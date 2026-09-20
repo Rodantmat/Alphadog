@@ -338,8 +338,50 @@ looks plausible, and it is simply from whenever the row was first written.
 to exist BEFORE the next upsert because the writers OVERWRITE."* **If a snapshot column is missing
 from an update clause, the differential compares against a frozen value and reports no change.**
 
-**The check is mechanical**: for each writer, compare the column list in the `INSERT` against the
-column list in `DO UPDATE SET`. **Not recorded as having been run.**
+### 4. ⚠ A shared helper can carry its OWN hidden internal cap
+> *"**A shared, reused helper function can carry ITS OWN HIDDEN INTERNAL CAP, completely independent
+> of whatever limit the CALLING CODE passes in.**
+> MLB found a real case where **RAISING A CALLER-SIDE THROUGHPUT SETTING HAD ZERO EFFECT**, because
+> **a shared promotion function had its OWN SEPARATE, HARDCODED CEILING that SILENTLY RE-CLAMPED EVERY
+> CALL regardless of the caller's own setting.**
+> **When tuning any shared NBA helper's throughput or limits, CHECK THE HELPER'S OWN INTERNAL CODE FOR
+> A HIDDEN CAP, not just the config value being passed into it.**"*
+
+**The symptom is "the setting has no effect"** — which reads as the config not being applied, not as a
+second limit existing further down.
+
+**NBA's shared helpers with limit-like behaviour:**
+| Helper | Potential internal cap |
+|---|---|
+| `nba_names.py` — shared name resolution (5,212 players) | match thresholds |
+| `nba_asof.py` — cutoffs | the cutoff constants themselves |
+| `nba_season.py` | — |
+| **The bridge's `run_sql` / `run_sql_postgres`** | **`max_rows` is capped at 500 regardless of what is requested** — a known, documented instance of exactly this |
+| The writer Workers' batched upserts | batch size |
+
+**⚠ And NBA has a live instance of the same family in the OTHER direction**: `BT_LADDER_STEPS`
+**overrides** `LADDER_DEPTH`, so a per-prop depth table can be silently flattened by an env var. **The
+caller wins there; the warning is about the case where the helper wins.** **Both are "the value you
+set is not the value used."**
+
+### 5. Prefer rebuilding a clean proven pattern over porting a problematic legacy one
+> *"**Prefer REBUILDING a clean, simple, ALREADY-PROVEN pattern over PORTING A COMPLEX LEGACY
+> ARCHITECTURE FORWARD, once that legacy pattern has ALREADY CAUSED REAL PROBLEMS ELSEWHERE.**
+> MLB made this call **repeatedly and deliberately** — when a new worker's legacy equivalent used the
+> same complex, already-proven-problematic design as an earlier one, **the team REBUILT CLEAN using
+> its own newer, simpler, already-proven pattern instead.**"*
+
+**✅ NBA did exactly this, twice, and the record shows the reasoning:**
+- **The PrizePicks NBA producer** — the startup plan assumed *"reuse the MLB scraper's architecture
+  directly, **swap the sport filter**"*, but Phase 1 found the MLB versions *"**hardcoded to
+  `baseball_mlb` at MULTIPLE LAYERS**"*, so a **separate producer** was built (`league_id=7`, own env
+  namespace, own output).
+- **The classification port** — two of three MLB generations were **dead and said so**; the live one
+  was read line by line and **the recency blend was rejected outright** rather than ported.
+
+**And the inverse discipline is also in the record**: `curl_cffi` and the writer-Worker shape **were**
+copied wholesale, because those patterns were proven *good*. **The rule is about porting patterns that
+have already caused problems — not about avoiding reuse.**
 
 ### The original MLB→NBA source mapping *(T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §3)*
 | MLB source | NBA equivalent, as stated | How it turned out |
