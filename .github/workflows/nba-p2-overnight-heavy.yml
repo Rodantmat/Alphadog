@@ -76,7 +76,10 @@ jobs:
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
-          IR_MODE: "recent"
+          # INJURY_MODE, not IR_MODE (verified in the script; my first guess was wrong). "daily" is the
+          # default and is what an unattended run wants - it pulls the current snapshots. The other
+          # modes are "probe" (a CDN diagnostic) and the backfill path, which needs INJURY_FROM/TO.
+          INJURY_MODE: "daily"
         run: python nba/scrape_nba_injury_report.py
 
       # Per the parity doc's stage table these are BASELINE-stage factors, not day-of:
