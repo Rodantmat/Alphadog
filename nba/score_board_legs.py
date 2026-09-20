@@ -182,6 +182,11 @@ def main():
             d["baseline_hp"] = d["new_hp"].fillna(d["baseline_hp"]).astype(float)
             print(f"  legs re-projected from the day-of report: {n_adj:,}", flush=True)
     except Exception as exc:  # noqa: BLE001
+        # ROLLBACK IS MANDATORY HERE. Catching the exception is not enough: psycopg leaves the
+        # connection in a FAILED TRANSACTION, so every later query dies with InFailedSqlTransaction and
+        # the traceback points at the innocent query instead of this one. The delta table legitimately
+        # may not exist yet, so this path is normal - it must not poison the rest of the run.
+        conn.rollback()
         print(f"  no availability delta applied ({str(exc)[:60]})", flush=True)
 
     # 4) AS-OF CALIBRATION - the latest cell published at or before today
