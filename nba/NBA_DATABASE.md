@@ -522,6 +522,8 @@ verdict is written here so it is queryable rather than trapped in a log. Keys in
 
 ## 3. `nba_control` — run bookkeeping *(T1)*
 
+> ⚠⚠ **BOTH TABLES ARE EMPTY AND NOTHING WRITES TO THEM** *(recorded 2026-09-20, T1 pass 68, **VERIFIED**)*. **`job_runs`: 0 rows. `worker_run_log`: 0 rows.** The string `nba_control` appears in **no non-markdown file in the repo**. Meanwhile **21 NBA workers are registered and enabled in `nba_config.worker_definitions` and their output tables are populated** — so the workers run, and **no run history is recorded anywhere.** The schema is a structure created in T1 for a purpose that was never wired. **Not fixed, per the standing instruction.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 68*.
+
 ### `nba_control.worker_run_log`
 `log_id` BIGSERIAL **PK** · `request_id` · `run_id` · `worker_name` · `job_key` · `level` ·
 `event_key` · `message` · `data_json` · `created_at`
