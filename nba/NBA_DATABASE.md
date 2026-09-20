@@ -222,8 +222,7 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 `credential_key` TEXT **PK** · `credential_value_encrypted` TEXT · `updated_at`
 Holds `balldontlie_api_key`, and later `betr_access_token`. **Credentials never live in chat memory.**
 
-### `nba_config.stat_decay_config` — 13 rows *(T7)*
-**Per-stat EWMA memory. The single most important config table in the system.**
+### `nba_config.stat_decay_config` — 13 rows *(T7)***Per-stat EWMA memory. The single most important config table in the system.**
 `stat_key` · `display_name` · **`ewma_alpha`** · **`min_lookback_games`** ·
 **`shrinkage_stabilization_games`** · **`memory_class`** · **`rationale`** · `active` · `updated_at`
 
