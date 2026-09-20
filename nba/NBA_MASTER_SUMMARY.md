@@ -5404,6 +5404,83 @@ per-player granularity, all defeated by sample size.**
 
 **T8 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T8.13 — PASS 5 — **THE FIRST CALIBRATION, AND TWO PUBLISHED FINDINGS THAT DID NOT REPRODUCE**
+
+`nba/backtest/minutes_model_v1.py` + a workflow running **on the committed JSON, no database access
+needed** — *"the cleanest possible path."*
+
+#### T8.13a — What the first run established on **79,138 player-games**
+| Check | Result | Verdict |
+|---|---|---|
+| **Derived static spread** | **r = 0.46** vs final margin, held-out season, MAE 11.5 | ***"Market-grade with zero market data"*** |
+| P(blowout \| spread) | **17% → 39% monotone on train; 19% → 41% on test** | *"Transfers cleanly across seasons"* |
+| DataStreak curve | **5.4-pt decay vs their 5.8** | *"Independently reproduced on our own data"* |
+| **Team-specific starter pull** | **0.81 (Orlando) → 1.10 (Dallas)** | ***"A 30% spread — the team-specific design is justified"*** |
+
+**⚠ THE TEAM-SPECIFIC FINDING STRENGTHENS AN OPEN ITEM.** I recorded (T7.13f) that team-specific
+blowout benching was *specified but not built*. **It was also MEASURED and found substantial — a 30%
+spread between the least and most bench-emptying coaches** — and still not implemented.
+`nba_score.blowout_model` remains league-wide.
+
+#### T8.13b — **CORRECTION 1: "the favourite's starters hit hardest" did NOT reproduce**
+> *"**Blowouts split by won/lost.** **Won: 51.9% over-rate (NOT a penalty).** **Lost: 36.9% (a
+> 12-point collapse).** **DataStreak's 'favourite's starters hit hardest' DID NOT reproduce** —
+> favoured starters **47.7%**, underdog starters **39.4%**. **The losing side is benched *and* played
+> badly to get there.**"*
+
+**⚠ THIS CORRECTS MY OWN T7.13f ENTRY**, where I wrote that the asymmetry *"survived"* because
+`won-by-25+ 0.8748 < lost-by-25+ 0.9124`. **Both are true and they measure different things:**
+| Measure | Won blowout | Lost blowout |
+|---|---|---|
+| **Minutes ratio** (`blowout_model.v1`) | **0.8748** — benched harder | 0.9124 |
+| **Over-rate** | **51.9%** — overs still hit | **36.9%** — collapse |
+
+**A starter in a won blowout plays fewer minutes but was productive in them** (he built the lead). **A
+starter in a lost blowout plays more minutes and produced less.** So minutes-wise the favourite is hit
+harder; outcome-wise the underdog is. **DataStreak's claim was about outcomes, and on our data it is
+backwards.** The engine keys on minutes, so it captures the real mechanism either way.
+
+#### T8.13c — **CORRECTION 2: published B2B ranges did not reproduce — and the reason is beautiful**
+> *"**Stars on zero rest: ~0 to −0.4 min *when they play*, NOT −1.5 to −3.0.** **Bench and rotation
+> *GAIN* +0.6 to +2.5.** **The mechanism is DNP-Rest: stars sit ENTIRELY**, so the star B2B effect is a
+> **P(available) effect belonging in the P(start) model**, and **the bench gains are the
+> redistribution**. **We have the DNP-Rest reasons to quantify it.**"*
+
+**The published figures (T7.14g: veterans −1.5 to −3.0) are an average over a population that includes
+zeros.** Conditioning on *playing* dissolves the effect almost entirely. **B2B is an availability
+factor wearing a minutes factor's clothing.**
+
+**And "we have the DNP-Rest reasons to quantify it" points at the exact field I flagged in T6** —
+`player_game_starter_status.comment`, where **`DND - Rest` has 27 rows**. **The asset had a named
+consumer in the design after all.**
+
+#### T8.13d — The FRINGE anomaly, flagged not explained
+> *"fringe players show a **0.87 minutes ratio in won blowouts** — **below 1, where garbage-time
+> accumulators should be above**. I've **flagged it as an anomaly to investigate rather than explained
+> it away**; the **≥40%-of-median filter on their tiny baselines** is the likely culprit."*
+
+**Garbage time should *help* fringe players** — that is when they play. A ratio below 1 is
+directionally wrong, and it was held open rather than rationalised.
+
+#### T8.13e — **THE FINAL CALIBRATION — out-of-sample, walk-forward monthly**
+2025-26, **~21,000 player-games per rung, every rung anchor ±6**:
+| Prop | Max gap, all 13 rungs | Role-tier residual at anchor | Empirical coverage |
+|---|---|---|---|
+| **Points** | **0.7 pp** | ±2.1 (**Iron Man +0.0**) | 84% |
+| **Rebounds** | **1.0 pp** | ±1.9 | 77% |
+| **Assists** | **0.7 pp** | ±1.3 | 81% |
+| **3PM** | **0.6 pp** | ±1.3 | 79% |
+
+> *"**Far tails are exact (3PM +6 rung: predicted 0.002, actual 0.002).** Reliability deciles within
+> **~±1–2 pp**."*
+
+**"Real outcomes fit it to within a point"** — the owner's stated standard (*"a perfect formula, very
+sharp, where the real outcomes fit perfectly most of the times"*) met at ≤1 pp across all 13 rungs of
+four props. **And `Iron Man +0.0` is the residual on the most predictable role tier being
+indistinguishable from zero.**
+
+**T8 PASS 5: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
