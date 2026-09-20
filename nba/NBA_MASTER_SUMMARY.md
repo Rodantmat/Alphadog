@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 60 passes (59 counted, pass 55 VOID).** Pass 60 (lessons Parts B/E/F by concept) found new material — **Part F's "opponent means different things on different sides of a prop"** lesson, and **the parallel-investigation technique** NBA used but never recorded (§T1.90). **Clean run of two (58, 59) broken; count reset to 0.** *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **0/3 — ACTIVE. 61 passes (60 counted, pass 55 VOID).** Pass 61 (Domain Mapping §2 row by row) found new material — **§7h transcribed 4 of the source's 10 factor-mapping rows**; the six missing rows added with outcomes, including **A2 (the handoff's "real, well-documented" effect) being fully retracted** (§T1.91). No consecutive clean run. *The earlier "DONE — 3/3 (passes 26, 27, 28)" is SUPERSEDED 2026-09-20 — see §T1.59.* |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
