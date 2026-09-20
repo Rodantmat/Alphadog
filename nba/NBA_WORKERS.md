@@ -490,7 +490,9 @@ show up as a timing anomaly too — **but only if someone is watching the runtim
 ---
 
 ## 1. CLOUDFLARE WORKERS — Postgres writers
-Pattern: read the GitHub-committed JSON → upsert into Postgres → log to `nba_control`.
+Pattern: read the GitHub-committed JSON → upsert into Postgres.
+
+> ⚠⚠ **CORRECTION — they do NOT log to `nba_control`** *(2026-09-20, T1 pass 68; this line previously read … → **log to `nba_control`**)*. **VERIFIED three ways**: **(1)** `nba_control.job_runs` and `nba_control.worker_run_log` hold **0 rows each**; **(2)** the string `nba_control` appears in **no non-markdown file anywhere in the repo** — not one worker, scraper, workflow or config; **(3)** every file that does use `worker_run_log` or `job_runs` is an **MLB** file at the repo root (`alphadog-v2-orchestrator.js`, `alphadog-v2-control-room.js`, `alphadog-v2-score-audit.js`, …). **NBA inherited the tables from MLB's design and never inherited the wiring.** → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 68*.
 They do **not** fetch from nba.com; they cannot (Cloudflare is blocked).
 
 | Worker | job_key | Writes | Source file |
