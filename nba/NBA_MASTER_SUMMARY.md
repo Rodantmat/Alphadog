@@ -5767,6 +5767,44 @@ west→east asymmetry was ever built is worth checking.
 
 **T8 PASS 9: MAJOR NEW MATERIAL. Clean count 0/3.**
 
+### T8.18 — PASS 10 (live verification of the two flagged data adds) — **BOTH ARE EMPTY**
+
+T8 recorded that 25 of 29 factors were *"all derivable now **except scheme and jet-lag, which need
+small data adds**."* I checked what those adds require.
+
+**`nba_ref.arenas`, verified 2026-09-20:**
+```
+arenas   with_timezone   with_altitude_ft   with_capacity
+  30           0                 0                19
+```
+
+**Both peer-reviewed factors from T7.16e have EMPTY source columns:**
+| Factor | Evidence | Required column | State |
+|---|---|---|---|
+| **Altitude** | *J. Sports Sciences* 2025, **p=0.005**; shot selection shifts to 3PA; **4Q starter minutes/efficiency reduced** | `nba_ref.arenas.altitude_ft` | **0 of 30 populated** |
+| **Eastward jet lag** | Peer-reviewed, **10 seasons** (PMC); **effect ~DOUBLE west→east** | `nba_ref.arenas.timezone` | **0 of 30 populated** |
+
+**⚠ THIS CORRECTS MY OWN T7.16e ENTRY.** I wrote that *"`altitude_ft` was put in `nba_ref.arenas` in
+T1's very first DDL, before any factor needed it"* — implying the data was ready and waiting. **The
+COLUMN was created in T1. The VALUES were never loaded.**
+
+**Why this is a clean gap rather than a hard one:**
+- Both are **30 static values** that never change — arena elevation and time zone.
+- Neither needs an API: Denver ~1,610 m and Utah ~1,290 m are the only two that clear the
+  *"gated >1500 m"* threshold the design specified, and time zones are public record.
+- The `teamdetails` source that fills the other arena fields does not carry them, which is presumably
+  why they were never populated.
+- **19 of 30 capacities are present**, matching T6's finding — so the table was loaded, just not
+  completely.
+
+**Consequence**: two factors with peer-reviewed support, both explicitly designed in (`altitude` as
+*"continuous, gated >1500 m"*, with the caution *"sparse data — don't overfit"*), **cannot be computed
+at all**. They are not failing a gate — they have no input.
+
+**Recorded in OPEN_ITEMS as a cheap, concrete fix.**
+
+**T8 PASS 10: NEW MATERIAL (a correction and a verified gap). Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
