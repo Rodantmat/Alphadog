@@ -64,6 +64,19 @@ repo access (drag-and-drop into the GitHub web UI works, or `git add nba/transcr
 > 2. **Rotate the affected credentials first**, then commit — which is worth doing regardless, since
 >    the values have already travelled through chat exports.
 >
+> ### ⚠⚠ **AND CHECK GITHUB PAGES FIRST** *(added 2026-09-20, T1 pass 81)*
+> **VERIFIED LIVE**: **`pages build and deployment` runs on every push to `main`** — twelve of
+> twelve recent runs are Pages builds on this documentation effort's own commits, two of them
+> **`success`**. **There is no `gh-pages` branch, no `docs/`, no `_config.yml` and no `index.html`**,
+> so the build takes **the repository root**, which is where the markdown lives.
+> ⚠ **`[skip ci]` does not stop it** — it suppressed the MLB deploy workflow on every commit and
+> **did not suppress a single Pages build.**
+> **Whether the resulting site is public cannot be read from here**, and **no claim is made that
+> anything is currently exposed.** **But if Pages is public and the transcripts are committed, the
+> credential values would be published as web pages, not merely stored in `git`.**
+> **So: confirm the Pages setting — enabled? source? public? — BEFORE committing the transcripts.**
+> If it is public, **rotation is the only reliable remedy for anything already committed.**
+>
 > **Not done here**, per the standing instruction: this session does not write to the database, does
 > not rotate keys, and does not commit the transcripts. **Flagged for the owner.**
 
