@@ -414,6 +414,19 @@ factor audit (T15/T16) tested ten candidates and none were shot-quality-based.
 **If it is computed weekly and never consumed, that is a real gap** — the metric is built, validated
 and sitting unused. **To verify: check whether any factor set or baseline recipe references it.**
 
+### NOT IMPLEMENTED (design specified it) · **team-specific blowout benching**
+The T7 blowout design called for a **team-specific `E[minutes | blowout]`**, on RotoGrinders' evidence
+that *"coaches differ in how they empty benches"* and the scale should be *"asymmetric and
+**team-specific**."*
+
+**`nba_score.blowout_model` has no team dimension** — it is keyed on **margin band + side only**
+(7 `minutes_by_margin` rows, league-wide). **The asymmetry survived** (won-by-25+ 0.8748 vs lost-by-25+
+0.9124 — the favourite's starters lose more minutes, matching DataStreak's *"hitting the favourite's
+starters hardest"*). **The team-specific half did not.**
+
+**Whether it matters is measurable**: a Spurs-vs-Warriors blowout may empty benches at different rates,
+and with 24,025 player-games in the model there is sample for a per-team term. **Untested.**
+
 ### REJECTED CANDIDATE (with reason, so it is not re-proposed) · Draft Combine anthropometrics*"Real on-court results already encode a player's physical tools better than a years-old combine
 measurement. Only rookies would benefit, and it's not worth the complexity here."*
 
