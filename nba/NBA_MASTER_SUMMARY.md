@@ -4017,6 +4017,75 @@ data comes up?"* — which is what surfaced the season-hardcoding bug (T7.1) and
 
 **T7 PASS 3: NEW MATERIAL. Clean count 0/3.**
 
+### T7.10 — PASS 4 — **THE DATA-UNIVERSE RESEARCH, AND THE PER-STAT DECAY TABLE**
+
+#### T7.10a — The six-gap verdict table
+| Gap | Cost | Baseline impact | Verdict |
+|---|---|---|---|
+| **Usage / Scoring / Four Factors** measure types | **9 cheap bulk calls** (3 types × 3 seasons) | **High** — Usage = *"share-of-team-stats per game, the direct input for role/opportunity modelling"*; Scoring = *"composition (%paint/mid/3pt/FT, %assisted → **scoring stability archetype**)"*; Four Factors = *"true efficiency (eFG%, FTA rate)"* | **BUILD** |
+| **Per-stat decay rates** (not one alpha) | **Zero data cost** — methodology + config table | **HIGHEST** — *"3pt% needs a **long memory**, assist rate needs a **short** one; **a single alpha is wrong for all of them**"* | **DO IT** |
+| Opponent / Defence / Misc types | 9 more cheap calls | Low — *"matchup/single-game descriptive, **not baseline talent**"* | Skip |
+| Play-by-play (garbage time, per-possession) | Real engineering | High, but *"our **MIN + score-margin proxy** is a reasonable stand-in"* | Defer, document |
+| **Starter-status for 2023-24/2024-25** | 2,460 expensive calls | Moderate — ***"90% proxied by MIN + Usage once we have it"*** | Defer |
+| Teammate-context conditional rates | Zero new data | High, but *"it's baseline **LOGIC, not data**"* | Note for the pipeline |
+
+**Two of these settle open items I raised earlier:**
+- **The T5 starter-status coverage asymmetry has a stated mitigation**: *"90% proxied by MIN + Usage."*
+  The one-season gap is less severe than it looked, **provided Usage is actually used that way.**
+- **The garbage-time proxy is confirmed a third time** as MIN + margin (cf. T4.14b, T6.9).
+
+#### T7.10b — The execution order, and its reasoning
+> *"1. **Season utility first** → 2. new measure types → 3. decay config table → 4. **replay probe
+> last**. The utility had to come first so the **new scrapers use it from day one instead of repeating
+> the bug**; the replay probe goes last so I'm **not validating a delta path for data that's about to
+> expand**."*
+
+**Both halves are ordering-by-dependency rather than by priority** — a fix applied before the code
+that would inherit the bug, and a validator built after the thing it validates stops changing.
+
+#### T7.10c — ✅ **ALL OF IT WAS BUILT — verified live 2026-09-20**
+`nba_config.stat_decay_config` · `nba_stats.player_game_log_usage` ·
+`nba_stats.player_game_log_scoring` · `nba_team.team_game_log_four_factors` ·
+`nba_team.team_game_log_scoring`
+
+#### T7.10d — **`nba_config.stat_decay_config` — 13 rows, and every one carries its reasoning**
+Columns: `stat_key`, `display_name`, **`ewma_alpha`**, **`min_lookback_games`**,
+**`shrinkage_stabilization_games`**, **`memory_class`**, **`rationale`**, `active`, `updated_at`.
+
+| `stat_key` | α | lookback | stabilise | class |
+|---|---|---|---|---|
+| **minutes** | **0.20** | 8 | **10** | short |
+| usg_pct | 0.15 | 10 | 15 | short |
+| ast_rate | 0.15 | 10 | 20 | short |
+| pts_rate | 0.12 | 15 | 25 | medium-short |
+| fg3a_rate | 0.12 | 15 | 25 | medium-short |
+| stl_rate | 0.10 | 15 | 60 | medium-short |
+| fta_rate | 0.10 | 15 | 30 | medium |
+| tov_rate | 0.10 | 15 | 40 | medium |
+| reb_rate | 0.08 | 20 | 40 | medium |
+| blk_rate | 0.08 | 20 | 50 | medium |
+| fg_pct | 0.06 | 25 | 120 | medium-long |
+| ft_pct | 0.04 | 30 | **150** | long |
+| **fg3_pct** | **0.03** | **40** | **300** | **long** |
+
+**The alpha spread is 6.7× (0.03 → 0.20) and the stabilisation spread is 30× (10 → 300 games).**
+**A single alpha would have been wrong for eleven of the thirteen.**
+
+**The `rationale` column is the most valuable part** — each row explains itself:
+- **minutes**: *"the **single biggest error source in props** and are set by coaching decisions that
+  change abruptly; **shortest memory of all**"* — the T4.9c warning, encoded as a parameter.
+- **usg_pct**: *"Role can change overnight (trade, teammate injury); **USG% from 30 games ago as a 4th
+  option is irrelevant if now a 2nd option**. React fast."*
+- **fg3_pct**: *"True 3pt shooting talent takes **hundreds of attempts** to stabilise; **a 10-game
+  hot/cold streak is mostly noise**."*
+- **fg3a_rate**: *"**Attempt VOLUME (unlike make %) is role/scheme-driven** and moves with usage, not
+  shooting talent."* — **the same stat split into two memory classes depending on which component.**
+
+**This is the no-hardcoding rule (owner, T1) applied to its hardest case**: not timeouts or chunk
+sizes, but **model hyperparameters**, each with its justification stored beside it and SQL-editable.
+
+**T7 PASS 4: MAJOR NEW MATERIAL. Clean count 0/3.**
+
 **T3's two findings that bear on live code**, both now in OPEN_ITEMS:
 1. **82 play-type rows scraped but never loaded** — verified still true today (3,282 vs 3,364).
 2. **The weekly differential worker is not scheduled, and `nba-p1-weekly-static.yml` does not call
