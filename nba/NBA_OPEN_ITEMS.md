@@ -483,7 +483,10 @@ the row count against an expected magnitude (26 players/game).
 **Fix: use `boxscoretraditionalv3`** — *"v3 works reliably for every single sample, including all the
 games v2 silently failed on."* **v3 schema differs**: flat per-player fields (`personId`, `position`,
 `comment`) nested under `boxScoreTraditional.homeTeam.players` / `awayTeam.players`.
-**Any remaining v2 usage anywhere in the codebase is suspect.**
+
+**✅ VERIFIED CLEAN 2026-09-20**: `nba/scrape_nba_per_game_delta.py` — the script P2 calls daily — uses
+**`boxscoretraditionalv3`** for starter status and **`boxscoresummaryv3`** for officials. **No v2
+remains in the live path.** The lesson propagated correctly.
 
 ### BUG-FIXED · `nba_ref.players.position` existed in the schema and was never written
 Two components had the same silent omission: **the scraper never extracted the field**, and **the
