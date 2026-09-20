@@ -58,6 +58,14 @@ jobs:
           FE_WRITE: '0'
         run: python nba/build_final_hp.py
 
+      - name: Availability delta (simulate P3 step 4a)
+        if: ${{ github.event.inputs.task == 'delta' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DELTA_ASOF: ${{ github.event.inputs.date }}
+          DELTA_SEASON: ${{ github.event.inputs.season }}
+        run: python nba/build_availability_delta.py
+
       - name: Score the board (simulate P3 scoring)
         if: ${{ github.event.inputs.task == 'board' }}
         env:
