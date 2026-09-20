@@ -1480,7 +1480,25 @@ begun — and that is correct sequencing, not an omission.
 
 ---
 
-## 14. THE RESEARCH STANDARD — all 26 lessons *(T1, `NBA_LESSONS_LEARNED_FROM_MLB.md`, Part A)*
+## 14. THE RESEARCH STANDARD — all **27** lessons *(T1, `NBA_LESSONS_LEARNED_FROM_MLB.md`, Part A)*
+
+**⚠ COUNT CORRECTION, 2026-09-20 (T1 pass 30). This heading read "all 26 lessons." Part A has 27.**
+**VERIFIED** two ways on 2026-09-20: a direct grep of the source document
+(`grep -c "^### [0-9]\+\." NBA_LESSONS_LEARNED_FROM_MLB.md` → **27**), and a grep of T1 itself, which
+carries `### 27.` inside its pasted copy. **The "26" figure propagated from the work order into this
+document and was never checked against the file.** **Lesson #27 had no entry anywhere in the twelve
+documents** — it is added below, at the end of the list.
+
+**⚠ AND THE PART LIST IS ALSO INCOMPLETE.** Every reference in these documents says *"Parts A–F."*
+The current `NBA_LESSONS_LEARNED_FROM_MLB.md` carries **Parts A, B, C, D, E, F, G and H**:
+- **Part G — "Lessons earned by the NBA baseline work itself (2026-09-09), now part of the standard"** — **10 numbered lessons**
+- **Part H — "Lessons from the enrichment backfill, market and board-sourcing phase (2026-09-10)"** — **12 numbered lessons**
+
+**Both POSTDATE T1** (2026-09-03), so they are **not T1 material** — they were appended by the
+sessions that became **T7–T11**, and they are swept with those transcripts, not here. **They are
+recorded now so the gap is not lost**: `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 30*. **The research
+standard is 27 lessons + 22 NBA-earned lessons across Parts G and H = 49 numbered items, of which
+this document currently carries 27.**
 
 **Part A's own preamble, which sets how the standard must be used:**
 > *"**The complete research standard (apply to EVERY NBA strategy candidate).**
