@@ -597,6 +597,30 @@ step-by-step against their workflow files.**
 
 ---
 
+## 4b. ⚠ WHAT NO PIPELINE DOES — `final_hp` is rebuilt by nothing
+*Recorded 2026-09-20 (T1 pass 34). **VERIFIED** by reading all three P-pipeline workflow files.*
+
+The calculation chain in §5 below runs `baseline HP → availability delta → as-of calibration →
+final HP`. **The last arrow is not wired into any pipeline.**
+
+| Script | Writes | Run by |
+|---|---|---|
+| `build_final_hp.py` | `nba_score.final_hp` | **no P-pipeline.** Only `nba-absence-panel.yml` (`FE_WRITE` defaults `'0'`) and `nba-engine-test.yml` (`FE_WRITE: '0'`) |
+| `score_board_legs.py` | `nba_score.board_scored` | **P3, step 9** |
+
+**This is by design and worth stating plainly**: **P3 is board-scoped** (§4) — it scores the legs the
+apps actually offer, not the internal ±10 ladder — so **`board_scored`, not `final_hp`, is the live
+daily output.** `final_hp` is the **backtest/replication surface**, built on demand.
+
+**⚠ Two consequences, neither previously recorded:**
+1. **The `final_hp` data loss recorded in `NBA_OPEN_ITEMS.md` is PERSISTENT.** Nothing scheduled will
+   notice or repair the 2025-26 partition reduced to a single date, and **no certifier checks its
+   date coverage** — `certify_pipeline.py`'s P2 check counts `confidence_model` rows.
+2. **§5's chain diagram reads as a nightly pipeline and is not one.** A reader tracing the chain
+   would reasonably assume P2 or P3 produces `final_hp`. **Neither does.**
+
+---
+
 ## 5. THE CALCULATION CHAIN
 
 ```
