@@ -127,6 +127,18 @@ WNBA).
 
 ## 4. THE LADDER CONFIG — `nba_config.classification_config.ladder`
 
+> ### ⚠ NOTHING READS THIS TABLE — **VERIFIED 2026-09-20 (T1 pass 36)**
+> A grep of all 190 `.py`/`.js` files in `nba/` **and** the MCP admin bridge finds
+> **`classification_config` zero times.** The stored JSON below is a **recorded design, not a live
+> setting**: the ladder's actual steps and bounds are **hardcoded** in
+> `nba/backtest/classification_ladder_v12.py` (`LADDER_STEPS`, and `step` per prop inside the `PROPS`
+> dict).
+> **Editing this JSON by SQL changes nothing and raises no error** — which matters here because the
+> ladder config is the most obvious thing a future reader would reach for when adjusting rung depth.
+> **Not claimed**: that the JSON disagrees with the code. On the sibling table
+> `stat_decay_config` a full diff **did** find disagreement on 7 of 10 stats, so **this one warrants
+> the same check and has not had it.** `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 36*.
+
 **The actual stored JSON:**
 ```json
 {"anchor": "recency_blended_projection",
