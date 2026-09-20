@@ -55,7 +55,50 @@ taxonomy: NBA has no opposing-role prop family, so one `nba_stats` replaces MLB'
 
 ---
 
-## 2. COMPUTE
+## 1c. THE DATABASE-DISCIPLINE RULE, STATED PRECISELY
+*Source: T1, blueprint §7e — **"the single most important database-discipline rule from the whole MLB
+migration."*** Recorded 2026-09-20.
+
+> *"MLB's standing rule was **'ZERO NEW TABLES ON THE LEGACY/D1-STYLE DATABASE'** — but **the PRECISE,
+> CORRECT VERSION of this rule has A REAL, IMPORTANT EXCEPTION worth carrying forward exactly:**
+> **the OPERATIONAL CONTROL-PLANE — job dispatch bookkeeping: A JOB QUEUE, RUN HISTORY, LOCKS, WORKER
+> RUN LOGS — is A LEGITIMATE, ACCEPTED EXCEPTION**, since **every part of the system already flows
+> through it REGARDLESS OF WHICH DATABASE HOLDS THE ACTUAL BUSINESS/SPORTS DATA.**
+> **What is A HARD VIOLATION, WITH ZERO EXCEPTIONS, is creating ANY NEW TABLE OF ANY KIND — INCLUDING
+> A TINY CONFIGURATION OR MARKER VALUE — ON THE LEGACY DATABASE WHEN AN EXISTING POSTGRES TABLE OR AN
+> ALREADY-ESTABLISHED PATTERN IN THE SAME CODEBASE ALREADY SOLVES THE SAME PROBLEM.**"*
+
+**The rule has a shape worth noting: an exception for the control plane, and NO exception for
+anything else — explicitly including "a tiny configuration or marker value."** The small case is named
+because it is the one that gets waved through.
+
+### ✅ NBA is structurally compliant, and by a wider margin than the rule requires
+| | Rule | NBA |
+|---|---|---|
+| Business/sports data | never on legacy | **Postgres-only from day one** — *"NBA is Postgres-native from the start"* |
+| **Control plane** | **legitimate exception** | **uses the SHARED `control.*` / `config.*` tables — bookkeeping only** |
+| New tables on legacy | **hard violation** | **none — D1 was decommissioned system-wide 2026-08-12**; all 12 MLB D1 bindings report false |
+
+**NBA never had the opportunity to violate this**, because it began after the Postgres migration and
+D1 was retired during the build.
+
+### ⚠ But the rule's GENERAL form still applies, and it is the live one
+***"…when an existing Postgres table or AN ALREADY-ESTABLISHED PATTERN IN THE SAME CODEBASE ALREADY
+SOLVES THE SAME PROBLEM."***
+
+**That clause is about DUPLICATION, not about D1** — and it is the same principle as §5a's *"check
+whether an equivalent, already-correct pattern exists elsewhere in the same codebase; copying a proven
+pattern beats inventing a new one."*
+
+**Live NBA cases where an established pattern already solves a recorded gap:**
+| Gap | Established pattern that already solves it |
+|---|---|
+| The board producer's zero-vs-broken ambiguity | **the delta worker's calendar-based pre-flight** |
+| Config↔code drift (`minutes_mixture`) | **the patcher's anchor assertions** |
+| A stale artefact load | **`baseline_ladder_runs.source_file`** + an `asof` assertion |
+| Unscheduled differential worker | **MLB's `weekly-differential-runner` native cron** |
+
+**In each case the answer is to copy, not to invent** — which is what this rule's final clause says.
 
 ### Reused as-is (shared, sport-agnostic infrastructure) *(T1)*
 *Confirmed and refined against what Phase 1 actually found live.*
