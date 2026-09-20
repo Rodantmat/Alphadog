@@ -2055,7 +2055,7 @@ calls, lines ~40000–43895.*
 
 - **⚠⚠ A documented claim corrected.** `NBA_SYSTEM_DESIGN.md` §0.8 said blueprint §4o (*"don't
   babysit a long-running job"*) **was followed**. **In T1 it was not.** T1's whole local execution is
-  two syntax checks, two `cat`s and **thirteen polling sleeps** — `30, 40, 45, 50, 55, 60, 70, 90,
+  two syntax checks, two `cat`s and **25 polling sleeps** *(corrected 2026-09-20, pass 66: the original "thirteen" counted distinct durations, not calls)* — `30, 40, 45, 50, 55, 60, 70, 90,
   150, 240, 280, 290` seconds. **VERIFIED** by extracting every `bash_tool` call.
 - **The owner caught it live** — message 6 of 15: *"**what is going on? what are these waits for?**"*
 - **The cause is structural too**: no `github_trigger_workflow` in the session's tool list, so **no
