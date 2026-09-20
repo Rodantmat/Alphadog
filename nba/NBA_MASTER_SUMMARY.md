@@ -1456,6 +1456,135 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.110 — PASS 80 (angle: **the live-system RESPONSES — `check_bindings` and the four `run_job` results, with `check_bindings` re-run today**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 80.*
+
+**FINDING 1 — ✅ the environment surface is unchanged since T1.** `check_bindings` re-run live
+returns **all 12 D1 bindings `false`**, **20 vars**, **11 secrets**,
+`control_room_service_binding_present: true`. **Clean re-verification**, consistent with the D1
+decommission and with pass 40.
+
+**FINDING 2 — ⚠⚠ the mechanism behind §0.3's "every operating constant is hardcoded".**
+**VERIFIED from the generator**: an NBA worker gets **six vars — `SYSTEM_ENV`, `SYSTEM_TIMEZONE`,
+`ACTIVE_SPORT`, `NBA_STATS_API_BASE_URL`, `WORKER_SAFE_MODE`, `DEBUG_MODE` — and not one is an
+operating constant.** **MLB's shared `VARS` carries the caps** (`MAX_TICK_MS`,
+`MAX_API_CALLS_PER_TICK`, `MAX_ROWS_PER_TICK`, `LOCK_STALE_MINUTES`, … 20 in total), and the
+generator deliberately gives NBA *"its own vars, never the shared MLB VARS dict."*
+**✅ The isolation is real and intended. ⚠ The consequence is that an NBA worker has nowhere to
+read a timeout, retry, chunk size or row cap from** — `nba_config.system_settings` is read by no
+code (pass 33) and the vars block carries no constant. **The founding rule did not fail through
+neglect; the plumbing was never built on either side.** §0.3 now carries this.
+
+**FINDING 3 — ⚠ `ACTIVE_SPORT` uses two naming conventions.** MLB: **`"MLB"`**. NBA:
+**`"basketball_nba"`**. **A league abbreviation and a ParlayAPI-style sport key in the same variable
+name.** Harmless today; **any future code comparing them across sports will be wrong.**
+
+**FINDING 4 — the `run_job` results, measured.** First run: `teams_written: 30`,
+`aliases_written: 157`, `external_calls_performed: 0`, **`elapsed_ms: 78,616`**,
+`source_key: STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR`. Second run: **`teams_written: 0`,
+`teams_unchanged_skipped: 30`**, `elapsed_ms: 73,240` — **✅ the "only update what changed"
+behaviour demonstrated on the first repeat, not merely asserted.**
+⚠ **But a 30-row upsert took 78.6 s, then 73.2 s, with zero external calls** — **that is the write
+path.** **Why is NOT RECORDED**; consistent with pass 66's 49.5 s `run_job` mean, and it matters when
+21 workers run in sequence.
+
+**FINDING 5 — the one MLB call was rejected.** `run_job {"job":"trigger","target":"CONTROL_ROOM"}`
+→ **HTTP 400**, `unknown_or_not_enabled_v2_control_room_job`, from
+`alphadog-v2-control-room-v1.6.215-baseline-v5-classification-rescue-target-batch`. **Nothing was
+triggered** — one more independent isolation data point, plus the control room's exact deployed
+version at 2026-08-31.
+
+**Routed to**: `WORKERS` §0.3 (the mechanism) · `OPEN_ITEMS` (*FROM T1 PASS 80*) · this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `GLOSSARY`,
+`SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 80 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.109 — PASS 79 (angle: **the CI LOGS themselves — `log_text`, not run IDs or timing**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full tables and quotes: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 79.*
+
+**FINDING 1 — ⚠⚠ the tarpit escalation ladder, exact, and recorded nowhere.** Three runs, three
+settings, one failure mode: **`timeout=30` single attempt → `timeout=60` ×3 attempts → proxy
+(`proxy=yes`) ×3 attempts**, and **every one returned `Read timed out.`** — **never a 403, never a
+refusal, never an HTTP status.** **Doubling the timeout, retrying three times and changing egress all
+changed nothing**, which is exactly why the answer was **TLS-fingerprint impersonation**, not
+headers, IPs or retries. ⚠ **The strings `Read timed out`, `Attempt 1/3` and `proxy=yes` appear in
+no document** — the conclusion was carried forward, **the measurements were not.** The reusable
+rule: **a read timeout that survives a longer timeout and a different egress is a tarpit, not a
+block.**
+
+**FINDING 2 — the deploy failure's exact fingerprint.** Run **33429867514** returns one error line:
+*"✘ [ERROR] **The entry-point file at `nba/alphadog-v2-nba-static-teams.js` was not found.**"* —
+the `nba/nba/` path-doubling bug. **The bug is documented in four places; this string is not**, and
+it is what anyone would grep for when it recurs.
+⚠ **That job had 17 steps and FOUR failed** — two of them (`Post Setup Python`, `Post Setup Node`)
+**post-job cleanup failing as a consequence.** **One real failure, four red steps.** The scrape
+failures show the same shape: **three failed steps each**, including **`Commit NBA data JSON to
+main`, which fails because the scrape produced nothing to commit.** ✅ Each ends with
+`##[error]Process completed with exit code 1` — **loud failure, nothing swallowed.**
+
+**FINDING 3 — ⚠ an effective 40-line cap on returned log text, NOT RECORDED.** The five successful
+calls report `total_log_lines` of **9,551 / 9,627 / 184 / 187 / 188** and `returned_lines` of
+**40 / 40 / 8 / 32 / 40** — **`returned_lines` never exceeded 40 even when `tail_lines` asked for
+150.** **A deploy log is ~50× a scrape log**, so **anyone diagnosing a deploy failure gets at most
+40 matching lines out of ~9,500** and must choose the grep pattern accordingly. This **refines pass
+40**, which recorded only the 404-on-in-flight case.
+
+**Routed to**: `OPEN_ITEMS` (*FROM T1 PASS 79*, measured numbers and verbatim error strings) ·
+this entry.
+**Considered, no change warranted**: `RECIPE` (its STEP 3 narrative is correct; the ladder is
+evidence for it, now recorded in OPEN_ITEMS), `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`,
+`GLOSSARY`, `SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`,
+`GOBLIN_DEMON`.
+
+**PASS 79 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
+### T1.108 — PASS 78 (angle: **T1's READING LIST — every file it opened, counted against the repo it was reading**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*Recorded 2026-09-20. Full tables: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 78.*
+
+**Angle**: pass 73 counted what T1 **wrote**; this counts what it **read** — every
+`github_get_file`, `github_grep_file` and `github_list_dir` call — **with the denominator measured
+on the live clone.**
+
+**FINDING 1 — the whole reading surface is 32 calls across 20 paths and 4 directory listings.**
+**`alphadog-v2-admin-sql.js` was the most-read file of the session** (1 full read + **6 greps**) —
+the MCP bridge T1 had to understand to extend its own tooling. **The three handoff documents were
+each read exactly once, in full** — matching the founding instruction. ✅
+
+**FINDING 2 — ⚠⚠ the measured search space: NINE MLB files, out of 372 at the repo root alone.**
+**VERIFIED**: the root holds **140 `.js` MLB workers, 11 `.py`, 41 `.md` — 372 files** — plus 6 MLB
+workflows and `gbdt_training/`'s 28. **T1 opened nine, and two of the four workers were grepped only,
+never read.**
+**This is the measurement pass 40's finding was missing.** Pass 40 showed T1's central discovery was
+**prior art already in `gbdt_training/d1_client.py`**, rediscovered at a cost of four failed runs and
+25 polling sleeps. **Now the reason is measured, not inferred: that directory was never opened, and
+neither were 363 of the 372 root files.**
+**Stated at strength**: **the nine were the right nine**, chosen by the §0a method (registry →
+targeted grep → full read only when needed), **which is why the work was fast.** **The finding is
+that the method has no step for *"has this already been solved here"***, and pass 40 measured the
+cost. **The two findings complete each other**; §0a now carries the caveat.
+
+**FINDING 3 — the eight grep patterns are a compact record of what T1 needed to know.** Six of the
+eight target the MCP bridge. ⚠ The `prizepicks-github-board` grep
+(`raw.githubusercontent|api.github.com|GITHUB_TOKEN`) is **the exact moment the
+GitHub-committed-JSON pattern was identified** — and it searched for **both** surfaces.
+**Which one the MLB template actually used, and whether the NBA choice was read or assumed, is
+NOT RECORDED** — which is the unanswered half of pass 71's finding that **10 of 21 NBA workers still
+use the Contents API.**
+
+**Routed to**: `WORKERS` §0a (the method's measured blind spot) · `OPEN_ITEMS` (*FROM T1 PASS 78*) ·
+this entry.
+**Considered, no change warranted**: `RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `GLOSSARY`,
+`SYSTEM_DESIGN`, `BASELINE_CALIBRATION`, `FINAL_SCORING_CALIBRATION`, `MULTIPLIERS`, `GOBLIN_DEMON`.
+
+**PASS 78 FOUND NEW MATERIAL. CLEAN COUNT REMAINS 0/3.**
+
+---
+
 ### T1.107 — PASS 77 (angle: **the 14 ASSISTANT MESSAGES — only the text the owner actually saw**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *Recorded 2026-09-20. Full detail: `NBA_OPEN_ITEMS.md` → FROM T1 PASS 77.*
 
