@@ -324,7 +324,36 @@ archives back to **2021-22** — free, official, no third-party paywall."*
 **⚠ The backfill captured is HOURLY (48 snapshots/game-date), while the league publishes every 15
 minutes.** Any cutoff analysis finer than ±1 hour needs the 15-minute archive. The season crosses DST.
 
-### BallDontLie — **PAID GOAT tier, $39.99/month**
+### ✅ RULE FOLLOWED · check the sport's own official API before any third-party source
+*Source: T1, blueprint §4i. Recorded 2026-09-20.*
+
+> *"MLB had **a LOCKED PLAN to integrate a separate, PAID weather API**, and **before building it, ran
+> a real, DIRECT TEST against MLB's own official live-game-feed API — the same one already used
+> elsewhere in the pipeline** — and found it **ALREADY RETAINED COMPLETE, PERMANENT HISTORICAL WEATHER
+> *AND* UMPIRE DATA for every completed game, going back over a year, FOR FREE, with NO SEPARATE
+> INTEGRATION NEEDED. This was confirmed BY AN ACTUAL TEST CALL, NOT ASSUMED FROM DOCUMENTATION.**
+> **For NBA: before integrating any separate third-party historical data source** — and it names
+> them — **REFEREE/OFFICIATING HISTORY, INJURY-REPORT ARCHIVES, PLAY-BY-PLAY, or anything else NBA's
+> own official stats API might already provide — RUN THE EQUIVALENT DIRECT TEST AGAINST THE NBA'S OWN
+> OFFICIAL API FIRST.**
+> **A genuinely free, already-available, already-reliable source HIDING IN AN API YOU'RE ALREADY
+> CALLING FOR SOMETHING ELSE is a REAL, RECURRING PATTERN worth actively checking for.**"*
+
+**✅ NBA followed this, and it paid off on two of the three named categories:**
+| Category named | What the official source yielded |
+|---|---|
+| **Referee/officiating history** | **`boxscoresummaryv3` `Officials` → `nba_stats.game_officials`, 3,681 rows** — free, from an endpoint already in use. *(The roster itself was NOT there — Wikipedia was needed — so the answer was split.)* |
+| **Injury-report archives** | **`ak-static.cms.nba.com/referee/injury/` — official PDFs back to 2021-22**, *"free, official, **no third-party paywall**"* |
+| **Play-by-play** | ⚠ correctly identified as **not available** in the bulk endpoints; Tier C props deferred rather than a third party bought |
+
+**And the pattern recurred in a fourth place the blueprint did not name**: **period props**. The
+assumption was they would need ~5,000 per-game calls; **a direct probe found `Period=1..4` works on
+the BULK endpoint — 4 calls per season.** *"Confirmed by an actual test call, not assumed from
+documentation"* is exactly how that was established.
+
+**⚠ The one paid source that exists anyway**: **BallDontLie GOAT tier, $39.99/month** — recorded in T1
+as verified and operational, **with no consumer in any later transcript.** By this rule it should have
+been tested against stats.nba.com first; **stats.nba.com is in fact what the build used.**
 *Source: T1, a pre-existing NBA integration report. Recorded 2026-09-20.*
 
 | Property | Value |
