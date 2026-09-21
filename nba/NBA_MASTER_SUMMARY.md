@@ -14423,6 +14423,73 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.5 — PASS 4 (**two-direction judgment, baseline-tree reporting**) — **✅ the Sleeper claim survives the attack, and the attack found a second defect · 0/3**
+*2026-09-21. The judgment pass, with the weight on pass 3 — the pass with the most new assertions and
+the least scrutiny.*
+
+#### 📌 T11.5a — **The band, per rule 18**
+
+| | high band | tail | uncovered vs **the twelve** | uncovered vs **all `nba/`** |
+|---|---|---|---|---|
+| **Baseline `5dfb72ab`** — *the finding* | **13** | **3** | **695** | **685** |
+| Working tree — *what this sweep added* | **22** | **2** | **686** | **677** |
+
+**The baseline is identical to pass 0's.** **Overlap: 13 in both · 9 working-only · 0 baseline-only**
+— **strictly monotone, the fifth transcript running.**
+
+🔑 **And the rate is the observation**: **9 crossings in FOUR passes on T11, against 8 in SIXTEEN
+passes on T10.** ***That is §T10.16c's threshold mechanism confirmed from the other end*** — coverage
+moves only on verbatim quotation, and **T11 is 97.6% uncovered, so nearly everything worth writing is
+a quotation.** *A transcript that is already documented produces commentary; one that is not produces
+quotation, and only the second moves the metric.*
+
+#### ✅ T11.5b — **"Sleeper has one day" attacked in three vocabularies — and it survives**
+
+*The claim §T11.4a rests on is a **table-level** absence, and this sweep has mistaken one of those for
+a system-level absence five times. So it was attacked rather than re-stated.*
+
+| Where Sleeper history could hide | What is actually there |
+|---|---|
+| `nba_market.board_snapshots` | **the only populated app discriminator** — `sleeper` = **1,276 rows, one day** |
+| `nba_market.board_tiers` / `board_tiers_v2` | **no app column at all**, and the row count equals PrizePicks' board **exactly** — ✅ **documented as PrizePicks-only in 2 of the twelve** |
+| `nba_market.rung_market` | **no bookmaker column** — it aggregates across books via `books` |
+| `nba_market.board_outcomes` | **has a `bookmaker` column and it is NULL on every one of 6,905,452 rows** |
+
+✅ ***The claim survives, and the attack explains why it must: no other table in the market schema can
+carry app-level history, because none of them distinguishes apps.*** **Probed as the documents would
+phrase it (*sleeper … one day · single day*) → 0 of thirty.**
+
+#### 🔴 T11.5c — **And the attack found it: `board_outcomes` discards both discriminators its source carries**
+
+**`[LIVE-AUDIT]`, `nba_market.board_outcomes` — 6,905,452 rows:**
+
+| column | populated |
+|---|---|
+| **`bookmaker`** | **0 of 6,905,452 — entirely NULL** |
+| **`snapshot_label`** | **0 distinct values — entirely NULL** |
+| `market_key` | 21 distinct |
+| `is_alternate` | **5,143,042 true** |
+| `leg_result` | **5 values — `over_win` · `under_win` · `push` · `dnp` · `unmatched_player`** |
+
+🔴 ***The graded-outcome surface cannot say which app a result belongs to, or which snapshot window
+produced the line*** — **while `board_snapshots`, the table it grades, carries both.** Recovering
+either means joining back on `(game_date, event_id, player, market_key, side, line)`.
+
+**Novelty**: `board_outcomes` itself is well documented (**13 of thirty, 9 of the twelve**) and its
+`leg_result` vocabulary too (**5 / 4**); ***that these two columns are entirely NULL is 0 across all
+thirty.*** 📌 **The "seeded, then orphaned" class again** — the sweep has recorded ten such objects;
+**these are two columns of a heavily-used table, which is a sharper case than an unread table.**
+
+⚠ **Why it bites**: **the per-app payout structures are the whole of `NBA_MULTIPLIERS.md`** — Power
+vs Flex, same-game discounts, the `p × m` gate — **and a graded leg that cannot name its app cannot be
+priced against them.** *Whether any consumer needs that attribution is **NOT RECORDED**; this pass did
+not trace it.*
+
+**Pass outcome: 1 claim attacked and upheld with a better reason + 1 new structural defect the attack
+surfaced. 🔴 CLEAN 0/3 · 5 passes.**
+
+---
+
 ### T11.4 — PASS 3 (**live verification of the market and injury surfaces**) — **🔴🔴 one of the three named apps has ONE DAY · 🔴🔴 every injury timestamp carries a hardcoded `-05:00` · 0/3**
 *2026-09-21. `[LIVE-AUDIT]` throughout. **Rule 6: T11 is 2026-09-10 and eight transcripts are
 unread, so what the numbers show is the system NOW, never T11's story.***
