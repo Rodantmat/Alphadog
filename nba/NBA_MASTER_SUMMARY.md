@@ -14423,6 +14423,98 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.3 — PASS 2 (**market / board-sourcing stratum**) — **🔴🔑 the fact the whole DFS-board program rests on is in no document · 0/3**
+*2026-09-21. The half pass 1 did not reach. **All novelty probed in three vocabularies against
+`5dfb72ab` (rule 20); every count carries its population and tree (rules 17, 18).***
+
+#### 🔴🔑 T11.3a — **ParlayAPI was VALIDATED LIVE, for all three apps, and none of the thirty documents says so**
+
+**From the transcript**, assistant, segment 221:
+
+> *"**ParlayAPI is live on your key — v3.2.0, Pro tier, unlimited rate — NBA active** — and **its
+> provider-state header lists PrizePicks, Underdog and Sleeper as primary live sources**, which
+> confirms **live board data is reachable through it**. The Odds API key is valid too — **game odds
+> only, per your split**."*
+
+**Novelty**: the source's wording (`v3.2.0` · *Pro tier* · *unlimited rate*) → **0 of thirty**; the
+documents' (*provider-state* · *primary live source*) → **0 of thirty.**
+
+🔴🔑 ***This is the single most consequential fact in the transcript and it is recorded nowhere.***
+The owner's whole sequence — *probe ParlayAPI first, exhaust it, and only then pay for The Odds
+API* — **turns on whether ParlayAPI actually reaches PrizePicks, Underdog and Sleeper.** **It does,
+it was verified on the live key, and a reader of the thirty cannot learn it.**
+
+📌 **The ordering is locked in config, not just stated**: finish **every enrichment factor's
+backfill** → **probe ParlayAPI for the live prop-line endpoints and exhaust it** for retroactive prop
+lines and daily board snapshots across two seasons (multiple attempts, online research, Gemini) →
+**only if that truly comes up empty, The Odds API's historical endpoint**, *"knowing it's expensive
+and would need a bigger subscription."*
+
+#### ⚠ T11.3b — **And it says where the keys live, which sharpens O8**
+
+> *"**both keys are in the credentials table only, never in memory**, and the bridge probe now reads
+> them from there — **so no Cloudflare secret rotation is needed for probing**."*
+
+**Novelty**: **0 of the twelve**, 2 of thirty (`NBA_COMPASS.md`, `NBA_PROJECT_LOG.md`).
+
+⚠⚠ **Compose it with what `NBA_DATABASE.md` already records VERIFIED two ways**: the column holding
+them, `nba_config.external_credentials.credential_value_encrypted`, **is a misnomer — nothing
+encrypts and nothing decrypts.** ***So "the keys are in the credentials table only" is a security
+posture that rests on a column whose name promises protection it does not provide*** — **and the same
+two keys are additionally in the transcript in plaintext (O8).**
+
+#### 🔴 T11.3c — **The injury archive changes filename pattern in the middle of a season, and the first backfill silently captured only the later half**
+
+> *"It produced **266,049 rows and 2,218 snapshots, but only from Dec 22 onward.** Cause: **before
+> ~Dec 22 2025 the archive used an hourly filename with no minutes** (`06pm`, `12pm`, even `12am`)
+> **and the true publish time is in the document header** (*'Injury Report: 11/24/25 12:30 PM'*);
+> **the 15-minute pattern begins Dec 22.**"*
+
+**The fix**: probe **both** filename patterns, take the snapshot time from the **document header**,
+and **drop consecutive duplicate documents by content hash.**
+
+**Novelty**: *Dec 22 · 12/22* → **0 of thirty**; *hourly filename · two URL patterns* → **0 relevant**
+*(the two hits are about two file copies drifting apart, an unrelated §4j entry)*.
+
+⚠ **The failure shape is the one this documentation set keeps finding**: **the run succeeded, wrote a
+quarter of a million rows, and was silently missing everything before 22 December.** *A row count that
+looks healthy is not coverage.*
+
+#### 🔑 T11.3d — **The league republishes the injury report 10–27 times a day — quantified nowhere, and it is the cause of a scheme the twelve already document**
+
+> *"**The league re-publishes the report 10–27 distinct times per day** — genuine intra-day snapshots,
+> **which is excellent for the enrichment cutoffs** — but that pushed **the single season file to
+> 98 MB.** Output is now **monthly shards with an index** (migrating the existing file, redoing the
+> empty days); **the as-of loader and both builders read the shards; the workflow size-guards
+> commits.**"*
+
+**Novelty**: *10–27 · republish* → **0 of thirty**; *98 MB* → **1 of thirty** (`NBA_PROJECT_LOG.md`),
+**0 of the twelve**; but **the injury monthly-shard scheme is in FOUR of the twelve.**
+
+🔑 ***So it is §T11.2b's shape for the second time in two passes: the twelve carry the remedy —
+monthly shards, an index, size-guarded commits — and not the measurement that forced it.*** **A
+reader can see the shards and cannot learn that the league publishes up to 27 times a day**, which is
+both **the reason the shards exist** and **the reason the enrichment cutoffs have anything to cut
+against.**
+
+#### ✅ T11.3e — **What confirms, and what is not a finding at all**
+
+✅ **`matchups 2024-25` landed complete — 1,230/1,230 games, 232,830 pairings** — **exactly the figure
+`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` and the twelve already carry**, now with its landing
+transcript. ✅ **Content-hash de-duplication** is documented (**5 of thirty, 1 of the twelve**).
+📌 **The 6–8 hour backfill tail** — ~84 probes per day across both URL patterns, ~1.5–2 h per 100-day
+chunk, two chunks left — **0 of thirty**, *and correctly so: it is a wall-clock estimate for one
+night's queue, not a durable fact.*
+
+⚠ **Not findings, recorded so a later pass does not mine them as conclusions**: segments **303–308**
+are **web-search output** — Apify/RapidAPI marketplace listings and OddsPapi marketing copy. *They are
+what the search returned, not what the session established, and nothing in them was adopted.*
+
+**Pass outcome: 3 findings absent from all thirty (ParlayAPI's validated state, the Dec-22 pattern
+break, the 10–27 republish rate) + 1 composition with O8 + 1 confirmation. 🔴 CLEAN 0/3 · 3 passes.**
+
+---
+
 ### T11.2 — PASS 1 (**tail stratum**) — **🔴 the injury-backfill root cause is in none of the twelve, and its lesson is in no document at all · 0/3**
 *2026-09-21. The stratum pass 0's 97.6% pointed at. **The instrument was re-measured first, and my
 own first measurement of it was wrong.***
