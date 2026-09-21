@@ -2119,7 +2119,24 @@ carried in the twelve. **No write-up found wrong.**
 `NBA_OPEN_ITEMS.md` at **0.73** (§T2.12 landed correctly), and the rest of the band maps to
 documented entries. One segment does not:
 
-#### ⚠ T2.14a — AN UNRECONCILED CONTRADICTION ABOUT WHETHER `[skip ci]` HELD
+#### ⚠ T2.14a — A CLAIM AWAITING ITS SUPERSESSION — **not a contradiction**
+*Reframed 2026-09-21 on owner correction. **The original framing below was itself the
+future-leaking-backward error**, committed one turn after recording the rule against it.*
+
+**What I did wrong.** I took a T2 statement describing the system on 2026-09-03, checked it against
+`nba-scrape.yml` **as it stands today**, found them inconsistent, and filed an "unreconciled
+contradiction." **That is judging a T2 claim by later code** — the same failure as the P1 incident,
+in a subtler dress: there I pulled a later *transcript's* knowledge backward, here I pulled the
+*live system's* current state backward. **Rule 6 says a live-audit finding records what the system is
+now and never explains why. I used "what it is now" to adjudicate "what T2 said then," which is the
+same violation from the other end.**
+
+**The correct reading.** `[skip ci]` at `nba-scrape.yml:150` is **today's** code. If the guard was
+added **after** T2 — plausibly *because* of what T2 observed — then **there is nothing to reconcile
+at T2**, and this resolves as an ordinary supersession the moment the sweep reaches the transcript
+that added it.
+
+**So T2's claim is recorded as what it is: observed, hedged, and never checked in T2.**
 
 The high band surfaced this, from T2:
 > *"the auto-deploy workflow **likely fired** because it triggers on **any** push to `main`, not just
