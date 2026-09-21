@@ -1,2 +1,3 @@
-max_quotes: 250
-note: first full server-side map, 2026-09-21 - moderate budget to confirm the chrome146 session holds at volume
+max_quotes: 420
+altalt: 160
+note: run 2, 2026-09-21 - widened to crack the Flex consolation-tier rule: 160 stratified alt-by-alt pairs (no standard leg), 26 multi-pick Flex compositions, every leg re-quoted fresh
