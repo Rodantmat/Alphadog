@@ -441,7 +441,16 @@ grounds was already justified by a real migration.)*
 | | |
 |---|---|
 | Kept | `play_type · type_grouping · gp · poss_pct · ppp · fg_pct · efg_pct · poss · pts · percentile` |
-| **Dropped** | **`ft_poss_pct` · `tov_poss_pct` · `sf_poss_pct` · `plusone_poss_pct` · `score_poss_pct`** |
+| **Dropped** | **`ft_poss_pct` · `tov_poss_pct` · `sf_poss_pct` · `plusone_poss_pct` · `score_poss_pct` · `fgm` · `fga` · `fgmx`** |
+
+⚠ **Corrected 2026-09-21 (pass 13): EIGHT columns, not five.** The full `synergyPlayType` column set
+also carries **`FGM`, `FGA`, `FGMX`** (field goals made, attempted, missed) per play type. *`FGA` by
+play type is shot volume by role — the denominator behind every shooting prop — and `FGMX` feeds
+offensive-rebound opportunity directly. This entry originally listed only the five `_PCT` fields.*
+
+*Also noted: `nba_api`'s registry records the synergy endpoint's **last validated date as
+2020-08-15** — the upstream schema has not been re-checked in five years, which is context for how
+confidently any column list should be treated.*
 
 **And they are not recoverable from `raw_json`.** The worker stores `JSON.stringify(r).slice(0,1000)`
 where `r` is the **already-reduced record**, not the source row:
