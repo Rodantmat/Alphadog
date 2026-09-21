@@ -17,6 +17,9 @@ on:
       to:
         description: "Last date to score (YYYY-MM-DD); empty = same as from"
         default: ""
+      skip_built_after:
+        description: "Resume: skip dates already scored after this UTC timestamp (empty = score every date)"
+        default: ""
 
 concurrency:
   group: nba-score-history
