@@ -317,6 +317,56 @@ does not protect against the delete above it.**
 
 ---
 
+## 🔴 SEASON-CRITICAL · `[LIVE-AUDIT]` · THE SCHEDULE HAS NOT BEEN REFRESHED SINCE THE DAY IT WAS BUILT *(added 2026-09-21, T3 pass 12)*
+***VERIFIED by live SQL, 2026-09-21.** Live-system state, not T3 material — **does not affect T3's
+clean count.** T3 built and verified this correctly on 2026-09-02; everything below is about what has
+happened since.*
+
+```
+season    games   oldest_write              newest_write              distinct write days
+2025-26   1400    2026-09-02T20:24:11.403Z  2026-09-02T20:24:55.401Z  1
+2026-27   1266    2026-09-02T20:24:55.428Z  2026-09-02T20:25:35.429Z  1
+```
+
+**`nba_calendar.games` has been written exactly once, on 2026-09-02, and not touched in the 19 days
+since.** `nba-scrape.yml`'s weekly Monday 09:00 UTC cron should have fired at least twice in that
+window. **The scraper may well have run; the Cloudflare worker that loads its output is triggered
+manually via `run_job` and evidently has not been.**
+
+**Why this matters now**: the schedule is the join everything else hangs off — rest days,
+back-to-backs, home/away, matchups — and **the season opens 2026-10-03, twelve days from this
+entry.**
+
+### And the 2026-27 slate is 30 regular-season games short
+| Season | `001` pre | `002` **regular** | `003` ASG | `004` post | `005` play-in | `006` Cup final |
+|---|---|---|---|---|---|---|
+| 2025-26 | 71 | **1,230** ✅ | 7 | 85 | 6 | 1 |
+| **2026-27** | 66 | **1,200** ⚠ | — | — | — | — |
+
+**A full regular season is 1,230 games. The stored 2026-27 slate has 1,200 — exactly 30 short, which
+is exactly one per team.**
+
+**Two candidate explanations, and this entry does not choose between them:**
+1. **NBA Cup contingency (leading candidate, NOT verified).** Each team's Cup-dependent filler game
+   is not scheduled at release, so a schedule pulled in early September is legitimately short by one
+   per team. *The completed 2025-26 season reaching exactly 1,230 with a separate `006` Cup Final
+   supports this shape.*
+2. **A known upstream defect.** T3's own research surfaced `nba_api` issue #407 — *"scheduleLeagueV2
+   endpoint doesn't get me all the games for previous seasons … typically 1230 regular season games
+   … but fetch only gets me 1148"* — opened 2023-11-19, labelled `bug`/`triage`, **no assignee, no
+   response.** If that defect applies here it would under-report silently.
+
+**Either way the consequence is the same and it is not covered by any existing gate**: the schedule
+scraper's completeness check applies **only to `seasons[0]`, the completed season** (see FROM T3
+PASS 6), and the worker certifies on `written >= 1000` (§0.31) — **1,200 passes both.** *Nothing in
+the pipeline would report a 2026-27 slate that stays 30 games short into opening night.*
+
+**Owner action**: re-trigger `nba-static-schedule` and re-check the `002` count for 2026-27 before
+2026-10-03. If it is still 1,200 after the Cup bracket would have resolved, explanation 2 is the
+live one.
+
+---
+
 ## ⚠ THE PLAY-TYPE SCRAPER DROPS FIVE COLUMNS THE ENDPOINT RETURNS — including turnover and foul rates *(added 2026-09-21, T3 pass 11)*
 ***VERIFIED by live SQL, 2026-09-21.** Recorded as of 2026-09-02.*
 
