@@ -12789,6 +12789,51 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.26 — PASS 5 (**novelty audit**) — **🔴 §T8.23a WAS MOSTLY WRONG · 0/3**
+*2026-09-21. Grepped against `/tmp/t8base/nba/` (snapshot `700a999b`, taken before the first T8
+write). **Rule 8 applied — and the claim I was most confident about is the one that failed.***
+
+#### 🔴 T8.26a — **The leakage guard IS documented — as a fleet-wide invariant, with the exact failure it prevents**
+
+§T8.23a wrote: *"the derived spread's formula and fit are recorded; **its leakage guard is not**"*,
+and *"a component documented only as 'r = 0.46' is **one reimplementation away from leaking**."*
+**Four pre-edit documents say otherwise, and say it better:**
+
+| Document | What it already says |
+|---|---|
+| `NBA_BASELINE_CALIBRATION.md` line 774 | *"✅ **NBA satisfies both, structurally. Every feature is `shift(1)`-based**"* |
+| `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` line 71 | *"**Strictly backward-looking: every feature is `shift(1)`-based**; walk-forward monthly with a one-month lag on the test season"* |
+| same, line 151 | *"the backtest on a past day **IS** the production computation (**all features `shift(1)`**)"* |
+| same line 189, and `NBA_LESSONS_LEARNED_FROM_MLB.md` line 206 | *"**Leakage hides as a 'puzzling anomaly'** (FRINGE 0.867) — **check every baseline is `shift(1)`**… The FRINGE 0.867 blowout ratio was a season-wide mean **using future games**."* |
+
+**So not only is the guard recorded as an invariant over every feature — the documents also record a
+real instance of it failing, diagnosed, and turned into a check.** *That FRINGE 0.867 anomaly is the
+same one §T8.6 shows the owner's rigour directive being invoked over.* **My "one reimplementation
+away" framing was exactly backwards: the invariant is stated four times and the failure mode is
+named.**
+
+#### ✅ T8.26b — **What actually survives from §T8.23a, and it is one clause**
+
+**The season-start prior.** `season-start prior`, `pre_net` and `strictly games before` all return
+**zero hits** pre-edit, and `expanding` appears once, about **EWMA versus an expanding mean**, not
+about as-of safety. So the genuinely unrecorded detail is:
+
+> **`pre_net_shrunk = pre_net.fillna(0) * pre_n / (pre_n + k)`, k = 10** — which makes **game 1 of a
+> season the league average (0 net rating)** rather than undefined, and blends toward the real mean
+> over the first ~10 games.
+
+**That is a boundary-condition choice, not a leakage guard**: `.shift(1)` is what prevents leakage,
+and it is documented; **the `fillna(0)` shrink is what keeps the first games of a season usable at
+all**, and it is not. §T8.23a and `NBA_BASELINE_METHODOLOGY.md` §4b both rewritten to say that and
+nothing more.
+
+⚠⚠ **Eighth absence/novelty failure of this run, and the rule caught it one pass late — again.**
+*The grep that killed it took four seconds. I ran it in pass 5 because the audit was scheduled; I did
+not run it in pass 2, when the claim was written, because the claim felt obviously true.* **That is
+the eighth form verbatim, and knowing the rule is still not running it.**
+
+---
+
 ### T8.25 — PASS 4 (**live numeric re-verification**) — **✅ CLEAN 1/3 · 6 of 6 exact · and a tenth table nothing reads**
 *2026-09-21. Every artefact T8 seeded, re-counted live.*
 
