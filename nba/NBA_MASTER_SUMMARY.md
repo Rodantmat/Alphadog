@@ -10383,8 +10383,11 @@ Already standing: *"a count comes from an authority, never from the pattern that
 ---
 
 ### T7.30 — PASS 1 (**owner-turn stratum**) — **🔴 NEW MATERIAL · 0/3**
-*2026-09-21. **Three owner design directives are recorded nowhere**, and one of them governs a
-decision the system has already made.*
+*2026-09-21. ⚠ **This preamble originally read "Three owner design directives are recorded
+nowhere."* **All three are recorded** — §T7.30c corrected at §T7.35a (pass 6), §T7.30a and §T7.30b at
+§T7.46a (pass 17). **What the pass actually recovered is the owner's verbatim wording and reasoning
+for directives the documents carry in paraphrase.** Kept in place, with each claim's retirement
+notice attached, because the sequence of corrections is itself the record.*
 
 #### ⚠ T7.30a — **THE OWNER'S ANTI-CAPPING DIRECTIVE, IN HIS OWN WORDS** *(headline retired)*
 > 🔴🔴 **RETIRED 2026-09-21 by §T7.46a.** This entry was headed *"IT IS NOT IN ANY DOCUMENT."*
