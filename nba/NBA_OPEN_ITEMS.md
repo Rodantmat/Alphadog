@@ -1,5 +1,23 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴 NO NBA CODE SPEAKS `canonical_prop_key` — the taxonomy's vocabulary is unused on the NBA side
+*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 (T8 passes 4 and 6). Detail: `NBA_MASTER_SUMMARY.md`
+§T8.25b, §T8.27b.*
+
+| | |
+|---|---|
+| `nba_ref.prop_taxonomy` | **28 rows, fully populated** — every descriptive column set on all 28, all `active = 1` |
+| Code reading `nba_ref.prop_taxonomy` | **ZERO.** The six files matching `prop_taxonomy` are **MLB's** (`config_prop_taxonomy`, `static_prop_taxonomy`), with **no `nba_*` schema reference in any of them** |
+| **`canonical_prop_key` in the codebase** | **1,218 references — and ZERO under `nba/`.** All of them are the MLB fleet: `score-prep`, the certifiers, the parlay boards, the market-line-shape classifier, the score audit |
+| NBA board scrapers | `scrape_underdog_board.py` · `scrape_sleeper_board.py` · `scrape_fliff_board.py` — **no `taxonomy`, no `canonical_prop`**; they emit raw board JSON (`legs[]`, `appearances`, `players`) |
+
+**So this is not simply "a table nothing reads."** The NBA side **defines** the canonical prop
+vocabulary and **never speaks it**, while MLB uses the same key 1,218 times.
+
+⚠ **What is supposed to translate a scraped board leg into a canonical prop key on the NBA side — and
+whether that step exists yet — is NOT RECORDED.** It belongs to the board/grader transcripts this
+sweep has not reached. **Flagged so those transcripts are read with this question in hand.**
+
 ## 🔑 THE OWNER'S ACCURACY STANDARD IS SCOPED — *"within the baseline ladder"*
 *Recorded 2026-09-21 (T8 pass 3, §T8.24b). The qualifier returns **zero hits** across all thirty
 documents.*
