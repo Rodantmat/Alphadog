@@ -593,6 +593,26 @@ and it only fires for `departed` events, which are themselves suppressed on a fi
 `normalizeOfficialId(o.full_name)` builds the key. **The Wikipedia roster carries jersey numbers and
 names, no stable identifier** — so the differential's notion of "the same official" is their name.
 
+⚠ **CORRECTED 2026-09-21 (T2 depth re-read): this was framed as an undeclared risk. It was
+declared — three times, by T2, a session earlier.** ***VERIFIED** on live `main`,
+`nba/alphadog-v2-nba-static-officials.js` line 150:*
+
+```js
+known_limitation: "No stats.nba.com official ID crosswalk yet - official_id is name-derived
+                   until box-score officials data provides a real cross-reference",
+```
+
+**It is a field in the worker's own `/run` response**, alongside the same note in the scraper's
+`meta.json` (*"jersey number + name only, no stats.nba.com official id in this source"*) and in the
+source comment, which also states the plan: *"expected to come later from box-score 'officials' data
+in the delta/game-log layer, which resolves by name."*
+
+**The consequence recorded above still stands and is still unrecorded anywhere** — a listed name
+changing produces a spurious `departed_official` + `new_official` pair, indistinguishable from a
+real change. **What was wrong was the implication that nobody had noticed the ID gap.** *This is
+Rule 5 read backwards: I treated the absence of documentation in the twelve as absence of awareness,
+when the awareness was sitting in the worker's response payload.*
+
 **Consequence**: an official whose listed name changes — a marriage, a spelling correction, a middle
 initial added or dropped, a diacritic normalised differently — **produces a spurious
 `departed_official` plus `new_official` pair, and nothing distinguishes that from a real roster
