@@ -364,7 +364,10 @@ rather than lowering them: only ONE of the three as-of days was built with the p
 override is still live, and `TRIGGER_NBA_BASELINE.txt` still reads `ladder_steps: 10` — so the next
 `nba-baseline.yml` run flattens it again.** 📌 *That trigger file's last commit is 2026-09-11 17:18
 UTC, so `nba-baseline.yml` built the 2026-03-15 day and nothing after it; what built the other two is
-NOT RECORDED.*
+NOT RECORDED.* *(🔑 **narrowed 2026-09-21, §T10.25b — the LOAD is recorded even though the BUILD is
+not**: `nba_score.baseline_ladder_runs.loaded_at` reads **2026-09-11 20:23:10 · 2026-09-19 22:35:04 ·
+2026-09-20 03:23:26 UTC**, each with its own `source_file`, which places **2026-03-15 and 2026-01-15
+before `LADDER_DEPTH` (2026-09-19 23:58:44) and 2025-11-29 after it.**)*
 
 🔴 **All three carry the identical `recipe_version` string and there is no column recording depth**,
 so nothing in the table tells a consumer which regime a row came from. **A join across as-of days
