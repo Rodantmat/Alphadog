@@ -1,0 +1,67 @@
+name: NBA PP Payout Map
+
+# Maps PrizePicks goblin/demon/Flex payouts server-side via the /game_types quote endpoint.
+# Anonymous: PrizePicks issues its own session; no owner account is involved. Quotes only.
+# Trigger: push nba/TRIGGER_NBA_PP_MAP.txt (optional line "max_quotes: N"), or run manually.
+# Output: nba/data/pp_payouts/pp_payout_map_<utc>.json, committed [skip ci].
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_quotes:
+        description: "Quote budget for this run"
+        required: false
+        default: "250"
+  push:
+    paths:
+      - 'nba/TRIGGER_NBA_PP_MAP.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-pp-payout-map
+  cancel-in-progress: false
+
+jobs:
+  map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: python -m pip install --upgrade pip curl_cffi
+
+      - name: Map PrizePicks payouts
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PP_MAX_QUOTES: ${{ github.event.inputs.max_quotes || '250' }}
+        run: |
+          f=nba/TRIGGER_NBA_PP_MAP.txt
+          if [ -f "$f" ]; then
+            Q=$(grep -E '^max_quotes:' "$f" | head -1 | sed 's/^max_quotes:[[:space:]]*//' || true)
+            if [ -n "${Q:-}" ]; then export PP_MAX_QUOTES="$Q"; fi
+          fi
+          echo "quote budget: $PP_MAX_QUOTES"
+          python nba/pp_payout_map.py
+
+      - name: Commit payout map
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/data/pp_payouts/*.json || true
+          if git diff --cached --quiet; then echo "No map output."; else
+            git commit -m "PP payout map [skip ci]"
+            for i in 1 2 3 4 5; do
+              if git push origin HEAD:main; then break; fi
+              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+            done
+          fi
