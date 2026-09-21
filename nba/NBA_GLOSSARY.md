@@ -95,6 +95,10 @@ band×direction×rung cells over 2.5 pp, confidence bands hitting their rate on 
 between seasons; walk-forward Platt carries it) · **CONFIGURED, NOT RUN** · **NOT YET CERTIFIED**.
 As of T9: **6 certified** (points, rebounds, assists, 3PM, FGA, FTM), **4 close** (blocks, steals,
 turnovers, fouls), **1 regime** (3PA), **combos certified** (P+R, P+A, R+A, PRA, fantasy).
+⚠ *2026-09-21 (§T9.35b/c): **`FGA` is in two states in the live file** — counted certified here and in
+its inline comment (`0.9 / 1.3, 0 band misses`), and listed among "configured, NOT yet run" in the
+module docstring, line 11. **Which governs is NOT RECORDED.** And **NOT YET CERTIFIED is four props —
+`fgm`, `fta`, `oreb`, `dreb`** — not the two usually listed.*
 
 **opponent-driven props** · T9 · **The structural reason blocks, steals and FTM resist certification**:
 *"the 'close' props are EXACTLY the ones whose primary drivers are **opponent** stats — steals ←
