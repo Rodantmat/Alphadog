@@ -275,3 +275,76 @@ Standard + standard from the same game paid **3.0×, 3.0×, 2.9×** — no meani
   compression may explain it
 - **State dependence** — every measurement is `prizepools`; other modes and states are unmeasured
 - **Line movement over time** — needs scheduled runs
+
+---
+
+## 9. PER-LEG PRICING LOGIC — for replicating two seasons of history
+*Recorded 2026-09-21. Mining only works on LIVE projections, so history requires the logic.*
+
+**PrizePicks prices each line as the tail probability of a count distribution centered on the standard line,
+with spread `c × √(standard line)`:**
+| Stat family | c | Consistency |
+|---|---|---|
+| Points, P+R, P+A, PRA | **≈ 2.0** (1.93–2.06) | CV 0.11–0.15, all 6 players |
+| Rebounds, Assists, 3-PT Made | **≈ 1.25** (1.23–1.28) | CV 0.13–0.21 |
+| Rebs+Asts | ≈ 1.4 | CV 0.11 — **only 5 legs, thin** |
+
+`p = P(stat > line)` → `factor = 0.5 / p` → goblin floor ≈ 2.08× (2-pick) → compression → rounding.
+The spread depends on the stat and the standard line — **not on the player**.
+
+**Leave-one-player-out** (115 legs, model never saw the player): **72% within one rounding step, median error
+4.0%, median bias −0.04%.** Error concentrates in **big demons (> 9.1×): bias +4.8%, error 8.5%** — a bell curve's
+right tail is too thin for count stats. **Fix pending:** a right-skewed count distribution (gamma / negative
+binomial).
+
+### History coverage (VERIFIED against Postgres)
+- `nba_market.board_snapshots`, bookmaker `prizepicks`: **2024-10-22 → 2026-04-12**, 2.2M rows.
+- Goblins/demons live only in the 8 `_alternate` markets — **all 8 map to a fitted stat family.** Blocks, steals,
+  blocks+steals and turnovers have **no alternates** → factor 1.
+- **Alternates were More-only in both seasons: zero Under rows** (1.45M alternate rows, all Over).
+- Price flag in alternates: `100` = demon, `-137` = goblin (`NBA_GOBLIN_DEMON.md` §4).
+- **Match centers by snapshot, never by date:** 18% of day-ladders (37,719) had their standard move intraday.
+
+### Price ID design — AGREED with the owner
+**Leg side exists:** `nba_market.board_tiers_v2` gives every leg its four price-determining facts —
+`base_market, anchor_line, line, side` — plus `anchor_type` (how the center was found). **Those four facts are
+the Price ID.** 2,199,354 PrizePicks legs → **8,573 Price IDs** (6,945 goblin/demon, 1,691 standard).
+
+**Price side — to build:**
+| Table | Holds |
+|---|---|
+| `nba_market.pp_price_key` | Price ID ↔ (base_market, anchor_line, line, side) |
+| `nba_market.pp_price` | Price ID × **model_version** → implied_p, factor, **source** (model / mined / override) |
+| `nba_config.pp_pricing_model` | each version's parameters, which is current, its validation scores |
+| `nba_config.pp_slip_rules` | bases, compression, rounding grids, Flex tiers and EV targets |
+| view `pp_leg_price` | every leg + its Price ID + current factor, computed on the fly |
+
+**Keyed on raw facts, not model parameters** (the stat, not its family) — so any future model is just a new
+version, with no re-tagging. **Exposed through a view, not a stamped column**: the tier builder rebuilds
+`board_tiers_v2`, which would wipe a stamped column.
+
+### Legs with no center — 43,370 (2.0%), `anchor_type = 'none'`
+Mostly **lone demon lines on small stats** (92% demons; threes 36%, assists 33%, rebounds 13%; 19,827 are a single
+line). The formula needs a center, so these get a Price ID with a **NULL price and a reason code — never a
+guessed center.** Guessing is dangerous twice over: a demon's price is most sensitive to the center, and using
+the model's own projection as the center would make the backtest circular.
+
+| Rescue tier | Legs | Center source | Rule |
+|---|---|---|---|
+| same-day snapshot | 3,227 | PrizePicks' own standard, another snapshot, one value all day | safe |
+| sportsbook consensus | 35,951 (22,690 with 3+ books) | books' line, same player/stat/day | **only if validated** against PP standards on explicit ladders |
+| standard moved | 5 | ambiguous | unpriced |
+| no center anywhere | 4,187 | — | unpriced |
+
+Each rescue tier gets its own `anchor_type`. After rescue, genuinely unpriced ≈ **4,192 legs (0.2%)**.
+
+### BUILD CHECKLIST — nothing below is built yet
+1. **Schema** — the four tables and the view
+2. **Fill version 1** — the current normal model, with its big-demon bias recorded in `pp_pricing_model`
+3. **Slip rules** into `pp_slip_rules`
+4. **Version 2** — skew fix; re-validate leave-one-player-out; flip "current" only if it beats v1
+5. **Rescue tier: same-day snapshot** (3,227)
+6. **Rescue tier: sportsbook consensus** — validate first (35,951)
+7. **Investigate ≥ 63 keys** tagged standard on some legs and goblin/demon on others — one Price ID must mean one kind
+8. **Load mined live prices** as `source = 'mined'` (needs a PrizePicks stat-name ↔ Odds-API market map)
+9. **When the preseason board posts (2026-10-03):** re-validate on dozens of players; re-run if the model moves
