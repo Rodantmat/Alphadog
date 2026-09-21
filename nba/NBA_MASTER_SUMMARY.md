@@ -14430,6 +14430,57 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.45 — PASS 44 (**twelfth two-direction judgment, PRE-REGISTERED — aimed at SETTLED claims per §T11.44e**) — **❌ two settled claims narrowed, both by the enumeration they never stated · 0/3**
+*2026-09-21. **The re-aimed judgment worked: attacking claims four to seventeen passes old still found
+defects, and they are a different and more interesting kind.***
+
+#### 🔑 T11.45a — **Seventh pre-registration, seventh hit**
+**Predicted**: *"segment 393 has already crossed, so the working band should hold at 39 / 0 / 664 / 664
+and the baseline must read 13 / 3 / 695 / 689 for a FIFTEENTH identical measurement."*
+✅ **Both exact.** ✅ **And no second segment crossed** — *the mechanism's prediction that only a long
+quotation moves the metric held against pass 43's own long quotation of segment 703's job result,
+which did not move.*
+
+#### ❌ T11.45b — **TARGET 1 narrows §T11.28a: the consumer hazard is LATENT, not live**
+§T11.28a (**pass 27, seventeen passes old**) published: *"⚠⚠ **CONSUMER HAZARD** — a `GROUP BY side`
+returns FOUR groups for TWO concepts and a filter on `side = 'favourite'` silently drops half."*
+🔴 **`sliding_scale` appears in exactly ONE file in the repo — `nba/build_blowout_model.py` lines
+173–174 — and that is the WRITER.** *Nothing reads it.* **Against `p_blowout`, which is read by
+FIVE**: `classification_ladder_v1` · `_v12` · `periods_ladder_v1` · `minutes_model_v1` ·
+`validate_blowout_upgrade`. ✅ ***So there is no consumer of the `fav`/`dog` half, and the hazard
+would bite the FIRST consumer rather than an existing one.*** 🔑 **The finding restated, and it is
+still worth having**: ***the table stores a partition that nothing reads, in a vocabulary inconsistent
+with the partition that five files do*** — **which is `NBA_DATABASE.md`'s own *"a documented design
+that no running code consults"* class, in `nba_score` rather than `nba_config`.**
+
+#### ❌ T11.45c — **TARGET 2 makes §T11.37b's bound EXHAUSTIVE — and shows it rested on 9 of 10**
+§T11.37b (**pass 36**) concluded *"the gap is NOT systemic — seven game-keyed tables complete, two
+not."* 🔴 **The class has TEN members, and the pass listed nine.** *(`information_schema`: exactly ten
+tables in `nba_stats` + `nba_team` carry `game_id`.)* **The omitted one is `nba_team.team_game_log`,
+which has a `season` column and so fell outside the prefix census.** ✅ **Checked: 2,460 rows per
+season × 3 = 7,380, 3,690 distinct games — COMPLETE.**
+
+✅ ***So the bound is now proven over the whole class: of the TEN game-keyed tables, EIGHT hold all
+three seasons and exactly TWO hold one*** — `game_officials` and `player_game_starter_status`.
+**The conclusion is unchanged and is now exhaustive rather than inferred.** ⚠ **But §T11.37b drew
+*"not systemic"* from a class it had not enumerated, and did not say so** — ***rule 25's shape
+extended from samples to CLASSES: a BOUND states the class it was drawn over.*** 🔑 **And this is the
+third distinct pass to make the same omission** *(§T11.12's five slices · §T11.41c's four-tables ·
+this one)* — **the sweep's persistent failure mode is not wrong facts, it is unenumerated
+populations.**
+
+#### ✅ T11.45d — **TARGETS 3 and 4 survive intact**
+**§T11.27b's retraction stands**: `NBA_MASTER_SUMMARY.md` §T7.14a still reads *"This verdict was
+overtaken in T13"* and *"BigDataBall was never purchased and never needed"* in the current tree, and
+**the T13 attribution is the document's own words, not the sweep's inference.** **§T11.29b/§T11.30a's
+segment 355 and 501 readings match `market_probe_results_2026_09_10` verbatim** — *"EXHAUSTED for
+historical boards: archive starts about 2026-05-10 … regular seasons 2025-26 and 2024-25 empty for
+all books; GAME LINES available for 3 seasons."*
+
+**Pass outcome: ❌ two settled claims narrowed, both strengthened by it. CLEAN 0/3 · 45 passes.**
+
+---
+
 ### T11.44 — PASS 43 (**eleventh two-direction judgment, PRE-REGISTERED — the pass that would have closed T11**) — **❌ two narrowings of passes 41–42, and the purest instance of self-authorship the sweep has found · 0/3**
 *2026-09-21.*
 
