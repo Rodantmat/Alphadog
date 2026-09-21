@@ -14424,6 +14424,51 @@ the loader.
 > Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.50 — PASS 35 (**identified-but-not-applied audit**) — **✅ CLEAN 1/3 · no fourth instance, and every non-correction is deliberate**
+*2026-09-21. The angle pass 34 forced: **every entry in the twelve that DIAGNOSES a problem, checked
+against whether the fix reached the text it names.** Two search forms — entries that count locations
+(*"in two documents" · "in four places" · "appears in"*) and entries that describe surviving text
+(*"still reads" · "still says" · "left standing" · "not corrected"*). **No document was changed by
+this pass.***
+
+#### ✅ T9.50a — **The shape has exactly five instances in the whole record, and all five are closed**
+
+| Entry | Diagnosis | Applied? |
+|---|---|---|
+| **§T7.61a** | the `undifferentiated` claim corrected in four places, **left standing in two** | ✅ both fixed in the same turn |
+| **§T8.33a** | pass 8 superseded one *"correctly empty"* row and **left its neighbour** | ✅ retired, with proof |
+| **§T9.25a** | the `6 of 28` correction **missed three summary rows** | ✅ all three fixed |
+| **§T9.48a** | the census **published undated** | ✅ dated |
+| **§T9.49a** | the two rows **§T9.28b named and did not change** | ✅ dated, with the current values |
+
+**No sixth instance exists.** *The scan's other hits are a different thing entirely, and that is the
+finding.*
+
+#### ✅ T9.50b — **Every non-correction in the record is deliberate, reasoned, and of one of three kinds**
+
+| Kind | Example | The stated reason |
+|---|---|---|
+| **A historical artifact outside the twelve** | **§T2.18a** — *"all 582 active players" is wrong in two documents* (`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md`, `NBA_PROJECT_LOG.md`) | *"**Neither is corrected**: editing them would rewrite a historical record to match a later finding"* |
+| **A counting error in a SOURCE the sweep is quoting** | *"three large session-log files"* — **flagged not corrected** | the source is quoted, not authored |
+| **Live-system state** | *"`TRIGGER_NBA_BASELINE.txt` still reads `ladder_steps: 10`"* · *"the comment still says 'changes rarely'"* | **the standing rule — document, don't fix** |
+
+🔑 **So the record distinguishes cleanly between a defect left standing and a text deliberately left
+alone, and it states the reason in every case.** *That distinction is what makes the five real
+failures findable at all — had the non-corrections been silent, this audit could not have separated
+them.*
+
+#### ✅ T9.50c — **One directive checked end-to-end, and it landed**
+
+T7 recorded the owner's instruction — *"the methodology doc **still says a single alpha=0.2** — that's
+now wrong and **must be corrected so the design and the config table agree**"* — and §T7.42b verified
+it. **Re-checked live at this pass**: `NBA_BASELINE_METHODOLOGY.md` line 25 reads *"**Per-stat decay
+rates, not one alpha** (revised 2026-09-08…)"*, and no `alpha=0.2` remains. ✅
+
+**Pass outcome: no defect, no document changed; the shape's five instances confirmed closed and its
+look-alikes confirmed deliberate. ✅ CLEAN 1/3 · 35 passes.**
+
+---
+
 ### T9.49 — PASS 34 (**two-direction judgment, ninth run — weight on RULE 12 and its siblings**) — **🔴 §T9.28b's own finding was never applied to the two rows it described · 0/3**
 *2026-09-21. Band **54 for a fourth run, 0 in, 0 out**; coverage **690 / 675**. Pass 33's defect was a
 rule this run wrote three passes earlier and did not apply — **so this pass asked rule 6's question of
