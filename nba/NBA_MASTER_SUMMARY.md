@@ -9931,7 +9931,14 @@ another document, open the line, and **read the whole paragraph around it**. Fif
 nine documents. **Three of T7's eight failures came from skipping exactly this; the fourth thing it
 found is not a documentation defect at all.***
 
-#### 🔴🔴 T7.51a — `[LIVE-AUDIT]` **`active_stats_season()` rolls over on OCTOBER 1 — 19 days before the first regular-season game — and 13 scrapers call it**
+#### 🔴🔴 T7.51a — **The Oct-1 rollover, RE-RATED: nineteen days and six scheduled runs, not two days and none**
+> ⚠ **FRAMING CORRECTED 2026-09-21 by §T7.54a.** This entry read as a discovery. **The boundary was
+> already on file** — `NBA_OPEN_ITEMS.md` item ② *"`active_stats_season()` returns a data-less season
+> on Oct 1–2"*, and `NBA_WORKERS.md` line 1172's *"⚠ Oct 1–2 edge case"*. **What is new is the
+> re-rating**: the existing entry sized the window against *"opening night is 2026-10-03"* — the
+> **preseason** opener — and rated it *"low impact (P1 runs Mondays; 2026-10-01 is a Thursday)."*
+> **Against the real 2026-10-20 opener the window is nineteen days and contains three Mondays**, so
+> six scheduled runs land inside it. **The owner's date correction is what re-scored the item.**
 
 Reading the paragraph around `NBA_COMPASS.md` line 9 — *"`active_stats_season()` (stats; **2025-26
 until Oct 3**)"* — sent me to the helper itself. **The code does not say Oct 3 either:**
