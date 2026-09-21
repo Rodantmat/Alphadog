@@ -646,6 +646,53 @@ Leg value = 2 × factor × hit; fair = 1.0; breakeven 1.1547 (2-pick Power), 1.1
 legs are not independent (SEs optimistic); the model's design was developed looking at these seasons, so these
 results are an upper bound — live 2026-27 is the real test; 2025-26 calibration is inherited only.
 
+### IS SHRINKAGE THE NEXT STEP? — checked, no (2026-09-21)
+**Algebra.** Blend p = price + k·(model − price). A leg's price-implied value is exactly 1 (2 × factor × price = 1), so the
+blended value = **1 + k·(model value − 1)** — a monotone rescaling. Every leg keeps its rank: shrinkage makes claimed
+values honest but **cannot change a single pick or any selection's realized return.**
+**But it proves real signal.** k fitted on 2024-25 (least-squares on Brier), applied to 2025-26 OUT OF SAMPLE:
+| Kind | k (2024-25) | k if fit on 2025-26 | Brier price → blend (2025-26) |
+|---|---|---|---|
+| demon | 0.315 | 0.279 | 0.18411 → **0.18314** |
+| goblin | 0.212 | 0.277 | 0.22016 → **0.21894** |
+| standard | 0.263 | 0.321 | 0.25000 → **0.24860** |
+The blend **beats PrizePicks' own price on every kind**, even standards (raw model worse than a flat 50%). k is stable:
+~21–32% of the model's disagreement with the price is signal, the rest overconfidence.
+
+**Where it pays — standards, not demons** (model value ≥ 1.40, one leg per player-prop-day, realized value ± SE):
+| Segment | 2024-25 | 2025-26 |
+|---|---|---|
+| standard Over | **1.195** ± 0.027 (1,324) | **1.211** ± 0.035 (773) |
+| standard Under | 1.116 ± 0.013 (5,622) | **1.148** ± 0.012 (6,880) |
+| demon | 1.164 ± 0.021 (9,667) | 1.095 ± 0.013 (30,494) |
+Standards combined: 1.131 and 1.155 (hit rate ~57–58%), above the 3-pick breakeven (1.1006) both seasons. Standards have
+factor 1 — no compression, no rounding — so leg value IS exact slip value. Demons are inconsistent and underpay as a class.
+**Proper next step: an exact slip-level backtest of a standards-only strategy** (pushes/DNPs revert the slip size).
+
+### WNBA — same engine, not all the same constants (2026-09-21)
+Mapper, loader and workflow are league-parameterized: trigger-file line `league: nba|wnba` (default nba) sets
+`PP_LEAGUE` (7 NBA, 3 WNBA — PrizePicks' board league ids are printed as proof), `PP_OUT_DIR`
+(`nba/data/pp_payouts_wnba/`) and `PP_MINED_TABLE` (`nba_market.pp_mined_leg_wnba`, an exact structural copy). WNBA never
+touches NBA files, tables or validation views; the per-leg extraction is the SAME function. VALIDATE (NBA-only pair) is
+skipped on other leagues. **While `league: wnba` stays in the trigger file, scheduled runs mine WNBA** (delta against the
+WNBA table) — switch back to `league: nba` when the NBA preseason board appears (~Oct 1–3).
+
+First WNBA map, 2026-09-21 10:41–10:55 AM PT: 400 quotes, **337 per-leg prices** (250 with a same-board standard line to
+anchor them; 87 without, excluded). NBA's v2 constants vs a fresh WNBA grid fit of c (same v2 formula):
+| Stat | Legs | NBA c | WNBA c | NBA c within 1 step |
+|---|---|---|---|---|
+| Points | 53 | 1.87 | **1.88** | 62% |
+| Pts+Rebs | 27 | 1.87 | **1.86** | 67% |
+| Pts+Rebs+Asts | 32 | 1.87 | 1.94 | 56% |
+| Pts+Asts | 26 | 1.87 | 1.78 | 42% |
+| Rebounds | 32 | 1.08 | **1.32** | 28% |
+| Assists | 17 | 1.08 | **1.28** | 35% |
+| Rebs+Asts | 24 | 1.34 | 1.46 | 50% |
+| FG Attempted / Fantasy Score / 3-PT Attempted | 14 / 14 / 8 | — | 1.22 / 2.08 / 1.16 | — |
+**Points family transfers** (independent fit lands on 1.87). **Rebounds and assists do not** — refit error ~17–20% → ~4%;
+league-specific. New stats fit the formula cleanly but are WNBA-only until an NBA board confirms them.
+**RULE: transfer only what both leagues agree on.** Never copy WNBA rebound/assist constants into NBA.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
