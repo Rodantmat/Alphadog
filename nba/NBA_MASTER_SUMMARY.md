@@ -14430,6 +14430,72 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.15 — PASS 14 (**orientation audit**) — **🔑🔑 the six are NEUTRAL-SITE GAMES, and neutral sites appear in no document at all · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. The angle §T11.14a forced. **The cause is established — from the
+system's own authority, not from a guess — and it opens something larger.***
+
+#### 🔑🔑 T11.15a — **The calendar names them, and it names them explicitly**
+
+**`nba_calendar.games` carries `game_label` and `arena_city`, and for four of the six:**
+
+| date | calendar orientation | `game_label` | `arena_city` |
+|---|---|---|---|
+| **2025-11-01** | **DAL @ DET** | **NBA Mexico City Game** | **Mexico City** |
+| **2025-12-13** | **SAS @ OKC** | **Emirates NBA Cup** | **Las Vegas** |
+| **2026-01-15** | **MEM @ ORL** | **NBA Berlin Game** | **Berlin** |
+| **2026-01-18** | **ORL @ MEM** | **NBA London Game** | **London** |
+
+*(The 2024-12-14 pair — MIL/ATL and OKC/HOU — are absent because the calendar holds only 2026-27 and
+2025-26; both are 2024 NBA Cup games.)*
+
+🔑 ***The "orientation mismatch" is not a bug in either feed — it is the NEUTRAL-SITE designation.***
+**At a neutral venue "home" is an administrative label, and the two sources took opposite
+conventions.**
+
+🔴 **And the calendar settles which one is wrong: all four calendar orientations match
+`game_lines_snapshots` EXACTLY.** ***So `nba_market.schedule_norm` is the source carrying the reversed
+home/away on neutral-site games*** — the market feed agrees with the official calendar.
+
+📌 **On rule 6**: the cause here is **not** supplied by a swept transcript — it is **read off a live
+authority that stores it** (`game_label`, `arena_city`). *Recorded as such: a live-derived cause,
+tagged `[LIVE-AUDIT]`, not a transcript finding.*
+
+#### 🔴🔴 T11.15b — **And neutral-site games appear in NO document, in any vocabulary**
+
+**Probed with positive controls (rule 22) across all thirty against `5dfb72ab`:**
+
+| probe | hits |
+|---|---|
+| **`neutral[- ]site` · `neutral venue`** | **0 of thirty** |
+| **`arena_city`** | **0 of thirty** |
+| **`is_home`** *(a live factor in `baseline_ladder_runs.factor_fits`, betas ≈ 0.0246)* | **0 of thirty** |
+| `game_label` | 3 of thirty, 2 of the twelve |
+| `NBA Cup` / `Emirates` | 3 of thirty, **3 of the twelve** |
+| `HCA` / home-court advantage | **7 of thirty, 3 of the twelve** |
+
+🔴 ***The documents discuss home-court advantage in three of the twelve, name the NBA Cup in three,
+and never once mention that some of these games are played at a neutral site where home-court
+advantage does not exist.*** **The column that identifies them — `arena_city` — is in no document,
+and neither is the `is_home` factor that would carry the effect.**
+
+⚠⚠ **Why it matters beyond the join**: **HCA is applied per game from a home/away designation.** For a
+game in Mexico City, Berlin, London or Las Vegas, **the designated home team is not at home** — so
+any HCA term applied to it is **applied to a game where the effect it models is absent**, and for the
+six where the two sources disagree it may additionally be **applied to the wrong side.**
+📌 **Whether the production path uses `schedule_norm` or the calendar for that designation is NOT
+RECORDED**; this pass did not trace it, and tracing it is the next step.
+
+📌 **Scale, stated plainly**: **four labelled neutral-site games in 2025-26** by the calendar's own
+labels — *a handful of games, not a season-wide defect* — **but they are among the most-watched games
+on the schedule, and the Cup games are the ones a slate-based system is most likely to be asked
+about.**
+
+**Pass outcome: 1 cause established from a live authority, 1 source identified as the one carrying
+the reversal, and 1 new absence — neutral sites, `arena_city` and `is_home` are in none of the thirty.
+🔴 CLEAN 0/3 · 15 passes.**
+
+---
+
 ### T11.14 — PASS 13 (**live numeric re-verification**) — **🔑 the six unmapped games have a PROVEN mechanism: home and away are swapped · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. First of the closing three — and the attack the next-step row demanded,
 on the newest and least-checked figure, turned a NOT RECORDED into a demonstration.*
