@@ -15,9 +15,9 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 | | |
 |---|---|
 | **Current transcript** | **T7** — `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt` |
-| **State** | **Not started.** T6 CLOSED 2026-09-21 at 9 passes. |
-| **Stratum** | — |
-| **Exact next step** | **T7 pass 1.** `sed` the transcript path in `scratchpad/t6/tail6.py` → run → writes `t7_tail.json` + coverage. Stratify, read **owner → reasoning → commands → results**, writing at the end of each stratum (Rule 2). ⚠ **T7 is a research/design transcript** — expect few new tables, so the live-system angles will yield less; weight the strata read and the judgment pass accordingly. |
+| **State** | **0/3 · 1 pass · owner stratum done.** 1,081 segments (largest yet), 944 uncovered vs twelve (87.3%). Tail at `scratchpad/t7/t7_tail.json`. |
+| **Stratum** | owner ✅ (7 turns) · **reasoning, commands, results still to read.** |
+| **Exact next step** | **T7 pass 2 — the reasoning stratum.** Stratify `t7_tail.json` with the classifier used for T4–T6 (`kind()` on the text), filter `text`, sort by `i`, read in chunks of ~70 at ~230 chars. ⚠ **T7 is a research/design transcript** — few new tables, so the live-system angles will yield less than on T4–T6; **weight the strata read and the judgment pass**, and expect the owner-directive class of finding (pass 1 produced three). |
 | **Open threads left by T6** | (a) `lineup_profile` truncation severity — how many lineups actually exist per group size is **NOT RECORDED**; belongs to the lineups worker's transcript. (b) The 3 officials-less games on 2025-11-19 — upstream cause **NOT RECORDED**. (c) Whether `boxscoresummaryv3` exposes the crew role under another field name — **NOT RECORDED**, never checked. |
 | **⚠ Lesson carried forward** | Across T4/T5/T6 the strata re-reads mostly confirmed existing prose; **every headline finding came from the live-system angles**, and **referential integrity produced it three transcripts running.** Run the angles even when the read looks clean. |
 | **Working scripts** | `scratchpad/t5/tail5.py` (tail + coverage), `scratchpad/t5/judge5.py` (two-direction judgment), `scratchpad/t2judge/midband.py` (0.40–0.45 seam). Each needs one `sed` of the transcript path. |
