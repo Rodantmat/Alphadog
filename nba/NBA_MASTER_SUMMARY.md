@@ -14420,6 +14420,50 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.47 — PASS 32 (**novelty audit, fifth run — passes 28–31 vs `/tmp/t9base/nba/`**) — **✅ CLEAN 1/3 · no defect, and one finding stopped by opening its hit**
+*2026-09-21. Everything passes 28–31 added, grepped against the pre-T9 snapshot, every hit opened.
+**No document was changed by this pass.***
+
+#### ✅ T9.47a — **Everything passes 28–31 added is new across all thirty**
+
+**Zero hits in the baseline** for: the commit SHAs **`3cda5a12`** and **`e0e49be1`** *(git history is
+cited nowhere in the thirty — consistent with §T9.43d's observation that the sweep had never used it)*
+· **`used_emp` meaning "a cell existed"** · the **timestamp-zone rule**.
+
+#### 📌 T9.47b — **One claim was already on file, and §T9.46a framed it correctly without being told**
+
+*"Three generations coexisting"* is recorded in **`NBA_DATABASE.md`** and **`NBA_GLOSSARY.md`**, both
+pre-T9. **§T9.46a called its query a *re-verification* rather than a finding, which is what it is.**
+*Worth recording because eight of this run's findings had their general form on file and were written
+as new first; this is the first time the framing was right before the audit ran.*
+
+#### 📌 T9.47c — **A ninth "already on file" was avoided by opening the hit — the grep matched a homonym**
+
+`grep blame` returned, from T1 Part F:
+
+> *"**Before investigating why a component seems to underperform a supposedly-strong reference point,
+> VERIFY THE REFERENCE POINT ITSELF as rigorously as the thing being blamed** — a 'before' or
+> 'control' measurement is just as capable of containing a lookahead-bias or leakage bug…"*
+
+**That is about measurement controls. It has nothing to do with `git blame`.** *"The thing being
+blamed" is a coincidence of wording.* ⚠ **Opening it is the only reason it was not written up as the
+general form of §T9.43d.**
+
+🔑 **Rule 14 in its other direction, and this is the first instance in the run**: *the rule has always
+been used to STRENGTHEN or CORRECT a finding by reading a hit. **Here reading the hit STOPPED one.***
+**A grep hit is evidence of a string, not of a subject.**
+
+#### 📌 T9.47d — **`timestamptz` was on file as a column TYPE; the inference from it was not**
+
+The schema tables record `created_at`, `updated_at` and others as `TIMESTAMPTZ`. **What §T9.46b adds
+is using that type to settle a document's zone ambiguity** — *the fact was recorded, the inference
+from it was not.* **Narrow, and stated narrowly.**
+
+**Pass outcome: no defect, no document changed, four claims confirmed new, one avoided. ✅ CLEAN 1/3 ·
+32 passes.**
+
+---
+
 ### T9.46 — PASS 31 (**timestamp-form audit across all twelve**) — **🔑 111 timestamps, 68 with no zone token, 43 in the window where local ≠ UTC day · 0/3**
 *2026-09-21. §T9.44a's standing form applied beyond the T9 block: **every timestamp in the twelve**
 checked for whether it states its zone, with the `−0700` boundary as the named risk.*
