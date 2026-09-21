@@ -8077,6 +8077,14 @@ edited is the likeliest place to contradict.** *The novelty grep and the contrad
 same grep; run it over the twelve including the file in front of you.* **First internal
 contradiction of the sweep.**
 
+🔴🔴 **The fourteenth form, added 2026-09-21 after §T9.17a — THE GREP IS NOT THE CHECK; READING THE
+HIT IS.** At §T9.16a I grepped `noise floor`, saw it return `NBA_MASTER_SUMMARY.md`, **and did not
+open it** — it was §T9.14e, recording the settled position I was about to call unproven. **A grep
+that returns a filename has told you where to look, nothing more.** *Twice now (§T8.26a, §T9.17a) a
+wrong claim survived because a hit was counted as "already considered" instead of opened.* **Rule 12
+moved the grep to the moment of writing; this rule says the grep is not finished until every hit has
+been read.**
+
 🔴🔴🔴 **THE PROCEDURAL FIX, 2026-09-21 after §T8.26a — the twelfth form, and the only one that
 changes WHEN rather than WHAT.** Eight absence/novelty failures across T7 and T8, **every one caught
 by a later audit pass and none by the pass that wrote it**, all for the same reason: the audit is
