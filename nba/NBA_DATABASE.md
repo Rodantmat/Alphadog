@@ -1009,7 +1009,11 @@ derived r=0.46 proxy was replaced.
 > 🔴 **`[LIVE-AUDIT]` 2026-09-21 (§T10.22b): `nba_score.real_slip_leg_observations` is NOT in the
 > database** — and it is **not in the DROPPED list below** either. **Why it is absent is NOT
 > RECORDED** (rule 6): it may have been dropped after 2026-09-19 by a session this sweep has not
-> reached, or never created. ⚠ **`NBA_OPEN_ITEMS.md` rests a finding on it** — *"there is no NBA slip
+> reached, or never created. 🔑 **Added §T10.24b — and this document's own MLB inventory offers the
+> likeliest reading**: it lists **`score.real_slip_leg_observations` among the MLB D1 objects**
+> *("All 12 MLB D1 bindings report FALSE")*, ***so the 139 legs are plausibly MLB's and the
+> `nba_score.` prefix is the error.*** **Not confirmed — checking it means querying MLB's D1, and
+> MLB is out of scope.** ⚠ **`NBA_OPEN_ITEMS.md` and `NBA_MULTIPLIERS.md` both rest a finding on it** — *"there is no NBA slip
 > history; `nba_score.real_slip_leg_observations` holds 139 legs, not dated slips"* — **and that
 > finding's direction is unaffected: the table is not there at all.**
 
