@@ -299,7 +299,8 @@ The owner, in T7 (2026-09-09):
 > correct threshold.** But if caps need to be used, **they also need to be specific to the specific
 > tiers**."*
 
-**Two instructions, neither recorded until now:**
+**Two instructions — both recorded elsewhere in the twelve (see the retirement notice above); quoted
+here in the owner's own words:**
 1. **A cap is a fallback, not a first resort** — prefer logic that lands the number correctly.
 2. **Any cap that exists must be tier-specific**, not global.
 
