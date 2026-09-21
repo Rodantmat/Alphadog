@@ -234,7 +234,15 @@ Source: **`leaguedashplayerbiostats`** — one call, whole league.
 *"semi-static, stable enough for weekly refresh — **a single game barely moves a season average after
 20+ games played**."* **Note this reasoning does not hold in the first 20 games of a season.**
 
-> ### 🔴🔴 `[LIVE-AUDIT]` 2026-09-21 (T7 pass 24) — **THE SEASON-LESS PRIMARY KEY, and why it matters on 2026-10-01**
+> ### 🔴🔴 `[LIVE-AUDIT]` 2026-09-21 (T7 passes 24, 26) — **THE SEASON-LESS PRIMARY KEY, and why it matters on 2026-10-01**
+> > **Season is in the primary key of exactly THREE of the forty NBA data tables that have one** —
+> > `nba_stats.player_career_season_totals` (`player_id, season_id, team_id`),
+> > `nba_team.defense_vs_position` (`team_id, opponent_position, season`) and
+> > `nba_team.lineup_profile` (`group_quantity, group_id, team_id, season`). **The other 37 hold one
+> > season at a time.** That is the dominant convention of the schema, not a quirk of a few tables;
+> > the three exceptions are exactly the ones built to be multi-season. *Whether the convention was
+> > deliberate is **NOT RECORDED**.*
+>
 > **37 tables across `nba_stats`, `nba_team` and `nba_ref` have a primary key with NO season column**
 > — the single-season profile tables above all: `player_tracking_profile` (`player_id`) ·
 > `player_onoff_profile` (`player_id`) · `player_season_profile` (`player_id`) ·
