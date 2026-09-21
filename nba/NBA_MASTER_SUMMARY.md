@@ -8032,12 +8032,16 @@ memory.** One grep. *(The count rule and the novelty rule fail together, because
 what I just looked at for what is on record.)*
 
 🔴 **This is the THIRD time in this sweep that I have reported a count from a single-pattern search.**
-The others:
+**— and by 2026-09-21 it is the FOURTH; see item 4.** The others:
 1. **`raw_json`** — measured 1,306 rows / 6 tables by checking the static layer I was already
    reading; **the true figure was 17,902 / 14 tables.** Caught by the owner, not by me.
 2. **Tool-name failures** — *"four instances, two families"* from memory; **actually 5 across 3
    distinct wrong names** (§T4.25a). Caught by a judgment pass.
 3. **Debug artifacts** — *"three"* from a `*debug*` grep; **actually five.** Caught here.
+4. **Config tables read by nothing** — *"five"* from the tables I had just queried; **the authority,
+   `NBA_DATABASE.md`'s own §2 banner, says eight** (§T7.39c, 2026-09-21). Caught inside the same
+   pass, by opening the file I was about to edit. **The only one of the four caught before it was
+   written down as fact** — which is what the rule is for.
 
 **The error is identical every time: I enumerate what one pattern returns and report it as the
 population.** The fix is equally consistent and is now a standing rule below: **when a finding is a
