@@ -1580,6 +1580,40 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.9 — PASS 9 (angle: **the scrapers' own docstrings, and a live-data confirmation**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+1. ⚠ **The worker registry claims data that does not exist.** ***VERIFIED by SQL:***
+   `nba_stats.player_playtype_profile` holds **3,282 rows, all `Offensive`** — **no `Defensive` row
+   at player level at all** — while `nba_team.playtype_profile` holds both (300 offensive, 330
+   defensive). **`nba_config.worker_definitions.notes` for that worker says *"Player + team level,
+   offensive and defensive groupings."*** Anyone checking coverage from the registry rather than the
+   tables will conclude player-level defensive play-type data is available. **It is not.**
+   → `NBA_OPEN_ITEMS.md` FROM T3 PASS 8
+2. **The SvelteKit attempt order was specified in the scraper, and it included the fix that was
+   later lost.** The v2 comment: try `<script type="application/json" data-sveltekit-fetched>` blocks
+   first, then the `__data.json` sibling route, then guessed query params — and ***"always dump the
+   full html (not truncated) plus every embedded application/json script block on any failure, so the
+   next attempt has full ground truth instead of another guess."*** **The final rewrite kept the
+   extraction and dropped the dumping discipline** — which is §T3.7's live defect, now with the
+   author's own stated intent behind it.
+3. **A stated principle worth keeping**: *"shape genuinely unknown until seen for real — **dump and
+   stop rather than guess a field path that silently returns nothing**."* **The whole class of
+   failures this sweep keeps finding — `TeamAbbreviation`, `teamInfoCommon`, the 50-of-530 parse —
+   is what that sentence is guarding against.**
+4. **The schedule scraper's dump budget is 100,000 characters**, five times DARKO's 20,000, on a
+   response an order of magnitude larger. *The two limits were chosen per-scraper with no shared
+   rule, which is why one of them happens to work and the other does not.*
+5. **Gemini's framing of the schedule**, recorded because it drove the build order: not another
+   factor but *"the central organizing entity for your entire system"* — the join that rest days,
+   back-to-backs, home/away and matchups all hang off. *Named as a needed static entity from day one
+   and never built until T3.*
+
+**Ratio**: 5 findings from 16 segments, **2 verified by live SQL**.
+
+**Clean count 0/3.** **Tail not exhausted**: ~48 of 240 command segments and all 137 result segments
+remain.
+
 ### T3.8 — PASS 8 (angle: **the differential worker's declared scope and the play-types shape**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
