@@ -317,6 +317,51 @@ does not protect against the delete above it.**
 
 ---
 
+## ⚠ THE PLAY-TYPE SCRAPER DROPS FIVE COLUMNS THE ENDPOINT RETURNS — including turnover and foul rates *(added 2026-09-21, T3 pass 11)*
+***VERIFIED by live SQL, 2026-09-21.** Recorded as of 2026-09-02.*
+
+`synergyPlayTypes` returns, per play type, a column set that T3's own research captured in full:
+
+> `SEASON_ID · TEAM_ID · … · PLAY_TYPE · TYPE_GROUPING · PERCENTILE · GP · POSS_PCT · PPP ·
+> FG_PCT · **FT_POSS_PCT** · **TOV_POSS_PCT** · **SF_POSS_PCT** · **PLUSONE_POSS_PCT** ·
+> **SCORE_POSS_PCT** · EFG_PCT · …`
+
+**`row_to_record()` hand-picks ten fields and discards the five in bold.**
+
+| | |
+|---|---|
+| Kept | `play_type · type_grouping · gp · poss_pct · ppp · fg_pct · efg_pct · poss · pts · percentile` |
+| **Dropped** | **`ft_poss_pct` · `tov_poss_pct` · `sf_poss_pct` · `plusone_poss_pct` · `score_poss_pct`** |
+
+**And they are not recoverable from `raw_json`.** The worker stores `JSON.stringify(r).slice(0,1000)`
+where `r` is the **already-reduced record**, not the source row:
+
+```
+rows 3,282 | raw_json containing 'tov' → 0 | raw_json containing 'score_poss' → 0
+raw_json length: min 185, max 213 chars
+```
+
+**The data is discarded at scrape time and nothing downstream can get it back without a re-scrape.**
+
+### Why these five matter for a prop system
+- **`tov_poss_pct`** — turnover rate *per play type*. A high-usage pick-and-roll ball-handler who
+  turns it over on 18% of those possessions is a different assists/points proposition from one at
+  9%, and season-long TOV% cannot separate them by role.
+- **`sf_poss_pct`** and **`ft_poss_pct`** — shooting-foul and free-throw rates per play type, which
+  is the direct mechanism behind FTA and FTM props — **both of which are certified props in the
+  reliability audit.**
+- **`score_poss_pct`** — the share of possessions that produced any score, a cleaner scoring-rate
+  signal than PPP alone, which is diluted by possession volume.
+
+### The contrast worth holding
+**The same session built the tracking-detail scraper specifically to avoid this**, and said so:
+*"rather than hand-picking fields and risking silently dropping something valuable, this stores every
+real column returned as a generic JSONB metrics blob."* **Two scrapers, one session, opposite
+choices — and the one that hand-picked is the one whose endpoint had the richest column set.**
+*Recorded, not fixed.*
+
+---
+
 ## ⚠ THE DIFFERENTIAL WORKER'S SNAPSHOT REFRESH IS DELETE-THEN-INSERT, AND OFFICIALS ARE KEYED BY NAME *(added 2026-09-21, T3 pass 10)*
 *Recorded as of 2026-09-02.*
 
