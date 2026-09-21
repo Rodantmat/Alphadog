@@ -184,6 +184,8 @@ def leg(r, side="over"):
 
 def pick_distinct(pool, k, avoid_games=(), avoid_players=()):
     out, g, p = [], set(avoid_games), set(avoid_players)
+    if k <= 0:                        # asked for none -> return none (the old code appended one
+        return out                    # BEFORE checking, so k=0 silently returned 1 leg)
     for r in pool:
         if r["game"] in g or r["player"] in p:
             continue
