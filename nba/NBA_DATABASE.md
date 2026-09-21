@@ -502,6 +502,14 @@ section's own *"these are the values the backtest will move."* Rows created **20
 **Exactly matching `ROLE_TIERS` in `classification_ladder_v12.py`** — IRON_MAN 36+ ·
 HIGH_USAGE_STARTER 32–36 · STARTER 27–32 · ROTATION 21–27 · BENCH 15–21 · FRINGE 0–15.
 
+✅ **`[LIVE-AUDIT]` 2026-09-21 (T7 pass 12): the six rows partition minutes 0 → 48 with no gap and no
+overlap**, `sort_order` 1–6. ⚠ Two precisions: **IRON_MAN is stored as 36–48, bounded**, not `36+`;
+and **every boundary value belongs to two rows at once** (36 is HIGH_USAGE_STARTER's max *and*
+IRON_MAN's min, and so on), so **the table does not express whether the comparison is inclusive at
+the min or the max**. Since **nothing reads this table**, that convention lives in the hardcoded
+`ROLE_TIERS` list; **whether the two agree at the edges is NOT RECORDED** — the T1 pass 36 check
+compared names and ranges, not operators.
+
 ⚠ **CORRECTED 2026-09-20 (T1 pass 36). This entry read: *"Config and code agree, so the no-hardcoding
 rule holds here."*** **The values do agree — VERIFIED.** **The conclusion does not follow.**
 `ROLE_TIERS` is a **hardcoded Python list** at `classification_ladder_v12.py` **line 129**, and
