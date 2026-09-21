@@ -6115,9 +6115,14 @@ carried evidence counts as `CARRY_N` games at the boundary.
 **Controlled by `BT_CARRY`, default `"1"`.** ⚠ **If a replay ever sets `BT_CARRY=0` and it is left
 off, opening month produces nothing.** Worth an explicit assertion in the P2 certifier.
 
-### ① THE DIFFERENTIAL WORKER HAS NOT RUN SINCE 2026-09-03
-**Verified live 2026-09-20**: all three `*_differential_log` tables are **empty**;
-`player_roster_snapshot` holds **582 rows frozen 17 days ago**.
+### ① THE DIFFERENTIAL WORKER HAS NOT RUN SINCE 2026-09-02
+*(⚠ date corrected 2026-09-21 by §T9.35a — this heading read **2026-09-03**. The authority is the
+snapshot timestamp, and all three snapshots read **`2026-09-02 19:47` UTC**. The 09-03 date belongs to
+a different table, `nba_ref.players` at `2026-09-03 18:14` — the last day of the build window.)*
+**Re-verified live 2026-09-21**: all three `*_differential_log` tables are **still 0 rows**;
+`player_roster_snapshot` holds **582 rows, `team_roster_snapshot` 30, `official_roster_snapshot` 80,
+all frozen at `2026-09-02 19:47` UTC.** *(This previously read "frozen 17 days ago" — **an elapsed-day
+figure ages every day it is not rewritten**; the date is stated instead.)*
 **Nothing schedules it** — it was flagged unwired when built (T3), the owner said *"leave like this for
 now"*, and `nba-p1-weekly-static.yml` does not call it.
 **September–October is peak roster churn**: camp signings, two-way conversions, waivers, final cuts.
