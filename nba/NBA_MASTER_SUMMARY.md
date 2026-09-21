@@ -2152,12 +2152,23 @@ that a data commit would not retrigger the deploy pipeline"* — recorded twice,
 - lines 22–24: `concurrency: group: alphadog-nba-scraper` · `cancel-in-progress: false`
 - lines 151–152: `for i in 1 2 3 4 5; do if git push origin HEAD:main; then` — the push-race retry
 
-**Both cannot be straightforwardly true, and this pass does not resolve which is.** The T2 statement
-is hedged (*"likely"*) and **was never checked in T2** — no run ID, no workflow log, no verification
-follows it. It may be a wrong guess; the guard may have been absent at that moment; or `[skip ci]`
-may not suppress that particular workflow (it demonstrably **does not suppress Pages**, already
-recorded). **The cause is NOT RECORDED and is left OPEN** — recording the contradiction rather than
-picking a side, per the rule that a live-audit finding states what the system is now and never why.
+**The T2 statement is hedged (*"likely"*) and was never checked in T2** — no run ID, no workflow log,
+no verification follows it. **It is recorded as an observation, not as a fact about the system, and
+it is not adjudicated here.** The live-code lines above are recorded as `[LIVE-AUDIT]` state only —
+**they describe today, and are not evidence about 2026-09-03.**
+
+**Three candidate resolutions, none chosen here**: the guard was added after T2 (→ supersession, and
+the transcript that adds it will say so); the guard existed and T2's guess was simply wrong; or the
+guard existed and does not suppress that workflow — **`[skip ci]` demonstrably does not suppress
+Pages**, already recorded, so "the guard is present" does not by itself mean "nothing fired."
+
+⚠ **A separate lead to carry forward, and it may dissolve the question entirely**: **a push made with
+a workflow's own `GITHUB_TOKEN` does not trigger other workflows at all** — GitHub suppresses that by
+design, independently of `[skip ci]`. **So which credential `nba-scrape.yml` pushed with decides
+whether the auto-deploy could have fired in the first place.** The workflow declares
+`permissions: contents: write` and pushes with `git push origin HEAD:main`; **whether that used the
+default `GITHUB_TOKEN` or a PAT is NOT RECORDED here and is a question for the transcript that wrote
+the push step**, not for this pass.
 
 **`[LIVE-AUDIT]` and separately true**: the commit message still reads **"Update NBA teams JSON"**
 although the commit step now covers **all nine entities** via the existence-checking loop (§T2.10).
