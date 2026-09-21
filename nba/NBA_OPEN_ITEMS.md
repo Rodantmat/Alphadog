@@ -1277,11 +1277,18 @@ its `nba_ref.players` bio update.
 |---|---|---|
 | `nba-static-onoff` | `nba_stats.player_onoff_profile` | literal `'2025-26'` |
 | `nba-static-player-bio` | `nba_stats.player_season_profile` | literal `'2025-26'` |
+| **`nba-static-team-stats`** | **`nba_team.season_profile`** | **literal `'2025-26'`** |
 
-**Two workers means the rollover fix has at least three locations** — the scrapers' URLs, and each
-of these INSERTs — **and no single search term finds all of them**, since one set writes the season
-into a query string and the other into a SQL value. *Whether more workers do the same is not
-established; only these two were read in depth.*
+**Three workers, three tables, spanning two schemas** (`nba_stats` and `nba_team`) — **so the
+rollover fix has at least four locations**: the scrapers' URLs plus each of these INSERTs. **And no
+single search term finds them all**, since one set writes the season into a query string and the
+other into a SQL value. *Whether further workers do the same is not established; these three were
+read in depth.*
+
+**The three carry the system's pace, ratings, usage and on/off inputs** — `player_season_profile`
+holds USG%/TS%/net rating, `nba_team.season_profile` holds pace and off/def rating,
+`player_onoff_profile` holds the on/off splits. *Those are the tier-1 and tier-2 factors from the
+Gemini list, all landing under a season label the worker chose rather than the data did.*
 
 ### The `_debug_headers` technique, worth keeping as a practice
 The arenas scrape's first output committed **`arena_name: null` for all 30 teams plus a
