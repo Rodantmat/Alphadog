@@ -365,6 +365,43 @@ that neither fails — which means it cannot detect a materially short scrape of
 
 ---
 
+## ⚠ 0.35 THE DESIGN RULE THE SCRAPERS DISAGREE ON — keep every column, or hand-pick and lose signal
+*Recorded 2026-09-21 (T3). **This is one finding, not three** — the pattern is the point.*
+
+**Three scrapers were built in a single session, 2026-09-02, against three sources. They made
+opposite choices about the same question, and the two that hand-picked both lost data that maps onto
+certified props.**
+
+| Scraper | Choice | Result |
+|---|---|---|
+| **tracking detail** | **keep every column returned**, as a generic `metrics` JSONB blob per player per measure type | **nothing lost** |
+| play types | hand-pick 10 of 18 source columns | **8 dropped** — `ft_poss_pct`, `tov_poss_pct`, `sf_poss_pct`, `plusone_poss_pct`, `score_poss_pct`, `fgm`, `fga`, `fgmx` |
+| DARKO | hand-pick 9 of 24 payload fields | **15 dropped** — incl. **`x_minutes`**, `x_pts_100`, `x_ast_100`, `x_fg_pct`, `x_fg3_pct`, `x_ft_pct`, `x_pace`, `career_game_num` |
+
+**The tracking-detail scraper stated the rule explicitly, and was right:**
+
+> *"each measure type returns a different, not-fully-predictable set of columns — rather than
+> hand-picking fields and **risking silently dropping something valuable**, this stores every real
+> column returned as a generic JSONB metrics blob per player per type, **so nothing gets silently
+> dropped**."*
+
+**Neither of the other two is recoverable without a re-scrape.** Both workers store
+`JSON.stringify(record).slice(0, N)` of the **already-reduced** record — ***VERIFIED**: 0 of 3,282
+play-type rows and 0 of 530 impact rows contain any dropped field; max `raw_json` lengths 213 and
+187 characters.* **A `raw_json` column that holds the transform's output rather than the source's
+row is not a safety net; it just looks like one.**
+
+**What was actually lost, stated once:** per-play-type **turnover and shooting-foul rates** (the
+mechanism behind the certified FTA and FTM props), per-play-type **shot volume** (`FGA`), and
+**DARKO's own daily projected minutes** — while factor A2 was being built to predict minutes through
+five retracted attempts.
+
+**The rule for every future scraper**: *store the source row, transform on read.* The JSONB pattern
+already exists in this codebase and costs one column. *Not applied retroactively — per the sweep's
+read-only rule.*
+
+---
+
 ## 0.34 THE `scope_lock` DECLARATION — a worker that states, in its own response, every table it may write
 *Recorded 2026-09-21 (T3 pass 8). Appears in none of the thirty documents.*
 
