@@ -189,6 +189,36 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 🔴🔴 THE INJURY ARCHIVE HAS NO POSTGRES TABLE — its documented destination was never created
+*Found 2026-09-21, T11 pass 35 (§T11.36a). **`[LIVE-AUDIT]`. The scrape-vs-load class at its largest
+scale: not "the load was never run" but "the destination does not exist."***
+
+**Two facts, each already on file, and the join between them is in 0 of thirty:**
+
+| | |
+|---|---|
+| `NBA_DATABASE.md` *(one of the twelve)* | *"**SIX OF THE FOURTEEN SCHEMAS HOLD ZERO TABLES** — VERIFIED: `nba_archive`, `nba_backtest`, `nba_classification`, `nba_context`, **`nba_daily`**, `nba_scoring` — all empty."* |
+| `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` *(outside the twelve)* | **Build item #1**: *"`scrape_nba_injury_report.py` (daily + backfill modes, pdfplumber) **+ loader → `nba_daily.injury_report_snapshots`** — unlocks **A1, N1, N2, A4 truth, A6, B4**; day-before report into the baseline builder."* |
+
+🔴🔴 **`nba_daily.injury_report_snapshots` does not exist. `nba_daily` holds zero tables**
+*(re-verified live)*. ***So the injury archive — `[LIVE-AUDIT]` 1,338,020 snapshot timestamps across
+14 monthly shards, 919,949 for 2025-26 and 418,071 for 2024-25 (§T11.3c), the largest data asset T11
+produced — lives only as JSON in the repo, and the factor group it unlocks is the matrix's largest ⏳
+group.***
+
+⚠ **Neither document is wrong; nobody has joined them.** *The twelve say the schema is empty; a
+document outside them says a loader should fill it; **no document says the archive therefore has
+nowhere to land.*** **WHY the table was never created is NOT RECORDED** (rule 6) — *built-and-pending,
+deferred, or superseded by reading the JSON directly are all consistent with what is observable.*
+
+📌 **And the control plane cannot answer it**: `nba_control.job_runs` and `worker_run_log` are
+**both 0 rows** — *already recorded in **five** of the twelve, verified three ways at T1 pass 68,
+with the string `nba_control` appearing in **no non-markdown file in the repo** while 21 workers are
+registered and enabled*. ***There is no run history for any worker, so "was the loader ever run" is
+unanswerable from inside the database for every finding of this class.***
+
+---
+
 ## 🔴🔴 THE SCRAPE IS THREE SEASONS AND THE LOAD IS ONE — `game_officials` and `player_game_starter_status`
 *Found 2026-09-21, T11 pass 30 (§T11.31b). **`[LIVE-AUDIT]`, and the second instance of a shape this
 sweep has already recorded once.***
