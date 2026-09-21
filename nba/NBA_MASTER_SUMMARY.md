@@ -1555,6 +1555,36 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T2.4 — PASS 4 (**the two-direction judgment pass**) — **1 DEFECT FOUND AND FIXED · T2 CLOSES**
+*2026-09-21. 137 segments judged: 70 in the high band, 67 in the tail direction.*
+
+**DIRECTION 1 — high band (≥0.45), 70 segments. One defect, in the twelve, now corrected.**
+`NBA_MASTER_SUMMARY.md` line 4015 read *"verified 80/80 in Postgres."* **That number measures scrape
+rows against written rows — an internal-consistency check — and was written in a form that reads as
+agreement with the source.** It is not: the Wikipedia "Staff officials" table carries **81** rows and
+T2's parser drops one. **Exactly the "mentioned but incomplete" shape the high band exists to
+catch**, and exactly the kind of number a later session would cite as settled. Caveat added in place.
+
+**DIRECTION 2 — the tail, 67 segments covered elsewhere.** 46 match `NBA_PROJECT_LOG.md`, 20 match
+`NBA_ENRICHMENT_FACTORS_RESEARCH.md`, 1 a checkpoint — **self-authorship again (mechanism 3), since
+T2 wrote both files.** One defect found, and it is **outside the twelve**:
+
+> *"The freely and legitimately sourceable static/weekly layer is now **genuinely complete** — every
+> factor that (a) doesn't require game-level/play-by-play data and (b) doesn't require paying for a
+> third-party proprietary model has been identified."*
+
+**T2 contradicts this within its own session**: nbarapm.com — a free aggregator carrying
+RAPM/ORAPM/DRAPM plus DARKO/LeBron/RAPTOR summaries — was flagged as promising and **never
+evaluated**. The claim appears in `NBA_ENRICHMENT_FACTORS_RESEARCH.md` and `NBA_PROJECT_LOG.md` (3×).
+**The twelve do not carry the overclaim, so nothing in the mandated set needs correcting** — recorded
+here so that the next session to read those working files knows the completeness claim is
+unsupported. *Two further transfer candidates surfaced the same way and are not defects:
+`boxScoreAdvancedV2` with date ranges and **pbpstats.com** as on/off source candidates, both flagged
+"not yet independently verified", both absent from the twelve.*
+
+**Judgment pass clean after the fix → T2 CLOSES.** Tail exhausted across all five strata (passes
+1–3), both judgment directions run, the one in-scope defect corrected.
+
 ### T2.3 — PASS 3 (angle: **the RESULTS RETURNED stratum — 147 segments of what came back**) — **NEW MATERIAL · CLEAN COUNT 0/3 · TAIL EXHAUSTED**
 *2026-09-21. All five strata of T2's 0.40 tail now read.*
 
