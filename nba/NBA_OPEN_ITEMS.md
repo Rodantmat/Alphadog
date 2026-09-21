@@ -230,6 +230,61 @@ column, or a view exposing parts-only, so the choice is explicit instead of folk
 
 ---
 
+## 🔴🔴 THE OFFICIALS DICTIONARY AND THE GAME ASSIGNMENTS CANNOT BE JOINED — 3,681 of 3,681 rows fail
+*Found 2026-09-21, T6 re-sweep pass 5 (referential-integrity angle). **`[LIVE-AUDIT]` VERIFIED**.
+Detail: `NBA_MASTER_SUMMARY.md` §T6.21a.*
+
+`nba_stats.game_officials` LEFT JOIN `nba_ref.officials` on `official_id`: **3,681 unmatched of
+3,681. Every row.** The keys are in two incompatible formats:
+
+| Table | `official_id` |
+|---|---|
+| `nba_ref.officials` | **`nba_official_ray_acosta`** — derived from the name |
+| `nba_stats.game_officials` | **`nba_1629178`** — numeric, from stats.nba.com |
+
+**And `nba_stats.game_officials` also carries `nba_official_id = 1629178`** — the real numeric id.
+**The assignments hold exactly the identifier the dictionary lacks.**
+
+⚠ **This is the T2 `known_limitation` arriving as a total failure.** The officials worker has
+declared since T2: *"no stats.nba.com official_id crosswalk yet — official_id is name-derived until
+box-score data provides one."* **Box-score data provided one. The crosswalk was never built.** The
+two tables have coexisted since 2026-09-04 at a **100% join-failure rate**.
+
+**What it costs**: referee-crew tendencies — rated high-impact by the research passes and deferred to
+Phase 3b *specifically so this table could exist* — **cannot be computed by joining these two
+tables.** Any query must route through `full_name`, the fragile path the limitation warned about.
+
+✅ **The assignment data itself is sound**: 0 orphans against `nba_calendar.games`, and every one of
+the 1,227 games has exactly three officials. **The defect is the seam, not the data** — the same
+shape as the calendar gap on the backfilled seasons.
+
+**Remedy shape** (not applied — it is a write): backfill `nba_ref.officials.nba_official_id` from
+`nba_stats.game_officials`, matching on normalised `full_name` once, then join on the numeric id
+thereafter. **The 80-vs-83 name discrepancy below is the symptom of this; fixing this resolves it.**
+
+---
+
+## 🔴 `lineup_profile` IS EXACTLY 2,000 ROWS PER GROUP SIZE — the API cap, hit four times
+*Found 2026-09-21, T6 re-sweep pass 5. **`[LIVE-AUDIT]` VERIFIED**. Detail: §T6.21b.*
+
+**8,000 rows; group sizes 2, 3, 4, 5; precisely 2,000 in each.** Four identical round numbers are a
+ceiling, not a coincidence — and this document already records the endpoint's behaviour from a later
+transcript: *"`leaguedashlineups` → **API capped at 2,000 rows**."*
+
+**Here is that cap truncating the lineups backfill at the moment it was built.** Four calls, each
+returning the maximum the endpoint serves.
+
+⚠ **Nothing reported a problem.** 2,000 is a large, healthy-looking number and all four runs
+"succeeded" — **the aggregate-guard blind spot again**: a count floor passes, completeness has
+nothing to compare against, and only the suspiciously round repetition reveals it.
+
+**NOT RECORDED**: how many lineups actually exist per group size, so the captured fraction is
+unknown. A 5-man lineup count across a 30-team season is far larger than 2,000, **so the truncation
+is likely severe — but that is an inference, and the measurement belongs to the transcript that owns
+the lineups worker.** Flagged forward.
+
+---
+
 ## ⚠ THREE GAMES HAVE NO OFFICIALS, AND THEY ARE ALL ONE NIGHT — 2025-11-19
 *Found 2026-09-21, T6 re-sweep pass 3. **`[LIVE-AUDIT]` VERIFIED**. Detail:
 `NBA_MASTER_SUMMARY.md` §T6.19a.*
