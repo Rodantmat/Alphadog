@@ -14558,7 +14558,7 @@ system's** identifier.
 
 | Claim | source vocab | documents vocab | system vocab | Verdict |
 |---|---|---|---|---|
-| **`compute_stage` in 0 of the twelve** | `compute_stage` → **0 / 12, 2 / 30** | `phase-1 baseline` · `phase 2` · `live-only` · `stage of the pipeline` → **7 / 12** | `phase1_baseline` · `live_only_excluded` · `not_mined` → **0 / 30** | ⚠ **stands, with context added — see §T10.19b** |
+| **`compute_stage` in 0 of the twelve** | `compute_stage` → **0 / 12, 2 / 30** | `phase-1 baseline` · `phase 2` · `live-only` · `stage of the pipeline` → **7 / 12** | `phase1_baseline` · `live_only_excluded` · `not_mined` → **0 / 30** *(🔴 the probe as first run also carried `phase2_enrichment`, **a value that does not exist** — corrected 2026-09-21 by §T10.21b; the real literal is **`phase2_window`**, and the verdict is unaffected because the other two literals are real and both return 0)* | ⚠ **stands, with context added — see §T10.19b** |
 | **`matchupMinutesSort` zero across thirty** | `matchupMinutesSort` → **0** | `matchup minutes sort` · `minutes sort` → **0** | `matchupMinutes` (the sibling), `KEEP` → **1** (`NBA_COMPASS.md`) | ✅ **holds in all three** |
 | **No document states both 67 and 31/34** | `67 rows\|factors` → **6 / 30, 5 / 12** | `31 baseline` · `34 active` · `31/34` → **2 / 30, 0 / 12** | `layer='baseline'` · *layer-tagged* → **4 / 30, 3 / 12** | ✅ **holds — the two figures live in disjoint document sets, and the second is in none of the twelve** |
 | **`factor_relevance` maps 29 of 67** | `factor_relevance` → **12 / 30** | `relevance matrix\|table\|gate` → **5 / 30** | `factor_key` + relevance → **1** | ✅ **not an absence claim at all — a live-verified numeric fact (460 rows / 29 keys, re-verified pass 16)** |
