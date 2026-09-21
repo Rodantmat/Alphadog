@@ -517,6 +517,24 @@ Factors, *"layer-tagged, with macro-clusters"* — i.e. each carries whether it 
 the ancestor of the A/B/D/M/N factor codes used in T15–T16 and of
 `nba/NBA_ENRICHMENT_FACTOR_LOCK.md`.
 
+### ⚠ ONE CONCEPT, FIVE COLUMN NAMES — the join map
+*`[LIVE-AUDIT]` 2026-09-21, T10 pass 23 (§T10.23b). **Every name below is live and correct — for its
+own table.** The trap is that the documents use all of them and never say which belongs where.*
+
+| Concept | `nba_config.factor_profile_cells` | `nba_score.baseline_ladder` / `baseline_history` | `nba_config.variation_bands` | `nba_config.role_tiers` |
+|---|---|---|---|---|
+| **variation band** | `variation_band` | **`var_band`** | **`band_key`** | — |
+| **role tier** | **`role_tier_key`** | `role_tier` | — | `role_tier_key` |
+| **rate tier** | **`tier_label`** | — | — | — |
+| **prop** | `canonical_prop_key` | `prop` | `canonical_prop_key` | — |
+
+🔴 **`rate_tier` is NOT a column anywhere** — it is the design's word for `tier_label`.
+📌 **Mentions across the twelve**: `variation_band` **43** · bare `role_tier` **40** · `var_band`
+**12** · `tier_label` **11** · `role_tier_key` **11** · `rate_tier` **4**. ***Both vocabularies are
+in use in the same documents, and only this table says which is which.***
+
+---
+
 **`compute_stage` — the exact literals, because the prose form is not the value** *(`[LIVE-AUDIT]`,
 re-verified 2026-09-21, T10 pass 21)*:
 
