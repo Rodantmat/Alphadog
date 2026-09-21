@@ -14430,6 +14430,71 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.2 — PASS 1 (**the TAIL stratum — 15 segments, the largest tail of any transcript swept**) — **🔴 the owner's documentation directive was followed INTO THE WRONG DOCUMENT SET · 0/3**
+*2026-09-21.*
+
+#### ✅ T12.2a — **The pre-registration landed, and the crossing segments are NAMED**
+***Predicted: the baseline unchanged at 9 / 15 / 618 / 585, and `uncovered12` to FALL because pass 0
+quoted segments into the twelve — with the crossing segments to be named (rule 18).***
+**Measured: baseline 9 / 15 / 618 / 585 unchanged ✅ · working 14 / 15 / 612 / 579.**
+**Sixteenth pre-registration: fifteen hits, one miss.**
+
+| segment | baseline → working | covering paragraph |
+|---|---|---|
+| **49** *(owner, the diff request)* | 0.213 → **0.924** | `NBA_OPEN_ITEMS.md` |
+| **86** *(the comparison being set up)* | 0.207 → **0.414** | `NBA_MASTER_SUMMARY.md` |
+| **90** *(the diff's verdict)* | 0.186 → **0.681** | `NBA_MASTER_SUMMARY.md` |
+| **91** *(the decision)* | 0.292 → **0.683** | `NBA_OPEN_ITEMS.md` |
+| **94** *(the memory write recording it)* | 0.281 → **0.452** | `NBA_MASTER_SUMMARY.md` |
+| **135** *(owner, the proxy)* | 0.208 → **0.611** | `NBA_OPEN_ITEMS.md` |
+
+✅ **Four of the six are exactly what pass 0 quoted; 86 and 94 are the same subject, crossing as a
+by-product.** 🔑 ***Self-authorship, third transcript — credited to §T11.44a, not re-discovered***
+*(rule 28)*: **the sweep quoted segments in order to record that they were uncovered, and thereby
+made them covered.**
+
+#### ✅ T12.2b — **The tail, classified before it was read, and its structure is the finding**
+**15 segments — identical on both trees — 559, 561, 564, 566, 567, 568, 570, 571, 588, 590, 592,
+600, 602, 604, 617.** **Split: 10 PROSE / 5 MCP envelope** *(rules 17, 23, 30 — the denominator for
+every later "N of the tail" figure)*. 🔑 ***And not one is an assistant `text` segment: all fifteen
+are `tool_use` or `tool_result`*** — **the PROSE ones are patch BODIES, the content being written
+into documents, captured as tool arguments.**
+🔑🔑 **THE STRUCTURE**: **the tail begins at 559 — six segments after OWNER SEGMENT 553**, *"continue,
+document everything since last update/log, check transcripts and history **leave nothing out of
+documentation**."* ***The tail IS the documentation burst that directive produced*** — **and its
+targets are `NBA_PROJECT_LOG.md` and `NBA_COMPASS.md`.**
+🔴 ***So the owner's instruction was followed, into the EIGHTEEN rather than the TWELVE*** — **which
+is precisely why the tail metric finds these segments: all thirty cover them and the mandated twelve
+do not.** *(And §T12.1f found the directive itself is in 0 of thirty.)*
+
+#### 🔴 T12.2c — **Seven substantive results in the eighteen and ZERO of the twelve**
+*(Probed against the baseline, controls `pdfplumber` 8 of thirty and `absence_prior_measured` 2;
+every hit opened — rules 20, 22, 26, 28.)*
+
+| result | thirty | twelve | written to |
+|---|---|---|---|
+| 🔴 **end-of-season tables demoted — *"they leak the future"***, replaced by weekly as-of snapshots 25/season × 3 | **4** *(COMPASS, DAILY_PARITY, LESSONS_FROM_MLB, PROJECT_LOG — all agreeing)* | **0** | `NBA_BASELINE_CALIBRATION.md` §0x |
+| 🔴 **the absence prior, measured**: n = **59,785**, base **10.4%**, b2b **13.5%**, stars 33+ road b2b **17.6%**, and ***a prior night ≥ 38 min LOWERS b2b absence — "folklore reversed"*** | **1** | **0** | `NBA_BASELINE_CALIBRATION.md` §0x |
+| 🔴 **primary defender quality (`m1`)**: toughest quintile **−5.5%**, easiest **+6.7%**, **elasticity 0.39**, high scorers **−9.5%** | **3** | **0** | `NBA_BASELINE_CALIBRATION.md` §0x |
+| 🔴 **the third injury bug** — ***a YAML step name with unquoted colons produced a JOB-LESS RUN*** | **1** | **0** | `NBA_OPEN_ITEMS.md` |
+| 🔴 **the 05:30Z verification** — injury **176/176 days** · starters 2023-24 **32,328 rows, 1,228/1,230** | **1–2** | **0** | `NBA_OPEN_ITEMS.md` |
+| ✅ **the two timeout game IDs `0022300079` / `0022300721`** | 2 *(incl. `TRIGGER_NBA_PERGAME_BACKFILL.txt`)* | **0** | `NBA_OPEN_ITEMS.md` — **the T12 queue item, resolved** |
+| ✅ **already in the twelve** | — | — | **919,949 · 418,071 · `enrichment_backfill_status_2026_09_10` · 5,212 · 241,590 · 232,830** |
+
+#### 🔴🔴 T12.2d — **And the verification SHARPENS T11's first standing gap instead of closing it**
+**Segment 617 records the 2023-24 SCRAPE complete — starters 32,328 rows, officials 3,690 — and
+concludes *"every enrichment factor now has its two-season backfill."*** 🔴 **`[LIVE-AUDIT]`
+2026-09-21: both tables hold season `25` ONLY.** 🔑 ***So that sentence is true of the REPOSITORY and
+false of Postgres*** — **§T11.31b's distinction, now with the scrape's own row counts on the other
+side of it.** ⚠ **The fix did not appear in T12. A dated STATE** *(O9)*; **T13–T20 are unswept.**
+⚠ *Not conflated: officials **3,690** is the 2023-24 scrape; officials **3,681** is the loaded
+2025-26 table.*
+
+**Pass outcome: the tail read whole and classified, six crossings named, seven results moved into the
+twelve, and one standing gap sharpened. CLEAN 0/3 · 2 passes.**
+
+---
+
 ### T12.1 — PASS 0 (**corpus + owner stratum**) — **🔴 the measurement that chose every live board source is in NONE of the twelve · 0/3**
 *2026-09-21.*
 
