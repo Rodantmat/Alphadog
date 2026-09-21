@@ -9762,6 +9762,39 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.62 — PASS 33 (**two-direction judgment, eighth run**) — **⚠ 1 SCOPE DEFECT, MINE · band stable for a third run · 0/3**
+*2026-09-21. 118 segments, 0 in, 0 out, coverage 928 / 885 — **identical for the third consecutive
+run** (29, 30, 33). The extraction is finished; only the claims are still in play.*
+
+#### ⚠ T7.62a — **"every other cross-document figure agrees" was broader than what I checked**
+
+§T7.61a closed with that sentence after spot-checking **seven figure families**. **Seven families is
+not "every figure",** and the sweep's own first rule is that **language strength must never exceed
+evidence strength.** Narrowed in place to name exactly what was grepped and to say plainly that
+anything outside those seven was not checked.
+
+**The seven, re-verified here with their statement counts, all internally consistent**: the
+35 / 22 / 13 split (17 statements) · 9 `band_key`s (2) · `calibration_log` 8-of-8 (4) · 37
+season-less PKs · 15 exposed scrapers (6) · 4 hardcoded workers (10 hits, **7 of them this claim and
+3 unrelated** — T3's thresholds and T4's admin-sql, correctly distinguished) · 7 scheduled workflows
+(5).
+
+#### 📌 T7.62b — **The extraction is settled; the defect class has changed twice**
+
+Recorded because it is the evidence for the closure judgment, not a finding in itself:
+
+| Passes | What the defects were |
+|---|---|
+| 9–25 | **Findings retired and severities reversed** — headline claims that were wrong |
+| 26–31 | **Framing and attribution** — right findings, wrong provenance or population |
+| **32–33** | **Propagation and scope** — right findings, right provenance, **copies missed and language a shade too wide** |
+
+**Three passes in a row have produced no change to any finding, figure or severity.** *Under the run
+log's own standing note, if the next passes continue in this class the honest call is to close T7 and
+record that its final defects were editorial.*
+
+---
+
 ### T7.61 — PASS 32 (**self-contradiction audit**) — **🔴 TWO SURVIVING CONTRADICTIONS IN THE DELIVERABLE · 0/3**
 *2026-09-21. The ninth rule as its own angle, because pass 31 showed the failure class exists: every
 factual assertion §T7.38–§T7.60 makes about the system, grepped back across **the twelve including
