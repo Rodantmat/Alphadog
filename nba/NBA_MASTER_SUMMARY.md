@@ -12797,6 +12797,48 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.27 — PASS 6 (**two-direction judgment, second run**) — **🔑 the taxonomy finding STRENGTHENS under a stricter test · 0/3**
+*2026-09-21. 61 high-band segments (one in, one out — the rigour directive, now matching more strongly
+because §T8.24b quoted it). **First pass run under the twelfth rule: every claim below was grepped
+against `/tmp/t8base` in the same breath as drafting it, not in a later audit.***
+
+#### ✅ T8.27a — **§T8.25b re-tested against the objection that would break it, and it holds**
+
+The claim *"nothing reads `nba_ref.prop_taxonomy`"* rested on a **schema-qualified** grep, which
+would miss any code referencing the table bare. **Tested:** all six files matching `prop_taxonomy`
+carry **zero** references to any `nba_*` schema, and their identifiers are MLB's own —
+`config_prop_taxonomy`, `static_prop_taxonomy`, `postgres_config_prop_taxonomy`. **None of them is
+NBA code.**
+
+#### 🔑 T8.27b — **And the substance test makes it larger: the canonical-key vocabulary is unused on the NBA side entirely**
+
+Rather than stop at the table name, the check asked what *consuming the taxonomy* would look like —
+reading its primary key.
+
+> ### **`canonical_prop_key` appears 1,218 times in the codebase. ZERO of them are under `nba/`.**
+
+All 1,218 are the MLB fleet at the repo root — `alphadog-v2-score-prep.js`, the certifiers, the
+parlay boards, the market-line-shape classifier, the score audit. **And the NBA board scrapers do not
+map to it at all**: `scrape_underdog_board.py`, `scrape_sleeper_board.py` and `scrape_fliff_board.py`
+contain **no** `taxonomy` and **no** `canonical_prop` reference, emitting raw board JSON
+(`legs[]`, `appearances`, `players`) instead.
+
+**So the finding is not "a table nothing reads."** It is: **the NBA side defines a 28-row canonical
+prop taxonomy, fully populated, and no NBA code ever speaks its key** — while the MLB fleet uses that
+exact key 1,218 times. *The vocabulary exists on both sides; only one side uses it.*
+
+*Novelty grepped before writing, per rule 12: `canonical_prop_key` appears in **two** pre-edit
+documents, both as a **schema/PK description** (`NBA_DATABASE.md` lines 203, 534, 555, 571) — **never
+as a statement about whether NBA code uses it.** `1,218`, `canonical key` and `unused on the NBA
+side` return **zero hits**.*
+
+⚠ *Per rule 6 this entry records the state and not the reason. **What is supposed to translate a
+scraped board leg into a canonical prop key on the NBA side — and whether that step exists yet — is
+NOT RECORDED**, and belongs to the board/grader transcripts this sweep has not reached.*
+→ `NBA_DATABASE.md`, `NBA_OPEN_ITEMS.md`.
+
+---
+
 ### T8.26 — PASS 5 (**novelty audit**) — **🔴 §T8.23a WAS MOSTLY WRONG · 0/3**
 *2026-09-21. Grepped against `/tmp/t8base/nba/` (snapshot `700a999b`, taken before the first T8
 write). **Rule 8 applied — and the claim I was most confident about is the one that failed.***
