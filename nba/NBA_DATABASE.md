@@ -533,6 +533,19 @@ rule holds here."*** **The values do agree — VERIFIED.** **The conclusion does
 changes nothing. See the banner at the top of §2.
 
 ### `nba_config.calibration_log` — 8 rows
+`log_id · cell_id · proposed_field · old_value · proposed_value · evidence_json · sample_size ·
+bootstrap_shrinkage · status · decided_by · created_at · decided_at`
+
+🔴 **`[LIVE-AUDIT]` 2026-09-21 (T7 pass 16) — it joins `factor_profile_cells` at 0%, and most of it
+isn't cells.** **8 of 8 `cell_id` values are orphaned.** The two tables use **incompatible id
+conventions**: here `blowout_risk::points::P_BLOWOUT_GT50` (`::`, three segments), there
+`blowout__points__WON_GT50__FRINGE__more` (`__`, five). **The same failure class as the officials
+join** — a name-derived key against a differently-derived key, total failure, no error raised.
+**And 6 of the 8 rows are not factor cells at all** but decision records
+(`classification::structure`, `classification::guards`, `classification::shift_mode::bug`, …).
+⚠ **`old_value` and `proposed_value` are NULL on all eight, every row `status = 'applied'`** — an
+audit trail that records that something changed and nothing about what. *Whether anything writes here
+today is **NOT RECORDED**; per the §2 banner nothing reads it.*
 
 ### `nba_config.stat_decay_config` — 13 rows *(T7)*
 ⚠ **Described here as "the single most important config table in the system" — and NOTHING READS IT.**
