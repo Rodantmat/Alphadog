@@ -351,6 +351,23 @@ as a considered exception. All 35 rows carry `created_at` in the **01:53–02:03
 are closed and recorded **no cap-setting turn**. **Deliberately left open** — read the later
 calibration transcripts against the instruction rather than inferring from timestamps.
 
+🔴 **TWO BROKEN JOINS IN THE SAME CONFIG LAYER, found 2026-09-21 (T7 pass 16), both missed by the
+pass-12 referential-integrity sweep because it had not enumerated the design's six-dimensional key:**
+
+1. **`factor_profile_cells.variation_band = 'continuous'` resolves to nothing.**
+   `nba_config.variation_bands` holds 9 `band_key` values (`LOW/MID/HIGH/ELITE` and
+   `FRINGE/ROLE/STARTER/STAR/SUPERSTAR`) — **none is `continuous`**, yet 13 cells carry it. It is a
+   **sentinel meaning "not banded"**, not a foreign key, and **nothing in the schema says so**.
+2. **`calibration_log` joins `factor_profile_cells` at 0% — 8 of 8 orphaned.** Two incompatible id
+   conventions (`blowout_risk::points::P_BLOWOUT_GT50` vs
+   `blowout__points__WON_GT50__FRINGE__more`) — **the same failure class as the officials join**.
+   **6 of the 8 rows are not factor cells at all** but decision records. And **`old_value` /
+   `proposed_value` are NULL on every row while `status = 'applied'`** — *"the audit trail for the
+   semi-automatic → automatic loop"* records that something changed and **nothing about what**.
+
+*Both are 🔴 as design gaps and **latent** in effect, since per the `NBA_DATABASE.md` §2 banner
+nothing reads these tables. **Whether anything writes to `calibration_log` today is NOT RECORDED.***
+
 ⚠ **AND ONE MORE CONFIG GAP, same family, found 2026-09-21 (T7 pass 13)**:
 `NBA_BASELINE_METHODOLOGY.md` line 48 specifies *"a second, faster EWMA (e.g. `alpha` ≈0.5, ~3-game
 lookback) alongside the primary one."* **`nba_config.stat_decay_config` has 13 rows and none of them
