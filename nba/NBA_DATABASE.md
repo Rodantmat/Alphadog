@@ -440,6 +440,21 @@ values — *"**these are the values the backtest will move**."*
 none survived at leg level**. **The matrix records what was considered; the cells record what earned a
 value.**
 
+**`[LIVE-AUDIT]` 2026-09-21 (T7 pass 9) — the cap column, since a document elsewhere was read as
+saying the system runs a single global cap. It does not.** All **35** cells carry a non-null `cap`,
+spread over **15 factors** and **10 distinct values, 0.05 → 0.40** (0.12 on 7 cells, 0.25 on 6).
+Cells are keyed `(factor_key, canonical_prop_key, tier_label, role_tier_key, direction)`, and
+**22 of 35 carry a `tier_label` or a `role_tier_key`**. **13 carry neither** — one undifferentiated
+value for the whole factor: `altitude` 0.06 · `opp_forced_to_rate` 0.20 ·
+`teammate_shooting_quality` 0.20 · `foul_drawing` 0.25 · `opp_rim_attempt_rate` 0.25 ·
+`opp_turnover_rate` 0.25 · `usage_share` 0.30, plus cells of `game_pace`, `potential_assist_rate`,
+`opp_miss_rate`. Largest factor: `blowout_risk`, **9 cells over 3 props and 4 tiers, caps 0.08–0.40**.
+`automation_status` is `semi_automatic`; **`last_validated_at` and `last_empirical_validation_json`
+are null on the rows sampled**, so no validation record backs the seeded values — matching this
+section's own *"these are the values the backtest will move."* Rows created **2026-09-09
+01:53–02:03**. See `NBA_MASTER_SUMMARY.md` §T7.38b and the owner's anti-capping directive in
+`NBA_OPEN_ITEMS.md`.
+
 ### `nba_config.role_tiers` — **6 rows**
 **Exactly matching `ROLE_TIERS` in `classification_ladder_v12.py`** — IRON_MAN 36+ ·
 HIGH_USAGE_STARTER 32–36 · STARTER 27–32 · ROTATION 21–27 · BENCH 15–21 · FRINGE 0–15.
