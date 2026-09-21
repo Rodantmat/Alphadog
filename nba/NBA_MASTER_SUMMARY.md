@@ -12808,6 +12808,60 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.36 — PASS 15 (**live numeric re-verification, second run**) — **✅ CLEAN 3/3 — T8 CLOSES**
+*2026-09-21. Every figure passes 10–14 state, re-derived from its authority, and the load-bearing
+code claim re-read from the source rather than from the earlier grep.*
+
+| Claim | Live |
+|---|---|
+| The three `*_differential_log` tables, combined | **0 rows** ✅ |
+| The three snapshot tables, combined (582 + 30 + 80) | **692** ✅ — *the sum, per rule 11* |
+| `max(snapshot_taken_at)` across all three | **2026-09-02** ✅ |
+| `nba_ref.referee_assignments` | **0 rows** ✅ |
+| `nba_ref.prop_taxonomy` | **28 rows** ✅ |
+
+**✅ And the load-bearing code claim re-read at source**: the snapshot rewrite is preceded by the
+comment *"Refresh the snapshot to the new state for next week's diff"* and **no conditional guard** —
+`DELETE` then `INSERT` at lines 98/102, 152/156, 194/197, unconditionally. *§T8.33b's proof stands on
+the strictest reading: the staleness cannot be explained by "nothing changed".*
+
+> ## ⇒ **T8 CLOSES — 3 consecutive clean passes at 3 genuinely different angles:**
+> ## **13 (dated-verdict audit) · 14 (two-direction judgment) · 15 (live numeric re-verification)**
+> **The judgment pass is among them, as the criterion requires.**
+
+---
+
+## ✅ T8 — CLOSED 2026-09-21 · 15 re-sweep passes · closing summary
+
+**What T8 was**: the transcript that **materialised the schema** — `prop_taxonomy` (28),
+`factor_registry` (29, now 67), `variation_bands` (25), `role_tiers` (6), `factor_relevance` (460),
+`factor_profile_cells` (35) — and ran the **first leg-level calibration and the two-season holdout**.
+
+**Headline findings of the re-sweep:**
+
+| | Finding |
+|---|---|
+| 🔴 | **The NBA side never speaks its own canonical prop key.** `canonical_prop_key` appears **1,218 times in code and ZERO times under `nba/`**; the three board scrapers carry no `taxonomy` or `canonical_prop` reference at all. §T8.27b |
+| 🔴 | **`nba_ref.prop_taxonomy` is fully populated (28/28, every column) and read by nothing** — the **first read-by-nothing object outside `nba_config`**, which widened the §2 banner's scope. §T8.25 |
+| 🔴 | **The weekly differential worker has not completed a run since 2026-09-02** — proven, not inferred: the snapshots are rewritten **unconditionally**, so a stale `snapshot_taken_at` is proof. **Retires the *"correctly empty — detection starts on the second run"* verdict.** §T8.33b |
+| 🔑 | **The variation dimension covers 6 of 28 props**, split exactly by `build_tier` (A 6/13, B 0/15) — and §T8.14b's *"empirical vindication of the variation dimension"* rests on those 6. §T8.28a |
+| 🔑 | **The owner's accuracy standard is scoped** — *"a perfect formula… **within the baseline ladder**"* — a qualifier absent from all thirty documents. §T8.24b |
+| 🔑 | **The two band-key families map to their props**: line magnitude serves five, **role serves `points` alone** — answering §T7.45a. §T8.28b |
+
+**What the sweep got wrong**: **six defects, all in its own prose** — a count taken from the tail
+instead of the transcript (owner turns: three vs six), a leakage-guard claim that four documents
+already contradicted, a prose grouping that mis-assigned four props, a terminology collision
+(*"band family"*), and a sibling-claim failure four passes after invoking the rule. **Two more
+standing rules came out of them (12th and 13th), and one procedural change**: the novelty grep now
+runs **at the moment of writing**, not in a scheduled audit.
+
+**Ratio**: ~20 recorded findings across 615 segments ≈ **1 per 31** — and, as in T7, **the great
+majority came from live-system angles and from auditing the sweep's own claims**, not from
+re-reading prose. *T8's transcript material was almost entirely already documented: §T8.1–§T8.21
+covered it before the reset, and all six owner directives were on file.*
+
+---
+
 ### T8.35 — PASS 14 (**two-direction judgment, fifth run**) — **✅ CLEAN 1/3 · and the blueprint already names the discriminator §T8.34a needed**
 *2026-09-21. Band 61 for a fifth run, 0 in, 0 out, coverage 536 / 510. Rules 12 and 13 applied to
 §T8.31–§T8.34's claims as they were re-read.*
