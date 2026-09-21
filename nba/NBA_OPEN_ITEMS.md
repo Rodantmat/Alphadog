@@ -238,6 +238,13 @@ disagree, potentially to the wrong side.**
 > `derived_spread` and its full HCA — and those six ARE the neutral-site games.***
 > **The one place HCA still governs the spread is the one place it is most wrong.**
 >
+> ✅ **PROVEN BY MEASUREMENT, not inference (§T11.17a)**: the market-spread exports
+> `nba/data/nba_market_spreads_{2024_25,2025_26}.json` hold **2,454 distinct `game_id`s — identical to
+> `event_game_map`'s mapped-game count, so the export IS gated by the mapping — and NONE of the six
+> (`0022401229`, `0022401230`, `0022500147`, `0022501230`, `0022500578`, `0022500602`) appears in
+> either file.** 🔑 **And the split closes exactly: 1,228 + 1,226 = 2,454, so each season is short by
+> 2 and 4 — and 2 + 4 = 6, precisely where the six fall.**
+>
 > ✅ **What limits it**: six games across two seasons; the fallback is **printed, not silent**; and
 > `spread_used` feeds **`p_blowout` and `home_favored`** — a blowout probability and a favourite flag,
 > **not a projection directly**. 📌 **The magnitude has NOT been measured** — this sweep reads, it
