@@ -114,6 +114,24 @@ environment**, so this is the last cheap point. **It catches syntax only** — n
 not a wrong column name, not an unwired dispatch branch, which are what §0's four-step pattern
 exists to prevent. *(`NBA_RECIPE.md` had recorded only the `node --check` half.)*
 
+### ⚠ EXTENDED 2026-09-21 (T3 pass 4) — a stronger gate exists and was used once
+**T3 ran a second check the others do not**: after `py_compile`, it executed the scraper's real
+extraction function **against a captured HTML fixture** and asserted on a known value —
+
+```
+python3 -m py_compile scrape_nba_darko_v2.py && echo SYNTAX_OK
+python3 -c "... players = extract_players(html); print([p for p in players if p['nba_id']==203999])"
+```
+
+— `203999` being Jokić's real NBA person ID. **That is a functional test against real captured data,
+run before the commit that auto-deploys**, and it is why the DARKO extraction shipped working on its
+first live run after two failed pagination attempts.
+
+**It was used for this one scraper and is not part of the standing pattern.** The gate for every
+other worker remains syntax-only. *The ingredient that made it cheap was already on disk: the
+scraper's own committed debug artifact (see `NBA_OPEN_ITEMS.md` FROM T3 PASS 2) is the fixture.
+Any scraper that commits its raw source page can be tested this way for the cost of one command.*
+
 ---
 
 ## 0.26 ⚠ THE DEPLOY-SCOPE ANCHOR — `deployed_sha.txt`, and how it silently drifts
