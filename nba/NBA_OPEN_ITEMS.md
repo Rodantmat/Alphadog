@@ -317,6 +317,54 @@ does not protect against the delete above it.**
 
 ---
 
+## ⚠ FROM T3 PASS 8 — PLAY-TYPE DATA IS OFFENSIVE-ONLY FOR PLAYERS, BY CONSTRUCTION *(added 2026-09-21)*
+*Recorded as of 2026-09-03.*
+
+The play-types scraper's grouping loop:
+
+```python
+groupings = ["offensive"] if player_or_team == "p" else ["offensive", "defensive"]
+```
+
+**Teams get both offensive and defensive play-type profiles. Players get offensive only.**
+
+So `nba_stats.player_playtype_profile` contains, for every player, how *he* scores — isolation,
+pick-and-roll ball-handler, post-up, spot-up — and **nothing about what he concedes.** The defensive
+half exists at team level in `nba_team.playtype_profile` and nowhere at player level.
+
+**This is a deliberate scrape-shape decision, not a source limitation** — `synergyPlayTypes` accepts
+`TypeGrouping=defensive` with `PlayerOrTeam=P`, and the scraper simply does not ask for it.
+
+**What it forecloses, stated plainly**: the "defense-vs-role" idea T3 itself surfaced in the same
+session — *"team X allows the most efficiency to opposing pick-and-roll roll men"* — works at team
+level with this data. **The player-level version, matching a specific prop against the specific
+defender's play-type vulnerability, cannot be built from what is collected.** *That is the sharper
+form of the defense-vs-position concept, and the data needed for it is one loop change away and not
+being gathered.* Recorded, not fixed.
+
+### The cheap-path detection, which is why 44 calls are usually 2
+The scraper first requests with `PlayType` left blank. **If the response carries more than one
+distinct `play_type`, the endpoint answered everything in one call** and the method is recorded as
+`single_call_all_playtypes`. Only when that probe comes back single-typed does it fall back to
+`looped_per_playtype` — 11 types × the groupings above, paced at `time.sleep(0.5)`.
+
+**The fallback is not a failure path, it is a detected-capability path**, and the scraper records
+which one it used in its meta. *T3's observed run took the fallback, which is why the play-type
+scrape is the slow one.*
+
+### How the differential worker was actually tested
+`UPDATE nba_stats.player_roster_snapshot SET team_id = 'nba_1610612738' WHERE player_id = 'nba_2544'`
+— **LeBron James (2544) manually reassigned to Boston (1610612738) in the snapshot table**, then the
+worker triggered to see whether it detected the change. A departed-official test was done the same
+way, by renaming one official's ID so it would not match the fresh scrape.
+
+*Recorded because this is the method that produced the retracted race condition (FROM T3 PASS 1):
+writing directly into the snapshot table to simulate a change is effective, and it is also why two
+runs disagreed — the test artifact was still in place. **The final clean baseline run was taken only
+after the artifacts were removed.***
+
+---
+
 ## FROM T3 PASS 6 — THE SCHEDULE SCRAPER TREATS ITS TWO SEASONS ASYMMETRICALLY, ON PURPOSE *(added 2026-09-21)*
 *Recorded as of 2026-09-03.*
 
