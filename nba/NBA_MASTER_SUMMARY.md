@@ -14358,6 +14358,89 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.27 — PASS 12 (**novelty audit vs `/tmp/t9base/nba/`, commit `213800e7`**) — **🔴🔴 the ladder in Postgres was built under TWO depth regimes under ONE recipe string · 0/3**
+*2026-09-21. Everything passes 7–11 added, grepped against the pre-T9 snapshot — **every hit opened**
+(rule 14). One defect of mine, one large live finding it led to, and one pattern about this sweep.*
+
+#### 🔴 T9.27a — **§T9.22 called `LADDER_DEPTH`'s membership "recorded nowhere" and omitted the thing that actually matters: an env override can flatten it, and it is currently SET**
+
+The novelty grep returned four hits I had not opened:
+
+| Document | What it already records |
+|---|---|
+| `NBA_GOBLIN_DEMON.md` 508–511 | the dict's introduction with `ladder_depth(prop)`, *"**`BT_LADDER_STEPS` still overrides**"*, all four `LADDER_STEPS` sites patched, and a partial prop list (*"points, pra, pts_reb, pts_ast, fantasy_score deeper; steals/blocks/turnovers shallower"*) — with **"the scoped expansion … has not completed"** |
+| `NBA_OPEN_ITEMS.md` 8238 | `LADDER_STEPS` / `LADDER_DEPTH` listed as a **duplicated-constant pair** — *"combos recipe has its OWN `LADDER_STEPS`"* |
+| `NBA_OPEN_ITEMS.md` 7645 | *"the **`BT_LADDER_STEPS` override** silently flattens the per-prop `LADDER_DEPTH` table… a legitimate escape hatch, **but nothing marks it as one that should not be left set**"* |
+| `NBA_COMPASS.md` 126 | *"`BT_LADDER_STEPS` (now **10**, was 6) must be applied in BOTH the singles recipe and the combos recipe"* |
+
+**What survives as new is narrow — the twenty keys and their values.** ⚠ **The defect is the other
+half**: §T9.22's code-vs-table map presented `LADDER_DEPTH` as the live per-prop authority *"with no
+table at all"*, **and never recorded that a documented override can flatten it to one number.**
+*A map of which copy is live is wrong if it omits the switch that decides.* **Corrected below and in
+the §T9.22 map.**
+
+#### 🔴🔴 T9.27b — **`[LIVE-AUDIT]` The three as-of days in `nba_score.baseline_ladder` were built under TWO different depth configurations, and all three carry the IDENTICAL `recipe_version` string**
+
+**VERIFIED — the switch** (`nba/backtest/classification_ladder_v12.py` 88–93, one call site at 562):
+
+```python
+def ladder_depth(prop):
+    """rungs each side of the anchor for this prop; env override wins, else the measured table"""
+    env = os.environ.get("BT_LADDER_STEPS")
+    if env: return int(env)
+    return LADDER_DEPTH.get(prop, 10)
+```
+
+**VERIFIED — who sets it.** `nba-baseline.yml` (the path that built the rows now in Postgres) reads
+`ladder_steps:` from `nba/TRIGGER_NBA_BASELINE.txt`, **default `10`**, and that file currently reads
+**`ladder_steps: 10`**, `asof: 2026-03-15`, `last_triggered_utc: 2026-09-11T17:30:00Z`.
+`nba-p2-overnight-heavy.yml` **deliberately does not set it**, with the reason in the file:
+> *"NO BT_LADDER_STEPS - setting it would override the measured PER-PROP depth table… Points needs 14
+> rungs, steals needs 2; one number cannot be right for both."*
+
+**VERIFIED — what is in the table.** `max(ladder_offset)` per prop per as-of day:
+
+| as-of | props | loaded | regime |
+|---|---|---|---|
+| **2025-11-29** | 22 | 2026-09-20 03:23 | **per-prop** — `points` **14**, `steals` **2**, `blocks` **2**, `oreb` **3**, `turnovers` **3**, `personal_fouls` **3**, `dreb` **5**, `fta` **5**, `ftm` **5**, `fga` **10** — **ten props match `LADDER_DEPTH` exactly** |
+| **2026-01-15** | 22 | 2026-09-19 22:35 | **flat 10 — every prop**, `points` included |
+| **2026-03-15** | 18 | 2026-09-11 20:23 | **flat 10 — every prop** |
+
+🔴 **All three rows carry the same `recipe_version`**: `"classification_ladder_v12 (certified
+two-season recipe) + production patches"`. **There is no column recording the depth configuration**,
+so **nothing in the table distinguishes a 14-rung `points` day from a 10-rung one.** *A consumer
+joining across as-of days gets two different products under one label, and the label is the one
+field that claims to identify the build.*
+
+🔑 **And it VERIFIES an item `NBA_DATABASE.md` carried as "⚠ unverified"** — *"`classification_ladder_v12.py`
+↔ `combos_ladder_v1.py` … each holds its own `LADDER_STEPS`"*. **On 2025-11-29, the day the singles
+ran per-prop, all five composites and `stocks` sat at 10** (`pra`, `pts_reb`, `pts_ast`, `reb_ast`,
+`fantasy_score`) against `LADDER_DEPTH` values of **16 · 15 · 14 · 7 · 16**. **The divergence is real
+and now measured.** *The trigger file's own `trigger_reason` names the mechanism —* `"build_combos_ladder.py`
+*patches* `combos_ladder_v1.py`, *which carries its own `LADDER_STEPS` constant that the recipe patch
+never touched"* — *and names the symptom it was chasing:* **"the 252 combo legs still out of range
+(pts_reb 102, pts_ast 81, pra 69)"** — *the three props whose measured depths are 15 · 14 · 16.*
+
+📌 **NOT RECORDED — two singles exceed their table value on 2025-11-29**: `assists` reaches **6**
+against a table value of **5**, `threes_made` **6** against **4**. **6 is line 66's module constant.**
+**The mechanism that produced 6 for those two props is NOT RECORDED** and is not asserted here.
+📌 `stocks` and `double_double` are **not keys of `LADDER_DEPTH`** — they take the `.get(prop, 10)`
+default; `double_double` has a single offset `0` and is not a ladder at all.
+
+#### 🔑 T9.27c — **The fourth time a rule this sweep "derived" turns out to have its general form already on file**
+
+Rule 15 (*a zero from an extraction is a failed extraction until proven otherwise*) is a special case
+of **§T6.2a**, written days earlier: *"**`[] is not None` is `True`** … **Empty-but-valid is not the
+same as absent, and Python's truthiness rules make both look like success.**"* Same family exactly.
+**Precedents: §T7.63a (the blueprint held the general form of four rules), the blueprint's failure
+mode 2 (T8 pass 14), §T6.2a (here).** ⚠ **The pattern is about this sweep, not the system: the rules
+are being RE-DERIVED from fresh pain, not discovered.** *Before adding a sixteenth form, grep the
+blueprint and the early transcripts for the principle in general language.*
+
+**Pass outcome: 1 defect of mine, 1 major live finding, 1 pattern. 🔴 CLEAN 0/3 · 12 passes.**
+
+---
+
 ### T9.26 — PASS 11 (**two-direction judgment, third run**) — **🔴 TWO defects, both mine, both in claims ABOUT THE SWEEP'S OWN RECORD · 0/3**
 *2026-09-21. Band **52 for a third run — 0 in, 0 out, the set byte-identical to passes 3 and 8**;
 direction 2 still the single self-authorship segment. **So the extraction is settled and this pass
