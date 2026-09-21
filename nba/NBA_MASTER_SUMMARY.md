@@ -6396,7 +6396,70 @@ vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship**
 writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
 but not the twelve.
 
-### T4.26 — PASS 6 (**angle: every measured volume in T4 re-verified against live Postgres**) — **✅ CLEAN 1/3**
+### T4.27 — PASS 7 (**angle: referential integrity across T4's tables**) — **🔴 NEW MATERIAL · COUNTER RESET 0/3**
+*2026-09-21. Not "is it documented?" and not "is the count right?" but **"do these tables actually
+join to each other?"** — a question no previous pass on any transcript has asked.*
+
+#### 🔴 T4.27a — **TWO OF THE THREE BACKFILLED SEASONS HAVE NO CALENDAR COVERAGE AT ALL**
+
+`[LIVE-AUDIT]` **VERIFIED** — `nba_stats.player_game_log` LEFT JOIN `nba_calendar.games` on `game_id`:
+
+| Season | Log rows | With a calendar row | **Without** |
+|---|---|---|---|
+| **2023-24** | 26,401 | **0** | **26,401** |
+| **2024-25** | 26,306 | **0** | **26,306** |
+| 2025-26 | 26,651 | 26,651 | 0 |
+
+**Zero, not "few".** The same holds for teams: 7,380 team-game rows, **4,920 without a calendar row**
+— and 7,380 − 4,920 = **2,460**, exactly the 2025-26 count. **Both tables split perfectly along the
+season boundary.**
+
+**The cause is visible in the calendar itself and needs no speculation**: `nba_calendar.games` holds
+**2025-26 and 2026-27 only** (verified in T2 pass 18). **The schedule was never backfilled for the
+two historical seasons that the game-log backfill deliberately added.**
+
+⚠ **Why this matters, concretely.** The calendar is where `game_date`, `game_datetime_utc`,
+home/away team ids, arena and `game_label` live. **Every schedule-derived feature the documents name
+as high-value — days of rest, back-to-backs, schedule density, home/away, travel, arena/altitude —
+can only be computed for 2025-26.** A join written against the game-log spine returns those features
+for one season in three and **silently returns nothing for the other two**: an inner join drops
+52,707 of 79,358 rows (66%), a left join NULL-fills them.
+
+**And the backfill's own stated purpose was the other two seasons.** The 3-season scope was chosen
+deliberately (§T4.15) — *"1-2 seasons is insufficient … no way to build an aging curve or tell a hot
+streak from a new baseline"*. **Two thirds of that data cannot currently carry a rest or schedule
+feature.**
+
+⚠ **This is not asserted to be a defect in T4.** T4 backfilled game logs; the calendar belongs to a
+different worker (`nba-static-schedule`). **Whether the schedule worker can fetch prior seasons,
+whether anyone noticed, and whether a later transcript addressed it are all NOT RECORDED** — they
+belong to the transcripts that own the schedule and the baseline pipeline. **Recorded here as live
+state with its exact shape, and flagged forward.** → `NBA_OPEN_ITEMS.md`.
+
+#### ⚠ T4.27b — 7,887 game-log rows have no player-dictionary row (≈10%)
+
+`[LIVE-AUDIT]` **VERIFIED**: `player_game_log` LEFT JOIN `nba_ref.players` → **7,887 of 79,358 rows
+unmatched.**
+
+**This is a structural consequence, not corruption.** `nba_ref.players` is built from
+`commonallplayers` with **`isOnlyCurrentSeason=1`** — it is the *current* roster, 582 players. The
+game logs span three seasons and include everyone who played in them, **so any player who left the
+league between 2023-24 and now has game logs and no dictionary row.**
+
+**The hazard is the join, not the data**: `player_game_log INNER JOIN nba_ref.players` silently drops
+~10% of rows, and the drop is **biased** — it removes exactly the departed players, which is the
+same survivorship selection already flagged for `playercareerstats`. **Recorded as state; nothing in
+the documents currently warns a query author.**
+
+#### ✅ T4.27c — the advanced tables are perfectly aligned
+`player_game_log_advanced` ↔ `player_game_log`: **0 orphans in either direction**, a clean 1:1 on
+`(player_id, game_id)`. ✅ `player_career_season_totals` and `player_shot_quality`: **0 rows with a
+player not in the dictionary** ✅ — both were built from the current roster, so they inherit its
+scope exactly.
+
+---
+
+### T4.26 — PASS 6 (**angle: every measured volume in T4 re-verified against live Postgres**) — **✅ CLEAN 1/3 *(superseded — pass 7 reset the counter)***
 *2026-09-21.*
 
 **Seven volume claims checked. Seven verified.** `[LIVE-AUDIT]`:
