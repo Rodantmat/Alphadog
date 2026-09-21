@@ -1580,6 +1580,44 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.10 — PASS 10 (**command stratum FINISHED — read to the end before writing, per Rule 2**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21. All 240 command segments now read.*
+
+1. ⚠ **CORRECTION — and the one I most needed to catch.** §T3.1 closed by asserting *"there is no
+   evidence in T3 of … connection-pool staleness."* **There is.** The resolution sat in the command
+   stratum, which that entry was written before reading. **The arc has three stages**: the race-
+   condition hypothesis, the operator-error retraction, and then the real mechanism —
+   ***"Cloudflare Hyperdrive's brief query-result caching layer … a test artifact of rapid-fire
+   manual triggering, not a logic bug … at the real weekly cadence there's no meaningful gap for
+   stale caching to matter."*** **The original instinct was partly right and I over-corrected it.**
+   *Asserting an absence from a partial read is the sharpest form of the failure Rule 2 addresses.*
+   → `NBA_OPEN_ITEMS.md` FROM T3 PASS 1, corrected in place
+2. ⚠ **The snapshot refresh is DELETE-then-INSERT, outside a transaction** — a full wipe followed by
+   582 individual inserts. **A run dying in between leaves an empty snapshot, which reads as
+   `is_first_run = true`, which suppresses every event** — so a partial failure produces not a wrong
+   diff but a **silent baseline reset**, and a week of roster changes goes unreported. *T3 suspected
+   this exact shape while debugging; that instance was its own test edits, but the pattern is still
+   what the worker does.* → FROM T3 PASS 10
+3. ⚠ **Officials are keyed by a normalized NAME** — `normalizeOfficialId(full_name)` — because the
+   Wikipedia roster has no stable ID. **A marriage, a spelling fix, a diacritic normalised
+   differently produces a spurious `departed_official` + `new_official` pair**, indistinguishable
+   from a real change. 80 officials, weekly, community-edited source. → FROM T3 PASS 10
+4. **Three entities, three event vocabularies** — players 4, teams 3, officials 2 — and **only the
+   team log records which field changed.** *The layer detects roster membership and team moves, and
+   is blind to attribute drift on players and officials.* → FROM T3 PASS 10
+5. **The `scope_lock`'s "active flag only" exception, in code**, with T3's comment: *"apply the real,
+   missing consequence the regular upsert worker never does … it never flips a player off when they
+   disappear from the active list."* **It fires only on `departed` events, which are themselves
+   suppressed on a first run.**
+
+**Also confirmed**: my own SQL from pass 9 (3,282 player / 630 team play-type rows) matches T3's
+reported figures exactly — *a rare case where a live count four weeks later reproduces a transcript's
+claim unchanged.*
+
+**Ratio**: 12 candidates, 5 findings. **Command stratum total: 240 segments, 30 findings — 1 per 8.**
+
+**Clean count 0/3.** **Remaining: the 137 result segments, then the two-direction judgment pass.**
+
 ### T3.9 — PASS 9 (angle: **the scrapers' own docstrings, and a live-data confirmation**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
