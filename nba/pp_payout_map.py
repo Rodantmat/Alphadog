@@ -234,6 +234,12 @@ def main():
         return 0
     rows = parse_board(doc)
     result["board"] = rows
+    board_leagues = sorted({str((((p.get("relationships") or {}).get("league") or {}).get("data") or {}).get("id"))
+                            for p in doc.get("data") or []})
+    league_names = sorted({(i.get("attributes") or {}).get("name") for i in doc.get("included") or []
+                           if i.get("type") == "league"} - {None})
+    result["meta"].update({"board_league_ids": board_leagues, "league_names": league_names})
+    print(f"LEAGUE|requested={LEAGUE}|board league ids={board_leagues}|names={league_names}", flush=True)
     std = [r for r in rows if r["odds"] == "standard"]
     alt = [r for r in rows if r["odds"] in ("goblin", "demon")]
     gob = [r for r in alt if r["odds"] == "goblin"]
