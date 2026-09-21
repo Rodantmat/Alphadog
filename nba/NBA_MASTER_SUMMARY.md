@@ -8045,6 +8045,14 @@ design names. **In all three the missing context was one line away from the thin
 practical form of all three rules is one instruction: **read the neighbours before drawing the
 conclusion** — the sentence above, the column beside, the rest of the key.*
 
+🔴 **The eleventh form, added 2026-09-21 after §T7.64a — WHEN VERIFYING A PARTITION, CHECK THAT THE
+PARTS SUM TO THE WHOLE.** A conformance query reported **34 conforming, 0 non-conforming** against
+**35** cells: the missing row's `variation_band` was NULL, so `= 'continuous'` yielded NULL, the
+predicate went NULL, and `NOT NULL` is NULL — **the row fell out of both sides.** `IS NOT DISTINCT
+FROM` gives 34 + 1 = 35. **A clean-looking zero can be an artifact of three-valued logic, and only
+the sum exposes it.** *It is the **no-error-raised** class — documented four times in the system —
+appearing in the sweep's own verification.*
+
 🔴🔴 **The tenth form, added 2026-09-21 after §T7.61a — A CORRECTION MUST BE APPLIED TO EVERY COPY OF
 THE CLAIM, NOT TO THE ENTRY THAT MADE IT.** Every correction in this sweep was written where the
 wrong claim was **first** made — but by then the claim had been copied into two or three other
