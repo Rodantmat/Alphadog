@@ -1014,6 +1014,3 @@ for ~1.5 bpg players, persists at any lambda**; blocks less 75–80 −2.6; stea
 > **slip EV computable and Goblin/Demon pricing comparable**.
 > **It does NOT mean any single leg is near-certain — a calibrated 75% still loses one time in four.**
 > **Calibration is the foundation; EDGE comes from the factor layer and the enrichment deltas on top.**"*
-</content>
-</parameter>
-<parameter name="message">docs: NBA baseline calibration - dedicated file per owner mandate
