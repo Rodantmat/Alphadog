@@ -1555,6 +1555,40 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T2.3 — PASS 3 (angle: **the RESULTS RETURNED stratum — 147 segments of what came back**) — **NEW MATERIAL · CLEAN COUNT 0/3 · TAIL EXHAUSTED**
+*2026-09-21. All five strata of T2's 0.40 tail now read.*
+
+**Four findings, the first two VERIFIED against the live data file today:**
+
+1. ⚠ **`nba_arenas_current.json` carries two TEAM fields under arena-shaped names.**
+   **`year_founded` is the franchise's founding year, not the arena's** — Boston `1946` (TD Garden
+   opened **1995**), Atlanta `1949` (State Farm Arena **1999**), Dallas `1980` (American Airlines
+   Center **2001**). **Off by decades on every row, in the direction a reader would not suspect.**
+   `owner` is the same error — Bill Chisholm owns the Celtics, not the building. Both come from
+   `teamDetails`, a *team* endpoint. Nothing reads them today, which is why it has gone unnoticed —
+   **and a venue-age factor would reach for `year_founded` first.** → `NBA_OPEN_ITEMS.md` FROM T2 PASS 3
+2. **`arena_capacity` is a quoted string (`"18624"`) while `year_founded` is a bare integer
+   (`1946`)** — mixed typing in one record from one source. Capacity sorts **lexically**, so
+   `"9000"` outranks `"18624"`, and it is `null` for about a third of teams. Three cases to handle,
+   none signposted. → FROM T2 PASS 3
+3. **The `_debug_headers` technique** — the arenas scrape's first output committed all-null arena
+   fields **plus the source's real column list**, which is what turned *"the field is empty"* into
+   *"the field does not exist"*, **in committed data rather than an expiring log.** The same move
+   would have shortened T1's `TeamAbbreviation` diagnosis. Recorded as a method. → FROM T2 PASS 3
+4. **The Wikipedia officials page marks active referees in bold, and the parser discards
+   formatting** — so the 80 rows are current by virtue of *which table* was parsed, not by the
+   page's own active/inactive signal. → FROM T2 PASS 3
+
+**On the stratum itself, and it is evidence for false-tail mechanism 0.** A large share of these 147
+segments is `web_search` output that has nothing to do with the system: **SaaS "leaderboard maker"
+marketing pages** (from a search for leaderboard data), **Darko Rajaković the Raptors head coach**
+(from a search for the DARKO metric), and ABA/NBL/African-league arena tables. **None of it will
+ever prose-match the documentation and none of it should.** It passes the substance filter because
+marketing copy is word-rich. *This is the clearest example yet of why the uncovered percentage
+cannot be read as a work queue.*
+
+**Clean count 0/3** — pass 3 found new material. **Tail exhausted; the judgment pass is next.**
+
 ### T2.2 — PASS 2 (angle: **the COMMANDS RUN stratum — 294 segments of tool_use, read as source**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
