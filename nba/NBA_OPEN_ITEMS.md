@@ -1662,6 +1662,25 @@ nba_stats.player_onoff_profile — season '2025-26', 582 rows, last write 2026-0
 **Every previously-recorded hardcoded season in this sweep was in a scraper's URL** (play types,
 tracking detail, `teamInfoCommon`, schedule). **This one is in the write path.**
 
+### ✅ BUT NOT EVERY SEASON LITERAL IS THE TRAP — classify by CADENCE, not by the string
+*Added 2026-09-21, T5 re-sweep pass 4, to stop this fix being over-applied.*
+
+`alphadog-v2-nba-static-backfill.js` **line 233** holds three season literals:
+```js
+const seasonSlugs = { "2023-24": "2023_24", "2024-25": "2024_25", "2025-26": "2025_26" };
+for (const [season, slug] of Object.entries(mode === "weekly" ? {} : seasonSlugs)) { … }   // line 242
+```
+**These are correct and must not be "fixed."** It is a **one-time backfill over completed, frozen
+seasons**, and line 242 guarantees the literals never reach a recurring run — **in `weekly` mode the
+loop iterates an empty object.**
+
+⚠ **The hazard is the rollover fix itself.** Whoever performs it will grep for `2025-26`, land on
+line 233, and "correct" a worker that is already right — turning a frozen historical job into one
+that chases the current season and re-mines **79,358 rows it already has**.
+
+**The rule**: *a season literal is a trap in a **recurring** write path and is **correct** in a
+one-time historical job over completed seasons.* **Check the worker's cadence before changing it.**
+
 ### ⚠ NAME IT AS THE TRAP IT IS
 **The scrapers are the natural and correct first place to look when fixing a season rollover** —
 that is where the season appears in a URL, that is what a search for `2025-26` turns up first, and
