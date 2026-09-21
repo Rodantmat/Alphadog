@@ -183,7 +183,8 @@ Same shape as `team_aliases`, keyed on `player_id`.
 | `arena_id` | TEXT | **PK** |
 | `arena_name` | TEXT | current sponsor names (Rocket Arena, Frost Bank Center, Xfinity Mobile Arena) |
 | `team_id`, `city`, `state` | TEXT | ✅ **`team_id` is THE team↔arena link** — **VERIFIED 2026-09-20**: 30 rows, `team_id` non-null on all 30, 30 distinct teams. **Not `nba_ref.teams.arena_id`, which is dead.** |
-| `capacity` | INTEGER | **null where the SOURCE lacks it** — not a scrape failure |
+| `capacity` | INTEGER | **null where the SOURCE lacks it** — not a scrape failure. **VERIFIED live 2026-09-21: 11 of 30 NULL** (matches `arenas_missing_capacity: 11` in T2's run response; previously recorded only qualitatively). ⚠ The source field is a **string** when present (`"arena_capacity": "18694"`) and the cast to INTEGER is implicit at the write — no `toIntOrNull`-style coercion, unlike the bio worker. |
+| *(absent)* `owner`, `year_founded` | — | ⚠⚠ **SCRAPED ON EVERY RUN, WRITTEN NOWHERE — and NOT recoverable from `raw_json`.** *Extended 2026-09-21 (T2 re-read pass 11).* `nba/scrape_nba_stats_arenas.py` lines 60–61 collect `"owner": col("OWNER")` and `"year_founded": col("YEARFOUNDED")`; `alphadog-v2-nba-static-arenas.js` line 71 writes five source-derived columns only, and this table has no column for either. **The obvious repair — add the columns, backfill from `raw_json` — fails**: across all 30 rows `raw_json ? 'owner'` matches **0** and `raw_json ? 'year_founded'` matches **0**; the stored payload holds four keys (`team_id, arena_name, arena_capacity, city`) and is a double-encoded string besides. **Why the stored payload predates the six-field scraper is NOT RECORDED — left OPEN.** → `NBA_OPEN_ITEMS.md`. |
 | `altitude_ft` | INTEGER | present from day one (Denver matters) |
 | `timezone` | TEXT | |
 | `source_key`, `raw_json` | | |
