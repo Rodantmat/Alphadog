@@ -893,6 +893,36 @@ projections); period props (1Q/1H) and double-double.
 **Correction — goblin floor is not universal:** NBA points-family goblins stop at 2.1× (2.08 floor), NBA rebounds/threes
 reach 2.0×, WNBA goblins reach 1.9× in most stats. Set NBA count-family floors from preseason data.
 
+### CONSERVATIVE MODE — owner policy (2026-09-21)
+**Owner:** anything we derive or backtest must aim for LESS earnings — harder lines, lower multipliers, with wiggle room
+sized to what we don't know; change later if the real boards say otherwise. Interpretation applied: "harder" = an OVER
+line moves UP (goblins AND demons), an UNDER line moves DOWN. Verified exact constants (standard factor 1; all-standard
+bases 3/6/10/20/37.5) are observations, not estimates, and stay unshaded.
+**Every safety number lives in ONE table, `nba_config.pp_conservative_policy`** (value + evidence per row):
+| Key | Values | Evidence |
+|---|---|---|
+| `leg_haircut` | favourites 3%, longshots 7%, extrapolated 17%, standards 0 | 1 − p10 of real/model: NBA goblins 0.971 (124), NBA demons 0.933 (235), beyond-edge demons 0.827 (95) |
+| `slip_haircut` | 2-pick alternates 2%, one alternate 2%, multi-alternate 6%, all-standard 0; round DOWN | slip validation errors 2.0% / 1.2% / 4.0% (worst 17%) |
+| `derived_line_shift` | Fantasy Score 1.0, combos 0.5, default 0.5 — against the pick | FS reconstruction sd ~1–1.4; combos sd 0.24 |
+| `fantasy_score` | gap = round½(3.2 + 0.07·C); goblin 2.2×, demon 4.0×; Less mirrors | WNBA prices 2.3× / 4.5–4.75× shaded and rounded down |
+**Per-leg: `pp-leg-v2-sqrt-cap-conservative` is CURRENT** (`pp_price_version` gained haircut_favourite / _longshot /
+_extrapolated, default 0). Verified against the best estimate on all 9,036 keys: ratios exactly 0.83 (982 extrapolated),
+0.97 (2,763 favourites), 0.93 (3,405 longshots), 1.00 (1,691 standards); 0 other fields changed — which also proves the
+rewrite reproduces the best estimate exactly. **The best estimate `pp-leg-v2-sqrt-cap` is kept** — flip back with two
+statements.
+**Slips: `nba_market.pp_slip_power_conservative(factors)`** = best estimate × (1 − slip haircut), rounded DOWN to the grid.
+Against 452 real quotes (real leg factors): at or below the real payout **97.1%** (2-pick alternates, 240), **97.2%** (one
+alternate, 72), **96.2%** (2+ alternates, 105) — vs 55–67% for the best estimate.
+**Found: same-game slips pay less.** All-standard slips are exact EXCEPT same-game ones (a 2-pick of opponents paid 2.9×,
+not 3.0×; Flex partials cut) — the 8.6% of all-standard overshoots. The standards backtest and paper log never stopped
+two legs coming from one game. **Conservative fix for the backtest build: every slip uses legs from DIFFERENT games.**
+**Spacing research — exhausted with the data we have:** fixed-rung props are SYMMETRIC and follow schedules — Fantasy
+Score gap = round½(3.2 + 0.07 × line) (reproduces all 15 distinct WNBA lines, 32/32 ladders); FG Attempted gap 2.0 (lines
+8.5–15.5); 3-PT Attempted 1.0 (4.5–6.5), 2.0 at 8.5. Price targets: goblins ~0.65–0.675, demons ~0.32–0.36. On NBA outcomes
+the Fantasy demon spacing matches its price (31.9% vs ~32%); goblins hit 73.5% vs ~65% — the one open question; the line
+shift and the shaded 2.2× cover it until the NBA preseason board settles it. Formula-ladder props need no spacing model:
+their real rungs are archived.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
