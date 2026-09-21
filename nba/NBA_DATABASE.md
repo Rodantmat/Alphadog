@@ -440,12 +440,15 @@ values — *"**these are the values the backtest will move**."*
 none survived at leg level**. **The matrix records what was considered; the cells record what earned a
 value.**
 
-🔴 **`[LIVE-AUDIT]` 2026-09-21 (T7 pass 10) — NOTHING IN THE REPO READS THIS TABLE, OR
-`factor_relevance`.** VERIFIED by repo-wide grep: both strings appear in the twelve documents and in
-**zero code files**. In all `.py`/`.js`, `nba_config` is referenced only as
-`nba_config.external_credentials` (12 sites) and `nba_config.pp_slip_rules` (2, out of scope).
-**With `role_tiers`, `stat_decay_config` and `ewma_alpha`, that is five NBA config tables read by
-nothing** — see the banner at the top of §2. *Cross-system context only (MLB is dropped): the same
+✅ **`[LIVE-AUDIT]` 2026-09-21 (T7 pass 10) — the §2 banner RE-VERIFIED at a wider scope, and it
+holds.** The banner's grep (T1 pass 36) covered the 190 `.py`/`.js` files in `nba/` plus the admin
+bridge; this pass grepped the **whole repository, unrestricted**, and `factor_profile_cells` and
+`factor_relevance` still appear in **zero code files** — one day later, against a repo another
+session committed to overnight. **The count of tables read by nothing is the banner's eight, not a
+new number.** One refinement: at repo level `nba_config` is read as `external_credentials` (12 sites)
+**and** `nba_config.pp_slip_rules` (2 sites, another session's table, **out of scope**) — so
+*"only `external_credentials` is read"* is true of the eight, not literally of the schema.
+*Cross-system context only (MLB is dropped): the same
 pattern under MLB's names **is** live — `config.enrichment_profile_cells` is read by
 `alphadog-v2-phase2a-run-environment.js:271`, `config_enrichment_profile_cells` by
 `alphadog-v2-score-audit.js:6221`, and `gbdt_training/validate_factor_coefficients.py:204` writes
