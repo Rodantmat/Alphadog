@@ -14430,6 +14430,89 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.28 — PASS 27 (**literal audit of the non-market schemas — `nba_ref`, `nba_config`, `nba_score`**) — **🔴 a defect in `NBA_DATABASE.md`, and the sharpest instance of rule 24 the sweep has found · 0/3**
+*2026-09-21. **The angle pass 26's defect earned.** Passes 7 and 18–21 audited `nba_market`; these
+schemas had been READ (T10's census) and never audited **literally** — value by value, against the
+prose. **Rule 26 applied from pass 0: every carrier count opened, zero or not.***
+
+#### 🔴 T11.28a — **`blowout_model` has THREE `kind`s, `NBA_DATABASE.md` says two, and one column holds three vocabularies**
+`[LIVE-AUDIT]`, census by `GROUP BY kind, side`:
+
+| `kind` | rows | `side` vocabulary | documented? |
+|---|---|---|---|
+| `minutes_by_margin` | **7** | margin buckets — `competitive` · `won by 12-20` … `lost by 25+` | ✅ in full, with counts and ratios |
+| `p_blowout` | **14** | **`favourite` · `underdog`** | ✅ named |
+| 🔴 **`sliding_scale`** | **14** | 🔴 **`fav` · `dog`** | ❌ **the `kind` is absent from the section; the values are 0 of thirty** |
+
+**7 + 14 + 14 = 35 ✅** — ***the row count was right and the "Two `kind`s" was wrong***, while
+**§T11.19a's column-collision entry already names all three**: two of the twelve disagreeing with
+each other, in the same document family, about the same table.
+
+🔴🔴 ***And the same two concepts are spelled two ways in one column of one table*** — `p_blowout`
+says `favourite`/`underdog`, `sliding_scale` says `fav`/`dog`, 7 rows each. **A `GROUP BY side`
+returns FOUR groups for TWO concepts and a filter on `side = 'favourite'` silently drops half.**
+⚠ NOT RECORDED whether one consumer reads both spellings or two consumers read one each.
+
+🔑 ***This is rule 24 at its sharpest.*** **`side` names a prop direction in ten tables, a team role
+in two `kind`s of an eleventh, and a margin bucket in a third `kind` of that same table** — so the
+collision is **not only between tables but between partitions of one column**, which is a level
+rule 24 did not reach. ✅ Corrected in `NBA_DATABASE.md`.
+
+#### 🔴 T11.28b — **`prop_taxonomy.applies_to_side`: a ninth descriptive column, 0 of thirty — and it names `triple_double`**
+**`both` 26 · `more` 2**, fully populated, and the two `more` rows are ***`double_double` AND
+`triple_double`***, with identical rows throughout. **The documents enumerate the table's "every
+descriptive column" as eight and this is a ninth** *(`stat_expression` is a tenth, also 0)*.
+
+🔑🔑 **It turns §T11.20b from an inference into a declaration.** §T11.20b reasoned from a subset
+relation that *"the Yes/No props never reach `final_hp`"*; **the taxonomy states it** — two props are
+`more`-only **by design**. ⚠ **And it is a different fact from the documented one**: the Goblin/Demon
+*"More-only"* rule in five of the twelve is a **line-layer** property of the board; **this is a
+prop-level property of the taxonomy, in none of them.**
+
+🔴 **And the pair is not treated alike**: live, `double_double` has **47,504** `final_hp` rows and
+**541** `baseline_ladder` rows; ***`triple_double` has ZERO in `final_hp`, `baseline_ladder`,
+`board_scored` and `rung_market`*** — **in the taxonomy and never once built.** **Five of the twelve
+document `double_double`'s *"sentinel −1.0, no ladder"*; none says `triple_double` shares it.**
+**Which it is — deferral or gap — NOT RECORDED** (rule 6).
+
+#### ✅ T11.28c — **§T9.37a sharpened from a majority to a census**
+`baseline_ladder`: **206,237 rows · 559 `used_emp = false` · 541 `double_double` · 18 other.** **And
+`double_double` has exactly 541 rows** — so ***every one of them is `used_emp = false`, 541 of 541***,
+and the 18 are the documented `threes_made` fall-throughs. **541 + 18 = 559** ✅. *"541 of 559 false
+rows are `double_double`"* understated it: **it is not that most false rows are `double_double`, it is
+that no `double_double` row is anything else** — which is what *"no ladder"* means, measured.
+
+#### ✅ T11.28d — **`nba_config` audited literally and it HOLDS — every partition closes and every claim is on file**
+*The counter-example this pass needed, so the finding above does not read as "the config layer is
+unreliable."* **`factor_registry` closes on 67 five independent ways** — `layer` 31 + 36 · `form`
+28 + 25 + 13 + 1 · `model_side` 28 + 24 + 15 · `macro_cluster` across 15 clusters · `derivable_now`
+39 + 28 — **and `compute_stage` 15 + 17 + 2 + 2 + 31 NULL = 67 with `NBA_DATABASE.md` stating *"NULL
+(every baseline-layer row)"* exactly.** ✅ **Verified: `compute_stage` is NULL on precisely the 31
+`layer = 'baseline'` rows and set on precisely the 36 enrichment rows — a perfect correspondence, so
+the NULL is by design and the documents say so.** 📌 *These are still five slices of one table
+(§T11.12) — the audit confirms the values, not an external denominator.* ⚠ **One self-correction in
+flight**: the pass's own plan called `compute_stage` a `worker_definitions` column; **it is on
+`factor_registry`, and the query failed rather than guessing** (rule 21).
+
+#### 📌 T11.28e — **`nba_score.paper_picks`: shape on file, still empty**
+§T11.19 found it *"present, empty, NOT RECORDED what it is."* **Its 15 columns, read live**:
+`strategy` · `game_date` · `player` · `prop` · `line` · `side` · `model_value` · `final_hp` ·
+**`pick_rank`** · **`slip_no`** · **`threshold`** · `snapshot_label` · `logged_at` · **`result`** ·
+`graded_at`. **0 rows.** 🔑 **`slip_no` is the first slip-level column anywhere in the schema** — and
+per rule 6 that is what the columns say, not what the table is for; **its purpose remains NOT
+RECORDED.**
+
+#### ⚠ T11.28f — **A loose-pattern failure of my own, caught in-pass by rule 26**
+The first probe for `blowout_model`'s `fav`/`dog` values searched `underdog` and returned **23 of
+thirty / 11 of the twelve**. ***Every hit was the APP Underdog.*** **Discarded, not reported**, and
+re-probed as column-scoped literals — which returned **0 of thirty** with a passing control.
+🔑 **Rule 20's failure mode and rule 26's remedy in one probe**: the count was large, confident and
+entirely about something else, and **opening the hits is the only thing that told the difference.**
+
+**Pass outcome: 🔴 a defect in one of the twelve, corrected. CLEAN 0/3 · 28 passes.**
+
+---
+
 ### T11.27 — PASS 26 (**the closing novelty audit over all thirty, rule-22 controlled**) — **❌ IT WOULD HAVE CLOSED T11 AND FOUND A DEFECT INSTEAD, FOR THE SECOND TIME · 0/3**
 *2026-09-21. **Thirty-nine probes across the two trees, every one positive-controlled, every hit
 opened.** The mandate was to test whether everything passes 20–25 added is genuinely new. **Most of it
