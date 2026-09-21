@@ -317,6 +317,46 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T3 PASS 3 — THE SEASON PARAMETER WAS HARDCODED TO A CONCLUDED SEASON *(added 2026-09-21)*
+
+### As it stood in T3, 2026-09-03
+`nba/scrape_nba_playtypes.py` built its request with the season written into the URL:
+
+```python
+f"&SeasonType=Regular+Season&SeasonYear=2025-26&TypeGrouping={type_grouping}"
+```
+
+**`2025-26` is the season T3 had just established was already over.** Pass 1 records T3 noticing
+this for the schedule endpoint — *"I should actually be scraping season=2026-27 rather than the
+concluded 2025-26 season"* — alongside the untested assumption that *"the other endpoints … are
+likely season-agnostic."* **`synergyPlayTypes` is not season-agnostic: it takes `SeasonYear`
+explicitly, and T3 passed it the concluded season.** So the play-type profiles loaded that day
+describe 2025-26, not the season the system was being built for.
+
+*This is what the dated assumption in FROM T3 PASS 1 cost, in one concrete scraper. Recorded as it
+stood; no later knowledge applied.*
+
+### `[LIVE-AUDIT]` — the live file no longer matches, and the change is not yet attributed
+***VERIFIED 2026-09-21** by direct read of `main`:*
+
+```python
+from nba_season import active_stats_season
+SEASON = active_stats_season()
+...  f"&SeasonType=Regular+Season&SeasonYear={SEASON}&TypeGrouping={type_grouping}"
+```
+
+**The hardcoded literal is gone, replaced by a computed season from an `nba_season` module.**
+**Which transcript made that change, and when, is NOT established here** — this sweep has not yet
+reached it. **When a later transcript introduces `active_stats_season()`, record the supersession
+there with both dates and a pointer back to this entry.** *Tagged `[LIVE-AUDIT]`: live-system state,
+not T3 material, and it does not affect T3's clean count.*
+
+**Worth checking when that transcript is reached**: whether the other season-scoped scrapers were
+migrated at the same time or one at a time, and whether any data loaded under the hardcoded season
+was ever re-scraped rather than left in place.
+
+---
+
 ## FROM T3 PASS 2 — THE DARKO EXTRACTION IN FULL, AND A SELF-DIAGNOSING SCRAPER PATTERN *(added 2026-09-21)*
 *Recorded as of 2026-09-03.*
 
