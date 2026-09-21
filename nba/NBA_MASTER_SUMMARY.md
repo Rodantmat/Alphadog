@@ -15535,7 +15535,7 @@ def ladder_depth(prop):
 
 **VERIFIED — what is in the table.** `max(ladder_offset)` per prop per as-of day:
 
-| as-of | props | loaded | regime |
+| as-of | props | loaded (**UTC** — zone added 2026-09-21, §T9.45a) | regime |
 |---|---|---|---|
 | **2025-11-29** | 22 | 2026-09-20 03:23 | **per-prop** — **THIRTEEN of the 20 `LADDER_DEPTH` keys match exactly** *(⚠ corrected from "ten" 2026-09-21 by §T9.30a — ten was the number of examples listed, not the count)*: `points` 14 · `rebounds` 6 · `fgm` 6 · `fg3a` 6 · `fga` 10 · `dreb` 5 · `fta` 5 · `ftm` 5 · `oreb` 3 · `turnovers` 3 · `personal_fouls` 3 · `steals` 2 · `blocks` 2. **The other 7 do not**: `pra` 10≠16 · `pts_reb` 10≠15 · `pts_ast` 10≠14 · `fantasy_score` 10≠16 · `reb_ast` 10≠7 · `assists` 6≠5 · `threes_made` 6≠4. **13 + 7 = 20 keys, plus `stocks` and `double_double` (not keys) = 22** ✅. 📌 `fga`'s match is **ambiguous** — its table value **is** the `.get(prop, 10)` default — so **12 unambiguous**. |
 | **2026-01-15** | 22 | 2026-09-19 22:35 | **flat 10 — every prop**, `points` included |
