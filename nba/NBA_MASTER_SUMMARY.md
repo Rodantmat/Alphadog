@@ -9326,6 +9326,35 @@ bands, direction, prop line), and the design document that gets materialised int
 **Seven owner turns sit in the tail**, the most of any transcript; T2–T6 had at most five, and T5 and
 T6 had none.*
 
+### T7.37 — PASS 8 (**wiring**) — **✅ CLEAN 2/3 · one `[LIVE-AUDIT]` refinement that completes §T7.32a**
+*2026-09-21.*
+
+**`alphadog-v2-nba-daily-delta` is fully wired**: worker file ✅ · manifest ✅ · **3 sites** in
+`alphadog-v2-admin-sql.js` ✅ · `generate_wrangler_configs.py` ✅ · **2 workflows** ✅. The four-site
+model holds. **Nothing new.**
+
+#### 🔑 T7.37a — `[LIVE-AUDIT]` **WHY the four workers still hardcode the season: there is no JS-side helper**
+
+`nba_season.py` is **Python**. The scrapers are Python; **the workers are JavaScript.**
+`[LIVE-AUDIT]`: **zero of the `alphadog-v2-nba-*.js` workers reference `nba_season` or `NBA_SEASON`** —
+they cannot, and **no JavaScript equivalent exists.**
+
+**This completes the picture §T7.32a left incomplete.** The rollover work was not abandoned halfway
+out of carelessness — **it was done on the side where the tool existed.** 18 scrapers adopted the
+helper; the four weekly static writers had nothing to adopt.
+
+✅ **And the fix pattern already exists, in one worker.** `alphadog-v2-nba-daily-delta.js` lines
+154/159 use **`f.season || season`** — *take the season from the committed file's metadata, fall back
+to a detected value.* **T7 confirmed the plumbing for this when it noted `"both metas carry
+season"`.** So the remedy for the four is neither a new helper nor a JS port: **read the season the
+scraper already wrote into the meta file.**
+
+**Recorded as `[LIVE-AUDIT]` state, so it does not reset the clean count** — but it turns §T7.32a
+from *"four workers are wrong"* into *"four workers are wrong, here is exactly why, and here is the
+one-line pattern that fixes them, already working in a sibling."* → `NBA_OPEN_ITEMS.md`.
+
+---
+
 ### T7.36 — PASS 7 (**the mid-band 0.40–0.45 seam**) — **✅ CLEAN 1/3**
 *2026-09-21. 32 segments in the seam.*
 
