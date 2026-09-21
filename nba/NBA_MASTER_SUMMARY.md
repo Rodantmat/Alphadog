@@ -8081,7 +8081,12 @@ many places, but **two claims colliding on a word**. Grepping the wording finds 
 object never would.*
 
 🔴🔴 **The tenth form, added 2026-09-21 after §T7.61a — A CORRECTION MUST BE APPLIED TO EVERY COPY OF
-THE CLAIM, NOT TO THE ENTRY THAT MADE IT.** Every correction in this sweep was written where the
+THE CLAIM, NOT TO THE ENTRY THAT MADE IT.** ⚠ **SHARPENED after §T9.25a**: corrections reliably reach
+the **entry** and the **topical documents** and reliably **stop at the summary rows** — **the ledger
+row, the transcript's closing summary and the run log**, which are derived views that nothing
+re-derives, **and which are what a reader reads first.** *The `6 of 28` fix reached three places and
+missed exactly those three.* **When correcting a finding, grep the ledger and the run log by name
+before finishing.** Every correction in this sweep was written where the
 wrong claim was **first** made — but by then the claim had been copied into two or three other
 documents. The `undifferentiated` claim was corrected in four places and **left standing in two**,
 one of them eleven lines below its own correction. **Find the copies by grepping the claim's
