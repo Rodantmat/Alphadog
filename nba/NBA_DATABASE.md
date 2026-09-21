@@ -605,6 +605,19 @@ own table.** The trap is that the documents use all of them and never say which 
 | **rate tier** | **`tier_label`** | — | — | — |
 | **prop** | `canonical_prop_key` | `prop` | `canonical_prop_key` | — |
 
+🔴 **AND `snapshot_label` CARRIES A DIFFERENT VOCABULARY PER TABLE** *(added 2026-09-21, §T11.18b)*:
+
+| table | `snapshot_label` values | rows |
+|---|---|---|
+| `nba_market.board_snapshots` | **`close` · `routine` · `window`** | 27,067,871 |
+| `nba_market.game_lines_snapshots` | **`morning` · `window`** | **153,934 + 153,670 = 307,604** ✅ |
+
+***Same column name, same schema, different value sets.*** **`close` and `routine` exist only on the
+board table; `morning` only on the game-lines table; `window` is the only value common to both.**
+📌 `nba/export_market_spreads.py` filters `snapshot_label IN ('morning','window')` — **correct for
+its table, and it would select almost nothing on the other.** ⚠ *`morning` covers **2,468** events
+against `window`'s **2,466** — a two-event difference, **NOT RECORDED** why.*
+
 🔴 **`rate_tier` is NOT a column anywhere** — it is the design's word for `tier_label`.
 📌 **Mentions across the twelve**: `variation_band` **43** · bare `role_tier` **40** · `var_band`
 **12** · `tier_label` **11** · `role_tier_key` **11** · `rate_tier` **4**. ***Both vocabularies are
