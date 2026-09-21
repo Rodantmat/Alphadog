@@ -14417,7 +14417,11 @@ the loader.
 >
 > **Corpus**: **769 segments** — 764 assistant, **5 owner** *(counted from the transcript's own
 > segment list, not from the tail — the §T8.24a failure)*. **703 uncovered vs the twelve (91.4%)**,
-> 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
+> **685 vs all thirty — both measured at pass 0, and both are measurements of a MOVING corpus**
+> *(dated 2026-09-21 by §T9.49a; §T9.28b identified this and did not date the two rows it described)*.
+> **At pass 33 the same script returns 690 and 675** — the difference is this sweep's own writes into
+> the twelve. **769 is a property of the transcript and does not move; the uncovered counts are not.**
+> Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
 ### T9.48 — PASS 33 (**live numeric re-verification**) — **🔴 the census ROSE because documenting the problem added instances of it · 0/3**
