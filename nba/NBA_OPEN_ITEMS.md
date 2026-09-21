@@ -34,6 +34,25 @@ module itself.** *Whether the Oct-1 boundary was deliberate is **NOT RECORDED**.
 `NBA_COMPASS.md` line 9 documents the switch as **"Oct 3"** — **the document and the code disagree,
 and neither matches the 20th.**
 
+### 🔴🔴 The dates, verified by execution (T7 pass 23)
+
+The module was imported and called with fixed dates — **read-only, nothing written or triggered**:
+**2026-09-30 → `2025-26`; 2026-10-01 → `2026-27`.** And `stats_seasons(3)` flips the same day from
+`['2025-26','2024-25','2023-24']` to **`['2026-27','2025-26','2024-25']`** — **dropping the oldest
+real season and adding an empty one**, which is the same bug family its own docstring records having
+already fixed once.
+
+**Six scheduled runs fall inside the window.** Only four NBA workflows are scheduled at all;
+**two of them run the affected scrapers weekly on Mondays** — `nba-scrape.yml` (`0 9 * * 1`) and
+`nba-p1-weekly-static.yml` (`0 19 * * 1`). **Mondays between Oct 1 and the Oct 20 opener:
+`2026-10-05`, `2026-10-12`, `2026-10-19`.**
+
+> **2 workflows × 3 Mondays = 6 scheduled runs against an empty `2026-27`, before a single
+> regular-season game is played.**
+
+🔴 **OWNER DECISION — O4.** This is the only finding in the sweep whose window opens before the
+sweep can reach the transcripts that would explain it. **Nothing has been changed.**
+
 ## ⚠ THE 2026-27 SCHEDULE IN `nba_calendar.games` IS **TWO GAMES SHORT PER TEAM, ON ALL THIRTY**
 *`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by live SQL (T7 pass 11). Detail: `NBA_MASTER_SUMMARY.md`
 §T7.40a. ⚠ **The 1,200-vs-1,230 shortfall itself was already recorded** at §T2.18 (T2 pass 18); what
