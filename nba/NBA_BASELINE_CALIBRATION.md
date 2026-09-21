@@ -15,6 +15,43 @@ document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 
 ---
 
+## 0x. 🔴 THREE THINGS THE MANDATED DOCUMENTS DID NOT CARRY — **a leakage rule and two measured priors**
+*Recorded 2026-09-21 (T12 pass 1, §T12.2c). **Transcript `2026-09-11-21-01-23`, tail segments 568,
+604.** Each probed against the baseline `c5798146` with positive controls (`pdfplumber` 8 of thirty,
+`absence_prior_measured` 2) and every hit opened — rules 20, 22, 26, 28.*
+
+### 🔴 1 · END-OF-SEASON TABLES ARE DEMOTED TO CROSS-CHECKS — **"they leak the future"**
+***The parity rule, stated by the owner and implemented in one module***: **every enrichment backfill
+must be the SAME object the daily mining produces — train = live — with `nba/nba_asof.py` as the
+single as-of rule set**, and ***end-of-season tables leak the future, so they are cross-checks
+only.*** **What replaces them: weekly as-of snapshots, 25 per season × 3 seasons, for `pt_defend`,
+`hustle` and `clutch`.**
+🔴 ***This is in FOUR non-mandated documents and ZERO of the twelve*** — `NBA_COMPASS.md`,
+`NBA_DAILY_PARITY_AND_BACKFILL.md`, `NBA_LESSONS_LEARNED_FROM_MLB.md`, `NBA_PROJECT_LOG.md` — **all
+four saying the same thing, so the rule is well established and simply never entered the mandated
+set.** 🔑 **It belongs here because it is a LOOK-AHEAD LEAKAGE constraint on every calibration in
+this document**: *a factor built from a season aggregate and sliced per date is trained on
+information the live pipeline will not have, and the better number it produces is the symptom*
+*(the same class as §4b's `.shift(1)` leakage guard)*.
+
+### 🔴 2 · THE ABSENCE PRIOR, MEASURED ON OUR OWN DATA — **and it reverses the folklore**
+**Config key `absence_prior_measured`, n = 59,785**: **base 10.4% · back-to-back 13.5% · stars (33+
+minutes) on the road on a b2b 17.6%** — and 🔑 ***a prior night of ≥ 38 minutes LOWERS b2b absence,
+which is the opposite of the "heavy minutes → rest risk" folklore.*** **"Folklore reversed."**
+⚠ **`n = 59,785` and the phrase are in ONE document — `NBA_PROJECT_LOG.md` — and 0 of the twelve.**
+
+### 🔴 3 · PRIMARY DEFENDER QUALITY (`m1`), MEASURED — **elasticity 0.39**
+**Config key `primary_defender_quality_measured`**: **toughest quintile −5.5% · easiest +6.7% ·
+elasticity 0.39 · high scorers −9.5%.** ⚠ **In three of thirty** *(`NBA_COMPASS.md`,
+`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`, `NBA_PROJECT_LOG.md`)* **and 0 of the twelve.**
+
+⚠⚠ **Stated at evidence strength**: *these are the transcript's own reported measurements, recorded
+here because the mandated set did not carry them.* **They are NOT re-derived live by this pass —
+`absence_prior_measured` and `primary_defender_quality_measured` are config keys, and re-deriving
+them from the game logs is a separate job.** **A dated STATE** *(O9)*.
+
+---
+
 ## 0y. ⚠ WHERE THE BASELINE'S CONSTANTS ACTUALLY LIVE — in Python, not in config
 *VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
 
