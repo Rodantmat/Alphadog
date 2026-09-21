@@ -109,6 +109,40 @@ against a wrong picture of what remains.
 
 # ⚠ SCOPE AND LEDGER RULES — owner instruction, 2026-09-20
 
+## ⚠⚠ READING ORDER IS STRICTLY CHRONOLOGICAL — owner instruction, 2026-09-21, superseding yield order
+**T1 → T20 in the order they happened. Not by uncovered percentage.**
+
+**Why, and it is the change-tracking rule.** These documents must record *the updates, adjustments,
+improvements and fixes* with dates, so a reader can tell what is current from what was superseded.
+**That only works if the transcripts are read in the order they occurred.** T15 is the reliability
+audit — it corrects and retracts work built in T8, T9 and T10. Documenting T15 first writes the
+correction before the thing being corrected exists in the record, and worse: on later reaching T8,
+the **superseded** version reads as a new finding, with nothing marking it as already overturned.
+
+**This system changed repeatedly** — the blowout factor moved from a derived proxy to the real market
+spread, A2 was built and then retracted, the recency blend was rejected, the ladder ran v1 through
+v18. **Read in order each is a clean supersession with a date. Read out of order each is a
+contradiction with no way to tell which side is current.**
+
+**Chronological is also expected to be faster.** Later transcripts inherit context from earlier ones,
+so by T12 much of a transcript should already be documented and its tail should exhaust quickly.
+Yield ordering front-loads the least-anchored material.
+
+### The supersession rule that goes with it
+When a later transcript changes something an earlier one established, **record it as a supersession
+carrying BOTH dates and a pointer to the earlier entry — never as a silent replacement.** The history
+is part of what these documents are for. *"X was Y (Tn, date); changed to Z for reason W (Tm, date)."*
+
+### What did not change
+The coverage tool is unchanged and still decides **what to read inside a transcript**. It simply no
+longer decides **which transcript comes next**. Uncovered percentage stays useful as a progress
+signal and as a check that a tail was genuinely exhausted — read as *"not yet in the twelve"*, never
+as *"undocumented"* (see the tool's own `WHAT "UNCOVERED" ACTUALLY MEASURES`).
+
+**Prior state, recorded rather than erased**: passes up to 2026-09-21 planned T1 first and then
+descending uncovered percentage, which would have put the A2/N1 reliability audit (T15) second. That
+ordering was **withdrawn by the owner before any T15 material was written into these documents.**
+
 ## ⚠ COMPLETION RULE, amended 2026-09-21: the judgment pass closes a transcript, not the coverage number
 **A transcript is done when its judgment pass is clean.** Coverage decides *what to read*. It does
 not decide when you are finished. Reading the whole tail is **necessary and not sufficient.**
