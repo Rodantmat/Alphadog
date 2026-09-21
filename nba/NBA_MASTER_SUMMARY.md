@@ -14430,6 +14430,75 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.57 — PASS 56 (**the RULE-29 SIBLING RE-TEST — rule 6 applied to rule 29, the pass after it was written**) — **🔴🔴 the corpus's most widely reused POPULATION figure cannot be reproduced · ✅ the verdict it carries survives on a population twice the size · 0/3**
+*2026-09-21. **The obligation**: rule 29 was born from ONE claim that held by name and split by
+artifact. Its siblings — every *"nothing reads / no writer covers / no code references"* claim on
+T11 — had never been re-tested. **`SELECT` only; read-only.***
+
+#### ✅ T11.57a — **The enumeration, and the artifact test**
+**The class**: the eleven in-scope `nba_config` tables *(14 base tables less the 3 `pp_*` the
+concurrent session owns)*, plus the named claims — **`sliding_scale` · `prop_taxonomy` ·
+`variation_bands` · `classification_config` · `injury_report_snapshots` · the four scrapers of
+§T11.37a.** **Tested by the ARTIFACT — the SCHEMA-QUALIFIED table name — across every non-markdown
+file in the WHOLE repository** *(314 `.py`/`.js`: `nba/` 157 + repo root 151 + 6 elsewhere)*,
+**control `nba_market.board_snapshots` firing in 21.**
+
+| result | tables |
+|---|---|
+| **ZERO schema-qualified references — 10** | `classification_config` · `factor_registry` · `factor_relevance` · `factor_profile_cells` · `stat_decay_config` · `system_settings` · `role_tiers` · `variation_bands` · `worker_definitions` · `calibration_log` |
+| **referenced — 1** | **`external_credentials`** *(3 files)* |
+
+⚠ **RULE 28 KILLS IT AS A FINDING — the EIGHTH candidate killed in five passes.** `NBA_GLOSSARY.md`
+already states it: ***"VERIFIED 2026-09-20: no code reads any of them … the only config table
+anything reads is `external_credentials`."*** ✅ **So the pass CONFIRMS a published verdict over a
+population nearly twice the size — which is the right outcome for a sibling re-test.**
+
+#### 🔴🔴 T11.57b — **But the population it was verified over cannot be reproduced**
+***"A grep of all 190 `.py`/`.js` files in `nba/`" is the most widely reused population figure in
+this corpus: it is in TEN of the twelve, and at least EIGHT verified findings rest on it*** — *the
+unread config tables · `teams.arena_id` written by no code · `credential_value_encrypted`'s missing
+encrypt/decrypt step · `classification_config` · `system_settings` · `ladder_calibration` · the
+`NOT IN` bug class absent · the 24 `DELETE`/`TRUNCATE` statements.*
+🔴 **`nba/` holds 157** — **136 `.py` + 21 `.js`, recursive; `nba/data/` contains no code.** **Not
+190.**
+🔴 **And the stated scope names a directory that does not exist**: the documents say *"including
+`backtest/` and `workflows/`"*, but `nba/`'s subdirectories are `sql`, `backtest`, `transcripts`,
+`baseline`, `data`, `tools`, `__pycache__`. ***The workflows are `.github/workflows/` — 40 `.yml`
+today — outside `nba/`.***
+⚠ **157 + 33 = 190**, so the figure is arithmetically consistent with *`nba/` code plus the workflow
+files when there were 33 of them* — ***a reconstruction, not a verification. HOW it was counted is
+NOT RECORDED*** (rule 6). 📌 **Recorded as a standing correction at the head of
+`NBA_OPEN_ITEMS.md`, once, rather than patched into ten documents** *(the propagation choice
+§T10.18b made explicit)*.
+
+#### 📌 T11.57c — **Two membership inconsistencies inside the twelve, and they are §0z's class**
+**`NBA_GLOSSARY.md` NAMES seven unread config tables. `NBA_OPEN_ITEMS.md` asserts EIGHT. The
+measured set is TEN.** ***The prose of both is right and neither enumeration is*** — **the class is
+stated, the membership is not**, which is precisely the failure the CLASS REGISTER was built for.
+
+#### ⚠ T11.57d — **The name test is not the artifact test — second instance in two passes**
+**`system_settings` matches ELEVEN non-markdown files by BARE name and ZERO when schema-qualified,
+and all eleven are MLB-side.** *§T11.55c's `prop_taxonomy` trap again.* 🔑 ***This is why rule 29
+says schema-qualified, and it is the second time in two passes that an unqualified name would have
+produced a false result.***
+⚠⚠ **And the strength bound, stated rather than left implicit**: **all of this measures the
+REPOSITORY, not what runs.** *A deployed worker whose source is not in this repo, or an unqualified
+query under a `search_path`, would not appear.* ***"Read by no code" is stronger than the evidence
+supports; "no schema-qualified reference in the repository on 2026-09-21" is what was measured.***
+
+#### ✅ T11.57e — **The band, and the ±1 resolution confirmed empirically**
+**Baseline `5dfb72ab` 13 / 3 / 695 / 689 — the TWENTY-SECOND identical measurement. Working 39 / 0 /
+664 / 664.** ***Predicted: `uncovered12` within ±1 of 663, no exact value named. Measured 664.***
+**Thirteenth pre-registration: twelve hits, one miss.** 🔑 ***And the figure has now gone 664 → 663 →
+664 across three consecutive passes with no coverage change — which is §T11.55b's ±1 resolution
+demonstrated rather than asserted.***
+
+**Pass outcome: 🔴🔴 one population figure in ten of the twelve shown unreproducible, ✅ the verdict
+it carries confirmed over a larger population, 📌 two membership inconsistencies recorded, and an
+eighth candidate killed by rule 28 before it was written. CLEAN 0/3 · 57 passes.**
+
+---
+
 ### T11.56 — PASS 55 (**the FOURTEENTH two-direction judgment — the first run since the band's resolution was known**) — **🔴 §T11.37a NARROWED by an output-path test · ✅ two settled claims survive and strengthen · ❌ a row count corrected · 0/3**
 *2026-09-21. **The pre-registration was made in the honest form the instrument now permits** (§T11.55b):
 *the baseline at 13 / 3 / 695 / 689 for a **twenty-first** identical measurement, and `uncovered12`
