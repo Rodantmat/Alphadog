@@ -264,6 +264,34 @@ thereafter. **The 80-vs-83 name discrepancy below is the symptom of this; fixing
 
 ---
 
+## ⚠⚠ `game_officials.assignment` IS NULL ON ALL 3,681 ROWS — the crew role was never captured
+*Found 2026-09-21, T6 re-sweep pass 6. **`[LIVE-AUDIT]` VERIFIED**. Detail: §T6.22a.*
+
+`full_name` 3,681/3,681 ✅ · `jersey_num` 3,681/3,681 ✅ · **`assignment` 0/3,681** ❌
+
+**The column is plumbed end to end and arrives empty.** The scraper asks for it
+(`"assignment": o.get("assignment") or None`), the worker carries it through its INSERT, and
+`NBA_DATABASE.md` lists it as a real column. **`boxscoresummaryv3` does not populate it**, and
+`or None` turns the absent key into a silent NULL.
+
+⚠ **`assignment` is the crew role** — crew chief, referee, umpire. Without it **the three officials
+of a game are an unordered set**, so any analysis that treats the crew chief differently is
+impossible — on top of the 100% join failure above. *Whether `boxscoresummaryv3` exposes the role
+under a different field name is **NOT RECORDED**: T6 never checked, because nothing surfaced the
+emptiness.*
+
+**Third dead column in the sweep, and each has a different mechanism:**
+| Column | Mechanism |
+|---|---|
+| `nba_ref.teams.arena_id` | exists, **written by no code** |
+| `arenas.owner` / `year_founded` | **scraped every run, written nowhere** |
+| **`game_officials.assignment`** | **written faithfully, with a value the source never sends** |
+
+**The common thread is that none of the three fails loudly** — a NULL column looks identical whether
+it is unwired, unwritten, or unsupplied.
+
+---
+
 ## 🔴 `lineup_profile` IS EXACTLY 2,000 ROWS PER GROUP SIZE — the API cap, hit four times
 *Found 2026-09-21, T6 re-sweep pass 5. **`[LIVE-AUDIT]` VERIFIED**. Detail: §T6.21b.*
 
