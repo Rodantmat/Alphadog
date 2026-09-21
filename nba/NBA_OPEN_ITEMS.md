@@ -8922,7 +8922,7 @@ DARKO · shot quality · defender ratings · static context. **No differential w
 2. Because the worker diffs against **its own** snapshot tables, whenever it is next run it will report
    the **accumulated** difference since its last run — not a weekly delta. The event log will show one
    enormous batch rather than a history.
-3. Its snapshot baseline is from **2026-09-03** and is now stale by the whole off-season.
+3. Its snapshot baseline is from **2026-09-02 19:47 UTC** *(corrected from 2026-09-03, §T9.35a)* and is now stale by the whole off-season.
 
 **The fix is small**: add a step to `nba-p1-weekly-static.yml` calling the differential worker
 **AFTER** the scrape+load steps (it must see the fresh data), and accept that the first run will emit a
