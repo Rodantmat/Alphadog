@@ -283,7 +283,19 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
    the step (*"`nba-baseline.yml` — manual trigger only, cron OFF per owner"*). **All six of O7's
    "differently-worded" probes were worded in the transcript's vocabulary and none in the documents'
    (`cron`, `OFF`, `intentionally`). Rule 20.**
-0b. **TWO MORE LIVE API KEYS in a transcript** — **OWNER DECISION O8**, T11 pass 0 (§T11.1b): owner
+0a. **EVERY INJURY SNAPSHOT TIMESTAMP HARDCODES `-05:00`** — T11 pass 3 (§T11.4c), `[LIVE-AUDIT]`
+   across **all 14 month-shards, both seasons; no other offset exists in the data.** The NBA
+   publishes in **Eastern**, which is **−04:00 from mid-March to early November**, and the season
+   runs late October → mid-April — **so the opening fortnight and the closing month are stamped an
+   hour late, and the 2026-10-20 opener is inside that window.** ⚠ `NBA_SYSTEM_ARCHITECTURE.md`
+   already carried the caveat *"the season crosses DST… ⚠ noted"* **and** the standard it violates.
+   **The league republishes 10–27 times a day, so an hour is several snapshots.**
+0b. 🔴 **SLEEPER HAS ONE DAY OF BOARD HISTORY** — T11 pass 3 (§T11.4a): **1,276 rows, one label, one
+   day**, against PrizePicks' **2,199,354 over 378 days** and Underdog's **939,719 over 380**.
+   **Betr starts 2025-11-23 (131 days) and Pick6 2025-05-26 (176).** *The owner named
+   sleeper/underdog/prizepicks and asked for two seasons to train the derived fallback.* **Cause NOT
+   RECORDED and not guessed.**
+0c. **TWO MORE LIVE API KEYS in a transcript** — **OWNER DECISION O8**, T11 pass 0 (§T11.1b): owner
    turns 197 and 641 carry an earlier **The Odds API** key and the **$30 subscription** key.
    ***Values not reproduced anywhere.*** **Third credential exposure, and rotation is the remedy.**
 1. **Live balldontlie.io API key committed** in `NBA_MASTER_SUMMARY.md` and in the transcripts.
