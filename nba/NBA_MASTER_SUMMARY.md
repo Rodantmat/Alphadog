@@ -14483,11 +14483,19 @@ claims** of §T9.33–§T9.41, after pass 26 retracted one.*
 
 **Three statements, three commits, in order:**
 
-| Statement | Commit | Timestamp |
-|---|---|---|
-| **Line 11** — *"turnovers/fga/fg3a/ftm/personal_fouls: configured, NOT yet run."* | `e0e49be1` | **2026-09-08 21:57:30 −0700** |
-| **Line 103** — the `fga` entry's `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` | `98dcccb1` | **2026-09-08 22:55:07 −0700** — **58 minutes later** |
-| **Lines 108–109** — `# ADDED 2026-09-12 … NOT yet certified` | `1677b3d7` | **2026-09-11 19:49:35 −0700** |
+| Statement | Commit | Local (−0700) | **UTC** |
+|---|---|---|---|
+| **Line 11** — *"turnovers/fga/fg3a/ftm/personal_fouls: configured, NOT yet run."* | `e0e49be1` | 2026-09-08 21:57:30 | **2026-09-09 04:57:30** |
+| **Line 103** — the `fga` entry's `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` | `98dcccb1` | 2026-09-08 22:55:07 | **2026-09-09 05:55:07** — **58 minutes later** |
+| **Lines 108–109** — `# ADDED 2026-09-12 … NOT yet certified` | `1677b3d7` | 2026-09-11 19:49:35 | **2026-09-12 02:49:35** |
+
+> ⚠ **UTC column added 2026-09-21 by §T9.44a — this table first gave only the local times, and two of
+> the three cross midnight.** *Line 11 and line 103 read "2026-09-08" locally and are **2026-09-09** in
+> UTC.* **The ordering is unchanged** — line 11, then line 103 fifty-eight minutes later, then the T9
+> session (`2026-09-09-22-10-00`), then the `# ADDED` block — **but a reader converting the local dates
+> would have found line 11 landing on the same UTC day as the transcript that supersedes it.**
+> *Third date-handling issue at this `−0700` boundary: §T9.35a was a defect, §T9.42a's `# ADDED`
+> check was a caught near-miss, this is the third.*
 
 ✅ **So §T8.12b's judgement — *"the header is likely stale relative to the inline comment"* — is
 CONFIRMED**, and §T9.35b's *"which governs is NOT RECORDED"* and §T9.36a's *"when line 11 was last
