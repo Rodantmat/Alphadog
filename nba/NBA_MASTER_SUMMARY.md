@@ -9745,6 +9745,63 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.58 — PASS 29 (**two-direction judgment, sixth run**) — **🔴🔴 NEW TRANSCRIPT MATERIAL: T7 TESTED THE BOUNDARY AND THE TEST PASSED · 0/3**
+*2026-09-21. The first pass in nine to move the high band: **118 segments, up from 113 — five entered,
+none left**, all five the `nba_season.py` material, now matching because passes 22–28 wrote about it.
+**Writing about the helper pulled the transcript's own account of the helper into view, and it
+answers the question passes 22–27 left open.***
+
+#### 🔴🔴 T7.58a — **T7 VERIFIED the season helper across the rollover — and sampled 2026-10-03, the date it believed was opening night**
+
+T7's own verification output, quoted from the transcript:
+
+```
+compile ok
+2026-09-08   '2025-26', '2024-25', '2023-24'   dupes: false
+2026-10-03   '2026-27', '2025-26', '2024-25'   dupes: false
+2027-02-01   '2026-27', '2025-26', '2024-25'   dupes: false
+2027-08-01   '2026-27', '2025-26', '2024-25'   dupes: false
+```
+
+**Four dates. One of them is 2026-10-03** — which T7 (and every document until the owner's
+correction) believed was opening night. **On that date the helper returns `2026-27`, which is
+correct if the season opens on the 3rd. The test passed.**
+
+> ### ⇒ **The boundary was tested. The test was built around the wrong opening date, and so it confirmed the wrong boundary.**
+> **`2026-10-01` and `2026-10-02` were never sampled, and neither was any date between Oct 3 and
+> Oct 20.**
+
+**This is the chronological answer to the question §T7.51a marked NOT RECORDED** — *"whether the
+Oct-1 boundary was deliberate."* It was not deliberate and it was not careless: **it was verified, by
+a test whose sample points were chosen from a date that was itself wrong.** *Permitted under rule 6
+because the explanation comes from the transcript being swept, not from inference.*
+
+⚠ **And it is the sharpest example in the whole sweep of the owner's 2026-10-20 correction
+propagating**: one wrong date produced a wrong test, which produced a passing result, which produced
+a "low impact" rating on the item that is now **O4**.
+
+#### 🔑 T7.58b — **T7 names NINE stats scrapers; today there are TWELVE direct callers**
+
+From the transcript's own command: *"check **the 9 stats scrapers** that should use
+`active_stats_season`: `splits`, `lineups`, `player_bio`, `tracking_detail`, `playtypes`,
+`shotquality`, `onoff`, `team_stats`, `player_tracking`."*
+
+**`[LIVE-AUDIT]`: those nine, plus three added since — `daily_delta`, `matchups_pergame`,
+`per_game_delta` — give today's 12 direct callers, and `stats_seasons()` carries the boundary to 3
+more (§T7.56a).** **T7's 9 → today's 15 exposed.** *Recorded as a supersession with both dates:
+T7 (2026-09-09) named nine; live (2026-09-21) the set is fifteen.*
+
+#### 📌 T7.58c — the helper's own origin line, now in the high band
+
+*"`nba_season.py` — the one shared season-detection utility for every NBA scraper. **Real bug this
+fixes, found 2026-09-07 during a brainstorm about the delta path**: every weekly static scraper
+hardcoded `Season=2025-26` directly in its URLs or a SEASON constant, **confirmed on 6 scrapers
+directly**…"* — **the 6 / 9 / 13 / 18 progression is now fully sourced**: 6 confirmed by inspection,
+9 named as the target set, 13 recorded in the 09-09 checkpoint as having had hardcoding, 18 using the
+helper today (§T7.56b).
+
+---
+
 ### T7.57 — PASS 28 (**call-site audit**) — **✅ CLEAN 1/3 · every count re-derives · one grep trap found**
 *2026-09-21. The sixth count failure came from `grep -rl` (files) where the claim was about callers.
 So: **every "N workers / N scrapers / N tables / N workflows" figure in the T7 entries, re-derived by
