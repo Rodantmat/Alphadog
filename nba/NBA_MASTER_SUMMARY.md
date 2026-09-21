@@ -9788,7 +9788,9 @@ read from the table, and the scoring transcripts are not yet swept. **Flagged fo
    this, found **2026-09-20 at T1 pass 36**. I re-found a documented finding and labelled it 🔴 new.
 2. **The count was an undercount — again.** The banner lists **eight** tables:
    `classification_config`, `factor_registry`, `factor_relevance`, `factor_profile_cells`,
-   `stat_decay_config`, `ewma_alpha`, `system_settings`, `role_tiers`. **I said five**, having
+   `stat_decay_config`, `ewma_alpha`, `system_settings`, `role_tiers` — **seven tables and one
+   column, corrected at §T7.40b the next pass: `ewma_alpha` is a column of `stat_decay_config`, not
+   a table.** **I said five**, having
    counted only the ones I happened to have queried. **This is the FOURTH single-pattern count in
    this sweep** — after `raw_json` (1,306→17,902), the tool-name failures (4→17) and the debug
    artifacts (3→5) — and it is the standing rule's own subject: *a count comes from an authority,
