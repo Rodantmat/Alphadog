@@ -1555,6 +1555,52 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.1 — PASS 1 (**owner + reasoning strata, read as design history**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21. T3 = the 2026-09-03 phase-3a final-complete session. Tail at 0.40: **466 of 534
+segments (87.3%)**. Strata: owner 1 · reasoning 32 · output 56 · commands 240 · results 137.*
+
+**Six findings. Everything here is recorded as it stood on 2026-09-03, with no hindsight applied.**
+
+1. ⚠ **The 1 MB limit does not apply equally to both readers.** The bridge tools read
+   `nba_schedule_current.json` fine — ***VERIFIED** today: 1,225,505 bytes, 40,009 lines* — while a
+   worker's contents-API `fetch()` gets **empty content rather than an error** and throws
+   `unexpected end of JSON input`. **So the file looks healthy through the bridge and broken to the
+   worker**, which is a diagnosis trap, and the schedule file is over the limit *now*.
+   → `NBA_OPEN_ITEMS.md` FROM T3 PASS 1
+2. **Why the differential worker owns its own snapshot tables**: run it after the static workers and
+   *"the 'before' state is gone … making any diff meaningless."* Independent snapshots make it
+   **order-independent by construction** rather than dependent on being scheduled first. The gap it
+   closes: per-field change checks never handled **departure** — a player vanishing from the scrape
+   was never marked inactive. → FROM T3 PASS 1
+3. ⚠ **A race condition was hypothesised and retracted inside the same session.** T3 escalated to
+   *"a genuine race condition — `run_job` invocations aren't fully sequential, or … a stale read
+   across separate Cloudflare Worker calls sharing a connection pool"*, then found the real cause:
+   **it had manually re-broken LeBron's snapshot before the run.** Operator error during testing, not
+   a concurrency defect. **Recorded so the abandoned hypothesis is not re-derived from the
+   symptoms** — the existing "race condition" entry in these documents is T7's, about large commits,
+   and unrelated. → FROM T3 PASS 1
+4. **`postgres.js` rejects `undefined` bindings outright** rather than coercing to `NULL` — which is
+   why teams failed while players and officials passed, purely on which fields their sources
+   populated. Any scraped field going into a query needs `?? null`. → FROM T3 PASS 1
+5. **DARKO's "JS-heavy, unscrapable" assessment from T2 was superseded within T3**: it is
+   **SvelteKit, server-side rendered**, the "Download CSV" control is a `<button>` with no URL, and
+   all **530 players** sit in the hydration payload as a JS object literal with **unquoted keys**
+   needing regex repair before parsing. *Same source, superseded 2026-09-03.* → FROM T3 PASS 1
+6. **Two dated assumptions, neither tested**: that teams/players/bio/tracking endpoints are
+   *"likely season-agnostic"* — stated as T3 realised the **2025-26 season had concluded** and
+   `2026-27` was the right target — and a **static CDN JSON alternative** to `scheduleLeagueV2`,
+   noted and never evaluated. → FROM T3 PASS 1
+
+**Coverage observation.** 26 candidates checked in one batched grep; most came back already
+documented — `nba_calendar.games` (44), the weekly-differential worker (51), the 1 MB limit (49),
+DARKO's 530 players (28), `player_differential_log` (27). **T3 is markedly better covered than T1 or
+T2 were**, which is the chronological-order prediction holding for a second transcript.
+
+**Findings per segment: 6 over 466 tail segments = 1 per 78 so far** *(T2 closed at 1 per 34 across
+all four passes; T3's remaining three strata — output, commands, results — are unread).*
+
+**Clean count 0/3** — pass 1 found new material.
+
 ### T2.4 — PASS 4 (**the two-direction judgment pass**) — **1 DEFECT FOUND AND FIXED · T2 CLOSES**
 *2026-09-21. 137 segments judged: 70 in the high band, 67 in the tail direction.*
 
