@@ -9539,8 +9539,10 @@ moved on. **Nothing in T7 records it; no document records it until 2026-09-21.**
 #### ✅ T7.34b — the coverage check's first real output: **`{"missing starter": 0, "missing officials": 3}`**
 `[LIVE-AUDIT]`-equivalent, from T7 itself on 2026-09-04 — **the exact figures this sweep re-derived
 today** (§T6.19a, §T7.31a). **So the three missing-officials games were known, reported, and
-visible in a worker response from the day the check was built**, and remained unfixed and
-undocumented for seventeen days. ✅ The detector worked; nothing consumed its output.
+visible in a worker response from the day the check was built**, and **remained unfixed** for
+seventeen days. ✅ The detector worked; nothing consumed its output. *(⚠ This sentence read "unfixed
+**and undocumented**" until §T7.47 corrected it: the figures were written into
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` the same day. **Unfixed, yes; undocumented, no.**)*
 
 #### ⚠ T7.34c — the completeness check's three drafts, each with its measured result
 `1,400` (status only) → `1,149` (`game_label=''`, which *undercounts* — it excludes 81 labelled
