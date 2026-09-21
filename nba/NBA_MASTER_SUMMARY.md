@@ -14419,6 +14419,71 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.2 — PASS 2 (**tail stratum**) — **🔑 the default mechanism filter under-counted by 18 points, and the tail's headline is already on file · 0/3**
+*2026-09-21. The 831-segment tail classified and its prose stratum read.*
+
+#### 🔑 T10.2a — **`substance()` reported 87% prose; the true figure is 69%, and the reason is T10's tool surface**
+
+The shared filter, tuned on T2–T9, classified **720 of 831 (87%)** as prose — *implausible for a
+mining/backfill transcript, which is more tool-heavy than T9, not less.* **Re-classified against
+T10's actual shapes:**
+
+| Class | Count | |
+|---|---|---|
+| **PROSE** | **572** | **69%** |
+| tool envelope — `{"ok": true, …}` and `{"returncode": …}` | **205** | 25% |
+| code body | 35 | 4% |
+| workflow log · column list · http status | 15 | 2% |
+| **GEMINI** — model prose inside a `"status": 200, "text"` envelope | **4** | — |
+| **Mechanism total** | **255** | **31%** — *in line with T8/T9* |
+
+⚠ **The cause is specific and carries forward**: T2–T9's tool output is mostly shell
+`{"returncode": …}`; **T10's is mostly the MCP bridge's `{"ok": true, …}` envelope**, which the filter
+does not recognise. *A classifier tuned on earlier transcripts silently mis-measures a later one —
+rule 15's family, and the same shape as §T9.24a's zero.* 📌 **And the envelope test must not be
+blanket**: four `{"ok": true, "status": 200, "text": …}` segments are **Gemini's own analysis**, which
+is content, not mechanism — *the owner asked for Gemini explicitly in three separate turns.*
+
+#### ✅ T10.2b — **The tail's headline is a quantified signal table, and every distinctive element of it is already recorded**
+
+The largest prose segment is a **signal table** with columns *signal · exact data point · mechanism ·
+direction/magnitude at anchor · low vs mid vs high anchor · trap · engine* and a **published-vs-measured
+provenance marker on every row** — the direct product of the owner's factor directives. Examples:
+*teammate with usage ≥28% out, first game of the absence → **+3–8 pp**, 7–8 usage points freed* ·
+*iron men play **37% of normal Q4 minutes** in blowouts, **45% sit entirely*** · *lost blowouts
+**36.9%** over-rate* · *stars score **1.09×** per minute in close Q4s* · *crew in the **top quartile of
+fouls/game** → **+1–3 pp** on points*.
+
+✅ **Seven distinctive probes, and `NBA_ENRICHMENT_FACTOR_LOCK.md` carries all seven** — *"usage
+vacuum" · "36.9" · "1.09" · "37% of normal" · "rim protector" · "8+ game absence" · "top quartile of
+fouls"*. **Rule 7 applied deliberately: not in the twelve is not in no document.**
+
+#### 📌 T10.2c — **Three signals live ONLY outside the twelve, and T10's entry does not import their fate**
+
+*"Usage vacuum"*, *"37% of normal Q4 minutes"* and *"top quartile of fouls"* appear only in
+`NBA_ENRICHMENT_FACTOR_LOCK.md` and `NBA_ENRICHMENT_ENGINE_DESIGN.md`; the rest reach
+`NBA_MASTER_SUMMARY.md` and `NBA_OPEN_ITEMS.md`.
+
+⚠ **And the forward pointer is recorded WITHOUT being adopted.** The twelve already state —
+`NBA_FINAL_SCORING_CALIBRATION.md` §7 — that **ten enrichment factors were tested in T15/T16 and none
+survived at leg level.** ***T10 produced the candidates; T15/T16 is where their fate belongs, and the
+chronological rule forbids writing that verdict into T10's own entry.*** *Noted here so a later pass
+does not mistake the omission for a gap.*
+
+#### ✅ T10.2d — **A clean example of rule 2, in the direction this run usually fails**
+
+Gemini's segment [467] proposes *"**primary defender matchup quality** — your 'opponent absences'
+factor is team-level; **this is player-level**"*. **The wording returns ZERO hits across all thirty.**
+**The substance is recorded in twelve documents** — `nba_ref.defender_ratings` (**111,768 rows**, T16)
+and `matchupminutes`. *An absence claim on the phrase would have been wrong; the substance test is
+what settles it, and this run's usual failure is the reverse.*
+
+**Pass outcome: 1 method correction to the instrument, the tail's headline confirmed on file, 3
+signals located outside the twelve and a forward verdict deliberately not imported. 🔑 CLEAN 0/3 ·
+2 passes.**
+
+---
+
 ### T10.1 — PASS 1 (**owner stratum**) — **🔴 a live config row contradicts the documents on the certified set — and it settles `fga` · 0/3**
 *2026-09-21. All fourteen owner turns read in full, each directive's SUBSTANCE grepped across all
 thirty before any absence was considered.*
