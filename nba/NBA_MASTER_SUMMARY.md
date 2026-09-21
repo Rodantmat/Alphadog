@@ -14419,6 +14419,79 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.20 — PASS 20 (**fifth two-direction judgment, reported against the BASELINE tree per rule 18**) — **🔴 pass 18's evidence broke rules 18 and 20 at once · 🔑 and the audit drove a segment from 0.22 to 0.96 · 0/3**
+*2026-09-21. The closing-three judgment, re-measured on both trees rather than carried forward.*
+
+#### 📌 T10.20a — **The band, reported the way rule 18 requires**
+
+| | high band (≥0.45) | tail | uncovered vs **the twelve** | uncovered vs **all `nba/`** |
+|---|---|---|---|---|
+| **Baseline `d29401bd`** — *the finding* | **28** | **106** | **831** | **689** |
+| Working tree — *what this sweep added* | **33** | **101** | **823** | **688** |
+
+**The baseline is identical to pass 16's, as it must be.** **The working band has moved again —
+32 → 33 — during passes 17–19**, which is rule 18 demonstrating itself inside the pass that reports
+it. **Overlap: 28 in both · 5 working-only · 0 baseline-only**, still strictly monotone across five
+measurements (passes 3, 6, 12, 16, 20).
+
+#### 🔑 T10.20b — **Segment 73 went from 0.22 to 0.96 because the sweep audited it**
+
+| measured at | score vs the twelve |
+|---|---|
+| Baseline `d29401bd` | **0.22** |
+| Working tree, pass 16 | **0.67** |
+| Working tree, now | **0.96** |
+
+**Passes 17 and 18 quoted owner turn 73 in full — first to raise it as OWNER DECISION O7, then to
+retract O7 — and the quotation now sits in `NBA_MASTER_SUMMARY.md` and `NBA_OPEN_ITEMS.md`.**
+
+***A segment the documents did not carry at all is now a 0.96 near-identical match to them, and every
+point of that rise was produced by writing about it.*** **The sharpest instance of self-authorship in
+this run, and the mechanism is not an error — it is what auditing a segment does.** *It is also why
+rule 18's baseline-first reporting is not a formality: on the working tree, turn 73 now looks like the
+best-documented segment on the transcript.*
+
+⚠ **Instrument caveat, new**: seg 462 is the 33rd band member at **0.4500** against a baseline
+**0.4491** — **it crosses the cut by 0.0009.** Across the transcript, **11 segments (working) and 12
+(baseline) sit within ±0.02 of the 0.45 threshold**, so ***a band difference of one or two is inside
+the instrument's noise and must not be read as movement.*** **Attribute a band change segment by
+segment, or do not report it.**
+
+#### 🔴 T10.20c — **Judging §T10.16–§T10.19: pass 18's evidence broke rule 18 and rule 20 together**
+
+**§T10.18c's clearing table was measured on the WORKING TREE using SOURCE-vocabulary probes** — two
+passes after rule 18 said counts are taken against the baseline, and in the same pass that wrote rule
+20 about vocabularies. **Re-derived correctly, every verdict survives and two figures collapse:**
+
+- **turn 548's *"a fallback for every single factor"*** — **0 of thirty at the baseline**; all three
+  working-tree hits are this sweep. **In the documents' vocabulary it was always covered**: *fallback
+  per/each/every factor* **2** · *fallback + derived* **5** · *secondary source* **6** ·
+  `MINING_AND_FALLBACKS`/`fallback_` **8**, **4 of the twelve.**
+- **turn 484's *"thin the factors"*** — **1 of thirty at the baseline**, not 4; *sub-factor* → **5**.
+- Same cause, smaller: `factor lock` **8** not 9 · realignment **7** not 8 · derivable-to-baseline
+  **5** not 7 · keep-the-calibration **6** not 7 · injury-report PDF **7** not 8.
+
+***The verdicts were right for the wrong reason*** — the owner's words were absent before the sweep
+and the substance was present, which is exactly the pair rule 20 exists to separate, **and pass 18
+published the half it should have discarded.** **Corrected in place under §T10.18c.**
+
+📌 **Also corrected**: §T10.16e (`factor_gate_results` **15 of 24 mentions unqualified**) and
+§T10.17c's probe counts were working-tree measurements with no tree named — **stated now.** *Both
+figures are unchanged by the correction; the labelling was the defect.*
+
+#### ✅ T10.20d — **Everything else in §T10.16–§T10.19 passes the rule 17/18/20 test**
+
+§T10.16a (both trees, both populations) · §T10.16c (the **+94,490 byte** growth, stated as `d29401bd`
+→ today over the twelve) · §T10.17a (the 8 crossings, both trees, all 8 attributed to
+`NBA_MASTER_SUMMARY.md`) · §T10.18b (the 10-03 census, with its predicate, population and tree) ·
+§T10.19a (three vocabularies, all against `/tmp/t10base`) — ✅ **compliant as written.**
+
+**Pass outcome: 1 defect — pass 18's evidence measured on the wrong tree with the wrong vocabulary,
+verdicts intact — plus a new instrument caveat. 🔴 CLEAN 0/3 · 20 passes.**
+*(Pass 19's clean count is reset: the closing three must be consecutive.)*
+
+---
+
 ### T10.19 — PASS 19 (**rule 20 applied retrospectively to every surviving absence claim**) — **✅ CLEAN 1/3 · five claims re-probed in three vocabularies, none falls, one gains context**
 *2026-09-21. The first run of rule 20's actual test. Five absence failures on this transcript and the
 rule that would have caught four of them is one pass old — so it was turned on the claims still
