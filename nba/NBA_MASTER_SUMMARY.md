@@ -14423,6 +14423,95 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.4 — PASS 3 (**live verification of the market and injury surfaces**) — **🔴🔴 one of the three named apps has ONE DAY · 🔴🔴 every injury timestamp carries a hardcoded `-05:00` · 0/3**
+*2026-09-21. `[LIVE-AUDIT]` throughout. **Rule 6: T11 is 2026-09-10 and eight transcripts are
+unread, so what the numbers show is the system NOW, never T11's story.***
+
+#### 🔴🔴 T11.4a — **The DFS board backfill landed for four apps, and Sleeper is not one of them**
+
+`nba_market.board_snapshots` — **27,067,871 rows, 2024-10-22 → 2026-09-13**, keyed on `bookmaker`:
+
+| app | labels | rows | range | **distinct days** |
+|---|---|---|---|---|
+| **`prizepicks`** | `close` · `window` | **2,199,354** | 2024-10-22 → 2026-04-12 | **378** |
+| **`underdog`** | `close` · `routine` · `window` | **939,719** | 2024-10-22 → 2026-09-12 | **380** |
+| **`betr_us_dfs`** | `close` · `window` | **780,765** | **2025-11-23** → 2026-04-12 | **131** |
+| **`pick6`** | `close` · `window` | **534,188** | **2025-05-26** → 2026-04-12 | **176** |
+| `fliff` | `routine` | 1,394 | 2026-09-13 | **1** |
+| 🔴 **`sleeper`** | `routine` | **1,276** | **2026-09-12** | **1** |
+
+🔴🔴 **The owner named three apps — *"board snapshots for sleeper, underdog, and prizepicks"* (seg
+197). Two landed with two full seasons. SLEEPER HAS ONE DAY AND ONE LABEL.** *`scrape_sleeper_board.py`
+exists and is documented; **what is missing is history, not a scraper**.*
+
+🔴 **And two more are partial**: **`betr_us_dfs` begins 2025-11-23** and **`pick6` begins 2025-05-26** —
+**131 and 176 days against PrizePicks' 378.** *Neither covers the first season.*
+
+⚠ **Stated with its authority**: this is **the live state on 2026-09-21**, not T11's outcome. **Why
+Sleeper has no history — whether ParlayAPI never served it, whether a run failed, or whether it was
+dropped — is NOT RECORDED**, and eight transcripts after T11 are unread. **Written to
+`NBA_OPEN_ITEMS.md` as a question, not a cause.**
+
+✅ **Cross-check that lands exactly**: PrizePicks' **2,199,354** board rows equal
+`nba_market.board_tiers` and `board_tiers_v2` **to the row** (§T10.27a) — *the tier tables are that
+board, tiered.*
+
+#### ✅ T11.4b — **The injury re-run landed, and the Dec-22 gap is closed — with the cost of the bug quantified**
+
+| season | days done | rows | shards |
+|---|---|---|---|
+| **2025-26** | **176** | **919,949** | **7** |
+| **2024-25** | **174** | **418,071** | **7** |
+
+**The 2025-26 October shard holds 19,880 rows and its earliest snapshot is `2025-10-20`** —
+***so the pre-22-December range §T11.3c showed missing is present.*** ✅
+
+🔑 **And it prices the bug**: the first run wrote **266,049 rows**; the fixed run wrote **919,949** —
+***the two-pattern fix recovered 653,900 rows, 3.5× the original capture.*** *That is what "found the
+PDFs and reported success" was hiding.*
+
+#### 🔴🔴 T11.4c — **Every injury snapshot timestamp carries a HARDCODED `-05:00` — and the document that warns against fixed offsets already flagged this archive**
+
+**Measured across all 14 month-shards, both seasons** *(sample: first 4,000 rows per shard)*:
+**`-05:00` on every row of every month — 2024-10 through 2026-04. No other offset appears anywhere.**
+*The transcript shows why*: the scan function builds the timestamp as
+`f"{d.isoformat()}T{h:02d}:{m or 0:02d}:00-05:00"`.
+
+**The NBA publishes the injury report in Eastern time, and Eastern is not a fixed offset**: **EDT
+(−04:00)** from the second Sunday in March to the first Sunday in November, **EST (−05:00)**
+otherwise. **The season runs late October → mid-April**, so:
+
+| period | true ET | stored | effect |
+|---|---|---|---|
+| late Oct → early Nov | **−04:00** | −05:00 | **stored instant is ONE HOUR LATE** |
+| early Nov → mid-Mar | −05:00 | −05:00 | ✅ correct |
+| mid-Mar → mid-Apr | **−04:00** | −05:00 | **ONE HOUR LATE** |
+
+***So the opening fortnight and the closing month of every season are stamped an hour late, and the
+middle is right.***
+
+🔴 **`NBA_SYSTEM_ARCHITECTURE.md` already carries the warning and the standard** — its DST-exposure
+table lists *"**The injury-report archive** — 'the season crosses DST' — already recorded as a caveat
+on the hourly backfill — **⚠ noted**"*, and in the same table it praises `nba_asof.py` for storing
+**`"16:00"` as a local wall-clock time**: *"**exactly the prescribed pattern, not a fixed offset**."*
+
+⚠⚠ ***The injury scraper does the exact thing that sentence names as wrong, the caveat was already
+"noted", and nobody checked the data.*** **Novelty: `-05:00` → 0 across all thirty.**
+
+📌 **The consumer effect, stated as arithmetic and no further** (rule 6): a report truly published at
+**14:30 EDT = 18:30 UTC** is stored as **14:30−05:00 = 19:30 UTC**, so a cutoff filter of the form
+`snapshot_ts <= cutoff` **excludes snapshots that were genuinely before the cutoff** — losing the most
+recent hour of pre-cutoff information in exactly the October and April windows. ⚠ **Whether any live
+consumer filters that way is NOT RECORDED**; this pass did not trace it. **And it matters more here
+than elsewhere because §T11.3d established the league republishes 10–27 times a day — an hour is
+several snapshots.**
+
+**Pass outcome: 2 live findings (Sleeper's missing history and the two partial apps; the hardcoded
+offset across 14 shards) + 1 confirmation that the injury fix landed, with the bug priced at 653,900
+rows + 1 exact cross-check. 🔴 CLEAN 0/3 · 4 passes.**
+
+---
+
 ### T11.3 — PASS 2 (**market / board-sourcing stratum**) — **🔴🔑 the fact the whole DFS-board program rests on is in no document · 0/3**
 *2026-09-21. The half pass 1 did not reach. **All novelty probed in three vocabularies against
 `5dfb72ab` (rule 20); every count carries its population and tree (rules 17, 18).***
