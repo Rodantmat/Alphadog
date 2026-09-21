@@ -380,8 +380,8 @@ were fitted on these legs; the out-of-sample figure remains leave-one-player-out
 
 ### REMAINING
 4. ~~v2 — skew fix~~ — **DONE 2026-09-21, now CURRENT.** See "v2 — THE PER-LEG LOGIC" below.
-5. **Rescue tier: same-day snapshot** (3,227 legs)
-6. **Rescue tier: sportsbook consensus** — validate first (35,951 legs)
+5. ~~Rescue tier: same-day snapshot~~ — **DONE.** See "RESCUE TIERS" below.
+6. ~~Rescue tier: sportsbook consensus~~ — **DONE, lower confidence.** See "RESCUE TIERS" below.
 7. ~~Conflicting keys~~ — **resolved structurally** by `kind` in the key; root cause of off-center standards open
 8. **Load mined live prices** — per leg, not per key (finding 3); needs the PrizePicks stat ↔ Odds-API market map
    (`Points→player_points`, `Pts+Rebs→player_points_rebounds`, `Pts+Asts→player_points_assists`,
