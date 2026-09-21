@@ -12,6 +12,32 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
+### 📜 THE TWENTY-FOUR STANDING RULES — *the index; each is written in full where it was born*
+
+*Rules 1–15 were born in T1–T9 and are stated in `NBA_MASTER_SUMMARY.md` at their entries. Rules
+16–24 are T9–T11's and each carries a §-pointer. **Apply them from pass 0 of a transcript, not from
+pass 20 — that gap is this run's signature failure.***
+
+| # | Rule, in one line | Born |
+|---|---|---|
+| **1–5** | The early discipline: read all strata · record every message · severity on every finding · chronological order · supersessions carry both dates | T1–T4 |
+| **6** | **A live-audit finding records what the system IS. It never explains WHY unless a swept transcript supplies the cause.** | T7 |
+| **7** | **Before asserting something is unrecorded, grep its distinctive term — and OPEN EVERY HIT.** | T7 |
+| **8** | Run the novelty grep on the finding you are most confident about, first. | T7 |
+| **9–11** | Sibling checks · call-site checks · the authority is named, never inferred | T7 |
+| **12** | **Apply a rule in the pass that writes it.** *(The most-broken rule in the run.)* | T7 |
+| **13–14** | Judge the entries' claims, not the extraction · a discrepancy you are about to record may already be on file | T7–T9 |
+| **15** | **A pattern tuned elsewhere silently mis-measures — and the wrong number is not always zero.** | T9 |
+| **16** | **The prose states the query's own predicate: its grouping, its boundary, its filter.** | T9 (§T9.34a) |
+| **17** | **A document count names its POPULATION — the twelve, or `nba/`. They are not the same corpus.** | T10 (§T10.15c) |
+| **18** | **The band and the coverage count ARE document counts: report them against the BASELINE tree.** | T10 (§T10.16a) |
+| **19** | **A quotation covers only what it quotes — state what was left out, or quote the whole turn.** | T10 (§T10.17b) |
+| **20** | **Probes are counted in VOCABULARIES, not in number: the source's, the documents', the system's.** | T10 (§T10.18a) |
+| **21** | **An identifier is COPIED from the system, never written from the prose.** | T10 (§T10.22b) |
+| **22** | **A zero is believed only after a POSITIVE CONTROL; and every hit is opened before it is counted.** | T11 (§T11.7b) |
+| **23** | **A count states its population, its tree, AND its sport.** *(Rule 17 for data.)* | T11 (§T11.9c) |
+| **24** | **A column name is not a vocabulary — and comparing TWO tables shows a difference, comparing ALL of them shows whether it is a pattern or a collision.** | T11 (§T11.19b) |
+
 | | |
 |---|---|
 | **Current transcript** | ▶ **T11** — `2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt` · **CLEAN 0/3 · 19 passes.** *Ten of twenty closed.*
