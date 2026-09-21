@@ -222,8 +222,11 @@ eight transcripts after it are unswept.*
 
 🔑 **What the matrix settles**: ***three factor groups are blocked and all three are market/board
 history*** — **b1/b2/c3** (resolved inside T11 when the owner renewed the key, §T11.23b), **c1/c2**
-(paid, **owner decision**), **c4/s1–s4** (**no free archive exists for anyone**). **Everything else is
-have, running, or built-and-pending.** *As segment 113 puts it: **"everything else is built or
+(paid, **owner decision** — ✅ **superseded in T13, BigDataBall never needed**, §T11.27b), **c4/s1–s4**
+(**no free archive exists for anyone** — ⚠ **still open**: The Odds API carries PrizePicks as a
+*bookmaker* but **not the DFS-only markets**, so it does not reach this row). **Everything else is
+have, running, or built-and-pending.** ***Two of the three ⛔ groups are now closed and the third is
+not — and they close for different reasons.*** *As segment 113 puts it: **"everything else is built or
 running."***
 
 📌 **Four items in this matrix are in NONE of the twelve** *(probed with positive controls against
