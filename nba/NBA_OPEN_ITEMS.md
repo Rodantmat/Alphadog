@@ -14,10 +14,14 @@ dicts"* it replaced — **a ~6× reduction** — and **no shard above 5.7 MB** a
 | 2024-25 | **1,230** | 0 | 232,830 | 29 ✅ |
 | **2025-26** | **1,229** | **0** | 241,590 | **28** |
 
-🔴 **(1) One game is unaccounted for.** The twelve record **1,230** regular-season games for 2025-26 —
-`NBA_DATABASE.md` states the identity *"**12,300 = 10 starters × 1,230 games** — an identity that only
-holds if every game parsed correctly."* **The index covers 1,229 and lists `empty: 0`, so the missing
-game is neither covered nor recorded as empty:** the index's own bookkeeping does not account for it.
+🔴 **(1) The index does not account for the missing game.** *(Narrowed 2026-09-21 by §T10.5b: **the
+1,229/1,230 shortfall itself is already recorded** — `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` line 195
+states it in the coverage table beside the other two seasons, with matching row counts. **The defect
+is the bookkeeping, not the shortfall.**)* The index records **`covered: 1,229`** and **`empty: 0`**,
+**so a consumer reading the index alone sees a complete season** — where 2023-24's index partitions
+correctly at **1,228 + 2 = 1,230**. The twelve record **1,230** for 2025-26, including
+`NBA_DATABASE.md`'s identity *"**12,300 = 10 starters × 1,230 games** — an identity that only holds if
+every game parsed correctly."*
 
 🔴 **(2) `matchupMinutesSort` is missing from the current season only.** It is present in 2023-24 and
 2024-25, **absent from 2025-26**, and **`scrape_nba_matchups_pergame.py:33` lists it in `KEEP`.**
