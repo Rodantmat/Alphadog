@@ -1,3 +1,3 @@
-max_quotes: 420
-altalt: 160
-note: run 2, 2026-09-21 - widened to crack the Flex consolation-tier rule: 160 stratified alt-by-alt pairs (no standard leg), 26 multi-pick Flex compositions, every leg re-quoted fresh
+max_quotes: 260
+altalt: 60
+note: run 3, 2026-09-21 - FIRST run with the pick_distinct fix. Multi-pick FLEX compositions in runs 1-2 were corrupted (asking for 0 legs returned 1). This run gives clean 3-6 pick compositions; same-size slips can be compared directly since the base cancels in the ratio.
