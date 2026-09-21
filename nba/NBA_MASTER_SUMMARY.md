@@ -14430,6 +14430,58 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.26 — PASS 25 (**live numeric re-verification, and the check the sweep had never run**) — **✅ CLEAN 1/3 · all three baseline trees verified BYTE-IDENTICAL**
+*2026-09-21. `[LIVE-AUDIT]`. The next-step row named the check that protects everything else, and it
+had never been run in eleven transcripts.*
+
+#### ✅ T11.26a — **The baseline trees are uncontaminated — verified, not assumed**
+
+***Every novelty and coverage claim in this sweep rests on a `/tmp/t*base/` tree being an untouched
+copy of a commit. That has been ASSUMED since T9.*** **Tested by re-cutting each tree with
+`git archive` and comparing a SHA-256 digest over all 32 files:**
+
+| tree | commit | in-use digest | fresh digest | verdict |
+|---|---|---|---|---|
+| `/tmp/t9base` | `213800e7` | `814ec45406ce8c17` | `814ec45406ce8c17` | ✅ **INTACT** |
+| `/tmp/t10base` | `d29401bd` | `f2e052636e332920` | `f2e052636e332920` | ✅ **INTACT** |
+| **`/tmp/t11base`** | **`5dfb72ab`** | **`ff0ba91ef73e69e7`** | **`ff0ba91ef73e69e7`** | ✅ **INTACT** |
+
+🔑 ***All three byte-identical, 32 files each.*** **So T9's, T10's and T11's novelty claims rest on a
+verified authority rather than an assumed one** — and ***the check itself is the finding***: it is
+cheap, it protects every absence claim in three transcripts, and **the sweep ran for eleven
+transcripts without it.** 📌 **T1–T8's baseline trees no longer exist to check** — *their claims keep
+whatever standing they had; this verification does not extend backwards.*
+
+#### ✅ T11.26b — **The tail reported with BOTH trees, per rule 18**
+
+| | baseline `5dfb72ab` | working tree |
+|---|---|---|
+| tail (n) | **3** | **0** |
+| scores | **0.6037 · 0.7203 · 0.7232** | *(empty)* |
+| at ≥0.95 | **0 of 3** | — |
+
+✅ **The baseline tail is still 3 and its three scores are unchanged** — *which is what the intact
+digest predicts, and now confirms from the other direction.* ⚠ ***"The tail is 0" is a claim about
+the WORKING tree only, and it is stated that way wherever it appears.***
+
+#### ✅ T11.26c — **Every other figure re-derives exactly**
+
+`data_quality` **20 `real` / 2 `derived`** across all 22 tables ✅ · the band **baseline 13 / 3 / 695
+/ 685**, unchanged for a sixth measurement ✅ · working **24 / 0 / 683 / 677** with **12 crossers, 0
+fallbacks**, **seg 112 at 0.27 → 0.97** ✅ · the exports **1,228 + 1,226 = 2,454** ✅ · the injury
+census **1,338,020 = 919,949 + 418,071** ✅ · **`schedule_norm` 2,460 · `event_game_map` 2,454 ·
+`game_lines_snapshots` 2,468 · `game_lines_closing` 2,410** ✅ · the three routes to **7,762** ✅ ·
+`board_tiers` = `board_tiers_v2` = **2,199,354** ✅.
+
+📌 **Novelty of the integrity check itself**: *byte-identical / SHA-256 / digest* → **5 of thirty**,
+but **none of them about the baseline trees** — the hits are about file-copy drift and commit shas.
+**`git archive`** → **2 of thirty**, both this sweep's own method notes. ***The check is new.***
+
+**Pass outcome: three baseline trees verified byte-identical for the first time in the sweep, the tail
+reported with both trees, every figure exact. ✅ CLEAN 1/3 · 26 passes.**
+
+---
+
 ### T11.25 — PASS 24 (**fifth two-direction judgment**) — **🔑🔑 a PRE-REGISTERED band movement, and it landed on the exact segments named · 0/3**
 *2026-09-21. **The next-step row predicted this pass's result before the measurement was taken. It is
 the strongest confirmation of the self-authorship mechanism in the run.***
