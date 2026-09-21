@@ -230,6 +230,31 @@ column, or a view exposing parts-only, so the choice is explicit instead of folk
 
 ---
 
+## ⚠ THE OFFICIALS DICTIONARY HAS 80 NAMES; THE GAMES NAME 83
+*Found 2026-09-21, T6 re-sweep pass 1. **`[LIVE-AUDIT]` VERIFIED**. Detail: `NBA_MASTER_SUMMARY.md`
+§T6.17a.*
+
+`nba_ref.officials` holds **80** rows — the Wikipedia staff roster, a count already flagged as one
+short of the page's own *"74 staff + 7 non-staff"*. `nba_stats.game_officials` names **83 distinct
+officials** across the 2025-26 season.
+
+**The two sources disagree by three, in the direction that matters**: the games contain officials the
+dictionary does not list.
+
+⚠ **They are not directly comparable, which is the underlying problem.** The officials dictionary is
+**name-keyed with no stats.nba.com crosswalk** — a `known_limitation` declared since T2 — so a
+crew member missing from the roster page, a mid-season hire, or a G-League call-up cannot be
+distinguished from a name-normalisation miss. **Cause NOT RECORDED.**
+
+✅ **The game-level data itself is sound**: 3,681 rows across 1,227 games, and **every single game has
+exactly three officials** (0 exceptions), which is the correct crew size. **3,681 = 1,227 × 3.**
+The three absent games are a clean absence, not a partial parse.
+
+**Flagged for whichever transcript reconciles the dictionary against the assignments** — the
+crosswalk this needs is the same one the T2 `known_limitation` asks for.
+
+---
+
 ## ⚠⚠ COMMITTED DEBUG ARTIFACTS ARE A PATTERN OF THREE, NOT A ONE-OFF — two are undocumented
 *Found 2026-09-21, T4 re-sweep pass 3. **`[LIVE-AUDIT]` VERIFIED** by listing `nba/data/`.
 Detail: `NBA_MASTER_SUMMARY.md` §T4.23a.*
