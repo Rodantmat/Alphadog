@@ -329,7 +329,8 @@ tier and role NULL, and hold a `formula_expression` instead of a flat value — 
 its form.**
 
 **So against the directive:**
-- **Instruction 2 (*tier-specific, not global*) — SATISFIED wherever the concept applies.** There is
+- **Instruction 2 (*tier-specific, not global*) — SATISFIED, and not merely "wherever the concept
+  applies": after pass 15, every one of the 35 cells is keyed.** There is
   no global cap, and no bucketed cell lacks a tier or role key.
 - 🔴 **Instruction 1 (*a cap is a fallback, not a first resort*) — cannot be judged, and the reason
   is bigger than the question.** `automation_status` is `semi_automatic`;
