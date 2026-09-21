@@ -6396,6 +6396,82 @@ vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship**
 writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
 but not the twelve.
 
+### T4.23 — PASS 3 (**command stratum, all 103 segments, read to the end**) — **NEW MATERIAL · 0/3**
+*2026-09-21.*
+
+#### ⚠⚠ T4.23a — **THE COMMITTED DEBUG ARTIFACTS ARE A PATTERN OF THREE, AND ONLY ONE IS DOCUMENTED**
+
+The backfill workflow's `git add` list, patched twice in this transcript, includes
+`nba/data/nba_player_game_log_2025_26_debug_raw.json` — **a debug dump added to the list of files
+committed to the repository as data.** That prompted a directory check.
+
+`[LIVE-AUDIT]` **VERIFIED** — `nba/data/` holds **three** committed debug artifacts:
+
+| File | Size | Documented? |
+|---|---|---|
+| `nba_darko_debug_html_snippet.txt` | **432,513 B** | ✅ yes, in detail (owner action) |
+| `nba_shotzones_debug_raw.json` | **50,000 B** | ❌ **no** |
+| `nba_officials_debug_raw.json` | **2,426 B** | ❌ **no** |
+
+**The shot-zones artifact is T4's own**, produced by the zone-parsing failure (§T4.21a BUG 2/BUG 3)
+and **truncated at exactly 50,000 characters** by
+`json.dumps(body)[:100000]`-style slicing in the scraper's error path. Its head confirms the
+content: the raw `leaguedashplayershotlocations` response with its parameters.
+
+**The officials artifact is different in kind and more interesting**: it is keyed by game id and its
+first entry reads
+```json
+{"0022500259": {"raw_officials_field": [], "summary_keys": ["gameId","gameCode","gameStatus", ...
+```
+— **an empty `raw_officials_field`**, i.e. a capture of the endpoint returning *no officials* for a
+game, retained as evidence. **Whose transcript produced it, and whether that emptiness was ever
+resolved, is NOT RECORDED** — `nba_ref.referee_assignments` belongs to a session this sweep has not
+reached. **Flagged for it.**
+
+**The pattern, which is the finding**: the documents treat the DARKO artifact as a one-off owner
+action. **It is not a one-off — it is the third instance of the same habit**: when a scrape fails,
+dump the raw body beside the data and commit it. **The habit is undocumented as a habit**, and two of
+its three outputs are undocumented as files. *(A fourth, `nba_player_game_log_2025_26_debug_raw.json`,
+appears in the `git add` list but is **not present in `nba/data/`** — so either it was never produced
+or it was removed. **NOT RECORDED which.**)*
+
+#### ✅ T4.23b — `nba-backfill.yml` is deliberately cron-less, and says so in its own header
+```yaml
+name: NBA one-time historical backfill
+on:
+  # no cron - this is deliberately not part of the weekly refresh cycle.
+  # per the person's explicit instruction (2026-09-03): the 2025-26 season is complete/frozen
+  # and its game logs will not change, so re-mining weekly would be waste.
+```
+**A second trigger file** (`nba/TRIGGER_NBA_BACKFILL.txt`) keeps it separate from the weekly
+`TRIGGER_NBA_SCRAPE.txt` cycle. ✅ Already recorded in substance; the self-documenting `on:` block is
+noted here because it is the clearest statement in the codebase of *why* a workflow has no schedule.
+
+#### ✅ T4.23c — the `player_splits` key defect is already documented, and correctly
+The `CREATE TABLE nba_stats.player_splits` in this stratum declares
+`PRIMARY KEY (player_id, split_type, group_value)` — **`season` is a column but not in the key**,
+which `NBA_DATABASE.md` already flags with a ⚠. **Verified, not new.** Worth restating why it
+matters: this table was built in the same breath as a **3-season** backfill, so the key cannot hold
+three seasons of the same split for the same player.
+
+#### ⚠ T4.23d — `[LIVE-AUDIT]` **25 NBA tables have no PRIMARY KEY** *(inventory only — analysis deferred)*
+A catalog query while checking the above returned **25 base tables under `nba*` schemas with zero
+`PRIMARY KEY` constraints**: 8 in `nba_market` (`board_outcomes`, `board_snapshots`, `board_tiers`,
+`board_tiers_v2`, `event_game_map`, `game_lines_snapshots`, `rung_market`, `schedule_norm`), 15 in
+`nba_score` (`absence_panel_teams`, `availability_delta`, `baseline_history`, `blowout_model`,
+`board_scored`, `confidence_verification`, `conformal_confidence`, `factor_gate_results`, `final_hp`,
+`ladder_calibration_asof`, `redistribution_factors`, `scenario_calibration`, `scenario_realised`,
+`tier_band_calibration`, `tier_selection_value`), and 2 in `nba_ref` (`defender_ratings`,
+`referee_assignments`).
+
+**Recorded as an inventory and nothing more.** Nearly all belong to the scoring and market layers —
+**transcripts this sweep has not reached** — so whether each is an append-only log (where no PK is
+correct) or a table that should have one is **not assessed here**. **Flagged for those transcripts.**
+*Per the scope cap this is `[LIVE-AUDIT]` state and does not reset the clean count; §T4.23a does,
+being T4-sourced.*
+
+---
+
 ### T4.22 — PASS 2 (**reasoning stratum finished — consolidation; §T4.21 was written mid-stratum and is hereby completed, not superseded**) — **NEW MATERIAL · 0/3**
 *2026-09-21. **Rule 3 disclosure**: §T4.21 was written after the first chunk of the reasoning stratum
 rather than after the whole of it, which is a Rule 2 violation. It is marked PROVISIONAL at its head
