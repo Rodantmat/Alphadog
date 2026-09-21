@@ -9645,7 +9645,11 @@ the season through the `nba_season` helper.** Of the ten still containing a `202
 several are legitimately one-time backfills over frozen seasons (§T5.19a) — **the cadence rule
 applies, and they are correct.**
 
-#### ⚠ T7.32b — **"always test v3 before v2" — a hard-won rule, stated in T7 and in no document**
+#### ⚠ T7.32b — **"always test v3 before v2" — a hard-won rule, stated in T7 and carried into `NBA_WORKERS.md`**
+> 🔴 **CORRECTED 2026-09-21 by §T7.47.** This heading read *"and **in no document**."* **Wrong** —
+> `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` line 313 carries the rule **verbatim, five days
+> before T7**. It was missing from the *twelve*, which is what §T7.32's addition to `NBA_WORKERS.md`
+> fixed; it was never missing from the corpus.
 > *"**Always test v3 before v2** for any per-game stats.nba.com endpoint. This cost real time twice
 > in a row — starter status, then officials — before the pattern was recognized and applied
 > proactively for officials."*
