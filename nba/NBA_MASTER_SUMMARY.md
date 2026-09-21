@@ -10320,7 +10320,13 @@ Already standing: *"a count comes from an authority, never from the pattern that
 *2026-09-21. **Three owner design directives are recorded nowhere**, and one of them governs a
 decision the system has already made.*
 
-#### 🔴 T7.30a — **THE OWNER STATED A PREFERENCE AGAINST CAPPING. IT IS NOT IN ANY DOCUMENT — AND THE SYSTEM CAPS.**
+#### ⚠ T7.30a — **THE OWNER'S ANTI-CAPPING DIRECTIVE, IN HIS OWN WORDS** *(headline retired)*
+> 🔴🔴 **RETIRED 2026-09-21 by §T7.46a.** This entry was headed *"IT IS NOT IN ANY DOCUMENT."*
+> **It is in at least two**: `NBA_BASELINE_CALIBRATION.md` line 676 (*"**CAPS ARE A LAST RESORT** …
+> tier-specific if ever used — the preference is logic that lands on the right number on its own"*)
+> and `NBA_GLOSSARY.md` line 375, **which tags the entry to T7**. Both halves of the directive are
+> recorded. **What this entry actually contributes is the owner's verbatim phrasing and reasoning,
+> not the discovery of an unrecorded instruction.**
 
 > *"I don't like cap… capping. **I'd rather have proper logic that drives the final number to the
 > correct threshold.** But if caps need to be used, **they also need to be specific to the specific
