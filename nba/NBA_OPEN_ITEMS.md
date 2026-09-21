@@ -230,6 +230,39 @@ column, or a view exposing parts-only, so the choice is explicit instead of folk
 
 ---
 
+## 🔴 THE OWNER STATED A PREFERENCE AGAINST CAPPING — it is in no document, and the system caps globally
+*Found 2026-09-21, T7 re-sweep pass 1 (owner stratum). Detail: `NBA_MASTER_SUMMARY.md` §T7.30a.*
+
+The owner, in T7 (2026-09-09):
+> *"I don't like cap… capping. **I'd rather have proper logic that drives the final number to the
+> correct threshold.** But if caps need to be used, **they also need to be specific to the specific
+> tiers**."*
+
+**Two instructions, neither recorded until now:**
+1. **A cap is a fallback, not a first resort** — prefer logic that lands the number correctly.
+2. **Any cap that exists must be tier-specific**, not global.
+
+⚠ **The system caps, and the cap is global.** `NBA_BASELINE_CALIBRATION.md` records a live clamp:
+*"the prior is capped at contributing no more than 25% of the final estimate."* **One threshold, all
+tiers.**
+
+**NOT RECORDED**: whether that cap was set before this instruction, in ignorance of it, or as a
+considered exception. The calibration work belongs to transcripts this sweep has not reached.
+**Flagged so those transcripts are read against the instruction that preceded them** — and so the
+owner can confirm whether a global 25% clamp is the exception he had in mind.
+
+**Related and also unrecorded (same turn set):**
+- **Ladder width**: *"five or six variations over the anchor and five, six under"* — roughly **11–13
+  rungs**, because *"we never know where the apps are gonna throw the prop line"* and the
+  goblin/demon extremes are *"where we can find good [value]"*. Explicitly **not** *"a global matrix
+  with a ton of data that's not needed."* **The documents describe rungs at length but never record
+  this width requirement or its rationale.**
+- **Per-prop factor study**: *"do this study **prop line by prop line** — which specific factor is
+  important for each specific prop line?"* **Factor importance is to be established per prop type,
+  not globally.** Nowhere recorded.
+
+---
+
 ## 🔴🔴 THE OFFICIALS DICTIONARY AND THE GAME ASSIGNMENTS CANNOT BE JOINED — 3,681 of 3,681 rows fail
 *Found 2026-09-21, T6 re-sweep pass 5 (referential-integrity angle). **`[LIVE-AUDIT]` VERIFIED**.
 Detail: `NBA_MASTER_SUMMARY.md` §T6.21a.*
