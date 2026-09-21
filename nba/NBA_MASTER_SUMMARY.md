@@ -8532,6 +8532,68 @@ with a completeness-check bug caught via the `002` GAME_ID prefix.
 **527 uncovered vs the twelve (88.6%)** · 524 vs all 30 — a **3-segment** self-authorship gap, the
 smallest of any transcript. T6 writes almost none of the documents; its tail is all content.*
 
+### T6.21 — PASS 5 (**referential integrity across T6's tables**) — **🔴🔴 MAJOR NEW MATERIAL · 0/3**
+*2026-09-21. The angle that opened T4 does it again.*
+
+#### 🔴🔴 T6.21a — **THE OFFICIALS DICTIONARY AND THE GAME ASSIGNMENTS CANNOT BE JOINED — 3,681 OF 3,681 ROWS FAIL**
+
+`[LIVE-AUDIT]` — `nba_stats.game_officials` LEFT JOIN `nba_ref.officials` on `official_id`:
+**3,681 unmatched of 3,681. Not some. Every row.**
+
+**The keys are in two incompatible formats:**
+
+| Table | `official_id` sample |
+|---|---|
+| `nba_ref.officials` (the dictionary) | **`nba_official_ray_acosta`** — name-derived |
+| `nba_stats.game_officials` (the assignments) | **`nba_1629178`** — numeric, from stats.nba.com |
+
+**`nba_stats.game_officials` also carries `nba_official_id = 1629178`**, the real numeric id — so the
+assignments have the identifier the dictionary lacks, and **the dictionary is keyed on a
+normalised name because Wikipedia never supplied a numeric id.**
+
+⚠ **This is the T2 `known_limitation` arriving as a concrete, total failure.** Since T2 the officials
+worker has declared: *"no stats.nba.com official_id crosswalk yet — official_id is name-derived until
+box-score data provides one."* **Box-score data has since provided one — it is sitting in
+`nba_stats.game_officials.nba_official_id` — and the crosswalk was never built.** The two tables have
+coexisted since 2026-09-04 with a **100% join failure rate** between them.
+
+**What it costs**: the whole point of the officials dictionary is to attach referee identity and
+tendencies to games. **Referee-crew tendencies — a factor the research passes rated high-impact and
+deferred to Phase 3b precisely so this table could exist — cannot currently be computed by joining
+these two tables.** A query must go through `full_name`, which is exactly the fragile path the
+`known_limitation` warned about.
+
+✅ **And the assignments table is otherwise sound**: `game_officials` → `nba_calendar.games` resolves
+**0 orphans**, and §T6.17a's crew-size invariant holds for all 1,227 games. **The defect is the seam,
+not the data** — the same shape as T4's calendar gap. → `NBA_OPEN_ITEMS.md`.
+
+*This also explains §T6.17a's 80-vs-83: the counts cannot be reconciled because the sets cannot be
+joined. **That entry is the symptom; this is the cause.***
+
+#### 🔴 T6.21b — **`lineup_profile` is exactly 2,000 rows per group size — the API cap, hit four times**
+
+`[LIVE-AUDIT]`: **8,000 rows, group sizes 2/3/4/5, and precisely 2,000 in each.**
+
+**Four identical round numbers are not a coincidence — they are a ceiling.** `NBA_OPEN_ITEMS.md`
+already records this endpoint's behaviour from a later transcript: *"v2b `leaguedashlineups` → **API
+capped at 2,000 rows**, dropped the absorbers."* **Here is that cap silently truncating the lineups
+backfill at the moment it was built**, four separate calls each returning the maximum the endpoint
+will serve.
+
+⚠ **Nothing in the scrape reported a problem** — 2,000 rows is a large, healthy-looking number, and
+the run "succeeded" four times. **This is the aggregate-guard blind spot again** (§T4.22b): a count
+floor passes, a completeness check has nothing to compare against, and **only the suspiciously round
+repetition reveals it.**
+
+**Unknown and NOT RECORDED**: how many lineups actually exist per group size, and therefore what
+fraction was captured. **A 5-man lineup count for a 30-team season is far more than 2,000**, so the
+truncation is likely severe — but that is an inference, and the measurement belongs to whichever
+transcript owns the lineups worker. **Recorded as state, flagged forward.** → `NBA_OPEN_ITEMS.md`.
+
+✅ `lineup_profile` and `defense_vs_position` → `nba_ref.teams`: **0 orphans each.** ✅
+
+---
+
 ### T6.20 — PASS 4 (**the two-direction judgment pass**) — **NEW MATERIAL · 0/3**
 *2026-09-21. 595 segments. High band (≥0.45): 58. **Tail-direction: 0.***
 
