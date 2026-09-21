@@ -2105,6 +2105,33 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+### T2.7 — PASS 7 (**re-read continued: certification and fallback design**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+1. ⚠ **The hardcoded-season trap is at least TWO workers.** `nba-static-player-bio` writes
+   `nba_stats.player_season_profile` with the same `'2025-26'` string literal in its INSERT.
+   **So a season rollover has at least three fix locations — the scrapers' URLs and each of these
+   INSERTs — and no single search finds them all**, since one set writes the season into a query
+   string and the other into a SQL value. → `NBA_OPEN_ITEMS.md`
+2. ⚠ **One worker certifies on DATA QUALITY, and it is the only one that does.** ***VERIFIED***,
+   `alphadog-v2-nba-static-players.js` line 253:
+   `active_nba_players >= 400 && active_players_missing_team_id < active_nba_players * 0.05`.
+   **A scrape returning 582 players with half their team IDs null passes every other worker's check
+   and fails this one.** *This materially softens §0.31's framing: of eight thresholds, two are
+   anchored to real invariants and two are compound — the bare-margin criticism applies to the
+   remaining four, and every counter-example is already in the codebase.* → `NBA_WORKERS.md` §0.31
+3. **The players worker deliberately has no fallback, with a stated reason** — *"a 450+ player
+   roster changes too often and is too large to safely hand-maintain as a certified fallback. If the
+   real source fails, this worker fails honestly rather than silently writing stale/wrong data."*
+   **The generalisable principle: a fallback is only safe where the data is small, stable and
+   verifiable by hand.** 30 teams qualify; 582 players do not. → `NBA_WORKERS.md` §0.31
+4. **The arenas worker coerces capacity on the way in** —
+   `arena_capacity && Number(arena_capacity) > 0 ? Number(...) : null` — **which is where the
+   string-to-integer cast happens**, with a zero-guard. *Confirms the correction made to the T2
+   pass-3 entry: the lexical-sort hazard exists in the JSON and never reaches the table.*
+
+**Ratio**: 4 findings from ~14 segments.
+
 ### T2.6 — PASS 6 (**re-read continued: the arenas endpoint migration, settled by reading code**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
