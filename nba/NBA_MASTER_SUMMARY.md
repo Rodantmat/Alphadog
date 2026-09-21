@@ -10444,8 +10444,11 @@ preference, in both halves.)*
 **A concrete coverage spec — roughly 11–13 rungs centred on the anchor — with its reasoning:** the
 apps place the line where they choose, and the profitable rungs are the goblin/demon extremes. **The
 documents describe rungs extensively** (`nba_market.rung_market`, 1.06M rungs; de-vigging *"at the
-DFS rungs only"*) **but nowhere record the owner's stated width requirement or the rationale for
-it.** The spec is the acceptance criterion for ladder coverage, and it is missing.
+DFS rungs only"*) — ⚠ ~~*"but nowhere record the owner's stated width requirement or the rationale
+for it. The spec is the acceptance criterion for ladder coverage, and it is missing."*~~ **WRONG,
+corrected by §T7.46a**: three documents record the requirement **in measured form** (`LADDER_DEPTH`
+p95 = 13 rungs, *"agrees to within one rung"*). **The owner's verbatim numbers and his rationale are
+what is added here.**
 
 **He also rejected the alternative explicitly**: *"not do a global matrix and have a ton of data
 that's not needed"* — **bounded ladder, not exhaustive grid.**
