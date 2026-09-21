@@ -1165,7 +1165,7 @@ signs.**"* — structural, reproducible, not noise.
 |---|---|
 | `nba_config.role_tiers` (6 rows) ↔ `ROLE_TIERS` in the recipe | ✅ **verified identical 2026-09-20** |
 | **`classification_config.minutes_mixture` ↔ the recipe's minutes logic** | ❌ **DRIFTED** — config specifies `dud_lognormal`, `tiered_inelastic`, per-team `E[min\|blowout]`; none implemented |
-| `classification_ladder_v12.py` ↔ `combos_ladder_v1.py` constants | ⚠ unverified — each holds its own `LADDER_STEPS`, Wilson threshold |
+| `classification_ladder_v12.py` ↔ `combos_ladder_v1.py` constants | 🔴 **DIVERGED — verified 2026-09-21 (§T9.27b)**, no longer "unverified". On **2025-11-29**, the one as-of day whose singles ran at per-prop depth (`points` 14, `steals` 2), **all five composites and `stocks` sat at a flat 10** against `LADDER_DEPTH` values of **16 · 15 · 14 · 7 · 16** (`pra`, `pts_reb`, `pts_ast`, `reb_ast`, `fantasy_score`). Each file still holds its own `LADDER_STEPS`; the Wilson threshold remains unverified. |
 | The certified recipe ↔ the production **patcher** | ✅ **anchor assertions fail loudly on drift** — the right pattern |
 
 **The patcher's anchor assertions are the model**: they turn silent drift into a loud failure. **The
