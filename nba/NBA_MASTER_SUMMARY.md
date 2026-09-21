@@ -9762,6 +9762,37 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.63 — PASS 34 (**novelty audit, fifth run**) — **✅ CLEAN 1/3 · and the blueprint already carried the general form of these rules**
+*2026-09-21. Rule 8 first: `undifferentiated`, `eleven lines`, `every copy`, `seven figure families`,
+`editorial` — **zero pre-edit hits, all thirty documents.** So are `self-contradiction`, `internal
+contradiction`, `grep your own`, `copies missed`. **Everything passes 31–33 added is new.** One
+near-miss cleared: `propagation` appears twice pre-edit, both about **database read delays**, not
+about corrections.*
+
+#### 🔑 T7.63a — **The blueprint already stated the general discipline these ten rules are special cases of**
+
+`NBA_ARCHITECTURE_BLUEPRINT.md` line 342, from T1, **pre-dating this entire re-sweep**:
+
+> *"**General verification discipline, applies everywhere**: **never accept a claimed table / column /
+> fix location without checking it exists exactly where claimed** (a claim can be true about a
+> different table than your first assumption — **verify the actual target, don't dismiss from
+> checking the wrong place first**)…"*
+
+**That is the general form of at least four of the ten rules this sweep derived the hard way** — the
+composite-key rule (§T7.44a: a claim true of `variation_band`, checked against `tier_label`), the
+one-line rule (§T7.50a: the vocabulary two lines above the key), the novelty rule (§T7.39c, §T7.54a:
+never checking where the claim already existed), and the copy-propagation rule (§T7.61a).
+
+⚠ **Recorded without softening what it implies about this sweep**: the discipline was on file in
+general terms, and **ten specific failures were still needed to produce ten specific rules.** *The
+general statement did not prevent them — which is itself the argument for the specific forms, each
+naming its own failure and the exact check that catches it.* **Both belong in the record: the
+principle, and the ten instances that show a principle is not a procedure.**
+
+**Pass outcome: no duplicate, no defect, one connection recorded. ✅ CLEAN 1/3.**
+
+---
+
 ### T7.62 — PASS 33 (**two-direction judgment, eighth run**) — **⚠ 1 SCOPE DEFECT, MINE · band stable for a third run · 0/3**
 *2026-09-21. 118 segments, 0 in, 0 out, coverage 928 / 885 — **identical for the third consecutive
 run** (29, 30, 33). The extraction is finished; only the claims are still in play.*
