@@ -189,6 +189,80 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 🔴🔴 SLEEPER HAS ONE DAY OF BOARD HISTORY — one of the three apps the owner named
+*Found 2026-09-21, T11 pass 3 (§T11.4a). `[LIVE-AUDIT]` on `nba_market.board_snapshots` —
+**27,067,871 rows, 2024-10-22 → 2026-09-13**.*
+
+| app | labels | rows | range | **distinct days** |
+|---|---|---|---|---|
+| **`prizepicks`** | `close` · `window` | **2,199,354** | 2024-10-22 → 2026-04-12 | **378** |
+| **`underdog`** | `close` · `routine` · `window` | **939,719** | 2024-10-22 → 2026-09-12 | **380** |
+| ⚠ **`betr_us_dfs`** | `close` · `window` | **780,765** | **2025-11-23** → 2026-04-12 | **131** |
+| ⚠ **`pick6`** | `close` · `window` | **534,188** | **2025-05-26** → 2026-04-12 | **176** |
+| `fliff` | `routine` | 1,394 | 2026-09-13 | **1** |
+| 🔴 **`sleeper`** | `routine` | **1,276** | **2026-09-12** | **1** |
+
+🔴 **The owner asked for two seasons of board snapshots for *"sleeper, underdog, and prizepicks"*
+(T11 seg 197). Two of the three have them. Sleeper has a single day and a single label.**
+*`scrape_sleeper_board.py` exists and is documented — **what is missing is history, not a scraper**.*
+
+🔴 **Two more are partial**: **Betr starts 2025-11-23** and **Pick6 starts 2025-05-26** — **131 and
+176 days against PrizePicks' 378. Neither covers the first season.**
+
+⚠⚠ **Why it matters**: the derived-fallback plan the owner set out rests on *"two seasons of data to
+train and test our derived fallback"* (T11 seg 676). **For Sleeper there is no training data at all,
+and for Betr and Pick6 there is one partial season.**
+
+📌 **OWNER DECISION — and the cause is deliberately not guessed**: **whether ParlayAPI never served
+Sleeper's history, whether a run failed, or whether it was dropped is NOT RECORDED.** *T11 is
+2026-09-10 and eight transcripts after it are unswept; this is the live state on 2026-09-21, not
+T11's outcome.* **The question is whether Sleeper is meant to have history and does not, or was
+consciously dropped from the historical set.**
+
+---
+
+## 🔴🔴 EVERY INJURY SNAPSHOT TIMESTAMP CARRIES A HARDCODED `-05:00`
+*Found 2026-09-21, T11 pass 3 (§T11.4c). `[LIVE-AUDIT]`, measured across **all 14 month-shards, both
+seasons**.*
+
+**`-05:00` appears on every row of every month, 2024-10 through 2026-04. No other offset exists
+anywhere in the data.** The scraper builds it literally:
+
+```python
+found.append((f"{d.isoformat()}T{h:02d}:{(m or 0):02d}:00-05:00", url, content))
+```
+
+🔴 **The NBA publishes the injury report in EASTERN time, and Eastern is not a fixed offset** — **EDT
+(−04:00)** from the second Sunday in March to the first Sunday in November, **EST (−05:00)** the rest
+of the year. **The season runs late October → mid-April:**
+
+| period | true ET | stored | effect |
+|---|---|---|---|
+| **late Oct → early Nov** | **−04:00** | −05:00 | 🔴 **stored instant is ONE HOUR LATE** |
+| early Nov → mid-Mar | −05:00 | −05:00 | ✅ correct |
+| **mid-Mar → mid-Apr** | **−04:00** | −05:00 | 🔴 **ONE HOUR LATE** |
+
+⚠⚠ **`NBA_SYSTEM_ARCHITECTURE.md` already carries both the warning and the standard.** Its
+DST-exposure table lists *"**the injury-report archive** — 'the season crosses DST' — already recorded
+as a caveat on the hourly backfill — **⚠ noted**"*, and in the same table praises `nba_asof.py` for
+storing `"16:00"` as a **local wall-clock time**: *"**exactly the prescribed pattern, not a fixed
+offset**."* ***The injury scraper does the exact thing that sentence names as wrong. The caveat was
+noted; the data was never checked.***
+
+📌 **The arithmetic, and no further** (rule 6): a report truly published at **14:30 EDT = 18:30 UTC**
+is stored as **14:30−05:00 = 19:30 UTC**, so a cutoff of the form `snapshot_ts <= cutoff`
+**excludes snapshots that were genuinely before it** — losing the most recent hour of pre-cutoff
+information in the October and April windows. ⚠ **Whether any live consumer filters that way is NOT
+RECORDED**; this pass did not trace it.
+
+🔑 **And the magnitude is set by a second finding**: **the league republishes the report 10–27 times a
+day** (§T11.3d) — **an hour is several snapshots, not a rounding error.**
+
+📌 **Season-relevant**: the regular season opens **2026-10-20**, which is **inside the EDT window** —
+*the defect bites from opening night.*
+
+---
+
 ## ⚠ NO NBA PARSER IS RECORDED AS VALIDATED AGAINST THE RUNNER'S OWN EXTRACTION
 *Added 2026-09-21 from T11 (§T11.2c). **Past bug with its fix, plus an unchecked class.***
 
