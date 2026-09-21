@@ -9320,6 +9320,45 @@ bands, direction, prop line), and the design document that gets materialised int
 **Seven owner turns sit in the tail**, the most of any transcript; T2–T6 had at most five, and T5 and
 T6 had none.*
 
+### T7.31 — PASS 2 (**reasoning stratum, chunk 1 — ⚠ PROVISIONAL, stratum not finished**) — **NEW MATERIAL · 0/3**
+*2026-09-21. Rule 3: written from part of a stratum, completed by the next pass.*
+
+#### ⚠ T7.31a — **THE SYSTEM ALREADY DETECTS THE GAP T6 FOUND — and the detector is undocumented**
+
+T7 built a coverage check into `alphadog-v2-nba-daily-delta.js`, with its own comment:
+> *"real gap closed 2026-09-04, final coverage pass: **this check was designed but never actually
+> implemented until now** — identifies logged games that still lack starter-status or officials data,
+> so a follow-up per-game backfill run knows exactly which `game_id`s to [fetch]."*
+
+`[LIVE-AUDIT]` **VERIFIED**, lines **196–216**: two `LEFT JOIN`s from the game log against
+`player_game_starter_status` and `game_officials`, surfacing the misses as
+`games_missing_starter_status_sample` and its officials counterpart in the worker's response.
+
+**Nothing in the thirty documents records that this check exists.** And it matters, because **it is
+precisely the detector for §T6.19a**: run today it would report **3 games missing officials** — the
+2025-11-19 trio — and **0 missing starter status**, exactly the figures this sweep derived by hand
+from live SQL.
+
+**So the gap was never invisible to the system; it was invisible to the documentation.** The check
+has been shipping since 2026-09-04, on a worker that runs daily in season. **Recorded so the
+2025-11-19 item is read as "known and reported by design" rather than as an undetected hole.**
+→ `NBA_OPEN_ITEMS.md`.
+
+#### ✅ T7.31b — the game-id prefix convention was discovered here, and this sweep re-derived it independently
+> *"NBA game-id prefixes are a well-known, precise convention for game type, rather than relying on
+> free-text labels… **exact match confirmed — prefix `002` = 1,230 games**, precisely matching the
+> known-correct regular-season count."*
+
+**T7 replaced a fragile `game_label` text match with the prefix**, and the documents record it ✅.
+Worth noting for confidence: **this sweep arrived at the same convention independently** in T2 pass
+18 and T4 pass 8, and used it to establish the 2026-10-20 season-opening correction and the
+zero-calendar-coverage finding. **Two routes, same convention, consistent results.**
+
+The **170-game gap** (1,400 − 1,230) is likewise recorded and matches this sweep's own
+season/prefix breakdown exactly ✅.
+
+---
+
 ### T7.30 — PASS 1 (**owner-turn stratum**) — **🔴 NEW MATERIAL · 0/3**
 *2026-09-21. **Three owner design directives are recorded nowhere**, and one of them governs a
 decision the system has already made.*
