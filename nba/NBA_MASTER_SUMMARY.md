@@ -8532,6 +8532,52 @@ with a completeness-check bug caught via the `002` GAME_ID prefix.
 **527 uncovered vs the twelve (88.6%)** · 524 vs all 30 — a **3-segment** self-authorship gap, the
 smallest of any transcript. T6 writes almost none of the documents; its tail is all content.*
 
+### T6.19 — PASS 3 (**results stratum, all 158 segments — last of T6's four**) — **NEW MATERIAL · 0/3**
+*2026-09-21.*
+
+#### 🔍 T6.19a — **THE THREE MISSING OFFICIALS GAMES ARE ALL THE SAME NIGHT — 2025-11-19**
+
+The transcript names them: `0022500259`, `0022500260`, `0022500261` — **three consecutive ids**.
+`[LIVE-AUDIT]` resolves what that means:
+
+| `game_id` | Date | Matchup | Status |
+|---|---|---|---|
+| 0022500259 | **2025-11-19** | WAS @ MIN | Final |
+| 0022500260 | **2025-11-19** | DEN @ NOP | Final |
+| 0022500261 | **2025-11-19** | SAC @ OKC | Final |
+
+**All three on one date, and all three `Final`** — they were played and completed. And the night was
+only partly affected: **9 games were scheduled on 2025-11-19; 6 have officials, 3 do not.**
+
+**This reframes the gap.** It is not scattered attrition and not a scraper defect — the truthiness
+fix (§T6.18a) did not recover them, so **the data was never served for those three games.** A
+date-localized, partial-slate hole points upstream, at `boxscoresummaryv3` for that night. *Cause
+NOT RECORDED — nothing in T6 establishes why, and the raw-capture debug run was the last attempt.*
+**Recorded with its exact shape so a future retry has somewhere to start** — three named ids, one
+date, six sibling games that did work. → `NBA_OPEN_ITEMS.md`.
+
+#### ✅ T6.19b — the invariant I verified in §T6.17a was **already computed at build time**
+```
+officials per game distribution: Counter({3: 1227})
+```
+**T6 ran the same structural check itself.** §T6.17a presented `games_not_3_officials = 0` as an
+independent verification — it is, but **it is a re-confirmation, not a discovery**, and the entry is
+corrected to say so. *Recorded because the distinction matters: the build was more rigorous than the
+documentation credited it with being.*
+
+#### 📐 T6.19c — **591 distinct players in starter status vs 582 in the dictionary — the 9 reconcile exactly**
+The transcript's own count: *"distinct player ids: 591"*. The dictionary holds **582**.
+**The difference is 9 — precisely the 9 distinct orphan players measured in §T5.20b**, all of them
+DNP entries with no starts. ✅ **Two independent routes to the same nine people**, confirming the
+box-score-vs-game-log population difference is complete and understood.
+
+#### ✅ Verified, already documented
+32,179 / 12,300 / 1,230 recomputed from the source file, not trusted from the meta; the chunk-size
+iterations (65 → 17 → 5 → 33 chunks) behind the manual load; `dblink` present but
+`installed_version: null`; three `github_get_file` 404s during the debug cycle. ✅
+
+---
+
 ### T6.18 — PASS 2 (**command stratum, all 153 segments**) — **NEW MATERIAL · 0/3**
 *2026-09-21. Resolves the open thread §T6.17b left for this stratum.*
 
