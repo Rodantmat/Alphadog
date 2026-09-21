@@ -287,7 +287,8 @@ if those routes are public, every writer worker in the fleet is an open write en
 not, the service bindings are the only path and this is a non-issue.**
 
 **The owner is the only one who can close that question**, in the Cloudflare dashboard, per worker.
-It is worth closing before the season opens on 2026-10-03, because the same shape will be on every
+It is worth closing before the season opens on **2026-10-20** *(corrected 2026-09-21, §T10.18b — this
+line read 2026-10-03, which is preseason opening night; the regular season opens 10-20)*, because the same shape will be on every
 NBA writer built between now and then. *Not fixed — recorded per the sweep's read-only rule.*
 
 ---
