@@ -52,6 +52,14 @@ if env: return int(env)          # flat, every prop
 return LADDER_DEPTH.get(prop, 10)   # the measured per-prop table
 ```
 
+🔑 **And the cost of the flat 10 is already graded per prop, in `NBA_GOBLIN_DEMON.md` lines 496–504**
+*(located 2026-09-21, §T9.41a)* — a table of **Prop · Anchor · p95 distance · "Our ±10" · Fixed to**
+whose middle column reads **short · short · short · short · wasteful · wasteful · very wasteful · very
+wasteful**, and whose "Fixed to" column **equals `LADDER_DEPTH` on all eight props it covers**
+(p95 + 1 for the five short/wasteful ones, p95 exactly for the three deep composites).
+**So the override is not merely undocumented-in-effect — the document that proposed replacing it
+already measured what it costs.** *The provenance of the other 12 `LADDER_DEPTH` keys is unrecorded.*
+
 `nba-baseline.yml` reads `ladder_steps:` from `nba/TRIGGER_NBA_BASELINE.txt`, which currently reads
 **`ladder_steps: 10`**. `nba-p2-overnight-heavy.yml` deliberately leaves it unset, with the reason in
 the file: *"Points needs 14 rungs, steals needs 2; one number cannot be right for both."*
