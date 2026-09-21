@@ -6396,6 +6396,62 @@ vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship**
 writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
 but not the twelve.
 
+### T4.25 — PASS 5 (**the two-direction judgment pass**) — **1 DEFECT, IN THIS SWEEP'S OWN PROSE · 0/3**
+*2026-09-21. 607 segments. High band (≥0.45): 82. Tail-direction: 32.*
+
+**DIRECTION 2 — CLEAN.** All 32 segments are **false-tail mechanism (3), self-authorship** — T4
+writes four of the thirty documents and matches them at up to 1.00: `NBA_PROJECT_LOG.md` (13),
+`NBA_BASELINE_METHODOLOGY.md` (8), `NBA_HISTORICAL_BACKFILL_PLAN.md` (7),
+`NBA_ENRICHMENT_FACTORS_RESEARCH.md` (4). **None is among the twelve**, which is the whole of the
+82%-vs-71% coverage gap. Their substance is carried in the twelve — the 5-step pipeline, the
+3-season scope, the splits inventory, the cost correction. ✅
+
+**DIRECTION 1 — one defect, and it is mine.**
+
+#### ⚠ T4.25a — CORRECTION to §T4.22c: the tool-failure count was loose; here it is exactly
+
+§T4.22c asserted *"Four instances, two tool families."* That was assembled from memory across T2 and
+T4 rather than counted. **Counted properly across all 607 T4 segments:**
+
+| Mistaken tool name | Instances |
+|---|---|
+| `Alphadog Bridge:github_str_replace` | **2** |
+| `Alphadog Bridge:memory_append` | 1 |
+| `Alphadog Bridge:memory_write` | 1 |
+| `Alphadog Bridge:str_replace` | 1 |
+| **Total in T4 alone** | **5**, across **3 distinct wrong names** |
+
+**All five are the same error**: the MCP server label prefixed onto the tool name. The correction
+already in the documents — *"`github_str_replace` does not exist, and a mandated document listed
+it"* — is right about the fact and **too narrow about the shape**: it reads as a quirk of one tool,
+and it is a naming-convention error that recurs across unrelated tool families, five times in one
+session.
+
+#### ⚠ T4.25b — a SECOND, different tool failure mode, distinct from the naming one
+```
+MCP error -32602: Input validation error: invalid arguments for tool github_put_file:
+  invalid input: expected string, received undefined at path…
+MCP error -32602: … for tool github_patch_file: invalid input: expected string, received undefined …
+```
+**Two instances.** This is **not** the naming error — the tool resolved fine and rejected its
+*arguments*. The `expected string, received undefined` shape is what a caller gets from using the
+wrong parameter names (`old_string`/`new_string` rather than `old_str`/`new_str`).
+
+⚠ **Worth recording as a live hazard rather than a historical curiosity: the same error was hit
+again during this documentation sweep, 2026-09-21**, on the first `github_patch_file` call of the
+session. **Two sessions, eighteen days apart, same tool, same mistake.** The parameter names are
+`old_str` / `new_str`.
+
+#### ✅ Everything else in the band is documented and correct
+Survivorship bias in `playercareerstats` ✅ (in `NBA_DATABASE.md` **and** the backfill plan, with the
+sharper *"conditioned on being a currently-relevant NBA player"* framing). The cost correction, the
+`%2B` encoding bug, the structural verification against captured raw data, the pre-flight
+completeness check, the cadence as **Claude scheduled tasks rather than cron**, `2,460 = 30 × 82`,
+`32,755` total backfilled rows, and the baseline/enrichment architecture split — **all already
+recorded** ✅.
+
+---
+
 ### T4.24 — PASS 4 (**results stratum, all 129 segments — the last of T4's four strata**) — **NEW MATERIAL · 0/3**
 *2026-09-21.*
 
