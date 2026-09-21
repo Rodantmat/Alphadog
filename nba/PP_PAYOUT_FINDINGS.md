@@ -184,6 +184,41 @@ salvaged by relabelling from contents. **Fixed** in `nba/pp_payout_map.py`; run 
 **Why the mock missed it:** it counted slips per *label*, not whether each slip *contained* what its label
 claimed. A composition-content check (29/29 correct after the fix) now exists.
 
+### Clean result — run 3 (22/22 compositions verified by content)
+Method: for each slip, multiply its legs' own 2-pick factors, then take the **base that product implies**
+(`payout ÷ product`). If the multiplicative model held, every slip of a size would imply the same base.
+
+| Size | Goblin-heavy slips imply | Demon-heavy slips imply | All-standard, measured | Mean of mixed slips |
+|---|---|---|---|---|
+| 3 | 5.13 | 5.41–5.47 | **6.00** | 5.42 |
+| 4 | 9.29 | 10.25–10.58 | **10.0** | 9.87 |
+| 5 | 17.16 | 19.06–19.25 | — | 18.26 |
+| 6 | 32.54 | 36.37 | — | 34.56 |
+
+**Goblins cost more in larger slips than their 2-pick price implies** — goblin-heavy slips imply the lowest
+base at every size, ~10% below demon-heavy ones. **The 3-pick 6× base applies to all-standard slips only:**
+with any goblin or demon the effective base falls to ~5.1–5.5.
+
+**Working approximation:** payout ≈ mixed-slip base × product of the legs' 2-pick factors, with bases
+**5.4 / 9.9 / 18.3 / 34.6** for 3–6 picks. Good to about **±6%**; goblin-heavy slips sit low. Adequate for
+rough EV, not for exact prediction. **The exact multi-pick rule remains open**, as do the all-standard
+bases for 5 and 6 picks (the published 20× and 37.5× are plausible but unverified here).
+
+**A method error caught on the way:** a shortcut — dividing the `1g`, `1d` and `gd` slips to cancel the
+base — assumed they shared the same goblin and demon. They did not: `gd` must avoid the goblin's game, so it
+substituted a different demon. The result (a goblin factor of 2.96, a 3-pick base of 1.52) was impossible,
+which is what exposed it. **Verify shared legs before any cancellation.**
+
+### Flex — confirmed out of sample (owner's screen, 2026-09-21)
+| Slip | Power pred → actual | Flex pred → actual |
+|---|---|---|
+| LeBron PRA 34.5 D + SGA P+R 29.5 G | 3.25 → **3.25** | 2.2/0.5 → **2.2/0.5** |
+| Tatum P+R 39.5 D + Wemby Points 29.5 D | 5.75 → 5.5 | 4.0/0.5 → 3.8/0.5 |
+| Tatum Points 24.5 G + Brunson 3PM 1.5 G | 1.9 → **1.9** | 1.6/0.25 → **1.6/0.25** |
+
+Consolation tier **3/3**, including across the 2.4× boundary. The one full-payout miss is inherited from the
+Power miss: feeding the actual 5.5× back in gives 4.0 × 5.5/5.75 = 3.83 → **3.8**, exact.
+
 ---
 
 ## 5. FOUR-WAY TAXONOMY — VERIFIED IN THE PRICING ENGINE
