@@ -14420,6 +14420,47 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.48 — PASS 33 (**live numeric re-verification**) — **🔴 the census ROSE because documenting the problem added instances of it · 0/3**
+*2026-09-21. Every figure passes 29–32 state, re-derived; every timestamp in UTC; every partition
+summed; every predicate stated.*
+
+#### 🔴 T9.48a — **§T9.46's timestamp census was published as a property of the twelve; it is a dated measurement, and it went UP**
+
+| | Pass 31 | **Pass 33** | Δ |
+|---|---|---|---|
+| Timestamps in the twelve | 111 | **120** | **+9** |
+| With no adjacent zone token | 68 | **74** | **+6** |
+| Of those, in 17:00–23:59 | 43 | **47** | **+4** |
+
+**Nothing was measured wrongly.** *§T9.46a's own write-up — the entry, the ledger row and the run-log
+row — quotes the three confidence times in prose, and the ledger and run log quote them without an
+adjacent zone token.* **Documenting the zone problem added six new instances of it.**
+
+🔴 **The defect is mine and the rule already existed.** §T9.28b established the treatment for exactly
+this shape — *"a coverage figure is dated by construction; state it with the pass that took it, never
+as a property of the transcript"* — **after the 703 → 696 drift.** *I applied it to the coverage
+figure and not to the census, three passes later.* **Dated in place.**
+
+🔑 **And this is the self-authorship effect in a THIRD location.** *Direction 2 (mechanism 3, T2/T3) ·
+direction 1 (§T9.40b, the `rep()` quotation) · **now a corpus metric.*** **Every number this sweep
+measures over the twelve is measured over a corpus it is writing** — *which is not a reason to stop
+measuring, but is a reason that every such figure carries the pass that took it.*
+
+#### ✅ T9.48b — **Everything else exact, predicates and zones stated**
+
+| Claim | Predicate / authority | Result |
+|---|---|---|
+| The five commit times | `git show -s --format=%aI`, converted to UTC | ✅ **2026-09-09 04:57:30** · **05:55:07** · **2026-09-12 02:49:35** · **2026-09-19 23:58:44** · **2026-09-11 17:18:17** |
+| Confidence generations | `count(*)` grouped by `check_type` family | ✅ **34 · 5 · 21**, and **34 + 5 + 21 = 60** = the table's total |
+| `LADDER_DEPTH` provenance | the documented table vs the parsed dict | ✅ **8 of 8 "Fixed to" match**, **8 + 12 = 20** |
+| `used_emp` | `count(*) FILTER (WHERE used_emp)` / `(WHERE NOT used_emp)` | ✅ **205,678 + 559 = 206,237** |
+| Band and coverage | `judge9.py`, band `>= 0.45`, coverage `< 0.40` | ✅ **54 · 690 · 675** — unchanged from pass 30 |
+
+**Pass outcome: 1 defect — a dated measurement published as a static property, by a rule this run had
+already written — everything else exact. 🔴 CLEAN 0/3 · 33 passes.**
+
+---
+
 ### T9.47 — PASS 32 (**novelty audit, fifth run — passes 28–31 vs `/tmp/t9base/nba/`**) — **✅ CLEAN 1/3 · no defect, and one finding stopped by opening its hit**
 *2026-09-21. Everything passes 28–31 added, grepped against the pre-T9 snapshot, every hit opened.
 **No document was changed by this pass.***
