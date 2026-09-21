@@ -8532,6 +8532,45 @@ with a completeness-check bug caught via the `002` GAME_ID prefix.
 **527 uncovered vs the twelve (88.6%)** · 524 vs all 30 — a **3-segment** self-authorship gap, the
 smallest of any transcript. T6 writes almost none of the documents; its tail is all content.*
 
+# ✅✅ T6 IS CLOSED — 2026-09-21 — 9 PASSES (re-sweep under chronological order)
+
+**Three consecutive clean passes at three different angles**: 7 (wiring), 8 (mid-band seam),
+9 (two-direction judgment).
+
+### T6.25 — PASS 9 (**two-direction judgment, re-run**) — **✅ CLEAN 3/3 — T6 CLOSES**
+Direction 2: **0 segments** again — T6 writes none of the thirty documents. Direction 1: 58 segments,
+all mapping to correct entries, including every item the earlier passes added. **No defect.**
+
+---
+
+## T6 FINAL TALLY
+
+**9 passes. All four strata read. Closed on 3 clean passes at 3 angles.**
+**~8 findings across 527 tail segments ≈ 1 per 66** — the lowest yield of the sweep, and the right
+one: T6 arrived with sixteen sound sections, **and the batch check confirmed them.**
+
+**Everything new came from the live-system angles, not from re-reading prose:**
+
+| Severity | Finding | Angle that found it |
+|---|---|---|
+| 🔴🔴 | **The officials dictionary and the game assignments join at 0%** — 3,681 of 3,681 rows fail; name-derived key vs numeric key, **with the numeric id sitting unused in the assignments table.** The T2 `known_limitation` said box-score data would supply the crosswalk; it did, and it was never built | referential integrity |
+| 🔴 | **`lineup_profile` is exactly 2,000 rows per group size** — the API cap hit four times, silently, every run "successful" | referential integrity |
+| ⚠⚠ | **`game_officials.assignment` NULL on all 3,681 rows** — the crew role (chief/referee/umpire), plumbed end to end, never sent by the source. **Third dead column, third distinct mechanism** | value sanity |
+| 🔴 | **The "silent parse error" is a truthiness bug** — `[] is not None` accepted an empty list as success *and discarded the error with it*. **Fourth instance of the no-error-raised class, and the only one caused by our own code** | command stratum |
+| 🔍 | **The 3 officials-less games are all 2025-11-19** — 9 games that night, 6 have officials. Date-localized and upstream, not scraper attrition | results stratum |
+| 📊 | **Tool-name failures counted corpus-wide: 17 instances, 7 wrong names, 7 of 20 transcripts** — `github_str_replace` alone is 10, meaning a mandated document naming a non-existent tool cost attempts in four sessions | judgment |
+
+**The pattern across T4, T5 and T6 is now unmistakable**: the strata re-reads confirm what is already
+written; **the findings that matter come from asking the live system questions the transcripts never
+asked.** Referential integrity has now produced the headline finding on **three consecutive
+transcripts.**
+
+---
+
+## ▶ NEXT: T7 — `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt`
+
+---
+
 ### T6.24 — PASS 8 (**the mid-band 0.40–0.45 seam**) — **✅ CLEAN 2/3**
 *2026-09-21. Only 11 segments in the seam.*
 
