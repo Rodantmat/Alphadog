@@ -790,6 +790,34 @@ best prop and side), ranked and cut into 3-pick slips.
 lookup finds nothing and P3 aborts — no scores, no paper picks. Switch the season before October 20 (the same
 hard-coded-season class that caused the calibration wipe).
 
+### SHARPENING NBA MULTIPLIERS — slip rules and constants (2026-09-21, owner: multipliers don't wait on the docs)
+**Per-leg constants — already about as good as NBA's data allows.** Refit on every NBA leg mined so far (103 usable, very
+few players): points 1.87 → best 1.90 (no real gain), count 1.08 → 1.12, rebs+asts 1.34 → 1.30 (still 5 legs). No change.
+**CORRECTION to the WNBA section above:** "rebounds/assists are league-specific" is NOT established. Inside NBA, single
+ladders prefer 1.08 (SGA reb, Brunson reb, Cunningham ast) or ~1.3 (Wembanyama reb, Brunson ast): NBA's 1.08 averages 8
+ladders from 4 players. NBA's data still modestly prefers ~1.1 over 1.3 (6.2% vs 8.4% mean error), so KEEP 1.08 — but
+revisit with preseason NBA data.
+**Hypothesis rejected: per-player dispersion.** On the sqrt scale, c = √(variance ÷ mean) of the stat (why Poisson-like
+stats sit near 1 and points at 1.87). Per-ladder fitted c does NOT track the player's own season dispersion (SGA points
+1.92 vs 1.29; LeBron 2.12 vs 1.35; Tatum 1.98 vs 1.00) → PrizePicks uses a FAMILY-level spread; ladder-to-ladder scatter
+is mostly estimation noise (2–4 legs per ladder, payouts rounded to 0.25).
+
+**Slips run** (`PP_MODE=slips`, WNBA board — slip rules are league-independent): all-standard slips 2–6 picks, one player
+per TEAM (board rows now carry `team`), three player sets; 16 alternates (8 goblins + 8 demons, nearest to farthest
+line) each priced alone, then as ONE alternate + standards at 3–6 picks. Rules written to `nba_config.pp_slip_rules`.
+| Rule | Result | Status |
+|---|---|---|
+| All-standard Power | **3.0 / 6.0 / 10.0 / 20.0 / 37.5×** (2–6 picks) — 5 and 6 were unverified | verified |
+| All-standard Flex | 3: 3.0/1.0 · 4: 6.0/1.5 · 5: 10.0/2.0/0.4 · 6: 25.0/2.0/0.4 | verified |
+| Same game | two players from one game in a 3-pick: Power stays 6.0; Flex partial 1.0 → 0.75, `is_adjusted` | partial |
+| **One alternate + standards** | **payout = b · f^a**: 3: b 5.330 a 1.008 · 4: 10.058 / 1.034 · 5: 18.605 / 1.057 · 6: 35.432 / 1.069 | **verified** |
+| Two or more alternates | 3 picks: follows b·∏f^a (0.2–1.8%); 4–6 picks: ~7% BELOW it (obs/pred 0.92–0.97) | partial |
+The one-alternate law fits with R² ≥ 0.9993 and 0.9–1.6% mean error (rounding level), vs up to 4.6% for a linear base;
+the exponent climbs with slip size, so goblins sit below the all-standard base and demons rise above it. NBA's own
+one-alternate slips fit it within ~2% (league- and time-consistent). The old `base_power_mixed` (±6%) is explained.
+**Next:** rewrite `nba_market.pp_slip_power` on these rules and validate it against every stored quote; a targeted run
+with 2- and 3-alternate slips (alternates priced alone) to model the multi-alternate haircut.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
