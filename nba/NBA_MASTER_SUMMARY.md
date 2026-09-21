@@ -14423,6 +14423,76 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.6 — PASS 5 (**novelty audit over all thirty vs `5dfb72ab`**) — **❌ two of my own claims overturned, and both by the same probe-design failure · 0/3**
+*2026-09-21. Everything passes 0–4 added, grepped against the pre-T11 snapshot across all thirty, in
+three vocabularies, **with every hit opened.** The next-step row named the risk correctly — on T11 the
+likely error is calling something NEW that `NBA_COMPASS.md`, `NBA_PROJECT_LOG.md` or the checkpoints
+already carry — **and it happened twice.***
+
+#### ❌ T11.6a — **RETRACTION: the Dec-22 filename break is NOT new, and my date was a year out**
+
+**`NBA_PROJECT_LOG.md` line 502 records it in full, fix and all**: *"(c) **before ~2025-12-22 the
+archive uses an HOURLY filename with no minutes and the true publish time is in the PDF header** →
+**probe both patterns, `snapshot_ts` from the header, md5 dedupe** of re-pub…"*
+
+🔴 **§T11.3c's *"Novelty: 0 of thirty"* is wrong.** **Why the probe missed it**: it searched
+`dec(ember)? 22|12/22` and **the text says `2025-12-22`, which matches neither pattern.**
+***Second instance of the `phase2_enrichment` family — a probe that could not match, returning a
+confident zero*** (§T10.21b was the first, and rule 21 was written for it).
+
+🔴 **And a second error the same hit exposed**: `NBA_WORKERS.md` §0.23 and the run log said
+**`~2026-12-22`. The correct date is `~2025-12-22`** — *the season is 2025-26, and the log gives it.*
+**Both corrected.**
+
+✅ **What survives, narrowed**: **the break is new to the TWELVE** — `NBA_PROJECT_LOG.md` is outside
+the mandated set — **so `NBA_WORKERS.md` §0.23 stays, with its novelty claim corrected.**
+
+#### ❌ T11.6b — **RETRACTION: Sleeper's missing history has a documented CAUSE and a documented REMEDY**
+
+| document | what it says |
+|---|---|
+| **`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`** | ***"Sleeper has no history anywhere → **derived-Sleeper fallback trained on PP/UD snapshots**; live boards from opening day via OUR scrapers."*** |
+| **`NBA_COMPASS.md`** | *"PrizePicks… and Underdog… boards **for both seasons, no Sleeper**; cost is per REGION per market (`us_dfs,us` = **420 credits/snapshot**)."* |
+| **`NBA_PROJECT_LOG.md`** | *"PrizePicks restricted, **UD/Sleeper absent**, history only since Jan 2026; Wayback/GitHub/Kaggle dead ends."* |
+
+🔴 **§T11.4a's *"whether ParlayAPI never served it, a run failed, or it was dropped is NOT RECORDED"*
+is wrong on both halves.** ***"Sleeper has no history anywhere" is a sourcing fact about the world,
+not a gap in the backfill — and the plan for it exists.***
+
+⚠⚠ **This is §T10.24b's lesson, one pass after §T10.25 bounded its exposure at eight instances:
+NOT RECORDED is a claim about the corpus and I wrote it from a live query again.** **Sixth absence
+failure of the sweep, and the first on T11.**
+
+✅ **What survives, and it is the §T7.47 shape**: **all three documents are OUTSIDE the twelve.** *A
+reader of the mandated twelve sees `scrape_sleeper_board.py` documented and cannot learn that Sleeper
+has no history, that a derived fallback is the plan, or that PrizePicks and Underdog are its training
+set.* ✅ **And the live figures stand** — they are `[LIVE-AUDIT]` and **0 of thirty**.
+📌 **The genuinely open part is narrower**: **Betr from 2025-11-23 and Pick6 from 2025-05-26 each
+cover one partial season**, **neither range is documented anywhere**, and **whether a derived fallback
+is planned for those two, as it is for Sleeper, is NOT RECORDED — probed in the documents' vocabulary
+this time.**
+
+#### ✅ T11.6c — **Seven claims confirmed genuinely new, carriers checked first**
+
+**Zero hits across all thirty**, with `NBA_COMPASS.md`, `NBA_PROJECT_LOG.md` and both checkpoints
+searched before anything else: **the Pacific-time standing instruction** · **ParlayAPI's live
+validation** (`v3.2.0` · Pro tier · unlimited rate · provider-state listing) · **the 10–27 republish
+rate** · **Betr's and Pick6's partial ranges** · **the hardcoded `-05:00`** · **`board_outcomes`' two
+entirely-NULL discriminators** · **the parser-validation lesson.**
+
+📌 **Already known and correctly credited**: the **919,949-row** injury figure (2 of thirty, both
+outside the twelve) and the **monthly-shard scheme** (4 of the twelve).
+
+🔑 **The pass's own lesson, and it is about the rule that was supposed to prevent this**: rule 20 says
+count vocabularies, not probes — **and both retractions came from probes that were vocabulary-correct
+and PATTERN-wrong.** ***A vocabulary you cannot spell is not a vocabulary you searched.*** **Operative
+addition: an absence probe is checked against a string known to exist before its zero is believed.**
+
+**Pass outcome: 2 retractions (mine, both from probe design) + 1 date correction + 7 claims confirmed
+novel. 🔴 CLEAN 0/3 · 6 passes.**
+
+---
+
 ### T11.5 — PASS 4 (**two-direction judgment, baseline-tree reporting**) — **✅ the Sleeper claim survives the attack, and the attack found a second defect · 0/3**
 *2026-09-21. The judgment pass, with the weight on pass 3 — the pass with the most new assertions and
 the least scrutiny.*
