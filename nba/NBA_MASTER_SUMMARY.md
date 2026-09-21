@@ -14480,6 +14480,19 @@ never matched a segment, so the damage is 3–4 counts rather than a rewriting o
 the sweep measured itself for thirty-eight passes without noticing, and found it only by chasing a
 two-segment anomaly it had pre-registered a prediction against.*
 
+✅ **AND THE DEFECT IS MINE, NOT THE SYSTEM'S — checked rather than assumed.**
+**`nba/tools/sweep_coverage.py`'s own `doc_paragraphs()` iterates `DOCS` — the twelve, by name.**
+***The repo's tool was never wrong.*** **The 32-file corpus was my scratchpad harness's own choice**,
+and it is now corrected there: **`EXCL = {'NBA_SWEEP_RUN_LOG.md', 'PP_PAYOUT_FINDINGS.md'}`.**
+**Re-measured on the corrected basis: baseline `5dfb72ab` 13 / 3 / 695 / **689**, working
+38 / 0 / 665 / **665**.** ⚠ ***All `uncovered30` figures from pass 39 onward are on this basis; every
+one before it is 3–4 low.***
+
+🔑 **And no new rule is needed — rule 17 already says it.** *"A document count names its POPULATION —
+the twelve, or `nba/`. They are not the same corpus."* ***The band is a document count, and rule 17
+was never applied to it.*** **That is the failure, and it is a rule-12 failure — applying a rule only
+where it was born.**
+
 📌 **A second instrument note, from the same pass**: the tree-digest check (§T11.26a) hashes
 **`sha256sum` output including the FILE PATH**, so the same tree cut to a different directory yields a
 different digest. **The original check was unaffected** *(it re-cut to the same paths)*, **but the
