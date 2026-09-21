@@ -6430,6 +6430,84 @@ vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship**
 writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
 but not the twelve.
 
+# ✅✅ T4 IS CLOSED — 2026-09-21 — 10 PASSES (re-sweep under chronological order)
+
+**Three consecutive clean passes at three different angles**: 8 (referential integrity, remainder +
+value sanity), 9 (two-direction judgment), 10 (wiring).
+
+### T4.30 — PASS 10 (**angle: is everything T4 built actually wired and runnable?**) — **✅ CLEAN 3/3 — T4 CLOSES**
+*2026-09-21. A dimension no other angle touches: not the data, not the prose — **the plumbing.***
+
+**Registry** `[LIVE-AUDIT]` — all four T4-era workers present in `nba_config.worker_definitions`,
+**all `enabled = 1`**, and the backfill worker correctly filed under a **different worker group**
+from the weekly ones:
+
+| Worker | `job_key` | Group | Enabled |
+|---|---|---|---|
+| `alphadog-v2-nba-static-shotquality` | `nba-static-shotquality` | 01 Static | 1 |
+| `alphadog-v2-nba-static-backfill` | `nba-static-backfill` | **02 Historical** | 1 |
+| `alphadog-v2-nba-static-tracking-detail` | `nba-static-tracking-detail` | 01 Static | 1 |
+| `alphadog-v2-nba-static-playtypes` | `nba-static-playtypes` | 01 Static | 1 |
+
+**Scrapers** — all five T4 scripts exist and each is referenced by at least one workflow ✅
+(`scrape_nba_shotquality` 2 · `scrape_nba_backfill_2025_26` 1 · `scrape_nba_career_totals` 2 ·
+`scrape_nba_backfill_historical_seasons` 1 · `scrape_nba_splits` 2). **None is an orphan script.**
+
+**Bindings — the check the four-edit-site problem exists to catch** (§0.38). `[LIVE-AUDIT]`:
+**21 NBA `*_WORKER` bindings referenced in `alphadog-v2-admin-sql.js`, 21 emitted by
+`generate_wrangler_configs.py`, set difference EMPTY in both directions.** **Not one dangling
+binding.** Both T4 workers appear exactly **3 times** in admin-sql — the `z.enum`, the `bindingMap`
+and the `else if` chain — matching the documented model precisely.
+
+#### 🔍 Two hypotheses raised and cleared in this pass — both recorded, because the near-misses matter
+1. *"The T4 workers are missing from admin-sql"* — an artefact of grepping the **service** name
+   (`alphadog-v2-nba-static-shotquality`) where admin-sql keys on the **binding** name
+   (`NBA_STATIC_SHOTQUALITY_WORKER`). **Cleared.**
+2. *"`NBA_STATIC_WEEKLY_DIFFERENTIAL_WORKER` is a dangling binding"* — it resolves to
+   `alphadog-v2-nba-weekly-differential` (**no `static` in the service name**, unlike every sibling),
+   and the generator does emit it. **Cleared.** ⚠ Worth noting as a naming inconsistency: the binding
+   says `NBA_STATIC_…` while the service it points at is not a `static` worker. **Harmless today,
+   and exactly the sort of mismatch that makes a set-difference check read false-positive.**
+
+**Both were checked to the bottom rather than reported as findings.** A wiring angle that cries wolf
+is worse than no wiring angle.
+
+---
+
+## T4 FINAL TALLY
+
+**10 passes. All four strata read to the end. Closed on 3 clean passes at 3 different angles.**
+
+**Re-sweep yield: ~12 findings across 498 tail segments ≈ 1 per 41** — the expected shape for a
+transcript that already carried 20 documented sections before the re-sweep began, and **not** a
+closure signal in either direction (the judgment and integrity passes are).
+
+**What the re-sweep found that twelve prior passes had not:**
+
+| Severity | Finding |
+|---|---|
+| 🔴🔴 | **2023-24 and 2024-25 have ZERO calendar coverage** — 0 of 52,707 game-log rows join. No rest / back-to-back / schedule-density / home-away feature exists for two of the three backfilled seasons, **which are the entire reason the backfill was scoped to three** |
+| 🔴 | **`player_career_season_totals` stores its own subtotals** — 282 player-seasons present twice, verified exact; any naive aggregate double-counts, and no `is_total` flag exists |
+| ⚠⚠ | **"582 players succeeded" is attempts-minus-errors** — one player (Maxi Kleber) has no career totals at all, and the **per-item guard shape is absent from all four guard shapes in the codebase** |
+| ⚠⚠ | **7,887 game-log rows (≈10%) have no player-dictionary row**, and the drop is biased toward departed players |
+| ⚠ | **§T4.1 recorded 2 bugs; there were 3** — the third being that the endpoint's own header metadata is untrustworthy, fixed by hardcoding, **contradicting the documented read-by-name principle** |
+| ⚠ | A **third** status vocabulary (`completed_with_errors`); **three** committed debug artifacts, two undocumented; **5** tool-name failures across 3 wrong names |
+
+**Two corrections to this sweep's own prose**, both caught by judgment passes: a loose tool-failure
+count, and a Rule 2 breach (writing mid-stratum) left visible and marked PROVISIONAL rather than
+tidied away.
+
+**The methodological result**: the **referential-integrity angle** — *do these tables actually join?*
+— found the most consequential item in the transcript **after** a clean volume pass and a clean
+judgment pass. Row counts were right, every table was documented, and the joins were empty. It is now
+a standing technique for T5→T20.
+
+---
+
+## ▶ NEXT: T5 — `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt`
+
+---
+
 ### T4.29 — PASS 9 (**the two-direction judgment pass, re-run against the amended documents**) — **✅ CLEAN 2/3**
 *2026-09-21. 607 segments. High band: 82. Tail-direction: 32.*
 
