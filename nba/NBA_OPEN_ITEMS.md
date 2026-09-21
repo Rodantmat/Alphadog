@@ -713,9 +713,28 @@ escalated to:
 > update** before this third trigger run, so the discrepancy reappeared as expected **rather than
 > indicating a persistence bug**."*
 
-**Operator error during manual testing, not a concurrency defect.** *There is no evidence in T3 of
-`run_job` calls executing out of order or of connection-pool staleness, and the entry exists so that
-nobody re-derives the abandoned hypothesis from the symptoms.*
+⚠ **CORRECTED 2026-09-21 (pass 10) — this entry stopped one stage too early, and its closing claim
+was wrong.** It asserted *"there is no evidence in T3 of … connection-pool staleness."* **There is.**
+The resolution lives in the command stratum, which this entry was written before reading — the exact
+failure Rule 2 now exists to prevent.
+
+**The arc has THREE stages, not two:**
+
+| Stage | T3's position |
+|---|---|
+| 1. Hypothesis | *"a genuine race condition — `run_job` invocations aren't fully sequential, or … a stale read across separate Cloudflare Worker calls sharing a connection pool"* |
+| 2. Retraction | the specific event was the manually re-broken snapshot — **operator error for that instance** |
+| 3. **Final** | *"triggering this worker multiple times within seconds of each other can show a stale/duplicate detection due to **Cloudflare Hyperdrive's brief query-result caching layer** — a test artifact of rapid-fire manual triggering, not a logic bug … **At the real weekly cadence this runs on, there's no meaningful gap for stale caching to matter.**"* |
+
+**So the original instinct was partly right and I over-corrected it.** The mechanism is real and
+named — **Hyperdrive caches query results briefly** — it is simply bounded, and harmless at the
+cadence this worker is meant to run at. *Stage 2 explains the specific event; stage 3 explains why
+two runs seconds apart can disagree at all.*
+
+**What this means operationally**: a worker triggered twice in quick succession may read pre-write
+state. **That is a property of the Hyperdrive layer every NBA worker sits behind**, not of this
+worker — and the only reason it is documented here is that manual back-to-back triggering during
+testing is exactly how anyone would first meet it.
 
 ### Two dated assumptions, neither verified in T3
 1. **"The other endpoints — teams, players, bio, tracking — are likely season-agnostic."** Stated
