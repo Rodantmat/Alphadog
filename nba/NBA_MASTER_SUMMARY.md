@@ -14430,6 +14430,54 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.43 — PASS 42 (**the ASSISTANT REASONING stratum read in full — a census of 51**) — **✅ CLEAN 2/3 · the stratum carries no reasoning, and that closes a question rather than leaving one**
+*2026-09-21. **51 segments, 3,428 characters total — small enough to read entirely, so there is no
+sample to state** (rule 25).*
+
+#### 🔑 T11.43a — **T11's "reasoning" is 51 one-line activity labels, 0.11% of the transcript**
+**Max 124 characters, min 60** *(which is `segments()`' own floor, so the true fragments are shorter)*,
+**mean 67.** **They read as labels, not deliberation**: *"fixing pdf parsing so injury report rows stop
+getting dropped"* · *"checking whether dfs props are archived in the current window"* · *"working out
+time zone conversions for a scheduling window"* — **many ending in `…`, truncated.**
+
+🔑🔑 **AND IT CLOSES A QUESTION THIS SWEEP HAS BEEN LEAVING OPEN.** The open list was taken in and
+checked against all 51: **why the officials/starters loads were never run · why
+`nba_daily.injury_report_snapshots` was never created · why the season-tables family has no writer ·
+`triple_double`'s zero rows · whether `applies_to_side = 'more'` is the model or stale ·
+`paper_picks`' purpose · whether 2:40 PM PT / tip−35 is granularity or a setting · why the two sources
+disagree on home/away at neutral sites.** ***Seven of the eight return ZERO hits; the eighth is
+segment 508 — "confirming full regular-season odds coverage, now building the postgres backfill" — a
+label, not a why.*** ✅ ***So for T11, "NOT RECORDED (rule 6)" is the correct and PERMANENT verdict on
+those questions, not a gap a later pass of this transcript might fill.*** **The transcript records
+what was done (`tool_use` 227, `tool_result` 355) and what was said (79 text segments); the
+deliberation is reduced to labels.**
+
+⚠⚠ **AND THE SCOPE MATTERS — this is a property of T11, NOT of the format.** `NBA_OPEN_ITEMS.md`
+records that **T1 pass 65 recovered *why* a rule was relaxed — *"the additive judgement call, from
+T1's thinking blocks"*** — ***so T1's thinking blocks carried substantive reasoning and T11's do
+not.*** **WHY they differ is NOT RECORDED** (rule 6) — *different capture, session length, or the
+60-character floor cutting differently are all consistent with what is observable, and none is
+stated.* **Novelty: the characterisation is 0 of thirty; the stratum's existence is in 2 of the
+twelve.**
+
+#### ⚠ T11.43b — **It corrects the expectation the previous pass wrote down**
+§T11.42's next-step row called reasoning *"the stratum most likely to carry what the documents
+lack"* and said *"every 'NOT RECORDED' is a question this stratum might answer."* ***It cannot, and
+a future pass would have made the same assumption.*** *Recorded as a correction to the sweep's
+planning rather than to its findings — a next-step row is a plan, not a claim about the system.*
+
+#### 📌 T11.43c — **But read in order the labels are a précis of T11's arc, and it matches rule 27's picture**
+Injury PDF parsing **(16–27)** → the enrichment coverage matrix **(60)** → matchups and minutes
+**(122–146)** → coaching-change dates **(181)** → injury-archive forensics **(224–250)** →
+***the market-archive investigation, TWENTY-TWO consecutive labels (272–508)*** → injury backfill
+queueing **(616–617)** → the board puller's cost and scheduling **(647–706)**. 🔑 ***That is
+segments 355, 501 and 709's story told in one column, arrived at independently — the transcript's
+shape confirmed from a stratum that carries none of its content.***
+
+**Pass outcome: ✅ CLEAN 2/3 · 43 passes.**
+
+---
+
 ### T11.42 — PASS 41 (**the stratum audit — T11's composition, measured for the first time**) — **✅ CLEAN 1/3 · the partition closes on 712, one of my own errors caught in-pass, one duplicate stopped before publication**
 *2026-09-21. **A deliberate return to content after four meta passes**, and the angle T11 has never
 had: the sweep partitioned T2 by stratum at its pass 3 and never did it here.*
