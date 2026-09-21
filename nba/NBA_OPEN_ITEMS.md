@@ -270,14 +270,36 @@ The owner, in T7 (2026-09-09):
 1. **A cap is a fallback, not a first resort** — prefer logic that lands the number correctly.
 2. **Any cap that exists must be tier-specific**, not global.
 
-⚠ **The system caps, and the cap is global.** `NBA_BASELINE_CALIBRATION.md` records a live clamp:
-*"the prior is capped at contributing no more than 25% of the final estimate."* **One threshold, all
-tiers.**
+⚠⚠ **CORRECTED 2026-09-21 (T7 pass 9, cross-document consistency).** This entry previously read
+*"the system caps, and the cap is global — `NBA_BASELINE_CALIBRATION.md` records a live clamp, 'the
+prior is capped at contributing no more than 25% of the final estimate', one threshold, all tiers."*
+**That was wrong on all three counts.** The 25% is **MLB's** safety valve, quoted in the NBA
+documents as a **recommendation**; the same section states *"**NO SUCH VALVE IS RECORDED IN NBA'S
+SHRINKAGE**"*; and it is a **floor protecting individual signal from a population prior**, not a
+ceiling on a factor's effect. Detail: `NBA_MASTER_SUMMARY.md` §T7.38a.
 
-**NOT RECORDED**: whether that cap was set before this instruction, in ignorance of it, or as a
-considered exception. The calibration work belongs to transcripts this sweep has not reached.
-**Flagged so those transcripts are read against the instruction that preceded them** — and so the
-owner can confirm whether a global 25% clamp is the exception he had in mind.
+✅ **What the system actually caps — `[LIVE-AUDIT]` 2026-09-21**, `nba_config.factor_profile_cells`:
+
+| | |
+|---|---|
+| Cells (all with a non-null `cap`) | **35** across **15 factors** |
+| Cap values | **10 distinct, 0.05 → 0.40** |
+| Key | factor × canonical prop × `tier_label` × `role_tier_key` × direction |
+| Tier- or role-keyed | **22 of 35** |
+| **Undifferentiated (neither key)** | **13 of 35** — `altitude` 0.06 · `opp_forced_to_rate` 0.20 · `teammate_shooting_quality` 0.20 · `foul_drawing` 0.25 · `opp_rim_attempt_rate` 0.25 · `opp_turnover_rate` 0.25 · `usage_share` 0.30, plus cells of `game_pace`, `potential_assist_rate`, `opp_miss_rate` |
+
+**So against the directive**: instruction 2 (*tier-specific, not global*) is **mostly satisfied by
+construction — there is no global cap** — with a real gap at **the 13 undifferentiated cells**.
+Instruction 1 (*a cap is a fallback, not a first resort*) **cannot be judged from the table**:
+`automation_status` is `semi_automatic` and `last_validated_at` / `last_empirical_validation_json`
+are **null on the rows sampled**, so **no empirical validation backs any of the 35 values** —
+🔴 **that is the open item now**, not the phantom global clamp.
+
+**NOT RECORDED**: whether any of these values was set before this instruction, in ignorance of it, or
+as a considered exception. All 35 rows carry `created_at` in the **01:53–02:03 window of
+2026-09-09**, which precedes T7's own 03:51 timestamp; the transcripts covering that window (T5, T6)
+are closed and recorded **no cap-setting turn**. **Deliberately left open** — read the later
+calibration transcripts against the instruction rather than inferring from timestamps.
 
 **Related and also unrecorded (same turn set):**
 - **Ladder width**: *"five or six variations over the anchor and five, six under"* — roughly **11–13
