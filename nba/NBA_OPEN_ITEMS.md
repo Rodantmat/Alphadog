@@ -389,9 +389,24 @@ except Exception as exc:
 ```
 
 **The data this scraper extracts lives in a SvelteKit hydration `<script>` near the END of the
-body.** The debug artifact captures the **FIRST** 20,000 characters. **So on any failure, the file
-committed to the repo as evidence contains none of the data the failure is about** — and it looks
-like a successful capture, which is worse than no artifact at all.
+body.** The debug artifact captures the **FIRST** 20,000 characters.
+
+**The gap is an order of magnitude, measured.** T3 located the payload in the page it captured:
+***"first nba_id at 203036"*** — byte offset **203,036**, against a **20,000**-character cap.
+
+### ⚠ Sharpened 2026-09-21 — the artifact in the repo right now is the GOOD one, and that is the risk
+*An earlier draft of this entry implied the committed artifact is already useless. **It is not**, and
+the real shape is worse.* ***VERIFIED on live `main`:*** `nba/data/nba_darko_debug_html_snippet.txt`
+is **432,513 bytes across 87 lines**, and line 77 contains
+`kit.start(app, element, { node_ids: [0,2], data: [null,{type:"data",data:{players:[{nba_id:2…`
+— **the payload is in it.**
+
+**That file is a leftover from the version of the scraper that dumped the whole page.** The scraper
+that will overwrite it on the next failure writes 20,000 characters.
+
+**So the first failure of the season does not merely produce a useless artifact — it destroys a
+usable one and replaces it with the document `<head>.`** *(T3's own earlier commit of this same file
+was exactly that: 20,026 bytes of favicon links, Google Fonts preconnects and stylesheet tags.)*
 
 **It was fixed once and lost.** T3's v2 scraper carried the instruction explicitly —
 *"always dump the full html (not truncated) … so the next attempt has full ground truth instead of
