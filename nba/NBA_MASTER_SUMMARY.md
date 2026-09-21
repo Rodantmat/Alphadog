@@ -8045,6 +8045,14 @@ design names. **In all three the missing context was one line away from the thin
 practical form of all three rules is one instruction: **read the neighbours before drawing the
 conclusion** — the sentence above, the column beside, the rest of the key.*
 
+🔴🔴 **THE ONE-LINE RULE, added 2026-09-21 after §T7.50a — where three of the eight T7 failures
+actually came from.** §T7.38a quoted a rule and missed the **attribution in the same sentence**.
+§T7.44a quoted a composite key and missed **three of its six dimensions**, spelled out four times in
+three documents. §T7.50a quoted the key definition at line 247 and missed the **form vocabulary at
+line 242 — two lines above it.** *Each time the disqualifying context was inside the paragraph I was
+already reading.* **Before citing a line, read the paragraph it sits in — above and below — and say
+out loud what the surrounding text asserts. Three of eight failures die on that one habit.**
+
 🔴 **The seventh form, added 2026-09-21 after §T7.47a — "NOT IN THE TWELVE" IS NOT "IN NO
 DOCUMENT."** The coverage scan is scored against **the twelve**; the corpus is **thirty**. Three
 separate T7 entries wrote *"in no document" / "nothing in the thirty documents" / "undocumented"* for
