@@ -12808,6 +12808,46 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.35 — PASS 14 (**two-direction judgment, fifth run**) — **✅ CLEAN 1/3 · and the blueprint already names the discriminator §T8.34a needed**
+*2026-09-21. Band 61 for a fifth run, 0 in, 0 out, coverage 536 / 510. Rules 12 and 13 applied to
+§T8.31–§T8.34's claims as they were re-read.*
+
+**✅ Novelty, most confident first** (`/tmp/t8base`): `proof it has not`, `dated-verdict`,
+`unfalsifiable` — **zero pre-edit hits.** `snapshot_taken_at` appears pre-edit **only as a column
+name in three schema listings**, never with a value or a staleness observation, so §T8.33b's use is
+new. **✅ Rule 13**: `unconditionally` has four pre-edit uses — the wrangler generator's
+`"d1_databases": []`, the unconditional writers' `updated_at`, an unconditional POST, and
+`build_asof_calibration.py`'s delete — **all about different objects, none about the differential
+snapshots.** No collision.
+
+#### 🔑 T8.35a — **`indistinguishable` was already on file, and it names exactly what T15 must check**
+
+Rule 13 flagged the word. `NBA_ARCHITECTURE_BLUEPRINT.md` §334, from T1, lists six named failure
+modes to build checks for — and **the second is §T8.34a's shape, with its discriminator:**
+
+> *"**Reconciliation trusting a permanently-dead writer** — **indistinguishable from #1 by stability
+> alone** (both show a stable count), **but the actual data composition tells them apart.** A
+> died-mid-write batch characteristically recovers as 100% one category and 0% of whatever would have
+> been written later in the write order."*
+
+**So the principle behind §T8.34a is on file, in general form, and it says what the specific check
+should be**: not *"did the job run?"* but *"does the data's composition distinguish a live capture
+from a dead one?"* — **and for `referee_assignments` at 0 rows, composition is exactly what is
+unavailable until the first game day.** *That is the honest statement of the risk, and it sharpens
+the hand-off: **T15 should look for the fresh-evidence check (blueprint failure mode 3) rather than
+for a row count.***
+
+⚠ **Second time this has happened** — at §T7.63a the blueprint's *"never accept a claimed
+table/column/fix location without checking it exists exactly where claimed"* turned out to be the
+general form of four hard-won rules. **The blueprint is a better-stocked source of general principles
+than this sweep has been treating it as**, and both connections were found by grepping a phrase
+rather than by reading it. *Recorded so the remaining transcripts check the blueprint's six failure
+modes by name.*
+
+**Pass outcome: no defect, no duplicate, one connection that sharpens a flagged item. ✅ CLEAN 1/3.**
+
+---
+
 ### T8.34 — PASS 13 (**dated-verdict audit**) — **✅ CLEAN 1/3 · no further retirement, one item flagged forward**
 *2026-09-21. The angle passes 8 and 12 stumbled into twice, run deliberately: sweep the twelve for
 verdicts that were **true when written and carry a date or a condition** — "correctly empty", "not
