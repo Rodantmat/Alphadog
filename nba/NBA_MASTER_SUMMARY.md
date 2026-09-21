@@ -8055,6 +8055,25 @@ design names. **In all three the missing context was one line away from the thin
 practical form of all three rules is one instruction: **read the neighbours before drawing the
 conclusion** — the sentence above, the column beside, the rest of the key.*
 
+🔴 **The SIXTEENTH form, added 2026-09-21 after §T9.34a — THE PROSE MUST STATE THE QUERY'S OWN
+PREDICATE: ITS GROUPING, ITS BOUNDARY, ITS FILTER.** *Two instances, four passes apart, and in both
+the **number was right for the query** and the **sentence was right for the intent** — they were not
+the same thing.*
+
+- **§T8.28a — the grouping.** The counts came from a `GROUP BY build_tier`; the narrative grouped by
+  prop *kind* (periods, milestones, attempts, composites) and closed *"plus the Tier A composites"*,
+  implying three unbanded Tier A props. **It is seven.**
+- **§T9.34a — the boundary.** The prose said beyond-depth rows *"at `p_more` **≤** 0.01 or **≥** 0.99"*;
+  the query used `< 0.01 OR > 0.99`. **The rows sitting exactly on 0.01 and 0.99 fell out of both
+  sides** — **33** beyond-depth and **76** within-depth, so 28,563 was published under a sentence that
+  described 28,596.
+
+⚠ **Why this class survives the other fifteen rules**: nothing is unverified, no partition fails, no
+grep is skipped, and re-running the query reproduces the number exactly. **The defect lives in the
+gap between the predicate and the sentence, and only re-reading them side by side finds it.**
+**Operative form: when writing a figure, copy the predicate out of the query into the prose —
+`GROUP BY` column, comparison operator, `WHERE` clause — before describing it in words.**
+
 ⚠ **The fifteenth form, added 2026-09-21 after §T9.24a — A ZERO FROM AN EXTRACTION IS A FAILED
 EXTRACTION UNTIL PROVEN OTHERWISE.** A regex written for `"key": {` and `"key": [` returned **0 keys**
 for `LADDER_DEPTH`, whose values are bare integers. **Absence and non-match are indistinguishable to
