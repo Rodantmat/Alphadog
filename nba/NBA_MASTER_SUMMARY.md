@@ -1580,6 +1580,47 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.11 — PASS 11 (angle: **the results stratum — what the sources actually returned**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21. Results stratum read through segment ~40 of 137.*
+
+1. ⚠ **The play-type scraper discards five columns the endpoint returns**, and they are
+   **unrecoverable**. ***VERIFIED by SQL***: `ft_poss_pct`, `tov_poss_pct`, `sf_poss_pct`,
+   `plusone_poss_pct`, `score_poss_pct` are absent from the table **and from `raw_json`** — 0 of
+   3,282 rows contain them, because the worker stores the already-reduced record (185–213 chars),
+   not the source row. **`sf_poss_pct` and `ft_poss_pct` are the direct mechanism behind the FTA and
+   FTM props, both certified in the reliability audit.** *The same session built the tracking-detail
+   scraper explicitly to avoid hand-picking — "risking silently dropping something valuable" — and
+   the scraper that hand-picked is the one whose endpoint had the richest columns.*
+   → `NBA_OPEN_ITEMS.md` FROM T3 PASS 11
+2. ⚠ **CORRECTION to the season-critical DARKO item, sharpened rather than reversed.** I implied the
+   committed debug artifact is already useless. ***VERIFIED***: `nba_darko_debug_html_snippet.txt` is
+   **432,513 bytes** and line 77 contains the `kit.start(… players:[{nba_id:2…` payload — **it is the
+   good artifact**, left by the version that dumped the whole page. **The live scraper writes 20,000
+   characters, so the next failure destroys a usable artifact and replaces it with the document
+   `<head>`.** *T3's own measurement puts the payload at byte offset **203,036** — ten times past the
+   cap.*
+3. **`season_id` encodes the season type in its first digit** — `1` preseason, `2` regular season,
+   `4` playoffs — which is also the `game_id` prefix pattern visible in the schedule data
+   (`0012500008` preseason, `0042500405` Finals). *Undocumented, and it is how game type is derived
+   without a separate column.*
+4. **All 1,400 games of the 2025-26 schedule carry `game_status: 3` (Final)** across **230 distinct
+   dates** — confirming from the data itself that the backfilled season is complete, not partial.
+5. **DARKO's "single-maintainer bus factor" is an oversimplification.** The site's own
+   acknowledgments name a team: Kostya Medvedovsky (model), **Andrew Patton (the application)**,
+   Ryan Davis (coding), Canzhi Ye (scraping), Krishna Narsu (training data). *The risk is real but it
+   is a small-team risk, not a one-person one, and the mitigation chosen — the generic
+   `player_impact_rating` abstraction — is right either way.* **DARKO = "Daily Adjusted and Regressed
+   Kalman Optimized."**
+
+**On this stratum's composition**: the same web-search contamination as T2 and T1 — SaaS leaderboard
+marketing, Sportradar's NFL library, Dota 2 league endpoints, Laravel pagination tutorials, and
+Darko Rajaković the Raptors coach. **Roughly two thirds of what has been read so far is unrelated to
+the system.** *Third transcript running; this is false-tail mechanism 0 behaving exactly as measured.*
+
+**Ratio**: 5 findings from ~40 segments, **3 verified by live SQL or file read**.
+
+**Clean count 0/3.** **Remaining: ~97 result segments, then the two-direction judgment pass.**
+
 ### T3.10 — PASS 10 (**command stratum FINISHED — read to the end before writing, per Rule 2**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21. All 240 command segments now read.*
 
