@@ -110,8 +110,19 @@ confidence factor — and nothing that scores a leg reads `LADDER_DEPTH` at all.
 the existing hierarchy to the parametric, which is the designed behaviour."* **Live, of 206,237 rows,
 559 have `used_emp = false` — and 541 of those are `double_double`** (a binary prop with no ladder).
 **The genuine fall-throughs are 18 rows of `threes_made`, 0.009% of the table.**
-📌 **NOT RECORDED — whether `used_emp` is the correct indicator of that fall-through.** The comment is
-quoted, not adjudicated; what is verified is the flag's value and its downstream use.
+✅ **ANSWERED 2026-09-21 by §T9.42b — and it sharpens this item rather than softening it.**
+`classification_ladder_v12.py` 612–632: **`used[i]` is set the moment ANY of three cell granularities
+returns a value** — `levels = (emp3.get((v, off)), emp2.get((v, r, off)), emp.get((t, r, off)))` —
+**and the sample count `n` never gates it.** `n` enters **only as a shrinkage weight**:
+`n/(n + K_CELL)` in shift mode, `(n·c + K·base)/(n + K)` in replacement. **A cell with `n = 1` sets
+`used_emp = True` and moves the probability almost not at all.**
+
+**So the builder's comment is true in EFFECT and the flag does not record it.** *"Deeper rungs with
+too few samples fall through the existing hierarchy to the parametric"* — **the shrinkage does exactly
+that**; `used_emp` reports only that **a cell existed**. 🔴 **Which is why this item stands: the deep
+rungs are correctly shrunk toward the parametric, and `f_prov` still grants them the full 1.0
+provenance credit, because the flag it reads cannot tell a rung backed by 400 observations from one
+backed by 1.**
 
 ### 🔴🔴 `f_phase` IS COMPUTED, JUSTIFIED AND NOT IN THE CONFIDENCE SUM — *added 2026-09-21, §T9.38a*
 
