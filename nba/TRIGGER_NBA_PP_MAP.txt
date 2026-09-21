@@ -1,4 +1,4 @@
 mode: delta
 drift: 10
 max_quotes: 60
-note: first delta run, 2026-09-21 - baseline read from nba_market.pp_mined_leg (run 1 loaded); expect few or no new legs on an unchanged board, a 10-leg drift sample, and the loader backfilling runs 2 and 3
+note: end-to-end test 2026-09-21 - map (delta) -> commit -> load -> pp_refresh_prices(); expect REFRESH all zeros on an unchanged board
