@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-09-20T22:34:10Z",
-  "fetched_at": "2026-09-20T22:45:37Z",
+  "started_at": "2026-09-21T05:10:09Z",
+  "fetched_at": "2026-09-21T05:25:47Z",
   "categories": [],
   "calls": [
     [
@@ -72,5 +72,5 @@
   "multiplier_values": {
     "None": 3
   },
-  "github_run_id": "35542062117"
+  "github_run_id": "35563540027"
 }
