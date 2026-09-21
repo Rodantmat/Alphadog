@@ -14430,6 +14430,126 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.27 — PASS 26 (**the closing novelty audit over all thirty, rule-22 controlled**) — **❌ IT WOULD HAVE CLOSED T11 AND FOUND A DEFECT INSTEAD, FOR THE SECOND TIME · 0/3**
+*2026-09-21. **Thirty-nine probes across the two trees, every one positive-controlled, every hit
+opened.** The mandate was to test whether everything passes 20–25 added is genuinely new. **Most of it
+is. One thing passes 22–23 published is not new, is not open, and the sweep's own ledger said so.***
+
+#### ❌ T11.27b — **RETRACTION: "BigDataBall's status after T11 is NOT RECORDED" — it is recorded, in the twelve, by this sweep**
+
+**§T11.23b, on segment 113's owner-action list, published:**
+> 📌 *"**Items 2 and 3 are OWNER DECISIONS and their status after T11 is NOT RECORDED** (eight
+> transcripts unswept): **BigDataBall for `c1`/`c2` history** … **BigDataBall is documented in 7 of
+> thirty, 2 of the twelve.**"*
+
+🔴🔴 **One of those two carriers inside the twelve is `NBA_MASTER_SUMMARY.md` §T7.14a — this
+sweep's own ledger — and it says:**
+> *"**This verdict was overtaken in T13**, which obtained **two full seasons of historical board data
+> from The Odds API** (→ `nba_market.board_snapshots`, 6.6 GB) … **BigDataBall was never purchased and
+> never needed.**"*
+
+**Verified in the baseline `5dfb72ab`**, so it was on file **before T11's passes began**, written by
+this sweep's **T7** pass. **`NBA_SYSTEM_ARCHITECTURE.md`, the other carrier, says the same from the
+source's side** and adds the boundary: The Odds API *"carries PrizePicks as a bookmaker but **NOT the
+DFS-only markets** (fantasy_score, period props)."*
+
+🔑 **Why it was wrong, and this is the whole finding.** ***The count was correct. The carriers were
+correctly located. Neither was opened, and the conclusion drawn from the number was the opposite of
+what the number's carriers say.*** **Rule 22's first half — a zero is believed only after a positive
+control — was obeyed. Its second half — every hit is opened before it is counted — was applied only to
+zeros.** **A nonzero count got no reading at all.** ***This is the eighth absence failure of the sweep
+and the first violation of rule 22 in the twenty passes since rule 22 was written.***
+
+✅ **Corrected in `NBA_OPEN_ITEMS.md`** — the supersession with both dates and a pointer, the original
+text retained beneath it, the `c1/c2` matrix row annotated, and the matrix headline fixed. 🔑 **And
+the correction is sharper than the claim it replaces**: ***the supersession is PARTIAL.*** The Odds
+API closes **`c1`/`c2`**'s sportsbook side and **does not reach `c4`/`s1–s4`**, whose ⛔ is *"no
+archive exists … boards are not archived anywhere free"* — **so two of the three blocked groups are
+now closed, for three different reasons, and the third is still open.** ⚠ **Item 3, Kaggle**: the
+free game-line history it was a fallback for **is present** (`game_lines_closing`, 2,410 games /
+12,165 rows, §T11.12), so the need is met — **but whether the account was opened is NOT RECORDED, and
+"the need is met" is an inference from the data, not a statement anyone made.**
+
+#### 🔴 T11.27a — **RULE 26: a count of carriers is not a reading of them**
+*Added 2026-09-21 after §T11.27b.*
+
+> ***"Documented in N of thirty" is a measurement of the corpus. "Not recorded" is a claim about its
+> content. The second does not follow from the first — it requires opening the N.***
+
+🔑 **Rule 22 says a zero is believed only after a positive control, and every hit is opened before it
+is counted.** **Twenty passes read that as a rule about zeros.** ***A nonzero count is not a result;
+it is a reading task, and the smaller the N the cheaper the reading and the worse the excuse.*** **N
+was 2.**
+
+#### 📌 T11.27c — **The `data_quality` census completed: the value IS the column default, except where the default is dead**
+`[LIVE-AUDIT]`. **22 tables → 22 table × value pairs**, so §T11.22a's per-table constancy holds as a
+census of *pairs*, not merely of values. **1,212 `derived` + 162,651 `real` = 163,863.** 🔴 **Four
+tables carry `DEFAULT 'derived'` and only two hold it**: `player_shot_quality_delta` (582) and
+`defense_vs_position` (630) take theirs; **`nba_ref.arenas` (30) and `nba_ref.officials` (80) are
+100% `real` — the `derived` default is never taken on either.** ⚠ **Those two are exactly the
+tables four of the twelve cite for *"sourced vs derived distinguished from day one"*** — the design
+statement is true and **the distinction has never been exercised on them**; NOT RECORDED whether
+that is deliberate. **The other 18 hold their own default exactly.** Written to `NBA_DATABASE.md`.
+
+#### ✅ T11.27d — **The novelty results: what passes 20–25 added is new, and seven more matrix rows join the four**
+
+*All against `5dfb72ab`, each with a positive control, every hit opened.*
+
+| claim | of thirty | of the twelve |
+|---|---|---|
+| **`board_tiers_v2`'s third `anchor_type` (`none`)** and its **−7…+8** range | **0** | **0** |
+| **`side` as a subset** — the value set and the Yes/No exclusion *(the column itself is in 2 of the twelve, as an index member only)* | **0** | **0** |
+| **`phase` identical across all six tables** *(1 false hit: MLB's "phase files", dismissed)* | **0** | **0** |
+| **`status`/`source` as a COLLISION** *(the two meanings are separately recorded — §T11.21b said so)* | **0** | **0** |
+| **`data_quality` on 22 tables**; **per-table provenance**; **the dead default** | **0** | **0** |
+| **T11's tail distribution** (0.60 / 0.72 / 0.72) | **0** | **0** |
+| **Baseline-tree integrity by digest** | **0** | **0** |
+| **Rules 24 and 25** | **0** | **0** |
+
+**And the sixteen remaining matrix rows, the pass's declared risk** *(most of the matrix is in
+`ENRICHMENT_MINING_AND_FALLBACKS.md` by construction — the question was which rows are in the
+TWELVE)*: 🔴 **seven more are in NONE of them** — **`a7` trade window** (3 of thirty) · **`a8`
+preseason seeding** (2) · **the PDF's two-way reason class** (3) · **the Kaggle game-line set** (1) ·
+**the derived spread as the trained fallback in place** (2) · **`b3` leverage/tanking from standings**
+(4) · **the daily referee-assignments scraper still to build** (5) · and **`a1`'s *"archive coverage
+to verify"* is in 0 of thirty.** ***Eleven of the matrix's twenty rows carry something the mandated
+documents do not, which is §T11.2d measured rather than asserted.***
+
+#### ✅ T11.27e — **Three false hits opened and dismissed, and one duplicate caught before publication**
+- **Kaggle.** `NBA_PROJECT_LOG.md` reads *"Wayback/GitHub/**Kaggle dead ends**"* — **about pick'em
+  BOARD archives**, while T11's matrix proposes Kaggle for **sportsbook GAME LINES**. **Different
+  surfaces; no contradiction.** *(Identical at the keyword level — this is what opening hits is for.)*
+- 🔑 **The referee cron's DST exposure — ALREADY RECORDED, and it would have been published as new.**
+  `nba-referees.yml` carries `cron: '30 15 * * *'` with the comment *"08:30 UTC-7 = ~08:30 PT"* —
+  15:30 UTC is **08:30 PDT and 07:30 PST**, and the NBA season is mostly PST. **`NBA_MASTER_SUMMARY.md`
+  and `NBA_OPEN_ITEMS.md` both carry this in full, with the same restraint** *("no claim is made that
+  this is too early")*. **Rule 22 worked in the same pass in which §T11.27b shows it failing** — the
+  difference is only that here the hits were opened.
+- 📌 **`NBA_WORKERS.md`'s `~6–7 AM PT` against `nba-referees.yml`'s 08:30 PT is NOT a contradiction**:
+  **~6–7 AM PT is when the NBA POSTS the assignments** *(the workflow's own comment)*, **08:30 PT is
+  when the capture RUNS** — *"after the morning posting"* — and the same document's workflow table
+  gives `30 15 * * *` correctly. **The corpus is consistent; only the notes column is terse.**
+- 📌 **Pre-registration has a documented ancestor.** §T11.25a's pre-registered band prediction is the
+  sweep's own first, but the *method* is in **2 of the twelve** from MLB: *"a single, **PRE-REGISTERED**
+  confirmatory test … should use an UNCORRECTED bar."* **Applying a documented practice, not inventing
+  one.**
+
+#### ✅ T11.27f — **A chronology save: `ENRICHMENT_MINING_AND_FALLBACKS.md`'s 05:30Z status line is T12 material**
+That document carries the same matrix at a **later** state — *"Status as of 2026-09-10 05:30Z (config
+`enrichment_backfill_status_2026_09_10`): **every factor has its two-season backfill except the
+pick'em/prop history** … **BigDataBall is no longer needed**"* — which would have read as a 🔴🔴
+retraction of §T11.24a's ⛔ rows. ⚠ **It is not T11's.** **`enrichment_backfill_status_2026_09_10`
+and *"BigDataBall is no longer needed"* appear in NO T11 segment and FIRST APPEAR IN T12's
+transcript** *(grep across all twenty)*. **Swept in order, it belongs to T12's pass.** **Queued
+there**; the matrix's *"State as of T11 — not current; eight transcripts after it are unswept"* banner
+already protects the reader. ***The first time the chronology rule has prevented a finding rather than
+merely ordering one.***
+
+**Pass outcome: ❌ a defect, and it is mine — the second time a closing novelty audit has found one
+instead of closing. 🔴 CLEAN 0/3 · 27 passes. Rule 26 added.**
+
+---
+
 ### T11.26 — PASS 25 (**live numeric re-verification, and the check the sweep had never run**) — **✅ CLEAN 1/3 · all three baseline trees verified BYTE-IDENTICAL**
 *2026-09-21. `[LIVE-AUDIT]`. The next-step row named the check that protects everything else, and it
 had never been run in eleven transcripts.*
