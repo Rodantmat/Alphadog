@@ -14716,8 +14716,11 @@ two keys are additionally in the transcript in plaintext (O8).**
 **The fix**: probe **both** filename patterns, take the snapshot time from the **document header**,
 and **drop consecutive duplicate documents by content hash.**
 
-**Novelty**: *Dec 22 · 12/22* → **0 of thirty**; *hourly filename · two URL patterns* → **0 relevant**
-*(the two hits are about two file copies drifting apart, an unrelated §4j entry)*.
+~~**Novelty**: *Dec 22 · 12/22* → **0 of thirty**~~ ❌ **RETRACTED 2026-09-21 by §T11.6a —
+`NBA_PROJECT_LOG.md` line 502 records the break in full, fix and all. The probe searched
+`dec(ember)? 22|12/22` and the text says `2025-12-22`, which matches neither.** ✅ **Corrected
+novelty: NEW TO THE TWELVE, not to the thirty.** ⚠ **And the date above should read `~2025-12-22`**
+— the season is 2025-26.
 
 ⚠ **The failure shape is the one this documentation set keeps finding**: **the run succeeded, wrote a
 quarter of a million rows, and was silently missing everything before 22 December.** *A row count that
