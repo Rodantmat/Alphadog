@@ -21,7 +21,7 @@
 > 36 are assertive prose rather than quotation.**
 
 > ## 🔴🔴 READ SECOND — **"ALL 190 `.py`/`.js` FILES IN `nba/`" IS A POPULATION THAT CANNOT BE REPRODUCED**
-> *Standing correction, added 2026-09-21 (§T11.57d, T11 pass 56). It applies wherever the figure
+> *Standing correction, added 2026-09-21 (§T11.57b, T11 pass 56). It applies wherever the figure
 > appears and is not repeated at each site.*
 >
 > **The phrase *"a grep of all 190 `.py`/`.js` files in `nba/` (plus the MCP admin bridge)"* is the
