@@ -12797,6 +12797,61 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.28 — PASS 7 (**referential integrity / composite key**) — **✅ integrity clean · 🔑 the gap is COVERAGE, and it maps exactly onto `build_tier` · 0/3**
+*2026-09-21. The T8-seeded layer joined on `canonical_prop_key`, in both directions. Novelty grepped
+at the moment of writing, per rule 12.*
+
+**✅ Integrity is clean in every direction tested — 0 orphans:**
+
+| Join | Orphans |
+|---|---|
+| `factor_relevance.canonical_prop_key` → `prop_taxonomy` | **0 of 460** |
+| `factor_profile_cells.canonical_prop_key` → `prop_taxonomy` | **0 of 35** |
+| `variation_bands.canonical_prop_key` → `prop_taxonomy` | **0 of 25** |
+| Every taxonomy prop has at least one `factor_relevance` row | **0 missing of 28** |
+
+#### 🔑 T8.28a — `[LIVE-AUDIT]` **22 of 28 props have NO variation band — and the split is exactly `build_tier`**
+
+The one direction that is *not* full is variation coverage, and it is not ragged — **it follows the
+taxonomy's own `build_tier` column precisely:**
+
+| `build_tier` | Props | With a variation band | With a profile cell |
+|---|---|---|---|
+| **A** — core, all three apps | **13** | **6** | 7 |
+| **B** — derivable, app-specific | **15** | **0** | 2 |
+
+**The 22 unbanded props are every Tier B prop plus 7 Tier A ones**: all the period layers
+(`points_1q`, `points_1h`, `points_2h`, `points_4q`, `assists_1q`, `rebounds_1q`, `threes_made_1q`,
+`pra_1q`, `fantasy_score_1q`), the milestones (`double_double`, `triple_double`), the attempt props
+(`fga`, `fg3a`, `ftm`), the defensive/negative props (`blocks`, `steals`, `stocks`, `turnovers`,
+`personal_fouls`) and the composites (`pts_ast`, `pts_reb`, `reb_ast`).
+
+⚠ **Why this matters rather than being a to-do list**: the **variation dimension is one of the
+owner's five**, and §T8.14b calls the band-level residual *"the empirical vindication of the
+variation dimension"* — *"per-band cells fixed what per-prop k couldn't."* **That vindication rests
+on 6 props out of 28.** *Whether the other 22 are intended to inherit a default band, to be banded
+later, or to run unbanded is **NOT RECORDED**.*
+
+#### 🔑 T8.28b — **This resolves what §T7.45a left open: which props each band family serves**
+
+§T7.45a recorded two band families without saying what they cover. **They divide by prop, not by
+convention:**
+
+| Family | Keys | Props |
+|---|---|---|
+| **Line magnitude** | `LOW · MID · HIGH · ELITE` | **5** — `assists`, `rebounds`, `threes_made`, `pra`, `fantasy_score` |
+| **Role** | `FRINGE · ROLE · STARTER · STAR · SUPERSTAR` | **1 — `points` alone** |
+
+**`points` is the only prop banded by player role rather than by line magnitude**, which is why the
+role family has exactly five rows. *Recorded as the answer to §T7.45a's open question.*
+
+*Novelty grepped before writing: `build_tier`, `22 of 28`, `6 of 28`, `no variation band` and
+`FRINGE, ROLE, STARTER` all return **zero hits** pre-edit. The A/B tiers themselves **are** defined —
+`NBA_CLASSIFICATION_BASELINE_DESIGN.md` §1 — but **only as a prop taxonomy, never as a predictor of
+band coverage.***
+
+---
+
 ### T8.27 — PASS 6 (**two-direction judgment, second run**) — **🔑 the taxonomy finding STRENGTHENS under a stricter test · 0/3**
 *2026-09-21. 61 high-band segments (one in, one out — the rigour directive, now matching more strongly
 because §T8.24b quoted it). **First pass run under the twelfth rule: every claim below was grepped
