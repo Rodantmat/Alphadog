@@ -347,9 +347,31 @@ certification threshold." A run that fetched, parsed and wrote flawlessly but mi
 returns **`ok: false`** — and **there is no separate field meaning "the call worked."** Any monitor
 or caller applying the ordinary JSON convention reads this backwards.
 
-⚠ **Only 7 of the 18 carry `completed_with_warning`** (`-darko`, `-onoff`, `-player-bio`,
-`-player-tracking`, `-schedule`, `-team-stats`, `-tracking-detail`). **The other 11 have no
-warning-status vocabulary**, so the uncertified case is not uniformly legible even inside the fleet.
+⚠ **And `status` is no better — there are EIGHTEEN distinct values, in two generations.**
+*Enumerated from an authority 2026-09-21 (T5 pass 7), correcting an earlier partial count of three.*
+
+| Value | Workers |
+|---|---|
+| `completed` | 17 |
+| `failed_no_data` · `completed_with_warning` | 7 each |
+| `completed_with_errors` | 6 |
+| `failed` | 4 |
+| `completed_with_certification_warning` | 3 |
+| **12 bespoke per-worker strings** | 1 each |
+
+**The four original static workers — teams, players, arenas, officials — each carry four bespoke
+strings with the entity name baked in** (`completed_nba_static_arena_dictionary_seed`,
+`failed_nba_static_player_dictionary_no_fallback_available`, …). **Everything built later uses the
+shared generic set.**
+
+🔴 **Taken together with `ok: certified`, there is no fleet-wide programmatic success signal.**
+`ok` means *certified*, not *succeeded*; `status` has 18 values, **12 unique to one worker**, and the
+two generations **do not even share a success token** (`completed` vs
+`completed_nba_static_arena_dictionary_seed`). **Any monitor must special-case the four oldest
+workers or match on prefixes.**
+
+**Not urgent before opening day** — nothing consumes these strings today, which is precisely why the
+divergence went unnoticed. **Recorded because a health-check or alerting layer meets this first.**
 
 ### 🔴🔴 The consequence — certification is structurally blind to the fallback
 
