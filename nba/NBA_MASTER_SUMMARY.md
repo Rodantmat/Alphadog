@@ -14430,6 +14430,90 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.53 — PASS 52 (**the QUOTATION-BOUNDARY audit — rule 6 applied to rule 19, and the population enumerated for the first time**) — **❌ two more rule-19 omissions, both in PASS 0's entries · 🔑 RULE 28 · ✅ six candidates killed by rule 26 before they were written · 0/3**
+*2026-09-21. **The brief**: pass 51 found two omissions, but only in the two segments the next-step
+row happened to name. ***Rule 19 has been in force since T10 and its population had never been
+listed.*** This pass listed it.*
+
+#### ✅ T11.53a — **The enumeration, which is the deliverable**
+| | |
+|---|---|
+| **T11 entries that cite a transcript segment by number** | **19** |
+| **entry–segment pairs** | **74** |
+| **distinct segments cited** | **37** |
+| **of those, ≥ 400 characters** *(where partial quotation can hide a clause)* | **25** |
+
+⚠ **And the sub-population that worried the step was bounded rather than assumed**: of **466
+quotations of ≥ 40 characters** in the T11 section, **20 are locatable in the transcript**, and
+***every entry carrying one also names the segment number — no unnumbered transcript quotation was
+found.*** 🔑 **Stated at the strength the instrument supports** *(rule 25)*: the match is literal
+after normalisation, so the other 446 are overwhelmingly quotations of the DOCUMENTS and of code —
+***this shows none, it does not prove none exists.***
+
+#### ❌ T11.53b — **Segment 668: §T11.1c quoted the last clause and dropped the owner's placement cadence**
+The entry has the Pacific-time instruction right. ***The same turn also says*** *"**prizepicks and
+sleeper i think 3 a day is too much**… **i'll only place the picks in one window, probably 2 hours
+before the first game daily**"* — and opens with *"so it is confirmed that we have all needed for 2
+full seasons?"*, **which segment 670 corrects.** 🔑 ***"Two snapshots per game (window + tip−30)" is
+recorded in FIVE documents as a settled owner decision, and the number THREE — and the owner's
+rejection of it — is in NONE of the thirty.*** ⚠ **At evidence strength**: the owner's sentence is
+about **when he PLACES**; the two-snapshot design is about **when the system CAPTURES**; ***that the
+one caused the other is NOT RECORDED.*** *(The ~2-hour rule itself is on file — §4b, "first tip minus
+2 hours" — so what was missing is the owner's own statement of it.)*
+
+#### ❌ T11.53c — **Segment 197: §T11.1e's directive table dropped the scope limit**
+The table gets the ordering, the OTZ last-resort clause, Gemini, the two seasons and the backfill
+gate. ***It omits*** *"and that should get board snapshots, daily board snapshots for nba. **not to
+get market data just yet**."* — **0 of thirty in any vocabulary** *(control fires on "daily board
+snapshots")*. 🔑 ***The owner scoped the phase to BOARDS and deferred market data explicitly.***
+📌 Both restored to `NBA_OPEN_ITEMS.md`.
+
+#### ✅ T11.53d — **SIX candidates killed by rule 26 before a word was written**
+| candidate | why it died |
+|---|---|
+| **segments 709 vs 711 give two numbers for one setting** *(`14:45 PT` / `tip−30` against *"the window at 2:40 pm pt, the close at 35 minutes before tip"*)* | ✅ **already recorded — §T11.31/§T11.43, in `NBA_MASTER_SUMMARY.md` AND `NBA_OPEN_ITEMS.md`**, with the right verdict *(granularity or a different setting, NOT RECORDED)* |
+| **segment 197's whole directive** | ✅ **§T11.1e already carries it**, OTZ clause included |
+| **`k1`'s Wikipedia coaching-changes source** | ✅ **§T11.24b already carries it** *(2 of thirty, 0 of the twelve)* — and `NBA_COMPASS.md` fact 64 carries the finished version |
+| **the one-window / 2-hours-before-tip rule** | ✅ **on file in four documents and in `archive_live_boards.py`** |
+| **segment 609's sourcing playbook** | ✅ **§T11.31c already carries it, channel by channel** |
+| **the plan ladder and credit figures** *(`$30/20k … $249/15m`, ~123k/season, 420/snapshot)* | ✅ **on file in `NBA_OPEN_ITEMS.md` and `NBA_PROJECT_LOG.md`** |
+
+🔑 ***Six of eight candidates were the sweep's own earlier work.*** ⚠ **And the instrument's error is
+ONE-DIRECTIONAL**: it matches literal strings while the documents paraphrase, so ***it over-reports
+omissions and never under-reports them — an UPPER bound, never a lower one*** *(it flagged 34 of 37
+segments; two survived)*.
+
+#### 🔑🔑 T11.53e — **RULE 28, and it is the rule that nearly failed this pass**
+**`2:40` returns ZERO against the baseline `5dfb72ab` and THREE files in the working tree** — *because
+the sweep discovered it itself, at pass 42.* 🔴 ***A probe against the BASELINE answers "was this in
+the documents before the sweep began"; it CANNOT answer "have I already said this," because the
+sweep's own entries are not in the baseline.*** **Rule 18 fixes the tree for the BAND; nothing fixed
+it for a duplicate check, and for six candidates this pass the baseline would have licensed six
+false discoveries.**
+> **RULE 28 — A NOVELTY probe runs against the BASELINE tree; a DUPLICATE probe runs against the
+> WORKING tree. They are different questions and they have different controls.**
+
+#### ❌ T11.53f — **The rule index's own rule 18 carries a stale figure — §T11.48b's failure, in the index built to stop it**
+Rule 18 reads *"the baseline has returned **ELEVEN** identical measurements; that is why it is the
+authority."* ***It has now returned EIGHTEEN.*** 🔑 **The index is the instrument a method claim is
+checked against (§T11.51d), and it inherited a count instead of dating one** — **§T11.47c's dating
+principle applied to the index itself.** ✅ **Corrected to durable phrasing with its date.**
+*(Rules 26 and 27 were also out of order in the table; fixed.)*
+
+#### ✅ T11.53g — **The band: the EIGHTEENTH identical baseline, and the ninth pre-registration**
+| tree | high | tail | uncovered12 | uncovered30 |
+|---|---|---|---|---|
+| **baseline `5dfb72ab`** | **13** | **3** | **695** | **689** |
+| **working** | **39** | **0** | **664** | **664** |
+
+***Predicted before measuring — pass 51 wrote only into documents already inside the corpus, so
+neither tree could move. Ninth pre-registration, ninth hit.***
+
+**Pass outcome: ❌ two rule-19 omissions, one stale figure in the rule index. ✅ One new standing rule
+and the first enumeration of rule 19's population. CLEAN 0/3 · 53 passes.**
+
+---
+
 ### T11.52 — PASS 51 (**the thirteenth two-direction judgment — pre-registered, aimed at SETTLED claims**) — **❌ two rule-19 quotation omissions, both mine · ✅ one causal claim now rests on two workers, one surface closed · 0/3**
 *2026-09-21. **Pre-registered before measurement**: the band would be unchanged on the baseline and
 the working tree would show zero tail, because passes 49–50 wrote only into files already inside the
