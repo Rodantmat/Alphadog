@@ -1,5 +1,44 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴 THE SEASON ROLLS IN ONE LAYER AND IS FROZEN IN THE OTHER — the other half of the Oct-1 boundary
+*Recorded 2026-09-21 (T9 pass 14, §T9.29a). `[LIVE-AUDIT]` — verified by enumerating `os.environ.get`
+across `nba/**/*.py` and the `env:` blocks of `.github/workflows/*.yml`. **Not a transcript finding.***
+
+**Read this beside the Oct-1 item.** That one is the **scraper** layer rolling to `2026-27` on
+**2026-10-01**, nineteen days before the opener. **This is the analysis and backtest layer not rolling
+at all.**
+
+| | |
+|---|---|
+| Distinct env vars under `nba/**/*.py` | **174** |
+| **With a hardcoded season-string default** (`"2025-26"`, `"2024-25"`, `"2025_26"`, or a season date bound) | **47** |
+| Set by at least one workflow — **to a literal, or to an input with a literal fallback** | **45** |
+| **Never set by anything; the frozen default is what runs** | **2** — `RUNG_FROM` (`2024-10`), `RUNG_TO` (`2026-04`) in `nba/build_rung_market.py` |
+| NBA Python files importing `nba_season` / `active_stats_season` | **20 of 135** |
+
+```yaml
+UA_TEST_SEASON: "2025-26"        RT_TRAIN_SEASON: "2024-25"       N1_TEST: "2025-26"
+ALLOC_SEASONS: ${{ github.event.inputs.seasons || '2025-26' }}
+LOAD_ASOF:     ${{ github.event.inputs.asof    || '2026-03-15' }}
+```
+
+**The one computed setter is `SEASON_SLUG` / `INJURY_SEASON_SLUG`** (`steps.cfg.outputs.slug`) — **and
+its own fallback is the literal `2024_25`**, not `nba_season.py`. 📌 Three workflows set
+`BT_TEST: ${{ github.event.inputs.season }}` with **no fallback**, so a dispatch without the input
+leaves it empty and the Python default `"2025-26"` applies — *a default behind a default.*
+
+✅ **This does NOT contradict the documented claim.** `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md`
+says *"`nba/nba_season.py` — the one source of truth for season strings, replacing a universal
+hardcoded `Season=2025-26` **across 13 scrapers**"* — **the scope is in the sentence, and it is true
+of the scrapers.** This is an addition to it.
+
+🔑 **OWNER DECISION — folded into the Oct-1 decision, because the date is the same.** From 2026-10-01
+the scraper layer says `2026-27` and the analysis layer says `2025-26`, **and nothing reconciles
+them**. *Whether the analysis layer should follow `nba_season.py`, stay pinned deliberately, or be
+made to fail loudly on a mismatch is a design choice this sweep does not make.*
+
+---
+
 ## 🔴🔴 THE BASELINE LADDER IN POSTGRES HOLDS TWO DEPTH REGIMES UNDER ONE `recipe_version`
 *Recorded 2026-09-21 (T9 pass 12, §T9.27b). `[LIVE-AUDIT]` — verified by SQL and by reading the
 workflows; **not a transcript finding**.*
