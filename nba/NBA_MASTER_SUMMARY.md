@@ -14430,6 +14430,64 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.59 — PASS 58 (**the FIFTEENTH two-direction judgment — the closure-deciding pass**) — **✅ CLEAN · all four headline findings SURVIVE, one of them tested EXHAUSTIVELY for the first time**
+*2026-09-21. **Built so that a system defect would have its best chance to appear** — each headline
+attacked at its weakest joint, not its strongest — *so that closure would be earned rather than
+declared.* **`SELECT` only; read-only.**
+***Pre-registered: baseline 13 / 3 / 695 / 689 for a twenty-fourth identical measurement,
+`uncovered12` within ±1 of 664, no exact value named. Measured 13 / 3 / 695 / 689 · 39 / 0 / 664 /
+664. Fifteenth pre-registration: fourteen hits, one miss.***
+
+#### ✅ T11.59a — **ATTACK 1: the officials / starter-status load gap is UNCHANGED**
+`[LIVE-AUDIT]`, by `game_id` season code: **`nba_stats.game_officials` holds season `25` ONLY —
+1,227 games, 3,681 rows. `nba_stats.player_game_starter_status` holds season `25` ONLY — 1,230
+games, 32,179 rows.** ***No `24`, no `23`.*** ✅ **Both figures match what the documents record, and
+a fix would have shown up precisely here.** **A dated STATE, not a verdict** *(O9)*.
+
+#### ✅ T11.59b — **ATTACK 2: the scrape-vs-load split tested over ALL 33 SCRAPERS — and it holds**
+*§T11.37a tested four scrapers by name; §T11.56b re-tested those four by output path. **This pass ran
+the output-path test over the whole class for the first time.***
+✅ ***The genuinely uncovered set is exactly the one already recorded***: **`scrape_nba_season_tables.py`
+(all eight output families) · `scrape_nba_periods.py` · `scrape_nba_injury_report.py` · and
+`scrape_nba_matchups_pergame.py`'s `matchups` half** *(its `team_game_log` and `delta_team_game_log`
+halves are read — §T11.56b)*. **Sixteen scrapers are fully covered.**
+⚠ **Bound stated** *(rules 17, 30)*: **four board scrapers** *(`fliff`, `sleeper`, `underdog`,
+`prizepicks_nba`)* **write to `boards/`, not `nba/data/`, and are outside the two-hop class**;
+`scrape_referee_assignments.py` is the one recorded as *"to build"*; `scrape_nba_pairs.py` and
+`scrape_nba_backfill_measure_types.py` expose no output path to this probe. **Two debug dumps —
+`nba_schedule_debug_raw` and `nba_shotzones_debug_raw` — are read by nothing, which is what a debug
+dump is.**
+🔑 ***So the corrected §T11.37a is now EXHAUSTIVE over its class rather than resting on four
+instances*** — **the first time this finding has been tested against the whole population.**
+
+#### ✅ T11.59c — **ATTACK 3: `blowout_model`'s three disjoint vocabularies are unchanged**
+| `kind` | `side` values | rows |
+|---|---|---|
+| `minutes_by_margin` | `competitive` · `won by 12-20 / 20-25 / 25+` · `lost by 12-20 / 20-25 / 25+` | **7** |
+| `p_blowout` | `favourite` · `underdog` | **14** |
+| `sliding_scale` | `fav` · `dog` | **14** |
+
+✅ **7 + 14 + 14 = 35 · 3 kinds · 11 distinct sides — the partition closes exactly.**
+
+#### ✅ T11.59d — **ATTACK 4: `applies_to_side` and the milestone zero are unchanged**
+**The `more`-only set is still exactly `double_double` and `triple_double`** *(pass 55, live)*, and
+**`board_snapshots` still carries `player_double_double` 274,010 and no `player_triple_double`**
+*(pass 54, live)*.
+
+#### ⚠ T11.59e — **Two probe errors of my own, both caught INSIDE the pass**
+| error | how it was caught |
+|---|---|
+| **Three scrapers reported "zero covered"** — `backfill_2025_26`, `game_officials`, `starter_status` | ***literal matching of the season suffix***: the workers read `nba_..._${slug}.json`, so `nba_game_officials_2025_26` cannot match. **Re-run on the season-agnostic prefix: all three ARE covered.** |
+| **A phantom output, `nba_playtypes_current`** | ***a wrapped docstring line***: `"Writes nba/data/nba_playtypes_player_current.json, nba/data/nba_playtypes_team_current.json,"` produced a stem for a file that **does not exist**. **`ls` confirms only the player and team files, and the worker reads both.** |
+
+🔑 **Rule 22's second half — every hit is opened before it is counted — is what caught both, and
+neither reached a document.** *§T11.41c's class: suspect the caller before the finding.*
+
+**Pass outcome: ✅ CLEAN. No finding, figure or severity changed; all four headline findings survive,
+and one is exhaustive for the first time. CLEAN 1/3 · 59 passes.**
+
+---
+
 ### T11.58 — PASS 57 (**the RULE-30 POPULATION AUDIT — rule 6 applied to rule 30, and the cross-document consistency pass**) — **🔴 a second unreproducible population · ✅ both findings that rest on one HOLD over a larger set · 0/3**
 *2026-09-21. **The obligation**: rule 30 was written at pass 56 from ONE figure. This pass enumerated
 its siblings and re-took the load-bearing ones. **`SELECT` only; read-only.***
