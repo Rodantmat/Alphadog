@@ -14323,6 +14323,41 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.18 — PASS 3 (**two-direction judgment**) — **✅ CLEAN 1/3 · and a tooling caveat that nearly cost a wrong correction**
+*2026-09-21. **52 high-band segments and — remarkably — only ONE tail-direction segment**, the lowest
+of any transcript swept. T9's material is either well covered or genuinely uncovered; there is almost
+no "covered elsewhere in other words" middle.*
+
+**✅ Direction 1 checks out.** The high band is T9's own payload matching the documents that record
+it: the DD copula's explicit fallback, the three-part Q4/2H mixture, the virtual-rows `player_id`
+cast bug, the three bridge edits plus the generator, the 1.5-hour factor run ordered
+certified-props-first, the v17 two-season table. **Each spot-checked claim is recorded** —
+`0 misses of 37` appears in **seven** documents, `3 of 76 / 3 of 77`, `no re-tuning` and
+`every band with real volume` in three each.
+
+#### ⚠ T9.18a — **A tooling caveat, recorded because it nearly produced a wrong correction to a CLOSED transcript**
+
+The judge script prints direction-1 lines as `- (score) role [FILENAME]: text`. **The bracketed
+filename is the NEAREST-MATCHING DOCUMENT; the text is always the TRANSCRIPT's.** Reading a line
+tagged `[NBA_DATABASE.md]` that contained *"confidence bands 95/90/85… must hit their stated rate"*,
+I began drafting a correction to **§T8.22** — a closed transcript's entry — on the belief that
+`NBA_DATABASE.md` carried the owner's explicit band ladder.
+
+**It does not. `95/90/85` appears in none of the thirty documents, in either baseline snapshot or the
+working tree.** The string is T9's own `content:` block. **§T8.22's note stands exactly as written.**
+
+> ### ⚠ **The caveat, for anyone reading `judge*.py` output: the filename in brackets is where the segment would go, not where it came from.** *Every quotation lifted from that output is transcript text and must be attributed as such.*
+
+*What the check did establish, and it is the useful residue*: the owner's standard appears in T9's
+payload as **"confidence bands 95/90/85 … must hit their stated rate"**, while the documents carry it
+as *"when the model says 90%, does it hit 90%?"* and report bands as ranges. **Same standard, three
+phrasings, none missing** — which is what §T8.22 concluded from the other direction.
+
+**Pass outcome: no defect landed, direction 2 is a single self-authored segment, one tooling caveat
+recorded. ✅ CLEAN 1/3.**
+
+---
+
 ### T9.17 — PASS 2 (**tail stratum**) — **🔴 I GREPPED AND DIDN'T READ THE HIT · 0/3**
 *2026-09-21. 703 tail segments, classified by shape first: **287 prose (41%)**, 220 tool-result JSON,
 182 command/patch bodies, 14 tool-arg blocks — **~60% mechanism (0)**, the same proportion as T8.*
