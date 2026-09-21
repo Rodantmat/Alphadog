@@ -14430,6 +14430,60 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.46 — PASS 45 (**the ENUMERATION AUDIT — the direct remedy for the failure mode §T11.45c named**) — **❌ one claim's count wrong, four confirmed exhaustively, and a column the sweep never saw · 0/3**
+*2026-09-21. **For every completeness or bound claim: name the class, enumerate it, state whether the
+claim covered all of it.** The pass found what it was built to find.*
+
+| claim | class | size | verdict |
+|---|---|---|---|
+| §T11.36a — *"six of fourteen schemas hold zero tables"* | `nba*` schemas | **14** | ✅ **exactly six** — `nba_archive` · `nba_backtest` · `nba_classification` · `nba_context` · `nba_daily` · `nba_scoring`. **Correct.** |
+| §T11.21a — *"`phase` identical across all six tables"* | tables carrying `phase` | **6** | ✅ `conformal_confidence` · `final_hp` · `ladder_calibration_asof` · `scenario_calibration` · `scenario_realised` · `tier_band_calibration`. **Exactly six. Correct.** |
+| §T11.39b — *"32 files, not thirty"* | `nba/*.md` | **32** | ✅ **Correct**, and the two are named. |
+| §T11.37a — *"21 writers, NONE covers…"* | scrapers **33** vs writers **21** | | ⚠ **one side was stated; both now are.** *The four named unmapped scrapers are all present among the 33 and all still have no writer — **the claim holds and now has its denominator.*** |
+| 🔴 §T11.28b — *"a NINTH descriptive column"* | `prop_taxonomy` columns | **18** | ❌ **the COUNT is wrong** |
+| `NBA_DATABASE.md`'s per-schema table counts | 14 schemas | | ✅ **correct for the IN-SCOPE set** — see below |
+
+#### ❌ T11.46a — **§T11.28b's "ninth" is a count drawn from an unenumerated class**
+**`nba_ref.prop_taxonomy` has EIGHTEEN columns.** The documents enumerate **eight** as *"every
+descriptive column"*. 🔴 ***Outside that eight sit `prop_family`, `display_name`, `stat_expression`,
+`applies_to_side` AND `is_composite` — five descriptive columns, not one*** *(plus the key, `active`,
+`notes` and two timestamps)*. ✅ **The substantive finding stands unchanged**: `applies_to_side` is
+fully populated, **0 of thirty**, and declares `double_double` and `triple_double` `more`-only.
+⚠ **"A ninth" was never measured** — ***the FOURTH instance of the failure mode, found by the pass
+built for it.***
+
+#### 📌 T11.46b — **And the enumeration surfaced a column the sweep has never mentioned: `is_composite`**
+**18 simple / 10 composite = 28 ✅.** The ten: **`double_double` · `fantasy_score` ·
+`fantasy_score_1q` · `pra` · `pra_1q` · `pts_ast` · `pts_reb` · `reb_ast` · `stocks` ·
+`triple_double`.** **Novelty: the COLUMN is 0 of thirty; the composite props as a SET are documented
+richly** *(`NBA_DATABASE.md`'s family table, the certification record for P+R · P+A · R+A · PRA ·
+fantasy · stocks)*. 🔑 **And it is rule 24's shape between two columns of one table**: **`prop_family`
+splits them as `combo` 6 + `composite` 2, while `is_composite = 1` covers TEN** — *the six combos, the
+two fantasy props **and the two milestones*** — ***two columns partitioning the same 28 rows
+differently, and only one of them is documented.*** 📌 **Both `more`-only props are
+`is_composite = 1`, but so are eight that are `both`** — *so composite is not the discriminator;
+`milestone` is.*
+
+#### ✅ T11.46c — **The per-schema counts look stale and are not — attribution settles it**
+`NBA_DATABASE.md` records `nba_score` **18** and `nba_config` **11**; live they are **20** and **14**.
+✅ **Enumerated, the growth is fully attributed and none of it is in scope**: `nba_config` gains
+**`pp_conservative_policy` · `pp_pricing_model` · `pp_slip_rules`** — *all three the concurrent
+session's `pp_*` work* — **11 + 3 = 14 ✅**; `nba_score` gains **`paper_picks`** *(already recorded,
+§T11.19)* and **`board_scored_snapshot_20260920`** *(a dated snapshot copy)* — **18 + 2 = 20 ✅**.
+📌 ⚠ **`pp_conservative_policy` is a fourth `pp_*` object not named in the standing scope list** —
+*recorded as a scope-boundary fact, not swept.*
+
+#### 🔑 T11.46d — **This pass's own class, stated so the next pass can check it**
+**Seven completeness or bound claims were audited.** ⚠ ***How many T11 contains in total was NOT
+enumerated*** — *the seven are the ones visible in the entries and the next-step row, not a census of
+the transcript's claims.* **By this pass's own standard that is the same omission it exists to
+correct, and saying so is the only honest form available** (rule 25).
+
+**Pass outcome: ❌ one count corrected, four claims confirmed exhaustively, one new column.
+CLEAN 0/3 · 46 passes.**
+
+---
+
 ### T11.45 — PASS 44 (**twelfth two-direction judgment, PRE-REGISTERED — aimed at SETTLED claims per §T11.44e**) — **❌ two settled claims narrowed, both by the enumeration they never stated · 0/3**
 *2026-09-21. **The re-aimed judgment worked: attacking claims four to seventeen passes old still found
 defects, and they are a different and more interesting kind.***
