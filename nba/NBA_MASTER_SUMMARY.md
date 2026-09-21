@@ -1580,6 +1580,42 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.13 — PASS 13 (**results stratum FINISHED — the 0.40 tail is now fully read**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21. All 466 tail segments read across passes 1–13.*
+
+1. 🔴 **The DARKO scraper fetches a daily projected-minutes series and throws it away.**
+   ***VERIFIED*** by reading the committed hydration payload: **24 fields per player, 9 kept.**
+   Discarded include **`x_minutes`** — DARKO's own projected minutes — plus `x_pts_100`,
+   `x_ast_100`, `x_fg_pct`, `x_fg3_pct`, `x_ft_pct`, `x_pace`, and **`career_game_num`**, which is
+   precisely the confidence signal for DARKO's documented rookie problem. **The system is separately
+   building factor A2 to predict minutes — five retracted attempts — while discarding a free,
+   daily-updated second opinion on that exact quantity.** Unrecoverable: `raw_json` holds the
+   already-reduced record (max 187 chars), 0 of 530 rows contain any of them.
+   → `NBA_OPEN_ITEMS.md`, new section
+2. ⚠ **CORRECTION to §T3.11 — the play-type scraper drops EIGHT columns, not five.** The full
+   `synergyPlayType` set also carries **`FGM`, `FGA`, `FGMX`**. *`FGA` by play type is shot volume by
+   role; `FGMX` feeds offensive-rebound opportunity.* **Three scrapers in one session: one keeps
+   every column by design, two hand-pick, and both hand-picking ones discarded fields that map onto
+   certified props.**
+3. **The payload offset, measured exactly**: `players:[` begins at character **203,026** of a
+   432,417-character page. **The live scraper's debug cap is 20,000.** *This is the hard number
+   behind the season-critical item — the cap misses the data by a factor of ten.*
+4. **`[LIVE-AUDIT]`** — `nba_stats.player_impact_rating` last written **2026-09-02T07:58Z**, 19 days
+   stale, the same pattern as `nba_calendar.games`. **Two of the foundational tables are frozen at
+   their build date.**
+5. **Unverified and worth one check**: the leaderboard shows *"minimum 20 games played"*. **If that
+   filter constrains the payload rather than one widget, the October scrape returns few or no rows.**
+   *Stated as unverified per Rule 1 — the page text does not establish which.*
+6. **DARKO's Shiny app was retired in June 2026** and the site moved to www.darko.app, three months
+   before this scrape. *The bus-factor abstraction was already justified by a real migration.*
+
+**Ratio**: 6 findings from ~67 segments. **Results stratum total: 137 segments, 17 findings — 1 per
+8.1**, and **roughly two thirds of the stratum was web-search contamination** unrelated to the
+system (SaaS leaderboards, Rocket League, LEGO NFC tags, Django pagination).
+
+**Clean count 0/3.** **TAIL EXHAUSTED — all 466 segments read. The two-direction judgment pass is
+what remains before T3 can close.**
+
 ### T3.12 — PASS 12 (angle: **the results stratum continued — and a live audit it triggered**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
