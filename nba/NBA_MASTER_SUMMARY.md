@@ -14430,6 +14430,45 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.50 — PASS 49 (**the FIGURE audit — testing the hypothesis five duplicates suggested**) — **✅ CLEAN 1/3 · the hypothesis is WRONG, and the correction is worth more than the hypothesis was**
+*2026-09-21. **The next-step row proposed**: "rule 26 has been applied to ABSENCE claims and not to
+FIGURES — every duplicate was a measurement the sweep re-derived and credited to itself."
+***Tested against all sixteen figures passes 41–48 published. It does not hold.***
+
+#### ✅ T11.50a — **Sixteen figures probed against `5dfb72ab`; two were on file, and both were already known**
+
+| | |
+|---|---|
+| **figures probed** | **16** |
+| ⚠ **controls FAILED → discarded** *(rule 22, firings 5, 6 and 7)* | **3** — `side` 19 carriers · `phase` 7 carriers · game-keyed 10 |
+| **valid probes** | **13** |
+| **returned hits** | **5** |
+| ✅ **hits OPENED and dismissed as false** | **3** |
+| 🔴 **confirmed already on file** | **2** — `team_game_log` **7,380** and the prefix counts **71 / 7 / 85 / 6**, ***both caught at pass 48*** |
+
+**The three false hits, opened**: **`104`** matched *COMPASS fact 104*, *`factor_gate_results` 104
+rows*, the live board's *`{demon: 104}`* and *§T1.104* — **never "104 base tables"** · **`is_composite`
+18 + 10 = 28** matched *"all five composites and `stocks` sat at a flat 10"*, which is about
+`LADDER_DEPTH` · **`prop_taxonomy` 18** matched an `oreb`/`dreb` entry. ***None is the figure.***
+
+#### 🔑 T11.50b — **So the hypothesis is wrong, and the true shape is narrower and better**
+***Two of thirteen — about 15% — and ZERO new duplicates.*** 🔑 **The five duplicates were
+CONCEPTS and CLASSES, not measurements**: **§T3.8a's scrape-vs-load class** · **`nba_control`'s
+emptiness** · **the two-hop architecture** · **the memory store as the fourth store** — *each a
+characterisation the documents already carried in prose*. **Only pass 48's two were figures.**
+✅ ***So the sweep's NUMBERS are overwhelmingly its own; the duplication is in how it DESCRIBES
+things.*** ⚠ **That relocates the remedy**: **rule 26 is being applied correctly to figures** — *the
+gap is that **a characterisation ("this is the Nth instance of a class", "nothing reads it", "the
+store is X") needs the same probe a figure gets**, and prose is harder to grep than a number, which
+is exactly why those five slipped.*
+
+📌 **Recorded as a correction to the sweep's PLANNING, not its findings** — *a next-step row's
+hypothesis is a plan, and §T11.43b set that precedent.*
+
+**Pass outcome: ✅ CLEAN 1/3 · 50 passes.**
+
+---
+
 ### T11.49 — PASS 48 (**novelty audit of passes 41–47, and the REGISTER's own novelty**) — **❌ two more duplicates · ✅ the register is an ADDITION to the twelve, and the prediction that said so landed · 0/3**
 *2026-09-21.*
 
