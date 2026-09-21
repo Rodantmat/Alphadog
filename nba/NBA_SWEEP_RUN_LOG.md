@@ -15,10 +15,10 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 | | |
 |---|---|
 | **Current transcript** | **T6** — `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt` |
-| **State** | **0/3 · 1 pass · reasoning stratum done.** 595 segments, 527 uncovered vs twelve (88.6%). Tail at `scratchpad/t6/t6_tail.json`; generator `scratchpad/t6/tail6.py`. |
-| **Stratum** | reasoning ✅ (216) · **commands (153) and results (158) still to read.** |
-| **Exact next step** | **T6 pass 2 — the command stratum**, using the classifier inline in `tail6.py`'s sibling one-liners (filter `kind=='cmd'`, sort by `i`, print). Then pass 3 = results stratum. Then the angles. |
-| **Open thread for the command stratum** | T6 names *"a logic bug that silently hides parsing errors"* while tracing 3 failed officials games. **Whether it was fixed or only worked around by the 3-game patch script is NOT RECORDED** — resolve it there. |
+| **State** | **0/3 · 5 passes · ALL FOUR STRATA READ.** 595 segments, 527 uncovered vs twelve (88.6%). Tail at `scratchpad/t6/t6_tail.json`; judge at `scratchpad/t6/judge6.py`. |
+| **Stratum** | reasoning ✅ · commands ✅ · results ✅. Angles used: judgment (4), referential integrity (5). |
+| **Exact next step** | **T6 needs 3 clean passes at different angles.** Pass 5 reset the counter. Remaining angles: **structural value sanity**, **wiring**, **cross-document consistency**, **mid-band 0.40–0.45 seam** (`scratchpad/t2judge/midband.py`, repoint), **live volume re-verification**. Then close T6 → **T7** `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt`. |
+| **Open threads left by T6** | (a) `lineup_profile` truncation severity — how many lineups actually exist per group size is **NOT RECORDED**; belongs to the lineups worker's transcript. (b) The 3 officials-less games on 2025-11-19 — upstream cause **NOT RECORDED**. |
 | **Working scripts** | `scratchpad/t5/tail5.py` (tail + coverage), `scratchpad/t5/judge5.py` (two-direction judgment), `scratchpad/t2judge/midband.py` (0.40–0.45 seam). Each needs one `sed` of the transcript path. |
 | **Angles menu** (3 clean at different angles closes a transcript) | two-direction judgment · live numeric re-verification · **referential integrity** (do the tables join?) · **structural value sanity** (does the data obey domain invariants?) · wiring (registry/manifest/bindings/workflows) · cross-document consistency · mid-band 0.40–0.45 seam |
 | **⚠ T6 note** | The `comment` taxonomy on `player_game_starter_status` (4,319 DNP-Coach's-Decision etc.) **belongs to T6** — deliberately left undocumented by the T5 sweep. Live tail beyond the documented three: NWT-Not With Team 29, DND-Rest 27, NWT-Injury/Illness 25, DNP/NWT-League Suspension 12 each. |
