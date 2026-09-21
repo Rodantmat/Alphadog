@@ -55,6 +55,7 @@ every commit message. Never `git push`.
 | T1 | phase1-static | 89 (88 counted, 55 VOID) | — | — | 2026-09-21 |
 | T3 | phase3a-final | 14 | 64 / 466 | 1 per 7.3 | 2026-09-21 |
 | T2 | phase3a-enrichment | **19** (18 counted, 13 VOID) | re-read ~42 / ~367 | **1 per ~9** | **2026-09-21** ✅ |
+| T4 | phase3b-backfill | **10** (re-sweep) | ~12 / 498 | 1 per ~41 | **2026-09-21** ✅ |
 
 **T2 closed twice.** First at pass 11 — procedurally correct, but on a shallow read (**1 per ~34**).
 Reopened on that measurement alone. The re-read improved yield **3.8×** and produced the two 🔴🔴
