@@ -14430,6 +14430,58 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.47 — PASS 46 (**the enumeration CENSUS §T11.46d admitted it had not taken**) — **📐 the CLASS REGISTER built · ❌ a fifth instance of the failure mode · 🔑 a class that CHANGED mid-sweep · 0/3**
+*2026-09-21. **§T11.46d ended with *"how many T11 contains in total was NOT enumerated"*, and a claim
+that states its own limit puts the completion on the next pass's list** — §T11.21c and §T11.39a are
+the precedents where that worked.*
+
+#### ✅ T11.47a — **The census, and it splits into two populations with different standing**
+**T11's entries hold 812 sentence-like units; 362 carry completeness or bound vocabulary**
+*(`all` 133 · `only` 103 · `every` 100 · `never` 71 · `exactly` 63 · `zero` 44 · `none` 44 ·
+`complete` 12 · `exhaustive` 5 · `not systemic` 4)*. **They divide cleanly:**
+
+| population | n | standing |
+|---|---|---|
+| **DOCUMENT-class counts** — *"of thirty", "of the twelve"* | **82** | ✅ **the class is defined by the harness** (`DOCS` names the twelve; `nba/*.md` minus two is the thirty) **and both were enumerated at §T11.39b/§T11.46** |
+| **SYSTEM-OBJECT bound claims** | **130** | ⚠ **the population where all five failures occurred** — by object: **table 85 · row 78 · file 23 · column 18 · schema 10 · writer 9 · worker 8 · scraper 7** |
+
+🔑 **And the remedy is not to audit 130 sentences — it is to enumerate the CLASSES they bound, which
+are FEW and FINITE.** ***Written as `NBA_DATABASE.md` §0z, "THE CLASS REGISTER" — sixteen classes,
+each with its size, its members where short, and the § that enumerated it.*** **Every class the 130
+claims draw on is now on one page and dated.**
+
+#### ❌ T11.47b — **A fifth instance, and it is §T11.28a's**
+§T11.28a published *"`side` names a prop direction in **ten tables**, a team role in two `kind`s of an
+**eleventh**."* 🔴 **Enumerated: NINETEEN base tables carry `side`** — **6 named `pp_*`** *(out of
+scope)*, leaving ***thirteen in scope***, not eleven. **The two the pass missed are
+`nba_market.prop_universe` and `nba_score.board_scored_snapshot_20260920`.** ✅ **The substantive
+finding is untouched** — *`blowout_model`'s three vocabularies in one column, `fav`/`dog` at 0 of
+thirty* — **only the bound was drawn from an unenumerated class.** ***The fifth instance, and the
+register above is why there should not be a sixth.***
+
+#### 🔑🔑 T11.47c — **And one of those two was NOT THERE at pass 27 — an unenumerated class is also an UNDATED one**
+**`nba_market.prop_universe` — 1,667,024 rows, 24 columns — did not appear in pass 27's census of the
+same four column names.** ***So the class changed during the sweep.*** 🔑 **That is the sharper form
+of the lesson**: **§T11.28a's "eleven" was not merely unenumerated, it was a snapshot presented
+without a date** — ***and a bound over a live class is a measurement, so it carries the date of its
+measurement or it carries nothing.*** **Every row of the class register is dated for exactly this
+reason.**
+
+⚠ **SCOPE, recorded and not swept** (rule 6, and the owner's standing exclusion): **`prop_universe`
+carries the concurrent PP session's column vocabulary — `two_pick` · `price_source` · `model_p` ·
+`hit` · `stat_actual` · `result` — WITHOUT the `pp_` prefix**, ***so the standing exclusion list,
+which names objects individually, does not reach it by its wording.*** 📌 **`nba_market` now holds
+25 base tables of which 12 are `pp_*`** — **nearly half the schema is outside this sweep's scope** —
+and **`pp_conservative_policy`** *(§T11.46c)* **and `pp_leg_price_cons`** are two more `pp_*` objects
+the list does not name. **Not swept, not counted, recorded as a boundary fact.**
+
+📌 **And one figure the sweep has never stated**: ***104 base tables across all fourteen `nba*`
+schemas.***
+
+**Pass outcome: 📐 the class register built · ❌ a fifth instance corrected · CLEAN 0/3 · 47 passes.**
+
+---
+
 ### T11.46 — PASS 45 (**the ENUMERATION AUDIT — the direct remedy for the failure mode §T11.45c named**) — **❌ one claim's count wrong, four confirmed exhaustively, and a column the sweep never saw · 0/3**
 *2026-09-21. **For every completeness or bound claim: name the class, enumerate it, state whether the
 claim covered all of it.** The pass found what it was built to find.*
