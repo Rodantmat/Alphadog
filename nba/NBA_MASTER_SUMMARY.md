@@ -14503,8 +14503,19 @@ The conclusion is unaffected: **13 is still absent**, and the count is still 20.
 
 **`p95 = 13` is the MEASUREMENT that motivated the table** *(`NBA_GOBLIN_DEMON.md`: "the design figure
 was ±6 line-units = 12 rungs, against **a measured p95 of 13 rungs**")*; **the configured value is
-14**, and the deep props run **14–16**, not 13–16. 📌 **NOT RECORDED: whether 14 is p95 + 1 as a
-deliberate margin** — nothing states it, and it is not asserted here.
+14**, and the deep props run **14–16**, not 13–16.
+
+> 🔴 **"NOT RECORDED: whether 14 is p95 + 1 as a deliberate margin" — RETRACTED 2026-09-21 by
+> §T9.41a. IT IS RECORDED, as a per-prop table, in the same document.** `NBA_GOBLIN_DEMON.md` lines
+> 496–504 give **Prop · Anchor · p95 distance · "Our ±10" · Fixed to** for eight props, and
+> **all eight "Fixed to" values equal `LADDER_DEPTH` exactly**: `points` 13 → **14** · `pra` 16 → 16 ·
+> `pts_reb` 15 → 15 · `pts_ast` 14 → 14 · `rebounds` 5 → **6** · `assists` 4 → **5** · `steals` 1 →
+> **2** · `blocks` 1 → **2**. **The rule is visible: p95 + 1 for the five short/wasteful props, p95
+> exactly for the three deep composites.** ⚠ **I asserted an absence without running the one-word grep
+> (`p95`) that answers it — rules 2 and 8, and the grep took four seconds.** 📌 *What IS unrecorded is
+> narrower: **the provenance of the other 12 keys** — `dreb`, `fantasy_score`, `fg3a`, `fga`, `fgm`,
+> `fta`, `ftm`, `oreb`, `personal_fouls`, `reb_ast`, `threes_made`, `turnovers` — which appear in no
+> such table.* **8 + 12 = 20** ✅.
 
 ⚠ **The distinction is load-bearing, not pedantic.** *§T9.33a's beyond-depth split — **30,989 rows**,
 **92.3% of them certainties** — joins on the **configured** value. A reader who takes the documents'
