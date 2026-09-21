@@ -144,6 +144,33 @@ Live, lines 45–51:
 
 ---
 
+## 0.23 🔴 THE INJURY ARCHIVE CHANGES FILENAME PATTERN MID-SEASON — and the first backfill silently captured only the later half
+*Added 2026-09-21 from T11 (§T11.3c). **Past bug with its fix; the shape is the one that keeps
+recurring.***
+
+🔴 **What happened**: the run produced **266,049 rows and 2,218 snapshots — but only from
+22 December onward.**
+
+**Cause**: **before ~2026-12-22 the NBA's injury-report archive used an HOURLY filename with no
+minutes** — `06pm`, `12pm`, even `12am` — **and the true publish time appears only in the document
+header** (*"Injury Report: 11/24/25 12:30 PM"*). **The 15-minute filename pattern begins 22 December.**
+A scraper written against the 15-minute pattern therefore finds nothing before that date **and
+reports success.**
+
+✅ **The fix, three parts**: **probe BOTH filename patterns** · take the snapshot timestamp from the
+**document header**, not the filename · **drop consecutive duplicate documents by content hash.**
+
+🔑 **And the volume it revealed**: **the league republishes the report 10–27 distinct times per day** —
+genuine intra-day snapshots, *"excellent for the enrichment cutoffs"* — which pushed the single
+season file to **98 MB** and forced the **monthly-shard-with-index** layout this document already
+describes. *The as-of loader and both builders read the shards; the workflow size-guards commits.*
+
+⚠⚠ **The recurring shape, stated plainly: a run that finds inputs, writes a quarter of a million rows
+and reports success can still be missing an entire half of the range.** ***A healthy row count is not
+coverage — only a date-range check is.***
+
+---
+
 ## 0.24 🔴 VALIDATE A PARSER ON **THE RUNNER'S OWN EXTRACTION**, NOT ON YOUR OWN
 *Added 2026-09-21 from T11 (§T11.2c). **The transcript states the lesson; no document carried it.***
 
