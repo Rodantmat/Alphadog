@@ -189,6 +189,64 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 🔴🔴 T11's MARKET-PROBING RESULT — **the transcript's own answer to its blocked-items list, and it is in ZERO of the twelve**
+*Found 2026-09-21, T11 pass 28 (§T11.29). **Segment 355 of 712** — verbatim where quoted, and
+**every figure confirmed live** in `nba_config.classification_config` key
+`market_probe_results_2026_09_10`.*
+
+⚠⚠ **READ THIS BEFORE THE MATRIX BELOW.** **The matrix and the blocked-items list are segments 112–113
+— 12% of the way into T11. This is segment 355, and segment 536 is later still. A transcript's state
+on a subject is its LAST word, not its first** *(rule 27)*.
+
+### The probe, and what it settles
+> *"**2026-09-10 v40 market probing done** (config key `market_probe_results_2026_09_10`):
+> **ParlayAPI v3.2.0 Pro**: live props endpoint `/v1/sports/basketball_nba/props`, 3 credits, **all
+> DFS books incl PP/UD/Sleeper = the live board source**; historical coverage endpoint shows **game
+> lines for 3 seasons** (DK / Caesars / MGM / FD / Fanatics, Oct 2023 – Jun 2026) — ***`b1`/`b2`/`c3`
+> backfill SOLVED***; **but** the props/board archive `/historical/…/closing-odds` **starts
+> ~2026-05-10**: Underdog + sportsbooks present, ***PrizePicks and Sleeper absent even June 2026
+> (Finals)***, **regular seasons 2025-26 and 2024-25 EMPTY for every book** — ***ParlayAPI EXHAUSTED
+> for historical boards***. **Odds API key = free plan (historical unavailable)**; docs: **props
+> history since 2023-05 at 5-minute snapshots, 10 credits per region per market per event**, us_dfs
+> books in history only from their add date (**not in the docs**) — ***a small paid month is the cheap
+> test; ~123k credits per season for one snapshot per game***. Alternatives researched: **OpticOdds**
+> (enterprise), **OddsJam** (B2B), **SportsGameOdds**, **OddsPapi**, **BigDataBall**. Gemini + sharp
+> practice: ***DERIVED BOARD is legitimate*** — **PP line = sportsbook consensus median; Goblin/Demon
+> structured offsets** — but **needs historical sportsbook props (Odds API paid)**. ***DECISION
+> PENDING (owner): pay for an Odds API month to test us_dfs history / pull sportsbook props for a
+> derived board, or accept live-only board archiving from opening day.***"*
+
+### 🔴 What this corrects in this sweep's own record
+
+| the sweep said | T11 actually says |
+|---|---|
+| §T11.23b / §T11.24a / §T11.27b — **`c1`/`c2` is blocked on *"decide on BigDataBall"*** | ❌ **That is segment 113.** By **segment 355** the decision is ***"pay for an Odds API month (~123k credits/season) or accept live-only"***, and **BigDataBall is one of FIVE researched alternatives**, not the option |
+| §T11.24a — ***"`b1`/`b2`/`c3` … resolved inside T11 when the owner renewed the key"*** | ✅ **Right, and the RESULT was never found**: **segment 536** rewrites the matrix row to **✓ — `nba_market.game_lines_closing`, ParlayAPI closing-odds archive, 5–7 books, 2,410 games, 12,165 rows, openers not archived before May 2026** |
+| §T11.27f — *"the supersession is T12's; **queued, not taken**"* | ❌ **RETRACTED.** The probe searched for T12's *status-line* strings and found none. **The supersession itself is at T11 segments 355 and 536.** *Vocabulary-correct, pattern-wrong — the third time in this run* |
+| §T11.23c — ***"no free archive exists for anyone"*** | ✅ **Upheld and now MECHANISED**: the archive **starts ~2026-05-10**, **PP and Sleeper are absent even in June 2026**, and **both regular seasons are empty for every book.** *The claim was published without the measurement behind it* |
+| §T11.3a — **ParlayAPI validated live** | ⚠ **Half the finding.** It is the **live board source** ***and*** ***EXHAUSTED for historical boards*** — the operationally decisive half, recorded nowhere by this sweep |
+
+### 📌 Novelty, positive-controlled against `5dfb72ab`
+**0 of thirty**: ***~123k credits/season*** · ***props history since 2023-05 at 5-min snapshots, 10
+credits per region/market/event*** · ***the DERIVED BOARD as a legitimate substitute (PP line =
+sportsbook consensus median, Goblin/Demon structured offsets)***. **0 of the twelve** *(carried only
+by `NBA_COMPASS.md` and `NBA_PROJECT_LOG.md`)*: the **~2026-05-10** archive start · **PP/Sleeper
+absent** · the **config key** · **2,410 games / 12,165 rows**. ⚠ ***"EXHAUSTED" returns 0 of thirty as
+a word, but the FACT is in 2 of thirty in another vocabulary*** — *"archive starts ~2026-05-10 and
+never holds PrizePicks/Sleeper"* — **so it is reported as 2 of thirty, 0 of the twelve** *(rule 20)*.
+⚠ **OpticOdds / OddsJam / SportsGameOdds appear in 5 of the twelve and in EVERY case as research
+sources for projection methodology, never as board-history vendors** — false hits, opened and
+dismissed.
+
+### ✅ And the decision did resolve — the configs carry it
+`board_sources_decision`: ***`historical_boards`: The Odds API (PrizePicks + Underdog, 2 seasons)***.
+`board_backfill_odds_api`: **$119 / 5M plan**, **420 credits per snapshot** (10 × 21 markets × 2
+regions), **2,460 games × 2 snapshots ≈ 2.07M credits**, resumable via `nba_market.board_backfill_log`.
+⚠ **This is the live state, not T11's** *(rule 6)* — **T11 ends with the decision PENDING**, and which
+transcript closes it is for a later pass.
+
+---
+
 ## 📋 THE FACTOR × SEASON BACKFILL MATRIX — **the instrument that answers "which factors are done"**
 *Transcribed in full 2026-09-21 from T11 segment 112 (§T11.24). **§T11.2d established that the twelve
 carry the owner's requirement — "every enrichment factor needs a two-season backfill" — and NOT the
