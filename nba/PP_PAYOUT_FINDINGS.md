@@ -389,6 +389,39 @@ were fitted on these legs; the out-of-sample figure remains leave-one-player-out
    `3-PT Made→player_threes`, `Rebs+Asts→player_rebounds_assists`)
 9. **Preseason board (2026-10-03):** re-validate on dozens of players; mine longer-odds demons to extend the edge
 
+### v2 — THE PER-LEG LOGIC (current model, `pp-leg-v2-sqrt`)
+**PrizePicks prices each line as a tail probability on the square-root scale, centered on the MEDIAN projection:**
+```
+P(over the line) = 1 − Φ( 2 × (√line − √center) / c )      general form: power-normal, λ = 0.5
+```
+| Family | c | Reading |
+|---|---|---|
+| Rebounds / Assists / Threes | **1.08** | ≈ **Poisson** — a pure Poisson count gives exactly 1.0 on the square-root scale |
+| Points / P+R / P+A / PRA | **1.87** | variance ≈ 3.5 × mean — points arrive in twos and threes |
+| Rebs+Asts | 1.34 | 5 legs — thin |
+
+**Head-to-head, leave-one-player-out (115 legs, constants refitted inside every fold):**
+| Model | Within 1 step | Median error | Big-demon bias |
+|---|---|---|---|
+| normal (v1) | 70% | 4.5% | **+4.8%** |
+| gamma, median on line | 72% | 4.3% | −3.3% (overcorrects) |
+| gamma, **mean** on line | 39% | 8.7% | +1.4% — **PrizePicks centers on the median, not the mean** |
+| **square root, λ = ½ (v2)** | **80%** | **3.8%** | **−0.5%** |
+| λ fitted blind per fold | 76% | 4.0% | −1.2% — chose λ = 0.40–0.55 every fold |
+
+λ = ½ was named in advance as the variance-stabilizing transform for count data; the blind per-fold fit
+converging on 0.40–0.55 is the independent confirmation. The 76% row is the strictly out-of-sample figure.
+
+**Against PrizePicks' real current prices** (mined keys found in history; both models fitted on these legs):
+v1 median error 3.07%, big-demon bias +1.93%, 112 priced · **v2 3.16%, +0.15%, 114 priced.**
+
+**Coverage of two seasons:** v2 prices **2,102,700 legs = 95.61%** (v1: 94.26%). Demons outside calibration
+fall from 82,944 to **53,284** — v2's fatter tail places some far historical demons inside the range of odds
+actually mined. v2's edge: `implied_p ≥ 0.1253` (furthest mined demon in v2 terms: Rebounds 11.0 → 15.5, 9.0×).
+
+**Safety fix made at the switch:** the view now LEFT-joins the current model, so if no version were ever current,
+every leg would still appear with `no_current_model` instead of silently vanishing.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
