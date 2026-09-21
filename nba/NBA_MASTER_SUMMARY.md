@@ -14679,8 +14679,11 @@ not duplicated here.)*
 
 🔴 ***All three blocked groups are MARKET OR BOARD HISTORY, and their reasons are different:***
 **b1/b2/c3** was a **dead key** *(resolved inside T11 when the owner renewed it — §T11.23b)* ·
-**c1/c2** is **paid — BigDataBall — an owner decision** · **c4/s1–s4** is **impossible: no free
-archive exists for anyone** *(§T11.23c)*. ***Everything else is have, running, or built-and-pending
+**c1/c2** is **paid — BigDataBall — an owner decision** — ✅ **SUPERSEDED IN T13: The Odds API supplied
+two seasons; BigDataBall never purchased, never needed (§T11.27b), and the supersession reaches the
+SPORTSBOOK side only** · **c4/s1–s4** is **impossible: no free archive exists for anyone**
+*(§T11.23c)* — ⚠ **still open, because The Odds API carries PrizePicks as a bookmaker but not the
+DFS-only markets**. ***Everything else is have, running, or built-and-pending
 — which is precisely what segment 113 claims: "everything else is built or running."***
 
 #### 📌 T11.24b — **Four items in the matrix were in none of the twelve**
