@@ -16115,7 +16115,7 @@ TWELVE)*: 🔴 **seven more are in NONE of them** — **`a7` trade window** (3 o
 preseason seeding** (2) · **the PDF's two-way reason class** (3) · **the Kaggle game-line set** (1) ·
 **the derived spread as the trained fallback in place** (2) · **`b3` leverage/tanking from standings**
 (4) · **the daily referee-assignments scraper still to build** (5) · and **`a1`'s *"archive coverage
-to verify"* is in 0 of thirty.** ***Eleven of the matrix's twenty rows carry something the mandated
+to verify"* is in 0 of thirty.** ***Eleven of the matrix's ~~twenty~~ NINETEEN rows carry something the mandated
 documents do not, which is §T11.2d measured rather than asserted.***
 
 #### ✅ T11.27e — **Three false hits opened and dismissed, and one duplicate caught before publication**
