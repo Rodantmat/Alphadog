@@ -10453,7 +10453,10 @@ what is added here.**
 **He also rejected the alternative explicitly**: *"not do a global matrix and have a ton of data
 that's not needed"* — **bounded ladder, not exhaustive grid.**
 
-#### 🔴 T7.30c — **"PROP LINE BY PROP LINE" — the per-prop factor study, directed and unrecorded**
+#### ⚠ T7.30c — **"PROP LINE BY PROP LINE" — the per-prop factor study, in the owner's own words**
+> 🔴 **CORRECTED 2026-09-21 by §T7.35a (pass 6), the first of the three retirements.** This heading
+> read *"directed and **unrecorded**."* **The study is documented** — the sweep had searched for the
+> owner's phrasing rather than for what the work would be called by someone who recorded it.
 
 > *"…projected minutes logic should be covered in the baseline level, no doubt. **That differs from
 > MLB**, so it needs the proper logic. And you need to do this study **prop line by prop line**.
