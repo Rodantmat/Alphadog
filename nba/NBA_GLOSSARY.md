@@ -377,6 +377,14 @@ Unabated prices off the player's full outcome distribution; **Goblin ≈ 25th–
 Standard ≈ median, Demon ≈ 70th–80th, useful range ≈ 15th–85th.** The live `LADDER_DEPTH` measurement
 (p95 = 13 rungs for points) **agrees with this to within one rung.**
 
+> ⚠ **Two quantities, one name — disambiguated 2026-09-21 (§T9.39b).** **`p95 = 13 rungs` is the
+> MEASUREMENT** that motivated the table; **`LADDER_DEPTH["points"]` is `14`**, and **no entry in the
+> dict is 13** *(the twenty values are 2·2·3·3·3·4·5·5·5·6·6·6·7·10·10·14·14·15·16·16)*. **Four
+> documents call the measurement "the `LADDER_DEPTH` measurement", which reads as the table's value.**
+> 📌 **NOT RECORDED: whether 14 is p95 + 1 as a deliberate margin.** ⚠ **The distinction is
+> load-bearing, not pedantic** — §T9.33a's beyond-depth counts join on the **configured** value, so
+> reading 13 as the depth shifts every one of them.
+
 **lifts / penalties / caps** · T7 · **Lifts and penalties are factor-driven adjustments inside each
 tier's pipeline.** **Caps are explicitly a LAST RESORT** — *"the preference is logic that lands on the
 right number on its own."* Same instinct as the blowout minutes-mixture.
