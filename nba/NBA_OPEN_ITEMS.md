@@ -1,8 +1,25 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
-## 🔴🔴 `active_stats_season()` ROLLS OVER ON **OCTOBER 1** — NINETEEN DAYS BEFORE THE FIRST REGULAR-SEASON GAME — AND 13 SCRAPERS CALL IT
-*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by reading `nba/nba_season.py` (T7 pass 22). Detail:
-`NBA_MASTER_SUMMARY.md` §T7.51a. **Document, don't fix — nothing was changed.***
+## 🔴🔴 THE Oct-1 ROLLOVER, **RE-RATED**: nineteen days and six scheduled runs, not two days and none
+*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by reading and executing `nba/nba_season.py` (T7 passes
+22–25). Detail: `NBA_MASTER_SUMMARY.md` §T7.51a, §T7.53a, §T7.54. **Document, don't fix — nothing was
+changed.***
+
+> ⚠ **This is a RE-RATING of an existing item, not a new finding, and the distinction matters.**
+> **Item ② below in this same file** — *"`active_stats_season()` returns a data-less season on
+> Oct 1–2"* — already recorded the `month >= 10` branch and the empty-write failure shape, and rated
+> it **"low impact (P1 runs Mondays; 2026-10-01 is a Thursday)"**, measured against *"opening night
+> is 2026-10-03."*
+>
+> **That date is the PRESEASON opener.** Against the real regular-season opener, **2026-10-20**:
+> - the window is **nineteen days, not two**;
+> - it contains **three Mondays — Oct 5, 12, 19** — so the Monday argument that produced "low impact"
+>   now produces **six scheduled runs** (two weekly workflows × three Mondays);
+> - and the write is not merely "empty aggregates" but an **upsert over last season's real row**
+>   (below).
+>
+> **The owner's 2026-10-20 correction is what re-scored this item.** Item ② should be read as
+> superseded by this entry.
 
 ```python
 if today.month in (7, 8, 9):   start_year = today.year - 1
