@@ -7692,6 +7692,57 @@ a tooling constraint blocking the final load.
 
 ---
 
+## T5 RE-SWEEP UNDER CHRONOLOGICAL ORDER (2026-09-21)
+
+*Swept previously, then RESET by the DRIFT NOTICE. Re-swept stratum by stratum under the current
+methodology. **Coverage at start**: 438 segments · **375 uncovered vs the twelve (85.6%)** · 366 vs
+all 30 — **only a 9-segment self-authorship gap**, so unlike T4 this transcript barely writes the
+documents; its tail is genuine content, not its own payloads.*
+
+### T5.16 — PASS 1 (**owner + reasoning strata, read to the end**) — **NEW MATERIAL · 0/3**
+*2026-09-21. **No owner turns in the tail at all** — every one already scores as covered.*
+
+**T5's existing fifteen sections hold up well.** Batch-checked against all 30 documents and found
+correctly recorded: the `playerindex` position source, the *"`playerPosition` is only a filter
+parameter, not an output column"* self-correction, the 3,690-call estimate, `team_splits` at 581
+rows, the 5 split types, `defense_vs_position` at 630 rows (30 × 7 × 3), the 799-row v2 trap and its
+v3 fix, the 32,179-row load, the MCP fixed-enum block, and the absent Postgres `http` extension. ✅
+
+#### 🔴 T5.16a — **THE 799-ROW TRAP AND T4's MISSING PLAYER ARE THE SAME FAILURE CLASS — and only one of them was caught**
+
+`NBA_OPEN_ITEMS.md` calls the v2 trap *"the worst failure mode in the transcripts"*: **1,228 games
+"succeeded" and produced 799 rows** where ~30,000 were expected, because `boxscoretraditionalv2`
+returned **HTTP 200 with structurally correct responses and zero player rows**. No error raised, meta
+file reporting success. **Caught only by comparing the row count against an expected magnitude.**
+
+**T4's career-totals scraper has the identical defect, and nobody noticed** (§T4.22a, found by this
+sweep on 2026-09-21): a player whose request returns HTTP 200 with an empty rowset raises nothing,
+appends nothing to `errors`, and **still counts as a success**, because the tally is
+`len(players) - len(errors)`. One player — Maxi Kleber — silently has no career totals.
+
+| | T5, starter status | T4, career totals |
+|---|---|---|
+| Endpoint behaviour | HTTP 200, zero rows | HTTP 200, zero rows |
+| Error raised | none | none |
+| Reported as | 1,228/1,230 games "succeeded" | "582 players succeeded" |
+| Actually obtained | **799 rows / 31 games** | **3,644 rows / 581 players** |
+| **Noticed?** | **YES — magnitude check** | **NO — 18 days, until this sweep** |
+
+**The difference is not luck, it is scale.** T5's loss was 97% and unmissable against an expected
+magnitude. T4's was **one player in 582** — well inside the noise of any aggregate check, and
+invisible to all four guard shapes in the codebase, every one of which tests the *aggregate*.
+
+⚠ **And the remedy was in hand.** T5 diagnosed this failure mode, wrote it up as the worst in the
+project, and **the earlier scraper was never revisited** — because nothing connected the class to its
+other instances. **The documents record both facts on separate pages and draw no line between them.
+This entry is that line.** → `NBA_OPEN_ITEMS.md`.
+
+**The generalisable rule, stated for the transcripts still to come**: *a source that can return a
+well-formed empty result makes "no error" meaningless as a success signal.* **The only sound check is
+per-item: did every input produce at least one output row?**
+
+---
+
 ## T5 — `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt`
 **PHASE 3c — splits completion, the position bug, Defence-vs-Position, and the starter-status backfill**
 *115 content blocks · **PASS 1 (full sequential) 2026-09-20***
