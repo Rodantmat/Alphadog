@@ -189,7 +189,43 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
-## 🔴🔴 SLEEPER HAS ONE DAY OF BOARD HISTORY — one of the three apps the owner named
+## 🔴🔴 `nba_market.board_snapshots` IS NOT NBA-ONLY — the live board crons write every sport into it
+*Found 2026-09-21, T11 pass 7 (§T11.8a). `[LIVE-AUDIT]`, read off the table. **Novelty 0 of thirty,
+probe positive-controlled.***
+
+**`market_key` holds ~90 distinct values and the majority are BASEBALL**: `player_batter_hits` ·
+`player_pitcher_strikeouts` · `player_1st_inn._batters_faced` · `player_1st_inn._pitch_count` ·
+`player_home_runs` · `player_rbis` · `player_stolen_bases` · `player_earned_runs_allowed` ·
+`player_total_bases` · `player_singles` · `player_doubles` · `player_hits_+_runs_+_rbis` ·
+`player_team_total_runs` · `player_outs` — beside the NBA set (`player_points`, `player_rebounds`,
+`player_assists`, `player_threes`, `player_blocks`, `player_steals`, `player_turnovers`,
+`player_double_double`, `player_blocks_steals`, `player_points_rebounds_assists`,
+`player_fantasy_points` and their `_alternate` forms).
+
+🔴 **Where they come from**: the **`routine`** snapshot label is the **live 2-hour board crons** —
+`sleeper-board.yml`, `underdog-board.yml`, `fliff-board.yml` — **and they ran in mid-September, which
+is not NBA season.**
+
+| bookmaker | `routine` rows | **NBA-shaped `market_key`s** |
+|---|---|---|
+| `underdog` | 5,281 | **189 — 3.6%** |
+| `fliff` | 1,394 | **0** |
+| `sleeper` | 1,276 | **0** |
+
+⚠⚠ **The consumer hazard, and it caught this sweep four times**: ***a row in `nba_market.board_snapshots`
+is not necessarily an NBA row.*** **Any count, date range or `market_key` listing taken on
+`bookmaker`/`game_date` alone silently includes other sports.** *The historical `window`/`close` rows
+for PrizePicks and Underdog are the NBA backfill and are not affected; the contamination is in the
+live `routine` capture.*
+
+📌 **OWNER DECISION**: **should the live board scrapers filter to NBA before writing, or should the
+table carry an explicit `sport`/`league` column?** *Neither is chosen here — "document, don't fix" —
+and **NOT RECORDED** is whether the cross-sport capture is deliberate (one table for all sports, the
+`nba_` prefix being historical) or accidental.*
+
+---
+
+## 🔴🔴 ~~SLEEPER HAS ONE DAY OF BOARD HISTORY~~ — **SLEEPER HAS ZERO NBA BOARD ROWS** — one of the three apps the owner named
 *Found 2026-09-21, T11 pass 3 (§T11.4a). `[LIVE-AUDIT]` on `nba_market.board_snapshots` —
 **27,067,871 rows, 2024-10-22 → 2026-09-13**.*
 
