@@ -1,0 +1,65 @@
+name: NBA Score History
+
+# Scores the model over PAST dates into nba_score.board_scored, point-in-time (nba/score_history.py), so the model
+# has a scored history to compare against PrizePicks' prices (nba/PP_PAYOUT_FINDINGS.md, pending item 1).
+# Optional first job rebuilds the as-of calibration (nba/build_asof_calibration.py - every season in final_hp,
+# oldest first; refuses to write an empty build). Manual only. Re-running is safe: a date is replaced whole.
+
+on:
+  workflow_dispatch:
+    inputs:
+      calibrate:
+        description: "Rebuild the as-of calibration first (true / false)"
+        default: "false"
+      from:
+        description: "First date to score (YYYY-MM-DD); empty = calibrate only"
+        default: ""
+      to:
+        description: "Last date to score (YYYY-MM-DD); empty = same as from"
+        default: ""
+
+concurrency:
+  group: nba-score-history
+  cancel-in-progress: false
+
+jobs:
+  calibrate:
+    if: ${{ github.event.inputs.calibrate == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+      - name: Rebuild the as-of calibration (every season in final_hp, oldest first)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AC_K: '400'
+          AC_CADENCE_DAYS: '7'
+        run: python nba/build_asof_calibration.py
+
+  score:
+    needs: calibrate
+    if: ${{ always() && github.event.inputs.from != '' && needs.calibrate.result != 'failure' && needs.calibrate.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        chunk: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+      - name: Score chunk ${{ matrix.chunk }} of 8
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SH_FROM: ${{ github.event.inputs.from }}
+          SH_TO: ${{ github.event.inputs.to }}
+          SH_CHUNK: ${{ matrix.chunk }}
+          SH_CHUNKS: '8'
+        run: python nba/score_history.py
