@@ -8045,6 +8045,20 @@ design names. **In all three the missing context was one line away from the thin
 practical form of all three rules is one instruction: **read the neighbours before drawing the
 conclusion** — the sentence above, the column beside, the rest of the key.*
 
+🔴🔴 **The sixth form, added 2026-09-21 after §T7.46a — the SIBLING-CLAIM rule, and the costliest
+lesson of the T7 re-sweep**: **when a rule is written because one item in a list was wrong, re-test
+every other item in that list before the pass ends.**
+
+At §T7.35a (pass 6) I corrected **one** of §T7.30's three "unrecorded owner directives" and wrote the
+substance rule from it. **I never re-ran that rule against the other two, which sat in the same
+entry.** Eleven passes later, pass 17 found **both** recorded — the anti-capping directive in two
+documents with both halves, one of them **tagged to T7**, and the ladder width in three, in measured
+form. **T7's headline finding did not survive, and it had led the ledger row and the run log for
+seventeen passes.** The search that would have found it on the day: `grep -ri "last resort"` — three
+documents, five seconds.
+
+***A correction that does not sweep its own siblings is half a correction.***
+
 **✅ THE MECHANISM THAT ACTUALLY WORKS, established at §T7.43 (pass 14) after the rule failed twice
 inline — the NOVELTY AUDIT, as its own pass:** `git archive` the twelve **as they stood before this
 transcript's re-sweep began** into a scratch tree, then grep **that tree** — not the working tree —
