@@ -8232,6 +8232,3 @@ reach us only through the DFS scrapers, which is what the live pipeline reads. M
 ### DEFERRED (owner-sequenced) · leg correlation, live plumbing
 Leg correlation is slip-building-stage work and will be treated there, not in this pipeline.
 Live plumbing is LAST — nothing is live until the NBA season opens in October.
-</content>
-</parameter>
-<parameter name="message">docs: NBA open items - deferred, dropped, partial, bugs, caveats
