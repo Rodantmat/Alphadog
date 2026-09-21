@@ -114,32 +114,75 @@ places each floor goblin's true value just under 2.086, displayed as 2.1.
 
 ---
 
-## 4. FLEX PLAY — PARTIAL
+## 4. FLEX PLAY — MECHANISM VERIFIED, TIER RULE PARTIAL
+*Updated 2026-09-21 with run 2 (160 stratified alt×alt pairs).*
 
-**EV-balanced:** Flex expected value **0.770, sd 0.030** — about 2.7% richer than Power, noisier.
+**Flex runs on the same economics as Power.** On alt×alt pairs Flex EV = **0.747**; Power EV = **0.748**.
+Same flat 25% edge. **Flex does not make or lose value versus Power — it redistributes the same expected
+value into a consolation.** At the top it compresses like Power: tiers 1.25 and 1.5 sit at EV 0.66–0.68.
 
-**Consolation tiers step by 0.25:** 0.25 · 0.5 · 0.75 · 1.0 · **1.25**.
+**Consolation tiers step by 0.25:** 0.25 · 0.5 · 0.75 · 1.0 · 1.25 · **1.5**.
 
-| 2-pick Power | Consolation |
+**The tier is driven by risk.** P(both hit), P(both miss) and the Power payout each sort the tiers at
+~75–77% — they are one underlying quantity. **P(exactly one) scores 15.6% — not the driver.** (Run 1
+could not test this: whenever one leg is a standard at 50%, P(exactly one) is 0.50 regardless. Run 2's
+alt×alt pairs, where it varies, settled it.)
+
+**Tier cut points on 2-pick Power** (share of the two adjacent tiers falling on the correct side):
+| Boundary | Cut | Reliability |
+|---|---|---|
+| 0.25 → 0.5 | **2.40×** | 99% |
+| 0.5 → 0.75 | 8.00× | 84% |
+| 0.75 → 1.0 | 12.00× | 68% |
+| 1.0 → 1.25 | 19.00× | 92% |
+| 1.25 → 1.5 | 25.50× | 80% |
+
+**The full payout is solved from the EV target:**
+```
+Flex full = (EV_target − consolation × P(exactly one)) / P(both hit)    snapped to the Flex grid
+```
+| Tier | EV target | In-sample exact | Within one step |
+|---|---|---|---|
+| 0.5 (2.4×–8×) | **0.7712** (sd 0.017) | 115 / 142 | **138 / 142** |
+| 0.25 (< 2.4×) | **0.7410** | 61 / 87 | — |
+
+Leg probabilities come from each leg's 2-pick price vs a standard, **de-compressed first** — prices above
+9.1× are themselves compressed and would bias the big demons.
+
+**Flex full-payout grid:** 0.1 steps from 1.2× to 2.0× · 0.2 to 4.0× · then 4.5, 5.0 · whole numbers
+5–12 · then 14, 16, 22.
+
+**Still open:** the ~23% of tiers a single risk measure mis-sorts — most likely because PrizePicks uses
+exact internal probabilities that can only be recovered approximately from rounded prices.
+
+---
+
+## 4a. MULTI-PICK POWER — PARTIAL
+*Recorded 2026-09-21.*
+
+| Size | Result |
 |---|---|
-| under 2.5× | **0.25** (37 of 38) |
-| 2.5× – 5× | **0.5** (69 of 69) |
-| above 5× | mixed 0.5 / 0.75 / 1.0 / 1.25 — **rule not yet known** |
+| 3 picks | Model (base × leg factors, then 2-pick compression) within ~1% on 2 of 3 |
+| 4 picks | Demon-heavy slips pay **15–29% more** than the compressed prediction |
 
-**The full payout gives back what the consolation adds:**
-| Consolation | Flex full ÷ Power |
-|---|---|
-| 0.25 | 0.83 |
-| 0.5 | 0.69 |
-| 0.75 | 0.57 |
-| 1.0 | 0.46 |
+**The 2-pick compression curve does not transfer directly to larger slips.** Directional pattern: a
+goblin-heavy 3-pick paid *less* than predicted while demon-heavy 4-picks paid *more* — **slip size appears
+to widen the gap between goblins and demons**, consistent with the owner's console run (goblin factor
+0.667 at 2 picks → 0.583 at 3).
 
-**The tier is not a function of the payout.** A 15.5× slip got 0.5 while a 13.5× slip got 1.0; two
-slips with an identical 11× full payout got 0.5 and 1.25.
+Bases for 5 and 6 picks are unmeasured: with 3 games on the board, all-standard 5/6-pick slips cannot be
+built from distinct games. Workaround in run 3: compare same-size slips to each other — the base cancels
+in the ratio.
 
-**A hypothesis that failed:** that the tier tracks P(exactly 1 of 2). The test was structurally weak —
-whenever one leg is a standard at 50%, P(exactly one) is 0.50 regardless of the other leg, and nearly
-every slip measured had a standard leg. Cracking the rule needs alt×alt slips — run 2 collects 160.
+### ⚠ Data defect in runs 1 and 2 — multi-pick compositions mislabeled
+`pick_distinct(pool, 0)` returned **one** leg instead of none: it appended before checking the count. So
+"1 goblin, 0 demons" silently became 1 goblin + 1 demon, collapsing `1g = 1d = gd`, `2g = ggd`, `2d = gdd`.
+**Only the FLEX section called it with zero**; ALTALT, LEG, UNDER, SAMEGAME, BASE and VALIDATE are
+unaffected, so every 2-pick finding stands. The legs *recorded* in each slip are correct, so the data was
+salvaged by relabelling from contents. **Fixed** in `nba/pp_payout_map.py`; run 3 is the first clean run.
+
+**Why the mock missed it:** it counted slips per *label*, not whether each slip *contained* what its label
+claimed. A composition-content check (29/29 correct after the fix) now exists.
 
 ---
 
