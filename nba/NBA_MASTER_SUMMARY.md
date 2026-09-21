@@ -14430,6 +14430,41 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.33 — PASS 32 (**live numeric re-verification of everything passes 26–31 added**) — **✅ CLEAN 1/3 — every figure exact, every novelty count holds, and a FOURTH unplanned confirmation of §T10.16c**
+*2026-09-21. **Six consecutive passes found defects and five were the sweep's own method. Those
+defects are fixed in rules 26 and 27; this pass asks the different question — whether the NUMBERS
+those passes published are right.***
+
+#### ✅ T11.33a — **Twenty-eight figures re-derived, all exact**
+`prop_taxonomy` **28** · `applies_to_side` **both 26 / more 2** · **`triple_double` 0 in `final_hp`
+and 0 in `baseline_ladder`** · `baseline_ladder` **206,237 / 559 false / `double_double` 541**, so
+**541 of 541** and **541 + 18 = 559** · `blowout_model` **35 rows · 3 `kind`s · 11 distinct `side`
+values** *(7 margin buckets + `favourite` + `underdog` + `fav` + `dog` = 11 ✅)* · `factor_registry`
+**67**, **`compute_stage` NULL on 31 = `layer = 'baseline'` 31** exactly · `data_quality` on **22**
+tables with **4** defaulting to `derived`, **`player_shot_quality_delta` 582 + `defense_vs_position`
+630 = 1,212**, and **`arenas` 30 / `officials` 80 both 100% `real`** · `board_tiers` **2**
+`anchor_type`s against `board_tiers_v2`'s **3** · `final_hp` **2** `side` values · `game_officials`
+**3,681 / 1,227** · `player_game_starter_status` **32,179 / 12,300 starters / 1,230 games =
+10.000 per game**.
+
+#### ✅ T11.33b — **All six novelty counts re-verified against `5dfb72ab`, each with a passing control**
+**0 of thirty**, every one: `applies_to_side` · `fav`/`dog` as values · the ~123k credits · the
+2023-05 / 5-minute / 10-credit terms · the derived-board judgement · *"exhausted"* as a word.
+⚠ *The last remains reported as **2 of thirty** because the FACT is carried in another vocabulary —
+§T11.29b's rule-20 note stands.*
+
+#### 🔑 T11.33c — **A NINTH identical baseline measurement, and a fourth confirmation nobody planned**
+**Baseline `5dfb72ab`: 13 / 3 / 695 / 685** — ninth consecutive, which is what the verified digests
+(§T11.26a) predict and what every absence claim since T9 rests on. **Working: 38 / 0 / 665 / 660 —
+UNCHANGED from pass 31.** 🔑 ***And that is the mechanism again, unplanned***: pass 31 wrote findings
+**about the sweep** rather than transcript quotation, and §T10.16c says only quotation moves the
+metric. **Four observations now — 24 (+12, quotation), 28 (+1, measurement), 31 (+13, quotation),
+32 (0, self-analysis) — and all four go the way the mechanism says.**
+
+**Pass outcome: ✅ CLEAN 1/3 · 33 passes. The first clean pass in seven.**
+
+---
+
 ### T11.32 — PASS 31 (**seventh two-direction judgment, PRE-REGISTERED — and the attack on pass 30**) — **🔑🔑 the third pre-registration lands, down to WHICH segments moved · 0/3**
 *2026-09-21.*
 
