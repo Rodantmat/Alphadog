@@ -9690,6 +9690,69 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.46 — PASS 17 (**two-direction judgment, third run**) — **🔴🔴 THE LARGEST CORRECTION OF THIS RE-SWEEP: T7's HEADLINE FINDING IS RETIRED · 0/3**
+*2026-09-21. The 113 high-band segments are the same population as pass 13 — none entered, none left,
+only small score shifts. So the judgment fell on the **representations** rather than the extraction:
+does what this sweep wrote about T7 hold up against the documents? **One of them does not, and it is
+the finding that has led T7's ledger row and the run log since pass 1.***
+
+#### 🔴🔴 T7.46a — **ALL THREE "UNRECORDED OWNER DIRECTIVES" WERE RECORDED. §T7.30 is retired.**
+
+§T7.30a's headline read: *"**THE OWNER STATED A PREFERENCE AGAINST CAPPING. IT IS NOT IN ANY
+DOCUMENT** — AND THE SYSTEM CAPS."* The open-items entry read *"Two instructions, **neither recorded
+until now**."*
+
+**The directive is recorded in at least two of the twelve, in both halves.**
+
+**`NBA_BASELINE_CALIBRATION.md` line 676**, as a highlighted blockquote:
+> **CAPS ARE A LAST RESORT.** *"**tier-specific if ever used** — **the preference is logic that lands
+> on the right number on its own**."*
+
+**`NBA_GLOSSARY.md` line 375** — and note the attribution tag:
+> **lifts / penalties / caps** · **T7** · … **Caps are explicitly a LAST RESORT** — *"the preference
+> is logic that lands on the right number on its own."*
+
+**The glossary entry is tagged to T7** — the transcript whose sweep declared the directive recorded
+nowhere. **Both halves are there: "last resort" and "tier-specific if ever used."**
+
+**And the second directive too.** §T7.30b claimed the **ladder-width requirement** was nowhere
+recorded. `NBA_GLOSSARY.md` line 370 and `NBA_GOBLIN_DEMON.md` line 167 both carry it **in measured
+form** — *"Goblin ≈ 25th–35th percentile, Standard ≈ median, Demon ≈ 70th–80th, useful range ≈
+15th–85th… the live `LADDER_DEPTH` measurement (**p95 = 13 rungs for points**) agrees with this **to
+within one rung**"* — against §T7.30b's *"roughly 11–13 rungs."* `NBA_FINAL_SCORING_CALIBRATION.md`
+line 2123 carries the same measurement.
+
+**The third was already retired** at §T7.35a (pass 6): the prop-by-prop study is documented.
+
+> ### ⇒ **All three directives §T7.30 called unrecorded are recorded. The headline finding of the T7 re-sweep does not survive.**
+
+**What genuinely survives, and it is much smaller**: the documents record the directives' **substance
+in the sweep's own words**; §T7.30 adds the **owner's verbatim phrasing and his stated reasoning** —
+*"I don't like cap… capping"*, *"we never know where the apps are gonna throw the prop line"*, and
+the goblin/demon rationale for covering the extremes. **A quotation contribution, not a discovery.**
+Both §T7.30a and §T7.30b rewritten to say so.
+
+⚠⚠ **This is the FOURTH absence/novelty failure, and it is the one that mattered.** The sibling rule
+— *"an absence claim must be tested against the **SUBSTANCE**, not the wording"* — was written at
+§T7.35a **in this very transcript's sweep**, after §T7.30c made the same error about the third
+directive. **I wrote the rule about directive 3 and never re-ran it against directives 1 and 2, which
+sat in the same entry.** The search that would have found it: `grep -ri "last resort"` — **three
+documents, five seconds.**
+
+**Standing rule, sixth form — the SIBLING-CLAIM rule**: **when a rule is written because one item in
+a list was wrong, re-test every other item in that list before the pass ends.** §T7.35a corrected one
+of three directives and left the other two standing for eleven passes. *A correction that does not
+sweep its own siblings is half a correction.*
+
+#### ✅ T7.46b — **Direction 1 population unchanged; direction 2 unchanged and still all mechanism (3)**
+
+113 high-band segments, **the same 113 as pass 13** — no entries, no exits, only reordering (the
+alpha segment rose 0.76 → 0.78 because this sweep wrote about it). Direction 2: **the same 32
+segments, 31 matching the 2026-09-04 checkpoint at 0.65–1.00, all self-authorship.** **The extraction
+is stable; it is the commentary that keeps failing.**
+
+---
+
 ### T7.45 — PASS 16 (**composite-key / schema-completeness sweep**) — **🔴 2 LIVE FINDINGS + ⚠ pass 12 was INCOMPLETE · 0/3**
 *2026-09-21. The pass-15 rule applied as its own angle: for every live object these entries describe,
 enumerate **all** its columns from `information_schema` and **all** its key dimensions from the design
