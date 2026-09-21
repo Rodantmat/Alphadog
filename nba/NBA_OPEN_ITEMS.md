@@ -1,8 +1,10 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
-## 🔴 THE 2026-27 SCHEDULE IN `nba_calendar.games` IS **TWO GAMES SHORT PER TEAM, ON ALL THIRTY**
-*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by live SQL (T7 pass 11, live numeric re-verification).
-Detail: `NBA_MASTER_SUMMARY.md` §T7.40a.*
+## ⚠ THE 2026-27 SCHEDULE IN `nba_calendar.games` IS **TWO GAMES SHORT PER TEAM, ON ALL THIRTY**
+*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by live SQL (T7 pass 11). Detail: `NBA_MASTER_SUMMARY.md`
+§T7.40a. ⚠ **The 1,200-vs-1,230 shortfall itself was already recorded** at §T2.18 (T2 pass 18); what
+this entry adds is that it is **uniform — every team at exactly 80, none at 81 or 82** — which rules
+out the reading that a handful of teams are missing games.*
 
 | Season | Prefix `002` games | Games per team | Teams at that count |
 |---|---|---|---|
