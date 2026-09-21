@@ -9762,6 +9762,40 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.64 — PASS 35 (**live numeric re-verification, fourth run**) — **✅ CLEAN 2/3 · 9 of 9 exact · and the check caught its own query**
+*2026-09-21. Every figure passes 21–34 added, re-queried from the claim.*
+
+| Claim | Live |
+|---|---|
+| 35 cells · 22 tier/role-keyed · 13 band-keyed | **35 · 22 · 13** ✅ |
+| **34 of 35 conform to their factor's declared `form`** | **34** ✅ |
+| **1 non-conforming — `shotdiet__rebounds__3PA_HEAVY__all__more`** | **1, that cell** ✅ |
+| 0 of 35 carry any validation record | **0** ✅ |
+| `real_sample_size_observed = 0` on all 35 | **35** ✅ |
+| `factor_registry.form` — 4 distinct values, `continuous` on 28 | **4 · 28** ✅ |
+
+#### 🔑 T7.64a — **The verification query was wrong, and the arithmetic caught it — an eleventh rule**
+
+The first form of the conformance query returned **34 conforming and 0 non-conforming**. **34 + 0 =
+34, against 35 cells.** The missing row is the non-conforming one: its `variation_band` is NULL, so
+`variation_band = 'continuous'` evaluated to **NULL rather than false**, the whole predicate went
+NULL, and `NOT NULL` is NULL — **so the row was silently excluded from both sides of the split.**
+Re-run with `IS NOT DISTINCT FROM`, it is **34 + 1 = 35**, and the one non-conformer is exactly the
+cell §T7.50b named.
+
+> **Standing rule, eleventh form: when verifying a partition, check that the parts sum to the
+> whole.** A three-valued comparison drops a row from **both** sides of a `NOT`, so a query can
+> report a clean-looking zero that is an artifact of NULL. **Had the sum not been checked, the query
+> would have contradicted §T7.50b and the contradiction would have looked like a finding.**
+
+*This is the same failure family the sweep has documented four times in the system itself — the
+**no-error-raised** class, where a well-formed response with a silently empty field passes every
+check. **Here it appeared in my own verification rather than in the code being verified.***
+
+**Pass outcome: 9 of 9 exact, no document defect, one rule. ✅ CLEAN 2/3.**
+
+---
+
 ### T7.63 — PASS 34 (**novelty audit, fifth run**) — **✅ CLEAN 1/3 · and the blueprint already carried the general form of these rules**
 *2026-09-21. Rule 8 first: `undifferentiated`, `eleven lines`, `every copy`, `seven figure families`,
 `editorial` — **zero pre-edit hits, all thirty documents.** So are `self-contradiction`, `internal
