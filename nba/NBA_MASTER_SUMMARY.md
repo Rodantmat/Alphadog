@@ -1553,6 +1553,37 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T1.119 — PASS 89 (**the two-direction judgment pass, and T1 closes**) — **CLEAN · T1 CLOSED**
+
+Pass 88 left T1 open because its judgment pass was not clean: 2 defects in 97 high-band segments.
+Both are now recorded — the committed credential (`NBA_OPEN_ITEMS.md`, first section) and the
+unauthenticated `POST /run` (`NBA_WORKERS.md` §0.28) — so direction 1 re-runs clean. **Direction 2,
+the tail, had never been run at all.** This pass ran it.
+
+**THE TAIL DIRECTION, measured.** T1's tail is 309 segments against the twelve. Rescored against all
+30 `nba/*.md` files, **32 of them (10.4%) are covered elsewhere** — 28 in `NBA_PROJECT_LOG.md`, 3 in
+`NBA_SYSTEM_DRAFT.md`, 1 in `NBA_ARCHITECTURE_BLUEPRINT.md`. **Zero defects**, and the reason is
+structural rather than lucky: most match at **1.00**, because they are T1's own `github_put_file` /
+`github_patch_file` payloads and the document *is* the segment, verbatim, still live in the repo
+today. **An exact self-match has no cross-reference that could point at the wrong place.**
+
+**This is a THIRD false-tail mechanism, distinct from the two already recorded:**
+
+| # | Mechanism | Measured on | Size |
+|---|---|---|---|
+| 1 | **paraphrase vs quotation** — concept named in the documents' own words scores low | GROUND_TRUTH, 2026-09-21 | 5 of 15 documented findings stay in the tail |
+| 2 | **the scorer reads only the twelve** — COMPASS / PROJECT_LOG analysis is invisible to it | A2/N1, 2026-09-21 | 6.2 points |
+| 3 | **self-match** — the transcript's file-writing calls ARE another file's content | T1, 2026-09-21 | 10.4% of T1's tail |
+
+**All three say the same thing in different ways: "uncovered" means "not in the twelve", never
+"undocumented".** Mechanism 3 also explains why a transcript that *wrote* documentation (T1 created
+`NBA_PROJECT_LOG.md` and `NBA_SYSTEM_DRAFT.md`) carries a permanently inflated tail — its own
+authorship reads as uncovered forever.
+
+**Judgment pass clean in both directions → T1 CLOSES.** Two items pass to the owner, neither a
+documentation defect: **rotate the balldontlie key**, and **decide whether the `workers.dev` routes
+are publicly reachable.**
+
 ### T1.118 — PASS 88 (**the first pass run under the measured-coverage loop**: T1's whole 0.40 tail read by stratum, findings checked against all 30 documents in ONE batched call, then a judgment pass on the high-similarity band) — **NEW MATERIAL · CLEAN COUNT 0/3**
 
 **Method change, and it is the point of this entry.** Passes 64–87 each took one angle and produced
