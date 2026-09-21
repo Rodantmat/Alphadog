@@ -14420,6 +14420,57 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.41 — PASS 26 (**novelty audit, fourth run — passes 22–25 vs `/tmp/t9base/nba/`**) — **🔴 I asserted an absence one grep away from being disproved · 0/3**
+*2026-09-21. Everything passes 22–25 added, grepped against the pre-T9 snapshot, every hit opened —
+and the first hit retracted a claim I had made one pass earlier.*
+
+#### 🔴 T9.41a — **"NOT RECORDED: whether 14 is p95 + 1" — it is recorded, as a per-prop table, in the document I was already quoting**
+
+`NBA_GOBLIN_DEMON.md` lines **496–504**, from *"60k+ board legs joined to our anchors"*:
+
+| Prop | Anchor | p95 distance | **Our ±10** | **Fixed to** |
+|---|---|---|---|---|
+| points | 15.9 | **13** | short | **14** |
+| pra | ~18 | **16** | short | **16** |
+| pts_reb | ~15 | 15 | short | 15 |
+| pts_ast | ~14 | 14 | short | 14 |
+| rebounds | 5.7 | 5 | wasteful | **6** |
+| assists | 4.3 | 4 | wasteful | **5** |
+| steals | 1.1 | 1 | **very** wasteful | **2** |
+| blocks | 0.8 | 1 | **very** wasteful | **2** |
+
+✅ **All eight "Fixed to" values equal `LADDER_DEPTH` exactly**, and the rule is visible: **p95 + 1 for
+the five short/wasteful props, p95 exactly for the three deep composites.** ✅ **8 + 12 = 20**; the
+other twelve keys appear in no such table, **and their provenance is what is genuinely unrecorded.**
+
+⚠ **Rules 2 and 8, and the grep was one word.** *§T9.39b wrote "NOT RECORDED" about a mapping that a
+search for `p95` returns immediately — in the same document the entry was already citing for the
+p95 figure.* **An absence claim is the one kind of claim that cannot be checked by re-reading what you
+have; it can only be checked by searching for what you do not.**
+
+🔑 **And the same table answers O5's cost question per prop.** Its *"Our ±10"* column — **short ·
+short · short · short · wasteful · wasteful · very wasteful · very wasteful** — **is the flat-10
+override being graded, prop by prop, by the document that proposed replacing it.** *So the eighth
+instance of the general-form-already-on-file pattern is also the most useful: the documents do not
+merely mention the override, they quantify what it costs.*
+
+#### ✅ T9.41b — **Everything else passes 22–25 added is new across all thirty**
+
+**Zero hits in the baseline** for: **`f_phase`** · **`FACTOR_COLS`** · **`phase_rank`** · `f_depth`'s
+**`14.0`** scale · the **99.73%** `used_emp` rate.
+
+🔑 **One confirmation, and it upholds §T9.40b exactly**: **self-authorship (false-tail mechanism 3) is
+well documented — and every recorded instance is in DIRECTION 2.** *T2 pass 19: "27 segments, every
+one false-tail mechanism (3), self-authorship… matching at 0.98–1.00 because the segment **is** the
+file being written." T3: "self-authorship again (mechanism 3)… the transcript's own `github_put_file`
+payloads."* **Its appearance in DIRECTION 1 at pass 25 is new, and the mechanism is the same one, now
+running through this sweep's own quotations instead of the transcript's.**
+
+**Pass outcome: 1 retraction of an absence claim, 1 documented table located that answers two open
+questions, 5 claims confirmed new. 🔴 CLEAN 0/3 · 26 passes.**
+
+---
+
 ### T9.40 — PASS 25 (**live numeric re-verification**) — **🔴 the enumeration written to warn about hand-typed values was hand-typed · 🔑 the band MOVED for the first time, and the cause is this sweep · 0/3**
 *2026-09-21. Every figure passes 22–24 state, re-derived from its own authority by a different method,
 predicates copied into the prose (rule 16), every partition summed (rule 11).*
