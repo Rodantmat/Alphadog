@@ -5841,7 +5841,15 @@ scheduled, however it looks.**
 exist but carry `GAME_ID` prefix `001`, not `002`.
 **A weekly scraper running in that window pulls empty aggregates and writes them, reporting success** —
 the exact failure shape the utility was built to prevent (see the season-hardcoding fix below).
-**Low impact** (P1 runs Mondays; 2026-10-01 is a Thursday) **but the fix is trivial**: the real opening
+~~**Low impact** (P1 runs Mondays; 2026-10-01 is a Thursday)~~ 🔴🔴 **SUPERSEDED 2026-09-21 (T7 passes
+22–25) — see the re-rated entry at the top of this file.** This item measured the window against
+*"opening night is 2026-10-03"*, **which is the PRESEASON opener**. Against the real regular-season
+opener of **2026-10-20** the window is **nineteen days, not two**, it contains **three Mondays
+(Oct 5, 12, 19)**, and **six scheduled runs** land inside it — so the very argument used here for
+"low impact" now argues the opposite. The write is also worse than *"pulls empty aggregates and
+writes them"*: the target tables have **no season in the primary key** and the writers **upsert**,
+so the empty aggregates **replace** last season's real rows, under a **hardcoded `'2025-26'`** label.
+**but the fix is trivial**: the real opening
 date is already in `nba_calendar.games`. **Not fixed — documentation pass.**
 
 ### BUG-FIXED (2026-09-08) · `stats_seasons` was anchored on the wrong season
