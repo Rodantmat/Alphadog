@@ -343,7 +343,11 @@ its form.**
 - 🔴 **Instruction 1 (*a cap is a fallback, not a first resort*) — cannot be judged, and the reason
   is bigger than the question.** `automation_status` is `semi_automatic`;
   `last_validated_at` / `last_empirical_validation_json` are **null on every sampled row**, so **no
-  empirical validation backs any of the 35 values**; and **no code reads `factor_profile_cells` or
+  empirical validation backs any of the 35 values** — **VERIFIED over the full population 2026-09-21
+  (T7 pass 20): `last_validated_at` set on 0 of 35, `last_empirical_validation_json` on 0 of 35, and
+  `real_sample_size_observed` = 0 on every row against a threshold of 75, so the design's own
+  "cells under sample are fully shrunk to prior" gate is unmet by every cell**; and **no code reads
+  `factor_profile_cells` or
   `factor_relevance` at all** — already recorded in the `NBA_DATABASE.md` §2 banner (T1 pass 36,
   **eight** config tables), and **re-verified 2026-09-21 at a wider scope**: a grep of the whole
   repository, unrestricted by directory or extension, still finds zero code references. **That is
