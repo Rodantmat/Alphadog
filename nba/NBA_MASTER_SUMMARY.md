@@ -9991,7 +9991,13 @@ or `calibration_log.cell_id` → `factor_profile_cells`.** **Both fail.** §T7.4
 **incomplete in scope**, not wrong in content. *This is the fifth-form rule proving itself on the
 pass immediately after it was written — in the useful direction, for once.*
 
-#### 🔴 T7.45a — `[LIVE-AUDIT]` **`variation_band = 'continuous'` resolves to NOTHING. It is a sentinel outside the vocabulary.**
+#### ⚠ T7.45a — `[LIVE-AUDIT]` **`variation_bands` holds no `continuous` row** *(severity downgraded)*
+> 🔴 **DOWNGRADED 2026-09-21 by §T7.50a.** This entry called `'continuous'` *"a sentinel **outside
+> the vocabulary**"* and said *"nothing in the schema says so."* **It is documented vocabulary** —
+> `NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 242 declares every factor's **`form (band /
+> continuous / gate)`**, and live, **34 of 35 cells are keyed exactly as their factor's form
+> requires.** The missing band row is not a dangling key; **continuous factors are not banded.** The
+> observation below stands; the "broken join" reading does not.
 
 `nba_config.variation_bands` holds **25 rows over 9 distinct `band_key` values**, in two clean
 families:
