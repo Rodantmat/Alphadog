@@ -14430,6 +14430,84 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.29 — PASS 28 (**sixth two-direction judgment, with a PRE-REGISTERED prediction**) — **🔑🔑 the prediction landed, and the ONE segment that moved overturns pass 26 · 0/3**
+*2026-09-21. **The prediction was written into the run log's next-step row before the measurement.***
+
+#### 🔑 T11.29c — **The pre-registration, and the measurement**
+> *"Pass 27 wrote a lot into `NBA_DATABASE.md` but **all of it is `[LIVE-AUDIT]` material, not
+> transcript quotation**. §T10.16c says only quotation moves the metric… **so I predict the working
+> band moves LITTLE OR NOT AT ALL from 24 / 0 / 683 / 677 — and the baseline stays at
+> 13 / 3 / 695 / 685 for a seventh measurement.**"*
+
+| tree | pass 24 | **pass 28** | Δ |
+|---|---|---|---|
+| **BASELINE `5dfb72ab`** | 13 / 3 / 695 / 685 | **13 / 3 / 695 / 685** | **0 — seventh identical measurement** ✅ |
+| **WORKING** | 24 / 0 / 683 / 677 | **25 / 0 / 682 / 676** | **+1 high band, −1 / −1 uncovered** |
+
+🔑🔑 ***§T10.16c is now confirmed from BOTH directions, and the contrast is quantitative***: **pass 23
+transcribed ONE transcript segment and twelve segments crossed; passes 25–27 ran three passes of
+census, digest and live audit — and wrote roughly four thousand characters into `NBA_DATABASE.md` —
+and ONE segment crossed.** ***Quotation moves coverage; measurement does not.*** **0 fell back — the
+band is strictly monotone for the seventh transcript running.**
+
+#### 🔴🔴 T11.29a — **RETRACTION of §T11.27f: the supersession is INSIDE T11, and the metric pointed at it**
+**The one crosser is SEGMENT 536** *(baseline 0.2133 → working 0.4507)*, **and it is T11's own edit
+upgrading the matrix row pass 23 transcribed**:
+> *new_str:* **`b1/b2` market spread & total, `c3` game-line movement — ✓ closing lines (Postgres
+> `nba_market.game_lines_closing`) ✓ — ParlayAPI closing-odds archive, **5–7 books, 2,410 games,
+> 12,165 rows (2026-09-10)**; openers not archived before May 2026 | derived spread stays as the
+> fallback for dates without a line*
+> *old_str:* **the ⛔ ⛔ ⛔ row §T11.24a published.** *Path: `nba/NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`.*
+
+❌ **§T11.27f called this "a chronology save — T12's to sweep, queued not taken."** ***It is T11's.***
+**The probe searched for T12's status-line strings** (`enrichment_backfill_status_2026_09_10`,
+*"BigDataBall is no longer needed"*) **and correctly found zero — of the wrong thing.** **The
+supersession is the matrix row's own text, at segment 536.** ***Rule 20's failure mode for the third
+time in this run: vocabulary-correct, pattern-wrong.***
+
+#### 🔴🔴 T11.29b — **And segment 355 is T11's ANSWER to its own blocked-items list — in zero of the twelve**
+*Written to `NBA_OPEN_ITEMS.md` in full; every figure confirmed live in
+`market_probe_results_2026_09_10`.* **ParlayAPI v3.2.0 Pro is the live board source AND *"EXHAUSTED
+for historical boards"* — the archive starts ~2026-05-10, PrizePicks and Sleeper are absent even in
+June 2026, and both regular seasons are empty for every book — while its game lines cover three
+seasons, so `b1`/`b2`/`c3` is SOLVED there.** **The Odds API is on the free plan; its props history
+runs from 2023-05 at 5-minute snapshots, 10 credits per region per market per event, ~123k credits
+per season.** **A DERIVED BOARD is judged legitimate — *"PP line = sportsbook consensus median;
+Goblin/Demon structured offsets"* — needing paid sportsbook props.** ***DECISION PENDING (owner): pay
+for an Odds API month, or accept live-only archiving from opening day.***
+
+🔴 **So `c1`/`c2`'s owner decision is NOT *"decide on BigDataBall"*** — that is segment 113, and
+**BigDataBall is one of five researched alternatives by segment 355.** ✅ **§T11.23c's *"no free
+archive exists for anyone"* is UPHELD and now carries its measurement** instead of being asserted.
+⚠ **And §T11.3a recorded only half of ParlayAPI**: live-validated, yes — **and exhausted for history**,
+which is the half that decides the sourcing.
+
+📌 **Novelty, positive-controlled, every hit opened**: **0 of thirty** — the ~123k credits, the
+2023-05 / 5-minute / 10-credit terms, and the derived-board judgement. **0 of the twelve** — the
+2026-05-10 archive start, PP/Sleeper absent, the config key, 2,410 / 12,165; all carried by
+`NBA_COMPASS.md` and `NBA_PROJECT_LOG.md`, **§T11.2d's pattern for the third time**. ⚠ *"EXHAUSTED"*
+is 0 of thirty **as a word** and the fact is in 2 of thirty **in another vocabulary**, so it is
+reported as **2 of thirty** (rule 20). ⚠ **OpticOdds / OddsJam / SportsGameOdds are in 5 of the twelve
+and in every case as projection-methodology sources, never board-history vendors** — false hits,
+opened and dismissed.
+
+#### 🔴 T11.29d — **RULE 27: a transcript's state on a subject is its LAST word, not its first**
+*Added 2026-09-21 after §T11.29a.*
+
+> ***A status list, a blocked-items list or a matrix is dated by its OFFSET in the transcript.***
+> **Before publishing one as the transcript's answer, grep the whole transcript for the items it
+> names and READ THE LAST OCCURRENCE OF EACH.**
+
+🔑 **T11's blocked-items list is at segment 113 of 712 — 12% in — and this sweep published it as
+T11's state THREE TIMES** *(§T11.23b, §T11.24a, §T11.27b)*. **Segments 355 and 536 held the answer,
+and `bigdataball` alone occurs 64 times across the transcript, the last at 99.7% of the file.**
+***Rule 26 says open every hit; rule 27 says the hits have an ORDER, and the last one wins.***
+
+**Pass outcome: 🔴 my own conclusion overturned, and the pre-registered metric is what found it.
+CLEAN 0/3 · 29 passes. Rule 27 added.**
+
+---
+
 ### T11.28 — PASS 27 (**literal audit of the non-market schemas — `nba_ref`, `nba_config`, `nba_score`**) — **🔴 a defect in `NBA_DATABASE.md`, and the sharpest instance of rule 24 the sweep has found · 0/3**
 *2026-09-21. **The angle pass 26's defect earned.** Passes 7 and 18–21 audited `nba_market`; these
 schemas had been READ (T10's census) and never audited **literally** — value by value, against the
