@@ -929,7 +929,8 @@ subgroup.** That is exactly the case this lesson describes.
 
 **The exposure profile for NBA is worse than MLB's in one specific way**: MLB's gap ran two and a half
 weeks with someone available to notice. **NBA's P2 is designed to run unattended through a
-season**, and the season opens **2026-10-03**. **SEASON-START RELEVANT.**
+season**, and the season opens **2026-10-20** *(corrected 2026-09-21, §T10.18b — this line read
+2026-10-03, which is preseason opening night)*. **SEASON-START RELEVANT.**
 
 **① A band cell is kept ONLY if its sign is consistent across seasons.**
 Rebounds ELITE under-projected in both → **structural**, kept. 3PM mid-bands **+2.8 / −3.6** →
