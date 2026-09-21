@@ -385,7 +385,7 @@ thresholds assigned by analogy**, with no separate label beyond a code comment. 
 > `dreb` are also two of the four props missing from `prop_taxonomy`** (§T9.19c) and both ship ladder
 > rows, so they are **uncertified, untaxonomised and live**. ⚠ **TWO of the five configured-not-run
 > props are called certified elsewhere** *(extended §T9.36a)*: **`fga`** — line 11 versus its own
-> `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` at line 102, **a contradiction inside the
+> `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` at line **103** *(corrected from 102, §T9.42c)*, **a contradiction inside the
 > file** — and **`ftm`**, which carries **no inline certification marker** but appears in the owner's
 > T9 certified six (`points, rebounds, assists, 3PM, FGA, FTM`), **a contradiction between the file
 > and the record**. **Which governs is NOT RECORDED; line 11 is undated.**
