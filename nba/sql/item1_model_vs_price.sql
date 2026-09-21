@@ -29,8 +29,8 @@ WITH m(prop, base_market) AS (VALUES
 ), o AS (
   SELECT DISTINCT ON (game_date, player, replace(market_key, '_alternate', ''), line, side)
          game_date, player, replace(market_key, '_alternate', '') AS base_market, line, side, leg_result, stat_actual
-  FROM nba_market.board_outcomes
-  WHERE bookmaker = 'prizepicks'
+  FROM nba_market.board_outcomes   -- NO bookmaker filter: the column is NULL; outcomes are graded once per
+                                   -- player/market/line/side, independent of the app (verified 2026-09-21)
   ORDER BY game_date, player, replace(market_key, '_alternate', ''), line, side, snapshot_label DESC
 )
 SELECT s.*, p.kind, p.anchor_type, p.implied_p AS pp_p, p.factor, p.price_source, p.price_reason,
