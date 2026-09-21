@@ -317,6 +317,56 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T3 PASS 2 — THE DARKO EXTRACTION IN FULL, AND A SELF-DIAGNOSING SCRAPER PATTERN *(added 2026-09-21)*
+*Recorded as of 2026-09-03.*
+
+### The DARKO extraction needs TWO JSON repairs, not one
+Pass 1 recorded that the hydration payload has **unquoted keys**. **That is only the first repair.**
+The committed scraper does both:
+
+```python
+m = re.search(r'players:\[(.*?)\],seasons:', html, re.S)      # boundary
+json_text = re.sub(r'(?<=[{,\[]\s)([A-Za-z_][A-Za-z0-9_]*)\s*:', r'"\1":', arr_text)   # 1. quote keys
+json_text = re.sub(r':(-?)\.(\d)', r':\g<1>0.\2', json_text)  # 2. bare leading decimals
+```
+
+**JS allows `:.534` and `:-.844`; JSON does not.** A DPM value between −1 and 1 is written without a
+leading zero in the page source, so **the second substitution is required for exactly the players
+whose impact is smallest** — and its absence fails the whole parse, not one row. *Anyone rebuilding
+this from the "unquoted keys" note alone will hit it.*
+
+### The self-diagnosing scraper pattern — a completeness gate plus committed debug HTML
+The DARKO scraper does not assume its extraction worked. It carries:
+
+- **an expected-total check with a 10% tolerance** —
+  `if total_expected and len(all_players) < total_expected * 0.9:` sets
+  `error = "pagination incomplete: got N of expected ~M — real pagination url scheme not found by
+  the candidates tried, needs manual inspection"`
+- **a committed debug artifact** — `output_debug_path.write_text(html1[:20000])`, so the next
+  iteration inspects the page's real structure from the repo instead of re-fetching blind
+- an explicitly **permissive** first-run parse, documented in its own docstring as *"intentionally
+  permissive … if it produces obviously wrong results (e.g. zero rows, or fewer than expected),
+  that's **surfaced honestly in the meta file rather than silently accepted**"*
+
+**This is the same family as T2's `_debug_headers` move** (see FROM T2 PASS 3): when a scrape's
+correctness cannot be pre-validated, commit the evidence needed to diagnose it rather than the
+conclusion. **It is also what caught the 50-of-530 failure honestly instead of shipping a parser
+that looked like it worked on sparse data** — the same trap that later cost three stacked bugs
+elsewhere in this project.
+
+*The pagination schemes tried empirically, all unsuccessful, recorded so they are not retried:*
+`?page=2` · `?p=2` · `?offset=50` · `?pagesize=1000` · `?limit=1000` · `?per_page=1000` ·
+`<base>/__data.json`.
+
+### Schedule parsing uses a fallback-key helper for casing variants
+`get_any(g, "gameId", "gameID")`, `gameDateEst` **or** `gameDate`, `teamTricode` **or**
+`teamAbbreviation`. **The same NBA payload spells the same field differently in different places**,
+and the parser was written defensively rather than to one observed spelling. *Related to the
+`result_set_rows`-by-name lesson in FROM T2 PASS 2: positional and single-spelling reads are the
+recurring silent-failure class in this codebase.*
+
+---
+
 ## FROM T3 PASS 1 — THE 1 MB ASYMMETRY, A RETRACTED RACE CONDITION, AND TWO DATED ASSUMPTIONS *(added 2026-09-21)*
 *T3 = the 2026-09-03 phase-3a final-complete session. **Recorded as it stood on 2026-09-03**; later
 transcripts may supersede these and will be linked here when they do.*
