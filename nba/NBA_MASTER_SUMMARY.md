@@ -14419,6 +14419,102 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+## T11 — `2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt`
+**DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
+*712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
+
+### T11.1 — PASS 0 (**corpus + owner stratum**) — **🔴🔴 two live API keys in the transcript · 🔑 the owner's timezone instruction is in none of the twelve · 0/3**
+*2026-09-21. Rules 17–21 applied from the first pass rather than from the twentieth, which is the
+test T10's record set.*
+
+#### 📌 T11.1a — **The corpus, with its population and tree (rules 17, 18)**
+
+| | Value |
+|---|---|
+| Segments | **712 — 697 assistant + 15 owner** *(697 + 15 = 712 ✅)* |
+| Uncovered vs **the twelve** | **695 (97.6%)** |
+| Uncovered vs **all `nba/`** (32 files) | **685 (96.2%)** |
+| High band (≥0.45 vs the twelve) | **13** |
+| Tail (false-tail candidates) | **3** |
+
+**All measured against the baseline tree `5dfb72ab`, not the working tree.**
+
+🔑 **97.6% is the highest uncovered share of any transcript swept** (T10 95.3%, T7 and T8 lower
+still). 🔑🔑 **And the twelve-vs-thirty gap is only TEN segments — against T10's 142.**
+
+***That inverts T10's governing risk.*** T10's material sat in eighteen non-mandated documents, so
+*"not in the twelve"* rarely meant *"in no document."* **On T11 the two populations agree almost
+exactly: what is missing from the twelve is missing from everything.** *The high band of 13 and a
+tail of 3 say the same thing from the other side — there is almost nothing here for the corpus to
+match.*
+
+📌 **15 owner turns — the most of any transcript swept**, past T10's 14.
+
+#### 🔴🔴 T11.1b — **Two live API keys sit in this transcript. OWNER DECISION O8.**
+
+**The transcript contains two API keys in owner turns** — one for **The Odds API**, supplied when the
+owner bought a **$30 subscription**, and one earlier key for the same service. ***The values are
+deliberately not reproduced here, in this document or in any other.***
+
+**Where**: owner turns at segments **197** and **641** of
+`2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt`.
+
+🔴 **This is the third credential exposure the sweep has found** — **O1** is the balldontlie key, and
+`NBA_DATABASE.md` already records that `external_credentials.credential_value_encrypted` **is a
+misnomer: nothing encrypts and nothing decrypts.** ⚠ **The remedy is the same and it is the owner's:
+rotation. Redacting a transcript does not remove a key from git history.**
+
+📌 **What is safe to record, and is**: the owner bought a **$30 The Odds API subscription for NBA
+only**, instructed that the **older free key stays alive and separate with its own ~500-credit
+budget**, and that the new key is not to replace it.
+
+#### 🔑 T11.1c — **"Always when I give you a time… I refer to Pacific time" — a standing instruction, in none of the twelve**
+
+> *"always when i give you a time or ask a time, i refer to pacific time, i am in san diego
+> california, **so do not forget it**"* — owner, segment 668.
+
+**Probed in three vocabularies against `5dfb72ab` (rule 20)**: the source's wording
+(*pacific time · San Diego*) → **0 of the twelve, 2 of thirty** (`NBA_COMPASS.md`,
+`NBA_PROJECT_LOG.md`); the documents' (*times are PT · owner's timezone*) → **0 of the twelve, 3 of
+thirty**; the system's (*PT vs UTC handling*) → **4 of the twelve**, but as **individual timezone
+bugs, never as a standing rule.**
+
+⚠⚠ **And it composes with defects this sweep has already recorded, every one of them a timezone
+error**: **§T7's blame timestamps published in −0700, two of which cross midnight in UTC** · the **P3
+cron drifting an hour** (`NBA_SYSTEM_ARCHITECTURE.md`: *"UTC in the workflow — **drifts an hour** —
+against a cutoff that IS time-sensitive"*) · the injury-PDF timestamps in **Eastern** against
+`PHASE2_CUTOFF_LOCAL`. ***A standing owner instruction that every time he states is Pacific is the
+missing premise all of those needed, and it is in none of the mandated documents.***
+
+#### ✅ T11.1d — **The 2:45 PM PT decision is already on file — and already superseded**
+
+The owner sets the daily board-snapshot window: *"**2:45** looks like to be the best time for
+weekdays, same for weekends proportionally… **2 snapshots a day** sounds great for NBA."*
+
+✅ **Recorded, and recorded correctly as superseded**: `NBA_DATABASE.md` — *"`snapshot_label`:
+`window` (the decision pull — **1:15 PM PT**, **corrected from 2:45**)"* — and `NBA_GLOSSARY.md`
+tags the term **T11, LIVE**. **Both the T11 decision and its later correction are on file with the
+supersession named.** 📌 ***Chronology preserved: T11's state is 2:45 PM PT and two snapshots a day;
+the correction to 1:15 belongs to the transcript that made it.***
+
+#### 📌 T11.1e — **The other eleven owner turns: what the transcript is for**
+
+| Seg | Directive |
+|---|---|
+| **56** | *"**every single factor** needs backfill… every single factor on the daily context, which is the enrichment pipeline, needs that back view now"* — **T10's seg-548 fallback directive extended to backfill** |
+| **197** | **Probe ParlayAPI FIRST** for historical prop-line odds and **daily board snapshots for Sleeper, Underdog and PrizePicks**, two seasons; *"**just probe otz api on the last case scenario because it's very expensive**"*; **research online and use Gemini**; *"go to this phase **once you're done with the backfill for every single factor**"* |
+| **262 · 359 · 390 · 448** | Probe the boards for historical data; **which is the cheapest option** for one or two seasons, all games, all players, all prop lines; *"exhaust research, look deeper for alternatives and cheaper options, also use gemini"*; *"parlay api has the sleeper and underdog at least"* |
+| **607** | **A sourcing idea from the owner**: private quant and betting communities — *"independent modelers who built scrapers in past seasons occasionally trade or sell multi-season historical CSV logs of pick'em boards"* |
+| **611 · 627 · 641 · 657** | *"it will probably be **odds api** for historical snapshots"* → the **$30 subscription**, **NBA only**, **old free key kept separate with its own 500-credit budget** |
+| **676** | Two seasons of data **to train and test the derived fallback**; the credits also to cover **MLB and hockey for other projects** — *"don't worry about them"* |
+| **682** | **Queue everything for the next morning**; and *"we will need **other market books** as well, to mimic the market… probably **3 strong books, all proplines, 2 seasons**"* |
+
+**Pass outcome: corpus established against `5dfb72ab`; 1 season-critical credential finding (O8);
+1 standing owner instruction absent from the twelve; 1 decision confirmed on file and correctly
+superseded. 🔴 CLEAN 0/3 · 1 pass.**
+
+---
+
 ### T10.28 — PASS 28 (**literal audit, second run — the bare-identifier surface**) — **✅ CLEAN 3/3 · T10 CLOSES**
 *2026-09-21. The third of the closing three. Pass 22 audited `schema.table`, pass 23 the
 `factor_profile_cells` key columns; this is the rest of the bare-identifier surface.*
