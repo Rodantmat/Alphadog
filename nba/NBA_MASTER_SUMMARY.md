@@ -1580,6 +1580,42 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.7 — PASS 7 (angle: **the scrapers' low-count gates, settled against live files**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21. First pass run under the new write-after-the-stratum rule.*
+
+1. ⚠ **CORRECTION TO A CORRECTION — and the rule working.** Pass 4 said T3 removed the debug
+   artifact's 20,000-char cap. **It did, in the v1 pagination-guessing scraper — which was then
+   thrown away and rewritten around the hydration extraction.** ***VERIFIED on live `main`:
+   `scrape_nba_darko.py` lines 86 and 90 both write `html[:20000]`.*** **The rewrite lost the fix.**
+   *I settled this by reading the committed file instead of trusting the order of segments in the
+   stratum, which is exactly what the new rule is for.*
+2. ⚠ **That makes it a LIVE defect, not history.** The hydration payload this scraper depends on sits
+   **near the end of the body**; the debug artifact captures the **first** 20,000 characters. **If
+   the DARKO scrape fails, the evidence committed to the repo is the part of the page without the
+   data** — and it will look like a captured artifact rather than a miss. → `NBA_OPEN_ITEMS.md` FROM T3 PASS 2
+3. **Two more magic numbers, both in the play-types scraper**: `min_expected = 400` for player level,
+   **`25` for team level** — against 30 teams, so a scrape losing five teams passes. *That brings the
+   count in T3 alone to six hardcoded thresholds across four workers and two scrapers, of which
+   exactly one (`~1230+` games) is anchored to a real invariant.*
+4. **The `metrics` JSONB design has a stated rationale**: *"unlike speeddistance (6 fixed columns),
+   each measure type has a different, **not-fully-predictable column set** — this script stores
+   every real column returned as a generic metrics dict per player per type rather than hand-picking
+   fields, **so nothing gets silently dropped**."* **A schema choice made because the source's shape
+   is unknown in advance** — the opposite of the `TeamAbbreviation` and `teamInfoCommon` failures,
+   where hand-picked fields vanished silently.
+5. **The tier-1 tracking families carry per-family reasons**, not just names: passing
+   (`potential_ast` separates assist *opportunity* from teammate finishing), rebounding
+   (`reb_chances`/`contested_reb` separates sustainable rebounding from lucky bounces), drives
+   (`drive_pts`/`drive_ast`), catch-shoot vs pull-up (*how* a player scores), touches
+   (elbow/post/paint as role proxies). **And the deprioritized set is named rather than omitted** —
+   draft combine, and the defense/possessions/efficiency families — *"explicitly
+   deprioritized/skipped per this pass's findings, not silently omitted."*
+
+**Ratio**: 5 findings from 16 segments.
+
+**Clean count 0/3.** **Tail not exhausted**: ~80 of 240 command segments and all 137 result segments
+remain.
+
 ### T3.6 — PASS 6 (angle: **the scrapers' own error handling, read as design**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
