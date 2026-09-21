@@ -97,7 +97,7 @@ against a wrong picture of what remains.
 |---|---|---|
 | 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ✅ **CLOSED 2026-09-21 — 89 passes** (88 counted, pass 55 VOID). Closed on the amended rule: tail at 0.40 fully read **and** judgment pass clean in **both** directions (97 high-band + 32 tail-direction segments, 0 outstanding defects). Two owner actions handed off, neither a doc defect. Detail: §T1.59–§T1.119. |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **CLOSED 2026-09-21 — 4 passes** (reset 2026-09-21 from a stale `3/3` earned against 8 documents). Closed on the amended rule: all five strata of the 0.40 tail read **and** judgment pass clean in both directions (70 high-band + 67 tail-direction; 1 defect found in the twelve and fixed — the `80/80` officials count). 16 findings. Detail: §T2.1–§T2.4. |
-| 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
+| 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **0/3 — ACTIVE. 1 pass** (reset per DRIFT NOTICE). Last pass: 1 — transcript material, 6 findings (1 MB reader asymmetry; a race condition hypothesised then retracted; differential worker's snapshot design). Tail 466 segs / 87.3%; owner+reasoning read, output/commands/results remain. **1 finding per 78 segs.** Detail: §T3.1. |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
 | 5 | `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt` | ⚠ **RESET** |
 | 6 | `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt` | ⚠ **RESET** |
