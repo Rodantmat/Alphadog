@@ -14430,6 +14430,63 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.21 — PASS 20 (**rule 24's companion finished — the three largest column families**) — **✅ CLEAN 1/3 · the documents already carry all three, and `phase` is the counter-example**
+*2026-09-21. `[LIVE-AUDIT]`. The families pass 19 did not reach: `data_quality` (22 tables), `phase`
+(6), `status` (4), `source` (3).*
+
+#### ✅ T11.21a — **`phase` is identical across all six tables — the counter-example rule 24 needed**
+
+| table | `phase` values |
+|---|---|
+| `final_hp` · `conformal_confidence` · `ladder_calibration_asof` · `scenario_calibration` · `scenario_realised` · `tier_band_calibration` | **`1_oct_nov` · `2_dec_asb` · `3_post_asb` · `4_push`** — *identical in all six* |
+
+✅ ***A multi-table column that means exactly the same thing everywhere.*** **Rule 24 says a column
+name is not a vocabulary; `phase` is the case where it is one, and recording it matters — otherwise
+the rule reads as "every shared column is suspect", which is not what pass 18–19 found.**
+📌 **Documented: 3 of the twelve.** 🔑 *And it is the domain of `f_phase` — the factor **O6** records
+as computed, justified and absent from the confidence sum.*
+
+📌 **`phase` vs `phase_key` is a near-collision by NAME ONLY**: `phase_key` lives on
+`nba_config.worker_definitions` and is a **worker-pipeline phase**, not a season phase. ✅ **The
+documents distinguish them — `phase_key` is in 3 of the twelve.**
+
+#### ⚠ T11.21b — **`status` and `source` do collide — and the documents already say so**
+
+| column | table | values |
+|---|---|---|
+| **`status`** | `nba_config.calibration_log` | **`applied`** |
+| | `nba_market.board_backfill_log` | **`error` · `ok`** |
+| | `nba_market.game_lines_snapshot_log` | **`ok`** |
+| | `nba_control.job_runs` | **empty** |
+| **`source`** | `nba_market.game_lines_closing` | **`parlayapi_closing_odds`** — *a provenance string* |
+| | `nba_score.ladder_calibration_asof` | **`own` · `prior_season`** — *a calibration-origin flag* |
+| | `nba_ref.referee_assignments` | *(empty table)* |
+
+🔴 **`calibration_log`'s `applied` shares NO value with the log tables' `ok`/`error`** — *three status
+vocabularies, and **§T4 already found a fourth in the worker layer (`completed_with_errors`)***.
+✅ **And the documents already record that the status vocabularies differ — 4 of the twelve** — as
+they record `source`'s `prior_season` (**3 of the twelve**). ***Confirmed live, not newly found.***
+
+#### 📌 T11.21c — **`data_quality` exists on 22 tables and has only ever held one value**
+
+**Sampled across eight of the twenty-two** — `nba_ref.arenas` · `nba_ref.officials` ·
+`nba_stats.game_officials` · `player_game_log` · `player_splits` · `player_tracking_profile` ·
+`nba_team.team_game_log` · `lineup_profile`:
+
+***`real` — and nothing else, in every one.***
+
+📌 **The documents carry both the column (5 of the twelve) and its intended other values (4 of the
+twelve).** 🔑 ***So the vocabulary was designed and exactly one value has ever been written***, which
+makes `data_quality` a **discriminator that discriminates nothing today** — the "seeded, then
+orphaned" shape, but **already documented in intent**, so this pass adds the measurement rather than
+the finding. ⚠ **Predicate stated (rule 16): eight of twenty-two tables sampled, not all.**
+
+**Pass outcome: no defect and no retraction — `phase` identical across six, `status`/`source` colliding
+but already documented, `data_quality` single-valued and measured for the first time.
+✅ CLEAN 1/3 · 21 passes.**
+
+---
+
 ### T11.20 — PASS 19 (**fourth two-direction judgment, rule 24's companion applied**) — **🔴 two of my own value-set claims were drawn from a subset, and both are wrong · 0/3**
 *2026-09-21. **Rule 24's companion was written one pass ago and it caught two errors on its first
 application** — the first time in this run a rule has found defects in the pass immediately after
