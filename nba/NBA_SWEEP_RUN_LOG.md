@@ -15,9 +15,10 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 | | |
 |---|---|
 | **Current transcript** | **T6** — `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt` |
-| **State** | **Not started.** T5 CLOSED 2026-09-21 at 10 passes. |
-| **Stratum** | — |
-| **Exact next step** | **T6 pass 1.** `sed` the transcript path in `scratchpad/t5/tail5.py` → run → writes `t6_tail.json` + prints coverage. Stratify, then read **owner → reasoning → commands → results**, writing only at the end of each stratum (Rule 2). |
+| **State** | **0/3 · 1 pass · reasoning stratum done.** 595 segments, 527 uncovered vs twelve (88.6%). Tail at `scratchpad/t6/t6_tail.json`; generator `scratchpad/t6/tail6.py`. |
+| **Stratum** | reasoning ✅ (216) · **commands (153) and results (158) still to read.** |
+| **Exact next step** | **T6 pass 2 — the command stratum**, using the classifier inline in `tail6.py`'s sibling one-liners (filter `kind=='cmd'`, sort by `i`, print). Then pass 3 = results stratum. Then the angles. |
+| **Open thread for the command stratum** | T6 names *"a logic bug that silently hides parsing errors"* while tracing 3 failed officials games. **Whether it was fixed or only worked around by the 3-game patch script is NOT RECORDED** — resolve it there. |
 | **Working scripts** | `scratchpad/t5/tail5.py` (tail + coverage), `scratchpad/t5/judge5.py` (two-direction judgment), `scratchpad/t2judge/midband.py` (0.40–0.45 seam). Each needs one `sed` of the transcript path. |
 | **Angles menu** (3 clean at different angles closes a transcript) | two-direction judgment · live numeric re-verification · **referential integrity** (do the tables join?) · **structural value sanity** (does the data obey domain invariants?) · wiring (registry/manifest/bindings/workflows) · cross-document consistency · mid-band 0.40–0.45 seam |
 | **⚠ T6 note** | The `comment` taxonomy on `player_game_starter_status` (4,319 DNP-Coach's-Decision etc.) **belongs to T6** — deliberately left undocumented by the T5 sweep. Live tail beyond the documented three: NWT-Not With Team 29, DND-Rest 27, NWT-Injury/Illness 25, DNP/NWT-League Suspension 12 each. |
