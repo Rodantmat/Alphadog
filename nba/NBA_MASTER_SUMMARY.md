@@ -14474,11 +14474,20 @@ with an index carrying coverage."* **Verified on disk:**
 the stated ~170 MB as row dicts — a ~6× reduction** — with **no shard above 5.7 MB** against the
 100 MB limit. ✅ 2023-24 partitions exactly: **1,228 + 2 = 1,230**.
 
-🔴 **Defect 1 — 2025-26 is one game short and does not say so.** It covers **1,229** with
-**`empty: 0`**, while the twelve record **1,230** regular-season games for that season — including
-`NBA_DATABASE.md`'s identity *"**12,300 = 10 starters × 1,230 games** — an identity that only holds if
-every game parsed correctly."* **One game is neither covered nor recorded as empty**, so the index's
-own bookkeeping does not account for it.
+🔴 **Defect 1 — 2025-26 is one game short.** It covers **1,229** with **`empty: 0`**, while the twelve
+record **1,230** regular-season games — including `NBA_DATABASE.md`'s identity *"**12,300 = 10 starters
+× 1,230 games** — an identity that only holds if every game parsed correctly."*
+
+> 🔴 **RETRACTED IN PART 2026-09-21 by §T10.5b — the shortfall is RECORDED.**
+> `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` line 195 states it exactly, in the coverage table, beside
+> the other two seasons: **`1,229/1,230` (241,590 pairings, monthly shards)** · **`1,230/1,230`
+> (232,830)** · **`1,228/1,230`** — *and every row count matches what this pass measured.*
+> **The finding was not that a game is missing; it was already known.**
+>
+> ✅ **What survives is the BOOKKEEPING**: the index records **`covered: 1,229`** and **`empty: 0`**,
+> **so the index itself does not account for the missing game** — 2023-24 does (**1,228 + 2 = 1,230**).
+> *A consumer reading the index alone sees a complete season.* **That is the defect, and it is
+> narrower than what this entry first claimed.**
 
 🔴 **Defect 2 — 2025-26 has 28 columns where the others have 29.** The missing one is
 **`matchupMinutesSort`**, which **`scrape_nba_matchups_pergame.py:33` lists in `KEEP`.**
