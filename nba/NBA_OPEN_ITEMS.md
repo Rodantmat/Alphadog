@@ -233,6 +233,10 @@ cross-schema names rather than piecemeal.*
 ---
 
 ## 🔴 THE 2025-26 MATCHUPS SHARDS ARE ONE GAME SHORT AND ONE COLUMN SHORT
+> 📌 **Precision note, 2026-09-21 (§T10.27b):** `covered` and `empty` in the shard index are **lists
+> of game ids**, not scalar counts — the figures below are their lengths. **So 2025-26 lists 1,229
+> ids as covered and none as empty against a 1,230-game season: the missing game is absent from
+> BOTH lists, not mis-counted in a field.** *Re-verified 2026-09-21; every figure unchanged.*
 *Recorded 2026-09-21 (T10 pass 4, §T10.4b). `[LIVE-AUDIT]` — verified from the shard files and their
 index metadata on disk. **Not a transcript finding.***
 
