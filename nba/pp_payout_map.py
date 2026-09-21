@@ -45,6 +45,21 @@ KNOWN = ["13975905", "13976089"]
 QUOTE_TARGETS = ["chrome146", "chrome150", "chrome145"]
 MAX_Q = int(os.getenv("PP_MAX_QUOTES", "250"))
 N_ALTALT = int(os.getenv("PP_ALTALT", "20"))
+MODE = (os.getenv("PP_MODE") or "full").strip().lower()   # full = research map | delta = monitoring
+N_DRIFT = int(os.getenv("PP_DRIFT_SAMPLE", "10"))
+
+
+def already_mined():
+    """(projection_id, line) pairs already in nba_market.pp_mined_leg - the delta baseline.
+    No DATABASE_URL -> empty baseline, announced loudly: every leg then counts as new (never silently skipped)."""
+    url = (os.getenv("DATABASE_URL") or "").strip()
+    if not url:
+        print("DELTA|WARNING no DATABASE_URL - empty baseline, every leg counts as new", flush=True)
+        return set()
+    import psycopg
+    with psycopg.connect(url) as conn, conn.cursor() as cur:
+        cur.execute("SELECT DISTINCT projection_id, line FROM nba_market.pp_mined_leg")
+        return {(str(r[0]), float(r[1])) for r in cur.fetchall()}
 DEADLINE = time.time() + float(os.getenv("PP_MAX_MINUTES", "34")) * 60
 OUT_DIR = Path("nba/data/pp_payouts")
 
