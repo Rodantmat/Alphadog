@@ -14668,8 +14668,17 @@ baseline tree, always, and the working tree answers a different question.**
 · **15 + 17 + 2 + 2 + 31**; `factor_relevance` **460**; `factor_gate_results` **104**; the documented
 `source_key` split **5 + 25 = 30**; band **32 / 101** and coverage **823 / 688**.
 
+> 🔴 **CORRECTED 2026-09-21 by §T10.16b — the band and coverage figures on the line above are
+> WORKING-TREE measurements and were published with neither population nor tree.** **Read them as:
+> band **32 high / 101 tail** and **823 uncovered vs the twelve / 688 vs all `nba/`**, *measured
+> against the working tree on 2026-09-21.* **Against the baseline `d29401bd` they are 28 / 106 and
+> 831 / 689** — and the difference is entirely this sweep's own writing (§T10.16a). ***The irony
+> repeats one paragraph down from the finding that names it: §T10.14a is about measuring against the
+> wrong tree, and §T10.14b published four figures without naming one.***
+
 **Pass outcome: 1 defect — a table measured against the wrong tree, in a pass that used the right one
-two paragraphs later — everything else exact. 🔴 CLEAN 0/3 · 14 passes.**
+two paragraphs later — everything else exact. 🔴 CLEAN 0/3 · 14 passes.** *(Amended by §T10.16b: the
+pass in fact carried a second instance of its own defect, in its second half.)*
 
 ---
 
