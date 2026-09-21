@@ -379,7 +379,7 @@ Each rescue tier gets its own `anchor_type`. After rescue, genuinely unpriced �
 were fitted on these legs; the out-of-sample figure remains leave-one-player-out: 72% within one rounding step.)
 
 ### REMAINING
-4. **v2 — skew fix** (right-skewed count distribution). Should also push the calibration edge outward honestly.
+4. ~~v2 — skew fix~~ — **DONE 2026-09-21, now CURRENT.** See "v2 — THE PER-LEG LOGIC" below.
 5. **Rescue tier: same-day snapshot** (3,227 legs)
 6. **Rescue tier: sportsbook consensus** — validate first (35,951 legs)
 7. ~~Conflicting keys~~ — **resolved structurally** by `kind` in the key; root cause of off-center standards open
