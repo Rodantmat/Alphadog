@@ -96,7 +96,7 @@ against a wrong picture of what remains.
 | # | File | Pass status |
 |---|---|---|
 | 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ✅ **CLOSED 2026-09-21 — 89 passes** (88 counted, pass 55 VOID). Closed on the amended rule: tail at 0.40 fully read **and** judgment pass clean in **both** directions (97 high-band + 32 tail-direction segments, 0 outstanding defects). Two owner actions handed off, neither a doc defect. Detail: §T1.59–§T1.119. |
-| 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ⚠ **0/3 — ACTIVE. 1 pass** (reset 2026-09-21; the prior `3/3` was earned against 8 documents — same defect as T3–T9). Last pass: 1 — transcript material, 6 findings (deploy trigger has no path filter; `curl_cffi`+`requests`; `teamInfoCommon`→`teamDetails`; service-binding order). Tail 551 segs / 85.4%. Detail: §T2.1. |
+| 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ⚠ **0/3 — ACTIVE. 2 passes** (reset 2026-09-21; the prior `3/3` was earned against 8 documents — same defect as T3–T9). Last pass: 2 — transcript material, 6 findings (hardcoded `>= 400` certification threshold; seven copied static writers; Gemini's factor tier list as hypothesis). Tail 551 segs; owner/reasoning/output/commands read, RESULTS stratum remains. Detail: §T2.1–§T2.2. |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
 | 5 | `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt` | ⚠ **RESET** |
