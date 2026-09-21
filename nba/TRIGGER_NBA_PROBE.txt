@@ -1,1 +1,1 @@
-script: scrape_prizepicks_nba_board.py
+script: probe_pp_game_types.py
