@@ -483,6 +483,49 @@ backfilled by the loader. **Validation (v2):** 115 legs matched a Price ID; medi
 7 mined legs are stats with no historical market (Blocked Shots, Double-Double); **34 (22%) have no standard line on
 the live board** — for live legs that is harmless, since the mined price itself is exact.
 
+### DELTA MINING, DRIFT MONITOR, SLIP FUNCTIONS — built 2026-09-21 (second session)
+
+**Delta mining (monitoring).** `nba/pp_payout_map.py` gained `mode: delta`: it reads the already-mined
+`(projection_id, line)` pairs from `pp_mined_leg` and quotes **only new legs**, plus a **DRIFT sample** of already-mined
+legs (rotating hourly, default 10) re-quoted to catch repricing when a line does not move. No database → a loud
+warning and every leg counts as new, never silently skipped. **`nba/load_pp_mined_legs.py`** loads every map file not
+yet in `pp_mined_leg` (self-healing: a failed load retries next run). Workflow chains map → commit → load.
+**The schedule is DISABLED** (commented cron in the workflow) — how often PrizePicks is queried is an owner decision;
+scheduled runs are forced into delta mode.
+
+**First delta run (06:11 UTC):** board unchanged → **0 new legs, 10 drift re-quotes**; the loader **backfilled runs 2
+and 3 automatically** (files 4, new rows 322). `pp_mined_leg`: **478 rows, 156 distinct legs, 4 runs.**
+
+**Drift monitor — view `nba_market.pp_price_drift`:** first vs latest price per leg, `repriced` flag.
+**First finding: 0 of 156 legs repriced across 2 h 46 m** (10 legs quoted 4×). Prices a month before tip-off are
+stable; movement is expected near game time (injuries, line moves) — where delta monitoring matters.
+
+**Slip-payout functions — pricing logic now lives in the database, reading `pp_slip_rules`:**
+| Function | Does |
+|---|---|
+| `pp_slip_power(factors numeric[])` | 2-pick: base × factors, compressed, rounded (`verified`); 3–6: all-standard base (`verified` 3–4, `unverified` 5–6) or mixed-slip effective base × factors (`partial`, ±6%). A NULL leg → no price, never guessed |
+| `pp_slip_flex2(p1, p2, power2)` | 2-pick Flex: consolation tier by risk, full payout solved from the EV target, snapped to the grid; `verified` for tiers 0.25/0.5, `partial` above |
+| `pp_round_step(x, lo, hi)` | the Power rounding grid |
+`flex_ev_targets` gained the higher tiers (0.75 → 0.757 · 1.0 → 0.743 · 1.25 → 0.677 · 1.5 → 0.658) with sample sizes
+(22 / 12 / 4 / **1**) — marked partial.
+
+**Validated against all 10 slips the owner confirmed on screen** (legs' mined factors in, database functions only):
+**Power 10/10 within one rounding step, 6 exact. Flex tier 9/10; full payout 7/10 exact.** The labels are honest:
+every `verified` slip is exact or one step off, the one-step Flex misses (#4, #9) are inherited from their Power miss,
+and the only real miss (#6's tier) sits in the region labelled `partial`. Slip #4's Power miss: both legs are floor
+goblins displayed 2.1× but truly ~2.08× — mined factors come from displayed, rounded prices. **Stored mined data is
+kept raw** (observations stay observations; corrections belong in pricing logic).
+
+**Item 1 feasibility (model probability vs PrizePicks'):** the two sides join cleanly — **11,279 of 11,279**
+model-scored PrizePicks legs match a priced leg (10,982 carry a price). **But `board_scored` holds only 2 dates**
+(2025-11-29, 2026-01-15 — sample replays), not two seasons. **Item 1 across two seasons first needs the model to score
+all 378 dates** — a scoring-pipeline replay job, not a pricing gap. `board_scored.kind` is NULL for PrizePicks rows;
+props use short codes (`pra`, `threes_made`, …) mapped to Odds-API markets in the join. First glimpse on the 2 dates:
+avg model p 0.454 vs PrizePicks implied 0.469.
+
+**Lesson recorded:** verify commits through the **GitHub API**, never `raw.githubusercontent.com` — its CDN caches
+for minutes and ignores cache-busting query strings (it returned a pre-patch copy after two successful patches).
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
