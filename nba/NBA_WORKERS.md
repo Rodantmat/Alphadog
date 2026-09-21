@@ -292,6 +292,62 @@ sorts near the front.*
 
 ---
 
+## 0.31 ⚠ CERTIFICATION IS A HARDCODED ROW-COUNT THRESHOLD — and each worker picks its own
+*Recorded 2026-09-21 (T2 pass 2). **VERIFIED** on live `main`:
+`nba/alphadog-v2-nba-static-player-bio.js` line 86.*
+
+```js
+const certified = seasonWritten >= 400;
+```
+
+**A worker's `ok` / `certified` flag — the thing every caller reads to decide whether a run
+succeeded — is a magic number compiled into the worker.** Not a config row, not a var, not derived
+from the source. `400` is roughly two-thirds of the 582-player roster, chosen as "enough players
+came back", and the only way to change it is an edit-and-deploy.
+
+**Compare the pattern across the static writers:** the teams worker certifies on
+`activeNbaTeams === 30` — an exact count with a real invariant behind it — while player-bio uses an
+inequality against a round number. **Both are hardcoded; only one is anchored to a fact about the
+world.** A roster that legitimately shrank below 400 would be reported as a failed certification,
+and a scrape that silently returned 401 rows would certify.
+
+**This is §0.3's founding-rule violation with a sharper edge**: §0.3 records that operating constants
+are hardcoded; this one decides whether the system believes its own data. *Not fixed — recorded per
+the sweep's read-only rule. It belongs in `nba_config.system_settings` with the rest.*
+
+---
+
+## 0.32 THE FIVE STATIC WRITERS ARE COPIES OF ONE WORKER — including a self-identifying User-Agent each
+*Recorded 2026-09-21 (T2 pass 2). **VERIFIED**: `Alphadog-NBA-StaticPlayerBio` at
+`nba/alphadog-v2-nba-static-player-bio.js` line 20.*
+
+T2 built five writers in one session — players, arenas, officials, player-bio, player-tracking,
+team-stats, on/off — by copying the teams worker. **`fetchFromGithub()` is duplicated verbatim in
+each**, with exactly one line differing: the User-Agent it sends to the GitHub contents API.
+
+| Worker | User-Agent |
+|---|---|
+| teams | `Alphadog-NBA-StaticTeams` |
+| players | `Alphadog-NBA-StaticPlayers` |
+| officials | `Alphadog-NBA-StaticOfficials` |
+| player bio | `Alphadog-NBA-StaticPlayerBio` |
+| player tracking | `Alphadog-NBA-StaticPlayerTracking` |
+| team stats | `Alphadog-NBA-StaticTeamStats` |
+| on/off | `Alphadog-NBA-StaticOnOff` |
+
+**Two consequences worth holding together.** The good one: **GitHub API traffic is attributable per
+worker** — a rate-limit or audit question can be answered by worker name without adding logging.
+*(T1 pass 84 recorded this property for the teams worker alone; it is a deliberate convention across
+all seven.)* The cost: **there is no shared module**, so a fix to the GitHub read path — auth, error
+handling, the base64 decode, the `meta.error` check — must be made seven times, and a worker that is
+missed fails in a way no other worker exhibits.
+
+**The route surface is copied too**: `GET /`, `GET /health` (returning `vars_present`), `POST /run`,
+404 otherwise. **So §0.28's finding — `POST /run` carries no authentication — holds for all seven,
+not just the one it was measured on.**
+
+---
+
 ## 0.3 ⚠ EVERY WORKER'S OPERATING CONSTANTS ARE HARDCODED — the founding rule is not holding
 *VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
 
