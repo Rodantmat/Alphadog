@@ -9731,6 +9731,68 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.54 — PASS 25 (**novelty audit, third run**) — **🔴🔴 THE TENTH ABSENCE FAILURE, AND IT LANDED ON THE RUN'S HEADLINE · 0/3**
+*2026-09-21. The `git archive` snapshot grepped again, over all thirty, for everything passes 21–24
+added. Most of it is new. **The headline is not.***
+
+#### 🔴🔴 T7.54a — **The Oct-1 rollover was ALREADY DOCUMENTED — as a two-day edge case, rated "low impact"**
+
+`NBA_OPEN_ITEMS.md` (pre-edit, line 5623) carries it as its own numbered item:
+
+> ### ② `active_stats_season()` returns a data-less season on Oct 1–2
+> *"`nba/nba_season.py` branches on **`month >= 10` → current year**. So on **2026-10-01 and 10-02**
+> it returns **2026-27**, which has **zero regular-season games** (opening night is **2026-10-03**).
+> Preseason games exist but carry `GAME_ID` prefix `001`, not `002`. **A weekly scraper running in
+> that window pulls empty aggregates and writes them, reporting success** — the exact failure shape
+> the utility was built to prevent. **Low impact** (P1 runs Mondays; 2026-10-01 is a Thursday) **but
+> the fix is trivial**… **Not fixed — documentation pass.**"*
+
+`NBA_WORKERS.md` line 1172 tags the same thing — *"⚠ Oct 1–2 edge case"* — and
+`NBA_SYSTEM_DESIGN.md` line 297 discusses those dates. **§T7.51a and §T7.52 presented this as a new
+discovery. It is not.**
+
+#### ✅ T7.54b — **What IS new, stated at its true size: a severity re-rating, and the mechanism**
+
+**Three things the existing entry does not have, and each changes its verdict:**
+
+**1 — The window is NINETEEN days, not two.** The entry measures against *"opening night is
+2026-10-03"* — which the owner's correction established is the **preseason** opener; the regular
+season opens **2026-10-20**. *The entry's own next sentence shows the author had the distinction in
+hand — "preseason games exist but carry `GAME_ID` prefix `001`, not `002`" — and still used the 3rd
+as the boundary.* **Oct 1 → Oct 19, not Oct 1 → Oct 2.**
+
+**2 — The "low impact" rating fails on its own reasoning.** It reads: *"P1 runs Mondays;
+2026-10-01 is a Thursday."* **Over nineteen days there are three Mondays — Oct 5, Oct 12, Oct 19 —
+and two weekly workflows run on them** (`nba-scrape.yml` `0 9 * * 1`, `nba-p1-weekly-static.yml`
+`0 19 * * 1`). **Six scheduled runs, not zero.** The Monday argument was correct for a two-day
+window and is exactly backwards for a nineteen-day one.
+
+**3 — The mechanism is worse than "writes empty aggregates."** §T7.53a: the target tables have **no
+season in the primary key** (37 such tables), the writers **upsert** (`ON CONFLICT (player_id) DO
+UPDATE SET season=excluded.season, …`), and **four workers hardcode `'2025-26'`** with no meta
+fallback. **So the empty aggregates do not land beside last season's row — they replace it, under
+last season's label.** *Verified new: `ON CONFLICT (player_id)`, "season-less", "37 tables",
+"no season in the primary key" all return **zero hits** across the pre-edit thirty.*
+
+> ### ⇒ **The finding is real and the severity change is real. The discovery was not mine — the item was on file, dismissed on a date that turned out to be the preseason opener.**
+> **It is the owner's 2026-10-20 correction, propagating**: that single date change turns a
+> "low impact" two-day edge case into six scheduled runs that overwrite real rows. **Recorded this
+> way because the provenance is the point** — a date correction re-scored an item nobody would have
+> revisited.
+
+⚠⚠ **Tenth absence/novelty failure in T7, and the first to land on a headline finding.** Every one
+was a claim about the documents; **every one was one `grep -ri` away.** I ran that grep on
+`variation_band`, on `band_key`, on `real_sample_size_observed` — and **not on `2026-10-01`**, the
+single most consequential string in the pass. *The rule is not the problem; running it only on the
+claims that feel uncertain is.* **Standing rule, eighth form: run the novelty grep on the
+finding you are most confident about, first.**
+
+*Everything else in passes 21–24 verified genuinely new: `season-less` · `37 tables` · `shotdiet` ·
+`3PA_HEAVY` · `opp_shot_diet` · `binary_gate` · `quantile_bands` · `tiered_bands` · the board
+workflows' crons — **zero pre-edit hits each**.*
+
+---
+
 ### T7.53 — PASS 24 (**two-direction judgment, fifth run**) — **🔴🔴🔴 THREE DOCUMENTED DEFECTS COMPOSE INTO ONE · plus a fifth single-pattern count (mine) · 0/3**
 *2026-09-21. Judgment turned on the newest entries' own claims. Two of them failed a check — and the
 second failure opened the most concrete finding of the entire run.*
