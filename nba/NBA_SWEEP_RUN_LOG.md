@@ -62,6 +62,7 @@ every commit message. Never `git push`.
 | T2 | phase3a-enrichment | **19** (18 counted, 13 VOID) | re-read ~42 / ~367 | **1 per ~9** | **2026-09-21** ✅ |
 | T4 | phase3b-backfill | **10** (re-sweep) | ~12 / 498 | 1 per ~41 | **2026-09-21** ✅ |
 | T5 | phase3c-starter-status | **10** (re-sweep) | ~7 / 375 | 1 per ~54 | **2026-09-21** ✅ |
+| T6 | phase3d-delta | **9** (re-sweep) | ~8 / 527 | 1 per ~66 | **2026-09-21** ✅ |
 
 **Five of twenty closed.** The falling ratio across T2 → T4 → T5 (1 per 9 → 41 → 54) is the expected
 shape, not a warning: each transcript arrived with more already documented than the last. **Closure
