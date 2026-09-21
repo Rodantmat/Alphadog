@@ -60,9 +60,17 @@ jobs:
             A=$(val altalt);     if [ -n "${A:-}" ]; then export PP_ALTALT="$A"; fi
             M=$(val mode);       if [ -n "${M:-}" ]; then export PP_MODE="$M"; fi
             D=$(val drift);      if [ -n "${D:-}" ]; then export PP_DRIFT_SAMPLE="$D"; fi
+            L=$(val league);     if [ -n "${L:-}" ]; then LG="$L"; fi
           fi
+          # LEAGUE (line "league: nba|wnba", default nba). WNBA writes its OWN directory and table - never NBA's.
+          case "${LG:-nba}" in
+            wnba) export PP_LEAGUE=3 PP_OUT_DIR=nba/data/pp_payouts_wnba PP_MINED_TABLE=nba_market.pp_mined_leg_wnba ;;
+            *)    export PP_LEAGUE=7 PP_OUT_DIR=nba/data/pp_payouts PP_MINED_TABLE=nba_market.pp_mined_leg ;;
+          esac
+          echo "PP_OUT_DIR=$PP_OUT_DIR" >> "$GITHUB_ENV"
+          echo "PP_MINED_TABLE=$PP_MINED_TABLE" >> "$GITHUB_ENV"
           if [ "${{ github.event_name }}" = "schedule" ]; then export PP_MODE=delta; fi
-          echo "mode: ${PP_MODE:-full} | quote budget: $PP_MAX_QUOTES | altalt: ${PP_ALTALT:-20} | drift: ${PP_DRIFT_SAMPLE:-10}"
+          echo "league: ${LG:-nba} ($PP_LEAGUE) | mode: ${PP_MODE:-full} | quote budget: $PP_MAX_QUOTES | altalt: ${PP_ALTALT:-20} | drift: ${PP_DRIFT_SAMPLE:-10}"
           python nba/pp_payout_map.py
 
       - name: Commit payout map
