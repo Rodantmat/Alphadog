@@ -14382,12 +14382,18 @@ the VALUES. This pass asks what is in those extra rungs and what downstream does
 
 Every ladder row joined to its prop's `LADDER_DEPTH` value and split on whether `|offset|` exceeds it:
 
-| as-of | Within measured depth | **Beyond it** | Beyond-depth rows at **p ≤ 0.01 or ≥ 0.99** |
+| as-of | Within measured depth | **Beyond it** | Beyond-depth rows at **`p_more` ≤ 0.01 or ≥ 0.99** |
 |---|---|---|---|
-| 2025-11-29 *(per-prop)* | 59,855 | **2,638** | **2,188 — 83.0%** |
-| 2026-01-15 *(flat 10)* | 69,560 | **18,713** | **17,409 — 93.0%** |
-| 2026-03-15 *(flat 10)* | 38,942 | **9,638** | **8,966 — 93.0%** |
-| **Total** | **168,357** *(10.7% extreme)* | **30,989** | **28,563 — 92.2%** |
+| 2025-11-29 *(per-prop)* | 59,855 | **2,638** | **2,196 — 83.2%** |
+| 2026-01-15 *(flat 10)* | 69,560 | **18,713** | **17,425 — 93.1%** |
+| 2026-03-15 *(flat 10)* | 38,942 | **9,638** | **8,975 — 93.1%** |
+| **Total** | **168,357** *(18,166 extreme — 10.8%)* | **30,989** | **28,596 — 92.3%** |
+
+> ⚠ **Boundary corrected 2026-09-21 by §T9.34a.** This table first read **2,188 / 17,409 / 8,966 →
+> 28,563** and *"10.7%"*. **Those were computed with a STRICT predicate (`< 0.01 OR > 0.99`) while the
+> prose said `≤ / ≥`** — **the rows sitting exactly on 0.01 or 0.99 fell out of both.** *The
+> difference is **33** beyond-depth rows and **76** within-depth rows.* **The figures above are the
+> inclusive predicate the prose states**; per-day sums check: **2,196 + 17,425 + 8,975 = 28,596** ✅.
 
 ✅ **Partition (rule 11): 168,357 + 30,989 = 199,346**, plus `stocks` **6,350** and `double_double`
 **541** — the two props with no `LADDER_DEPTH` key — **= 206,237** ✅.
