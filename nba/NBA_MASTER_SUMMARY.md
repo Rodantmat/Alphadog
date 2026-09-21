@@ -6430,6 +6430,34 @@ vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship**
 writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
 but not the twelve.
 
+### T4.28 — PASS 8 (**referential integrity, the remaining T4 tables + value sanity**) — **✅ CLEAN 1/3**
+*2026-09-21. Completes the angle pass 7 opened: everything §T4.27 did not reach.*
+
+**Eight checks, all clean** `[LIVE-AUDIT]`:
+
+| Check | Result |
+|---|---|
+| `player_splits` → `nba_ref.players` | **0 orphans** ✅ |
+| `player_shot_zone_profile` → `players` | **0** ✅ |
+| `team_game_log` → `nba_ref.teams` | **0** ✅ |
+| `player_game_log.team_id` → `teams` | **0** ✅ |
+| `player_game_log` with `min < 0` or `pts < 0` | **0** ✅ |
+| `player_game_log` with NULL `min` | **0** ✅ |
+| `player_shot_quality_delta` with NULL delta | **0** ✅ |
+| distinct `game_id` in the player log | **3,690** = **1,230 × 3**, exactly three complete seasons ✅ |
+
+**That last figure is the strongest completeness evidence in the transcript** and it is arrived at
+independently of any reported count: 3,690 distinct games is precisely three full 1,230-game regular
+seasons, with no duplicates and none missing.
+
+**The contrast with §T4.27 is the point.** The tables built *by this transcript* are internally
+consistent — every player, team and game reference resolves, every value is in range, and the game
+coverage is exact. **The two failures pass 7 found are both at boundaries with tables T4 did not
+build**: the calendar (never backfilled for the older seasons) and the player dictionary (scoped to
+the current season by a different worker). **T4's own work is sound; its seams are not.**
+
+---
+
 ### T4.27 — PASS 7 (**angle: referential integrity across T4's tables**) — **🔴 NEW MATERIAL · COUNTER RESET 0/3**
 *2026-09-21. Not "is it documented?" and not "is the count right?" but **"do these tables actually
 join to each other?"** — a question no previous pass on any transcript has asked.*
