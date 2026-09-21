@@ -487,8 +487,27 @@ is worth knowing before anyone "simplifies" it to read `nba_ref.*` directly.*
 
 **The gap it was built to close**: `teamHasRealChange` / `playerHasRealChange` do per-field checks on
 rows that are present, so **a player who disappears from the scrape is never marked inactive** — the
-departure case had no handler at all. Events tracked: new player · departed player · team changed,
-with team relocations, arena renames and referee roster changes as rarer cases.
+departure case had no handler at all.
+
+⚠ **CORRECTED 2026-09-21 (pass 5): there are FOUR event types, not three.** This entry originally
+listed *new player · departed player · team changed*. The committed worker also emits
+**`reactivated`** — a player present in the old snapshot with `active = 0` who returns with
+`roster_status === 1`:
+
+| Event | Condition |
+|---|---|
+| `new_player` | not in the old snapshot at all *(suppressed when `is_first_run`)* |
+| `team_change` | active, both team IDs present, and they differ |
+| **`reactivated`** | active now, `old.active === 0` — **a return from inactive, not a new signing** |
+| `departed` | `old.active === 1` and the player is absent from the new active set |
+
+**`reactivated` matters because without it a returning player would surface as `new_player`**, which
+would read as a league entry rather than a status change — the two need different handling
+downstream. *It appears once in `NBA_PROJECT_LOG.md` and in none of the twelve.* **Active is defined
+as `roster_status === 1`**, which is recorded nowhere.
+
+**Departure detection walks the OLD snapshot**, not the new data — `old.active === 1 &&
+!newActiveIds.has(old.player_id)` — which is the only way to see something that is no longer there.
 
 ### ⚠ A race condition was hypothesised and then RETRACTED — within the same session
 **Recorded because the retraction is the finding, and because the hypothesis is the kind that gets
