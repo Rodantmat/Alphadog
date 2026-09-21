@@ -14327,6 +14327,54 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.21 — PASS 6 (**novelty audit**) — **🔴🔴 IT CORRECTS A CLOSED TRANSCRIPT: the variation dimension covers 15 props, not 6 · 0/3**
+*2026-09-21. Rule 14 turned a routine audit into the most consequential finding of the T9 re-sweep —
+by opening a hit I had already quoted half of.*
+
+#### 🔴🔴 T9.21a — **CORRECTION to §T8.28a: the live variation bands are in CODE, for 15 props. The 6-row table is a stale shadow that nothing reads.**
+
+At §T9.19b I quoted `NBA_COMPASS.md` line 130 and stopped at the em-dash. **The rest of the line is a
+checklist:**
+
+> *"STAT MENU (2026-09-12): … Added fgm/fta/dreb to the singles recipe — certified both seasons
+> (**all three per-prop tables must be extended: PROPS config, `VBANDS_ALL`, and the factor-feature
+> map**)."*
+
+**`VBANDS_ALL` is a Python dict in `nba/backtest/classification_ladder_v12.py` line 114**, and
+enumerating it gives **15 props**:
+
+> `assists · blocks · dreb · fg3a · fga · fgm · fta · ftm · oreb · personal_fouls · points ·
+> rebounds · steals · threes_made · turnovers`
+
+**Against `nba_config.variation_bands`, which has 6** (§T8.28a). **And the four props missing from the
+taxonomy — `dreb`, `fgm`, `fta`, `oreb` — are all present in `VBANDS_ALL`.**
+
+| | Props banded | Read by code? |
+|---|---|---|
+| **`VBANDS_ALL`** (code, line 114) | **15** | ✅ **yes — `VBANDS = VBANDS_ALL[prop]`, line 519** |
+| `nba_config.variation_bands` (table) | **6** | ❌ **no — zero code references** (§T7.45b) |
+
+> ### ⇒ **§T8.28a's "the variation dimension covers 6 of 28 props" describes the STALE TABLE, not the live system. The dimension is built for 15 props, in code.**
+> **And §T8.14b's *"empirical vindication of the variation dimension"* rests on 15 props, not 6.**
+> Severity of that finding drops accordingly; **the finding that replaces it is sharper**: the
+> variation bands are **hardcoded**, exactly like `ROLE_TIERS` (line 129 of the same file) and the
+> decay `PROPS` dict — *the §2-banner pattern, third instance, in the file that holds all three.*
+
+⚠ **And the STAT MENU checklist explains the whole shape**: the three things it says to extend —
+**PROPS config, `VBANDS_ALL`, the factor-feature map — are all code structures.** `prop_taxonomy` and
+`variation_bands` are **not on the list**, which is why a prop added to the recipe reaches neither.
+**§T9.19c's four unresolvable ladder props are that checklist working exactly as written.**
+
+*Novelty: `VBANDS_ALL` appears in **one** pre-edit document (`NBA_COMPASS.md` line 130, the checklist
+itself) and **nowhere is its content, its 15 props, or its divergence from the table recorded**.
+`16,208`, `4,315`, `coverage gain`, `nearest-matching` → zero hits. The five `hand-picked` hits were
+opened and are all unrelated (shrinkage constants, scraper field choices).*
+
+→ `NBA_DATABASE.md`, `NBA_OPEN_ITEMS.md`, and **§T8.28a corrected in place** — a closed transcript's
+entry, because closure does not freeze correctness.
+
+---
+
 ### T9.20 — PASS 5 (**referential integrity / composite key**) — **✅ integrity clean · the one failure is already documented · one stale count, out of scope · 0/3**
 *2026-09-21. The production layer joined in both directions. **Rule 14 governed this pass and changed
 its output twice**: both findings I was drafting turned out to be on file.*
