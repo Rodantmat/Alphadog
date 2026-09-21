@@ -50,6 +50,31 @@ already fixed once.
 > **2 workflows × 3 Mondays = 6 scheduled runs against an empty `2026-27`, before a single
 > regular-season game is played.**
 
+### 🔴🔴🔴 And it COMPOSES with two other documented defects (T7 pass 24)
+
+Three facts, each recorded separately in these documents, **never recorded together**:
+
+1. **The scrapers' season moves on 2026-10-01** (above, verified by execution).
+2. **Four workers hardcode `'2025-26'` with no meta fallback** — named from the authority:
+   `alphadog-v2-nba-static-onoff.js` · `-player-bio.js` · `-player-tracking.js` · `-team-stats.js`.
+   *(Three others carry a hardcoded season **but do** read the meta: `backfill`, `game-officials`,
+   `starter-status`.)*
+3. **`[LIVE-AUDIT]` — their target tables have NO season in the primary key**:
+   `player_tracking_profile` (`player_id`) · `player_onoff_profile` (`player_id`) · `nba_ref.players`
+   (`player_id`) · `nba_team.season_profile` (`team_id`). **37 tables across
+   `nba_stats`/`nba_team`/`nba_ref` have a season-less primary key.**
+
+**And the writer overwrites** — `alphadog-v2-nba-static-player-tracking.js` lines 58–64:
+`ON CONFLICT (player_id) DO UPDATE SET season=excluded.season, avg_speed=excluded.avg_speed, …`
+
+> **From 2026-10-01 a weekly run fetches a season with no games and upserts whatever comes back over
+> last season's real row — under the label `'2025-26'`, because the worker hardcodes it.** Not a
+> wrong label and not empty data: **both at once, in a table that cannot hold two seasons.**
+
+*What each scraper does on an empty response — writes zeros, writes nothing, or raises — is **NOT
+RECORDED**, and is exactly the **no-error-raised failure class** documented four times elsewhere in
+these files.*
+
 🔴 **OWNER DECISION — O4.** This is the only finding in the sweep whose window opens before the
 sweep can reach the transcripts that would explain it. **Nothing has been changed.**
 
