@@ -584,6 +584,18 @@ backtest will move."* Rows created **2026-09-09
 `canonical_prop_key · band_key · band_order · line_min · line_max · percentile_lo · percentile_hi ·
 edge_method · notes · updated_at`
 
+🔑 **`[LIVE-AUDIT]` 2026-09-21 (T8 pass 7) — WHICH PROPS EACH FAMILY SERVES, and how little is
+covered.** The families divide **by prop**: **line magnitude** (`LOW · MID · HIGH · ELITE`) serves
+**five** — `assists`, `rebounds`, `threes_made`, `pra`, `fantasy_score` — and the **role** family
+(`FRINGE · ROLE · STARTER · STAR · SUPERSTAR`) serves **`points` alone**, which is why it has exactly
+five rows. ⚠ **Only 6 of the 28 taxonomy props have any band**, and the split follows
+`prop_taxonomy.build_tier` exactly — **Tier A 6 of 13; Tier B 0 of 15.** *The variation dimension is
+one of the owner's five, and §T8.14b calls the band-level residual "the empirical vindication of the
+variation dimension" — **that rests on 6 props of 28**. Whether the other 22 inherit a default, are
+banded later, or run unbanded is **NOT RECORDED**.* ✅ **Referential integrity is clean in every
+direction**: 0 orphans from `factor_relevance` (460), `factor_profile_cells` (35) and
+`variation_bands` (25) to `nba_ref.prop_taxonomy`, and every taxonomy prop has a relevance row.
+
 **`[LIVE-AUDIT]` 2026-09-21 (T7 pass 16) — 9 distinct `band_key` values in two families**: a
 line-magnitude family `LOW · MID · HIGH · ELITE` (`band_order` 1–4, 5 props each = 20 rows) and a
 role family `FRINGE · ROLE · STARTER · STAR · SUPERSTAR` (`band_order` 1–5, 1 each = 5 rows).
