@@ -1205,7 +1205,15 @@ same table.*** *(`[LIVE-AUDIT]` 2026-09-21, §T11.28a. **`fav`/`dog` as values: 
 positive-controlled.)*
 
 ⚠⚠ **CONSUMER HAZARD — a `GROUP BY side` on this table returns FOUR groups for TWO concepts**, and a
-filter written as `side = 'favourite'` silently drops the `sliding_scale` half. **The vocabulary is
+filter written as `side = 'favourite'` silently drops the `sliding_scale` half.
+🔴 **NARROWED 2026-09-21 by §T11.45b — the hazard is LATENT, not live.** ***`sliding_scale` appears in
+exactly ONE file in the repo — `nba/build_blowout_model.py` lines 173–174 — and that is the WRITER.
+Nothing reads it.*** **Against `p_blowout`, read by FIVE**: `classification_ladder_v1` · `_v12` ·
+`periods_ladder_v1` · `minutes_model_v1` · `validate_blowout_upgrade`. ***So the hazard would bite
+the FIRST consumer rather than an existing one*** — **and the standing finding is that the table
+stores a 14-row partition nothing reads, in a vocabulary inconsistent with the partition five files
+do**, which is this document's own *"a documented design that no running code consults"* class
+appearing in `nba_score` rather than `nba_config`. **The vocabulary is
 per-`kind`, and the three `kind`s use three unrelated vocabularies in one column:**
 
 | `kind` | rows | `side` vocabulary |
