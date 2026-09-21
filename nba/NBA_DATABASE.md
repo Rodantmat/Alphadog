@@ -349,6 +349,16 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 ## 2. `nba_config` — NBA control configuration *(T1)*
 
 > ### ⚠⚠ READ FIRST — **nothing in the codebase reads any of these tables except `external_credentials`**
+> > 🔑 **AND THE RIGHT NAME FOR IT, 2026-09-21 (T9 pass 8).** T1 pass 68 named the family *"table
+> > exists, **writer never born**"* — the mirror of the blueprint's *"registry entry, dead worker"*.
+> > **These nine are a DIFFERENT member of it: "seeded, then orphaned."** They were written once with
+> > real values (66 · 67 · 460 · 35 · 25 · 28 · 13 · 6 · 5 rows) and then a **hardcoded copy in
+> > `nba/backtest/classification_ladder_v12.py` became the live version and drifted** —
+> > `stat_decay_config` by 7 of 10 stats, `variation_bands` by 6 props against `VBANDS_ALL`'s 15.
+> > ⚠ **An empty table is visibly unused; a seeded one looks authoritative** — it returns plausible
+> > values while the system uses different ones. *The genuinely empty members of the family are
+> > `nba_control.job_runs` (0), `nba_control.worker_run_log` (0) and `nba_ref.teams.arena_id` (NULL
+> > on all 30).*
 > > 🔴 **AND THE SCOPE OF THIS BANNER IS TOO NARROW — 2026-09-21 (T8 pass 4).** The class is not
 > > confined to `nba_config`: **`nba_ref.prop_taxonomy` (28 rows, fully populated) is read by
 > > nothing either** — zero code references, the `prop_taxonomy` hits being MLB's own table. **Read
