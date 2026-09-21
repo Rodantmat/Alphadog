@@ -10465,8 +10465,10 @@ that's not needed"* — **bounded ladder, not exhaustive grid.**
 
 **A methodological instruction, not a feature request**: factor importance is to be established
 **per prop type**, not globally. Points, rebounds and assists are not to share one factor weighting.
-**Nothing in the documents records this directive** — and it is the design principle behind any
-per-prop factor table the later transcripts may have built. **Recorded in its chronological place.**
+⚠ ~~**Nothing in the documents records this directive**~~ — **wrong, see the correction above**: the
+prop-by-prop study **is** documented (§T7.35a). It is the design principle behind the per-prop factor
+tables the later transcripts built. **The owner's own framing of it is recorded here, in its
+chronological place.**
 
 #### ✅ Recorded already, and correctly
 *"Gemini is not the absolute truth — you should ground that research on reliable sources and multiple
