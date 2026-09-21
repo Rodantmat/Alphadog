@@ -14860,7 +14860,8 @@ right and is now independently confirmed.*
 **460 rows / 29 distinct `factor_key`** ✅ · `factor_gate_results` **104** ✅.
 
 ⚠ **But `factor_gate_results` is in `nba_score`, not `nba_config`** — and **15 of its 24 mentions in
-the twelve are unqualified**, across six documents (`DATABASE`, `FINAL_SCORING_CALIBRATION`,
+the twelve are unqualified** *(working tree, 2026-09-21 — a current-property count, so the working
+tree is the right authority here; named per rule 17, added §T10.20c)*, across six documents (`DATABASE`, `FINAL_SCORING_CALIBRATION`,
 `GLOSSARY`, `MASTER_SUMMARY`, `OPEN_ITEMS`, `WORKERS`), in a neighbourhood where every sibling it is
 listed beside — `factor_registry`, `factor_relevance` — **is `nba_config`.** *Recorded because this
 pass fell into it: the verification query named `nba_config.factor_gate_results` and errored.*
