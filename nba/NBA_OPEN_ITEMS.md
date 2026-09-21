@@ -70,6 +70,17 @@ the file: *"Points needs 14 rungs, steals needs 2; one number cannot be right fo
 | **2026-01-15** | **10 on every prop** | flat |
 | **2026-03-15** | **10 on every prop** | flat |
 
+🔑 **AND THE CAUSE IS CHRONOLOGICAL — added 2026-09-21, §T9.43a.** `LADDER_DEPTH` and
+`ladder_depth()` landed in one commit, `3cda5a12`, **2026-09-19 23:58:44 UTC**. **The 2026-03-15 day
+was loaded 8 days earlier and the 2026-01-15 day 1h 24m earlier — before the per-prop table existed at
+all — and the 2025-11-29 day 3h 25m after it.** *So the split is not someone setting the override on
+some days and not others; it is a table that had not been written yet.* ⚠ **This raises the stakes
+rather than lowering them: only ONE of the three as-of days was built with the per-prop table, the
+override is still live, and `TRIGGER_NBA_BASELINE.txt` still reads `ladder_steps: 10` — so the next
+`nba-baseline.yml` run flattens it again.** 📌 *That trigger file's last commit is 2026-09-11 17:18
+UTC, so `nba-baseline.yml` built the 2026-03-15 day and nothing after it; what built the other two is
+NOT RECORDED.*
+
 🔴 **All three carry the identical `recipe_version` string and there is no column recording depth**,
 so nothing in the table tells a consumer which regime a row came from. **A join across as-of days
 mixes two products under one label.**
