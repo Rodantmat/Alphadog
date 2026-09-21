@@ -9723,6 +9723,55 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.49 — PASS 20 (**live numeric re-verification, second run**) — **✅ CLEAN 2/3 · 16 of 16 exact · one hedge upgraded, one new column**
+*2026-09-21. Every figure passes 15–19 added, re-queried from the **claim** rather than from the query
+that produced it — and, per the fifth standing rule, with the table's **full column list** enumerated
+first rather than the columns I happened to have used.*
+
+**✅ 16 of 16 exact:**
+
+| Claim | Live |
+|---|---|
+| 35 cells · 22 bucketed · 13 continuous | **35 · 22 · 13** |
+| `variation_band = 'continuous'` on exactly the 13 | **13** |
+| Every bucketed cell tier- or role-keyed | **22 of 22** |
+| 15 factors · 10 distinct caps · range 0.05–0.40 | **15 · 10 · 0.05–0.4** |
+| `direction` `more` 22 · `less` 1 | **22 · 1** |
+| `variation_bands` 25 rows · 9 `band_key`s · **zero** named `continuous` | **25 · 9 · 0** |
+| `calibration_log` 8 rows · **8 orphaned** · **8 with both values NULL** | **8 · 8 · 8** |
+
+#### ✅ T7.49a — **A hedge upgraded to a verified absolute**
+
+§T7.38b said the validation columns were *"null **on the rows sampled**"* — correctly hedged, since
+only three rows had been read. **The full population, `[LIVE-AUDIT]`: `last_validated_at` is set on
+**0 of 35**, and `last_empirical_validation_json` on **0 of 35**.** `automation_status` is
+`semi_automatic` on **all 35**, with **exactly one distinct value in the column** — so it does not
+distinguish anything either. **No empirical validation backs any of the 35 cap/lift/penalty values.**
+
+#### 🔑 T7.49b — `[LIVE-AUDIT]` **`real_sample_size_observed = 0` on ALL 35 — the table records that it has seen no data**
+
+Enumerating the full column list surfaced one not previously read. `factor_profile_cells` carries
+**`real_sample_size_observed`** beside `min_real_sample_threshold` (75 on the rows read) — the column
+that records **how much real data actually stands behind a cell.**
+
+> **It is `0` on every one of the 35 rows.**
+
+**This is stronger than "unvalidated."** The design gates a cell on its own sample —
+`min_real_sample_threshold`, *"cells under sample are fully shrunk to prior"* — and **every cell is
+at zero against a threshold of 75.** The table is not a set of fitted values awaiting confirmation;
+**by its own bookkeeping it is entirely seed values, with no observed sample anywhere**, which is
+exactly what `NBA_DATABASE.md` says of it in words — *"seeded from research as provisional values —
+**these are the values the backtest will move**"* — now **confirmed from the data rather than from
+the prose.**
+
+*Novelty verified per the standing rule: **`real_sample_size_observed` appears in none of the thirty
+pre-edit documents.** (`min_real_sample_threshold`, `stabilization_reference_games` and
+`current_shrinkage_weight` do — this one does not.)*
+
+**Pass outcome: no defect, one hedge upgraded, one new column. ✅ CLEAN 2/3.**
+
+---
+
 ### T7.48 — PASS 19 (**novelty audit, second run — against all THIRTY this time**) — **✅ CLEAN 1/3**
 *2026-09-21. The pass-14 method re-run over everything §T7.44–§T7.47 added, with the seventh rule
 applied: a fresh `git archive` of commit `d33902f9` (the last write before pass 9), grepped across
