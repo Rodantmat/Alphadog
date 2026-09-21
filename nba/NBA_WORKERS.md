@@ -144,6 +144,38 @@ Live, lines 45–51:
 
 ---
 
+## 0.24 🔴 VALIDATE A PARSER ON **THE RUNNER'S OWN EXTRACTION**, NOT ON YOUR OWN
+*Added 2026-09-21 from T11 (§T11.2c). **The transcript states the lesson; no document carried it.***
+
+🔴 **What happened**: the injury-report backfill **scanned all 176 days, found every PDF, and wrote
+ZERO rows.** Two diagnostic runs on the runner pinned it — **the CDN serves the files correctly (200,
+PDF, S3, with or without the proxy), and `pdfplumber` ON THE RUNNER drops the spaces inside cells**:
+
+```
+detroitpistons cunningham,cade questionable
+injury/illness-rightknee;surgery
+```
+
+**So the team-name regex failed on every row**, and the job reported success with nothing written —
+**the silent-failure shape this documentation set names again and again.**
+
+⚠⚠ **Why the self-test missed it, and this is the transferable part**: *"my self-test had passed on
+text extracted by a **different tool**."* ***A parser validated against one extractor is validated
+against that extractor, not against the file.*** **Every NBA parser runs on a GitHub Actions runner
+whose library versions are not the ones a local check uses.**
+
+✅ **The fix, verified on both text shapes — 10 rows from the collapsed text, 24 from the spaced
+fixture**: a **space-insensitive team regex with canonical names**, a **tolerant header regex**, and
+**`split_camel()`** to recover the dropped spaces.
+✅ **And it produced the diagnostic this document already describes**: **`injury mode=probe`** — CDN
+status, `pdfplumber` text, parsed row count, extracted table. *📌 The probe mode is in three of the
+twelve; **the bug that caused it was in none of them** until this entry.*
+
+**Operative form: a parser's fixture comes from the runner, through the same library the job will
+use — and a run that finds its inputs and writes zero rows is a parser failure until proven otherwise.**
+
+---
+
 ## 0.25 ⚠ THE PRE-COMMIT SYNTAX GATE — the only local check before an auto-deploying push
 *Recorded 2026-09-20 (T1 pass 38). **VERIFIED** from T1's own `bash_tool` history.*
 
