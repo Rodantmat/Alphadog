@@ -9313,6 +9313,87 @@ bands, direction, prop line), and the design document that gets materialised int
 
 ---
 
+## T7 RE-SWEEP UNDER CHRONOLOGICAL ORDER (2026-09-21)
+
+*Swept previously, then RESET by the DRIFT NOTICE. **Coverage at start**: 1,081 segments —
+**the largest transcript so far** — with **944 uncovered vs the twelve (87.3%)** and 902 vs all 30.
+**Seven owner turns sit in the tail**, the most of any transcript; T2–T6 had at most five, and T5 and
+T6 had none.*
+
+### T7.30 — PASS 1 (**owner-turn stratum**) — **🔴 NEW MATERIAL · 0/3**
+*2026-09-21. **Three owner design directives are recorded nowhere**, and one of them governs a
+decision the system has already made.*
+
+#### 🔴 T7.30a — **THE OWNER STATED A PREFERENCE AGAINST CAPPING. IT IS NOT IN ANY DOCUMENT — AND THE SYSTEM CAPS.**
+
+> *"I don't like cap… capping. **I'd rather have proper logic that drives the final number to the
+> correct threshold.** But if caps need to be used, **they also need to be specific to the specific
+> tiers**."*
+
+**Two instructions in one sentence, neither recorded:**
+1. **Capping is a fallback, not a tool of first resort** — the preferred fix is logic that lands the
+   number correctly without a clamp.
+2. **Any cap that does exist must be tier-specific**, not global.
+
+⚠ **This matters because the system caps.** `NBA_BASELINE_CALIBRATION.md` records a live clamp —
+*"the prior is capped at contributing no more than 25% of the final estimate"* — **a single global
+cap, not a tier-specific one.** *Whether that cap was chosen before this instruction, or in spite of
+it, is **NOT RECORDED**; the calibration work belongs to later transcripts.* **Recorded here in its
+chronological place so the transcripts that set the cap can be read against the instruction that
+preceded it.** → `NBA_OPEN_ITEMS.md`.
+
+*(The documents do define the vocabulary — a **lift** is a factor that improves a leg's probability,
+a **penalty** or **drag** one that reduces it, and one entry already notes *"a direct penalty is what
+you called capping."* **The vocabulary is recorded; the preference about using it is not.**)*
+
+#### 🔴 T7.30b — **THE LADDER-WIDTH REQUIREMENT, IN THE OWNER'S OWN NUMBERS**
+
+> *"…we need to still do at least, like, four… no, four is too low. **Five or six variations over the
+> anchor and five, six variations under the anchor as well**, because **we never know where the apps
+> are gonna throw the prop line**. And they always give a ladder with goblins and demons or lower
+> multipliers, so **we need to be prepared to cover that ladder, because there is where we can find
+> good [value]**."*
+
+**A concrete coverage spec — roughly 11–13 rungs centred on the anchor — with its reasoning:** the
+apps place the line where they choose, and the profitable rungs are the goblin/demon extremes. **The
+documents describe rungs extensively** (`nba_market.rung_market`, 1.06M rungs; de-vigging *"at the
+DFS rungs only"*) **but nowhere record the owner's stated width requirement or the rationale for
+it.** The spec is the acceptance criterion for ladder coverage, and it is missing.
+
+**He also rejected the alternative explicitly**: *"not do a global matrix and have a ton of data
+that's not needed"* — **bounded ladder, not exhaustive grid.**
+
+#### 🔴 T7.30c — **"PROP LINE BY PROP LINE" — the per-prop factor study, directed and unrecorded**
+
+> *"…projected minutes logic should be covered in the baseline level, no doubt. **That differs from
+> MLB**, so it needs the proper logic. And you need to do this study **prop line by prop line**.
+> Understand how each one of the prop lines behaves with different factors. **Which specific factor
+> is important for each specific prop line?**"*
+
+**A methodological instruction, not a feature request**: factor importance is to be established
+**per prop type**, not globally. Points, rebounds and assists are not to share one factor weighting.
+**Nothing in the documents records this directive** — and it is the design principle behind any
+per-prop factor table the later transcripts may have built. **Recorded in its chronological place.**
+
+#### ✅ Recorded already, and correctly
+*"Gemini is not the absolute truth — you should ground that research on reliable sources and multiple
+reliable sources"* ✅ (the mandatory-consultation rule's counterweight, already captured), and
+*"minutes is very, very important on NBA… that differs from MLB"* ✅.
+
+#### 📌 T7.30d — the "ready for real data" exchange, recorded as expectation-setting
+Three consecutive owner turns establish something the documents should carry plainly: the owner asked
+*"we're ready for when the real data comes up… just confirm that to me"*, then accepted
+*"you're gonna have to make some adjustments to get the proper endpoint, the proper path"*, and
+closed with *"that's something that you were just gonna know when the real data starts coming for the
+new season. That's the only way you're gonna be able to adjust, fix, and improve. Is that correct?"*
+
+**The owner explicitly accepted that some breakage is only discoverable once live data flows.** That
+frames every *"untested against live data"* caveat in this documentation set — **they are known and
+accepted, not oversights** — and it is why the season-opening date (**2026-10-20**, not 10-03) and
+the first real runs matter so much.
+
+---
+
 ## T7 — `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt`
 **Delta completion · the final audit · THE SEASON-HARDCODING FINDING · the deep documentation
 checkpoint · data-universe research**
