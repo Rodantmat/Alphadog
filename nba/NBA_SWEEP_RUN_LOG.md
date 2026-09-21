@@ -15,10 +15,10 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 | | |
 |---|---|
 | **Current transcript** | **T7** — `2026-09-09-03-51-16-nba-classification-baseline-design-research.txt` |
-| **State** | **0/3 · 3 passes.** 1,081 segments (largest yet), 944 uncovered vs twelve (87.3%). Tail at `scratchpad/t7/t7_tail.json`. |
-| **Stratum** | owner ✅ (7) · reasoning ✅ (478) · **commands (233) and results (233) still to read.** |
-| **Exact next step** | **T7 pass 4 — the command stratum** (filter `kind=='cmd'`, sort by `i`). Then pass 5 = results. Then the angles (judgment, referential integrity, wiring, value sanity, mid-band). |
-| **T7 is yielding well** | Unlike T5/T6, this design transcript is producing findings from the **prose**, not just the live angles: 3 unrecorded owner directives, a miscounted season-trap list, two unrecorded rules. **Read it properly rather than rushing to the angles.** |
+| **State** | **0/3 · 5 passes · ALL FOUR STRATA READ.** 1,081 segments (largest yet), 944 uncovered vs twelve (87.3%). Tail at `scratchpad/t7/t7_tail.json`. |
+| **Stratum** | owner ✅ (7) · reasoning ✅ (478) · commands ✅ (233) · results ✅ (233). |
+| **Exact next step** | **T7 needs 3 clean passes at different angles.** None run yet for T7. Start with the **two-direction judgment pass** (`sed` the transcript path in `scratchpad/t6/judge6.py`), then **mid-band seam**, then **wiring** or **cross-document consistency**. ⚠ T7 built few tables, so referential integrity will yield less here than on T4–T6. |
+| **T7 yielded from the prose** | Unlike T5/T6, this design transcript produced its findings from **reading**, not the live angles: 3 unrecorded owner directives, a miscounted season-trap list (3→4 workers), two unrecorded rules, and **the first sighting of the `raw_json` bug**. |
 | **Open threads left by T6** | (a) `lineup_profile` truncation severity — how many lineups actually exist per group size is **NOT RECORDED**; belongs to the lineups worker's transcript. (b) The 3 officials-less games on 2025-11-19 — upstream cause **NOT RECORDED**. (c) Whether `boxscoresummaryv3` exposes the crew role under another field name — **NOT RECORDED**, never checked. |
 | **⚠ Lesson carried forward** | Across T4/T5/T6 the strata re-reads mostly confirmed existing prose; **every headline finding came from the live-system angles**, and **referential integrity produced it three transcripts running.** Run the angles even when the read looks clean. |
 | **Working scripts** | `scratchpad/t5/tail5.py` (tail + coverage), `scratchpad/t5/judge5.py` (two-direction judgment), `scratchpad/t2judge/midband.py` (0.40–0.45 seam). Each needs one `sed` of the transcript path. |
