@@ -14430,6 +14430,88 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.38 — PASS 37 (**ninth two-direction judgment, PRE-REGISTERED — and four attacks on passes 35–36**) — **❌ the first NON-MONOTONE band movement in the run, and it exposes a limit of the instrument · 0/3**
+*2026-09-21. **All four attacks survived; the defect is in the metric the sweep has been quoting.***
+
+#### ❌ T11.38a — **The prediction was right in four figures of five, and the fifth is the finding**
+**Pre-registered**: *"passes 35–36 wrote findings built from live SQL and the worker registry — no
+transcript quotation — so the working band must stay at **38 / 0 / 665 / 660** and the baseline must
+hold for an ELEVENTH measurement."*
+
+| | predicted | measured |
+|---|---|---|
+| **Baseline `5dfb72ab`** | 13 / 3 / 695 / 685 | ✅ **13 / 3 / 695 / 685 — eleventh identical** |
+| **Working** | 38 / 0 / 665 / 660 | ⚠ **38 / 0 / 665 / 662** |
+
+🔴 ***`uncovered30` went UP by two — the first non-monotone movement this sweep has recorded***, after
+six transcripts of *"0 fell back, strictly monotone."* **`uncovered12` and the high band were exactly
+as predicted.**
+
+🔑 **And a coverage LOSS is not a plausible reading.** Passes 35–36 only **added** material, and the
+one document touched — `NBA_OPEN_ITEMS.md` — is in both the twelve and the thirty. **Two instrument
+mechanisms are plausible and the sweep has never stated either:**
+1. **`score()` re-fits `TfidfVectorizer` on `docs + texts` every run**, so **the IDF weights depend on
+   the corpus** — adding ~6,000 characters moves every score slightly, and borderline segments cross
+   the 0.40 threshold in either direction.
+2. **Passes 35–36 did not only append — they inserted correction blocks INSIDE existing paragraphs**
+   *(the `1,227` cell, the `us_dfs` parenthetical placed inside a quoted block)*, **and modifying a
+   paragraph can LOWER its similarity to the segment it was matching.**
+
+⚠ **WHICH of the two is NOT VERIFIED** *(it would take re-scoring the pre-pass-35 tree segment by
+segment)*. ***But either way the correction is the same and it is overdue***: **the working-tree band
+is NOT strictly comparable across passes**, because the tree and the fit both change. **Every
+"strictly monotone / 0 fallbacks" claim in this sweep carries that caveat, and none of them stated
+it.** 🔑🔑 ***And this is what rule 18 has been protecting against without anyone knowing***: the
+baseline tree is fixed, fit on the same corpus every time, and has returned **eleven identical
+measurements**. ***"Report the band against the BASELINE tree" was written as a population rule and
+turns out to be a stability rule.***
+
+#### ✅ T11.38b — **ATTACK 1: §T11.37a survives at the strongest level available**
+The challenge was that `worker_definitions` *"is read by nothing"*, so the registry might not be the
+authority on which workers exist. ✅ **The filesystem settles it: exactly 21 `alphadog-v2-nba-*.js`
+files, matching the 21 registry rows one-for-one — no off-registry writer.** ✅ **And grepping all 21
+for the vocabulary returns ZERO for `hustle`, `clutch`, `pt_defend`, `coaches`, `matchups`,
+`injury_report` and `q1`.** ⚠ **Two apparent hits opened and both false** (rule 26): all five
+`nba_daily` occurrences are the **filename `nba_daily_delta_meta.json`**, and `preseason` is a
+**comment about the GAME_ID prefix convention.** ***The writers were never built — on or off the
+registry.***
+
+#### ✅ T11.38c — **ATTACK 2: the season encoding is the SYSTEM's own convention, stated in its code**
+`alphadog-v2-nba-daily-delta.js` documents it, and it is richer than §T11.37b assumed:
+> *"Uses the **GAME_ID prefix convention (002 = regular season, 001 = preseason, 003 = all-star,
+> 004 = playoffs, 005 = play-in)** rather than the free-text `game_label` field — **the label field
+> turned out unreliable for this** (Cup group-stage games, Rivals Week and international showcase
+> games all correctly count as regular season but carry a non-blank label, while blank-label alone
+> undercounted by 81 games). **GAME_ID prefix '002' matched the known-correct 1,230 regular-season
+> game count for 2025-26 exactly — verified before using it.**"*
+
+✅ **So §T11.37b's method is the system's own, chosen deliberately over the alternative and verified
+against 1,230** (rule 9 — the authority is named, not inferred). ✅ **And the calendar decomposes
+exactly**: **2025-26 = 71 + 1,230 + 7 + 85 + 6 + 1 = 1,400** · **2026-27 = 66 + 1,200 = 1,266.**
+🔴 **A `006` prefix exists — ONE game — and the code's convention lists only 001–005**: it is
+**`0062500001`, NYK v SAS, 2025-12-16, T-Mobile Arena, Las Vegas, *"Emirates NBA Cup"*, Final** — the
+**Cup final**, which has its own prefix and is played at a **neutral site**. ⚠ *The completeness check
+is unaffected (it tests `002`); the documented vocabulary is incomplete by one value.*
+✅ **And it tightens §T11.13/§T11.14**: **`nba_market.schedule_norm` holds 2,460 games, ALL prefix
+`002`** — **regular season only, zero exceptions** — so *"2,460 = 1,230 × 2"* is explained by
+construction, **the Cup final is neither in it nor mapped**, and ***the six neutral-site unmapped
+games are regular-season Cup group-stage and international games, not the final.*** §T11.14 stands
+with its scope now exact.
+
+#### ✅ T11.38d — **ATTACKS 3 and 4: one confirmation and one averted false instance**
+**No worker file references `nba_daily` as a schema or `injury_report_snapshots` at all** — so
+§T11.36a's destination *"was never created"* is confirmed from the code side as well as the catalog.
+🔑 **And the `darko` check was worth running**: `alphadog-v2-nba-static-darko.js` writes
+**`INSERT INTO nba_stats.player_impact_rating … ON CONFLICT (player_id)`** — ***a table that exists***.
+**So `darko` is NOT a fifth scrape-vs-load instance**, and a wrong fifth would have undone the
+bounding §T11.37b had just achieved. *The next-step row flagged that risk explicitly; the check is why
+it did not land.*
+
+**Pass outcome: ❌ a limit of the sweep's own instrument, stated at last. Four attacks, four
+survivals. CLEAN 0/3 · 38 passes.**
+
+---
+
 ### T11.37 — PASS 36 (**the scrape-vs-load class audited in full**) — **🔴🔴 the two-hop architecture's second hop was never built for a whole family — and the load gap is NOT systemic · 0/3**
 *2026-09-21. **Four instances had been named one at a time (§T3.8a · §T11.1b · §T11.31b · §T11.36a)
 and the EXTENT had never been measured.** This pass measured it, and the answer is a clean split.*
