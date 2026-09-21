@@ -9770,6 +9770,59 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.65 — PASS 36 (**two-direction judgment, ninth run**) — **✅ CLEAN 3/3 — T7 CLOSES**
+*2026-09-21. 118 segments, 0 in, 0 out; coverage 928 / 884. Direction 2 still 32, still 31 of them
+matching the 2026-09-04 checkpoint — mechanism (3), self-authorship. **The extraction has been
+identical for four consecutive runs.** The work was rules 8, 9 and 10 applied to §T7.63–§T7.64.*
+
+**✅ Rule 8 — novelty, most confident first**: `sum to the whole` · `IS NOT DISTINCT FROM` ·
+`three-valued` · `line 342` — **zero pre-edit hits across all thirty.** *Near-misses cleared:
+`partition` appears in eight documents, always about tiers or minutes, never about verification;
+`verification discipline` appears in three, and §T7.63a **cites** it rather than claiming it.*
+
+**✅ Rule 9 — own-document contradiction**: all **ten** statements of *"34 of 35 conform"* across the
+three edited documents agree, and all **four** statements naming
+`shotdiet__rebounds__3PA_HEAVY__all__more` agree. **No contradiction.**
+
+**✅ Rule 10 — copy propagation**: the corrections from passes 15, 21 and 32 are present in every
+copy; the `undifferentiated` wording that pass 32 chased no longer appears as an assertion anywhere.
+
+> ## ⇒ **T7 CLOSES — 3 consecutive clean passes at 3 genuinely different angles:**
+> ## **34 (novelty audit, all thirty) · 35 (live numeric re-verification) · 36 (two-direction judgment)**
+> **The judgment pass is among them, as the criterion requires.**
+
+---
+
+## ✅ T7 — CLOSED 2026-09-21 · 36 passes · closing summary
+
+**What T7 actually was**: the classification-baseline **design research** transcript — the session
+that specified `factor_profile_cells`, `variation_bands`, `role_tiers`, `stat_decay_config` and the
+six-dimensional cell key, and that built `nba_season.py`.
+
+**Headline findings, in severity order:**
+
+| | Finding |
+|---|---|
+| 🔴🔴🔴 | **THE COMPOSITION (O4)** — from **2026-10-01** `active_stats_season()` returns an empty `2026-27`, **four workers stamp the rows `'2025-26'`** (hardcoded, no meta fallback), and **37 of 40 NBA data tables have no season in the primary key**, so `ON CONFLICT (player_id) DO UPDATE` **replaces last season's real row**. **15 scrapers exposed; 6 scheduled runs inside the window** (Mondays Oct 5 · 12 · 19). **Each of the three facts was on file; the composition was not.** §T7.51–§T7.56 |
+| 🔴🔴 | **The boundary was TESTED — on the wrong date.** T7's own output samples 2026-09-08, **2026-10-03**, 2027-02-01, 2027-08-01 and passes. Oct 1–2 and Oct 3–19 were never sampled. **One wrong opening date → a wrong test → a passing result → a "low impact" rating on what is now O4.** §T7.58a |
+| 🔴 | **Nothing reads the config layer.** Re-verified at a wider scope, and **`variation_bands` (25 rows) is a ninth member absent from the §2 banner** — the very table the 13 continuous cells key against. §T7.39c, §T7.45b |
+| 🔴 | **`calibration_log` joins `factor_profile_cells` at 0%** — 8 of 8, two incompatible id conventions, **6 of 8 rows are not cells at all**, and `old_value`/`proposed_value` are NULL on every row under `status='applied'`. §T7.45b |
+| 🔴 | **No cap in the system is backed by anything.** 0 of 35 cells carry a validation record and **`real_sample_size_observed` = 0 on all 35**, against a threshold of 75. §T7.49 |
+| ✅ | **The owner's anti-capping directive is SATISFIED** — no global cap exists, and **34 of 35 cells are keyed exactly as their factor's declared form requires**, with one named exception. §T7.44a, §T7.50 |
+
+**What the sweep got wrong, because it matters more than what it got right**: **thirteen defects, every
+one in this sweep's own prose and none in T7's material.** Three headline findings were retired
+(§T7.30a/b/c — all three "unrecorded owner directives" were recorded), two severities reversed, one
+internal contradiction, six single-pattern counts. **Eleven standing rules came out of them**, filed
+above. **The transcript was read correctly by pass 8; passes 9–36 were spent auditing what the sweep
+wrote about the other documents.**
+
+**Ratio**: ~40 recorded findings across 1,081 segments ≈ **1 per 27**, of which **the great majority
+came from live-system angles and from auditing the sweep's own claims**, not from re-reading prose —
+consistent with T4/T5/T6 and now with a named reason.
+
+---
+
 ### T7.64 — PASS 35 (**live numeric re-verification, fourth run**) — **✅ CLEAN 2/3 · 9 of 9 exact · and the check caught its own query**
 *2026-09-21. Every figure passes 21–34 added, re-queried from the claim.*
 
