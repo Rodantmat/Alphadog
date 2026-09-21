@@ -8106,6 +8106,12 @@ the pass that made them.**
 2. **Tool-name failures** — *"four instances, two families"* from memory; **actually 5 across 3
    distinct wrong names** (§T4.25a). Caught by a judgment pass.
 3. **Debug artifacts** — *"three"* from a `*debug*` grep; **actually five.** Caught here.
+5. **Scrapers exposed to the Oct-1 season boundary** — *"13"* from `grep -rl`, which counts **files,
+   not call sites**; **the authority is the call sites**, and they give **15**: 12 direct callers plus
+   3 reached through `stats_seasons()`, which is anchored on `active_stats_season()` (§T7.56a,
+   2026-09-21). ⚠ **The first of these undercounts to understate a LIVE RISK rather than a
+   documentation gap.** *(A sixth instance also landed one pass earlier: "four scheduled NBA
+   workflows", enumerated by the `nba-` filename prefix; the directory says **seven** touch `nba/`.)*
 4. **Config tables read by nothing** — *"five"* from the tables I had just queried; **the authority,
    `NBA_DATABASE.md`'s own §2 banner, says eight** (§T7.39c, 2026-09-21). Caught inside the same
    pass, by opening the file I was about to edit. **The only one of the four caught before it was
