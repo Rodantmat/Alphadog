@@ -8321,9 +8321,11 @@ hard floor/ceiling caps the main system doesn't use**:
 > *"**Design it as an EXPLICITLY SEPARATE, CLEARLY-LABELLED path FROM DAY ONE — don't let it SILENTLY
 > SHARE THRESHOLDS with the main system, and DON'T ASSUME A FIX TO ONE TOUCHES THE OTHER.**"*
 
-**NBA's uncertified props sit on the main path.** `fgm` and `fta` carry *"configs are the **closest
-certified analogue** — NOT yet certified"* — i.e. **a certified prop's thresholds assigned by
-analogy**, marked only by a code comment.
+**NBA's uncertified props sit on the main path.** **`fgm`, `fta`, `oreb` and `dreb`** carry *"configs
+are the **closest certified analogue** — NOT yet certified"* — i.e. **a certified prop's thresholds
+assigned by analogy**, marked only by a code comment. *(⚠ `oreb`/`dreb` added 2026-09-21, §T9.35c —
+the comment governs the last four `PROPS` entries, and those two are also missing from
+`prop_taxonomy`.)*
 
 **Per-prop tuning exists** (`k_stab` measured per prop, `SHIFT_LAMBDA` per prop) — **but that is
 parameter variation inside one system, not a separate path.** There is no distinct prior-strength
