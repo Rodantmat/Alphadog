@@ -68,13 +68,17 @@ This is where today's live, fast-changing data enters — deliberately kept out 
 
 ---
 
-## 4b. ⚠ THE LEAKAGE GUARD ON THE DERIVED SPREAD — recorded 2026-09-21 (T8 pass 2), from T8's own code
+## 4b. THE DERIVED SPREAD'S SEASON-START PRIOR — recorded 2026-09-21 (T8 passes 2 and 5), from T8's own code
 
-The derived static spread is documented elsewhere by its formula and its fit —
-*"pre-game rolling net rating (shrunk k=10) + HCA (fit 1.98) + 0.5 × rest diff: **r = 0.44 train /
-0.46 test**, MAE 11.5 — market-grade with zero market data"*
-(`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` line 82). **How "pre-game" is enforced was
-recorded nowhere.** T8 states it and implements it:
+*⚠ This section first claimed the **leakage guard** was undocumented. **It is not** — "every feature
+is `shift(1)`-based" is stated in `NBA_BASELINE_CALIBRATION.md` line 774 and
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` lines 71 and 151, and the lesson "leakage hides as
+a puzzling anomaly (FRINGE 0.867) — check every baseline is `shift(1)`" is on file too. **What was
+genuinely missing is the season-start prior**, below.*
+
+The derived static spread is documented by its formula and its fit — *"pre-game rolling net rating
+(shrunk k=10) + HCA (fit 1.98) + 0.5 × rest diff: **r = 0.44 train / 0.46 test**, MAE 11.5 —
+market-grade with zero market data"* (checkpoint line 82). **The construction, from T8:**
 
 > *"pre-game rolling net rating: mean net rating over the team's previous n games this season, **with
 > a season-start prior of 0 (league average). Strictly games before the current one.**"*
