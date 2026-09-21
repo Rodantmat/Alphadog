@@ -1663,6 +1663,3 @@ continuity that isn't there."* **Saying so explicitly is what these two entries 
 | `nba/NBA_LESSONS_LEARNED_FROM_MLB.md` (57,066 B) | *"the single most important document… a research standard built the hard way"* |
 | `nba/NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` (18,034 B) | concept mapping |
 | `nba_config.classification_config` | **machine-readable decisions** — verdicts live in the DB, not in logs |
-</content>
-</parameter>
-<parameter name="message">docs: NBA system architecture - infrastructure, tools, sources, constraints
