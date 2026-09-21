@@ -9739,6 +9739,48 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.56 — PASS 27 (**cross-document consistency, third run**) — **🔴 A SIXTH SINGLE-PATTERN COUNT — AND IT UNDERSTATED O4 · 0/3**
+*2026-09-21. Angle: read this sweep's new claims against each other and against the documents that
+carry the same figures. **Three different numbers for "how many scrapers use the season helper" are
+now in the documents, and two of them are the same number meaning different things.***
+
+#### 🔴 T7.56a — **"13 scrapers call `active_stats_season()`" is wrong in three ways, and the correction WIDENS the exposure to 15**
+
+The figure came from `grep -rl "active_stats_season"` — **a file-level match, which hits import lines
+and counts files, not callers.** Counting **call sites** per file, from the authority:
+
+| Group | Count | Files |
+|---|---|---|
+| **Direct callers — scrapers** | **12** | `daily_delta` · `lineups` · `matchups_pergame` · `onoff` · `per_game_delta` · `player_bio` · `player_tracking` · `playtypes` · `shotquality` · `splits` · `team_stats` · `tracking_detail` |
+| Direct caller — **not a scraper** | 1 | `diagnostic_measure_types.py` |
+| **Transitively exposed via `stats_seasons()`** | **+3** | `backfill_measure_types` · `periods` · `season_tables` — **`stats_seasons()` is anchored on `active_stats_season()`**, by its own code and docstring |
+| **Not exposed** — roster/schedule on `current_season()` | 3 | `schedule` (also `prior_seasons()`, anchored on `current_season`) · `stats_players` · `stats_teams` |
+
+**12 + 3 + 3 = 18 ✅**, reconciling with the documented *"18 scrapers now use the season helper."*
+
+> ### ⇒ **Three errors in one figure: it counted files not callers; it included a diagnostic that is not a scraper; and it wrongly listed `backfill_measure_types`, which calls `stats_seasons()`, not `active_stats_season()`. Correcting all three, the exposure is FIFTEEN scrapers, not thirteen — because `stats_seasons()` carries the same boundary to three more.**
+
+**O4 is widened, not narrowed.** *Sixth single-pattern count in this sweep — and the first where the
+undercount understated a live risk rather than a documentation gap.*
+
+#### 🔑 T7.56b — **The three "13 / 18" figures reconciled, so a reader cannot mistake them**
+
+Three numbers now sit in these documents for adjacent things. **They are all correct and they mean
+three different things:**
+
+| Figure | Where | What it counts |
+|---|---|---|
+| **13** | `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` line 30 | scrapers that **had** a hardcoded `Season=2025-26` when the helper was built (2026-09-08) |
+| **18** | §T7.32a, verified again at pass 11 | scrapers that **use the helper today**, in any form |
+| **15** | **this pass** | of those 18, the ones **exposed to the Oct-1 boundary** — 12 direct + 3 via `stats_seasons()` |
+
+**The 13 and the 18 are not in conflict and never were**; the collision is that **the old 13 and my
+wrong 13 are the same number for different sets.** Recorded here as a table because two of these
+figures appear in different files with no cross-reference, which is exactly how a later reader
+concludes one of them is stale.
+
+---
+
 ### T7.55 — PASS 26 (**live numeric re-verification, third run**) — **✅ CLEAN 1/3 · 4 of 4 exact · the season-less PK stated at its true scale**
 *2026-09-21. Every figure passes 22–25 added, **re-derived from its authority** rather than re-run
 from the query that produced it: `information_schema` for the keys, the workflows directory for the
