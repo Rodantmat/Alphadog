@@ -6074,7 +6074,9 @@ partition. One does not.**
 ones **P2 writes nightly** via `build_confidence_v3.py`.
 
 **VERIFIED it has not yet fired — and that the collision is real.** The live table holds **three
-generations of rows coexisting**: `verify_confidence`'s own at **2026-09-17 18:16**, mondrian's at
+generations of rows coexisting** *(`run_at` is `timestamptz` — all three values **UTC**; re-verified
+live 2026-09-21 at §T9.46a: **34 · 5 · 21 rows**, still coexisting)*: `verify_confidence`'s own at
+**2026-09-17 18:16**, mondrian's at
 **2026-09-17 23:31**, and v3's at **2026-09-20 03:30**. **The only reason the v3 and mondrian rows
 survive is that the unscoped writer happens to have run first.** **The next `verify_confidence.py`
 run deletes both sets.**
