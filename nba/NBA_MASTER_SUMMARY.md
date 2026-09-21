@@ -14420,6 +14420,61 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.39 — PASS 24 (**cross-document consistency audit**) — **🔴 two quantities share one name, and the override is documented a SIXTH time — with its classification · 0/3**
+*2026-09-21. Every code symbol appearing in a T9 finding — `used_emp` · `f_prov` · `f_depth` ·
+`f_phase` · `LADDER_DEPTH` · `BT_LADDER_STEPS` · `ladder_steps` · `recipe_version` · `oreb` · `dreb` ·
+`fga` · `ftm` — grepped across all twelve, and **every pre-existing statement about it reconciled.***
+
+#### 🔴 T9.39b — **`p95 = 13 rungs` and `LADDER_DEPTH["points"] = 14` are different quantities, and four documents give them the same name**
+
+The dict's twenty values are **2 · 2 · 3 · 3 · 3 · 4 · 5 · 5 · 5 · 6 · 6 · 6 · 7 · 10 · 10 · 14 · 14 ·
+15 · 16 · 16.** **No entry is 13.** Yet:
+
+| Document | What it says |
+|---|---|
+| `NBA_GLOSSARY.md` · `NBA_GOBLIN_DEMON.md` · `NBA_MASTER_SUMMARY.md` · `NBA_OPEN_ITEMS.md` | *"the live **`LADDER_DEPTH` measurement** (**p95 = 13 rungs for points**)"* |
+| `NBA_RECIPE.md` · `NBA_GOBLIN_DEMON.md` | *"**`LADDER_DEPTH` later measured books laddering to 13–16** on the deep props"* |
+
+**`p95 = 13` is the MEASUREMENT that motivated the table** *(`NBA_GOBLIN_DEMON.md`: "the design figure
+was ±6 line-units = 12 rungs, against **a measured p95 of 13 rungs**")*; **the configured value is
+14**, and the deep props run **14–16**, not 13–16. 📌 **NOT RECORDED: whether 14 is p95 + 1 as a
+deliberate margin** — nothing states it, and it is not asserted here.
+
+⚠ **The distinction is load-bearing, not pedantic.** *§T9.33a's beyond-depth split — **30,989 rows**,
+**92.3% of them certainties** — joins on the **configured** value. A reader who takes the documents'
+"13" as the depth shifts every count in the run's largest live finding.* **Disambiguated at the two
+primary statements and corrected at the "13–16" range; the other four quote them.**
+
+#### 🔑 T9.39a — **The override is documented a SIXTH time — and `NBA_SYSTEM_ARCHITECTURE.md` had already CLASSIFIED it**
+
+> *"⚠ **And NBA has a live instance of the same family in the OTHER direction**: `BT_LADDER_STEPS`
+> **overrides** `LADDER_DEPTH`, so a per-prop depth table can be **silently flattened by an env var**.
+> **The caller wins there; the warning is about the case where the helper wins.** **Both are 'the
+> value you set is not the value used.'**"*
+
+**So the mechanism sits in six documents** — `NBA_COMPASS.md`, `NBA_OPEN_ITEMS.md` (twice),
+`NBA_GOBLIN_DEMON.md`, `NBA_DAILY_PARITY_AND_BACKFILL.md`, `NBA_SYSTEM_ARCHITECTURE.md` — **and in the
+last of them it is not merely noted but placed in a named failure family.** §T9.27a credited four and
+did not have this one.
+
+⚠ **Seventh instance of the pattern, and the strongest form yet: not only the general statement but
+the CLASSIFICATION was already on file.** *What survives as new is unchanged and is where the value
+is: **the override is currently SET**, **the live table holds two regimes under one `recipe_version`**,
+and **the beyond-depth rungs carry full provenance credit.*** **The novelty scope of O5 narrows again;
+the finding does not.**
+
+#### ✅ T9.39c — **The other ten symbols reconcile**
+
+`used_emp` · `f_prov` · `f_phase` · `f_depth` — every pre-existing statement is the one already
+addressed at §T9.37a/b and §T9.38a/b, with no further copies. `ladder_steps` · `recipe_version` —
+consistent across all sites. `oreb` · `dreb` · `fga` · `ftm` — the four lists corrected at §T9.35b/c
+and §T9.36a are now the only statements, and they agree.
+
+**Pass outcome: 1 terminology collision resolved across six sites, 1 novelty scope narrowed, ten
+symbols reconciled. 🔴 CLEAN 0/3 · 24 passes.**
+
+---
+
 ### T9.38 — PASS 23 (**two-direction judgment, sixth run**) — **🔴🔴 a justified confidence factor that is computed, attached and NOT IN THE SUM — and my own headline over-claimed · 0/3**
 *2026-09-21. §T9.37b found one confidence factor to be a relabelled bit. **Rule 6 asks the sibling
 question — are the others?** Reading the whole model answered it twice over.*
