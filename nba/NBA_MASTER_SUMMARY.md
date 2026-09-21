@@ -9640,6 +9640,81 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.38 — PASS 9 (**cross-document consistency**) — **🔴 1 DEFECT IN THIS SWEEP'S OWN PROSE · CLEAN COUNT RESETS 2/3 → 0/3**
+*2026-09-21. Angle: take every claim this sweep made about T7 that cites another of the twelve, and
+read the cited document. One citation says the opposite of what was claimed from it.*
+
+#### 🔴 T7.38a — **CORRECTION to §T7.30a: the 25% clamp is MLB's, it is a FLOOR not a ceiling, and the cited document states NBA does not have it**
+
+§T7.30a (and its `NBA_OPEN_ITEMS.md` entry) asserted:
+
+> *"`NBA_BASELINE_CALIBRATION.md` records a live clamp — 'the prior is capped at contributing no more
+> than 25% of the final estimate' — **a single global cap**, not a tier-specific one."*
+
+**The cited document says three things that each break that claim.** `NBA_BASELINE_CALIBRATION.md`
+§3.7b ("THE 'DON'T OVER-SHRINK A REAL SIGNAL' SAFETY VALVE"):
+
+1. **It is MLB's rule, not NBA's.** The quote is introduced as *"**MLB's** shrinkage formula has a
+   hard-coded rule…"*, carried into the NBA documents as a **recommendation** — *"Build an equivalent
+   safety valve into NBA's shrinkage design FROM THE START, NOT AS A LATER PATCH."*
+2. **The same section states NBA does not have it**, in bold: *"**⚠ NO SUCH VALVE IS RECORDED IN
+   NBA'S SHRINKAGE.**"* It then lists what NBA has instead (Efron-Morris prior strength, per-prop
+   `k_stab`, `min_real_sample_threshold`) and notes the last of those runs *"the opposite
+   direction."*
+3. **It is not the kind of cap the directive is about.** The 25% limits how much a **population prior**
+   may wash out a well-supported individual signal (fires only at `n ≥ 20` **and** divergence
+   `> 15 points`) — a **protection for individual signal**, not a ceiling on a factor's effect on a
+   leg. The owner's *"I don't like capping"* concerns the latter.
+
+**Mechanism**: a quoted threshold was matched on its number and its word ("capped… 25%") without
+reading the attribution sentence above it or the contradiction sentence below it. **This is the
+already-recorded standing failure — *"an absence claim must be tested against the SUBSTANCE, not the
+wording"* (§T7.35a) — in its mirror form: a PRESENCE claim tested against the wording.** Recorded as
+a standing rule extension below.
+
+**Severity 🔴 because the claim was load-bearing**: it was the entire evidence for *"this matters
+because the system caps"*, which is what turned an unrecorded directive into a live conflict.
+
+#### 🔑 T7.38b — `[LIVE-AUDIT]` **What the system ACTUALLY caps: 35 cells, 15 factors, 10 distinct caps — mostly tier-keyed, 13 not**
+
+The corrected claim, verified live rather than from prose. `nba_config.factor_profile_cells`:
+
+| | |
+|---|---|
+| Cells | **35**, every one with a non-null `cap` |
+| Factors | **15** (`blowout_risk` 9 cells · `rest_density` 6 · `opp_dvp_position` 5 · `game_pace` 3 · `usage_share` 2 · ten factors with 1 each) |
+| Cap values | **10 distinct, 0.05 → 0.40** (0.12 and 0.25 most common, 7 and 6 cells) |
+| Key | `(factor_key, canonical_prop_key, tier_label, role_tier_key, direction)` |
+| Tier- or role-keyed | **22 of 35** |
+| **Neither `tier_label` nor `role_tier_key`** | **13 of 35** — one undifferentiated cap for the whole factor (`altitude` 0.06 · `opp_forced_to_rate` 0.20 · `teammate_shooting_quality` 0.20 · `foul_drawing` 0.25 · `opp_rim_attempt_rate` 0.25 · `opp_turnover_rate` 0.25 · `usage_share` 0.30, and cells of `game_pace`, `potential_assist_rate`, `opp_miss_rate`) |
+| Row timestamps | all 35 `created_at` between **2026-09-09T01:53:08Z and 02:02:54Z** |
+
+**Read against the owner's two-part directive, with the language at evidence strength:**
+- *"Caps must be tier-specific, not global"* — **there is no single global cap.** The registry is
+  per-factor and per-prop, and **22 of 35 cells carry a tier or role key.** The directive is **mostly
+  satisfied by construction**; the gap is the **13 cells that carry neither**, which apply one value
+  across all tiers for their factor.
+- *"A cap is a fallback, not a first resort"* — **whether these 35 caps are fallbacks or first
+  resorts is NOT RECORDED**, and cannot be read off the table. `automation_status` is
+  `semi_automatic` and `last_empirical_validation_json` / `last_validated_at` are **null on the rows
+  sampled**, so no validation record backs any value.
+- **Per rule 6, the timestamps are recorded as state, not as explanation.** They precede T7's own
+  transcript timestamp (2026-09-09 03:51). **Whether the directive followed or preceded the values in
+  the conversation itself is for the transcript that set them** — the 01:53–02:03 window falls in
+  **T5/T6**, already closed, where no cap-setting turn was recorded. **Left open, deliberately.**
+
+#### ⚠ T7.38c — **STANDING RULE, extended (third form)**
+
+Already standing: *"a count comes from an authority, never from the pattern that found it"* and
+*"an absence claim must be tested against the SUBSTANCE, not the wording."* **Add the mirror:**
+
+> **⚠ A PRESENCE claim quoted out of another document must be tested against its ATTRIBUTION and its
+> SURROUNDING VERDICT.** A quoted threshold carries whose system it describes and whether the citing
+> document says it is present or absent. **Read the sentence above the quote and the sentence below
+> it before claiming the system does the thing.** Here, both said the opposite of the claim.
+
+---
+
 ### T7.30 — PASS 1 (**owner-turn stratum**) — **🔴 NEW MATERIAL · 0/3**
 *2026-09-21. **Three owner design directives are recorded nowhere**, and one of them governs a
 decision the system has already made.*
