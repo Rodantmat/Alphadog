@@ -14511,7 +14511,12 @@ Read off the table, **~90 distinct `market_key` values**, and the majority are n
 `player_points_rebounds_assists` · `player_fantasy_points`, each with its `_alternate`.
 
 🔴 ***An `nba_`-schema table carries other sports' rows.*** **Novelty: 0 of thirty, control passed
-(rule 22).** *The three hits for "cross-sport" in the twelve are about **MLB-to-NBA transferability of
+(rule 22).**
+
+> ⚠ **BOUNDED 2026-09-21 by §T11.9b — this sentence is true of the VOCABULARY and overstates the
+> DATA.** **The contamination is 7,762 rows of 27,067,871 — 0.029% — all of it in the `routine`
+> label.** **PrizePicks, Betr and Pick6 are 100% NBA, Underdog 99.46%, and the 22,611,175 sportsbook
+> rows are 100%.** ***Most of the keys are baseball; 99.97% of the rows are NBA.*** *The three hits for "cross-sport" in the twelve are about **MLB-to-NBA transferability of
 pricing logic** and a **sport-key naming inconsistency** — a different subject entirely, opened and
 dismissed per rule 7.*
 
