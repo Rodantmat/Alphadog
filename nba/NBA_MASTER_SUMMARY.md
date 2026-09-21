@@ -14444,6 +14444,23 @@ The owner's whole sequence — *probe ParlayAPI first, exhaust it, and only then
 API* — **turns on whether ParlayAPI actually reaches PrizePicks, Underdog and Sleeper.** **It does,
 it was verified on the live key, and a reader of the thirty cannot learn it.**
 
+🔴 **AND IT CORRECTS A SENTENCE IN `NBA_SYSTEM_ARCHITECTURE.md`.** That document carried the T1
+caveat *"coverage for this sport key is still **NOT INDEPENDENTLY VERIFIED**"* and closed it with
+***"it was later superseded by own scrapers rather than verified."*** **The second half is wrong, and
+the chronology is:**
+
+| date | what happened |
+|---|---|
+| **T1** | the caveat is raised and left open |
+| **T11, 2026-09-10** | **the key is validated live** — v3.2.0, Pro tier, unlimited rate, NBA active, provider-state header naming the three apps |
+| later | **own scrapers supersede it for boards** — *"ParlayAPI drops ~25% of ladder rungs"* |
+
+⚠ **Read narrowly**: T11 verifies **the key, the tier, NBA-active state and the provider's own
+listing** — ***the vendor reporting on itself, not independent row-level coverage.*** **The ~25%-drop
+measurement is the independent verification and it arrived later.** **So the caveat was PARTIALLY
+closed in T11 and fully settled by the supersession — not *"superseded rather than verified."***
+✅ **Corrected in place, with both dates and a pointer to the earlier entry.**
+
 📌 **The ordering is locked in config, not just stated**: finish **every enrichment factor's
 backfill** → **probe ParlayAPI for the live prop-line endpoints and exhaust it** for retroactive prop
 lines and daily board snapshots across two seasons (multiple attempts, online research, Gemini) →
