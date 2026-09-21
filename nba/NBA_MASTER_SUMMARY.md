@@ -9815,7 +9815,12 @@ that only reports its misses is not evidence:
 `diagnostic_measure_types.py`. **The pattern returns 20; the population is 18**, exactly as
 documented. *Contrast with the four single-pattern failures listed at the standing rules.*
 
-#### 🔴 T7.40a — `[LIVE-AUDIT]` **The 2026-27 regular season in the live calendar is UNIFORMLY TWO GAMES SHORT PER TEAM**
+#### ⚠ T7.40a — `[LIVE-AUDIT]` **The 2026-27 shortfall is UNIFORM: all thirty teams at exactly 80**
+*⚠ **SEVERITY DOWNGRADED 2026-09-21 by §T7.42a.** This entry was written as 🔴 NEW. **It is not new** —
+**§T2.18 (T2 pass 18, the day before, in this file)** already carries the same prefix table and the
+same finding in the same words: *"2026-27 is 1,200 vs 1,230 and has zero playoff / All-Star /
+Cup-knockout rows."* **What survives as new is only the per-team decomposition below.** The
+novelty-rule failure is recorded at §T7.42a and at the standing rules.*
 
 | Season | Prefix `002` games | Games per team | Teams |
 |---|---|---|---|
