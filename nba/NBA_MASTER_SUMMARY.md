@@ -14419,6 +14419,32 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.11 — PASS 11 (**live numeric re-verification**) — **✅ CLEAN 2/3 · every figure exact, five partitions sum**
+*2026-09-21. Every figure passes 6–10 state, re-derived; partitions summed, predicates stated,
+timestamps UTC, corpus metrics carrying their pass. **No document changed.***
+
+| Claim | Result |
+|---|---|
+| Registry **67 = 28 batch-1 + 39 batch-2** | ✅ **sums** |
+| Relevance **67 = 29 mapped + 38 unmapped** | ✅ **sums** |
+| Mapped **29 = 28 batch-1 + 1 batch-2** *(`market_spread_delta`)* | ✅ **sums** |
+| Mapped **29 = 4 enrichment + 25 baseline** | ✅ **sums** |
+| `compute_stage` **67 = 15 + 17 + 2 + 2 + 31 NULL** | ✅ **sums** |
+| `factor_relevance` **460** · `factor_gate_results` **104** | ✅ exact |
+| The five examples — `nba_1610612737` **1** · **ATL** · `101108` **319** · teams **30** / arenas **30** · `source_key` **5 + 25 = 30** | ✅ **all five, and the partition** |
+| Band **32 / 101**, coverage **823 / 688** | ✅ **0 in, 0 out — unchanged since pass 6** |
+
+🔑 **Five independent partitions over one table, all closing.** *The registry is now described five
+different ways — by write batch, by relevance coverage, by mapped-source, by layer, by compute stage —
+and **every one of them sums to 67**. That is the strongest structural confirmation this sweep has
+produced for any object, and it is what makes §T10.8a's twenty-hour maintenance boundary safe to
+assert: the same 67 rows partition identically however they are sliced.*
+
+**Pass outcome: no defect, no document changed, eight figure families exact and five partitions
+closing. ✅ CLEAN 2/3 · 11 passes.**
+
+---
+
 ### T10.10 — PASS 10 (**stale-example audit**) — **✅ CLEAN 1/3 · every verifiable example in the twelve still holds**
 *2026-09-21. The angle §T10.9a discovered: **an example is the part of a definition nobody re-checks
 when the classification changes.** Every example marker in the twelve — `e.g.` · `for example` ·
