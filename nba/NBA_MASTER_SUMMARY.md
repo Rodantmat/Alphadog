@@ -14361,6 +14361,72 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.29 — PASS 14 (**override / escape-hatch audit**) — **🔴 the season ROLLS in one layer and is FROZEN in the other · 0/3**
+*2026-09-21. The angle §T9.27b opened: **every env var in the NBA build path, mapped to what it can
+silently replace and to whether anything is currently setting it.** `[LIVE-AUDIT]` throughout.*
+
+#### 🔴 T9.29a — **`nba_season.py` reaches 20 of 135 NBA Python files; the rest take the season from an env default typed `"2025-26"`**
+
+**The inventory** — `os.environ.get("NAME"…)` across `nba/**/*.py`:
+
+| | Count |
+|---|---|
+| Distinct env vars | **174** |
+| **Carrying a hardcoded SEASON-STRING default** (`"2025-26"`, `"2024-25"`, `"2025_26"`, or a season date bound) | **47** |
+| Of those, set by at least one workflow | **45** |
+| **Never set by any workflow — the frozen default is what runs** | **2** — `RUNG_FROM` (`2024-10`) and `RUNG_TO` (`2026-04`), `nba/build_rung_market.py` |
+| NBA Python files importing `nba_season` / `active_stats_season` | **20 of 135** |
+
+🔴 **And "set by a workflow" does not mean computed.** The workflows assign **literals**, or a manual
+input with a **literal fallback**:
+
+```yaml
+UA_TEST_SEASON: "2025-26"          RT_TRAIN_SEASON: "2024-25"      N1_TEST: "2025-26"
+ALLOC_SEASONS:  ${{ github.event.inputs.seasons || '2025-26' }}
+LOAD_ASOF:      ${{ github.event.inputs.asof    || '2026-03-15' }}
+GL_START:       ${{ github.event.inputs.start   || '2024-10-22' }}
+```
+
+**The only computed one is `SEASON_SLUG` / `INJURY_SEASON_SLUG`** (`steps.cfg.outputs.slug`) — **and
+that step's own fallback is the literal `2024_25`**, not `nba_season.py`. 📌 Three workflows set
+`BT_TEST: ${{ github.event.inputs.season }}` with **no fallback at all**, so a dispatch without the
+input leaves it empty and the **Python default `"2025-26"`** takes over — *a default behind a default.*
+
+🔑 **Composed with O4, this is the other half of the same boundary.** O4: from **2026-10-01**
+`active_stats_season()` returns **`2026-27`** and the scraper layer follows it, **19 days before the
+opener**. **This pass: the analysis and backtest layer does not follow it at all** — it is pinned to
+`2025-26` by literal strings in 45 workflow assignments and 47 Python defaults. **From 2026-10-01 the
+two layers name different seasons, and nothing reconciles them.** *O4 is the rollover arriving too
+early; this is most of the system never rolling.*
+
+#### ✅ T9.29b — **The documented "one source of truth" claim SURVIVES its attribution, and opening it is the only reason this was not written as a contradiction**
+
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` line 30 reads: *"**`nba/nba_season.py`** — the one
+source of truth for season strings, replacing a universal hardcoded `Season=2025-26` **across 13
+scrapers**."* ⚠ **The scope is in the sentence.** The claim is about **the 13 scrapers**, and it is
+true of them; **it never claimed the analysis layer.** *Rule 3 exactly — a presence claim is tested
+against its attribution — and the finding above is an ADDITION to that claim, not a contradiction of
+it.* **Written without opening the line, this pass would have produced a false 🔴.**
+
+#### 🔑 T9.29c — **The escape-hatch shape, now with two instances and a test**
+
+| Hatch | Replaces | Currently set? | Recorded consequence |
+|---|---|---|---|
+| **`BT_LADDER_STEPS`** | the measured per-prop `LADDER_DEPTH` table | ✅ **yes — `ladder_steps: 10`** in `TRIGGER_NBA_BASELINE.txt` | **O5** — two depth regimes in one table under one `recipe_version` |
+| **`NBA_SEASON`** | `active_stats_season()`'s computed season | ❌ **set by no workflow** | the computed value stands — **O4** |
+| **the 47 season defaults** | *nothing — they ARE the value* | 45 set to literals, 2 never set | **§T9.29a** — the analysis layer never rolls |
+
+🔑 **The test the shape suggests, for every remaining transcript**: *for each configuration value,
+ask **which copy is live** — the measured table, the env override, or the literal in the workflow —
+and then ask **whether the output records which one produced it.*** **In every instance found so far
+the answer to the second question is no.**
+
+**Pass outcome: 1 live finding composing with O4, 1 claim upheld under rule 3, 1 shape named. 🔴 CLEAN
+0/3 · 14 passes** *(live-audit findings do not reset the clean count; the count stands at 0/3 from
+pass 13's documentation defect).*
+
+---
+
 ### T9.28 — PASS 13 (**heading-and-summary audit**) — **🔴 the T8 corpus composition survived in TWO places, and rule 11 would have caught it · 0/3**
 *2026-09-21. The angle pass 11 discovered, run deliberately: **every figure that a heading, ledger
 row, corpus preamble or closing summary states, re-derived from the body it claims to summarise.***
