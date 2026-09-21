@@ -14420,6 +14420,69 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.40 — PASS 25 (**live numeric re-verification**) — **🔴 the enumeration written to warn about hand-typed values was hand-typed · 🔑 the band MOVED for the first time, and the cause is this sweep · 0/3**
+*2026-09-21. Every figure passes 22–24 state, re-derived from its own authority by a different method,
+predicates copied into the prose (rule 16), every partition summed (rule 11).*
+
+#### 🔴 T9.40a — **The `LADDER_DEPTH` multiset was mis-transcribed — three 5s and two 10s, for four 5s and one 10**
+
+§T9.39b published the twenty values as *"2 · 2 · 3 · 3 · 3 · 4 · 5 · 5 · 5 · 6 · 6 · 6 · 7 · 10 · 10 ·
+14 · 14 · 15 · 16 · 16"* to demonstrate that **13 is absent**. **Parsed from the block:**
+
+```
+2 · 2 · 3 · 3 · 3 · 4 · 5 · 5 · 5 · 5 · 6 · 6 · 6 · 7 · 10 · 14 · 14 · 15 · 16 · 16
+```
+
+**`assists`, `ftm`, `fta` and `dreb` are all 5 — four of them; only `fga` is 10.** ✅ **The conclusion
+is untouched: 13 is still absent and the count is still 20** — but the enumeration that carried it was
+wrong. **Corrected in four places.**
+
+⚠ **The irony is exact and the lesson is rule 1 verbatim.** *§T9.34b had just verified twenty
+hand-typed `(prop, depth)` pairs and reported them 20 of 20 correct; one pass later I eyeballed a
+**sorted** version of the same twenty values and mis-copied two of them.* **Reading a block is not
+transcribing a block — the authority is the parse, not the eye.**
+
+#### 🔑 T9.40b — **The high band moved for the first time in six runs, and both new segments are text THIS SWEEP quoted**
+
+| Run | High band (≥ 0.45) | Uncovered vs twelve | vs all thirty |
+|---|---|---|---|
+| Passes 3 · 8 · 11 · 16 · 19 · 23 | **52** *(byte-identical)* | 703 → 696 → 694 | 685 → 679 → 677 |
+| **Pass 25** | **54** | **691** | **675** |
+
+**The two segments that entered are both the patcher's own definition:**
+
+```python
+def rep(s, old, new):
+    assert old in s, f"production patch anchor not found: {old[:80]!r}"
+```
+
+**That is the function §T9.32b quoted verbatim into `NBA_WORKERS.md` and `NBA_MASTER_SUMMARY.md` two
+passes earlier.** **Nothing left the band.**
+
+🔑 **So self-authorship has appeared in DIRECTION 1 for the first time** — until now it was a
+tail-direction mechanism only (mechanism 3). **The instrument now scores this sweep's own prose as
+coverage of the transcript**, and the effect is attributable **segment by segment**, not merely as
+drift. ⚠ **Carry to T10–T20**: *a stable band is evidence the extraction has settled **only while the
+sweep has not quoted the transcript's code**. Once it has, band movement must be checked against what
+was quoted before it is read as new coverage.* **This is §T9.28b's dated-measurement caveat,
+demonstrated rather than inferred.**
+
+#### ✅ T9.40c — **Every other figure exact, with its predicate**
+
+| Claim | Predicate / authority | Result |
+|---|---|---|
+| `used_emp` true **205,678** · false **559** · **99.73%** | `count(*) FILTER (WHERE used_emp)` over the whole table | ✅ exact — **205,678 + 559 = 206,237** |
+| The 559: **541 `double_double` + 18 `threes_made`** | `FILTER (WHERE NOT used_emp AND prop = …)` | ✅ **541 + 18 = 559** |
+| Nine weighted factors summing to **1.00**, `f_phase` declared-but-unsummed | **both structures parsed** — `FACTOR_COLS` (10 names) and the `raw` expression (9 terms) | ✅ **sum = 1.0**, `f_phase` the sole difference |
+| `f_depth` **0.857 / 0.643 / 0.286 / 0.25** at offsets 2 / 5 / 10 / 10.5 | `np.clip(1 − |off| / 14.0, 0.25, 1.0)` evaluated | ✅ exact |
+| `LADDER_DEPTH` — **20 values, 13 absent** | **the block parsed**, not eyeballed *(see §T9.40a)* | ✅ 20 · absent |
+| **30,989 / 168,357 / 6,891 / 28,596 / 18,166** | pass 19's `CASE`-map formulation, inclusive `<= 0.01 OR >= 0.99` | ✅ unchanged |
+
+**Pass outcome: 1 defect of mine, 1 methodological finding that changes how band stability is read for
+every remaining transcript, 6 figure families exact. 🔴 CLEAN 0/3 · 25 passes.**
+
+---
+
 ### T9.39 — PASS 24 (**cross-document consistency audit**) — **🔴 two quantities share one name, and the override is documented a SIXTH time — with its classification · 0/3**
 *2026-09-21. Every code symbol appearing in a T9 finding — `used_emp` · `f_prov` · `f_depth` ·
 `f_phase` · `LADDER_DEPTH` · `BT_LADDER_STEPS` · `ladder_steps` · `recipe_version` · `oreb` · `dreb` ·
