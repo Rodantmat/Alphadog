@@ -9940,6 +9940,11 @@ extraction defect; **0 real findings in direction 2.**
 ---
 
 ### T7.41 — PASS 12 (**referential integrity**) — **✅ CLEAN 1/3 · 4 joins, 0 orphans · 2 precision refinements**
+> ⚠ **INCOMPLETE IN SCOPE, established 2026-09-21 by §T7.45.** Every claim below stands. But this
+> pass ran four joins because it knew of four — it had not enumerated the key from
+> `NBA_CLASSIFICATION_BASELINE_DESIGN.md`, so it never tested **`variation_band` →
+> `variation_bands`** or **`calibration_log.cell_id` → `factor_profile_cells`**. **Both fail, the
+> second at 100%.** Read this section with §T7.45.
 *2026-09-21. Angle: do T7's config tables actually join what they claim to? This is the technique
 that produced the headline on T4, T5 and T6.*
 
