@@ -12839,7 +12839,10 @@ architecture materialised into `nba_config`.
 > strata and closes on **3 clean passes at 3 genuinely different angles**, the two-direction judgment
 > among them.
 >
-> **Corpus**: **615 segments** — 539 assistant, 3 owner. **542 uncovered vs the twelve (88.1%)**,
+> **Corpus**: **615 segments** — **609 assistant, 6 owner** *(⚠ corrected 2026-09-21 by §T9.28a: this
+> line read "539 assistant, 3 owner" — the superseded owner count from §T8.24a, **crossed with the
+> uncovered count**, since 539 + 3 = 542, which is the uncovered figure, not the total. The authority
+> is the transcript's own segment list.)* **542 uncovered vs the twelve (88.1%)**,
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
