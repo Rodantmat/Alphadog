@@ -12784,6 +12784,59 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.24 — PASS 3 (**two-direction judgment**) — **🔴 A SEVENTH SINGLE-PATTERN COUNT, MINE · 🔑 one unrecorded qualifier · 0/3**
+*2026-09-21. 61 high-band segments, 14 tail-direction.*
+
+#### 🔴 T8.24a — **"T8 has only three owner turns" is wrong. It has six — and I counted the tail, not the transcript.**
+
+§T8.22 opened *"**T8 has only three owner turns**"* and audited three. **The authority —
+`segments(transcript)` — gives 615 segments, 609 assistant and **6 human**.**
+
+**The mechanism is the purest instance of the count rule yet.** I enumerated the owner turns **in the
+uncovered tail**, and the tail is by construction *"segments the documents do not already cover"* —
+**so it excludes exactly the owner turns that are already recorded, which is the very thing pass 1
+set out to determine.** The pattern I counted was defined by the answer I was looking for. *Two of
+the three missing turns surfaced in this pass's **high band**, which is where covered segments go.*
+
+**The three missed, all also recorded** — checked by substance, not by wording:
+
+| Owner turn | Recorded at |
+|---|---|
+| *"now do another full deep check on each prop line, all different types and layers of proplines all apps"* | ✅ §T8.1 and §T8.16 |
+| *"continue, and any time you see it needs deeper testing and calibration, do not move before fixing it…"* | ✅ §T8.6 (first half, verbatim) **and line 13118** (the standard clause) |
+| *"…apply the ones that meet the standard to the previous season… if it correctly worked for the past season, [it] should also work for the one before"* | ✅ §T8.8, verbatim |
+
+**So the pass-1 verdict survives — every owner directive in T8 is recorded — but it was reached on
+half the population.**
+
+#### 🔑 T8.24b — **One fragment IS unrecorded, and it is a scope qualifier on the owner's accuracy standard**
+
+The rigour directive's full text:
+> *"…the final work should be **a perfect formula, very sharp, where the real outcomes fit perfectly
+> most of the times, with a very high level of accuracy, WITHIN THE BASELINE LADDER**."*
+
+**The documents carry this standard split across two places** — §T8.6 holds *"do not move before
+fixing it"*, and line 13118 holds *"a perfect formula, very sharp"* — **270 lines apart, and neither
+carries the closing qualifier.** `within the baseline ladder` returns **zero hits across all thirty**
+(`/tmp/t8base`).
+
+⚠ **The qualifier is not decoration: it scopes the perfection standard.** The owner is asking for
+outcomes to fit **within the baseline ladder** — the ±6-rung anchored ladder — **not across the
+enrichment or scoring layers**, which were not built yet. *Recorded so a later reader does not apply
+the "perfect formula" bar to layers the owner did not scope it to.* → `NBA_OPEN_ITEMS.md`.
+
+#### ✅ T8.24c — **Direction 2: all 14 segments are mechanism (3), self-authorship**
+
+**13 of 14 match `NBA_CLASSIFICATION_BASELINE_DESIGN.md` at 0.70–1.00**, the 14th the 09-09
+checkpoint. **T8 wrote that design document**, so its payload arrives in the transcript as text —
+the same false-tail shape as T7's 2026-09-04 checkpoint. **No extraction defect.**
+
+*One corroboration worth keeping*: the 0.97 match carries the design's own relevance table —
+**`factor | full | partial | none`** — **independently confirming §T7.51c**, that the three-grade
+vocabulary is specified in the design while the live table only ever writes two.
+
+---
+
 ### T8.23 — PASS 2 (**reasoning / results stratum, tail-first**) — **🔑 1 NEW FINDING · 0/3**
 *2026-09-21. The 542-segment tail read lowest-coverage first. **First, its shape**, because it tells
 later passes where not to spend time:*
