@@ -591,10 +591,14 @@ row**. The NBA repo has no equivalent of either; whether one is pending is **NOT
 
 **`[LIVE-AUDIT]` — the table is TWO POPULATIONS, zero mixing across 35 rows, and EVERY cell is keyed.**
 The design key is **six-dimensional** — *factor × prop × rate_tier × role_tier × direction ×
-<!-- names corrected below -->
-
 variation_band* (`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247) — **and which key columns are
 populated is itself the population marker**:
+
+> 🔴 **`[LIVE-AUDIT]` 2026-09-21 (§T10.23b) — those are the DESIGN's names, not the table's.** The
+> live columns are **`factor_key` · `canonical_prop_key` · `tier_label` · `role_tier_key` ·
+> `direction` · `variation_band`.** ⚠ ***`rate_tier` is not a column in ANY `nba%` table*** — the
+> rate tier is stored as **`tier_label`**, which these documents already use correctly eleven times
+> elsewhere. **Query `tier_label`; `rate_tier` returns `column does not exist`.**
 
 | | Effect | Keyed by | Direction | Cells |
 |---|---|---|---|---|
