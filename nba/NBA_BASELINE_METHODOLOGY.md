@@ -68,6 +68,37 @@ This is where today's live, fast-changing data enters — deliberately kept out 
 
 ---
 
+## 4b. ⚠ THE LEAKAGE GUARD ON THE DERIVED SPREAD — recorded 2026-09-21 (T8 pass 2), from T8's own code
+
+The derived static spread is documented elsewhere by its formula and its fit —
+*"pre-game rolling net rating (shrunk k=10) + HCA (fit 1.98) + 0.5 × rest diff: **r = 0.44 train /
+0.46 test**, MAE 11.5 — market-grade with zero market data"*
+(`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` line 82). **How "pre-game" is enforced was
+recorded nowhere.** T8 states it and implements it:
+
+> *"pre-game rolling net rating: mean net rating over the team's previous n games this season, **with
+> a season-start prior of 0 (league average). Strictly games before the current one.**"*
+
+```python
+teams_adv = teams_adv.sort_values(["season","team_id","game_date"])
+teams_adv["pre_net"] = teams_adv.groupby(["season","team_id"])["net_rating"] \
+                                .transform(lambda s: s.shift(1).expanding().mean())
+teams_adv["pre_n"]   = teams_adv.groupby(["season","team_id"]).cumcount()
+k = 10
+teams_adv["pre_net_shrunk"] = teams_adv["pre_net"].fillna(0) * pre_n / (pre_n + k)
+```
+
+**Three guards in four lines**: `.shift(1)` excludes the game being predicted · `.expanding()` uses
+only games that precede it · `pre_n / (pre_n + k)` with `fillna(0)` makes game 1 of a season the
+league average instead of undefined or leaked. **Rest days are built the same way**, from
+`game_date.shift(1)` within team-season.
+
+🔴 **Why this belongs in the methodology and not only in a transcript**: the backtest's validity
+rests entirely on as-of correctness. **A component documented as "pre-game rolling net rating,
+r = 0.46" is one reimplementation away from leaking** — `.expanding().mean()` without the `.shift(1)`
+includes the current game, **raises the reported r, and invalidates the result**. The improved number
+is the symptom, not the reassurance.
+
 ## 5. Real risks in this two-stage separation, named directly (not just "it's correct, done")
 
 - **Double-counting**: the most dangerous risk. If the baseline's historical minutes already reflect a player's real blowout-shortened games, and enrichment applies *another* negative adjustment for today's spread, the player gets penalized twice. Mitigation: baseline models "performance in this player's average historical context"; enrichment models only the *deviation* from that average based on today's specific information — keep this distinction explicit in code and documentation, not just in this doc.
