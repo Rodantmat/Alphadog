@@ -7727,6 +7727,29 @@ methodology. **Coverage at start**: 438 segments · **375 uncovered vs the twelv
 all 30 — **only a 9-segment self-authorship gap**, so unlike T4 this transcript barely writes the
 documents; its tail is genuine content, not its own payloads.*
 
+### T5.21 — PASS 6 (**wiring: is everything T5 built registered, bound and runnable?**) — **✅ CLEAN 2/3**
+*2026-09-21.*
+
+| Element | Result |
+|---|---|
+| `alphadog-v2-nba-static-starter-status.js` | present ✅ |
+| `nba/worker_manifest_nba.json` | 1 entry ✅ |
+| `alphadog-v2-admin-sql.js` | **3 references** — `z.enum`, `bindingMap`, `else if` chain ✅ |
+| `generate_wrangler_configs.py` | 1 binding ✅ |
+| `nba_config.worker_definitions` | registered, `enabled = 1` ✅ |
+| `scrape_nba_starter_status.py` | in **2** workflows ✅ |
+| `diagnostic_starter_status.py` | in **1** workflow (`nba-diagnostic.yml`) ✅ |
+
+**The four-site model is satisfied exactly** (§0.38), with no dangling reference in either direction.
+**Nothing new.**
+
+*Note the diagnostic tooling is wired, not stranded: script plus dedicated trigger-file workflow, no
+cron. Combined with §T5.18c — workflow logs expire — **a permanently-available diagnostic path is a
+deliberate answer to a real constraint**, not clutter. The open item remains only that it is
+undocumented as a pattern.*
+
+---
+
 ### T5.20 — PASS 5 (**referential integrity — the angle that opened T4**) — **✅ CLEAN 1/3 · one `[LIVE-AUDIT]` refinement, non-resetting**
 *2026-09-21.*
 
