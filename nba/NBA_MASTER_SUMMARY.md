@@ -14430,6 +14430,59 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.42 — PASS 41 (**the stratum audit — T11's composition, measured for the first time**) — **✅ CLEAN 1/3 · the partition closes on 712, one of my own errors caught in-pass, one duplicate stopped before publication**
+*2026-09-21. **A deliberate return to content after four meta passes**, and the angle T11 has never
+had: the sweep partitioned T2 by stratum at its pass 3 and never did it here.*
+
+#### ✅ T11.42a — **T11's five strata, and the partition closes exactly**
+
+| stratum | segments | share |
+|---|---|---|
+| **RESULTS RETURNED** *(`assistant`/`tool_result`)* | **355** | 49.9% |
+| **COMMANDS RUN** *(`assistant`/`tool_use`)* | **227** | 31.9% |
+| **ASSISTANT OUTPUT** *(`assistant`/`text`)* | **64** | 9.0% |
+| **ASSISTANT REASONING** *(`assistant`/`thinking`)* | **51** | 7.2% |
+| **OWNER SAID** *(`human`/`text`)* | **15** | 2.1% |
+| | **712** ✅ | *(rule 11 — it closes)* |
+
+⚠ **Two strata have never been swept on T11**: **ASSISTANT REASONING (51)** entirely, and **RESULTS
+RETURNED (355)** as a stratum — *individual results have been read (segment 613's metas, the injury
+shard indexes) but never the half of the transcript they belong to.* 📌 **And the scale is worth the
+comparison**: **T2's RESULTS RETURNED was 147; T11's is 355** — *"tail exhausted across all five
+strata" was achievable on T2 and has never been attempted here.*
+
+#### 📌 T11.42b — **The tool census, and what it says about what T11 actually was**
+**`run_job` 114 · `web_search` 84 · `web_fetch` 80 · `github_patch_file` 79 · `bash_tool` 58 ·
+`run_sql_postgres` 50 · `github_put_file` 35 · `memory_str_replace` 28 ·
+`github_get_workflow_run_log` 20 · `github_list_workflow_runs` 12 · `github_grep_file` 12.**
+🔑 ***One hundred and sixty-four web calls in a single transcript*** — **which is what segment 501's
+*"exhaustive alternatives done"* and segment 609's sourcing playbook look like from the outside.**
+***T11 is, by tool count, a research session with a backfill running underneath it.***
+📌 **And 114 file writes** (`patch_file` 79 + `put_file` 35) **against 50 SQL calls** — *the ratio the
+scrape-vs-load findings predict.*
+
+#### ✅ T11.42c — **One of my own errors, caught inside the pass**
+The first partition keyed on **`(role, kind)`** and returned *"(unnamed stratum)"* for everything,
+which looked like a defect in `sweep_coverage.py`'s `STRATA` constant. ❌ **It was mine.**
+**`STRATA`'s keys are `(role, TYPE)` pairs — `('human','text')`, `('assistant','thinking')` — and
+`segments()` emits `type`, not `kind`.** ***Re-keyed, every stratum matches exactly.***
+**`sweep_coverage.py` is correct and was never wrong.** 🔑 *Recorded because the near-miss is the
+point: a "defect in the tool" that is a defect in the caller is the easiest wrong finding to publish,
+and the only thing that stopped it was checking the constant's actual keys before writing.*
+
+#### ✅ T11.42d — **And a duplicate stopped before publication — the fourth in nine passes**
+The path map showed **`/areas/alphadog-nba.md` written 14 times, more than any other destination, with
+its last write at segment 709** — *so T11's running state went to a MEMORY file*. **That is in FOUR of
+the twelve already**, with a dedicated section: `NBA_SYSTEM_ARCHITECTURE.md` **§8d, "THE FOURTH
+STORE — an assistant memory file outside GitHub and Postgres"**, sizes, versions and the 49,152-byte
+cap, plus `NBA_OPEN_ITEMS.md` flagging that *"the canonical log entry points at a file outside version
+control."* ✅ **What IS new and stays**: ***the count — 14 writes, the most of any path in T11 — and
+that segments 355, 501 and 709, the three terminal states rule 27 recovered, are all writes to it.***
+
+**Pass outcome: ✅ CLEAN 1/3 · 42 passes.**
+
+---
+
 ### T11.41 — PASS 40 (**tenth two-direction judgment, PRE-REGISTERED in two parts — and four attacks on passes 38–39**) — **❌ three narrowings of my own one-pass-old claims · 0/3**
 *2026-09-21. **The prediction lands on both parts; the attacks find that three of the last two passes'
 sentences were scoped more widely than their measurements.***
