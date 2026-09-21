@@ -15770,6 +15770,10 @@ app.** The schema is not the blocker.
   Platt and the cells is auditable per row.
 - **`used_emp`** — whether the empirical table or the parametric fallback produced this row. **Exactly
   the flag needed to check the hierarchical fallback's 100% coverage claim in production.**
+  > 🔴 **And live it cannot do that job — §T9.37a (2026-09-21).** `used_emp` is `true` on **205,678 of
+  > 206,237 rows (99.73%)**; of the 559 false rows **541 are `double_double`**, which has no ladder;
+  > **18 genuine fall-throughs.** It reads `true` on **all 30,989 rungs beyond the measured
+  > `LADDER_DEPTH`**, and downstream it is a **3.3× confidence multiplier** (`f_prov`, §T9.37b).
 - **`recipe_version`** — rows carry the recipe that made them.
 
 #### T9.11b — `nba_score.baseline_ladder_runs` — the per-run audit trail
