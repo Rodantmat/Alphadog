@@ -14430,6 +14430,67 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.31 — PASS 30 (**the last-word audit finished — the seven subjects pass 29 mapped and did not read**) — **🔴🔴 the scrape is three seasons and the load is one · 0/3**
+*2026-09-21. **§T11.30c listed nine subjects and read two.** Rule 27 says an unread last word is a
+pending defect; §T11.21c's lesson says a claim that states its own limit gets completed. **This is
+the completion.***
+
+#### 🔴🔴 T11.31b — **`[LIVE-AUDIT]`: three seasons scraped, one season loaded — in TWO workers**
+**T11 segment 613 reports both 2024-25 runs complete** — `nba_starter_status_2024_25` *"games_input
+1230, games_succeeded 1230, row_count 32515"* and `nba_game_officials_2024_25` *"1230, 1230, 3691"* —
+**and `nba/data/` holds all three seasons of both, committed.** 🔴🔴 **Postgres holds one**, joined to
+`nba_calendar.games.season` rather than read off the id prefix *(rule 9 — the authority is named)*:
+
+| table | in `nba/data/` | in Postgres | games | rows |
+|---|---|---|---|---|
+| `nba_stats.game_officials` | **3 seasons** | 🔴 **2025-26 only** | **1,227** *(of 1,230)* | **3,681** |
+| `nba_stats.player_game_starter_status` | **3 seasons** | 🔴 **2025-26 only** | 1,230 | **32,179** |
+
+🔑 ***This is §T11.1b's shape in a second and third worker***: **a scrape reporting complete success
+while the database receives none of it.** ⚠ **The difference matters and sharpens the class**: for the
+injury backfill the rows were **never produced** (the `pdfplumber` parser bug); **here the rows EXIST,
+in the repo, and did not reach the table.** ***So "the scrape succeeded" is not evidence about the
+database, and the sweep has now seen that twice from two different causes.*** **WHY is NOT RECORDED**
+(rule 6). ⚠ **It re-dates the matrix**: `a5` and `d1`'s ⏳ marks describe the **scrape**; by the
+database both are **one season**, and anything reading them for 2024-25 or 2023-24 gets nothing
+silently. 📌 **§T11.12's `12,300 = 10 × 1,230` re-verified exact** (`is_starter = 1`, 10.000/game) —
+⚠ **population 2025-26 alone, which that entry did not state** (rule 23).
+
+#### 📌 T11.31a — **Segment 711 is T11's closing summary, and it names the four open items**
+*Three from the end.* ***"Already done: game lines (both seasons), matchups (three seasons),
+starters/officials 2024-25 and 2025-26, coaches, weekly as-of tables, player index, preseason logs,
+absence prior… by morning the only open data item outside the boards is my own desk work — coach-change
+dates, all-star lists, referee-assignments scraper, the game-id join — which doesn't block the DFS
+work."*** 🔑 **§T11.24b found THREE of those four independently as *"in none of the twelve"***; **the
+fourth — the game-id join — the sweep held only as a T12 queue note, and it is T11's.** ⚠ **Against
+§T11.31b, *"starters/officials … already done"* is true of the scrape and not of the database.**
+⚠ **And two segments give two numbers for one setting**: **709 and the live config say `window 14:45
+PT` / `close = tip − 30`**; **711 says the test *"landed exactly right: the window at 2:40 PM PT, the
+close at 35 minutes before tip."*** **Snapshot granularity or a different setting — NOT RECORDED.**
+
+#### 📌 T11.31c — **Segment 609: "optionally a Kaggle account" ends as a sourcing playbook with a data spec**
+**Named channels**: the GitHub scraper authors themselves — **`mada949/prizepicks-api`** and the
+**apify / parse.bot** maintainers, *"an issue or DM asking 'do you keep your daily JSON dumps?' is the
+highest-yield ask"* · **r/algobetting and r/sportsbook Discords**, the **OddsJam and Unabated**
+communities, DFS pick'em developer circles on X · **Kaggle "data requests" and HuggingFace**.
+**And the spec** — *"so you don't buy the wrong thing"*: **per row — capture timestamp, player, team,
+stat type, line, and for PrizePicks the projection type (standard / goblin / demon), for Underdog the
+multiplier; alt lines matter. Cadence at least 2–3 captures per day — opening-of-board and pre-tip are
+the two that matter for our cutoffs. Both seasons; even Jan–Apr 2025 alone is worth low double
+digits."* ⚠ **§T11.27b's item 3 called this *"optionally a Kaggle account"* — segment 113's words.**
+
+#### ✅ T11.31d — **Two of the seven last words AGREE with what the sweep published**
+**Segment 685** is `nba-injury-report.yml` in full: it **installs `pdfplumber` on the runner** and
+resolves `mode`/`from`/`to`/`slug` from the trigger file — **consistent with §T11.1b and with
+`NBA_WORKERS.md` §0.24**. **Segment 690** is the 2024-25 trigger file, *"the workflow now loops 30-day
+chunks with commits until the range is complete"* — **consistent with §T11.3c.** 🔑 **Of seven last
+words read across passes 29–30, two agreed and five did not** — *which is the number worth keeping: the
+method's failure rate on this transcript was about 70%, and it is now measured rather than feared.*
+
+**Pass outcome: 🔴 a live gap in two workers and the matrix re-dated. CLEAN 0/3 · 31 passes.**
+
+---
+
 ### T11.30 — PASS 29 (**rule 27 applied to the whole transcript — the LAST-WORD audit**) — **🔴🔴 it found the terminal states on its first outing, and one of them is the CAUSE of a finding this sweep revised three times · 0/3**
 *2026-09-21. **The pass rule 27 made mandatory, and the one that should have run at pass 1.** Method:
 for every subject this sweep published a STATE for, map all 712 segments and **read the LAST
