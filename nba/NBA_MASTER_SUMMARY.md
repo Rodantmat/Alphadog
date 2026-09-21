@@ -11606,7 +11606,7 @@ from being exact; the schedule table already holds the real opening date (2026-1
 | Category | Status |
 |---|---|
 | **All 30 data tables** (`nba_ref`/`nba_calendar`/`nba_team`/`nba_stats`) | ✅ real, correct counts |
-| `nba_ref.prop_taxonomy` (0 rows) | correctly empty — *"a Board/Scoring concept, out of scope for this layer"* |
+| `nba_ref.prop_taxonomy` (0 rows) | correctly empty — *"a Board/Scoring concept, out of scope for this layer"* ⚠ **T7-dated. Superseded by T8: the table was seeded to 28 props on 2026-09-09** (§T8.4, §T8.25a). *The judgment's substance is a live open question — see §T8.29a.* |
 | `*_differential_log` (0 rows) | correctly empty — *"only one weekly baseline run has happened; **detection starts on the second run**"* |
 | **18 registered workers** | *"All have real corresponding scrapers on disk, **no orphans either direction**"* |
 | Weekly scrape workflow | *"All **14 static/weekly-phase scrapers** cross-checked **step-by-step against the actual workflow file**"* |
