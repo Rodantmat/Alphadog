@@ -87,9 +87,40 @@ as live-only? **Both are writes or design decisions this sweep does not make.**
 
 ---
 
-## 🔴🔴 THE SCHEDULED TASK IS DELIBERATELY NOT DEPLOYED, AND NO DOCUMENT SAYS SO — **OWNER DECISION O7**
-*Found 2026-09-21, T10 pass 17 (§T10.17b). **Season-critical**: the regular season opens
-**2026-10-20**.*
+## ❌❌ ~~THE SCHEDULED TASK IS DELIBERATELY NOT DEPLOYED, AND NO DOCUMENT SAYS SO — OWNER DECISION O7~~ — **RETRACTED IN FULL, 2026-09-21 (T10 pass 18, §T10.18a)**
+
+> 🔴 **RETRACTED ONE PASS AFTER IT WAS WRITTEN. O7 IS NOT AN OPEN ITEM AND WAS NEVER ONE.**
+>
+> **The decision is recorded in four documents, and one of them names the artefact:**
+> - **`NBA_OPEN_ITEMS.md` — this very document**, below: *"**P2: NO CRON YET — deliberately.** The
+>   NBA season opens in October; until real games exist there is nothing for this to mine… **The cron
+>   goes in when the season starts** (target: daily 09:00 UTC…)"*, with **P3's target string too**,
+>   and the explicit verdict ***"So this is not a gap — it is a dated action item… adding them is the
+>   owner's step, not a design question."***
+> - **`NBA_PROJECT_LOG.md` line 478** — *"`nba-baseline.yml` (**manual trigger only — cron OFF per
+>   owner**)"*. ***That names the step O7 claimed was NOT RECORDED.***
+> - **`NBA_COMPASS.md` line 56** — *"**Cron for the ladder build is OFF by owner decision until near
+>   the season.**"*
+> - **`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` line 20** — *"cron intentionally OFF"*.
+>
+> **Nothing of substance survives.** The T10 turn adds only that the owner expected to trigger it via
+> **Claude Coworker** — which is already the documented operating model in **4 of the twelve** — and
+> that *"everything needed to be done up to that point"* was to be finished.
+>
+> 🔑 **How it failed, exactly**: O7's six "differently-worded" probes were `not deploy` ·
+> `deployment deferred` · `scheduled task` near `season` · `closer to the season` ·
+> `deploy … later|opener` · `everything needed … up to that point`. ***Every one of them is T10's
+> vocabulary. Not one was the DOCUMENTS' vocabulary — `cron`, `OFF`, `intentionally`, `manual trigger
+> only`.*** **That is §T10.12b's cause verbatim: probing the identifier this sweep happened to be
+> holding rather than the thing it names** — the **fifth** absence failure on this transcript, and it
+> occurred in the pass that wrote **rule 19** about handling owner turns carefully.
+>
+> ⚠ **The one thing worth keeping from the episode is in the entry below, and it is not this**: that
+> P2/P3 cron entry dates itself to **2026-10-03**, which this sweep has since corrected to
+> **2026-10-20** — see §T10.18b.
+
+*~~Found 2026-09-21, T10 pass 17 (§T10.17b).~~ Superseded by §T10.18a. Kept, not deleted, because
+the failure mode is the record's most valuable part.*
 
 **The owner's instruction, T10 turn 73, verbatim:**
 
