@@ -14404,10 +14404,14 @@ with the fitted table (*Iron Man blowout 45% sit-out, 0.64× minutes; Fringe blo
 T9 states the gap, a later transcript closes it. *Recorded with both dates so the later entry is read
 as the closure of this one.*
 
-🔴 **Item 4 is the one to carry**: the four close props were **never certified**, and the reason given
-is an *unproven* claim — *"my honest read is that they're at the noise floor, but I haven't proven
-that with a variance-bound argument."* **Whether that proof was ever produced is NOT RECORDED** and
-belongs to a later transcript. → `NBA_OPEN_ITEMS.md`.
+🔴 **Item 4 is the one to carry**: the four close props were **never certified**. ⚠ *This paragraph
+first called the reason "an explicitly unproven claim" — **corrected at §T9.17a**: the
+*"I haven't proven that with a variance-bound argument"* line is from **early** in the transcript,
+and **§T9.14e records the settled position** — *"I'd now call their remaining residual **the noise
+floor of 0–2 count stats** rather than a missing factor"*, reached **after** the opponent factors
+were measured and found real but insufficient.* **What stands: the four props were never certified
+and no variance-bound proof exists.** *Whether they were later certified, left as-is, or shipped is
+**NOT RECORDED**.* → `NBA_OPEN_ITEMS.md`.
 
 ---
 
