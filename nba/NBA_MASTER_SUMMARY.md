@@ -14519,6 +14519,13 @@ they record `source`'s `prior_season` (**3 of the twelve**). ***Confirmed live, 
 
 ***`real` — and nothing else, in every one.***
 
+> ❌ **RETRACTED 2026-09-21 by §T11.22a — the census across all twenty-two found a SECOND value.**
+> **`real` on 20 tables, `derived` on 2 — `nba_stats.player_shot_quality_delta` and
+> `nba_team.defense_vs_position` — and both fell outside the eight sampled.** ✅ **The corrected
+> finding is better: `data_quality` is CONSTANT WITHIN each table, so it is a per-TABLE provenance
+> marker stored per row — `real` = scraped, `derived` = computed — and the two `derived` tables are
+> exactly the computed ones, a delta and an aggregate.**
+
 📌 **The documents carry both the column (5 of the twelve) and its intended other values (4 of the
 twelve).** 🔑 ***So the vocabulary was designed and exactly one value has ever been written***, which
 makes `data_quality` a **discriminator that discriminates nothing today** — the "seeded, then
