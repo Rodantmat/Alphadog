@@ -796,6 +796,3 @@ From `nba_config.classification_config.production_baseline_ladder`:
 | **`BT_CARRY`** | **October producing ZERO projections** |
 
 **Open before opening day:** see `NBA_OPEN_ITEMS.md` — ranked, with the Postgres-loader question first.
-</content>
-</parameter>
-<parameter name="message">docs: NBA system design - the three pipelines in detail
