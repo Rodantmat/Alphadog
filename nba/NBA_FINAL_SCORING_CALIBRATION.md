@@ -410,6 +410,23 @@ value is present *because something substituted for it*.
 **Routing reliability through the measured confidence model rather than a label is defensible and
 arguably stronger** — `f_prov` is a measured deduction, not an assertion.
 
+> 🔴🔴 **CONTRADICTED BY THE CODE — recorded 2026-09-21, §T9.37b.** **All three live definitions of
+> `f_prov` are `used_emp`, rescaled**, and `used_emp` is listed **as binary two rows above** in the
+> table this paragraph concludes:
+>
+> ```python
+> build_confidence_v3.py:62   f_prov = d["used_emp"].fillna(False).astype(float) * 0.7 + 0.3   → {0.3, 1.0}
+> build_final_hp.py:344 · score_board_legs.py:234   np.where(d["used_emp"]…, 1.0, 0.30)
+> ```
+>
+> **`f_prov` takes exactly two values and the value is the label.** *So the same flag is counted once
+> as a binary label and once as a continuous deduction, and the argument that the model is stronger
+> than a label rests on a factor that **is** the label.* At weight **0.12** in
+> `build_confidence_v3.py:85`, the whole spread it can express is **0.084** of raw confidence — and
+> **`used_emp` is `true` on 99.73% of ladder rows**, including **all 30,989 rungs beyond their prop's
+> measured `LADDER_DEPTH`** (§T9.33a, §T9.37a). 📌 **Scope: `f_prov` only. `c_exist` and `c_quality`
+> were NOT CHECKED** — no definition of either was found under `nba/`.
+
 **⚠ The undecided half is the second clause**: *"decide explicitly, upfront, whether the weighting
 applies **inside the enrichment factor itself** or **downstream**."* **NBA applies it downstream.**
 The enrichment record has a separate `confidence_adjustment` field, so a factor *can* move confidence
