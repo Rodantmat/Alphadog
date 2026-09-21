@@ -1555,6 +1555,42 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.6 — PASS 6 (angle: **the scrapers' own error handling, read as design**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+**Opens with a correction to pass 5, which is the more useful half of this entry.**
+
+1. ⚠ **CORRECTION to T3.5 finding 4.** I wrote that `scheduleLeagueV2` *"returned BOTH seasons"* and
+   that the endpoint made a wrong parameter harmless. **That was an inference from an output count,
+   not a reading of the code.** The scraper was **rewritten inside T3 to loop a `seasons` list**,
+   fetching each season explicitly — and the patch doing it sat three segments further down the same
+   stratum I was reading. *The lesson is the one this sweep keeps re-learning: a count is not a
+   mechanism. Pass 75, pass 79 and pass 86 were the same error in other clothes.*
+2. **The loop's error handling is deliberately asymmetric** — only `seasons[0]`, the completed
+   season, may fail the scrape on a low count; **an empty upcoming season is a normal state**,
+   because the NBA publishes next season's schedule in August. Treating it as an error would have
+   broken the scraper for half of every year. → `NBA_OPEN_ITEMS.md` FROM T3 PASS 6
+3. **`real_games` versus `raw_count`, recorded per season** — a game counts only with `game_id`,
+   `home_team_id` **and** `away_team_id`. **A scrape returning well-shaped rows with missing team IDs
+   shows up as a raw/real gap instead of a silent pass.** → FROM T3 PASS 6
+4. **The completed season's `~1230+` threshold is the one magic number in T3 anchored to a real
+   invariant** — it is the actual regular-season game count. **And it lives in the scraper, not the
+   worker**: the worker loading this same data still certifies on `written >= 1000` (§0.31). *The
+   layer that knows the right number is not the layer that decides whether the run was good.*
+5. **The play-types scraper exits non-zero if EITHER level failed** — *"both are checked, neither
+   silently skipped"* — so a partial success at player level cannot mask a team-level failure, which
+   is exactly what one combined row count would hide.
+6. **The DARKO docstring states why the third-party dependency was acceptable**: best predictive
+   catch-all on RMSE, **the same NBA person IDs so the join needs no name-matching** (substantive,
+   given this sweep's Jokić-diacritic and `Last, First` findings), and a decision to run it on a
+   GitHub Actions runner anyway *"because its exact anti-bot posture (if any) is unknown until tested
+   for real."* → FROM T3 PASS 6
+
+**Ratio**: 6 findings from 16 segments, one of them a correction to this sweep's own work.
+
+**Clean count 0/3.** **Tail not exhausted**: ~96 of 240 command segments and all 137 result segments
+remain.
+
 ### T3.5 — PASS 5 (angle: **the differential event taxonomy and the scrapers' partial-failure reporting**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
