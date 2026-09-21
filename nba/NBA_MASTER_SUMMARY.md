@@ -14419,6 +14419,52 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.13 — PASS 13 (**display-name / vocabulary audit**) — **✅ CLEAN 1/3 · every surviving claim re-probed by SUBJECT and confirmed**
+*2026-09-21. The angle §T10.12b's failure named: **four absence claims on this transcript probed the
+identifier instead of the thing it names.** `factor_registry.display_name` is the bridge between the
+two vocabularies, so every snake_case object this sweep called absent or novel was re-probed by its
+display name **and** by the prose phrase a document would use. **No document changed.***
+
+#### 📌 T10.13a — **The subject probe, and how far it moves each object**
+
+| Object | Probe used | In the twelve | In all thirty |
+|---|---|---|---|
+| `altitude_venue` | /altitude/ | **6** | **15** |
+| `national_tv_marquee` | /national tv · marquee/ | 1 | 7 |
+| `market_spread_delta` | /derived spread · market spread/ | **10** | **19** |
+| `market_total_delta` | /pace-implied total · market total/ | 0 | 3 |
+| `late_scratch` | /late scratch/ | 1 | 5 |
+| `referee_assignment` | /referee crew/ | 2 | 9 |
+| `lineup_change` | /confirmed lineup/ | 4 | 7 |
+| **`compute_stage`** | /compute[_ ]stage/ | **0** | **2** |
+
+🔑 **The spread is the finding.** *Objects this sweep handled as bare keys turn out to be discussed by
+name in up to **19 of thirty** documents — `market_spread_delta` and `altitude_venue` most of all.*
+✅ **And exactly one claim survives the subject probe unchanged: `compute_stage` — 0 in the twelve, 2
+in the thirty**, precisely as §T10.6c recorded.
+
+#### ✅ T10.13b — **§T10.1a re-tested at subject level against the BASELINE tree, and it is exactly right**
+
+*The working tree now hits on all of these — **because passes 1–3 wrote them there**, which is why
+the novelty authority is `/tmp/t10base` and never the working tree (§T10.6b).* **Against the baseline:**
+
+| Subject probe | Pre-T10 twelve |
+|---|---|
+| October **bias** — *over-project · bias · ±5 pp · too high* | **NONE** |
+| carryover **+ October** | **`NBA_MASTER_SUMMARY.md`** — and opening it, §T7.21b, *"Coverage with carryover: **October 85%, November 90%**"* |
+| *Platt off until December* | **NONE** |
+| *what the factor set IS* — `34 factors` | **NONE** |
+| `compute_stage` | **NONE** |
+
+✅ **So §T10.1a's claim is confirmed at subject level and not merely at wording level**: the twelve
+carried **the coverage half** — that single §T7.21b line — **and not the bias half.** *The one hit is
+the half the entry said was present.*
+
+**Pass outcome: no defect, no document changed, one claim confirmed at subject level and the
+vocabulary gap between the code and the documents quantified. ✅ CLEAN 1/3 · 13 passes.**
+
+---
+
 ### T10.12 — PASS 12 (**two-direction judgment, third run**) — **🔴 a claim retracted, and the fourth absence failure on T10 has ONE cause · 0/3**
 *2026-09-21. Band **32 / 101**, coverage **823 / 688**, 0 in / 0 out. The closing judgment, with the
 weight on absence claims — pass 5 retracted two and pass 9 narrowed a third.*
