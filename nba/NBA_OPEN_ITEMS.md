@@ -8789,7 +8789,9 @@ contribution values per factor.
 > *"**a cumulative/season-total stat used as if it were a per-game rate**, with no division by games
 > played — **causing one factor to SWAMP EVERY OTHER FACTOR COMBINED.** **Tell: the source field name
 > says 'TOTAL' while the consuming code treats it as 'PER GAME'.**"*
-**`nba_stats.player_career_totals` is cumulative; `player_game_log` is per-game.**
+**`nba_stats.player_career_season_totals` is cumulative; `player_game_log` is per-game.** *(🔴 the
+table name here read `nba_stats.player_career_totals`, which does not exist — corrected 2026-09-21,
+§T10.22b. It is the same table this item is about, so the wrong name made the item unqueryable.)*
 
 ### ⚠ RSS AGGREGATION — a named fix for a live multicollinearity, not implemented
 *Pattern 3*:
