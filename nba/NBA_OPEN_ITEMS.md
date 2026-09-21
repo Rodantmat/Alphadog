@@ -61,12 +61,15 @@ the twelve**, so a reader of the mandated documents finds the subjects and not t
 live-only · 2 not-mined** *(recorded in `NBA_PROJECT_LOG.md` 739; **confirmed live to the row**, and
 **15 + 17 + 2 + 2 = 36**, + 31 baseline = **67**; the column is NULL on every baseline row)*.
 
-🔴 **The two `live_only_excluded_from_history` factors — `lineups_confirmed` and `overtime_pace_live` —
-appear in NO document at all, across all thirty.** ⚠ **They are the factors that structurally cannot
-be backfilled**, which is the direct answer to the owner's standing directive: *"we need also a
-fallback… either a second source that's extremely reliable… or a derived option… **for all the
-factors, every single factor**."* **Two are exempt by construction and nothing says so.**
-📌 `compute_stage` itself appears in **none of the twelve**.
+📌 **Two factors carry `live_only_excluded_from_history` — `lineups_confirmed` and
+`overtime_pace_live`.** *(⚠ **Corrected 2026-09-21, §T10.12a.** This first read *"appear in NO document
+at all"* and framed them as an unmet obligation against the owner's *"a fallback… for all the factors,
+every single factor."* **Both halves were wrong**: only the snake_case keys return zero — the subjects
+appear in up to **seven** documents, **four mandated** — and **the registry annotates one *"superseded
+by `lineup_change`"* and the other *"mostly absorbed by `market_spread_delta` / `market_total_delta`"*,
+with all three replacements mined.*** **The live-only stage is the residue of two folded-in factors.**)*
+✅ **What remains**: that supersession reasoning lives in `research_notes` and **in none of the
+twelve**, and 📌 **`compute_stage` itself appears in none of the twelve.**
 
 🔑 **AND THE GAP HAS A TIMESTAMP — added 2026-09-21, §T10.8a.** All UTC: **`factor_relevance` was last
 written 2026-09-09 01:52:03**; the registry arrived in **two batches — 28 rows at 01:xx and 39 rows at
