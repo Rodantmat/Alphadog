@@ -14430,6 +14430,48 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.32 — PASS 31 (**seventh two-direction judgment, PRE-REGISTERED — and the attack on pass 30**) — **🔑🔑 the third pre-registration lands, down to WHICH segments moved · 0/3**
+*2026-09-21.*
+
+#### 🔑🔑 T11.32b — **The prediction, and it names the mechanism to the segment**
+**Pre-registered**: *"passes 29–30 wrote a lot of TRANSCRIPT QUOTATION… so predict the OPPOSITE of
+pass 28: **the working band should MOVE**… and the baseline must stay at 13 / 3 / 695 / 685 for an
+EIGHTH measurement. **Name the segments before measuring — 501, 609, 613, 685, 690, 709, 711.**"*
+
+| tree | pass 28 | **pass 31** | Δ |
+|---|---|---|---|
+| **BASELINE `5dfb72ab`** | 13 / 3 / 695 / 685 | **13 / 3 / 695 / 685** | **0 — EIGHTH identical** ✅ |
+| **WORKING** | 25 / 0 / 682 / 676 | **38 / 0 / 665 / 660** | **+13, 0 fallbacks** |
+
+✅ **Of the seven named, FOUR crossed — 501 · 609 · 709 · 711 — and the three that did not are exactly
+the three pass 30 QUOTED BRIEFLY rather than at length** *(613's meta figures, 685's workflow, 690's
+trigger)*. **The nine unnamed crossers are the market-probing cluster I quoted heavily —
+312 · 349 · 351 · 353 · 355 · 357 · 358 · 499 · 681.** 🔑🔑 ***So §T10.16c is confirmed a third time
+and at a finer grain than before: the mechanism predicts not just THAT the band moves but WHICH
+segments move, and length of quotation is the variable.*** **Three pre-registrations, three hits —
+pass 24 positive, pass 28 negative, pass 31 positive-and-specific.**
+
+#### ❌ T11.32a — **The attack broke my own §T11.31b — the "three short" was not a gap**
+`nba_game_officials_2025_26_meta.json` records **`games_covered: 1227`, `row_count: 3681`** —
+***which Postgres matches to the row*** — plus `known_empty_games`, a `patch_applied` block
+(**`games_recovered: 0`**, `zero_officials_parsed_v3` ×3) and *"`bug_fixed`: main loop checked
+`'rows is not None'` instead of truthiness."* **All of it is in FIVE of the twelve already**: §T6.19a
+resolves the three to **2025-11-19 — WAS @ MIN, DEN @ NOP, SAC @ OKC, all Final, 9 games that night,
+6 with officials** — and says *"this is not scraper attrition."* ***Rule 14, and rule 26 is what
+caught it: the probe returned 8 of thirty and every hit was opened.***
+
+✅ **And the correction makes the finding BETTER.** ***Because 2025-26's load matches its JSON exactly,
+the loader demonstrably works*** — so §T11.31b is not *"loads are unreliable"* but the sharper
+***the loader has never been run for 2024-25 or 2023-24***, whose rows sit committed in `nba/data/`.
+📌 **`scrape_nba_game_officials.py` writes JSON only** — no `INSERT`, `psycopg` or `DATABASE_URL` —
+**so scrape and load are two workers by design**, which is precisely why a complete scrape is no
+evidence about the table.
+
+**Pass outcome: 🔴 my own finding corrected one pass old, its core upheld and sharpened.
+CLEAN 0/3 · 32 passes.**
+
+---
+
 ### T11.31 — PASS 30 (**the last-word audit finished — the seven subjects pass 29 mapped and did not read**) — **🔴🔴 the scrape is three seasons and the load is one · 0/3**
 *2026-09-21. **§T11.30c listed nine subjects and read two.** Rule 27 says an unread last word is a
 pending defect; §T11.21c's lesson says a claim that states its own limit gets completed. **This is
