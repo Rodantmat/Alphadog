@@ -89,6 +89,15 @@ build_final_hp.py:344 · score_board_legs.py:234   np.where(used_emp, 1.0, 0.30)
 **A rung beyond the measured useful depth therefore carries provenance 1.0 rather than 0.30 — a 3.3×
 confidence factor — and nothing that scores a leg reads `LADDER_DEPTH` at all.**
 
+> ⚠ **QUALIFIED 2026-09-21 (§T9.38b).** The literal claim holds — **no downstream code reads
+> `LADDER_DEPTH`** — but the confidence model is **not depth-blind**:
+> `f_depth = np.clip(1.0 - |ladder_offset| / 14.0, 0.25, 1.0)` at weight **0.14**
+> (`build_confidence_v3.py:61`), giving 0.857 at offset 2, 0.286 at 10, floored at 0.25 from 10.5 out.
+> 🔴 **The defect is the SCALE: `14.0` is exactly `LADDER_DEPTH["points"]`, applied to all twenty
+> props** — `steals` at offset 10 (five times its measured depth of 2) is penalised identically to
+> `points` at offset 10 (inside its measured depth of 14). **The same per-prop-versus-flat failure as
+> O5, one layer up.**
+
 ⚠ **The builder's own comment claims the opposite**: *"deeper rungs with too few samples fall through
 the existing hierarchy to the parametric, which is the designed behaviour."* **Live, of 206,237 rows,
 559 have `used_emp = false` — and 541 of those are `double_double`** (a binary prop with no ladder).
