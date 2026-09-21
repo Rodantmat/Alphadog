@@ -287,7 +287,10 @@ owner can confirm whether a global 25% clamp is the exception he had in mind.
   this width requirement or its rationale.**
 - **Per-prop factor study**: *"do this study **prop line by prop line** — which specific factor is
   important for each specific prop line?"* **Factor importance is to be established per prop type,
-  not globally.** Nowhere recorded.
+  not globally.** ⚠ **Qualified 2026-09-21 (T7 pass 6): the STUDY this asked for was done and IS
+  documented** (`NBA_MASTER_SUMMARY.md` records the prop-by-prop study and its scoping). **Only the
+  owner's instruction is unrecorded** — worth keeping for provenance, but the analysis is not
+  missing.
 
 ---
 
