@@ -517,6 +517,32 @@ Factors, *"layer-tagged, with macro-clusters"* — i.e. each carries whether it 
 the ancestor of the A/B/D/M/N factor codes used in T15–T16 and of
 `nba/NBA_ENRICHMENT_FACTOR_LOCK.md`.
 
+### 🔴 `nba_market.board_outcomes` — **two discriminator columns are entirely NULL**
+*`[LIVE-AUDIT]` 2026-09-21, T11 pass 4 (§T11.5c). **6,905,452 rows.***
+
+| column | populated | note |
+|---|---|---|
+| **`bookmaker`** | **0 of 6,905,452** | 🔴 **entirely NULL** |
+| **`snapshot_label`** | **0 distinct values** | 🔴 **entirely NULL** |
+| `market_key` | 21 distinct | ✅ |
+| `is_alternate` | **5,143,042 true** | ✅ |
+| `leg_result` | **`over_win` · `under_win` · `push` · `dnp` · `unmatched_player`** | ✅ documented |
+
+🔴 ***The graded-outcome surface cannot say which app a result belongs to, or which snapshot window
+produced the line*** — **while `nba_market.board_snapshots`, the table it grades, carries both**
+(`bookmaker` distinguishes `prizepicks` · `underdog` · `betr_us_dfs` · `pick6` · `sleeper` · `fliff`
+and eight sportsbooks; `snapshot_label` distinguishes `window` · `close` · `routine`).
+
+**Recovering either means joining back on `(game_date, event_id, player, market_key, side, line)`.**
+
+⚠ **Why it bites**: **the per-app payout structures are the whole of `NBA_MULTIPLIERS.md`** — Power
+vs Flex, same-game discounts, the `p × m` gate — **and a graded leg that cannot name its app cannot be
+priced against them.** 📌 **Whether any live consumer needs that attribution is NOT RECORDED**; this
+pass did not trace it. **The "seeded, then orphaned" class, but as two columns of a heavily-used
+table rather than an unread one.**
+
+---
+
 ### ⚠ ONE CONCEPT, FIVE COLUMN NAMES — the join map
 *`[LIVE-AUDIT]` 2026-09-21, T10 pass 23 (§T10.23b). **Every name below is live and correct — for its
 own table.** The trap is that the documents use all of them and never say which belongs where.*
