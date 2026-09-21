@@ -8053,6 +8053,14 @@ FROM` gives 34 + 1 = 35. **A clean-looking zero can be an artifact of three-valu
 the sum exposes it.** *It is the **no-error-raised** class — documented four times in the system —
 appearing in the sweep's own verification.*
 
+⚠ **The thirteenth form, added 2026-09-21 after §T8.32a — BEFORE REUSING A DISTINCTIVE PHRASE, GREP
+IT AND SEE WHAT IT ALREADY DENOTES.** This sweep wrote *"the band family is split in two"* about
+`factor_registry.form` and, four days later, *"the two band families"* about
+`variation_bands.band_key` — **two unrelated objects, one phrase, neither statement wrong.** A
+reader meets them as one claim. *This is the inverse of the tenth rule: not one claim copied into
+many places, but **two claims colliding on a word**. Grepping the wording finds it; grepping the
+object never would.*
+
 🔴🔴 **The tenth form, added 2026-09-21 after §T7.61a — A CORRECTION MUST BE APPLIED TO EVERY COPY OF
 THE CLAIM, NOT TO THE ENTRY THAT MADE IT.** Every correction in this sweep was written where the
 wrong claim was **first** made — but by then the claim had been copied into two or three other
