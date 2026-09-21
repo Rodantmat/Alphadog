@@ -109,6 +109,38 @@ against a wrong picture of what remains.
 
 # ⚠ SCOPE AND LEDGER RULES — owner instruction, 2026-09-20
 
+## ⚠ COMPLETION RULE, amended 2026-09-21: the judgment pass closes a transcript, not the coverage number
+**A transcript is done when its judgment pass is clean.** Coverage decides *what to read*. It does
+not decide when you are finished. Reading the whole tail is **necessary and not sufficient.**
+
+**Why the number cannot close a transcript — measured, not argued.** The 15 findings in
+`sweep_coverage.py`'s `GROUND_TRUTH` were undocumented at pass 63 and written up by passes 64–87.
+Scored against pass-63 documents versus current ones: **10 of 15 crossed 0.40 — so the metric can
+see documentation — but 5 of 15 stayed in the tail despite being correctly documented.**
+**"Uncovered" does not mean "undocumented."**
+
+**What separates them is quotation versus paraphrase**, not pointer-style writing — pointer phrases
+are only **2.8%** of document paragraphs, too few to be the cause. Findings the documents **quoted
+verbatim** moved hard (`+0.548`, `+0.507`, `+0.391`); findings the documents **named as a concept in
+their own words** did not move at all (`-0.004`, `-0.005`, `+0.041`). A pointer is simply paraphrase
+taken to its limit.
+
+**So the judgment pass runs in two directions, because the score is wrong in both:**
+
+| Band | What it is wrong about | What to check |
+|---|---|---|
+| **High (≥ 0.45)** | calls a shallow mention "covered" | did the documents get it **right**, not merely mention it |
+| **The tail** | calls documented material "uncovered" | is this **already written up in other words** — and is that write-up **correct**? |
+
+**A wrong cross-reference is caught in the tail, never in the high band** — which is the opposite of
+where you would look if you assumed pointer-style writing were the cause.
+
+*Confound stated rather than buried: the document corpus grew 3,941 → 5,453 paragraphs over the same
+period, and a bigger corpus lifts max-similarity for everything. The signal is the **spread**
+(−0.005 to +0.548), not the mean, since growth alone would lift all fifteen equally. And n=15,
+selected as distinctive strings — "about a third" is the supportable claim; a precise false-tail rate
+is not.*
+
 ## The ledger row carries four fields and nothing else
 Every transcript row in the table above holds **only**: the clean count, the pass count, the
 last pass's outcome, and a **section range pointing at the numbered entries below.**
