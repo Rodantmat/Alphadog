@@ -367,6 +367,66 @@ live one.
 
 ---
 
+## 🔴 THE DARKO SCRAPER FETCHES A DAILY PROJECTED-MINUTES SERIES AND THROWS IT AWAY *(added 2026-09-21, T3 pass 13)*
+***VERIFIED** by reading the committed hydration payload and by live SQL, 2026-09-21.*
+
+The SvelteKit payload carries **24 fields per player**. The scraper keeps **9**.
+
+```
+payload:  nba_id · player_name · team_name · tm_id · position · season · career_game_num ·
+          dpm · o_dpm · d_dpm · box_dpm · on_off_dpm ·
+          x_minutes · x_pace · x_pts_100 · x_ast_100 · x_fg_pct · x_fg3_pct · x_ft_pct ·
+          sal_market_fixed · actual_salary · surplus_value · _rank
+kept:     nba_id · tm_id · position · dpm · o_dpm · d_dpm · box_dpm · on_off_dpm · _rank
+```
+
+**`x_minutes` is DARKO's own daily projected minutes.**
+
+**The system is separately building factor A2 to predict minutes** — the absence/redistribution
+machinery, the panel work, five retracted attempts — **while discarding a published, daily-updated
+minutes projection from the very metric it rated the best predictive catch-all available.** *DARKO's
+own accuracy writeup is explicit that minutes is the one stat where it loses to DFS sites, so this
+is not a drop-in replacement; it is a free second opinion on the hardest quantity in the system,
+currently unfetched.*
+
+**Also discarded, and directly prop-shaped:**
+
+| Field | Why it matters |
+|---|---|
+| `x_pts_100` · `x_ast_100` | projected production per 100 possessions — the prop categories themselves |
+| `x_fg_pct` · `x_fg3_pct` · `x_ft_pct` | projected shooting rates; **`x_ft_pct` bears on the certified FTM prop** |
+| `x_pace` | projected pace, a tier-1 factor per the Gemini list |
+| **`career_game_num`** | **how many career games the estimate rests on — the exact confidence signal for DARKO's documented rookie problem** *("rookies are all initialized to essentially the same starting point … DARKO doesn't know anything about a rookie who has yet to play")* |
+
+**Unrecoverable without a re-scrape.** The worker stores `JSON.stringify(p).slice(0,1500)` of the
+**already-reduced** record:
+
+```
+rows 530 | raw_json containing x_minutes → 0 | career_game_num → 0 | x_pts_100 → 0
+max raw_json length 187 chars | last write 2026-09-02T07:58Z
+```
+
+**This is the same defect as the play-type scraper's** (below) **and the opposite of the design the
+same session chose for tracking detail** — *"stores every real column returned … so nothing gets
+silently dropped."* **Three scrapers, one session: one keeps everything, two hand-pick, and both
+hand-picking ones discarded fields that map onto certified props.**
+
+### `[LIVE-AUDIT]` — and this table has not been refreshed either
+`last_write 2026-09-02T07:58Z` — **19 days stale**, the same pattern as `nba_calendar.games`.
+
+### Unverified, and worth one check before the season
+The leaderboard page displays **"minimum 20 games played"** adjacent to the rankings. **Whether that
+filter constrains the 530-row payload or only the top-by-position widget is NOT established here.**
+If it constrains the payload, then in October — with no player at 20 games — **the scrape returns
+few or no rows, and the scraper's own `< 400` gate would fire correctly but weekly.** *One fetch in
+late October settles it.*
+
+*(Also noted: DARKO's Shiny app was retired in June 2026 and the site moved to www.darko.app — three
+months before this scrape. The generic `player_impact_rating` abstraction chosen on bus-factor
+grounds was already justified by a real migration.)*
+
+---
+
 ## ⚠ THE PLAY-TYPE SCRAPER DROPS FIVE COLUMNS THE ENDPOINT RETURNS — including turnover and foul rates *(added 2026-09-21, T3 pass 11)*
 ***VERIFIED by live SQL, 2026-09-21.** Recorded as of 2026-09-02.*
 
