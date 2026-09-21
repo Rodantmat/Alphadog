@@ -14371,7 +14371,7 @@ silently replace and to whether anything is currently setting it.** `[LIVE-AUDIT
 
 | | Count |
 |---|---|
-| Distinct env vars | **174** |
+| Distinct env vars | **193** *(⚠ corrected from 174 at pass 15, §T9.30b: the first pattern's character class was `[A-Z_]`, which **silently truncated every var containing a digit** — `A2W_TEST_SEASON`, `B4_TRAIN_SEASON`, `M1_TEST_SEASON`, `N1_TEST`, `A5_SEASONS` — and collapsed them together. **Re-derived with `[A-Z_0-9]+`.**)* |
 | **Carrying a hardcoded SEASON-STRING default** (`"2025-26"`, `"2024-25"`, `"2025_26"`, or a season date bound) | **47** |
 | Of those, set by at least one workflow | **45** |
 | **Never set by any workflow — the frozen default is what runs** | **2** — `RUNG_FROM` (`2024-10`) and `RUNG_TO` (`2026-04`), `nba/build_rung_market.py` |
