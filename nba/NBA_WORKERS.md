@@ -353,6 +353,38 @@ that neither fails — which means it cannot detect a materially short scrape of
 
 ---
 
+## 0.34 THE `scope_lock` DECLARATION — a worker that states, in its own response, every table it may write
+*Recorded 2026-09-21 (T3 pass 8). Appears in none of the thirty documents.*
+
+`alphadog-v2-nba-weekly-differential` returns a `scope_lock` object from **`GET /`** and
+**`GET /health`**, not just from a run:
+
+```
+writes_only: [ nba_stats.player_roster_snapshot,  nba_stats.player_differential_log,
+               nba_ref.team_roster_snapshot,      nba_ref.team_differential_log,
+               nba_ref.official_roster_snapshot,  nba_ref.official_differential_log,
+               "nba_ref.players (active flag only, for departed players)" ]
+no_mlb_table_access: true   no_scoring: true   no_board_mutation: true
+```
+
+**The last entry is the one that matters.** Six of the seven are tables this worker owns outright;
+**the seventh is a shared reference table it writes one column of.** That is a real, narrow
+exception to "the differential worker only touches its own snapshots", declared rather than
+discovered — *and it is the mechanism by which a departed player actually becomes inactive, since
+the snapshot tables alone would record the event without changing the roster anyone queries.*
+
+**Why the pattern is worth keeping**: a worker's write scope is otherwise only discoverable by
+reading its whole body, and the NBA/MLB isolation guarantee (§0.2, and the founding instruction that
+nothing is shared) is exactly the kind of claim that needs to be checkable without a code review.
+**`curl` the health endpoint and the worker tells you.** *No other NBA worker does this.*
+
+### The schema placement is inconsistent, and the declaration makes it visible
+**Player snapshots live in `nba_stats`; team and official snapshots live in `nba_ref`.** Same worker,
+same purpose, three entities, two schemas. *Nothing breaks — but a reader looking for
+`nba_stats.official_roster_snapshot` by analogy will not find it.*
+
+---
+
 ## 0.33 TWO GITHUB READ PATHS NOW EXIST — and which one a worker uses is invisible from its name
 *Recorded 2026-09-21 (T3 pass 3).*
 
