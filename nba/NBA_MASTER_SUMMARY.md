@@ -95,7 +95,7 @@ against a wrong picture of what remains.
 
 | # | File | Pass status |
 |---|---|---|
-| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ⚠ **ACTIVE — 0/3. 88 passes** (87 counted, pass 55 VOID). Unparked 2026-09-21: order is now chronological, so T1 closes **before** T2 starts. Tail at 0.40 fully read; judgment pass was **not clean** (97 segs, 2 defects), so pass 89 re-runs it in **both** directions. Detail: §T1.59–§T1.118. |
+| 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ✅ **CLOSED 2026-09-21 — 89 passes** (88 counted, pass 55 VOID). Closed on the amended rule: tail at 0.40 fully read **and** judgment pass clean in **both** directions (97 high-band + 32 tail-direction segments, 0 outstanding defects). Two owner actions handed off, neither a doc defect. Detail: §T1.59–§T1.119. |
 | 2 | `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` | ✅ **DONE — 3/3 clean (passes 9, 10, 11)** |
 | 3 | `2026-09-03-22-24-13-nba-expansion-phase3a-final-complete.txt` | ⚠ **RESET — see DRIFT NOTICE** |
 | 4 | `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` | ⚠ **RESET** |
