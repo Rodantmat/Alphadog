@@ -8532,6 +8532,56 @@ with a completeness-check bug caught via the `002` GAME_ID prefix.
 **527 uncovered vs the twelve (88.6%)** · 524 vs all 30 — a **3-segment** self-authorship gap, the
 smallest of any transcript. T6 writes almost none of the documents; its tail is all content.*
 
+### T6.20 — PASS 4 (**the two-direction judgment pass**) — **NEW MATERIAL · 0/3**
+*2026-09-21. 595 segments. High band (≥0.45): 58. **Tail-direction: 0.***
+
+**DIRECTION 2 — TRIVIALLY CLEAN: zero segments.** T6 writes **none** of the thirty documents, so it
+generates no self-authorship tail at all — the first transcript in the sweep with a genuinely empty
+direction-2 set, and the explanation for its 88.6%-vs-88.1% coverage figures being nearly identical.
+
+**DIRECTION 1 — one finding, produced by applying this sweep's own new rule.**
+
+#### 📊 T6.20a — **THE TOOL-NAME FAILURE, COUNTED ACROSS THE WHOLE CORPUS AT LAST**
+
+The band surfaced a **fifth** distinct wrong name (`memory_read`). Rather than record a sixth partial
+count — the error this sweep has now made three times — **I scanned all twenty transcripts.**
+`[LIVE-AUDIT]`, authoritative:
+
+| Wrong name | Instances |
+|---|---|
+| `Alphadog Bridge:github_str_replace` | **10** |
+| `Alphadog Bridge:str_replace` | 2 |
+| `Alphadog Bridge:github_patch_str_replace` | 1 |
+| `Alphadog Bridge:memory_append` | 1 |
+| `Alphadog Bridge:memory_write` | 1 |
+| `Alphadog Bridge:memory_read` | 1 |
+| `mcp_alphadog_bridge_mcp_alphadog_bridge_run_sql` | 1 |
+| **17 instances · 7 distinct wrong names · 7 of 20 transcripts** | |
+
+**Spread across the corpus**: T1 (1), T2 (2), T4 (5), T5 (2), T6 (4), T7 (2), and one 2026-09-20
+session (1). **This is not a quirk of one chat — it is a persistent, recurring cost across the
+project's whole history.**
+
+**Two distinct mistakes hide inside the one error message**, and the tally separates them:
+1. **Prefixing the server label** onto a real tool name (14 of 17) — `Alphadog Bridge:memory_read`
+   for `memory_read`.
+2. **Inventing a tool that does not exist** (3 of 17) — `github_str_replace` and
+   `github_patch_str_replace` were never tools; the seventh name is a doubled-prefix mangling.
+
+⚠ **The documents record this as a one-line correction** — *"`github_str_replace` does not exist, and
+a mandated document listed it."* **True, and it undersells the scale by an order of magnitude.**
+`github_str_replace` alone accounts for **10 of the 17**, which means **a mandated document naming a
+non-existent tool cost real attempts in at least four separate sessions.** → `NBA_OPEN_ITEMS.md`.
+
+#### ✅ Verified, already documented
+The `boxscoresummaryv2` post-4/10/2025 warning; *"no delta-phase worker anywhere in the registry"*;
+top officials at 65–66 games of ~1,227; the calendar completeness check (**2025-26 1400/1400
+complete, 2026-27 0/1266 not started** — matching the season totals independently derived in T4
+pass 8); real starting lineups spot-checked; and the `sql.array` composition problem inside the
+bulk-row helper. ✅
+
+---
+
 ### T6.19 — PASS 3 (**results stratum, all 158 segments — last of T6's four**) — **NEW MATERIAL · 0/3**
 *2026-09-21.*
 
