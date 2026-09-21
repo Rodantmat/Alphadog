@@ -1052,6 +1052,8 @@ ceiling on a factor's effect. Detail: `NBA_MASTER_SUMMARY.md` §T7.38a.
 *"undifferentiated caps, a gap against the directive"*, then *"not tier-keyed because tiers are
 meaningless for them."* **The correct reading is the third: they are keyed — on `variation_band`.**
 
+*(🔴 **the live columns are `factor_key · canonical_prop_key · tier_label · role_tier_key · direction
+· variation_band`** — `rate_tier` is not a column in any `nba%` table; §T10.23b.)*
 The design key is **six-dimensional** — *factor × prop × rate_tier × role_tier × direction ×
 variation_band* (`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247). Live, which key columns are
 populated **is** the population marker: **22 bucketed cells** carry `tier_label` (+ `role_tier_key`)
