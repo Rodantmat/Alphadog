@@ -78,16 +78,38 @@ for the play-type table (*"the worker stores `JSON.stringify(r).slice(0,1000)` w
 already-reduced record, not the source row"*). **That one is about what was put in. This one is about
 how it was encoded.** A table can have either, or both — `nba_ref.arenas` has both.
 
-**Not fixed, per the standing instruction.** The shape of the fix, for afterwards: the correction is
-in the **writers** — bind the object and let the driver serialize it. Existing rows can be repaired in
-place with `raw_json = (raw_json #>> '{}')::jsonb`, since the content is intact and only the encoding
-is wrong. **Both are writes, so neither is done here.**
+✅ **FULLY RECOVERABLE — verified, not assumed.** Every affected row parses after
+`(col #>> '{}')::jsonb`, and **none are truncated**: the longest affected value is **601 characters**,
+comfortably under every `.slice()` limit in the writers (1000/2000/5000). **Truncation is a latent
+risk of the pattern, not current damage.** So the repair is a pure re-encode with no data loss and no
+re-scrape.
 
-⚠ **Scope stated honestly.** Six tables checked — the NBA static layer. **Whether the same
-`JSON.stringify(...).slice()` pattern reaches the Phase 3b/3c/3d tables, the scoring tables or the MLB
-fleet is NOT RECORDED**; those writers have not been swept. The pattern is copied boilerplate across
-the ten static writers (`NBA_WORKERS.md` §0.32), so it is worth asking of every worker that has a
-`raw_json` column.
+**Not fixed, per the standing instruction.** The shape of the fix, for afterwards: correct the
+**writers** — bind the object and let the driver serialize it — then re-encode existing rows in place
+with `col = (col #>> '{}')::jsonb`. **Both are writes, so neither is done here.**
+
+### ⚠ IT REACHES MLB, MIXED — and that is where the pattern becomes a finding
+*Owner-verified. **MLB is outside this sweep's scope and has been flagged to the owner directly**;
+recorded here only because of what it says about the NBA layer.*
+
+| MLB table | Affected rows |
+|---|---|
+| `stats_pitcher.game_logs` | **11,792 of 19,528** |
+| `team.bullpen_history` | **9,508 of 25,069** |
+
+**The bad rows stop on 2026-07-24**, consistent with an MLB writer fix that day — **unverified**.
+**Old rows were never repaired**, and the readers disagree about it: one MLB reader unwraps
+(`phase3a` line 8325), others do not. **Only these two MLB tables were checked; the rest of MLB's
+JSONB is unchecked.**
+
+**🔴 The pattern worth recording, and the reason this entry is not merely a bug report:**
+**the NBA static layer — built 2026-08-31 → 09-03 — reintroduced a bug MLB had apparently fixed a
+month earlier, on 2026-07-24.** The NBA build copied MLB's *patterns* (the PrizePicks GitHub-read
+shape, the `BASE_HITTER_GAME_LOGS_WORKER` dispatch style, the `[skip ci]` convention, `curl_cffi`)
+**but copied them from MLB code as it stood before the fix, or from a sibling that never got it.**
+`NBA_LESSONS_LEARNED_FROM_MLB.md` exists precisely to carry MLB's hard-won lessons forward; **this
+one did not travel**, and nothing in the NBA documents records the MLB fix at all. **That is a gap in
+the lessons-transfer mechanism, not in one worker.**
 
 ---
 
