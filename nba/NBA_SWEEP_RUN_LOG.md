@@ -162,11 +162,25 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
     **so a reader following the documented fix would leave one write path stamping `'2025-26'` onto
     2026-27 rows.** The entries that warn the fix feels complete and isn't were themselves
     incomplete. ✅ 18 scrapers now resolve the season via the `nba_season` helper.
-17. 🔴 **An owner design preference against capping is recorded nowhere, and the system caps
-    globally** (25% prior clamp, one threshold for all tiers). Owner: *"I'd rather have proper logic
-    that drives the final number to the correct threshold… if caps need to be used, they need to be
-    specific to the specific tiers."* Also unrecorded: the **ladder-width spec** (5–6 rungs each side
-    of the anchor) and **"prop line by prop line"** factor study.
+17. ⚠ ~~**An owner design preference against capping is recorded nowhere, and the system caps
+    globally** (25% prior clamp, one threshold for all tiers).~~ **🔴🔴 WITHDRAWN 2026-09-21, T7
+    passes 9–17 — every clause of this item was wrong, and it led this log for sixteen passes:**
+    - **"recorded nowhere"** → recorded in **`NBA_BASELINE_CALIBRATION.md` line 676** (*"CAPS ARE A
+      LAST RESORT … tier-specific if ever used"*) and **`NBA_GLOSSARY.md` line 375, tagged `· T7 ·`**
+      (§T7.46a). **Both halves of the directive.**
+    - **"the system caps globally… 25% prior clamp"** → **that 25% is MLB's** safety valve, quoted in
+      two NBA documents as a *recommendation*, one of which states in bold *"NO SUCH VALVE IS
+      RECORDED IN NBA'S SHRINKAGE"* (§T7.38a). **There is no global cap.**
+    - **the real live picture** → **35 caps in `nba_config.factor_profile_cells`**, 15 factors,
+      0.05–0.40, **every one keyed** — 22 by tier/role, 13 by `variation_band` (§T7.38b, §T7.44a).
+      **The directive is satisfied.**
+    - **"ladder-width spec unrecorded"** → recorded in three documents in **measured** form,
+      `LADDER_DEPTH` p95 = 13 rungs, *"agrees to within one rung"* (§T7.46a).
+    - **"prop line by prop line unrecorded"** → recorded; corrected at §T7.35a back at pass 6.
+
+    ✅ **What survives** is the owner's **verbatim phrasing and reasoning**, and one real open item:
+    **nothing reads `factor_profile_cells`, and `last_validated_at` is null on every row** — no
+    empirical validation backs any of the 35 values.
 
 18. 🔴🔴 **The `raw_json` double-encoding was visible on 2026-09-04 and was stepped over.** T7 hit
     `cannot call jsonb_object_keys on a scalar`, worked around it with `left(metrics::text, 600)`,
