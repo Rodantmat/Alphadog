@@ -15220,8 +15220,8 @@ one level deeper: I checked which corpus, and never checked which sport.*
 |---|---|---|
 | `board_snapshots.snapshot_label` | `close` · `routine` · `window` | ✅ **6 of the twelve** |
 | `board_tiers.kind` | `demon` · `goblin` · `standard` | ✅ |
-| `board_tiers.anchor_type` | `explicit` · `switch_point` | ✅ |
-| `board_tiers.tier` | `0` · `−1…−6` · `1…8` | ✅ tier signing **5 of thirty, 3 of the twelve** |
+| `board_tiers.anchor_type` | `explicit` · `switch_point` — 🔴 **`board_tiers_v2` also has `none`, §T11.20a** | ✅ |
+| `board_tiers.tier` | `0` · `−1…−6` · `1…8` — 🔴 **`board_tiers_v2` runs `−7…+8`, §T11.20a** | ✅ tier signing **5 of thirty, 3 of the twelve** |
 | `board_outcomes.leg_result` | `over_win` · `under_win` · `push` · `dnp` · `unmatched_player` | ✅ **5 of thirty, 4 of the twelve** |
 
 🔑 **RULE 22 CAUGHT AN ERROR BEFORE PUBLICATION, not a pass later.** The first tier-range probe was
