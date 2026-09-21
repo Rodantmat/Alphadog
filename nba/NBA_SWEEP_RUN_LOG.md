@@ -153,6 +153,17 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
 15. 🔴 **`lineup_profile` is exactly 2,000 rows per group size (8,000 total) — the API cap hit four
     times, silently.** Every run "succeeded"; 2,000 looks healthy. **Captured fraction unknown.**
 
+16. 🔴 **The season-rollover trap is FOUR workers, not the three the documents list.**
+    `player-tracking` (`nba_stats.player_tracking_profile`, line 59) was missing from the list —
+    **so a reader following the documented fix would leave one write path stamping `'2025-26'` onto
+    2026-27 rows.** The entries that warn the fix feels complete and isn't were themselves
+    incomplete. ✅ 18 scrapers now resolve the season via the `nba_season` helper.
+17. 🔴 **An owner design preference against capping is recorded nowhere, and the system caps
+    globally** (25% prior clamp, one threshold for all tiers). Owner: *"I'd rather have proper logic
+    that drives the final number to the correct threshold… if caps need to be used, they need to be
+    specific to the specific tiers."* Also unrecorded: the **ladder-width spec** (5–6 rungs each side
+    of the anchor) and **"prop line by prop line"** factor study.
+
 ### ⚠⚠ Structural
 - **The teams fallback has two triggers**, and `…AFTER_COUNT_MISMATCH` fires on a *successful* fetch
   whose count ≠ 30 — an equality test, so **32 teams fails it exactly as 29 does**.
