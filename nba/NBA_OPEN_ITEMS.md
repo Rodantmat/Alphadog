@@ -189,6 +189,54 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 🔴🔴 THE TWO-HOP ARCHITECTURE'S SECOND HOP WAS NEVER BUILT FOR A WHOLE FAMILY
+*Found 2026-09-21, T11 pass 36 (§T11.37a). **`[LIVE-AUDIT]`, 0 of thirty, positive-controlled.
+This generalises §T11.36a from one table to a family, and it is the REASON the matrix's marks
+describe files.***
+
+**The architecture is documented in SEVEN of the twelve** — *"each scraper writes its output as JSON
+to `nba/data/*.json`, committed by the workflow; **the corresponding Postgres-writer Worker then reads
+that committed JSON** and upserts it"* — and `NBA_WORKERS.md` §1 states it as the pattern:
+***"CLOUDFLARE WORKERS — Postgres writers. Pattern: read the GitHub-committed JSON → upsert into
+Postgres."***
+
+🔴🔴 **`nba_config.worker_definitions` holds 21 writers, all `enabled = 1`, and NONE of them covers:**
+
+| scraper *(named in the twelve)* | its output in `nba/data/` | writer | Postgres table |
+|---|---|---|---|
+| `scrape_nba_season_tables.py` — *"weekly as-of tables: pt_defend, hustle, clutch, coaches"* | `nba_pt_defend_*` · `nba_hustle_*` · `nba_clutch_*` (**plain AND `_asof_` weekly**) · `nba_preseason_logs_*` · `nba_coaches_*` — **3 seasons each** | 🔴 **none** | 🔴 **none** |
+| `scrape_nba_matchups_pergame.py` — *"matchup shards, feeds M1"* | `nba_matchups_pergame_*` — **3 seasons × 7 monthly shards** | 🔴 **none** | 🔴 **none** |
+| `scrape_nba_periods.py` — *"quarter/half splits"* | `nba_player_game_log_q1…q4_*` — **12 files** | 🔴 **none** | 🔴 **none** |
+| `scrape_nba_injury_report.py` | 14 monthly shards, **1,338,020 timestamps** | 🔴 **none** | 🔴 **none** *(§T11.36a)* |
+
+**The 21 that DO exist**: 15 `01 Static` *(arenas · darko · lineups · officials · onoff · player-bio ·
+players · player-tracking · playtypes · schedule · shotquality · teams · team-stats · tracking-detail ·
+weekly-differential)* · 4 `02 Historical` *(backfill · game-officials · measure-types ·
+starter-status)* · 1 `03 Delta` · 1 `nba_baseline`.
+
+⚠⚠ **SO THE MATRIX'S MARKS DESCRIBE FILES.** ***`m3` hustle, `m4` clutch and `b4`'s pt_defend are
+marked ⏳ "weekly as-of snapshots ✓ 25 per season"; `a8` preseason and `k1` coaches are marked ✓ across
+all three seasons. All of that is true OF THE REPO. None of it is in Postgres, and nothing reading
+Postgres can see any of it.***
+
+### ✅ And the counterpart bounds §T11.31b — the gap is NOT systemic
+**Where a writer exists, the loads are complete, with exactly two exceptions.** *Live, by `game_id`
+prefix:*
+
+| table | 2023-24 | 2024-25 | 2025-26 |
+|---|---|---|---|
+| `player_game_log` · `_advanced` · `_scoring` · `_usage` | **26,401** | **26,306** | **26,651** *(all four tables identical per season; **79,358 total**, matching the documented figure)* |
+| `team_game_log_advanced` · `_four_factors` · `_scoring` | **2,460** | **2,460** | **2,460** *(= 1,230 × 2)* |
+| 🔴 `game_officials` | — | — | **3,681** |
+| 🔴 `player_game_starter_status` | — | — | **32,179** |
+
+🔑 ***Seven game-keyed tables hold all three seasons exactly; two hold one.*** **So the answer to
+"is the repo systematically ahead of the database?" is NO — where a writer exists the load is complete
+except in two cases, and where no writer exists there is no table at all.** *That bounds §T11.31b
+precisely and stops it being over-read.*
+
+---
+
 ## 🔴🔴 THE INJURY ARCHIVE HAS NO POSTGRES TABLE — its documented destination was never created
 *Found 2026-09-21, T11 pass 35 (§T11.36a). **`[LIVE-AUDIT]`. The scrape-vs-load class at its largest
 scale: not "the load was never run" but "the destination does not exist."***
