@@ -120,7 +120,14 @@ every commit message. Never `git push`.
 > **Eleven standing rules came out of it, and the run's largest live finding (O4) came out of a
 > paragraph read while checking one of those defects.**
 
-**Seven of twenty closed.** The falling ratio across T2 → T4 → T5 (1 per 9 → 41 → 54) is the expected
+**Eight of twenty closed.**
+
+> **T8 closed in 15 re-sweep passes against T7's 36, and the reason is worth carrying forward.**
+> T8 arrived with **§T8.1–§T8.21 already written** and **all six owner directives already recorded**,
+> so almost nothing came from re-reading prose — **~20 findings came from the live system and from
+> auditing the sweep's own claims.** ⚠ **Six of T8's defects were in this sweep's own prose, none in
+> the transcript** — the same ratio as T7, at half the pass count, because the rules were applied
+> from pass 1 instead of being discovered. The falling ratio across T2 → T4 → T5 (1 per 9 → 41 → 54) is the expected
 shape, not a warning: each transcript arrived with more already documented than the last. **Closure
 is decided by three clean passes at three different angles, never by the ratio.**
 
