@@ -24,7 +24,7 @@ import sys
 MAP = {"Points": "player_points", "Rebounds": "player_rebounds", "Assists": "player_assists",
        "3-PT Made": "player_threes", "Pts+Rebs": "player_points_rebounds", "Pts+Asts": "player_points_assists",
        "Rebs+Asts": "player_rebounds_assists", "Pts+Rebs+Asts": "player_points_rebounds_assists"}
-PER_LEG_SECTIONS = ("LEG", "DRIFT")
+PER_LEG_SECTIONS = ("LEG", "DRIFT", "LESS")   # LESS = goblin/demon quoted on Less (2026-09-21); keys include side
 TABLES = ("nba_market.pp_mined_leg", "nba_market.pp_mined_leg_wnba")
 
 
