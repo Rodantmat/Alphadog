@@ -347,6 +347,18 @@ clearest waste**: that scraper already reports `per_type` counts and a `failed_t
 knows exactly which of its measure types came back empty — and the certification flag ignores all of
 it in favour of one total.*
 
+### ⚠ ONE WORKER DOES IT PROPERLY — the play-types writer *(added T3 pass 8)*
+```js
+const certified = errors.length === 0 && playerWritten >= 1000 && teamWritten >= 200;
+```
+**It gates on three things: no errors, and a floor per level.** Compare the other four, which gate on
+a single total and therefore cannot tell a clean short run from a half-failed full one.
+
+**This is the pattern the rest should follow**, and it already exists in the codebase — so the fix
+for §0.31 is not a design question, it is copying a line from a sibling. *The play-types writer is
+also the one whose scraper checks both levels before exiting non-zero (FROM T3 PASS 6), so the
+discipline is consistent end to end for this one entity and absent for the others.*
+
 **Three workers, three unrelated numbers, none in config.** The schedule case is the weakest: the
 same constant has to serve a single-season scrape and a two-season one, so it was set low enough
 that neither fails — which means it cannot detect a materially short scrape of either.
