@@ -526,12 +526,22 @@ edge_method · notes · updated_at`
 line-magnitude family `LOW · MID · HIGH · ELITE` (`band_order` 1–4, 5 props each = 20 rows) and a
 role family `FRINGE · ROLE · STARTER · STAR · SUPERSTAR` (`band_order` 1–5, 1 each = 5 rows).
 
-🔴 **None of the nine is `continuous` — yet 13 `factor_profile_cells` rows carry
-`variation_band = 'continuous'`.** Those 13 point at a band that does not exist here:
-**`'continuous'` is a sentinel meaning "not banded", not a resolving key**, and nothing in the schema
-says so. *Whether that is deliberate is **NOT RECORDED** — the design document
-(`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247) names `variation_band` as a key dimension without
-naming a sentinel.* ✅ Every `canonical_prop_key` here does resolve against `factor_relevance`.
+⚠ **None of the nine is `continuous`, and that is by design.** 13 `factor_profile_cells` rows carry
+`variation_band = 'continuous'` — **not a dangling key but the documented factor FORM**:
+`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 242 declares every factor's *"**form (band /
+continuous / gate)**"*, and **continuous factors are not banded, so no band row exists to point at.**
+`[LIVE-AUDIT]` joining the cells to `factor_registry.form`: **34 of 35 cells are keyed exactly as
+their factor's form requires** — `continuous` 14 cells (13 band-keyed), `quantile_bands` 5 and
+`tiered_bands` 16 (all tier-keyed). 🔑 **The single exception** is
+`shotdiet__rebounds__3PA_HEAVY__all__more`: factor `opp_shot_diet` is declared `form='continuous'`,
+yet the cell is tier-keyed (`OPP_3PA_HEAVY`) with a **flat penalty −0.06 and no formula**. *Whether
+that is deliberate is **NOT RECORDED**.* ✅ Every `canonical_prop_key` here resolves against
+`factor_relevance`.
+
+**`[LIVE-AUDIT]` the `form` vocabulary itself** — `factor_registry.form` over 67 factors:
+**`continuous` 28 · `tiered_bands` 25 · `binary_gate` 13 · `quantile_bands` 1.** The design's
+*"band / continuous / gate"* is a simplification: **the band family is split in two, and `gate` is
+`binary_gate`.**
 
 ### `nba_config.role_tiers` — **6 rows**
 **Exactly matching `ROLE_TIERS` in `classification_ladder_v12.py`** — IRON_MAN 36+ ·
