@@ -474,10 +474,18 @@ pattern under MLB's names **is** live — `config.enrichment_profile_cells` is r
 back `last_empirical_validation_json` / `last_validated_at` — **the two columns null on every NBA
 row**. The NBA repo has no equivalent of either; whether one is pending is **NOT RECORDED**.*
 
-**`[LIVE-AUDIT]` — the table is TWO POPULATIONS, zero mixing across 35 rows**: **22 bucketed cells**
-(flat `lift` **or** `penalty`, **always** `tier_label`/`role_tier_key`, direction `more` 21 / `less`
-1) and **13 continuous cells** (`formula_expression` + `coefficient_a`, both flat values NULL,
-**never** tier-keyed, direction `both` 12 / `more` 1). All six other combinations are empty.
+**`[LIVE-AUDIT]` — the table is TWO POPULATIONS, zero mixing across 35 rows, and EVERY cell is keyed.**
+The design key is **six-dimensional** — *factor × prop × rate_tier × role_tier × direction ×
+variation_band* (`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247) — **and which key columns are
+populated is itself the population marker**:
+
+| | Effect | Keyed by | Direction | Cells |
+|---|---|---|---|---|
+| **Bucketed** | flat `lift` **or** `penalty` | `tier_label` (+ `role_tier_key`), `variation_band` NULL | `more` 21 · `less` 1 | **22** |
+| **Continuous** | `formula_expression` + `coefficient_a` | **`variation_band = 'continuous'`**, tier/role NULL | `both` 12 · `more` 1 | **13** |
+
+All other combinations are empty. **Nothing in the table is undifferentiated** — the continuous cells
+are band-keyed rather than tier-keyed, by design.
 Invariants hold: every `cap` positive; **no `|penalty|` or `|lift|` exceeds its own cap**; every
 `penalty` negative, every `lift` positive. ⚠ **22 of the 23 directional cells are `more`** — the lone
 `less` is `blowout__points__LOST_GT50__all__less`, the only combination with both. Whether the scorer
