@@ -1,5 +1,47 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴 THE FACTOR-RELEVANCE GATE KNOWS 4 OF 36 ENRICHMENT FACTORS — AND TWO FACTORS CANNOT BE BACKFILLED AT ALL
+*Recorded 2026-09-21 (T10 pass 6, §T10.6a / §T10.6c). `[LIVE-AUDIT]`.*
+
+**`nba_config.factor_relevance` is described as a gate that runs before tier logic — factor × prop →
+full/partial/none.** `NBA_DATABASE.md` already records two things about it: **`none` is specified and
+never written**, so *"as a filter the table currently excludes nothing"*, and *"0 of 460 `factor_key`
+values are orphaned against `factor_registry`"*.
+
+🔴 **That orphan check is the relevance → registry direction. The other direction, live:**
+
+| Layer | Registry rows | Has a relevance row | **No relevance row** |
+|---|---|---|---|
+| baseline | 31 | **25** | **6** |
+| **enrichment** | **36** | **4** | **32** |
+| **Total** | **67** | **29** | **38** |
+
+✅ **25 + 4 = 29 · 6 + 32 = 38 · 29 + 38 = 67.** **The matrix was seeded against the 29-factor
+registry in T8 and never extended when the registry grew to 67** — so it knows **4 of the 36
+enrichment factors**, which is the layer this transcript exists to build.
+
+⚠ **Read the two findings together: a filter that filters nothing, over a set it half knows.**
+
+### 🔴 AND TWO FACTORS ARE EXEMPT FROM BACKFILL BY CONSTRUCTION — *§T10.6c*
+
+`factor_registry.compute_stage` partitions the enrichment layer **15 phase-1 · 17 phase-2 · 2
+live-only · 2 not-mined** *(recorded in `NBA_PROJECT_LOG.md` 739; **confirmed live to the row**, and
+**15 + 17 + 2 + 2 = 36**, + 31 baseline = **67**; the column is NULL on every baseline row)*.
+
+🔴 **The two `live_only_excluded_from_history` factors — `lineups_confirmed` and `overtime_pace_live` —
+appear in NO document at all, across all thirty.** ⚠ **They are the factors that structurally cannot
+be backfilled**, which is the direct answer to the owner's standing directive: *"we need also a
+fallback… either a second source that's extremely reliable… or a derived option… **for all the
+factors, every single factor**."* **Two are exempt by construction and nothing says so.**
+📌 `compute_stage` itself appears in **none of the twelve**.
+
+🔑 **OWNER DECISION** — **(a)** should `factor_relevance` be extended to the 38 unmapped factors, or is
+a missing row meant to read as "not relevant"? *Today the two are indistinguishable.* **(b)** do
+`lineups_confirmed` and `overtime_pace_live` need a derived fallback for history, or are they accepted
+as live-only? **Both are writes or design decisions this sweep does not make.**
+
+---
+
 ## 🔴 THE 2025-26 MATCHUPS SHARDS ARE ONE GAME SHORT AND ONE COLUMN SHORT
 *Recorded 2026-09-21 (T10 pass 4, §T10.4b). `[LIVE-AUDIT]` — verified from the shard files and their
 index metadata on disk. **Not a transcript finding.***
