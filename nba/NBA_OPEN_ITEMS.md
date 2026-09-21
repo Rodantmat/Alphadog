@@ -99,6 +99,47 @@
 > thirty / thirty-two document pair, which is two correct counts of two different populations
 > (32 `.md`, less the run log and the out-of-scope PP document)**.
 
+## 🔴🔴 THE 05:30Z OVERNIGHT VERIFICATION — **and it CONFIRMS the scrape-vs-load gap rather than closing it**
+*Recorded 2026-09-21 (T12 pass 1, §T12.2b). **Transcript `2026-09-11-21-01-23`, tail segment 617** —
+a patch into `NBA_PROJECT_LOG.md`, quoted whole.*
+
+> *"**overnight jobs — verified 05:30Z**: injury report **2025-26 = 176/176 days, 919,949 rows, 7
+> shards**; **2024-25 = 174 days, 418,071 rows, 7 shards** (fewer intra-day re-publishes that season
+> — spot-check per month); **starters 2023-24 = 32,328 rows, 1,228/1,230** — *timeouts on
+> `0022300079`, `0022300721` — rerun*; **officials 2023-24 = 3,690 rows, 1,230/1,230**. **Every
+> enrichment factor now has its two-season backfill** (except the boards, waiting on the Odds API
+> upgrade). Status snapshot in config `enrichment_backfill_status_2026_09_10`."*
+
+✅ **This answers three items queued for T12 at T11's close**: **the `enrichment_backfill_status_2026_09_10`
+key at 05:30Z**, **the two 2023-24 starter-status game timeouts — now named: `0022300079` and
+`0022300721`** *(also on file in `TRIGGER_NBA_PERGAME_BACKFILL.txt`)*, **and the completion state of
+the overnight queue.**
+
+🔴🔴 **AND READ AGAINST THE DATABASE IT SHARPENS T11's FIRST STANDING GAP RATHER THAN CLOSING IT.**
+***The transcript records the 2023-24 SCRAPE as complete — starters 32,328 rows, officials 3,690 rows
+— and the database holds NONE of it***: `[LIVE-AUDIT]` **2026-09-21, by `game_id` season code,
+`nba_stats.player_game_starter_status` and `nba_stats.game_officials` each hold season `25` ONLY**
+*(1,230 games / 32,179 rows and 1,227 / 3,681 respectively)*. 🔑 ***So "every enrichment factor now
+has its two-season backfill" is TRUE OF THE REPOSITORY and not of Postgres*** — **exactly the
+distinction §T11.31b draws, now with the scrape's own row counts on the other side of it.** ⚠ **The
+fix did NOT appear in T12; a dated STATE, not a verdict** *(O9)* — **T13–T20 are unswept.**
+⚠ *Do not conflate the near-identical magnitudes: officials **3,690** is the 2023-24 SCRAPE, officials
+**3,681** is the loaded 2025-26 table. Different seasons.*
+
+### 📌 The third injury-report bug — **the one that produced a JOB-LESS RUN**
+*Tail segment 568. T11 recorded two of the three; this is the first.*
+**The injury-report backfill hit three real bugs in sequence:** **(a)** 🔴 ***a YAML step name with
+unquoted colons produced a JOB-LESS RUN*** — **1 of thirty (`NBA_PROJECT_LOG.md`), 0 of the twelve**
+· **(b)** `pdfplumber` on the runner drops intra-cell spaces → space-insensitive team regex,
+camel-case splitter, tolerant headers *(**3 of the twelve** — recorded at T11 §T11.2)* · **(c)**
+before ~2025-12-22 the archive uses an hourly filename with no minutes and the true publish time is
+in the PDF header → probe both patterns, snapshot timestamp from the header, **md5 dedupe of
+re-published identical documents** *(recorded at T11)*.
+🔑 ***So the bug family is documented in the twelve for two of three, and the third — a workflow that
+silently produced no job at all — is in none.*** **Also from the same segment, not in the twelve**:
+the single-season injury file **hit 98 MB → monthly shards + index**, and the workflow **self-loops
+in 30-day chunks with commits**.
+
 ## 🔴 THE MEASUREMENT THAT CHOSE EVERY LIVE BOARD SOURCE — **in none of the twelve until now**
 *Recorded 2026-09-21 (T12 pass 0, §T12.1d/e). **Transcript `2026-09-11-21-01-23`, segments 49, 90,
 91, 98.** The decision is on file; the evidence behind it was not.*
