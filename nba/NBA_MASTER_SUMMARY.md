@@ -12808,6 +12808,44 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.33 — PASS 12 (**two-direction judgment, fourth run**) — **🔴 MY OWN SIBLING-CLAIM FAILURE, one pass after using the rule · 0/3**
+*2026-09-21. Band stable at 61 for a fourth run. The work was rule 13 applied to the newest phrases —
+which led straight to a sibling I had left standing four passes earlier.*
+
+#### 🔴 T8.33a — **Pass 8 superseded one "correctly empty" row of §T7.9a and left its neighbour**
+
+Rule 13 asked what *"correctly empty"* already denotes. **It has seven uses, and two of them are a
+second table** in the **same §T7.9a audit table** I corrected at pass 8:
+
+> `*_differential_log` (0 rows) | correctly empty — *"only one weekly baseline run has happened;
+> **detection starts on the second run**"*
+
+**I superseded the `prop_taxonomy` row directly above it and did not test this one.** *That is the
+sixth standing rule — **a correction must sweep its own siblings** — failing **four passes after I
+invoked it**, on the adjacent line of the same table.*
+
+#### 🔴 T8.33b — `[LIVE-AUDIT]` **The verdict is wrong on its own terms, and it is provable rather than inferable**
+
+| Check | Result |
+|---|---|
+| `nba_stats.player_differential_log` · `nba_ref.team_differential_log` · `official_differential_log` | **0 rows, all three** |
+| The three snapshot tables (582 · 30 · 80 rows) | **`snapshot_taken_at` max = `2026-09-02 19:47`** — all three, **nineteen days stale** |
+| The only writer, `nba/alphadog-v2-nba-weekly-differential.js` | **unconditionally** `DELETE`s each snapshot and re-`INSERT`s it with `now()` (lines 98/102, 152/156, 194/197) — **no change-gate** |
+
+> ### ⇒ **Because the snapshot rewrite is unconditional, a stale `snapshot_taken_at` is PROOF the worker has not completed a run — not merely evidence that nothing changed.**
+> **It has not completed a run since 2026-09-02.** So *"detection starts on the second run"* has never
+> been put to the test: **there has been no second run.**
+
+⚠ **Novelty, grepped before writing (rule 12) — and it changed what this entry claims.** *"The
+weekly differential worker has not run"* **is already documented, with its cause**:
+`NBA_WORKERS.md` line 1230 tags it **"⚠ NEVER SCHEDULED"**, and §6415 records *"the weekly
+differential worker was never scheduled, and `nba-p1-weekly-static.yml` does not call it."* **What
+this pass adds is narrower and firmer**: the live confirmation 17 days later, and **the unconditional
+rewrite that turns the stale snapshot from a hint into a proof.** *The "correctly empty" verdict is
+what is retired — not the scheduling finding, which was right all along.*
+
+---
+
 ### T8.32 — PASS 11 (**novelty audit**) — **⚠ a TERMINOLOGY COLLISION I created · 0/3**
 *2026-09-21. Grepped against `/tmp/t8base/nba/` (`700a999b`), most confident claims first.*
 
