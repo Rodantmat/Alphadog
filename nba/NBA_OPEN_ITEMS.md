@@ -161,10 +161,29 @@ game logs span three seasons, **so every player who left the league since 2023-2
 no dictionary row.**
 
 **The data is not corrupt; the join is the hazard.**
-`player_game_log INNER JOIN nba_ref.players` **silently drops ~10% of rows**, and the drop is
+`player_game_log INNER JOIN nba_ref.players` **silently drops rows**, and the drop is
 **systematically biased** — it removes precisely the departed players. **This is the same
 survivorship selection already flagged for `playercareerstats`, arriving by a different route**, and
 nothing in the documents currently warns a query author about it.
+
+**⚠ Measured by season, 2026-09-21 (T5 pass 5) — it is not a flat 10%:**
+
+| Season | Rows | Orphans | **%** |
+|---|---|---|---|
+| 2023-24 | 26,401 | 5,299 | **20.07%** |
+| 2024-25 | 26,306 | 2,588 | **9.84%** |
+| **2025-26** | 26,651 | **0** | **0.00%** |
+
+**A monotone gradient to exactly zero**, which proves the mechanism rather than inferring it:
+`nba_ref.players` *is* the current roster, so the orphan rate is the league's attrition curve.
+**An inner join therefore costs one row in five on the oldest season and nothing on the newest** —
+the sample is lost **unevenly, hardest where the aging-curve signal lives**, which is the very reason
+three seasons were backfilled.
+
+*Related, and NOT a defect: `player_game_starter_status` has 58 orphan rows for 2025-26 where the
+game log has none. **All 58 carry a DNP comment, none is a starter, 9 distinct players** — box scores
+list players who dressed, game logs list players who played. The 58 are the difference between those
+populations.*
 
 ---
 
