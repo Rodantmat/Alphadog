@@ -286,14 +286,30 @@ ceiling on a factor's effect. Detail: `NBA_MASTER_SUMMARY.md` §T7.38a.
 | Cap values | **10 distinct, 0.05 → 0.40** |
 | Key | factor × canonical prop × `tier_label` × `role_tier_key` × direction |
 | Tier- or role-keyed | **22 of 35** |
-| **Undifferentiated (neither key)** | **13 of 35** — `altitude` 0.06 · `opp_forced_to_rate` 0.20 · `teammate_shooting_quality` 0.20 · `foul_drawing` 0.25 · `opp_rim_attempt_rate` 0.25 · `opp_turnover_rate` 0.25 · `usage_share` 0.30, plus cells of `game_pace`, `potential_assist_rate`, `opp_miss_rate` |
+| Without either key | **13 of 35** — **these are the CONTINUOUS FORMULA cells**, see below |
 
-**So against the directive**: instruction 2 (*tier-specific, not global*) is **mostly satisfied by
-construction — there is no global cap** — with a real gap at **the 13 undifferentiated cells**.
-Instruction 1 (*a cap is a fallback, not a first resort*) **cannot be judged from the table**:
-`automation_status` is `semi_automatic` and `last_validated_at` / `last_empirical_validation_json`
-are **null on the rows sampled**, so **no empirical validation backs any of the 35 values** —
-🔴 **that is the open item now**, not the phantom global clamp.
+**⚠ REFINED the same day (T7 pass 10, structural value sanity).** This entry first called those 13
+*"undifferentiated caps, a gap against the directive."* **They are not a gap.** The table is two
+populations with zero mixing: **22 bucketed cells** (a flat `lift` or `penalty`, **always** tier- or
+role-keyed) and **13 continuous cells** (a `formula_expression` with `coefficient_a`, both flat
+values NULL, **never** tier-keyed) — e.g. `pace__points__continuous__all__both` =
+`coef_a * ln(proj_pace/league_avg)`. A tier bucket has no meaning for an effect that scales with a
+continuous input. **Every bucketed cap in the system is tier- or role-specific.**
+
+**So against the directive:**
+- **Instruction 2 (*tier-specific, not global*) — SATISFIED wherever the concept applies.** There is
+  no global cap, and no bucketed cell lacks a tier or role key.
+- 🔴 **Instruction 1 (*a cap is a fallback, not a first resort*) — cannot be judged, and the reason
+  is bigger than the question.** `automation_status` is `semi_automatic`;
+  `last_validated_at` / `last_empirical_validation_json` are **null on every sampled row**, so **no
+  empirical validation backs any of the 35 values**; and **VERIFIED, no code in the repo reads
+  `factor_profile_cells` or `factor_relevance` at all** — the strings appear in the twelve documents
+  and in zero code files. **That is the open item now**: five NBA config tables are now known to be
+  read by nothing (with `role_tiers`, `stat_decay_config`, `ewma_alpha`).
+- ⚠ **And one structural question for the scoring transcripts**: **22 of the 23 directional cells are
+  `more`.** The lone `less` cell is `blowout__points__LOST_GT50__all__less`. Whether the scorer
+  mirrors MORE-side values onto LESS legs, or LESS legs get no adjustment from the other 21,
+  is **NOT RECORDED**. Detail: `NBA_MASTER_SUMMARY.md` §T7.39.
 
 **NOT RECORDED**: whether any of these values was set before this instruction, in ignorance of it, or
 as a considered exception. All 35 rows carry `created_at` in the **01:53–02:03 window of
