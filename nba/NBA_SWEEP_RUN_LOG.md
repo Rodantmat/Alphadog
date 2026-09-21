@@ -14,7 +14,9 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 | | |
 |---|---|
-| **Current transcript** | ▶ **T8** — `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt` · **CLEAN 0/3 · 2 passes · owner + tail strata read.** *(T7 CLOSED 2026-09-21 at 36 passes; its state is kept below for the record.)* |
+| **Current transcript** | ▶ **T8** — `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt` · **CLEAN 0/3 · 3 passes · all strata read.** |
+| **Pass 3 (judgment) — 🔴 + 🔑** | 🔴 **A seventh single-pattern count, mine, and the purest one yet**: pass 1 said *"T8 has only three owner turns"* — **it has six.** I counted the owner turns **in the uncovered tail**, and the tail is *by construction* the segments the documents do **not** already cover — **so it excluded exactly the turns already recorded, which is what the pass was trying to determine.** All six turn out to be recorded, so the verdict survives; it was reached on half the population. 🔑 **One genuinely unrecorded fragment**: the owner's accuracy standard is scoped — *"a perfect formula… **within the baseline ladder**"* — and that qualifier appears in **none** of the thirty. ✅ Direction 2: all 14 segments are mechanism (3), self-authorship of `NBA_CLASSIFICATION_BASELINE_DESIGN.md`. |
+| ~~Current (pass 2)~~ | **CLEAN 0/3 · 2 passes · owner + tail strata read.** *(T7 CLOSED 2026-09-21 at 36 passes; its state is kept below for the record.)* |
 | **⚠ T8 is NOT a fresh transcript** | **§T8.1–§T8.21 already exist**, written before the chronological-order reset, reaching **CLEAN 3/3 at 15 passes**. **The reset voided the clean count, not the content** — the same position T4/T5/T6 were in, which closed in 9–10 re-sweep passes each. |
 | **T8 corpus** | **615 segments** — 539 assistant, **only 3 owner**. **542 uncovered vs the twelve (88.1%)**, 516 vs all thirty. Tail: `scratchpad/t8/t8_tail.json`; script: `scratchpad/t8/tail8.py`. |
 | **T8 novelty baseline** | ✅ **Commit `700a999b`**, extracted to **`/tmp/t8base/nba/`** (32 files). **Grep that tree, never the working tree** — it is the snapshot taken before the first T8 write. |
