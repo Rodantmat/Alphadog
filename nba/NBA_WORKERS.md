@@ -396,6 +396,23 @@ that neither fails — which means it cannot detect a materially short scrape of
 
 ---
 
+## 0.41 WHY THERE ARE SO MANY `nba-*.yml` WORKFLOWS — a stated principle, recovered from code
+*Recorded 2026-09-21, T5 re-sweep pass 2. The rule was in a workflow header and in no document.*
+
+`.github/workflows/nba-starter-status.yml`, in its own comment:
+> *"standalone, targeted workflow — **deliberately not added as another step in `nba-backfill.yml`,
+> which would force re-running all its earlier steps** (career totals…)"*
+
+**In a workflow whose steps are expensive and sequential, adding a step is not free — it re-runs
+everything before it.** `nba-backfill.yml`'s earlier steps include a 582-call career-totals scrape
+and two full-season bulk pulls; appending a 1,230-call job would have meant paying all of that on
+every retry. **So the job got its own workflow and its own trigger file.**
+
+**This explains the file count** — **32 in-scope `nba-*.yml` workflows** (33 on disk; one,
+`nba-pp-payout-map.yml`, belongs to a concurrent session and is out of scope). The proliferation is
+**deliberate granularity, not sprawl.** Apply the same rule when adding future jobs: a new expensive
+step belongs in its own workflow unless it genuinely shares the earlier steps' inputs.
+
 ## 🔴 0.39 `ok: certified` — THE `ok` FIELD IS THE CERTIFICATION VERDICT, ACROSS 18 WORKERS
 *Recorded 2026-09-21, T2 pass 16. **`[LIVE-AUDIT]` VERIFIED** by grep of the worker sources.*
 
