@@ -220,6 +220,33 @@ Postgres."***
 | `scrape_nba_periods.py` — *"quarter/half splits"* | `nba_player_game_log_q1…q4_*` — **12 files** | 🔴 **none** | 🔴 **none** |
 | `scrape_nba_injury_report.py` | 14 monthly shards, **1,338,020 timestamps** | 🔴 **none** | 🔴 **none** *(§T11.36a)* |
 
+### 🔴 NARROWED 2026-09-21 by §T11.56b — *tested by OUTPUT PATH, one of the four is PARTIALLY covered*
+*The table above was built by NAME. **Pass 55 re-tested it by the thing that actually matters — the
+JSON filename each scraper writes and each worker reads** (§T11.20a's shape: a four-item claim
+resting on one lookup style).*
+
+**The four scrapers write EIGHT output families. Seven are referenced by ZERO of the 21 workers.**
+🔴 ***The eighth is not***: **`scrape_nba_matchups_pergame.py` also writes
+`nba_team_game_log_{slug}.json`, and `alphadog-v2-nba-static-backfill.js` READS it** —
+```js
+const r = await fetchFromGithubRaw(env, `nba/data/nba_team_game_log_${slug}.json`, …);   // line 249
+const r = await fetchFromGithubRaw(env, `nba/data/nba_team_game_log_advanced_${slug}.json`, …); // 259
+```
+⚠ ***Its `nba_matchups_pergame_{slug}_index.json` output is still read by nothing.*** **So that
+scraper SPLITS across the line rather than sitting outside it.**
+
+🔑🔑 **AND THE DATABASE MAKES THE SPLIT EXACT** *(`[LIVE-AUDIT]` 2026-09-21, `SELECT` only)*:
+**`nba_team.team_game_log` holds 7,380 rows across 3,690 games — complete for three seasons** *(the
+loaded half)* — while ***no table whose name contains `matchup`, `period`, `injury`, `coach`,
+`clutch` or `hustle` exists in ANY `nba*` schema*** *(the unloaded half; `information_schema`, zero
+rows returned)*.
+
+✅ ***So the finding is stronger in its corrected form than in its original one***: **a scraper output
+either has a registered loader AND a populated table, or it has NEITHER** — **the two-hop
+architecture's second hop is missing for seven of eight output families, and the one exception proves
+the pattern rather than breaking it.** ⚠ **Stated as a dated STATE, not a verdict** *(O9)*: **this is
+what the repository and the database hold on 2026-09-21; T12–T20 are unswept.**
+
 **The 21 that DO exist**: 15 `01 Static` *(arenas · darko · lineups · officials · onoff · player-bio ·
 players · player-tracking · playtypes · schedule · shotquality · teams · team-stats · tracking-detail ·
 weekly-differential)* · 4 `02 Historical` *(backfill · game-officials · measure-types ·
