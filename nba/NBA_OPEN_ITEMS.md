@@ -1,5 +1,29 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴 THE 2026-27 SCHEDULE IN `nba_calendar.games` IS **TWO GAMES SHORT PER TEAM, ON ALL THIRTY**
+*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by live SQL (T7 pass 11, live numeric re-verification).
+Detail: `NBA_MASTER_SUMMARY.md` §T7.40a.*
+
+| Season | Prefix `002` games | Games per team | Teams at that count |
+|---|---|---|---|
+| **2025-26** | **1,230** | **exactly 82** | 30 |
+| **2026-27** | **1,200** | **exactly 80** | 30 |
+
+**Perfectly uniform — no team has 81 or 82.** 30 × 80 ÷ 2 = 1,200; the shortfall is **30 games**.
+**2026-27 also has no prefix `003`, `004`, `005` or `006` rows at all**, where 2025-26 carries
+7 · 85 · 6 · 1.
+
+⚠ **The cause is NOT RECORDED and is not inferred here.** What is recorded is the shape.
+
+**Why it is open rather than trivia**: **any check keyed to 82 games per team, or 1,230 per season,
+reports a shortfall on every team for 2026-27** — the season the entire static and enrichment layer
+was built for, opening **2026-10-20**. *Whether any worker performs such a check is **NOT
+RECORDED**; the coverage detector in `alphadog-v2-nba-daily-delta` reports missing starters and
+officials, not game counts.* **Resolve when the sweep reaches the schedule scraper's transcript** —
+whether the source served 1,200, or the loader dropped 30, is a question for it.
+
+---
+
 ## 🔴🔴 REGULAR SEASON OPENS **2026-10-20**, NOT 2026-10-03 — every urgency label in these documents is 17 days early
 *`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by live SQL against `nba_calendar.games`, and independently by
 the owner. **This correction carries everywhere.***
