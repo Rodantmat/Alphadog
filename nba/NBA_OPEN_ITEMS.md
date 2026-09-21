@@ -293,7 +293,9 @@ Sleeper, is NOT RECORDED** *(probed in the documents' vocabulary, not only the t
 seasons**.*
 
 **`-05:00` appears on every row of every month, 2024-10 through 2026-04. No other offset exists
-anywhere in the data.** The scraper builds it literally:
+anywhere in the data.** 🔑 **CENSUS, not a sample (upgraded 2026-09-21, §T11.10c): 1,338,020
+timestamps across all 14 shards, `-05:00` on 1,338,020 of them — and 919,949 + 418,071 = 1,338,020
+verifies the scan against the index row counts.** The scraper builds it literally:
 
 ```python
 found.append((f"{d.isoformat()}T{h:02d}:{(m or 0):02d}:00-05:00", url, content))
