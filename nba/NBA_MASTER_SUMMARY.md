@@ -9739,6 +9739,46 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.55 — PASS 26 (**live numeric re-verification, third run**) — **✅ CLEAN 1/3 · 4 of 4 exact · the season-less PK stated at its true scale**
+*2026-09-21. Every figure passes 22–25 added, **re-derived from its authority** rather than re-run
+from the query that produced it: `information_schema` for the keys, the workflows directory for the
+crons, a fresh grep of all `.py`/`.js` for the callers.*
+
+| Claim | Authority | Live |
+|---|---|---|
+| **37** tables with a season-less primary key | `information_schema` over `nba_stats`/`nba_team`/`nba_ref` | **37** ✅ |
+| **13** scrapers call `active_stats_season()` | every `.py` under `nba/`, minus the helper and the diagnostic | **13** ✅ |
+| **4** workers hardcode `'2025-26'` with no meta fallback | every `alphadog-v2-nba-*.js`, hardcoded-season **and** no `f.season`/meta | **4** ✅ — `-onoff`, `-player-bio`, `-player-tracking`, `-team-stats` |
+| **7** scheduled workflows touch `nba/` | the workflows directory | **7** ✅ |
+
+#### 🔑 T7.55a — `[LIVE-AUDIT]` **The true scale: season is in the primary key of THREE of forty NBA data tables**
+
+§T7.53a said *"37 tables have a season-less primary key"*, which is the count but not the shape.
+**From the authority: `nba_stats`, `nba_team` and `nba_ref` hold 40 tables with a primary key, and
+the season appears in exactly three of them:**
+
+| Table | Primary key |
+|---|---|
+| `nba_stats.player_career_season_totals` | `player_id, **season_id**, team_id` |
+| `nba_team.defense_vs_position` | `team_id, opponent_position, **season**` |
+| `nba_team.lineup_profile` | `group_quantity, group_id, team_id, **season**` |
+
+> ### ⇒ **Thirty-seven of forty NBA data tables can hold exactly one season at a time. Three can hold many.**
+
+**That is the structural fact behind O4**, and it is not a quirk of a few profile tables — **it is
+the dominant convention of the schema.** The three exceptions are precisely the tables built to be
+multi-season: career totals, DvP history, and lineup history. *Whether the single-season convention
+was deliberate is **NOT RECORDED** — and the question belongs to the static-layer transcripts (T2–T3)
+that created these tables, which are closed; **neither recorded a design note on it.***
+
+*Novelty verified per the eighth rule — **the most confident claim grepped first**: `3 of 40`,
+`season in the primary key`, `player_id, season_id, team_id` all return **zero hits** across the
+pre-edit thirty.*
+
+**Pass outcome: 4 of 4 figures exact, one structural framing added, no defect. ✅ CLEAN 1/3.**
+
+---
+
 ### T7.54 — PASS 25 (**novelty audit, third run**) — **🔴🔴 THE TENTH ABSENCE FAILURE, AND IT LANDED ON THE RUN'S HEADLINE · 0/3**
 *2026-09-21. The `git archive` snapshot grepped again, over all thirty, for everything passes 21–24
 added. Most of it is new. **The headline is not.***
