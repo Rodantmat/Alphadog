@@ -14694,6 +14694,16 @@ rarely states the COUNT — and if so the register is an addition to the twelve,
 |---|---|
 | **14 schemas** *(4 of the twelve)* · **6 empty schemas** *(3)* · **21 writers** *(6)* | **104 base tables** · **22 `data_quality` tables** · **6/7 `phase` tables** · **10 game-keyed tables** · **18 `prop_taxonomy` columns** · **33 scrapers** · **32 `.md` files** |
 
+🔴 **CREDIT CORRECTED 2026-09-21 by §T11.54b (pass 53, the rule-28 duplicate audit): TWO of those
+seven were already on this sweep's OWN novelty ledger, with the same verdict, at PASS 26.**
+**§T11.27's table carries *"`data_quality` on 22 tables; per-table provenance; the dead default — 0
+of thirty, 0 of the twelve"* and *"`phase` identical across all six tables — 0 of thirty, 0 of the
+twelve."*** ***So `22 data_quality tables` and `6/7 phase tables` are re-derivations of a verdict the
+sweep had published twenty-two passes earlier, and this entry named neither.*** ✅ **The other five
+stand, and the register's conclusion is unchanged** *(five absent is still an addition to the
+twelve)*. ⚠ **The probe was run against the BASELINE, where the sweep's own entries do not exist —
+RULE 28.**
+
 ✅ **Seven of ten valid probes absent.** ⚠ **Two hits opened and dismissed**: *"`nba_market` 25"* is
 **`variation_bands` (25 rows)**, and *"32 files"* is **32 `nba-*.yml` WORKFLOW files**, not documents.
 ⚠ **Rule 22 fired a FOURTH time** — the `side`-carrier probe **failed its positive control and was
