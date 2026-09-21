@@ -95,6 +95,16 @@ band×direction×rung cells over 2.5 pp, confidence bands hitting their rate on 
 between seasons; walk-forward Platt carries it) · **CONFIGURED, NOT RUN** · **NOT YET CERTIFIED**.
 As of T9: **6 certified** (points, rebounds, assists, 3PM, FGA, FTM), **4 close** (blocks, steals,
 turnovers, fouls), **1 regime** (3PA), **combos certified** (P+R, P+A, R+A, PRA, fantasy).
+✅ **`FGA` SETTLED 2026-09-21 by §T10.1b — a third independent authority.** The live config row
+`nba_config.classification_config.single_stat_scoreboard_two_seasons`, written **2026-09-09 05:55:58
+UTC** (51 seconds after `fga`'s inline `# CERTIFIED` comment), lists **`certified`: points, rebounds,
+assists, threes_made, `fga`** — so the inline comment, the config and the owner's T9 statement all
+certify `fga`, and **the docstring's line 11 is the stale statement.**
+🔴 **`FTM` is the reverse — and it is the CONFIG that is stale.** That same row puts **`ftm` in
+`close_not_certified`**, because it was written **sixteen hours before the T9 session** in which the
+owner stated the certified six. **Its own `notes` field says so: *"State as of 2026-09-09 v20."***
+⚠ **`[LIVE-AUDIT]` Nothing reads that key, or `classification_config` at all, anywhere under `nba/`.**
+
 ⚠ *2026-09-21 (§T9.35b/c, extended §T9.36a): **TWO of this certified six are listed as "configured,
 NOT yet run" in the recipe's module docstring, line 11** — **`FGA`** (which also carries its own
 inline `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)`, so the file contradicts itself) and
