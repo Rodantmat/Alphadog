@@ -8203,6 +8203,30 @@ explicitly (COMPASS fact 66) — the bound is a modelling decision, not a storag
 
 ## FROM T5 PASS 1 *(added 2026-09-20)*
 
+### 🔴 THIS TRAP HAS A SECOND, UNCAUGHT INSTANCE — the failure class, not the endpoint, is the problem
+*Connection drawn 2026-09-21, T5 re-sweep pass 1. Detail: `NBA_MASTER_SUMMARY.md` §T5.16a.*
+
+The v2 trap below was caught because the loss was **97%** and obvious against an expected magnitude.
+**T4's career-totals scraper has the identical defect and was never noticed** — because its loss was
+**one player in 582**.
+
+| | T5, starter status | T4, career totals |
+|---|---|---|
+| Endpoint behaviour | HTTP 200, zero rows | HTTP 200, zero rows |
+| Error raised | none | none |
+| Reported as | 1,228/1,230 games "succeeded" | "582 players succeeded" (`len(players) - len(errors)`) |
+| Actually obtained | **799 rows / 31 games** | **3,644 rows / 581 players** |
+| **Noticed** | **yes** | **no — 18 days, until this sweep** |
+
+**The lesson generalises past both endpoints**: *a source that can return a well-formed empty result
+makes "no error" meaningless as a success signal.* **All four guard shapes in this codebase test the
+aggregate** (count floor, completeness, null-value, per-dataset minimum) — **none asks the per-item
+question: did every input produce at least one output row?** That check costs one comparison and
+catches both instances.
+
+⚠ **T5 diagnosed this and wrote it up as the worst failure mode in the project; the earlier scraper
+was never revisited**, because nothing connected the class to its other instances.
+
 ### ⚠ TRAP · **`boxscoretraditionalv2` returns HTTP 200 with ZERO rows on historical games**
 The worst failure mode in the transcripts: **1,228 games "succeeded" and produced 799 rows** where
 ~30,000 were expected. *"HTTP 200 and **structurally correct responses, but zero player rows** for every
