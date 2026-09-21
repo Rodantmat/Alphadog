@@ -1,5 +1,47 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴 THE BASELINE LADDER IN POSTGRES HOLDS TWO DEPTH REGIMES UNDER ONE `recipe_version`
+*Recorded 2026-09-21 (T9 pass 12, §T9.27b). `[LIVE-AUDIT]` — verified by SQL and by reading the
+workflows; **not a transcript finding**.*
+
+**`ladder_depth(prop)` takes an env override before the measured table**, and the override is set on
+the path that built the rows now in Postgres:
+
+```python
+env = os.environ.get("BT_LADDER_STEPS")
+if env: return int(env)          # flat, every prop
+return LADDER_DEPTH.get(prop, 10)   # the measured per-prop table
+```
+
+`nba-baseline.yml` reads `ladder_steps:` from `nba/TRIGGER_NBA_BASELINE.txt`, which currently reads
+**`ladder_steps: 10`**. `nba-p2-overnight-heavy.yml` deliberately leaves it unset, with the reason in
+the file: *"Points needs 14 rungs, steals needs 2; one number cannot be right for both."*
+
+| as-of | max rung | regime |
+|---|---|---|
+| **2025-11-29** | `points` **14** · `steals` **2** · `blocks` **2** · `oreb` **3** | **per-prop** — ten props match `LADDER_DEPTH` exactly |
+| **2026-01-15** | **10 on every prop** | flat |
+| **2026-03-15** | **10 on every prop** | flat |
+
+🔴 **All three carry the identical `recipe_version` string and there is no column recording depth**,
+so nothing in the table tells a consumer which regime a row came from. **A join across as-of days
+mixes two products under one label.**
+
+**Already on file, and this does not supersede it**: the override is recorded as *"a legitimate
+escape hatch, but nothing marks it as one that should not be left set"*. **What is new is that it IS
+set, and that the consequence is now visible in the data.**
+
+🔑 **OWNER DECISION** — two choices, neither takeable from the transcripts: **(a)** stamp the depth
+configuration into the ladder rows (a column, or the `recipe_version` string) so the regimes are
+distinguishable, and **(b)** decide whether the three existing as-of days should be rebuilt to one
+regime before they are used as a baseline. *Not actioned — this sweep documents only.*
+
+📌 **NOT RECORDED**: `assists` reaches rung **6** against a table value of **5**, and `threes_made`
+**6** against **4**, on the 2025-11-29 day. **6 is the module constant at line 66.** The mechanism is
+not recorded and is not asserted.
+
+---
+
 ## 🔴 THE FOUR "CLOSE" PROPS WERE NEVER CERTIFIED — and the reason given was explicitly unproven
 *Recorded 2026-09-21 (T9 pass 1, §T9.16a), from T9's own phase-status answer. The distinctive terms
 (`certified 6`, `variance-bound`, `star bimodality`, `40-47%`) return **zero hits** across the thirty.*
