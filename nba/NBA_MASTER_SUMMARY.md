@@ -68,6 +68,49 @@ original form — those sessions **are** transcript files now (T17 and T18), and
 
 ---
 
+### ⚠⚠ STANDING RULE — FAST-FORWARD BEFORE THE PASS, AND A CONCURRENT SESSION IS WRITING HERE
+*Owner-confirmed, 2026-09-21.*
+
+**A pass is written against the documents as they exist on `origin/main`, so the clone is
+fast-forwarded BEFORE the pass, not after it.** Origin: the working clone was found **98 commits
+behind** mid-sweep, which **voided a completed judgment pass** (it had scored the transcript against
+stale documents) and produced **five findings that passes 5–8 had already recorded.** This is the
+ledger-drift defect one level out — not the row drifting from the body, but **the body drifting from
+the remote.**
+
+**⚠ AND A SECOND SESSION IS COMMITTING TO THIS REPO — it accounts for much of that 98.**
+It adds **only new files**, and **never the twelve documents**:
+`nba/PP_PAYOUT_FINDINGS.md` · `nba/pp_payout_map.py` · `nba/probe_pp_*.py` ·
+`.github/workflows/nba-pp-payout-map.yml` · trigger files · bot commits under `nba/data/pp_payouts/`.
+It is also about to create Postgres objects: `nba_market.pp_price_key`, `nba_market.pp_price`, view
+`nba_market.pp_leg_price`, `nba_config.pp_pricing_model`, `nba_config.pp_slip_rules`.
+
+🔴 **NONE OF IT IS DOCUMENTED OUT OF ORDER.** All of it belongs to a session **this sweep has not
+reached**. Encountering those files or tables in a live audit is **not** a licence to write them up —
+the chronological rule governs, exactly as it does for a later transcript. **When the sweep reaches
+that session, `PP_PAYOUT_FINDINGS.md` is the map**, and **several of its findings correct existing
+documents** — each to be recorded as a supersession **in its chronological place**, not backported.
+
+**Practical consequence for every future pass**: a fast-forward will routinely pull in commits that
+are *not* this sweep's work and *not* yet in scope. **Fast-forward, then ignore them.**
+
+---
+
+### ⚠ STANDING RULE — ON A RE-READ, THE RATIO IS NOT THE CLOSURE SIGNAL
+*Owner-confirmed, 2026-09-21.*
+
+**Findings-per-segment is reported for every transcript and is diagnostic, not decisive.** On a first
+read a low ratio is evidence of shallow reading — that is what reopened T2, at 1 per 34 against T3's
+1 per 7.3. **On a re-read the same number means the opposite**: material already covered *should*
+yield less, so a falling ratio is the expected shape of approaching exhaustion, not a warning.
+
+**Therefore the ratio can never close a re-read. The two-direction judgment pass is the closure
+signal** — high band (*"is the documented version right, not merely present?"*) and tail direction
+(*"is it recorded elsewhere in other words, and is that write-up correct?"*). **Coverage and ratio
+decide what to read; the judgment pass decides when you are finished.**
+
+---
+
 ### ⚠ STANDING RULE — THE LEDGER ROW IS PART OF THE PASS, NOT A SUMMARY OF IT
 *Owner instruction, 2026-09-20. **Inserted into the execution loop between steps 7 and 8.***
 
