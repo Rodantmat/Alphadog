@@ -9858,7 +9858,12 @@ because the explanation comes from the transcript being swept, not from inferenc
 propagating**: one wrong date produced a wrong test, which produced a passing result, which produced
 a "low impact" rating on the item that is now **O4**.
 
-#### 🔑 T7.58b — **T7 names NINE stats scrapers; today there are TWELVE direct callers**
+#### ⚠ T7.58b — **The 9 → 12 → 15 reconciliation** *(novelty claim withdrawn)*
+> 🔴 **CORRECTED TWICE.** §T7.59a: `daily_delta` is the helper's **origin**, not a later adopter.
+> §T7.60a–b: **neither fact here was new** — *"Patched across 9 stats scrapers"* is at
+> `NBA_MASTER_SUMMARY.md` line 9744 from passes 1–8, and *"`daily_delta` was the only scraper that
+> auto-detected the season"* is recorded **twice** pre-edit, so this entry **contradicted the
+> sweep's own earlier text**. **What survives is the reconciliation of figures already present.**
 
 From the transcript's own command: *"check **the 9 stats scrapers** that should use
 `active_stats_season`: `splits`, `lineups`, `player_bio`, `tracking_detail`, `playtypes`,
