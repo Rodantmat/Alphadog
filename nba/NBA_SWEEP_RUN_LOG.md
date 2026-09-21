@@ -14,7 +14,9 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 | | |
 |---|---|
-| **Current transcript** | ▶ **T9** — `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt` · **CLEAN 0/3 · 2 passes · owner + tail strata read.** *(T8 CLOSED 2026-09-21 at 15 re-sweep passes; T7 at 36. Their state is kept below for the record.)* |
+| **Current transcript** | ▶ **T9** — `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt` · **CLEAN 1/3 · 3 passes · all strata read.** |
+| **Pass 3 (judgment) — ✅ CLEAN** | 52 high-band segments and **only ONE tail-direction segment** — the lowest of any transcript swept; T9's material is either well covered or genuinely uncovered, with almost no "covered in other words" middle. Every spot-checked claim is recorded (`0 misses of 37` in **seven** documents). ⚠ **Tooling caveat worth carrying**: in `judge*.py` output the **bracketed filename is the nearest-matching document, not the source of the quoted text** — the text is always the transcript's. Misreading it nearly produced a wrong correction to **closed T8**. |
+| ~~Current (pass 2)~~ | **CLEAN 0/3 · 2 passes · owner + tail strata read.** *(T8 CLOSED 2026-09-21 at 15 re-sweep passes; T7 at 36. Their state is kept below for the record.)* |
 | **⚠ T9 is also a RE-SWEEP, not a fresh transcript** | **§T9.1–§T9.15 already exist**, written before the chronological reset, reaching **CLEAN 3/3 at 8 passes**. The reset voided the count, not the content. |
 | **T9 corpus** | **769 segments** — 764 assistant, **5 owner** *(counted from the transcript's segment list, not the tail — the T8 pass-1 failure)*. **703 uncovered vs the twelve (91.4%)**, 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`; scripts `t9/tail9.py`, `t9/judge9.py` (both already pointed at T9). |
 | **T9 novelty baseline** | ✅ **Commit `213800e7`** → **`/tmp/t9base/nba/`** (32 files). **Grep that tree, never the working tree.** |
