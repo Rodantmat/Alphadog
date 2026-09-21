@@ -9723,6 +9723,68 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.50 — PASS 21 (**two-direction judgment, fourth run**) — **🔴 THE EIGHTH ABSENCE FAILURE · T7 DOES NOT CLOSE · 2/3 → 0/3**
+*2026-09-21. The pass that would have closed T7. Direction 1 is the same 113 segments for the third
+time; the work was the seventh rule applied to the absence claims **added since pass 18** — and one
+of them fails, taking a 🔴 finding down with it.*
+
+#### 🔴 T7.50a — **CORRECTION to §T7.45a: `'continuous'` is DOCUMENTED VOCABULARY, and 34 of 35 cells conform to it**
+
+§T7.45a wrote: *"`'continuous'` is a **sentinel outside the vocabulary**… **nothing in the schema says
+so**… the design document names `variation_band` as a key dimension **without naming a sentinel**."*
+
+**`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 242 — two lines above the key definition I did
+quote:**
+
+> *"`factor_registry` — every factor: **form (band / continuous / gate)**, model side
+> (rate/minutes), …"*
+
+**`continuous` is one of the three declared factor FORMS.** And the cells follow their factor's form,
+`[LIVE-AUDIT]`, joining `factor_profile_cells` to `factor_registry.form`:
+
+| `factor_registry.form` | Cells | `variation_band='continuous'` | tier/role-keyed |
+|---|---|---|---|
+| **`continuous`** | 14 | **13** | **1** |
+| `quantile_bands` | 5 | 0 | **5** |
+| `tiered_bands` | 16 | 0 | **16** |
+
+> ### **34 of 35 cells are keyed exactly as their factor's declared form requires.**
+
+**So §T7.45a's 🔴 is downgraded.** `variation_bands` genuinely holds no `continuous` row — **that
+fact stands** — but the interpretation was wrong: it is not a dangling foreign key, it is **the
+documented form-name, and continuous factors are not banded, so there is no band row to point at.**
+The coherence was designed; I called it a break because I had read the key definition at line 247 and
+not the vocabulary at line 242.
+
+⚠⚠ **Eighth absence failure in this transcript, and the third caused by reading one line of a
+document and not its neighbour** (§T7.38a, §T7.44a, now §T7.50a). **The line I needed was two lines
+above the line I quoted.**
+
+#### 🔑 T7.50b — **And the join finds the ONE cell that does not conform**
+
+`[LIVE-AUDIT]` — of 35 cells, exactly one is keyed against its factor's declared form:
+
+| | |
+|---|---|
+| Cell | **`shotdiet__rebounds__3PA_HEAVY__all__more`** |
+| Factor | `opp_shot_diet`, declared **`form = 'continuous'`** |
+| Yet it carries | `tier_label = 'OPP_3PA_HEAVY'`, a **flat `penalty` −0.06**, `cap` 0.12, **no formula** |
+
+**Every other continuous-form cell carries a formula and a band; this one carries a bucket and a flat
+value.** *Whether that is deliberate is **NOT RECORDED** — and this time the claim is made after
+grepping all thirty documents for `opp_shot_diet` and `3PA_HEAVY`.* **This is what the pass-15 angle
+was supposed to find, and it took the right join to find it.**
+
+#### 🔑 T7.50c — `[LIVE-AUDIT]` **The `form` vocabulary is four values live, three in the document**
+
+`nba_config.factor_registry.form` across 67 factors: **`continuous` 28 · `tiered_bands` 25 ·
+`binary_gate` 13 · `quantile_bands` 1.** The design's *"band / continuous / gate"* is a
+simplification — **the band family is split in two, and `gate` is spelled `binary_gate`.** Recorded
+as a precision, not a defect: the document describes three families and the schema implements four
+values.
+
+---
+
 ### T7.49 — PASS 20 (**live numeric re-verification, second run**) — **✅ CLEAN 2/3 · 16 of 16 exact · one hedge upgraded, one new column**
 *2026-09-21. Every figure passes 15–19 added, re-queried from the **claim** rather than from the query
 that produced it — and, per the fifth standing rule, with the table's **full column list** enumerated
