@@ -113,6 +113,49 @@ the lessons-transfer mechanism, not in one worker.**
 
 ---
 
+## 🔴 `player_career_season_totals` STORES ITS OWN SUBTOTALS — 282 player-seasons are in the table twice
+*Found 2026-09-21, T4 re-sweep pass 4. **`[LIVE-AUDIT]` VERIFIED** across the whole table.
+Detail: `NBA_MASTER_SUMMARY.md` §T4.24a.*
+
+`TEAM_ID = 0` is not a team — it is **the season total for a traded player**, stored **alongside**
+the per-team rows it sums.
+
+| | |
+|---|---|
+| rows | **3,644** |
+| distinct player-seasons | **3,064** |
+| player-seasons with >1 row | **282** |
+| of those, carrying a `team_id = 'nba_0'` row | **282 — all** |
+| where that row's `GP` = sum of the per-team rows | **282 — all** |
+| mismatches | **0** |
+
+**The documents record the good half** — that `TEAM_ID=0` rows are *"the confirmed-correct combined
+total for traded players, empirically verified"*. ✅ True. **The half not recorded is the
+consequence**: because the subtotal sits next to its parts, **any aggregate over this table counts
+those 282 player-seasons twice.**
+
+```sql
+SELECT player_id, sum(pts) FROM nba_stats.player_career_season_totals GROUP BY 1;  -- ⚠ double-counts
+SELECT player_id, sum(pts) FROM nba_stats.player_career_season_totals
+  WHERE team_id <> 'nba_0' GROUP BY 1;                                             -- parts only
+```
+**Neither form is wrong; the table cannot be aggregated without choosing.** And nothing in the schema
+announces the choice — **no `is_total` flag, no row-type column.** The discriminator is the magic
+value `'nba_0'`, which a reader has to already know about.
+
+⚠ **This is NOT the double-counting recorded at §T4.11.** That one concerns blowout-minutes in
+`nba_score.blowout_model` and concludes the design avoids it. **Different table, different hazard,
+still open.** Two things share the name in this documentation set and only one is addressed.
+
+**Impact**: the baseline pipeline that would consume this table is, as of T4, a **design document**,
+not code. **Whether any live reader aggregates without the filter is NOT RECORDED** — flagged for
+the transcript that builds it. **Not opening-day blocking on current evidence.**
+
+**Remedy shape, for after the sweep** (not applied — it is a write): an `is_season_total BOOLEAN`
+column, or a view exposing parts-only, so the choice is explicit instead of folkloric.
+
+---
+
 ## ⚠⚠ COMMITTED DEBUG ARTIFACTS ARE A PATTERN OF THREE, NOT A ONE-OFF — two are undocumented
 *Found 2026-09-21, T4 re-sweep pass 3. **`[LIVE-AUDIT]` VERIFIED** by listing `nba/data/`.
 Detail: `NBA_MASTER_SUMMARY.md` §T4.23a.*
