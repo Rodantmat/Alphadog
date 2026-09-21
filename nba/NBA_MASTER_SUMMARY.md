@@ -14430,6 +14430,64 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.58 — PASS 57 (**the RULE-30 POPULATION AUDIT — rule 6 applied to rule 30, and the cross-document consistency pass**) — **🔴 a second unreproducible population · ✅ both findings that rest on one HOLD over a larger set · 0/3**
+*2026-09-21. **The obligation**: rule 30 was written at pass 56 from ONE figure. This pass enumerated
+its siblings and re-took the load-bearing ones. **`SELECT` only; read-only.***
+
+#### ✅ T11.58a — **The enumeration, and the bound on it**
+***262 distinct population-bearing phrases across the twelve*** — *"all N ⟨things⟩", "every N", "across
+all N"* — **extracted mechanically.** ⚠ **Stated at the instrument's strength** *(rule 25)*: the
+pattern catches phrases of that SHAPE; a population expressed in prose without a number is not in the
+262. **Twelve were re-taken this pass — every figure carried by two or more of the twelve, or
+underpinning a VERIFIED finding.** *The remaining 250 are single-document, single-claim figures and
+are carried forward as a named, dated remainder rather than sampled silently.*
+
+#### 🔴 T11.58b — **RULE 30's SECOND INSTANCE: "across all 85 tables" matches neither population**
+**The type-discipline finding — in `NBA_MASTER_SUMMARY.md` and `NBA_OPEN_ITEMS.md` — is stated
+*"across all 85 tables."*** `[LIVE-AUDIT]`: ***`nba*` holds 104 base tables, and 54 carry any of the
+five ID columns the sentence itself enumerates. 85 is neither***, and the sentence carries **no date
+and no derivation.** ⚠ *104 − 85 = 19 is consistent with tables added since — a reconstruction, not
+a verification.*
+
+#### ✅ T11.58c — **And the finding it carries re-verifies PERFECTLY, on a larger set**
+| column | stated | re-taken | type |
+|---|---|---|---|
+| `player_id` | 28 | **34** | ✅ all `text` |
+| `team_id` | 20 | **21** | ✅ all `text` |
+| `game_id` | 20 | **21** | ✅ all `text` |
+| `nba_player_id` | 10 | **11** | ✅ all `bigint` |
+| `nba_team_id` | 6 | **6** | ✅ all `bigint` |
+
+***No exceptions in any column.*** ⚠ **Four of five counts have MOVED — a dated state, not a defect**
+*(O9: tables were added after the measurement)*.
+
+#### ✅ T11.58d — **The counter-examples, and they matter as much as the failures**
+| population | stated | re-taken 2026-09-21 | verdict |
+|---|---|---|---|
+| **the `DELETE`/`TRUNCATE` audit** | **24** | **24** — *23 `DELETE FROM` + 1 `TRUNCATE`* | ✅ **EXACT**; the six lowercase matches are **comment prose**, opened and dismissed *(rule 26)* |
+| **`nba_ref.players`** | 582 | **582** | ✅ exact |
+| **the thirty / thirty-two documents** | 30 **and** 32 | **32 `.md`, 30 excluding the run log and the PP document** | ✅ **two correct counts of two different populations** *(§T11.39b)* |
+| **"across 13 scrapers"** | 13 | — | ✅ **a QUOTATION whose scope is inside the sentence**; already handled correctly |
+| **"across 18 workers"** | 18 | 21 worker files today | ⚠ **a dated T2 figure**, scoped in its own sentence |
+
+#### 🔑🔑 T11.58e — **The meta-result, and it extends §T11.55d exactly**
+***In BOTH of rule 30's instances the POPULATION is wrong and the FINDING is right.*** **Pass 54
+re-derived fourteen live figure families exactly; pass 56 re-confirmed the unread-config verdict over
+314 files; this pass re-confirmed the type discipline over 54 tables instead of 85, with no
+exceptions.** 🔑 ***So the sweep's counts of the SYSTEM are sound, and its counts of its own SEARCH
+SPACE are not*** — **which is the same split §T11.51d found between the sweep's findings and its
+account of its own method, now measured on populations instead of prose.**
+
+#### ✅ T11.58f — **The band**
+**Baseline `5dfb72ab` 13 / 3 / 695 / 689 — the TWENTY-THIRD identical. Working 39 / 0 / 664 / 664.**
+***Predicted within ±1 of 664, no exact value named. Fourteenth pre-registration: thirteen hits, one
+miss.***
+
+**Pass outcome: 🔴 one more unreproducible population, ✅ both of its findings confirmed on larger
+sets, and four population figures re-taken EXACT. CLEAN 0/3 · 58 passes.**
+
+---
+
 ### T11.57 — PASS 56 (**the RULE-29 SIBLING RE-TEST — rule 6 applied to rule 29, the pass after it was written**) — **🔴🔴 the corpus's most widely reused POPULATION figure cannot be reproduced · ✅ the verdict it carries survives on a population twice the size · 0/3**
 *2026-09-21. **The obligation**: rule 29 was born from ONE claim that held by name and split by
 artifact. Its siblings — every *"nothing reads / no writer covers / no code references"* claim on
