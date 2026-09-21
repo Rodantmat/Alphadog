@@ -3657,9 +3657,13 @@ broad. **VERIFIED**: `nba_score.baseline_ladder_runs` holds **3 real rows** (as-
 `nba_score.*_runs`; the central control plane is empty.** Pass 68's `nba_control` evidence stands;
 **its heading is corrected in §T1.98.**
 
-**FINDING 4 — ⚠ an open question, not a claim.** The three ladder runs do not cover the same props:
-**22, 22, and 18** — `asof 2026-03-15` is missing `dreb`, `fgm`, `fta`, `oreb`. **Whether that is a
-different slate or a coverage loss is NOT RECORDED.**
+**FINDING 4 — ✅ ANSWERED 2026-09-21 by §T9.19b.** The three ladder runs do not cover the same props:
+**22, 22, and 18** — `asof 2026-03-15` is missing `dreb`, `fgm`, `fta`, `oreb`. ~~*Whether that is a
+different slate or a coverage loss is NOT RECORDED.*~~ **It is neither: it is a coverage GAIN, and
+the load dates prove it.** The 18-prop run was **loaded 2026-09-11**; `NBA_COMPASS.md` line 130
+records the **stat-menu expansion of 2026-09-12** that *"added fgm/fta/dreb to the singles recipe"*;
+the two 22-prop runs were loaded **09-19 and 09-20**. **The March run is not missing props — it
+predates them.**
 
 **FINDING 5 — a method note.** `pg_stat_user_tables.n_live_tup` reported **19,320,938** rows for
 `final_hp`; the exact count is **19,215,200** — **105,738 apart (0.55%)**. **Pass 33's measurement
