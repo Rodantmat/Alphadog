@@ -14430,6 +14430,74 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.56 — PASS 55 (**the FOURTEENTH two-direction judgment — the first run since the band's resolution was known**) — **🔴 §T11.37a NARROWED by an output-path test · ✅ two settled claims survive and strengthen · ❌ a row count corrected · 0/3**
+*2026-09-21. **The pre-registration was made in the honest form the instrument now permits** (§T11.55b):
+*the baseline at 13 / 3 / 695 / 689 for a **twenty-first** identical measurement, and `uncovered12`
+**within ±1 of 663** — no exact value named.* ✅ **Measured: 13 / 3 / 695 / 689 · 39 / 0 / 663 / 664.**
+***Twelfth pre-registration: eleven hits, one miss.***
+
+#### ✅ T11.56a — **PART (a): every cross-corpus band claim T11 has published, enumerated and restated**
+*Not every band figure — only the claims that COMPARE the twelve with the thirty, since that is what
+§T11.55b invalidates. The baseline's repeated identical measurement is the SAME corpus on a FROZEN
+tree and is untouched.*
+
+| claim | gap asserted | verdict |
+|---|---|---|
+| **§T11.1** — *"the twelve-vs-thirty gap is only TEN segments, against T10's 142"* | **10** and **142** | ✅ **far outside ±1 — SURVIVES** |
+| **§T11.39b** — `uncovered30` 662 vs `uncovered12` 665 | **3** | ✅ **outside ±1 — survives** |
+| **§T11.40b** — *"every `uncovered30` before pass 39 is 3–4 low"* | **3–4** | ✅ **a stated basis correction — survives** |
+| 🔴 **§T11.44a** — *"both fell by **exactly this one segment**"* | **1** | ⚠ **AT the resolution — RESTATED in place**: the evidence is the **named segment** whose crossing was traced, ***not*** the count move |
+| 🔴 **§T11.52a** — *"`uncovered12` = `uncovered30` = 664, the gap is ZERO"* | **0** | ⚠ **already narrowed at pass 54 — zero to within ±1** |
+
+🔑 ***Five claims, three untouched, two restated — and both restatements leave the finding standing on
+the evidence that was actually collected.***
+
+#### 🔴🔴 T11.56b — **ATTACK 1: §T11.37a narrowed — tested by OUTPUT PATH, one of the four scrapers is PARTIALLY covered**
+**The original table was built by NAME.** **Re-tested by the JSON filename each scraper writes and
+each of the 21 workers reads** *(control: `nba_daily_delta_meta` fires in 3 workers)*: **the four
+scrapers write EIGHT output families; SEVEN are referenced by ZERO workers.**
+🔴 ***The eighth is `nba_team_game_log_{slug}.json`, written by `scrape_nba_matchups_pergame.py` and
+READ by `alphadog-v2-nba-static-backfill.js` at lines 249 and 259*** *(plus `_advanced_`)*. ⚠ **Its
+`nba_matchups_pergame_{slug}_index.json` output is still read by nothing.**
+🔑🔑 **And the database makes the split exact** *(`[LIVE-AUDIT]`)*: **`team_game_log` 7,380 rows /
+3,690 games, complete** — *the loaded half* — while ***no table containing `matchup`, `period`,
+`injury`, `coach`, `clutch` or `hustle` exists in any `nba*` schema*** — *the unloaded half.*
+✅ ***The corrected finding is STRONGER: a scraper output either has a registered loader AND a
+populated table, or NEITHER.*** **The exception proves the pattern.** 📌 **And the sweep already held
+both halves** — §T11.45c measured `team_game_log` complete, §T11.37a said no writer covered that
+scraper — ***and never put them together.*** *(§T11.20a's shape, fifth instance.)*
+
+#### ✅ T11.56c — **ATTACK 2: `sliding_scale` survives and is STRENGTHENED — and a control failure was informative**
+⚠ **RULE 22 FIRED AGAIN**: the first positive control, **`variation_bands`, FAILED** — *it returns
+zero in code because it is ITSELF one of the documents' "no code reference anywhere" tables.* **Probe
+re-run with `blowout_model`, which fires.** ✅ **Population stated** *(rules 17, 23)*: **123 `.py` +
+21 `.js` in `nba/`, AND 151 `.js`/`.py` at the repo root.** ***`sliding_scale` appears in exactly two
+lines of `build_blowout_model.py` — and that file is the WRITER.***
+⚠ **The root tree returned five files matching `prop_taxonomy`** — **opened** *(rule 26)*: they are
+**MLB orchestrator JOB NAMES** — `static_prop_taxonomy_dispatch`, `STATIC_PROP_TAXONOMY_WORKER`,
+status strings — and ***zero files anywhere reference `nba_ref.prop_taxonomy`.*** ✅ **So §T11.51c's
+quoted class holds, now over a population twice as large.**
+
+#### ❌ T11.56d — **ATTACK 3: the matrix transcription is FAITHFUL — but its row count is wrong**
+✅ **Segment 112 re-read whole. All four §T11.24b items are verbatim in it** — *m2's "no date filter",
+the national-TV flag, the all-star/all-NBA lists, and k1's Wikipedia "coaching changes" source.*
+***Rule 19 does NOT fail a fifth time here: the transcription is complete.***
+❌ **But the matrix has NINETEEN factor rows, not twenty** — *a1 · a2 · a3 · a4 · a5 · a7 · a8 ·
+b1/b2+c3 · b3 · b4/m1 · b5 · c1/c2 · c4+s1–s4 · d1 · d2 · k1 · m2 · m3+m4 · e1–e4* — **and "twenty"
+counted the header.** **Rule 6: the count comes from the authority, and the authority is the table.**
+📌 **Corrected in all three places it appears.**
+
+#### ✅ T11.56e — **ATTACK 4: `applies_to_side` survives exactly**
+**Live: the `more`-only set is still precisely `double_double` and `triple_double`** — *both
+`prop_family = milestone`, both `is_composite = 1`, both `build_tier = B`, and nothing else in the
+28 rows is anything but `both`.* ✅ **§T11.28b unchanged.**
+
+**Pass outcome: 🔴 one substantive narrowing that strengthens the finding, ✅ two settled claims
+surviving over larger populations, ❌ one row count corrected and one band claim restated.
+CLEAN 0/3 · 56 passes.**
+
+---
+
 ### T11.55 — PASS 54 (**live numeric re-verification of passes 44–53 — the first pass in ten to test the SYSTEM rather than the sweep's prose**) — **✅ FOURTEEN figure families exact, every partition closing · ❌ the pre-registration MISSED, and it found a real limit in the band instrument · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. **Every figure re-derived from the database and the filesystem, not from
 the entry** (rules 21, 23). **Read-only: `SELECT` only.***
