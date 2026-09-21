@@ -189,6 +189,17 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+> ## ⚠⚠ STANDING BANNER FOR THE FOUR GAPS BELOW — *owner instruction, 2026-09-21*
+> ***"Fixes can show up later on the other transcripts, so we don't treat anything now."***
+>
+> **Every `[LIVE-AUDIT]` gap in this group is a STATE, not a verdict.** *This sweep has read T1–T11
+> of twenty; **T12–T20 are unswept, and a fix would be recorded there***. **So read each of these as
+> *"this is what the database holds as of 2026-09-21"*, never as *"this is broken"* or *"this is
+> still open."*** **None is to be chased, fixed or escalated** — **the sweep finds the resolution
+> chronologically or not at all.** **The four**: ***the officials/starters loads*** *(§T11.31b)* ·
+> ***the missing season-tables writer family*** *(§T11.37a)* · ***`nba_daily.injury_report_snapshots`***
+> *(§T11.36a)* · ***`triple_double`'s zero rows*** *(§T11.28b)*.
+
 ## 🔴🔴 THE TWO-HOP ARCHITECTURE'S SECOND HOP WAS NEVER BUILT FOR A WHOLE FAMILY
 *Found 2026-09-21, T11 pass 36 (§T11.37a). **`[LIVE-AUDIT]`, 0 of thirty, positive-controlled.
 This generalises §T11.36a from one table to a family, and it is the REASON the matrix's marks
