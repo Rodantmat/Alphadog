@@ -8031,6 +8031,13 @@ live-audit result NEW, grep the twelve documents for the object's own name.** At
 memory.** One grep. *(The count rule and the novelty rule fail together, because both substitute
 what I just looked at for what is on record.)*
 
+🔴 **AND IT FAILED AGAIN ON THE VERY NEXT PASS.** At **pass 11** I labelled §T7.40a a 🔴 new live
+finding; **pass 13 found it recorded at §T2.18 the day before, in this same file, in the same
+words** — a single grep for `1,200` would have returned four places. **Writing the rule is not
+running the rule.** The check is now: *grep first, then write the severity marker* — not *write, then
+justify.* **Two consecutive passes, two novelty failures, both caught by the next pass rather than by
+the pass that made them.**
+
 🔴 **This is the THIRD time in this sweep that I have reported a count from a single-pattern search.**
 **— and by 2026-09-21 it is the FOURTH; see item 4.** The others:
 1. **`raw_json`** — measured 1,306 rows / 6 tables by checking the static layer I was already
