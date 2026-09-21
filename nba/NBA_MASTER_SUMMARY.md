@@ -14315,6 +14315,47 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.17 — PASS 2 (**tail stratum**) — **🔴 I GREPPED AND DIDN'T READ THE HIT · 0/3**
+*2026-09-21. 703 tail segments, classified by shape first: **287 prose (41%)**, 220 tool-result JSON,
+182 command/patch bodies, 14 tool-arg blocks — **~60% mechanism (0)**, the same proportion as T8.*
+
+#### 🔴 T9.17a — **CORRECTION to §T9.16a: the noise-floor conclusion IS recorded, at §T9.14e, and I had the grep hit in front of me**
+
+§T9.16a called the four close props *"left uncertified on an **explicitly unproven** argument"*,
+quoting *"I haven't proven that with a variance-bound argument."* **In the same pass I grepped
+`noise floor` and saw it return `NBA_MASTER_SUMMARY.md` — and did not open it.** It is **§T9.14e**:
+
+> *"I'd now call their remaining residual **the noise floor of 0–2 count stats** rather than a missing
+> factor."* — **"A principled place to stop** on blocks/steals/turnovers/fouls, **reached after the
+> opponent factors were measured and found real but insufficient.**"
+
+**So the reason evolved within T9 itself**: from an admitted *"honest read… not proven"* early in the
+transcript to a **measured** conclusion later — factors tested, found real but insufficient. **The
+open item survives** (the four props were never certified, and no variance-bound proof exists) **but
+"explicitly unproven" understates what the sweep already records.** Corrected in both places.
+
+> ### ⚠ **The rule this breaks is rule 12's second half, and it needs stating: THE GREP IS NOT THE CHECK — READING THE HIT IS.**
+> A grep that returns a filename has not told you anything except where to look. **Twice now
+> (§T8.26a, here) a claim survived because the hit was counted as "already considered" rather than
+> opened.** *Fourteenth standing rule.*
+
+#### 🔑 T9.17b — **What IS unrecorded: the external research behind the conclusion**
+
+The owner's directive was *"research online, **multiple sources**"*. The research came back, and the
+tail carries it — **none of it is in the documents** (`minuscule`, `inherently more volatile` →
+**zero hits**):
+
+> *"Projections are **inherently more volatile** when you're trying to hit **minuscule targets** —
+> the kind you see in stats like **turnovers or blocks**… the thing with 3-pointers and steals or
+> blocks is that **unless you're Victor Wembanyama** averaging [enough], …"*
+
+**The conclusion is documented; the sourcing that the owner explicitly asked for is not.** *Recorded
+because "we stopped at the noise floor" is a much weaker sentence than "we stopped at the noise
+floor, and independent analysis of low-count NBA props says the same" — and the owner asked for the
+second one.* → `NBA_OPEN_ITEMS.md`.
+
+---
+
 ### T9.16 — PASS 1 (**owner stratum**) — **🔑 four of five directives recorded; the fifth's ANSWER is not · 0/3**
 *2026-09-21. Each directive substance-tested across all thirty **before** any claim was written.*
 
