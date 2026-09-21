@@ -1,5 +1,37 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴 THE 2025-26 MATCHUPS SHARDS ARE ONE GAME SHORT AND ONE COLUMN SHORT
+*Recorded 2026-09-21 (T10 pass 4, §T10.4b). `[LIVE-AUDIT]` — verified from the shard files and their
+index metadata on disk. **Not a transcript finding.***
+
+`nba/data/nba_matchups_pergame_<slug>_<yyyy-mm>.json` — **columnar monthly shards, 7 per season**,
+with an index carrying coverage. **The scheme works**: ~29 MB per season against the *"~170 MB as row
+dicts"* it replaced — **a ~6× reduction** — and **no shard above 5.7 MB** against GitHub's 100 MB limit.
+
+| Season | Covered | `empty` | Rows | Columns |
+|---|---|---|---|---|
+| 2023-24 | **1,228** | **2** | 230,877 | 29 ✅ *(1,228 + 2 = 1,230)* |
+| 2024-25 | **1,230** | 0 | 232,830 | 29 ✅ |
+| **2025-26** | **1,229** | **0** | 241,590 | **28** |
+
+🔴 **(1) One game is unaccounted for.** The twelve record **1,230** regular-season games for 2025-26 —
+`NBA_DATABASE.md` states the identity *"**12,300 = 10 starters × 1,230 games** — an identity that only
+holds if every game parsed correctly."* **The index covers 1,229 and lists `empty: 0`, so the missing
+game is neither covered nor recorded as empty:** the index's own bookkeeping does not account for it.
+
+🔴 **(2) `matchupMinutesSort` is missing from the current season only.** It is present in 2023-24 and
+2024-25, **absent from 2025-26**, and **`scrape_nba_matchups_pergame.py:33` lists it in `KEEP`.**
+✅ **Benign on today's code path** — `nba_asof.py`'s `_minutes()` mentions it only in a docstring and
+parses `matchupMinutes`, which is what `aggregate_matchups_asof` sums. 📌 **Why it is absent is NOT
+RECORDED.** ⚠ **But it is a silent schema difference across seasons of one dataset, in the season the
+system is about to run on.**
+
+🔑 **OWNER DECISION** — whether to re-scrape the 2025-26 pairings *(which would settle both at once)*,
+and whether the index should assert `covered + empty = schedule games` so a shortfall fails loudly
+instead of reading as complete. **A re-scrape and a code change; this sweep does neither.**
+
+---
+
 ## 🔴🔴 THE SEASON ROLLS IN ONE LAYER AND IS FROZEN IN THE OTHER — the other half of the Oct-1 boundary
 *Recorded 2026-09-21 (T9 pass 14, §T9.29a). `[LIVE-AUDIT]` — verified by enumerating `os.environ.get`
 across `nba/**/*.py` and the `env:` blocks of `.github/workflows/*.yml`. **Not a transcript finding.***
