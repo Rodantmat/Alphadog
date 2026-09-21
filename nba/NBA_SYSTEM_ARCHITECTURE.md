@@ -43,6 +43,28 @@ at all without a session.*
 pills are `pickemstat` ids that EVERY LINE ALREADY CARRIES as `pickem_stat_id`, so the scraper learns
 its categories from the lines it already has.***
 
+### 🔴 THE ODDS API SPLITS THE US BOOKS INTO TWO REGIONS — **and the one carrying FLIFF was excluded**
+*Recorded 2026-09-21 (T12 pass 3, §T12.4d). **Transcript segments 39 and 42.** **1 of thirty
+(`NBA_PROJECT_LOG.md`), 0 of the twelve** — control `us_dfs` fires in 8 of thirty.*
+
+**The cost model, in the owner's own challenge** *(segment 38, whole)*: *"why the credits increased?
+you just said it is not charged per book."* **The answer**: ***it is not charged per book — it is
+charged PER REGION***, and The Odds API splits the US sportsbooks into two:
+
+| region | books |
+|---|---|
+| **`us`** | DraftKings · FanDuel · BetMGM · Caesars · BetRivers · Bovada · BetOnline · BetUS · LowVig · MyBookie |
+| 🔴 **`us2`** | ESPN BET/theScore · **FLIFF** · Hard Rock · Bally Bet · BetParx · ReBet |
+| **`us_dfs`** | PrizePicks *(+ goblin/demon alternates)* · Underdog · Pick6 · Dabble — **no Sleeper** |
+
+**The purchase, segment 42, verbatim**: *"final: regions **`us_dfs,us` only** … = **420 credits per
+snapshot, ~2.07M for two seasons**; **`us2` and `us_ex` EXCLUDED**."*
+🔑🔑 ***So FLIFF's historical board data was purchasable, in `us2`, and was deliberately left out on
+cost*** — **while Fliff is also the one live board T12 still served through ParlayAPI** *(§0f above)*.
+⚠ **Stated at evidence strength and NOT conflated**: **`us2` would supply Fliff's HISTORY as a
+sportsbook feed; the live-board question is a separate surface.** ***Whether `us2`'s Fliff coverage
+would have satisfied the pick'em board need is NOT RECORDED, and no diff of it was run.***
+
 ### ⚠ Four transferable lessons from the same arc *(segment 604)*
 1. 🔴 **GET THE REAL REQUEST BEFORE GUESSING AT ONE.** *Two evenings of guessed Underdog parameters
    got the runner's request signature challenged by Cloudflare; **a single "copy as curl" from the
