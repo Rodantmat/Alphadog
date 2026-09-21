@@ -230,10 +230,18 @@ prefix:*
 | 🔴 `game_officials` | — | — | **3,681** |
 | 🔴 `player_game_starter_status` | — | — | **32,179** |
 
-🔑 ***Seven game-keyed tables hold all three seasons exactly; two hold one.*** **So the answer to
-"is the repo systematically ahead of the database?" is NO — where a writer exists the load is complete
-except in two cases, and where no writer exists there is no table at all.** *That bounds §T11.31b
-precisely and stops it being over-read.*
+✅ **COMPLETED 2026-09-21 by §T11.45c — the bound is now EXHAUSTIVE over the whole class.**
+***`information_schema` gives exactly TEN game-keyed tables in `nba_stats` + `nba_team`; the table
+above listed NINE.*** **The omitted one is `nba_team.team_game_log`** *(it carries a `season` column
+and so fell outside the prefix census)* — **checked: 2,460 rows per season × 3 = 7,380, 3,690 distinct
+games, COMPLETE.**
+
+🔑 ***So: of the TEN game-keyed tables, EIGHT hold all three seasons and exactly TWO hold one*** —
+`game_officials` and `player_game_starter_status`. **The answer to *"is the repo systematically ahead
+of the database?"* is NO, and it is now proven over the class rather than inferred from part of it:
+where a writer exists the load is complete except in two cases, and where no writer exists there is no
+table at all.** ⚠ *The original wording drew "not systemic" from a class it had not enumerated —
+**rule 25's shape extended from samples to CLASSES: a BOUND states the class it was drawn over.***
 
 ---
 
