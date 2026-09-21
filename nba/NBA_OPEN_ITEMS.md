@@ -317,6 +317,58 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T2 PASS 1 — THE SCRAPER'S DEPENDENCY BUG, AND THE IMPACT-METRIC SOURCE SURVEY *(added 2026-09-21)*
+*First pass on T2 under chronological order. T2 is the 2026-09-03 phase-3a enrichment session.*
+
+### The `curl_cffi` / `requests` install, and why BOTH are there
+Pass 88 recorded that `nba-scrape.yml`'s `Install tools` step runs
+`pip install --upgrade pip curl_cffi requests` and noted only that it installs both. **T2 is where
+the second one comes from, and it was a real failure**: the install step had been narrowed to
+`curl_cffi` alone, and the officials scraper broke with a `ModuleNotFoundError`. T2's diagnosis:
+
+> *"curl_cffi's requests-compatible module is a submodule accessed differently, not the actual
+> `requests` package my officials script imports directly."*
+
+**`from curl_cffi import requests` and `import requests` are different packages.** The nba.com
+scrapers use the first (Chrome TLS impersonation); the Wikipedia officials scraper uses the second,
+because Wikipedia does not tarpit and needs no impersonation. **Both must be installed.** *Anyone
+"cleaning up" that line to the single package it appears to need will break the officials scrape,
+and only the officials scrape — which now runs with `continue-on-error: true`, so it would fail
+quietly.*
+
+### Arenas: `teamInfoCommon` was tried first and rejected — recorded because only the outcome was
+The twelve record `teamDetails` as the arena source (16 mentions). **They do not record that
+`teamInfoCommon` was the first choice and failed.** T2 called all 30 teams against it successfully —
+HTTP 200, `team_city` populated — but **`arena` and `arena_capacity` came back `null` for every
+team**, because the endpoint's live schema no longer carries those column names.
+
+**This is the same failure shape as `leagueStandingsV3`'s missing `TeamAbbreviation`** — the live
+stats.nba.com response differing from the documentation the code was written against, returning a
+well-formed row with a silently empty field rather than an error. **Two independent instances in the
+first two transcripts.** *Recorded as a supersession: arenas were to come from `teamInfoCommon`
+(T2, 2026-09-03), changed to `teamDetails` in the same session when the fields proved null.*
+
+### The free impact-metric survey, and what was ruled out and why
+The twelve record DARKO as the chosen source. **The alternatives it beat are recorded only outside
+them**, and the reasons are the durable part:
+
+| Source | Verdict | Reason |
+|---|---|---|
+| **DARKO** | **chosen** | public leaderboard, no paywall language, strong practitioner reputation |
+| EPM (dunks & threes) | rejected | **premium subscription gate** — the free page shows partial data only, and scraping the paid portion would breach their ToS |
+| RAPTOR (FiveThirtyEight) | rejected | open-sourced, but **FiveThirtyEight shut down** — no ongoing updates |
+| nbarapm.com | **not evaluated** | a free aggregator carrying RAPM/ORAPM/DRAPM plus DARKO/LeBron/RAPTOR summaries; T2 flagged it as promising and **never verified it**. Appears in none of the thirty documents. |
+
+**The ToS reasoning is worth keeping** — the decision not to scrape EPM was made on legitimacy
+grounds, not capability grounds, and that is the kind of constraint a later session will otherwise
+re-litigate.
+
+**And the defensive architecture T2 specified for DARKO, because `darko.app` is a JS-heavy
+client-rendered app**: an abstraction layer rather than a hard-coded dependency, plus deliberately
+low-frequency scraping. *A plain `curl_cffi` fetch will not capture client-rendered data.*
+
+---
+
 ## FROM T1 PASS 88 — THE WEEKLY CADENCE WAS LOCKED FOR A WORKFLOW THAT NO LONGER EXISTS *(added 2026-09-20)*
 *VERIFIED by direct read of `.github/workflows/nba-scrape.yml` on live `main`, 2026-09-20.*
 
