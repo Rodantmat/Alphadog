@@ -14695,7 +14695,13 @@ documents do not, which is §T11.2d measured rather than asserted.***
   confirmatory test … should use an UNCORRECTED bar."* **Applying a documented practice, not inventing
   one.**
 
-#### ✅ T11.27f — **A chronology save: `ENRICHMENT_MINING_AND_FALLBACKS.md`'s 05:30Z status line is T12 material**
+#### ❌ T11.27f — ~~**A chronology save**~~ — **RETRACTED IN FULL BY §T11.29a, ONE PASS LATER**
+> 🔴 ***The supersession is NOT T12's — it is at T11 segments 355 and 536.*** **This probe searched
+> for T12's status-line strings and correctly found zero of the wrong thing.** **The text below is
+> retained as written; its conclusion is void.** *(Rule 20, third instance: vocabulary-correct,
+> pattern-wrong. Rule 27 was born from it.)*
+
+#### ❌ ~~T11.27f — A chronology save: `ENRICHMENT_MINING_AND_FALLBACKS.md`'s 05:30Z status line is T12 material~~
 That document carries the same matrix at a **later** state — *"Status as of 2026-09-10 05:30Z (config
 `enrichment_backfill_status_2026_09_10`): **every factor has its two-season backfill except the
 pick'em/prop history** … **BigDataBall is no longer needed**"* — which would have read as a 🔴🔴
