@@ -386,8 +386,14 @@ nothing to read.** *(Severity ⚠ only because **nothing reads the table at all*
 rebounding 0.08 / usage-assist 0.15 / minutes 0.20 ↔ live `fg3_pct` 0.03, `reb_rate` 0.08,
 `usg_pct` & `ast_rate` 0.15, `minutes` 0.20.
 
-**Related and also unrecorded (same turn set):**
-- **Ladder width**: *"five or six variations over the anchor and five, six under"* — roughly **11–13
+**Related, same turn set — ⚠ also RECORDED elsewhere, contrary to what this entry first said
+(retired 2026-09-21, T7 pass 17):**
+- **Ladder width** — **the requirement is documented in measured form**: `NBA_GLOSSARY.md` line 370
+  and `NBA_GOBLIN_DEMON.md` line 167 give *"Goblin ≈ 25th–35th percentile … useful range ≈
+  15th–85th"* with the live **`LADDER_DEPTH` p95 = 13 rungs for points**, agreeing *"to within one
+  rung"*; `NBA_FINAL_SCORING_CALIBRATION.md` line 2123 repeats the measurement. **The owner's own
+  numbers and rationale are what this entry adds**: *"five or six variations over the anchor and
+  five, six under"* — roughly **11–13
   rungs**, because *"we never know where the apps are gonna throw the prop line"* and the
   goblin/demon extremes are *"where we can find good [value]"*. Explicitly **not** *"a global matrix
   with a ton of data that's not needed."* **The documents describe rungs at length but never record
