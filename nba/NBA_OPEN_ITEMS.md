@@ -1251,9 +1251,22 @@ nba_stats.player_onoff_profile — season '2025-26', 582 rows, last write 2026-0
 ```
 
 **Every previously-recorded hardcoded season in this sweep was in a scraper's URL** (play types,
-tracking detail, `teamInfoCommon`, schedule). **This one is in the write path**, which is worse: a
-scraper fixed to fetch 2026-27 would still land its rows labelled 2025-26 until the worker is
-changed too. *`[LIVE-AUDIT]`: this table is also frozen, last written 2026-09-01 — 20 days.*
+tracking detail, `teamInfoCommon`, schedule). **This one is in the write path.**
+
+### ⚠ NAME IT AS THE TRAP IT IS
+**The scrapers are the natural and correct first place to look when fixing a season rollover** —
+that is where the season appears in a URL, that is what a search for `2025-26` turns up first, and
+fixing them there feels complete. **It is not.**
+
+**A scraper corrected to fetch 2026-27 hands correct data to this worker, which then writes it into
+`nba_stats.player_onoff_profile` labelled `'2025-26'`** — silently, with no error, no certification
+failure, and a row count that looks exactly right. **The wrong-season rows would then be
+indistinguishable from the 2025-26 backfill already sitting beside them**, since the season column
+is the only thing separating the two.
+
+**The check that catches it**: after any season-rollover fix, `SELECT DISTINCT season FROM` each
+`nba_stats` table, not just the scrapers' URLs. *`[LIVE-AUDIT]`: this table currently holds 582 rows,
+all `'2025-26'`, last written 2026-09-01.*
 
 ### The `_debug_headers` technique, worth keeping as a practice
 The arenas scrape's first output committed **`arena_name: null` for all 30 teams plus a
