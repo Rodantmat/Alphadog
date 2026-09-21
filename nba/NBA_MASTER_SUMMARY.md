@@ -14419,6 +14419,60 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.5 — PASS 5 (**novelty audit vs `/tmp/t10base/nba/`, commit `d29401bd`**) — **🔴 TWO of pass 4's claims retracted, both one grep from disproof · 0/3**
+*2026-09-21. Everything passes 1–4 added, grepped against the pre-T10 snapshot **across all thirty
+files, not the twelve** — T10's governing risk — with every hit opened.*
+
+#### 🔴 T10.5a — **The 31/34 split and the "34 active" count were both already on file**
+
+§T10.4a wrote *"two numbers, one object, and **nothing said so**."* **Two documents said so:**
+
+| Document | Text |
+|---|---|
+| `NBA_PROJECT_LOG.md` **488** | *"`nba_config.factor_registry` (**31 baseline / 34 enrichment**…)"* |
+| `NBA_ENRICHMENT_FACTOR_LOCK.md` **641** | *"**Factors (34 active)** and sub-factors (~90) are enumerated with splits and types; the minutes tree is explicit…"* |
+
+✅ **What survives, and it is the more useful statement**: **the registry holds 36 enrichment ROWS of
+which 34 are ACTIVE**, so **67 = 31 + 36** and **65 = 31 + 34** are **two consistent counts of one
+table** — which is exactly why `NBA_DATABASE.md`'s *"67 rows"* and the project log's *"31 / 34"* read
+as a disagreement and are not. **No document states both.**
+
+🔑 **And the retirements are documented more fully than the table documents them**: the registry gives
+`active = 0` and a note; **`NBA_ENRICHMENT_FACTOR_LOCK.md` line 511 gives the destination** —
+*"`national_tv_marquee` and `altitude_venue` **demoted to sub-tiers of A4 and D2**"*. *The table says
+they are off; the document says where they went.*
+
+#### 🔴 T10.5b — **The 1,229/1,230 shortfall is recorded, with the same row counts**
+
+`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` line 195, in the mining-coverage table:
+
+> *"B4/M1 opponent absences / primary defender | ✓ per-game matchups **1,229/1,230 (241,590 pairings,
+> monthly shards)** + weekly pt_defend | ✓ **1,230/1,230 (232,830)** | ✓ **1,228/1,230**"*
+
+**Every figure matches what pass 4 measured.** ✅ **What survives is the bookkeeping**: the index says
+**`covered: 1,229`, `empty: 0`**, so **a consumer reading the index alone sees a complete season**,
+where 2023-24's index partitions correctly at **1,228 + 2 = 1,230**. **Narrowed in both documents.**
+
+#### ✅ T10.5c — **What is genuinely new survives the audit**
+
+| Claim | Baseline hits | Verdict |
+|---|---|---|
+| **`matchupMinutesSort` missing from 2025-26** | **zero across all thirty** | ✅ **new** |
+| **The 36-rows-vs-34-active distinction** | neither document states both | ✅ **new** |
+| **The config-vs-documents certified set** (§T10.1b) | `single_stat_scoreboard_two_seasons` appears only in the 09-09 checkpoint | ⚠ *checked: the checkpoint names the key and does not carry the certified list, so the contradiction is new* |
+| **The mechanism-filter correction** (§T10.2a) | zero | ✅ **new** |
+| **The season-opening bias half** (§T10.1a) | `NBA_COMPASS.md`, the 09-09 checkpoint | ✅ *claim was scoped to **the twelve** and stands as written* |
+
+⚠ **Two retractions in one pass, both of the same shape, and both preventable by the instruction this
+run already wrote**: ***before asserting something is unrecorded, grep its distinctive term.***
+*§T9.41a produced that instruction; pass 4 did not apply it. **That is rule 12 — the gap between
+writing a rule and applying it — for the fourth time in this run.***
+
+**Pass outcome: 2 claims retracted and narrowed, 4 confirmed new, 1 confirmed correctly scoped.
+🔴 CLEAN 0/3 · 5 passes.**
+
+---
+
 ### T10.4 — PASS 4 (**live verification**) — **🔑 the "34 factors" reconciles exactly · 🔴 two defects in the matchups shards · 0/3**
 *2026-09-21. `[LIVE-AUDIT]` throughout — live state does not reset the clean count.*
 
