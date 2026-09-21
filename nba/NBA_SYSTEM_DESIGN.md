@@ -154,7 +154,9 @@ against real data at least once."** **It does not forbid scheduling.** It is the
 for why **P2 (§3) and P3 (§4) were built with `no cron yet`** — and **it stops applying the moment
 that one verified end-to-end run exists.**
 
-**Season opens 2026-10-03.** **Whether that verified end-to-end run has happened is NOT RECORDED** —
+**Season opens 2026-10-20** *(corrected 2026-09-21, §T10.18b — this line read 2026-10-03; that is
+preseason opening night, verified live: prefix 001 preseason 10-03→10-16, prefix 002 regular
+10-20→2027-04-11)*. **Whether that verified end-to-end run has happened is NOT RECORDED** —
 §7's verification table marks the pipelines' status, but the specific question non-goal 3 poses has
 never been asked in these documents. **Flagged in `NBA_OPEN_ITEMS.md`, not resolved here.**
 
