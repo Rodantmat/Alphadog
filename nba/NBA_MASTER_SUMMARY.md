@@ -14430,6 +14430,65 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.41 — PASS 40 (**tenth two-direction judgment, PRE-REGISTERED in two parts — and four attacks on passes 38–39**) — **❌ three narrowings of my own one-pass-old claims · 0/3**
+*2026-09-21. **The prediction lands on both parts; the attacks find that three of the last two passes'
+sentences were scoped more widely than their measurements.***
+
+#### 🔑 T11.41a — **The two-part pre-registration, both parts exact**
+**Predicted**: *"(1) the baseline must read **13 / 3 / 695 / 689** — a thirteenth identical
+measurement of the first three and a **second at 689** — and if `uncovered30` comes back 685 the
+corrected harness was reverted; (2) passes 38–39 wrote instrument analysis, not transcript quotation,
+so the working band must hold at **38 / 0 / 665 / 665**."* ✅ **Baseline 13 / 3 / 695 / 689.**
+✅ **Working 38 / 0 / 665 / 665.** ***Six pre-registrations, six hits*** *(24 · 28 · 31 · 32 · 34 ·
+37 · 40 — with 37's miss being the anomaly that produced §T11.39b)*. ⚠ **And the trap it was written
+against did not spring**: the basis change was not mistaken for movement, because the prediction named
+the number.
+
+#### ❌ T11.41b — **ATTACK 1 narrows §T11.39b: the run log IS the nearest document for three segments**
+§T11.39b published *"**zero** segments have the run log as their nearest document."* 🔴 **Re-taken
+without the coverage filter: the run log is top-1 for THREE segments and top-3 for FIVE, of 712.**
+**The original count was over segments at ≥0.40 only, and that predicate went unstated — rule 16.**
+✅ **The substance holds and is now stated at the right strength**: ***the run log's best score against
+any segment is 0.2375***, far below the 0.40 threshold, **so it cannot cover anything** — which is the
+claim §T11.39b needed and not the one it made.
+
+#### ❌ T11.41c — **ATTACK 2 narrows it further, and this one matters: the PP document DOES match**
+§T11.39b published *"it never matched anything, it only moved the IDF weights."* 🔴 **True of the run
+log; FALSE of `PP_PAYOUT_FINDINGS.md`, which reaches 0.5206 against a segment** — above the high-band
+threshold — **and covers ONE segment at ≥0.40 (max 0.4559) when the two excluded files are scored
+alone.** ✅ **Named**: **segment 393** — *"query: github prizepicks projections daily snapshot archive
+repository json history `api.prizepicks.com/projections` commits daily 2024 2025 dataset"* — against
+PP's *"board source: `api.prizepicks.com/projections` returns 403 from the runner;
+`partner-api.prizepicks.com/projections` serves it."* 🔑 ***It is a URL-STRING artefact, not shared
+substance***: T11's segment is the Wayback/GitHub archive hunt (§T11.30a's dead ends), PP's line is
+about which host serves the board. **Same identifier, different subject.** ✅ ***So excluding the PP
+document was right twice over — out of scope by the owner's rule, and its one "coverage" of a T11
+segment is a char-n-gram collision on a shared URL.*** **The corrected figures stand.**
+
+#### ❌ T11.41d — **ATTACK 3 halves §T11.40a's control: two independent routes, not four**
+§T11.40a called `player_game_log` · `_advanced` · `_scoring` · `_usage` at 79,358 each *"four tables
+agreeing to the row."* 🔴 **They come from TWO workers, not four**: `alphadog-v2-nba-static-backfill`
+*(and the delta)* writes **`player_game_log` + `_advanced`**; `alphadog-v2-nba-static-measure-types`
+writes **`_scoring` + `_usage`** — **from different source files.** ***Within a pair the agreement is
+by construction; across the pairs it is genuine.*** ✅ **So it is a real control at HALF the stated
+strength — two independent pipelines reaching 79,358 — and §T11.12's *"five slices of one cake"* is
+exactly the precedent the pass was told to check.**
+
+#### ⚠ T11.41e — **ATTACK 4: the `006` prefix is attested in ONE season, and the sample must say so**
+`nba_calendar.games` holds **two** seasons; **2026-27 carries only `001` and `002`** because it has
+not been played. ***So "a `006` prefix exists outside the code's documented vocabulary" rests on one
+game in one season*** — **`0062500001`, the 2025-26 Cup final.** **True, and stated at the wrong
+confidence.** *(Rule 25 — a claim from a sample states the sample.)*
+
+📌 **A process observation, recorded and not acted on.** **Passes 26–33 found substantive errors;
+passes 37–40 find PREDICATE and SCOPE imprecision in claims days old.** ***The completion criterion
+treats both as defects, which keeps resetting the count.*** **That is the criterion working as
+written, and changing it mid-sweep would be the sweep grading itself leniently — so it stands.**
+
+**Pass outcome: ❌ three of my own sentences narrowed, none overturned. CLEAN 0/3 · 41 passes.**
+
+---
+
 ### T11.40 — PASS 39 (**live numeric re-verification of passes 32–38, on the CORRECTED corpus**) — **✅ CLEAN 1/3 — twenty-three figures exact, six novelty counts identical, and the first band on the true thirty**
 *2026-09-21.*
 
