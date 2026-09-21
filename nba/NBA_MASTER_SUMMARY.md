@@ -14427,8 +14427,11 @@ the loader.
 
 #### 🔴 T9.39b — **`p95 = 13 rungs` and `LADDER_DEPTH["points"] = 14` are different quantities, and four documents give them the same name**
 
-The dict's twenty values are **2 · 2 · 3 · 3 · 3 · 4 · 5 · 5 · 5 · 6 · 6 · 6 · 7 · 10 · 10 · 14 · 14 ·
-15 · 16 · 16.** **No entry is 13.** Yet:
+The dict's twenty values are **2 · 2 · 3 · 3 · 3 · 4 · 5 · 5 · 5 · 5 · 6 · 6 · 6 · 7 · 10 · 14 · 14 ·
+15 · 16 · 16.** **No entry is 13.** *(⚠ the multiset was mis-transcribed as "…5 · 5 · 5 · 6 · 6 · 6 ·
+7 · 10 · 10…" when this entry was written — **three 5s and two 10s instead of four 5s and one 10** —
+corrected 2026-09-21 by §T9.40a. **`assists`, `ftm`, `fta` and `dreb` are all 5; only `fga` is 10.**
+The conclusion is unaffected: **13 is still absent**, and the count is still 20.)* Yet:
 
 | Document | What it says |
 |---|---|
