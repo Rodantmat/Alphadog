@@ -8069,6 +8069,14 @@ edited is the likeliest place to contradict.** *The novelty grep and the contrad
 same grep; run it over the twelve including the file in front of you.* **First internal
 contradiction of the sweep.**
 
+🔴🔴🔴 **THE PROCEDURAL FIX, 2026-09-21 after §T8.26a — the twelfth form, and the only one that
+changes WHEN rather than WHAT.** Eight absence/novelty failures across T7 and T8, **every one caught
+by a later audit pass and none by the pass that wrote it**, all for the same reason: the audit is
+scheduled, and the claim is written in between. **So the grep moves to the moment of writing — same
+tool call as the draft, before the severity marker exists.** The audit pass stays as a backstop, but
+*a backstop that catches everything is not a backstop, it is the process.* **If a claim about the
+documents is worth writing, it is worth four seconds of `grep -ri` first.**
+
 🔴🔴 **The eighth form, added 2026-09-21 after §T7.54a — RUN THE NOVELTY GREP ON THE FINDING YOU ARE
 MOST CONFIDENT ABOUT, FIRST.** *Proven twice by pass 31: the two claims grepped first — because I was
 sure of them — both returned hits.* **Ten of T7's thirteen defects were claims I did not doubt.** In pass 25 I grepped `variation_band`, `band_key`,
