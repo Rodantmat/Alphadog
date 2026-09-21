@@ -613,6 +613,39 @@ backtest at thresholds 1.1006 / 1.1547 / 1.25 / 1.40, one leg per player-prop-da
 breakeven per leg 1.1547 (2-pick Power) and 1.1006 (3-pick). Leg-level value ignores compression above 9.1× and
 rounding, so it overstates big demons; extrapolated prices are excluded from every verdict.
 
+### ITEM 1 RESULTS — the model against PrizePicks' prices, two seasons (2026-09-21)
+All 325 dates scored (point-in-time). Table `nba_market.pp_model_vs_price`: 1,092,800 model-scored PrizePicks legs
+(316,585 + 776,215), 99.6% priced, 1,078,919 usable (priced + graded, extrapolated prices excluded).
+Leg value = 2 × factor × hit; fair = 1.0; breakeven 1.1547 (2-pick Power), 1.1006 (3-pick).
+
+| | 2024-25 | 2025-26 |
+|---|---|---|
+| Brier, demons (model / PrizePicks) | 0.1853 / **0.1812** | 0.1897 / **0.1841** |
+| Brier, goblins | 0.2232 / **0.2128** | 0.2277 / **0.2202** |
+| Brier, standards (PP = flat 50%) | 0.2567 / **0.2500** | 0.2551 / **0.2500** |
+| Top bucket (model value ≥ 1.50): claimed → realized | 1.729 → 1.155 ± 0.015 | 1.798 → 1.132 ± 0.009 |
+| Best selection (≥ 1.40, one leg per player-prop-day) | 1.151 ± 0.013 | 1.107 ± 0.010 |
+| Calibration gain, shifts > 0.30 (Brier) | +0.0121 | +0.0050 |
+
+1. **PrizePicks' pricing is the better forecast on every kind, both seasons.** On standards the model is worse than
+   a flat 50%.
+2. **But the model ranks.** Realized value climbs with its claim in both seasons (0.89 → 1.155; 0.86 → 1.13).
+3. **It is heavily overconfident.** Only ~21% (2024-25) and ~17% (2025-26) of the top bucket's claimed edge
+   materialized.
+4. **No threshold clears the 2-pick breakeven in either season.** The 3-pick breakeven is cleared only at ≥ 1.40:
+   clearly in 2024-25, not significantly in 2025-26 — and those picks are 58% / 80% demons, whose leg-level value
+   slip compression will cut.
+5. **Tail bias by kind:** goblins under-predicted (0.644 vs 0.685 actual; 0.626 vs 0.659), demons over-predicted
+   (0.263 vs 0.246; 0.296 vs 0.257) — the ladder's tails are too wide.
+6. **Demons underpay as a class:** actual 0.246 vs implied 0.267; 0.257 vs 0.286 (~ −8 to −10% value). Standards are
+   fair (0.500 vs 0.500).
+7. **Calibration helps out of sample in both seasons, and the larger the shift, the more it helps** — a 0.15 guard
+   would remove the most useful corrections (answers open decision 1).
+
+**Caveats:** prices are our reconstruction (v2, ~80% within one step); leg value ignores compression and rounding;
+legs are not independent (SEs optimistic); the model's design was developed looking at these seasons, so these
+results are an upper bound — live 2026-27 is the real test; 2025-26 calibration is inherited only.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
