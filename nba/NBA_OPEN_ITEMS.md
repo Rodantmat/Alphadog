@@ -317,6 +317,61 @@ does not protect against the delete above it.**
 
 ---
 
+## 🔴 SEASON-CRITICAL · THE DARKO SCRAPER'S FAILURE EVIDENCE IS THE WRONG 20 KB OF THE PAGE *(added 2026-09-21)*
+***VERIFIED** on live `main`: `nba/scrape_nba_darko.py` lines 86 and 90. **Owner action — do not fix
+here.***
+
+```python
+if len(players) < 400:
+    error = f"suspiciously_low_count: only {len(players)} players parsed, expected ~530"
+    OUTPUT_DEBUG_PATH.write_text(html[:20000], encoding="utf-8")   # line 86
+...
+except Exception as exc:
+    if html:
+        OUTPUT_DEBUG_PATH.write_text(html[:20000], encoding="utf-8")  # line 90
+```
+
+**The data this scraper extracts lives in a SvelteKit hydration `<script>` near the END of the
+body.** The debug artifact captures the **FIRST** 20,000 characters. **So on any failure, the file
+committed to the repo as evidence contains none of the data the failure is about** — and it looks
+like a successful capture, which is worse than no artifact at all.
+
+**It was fixed once and lost.** T3's v2 scraper carried the instruction explicitly —
+*"always dump the full html (not truncated) … so the next attempt has full ground truth instead of
+another guess"* — and the rewrite that introduced the working hydration extraction dropped it.
+
+**Why season-critical**: DARKO is the player-impact input, refreshed weekly. **The first failure that
+matters will be during the season, and the artifact left behind will be useless.** The fix is
+deleting `[:20000]` in two places.
+
+---
+
+## ⚠ THE WORKER REGISTRY MISLABELS PLAY-TYPE COVERAGE — a check that returns a wrong answer *(added 2026-09-21)*
+***VERIFIED by live SQL, 2026-09-21.** Recorded as its own item because it makes an audit lie.*
+
+`nba_config.worker_definitions.notes` for `alphadog-v2-nba-static-playtypes`:
+
+> *"Source: stats.nba.com synergyplaytypes. **Player + team level, offensive and defensive
+> groupings**, 11 real play types …"*
+
+The data:
+
+| Level | `type_grouping` | Rows |
+|---|---|---|
+| player | **Offensive** | **3,282** |
+| player | *Defensive* | **0 — the grouping does not exist** |
+| team | Offensive | 300 |
+| team | Defensive | 330 |
+
+**The registry is the natural place to check what a worker produces without querying its tables, and
+for this worker it gives the wrong answer.** A future session planning a defense-vs-role factor would
+read the notes, believe player-level defensive play-type data is in hand, and design against data
+that was never collected. *The underlying scrape-shape decision is documented separately below; this
+entry is about the check, not the data.* **Not corrected — the notes column is live database state
+and editing it is a write.**
+
+---
+
 ## ⚠ FROM T3 PASS 8 — PLAY-TYPE DATA IS OFFENSIVE-ONLY FOR PLAYERS, BY CONSTRUCTION *(added 2026-09-21)*
 *Recorded as of 2026-09-03.*
 
