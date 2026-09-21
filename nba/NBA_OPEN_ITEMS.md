@@ -71,6 +71,33 @@
 > `search_path`, would not appear. ***"Read by no code" is stronger than this evidence supports;
 > "no schema-qualified reference in the repository on 2026-09-21" is what was measured.*** **A
 > dated STATE, not a verdict** *(O9)*.
+>
+> ### 🔴 SECOND INSTANCE — **"ACROSS ALL 85 TABLES" MATCHES NEITHER POPULATION** *(§T11.58b, pass 57)*
+> **The type-discipline finding in this document and in `NBA_MASTER_SUMMARY.md` is stated *"across
+> all 85 tables."*** `[LIVE-AUDIT]` **2026-09-21: `nba*` holds 104 base tables, and 54 of them carry
+> any of the five ID columns the sentence enumerates. 85 is neither**, and the sentence gives no
+> date and no derivation. *(104 − 85 = 19 is consistent with tables added since the measurement,
+> including the concurrent session's `pp_*` — **a reconstruction, not a verification**.)*
+>
+> ✅ **AND THE FINDING ITSELF RE-VERIFIES PERFECTLY, ON A LARGER SET** — *every column, no
+> exceptions*:
+>
+> | column | stated | re-taken 2026-09-21 | type |
+> |---|---|---|---|
+> | `player_id` | 28 | **34** | ✅ all `text` |
+> | `team_id` | 20 | **21** | ✅ all `text` |
+> | `game_id` | 20 | **21** | ✅ all `text` |
+> | `nba_player_id` | 10 | **11** | ✅ all `bigint` |
+> | `nba_team_id` | 6 | **6** | ✅ all `bigint` |
+>
+> 🔑 ***So in BOTH of rule 30's instances the population is wrong and the finding is right*** — **the
+> sweep's counts of the SYSTEM are sound; its counts of its own SEARCH SPACE are not.**
+>
+> ✅ **Counter-examples, re-taken and EXACT** *(so this is an audit, not a complaint)*: **the 24
+> `DELETE`/`TRUNCATE` statements** — *23 `DELETE FROM` + 1 `TRUNCATE`; the six lowercase matches are
+> comment prose, opened and dismissed* — **`nba_ref.players` 582** · **`nba_team_id` 6** · **and the
+> thirty / thirty-two document pair, which is two correct counts of two different populations
+> (32 `.md`, less the run log and the out-of-scope PP document)**.
 
 ## 🔴 THE FACTOR-RELEVANCE GATE KNOWS 4 OF 36 ENRICHMENT FACTORS — AND TWO FACTORS CANNOT BE BACKFILLED AT ALL
 *Recorded 2026-09-21 (T10 pass 6, §T10.6a / §T10.6c). `[LIVE-AUDIT]`.*
