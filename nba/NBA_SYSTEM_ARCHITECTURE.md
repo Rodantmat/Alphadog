@@ -157,7 +157,7 @@ taxonomy: NBA has no opposing-role prop family, so one `nba_stats` replaces MLB'
 | **P2 cron 01:00 PT** | UTC in the workflow | **drifts an hour** — and P2's margin is already **2 hours tighter** than the lag research endorsed |
 | **P3 cron 1:15 PM PT** | UTC in the workflow | **drifts an hour** — against a cutoff that IS time-sensitive |
 | **`nba_asof.py` — `PHASE1_CUTOFF_LOCAL = "16:00"`** | **a LOCAL time string**, not an offset | ✅ **the correct form** |
-| The injury-report archive | *"the season crosses DST"* — already recorded as a caveat on the hourly backfill | ⚠ noted |
+| The injury-report archive | *"the season crosses DST"* — already recorded as a caveat on the hourly backfill | 🔴🔴 **MEASURED 2026-09-21 (§T11.4c) — the caveat was noted and the code does the wrong thing: every `snapshot_ts` in all 14 month-shards, both seasons, carries a HARDCODED `-05:00`.** *No other offset exists in the data.* **The season opens and closes inside EDT (−04:00), so the opening fortnight and the closing month are stamped an hour late** — ***this is precisely the "fixed offset" the row below names as wrong.*** Full entry in `NBA_OPEN_ITEMS.md` |
 
 **✅ `nba_asof.py` gets it right** — storing `"16:00"` as a **local wall-clock time** with the timezone
 resolved at use is exactly the prescribed pattern, not a fixed offset.
