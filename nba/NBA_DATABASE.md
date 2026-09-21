@@ -632,6 +632,23 @@ family.** ⚠ *`morning` covers **2,468** events against `window`'s **2,466** �
 📌 **`nba_score.board_scored.kind` is entirely NULL** — a third unpopulated discriminator after
 `board_outcomes`' two.
 
+🔴 **AND `board_tiers` vs `board_tiers_v2`: SAME ROW COUNT, DIFFERENT VALUE SETS** *(§T11.20a)*
+
+| column | `board_tiers` | **`board_tiers_v2`** |
+|---|---|---|
+| rows | **2,199,354** | **2,199,354** — *identical* |
+| `kind` | `demon` · `goblin` · `standard` | same |
+| **`anchor_type`** | `explicit` · `switch_point` | 🔴 **+ `none`** |
+| **`tier`** | `0` · `−1…−6` · `1…8` | 🔴 **`−7…+8`** |
+
+***The counts match and the content does not*** — v2 carries a third anchor type and a wider tier
+range. 📌 **What v2 is, and whether it supersedes v1, is NOT RECORDED.**
+
+✅ **`side` is a SUBSET relationship, not a collision**: `board_snapshots` and `board_outcomes` both
+carry **`No` · `Over` · `Under` · `Yes`**, and **`nba_score.final_hp` carries only `Over` · `Under`** —
+🔑 ***the `Yes`/`No` props never reach `final_hp`***, consistent with `double_double`'s documented
+*"sentinel −1.0, no ladder."*
+
 🔴 **`rate_tier` is NOT a column anywhere** — it is the design's word for `tier_label`.
 📌 **Mentions across the twelve**: `variation_band` **43** · bare `role_tier` **40** · `var_band`
 **12** · `tier_label` **11** · `role_tier_key` **11** · `rate_tier` **4**. ***Both vocabularies are
