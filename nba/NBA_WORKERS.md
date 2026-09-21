@@ -151,7 +151,9 @@ recurring.***
 🔴 **What happened**: the run produced **266,049 rows and 2,218 snapshots — but only from
 22 December onward.**
 
-**Cause**: **before ~2026-12-22 the NBA's injury-report archive used an HOURLY filename with no
+**Cause**: **before ~2025-12-22** *(corrected 2026-09-21 by §T11.6a — this read 2026-12-22, a year
+out; the season is 2025-26 and `NBA_PROJECT_LOG.md` line 502 gives the date)* **the NBA's
+injury-report archive used an HOURLY filename with no
 minutes** — `06pm`, `12pm`, even `12am` — **and the true publish time appears only in the document
 header** (*"Injury Report: 11/24/25 12:30 PM"*). **The 15-minute filename pattern begins 22 December.**
 A scraper written against the 15-minute pattern therefore finds nothing before that date **and
