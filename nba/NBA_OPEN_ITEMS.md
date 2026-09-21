@@ -189,6 +189,53 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 🔴🔴 NEUTRAL-SITE GAMES ARE IN NO DOCUMENT — and HCA is applied to them
+*Found 2026-09-21, T11 pass 14 (§T11.15). `[LIVE-AUDIT]`. **Season-relevant: the 2025-26 calendar
+labels four of them.***
+
+**`nba_calendar.games` carries `game_label` and `arena_city`, and labels these explicitly:**
+
+| date | calendar | `game_label` | `arena_city` |
+|---|---|---|---|
+| **2025-11-01** | DAL @ DET | **NBA Mexico City Game** | **Mexico City** |
+| **2025-12-13** | SAS @ OKC | **Emirates NBA Cup** | **Las Vegas** |
+| **2026-01-15** | MEM @ ORL | **NBA Berlin Game** | **Berlin** |
+| **2026-01-18** | ORL @ MEM | **NBA London Game** | **London** |
+
+🔑 **These are the games behind the home/away join failure** (§T11.14a): at a neutral venue "home" is
+an administrative label, and `nba_market.schedule_norm` took the opposite convention to both the
+calendar and the market feed. ***The calendar and `game_lines_snapshots` agree; `schedule_norm` is the
+one reversed.***
+
+🔴 **And nothing in the documentation knows neutral sites exist.** Probed with positive controls
+across all thirty documents:
+
+| probe | hits |
+|---|---|
+| **`neutral site` / `neutral venue`** | **0 of thirty** |
+| **`arena_city`** — the column that identifies them | **0 of thirty** |
+| **`is_home`** — a live factor in `baseline_ladder_runs.factor_fits` (β ≈ 0.0246) | **0 of thirty** |
+| `HCA` / home-court advantage | 7 of thirty, **3 of the twelve** |
+| `NBA Cup` / `Emirates` | 3 of thirty, **3 of the twelve** |
+
+⚠⚠ **The exposure**: **HCA is applied per game from a home/away designation.** For a game in Mexico
+City, Berlin, London or Las Vegas **the designated home team is not at home**, so an HCA term is
+applied to a game where the effect it models is absent — **and for the games where the two sources
+disagree, potentially to the wrong side.**
+
+📌 **OWNER DECISION — three questions, none answered here:**
+1. **Should HCA be zeroed (or reduced) for games where `arena_city` is not the home team's city?**
+2. **Which source does the production path take the home/away designation from** — `schedule_norm`
+   (reversed on these) or `nba_calendar.games` (correct)? **NOT RECORDED; this pass did not trace it.**
+3. **Should `schedule_norm`'s orientation be corrected to match the calendar**, which would also fix
+   the six-game join gap at §T11.12b?
+
+📌 **Scale, stated plainly**: **four labelled neutral-site games in 2025-26** — *a handful, not a
+season-wide defect* — **but they include the NBA Cup games, which are among the most-watched on the
+schedule.**
+
+---
+
 ## 🔴 THE "100% MARKET-SPREAD COVERAGE" IN TWO MANDATED DOCUMENTS IS 99.76%
 *Found 2026-09-21, T11 pass 11 (§T11.12b). `[LIVE-AUDIT]`.*
 
