@@ -2148,7 +2148,76 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
-### T2.15 — PASS 15 (**judgment pass, both directions, against the corrected documents**) — **✅ CLEAN 1/3**
+### T2.16 — PASS 16 (**angle: the mid-band 0.40–0.45 — segments the matcher calls barely-covered**) — **NEW MATERIAL · CLEAN COUNT RESET 0/3**
+*2026-09-21. 43 mid-band segments. A deliberately different angle from pass 15's two-direction run,
+per the pass rule's "different real samples and different angles — a pass is not a re-run."*
+
+**Why this band.** 0.40 is the read-threshold and 0.45 the judgment-band floor, so **0.40–0.45 is the
+seam that neither pass looks at**: high enough to be called covered and dropped from the tail, low
+enough to fall out of the high band. Forty-three segments live there. Most resolved to documented
+entries — the abbreviation gap, the 661→582 dedup, the full-fleet redeploy trigger, Wembanyama's
++16.4 on/off. **One did not, and it is the sharpest finding of the T2 re-read.**
+
+#### 🔴 T2.16a — **`ok` IS THE CERTIFICATION VERDICT, NOT A REQUEST-SUCCESS FLAG — and the fallback is built to satisfy it**
+
+The segment is a worker's return shape:
+```js
+return {
+  ok: certified,
+  status: certified ? "completed" : "completed_with_warning",
+  rows_read: teams.length, rows_written: written, source_key: sourceKey, ...
+}
+```
+**`ok: certified` appears in no document.** `[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by grep of the
+worker sources: **18 NBA workers return `ok: certified`** — `static-teams`, `-players`, `-arenas`,
+`-officials`, `-player-bio`, `-player-tracking`, `-team-stats`, `-onoff`, `-darko`, `-schedule`,
+`-playtypes`, `-tracking-detail`, `-shotquality`, `-lineups`, `-game-officials`, `-starter-status`,
+`-backfill`, and `daily-delta`.
+
+**So `ok` does not mean "the request succeeded." It means "this run passed its own certification
+check."** A run that fetched, parsed and wrote perfectly but missed its threshold returns
+**`ok: false`**. A monitor, a log scan, or any caller applying the near-universal JSON convention
+that `ok: true` means "the call worked" **reads this field backwards from its intent** — and there is
+no separate field that does mean "the call worked."
+
+⚠ **Only 7 of the 18 carry `completed_with_warning`** — `-darko`, `-onoff`, `-player-bio`,
+`-player-tracking`, `-schedule`, `-team-stats`, `-tracking-detail`. **The other 11 return `ok: false`
+with no warning-status vocabulary at all**, so the uncertified case is not uniformly legible even
+within the fleet.
+
+#### 🔴🔴 T2.16b — **THE CONSEQUENCE: the teams fallback CANNOT fail certification**
+
+Put T2.16a beside the certification criterion, `[LIVE-AUDIT]` **VERIFIED** at
+`alphadog-v2-nba-static-teams.js` **line 349**:
+```js
+const certified = finalCounts.active_nba_teams === 30
+               && finalCounts.nba_ref_team_aliases_active_rows >= 100;
+```
+**The hardcoded fallback is a 30-team list.** So when it serves, `active_nba_teams` is exactly 30 and
+the alias count is comfortably over 100 — **the certification predicate is satisfied *by* the
+fallback, structurally, every time.**
+
+**This closes the loop on the indistinguishability finding and makes it worse than recorded.** It was
+already known that a fallback run and a live run return identical certification strings (§T2.12). The
+missing piece is *why that is not a cosmetic logging gap*: **the certification check is incapable of
+detecting the fallback, because the fallback was hand-built to produce exactly the shape the check
+tests for.** A certified run is not evidence of live data. It is evidence of thirty rows.
+
+**And the same `!== 30` shape appears on both sides**: the fallback *trigger* is `teams.length !== 30`
+(§T2.12) and the *certification* is `active_nba_teams === 30`. **Real data with 32 teams trips the
+trigger into the fallback, and the fallback then certifies.** The two checks agree with each other
+and disagree with reality.
+
+**Not fixed, per the standing instruction.** → `NBA_OPEN_ITEMS.md`.
+
+*(Scope honesty: 18 workers were confirmed to use `ok: certified` by grep. **Whether each one's
+`certified` predicate is likewise satisfiable by its own fallback or degraded path was NOT checked**
+— that is a per-worker question, and several of those workers belong to transcripts this sweep has
+not reached. Only the teams worker is asserted here.)*
+
+---
+
+### T2.15 — PASS 15 (**judgment pass, both directions, against the corrected documents**) — **✅ CLEAN 1/3 *(superseded — see pass 16)***
 *2026-09-21. 814 segments. High band (≥0.45): 80. Tail-direction: 27.*
 
 **Run after the owner's corrections were applied** (the `raw_json` scope widening, the 2026-10-20
