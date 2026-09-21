@@ -178,6 +178,23 @@ def main():
             w = v["size"] / (v["size"] + K)
             prior[k] = (w * (logit(v["mean"]) - logit(float(gp.loc[k]))), int(v["size"]), "prior_season")
         print(f"  carried {len(prior):,} cells forward as the next season's opening prior", flush=True)
+    # THE GUARD. An empty build means the inputs came back thin - never a reason to erase the history.
+    if not all_rows:
+        conn.rollback()
+        conn.close()
+        print("REFUSING TO WRITE: this build produced ZERO calibration cells. The existing table is left "
+              "untouched. Check nba_score.final_hp coverage and nba_market.board_outcomes.", flush=True)
+        sys.exit(1)
+    with conn.cursor() as cur:
+        cur.execute("DELETE FROM nba_score.ladder_calibration_asof WHERE season = ANY(%s)", (seasons,))
+        deleted = cur.rowcount
+        cur.executemany("""INSERT INTO nba_score.ladder_calibration_asof
+            (season, as_of_date, prop, phase, band, side, log_odds_shift, n, source)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT (as_of_date, prop, phase, band, side) DO UPDATE
+              SET log_odds_shift=EXCLUDED.log_odds_shift, n=EXCLUDED.n, source=EXCLUDED.source""", all_rows)
+    conn.commit()
+    print(f"WROTE {len(all_rows):,} as-of cells for {seasons} in one transaction (replaced {deleted:,})", flush=True)
     conn.close()
 
 
