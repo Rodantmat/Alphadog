@@ -14419,6 +14419,85 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.6 — PASS 6 (**two-direction judgment, second run — weight on ABSENCE claims**) — **🔴 the relevance gate knows 4 of 36 enrichment factors · 0/3**
+*2026-09-21. Band **30 → 32** high, **103 → 101** tail, coverage **823 / 688**. Pass 5 retracted two of
+pass 4's absence claims, so every absence claim in §T10.1–§T10.5 was re-probed **with differently
+worded probes, not repeats of the first.***
+
+#### 🔴 T10.6a — **`factor_relevance` maps 29 of the registry's 67 factors, and the documented integrity check runs in the one direction that cannot see it**
+
+`NBA_DATABASE.md` records: *"✅ Referential integrity is clean: **0 of 460 `factor_key` values are
+orphaned against `factor_registry`**."* **True — and that is the relevance → registry direction.**
+**The other direction, live:**
+
+| Layer | Registry rows | Has a relevance row | **No relevance row** |
+|---|---|---|---|
+| baseline | 31 | **25** | **6** |
+| **enrichment** | **36** | **4** | **32** |
+| **Total** | **67** | **29** | **38** |
+
+✅ **Every partition sums**: 25 + 4 = **29** *(the distinct `factor_key`s in the table)* · 6 + 32 =
+**38** · 29 + 38 = **67**.
+
+🔴 **The relevance matrix knows 4 of 36 enrichment factors — 89% of the layer T10 exists to build is
+unmapped** — while covering **25 of 31** baseline factors. *The table was seeded against the
+29-factor registry in T8 and was never extended when the registry grew to 67.*
+
+🔑 **And it composes with a finding already in the same document**: *"`none` is specified and never
+written… **as a filter the table currently excludes nothing**."* **Together — a gate that excludes
+nothing, over a factor set it half knows.** ⚠ *`0 of 460` is the check that was run; `38 of 67` is
+the one that was not, and only the second can see this.*
+
+#### ✅ T10.6b — **Three absence claims re-probed with different wording; all three survive, one narrows**
+
+| Claim | Re-probe | Verdict |
+|---|---|---|
+| *"the A/N/B/K/M/C/S/D/E codes are not a column"* | value probe over `factor_key`, `display_name`, `research_notes` | ✅ survives, **narrowed**: **exactly one of 67 `research_notes` references a code** — `late_scratch`, *"**A2** with maximal mispricing; backfill: PDF snapshot deltas"* |
+| *"there is no sub-factor table"* | all six factor-named tables' full column lists | ✅ survives — `factor_registry` · `factor_relevance` · `factor_profile_cells` · `factor_gate_results` · `redistribution_factors` · `team_game_log_four_factors`, **none has a sub-factor column** |
+| *"`matchupMinutesSort` — zero hits across all thirty"* | case-insensitive and space-normalised | ✅ survives **against the baseline tree**; the working tree now returns **3**, all written by passes 4–5 — ***which is exactly why the novelty grep runs against `/tmp/t10base` and never the working tree*** |
+
+#### 🔑 T10.6c — **The `compute_stage` partition is recorded, the live counts confirm it exactly, and two of the factors it names appear in no document**
+
+`NBA_PROJECT_LOG.md` line 739: *"Registry column `compute_stage` added: **15 phase-1, 17 phase-2,
+2 live-only, 2 not-mined**."* **Live:**
+
+| `compute_stage` | Layer | n | Keys |
+|---|---|---|---|
+| `phase2_window` | enrichment | **17** | market/injury/line-movement family |
+| `phase1_baseline` | enrichment | **15** | referee, rotation, restriction, scheme family |
+| `live_only_excluded_from_history` | enrichment | **2** | **`lineups_confirmed`, `overtime_pace_live`** |
+| `not_mined` | enrichment | **2** | `altitude_venue`, `national_tv_marquee` |
+| **NULL** | **baseline** | **31** | — *the column applies to the enrichment layer only* |
+
+✅ **15 + 17 + 2 + 2 = 36 enrichment**, **+ 31 baseline = 67** — and the recorded split matches live
+exactly. ✅ **The `not_mined` pair is precisely the `active = 0` pair**, so the table encodes the
+retirement consistently through two different columns.
+
+🔴 **`compute_stage` appears in NONE of the twelve** — only in `NBA_COMPASS.md` and
+`NBA_PROJECT_LOG.md`. 🔴 **And `lineups_confirmed` and `overtime_pace_live` appear in NO document at
+all, across all thirty.** ⚠ ***Those two are the factors that structurally cannot be backfilled*** —
+which is the direct answer to the owner's [548] directive, *"we need also a fallback… **for all the
+factors, every single factor**."* **Two are exempt by construction, and nothing says so.**
+
+#### ✅ T10.6d — **The band moved, it is attributable, and unlike T9's it is REAL coverage**
+
+**Two segments entered the high band, and both are text §T10.3a quoted verbatim into
+`NBA_FINAL_SCORING_CALIBRATION.md` §7:** *"p5.6 lock status after five passes — discovery is closed:
+34 factors, ~90 sub-factors…"* and *"the factor set is now complete at the level of mechanisms:
+availability and role…"*. **Nothing left the band.**
+
+🔑 **This is the distinction §T9.40b's finding needs.** *There, quoting `rep(s, old, new)` to
+illustrate a mechanism made two code segments read as "covered" — an artifact.* **Here the sweep
+quoted the segments to record their CONTENT in a mandated document, so the movement is the
+documentation gap closing, measured.** **The test that separates them: was the text quoted to carry
+its meaning, or to exhibit a mechanism?**
+
+**Pass outcome: 1 live gap with its partitions, 3 absence claims upheld and 1 narrowed, the recorded
+`compute_stage` split confirmed live with 2 undocumented factors inside it, band movement attributed.
+🔴 CLEAN 0/3 · 6 passes.**
+
+---
+
 ### T10.5 — PASS 5 (**novelty audit vs `/tmp/t10base/nba/`, commit `d29401bd`**) — **🔴 TWO of pass 4's claims retracted, both one grep from disproof · 0/3**
 *2026-09-21. Everything passes 1–4 added, grepped against the pre-T10 snapshot **across all thirty
 files, not the twelve** — T10's governing risk — with every hit opened.*
