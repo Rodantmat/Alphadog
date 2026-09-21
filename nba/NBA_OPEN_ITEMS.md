@@ -43,6 +43,19 @@ vocabulary and **never speaks it**, while MLB uses the same key 1,218 times.
 whether that step exists yet — is NOT RECORDED.** It belongs to the board/grader transcripts this
 sweep has not reached. **Flagged so those transcripts are read with this question in hand.**
 
+### 🔑 And an earlier architectural judgment says where it was supposed to live (T8 pass 8)
+
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` line 99 recorded the table, then empty, as
+**"correctly empty"** — with a reason:
+
+> *"canonical prop-key definitions (points/rebounds/PRA/etc.) **belong to the Board/Scoring layer,
+> explicitly out of scope**"*
+
+**Five days later T8 seeded it into the config layer, 28 rows.** So: **the table now lives where the
+earlier judgment said it should not, and the layer that was supposed to own it still does not speak
+its key.** *These are one question, not two.* ⚠ *Per rule 6 no cause is offered — whether the
+seeding superseded that judgment or simply preceded its consumer is **NOT RECORDED**.*
+
 ## 🔑 THE OWNER'S ACCURACY STANDARD IS SCOPED — *"within the baseline ladder"*
 *Recorded 2026-09-21 (T8 pass 3, §T8.24b). The qualifier returns **zero hits** across all thirty
 documents.*
