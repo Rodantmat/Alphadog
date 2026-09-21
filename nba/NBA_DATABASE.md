@@ -982,6 +982,3 @@ single-valued `baseball_mlb`/`MLB`) · `market.prizepicks_board_current` (`leagu
 `score.real_slip_leg_observations` · `control.user_placed_slips_log`
 
 **All 12 MLB D1 bindings report FALSE** — MLB migrated to Postgres before the NBA build began.
-</content>
-</parameter>
-<parameter name="message">docs: NBA database - full data dictionary from T1 DDL + live measurements
