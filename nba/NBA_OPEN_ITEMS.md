@@ -99,7 +99,79 @@
 > thirty / thirty-two document pair, which is two correct counts of two different populations
 > (32 `.md`, less the run log and the out-of-scope PP document)**.
 
+## 🔴🔴 `[LIVE-AUDIT]` 2026-09-21 — **THE BACKFILL STATUS KEY ASSERTS THREE COMPLETE SEASONS; THE TABLES HOLD ONE**
+*Recorded 2026-09-21 (T12 pass 3, §T12.4b). **`SELECT` only.** The key is
+`nba_config.classification_config` → `enrichment_backfill_status_2026_09_10`, **`verified_at`
+2026-09-10T22:00Z**, row `updated_at` 2026-09-10 21:51Z. **A dated STATE, not a verdict** (O9).*
+
+**What the key says**, verbatim from the live JSON:
+
+| | 2023-24 | 2024-25 | 2025-26 |
+|---|---|---|---|
+| **starters** | `1230/1230 rows 32385 errors 0` ***(2 timed-out games repaired)*** | `1230/1230 rows 32515` | `1230/1230 rows 32179` |
+| **officials** | `1230/1230 rows 3690` | `1230/1230 rows 3691` | `1230/1230 rows 3681` |
+
+🔴🔴 **And the database holds ONLY 2025-26 in both tables** *(re-verified by `game_id` season code at
+T11 pass 58 and unchanged)*: **`player_game_starter_status` 32,179 rows · `game_officials` 3,681
+rows.**
+🔑 ***`32,179` is EXACTLY the key's 2025-26 figure, and `3,681` is exactly its 2025-26 figure*** —
+**so the table contains precisely one of the three seasons the status record calls complete.**
+***This is the strongest evidence yet for the first standing gap: the system's own verified status
+record describes the REPOSITORY, and nothing reads the repository.*** *(§T11.31b · §T12.2d.)*
+✅ **And it CLOSES a T12 queue item**: the two timed-out 2023-24 games — **`0022300079`,
+`0022300721`** — are recorded here as ***repaired***, with the scrape at 1230/1230 and errors 0.
+
+### 🔴 FOUR OPEN ITEMS INSIDE THAT KEY — **and all four are in ZERO of the thirty**
+*(Probed against the baseline with controls `us_dfs` 8 of thirty and `420 credits` 4; every hit
+opened — the two `arbitrage` hits are `NBA_MULTIPLIERS.md`'s **Single-Tier Non-Arbitrage Principle**,
+a payout-table validity check and a different subject, **dismissed**.)*
+
+1. 🔴🔴 ***"market join must be properly keyed before the engine consumes it — a coarse join produced
+   a FALSE 2.9%-vs-56% ARBITRAGE SIGNAL."*** **A join defect that manufactured an apparent
+   53-point edge.** *`coarse join` · `market join` · `properly keyed` — **0 of thirty each.***
+2. 🔴 ***"injury index files report `days_done: 0` while rows are correct — the counter was never
+   written during the shard migration; repair before any job reads it to decide re-fetches."***
+   **A stale counter that a re-fetch decision would read as "nothing done."**
+3. 🔴 ***"2023-24 has NO injury reports — the league archive does not reach back reliably → day-of-report
+   factors can only be fitted on TWO seasons, not three (matters for harness training)."***
+   ⚠ **This is a scope limit on every day-of-report factor and it is not a bug.**
+4. **"9 board snapshots unrecoverable (`EVENT_NOT_FOUND` at that timestamp — the board was not posted
+   yet); 0.18% of 5,124."**
+
+### ✅ WHAT THE SAME KEY GETS EXACTLY RIGHT — **verified live, and the partition closes**
+| claim | re-derived 2026-09-21 |
+|---|---|
+| **`board_backfill_log`: 5,115 snapshots, 9 errors, "0.18% of 5,124"** | ✅ **`status = 'ok'` 5,115 + `status = 'error'` 9 = 5,124 EXACTLY**, and 9 / 5,124 = **0.18%** |
+| **boards 27.06M rows, board table 6,602 MB** | ✅ **`reltuples` ≈ 27,059,920, `pg_total_relation_size` 6,604 MB** |
+| **`game_lines_closing` all 3 seasons** | ✅ **12,165 rows exactly, 333 distinct game dates** |
+
+⚠⚠ **METHOD NOTE, and it is rule 30 biting in the other direction**: ***`reltuples` is an ESTIMATE,
+not a count.*** **`game_lines_closing` estimates 11,768 and counts 12,165 — 3.3% low** — *so the
+27.06M above is an estimate and is stated as one; an exact `count(*)` over that table times out at
+180 s, which is itself the reason the estimate is the only available figure.*
+
+📌 **Also recorded live, and in 0 of the twelve**: **`credits_used_total` 2,148,300** *(against the
+~2.07M estimate)* · **`db_after_index_shrink`: 19 GB (was 23 GB), board table 6,602 MB (was 12 GB),
+indexes 1,001 MB (was 5,764 MB), 0 duplicates proven by a unique-index build over 27.06M rows** ·
+**`player_game_logs` 26,401 / 26,306 / 26,651** · **`matchups_pergame_pairings` 230,877 / 232,830 /
+241,590** · **`weekly_asof`: pt_defend + hustle + clutch, 25 snapshots each, all three seasons.**
+
 ## 🔑 OWNER ACTION — **one browser capture is all that stands between Fliff and our own scraper**
+> 🔴 **SUPERSEDED BY THE LIVE STATE — recorded 2026-09-21, §T12.4c, and kept below with both dates
+> per the chronology rule.** **The section below is T12's state and T12's state is correct for T12**:
+> *rule 27 confirms the transcript's LAST word on Fliff is segment 638 — **"fliff = parlayapi"***.
+> 🔑 **But `board_sources_decision`, live, says**: ***"fliff: OUR OWN scraper
+> (`nba/scrape_fliff_board.py`, NO LOGIN; verified 2026-09-10: 236 markets / 2,434 legs on 5 MLB
+> games with full ladders); ParlayAPI fallback. Owner plays Fliff from California."***
+> ✅ **And the completion is provably AFTER T12**: ***"236 markets" and "2,434" occur ZERO times in
+> the 640 segments of T12*** — **so the owner capture the section below asks for was made, and the
+> scraper finished, in a transcript this sweep has not yet reached.** ⚠ **The gap is therefore
+> CLOSED in the system and OPEN in the record; the section below stands as the history of how.**
+> 📌 **The live key also carries TWO MORE boards the T12 transcript never mentions** — **`betr`**
+> *(our own puller, bridge job `betr_board_pull`, owner session token, twice daily; "no aggregator
+> carries Betr")* **and `chalkboard`** *(research only)* — ⚠ ***and both are already well documented:
+> `betr` is in 10 of the twelve and `chalkboard` in 1, so neither is a discovery*** *(rule 28; "betr"
+> in T12 is seven false matches on **`betrivers`**, opened and dismissed)*.
 *Recorded 2026-09-21 (T12 pass 2, §T12.3c). **Transcript `2026-09-11-21-01-23`, segment 636.**
 Probed against the baseline: every fact below is **0 of the twelve**; the carriers are
 `NBA_PROJECT_LOG.md`, `NBA_COMPASS.md` and `scrape_fliff_board.py`.*
