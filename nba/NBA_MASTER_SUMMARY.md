@@ -6396,6 +6396,54 @@ vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship**
 writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
 but not the twelve.
 
+### T4.26 — PASS 6 (**angle: every measured volume in T4 re-verified against live Postgres**) — **✅ CLEAN 1/3**
+*2026-09-21.*
+
+**Seven volume claims checked. Seven verified.** `[LIVE-AUDIT]`:
+
+| Documented | Live | |
+|---|---|---|
+| `player_shot_quality` **2,244** | 2,244 | ✅ |
+| `player_shot_quality_delta` **582** | 582 | ✅ |
+| `player_shot_zone_profile` **4,656** | 4,656 | ✅ |
+| `player_career_season_totals` **3,644** | 3,644 | ✅ |
+| `player_game_log` **26,651 for 2025-26** | **79,358 across 3 seasons** | ✅ both figures documented, correctly scoped |
+| `team_game_log` **2,460 for 2025-26** | **7,380 across 3 seasons** = 2,460 × 3 exactly | ✅ |
+| `player_splits` | **9,948 rows, 1 distinct season** | ✅ see below |
+
+**The documents are not stale here** — `NBA_DATABASE.md` already carries **79,358** as the table
+total *and* **26,651 for 2025-26** as the season figure, each labelled. The 3-season extension built
+later in this same transcript is reflected. ✅
+
+#### 🔍 T4.26a — a hypothesis raised and **cleared**: `player_splits` holding one season is by design, not key loss
+
+`nba_stats.player_splits` has **9,948 rows but only one distinct `season`**, and its primary key is
+`(player_id, split_type, group_value)` with **`season` deliberately outside it** — a combination that
+*looks* exactly like three seasons of splits silently upserting over one another.
+
+**It is not.** The scraper's own docstring settles it:
+> *"Scoped to the current season (2025-26, the one full-detail season already backfilled) — per the
+> plan's own guidance, splits are most valuable for the 'hot' full-detail season, not necessarily
+> re-collected for the older 2 seasons at the same exhaustive level."*
+
+**One season was collected, so one season is stored.** ✅ **Recorded because the near-miss is
+instructive**: the key defect and the single-season scope produce an identical observable, and only
+reading the scraper distinguishes them. ⚠ **The key defect remains real and remains open** — it is
+latent rather than active, and it becomes active the moment splits are collected for a second season.
+
+#### ⚠ T4.26b — a forward pointer, deliberately NOT documented here
+The live splits scraper resolves its season through **`nba_season.active_stats_season()`**, a helper
+whose own docstring is dated **2026-09-07** — *after* T4. **So the season is no longer hardcoded in
+this scraper, and a season-resolution utility exists in this codebase.**
+
+**That is all this entry says.** The helper, its reasoning, and which scrapers adopted it belong to
+the transcript that introduced it, which this sweep has not reached. **Recorded only so the
+season-rollover trap entries are read against it rather than as an unqualified open hazard, and so
+the sweep recognises the helper as already-documented when it arrives.** Cause and design: **NOT
+RECORDED here**, per Rule 6.
+
+---
+
 ### T4.25 — PASS 5 (**the two-direction judgment pass**) — **1 DEFECT, IN THIS SWEEP'S OWN PROSE · 0/3**
 *2026-09-21. 607 segments. High band (≥0.45): 82. Tail-direction: 32.*
 
