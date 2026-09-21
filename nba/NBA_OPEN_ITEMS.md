@@ -423,6 +423,22 @@ on a subject is its LAST word, not its first** *(rule 27)*.
 > PENDING (owner): pay for an Odds API month to test us_dfs history / pull sportsbook props for a
 > derived board, or accept live-only board archiving from opening day.***"*
 
+### ⚠ WHAT THE QUOTATION LEFT OUT — *rule 19, added by §T11.52d*
+**Segment 355 is a memory-file write with TWO halves and the quotation above is the second.**
+***Its first half is a to-do list***: *"next: **verify injury shards Oct–Dec present, header
+timestamps**; **chunk 2 to season end**; **2024-25 injury**; **per-game 2024-25 result**; **replay
+2026-03-15 with the report**; **then the market probing phase (ParlayAPI first)**."* 🔑 **It dates
+the probe within the session** — ***market probing was scheduled AFTER the injury and per-game work,
+and "ParlayAPI first" is the ordering the whole investigation follows.***
+
+**And segment 501's TAIL was left out**: *"**bridge probe: summarize-fields patch committed but not
+observed live yet (verify)**; **probe workflow `nba-probe.yml` + `nba/probe_board_archives.py` exist
+— no commit runs**."* ⚠ ***An unverified bridge patch and a probe workflow that has never run***, both
+`[LIVE-AUDIT]`-checkable and neither previously recorded by this sweep.
+
+*(§T10.17c's failure exactly — an owner turn quoted for its second half only — which is why rule 19
+exists. Two more instances, both mine.)*
+
 ### 🔴 What this corrects in this sweep's own record
 
 | the sweep said | T11 actually says |
