@@ -1155,6 +1155,39 @@ database**. The original entry implied it did. **What remains true at the table*
 populated for **19 of 30** teams, so any capacity-derived factor still has a `NULL` case covering a
 third of the league.
 
+### ⚠ WHY two team fields ended up in an arenas file — the full sequence, established 2026-09-21
+*The T2 depth re-read settled this by reading the patches and the live scraper, not by inference.*
+
+1. The scraper called **`teamInfoCommon`** and extracted `col("ARENA")`, `col("ARENACAPACITY")`,
+   `col("team_city")` → **arena fields null for all 30 teams.**
+2. **`_debug_headers` was added** and revealed the endpoint's real column list — which contains
+   `CITY`, `OWNER`, `YEARFOUNDED` **and no arena column at all.**
+3. The extraction was patched to use the revealed names: `col("city")`, **and `owner` and
+   `year_founded` were added because the debug output showed they existed.** *Still no arena.*
+4. **The endpoint was then replaced wholesale with `teamDetails`**, which does carry `ARENA` and
+   `ARENACAPACITY` — ***VERIFIED** on live `main`, `scrape_nba_stats_arenas.py` line 38:
+   `https://stats.nba.com/stats/teamdetails?TeamID={team_id}`, extracting `ARENA`, `ARENACAPACITY`,
+   `CITY`, `OWNER`, `YEARFOUNDED`.*
+
+**So `owner` and `year_founded` were discovered on one endpoint and carried across to another when
+the endpoint changed.** **That is the causal origin of the mislabeling recorded above** — not
+carelessness, but two team-scoped fields surviving a migration that changed what the file was
+about. *The `_debug_headers` move that found them is the same one that later proved the endpoint
+could not supply arenas at all.*
+
+### ⚠ A hardcoded season in a WORKER, not just a scraper
+`alphadog-v2-nba-static-onoff.js` writes `season` as a **string literal `'2025-26'` in its INSERT**,
+so every row carries that season regardless of what was scraped. ***VERIFIED***:
+
+```
+nba_stats.player_onoff_profile — season '2025-26', 582 rows, last write 2026-09-01T03:34Z
+```
+
+**Every previously-recorded hardcoded season in this sweep was in a scraper's URL** (play types,
+tracking detail, `teamInfoCommon`, schedule). **This one is in the write path**, which is worse: a
+scraper fixed to fetch 2026-27 would still land its rows labelled 2025-26 until the worker is
+changed too. *`[LIVE-AUDIT]`: this table is also frozen, last written 2026-09-01 — 20 days.*
+
 ### The `_debug_headers` technique, worth keeping as a practice
 The arenas scrape's first output committed **`arena_name: null` for all 30 teams plus a
 `_debug_headers` array listing the columns `teamInfoCommon` actually returned** — `team_id`,
