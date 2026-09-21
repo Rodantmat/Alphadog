@@ -14430,6 +14430,50 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.22 — PASS 21 (**live numeric re-verification**) — **❌ §T11.21c retracted by the very sample note that made it recoverable · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. The attack the next-step row demanded: **"only ever held one value" rested
+on 8 of 22 tables, and a single second value anywhere overturns the sentence.** It did.*
+
+#### ❌ T11.22a — **RETRACTION: `data_quality` holds TWO values, and the sample missed both instances**
+
+**The census completed across all twenty-two tables:**
+
+| value | tables |
+|---|---|
+| **`real`** | **20** |
+| **`derived`** | **2 — `nba_stats.player_shot_quality_delta` and `nba_team.defense_vs_position`** |
+
+🔴 **§T11.21c's *"`real` — and nothing else, in every one"* is wrong.** *Both `derived` tables fell
+outside the eight sampled.*
+
+🔑 **And the corrected finding is better than the retracted one**: ***`data_quality` is CONSTANT WITHIN
+each table*** — no table mixes the two — **so it is a PER-TABLE provenance marker stored per row, not
+a per-row quality flag.** **`real` = scraped from a source; `derived` = computed.** ✅ **And the two
+`derived` tables are exactly the computed ones**: a **delta** (`player_shot_quality_delta`) and an
+**aggregate** (`defense_vs_position`). ***The column does discriminate — just not within a table.***
+
+🔑🔑 **The process point, and it is the reason the claim was recoverable.** §T11.21c ended with the
+rule-16 note ***"predicate stated: eight of twenty-two tables sampled, not all"*** — **that sentence
+is what put the completion on the next pass's list, and the completion overturned it.**
+***A claim that states its own limit is a claim that can be corrected; one that does not is a claim
+that has to be caught.*** *This is the first retraction in the run that the previous pass
+deliberately set up.*
+
+#### ✅ T11.22b — **Everything else re-derives exactly**
+
+`board_tiers` **2,199,354** = `board_tiers_v2` **2,199,354**, with v2's extra `anchor_type='none'`
+and `tier=−7` ✅ · `side` **4 values on the market tables, 2 on `final_hp`** ✅ · `phase` **identical
+across six tables** ✅ · `status` **`applied` / `error`·`ok` / `ok` / empty** ✅ · `source`
+**`parlayapi_closing_odds` / `own`·`prior_season`** ✅ · `snapshot_label` across **nine** tables,
+the family split holding ✅ · the exports **1,228 + 1,226 = 2,454** ✅ · the injury census
+**1,338,020 = 919,949 + 418,071** ✅ · `schedule_norm` **2,460** / `event_game_map` **2,454** /
+`game_lines_snapshots` **2,468** / `game_lines_closing` **2,410** ✅ · the three routes to **7,762** ✅.
+
+**Pass outcome: 1 retraction — mine, and the one the previous pass's own predicate note scheduled —
+plus a better finding in its place; every other figure exact. 🔴 CLEAN 0/3 · 22 passes.**
+
+---
+
 ### T11.21 — PASS 20 (**rule 24's companion finished — the three largest column families**) — **✅ CLEAN 1/3 · the documents already carry all three, and `phase` is the counter-example**
 *2026-09-21. `[LIVE-AUDIT]`. The families pass 19 did not reach: `data_quality` (22 tables), `phase`
 (6), `status` (4), `source` (3).*
