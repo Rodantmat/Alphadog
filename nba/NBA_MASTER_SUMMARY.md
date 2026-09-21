@@ -11104,9 +11104,11 @@ The corrected claim, verified live rather than from prose. `nba_config.factor_pr
 
 **Read against the owner's two-part directive, with the language at evidence strength:**
 - *"Caps must be tier-specific, not global"* — **there is no single global cap.** The registry is
-  per-factor and per-prop, and **22 of 35 cells carry a tier or role key.** The directive is **mostly
-  satisfied by construction**; the gap is the **13 cells that carry neither**, which apply one value
-  across all tiers for their factor.
+  per-factor and per-prop, and **22 of 35 cells carry a tier or role key.** ⚠ *This bullet continued
+  "the gap is the 13 cells that carry neither" — **withdrawn**: those 13 are band-keyed
+  (`variation_band = 'continuous'`), and **34 of 35 cells are keyed exactly as their factor's
+  declared form requires** (§T7.44a, §T7.50a). **The directive is satisfied**, with one
+  non-conforming cell named at §T7.50b.*
 - *"A cap is a fallback, not a first resort"* — **whether these 35 caps are fallbacks or first
   resorts is NOT RECORDED**, and cannot be read off the table. `automation_status` is
   `semi_automatic` and `last_empirical_validation_json` / `last_validated_at` are **null on the rows
