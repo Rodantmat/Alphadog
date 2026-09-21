@@ -11618,7 +11618,7 @@ from being exact; the schedule table already holds the real opening date (2026-1
 |---|---|
 | **All 30 data tables** (`nba_ref`/`nba_calendar`/`nba_team`/`nba_stats`) | ✅ real, correct counts |
 | `nba_ref.prop_taxonomy` (0 rows) | correctly empty — *"a Board/Scoring concept, out of scope for this layer"* ⚠ **T7-dated. Superseded by T8: the table was seeded to 28 props on 2026-09-09** (§T8.4, §T8.25a). *The judgment's substance is a live open question — see §T8.29a.* |
-| `*_differential_log` (0 rows) | correctly empty — *"only one weekly baseline run has happened; **detection starts on the second run**"* |
+| `*_differential_log` (0 rows) | ~~correctly empty — *"only one weekly baseline run has happened; **detection starts on the second run**"*~~ 🔴 **RETIRED 2026-09-21 by §T8.33b: there has been no second run.** All three logs are still empty **and all three snapshots still read `2026-09-02 19:47`**, while the worker rewrites them **unconditionally** — so the staleness is proof it has not completed a run, not evidence that nothing changed. *Consistent with the already-recorded **"⚠ NEVER SCHEDULED"** (`NBA_WORKERS.md` line 1230).* |
 | **18 registered workers** | *"All have real corresponding scrapers on disk, **no orphans either direction**"* |
 | Weekly scrape workflow | *"All **14 static/weekly-phase scrapers** cross-checked **step-by-step against the actual workflow file**"* |
 
