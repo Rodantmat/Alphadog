@@ -317,6 +317,91 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T3 PASS 1 — THE 1 MB ASYMMETRY, A RETRACTED RACE CONDITION, AND TWO DATED ASSUMPTIONS *(added 2026-09-21)*
+*T3 = the 2026-09-03 phase-3a final-complete session. **Recorded as it stood on 2026-09-03**; later
+transcripts may supersede these and will be linked here when they do.*
+
+### ⚠ The bridge tools can read files the workers cannot — a 1 MB asymmetry
+The ~1 MB GitHub contents-API limit is already well documented (49 mentions). **What is not recorded
+is that it does not apply equally to both readers**, and the gap is invisible until it bites:
+
+| Reader | Mechanism | Behaviour on `nba/data/nba_schedule_current.json` |
+|---|---|---|
+| **The bridge tools** (`github_get_file`, `github_grep_file`) | not the plain contents API — T3's reading was the **git blobs endpoint** *(T3's inference, not confirmed here)* | **reads it fine** — ***VERIFIED** 2026-09-21: 1,225,505 bytes, 40,009 lines, returned normally* |
+| **A worker's `fetch()`** | the standard contents API | **fails** — the API returns **empty content rather than an error**, so the worker throws `unexpected end of JSON input` |
+
+**The trap is that the failure is silent on the API's side and misleading on the worker's.** A
+developer checking the file with the bridge sees healthy data and concludes the worker has a parsing
+bug. *The schedule file is over the limit today, so any worker reading it via the contents API is
+affected now, not hypothetically.*
+
+### The differential worker's ordering problem — and why it owns snapshot tables
+*Design recorded as of 2026-09-03.* The existing static workers upsert in place. T3's reasoning:
+
+> *"If the differential worker runs after the regular static-teams/static-players workers already
+> upsert their data, the **'before' state is gone** since it's been overwritten with 'after' values,
+> **making any diff meaningless**."*
+
+**So `alphadog-v2-nba-weekly-differential` maintains its own snapshot tables** rather than diffing
+against the live reference tables — independent of run order by construction, instead of depending
+on being scheduled first. *That design choice is the reason the worker is order-independent, and it
+is worth knowing before anyone "simplifies" it to read `nba_ref.*` directly.*
+
+**The gap it was built to close**: `teamHasRealChange` / `playerHasRealChange` do per-field checks on
+rows that are present, so **a player who disappears from the scrape is never marked inactive** — the
+departure case had no handler at all. Events tracked: new player · departed player · team changed,
+with team relocations, arena renames and referee roster changes as rarer cases.
+
+### ⚠ A race condition was hypothesised and then RETRACTED — within the same session
+**Recorded because the retraction is the finding, and because the hypothesis is the kind that gets
+quoted later as if it were a result.**
+
+T3 saw a team-change event fire for LeBron citing an old `team_id` that a prior run had already
+refreshed, plus a snapshot table reporting `is_first_run = true` when it held 30 rows. The reasoning
+escalated to:
+
+> *"The only explanation is a **genuine race condition** — `run_job` invocations aren't fully
+> sequential, or there's caching or a stale read across separate Cloudflare Worker calls **sharing a
+> connection pool**."*
+
+**It was not.** T3 then established the real cause:
+
+> *"The team change event fired again because **I'd manually re-broken LeBron's snapshot with another
+> update** before this third trigger run, so the discrepancy reappeared as expected **rather than
+> indicating a persistence bug**."*
+
+**Operator error during manual testing, not a concurrency defect.** *There is no evidence in T3 of
+`run_job` calls executing out of order or of connection-pool staleness, and the entry exists so that
+nobody re-derives the abandoned hypothesis from the symptoms.*
+
+### Two dated assumptions, neither verified in T3
+1. **"The other endpoints — teams, players, bio, tracking — are likely season-agnostic."** Stated
+   with *"likely"* when T3 realised the **2025-26 season had already concluded** and that
+   `season=2026-27` was the one to scrape. **The schedule endpoint plainly is season-scoped; the
+   claim that the others are not was never tested.** If it is wrong, several static tables carry a
+   concluded season's values.
+2. **A static CDN JSON alternative to `scheduleLeagueV2`** *"that might avoid special headers
+   entirely and be less likely to get blocked"* — noted, never evaluated. Appears only in
+   `NBA_ENRICHMENT_FACTORS_RESEARCH.md`.
+
+### `postgres.js` rejects `undefined` parameter bindings
+The teams diff failed with an undefined-value error while players and officials succeeded: some team
+fields (`name`, `conference`, `division`) are `undefined` in the source JSON, **and the driver
+rejects `undefined` bindings outright rather than coercing to `NULL`.** *Any field read straight from
+scraped JSON into a query needs `?? null`. The three entities behaved differently purely because of
+which fields their sources happened to populate.*
+
+### DARKO: the "JS-heavy, unscrapable" assumption was superseded inside T3
+T2 recorded `darko.app` as a JS-heavy React/Vue app that a plain `curl_cffi` fetch would not capture
+(see FROM T2 PASS 1). **T3 found otherwise**: it is **SvelteKit, server-side rendered**, with real
+values visible in the HTML. The final extraction path is neither HTML-table parsing nor a CSV link —
+the page's **"Download CSV" control is a `<button>`, not an anchor**, so there is no URL to fetch.
+**All 530 players sit in SvelteKit's hydration payload in an inline `<script>` near the end of the
+body**, as a JS object literal with **unquoted keys**, requiring regex key-quoting before it will
+parse as JSON. *Supersedes T2's assessment, same source, 2026-09-03.*
+
+---
+
 ## ⚠ FROM T2 PASS 3 — `nba_arenas_current.json` CARRIES TWO TEAM FIELDS UNDER ARENA NAMES *(added 2026-09-21)*
 ***VERIFIED** by direct read of `nba/data/nba_arenas_current.json` on live `main`, 2026-09-21.*
 
