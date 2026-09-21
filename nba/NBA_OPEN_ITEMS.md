@@ -10,7 +10,7 @@ at all.**
 
 | | |
 |---|---|
-| Distinct env vars under `nba/**/*.py` | **193** *(corrected from 174, §T9.30b — the first pattern's `[A-Z_]` class truncated every name containing a digit)* |
+| Distinct env vars under `nba/**/*.py` | **194 = 191 + 3** *(174 → 193 → 194; §T9.30b then §T9.31a)* — **191** in the files' own code, **3 (`BT_REPLAY`, `BT_INJURY`, `BT_CUTOFF`) only inside the patcher's embedded replacement source** |
 | **With a hardcoded season-string default** (`"2025-26"`, `"2024-25"`, `"2025_26"`, or a season date bound) | **47** |
 | Set by at least one workflow — **to a literal, or to an input with a literal fallback** | **45** |
 | **Never set by anything; the frozen default is what runs** | **2** — `RUNG_FROM` (`2024-10`), `RUNG_TO` (`2026-04`) in `nba/build_rung_market.py` |
