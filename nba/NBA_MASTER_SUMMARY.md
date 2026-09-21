@@ -14419,6 +14419,117 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.18 — PASS 18 (**partial-quotation audit of the owner stratum**) — **❌ O7 RETRACTED IN FULL one pass after it was written · 🔴🔴 and the sweep's own top-2 headline never reached the documents' prose · 0/3**
+*2026-09-21. All 14 owner turns pulled in full (10,464 characters) and diffed against what the thirty
+carry — the angle rule 19 forced. **It killed the finding that created rule 19, and found a larger one
+underneath it.***
+
+#### ❌❌ T10.18a — **OWNER DECISION O7 IS RETRACTED. The cron-off decision is recorded in FOUR documents, one of which names the step.**
+
+| Document | What it says |
+|---|---|
+| **`NBA_OPEN_ITEMS.md`** *(one of the twelve)* | *"**P2: NO CRON YET — deliberately.** The NBA season opens in October; until real games exist there is nothing for this to mine… **The cron goes in when the season starts** (target: daily 09:00 UTC…)"* — **with P3's target string too**, and the verdict ***"So this is not a gap — it is a dated action item… adding them is the owner's step, not a design question."*** |
+| **`NBA_PROJECT_LOG.md` 478** | *"`nba-baseline.yml` (**manual trigger only — cron OFF per owner**)"* — ***names the step O7 declared NOT RECORDED.*** |
+| **`NBA_COMPASS.md` 56** | *"**Cron for the ladder build is OFF by owner decision until near the season.**"* |
+| **`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` 20** | *"cron intentionally OFF"* |
+
+**Nothing of substance survives.** T10's turn adds only *"I'll very likely do it via Claude
+coworker"* — **already the documented operating model in 4 of the twelve** — and *"do everything
+needed to be done up to that point."*
+
+🔑 **How it failed, and the diagnosis is exact.** O7's six *"differently-worded"* probes were
+`not deploy` · `deployment deferred` · `scheduled task`+`season` · `closer to the season` ·
+`deploy … later|opener` · `everything needed … up to that point`. ***Every one is T10's vocabulary.
+Not one is the DOCUMENTS' vocabulary — `cron`, `OFF`, `intentionally`, `manual trigger only`.***
+
+⚠⚠ **This is §T10.12b's cause verbatim — *probe the SUBJECT in the vocabulary the DOCUMENTS use, not
+the vocabulary the source uses* — and it is the FIFTH absence failure on this one transcript.**
+**It occurred in the pass that wrote rule 19**, and rule 19 was written about being careful with owner
+turns. ***Six differently-worded probes are not a defence when all six are worded by the same
+source.*** **Rule 20, below.**
+
+#### 🔴🔴 T10.18b — **And underneath it: the 2026-10-20 correction is in the headlines and NOT in the documents**
+
+The retracted item sent me to `NBA_OPEN_ITEMS.md`'s cron entry, which closes *"**the season opens
+2026-10-03**."* **This sweep corrected that to 2026-10-20 and made it headline finding #2** —
+`[LIVE-AUDIT]`, `nba_calendar.games`: prefix **001 preseason, 66 games, 10-03 → 10-16**; prefix
+**002 regular, 1,200 games, 10-20 → 2027-04-11**.
+
+**Census over the twelve** *(predicate: a line matching `2026-10-03|october 3|oct 3`; "corrected" = a
+line within ±3 lines matching `10-20|october 20|not 2026-10-03|17 days|preseason`; working tree,
+2026-09-21)*:
+
+| | Count |
+|---|---|
+| Mentions of the wrong date in the twelve | **78** |
+| …carrying **no correction** within ±3 lines | **58** |
+| …of those, **the documents' own assertive prose** (not quotation, not a table cell) | **36** |
+| …of those 36, **outside `NBA_MASTER_SUMMARY.md`** | **18** — `OPEN_ITEMS` **15** · `WORKERS` 1 · `SYSTEM_DESIGN` 1 · `BASELINE_CALIBRATION` 1 |
+
+🔴 **And the run log's own headline is wrong about this**: it states *"**The 40 in-document references
+are left as-is where they sit inside verbatim transcript quotes**."* **Both halves fail** — the count
+is **78 (58 uncorrected)**, not 40, and **36 of them are not quotes at all** but the documents
+asserting the date in their own voice.
+
+⚠⚠ **Fifteen of them are in `NBA_OPEN_ITEMS.md` — *the document the owner will act on*** — including
+a **section heading** (*"SEASON-START CRITICAL — items that bite on or before 2026-10-03"*) and a
+**live countdown** (*"the season opens 2026-10-03, twelve days from this"*). ***The sweep found the
+defect, published it at the top of its findings, and left every deadline it governs 17 days early in
+the document built to be acted on.***
+
+✅ **Corrected, this pass**: a **standing banner at the top of `NBA_OPEN_ITEMS.md`** governing all
+fifteen (*"every deadline keyed to 2026-10-03 is 17 days early"*, with the live partition), **the
+SEASON-START CRITICAL heading**, and the single assertive instances in **`NBA_WORKERS.md`**,
+**`NBA_SYSTEM_DESIGN.md`**, **`NBA_BASELINE_CALIBRATION.md`** and **`NBA_DATABASE.md`**. *Dates inside
+verbatim quotes are left as written — the quote is accurate; the belief it records was wrong.*
+**Stated exactly**: the fifteen in-line OPEN_ITEMS mentions are **governed by the banner, not
+individually rewritten.**
+
+#### ✅ T10.18c — **The other 13 owner turns: no dropped instruction survives a subject-level probe**
+
+All 14 turns pulled in full and each unquoted remainder probed **in the documents' vocabulary**, per
+the lesson above:
+
+| Turn | The part not quoted | Verdict |
+|---|---|---|
+| 121 · 124 | *"besides the scheduled task the system is ready to create an extremely accurate baseline"* / *"finish what still open"* | ⚠ **the owner's ratification of the baseline layer is unrecorded as an event** — but the **standard it ratifies is** (`NBA_COMPASS.md` 57 defines *"extremely accurate"* = calibrated at leg level on both seasons; the scoping to *"within the baseline ladder"* is in **2 of the twelve**). *Recorded, not raised to an item.* |
+| 234 | *"lock the factors"* · *"focus by prop line"* · *"use Gemini for insight"* | ✅ covered — `factor lock` **9 of thirty**, by-prop-line **3**, Gemini **1** |
+| 263 | the documentation mandate itself | 📌 **the instruction that created this sweep is in none of the thirty** — *and it is the only turn of the fourteen whose subject is the documentation rather than the system.* **Out of scope by the sweep's own rule**: the documents record the system, not the sweep. *Noted here so no later pass records it as a gap.* |
+| 338 | the realignment document | ✅ covered — **8 of thirty**, and it **is** `NBA_COMPASS.md` |
+| 413 · 440 | factors must serve slip ranking; slip correlation *"treated later"* | ✅ covered — factors↔slips **4**, correlation/copula **5** |
+| 484 | *"look for sub factors… we thin the factors"* | ✅ covered — **4 of thirty** |
+| 518 | promote a daily factor to baseline via a *"less version"* or a derivation | ✅ covered in substance — *"everything **derivable or day-before-published** into the baseline"*, **7 of thirty, 2 of the twelve** |
+| 548 · 551 | a fallback for *"every single factor"*; new factors must not cost the existing calibration | ✅ covered — **3** and **7 of thirty** |
+| 683 | the backfill must mirror daily mining | ✅ recorded — **1**, by this sweep |
+
+***So partial quotation cost one thing on this transcript, and it was not what pass 17 thought:
+turn 73's remainder was already documented; turn 121/124's ratification is the only real omission,
+and it is minor.*** **Rule 19 stands — it is good practice — but the finding that produced it does
+not.**
+
+#### 🔴 STANDING RULE 20 — **DIFFERENTLY-WORDED PROBES ARE NOT INDEPENDENT IF ONE SOURCE WORDED THEM ALL**
+*Added 2026-09-21 after §T10.18a.*
+
+**An absence claim is not defended by the NUMBER of probes. It is defended by the number of
+VOCABULARIES.** O7 ran six probes and they failed as one, because all six were phrased in the
+transcript's words and the documents use different ones.
+
+**Operative form — an absence claim needs at least one probe from EACH of:**
+1. **the source's vocabulary** — the transcript's own phrasing;
+2. **the documents' vocabulary** — how these twelve habitually name the thing (`cron`, `OFF`,
+   `workflow_dispatch`, a `display_name`, a `.yml` filename);
+3. **the system's vocabulary** — the identifier in code or the database.
+
+**If a probe set does not span all three, the claim says only *"not in these words"*, and it is
+written that way or not at all.** *This is the operative form of §T10.12b's lesson, which named the
+failure and did not give a test that would catch it. Five absence failures on T10; this rule exists
+because the fifth one came after the lesson.*
+
+**Pass outcome: 1 full retraction (O7, one pass old) + 1 propagation finding across 78 references,
+partly corrected in place + rule 20. 🔴 CLEAN 0/3 · 18 passes.**
+
+---
+
 ### T10.17 — PASS 17 (**baseline-tree re-read of the band**) — **🔴🔴 a segment the band scores 0.67 is covered for HALF its content, and the missing half is an undeployed production step · 0/3**
 *2026-09-21. The angle §T10.16a forced: the band has never been read against the corpus that answers
 the question. Every segment that differs between the two trees opened individually.*
