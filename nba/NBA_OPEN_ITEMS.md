@@ -383,7 +383,13 @@ The DARKO scraper does not assume its extraction worked. It carries:
   `error = "pagination incomplete: got N of expected ~M — real pagination url scheme not found by
   the candidates tried, needs manual inspection"`
 - **a committed debug artifact** — `output_debug_path.write_text(html1[:20000])`, so the next
-  iteration inspects the page's real structure from the repo instead of re-fetching blind
+  iteration inspects the page's real structure from the repo instead of re-fetching blind.
+  ⚠ **Corrected 2026-09-21 (pass 4): the 20,000-char cap was itself a defect and T3 removed it
+  mid-session** — *"full, untruncated html this time (not just first 20k) **so the next attempt has
+  complete ground truth instead of a partial guess**."* **The truncated artifact had cut off before
+  the hydration payload, which is near the end of the body — so the very evidence needed was the
+  part the cap discarded.** A debug artifact that samples the wrong end of a document is worse than
+  none, because it looks like evidence. *The final scraper writes the whole page.*
 - an explicitly **permissive** first-run parse, documented in its own docstring as *"intentionally
   permissive … if it produces obviously wrong results (e.g. zero rows, or fewer than expected),
   that's **surfaced honestly in the meta file rather than silently accepted**"*
