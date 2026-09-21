@@ -1,8 +1,9 @@
 league: wnba
-mode: less
-max_quotes: 500
+mode: slips
+max_quotes: 150
 altalt: 30
 drift: 15
-note: 2026-09-21 WNBA LESS run - every goblin/demon quoted More (LEG) then Less (LESS), back to back, ladder by ladder.
-note: purpose (owner): learn how PrizePicks prices Less on alternates before NBA offers it. WNBA = data source for NBA only.
+note: 2026-09-21 WNBA SLIPS run - all-standard 2..6 picks (one player per team) + 1-alternate mixed slips 3..6 with the
+note: alternate priced alone in the same run. Purpose: exact multi-pick Power/Flex rules for NBA (slip rules are league-
+note: independent - verified identical bases and Flex tables). WNBA = data source for NBA only.
 note: scheduled runs force delta mode. Switch back to "league: nba" when the NBA preseason board appears (~Oct 1-3).
