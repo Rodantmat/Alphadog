@@ -591,6 +591,8 @@ row**. The NBA repo has no equivalent of either; whether one is pending is **NOT
 
 **`[LIVE-AUDIT]` — the table is TWO POPULATIONS, zero mixing across 35 rows, and EVERY cell is keyed.**
 The design key is **six-dimensional** — *factor × prop × rate_tier × role_tier × direction ×
+<!-- names corrected below -->
+
 variation_band* (`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247) — **and which key columns are
 populated is itself the population marker**:
 
