@@ -9730,12 +9730,19 @@ decision the system has already made.*
    number correctly without a clamp.
 2. **Any cap that does exist must be tier-specific**, not global.
 
-⚠ **This matters because the system caps.** `NBA_BASELINE_CALIBRATION.md` records a live clamp —
-*"the prior is capped at contributing no more than 25% of the final estimate"* — **a single global
-cap, not a tier-specific one.** *Whether that cap was chosen before this instruction, or in spite of
-it, is **NOT RECORDED**; the calibration work belongs to later transcripts.* **Recorded here in its
-chronological place so the transcripts that set the cap can be read against the instruction that
-preceded it.** → `NBA_OPEN_ITEMS.md`.
+⚠ **This matters because the system caps** — but ~~*"`NBA_BASELINE_CALIBRATION.md` records a live
+clamp — 'the prior is capped at contributing no more than 25% of the final estimate' — a single
+global cap, not a tier-specific one."*~~ **WRONG, corrected 2026-09-21 by §T7.38a** (pass 9): that
+25% is **MLB's** safety valve, quoted in the NBA documents as a **recommendation**, and the same
+section states *"NO SUCH VALVE IS RECORDED IN NBA'S SHRINKAGE"*; it is also a **floor protecting
+individual signal**, not a ceiling on a factor's effect.
+
+**What the system actually caps — `[LIVE-AUDIT]`, §T7.38b**: `nba_config.factor_profile_cells`,
+**35 cells across 15 factors, 10 distinct caps 0.05–0.40**, keyed by factor × prop × tier × role ×
+direction. **There is no single global cap.** 22 of 35 cells are tier- or role-keyed; **13 carry
+neither**, applying one value across all tiers for their factor. *Whether any cap was chosen before
+this instruction or in spite of it is **NOT RECORDED**.* **Recorded here in its chronological place
+so the transcripts that set the values can be read against the instruction.** → `NBA_OPEN_ITEMS.md`.
 
 *(The documents do define the vocabulary — a **lift** is a factor that improves a leg's probability,
 a **penalty** or **drag** one that reduces it, and one entry already notes *"a direct penalty is what
