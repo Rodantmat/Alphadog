@@ -14468,11 +14468,18 @@ from it was not.* **Narrow, and stated narrowly.**
 *2026-09-21. §T9.44a's standing form applied beyond the T9 block: **every timestamp in the twelve**
 checked for whether it states its zone, with the `−0700` boundary as the named risk.*
 
-| | Count |
+| | **Count, measured at pass 31 (2026-09-21)** |
 |---|---|
 | Timestamps in the twelve | **111** |
 | **With no zone token adjacent** | **68** |
 | Of those, **17:00–23:59** — *the window where a local time is the NEXT DAY in UTC* | **43** |
+
+> ⚠ **Dated at pass 33 (§T9.48a), and the direction is the surprise.** Re-measured two passes later the
+> census reads **120 / 74 / 47** — **it ROSE by 9 / 6 / 4.** *Writing this audit up added nine
+> timestamps to the corpus it measures, six of them without an adjacent zone token — because the
+> entry, the ledger row and the run log each quote the three confidence times in prose.*
+> **These figures are a measurement of a corpus the sweep is writing, and they belong with the pass
+> that took them** — §T9.28b's rule, which existed and was not applied here.
 
 ⚠ **Scope stated exactly**: the test looks for a zone token **beside** the timestamp, so a value whose
 zone is given by its **column header** or by "UTC" elsewhere in the sentence counts as zone-less here.
