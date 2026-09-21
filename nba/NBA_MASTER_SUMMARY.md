@@ -16541,7 +16541,11 @@ returns `int(env)` before consulting the table, and **`TRIGGER_NBA_BASELINE.txt`
 `nba/TRIGGER_NBA_BASELINE.txt`'s last commit is `5ef26b1a`, **2026-09-11 10:18:17 −0700 =
 17:18 UTC** — matching its own `last_triggered_utc: 2026-09-11T17:30:00Z`. **Since that path fires on
 a push to that file, it built the 2026-03-15 day and nothing after it.** 📌 **What built the
-2026-01-15 and 2025-11-29 days is NOT RECORDED** — `nba-p2-overnight-heavy.yml` sets no
+2026-01-15 and 2025-11-29 days is NOT RECORDED** *(🔑 **narrowed 2026-09-21 by §T10.25b — the LOAD is
+recorded even though the BUILD is not**: `nba_score.baseline_ladder_runs` gives `loaded_at`
+**2026-09-11 20:23:10** · **2026-09-19 22:35:04** · **2026-09-20 03:23:26** UTC with each day's own
+`source_file`, which puts **two days before `LADDER_DEPTH` (2026-09-19 23:58:44) and 2025-11-29
+after it** — O5 resolved to the day)* — `nba-p2-overnight-heavy.yml` sets no
 `BT_LADDER_STEPS` and is consistent with the per-prop day, but nothing establishes it.
 
 #### 📌 T9.43c — **`assists` 6 and `threes_made` 6 stay NOT RECORDED, and the puzzle narrows**
