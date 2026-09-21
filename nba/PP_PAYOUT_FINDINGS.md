@@ -556,6 +556,63 @@ in `board_tiers_v2` — which depends on the board archive and tier builder runn
 
 **Schedule:** enabled every 6 hours (delta mode). Owner: secondary this early; kept because a run costs ~10–20 quotes.
 
+### MODEL HISTORY FOR ITEM 1 — scoring both seasons (2026-09-21)
+**Why.** Item 1 compares the model's probability with PrizePicks' price on every leg of two seasons. On
+2026-09-21 the model had scored 2 of 325 ladder dates.
+
+**The expensive half already existed.** `nba_score.baseline_history` (13 GB, ~19.3M rows) holds P2's ladder for
+**325 dates — 162 (2024-25) + 163 (2025-26)**, every regular-season date. The scorer (`nba/score_board_legs.py`)
+is point-in-time by design: that date's ladder plus the latest calibration cells published at or before it.
+New runner: `nba/score_history.py` + `.github/workflows/nba-score-history.yml` (optional calibration rebuild,
+then 8 parallel chunks; each date its own process and its own season). `BS_APPS` is documented in the scorer's
+header but never read — it always scores every app.
+
+**THE CALIBRATION WIPE (found 2026-09-21).** `nba_score.ladder_calibration_asof` was EMPTY. P2 test run
+`35483301157` deleted it at **2026-09-20 03:24 UTC (8:24 PM PT, Sep 19)**: P2 passed `AC_SEASONS` = one season,
+the builder deleted EVERY season, `final_hp` held only one graded 2025-26 date, so it computed **zero cells and
+committed them over the whole history** ("wrote 0 as-of cells"). `certify_pipeline.py` caught it and failed the
+job red (`FAILED CHECKS: as-of calibration available`) — nobody followed up.
+**Fixed:** the builder now defaults to every season in `final_hp` (oldest first), computes everything before
+touching the table, **refuses to write an empty build**, and replaces only the rebuilt seasons in one
+transaction. P2 no longer passes a season.
+
+**The lost calibration cannot be recovered, and was stale.** Postgres' insert counter (9,577) is cumulative
+across builds — not the table's size (my misread; I had predicted the rebuild would reproduce it). Re-scoring
+2026-01-15 matched yesterday's scores on ladder probability and confidence for all 52,560 legs, but every
+calibrated leg's shift differed (points ~13–16× larger now): the lost table was built from an older `final_hp`.
+The rebuild is fitted on exactly the probabilities the scorer corrects — `final_hp.baseline_hp` equals the
+scorer's ladder probability on all 5,283 PrizePicks legs tested. Yesterday's scores are preserved in
+`nba_score.board_scored_snapshot_20260920`.
+
+**Two silent bugs fixed along the way:**
+| Bug | Effect | Fix | Proof |
+|---|---|---|---|
+| Builder derived props with `replace('player_','')` → `threes`, `points_rebounds_assists` | threes + all four combos NEVER calibrated (only points/rebounds/assists) | map outcome keys to our names as the scorer does | cells 3,639 → **9,904**, all 8 props |
+| Scorer's phase rule was month-only; the fit splits Feb 15 / Mar 16 | wrong phase's cells on **60 of 348** days (Feb 1–14, Mar 16–31) | scorer uses the fit's rule | disagreeing days → **0** |
+
+**Full run — deadlocks, fixed, resumed.** Run `35572323173` (launched 12:18 AM PT, Sep 21) rebuilt calibration
+(9,904 cells), then scored only **144 of 325 dates**; the other 181 failed on **Postgres deadlocks**. Cause: the
+scorer ran `CREATE UNIQUE INDEX IF NOT EXISTS` in its write transaction on every run. Postgres takes a SHARE lock on
+the table *before* discovering the index exists and holds it to commit; two scorers both held SHARE, then each waited
+on the other for ROW EXCLUSIVE to delete its date. P3 scores one date alone, so it never surfaced — 8 parallel
+chunks triggered it constantly. Victims rolled back whole (nothing half-written). **Fixed:** the index is created
+only when missing. The runner gained `SH_SKIP_BUILT_AFTER` (resume without redoing good dates) and one retry pass;
+the rerun skips dates scored after the 9,904-cell calibration was written (07:22:34 UTC).
+
+**Open decisions (owner):**
+1. **Calibration magnitude.** Average |shift| 0.09–0.15 log-odds per prop, max 0.72 (~17 points at even odds).
+   The ladder recipe discards Platt shifts above 0.15; the as-of builder has no guard. Item 1's Q2b measures
+   whether the large shifts help or hurt out of sample — decide with that result.
+2. **2025-26 has no own-season calibration.** `final_hp` covers one 2025-26 date, so 2025-26 inherits 2024-25's
+   cells. Running the final engine across 2025-26 would fix that (heavier job).
+
+**Item 1 is prepared:** `nba/sql/item1_model_vs_price.sql` — per-leg base table (model score + latest-snapshot
+price + outcome) and five questions: coverage; model vs PrizePicks pricing as predictors (Brier, by kind); does
+calibration help, and do the large shifts help; is the model's claimed edge real (value buckets); a selection
+backtest at thresholds 1.1006 / 1.1547 / 1.25 / 1.40, one leg per player-prop-day. Leg value = 2 × factor × hit;
+breakeven per leg 1.1547 (2-pick Power) and 1.1006 (3-pick). Leg-level value ignores compression above 9.1× and
+rounding, so it overstates big demons; extrapolated prices are excluded from every verdict.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
