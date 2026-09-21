@@ -136,6 +136,18 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/grade_board_outcomes.py
 
+      # 3b) PAPER TRADING (2026-09-21): fill hit / miss / void for logged picks from the freshly graded board.
+      - name: Grade paper-trading picks
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              n = c.execute("SELECT nba_score.grade_paper_picks()").fetchone()[0]
+          print(f"PAPER_GRADED|{n} picks")
+          EOF
+
       # 4) MARKET inputs the baseline needs (blowout + matchup run on the real market line)
       - name: Market spreads and totals
         env:
