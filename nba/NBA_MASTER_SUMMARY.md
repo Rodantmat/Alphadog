@@ -4960,7 +4960,7 @@ whole-universe comparison**, applied to deletes. Full inventory: `NBA_WORKERS.md
 scripts write to it; **three scope their deletes to their own partition and one does not.** Running
 it erases the `v3` rows **P2 writes nightly** and the mondrian rows.
 **VERIFIED not yet fired, and VERIFIED that the collision is real**: the live table holds **three
-generations coexisting** — `verify_confidence`'s own at **2026-09-17 18:16**, mondrian's at
+generations coexisting** *(all `run_at` values **UTC**, `timestamptz`; re-verified live 2026-09-21 at §T9.46a — **34 · 5 · 21 rows**)* — `verify_confidence`'s own at **2026-09-17 18:16**, mondrian's at
 **2026-09-17 23:31**, v3's at **2026-09-20 03:30**. **They survive only because the unscoped writer
 ran first.** It is wired in `nba-absence-panel.yml`, **not** in P2 — a manual-run hazard, which is
 why it has gone unnoticed. **The damage would not error; it would leave a verification table
