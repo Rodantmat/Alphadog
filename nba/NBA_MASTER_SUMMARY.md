@@ -14420,6 +14420,45 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.44 — PASS 29 (**live numeric re-verification**) — **🔴 the blame timestamps were local, and two of them cross midnight in UTC · 0/3**
+*2026-09-21. Every figure passes 26–28 state, re-derived, **with every timestamp converted to UTC
+explicitly** — the check the previous pass's own next-step note demanded.*
+
+#### 🔴 T9.44a — **Five commit times, stated in −0700, two of which are the next day in UTC**
+
+| Commit | What it dates | Local (−0700) | **UTC** | As published |
+|---|---|---|---|---|
+| `e0e49be1` | docstring line 11 | 2026-09-08 21:57:30 | **2026-09-09 04:57:30** | ❌ "2026-09-08" |
+| `98dcccb1` | `fga`'s `# CERTIFIED` | 2026-09-08 22:55:07 | **2026-09-09 05:55:07** | ❌ "2026-09-08" |
+| `1677b3d7` | the `# ADDED 2026-09-12` block | 2026-09-11 19:49:35 | **2026-09-12 02:49:35** | ✅ *(already reasoned about in UTC at §T9.42a)* |
+| `3cda5a12` | `LADDER_DEPTH` + `ladder_depth()` | 2026-09-19 16:58:44 | **2026-09-19 23:58:44** | ✅ stated in UTC |
+| `5ef26b1a` | `TRIGGER_NBA_BASELINE.txt` | 2026-09-11 10:18:17 | **2026-09-11 17:18:17** | ✅ stated in UTC |
+
+✅ **Every ordering conclusion is unchanged** — line 11, then line 103 **58 minutes later**, then the
+T9 session (`2026-09-09-22-10-00`), then the `# ADDED` block; and `LADDER_DEPTH` landing **after** two
+loads and **before** one. ⚠ **But two dates were published a day early**, and they are the two that
+support *"line 11 is older than the certification"* — *a reader converting them finds line 11 on the
+**same** UTC day as the transcript that supersedes it.*
+
+🔴 **Third date-handling issue at this `−0700` boundary in one run**: §T9.35a (a real defect, 09-03
+for 09-02), §T9.42a (a near-miss, caught), this (published). **Standing form: every timestamp in these
+documents is stated in UTC, and a local time is shown only beside it.**
+
+#### ✅ T9.44b — **Everything else re-derives exactly**
+
+| Claim | Authority | Result |
+|---|---|---|
+| The three `min(loaded_at)` — **2026-09-11 20:23:10** · **2026-09-19 22:35:04** · **2026-09-20 03:23:26** | Postgres `timestamptz`, already UTC | ✅ exact, and the before/before/after split holds against **2026-09-19 23:58:44 UTC** |
+| `LADDER_DEPTH` provenance: **8 in the documented table + 12 not = 20** | the `NBA_GOBLIN_DEMON.md` table vs the parsed dict | ✅ **8 + 12 = 20** |
+| The eight "Fixed to" values equal `LADDER_DEPTH` | key-by-key comparison | ✅ **8 of 8** |
+| `used_emp` **205,678 / 559 / 541 / 18 / 99.73%** | `count(*) FILTER (…)` | ✅ **205,678 + 559 = 206,237**, **541 + 18 = 559** |
+| Band **54**, coverage **691 / 675** | `judge9.py`, threshold `< 0.40`, high band `>= 0.45` | ✅ stable, 0 in / 0 out |
+
+**Pass outcome: 1 defect — two published dates a day early — every ordering conclusion intact, six
+figure families exact. 🔴 CLEAN 0/3 · 29 passes.**
+
+---
+
 ### T9.43 — PASS 28 (**`git blame` / history audit**) — **🔑 the two depth regimes have a chronological cause, and it is not the override · 0/3**
 *2026-09-21. The authority pass 27 discovered, applied deliberately: every claim in the twelve of the
 form "X is stale" / "Y supersedes Z" / "this was added later", resolved against `git blame` and
