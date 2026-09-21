@@ -1,3 +1,4 @@
-max_quotes: 260
-altalt: 60
-note: run 3, 2026-09-21 - FIRST run with the pick_distinct fix. Multi-pick FLEX compositions in runs 1-2 were corrupted (asking for 0 legs returned 1). This run gives clean 3-6 pick compositions; same-size slips can be compared directly since the base cancels in the ratio.
+mode: delta
+drift: 10
+max_quotes: 60
+note: first delta run, 2026-09-21 - baseline read from nba_market.pp_mined_leg (run 1 loaded); expect few or no new legs on an unchanged board, a 10-leg drift sample, and the loader backfilling runs 2 and 3
