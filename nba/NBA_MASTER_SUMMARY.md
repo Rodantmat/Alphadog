@@ -6430,6 +6430,29 @@ vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship**
 writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
 but not the twelve.
 
+### T4.29 — PASS 9 (**the two-direction judgment pass, re-run against the amended documents**) — **✅ CLEAN 2/3**
+*2026-09-21. 607 segments. High band: 82. Tail-direction: 32.*
+
+**DIRECTION 2 — CLEAN.** The same 32 self-authorship segments (mechanism 3), into the four documents
+T4 itself writes. ✅
+
+**DIRECTION 1 — CLEAN.** The band is unchanged from pass 5 and every item now maps to a correct
+entry, including the two highest-scoring segments, both owner turns:
+
+- **(0.93)** the architecture correction — *"…would very be on the enrichment pipeline, not the
+  baseline pipeline, **unless there is a better logic that unifies everything and works fast**"* —
+  recorded **verbatim** and analysed ✅.
+- **(0.88)** the timing question — *"the baseline will run early in the day so as not to crash with
+  the enrichment pipeline, will the data be available"* — the **answer** is what matters and it is
+  fully documented: last west-coast games end ~1:45 am ET, stats.nba.com finalises within **10–15
+  minutes**, and **6 am ET was chosen as a 4-hour safety margin**. ✅ The documents also carry the
+  sharper follow-on that **P2's planned 01:00 PT = 04:00 ET is tighter than the 6 am ET window this
+  research endorsed** — a caveat the transcript itself never drew.
+
+**No defect in either direction.**
+
+---
+
 ### T4.28 — PASS 8 (**referential integrity, the remaining T4 tables + value sanity**) — **✅ CLEAN 1/3**
 *2026-09-21. Completes the angle pass 7 opened: everything §T4.27 did not reach.*
 
