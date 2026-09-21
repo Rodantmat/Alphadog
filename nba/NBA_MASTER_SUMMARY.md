@@ -14420,6 +14420,49 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.36 — PASS 21 (**live numeric re-verification**) — **🔴 pass 20's own correction was short one prop — the sibling rule, violated one pass after applying it · 0/3**
+*2026-09-21. Every figure passes 17–20 state, re-derived from its authority, **with each query's
+predicate copied into the prose** (rule 16, first pass under it).*
+
+#### 🔴 T9.36a — **§T9.35b named `fga` and missed `ftm` — and they fail differently**
+
+Docstring **line 11** names **five**: `turnovers`, **`fga`**, `fg3a`, **`ftm`**, `personal_fouls`.
+T9's own owner statement — recorded in **three** documents — names the certified six as
+`points, rebounds, assists, 3PM, `**`FGA`**`, `**`FTM`**. **So two of the five are called certified
+elsewhere, not one.**
+
+| Prop | Docstring line 11 | Inline comment at its entry | Owner, T9 (2026-09-09) | Shape |
+|---|---|---|---|---|
+| **`fga`** | *configured, NOT yet run* | **`# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)`** | **certified** | contradiction **inside the file** |
+| **`ftm`** | *configured, NOT yet run* | `# FTA regression 9%; shift lambda 0.5` — **no marker** | **certified** | contradiction **between the file and the record** |
+
+⚠ **This is the sixth rule — a correction must sweep its own siblings — broken one pass after
+invoking it.** *§T9.35b read line 11, extracted the one prop whose inline comment disagreed, and never
+checked the other four against the certified-six list that was in front of it.* **Corrected in all
+four documents.** 📌 **NOT RECORDED: when line 11 was last edited.** The `# ADDED` comment inside the
+dict is dated **2026-09-12** — after the owner's statement — but **line 11 carries no date**, so
+nothing in the file establishes which is later.
+
+#### ✅ T9.36b — **Every figure passes 17–20 state re-derives exactly, predicates stated**
+
+| Claim | Predicate / authority | Result |
+|---|---|---|
+| Snapshot rows **582 · 30 · 80** | `count(*)` on each of the three `*_roster_snapshot` tables | ✅ exact |
+| Snapshot date **2026-09-02** | `max(snapshot_taken_at)::date` | ✅ **2026-09-02** |
+| Differential logs **0** | `count(*)` summed over the three `*_differential_log` tables | ✅ **0** |
+| `nba_ref.players` **2026-09-03 18:14** | `max(updated_at)` | ✅ **2026-09-03 18:14:55 UTC** — *confirming §T9.35a's two-tables explanation from the second table's own authority* |
+| `oreb` **3,185** · `dreb` **4,315** | `count(*) WHERE prop = …` | ✅ exact |
+| `PROPS` — **15** keys | **the dict read**, keys matched at line start | ✅ **15** |
+| Certification groups **5** and **4** | **the docstring line and the comment's extent read**, not pattern-counted | ✅ 5 · 4 |
+| Extreme split **28,596 / 18,166** over **30,989 / 168,357** | `p_more <= 0.01 OR p_more >= 0.99` — **inclusive, as the prose states** (rule 16) | ✅ exact |
+| **168,357 + 30,989 + 6,891 = 206,237** | partition | ✅ sums |
+| Coverage **694 / 677** | `judge9.py`, `min_df=2`, `char_wb` 4–5, threshold **`< 0.40`** | ✅ exact |
+
+**Pass outcome: 1 defect — my own correction, incomplete — and 10 figure families exact with their
+predicates stated. 🔴 CLEAN 0/3 · 21 passes.**
+
+---
+
 ### T9.35 — PASS 20 (**dated-verdict audit**) — **🔴 a date wrong in four places, a prop dropped from a list, and an "uncertified" group short by two · 0/3**
 *2026-09-21. 111 conditional verdicts extracted from the twelve — *"correctly empty" · "not yet" ·
 "expected until…" · "has not run" · "still empty"* — and the live-testable ones re-tested against
