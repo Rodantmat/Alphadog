@@ -614,7 +614,9 @@ that is deliberate is **NOT RECORDED**.* ✅ Every `canonical_prop_key` here res
 
 **`[LIVE-AUDIT]` the `form` vocabulary itself** — `factor_registry.form` over 67 factors:
 **`continuous` 28 · `tiered_bands` 25 · `binary_gate` 13 · `quantile_bands` 1.** The design's
-*"band / continuous / gate"* is a simplification: **the band family is split in two, and `gate` is
+*"band / continuous / gate"* is a simplification: **the `band` FORM is split in two
+(`tiered_bands`, `quantile_bands`) — this is `factor_registry.form`, not the two
+`variation_bands.band_key` families documented above — and `gate` is
 `binary_gate`.**
 
 ### `nba_config.role_tiers` — **6 rows**
