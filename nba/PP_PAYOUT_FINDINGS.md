@@ -953,6 +953,32 @@ event_id). Test night 2026-01-15: 45 picks → 15 full slips, 0 same-game (rank-
 slips, hit 57.4%); 2025-26 **+18.0% ± 5.6%** (155, 2,166, 58.4%); **both +14.5% ± 4.2%** (309 nights, 3,921 slips; 3.5 SE);
 0 same-game slips. Nights with fewer than three games produce no full slip (14 nights) — correctly sat out.
 
+### DERIVED BOX-SCORE PROPS — research, a caught artifact, results (2026-09-21)
+**Which props have book lines (NBA archive, 6 sample nights):** points, rebounds, assists, threes, the four combos (~110–118
+players/night); blocks ~94; double-double ~90 (books only); steals ~58; blocks+steals ~45; turnovers ~25 (DraftKings only).
+**No book market at all** for FG attempted/made, free throws, 3-PT attempted, offensive/defensive rebounds, quarter props.
+**Estimator test 1 — against real book lines** (stats that have them, pretend unknown; 12 nights): the prior-30-day MEAN
+beats the median everywhere (median runs 0.1–0.25 low); **points-scaled** (tonight's book points line × the player's
+stat/points ratio) wins for scoring volume (threes 0.326 vs mean 0.396 MAE, 79% within 0.5).
+**WNBA cross-check — PrizePicks cuts every line from one box-score projection:** makes/attempts line ratios are real
+shooting % (FG 0.45, FT 0.78, 3PT 0.34), points/FG-attempt 1.28, and **PTS = 2·FGM + 3PM + FTM within −0.11 ± 0.38**.
+**Estimator test 2 — against NBA outcomes** (the proxy for a sharp line; it ranks threes the same way test 1 does):
+FGA points-scaled 2.97 (identity 2.99, best centered); FGM/FTA/FTM/3PA points-scaled; OREB/DREB **rebounds line × share**.
+Estimating 3PA from the threes line is WORST (2.07) — a player's 30-day make rate is too noisy.
+**Built:** `nba_market.build_derived_backsim(from, to)` → `nba_market.derived_backsim` (179,712 legs, both seasons):
+center = estimator − per-prop offset, nearest .5; conservative Over/Under lines (policy `derived_line_shift`: FGA/FGM/FTA 1.0,
+FTM/3PA/OREB/DREB 0.5 = estimator line-error rounded UP); the model's probability at each line; box-score outcome.
+**Caught: an Under artifact.** First build's centers (mean-like) sat ABOVE the outcome median on low counts (best-center over
+FTM 37%, OREB 36%, FTA 40%) — the model's top picks were ~80% Unders and looked like 1.13–1.16. Real PrizePicks low-count
+lines (blocks, steals, turnovers, stocks) hit Over **47.5–49.2%**. Fix: policy **`derived_center_offset`** (FGA 0, FGM/3PA/DREB
+0.25, FTA/OREB 0.5, FTM 0.75) brings every prop's best-center over-rate to 47–50%. The model's real edge on low counts is
+confirmed on REAL lines: its ≥1.30 picks pay on both sides (steals 1.39 / 1.32, turnovers 1.29 / 1.26, blocks Over 1.35).
+**Results after the fix (best derived leg per player-night):** ≥1.30 **1.063 ± 0.017 / 1.093 ± 0.016** (2024-25 / 2025-26),
+≥1.40 1.068 / 1.122 — as a group BELOW the 3-pick breakeven 1.10. Most of the first build's edge was the artifact.
+**Free throws stand out, both sides, both seasons:** FTM Over 1.293 / 1.322 (364 legs, hit 65%), FTM Under 1.258 / 1.205
+(140), FTA Under 1.294 / 1.205 (112). 3PA 1.03–1.14; FGA 1.01–1.09; **rebound splits fail** (DREB Under 0.99 / 0.99, OREB
+Over 0.76 / 0.94) — exclude. Free throws are a candidate only after the NBA preseason board validates the proxy lines.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
