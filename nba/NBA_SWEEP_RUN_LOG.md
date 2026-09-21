@@ -90,6 +90,13 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
 5. **Schedule not refreshed / 2026-27 slate 30 games short** of the prior season's 1,230.
 6. **DARKO discards `x_minutes`.**
 
+7. **`ok` IS THE CERTIFICATION VERDICT, NOT A SUCCESS FLAG — across 18 workers** — and for teams the
+   check is **circular**: certification is `active_nba_teams === 30`, and the hardcoded fallback is a
+   30-team list, so **serving the fallback satisfies the check by construction.** The fallback
+   *trigger* (`teams.length !== 30`) and the *certification* (`=== 30`) share the same magic number
+   and fail together: a real 32-team response trips into the fallback, and the fallback then
+   certifies. **A certified teams run is not evidence of live data; it is evidence of thirty rows.**
+
 ### ⚠⚠ Structural
 - **The teams fallback has two triggers**, and `…AFTER_COUNT_MISMATCH` fires on a *successful* fetch
   whose count ≠ 30 — an equality test, so **32 teams fails it exactly as 29 does**.
