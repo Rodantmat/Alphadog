@@ -377,8 +377,10 @@ before any preseason transaction, and with `nba_calendar.games` still 30 regular
 (below). **Nothing in the pipeline reports staleness**: every worker's certification is a row-count
 threshold (`NBA_WORKERS.md` §0.31), and a stale table has exactly the right row count.
 
-**Owner action**: this is the same root cause as the three items already flagged, and the fix is one
-decision — **wire the workers into the cron, or schedule the `run_job` calls.** Not fixed here.
+**Owner action**: flagged, not fixed, and **not yet grouped with the other staleness observations**
+(the schedule table, the 1,200-game slate, the DARKO table). *Grouping them under a shared cause
+would be the same premature explanation this entry refuses — they are recorded as four observations
+until the transcripts justify treating them as one.*
 
 ---
 
