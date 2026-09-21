@@ -12808,6 +12808,48 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.34 — PASS 13 (**dated-verdict audit**) — **✅ CLEAN 1/3 · no further retirement, one item flagged forward**
+*2026-09-21. The angle passes 8 and 12 stumbled into twice, run deliberately: sweep the twelve for
+verdicts that were **true when written and carry a date or a condition** — "correctly empty", "not
+yet", "expected until…" — and re-test each live.*
+
+**The population, and what each one is now:**
+
+| Verdict | Status |
+|---|---|
+| `nba_ref.prop_taxonomy` — *"correctly empty; a Board/Scoring concept"* | 🔴 **Retired at pass 8** — seeded to 28 in T8 |
+| `*_differential_log` — *"correctly empty; detection starts on the second run"* | 🔴 **Retired at pass 12** — no second run has happened, proven by the stale snapshots |
+| `nba_ref.referee_assignments` — *"0 rows — expected until the season opens"* | ✅ **Still valid.** The season opens **2026-10-20**; the condition has not been met. ⚠ **But see below.** |
+| *"board / daily-context / market are design-only until the season gives something live to mine"* (§793, §1222) · *"P2 carries no `schedule:` block — deliberately, until the season opens"* | ✅ **Still valid**, same condition |
+
+#### ⚠ T8.34a — **One conditional verdict is unfalsifiable until the season, and that is the risk**
+
+`nba-referees.yml` is **one of the seven scheduled workflows** (`30 15 * * *`, daily) and
+`nba_ref.referee_assignments` is at **0 rows**, recorded as *"expected until the season opens."*
+**The verdict is correct** — referee assignments are published on game days, and there have been
+none.
+
+⚠ **But it makes a working daily job and a failing one look identical**, which is the
+**no-error-raised** failure class this sweep has now documented five times — here in its most
+awkward form: **a correct verdict that will keep being correct right up until the first day it
+matters.** *Whether the daily run currently succeeds is **NOT RECORDED**, and is not resolvable in
+this transcript: `referee_assignments` is tagged **(T15)**, so the workflow's health belongs to T15's
+sweep.* **Flagged forward, deliberately not investigated here** — the chronological rule.
+
+#### 📌 T8.34b — **An incidental corroboration, recorded as corroboration and not as a finding**
+
+The workflow-run listing is dominated by **"pages build and deployment" fired by this sweep's own
+`[skip ci]` commits**, cancelling each other in a cascade. That is exactly the already-documented
+*"the deploy trigger has no path filter — `[skip ci]` is a convention, not a guard"*
+(`NBA_WORKERS.md` §0.29). **Nothing new; recorded because a sweep that changes the thing it is
+measuring should say so.** *(An MLB workflow failure is also visible; **MLB is out of scope** and
+nothing is recorded about it.)*
+
+**Pass outcome: the audit ran, found no verdict needing retirement beyond the two already retired,
+and flagged one forward. ✅ CLEAN 1/3.**
+
+---
+
 ### T8.33 — PASS 12 (**two-direction judgment, fourth run**) — **🔴 MY OWN SIBLING-CLAIM FAILURE, one pass after using the rule · 0/3**
 *2026-09-21. Band stable at 61 for a fourth run. The work was rule 13 applied to the newest phrases —
 which led straight to a sibling I had left standing four passes earlier.*
