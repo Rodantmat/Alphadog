@@ -15074,7 +15074,7 @@ that 60–124-character labels are below the threshold, which is what the predic
 🔑🔑 **The mover is SEGMENT 393 — 0.1899 → 0.4921 — and the paragraph that now covers it is §T11.41c,
 the entry in which pass 40 QUOTED segment 393 verbatim while explaining that its coverage was an
 artefact.** ***The sweep quoted a segment in order to argue that the segment's coverage was not real,
-and thereby made it real.*** **`uncovered12` and `uncovered30` both fell by exactly this one segment.**
+and thereby made it real.*** **`uncovered12` and `uncovered30` both fell by exactly this one segment.** ⚠ **RESTATED 2026-09-21 by §T11.56a**: ***a ONE-unit move is exactly the band instrument's resolution (§T11.55b), so the count move is not the evidence — the NAMED SEGMENT is.*** ✅ **The finding stands because the segment was identified and its crossing traced; it would not stand on the count alone.**
 📌 **The third form of a shape §T11.25a named** *(the tail measured the auditor)* **and §T11.39b
 extended** *(the run log was inside the corpus)*: ***the MASTER SUMMARY is one of the twelve, so
 coverage against the twelve is partly self-authored by construction — a property to state, not a
