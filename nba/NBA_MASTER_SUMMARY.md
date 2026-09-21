@@ -12797,6 +12797,42 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.30 — PASS 9 (**two-direction judgment, third run**) — **⚠ 1 DEFECT: a table read correctly, a sentence written wrong · 0/3**
+*2026-09-21. **61 high-band segments for the third run — 0 in, 0 out, coverage identical at
+536 / 510.** The extraction is settled; the judgment fell on §T8.27–§T8.29's own claims, tested
+under rule 12 as they were re-read.*
+
+#### ⚠ T8.30a — **§T8.28a's counts were right and its sentence mis-assigned four props**
+
+The entry's table said **Tier A 6 of 13 banded** and **Tier B 0 of 15** — both correct. **Its prose
+then listed the 22 unbanded by kind and closed "plus the Tier A composites `pts_ast`, `pts_reb`,
+`reb_ast`"** — which reads as *three* Tier A props unbanded. **`[LIVE-AUDIT]`, grouped by the
+authority instead of by kind:**
+
+| Tier | Unbanded | Which |
+|---|---|---|
+| **A** | **7** | `blocks` · `steals` · `stocks` · `turnovers` · `pts_ast` · `pts_reb` · `reb_ast` |
+| **B** | **15** | the period layers, the milestones, the attempt props, `personal_fouls` |
+
+**`blocks`, `steals`, `stocks` and `turnovers` are Tier A** — the design's §1 lists them among the
+core props on all three apps — **and the prose left a reader to infer they were Tier B.** Corrected
+in place.
+
+⚠ **The failure is narrow and worth naming precisely**: the numbers came from a `GROUP BY`, the
+sentence came from my own grouping of the prop names by what they *look like* — periods, milestones,
+attempts, composites — **and that taxonomy is not the one the column encodes.** *When a table is
+grouped one way and the prose groups it another, the prose must say which grouping it is using.* **The
+counts survive; only the narrative was wrong.**
+
+#### ✅ T8.30b — **The partition sums, and the other claims hold**
+
+**7 + 15 = 22 unbanded, 6 + 22 = 28 props** — checked per rule 11, since that is exactly the check
+that caught a NULL artifact at §T7.64a. Re-verified alongside it: **`points` is the only role-banded
+prop** ✅, **1,218 `canonical_prop_key` references with none under `nba/`** ✅, and the **four
+documents** carrying `prop_taxonomy`'s two row counts ✅.
+
+---
+
 ### T8.29 — PASS 8 (**self-contradiction audit**) — **🔴 a stale row count with a confident verdict attached · 🔑 and the two findings connect · 0/3**
 *2026-09-21. Every object §T8.22–§T8.28 describes, grepped back across the twelve **including this
 file**, looking for the sweep's own earlier text saying something different.*
