@@ -14420,6 +14420,70 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.38 — PASS 23 (**two-direction judgment, sixth run**) — **🔴🔴 a justified confidence factor that is computed, attached and NOT IN THE SUM — and my own headline over-claimed · 0/3**
+*2026-09-21. §T9.37b found one confidence factor to be a relabelled bit. **Rule 6 asks the sibling
+question — are the others?** Reading the whole model answered it twice over.*
+
+#### 🔴🔴 T9.38a — **`f_phase` is computed, documented at length, attached to the frame, and absent from the weighted sum**
+
+`build_confidence_v3.py` declares **ten** factors:
+
+```python
+FACTOR_COLS = ["f_complete", "f_prov", "f_time", "f_depth", "f_role", "f_vol", "f_exp",
+               "f_books", "f_agree", "f_phase"]
+```
+
+`f_phase` gets a **six-line justification with measured figures** — *"SEASON PHASE as a confidence
+factor, not just a reporting slice… the calibration work measured the gap decaying **+1.46 / +1.30 /
++0.88 / +0.13 pp** across those four, so the data's reliability genuinely varies by calendar regime —
+**which is a confidence question, not a probability one**"* — a rank map, and a place in the `attach`
+block. **And then:**
+
+```python
+raw = (0.16 * f_complete + 0.12 * f_prov + 0.10 * f_time + 0.14 * f_depth
+       + 0.10 * f_vol + 0.08 * f_exp + 0.12 * f_role + 0.08 * f_books + 0.10 * f_agree)
+```
+
+**Nine terms. `f_phase` is not one of them.** ✅ **And the partition proves it is structural, not a
+dropped term: the nine weights sum to exactly 1.00** (rule 11) — **`f_phase` could not be added
+without renormalising every other weight.** *So the factor is exported for inspection and has zero
+effect on the confidence it was written to adjust.* **Recorded in `NBA_FINAL_SCORING_CALIBRATION.md`.**
+
+#### 🔴 T9.38b — **My own headline over-claimed: the confidence model is NOT depth-blind**
+
+§T9.33b closed *"nothing downstream consults `LADDER_DEPTH`"*, which is **literally true and
+implies something false**. Two lines below `f_prov`:
+
+```python
+f_depth = np.clip(1.0 - np.abs(d["ladder_offset"].fillna(0)) / 14.0, 0.25, 1.0)   # OOD: rung distance
+```
+
+**Weight 0.14 — the second-largest in the model.** It gives **0.857** at offset 2, **0.643** at 5,
+**0.286** at 10, and floors at **0.25** from 10.5 out. **Rung distance is penalised, and substantially.**
+
+🔴 **The defect is the SCALE, and it is the same one O5 names.** **`14.0` is exactly
+`LADDER_DEPTH["points"]`, applied to all twenty props.** *`steals` at offset 10 — **five times** its
+measured depth of 2 — receives the identical 0.286 that `points` receives at offset 10, which is
+**inside** its measured depth of 14.* **A flat depth scale in the confidence model, one layer above
+the flat depth override in the builder.** *Qualified in all six places the original claim reached.*
+
+⚠ **Rule 6 is what produced both findings** — *§T9.37b examined one factor and stopped; the sibling
+question was "are the others like this?", and asking it corrected my own strongest claim.*
+
+#### ✅ T9.38c — **§T9.37's figures verified, and the factor-degeneracy question answered**
+
+| Claim | Result |
+|---|---|
+| `used_emp` true **205,678** of **206,237** — **99.73%** | ✅ **205,678 + 559 = 206,237** (rule 11) |
+| The 559 false rows: **541 `double_double` + 18 `threes_made`** | ✅ **541 + 18 = 559** |
+| `f_prov` weight **0.12**, spread **0.7** → **0.084** of raw | ✅ exact, read from line 85 |
+| Which factors are degenerate? | 🔑 **`f_prov` and `f_time` are the two binary factors** — `f_time` is `np.where(n_uncertain > 0, 0.65, 1.0)`. `f_complete` takes six values, `f_role` six, `f_depth`/`f_books`/`f_agree`/`f_vol`/`f_exp` continuous. **Only `f_prov` is documented as continuous.** |
+
+**Pass outcome: 1 new defect in the system, 1 correction to my own headline, the sibling question
+answered. 🔴 CLEAN 0/3 · 23 passes.**
+
+---
+
 ### T9.37 — PASS 22 (**novelty audit, third run — passes 17–21 vs `/tmp/t9base/nba/`**) — **🔴🔴 the documents assign `used_emp` a job it cannot do, and call `f_prov` continuous when it is one bit · 0/3**
 *2026-09-21. Every claim passes 17–21 added, grepped against the pre-T9 snapshot, **every hit
 opened** — and two of them turned §T9.33b from a live observation into a contradiction of a stated
