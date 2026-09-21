@@ -58,10 +58,13 @@ def already_mined():
         return set()
     import psycopg
     with psycopg.connect(url) as conn, conn.cursor() as cur:
-        cur.execute("SELECT DISTINCT projection_id, line FROM nba_market.pp_mined_leg")
+        table = os.getenv("PP_MINED_TABLE") or "nba_market.pp_mined_leg"
+        if table not in ("nba_market.pp_mined_leg", "nba_market.pp_mined_leg_wnba"):
+            raise ValueError(f"unexpected PP_MINED_TABLE {table!r}")
+        cur.execute(f"SELECT DISTINCT projection_id, line FROM {table}")
         return {(str(r[0]), float(r[1])) for r in cur.fetchall()}
 DEADLINE = time.time() + float(os.getenv("PP_MAX_MINUTES", "34")) * 60
-OUT_DIR = Path("nba/data/pp_payouts")
+OUT_DIR = Path(os.getenv("PP_OUT_DIR") or "nba/data/pp_payouts")   # WNBA -> its own directory: the NBA loader never reads it
 
 
 class Stop(Exception):
