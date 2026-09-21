@@ -1580,6 +1580,47 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.8 — PASS 8 (angle: **the differential worker's declared scope and the play-types shape**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+**Five findings, no corrections — the first pass since the write-after-the-stratum rule that needed
+none.**
+
+1. ⚠ **Play-type data is offensive-only for players, by construction.**
+   `groupings = ["offensive"] if player_or_team == "p" else ["offensive", "defensive"]`. **Teams get
+   both; players get offence only.** Not a source limitation — `synergyPlayTypes` accepts
+   `TypeGrouping=defensive` with `PlayerOrTeam=P` and the scraper does not ask. **This forecloses the
+   player-level "defense-vs-role" factor T3 surfaced in the same session** — matching a prop against
+   a specific defender's play-type vulnerability — *and the data is one loop change away.*
+   → `NBA_OPEN_ITEMS.md` FROM T3 PASS 8
+2. **The `scope_lock` declaration** — the differential worker returns, from `GET /` and
+   `GET /health`, every table it may write, plus `no_mlb_table_access`, `no_scoring`,
+   `no_board_mutation`. **Six tables it owns, and one it does not**:
+   `nba_ref.players (active flag only, for departed players)` — **the narrow shared-table exception
+   that is how a departed player actually becomes inactive.** The isolation guarantee becomes
+   checkable with a `curl` instead of a code review. **No other NBA worker does this.**
+   → `NBA_WORKERS.md` §0.34
+3. **The schema placement is inconsistent and the declaration exposes it**: player snapshots in
+   `nba_stats`, team and official snapshots in `nba_ref`. Same worker, three entities, two schemas.
+4. ⚠ **One worker certifies properly, and it is already in the codebase.** The play-types writer:
+   `errors.length === 0 && playerWritten >= 1000 && teamWritten >= 200` — **no errors, plus a floor
+   per level.** The other four gate on a single total and cannot distinguish a clean short run from
+   a half-failed full one. **So the fix for §0.31 is copying a line from a sibling, not a design
+   question.** → `NBA_WORKERS.md` §0.31
+5. **The cheap-path detection explains the 44-call fallback**: the scraper probes with `PlayType`
+   blank and, if more than one distinct type comes back, records `single_call_all_playtypes`.
+   **The loop is a detected-capability path, not a failure path**, and the method used is recorded in
+   the meta. → FROM T3 PASS 8
+
+**Also recorded**: how the differential worker was tested — `UPDATE … SET team_id='nba_1610612738'
+WHERE player_id='nba_2544'`, LeBron manually moved to Boston in the snapshot table — *which is both
+an effective method and the direct cause of the retracted race condition in §T3.1.*
+
+**Ratio**: 11 candidates, 5 findings from 16 segments.
+
+**Clean count 0/3.** **Tail not exhausted**: ~64 of 240 command segments and all 137 result segments
+remain.
+
 ### T3.7 — PASS 7 (angle: **the scrapers' low-count gates, settled against live files**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21. First pass run under the new write-after-the-stratum rule.*
 
