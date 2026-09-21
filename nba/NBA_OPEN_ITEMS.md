@@ -230,6 +230,36 @@ column, or a view exposing parts-only, so the choice is explicit instead of folk
 
 ---
 
+## ⚠ THREE GAMES HAVE NO OFFICIALS, AND THEY ARE ALL ONE NIGHT — 2025-11-19
+*Found 2026-09-21, T6 re-sweep pass 3. **`[LIVE-AUDIT]` VERIFIED**. Detail:
+`NBA_MASTER_SUMMARY.md` §T6.19a.*
+
+`nba_stats.game_officials` covers **1,227 of 1,230** games. The three absent ones are consecutive
+ids — and they share a date:
+
+| `game_id` | Date | Matchup | Status |
+|---|---|---|---|
+| `0022500259` | **2025-11-19** | WAS @ MIN | Final |
+| `0022500260` | **2025-11-19** | DEN @ NOP | Final |
+| `0022500261` | **2025-11-19** | SAC @ OKC | Final |
+
+**All three were played and completed**, and the night was only partly affected: **9 games were
+scheduled on 2025-11-19, 6 have officials, 3 do not.**
+
+**This is not scraper attrition.** The truthiness bug (above) hid these games but did not cause them
+— **they still failed after it was fixed, and after a dedicated retry with raw-response capture.**
+A date-localized, partial-slate hole points **upstream**, at what `boxscoresummaryv3` serves for that
+night.
+
+**Cause NOT RECORDED.** Nothing in T6 establishes it, and the raw-capture run was the last attempt.
+**Recorded with its exact shape so a retry has somewhere to start**: three named ids, one date, six
+sibling games from the same slate that worked.
+
+**Impact is small and bounded** — 3 of 1,230 games (0.24%) lack referee assignments, in a table
+whose purpose (referee-crew tendencies) is aggregate. **Not opening-day blocking.**
+
+---
+
 ## ⚠ THE OFFICIALS DICTIONARY HAS 80 NAMES; THE GAMES NAME 83
 *Found 2026-09-21, T6 re-sweep pass 1. **`[LIVE-AUDIT]` VERIFIED**. Detail: `NBA_MASTER_SUMMARY.md`
 §T6.17a.*
