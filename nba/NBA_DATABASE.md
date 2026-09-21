@@ -1160,9 +1160,30 @@ uses**. Applying them **re-centres** the projection onto the expected game scrip
 **This is what prevents the double-counting the T4 methodology warned about** — the baseline's minutes
 already include blowout games, so an absolute penalty would subtract twice.
 
-**`p_blowout`** — per spread band, `side` = favourite/underdog, with three probabilities in
-`v1`/`v2`/`v3` (blow-open, blown-out, and the residual). Example, spread 0–2 favourite:
-0.1634 / 0.0842 / 0.0792.
+**`p_blowout`** — **14 rows**, per spread band, `side` = **`favourite`/`underdog`** *(7 each)*, with
+three probabilities in `v1`/`v2`/`v3` (blow-open, blown-out, and the residual). Example, spread 0–2
+favourite: 0.1634 / 0.0842 / 0.0792.
+
+🔴 **`sliding_scale`** — **14 rows**, per spread band, and 🔴🔴 **its `side` is `fav`/`dog`** *(7
+each)* — ***the same two concepts as `p_blowout`'s, spelled differently, in the same column of the
+same table.*** *(`[LIVE-AUDIT]` 2026-09-21, §T11.28a. **`fav`/`dog` as values: 0 of thirty**,
+positive-controlled.)*
+
+⚠⚠ **CONSUMER HAZARD — a `GROUP BY side` on this table returns FOUR groups for TWO concepts**, and a
+filter written as `side = 'favourite'` silently drops the `sliding_scale` half. **The vocabulary is
+per-`kind`, and the three `kind`s use three unrelated vocabularies in one column:**
+
+| `kind` | rows | `side` vocabulary |
+|---|---|---|
+| `minutes_by_margin` | **7** | **margin buckets** — `competitive` · `won by 12-20` · `won by 20-25` · `won by 25+` · `lost by 12-20` · `lost by 20-25` · `lost by 25+` |
+| `p_blowout` | **14** | **`favourite` · `underdog`** |
+| 🔴 `sliding_scale` | **14** | 🔴 **`fav` · `dog`** |
+
+🔑 ***This is rule 24 at its sharpest***: `side` names a **prop direction** in ten tables, a **team
+role** in two `kind`s of this one, and a **margin bucket** in a third — **and the team role is spelled
+two ways inside the single table.** *(The per-`kind` split is what §T11.19a's collision finding looks
+like one level in: the collision is not only between tables.)* ⚠ **NOT RECORDED** whether the two
+spellings are read by one consumer or two.
 Measured on the **real market spread** (307,604 rows available, 2,454 games, ~~100% coverage~~
 🔴 **99.76% — corrected 2026-09-21, §T11.12b**) after the
 derived r=0.46 proxy was replaced.
