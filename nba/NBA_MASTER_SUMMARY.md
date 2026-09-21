@@ -2105,6 +2105,32 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+### T2.8 — PASS 8 (**re-read continued: a third season literal and a third diagnostic form**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+1. ⚠ **A THIRD worker hardcodes the season in its INSERT** — `nba-static-team-stats` writes
+   `nba_team.season_profile` with `'2025-26'`. **Three workers, three tables, two schemas**, so the
+   rollover fix has **at least four locations** and no single search term finds them all. **And the
+   three carry pace, off/def rating, USG%, TS% and the on/off splits** — the tier-1 and tier-2
+   factors, all landing under a season label the worker chose rather than the data did.
+   → `NBA_OPEN_ITEMS.md`
+2. **A third form of the header-diagnostic technique**, and the cheapest: the player-tracking
+   scraper checks whether its key field is **null across every row** and, if so, puts the source's
+   real header list into the error string — `"suspicious_all_null_avg_speed: real headers were
+   {headers}"`. **This catches precisely the failure that cost two cycles elsewhere** — a
+   well-formed response with a silently empty field, which is what both `TeamAbbreviation` and
+   `ARENA` were. *A row count cannot see it. It costs nothing when the scrape succeeds.*
+   → `NBA_OPEN_ITEMS.md`
+3. **The officials worker certifies on `>= 70`** against 80 scraped — a fifth bare margin, and the
+   loosest in the fleet at 12.5% slack on a list whose real size is known exactly.
+4. **`playerHasRealChange` and `players_unchanged_skipped`** exist, confirming the caveat attached
+   to the static-layer freeze entry: **players, teams and officials all have change-detection**, so
+   their `updated_at` staleness is weaker evidence than the five unconditional writers'.
+   *Recorded because that caveat now has a named mechanism behind it rather than an assumption.*
+5. **`years_pro` is derived, not sourced** — `to_year − from_year` from `commonAllPlayers`.
+
+**Ratio**: 5 findings from ~14 segments.
+
 ### T2.7 — PASS 7 (**re-read continued: certification and fallback design**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
