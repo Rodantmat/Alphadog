@@ -754,6 +754,42 @@ same payout → different tiers). It must depend on a per-leg property we cannot
 internal price). **Deprioritized:** the standards strategy only needs all-standard Flex tables (fixed and verified), and
 demon Flex slips underpay anyway.
 
+### LESS ON GOBLINS AND DEMONS — learned from WNBA, ready for NBA (2026-09-21)
+**Already priced by PrizePicks' quote engine in BOTH leagues** (the mapper's UNDER test): goblins on Less paid 3.5–4.75×
+(Less on a low line is unlikely), demons on Less 1.7–2.8× (Less on a high line is likely); every such quote `is_adjusted`.
+**Less run** (`PP_MODE=less`): every WNBA goblin/demon quoted More (section LEG) then Less (section LESS), back to back,
+ladder by ladder — 250 legs both ways. Tables' primary keys now include `side` (before, a Less row sharing run +
+projection + partner with its More row would have been silently dropped); the loader reads the LESS section.
+| Finding | Evidence |
+|---|---|
+| **Less = complement of More**, same distribution | P(More) + P(Less) median 0.978 (demons, 144) / 0.986 (goblins, 106) |
+| **NBA's formula already prices it** (points family, c 1.87, P(Less) = 1 − P(More)) | 107 legs: 4.7% mean error, 91% within 10%, median ratio 1.02 |
+| **Less favourites floor at 1.7×** (factor 0.5667) — NOT the More-side goblin floor 2.08× | complement below 1.7× → paid exactly 1.7× on 28 of 36 |
+| Less longshots (goblins on Less) | 3.25–8.0×; the engine cap (18.5×) not reached |
+**Applied to NBA pricing:** `pp_price_version` floors are now side-aware (goblin floor on More only; Less favourites use
+`less_favorite_floor_factor`, default = the goblin floor so older versions reproduce exactly). `pp-leg-v2-sqrt-cap`
+carries `less_favorite_floor_factor` 0.5667. **No existing price changed** — 0 NBA alternate-on-Less keys exist (799
+standard-on-Less keys are rule-priced at factor 1). When NBA offers Less on alternates, `pp_refresh_prices()` prices
+them automatically. Function verified by execution (0 new prices, 9,036 keys).
+
+### PAPER-TRADING LOG — the live test (2026-09-21, owner approved)
+Strategy **`standards_3pick_v1`**: PrizePicks standard lines on the board in ONE snapshot (live: the most recently
+fetched = what is on the board at logging time), model value = 2 × final_hp ≥ 1.30, one leg per player (the model's
+best prop and side), ranked and cut into 3-pick slips.
+- `nba_score.paper_picks` — picks with `logged_at`; **first log wins** (a night is never overwritten → honest
+  pre-game timestamps)
+- `nba_score.paper_pick_candidates(date, threshold, snapshot)` — the selection; writes nothing; identical live and replay
+- `nba_score.log_paper_picks(date)` — hooked into **P3** right after scoring
+- `nba_score.grade_paper_picks()` — hooked into **P2** right after the board is graded (hit / miss / void)
+- `nba_score.paper_results` — per night: full 3-pick slips, exact Power payouts (6.0×; a void reverts to 3.0×; <2 live
+  legs refunds), cumulative profit
+**Replay of the exact live procedure** (`window` snapshot = the pre-game board), 12,481 picks, all graded:
+2024-25 **+7.8% ± 6.7%** (162 nights, 1,821 slips, hit 57.5%); 2025-26 **+18.3% ± 5.2%** (161, 2,234, 58.4%);
+**both +13.6% ± 4.3%** (323 nights, 4,055 slips; 3.2 SE). Below the never-moved variant (+16.7%), as it should be.
+**PRE-SEASON MUST-FIX:** P2 and P3 default their season to `2025-26` (P3: `BS_SEASON`). On 2026-27 dates the ladder
+lookup finds nothing and P3 aborts — no scores, no paper picks. Switch the season before October 20 (the same
+hard-coded-season class that caused the calibration wipe).
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
