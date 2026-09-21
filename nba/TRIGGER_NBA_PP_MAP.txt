@@ -1,4 +1,8 @@
-mode: delta
+league: wnba
+mode: full
+max_quotes: 400
+altalt: 30
 drift: 10
-max_quotes: 60
-note: end-to-end test 2026-09-21 - map (delta) -> commit -> load -> pp_refresh_prices(); expect REFRESH all zeros on an unchanged board
+note: 2026-09-21 first WNBA map - final week of the WNBA regular season (playoffs start Sep 27). Scheduled 6-hourly runs
+note: read this file too, so while "league: wnba" stays here they mine WNBA in delta mode against pp_mined_leg_wnba.
+note: switch back to "league: nba" when the NBA preseason board appears (~Oct 1-3).
