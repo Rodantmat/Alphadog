@@ -716,6 +716,3 @@ re-render that drops one destroys data that **cost a logged-in browser session t
    **Coverage per app is unverified.**
 5. **The fantasy-score scale conflict** (+2 vs +3 on blocks/steals) changes payout arithmetic for
    `fantasy_score` legs — see `NBA_OPEN_ITEMS.md`.
-</content>
-</parameter>
-<parameter name="message">docs: NBA multipliers - dedicated file per owner mandate
