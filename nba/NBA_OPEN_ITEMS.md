@@ -99,6 +99,81 @@
 > thirty / thirty-two document pair, which is two correct counts of two different populations
 > (32 `.md`, less the run log and the out-of-scope PP document)**.
 
+## 🔴 THE MEASUREMENT THAT CHOSE EVERY LIVE BOARD SOURCE — **in none of the twelve until now**
+*Recorded 2026-09-21 (T12 pass 0, §T12.1d/e). **Transcript `2026-09-11-21-01-23`, segments 49, 90,
+91, 98.** The decision is on file; the evidence behind it was not.*
+
+**The owner asked for it, segment 49, verbatim**: *"on parlay api we need to get all 4 so, **sleeper,
+fliff, underdog** and as for prizepicks, i want you to **probe one day of prizepicks on parlay api,
+compare to the prizepicks scraper**, of course mlb, just to compare the dataset. i want to know if
+they are **exactly the same, complete the same way, all legs, all ladder variations, all
+goblin/demon/regular information**, to decide which way to go with pp for nba."*
+
+**It was run — same MLB slate, four minutes apart** *(our scraper 03:15:03Z, ParlayAPI 03:18:46Z)*:
+
+| | our scraper (raw PrizePicks API) | ParlayAPI |
+|---|---|---|
+| **pre-game legs** | **1,729** | **1,353** |
+| **demon / goblin / standard** | **1,379 / 277 / 73** | **1,092 / 199 / 62** |
+| **distinct players** | **93** | **104** |
+| **exact leg matches** *(player + stat + line + type)* | **1,012** | |
+| **only in ours** | **717** — *287 the same player/stat/type at a **different rung**, 430 absent entirely* | |
+| **only in ParlayAPI** | | **341** |
+
+🔑 **THE THREE MECHANISMS — these are what make the numbers decision-relevant, and none was on file:**
+1. 🔴 **ParlayAPI DROPS LADDER RUNGS — roughly a quarter of the board, and *"it's the rungs closest to
+   the standard line, which are exactly the ones a slip engine uses."*** *Examples from the diff:
+   Nick Martinez strikeouts — ours carries demons at **4.5 and 5.5**, ParlayAPI only **6.5**;
+   total-bases demons at **3.5 and 4.5** for a dozen hitters, ParlayAPI only **5.5 or 7.5**.*
+2. 🔴 **ParlayAPI LAGS**: its PrizePicks rows carried **`age_seconds ≈ 3,300` — about 55 minutes
+   stale** — while our scraper reads the API directly.
+3. ✅ **The 341 ParlayAPI-only legs are LIVE IN-GAME micro-markets** *(1st/2nd/3rd-inning pitches
+   seen, balls counted)* **from a game already in progress**, and **our scraper deliberately excludes
+   live props via `single_stat=true`** — ***so that column is a SCOPE difference, not a coverage
+   deficit, and reading it as a deficit would invert the finding.***
+
+✅ **Same stat taxonomy on both sides** — *no stat we track was missing from either* — and **both
+carry the same `standard`/`goblin`/`demon` labels**; ⚠ **player-name normalisation (accents, "Jr.")
+is the join hazard.**
+
+**THE DECISION, segment 91**: ***"prizepicks comes from our own scraper (raw api: complete ladders,
+all three odds types, board time), fresh — the same producer we run for mlb, pointed at
+`league_id=7`. **parlayapi stays as the source for underdog, sleeper and fliff and as a prizepicks
+FALLBACK ONLY**."*** **Recorded to config key `board_sources_decision`** *(segment 98)*, *"and the
+comparison job stays in the bridge so the same test can be rerun."*
+
+### 🔴 What the documents carried before this entry
+*Probed against the baseline `c5798146` with positive controls (`board_backfill_odds_api` 3,
+`league_id=7` 11) and every hit opened — rules 20, 22, 26, 28.*
+
+| | carriers |
+|---|---|
+| ✅ the diff's **headline** | **`NBA_PROJECT_LOG.md`, ONE line** — *"1,729 legs vs ParlayAPI 1,353 — ParlayAPI drops ~25% of ladder rungs nearest the standard line and lags ~55 min → ours"* — **1 of thirty, 0 of the TWELVE** |
+| ✅ the **decision** | **`board_sources_decision` in 4 of thirty**, this document included — ⚠ **but quoted only for its `historical_boards` sub-key**, not for the live-board decision |
+| 🔴 **in NO document** *(0 of thirty)* | **1,012 / 717 / 341** · **1,379 / 277 / 73** · **`age_seconds ≈ 3,300`** · **the live-micro-market explanation** · ***"fallback only"*** |
+
+⚠ *The 717 and 341 hits elsewhere in the corpus are `backtest/reports/` classification figures —
+**opened and dismissed, different subjects.***
+
+⚠⚠ **CARRIED FORWARD, NOT CONCLUDED** *(rule 27 — this is segment 91 of 640)*: segment 91 also
+commits to ***"the same same-moment diff for **underdog and sleeper** against their own public apis
+before opening day, so every board's source is chosen on evidence, not assumption."*** **Whether it
+was run is NOT RECORDED as of this pass, and the LAST word in T12 must be read before any verdict.**
+
+## 📌 THE UNDERDOG SCRAPER'S PROXY DEPENDENCY — **implemented, and in none of the twelve**
+*Recorded 2026-09-21 (T12 pass 0, §T12.1f). Owner, segment 135, whole: **"for underdog, would a
+proxy help? the mlb pp has a proxy information that can be used."***
+
+**It is in the code**: **`scrape_underdog_board.py` documents `PROXY_URL` as an environment fallback**
+*(alongside `UNDERDOG_PXID`, `UNDERDOG_STATE_CONFIG`, `UNDERDOG_CLIENT_VERSION`)*, and **two
+dedicated probes exist** — **`probe_underdog2.py`** *("through the residential proxy, vary HTTP
+version / client headers / endpoints to find a working combo")* and **`probe_underdog4.py`**
+*("proxy-only, spaced requests, ranked variants to reach the PRE-GAME board")*.
+🔴 ***The dependency is in ZERO of the twelve*** — **so a reader of the mandated documents would not
+know the Underdog board may require a residential proxy to reach at all.** ⚠ *(A prose hit in
+`backtest/classification_ladder_v12.py` — "invisible to a proxy this noisy" — is an unrelated sense
+of the word; opened and dismissed.)* **A dated STATE, not a verdict** *(O9)*: **T13–T20 are unswept.**
+
 ## 🔴 THE FACTOR-RELEVANCE GATE KNOWS 4 OF 36 ENRICHMENT FACTORS — AND TWO FACTORS CANNOT BE BACKFILLED AT ALL
 *Recorded 2026-09-21 (T10 pass 6, §T10.6a / §T10.6c). `[LIVE-AUDIT]`.*
 
