@@ -164,14 +164,8 @@ def main():
                     used_own += 1
                 else:
                     used_prior += 1
-        with conn.cursor() as cur:
-            cur.executemany("""INSERT INTO nba_score.ladder_calibration_asof
-                (season, as_of_date, prop, phase, band, side, log_odds_shift, n, source)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                ON CONFLICT (as_of_date, prop, phase, band, side) DO UPDATE
-                  SET log_odds_shift=EXCLUDED.log_odds_shift, n=EXCLUDED.n, source=EXCLUDED.source""", rows)
-        conn.commit()
-        print(f"  wrote {len(rows):,} as-of cells ({used_own:,} from current-season evidence, "
+        all_rows.extend(rows)
+        print(f"  computed {len(rows):,} as-of cells ({used_own:,} from current-season evidence, "
               f"{used_prior:,} inherited from the prior season)", flush=True)
         # carry the season's final cells forward as next season's opening prior
         last = d
