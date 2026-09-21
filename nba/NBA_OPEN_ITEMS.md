@@ -338,15 +338,25 @@ written since.** *The latest, `nba_ref.players`, is 2026-09-03 — which is T3's
 testing, not a scheduled run. **The only thing that has touched an NBA table since the build is a
 human testing it.***
 
-### The weekly layer has never refreshed once
-`nba-scrape.yml` runs its **sixteen scrapers** on a Monday 09:00 UTC cron and commits fresh JSON.
-**Every worker that loads that JSON into Postgres is triggered by hand via `run_job`.** So the
-scrapers may well have run three times since the build — **and nothing read their output.**
+### ⚠ THE CAUSE IS DEPARTMENTALLY OPEN — do not infer it here
+**This entry records WHAT the system is now. It does not explain WHY, because the explanation lives
+in transcripts this sweep has not yet reached.**
 
-**This is the general form of the differential worker's flagged-and-deleted warning** (see
-FROM T3 PASS 8 / judgment pass): *"nba-scrape.yml's existing weekly cron only runs the python
-scrapers; this cloudflare worker still needs to be triggered manually via `run_job`."* **That was
-written about one worker. It is true of all of them.**
+The loaders, the pipelines that orchestrate them, and whatever scheduling exists for either were
+built in later sessions. **Settling the cause at T2/T3 would mean writing a conclusion drawn from
+sixteen transcripts of material the record has not yet covered** — the same error the chronological
+rule exists to prevent. *Expected to be settled when the sweep reaches the transcripts that built
+the loaders and the pipelines; the resolution belongs there, with a pointer back to this entry.*
+
+**One thing CAN be linked now, because it runs the right direction** — an earlier transcript
+explaining a later observation. T3 wrote, and then deleted, this warning about the differential
+worker (see FROM T3 PASS 8 and the T3 judgment pass):
+
+> *"not yet wired to any schedule — `nba-scrape.yml`'s existing weekly cron only runs the python
+> scrapers; this cloudflare worker still needs to be triggered manually via `run_job`."*
+
+**That was written about one worker on 2026-09-02. Whether it generalises to all of them is exactly
+the open question above.** *Recorded as a lead, not a conclusion.*
 
 ### Stated at the right strength
 **For five of these tables the inference is firm.** `player_impact_rating`, `player_playtype_profile`,
