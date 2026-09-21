@@ -1555,6 +1555,45 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T2.1 — PASS 1 (**first pass on T2 under chronological order**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21. T2 = the 2026-09-03 phase-3a enrichment session. Tail at 0.40: **551 of 645 segments
+(85.4%)**. Strata: owner 1 · reasoning 37 · output 72 · commands 294 · results 147.*
+
+**Read this pass**: owner + reasoning + output (36 KB). **Commands and results strata remain.**
+
+**Six findings, all VERIFIED against live `main` or against T2's own diagnosis:**
+
+1. **The deploy trigger has no `paths:` filter** — every push to `main` matches it, and `[skip ci]`
+   in the commit message is the *only* thing preventing a commit storm. It is a convention, not an
+   enforced guard. → `NBA_WORKERS.md` §0.29
+2. **Step-condition asymmetry**: the dead D1 artifact commits under `if: always()`, so **a failing
+   deploy still writes one junk commit to `main`** — sharpening §0.27, which had assumed the success
+   path only. The deploy marker correctly uses `if: success()`. → §0.29
+3. **Service-binding deploy order** — Cloudflare requires a binding's target worker to exist first;
+   `alphadog-v2-admin-sql` must deploy **last** because its bindings all point outward. Without it,
+   §0.2's four-step wiring commit is self-blocking. → `NBA_WORKERS.md` §0.30
+4. **`curl_cffi` and `requests` are both installed for a reason** — `from curl_cffi import requests`
+   is a different package from `import requests`, and the Wikipedia officials scraper needs the
+   real one. Narrowing that line breaks the officials scrape **quietly**, since it runs
+   `continue-on-error: true`. → `NBA_OPEN_ITEMS.md` FROM T2 PASS 1
+5. **`teamInfoCommon` was the first arena source and was rejected** — 30/30 calls returned HTTP 200
+   with `arena` and `arena_capacity` **null**, the live schema having dropped those columns.
+   **Same failure shape as `leagueStandingsV3`'s missing `TeamAbbreviation`: a well-formed row with
+   a silently empty field.** Two instances in the first two transcripts. Recorded as a dated
+   supersession to `teamDetails`. → FROM T2 PASS 1
+6. **The impact-metric survey** — DARKO chosen; **EPM rejected on ToS grounds** (paywalled, partial
+   free page), RAPTOR rejected because FiveThirtyEight shut down, and **nbarapm.com flagged as
+   promising and never evaluated** — it appears in none of the thirty documents. → FROM T2 PASS 1
+
+**What the batched check showed about T2's coverage.** Most of what T2 contains is already
+documented — 582 players / 525 active (98 mentions), 1,822 player aliases, 661 on/off rows, the
+Jokić diacritic bug, `leagueDashPlayerBioStats`, the trigger-file mechanism, tarpitting. **28 of 28
+candidate facts checked in one batched grep**; six survived. That is the chronological-order
+prediction behaving as expected on the very first transcript after T1: the earlier sessions are the
+well-trodden ones.
+
+**Clean count 0/3** — pass 1 found new material.
+
 ### T1.119 — PASS 89 (**the two-direction judgment pass, and T1 closes**) — **CLEAN · T1 CLOSED**
 
 Pass 88 left T1 open because its judgment pass was not clean: 2 defects in 97 high-band segments.
