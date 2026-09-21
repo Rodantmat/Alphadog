@@ -1079,7 +1079,8 @@ already include blowout games, so an absolute penalty would subtract twice.
 **`p_blowout`** — per spread band, `side` = favourite/underdog, with three probabilities in
 `v1`/`v2`/`v3` (blow-open, blown-out, and the residual). Example, spread 0–2 favourite:
 0.1634 / 0.0842 / 0.0792.
-Measured on the **real market spread** (307,604 rows available, 2,454 games, 100% coverage) after the
+Measured on the **real market spread** (307,604 rows available, 2,454 games, ~~100% coverage~~
+🔴 **99.76% — corrected 2026-09-21, §T11.12b**) after the
 derived r=0.46 proxy was replaced.
 `nba_score.confidence_verification` · `nba_score.availability_delta` ·
 `nba_score.real_slip_leg_observations` (139 legs, `decomposition_method='equal_scale_v1'`)
