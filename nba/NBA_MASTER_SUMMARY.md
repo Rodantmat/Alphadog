@@ -9745,6 +9745,48 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.60 — PASS 31 (**novelty audit, fourth run**) — **🔴 §T7.58b CONTRADICTED THIS SWEEP'S OWN EARLIER ENTRIES · 0/3**
+*2026-09-21. Rule 8 applied first — the grep run on the claims I was most confident about. **Both of
+them hit.***
+
+#### 🔴 T7.60a — **§T7.58b was not an omission; it was an internal contradiction, and the fact it got wrong was already on file TWICE**
+
+§T7.59a corrected §T7.58b's *"three added since"* using `nba_season.py`'s docstring. **The docstring
+was never the only source. This sweep's own earlier passes recorded it, pre-edit, in two files:**
+
+> `NBA_MASTER_SUMMARY.md` line 9517: *"**`scrape_nba_daily_delta.py` was the only scraper that
+> auto-detected the season**, and the helper…"*
+> `NBA_OPEN_ITEMS.md` line 1992: *"**`scrape_nba_daily_delta.py` was the only scraper that already
+> auto-detected the season**; the…"*
+
+**So §T7.58b did not fail to look something up — it asserted the opposite of what §T7.32-era entries
+in the same document already said.** That is a worse class of defect than an unsourced claim, and it
+is the first internal contradiction the sweep has produced about T7.
+
+#### 🔴 T7.60b — **And "T7 names NINE stats scrapers" was already recorded too**
+
+`NBA_MASTER_SUMMARY.md` line 9744, **pre-edit**: *"**Patched across 9 stats scrapers**, with
+`active_stats_season` vs…"* — recorded by passes 1–8 of this same re-sweep. **§T7.58b presented it
+as new.** *Eleventh absence/novelty failure in T7.*
+
+**What survives from §T7.58b**: the 9 → 12 → 15 reconciliation itself, which no entry had assembled
+— *but it is a reconciliation of figures already present, not a discovery of any of them.*
+
+#### ✅ T7.60c — **Everything else from passes 26–30 verifies as new**
+
+Zero pre-edit hits across all thirty for: `compile ok` · `dupes: false` (T7's verification output) ·
+`lifts that logic out` · **`quote style` · `single-quoted` · `double-quoted`** (the §T7.57a trap) ·
+`transitively` · `stats_seasons() is anchored` · `12 direct`. *Two near-misses checked and cleared:
+`15 scrapers` appears pre-edit but about **blanking outputs on failure**, unrelated; `call site`
+appears in four files, never about season helpers.*
+
+⚠ **Rule 8 is now proven twice.** I grepped `2026-10-03` and `9 stats scrapers` **first, because I
+was sure of them** — and both returned hits. *The claims that feel solid are exactly the ones that go
+unchecked, which is why they are where the failures concentrate: **ten of T7's thirteen defects were
+claims I did not doubt.***
+
+---
+
 ### T7.59 — PASS 30 (**two-direction judgment, seventh run**) — **⚠ 1 DEFECT, MINE, IN THE PASS BEFORE THIS ONE · 0/3**
 *2026-09-21. **The band has settled: 118 segments, zero entered, zero left, coverage identical at
 928 / 885.** The shift pass 29 predicted has completed, so the extraction is stable again. Direction 2
