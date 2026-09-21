@@ -113,6 +113,58 @@ the lessons-transfer mechanism, not in one worker.**
 
 ---
 
+## 🔴🔴 `ok` IS THE CERTIFICATION VERDICT, NOT A REQUEST-SUCCESS FLAG — and the teams fallback cannot fail certification
+*Found 2026-09-21, T2 pass 16 (mid-band angle). **`[LIVE-AUDIT]` VERIFIED** by grep of the worker
+sources. Detail: `NBA_MASTER_SUMMARY.md` §T2.16 (sweep series).*
+
+**18 NBA workers return `ok: certified`:**
+```js
+return { ok: certified, status: certified ? "completed" : "completed_with_warning", ... }
+```
+`static-teams` · `-players` · `-arenas` · `-officials` · `-player-bio` · `-player-tracking` ·
+`-team-stats` · `-onoff` · `-darko` · `-schedule` · `-playtypes` · `-tracking-detail` ·
+`-shotquality` · `-lineups` · `-game-officials` · `-starter-status` · `-backfill` · `daily-delta`.
+
+**`ok` therefore does NOT mean "the request succeeded."** It means "this run passed its own
+certification threshold." A run that fetched, parsed and wrote flawlessly but missed its threshold
+returns **`ok: false`** — and **there is no separate field meaning "the call worked."** Any monitor
+or caller applying the ordinary JSON convention reads this backwards.
+
+⚠ **Only 7 of the 18 carry `completed_with_warning`** (`-darko`, `-onoff`, `-player-bio`,
+`-player-tracking`, `-schedule`, `-team-stats`, `-tracking-detail`). **The other 11 have no
+warning-status vocabulary**, so the uncertified case is not uniformly legible even inside the fleet.
+
+### 🔴🔴 The consequence — certification is structurally blind to the fallback
+
+`[LIVE-AUDIT]` **VERIFIED**, `alphadog-v2-nba-static-teams.js` **line 349**:
+```js
+const certified = finalCounts.active_nba_teams === 30
+               && finalCounts.nba_ref_team_aliases_active_rows >= 100;
+```
+**The hardcoded fallback is a 30-team list**, so when it serves, `active_nba_teams` is exactly 30 and
+the aliases clear 100. **The certification predicate is satisfied BY the fallback, every time, by
+construction.**
+
+**This is why the identical-certification-string finding below is not cosmetic.** The check cannot
+detect the fallback, because the fallback was hand-built to produce precisely the shape the check
+tests for. **A certified teams run is not evidence of live data. It is evidence of thirty rows.**
+
+**Both checks share the same magic number, and they fail together**: the fallback *trigger* is
+`teams.length !== 30`; the *certification* is `active_nba_teams === 30`. **A real 32-team response
+trips the trigger into the fallback, and the fallback then certifies.** The two agree with each other
+and disagree with reality.
+
+**Remedy shape, for after the sweep** (not applied — it is a write): make the certification predicate
+test *provenance* as well as shape — `source_key NOT LIKE 'STATIC_SEED_FALLBACK%'` — so that serving
+the fallback cannot certify, and make `ok` mean "the call worked" with certification in its own field.
+
+⚠ **Scope**: the 18 workers were confirmed to use `ok: certified`. **Whether each one's `certified`
+predicate is likewise satisfiable by its own fallback or degraded path was NOT checked** — a
+per-worker question, and several belong to transcripts this sweep has not reached. **Only the teams
+worker is asserted here.**
+
+---
+
 ## ⚠⚠ THE FALLBACK HAS A SECOND TRIGGER, AND IT FIRES ON A **SUCCESSFUL** FETCH
 *Found 2026-09-21, T2 re-read pass 12. Extends the existing caveat
 `STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR is the marker to watch`, which named only one of the two.*
