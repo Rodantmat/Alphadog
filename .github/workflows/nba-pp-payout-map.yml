@@ -80,6 +80,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add nba/data/pp_payouts/*.json || true
+          git add nba/data/pp_payouts_wnba/*.json || true
           if git diff --cached --quiet; then echo "No map output."; else
             git commit -m "PP payout map [skip ci]"
             for i in 1 2 3 4 5; do
