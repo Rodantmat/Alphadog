@@ -40,11 +40,21 @@ over to the new season **only once it starts in October**"* and *"…they'd get 
 rows — and **for tables keyed by player_id alone, that could overwrite last season's real stats with
 zeros**."* **That is the state the Oct-1 boundary creates for nineteen days.**
 
-**The 13 callers**: `scrape_nba_lineups` · `scrape_nba_splits` · `scrape_nba_player_tracking` ·
-`scrape_nba_tracking_detail` · `scrape_nba_playtypes` · `scrape_nba_shotquality` · `scrape_nba_onoff`
-· `scrape_nba_team_stats` · `scrape_nba_matchups_pergame` · `scrape_nba_player_bio` ·
-`scrape_nba_backfill_measure_types` · `scrape_nba_per_game_delta` · `scrape_nba_daily_delta`.
-*(4 others use `current_season()`, correct for roster/schedule.)*
+**The exposed set is FIFTEEN scrapers** *(corrected 2026-09-21, T7 pass 27 — the earlier figure of 13
+counted files rather than call sites, included a diagnostic, and misclassified one scraper)*:
+
+- **12 direct callers of `active_stats_season()`**: `scrape_nba_daily_delta` · `scrape_nba_lineups` ·
+  `scrape_nba_matchups_pergame` · `scrape_nba_onoff` · `scrape_nba_per_game_delta` ·
+  `scrape_nba_player_bio` · `scrape_nba_player_tracking` · `scrape_nba_playtypes` ·
+  `scrape_nba_shotquality` · `scrape_nba_splits` · `scrape_nba_team_stats` ·
+  `scrape_nba_tracking_detail`
+- **+3 exposed transitively through `stats_seasons()`**, which is anchored on `active_stats_season()`
+  by its own code and docstring: `scrape_nba_backfill_measure_types` · `scrape_nba_periods` ·
+  `scrape_nba_season_tables`
+
+*(3 scrapers are **not** exposed — `scrape_nba_schedule`, `scrape_nba_stats_players`,
+`scrape_nba_stats_teams` — all on `current_season()`, correct for roster/schedule. 12 + 3 + 3 = the
+documented 18 that use the helper.)*
 
 **This is the season-rollover trap the module was written to eliminate, re-entering through the
 module itself.** *Whether the Oct-1 boundary was deliberate is **NOT RECORDED**.* ⚠ And
