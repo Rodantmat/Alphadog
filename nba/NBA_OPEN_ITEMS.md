@@ -317,6 +317,63 @@ does not protect against the delete above it.**
 
 ---
 
+## ⚠ THE DIFFERENTIAL WORKER'S SNAPSHOT REFRESH IS DELETE-THEN-INSERT, AND OFFICIALS ARE KEYED BY NAME *(added 2026-09-21, T3 pass 10)*
+*Recorded as of 2026-09-02.*
+
+### Every run empties the snapshot table before repopulating it
+```js
+await sql`DELETE FROM nba_stats.player_roster_snapshot`;
+for (const p of newPlayers) { await sql`INSERT INTO nba_stats.player_roster_snapshot …`; }
+```
+**Not an upsert — a full wipe followed by 582 individual inserts, outside a transaction.** The same
+pattern refreshes the team and official snapshots.
+
+**A run that dies between the delete and the last insert leaves the snapshot short or empty**, and
+an empty snapshot reads as `is_first_run = true` on the next run — **which suppresses every event**,
+because new/departed/team-change detection is all gated on `!isFirstRun`. **So a partial failure
+does not produce a wrong diff; it produces a silent baseline reset, and a week's worth of roster
+changes is never reported.**
+
+*T3 suspected exactly this shape during its debugging — "something's causing the delete-and-reinsert
+cycle to wipe the table without properly repopulating it" — and that particular instance turned out
+to be its own test edits. **The pattern that would cause it for real is still what the worker does.***
+Recorded, not fixed.
+
+### The one write outside its own tables, with T3's own reasoning
+```js
+// apply the real, missing consequence the regular upsert worker never does: mark departed
+// players inactive in the live table. the regular worker only ever upserts players present in
+// its scrape - it never flips a player off when they disappear from the active list.
+for (const e of events.filter(e => e.event_type === "departed"))
+  await sql`UPDATE nba_ref.players SET active = 0, updated_at = now() WHERE player_id = ${e.player_id}`;
+```
+**This is the `scope_lock`'s "active flag only" exception in code** (see `NBA_WORKERS.md` §0.34) —
+and it only fires for `departed` events, which are themselves suppressed on a first run.
+
+### ⚠ Officials are keyed by a NORMALIZED NAME, because the source has no ID
+`normalizeOfficialId(o.full_name)` builds the key. **The Wikipedia roster carries jersey numbers and
+names, no stable identifier** — so the differential's notion of "the same official" is their name.
+
+**Consequence**: an official whose listed name changes — a marriage, a spelling correction, a middle
+initial added or dropped, a diacritic normalised differently — **produces a spurious
+`departed_official` plus `new_official` pair, and nothing distinguishes that from a real roster
+change.** *With 80 officials refreshed weekly against a community-edited source, this is a
+when-not-if.*
+
+### Three entities, three different event vocabularies
+| Entity | Event types |
+|---|---|
+| players | `new_player` · `team_change` · `reactivated` · `departed` — **4** |
+| teams | `new_team` · `field_change` *(with `field_name`/`old_value`/`new_value`)* · `team_removed` — **3** |
+| officials | `new_official` · `departed_official` — **2** |
+
+**Only the team log records WHICH field changed.** A player who changes team produces
+`team_change` with old/new team IDs, but a player whose name or roster status changes produces
+nothing — there is no `field_change` at player level. *So the differential layer detects roster
+membership and team moves, and is blind to attribute drift on players and officials.*
+
+---
+
 ## 🔴 SEASON-CRITICAL · THE DARKO SCRAPER'S FAILURE EVIDENCE IS THE WRONG 20 KB OF THE PAGE *(added 2026-09-21)*
 ***VERIFIED** on live `main`: `nba/scrape_nba_darko.py` lines 86 and 90. **Owner action — do not fix
 here.***
