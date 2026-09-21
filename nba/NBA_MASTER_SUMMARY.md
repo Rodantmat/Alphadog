@@ -14430,6 +14430,73 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.55 — PASS 54 (**live numeric re-verification of passes 44–53 — the first pass in ten to test the SYSTEM rather than the sweep's prose**) — **✅ FOURTEEN figure families exact, every partition closing · ❌ the pre-registration MISSED, and it found a real limit in the band instrument · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. **Every figure re-derived from the database and the filesystem, not from
+the entry** (rules 21, 23). **Read-only: `SELECT` only.***
+
+#### ✅ T11.55a — **Fourteen figure families, re-derived exactly**
+| figure | published | re-derived 2026-09-21 |
+|---|---|---|
+| **schemas · empty schemas** | 14 · 6 | ✅ **14 · 6** |
+| **base tables across all `nba*`** | 104 | ✅ **104** — *and the partition CLOSES: 25 + 20 + 19 + 14 + 14 + 9 + 2 + 1 + (6 × 0) = 104* |
+| **`nba_market` base tables** | 25 | ✅ **25** |
+| **`prop_taxonomy` columns / rows / composites** | 18 · 28 · 10 | ✅ **18 · 28 · 10** *(28 − 10 = 18 simple)* |
+| **`data_quality` carriers and census** | 22 tables · 1,212 + 162,651 = 163,863 | ✅ **exact, and it closes on BOTH axes** — *2 tables `derived` + 20 `real` = 22* |
+| **`phase` carriers** | 7 *(corrected §T11.48b)* | ✅ **7** |
+| **`side` carriers** | 19 base tables, 6 `pp_*`, **13 in scope** | ✅ **19 · 6 · 13** |
+| **`factor_registry` rows** | 67 | ✅ **67** |
+| **registered writers** | 21 | ✅ **21** |
+| **`blowout_model`** | 35 rows · 3 kinds · 11 sides | ✅ **35 · 3 · 11** |
+| **`prop_universe`** | 1,667,024 · `regular` 1,652,753 / `no-boxscore` 14,271 | ✅ **exact, and 1,652,753 + 14,271 = 1,667,024** |
+| **game-keyed tables · `team_game_log`** | 10 · 7,380 rows / 3,690 games | ✅ **10 · 7,380 · 3,690** |
+| **`board_snapshots` milestone markets** | `player_double_double` 274,010 · `player_triple_double` absent | ✅ **274,010 · 0** |
+| **filesystem · transcript** | 33 scrapers · 21 worker files · 32 `.md` · 355 + 227 + 64 + 51 + 15 = 712 · T11 thinking 51 / 3,428 / 124 | ✅ **all exact; both partitions close** |
+
+📌 **And one standing gap re-dated as a STATE** *(O9)*: **`nba_daily` holds ZERO base tables as of
+2026-09-21** — *so `nba_daily.injury_report_snapshots` still does not exist; **that is what the
+database holds today, not a verdict**, and T12–T20 are unswept.*
+
+#### ❌ T11.55b — **The pre-registration missed, and the miss is the pass's real finding**
+***Predicted: 39 / 0 / 664 / 664. Measured: 39 / 0 / **663** / 664.*** **Eleventh pre-registration,
+ten hits, one miss** — *recorded as a miss rather than rounded away.*
+🔴 ***And the direction is impossible on its face***: **`uncovered12` 663 < `uncovered30` 664 says the
+TWELVE cover more than ALL THIRTY**, when the thirty contain the twelve. 🔑 **The cause, found by
+naming the segments** *(rule 18's requirement)*: **the two figures are scored by SEPARATELY FITTED
+vectorizers** — *`score()` re-fits on `docs + texts` for each corpus* — **so the IDF weights differ
+and the scores are not on a common scale.** **Three segments sit within 0.005 of the 0.40 threshold**:
+
+| seg | vs the twelve | vs the thirty | best-matching paragraph |
+|---|---|---|---|
+| **93** | **0.4000** | **0.3962** | ***the same paragraph of `NBA_OPEN_ITEMS.md` in both*** |
+| **444** | **0.4030** | **0.3989** | ***the same paragraph of `NBA_OPEN_ITEMS.md` in both*** |
+| **671** | *below* | *above* | the reverse crossing |
+
+✅ ***So nothing crossed in substance.*** **Pass 53 wrote into `NBA_MASTER_SUMMARY.md` — one of the
+twelve — which moved the IDF basis and pushed two borderline segments across a threshold they were
+already sitting on.** 🔑 ***The consequence is a published headline narrowed: §T11.52a's
+"`uncovered12` = `uncovered30`, the self-authorship gap is ZERO" is true only to ±1, the instrument's
+resolution.*** **Corrected in place.**
+
+#### ✅ T11.55c — **One caller error of my own, caught before it was written**
+**The first `side` query returned TWENTY carriers, not nineteen.** ⚠ ***It counted VIEWS*** — the
+twentieth is **`nba_market.pp_leg_price`, the concurrent PP session's view, explicitly out of scope.**
+**Re-run restricted to `BASE TABLE`: nineteen, six of them `pp_*`, thirteen in scope — §T11.47b
+exactly.** 🔑 **§T11.41c's class again — *suspect the caller before the finding* — and rule 22's
+second half is what caught it: the hit was opened before it was counted.**
+
+#### 🔑 T11.55d — **What ten methodological passes cost, and what this one says about them**
+***Passes 44–53 were almost entirely about the sweep's own prose*** — *quotation boundaries, credit,
+duplication, the rule index.* ✅ ***Every live figure they rest on still re-derives exactly, seven
+passes after it was last taken.*** 🔑 **So the system's account in the twelve is stable and the
+sweep's account of ITSELF is what keeps failing** — **which is the same conclusion §T11.51d reached
+from the other side, now with a live control behind it.**
+
+**Pass outcome: ✅ fourteen figure families exact, every partition closing. ❌ a missed
+pre-registration that narrowed a published headline, and one caller error caught in-pass.
+CLEAN 0/3 · 55 passes.**
+
+---
+
 ### T11.54 — PASS 53 (**the RULE-28 DUPLICATE audit — rule 6 applied to rule 28, the pass after it was written**) — **❌ two duplicates, and they are a THIRD SPECIES · ✅ the novelty population enumerated and probed complete · 0/3**
 *2026-09-21. **The obligation**: rule 28 was written at pass 52 and every novelty probe this sweep
 ran on T11 — passes 26, 34, 40, 48, 49, 50, 51, 52 — had been run against the BASELINE. **So every
