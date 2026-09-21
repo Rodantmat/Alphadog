@@ -526,6 +526,36 @@ avg model p 0.454 vs PrizePicks implied 0.469.
 **Lesson recorded:** verify commits through the **GitHub API**, never `raw.githubusercontent.com` — its CDN caches
 for minutes and ignores cache-busting query strings (it returned a pre-patch copy after two successful patches).
 
+### PRICING THE SEASON — v2-full, one stored formula, live refresh (2026-09-21, owner direction)
+**Owner's rule:** price with the best logic available now; if prices change, change them in the database.
+
+**`pp-leg-v2-sqrt-full` is CURRENT.** Identical formula and constants to `pp-leg-v2-sqrt`, with one switch —
+`price_beyond_edge: true` — so legs past the calibration edge are **priced and flagged
+`extrapolated_beyond_mined_range`** instead of left unpriced. v2 extrapolates sanely (as a 2-pick with a standard:
+median 17.0×, p90 36.3×, p99 89.2×; 118 legs above 50×). The conservative `pp-leg-v2-sqrt` stays stored beside it.
+
+| Status (view `pp_leg_price`) | Legs | Share |
+|---|---|---|
+| priced within the evidence | 1,384,956 | 63.0% |
+| standards (factor 1) | 745,526 | 33.9% |
+| **priced, extrapolated (flagged)** | **58,879** | **2.7%** |
+| no center — unpriced | 9,993 | 0.45% |
+| **Total priced** | **2,189,361** | **99.55%** |
+
+**`nba_market.pp_price_version(version)` — the ONE copy of the per-leg formula.** Prices every not-yet-priced key
+under a version, reading everything from its `params_json` (power-normal family: `lambda` defaults to 1 = v1's normal;
+0.5 = v2). Replaces a statement pasted four times — the way copies of a formula drift. **Verified bit-for-bit:** v2-full
+vs the hand-priced v2 across all 9,036 keys — **0 differences outside the gap, not even at 1e-9**; all 982 gap keys
+priced from the identical probability.
+
+**`nba_market.pp_refresh_prices(p_since date default current_date - 3)` — prices the live season as it arrives:**
+rescues centers for recent no-center legs (tiers A and B, flag-checked, date-bounded), creates missing Price IDs, then
+prices every missing key under **every** registered version. **Idempotent — run over all of history it returned
+0 / 0 / 0 / 0.** The loader calls it at the end of every run, so each scheduled run prices whatever new legs have landed
+in `board_tiers_v2` — which depends on the board archive and tier builder running during the season.
+
+**Schedule:** enabled every 6 hours (delta mode). Owner: secondary this early; kept because a run costs ~10–20 quotes.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
