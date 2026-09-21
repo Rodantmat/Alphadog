@@ -110,6 +110,7 @@ every commit message. Never `git push`.
 | T5 | phase3c-starter-status | **10** (re-sweep) | ~7 / 375 | 1 per ~54 | **2026-09-21** ✅ |
 | T6 | phase3d-delta | **9** (re-sweep) | ~8 / 527 | 1 per ~66 | **2026-09-21** ✅ |
 | **T7** | **classification-baseline-design** | **36** (re-sweep) | **~40 / 1,081** | **1 per ~27** | **2026-09-21** ✅ |
+| **T8** | **classification-baseline-backtest-calibration** | **15** (re-sweep; 15 more pre-reset) | **~20 / 615** | **1 per ~31** | **2026-09-21** ✅ |
 
 > **T7 is the outlier and the reason matters for T8–T20.** Its 36 passes were not spent on the
 > transcript — **the transcript was read correctly by pass 8.** Passes 9–36 audited **what this sweep
