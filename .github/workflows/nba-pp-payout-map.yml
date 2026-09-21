@@ -21,8 +21,9 @@ on:
   push:
     paths:
       - 'nba/TRIGGER_NBA_PP_MAP.txt'
-  # schedule:                    # DISABLED - the owner decides how often PrizePicks is queried.
-  #   - cron: '15 */6 * * *'     # example: every 6 hours. Scheduled runs are forced into delta mode.
+  schedule:                      # ENABLED 2026-09-21 - delta monitoring every 6 hours (owner may change or remove)
+    - cron: '15 */6 * * *'       # 00:15 / 06:15 / 12:15 / 18:15 UTC. Scheduled runs are forced into delta mode and
+                                 # read max_quotes / drift from the trigger file - a board surge is caught up gradually.
 
 permissions:
   contents: write
