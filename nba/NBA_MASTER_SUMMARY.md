@@ -14419,6 +14419,62 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.19 — PASS 19 (**rule 20 applied retrospectively to every surviving absence claim**) — **✅ CLEAN 1/3 · five claims re-probed in three vocabularies, none falls, one gains context**
+*2026-09-21. The first run of rule 20's actual test. Five absence failures on this transcript and the
+rule that would have caught four of them is one pass old — so it was turned on the claims still
+standing. **All probes against `/tmp/t10base` (`d29401bd`), both populations, per rules 17 and 18.***
+
+#### ✅ T10.19a — **The three-vocabulary table**
+
+For each claim: (1) **the source's** wording, (2) **the documents'** habitual naming, (3) **the
+system's** identifier.
+
+| Claim | source vocab | documents vocab | system vocab | Verdict |
+|---|---|---|---|---|
+| **`compute_stage` in 0 of the twelve** | `compute_stage` → **0 / 12, 2 / 30** | `phase-1 baseline` · `phase 2` · `live-only` · `stage of the pipeline` → **7 / 12** | `phase1_baseline` · `live_only_excluded` · `not_mined` → **0 / 30** | ⚠ **stands, with context added — see §T10.19b** |
+| **`matchupMinutesSort` zero across thirty** | `matchupMinutesSort` → **0** | `matchup minutes sort` · `minutes sort` → **0** | `matchupMinutes` (the sibling), `KEEP` → **1** (`NBA_COMPASS.md`) | ✅ **holds in all three** |
+| **No document states both 67 and 31/34** | `67 rows\|factors` → **6 / 30, 5 / 12** | `31 baseline` · `34 active` · `31/34` → **2 / 30, 0 / 12** | `layer='baseline'` · *layer-tagged* → **4 / 30, 3 / 12** | ✅ **holds — the two figures live in disjoint document sets, and the second is in none of the twelve** |
+| **`factor_relevance` maps 29 of 67** | `factor_relevance` → **12 / 30** | `relevance matrix\|table\|gate` → **5 / 30** | `factor_key` + relevance → **1** | ✅ **not an absence claim at all — a live-verified numeric fact (460 rows / 29 keys, re-verified pass 16)** |
+| **The A/N/B/K/M codes are not a column** | `A1–A9` etc. → **1 / 30** | `factor code` · `mechanism taxonomy` → **3 / 30, 3 / 12** | registry columns → **1** | ✅ **holds — a live structural fact about `factor_registry`'s twelve columns, not a document claim** |
+
+🔑 **Zero retractions.** *After five absence failures on this transcript, the first systematic
+application of the test finds nothing to retract — which is what the test is for, and is the first
+evidence in this run that a rule was applied in the pass that needed it rather than one pass late.*
+
+#### ⚠ T10.19b — **`compute_stage`: the claim stands, and the twelve DO carry a phase vocabulary — for a different object**
+
+The documents-vocabulary probe returned **7 of the twelve**, so each hit was opened. **Five are a
+different sense of "phase"** — the project's own Phase 1/Phase 2, MLB's `phase2b` certifier, a
+generic *"a phase is a stage of the pipeline"*, and `NBA_RECIPE.md`'s *"Sleeper/Fliff have **LIVE-ONLY
+coverage** with zero historical depth"*, which is about **board coverage**, not factor staging. **Two
+are genuinely adjacent:**
+
+- **`NBA_GLOSSARY.md`** — `BT_CUTOFF` takes **`baseline|phase1|phase2`**;
+- **`NBA_SYSTEM_DESIGN.md`** — `nba_asof.py`'s **`PHASE2_CUTOFF_LOCAL = "17:45"`**.
+
+📌 **Both are the BUILDER'S CUTOFF — *when* the build stands — not the registry's per-factor
+assignment of *which factor is computed at which stage*.** So the claim is true and now says what it
+means: ***the twelve carry the phase vocabulary and not the per-factor mapping.*** *Together with
+§T10.9a (the live-only category is documented in `NBA_DAILY_PARITY_AND_BACKFILL.md` as policy) the
+picture is complete: **the policy is documented, the vocabulary is documented, and the assignment of
+factors to stages is in the table and nowhere else.***
+
+⚠ **This is an addition of context, not a correction** — no finding, figure or severity changes, and
+**§T10.6a's headline (the gate knows 4 of the 36 enrichment factors) is untouched.**
+
+#### 📌 T10.19c — **Closure judgment, stated in advance rather than after**
+
+**Pass 19 changed one paragraph and it was an addition of context.** By the T7 precedent already on
+file — *"if the passes produce only editorial corrections, close and say so"* — **this counts as
+clean, and the count is 1/3.** *Recorded explicitly so a later pass can overturn the judgment rather
+than re-litigate it: the test applied was **did any finding, figure or severity change**, and the
+answer was no.*
+
+**Pass outcome: 0 retractions, 5 claims confirmed across 3 vocabularies, 1 context addition. ✅ CLEAN
+1/3 · 19 passes.**
+
+---
+
 ### T10.18 — PASS 18 (**partial-quotation audit of the owner stratum**) — **❌ O7 RETRACTED IN FULL one pass after it was written · 🔴🔴 and the sweep's own top-2 headline never reached the documents' prose · 0/3**
 *2026-09-21. All 14 owner turns pulled in full (10,464 characters) and diffed against what the thirty
 carry — the angle rule 19 forced. **It killed the finding that created rule 19, and found a larger one
