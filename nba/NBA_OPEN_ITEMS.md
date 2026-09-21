@@ -189,6 +189,38 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 🔴 THE "100% MARKET-SPREAD COVERAGE" IN TWO MANDATED DOCUMENTS IS 99.76%
+*Found 2026-09-21, T11 pass 11 (§T11.12b). `[LIVE-AUDIT]`.*
+
+**Four documents — `NBA_DATABASE.md` and `NBA_FINAL_SCORING_CALIBRATION.md` among them — record the
+real-market-spread upgrade as *"307,604 rows, 2,454 games, **100% coverage**."* The 307,604 is exact
+(`nba_market.game_lines_snapshots`). The 100% is not.**
+
+| measure | value |
+|---|---|
+| `nba_market.schedule_norm` — games 2024-10-22 → 2026-04-12 | **2,460** *(= 1,230 × 2)* |
+| `nba_market.event_game_map` — distinct games mapped | **2,454** → **99.76%** |
+| **Unmapped** | **6** |
+| `game_lines_snapshots` — distinct `event_id` | **2,468** *(**eight MORE** than the schedule holds)* |
+| **`game_lines_closing` — distinct `canonical_event_id`** | **2,410** → **97.97%** |
+
+🔴 ***The "100%" is 100% of the games that were MAPPED — a denominator taken from the numerator's own
+table.*** **§T10.6a's shape**: *the check runs in the one direction that cannot see the gap.*
+
+**The six unmapped games** *(named as observation; no cause asserted, rule 6)*: **2024-12-14**
+MIL@ATL and OKC@HOU · **2025-11-01** DET@DAL · **2025-12-13** OKC@SAS · **2026-01-15** ORL@MEM ·
+**2026-01-18** MEM@ORL. 📌 *Two share a date; whether that is meaningful is **NOT RECORDED**.*
+
+✅ **Corrected in both mandated documents.** ⚠ **The blowout-model measurements built on those 2,454
+games are unaffected in kind** — *the sample is 99.76% of the two seasons rather than all of them* —
+**but the closing-lines table's 50-game shortfall has not been traced to any consumer, and whether it
+matters is NOT RECORDED.**
+
+📌 **OWNER DECISION (minor)**: **are the six unmapped games recoverable, and is `game_lines_closing`'s
+2,410 a known limit or a gap?**
+
+---
+
 ## 🔴🔴 `nba_market.board_snapshots` IS NOT NBA-ONLY — the live board crons write every sport into it
 *Found 2026-09-21, T11 pass 7 (§T11.8a). `[LIVE-AUDIT]`, read off the table. **Novelty 0 of thirty,
 probe positive-controlled.***
