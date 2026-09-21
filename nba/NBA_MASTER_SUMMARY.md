@@ -14423,6 +14423,97 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.2 — PASS 1 (**tail stratum**) — **🔴 the injury-backfill root cause is in none of the twelve, and its lesson is in no document at all · 0/3**
+*2026-09-21. The stratum pass 0's 97.6% pointed at. **The instrument was re-measured first, and my
+own first measurement of it was wrong.***
+
+#### 🔑 T11.2a — **The composition, re-measured — and the classifier corrected mid-pass**
+
+⚠ **First measurement, wrong, and caught inside the pass**: a classifier keyed on `^\{"ok":` reported
+**96% prose / 26 mechanism**, because the normalised text is `{ "ok": true, …` — **with a space after
+the brace.** *Rule 15's family again: a pattern that matches nothing returns a confident zero.*
+
+**Corrected, with the predicate stated (rule 16)** — a segment is mechanism if it begins with
+`{ "ok":` (MCP bridge), `{"returncode"` (shell), `content:` or `allow write:`:
+
+| Family | n | `substance()` accepts |
+|---|---|---|
+| **MCP envelope** | **168** | 70 **(42%)** |
+| **Other mechanism** (`content:`, `allow write: true sql:`) | **37** | 35 **(95%)** |
+| **Shell envelope** | **26** | 25 **(96%)** |
+| **Prose** | **481** | 481 **(100%)** |
+
+**TRUE composition: PROSE 481 (68%) · MECHANISM 231 (32%).** **`substance()` reports 611 (86%) — an
+18-point over-count.**
+
+🔑 **And the error is ONE-DIRECTIONAL: it never rejects prose (481 of 481 kept) and it accepts 130 of
+231 mechanism segments.** *So every `substance()`-filtered figure in this sweep is an **upper bound**
+on prose and a **lower bound** on mechanism — never the reverse.* 📌 **68 / 32 is T10's corrected
+split (69 / 31) to within a point** — two MCP-bridge transcripts, the same shape.
+
+⚠ **And it corrects pass 0's own prediction**: the next-step row said T11 would carry the MCP
+envelope *"and NOT the shell"*. **It carries both** — 168 MCP and 26 shell. *Recorded because the
+prediction was published.*
+
+#### 🔴 T11.2b — **The injury-report backfill produced ZERO rows from 176 days, and the twelve carry the remedy without the defect**
+
+**From the transcript**, assistant, segment 55:
+
+> *"The first run had **scanned all 176 days and found the PDFs but produced zero rows**. Two
+> diagnostic runs on the runner pinned it: **the CDN serves the files fine (200, PDF, S3, with or
+> without the proxy), but pdfplumber on the runner drops the spaces inside cells** —
+> `detroitpistons cunningham,cade questionable`, `injury/illness-rightknee;surgery` — **so the
+> team-name matching failed on every row.** My self-test had passed on text extracted by a different
+> tool… Fix, verified on both text shapes: **10 rows from the collapsed text, 24 from the spaced
+> fixture**."*
+
+**The fix**: space-insensitive team regex plus canonical names, a header regex made tolerant, and
+**`split_camel()`** to recover the dropped spaces. **A `probe` mode was added to the scraper**
+(`injury mode=probe` → CDN status, pdfplumber text, parsed rows, extracted table).
+
+**Novelty, three vocabularies against `5dfb72ab` (rule 20)**: the source's (*pdfplumber drops
+spaces*) → **0 of the twelve, 2 of thirty**; the documents' (*intra-cell · collapsed text ·
+space-insensitive*) → **0 of the twelve, 3 of thirty**; the system's (`split_camel`) → **0 of the
+twelve, 1 of thirty**. ***The bug and its fix are in NONE of the twelve*** — they sit in
+`NBA_COMPASS.md` and `NBA_PROJECT_LOG.md`.
+
+🔑 **And the asymmetry is the finding**: `injury mode=probe`, **the diagnostic this bug produced, is
+in THREE of the twelve** (`NBA_OPEN_ITEMS.md`, `NBA_SYSTEM_DESIGN.md`, `NBA_WORKERS.md`).
+***The mandated documents carry the remedy and not the defect that caused it*** — **§T10.12a's shape
+exactly, where the twelve carried the replacement factors and not the supersession reasoning.**
+
+#### 🔴🔑 T11.2c — **And the lesson it states is in NO document, in any vocabulary**
+
+> *"**a lesson worth keeping: validate parsers on the runner's own extraction.**"*
+
+**Probed as the source words and as the documents would phrase it** (*parser validation · validate the
+parser*) → **0 of thirty, both ways.**
+
+⚠⚠ **It generalises past PDFs, and the transcript says why: the self-test passed because it ran on
+text extracted by a different tool.** ***A parser validated against one extractor is validated
+against that extractor, not against the file*** — and the NBA scraping network runs its parsers on
+**GitHub Actions runners**, whose library versions are not the ones a local self-test uses.
+**Written to `NBA_WORKERS.md` and `NBA_OPEN_ITEMS.md`.**
+
+#### 📌 T11.2d — **The backfill coverage matrix and its five-state legend live outside the twelve**
+
+The transcript builds a **backfill coverage matrix** against the owner's directive — *"owner
+2026-09-09: **every enrichment factor needs a two-season backfill**"* — with the status legend
+**✓ have · ⏳ running · 🔧 built, run pending · ⛔ blocked (owner action) · – derived, no external
+data.**
+
+**Novelty**: *backfill coverage matrix* → **1 of thirty, 0 of the twelve**; the legend's distinctive
+strings (*blocked owner action*, *built, run pending*) → **1 of thirty, 0 of the twelve** — both in
+`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`. **The two-season backfill requirement itself is covered**
+(*5 of thirty, 1 of the twelve*). 📌 ***So the requirement is in the mandated set and the instrument
+that tracks it against every factor is not*** — and it is the instrument that answers *"which factors
+are done."*
+
+**Pass outcome: 1 instrument correction (mine, caught in-pass) + 1 defect absent from the twelve
++ 1 lesson absent from everything + 1 instrument outside the twelve. 🔴 CLEAN 0/3 · 2 passes.**
+
+---
+
 ### T11.1 — PASS 0 (**corpus + owner stratum**) — **🔴🔴 two live API keys in the transcript · 🔑 the owner's timezone instruction is in none of the twelve · 0/3**
 *2026-09-21. Rules 17–21 applied from the first pass rather than from the twentieth, which is the
 test T10's record set.*
