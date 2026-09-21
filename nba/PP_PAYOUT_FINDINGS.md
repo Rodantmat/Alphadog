@@ -338,6 +338,57 @@ the model's own projection as the center would make the backtest circular.
 
 Each rescue tier gets its own `anchor_type`. After rescue, genuinely unpriced ≈ **4,192 legs (0.2%)**.
 
+### BUILD STATUS — updated 2026-09-21 (items 1–3 BUILT and verified)
+
+**BUILT, in Postgres:**
+| Object | Contents |
+|---|---|
+| `nba_market.pp_price_key` | **8,831 Price IDs** covering all **2,199,354** PrizePicks legs — key = `(base_market, anchor_line, line, side, kind)` |
+| `nba_market.pp_price` | version `pp-leg-v1-normal`: implied_p, factor, source (`model` / `rule` / `unpriced`), reason |
+| `nba_config.pp_pricing_model` | v1 registered as current: parameters, validation scores, known biases |
+| `nba_config.pp_slip_rules` | 13 slip-level rules, each marked verified / partial / unverified |
+| `nba_market.pp_norm_cdf(x)` | normal CDF (Abramowitz–Stegun), verified exact to 6 decimals |
+| view `nba_market.pp_leg_price` | every leg + Price ID + current price; a leg with no key yet still appears (`no_price_key_yet`); a `mined` price outranks the model |
+
+**Coverage (verified through the view — every leg accounted for):**
+| | Legs | Share |
+|---|---|---|
+| Demons priced | 743,853 | 33.8% — 2-pick 3.10–11.95× |
+| Goblins priced | 583,661 | 26.5% — 2-pick 2.08–2.92× |
+| Standards (factor 1) | 745,526 | 33.9% |
+| **Unpriced — outside calibration** | **82,944** | **3.8%** |
+| Unpriced — no center | 43,370 | 2.0% |
+| **Total priced** | **2,073,040** | **94.26%** |
+
+**Three findings from the build itself:**
+1. **`kind` had to join the key.** 2,475 legs are labelled standard while their line differs from the center
+   (727 IDs). A standard is its own center and pays factor 1; pricing purely by position would have charged them
+   as goblins/demons. With `kind` in the key they price at 1, flagged `standard_label_off_center`. Every goblin and
+   demon label agrees with its position (0 mismatches). **Root cause of the off-center standards not investigated.**
+2. **The calibration edge.** v1 initially priced far demons at up to **15,000×** — a bell curve's tail extrapolated
+   far past the evidence (history has demons at 2–4× their center; every mined demon sat within ~+47%). The edge is
+   evidence-based: the longest-odds demon mined is **Brunson Rebounds 5.5, 11.5× (implied_p 0.1254)**. Beyond it →
+   unpriced, `outside_calibration`. Stored as `calibrated_min_implied_p` — move it only when mining observes longer odds.
+3. **Same key, different players, different real prices** — up to ~10% (Pts+Asts 32.5 → 44.5 demon: 9.5× vs 10.5×,
+   mined minutes apart). Most likely PrizePicks prices alternates off its **unrounded** projection, of which the
+   standard line is a rounding. **For history this is irreducible — it is the accuracy ceiling of any key-level model.**
+   **Consequence: mined prices must be stored per leg (per player / projection), never per generic key.**
+
+**Validation against PrizePicks' real current prices:** 112 of 114 mined live legs have their exact key in history
+(103 keys, covering 123,571 historical legs). v1 vs mined: **median error 3.1%, median bias 0.0000.** (v1's constants
+were fitted on these legs; the out-of-sample figure remains leave-one-player-out: 72% within one rounding step.)
+
+### REMAINING
+4. **v2 — skew fix** (right-skewed count distribution). Should also push the calibration edge outward honestly.
+5. **Rescue tier: same-day snapshot** (3,227 legs)
+6. **Rescue tier: sportsbook consensus** — validate first (35,951 legs)
+7. ~~Conflicting keys~~ — **resolved structurally** by `kind` in the key; root cause of off-center standards open
+8. **Load mined live prices** — per leg, not per key (finding 3); needs the PrizePicks stat ↔ Odds-API market map
+   (`Points→player_points`, `Pts+Rebs→player_points_rebounds`, `Pts+Asts→player_points_assists`,
+   `Pts+Rebs+Asts→player_points_rebounds_assists`, `Rebounds→player_rebounds`, `Assists→player_assists`,
+   `3-PT Made→player_threes`, `Rebs+Asts→player_rebounds_assists`)
+9. **Preseason board (2026-10-03):** re-validate on dozens of players; mine longer-odds demons to extend the edge
+
 ### BUILD CHECKLIST — nothing below is built yet
 1. **Schema** — the four tables and the view
 2. **Fill version 1** — the current normal model, with its big-demon bias recorded in `pp_pricing_model`
