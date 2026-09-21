@@ -14,6 +14,12 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ### 📜 THE TWENTY-SEVEN STANDING RULES — *the index; each is written in full where it was born*
 
+⚠⚠ **READ THIS INDEX BEFORE WRITING ANY CLAIM ABOUT THE SWEEP'S OWN METHOD** *(§T11.51d, 2026-09-21)*.
+***Two of nine method characterisations audited at pass 50 turned out to be rules the sweep itself had
+already written*** — **§T9.28b's *"a coverage figure is dated by construction"* and §T10.20's
+*"re-measured rather than carried forward"*** — **because a rule written at T9 is not where a T11 pass
+looks.** ***A method claim gets the same check a figure gets, and this table is where it gets it.***
+
 *Rules 1–15 were born in T1–T9 and are stated in `NBA_MASTER_SUMMARY.md` at their entries. Rules
 16–27 are T9–T11's and each carries a §-pointer. **Apply them from pass 0 of a transcript, not from
 pass 20 — that gap is this run's signature failure.***
