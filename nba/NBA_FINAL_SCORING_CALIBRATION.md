@@ -2323,6 +2323,3 @@ T9 predicted two sources. **One delivered, one did not.**
 **That third item is now a hypothesis by elimination, not just by design**, and it is testable the
 moment real goblin/demon board data is in hand. **It should determine what the slip-building phase
 optimises for.**
-</content>
-</parameter>
-<parameter name="message">docs: NBA final scoring engine calibration - dedicated file per owner mandate
