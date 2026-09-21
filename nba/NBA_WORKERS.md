@@ -334,6 +334,15 @@ each**, with exactly one line differing: the User-Agent it sends to the GitHub c
 | player tracking | `Alphadog-NBA-StaticPlayerTracking` |
 | team stats | `Alphadog-NBA-StaticTeamStats` |
 | on/off | `Alphadog-NBA-StaticOnOff` |
+| schedule *(T3)* | `Alphadog-NBA-StaticSchedule` |
+| DARKO *(T3)* | `Alphadog-NBA-StaticDarko` |
+| weekly differential *(T3)* | `Alphadog-NBA-WeeklyDifferential` |
+
+*Extended 2026-09-21 from seven to **ten** when T3's pass 2 reached the schedule, DARKO and
+differential workers. **The duplication cost scales with the table**: a fix to the shared GitHub read
+path is now a ten-place edit, and `Alphadog-NBA-WeeklyDifferential` is the one copy that diverged —
+its `meta.error` throw includes the failing path (`last committed scrape failed for ${path}`) because
+it reads three files in one run, where the others read one.*
 
 **Two consequences worth holding together.** The good one: **GitHub API traffic is attributable per
 worker** — a rate-limit or audit question can be answered by worker name without adding logging.
