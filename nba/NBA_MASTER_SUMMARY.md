@@ -13758,7 +13758,7 @@ are not.** Two of the three named minutes inputs are missing.
 |---|---|---|
 | **CERTIFIED** | `fga` — *"CERTIFIED both seasons (0.9 / 1.3, **0 band misses**)"* | and the main singles set |
 | **CONFIGURED, NOT YET RUN** | **`turnovers`, `fga`, `fg3a`, `ftm`, `personal_fouls`** | *"configured, **NOT yet run**"* |
-| **NOT YET CERTIFIED** | **`fgm`, `fta`** | *"ADDED 2026-09-12 (**owner: the live PrizePicks menu carries these**; box-score columns already in our logs). **Configs are the closest certified analogue; NOT yet certified** — the first history run prints the band tables."* |
+| **NOT YET CERTIFIED** | **`fgm`, `fta`, `oreb`, `dreb`** *(⚠ `oreb`/`dreb` added 2026-09-21, §T9.35c — the comment governs the last FOUR entries of `PROPS`)* | *"ADDED 2026-09-12 (**owner: the live PrizePicks menu carries these**; box-score columns already in our logs). **Configs are the closest certified analogue; NOT yet certified** — the first history run prints the band tables."* |
 
 **These props will produce numbers.** They have alphas, `k_stab`, step sizes and families configured —
 so the ladder builds them and the scorer will score them. **What they lack is the band-table validation
