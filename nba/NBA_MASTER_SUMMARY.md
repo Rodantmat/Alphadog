@@ -9690,6 +9690,67 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.45 — PASS 16 (**composite-key / schema-completeness sweep**) — **🔴 2 LIVE FINDINGS + ⚠ pass 12 was INCOMPLETE · 0/3**
+*2026-09-21. The pass-15 rule applied as its own angle: for every live object these entries describe,
+enumerate **all** its columns from `information_schema` and **all** its key dimensions from the design
+document, then re-check. **It paid immediately — two joins that pass 12 never ran, both broken.***
+
+#### ⚠ First, the honest accounting on §T7.41
+
+Pass 12 reported *"referential integrity: **4 joins, 0 orphans**."* **Every claim it made is still
+true.** But it ran four joins because it knew of four — it had not enumerated the key from
+`NBA_CLASSIFICATION_BASELINE_DESIGN.md`, so it **never tested `variation_band` → `variation_bands`
+or `calibration_log.cell_id` → `factor_profile_cells`.** **Both fail.** §T7.41 is marked
+**incomplete in scope**, not wrong in content. *This is the fifth-form rule proving itself on the
+pass immediately after it was written — in the useful direction, for once.*
+
+#### 🔴 T7.45a — `[LIVE-AUDIT]` **`variation_band = 'continuous'` resolves to NOTHING. It is a sentinel outside the vocabulary.**
+
+`nba_config.variation_bands` holds **25 rows over 9 distinct `band_key` values**, in two clean
+families:
+
+| Family | Keys | Props | Rows |
+|---|---|---|---|
+| Line magnitude | `LOW` · `MID` · `HIGH` · `ELITE` (`band_order` 1–4) | 5 each | 20 |
+| Role | `FRINGE` · `ROLE` · `STARTER` · `STAR` · `SUPERSTAR` (`band_order` 1–5) | 1 each | 5 |
+
+**None of the nine is `continuous`.** So the **13** `factor_profile_cells` rows that carry
+`variation_band = 'continuous'` — the very rows §T7.44a established as *band-keyed* — **point at a
+band that does not exist in the band table.**
+
+**The finding this refines, not reverses**: the 13 are still differentiated (the value distinguishes
+them, and `cell_id` carries `__continuous__`). But **`'continuous'` is a sentinel meaning "not
+banded", not a foreign key** — and nothing in the schema says so. *Whether that is deliberate is
+**NOT RECORDED**; the design document names `variation_band` as a key dimension without naming a
+sentinel.*
+
+#### 🔴 T7.45b — `[LIVE-AUDIT]` **`calibration_log` joins `factor_profile_cells` at 0% — 8 of 8 — and 6 of its 8 rows are not cell ids at all**
+
+`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 250 calls it *"the audit trail for the semi-automatic →
+automatic loop,"* and its `cell_id` column names the cell each decision applies to. **Live, not one
+row resolves:**
+
+| | |
+|---|---|
+| Orphaned `cell_id` | **8 of 8 — 100%** |
+| **Two incompatible id conventions** | `calibration_log`: `blowout_risk::points::P_BLOWOUT_GT50` (**`::`**, 3 segments) · `factor_profile_cells`: `blowout__points__WON_GT50__FRINGE__more` (**`__`**, 5 segments) |
+| Rows that are not cells at all | **6 of 8** — `classification::structure`, `classification::guards`, `classification::threes_made::cell_mode`, `classification::band_cells::rule`, `classification::shift_mode::bug` — **decision records, not factor cells** |
+| Rows that at least look like cells | **2** — `blowout_risk::points::P_BLOWOUT_GT50`, `rest_density::B2B` — **neither resolves** |
+| `old_value` / `proposed_value` | **NULL on all 8**, every row `status = 'applied'` |
+
+**Two distinct problems, and the second is the worse one.** The id mismatch is **the same failure
+class as T6's officials join** — a name-derived key against a differently-derived key, 100% failure,
+no error raised. But **an audit trail whose every row says `applied` while recording neither the old
+nor the proposed value does not audit anything**: it records that something changed and nothing about
+what. *Severity 🔴 as a design gap; **whether anything writes to this table today is NOT RECORDED**,
+and per the §2 banner nothing reads it.*
+
+*Novelty checked inline, per the standing rule: the pre-pass-9 twelve contain `calibration_log` only
+as **"8 rows"** and the one-line purpose; **`band_key` and `proposed_field` appear nowhere in them.**
+The contents, both conventions and the null values are new.*
+
+---
+
 ### T7.44 — PASS 15 (**cross-document consistency, second run**) — **🔴 1 DEFECT, MINE, AND THE THIRD INSTANCE OF ONE HABIT · 1/3 → 0/3**
 *2026-09-21. Angle: re-read every claim passes 9–14 added **at the document that specifies the thing
 it describes** — not at the live table. The live table tells you which columns exist; the design
