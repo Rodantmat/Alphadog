@@ -9661,6 +9661,74 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.40 — PASS 11 (**live numeric re-verification**) — **🔴 1 NEW LIVE FINDING + ⚠ 2 DOCUMENT DEFECTS · 0/3**
+*2026-09-21. Angle: re-run every number §T7.30–§T7.39 states, against the live system, by a query
+written from the claim rather than from the query that produced it.*
+
+**✅ 13 of 13 numeric claims re-verified EXACTLY.** Recorded in full, because a re-verification pass
+that only reports its misses is not evidence:
+
+| Claim | Live | |
+|---|---|---|
+| 2025-26 regular season = prefix `002` | **1,230** | ✅ |
+| 2025-26 all prefixes | **1,400** (71 + 1,230 + 7 + 85 + 6 + 1) | ✅ |
+| The **170-game gap** (1,400 − 1,230) | **170**, to the game | ✅ |
+| 2026-27 preseason = prefix `001` | **66**, 2026-10-03 → 10-16 | ✅ |
+| 2026-27 regular season opens | **2026-10-20** | ✅ |
+| `factor_relevance` / `factor_profile_cells` / `stat_decay_config` | **460 / 35 / 13** | ✅ |
+| `role_tiers` / `calibration_log` / `factor_registry` / `system_settings` | **6 / 8 / 67 / 5** | ✅ |
+| `system_settings` key→value pairs | **all five match the documented table exactly** | ✅ |
+| *"18 scrapers now use the season helper"* | **18** | ✅ |
+
+**The season-helper figure is worth its own line, as the count rule done right.** 20 files under
+`nba/` reference `nba_season`; **two are not scrapers** — `nba_season.py` itself and
+`diagnostic_measure_types.py`. **The pattern returns 20; the population is 18**, exactly as
+documented. *Contrast with the four single-pattern failures listed at the standing rules.*
+
+#### 🔴 T7.40a — `[LIVE-AUDIT]` **The 2026-27 regular season in the live calendar is UNIFORMLY TWO GAMES SHORT PER TEAM**
+
+| Season | Prefix `002` games | Games per team | Teams |
+|---|---|---|---|
+| **2025-26** | **1,230** | **exactly 82** | 30 |
+| **2026-27** | **1,200** | **exactly 80** | 30 |
+
+**The shortfall is perfectly uniform** — no team has 81 or 82; all thirty have 80. 30 × 80 ÷ 2 =
+1,200, and 1,230 − 1,200 = **30 games missing**. Additionally, **2026-27 has no prefix `003`, `004`,
+`005` or `006` rows at all**, where 2025-26 carries 7 · 85 · 6 · 1.
+
+⚠ **The cause is NOT RECORDED, and this entry does not infer one** (rule 6). What is recorded is the
+shape: uniform, two per team, plus the absent non-regular-season prefixes.
+
+**Why it is 🔴 and not a curiosity**: **any check keyed to 82 games per team, or to 1,230 per season,
+will report a shortfall on all thirty teams for 2026-27** — and this is the season the whole static
+and enrichment layer has been built for. **It opens 2026-10-20, 29 days after this pass.** *Whether
+any worker performs such a check is **NOT RECORDED**; the coverage detector already found in
+`alphadog-v2-nba-daily-delta` reports missing starters and officials, not game counts.*
+
+#### ⚠ T7.40b — **`nba_config.ewma_alpha` IS NOT A TABLE — a precision defect in the §2 banner, inherited by my own §T7.39c**
+
+`SELECT` on it errors: **`relation "nba_config.ewma_alpha" does not exist`**. It is a **column of
+`nba_config.stat_decay_config`** — VERIFIED against `information_schema`, where it is the only
+`%ewma%` object in the database.
+
+The §2 banner's own sentence is careful — it claims *"the **strings** … appear ZERO times in the
+codebase,"* which holds for a column name too. **Its next sentence is not**: *"These **tables** are a
+documented design that no running code consults."* And **§T7.39c repeated "eight tables"** yesterday
+while correcting a different count. **It is seven tables and one column.** Corrected in both places.
+
+**Note the shape of this one.** In §T7.39c I reached for the authority to fix a count — and
+**inherited an imprecision from the authority**. So the count rule gains a clause: *derive the
+population from an authority — **and when checking the authority costs one query, check it.***
+
+#### ⚠ T7.40c — **Deliverable defect: a heading glued to its body in `NBA_DATABASE.md`**
+
+Line 557 read `### \`nba_config.classification_config\`\`config_key\` · \`config_json\` JSONB · …` —
+**no newline between the heading and its body**, so the section does not render as a heading and the
+table's columns read as part of its title. **Fixed** (document-don't-fix governs the system being
+documented, not this deliverable), and the **live row count, 66**, added while there.
+
+---
+
 ### T7.39 — PASS 10 (**structural value sanity**) — **⚠ 1 DEFECT (pass 9's own inference) + 🔴 NEW MATERIAL · 0/3**
 *2026-09-21. Angle: take the config tables T7 designed and test them against the invariants the
 design implies — sign, bound, key, population. Two of the four checks held perfectly; the invariant
