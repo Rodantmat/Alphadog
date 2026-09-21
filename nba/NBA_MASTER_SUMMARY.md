@@ -8532,6 +8532,38 @@ with a completeness-check bug caught via the `002` GAME_ID prefix.
 **527 uncovered vs the twelve (88.6%)** · 524 vs all 30 — a **3-segment** self-authorship gap, the
 smallest of any transcript. T6 writes almost none of the documents; its tail is all content.*
 
+### T6.24 — PASS 8 (**the mid-band 0.40–0.45 seam**) — **✅ CLEAN 2/3**
+*2026-09-21. Only 11 segments in the seam.*
+
+**All eleven map to documented entries** — the `ak-static.cms.nba.com/referee/injury/Injury-Report_*.pdf`
+source, the daily-delta worker gap and its closure, the enum refreshing and the worker loading the
+remaining rows in 25 seconds, the `git add` list growing for shotzones and lineups, and repeated
+instances of `status: error ? "failed" : "completed"` — **already enumerated in §T5.22a's 18-value
+tally, which is why they surface here as covered rather than new.** ✅
+
+**Nothing new.** *The seam that produced the sharpest finding on T2 is exhausted on T6, which is what
+a thoroughly-swept transcript should look like.*
+
+### T6.23 — PASS 7 (**wiring**) — **✅ CLEAN 1/3**
+*2026-09-21.*
+
+| Element | `game-officials` | `lineups` |
+|---|---|---|
+| worker file | ✅ | ✅ |
+| `worker_manifest_nba.json` | ✅ | ✅ |
+| `alphadog-v2-admin-sql.js` | **3 sites** ✅ | **3 sites** ✅ |
+| `generate_wrangler_configs.py` | ✅ | ✅ |
+| scraper in a workflow | 2 workflows ✅ | 1 workflow ✅ |
+
+**The four-site model is satisfied for both**, with no dangling reference either way.
+
+⚠ **One orphan, and it is explained**: `patch_missing_officials.py` is in the repo and referenced by
+**no workflow** — because T6 deliberately *"revert[ed] the workflow's temporary patch step back to
+the main scraper for future full runs"* after the one-off recovery. **A spent one-off left in place,
+consistent with the diagnostic-artifact habit** (§T5.18a) rather than a wiring defect.
+
+---
+
 ### T6.22 — PASS 6 (**structural value sanity**) — **NEW MATERIAL · 0/3**
 *2026-09-21. Does each row set obey an invariant that must hold if the parse is correct?*
 
