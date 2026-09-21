@@ -14746,6 +14746,11 @@ small enough to dismiss is small enough to read, and it was never read.*
 key" is the RESOLUTION of this blocker, not a contradiction of it.*** **§T11.3a stands, with its
 starting state now on file.**
 
+❌ **This entry's companion note in `NBA_OPEN_ITEMS.md` — *"items 2 and 3 … their status after T11 is
+NOT RECORDED"* — is RETRACTED by §T11.27b.** ***Item 2 was superseded in T13 and the ledger said so
+before T11's passes began; item 3's need is met by `game_lines_closing`.*** **Corrected in place; the
+verbatim quotation above is unaffected.**
+
 #### 🔴 T11.23c — **And segment 112 is the factor × season matrix, with two findings in it that are in no document**
 
 🔴 **`c4`, `s1–s4` — pick'em structure — ⛔ ⛔ ⛔ across all three seasons**:
