@@ -8045,6 +8045,14 @@ design names. **In all three the missing context was one line away from the thin
 practical form of all three rules is one instruction: **read the neighbours before drawing the
 conclusion** — the sentence above, the column beside, the rest of the key.*
 
+🔴🔴 **The eighth form, added 2026-09-21 after §T7.54a — RUN THE NOVELTY GREP ON THE FINDING YOU ARE
+MOST CONFIDENT ABOUT, FIRST.** In pass 25 I grepped `variation_band`, `band_key`,
+`real_sample_size_observed`, `shotdiet`, `binary_gate` — and **not `2026-10-01`**, the single most
+consequential string of the pass. **It was on file**, as a two-day edge case rated *"low impact"*.
+**The rule was not the problem; applying it only to the claims that felt uncertain was.** *Confidence
+is where the novelty check is skipped, so confidence is where it must run first.* **Tenth
+absence/novelty failure in T7, and the only one to land on a headline.**
+
 🔴🔴 **THE ONE-LINE RULE, added 2026-09-21 after §T7.50a — where three of the eight T7 failures
 actually came from.** §T7.38a quoted a rule and missed the **attribution in the same sentence**.
 §T7.44a quoted a composite key and missed **three of its six dimensions**, spelled out four times in
