@@ -207,9 +207,33 @@ real-market-spread upgrade as *"307,604 rows, 2,454 games, **100% coverage**."* 
 🔴 ***The "100%" is 100% of the games that were MAPPED — a denominator taken from the numerator's own
 table.*** **§T10.6a's shape**: *the check runs in the one direction that cannot see the gap.*
 
-**The six unmapped games** *(named as observation; no cause asserted, rule 6)*: **2024-12-14**
-MIL@ATL and OKC@HOU · **2025-11-01** DET@DAL · **2025-12-13** OKC@SAS · **2026-01-15** ORL@MEM ·
-**2026-01-18** MEM@ORL. 📌 *Two share a date; whether that is meaningful is **NOT RECORDED**.*
+🔑🔑 **THE SIX UNMAPPED GAMES ARE NOT MISSING — HOME AND AWAY ARE SWAPPED** *(proven by query
+2026-09-21, §T11.14a; the "cause NOT RECORDED" first written here is superseded)*:
+
+| `schedule_norm` *(away@home)* | `game_lines_snapshots` *(away @ home)* |
+|---|---|
+| 2024-12-14 **MIL@ATL** | 2024-12-14 **ATL @ MIL** |
+| 2024-12-14 **OKC@HOU** | 2024-12-14 **HOU @ OKC** |
+| 2025-11-01 **DET@DAL** | 2025-11-01 **DAL @ DET** |
+| 2025-12-13 **OKC@SAS** | 2025-12-13 **SAS @ OKC** |
+| 2026-01-15 **ORL@MEM** | 2026-01-15 **MEM @ ORL** |
+| 2026-01-18 **MEM@ORL** | 2026-01-18 **ORL @ MEM** |
+
+**Of the 14 events that map to no game: 6 match a schedule game with the orientation REVERSED, 0
+match exactly, and 8 have no schedule row in either orientation.** ✅ **Both partitions close:
+`game_lines_snapshots` 2,468 = 2,454 + 6 + 8 · `schedule_norm` 2,460 = 2,454 + 6.**
+
+⚠ **The mechanism is demonstrated; WHY the sources disagree is still NOT RECORDED** *(rule 6 — no
+transcript swept so far supplies it)*. **Two of the six share the date 2024-12-14 and two more are a
+home-and-home pair two days apart — patterns worth noting and not worth guessing from.**
+
+📌 **And the eight events with NO schedule row** — 2024-12-17 MIL@OKC · 2025-01-09 CHA@LAL ·
+2025-01-22 MIL@NOP · 2025-12-16 SAS@NYK · 2026-01-08 MIA@CHI · 2026-01-24 GSW@MIN · 2026-01-25
+DAL@MIL · 2026-01-25 DEN@MEM — **carry 48–128 line rows each: real market data for games the schedule
+does not contain. NOT RECORDED what they are.**
+
+🔑 **Practical consequence, and it changes the remedy**: ***these six games' market lines are already
+in the database.*** **The fix is a join that normalises orientation, not a re-scrape.**
 
 ✅ **Corrected in both mandated documents.** ⚠ **The blowout-model measurements built on those 2,454
 games are unaffected in kind** — *the sample is 99.76% of the two seasons rather than all of them* —
