@@ -70,10 +70,43 @@ mixes two products under one label.**
 escape hatch, but nothing marks it as one that should not be left set"*. **What is new is that it IS
 set, and that the consequence is now visible in the data.**
 
-🔑 **OWNER DECISION** — two choices, neither takeable from the transcripts: **(a)** stamp the depth
-configuration into the ladder rows (a column, or the `recipe_version` string) so the regimes are
-distinguishable, and **(b)** decide whether the three existing as-of days should be rebuilt to one
-regime before they are used as a baseline. *Not actioned — this sweep documents only.*
+### 🔴🔴 AND THE EXTRA RUNGS CARRY FULL CONFIDENCE CREDIT — *added 2026-09-21, §T9.33b*
+
+**30,989 ladder rows sit beyond their prop's measured `LADDER_DEPTH`**, and **92.2% of them (28,563)
+are at `p_more` ≤ 0.01 or ≥ 0.99.** *(Within the measured depth: 168,357 rows, 10.7% extreme.
+**168,357 + 30,989 = 199,346**, + `stocks` 6,350 + `double_double` 541 = **206,237** ✅.)*
+
+🔴 **All 30,989 report `used_emp = true`** — and downstream that flag is a multiplier, not a
+diagnostic:
+
+```python
+build_confidence_v3.py:62   f_prov = d["used_emp"].fillna(False).astype(float) * 0.7 + 0.3
+build_final_hp.py:344 · score_board_legs.py:234   np.where(used_emp, 1.0, 0.30)
+```
+
+**A rung beyond the measured useful depth therefore carries provenance 1.0 rather than 0.30 — a 3.3×
+confidence factor — and nothing that scores a leg reads `LADDER_DEPTH` at all.**
+
+⚠ **The builder's own comment claims the opposite**: *"deeper rungs with too few samples fall through
+the existing hierarchy to the parametric, which is the designed behaviour."* **Live, of 206,237 rows,
+559 have `used_emp = false` — and 541 of those are `double_double`** (a binary prop with no ladder).
+**The genuine fall-throughs are 18 rows of `threes_made`, 0.009% of the table.**
+📌 **NOT RECORDED — whether `used_emp` is the correct indicator of that fall-through.** The comment is
+quoted, not adjudicated; what is verified is the flag's value and its downstream use.
+
+### 🔑 THE FIX ALREADY EXISTS ONE TABLE OVER — *§T9.33c*
+
+`nba/load_baseline_history.py` creates **`nba_score.baseline_history`** with a
+**`ladder_steps int`** column and writes `meta.get("ladder_steps")` into it.
+**`nba_score.baseline_ladder` has `recipe_version` and no depth column.** *A 0.5% sample of
+`baseline_history` (97,603 rows) returns `ladder_steps = 10` uniformly.*
+
+🔑 **OWNER DECISION** — narrowed by §T9.33c from "design something" to a concrete choice:
+**(a)** carry **`ladder_steps`** into `baseline_ladder` exactly as `baseline_history` already does, so
+the regimes are distinguishable; **(b)** decide whether the three existing as-of days should be
+rebuilt to one regime before they are used as a baseline; and **(c)** decide whether anything that
+scores a leg should read `LADDER_DEPTH` before granting full provenance credit — **today nothing
+does.** *Not actioned — this sweep documents only.*
 
 📌 **NOT RECORDED**: `assists` reaches rung **6** against a table value of **5**, and `threes_made`
 **6** against **4**, on the 2025-11-29 day. **6 is the module constant at line 66.** The mechanism is
