@@ -6673,11 +6673,11 @@ if not records: error = "zero rows parsed"
 shape is per-item: "did every input produce at least one output row?"** That check would have caught
 Kleber at build time for the cost of one comparison.
 
-#### ⚠ T4.22c — the tool-name failure recurs a fourth time, same family
-`memory_write` joins `memory_append`, `github_str_replace` and `github_patch_str_replace`:
+#### ⚠ T4.22c — the tool-name failure recurs, same cause, different family *(⚠ count corrected by §T4.25a — it is **5 instances across 3 distinct wrong names** in T4 alone, not the "four, two families" first written here from memory)*
+`memory_write` joins `memory_append` and `github_str_replace`:
 > *"Tool 'Alphadog Bridge:memory_write' not found. Did you mean: `memory_write`?"*
-**Four instances, two tool families, one cause** — the server label prefixed onto the tool name.
-Confirms §T4.21c: a naming-convention error, not a GitHub-tool quirk.
+**One cause** — the MCP server label prefixed onto the tool name. Confirms §T4.21c: a
+naming-convention error, not a GitHub-tool quirk. **Exact tally at §T4.25a.**
 
 #### Confirmed against the documents, no discrepancy
 The 2025-26 backfill volumes (**26,651** player-game rows · **2,460** team-game rows), the 3-season
