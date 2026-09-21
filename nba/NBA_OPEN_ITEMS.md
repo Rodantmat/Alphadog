@@ -227,8 +227,32 @@ the loader demonstrably WORKS*** — so the finding is not *"loads are unreliabl
 `DATABASE_URL` — **so scrape and load are two workers by design**, which is why a complete scrape says
 nothing about the table.
 
-🔑 ***This is the shape §T11.1b recorded for the injury backfill, in a second worker***: **a scrape
-that reports complete success while the database receives none of it.** *There it was a parser bug
+❌ **LINEAGE CORRECTED 2026-09-21 by §T11.34a.** ~~*"§T11.1b's shape in a second worker"*~~ — **the
+exact precedent is §T3.8a, which is in THREE of the twelve**: ***"82 play-type rows scraped but never
+loaded — 3,364 vs 3,282"***, with the diagnosis that matters here — ***"it escaped notice because the
+scrape count and the load count were reported separately."*** **That is precisely how this escaped
+notice too.** *§T11.1b is a different failure: a parser bug where the rows were never produced.*
+***So this is the THIRD and by far the largest instance of a class the sweep had already named — two
+entire seasons against 82 rows — and naming it correctly is what makes it a pattern rather than an
+anecdote.***
+
+✅ **AND THE ADVERSARIAL CHECK RULED OUT THE OBVIOUS INNOCENT EXPLANATION.** `NBA_MASTER_SUMMARY.md`
+records that ***"thirty-seven of forty NBA data tables can hold exactly one season at a time"*** — so
+the natural counter-hypothesis is that these two are single-season by construction and the absence is
+by design. **It fails on the primary key**: `nba_stats.game_officials` is **`(game_id, official_id)`**
+and `player_game_starter_status` is **`(player_id, game_id)`**, and **`game_id` encodes the season**
+(`0022400…` vs `0022500…`), **so both tables can hold all three seasons at once.** 🔑 **Internal
+control**: **`nba_stats.player_game_log` has the same key shape — `(player_id, game_id)` — and holds
+79,358 player-games across THREE seasons.** ***The shape permits multi-season, one sibling uses it,
+these two do not.***
+
+📌 **And the corpus already says so, outside the twelve**: `NBA_ENRICHMENT_FACTOR_LOCK.md` —
+*"our `nba_stats.game_officials` (**2025-26 built**) + **backfill 2023-24/2024-25 via
+`boxscoresummaryv3`**"* — **1 of thirty, 0 of the twelve.** *§T11.2d's pattern again.*
+
+🔑 ***The shape, stated correctly***: **a scrape that reports complete success while the database
+receives none of it** — *and the scrape count and the load count are reported separately, which is
+what lets it pass unnoticed.* *There it was a parser bug
 (`pdfplumber` on the runner) and the rows were never produced; here the rows EXIST, in the repo, and
 did not reach the table.* ⚠ **WHY is NOT RECORDED** (rule 6) — load never run, run and rolled back, or
 loaded and later replaced are all consistent with what is observable.
