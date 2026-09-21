@@ -64,6 +64,33 @@ variation dimension"* — *"per-band cells fixed what per-prop k couldn't."* **T
 run unbanded is **NOT RECORDED**.* ✅ Referential integrity itself is clean — **0 orphans** in every
 direction tested.
 
+## 🔴 THE PRODUCTION LADDER WRITES FOUR PROPS THE CANONICAL TAXONOMY DOES NOT DEFINE
+*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 (T9 pass 4). Detail: `NBA_MASTER_SUMMARY.md` §T9.19c.*
+
+`nba_score.baseline_ladder` (**206,237 rows**, 3 as-of days) carries 22 distinct `prop` values.
+**Joined to `nba_ref.prop_taxonomy.canonical_prop_key`, four do not resolve:**
+
+| Prop | Ladder rows |
+|---|---|
+| `dreb` | 4,315 |
+| `fgm` | 4,773 |
+| `fta` | 3,935 |
+| `oreb` | 3,185 |
+| **Total on unresolvable props** | **16,208** |
+
+**These are exactly the props the 2026-09-12 stat-menu expansion added** (`NBA_COMPASS.md` line 130:
+*"added fgm/fta/dreb to the singles recipe — certified both seasons"*) — **added to the recipe and
+not to the taxonomy.**
+
+⚠ **This is the concrete consequence of the entry below.** Nothing in `nba/` speaks
+`canonical_prop_key`, so **no join exists that would have caught it**: a production table keyed on
+`prop`, four of whose values have no canonical definition, and nothing to notice. *Whether the
+taxonomy is meant to grow with the recipe is **NOT RECORDED**.*
+
+*(Also recorded: the ladder is populated but **not yet a daily artifact** — three hand-picked as-of
+days in 2025-26, loaded out of chronological order over ten days. T9's item 6, *"nothing writes the
+baseline ladder to Postgres yet"*, is **closed**; the cadence is not.)*
+
 ## 🔴 NO NBA CODE SPEAKS `canonical_prop_key` — the taxonomy's vocabulary is unused on the NBA side
 *`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 (T8 passes 4 and 6). Detail: `NBA_MASTER_SUMMARY.md`
 §T8.25b, §T8.27b.*
