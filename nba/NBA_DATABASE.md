@@ -632,6 +632,20 @@ family.** ⚠ *`morning` covers **2,468** events against `window`'s **2,466** �
 📌 **`nba_score.board_scored.kind` is entirely NULL** — a third unpopulated discriminator after
 `board_outcomes`' two.
 
+🔑 **`data_quality` IS A PER-TABLE PROVENANCE MARKER, NOT A PER-ROW QUALITY FLAG** *(census across
+all 22 tables, §T11.22a)*
+
+| value | tables |
+|---|---|
+| **`real`** — scraped from a source | **20** |
+| **`derived`** — computed | **2: `nba_stats.player_shot_quality_delta` · `nba_team.defense_vs_position`** |
+
+***It is CONSTANT WITHIN each table — no table mixes the two*** — **so it labels the table's
+provenance, one row at a time.** ✅ **And the two `derived` tables are exactly the computed ones: a
+delta and an aggregate.**
+
+---
+
 🔴 **AND `board_tiers` vs `board_tiers_v2`: SAME ROW COUNT, DIFFERENT VALUE SETS** *(§T11.20a)*
 
 | column | `board_tiers` | **`board_tiers_v2`** |
