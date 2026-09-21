@@ -1175,6 +1175,22 @@ config↔code pairs have no equivalent**, which is why `minutes_mixture` drifted
 **`baseline_ladder.recipe_version` exists per row** — so NBA has the version-string mechanism; **what
 is missing is anything comparing it against the config's expectations.**
 
+> 🔴🔴 **THIS PREDICTION CAME TRUE — verified live 2026-09-21 (§T9.27b, §T9.32a).** The three as-of
+> days in `nba_score.baseline_ladder` were built under **two different ladder-depth configurations**
+> (2025-11-29 per-prop, `points` reaching rung **14**; 2026-01-15 and 2026-03-15 **flat 10**) — **and
+> all three carry the identical string** `"classification_ladder_v12 (certified two-season recipe) +
+> production patches"`. ⚠ **It is worse than the gap as written**: the gap was *"nothing compares the
+> version string to the config"*; **the live state is that the version string does not VARY with the
+> config**, so there is nothing to compare. **The mechanism is present as a column and absent as a
+> signal.** *See `NBA_OPEN_ITEMS.md` for the owner decision.*
+
+> ⚠ **And the patcher's anchor assertions do not cover this** *(added 2026-09-21, §T9.32b)*. `rep()`
+> is `assert old in s` — **it asserts the anchor text still exists**, so it detects **drift in the
+> harness**, loudly, exactly as this document credits it. **It cannot detect configuration introduced
+> by the replacement**: `LADDER_STEPS` is replaced with `int(os.environ.get("BT_LADDER_STEPS", "10"))`,
+> **the assertion passes**, and a measured 20-prop table is flattened to one number with nothing
+> raised. **The guarantee is real and its scope is narrower than the eleven citations of it suggest.**
+
 ### 2. A stuck-looking job usually needs a WAIT, not a retry
 > *"**When a job appears stuck in a running state with no progress, the correct response is usually to
 > WAIT AND RE-CHECK VIA A LIGHTWEIGHT STATUS QUERY, NOT to repeatedly manually retry it.**
