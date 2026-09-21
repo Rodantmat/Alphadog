@@ -14419,6 +14419,64 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.12 — PASS 12 (**two-direction judgment, third run**) — **🔴 a claim retracted, and the fourth absence failure on T10 has ONE cause · 0/3**
+*2026-09-21. Band **32 / 101**, coverage **823 / 688**, 0 in / 0 out. The closing judgment, with the
+weight on absence claims — pass 5 retracted two and pass 9 narrowed a third.*
+
+#### 🔴 T10.12a — **"`lineups_confirmed` and `overtime_pace_live` appear in NO document at all" — retracted twice over**
+
+**Probed by subject rather than by key:**
+
+| Probe | Documents |
+|---|---|
+| **`lineups_confirmed`** *(the key)* | **0** |
+| *"Confirmed starting lineups"* *(its `display_name`)* | `NBA_ENRICHMENT_FACTOR_LOCK.md`, `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` |
+| *"confirmed lineup"* | **7 — including `NBA_BASELINE_CALIBRATION.md`, `NBA_GLOSSARY.md`, `NBA_MASTER_SUMMARY.md`, `NBA_SYSTEM_DESIGN.md`** |
+| **`overtime_pace_live`** *(the key)* | **0** |
+| *"P(OT)"* | **6 — four of them mandated** |
+
+🔴 **Rule 2, in its purest form: I tested the wording and called the substance absent.**
+
+🔑 **And the framing was wrong a second way, which the registry's own notes settle.** These two are
+**not an unmet backfill obligation**: `lineups_confirmed` is annotated *"DELTA vs P(start)
+**[superseded by `lineup_change` in pass 1 2026-09-09]**"*; `overtime_pace_live` is *"**Mostly absorbed
+by `market_spread_delta` / `market_total_delta`**; kept for 2H/4Q OT-inclusive lines."* **All three
+replacements are in the registry and mined — and `market_spread_delta` is the single batch-2 factor
+carrying a relevance row.** ***The live-only stage is the residue of two folded-in factors, not a gap
+against "a fallback for every single factor".***
+
+✅ **What survives**: the supersession reasoning lives in `research_notes` and **in none of the
+twelve** — a reader of the mandated documents finds the subjects and not the folding-in. **Corrected
+in §T10.6c, §T10.8b and `NBA_OPEN_ITEMS.md` (two places).**
+
+#### 🔑 T10.12b — **Four absence failures on one transcript, and they have a single cause**
+
+| Pass | Claim | Cause |
+|---|---|---|
+| 5 | *"nothing said so"* about the 31/34 split | probed the **reconciliation**, not the numbers |
+| 5 | *"one game unaccounted for"* | probed the **index**, not the coverage table |
+| 9 | *"the live-only category"* | probed the **column value**, not the policy |
+| **12** | *"appear in no document"* | probed the **key**, not the subject |
+
+⚠ **Every one probed the IDENTIFIER this sweep happened to be holding, rather than the thing the
+identifier names.** *T10 is the transcript where that fails most, because its subject matter is
+recorded in eighteen non-mandated documents that use prose names where the database uses snake_case.*
+🔑 **The operative form, and it is sharper than "grep the distinctive term"**: ***probe the SUBJECT in
+the vocabulary the DOCUMENTS use, not the vocabulary the CODE uses — and when an object has a
+`display_name`, probe that too.***
+
+#### ✅ T10.12c — **Direction 2 re-confirmed a false tail by score, not by assumption**
+
+**101 tail-direction segments; across the 40 printed, minimum 0.90, median 1.00, 30 of 40 at ≥ 0.95.**
+*Unchanged from pass 3 — the population is the transcript writing its own documents, and no genuine
+"covered in other words" candidate exists anywhere in the distribution.* **Re-measured, not carried
+forward.**
+
+**Pass outcome: 1 claim retracted on two grounds, the transcript's failure mode named with its cause,
+direction 2 re-confirmed. 🔴 CLEAN 0/3 · 12 passes.**
+
+---
+
 ### T10.11 — PASS 11 (**live numeric re-verification**) — **✅ CLEAN 2/3 · every figure exact, five partitions sum**
 *2026-09-21. Every figure passes 6–10 state, re-derived; partitions summed, predicates stated,
 timestamps UTC, corpus metrics carrying their pass. **No document changed.***
