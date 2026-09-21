@@ -9731,6 +9731,81 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.53 — PASS 24 (**two-direction judgment, fifth run**) — **🔴🔴🔴 THREE DOCUMENTED DEFECTS COMPOSE INTO ONE · plus a fifth single-pattern count (mine) · 0/3**
+*2026-09-21. Judgment turned on the newest entries' own claims. Two of them failed a check — and the
+second failure opened the most concrete finding of the entire run.*
+
+#### 🔴🔴🔴 T7.53a — **THE COMPOSITION: from Oct 1 the scraper fetches an empty 2026-27, the worker stamps it `'2025-26'`, and the table's primary key has no season column**
+
+§T7.52c hedged: *"whether any of these tables is player_id-keyed is **NOT RECORDED**."* **It is now.**
+Three facts, each already documented **separately**, and **nowhere documented together**:
+
+**1 — The scrapers' season moves on Oct 1** (§T7.51a, §T7.52a, verified by execution).
+
+**2 — Four workers hardcode `'2025-26'` with no meta fallback** (§T7.32a). Named from the authority
+— every `alphadog-v2-nba-*.js` grepped for a hardcoded season *and* for a `f.season`/meta fallback.
+**Seven carry a hardcoded `'2025-26'`; exactly four have no fallback at all**:
+`alphadog-v2-nba-static-onoff.js` · `-player-bio.js` · `-player-tracking.js` · `-team-stats.js`.
+*(The other three — `backfill`, `game-officials`, `starter-status` — do read the meta season.)*
+
+**3 — `[LIVE-AUDIT]`, NEW: their target tables have NO season column in the primary key.**
+
+| Worker | Table | Primary key | Season in PK? |
+|---|---|---|---|
+| `-player-tracking` | `nba_stats.player_tracking_profile` | `player_id` | **NO** |
+| `-onoff` | `nba_stats.player_onoff_profile` | `player_id` | **NO** |
+| `-player-bio` | `nba_ref.players` | `player_id` | **NO** |
+| `-team-stats` | `nba_team.season_profile` | `team_id` | **NO** |
+
+*(And the same holds across the affected set: `player_playtype_profile` `(player_id, play_type,
+type_grouping)`, `player_shot_quality` `(player_id, close_def_dist_range)`, `player_splits`
+`(player_id, split_type, group_value)`, `player_tracking_detail` `(player_id, measure_type)`,
+`nba_team.playtype_profile`, `nba_team.team_splits` — **37 tables in `nba_stats`/`nba_team`/`nba_ref`
+have a primary key with no season in it.**)*
+
+**And the writer overwrites rather than inserting.** `alphadog-v2-nba-static-player-tracking.js`
+lines 58–64, verbatim:
+```sql
+INSERT INTO nba_stats.player_tracking_profile (player_id, nba_player_id, season, avg_speed, …)
+VALUES (${playerId}, ${p.player_id}, '2025-26', …)
+ON CONFLICT (player_id) DO UPDATE SET
+  season=excluded.season, avg_speed=excluded.avg_speed, …
+```
+
+> ### ⇒ **From 2026-10-01, a weekly run fetches a season with no games, and upserts whatever comes back over last season's real row — under the label `'2025-26'`, because the worker hardcodes it.**
+> **Not "wrong season label" and not "empty data" — both at once, in a table that cannot hold two
+> seasons.**
+
+**This is what makes O4 urgent rather than tidy.** The three facts were each recorded; **the
+composition was not** — verified against all thirty pre-edit documents: `ON CONFLICT (player_id)`,
+*"without the season"*, *"overwrite last season"* all return **zero hits**. *What each scraper
+actually does on an empty response — write zeros, write nothing, or raise — is **NOT RECORDED**, and
+is precisely the **no-error-raised failure class** this sweep has documented four times.* **O4
+updated.**
+
+#### 🔴 T7.53b — **A FIFTH single-pattern count, mine, in the pass before this one**
+
+§T7.52c stated *"only **four** NBA workflows are scheduled at all."* **I enumerated by the `nba-`
+filename prefix — a pattern, not the authority.** The authority is the workflows directory: **39
+workflows, 33 `nba-`-prefixed, and seven scheduled ones touch `nba/`:**
+
+| Workflow | Cron |
+|---|---|
+| `nba-scrape.yml` | `0 9 * * 1` |
+| `nba-p1-weekly-static.yml` | `0 19 * * 1` |
+| `nba-referees.yml` | `30 15 * * *` |
+| **`fliff-board.yml`** | **`35 */2 * * *`** |
+| **`sleeper-board.yml`** | **`15 */2 * * *`** |
+| **`underdog-board.yml`** | **`25 */2 * * *`** |
+| *(`nba-pp-payout-map.yml` — concurrent session, out of scope)* | |
+
+**O4's radius is unchanged** — verified: none of the three board scrapers imports the season helper.
+But the count was wrong, and **the three board workflows' every-two-hours cadence is recorded
+nowhere in the thirty** (the workflows themselves are; their crons are not). **Fifth instance of the
+rule-1 failure**, after `raw_json`, tool-name failures, debug artifacts and the config tables.
+
+---
+
 ### T7.52 — PASS 23 (**code-vs-docstring audit**) — **🔴🔴 §T7.51a PROVEN BY EXECUTION, AND DATED TO THREE SCHEDULED RUNS · 0/3**
 *2026-09-21. The angle pass 22 stumbled into, run deliberately: read each helper's own docstring and
 check the code does what it says. **Read-only — the module was imported and called with fixed dates;
