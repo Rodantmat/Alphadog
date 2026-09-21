@@ -957,7 +957,8 @@ a two-way split, not a per-prop one, but it carries the duplication cost recorde
 **Only execution history is trusted.**
 
 **✅ This is the method that caught NBA's differential worker** — the conclusion came from querying
-the **output tables** (all three logs empty, snapshot frozen 2026-09-03), not from reading configs.
+the **output tables** (all three logs empty, snapshot frozen **2026-09-02 19:47 UTC** — *date corrected
+2026-09-21 by §T9.35a; 09-03 belongs to `nba_ref.players`, a different table*), not from reading configs.
 
 **⚠ And it reinforces the never-fire-cron caveat**: a `crons: ["0 0 30 2 *"]` entry **and** an
 `enabled=1` flag can both be present and neither tells you whether the worker runs. **The MLB
