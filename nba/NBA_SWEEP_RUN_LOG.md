@@ -37,6 +37,7 @@ pass 20 — that gap is this run's signature failure.***
 | **22** | **A zero is believed only after a POSITIVE CONTROL; and every hit is opened before it is counted.** | T11 (§T11.7b) |
 | **23** | **A count states its population, its tree, AND its sport.** *(Rule 17 for data.)* | T11 (§T11.9c) |
 | **24** | **A column name is not a vocabulary — and comparing TWO tables shows a difference, comparing ALL of them shows whether it is a pattern or a collision.** | T11 (§T11.19b) |
+| **25** | **A claim from a sample STATES the sample — because that sentence is what makes it correctable. A sample note is a to-do, not a disclaimer.** | T11 (§T11.23) |
 
 | | |
 |---|---|
