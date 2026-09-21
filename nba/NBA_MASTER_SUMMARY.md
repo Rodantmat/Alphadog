@@ -14430,6 +14430,74 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.18 — PASS 17 (**live numeric re-verification, and the exporter read**) — **✅ "gated by" proven mechanically · 🔴 and `snapshot_label` has a DIFFERENT VOCABULARY PER TABLE · 0/3**
+*2026-09-21. `[LIVE-AUDIT]` plus read-only code reading. The attack the next-step row demanded, on the
+claim that rested on an equality rather than a mechanism.*
+
+#### ✅ T11.18a — **The export IS gated by the mapping, and the code says so in one line**
+
+**`nba/export_market_spreads.py`, lines 41–44:**
+
+```sql
+FROM nba_market.game_lines_snapshots s
+JOIN nba_market.event_game_map m ON m.event_id = s.event_id
+WHERE s.game_date BETWEEN %s AND %s
+  AND s.snapshot_label IN ('morning','window')
+```
+
+✅ ***An INNER JOIN on `event_game_map`.*** **So §T11.17a's "gated by the mapping" is a mechanism, not
+a coincidence of two equal numbers — the wording stands, and the six games' absence from the export
+is structurally guaranteed rather than observed.**
+
+🔑 **And it closes §T11.16c's hazard end to end.** Line 37 takes the spread as
+`max(CASE WHEN s.market='spreads' AND s.outcome = s.home_team THEN s.point END)` — ***the side named
+by `game_lines_snapshots`' OWN `home_team` column, i.e. the market feed's orientation*** — while the
+ladder's `is_home` is **MATCHUP-derived**. ⚠ **For any game where the two disagree AND the mapping
+succeeds, `_own_spread` would be signed wrongly.** ✅ **The six never reach it, because the join drops
+them — but the mechanism is now traced rather than surmised.**
+
+#### 🔴 T11.18b — **`snapshot_label` means different things in different tables**
+
+| table | `snapshot_label` values | rows |
+|---|---|---|
+| `nba_market.board_snapshots` | **`close` · `routine` · `window`** | 27,067,871 |
+| **`nba_market.game_lines_snapshots`** | **`morning` · `window`** | **153,670 + 153,934 = 307,604** ✅ |
+
+🔴 ***Same column name, same schema, disjoint-but-overlapping value sets.*** **`close` and `routine`
+exist only on the board table; `morning` exists only on the game-lines table; `window` is the only
+value common to both** — and the exporter's `IN ('morning','window')` is correct **for its table** and
+would select almost nothing on the other.
+
+**Novelty**: *two vocabularies* → **0 of thirty**; *`153,934` / `153,670`* → **0 of thirty**;
+*the join on `event_game_map`* → **0 of thirty**; **`morning` → 1 of thirty, 0 of the twelve**
+(`NBA_COMPASS.md`: *"the **MORNING snapshot** (08:00 PT — as-of legal for phase 1)"*).
+
+📌 ***This is §T10.23b's shape one level out***: there it was one concept under five column names
+across tables; **here it is one column name carrying two different vocabularies.** **The join map in
+`NBA_DATABASE.md` now needs a label row, and it has one.**
+
+⚠ **A probe saved by checking first**: the exporter's filter names `'morning'`, and §T11.8c had
+established the board table's labels as `close|routine|window` — **which made `'morning'` look like a
+filter on a value that does not exist.** ***It exists, in the other table.*** *Checked before
+publishing rather than after — rule 22's habit applied to a suspicion rather than a probe.*
+
+#### ✅ T11.18c — **Everything else re-derives exactly**
+
+The exports **1,228 + 1,226 = 2,454** and their identity with `event_game_map` · the six `game_id`s
+absent from both · the 14 unmapped events as **6 reversed + 8 with no schedule row** ·
+`schedule_norm` **2,460** · `game_lines_closing` **2,410** · the four calendar neutral-site labels ·
+the three routes to **7,762** · the injury census **1,338,020 = 919,949 + 418,071** · starters
+**1,230 / 12,300 / 10.000** · `teams`/`arenas` **30 / 30** with **0 orphans both ways**. ✅ **All
+exact.** 📌 **New partition**: `game_lines_snapshots` **307,604 = 153,934 `window` + 153,670
+`morning`**, with `morning` covering **2,468 events** and `window` **2,466** — *a two-event
+difference, **NOT RECORDED** why.*
+
+**Pass outcome: 1 claim upgraded from equality to mechanism, 1 hazard traced end to end, 1 new
+structural finding (a column name with two vocabularies), every figure exact. 🔴 CLEAN 0/3 · 18
+passes.**
+
+---
+
 ### T11.17 — PASS 16 (**third two-direction judgment**) — **✅ CLEAN 1/3 · the composition attacked directly and PROVEN, with a partition that closes on 6**
 *2026-09-21. The judgment pass, with the weight on the only findings in this transcript that rest on
 reading source rather than querying data.*
