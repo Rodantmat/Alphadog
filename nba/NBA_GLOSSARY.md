@@ -582,6 +582,13 @@ and nothing records it.** → `NBA_DATABASE.md` §3 · `NBA_OPEN_ITEMS.md` *FROM
 **tier** · T13, LIVE · Rungs out from the anchor. **v1 signs by kind; v2 must sign by POSITION**, since
 a demon-Less sits below the anchor.
 
+**Pacific time (the owner's standing instruction)** · **T11**, seg 668 · *"**always when i give you a
+time or ask a time, i refer to pacific time, i am in san diego california, so do not forget it**."*
+**Every time the owner states or asks for is PT.** ⚠ **Added 2026-09-21 (§T11.1c) because it was in
+none of the twelve**, and it is the missing premise behind several recorded timezone defects — the
+blame timestamps published in −0700, the P3 cron drifting an hour against a time-sensitive cutoff,
+and the injury-PDF timestamps in Eastern. → `NBA_MASTER_SUMMARY.md` §T11.1c.
+
 **window** · T11, LIVE · The decision snapshot label. **1:15 PM PT** (corrected from 2:45 — see
 OPEN_ITEMS). Set by `ARCHIVE_LABEL`, which **defaults to `routine`**.
 
