@@ -8321,6 +8321,31 @@ aggregate** (count floor, completeness, null-value, per-dataset minimum) — **n
 question: did every input produce at least one output row?** That check costs one comparison and
 catches both instances.
 
+### 🔴 A FOURTH INSTANCE, AND THE ONLY ONE WHOSE ROOT CAUSE IS OUR OWN CODE
+*Added 2026-09-21, T6 re-sweep pass 2. **`[LIVE-AUDIT]` VERIFIED** at
+`nba/scrape_nba_game_officials.py` lines 98–107, comment intact.*
+
+```python
+# a game with genuinely zero officials returns ([], "some_error_string") from fetch_game -
+# checking "rows is not None" treats an empty list as success (since [] is not None),
+# silently swallowing the error and dropping the game from output with zero record of it.
+if rows:                      # fixed: truthiness
+    all_rows.extend(rows)
+else:
+    errors.append({"game_id": game_id, "error": error or "empty_rows"})
+```
+
+**`[] is not None` is `True`.** The original sentinel check accepted an empty list as success **and
+discarded the error string that came with it** — three games disappeared from a 1,230-game run with
+nothing recording their absence.
+
+**The other three instances are endpoint behaviour; this one is ours** — and it is the most portable
+form of the lesson: **a sentinel check (`is not None`) applied to a collection that can legitimately
+be empty is this same defect in miniature. Test the collection, not the sentinel.**
+
+✅ Fixed in the scraper *and* recovered by a targeted 3-game patch rather than a 1,230-call re-run.
+*(Recovery was partial — 1,227/1,230 loaded. The bug hid the three games; it did not cause them.)*
+
 ⚠ **T5 diagnosed this and wrote it up as the worst failure mode in the project; the earlier scraper
 was never revisited**, because nothing connected the class to its other instances.
 
