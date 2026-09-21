@@ -46,6 +46,17 @@ from nba_names import norm_name  # noqa: E402
 RAW = "https://raw.githubusercontent.com/Rodantmat/Alphadog/main/nba/data/"
 BANDS = [0, .40, .45, .50, .55, .60, .65, .70, .75, .80, .85, 1.0]
 
+# board_outcomes carries the Odds-API market key; final_hp uses OUR prop names. Map exactly as score_board_legs
+# does. Until 2026-09-21 graded() used the naive replace('player_',''), which yields 'threes' and
+# 'points_rebounds_assists' - names that match nothing in final_hp ('threes_made', 'pra'). That silently limited
+# calibration to points, rebounds and assists: threes and all four combos were never calibrated.
+OUTCOME_KEY_TO_PROP = {
+    "points": "points", "rebounds": "rebounds", "assists": "assists", "threes": "threes_made",
+    "points_rebounds_assists": "pra", "points_rebounds": "pts_reb", "points_assists": "pts_ast",
+    "rebounds_assists": "reb_ast", "blocks": "blocks", "steals": "steals", "turnovers": "turnovers",
+    "blocks_steals": "stocks",
+}
+
 
 def fetch(name, timeout=300):
     with urllib.request.urlopen(urllib.request.Request(RAW + name, headers={"User-Agent": "alphadog"}), timeout=timeout) as r:
