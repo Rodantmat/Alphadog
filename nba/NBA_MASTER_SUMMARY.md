@@ -10415,14 +10415,17 @@ individual signal**, not a ceiling on a factor's effect.
 
 **What the system actually caps — `[LIVE-AUDIT]`, §T7.38b**: `nba_config.factor_profile_cells`,
 **35 cells across 15 factors, 10 distinct caps 0.05–0.40**, keyed by factor × prop × tier × role ×
-direction. **There is no single global cap.** 22 of 35 cells are tier- or role-keyed; **13 carry
-neither**, applying one value across all tiers for their factor. *Whether any cap was chosen before
-this instruction or in spite of it is **NOT RECORDED**.* **Recorded here in its chronological place
-so the transcripts that set the values can be read against the instruction.** → `NBA_OPEN_ITEMS.md`.
+direction **× band**. **There is no single global cap, and after §T7.44a, no unkeyed cell either** —
+22 are tier/role-keyed, **13 are band-keyed** (`variation_band = 'continuous'`). *Whether any cap was
+chosen before this instruction or in spite of it is **NOT RECORDED**.* **Recorded here in its
+chronological place so the transcripts that set the values can be read against the instruction.**
+→ `NBA_OPEN_ITEMS.md`.
 
-*(The documents do define the vocabulary — a **lift** is a factor that improves a leg's probability,
-a **penalty** or **drag** one that reduces it, and one entry already notes *"a direct penalty is what
-you called capping."* **The vocabulary is recorded; the preference about using it is not.**)*
+*(The documents define the vocabulary — a **lift** improves a leg's probability, a **penalty** or
+**drag** reduces it, and one entry notes *"a direct penalty is what you called capping."* ⚠ This
+paragraph ended *"the preference about using it is not [recorded]"* — **wrong, see the retirement
+notice above**: `NBA_BASELINE_CALIBRATION.md` line 676 and `NBA_GLOSSARY.md` line 375 both record the
+preference, in both halves.)*
 
 #### ⚠ T7.30b — **THE LADDER-WIDTH REQUIREMENT, IN THE OWNER'S OWN NUMBERS** *(headline retired)*
 > 🔴 **RETIRED 2026-09-21 by §T7.46a.** This entry claimed the width requirement was nowhere
