@@ -425,7 +425,20 @@ the snapshot tables alone would record the event without changing the roster any
 **Why the pattern is worth keeping**: a worker's write scope is otherwise only discoverable by
 reading its whole body, and the NBA/MLB isolation guarantee (§0.2, and the founding instruction that
 nothing is shared) is exactly the kind of claim that needs to be checkable without a code review.
-**`curl` the health endpoint and the worker tells you.** *No other NBA worker does this.*
+**`curl` the health endpoint and the worker tells you.**
+
+⚠ **CORRECTED 2026-09-21 (T2 re-read): this entry originally said "no other NBA worker does this."
+Wrong.** ***VERIFIED** on live `main`: `nba/alphadog-v2-nba-static-arenas.js` line 101 declares
+`scope_lock: { writes_only: ["POSTGRES.nba_ref.arenas"], no_mlb_table_access: true, … }` and
+returns it from `/run` at line 156.* **The convention predates the differential worker — it came
+from the teams worker in T1 and was carried into arenas in T2.**
+
+**What is distinctive about the differential worker's version is its CONTENT, not its existence**:
+it is the only one whose `writes_only` list names **seven** tables, and the only one declaring a
+write to a table it does not own (`nba_ref.players`, active flag). **A single-table `scope_lock`
+restates the worker's name; a seven-table one with a stated exception is the case where the
+declaration earns its keep.** *This correction is exactly why T2 was reopened — the shallow first
+pass recorded the pattern's existence without checking how far it extended.*
 
 ### The schema placement is inconsistent, and the declaration makes it visible
 **Player snapshots live in `nba_stats`; team and official snapshots live in `nba_ref`.** Same worker,
