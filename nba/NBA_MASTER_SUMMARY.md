@@ -14420,6 +14420,55 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.46 — PASS 31 (**timestamp-form audit across all twelve**) — **🔑 111 timestamps, 68 with no zone token, 43 in the window where local ≠ UTC day · 0/3**
+*2026-09-21. §T9.44a's standing form applied beyond the T9 block: **every timestamp in the twelve**
+checked for whether it states its zone, with the `−0700` boundary as the named risk.*
+
+| | Count |
+|---|---|
+| Timestamps in the twelve | **111** |
+| **With no zone token adjacent** | **68** |
+| Of those, **17:00–23:59** — *the window where a local time is the NEXT DAY in UTC* | **43** |
+
+⚠ **Scope stated exactly**: the test looks for a zone token **beside** the timestamp, so a value whose
+zone is given by its **column header** or by "UTC" elsewhere in the sentence counts as zone-less here.
+*The 68 is an upper bound on the exposure, not a count of defects.* **What it measures is how much of
+the corpus cannot be checked without reading its context — and that is the number that matters for a
+reader.**
+
+#### 🔑 T9.46a — **The largest zone-less cluster resolved: three confidence generations, verified UTC to the second**
+
+`2026-09-17 18:16` · `2026-09-17 23:31` · `2026-09-20 03:30` appear in **four documents**
+(`NBA_DATABASE.md`, `NBA_MASTER_SUMMARY.md`, `NBA_OPEN_ITEMS.md`, `NBA_WORKERS.md`) with no zone, and
+**two of the three sit in the risky window.** **Re-queried live:**
+
+| Group | Rows | `run_at` |
+|---|---|---|
+| `verify_confidence.py` — `overall`, `by_band_tier`, `component`, `phase`, `season` | **34** | **2026-09-17 18:16:54 UTC** |
+| `build_mondrian_confidence.py` — `mondrian_quintile` | **5** | **2026-09-17 23:31:03 UTC** |
+| `build_confidence_v3.py` — the eight `conf_band_v3` / `group_*` types | **21** | **2026-09-20 03:30:25 UTC** |
+
+✅ **`run_at` is `timestamptz`, so all three are UTC**, and the recorded values are exact to the
+minute. ✅ **And the finding they support re-verifies**: **three generations still coexist — 34 + 5 +
+21 = 60 rows** — so *"`verify_confidence.py` has not yet fired"* remains true. **Zone stated in all
+four documents.**
+
+#### 📌 T9.46b — **The zone-less population is dominated by one benign class, and that is worth saying**
+
+**Most of the 68 are Postgres values** — `snapshot_taken_at`, `loaded_at`, `updated_at`, `run_at` —
+**which are `timestamptz` and therefore UTC by construction.** *The genuinely ambiguous ones are the
+`git` and workflow times, which are emitted in `−0700`, and those are exactly the five §T9.44a
+corrected.* **So the audit's practical conclusion is a rule, not a list:**
+
+> **A timestamp read from Postgres is UTC; a timestamp read from `git log`, `git blame` or a workflow
+> log is local `−0700` unless converted. State the zone on the second class always, and on the first
+> class wherever a reader could mistake its source.**
+
+**Pass outcome: one four-document cluster resolved and re-verified, the exposure quantified, and the
+form reduced to a rule that can be applied without re-auditing. 🔑 CLEAN 0/3 · 31 passes.**
+
+---
+
 ### T9.45 — PASS 30 (**two-direction judgment, eighth run — weight on DATE claims and rule 6**) — **📌 the correction had exactly one sibling, and no more · 0/3**
 *2026-09-21. Band **54 for a third run, 0 in, 0 out**; coverage **690 / 675**. §T9.44a corrected two of
 five timestamps — **rule 6 asks whether every other date in the T9 block states its zone.***
