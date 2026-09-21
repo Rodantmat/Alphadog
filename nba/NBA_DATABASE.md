@@ -513,6 +513,21 @@ section's own *"these are the values the backtest will move."* Rows created **20
 01:53–02:03**. See `NBA_MASTER_SUMMARY.md` §T7.38b and the owner's anti-capping directive in
 `NBA_OPEN_ITEMS.md`.
 
+### `nba_config.variation_bands` — **25 rows**
+`canonical_prop_key · band_key · band_order · line_min · line_max · percentile_lo · percentile_hi ·
+edge_method · notes · updated_at`
+
+**`[LIVE-AUDIT]` 2026-09-21 (T7 pass 16) — 9 distinct `band_key` values in two families**: a
+line-magnitude family `LOW · MID · HIGH · ELITE` (`band_order` 1–4, 5 props each = 20 rows) and a
+role family `FRINGE · ROLE · STARTER · STAR · SUPERSTAR` (`band_order` 1–5, 1 each = 5 rows).
+
+🔴 **None of the nine is `continuous` — yet 13 `factor_profile_cells` rows carry
+`variation_band = 'continuous'`.** Those 13 point at a band that does not exist here:
+**`'continuous'` is a sentinel meaning "not banded", not a resolving key**, and nothing in the schema
+says so. *Whether that is deliberate is **NOT RECORDED** — the design document
+(`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247) names `variation_band` as a key dimension without
+naming a sentinel.* ✅ Every `canonical_prop_key` here does resolve against `factor_relevance`.
+
 ### `nba_config.role_tiers` — **6 rows**
 **Exactly matching `ROLE_TIERS` in `classification_ladder_v12.py`** — IRON_MAN 36+ ·
 HIGH_USAGE_STARTER 32–36 · STARTER 27–32 · ROTATION 21–27 · BENCH 15–21 · FRINGE 0–15.
