@@ -14430,6 +14430,49 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.36 — PASS 35 (**literal audit of `nba_control`, `nba_daily`, `nba_calendar` — the three schemas never audited literally**) — **🔴🔴 the injury archive's destination table was never created · 0/3**
+*2026-09-21. Pass 7 did `nba_market`; pass 27 did `nba_ref`, `nba_config`, `nba_score`. **These three
+had been READ and never had their VALUES checked against the prose.***
+
+#### 🔴🔴 T11.36a — **`nba_daily.injury_report_snapshots` does not exist, and the archive has nowhere to land**
+**Two facts, each already on file, and the JOIN between them is 0 of thirty.** `NBA_DATABASE.md`:
+*"**six of the fourteen schemas hold zero tables** — VERIFIED: … **`nba_daily`** … all empty."*
+`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`, **build item #1**: *"`scrape_nba_injury_report.py` (daily +
+backfill modes, pdfplumber) **+ loader → `nba_daily.injury_report_snapshots`** — unlocks **A1, N1, N2,
+A4 truth, A6, B4**."* 🔴🔴 **Re-verified live: `nba_daily` holds zero tables.** ***So the injury
+archive — 1,338,020 timestamps across 14 shards, 919,949 + 418,071 (§T11.3c), the largest data asset
+T11 produced — exists only as repo JSON, and the factor group it unlocks is the matrix's largest ⏳
+group.*** ⚠ **Neither document is wrong; nobody joined them.** **WHY is NOT RECORDED** (rule 6).
+🔑 ***This is the scrape-vs-load class at its largest scale — not "the load was never run" (§T11.31b)
+nor "the rows were never produced" (§T11.1b) but "the DESTINATION was never created."***
+
+#### ✅ T11.36b — **Two would-be findings caught by rule 26 before publication**
+**`nba_control.job_runs` and `worker_run_log` are both 0 rows** — and that is **already in FIVE of the
+twelve**, verified three ways at T1 pass 68, with *"the string `nba_control` appears in no
+non-markdown file in the repo"* and *"the central control plane is empty"* set against **21 registered
+and enabled workers**. **`nba_daily` as an empty schema is already in `NBA_DATABASE.md`.**
+***Both would have been published as discoveries; both were opened first.*** 📌 **And the consequence
+is worth keeping**: ***with no run history for any worker, "was the loader ever run" is unanswerable
+from inside the database — for every finding of this class.***
+
+#### 📌 T11.36c — **`nba_calendar.games` holds 2025-26 and 2026-27 only — and it does not weaken §T11.31b**
+Live: **2025-26 1,400 · 2026-27 1,266 · total 2,666**, with **no 2024-25 and no 2023-24**. *The
+consequence is already in the twelve — "two of three backfilled seasons have zero calendar coverage,
+so every schedule-derived feature is computable for one season in three… row counts were all correct,
+every table was documented, the joins were empty."* ⚠ **The obvious challenge to §T11.31b is that its
+season join simply could not see 2024-25 — and it fails**: the query was a **LEFT JOIN grouping on
+`g.season`**, so 2024-25 officials rows would have surfaced as a **`NULL` season group**. **No such
+group returned.** ***The finding is robust to the calendar gap, and stating the join type is what
+makes it checkable*** (rule 16). 📌 **Two vocabulary notes**: **`game_status_text` has 4 distinct
+values in 2025-26 and 25 in 2026-27** *(the upcoming season carries tip times as status text)*, and
+**`arena_city` has 53 distinct values against 30 teams** — the residue of neutral sites and
+international games, which is §T11.14's subject measured rather than sampled.
+
+**Pass outcome: 🔴 a genuine gap in the system, and two duplicates stopped before publication.
+CLEAN 0/3 · 36 passes.**
+
+---
+
 ### T11.35 — PASS 34 (**eighth two-direction judgment, PRE-REGISTERED — and four attacks on passes 32–33**) — **✅ CLEAN 1/3 · the fourth pre-registration lands and all four attacks strengthen what they hit**
 *2026-09-21.*
 
