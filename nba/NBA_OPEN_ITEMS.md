@@ -213,11 +213,33 @@ deployment question is precisely the class this sweep is read-only about.*
 train and test our derived fallback"* (T11 seg 676). **For Sleeper there is no training data at all,
 and for Betr and Pick6 there is one partial season.**
 
-📌 **OWNER DECISION — and the cause is deliberately not guessed**: **whether ParlayAPI never served
-Sleeper's history, whether a run failed, or whether it was dropped is NOT RECORDED.** *T11 is
-2026-09-10 and eight transcripts after it are unswept; this is the live state on 2026-09-21, not
-T11's outcome.* **The question is whether Sleeper is meant to have history and does not, or was
-consciously dropped from the historical set.**
+> ❌ **"NOT RECORDED" RETRACTED 2026-09-21 by §T11.6b — the cause AND the remedy are both on file,
+> and the entry below was written without grepping for them.**
+>
+> - **`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`** states it outright: ***"Sleeper has no history
+>   anywhere → **derived-Sleeper fallback trained on PP/UD snapshots**; live boards from opening day
+>   via OUR scrapers."***
+> - **`NBA_COMPASS.md`**: *"PrizePicks… and Underdog… boards for both seasons, **no Sleeper**; cost
+>   is per REGION per market (`us_dfs,us` = **420 credits/snapshot**)."*
+> - **`NBA_PROJECT_LOG.md`**: *"PrizePicks restricted, **UD/Sleeper absent**, history only since
+>   Jan 2026; Wayback/GitHub/Kaggle dead ends."*
+>
+> ✅ **So this is NOT an unmet obligation.** *"Sleeper has no history anywhere"* is a **sourcing fact
+> about the world**, not a gap in the backfill, and **the plan for it exists**: a derived-Sleeper
+> fallback trained on the PrizePicks and Underdog snapshots, with live boards captured by the
+> project's own scrapers from opening day.
+>
+> 🔴 **What genuinely survives, and it is the §T7.47 shape**: ***all three of those documents are
+> OUTSIDE the mandated twelve.*** **A reader of the twelve can see Sleeper's scraper documented and
+> cannot learn that Sleeper has no history, that a derived fallback is the plan, or that PrizePicks
+> and Underdog are its training set.** **That, and the live figures above, are what this entry is
+> for.**
+
+📌 **What is still genuinely open** — and it is narrower than first written: **Betr (`betr_us_dfs`,
+from 2025-11-23) and Pick6 (from 2025-05-26) each cover ONE PARTIAL SEASON**, against the owner's
+*"two seasons of data to train and test our derived fallback."* **Neither partial range is documented
+anywhere** (0 of thirty), **and whether a derived fallback for those two is planned, as it is for
+Sleeper, is NOT RECORDED** *(probed in the documents' vocabulary, not only the transcript's)*.
 
 ---
 
