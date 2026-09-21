@@ -14420,6 +14420,79 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.42 — PASS 27 (**two-direction judgment, seventh run — weight on ABSENCE claims**) — **🔑 three "NOT RECORDED" claims answered by one authority nobody had consulted · 0/3**
+*2026-09-21. Band **54 for a second run, 0 in, 0 out** — re-stabilised after §T9.40b's shift, exactly
+as that entry predicted, since nothing new has been quoted since. So the pass judged the **absence
+claims** of §T9.33–§T9.41, after pass 26 retracted one.*
+
+#### 🔑 T9.42a — **`git blame` settles the `fga` question that has been open since T8 — the docstring is 58 minutes older than the comment that contradicts it**
+
+**Three statements, three commits, in order:**
+
+| Statement | Commit | Timestamp |
+|---|---|---|
+| **Line 11** — *"turnovers/fga/fg3a/ftm/personal_fouls: configured, NOT yet run."* | `e0e49be1` | **2026-09-08 21:57:30 −0700** |
+| **Line 103** — the `fga` entry's `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` | `98dcccb1` | **2026-09-08 22:55:07 −0700** — **58 minutes later** |
+| **Lines 108–109** — `# ADDED 2026-09-12 … NOT yet certified` | `1677b3d7` | **2026-09-11 19:49:35 −0700** |
+
+✅ **So §T8.12b's judgement — *"the header is likely stale relative to the inline comment"* — is
+CONFIRMED**, and §T9.35b's *"which governs is NOT RECORDED"* and §T9.36a's *"when line 11 was last
+edited is NOT RECORDED"* are both **answered**: **line 11 is the oldest of the three**, and the
+owner's T9 certification of `fga` and `ftm` (**2026-09-09**) is later than all of them.
+
+📌 **And a false discrepancy caught before it was written**: the `# ADDED **2026-09-12**` comment sits
+in a commit dated **2026-09-11 19:49 −0700** — *which is **2026-09-12 02:49 UTC**. The comment is
+UTC-dated; the blame display is local. **No discrepancy.*** ⚠ *Worth recording as a method note: a
+date comparison across a `-0700` boundary is a defect generator, and this run has already produced one
+(§T9.35a).*
+
+🔑 **The wider point: `git blame` is an authority this sweep had not used once in 27 passes**, on a
+repository where every document question of the form *"which of these two statements is current?"*
+has an exact answer in it.
+
+#### 🔴 T9.42b — **`used_emp` means "a cell EXISTED", not "the cell had samples" — and that is why it reads 99.73%**
+
+`classification_ladder_v12.py` lines 612–632:
+
+```python
+levels = (emp3.get((v, off)), emp2.get((v, r, off)), emp.get((t, r, off)))
+if shift_mode:
+    fine = next((c for c in reversed(levels) if c), None)
+    if fine: used[i] = True; w = fine[1] / (fine[1] + K_CELL); …
+else:
+    for c in levels:
+        if not c: continue
+        used[i] = True
+        base = (c[1] * c[0] + K_CELL * base) / (c[1] + K_CELL)
+p_emp = np.where(used, p_over, np.nan)     …     "used_emp": ~np.isnan(p_emp)
+```
+
+**`used[i]` is set the moment ANY of three cell granularities returns a value. The sample count `n`
+never gates it — it enters only as a shrinkage weight**, `n/(n + K_CELL)` in shift mode and
+`(n·c + K·base)/(n + K)` in replacement. **A cell with `n = 1` sets `used_emp = True` and moves the
+probability almost not at all.**
+
+✅ **This answers §T9.33b's NOT RECORDED, and it vindicates the builder's comment while condemning the
+flag.** *"Deeper rungs with too few samples **fall through the existing hierarchy to the parametric**"*
+**is true in EFFECT — the shrinkage does exactly that — and `used_emp` does not record it.**
+**The flag reports existence; the shrinkage governs weight; nothing downstream sees the weight.**
+
+🔴 **So O5b sharpens rather than softens.** *The deep-rung probabilities are not unshrunk garbage —
+they are correctly pulled back toward the parametric. **What is wrong is that `f_prov` grants them
+full provenance credit (1.0 vs 0.30) on a flag that only says a cell was found.*** **The confidence
+model cannot distinguish a rung backed by 400 observations from one backed by 1.**
+
+#### 📌 T9.42c — **A line reference, off by one, in four documents**
+
+`fga`'s entry is at **line 103**; **line 102 is `turnovers`.** *Corrected in `NBA_MASTER_SUMMARY.md`,
+`NBA_OPEN_ITEMS.md`, `NBA_BASELINE_CALIBRATION.md` and the run log.* ⚠ *Small, and the same family as
+§T9.40a: a position read off a screen rather than from a match.*
+
+**Pass outcome: three absence claims answered, one long-open T8 question closed, one headline
+sharpened, one reference corrected, band stable at 54. 🔑 CLEAN 0/3 · 27 passes.**
+
+---
+
 ### T9.41 — PASS 26 (**novelty audit, fourth run — passes 22–25 vs `/tmp/t9base/nba/`**) — **🔴 I asserted an absence one grep away from being disproved · 0/3**
 *2026-09-21. Everything passes 22–25 added, grepped against the pre-T9 snapshot, every hit opened —
 and the first hit retracted a claim I had made one pass earlier.*
