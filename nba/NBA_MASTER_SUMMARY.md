@@ -14419,6 +14419,53 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.24 — PASS 24 (**novelty audit over all thirty against `d29401bd`**) — **🔴 pass 22 flagged one of two sites, and the answer it called NOT RECORDED is in the same document · 0/3**
+*2026-09-21. Everything passes 16–23 added, grepped against the pre-T10 snapshot across all thirty
+files, **in three vocabularies (rule 20)**, with every hit opened.*
+
+#### ✅ T10.24a — **Rules 17, 18, 20 and 21 are genuinely new; two findings correctly credit their ancestors**
+
+**Zero hits at the baseline** for: the population-vs-tree distinction (rule 17) · baseline-tree
+coverage reporting (rule 18) · the three-vocabulary test (rule 20) · copy-the-identifier (rule 21) ·
+`board_tiers_ud` as absent · `lineup_synergy` as the wrong name · `rate_tier` as not-a-column · the
+`var_band`/`variation_band` split · `phase2_window` · the band-boundary noise caveat.
+📌 **One near-hit opened and dismissed**: `NBA_LESSONS_LEARNED_FROM_MLB.md` on *"an unexpected exact
+multiple in row counts versus the expected population size"* — **row-count fan-out, not corpus
+population.**
+
+✅ **Two findings are NOT novel and say so already**: **self-authorship** is at the baseline in
+`NBA_MASTER_SUMMARY.md` and the run log *(T9's §T9.40b and §T9.48a, which §T10.14a and §T10.16c both
+cite)*; and **the 2026-10-20 correction** is at the baseline in `NBA_OPEN_ITEMS.md` and the run log
+*(which is exactly §T10.18b's point — the correction was published, the propagation was not)*.
+✅ **`nba_score.factor_gate_results` is correctly schema-qualified in 7 of thirty at the baseline**,
+consistent with §T10.16e's *15 of 24 mentions unqualified.*
+
+#### 🔴 T10.24b — **Two misses, and the second answers a question pass 22 left open**
+
+**(1) `NBA_MULTIPLIERS.md` also asserts `nba_score.real_slip_leg_observations` — "139 legs,
+`decomposition_method='equal_scale_v1'`" — and §T10.22b flagged only the `NBA_DATABASE.md` site.**
+***§T9.28b's shape exactly: named two, fixed one.*** ✅ **Now flagged in both.**
+
+🔑 **(2) And the "why is it absent — NOT RECORDED" that §T10.22b published is answered in the same
+document.** `NBA_DATABASE.md`'s MLB inventory lists **`score.real_slip_leg_observations` among the
+MLB **D1** objects** — *"All 12 MLB D1 bindings report FALSE"* — ***so the likeliest reading is that
+the 139 legs are MLB's and the `nba_score.` prefix is the error***, which is the same defect class as
+`lineup_synergy` and `player_career_totals`: **a real table, named into the wrong system.**
+
+⚠ **Stated as the supported reading, not proof** — confirming it means querying MLB's D1, and **MLB
+is out of scope.** *Recorded in `NBA_DATABASE.md`, `NBA_MULTIPLIERS.md` and `NBA_OPEN_ITEMS.md`.*
+
+⚠⚠ **The lesson is about the novelty audit itself.** §T10.22b ran `information_schema` and then wrote
+**NOT RECORDED** without grepping the thirty for the object's own name — **the very step rule 7 exists
+for.** ***A live query proves a table is absent; it cannot tell you why, and this sweep's own
+documents often can.*** **Operative form: NOT RECORDED is a claim about the corpus, so it is earned
+by searching the corpus — never by a query returning nothing.**
+
+**Pass outcome: 2 misses from pass 22, both corrected, one of them converting a NOT RECORDED into a
+supported reading; rules 17/18/20/21 confirmed novel. 🔴 CLEAN 0/3 · 24 passes.**
+
+---
+
 ### T10.23 — PASS 23 (**literal audit, second half — columns, values and config keys**) — **🔴 `rate_tier` is not a column anywhere, and one concept carries five live column names · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. Pass 22 audited `schema.table` and found 4 of 101 wrong; **columns and
 values were not audited at all**, and §T10.21b's `phase2_enrichment` was a value — so the family with
