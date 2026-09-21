@@ -9754,6 +9754,38 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.61 — PASS 32 (**self-contradiction audit**) — **🔴 TWO SURVIVING CONTRADICTIONS IN THE DELIVERABLE · 0/3**
+*2026-09-21. The ninth rule as its own angle, because pass 31 showed the failure class exists: every
+factual assertion §T7.38–§T7.60 makes about the system, grepped back across **the twelve including
+the file being edited**, looking for the sweep's own earlier text saying something different.*
+
+#### 🔴 T7.61a — **The `undifferentiated` claim was corrected in three places and left standing in two**
+
+Passes 15 and 21 established that **nothing in `factor_profile_cells` is undifferentiated** — the 13
+are band-keyed, and **34 of 35 cells match their factor's declared form**. That correction was
+written into §T7.44a, §T7.50a, `NBA_OPEN_ITEMS.md` and the top of `NBA_DATABASE.md`'s cell section.
+**Two copies were missed, and both still asserted the opposite:**
+
+| Where | What it still said |
+|---|---|
+| **`NBA_DATABASE.md`**, eleven lines below *"Nothing in the table is undifferentiated"* | *"**13 carry neither** — one **undifferentiated** value for the whole factor"* |
+| **`NBA_MASTER_SUMMARY.md` §T7.38b's body**, both the key table and the directive bullet | *"Neither `tier_label` nor `role_tier_key` \| 13 of 35 — one undifferentiated cap"* and *"the gap is the **13 cells that carry neither**"* |
+
+**A reader of `NBA_DATABASE.md` alone would have met both claims within eleven lines of each other.**
+Both fixed; §T7.38b's key row now also shows the **six**-dimension key whose truncation to five
+caused §T7.44a in the first place.
+
+⚠ **The lesson is about how corrections propagate, and it is new.** Every correction in this sweep
+was written **where the wrong claim was first made** — and the same claim had already been copied
+into two or three other documents. **A correction must be applied to every copy of the claim, found
+by grepping the claim's own wording, not to the entry that made it.** *Standing rule, tenth form.*
+
+**Checked and clean**: every other cross-document figure agrees — the 35/22/13 split, the 9 band
+keys, the 8 `calibration_log` rows, the 37 season-less PKs, the 15 exposed scrapers, the 4 hardcoded
+workers, the 7 scheduled workflows. **Two contradictions, both of the same claim, both now closed.**
+
+---
+
 ### T7.60 — PASS 31 (**novelty audit, fourth run**) — **🔴 §T7.58b CONTRADICTED THIS SWEEP'S OWN EARLIER ENTRIES · 0/3**
 *2026-09-21. Rule 8 applied first — the grep run on the claims I was most confident about. **Both of
 them hit.***
