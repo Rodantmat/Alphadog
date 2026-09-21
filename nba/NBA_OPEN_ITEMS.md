@@ -189,6 +189,54 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 🔴 NO PICK'EM BOARD IS ARCHIVED ANYWHERE FREE — the general form of the Sleeper gap
+*Found 2026-09-21, T11 pass 22 (§T11.23c), from the transcript's own factor × season matrix.
+**Novelty: 0 of thirty, probe positive-controlled.***
+
+**The matrix marks `c4` and `s1–s4` — pick'em structure — ⛔ ⛔ ⛔ across all three seasons:**
+
+> *"**no archive exists** … **boards are not archived anywhere free**; live from season start; **the
+> board scraper will archive every board from day one so the next backfill exists**."*
+
+🔑 ***This is the GENERAL form of the Sleeper finding.*** The documents record *"Sleeper has no
+history anywhere"* as an **app-specific** fact. **The transcript says the pick'em BOARD STRUCTURE has
+no free archive for ANY app** — *which is why the PrizePicks and Underdog history came from
+ParlayAPI's **prop lines** rather than from board archives, and why the live scraper archiving "from
+day one" is the plan rather than a backfill.*
+
+📌 **So the two-seasons-of-board-history question is settled in principle**: **for prop LINES there is
+history; for pick'em STRUCTURE (tiers, goblins/demons, multipliers) there is none, and the first
+season of it starts when the scrapers run.**
+
+---
+
+## 🔴 THREE BLOCKED ITEMS THE TRANSCRIPT ADDRESSES TO THE OWNER
+*Found 2026-09-21, T11 pass 22 (§T11.23b). **Verbatim from segment 113.***
+
+> *"**blocked items need the owner**: **1** renew the parlayapi key (free) — unlocks b1/b2/c3 live
+> and, with its historical endpoint, the backfill; **2** decide on **bigdataball** for c1/c2 history;
+> **3** optionally a **kaggle** account for the free game-line history. **everything else is built or
+> running.**"*
+
+✅ **Item 1 was resolved inside the same transcript** — segment 112 records *"parlayapi key invalid
+(key v3.2.0); odds api key deactivated → owner renews"*, the owner supplies keys at segment 197, and
+segment 221 validates both (§T11.3a). ***The chronology runs blocked → owner acts → validated.***
+
+📌 **Items 2 and 3 are OWNER DECISIONS and their status after T11 is NOT RECORDED** *(eight
+transcripts unswept)*:
+- **BigDataBall for `c1`/`c2` history** — *"historical prop lines are **paid** (bigdataball) — owner
+  decision; live-only otherwise, calibrated in-season."* **BigDataBall is documented in 7 of thirty,
+  2 of the twelve.**
+- **A Kaggle account** for the free game-line history — *"**kaggle 'NBA betting data Oct 2007–Jun
+  2026'** (owner account)"*, with **`TeamRankings` odds-history scrape** named as the other free
+  fallback. ⚠ **TeamRankings is in 0 of thirty; the Kaggle set in 1 of thirty and 0 of the twelve.**
+
+📌 **And one build note the twelve do not carry**: **`k1` coach rotation's source is Wikipedia season
+pages' *"coaching changes"* tables, *"to compile as a static file"*** — **2 of thirty, 0 of the
+twelve.**
+
+---
+
 ## 🔴🔴 NEUTRAL-SITE GAMES ARE IN NO DOCUMENT — and HCA is applied to them
 *Found 2026-09-21, T11 pass 14 (§T11.15). `[LIVE-AUDIT]`. **Season-relevant: the 2025-26 calendar
 labels four of them.***
