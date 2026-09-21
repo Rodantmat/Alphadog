@@ -14424,6 +14424,64 @@ the loader.
 > Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.52 — PASS 37 (**two-direction judgment, tenth run**) — **✅ CLEAN 3/3 — T9 CLOSES**
+*2026-09-21. Band **54 for a sixth consecutive run, 0 in, 0 out**; coverage **690 / 675**; direction 2
+still the single self-authorship segment. **No document changed by this pass.***
+
+#### ✅ T9.52a — **§T9.50a's absence claim survives two harder tests**
+
+*"The shape has exactly five instances and there is no sixth"* is an **absence claim**, and this run
+has retracted one of those (§T9.41a). **Re-tested with different wording** — *"were missed" · "copies
+were" · "survived" · "propagated"* — across all twelve. **Two genuine candidates surfaced, and both
+resolve as already-applied:**
+
+| Candidate | Named target | Outcome |
+|---|---|---|
+| *"⚠ **This propagates into an NBA-facing comparison.** `NBA_SYSTEM_DESIGN.md` §0.9 builds a table on the blueprint's number"* | `NBA_SYSTEM_DESIGN.md` §0.9 | ✅ **corrected in place** — §0.9 carries an inline *"⚠⚠ CONTRADICTION 2026-09-20 (T1 pass 44) — the live code says FIVE windows, not four… the comparison below is built on the blueprint's four and should be read with that caveat"* |
+| *"it propagated into `NBA_SYSTEM_ARCHITECTURE.md` §1 and `NBA_WORKERS.md` §1"* | both sections | ✅ **the entry itself records "where pass 68 corrected it"**, and §1 carries the correction |
+
+**No sixth instance.** *The claim was tested against the substance, not the wording — rule 2 — and it
+holds.*
+
+#### ✅ T9.52b — **The extraction is settled beyond doubt**
+
+**Band 54 across passes 27 · 30 · 33 · 34 · 36 · 37 — six runs, byte-identical, 0 in and 0 out
+each time.** Coverage **690 / 675** for five. Direction 2: **one segment**, the self-authored
+checkpoint patch body, unchanged since pass 3. *The only movement in the whole run was the +2 at pass
+25, attributed segment-by-segment to this sweep quoting `rep(s, old, new)` — and it did not recur.*
+
+---
+
+## ✅ T9 — CLOSED 2026-09-21
+
+**37 re-sweep passes. Closed on 3 clean passes at 3 genuinely different angles** — **35** an
+identified-but-not-applied audit · **36** live numeric re-verification · **37** a two-direction
+judgment. **117 sub-entries, of which 53 carry a severity marker — ≈ 1 finding per 14.5 segments of
+769**, the densest of any transcript swept *(T7 was 1 per 27, T8 1 per 31)*.
+
+**The five largest live findings**, all `[LIVE-AUDIT]`, all raised as owner decisions:
+
+| | Finding |
+|---|---|
+| **O5** | **The baseline ladder holds TWO depth regimes under ONE `recipe_version`** — and §T9.43a found the cause is chronological: `LADDER_DEPTH` landed **2026-09-19 23:58:44 UTC**, after two of the three loads. **The override is still live and the trigger still reads `ladder_steps: 10`.** |
+| **O5b** | **30,989 rungs sit beyond their prop's measured depth, 92.3% of them at p ≤ 0.01 or ≥ 0.99 — and all of them carry full provenance credit**, because `f_prov` is `used_emp` rescaled and **`used_emp` means "a cell existed", not "the cell had samples"** (§T9.42b). |
+| **O6** | **`f_phase` is computed, justified in six lines with measured figures, attached to the frame — and absent from the weighted sum**, whose nine weights total exactly 1.00. |
+| **O4b** | **The season rolls in one layer and is frozen in the other** — 47 env vars carry hardcoded season defaults, 45 set to literals, and `nba_season.py` reaches **20 of 135** NBA Python files. |
+| **§T9.19c** | **Four ladder props are absent from `prop_taxonomy`**, and §T9.35c found **two of them (`oreb`, `dreb`) are also uncertified** — *uncertified, untaxonomised and in production at once.* |
+
+**The methodological result is larger than any single finding.** *Of the 31 🔴 sub-entries, the large
+majority were defects in **this sweep's own prose**, not in the transcript* — and they produced the
+**sixteenth standing rule**, the **extension to rule 15**, and **five standing instructions**: grep
+the distinctive term before writing **NOT RECORDED** · **ask git** · after examining one member of a
+declared set, examine the rest · state every timestamp in UTC · when an entry names the places a claim
+appears, change them in the same turn. ⚠ **And three distinct observations of self-authorship** —
+direction 2 (the known mechanism), **direction 1** (§T9.40b), and **a corpus metric** (§T9.48a):
+***every number this sweep measures over the twelve is measured over a corpus it is writing.***
+
+**Detail: §T9.16–§T9.52.** **Next: T10 —** `2026-09-10-01-31-13-nba-enrichment-backfill-pipeline-2026-09-09.txt`.
+
+---
+
 ### T9.51 — PASS 36 (**live numeric re-verification**) — **✅ CLEAN 2/3 · every figure exact, and the one that moved moved as documented**
 *2026-09-21. Every figure passes 32–35 state, re-derived from its own authority; timestamps in UTC;
 partitions summed; predicates stated; **every corpus metric reported with the pass that took it.***
