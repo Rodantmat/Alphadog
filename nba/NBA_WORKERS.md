@@ -340,6 +340,12 @@ the sweep's read-only rule. It belongs in `nba_config.system_settings` with the 
 | teams | `activeNbaTeams === 30` | **yes** — the league has 30 teams |
 | player bio | `seasonWritten >= 400` | no — ~⅔ of a 582 roster, rounded |
 | **schedule** *(T3)* | **`written >= 1000`** | **no** — a season is 1,230 regular-season games, so this passes on a scrape missing up to 19% of them, and **passed on 2,666 rows spanning two seasons** |
+| **tracking detail** *(T3)* | **`written >= 4000`** | **no** — the observed run wrote 4,652, so the margin is ~14%, and the scraper's own per-measure-type failure list is the real signal |
+
+*Four workers, four unrelated numbers (2026-09-21, T3 pass 5). **The tracking-detail case is the
+clearest waste**: that scraper already reports `per_type` counts and a `failed_types` list, so it
+knows exactly which of its measure types came back empty — and the certification flag ignores all of
+it in favour of one total.*
 
 **Three workers, three unrelated numbers, none in config.** The schedule case is the weakest: the
 same constant has to serve a single-season scrape and a two-season one, so it was set low enough
