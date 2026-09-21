@@ -520,6 +520,25 @@ An off-ladder rung interpolated in log-odds is **flagged** and costs **−4 conf
 
 ---
 
+> 🔴 **WHAT THE FACTOR SET ACTUALLY IS — recorded 2026-09-21 (T10 pass 3, §T10.3a), because none of
+> the twelve said.** T10 closes factor discovery, and its terminal state lived in exactly one
+> document — `NBA_ENRICHMENT_FACTOR_LOCK.md` — and in **none** of the mandated twelve:
+>
+> > *"**discovery is closed: 34 factors, ~90 sub-factors, a minutes tree, thin factors, retirements**,
+> > and a **baseline/enrichment split that puts everything derivable or day-before-published into the
+> > baseline**. … the factor set is now **complete at the level of mechanisms**: availability and role
+> > **A1–A9, N1–N2** · game state **B1–B5, K1** · matchup **M1–M4, B4** · market **C1–C4, S1–S4** ·
+> > officials/schedule **D1–D2** · confidence **E1–E4**. What remains is not more factors but …"*
+>
+> ⚠ **And the twelve carry four different factor counts, none of them 34** — **67** (`factor_registry`,
+> seeded at 29), **15** (the recipe's props), **10** (tested at T15/T16), **25** (band rows). *A reader
+> of the twelve could not reconstruct what the factor set **is**, only how many rows various tables
+> hold.* 📌 **The A/N/B/K/M/C/S/D/E code scheme appears in no mandated document**, though later
+> transcripts refer to factors by those codes.
+>
+> ⚠ **Chronology preserved**: this is **T10's** state — the candidates. **The verdict below is
+> T15/T16's**, and is not imported into T10's entry.
+
 ## 7. THE ENRICHMENT FACTORS — ten tested, none survived
 
 **`nba_score.factor_gate_results`**: `season, slice, model, n, log_loss, brier, gain_vs_anchor,
