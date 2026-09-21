@@ -88,7 +88,8 @@ proposal to share the control plane.
 > | Layer | `player_id` | Evidence |
 > |---|---|---|
 > | **`nba_ref.*`**, **`nba_stats.*`** | **prefixed `nba_<id>`** — e.g. `nba_1610612737` | `players` 582/582 · `player_game_log` 79,358/79,358 |
-> | **`nba_score.*`** | **bare numeric** — e.g. `101108` | `baseline_history` 19,343,348 · `final_hp` 19,215,200 · `baseline_ladder` 206,237 · `board_scored` 110,955 · `availability_delta` 4,274 — **all 0 prefixed** |
+> | **`nba_score.*`** | **bare numeric** — e.g. `101108` | `baseline_history` 19,343,348 · `final_hp` 19,215,200 · `baseline_ladder` 206,237 · `board_scored` ~~110,955~~ **→ 5,524,359 (2026-09-21)** · `availability_delta` 4,274 · `redistribution_factors` 51,806 — **all 0 prefixed** |
+> > *`[LIVE-AUDIT]` 2026-09-21 (T9 pass 5): **re-verified — six `nba_score` tables carry `player_id` and every row in all six is bare numeric, 0 prefixed**, so the split is uniform rather than mixed within a table. ⚠ **`board_scored` is 50× its recorded size** because the table was **rebuilt between 07:23 and 08:05 on 2026-09-21** by the concurrent session's scoring workflow — **that rebuild is out of this sweep's scope** and is noted only so a later reader does not read the change as a discrepancy. The 110,955 was correct when written.*
 >
 > **⚠ And the pattern has a third hole — `nba_game_id` does not exist** *(T1 pass 54, VERIFIED)*:
 > `nba_player_id` appears in **11** columns, `nba_team_id` in **6**, `game_id` in **20**, and
