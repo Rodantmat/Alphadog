@@ -1009,7 +1009,13 @@ The grader's output: every offered line graded against the box score.
 `anchor_type` ∈ `explicit` | `switch_point` (**the invisible anchor**, validated on 42,600 ladders).
 `kind` ∈ standard/goblin/demon — **derived from PRICE, so Over-only. Superseded by the four-way rule.**
 
-### `nba_market.board_tiers_ud`
+### `nba_market.board_tiers_ud` — ⚠ **NO SUCH TABLE EXISTS**
+> 🔴 **`[LIVE-AUDIT]` 2026-09-21 (§T10.22b): `nba_market.board_tiers_ud` is not in the database.**
+> **What is live**: `nba_market.board_tiers` and `nba_market.board_tiers_v2`, **both 2,199,354 rows.**
+> ⚠ **Whether `board_tiers_v2` is the object this section describes is NOT RECORDED** — rule 6, no
+> transcript swept so far supplies the mapping. **The description below is kept as written; only the
+> name is in doubt.**
+
 The **Underdog** version — **already implements the four-way rule** (position vs anchor + side), and
 uses a smarter anchor for books that price every rung: *the FAIR rung, implied probability closest to 50%*.
 
