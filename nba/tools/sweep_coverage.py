@@ -95,6 +95,25 @@ STANDING RULES FOR THE READER - adopted 2026-09-21 after four self-corrections i
         Resolve them in the pass that finishes the stratum. Pass 8 was the first to
         need no corrections after rules 1-3 were adopted.
 
+    RULE 6. A [LIVE-AUDIT] FINDING RECORDS WHAT THE SYSTEM IS NOW. IT NEVER EXPLAINS WHY
+    UNLESS THE EXPLANATION COMES FROM A TRANSCRIPT ALREADY SWEPT.
+        Observing current state is always legitimate and does not depend on reading
+        order. Explaining it does. A "why" drawn from files or pipelines built in a
+        transcript the sweep has not reached yet is future knowledge pulled backward -
+        the same failure the chronological rule exists to prevent, wearing the
+        live-audit badge.
+        Worked example, 2026-09-21: nine NBA static tables were found frozen at their
+        2026-08-31..09-03 build window. Recording that is correct. Investigating the
+        P1 certifier to explain it is NOT - P1 was built in T18, and the sweep was at
+        T2. Likewise, linking the freeze to an open question raised in the T19/T20
+        documentation sessions attaches a late conclusion to an early observation.
+        THE TEST: which transcript would answer this? If the sweep has not reached it,
+        record the observation, write "cause OPEN - expected to be settled at the
+        transcripts that built X", and move on. Grouping several observations under a
+        shared root cause is itself an explanation and falls under the same rule.
+        THE ONE DIRECTION THAT IS ALWAYS FINE: an EARLIER transcript explaining a LATER
+        observation. That is the sequence working, not being circumvented.
+
     RULE 5. AN ENTRY'S ABSENCE IS NOT EVIDENCE THE ISSUE WAS NEVER SEEN.
         T3's differential worker was recorded in these documents as "built but never
         scheduled" - an outcome with no history. In fact T3 flagged it, wrote the
