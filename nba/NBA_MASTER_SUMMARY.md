@@ -1555,6 +1555,44 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.5 — PASS 5 (angle: **the differential event taxonomy and the scrapers' partial-failure reporting**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+**Four findings, one of them a second correction to this sweep's own work.**
+
+1. ⚠ **CORRECTION to T3.1 — there are FOUR differential event types, not three.** The entry listed
+   *new player · departed · team changed*. The committed worker also emits **`reactivated`**: a
+   player in the old snapshot with `active = 0` who returns with `roster_status === 1`. **Without
+   it a returning player would surface as `new_player`, reading as a league entry rather than a
+   status change** — different handling downstream. `reactivated` appears once in
+   `NBA_PROJECT_LOG.md` and nowhere in the twelve; **`roster_status === 1` as the definition of
+   active is recorded nowhere at all.** → `NBA_OPEN_ITEMS.md` FROM T3 PASS 1, corrected in place
+2. **A fourth hardcoded certification threshold** — tracking detail uses `written >= 4000` against
+   an observed 4,652, a ~14% margin. **The waste is specific here**: that scraper already emits
+   `per_type` counts and a `failed_types` list, so it knows exactly which measure types returned
+   nothing — and the certification flag discards all of it for one total. → `NBA_WORKERS.md` §0.31
+3. **The scrapers report partial failure properly, and the workers ignore it.** The tracking-detail
+   scraper paces at `time.sleep(0.5)` between measure types, records `{count, error}` per type, and
+   sets a top-level `error: "failed types: [...]"` when any fail. **Neither `per_type` nor
+   `failed_types` appears in any of the thirty documents** — so the richest health signal the
+   scraping layer produces is undocumented and unconsumed.
+4. **`scheduleLeagueV2?season=2025-26` returned BOTH seasons** — 1,400 games from the concluded
+   2025-26 and 1,266 from the upcoming 2026-27. **So the schedule scraper carried the same
+   concluded-season literal as the play-types scraper (T3.3), but the endpoint's behaviour made it
+   harmless**, returning forward games anyway. *Worth recording precisely: the parameter was wrong
+   in both scrapers; only one of them was saved by the API.*
+
+**Also noted**: the `call_gemini` prompt carries an explicit anti-anchoring instruction — *"be
+skeptical of your own past answers too; if something you rated high-priority before turns out less
+important on reflection, say so"* — and asks about `leagueDashPtStats` measure types and
+`draftCombineStats` (wingspan, standing reach, vertical leap), both already documented outside the
+twelve.
+
+**Ratio**: 12 candidates, 4 findings — **33% hit rate on 18 segments**.
+
+**Clean count 0/3.** **Tail not exhausted**: ~112 of 240 command segments and all 137 result
+segments remain.
+
 ### T3.4 — PASS 4 (angle: **the differential worker and the DARKO iterations, read as source**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
