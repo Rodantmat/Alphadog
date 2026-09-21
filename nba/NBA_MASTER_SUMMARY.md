@@ -14423,6 +14423,75 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.8 — PASS 7 (**literal audit of the `nba_market.*` surface**) — **🔴🔴 the NBA board table is not NBA-only, and it overturns my own Sleeper finding for the third time · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. The standing angle rule 21 created, never yet run on this schema —
+`board_outcomes`' two NULL discriminators (§T11.5c) showed why it was overdue.*
+
+#### 🔴🔴 T11.8a — **`nba_market.board_snapshots.market_key` holds BASEBALL markets**
+
+Read off the table, **~90 distinct `market_key` values**, and the majority are not basketball:
+
+**MLB**: `player_batter_hits` · `player_pitcher_strikeouts` · `player_1st_inn._batters_faced` ·
+`player_1st_inn._pitch_count` · `player_home_runs` · `player_rbis` · `player_stolen_bases` ·
+`player_earned_runs_allowed` · `player_total_bases` · `player_batter_walks` · `player_singles` ·
+`player_doubles` · `player_hits_+_runs_+_rbis` · `player_team_total_runs` · `player_outs` …
+**NBA**: `player_points` · `player_rebounds` · `player_assists` · `player_threes` · `player_blocks` ·
+`player_steals` · `player_turnovers` · `player_double_double` · `player_blocks_steals` ·
+`player_points_rebounds_assists` · `player_fantasy_points`, each with its `_alternate`.
+
+🔴 ***An `nba_`-schema table carries other sports' rows.*** **Novelty: 0 of thirty, control passed
+(rule 22).** *The three hits for "cross-sport" in the twelve are about **MLB-to-NBA transferability of
+pricing logic** and a **sport-key naming inconsistency** — a different subject entirely, opened and
+dismissed per rule 7.*
+
+#### 🔴🔴 T11.8b — **RETRACTION, third time on this claim: Sleeper does not have "one day of NBA board history." It has ZERO NBA ROWS.**
+
+**The `routine` label is the live 2-hour board crons** (`sleeper-board.yml` · `underdog-board.yml` ·
+`fliff-board.yml`, documented in 3 of the twelve), **and they ran in mid-September — which is not NBA
+season:**
+
+| bookmaker | `routine` rows | **NBA-shaped `market_key`s** |
+|---|---|---|
+| `underdog` | 5,281 | **189 — 3.6%** |
+| `fliff` | 1,394 | **0** |
+| **`sleeper`** | **1,276** | **0** |
+
+***§T11.4a said Sleeper has one day; §T11.5b upheld it under attack; §T11.6b narrowed its framing.
+All three understated it. Sleeper has NO NBA board rows at all*** — its 1,276 rows are other sports
+captured by a live cron into an NBA table, **and 530 of them are provably baseball.**
+
+✅ **And that strengthens the documented position rather than contradicting it**:
+`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` says *"**Sleeper has no history anywhere** → derived-Sleeper
+fallback trained on PP/UD snapshots."* **The live data agrees exactly — and the "one day" I kept
+reporting was an artifact of counting rows without checking what sport they were.**
+
+⚠⚠ **The lesson, and it is a new one**: ***every count in §T11.4a was taken on `bookmaker` and
+`game_date` without once filtering `market_key`.*** **A row in `nba_market.board_snapshots` is not
+necessarily an NBA row**, and four passes of this sweep assumed it was. *Rule 17's population error
+one level deeper: I checked which corpus, and never checked which sport.*
+
+#### ✅ T11.8c — **The value vocabularies check out, and rule 22 fired inside the pass**
+
+| vocabulary | live values | documented |
+|---|---|---|
+| `board_snapshots.snapshot_label` | `close` · `routine` · `window` | ✅ **6 of the twelve** |
+| `board_tiers.kind` | `demon` · `goblin` · `standard` | ✅ |
+| `board_tiers.anchor_type` | `explicit` · `switch_point` | ✅ |
+| `board_tiers.tier` | `0` · `−1…−6` · `1…8` | ✅ tier signing **5 of thirty, 3 of the twelve** |
+| `board_outcomes.leg_result` | `over_win` · `under_win` · `push` · `dnp` · `unmatched_player` | ✅ **5 of thirty, 4 of the twelve** |
+
+🔑 **RULE 22 CAUGHT AN ERROR BEFORE PUBLICATION, not a pass later.** The first tier-range probe was
+`tier[^.\n]{0,30}-6|…` and **failed its positive control**, so its single hit was **discarded rather
+than reported**; re-probed with a valid pattern, the tier vocabulary is **well covered**.
+***This is the first time in this run that a rule stopped a defect in the pass that would have made
+it*** — against a record in which every rule was applied one pass after the failure it describes.
+
+**Pass outcome: 1 new structural defect (cross-sport rows in an NBA table) + 1 retraction that
+strengthens the documented position + 5 vocabularies verified + rule 22's first pre-publication
+catch. 🔴 CLEAN 0/3 · 8 passes.**
+
+---
+
 ### T11.7 — PASS 6 (**probe-validation audit — positive controls on every surviving absence claim**) — **✅ the method holds, 18 of 20 exact · ❌ one more "no document" retracted · 0/3**
 *2026-09-21. The angle §T11.6c forced, and it reaches back over the whole sweep. **Rule 20 counts
 vocabularies; nothing checked that a pattern could match anything at all.***
