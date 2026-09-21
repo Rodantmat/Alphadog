@@ -7727,6 +7727,32 @@ methodology. **Coverage at start**: 438 segments · **375 uncovered vs the twelv
 all 30 — **only a 9-segment self-authorship gap**, so unlike T4 this transcript barely writes the
 documents; its tail is genuine content, not its own payloads.*
 
+### T5.23 — PASS 8 (**cross-document consistency, checked against live data**) — **✅ CLEAN 1/3**
+*2026-09-21.*
+
+**T5's figures carry consistently across the document set** — 32,179 (4 files), 1,230 (6), 630 (6),
+581 (3), 799 (5), with **no conflicting value for any of them**.
+
+**Five figures that *looked* like conflicts were checked and are not**: 1,074 · 4,319 · 7,813 ·
+7,841 · 10,508 appear near starter-status text but belong to the later `comment`-category analysis —
+different metrics, not competing counts.
+
+**And the category figures verify exactly against live data** `[LIVE-AUDIT]`:
+
+| `comment` | Documented | Live |
+|---|---|---|
+| DNP - Coach's Decision | 4,319 | **4,319** ✅ |
+| DND - Injury/Illness | 975 | **975** ✅ |
+| DNP - Injury/Illness | 99 | **99** ✅ |
+
+*(Live also shows the tail the documents do not enumerate: NWT - Not With Team 29, DND - Rest 27,
+NWT - Injury/Illness 25, DNP/NWT - League Suspension 12 each. **Not recorded as a finding** — the
+`comment` taxonomy belongs to T6, which this sweep has not reached.)*
+
+**Nothing new. No inconsistency.**
+
+---
+
 ### T5.22 — PASS 7 (**the mid-band 0.40–0.45 seam**) — **🔴 NEW MATERIAL · COUNTER RESET 0/3**
 *2026-09-21. 18 segments in the seam neither the tail read nor the judgment band inspects.*
 
