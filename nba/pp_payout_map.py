@@ -109,6 +109,8 @@ def fetch_board(px):
 def parse_board(doc):
     names = {i["id"]: (i.get("attributes") or {}).get("display_name")
              for i in doc.get("included") or [] if i.get("type") == "new_player"}
+    teams = {i["id"]: ((i.get("attributes") or {}).get("team") or (i.get("attributes") or {}).get("team_name"))
+             for i in doc.get("included") or [] if i.get("type") == "new_player"}
     rows = []
     for p in doc.get("data") or []:
         a = p.get("attributes") or {}
@@ -116,6 +118,7 @@ def parse_board(doc):
         if a.get("line_score") is None or not rel.get("id"):
             continue
         rows.append({"id": str(p["id"]), "player": rel["id"], "name": names.get(rel["id"]) or rel["id"],
+                     "team": teams.get(rel["id"]),
                      "stat": a.get("stat_type"), "line": float(a["line_score"]),
                      "odds": (a.get("odds_type") or "standard").lower(),
                      "game": str(a.get("game_id") or a.get("start_time")),
