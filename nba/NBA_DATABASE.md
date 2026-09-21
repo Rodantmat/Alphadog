@@ -176,7 +176,8 @@ Same shape as `team_aliases`, keyed on `player_id`.
 > that matters**: the check rests on **unofficial sources**, was made **2026-08-31**, and is **NOT
 > RECORDED as re-checked**. The fallback is what served the first successful run (*"genuinely seeded
 > and correct today, but via the fallback, not the live API"*), so a franchise change before
-> **2026-10-03** would propagate silently.
+> **2026-10-03** would propagate silently. *(The date is quoted as written; the regular season in fact
+> opens **2026-10-20** — §T10.18b.)*
 
 ### `nba_ref.arenas` — 30 rows
 | Column | Type | Notes |
