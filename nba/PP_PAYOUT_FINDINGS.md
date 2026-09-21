@@ -389,7 +389,7 @@ were fitted on these legs; the out-of-sample figure remains leave-one-player-out
    rule:** of the 251 goblins sitting *between* the two standards — the only legs whose kind depends on the choice —
    **247 are flagged goblin (98.4%)**, i.e. PrizePicks built the ladder around the higher line. Only 8 of 5,704 flags
    contradict the builder (0.14%). The lower standard prices correctly at factor 1.
-8. **Load mined live prices** — per leg, not per key (finding 3); needs the PrizePicks stat ↔ Odds-API market map
+8. ~~Load mined live prices~~ — **DONE 2026-09-21.** See "MINED PRICES — PER LEG" below.
    (`Points→player_points`, `Pts+Rebs→player_points_rebounds`, `Pts+Asts→player_points_assists`,
    `Pts+Rebs+Asts→player_points_rebounds_assists`, `Rebounds→player_rebounds`, `Assists→player_assists`,
    `3-PT Made→player_threes`, `Rebs+Asts→player_rebounds_assists`)
