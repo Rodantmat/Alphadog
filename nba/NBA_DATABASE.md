@@ -605,18 +605,32 @@ own table.** The trap is that the documents use all of them and never say which 
 | **rate tier** | **`tier_label`** | — | — | — |
 | **prop** | `canonical_prop_key` | `prop` | `canonical_prop_key` | — |
 
-🔴 **AND `snapshot_label` CARRIES A DIFFERENT VOCABULARY PER TABLE** *(added 2026-09-21, §T11.18b)*:
+🔑 **`snapshot_label` SPLITS BY PIPELINE FAMILY — all nine tables that carry it** *(§T11.18b,
+completed §T11.19a)*:
 
-| table | `snapshot_label` values | rows |
+| family | tables | values |
 |---|---|---|
-| `nba_market.board_snapshots` | **`close` · `routine` · `window`** | 27,067,871 |
-| `nba_market.game_lines_snapshots` | **`morning` · `window`** | **153,934 + 153,670 = 307,604** ✅ |
+| **BOARD** | `board_snapshots` · `board_tiers` · `board_tiers_v2` · `rung_market` · `board_backfill_log` | **`close` · `window`** *(+ **`routine`** on `board_snapshots`, the live-capture table)* |
+| **GAME LINES** | `game_lines_snapshots` · `game_lines_snapshot_log` | **`morning` · `window`** |
+| *(unpopulated)* | `board_outcomes` — all NULL · `nba_score.paper_picks` — empty | — |
 
-***Same column name, same schema, different value sets.*** **`close` and `routine` exist only on the
-board table; `morning` only on the game-lines table; `window` is the only value common to both.**
-📌 `nba/export_market_spreads.py` filters `snapshot_label IN ('morning','window')` — **correct for
-its table, and it would select almost nothing on the other.** ⚠ *`morning` covers **2,468** events
-against `window`'s **2,466** — a two-event difference, **NOT RECORDED** why.*
+✅ **`window` is the value common to both families; `close` is board-only; `morning` is
+game-lines-only.** ***Not arbitrary drift — two capture pipelines, each with its own second label.***
+📌 `nba/export_market_spreads.py` filters `snapshot_label IN ('morning','window')`, **correct for its
+family.** ⚠ *`morning` covers **2,468** events against `window`'s **2,466** — **NOT RECORDED** why.*
+*Row split: `game_lines_snapshots` **153,934 `window` + 153,670 `morning` = 307,604** ✅.*
+
+🔴 **AND TWO COLUMN NAMES DO COLLIDE, WITH UNRELATED MEANINGS** *(§T11.19b — rule 24)*:
+
+| column | where | values |
+|---|---|---|
+| **`kind`** | `board_tiers` · `board_tiers_v2` · `tier_band_calibration` · `tier_selection_value` | **`demon` · `goblin` · `standard`** — the PrizePicks taxonomy |
+| **`kind`** | 🔴 **`nba_score.blowout_model`** | 🔴 **`minutes_by_margin` · `p_blowout` · `sliding_scale`** — *a model-component name* |
+| **`market`** | `nba_market.game_lines_snapshots` | **`h2h` · `spreads` · `totals`** — game-level bet types |
+| **`market`** | 🔴 **`nba_market.rung_market`** | 🔴 **`player_points` · `player_assists` · …** — *player prop keys* |
+
+📌 **`nba_score.board_scored.kind` is entirely NULL** — a third unpopulated discriminator after
+`board_outcomes`' two.
 
 🔴 **`rate_tier` is NOT a column anywhere** — it is the design's word for `tier_label`.
 📌 **Mentions across the twelve**: `variation_band` **43** · bare `role_tier` **40** · `var_band`
