@@ -453,10 +453,11 @@ the ancestor of the A/B/D/M/N factor codes used in T15–T16 and of
 ### `nba_config.factor_relevance` — **460 rows**
 The **prop × factor relevance matrix** — which factors are even candidates for which props.
 
-⚠ **`[LIVE-AUDIT]` 2026-09-21 (T7 pass 12) — the column grades nothing as EXCLUDED.** It takes
-**exactly two values: `full` (440 rows) and `partial` (20)**. There is **no `none` / `excluded`
-grade anywhere in the table**, so 95.7% of pairs are `full` and **as a filter it currently excludes
-nothing**. ✅ Referential integrity is clean: **0 of 460** `factor_key` values are orphaned against
+🔴 **`[LIVE-AUDIT]` 2026-09-21 (T7 passes 12 and 22) — the design specifies THREE grades; the data
+uses two.** `NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 244: *"`factor_relevance` — factor × prop →
+**full / partial / none**."* Live the column takes **exactly two values: `full` (440 rows) and
+`partial` (20)** — **`none` is specified and never written**, so 95.7% of pairs are `full` and **as a
+filter the table currently excludes nothing**. ✅ Referential integrity is clean: **0 of 460** `factor_key` values are orphaned against
 `factor_registry`, and all **24** distinct (factor, prop) pairs that carry a fitted cell are graded
 `full`.
 
