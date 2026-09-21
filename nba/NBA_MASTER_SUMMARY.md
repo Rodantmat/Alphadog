@@ -14565,7 +14565,7 @@ early timestamp.* ⚠ **Stated as the supported reading, not as proof: `updated_
 | The config row's *"State as of 2026-09-09 v20"* | ✅ **already expired** — §T10.1b |
 | The two shard defects | ⏳ **Yes — a re-scrape clears both** |
 | **`factor_relevance` 29 of 67** | ❌ **No — it persists until someone extends the table.** *Not a dated verdict; a standing state* |
-| **`lineups_confirmed` / `overtime_pace_live` excluded from history** | ❌ **No — the exemption is STRUCTURAL, not dated.** *These two cannot be backfilled at any future date, which is what makes them different from everything else in the fallback directive* |
+| **`lineups_confirmed` / `overtime_pace_live` excluded from history** | ❌ **No — structural, not dated** — *but **not an unmet obligation either**, corrected 2026-09-21 by §T10.12a: the registry annotates one *"superseded by `lineup_change`"* and the other *"mostly absorbed by `market_spread_delta` / `market_total_delta`"*, and **all three replacements are mined.** The live-only stage is the **residue of two folded-in factors**, and what is missing from the twelve is that reasoning, not the factors* |
 | `nba_ref.referee_assignments` **0 rows** | ⏳ **correct until 2026-10-20** — re-verified **0** today; still the unfalsifiable case §T8.34a named, tagged **(T15)** |
 
 🔴 **And the two clocks compose.** *From **2026-10-01** the scraper layer moves to `2026-27` while the
