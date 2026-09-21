@@ -317,6 +317,61 @@ does not protect against the delete above it.**
 
 ---
 
+## ⚠ FROM T2 PASS 3 — `nba_arenas_current.json` CARRIES TWO TEAM FIELDS UNDER ARENA NAMES *(added 2026-09-21)*
+***VERIFIED** by direct read of `nba/data/nba_arenas_current.json` on live `main`, 2026-09-21.*
+
+```json
+{ "team_id": 1610612738, "arena_name": "TD Garden", "arena_capacity": "18624",
+  "city": "Boston", "owner": "Bill Chisholm", "year_founded": 1946 }
+```
+
+**`year_founded` is the FRANCHISE's founding year, not the arena's opening year.** The file is named
+for arenas and the field sits between `arena_capacity` and nothing else, so it reads as a building
+date. It is not:
+
+| Team | `year_founded` in the file | Franchise founded | Arena actually opened |
+|---|---|---|---|
+| Boston | **1946** | 1946 ✓ | TD Garden, **1995** |
+| Atlanta | **1949** | 1949 ✓ | State Farm Arena, **1999** |
+| Dallas | **1980** | 1980 ✓ | American Airlines Center, **2001** |
+
+**Off by decades, every row, in the direction a reader would not suspect.** `owner` is the same
+shape of error — **Bill Chisholm owns the Celtics, not TD Garden.** Both fields come from
+`teamDetails`, which is a *team* endpoint; the arena scraper kept them alongside the two genuinely
+arena-scoped fields it wanted.
+
+**Nothing downstream reads them today**, which is why this has gone unnoticed — but an altitude,
+venue-age or building-effect factor is exactly the kind of enrichment the roadmap contemplates, and
+it would reach for `year_founded` first. **Renaming them `franchise_founded` and `team_owner` is the
+fix; not applied, per the sweep's read-only rule.**
+
+### `arena_capacity` is a quoted string while `year_founded` is a bare integer
+`"18624"` versus `1946` — **mixed typing in the same record, from the same source.** Consequences:
+any capacity arithmetic needs an explicit cast, and sorting by capacity sorts **lexically**, so
+`"9000"` outranks `"18624"`. Combined with the already-documented fact that capacity is `null` for
+roughly a third of teams, a capacity-derived factor has three cases to handle — number-as-string,
+`null`, and lexical ordering — none of them signposted.
+
+### The `_debug_headers` technique, worth keeping as a practice
+The arenas scrape's first output committed **`arena_name: null` for all 30 teams plus a
+`_debug_headers` array listing the columns `teamInfoCommon` actually returned** — `team_id`,
+`season_year`, `team_city`, … `min_year`, `max_year`, and **no `arena` or `arena_capacity` at all.**
+
+**That is what turned "the field is empty" into "the field does not exist", in committed data rather
+than in a log that expires.** The same trick would have shortened the `leagueStandingsV3`
+`TeamAbbreviation` diagnosis in T1. *Recorded as a method: when a scrape returns nulls, emit the
+source's real header list into the output file before theorising.*
+
+### The Wikipedia officials page marks active referees in bold — the parser cannot see that
+The source page states: *"Referee data is available for the 1988-89 through 2026-27 seasons.
+**Active referees are listed in bold**."* **T2's parser reads wikitext cell text and discards
+formatting**, so boldness — the page's own active/inactive signal — is not available to it. The
+parse targets the "Staff officials" table, which is the current roster, so the 80 rows are believed
+current; **but the safeguard is table selection, not the page's actual active marker.** If that
+table ever includes a retired official, nothing in the pipeline would notice.
+
+---
+
 ## FROM T2 PASS 2 — THE FACTOR TIER LIST, AND TWO PARSER LESSONS *(added 2026-09-21)*
 
 ### Gemini's tier 1–4 factor list — recorded WITH its epistemic flag, which is the point
