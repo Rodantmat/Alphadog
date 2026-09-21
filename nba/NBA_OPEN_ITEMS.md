@@ -302,10 +302,11 @@ continuous input. **Every bucketed cap in the system is tier- or role-specific.*
 - 🔴 **Instruction 1 (*a cap is a fallback, not a first resort*) — cannot be judged, and the reason
   is bigger than the question.** `automation_status` is `semi_automatic`;
   `last_validated_at` / `last_empirical_validation_json` are **null on every sampled row**, so **no
-  empirical validation backs any of the 35 values**; and **VERIFIED, no code in the repo reads
-  `factor_profile_cells` or `factor_relevance` at all** — the strings appear in the twelve documents
-  and in zero code files. **That is the open item now**: five NBA config tables are now known to be
-  read by nothing (with `role_tiers`, `stat_decay_config`, `ewma_alpha`).
+  empirical validation backs any of the 35 values**; and **no code reads `factor_profile_cells` or
+  `factor_relevance` at all** — already recorded in the `NBA_DATABASE.md` §2 banner (T1 pass 36,
+  **eight** config tables), and **re-verified 2026-09-21 at a wider scope**: a grep of the whole
+  repository, unrestricted by directory or extension, still finds zero code references. **That is
+  the open item now** — not the phantom global clamp, and not tier-specificity.
 - ⚠ **And one structural question for the scoring transcripts**: **22 of the 23 directional cells are
   `more`.** The lone `less` cell is `blowout__points__LOST_GT50__all__less`. Whether the scorer
   mirrors MORE-side values onto LESS legs, or LESS legs get no adjustment from the other 21,
