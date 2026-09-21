@@ -164,6 +164,16 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
     specific to the specific tiers."* Also unrecorded: the **ladder-width spec** (5–6 rungs each side
     of the anchor) and **"prop line by prop line"** factor study.
 
+18. 🔴🔴 **The `raw_json` double-encoding was visible on 2026-09-04 and was stepped over.** T7 hit
+    `cannot call jsonb_object_keys on a scalar`, worked around it with `left(metrics::text, 600)`,
+    and **the output showed the escaped JSON plainly** — `"\"{\\\"gp\\\":24,…}\""`. Nobody asked why
+    the cast was needed. **The bug therefore predates 2026-09-04 and went unrecorded for 17 days.**
+    Same shape as the truthiness bug and the 799-row trap: *an error appeared, the workaround
+    succeeded, and the success was quiet enough to step over.*
+19. ✅ **The 3 missing-officials games were reported by the system from day one** — the daily-delta
+    coverage check returned `{missing_starter: 0, missing_officials: 3}` on 2026-09-04, the exact
+    figures this sweep re-derived. **The detector worked; nothing consumed its output.**
+
 ### ⚠⚠ Structural
 - **The teams fallback has two triggers**, and `…AFTER_COUNT_MISMATCH` fires on a *successful* fetch
   whose count ≠ 30 — an equality test, so **32 teams fails it exactly as 29 does**.
