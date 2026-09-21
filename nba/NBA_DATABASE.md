@@ -440,6 +440,27 @@ values — *"**these are the values the backtest will move**."*
 none survived at leg level**. **The matrix records what was considered; the cells record what earned a
 value.**
 
+🔴 **`[LIVE-AUDIT]` 2026-09-21 (T7 pass 10) — NOTHING IN THE REPO READS THIS TABLE, OR
+`factor_relevance`.** VERIFIED by repo-wide grep: both strings appear in the twelve documents and in
+**zero code files**. In all `.py`/`.js`, `nba_config` is referenced only as
+`nba_config.external_credentials` (12 sites) and `nba_config.pp_slip_rules` (2, out of scope).
+**With `role_tiers`, `stat_decay_config` and `ewma_alpha`, that is five NBA config tables read by
+nothing** — see the banner at the top of §2. *Cross-system context only (MLB is dropped): the same
+pattern under MLB's names **is** live — `config.enrichment_profile_cells` is read by
+`alphadog-v2-phase2a-run-environment.js:271`, `config_enrichment_profile_cells` by
+`alphadog-v2-score-audit.js:6221`, and `gbdt_training/validate_factor_coefficients.py:204` writes
+back `last_empirical_validation_json` / `last_validated_at` — **the two columns null on every NBA
+row**. The NBA repo has no equivalent of either; whether one is pending is **NOT RECORDED**.*
+
+**`[LIVE-AUDIT]` — the table is TWO POPULATIONS, zero mixing across 35 rows**: **22 bucketed cells**
+(flat `lift` **or** `penalty`, **always** `tier_label`/`role_tier_key`, direction `more` 21 / `less`
+1) and **13 continuous cells** (`formula_expression` + `coefficient_a`, both flat values NULL,
+**never** tier-keyed, direction `both` 12 / `more` 1). All six other combinations are empty.
+Invariants hold: every `cap` positive; **no `|penalty|` or `|lift|` exceeds its own cap**; every
+`penalty` negative, every `lift` positive. ⚠ **22 of the 23 directional cells are `more`** — the lone
+`less` is `blowout__points__LOST_GT50__all__less`, the only combination with both. Whether the scorer
+mirrors onto LESS legs is **NOT RECORDED**.
+
 **`[LIVE-AUDIT]` 2026-09-21 (T7 pass 9) — the cap column, since a document elsewhere was read as
 saying the system runs a single global cap. It does not.** All **35** cells carry a non-null `cap`,
 spread over **15 factors** and **10 distinct values, 0.05 → 0.40** (0.12 on 7 cells, 0.25 on 6).
