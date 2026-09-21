@@ -884,7 +884,7 @@ was_most_likely, rank_by_prob, phase`. **Only the realised branch is stored.**
 
 **Live contents — three generations coexisting, which is itself the evidence:**
 
-| `check_type` group | written by | `run_at` |
+| `check_type` group | written by | `run_at` (**UTC** — `timestamptz`; zone stated 2026-09-21, §T9.46a, and all three re-verified live to the second: **18:16:54** · **23:31:03** · **03:30:25**) |
 |---|---|---|
 | `overall`, `by_band_tier`, `component`, `phase`, `season` | `verify_confidence.py` | **2026-09-17 18:16** |
 | `mondrian_quintile` | `build_mondrian_confidence.py` | **2026-09-17 23:31** |
