@@ -45,10 +45,17 @@ treatment for a non-mandated document (§T2.18a) is to record against it rather 
 two: `lineups_confirmed`, `overtime_pace_live`)*, or record the referee reclassification in the parity
 document itself. **A documentation edit outside the twelve; this sweep does not make it.**
 
-### 🔴 AND TWO FACTORS ARE EXEMPT FROM BACKFILL BY CONSTRUCTION — *§T10.6c, narrowed §T10.9a*
-*(⚠ The **category** is documented — `NBA_DAILY_PARITY_AND_BACKFILL.md` §3 above. **What is recorded
-nowhere is which factors are in it**: `lineups_confirmed` and `overtime_pace_live` return zero hits
-across all thirty.)*
+### 📌 AND TWO FACTORS ARE LIVE-ONLY — *§T10.6c, narrowed §T10.9a, **corrected §T10.12a***
+*(⚠ **This item was first written as an unmet backfill obligation. It is not one.** The **category**
+is documented — `NBA_DAILY_PARITY_AND_BACKFILL.md` §3 above — and the two factors' **subjects** are
+documented in up to **seven** documents, **four of them mandated** *(only the snake_case keys return
+zero, which was a probe on the wording rather than the substance)*. 🔑 **And the registry's own notes
+settle the obligation question**: `lineups_confirmed` is *"DELTA vs P(start) **[superseded by
+`lineup_change` in pass 1 2026-09-09]**"* and `overtime_pace_live` is *"**Mostly absorbed by
+`market_spread_delta` / `market_total_delta`**; kept for 2H/4Q OT-inclusive lines"* — **all three
+replacements are in the registry and mined.** ***The live-only stage is the residue of two folded-in
+factors.*** ✅ **What remains worth recording: that reasoning lives in `research_notes` and in none of
+the twelve**, so a reader of the mandated documents finds the subjects and not the supersession.)*
 
 `factor_registry.compute_stage` partitions the enrichment layer **15 phase-1 · 17 phase-2 · 2
 live-only · 2 not-mined** *(recorded in `NBA_PROJECT_LOG.md` 739; **confirmed live to the row**, and
