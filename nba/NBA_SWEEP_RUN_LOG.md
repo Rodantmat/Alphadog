@@ -131,6 +131,15 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
     built with `isOnlyCurrentSeason=1`. The data is fine; **the inner join is the hazard, and its
     drop is biased** — it removes exactly the players who left the league.
 
+12. 🔴 **No fleet-wide programmatic success signal.** `ok` means *certified*, not *succeeded* (18
+    workers); `status` has **18 distinct values in two generations**, 12 unique to a single worker,
+    and the generations do not share a success token. Any monitor must special-case the four oldest
+    workers. Nothing consumes these strings today — which is why it went unnoticed.
+13. 🔴 **A whole failure class: HTTP 200 with zero rows, no error raised.** Two instances — T5's
+    starter status (**caught**, 97% loss) and T4's career totals (**missed**, 1-in-582). **All four
+    guard shapes in the codebase test the aggregate; none asks the per-item question** *did every
+    input produce at least one output row?*
+
 ### ⚠⚠ Structural
 - **The teams fallback has two triggers**, and `…AFTER_COUNT_MISMATCH` fires on a *successful* fetch
   whose count ≠ 30 — an equality test, so **32 teams fails it exactly as 29 does**.
