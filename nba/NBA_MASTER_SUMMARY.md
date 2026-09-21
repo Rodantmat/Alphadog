@@ -8045,8 +8045,17 @@ design names. **In all three the missing context was one line away from the thin
 practical form of all three rules is one instruction: **read the neighbours before drawing the
 conclusion** — the sentence above, the column beside, the rest of the key.*
 
+🔴🔴 **The ninth form, added 2026-09-21 after §T7.60a — GREP YOUR OWN DOCUMENT FIRST, NOT ONLY THE
+OTHER TWENTY-NINE.** §T7.58b asserted the opposite of what `NBA_MASTER_SUMMARY.md` and
+`NBA_OPEN_ITEMS.md` **already said twice**, recorded by earlier passes of this same re-sweep. **A
+long re-sweep accumulates its own prior findings faster than it can remember them, so the file being
+edited is the likeliest place to contradict.** *The novelty grep and the contradiction grep are the
+same grep; run it over the twelve including the file in front of you.* **First internal
+contradiction of the sweep.**
+
 🔴🔴 **The eighth form, added 2026-09-21 after §T7.54a — RUN THE NOVELTY GREP ON THE FINDING YOU ARE
-MOST CONFIDENT ABOUT, FIRST.** In pass 25 I grepped `variation_band`, `band_key`,
+MOST CONFIDENT ABOUT, FIRST.** *Proven twice by pass 31: the two claims grepped first — because I was
+sure of them — both returned hits.* **Ten of T7's thirteen defects were claims I did not doubt.** In pass 25 I grepped `variation_band`, `band_key`,
 `real_sample_size_observed`, `shotdiet`, `binary_gate` — and **not `2026-10-01`**, the single most
 consequential string of the pass. **It was on file**, as a two-day edge case rated *"low impact"*.
 **The rule was not the problem; applying it only to the claims that felt uncertain was.** *Confidence
