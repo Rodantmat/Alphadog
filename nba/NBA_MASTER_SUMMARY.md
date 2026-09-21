@@ -14430,6 +14430,76 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.3 — PASS 2 (**the BOARD-SCRAPER stratum — and it pays pass 1's two debts first**) — **🔴🔴 all four board sources decided on evidence, and THREE of the four had none of it in the twelve · 0/3**
+*2026-09-21. **Pass 1's brief carried two questions and pass 1 answered neither — stated plainly in
+its next-step row rather than dropped. Both are answered here.***
+
+#### ✅ T12.3a — **The pre-registration landed, including the two segments named in advance**
+***Predicted: the baseline unchanged, `uncovered12` to fall again, with tail segments 568 and 617
+among the crossings.*** **Measured: baseline 9 / 15 / 618 / 585 unchanged · working 18 / 13 / 609 /
+579.** ✅ **568 (0.329 → 0.456) and 617 (0.299 → 0.879) both crossed and both LEFT THE TAIL**, which
+fell 15 → 13. **Seventeenth pre-registration: sixteen hits, one miss.**
+⚠ **One crossing was NOT predicted and is named** *(rule 18)*: **segment 636, 0.213 → 0.515, covered
+by `NBA_OPEN_ITEMS.md`** — ***it is the memory-write twin of 617***, carrying the same 05:30Z
+verification, so it crossed on content this pass quoted from its sibling. **Opened, explained, not
+left as an unexplained movement.**
+
+#### ✅ T12.3b — **DEBT 1 PAID: rule 27 on segment 91's commitment — the diff DID run, for both**
+*Segment 91 promised **"the same same-moment diff for underdog and sleeper against their own public
+apis before opening day."** Last occurrences read: 570, 604, 615, 631, 638.*
+✅ **SLEEPER** — `nba/scrape_sleeper_board.py` + `sleeper-board.yml`, public
+**`api.sleeper.app/lines/available`**, names via `/v1/players/<sport>`, **both-side multipliers**:
+***405 / 91 vs ParlayAPI's 406 / 92 — PER-STAT IDENTICAL*** → **ours**.
+✅ **UNDERDOG** — 🔴 **two blind probe rounds TRIPPED CLOUDFLARE**, and **the owner's own "copy as
+curl" capture** exposed the lobby-content API *(host, the three mandatory parameters, the
+version/device/lat-long headers, and that the 10-min auth0 JWT and 3-min geocomply token are NOT
+needed for board content)*. **Result: 854 lines / 100 players → ours.**
+📌 **Segment 615 states the final set**: *`"live boards":"prizepicks (own producer), sleeper (own
+scraper), underdog (own scraper v3, 854 lines), fliff (parlayapi)"`.* **Written to
+`NBA_SYSTEM_ARCHITECTURE.md` §0f with the full Underdog API flow and the four transferable lessons.**
+
+#### 🔑 T12.3c — **DEBT 2 PAID: the Fliff scraper exists, is UNFINISHED, and one owner action decides it**
+**`POST app.getfliff.com/api/v1/sports_book_public/`** · `sports_book` envelope · **version 5.0.34 /
+cap 285** · location token · **feed-sync codes 3055/3056/3062** · hosts `m-c*.app.getfliff.com` and
+pubnub · ***"reachable without login but unfinished."*** 🔴 ***"parlayapi stays the fliff source
+UNLESS the owner captures one `sports_book_public` curl."***
+🔑 **And the precedent says that ask works — it is exactly what unblocked Underdog.** ⚠ **Which
+leaves the sharp version of the finding**: ***the one board still served by ParlayAPI is served by
+the source every other comparison rejected*** — **and no same-moment diff of Fliff has been run,
+because the scraper is unfinished, so whether ParlayAPI's Fliff feed shares those defects is NOT
+RECORDED.** 📌 Written to `NBA_OPEN_ITEMS.md` as an **OWNER ACTION**.
+
+#### 🔴 T12.3d — **What the twelve carried, and what they did not**
+*(Controls fired: `board_sources_decision` 4 of thirty, `scrape_sleeper_board` 6. Every hit opened.)*
+
+| | thirty | twelve |
+|---|---|---|
+| 🔴 **the Sleeper diff** *(405/91 vs 406/92, per-stat identical)* | **1** | **0** |
+| 🔴 **854 lines** · **`api.underdogfantasy.com`** · **`pickem_stat_id`** · **`underdog_filters_<sport>.json`** | 2 · 8 · 4 · 3 | **0** |
+| 🔴 **the burst-probe / Cloudflare lesson** · **geocomply tokens not needed** | 3 · 2 | **0** |
+| 🔴 **every Fliff API fact** *(`sports_book_public`, 5.0.34, 3055, pubnub, getfliff)* | 1–4 | **0** |
+| ✅ already in the twelve | — | **`product_experience_id` (2) · "copy as curl" (2) · the silent commit-step failure (1) · size-guard (3)** |
+| ✅ **a T12 QUEUE ITEM RESOLVED** | — | ***"BigDataBall no longer needed"* is in 2 of the twelve** — *segment 638 records `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`'s closing note being rewritten to say so, which is the resolution of T11's segments 709/711* |
+
+🔑 ***The same shape for the third pass running: the DECISIONS are in the twelve and the EVIDENCE is
+in `NBA_PROJECT_LOG.md` and `NBA_COMPASS.md`*** — **and §T12.2b named the mechanism, so this is that
+mechanism's second measurement rather than a new discovery** *(rule 28)*.
+
+#### 📌 T12.3e — **Two more, recorded where they belong**
+🔴 **Segment 604**: ***two backfills — the injury season file and the per-game matchups — SILENTLY
+FAILED AT THE COMMIT STEP AFTER THE SCRAPES SUCCEEDED.*** *"The file limit is a design input: shard
+by month with an index from the start, commit small files first, size-guard every commit."* **1 of
+the twelve already; added to the board-layer section.**
+📌 **Segment 631**: the mining/fallbacks matrix moved **`c4`/`s1–s4` from ⛔ to 🔧** — *The Odds API
+us_dfs history verified on 2024-10-25 (PrizePicks incl. goblins/demons, Underdog with multipliers)* —
+and states ***"sleeper has no history anywhere → derived-sleeper fallback trained on pp/ud
+snapshots."*** **`d1` officials updated to ✓ 3,691 / ✓ 3,690.**
+
+**Pass outcome: both debts paid, all four board sources traced to their evidence, one owner action
+isolated, and a T12 queue item resolved. CLEAN 0/3 · 3 passes.**
+
+---
+
 ### T12.2 — PASS 1 (**the TAIL stratum — 15 segments, the largest tail of any transcript swept**) — **🔴 the owner's documentation directive was followed INTO THE WRONG DOCUMENT SET · 0/3**
 *2026-09-21.*
 
