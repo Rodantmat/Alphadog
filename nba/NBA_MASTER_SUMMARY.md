@@ -14392,6 +14392,54 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.34 — PASS 19 (**two-direction judgment, fifth run**) — **🔴 the number was right for the query and the sentence was right for the intent · a SIXTEENTH rule · 0/3**
+*2026-09-21. Band byte-identical for a fifth run, so the pass judged §T9.31–§T9.33's claims, with the
+weight on §T9.33's counts — **five of the previous ten defects were counts of mine**.*
+
+#### 🔴 T9.34a — **The prose said `≤ 0.01 or ≥ 0.99`; the query said `< 0.01 OR > 0.99`**
+
+Re-derived through a different formulation — a `CASE` map instead of a `VALUES` join — the
+beyond-depth extreme count comes back **28,596**, not the published **28,563**; within-depth extremes
+**18,166**, not **18,090**.
+
+**Nothing was mis-measured.** *The rows sitting exactly on `0.01` and `0.99` — **33** beyond-depth and
+**76** within-depth — fell out of both sides, because the predicate I ran was strict and the predicate
+I wrote was inclusive.* ✅ **Per-day sums check under the inclusive predicate: 2,196 + 17,425 + 8,975
+= 28,596.** **Corrected in five places.**
+
+> 🔴 **This is the SIXTEENTH standing rule** — *the prose must state the query's own predicate: its
+> grouping, its boundary, its filter.* **Second instance of the class**, four passes after §T8.28a's
+> grouping defect. ⚠ **It survives the other fifteen rules intact**: nothing is unverified, every
+> partition sums, no grep was skipped, and re-running the query reproduces the number exactly. **The
+> defect lives in the gap between the predicate and the sentence.** *§T9.27c's test applied first —
+> the principle existed only as an unnumbered habit in a superseded next-step row, not in this
+> section — so promoting it is warranted, not a duplicate.*
+
+#### ✅ T9.34b — **The riskiest thing in §T9.33 is the one that held: 20 hand-typed values, 20 correct**
+
+§T9.33's join depended on **twenty `(prop, depth)` pairs re-typed by hand into a SQL `VALUES`
+clause** — the exact shape rule 1 warns about. **Extracted from the code block and compared
+key-by-key: 20 of 20 exact, zero mismatches, no key present in one and absent from the other.**
+*Worth recording because the instinct was to suspect it first, and the defect was elsewhere.*
+
+#### ✅ T9.34c — **Everything else in §T9.33 re-derives under the independent formulation**
+
+| Claim | Re-derived | |
+|---|---|---|
+| Total rows | **206,237** | ✅ |
+| Within measured depth | **168,357** | ✅ |
+| Beyond measured depth | **30,989** | ✅ |
+| Rows with no `LADDER_DEPTH` key | **6,891** *(= `stocks` 6,350 + `double_double` 541)* | ✅ |
+| **168,357 + 30,989 + 6,891 = 206,237** | ✅ **partition sums** | ✅ |
+| Beyond-depth rows with `used_emp = true` | **30,989 — all of them** | ✅ |
+| `used_emp = false`, whole table | **559** | ✅ |
+
+**Pass outcome: 1 defect — a boundary the prose and the query disagreed on — corrected everywhere;
+the twenty hand-typed values verified; every other figure exact under a second formulation.
+🔴 CLEAN 0/3 · 19 passes.**
+
+---
+
 ### T9.33 — PASS 18 (**structural / referential consistency ACROSS the two depth regimes**) — **🔴🔴 30,989 rungs beyond the measured depth, 92% of them certainties, all carrying FULL provenance credit · 0/3**
 *2026-09-21. §T9.27b established that the three as-of days differ in rung COUNT and said nothing about
 the VALUES. This pass asks what is in those extra rungs and what downstream does with them.
