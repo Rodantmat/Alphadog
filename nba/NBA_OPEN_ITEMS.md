@@ -58,7 +58,7 @@ the file: *"Points needs 14 rungs, steals needs 2; one number cannot be right fo
 
 | as-of | max rung | regime |
 |---|---|---|
-| **2025-11-29** | `points` **14** · `steals` **2** · `blocks` **2** · `oreb` **3** | **per-prop** — ten props match `LADDER_DEPTH` exactly |
+| **2025-11-29** | `points` **14** · `steals` **2** · `blocks` **2** · `oreb` **3** | **per-prop** — **13 of the 20 `LADDER_DEPTH` keys match exactly** *(corrected from "ten" 2026-09-21, §T9.30a)*; the other 7 are the five composites, `assists` and `threes_made`. **13 + 7 = 20, plus `stocks`/`double_double` = 22** ✅ |
 | **2026-01-15** | **10 on every prop** | flat |
 | **2026-03-15** | **10 on every prop** | flat |
 
