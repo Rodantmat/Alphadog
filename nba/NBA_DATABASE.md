@@ -531,12 +531,15 @@ mirrors onto LESS legs is **NOT RECORDED**.
 **`[LIVE-AUDIT]` 2026-09-21 (T7 pass 9) — the cap column, since a document elsewhere was read as
 saying the system runs a single global cap. It does not.** All **35** cells carry a non-null `cap`,
 spread over **15 factors** and **10 distinct values, 0.05 → 0.40** (0.12 on 7 cells, 0.25 on 6).
-Cells are keyed `(factor_key, canonical_prop_key, tier_label, role_tier_key, direction)`, and
-**22 of 35 carry a `tier_label` or a `role_tier_key`**. **13 carry neither** — one undifferentiated
-value for the whole factor: `altitude` 0.06 · `opp_forced_to_rate` 0.20 ·
+Cells are keyed on **six** dimensions — `(factor_key, canonical_prop_key, tier_label, role_tier_key,
+direction, **variation_band**)` — and **22 of 35 carry a `tier_label` or a `role_tier_key`**, while
+**the other 13 carry `variation_band = 'continuous'`** (`altitude` 0.06 · `opp_forced_to_rate` 0.20 ·
 `teammate_shooting_quality` 0.20 · `foul_drawing` 0.25 · `opp_rim_attempt_rate` 0.25 ·
 `opp_turnover_rate` 0.25 · `usage_share` 0.30, plus cells of `game_pace`, `potential_assist_rate`,
-`opp_miss_rate`. Largest factor: `blowout_risk`, **9 cells over 3 props and 4 tiers, caps 0.08–0.40**.
+`opp_miss_rate`). ⚠ *This paragraph originally read "13 carry neither — one **undifferentiated**
+value for the whole factor", which contradicted the corrected text eleven lines above. **Nothing in
+the table is undifferentiated** — see the two-population table and §T7.44a/§T7.50a. Fixed
+2026-09-21, T7 pass 32.* Largest factor: `blowout_risk`, **9 cells over 3 props and 4 tiers, caps 0.08–0.40**.
 🔴 **Nothing has been measured.** `[LIVE-AUDIT]` over the **full 35 rows** (T7 pass 20):
 **`last_validated_at` set on 0 · `last_empirical_validation_json` set on 0 · `automation_status` =
 `semi_automatic` on all 35 (one distinct value, so it distinguishes nothing) · and
