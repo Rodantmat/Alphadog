@@ -35,6 +35,15 @@ fallback… either a second source that's extremely reliable… or a derived opt
 factors, every single factor**."* **Two are exempt by construction and nothing says so.**
 📌 `compute_stage` itself appears in **none of the twelve**.
 
+🔑 **AND THE GAP HAS A TIMESTAMP — added 2026-09-21, §T10.8a.** All UTC: **`factor_relevance` was last
+written 2026-09-09 01:52:03**; the registry arrived in **two batches — 28 rows at 01:xx and 39 rows at
+21:xx** (max 21:40:33). **The split is exact: all 28 batch-1 factors have a relevance row; of the 39
+batch-2 factors exactly one does — `market_spread_delta` — and 38 do not.** *(28 + 1 = 29 mapped;
+29 + 38 = 67.)* ⚠ **So this is not a design choice — it is a maintenance boundary twenty hours wide.**
+📌 *It also reconciles the record's "seeded at 29": `market_spread_delta` is what a row **seeded at
+01:xx and later edited** looks like. Stated as the supported reading, not as proof — `updated_at`
+cannot distinguish "inserted later" from "updated later."*
+
 🔑 **OWNER DECISION** — **(a)** should `factor_relevance` be extended to the 38 unmapped factors, or is
 a missing row meant to read as "not relevant"? *Today the two are indistinguishable.* **(b)** do
 `lineups_confirmed` and `overtime_pace_live` need a derived fallback for history, or are they accepted
