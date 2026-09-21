@@ -12865,11 +12865,15 @@ taxonomy's own `build_tier` column precisely:**
 | **A** — core, all three apps | **13** | **6** | 7 |
 | **B** — derivable, app-specific | **15** | **0** | 2 |
 
-**The 22 unbanded props are every Tier B prop plus 7 Tier A ones**: all the period layers
-(`points_1q`, `points_1h`, `points_2h`, `points_4q`, `assists_1q`, `rebounds_1q`, `threes_made_1q`,
-`pra_1q`, `fantasy_score_1q`), the milestones (`double_double`, `triple_double`), the attempt props
-(`fga`, `fg3a`, `ftm`), the defensive/negative props (`blocks`, `steals`, `stocks`, `turnovers`,
-`personal_fouls`) and the composites (`pts_ast`, `pts_reb`, `reb_ast`).
+**The 22 unbanded props, by tier** *(membership corrected 2026-09-21 by §T8.30a — the prose first
+grouped them by kind and implied only the three composites were Tier A; it is seven)*:
+
+| Tier | Unbanded | Which |
+|---|---|---|
+| **A** | **7** | `blocks` · `steals` · `stocks` · `turnovers` — **the defensive and negative props** — and the composites `pts_ast` · `pts_reb` · `reb_ast` |
+| **B** | **15** | the nine period layers (`points_1q/1h/2h/4q`, `assists_1q`, `rebounds_1q`, `threes_made_1q`, `pra_1q`, `fantasy_score_1q`), the milestones `double_double` · `triple_double`, the attempt props `fga` · `fg3a` · `ftm`, and `personal_fouls` |
+
+**7 + 15 = 22, and 6 + 22 = 28** — the partition sums, per rule 11.
 
 ⚠ **Why this matters rather than being a to-do list**: the **variation dimension is one of the
 owner's five**, and §T8.14b calls the band-level residual *"the empirical vindication of the
