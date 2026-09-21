@@ -14563,6 +14563,23 @@ turn 73's remainder was already documented; turn 121/124's ratification is the o
 and it is minor.*** **Rule 19 stands — it is good practice — but the finding that produced it does
 not.**
 
+> 🔴 **CORRECTED 2026-09-21 by §T10.20c — the table above was measured on the WORKING TREE with
+> SOURCE-vocabulary probes, which breaks rule 18 and rule 20 at once, two passes after rule 18 was
+> written.** **Every verdict survives; the evidence did not.** Re-derived against `d29401bd`, with
+> the documents' vocabulary added:
+> - **turn 548's *"a fallback for every single factor"*** — the owner's wording is **0 of thirty at
+>   the baseline** (the 3 working-tree hits are all this sweep). **In the documents' vocabulary it is
+>   covered and always was**: *fallback per/each/every factor* **2**, *fallback + derived* **5**,
+>   *secondary/backup source* **6**, `MINING_AND_FALLBACKS` + `fallback_` **8** — **4 of the twelve**.
+> - **turn 484's *"thin the factors"*** — **1 of thirty at the baseline** (`NBA_ENRICHMENT_FACTOR_LOCK.md`),
+>   not 4; in the documents' vocabulary, *sub-factor* → **5 of thirty**.
+> - Smaller drifts, same cause: `factor lock` **8** not 9 · realignment **7** not 8 ·
+>   derivable-to-baseline **5** not 7 · keep-the-calibration **6** not 7 · injury-report PDF **7** not 8.
+>
+> ***The verdicts were right for the wrong reason: the source's words were absent before the sweep,
+> and the substance was present. That is precisely the pair rule 20 exists to separate — and pass 18
+> reported the one it should have discarded.***
+
 #### 🔴 STANDING RULE 20 — **DIFFERENTLY-WORDED PROBES ARE NOT INDEPENDENT IF ONE SOURCE WORDED THEM ALL**
 *Added 2026-09-21 after §T10.18a.*
 
