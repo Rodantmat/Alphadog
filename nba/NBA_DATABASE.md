@@ -507,9 +507,14 @@ value for the whole factor: `altitude` 0.06 · `opp_forced_to_rate` 0.20 ·
 `teammate_shooting_quality` 0.20 · `foul_drawing` 0.25 · `opp_rim_attempt_rate` 0.25 ·
 `opp_turnover_rate` 0.25 · `usage_share` 0.30, plus cells of `game_pace`, `potential_assist_rate`,
 `opp_miss_rate`. Largest factor: `blowout_risk`, **9 cells over 3 props and 4 tiers, caps 0.08–0.40**.
-`automation_status` is `semi_automatic`; **`last_validated_at` and `last_empirical_validation_json`
-are null on the rows sampled**, so no validation record backs the seeded values — matching this
-section's own *"these are the values the backtest will move."* Rows created **2026-09-09
+🔴 **Nothing has been measured.** `[LIVE-AUDIT]` over the **full 35 rows** (T7 pass 20):
+**`last_validated_at` set on 0 · `last_empirical_validation_json` set on 0 · `automation_status` =
+`semi_automatic` on all 35 (one distinct value, so it distinguishes nothing) · and
+`real_sample_size_observed` = **0 on every row**, against a `min_real_sample_threshold` of 75.** The
+design's own gate — *"cells under sample are fully shrunk to prior"* — is therefore **unmet by every
+cell**. **By its own bookkeeping the table is entirely seed values with no observed sample
+anywhere**, which confirms from the data what this section says in words: *"these are the values the
+backtest will move."* Rows created **2026-09-09
 01:53–02:03**. See `NBA_MASTER_SUMMARY.md` §T7.38b and the owner's anti-capping directive in
 `NBA_OPEN_ITEMS.md`.
 
