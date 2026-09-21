@@ -14430,6 +14430,45 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.37 — PASS 36 (**the scrape-vs-load class audited in full**) — **🔴🔴 the two-hop architecture's second hop was never built for a whole family — and the load gap is NOT systemic · 0/3**
+*2026-09-21. **Four instances had been named one at a time (§T3.8a · §T11.1b · §T11.31b · §T11.36a)
+and the EXTENT had never been measured.** This pass measured it, and the answer is a clean split.*
+
+#### 🔴🔴 T11.37a — **21 registered writers, and none covers the season-tables family**
+**The architecture is in SEVEN of the twelve**: *"each scraper writes JSON to `nba/data/`, committed
+by the workflow; **the corresponding Postgres-writer Worker reads that committed JSON** and upserts
+it"* — `NBA_WORKERS.md` §1: *"**Pattern: read the GitHub-committed JSON → upsert into Postgres.**"*
+🔴🔴 **`worker_definitions` holds 21 writers, all enabled, and NONE covers**
+`scrape_nba_season_tables.py` *(pt_defend · hustle · clutch — plain AND `_asof` weekly — preseason
+logs · coaches, 3 seasons each)*, `scrape_nba_matchups_pergame.py` *(3 seasons × 7 shards)*,
+`scrape_nba_periods.py` *(q1–q4, 12 files)*, or `scrape_nba_injury_report.py` *(§T11.36a)*.
+**Correspondingly no Postgres table exists for any of them.** **0 of thirty, positive-controlled.**
+
+⚠⚠ ***SO THE MATRIX'S MARKS DESCRIBE FILES.*** **`m3`, `m4` and `b4`'s pt_defend are ⏳ *"25 weekly
+as-of snapshots"*; `a8` preseason and `k1` coaches are ✓ across all three seasons. All true OF THE
+REPO — none of it is in Postgres, and nothing reading Postgres can see any of it.**
+
+#### ✅ T11.37b — **And the counterpart BOUNDS §T11.31b: the gap is not systemic**
+*Live, by `game_id` prefix.* **`player_game_log` · `_advanced` · `_scoring` · `_usage` all hold
+26,401 / 26,306 / 26,651 — four tables, identical per season, 79,358 total, matching the documented
+figure. `team_game_log_advanced` · `_four_factors` · `_scoring` hold 2,460 per season, = 1,230 × 2,
+three seasons.** 🔴 **Against `game_officials` 3,681 and `player_game_starter_status` 32,179 — one
+season each.** 🔑 ***Seven game-keyed tables complete, two not.*** **So the answer to *"is the repo
+systematically ahead of the database?"* is NO**: ***where a writer exists the load is complete except
+in two cases; where no writer exists there is no table at all.*** *That bounds §T11.31b and stops it
+being over-read — and it is a better outcome for the system than the alternative.*
+
+#### ✅ T11.37c — **A third would-be discovery stopped by rule 26**
+**"The enrichment layer is file-based rather than table-based" is the DOCUMENTED ARCHITECTURE** —
+7 of the twelve, plus COMPASS, PROJECT_LOG and both checkpoints. **It would have been published as a
+finding.** ***Rule 26 has now caught a duplicate in three of the last four passes*** *(33: §T3.8a in
+three of the twelve · 35: `nba_control` in five · 36: the two-hop pattern in seven)* — **which is why
+the narrow claim above survives and the broad one did not.**
+
+**Pass outcome: 🔴 a genuine gap, correctly narrowed. CLEAN 0/3 · 37 passes.**
+
+---
+
 ### T11.36 — PASS 35 (**literal audit of `nba_control`, `nba_daily`, `nba_calendar` — the three schemas never audited literally**) — **🔴🔴 the injury archive's destination table was never created · 0/3**
 *2026-09-21. Pass 7 did `nba_market`; pass 27 did `nba_ref`, `nba_config`, `nba_score`. **These three
 had been READ and never had their VALUES checked against the prose.***
