@@ -396,6 +396,27 @@ that neither fails — which means it cannot detect a materially short scrape of
 
 ---
 
+## 🔴 0.39 `ok: certified` — THE `ok` FIELD IS THE CERTIFICATION VERDICT, ACROSS 18 WORKERS
+*Recorded 2026-09-21, T2 pass 16. **`[LIVE-AUDIT]` VERIFIED** by grep of the worker sources.*
+
+```js
+return { ok: certified, status: certified ? "completed" : "completed_with_warning", ... }
+```
+**18 workers**: `static-teams` · `-players` · `-arenas` · `-officials` · `-player-bio` ·
+`-player-tracking` · `-team-stats` · `-onoff` · `-darko` · `-schedule` · `-playtypes` ·
+`-tracking-detail` · `-shotquality` · `-lineups` · `-game-officials` · `-starter-status` ·
+`-backfill` · `daily-delta`.
+
+**`ok` does not mean "the request succeeded"** — a run that fetched, parsed and wrote perfectly but
+missed its threshold returns `ok: false`, **and no field means "the call worked."** ⚠ Only **7 of the
+18** use `completed_with_warning`; the other 11 have no warning-status vocabulary.
+
+⚠⚠ **And for teams it is circular**: §0.31 records the certification as
+`active_nba_teams === 30 && aliases >= 100`; **the hardcoded fallback is a 30-team list, so serving
+the fallback satisfies the check by construction.** The fallback trigger (`teams.length !== 30`) and
+the certification (`=== 30`) share the same magic number and fail together. **Full entry:
+`NBA_OPEN_ITEMS.md` (🔴🔴).**
+
 ## 0.36 `raw_json` IS WRITTEN AS A STRING BY EVERY STATIC WRITER — the column is unqueryable
 *Recorded 2026-09-21, T2 re-read pass 11. **`[LIVE-AUDIT]` VERIFIED** across 1,306 rows / 6 tables.*
 
