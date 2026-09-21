@@ -379,7 +379,8 @@ Standard ≈ median, Demon ≈ 70th–80th, useful range ≈ 15th–85th.** The 
 
 > ⚠ **Two quantities, one name — disambiguated 2026-09-21 (§T9.39b).** **`p95 = 13 rungs` is the
 > MEASUREMENT** that motivated the table; **`LADDER_DEPTH["points"]` is `14`**, and **no entry in the
-> dict is 13** *(the twenty values are 2·2·3·3·3·4·5·5·5·6·6·6·7·10·10·14·14·15·16·16)*. **Four
+> dict is 13** *(the twenty values are 2·2·3·3·3·4·5·5·5·**5**·6·6·6·7·**10**·14·14·15·16·16 — **four
+> 5s and one 10**; corrected from a mis-transcribed "…5·5·5·6·6·6·7·10·10…" 2026-09-21, §T9.40a)*. **Four
 > documents call the measurement "the `LADDER_DEPTH` measurement", which reads as the table's value.**
 > 📌 **NOT RECORDED: whether 14 is p95 + 1 as a deliberate margin.** ⚠ **The distinction is
 > load-bearing, not pedantic** — §T9.33a's beyond-depth counts join on the **configured** value, so
