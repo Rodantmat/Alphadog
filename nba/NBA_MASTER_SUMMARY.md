@@ -6396,7 +6396,84 @@ vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship**
 writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
 but not the twelve.
 
-### T4.21 — PASS 1 (**owner-turn stratum, then the assistant-reasoning stratum**) — **NEW MATERIAL · 0/3**
+### T4.22 — PASS 2 (**reasoning stratum finished — consolidation; §T4.21 was written mid-stratum and is hereby completed, not superseded**) — **NEW MATERIAL · 0/3**
+*2026-09-21. **Rule 3 disclosure**: §T4.21 was written after the first chunk of the reasoning stratum
+rather than after the whole of it, which is a Rule 2 violation. It is marked PROVISIONAL at its head
+and completed here. The findings in it stand; this pass adds what the rest of the stratum held.*
+
+#### 🔴 T4.22a — **"ALL 582 PLAYERS SUCCEEDED" COUNTS ATTEMPTS MINUS ERRORS, NOT PLAYERS WITH DATA — and one player has none**
+
+T2's pass 18 recorded an unexplained gap: `nba_stats.player_career_season_totals` holds **3,644 rows
+across 581 distinct players**, while the dictionary has 582 and two documents call them *"all 582
+active players."* **Rule 6 forbade explaining it there.** T4 is the transcript that built the table,
+so the explanation is now in scope — and it is verifiable rather than inferred.
+
+**Step 1 — name the missing player.** `[LIVE-AUDIT]` **VERIFIED**:
+```
+nba_ref.players LEFT JOIN (SELECT DISTINCT player_id FROM nba_stats.player_career_season_totals)
+→ exactly one unmatched row:  nba_1628467  ·  Maxi Kleber  ·  active=1  ·  team nba_1610612747
+```
+
+**Step 2 — locate where he was lost.** The transcript reports *"all 582 players succeeded, zero
+errors, **3,644** total career-season rows."* The table holds **exactly 3,644 rows**. **The row
+counts match, so the Postgres write lost nothing** — the scrape itself produced 3,644 rows spanning
+581 players.
+
+**Step 3 — the mechanism, in live code.** `[LIVE-AUDIT]` **VERIFIED**,
+`nba/scrape_nba_career_totals.py` **line 115**:
+```python
+print(f"Career totals backfill OK: {len(all_rows)} season-rows across {len(players) - len(errors)} players")
+```
+**`len(players) - len(errors)` is attempted-minus-errored.** A player whose request returns HTTP 200
+with an empty rowset raises nothing, appends nothing to `errors`, and contributes nothing to
+`all_rows` — **and is still counted as a player who "succeeded."** So *"582 players succeeded"* is
+`582 − 0`, not a count of players with data. The true figure was 581 all along.
+
+⚠ **This is `NBA_WORKERS.md` §0.37 recurring in a fifth scraper**: an **aggregate** guard (all
+attempted, none errored) that cannot see a **per-item** empty result. The career-totals scraper has
+no per-player row-count check and no `min_expected` floor — unlike the historical-seasons scraper
+built later in this same transcript, which does (see T4.22b).
+
+⚠ **Why Kleber specifically returned nothing is NOT RECORDED** — the transcript never noticed the
+gap, so it never investigated. Recorded as state. **Two documents outside the twelve still say "all
+582 active players"; they are historical and are not rewritten** (see T2 §T2.18a).
+
+#### ✅ T4.22b — a FOURTH guard shape appears later in the same transcript: a per-dataset minimum
+
+The historical-seasons scraper built after the career-totals one guards differently:
+```python
+fetch_and_write(..., min_expected=15000)
+...
+if not records: error = "zero rows parsed"
+```
+**A per-dataset row floor plus an explicit empty-parse error.** Added to the taxonomy in §0.37:
+
+| Guard shape | Catches | Misses |
+|---|---|---|
+| count floor (`< 25` teams, `< 400` players) | a short response | a full response of empty values |
+| completeness (`arenas < teams`) | a partial set | wrong values |
+| null-value (`AVG_SPEED` all null) | a 200-with-empty-values | a partial null |
+| **per-dataset minimum + zero-rows-parsed** *(new)* | a dataset that came back short or unparseable | **a per-ITEM gap inside a healthy total — exactly T4.22a** |
+
+**None of the four catches T4.22a**, because all four operate on the aggregate. **The missing guard
+shape is per-item: "did every input produce at least one output row?"** That check would have caught
+Kleber at build time for the cost of one comparison.
+
+#### ⚠ T4.22c — the tool-name failure recurs a fourth time, same family
+`memory_write` joins `memory_append`, `github_str_replace` and `github_patch_str_replace`:
+> *"Tool 'Alphadog Bridge:memory_write' not found. Did you mean: `memory_write`?"*
+**Four instances, two tool families, one cause** — the server label prefixed onto the tool name.
+Confirms §T4.21c: a naming-convention error, not a GitHub-tool quirk.
+
+#### Confirmed against the documents, no discrepancy
+The 2025-26 backfill volumes (**26,651** player-game rows · **2,460** team-game rows), the 3-season
+scope (2023-24 / 2024-25 / 2025-26) and its stated reason, the five-step baseline pipeline and its
+final formula, the architecture correction, the ~1,230-call cost analysis, the operating cadence, and
+the explicitly-named daily-delta-ingestion gap are **all already recorded** ✅.
+
+---
+
+### T4.21 — PASS 1 (**owner-turn stratum, then the first chunk of the reasoning stratum**) — **⚠ PROVISIONAL (written mid-stratum; completed by §T4.22)** · NEW MATERIAL · 0/3
 *2026-09-21.*
 
 **The owner stratum is clean — all 5 owner turns already documented.** The cadence spec (§T4.12a),
