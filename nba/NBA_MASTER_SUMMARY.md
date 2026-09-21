@@ -14430,6 +14430,65 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.14 — PASS 13 (**live numeric re-verification**) — **🔑 the six unmapped games have a PROVEN mechanism: home and away are swapped · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. First of the closing three — and the attack the next-step row demanded,
+on the newest and least-checked figure, turned a NOT RECORDED into a demonstration.*
+
+#### 🔑🔑 T11.14a — **`2,468 − 2,460` resolves completely, and the six unmapped games are an ORIENTATION MISMATCH**
+
+**The question**: `game_lines_snapshots` holds **2,468 distinct events** against a **2,460-game**
+schedule — *eight more events than games* — while **six schedule games map to nothing.**
+
+**Answered by query, not inference**: of the **14** events that map to no game,
+
+| | count |
+|---|---|
+| match a schedule game **with `home` and `away` REVERSED** | **6** |
+| match a schedule game exactly | **0** |
+| **have no schedule row at all**, either orientation | **8** |
+
+🔑 ***The six unmapped schedule games and six of the fourteen unmapped events are the same six
+games.*** **The join fails because the two sources disagree about which team is home:**
+
+| `schedule_norm` *(away@home)* | `game_lines_snapshots` *(away @ home)* |
+|---|---|
+| 2024-12-14 **MIL@ATL** | 2024-12-14 **ATL @ MIL** |
+| 2024-12-14 **OKC@HOU** | 2024-12-14 **HOU @ OKC** |
+| 2025-11-01 **DET@DAL** | 2025-11-01 **DAL @ DET** |
+| 2025-12-13 **OKC@SAS** | 2025-12-13 **SAS @ OKC** |
+| 2026-01-15 **ORL@MEM** | 2026-01-15 **MEM @ ORL** |
+| 2026-01-18 **MEM@ORL** | 2026-01-18 **ORL @ MEM** |
+
+✅ **And both partitions now close exactly:**
+**`game_lines_snapshots` 2,468 = 2,454 mapped + 6 reversed + 8 with no schedule row** ·
+**`schedule_norm` 2,460 = 2,454 mapped + 6 reversed.**
+
+***§T11.12b recorded the six with "cause NOT RECORDED." The cause is now demonstrated in the data —
+not supplied by a transcript, so it is recorded as a MECHANISM rather than an explanation*** (rule 6):
+**the rows are present on both sides and the orientation disagrees.** ⚠ **WHY the sources disagree is
+still NOT RECORDED.** *Two of the six share the date 2024-12-14 and two more are a home-and-home pair
+two days apart — patterns worth noting and not worth guessing from.*
+
+📌 **The eight events with no schedule row at all** *(2024-12-17 MIL@OKC · 2025-01-09 CHA@LAL ·
+2025-01-22 MIL@NOP · 2025-12-16 SAS@NYK · 2026-01-08 MIA@CHI · 2026-01-24 GSW@MIN · 2026-01-25
+DAL@MIL · 2026-01-25 DEN@MEM)* carry **48–128 line rows each** — *real market data for games the
+schedule does not contain.* **NOT RECORDED what they are.**
+
+#### ✅ T11.14b — **Everything else re-derives exactly**
+
+The three contamination routes to **7,762** · `board_outcomes` **6,905,452** with `bookmaker` and
+`snapshot_label` at **0** · `schedule_norm` **2,460** · `event_game_map` **2,454** ·
+`game_lines_closing` **2,410** · `player_game_starter_status` **1,230 games / 12,300 starters /
+10.000 per game** · `teams` **30** / `arenas` **30** with **0 orphans both ways** ·
+`factor_relevance` **460 rows / 0 orphans / 38 unmapped** · the registry's five partitions on **67** ·
+the injury census **1,338,020** · the per-app filtered DFS counts. ✅ **All exact.**
+
+**Pass outcome: 1 NOT RECORDED converted into a proven mechanism, two partitions closed exactly, every
+other figure re-derived. 🔴 CLEAN 0/3 · 14 passes.** *(Not clean: §T11.12b's finding is materially
+revised — the six games are not missing, they are mis-oriented.)*
+
+---
+
 ### T11.13 — PASS 12 (**coverage-claim audit — where does the denominator come from?**) — **🔴 §T10.11's "strongest structural confirmation" is five slices of one table · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. The angle §T11.12b forced: a *"100% coverage"* was 99.76% because the
 denominator came from the numerator's own table. **That is a shape, and this pass looks for its
