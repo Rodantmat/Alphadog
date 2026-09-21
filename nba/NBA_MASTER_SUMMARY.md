@@ -14517,7 +14517,11 @@ checked against all 51: **why the officials/starters loads were never run · why
 `paper_picks`' purpose · whether 2:40 PM PT / tip−35 is granularity or a setting · why the two sources
 disagree on home/away at neutral sites.** ***Seven of the eight return ZERO hits; the eighth is
 segment 508 — "confirming full regular-season odds coverage, now building the postgres backfill" — a
-label, not a why.*** ✅ ***So for T11, "NOT RECORDED (rule 6)" is the correct and PERMANENT verdict on
+label, not a why.*** ⚠ **NARROWED by §T11.44c, one pass later, and it is the right form**: *that
+sentence is VOCABULARY-DEPENDENT.* **Re-probed wider, SIX of the eight SUBJECTS appear in the
+labels — injury 6, season-tables 6, window/tip 4, officials/load 1** *(plus one false `picks` hit,
+opened)* — ***every one a label, and not one carrying an answer.*** **So: the subjects appear in up to
+six of the 51; the ANSWERS appear in none.** *The conclusion is unchanged and better supported.* ✅ ***So for T11, "NOT RECORDED (rule 6)" is the correct and PERMANENT verdict on
 those questions, not a gap a later pass of this transcript might fill.*** **The transcript records
 what was done (`tool_use` 227, `tool_result` 355) and what was said (79 text segments); the
 deliberation is reduced to labels.**
