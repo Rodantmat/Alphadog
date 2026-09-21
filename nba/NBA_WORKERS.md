@@ -231,6 +231,67 @@ NBA writer built between now and then. *Not fixed — recorded per the sweep's r
 
 ---
 
+## 0.29 ⚠ THE DEPLOY TRIGGER HAS NO PATH FILTER — `[skip ci]` is a convention, not a guard
+*Recorded 2026-09-21 (T2 pass 1). **VERIFIED** by direct read of
+`.github/workflows/alphadog-v2-github-auto-deploy.yml` on live `main`.*
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+```
+
+**There is no `paths:` filter.** Every push to `main` — a worker edit, a scraper's data commit, a
+one-line documentation fix — matches this trigger. T2 noticed the symptom and reasoned it out
+correctly at the time: *"the auto-deploy workflow likely fired because it triggers on any push to
+main, not just worker file changes — so the scraper's data commit landing on main pushed it to run,
+even though it'll find no worker targets changed in scope."*
+
+**What actually stops the storm is `[skip ci]` in the commit message**, and that is a convention
+typed by whoever writes the commit, not a rule the workflow enforces. The repo's own bot commits all
+carry it — `"Auto: Scoring DB provisioning attempt … [skip ci]"`, `"Auto: record last successful
+deploy marker [skip ci]"`, `"Update NBA teams JSON [skip ci]"` — which is what keeps the pipeline
+from recursing into itself. **One forgotten `[skip ci]` is one full deploy run.** This is the
+mechanical reason behind the standing instruction that every documentation sync carries it.
+
+**Blast radius when it does fire** is set by §0.26: scope comes from `deployed_sha.txt`, so a stray
+push deploys everything changed since the last *successful* deploy, not just that commit.
+
+### A step-condition asymmetry worth knowing
+| Step | Condition | Consequence |
+|---|---|---|
+| `Commit Scoring DB binding/debug log` | **`if: always()`** | the dead D1 artifact from §0.27 is committed **even when the deploy failed** |
+| `Record last successful deploy marker` | **`if: success()`** | the scope anchor advances only on real success — correct |
+| `Remove generated secret file` | **`if: always()`** | `.alphadog_worker_secrets.json` is always cleaned up — correct |
+
+**So a failing deploy still writes one junk commit to `main`.** *This sharpens §0.27, which recorded
+the dead step but assumed it ran only on the success path.*
+
+---
+
+## 0.30 THE SERVICE-BINDING DEPLOY ORDER — a real bug, and the permanent fix
+*Recorded 2026-09-21 (T2 pass 1), from T2's own diagnosis and fix.*
+
+**Cloudflare requires the target worker to exist before another worker can bind to it.** T2 hit this
+when `alphadog-v2-admin-sql` deployed with a fresh service binding to `alphadog-v2-nba-static-players`
+— a worker that had not been created yet. The deploy failed on a bootstrapping order problem, not a
+code error.
+
+**The fix was structural, not a retry**: `alphadog-v2-admin-sql` moves to the **end** of the deploy
+target list, because it is the worker with **outgoing** service-binding dependencies on everything
+else. Dependencies deploy first; the binder deploys last. T2 recorded it as *"a real, permanent fix
+for every future NBA worker."*
+
+**Why it matters for every new NBA worker**: §0.2's four wiring steps add a binding to admin-sql in
+the same commit that adds the new worker's `.js`. Without the ordering fix, that commit is
+self-blocking — admin-sql tries to bind a worker the same run has not deployed yet. *The targets
+order otherwise follows git's diff output, which is alphabetical-ish, and `alphadog-v2-admin-sql`
+sorts near the front.*
+
+---
+
 ## 0.3 ⚠ EVERY WORKER'S OPERATING CONSTANTS ARE HARDCODED — the founding rule is not holding
 *VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
 
