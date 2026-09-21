@@ -20,6 +20,58 @@
 > patched away. **57 of 78 `2026-10-03` mentions across the twelve carry no correction near them;
 > 36 are assertive prose rather than quotation.**
 
+> ## 🔴🔴 READ SECOND — **"ALL 190 `.py`/`.js` FILES IN `nba/`" IS A POPULATION THAT CANNOT BE REPRODUCED**
+> *Standing correction, added 2026-09-21 (§T11.57d, T11 pass 56). It applies wherever the figure
+> appears and is not repeated at each site.*
+>
+> **The phrase *"a grep of all 190 `.py`/`.js` files in `nba/` (plus the MCP admin bridge)"* is the
+> single most widely reused population figure in this corpus: it appears in TEN of the twelve** —
+> `NBA_BASELINE_CALIBRATION.md` · `NBA_DATABASE.md` · `NBA_FINAL_SCORING_CALIBRATION.md` ·
+> `NBA_GLOSSARY.md` · `NBA_GOBLIN_DEMON.md` · `NBA_MASTER_SUMMARY.md` · `NBA_OPEN_ITEMS.md` ·
+> `NBA_RECIPE.md` · `NBA_SYSTEM_ARCHITECTURE.md` · `NBA_WORKERS.md` — **and at least eight VERIFIED
+> findings rest on it**: the unread config tables · `teams.arena_id` written by no code ·
+> `credential_value_encrypted` having no encrypt/decrypt step · `classification_config` ·
+> `system_settings` · `ladder_calibration` · the `NOT IN` bug class absent · the 24
+> `DELETE`/`TRUNCATE` statements.
+>
+> 🔴 **`nba/` holds 157 such files** *(`[LIVE-AUDIT]` 2026-09-21: **136 `.py` + 21 `.js`**, recursive,
+> and `nba/data/` contains no code, so including or excluding it changes nothing)*. **Not 190.**
+> 🔴 **And the scope the documents state — *"including `backtest/` and `workflows/`"* — names a
+> directory that does not exist under `nba/`**: its subdirectories are `sql`, `backtest`,
+> `transcripts`, `baseline`, `data`, `tools`, `__pycache__`. **The workflows live in
+> `.github/workflows/` — 40 `.yml` today — OUTSIDE `nba/`.**
+>
+> ⚠ **What this does NOT say.** **157 + 33 = 190**, so the figure is arithmetically consistent with
+> *`nba/` code plus the workflow files at a time when there were 33 of them* — **but that is a
+> reconstruction, not a verification. HOW the 190 was counted is NOT RECORDED** (rule 6), and no
+> document states it.
+>
+> ✅ **The findings themselves survive, and one was re-tested rather than assumed.** **Pass 56
+> re-ran the largest of them — the unread config tables — by the ARTIFACT (rule 29), on the
+> SCHEMA-QUALIFIED name, across every non-markdown file in the WHOLE repository (314 `.py`/`.js`:
+> `nba/` 157 + repo root 151 + 6 elsewhere), control `nba_market.board_snapshots` firing in 21.**
+> ***Result: of the ELEVEN in-scope `nba_config` tables — 14 base tables less the 3 `pp_*` the
+> concurrent session owns — TEN have ZERO references, and only `nba_config.external_credentials`
+> has any (3: `alphadog-v2-admin-sql.js`, `nba/backfill_board_snapshots.py`,
+> `nba/backfill_game_line_snapshots.py`).*** **Which is exactly what `NBA_GLOSSARY.md` already
+> says** — *so the verdict is confirmed over a population nearly twice the size of the one it
+> claimed, and only the population figure is wrong.*
+>
+> 📌 **Two membership notes, both inside the twelve.** **`NBA_GLOSSARY.md` NAMES seven unread config
+> tables; the paragraph below asserts EIGHT; the measured set is TEN** *(the seven, plus
+> `variation_bands`, `worker_definitions` and `calibration_log`)*. **The prose of both is right and
+> neither enumeration is** — §0z's class exactly: *the class is stated, the membership is not.*
+> ⚠ **And the name test is not the artifact test**: **`system_settings` matches ELEVEN non-markdown
+> files by BARE name and ZERO when schema-qualified — all eleven are MLB-side**, the
+> same-name-different-sport trap of §T11.55c, second instance. **This is why rule 29 says
+> schema-qualified.**
+>
+> ⚠⚠ **STATED AT ITS REAL STRENGTH**: all of the above measures the **REPOSITORY**, not what runs.
+> A deployed worker whose source is not in this repo, or a query using an unqualified name under a
+> `search_path`, would not appear. ***"Read by no code" is stronger than this evidence supports;
+> "no schema-qualified reference in the repository on 2026-09-21" is what was measured.*** **A
+> dated STATE, not a verdict** *(O9)*.
+
 ## 🔴 THE FACTOR-RELEVANCE GATE KNOWS 4 OF 36 ENRICHMENT FACTORS — AND TWO FACTORS CANNOT BE BACKFILLED AT ALL
 *Recorded 2026-09-21 (T10 pass 6, §T10.6a / §T10.6c). `[LIVE-AUDIT]`.*
 
