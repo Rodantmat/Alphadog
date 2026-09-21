@@ -14419,6 +14419,62 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.8 — PASS 8 (**dated-verdict audit**) — **🔑 the relevance gap has a TIMESTAMP, and it is 20 hours wide · 0/3**
+*2026-09-21. Every T10 verdict classified as **expiring on a date** or **not**, and every conditional
+re-tested live. Two clocks are running: the season rollover opens **2026-10-01 (10 days)** and the
+opener is **2026-10-20 (29 days)**.*
+
+#### 🔑 T10.8a — **`factor_relevance` stopped being maintained 20 hours before the registry was extended**
+
+`updated_at`, all UTC:
+
+| Object | Last written |
+|---|---|
+| **`nba_config.factor_relevance`** | **2026-09-09 01:52:03** |
+| `nba_config.factor_registry` — **batch 1, 28 rows** | 2026-09-09 **01:xx** |
+| `nba_config.factor_registry` — **batch 2, 39 rows** | 2026-09-09 **21:xx** *(max 21:40:33)* |
+| `nba_score.factor_gate_results` | 2026-09-17 03:41:39 *(state only — T15/T16 material)* |
+
+**And the split is exact:**
+
+| | Has a relevance row | No relevance row |
+|---|---|---|
+| **Batch 1 (28)** | **28 — all of them** | 0 |
+| **Batch 2 (39)** | **1 — `market_spread_delta`** | **38** |
+
+✅ **28 + 1 = 29 mapped · 38 unmapped · 29 + 38 = 67.**
+
+🔑 **So §T10.6a's gap is not a design choice, it is a maintenance boundary with a timestamp**: the
+matrix was written alongside the first batch and **never touched again**, while **39 more factors
+arrived twenty hours later**. 📌 **And it reconciles the record's "seeded at 29"**: the single batch-2
+row that has a relevance entry is **`market_spread_delta`**, exactly what a row **seeded at 01:xx and
+later edited** looks like — *so 29 were seeded, one was subsequently updated, and 28 still carry the
+early timestamp.* ⚠ **Stated as the supported reading, not as proof: `updated_at` cannot distinguish
+"inserted later" from "updated later."**
+
+#### ✅ T10.8b — **Which T10 verdicts expire, and which do not**
+
+| Verdict | Expires? |
+|---|---|
+| *"Platt stays OFF until ~December by construction"* | ⏳ **Yes — ~December 2026.** A date, and it is in the config, not in any document |
+| The season-opening bias — *October over-projects ~5pp at the anchor* | ⏳ **Becomes TESTABLE 2026-10-20**, and the config notes the 2026-27 fit uses **two** prior seasons rather than one, *"stronger"* — **so the magnitude may change; the sign is the part measured twice** |
+| The config row's *"State as of 2026-09-09 v20"* | ✅ **already expired** — §T10.1b |
+| The two shard defects | ⏳ **Yes — a re-scrape clears both** |
+| **`factor_relevance` 29 of 67** | ❌ **No — it persists until someone extends the table.** *Not a dated verdict; a standing state* |
+| **`lineups_confirmed` / `overtime_pace_live` excluded from history** | ❌ **No — the exemption is STRUCTURAL, not dated.** *These two cannot be backfilled at any future date, which is what makes them different from everything else in the fallback directive* |
+| `nba_ref.referee_assignments` **0 rows** | ⏳ **correct until 2026-10-20** — re-verified **0** today; still the unfalsifiable case §T8.34a named, tagged **(T15)** |
+
+🔴 **And the two clocks compose.** *From **2026-10-01** the scraper layer moves to `2026-27` while the
+analysis layer stays pinned to `2025-26` (**O4 / O4b**); from **2026-10-20** the carryover
+over-projects ~5pp at the anchor (**§T10.1a**).* **Two independent problems arrive in the same
+nineteen-day window, and each is recorded in a different place.** *Both halves were already on file;
+the composition is what this pass records.*
+
+**Pass outcome: 1 mechanism dated to the hour, the verdict set classified into expiring and standing,
+1 composition recorded. 🔑 CLEAN 0/3 · 8 passes.**
+
+---
+
 ### T10.7 — PASS 7 (**live numeric re-verification**) — **✅ CLEAN 1/3 · every figure exact, every partition sums**
 *2026-09-21. Every figure passes 1–6 state, re-derived from its own authority; partitions summed,
 predicates stated, timestamps in UTC, corpus metrics carrying the pass that took them. **No document
