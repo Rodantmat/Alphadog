@@ -396,6 +396,56 @@ that neither fails — which means it cannot detect a materially short scrape of
 
 ---
 
+## 0.36 `raw_json` IS WRITTEN AS A STRING BY EVERY STATIC WRITER — the column is unqueryable
+*Recorded 2026-09-21, T2 re-read pass 11. **`[LIVE-AUDIT]` VERIFIED** across 1,306 rows / 6 tables.*
+
+Every writer binds `${JSON.stringify(x).slice(0, N)}` into a JSONB column, producing a **double-encoded
+JSON scalar string** rather than an object. `jsonb_typeof(raw_json)` = `string` everywhere. Slice
+widths differ with no stated policy: `players` 5000 · `player_season_profile` 2000 · `arenas` 2000 ·
+`player_tracking_profile` 2000 · `officials` **1000** — and a payload exceeding its width truncates
+**mid-JSON**, leaving a string unparseable even after the encoding is corrected.
+
+**This is a second, independent defect from §0.35's hand-picking problem.** §0.35 is about *what the
+writer chose to keep*; this is about *how what it kept was stored*. `nba_ref.arenas` has both: `owner`
+and `year_founded` are hand-picked away at the INSERT **and** the `raw_json` that would have preserved
+them is a string holding only four keys. **Full entry and remedy: `NBA_OPEN_ITEMS.md` (🔴🔴).**
+
+## 0.37 A FIFTH HAND-MAINTAINED EDIT SITE PER NEW STATIC ENTITY — with the widest blast radius
+*Recorded 2026-09-21, T2 re-read pass 10.*
+
+Four sites wire a new **worker** (`admin-sql`'s `z.enum`, its `bindingMap`, its `else if` chain, and
+`generate_wrangler_configs.py`). A fifth wires the new **scraper**: the explicit file list in
+`nba-scrape.yml`'s commit step, which grew by two paths per scraper across four successive patches.
+
+⚠ **Its failure mode is not "the new entity is missing" but "the commit dies for everyone."** A
+`git add` naming a file the scrape step never produced **hard-fails the commit step**, taking down the
+commit for every scraper that *did* succeed — the same blast radius as the git-push race, different
+cause. **Superseded** (T2, 2026-09-01) by an existence-checking `for f in nba/data/…; do` loop, which
+also removed the per-scraper maintenance. *Recorded at §T2.4 as a bug fix; the maintenance-site
+framing is new.*
+
+## ⚠ 0.38 ALL TWELVE MANDATED DOCUMENTS END WITH A STRAY TOOL-PAYLOAD FRAGMENT
+*Found 2026-09-21 during the T2 re-read. **Not fixed**, per the owner's standing instruction that
+issues are documented now and fixed after the sweep.*
+
+Every one of the twelve ends with two lines that are **not content** — the closing tags of the
+`github_put_file` call that wrote the file, captured into the file body:
+```
+</content>
+<parameter name="message">docs: …
+```
+**VERIFIED** by grep against `origin/main`: the fragment sits on the **second-to-last line of all
+twelve** — `NBA_MASTER_SUMMARY.md`, `NBA_OPEN_ITEMS.md`, `NBA_WORKERS.md`, `NBA_DATABASE.md`,
+`NBA_SYSTEM_ARCHITECTURE.md`, `NBA_FINAL_SCORING_CALIBRATION.md`, `NBA_BASELINE_CALIBRATION.md`,
+`NBA_SYSTEM_DESIGN.md`, `NBA_MULTIPLIERS.md`, `NBA_GOBLIN_DEMON.md`, `NBA_GLOSSARY.md`,
+`NBA_RECIPE.md`.
+
+**Harmless to a human reader, not harmless to a parser** — and it means **every document's last real
+line is the line before it**, which matters when appending. **Cause: NOT RECORDED.** Consistency
+across all twelve points at a single write helper rather than twelve independent slips, but no
+transcript swept so far shows the write that introduced it. **Left OPEN.** New content is inserted
+**above** the fragment so the defect is not compounded.
+
 ## ⚠ 0.35 THE DESIGN RULE THE SCRAPERS DISAGREE ON — keep every column, or hand-pick and lose signal
 *Recorded 2026-09-21 (T3). **This is one finding, not three** — the pattern is the point.*
 
