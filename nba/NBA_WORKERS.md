@@ -348,6 +348,36 @@ clearest waste**: that scraper already reports `per_type` counts and a `failed_t
 knows exactly which of its measure types came back empty — and the certification flag ignores all of
 it in favour of one total.*
 
+### ⚠ TWO DO IT PROPERLY, AND ONE CHECKS DATA QUALITY *(added 2026-09-21, T2 depth re-read)*
+***VERIFIED** on live `main`, `nba/alphadog-v2-nba-static-players.js` line 253:*
+
+```js
+const certified = finalCounts.active_nba_players >= 400
+               && finalCounts.active_players_missing_team_id < finalCounts.active_nba_players * 0.05;
+```
+
+**A row floor AND a <5% missing-team-id ratio.** This is the only certification in the NBA fleet that
+asks whether the data is *usable*, not just whether there is enough of it. **A scrape returning 582
+players with half their team IDs null passes every other worker's check and fails this one.**
+
+*That materially softens this section's framing: the thresholds are not uniformly bare margins. Two
+of the eight are anchored to real invariants (teams, arenas at `=== 30`), and two are compound —
+this one on quality, the play-types writer on errors-plus-per-level floors. **The bare-margin
+criticism applies to the remaining four**, and the counter-examples are all already in the codebase.*
+
+### ⚠ AND ONE WORKER DELIBERATELY HAS NO FALLBACK, for a stated reason
+The teams worker carries a certified 30-team static fallback. **The players worker deliberately
+does not**, and says why:
+
+> *"no hardcoded fallback for players (unlike the 30-team list) — a 450+ player roster changes too
+> often and is too large to safely hand-maintain as a certified fallback. **If the real source
+> fails, this worker fails honestly rather than silently writing stale/wrong data.**"*
+
+**The principle is worth stating generally: a fallback is only safe where the data is small,
+stable, and verifiable by hand.** 30 teams qualify; 582 players do not. *A hand-maintained player
+fallback would decay silently between edits and be indistinguishable from a good scrape — which is
+the failure mode the whole certification layer exists to catch.*
+
 ### ⚠ ONE WORKER DOES IT PROPERLY — the play-types writer *(added T3 pass 8)*
 ```js
 const certified = errors.length === 0 && playerWritten >= 1000 && teamWritten >= 200;
