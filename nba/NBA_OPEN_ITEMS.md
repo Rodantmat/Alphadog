@@ -1,5 +1,25 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+> ## 🔴🔴 READ FIRST — **EVERY DEADLINE IN THIS DOCUMENT KEYED TO `2026-10-03` IS 17 DAYS EARLY**
+> *Standing correction, added 2026-09-21 (§T10.18b). It applies to the whole document and is not
+> repeated at each site.*
+>
+> **The regular season opens 2026-10-20.** `[LIVE-AUDIT]`, verified in `nba_calendar.games`: prefix
+> **001 (preseason) 66 games, 2026-10-03 → 2026-10-16**; prefix **002 (regular) 1,200 games,
+> 2026-10-20 → 2027-04-11.** **`2026-10-03` is opening night of the PRESEASON.**
+>
+> 🔴 **This document still asserts `2026-10-03` in its own prose in FIFTEEN places** — including
+> *"the season opens 2026-10-03, twelve days from this"* and the **SEASON-START CRITICAL** section
+> heading (since corrected). **Read every one of them as 2026-10-20**, and **do not read an item's
+> urgency from its stated date.** *Where a date is inside a verbatim quote from a transcript or a
+> file header, it is left as written — the quote is accurate; the belief it records was wrong.*
+>
+> ⚠ **Why it was not rewritten line by line**: the correction was published in this sweep's headline
+> findings and **not propagated into the prose of the documents that carry the deadlines** — the
+> sweep's own propagation defect, found at pass 18 and recorded in §T10.18b rather than silently
+> patched away. **57 of 78 `2026-10-03` mentions across the twelve carry no correction near them;
+> 36 are assertive prose rather than quotation.**
+
 ## 🔴 THE FACTOR-RELEVANCE GATE KNOWS 4 OF 36 ENRICHMENT FACTORS — AND TWO FACTORS CANNOT BE BACKFILLED AT ALL
 *Recorded 2026-09-21 (T10 pass 6, §T10.6a / §T10.6c). `[LIVE-AUDIT]`.*
 
