@@ -14419,6 +14419,115 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.16 — PASS 16 (**fourth two-direction judgment**) — **🔴🔴 the COVERAGE INSTRUMENT is itself self-authored · 0/3**
+*2026-09-21. Judged under rules 16 and 17 — every count over a corpus must state its population **and**
+its tree. **The band was re-measured, not carried forward — and then measured a second time against
+the baseline, which is what found this.** No document outside this entry and one correction to
+§T10.14b changed.*
+
+#### 🔴🔴 T10.16a — **Every band and coverage figure this sweep has published for T10 is a working-tree measurement, and the pre-sweep truth is different**
+
+Direction 1 and direction 2 scored twice over, same segments, same vectoriser, **two trees**:
+
+| | high band (≥0.45) | tail (<0.40 vs twelve, ≥0.60 vs thirty) | uncovered vs **the twelve** | uncovered vs **all `nba/`** |
+|---|---|---|---|---|
+| **Working tree** — *what passes 6, 11, 14 published* | **32** | **101** | **823** | **688** |
+| **Baseline `d29401bd`** — *the documents as they stood before this sweep* | **28** | **106** | **831** | **689** |
+
+**High band overlap: 28 in both · 4 working-only · 0 baseline-only.** ***Strictly monotone — the band
+has only ever gained, and every segment it gained entered because this sweep wrote the text it
+matches.***
+
+🔑 **The baseline reproduces pass 0's figure exactly.** The run log records coverage as
+*"831 (pass 0) → 825 (pass 3) → 823 (pass 6)"*; scored against `d29401bd` it is **831**. **So the
+entire 8-segment "improvement" is the sweep's own prose, and not one segment of T10 is covered by a
+document that existed before the sweep began.**
+
+⚠ **What this does NOT overturn**: the *direction* of every finding built on the band. Pass 6 already
+attributed its two entrants segment-by-segment to text §T10.3a had quoted, and pass 12 re-confirmed
+the tail by score. **What changes is which number answers which question** — *"how much of T10 did the
+documentation carry?"* is **831 / 689**, and **823 / 688** answers *"…carry after sixteen passes of
+this sweep wrote about it."*
+
+#### 🔴 T10.16b — **§T10.14b publishes the band and coverage with neither population nor tree — one paragraph after §T10.14a's finding**
+
+§T10.14b closes *"band **32 / 101** and coverage **823 / 688**"* — **no population, no tree**, in the
+entry whose other half is *"the authority for 'was this documented' is the baseline tree, always."*
+
+***Rule 6 in its sharpest form yet: the sibling was not one table away, it was one paragraph away, in
+the same pass, under the same heading.*** **Corrected in place, with both trees and both populations
+named.** *Rule 17, written one pass ago, catches its first live instance — and the instance predates
+the rule by a single pass, which is this run's signature failure (§T10.15b).*
+
+#### 🔑 T10.16c — **Self-authorship is NOT uniform across metrics, and the threshold is why**
+
+**Fifth observation of the effect, and the first measured end to end on both sides.** Setting
+§T10.14a beside §T10.16a:
+
+| Metric | Moved by the sweep's writes? | What triggers it |
+|---|---|---|
+| **Document counts** (`in N documents`) | **Yes, heavily** — `compute_stage` **0 / 2 → 2 / 5**, `matchupMinutesSort` **0 / 0 → 2 / 3** | ***any mention of the term*** |
+| **Coverage / band** | **Yes, but barely** — 831 → 823 in sixteen passes, **8 segments** | ***only a verbatim quotation of transcript text*** |
+
+**The mechanism is the threshold.** A grep count rises on a single occurrence of a string; a coverage
+score needs a 60-character-plus paragraph to reach cosine **0.45** against a transcript segment, which
+in practice happens only when the sweep **quotes the segment**. *Pass 6's test is the operative one:
+was the text quoted to carry its **meaning**, or to exhibit a **mechanism**?*
+
+📌 **Quantified**: the twelve grew **+94,490 bytes (+3.8%)** between `d29401bd` and today —
+`MASTER_SUMMARY` **+81,309** (86% of it) · `OPEN_ITEMS` **+8,722** · `FINAL_SCORING_CALIBRATION`
+**+1,437** · `BASELINE_CALIBRATION` **+1,126** · `DATABASE` **+1,015** · `GLOSSARY` **+881** — **and
+T10's uncovered count moved 8.** ***The later passes write about the transcript rather than of it.***
+**That is the standing rule *"on a re-read, the ratio is not the closure signal"* with a number
+attached, and it is the reason the ratio stopped being informative around pass 6.**
+
+#### ✅ T10.16d — **§T10.13a's nine baseline figures re-derived — all exact**
+
+Re-run against `/tmp/t10base` (`d29401bd`, 32 files) under **both** populations:
+
+`altitude_venue` **6 / 14** ✅ · `national_tv_marquee` **0 / 5** ✅ · `market_spread_delta`
+**10 / 19** ✅ · `market_total_delta` **0 / 3** ✅ · `late_scratch` **1 / 5** ✅ ·
+`referee_assignment` **2 / 9** ✅ · `lineup_change` **4 / 7** ✅ · `compute_stage` **0 / 2** ✅ ·
+`matchupMinutesSort` **0 / 0** ✅ — **nine of nine**, and the derived claims with them: **four objects
+at 0 in the twelve**, **`market_spread_delta` at 19 of thirty** the widest. *§T10.14a's correction was
+right and is now independently confirmed.*
+
+#### 📌 T10.16e — **The live figures re-verified, and a schema trap the twelve leave open**
+
+`factor_registry` **67 = 31 baseline + 36 enrichment**, **34 active** ✅ · `factor_relevance`
+**460 rows / 29 distinct `factor_key`** ✅ · `factor_gate_results` **104** ✅.
+
+⚠ **But `factor_gate_results` is in `nba_score`, not `nba_config`** — and **15 of its 24 mentions in
+the twelve are unqualified**, across six documents (`DATABASE`, `FINAL_SCORING_CALIBRATION`,
+`GLOSSARY`, `MASTER_SUMMARY`, `OPEN_ITEMS`, `WORKERS`), in a neighbourhood where every sibling it is
+listed beside — `factor_registry`, `factor_relevance` — **is `nba_config`.** *Recorded because this
+pass fell into it: the verification query named `nba_config.factor_gate_results` and errored.*
+**Severity low, fix trivial, but it is a documented-name defect that a reader hits on first use.**
+
+#### 🔴 STANDING RULE 18 — **THE BAND AND THE COVERAGE COUNT ARE DOCUMENT COUNTS, AND RULE 17 GOVERNS THEM**
+*Added 2026-09-21 after §T10.16a.*
+
+**A coverage figure is a measurement over a corpus, so it names its population and its tree exactly as
+a grep count does.** *"823 uncovered"* is not a property of the transcript — **it is a property of the
+pair (transcript, corpus-at-a-commit)**, and this sweep has been publishing it as though it were the
+former.
+
+**For every transcript from here: the band and coverage are reported against the BASELINE tree, and
+the working-tree figure is given beside it only to show what the sweep itself added.** The baseline
+number answers *"what did the documentation carry?"*; the working number answers *"what does it carry
+now that I have written about it?"* — **and only the first is evidence.**
+
+⚠ **Retroactive scope**: T1–T9's published coverage figures are **working-tree measurements** and
+carry the same overstatement, in the same direction — *each closed transcript's true pre-sweep
+coverage is at least as poor as published.* **The findings are unaffected** — every one of them is an
+absence claim, and an overstated coverage figure makes an absence claim **conservative**, never
+generous. **Not re-derived**; flagged here so no later pass reads those figures as pre-sweep facts.
+
+**Pass outcome: 2 defects (§T10.16a the instrument, §T10.16b a rule-17 breach one paragraph from its
+own cause) + rule 18; nine baseline figures and all live figures exact. 🔴 CLEAN 0/3 · 16 passes.**
+
+---
+
 ### T10.15 — PASS 15 (**wrong-tree audit — the census §T10.14a forced**) — **🔴 the counts are right; the POPULATION is unstated 75 times · 0/3**
 *2026-09-21. The angle §T10.14a demanded: **if one document-count table was measured against the
 wrong tree, find every document-count figure in the twelve and establish, for each, which corpus and
