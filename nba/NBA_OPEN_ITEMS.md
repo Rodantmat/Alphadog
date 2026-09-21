@@ -223,12 +223,32 @@ City, Berlin, London or Las Vegas **the designated home team is not at home**, s
 applied to a game where the effect it models is absent — **and for the games where the two sources
 disagree, potentially to the wrong side.**
 
-📌 **OWNER DECISION — three questions, none answered here:**
+> ✅ **QUESTION 2 ANSWERED 2026-09-21 by §T11.16a, in the code**: `classification_ladder_v12.py`
+> line 164 sets **`is_home` from the box-score `MATCHUP` string** (`"ATL vs. MIL"` vs `"ATL @ MIL"`) —
+> ***the league's own field.*** **The scoring path never reads `nba_market.schedule_norm` and is NOT
+> exposed to its reversed orientation.** *So the reversal is a join/documentation problem, not a
+> scoring one.*
+>
+> 🔴🔑 **BUT §T11.16b FOUND THE COMPOSITION THAT MAKES THIS WORSE, AND IT IS EXACT.**
+> **`HCA` is a single scalar** fitted over the TRAIN seasons and added to **every** game's
+> `derived_spread` — **no neutral-site condition anywhere.** **The market spread overrides it per
+> game**, loaded from a file *"exported from `nba_market.game_lines_snapshots`"*, and *"falls back to
+> the derived spread per game when no line exists — never silently, the coverage is printed."*
+> ***The six games with no `event_game_map` row have no market spread, so they fall through to
+> `derived_spread` and its full HCA — and those six ARE the neutral-site games.***
+> **The one place HCA still governs the spread is the one place it is most wrong.**
+>
+> ✅ **What limits it**: six games across two seasons; the fallback is **printed, not silent**; and
+> `spread_used` feeds **`p_blowout` and `home_favored`** — a blowout probability and a favourite flag,
+> **not a projection directly**. 📌 **The magnitude has NOT been measured** — this sweep reads, it
+> does not run.
+
+📌 **OWNER DECISION — the two questions that remain:**
 1. **Should HCA be zeroed (or reduced) for games where `arena_city` is not the home team's city?**
-2. **Which source does the production path take the home/away designation from** — `schedule_norm`
-   (reversed on these) or `nba_calendar.games` (correct)? **NOT RECORDED; this pass did not trace it.**
-3. **Should `schedule_norm`'s orientation be corrected to match the calendar**, which would also fix
-   the six-game join gap at §T11.12b?
+   *`arena_city` and `game_label` are in the calendar and in no document and no code path found.*
+2. **Should `schedule_norm`'s orientation be corrected to match `nba_calendar.games`?** *It would fix
+   the six-game join gap at §T11.12b and, through it, give those six a market spread — which is the
+   cheapest way to remove the HCA exposure above.*
 
 📌 **Scale, stated plainly**: **four labelled neutral-site games in 2025-26** — *a handful, not a
 season-wide defect* — **but they include the NBA Cup games, which are among the most-watched on the
