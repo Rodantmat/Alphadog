@@ -14323,6 +14323,62 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.19 — PASS 4 (**live verification of T9's production pipeline**) — **🔑 T9's last open item CLOSED, and an open question ANSWERED · 0/3**
+*2026-09-21. T9's stated gap was item 6 — **"nothing writes the baseline ladder to Postgres yet;
+everything lives in the backtest harnesses."** Checked live. **Rules 12 and 14 applied throughout:
+every claim grepped, and every hit opened.***
+
+#### ✅ T9.19a — **Item 6 is closed: the table exists and is populated**
+
+`nba_score.baseline_ladder` — **206,237 rows**, with `nba_score.baseline_ladder_runs` carrying the
+run provenance:
+
+| `asof` | Slate games | Players | Rows | Props | `loaded_at` |
+|---|---|---|---|---|---|
+| 2025-11-29 | 8 | 184 | 64,779 | **22** | 2026-09-20 |
+| 2026-01-15 | 9 | 227 | 90,861 | **22** | 2026-09-19 |
+| 2026-03-15 | 7 | 161 | 50,597 | **18** | 2026-09-11 |
+
+⚠ **But it is not yet the *daily artifact* T9 described**: **three hand-picked as-of days**, all in
+2025-26, loaded **out of chronological order** over ten days (03-15 first, then 01-15, then 11-29).
+*The mechanism works; the cadence does not exist yet.*
+
+#### ✅ T9.19b — **And an open question in these documents is now answered**
+
+**§3661 (FINDING 4) asks exactly this and leaves it open**: *"The three ladder runs do not cover the
+same props: **22, 22, and 18** — `asof 2026-03-15` is missing `dreb`, `fgm`, `fta`, `oreb`.
+**Whether that is a different slate or a coverage loss is NOT RECORDED.**"*
+
+**It is neither — it is a coverage GAIN, and the date proves it.** `NBA_COMPASS.md` line 130:
+> *"**STAT MENU (2026-09-12)**: baseline covers 29 of PrizePicks' ~31 NBA stat types. **Added
+> fgm/fta/dreb to the singles recipe** — certified both seasons."*
+
+**The 18-prop run was loaded 2026-09-11 — one day before the stat menu expanded.** The two 22-prop
+runs were loaded 09-19 and 09-20, after. **So the March run is not missing props; it predates
+them.** → §3661's FINDING 4 marked answered.
+
+#### 🔴 T9.19c — `[LIVE-AUDIT]` **Four of the ladder's 22 props are NOT in the canonical taxonomy**
+
+The genuinely new finding, and it lands on §T8.27b's open question. Joining
+`nba_score.baseline_ladder.prop` to `nba_ref.prop_taxonomy.canonical_prop_key`:
+
+| | |
+|---|---|
+| Props resolving | **18 of 22** |
+| **Not in the taxonomy** | **`dreb` (4,315 rows) · `fgm` (4,773) · `fta` (3,935) · `oreb` (3,185)** |
+| Ladder rows on unresolvable props | **16,208** |
+
+**These are exactly the props the 2026-09-12 stat-menu expansion added** — *added to the recipe, and
+not to the taxonomy.* **So the production artifact writes a `prop` vocabulary that the canonical
+table cannot resolve for 4 of its 22 values.**
+
+⚠ **This is §T8.27b's gap made concrete.** That entry found **nothing in `nba/` speaks
+`canonical_prop_key`**; here is the consequence — **a production table keyed on `prop`, four of whose
+values have no canonical definition, and no join anywhere that would have caught it.** *Whether the
+taxonomy is meant to grow with the recipe is **NOT RECORDED**.* → `NBA_OPEN_ITEMS.md`.
+
+---
+
 ### T9.18 — PASS 3 (**two-direction judgment**) — **✅ CLEAN 1/3 · and a tooling caveat that nearly cost a wrong correction**
 *2026-09-21. **52 high-band segments and — remarkably — only ONE tail-direction segment**, the lowest
 of any transcript swept. T9's material is either well covered or genuinely uncovered; there is almost
