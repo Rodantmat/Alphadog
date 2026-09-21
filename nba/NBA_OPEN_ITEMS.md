@@ -344,6 +344,16 @@ as a considered exception. All 35 rows carry `created_at` in the **01:53–02:03
 are closed and recorded **no cap-setting turn**. **Deliberately left open** — read the later
 calibration transcripts against the instruction rather than inferring from timestamps.
 
+⚠ **AND ONE MORE CONFIG GAP, same family, found 2026-09-21 (T7 pass 13)**:
+`NBA_BASELINE_METHODOLOGY.md` line 48 specifies *"a second, faster EWMA (e.g. `alpha` ≈0.5, ~3-game
+lookback) alongside the primary one."* **`nba_config.stat_decay_config` has 13 rows and none of them
+is that.** The same document's rule is that these values *"live in `nba_config.stat_decay_config` …
+**never hardcoded**, and the pipeline must read them from there" — **for the fast alpha there is
+nothing to read.** *(Severity ⚠ only because **nothing reads the table at all** — see the
+`NBA_DATABASE.md` §2 banner.)* ✅ **The primary alphas DO agree exactly**: design 3PT% 0.03 /
+rebounding 0.08 / usage-assist 0.15 / minutes 0.20 ↔ live `fg3_pct` 0.03, `reb_rate` 0.08,
+`usg_pct` & `ast_rate` 0.15, `minutes` 0.20.
+
 **Related and also unrecorded (same turn set):**
 - **Ladder width**: *"five or six variations over the anchor and five, six under"* — roughly **11–13
   rungs**, because *"we never know where the apps are gonna throw the prop line"* and the
