@@ -6383,7 +6383,95 @@ operating cadence locked.
 **PHASE 3b — historical backfill and the baseline methodology design**
 *119 content blocks · **PASS 1 (full sequential) 2026-09-20***
 
-### T4.1 — Shot Quality Delta: built, with two real bugs
+## T4 RE-SWEEP UNDER CHRONOLOGICAL ORDER (2026-09-21)
+
+*T4 was swept to "DONE 3/3 clean" at 12 passes under the old regime, then **RESET by the DRIFT
+NOTICE** — it was swept against documents that did not yet exist. This re-sweep applies the current
+methodology: stratum-by-stratum reading, write only after a stratum is finished, and closure on
+**three consecutive clean passes at genuinely different angles**, the two-direction judgment pass
+among them.*
+
+**Coverage at re-sweep start**: 607 segments · **498 uncovered vs the twelve (82.0%)** · 431 uncovered
+vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship** false tail — T4
+writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
+but not the twelve.
+
+### T4.21 — PASS 1 (**owner-turn stratum, then the assistant-reasoning stratum**) — **NEW MATERIAL · 0/3**
+*2026-09-21.*
+
+**The owner stratum is clean — all 5 owner turns already documented.** The cadence spec (§T4.12a),
+the one-time-backfill decision, the "at least the past season" requirement, and both research
+directives are recorded. ✅ **No new material from the owner turns.**
+
+**The reasoning stratum produced three findings.**
+
+#### ⚠⚠ T4.21a — **§T4.1 RECORDS TWO BUGS. THE TRANSCRIPT SAYS THREE, TWICE, AND NAMES THE THIRD.**
+
+§T4.1 is titled *"built, with two real bugs"* and documents BUG 1 (the `+` in `6+ Feet` needing
+`%2B`) and BUG 2 (`resultSets` returned as a dict, not a list). **The transcript's own two summaries
+both say three**, and the third is a distinct failure mode:
+
+> *"3. that same endpoint's **header metadata is actively misleading** — claims 3 sub-column names,
+> actually returns all 30 flat columns."*
+
+**BUG 3 — the endpoint's own schema metadata lies.** `leaguedashplayershotlocations` exposes a
+per-zone sub-header whose `columnNames` field *"is misleadingly the full flat 30-column list (6 skip
+columns + FGM/FGA/FG_PCT repeated per zone), not just the 3 real per-zone sub-column names as
+assumed."* **Fixed by hardcoding `["FGM","FGA","FG_PCT"]` instead of trusting the field.**
+
+`[LIVE-AUDIT]` **VERIFIED** — the comment survives in `nba/scrape_nba_shotquality.py` **line 160**:
+*"The sub-header's own `columnNames` is misleadingly the FULL…"*, with `zone_names =
+zone_group.get("columnNames")` at line 168 used **only for the zone names**, not the sub-columns.
+
+⚠ **This matters beyond a missed bullet, because it contradicts a documented design principle.**
+The `result_set_rows`-by-name pattern is recorded across these documents as *the* robustness
+technique — address result sets and columns **by name**, never by position, so the code survives
+schema drift. **Here, reading by name is exactly what produced the wrong answer**, and the fix was to
+**hardcode positions**. The principle has a real exception and the documents did not record it.
+**`leaguedashplayershotlocations` breaks two conventions, not one**: `resultSets` shape (BUG 2) and
+sub-header truthfulness (BUG 3).
+
+**§T4.1's heading and count are corrected below rather than rewritten in place**, so the original
+record of what pass 1 saw stays legible.
+
+#### ⚠ T4.21b — **A THIRD STATUS VOCABULARY: `completed_with_errors`**
+
+§0.39 recorded that `ok` is the certification verdict across 18 workers, and that **7 of 18** use
+`completed_with_warning`. The shot-quality worker uses a **third** form:
+```js
+status: errors.length === 0 ? "completed" : "completed_with_errors"
+```
+`[LIVE-AUDIT]` **VERIFIED** by grep of `alphadog-v2-nba-*.js`:
+
+| Status vocabulary | Workers |
+|---|---|
+| `completed_with_warning` | **7** |
+| `completed_with_errors` | **6** |
+| `failed_no_data` | **7** |
+
+**Three different words for "it did not go cleanly", split across the fleet**, and they are not
+synonyms: `_warning` is driven by a **certification threshold**, `_errors` by a **non-empty error
+array**. A caller cannot switch on `status` without knowing which worker it is talking to — and per
+§0.39 it cannot rely on `ok` either, because `ok` means *certified*, not *succeeded*.
+
+#### ⚠ T4.21c — a third tool-name discovery failure, in a different tool family
+
+> *"Tool 'Alphadog Bridge:memory_append' not found. Did you mean: `memory_append`? Use the exact name
+> shown here."*
+
+The documents record this failure mode for `github_str_replace` and `github_patch_str_replace`
+(bridge GitHub tools). **This is the same failure in the memory-tool family** — the assistant
+prefixing a tool name with the server label. Recorded to fix the shape of the existing correction:
+**it is not a GitHub-tool quirk, it is a naming convention error that recurs across families.**
+
+#### Measured values confirmed (no discrepancy)
+`2,244` shot-quality bucket rows · `582` deltas · `4,656` shot-zone records · zero errors ·
+Jokić **61.9% actual eFG vs 53.8% expected = +8.06%** · league averages **46.7%** tightly contested
+→ **58.9%** wide open. ✅ All as documented.
+
+---
+
+### T4.1 — Shot Quality Delta: built, with ~~two~~ **three** real bugs *(count corrected 2026-09-21 — see §T4.21a; the third is BUG 3, the endpoint's own header metadata being untrustworthy)*
 
 Owner: *"yes"* → build it.
 The run had grown large: *"arenas 30 calls + on/off 30 calls + playtypes 44+ calls + tracking-detail 8
