@@ -517,6 +517,25 @@ Factors, *"layer-tagged, with macro-clusters"* — i.e. each carries whether it 
 the ancestor of the A/B/D/M/N factor codes used in T15–T16 and of
 `nba/NBA_ENRICHMENT_FACTOR_LOCK.md`.
 
+**`compute_stage` — the exact literals, because the prose form is not the value** *(`[LIVE-AUDIT]`,
+re-verified 2026-09-21, T10 pass 21)*:
+
+| value | rows |
+|---|---|
+| `phase1_baseline` | **15** |
+| **`phase2_window`** | **17** |
+| `live_only_excluded_from_history` | **2** |
+| `not_mined` | **2** |
+| `NULL` *(every baseline-layer row)* | **31** |
+
+**15 + 17 + 2 + 2 = 36 enrichment · + 31 NULL = 67** ✅
+
+⚠ **The documents describe these as *"phase-1"* and *"phase-2"*, and the phase-2 literal is
+`phase2_window` — NOT `phase2_enrichment`, which does not exist in the table.** *Recorded because a
+probe written from the prose returns zero rows and reads as an absence.* 🔑 **Same shape as the
+`nba_score.factor_gate_results` schema trap: an object named from the prose rather than from the
+table.**
+
 ### `nba_config.factor_relevance` — **460 rows**
 The **prop × factor relevance matrix** — which factors are even candidates for which props.
 
