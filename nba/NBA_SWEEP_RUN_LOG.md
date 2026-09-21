@@ -53,7 +53,18 @@ every commit message. Never `git push`.
 |---|---|---|---|---|---|
 | T1 | phase1-static | 89 (88 counted, 55 VOID) | — | — | 2026-09-21 |
 | T3 | phase3a-final | 14 | 64 / 466 | 1 per 7.3 | 2026-09-21 |
-| T2 | phase3a-enrichment | 15, **CLEAN 1/3** | re-read 40 / ~367 | 1 per 9.2 | *open* |
+| T2 | phase3a-enrichment | **19** (18 counted, 13 VOID) | re-read ~42 / ~367 | **1 per ~9** | **2026-09-21** ✅ |
+
+**T2 closed twice.** First at pass 11 — procedurally correct, but on a shallow read (**1 per ~34**).
+Reopened on that measurement alone. The re-read improved yield **3.8×** and produced the two 🔴🔴
+findings below. **Closed the second time on three consecutive clean passes at three different
+angles**: live numeric re-verification (18/18 claims matched), cross-document consistency, and the
+two-direction judgment pass. A fourth angle — the **mid-band seam at 0.40–0.45**, which neither the
+tail read nor the judgment band looks at — produced the single sharpest finding of the transcript.
+
+*Three corrections to this sweep's own prose were caught by judgment passes rather than by reading:
+the `raw_json` undercount, a "contradiction" that was itself the future-leaking-backward error, and
+an absence-assertion drafted on a stale clone. Each recorded where it happened.*
 
 *(Ratio is diagnostic only. On a re-read a falling ratio is the expected shape of approaching
 exhaustion, not a warning — the two-direction judgment pass is the closure signal.)*
