@@ -96,6 +96,34 @@ are *not* this sweep's work and *not* yet in scope. **Fast-forward, then ignore 
 
 ---
 
+### 🔴 STANDING RULE — A COUNT COMES FROM AN AUTHORITY, NEVER FROM THE PATTERN THAT FOUND IT
+*Added 2026-09-21 after the same error occurred three times in this sweep.*
+
+**When a finding is a count, derive the population from an authority — `information_schema`, a full
+directory listing, a whole-corpus scan — not from the search that first surfaced the thing.**
+
+**The three instances, all this sweep, all the same mechanism:**
+
+| Reported | Actual | How the wrong number was produced | Caught by |
+|---|---|---|---|
+| `raw_json` bad on **1,306 rows / 6 tables** | **17,902 / 14** | checked the static layer I happened to be reading | **the owner** |
+| Tool-name failures: **"four, two families"** | **5, across 3 wrong names** | recalled rather than counted | a judgment pass |
+| Committed debug artifacts: **"three"** | **five** | grepped `nba/data/` for `*debug*`; two are `*diagnostic*` | the next transcript |
+
+**In every case the finding was real and the count was wrong.** That is the specific danger: a true
+finding carries a false number into a document whose whole purpose is to be trusted, and the number
+is the part a future reader will quote.
+
+**The tell is always the same** — a population defined by the query instead of by the domain. Ask
+*"what is the complete set, and what authority enumerates it?"* **before** reporting any figure. For
+tables, `information_schema`. For files, `ls` the directory, not a name pattern. For occurrences in
+a transcript, scan all segments, not the tail.
+
+⚠ **And never write a count from memory.** Two of the three came from re-stating an earlier figure
+without re-deriving it.
+
+---
+
 ### ⚠ STANDING TECHNIQUE — THE REFERENTIAL-INTEGRITY ANGLE, ADDED 2026-09-21
 *Autonomous addition during the unattended run. Recorded with its reasoning and its limits.*
 
