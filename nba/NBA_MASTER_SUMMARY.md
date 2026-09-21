@@ -8065,7 +8065,8 @@ documents.* **Same family as the NULL artifact (§T7.64a) and the tail-vs-transc
 world.**
 
 > ⚠⚠ **EXTENDED 2026-09-21 after §T9.30b — AND THE WRONG NUMBER IS NOT ALWAYS ZERO.** A count of
-> *"distinct env vars"* came back **174**; the true figure is **193**. The pattern's character class
+> *"distinct env vars"* came back **174**; the true figure is **194** *(stated as 193 when this note
+> was written — see §T9.31a; a **fourth** pattern, a **third** wrong answer)*. The pattern's character class
 > was `[A-Z_]`, so **every variable name containing a digit was silently truncated** — `A2W_TEST_SEASON`,
 > `B4_TRAIN_SEASON`, `M1_TEST_SEASON`, `N1_TEST`, `A5_SEASONS` — and the truncated forms collapsed
 > together. 🔴 **This is strictly worse than the zero case: a zero is implausible and invites a second
