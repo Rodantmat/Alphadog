@@ -9704,6 +9704,48 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.47 — PASS 18 (**sibling-claim audit — every absence assertion, re-tested by substance**) — **🔴 3 MORE FAILURES, ALL AGAINST ONE DOCUMENT · 0/3**
+*2026-09-21. The sixth standing rule applied as its own angle, immediately, because pass 17 showed the
+failure was systematic rather than isolated. **Method**: extract every *"NOT RECORDED" / "nowhere" /
+"unrecorded" / "no document" / "undocumented"* assertion in the T7 block, then `grep -ri` **the idea**
+across all thirty documents — never the phrasing.*
+
+**Result: three more wrong, and all three sit in the same file.**
+
+| Claim | Where it is actually recorded |
+|---|---|
+| §T7.32b — *"'always test v3 before v2' — a hard-won rule, stated in T7 and **in no document**"* | **`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` line 313, verbatim** — *"**Always test v3 before v2** for any per-game stats.nba.com endpoint. This cost real time twice in a row…"* — **written five days before T7** |
+| §T7.31a — *"**Nothing in the thirty documents records that this check exists**"* (the daily-delta coverage detector) | **Same file, lines 239–244**, as its own numbered finding: *"The daily-delta worker's own design comment promised surfacing which new games are missing starter-status/officials coverage, but this was never actually implemented… **Added the real check; verified it reproduces the exact known-correct numbers (0 missing starter-status, 3 missing officials for 2025-26)**"* |
+| §T7.34b — the 3 missing-officials games *"remained unfixed and **undocumented** for seventeen days"* | **Same passage.** They were documented **on the day the check was built.** "Unfixed", yes. "Undocumented", no. |
+
+*(Checked and **cleared**: §T7.32c's array-literal bug class — the checkpoint numbers it 6th at line
+220 and this entry claims no novelty, so the two agree. The `raw_json` absence claim at §T7.33
+stands: it is self-dated *"no document records it until 2026-09-21."*)*
+
+#### 🔴 T7.47a — **THE PATTERN: "not in the twelve" was written as "in no document" — and my own tooling had already named the document**
+
+**All three failures point at the same file**, and the reason is structural. That file is
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` — **the document T7 itself wrote.** The coverage
+machinery classified its content correctly the whole time: the tail-direction output of **passes 13
+and 17** lists *"always test v3 before v2…"* matching **`NBA_DEEP_DOCUMENTATION_CHECKPO` at 1.00** —
+a perfect match, in the *"covered elsewhere in other words"* direction, **by name, in my own scan
+output, twice.** I read that as *"false tail, mechanism 3, no finding"* — which is correct about the
+extraction — and then wrote *"in no document"* in the prose regardless.
+
+> ### **Standing rule, seventh form: "NOT IN THE TWELVE" IS NOT "IN NO DOCUMENT."**
+> The sweep's coverage scan is scored against **the twelve**; the corpus is **thirty**. Before writing
+> *no document / nowhere / undocumented*, grep **all thirty** — and **read the tail-direction output
+> of the current pass first**, because it already names, by filename and score, the document that
+> holds the thing. *The evidence was in the scan I had just run. Twice.*
+
+**Running total of absence failures in this one transcript: six** — §T7.30a, §T7.30b, §T7.30c,
+§T7.31a, §T7.32b, §T7.34b. **Every one of them was a claim about the documents, not about the
+system**, and **every one was checkable with a single `grep -ri`.** *The transcript material has been
+right since pass 8; the sweep's claims about the documents are where the entire defect population
+lives.*
+
+---
+
 ### T7.46 — PASS 17 (**two-direction judgment, third run**) — **🔴🔴 THE LARGEST CORRECTION OF THIS RE-SWEEP: T7's HEADLINE FINDING IS RETIRED · 0/3**
 *2026-09-21. The 113 high-band segments are the same population as pass 13 — none entered, none left,
 only small score shifts. So the judgment fell on the **representations** rather than the extraction:
