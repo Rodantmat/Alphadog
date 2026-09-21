@@ -113,6 +113,61 @@ the lessons-transfer mechanism, not in one worker.**
 
 ---
 
+## 🔴🔴 TWO OF THE THREE BACKFILLED SEASONS HAVE **ZERO** CALENDAR COVERAGE — no rest, no back-to-backs, no home/away for 2023-24 or 2024-25
+*Found 2026-09-21, T4 re-sweep pass 7 (referential-integrity angle). **`[LIVE-AUDIT]` VERIFIED**.
+Detail: `NBA_MASTER_SUMMARY.md` §T4.27a.*
+
+`nba_stats.player_game_log` LEFT JOIN `nba_calendar.games` on `game_id`:
+
+| Season | Log rows | With calendar row | **Without** |
+|---|---|---|---|
+| **2023-24** | 26,401 | **0** | **26,401** |
+| **2024-25** | 26,306 | **0** | **26,306** |
+| 2025-26 | 26,651 | 26,651 | 0 |
+
+**Zero, not "few".** Teams split identically: 7,380 rows, 4,920 unmatched, and 7,380 − 4,920 = 2,460
+— exactly the 2025-26 count.
+
+**The cause is plain**: `nba_calendar.games` holds **2025-26 and 2026-27 only**. **The schedule was
+never backfilled for the two historical seasons the game-log backfill deliberately added.**
+
+**Why it matters.** The calendar is the only source of `game_date`, `game_datetime_utc`, home/away
+team ids, arena and `game_label`. **Every schedule-derived feature the documents rank as high-value —
+days of rest, back-to-backs, schedule density, home/away, travel, arena/altitude — is computable for
+2025-26 and for nothing else.** A join written against the game-log spine yields those features for
+one season in three; **an inner join silently drops 52,707 of 79,358 rows (66%)**, a left join
+NULL-fills them.
+
+**And it undercuts the reason the backfill was scoped to three seasons at all.** That scope was a
+deliberate, reasoned choice — *"1-2 seasons is insufficient … no way to build an aging curve or tell
+a hot streak from a new baseline."* **Two thirds of the data obtained for that reason cannot
+currently carry a rest or schedule feature.**
+
+⚠ **Not attributed to T4.** T4 backfilled game logs; the calendar belongs to `nba-static-schedule`.
+**Whether that worker can fetch prior seasons, whether anyone noticed, and whether a later transcript
+fixed it are NOT RECORDED** — questions for the transcripts that own the schedule and the baseline
+pipeline. **Recorded here as live state, flagged forward.**
+
+**Related and already open**: the 2026-27 slate is 30 games short and has no playoff/All-Star/Cup
+rows. **The calendar has coverage problems at both ends of its range.**
+
+---
+
+## ⚠ 7,887 GAME-LOG ROWS (≈10%) HAVE NO PLAYER-DICTIONARY ROW — and the gap is biased
+*Found 2026-09-21, T4 re-sweep pass 7. **`[LIVE-AUDIT]` VERIFIED**: 7,887 of 79,358 unmatched.*
+
+`nba_ref.players` is built with **`isOnlyCurrentSeason=1`** — it is the *current* 582-man roster. The
+game logs span three seasons, **so every player who left the league since 2023-24 has game logs and
+no dictionary row.**
+
+**The data is not corrupt; the join is the hazard.**
+`player_game_log INNER JOIN nba_ref.players` **silently drops ~10% of rows**, and the drop is
+**systematically biased** — it removes precisely the departed players. **This is the same
+survivorship selection already flagged for `playercareerstats`, arriving by a different route**, and
+nothing in the documents currently warns a query author about it.
+
+---
+
 ## 🔴 `player_career_season_totals` STORES ITS OWN SUBTOTALS — 282 player-seasons are in the table twice
 *Found 2026-09-21, T4 re-sweep pass 4. **`[LIVE-AUDIT]` VERIFIED** across the whole table.
 Detail: `NBA_MASTER_SUMMARY.md` §T4.24a.*
