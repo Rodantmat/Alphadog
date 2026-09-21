@@ -12797,6 +12797,28 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.31 — PASS 10 (**live numeric re-verification**) — **✅ CLEAN 1/3 · 17 of 17 exact, every partition summed**
+*2026-09-21. Every figure §T8.25–§T8.30 states, re-derived from its authority, with the sums checked
+per rule 11 rather than assumed.*
+
+| Claim | Live |
+|---|---|
+| 28 props · Tier A **13** · Tier B **15** | **28 · 13 · 15** ✅ — **and 13 + 15 = 28** ✅ |
+| **6** banded · **22** unbanded | **6 · 22** ✅ — **and 6 + 22 = 28** ✅ |
+| Unbanded **7 Tier A + 15 Tier B** | **7 · 15** ✅ — **and 7 + 15 = 22** ✅ |
+| Banded **6 Tier A + 0 Tier B** | **6 · 0** ✅ |
+| Band families: **1** role prop, **5** magnitude props | **1 · 5** ✅ — **and 5 × 4 + 1 × 5 = 25 rows** ✅ |
+| `canonical_prop_key` in code | **1,218**, of which **0 under `nba/`** ✅ |
+| `nba_ref.prop_taxonomy` schema-qualified in code | **0** ✅ |
+
+**Every partition closes.** *This is the check that caught a NULL artifact at §T7.64a — where a
+conformance query returned 34 + 0 against 35 — so it is run on every split rather than on the ones
+that look risky.*
+
+**Pass outcome: 17 of 17 exact, no defect, nothing new. ✅ CLEAN 1/3.**
+
+---
+
 ### T8.30 — PASS 9 (**two-direction judgment, third run**) — **⚠ 1 DEFECT: a table read correctly, a sentence written wrong · 0/3**
 *2026-09-21. **61 high-band segments for the third run — 0 in, 0 out, coverage identical at
 536 / 510.** The extraction is settled; the judgment fell on §T8.27–§T8.29's own claims, tested
