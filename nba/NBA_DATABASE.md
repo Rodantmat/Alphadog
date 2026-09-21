@@ -516,8 +516,17 @@ property of the taxonomy, documented in none.**
 
 ***`triple_double` is in the taxonomy and has never produced a row anywhere.*** ⚠ **Five of the twelve
 document `double_double`'s *"sentinel −1.0, no ladder"* treatment and NONE says `triple_double` shares
-it or that it is unbuilt** — the corpus names the pair only in family enumerations. **Which this is —
-deliberate deferral or an unbuilt prop — is NOT RECORDED** (rule 6).
+it or that it is unbuilt** — the corpus names the pair only in family enumerations.
+
+🔑🔑 **AND THE BOARD SURFACES ANSWER PART OF IT** *(§T11.52c, `[LIVE-AUDIT]` 2026-09-21)*:
+**`nba_market.board_outcomes` carries `player_double_double` 42,436 and NO `player_triple_double`;
+`nba_market.board_snapshots` — 27M rows, six apps, 380+ days — carries `player_double_double`
+**274,010** and ***NO `player_triple_double` AT ALL***.** ***So the prop is absent from the raw board
+feed, not merely from the scored tables: the system did not fail to build something the board
+offered.*** ⚠ **Stated at the right strength**: **the captured feed's `market_key` vocabulary is what
+the scrapers REQUEST**, so *"no `player_triple_double` market appears in the captured board feed"* is
+the claim — ***whether the apps do not offer it or the scrapers do not ask for it is NOT RECORDED***
+(rule 6).
 
 ✅ **And the sentinel path is TOTAL, which sharpens §T9.37a from a majority to a census**:
 `baseline_ladder` **206,237 rows · 559 `used_emp = false` · 541 of them `double_double`** — and
