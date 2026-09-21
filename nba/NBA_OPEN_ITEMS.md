@@ -7529,8 +7529,8 @@ the grading path exists, not merely until the projection does.**
 **The props to check this against are the ones already configured but unvalidated:**
 | Prop | State | Gradeable from `player_game_log`? |
 |---|---|---|
-| `fgm`, `fta` | NOT YET CERTIFIED | ✅ `FGM`, `FTA` are box-score columns |
-| `turnovers`, `fg3a`, `ftm`, `personal_fouls` | CONFIGURED, NOT RUN | ✅ box-score columns |
+| **`fgm`, `fta`, `oreb`, `dreb`** *(§T9.35c — the group is four)* | NOT YET CERTIFIED | ✅ all four are box-score columns |
+| **`turnovers`, `fga`, `fg3a`, `ftm`, `personal_fouls`** *(§T9.35b — `fga` restored)* | CONFIGURED, NOT RUN | ✅ box-score columns |
 | **`double_double`** | sentinel −1.0, **no ladder** | ⚠ derivable, but **the grading expression is not recorded** |
 | **period props** (1Q/1H/2H/4Q) | built, certified for points | ✅ `Period=1..4` bulk data exists |
 | **`ot_rule = exclude` variants** | unverified whether built | ⚠ **requires OT isolation = full-game − quarters** |
