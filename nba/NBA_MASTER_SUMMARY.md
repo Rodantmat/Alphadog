@@ -2148,6 +2148,50 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+### T2.15 — PASS 15 (**judgment pass, both directions, against the corrected documents**) — **✅ CLEAN 1/3**
+*2026-09-21. 814 segments. High band (≥0.45): 80. Tail-direction: 27.*
+
+**Run after the owner's corrections were applied** (the `raw_json` scope widening, the 2026-10-20
+season date, the §T2.14a reframe, the fragment fix). Those corrections are themselves new material,
+so the count was 0/3 going in; **this pass found nothing further.**
+
+**DIRECTION 2 — CLEAN.** 27 segments, all **false-tail mechanism (3), self-authorship** —
+`NBA_PROJECT_LOG.md` (14) and `NBA_ENRICHMENT_FACTORS_RESEARCH.md` (13), matching at 0.98–1.00
+because the segment *is* the file. Substance correctly carried in the twelve.
+
+**DIRECTION 1 — CLEAN.** All 80 segments map to documented entries and the documented versions are
+right. The `[skip ci]` segment now matches §T2.14a at **0.85** (the reframe landed). Spot-checked to
+the end of the band: the deploy-ordering diagnosis, the `"Undrafted"` coercion, the TLS-fingerprint
+root cause, the EPM paywall, the DARKO bus-factor risks, the `git add` growth and its loop
+supersession, the `ALTER TABLE` column additions, the on/off DDL, the `fetch_note` removal, and
+`GET /health`'s `vars_present` — **each already recorded, and recorded correctly.**
+
+#### ✅ T2.15a — ONE CHECK THAT COULD HAVE BEEN A DEFECT, AND THE NEAR-MISS IS THE FINDING
+
+The band surfaced the players worker's own comment:
+> *"No hardcoded fallback for players (unlike the 30-team list) — a 450+ player roster changes too
+> often and is too large to safely hand-maintain as a certified fallback. If the real source fails,
+> this worker fails honestly rather than silently writing stale/wrong data."*
+
+**`[LIVE-AUDIT]` VERIFIED** still live at `alphadog-v2-nba-static-players.js` **lines 232–233** — and
+**already documented, with the principle generalized**, at `NBA_WORKERS.md`: *"a fallback is only
+safe where the data is small, stable, and verifiable by hand. 30 teams qualify; 582 players do not."*
+**No defect. The documents are right.**
+
+⚠ **But a draft written against the stale clone asserted the opposite** — *"the absence of a stated
+rule is the open item; the next static worker's author has no principle to apply."* **That claim was
+false**, and it was removed only because the `git reset --hard` discarded the stale edits wholesale —
+**not because the dedup caught it.** Verified it reached no document: zero occurrences in the repo.
+
+**The lesson, and it is a real gap in the dedup discipline**: after a fast-forward I re-checked five
+*findings* and dropped them, but **an assertion of ABSENCE reads as framing, not as a finding, and so
+slips through.** *"X is stated nowhere"* is precisely the claim a stale clone will get wrong, and it
+is the claim type this set already treats most seriously — standing rule 5, *"an entry's absence is
+not evidence the issue was never seen."* **Added to the dedup step: re-check every assertion of
+absence, not only every assertion of fact.**
+
+---
+
 ### T2.14 — PASS 14 (**the two-direction judgment pass, re-run against current documents**) — **1 DEFECT · CLEAN COUNT 0/3**
 *2026-09-21. 814 segments. High band (≥0.45): 80. Tail-direction (uncovered vs twelve, ≥0.60 vs all 30): 31.*
 
