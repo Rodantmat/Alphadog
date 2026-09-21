@@ -47,8 +47,10 @@ jobs:
           if [ -f "$f" ]; then
             Q=$(grep -E '^max_quotes:' "$f" | head -1 | sed 's/^max_quotes:[[:space:]]*//' || true)
             if [ -n "${Q:-}" ]; then export PP_MAX_QUOTES="$Q"; fi
+            A=$(grep -E '^altalt:' "$f" | head -1 | sed 's/^altalt:[[:space:]]*//' || true)
+            if [ -n "${A:-}" ]; then export PP_ALTALT="$A"; fi
           fi
-          echo "quote budget: $PP_MAX_QUOTES"
+          echo "quote budget: $PP_MAX_QUOTES | altalt: ${PP_ALTALT:-20}"
           python nba/pp_payout_map.py
 
       - name: Commit payout map
