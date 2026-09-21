@@ -12,10 +12,10 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
-### 📜 THE TWENTY-FOUR STANDING RULES — *the index; each is written in full where it was born*
+### 📜 THE TWENTY-SIX STANDING RULES — *the index; each is written in full where it was born*
 
 *Rules 1–15 were born in T1–T9 and are stated in `NBA_MASTER_SUMMARY.md` at their entries. Rules
-16–24 are T9–T11's and each carries a §-pointer. **Apply them from pass 0 of a transcript, not from
+16–26 are T9–T11's and each carries a §-pointer. **Apply them from pass 0 of a transcript, not from
 pass 20 — that gap is this run's signature failure.***
 
 | # | Rule, in one line | Born |
