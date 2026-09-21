@@ -113,6 +113,38 @@ the lessons-transfer mechanism, not in one worker.**
 
 ---
 
+## ⚠⚠ A SCRAPER'S "N PLAYERS SUCCEEDED" IS ATTEMPTS MINUS ERRORS — one player silently has no career totals
+*Found 2026-09-21, T4 re-sweep pass 2. Resolves the gap left open at T2 pass 18. **`[LIVE-AUDIT]`
+VERIFIED**. Detail: `NBA_MASTER_SUMMARY.md` §T4.22a.*
+
+**`nba_stats.player_career_season_totals` covers 581 of the 582 players in the dictionary.** The
+missing one, **VERIFIED** by outer join: **`nba_1628467` — Maxi Kleber**, active, on `nba_1610612747`.
+
+**Nothing was lost at the write.** The transcript reports 3,644 rows; the table holds exactly 3,644.
+The scrape itself produced 3,644 rows across 581 players and *reported* 582.
+
+**The mechanism**, `nba/scrape_nba_career_totals.py` **line 115**:
+```python
+print(f"... {len(all_rows)} season-rows across {len(players) - len(errors)} players")
+```
+**Attempted minus errored.** A player whose request returns HTTP 200 with an empty rowset raises
+nothing, appends nothing to `errors`, contributes nothing to `all_rows` — **and counts as a success.**
+
+⚠ **This is the `NBA_WORKERS.md` §0.37 guard problem in a fifth scraper, and it exposes the shape
+that is missing everywhere.** All four guard shapes in this codebase — count floor, completeness,
+null-value, per-dataset minimum — operate on the **aggregate**. **None asks the per-item question:
+did every input produce at least one output row?** That check costs one comparison and would have
+caught this at build time.
+
+⚠ **Why Kleber returned no rows is NOT RECORDED** — the transcript never noticed, so never
+investigated. **Recorded as state, cause OPEN.**
+
+**Impact, stated honestly**: one player missing career-season aggregates. Career totals feed
+long-range context, not the per-game baseline, so this is **not opening-day blocking** — but the
+*counting bug behind it* is fleet-shaped, and the same phrasing appears in other scrapers.
+
+---
+
 ## 🔴🔴 `ok` IS THE CERTIFICATION VERDICT, NOT A REQUEST-SUCCESS FLAG — and the teams fallback cannot fail certification
 *Found 2026-09-21, T2 pass 16 (mid-band angle). **`[LIVE-AUDIT]` VERIFIED** by grep of the worker
 sources. Detail: `NBA_MASTER_SUMMARY.md` §T2.16 (sweep series).*
