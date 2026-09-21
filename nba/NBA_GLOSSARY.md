@@ -382,7 +382,12 @@ Standard ≈ median, Demon ≈ 70th–80th, useful range ≈ 15th–85th.** The 
 > dict is 13** *(the twenty values are 2·2·3·3·3·4·5·5·5·**5**·6·6·6·7·**10**·14·14·15·16·16 — **four
 > 5s and one 10**; corrected from a mis-transcribed "…5·5·5·6·6·6·7·10·10…" 2026-09-21, §T9.40a)*. **Four
 > documents call the measurement "the `LADDER_DEPTH` measurement", which reads as the table's value.**
-> 📌 **NOT RECORDED: whether 14 is p95 + 1 as a deliberate margin.** ⚠ **The distinction is
+> ✅ **And the mapping IS recorded** *(§T9.41a, retracting this note's original "NOT RECORDED")*:
+> `NBA_GOBLIN_DEMON.md` lines 496–504 give **Prop · Anchor · p95 distance · "Our ±10" · Fixed to** for
+> eight props, and **all eight "Fixed to" values equal `LADDER_DEPTH` exactly** — **p95 + 1** for
+> `points` (13→14), `rebounds` (5→6), `assists` (4→5), `steals` (1→2), `blocks` (1→2); **p95 exactly**
+> for `pra`, `pts_reb`, `pts_ast`. *The provenance of the other **12** keys is not recorded anywhere.*
+> ⚠ **The distinction is
 > load-bearing, not pedantic** — §T9.33a's beyond-depth counts join on the **configured** value, so
 > reading 13 as the depth shifts every one of them.
 
