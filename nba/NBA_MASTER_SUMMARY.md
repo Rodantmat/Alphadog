@@ -1555,6 +1555,37 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.3 — PASS 3 (angle: **the command stratum continued — worker bodies read as source**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+**Four findings, two VERIFIED against live `main`.**
+
+1. ⚠ **The season parameter was hardcoded to a concluded season.** `scrape_nba_playtypes.py` built
+   `&SeasonYear=2025-26` — **the season T3 had itself just established was over.** Pass 1 recorded
+   T3's untested assumption that non-schedule endpoints are *"likely season-agnostic"*;
+   **`synergyPlayTypes` is not — it takes `SeasonYear` explicitly.** So the play-type profiles loaded
+   that day describe the wrong season. *Recorded as it stood.* → `NBA_OPEN_ITEMS.md` FROM T3 PASS 3
+2. **`[LIVE-AUDIT]`** — the live file now reads `SEASON = active_stats_season()` from an
+   `nba_season` module. **Which transcript changed it is not established**, and this sweep has not
+   reached it. Flagged as a supersession to close when it is. *Live-system state; does not affect
+   T3's clean count.* → FROM T3 PASS 3
+3. **A third hardcoded certification threshold** — the schedule worker uses `written >= 1000`, where
+   teams uses `=== 30` and player-bio `>= 400`. **A regular season is 1,230 games, so this passes on
+   a scrape missing up to 19% of one** — and it passed on 2,666 rows spanning two seasons. One
+   constant serving both cases means it can detect a short scrape of neither. → `NBA_WORKERS.md` §0.31
+4. **`fetchFromGithub` was forked.** A second helper, **`fetchFromGithubRaw`**, reads
+   `raw.githubusercontent.com` directly with no base64 envelope and no size limit, introduced after
+   the schedule failure and then applied proactively to play types. **Nothing about a worker
+   announces which helper it carries**, so a worker copied from an older sibling inherits the
+   1 MB-limited one and fails only once its data file crosses the threshold. → `NBA_WORKERS.md` §0.33
+
+**Also recorded**: `nba_calendar.games`' full column list with `toIntOrNull(game_status)` and a
+`game_date.slice(0,10)` date coercion, and the worker's `by_season` count breakdown in its response —
+a verification affordance the other workers lack.
+
+**Clean count 0/3.** **Tail still not exhausted**: ~150 of 240 command segments and all 137 result
+segments remain.
+
 ### T3.2 — PASS 2 (angle: **output stratum in full, plus the first ~45 of 240 command segments**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
