@@ -265,7 +265,7 @@ eight transcripts after it are unswept.*
 | **a5** lineup change | ✓ starters | **⏳** | **🔧** | `scrape_nba_starter_status.py`, season slug, `nba-pergame-backfill.yml` |
 | **a7** trade window | ✓ | ✓ | ✓ | logs, team change |
 | **a8** rookie / two-way | ✓ preseason + PDF two-way reason | ✓ preseason | ✓ preseason | season tables, preseason logs |
-| 🔴 **b1/b2** market spread & total, **c3** game-line movement | **⛔** | **⛔** | **⛔** | *"parlayapi key invalid (key v3.2.0); odds api key **deactivated** → **owner renews parlayapi free key** per its signup — then historical game lines"*; **free fallback for history: Kaggle *"NBA betting data Oct 2007–Jun 2026"* (owner account) or a TeamRankings odds-history scrape**; ***the derived spread is the trained fallback in place*** |
+| 🔴 **b1/b2** market spread & total, **c3** game-line movement — ✅ **UPGRADED TO ✓ AT SEGMENT 536 OF THE SAME TRANSCRIPT** *(§T11.29a: `game_lines_closing`, 5–7 books, 2,410 games, 12,165 rows)* | **⛔** | **⛔** | **⛔** | *"parlayapi key invalid (key v3.2.0); odds api key **deactivated** → **owner renews parlayapi free key** per its signup — then historical game lines"*; **free fallback for history: Kaggle *"NBA betting data Oct 2007–Jun 2026"* (owner account) or a TeamRankings odds-history scrape**; ***the derived spread is the trained fallback in place*** |
 | **b3** leverage / tanking | ✓ | ✓ | ✓ | standings from logs |
 | **b4/m1** opponent absences / primary defender | **⏳** per-game matchups sharded + weekly PT defend | **🔧** | **🔧** | `scrape_nba_matchups_pergame.py`; season-tables as-of weekly |
 | **b5** OT probability | ✓ | ✓ | ✓ | derived |
