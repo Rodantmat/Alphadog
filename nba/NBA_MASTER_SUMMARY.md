@@ -14350,6 +14350,35 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.25 — PASS 10 (**self-contradiction audit**) — **🔴 THREE surviving copies of a corrected claim — in the SUMMARY rows · 0/3**
+*2026-09-21. Every object §T9.16–§T9.24 describes, grepped back across the twelve **including the
+files being edited**.*
+
+#### 🔴 T9.25a — **The `6 of 28` correction reached the entry, the database doc and the open item — and NOT the three places a reader looks first**
+
+§T9.21a corrected §T8.28a, `NBA_DATABASE.md` and `NBA_OPEN_ITEMS.md`. **Three copies survived
+uncorrected, and they are the highest-traffic ones:**
+
+| Surviving copy | What it still said |
+|---|---|
+| **T8's closing summary** (§T8 headline table) | *"The variation dimension covers **6 of 28 props**… §T8.14b's vindication rests on those 6"* |
+| **The T8 ledger row** | *"🔑 the variation dimension covers **6 of 28 props**"* |
+| **The run log's run-history line** | *"**6 of 28 props banded**"* |
+
+**All three fixed.** *The entry bodies were corrected; the summaries that quote them were not.*
+
+> ### ⚠ **Rule 10, sharpened: a correction propagates to the ENTRY and the topical documents, and stops at the SUMMARY ROWS — which are what a reader reads first.**
+> **The ledger row, the closing summary and the run log are derived views of the entries, and nothing
+> re-derives them.** *Second time this exact shape has appeared (§T7.61a was the first, inside one
+> document). **When correcting a finding, grep the ledger and the run log by name before finishing.***
+
+**Checked and clean, scope stated exactly**: the four objects grepped across all three edited
+documents — `VBANDS_ALL` (20 statements), `baseline_ladder` (48), `prop_taxonomy` (57),
+`LADDER_DEPTH` (20) — **agree everywhere else**, as do the 206,237 / 385 / 22 / 18+4 / 16,208 figures
+and the nine config counts. **Objects outside those four were not checked.**
+
+---
+
 ### T9.24 — PASS 9 (**live numeric re-verification**) — **✅ CLEAN 1/3 · 22 of 22 exact, every partition summed · one method note**
 *2026-09-21. Every figure passes 4–8 state, re-derived from its own authority.*
 
