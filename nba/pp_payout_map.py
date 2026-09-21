@@ -44,6 +44,7 @@ BOARD_HEADERS = {"accept": "application/json, text/plain, */*", "accept-language
 KNOWN = ["13975905", "13976089"]
 QUOTE_TARGETS = ["chrome146", "chrome150", "chrome145"]
 MAX_Q = int(os.getenv("PP_MAX_QUOTES", "250"))
+N_ALTALT = int(os.getenv("PP_ALTALT", "20"))
 DEADLINE = time.time() + float(os.getenv("PP_MAX_MINUTES", "34")) * 60
 OUT_DIR = Path("nba/data/pp_payouts")
 
