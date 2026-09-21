@@ -3977,7 +3977,13 @@ anywhere that says so.** ⚠ **Blueprint §5's gap, one turn worse**: MLB could 
 **Stated at strength**: this is **not** a claim that anything is failing — only that no run record
 exists, which is what makes the first claim hard to make.
 
-**FINDING 3 — ⚠ a named pattern, third instance.** Three structures created to match MLB's design
+**FINDING 3 — ⚠ a named pattern, third instance.** ⚠ **EXTENDED 2026-09-21 by §T9.23**: the family
+has **two members, and they fail differently** — *"writer never born"* (**empty**:
+`nba_control.job_runs` 0, `nba_control.worker_run_log` 0, `teams.arena_id` NULL on all 30) versus
+***"seeded, then orphaned"*** (**populated and read by nothing**: the nine config objects, two of
+which have since **diverged** from the hardcoded copy that superseded them). **An empty table is
+visibly unused; a seeded one looks authoritative.** *A fourth instance was also added:
+`nba_ref.prop_taxonomy`, T8 pass 4 — the first outside `nba_config`.* Three structures created to match MLB's design
 and used by nothing: the **eight `nba_config` tunable tables** (pass 33), **`nba_ref.teams.arena_id`**
 (pass 65), and **the two `nba_control` tables** (this pass). **Blueprint §6 warns about "registry
 entry, dead worker"; this is the mirror — "table exists, writer never born."** Named so later
