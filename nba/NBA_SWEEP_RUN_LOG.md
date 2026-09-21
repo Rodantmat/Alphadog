@@ -14,11 +14,13 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 | | |
 |---|---|
-| **Current transcript** | **T5** — `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt` |
-| **State** | **CLEAN 2/3 · 6 passes · all four strata read.** 438 segments, 375 uncovered vs twelve (85.6%). |
-| **Stratum** | Complete (owner 0 in tail · reasoning 155 · commands 92 · results 128). |
-| **Exact next step** | **T5 pass 7 — one more clean pass at a NEW angle** to reach 3/3. Angles already used on T5: strata read (1–3), two-direction judgment (4), referential integrity (5), wiring (6). **Suggested: the mid-band 0.40–0.45 seam** (`scratchpad/t2judge/midband.py`, repoint at T5) — it produced the sharpest finding on T2. Then **close T5 and move to T6** `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt`. |
-| **Working scripts** | `scratchpad/t5/tail5.py` (tail + coverage), `scratchpad/t5/judge5.py` (two-direction), `scratchpad/t2judge/midband.py` (seam). Each takes one `sed` of the transcript path to repoint. |
+| **Current transcript** | **T6** — `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt` |
+| **State** | **Not started.** T5 CLOSED 2026-09-21 at 10 passes. |
+| **Stratum** | — |
+| **Exact next step** | **T6 pass 1.** `sed` the transcript path in `scratchpad/t5/tail5.py` → run → writes `t6_tail.json` + prints coverage. Stratify, then read **owner → reasoning → commands → results**, writing only at the end of each stratum (Rule 2). |
+| **Working scripts** | `scratchpad/t5/tail5.py` (tail + coverage), `scratchpad/t5/judge5.py` (two-direction judgment), `scratchpad/t2judge/midband.py` (0.40–0.45 seam). Each needs one `sed` of the transcript path. |
+| **Angles menu** (3 clean at different angles closes a transcript) | two-direction judgment · live numeric re-verification · **referential integrity** (do the tables join?) · **structural value sanity** (does the data obey domain invariants?) · wiring (registry/manifest/bindings/workflows) · cross-document consistency · mid-band 0.40–0.45 seam |
+| **⚠ T6 note** | The `comment` taxonomy on `player_game_starter_status` (4,319 DNP-Coach's-Decision etc.) **belongs to T6** — deliberately left undocumented by the T5 sweep. Live tail beyond the documented three: NWT-Not With Team 29, DND-Rest 27, NWT-Injury/Illness 25, DNP/NWT-League Suspension 12 each. |
 | **Angles to close with** | Three clean, genuinely different. Proven set: **two-direction judgment**, **live numeric re-verification**, **referential integrity (do the tables join?)**, **wiring (registry / manifest / bindings / workflow refs)**, **cross-document consistency**, **mid-band 0.40–0.45 seam**. |
 | **Then** | T4 → T5 → … → T20, strictly chronological. Completion criterion per transcript: **3 consecutive clean passes at genuinely different angles**, the two-direction judgment pass among them. |
 | **Order** | T1 ✅ · T2 (here) · T3 ✅ · then T4 → T20. T19/T20 are this documentation effort and are swept like any other. |
