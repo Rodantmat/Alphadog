@@ -14430,6 +14430,82 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.4 — PASS 3 (**LIVE VERIFICATION of T12's board layer — the first pass on this transcript to test the SYSTEM**) — **🔴🔴 the status key asserts three complete seasons and the tables hold one · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`, `SELECT` only. **Passes 0–2 read what the transcript says was built;
+this pass asked the database and the repository whether it is there.***
+
+#### ✅ T12.4a — **The band, and a FOURTH form of self-authorship — the desirable one**
+**Baseline 9 / 15 / 618 / 585 unchanged · working 21 / 11 / 600 / 576.** ***Predicted `uncovered12`
+to fall with several of segments 570, 604, 615, 631, 636, 638 among the crossings: 570, 604 and 636
+crossed.*** **Eighteenth pre-registration: seventeen hits, one miss.**
+⚠ **Eighteen segments have now crossed, and SEVEN were not predicted — 341, 343, 410, 425, 429, 431
+and 551 — every one of them covered by `NBA_SYSTEM_ARCHITECTURE.md`** *(§0f, written last pass)*.
+🔑 ***These are segments the sweep never QUOTED.*** **§T11.44a named three forms of self-authorship,
+all of them quotation-driven; this is a fourth — ***coverage gained by DESCRIBING A SUBJECT well
+enough that the transcript's own account of it becomes redundant.*** ✅ **And it is the direction the
+sweep exists to produce**, *not a measurement artefact to be corrected* — **recorded as an extension
+of §T11.44a rather than a new discovery** *(rule 28)*.
+
+#### 🔴🔴 T12.4b — **The status key asserts three complete seasons; the tables hold one**
+**`enrichment_backfill_status_2026_09_10`, `verified_at` 2026-09-10T22:00Z**: **starters
+`1230/1230` for all three seasons — 32,385 / 32,515 / 32,179, errors 0, *"2 timed-out games
+repaired"*; officials `1230/1230` — 3,690 / 3,691 / 3,681.**
+🔴 **The database holds only 2025-26**, and 🔑 ***32,179 and 3,681 are EXACTLY that key's 2025-26
+figures*** — **so the tables contain precisely one of the three seasons the status record calls
+complete.** ***The system's own verified status record describes the REPOSITORY, and nothing reads
+the repository*** *(§T11.31b · §T12.2d)*. ✅ **And it closes a T12 queue item: `0022300079` and
+`0022300721` are recorded as REPAIRED.**
+🔴 **Four OPEN ITEMS inside that key, all 0 of thirty**: ***"market join must be properly keyed
+before the engine consumes it — a coarse join produced a FALSE 2.9%-vs-56% ARBITRAGE SIGNAL"*** *(a
+join defect that manufactured a 53-point apparent edge)* · ***`days_done: 0` while rows are correct —
+the counter was never written during the shard migration, "repair before any job reads it to decide
+re-fetches"*** · ***2023-24 has NO injury reports, so day-of-report factors can only be fitted on TWO
+seasons*** · **9 unrecoverable board snapshots (`EVENT_NOT_FOUND`), 0.18% of 5,124.**
+⚠ *The two `arbitrage` hits in the corpus are `NBA_MULTIPLIERS.md`'s Single-Tier Non-Arbitrage
+Principle — a payout-table check, different subject, **opened and dismissed**.*
+
+#### ✅ T12.4c — **What the same key gets EXACTLY right, and one method correction**
+| claim | re-derived |
+|---|---|
+| **5,115 snapshots · 9 errors · "0.18% of 5,124"** | ✅ **`ok` 5,115 + `error` 9 = 5,124 exactly; 9/5,124 = 0.18%** |
+| **27.06M board rows · 6,602 MB** | ✅ **≈ 27,059,920 · 6,604 MB** |
+| **`game_lines_closing` all three seasons** | ✅ **12,165 rows, 333 dates** |
+
+⚠⚠ **RULE 30 IN THE OTHER DIRECTION**: ***`reltuples` is an ESTIMATE.*** **`game_lines_closing`
+estimates 11,768 and counts 12,165 — 3.3% low** — *so the 27.06M is stated as an estimate; an exact
+`count(*)` over that table **times out at 180 s**, which is why the estimate is the only figure
+available.* 🔑 **A figure that cannot be taken exactly must say so.**
+
+#### 🔴 T12.4d — **The live board decision SUPERSEDES T12, and T12 was right for T12**
+**`board_sources_decision` records SIX sources, not four**, and says **Fliff is *"OUR OWN scraper …
+NO LOGIN; verified 2026-09-10: 236 markets / 2,434 legs on 5 MLB games with full ladders"*.**
+✅ **Rule 27 confirms T12's last word is segment 638 — *"fliff = parlayapi"* — so pass 2 was correct
+for T12**, and 🔑 ***"236 markets" and "2,434" occur ZERO times in T12's 640 segments***, **so the
+completion is provably AFTER this transcript.** **Recorded as a supersession with both dates and a
+pointer, not as a correction.**
+⚠ **`betr` and `chalkboard` are also in the live key and NOT in T12** — ***and rule 28 kills them as
+findings: `betr` is in 10 of the twelve, `chalkboard` in 1.*** **The NINTH candidate killed before
+writing.** *(T12's seven "betr" matches are all **`betrivers`** — opened and dismissed.)*
+
+#### 🔴 T12.4e — **And one real T12 finding the board stratum missed: the `us2` region carries FLIFF**
+**Segment 38, the owner**: *"why the credits increased? you just said it is not charged per book."*
+**The answer — it is charged PER REGION, and The Odds API splits the US books in two**: **`us`**
+*(DK, FD, BetMGM, Caesars, BetRivers, Bovada, BetOnline, BetUS, LowVig, MyBookie)* and 🔴 **`us2`**
+*(ESPN BET/theScore, **FLIFF**, Hard Rock, Bally Bet, BetParx, ReBet)*. **Segment 42**: *"final:
+regions `us_dfs,us` only … **`us2` and `us_ex` EXCLUDED**."*
+🔑 ***So Fliff's historical board data was purchasable, in `us2`, and was deliberately left out on
+cost — while Fliff is also the one live board T12 still served through ParlayAPI.*** **1 of thirty,
+0 of the twelve.** ⚠ **Not conflated**: *`us2` supplies Fliff's HISTORY as a sportsbook feed; the
+live pick'em board is a separate surface, and **whether `us2`'s Fliff coverage would satisfy the
+board need is NOT RECORDED**.* 📌 **Rule 6 note: this was a sibling pass 2's board stratum should
+have enumerated and did not.**
+
+**Pass outcome: the live board layer verified end to end, one standing gap sharpened with the
+system's own status record, four unrecorded open items surfaced, one supersession dated, and one
+missed sibling recovered. CLEAN 0/3 · 4 passes.**
+
+---
+
 ### T12.3 — PASS 2 (**the BOARD-SCRAPER stratum — and it pays pass 1's two debts first**) — **🔴🔴 all four board sources decided on evidence, and THREE of the four had none of it in the twelve · 0/3**
 *2026-09-21. **Pass 1's brief carried two questions and pass 1 answered neither — stated plainly in
 its next-step row rather than dropped. Both are answered here.***
