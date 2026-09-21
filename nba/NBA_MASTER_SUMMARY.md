@@ -7727,6 +7727,58 @@ methodology. **Coverage at start**: 438 segments · **375 uncovered vs the twelv
 all 30 — **only a 9-segment self-authorship gap**, so unlike T4 this transcript barely writes the
 documents; its tail is genuine content, not its own payloads.*
 
+### T5.19 — PASS 4 (**the two-direction judgment pass**) — **NEW MATERIAL · 0/3**
+*2026-09-21. 438 segments. High band (≥0.45): **46** — the smallest band of any transcript so far.
+Tail-direction: **5**.*
+
+**DIRECTION 2 — CLEAN.** Only 5 segments, all `NBA_PROJECT_LOG.md` self-authorship. **T5 barely
+writes the documents**, which is why its uncovered-vs-twelve (85.6%) and uncovered-vs-all-30 (83.6%)
+figures nearly coincide — a 9-segment gap against T4's 67. ✅
+
+**DIRECTION 1 — one finding, and it protects a fix rather than reporting a fault.**
+
+#### ⚠ T5.19a — **NOT EVERY HARDCODED SEASON IS THE TRAP — and the distinction is undocumented**
+
+The band surfaced T5 *"rewriting this worker to loop over all 3 seasons generically, fixing the
+hardcoded season `'2025-26'`"*. `[LIVE-AUDIT]` **VERIFIED**, `alphadog-v2-nba-static-backfill.js`:
+```js
+const seasonSlugs = { "2023-24": "2023_24", "2024-25": "2024_25", "2025-26": "2025_26" };   // line 233
+for (const [season, slug] of Object.entries(mode === "weekly" ? {} : seasonSlugs)) { … }     // line 242
+```
+**Three season literals are still there — and that is correct.** This is a **one-time historical
+backfill** over *completed, frozen* seasons, and line 242 makes it explicit: **in `weekly` mode the
+season loop iterates an empty object**, so the literals cannot leak into recurring runs.
+
+⚠ **Why this needs saying.** `NBA_OPEN_ITEMS.md` correctly warns that *"the scrapers are the natural
+and correct first place to look when fixing a season rollover … fixing them there feels complete. It
+is not"*, and names `alphadog-v2-nba-static-onoff.js` — a **weekly** writer with `'2025-26'` in its
+INSERT — as the write-path instance. **The entry is right and correctly scoped.** But a future reader
+executing that rollover fix will grep for `2025-26`, **hit `seasonSlugs` at line 233, and "fix" a
+worker that is already correct** — turning a frozen historical backfill into something that chases
+the current season and re-mines 79,358 rows it already has.
+
+**The rule the documents were missing, now stated**: *a season literal is a trap in a **recurring**
+write path and is **correct** in a one-time historical job over completed seasons.* **Classify by the
+worker's cadence, not by the presence of the string.** → `NBA_OPEN_ITEMS.md`.
+
+#### 🔧 T5.19b — a defect in this sweep's own ledger, found and fixed during this pass
+While checking the above, the **T2 ledger row** was found to have accumulated three generations of
+text — the closure summary, a *"prior row, for history"* fragment, and the original pass-8 wording —
+running to roughly 1,200 characters. **That is the exact defect the owner corrected once before**
+(*"the T1 ledger row has become unreadable … the row keeps only the four required fields"*), caused
+here by patching the row additively instead of replacing it. **Stripped back to the four fields the
+standing rule requires.** *Recorded rather than quietly fixed, because a rule this sweep broke twice
+is worth the visibility.*
+
+#### ✅ Verified, already documented
+The 799/31/411 diagnostic figures; `playerindex` as the real bulk position source; `GS` existing only
+as a season aggregate; `start_position` living only on the per-game endpoint; the v3 nested schema;
+Jokić's rest buckets summing to 65 and home/road 33+32=65; the expired-log 404; **and the sandbox's
+own network limit** — *"stats.nba.com isn't in my sandbox's allowed network list, so I can't debug
+this directly"*, which is the structural reason every probe runs through GitHub Actions. ✅
+
+---
+
 ### T5.18 — PASS 3 (**results stratum, all 128 segments — last of T5's four**) — **NEW MATERIAL · 0/3**
 *2026-09-21.*
 
