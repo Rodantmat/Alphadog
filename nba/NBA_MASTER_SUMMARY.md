@@ -10578,7 +10578,10 @@ was supposed to find, and it took the right join to find it.**
 
 `nba_config.factor_registry.form` across 67 factors: **`continuous` 28 · `tiered_bands` 25 ·
 `binary_gate` 13 · `quantile_bands` 1.** The design's *"band / continuous / gate"* is a
-simplification — **the band family is split in two, and `gate` is spelled `binary_gate`.** Recorded
+simplification — **the `band` FORM is split in two (`tiered_bands`, `quantile_bands`), and `gate` is
+spelled `binary_gate`.** *(Wording disambiguated 2026-09-21, T8 pass 11: this is
+`factor_registry.form`, **not** the two `variation_bands.band_key` families at §T8.28b — two
+different objects that both read as "band families".)* Recorded
 as a precision, not a defect: the document describes three families and the schema implements four
 values.
 
