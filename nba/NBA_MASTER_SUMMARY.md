@@ -14430,6 +14430,72 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.30 — PASS 29 (**rule 27 applied to the whole transcript — the LAST-WORD audit**) — **🔴🔴 it found the terminal states on its first outing, and one of them is the CAUSE of a finding this sweep revised three times · 0/3**
+*2026-09-21. **The pass rule 27 made mandatory, and the one that should have run at pass 1.** Method:
+for every subject this sweep published a STATE for, map all 712 segments and **read the LAST
+occurrence**. **Pass 28 found segments 355 and 536 by accident — the band pointed at one. This pass
+found the rest on purpose.***
+
+#### 🔴 T11.30c — **The offset map, and it indicts eleven passes at a glance**
+
+| subject | occurrences | this sweep quoted | **transcript's LAST word** | |
+|---|---|---|---|---|
+| **Sleeper** | **99** | §T11.8b, from live SQL | **seg 709 — 99.6%** | 🔴🔴 |
+| **all-star lists** | 10 | seg 106 | **seg 711 — 99.9%** | ⚠ |
+| **injury backfill** | 14 | seg 47 | **seg 690 — 96.9%** | ⚠ |
+| **pdfplumber** | 10 | seg 20 (§T11.1b) | **seg 685 — 96.2%** | ⚠ |
+| **`a5` starter status** | 31 | seg 61 | **seg 613 — 86.1%** | ⚠ |
+| **Kaggle** | 16 | seg 112 | **seg 609 — 85.5%** | ⚠ |
+| **`parlayapi key`** | 16 | segs 112 → 197 → 221 (§T11.3a) | **seg 536 — 75.3%** | ⚠ |
+| **`c4`/`s1–s4`** | 3 | **seg 112 — 15.7%** (§T11.23c) | **seg 501 — 70.4%** | 🔴🔴 |
+| **TeamRankings** | 2 | seg 112 | **seg 536** | ⚠ |
+| **`bigdataball`** | **64** | seg 113 (§T11.23b) | **99.7%** *(found pass 28)* | ❌ retracted |
+
+***Nine of ten subjects were published from an early segment while the transcript's answer sat
+later.*** **That is not nine mistakes — it is one method error, nine times.**
+
+#### 🔴🔴 T11.30a — **Segment 501: the exhaustive verdict, and it is the CAUSE of §T11.8b**
+*`v41 exhaustive alternatives done` — the owner pushes back and is answered with evidence.* **ParlayAPI
+live-verified for Sleeper (331 MLB props, `is_dfs`, `flat_payout=true`) and its HISTORY verified absent
+BY THE API ITSELF** — **`BOOKMAKER_NOT_IN_ARCHIVE`**, *"no closing-line history exists for sleeper,
+prizepicks"*, **`/v1/bookmakers/sleeper/freshness` historical rows total = 0**, Underdog archived from
+~2026-05-10 only. **Free routes dead**: Wayback CDX gives **24 PP captures in three years, 0 for
+UD/Sleeper**, and the **52k PP board captures are share-entry SPA shells with no lines**; **no GitHub
+or Kaggle archives.** 🔴🔴 **And the paid route does not fix it**: ***the Odds API's `us_dfs` region is
+PrizePicks + Underdog + Pick6 + Dabble — NO SLEEPER***. **Plans $30/20k · $59/100k · $119/5M ·
+$249/15M.** ***"Nothing anywhere holds the 2024-25 or 2025-26 Sleeper boards."***
+
+🔑🔑 ***This is the CAUSE of the finding this sweep revised three times.*** **§T11.8b's *"Sleeper has
+zero NBA rows"* was measured from the database and reported as an observation about the data.** **T11
+explains it, and the explanation is stronger than the observation**: no archive exists anywhere, free
+or paid, and **the one paid route that rescues PrizePicks and Underdog does not carry Sleeper at
+all** — ***so the derived-Sleeper fallback (§T11.6b) is not a convenience, it is the only option that
+exists.*** ✅ **And §T11.23c's *"no free archive exists for anyone"* goes from an assertion quoted at
+segment 112 to a route-by-route PROOF at segment 501.**
+
+#### 🔴🔴 T11.30b — **Segment 709: the board puller is BUILT AND TESTED before T11 ends**
+*Three segments from the end.* **`odds_api_board_backfill` → `board_snapshots` + `board_backfill_log`
+(resumable); window 14:45 PT (DST-aware) + close (tip − 30); regions `us_dfs,us` in ONE call — cost is
+per REGION, not per book — 21 markets incl 8 alternate.** ***Test ORL-BKN 2024-10-25: 8,626 rows, 9
+books (PrizePicks 16 markets, Underdog 11, FD/DK 19).*** **420 credits/snapshot; two seasons ~2.07M,
+DFS-only 1.03M; fits $119/5M.**
+
+⚠ ***So §T11.29b's "DECISION PENDING" is segment 355's state, not T11's*** — **by 709 the puller is
+written, run against a real game, priced, and waiting on nothing but the owner's upgrade.** ***My own
+statement, one pass old, corrected by the rule written to catch exactly it.***
+
+🔑 **And the puller got the timezone RIGHT — `window 14:45 PT (DST-aware)`.** ***The same session that
+shipped a DST-aware window shipped the injury archive's hardcoded `-05:00` (§T11.3d) and
+`nba-referees.yml`'s `UTC-7` comment: this is not a knowledge gap, it is inconsistency between
+components*** — which is a better characterisation than any the sweep has published for those two.
+📌 **The ⏳ matrix rows are in motion at the close**: injury 2025-26 tail → 2024-25 queued, the
+workflow **self-looping 30-day chunks with commits**; starters/officials **2023-24 running**.
+
+**Pass outcome: 🔴 the sweep's own method corrected, nine subjects re-dated, two terminal states
+recovered. CLEAN 0/3 · 30 passes.**
+
+---
+
 ### T11.29 — PASS 28 (**sixth two-direction judgment, with a PRE-REGISTERED prediction**) — **🔑🔑 the prediction landed, and the ONE segment that moved overturns pass 26 · 0/3**
 *2026-09-21. **The prediction was written into the run log's next-step row before the measurement.***
 
