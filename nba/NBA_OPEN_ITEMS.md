@@ -317,6 +317,57 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T2 PASS 2 — THE FACTOR TIER LIST, AND TWO PARSER LESSONS *(added 2026-09-21)*
+
+### Gemini's tier 1–4 factor list — recorded WITH its epistemic flag, which is the point
+T2 asked Gemini for a prioritized list of prop-model factors and got one. **It is in
+`NBA_ENRICHMENT_FACTORS_RESEARCH.md` but in none of the twelve**, and it is worth having here
+because later calibration work tested these very claims:
+
+| Tier | Factors |
+|---|---|
+| **1 — highest signal** | projected minutes · recent usage rate/role · team pace |
+| **2 — strong, reliable** | defensive matchup / DvP · recent-form trailing averages |
+| **3 — context-dependent, decisive in the right spot** | blowout risk from the spread · referee crew · rest/schedule fatigue |
+| **4 — weak/noisy, test before trusting** | home/away splits · long-term season averages in isolation · altitude |
+
+**T2 flagged its own source honestly, and that flag is the durable part:**
+
+> *"This tiering is Gemini's synthesis of general industry consensus, **not a result from this
+> system's own backtests**. It should not be treated as locked until independently checked against
+> real data once the classification/scoring layer exists — this document records it as a **starting
+> hypothesis for prioritization, nothing more**."*
+
+**Carried forward as a hypothesis, dated 2026-09-03, not as a finding.** Gemini's own caveat on
+home/away splits is recorded with it: *"test this feature's lift in your model; you may find it's
+not worth the complexity."*
+
+### The officials parser was written twice in one session
+The first version split wikitable blocks and then rows on `|-`, assembling cells line by line. It
+was replaced by a single `re.finditer` over number/name pairs with a `len(name.split()) > 4` reject
+and a `normalize_id()` dedup. **Both are in T2; only the outcome (80 officials) is documented.**
+
+**Why it matters beyond trivia**: the rewrite is the reason the count is **80** rather than the
+**81** rows the Wikipedia page shows — the dedup key and the name regex drop one. *That is a
+defensible parse, but it means "80 officials" is a parser artifact as much as a fact about the NBA,
+and anyone reconciling against the page will find the discrepancy and wonder.*
+
+### `result_set_rows(body, name)` — selecting a result set by NAME, not index
+T1's scrapers take `resultSets[0]` positionally. **T2 introduced a helper that matches
+`rs["name"]` instead**, which is the robust form: stats.nba.com endpoints return multiple result
+sets and their order is not contractual. **Recorded because the two styles coexist in the codebase**
+— a positional read that happens to work today is a silent failure waiting for the day the API
+reorders, and it is the same class of defect as the `TeamAbbreviation` and `teamInfoCommon` column
+disappearances already seen twice in T1 and T2.
+
+### Name splitting, and the `Last, First` format
+`commonAllPlayers` returns both `full_name` and `last_comma_first`. T2's `splitName()` prefers the
+comma form when present and falls back to splitting on whitespace with everything-but-the-final-token
+as the first name. **Recorded because the same `"Last, First"` convention appears elsewhere in
+NBA-sourced data and the fallback is lossy for multi-word surnames.**
+
+---
+
 ## FROM T2 PASS 1 — THE SCRAPER'S DEPENDENCY BUG, AND THE IMPACT-METRIC SOURCE SURVEY *(added 2026-09-21)*
 *First pass on T2 under chronological order. T2 is the 2026-09-03 phase-3a enrichment session.*
 
