@@ -14358,6 +14358,57 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.26 — PASS 11 (**two-direction judgment, third run**) — **🔴 TWO defects, both mine, both in claims ABOUT THE SWEEP'S OWN RECORD · 0/3**
+*2026-09-21. Band **52 for a third run — 0 in, 0 out, the set byte-identical to passes 3 and 8**;
+direction 2 still the single self-authorship segment. **So the extraction is settled and this pass
+judged the CLAIMS of §T9.23–§T9.25 instead**, under rules 3, 8 and 14 — and both defects are in the
+one place this sweep keeps failing: **what it says about its own earlier entries.***
+
+#### 🔴 T9.26a — **§T7.61a's heading says "three places"; its own body names FOUR — and the summary rows were the ones that were right**
+
+§T7.61a is titled *"The `undifferentiated` claim was corrected in **three** places and left standing
+in two"*. **Its own body lists four**: §T7.44a, §T7.50a, `NBA_OPEN_ITEMS.md`, and the top of
+`NBA_DATABASE.md`'s cell section. **So does the rule-10 statement** (*"corrected in four places"*)
+**and so does the run log's pass-32 row.** A repo-wide grep of `three places` / `four places` found
+**exactly one stale copy — the heading.** Fixed, with the body's list named in the correction so the
+authority is visible.
+
+📌 **The direction is the reverse of §T9.25a and that is the useful part.** There the entry was
+corrected and the summary rows went stale; **here the summary rows were right and the entry's own
+heading went stale.** *Corrections do not fail in one direction — they fail wherever a figure was
+**re-typed rather than derived**, and a heading is re-typed prose exactly like a ledger row.*
+**Rule 10 needs no further sharpening; it needs applying to headings too.**
+
+#### 🔴 T9.26b — **§T9.25a's precedent claim was wrong on both counts, and correcting it STRENGTHENS the rule**
+
+§T9.25a closed with *"second time this exact shape has appeared (§T7.61a was the first, **inside one
+document**)"*. **I cited a section number without opening it — rule 14, again.** Opening it:
+
+| §T9.25a said | §T7.61a actually is |
+|---|---|
+| *"inside one document"* | **two documents** — `NBA_DATABASE.md` and `NBA_MASTER_SUMMARY.md` §T7.38b |
+| *"this exact shape"* | **a different shape** — the survivors were an **entry body** and a **prose paragraph**, **not summary rows** |
+
+**So the summary-row shape is NEW, not a repeat** — and that is precisely why the sharpening earns
+its place: **§T7.61a proves corrections leave copies standing; §T9.25a proves the copies they leave
+are the derived views a reader meets first.** *Written weaker, the rule looked like a restatement of
+itself.* Corrected in place at the rule-10 text.
+
+#### ✅ T9.26c — **The block's strongest claim re-tested hostilely, at REPO scope, and it holds exactly**
+
+Rule 8 says test the finding you are most confident about. §T9.21a's *"`nba_config.variation_bands`
+has zero code references"* was re-run **against the whole repository, every file type, unqualified
+table name** — the objection being a bare or non-NBA reader. **0 non-markdown hits anywhere in the
+repo**, not merely under `nba/`. And its counterpart is exact: **`VBANDS_ALL` has exactly two
+references, both in `classification_ladder_v12.py` — defined at line 114, read at line 519.**
+*The claim was stated at `nba/` scope and is true at repo scope; scope widened in the finding, not
+narrowed.*
+
+**Pass outcome: 2 defects, both in the sweep's own prose about its own entries, both fixed. 🔴 CLEAN
+0/3 · 11 passes.**
+
+---
+
 ### T9.25 — PASS 10 (**self-contradiction audit**) — **🔴 THREE surviving copies of a corrected claim — in the SUMMARY rows · 0/3**
 *2026-09-21. Every object §T9.16–§T9.24 describes, grepped back across the twelve **including the
 files being edited**.*
