@@ -246,7 +246,9 @@ jobs:
       - name: As-of ladder calibration
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          AC_SEASONS: ${{ github.event.inputs.season || '2025-26' }}
+          # NO AC_SEASONS HERE (removed 2026-09-21). Passing one season made the builder delete EVERY season and
+          # rebuild one; on 2026-09-20 03:24 UTC that wiped the whole calibration history. The builder now
+          # rebuilds every season in final_hp, oldest first, and refuses to write an empty build.
         run: python nba/build_asof_calibration.py
 
       - name: Refit the blowout model
