@@ -10355,7 +10355,13 @@ so the transcripts that set the values can be read against the instruction.** �
 a **penalty** or **drag** one that reduces it, and one entry already notes *"a direct penalty is what
 you called capping."* **The vocabulary is recorded; the preference about using it is not.**)*
 
-#### 🔴 T7.30b — **THE LADDER-WIDTH REQUIREMENT, IN THE OWNER'S OWN NUMBERS**
+#### ⚠ T7.30b — **THE LADDER-WIDTH REQUIREMENT, IN THE OWNER'S OWN NUMBERS** *(headline retired)*
+> 🔴 **RETIRED 2026-09-21 by §T7.46a.** This entry claimed the width requirement was nowhere
+> recorded. **It is recorded in measured form** — `NBA_GLOSSARY.md` line 370 and `NBA_GOBLIN_DEMON.md`
+> line 167: *"Goblin ≈ 25th–35th percentile … useful range ≈ 15th–85th. The live `LADDER_DEPTH`
+> measurement (**p95 = 13 rungs for points**) agrees with this to within one rung"* — against this
+> entry's *"roughly 11–13 rungs."* `NBA_FINAL_SCORING_CALIBRATION.md` line 2123 carries the same
+> measurement. **The owner's verbatim numbers and his rationale are the contribution.**
 
 > *"…we need to still do at least, like, four… no, four is too low. **Five or six variations over the
 > anchor and five, six variations under the anchor as well**, because **we never know where the apps
