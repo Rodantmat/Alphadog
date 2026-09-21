@@ -13768,6 +13768,20 @@ that every certified prop passed.** **Recorded in OPEN_ITEMS.**
 misses, while the header line lists it among "configured, not yet run". **The header is likely stale**
 relative to the inline comment, but worth confirming.
 
+> ✅ **CONFIRMED 2026-09-21 by §T9.35b — both statements are still live, in the same file.**
+> **Line 11** (module docstring): *"turnovers/fga/fg3a/ftm/personal_fouls: configured, NOT yet run."*
+> **Line 102** (the `fga` entry): `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)`.
+> ⚠ **Which governs is NOT RECORDED** — this entry's *"likely stale"* was a judgement, and nothing in
+> the file settles it. *`NBA_OPEN_ITEMS.md` had silently dropped `fga` from its copy of the list;
+> restored there with the disagreement stated rather than resolved.*
+>
+> 🔴 **And the NOT-YET-CERTIFIED group is FOUR props, not two** (§T9.35c). The
+> `# ADDED 2026-09-12 … Configs are the closest certified analogue; NOT yet certified` comment sits
+> above **the last four entries of `PROPS`** — **`fgm`, `fta`, `oreb`, `dreb`** (lines 109–112),
+> closing at the dict's `}`. **Both documents recorded only `fgm` and `fta`.** ⚠ **`oreb` and `dreb`
+> are two of the four props §T9.19c found missing from `prop_taxonomy`** — so they are **uncertified,
+> untaxonomised, and shipping ladder rows** (`oreb` 3,185, `dreb` 4,315).
+
 #### T8.12c — **Known misses, documented in the header rather than hidden**
 > *"**blocks more 70–75: −4.3, n=3900** = **P(0 blocks) under-predicted for ~1.5 bpg players, persists
 > at any lambda**; blocks less 75–80: −2.6 (thin); steals less 60–65: +3.6. **Holdout 2024-25 shows the
