@@ -35,8 +35,28 @@ attack: 4Q/2H mixture → remaining period stats + halves → period holdout →
 proof → production worker. **Item 6 is notable**: at T9, "**nothing writes the baseline ladder to
 Postgres yet; everything lives in the backtest harnesses**."*
 
-## 🔑 THE VARIATION DIMENSION COVERS **6 OF 28 PROPS** — and the split is exactly `build_tier`
-*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 (T8 pass 7). Detail: `NBA_MASTER_SUMMARY.md` §T8.28.*
+## ⚠ THE `variation_bands` TABLE COVERS 6 OF 28 PROPS — **but the LIVE dimension is code, and covers 15**
+*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 (T8 pass 7, **corrected T9 pass 6**). Detail:
+`NBA_MASTER_SUMMARY.md` §T8.28, §T9.21a.*
+
+> 🔴🔴 **CORRECTION FIRST, because it changes what this item means.** The variation bands the system
+> actually uses are **`VBANDS_ALL`**, a Python dict at `nba/backtest/classification_ladder_v12.py`
+> **line 114**, read at line 519 — **15 props**: `assists · blocks · dreb · fg3a · fga · fgm · fta ·
+> ftm · oreb · personal_fouls · points · rebounds · steals · threes_made · turnovers`.
+> **`nba_config.variation_bands` has 6 rows and zero code references.**
+>
+> **So the variation dimension is not under-built — it is hardcoded**, the third instance of the
+> §2-banner pattern and the third in that same file (`ROLE_TIERS` line 129; the decay `PROPS` dict).
+> *§T8.14b's "empirical vindication of the variation dimension" rests on 15 props, not 6.*
+>
+> ⚠ **The documented expansion checklist is why the tables lag**: `NBA_COMPASS.md` line 130 —
+> a new prop requires extending *"**PROPS config, `VBANDS_ALL`, and the factor-feature map**"* —
+> **three code structures. Neither `variation_bands` nor `prop_taxonomy` is on the list**, which is
+> exactly why the four stat-menu props reach the ladder and neither table.
+>
+> **What remains open**: which of the two is meant to be authoritative. *Not recorded.*
+
+**The table's own coverage, for the record:**
 
 | `prop_taxonomy.build_tier` | Props | With a variation band | With a profile cell |
 |---|---|---|---|
