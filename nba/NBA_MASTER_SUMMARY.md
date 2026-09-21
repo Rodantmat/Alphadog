@@ -2148,6 +2148,71 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+# ✅✅ T2 IS CLOSED — 2026-09-21 — 19 PASSES (18 counted, pass 13 VOID)
+
+**Three consecutive clean passes, at three genuinely different angles**, which is what the pass rule
+demands and what the first close in T2's history did not have:
+
+| Pass | Angle | Result |
+|---|---|---|
+| **17** | Every documented numeric claim re-verified against live Postgres | ✅ 18/18 matched |
+| **18** | Cross-document consistency — the thirty documents against each other | ✅ clean (one `[LIVE-AUDIT]`, non-resetting) |
+| **19** | The two-direction judgment pass | ✅ clean both directions |
+
+### T2.19 — PASS 19 (**the two-direction judgment pass**) — **✅ CLEAN 3/3 — T2 CLOSES**
+*2026-09-21. 814 segments. High band (≥0.45): 80. Tail-direction: 27.*
+
+**DIRECTION 2 — CLEAN.** 27 segments, every one **false-tail mechanism (3), self-authorship** —
+`NBA_PROJECT_LOG.md` (14) and `NBA_ENRICHMENT_FACTORS_RESEARCH.md` (13), matching at 0.98–1.00
+because the segment *is* the file being written. Substance correctly carried in the twelve.
+
+**DIRECTION 1 — CLEAN.** All 80 map to documented entries that are right. The last two unverified
+stragglers were cleared this pass: the `Tool 'Alphadog Bridge:github_str_replace' not found. Did you
+mean: str_replace?` failures are recorded **with the exact quote**, together with the correction that
+`NBA_SYSTEM_ARCHITECTURE.md` had listed a tool that does not exist.
+
+---
+
+## T2 FINAL TALLY
+
+**19 passes. 18 counted; pass 13 VOID (run against a clone 98 commits stale).**
+
+**Two closes, and the second is the real one.** T2 first closed at pass 11 with 3 clean passes — a
+**procedurally correct close on a shallow read**, at **1 finding per ~34 segments** against T3's
+1 per 7.3 on comparable material. Reopened on that measurement alone, not on any rule violation.
+**The re-read produced ~42 further findings across ~367 segments — 1 per ~9**, a 3.8× improvement,
+which settles the question the reopening asked.
+
+**What the re-read found that the first close missed**, by severity:
+
+| Severity | Finding |
+|---|---|
+| 🔴🔴 | **`ok` is the certification verdict, not a success flag** (18 workers) — and the teams fallback **structurally cannot fail certification**, because the check tests for the shape the fallback was built to produce |
+| 🔴🔴 | **`raw_json` double-encoded as a string** across the NBA JSONB surface — 17,902 rows / 14 tables *(my own count was 13× low; corrected by the owner and recorded as an error, not swapped)* |
+| ⚠⚠ | **A second fallback trigger**, `…AFTER_COUNT_MISMATCH`, firing on a **successful** fetch whose count ≠ 30 — an equality test, so 32 teams fails it exactly as 29 does |
+| ⚠⚠ | A fallback run and a live run return **identical certification strings**; the `fetch_note` field that told readers to check `source_key` was deleted |
+| ⚠ | A **fifth** hand-maintained edit site per new scraper, whose failure mode is "the commit dies for everyone" |
+| ⚠ | `arenas` `owner`/`year_founded` scraped every run, written nowhere, **and not recoverable from `raw_json`** |
+| ⚠ | The **stray payload fragment** ending all twelve documents — cause found, fixed |
+
+**Three corrections to this sweep's own prose**, all caught by judgment passes rather than by reading:
+the `raw_json` undercount; the §T2.14a "contradiction" that was **the future-leaking-backward error
+committed one turn after recording the rule against it**; and an absence-assertion drafted on a stale
+clone that would have been false. **Each is recorded where it happened rather than quietly fixed.**
+
+**The methodological result worth carrying forward**: the ratio reopened T2, but **three different
+angles closed it** — live numeric verification, cross-document consistency, and the two-direction
+judgment pass. A fourth angle, the mid-band seam at 0.40–0.45, produced the single sharpest finding
+of the whole transcript. **Neither the ratio nor any one angle would have been sufficient alone.**
+
+---
+
+## ▶ NEXT: T4 — `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt`
+Phase 3b, the incremental/delta game-log layer that T2 and T3 both deferred to. Strictly
+chronological from here: T4 → T5 → … → T20.
+
+---
+
 ### T2.18 — PASS 18 (**angle: cross-document consistency — do the thirty documents agree with each other?**) — **✅ CLEAN 2/3 · one `[LIVE-AUDIT]` finding, which does not reset**
 *2026-09-21. A fourth distinct angle: not transcript-vs-documents but **document-vs-document**.*
 
