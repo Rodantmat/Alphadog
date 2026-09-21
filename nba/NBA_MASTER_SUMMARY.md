@@ -16245,7 +16245,7 @@ turns §T11.1d and §T11.1e quoted.**
 #### ✅ T11.25b — **The matrix re-checked against the segment, cell by cell**
 
 *§T11.20a's lesson: a value set read from one place and generalised is wrong, and a 2,462-character
-segment transcribed into a twenty-row table is exactly that risk.* **The load-bearing cells
+segment transcribed into a ~~twenty~~ **nineteen**-row table is exactly that risk.* *(Row count corrected 2026-09-21 by §T11.56d — nineteen factor rows; "twenty" counted the header. **Rule 6: the count comes from the authority, and the authority is the table.**)* **The load-bearing cells
 re-read against the raw segment:**
 
 | cell | raw segment text | table |
