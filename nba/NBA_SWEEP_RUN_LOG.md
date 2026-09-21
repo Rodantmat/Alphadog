@@ -141,6 +141,15 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
     guard shapes in the codebase test the aggregate; none asks the per-item question** *did every
     input produce at least one output row?*
 
+14. 🔴🔴 **The officials dictionary and the game assignments cannot be joined — 3,681 of 3,681 rows
+    fail.** `nba_ref.officials.official_id` is name-derived (`nba_official_ray_acosta`);
+    `nba_stats.game_officials.official_id` is numeric (`nba_1629178`) — **and the assignments already
+    carry the numeric id the dictionary lacks.** The T2 `known_limitation` said the crosswalk would
+    come from box-score data; **it did, and was never built.** Referee-crew tendencies — deferred to
+    Phase 3b *so this table could exist* — are not computable by joining these two.
+15. 🔴 **`lineup_profile` is exactly 2,000 rows per group size (8,000 total) — the API cap hit four
+    times, silently.** Every run "succeeded"; 2,000 looks healthy. **Captured fraction unknown.**
+
 ### ⚠⚠ Structural
 - **The teams fallback has two triggers**, and `…AFTER_COUNT_MISMATCH` fires on a *successful* fetch
   whose count ≠ 30 — an equality test, so **32 teams fails it exactly as 29 does**.
