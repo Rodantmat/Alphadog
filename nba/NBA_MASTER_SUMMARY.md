@@ -14341,6 +14341,36 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.24 — PASS 9 (**live numeric re-verification**) — **✅ CLEAN 1/3 · 22 of 22 exact, every partition summed · one method note**
+*2026-09-21. Every figure passes 4–8 state, re-derived from its own authority.*
+
+| Claim | Live |
+|---|---|
+| Ladder: **206,237** rows · **3** asof days · **385** players · **22** props | **all four exact** ✅ |
+| Props in taxonomy **18** / not in taxonomy **4** | **18 · 4** ✅ — **and 18 + 4 = 22** ✅ |
+| Rows on unresolvable props | **16,208** ✅ |
+| The nine config objects: 66 · 67 · 460 · 35 · 25 · 28 · 13 · 6 · 5 | **all nine exact** ✅ — **and they sum to 705** ✅ |
+| Code dicts: `PROPS` **15** · `VBANDS_ALL` **15** · `LADDER_DEPTH` **20** · `ROLE_TIERS` **6** | **all four exact** ✅ |
+| The three empty objects: `nba_control.job_runs`, `worker_run_log`, `teams.arena_id` | **0 · 0 · NULL×30** ✅ |
+
+#### 📌 T9.24a — **A method note: my first `LADDER_DEPTH` count returned ZERO, and the partition check is not what caught it**
+
+The regex that enumerated `PROPS` and `VBANDS_ALL` — keys followed by `{` or `[` — **returned 0 for
+`LADDER_DEPTH`**, because its values are **bare integers**: `"points": 14, "pra": 16, …`. **A
+structure-shaped pattern found nothing in a structure of a different shape, and reported it as
+absence rather than as a mismatch.**
+
+**Rule 11 would not have caught this** — there was no partition to sum. What caught it was that
+**zero was implausible for a dict named in eight documents.** *So the method note is: when an
+extraction returns **zero**, treat it as a failed extraction until proven otherwise — **absence and
+non-match look identical to a pattern**, which is the same error family as the NULL artifact at
+§T7.64a and the tail-vs-transcript count at §T8.24a.* **Corrected count: 20 keys, confirmed by
+reading the block.**
+
+**Pass outcome: 22 of 22 exact, every partition sums, no defect. ✅ CLEAN 1/3.**
+
+---
+
 ### T9.23 — PASS 8 (**two-direction judgment, second run**) — **🔑 the pattern already has a NAME, and there are actually TWO · 0/3**
 *2026-09-21. Band 52 for a second run, 0 in, 0 out. Rules 8 and 14 on §T9.19–§T9.22 — and the hit
 that mattered was a phrase I used casually.*
