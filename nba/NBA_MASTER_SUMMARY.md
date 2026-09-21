@@ -14430,6 +14430,68 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.19 — PASS 18 (**label-vocabulary audit across the schema**) — **🔴 the pattern is real and `snapshot_label` was the mildest case · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. The angle §T11.18b forced. **The rule-16 discipline pays twice here: it
+narrows one finding and sharpens two others.***
+
+#### 📌 T11.19a — **`snapshot_label` across all NINE tables that carry it — and it splits cleanly by FAMILY**
+
+| table | `snapshot_label` values |
+|---|---|
+| `board_snapshots` | **`close` · `routine` · `window`** |
+| `board_tiers` / `board_tiers_v2` | `close` · `window` |
+| `rung_market` | `close` · `window` |
+| `board_backfill_log` | `close` · `window` |
+| **`game_lines_snapshots`** | **`morning` · `window`** |
+| **`game_lines_snapshot_log`** | **`morning` · `window`** |
+| `board_outcomes` | **all NULL** *(§T11.5c)* |
+| `nba_score.paper_picks` | *(empty table)* |
+
+✅ ***§T11.18b compared two tables and called it "two vocabularies". With all nine in view it is
+better than that: it is a clean split by PIPELINE FAMILY*** — **the BOARD family uses `close`/`window`
+(plus `routine` on the live-capture table); the GAME-LINES family uses `morning`/`window`; `window` is
+the shared value.** **Not arbitrary drift — two capture pipelines, each with its own second label.**
+**Narrowed in place.**
+
+📌 **And a table this sweep has not seen before**: **`nba_score.paper_picks`** — *absent from the
+97-object catalog taken at §T10.22a on 2026-09-21, present now, and empty.* **`[LIVE-AUDIT]`; what it
+is, and when it appeared, is NOT RECORDED** *(rule 6, and the chronological rule — it belongs to a
+session this sweep has not reached).*
+
+#### 🔴 T11.19b — **But two other column names DO collide, and their meanings are unrelated**
+
+| column | table | values |
+|---|---|---|
+| **`kind`** | `board_tiers` · `board_tiers_v2` · `tier_band_calibration` · `tier_selection_value` | **`demon` · `goblin` · `standard`** — *the PrizePicks taxonomy* ✅ consistent across four |
+| **`kind`** | 🔴 **`nba_score.blowout_model`** | 🔴 **`minutes_by_margin` · `p_blowout` · `sliding_scale`** — ***a model-component name, not a prop taxonomy*** |
+| **`market`** | `nba_market.game_lines_snapshots` | **`h2h` · `spreads` · `totals`** — *game-level bet types* |
+| **`market`** | 🔴 **`nba_market.rung_market`** | 🔴 **`player_points` · `player_assists` · `player_rebounds` …** — ***player prop keys*** |
+
+🔴 ***Two collisions where the same column name means entirely different things***: `kind` is a
+**goblin/demon taxonomy** in four tables and a **model-component label** in a fifth; `market` is a
+**game-level bet type** in one table and a **player prop key** in another — **two different levels of
+the data model under one name.**
+📌 **`nba_score.board_scored.kind` is entirely NULL** — a third unpopulated discriminator after
+`board_outcomes`' two (§T11.5c).
+
+#### 🔴 STANDING RULE 24 — **A COLUMN NAME IS NOT A VOCABULARY**
+*Added 2026-09-21 after §T11.19b, with three instances behind it.*
+
+**Before reading a column's values, or joining on it, or citing them in a document, check what that
+column name means IN THAT TABLE.** *`snapshot_label` splits by pipeline family; `kind` is a prop
+taxonomy in four tables and a model-component name in a fifth; `market` is a bet type in one and a
+prop key in another.*
+
+⚠ **And the companion, because this pass demonstrates it**: ***comparing TWO tables tells you there is
+a difference; comparing ALL of them tells you whether it is a pattern or a collision.*** **§T11.18b
+saw two and called it drift; nine showed a clean family split, and the real collisions were
+elsewhere.** **An audit of a naming question enumerates every table that carries the name.**
+
+**Pass outcome: 1 finding narrowed (the `snapshot_label` split is principled), 2 genuine collisions
+found (`kind`, `market`), 1 unseen table recorded, rule 24. 🔴 CLEAN 0/3 · 19 passes.**
+
+---
+
 ### T11.18 — PASS 17 (**live numeric re-verification, and the exporter read**) — **✅ "gated by" proven mechanically · 🔴 and `snapshot_label` has a DIFFERENT VOCABULARY PER TABLE · 0/3**
 *2026-09-21. `[LIVE-AUDIT]` plus read-only code reading. The attack the next-step row demanded, on the
 claim that rested on an equality rather than a mechanism.*
