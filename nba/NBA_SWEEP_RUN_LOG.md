@@ -97,6 +97,16 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
    and fail together: a real 32-team response trips into the fallback, and the fallback then
    certifies. **A certified teams run is not evidence of live data; it is evidence of thirty rows.**
 
+8. **`player_career_season_totals` stores its own subtotals** — `team_id='nba_0'` is the traded-player
+   season total sitting beside the per-team rows it sums. **282 of 3,064 player-seasons are in the
+   table twice**; verified exact (all 282 match the sum, 0 mismatches). Any naive aggregate
+   double-counts, and **no `is_total` flag exists**. *(Distinct from the blowout double-counting at
+   §T4.11, which is resolved.)*
+9. **One player has no career totals at all** — Maxi Kleber. The scrape reported "582 players
+   succeeded" because that number is `len(players) - len(errors)`: **attempts minus errors, not
+   players with data.** The per-item guard shape — *did every input produce at least one row?* — is
+   **absent from all four guard shapes in the codebase**.
+
 ### ⚠⚠ Structural
 - **The teams fallback has two triggers**, and `…AFTER_COUNT_MISMATCH` fires on a *successful* fetch
   whose count ≠ 30 — an equality test, so **32 teams fails it exactly as 29 does**.
