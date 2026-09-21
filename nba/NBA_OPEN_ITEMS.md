@@ -78,6 +78,34 @@ for the play-type table (*"the worker stores `JSON.stringify(r).slice(0,1000)` w
 already-reduced record, not the source row"*). **That one is about what was put in. This one is about
 how it was encoded.** A table can have either, or both — `nba_ref.arenas` has both.
 
+### 🔴🔴 IT WAS ON SCREEN ON 2026-09-04 AND WAS STEPPED OVER
+*Added 2026-09-21, T7 re-sweep pass 5. The first recorded sighting of this defect.*
+
+T7 ran `jsonb_object_keys(metrics::jsonb)` on `nba_stats.player_tracking_detail` and got:
+```
+{ "ok": false, "error": "cannot call jsonb_object_keys on a scalar" }
+```
+**That is the error a double-encoded column produces** — the identical error this sweep hit on
+`nba_ref.arenas` while establishing the finding. The response was a workaround,
+`left(metrics::text, 600)`, **whose output displayed the defect plainly**:
+```
+"sample": "\"{\\\"gp\\\":24,\\\"w\\\":12,\\\"min\\\":9.4,\\\"passes_made\\\":7.7, …}\""
+```
+— a JSON **string** containing escaped JSON.
+
+**The diagnosis was one question away and the question was not asked.** The cast made the data
+readable; nobody asked why the cast was needed. **Nothing recorded it for seventeen days.**
+
+⚠ **So the bug predates 2026-09-04** — T7 only brushed against it; the writers date from the
+static-layer build (T2–T3). **When it was introduced is still NOT RECORDED.**
+
+⚠ **This is the failure shape the sweep keeps meeting**: an error appeared, a workaround succeeded,
+and the success was quiet enough to step over — the same pattern as the truthiness bug (`[] is not
+None`) and the 799-row trap. **The system said something was wrong, in a form that was easy to route
+around.**
+
+---
+
 ✅ **FULLY RECOVERABLE — verified, not assumed.** Every affected row parses after
 `(col #>> '{}')::jsonb`, and **none are truncated**: the longest affected value is **601 characters**,
 comfortably under every `.slice()` limit in the writers (1000/2000/5000). **Truncation is a latent
