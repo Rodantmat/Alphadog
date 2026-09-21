@@ -389,7 +389,8 @@ were fitted on these legs; the out-of-sample figure remains leave-one-player-out
    `3-PT Made→player_threes`, `Rebs+Asts→player_rebounds_assists`)
 9. **Preseason board (2026-10-03):** re-validate on dozens of players; mine longer-odds demons to extend the edge
 
-### BUILD CHECKLIST — nothing below is built yet
+### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
+*Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
 2. **Fill version 1** — the current normal model, with its big-demon bias recorded in `pp_pricing_model`
 3. **Slip rules** into `pp_slip_rules`
