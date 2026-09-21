@@ -14584,10 +14584,13 @@ exists and is documented; **what is missing is history, not a scraper**.*
 🔴 **And two more are partial**: **`betr_us_dfs` begins 2025-11-23** and **`pick6` begins 2025-05-26** —
 **131 and 176 days against PrizePicks' 378.** *Neither covers the first season.*
 
-⚠ **Stated with its authority**: this is **the live state on 2026-09-21**, not T11's outcome. **Why
-Sleeper has no history — whether ParlayAPI never served it, whether a run failed, or whether it was
-dropped — is NOT RECORDED**, and eight transcripts after T11 are unread. **Written to
-`NBA_OPEN_ITEMS.md` as a question, not a cause.**
+⚠ **Stated with its authority**: this is **the live state on 2026-09-21**, not T11's outcome.
+❌ ~~**Why Sleeper has no history… is NOT RECORDED.**~~ — **RETRACTED 2026-09-21 by §T11.6b: the cause
+AND the remedy are on file.** `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`: ***"Sleeper has no history
+anywhere → derived-Sleeper fallback trained on PP/UD snapshots; live boards from opening day via OUR
+scrapers."*** ✅ **So it is a sourcing fact about the world, not an unmet obligation** — and **what
+survives is that all three carriers sit outside the twelve**, plus **Betr's and Pick6's partial
+ranges, which are documented nowhere.**
 
 ✅ **Cross-check that lands exactly**: PrizePicks' **2,199,354** board rows equal
 `nba_market.board_tiers` and `board_tiers_v2` **to the row** (§T10.27a) — *the tier tables are that
