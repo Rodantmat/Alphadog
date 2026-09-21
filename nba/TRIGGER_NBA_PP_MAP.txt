@@ -1,9 +1,9 @@
 league: wnba
-mode: slips
+mode: multi
 max_quotes: 150
 altalt: 30
 drift: 15
-note: 2026-09-21 WNBA SLIPS run - all-standard 2..6 picks (one player per team) + 1-alternate mixed slips 3..6 with the
-note: alternate priced alone in the same run. Purpose: exact multi-pick Power/Flex rules for NBA (slip rules are league-
-note: independent - verified identical bases and Flex tables). WNBA = data source for NBA only.
+note: 2026-09-21 WNBA MULTI run - 2- and 3-alternate slips at 3..6 picks, every alternate priced alone in the same run,
+note: to model the multi-alternate haircut for NBA slip pricing. Also the first run of the board-row loader (Fantasy Score
+note: research: every stat's standard line side by side, all runs). WNBA = data source for NBA only.
 note: scheduled runs force delta mode. Switch back to "league: nba" when the NBA preseason board appears (~Oct 1-3).
