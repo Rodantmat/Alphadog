@@ -100,13 +100,26 @@ def graded(season, conn, pid_map, props):
 
 
 def main():
-    seasons = [s.strip() for s in os.environ.get("AC_SEASONS", "2024-25,2025-26").split(",")]
+    seasons_env = os.environ.get("AC_SEASONS", "").strip()
     K = float(os.environ.get("AC_K", "400"))
     cadence = int(os.environ.get("AC_CADENCE_DAYS", "7"))
     props = [p.strip() for p in os.environ.get(
         "AC_PROPS", "points,rebounds,assists,threes_made,pra,pts_reb,pts_ast,reb_ast").split(",") if p.strip()]
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
+    # SEASONS. Default = EVERY season the final engine has produced, OLDEST FIRST, so each season inherits its
+    # prior. (2026-09-21: P2 passed a single season; the builder then deleted ALL seasons and rebuilt one -
+    # on 2026-09-20 03:24 UTC that wiped the whole 9,577-cell history and committed zero cells.)
+    if seasons_env:
+        seasons = [s.strip() for s in seasons_env.split(",") if s.strip()]
+    else:
+        seasons = [r[0] for r in conn.execute("""WITH RECURSIVE s AS (
+            (SELECT season FROM nba_score.final_hp ORDER BY season LIMIT 1)
+            UNION ALL
+            SELECT (SELECT f.season FROM nba_score.final_hp f WHERE f.season > s.season ORDER BY f.season LIMIT 1)
+            FROM s WHERE s.season IS NOT NULL)
+            SELECT season FROM s WHERE season IS NOT NULL ORDER BY season""").fetchall()]
+    print(f"seasons to rebuild (oldest first): {seasons}", flush=True)
     pid_map = {norm_name(x.get("DISPLAY_FIRST_LAST")): str(x.get("PERSON_ID"))
                for x in fetch("nba_all_players.json").get("records") or []}
     with conn.cursor() as cur:
@@ -115,7 +128,10 @@ def main():
             log_odds_shift numeric, n int, source text, built_at timestamptz DEFAULT now())""")
         cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS ladder_cal_asof_uidx
             ON nba_score.ladder_calibration_asof (as_of_date, prop, phase, band, side)""")
-        cur.execute("DELETE FROM nba_score.ladder_calibration_asof")
+    conn.commit()
+    # NOTHING IS DELETED HERE. Every cell is computed first; the old cells are replaced in ONE transaction at the
+    # end, and only if the new build produced cells. An empty build never overwrites history.
+    all_rows = []
 
     prior = {}          # cells carried from the previous season, used until current evidence exists
     for season in seasons:
