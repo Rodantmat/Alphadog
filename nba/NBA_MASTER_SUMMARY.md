@@ -12772,6 +12772,40 @@ architecture materialised into `nba_config`.
 
 ---
 
+## T8 RE-SWEEP UNDER CHRONOLOGICAL ORDER (2026-09-21)
+
+> **T8 is not a fresh transcript.** §T8.1–§T8.21 below were written before the chronological-order
+> DRIFT NOTICE, reaching **CLEAN 3/3 at 15 passes** (§T8.21). **The reset voided the clean count, not
+> the content** — the same position T4, T5 and T6 were in. The re-sweep therefore re-reads all four
+> strata and closes on **3 clean passes at 3 genuinely different angles**, the two-direction judgment
+> among them.
+>
+> **Corpus**: **615 segments** — 539 assistant, 3 owner. **542 uncovered vs the twelve (88.1%)**,
+> 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
+> extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
+
+### T8.22 — PASS 1 (**owner stratum**) — **✅ CLEAN 1/3 · all three directives already recorded**
+*2026-09-21. **T8 has only three owner turns.** Each was tested by substance across all thirty
+documents **before** any claim was written — the rule T7 cost thirteen defects to learn.*
+
+| Owner turn | Substance | Already recorded |
+|---|---|---|
+| *"now tiering for each **player tier, factor, prop line, variation and direction**"*, and study MLB's classification/baseline **and** enrichment pipelines for the tier logic | the five-dimension tiering architecture | ✅ **§T8.2**, quoted verbatim |
+| *"**daily context factors** — real lineups, current injury reports, anything mined daily — that's not gonna be on the baseline, that's enrichment"*, but factors **derivable as static data** (projected minutes, older injury reports) **are** baseline, *"to make a sharper baseline instead of being completely agnostic and naive"*; then **lock the tiers and start backtesting**, *"the backtest is what's gonna sharpen the tiers"* | the baseline/enrichment boundary, by derivability | ✅ **§T8.3**, quoted verbatim with the assistant's confirmation — *"daily-mined = enrichment; derivable-from-history = baseline"* |
+| *"it should be **leg** high accuracy level, **not only the overall propline**, on all variations and directions. Then recheck on **bands, 95%, 90%, 85%** and so on, on the hit rate"* | the leg-level gating standard | ✅ **§T8.7**, in the assistant's restatement — *"the standard is leg-level: every variation band, every direction, and then **'when the model says 90%, does it hit 90%?'** across confidence bands. That's the metric that actually gates"* |
+
+**Zero new owner material.** *Recorded as a finding in its own right: **T7's pass 1 made the opposite
+call on the same stratum and was wrong three times over** (§T7.46a). The difference is not the
+transcripts — it is that this pass grepped all thirty for the **substance** first. The rule works.*
+
+⚠ **One wording note kept for the owner's own phrasing, not as a gap**: the owner names the bands
+**"95%, 90%, 85% and so on"**; the documents render the standard as *"when the model says 90%, does
+it hit 90%?"* and report bands as ranges (`50–55` … `90–95`). **Same standard, different granularity
+of statement** — no correction needed, recorded so a later reader does not read the owner's ladder as
+a separate unmet requirement.
+
+---
+
 ## T8 — `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt`
 **The tiering architecture materialised, and the backtest harness driven to leg-level calibration**
 *53 content blocks · **PASS 1 (full sequential) 2026-09-20***
