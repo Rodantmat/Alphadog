@@ -1947,6 +1947,26 @@ season via the `nba_season` helper.** Of the ten still containing a literal, sev
 backfills over frozen seasons where the literal is **correct** — apply the cadence rule below before
 changing any of them.
 
+### 📌 The helper, its origin, and its escape hatch *(added 2026-09-21, T7 pass 4)*
+`nba/nba_season.py` was written in T7. **Its docstring is the best statement of this trap anywhere in
+the codebase:**
+> *"every weekly static scraper hardcoded `Season=2025-26` … **confirmed on 6 scrapers directly**
+> (splits, lineups, player-bio, tracking-detail, playtypes, shotquality) — and **the pattern is
+> universal across the whole stats.nba.com scraper set, all written from the same template**. …the
+> entire weekly layer would have silently kept pulling the frozen 2025-26 season's data **while
+> reporting success on every run — the most dangerous kind of failure, because nothing errors**."*
+
+- **The origin is the template**, so the defect was *copied*, not repeated — the same mechanism as
+  the ten copied static writers.
+- **`scrape_nba_daily_delta.py` was the only scraper that already auto-detected the season**; the
+  helper is that logic lifted out.
+- ⚠ **There is an `NBA_SEASON` environment-variable override** for deliberate one-off historical
+  runs. **This is the escape hatch the cadence rule needs**: a past season can be re-scraped without
+  editing any code, so a one-time backfill never needs its literal "fixed".
+- ⚠ **The docstring's deadline is now wrong**: it says the danger lands *"on 2026-10-03 when the
+  2026-27 season starts."* **The regular season opens 2026-10-20** — and since `current_season()`
+  rolls over in **July**, the helper has been returning `2026-27` since then regardless.
+
 **Three workers, three tables, spanning two schemas** (`nba_stats` and `nba_team`) — **so the
 rollover fix has at least four locations**: the scrapers' URLs plus each of these INSERTs. **And no
 single search term finds them all**, since one set writes the season into a query string and the
