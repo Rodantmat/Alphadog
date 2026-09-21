@@ -8526,6 +8526,55 @@ with a completeness-check bug caught via the `002` GAME_ID prefix.
 
 ---
 
+## T6 RE-SWEEP UNDER CHRONOLOGICAL ORDER (2026-09-21)
+
+*Swept previously, then RESET by the DRIFT NOTICE. **Coverage at start**: 595 segments ·
+**527 uncovered vs the twelve (88.6%)** · 524 vs all 30 — a **3-segment** self-authorship gap, the
+smallest of any transcript. T6 writes almost none of the documents; its tail is all content.*
+
+### T6.17 — PASS 1 (**reasoning stratum, read to the end**) — **NEW MATERIAL · 0/3**
+*2026-09-21. No owner turns in the tail.*
+
+**T6's existing sixteen sections verified correct** against all 30 documents: the manual
+chunk-loading saga and its 27-rows-of-32,179 self-caught error, the `dblink` / `http` /
+`plpython3u` extension dead end, the `boxscoresummaryv2` **data-availability cutoff after
+2025-04-10** (the upstream warning that explains T5's 799-row trap at its source), the move to
+`boxscoresummaryv3`, 12,300 starters, 3,681 officials rows across 1,227 games, and the lineups
+build. ✅
+
+#### 📐 T6.17a — `[LIVE-AUDIT]` **the officials table satisfies a clean domain invariant — every game has exactly three**
+
+Applying the structural-sanity angle that closed T5:
+
+| Check | Result |
+|---|---|
+| `nba_stats.game_officials` rows | **3,681** ✅ matches documented |
+| distinct games | **1,227** ✅ |
+| distinct officials | **83** |
+| **games with a count other than 3** | **0 — all 1,227 have exactly three** ✅ |
+| 2025-26 log games with **no** officials row | **3** — the known permanent failures |
+
+**3,681 = 1,227 × 3 exactly.** NBA regular-season games are officiated by a three-person crew, and
+**every game in the table obeys that without exception** — so the parse is sound and the three
+missing games are a clean absence, not a partial corruption.
+
+⚠ **The 83-official figure is worth one line of caution and is recorded here for the first time.**
+`nba_ref.officials` holds **80** rows (the Wikipedia roster), while the games themselves name **83**
+distinct officials. **The two sources disagree by three.** *Cause NOT RECORDED* — the officials
+dictionary is name-keyed with no stats.nba.com crosswalk (a declared `known_limitation` since T2),
+so the sets are not directly comparable. **Recorded as state; flagged for whichever transcript
+reconciles them.** → `NBA_OPEN_ITEMS.md`.
+
+#### ⚠ T6.17b — a self-described bug worth naming: **"a logic bug that silently hides parsing errors"**
+T6's own reasoning names it while tracing the three failed games. **The phrase appears in no
+document.** It belongs to the same family this sweep has now met three times — *the run reports
+success because nothing raised* (T5's 799 rows, T4's missing player). **Here it is a fourth instance,
+and the only one described in the transcript as a logic bug rather than an endpoint quirk.**
+*The specific code is in the officials scraper's error path; whether it was fixed or merely
+worked around by the 3-game patch script is **NOT RECORDED** and is left for the command stratum.*
+
+---
+
 ## T6 — `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt`
 **PHASE 3d — officials, lineups, the injury-PDF discovery, and the daily delta worker**
 *125 content blocks · **PASS 1 (full sequential) 2026-09-20***
