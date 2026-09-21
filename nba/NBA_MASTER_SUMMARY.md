@@ -9326,6 +9326,27 @@ bands, direction, prop line), and the design document that gets materialised int
 **Seven owner turns sit in the tail**, the most of any transcript; T2–T6 had at most five, and T5 and
 T6 had none.*
 
+### T7.36 — PASS 7 (**the mid-band 0.40–0.45 seam**) — **✅ CLEAN 1/3**
+*2026-09-21. 32 segments in the seam.*
+
+**All thirty-two resolve to documented entries.** Spot-checked the two most quotable:
+- *"**verifying a delta pipeline only against an empty season proves nothing about mappings** —
+  replaying real historical data through it is what finds bugs. This validates the user's
+  replay-probe idea"* ✅ recorded.
+- *"splits and career totals are **cumulative season aggregates that go stale as the season
+  progresses**, but they only lived in this one-time backfill worker"* ✅ recorded — the reason a
+  `weekly` mode was added to a backfill worker.
+
+Also covered: the array-literal bug, the 19-row worker registry, the `player_game_log` column error
+(*"team tricode columns are on `nba_calendar.games`, not here"*), the schedule's hardcoded 2-season
+list made dynamic, the concurrent-commit race (*"a newer commit landed after my last push — likely
+the backfill's data commit"*), and the completeness check confirming **0 missing starter-status /
+3 missing officials**. ✅
+
+**Nothing new.**
+
+---
+
 ### T7.35 — PASS 6 (**the two-direction judgment pass**) — **2 DEFECTS, BOTH IN THIS SWEEP'S OWN PROSE · 0/3**
 *2026-09-21. 1,081 segments. High band (≥0.45): **114**, the largest of any transcript.
 Tail-direction: 32.*
