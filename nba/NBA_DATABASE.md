@@ -780,7 +780,7 @@ The daily output of the certified recipe, loaded from committed JSON by
 | `p_more`, `p_less` | the calibrated probabilities |
 | **`p_raw`** | **pre-calibration value retained** — the effect of Platt and the cells is auditable per row |
 | `role_tier`, `var_band` | the tier keys |
-| **`used_emp`** | **whether the empirical table or the parametric fallback produced this row** — the flag that verifies the hierarchical fallback's coverage in production |
+| **`used_emp`** | **whether the empirical table or the parametric fallback produced this row** — the flag that verifies the hierarchical fallback's coverage in production. 🔴 **BUT SEE §T9.37a (2026-09-21): live it is `true` on 205,678 of 206,237 rows — 99.73%.** Of the **559** false rows, **541 are `double_double`**, which has no ladder at all; **the genuine fall-throughs are 18 rows of `threes_made`.** It also reads `true` on **all 30,989 rungs beyond their prop's measured `LADDER_DEPTH`**. ⚠ **A flag with one value everywhere cannot verify a coverage claim**, and it is a **3.3× confidence multiplier downstream** (`f_prov`, §T9.37b) |
 | `recipe_version` | rows carry the recipe that made them |
 
 ### `nba_score.baseline_ladder_runs` *(T9)*
