@@ -337,6 +337,3 @@ already reported.** Full methodology, the three techniques and the six named fai
 | 19 | Enrichment engine, **A2 five failed panels**, N1 status resolution, prop reliability audit, live board archiver | T15 |
 | 20 | **A2 retracted**, defender ratings rebuilt, **blowout on the real market spread**, matchup via market-implied totals, 60-season-prop rebuild, phase-aware calibration | T16 |
 | 21 | **The final calculation engine** — final HP, confidence, score, edge; as-of calibration parity fix; the three pipelines | live session |
-</content>
-</parameter>
-<parameter name="message">docs: NBA recipe - how the system was built, step by step
