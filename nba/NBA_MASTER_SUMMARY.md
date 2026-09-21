@@ -9775,7 +9775,7 @@ that hardcode the season"*, and the 12 is *"everything that calls `active_stats_
 *The exposure figure of 15 is unaffected.*
 
 ⚠ **The failure is the sibling of the composite-key one**: I read T7's list and the live call sites
-and差 them, **without reading the helper's own docstring — which I had already quoted twice in
+and took their difference, **without reading the helper's own docstring — which I had already quoted twice in
 §T7.51a and §T7.52a for a different sentence.** *Rule: when two counts differ, establish what each
 one was counting before calling the difference growth.*
 
