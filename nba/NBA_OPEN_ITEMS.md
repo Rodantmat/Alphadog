@@ -116,7 +116,9 @@ quoted, not adjudicated; what is verified is the flag's value and its downstream
 **(a)** carry **`ladder_steps`** into `baseline_ladder` exactly as `baseline_history` already does, so
 the regimes are distinguishable; **(b)** decide whether the three existing as-of days should be
 rebuilt to one regime before they are used as a baseline; and **(c)** decide whether anything that
-scores a leg should read `LADDER_DEPTH` before granting full provenance credit — **today nothing
+scores a leg should read `LADDER_DEPTH` before granting full provenance credit *(⚠ and, per §T9.38b,
+whether **`f_depth`'s hardcoded `14.0` should become the prop's own `LADDER_DEPTH`** — today it is
+`points`' depth applied to all twenty)* — **today nothing
 does.** *Not actioned — this sweep documents only.*
 
 📌 **NOT RECORDED**: `assists` reaches rung **6** against a table value of **5**, and `threes_made`
