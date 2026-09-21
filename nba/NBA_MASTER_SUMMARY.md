@@ -14433,11 +14433,25 @@ draws from.**
 | **Total** | **67** ✅ *(31 + 36)* | 65 | 2 | — | 39 |
 
 ✅ **The lock's "34 factors" IS the 34 active enrichment-layer rows**, and the twelve's *"67 factors
-(seeded at 29)"* is the whole table. **Two numbers, one object, and nothing said so.** 🔑 **The two
-retired rows are named and reasoned in the table itself** — **`altitude_venue`** (*"small; sub-tier of
-schedule_density_travel; baseline home/away carries most"*) and **`national_tv_marquee`** (*"protects
-star availability under the participation policy; rotation shortening in marquee…"*) — **which is the
-lock's "retirements", live.**
+(seeded at 29)"* is the whole table.
+
+> 🔴 **RETRACTED IN PART 2026-09-21 by §T10.5a — this entry said "two numbers, one object, and
+> nothing said so", and something did.** **`NBA_PROJECT_LOG.md` line 488 records
+> `nba_config.factor_registry` as **"31 baseline / 34 enrichment"**, and `NBA_ENRICHMENT_FACTOR_LOCK.md`
+> line 641 says **"Factors (34 active) and sub-factors (~90)"**.* **The split and the active count were
+> both on file, and the distinctive terms were one grep away — rules 2 and 8, and this run's own
+> standing instruction.**
+>
+> ✅ **What survives is narrower and is the useful part**: **the registry holds 36 enrichment ROWS of
+> which 34 are ACTIVE**, so **67 = 31 + 36 (rows)** and **65 = 31 + 34 (active)** are **two consistent
+> counts of one table**, and **no document states both** — which is exactly why `NBA_DATABASE.md`'s
+> *"67 rows"* and the project log's *"31 / 34"* look like a disagreement and are not. **The two
+> retired rows are physically present with `active = 0`.**
+
+🔑 **And the retirements are recorded more fully than the table records them.** The registry gives
+`active = 0` plus a note; **`NBA_ENRICHMENT_FACTOR_LOCK.md` line 511 gives the destination** —
+*"`national_tv_marquee` and `altitude_venue` **demoted to sub-tiers of A4 and D2**"* — and line 185 /
+188 carry their full mechanisms. *The live table says they are off; the document says where they went.*
 
 📌 **What is genuinely absent, and now stated narrowly**: the **A/N/B/K/M/C/S/D/E code scheme is not a
 column** — `factor_registry` has twelve columns and none carries it — and **there is no sub-factor
