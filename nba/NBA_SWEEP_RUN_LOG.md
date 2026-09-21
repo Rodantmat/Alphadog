@@ -280,6 +280,9 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
    the step (*"`nba-baseline.yml` — manual trigger only, cron OFF per owner"*). **All six of O7's
    "differently-worded" probes were worded in the transcript's vocabulary and none in the documents'
    (`cron`, `OFF`, `intentionally`). Rule 20.**
+0b. **TWO MORE LIVE API KEYS in a transcript** — **OWNER DECISION O8**, T11 pass 0 (§T11.1b): owner
+   turns 197 and 641 carry an earlier **The Odds API** key and the **$30 subscription** key.
+   ***Values not reproduced anywhere.*** **Third credential exposure, and rotation is the remedy.**
 1. **Live balldontlie.io API key committed** in `NBA_MASTER_SUMMARY.md` and in the transcripts.
    **Rotation is the only real remedy** — the value is in git history since pass 19. *OWNER DECISION,
    already handed off.*
