@@ -33,7 +33,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 API = "https://api.prizepicks.com"
-LEAGUE = 7
+LEAGUE = int(os.getenv("PP_LEAGUE", "7"))     # 7 = NBA (default), 3 = WNBA - proven at run time by the board's own league ids
 BOARD_URLS = [f"{API}/projections?league_id={LEAGUE}&per_page=1000&single_stat=true",
               f"https://partner-api.prizepicks.com/projections?league_id={LEAGUE}&per_page=1000&single_stat=true"]
 BOARD_HEADERS = {"accept": "application/json, text/plain, */*", "accept-language": "en-US,en;q=0.9",
