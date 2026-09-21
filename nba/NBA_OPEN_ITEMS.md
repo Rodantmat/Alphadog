@@ -189,6 +189,26 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## ⚠ TWO TABLES THESE DOCUMENTS DESCRIBE ARE NOT IN THE DATABASE
+*Found 2026-09-21, T10 pass 22 (§T10.22b). `[LIVE-AUDIT]` against `information_schema.tables`, all
+`nba%` schemas (**97 objects**). Severity **low–medium**; the question is whether anything was lost.*
+
+**Of 101 schema-qualified object references across the twelve, 90 resolve, 7 are correctly documented
+as gone or as traps, and 4 assert a live object that is not there.** *Two of the four were plain
+naming errors and are corrected in place (`nba_stats.lineup_synergy` → **`nba_team.lineup_profile`**,
+8,000 rows either way; `nba_stats.player_career_totals` → **`nba_stats.player_career_season_totals`**,
+3,644 rows). **The other two need the owner:***
+
+| Documented | Status | What the owner may want to decide |
+|---|---|---|
+| **`nba_market.board_tiers_ud`** — a **section heading** in `NBA_DATABASE.md`, described as *"the **Underdog** version — already implements the four-way rule… uses the FAIR rung, implied probability closest to 50%"* | **Not in the database.** Live: **`nba_market.board_tiers`** and **`nba_market.board_tiers_v2`**, **both 2,199,354 rows.** | **Is `board_tiers_v2` the table this section describes, or was `board_tiers_ud` a separate object that was dropped or never built?** ⚠ **NOT RECORDED** — rule 6; nothing swept so far supplies the mapping, and the section is **kept as written with only the name in doubt.** |
+| **`nba_score.real_slip_leg_observations`** — *"139 legs, `decomposition_method='equal_scale_v1'`"* | **Not in the database — and not on the DROPPED-2026-09-19 list two lines below it.** | **Dropped after 2026-09-19 by a session this sweep has not reached, or never created?** ⚠ **NOT RECORDED.** *The finding that rests on it — "there is **no NBA slip history**" — is unaffected in direction: the table is not there at all, which is a stronger version of the same statement.* |
+
+📌 **Neither is fixed and neither is renamed on a guess.** *"Document, don't fix" governs the system;
+these two are questions about the system, not defects in the prose.*
+
+---
+
 ## ⚠ `factor_gate_results` IS IN `nba_score`, AND MOST OF ITS MENTIONS IN THESE DOCUMENTS OMIT THE SCHEMA
 *Found 2026-09-21, T10 pass 16 (§T10.16e). Severity **low**; fix trivial; it costs a reader their
 first query.*
