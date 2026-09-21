@@ -9788,9 +9788,14 @@ was written **where the wrong claim was first made** — and the same claim had 
 into two or three other documents. **A correction must be applied to every copy of the claim, found
 by grepping the claim's own wording, not to the entry that made it.** *Standing rule, tenth form.*
 
-**Checked and clean**: every other cross-document figure agrees — the 35/22/13 split, the 9 band
-keys, the 8 `calibration_log` rows, the 37 season-less PKs, the 15 exposed scrapers, the 4 hardcoded
-workers, the 7 scheduled workflows. **Two contradictions, both of the same claim, both now closed.**
+**Checked and clean — and this list is exhaustive of what was checked, not of what exists** *(scope
+narrowed 2026-09-21 by §T7.62a; it read "every other cross-document figure agrees")*: **seven figure
+families were grepped across all four edited documents and every statement of each agrees** — the
+35 / 22 / 13 cell split (17 statements), the 9 `band_key`s (2), the `calibration_log` 8-of-8 orphan
+rate (4), the 37 season-less PKs, the 15 exposed scrapers (6), the 4 hardcoded workers (10, of which
+3 are unrelated contexts — T3 thresholds and T4 admin-sql — correctly distinguished), the 7 scheduled
+workflows (5). **Figures outside those seven families were not checked.**
+**Two contradictions, both of the same claim, both now closed.**
 
 ---
 
