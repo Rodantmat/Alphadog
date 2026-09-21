@@ -1,5 +1,28 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴 THE FOUR "CLOSE" PROPS WERE NEVER CERTIFIED — and the reason given was explicitly unproven
+*Recorded 2026-09-21 (T9 pass 1, §T9.16a), from T9's own phase-status answer. The distinctive terms
+(`certified 6`, `variance-bound`, `star bimodality`, `40-47%`) return **zero hits** across the thirty.*
+
+At T9 the single-stat props split **6 certified / 4 close**:
+
+| | Props | State |
+|---|---|---|
+| **Certified 6** | points · rebounds · assists · 3PM · fga · ftm | *"ladders ≤1.5 pp on all 13 rungs, **zero band×direction×rung cells over 2.5 pp**, confidence bands hitting their rate on both seasons"* |
+| **Close 4** | **blocks · steals · turnovers · fouls** | *"ladders fine, **2–5 confidence bands per season off by 2.6–4.4 pp**. These are the noisiest per-game stats in the sport."* |
+
+> **The stated reason for leaving them uncertified**: *"my honest read is that they're at the **noise
+> floor**, but **I haven't proven that with a variance-bound argument**."*
+
+⚠ **That is an honest non-claim, and it is still open.** *Whether the variance-bound proof was ever
+produced — and whether the four props were later certified, left uncertified, or shipped as-is — is
+**NOT RECORDED**.* **Flagged for the transcripts after T9.**
+
+*Also from the same answer, for the record — the six-item "what's missing" list and its order of
+attack: 4Q/2H mixture → remaining period stats + halves → period holdout → close-prop noise-floor
+proof → production worker. **Item 6 is notable**: at T9, "**nothing writes the baseline ladder to
+Postgres yet; everything lives in the backtest harnesses**."*
+
 ## 🔑 THE VARIATION DIMENSION COVERS **6 OF 28 PROPS** — and the split is exactly `build_tier`
 *`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 (T8 pass 7). Detail: `NBA_MASTER_SUMMARY.md` §T8.28.*
 
