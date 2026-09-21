@@ -9668,6 +9668,51 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.43 — PASS 14 (**novelty audit — the check that failed twice, run as its own pass**) — **✅ CLEAN 1/3**
+*2026-09-21. Method, so it is repeatable: `git archive` the twelve **as they stood before pass 9**
+(commit `d33902f9`, the last write before §T7.38) into a scratch tree, then grep that tree for the
+key term of every claim passes 9–13 added. **The documents-before-my-edits are the authority; my own
+new prose cannot vote on its own novelty**, which is exactly how the inline check failed twice.*
+
+**✅ Genuinely new — zero occurrences in the pre-pass-9 twelve:**
+
+| Term | Pre-pass-9 hits |
+|---|---|
+| `tier_label` · `role_tier_key` · `formula_expression` | **NONE** |
+| `13 of 35` (the continuous-cell population) | **NONE** |
+| `exactly 80` · `36-48` · `0 to 48` | **NONE** |
+| The `more`/`less` direction asymmetry; the two-population split; the `role_tiers` partition; `factor_relevance` being `full`/`partial` only; `ewma_alpha` not being a table; the fast-EWMA config gap | **NONE** |
+
+**⚠ Two near-misses checked and cleared**: *"35 cells"* does appear pre-pass-9 — but as
+`NBA_DATABASE.md`'s own row count, which §T7.38b cites rather than claims. *"80 games"* appears twice
+— **both about per-player sample sizes** (*"40–80 games is not enough"*), unrelated to the schedule.
+**The per-team-80 finding stands as new.**
+
+**⚠ Two confirmed duplicates — both already caught and already downgraded**, by §T7.42a (the
+1,200-vs-1,230 shortfall, recorded at §T2.18) and §T7.39c (the config tables read by nothing,
+recorded in the `NBA_DATABASE.md` §2 banner). **The audit found no third.**
+
+#### 🔑 T7.43a — **The audit strengthens §T7.38a: the MLB attribution was stated in TWO documents, not one**
+
+`NBA_ARCHITECTURE_BLUEPRINT.md` §4b carries the same rule, in the same words, in a section that is
+**entirely a list of MLB lessons to carry into NBA**:
+
+> *"**MLB's shrinkage formula** has a hard-coded rule that once a player has enough real observations
+> (n≥20) AND their raw rate genuinely, meaningfully differs from the population prior (>15 points),
+> **the prior is capped at contributing no more than 25% of the final estimate**…"*
+
+And `NBA_BASELINE_CALIBRATION.md` §3.7b names it as its own source — *"Source: T1, **blueprint
+§4b**."* **So §T7.30a's misreading stepped past an attribution that was stated twice, in the
+document quoted and in the document it was quoted from.** That makes the third standing rule's
+instruction — *read the sentence above the quote* — cheaper than it already looked: **the attribution
+was in the same sentence, in both copies.**
+
+**Pass outcome**: no unrecorded defect, one strengthening finding. **✅ CLEAN 1/3.** *Recorded as a
+standing technique below — the novelty audit now belongs in the angles menu, run against a
+pre-edit snapshot rather than the working tree.*
+
+---
+
 ### T7.42 — PASS 13 (**two-direction judgment, second run**) — **🔴 1 DEFECT — MINE, AND IT BREAKS THE RULE I WROTE ONE PASS EARLIER · 1/3 → 0/3**
 *2026-09-21. 1,081 segments re-scored against the twelve as they stand after passes 8–12. Coverage
 moved: **uncovered vs twelve 944 → 932**, high band (≥0.45) **113 segments**, tail-direction 32.*
