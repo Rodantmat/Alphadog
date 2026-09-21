@@ -2389,12 +2389,30 @@ level further out: not the row drifting from the body, but the body drifting fro
    (1017/1018), `NBA_SYSTEM_DESIGN.md` (799/800), `NBA_MULTIPLIERS.md` (719/720),
    `NBA_GOBLIN_DEMON.md` (705/706), `NBA_GLOSSARY.md` (585/586), `NBA_RECIPE.md` (340/341).
 
-   **Harmless to a human reader; not harmless to a parser**, and it means **every document's last real
-   line is the line before it** — worth knowing before appending to any of them. **Cause: NOT
-   RECORDED.** Consistency across all twelve points at a single write helper rather than twelve
-   independent slips, but no transcript swept so far shows the write that introduced it. **Left OPEN.**
-   **Not fixed**, per the standing instruction. New content is inserted **above** the fragment so the
-   defect is not compounded. → `NBA_WORKERS.md` §0.38.
+   ✅ **CAUSE FOUND, AND FIXED 2026-09-21.** `git log -S'</content>'` on each document names the
+   introducing commit: **twelve separate `github_put_file` calls on 2026-09-19 and 2026-09-20**, each
+   committed as *"Update nba/NBA_*.md via Claude MCP bridge"* — the generic message, meaning the
+   `message` parameter was never passed. **The closing tags of the tool call were typed into the
+   `content` argument**, so the bridge wrote them as file content and the real `message` went with
+   them.
+
+   **There is no live write helper appending it** — `github_put_file` writes exactly the string it is
+   given, and `github_patch_file` (what this sweep uses) never touches the tail. **So the cause was
+   established before stripping**, per the owner's instruction: fix the helper first or the next sync
+   puts it back. There is no helper to fix; the slip is in how the call was written.
+
+   **Stripped from all twelve**, 2026-09-21. *(Twelve commits, not one: the bridge writes a single
+   file per call, so an atomic twelve-file commit is not available through it. Identical commit
+   message `strip stray tool-payload fragment from document tail (n/12)` so they read as one change.)*
+   **Verified after: zero occurrences remain outside the two code fences that document the defect —
+   this entry and `NBA_WORKERS.md` §0.38.**
+
+   ⚠ **The recurrence risk is real and worth naming.** Nothing prevents a future full
+   `github_put_file` of one of these documents from reproducing the slip. **Prefer
+   `github_patch_file` for these twelve**, which is also what their size demands.
+
+   **This is the one fix made during the sweep**, on the owner's explicit instruction that
+   *"document, don't fix" applies to the system being documented, not to the deliverable itself.*
 
 2. ⚠ **A NUMBERING COLLISION EXISTS IN THIS FILE AND IS NOT A TYPO.** Two independent `§T2.n` series
    run here: the **chronological-sweep series** at the top of the T2 block (§T2.1–§T2.13, newest
