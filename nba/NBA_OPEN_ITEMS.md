@@ -1,5 +1,39 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴 `active_stats_season()` ROLLS OVER ON **OCTOBER 1** — NINETEEN DAYS BEFORE THE FIRST REGULAR-SEASON GAME — AND 13 SCRAPERS CALL IT
+*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by reading `nba/nba_season.py` (T7 pass 22). Detail:
+`NBA_MASTER_SUMMARY.md` §T7.51a. **Document, don't fix — nothing was changed.***
+
+```python
+if today.month in (7, 8, 9):   start_year = today.year - 1
+else:                          start_year = today.year if today.month >= 10 else today.year - 1
+```
+
+**A bare month boundary. On 2026-10-01 it returns `2026-27`.**
+
+| | |
+|---|---|
+| First regular-season game (prefix `002`) | **2026-10-20** |
+| First preseason game (prefix `001`) | 2026-10-03 |
+| **`active_stats_season()` switches** | **2026-10-01** |
+| **Exposure window** | **Oct 1 → Oct 19 — nineteen days**, opening **ten days from 2026-09-21** |
+
+⚠ **The module's own docstring states the opposite intent and names the exact damage**: *"rolling
+over to the new season **only once it starts in October**"* and *"…they'd get empty or zero-valued
+rows — and **for tables keyed by player_id alone, that could overwrite last season's real stats with
+zeros**."* **That is the state the Oct-1 boundary creates for nineteen days.**
+
+**The 13 callers**: `scrape_nba_lineups` · `scrape_nba_splits` · `scrape_nba_player_tracking` ·
+`scrape_nba_tracking_detail` · `scrape_nba_playtypes` · `scrape_nba_shotquality` · `scrape_nba_onoff`
+· `scrape_nba_team_stats` · `scrape_nba_matchups_pergame` · `scrape_nba_player_bio` ·
+`scrape_nba_backfill_measure_types` · `scrape_nba_per_game_delta` · `scrape_nba_daily_delta`.
+*(4 others use `current_season()`, correct for roster/schedule.)*
+
+**This is the season-rollover trap the module was written to eliminate, re-entering through the
+module itself.** *Whether the Oct-1 boundary was deliberate is **NOT RECORDED**.* ⚠ And
+`NBA_COMPASS.md` line 9 documents the switch as **"Oct 3"** — **the document and the code disagree,
+and neither matches the 20th.**
+
 ## ⚠ THE 2026-27 SCHEDULE IN `nba_calendar.games` IS **TWO GAMES SHORT PER TEAM, ON ALL THIRTY**
 *`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by live SQL (T7 pass 11). Detail: `NBA_MASTER_SUMMARY.md`
 §T7.40a. ⚠ **The 1,200-vs-1,230 shortfall itself was already recorded** at §T2.18 (T2 pass 18); what
