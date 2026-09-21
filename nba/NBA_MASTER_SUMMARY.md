@@ -14406,6 +14406,77 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.35 — PASS 20 (**dated-verdict audit**) — **🔴 a date wrong in four places, a prop dropped from a list, and an "uncertified" group short by two · 0/3**
+*2026-09-21. 111 conditional verdicts extracted from the twelve — *"correctly empty" · "not yet" ·
+"expected until…" · "has not run" · "still empty"* — and the live-testable ones re-tested against
+their authority. Last run of this angle: T8 pass 13.*
+
+#### 🔴 T9.35a — **"The differential worker has not run since 2026-09-03" — it is 2026-09-02, in four places**
+
+**The authority is the snapshot timestamp** (§T8.33b: the worker rewrites all three snapshots
+unconditionally with `now()`, so the max timestamp **is** the last completed run). **Live:**
+
+| Table | Rows | `max(snapshot_taken_at)` |
+|---|---|---|
+| `nba_stats.player_roster_snapshot` | **582** | **2026-09-02 19:47:15 UTC** |
+| `nba_ref.team_roster_snapshot` | **30** | **2026-09-02 19:47:16 UTC** |
+| `nba_ref.official_roster_snapshot` | **80** | **2026-09-02 19:47:18 UTC** |
+| all three `*_differential_log` | **0 · 0 · 0** | — |
+
+**`2026-09-03` was recorded in four places** — an open-item **heading**, a *"checked today"* code
+block, a numbered consequence, and `NBA_WORKERS.md`'s method note. ⚠ **And the 09-03 date is real,
+but it belongs to a different table**: `nba_ref.players` at `2026-09-03 18:14`, the last write of the
+build window, recorded correctly one section away. *Two dates, two tables, one of them copied onto the
+other.* **All four corrected; the `nba_ref.players` statement left alone.**
+
+📌 **One more dated form retired in passing**: the same item read *"582 rows frozen **17 days ago**"*.
+**An elapsed-day figure re-ages every day it is not rewritten** — by today it was already 19.
+**Replaced with the timestamp.** ✅ *The retired verdicts stand retired: the three logs are still 0.*
+
+#### 🔴 T9.35b — **§T8.12b's "worth confirming" is CONFIRMED — and `NBA_OPEN_ITEMS.md` had quietly dropped the prop in question**
+
+§T8.12b noted that `fga` appears in two certification states and closed *"the header is likely stale
+relative to the inline comment, **but worth confirming**."* **Confirmed — both statements are live in
+the same file:**
+
+| Location | Text |
+|---|---|
+| `classification_ladder_v12.py` **line 11** *(module docstring)* | *"turnovers/**fga**/fg3a/ftm/personal_fouls: configured, NOT yet run."* |
+| **line 102** *(the `fga` entry)* | `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` |
+
+⚠ **Which governs is NOT RECORDED** — §T8.12b's *"likely stale"* was a judgement and nothing in the
+file settles it. 🔴 **Meanwhile the documents had resolved it in both directions without saying so**:
+`NBA_OPEN_ITEMS.md` listed the configured-not-run set as **four props, silently omitting `fga`**,
+while `NBA_GLOSSARY.md` counts `FGA` among the **certified six**. **Restored to the authority's five,
+with the disagreement stated rather than resolved, in all four documents that carry the list.**
+
+#### 🔴 T9.35c — **The NOT-YET-CERTIFIED group is FOUR props, and two of them are the taxonomy orphans**
+
+The `# ADDED 2026-09-12 (owner: the live PrizePicks menu carries these)… Configs are the closest
+certified analogue; NOT yet certified` comment sits above **the last four entries of `PROPS`** —
+`fgm` (109), `fta` (110), **`oreb` (111), `dreb` (112)** — closing at the dict's `}` on 113.
+**Every document recorded only `fgm` and `fta`.**
+
+🔴 **And `oreb` and `dreb` are two of the four props §T9.19c found missing from `nba_ref.prop_taxonomy`.**
+**Live they ship ladder rows — `oreb` 3,185, `dreb` 4,315.** *So two props are **uncertified,
+untaxonomised and in production at once**, and each of those three facts was recorded separately, in a
+different document, by a different pass.* **Corrected in `NBA_MASTER_SUMMARY.md`, `NBA_OPEN_ITEMS.md`
+(three lists), `NBA_BASELINE_CALIBRATION.md` and `NBA_GLOSSARY.md`.**
+
+#### ✅ T9.35d — **The conditional verdicts that should still hold, do**
+
+| Verdict | Status |
+|---|---|
+| `nba_ref.referee_assignments` — *"0 rows, expected until the season opens"* | ✅ **still valid** — the opener is **2026-10-20**, the condition is unmet. ⚠ Still unfalsifiable until then (§T8.34a), still tagged **(T15)** |
+| `*_differential_log` — *"correctly empty; detection starts on the second run"* | ✅ **stays retired** (§T8.33b) — still **0 · 0 · 0** |
+| `nba_ref.prop_taxonomy` — *"correctly empty"* | ✅ **stays retired** — seeded to 28 in T8 |
+| *"the ladder is populated but not yet a daily artifact"* | ✅ **still true** — **3** as-of days |
+
+**Pass outcome: 3 defects — a date in four places, a list short one prop, a group short two — all in
+the documents, none in the transcripts; one long-open question closed. 🔴 CLEAN 0/3 · 20 passes.**
+
+---
+
 ### T9.34 — PASS 19 (**two-direction judgment, fifth run**) — **🔴 the number was right for the query and the sentence was right for the intent · a SIXTEENTH rule · 0/3**
 *2026-09-21. Band byte-identical for a fifth run, so the pass judged §T9.31–§T9.33's claims, with the
 weight on §T9.33's counts — **five of the previous ten defects were counts of mine**.*
