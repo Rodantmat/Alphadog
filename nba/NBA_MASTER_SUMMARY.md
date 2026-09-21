@@ -14570,10 +14570,12 @@ comparison**: **T2's RESULTS RETURNED was 147; T11's is 355** — *"tail exhaust
 strata" was achievable on T2 and has never been attempted here.*
 
 #### 📌 T11.42b — **The tool census, and what it says about what T11 actually was**
-**`run_job` 114 · `web_search` 84 · `web_fetch` 80 · `github_patch_file` 79 · `bash_tool` 58 ·
-`run_sql_postgres` 50 · `github_put_file` 35 · `memory_str_replace` 28 ·
-`github_get_workflow_run_log` 20 · `github_list_workflow_runs` 12 · `github_grep_file` 12.**
-🔑 ***One hundred and sixty-four web calls in a single transcript*** — **which is what segment 501's
+❌ **THE FIGURES BELOW ARE SEGMENT COUNTS AND EACH CALL CONTRIBUTES TWO — corrected by §T11.44d.**
+***Halve them for calls***: `run_job` **114 segments = 57 calls** · `web_search` 84 = **42** ·
+`web_fetch` 80 = **40** · `github_patch_file` 79 · `bash_tool` 58 · `run_sql_postgres` 50 ·
+`github_put_file` 35 · `memory_str_replace` 28 · `github_get_workflow_run_log` 20 ·
+`github_list_workflow_runs` 12 · `github_grep_file` 12.
+🔑 ~~*One hundred and sixty-four web calls in a single transcript*~~ ***EIGHTY-TWO web calls*** — **which is what segment 501's
 *"exhaustive alternatives done"* and segment 609's sourcing playbook look like from the outside.**
 ***T11 is, by tool count, a research session with a backfill running underneath it.***
 📌 **And 114 file writes** (`patch_file` 79 + `put_file` 35) **against 50 SQL calls** — *the ratio the
