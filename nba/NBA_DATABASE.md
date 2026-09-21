@@ -430,6 +430,23 @@ All row counts **verified live 2026-09-20.**
 Created empty in T1, correctly flagged as empty in T7's audit, **seeded in T8**. The canonical prop
 list the whole matrix is built over.
 
+✅ **`[LIVE-AUDIT]` 2026-09-21 (T8 pass 4) — FULLY POPULATED, and that is unusual here.** All **28 of
+28** rows carry every descriptive column — `apps` · `period` · `ot_rule` · `distribution_family` ·
+`direction_skew` · `build_tier` · `natural_floor` · `ladder_step` — and all 28 are `active = 1`.
+**No nulls anywhere.** *Set against its sibling `nba_config.factor_profile_cells`, seeded in the same
+transcript, where `last_validated_at` is null on all 35 and `real_sample_size_observed` is 0 on all
+35: the taxonomy encodes **decisions**, the cells encode **estimates awaiting a backtest**.* ⚠ Three
+of its columns — **`build_tier`, `natural_floor`, `direction_skew`** — are named in **none** of the
+thirty documents, though the table is discussed in twelve.
+
+🔴 **And nothing reads it.** **`nba_ref.prop_taxonomy` appears ZERO times in the codebase** — the six
+files matching `prop_taxonomy` are **MLB's** (`alphadog-v2-static-prop-taxonomy.js`, the MLB parlay
+boards, the phase2b certifier, `verify_schema_all.py`), none schema-qualified to `nba_ref`. For
+contrast, `nba_ref` **is** read elsewhere: `player_name_map` 24 sites, `players` 15,
+`defender_ratings` 12, `teams` 7. ⚠ **This is the first read-by-nothing object OUTSIDE `nba_config`**,
+so the §2 banner's *scope* — not only its list — was too narrow. *What consumes the taxonomy's
+grading rules today, if anything, is **NOT RECORDED**.*
+
 #### The original MLB→NBA taxonomy mapping *(T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §1)*
 | MLB concept | NBA equivalent, as stated |
 |---|---|
