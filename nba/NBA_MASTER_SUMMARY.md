@@ -9320,6 +9320,61 @@ bands, direction, prop line), and the design document that gets materialised int
 **Seven owner turns sit in the tail**, the most of any transcript; T2–T6 had at most five, and T5 and
 T6 had none.*
 
+### T7.33 — PASS 4 (**command stratum, all 233 segments**) — **NEW MATERIAL · 0/3**
+*2026-09-21.*
+
+#### ✅ T7.33a — **`nba_season.py` IS BORN HERE — closing the forward pointer left at §T4.26b**
+
+§T4.26b recorded that the splits scraper resolves its season through
+`nba_season.active_stats_season()`, a helper dated **2026-09-07**, and **deliberately left it
+undocumented**: *"the helper, its reasoning, and which scrapers adopted it belong to the transcript
+that introduced it, which this sweep has not reached."* **T7 is that transcript.** The pointer is now
+redeemed in its correct chronological place.
+
+**The helper's own docstring is the clearest statement of the season-rollover trap in the codebase:**
+> *"every weekly static scraper hardcoded `Season=2025-26` directly in its URLs or a `SEASON`
+> constant — **confirmed on 6 scrapers directly** (splits, lineups, player-bio, tracking-detail,
+> playtypes, shotquality) — and **the pattern is universal across the whole stats.nba.com scraper
+> set, all written from the same template**. On [season start] when the 2026-27 season starts, the
+> entire weekly layer would have silently kept pulling the frozen 2025-26 season's data **while
+> reporting success on every run — the most dangerous kind of failure, because nothing errors**."*
+
+**Three things this establishes that the documents did not carry:**
+1. **The trap's origin is the template.** Every scraper was written from one pattern, so the defect
+   was copied rather than repeated — the same mechanism as the ten copied static writers (§0.32).
+2. **`scrape_nba_daily_delta.py` was the only scraper that auto-detected the season**, and the helper
+   is that logic lifted out. **The fix existed in one file before it existed anywhere else.**
+3. **There is an `NBA_SEASON` env-var override** for one-off historical runs — so a past season can
+   be re-scraped deliberately without editing code. **Undocumented until now, and it is exactly the
+   escape hatch the "don't 'fix' the one-time backfills" caution (§T5.19a) needs.**
+
+⚠ **The docstring's own date reference is now wrong, through no fault of its author**: it says the
+danger lands *"on 2026-10-03 when the 2026-27 season starts."* **The regular season starts
+2026-10-20**; 10-03 is the preseason opener. **The hazard is real and its date is 17 days later than
+the code comment states** — and because `current_season()` rolls over in **July**, the helper has
+*already* been returning `2026-27` since July regardless. **The comment describes a deadline that,
+for this helper, has long passed.**
+
+#### 📐 T7.33b — the completeness check's three drafts, and why the third is right
+The command stratum shows the check rewritten **three times**:
+1. `game_status=3` alone → counted **1,400** games, 170 too many.
+2. `game_status=3 AND game_label=''` → **free-text matching**, which the author distrusted.
+3. **`game_id LIKE '002%'`** → *"uses the game-id prefix convention 002=regular season"* → **1,230,
+   exact.**
+
+**The progression is the finding**: a status flag is too coarse, a text label is fragile, **and the
+id prefix is a semantic identifier the NBA itself guarantees.** ✅ Already recorded in substance; the
+three-step derivation is noted because **it is the reasoning this sweep independently repeated** in
+T2 pass 18 and T4 pass 8.
+
+#### ✅ Verified, already documented
+The daily-delta worker's build, its wiring (four sites), `nba-daily-delta.yml` with its own trigger
+file, the dynamic-identifier helper replaced by *"two explicit, safe functions"*, the empty-batch
+guard for a season with zero games played, and the five-part documentation checkpoint assembled and
+pushed as `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md`. ✅
+
+---
+
 ### T7.32 — PASS 3 (**reasoning stratum finished — completes §T7.31**) — **🔴 NEW MATERIAL · 0/3**
 *2026-09-21. T7 systematically hunted hardcoded seasons across the scrapers; measuring the result
 against the documents produced the finding below.*
