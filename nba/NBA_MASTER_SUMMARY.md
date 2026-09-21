@@ -8532,6 +8532,47 @@ with a completeness-check bug caught via the `002` GAME_ID prefix.
 **527 uncovered vs the twelve (88.6%)** · 524 vs all 30 — a **3-segment** self-authorship gap, the
 smallest of any transcript. T6 writes almost none of the documents; its tail is all content.*
 
+### T6.22 — PASS 6 (**structural value sanity**) — **NEW MATERIAL · 0/3**
+*2026-09-21. Does each row set obey an invariant that must hold if the parse is correct?*
+
+#### ⚠ T6.22a — **`game_officials.assignment` IS NULL ON ALL 3,681 ROWS — the crew role was never captured**
+
+`[LIVE-AUDIT]`:
+
+| Column | Non-null |
+|---|---|
+| `full_name` | 3,681 / 3,681 ✅ |
+| `jersey_num` | 3,681 / 3,681 ✅ |
+| **`assignment`** | **0 / 3,681** ❌ |
+| `data_quality` | 3,681, single value `real` |
+
+**The column is plumbed end to end and arrives empty.** The scraper asks for it —
+`"assignment": o.get("assignment") or None` (`scrape_nba_game_officials.py:68`) — the worker carries
+it through its INSERT (`alphadog-v2-nba-static-game-officials.js:55,60`), and `NBA_DATABASE.md`
+lists it in bold as a real column. **`boxscoresummaryv3` simply does not populate it**, and the
+`or None` converts an absent key into a silent NULL.
+
+⚠ **`assignment` is the crew *role*** — crew chief, referee, umpire. Without it, the three officials
+of each game are an unordered set. **Referee-crew analysis that distinguishes the crew chief from the
+other two cannot be done**, on top of §T6.21a's join failure. *Whether `boxscoresummaryv3` exposes
+the role under another field name is **NOT RECORDED** — T6 never checked, because nothing surfaced
+the emptiness.*
+
+**This is the third dead column found in the sweep** — after `nba_ref.teams.arena_id` (NULL on all
+30, written by no code) and the `owner`/`year_founded` fields scraped but never written. **The
+pattern differs each time**: a column no code writes, fields written nowhere, and now **a column
+written faithfully with a value the source never sends.** → `NBA_OPEN_ITEMS.md`.
+
+#### ✅ T6.22b — two invariants hold perfectly
+- **`lineup_profile`**: the length of `player_ids` equals `group_quantity` on **all 8,000 rows,
+  0 violations** — so despite the 2,000-row cap (§T6.21b), **what was captured is correctly parsed**;
+  2-man through 5-man lineups all carry exactly the right number of players.
+- **`defense_vs_position`**: **7 distinct positions** (`C, C-F, F, F-C, F-G, G, G-F`) across
+  **3 seasons** — 30 teams × 7 × 3 = **630** ✅, matching the documented count exactly and confirming
+  the position vocabulary is the 7-value set, not the 5 a naive reader would assume.
+
+---
+
 ### T6.21 — PASS 5 (**referential integrity across T6's tables**) — **🔴🔴 MAJOR NEW MATERIAL · 0/3**
 *2026-09-21. The angle that opened T4 does it again.*
 
