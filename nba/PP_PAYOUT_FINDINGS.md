@@ -382,7 +382,13 @@ were fitted on these legs; the out-of-sample figure remains leave-one-player-out
 4. ~~v2 — skew fix~~ — **DONE 2026-09-21, now CURRENT.** See "v2 — THE PER-LEG LOGIC" below.
 5. ~~Rescue tier: same-day snapshot~~ — **DONE.** See "RESCUE TIERS" below.
 6. ~~Rescue tier: sportsbook consensus~~ — **DONE, lower confidence.** See "RESCUE TIERS" below.
-7. ~~Conflicting keys~~ — **resolved structurally** by `kind` in the key; root cause of off-center standards open
+7. ~~Conflicting keys~~ — **RESOLVED 2026-09-21.** Structurally by `kind` in the key; root cause found:
+   **all 2,475 off-center standards come from snapshots where PrizePicks' base market showed exactly two standard
+   lines at once** (avg 1.09 apart — most likely the line moving mid-capture). The tier builder **always takes the
+   higher standard as the center** (5,704 of 5,704 alt legs in those ladders). **PrizePicks' own flags confirm the
+   rule:** of the 251 goblins sitting *between* the two standards — the only legs whose kind depends on the choice —
+   **247 are flagged goblin (98.4%)**, i.e. PrizePicks built the ladder around the higher line. Only 8 of 5,704 flags
+   contradict the builder (0.14%). The lower standard prices correctly at factor 1.
 8. **Load mined live prices** — per leg, not per key (finding 3); needs the PrizePicks stat ↔ Odds-API market map
    (`Points→player_points`, `Pts+Rebs→player_points_rebounds`, `Pts+Asts→player_points_assists`,
    `Pts+Rebs+Asts→player_points_rebounds_assists`, `Rebounds→player_rebounds`, `Assists→player_assists`,
