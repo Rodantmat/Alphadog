@@ -383,9 +383,12 @@ thresholds assigned by analogy**, with no separate label beyond a code comment. 
 > configured-not-run props including **`fga`**, and the `# ADDED 2026-09-12 … NOT yet certified`
 > comment governs the **last four** `PROPS` entries — `fgm`, `fta`, **`oreb`, `dreb`**. 🔴 **`oreb` and
 > `dreb` are also two of the four props missing from `prop_taxonomy`** (§T9.19c) and both ship ladder
-> rows, so they are **uncertified, untaxonomised and live**. ⚠ **`fga` is in two states in the same
-> file** — line 11 above, and `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` at line 102;
-> `NBA_GLOSSARY.md` counts it among the certified six. **Which governs is NOT RECORDED.**
+> rows, so they are **uncertified, untaxonomised and live**. ⚠ **TWO of the five configured-not-run
+> props are called certified elsewhere** *(extended §T9.36a)*: **`fga`** — line 11 versus its own
+> `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` at line 102, **a contradiction inside the
+> file** — and **`ftm`**, which carries **no inline certification marker** but appears in the owner's
+> T9 certified six (`points, rebounds, assists, 3PM, FGA, FTM`), **a contradiction between the file
+> and the record**. **Which governs is NOT RECORDED; line 11 is undated.**
 Per-prop tuning exists (`k_stab`, `SHIFT_LAMBDA`) — **but that is parameter variation within one
 system, not the separate labelled path specified.** No hard floor/ceiling caps, no distinct
 prior-strength scale.
