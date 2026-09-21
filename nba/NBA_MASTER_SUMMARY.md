@@ -14419,6 +14419,38 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.10 — PASS 10 (**stale-example audit**) — **✅ CLEAN 1/3 · every verifiable example in the twelve still holds**
+*2026-09-21. The angle §T10.9a discovered: **an example is the part of a definition nobody re-checks
+when the classification changes.** Every example marker in the twelve — `e.g.` · `for example` ·
+`for instance` · `such as` · `say,` · `canonical example` · `representative` · `illustrat…` —
+enumerated, and every one naming a code object resolved against Postgres or the source.
+**No document changed by this pass.***
+
+**66 example-marker lines; 13 name a code object; 5 are live-verifiable. All five hold:**
+
+| Documented example | Live |
+|---|---|
+| `nba_ref.*` ids are *"prefixed `nba_<id>` — **e.g. `nba_1610612737`**"* | ✅ **exists** — 1 row |
+| *"**1610612737 = ATL**"* | ✅ **ATL** |
+| `nba_score.*` ids are *"bare numeric — **e.g. `101108`**"* | ✅ **319 rows** in `baseline_ladder` |
+| *"**`nba_ref.teams` 30 rows, `nba_ref.arenas` 30 rows**"* | ✅ **30 · 30** |
+| *"`source_key` — **e.g. `NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE`**"* | ✅ **present on 5 of 30 rows** |
+
+🔑 **And the last one confirms the claim it illustrates, by partition.** The same line states *"Only
+updates on rows that actually changed — **25 of 30 kept old keys** when data was identical."* **Live:
+2 distinct `source_key` values across 30 teams, the documented one on 5** — **5 + 25 = 30** ✅. *The
+example and the count it exists to illustrate both verify, and they verify each other.*
+
+✅ **So the stale-example class does not exist in the twelve.** *§T10.9a's instance is in
+`NBA_DAILY_PARITY_AND_BACKFILL.md`, which is not one of them* — **which is the useful conclusion: the
+mandated documents' examples are sound, and the one that rotted is in a document no pass had reason
+to re-read.**
+
+**Pass outcome: no defect, no document changed, 5 of 5 verifiable examples confirmed and one documented
+partition confirmed with them. ✅ CLEAN 1/3 · 10 passes.**
+
+---
+
 ### T10.9 — PASS 9 (**novelty audit, second run — passes 6–8 vs `/tmp/t10base/nba/`**) — **🔴 the parity document's canonical example was superseded and never updated · 0/3**
 *2026-09-21. Every claim passes 6–8 added, grepped against the pre-T10 snapshot, **each with wording
 different from the probe that produced it** — pass 5 retracted two absence claims on this transcript.*
