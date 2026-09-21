@@ -14419,6 +14419,52 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.9 — PASS 9 (**novelty audit, second run — passes 6–8 vs `/tmp/t10base/nba/`**) — **🔴 the parity document's canonical example was superseded and never updated · 0/3**
+*2026-09-21. Every claim passes 6–8 added, grepped against the pre-T10 snapshot, **each with wording
+different from the probe that produced it** — pass 5 retracted two absence claims on this transcript.*
+
+#### 🔴 T10.9a — **The live-only CATEGORY is documented; its MEMBERS are not — and the document's own example is now wrong**
+
+⚠ **Partial retraction of §T10.6c's framing.** `NBA_DAILY_PARITY_AND_BACKFILL.md` §3 already carries
+the category, the policy and the risk:
+
+> *"**(b) Live-only** — the value was never archived and only exists going forward (e.g. **game-day
+> referee assignments**, which are posted hours before tip and not retained). For these the honest
+> options are: 1. build the live capture now… 2. either **exclude the factor from historical
+> training**, or use a clearly labelled proxy… **Mixing (b) into training as if it were (a) is exactly
+> the leak this document exists to prevent.**"*
+
+**So `compute_stage = 'live_only_excluded_from_history'` is that policy implemented as a column
+value** — the concept is not new. ✅ **What survives is narrower and still holds**: **which factors
+are in the category is recorded nowhere** — `lineups_confirmed` and `overtime_pace_live` return
+**zero across all thirty**, re-probed.
+
+🔴 **And the finding underneath is better than the one it replaces: the document's example is
+superseded.** The registry classifies **`referee_assignment` and `referee_crew` as `phase1_baseline`**,
+not live-only — and **`NBA_PROJECT_LOG.md` line 739 records the decision**:
+
+> *"Referee assignments post in the morning → **baseline stage** (correcting my earlier 'target-only'
+> framing: the box-score crew is a faithful reconstruction of what was knowable)."*
+
+⚠ **`NBA_DAILY_PARITY_AND_BACKFILL.md` still names game-day referee assignments as its live-only
+example, and contains no mention of `compute_stage`, of "baseline stage", or of the reclassification.**
+***The document that exists to prevent the leak is the one carrying the stale example.***
+📌 **Not edited here** — it is not one of the twelve, and §T2.18a's rule applies: *a non-mandated
+document is recorded against, not rewritten.* **Flagged in `NBA_OPEN_ITEMS.md` for the owner.**
+
+#### ✅ T10.9b — **Everything else passes 6–8 added is new**
+
+**Zero hits in the baseline** for: **`29 of 67` / `38 of 67` / `38 unmapped`** · **"maintenance
+boundary" / "stopped being maintained"** · **the two-batch split** · the **expiring-vs-standing**
+verdict classification. 📌 **`market_spread_delta` is named in `NBA_ENRICHMENT_FACTOR_LOCK.md`** — as
+a factor in the inventory, **not as the single batch-2 row carrying a relevance entry**, which is the
+claim this sweep makes. *Narrow, and stated narrowly.*
+
+**Pass outcome: 1 framing retracted and replaced by a sharper finding, 4 claims confirmed new.
+🔴 CLEAN 0/3 · 9 passes.**
+
+---
+
 ### T10.8 — PASS 8 (**dated-verdict audit**) — **🔑 the relevance gap has a TIMESTAMP, and it is 20 hours wide · 0/3**
 *2026-09-21. Every T10 verdict classified as **expiring on a date** or **not**, and every conditional
 re-tested live. Two clocks are running: the season rollover opens **2026-10-01 (10 days)** and the
