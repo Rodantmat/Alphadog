@@ -640,6 +640,28 @@ all 22 tables, §T11.22a)*
 | **`real`** — scraped from a source | **20** |
 | **`derived`** — computed | **2: `nba_stats.player_shot_quality_delta` · `nba_team.defense_vs_position`** |
 
+📌 **AND THE VALUE IS THE COLUMN DEFAULT — except on two tables, where the default is dead**
+*(`[LIVE-AUDIT]` 2026-09-21, §T11.27c — the census completed to table × value pairs)*
+
+**22 tables, 22 table–value pairs** *(so every table holds exactly one value — the per-table finding
+above, now verified as a census of pairs rather than of values)*. **1,212 `derived` + 162,651 `real`
+= 163,863 rows.** **FOUR tables carry `DEFAULT 'derived'`** and only two of them hold it:
+
+| table | `column_default` | every row holds |
+|---|---|---|
+| `nba_stats.player_shot_quality_delta` | `'derived'` | **`derived`** (582) ✅ default taken |
+| `nba_team.defense_vs_position` | `'derived'` | **`derived`** (630) ✅ default taken |
+| 🔴 **`nba_ref.arenas`** | **`'derived'`** | **`real`** (30) — ***default never taken*** |
+| 🔴 **`nba_ref.officials`** | **`'derived'`** | **`real`** (80) — ***default never taken*** |
+
+🔑 **This bears on a claim four of the twelve make.** `NBA_DATABASE.md`, `NBA_GLOSSARY.md`,
+`NBA_MASTER_SUMMARY.md` and `NBA_RECIPE.md` all cite `data_quality TEXT DEFAULT 'derived'` on the
+reference tables as *"sourced vs derived distinguished from day one."* ***The design statement is
+true. The two reference tables it is cited from are 100% `real`, so on them the distinction has never
+once been exercised and the `derived` default is unreachable in practice.*** **NOT RECORDED whether
+that is deliberate.** **The other 18 tables hold their own default exactly, so across the whole
+surface the column restates the DDL and carries no per-row information.**
+
 ***It is CONSTANT WITHIN each table — no table mixes the two*** — **so it labels the table's
 provenance, one row at a time.** ✅ **And the two `derived` tables are exactly the computed ones: a
 delta and an aggregate.**
