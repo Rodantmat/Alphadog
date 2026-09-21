@@ -121,7 +121,7 @@ shows a class that CHANGED during the sweep, so an unenumerated class is also an
 | **`nba*` BASE TABLES, all schemas** | **104** | §T11.47 |
 | **`nba_market` base tables** | **25**, ⚠ **of which 12 are `pp_*`** *(out of scope)* | §T11.47 |
 | **Tables carrying `data_quality`** | **22** | §T11.22a |
-| **Tables carrying `phase`** | **6** — `conformal_confidence` · `final_hp` · `ladder_calibration_asof` · `scenario_calibration` · `scenario_realised` · `tier_band_calibration` | §T11.46 |
+| 🔴 **Tables carrying `phase`** | ❌ ~~6~~ → **7** *(corrected §T11.48b, **one pass after the register was built**)* — the six in scope: `conformal_confidence` · `final_hp` · `ladder_calibration_asof` · `scenario_calibration` · `scenario_realised` · `tier_band_calibration` — **plus `nba_market.prop_universe`, out of scope**, whose `phase` is **`regular` (1,652,753) / `no-boxscore` (14,271)**, ***an unrelated vocabulary*** | §T11.48 *(the register's row was copied from pass 45's measurement and not re-taken at pass 46 — **the register's own dating discipline, not applied to its own construction**)* |
 | 🔴 **Tables carrying `side`** | **19** total · **6 named `pp_*`** · ***13 in scope*** *(§T11.28a said eleven — see §T11.47b)* | §T11.47 |
 | **Game-keyed tables** *(`nba_stats` + `nba_team`)* | **10** — **8 hold three seasons, 2 hold one** | §T11.45c |
 | **`nba_ref.prop_taxonomy` columns** | **18** *(the documents enumerate 8 as "every descriptive column")* | §T11.46 |
