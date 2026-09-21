@@ -1555,6 +1555,53 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.2 — PASS 2 (angle: **output stratum in full, plus the first ~45 of 240 command segments**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+**Five findings** — and the more useful result of this pass is what it says about the *rate*.
+
+1. **The DARKO extraction needs TWO JSON repairs.** Pass 1 recorded the unquoted keys; the committed
+   scraper also rewrites **bare leading decimals** (`:.534` → `:0.534`, `:-.844` → `:-0.844`), which
+   JS permits and JSON does not. **That case fires for exactly the players whose DPM sits between
+   −1 and 1, and its absence fails the entire parse rather than one row.** → `NBA_OPEN_ITEMS.md` FROM T3 PASS 2
+2. **A self-diagnosing scraper pattern**: an expected-total gate at 90% tolerance, a **committed
+   debug HTML artifact** (`html1[:20000]`), and a deliberately permissive first-run parse that
+   surfaces shortfalls in the meta file *"rather than silently accepted."* Same family as T2's
+   `_debug_headers`. **It is what caught 50-of-530 honestly instead of shipping a parser that looked
+   like it worked on sparse data.** → FROM T3 PASS 2
+3. **The UA table extends from seven to ten** — `StaticSchedule`, `StaticDarko`,
+   `WeeklyDifferential`. **The differential worker is the one copy that diverged**: its `meta.error`
+   throw names the failing path, because it reads three files per run where the others read one.
+   → `NBA_WORKERS.md` §0.32
+4. **Schedule parsing uses a fallback-key helper** — `get_any(g, "gameId", "gameID")`,
+   `gameDateEst` or `gameDate`, `teamTricode` or `teamAbbreviation`. **The same NBA payload spells
+   the same field differently in different places.** → FROM T3 PASS 2
+5. **Two completeness overclaims, contradicted within T3 itself.** *"There's nothing more sitting
+   freely available that hasn't been found, sourced, and shipped"* — while the very next milestone
+   lists *"remaining from the third research pass: the tier-1 player-tracking families."* **Neither
+   is in the thirty documents, so nothing needs correcting** — recorded because this is the second
+   transcript running to produce a "the layer is complete" claim its own session disproves (T2 had
+   the same shape with nbarapm.com).
+
+**THE RATIO, and why it fell.** The output stratum gave **2 findings from 56 segments** against
+**24 candidates checked** — 22 of the 24 already documented, most of them in the twelve and at high
+counts (2,666 games 31×, play types 33×, shot quality 58×, `raw.githubusercontent` 27×).
+
+**That distinguishes the two explanations the owner flagged.** Skimming would show up as *fewer
+candidates generated per segment*. What actually happened is *a lower hit rate per candidate*:
+
+| | candidates / segment | findings / candidate |
+|---|---|---|
+| T3 pass 1 (owner + reasoning, 33 segs) | 0.79 | 23% |
+| T3 pass 2 (output, 56 segs) | 0.43 | 8% |
+
+**Candidate generation stayed healthy; the documents were simply already ahead.** *The two rates
+should be reported together from now on — findings-per-segment alone cannot tell coverage from
+carelessness.*
+
+**Clean count 0/3.** **Tail NOT exhausted**: ~195 of 240 command segments and all 137 result
+segments remain.
+
 ### T3.1 — PASS 1 (**owner + reasoning strata, read as design history**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21. T3 = the 2026-09-03 phase-3a final-complete session. Tail at 0.40: **466 of 534
 segments (87.3%)**. Strata: owner 1 · reasoning 32 · output 56 · commands 240 · results 137.*
