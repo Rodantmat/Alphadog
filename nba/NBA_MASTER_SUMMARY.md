@@ -12895,6 +12895,11 @@ returns eleven files, none of them stating the construction.* → `NBA_BASELINE_
 *2026-09-21. **T8 has only three owner turns.** Each was tested by substance across all thirty
 documents **before** any claim was written — the rule T7 cost thirteen defects to learn.*
 
+> 🔴 **CORRECTED by §T8.24a: T8 has SIX owner turns, not three.** This pass enumerated the owner
+> turns **in the uncovered tail**, which by construction excludes the ones the documents already
+> cover — the very thing it was trying to detect. **The verdict below survives** (all six are
+> recorded), **but it was reached on half the population.** The other three are audited at §T8.24a.
+
 | Owner turn | Substance | Already recorded |
 |---|---|---|
 | *"now tiering for each **player tier, factor, prop line, variation and direction**"*, and study MLB's classification/baseline **and** enrichment pipelines for the tier logic | the five-dimension tiering architecture | ✅ **§T8.2**, quoted verbatim |
