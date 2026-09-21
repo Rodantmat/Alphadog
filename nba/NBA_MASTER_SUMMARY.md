@@ -14305,6 +14305,71 @@ the loader.
 
 ---
 
+## T9 RE-SWEEP UNDER CHRONOLOGICAL ORDER (2026-09-21)
+
+> **T9, like T8, is not a fresh transcript.** §T9.1–§T9.15 were written before the chronological
+> reset, reaching **CLEAN 3/3 at 8 passes**. **The reset voided the clean count, not the content.**
+>
+> **Corpus**: **769 segments** — 764 assistant, **5 owner** *(counted from the transcript's own
+> segment list, not from the tail — the §T8.24a failure)*. **703 uncovered vs the twelve (91.4%)**,
+> 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
+> extracted to `/tmp/t9base/nba/`.**
+
+### T9.16 — PASS 1 (**owner stratum**) — **🔑 four of five directives recorded; the fifth's ANSWER is not · 0/3**
+*2026-09-21. Each directive substance-tested across all thirty **before** any claim was written.*
+
+| Owner turn | Recorded |
+|---|---|
+| *"the end product… will be able to get **any given day in the past** and have an accurate number for any propline… **one single set of tiers, layers, logic, lifts and drags** that will apply to any given day, propline, direction, variation"* | ✅ **§T9.2**, as *"ONE RECIPE — the owner's objective, made precise"* |
+| *"so all props are covered now? all the logic holds for 2 seasons, at any given day, it is very very precise"* | ✅ **§T9.4**, verbatim |
+| *"**certify the close ones**, give another try to the problematic one, research online… **the factor layer should be being used since the beginning**… **no forced!**"* | ✅ **§T9.5**, verbatim; *"no forced"* also in `NBA_BASELINE_CALIBRATION.md`; the goblin/demon deferral in four documents |
+| *"continue, use research online, gemini for insight and keep going"* | ✅ recorded |
+| *"so for this, **what's missing**? are all the prop lines done?… **where are we? what's missing for this phase?**"* | ⚠ **the question is not the issue — its ANSWER is unrecorded.** Below. |
+
+#### 🔑 T9.16a — **The phase-status answer: a six-item "what's missing" list that no document carries**
+
+The owner asked where the phase stood. **The reply is the most complete status snapshot in the
+transcript, and none of its structure is recorded** — `certified 6`, `star bimodality`, `40-47%` and
+`variance-bound` all return **zero hits** across the pre-edit thirty.
+
+**The split, as stated at T9's moment:**
+- **Certified 6** — points, rebounds, assists, 3PM, fga, ftm: *"ladders ≤1.5 pp on all 13 rungs,
+  **zero band×direction×rung cells over 2.5 pp**, confidence bands hitting their rate on both
+  seasons."*
+- **Close 4** — blocks *(borderline — 0 misses on 2025-26, two ≤3.3 on the one-season holdout)*,
+  steals, turnovers, fouls: *"ladders fine, **2–5 confidence bands per season off by 2.6–4.4 pp**.
+  These are the noisiest per-game stats in the sport."*
+
+**The six missing items, in the assistant's own order of attack:**
+1. **4Q / 2H** — *"the star bimodality **is measured — 40-47% sit out entirely in blowouts** — but the
+   three-part mixture that represents it **isn't implemented yet**. Until it is, **4Q/2H stars miss by
+   ±6–8 pp**."*
+2. **1Q rebounds/assists/3PM and 1H** — *"1Q rebounds is under-confident (near-binomial short
+   counts); the other 1Q stats and both halves haven't been run."*
+3. **Period holdout** — *"no period prop has the 2024-25 season check yet."*
+4. **The four close props** — *"not certified; my honest read is that they're at the **noise floor**,
+   but I haven't proven that with a **variance-bound argument**."*
+5. **Combos holdout on actions** — done locally, run in progress.
+6. **The production worker** — *"**nothing writes the baseline ladder to Postgres yet**; everything
+   lives in the backtest harnesses. This is the step that turns the recipe into a daily artifact."*
+
+> **Order taken**: *"4Q/2H mixture → remaining period stats + halves → period holdout → close-prop
+> noise-floor proof → production worker."*
+
+⚠ **One item is a chronological supersession, not a contradiction.** Item 1 says the three-part
+mixture *"isn't implemented yet"*; `NBA_BASELINE_CALIBRATION.md` §6 records it as **implemented**,
+with the fitted table (*Iron Man blowout 45% sit-out, 0.64× minutes; Fringe blowout 18%, 2.9×*), and
+§185 says *"the period layer **DOES** implement the mixture."* **Both are true at their dates** —
+T9 states the gap, a later transcript closes it. *Recorded with both dates so the later entry is read
+as the closure of this one.*
+
+🔴 **Item 4 is the one to carry**: the four close props were **never certified**, and the reason given
+is an *unproven* claim — *"my honest read is that they're at the noise floor, but I haven't proven
+that with a variance-bound argument."* **Whether that proof was ever produced is NOT RECORDED** and
+belongs to a later transcript. → `NBA_OPEN_ITEMS.md`.
+
+---
+
 ## T9 — `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt`
 **All 11 single-stat props certified · the factor layer · combos and DD · the period layer ·
 the production builder and loader — the production loop closed end to end**
