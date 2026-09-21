@@ -14423,6 +14423,77 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.9 — PASS 8 (**sport-filter audit**) — **✅ the contamination is 0.029% of rows and confined to the live capture · 🔴 and no `nba_market` table can tell you the sport · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. The angle §T11.8b forced: four passes counted this table without
+filtering `market_key`, so the question is **how far that goes** — and the answer bounds §T11.8a's
+own framing.*
+
+#### ✅ T11.9a — **Both numbers, side by side, for every DFS app**
+
+| app | **unfiltered** *(what a naive count gives)* | **NBA-only** *(the answer)* | NBA range | NBA days |
+|---|---|---|---|---|
+| `prizepicks` | 2,199,354 | **2,199,354 — 100%** | 2024-10-22 → 2026-04-12 | **378** |
+| `underdog` | 939,719 | **934,627 — 99.46%** | 2024-10-22 → 2026-09-12 | **380** |
+| `betr_us_dfs` | 780,765 | **780,765 — 100%** | 2025-11-23 → 2026-04-12 | **131** |
+| `pick6` | 534,188 | **534,188 — 100%** | 2025-05-26 → 2026-04-12 | **176** |
+| `fliff` | 1,394 | **0** | — | **0** |
+| `sleeper` | 1,276 | **0** | — | **0** |
+
+✅ **And the sportsbook side is clean outright: 22,611,175 rows, 100% NBA-shaped.**
+
+#### 🔑 T11.9b — **The contamination is 7,762 rows — and §T11.8a's framing needed this number**
+
+**5,092 Underdog + 1,394 Fliff + 1,276 Sleeper = 7,762 non-NBA rows of 27,067,871 — 0.029%** — and
+**every one of them is in the `routine` label**, the live 2-hour cron capture.
+
+⚠ **§T11.8a said *"the majority of `market_key` values are baseball."* That is true of the
+VOCABULARY and misleading about the DATA**: ~90 distinct keys of which most are baseball, but
+**99.97% of rows are NBA.** ***Both statements are correct under different predicates, and publishing
+only the first overstates the defect*** — **rule 16's distinction between what you grouped by and what
+you counted, applied to a value set rather than a query.** ✅ **Corrected in place.**
+
+✅ **What survives undiminished**: **the historical backfill is clean** — PrizePicks, Betr and Pick6
+100% NBA, Underdog 99.46% — **and Sleeper and Fliff still have zero NBA rows**, which is §T11.8b's
+finding and the one that matters.
+
+#### 🔴 T11.9c — **No table in `nba_market` carries a sport or league discriminator**
+
+Columns read off the catalog:
+
+| table | sport/league column? | what you can infer from |
+|---|---|---|
+| `board_snapshots` | ❌ none | `market_key` vocabulary |
+| **`board_outcomes`** | ❌ none | **`market_key` ONLY** — its `bookmaker` and `snapshot_label` are entirely NULL (§T11.5c) |
+| `board_tiers` / `board_tiers_v2` | ❌ none | *documented PrizePicks-only* |
+| `rung_market` | ❌ none | `market` vocabulary |
+| `game_lines_closing` / `game_lines_snapshots` | ❌ none | team names |
+| `event_game_map` · `schedule_norm` · `board_backfill_log` | ❌ none | **nothing — no market, no team** |
+
+🔴 ***So "which sport is this row" is never stored and always inferred*** — from a value vocabulary,
+or from team names, or, for three tables, **not at all.** **`board_outcomes` is the sharp case: two of
+its three discriminators are NULL and the third is the only sport handle it has.**
+
+📌 **"No way to tell" is itself the finding** (rule 6 — the cause is not guessed): **NOT RECORDED**
+whether the `nba_` prefix is meant to guarantee NBA-only content, or whether these are shared tables
+whose prefix is historical.
+
+#### 🔴 STANDING RULE 23 — **A COUNT STATES ITS POPULATION, ITS TREE, AND ITS SPORT**
+*Added 2026-09-21 after §T11.8b and §T11.9b.*
+
+**Rule 17 made a document count name its corpus. This is the same rule for DATA: a row count over an
+`nba_*` table states what makes those rows NBA** — a `market_key` filter, a team join, or an explicit
+*"this table has no discriminator and the figure is unfiltered."*
+
+⚠ **And it carries rule 16's companion, because this pass needed it**: **a value-set claim and a row
+claim are different claims.** *"Most of the keys are baseball"* and *"99.97% of the rows are NBA"* are
+**both true**, and **an entry that gives one without the other misstates the size of the problem.**
+
+**Pass outcome: §T11.8a's framing bounded and corrected, the historical backfill confirmed clean, one
+new structural finding (no sport discriminator anywhere in `nba_market`), rule 23.
+🔴 CLEAN 0/3 · 9 passes.**
+
+---
+
 ### T11.8 — PASS 7 (**literal audit of the `nba_market.*` surface**) — **🔴🔴 the NBA board table is not NBA-only, and it overturns my own Sleeper finding for the third time · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. The standing angle rule 21 created, never yet run on this schema —
 `board_outcomes`' two NULL discriminators (§T11.5c) showed why it was overdue.*
