@@ -9731,6 +9731,63 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.52 — PASS 23 (**code-vs-docstring audit**) — **🔴🔴 §T7.51a PROVEN BY EXECUTION, AND DATED TO THREE SCHEDULED RUNS · 0/3**
+*2026-09-21. The angle pass 22 stumbled into, run deliberately: read each helper's own docstring and
+check the code does what it says. **Read-only — the module was imported and called with fixed dates;
+nothing was written, deployed or triggered.***
+
+#### 🔴🔴 T7.52a — **Executed, not inferred: the rollover fires on 2026-10-01**
+
+`nba/nba_season.py` imported and evaluated across the boundary:
+
+| Date | `current_season()` | `active_stats_season()` | `stats_seasons(3)` |
+|---|---|---|---|
+| 2026-09-30 | 2026-27 | **2025-26** | `['2025-26','2024-25','2023-24']` |
+| **2026-10-01** | 2026-27 | **2026-27** | **`['2026-27','2025-26','2024-25']`** |
+| 2026-10-19 | 2026-27 | 2026-27 | `['2026-27','2025-26','2024-25']` |
+| 2026-10-20 *(first regular-season game)* | 2026-27 | 2026-27 | `['2026-27','2025-26','2024-25']` |
+
+**§T7.51a is now proven by running the code, not read off it.**
+
+#### 🔴 T7.52b — **The second-order effect: the three-season window silently loses its oldest real season**
+
+`stats_seasons(3)` is the backfill/analysis window. **On 2026-10-01 it stops returning
+`2023-24` and starts returning `2026-27`, a season with no played games** — so the documented
+*"Seasons on disk: 2023-24, 2024-25, 2025-26"* (`NBA_COMPASS.md` line 10) becomes a different set of
+three, **one of them empty**, nineteen days early.
+
+⚠ **And the function's own docstring describes a previous bug of exactly this family**: *"building
+the list as `[active_stats_season()] + prior_seasons(2)` produced `['2025-26','2025-26','2024-25']`
+in the off-season (**duplicate, and 2023-24 silently missing**)."* **The anchor was fixed; the
+anchor's own boundary now shifts the whole window.**
+
+#### 🔴🔴 T7.52c — **Three scheduled runs fall inside the window. The dates are knowable now.**
+
+`[LIVE-AUDIT]` of the NBA workflow crons — only four NBA workflows are scheduled at all:
+
+| Workflow | Cron | |
+|---|---|---|
+| **`nba-scrape.yml`** | `0 9 * * 1` | **Mondays 09:00 UTC** |
+| **`nba-p1-weekly-static.yml`** | `0 19 * * 1` | **Mondays 19:00 UTC** |
+| `nba-referees.yml` | `30 15 * * *` | daily |
+| *(`nba-pp-payout-map.yml` — concurrent session, **out of scope**)* | | |
+
+**Mondays between 2026-10-01 and the first regular-season game on 2026-10-20:
+`2026-10-05`, `2026-10-12`, `2026-10-19`.**
+
+> ### ⇒ **Six scheduled weekly runs — two workflows × three Mondays — would execute the affected scrapers against an empty `2026-27` before a single regular-season game is played.**
+
+Both workflows run the affected set: `player_bio`, `player_tracking`, `team_stats`, `onoff`,
+`playtypes`, `shotquality`, `tracking_detail`. *Per the module's own warning, the exposure for
+player_id-keyed tables is **overwriting last season's real stats with zeros**; whether any of these
+tables is so keyed is **NOT RECORDED** and belongs to each scraper's own transcript.*
+
+**Documented, not fixed.** 🔴 **OWNER DECISION — O4**, logged in `NBA_SWEEP_RUN_LOG.md`: this is the
+one finding in the run whose window opens before the sweep can reach the transcripts that would
+explain it.
+
+---
+
 ### T7.51 — PASS 22 (**paragraph audit**) — **🔴🔴 THE MOST CONSEQUENTIAL LIVE FINDING OF THE T7 SWEEP · 0/3**
 *2026-09-21. The one-line rule as its own angle: take **every** line citation these T7 entries make to
 another document, open the line, and **read the whole paragraph around it**. Fifteen citations across
