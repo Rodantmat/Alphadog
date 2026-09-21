@@ -20,6 +20,22 @@ changed.***
 >
 > **The owner's 2026-10-20 correction is what re-scored this item.** Item ② should be read as
 > superseded by this entry.
+>
+> ### 🔴🔴 And the boundary WAS tested — with the wrong date (T7 pass 29, from the transcript itself)
+> T7's own verification output for `nba_season.py`:
+> ```
+> 2026-09-08   '2025-26', '2024-25', '2023-24'   dupes: false
+> 2026-10-03   '2026-27', '2025-26', '2024-25'   dupes: false
+> 2027-02-01   '2026-27', '2025-26', '2024-25'   dupes: false
+> 2027-08-01   '2026-27', '2025-26', '2024-25'   dupes: false
+> ```
+> **Four sample dates, one of them 2026-10-03 — the date everyone believed was opening night. On
+> that date `2026-27` is the right answer, so the test passed.** **Oct 1 and Oct 2 were never
+> sampled, nor any date between Oct 3 and Oct 20.**
+>
+> **So the boundary is not an oversight: it was verified by a test whose sample points came from a
+> wrong opening date.** One wrong date → a wrong test → a passing result → a *"low impact"* rating →
+> **O4**. *This is what the 2026-10-20 correction was worth.*
 
 ```python
 if today.month in (7, 8, 9):   start_year = today.year - 1
