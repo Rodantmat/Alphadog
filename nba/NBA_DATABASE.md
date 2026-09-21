@@ -852,7 +852,7 @@ v3 schema: flat per-player fields (`personId`, `position`, `comment`) nested und
 `boxScoreTraditional.homeTeam.players` / `awayTeam.players`.
 
 ### `nba_stats.game_officials` — 3,681 rows *(T6)*
-`game_id`, `official_id`, `nba_official_id`, `full_name`, **`jersey_num`**, **`assignment`** —
+`game_id`, `official_id`, `nba_official_id`, `full_name`, **`jersey_num`**, ⚠⚠ **`assignment` — NULL on all 3,681 rows** *(verified live 2026-09-21, T6 pass 6)*: the scraper requests it (`o.get("assignment") or None`) and the worker writes it, but **`boxscoresummaryv3` never populates it**, so the `or None` yields a silent NULL every time. `assignment` is the crew **role** (crew chief / referee / umpire), so **the three officials of a game are an unordered set** and crew-chief-specific analysis is not possible. ⚠ **Also: `official_id` here is numeric (`nba_1629178`) while `nba_ref.officials.official_id` is name-derived (`nba_official_ray_acosta`) — the two tables join at 0%.** → `NBA_OPEN_ITEMS.md`. Other columns —
 PK `(game_id, official_id)`. **1,227 of 1,230 games** (3 officials × 1,227 + partials).
 **`assignment`** carries the crew role (crew chief / referee / umpire), not just presence.
 `source_key DEFAULT 'NBA_GITHUB_COMMITTED_ONETIME_BACKFILL_V3'` — **the `_V3` is encoded in the
