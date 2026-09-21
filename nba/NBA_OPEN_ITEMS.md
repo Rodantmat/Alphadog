@@ -12,11 +12,15 @@
 using that family) and `assists`, `rebounds`, `threes_made`, `pra`, `fantasy_score` (line magnitude —
 `LOW·MID·HIGH·ELITE`).
 
-**The 22 unbanded**: every Tier B prop — all period layers (`points_1q/1h/2h/4q`, `assists_1q`,
-`rebounds_1q`, `threes_made_1q`, `pra_1q`, `fantasy_score_1q`), the milestones (`double_double`,
-`triple_double`), the attempt props (`fga`, `fg3a`, `ftm`), the defensive/negative props (`blocks`,
-`steals`, `stocks`, `turnovers`, `personal_fouls`) — plus the Tier A composites `pts_ast`, `pts_reb`,
-`reb_ast`.
+**The 22 unbanded, by the tier column rather than by kind** *(corrected 2026-09-21, T8 pass 9)*:
+
+- **Tier A — 7**: `blocks` · `steals` · `stocks` · `turnovers` (the defensive and negative props, all
+  core on all three apps) and the composites `pts_ast` · `pts_reb` · `reb_ast`
+- **Tier B — 15**: the nine period layers (`points_1q/1h/2h/4q`, `assists_1q`, `rebounds_1q`,
+  `threes_made_1q`, `pra_1q`, `fantasy_score_1q`), the milestones `double_double` · `triple_double`,
+  the attempt props `fga` · `fg3a` · `ftm`, and `personal_fouls`
+
+**7 + 15 = 22, and 6 + 22 = 28.**
 
 ⚠ **Why this is an open item and not a backlog note**: **variation is one of the owner's five tiering
 dimensions**, and §T8.14b records the band-level residual as *"the empirical vindication of the
