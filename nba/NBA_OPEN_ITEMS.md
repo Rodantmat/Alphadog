@@ -333,7 +333,28 @@ pick-and-roll ball-handler, post-up, spot-up — and **nothing about what he con
 half exists at team level in `nba_team.playtype_profile` and nowhere at player level.
 
 **This is a deliberate scrape-shape decision, not a source limitation** — `synergyPlayTypes` accepts
-`TypeGrouping=defensive` with `PlayerOrTeam=P`, and the scraper simply does not ask for it.
+`TypeGrouping=defensive` with `PlayerOrTeam=P`, and the scraper simply does not ask for it. *The
+scraper's own docstring frames the team-level defensive grouping as "a sharper version of defense vs
+position", so team-level defence was the intent and player-level defence was never in scope.*
+
+### ⚠ CONFIRMED IN THE LIVE DATA — and the worker registry says otherwise
+***VERIFIED 2026-09-21 by SQL:***
+
+| Level | `type_grouping` | Rows |
+|---|---|---|
+| player | **Offensive** | **3,282** |
+| team | Offensive | 300 |
+| team | **Defensive** | **330** |
+
+**There is no `Defensive` row at player level at all.** Meanwhile
+`nba_config.worker_definitions.notes` for `alphadog-v2-nba-static-playtypes` reads:
+
+> *"Player + team level, **offensive and defensive groupings**, 11 real play types …"*
+
+**The registry claims coverage the data does not have.** A reader — or a future session — checking
+what exists by reading the worker registry rather than querying the tables will conclude that
+player-level defensive play-type data is available. **It is not, and never was.** *Recorded, not
+corrected: the notes column is live database state and editing it is a write.*
 
 **What it forecloses, stated plainly**: the "defense-vs-role" idea T3 itself surfaced in the same
 session — *"team X allows the most efficiency to opposing pick-and-roll roll men"* — works at team
