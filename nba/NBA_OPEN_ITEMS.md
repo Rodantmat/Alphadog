@@ -105,6 +105,26 @@ the existing hierarchy to the parametric, which is the designed behaviour."* **L
 📌 **NOT RECORDED — whether `used_emp` is the correct indicator of that fall-through.** The comment is
 quoted, not adjudicated; what is verified is the flag's value and its downstream use.
 
+### 🔴🔴 `f_phase` IS COMPUTED, JUSTIFIED AND NOT IN THE CONFIDENCE SUM — *added 2026-09-21, §T9.38a*
+
+`build_confidence_v3.py`'s `FACTOR_COLS` declares **ten** factors. **`f_phase` carries a six-line
+justification with measured figures** — *"SEASON PHASE as a confidence factor, not just a reporting
+slice… the gap decaying **+1.46 / +1.30 / +0.88 / +0.13 pp** across those four… **a confidence
+question, not a probability one**"* — a rank map (`1_oct_nov` 0.80 · `2_dec_asb` 1.00 · `3_post_asb`
+0.88 · `4_push` 0.92), and a place in the `attach` block.
+
+**The `raw` sum has nine terms and `f_phase` is not one of them.** ✅ **The nine weights total exactly
+1.00**, so this is structural, not a dropped term — **adding `f_phase` would require renormalising
+every other weight.** *The factor is exported for inspection and changes no confidence value.*
+
+⚠ **It matters most where the justification says it does**: `1_oct_nov` carries the **lowest**
+reliability rank (0.80), and **the season opens 2026-10-20** — so the regime the factor was written to
+discount is the one the system is about to enter.
+
+🔑 **OWNER DECISION** — whether `f_phase` should enter the sum (and the other weights renormalise), or
+whether it is deliberately inspection-only and should be labelled as such. **A code change this sweep
+does not make.**
+
 ### 🔑 THE FIX ALREADY EXISTS ONE TABLE OVER — *§T9.33c*
 
 `nba/load_baseline_history.py` creates **`nba_score.baseline_history`** with a
