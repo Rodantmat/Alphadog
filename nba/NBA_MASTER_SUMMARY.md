@@ -2230,18 +2230,51 @@ level further out: not the row drifting from the body, but the body drifting fro
 ### T2.11 — PASS 11 (**re-read: `raw_json` across the static layer**) — **🔴🔴 MAJOR NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
-1. 🔴🔴 **`raw_json` IS A DOUBLE-ENCODED JSON STRING ON EVERY NBA STATIC TABLE.**
-   `[LIVE-AUDIT]` **VERIFIED** by live SQL — `jsonb_typeof(raw_json)` returns **`string`**, not
-   `object`, on **1,306 rows across six tables**:
+1. 🔴🔴 **`raw_json` IS A DOUBLE-ENCODED JSON STRING ACROSS THE NBA JSONB SURFACE.**
+   `[LIVE-AUDIT]` — `jsonb_typeof(col)` returns **`string`**, not `object`, on **17,902 rows across
+   14 NBA tables — every NBA JSONB column except three.** Largest: `player_tracking_detail.metrics`
+   **4,652** · `player_career_season_totals` **3,644** · `player_playtype_profile` **3,282** ·
+   `nba_calendar.games` **2,666**.
 
-   | Table | `jsonb_typeof(raw_json)` | Rows |
-   |---|---|---|
-   | `nba_ref.teams` | **`string`** | 30 |
-   | `nba_ref.players` | **`string`** | 582 |
-   | `nba_ref.arenas` | **`string`** | 30 |
-   | `nba_ref.officials` | **`string`** | 80 |
-   | `nba_stats.player_season_profile` | **`string`** | 582 |
-   | `nba_stats.player_tracking_profile` | **`string`** | 582 |
+   ⚠ **SCOPE CORRECTED 2026-09-21 by the owner's independent verification.** My pass measured
+   **1,306 rows / 6 tables** — the static layer, the only place I looked. **That was an undercount by
+   a factor of 13.** Recording the error rather than quietly replacing the number: the mechanism I
+   found was right and the blast radius I claimed was wrong, because I enumerated the tables I was
+   already reading instead of asking the catalog which tables carry a JSONB column. **The check is
+   one query against `information_schema`; I substituted a list I had in hand for a list I could have
+   derived.** The original six:
+
+   | Table | Rows |
+   |---|---|
+   | `nba_ref.teams` · `nba_ref.arenas` | 30 each |
+   | `nba_ref.officials` | 80 |
+   | `nba_ref.players` · `player_season_profile` · `player_tracking_profile` | 582 each |
+
+   ✅ **Scoring is clean** — both JSONB columns in `nba_score.baseline_ladder_runs` are stored as
+   **objects**, as is `nba_config.classification_config`. **The three unaffected columns are the ones
+   the scoring path depends on**, which is why this is not an opening-day blocker.
+
+   ⚠ **One affected column is DATA, not provenance**: `nba_stats.player_tracking_detail.metrics`
+   holds the payload itself rather than an archive copy. **Its only reader today is its own writer**,
+   so nothing NBA is broken yet — **latent, not live.**
+
+   ✅ **Fully recoverable, verified**: every affected row parses after `(col #>> '{}')::jsonb`, and
+   **none are truncated** — longest affected value **601 characters**, under every `.slice()` limit.
+   **Truncation is a latent risk of the pattern, not current damage.**
+
+   ⚠ **It reaches MLB, mixed**: `stats_pitcher.game_logs` **11,792 of 19,528**;
+   `team.bullpen_history` **9,508 of 25,069**. Bad rows **stop on 2026-07-24**, consistent with an
+   MLB writer fix that day (**unverified**); old rows were never repaired, and readers disagree — one
+   unwraps (`phase3a` line 8325), others do not. **Only those two MLB tables were checked. MLB is
+   outside this sweep's scope and has been flagged to the owner directly.**
+
+   🔴 **The pattern, which is the real finding**: **the NBA static layer, built 2026-08-31 → 09-03,
+   reintroduced a bug MLB had apparently fixed a month earlier.** The NBA build copied MLB's patterns
+   deliberately and repeatedly — the PrizePicks GitHub-read shape, the `BASE_HITTER_GAME_LOGS_WORKER`
+   dispatch style, the `[skip ci]` convention, `curl_cffi` — **but copied them as MLB stood before
+   the fix, or from a sibling that never received it.** `NBA_LESSONS_LEARNED_FROM_MLB.md` exists to
+   carry exactly this forward; **this lesson did not travel, and no NBA document records the MLB fix
+   at all.** → `NBA_OPEN_ITEMS.md`.
 
    **The mechanism**, identical in every writer: `raw_json = ${JSON.stringify(x).slice(0, N)}` binds a
    **JavaScript string** into a JSONB column. Postgres accepts a JSON string as valid JSONB and stores
