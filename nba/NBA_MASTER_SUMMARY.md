@@ -14373,6 +14373,60 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.31 — PASS 16 (**live numeric re-verification**) — **🔴 the env count was wrong a SECOND time, and the reason is T9's own subject · 0/3**
+*2026-09-21. Every figure passes 12–15 state, re-derived from its own authority, **by a different
+method than the one that produced it**, with every partition summed.*
+
+#### 🔴 T9.31a — **194 = 191 + 3, and the missing 3 are hidden inside the PATCHER's embedded source**
+
+Four patterns have now been asked the same question and given **four answers**:
+
+| Method | Answer | What it got wrong |
+|---|---|---|
+| `grep 'os\.environ\.get("[A-Z_]*"'` (pass 14) | **174** | `[A-Z_]` **truncated every name containing a digit** |
+| `ast.parse`, real call expressions (pass 16) | **191** | correct **for code that runs as written** |
+| `grep '…\("[A-Z_0-9]+"'` (pass 15) | **193** | missed one call written with whitespace after `(` |
+| `grep '…\(\s*"[A-Z_0-9]+"'` (pass 16) | **194** | ✅ **the figure** |
+
+🔑 **And the delta is not noise — it is the finding.** The three names in the text but not in the AST
+are **`BT_REPLAY`, `BT_INJURY`, `BT_CUTOFF`**, and they sit inside `rep(s, '''…''', '''…''')` in
+`nba/baseline/build_baseline_ladder.py` and `build_periods_ladder.py` — **the patcher's triple-quoted
+replacement source.** They are string literals to `ast.parse` **and live environment reads at
+runtime**, because the patched recipe module is what executes them.
+
+> ⚠⚠ **So the patcher pattern — T9's own subject — HIDES CONFIGURATION FROM STATIC ANALYSIS.** *Any
+> audit of "what configures this system" that parses the builders will under-count it, and will do so
+> **silently and plausibly**.* **This is why the ladder-depth override at §T9.27b is easy to miss:
+> the switch that decides which copy is live is itself written inside a string.**
+
+📌 **What settled it was not a better pattern — it was enumerating the difference between two.**
+*Rule 11 generalised: when two methods disagree on a count, the answer is the **set difference**, not
+the larger number.* **Corrected in all five copies.**
+
+#### ✅ T9.31b — **Every other figure exact, from its own authority**
+
+| Claim | Authority | Result |
+|---|---|---|
+| Ladder **206,237** rows · **3** as-of days · **22** props · **385** players · **16,208** unresolvable-prop rows | one `nba_score.baseline_ladder` query | **all five exact** ✅ |
+| The depth split: `points` **14** on 2025-11-29, **10** on 2026-01-15 | same query, `FILTER` per day | **exact** ✅ |
+| `LADDER_DEPTH` — **20 keys** | **the block read, not counted by pattern** | **20** ✅ |
+| **13 match / 7 not / 20 keys / +2 non-keys = 22 props** | live max-offset per prop vs the block | **sums** ✅ |
+| Season defaults **47**, set **45**, never set **2**, **45 + 2 = 47** | AST **and** strict YAML key match | **exact, both methods agree** ✅ |
+| Files naming `nba_season` — **20 of 135** | directory walk | **exact** ✅ |
+| **T8 corpus 615 = 609 assistant + 6 human** | `segments()` on the T8 transcript | **exact — and it sums**, which §T9.28a's stale copy never did ✅ |
+| `VBANDS_ALL` **2** references · `variation_bands` **0** | repo-wide, all file types | **exact** ✅ |
+| Coverage, re-measured | `judge9.py`, identical parameters | **694 / 677** — *drifted again from 696 / 679 (pass 11) and 703 / 685 (pass 0)* |
+
+🔑 **The coverage drift now has a total: 703 → 694 vs the twelve (9 segments) and 685 → 677 vs all
+thirty (8).** **That is this sweep's own measured coverage gain on T9.** *The band itself is
+**byte-identical for a fourth run** — 52 high, 1 tail — so the movement is entirely in the 0.40
+threshold, not in the judgment strata.*
+
+**Pass outcome: 1 defect — the same figure, wrong a second time — and 9 figure families exact.
+🔴 CLEAN 0/3 · 16 passes.**
+
+---
+
 ### T9.30 — PASS 15 (**two-direction judgment, fourth run**) — **🔴 TWO count defects, both mine, both from the pattern rather than the authority · 0/3**
 *2026-09-21. The band has been byte-identical for three runs, so this pass judged the **claims** of
 §T9.26–§T9.29 under rules 1, 3, 8 and 11 — and both defects are counts I took from the shape of my
