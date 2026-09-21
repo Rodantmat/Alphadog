@@ -1576,11 +1576,13 @@ that correction applied, per the rule that a superseded claim is recorded, not e
    sets a top-level `error: "failed types: [...]"` when any fail. **Neither `per_type` nor
    `failed_types` appears in any of the thirty documents** — so the richest health signal the
    scraping layer produces is undocumented and unconsumed.
-4. **`scheduleLeagueV2?season=2025-26` returned BOTH seasons** — 1,400 games from the concluded
-   2025-26 and 1,266 from the upcoming 2026-27. **So the schedule scraper carried the same
-   concluded-season literal as the play-types scraper (T3.3), but the endpoint's behaviour made it
-   harmless**, returning forward games anyway. *Worth recording precisely: the parameter was wrong
-   in both scrapers; only one of them was saved by the API.*
+4. ⚠ **WRONG WHEN WRITTEN — corrected in pass 6.** This entry claimed
+   `scheduleLeagueV2?season=2025-26` *"returned BOTH seasons"* and that the endpoint's behaviour
+   made a wrong parameter harmless. **It did not.** The scraper started with that single hardcoded
+   URL and was **rewritten inside T3 to loop a `seasons` list**, fetching each explicitly — which is
+   where 1,400 + 1,266 actually came from. *I inferred an API behaviour from an output count
+   instead of reading the code that produced it; the patch introducing `for season in seasons:` was
+   three segments further down the same stratum. See §T3.6 for what the loop really does.*
 
 **Also noted**: the `call_gemini` prompt carries an explicit anti-anchoring instruction — *"be
 skeptical of your own past answers too; if something you rated high-priority before turns out less
