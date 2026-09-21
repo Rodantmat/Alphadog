@@ -366,7 +366,9 @@ run**, not that the data was unchanged.
 
 **For `nba_ref.teams` the inference is weaker**: that worker has `teamHasRealChange()` and skips
 rows that have not changed, so a run over an unchanged 30-team list would legitimately leave
-`updated_at` alone. *Same caveat for `players` and `officials`, which have their own change checks.*
+`updated_at` alone. **The same applies to `players` — `playerHasRealChange()` with a
+`players_unchanged_skipped` counter, confirmed in T2's source** — and to `officials`.
+*The caveat now has a named mechanism behind it rather than an assumption.*
 
 **Either way the five unconditional writers settle it: the load step has not run since the build.**
 
