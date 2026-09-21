@@ -10058,7 +10058,11 @@ def active_stats_season(today=None):
 
 **That is precisely the state the function creates for itself between Oct 1 and Oct 19.**
 
-**`[LIVE-AUDIT]` blast radius — 13 scrapers call `active_stats_season()`**: `scrape_nba_lineups` ·
+**`[LIVE-AUDIT]` blast radius — ⚠ CORRECTED at §T7.56a to FIFTEEN scrapers: 12 direct callers plus 3
+exposed transitively through `stats_seasons()`, which is anchored on `active_stats_season()`. The
+list below counted files rather than call sites, included the `diagnostic_measure_types.py`
+diagnostic, and wrongly listed `backfill_measure_types` as a direct caller.** The original list:
+`scrape_nba_lineups` ·
 `scrape_nba_splits` · `scrape_nba_player_tracking` · `scrape_nba_tracking_detail` ·
 `scrape_nba_playtypes` · `scrape_nba_shotquality` · `scrape_nba_onoff` · `scrape_nba_team_stats` ·
 `scrape_nba_matchups_pergame` · `scrape_nba_player_bio` · `scrape_nba_backfill_measure_types` ·
