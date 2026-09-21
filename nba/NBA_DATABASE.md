@@ -234,6 +234,24 @@ Source: **`leaguedashplayerbiostats`** — one call, whole league.
 *"semi-static, stable enough for weekly refresh — **a single game barely moves a season average after
 20+ games played**."* **Note this reasoning does not hold in the first 20 games of a season.**
 
+> ### 🔴🔴 `[LIVE-AUDIT]` 2026-09-21 (T7 pass 24) — **THE SEASON-LESS PRIMARY KEY, and why it matters on 2026-10-01**
+> **37 tables across `nba_stats`, `nba_team` and `nba_ref` have a primary key with NO season column**
+> — the single-season profile tables above all: `player_tracking_profile` (`player_id`) ·
+> `player_onoff_profile` (`player_id`) · `player_season_profile` (`player_id`) ·
+> `player_playtype_profile` (`player_id, play_type, type_grouping`) · `player_shot_quality`
+> (`player_id, close_def_dist_range`) · `player_splits` (`player_id, split_type, group_value`) ·
+> `player_tracking_detail` (`player_id, measure_type`) · `nba_ref.players` (`player_id`) ·
+> `nba_team.season_profile` (`team_id`) · `nba_team.playtype_profile` · `nba_team.team_splits`.
+> **They cannot hold two seasons at once**, and their writers upsert rather than insert —
+> `alphadog-v2-nba-static-player-tracking.js` lines 58–64:
+> `ON CONFLICT (player_id) DO UPDATE SET season=excluded.season, avg_speed=excluded.avg_speed, …`
+>
+> ⚠ **Composed with two other documented defects this becomes live on 2026-10-01**: the scrapers'
+> `active_stats_season()` rolls over that day (19 days before the first regular-season game) while
+> four workers hardcode `'2025-26'` with no meta fallback — so a weekly run **fetches an empty
+> `2026-27` and upserts it over last season's real row, under last season's label.**
+> **See `NBA_OPEN_ITEMS.md` O4 and `NBA_MASTER_SUMMARY.md` §T7.53a. Documented, not fixed.**
+
 ### `nba_stats.player_tracking_profile` — 582 rows
 Source: **`leaguedashptstats`** (SpeedDistance) — one call.
 `avg_speed`, `avg_speed_off`, `avg_speed_def`, `dist_miles`, `dist_miles_off`, `dist_miles_def`,
