@@ -14373,6 +14373,81 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.33 — PASS 18 (**structural / referential consistency ACROSS the two depth regimes**) — **🔴🔴 30,989 rungs beyond the measured depth, 92% of them certainties, all carrying FULL provenance credit · 0/3**
+*2026-09-21. §T9.27b established that the three as-of days differ in rung COUNT and said nothing about
+the VALUES. This pass asks what is in those extra rungs and what downstream does with them.
+`[LIVE-AUDIT]` throughout.*
+
+#### 🔴 T9.33a — **The extra rungs are almost entirely certainties**
+
+Every ladder row joined to its prop's `LADDER_DEPTH` value and split on whether `|offset|` exceeds it:
+
+| as-of | Within measured depth | **Beyond it** | Beyond-depth rows at **p ≤ 0.01 or ≥ 0.99** |
+|---|---|---|---|
+| 2025-11-29 *(per-prop)* | 59,855 | **2,638** | **2,188 — 83.0%** |
+| 2026-01-15 *(flat 10)* | 69,560 | **18,713** | **17,409 — 93.0%** |
+| 2026-03-15 *(flat 10)* | 38,942 | **9,638** | **8,966 — 93.0%** |
+| **Total** | **168,357** *(10.7% extreme)* | **30,989** | **28,563 — 92.2%** |
+
+✅ **Partition (rule 11): 168,357 + 30,989 = 199,346**, plus `stocks` **6,350** and `double_double`
+**541** — the two props with no `LADDER_DEPTH` key — **= 206,237** ✅.
+
+#### 🔴🔴 T9.33b — **`used_emp` is a CONFIDENCE INPUT, and every one of those 30,989 rungs claims it**
+
+**`used_emp = true` on all 30,989 beyond-depth rows.** And downstream it is not a diagnostic — it is a
+multiplier:
+
+```python
+build_confidence_v3.py:62   f_prov = d["used_emp"].fillna(False).astype(float) * 0.7 + 0.3
+build_final_hp.py:344       "f_prov": np.where(d["used_emp"].fillna(False).values, 1.0, 0.30)
+score_board_legs.py:234     "f_prov": np.where(d["used_emp"].fillna(False).values, 1.0, 0.30)
+```
+
+🔴 **So a rung beyond the measured useful depth carries provenance 1.0 instead of 0.30 — a 3.3×
+confidence factor — and NOTHING downstream consults `LADDER_DEPTH`.** *The table that knows those
+rungs are out of range is read by the builder and by nobody who scores a leg.*
+
+⚠ **And the patcher's own comment states the opposite behaviour**:
+> *"deeper rungs with too few samples **fall through the existing hierarchy to the parametric**, which
+> is the designed behaviour."*
+
+**Live, the fall-through is 18 rows.** Of **206,237**, exactly **559** have `used_emp = false`, and
+**541 of those are `double_double`** — a binary prop with a single offset 0, no ladder and no band.
+**The genuine empirical fall-throughs are 18 rows of `threes_made`: 0.009% of the table.**
+📌 **NOT RECORDED — whether `used_emp` is the correct indicator of that fall-through.** *What is
+verified is the flag's value, its 100% rate on the beyond-depth rows, and its downstream use as a
+3.3× provenance multiplier. The comment's claim is quoted, not adjudicated.*
+
+#### 🔑 T9.33c — **The remedy for O5 already exists, one table over**
+
+`nba/load_baseline_history.py` creates **`nba_score.baseline_history`** with
+
+```sql
+role_tier text, var_band text, used_emp boolean, ladder_steps int, recipe text
+```
+
+and writes `meta.get("ladder_steps")` into it. **`nba_score.baseline_ladder` has `recipe_version` and
+no depth column at all.** *A `TABLESAMPLE SYSTEM (0.5)` of `baseline_history` — 97,603 rows — returns
+`ladder_steps = 10` uniformly, consistent with `nba-baseline-history.yml`'s `|| '10'`.*
+
+**So the depth-provenance gap O5 raises is solved in the sibling table, in the same schema, by the
+same loader family.** *The owner decision narrows from "design something" to "carry `ladder_steps`
+into `baseline_ladder` as `baseline_history` already does."* **Recorded against O5.**
+
+#### ✅ T9.33d — **Structural integrity across the regimes is otherwise exact**
+
+| Check | Result |
+|---|---|
+| `role_tier` | **6 distinct, 0 NULL, on all three days** — identical across regimes ✅ |
+| `var_band` NULL | **541 — exactly the `double_double` rows**, and `var_band IS NULL AND used_emp` = **0** ✅ |
+| `var_band` distinct | 9 · 9 · **8** — the 8 is the 18-prop day, consistent with its prop set ✅ |
+| `recipe_version` | **1 distinct across all 206,237 rows** — §T9.27b confirmed at full-table scope, and corroborated in code: `_meta["recipe"]` is a literal with no depth term ✅ |
+
+**Pass outcome: 2 live findings, the second of them the sharpest consequence the run has produced, 1
+remedy located, structure otherwise exact. 🔴 CLEAN 0/3 · 18 passes.**
+
+---
+
 ### T9.32 — PASS 17 (**novelty audit, second run — passes 12–16 vs `/tmp/t9base/nba/`**) — **🔑 the documents PREDICTED §T9.27b, and the patcher's guarantee has an unstated boundary · 0/3**
 *2026-09-21. Every claim passes 12–16 added, grepped against the pre-T9 snapshot, **every hit opened**.
 No defect of mine this pass; two findings get sharper and one of them gets a documented ancestor.*
