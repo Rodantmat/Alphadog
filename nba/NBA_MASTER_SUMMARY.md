@@ -14377,8 +14377,13 @@ uncorrected, and they are the highest-traffic ones:**
 
 > ### ⚠ **Rule 10, sharpened: a correction propagates to the ENTRY and the topical documents, and stops at the SUMMARY ROWS — which are what a reader reads first.**
 > **The ledger row, the closing summary and the run log are derived views of the entries, and nothing
-> re-derives them.** *Second time this exact shape has appeared (§T7.61a was the first, inside one
-> document). **When correcting a finding, grep the ledger and the run log by name before finishing.***
+> re-derives them.** ⚠ **Precedent claim corrected 2026-09-21 by §T9.26b** — it read *"second time this
+> exact shape has appeared (§T7.61a was the first, inside one document)"*, and **§T7.61a is not this
+> shape**: its two survivors were an **entry body** (§T7.38b) and a **prose paragraph** in
+> `NBA_DATABASE.md` — two documents, and **neither a summary row**. *So the summary-row shape is **new**,
+> which is what makes the sharpening worth having: §T7.61a proves corrections leave copies standing;
+> §T9.25a proves the copies they leave are the **derived views a reader meets first**.* **When
+> correcting a finding, grep the ledger and the run log by name before finishing.**
 
 **Checked and clean, scope stated exactly**: the four objects grepped across all three edited
 documents — `VBANDS_ALL` (20 statements), `baseline_ladder` (48), `prop_taxonomy` (57),
