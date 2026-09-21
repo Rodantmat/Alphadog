@@ -14990,7 +14990,7 @@ the same file:**
 |---|---|
 | `classification_ladder_v12.py` **line 11** *(module docstring)* | *"turnovers/**fga**/fg3a/ftm/personal_fouls: configured, NOT yet run."* |
 | **line 103** *(the `fga` entry — corrected from 102, which is `turnovers`; §T9.42c)* | `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` |
-| ✅ **RESOLVED by `git blame` at §T9.42a** | **line 11 is `e0e49be1`, 2026-09-08 21:57:30 −0700; line 103 is `98dcccb1`, 58 minutes later.** *The header is the older statement, and the owner's T9 certification (2026-09-09) is later than both.* |
+| ✅ **RESOLVED by `git blame` at §T9.42a, in UTC per §T9.44a** | **line 11 is `e0e49be1`, 2026-09-09 04:57:30 UTC; line 103 is `98dcccb1`, 05:55:07 UTC — 58 minutes later.** *The header is the older statement, and the T9 session (`2026-09-09-22-10-00`) is later than both.* |
 
 ⚠ **Which governs is NOT RECORDED** — §T8.12b's *"likely stale"* was a judgement and nothing in the
 file settles it. 🔴 **Meanwhile the documents had resolved it in both directions without saying so**:
