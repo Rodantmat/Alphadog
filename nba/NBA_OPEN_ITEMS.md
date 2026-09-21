@@ -367,6 +367,69 @@ live one.
 
 ---
 
+## ⚠ THE DIFFERENTIAL WORKER'S "NOT SCHEDULED" WARNING WAS WRITTEN, AND THEN DELETED IN THE SAME SESSION *(added 2026-09-21, T3 judgment pass)*
+*Recorded as of 2026-09-02. **This entry exists because the judgment pass caught it missing from
+pass 10, which had read the evidence and not written it up.***
+
+The documents already record that the weekly differential worker was **built but never scheduled**
+(`NBA_MASTER_SUMMARY.md` line 3090). **What they do not record is that T3 knew, said so, and asked.**
+
+**T3 flagged it to the owner directly:**
+
+> *"One honest gap left: **this worker isn't wired to any automatic schedule yet** — it needs a
+> manual `run_job` trigger after each weekly scrape, or wiring into the existing cron. **I flagged
+> this rather than assuming it's automatic. Want me to wire that up now, or is this a good place to
+> pause?**"*
+
+**T3 also wrote the caveat into `nba/NBA_PROJECT_LOG.md`:**
+
+> *"not yet wired to any schedule — `nba-scrape.yml`'s existing weekly cron only runs the python
+> scrapers; this cloudflare worker still needs to be triggered manually via `run_job` after each
+> weekly scrape, or a future session should wire it into the same cron cycle. **flagged as an open
+> item rather than silently assumed automatic.**"*
+
+### And then removed it
+A later `github_patch_file` in the same session took **exactly that paragraph** as its `old_str` and
+replaced it with:
+
+> *"next, per the third research pass's own priority order: play-type data (synergyplaytypes) is the
+> next highest-value single addition…"*
+
+**The warning was overwritten by a what's-next paragraph.** Not edited, not moved — replaced.
+
+**Why this matters more than the omission itself**: the record as it stood reads as though nobody
+noticed. **Someone did, wrote it down twice, asked whether to fix it, and the note was then removed
+while the question went unanswered.** *The difference matters for how much to trust the rest of the
+log: an entry's absence is not evidence that the issue was never seen.*
+
+**This is also the mechanism behind the `[LIVE-AUDIT]` staleness found in passes 12 and 13** —
+`nba_calendar.games` and `nba_stats.player_impact_rating` both frozen at their 2026-09-02 build
+date. *The workers load committed JSON and are triggered by hand; the scrapers have a cron and the
+workers do not.*
+
+---
+
+## ⚠ THE SHOT-QUALITY-DELTA METHODOLOGY IS NAMED 25 TIMES AND SPECIFIED NOWHERE IN THE TWELVE *(added 2026-09-21, T3 judgment pass)*
+*Direction-1 defect: mentioned but incomplete.*
+
+"Shot quality delta" appears **25 times** across the documents, including `NBA_MASTER_SUMMARY.md`
+(8), `NBA_RECIPE.md` and `NBA_FINAL_SCORING_CALIBRATION.md`. **The buildable steps exist only in
+`NBA_ENRICHMENT_FACTORS_RESEARCH.md`, which is not one of the twelve:**
+
+1. **Weekly, alongside the per-player breakdown, pull `leagueDashPlayerPtShot` league-wide** to get
+   the **league-average eFG% at each of the four defender-distance buckets**
+   (`0–2ft very tight · 2–4ft tight · 4–6ft open · 6+ft wide open`).
+2. **For each player, weight those league averages by that player's own shot distribution** across
+   the four buckets — giving an **expected eFG%** for the shots he actually takes.
+3. **Delta = actual eFG% − expected eFG%.** A large positive delta means unsustainable shot-making
+   *(a sell / under signal)*; a negative delta on good shots is a *buy / over*.
+
+**Without step 1 the metric cannot be computed at all** — the per-player pull alone has no baseline
+to difference against, and the league-wide call is a separate request that nothing currently makes.
+*Recorded here so the concept and its recipe live in the same place.*
+
+---
+
 ## 🔴 THE DARKO SCRAPER FETCHES A DAILY PROJECTED-MINUTES SERIES AND THROWS IT AWAY *(added 2026-09-21, T3 pass 13)*
 ***VERIFIED** by reading the committed hydration payload and by live SQL, 2026-09-21.*
 
