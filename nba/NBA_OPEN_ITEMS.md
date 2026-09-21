@@ -317,6 +317,61 @@ does not protect against the delete above it.**
 
 ---
 
+## 🔴🔴 SEASON-CRITICAL · `[LIVE-AUDIT]` · THE ENTIRE NBA STATIC LAYER IS FROZEN AT ITS BUILD DATE *(added 2026-09-21)*
+***VERIFIED by live SQL, 2026-09-21.** Live-system state — does not affect any transcript's clean
+count. **This generalises the schedule finding below: it is not one table, it is all nine.***
+
+| Table | Rows | Last written | Days stale |
+|---|---|---|---|
+| `nba_ref.teams` | 30 | 2026-08-31 23:39 | **21** |
+| `nba_ref.arenas` | 30 | 2026-09-01 00:36 | 20 |
+| `nba_ref.officials` | 80 | 2026-09-01 00:53 | 20 |
+| `nba_stats.player_onoff_profile` | 582 | 2026-09-01 03:34 | 20 |
+| `nba_stats.player_impact_rating` | 530 | 2026-09-02 07:58 | 19 |
+| `nba_calendar.games` | 2,666 | 2026-09-02 20:25 | 19 |
+| `nba_stats.player_playtype_profile` | 3,282 | 2026-09-02 22:42 | 19 |
+| `nba_stats.player_tracking_detail` | 4,652 | 2026-09-02 23:01 | 19 |
+| `nba_ref.players` | 582 | 2026-09-03 18:14 | 18 |
+
+**Every table was last written inside the 2026-08-31 → 2026-09-03 build window. Not one has been
+written since.** *The latest, `nba_ref.players`, is 2026-09-03 — which is T3's manual differential
+testing, not a scheduled run. **The only thing that has touched an NBA table since the build is a
+human testing it.***
+
+### The weekly layer has never refreshed once
+`nba-scrape.yml` runs its **sixteen scrapers** on a Monday 09:00 UTC cron and commits fresh JSON.
+**Every worker that loads that JSON into Postgres is triggered by hand via `run_job`.** So the
+scrapers may well have run three times since the build — **and nothing read their output.**
+
+**This is the general form of the differential worker's flagged-and-deleted warning** (see
+FROM T3 PASS 8 / judgment pass): *"nba-scrape.yml's existing weekly cron only runs the python
+scrapers; this cloudflare worker still needs to be triggered manually via `run_job`."* **That was
+written about one worker. It is true of all of them.**
+
+### Stated at the right strength
+**For five of these tables the inference is firm.** `player_impact_rating`, `player_playtype_profile`,
+`player_tracking_detail`, `player_onoff_profile` and `nba_calendar.games` **upsert every row
+unconditionally with `updated_at = now()`** — so an unchanged timestamp means **the worker did not
+run**, not that the data was unchanged.
+
+**For `nba_ref.teams` the inference is weaker**: that worker has `teamHasRealChange()` and skips
+rows that have not changed, so a run over an unchanged 30-team list would legitimately leave
+`updated_at` alone. *Same caveat for `players` and `officials`, which have their own change checks.*
+
+**Either way the five unconditional writers settle it: the load step has not run since the build.**
+
+### Why this matters now
+Season opens **2026-10-03, twelve days out**. On opening night the system would score against a
+**roster, schedule, impact-rating, play-type and tracking snapshot taken five weeks earlier** —
+before any preseason transaction, and with `nba_calendar.games` still 30 regular-season games short
+(below). **Nothing in the pipeline reports staleness**: every worker's certification is a row-count
+threshold (`NBA_WORKERS.md` §0.31), and a stale table has exactly the right row count.
+
+**Owner action**: this is the same root cause as the three items already flagged, and the fix is one
+decision — **wire the workers into the cron, or schedule the `run_job` calls.** Not fixed here.
+
+---
+
 ## 🔴 SEASON-CRITICAL · `[LIVE-AUDIT]` · THE SCHEDULE HAS NOT BEEN REFRESHED SINCE THE DAY IT WAS BUILT *(added 2026-09-21, T3 pass 12)*
 ***VERIFIED by live SQL, 2026-09-21.** Live-system state, not T3 material — **does not affect T3's
 clean count.** T3 built and verified this correctly on 2026-09-02; everything below is about what has
