@@ -923,6 +923,36 @@ the Fantasy demon spacing matches its price (31.9% vs ~32%); goblins hit 73.5% v
 shift and the shaded 2.2× cover it until the NBA preseason board settles it. Formula-ladder props need no spacing model:
 their real rungs are archived.
 
+### OWNER RULE CONFIRMED (2026-09-21)
+**Every DERIVED line is made harder — goblins and demons alike, whatever their threshold. Real archived lines and
+verified exact payouts are untouched.** Model-estimated multipliers (incl. historical goblin/demon prices) count as derived
+and are shaded; one flip restores the best estimate if the owner decides otherwise.
+
+### FANTASY SCORE BACK-SIMULATION — BUILT (2026-09-21)
+`nba_market.build_fs_backsim(from, to)` (plain SQL; the PL/pgSQL draft failed on variable substitution) → table
+`nba_market.fs_backsim`: **32,170 player-nights** (2024-25 15,916; 2025-26 16,254). Per player-night: book-consensus
+components (+ 30-day-median fallback flag), best-estimate center, gap, CONSERVATIVE lines (standard Over at center + 1,
+Under at center − 1, goblin and demon a point harder, all moved to the next harder .5 — no pushes), conservative factors
+(2.2 / 4.0 ÷ 3, from the policy table), the model's probability at each exact line (`baseline_history`, fantasy_score
+rungs every .5), and the box-score outcome. Rebuild after any policy change.
+Test week (Jan 12–18 2026, 675 rows): best center 50.4% over; conservative Over 45.0%, Under 44.2%, goblin **64.0%**
+(below its price's ~65% — the WNBA spacing doubt can no longer flatter a backtest), demon 25.1%; 0 lines off .5; 0 lines
+easier than the rule; model probability present on 76% (the rest fall outside the model's ±10 ladder).
+**Results (conservative):** realized value per leg — goblins 0.976 / 0.983, standard Over 0.939 / 0.942, standard Under
+0.851 / 0.841, demons 0.763 / 0.771 (2024-25 / 2025-26). The model still ranks (realized climbs 0.83 → 1.06–1.07 across
+its claim buckets, both seasons), but its best leg per player-night returns **1.03–1.04 — below the 3-pick breakeven
+1.10.** Under these deliberately harsh assumptions Fantasy Score does not clear; real lines may show the one-point
+penalty is too harsh — revisit on the NBA preseason board.
+
+### GAME-AWARE SLIP PACKING (2026-09-21)
+`nba_score.paper_pick_candidates` now carries each pick's event_id; **`nba_score.paper_pick_slips(date, threshold,
+snapshot)`** packs greedily — picks in rank order, each into the first open slip with no leg from its game — so every
+slip spans three DIFFERENT games (same-game slips pay less). `log_paper_picks` now logs these slips (paper_picks gained
+event_id). Test night 2026-01-15: 45 picks → 15 full slips, 0 same-game (rank-order packing had 1).
+**Standards strategy replay, game-aware** (window lines, exact payouts): 2024-25 **+10.1% ± 6.1%** (154 nights, 1,755
+slips, hit 57.4%); 2025-26 **+18.0% ± 5.6%** (155, 2,166, 58.4%); **both +14.5% ± 4.2%** (309 nights, 3,921 slips; 3.5 SE);
+0 same-game slips. Nights with fewer than three games produce no full slip (14 nights) — correctly sat out.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
