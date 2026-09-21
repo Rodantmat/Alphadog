@@ -9676,6 +9676,69 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.44 — PASS 15 (**cross-document consistency, second run**) — **🔴 1 DEFECT, MINE, AND THE THIRD INSTANCE OF ONE HABIT · 1/3 → 0/3**
+*2026-09-21. Angle: re-read every claim passes 9–14 added **at the document that specifies the thing
+it describes** — not at the live table. The live table tells you which columns exist; the design
+document tells you which ones carry meaning.*
+
+#### 🔴 T7.44a — **CORRECTION to §T7.38b and §T7.39a: the 13 continuous cells ARE keyed — on `variation_band`. Nothing in the table is undifferentiated.**
+
+`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247 specifies the key, and has since T7 wrote it:
+
+> *"`factor_profile_cells` — factor × prop × **rate_tier** × **role_tier** × **direction** ×
+> **variation_band**"*
+
+**Six dimensions. I queried three** (`tier_label`, `role_tier_key`, `direction`) and concluded from
+their nullity that 13 cells *"carry neither key"* and are *"never tier-keyed."* **`[LIVE-AUDIT]`, the
+fourth dimension:**
+
+| | `variation_band` | Cells |
+|---|---|---|
+| **22 bucketed cells** (flat `lift`/`penalty`) | **NULL** | 22 |
+| **13 continuous cells** (`formula_expression`) | **`'continuous'`** | 13 |
+
+**Exactly the 13.** So the two-population finding survives — and gets **cleaner**: **the key column
+that is populated IS the population marker.** Bucketed cells are keyed by tier and role; continuous
+cells are keyed by band. **Every one of the 35 cells is differentiated on the dimension appropriate
+to its form; none is undifferentiated.**
+
+**Consequence for the owner's anti-capping directive — it strengthens again.** §T7.38b called the 13
+a gap; §T7.39a corrected that to "not a gap because tiers are meaningless for them"; **this is the
+third and correct reading: they are not tier-keyed because they are band-keyed, by design, and the
+design says so in writing.** → `NBA_OPEN_ITEMS.md` updated.
+
+⚠⚠ **THE SAME HABIT, THREE TIMES IN SEVEN PASSES** — and each time caught by the next pass, never by
+the pass that made it:
+
+| | What was read | What was ignored beside it |
+|---|---|---|
+| §T7.38a (pass 9) | a quote's **number and word** | its **attribution sentence** and the verdict sentence under it |
+| §T7.39a (pass 10) | the **key columns** | `formula_expression` in the same row |
+| **§T7.44a (pass 15)** | **three key columns** | **the other three, named in the design document** |
+
+**Standing rule, fifth form**: **when a document specifies a composite key, enumerate the key from
+that document before querying the table.** The schema lists columns; only the design says which ones
+mean something. *In all three cases the missing context was one line away from the thing I read.*
+
+#### 🔑 T7.44b — `[LIVE-AUDIT]` **`nba_config.variation_bands` (25 rows) is read by nothing — and is MISSING from the §2 banner's list**
+
+Live `nba_config` holds **13 tables**. The banner enumerates eight things (seven tables + the
+`ewma_alpha` column, §T7.40b). **The omissions, checked one by one:**
+
+| Table | Repo references |
+|---|---|
+| **`variation_bands`** (25 rows) | **NONE anywhere in the repo** — **and it is the table the `variation_band` key above points at** |
+| `calibration_log` (8), `worker_definitions` | hits exist, **but all are MLB's D1 names** (`config_worker_definitions` in `verify_schema_all.py`, MLB workers) — **none `nba_config`-qualified** |
+| `external_credentials` | **read** — 12 call sites |
+| `pp_pricing_model`, `pp_slip_rules` | the concurrent session's — **out of scope** |
+
+**So the unread set is larger than the banner says, and the newly-named member is the one that gives
+the 13 continuous cells their key.** *Novelty checked inline per the new rule:
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` line 64 already records `variation_bands` **(25)**
+as existing — **what is new is its absence from the read-by-nothing banner**, not the table.*
+
+---
+
 ### T7.43 — PASS 14 (**novelty audit — the check that failed twice, run as its own pass**) — **✅ CLEAN 1/3**
 *2026-09-21. Method, so it is repeatable: `git archive` the twelve **as they stood before pass 9**
 (commit `d33902f9`, the last write before §T7.38) into a scratch tree, then grep that tree for the
