@@ -517,6 +517,36 @@ Factors, *"layer-tagged, with macro-clusters"* — i.e. each carries whether it 
 the ancestor of the A/B/D/M/N factor codes used in T15–T16 and of
 `nba/NBA_ENRICHMENT_FACTOR_LOCK.md`.
 
+### 🔴🔴 `nba_market.board_snapshots` — **NOT NBA-ONLY**
+*`[LIVE-AUDIT]` 2026-09-21, T11 pass 7 (§T11.8a). **27,067,871 rows, 2024-10-22 → 2026-09-13.***
+
+**`market_key` holds ~90 distinct values and the majority are BASEBALL** — `player_batter_hits`,
+`player_pitcher_strikeouts`, `player_1st_inn._batters_faced`, `player_home_runs`, `player_rbis`,
+`player_stolen_bases`, `player_earned_runs_allowed`, `player_total_bases`, `player_singles`,
+`player_hits_+_runs_+_rbis`, `player_team_total_runs`, `player_outs`… — beside the NBA set
+(`player_points`, `player_rebounds`, `player_assists`, `player_threes`, `player_blocks`,
+`player_steals`, `player_turnovers`, `player_double_double`, `player_blocks_steals`,
+`player_points_rebounds_assists`, `player_fantasy_points`, each with `_alternate`).
+
+🔴 **Source**: the **`routine`** label is the **live 2-hour board crons** (`sleeper-board.yml`,
+`underdog-board.yml`, `fliff-board.yml`), which ran in **mid-September — not NBA season**:
+
+| bookmaker | `routine` rows | **NBA-shaped `market_key`s** |
+|---|---|---|
+| `underdog` | 5,281 | **189 (3.6%)** |
+| `fliff` | 1,394 | **0** |
+| `sleeper` | 1,276 | **0** |
+
+⚠⚠ **CONSUMER HAZARD — ***a row in this table is not necessarily an NBA row***.** **Any count, date
+range or `market_key` listing taken on `bookmaker`/`game_date` alone silently includes other sports**,
+and this sweep made that mistake four times before catching it. **Filter `market_key` to the NBA set,
+or filter out `snapshot_label = 'routine'`, depending on the question.**
+✅ **The historical `window` / `close` rows for PrizePicks and Underdog are the NBA backfill and are
+NOT affected.** 📌 **Whether the cross-sport capture is deliberate is NOT RECORDED** — see
+`NBA_OPEN_ITEMS.md`.
+
+---
+
 ### 🔴 `nba_market.board_outcomes` — **two discriminator columns are entirely NULL**
 *`[LIVE-AUDIT]` 2026-09-21, T11 pass 4 (§T11.5c). **6,905,452 rows.***
 
