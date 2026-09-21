@@ -7699,6 +7699,64 @@ methodology. **Coverage at start**: 438 segments · **375 uncovered vs the twelv
 all 30 — **only a 9-segment self-authorship gap**, so unlike T4 this transcript barely writes the
 documents; its tail is genuine content, not its own payloads.*
 
+### T5.18 — PASS 3 (**results stratum, all 128 segments — last of T5's four**) — **NEW MATERIAL · 0/3**
+*2026-09-21.*
+
+#### ⚠⚠ T5.18a — CORRECTION to §T4.23a: **there are FIVE committed diagnostic artifacts, not three** — and the reason I missed two is the point
+
+`[LIVE-AUDIT]` **VERIFIED** — full listing of `nba/data/`:
+
+| File | Size | Status |
+|---|---|---|
+| `nba_darko_debug_html_snippet.txt` | 432,513 B | documented (owner action) |
+| `nba_shotzones_debug_raw.json` | 50,000 B | flagged §T4.23a |
+| `nba_officials_debug_raw.json` | 2,426 B | flagged §T4.23a |
+| **`nba_officials_diagnostic.json`** | **7,736 B** | ❌ **missed** |
+| **`nba_starter_status_diagnostic.json`** | **1,473 B** | ❌ **missed — T5's own** |
+| | **494,148 B total** | |
+
+**Why they were missed: §T4.23a grepped `nba/data/` for `*debug*` and reported the result as a
+total.** Two of the five are named `*diagnostic*`. **The habit is one habit — dump the evidence beside
+the data and let `git add` commit it — and it uses two words.**
+
+🔴 **This is the THIRD time in this sweep that I have reported a count from a single-pattern search.**
+The others:
+1. **`raw_json`** — measured 1,306 rows / 6 tables by checking the static layer I was already
+   reading; **the true figure was 17,902 / 14 tables.** Caught by the owner, not by me.
+2. **Tool-name failures** — *"four instances, two families"* from memory; **actually 5 across 3
+   distinct wrong names** (§T4.25a). Caught by a judgment pass.
+3. **Debug artifacts** — *"three"* from a `*debug*` grep; **actually five.** Caught here.
+
+**The error is identical every time: I enumerate what one pattern returns and report it as the
+population.** The fix is equally consistent and is now a standing rule below: **when a finding is a
+count, derive the population from an authority — the catalog, the directory, a full-corpus scan —
+never from the pattern that first surfaced it.** All three findings were real; all three counts were
+wrong; and **a wrong count in a document that exists to be trusted is its own defect.**
+
+#### ✅ T5.18b — the 799-row bug's diagnostic signature, recorded precisely
+`{"actual row count": 799, "distinct game ids": 31, "distinct player ids": 411}` — and the successful
+game ids are **the last ~30 of the season plus a single outlier** (`0022500423`, then an unbroken run
+`0022501201 … 0022501228`). **Not random failure: a clean recency boundary**, which is what made
+"v2 doesn't serve historical games" the right diagnosis rather than a transient or rate-limit story.
+
+#### ⚠ T5.18c — workflow logs expire, and the bridge reports it plainly
+```json
+{"ok": false, "status": 404,
+ "error": "could not fetch log text (link may have expired, or run is too old)",
+ "job": {"id": 100525469198, "name": "backfill", "conclusion": null}}
+```
+✅ Already documented. Noted here because it bounds every future investigation: **a failure not
+diagnosed while its log is live may not be diagnosable later** — which is precisely why the
+diagnostic artifacts above get committed, and therefore why the habit exists at all. **The two
+findings explain each other.**
+
+#### ✅ Verified, already documented
+3 distinct seasons / 79,358 player-log / 7,380 team-log totals; `defense_vs_position` 630 rows; the
+7-value position distribution (G 240, F 180, …); Jokić's 7 days-rest split rows; another bridge
+`error occurred during tool execution`; an `old_str not found` patch failure. ✅
+
+---
+
 ### T5.17 — PASS 2 (**command stratum, all 92 segments**) — **NEW MATERIAL · 0/3**
 *2026-09-21.*
 
