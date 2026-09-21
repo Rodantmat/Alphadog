@@ -14419,6 +14419,50 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.14 — PASS 14 (**live numeric re-verification**) — **🔴 pass 13's own table was measured on the working tree · 0/3**
+*2026-09-21. Every figure passes 9–13 state, re-derived — and the re-derivation is what caught it.*
+
+#### 🔴 T10.14a — **Four of §T10.13a's nine figures counted this sweep's own writes**
+
+Re-measured on the **working tree** two passes later, four figures had moved; re-measured on the
+**baseline**, four of the published numbers were already wrong when written:
+
+| Object | Published (working tree) | **Baseline `d29401bd`** | Working tree **now** |
+|---|---|---|---|
+| `altitude_venue` (thirty) | 15 | **14** | 15 |
+| `national_tv_marquee` | 1 / 7 | **0 / 5** | 1 / 7 |
+| `market_total_delta` | 0 / 3 | **0 / 3** | **1 / 4** |
+| `late_scratch` | 1 / 5 | **1 / 5** | **2 / 6** |
+| `lineup_change` | 4 / 7 | **4 / 7** | **4 / 8** |
+| **`compute_stage`** | **0 / 2** | **0 / 2** | **2 / 5** |
+
+🔴 **And it hits the headline.** §T10.13a closed *"exactly one claim survives unchanged:
+`compute_stage` — **0 in the twelve**"* — **and by then this sweep had written `compute_stage` into
+two of the twelve while recording the finding.** *The statement is true of the baseline and false of
+the tree it was measured on.*
+
+⚠ **The irony is exact: §T10.13b used `/tmp/t10base` correctly, in the same pass, for the same
+reason — and §T10.13a did not.** **Corrected to the baseline, with the authority named in the table.**
+✅ **The finding itself survives the correction intact**: `market_spread_delta` **19 of thirty**,
+`altitude_venue` **14** — and the corrected count is that **four objects sit at 0 in the twelve**, with
+`compute_stage` the one at **0 / 2**.
+
+🔑 **Fourth location of the self-authorship effect**, after direction 2, direction 1 (§T9.40b) and the
+corpus metric (§T9.48a): ***a document-count table.*** **Every count this sweep takes over the twelve
+or the thirty is a count over a corpus it is writing — the authority for "was this documented" is the
+baseline tree, always, and the working tree answers a different question.**
+
+#### ✅ T10.14b — **Everything else re-derives exactly**
+
+**The five registry partitions all close on 67** — **28 + 39** · **29 + 38** · **28 + 1** · **4 + 25**
+· **15 + 17 + 2 + 2 + 31**; `factor_relevance` **460**; `factor_gate_results` **104**; the documented
+`source_key` split **5 + 25 = 30**; band **32 / 101** and coverage **823 / 688**.
+
+**Pass outcome: 1 defect — a table measured against the wrong tree, in a pass that used the right one
+two paragraphs later — everything else exact. 🔴 CLEAN 0/3 · 14 passes.**
+
+---
+
 ### T10.13 — PASS 13 (**display-name / vocabulary audit**) — **✅ CLEAN 1/3 · every surviving claim re-probed by SUBJECT and confirmed**
 *2026-09-21. The angle §T10.12b's failure named: **four absence claims on this transcript probed the
 identifier instead of the thing it names.** `factor_registry.display_name` is the bridge between the
