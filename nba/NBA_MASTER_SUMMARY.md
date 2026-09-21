@@ -14403,6 +14403,101 @@ draws from.**
 
 **113 passes, 87 with new material, across 8 transcripts.**
 
+## T10 SWEEP (2026-09-21) — `2026-09-10-01-31-13-nba-enrichment-backfill-pipeline-2026-09-09.txt`
+
+> **Corpus**: **872 segments — 858 assistant, 14 owner** *(counted from the transcript's own segment
+> list, never from the tail — the §T8.24a failure; **858 + 14 = 872** ✅)*. **Measured at pass 0:**
+> **831 uncovered vs the twelve (95.3%)** — the highest of any transcript swept — and **689 vs all
+> thirty (79.0%)**. ⚠ *Both uncovered counts are measurements of a corpus this sweep is writing and
+> are dated pass 0 (§T9.49a's rule); **872 is a property of the transcript and does not move.*** **The
+> 142-segment gap between 831 and 689 says most of T10's material is carried by the eighteen
+> non-mandated documents** — expected, since T10 is the enrichment/factor transcript and
+> `NBA_ENRICHMENT_*` files exist. Tail: `scratchpad/t10/t10_tail.json`; scripts
+> `scratchpad/t10/{tail10,judge10}.py`. **Novelty baseline: commit `d29401bd` → `/tmp/t10base/nba/`
+> (32 files) — grep that tree, never the working tree.**
+>
+> 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
+> is the transcript's centre of gravity, not a side channel.*
+
+### T10.1 — PASS 1 (**owner stratum**) — **🔴 a live config row contradicts the documents on the certified set — and it settles `fga` · 0/3**
+*2026-09-21. All fourteen owner turns read in full, each directive's SUBSTANCE grepped across all
+thirty before any absence was considered.*
+
+#### ✅ T10.1a — **The season-opening directive's ANSWER is on file, and the live config holds more of it than any document does**
+
+Turn [73]: *"understand the behavior on the first days of the season, how it behaves, how it holds and
+**understand if there is a reliable and safe pattern on season beginnings to work with**."*
+
+**The answer exists** — `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` §7 and the live config key
+**`nba_config.classification_config.season_opening_study`** (updated **2026-09-09 20:11:43 UTC**):
+
+| | |
+|---|---|
+| **Problem** | within-season rates (3 games) + minutes role (5 competitive games) + in-season Platt (1000 legs) ⇒ **zero projections in October, 62% coverage in November, Platt 0% until December** |
+| **Fix** | cross-season carryover at player level, boundary evidence counted as **`CARRY_N = 8`** games → **coverage Oct 85%, Nov 90%** |
+| **The pattern, and it is the answer** | *"both seasons, **same sign and size = reliable**"* — carryover **over-projects ~5pp at the anchor in October** (points **−4.8 / −6.2**, rebounds **−5.2 / −4.6**), **~2–4 in November, flat Dec–Mar** |
+| **Only in the live config** | *"**Platt stays OFF until ~December by construction** (raw is calibrated within ~1–3pp)"* · *"out-of-sample test of the phase cell only possible on 2025-26 today; **for the 2026-27 opening the fit uses 2024-25 + 2025-26 — stronger**"* |
+
+🔑 **The twelve carry the COVERAGE half and not the BIAS half.** `CARRY_N`, `BT_CARRY`, *"Oct 85%,
+Nov 90%"* and *"62% coverage"* are all in `NBA_BASELINE_CALIBRATION.md` / `NBA_GLOSSARY.md` /
+`NBA_MASTER_SUMMARY.md`. **The measured October over-projection, its per-prop magnitudes, its
+cross-season consistency, and the Platt-off-until-December statement are in none of them.**
+⚠ *Rule 14 mattered here: the twelve's only `over-project` hit is about the quantile tier prior
+compressing extremes — a different subject entirely, and counting it as coverage would have been
+wrong.* **Written to `NBA_BASELINE_CALIBRATION.md` §3.2.** ⚠ **The season opens 2026-10-20 — 29 days
+out — which is precisely the window this pattern describes.**
+
+#### 🔴 T10.1b — **`nba_config.classification_config.single_stat_scoreboard_two_seasons` says FIVE certified; the documents say six — and its own `notes` field dates it**
+
+```json
+{"certified": ["points","rebounds","assists","threes_made","fga"],
+ "close_not_certified": ["blocks","steals","turnovers","personal_fouls","ftm"], …}
+```
+`updated_at` **2026-09-09 05:55:58 UTC** · `notes`: *"**State as of 2026-09-09 v20.** Next: joint
+simulation for combos/fantasy/DD; period layers; production worker."*
+
+**The documents record 6 certified — `points · rebounds · assists · 3PM · FGA · FTM` — and 4 close.**
+**The config records 5 and 5, with `ftm` on the CLOSE side.**
+
+✅ **The chronology resolves it, and it is consistent to the minute:**
+
+| UTC | Event |
+|---|---|
+| **2026-09-09 04:57:30** | docstring line 11 written — `fga` and `ftm` both *"configured, NOT yet run"* (`e0e49be1`) |
+| **05:55:07** | `fga`'s inline `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` (`98dcccb1`) |
+| **05:55:58** | **this config row — `fga` certified, `ftm` still close** *(51 seconds later)* |
+| **20:11:43** | `season_opening_study` written |
+| **22:10:00** | **the T9 session opens**, in which the owner states the certified six **including `ftm`** |
+
+🔑 **So `fga` is settled by a third independent authority**: inline comment, config row and owner
+statement all certify it, and **docstring line 11 is stale** — §T8.12b's judgement, §T9.42a's blame
+ordering, and now the config all agree. 🔴 **And `ftm` is the reverse: the config row is the stale
+one**, written sixteen hours before the session that certified it, **and its own `notes` field says
+"State as of 2026-09-09 v20"** — a snapshot, labelled as such, that no longer matches.
+
+⚠ **`[LIVE-AUDIT]` And nothing reads it.** **Zero code references under `nba/` to
+`single_stat_scoreboard_two_seasons`, to `season_opening_study`, or to `classification_config` at
+all** — the ninth and tenth members of §T9.23's *"seeded, then orphaned"* family, **and the first two
+found to be DIVERGENT from the record rather than merely unread.**
+
+#### ✅ T10.1c — **The other twelve directives' substance is already on file**
+
+| Directive | Where |
+|---|---|
+| [338] *"one document to realign… a friendly name… first of anything, this realignment document"* | **`NBA_COMPASS.md`** — the document exists and is the answer |
+| [548] *"we need also a fallback… for all the factors, every single factor"* | `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` + 20 others |
+| [484] *"look for sub factors. so small factors."* | `NBA_ENRICHMENT_FACTOR_LOCK.md`, `NBA_ENRICHMENT_ENGINE_DESIGN.md` |
+| [551] *"we cannot just edit and lose the calibration that you had before"* | recalibration constraint, 6 documents |
+| [683] *"the backfill needs to match what the daily mining will be like"* | `NBA_DAILY_PARITY_AND_BACKFILL.md` |
+
+**Each was grepped by substance before being called covered** — *the §T7.46a failure was the opposite,
+and cost T7 its headline.*
+
+**Pass outcome: 1 live contradiction with a dated cause, 1 directive answer partly outside the twelve,
+12 directives confirmed covered. 🔴 CLEAN 0/3 · 1 pass.**
+
+---
+
 ## NEXT: T9 — `2026-09-09-22-10-00-nba-baseline-production-pipeline.txt`
 Single-stat re-certification with the factor layer · combos and DD joint simulation ·
 period props (1Q/1H/2H/4Q, the 3-part mixture, OT) · **the production builder (patcher pattern)** ·
