@@ -189,6 +189,33 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 🔴🔴 TWO MORE LIVE API KEYS SIT IN A TRANSCRIPT — **OWNER DECISION O8**
+*Found 2026-09-21, T11 pass 0 (§T11.1b). **The key values are deliberately not reproduced here or in
+any other document.***
+
+**Where**: owner turns at segments **197** and **641** of
+`nba/transcripts/2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt`. One is an
+earlier **The Odds API** key; the other is the key for the **$30 subscription** the owner bought in
+that session.
+
+🔴 **This is the third credential exposure this sweep has found:**
+1. **O1** — the live **balldontlie.io** key, committed in `NBA_MASTER_SUMMARY.md` and in the
+   transcripts. *Already handed to the owner.*
+2. **`nba_config.external_credentials.credential_value_encrypted` is a misnomer** — `NBA_DATABASE.md`
+   records it **VERIFIED two ways**: *nothing encrypts and nothing decrypts*; the two readers use the
+   value as-is.
+3. **These two Odds API keys, in transcript text.**
+
+⚠ **The remedy is the same one O1 carries and it is the owner's: ROTATION.** *Redacting a line does
+not remove a value from git history, and this sweep does not rewrite history.*
+
+📌 **What is safe to record about the subscription, and is recorded**: it is **$30**, it is **for NBA
+only**, the **older free key stays alive and separate with its own ~500-credit budget**, and the new
+key **does not replace it** — the owner said so explicitly. *Two snapshots a day was the plan those
+credits were sized for (§T11.1d).*
+
+---
+
 ## ⚠ TWO TABLES THESE DOCUMENTS DESCRIBE ARE NOT IN THE DATABASE
 *Found 2026-09-21, T10 pass 22 (§T10.22b). `[LIVE-AUDIT]` against `information_schema.tables`, all
 `nba%` schemas (**97 objects**). Severity **low–medium**; the question is whether anything was lost.*
