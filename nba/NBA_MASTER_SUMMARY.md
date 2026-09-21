@@ -9320,7 +9320,61 @@ bands, direction, prop line), and the design document that gets materialised int
 **Seven owner turns sit in the tail**, the most of any transcript; T2–T6 had at most five, and T5 and
 T6 had none.*
 
-### T7.31 — PASS 2 (**reasoning stratum, chunk 1 — ⚠ PROVISIONAL, stratum not finished**) — **NEW MATERIAL · 0/3**
+### T7.32 — PASS 3 (**reasoning stratum finished — completes §T7.31**) — **🔴 NEW MATERIAL · 0/3**
+*2026-09-21. T7 systematically hunted hardcoded seasons across the scrapers; measuring the result
+against the documents produced the finding below.*
+
+#### 🔴 T7.32a — **THE SEASON-ROLLOVER TRAP IS FOUR WORKERS, NOT THREE — the documents are one short**
+
+T7's reasoning repeatedly shows *"fixing hardcoded season values across weekly scrapers"*, checking
+each scraper in turn. **The scrapers were largely fixed. The workers were not, and the documented
+count of them is wrong.**
+
+`[LIVE-AUDIT]` **VERIFIED** — every `alphadog-v2-nba-*.js` with `'2025-26'` in an INSERT:
+
+| Worker | Line | Table |
+|---|---|---|
+| `alphadog-v2-nba-static-onoff` | 77 | `nba_stats.player_onoff_profile` |
+| `alphadog-v2-nba-static-player-bio` | 73 | `nba_stats.player_season_profile` |
+| **`alphadog-v2-nba-static-player-tracking`** | **59** | **`nba_stats.player_tracking_profile`** |
+| `alphadog-v2-nba-static-team-stats` | 59 | `nba_team.season_profile` |
+
+**Four workers, four tables.** `NBA_OPEN_ITEMS.md` lists **three** — onoff, player-bio, team-stats —
+and `NBA_MASTER_SUMMARY.md` §T2.8 states *"**Three workers, three tables, two schemas**, so the
+rollover fix has at least four locations."* **`player-tracking` is missing from both.**
+
+⚠ **The consequence is exactly what those entries warn about.** They argue the rollover fix feels
+complete after the scrapers are done and is not — **and then undercount the write paths by one**, so
+a reader working the documented list would fix three of four and leave
+`nba_stats.player_tracking_profile` stamping `'2025-26'` onto 2026-27 data. **This is the trap
+catching the warning about the trap.** → `NBA_OPEN_ITEMS.md`, corrected.
+
+✅ **The scraper side is in far better shape than the documents suggest**: **18 scrapers now resolve
+the season through the `nba_season` helper.** Of the ten still containing a `2025-26` literal,
+several are legitimately one-time backfills over frozen seasons (§T5.19a) — **the cadence rule
+applies, and they are correct.**
+
+#### ⚠ T7.32b — **"always test v3 before v2" — a hard-won rule, stated in T7 and in no document**
+> *"**Always test v3 before v2** for any per-game stats.nba.com endpoint. This cost real time twice
+> in a row — starter status, then officials — before the pattern was recognized and applied
+> proactively for officials."*
+
+**A concrete, reusable rule with its price attached.** The v2/v3 failures are documented individually
+(§T5, §T6); **the rule extracted from them is not.** → `NBA_WORKERS.md`.
+
+#### ⚠ T7.32c — a sixth bug class: **Postgres array-literal serialization**
+> *"Postgres array-literal formatting for `lineup_profile.player_ids` (`text[]`): passing a plain JS
+> array through the bulk-insert helper produced **'malformed array literal'** — the driver serialized
+> it as a bare comma-joined [string]."*
+
+**The `postgres` driver does not convert a JS array to a Postgres array literal inside the bulk-row
+helper.** Recorded because it is the only *type-serialization* bug in the corpus — every other
+recorded bug is network, schema, or logic — **and because the same helper is used by every batched
+writer in the fleet**, so any future `text[]` column meets it.
+
+---
+
+### T7.31 — PASS 2 (**reasoning stratum, chunk 1 — ⚠ PROVISIONAL, completed by §T7.32**) — **NEW MATERIAL · 0/3**
 *2026-09-21. Rule 3: written from part of a stratum, completed by the next pass.*
 
 #### ⚠ T7.31a — **THE SYSTEM ALREADY DETECTS THE GAP T6 FOUND — and the detector is undocumented**
