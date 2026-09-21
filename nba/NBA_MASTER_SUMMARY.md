@@ -14372,6 +14372,55 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.30 — PASS 15 (**two-direction judgment, fourth run**) — **🔴 TWO count defects, both mine, both from the pattern rather than the authority · 0/3**
+*2026-09-21. The band has been byte-identical for three runs, so this pass judged the **claims** of
+§T9.26–§T9.29 under rules 1, 3, 8 and 11 — and both defects are counts I took from the shape of my
+own extraction instead of from the population.*
+
+#### 🔴 T9.30a — **"ten props match `LADDER_DEPTH` exactly" is THIRTEEN — I counted the examples I had listed**
+
+§T9.27b's regime table said the 2025-11-29 day showed *"ten props match `LADDER_DEPTH` exactly"*.
+**Ten is the number of props the sentence happened to name.** Re-derived against all 20 keys:
+
+| | Count | Props |
+|---|---|---|
+| **Match exactly** | **13** | `points` 14 · `rebounds` 6 · `fgm` 6 · `fg3a` 6 · `fga` 10 · `dreb` 5 · `fta` 5 · `ftm` 5 · `oreb` 3 · `turnovers` 3 · `personal_fouls` 3 · `steals` 2 · `blocks` 2 |
+| **Do not** | **7** | `pra` 10≠16 · `pts_reb` 10≠15 · `pts_ast` 10≠14 · `fantasy_score` 10≠16 · `reb_ast` 10≠7 · `assists` 6≠5 · `threes_made` 6≠4 |
+| Not `LADDER_DEPTH` keys | **2** | `stocks`, `double_double` |
+
+✅ **Rule 11 now stated on the claim: 13 + 7 = 20 keys, + 2 non-keys = 22 props.** 📌 And one
+qualification the original lacked: **`fga`'s match is ambiguous** — its table value **is** the
+`.get(prop, 10)` default, so it is indistinguishable from a flat run. **12 unambiguous.**
+**Corrected in five places** — the entry, `NBA_OPEN_ITEMS.md`, the ledger row, the run log's pass-12
+row and the O5 row — *all three propagation directions at once, per §T9.28a.*
+
+#### 🔴 T9.30b — **"174 distinct env vars" is 193, and the wrong number was the plausible-looking kind**
+
+§T9.29a opened with **174**. Re-derived: **193**. The first pattern's character class was `[A-Z_]`,
+so **every variable name containing a digit was truncated** — `A2W_TEST_SEASON`, `B4_TRAIN_SEASON`,
+`M1_TEST_SEASON`, `N1_TEST`, `A5_SEASONS` — and the truncated forms collapsed together.
+
+⚠⚠ **This is worse than the `LADDER_DEPTH` zero at §T9.24a.** *A zero is implausible and invites a
+second look. **174 looked exactly as plausible as 193.*** **Rule 15 extended accordingly**, and — per
+§T9.27c — **no sixteenth rule was minted**: this is the **first** form, *a count comes from an
+authority, never the pattern that found it.* **The operative test added: before trusting a count, ask
+what the pattern CANNOT match, then construct one example of it.**
+
+#### ✅ T9.30c — **Everything else in §T9.29 re-derives exactly, including the partition**
+
+| Claim | Re-derived | |
+|---|---|---|
+| Season-string defaults | **47** | ✅ |
+| Set as a YAML env key in a workflow *(strict `^\s{2,}NAME:\s*\S` match, not a loose search)* | **45** | ✅ |
+| Never set by anything | **2** — `RUNG_FROM`, `RUNG_TO` | ✅ |
+| **45 + 2 = 47** | ✅ **partition sums** (rule 11) | ✅ |
+| Files naming `nba_season` / `active_stats_season` | **20 of 135** | ✅ |
+
+**Pass outcome: 2 count defects, both mine, both corrected across every copy; the substance of
+§T9.27b and §T9.29a stands unchanged. 🔴 CLEAN 0/3 · 15 passes.**
+
+---
+
 ### T9.29 — PASS 14 (**override / escape-hatch audit**) — **🔴 the season ROLLS in one layer and is FROZEN in the other · 0/3**
 *2026-09-21. The angle §T9.27b opened: **every env var in the NBA build path, mapped to what it can
 silently replace and to whether anything is currently setting it.** `[LIVE-AUDIT]` throughout.*
