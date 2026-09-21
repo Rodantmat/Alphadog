@@ -14430,6 +14430,69 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.5 — PASS 4 (**the OWNER-ANSWER audit — every owner turn paired with the answer it received**) — **🔴 my own Fliff framing narrowed by an answer that was in the transcript all along · 0/3**
+*2026-09-21. **The brief came from a rule-6 obligation**: pass 3 found a substantive finding inside
+the ANSWER to segment 38, and this sweep had been reading the questions.*
+
+#### ✅ T12.5a — **The enumeration, and the pre-registration was exact**
+**All ELEVEN owner turns mapped to their answering segments**: **29** → 30, 37 · **38** → 39, 46 ·
+**47** → 48 · **49** → 51, 64, 76, 86, 90, 91, 98 · **99** → 100, 134 · **135** → 136, 175, 195 ·
+**196** → 198, 201, 215 · **216** → 218, 230, 237, 276 · **277** → ten segments, 8,439 chars ·
+**347** → twenty-two segments, 8,389 chars · **553** → ten segments.
+***Predicted: baseline unchanged and segments 38, 39, 42 among the crossings.*** **Measured:
+baseline 9 / 15 / 618 / 585 unchanged · working 24 / 11 / 597 / 573, and 38, 39 and 42 all crossed
+with no unpredicted crossings.** **Nineteenth pre-registration: eighteen hits, one miss.**
+
+#### 🔑 T12.5b — **The OUTCOME GRADER's design, given in the answer to segment 29**
+**Input the CLOSE snapshot of every board line + our player game logs · join on normalised player
+name + game date + team · DNP → void, exact whole-number hit → push, goblins/demons on their own
+lines, Underdog multipliers carried · output one row per graded line.** 🔴 **Three elements are 0 of
+thirty**: ***unmatched names get LOGGED rather than silently dropped*** · **the exact-hit push rule
+as stated** · and ***"the same grader runs live every morning on the previous night's boards, which
+is how the derived-Sleeper fallback gets its ROLLING CALIBRATION"*** — **the mechanism that keeps the
+one board with no history usable.** ✅ `[LIVE-AUDIT]`: **the grader RAN — `board_outcomes` ≈ 6.9M
+rows, `graded_at` 2026-09-20T02:39Z; `board_scored` ≈ 12M.** ⚠ **`paper_picks` holds 0 rows exactly.**
+📌 Written to `NBA_SYSTEM_DESIGN.md` §0a.
+
+#### 🔴 T12.5c — **FLIFF IS NOT A PICK'EM BOARD — and this narrows my own §T12.3c**
+**Segment 48**: ***"fliff is a SOCIAL SPORTSBOOK, not pick'em — its lines carry REAL ODDS, not
+flat-payout picks, so for the slip engine it behaves like another SPORTSBOOK, not a fourth board.
+Its value is as a SOFT LINE to compare against, not as a place the picks are graded."*** **0 of
+thirty.**
+⚠⚠ ***So §T12.3c's "the one board still served by ParlayAPI is served by the source every other
+comparison rejected" is TRUE and MISLEADING***: **the ParlayAPI defects that decided the other three
+are LADDER defects, and Fliff has no pick'em ladder to drop.** **The finding stands; its weight does
+not.** **Narrowed in place.**
+✅ **And the rest of that answer, also 0 of thirty**: ***ParlayAPI already carries Fliff live at NO
+extra cost*** — the only question was HISTORY — and the history is **all-or-nothing: +210 credits per
+snapshot, ~+1.03M for two seasons, *"there's no way to buy Fliff alone"***. 🔑 **Segment 100 gives
+the reason Fliff was never ours in T12**: ***"an AUTHENTICATED app API (session tokens, device
+headers); there's no clean public endpoint"***, against Underdog and Sleeper's *"public JSON
+endpoints (no login) that community tools have used for years."*
+
+#### 📌 T12.5d — **Two more answers worth keeping**
+**Segment 30** *(to owner 29)*: **all books = three regions = 630 credits/snapshot, ~3.1M for two
+seasons, ~1.9M left** — and ***`us_ex` is Kalshi, Polymarket, Novig, ProphetX, "exchange/prediction
+markets, a different product"***, deliberately left out. **The membership is 0 of thirty.**
+🔑 **Segment 134 is a SUPERSEDED intermediate state inside T12 itself**: *"underdog → **parlayapi**
+(their api is bot-protected now)"* — **later overturned by the owner's capture (§T12.3b).** ***A
+clean rule-27 illustration within one transcript: the first word and the last word disagree, and the
+last one wins.***
+
+#### ✅ T12.5e — **RULE 28 kills the pass's biggest-looking find — the TENTH candidate killed**
+**`board_outcomes`' `bookmaker` and `snapshot_label` are NULL on all ~6.9M rows** — ***and §T11.5c
+already records it with the exact figure 6,905,452***, in `NBA_MASTER_SUMMARY.md` and
+`NBA_DATABASE.md`. 🔑 **What IS new is the reason, and it is in the code**: **`grade_board_outcomes.py`
+line 160 — *"distinct-leg key: the outcome does not depend on bookmaker/snapshot"* — and line 193 —
+*"Grade DISTINCT legs, not one row per bookmaker."*** **Both in ZERO documents.** ⚠ **Recorded as
+what the code SAYS, not as a verdict on the design** *(rule 6)*.
+
+**Pass outcome: eleven answers traced, the grader's design recovered, one of my own findings narrowed
+by evidence that was already in the transcript, and a tenth candidate killed before writing.
+CLEAN 0/3 · 5 passes.**
+
+---
+
 ### T12.4 — PASS 3 (**LIVE VERIFICATION of T12's board layer — the first pass on this transcript to test the SYSTEM**) — **🔴🔴 the status key asserts three complete seasons and the tables hold one · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`, `SELECT` only. **Passes 0–2 read what the transcript says was built;
 this pass asked the database and the repository whether it is there.***
