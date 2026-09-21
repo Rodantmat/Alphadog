@@ -248,13 +248,19 @@ def main():
         for k in range(2, len(base_legs) + 1):
             run("BASE", [leg(r) for r in base_legs[:k]])
 
-        # FLEX compositions at 3..6
+        # FLEX compositions at 3..6 - same legs across sizes, so size is the only thing that varies
+        comps = [("1g", 1, 0), ("1d", 0, 1), ("2g", 2, 0), ("gd", 1, 1),
+                 ("2d", 0, 2), ("3d", 0, 3), ("gdd", 1, 2), ("ggd", 2, 1)]
         for k in range(3, 7):
-            for comp in ("1g", "1d", "2g", "gd"):
-                ng = {"1g": 1, "1d": 0, "2g": 2, "gd": 1}[comp]
-                nd = {"1g": 0, "1d": 1, "2g": 0, "gd": 1}[comp]
-                alts = pick_distinct(gob, ng) + pick_distinct(dem, nd, avoid_games=[r["game"] for r in pick_distinct(gob, ng)],
-                                                             avoid_players=[r["player"] for r in pick_distinct(gob, ng)])
+            for comp, ng, nd in comps:
+                if ng + nd >= k:
+                    continue
+                gs = pick_distinct(gob, ng)
+                ds = pick_distinct(dem, nd, avoid_games=[r["game"] for r in gs],
+                                   avoid_players=[r["player"] for r in gs])
+                if len(ds) < nd:
+                    ds = pick_distinct(dem, nd, avoid_players=[r["player"] for r in gs])
+                alts = gs + ds
                 if len(alts) < ng + nd:
                     continue
                 stds = pick_distinct(std, k - len(alts), avoid_games=[r["game"] for r in alts],
