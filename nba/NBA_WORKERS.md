@@ -10,6 +10,28 @@ writes. Grouped by role.
 
 ---
 
+## 0.0 ⚠ THE COMPLETE SCHEDULE SURFACE — **seven scheduled workflows touch `nba/`, not four**
+*`[LIVE-AUDIT]` 2026-09-21 (T7 pass 24). Enumerated from the workflows directory — the authority —
+not from the `nba-` filename prefix, which is what produced the wrong count in the first place.*
+
+**39 workflows exist; 33 are `nba-`-prefixed; seven scheduled ones touch `nba/`:**
+
+| Workflow | Cron (UTC) | Cadence |
+|---|---|---|
+| `nba-scrape.yml` | `0 9 * * 1` | **Mondays 09:00** — the weekly static scrape |
+| `nba-p1-weekly-static.yml` | `0 19 * * 1` | **Mondays 19:00** — the weekly static layer |
+| `nba-referees.yml` | `30 15 * * *` | daily 15:30 |
+| **`fliff-board.yml`** | **`35 */2 * * *`** | **every 2 hours** — runs `nba/scrape_fliff_board.py` |
+| **`sleeper-board.yml`** | **`15 */2 * * *`** | **every 2 hours** — runs `nba/scrape_sleeper_board.py` |
+| **`underdog-board.yml`** | **`25 */2 * * *`** | **every 2 hours** — runs `nba/scrape_underdog_board.py` |
+| *`nba-pp-payout-map.yml`* | *`15 */6 * * *`* | *concurrent session — **out of scope*** |
+
+⚠ **The three board workflows are documented as workflows in several files; their every-two-hours
+cadence is recorded in none of the thirty.** They are also **not `nba-`-prefixed**, which is why a
+prefix-based enumeration misses them — *the fifth single-pattern count in this sweep.*
+✅ **None of the three imports the season helper** (verified), so they are outside the
+`active_stats_season()` rollover exposure (`NBA_OPEN_ITEMS.md`, O4).
+
 ## 0. THE FOUR-STEP WIRING PATTERN *(established T2)*
 
 Every Cloudflare worker must be registered in four places or it will not deploy or run:
