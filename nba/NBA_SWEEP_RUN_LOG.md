@@ -240,6 +240,7 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
 | O1 | **Rotate the balldontlie.io API key.** | The fix is an action outside the repo; redacting the line does not remove it from git history. |
 | O2 | **DARKO debug artifact** — owner said he would take it up. | Already acknowledged by the owner. |
 | O3 | **`raw_json` re-encode** — writers plus an in-place `(col #>> '{}')::jsonb` backfill. | Both are writes to the live system, which this sweep does not make. |
+| **O4** 🔴🔴 | **`active_stats_season()` rolls over on 2026-10-01, nineteen days before the first regular-season game (2026-10-20).** 13 scrapers call it; **6 scheduled runs fall inside the window** — `nba-scrape.yml` and `nba-p1-weekly-static.yml`, Mondays **Oct 5 · Oct 12 · Oct 19**. Verified by executing the module with fixed dates (read-only). §T7.51a, §T7.52. | **The window opens ten days from 2026-09-21 — before the sweep can reach the transcripts that would explain the boundary.** The remedy is a code change, which this sweep does not make. The owner may want the boundary moved to the first `002`-prefix game date, or the two weekly workflows held until Oct 20. |
 
 ---
 
