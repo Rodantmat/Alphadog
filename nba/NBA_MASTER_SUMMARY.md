@@ -9731,6 +9731,94 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.51 — PASS 22 (**paragraph audit**) — **🔴🔴 THE MOST CONSEQUENTIAL LIVE FINDING OF THE T7 SWEEP · 0/3**
+*2026-09-21. The one-line rule as its own angle: take **every** line citation these T7 entries make to
+another document, open the line, and **read the whole paragraph around it**. Fifteen citations across
+nine documents. **Three of T7's eight failures came from skipping exactly this; the fourth thing it
+found is not a documentation defect at all.***
+
+#### 🔴🔴 T7.51a — `[LIVE-AUDIT]` **`active_stats_season()` rolls over on OCTOBER 1 — 19 days before the first regular-season game — and 13 scrapers call it**
+
+Reading the paragraph around `NBA_COMPASS.md` line 9 — *"`active_stats_season()` (stats; **2025-26
+until Oct 3**)"* — sent me to the helper itself. **The code does not say Oct 3 either:**
+
+```python
+def active_stats_season(today=None):
+    ...
+    if today.month in (7, 8, 9):   start_year = today.year - 1
+    else:                          start_year = today.year if today.month >= 10 else today.year - 1
+```
+
+**The rollover is a bare month boundary. On 2026-10-01 it returns `2026-27`.**
+
+| | |
+|---|---|
+| First **regular-season** game (`002` prefix) | **2026-10-20** |
+| First **preseason** game (`001`) | 2026-10-03 |
+| **`active_stats_season()` switches** | **2026-10-01** |
+| Exposure window | **Oct 1 → Oct 19 — nineteen days** |
+
+**And the module's own docstring states the opposite intent, then names the exact damage:**
+> *"…the most recent season with real games — i.e. the prior completed season during the off-season,
+> **rolling over to the new season only once it starts in October**."*
+> *"…in Jul-Sep the 'current' season is the UPCOMING one … but it **has zero games played**. If the
+> weekly STATS scrapers queried it, they'd get empty or zero-valued rows — and **for tables keyed by
+> player_id alone, that could overwrite last season's real stats with zeros**."*
+
+**That is precisely the state the function creates for itself between Oct 1 and Oct 19.**
+
+**`[LIVE-AUDIT]` blast radius — 13 scrapers call `active_stats_season()`**: `scrape_nba_lineups` ·
+`scrape_nba_splits` · `scrape_nba_player_tracking` · `scrape_nba_tracking_detail` ·
+`scrape_nba_playtypes` · `scrape_nba_shotquality` · `scrape_nba_onoff` · `scrape_nba_team_stats` ·
+`scrape_nba_matchups_pergame` · `scrape_nba_player_bio` · `scrape_nba_backfill_measure_types` ·
+`scrape_nba_per_game_delta` · `scrape_nba_daily_delta`. *(A further 4 use `current_season()`, which is
+correct for roster/schedule.)*
+
+⚠ **This is the season-rollover trap the module was written to eliminate, re-entering through the
+module itself** — and it is **ten days away**. **Severity 🔴🔴.** *Per "document, don't fix": recorded,
+not changed. Whether the Oct-1 boundary was deliberate is **NOT RECORDED** — the docstring says
+"once it starts in October", which the code implements as "the first of October".* → `NBA_OPEN_ITEMS.md`.
+
+*(And the document is wrong about the code as well: `NBA_COMPASS.md` says **Oct 3**, the code says
+**Oct 1**. Two dates, neither of them the 20th.)*
+
+#### 🔴 T7.51b — **NINTH absence failure, and it retires an open thread carried since T6**
+
+The resume note has carried, since T6 closed: *"(b) The 3 officials-less games on 2025-11-19 —
+**upstream cause NOT RECORDED**."* **`NBA_COMPASS.md` line 12, three lines below the citation I had
+already opened:**
+
+> *"Known source quirks: **3 games of 2025-26 have empty officials at the source (skip list)**;
+> `boxscoretraditionalv2` unreliable for historical games (v3 used)…"*
+
+**The cause is recorded — empty at the source — and there is an explicit skip list.** The thread was
+answered in a document this sweep cited by line number for a different fact. **Removed from the open
+threads.**
+
+#### ⚠ T7.51c — **§T7.41a upgraded from "refinement" to a real divergence**
+
+§T7.41a found `factor_relevance` carries only `full` (440) and `partial` (20) and **declined to call
+it a defect**, reasoning that the document claimed only that the table records candidacy. **The
+paragraph says more than the line I quoted.** `NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 244:
+
+> *"`factor_relevance` — factor × prop → **full / partial / none**."*
+
+**The design names three grades; the data uses two.** `none` is specified and **never written**.
+A minor divergence, but a real one — and I had explicitly flagged that call as needing audit rather
+than trusting it. **The audit reverses it.**
+
+#### 🔑 T7.51d — **The design document's own closing line, which no T7 entry had cited**
+
+The same §9 paragraph ends:
+> *"**All tunables live in these tables. Nothing hardcoded.**"*
+
+**That is the sharpest single statement of the gap the `NBA_DATABASE.md` §2 banner documents** —
+seven tables and a column that no code reads, with `ROLE_TIERS` and the decay `PROPS` dict hardcoded
+in `classification_ladder_v12.py` instead. **The design asserts the invariant in four words, on the
+line after the schema it defines.** Added to the banner as its own epigraph.
+
+---
+
 ### T7.50 — PASS 21 (**two-direction judgment, fourth run**) — **🔴 THE EIGHTH ABSENCE FAILURE · T7 DOES NOT CLOSE · 2/3 → 0/3**
 *2026-09-21. The pass that would have closed T7. Direction 1 is the same 113 segments for the third
 time; the work was the seventh rule applied to the absence claims **added since pass 18** — and one
