@@ -1,9 +1,15 @@
 name: NBA PP Payout Map
 
 # Maps PrizePicks goblin/demon/Flex payouts server-side via the /game_types quote endpoint.
-# Anonymous: PrizePicks issues its own session; no owner account is involved. Quotes only.
-# Trigger: push nba/TRIGGER_NBA_PP_MAP.txt (optional line "max_quotes: N"), or run manually.
-# Output: nba/data/pp_payouts/pp_payout_map_<utc>.json, committed [skip ci].
+# Anonymous: PrizePicks issues its own session; no owner account is involved. Quotes only - nothing is placed.
+#
+# Modes (trigger-file line "mode: full|delta"; default full):
+#   full  = research map: validation, bases, Flex compositions, alt x alt, same-game, Less side, every leg
+#   delta = monitoring:   only legs never mined at their current line, plus a rotating DRIFT sample of
+#                         already-mined legs re-quoted to catch repricing (line "drift: N", default 10)
+# Trigger: push nba/TRIGGER_NBA_PP_MAP.txt (lines: max_quotes, altalt, mode, drift), or run manually.
+# Output: nba/data/pp_payouts/pp_payout_map_<utc>.json, committed [skip ci], then every not-yet-loaded run is
+#         loaded per leg into nba_market.pp_mined_leg (self-healing backfill).
 
 on:
   workflow_dispatch:
@@ -15,6 +21,8 @@ on:
   push:
     paths:
       - 'nba/TRIGGER_NBA_PP_MAP.txt'
+  # schedule:                    # DISABLED - the owner decides how often PrizePicks is queried.
+  #   - cron: '15 */6 * * *'     # example: every 6 hours. Scheduled runs are forced into delta mode.
 
 permissions:
   contents: write
@@ -36,21 +44,24 @@ jobs:
         with:
           python-version: '3.11'
 
-      - run: python -m pip install --upgrade pip curl_cffi
+      - run: python -m pip install --upgrade pip curl_cffi "psycopg[binary]"
 
       - name: Map PrizePicks payouts
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PP_MAX_QUOTES: ${{ github.event.inputs.max_quotes || '250' }}
         run: |
           f=nba/TRIGGER_NBA_PP_MAP.txt
+          val() { grep -E "^$1:" "$f" | head -1 | sed "s/^$1:[[:space:]]*//" || true; }
           if [ -f "$f" ]; then
-            Q=$(grep -E '^max_quotes:' "$f" | head -1 | sed 's/^max_quotes:[[:space:]]*//' || true)
-            if [ -n "${Q:-}" ]; then export PP_MAX_QUOTES="$Q"; fi
-            A=$(grep -E '^altalt:' "$f" | head -1 | sed 's/^altalt:[[:space:]]*//' || true)
-            if [ -n "${A:-}" ]; then export PP_ALTALT="$A"; fi
+            Q=$(val max_quotes); if [ -n "${Q:-}" ]; then export PP_MAX_QUOTES="$Q"; fi
+            A=$(val altalt);     if [ -n "${A:-}" ]; then export PP_ALTALT="$A"; fi
+            M=$(val mode);       if [ -n "${M:-}" ]; then export PP_MODE="$M"; fi
+            D=$(val drift);      if [ -n "${D:-}" ]; then export PP_DRIFT_SAMPLE="$D"; fi
           fi
-          echo "quote budget: $PP_MAX_QUOTES | altalt: ${PP_ALTALT:-20}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then export PP_MODE=delta; fi
+          echo "mode: ${PP_MODE:-full} | quote budget: $PP_MAX_QUOTES | altalt: ${PP_ALTALT:-20} | drift: ${PP_DRIFT_SAMPLE:-10}"
           python nba/pp_payout_map.py
 
       - name: Commit payout map
@@ -67,3 +78,9 @@ jobs:
               git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
             done
           fi
+
+      - name: Load per-leg prices into Postgres
+        if: always()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/load_pp_mined_legs.py
