@@ -1580,6 +1580,32 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.14 — PASS 14 (**the two-direction judgment pass**) — **2 DEFECTS FOUND AND FIXED · T3 CLOSES**
+*2026-09-21. 108 segments judged: 59 in the high band, 49 in the tail direction.*
+
+**DIRECTION 1 — high band (≥0.45), 59 segments. Two defects, both now recorded.**
+
+1. ⚠ **And the first one is mine.** The documents record the differential worker as *"built but
+   never scheduled"* — an outcome with no history. **T3 flagged it explicitly, wrote the caveat into
+   the project log, asked the owner *"want me to wire that up now, or is this a good place to
+   pause?"* — and then a later patch in the same session took that exact paragraph as its `old_str`
+   and replaced it with a what's-next list.** **The warning was overwritten, not answered.**
+   **Pass 10 read this evidence and did not write it up.** *The judgment pass exists to catch
+   exactly that, and this is the first time it has caught the sweep's own omission rather than an
+   earlier session's.* → `NBA_OPEN_ITEMS.md`, new section
+2. **"Shot quality delta" is named 25 times in the documents and specified in none of the twelve.**
+   The three buildable steps — pull league-wide eFG% per defender-distance bucket, weight by each
+   player's own shot distribution to get expected eFG%, difference against actual — live only in
+   `NBA_ENRICHMENT_FACTORS_RESEARCH.md`. **Without the league-wide call the metric cannot be computed
+   at all**, and nothing currently makes it. *Classic mentioned-but-incomplete.* → same file
+
+**DIRECTION 2 — the tail, 49 segments covered elsewhere.** 32 match `NBA_PROJECT_LOG.md`, 16
+`NBA_ENRICHMENT_FACTORS_RESEARCH.md`, 1 `NBA_WORKERS.md` — **self-authorship again (mechanism 3)**,
+since T3 wrote both non-mandated files. **No wrong cross-references**: these are the transcript's own
+`github_put_file` payloads matching what landed, so the match is exact by construction.
+
+**Judgment pass clean after the fixes → T3 CLOSES.**
+
 ### T3.13 — PASS 13 (**results stratum FINISHED — the 0.40 tail is now fully read**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21. All 466 tail segments read across passes 1–13.*
 
