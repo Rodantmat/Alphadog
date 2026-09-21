@@ -107,6 +107,15 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
    players with data.** The per-item guard shape — *did every input produce at least one row?* — is
    **absent from all four guard shapes in the codebase**.
 
+10. 🔴🔴 **Two of the three backfilled seasons have ZERO calendar coverage.** `nba_calendar.games`
+    holds only 2025-26 and 2026-27, so **0 of 52,707 game-log rows from 2023-24 and 2024-25 join to
+    it.** No days-rest, back-to-back, schedule-density, home/away, travel or arena feature is
+    computable for two thirds of the data — **and those two seasons are the entire reason the
+    backfill was scoped to three.** An inner join drops 66% of the spine.
+11. ⚠ **7,887 game-log rows (≈10%) have no player-dictionary row**, because `nba_ref.players` is
+    built with `isOnlyCurrentSeason=1`. The data is fine; **the inner join is the hazard, and its
+    drop is biased** — it removes exactly the players who left the league.
+
 ### ⚠⚠ Structural
 - **The teams fallback has two triggers**, and `…AFTER_COUNT_MISMATCH` fires on a *successful* fetch
   whose count ≠ 30 — an equality test, so **32 teams fails it exactly as 29 does**.
