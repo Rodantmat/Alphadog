@@ -9697,19 +9697,37 @@ either the scorer mirrors a MORE-side penalty onto the LESS side, or **LESS legs
 adjustment from 21 of the 22 bucketed cells.** **Which of the two, is NOT RECORDED** — it cannot be
 read from the table, and the scoring transcripts are not yet swept. **Flagged for them.**
 
-#### 🔴 T7.39c — `[LIVE-AUDIT]` **Nothing in the repo reads `factor_profile_cells` or `factor_relevance`. That makes FIVE NBA config tables read by nothing.**
+#### ⚠ T7.39c — **RE-VERIFICATION, not new material — and a THIRD defect of my own, caught inside this same pass**
 
-**VERIFIED** by repo-wide grep (not restricted to code extensions, per the substance rule): the
-strings `factor_profile_cells` and `factor_relevance` appear in **the twelve documents and in zero
-code files**. Across all `.py`/`.js` in the repo, `nba_config` is referenced only as
-`nba_config.external_credentials` (12 sites) and `nba_config.pp_slip_rules` (2 — the concurrent
-session's, **out of scope**).
+**What I first wrote here**: *"🔴 Nothing in the repo reads `factor_profile_cells` or
+`factor_relevance`. **That makes FIVE** NBA config tables read by nothing."*
 
-**They join the class `NBA_DATABASE.md` §2 already banners**: `role_tiers`, `stat_decay_config`,
-`ewma_alpha` — all documented as read by nothing, with the live values hardcoded in
-`nba/backtest/classification_ladder_v12.py` instead (`ROLE_TIERS` line 129; the `PROPS` dict for
-decay). **Five tables now. What plays the hardcoded role for the 35 cells — whether anything applies
-these caps at all today — is NOT RECORDED.**
+**Both halves were wrong, in the two ways this sweep keeps failing.**
+
+1. **It is not new.** `NBA_DATABASE.md` §2 opens with a `⚠⚠ READ FIRST` banner recording exactly
+   this, found **2026-09-20 at T1 pass 36**. I re-found a documented finding and labelled it 🔴 new.
+2. **The count was an undercount — again.** The banner lists **eight** tables:
+   `classification_config`, `factor_registry`, `factor_relevance`, `factor_profile_cells`,
+   `stat_decay_config`, `ewma_alpha`, `system_settings`, `role_tiers`. **I said five**, having
+   counted only the ones I happened to have queried. **This is the FOURTH single-pattern count in
+   this sweep** — after `raw_json` (1,306→17,902), the tool-name failures (4→17) and the debug
+   artifacts (3→5) — and it is the standing rule's own subject: *a count comes from an authority,
+   never from the pattern that found it.* **The authority existed, in the file I was editing.**
+
+**What this pass legitimately adds — confirmation at a WIDER scope.** T1 pass 36 grepped *"all 190
+`.py`/`.js` files in `nba/` **and** the MCP admin bridge."* This pass grepped the **whole repository,
+unrestricted by extension or directory**, and still found **zero** code references. The absence now
+holds at the wider scope, and it holds **one calendar day later**, against a repo the concurrent
+session has been committing to all night.
+
+**One refinement the wider grep does add**: `nba_config` is referenced in code as
+`external_credentials` (12 sites) **and** `nba_config.pp_slip_rules` (2 sites). The second is the
+concurrent session's table and is **out of scope** — recorded only so a later reader does not treat
+*"only `external_credentials` is read"* as still literally true at the repo level.
+
+**Standing consequence, added to the count rule**: *before labelling a live-audit result NEW, grep
+the twelve documents for the object's own name.* Pass 9 corrected a claim by reading the cited
+document; **this pass should have read the document it was about to edit.** The check costs one grep.
 
 **Note what this does to §T7.30a's original worry.** The owner disliked capping; the sweep first
 claimed a global 25% clamp (wrong, §T7.38a), then found 35 tier-keyed caps (§T7.38b). **The third and
