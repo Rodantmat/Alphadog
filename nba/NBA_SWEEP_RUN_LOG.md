@@ -260,6 +260,13 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
 ## HEADLINE FINDINGS SO FAR, BY SEVERITY
 
 ### 🔴🔴 Season-critical / owner action
+0. **A production scheduled task is deliberately NOT deployed, and no document says so** —
+   **OWNER DECISION O7**, T10 pass 17 (§T10.17b). The owner deferred it to *"closer to the season
+   beginning"* and named **Claude Coworker**, not a Cloudflare cron, as the mechanism; the twelve
+   quote the sentence that follows the instruction and not the instruction. **A reader cannot tell
+   "not built" from "built and held back", twenty-nine days before a 2026-10-20 opener.** *Which step
+   it is: **NOT RECORDED** — the turn says "the scheduled task", definite and singular, and the
+   transcript does not name it.*
 1. **Live balldontlie.io API key committed** in `NBA_MASTER_SUMMARY.md` and in the transcripts.
    **Rotation is the only real remedy** — the value is in git history since pass 19. *OWNER DECISION,
    already handed off.*
