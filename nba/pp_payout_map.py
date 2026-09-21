@@ -284,10 +284,11 @@ def main():
             save("complete (delta)")
             return 0
 
-        # VALIDATE
-        by_id = {r["id"]: r for r in rows}
-        known = [by_id.get(k) or {"id": k, "name": k, "stat": "?", "line": 0, "odds": "?", "game": "?"} for k in KNOWN]
-        run("VALIDATE", [leg(r) for r in known], "expect power 2.2")
+        # VALIDATE - NBA only: the known Tatum/Wemby pair are NBA projections
+        if LEAGUE == 7:
+            by_id = {r["id"]: r for r in rows}
+            known = [by_id.get(k) or {"id": k, "name": k, "stat": "?", "line": 0, "odds": "?", "game": "?"} for k in KNOWN]
+            run("VALIDATE", [leg(r) for r in known], "expect power 2.2")
 
         # BASE: all-standard, distinct games, 2..6
         base_legs = pick_distinct(std, 6)
