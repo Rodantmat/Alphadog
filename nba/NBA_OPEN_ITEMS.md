@@ -189,6 +189,30 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## ⚠ NO NBA PARSER IS RECORDED AS VALIDATED AGAINST THE RUNNER'S OWN EXTRACTION
+*Added 2026-09-21 from T11 (§T11.2c). **Past bug with its fix, plus an unchecked class.***
+
+✅ **The past bug, fixed**: the injury-report backfill **scanned 176 days, found every PDF and wrote
+zero rows**, because **`pdfplumber` on the GitHub Actions runner drops intra-cell spaces** while the
+author's own self-test had used a **different extractor**. Fixed with a space-insensitive team regex,
+canonical names, a tolerant header regex and `split_camel()`; **verified on both text shapes — 10 rows
+collapsed, 24 spaced** — and a **`probe` mode** was added to the scraper. *Full entry:
+`NBA_WORKERS.md` §0.24.*
+
+⚠ **The class it belongs to, and this is what is open**: *"validate parsers on the runner's own
+extraction"* appears **in none of the thirty documents** *(probed as the source's words and as the
+documents would phrase it)*. **Every NBA parser that reads an external document — injury PDFs,
+Wikipedia, any HTML or PDF surface — runs on a runner whose library versions differ from a local
+check**, and **NOT RECORDED** is whether any of them was ever validated against the runner's own
+extraction. *This pass did not audit them; it records that the question exists and that exactly one
+parser is known to have failed it.*
+
+📌 **The tell to watch for, since it is silent**: **a run that finds its inputs and writes zero rows.**
+*That shape is already all over this document; the injury backfill is the case where the cause was
+pinned.*
+
+---
+
 ## 🔴🔴 TWO MORE LIVE API KEYS SIT IN A TRANSCRIPT — **OWNER DECISION O8**
 *Found 2026-09-21, T11 pass 0 (§T11.1b). **The key values are deliberately not reproduced here or in
 any other document.***
