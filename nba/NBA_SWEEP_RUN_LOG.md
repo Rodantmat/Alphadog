@@ -147,6 +147,9 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
 | A3 | **Twelve commits to strip the fragment, not one.** | Waiting for a batch-commit capability. | The bridge writes one file per call; an atomic twelve-file commit is not available. Identical message `(n/12)` so they read as one change. |
 | A4 | **The 40 in-document `2026-10-03` references were NOT rewritten.** | A global find-and-replace. | Many sit inside verbatim transcript quotes; rewriting a quote to match a later correction falsifies the record the set exists to keep. One authoritative correction entry instead. |
 | A5 | **My own `raw_json` undercount (1,306/6 vs 17,902/14) was recorded, not silently replaced.** | Swapping the number quietly. | The change-tracking rule: record what it was, what superseded it, and why. |
+| A6 | **Added the referential-integrity angle as a standing technique** (do the tables actually join?), after it found on T4 what 7 prior passes missed. | Treating it as a one-off check. | The pass rule's demand for genuinely different angles; it tests a dimension no other angle reaches. |
+| A7 | **Closed transcripts (T1, T2, T3) are NOT reopened for the new angle.** | (a) Reopen all three — an unbounded regress, since there is always one more question to ask of a live system, and it would restart a 120-pass effort. (b) Ignore the angle for consistency — wasteful of a proven technique. | **Middle course**: the angle is standard for T5→T20, and anything it finds about tables the earlier transcripts built is still recorded in `NBA_OPEN_ITEMS.md`. **No finding is lost — only the pass accounting is left alone.** |
+| A8 | **T4's §T4.21 was left in place and marked PROVISIONAL** rather than rewritten, after it was written mid-stratum in breach of Rule 2. | Silently folding it into the consolidated pass. | Rule 3 (split passes mark entries PROVISIONAL) and the change-tracking rule — the breach is part of the record. |
 
 ---
 
