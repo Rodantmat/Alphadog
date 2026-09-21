@@ -317,6 +317,48 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T3 PASS 4 — THE DIFFERENTIAL WORKER DOCUMENTS ITS OWN SEMANTICS IN ITS RESPONSE *(added 2026-09-21)*
+*Recorded as of 2026-09-03.*
+
+### `is_first_run` — the field that prevents a baseline being read as a change
+The differential worker returns, per entity, `is_first_run`, `event_counts` (via `countByType`), and
+the events themselves — **plus a prose note in the response body**:
+
+> *"`is_first_run=true` means the snapshot table was empty (first-ever run) — everything reports as
+> a baseline, **not a real change**. Real differential detection starts from the **second run** of
+> this worker onward."*
+
+**This is the safeguard against exactly the confusion that cost T3 several debugging cycles** (see
+FROM T3 PASS 1, the retracted race condition): a first run that reports 582 players looks identical
+to a run that detected 582 changes unless something says otherwise. **Putting the caveat in the
+response rather than in documentation means it travels with the data** — a later session reading a
+stored run record sees it without needing to find this file.
+
+*Neither `is_first_run` nor `countByType` appears anywhere in the thirty documents.*
+
+### The `undefined` binding bug, in its concrete form
+FROM T3 PASS 1 records that `postgres.js` rejects `undefined` bindings. **This is the line that hit
+it**, in the differential worker's team-change comparison:
+
+```js
+["full_name", t.name, old.full_name]                                  // before — t.name is undefined
+["full_name", `${t.city || ""} ${t.nickname || ""}`.trim(), old.full_name]   // after
+```
+
+**The committed teams JSON has no `name` field at all** — it carries `city` and `nickname`
+separately, and the full name is composed at write time. *So the bug was not a null value; it was a
+field that never existed, reading as `undefined` and being passed straight into a query. The `?? null`
+guard would have converted a silent wrong-value into a silent null; naming the right fields is what
+actually fixed it.*
+
+### The 11 play types, enumerated
+`transition · isolation · prballhandler · prrollman · postup · spotup · handoff · cut · offscreen ·
+offrebound · misc` — the fallback loop runs **11 play types × 2 groupings × 2 levels = 44 calls**
+when the single-call path fails. *The list is recorded in three places outside the twelve and in
+`NBA_MASTER_SUMMARY.md`; the 44-call arithmetic is not.*
+
+---
+
 ## FROM T3 PASS 3 — THE SEASON PARAMETER WAS HARDCODED TO A CONCLUDED SEASON *(added 2026-09-21)*
 
 ### As it stood in T3, 2026-09-03
