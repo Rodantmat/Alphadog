@@ -284,7 +284,14 @@ column, or a view exposing parts-only, so the choice is explicit instead of folk
 
 ---
 
-## 🔴 THE OWNER STATED A PREFERENCE AGAINST CAPPING — it is in no document, and the system caps globally
+## ⚠ THE OWNER'S ANTI-CAPPING DIRECTIVE — recorded after all; kept here for his verbatim wording
+> 🔴🔴 **THIS ENTRY'S HEADLINE IS RETIRED, 2026-09-21 (T7 pass 17).** It read *"it is in no document,
+> and the system caps globally."* **Both halves were wrong.** The directive **is** recorded — in
+> `NBA_BASELINE_CALIBRATION.md` line 676 (*"**CAPS ARE A LAST RESORT** … tier-specific if ever used —
+> the preference is logic that lands on the right number on its own"*) and in `NBA_GLOSSARY.md`
+> line 375, **tagged to T7** — and **there is no global cap**; the 35 live caps are keyed per factor,
+> prop, tier/role or band. **What survives is the owner's verbatim phrasing, and the open question
+> below about validation.** Detail: `NBA_MASTER_SUMMARY.md` §T7.46a.
 *Found 2026-09-21, T7 re-sweep pass 1 (owner stratum). Detail: `NBA_MASTER_SUMMARY.md` §T7.30a.*
 
 The owner, in T7 (2026-09-09):
