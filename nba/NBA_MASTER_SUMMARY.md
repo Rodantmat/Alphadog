@@ -14419,6 +14419,70 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.26 — PASS 26 (**sixth two-direction judgment, baseline-tree reporting**) — **🔑 O5 upgraded from inference to PROOF, in the data, day by day · ✅ CLEAN 1/3**
+*2026-09-21. The closing-three judgment, re-measured on both trees, with the weight on the newest
+habit — passes 22–25 all rest on live queries, and a live query is a measurement at a moment.*
+
+#### ✅ T10.26a — **The band, per rule 18 — and the boundary caveat proves itself**
+
+| | high band | tail | uncovered vs **the twelve** | uncovered vs **all `nba/`** |
+|---|---|---|---|---|
+| **Baseline `d29401bd`** — *the finding* | **28** | **106** | **831** | **689** |
+| Working tree — *what this sweep added* | **33** | **101** | **823** | **689** |
+
+**The baseline is identical for the third consecutive measurement** (passes 16, 20, 26) — as it must
+be. **The working `uncovered30` moved 688 → 689 since pass 20**, i.e. *against* this sweep.
+
+📌 ***That is §T10.20b's caveat proving itself and is not reported as movement***: passes 22–25
+inserted correction blockquotes into `NBA_DATABASE.md`, `NBA_MULTIPLIERS.md` and `NBA_OPEN_ITEMS.md`,
+which re-split the paragraphs the scorer reads, and **one segment sitting within ±0.02 of the cut
+flipped.** **Eleven to twelve segments sit in that window. A difference of one is instrument noise.**
+
+#### 🔑🔑 T10.26b — **O5 re-tested by its own prediction, and the prediction holds exactly**
+
+§T10.25b attributed each ladder day to a depth regime **from load timestamps**. *That is an
+inference.* **The regimes make a falsifiable prediction about the rows themselves** — so it was run:
+
+`SELECT asof, prop, max(abs(ladder_offset)) FROM nba_score.baseline_ladder GROUP BY 1,2`
+
+| prop | `LADDER_DEPTH` | **2025-11-29** *(loaded AFTER)* | **2026-01-15** *(before)* | **2026-03-15** *(before)* |
+|---|---|---|---|---|
+| `points` | **14** | **14** ✅ | 10 | 10 |
+| `rebounds` | **6** | **6** ✅ | 10 | 10 |
+| `assists` | 5 | **6** ⚠ | 10 | 10 |
+| `threes_made` | 4 | **6** ⚠ | 10 | 10 |
+| `oreb` | **3** | **3** ✅ | 10 | *(prop absent)* |
+| `steals` | **2** | **2** ✅ | 10 | 10 |
+| `blocks` | **2** | **2** ✅ | 10 | 10 |
+
+🔑 ***The two-regime finding is no longer an inference from timestamps — it is visible in the rows.***
+**2025-11-29 carries seven different depths; the other two carry a flat 10 on every prop, which is
+`BT_LADDER_STEPS` doing exactly what §T9.27b said it does.** ✅ **And the day attribution from
+`loaded_at` is confirmed by the data it predicted.**
+
+⚠ **Two props exceed their table value — `assists` 6 against 5, `threes_made` 6 against 4 — and that
+is already on file** (`NBA_OPEN_ITEMS.md`: *"NOT RECORDED: `assists` reaches rung 6 against a table
+value of 5"*). **Now it is located: it is on the per-prop day, and only there.** *Why is still NOT
+RECORDED; rule 6.* 📌 **`2026-03-15` has no `oreb` rows at all**, consistent with its **18 props**
+against the other two days' **22**.
+
+#### ✅ T10.26c — **Passes 20–25's claims judged under rules 17–21**
+
+✅ **`baseline_ladder_runs`' three `loaded_at` values re-derived and identical** — `2026-09-11
+20:23:10.936` · `2026-09-19 22:35:04.532` · `2026-09-20 03:23:26.856` UTC, with 18 / 22 / 22 props
+and 50,597 / 90,861 / 64,779 rows. *The rule-18 worry — that a live figure is a measurement at a
+moment — checked and clean.*
+✅ **Corpus counts state population and tree** throughout §T10.20–§T10.25 *(the 272-instance NOT
+RECORDED census names both; the band tables give both trees)*.
+✅ **Absence claims show three vocabularies** *(§T10.19a as corrected, §T10.23c's four clearances)*.
+✅ **Identifiers read off the system** *(§T10.22, §T10.23, and this pass's column names)*.
+✅ **NOT RECORDED tried against both authorities** *(§T10.24b corpus-first, §T10.25b system-first)*.
+
+**Pass outcome: no defect; one finding upgraded from inference to proof; the band's only movement
+attributed to the instrument's own boundary. ✅ CLEAN 1/3 · 26 passes.**
+
+---
+
 ### T10.25 — PASS 25 (**"NOT RECORDED" audit**) — **🔑 one closed against the live system, and the exposure is far smaller than §T10.24b implied · 0/3**
 *2026-09-21. The angle §T10.24b forced: **NOT RECORDED is a claim about the corpus, and this sweep
 had been earning it from live queries.** Every instance enumerated and classified by what could
