@@ -1,0 +1,2 @@
+max_quotes: 250
+note: first full server-side map, 2026-09-21 - moderate budget to confirm the chrome146 session holds at volume
