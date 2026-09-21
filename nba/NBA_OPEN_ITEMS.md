@@ -374,6 +374,17 @@ sibling games from the same slate that worked.
 **Impact is small and bounded** — 3 of 1,230 games (0.24%) lack referee assignments, in a table
 whose purpose (referee-crew tendencies) is aggregate. **Not opening-day blocking.**
 
+✅ **AND THE SYSTEM ALREADY DETECTS THIS — the gap was never invisible to the code, only to the
+documentation.** *(Found 2026-09-21, T7 pass 2.)* `alphadog-v2-nba-daily-delta.js` **lines 196–216**
+carries a coverage check, added 2026-09-04 and **recorded in no document until now**:
+> *"identifies logged games that still lack starter-status or officials data, so a follow-up per-game
+> backfill run knows exactly which `game_id`s to [fetch]"*
+
+Two `LEFT JOIN`s against `player_game_starter_status` and `game_officials`, reported as
+`games_missing_starter_status_sample` and its officials counterpart. **Run today it returns exactly
+what this sweep derived by hand: 3 games missing officials, 0 missing starter status.**
+**It has been shipping on a daily-cadence worker since 2026-09-04.**
+
 ---
 
 ## ⚠ THE OFFICIALS DICTIONARY HAS 80 NAMES; THE GAMES NAME 83
