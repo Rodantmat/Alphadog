@@ -14419,6 +14419,79 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.25 — PASS 25 (**"NOT RECORDED" audit**) — **🔑 one closed against the live system, and the exposure is far smaller than §T10.24b implied · 0/3**
+*2026-09-21. The angle §T10.24b forced: **NOT RECORDED is a claim about the corpus, and this sweep
+had been earning it from live queries.** Every instance enumerated and classified by what could
+settle it.*
+
+#### 📌 T10.25a — **The census, and it narrows §T10.24b's lesson sharply**
+
+**Predicate** (rule 16): a line matching `NOT RECORDED`, case-insensitive, in the twelve; working
+tree, 2026-09-21; classified on a ±1-line window.
+
+| Class | Count |
+|---|---|
+| **Total** | **272** |
+| About an **action or decision** — *whether X was done · deliberate · as built · as run · why · cause* | **166** |
+| Names a **live object** (a `nba_*.*` table or a `.py`/`.yml`/`.js` file) | **26** |
+| …of those, **also** an action claim | **18** |
+| **Object-only — in principle settleable by a query or a grep** | **8** |
+| Neither — a prose absence | **98** |
+
+Per document: `OPEN_ITEMS` **113** · `MASTER_SUMMARY` **105** · `DATABASE` **15** ·
+`FINAL_SCORING_CALIBRATION` **9** · `GLOSSARY` **6** · `MULTIPLIERS` **5** ·
+`SYSTEM_ARCHITECTURE` **4** · `WORKERS` **4** · `SYSTEM_DESIGN` **3** · `BASELINE_CALIBRATION` **3** ·
+`GOBLIN_DEMON` **3** · `RECIPE` **2**.
+
+🔑 **So §T10.24b's failure mode has an exposure of at most 8 of 272 — and five of those eight are
+already this sweep's own pass-22/24 entries, the resolved O7 line, or the guidance line itself.**
+***The lesson is right and its blast radius is three sentences, not the document set.***
+
+✅ **And the corpus already carries the epistemics.** `NBA_OPEN_ITEMS.md` holds an **evidence-tier
+table** — *"**NOT RECORDED** | absence from transcripts and targeted search"* — the standing
+instruction *"**Before acting on any NOT RECORDED entry, read the internal step list of the relevant
+runner**"*, and the note that *"every 'NOT RECORDED' in these documents rests on [a negative claim]"*
+with *"entries already written as 'NOT RECORDED' on a numeric string alone should be re-tested."*
+📌 ***Rule 7 applied to my own planned finding: the thing pass 25 set out to establish is already on
+file, and what this pass adds is the count.***
+
+⚠ **The 166 action claims are §T8.34a's unfalsifiable class** — *whether something was ever decided,
+run, or intended.* **Neither a corpus grep nor a live query can settle them**, and they are correctly
+written as absences of evidence rather than as evidence of absence.
+
+#### 🔑 T10.25b — **One NOT RECORDED closed, and it names which ladder day sits in which depth regime**
+
+**The claim** *(in `NBA_MASTER_SUMMARY.md` and `NBA_OPEN_ITEMS.md`, the same sentence twice)*:
+*"`nba-baseline.yml` built the 2026-03-15 day and nothing after it; **what built the 2026-01-15 and
+2025-11-29 days is NOT RECORDED**."*
+
+**`nba_score.baseline_ladder_runs` records `source_file` and `loaded_at` for all three** — `[LIVE-AUDIT]`:
+
+| as-of | `loaded_at` (UTC) | props | rows | `source_file` |
+|---|---|---|---|---|
+| **2026-03-15** | **2026-09-11 20:23:10.936** | 18 | 50,597 | `nba_baseline_ladder_2026-03-15.json, …_latest.json` |
+| **2026-01-15** | **2026-09-19 22:35:04.532** | 22 | 90,861 | `nba_baseline_ladder_2026-01-15.json, …_latest.json` |
+| **2025-11-29** | **2026-09-20 03:23:26.856** | 22 | 64,779 | `nba_baseline_ladder_2025-11-29.json, …_latest.json` |
+
+🔴 **And that resolves O5 to the day.** `LADDER_DEPTH` landed **2026-09-19 23:58:44 UTC**, so
+**2026-03-15 and 2026-01-15 loaded before it** *(the latter by **1h 23m**)* and **2025-11-29 loaded
+after it, by 3h 25m** — ***exactly the "after two of three loads" already on file, now with the days
+named***: **two days in the flat `BT_LADDER_STEPS` regime, one in the per-prop `LADDER_DEPTH`
+regime.** *The 18-vs-22 prop split corroborates the 2026-03-15 day's separateness, and its load is
+consistent with `TRIGGER_NBA_BASELINE.txt`'s last commit at 2026-09-11 17:18 UTC.*
+
+⚠ **Half the claim stands**: the table records the **LOAD**, not the **BUILD** — *what produced the
+two later JSON files is still NOT RECORDED.* **Narrowed in both places, not deleted.**
+
+🔑 ***And this is §T10.24b's lesson in the other direction: pass 24 found a corpus grep answering a
+live question; pass 25 found a live query answering a corpus question. The rule is not "search the
+corpus" — it is "the authority is whichever one holds the answer, and both must be tried."***
+
+**Pass outcome: 1 NOT RECORDED narrowed and O5 resolved to the day, 272 classified, §T10.24b's
+exposure bounded at 8. 🔴 CLEAN 0/3 · 25 passes.**
+
+---
+
 ### T10.24 — PASS 24 (**novelty audit over all thirty against `d29401bd`**) — **🔴 pass 22 flagged one of two sites, and the answer it called NOT RECORDED is in the same document · 0/3**
 *2026-09-21. Everything passes 16–23 added, grepped against the pre-T10 snapshot across all thirty
 files, **in three vocabularies (rule 20)**, with every hit opened.*
