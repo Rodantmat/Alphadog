@@ -11097,9 +11097,9 @@ The corrected claim, verified live rather than from prose. `nba_config.factor_pr
 | Cells | **35**, every one with a non-null `cap` |
 | Factors | **15** (`blowout_risk` 9 cells · `rest_density` 6 · `opp_dvp_position` 5 · `game_pace` 3 · `usage_share` 2 · ten factors with 1 each) |
 | Cap values | **10 distinct, 0.05 → 0.40** (0.12 and 0.25 most common, 7 and 6 cells) |
-| Key | `(factor_key, canonical_prop_key, tier_label, role_tier_key, direction)` |
+| Key | **six dimensions** — `(factor_key, canonical_prop_key, tier_label, role_tier_key, direction, variation_band)`; this row originally listed five, which is what caused §T7.44a |
 | Tier- or role-keyed | **22 of 35** |
-| **Neither `tier_label` nor `role_tier_key`** | **13 of 35** — one undifferentiated cap for the whole factor (`altitude` 0.06 · `opp_forced_to_rate` 0.20 · `teammate_shooting_quality` 0.20 · `foul_drawing` 0.25 · `opp_rim_attempt_rate` 0.25 · `opp_turnover_rate` 0.25 · `usage_share` 0.30, and cells of `game_pace`, `potential_assist_rate`, `opp_miss_rate`) |
+| **The other 13** | **band-keyed — `variation_band = 'continuous'`**, *not* "neither key" and *not* undifferentiated (§T7.44a, §T7.50a) (`altitude` 0.06 · `opp_forced_to_rate` 0.20 · `teammate_shooting_quality` 0.20 · `foul_drawing` 0.25 · `opp_rim_attempt_rate` 0.25 · `opp_turnover_rate` 0.25 · `usage_share` 0.30, and cells of `game_pace`, `potential_assist_rate`, `opp_miss_rate`) |
 | Row timestamps | all 35 `created_at` between **2026-09-09T01:53:08Z and 02:02:54Z** |
 
 **Read against the owner's two-part directive, with the language at evidence strength:**
