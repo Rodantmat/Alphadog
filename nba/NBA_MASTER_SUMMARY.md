@@ -14426,6 +14426,122 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+## T12 — `2026-09-11-21-01-23-nba-board-scrapers-fliff-docs-2026-09-10.txt`
+**BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
+*640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
+
+### T12.1 — PASS 0 (**corpus + owner stratum**) — **🔴 the measurement that chose every live board source is in NONE of the twelve · 0/3**
+*2026-09-21.*
+
+#### ✅ T12.1a — **The corpus, and the partition closes**
+| stratum | segments |
+|---|---|
+| `tool_result` | **265** |
+| `tool_use` | **250** |
+| assistant `text` | **68** |
+| assistant `thinking` | **46** |
+| **owner** `text` | **11** |
+| **total** | **640** ✅ *265 + 250 + 68 + 46 + 11 = 640* |
+
+**Taken from the transcript's own segment list, never from the tail** *(§T8.24a)* **and never from
+`substance()`, whose prose count is a one-directional over-estimate** *(§T11.2)*.
+
+#### ✅ T12.1b — **The band, at pass 0, on both trees**
+| tree | high | tail | uncovered12 | uncovered30 |
+|---|---|---|---|---|
+| **working** | **9** | **15** | **618** | **585** |
+| **baseline `c5798146`** | **9** | **15** | **618** | **585** |
+
+***Identical, as they must be: the baseline was cut from this tree and nothing has been written for
+T12 yet — the control behaving as a control at pass 0.*** **96.6% uncovered vs the twelve · 91.4% vs
+all thirty**, and ⚠ **the twelve-vs-thirty gap is 33 segments** — *between T11's 10 and T10's 142, so
+a modest amount of T12's material is carried by the eighteen non-mandated documents.* 📌 **The tail
+is 15, five times T11's 3** — *a real tail stratum to read, and pass 1's subject.* **`EXCL` =
+`NBA_SWEEP_RUN_LOG.md`, `PP_PAYOUT_FINDINGS.md` in both harnesses** *(rule 25, §T11.39b)*.
+
+#### 📌 T12.1c — **The thinking stratum is labels again — a CONFIRMATION, not a discovery**
+**46 blocks, 3,007 characters, max 84, min 60, mean 65** *(T11: 51 / 3,428 / 124)*. ✅ **Credited to
+§T11.43a, which established the pattern; this is its second instance** *(rule 28 — the duplicate
+check runs against the WORKING tree, and the characterisation is the sweep's own)*.
+
+#### 🔴 T12.1d — **THE PASS'S FINDING: the same-moment diff that chose every live board source**
+**Segment 49, owner, quoted whole** *(rule 19)*: *"on parlay api we need to get all 4 so, **sleeper,
+fliff, underdog** and as for prizepicks, i want you to **probe one day of prizepicks on parlay api,
+compare to the prizepicks scraper**, of course mlb, just to compare the dataset. i want to know if
+they are **exactly the same, complete the same way, all legs, all ladder variations, all
+goblin/demon/regular information**, to decide which way to go with pp for nba."*
+
+**The diff was run — same slate, four minutes apart** *(scraper 03:15:03Z, ParlayAPI 03:18:46Z)*:
+
+| | our scraper (raw PP API) | ParlayAPI |
+|---|---|---|
+| pre-game legs | **1,729** | **1,353** |
+| demon / goblin / standard | **1,379 / 277 / 73** | **1,092 / 199 / 62** |
+| distinct players | **93** | **104** |
+| **exact leg matches** *(player + stat + line + type)* | **1,012** | |
+| **only in ours** | **717** — *287 the same player/stat/type at a DIFFERENT RUNG, 430 absent entirely* | |
+| **only in ParlayAPI** | | **341** |
+
+***And the three mechanisms, which are what make the numbers decision-relevant:***
+🔑 **ParlayAPI DROPS LADDER RUNGS — about a quarter of the board, and *"it's the rungs closest to the
+standard line, which are exactly the ones a slip engine uses"*** *(examples: Nick Martinez strikeouts
+— ours has demons at 4.5 and 5.5, ParlayAPI only 6.5; total-bases demons at 3.5 and 4.5 for a dozen
+hitters, ParlayAPI only 5.5 or 7.5)*. 🔑 **ParlayAPI LAGS — its PrizePicks rows carried
+`age_seconds ≈ 3,300`, about 55 minutes stale**, while our scraper reads the API directly. 🔑 **The
+341 ParlayAPI-only legs are LIVE IN-GAME micro-markets** *(1st/2nd/3rd-inning pitches seen, balls
+counted)* **from a game already in progress — our scraper deliberately excludes live props via
+`single_stat=true`**, ***so that column is not a coverage deficit, it is a scope difference.*** ✅
+Same stat taxonomy otherwise; player-name normalisation (accents, "Jr.") is the join hazard.
+
+**The decision (segment 91)**: ***"prizepicks comes from our own scraper … parlayapi stays as the
+source for underdog, sleeper and fliff and as a prizepicks FALLBACK ONLY"*** — **recorded to config
+key `board_sources_decision`** *(segment 98)*.
+
+#### 🔴 T12.1e — **What is on file, and what is not — probed against the baseline with controls**
+*(Rule 28: novelty → baseline. Rule 20: three vocabularies. Rule 22: controls fired —
+`board_backfill_odds_api` 3, `league_id=7` 11. Rule 26: every hit opened.)*
+
+| | carriers |
+|---|---|
+| ✅ **the headline of the diff** | **`NBA_PROJECT_LOG.md`, in ONE line** — *"same-moment MLB diff, our producer (raw API) 1,729 legs vs ParlayAPI 1,353 — ParlayAPI drops ~25% of ladder rungs nearest the standard line and lags ~55 min → **ours** (`league_id=7` for NBA)"* — **1 of thirty, 0 of the TWELVE** |
+| ✅ **the decision** | **`board_sources_decision` in 4 of thirty, incl. `NBA_OPEN_ITEMS.md`** ⚠ **but the twelve quote only its `historical_boards` sub-key** *(The Odds API, PrizePicks + Underdog, two seasons)* — **not the LIVE-board decision this diff produced** |
+| 🔴 **in NO document at all** *(0 of thirty, run log excluded)* | the **1,012 / 717 / 341** decomposition · the **1,379 / 277 / 73** odds-type split · **`age_seconds ≈ 3,300`** · **that the 341 ParlayAPI-only legs are LIVE micro-markets excluded by `single_stat=true`** · and ***"fallback only"*** |
+
+⚠ **Two hits opened and DISMISSED**: **717** *(30 carriers)* and **341** *(34)* are `backtest/reports/`
+classification figures — **different subjects entirely.**
+🔑 ***The shape is §T11.2's exactly: the documents carry the CONCLUSION and its headline numbers, and
+not the decomposition that makes the conclusion checkable.*** **A reader of the twelve knows which
+source was chosen and cannot learn why, or on what evidence, or what the fallback is scoped to.**
+
+#### 📌 T12.1f — **Two more from the owner stratum, both probed**
+🔴 **The UNDERDOG PROXY — 0 of the twelve.** *Segment 135, whole*: *"for underdog, would a proxy help?
+the mlb pp has a proxy information that can be used."* **It is IMPLEMENTED** — `scrape_underdog_board.py`
+documents `PROXY_URL` as an env fallback, and `probe_underdog2.py` / `probe_underdog4.py` are
+dedicated proxy probes *("through the residential proxy, vary HTTP version / client headers /
+endpoints")* — ⚠ **and the scraper's proxy dependency is in NONE of the twelve.** *(One prose hit in
+`backtest/classification_ladder_v12.py` — "invisible to a proxy this noisy" — is a different sense of
+the word; opened and dismissed.)*
+📌 **The owner's DOCUMENTATION directive — 0 of thirty.** *Segment 553, whole*: *"continue, document
+everything since last update/log, check transcripts and history **leave nothing out of
+documentation**."* ***The instruction that this entire sweep exists to satisfy is recorded nowhere in
+the corpus it produced.***
+
+#### ⚠ T12.1g — **Carried forward, not concluded**
+📌 **Segment 91 also commits to a test that has not been recorded as run**: *"i'd run the same
+same-moment diff for **underdog and sleeper** against their own public apis before opening day, **so
+every board's source is chosen on evidence, not assumption**."* **Whether it was run is NOT RECORDED
+as of this pass** *(rule 27: T12 has 640 segments and this is segment 91 — **the last word on it must
+be checked before any verdict**, which is pass 1's job, not this one's)*.
+📌 **Segment 98 states the board-puller configuration as *"two snapshots at 2:45 pm pt and tip-30"***
+— **consistent with T11's recorded defaults**, and ⚠ **the 2:40 / tip−35 discrepancy §T11.31 records
+is NOT repeated here.** *Dated, not resolved.*
+
+**Pass outcome: the corpus measured and its partition closed, the band taken on both trees, all
+eleven owner turns read and quoted whole. 🔴 One finding: the measurement behind every live board
+source is in none of the twelve. CLEAN 0/3 · 1 pass.**
+
+---
+
 ## T11 — `2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt`
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
