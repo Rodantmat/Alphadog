@@ -189,6 +189,71 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 🔴🔴 THE SCRAPE IS THREE SEASONS AND THE LOAD IS ONE — `game_officials` and `player_game_starter_status`
+*Found 2026-09-21, T11 pass 30 (§T11.31b). **`[LIVE-AUDIT]`, and the second instance of a shape this
+sweep has already recorded once.***
+
+**T11 segment 613 — a live index check inside the transcript — reports both 2024-25 runs COMPLETE:**
+> *`nba_starter_status_2024_25 meta`: **`games_input 1230, games_succeeded 1230, row_count 32515`***
+> *`nba_game_officials_2024_25 meta`: **`games_input 1230, games_succeeded 1230, row_count 3691`***
+
+**And `nba/data/` holds all three seasons of both, committed:** `nba_game_officials_2023_24.json`
+(585,960 B) · `_2024_25.json` (586,196 B) · `_2025_26.json` (584,907 B); `nba_starter_status_2023_24`
+/ `_2024_25` / `_2025_26.json` (4.86 / 4.88 / 4.82 MB).
+
+🔴🔴 **Postgres holds ONE season of each** *(live, joined to `nba_calendar.games.season` — the
+system's own authority, not the id prefix)*:
+
+| table | seasons in `nba/data/` | seasons in Postgres | games | rows |
+|---|---|---|---|---|
+| `nba_stats.game_officials` | **3** | 🔴 **1 — 2025-26 only** | **1,227** *(of 1,230 — three short)* | **3,681** |
+| `nba_stats.player_game_starter_status` | **3** | 🔴 **1 — 2025-26 only** | 1,230 | **32,179** *(12,300 starters, **10.000/game**)* |
+
+🔑 ***This is the shape §T11.1b recorded for the injury backfill, in a second worker***: **a scrape
+that reports complete success while the database receives none of it.** *There it was a parser bug
+(`pdfplumber` on the runner) and the rows were never produced; here the rows EXIST, in the repo, and
+did not reach the table.* ⚠ **WHY is NOT RECORDED** (rule 6) — load never run, run and rolled back, or
+loaded and later replaced are all consistent with what is observable.
+
+⚠ **AND IT RE-DATES THE MATRIX.** The factor × season matrix marks **`a5`** ✓/⏳/🔧 and **`d1`**
+✓/⏳/🔧 — ***those marks describe the SCRAPE.*** **By the database, both are one season.** *Anything
+that reads these tables for 2024-25 or 2023-24 gets nothing, silently.*
+
+📌 **And §T11.12's `12,300 = 10 × 1,230` is re-verified EXACT** — `is_starter = 1`, 10.000 per game —
+⚠ **with a population the entry did not state: 2025-26 alone** *(rule 23)*.
+
+---
+
+## 📌 T11's CLOSING SUMMARY — **segment 711, and it names the four open items**
+*T11 pass 30 (§T11.31a). **Three segments from the end of 712** — the transcript's own final word,
+against §T11.24a's matrix at segment 112.*
+
+> *"**overnight queue — set so it finishes without me**: injury report 2025-26 final chunk **running**;
+> **injury report 2024-25 queued right behind it**, and the workflow now **loops on its own 30-day
+> chunks, committing after each** until the season is complete — no manual re-triggers overnight;
+> **starters + officials 2023-24 running**. ***ALREADY DONE: game lines (both seasons), matchups
+> (three seasons), starters/officials 2024-25 and 2025-26, coaches, weekly as-of tables, player index,
+> preseason logs, absence prior.*** ***By morning the only open data item outside the boards is my own
+> desk work — coach-change dates, all-star lists, referee-assignments scraper, the game-id join —
+> which doesn't block the DFS work.***"*
+
+🔑 ***The four open items ARE the answer to "what is left after T11"***, and **§T11.24b found three of
+them independently as *"in none of the twelve"*** — the **all-star / all-NBA lists**, the **daily
+referee-assignments scraper**, and **`k1`'s coach-change source**. ***The fourth — the NBA game-id
+join for `game_lines_closing` / `board_snapshots` — the sweep had only as a T12 queue note. It is
+T11's, at segment 711.***
+
+⚠ **Read against the live tables above, *"starters/officials 2024-25 … already done"* is true of the
+SCRAPE and not of the database** — which is why §T11.31b matters rather than being bookkeeping.
+
+⚠ **And two segments give two numbers for one setting**: **segment 709 and the live config
+`board_backfill_odds_api` say `window 14:45 PT (DST-aware)` and `close = commence_time − 30 min`**;
+**segment 711 says the test *"landed exactly right: the window at 2:40 PM PT, the close at 35 minutes
+before tip."*** **Whether that is snapshot granularity (the nearest available capture to the target)
+or a different setting is NOT RECORDED** (rule 6).
+
+---
+
 ## 🔴🔴 T11's MARKET-PROBING RESULT — **the transcript's own answer to its blocked-items list, and it is in ZERO of the twelve**
 *Found 2026-09-21, T11 pass 28 (§T11.29). **Segment 355 of 712** — verbatim where quoted, and
 **every figure confirmed live** in `nba_config.classification_config` key
