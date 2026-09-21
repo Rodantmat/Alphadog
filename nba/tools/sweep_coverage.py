@@ -70,6 +70,36 @@ WHAT "UNCOVERED" ACTUALLY MEASURES - read before quoting any percentage
 
     Quote the percentage as "not yet in the twelve".  Never as "undocumented".
 
+THE THREE FALSE-TAIL MECHANISMS - all measured, read all three together
+    A segment in the tail is NOT necessarily undocumented.  Three separate mechanisms
+    put already-handled material below 0.40, and they compound:
+
+    (0) CONTENT THAT CAN NEVER PROSE-MATCH.  web_search result dumps, verbatim code
+        diffs in tool_use inputs, `sleep 90` calls.  On T1 that is ~143 of 309 tail
+        segments (46%) - 50 web_search results, 69 code-writing tool calls, 24 bash
+        sleeps.  It will never match prose documentation and it never should.  The
+        substance filter passes it because search prose IS word-rich; it just is not
+        transcript-specific.
+
+    (1) PARAPHRASE vs QUOTATION.  See FALSE TAIL below.  Findings the documents quoted
+        verbatim moved +0.39 to +0.55; findings named as a concept in the documents'
+        own words moved -0.005 to +0.041.  5 of 15 documented findings stayed in the
+        tail.  Pointer-style writing is this taken to its limit, not a separate cause
+        (pointer phrases are only 2.8% of document paragraphs).
+
+    (2) THE SCORER READS ONLY THE TWELVE.  See above.  6.2 points on A2/N1, and
+        concentrated in the highest-value findings.
+
+    (3) SELF-AUTHORSHIP.  A transcript that WROTE documentation matches that document
+        at ~1.00 - because its github_put_file payload IS the file's content - but the
+        twelve do not quote those files, so it scores as uncovered forever.  Measured
+        on T1: 32 of 309 tail segments (10.4%), 28 of them matching NBA_PROJECT_LOG.md,
+        most at exactly 1.00.  ZERO defects possible here: an exact self-match has no
+        cross-reference that could point at the wrong place.
+        EXPECT THIS TO DOMINATE T20 and T21, the documentation-sweep transcripts,
+        whose payloads are these very documents.  Their tails will look enormous and
+        will mostly be their own authorship.  Say so in their ledger rows.
+
 FALSE TAIL - measured 2026-09-21, and it is why step 5 changed
     The 15 GROUND_TRUTH findings were undocumented at pass 63 and were written up by
     passes 64-87.  Scored against pass-63 documents vs CURRENT documents:
