@@ -14430,6 +14430,80 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.23 — PASS 22 (**predicate-completeness audit**) — **🔴🔴 the tail was three segments and nobody opened them; one is an OWNER-ACTION LIST · 0/3**
+*2026-09-21. The angle §T11.22a earned. **Completing one sample found a second sample that had never
+been completed at all — and it was three segments long.***
+
+#### 🔑 T11.23a — **T11's tail is NOT a false tail, and no pass had said so**
+
+**The full distribution, taken for the first time** *(baseline `5dfb72ab`; n = 3, so this IS the
+census, not "the 40 printed")*:
+
+| | T11 tail | T10 tail *(for contrast)* |
+|---|---|---|
+| n | **3** | 101 |
+| min | **0.6037** | 0.90 |
+| median | **0.7203** | **1.00** |
+| max | **0.7232** | ~1.00 |
+| at ≥0.95 | **0 of 3** | **30 of 40** |
+
+🔑 ***T10's tail was self-authorship — the segment WAS the file being written. T11's is nothing of the
+kind***: three segments scoring **0.60–0.72** against `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` —
+**genuine partial coverage.** ⚠ **Six T11 passes reported "tail 3" and none judged it.** *A stratum
+small enough to dismiss is small enough to read, and it was never read.*
+
+#### 🔴🔴 T11.23b — **Segment 113 is a blocked-items list addressed to the owner**
+
+> *"**blocked items need the owner**: **1** renew the parlayapi key (free) — unlocks b1/b2/c3 live
+> and, with its historical endpoint, the backfill; **2** decide on **bigdataball** for c1/c2 history;
+> **3** optionally a **kaggle** account for the free game-line history. **everything else is built or
+> running.**"*
+
+✅ **And it resolves a chronology §T11.3a did not have.** Segment **112** records
+***"parlayapi key invalid (key v3.2.0); odds api key deactivated → owner renews parlayapi free key"***
+— **and 112–113 come BEFORE the owner supplies keys at 197 and before the validation at 221.**
+***So the transcript runs blocked → owner acts → validated, and §T11.3a's "ParlayAPI is live on your
+key" is the RESOLUTION of this blocker, not a contradiction of it.*** **§T11.3a stands, with its
+starting state now on file.**
+
+#### 🔴 T11.23c — **And segment 112 is the factor × season matrix, with two findings in it that are in no document**
+
+🔴 **`c4`, `s1–s4` — pick'em structure — ⛔ ⛔ ⛔ across all three seasons**:
+> *"**no archive exists** … **boards are not archived anywhere free**; live from season start; **the
+> board scraper will archive every board from day one so the next backfill exists**."*
+
+**Novelty: 0 of thirty** *(control passed)*. 🔑 ***This is the GENERAL form of §T11.6b's Sleeper
+finding.*** The documents record *"Sleeper has no history anywhere"* as an app-specific fact; **the
+transcript says the pick'em BOARD STRUCTURE has no free archive for any app** — *which is why
+PrizePicks and Underdog history came from ParlayAPI's prop lines rather than from board archives, and
+why the live scraper archiving "from day one" is the plan.*
+
+🔴 **`TeamRankings` odds-history scrape** — named as a free fallback for game-line history —
+**0 of thirty.** 📌 **Kaggle *"NBA betting data Oct 2007–Jun 2026"*** — **1 of thirty
+(`NBA_PROJECT_LOG.md`), 0 of the twelve.** 📌 **`k1` coach rotation's source — Wikipedia season pages'
+*"coaching changes"* tables, "to compile as a static file"** — **2 of thirty, 0 of the twelve.**
+
+⚠ **Rule 22 fired again**: a probe for the matrix's status legend used the emoji glyphs and **failed
+its positive control** *(the control string did not contain them)*, **so its four hits were discarded
+rather than reported.**
+
+#### 🔴 STANDING RULE 25 — **A CLAIM FROM A SAMPLE STATES THE SAMPLE**
+*Added 2026-09-21 after §T11.22a and §T11.23a.*
+
+**Any figure taken from a subset says so, in the entry, with the size** — *"eight of twenty-two
+tables"*, *"the 40 printed of 101"*, *"4,000 rows per shard"*.
+
+🔑 **Because that sentence is what makes the claim correctable.** **§T11.21c carried it and the next
+pass completed the census and overturned it. The tail's "40 printed" never carried it on T11 — and
+six passes reported the stratum without ever reading it.**
+⚠ **And the corollary this pass demonstrates: *a sample note is a to-do, not a disclaimer.* An entry
+that states its sample has scheduled its own completion; one that does not has hidden a gap.**
+
+**Pass outcome: 1 stratum judged for the first time, 1 owner-action list surfaced, 2 findings absent
+from all thirty, 1 chronology resolved, rule 25. 🔴 CLEAN 0/3 · 23 passes.**
+
+---
+
 ### T11.22 — PASS 21 (**live numeric re-verification**) — **❌ §T11.21c retracted by the very sample note that made it recoverable · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. The attack the next-step row demanded: **"only ever held one value" rested
 on 8 of 22 tables, and a single second value anywhere overturns the sentence.** It did.*
