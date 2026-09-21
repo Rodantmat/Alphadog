@@ -466,6 +466,23 @@ Those are the bottom and top bands of `ROLE_TIERS`.
 **Mean confidence 0.92–0.95.** Per-leg factors (`f_role`, `f_prov`) are real, read from
 `baseline_history` — **not placeholders**.
 
+> 🔴🔴 **`f_phase` IS COMPUTED AND IS NOT IN THE SUM — recorded 2026-09-21, §T9.38a.**
+> `build_confidence_v3.py`'s `FACTOR_COLS` declares **ten** factors; `f_phase` gets a **six-line
+> justification with measured figures** (*"the calibration work measured the gap decaying **+1.46 /
+> +1.30 / +0.88 / +0.13 pp** across those four… **a confidence question, not a probability one**"*), a
+> rank map, and a place in the `attach` block — **and the `raw` expression sums nine terms without
+> it.** ✅ **The nine weights total exactly 1.00**, so the omission is structural: `f_phase` could not
+> be added without renormalising every other weight. **The factor is exported for inspection and has
+> zero effect on the confidence it was written to adjust.**
+>
+> 📌 **The full weighted set** (`build_confidence_v3.py:85`): `f_complete` **0.16** · `f_depth`
+> **0.14** · `f_prov` **0.12** · `f_role` **0.12** · `f_time` **0.10** · `f_vol` **0.10** · `f_agree`
+> **0.10** · `f_exp` **0.08** · `f_books` **0.08**. ⚠ **Two of the nine are binary** — `f_prov`
+> (`used_emp`, §T9.37b) and `f_time` (`np.where(n_uncertain > 0, 0.65, 1.0)`).
+> ⚠ **And `f_depth` uses a hardcoded `14.0`** — exactly `LADDER_DEPTH["points"]` — **as the rung-distance
+> scale for all twenty props** (§T9.38b), so `steals` at offset 10, five times its measured depth,
+> scores identically to `points` at offset 10, inside its own.
+
 ### 5.3 Three earlier versions, and why each failed
 | Attempt | Why it failed |
 |---|---|
