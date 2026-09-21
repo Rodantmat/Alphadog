@@ -4122,7 +4122,12 @@ repeated here. New material starts at T2.1.*
 - **Second fix in the same patch: the commit step must not hard-fail when one scraper produces no
   output.**
 - Result: **80 officials parsed** (matches the expected ~81), names spot-checked against the source.
-- Built `nba/alphadog-v2-nba-static-officials.js`, wired, verified 80/80 in Postgres.
+- Built `nba/alphadog-v2-nba-static-officials.js`, wired, verified 80/80 in Postgres. ⚠ **Caveat added
+  2026-09-21 (T2 judgment pass): "80/80" means 80 rows scraped = 80 rows written — an
+  internal-consistency check, NOT agreement with the source.** The Wikipedia "Staff officials" table
+  carries **81** rows; T2's parser drops one via its `normalize_id()` dedup key and a name regex.
+  **The parse is defensible, but 80 is partly a parser artifact**, and anyone reconciling against the
+  page will find the gap. See `NBA_OPEN_ITEMS.md` → FROM T2 PASS 2 and PASS 3.
 
 ### T2.5 The research pass (owner-directed, Gemini + web)
 - Owner: *"use Gemini as well to give you insight, check online, check how systems deal with which data
