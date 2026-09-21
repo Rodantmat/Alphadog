@@ -1268,6 +1268,21 @@ is the only thing separating the two.
 `nba_stats` table, not just the scrapers' URLs. *`[LIVE-AUDIT]`: this table currently holds 582 rows,
 all `'2025-26'`, last written 2026-09-01.*
 
+### ⚠ AND IT IS NOT ONE WORKER — at least two
+`alphadog-v2-nba-static-player-bio.js` does the same thing, writing
+`nba_stats.player_season_profile` with `'2025-26'` as a **string literal in its INSERT**, alongside
+its `nba_ref.players` bio update.
+
+| Worker | Table | Season written |
+|---|---|---|
+| `nba-static-onoff` | `nba_stats.player_onoff_profile` | literal `'2025-26'` |
+| `nba-static-player-bio` | `nba_stats.player_season_profile` | literal `'2025-26'` |
+
+**Two workers means the rollover fix has at least three locations** — the scrapers' URLs, and each
+of these INSERTs — **and no single search term finds all of them**, since one set writes the season
+into a query string and the other into a SQL value. *Whether more workers do the same is not
+established; only these two were read in depth.*
+
 ### The `_debug_headers` technique, worth keeping as a practice
 The arenas scrape's first output committed **`arena_name: null` for all 30 teams plus a
 `_debug_headers` array listing the columns `teamInfoCommon` actually returned** — `team_id`,
