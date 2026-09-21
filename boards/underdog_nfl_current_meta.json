@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NFL",
-  "started_at": "2026-09-10T15:49:45Z",
-  "fetched_at": "2026-09-10T16:05:05Z",
+  "started_at": "2026-09-21T04:16:04Z",
+  "fetched_at": "2026-09-21T04:29:00Z",
   "categories": [
     "100+ Pass Yards in Each Half",
     "150+ Pass Yards in Each Half",
@@ -57,266 +57,267 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      93
-    ],
-    [
-      "lines[match=177184]",
-      20
-    ],
-    [
-      "pills[match=177184]",
-      57
-    ],
-    [
-      "lines[match=178861]",
-      20
-    ],
-    [
-      "pills[match=178861]",
-      37
-    ],
-    [
-      "lines[match=178862]",
-      20
-    ],
-    [
-      "pills[match=178862]",
-      74
-    ],
-    [
-      "lines[match=178864]",
-      20
-    ],
-    [
-      "pills[match=178864]",
-      59
-    ],
-    [
-      "lines[match=178865]",
-      20
-    ],
-    [
-      "pills[match=178865]",
-      72
-    ],
-    [
-      "lines[match=178866]",
-      20
-    ],
-    [
-      "pills[match=178866]",
-      47
-    ],
-    [
-      "lines[match=178863]",
-      20
-    ],
-    [
-      "pills[match=178863]",
-      63
-    ],
-    [
-      "lines[match=179056]",
-      20
-    ],
-    [
-      "pills[match=179056]",
-      66
-    ],
-    [
-      "lines[match=178860]",
-      20
-    ],
-    [
-      "pills[match=178860]",
-      91
-    ],
-    [
-      "lines[match=178894]",
-      20
-    ],
-    [
-      "pills[match=178894]",
-      112
-    ],
-    [
-      "lines[match=178896]",
-      20
-    ],
-    [
-      "pills[match=178896]",
-      62
-    ],
-    [
-      "lines[match=178893]",
-      20
-    ],
-    [
-      "pills[match=178893]",
-      98
-    ],
-    [
-      "lines[match=178895]",
-      20
-    ],
-    [
-      "pills[match=178895]",
-      118
-    ],
-    [
-      "lines[match=177890]",
-      20
-    ],
-    [
-      "pills[match=177890]",
-      137
-    ],
-    [
-      "lines[match=178337]",
-      20
-    ],
-    [
-      "pills[match=178337]",
-      145
-    ],
-    [
-      "lines[match=178001]",
-      0
-    ],
-    [
-      "pills[match=178001]",
-      0
-    ],
-    [
-      "lines[match=178897]",
-      0
-    ],
-    [
-      "pills[match=178897]",
-      0
-    ],
-    [
-      "lines[match=178901]",
-      0
-    ],
-    [
-      "pills[match=178901]",
-      0
-    ],
-    [
-      "lines[match=178904]",
-      0
-    ],
-    [
-      "pills[match=178904]",
-      0
-    ],
-    [
-      "lines[match=178899]",
-      0
-    ],
-    [
-      "pills[match=178899]",
-      0
-    ],
-    [
-      "lines[match=178902]",
-      0
-    ],
-    [
-      "pills[match=178902]",
-      0
-    ],
-    [
-      "lines[match=178898]",
-      0
-    ],
-    [
-      "pills[match=178898]",
-      0
-    ],
-    [
-      "lines[match=178900]",
-      0
-    ],
-    [
-      "pills[match=178900]",
-      0
-    ],
-    [
-      "lines[match=178903]",
-      0
-    ],
-    [
-      "pills[match=178903]",
-      0
-    ],
-    [
-      "lines[match=178905]",
-      0
-    ],
-    [
-      "pills[match=178905]",
-      0
-    ],
-    [
-      "lines[match=178906]",
-      0
-    ],
-    [
-      "pills[match=178906]",
-      0
-    ],
-    [
-      "lines[match=178909]",
-      0
-    ],
-    [
-      "pills[match=178909]",
-      0
-    ],
-    [
-      "lines[match=178908]",
-      0
-    ],
-    [
-      "pills[match=178908]",
-      0
-    ],
-    [
-      "lines[match=178907]",
-      0
-    ],
-    [
-      "pills[match=178907]",
-      0
-    ],
-    [
-      "lines[match=178910]",
-      0
-    ],
-    [
-      "pills[match=178910]",
-      0
+      65
     ],
     [
       "lines[match=178911]",
-      0
+      20
     ],
     [
       "pills[match=178911]",
+      276
+    ],
+    [
+      "lines[match=178912]",
+      4
+    ],
+    [
+      "pills[match=178912]",
+      0
+    ],
+    [
+      "lines[match=178914]",
+      7
+    ],
+    [
+      "pills[match=178914]",
+      0
+    ],
+    [
+      "lines[match=178915]",
+      3
+    ],
+    [
+      "pills[match=178915]",
+      0
+    ],
+    [
+      "lines[match=178998]",
+      5
+    ],
+    [
+      "pills[match=178998]",
+      0
+    ],
+    [
+      "lines[match=178917]",
+      0
+    ],
+    [
+      "pills[match=178917]",
+      0
+    ],
+    [
+      "lines[match=178916]",
+      8
+    ],
+    [
+      "pills[match=178916]",
+      0
+    ],
+    [
+      "lines[match=178996]",
+      2
+    ],
+    [
+      "pills[match=178996]",
+      0
+    ],
+    [
+      "lines[match=178913]",
+      2
+    ],
+    [
+      "pills[match=178913]",
+      0
+    ],
+    [
+      "lines[match=178997]",
+      0
+    ],
+    [
+      "pills[match=178997]",
+      0
+    ],
+    [
+      "lines[match=178995]",
+      0
+    ],
+    [
+      "pills[match=178995]",
+      0
+    ],
+    [
+      "lines[match=179000]",
+      7
+    ],
+    [
+      "pills[match=179000]",
+      0
+    ],
+    [
+      "lines[match=178999]",
+      0
+    ],
+    [
+      "pills[match=178999]",
+      0
+    ],
+    [
+      "lines[match=175974]",
+      14
+    ],
+    [
+      "pills[match=175974]",
+      0
+    ],
+    [
+      "lines[match=179001]",
+      4
+    ],
+    [
+      "pills[match=179001]",
+      0
+    ],
+    [
+      "lines[match=179002]",
+      6
+    ],
+    [
+      "pills[match=179002]",
+      0
+    ],
+    [
+      "lines[match=179003]",
+      0
+    ],
+    [
+      "pills[match=179003]",
+      0
+    ],
+    [
+      "lines[match=179004]",
+      0
+    ],
+    [
+      "pills[match=179004]",
+      0
+    ],
+    [
+      "lines[match=178613]",
+      0
+    ],
+    [
+      "pills[match=178613]",
+      0
+    ],
+    [
+      "lines[match=179057]",
+      0
+    ],
+    [
+      "pills[match=179057]",
+      0
+    ],
+    [
+      "lines[match=179006]",
+      0
+    ],
+    [
+      "pills[match=179006]",
+      0
+    ],
+    [
+      "lines[match=179058]",
+      0
+    ],
+    [
+      "pills[match=179058]",
+      0
+    ],
+    [
+      "lines[match=179010]",
+      0
+    ],
+    [
+      "pills[match=179010]",
+      0
+    ],
+    [
+      "lines[match=179005]",
+      0
+    ],
+    [
+      "pills[match=179005]",
+      0
+    ],
+    [
+      "lines[match=179008]",
+      0
+    ],
+    [
+      "pills[match=179008]",
+      0
+    ],
+    [
+      "lines[match=179009]",
+      0
+    ],
+    [
+      "pills[match=179009]",
+      0
+    ],
+    [
+      "lines[match=179007]",
+      0
+    ],
+    [
+      "pills[match=179007]",
+      0
+    ],
+    [
+      "lines[match=179059]",
+      0
+    ],
+    [
+      "pills[match=179059]",
+      0
+    ],
+    [
+      "lines[match=179060]",
+      0
+    ],
+    [
+      "pills[match=179060]",
+      0
+    ],
+    [
+      "lines[match=179061]",
+      0
+    ],
+    [
+      "pills[match=179061]",
+      0
+    ],
+    [
+      "lines[match=179062]",
+      0
+    ],
+    [
+      "pills[match=179062]",
       0
     ],
     [
       "lines_with_stats[players]",
-      1366,
-      613
+      0,
+      90
     ],
     [
       "alternate_projections",
-      1793,
-      11180,
-      0
+      220,
+      1662,
+      0,
+      "deduped 0"
     ],
     [
       "lines[mass=true]",
@@ -327,85 +328,76 @@
       0
     ]
   ],
-  "lines": 2997,
-  "legs": 2997,
-  "ladder_legs": 11180,
-  "ladder_lines_with_alternates": 1793,
-  "players": 613,
-  "pregame_legs": 2997,
+  "lines": 423,
+  "legs": 423,
+  "ladder_legs": 1662,
+  "ladder_lines_with_alternates": 220,
+  "players": 90,
+  "pregame_legs": 423,
   "live_legs": 0,
   "by_stat": {
-    "Rush + Rec TDs": 362,
-    "Receiving Yards": 188,
-    "1H Rush + Rec TDs": 181,
-    "Receptions": 168,
-    "Defensive INTs": 149,
-    "Targets": 139,
-    "Sacks": 112,
-    "First TD Scorer": 89,
-    "1Q Rush + Rec TDs": 88,
-    "Rush Yards": 76,
-    "1Q Rec Yards": 72,
-    "1Q Receptions": 72,
-    "1H Rec Yards": 72,
-    "1H Receptions": 72,
-    "Longest Reception": 71,
-    "Tackles + Assists": 69,
-    "Fantasy Points": 68,
-    "Fumbles Lost": 56,
-    "Assists": 53,
-    "Longest Rush": 42,
-    "1Q Rush Yards": 42,
-    "1H Rush Yards": 42,
-    "Solo Tackles": 41,
-    "Rush Attempts": 41,
-    "25+ Rec Yards in Each Half": 40,
-    "Rush + Rec Yards": 39,
+    "Rush + Rec TDs": 61,
     "Moneyline": 31,
-    "Spread": 31,
-    "Total Points": 31,
-    "Pass Yards": 30,
-    "FG Made": 30,
-    "25+ Rush Yards in Each Half": 26,
-    "XP Made": 25,
-    "Pass TDs": 25,
-    "Last TD Scorer": 25,
-    "Kicking Points": 20,
-    "Pass + Rush Yards": 20,
-    "Completions": 20,
-    "Pass Attempts": 20,
-    "INTs Thrown": 20,
-    "1Q Pass TDs": 20,
-    "25+ Pass Yards in Each Quarter": 20,
-    "100+ Pass Yards in Each Half": 20,
-    "50+ Pass Yards in Each Quarter": 20,
-    "50+ Rec Yards in Each Half": 19,
-    "1Q Pass Yards": 19,
-    "Longest Completion": 19,
-    "1H Pass Yards": 19,
-    "1H Pass TDs": 19,
-    "150+ Pass Yards in Each Half": 14
+    "1H Rush + Rec TDs": 21,
+    "Receiving Yards": 19,
+    "Spread": 17,
+    "Total Points": 17,
+    "1Q Rush + Rec TDs": 16,
+    "Tackles + Assists": 15,
+    "Assists": 15,
+    "Solo Tackles": 15,
+    "First TD Scorer": 14,
+    "Rush Yards": 12,
+    "Pass Yards": 12,
+    "Longest Reception": 12,
+    "1Q Rec Yards": 12,
+    "1Q Receptions": 12,
+    "1H Rec Yards": 12,
+    "1H Receptions": 12,
+    "Receptions": 11,
+    "Sacks": 10,
+    "Fumbles Lost": 10,
+    "Defensive INTs": 9,
+    "Rush Attempts": 6,
+    "Longest Rush": 6,
+    "1Q Rush Yards": 6,
+    "1H Rush Yards": 6,
+    "Last TD Scorer": 5,
+    "Rush + Rec Yards": 3,
+    "FG Made": 2,
+    "XP Made": 2,
+    "Pass TDs": 2,
+    "Kicking Points": 2,
+    "1Q Pass Yards": 2,
+    "Pass + Rush Yards": 2,
+    "Completions": 2,
+    "Pass Attempts": 2,
+    "INTs Thrown": 2,
+    "Longest Completion": 2,
+    "1Q Pass TDs": 2,
+    "1H Pass Yards": 2,
+    "1H Pass TDs": 2
   },
   "by_line_type": {
-    "balanced": 2997
+    "balanced": 423
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 949,
-    "None": 62,
-    "1.1": 40,
-    "1.05": 38,
-    "0.91": 35,
-    "1.14": 32,
-    "0.9": 31,
-    "1.11": 30,
-    "1.04": 29,
-    "1.16": 29,
-    "1.12": 29,
-    "1.09": 28,
-    "1.08": 27,
-    "0.89": 27,
-    "0.81": 23
+    "1.0": 134,
+    "None": 48,
+    "1.11": 8,
+    "0.8": 6,
+    "1.07": 5,
+    "1.23": 5,
+    "0.91": 4,
+    "1.22": 4,
+    "1.51": 4,
+    "1.06": 4,
+    "1.09": 4,
+    "1.05": 4,
+    "0.85": 3,
+    "1.18": 3,
+    "1.14": 3
   },
-  "github_run_id": "34498134252"
+  "github_run_id": "35560281481"
 }
