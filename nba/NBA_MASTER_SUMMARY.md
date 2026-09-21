@@ -14430,6 +14430,66 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.35 — PASS 34 (**eighth two-direction judgment, PRE-REGISTERED — and four attacks on passes 32–33**) — **✅ CLEAN 1/3 · the fourth pre-registration lands and all four attacks strengthen what they hit**
+*2026-09-21.*
+
+#### 🔑 T11.35a — **The fourth pre-registration, and a TENTH identical baseline**
+**Predicted before measuring**: *"passes 32–33 wrote ONLY self-analysis and corrections — no
+transcript quotation at all — so the working band must NOT move from 38 / 0 / 665 / 660, and the
+baseline must hold for a TENTH measurement."* ✅ **Baseline `5dfb72ab`: 13 / 3 / 695 / 685 — tenth
+identical.** ✅ **Working: 38 / 0 / 665 / 660 — unchanged.** ***Four pre-registrations, four hits —
+24 positive · 28 negative · 31 positive-and-specific · 34 negative — plus pass 32's unplanned zero.
+§T10.16c is now the best-supported claim this sweep has made.***
+
+#### ✅ T11.35b — **ATTACK 1 on §T11.34b's primary-key argument: it survives, twice over**
+The counter-hypothesis needed a loader that truncates or filters by season.
+**`alphadog-v2-nba-static-game-officials.js` does neither**: it takes **`input.season`** (falling back
+to `nba_daily_delta_meta.json`), builds the file slug from it, and writes
+**`ON CONFLICT (game_id, official_id) DO UPDATE SET …`** — **an UPSERT, no `DELETE`, no `TRUNCATE`,
+no season predicate on the table.** ✅ ***So the loader is explicitly multi-season-capable: pass it
+`season: "2024-25"` and it upserts alongside 2025-26.*** 🔑 **And the default IS the finding**:
+**`(season || "2025-26")`** — ***with no input it always loads the current season, so "never run for
+2024-25 or 2023-24" is exact and the mechanism is an input nobody has passed.***
+
+#### ✅ T11.35c — **ATTACK 2 on the 11 `side` values: survives, and the second route adds a fact**
+`count(DISTINCT side)` over the whole table = **11**; `count(DISTINCT kind||'|'||side)` = **11**.
+🔑 ***Equal counts mean no `side` value is shared between `kind`s — the three vocabularies are
+DISJOINT, so `side` alone determines `kind`.*** **That makes §T11.28a's finding sharper in both
+directions**: the `fav`/`favourite` split is two genuinely separate namespaces *(worse for anyone
+reading the column as one vocabulary)*, **and** a filter on `favourite` cannot accidentally catch
+`sliding_scale` rows *(better than the hazard note implied)*. ⚠ **The `GROUP BY side` hazard stands
+exactly as written**: four groups for two concepts.
+
+#### 🔑🔑 T11.35d — **ATTACK 3 on `triple_double`: it survives and CLOSES §T11.20b completely**
+**`nba_market.board_outcomes` carries `player_double_double` at 42,436 rows and NO
+`player_triple_double` at all** — so `triple_double` is absent from the **graded board** as well as
+the scored tables. 🔑🔑 **And the exact closure**: `board_outcomes`' **`Yes` 27,508 + `No` 14,928 =
+42,436**, and filtering to `market_key = 'player_double_double'` returns **precisely those two
+counts** — ***the `Yes`/`No` vocabulary in that table is entirely and only `double_double***, which is
+a mechanism rather than the numeric coincidence §T11.20b inferred. **Four independent artefacts now
+agree**: the taxonomy declares it `more`-only, the board grades it Yes/No, the scored surface excludes
+Yes/No, and the ladder gives it no rungs.
+
+🔴 **AND THE ATTACK FOUND A TENSION**: ***the board grades `double_double` on BOTH sides — 14,928
+`No` rows exist — while the taxonomy declares it `applies_to_side = 'more'`.*** **A `No` is a Less.**
+**So `applies_to_side` describes what the SYSTEM will model, not what the BOARD offers — or the
+taxonomy is stale. NOT RECORDED which** (rule 6).
+
+#### ✅ T11.35e — **ATTACK 4: every quoted clause verified verbatim, and it caught one quotation limit**
+Fifteen load-bearing clauses from segments 355, 501, 709 and 711 re-checked against the raw file:
+**all fifteen present.** ⚠ **Four first returned MISS and all four were MY spellings, not absences** —
+the file reads `historical rows_total=0` and `us_dfs region (PrizePicks`. ***Method note: a verbatim
+check must run against the text as the file carries it, not as the entry renders it — rule 20's
+failure mode applied to self-verification.*** ⚠ **And it found a real quotation limit (rule 19)**:
+§T11.30a gives the `us_dfs` region as **PrizePicks + Underdog + Pick6 + Dabble** — *segment 501's
+list* — while elsewhere T11 gives **"Pick6, Boom, ParlayPlay, Dabble"**, **six books not four**.
+**Both are in the transcript; the sweep quoted the shorter, and both are now recorded.** ✅ **The
+"no Sleeper" conclusion is unaffected — Sleeper is in neither list.**
+
+**Pass outcome: ✅ CLEAN 1/3 · 35 passes. Four attacks, four survivals, three of them strengthened.**
+
+---
+
 ### T11.34 — PASS 33 (**novelty re-audit of passes 26–31, three vocabularies per claim**) — **❌ a lineage defect in my own §T11.31b — the class was already named, twice · 0/3**
 *2026-09-21. **The pass that exists because seven of this sweep's eight retractions were absence
 failures, and pass 26's was a retraction of a pass that had itself just audited novelty.** Every claim
