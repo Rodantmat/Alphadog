@@ -14423,6 +14423,55 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.11 — PASS 10 (**second two-direction judgment**) — **✅ CLEAN 2/3 · the key set attacked at its root and it holds**
+*2026-09-21. Second of the closing three, and the two-direction judgment the criterion requires among
+them.*
+
+#### ✅ T11.11a — **The band, per rule 18**
+
+| | high band | tail | uncovered vs **the twelve** | uncovered vs **all `nba/`** |
+|---|---|---|---|---|
+| **Baseline `5dfb72ab`** — *the finding* | **13** | **3** | **695** | **685** |
+| Working tree | **22** | **2** | **686** | **678** |
+
+**The baseline is identical for the third consecutive measurement** (passes 0, 4, 10). **Overlap: 13
+in both · 9 working-only · 0 baseline-only.** 📌 **The working `uncovered30` moved 677 → 678 since
+pass 4 — one segment, against this sweep** — **§T10.20b's ±0.02 boundary noise, not movement**, and
+it is reported as such rather than attributed.
+
+#### ✅ T11.11b — **The 23-key NBA filter attacked at its root, and it holds**
+
+***Every filtered figure in §T11.9 and §T11.10 rests on a list of 23 NBA `market_key`s that I wrote
+rather than read.*** **Rule 20's third vocabulary applied to a value set:**
+
+| test | result |
+|---|---|
+| The key set **PrizePicks actually uses** | **20 distinct keys — all 20 inside the 23** ✅ |
+| The key set **Underdog + Betr + Pick6 use** | **67 distinct keys**, and **every NBA-shaped one among them is in the 23** ✅ |
+| **Keys the filter misses** | **none** — no `player_minutes`, no `player_free_throws`, no offensive/defensive-rebound split; the other 44 are baseball |
+
+🔑 **The filter is a SUPERSET, never a subset** — its three unused entries (`player_double_double`,
+`player_fantasy_points`, `player_fantasy_points_alternate` for PrizePicks) ***could only over-count
+NBA, never under-count it*** — **and PrizePicks came out at 100%, so the slack never mattered.**
+✅ **All §T11.9a / §T11.10 figures stand.**
+
+#### ✅ T11.11c — **And Sleeper's "zero NBA rows" attacked the same way, by distinct key**
+
+**Sleeper's 1,276 rows, listed by `market_key` off the system — 14 keys, every one baseball**:
+`player_singles` 172 · `player_hits_runs_rbis` 172 · `player_total_bases` 172 · `player_runs` 172 ·
+`player_hits` 172 · `player_rbis` 166 · `player_bat_walks` 156 · `player_outs` 16 ·
+`player_earned_runs` 16 · `player_first_inning_runs` 16 · `player_hits_allowed` 16 ·
+`player_strike_outs` 14 · `player_walks` 12 · `player_home_runs` 4.
+
+✅ ***"Zero NBA rows" is not a vocabulary artifact.*** **It holds against the full distinct-key
+listing, read off the system rather than filtered by my list** — **the fourth and final form of a
+claim this transcript revised three times, and the first one tested without a list I wrote.**
+
+**Pass outcome: no defect; the filter and the Sleeper claim both attacked at their root and upheld;
+the band's one-segment move attributed to instrument noise. ✅ CLEAN 2/3 · 11 passes.**
+
+---
+
 ### T11.10 — PASS 9 (**live numeric re-verification**) — **✅ CLEAN 1/3 · every figure exact, three arithmetic routes agree, and the `-05:00` sample becomes a census**
 *2026-09-21. `[LIVE-AUDIT]`. First of the closing three. Rules 17, 18, 22 and 23 on every figure.*
 
