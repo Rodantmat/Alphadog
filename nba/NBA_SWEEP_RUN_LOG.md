@@ -275,3 +275,9 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
 | UTC | Event |
 |---|---|
 | 2026-09-21 05:36 | Unattended mode begins. Run log created. T2 at CLEAN 1/3, 15 passes. Next: T2 pass 16. |
+| 2026-09-21 | **T2 closed** (19 passes), **T4** (10), **T5** (10), **T6** (9). Six of twenty closed; T7 re-sweep begins. |
+| 2026-09-21 | T7 passes 9–21: the sweep starts finding its own defects. §T7.38a (a quote read without its attribution), §T7.39a (columns without their neighbours), §T7.39c and §T7.42a (novelty unchecked), §T7.44a (a composite key read three columns short). **Five standing rules.** |
+| 2026-09-21 | **T7 pass 17 — the largest correction of the run**: all three *"unrecorded owner directives"* are recorded. T7's headline finding retired; sixth rule (sibling claims) added. |
+| 2026-09-21 | **T7 passes 22–24 — O4.** A paragraph audit reaches `nba_season.py`; execution confirms the Oct-1 rollover; the composition with the hardcoded workers and the season-less primary keys is assembled. **The run's largest live finding.** |
+| 2026-09-21 | T7 passes 25–33: O4 re-framed as a **severity re-rating** of an existing item (10th absence failure, on the headline); exposure widened 13 → **15**; the first internal contradiction; two surviving copies of a corrected claim. **Rules 7–10.** |
+| 2026-09-21 | **T7 CLOSED at 36 passes** on 34 (novelty) · 35 (numeric, 9/9) · 36 (judgment). Eleven standing rules in total. **Seven of twenty closed. Next: T8.** |
