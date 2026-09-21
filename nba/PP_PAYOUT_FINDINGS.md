@@ -818,6 +818,44 @@ one-alternate slips fit it within ~2% (league- and time-consistent). The old `ba
 **Next:** rewrite `nba_market.pp_slip_power` on these rules and validate it against every stored quote; a targeted run
 with 2- and 3-alternate slips (alternates priced alone) to model the multi-alternate haircut.
 
+### SLIP PRICING FUNCTION REBUILT AND VALIDATED (2026-09-21)
+**Multi-alternate rule (partial)** — WNBA `PP_MODE=multi` run (12 combinations of 2–3 alternates, every alternate priced
+alone, 48 slips at 3–6 picks) + NBA FLEX slips. Ratio of real payout to the one-alternate law b·∏f^a, by combined
+multiplier M = ∏f^a: M < 12 → 0.956–0.986 (a flat **~3% haircut** for 2+ alternates; goblin-only slips ≈ 1.0, demon-heavy
+lower); M ≥ 25 (4 slips, avg 62) → **0.748: compression**, fitted by the 2-pick exponent 0.857 with a **knee at M ≈ 8.2**.
+One alternate never reaches the knee (the 0.072 per-leg cap limits it to ~7.95) — why the one-alternate law shows none.
+**`nba_market.pp_slip_power`** now: 2-pick unchanged; all-standard from `base_power` (3/6/10/20/37.5, all verified);
+with alternates **payout = b_n · compress(∏f^a_n) · haircut** (haircut 1.0 for one alternate, 0.97 for 2+).
+**Validation against 452 real quotes it never learned from** (BASE, FLEX, ALTALT, MIXED, SAMEGAME; factors from the
+same run's per-leg quotes):
+| Slip type | Quotes | Exact | Within 1 step | Mean error |
+|---|---|---|---|---|
+| 2-pick, standards | 19 | 84% | 100% | 0.5% |
+| 2-pick, alternate × alternate | 240 | 54% | 95% | 2.0% |
+| 3–6 picks, all standard | 16 | 100% | 100% | 0.0% |
+| 3–6 picks, one alternate | 72 | 33% | 81% | 1.2% |
+| 3–6 picks, 2+ alternates | 105 | 6% | 25% | 4.0% (partial; was ~7%) |
+
+### FANTASY SCORE — mechanics, and back-simulating NBA history (2026-09-21)
+**Mechanics (WNBA board; the engine is shared):**
+- **Ladder = exactly one goblin + one demon per standard** (96/96/96) — not the multi-rung ladders of Points.
+- **Symmetric:** goblin = standard − g, demon = standard + g; g grows with the line but less than proportionally
+  (4.5 at 15.5 → 6.0 at 41.0; r = 0.97; always a whole or half point).
+- **Fixed price points:** goblin More **2.3×** (all 16), demon More **4.5–4.75×** (implied p ≈ 0.65 / 0.32); Less mirrors
+  exactly (demon Less 2.3×, goblin Less 4.5–4.75×). PrizePicks moves the LINES to fixed probabilities, not the prices.
+- **Spread constant ≈ 2.26** (4.0% error vs 7.0% at points' 1.87) — a weighted sum is wider than points alone.
+- **Scoring:** the NBA official formula PTS + 1.2 REB + 1.5 AST + 3 STL + 3 BLK − TOV equals `nba_fantasy_pts` in
+  `nba_stats.player_game_log` on all 26,649 2025-26 game logs (0 disagreements). PrizePicks using the same weights is
+  still to be confirmed on a live NBA board.
+**Back-simulation — feasible, one piece unvalidated:** prices are constants; outcomes are exact from box scores; the model
+ALREADY builds `fantasy_score` ladders (3,521 rungs on 2026-01-15), so simulated legs can be scored. **The weak link is the
+center:** PrizePicks' NBA Fantasy lines were never archived, and its component standards are too sparse to rebuild one
+(2026-01-15: 150 players, 36 with points+rebounds+assists, **0 with all six**). Plan: center = weighted sum of component
+medians (PrizePicks where present, else sportsbook consensus); rungs at ±g(center); prices 2.3× / ~4.6×. **Validate first on
+the NBA preseason board** (~Oct 3) — the board-row loader (`nba_market.pp_board_row`, every stat's line side by side, both
+leagues) captures Fantasy and component lines together on the first full NBA map. (WNBA: only 4 players carried all four
+lines at once — inconclusive; the average gap Fantasy − (PTS + 1.2 REB + 1.5 AST) was +3.3, about what 3 STL + 3 BLK − TOV adds.)
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
