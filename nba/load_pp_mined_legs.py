@@ -81,6 +81,13 @@ def main():
         print(f"LOADED|{name}|{len(rows)} per-leg prices", flush=True)
         total += len(rows)
     print(f"LOAD_DONE|files={len(files)}|previously_loaded={len(loaded)}|new_rows={total}", flush=True)
+    # PRICE THE SEASON AS IT ARRIVES: rescue centers for recent no-center legs, create missing Price IDs, and price
+    # them under every registered model version. Idempotent - on an unchanged board it adds nothing.
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM nba_market.pp_refresh_prices()")
+        ra, rb, nk, npr = cur.fetchone()
+    conn.commit()
+    print(f"REFRESH|rescued_a={ra}|rescued_b={rb}|new_keys={nk}|new_prices={npr}", flush=True)
     conn.close()
     return 0
 
