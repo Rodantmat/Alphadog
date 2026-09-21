@@ -366,6 +366,64 @@ def main():
             save("complete (slips)")
             return 0
 
+        if MODE == "multi":
+            # MULTI (2026-09-21): slips with 2 and 3 alternates at 3..6 picks; every alternate is also priced alone (LEG)
+            # in this run. Models the multi-alternate haircut (4-6 picks pay ~7% below b * prod(f)^a).
+            def team_key(r):
+                return r.get("team") or ("game:" + str(r["game"]))
+
+            def team_distinct(pool, k, avoid=(), avoid_players=()):
+                out, seen_t, seen_p = [], set(avoid), set(avoid_players)
+                for r in pool:
+                    if team_key(r) in seen_t or r["player"] in seen_p:
+                        continue
+                    out.append(r)
+                    seen_t.add(team_key(r))
+                    seen_p.add(r["player"])
+                    if len(out) >= k:
+                        break
+                return out
+            rng = random.Random(23)
+            g_pool, d_pool = gob[:], dem[:]
+            rng.shuffle(g_pool)
+            rng.shuffle(d_pool)
+            combos = []
+            for kinds in ("gg", "gd", "dd", "gd", "dd", "gg", "ggd", "gdd", "ddd", "ggg", "gdd", "ggd"):
+                chosen, used_t, used_p = [], set(), set()
+                for kd in kinds:
+                    pool = g_pool if kd == "g" else d_pool
+                    pick = next((r for r in pool if team_key(r) not in used_t and r["player"] not in used_p), None)
+                    if not pick:
+                        break
+                    chosen.append(pick)
+                    used_t.add(team_key(pick))
+                    used_p.add(pick["player"])
+                    pool.remove(pick)
+                if len(chosen) == len(kinds):
+                    combos.append(chosen)
+            result["meta"].update({"mode": "multi", "combos": len(combos)})
+            print(f"MULTI|combos={len(combos)}|goblins={len(gob)}|demons={len(dem)}", flush=True)
+            priced = set()
+            for combo in combos:
+                for a in combo:
+                    if a["id"] in priced:
+                        continue
+                    p = next((x for x in std if x["game"] != a["game"] and x["player"] != a["player"]), None)
+                    if p:
+                        run("LEG", [leg(p), leg(a)])
+                        priced.add(a["id"])
+                pool = std[:]
+                rng.shuffle(pool)
+                mates = team_distinct(pool, 6 - len(combo), avoid=[team_key(a) for a in combo],
+                                      avoid_players=[a["player"] for a in combo])
+                for k in range(max(3, len(combo)), 7):
+                    need = k - len(combo)
+                    if len(mates) >= need:
+                        run("MIXED", [leg(r) for r in mates[:need]] + [leg(a) for a in combo],
+                            f"{len(combo)} alts ({''.join(a['odds'][0] for a in combo)}) + {need} standards")
+            save("complete (multi)")
+            return 0
+
         # VALIDATE - NBA only: the known Tatum/Wemby pair are NBA projections
         if LEAGUE == 7:
             by_id = {r["id"]: r for r in rows}
