@@ -211,7 +211,7 @@ eight transcripts after it are unswept.*
 | **b3** leverage / tanking | ✓ | ✓ | ✓ | standings from logs |
 | **b4/m1** opponent absences / primary defender | **⏳** per-game matchups sharded + weekly PT defend | **🔧** | **🔧** | `scrape_nba_matchups_pergame.py`; season-tables as-of weekly |
 | **b5** OT probability | ✓ | ✓ | ✓ | derived |
-| 🔴 **c1/c2** book vs pick'em gap, prop-line movement | **⛔** | **⛔** | **⛔** | ***historical prop lines are PAID (BigDataBall) — owner decision***; live-only otherwise, calibrated in-season |
+| 🔴 **c1/c2** book vs pick'em gap, prop-line movement | **⛔** | **⛔** | **⛔** | ***historical prop lines are PAID (BigDataBall) — owner decision***; live-only otherwise, calibrated in-season — ✅ **SUPERSEDED IN T13**: The Odds API supplied two seasons; **BigDataBall never purchased, never needed** *(§T11.27b; sportsbook side only — see below)* |
 | 🔴 **c4, s1–s4** pick'em structure | **⛔** | **⛔** | **⛔** | ***"no archive exists … boards are not archived anywhere free; live from season start; the board scraper will archive every board from day one so the next backfill exists"*** |
 | **d1** referee crew | ✓ officials | **⏳** | **🔧** | `scrape_nba_game_officials.py`, season slug, `nba-pergame-backfill.yml`; **daily assignments scraper to build** |
 | **d2** schedule / travel / day game / altitude | ✓ | ✓ | ✓ | logs dates, home + arenas |
