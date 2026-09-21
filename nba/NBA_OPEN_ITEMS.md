@@ -87,6 +87,57 @@ as live-only? **Both are writes or design decisions this sweep does not make.**
 
 ---
 
+## 🔴🔴 THE SCHEDULED TASK IS DELIBERATELY NOT DEPLOYED, AND NO DOCUMENT SAYS SO — **OWNER DECISION O7**
+*Found 2026-09-21, T10 pass 17 (§T10.17b). **Season-critical**: the regular season opens
+**2026-10-20**.*
+
+**The owner's instruction, T10 turn 73, verbatim:**
+
+> *"**Let's not deploy the scheduled task just for now, because I'll very likely do it via Claude
+> coworker, but just closer to the season beginning, so do everything needed to be done up to that
+> point and just the scheduled task we do later.** One important single, is understand the behavior on
+> the first days of the season, how it behaves, how it holds and understand if there is a reliable and
+> safe pattern on season beginnings to work with"*
+
+🔴 **The second half — the season-beginning research directive — is recorded in
+`NBA_MASTER_SUMMARY.md` and drove §T10.1a's season-opening bias finding. The first half is recorded
+nowhere in any of the thirty documents.**
+
+**What is therefore undocumented:**
+
+1. **A production step is deliberately un-deployed.** Not blocked, not forgotten, not failed —
+   **deferred by decision.**
+2. **The deferral has a deadline**: *"closer to the season beginning"*, against an opener of
+   **2026-10-20**.
+3. **The owner named the mechanism**: *"very likely do it via Claude coworker"* — **not a Cloudflare
+   cron trigger**, which is what a reader of `NBA_WORKERS.md`'s four-place registration pattern would
+   assume.
+4. **Everything else was to be finished**: *"do everything needed to be done up to that point"* —
+   **so the absence of the scheduled task is not evidence that anything upstream is incomplete.**
+
+**Absence verified** with six differently-worded probes across all thirty documents and against the
+pre-sweep tree (`d29401bd`): `not deploy` / `deployment deferred` · `scheduled task` near `season` ·
+`closer to the season` · `deploy … later | at season start | opener` · `Coworker … deploy|schedule` ·
+`everything needed … up to that point`. **Every relevant hit is about something else** (worker
+registration in `NBA_WORKERS.md`; the `run_job` target-enum lag in `NBA_COMPASS.md`).
+
+⚠ **Why this matters beyond the omission**: these documents describe the three pipelines (P1 weekly
+static, P2 overnight heavy, P3 afternoon live) **with their schedules**, and a reader finding no
+scheduled task in the deployed state has no way to tell **"not built"** from **"built and held
+back."** *Which of the two it is changes what must happen before 2026-10-20 completely.*
+
+📌 **OWNER DECISION O7 — two questions:**
+- **Which step is it?** The turn says *"the scheduled task"*, singular and definite, and **the
+  transcript does not name it.** *Stated narrowly: this sweep can record that one exists and is
+  deferred; it cannot say which without material from a later transcript.* **NOT RECORDED.**
+- **Is it still deferred?** T10 is **2026-09-10**; the sweep has reached neither T11 nor T20, and a
+  later session may have deployed it. **Chronology governs — not checked live, not assumed.**
+
+*Not fixed, and deliberately not probed against the live system: "document, don't fix", and a
+deployment question is precisely the class this sweep is read-only about.*
+
+---
+
 ## ⚠ `factor_gate_results` IS IN `nba_score`, AND MOST OF ITS MENTIONS IN THESE DOCUMENTS OMIT THE SCHEMA
 *Found 2026-09-21, T10 pass 16 (§T10.16e). Severity **low**; fix trivial; it costs a reader their
 first query.*
