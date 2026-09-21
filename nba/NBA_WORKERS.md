@@ -146,7 +146,9 @@ Live, lines 45–51:
 
 ## 0.23 🔴 THE INJURY ARCHIVE CHANGES FILENAME PATTERN MID-SEASON — and the first backfill silently captured only the later half
 *Added 2026-09-21 from T11 (§T11.3c). **Past bug with its fix; the shape is the one that keeps
-recurring.***
+recurring.*** ⚠ **Novelty corrected 2026-09-21 by §T11.6a: this is NOT new across the thirty —
+`NBA_PROJECT_LOG.md` line 502 already records it, fix and all. It is new to the TWELVE, which is why
+the entry stays here.**
 
 🔴 **What happened**: the run produced **266,049 rows and 2,218 snapshots — but only from
 22 December onward.**
