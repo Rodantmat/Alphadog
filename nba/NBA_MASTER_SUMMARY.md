@@ -14420,6 +14420,75 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.37 — PASS 22 (**novelty audit, third run — passes 17–21 vs `/tmp/t9base/nba/`**) — **🔴🔴 the documents assign `used_emp` a job it cannot do, and call `f_prov` continuous when it is one bit · 0/3**
+*2026-09-21. Every claim passes 17–21 added, grepped against the pre-T9 snapshot, **every hit
+opened** — and two of them turned §T9.33b from a live observation into a contradiction of a stated
+design purpose.*
+
+#### 🔴 T9.37a — **`used_emp` is documented TWICE as the flag that VERIFIES the fallback's coverage claim, and live it reads the same value almost everywhere**
+
+> `NBA_MASTER_SUMMARY.md` — *"**`used_emp`** — whether the empirical table or the parametric fallback
+> produced this row. **Exactly the flag needed to check the hierarchical fallback's 100% coverage
+> claim in production.**"*
+> `NBA_DATABASE.md` — *"**the flag that verifies the hierarchical fallback's coverage in production**"*
+
+**Live: `used_emp` is true on 205,678 of 206,237 rows — 99.73%.** Of the **559** false rows, **541 are
+`double_double`**, a binary prop with **no ladder at all**; **the genuine empirical fall-throughs are
+18 rows of `threes_made`.** *And the flag reads **true** on all **30,989** rungs that sit beyond their
+prop's measured `LADDER_DEPTH` (§T9.33a).*
+
+🔴 **An instrument that returns one value everywhere verifies nothing — and these two documents assign
+it exactly that job.** *This is the sixth time a T9 finding had its general form already on file, and
+the sharpest variant yet: the documents state the instrument's **purpose**, and the live data shows it
+cannot serve it.* **Recorded in both documents beside the existing statements.**
+
+#### 🔴 T9.37b — **`f_prov` is documented as "a measured deduction, not an assertion" — and it is `used_emp`, rescaled**
+
+`NBA_FINAL_SCORING_CALIBRATION.md` sets out a table of reliability signals, lists `used_emp` as
+**binary**, groups `c_exist` / `c_quality` / `f_prov` as **"continuous deductions"** two rows below,
+and concludes:
+
+> *"Routing reliability through the measured confidence model rather than a label is defensible and
+> **arguably stronger** — **`f_prov` is a measured deduction, not an assertion.**"*
+
+**All three live definitions of `f_prov` are the same bit:**
+
+```python
+build_confidence_v3.py:62   f_prov = d["used_emp"].fillna(False).astype(float) * 0.7 + 0.3   → {0.3, 1.0}
+build_final_hp.py:344       np.where(d["used_emp"]…, 1.0, 0.30)
+score_board_legs.py:234     np.where(d["used_emp"]…, 1.0, 0.30)
+```
+
+🔴 **`f_prov` takes two values, and the value is `used_emp`.** *The same table lists `used_emp` as
+binary two rows above `f_prov` as continuous — **they are the same flag, counted once in each
+column.*** At weight **0.12** in `build_confidence_v3.py:85`'s sum, the entire spread `f_prov` can
+express is **0.084** of raw confidence — **and 99.73% of ladder rows sit at the top of it.**
+📌 **Scope stated exactly**: this concerns **`f_prov` only.** **`c_exist` and `c_quality` were NOT
+CHECKED** — no definition of either was found under `nba/`, only an `EXCLUDED.` upsert reference.
+
+#### ✅ T9.37c — **§T9.33c narrowed: the run report's `ladder_steps` was already documented; the COLUMN was not**
+
+`NBA_FINAL_SCORING_CALIBRATION.md` already records that *"`platt_fits` are written into each run's
+report alongside **`ladder_steps`**, `props`, `test_season` and `generated_at` — **the
+no-pasted-constants rule made inspectable per run.**"* **So the meta has always carried the depth.**
+**What is new is that `nba/load_baseline_history.py` PERSISTS it as a column and
+`nba/load_baseline_ladder.py` does not** — *the value reaches one loader and is dropped by the other,
+which is a narrower and more actionable statement than "the fix exists one table over."*
+
+#### ✅ T9.37d — **The remaining passes 17–21 claims are new across all thirty**
+
+**Zero hits in the baseline** for: **`_season_of`** · the anchor assertion's **scope** (`assert old in s`,
+"anchor text") · the snapshot date **2026-09-02** in this sense *(the `2026-09-02` hits are DARKO
+research, unrelated)* · **`ftm` as a second two-state prop** *(§T8.12b names only `fga`)*.
+📌 **And one confirmation**: `NBA_OPEN_ITEMS.md`'s copy of the configured-not-run list **already
+omitted `fga` in the baseline snapshot** — so that omission predates this sweep and §T9.35b described
+it correctly.
+
+**Pass outcome: 2 defects, both of them documented design claims the live system contradicts; 1
+finding narrowed; 4 claims confirmed new. 🔴 CLEAN 0/3 · 22 passes.**
+
+---
+
 ### T9.36 — PASS 21 (**live numeric re-verification**) — **🔴 pass 20's own correction was short one prop — the sibling rule, violated one pass after applying it · 0/3**
 *2026-09-21. Every figure passes 17–20 state, re-derived from its authority, **with each query's
 predicate copied into the prose** (rule 16, first pass under it).*
