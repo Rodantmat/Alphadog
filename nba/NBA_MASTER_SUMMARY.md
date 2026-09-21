@@ -14335,6 +14335,50 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.22 — PASS 7 (**code-vs-table audit**) — **✅ CLEAN 1/3 · the map, and rule 14 catching a fifth consecutive claim**
+*2026-09-21. The angle pass 6 stumbled into, run across the whole config layer: for every hardcoded
+structure in `classification_ladder_v12.py`, find its table counterpart and measure the divergence.*
+
+**The complete map** — every module-level config structure in the file that governs the live recipe:
+
+| Code structure | Covers | Table counterpart | Table | Table read? | Divergence |
+|---|---|---|---|---|---|
+| **`PROPS`** (line 94) — per-prop `alpha`, `k_stab`, `step`, `family` | **15 props** | `nba_config.stat_decay_config` | **13 rows** | ❌ | **already documented** — T1 pass 36 measured *"seven of ten mappable stats disagreeing on at least one parameter, three on the decay rate itself"* |
+| **`VBANDS_ALL`** (114) | **15 props** | `nba_config.variation_bands` | **6 props / 25 rows** | ❌ | **§T9.21a** (this sweep) |
+| **`ROLE_TIERS`** (129) | **6 tiers** | `nba_config.role_tiers` | **6 rows** | ❌ | values agree; **boundary operators NOT RECORDED** (§T7.41b) |
+| **`LADDER_DEPTH`** (80) | **20 props** | **none — no table exists** | — | — | **see below** |
+| `MAX_TIERS` · `MIN_PER_TIER` · `TIER_BLEND_K` · `LADDER_STEPS` · `BLOWOUT_MARGIN` · `COMPETITIVE_MARGIN` · `SHIFT_LAMBDA` · `K_CELL_BY_PROP` · `P_BLOWOUT_BINS` | literals | *(none)* | — | — | documented as *"Python literals in the recipes"* |
+
+#### ⚠ T9.22a — **Rule 14, fifth consecutive pass: the decay divergence is already measured, and more completely than I measured it**
+
+I re-derived the `PROPS`-vs-`stat_decay_config` comparison and found **5 of 8 mappable props
+differing** — `blocks` α 0.10 vs 0.08 · `fg3a` k 20 vs 25 · `fta` 0.12/40 vs 0.10/30 · `steals` k
+125 vs 60 · `turnovers` 0.12/95 vs 0.10/40. **Then I opened the grep hit.** `NBA_DATABASE.md` §664,
+from **T1 pass 36**, already carries it — *"a whole-universe diff … found **seven of ten mappable
+stats disagreeing** on at least one parameter, **three on the decay rate itself**"* — with the exact
+pairs, **and it maps two stats I did not** (`ft_pct` 0.04 vs 0.03 among them). **The existing entry
+is the better measurement.** *Re-verified unchanged against the live file; nothing added.*
+
+#### 🔑 T9.22b — **`LADDER_DEPTH` covers 20 props and has NO table at all — the five composites live only in code**
+
+It is named in five documents as *"a Python literal in the recipes"*, and the **p95 = 13 rungs for
+points** measurement is quoted in three. **Its membership is recorded nowhere**, and it is the widest
+of the three dicts:
+
+> **20 props** = the 15 in `PROPS`/`VBANDS_ALL` **plus five composites** — `fantasy_score` · `pra` ·
+> `pts_ast` · `pts_reb` · `reb_ast`.
+
+**So the composites have a ladder depth and no decay parameters and no variation bands** — consistent
+by design (they are computed from components), **but it means the three dicts have three different
+populations and only one of the three has any table at all.**
+
+*Novelty checked before writing: `20 props` → zero hits; `LADDER_DEPTH` appears in eight documents,
+**all opened**, always as a named literal or the p95 measurement, never with its content.*
+
+**Pass outcome: no defect, one map, one genuinely unrecorded membership. ✅ CLEAN 1/3.**
+
+---
+
 ### T9.21 — PASS 6 (**novelty audit**) — **🔴🔴 IT CORRECTS A CLOSED TRANSCRIPT: the variation dimension covers 15 props, not 6 · 0/3**
 *2026-09-21. Rule 14 turned a routine audit into the most consequential finding of the T9 re-sweep —
 by opening a hit I had already quoted half of.*
