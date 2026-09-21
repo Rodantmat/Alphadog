@@ -1,8 +1,8 @@
 league: wnba
-mode: full
-max_quotes: 400
+mode: delta
+max_quotes: 250
 altalt: 30
-drift: 10
-note: 2026-09-21 first WNBA map - final week of the WNBA regular season (playoffs start Sep 27). Scheduled 6-hourly runs
-note: read this file too, so while "league: wnba" stays here they mine WNBA in delta mode against pp_mined_leg_wnba.
+drift: 15
+note: 2026-09-21 WNBA delta - new legs vs pp_mined_leg_wnba + drift re-quotes; first run of load_pp_quotes.py (all sections).
+note: scheduled 6-hourly runs read this file too: while "league: wnba" stays, they mine WNBA in delta mode.
 note: switch back to "league: nba" when the NBA preseason board appears (~Oct 1-3).
