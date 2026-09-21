@@ -318,8 +318,27 @@ workers are registered there and dispatched **directly**, never pulled from the 
 | **Config-table-driven tunables** | *"every tunable variable lives in the database (`nba_config.system_settings`), **never hardcoded**"* — restated by the owner as a hard rule |
 
 **⚠ ParlayAPI coverage caveat, stated in T1 and never closed there**: *"**Coverage for this sport key
-is still NOT INDEPENDENTLY VERIFIED** — see Section 5, open question 1."* **It was later superseded by
-own scrapers rather than verified.**
+is still NOT INDEPENDENTLY VERIFIED** — see Section 5, open question 1."* ~~**It was later superseded
+by own scrapers rather than verified.**~~
+
+> 🔴 **CORRECTED 2026-09-21 by §T11.3a — the second half of that sentence was wrong, and the
+> chronology is worth having in full:**
+>
+> | date | what happened |
+> |---|---|
+> | **T1** | the caveat is raised and left open |
+> | **T11, 2026-09-10** | **the key is validated live**: ParlayAPI **v3.2.0, Pro tier, unlimited rate, NBA active**, and **its provider-state header lists PrizePicks, Underdog and Sleeper as primary live sources** — *"which confirms live board data is reachable through it."* |
+> | later | **own scrapers supersede it for boards** — the measurement *"ParlayAPI drops ~25% of ladder rungs"* |
+>
+> ⚠ **Read narrowly, and this is the point**: T11 verifies **the key, the tier, NBA-active state and
+> the provider's own listing of the three apps** — ***it is the vendor reporting on itself, not
+> independent row-level coverage.*** **The ~25%-drop measurement is the independent verification, and
+> it arrived later.** **So the caveat was PARTIALLY closed in T11 and fully settled by the
+> supersession — not "superseded rather than verified."**
+>
+> 🔑 **And T11's validation is why the program went the way it did**: the owner's ordering was *probe
+> ParlayAPI first, exhaust it, pay for The Odds API only if it comes up empty* — **and it did not come
+> up empty.**
 
 ### Must be built fresh, NBA-specific *(T1)*
 - **Every schema and table** listed in the naming convention
