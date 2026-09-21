@@ -8055,6 +8055,15 @@ design names. **In all three the missing context was one line away from the thin
 practical form of all three rules is one instruction: **read the neighbours before drawing the
 conclusion** — the sentence above, the column beside, the rest of the key.*
 
+⚠ **The fifteenth form, added 2026-09-21 after §T9.24a — A ZERO FROM AN EXTRACTION IS A FAILED
+EXTRACTION UNTIL PROVEN OTHERWISE.** A regex written for `"key": {` and `"key": [` returned **0 keys**
+for `LADDER_DEPTH`, whose values are bare integers. **Absence and non-match are indistinguishable to
+a pattern**, and the pattern reports both as zero. *The partition rule would not have caught it —
+there was nothing to sum; what caught it was that zero was implausible for a dict named in eight
+documents.* **Same family as the NULL artifact (§T7.64a) and the tail-vs-transcript count
+(§T8.24a): a clean-looking zero produced by the shape of the question rather than the state of the
+world.**
+
 🔴 **The eleventh form, added 2026-09-21 after §T7.64a — WHEN VERIFYING A PARTITION, CHECK THAT THE
 PARTS SUM TO THE WHOLE.** A conformance query reported **34 conforming, 0 non-conforming** against
 **35** cells: the missing row's `variation_band` was NULL, so `= 'continuous'` yielded NULL, the
