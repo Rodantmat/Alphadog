@@ -14419,6 +14419,102 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.17 — PASS 17 (**baseline-tree re-read of the band**) — **🔴🔴 a segment the band scores 0.67 is covered for HALF its content, and the missing half is an undeployed production step · 0/3**
+*2026-09-21. The angle §T10.16a forced: the band has never been read against the corpus that answers
+the question. Every segment that differs between the two trees opened individually.*
+
+#### 📌 T10.17a — **The movement is complete, monotone, and lands in one document**
+
+| | |
+|---|---|
+| Uncovered vs the twelve | **831** (baseline `d29401bd`) → **823** (working tree) |
+| Segments that crossed **into** covered | **8** |
+| Segments that fell **back out** | **0** |
+| Nearest working-tree document for all 8 | **`NBA_MASTER_SUMMARY.md`** — *8 of 8* |
+
+| seg | baseline → working | what it is |
+|---|---|---|
+| **73** | 0.22 → **0.67** | **owner** — the scheduled-task deferral + the season-beginning directive |
+| 475 | 0.28 → **0.52** | the factor set *"complete at the level of mechanisms"* |
+| 537 | 0.22 → **0.49** | *"discovery is closed: 34 factors, ~90 sub-factors…"* |
+| 115 | 0.35 → **0.48** | the `season_opening_study` config insert |
+| 354 | 0.39 → **0.43** | the 09-09 checkpoint's realignment-rule edit |
+| 117 | 0.33 → **0.40** | the ladder-commit confirmation step |
+| 285 · 305 | 0.26 → **0.40** | the season-opening bias pattern *(the same text, twice in the transcript)* |
+
+🔑 **`OPEN_ITEMS` (+8,722 bytes), `FINAL_SCORING_CALIBRATION` (+1,437), `BASELINE_CALIBRATION`
+(+1,126), `DATABASE` (+1,015) and `GLOSSARY` (+881) all grew during T10 and moved ZERO segments.**
+***All eight crossings are `MASTER_SUMMARY` quoting the transcript back at itself*** — which is
+§T10.16c's threshold result confirmed segment by segment: **only verbatim quotation moves coverage.**
+
+**Tail, same treatment**: **101 in both trees · 0 working-only · 5 baseline-only** — and the 5 that
+left are 285, 305, 354, 475, 537, the same crossings. *Nothing entered either stratum from the
+documents' side.*
+
+#### 🔴🔴 T10.17b — **Turn 73 is quoted for its second half, and its FIRST half is an undeployed production step recorded nowhere**
+
+**The segment, in full** *(owner, turn 73)*:
+
+> *"**Let's not deploy the scheduled task just for now, because I'll very likely do it via Claude
+> coworker, but just closer to the season beginning, so do everything needed to be done up to that
+> point and just the scheduled task we do later.** One important single, is understand the behavior on
+> the first days of the season, how it behaves, how it holds and understand if there is a reliable and
+> safe pattern on season beginnings to work with"*
+
+**What the twelve carry** — `NBA_MASTER_SUMMARY.md`, verbatim and complete:
+
+> *"Turn [73]: **'understand the behavior on the first days of the season, how it behaves, how it
+> holds and understand if there is a reliable and safe pattern on season beginnings to work with.'**"*
+
+🔴 **The research directive is recorded. The operational decision is not** — *and the operational
+decision is that **a production step is deliberately not deployed, with the deployment deferred to
+"closer to the season beginning" and assigned to Claude Coworker.***
+
+**Absence verified, six differently-worded probes, across all thirty documents and both trees**:
+`not deploy` / `deployment deferred` **0 relevant** *(3 hits, all unrelated — worker registration,
+`run_job` lag)* · `scheduled task` near `season` **0** · `closer to the season` **0** ·
+`deploy … later|at season start|opener` **0 relevant** *(1 hit, `NBA_COMPASS.md`, about the bridge's
+target enum)* · `everything needed … up to that point` **0**. ✅ **Nothing states it.**
+
+⚠ **And it is season-critical by its own terms**: the regular season opens **2026-10-20**, so this is
+a deliberately-deferred deployment with a deadline **twenty-nine days out** at the time of writing,
+sitting in no document the owner will read. **Written to `NBA_OPEN_ITEMS.md` as OWNER DECISION O7.**
+
+#### ✅ T10.17c — **The other three working-only segments are covered in substance, checked the same way**
+
+*Rule 6 — the sibling test, run rather than assumed.* Each segment's **unquoted** remainder probed
+across all thirty: seg 475's *"build the two backfills… the injury-report PDF archive **statuses as
+known** and the matchup/hustle/clutch season tables… then run the **pass-3 measurement list**"* →
+`two backfills` **4** · `injury-report PDF` **8** · `hustle…clutch` **8** · `factor_profile_cells`
+**12** ✅ · seg 537's lock status → covered with 475 ✅ · seg 115's `season_opening_study` key →
+**2 of the twelve, 5 of thirty** ✅ *(and only 2 of thirty at the baseline — this sweep wrote the
+other three, §T10.1a)*.
+
+***So the partial-quotation defect is not general — it is one segment, and it took opening all four to
+find it.*** **The band could not have reported it**: seg 73 scores **0.67**, the highest working-only
+score on the transcript, *because the half that was quoted was quoted well.*
+
+#### 🔴 STANDING RULE 19 — **A QUOTATION COVERS ONLY WHAT IT QUOTES**
+*Added 2026-09-21 after §T10.17b.*
+
+**When the sweep quotes part of a segment, the unquoted part is still uncovered — and the coverage
+score cannot see the difference, because it scores the segment against the paragraph as wholes.**
+A well-chosen partial quotation *raises* the score, so **the better the excerpt, the more thoroughly
+the remainder is hidden.**
+
+**Operative form: when a segment is quoted into the twelve, the pass that quotes it states what it
+LEFT OUT, or quotes the whole turn.** ⚠ **Owner turns above all** — they are the least numerous and
+the most likely to carry an instruction beside an observation, and **turn 73 carried exactly that:
+a directive and a research question in one paragraph, of which the sweep kept the question.**
+
+🔑 **This is the sixth location of the self-authorship family and the first that is a LOSS rather than
+an inflation.** The others cost precision in a metric; **this one cost an owner decision.**
+
+**Pass outcome: 1 season-critical finding (O7) + rule 19; the movement fully accounted for, the other
+three segments cleared by probe. 🔴 CLEAN 0/3 · 17 passes.**
+
+---
+
 ### T10.16 — PASS 16 (**fourth two-direction judgment**) — **🔴🔴 the COVERAGE INSTRUMENT is itself self-authored · 0/3**
 *2026-09-21. Judged under rules 16 and 17 — every count over a corpus must state its population **and**
 its tree. **The band was re-measured, not carried forward — and then measured a second time against
