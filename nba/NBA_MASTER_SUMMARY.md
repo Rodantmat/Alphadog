@@ -14419,6 +14419,66 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.4 — PASS 4 (**live verification**) — **🔑 the "34 factors" reconciles exactly · 🔴 two defects in the matchups shards · 0/3**
+*2026-09-21. `[LIVE-AUDIT]` throughout — live state does not reset the clean count.*
+
+#### 🔑 T10.4a — **67 and 34 are the same table, sliced differently — and that reconciliation is in no document**
+
+`nba_config.factor_registry`, live:
+
+| Layer | Rows | Active | Retired | Macro clusters | Derivable now |
+|---|---|---|---|---|---|
+| **baseline** | **31** | 31 | 0 | 12 | 28 |
+| **enrichment** | **36** | **34** | **2** | 11 | 11 |
+| **Total** | **67** ✅ *(31 + 36)* | 65 | 2 | — | 39 |
+
+✅ **The lock's "34 factors" IS the 34 active enrichment-layer rows**, and the twelve's *"67 factors
+(seeded at 29)"* is the whole table. **Two numbers, one object, and nothing said so.** 🔑 **The two
+retired rows are named and reasoned in the table itself** — **`altitude_venue`** (*"small; sub-tier of
+schedule_density_travel; baseline home/away carries most"*) and **`national_tv_marquee`** (*"protects
+star availability under the participation policy; rotation shortening in marquee…"*) — **which is the
+lock's "retirements", live.**
+
+📌 **What is genuinely absent, and now stated narrowly**: the **A/N/B/K/M/C/S/D/E code scheme is not a
+column** — `factor_registry` has twelve columns and none carries it — and **there is no sub-factor
+table at all**, so the lock's *"~90 sub-factors"* exist only as prose in
+`NBA_ENRICHMENT_FACTOR_LOCK.md`.
+
+#### 🔴 T10.4b — **The columnar shard scheme is live and complete, and carries two defects**
+
+The tail describes it: *"github rejects files ≥100 MB; a full season of pairings is **~170 MB as row
+dicts**, so rows are stored as **columnar monthly shards** `nba_matchups_pergame_<slug>_<yyyy-mm>.json`
+with an index carrying coverage."* **Verified on disk:**
+
+| Season | Games covered | `empty` | Rows | Shards | Columns | Size (max shard) |
+|---|---|---|---|---|---|---|
+| 2023-24 | **1,228** | **2** | 230,877 | 7 | **29** | 29.1 MB (5.5) |
+| 2024-25 | **1,230** | 0 | 232,830 | 7 | **29** | 29.4 MB (5.6) |
+| **2025-26** | **1,229** | **0** | **241,590** | 7 | **28** | 29.3 MB (5.7) |
+
+✅ **The scheme works, and better than the split alone would**: **~29 MB per season columnar against
+the stated ~170 MB as row dicts — a ~6× reduction** — with **no shard above 5.7 MB** against the
+100 MB limit. ✅ 2023-24 partitions exactly: **1,228 + 2 = 1,230**.
+
+🔴 **Defect 1 — 2025-26 is one game short and does not say so.** It covers **1,229** with
+**`empty: 0`**, while the twelve record **1,230** regular-season games for that season — including
+`NBA_DATABASE.md`'s identity *"**12,300 = 10 starters × 1,230 games** — an identity that only holds if
+every game parsed correctly."* **One game is neither covered nor recorded as empty**, so the index's
+own bookkeeping does not account for it.
+
+🔴 **Defect 2 — 2025-26 has 28 columns where the others have 29.** The missing one is
+**`matchupMinutesSort`**, which **`scrape_nba_matchups_pergame.py:33` lists in `KEEP`.**
+✅ **Benign on today's code path**: `nba_asof.py`'s `_minutes()` names it only in a docstring
+(*"matchupMinutes arrives as 'm:ss'; matchupMinutesSort is seconds"*) and parses `matchupMinutes`,
+which is what `aggregate_matchups_asof` sums. 📌 **Why it is absent is NOT RECORDED** — rule 6, and no
+cause is supplied here. ⚠ **But it is a silent schema difference across seasons of one dataset, in the
+current season, in a column the scraper says it keeps.**
+
+**Pass outcome: 1 reconciliation that resolves a gap pass 3 opened, 2 live defects, 2 narrow absences
+stated. 🔴 CLEAN 0/3 · 4 passes.**
+
+---
+
 ### T10.3 — PASS 3 (**two-direction judgment**) — **🔴 T10's terminal deliverable is in ONE document and none of the twelve · 0/3**
 *2026-09-21. Band established: **30 high-band segments**, **103 tail-direction**. Coverage **825 / 689**
 *(down from 831 at pass 0 — this sweep's own writes absorbed six)*.*
