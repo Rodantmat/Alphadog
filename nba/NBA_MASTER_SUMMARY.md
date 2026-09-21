@@ -14430,6 +14430,76 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.44 — PASS 43 (**eleventh two-direction judgment, PRE-REGISTERED — the pass that would have closed T11**) — **❌ two narrowings of passes 41–42, and the purest instance of self-authorship the sweep has found · 0/3**
+*2026-09-21.*
+
+#### 🔑🔑 T11.44a — **The prediction, and the one segment that moved is the one pass 40 quoted**
+**Predicted**: *"the working band should move by AT MOST one or two segments from 38 / 0 / 665 / 665,
+and the baseline must read 13 / 3 / 695 / 689 for a FOURTEENTH identical measurement… the honest
+prediction is NO movement and the named candidates (16, 27, 706) are a falsification test."*
+✅ **Baseline 13 / 3 / 695 / 689 — fourteenth identical.** ✅ **Working 39 / 0 / 664 / 664 — ONE
+segment**, inside the predicted band. ✅ **And none of the three named candidates moved** — *confirming
+that 60–124-character labels are below the threshold, which is what the prediction's lean said.*
+
+🔑🔑 **The mover is SEGMENT 393 — 0.1899 → 0.4921 — and the paragraph that now covers it is §T11.41c,
+the entry in which pass 40 QUOTED segment 393 verbatim while explaining that its coverage was an
+artefact.** ***The sweep quoted a segment in order to argue that the segment's coverage was not real,
+and thereby made it real.*** **`uncovered12` and `uncovered30` both fell by exactly this one segment.**
+📌 **The third form of a shape §T11.25a named** *(the tail measured the auditor)* **and §T11.39b
+extended** *(the run log was inside the corpus)*: ***the MASTER SUMMARY is one of the twelve, so
+coverage against the twelve is partly self-authored by construction — a property to state, not a
+defect to fix, since the ledger legitimately records transcript content.***
+
+#### ✅ T11.44b — **ATTACK 2 confirms §T11.43a's scope claim BY MEASUREMENT, not by one quoted sentence**
+§T11.43a said *"T1's thinking blocks carried substantive reasoning and T11's do not"* on the strength
+of a single line about T1 pass 65. **Measured:**
+
+| | T11 | T1 |
+|---|---|---|
+| thinking segments | 51 | 52 |
+| **total characters** | **3,428** | **33,578** |
+| **max** | **124** | **1,774** |
+| **mean** | **67** | **646** |
+
+✅ ***Ten times the size, segment for segment.*** **The scope claim survives its hardest attack and is
+now quantified rather than asserted.** ✅ **ATTACK 3**: T1's `(role, type)` partition also closes
+exactly — **225 + 188 + 78 + 52 + 14 = 557** — ⚠ *though both partitions close on `segments()`' own
+output, which is one authority, not two (§T11.12's shape, stated rather than glossed).*
+
+#### ❌ T11.44c — **ATTACK 1 narrows §T11.43a: the subjects ARE there, the answers are not**
+§T11.43a published *"seven of the eight open questions return ZERO hits."* 🔴 **Re-probed in wider
+vocabularies, six of the eight subjects appear** — **injury in 6 labels** *(27, 60, 224, 225, 616,
+617)*, **season-tables in 6** *(141, 181, 229, 317, 508, 651)*, **window/tip in 4** *(16, 281, 697,
+706)*, **officials/load in 1**, **`paper_picks` in 1** *(segment 669 — *"adjusting sportsbook picks"*,
+**a false hit, opened**)*. ✅ **All of them are LABELS, and not one carries an answer** — so
+***§T11.43a's conclusion is unchanged and better supported, and its SENTENCE was vocabulary-dependent
+without saying so*** (rule 20). ***The right form: the subjects appear in up to six of the 51; the
+answers appear in none.***
+
+#### ❌ T11.44d — **ATTACK 4 narrows §T11.42b: the tool census double-counts**
+**`run_job` is 114 SEGMENTS but 57 `tool_use` + 57 `tool_result` — 57 actual calls.** 🔴 **Every
+figure in §T11.42b's census is doubled the same way**: **`web_search` 84 → 42 · `web_fetch` 80 → 40**,
+so ***"one hundred and sixty-four web calls" is eighty-two***. ✅ **The characterisation stands** —
+*82 web calls in one transcript is still a research session with a backfill underneath* — **and the
+number was double.** 📌 ⚠ **And `tool_use` 227 vs `tool_result` 355 do NOT pair 1:1**; *why is NOT
+RECORDED* (rule 6). ✅ **Bonus, from opening the family**: **segment 703 is the ORL-BKN job result in
+raw form — `credits_per_snapshot: 420 · rows: 8626 · snapshots_done: 2 · credits_est: 840`** —
+***independently confirming the figures §T11.30b took from segment 709's prose.***
+
+#### 📌 T11.44e — **A structural observation about the completion criterion, and a correction to how the judgment is aimed**
+***Three consecutive judgment passes (40, 43) have narrowed the pass immediately before them, and both
+times by vocabulary or predicate rather than fact.*** **That is not chance**: a judgment attacks with
+more vocabularies than the original used by design, **so a one-pass-old claim will essentially always
+narrow** — and a criterion that places the judgment last can then never be satisfied. ⚠⚠ **The remedy
+is NOT to relax the criterion** — that would be the sweep grading itself leniently. ***It is to aim
+the judgment at SETTLED claims — several passes old, already survived scrutiny — which is HARDER, not
+easier.*** **Applied from pass 44.**
+
+**Pass outcome: ❌ two narrowings, both mine, both one pass old; the closing set does not stand.
+CLEAN 0/3 · 44 passes.**
+
+---
+
 ### T11.43 — PASS 42 (**the ASSISTANT REASONING stratum read in full — a census of 51**) — **✅ CLEAN 2/3 · the stratum carries no reasoning, and that closes a question rather than leaving one**
 *2026-09-21. **51 segments, 3,428 characters total — small enough to read entirely, so there is no
 sample to state** (rule 25).*
