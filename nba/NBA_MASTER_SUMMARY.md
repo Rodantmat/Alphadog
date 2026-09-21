@@ -8045,6 +8045,15 @@ design names. **In all three the missing context was one line away from the thin
 practical form of all three rules is one instruction: **read the neighbours before drawing the
 conclusion** — the sentence above, the column beside, the rest of the key.*
 
+🔴 **The seventh form, added 2026-09-21 after §T7.47a — "NOT IN THE TWELVE" IS NOT "IN NO
+DOCUMENT."** The coverage scan is scored against **the twelve**; the corpus is **thirty**. Three
+separate T7 entries wrote *"in no document" / "nothing in the thirty documents" / "undocumented"* for
+things sitting in `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` — **the document T7 itself
+wrote**, which is exactly why its content shows up as *false tail* rather than as coverage. **Before
+writing an absence, grep all thirty — and read the current pass's own tail-direction output first**,
+because it already names, by filename and similarity score, the document that holds the thing. *In
+two consecutive passes it named that file at 1.00 and I wrote "in no document" anyway.*
+
 🔴🔴 **The sixth form, added 2026-09-21 after §T7.46a — the SIBLING-CLAIM rule, and the costliest
 lesson of the T7 re-sweep**: **when a rule is written because one item in a list was wrong, re-test
 every other item in that list before the pass ends.**
