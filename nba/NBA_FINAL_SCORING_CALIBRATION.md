@@ -972,7 +972,7 @@ Recorded 2026-09-20.
 > **Tell: check whether a factor's source field name says 'TOTAL' while its consuming code treats it
 > as 'PER GAME'.**"*
 
-**Live surface**: `nba_stats.player_career_totals` is cumulative by name and content;
+**Live surface**: **`nba_stats.player_career_season_totals`** (**3,644 rows**) is cumulative by name and content *(🔴 corrected 2026-09-21, §T10.22b — this read `nba_stats.player_career_totals`, which does not exist; and the correct table is the one whose stored self-subtotals are the documented §T4 double-count, so the wrong name pointed a reader away from the very defect)*;
 `player_game_log` is per-game. **Any factor reading career totals must divide.**
 
 ### 2. One factor's lookup table left UNCAPPED while siblings have explicit caps
