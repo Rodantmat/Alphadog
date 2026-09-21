@@ -89,12 +89,14 @@ def graded(season, conn, pid_map, props):
     f["game_date"] = pd.to_datetime(f["game_date"]).dt.date
     f["player_id"] = f["player_id"].astype(str)
     f["line"] = f["line"].astype(float)
+    raw_keys = [k for k, v in OUTCOME_KEY_TO_PROP.items() if v in props]
     o = pd.read_sql("""SELECT game_date, player, line, side, leg_result,
-                              replace(replace(market_key,'player_',''),'_alternate','') AS prop
+                              replace(replace(market_key,'player_',''),'_alternate','') AS raw_prop
                        FROM nba_market.board_outcomes
                        WHERE leg_result IN ('over_win','under_win')
                          AND replace(replace(market_key,'player_',''),'_alternate','') = ANY(%s)""",
-                    conn, params=(props,))
+                    conn, params=(raw_keys,))
+    o["prop"] = o["raw_prop"].map(OUTCOME_KEY_TO_PROP)
     o["game_date"] = pd.to_datetime(o["game_date"]).dt.date
     o["player_id"] = o["player"].map(norm_name).map(pid_map)
     o = o[o["player_id"].notna()]
