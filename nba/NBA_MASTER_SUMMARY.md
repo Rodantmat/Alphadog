@@ -14420,6 +14420,60 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.43 — PASS 28 (**`git blame` / history audit**) — **🔑 the two depth regimes have a chronological cause, and it is not the override · 0/3**
+*2026-09-21. The authority pass 27 discovered, applied deliberately: every claim in the twelve of the
+form "X is stale" / "Y supersedes Z" / "this was added later", resolved against `git blame` and
+`git log`.*
+
+#### 🔑 T9.43a — **`LADDER_DEPTH` did not exist when two of the three as-of days were built**
+
+`LADDER_DEPTH` and `ladder_depth()` — **all fourteen lines, one commit**: `3cda5a12`,
+**2026-09-19 16:58:44 −0700 = 2026-09-19 23:58:44 UTC.**
+
+| as-of | `min(loaded_at)` UTC | vs the table landing | Regime observed |
+|---|---|---|---|
+| **2026-03-15** | 2026-09-11 20:23:10 | **8 days 3h 35m BEFORE** | flat 10 |
+| **2026-01-15** | 2026-09-19 22:35:04 | **1h 23m 40s BEFORE** | flat 10 |
+| **2025-11-29** | 2026-09-20 03:23:26 | **3h 24m 42s AFTER** | **per-prop** |
+
+**The two flat days predate the per-prop table's existence; the per-prop day postdates it by three and
+a half hours.** *The split is chronological — a table that had not been written yet — not someone
+setting an override on some days and not others.*
+
+⚠ **This does NOT retire O5, and it raises its stakes.** The override is live, `ladder_depth()` still
+returns `int(env)` before consulting the table, and **`TRIGGER_NBA_BASELINE.txt` still reads
+`ladder_steps: 10`** — so **the next `nba-baseline.yml` run flattens the table again**. *And only
+**one** of the three as-of days now in Postgres was built with the per-prop table at all.*
+**§T9.27b's figures are unchanged; its implied story is corrected.**
+
+#### 📌 T9.43b — **The trigger file has not been touched since 2026-09-11, so `nba-baseline.yml` built only one of the three days**
+
+`nba/TRIGGER_NBA_BASELINE.txt`'s last commit is `5ef26b1a`, **2026-09-11 10:18:17 −0700 =
+17:18 UTC** — matching its own `last_triggered_utc: 2026-09-11T17:30:00Z`. **Since that path fires on
+a push to that file, it built the 2026-03-15 day and nothing after it.** 📌 **What built the
+2026-01-15 and 2025-11-29 days is NOT RECORDED** — `nba-p2-overnight-heavy.yml` sets no
+`BT_LADDER_STEPS` and is consistent with the per-prop day, but nothing establishes it.
+
+#### 📌 T9.43c — **`assists` 6 and `threes_made` 6 stay NOT RECORDED, and the puzzle narrows**
+
+Lines 82–83 carry the same commit as the rest of the block, so at the moment the 2025-11-29 day was
+built the configured values were already **`assists` 5** and **`threes_made` 4**. **The observed
+maxima of 6 exceed the configured depth on the one day that used the table.** *Still unexplained,
+still not asserted — but now known not to be a case of the values changing after the load.*
+
+#### 🔑 T9.43d — **The method note this pass exists to record**
+
+**Twenty-seven passes ran on a git repository without once asking it when a line was written.** *Every
+question of the form "which of these two statements is current?" — and this sweep has produced at
+least six — has an exact answer in `git blame`, and four of them were marked NOT RECORDED instead.*
+**Standing instruction: for any staleness or supersession question about a file in this repository,
+`git blame` the two lines before writing anything.**
+
+**Pass outcome: one headline's causal story corrected, two questions answered, one narrowed, and a
+method the sweep should have been using since T1. 🔑 CLEAN 0/3 · 28 passes.**
+
+---
+
 ### T9.42 — PASS 27 (**two-direction judgment, seventh run — weight on ABSENCE claims**) — **🔑 three "NOT RECORDED" claims answered by one authority nobody had consulted · 0/3**
 *2026-09-21. Band **54 for a second run, 0 in, 0 out** — re-stabilised after §T9.40b's shift, exactly
 as that entry predicted, since nothing new has been quoted since. So the pass judged the **absence
