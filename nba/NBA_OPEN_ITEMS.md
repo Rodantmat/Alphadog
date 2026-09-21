@@ -6912,8 +6912,8 @@ validated**:
 | State | Props |
 |---|---|
 | **CERTIFIED** | the main singles set; `fga` — *"CERTIFIED both seasons (0.9 / 1.3, **0 band misses**)"* |
-| **CONFIGURED, NOT YET RUN** | `turnovers` · `fg3a` · `ftm` · `personal_fouls` |
-| **NOT YET CERTIFIED** | **`fgm` · `fta`** — *"ADDED 2026-09-12 (owner: the live PrizePicks menu carries these). **Configs are the closest certified analogue; NOT yet certified** — the first history run prints the band tables."* |
+| **CONFIGURED, NOT YET RUN** | **`turnovers` · `fga` · `fg3a` · `ftm` · `personal_fouls`** — ⚠ *`fga` restored 2026-09-21 by §T9.35b: this row dropped it. The authority is the module docstring, **line 11**: "turnovers/fga/fg3a/ftm/personal_fouls: configured, NOT yet run." **`fga` is listed in two states in the same file** — line 11 here, and an inline `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` at its own entry, line 102. **Both are live; which governs is NOT RECORDED.*** |
+| **NOT YET CERTIFIED** | **`fgm` · `fta` · `oreb` · `dreb`** — ⚠ *`oreb` and `dreb` added 2026-09-21 by §T9.35c: the `# ADDED 2026-09-12 … NOT yet certified` comment governs **the last four entries of `PROPS`** (lines 109–112), not two. **And `oreb` and `dreb` are two of the four props §T9.19c found missing from `prop_taxonomy`, both shipping ladder rows** (`oreb` 3,185, `dreb` 4,315).* — *"ADDED 2026-09-12 (owner: the live PrizePicks menu carries these). **Configs are the closest certified analogue; NOT yet certified** — the first history run prints the band tables."* |
 
 **These props have alphas, `k_stab`, step sizes and distribution families configured, so the ladder
 builds them and `score_board_legs.py` will score them.** What they lack is the band-table validation
