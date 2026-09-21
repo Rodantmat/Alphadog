@@ -13775,6 +13775,20 @@ relative to the inline comment, but worth confirming.
 > the file settles it. *`NBA_OPEN_ITEMS.md` had silently dropped `fga` from its copy of the list;
 > restored there with the disagreement stated rather than resolved.*
 >
+> 🔴 **EXTENDED 2026-09-21 by §T9.36a — it is TWO props, not one, and they fail differently.**
+> **Line 11 names five: `turnovers`, `fga`, `fg3a`, `ftm`, `personal_fouls`. T9's own owner statement
+> — recorded in three documents — names the certified six as `points`, `rebounds`, `assists`, `3PM`,
+> **`FGA`**, **`FTM`**.** So **two** of the five are called certified elsewhere:
+>
+> | Prop | Docstring line 11 | Its own inline comment | Owner, T9 (2026-09-09) |
+> |---|---|---|---|
+> | **`fga`** | *configured, NOT yet run* | **`# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)`** | **certified** |
+> | **`ftm`** | *configured, NOT yet run* | `# FTA regression 9%; shift lambda 0.5` — **no certification marker** | **certified** |
+>
+> *`fga` is a contradiction **inside the file**; `ftm` is a contradiction **between the file and the
+> record**.* **NOT RECORDED: when line 11 was last edited** — the `# ADDED` comment two lines below the
+> dict is dated **2026-09-12**, after the owner's statement, but line 11 carries no date of its own.
+>
 > 🔴 **And the NOT-YET-CERTIFIED group is FOUR props, not two** (§T9.35c). The
 > `# ADDED 2026-09-12 … Configs are the closest certified analogue; NOT yet certified` comment sits
 > above **the last four entries of `PROPS`** — **`fgm`, `fta`, `oreb`, `dreb`** (lines 109–112),
