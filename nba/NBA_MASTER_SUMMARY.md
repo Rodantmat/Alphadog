@@ -9649,6 +9649,97 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.39 — PASS 10 (**structural value sanity**) — **⚠ 1 DEFECT (pass 9's own inference) + 🔴 NEW MATERIAL · 0/3**
+*2026-09-21. Angle: take the config tables T7 designed and test them against the invariants the
+design implies — sign, bound, key, population. Two of the four checks held perfectly; the invariant
+that held is what exposed the defect.*
+
+#### ⚠ T7.39a — **CORRECTION to §T7.38b: the 13 "undifferentiated" cells are the CONTINUOUS FORMULA cells. There is no tier-specificity gap.**
+
+Pass 9 recorded *"the gap is the **13 cells that carry neither** [tier nor role key], which apply one
+value across all tiers for their factor."* **True about the key columns, wrong as an inference** —
+those columns were read without `formula_expression` beside them.
+
+`nba_config.factor_profile_cells` is **exactly two populations, with zero mixing across 35 rows**:
+
+| | Formula | Flat value | Tier/role key | Direction | Cells |
+|---|---|---|---|---|---|
+| **Bucketed cells** | ∅ | `lift` **or** `penalty` | **always set** | `more` 21 · `less` 1 | **22** |
+| **Continuous cells** | set, with `coefficient_a` | **both NULL** | **never set** | `both` 12 · `more` 1 | **13** |
+
+**All six other combinations are empty.** Never both a formula and a flat value; never a formula cell
+with a tier key; never a flat cell without one.
+
+**So the tier-specificity picture is the opposite of what pass 9 implied**: the 13 are things like
+`pace__points__continuous__all__both` (`coef_a * ln(proj_pace/league_avg)`, `coef_a` 1.0 for points,
+0.9 rebounds, 0.7 assists) and `usage__points__continuous__all__both` — effects that **scale with a
+continuous input**, where a tier bucket has no meaning by construction. **Every cell in the system
+that IS bucketed carries a tier or role key.** The owner's *"caps must be specific to the specific
+tiers"* is **satisfied wherever the concept applies** — `NBA_OPEN_ITEMS.md` corrected accordingly.
+
+**Mechanism — the same family as §T7.38a**: a value read without the columns that qualify it, one
+pass after a quote read without the sentences that qualified it. **Two defects, two passes, one
+habit.**
+
+**Invariants that DID hold** (recorded, since a sweep should record what survives): every cell has a
+positive `cap`; **no `|penalty|` or `|lift|` exceeds its own cap** (0 of 35); **every `penalty` is
+negative and every `lift` positive** (12 and 10, 0 sign violations).
+
+#### 🔑 T7.39b — `[LIVE-AUDIT]` **The MORE/LESS asymmetry: 22 directional cells are `more`, exactly ONE is `less`**
+
+Of the 23 cells with a direction other than `both`, **22 are `more`**. The single `less` cell is
+**`blowout__points__LOST_GT50__all__less`**, and that combination is the **only one in the table
+carrying both directions**. So every other bucketed factor — DvP top/bottom-5, B2B road rest,
+3PA-heavy shot diet, second-big-out lineups — **has a MORE-side value and no LESS-side counterpart.**
+
+⚠ **For a product whose entire output is over/under rungs, this is a live question, not a curiosity**:
+either the scorer mirrors a MORE-side penalty onto the LESS side, or **LESS legs receive no factor
+adjustment from 21 of the 22 bucketed cells.** **Which of the two, is NOT RECORDED** — it cannot be
+read from the table, and the scoring transcripts are not yet swept. **Flagged for them.**
+
+#### 🔴 T7.39c — `[LIVE-AUDIT]` **Nothing in the repo reads `factor_profile_cells` or `factor_relevance`. That makes FIVE NBA config tables read by nothing.**
+
+**VERIFIED** by repo-wide grep (not restricted to code extensions, per the substance rule): the
+strings `factor_profile_cells` and `factor_relevance` appear in **the twelve documents and in zero
+code files**. Across all `.py`/`.js` in the repo, `nba_config` is referenced only as
+`nba_config.external_credentials` (12 sites) and `nba_config.pp_slip_rules` (2 — the concurrent
+session's, **out of scope**).
+
+**They join the class `NBA_DATABASE.md` §2 already banners**: `role_tiers`, `stat_decay_config`,
+`ewma_alpha` — all documented as read by nothing, with the live values hardcoded in
+`nba/backtest/classification_ladder_v12.py` instead (`ROLE_TIERS` line 129; the `PROPS` dict for
+decay). **Five tables now. What plays the hardcoded role for the 35 cells — whether anything applies
+these caps at all today — is NOT RECORDED.**
+
+**Note what this does to §T7.30a's original worry.** The owner disliked capping; the sweep first
+claimed a global 25% clamp (wrong, §T7.38a), then found 35 tier-keyed caps (§T7.38b). **The third and
+current reading is that no NBA code in the repo reads any of them.**
+
+#### 🔑 T7.39d — **Cross-system context: the pattern HAS live readers — under MLB's names**
+
+*MLB is dropped as a subject; this is recorded only because it is what the NBA table's shape and its
+empty validation columns are made of. No further MLB work.*
+
+| | |
+|---|---|
+| `config.enrichment_profile_cells` (Postgres) | **read live** — `alphadog-v2-phase2a-run-environment.js:271`, and declared in its own health payload as an `upstream_reads` dependency |
+| `config_enrichment_profile_cells` (CONFIG_DB/D1) | **read** — `alphadog-v2-score-audit.js:6221` |
+| **Written back** | `gbdt_training/validate_factor_coefficients.py:204` — `UPDATE … SET last_empirical_validation_json=?, last_validated_at=CURRENT_TIMESTAMP WHERE cell_id=?` |
+
+**Those are the exact two columns found NULL on every sampled NBA row in §T7.38b.** The cell-id
+convention is the same four-segment form —
+`weather_temp_altitude_pressure__home_runs__all__over` ↔ `blowout__points__10_25__all__more`,
+with `all` in slot 3 and the direction in slot 4 — which **independently confirms
+`NBA_DATABASE.md`'s *"in exactly MLB's cell form."***
+
+**Per rule 6, no causal claim**: recorded is that MLB has a reader and a coefficient validator for
+this table, and that **the NBA repo contains no equivalent of either**. *Whether the NBA port is
+awaiting them is NOT RECORDED.* *(For scale, MLB's validator states in its own docstring that it
+validated **2 of 19** factors and named the reason for each it could not — the honest-scope pattern
+already recorded elsewhere in these documents.)*
+
+---
+
 ### T7.38 — PASS 9 (**cross-document consistency**) — **🔴 1 DEFECT IN THIS SWEEP'S OWN PROSE · CLEAN COUNT RESETS 2/3 → 0/3**
 *2026-09-21. Angle: take every claim this sweep made about T7 that cites another of the twelve, and
 read the cited document. One citation says the opposite of what was claimed from it.*
