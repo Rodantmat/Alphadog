@@ -11,12 +11,24 @@ At T9 the single-stat props split **6 certified / 4 close**:
 | **Certified 6** | points · rebounds · assists · 3PM · fga · ftm | *"ladders ≤1.5 pp on all 13 rungs, **zero band×direction×rung cells over 2.5 pp**, confidence bands hitting their rate on both seasons"* |
 | **Close 4** | **blocks · steals · turnovers · fouls** | *"ladders fine, **2–5 confidence bands per season off by 2.6–4.4 pp**. These are the noisiest per-game stats in the sport."* |
 
-> **The stated reason for leaving them uncertified**: *"my honest read is that they're at the **noise
-> floor**, but **I haven't proven that with a variance-bound argument**."*
+**The reason evolved within T9 itself** *(corrected 2026-09-21, T9 pass 2)*:
+- **Early**: *"my honest read is that they're at the **noise floor**, but **I haven't proven that with
+  a variance-bound argument**."*
+- **Settled, §T9.14e**: *"I'd now call their remaining residual **the noise floor of 0–2 count
+  stats** rather than a missing factor"* — **reached after the opponent factors were measured and
+  found real but insufficient.** A principled stop, not a shrug.
 
-⚠ **That is an honest non-claim, and it is still open.** *Whether the variance-bound proof was ever
-produced — and whether the four props were later certified, left uncertified, or shipped as-is — is
-**NOT RECORDED**.* **Flagged for the transcripts after T9.**
+⚠ **What remains open**: the four props were **never certified**, and **no variance-bound proof
+exists** — the conclusion rests on measurement plus judgment. *Whether they were later certified,
+left uncertified, or shipped as-is is **NOT RECORDED**.* **Flagged for the transcripts after T9.**
+
+🔑 **And the sourcing the owner asked for is missing from the documents.** The directive was
+*"research online, **multiple sources**"*; the research came back and says the same thing —
+*"projections are **inherently more volatile** when you're trying to hit **minuscule targets** — the
+kind you see in stats like **turnovers or blocks**… unless you're Victor Wembanyama…"* — but
+**none of it is recorded** (`minuscule`, `inherently more volatile`: zero hits across the thirty).
+*"We stopped at the noise floor" is a weaker sentence than "we stopped at the noise floor, and
+independent analysis of low-count NBA props says the same" — and the owner asked for the second one.*
 
 *Also from the same answer, for the record — the six-item "what's missing" list and its order of
 attack: 4Q/2H mixture → remaining period stats + halves → period holdout → close-prop noise-floor
