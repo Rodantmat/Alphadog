@@ -338,6 +338,7 @@ the sweep's read-only rule. It belongs in `nba_config.system_settings` with the 
 | Worker | Certification test | Anchored to a real invariant? |
 |---|---|---|
 | teams | `activeNbaTeams === 30` | **yes** — the league has 30 teams |
+| **arenas** *(T2)* | **`nba_ref_arenas_rows === 30`** | **yes** — one arena per team *(VERIFIED live, line 140)* |
 | player bio | `seasonWritten >= 400` | no — ~⅔ of a 582 roster, rounded |
 | **schedule** *(T3)* | **`written >= 1000`** | **no** — a season is 1,230 regular-season games, so this passes on a scrape missing up to 19% of them, and **passed on 2,666 rows spanning two seasons** |
 | **tracking detail** *(T3)* | **`written >= 4000`** | **no** — the observed run wrote 4,652, so the margin is ~14%, and the scraper's own per-measure-type failure list is the real signal |
