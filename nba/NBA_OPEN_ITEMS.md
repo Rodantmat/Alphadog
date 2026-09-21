@@ -1,13 +1,57 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
-## 🔴🔴 `raw_json` IS A DOUBLE-ENCODED STRING ON EVERY NBA STATIC TABLE — the provenance safety net is unqueryable
-*Found 2026-09-21, T2 re-read pass 11. **`[LIVE-AUDIT]` VERIFIED** by live SQL. Detail:
-`NBA_MASTER_SUMMARY.md` §T2.11 (sweep series).*
+## 🔴🔴 REGULAR SEASON OPENS **2026-10-20**, NOT 2026-10-03 — every urgency label in these documents is 17 days early
+*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by live SQL against `nba_calendar.games`, and independently by
+the owner. **This correction carries everywhere.***
 
-`jsonb_typeof(raw_json)` returns **`string`**, not `object`, on **1,306 rows across six tables** —
-`nba_ref.teams` (30), `nba_ref.players` (582), `nba_ref.arenas` (30), `nba_ref.officials` (80),
-`nba_stats.player_season_profile` (582), `nba_stats.player_tracking_profile` (582). **Not one row is
-a queryable object.**
+```
+season 2026-27 | prefix 001 (preseason)       66 games   2026-10-03 → 2026-10-16
+               | prefix 002 (regular season) 1200 games  2026-10-20 → 2027-04-11
+```
+
+**`2026-10-03` is the PRESEASON opener.** The whole documentation set has been treating it as the
+date the system must be ready for. It is not. From today (2026-09-21): **preseason in 12 days,
+regular season in 29.**
+
+⚠ **Read every existing "before 2026-10-03" in these documents as "before the preseason opener."**
+The phrase appears **40 times across 15 files**, and **many of those occurrences sit inside verbatim
+transcript quotes, which are NOT rewritten** — altering a quote to match a later correction would
+falsify the record this set exists to keep. **This entry is the authority; the individual references
+are historical.**
+
+**It cuts both ways, and the second direction matters more.** The deadline is 17 days *later* than
+assumed, which is slack — but anything that was scoped to "work by opening day" and silently meant
+the preseason may now be **measured against the wrong slate**. Preseason games carry prefix `001`,
+have no bearing on player props, and are exactly the kind of rows a naive `WHERE season = '2026-27'`
+sweeps in. **Whether any loader, backfill or scoring path filters on prefix is NOT RECORDED** — it is
+a question for the transcripts that built them.
+
+---
+
+## 🔴🔴 `raw_json` IS A DOUBLE-ENCODED STRING ACROSS THE NBA JSONB SURFACE — the provenance safety net is unqueryable
+*Found 2026-09-21, T2 re-read pass 11. **`[LIVE-AUDIT]`** — scope **corrected and widened by the owner's
+independent verification**, same day. Detail: `NBA_MASTER_SUMMARY.md` §T2.11 (sweep series).*
+
+`jsonb_typeof(col)` returns **`string`**, not `object`, on **17,902 rows across 14 NBA tables** —
+**every NBA JSONB column except three.**
+
+*(My own pass measured **1,306 rows / 6 tables** by checking only the static layer. **That figure was
+an undercount by a factor of 13**, and the correction is the owner's, not mine. Recorded here rather
+than silently replaced: the finding was real, the scoping was too narrow, and the lesson is that
+"which tables have this column" is a question to ask the catalog, not the tables I happened to be
+reading.)*
+
+**Largest affected:** `player_tracking_detail.metrics` **4,652** · `player_career_season_totals`
+**3,644** · `player_playtype_profile` **3,282** · `nba_calendar.games` **2,666**.
+
+✅ **Scoring is clean.** Both JSONB columns in `nba_score.baseline_ladder_runs` are stored as
+**objects**, as is `nba_config.classification_config`. **The three unaffected columns are the ones
+the scoring path depends on** — which is why this is not an opening-day blocker.
+
+⚠ **One affected column is DATA, not provenance**: `nba_stats.player_tracking_detail.metrics`. Every
+other affected column is a `raw_json`-style archive whose loss is a recoverability problem; this one
+holds the payload itself. **Its only reader today is its own writer**, so **nothing NBA is broken
+yet — latent, not live.**
 
 **The mechanism**, identical in every writer:
 ```js
