@@ -284,6 +284,34 @@ def main():
             save("complete (delta)")
             return 0
 
+        if MODE == "less":
+            # LESS (2026-09-21): every goblin/demon quoted BOTH ways, back to back - More (section LEG) then Less (section
+            # LESS) - each paired with a standard on More from another game, ladder by ladder, round-robin across stats so a
+            # budget cut still spans every stat. Both sides of one line are priced at the same moment: how PrizePicks prices
+            # Less on alternates (complement of More? its own floors and caps?) before NBA offers it.
+            partners = pick_distinct(std, 4)
+            ladders = {}
+            for r in alt:
+                ladders.setdefault((r["stat"], r["player"]), []).append(r)
+            by_stat = {}
+            for (stat, _), rs in ladders.items():
+                by_stat.setdefault(stat, []).append(sorted(rs, key=lambda x: x["line"]))
+            order = []
+            while any(by_stat.values()):
+                for stat in sorted(by_stat):
+                    if by_stat[stat]:
+                        order.append(by_stat[stat].pop(0))
+            result["meta"].update({"mode": "less", "alt_legs": len(alt), "ladders": len(order)})
+            print(f"LESS|alt legs={len(alt)}|ladders={len(order)}|budget={MAX_Q}", flush=True)
+            for lad in order:
+                for r in lad:
+                    p = next((x for x in partners if x["game"] != r["game"] and x["player"] != r["player"]), None)
+                    if p:
+                        run("LEG", [leg(p), leg(r)])
+                        run("LESS", [leg(p), leg(r, "under")])
+            save("complete (less)")
+            return 0
+
         # VALIDATE - NBA only: the known Tatum/Wemby pair are NBA projections
         if LEAGUE == 7:
             by_id = {r["id"]: r for r in rows}
