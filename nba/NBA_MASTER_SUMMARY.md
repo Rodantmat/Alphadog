@@ -14420,6 +14420,50 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.45 — PASS 30 (**two-direction judgment, eighth run — weight on DATE claims and rule 6**) — **📌 the correction had exactly one sibling, and no more · 0/3**
+*2026-09-21. Band **54 for a third run, 0 in, 0 out**; coverage **690 / 675**. §T9.44a corrected two of
+five timestamps — **rule 6 asks whether every other date in the T9 block states its zone.***
+
+#### 📌 T9.45a — **Every timestamp in the T9 block is zone-marked except one table, and it is now**
+
+All twenty-six distinct timestamps in §T9.16–§T9.44 were enumerated and each checked for whether its
+zone is stated **inline or by its column header**. **Twenty-five are.** *(The `git blame` times sit
+under explicit `Local (−0700)` / `UTC` headers; the `loaded_at` values under a `min(loaded_at)` **UTC**
+header; the snapshot and `nba_ref.players` times carry `UTC` inline.)*
+
+**The one exception is §T9.27b's own regime table**, whose column read simply **`loaded`** —
+*the table that started the two-regime finding, and the only place in the block where a timestamp had
+no zone anywhere.* **Header now reads `loaded (UTC)`.**
+
+✅ **So the sibling sweep closes cleanly: one sibling, found and fixed, and no others.** *That is the
+outcome rule 6 is supposed to produce and has not produced before in this run — at §T9.36a it found a
+missed prop, at §T9.38 two further findings; here it confirms the correction was complete bar one.*
+
+#### ✅ T9.45b — **The band has been stable across the whole stretch since the pass-25 shift**
+
+| Pass | High band | vs twelve | vs thirty |
+|---|---|---|---|
+| 25 | **54** *(+2 — the `rep()` quotation)* | 691 | 675 |
+| 27 | **54** — 0 in, 0 out | 691 | 675 |
+| **30** | **54** — 0 in, 0 out | **690** | 675 |
+
+**One further segment crossed the 0.40 coverage threshold; the judgment strata did not move.**
+*Exactly the behaviour §T9.40b predicted: the band shifts when this sweep quotes the transcript's code
+and is otherwise settled.*
+
+#### ✅ T9.45c — **The date claims of §T9.42–§T9.44 survive re-judgement**
+
+The ordering — **line 11 → 58 minutes → line 103 → the T9 session → the `# ADDED` block** — and the
+**before / before / after** split of the three loads against `LADDER_DEPTH`'s landing both re-derive.
+**The `# ADDED 2026-09-12` UTC reasoning stands** (commit `1677b3d7` = 2026-09-12 02:49:35 UTC).
+**No further date defect.**
+
+**Pass outcome: no defect found; the sole change was applying §T9.44a's newly adopted zone form to the
+one table that lacked it. 📌 CLEAN 0/3 · 30 passes** *(the count does not advance: a document was
+changed, and this run holds that bar strictly — but the pass's substance was clean).*
+
+---
+
 ### T9.44 — PASS 29 (**live numeric re-verification**) — **🔴 the blame timestamps were local, and two of them cross midnight in UTC · 0/3**
 *2026-09-21. Every figure passes 26–28 state, re-derived, **with every timestamp converted to UTC
 explicitly** — the check the previous pass's own next-step note demanded.*
