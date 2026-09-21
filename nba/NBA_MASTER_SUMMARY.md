@@ -14430,6 +14430,58 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.17 — PASS 16 (**third two-direction judgment**) — **✅ CLEAN 1/3 · the composition attacked directly and PROVEN, with a partition that closes on 6**
+*2026-09-21. The judgment pass, with the weight on the only findings in this transcript that rest on
+reading source rather than querying data.*
+
+#### ✅ T11.17a — **The composition was an inference. It is now a measurement.**
+
+§T11.16b asserted *"the six games have no market spread"* **by inference** from the mapping gap. **The
+next-step row demanded it be tested directly, and it was:**
+
+| test | result |
+|---|---|
+| Distinct `game_id`s in `nba/data/nba_market_spreads_{2024_25,2025_26}.json` | **2,454** |
+| …equal to `event_game_map`'s mapped-game count (**2,454**) | ✅ **identical — the export IS gated by the mapping** |
+| The six unmapped `game_id`s — `0022401229` · `0022401230` · `0022500147` · `0022501230` · `0022500578` · `0022500602` | **NONE of the six is in either export** ✅ |
+
+🔑 **And the split closes exactly**: the 2024-25 export holds **1,228** rows and 2025-26 **1,226** —
+**1,228 + 1,226 = 2,454** — **so each season is short by 2 and 4 respectively, and 2 + 4 = 6**,
+***which is precisely where the six games fall*** (two on 2024-12-14; four in 2025-26 on 11-01,
+12-13, 01-15 and 01-18).
+
+✅ ***§T11.16b stands, upgraded from inference to measurement, with a partition closing on the exact
+number in the claim.***
+
+#### ✅ T11.17b — **The code quotations re-read verbatim**
+
+*§T10.22b's lesson is that an identifier written from memory looks right and is wrong — and a quoted
+line is no different.* **Line 164 re-fetched by exact-string grep**, a single match:
+
+```
+164: teams["is_home"] = teams["MATCHUP"].str.contains("vs."); teams["margin"] = pd.to_numeric(teams["PLUS_MINUS"], errors="coerce")
+```
+
+✅ **Verbatim as published.** *The surrounding quotations (181–182, 190–205, 301, 322) were taken from
+the same grep output in the same pass and are reproduced from it, not from memory.*
+
+#### 📌 T11.17c — **The band, per rule 18**
+
+| | high band | tail | uncovered vs **the twelve** | uncovered vs **all `nba/`** |
+|---|---|---|---|---|
+| **Baseline `5dfb72ab`** | **13** | **3** | **695** | **685** |
+| Working tree | **22** | **2** | **686** | **678** |
+
+**Baseline identical for the fourth consecutive measurement** (passes 0, 4, 10, 16). **Overlap 13 in
+both · 9 working-only · 0 baseline-only — strictly monotone.** 📌 **The working figures are unchanged
+from pass 10**, *so the last six passes added no verbatim quotation — they were measurement and code
+reading, which §T10.16c predicts moves nothing.*
+
+**Pass outcome: no defect; the composition upgraded from inference to measurement; the code
+quotations verified verbatim; the band stable. ✅ CLEAN 1/3 · 17 passes.**
+
+---
+
 ### T11.16 — PASS 15 (**tracing home/away to its consumer, in the code**) — **✅ scoring is NOT exposed to the reversal · 🔴🔴 and the six games are exactly the ones HCA still governs · 0/3**
 *2026-09-21. Read-only code reading (`github_grep_file`). The question §T11.15b left open, answered —
 **and the answer composes two findings into a sharper one.***
