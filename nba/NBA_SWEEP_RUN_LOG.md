@@ -15,9 +15,9 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 | | |
 |---|---|
 | **Current transcript** | **T4** — `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` |
-| **State** | **Not started.** T2 CLOSED 2026-09-21 at 19 passes. |
-| **Stratum** | — |
-| **Exact next step** | **T4 pass 1**: run `sweep_coverage.py` to get T4's tail at 0.40, then read **strictly by stratum in order** — owner turns → assistant reasoning → output → commands → results — writing **only after** each stratum is finished (Rule 2). Batch-check candidates against all 30 documents before writing. Ledger row synced after every pass. |
+| **State** | **0/3 · 4 passes · ALL FOUR STRATA READ** (owner 5 · reasoning 261 · commands 103 · results 129). |
+| **Stratum** | Complete. Tail: 607 segments, 498 uncovered vs the twelve (82%). |
+| **Exact next step** | **T4 pass 5 — the two-direction judgment pass.** Script is at `scratchpad/t2judge/judge.py`; point `T2` at T4's transcript path and rerun. Then two more clean passes at **different angles** (suggested: live numeric re-verification of T4's measured volumes; cross-document consistency on the backfill tables). |
 | **Then** | T4 → T5 → … → T20, strictly chronological. Completion criterion per transcript: **3 consecutive clean passes at genuinely different angles**, the two-direction judgment pass among them. |
 | **Order** | T1 ✅ · T2 (here) · T3 ✅ · then T4 → T20. T19/T20 are this documentation effort and are swept like any other. |
 | **Parked** | A2/N1 (T15) material — re-extract when the sequence reaches T15. |
