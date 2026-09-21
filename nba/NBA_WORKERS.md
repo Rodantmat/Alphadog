@@ -1324,6 +1324,3 @@ carries a destructive shell step is NOT RECORDED.** → `NBA_OPEN_ITEMS.md` *FRO
 
 **Every workflow:** `persist-credentials: true`, **retry-with-rebase on push**, and **no
 `|| echo failed`**.
-</content>
-</parameter>
-<parameter name="message">docs: NBA workers - every worker, scraper and script
