@@ -702,6 +702,3 @@ it remains **built but unverified**.
    The ±6 ladder was certified; **the tails beyond it were never separately certified.**
 5. **Per-leg multipliers are unavailable** — see `NBA_MULTIPLIERS.md`. Without them the −EV/+EV
    conclusions rest on *observed* payout factors, not per-leg truth.
-</content>
-</parameter>
-<parameter name="message">docs: NBA goblin/demon identification - dedicated file per owner mandate
