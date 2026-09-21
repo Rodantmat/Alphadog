@@ -1136,7 +1136,11 @@ cal_shift, final_hp, confidence, score, edge, interpolated, built_at`. The board
 
 ### Others
 ### `nba_score.blowout_model` — 35 rows *(T16 build, T4 design warning)*
-Two `kind`s:
+❌ ~~Two `kind`s:~~ 🔴 **THREE `kind`s — corrected 2026-09-21, §T11.28a.** *The 35 is right and the
+"two" was not:* **`minutes_by_margin` 7 + `p_blowout` 14 + `sliding_scale` 14 = 35** *(census,
+`GROUP BY kind, side`)*. **`sliding_scale` is documented below; it was missing from this section
+while §T11.19a's column-collision entry already named all three — two of the twelve disagreeing
+with each other.**
 
 **`minutes_by_margin`** — 7 rows, one per margin band. **`v1` is a RATIO relative to the player's own
 baseline; `v2` is absolute minutes lost.**
