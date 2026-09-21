@@ -2148,6 +2148,38 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+### T2.17 — PASS 17 (**angle: every documented numeric claim re-verified against live Postgres**) — **✅ CLEAN 1/3**
+*2026-09-21. A third distinct angle: not "did I read it?" but **"is the number still true?"***
+
+**Eighteen documented claims checked in two queries. Eighteen matched exactly.** `[LIVE-AUDIT]`:
+
+| Claim as documented | Live |
+|---|---|
+| `nba_ref.teams` 30 rows, 30 active | **30 / 30** ✅ |
+| `nba_ref.team_aliases` 162 active, 7 `manual_alias` | **162 / 7** ✅ |
+| 3 normalized alias collisions | **3** ✅ |
+| `nba_ref.players` 582 rows, 525 active, 0 active missing `team_id` | **582 / 525 / 0** ✅ |
+| `nba_ref.player_aliases` 1,822 active, 4 alias types | **1,822 / 4** ✅ |
+| `nba_ref.arenas` 30 rows, 11 NULL capacity | **30 / 11** ✅ |
+| `nba_ref.officials` 80 rows | **80** ✅ |
+| `player_season_profile` / `player_tracking_profile` / `player_onoff_profile` 582 each | **582 / 582 / 582** ✅ |
+| `nba_team.season_profile` 30 | **30** ✅ |
+| `nba_ref.teams.arena_id` NULL on all 30 (dead column) | **30 of 30 NULL** ✅ |
+
+**The freeze is re-confirmed from a second direction**: `max(updated_at)` across these eleven tables
+spans **2026-08-31 → 2026-09-03 and nothing later** — teams and team_aliases 08-31; arenas,
+officials, player_aliases, tracking, on/off and team season_profile 09-01; players and
+player_season_profile 09-03. **Eighteen days of no writes, on the layer whose whole purpose is a
+weekly refresh.** *(Recorded as state. Cause remains OPEN per Rule 6.)*
+
+**Nothing new. No discrepancy. CLEAN 1/3.**
+
+*(Worth noting what this angle can and cannot do: it confirms the documents describe the database
+accurately **today**. It cannot catch a number that was wrong when written and has since been
+overwritten by a value that happens to match — though on a frozen layer, "since" is doing no work.)*
+
+---
+
 ### T2.16 — PASS 16 (**angle: the mid-band 0.40–0.45 — segments the matcher calls barely-covered**) — **NEW MATERIAL · CLEAN COUNT RESET 0/3**
 *2026-09-21. 43 mid-band segments. A deliberately different angle from pass 15's two-direction run,
 per the pass rule's "different real samples and different angles — a pass is not a re-run."*
