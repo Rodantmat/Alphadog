@@ -582,6 +582,3 @@ pass 30 — lesson #27 and the lesson-count correction). **T2 at 0/3 pending re-
 per the DRIFT NOTICE. T10–T20 not started.**
 *This block previously read "T1 is at pass 10 (clean count 0); T2 at pass 1" — stale, superseded
 2026-09-20.*
-</content>
-</parameter>
-<parameter name="message">docs: NBA glossary - terms mapped to transcripts
