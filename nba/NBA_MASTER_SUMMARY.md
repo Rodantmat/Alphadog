@@ -14662,10 +14662,25 @@ exactly. ✅ **The `not_mined` pair is precisely the `active = 0` pair**, so the
 retirement consistently through two different columns.
 
 🔴 **`compute_stage` appears in NONE of the twelve** — only in `NBA_COMPASS.md` and
-`NBA_PROJECT_LOG.md`. 🔴 **And `lineups_confirmed` and `overtime_pace_live` appear in NO document at
-all, across all thirty.** ⚠ ***Those two are the factors that structurally cannot be backfilled*** —
-which is the direct answer to the owner's [548] directive, *"we need also a fallback… **for all the
-factors, every single factor**."* **Two are exempt by construction, and nothing says so.**
+`NBA_PROJECT_LOG.md`. *(That half stands; see §T10.12a.)*
+
+> 🔴 **RETRACTED 2026-09-21 by §T10.12a — "appear in NO document at all" was a probe on the KEY, not
+> on the subject.** *The snake_case keys return zero; **the subjects are documented in up to seven
+> documents, four of them mandated**: "Confirmed starting lineups" in `NBA_ENRICHMENT_FACTOR_LOCK.md`
+> and `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`; "confirmed lineup" in **`NBA_BASELINE_CALIBRATION.md`,
+> `NBA_GLOSSARY.md`, `NBA_MASTER_SUMMARY.md`, `NBA_SYSTEM_DESIGN.md`** and three more; "P(OT)" in six.*
+> **Rule 2 exactly: an absence claim is tested against the SUBSTANCE, not the wording.**
+>
+> 🔑 **And the framing was wrong in a second way, which the registry's own notes settle.** These two
+> are **not an unmet backfill obligation**: `lineups_confirmed` is annotated *"DELTA vs P(start)
+> **[superseded by `lineup_change` in pass 1 2026-09-09]**"* and `overtime_pace_live` *"**Mostly
+> absorbed by `market_spread_delta` / `market_total_delta`**; kept for 2H/4Q OT-inclusive lines."*
+> **All three replacements are in the registry, and `market_spread_delta` is the single batch-2 factor
+> that carries a relevance row.** ***The live-only stage is the residue of two folded-in factors, not
+> a gap against the owner's "a fallback for every single factor".***
+>
+> ✅ **What survives**: that reasoning lives in `research_notes` and **in none of the twelve** — a
+> reader of the mandated documents can find the subjects and not the supersession.
 
 #### ✅ T10.6d — **The band moved, it is attributable, and unlike T9's it is REAL coverage**
 
