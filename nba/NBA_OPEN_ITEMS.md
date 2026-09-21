@@ -72,8 +72,10 @@ set, and that the consequence is now visible in the data.**
 
 ### 🔴🔴 AND THE EXTRA RUNGS CARRY FULL CONFIDENCE CREDIT — *added 2026-09-21, §T9.33b*
 
-**30,989 ladder rows sit beyond their prop's measured `LADDER_DEPTH`**, and **92.2% of them (28,563)
-are at `p_more` ≤ 0.01 or ≥ 0.99.** *(Within the measured depth: 168,357 rows, 10.7% extreme.
+**30,989 ladder rows sit beyond their prop's measured `LADDER_DEPTH`**, and **92.3% of them (28,596)
+are at `p_more` ≤ 0.01 or ≥ 0.99** *(figures corrected 2026-09-21 by §T9.34a: they first read 28,563
+and 92.2%, computed with a **strict** `< / >` predicate while the prose said `≤ / ≥`)*. *(Within the
+measured depth: 168,357 rows, 18,166 extreme — 10.8%.
 **168,357 + 30,989 = 199,346**, + `stocks` 6,350 + `double_double` 541 = **206,237** ✅.)*
 
 🔴 **All 30,989 report `used_emp = true`** — and downstream that flag is a multiplier, not a
