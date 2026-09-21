@@ -14430,6 +14430,70 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.54 — PASS 53 (**the RULE-28 DUPLICATE audit — rule 6 applied to rule 28, the pass after it was written**) — **❌ two duplicates, and they are a THIRD SPECIES · ✅ the novelty population enumerated and probed complete · 0/3**
+*2026-09-21. **The obligation**: rule 28 was written at pass 52 and every novelty probe this sweep
+ran on T11 — passes 26, 34, 40, 48, 49, 50, 51, 52 — had been run against the BASELINE. **So every
+"0 of thirty" the sweep published answers "was this in the documents before the sweep began," not
+"have I already said this."** This pass asked the second question.*
+
+#### ✅ T11.54a — **The enumeration, and it is complete rather than sampled**
+| | |
+|---|---|
+| **passes audited** | **26, 34, 40, 48, 49, 50, 51, 52** |
+| **passes that published a novelty/absence verdict at all** | **26, 48, 50, 52** *(34, 40, 49 and 51 published none in this form)* |
+| **distinct published novelty claims** | **19** |
+| **re-probed against the WORKING tree this pass** | **19 — all of them**, each with a positive control *(rule 22)* and every hit opened *(rules 22, 26)* |
+
+⚠ **The dismissal rules were fixed BEFORE the probes ran, so the result could not be read backwards**:
+*a hit tracing to the claiming pass is the claim itself* · *a hit in the ledger row is the sweep's own
+summary of that pass* · *a hit in the artifact the claim is ABOUT (the register in `NBA_DATABASE.md`)
+is not an independent carrier* · ***only a hit in an entry EARLIER than the claiming pass is a
+duplicate.*** 🔑 **And the expected false-hit rate was stated in advance and held**: most hits were
+the claim's own entry.
+
+#### ❌ T11.54b — **Two duplicates, both in §T11.49c, both already on the sweep's own novelty ledger at PASS 26**
+**§T11.27's table — twenty-two passes earlier — carries:**
+
+| pass 26 published | pass 48 re-published |
+|---|---|
+| ***"`data_quality` on 22 tables; per-table provenance; the dead default — **0** of thirty, **0** of the twelve"*** | **"22 `data_quality` tables"** among the register's *"absent from all thirty"* |
+| ***"`phase` identical across all six tables — **0** of thirty, **0** of the twelve"*** | **"6/7 `phase` tables"** among the same seven |
+
+✅ **The other five hold** — **104 base tables · 10 game-keyed tables · 18 `prop_taxonomy` columns ·
+33 scrapers · 32 `.md` files** — *and the register's conclusion is untouched: five class sizes absent
+is still an addition to the twelve.* 📌 **Credit corrected in place at §T11.49c.**
+
+#### 🔑🔑 T11.54c — **A THIRD SPECIES of duplication, and it is the one only rule 28 can catch**
+**§T11.50b sorted the sweep's duplicates into FIGURES** *(rare — 2 of 13 at pass 49)* **and
+CHARACTERISATIONS** *(the five that mattered)*. ***These two are neither. They are VERDICTS — a
+published novelty RESULT, re-derived.***
+🔑 **And that is exactly why the baseline could never catch them**: ***a figure or a characterisation
+may exist in the documents; a VERDICT about the documents exists ONLY in the sweep's own entries,
+and the baseline contains none of those.*** **Rule 28 is not a refinement of rule 26 — it is the
+instrument for a class the sweep had no instrument for.**
+
+#### ✅ T11.54d — **Rule 18 is NOT superseded, and the control case proves it**
+**§T11.27 also published *"`a1`'s 'archive coverage to verify' is in 0 of thirty."*** **The working
+tree carries that string today — in `NBA_OPEN_ITEMS.md`, put there by PASS 23's matrix transcription,
+three passes BEFORE the claim.** ⚠ ***That is not a defect.*** **The claim is a NOVELTY claim, it was
+measured against the baseline, and against the baseline it is correct — rule 18 working exactly as
+written.** 🔑 ***So the two rules divide the work rather than competing: novelty → baseline; duplicate
+→ working tree. A pass that used one tree for both questions would be wrong either way.***
+
+#### ✅ T11.54e — **The band: the NINETEENTH identical baseline, and the tenth pre-registration**
+| tree | high | tail | uncovered12 | uncovered30 |
+|---|---|---|---|---|
+| **baseline `5dfb72ab`** | **13** | **3** | **695** | **689** |
+| **working** | **39** | **0** | **664** | **664** |
+
+***Predicted before measuring: pass 52 wrote only into documents already inside the corpus or
+excluded from it (rule 25), so neither tree could move. Tenth pre-registration, tenth hit.***
+
+**Pass outcome: ❌ two duplicates, credit corrected. ✅ A complete enumeration, a third species of
+duplication named, and rule 18's scope defended rather than eroded. CLEAN 0/3 · 54 passes.**
+
+---
+
 ### T11.53 — PASS 52 (**the QUOTATION-BOUNDARY audit — rule 6 applied to rule 19, and the population enumerated for the first time**) — **❌ two more rule-19 omissions, both in PASS 0's entries · 🔑 RULE 28 · ✅ six candidates killed by rule 26 before they were written · 0/3**
 *2026-09-21. **The brief**: pass 51 found two omissions, but only in the two segments the next-step
 row happened to name. ***Rule 19 has been in force since T10 and its population had never been
