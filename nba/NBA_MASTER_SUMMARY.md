@@ -14419,6 +14419,71 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.22 — PASS 22 (**literal audit — every documented identifier read off the system**) — **🔴 four objects asserted live that do not exist, one of them identified by its own row count · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. The angle §T10.21b forced: two wrong identifiers in six passes, both
+written from the prose rather than read from the database. **The first pass since 18 to change the
+record of the SYSTEM rather than the record of this sweep.***
+
+#### 📌 T10.22a — **The census**
+
+**Predicate** (rule 16): every backticked `` `nba_<schema>.<object>` `` in the twelve, working tree,
+2026-09-21; `.py` filenames excluded; the live catalog is `information_schema.tables` for all
+`nba%` schemas (**97 objects**).
+
+| | Count |
+|---|---|
+| Distinct schema-qualified object references in the twelve | **101** |
+| Total mentions | **785** |
+| **Resolve against the live database** | **90** |
+| **Do not resolve** | **11** *(29 mentions)* |
+
+✅ **Seven of the eleven are CORRECT AS WRITTEN** — the documents say the object is gone, is not a
+table, or is a trap, and the audit confirms each: `nba_score.ladder_calibration` *(on the DROPPED
+list)* · `nba_score.absence_panel` *(same list)* · `nba_config.ewma_alpha` *(documented as **not a
+table** — a column of `nba_config.stat_decay_config`)* · `nba_config.factor_gate_results` *(this
+sweep quoting its own §T10.16e error)* · `nba_stats.official_roster_snapshot` *(the by-analogy trap,
+documented as such — the real one is `nba_ref.`)* · `nba_market.sleeper_board_current` *(documented
+as never written)* · `nba_stats.darko` *(an explicit negative — "**not** `nba_stats.darko`")*.
+
+🔑 ***Applying rule 20 before calling any of them a defect is what kept the finding at four instead of
+eleven: seven "missing" objects are the documents being right about absence.***
+
+#### 🔴 T10.22b — **Four objects asserted as live that are not in the database**
+
+| # | As written | Live reality | Severity |
+|---|---|---|---|
+| 1 | **`nba_stats.lineup_synergy` (8,000 rows)** — `NBA_FINAL_SCORING_CALIBRATION.md` | **`nba_team.lineup_profile` — exactly 8,000 rows.** *Wrong schema AND wrong name; **the row count is what proves they are the same object**.* | 🔴 **corrected in place** |
+| 2 | **`nba_stats.player_career_totals`** — *"Live surface"* in `NBA_FINAL_SCORING_CALIBRATION.md`, repeated in `NBA_OPEN_ITEMS.md` | **`nba_stats.player_career_season_totals` — 3,644 rows.** ⚠ ***And that is the table whose stored self-subtotals are the §T4 double-count*** — so the wrong name pointed a reader away from the defect the item is about. | 🔴 **corrected in both places** |
+| 3 | **`nba_market.board_tiers_ud`** — a `###` **section heading** in `NBA_DATABASE.md` | **No such table.** Live: `board_tiers` and `board_tiers_v2`, **both 2,199,354 rows.** ⚠ **Whether `board_tiers_v2` is the object described is NOT RECORDED** — rule 6, nothing swept supplies the mapping. | ⚠ **flagged, not renamed** |
+| 4 | **`nba_score.real_slip_leg_observations` (139 legs)** — `NBA_DATABASE.md`, **two lines above a DROPPED list that does not include it** | **Not in the database.** ⚠ **Why is NOT RECORDED**: dropped after 2026-09-19 by a session not yet swept, or never created. *`NBA_OPEN_ITEMS.md` rests a finding on it — "there is no NBA slip history" — and that direction is unaffected: the table is not there at all.* | ⚠ **flagged** |
+
+🔑 **The pattern across all four, and across §T10.16e and §T10.21b**: ***the name is right about the
+thing and wrong about where it lives or what it is called.*** **`lineup_synergy` is the clearest —
+the documents carry the correct row count for a table whose name they get wrong**, which is only
+possible if someone read the table and then wrote the name from memory.
+
+#### 🔴 STANDING RULE 21 — **AN IDENTIFIER IS COPIED FROM THE SYSTEM, NEVER WRITTEN FROM THE PROSE**
+*Added 2026-09-21 after §T10.22b, and it now has six instances: `nba_config.factor_gate_results`,
+`phase2_enrichment`, `lineup_synergy`, `player_career_totals`, `board_tiers_ud`,
+`real_slip_leg_observations`.*
+
+**A schema, table, column or enum value in these documents is pasted from a live query or a source
+file — never reconstructed from the surrounding prose.** *"17 phase-2 factors"* does **not** make the
+value `phase2_enrichment`; *"the Underdog board tiers"* does **not** make the table `board_tiers_ud`;
+*"career totals"* does **not** make it `player_career_totals`.
+
+⚠ **And the failure is invisible to every other check in this sweep**: a wrong identifier **grep-hits
+normally**, **reads correctly**, and **carries accurate surrounding facts** — `lineup_synergy` came
+with the exact row count. ***Only running it against the system finds it.*** **So the literal audit
+is now a standing angle, not a one-off: every transcript's closing three must include one.**
+
+**Pass outcome: 4 defects — two corrected in place, two flagged as NOT RECORDED — 7 apparent
+defects cleared by rule 20, 90 of 101 identifiers exact, rule 21. 🔴 CLEAN 0/3 · 22 passes.**
+*(And the closure judgment does **not** trigger: this pass changed the record of the system, not of
+the sweep's method.)*
+
+---
+
 ### T10.21 — PASS 21 (**live numeric re-verification, rules 17/18/20 applied to every figure**) — **🔴 one defect, in pass 19's own probe: a value that does not exist · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. Every live figure §T10.1–§T10.20 states, re-derived, with every
 partition summed.*
