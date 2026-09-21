@@ -8131,6 +8131,11 @@ the pass that made them.**
 2. **Tool-name failures** — *"four instances, two families"* from memory; **actually 5 across 3
    distinct wrong names** (§T4.25a). Caught by a judgment pass.
 3. **Debug artifacts** — *"three"* from a `*debug*` grep; **actually five.** Caught here.
+6. **T8's owner turns** — *"three"*, counted **in the uncovered tail**; the transcript has **six**
+   (§T8.24a, 2026-09-21). ⚠ **The purest instance of the rule**: the tail is *"segments the documents
+   do not already cover"*, so it **excludes exactly the turns already recorded** — which is what the
+   pass was trying to determine. **The pattern was defined by the answer being sought.** *The
+   authority is the transcript's own segment list: 609 assistant / 6 human.*
 5. **Scrapers exposed to the Oct-1 season boundary** — *"13"* from `grep -rl`, which counts **files,
    not call sites**; **the authority is the call sites**, and they give **15**: 12 direct callers plus
    3 reached through `stats_seasons()`, which is anchored on `active_stats_season()` (§T7.56a,
