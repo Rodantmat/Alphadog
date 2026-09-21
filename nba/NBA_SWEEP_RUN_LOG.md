@@ -14,11 +14,11 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 | | |
 |---|---|
-| **Current transcript** | **T2** — `2026-09-03-04-41-28-nba-expansion-phase3a-enrichment-complete.txt` |
-| **State** | REOPENED, **CLEAN 1/3**, 15 passes run |
-| **Stratum** | Both strata fully read (command lines 268–417, results 419–567, earlier passes 143–267) |
-| **Exact next step** | **T2 pass 16** — a judgment pass at a **different angle** from pass 15, per the pass rule's *"different real samples and different angles"* clause. Pass 15 was the standard two-direction run. Pass 16 samples the **mid-band 0.40–0.45** (segments the matcher calls barely-covered) plus a **live-verification sample** of documented claims. |
-| **Then** | T2 pass 17 (third clean) → close T2 → **T4** `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` → T5 … T20, strictly chronological |
+| **Current transcript** | **T4** — `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` |
+| **State** | **Not started.** T2 CLOSED 2026-09-21 at 19 passes. |
+| **Stratum** | — |
+| **Exact next step** | **T4 pass 1**: run `sweep_coverage.py` to get T4's tail at 0.40, then read **strictly by stratum in order** — owner turns → assistant reasoning → output → commands → results — writing **only after** each stratum is finished (Rule 2). Batch-check candidates against all 30 documents before writing. Ledger row synced after every pass. |
+| **Then** | T4 → T5 → … → T20, strictly chronological. Completion criterion per transcript: **3 consecutive clean passes at genuinely different angles**, the two-direction judgment pass among them. |
 | **Order** | T1 ✅ · T2 (here) · T3 ✅ · then T4 → T20. T19/T20 are this documentation effort and are swept like any other. |
 | **Parked** | A2/N1 (T15) material — re-extract when the sequence reaches T15. |
 
