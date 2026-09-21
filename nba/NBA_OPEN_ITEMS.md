@@ -241,6 +241,66 @@ never holds PrizePicks/Sleeper"* — **so it is reported as 2 of thirty, 0 of th
 sources for projection methodology, never as board-history vendors** — false hits, opened and
 dismissed.
 
+### 🔴🔴 SEGMENT 501 — **the exhaustive verdict, and it is the owner being answered with evidence**
+*T11 pass 29 (§T11.30a). **`v41 exhaustive alternatives done`** — the transcript's LAST word on board
+history, at **70% of the file**, against §T11.23c's quotation at **15.7%**.*
+
+> *"**owner pushed back that ParlayAPI has Sleeper/Underdog**: **live verified** — bookmaker key
+> `sleeper` returns **331 MLB props** (`is_dfs`, `flat_payout=true`); **PP/UD/Sleeper all live in
+> `/props`**. ***History verified ABSENT***: the API itself returns **`BOOKMAKER_NOT_IN_ARCHIVE`** —
+> *"no closing-line history exists for sleeper, prizepicks"*; **`/v1/bookmakers/sleeper/freshness`
+> shows writes only to `prop_snapshots` (short-retention tick store behind `/line-movement`, <1h
+> tracked), historical rows total = 0**; **Underdog archived from ~2026-05-10 only.** **Free routes
+> DEAD**: Wayback CDX — **PP projections API 24 captures in 3 years; UD and Sleeper 0**; the **52k PP
+> board captures are share-entry SPA shells with no lines**; **no GitHub or Kaggle archives.** **Odds
+> API**: free plan historical locked; ***us_dfs region = PrizePicks (+ goblin/demon alternate) +
+> Underdog + Pick6 + Dabble — NO SLEEPER***; plans **$30 / 20k · $59 / 100k · $119 / 5M · $249 /
+> 15M**; ~200 credits per game-snapshot. ***NOTHING ANYWHERE HOLDS THE 2024-25 OR 2025-26 SLEEPER
+> BOARDS.*** **Cheapest reliable: Odds API $119 for one month, conditional on the unpublished us_dfs
+> start date — ask support first, or a $30 test.** Fallback per Gemini: ask ParlayAPI support for a
+> raw `prop_snapshots` export (May 2026+ at best)."*
+
+🔑🔑 **THIS IS THE CAUSE OF `[LIVE-AUDIT]` §T11.8b — the finding this sweep revised THREE times.**
+*"Sleeper has zero NBA rows"* was measured from the database and explained as an observation about the
+data. ***T11 explains it: no archive of Sleeper boards exists anywhere, free or paid, and the one paid
+route that fixes PrizePicks and Underdog does not carry Sleeper at all.*** **The derived-Sleeper
+fallback (§T11.6b) is therefore not a convenience — it is the only option that exists**, and this
+segment is the proof of necessity the sweep recorded the remedy without.
+
+✅ **§T11.23c's *"no free archive exists for anyone"* is not merely upheld — it is EXHAUSTIVELY
+PROVEN**, route by route, with **the API's own error code** and **`historical rows total = 0`**.
+*Published from segment 112 as an assertion; the evidence was at segment 501.*
+
+### 🔴🔴 SEGMENT 709 — **the board puller is BUILT AND TESTED before T11 ends**
+*T11 pass 29 (§T11.30b). **99.6% of the file** — three segments from the end.*
+
+> *"**wants the 2-season boards to train/test the derived Sleeper fallback.** — **2026-09-10 v46 board
+> puller built + tested**: bridge job **`odds_api_board_backfill`**, config key
+> **`board_backfill_odds_api`** → Postgres **`nba_market.board_snapshots` + `board_backfill_log`
+> (resumable)**; defaults **snapshots = window 14:45 PT (DST-aware) + close (tip − 30)**, regions
+> **`us_dfs,us`** — DFS **and all US sportsbooks in ONE call: cost is per REGION, not per book** —
+> **21 markets incl 8 alternate**, key `odds_api_key_nba`. ***Test ORL-BKN 2024-10-25: 8,626 rows, 9
+> books (PrizePicks 16 markets, Underdog 11, FD/DK 19).*** **Cost 420 credits/snapshot — two seasons
+> ~2.07M (DFS-only 1.03M); fits the $119 / 5M plan leaving ~2.9M for the owner's MLB/hockey.** Run
+> after upgrade in ~7-date chunks per call. **Queue for overnight: injury 2025-26 tail running, then
+> injury 2024-25 queued (the workflow now self-loops 30-day chunks with commits); starters/officials
+> 2023-24 running.**"*
+
+⚠ ***So "DECISION PENDING" is segment 355's state, not T11's.*** **By segment 709 the puller is
+written, run against a real game, priced, and waiting on nothing but the owner's plan upgrade.**
+*(This corrects §T11.29b, written one pass earlier — the same failure rule 27 was created to stop,
+caught by rule 27 on its first application.)*
+
+🔑 **And the board puller got the timezone RIGHT**: **`window 14:45 PT (DST-aware)`** — an explicit
+in-transcript counter-example to the fixed-offset defects this sweep keeps recording *(the injury
+archive's hardcoded `-05:00`, §T11.3d; `nba-referees.yml`'s `UTC-7` comment)*. ***The same session
+that shipped a DST-aware window shipped a fixed-offset one, so this is not a knowledge gap — it is
+inconsistency between components.***
+
+📌 **And the matrix's ⏳ rows are in motion at T11's close**: injury 2025-26 tail → injury 2024-25
+queued, the workflow **self-looping 30-day chunks with commits**; starters/officials **2023-24
+running**.
+
 ### ✅ And the decision did resolve — the configs carry it
 `board_sources_decision`: ***`historical_boards`: The Odds API (PrizePicks + Underdog, 2 seasons)***.
 `board_backfill_odds_api`: **$119 / 5M plan**, **420 credits per snapshot** (10 × 21 markets × 2
