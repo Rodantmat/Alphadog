@@ -187,6 +187,23 @@ pg["comp_min"] = np.where(pg["competitive"] & (pg["PF"] < 6), pg["MINF"], np.nan
 ### 3.2 Cross-season carryover — the season-opening fix
 > *"without it **the opening month has ZERO projections and November only 62% coverage**"* (within-season
 > rates need 3 games, the minutes role 5).
+> 🔑 **THE BIAS HALF, recorded 2026-09-21 (T10 pass 1, §T10.1a) — the coverage figures below were on
+> file and the measured bias was not.** From `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` §7 and
+> the live config key `nba_config.classification_config.season_opening_study`:
+>
+> **Carryover OVER-PROJECTS ~5pp at the anchor in October** — **points −4.8 / −6.2, rebounds −5.2 /
+> −4.6** *(the two backtest seasons)* — **~2–4 pp in November, flat December–March.** ✅ **Both
+> seasons, same sign and same size**, which is what makes it usable rather than noise: *this is the
+> direct answer to the owner's T10 question, "is there a reliable and safe pattern on season beginnings
+> to work with."*
+>
+> 📌 **Also only in the config, not in any document**: *"**Platt stays OFF until ~December by
+> construction** (raw is calibrated within ~1–3pp)"*, and *"the out-of-sample test of the phase cell is
+> only possible on 2025-26 today; **for the 2026-27 opening the fit uses 2024-25 + 2025-26 —
+> stronger**."*
+>
+> ⚠ **The season opens 2026-10-20**, which is the window this pattern describes.
+
 **With it: October 85%, November 90%.** Carried at player level; carried evidence counts as `CARRY_N`
 games at the boundary. **`BT_CARRY`, default `"1"`.**
 
