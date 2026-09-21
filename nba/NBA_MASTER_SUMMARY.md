@@ -8008,6 +8008,12 @@ this directly"*, which is the structural reason every probe runs through GitHub 
 total.** Two of the five are named `*diagnostic*`. **The habit is one habit — dump the evidence beside
 the data and let `git add` commit it — and it uses two words.**
 
+**⚠ The sibling rule, added 2026-09-21 after §T7.35a**: **an absence claim must be tested against the
+SUBSTANCE, not the wording.** Twice now I have searched for an owner's *phrasing*, found nothing, and
+reported the *idea* as unrecorded — when the work it asked for was documented in other words. **Before
+writing "nothing records this," search for what the thing would be called by someone who did record
+it.**
+
 🔴 **This is the THIRD time in this sweep that I have reported a count from a single-pattern search.**
 The others:
 1. **`raw_json`** — measured 1,306 rows / 6 tables by checking the static layer I was already
