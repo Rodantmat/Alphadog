@@ -727,6 +727,33 @@ payout band). WNBA reaches 37–44× two-pick payouts with consolations 1.75 and
 **Schedule:** no scheduled runs seen at 06:15 or 12:15 UTC; a map run appeared at 18:12 UTC on a commit not made here —
 identify its triggering event from its log before relying on the schedule.
 
+### WNBA SCOPE (owner, 2026-09-21)
+**WNBA is only a data source to sharpen NBA multipliers.** No WNBA models, WNBA constants or WNBA-only stats. Use it only
+where the machinery is shared with NBA and NBA lacks data.
+
+### THE PAYOUT CAP — filled from WNBA, now in NBA pricing (2026-09-21)
+**Finding.** NBA's formula prices WNBA points-family demons well inside NBA's evidence range (168 legs: 6.7% mean error)
+but badly beyond it (73 legs: 26.6%). Binned by predicted p, reality tracks the formula down to p ≈ 0.075, then STOPS:
+the minimum real implied p is **0.0720 in every bin**, and the max 2-pick is **18.5×** (= factor 0.5/0.072 = 6.94,
+×3 = 20.8, compressed to 18.5). **It is an engine-level cap:** points (255 demons), reb/ast (186) and other stats (77) —
+three families with different spread constants — all floor at exactly 0.0720 / 18.5× (16 legs at the floor). NBA never
+reached it (min mined p 0.1254, max 11.5×). NBA pricing had `implied_p_floor` 0.0001, so its extrapolation produced
+2-picks up to 306.6×.
+**Applied:** new version **`pp-leg-v2-sqrt-cap` (CURRENT)** = v2-full with `implied_p_floor` 0.072 (±0.0007 — 18.5 is a
+rounded payout). Verified against v2-full: 422 keys changed, **all** from p < 0.072; **0** changes above the floor; **0**
+uncapped legs below it; max 2-pick 306.63× → **18.51×**. **4,748 NBA legs capped** (of 58,879 beyond the NBA edge);
+coverage unchanged at 99.55%. Earlier results are unaffected (item 1 excluded extrapolated prices; the standards
+backtest has no demons). `pp_refresh_prices()` prices every version, so new legs get the cap automatically.
+
+### FLEX TIER RULE — determinant not found; deprioritized (2026-09-21)
+Pooled NBA + WNBA 2-pick quotes: every (Power payout, consolation) pair maps to ONE fixed Flex full payout (e.g. 10.5×:
+0.5 → 7.0×, 0.75 → 6.0×), so PrizePicks picks a consolation first and derives the full payout from it. But the
+consolation is **not** determined by the Power payout (mixing at many payout values, across many runs), **not** by the
+alternate's stat family (all three tiers in every family and band), and **not** by the standard partner (same partner +
+same payout → different tiers). It must depend on a per-leg property we cannot observe (likely the exact unrounded
+internal price). **Deprioritized:** the standards strategy only needs all-standard Flex tables (fixed and verified), and
+demon Flex slips underpay anyway.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
