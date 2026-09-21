@@ -6395,7 +6395,10 @@ blueprint §7f's *"mandatory human review before applying"* would need in order 
 
 ---
 
-## ⚠ SEASON-START CRITICAL — items that bite on or before 2026-10-03
+## ⚠ SEASON-START CRITICAL — items that bite on or before **2026-10-20**
+> 🔴 **Heading corrected 2026-09-21 (§T10.18b) — it read *"on or before 2026-10-03"*.** The regular
+> season opens **2026-10-20**; 10-03 is **preseason** (prefix 001, 66 games, 10-03→10-16), verified
+> live in `nba_calendar.games`. **Every deadline in this section keyed to 10-03 is 17 days early.**
 
 ### ⓪ GOOD NEWS FIRST — **the season-opening coverage problem is already SOLVED**
 `classification_ladder_v12.py` carries **cross-season carryover** (*"season-opening study
