@@ -49,6 +49,27 @@ THE LOOP
        to READ; it does not decide when you are finished.  Reading the whole tail is
        necessary and not sufficient - see below for why the number cannot close it.
 
+WHAT "UNCOVERED" ACTUALLY MEASURES - read before quoting any percentage
+    doc_paragraphs() iterates DOCS - THE TWELVE MANDATED DOCUMENTS ONLY.  It does not
+    read NBA_COMPASS.md, NBA_PROJECT_LOG.md, or the other 18 nba/*.md files.
+
+    That is CORRECT for the task (the job is to get material into the twelve), but it
+    means the number does NOT say "nobody has written this down".  It says "this is
+    not in the twelve yet".  Material already analysed in COMPASS or PROJECT_LOG needs
+    TRANSFER, not DISCOVERY - much cheaper work, and the percentage cannot tell them
+    apart.
+
+    MEASURED on the A2/N1 reliability-audit transcript, 2026-09-21:
+        uncovered vs the twelve   813/821 = 99.0%
+        uncovered vs all 30 *.md  762/821 = 92.8%
+        difference                 51 segments = 6.2 points
+    Small in segment count - and concentrated in exactly the high-value findings
+    (the N1 status probabilities, the A2 held-out MAE table, the OREB k-sweep, the
+    per-prop lift table).  So 6.2 points understates the practical effect: the segments
+    already written up elsewhere are disproportionately the ones that matter.
+
+    Quote the percentage as "not yet in the twelve".  Never as "undocumented".
+
 FALSE TAIL - measured 2026-09-21, and it is why step 5 changed
     The 15 GROUND_TRUTH findings were undocumented at pass 63 and were written up by
     passes 64-87.  Scored against pass-63 documents vs CURRENT documents:
