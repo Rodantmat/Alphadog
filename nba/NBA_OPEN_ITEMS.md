@@ -1,5 +1,23 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔑 THE OWNER'S ACCURACY STANDARD IS SCOPED — *"within the baseline ladder"*
+*Recorded 2026-09-21 (T8 pass 3, §T8.24b). The qualifier returns **zero hits** across all thirty
+documents.*
+
+The rigour directive is carried in the documents in two halves, 270 lines apart — §T8.6 has
+*"any time you see it needs deeper testing and calibration, do not move before fixing it"*, and the
+standard clause appears separately as *"a perfect formula, very sharp"*. **Neither carries the
+owner's closing words:**
+
+> *"…the final work should be a perfect formula, very sharp, where the real outcomes fit perfectly
+> most of the times, with a very high level of accuracy, **WITHIN THE BASELINE LADDER**."*
+
+⚠ **The qualifier scopes the standard.** The bar is outcomes fitting **within the ±6-rung anchored
+baseline ladder** — **not** across the enrichment or scoring layers, which did not exist when it was
+stated. **Recorded so a later reader does not apply the "perfect formula" bar to layers the owner
+did not scope it to** — and so that, when those layers are assessed, it is clear the owner has not
+yet set a standard for them.
+
 ## 🔴🔴 THE Oct-1 ROLLOVER, **RE-RATED**: nineteen days and six scheduled runs, not two days and none
 *`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 by reading and executing `nba/nba_season.py` (T7 passes
 22–25). Detail: `NBA_MASTER_SUMMARY.md` §T7.51a, §T7.53a, §T7.54. **Document, don't fix — nothing was
