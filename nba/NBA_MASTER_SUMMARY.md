@@ -2105,6 +2105,33 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+### T2.6 — PASS 6 (**re-read continued: the arenas endpoint migration, settled by reading code**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+1. ⚠ **A hardcoded season in a WORKER's write path, not a scraper's URL.**
+   `alphadog-v2-nba-static-onoff.js` writes `season` as the **string literal `'2025-26'` in its
+   INSERT.** ***VERIFIED***: `nba_stats.player_onoff_profile` holds 582 rows, all season `'2025-26'`,
+   last written 2026-09-01. **Every previously-recorded hardcoded season in this sweep was in a
+   scraper's URL. This one is downstream of the fetch** — so a scraper corrected to pull 2026-27
+   would still land its rows labelled 2025-26 until the worker changes too. *Third frozen table:
+   `[LIVE-AUDIT]`, 20 days.* → `NBA_OPEN_ITEMS.md`
+2. **The arenas mislabeling has a cause, and it is not carelessness.** The full sequence, established
+   by reading the patches and then the live scraper rather than inferring: `teamInfoCommon` returned
+   null arena fields → **`_debug_headers` revealed the real column list, which contains `CITY`,
+   `OWNER`, `YEARFOUNDED` and no arena column at all** → the extraction was patched to use those
+   names, **adding `owner` and `year_founded` because the debug output showed they existed** → the
+   endpoint was then replaced wholesale with `teamDetails`, which does carry arenas, **and the two
+   team-scoped fields came along.** *Two fields survived a migration that changed what the file was
+   about.* → `NBA_OPEN_ITEMS.md`
+3. **My pass-3 attribution was checked and holds** — `owner` and `year_founded` do come from
+   `teamDetails` in the shipped scraper (line 38, verified). *Recorded because Rule 1 required
+   settling it: a patch mid-stratum showed them being added to a `teamInfoCommon` call, which read
+   like a contradiction until the live file resolved it.*
+4. **`teamInfoCommon` also carried a hardcoded `season=2025-26`** — a fourth instance, in T2 rather
+   than T3, predating the ones already recorded.
+
+**Ratio**: 4 findings from ~14 segments.
+
 ### T2.5 — PASS 5 (**REOPENED: command stratum re-read at T3's depth**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21. The first pass of the depth re-read, and **two of its four findings are corrections to
 entries this sweep wrote while reading T2 shallowly or reading T3 without T2's context.***
