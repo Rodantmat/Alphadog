@@ -14,10 +14,11 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 | | |
 |---|---|
-| **Current transcript** | **T4** — `2026-09-03-22-38-55-nba-expansion-phase3b-backfill-complete.txt` |
-| **State** | **0/3 · 4 passes · ALL FOUR STRATA READ** (owner 5 · reasoning 261 · commands 103 · results 129). |
-| **Stratum** | Complete. Tail: 607 segments, 498 uncovered vs the twelve (82%). |
-| **Exact next step** | **T4 pass 5 — the two-direction judgment pass.** Script is at `scratchpad/t2judge/judge.py`; point `T2` at T4's transcript path and rerun. Then two more clean passes at **different angles** (suggested: live numeric re-verification of T4's measured volumes; cross-document consistency on the backfill tables). |
+| **Current transcript** | **T5** — `2026-09-09-01-49-59-nba-expansion-phase3c-starter-status-complete.txt` |
+| **State** | **Not started.** T4 CLOSED 2026-09-21 at 10 passes. |
+| **Stratum** | — |
+| **Exact next step** | **T5 pass 1.** Generate the tail: copy `scratchpad/t4/tail4.py`, point `T` at T5's transcript path, run it — it prints coverage and writes `t5_tail.json`. Then stratify (the classifier in the same script family) and read **owner turns → reasoning → commands → results**, writing only at the end of each stratum (Rule 2). |
+| **Angles to close with** | Three clean, genuinely different. Proven set: **two-direction judgment**, **live numeric re-verification**, **referential integrity (do the tables join?)**, **wiring (registry / manifest / bindings / workflow refs)**, **cross-document consistency**, **mid-band 0.40–0.45 seam**. |
 | **Then** | T4 → T5 → … → T20, strictly chronological. Completion criterion per transcript: **3 consecutive clean passes at genuinely different angles**, the two-direction judgment pass among them. |
 | **Order** | T1 ✅ · T2 (here) · T3 ✅ · then T4 → T20. T19/T20 are this documentation effort and are swept like any other. |
 | **Parked** | A2/N1 (T15) material — re-extract when the sequence reaches T15. |
