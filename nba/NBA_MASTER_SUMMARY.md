@@ -9661,6 +9661,56 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.41 — PASS 12 (**referential integrity**) — **✅ CLEAN 1/3 · 4 joins, 0 orphans · 2 precision refinements**
+*2026-09-21. Angle: do T7's config tables actually join what they claim to? This is the technique
+that produced the headline on T4, T5 and T6.*
+
+**✅ All four joins are clean — 0 orphans, not "few":**
+
+| Join | Orphans |
+|---|---|
+| `factor_profile_cells.factor_key` → `factor_registry.factor_key` | **0 of 35** |
+| `factor_relevance.factor_key` → `factor_registry.factor_key` | **0 of 460** |
+| `factor_profile_cells.role_tier_key` → `role_tiers.role_tier_key` | **0** (of the cells that set one) |
+| `factor_profile_cells (factor, prop)` → `factor_relevance (factor, prop)` | **0 of 35** |
+
+**And the semantic layer is consistent too**: all **15** cell-bearing factors are `active = 1` **and**
+`derivable_now = 1`; all **24** distinct (factor, prop) pairs carrying a cell are graded `full`, none
+`partial`. **`role_tiers` partitions minutes 0 → 48 with no gap and no overlap** (0–15 · 15–21 ·
+21–27 · 27–32 · 32–36 · 36–48, `sort_order` 1–6).
+
+**This is a materially different result from T4/T5/T6**, where the same angle produced the headline
+each time (zero calendar coverage; the 0% officials join; the 2,000-row lineup cap). **T7 designed
+these tables and they join correctly.** Recorded as a positive finding, not an absence of work.
+
+#### 🔑 T7.41a — `[LIVE-AUDIT]` refinement: **`factor_relevance` grades nothing as EXCLUDED**
+
+`NBA_DATABASE.md` calls it *"the prop × factor relevance matrix — which factors are even candidates
+for which props."* Live, the column takes **exactly two values: `full` (440 rows) and `partial`
+(20)**. **There is no `none`, `no`, or `excluded` grade anywhere in the table.** So **95.7% of pairs
+are `full` and nothing is marked a non-candidate** — as a filter, it currently excludes nothing.
+
+**Not recorded as a defect**, and the reasoning is put here so the call is auditable rather than
+convenient: the document's claim is that the table records candidacy per pair, which it does, and its
+very next line already says *"most prop × factor pairs are marked relevant but carry no fitted
+cell."* **What was missing is that the alternative grade is absent, not merely rare.** Added to
+`NBA_DATABASE.md`.
+
+#### 🔑 T7.41b — `[LIVE-AUDIT]` refinement: **`IRON_MAN` is 36–48, not "36+", and every tier boundary is shared**
+
+The documented tier list renders the top tier as **"IRON_MAN 36+"**. The live row is
+`min_projected_minutes 36`, **`max_projected_minutes 48`** — bounded. And **every boundary value
+belongs to two rows at once** (36 is `HIGH_USAGE_STARTER`'s max and `IRON_MAN`'s min, and so on down),
+so **the table does not express whether the comparison is inclusive at the min or the max.**
+
+**Low severity and here is why**: *"36+"* is a fair rendering of a top tier, and **nothing reads this
+table** — the live behaviour comes from the hardcoded `ROLE_TIERS` list in
+`classification_ladder_v12.py` (§2 banner). **The boundary convention therefore lives in code, and
+whether the two agree at the edges is NOT RECORDED** — the documented check (T1 pass 36) compared the
+tier names and ranges, not the comparison operators.
+
+---
+
 ### T7.40 — PASS 11 (**live numeric re-verification**) — **🔴 1 NEW LIVE FINDING + ⚠ 2 DOCUMENT DEFECTS · 0/3**
 *2026-09-21. Angle: re-run every number §T7.30–§T7.39 states, against the live system, by a query
 written from the claim rather than from the query that produced it.*
