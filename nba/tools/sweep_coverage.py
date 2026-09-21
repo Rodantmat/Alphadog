@@ -95,6 +95,19 @@ STANDING RULES FOR THE READER - adopted 2026-09-21 after four self-corrections i
         Resolve them in the pass that finishes the stratum. Pass 8 was the first to
         need no corrections after rules 1-3 were adopted.
 
+    RULE 5. AN ENTRY'S ABSENCE IS NOT EVIDENCE THE ISSUE WAS NEVER SEEN.
+        T3's differential worker was recorded in these documents as "built but never
+        scheduled" - an outcome with no history. In fact T3 flagged it, wrote the
+        caveat into NBA_PROJECT_LOG.md, and asked the owner "want me to wire that up
+        now, or is this a good place to pause?" A later patch in the SAME SESSION took
+        that exact paragraph as its old_str and replaced it with a what's-next list.
+        The warning was overwritten, not answered.
+        So when a document is silent on something that should obviously have been
+        noticed, check whether it was noticed and REMOVED. github_patch_file old_str
+        values are the record of what a session deleted, and they are in the tail.
+        Corollary: a "next steps" paragraph that replaced something is worth reading
+        for what it replaced, not only for what it says.
+
     RULE 4. REPORT FINDINGS-PER-SEGMENT FOR EVERY TRANSCRIPT.
         Measured so far: T2 closed at 1 per 34; T3 ran at 1 per 6 on the same kind of
         material. That gap was NOT a difference between the transcripts - it was a
