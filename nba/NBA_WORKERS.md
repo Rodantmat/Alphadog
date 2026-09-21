@@ -440,11 +440,19 @@ twelve** — `NBA_MASTER_SUMMARY.md`, `NBA_OPEN_ITEMS.md`, `NBA_WORKERS.md`, `NB
 `NBA_SYSTEM_DESIGN.md`, `NBA_MULTIPLIERS.md`, `NBA_GOBLIN_DEMON.md`, `NBA_GLOSSARY.md`,
 `NBA_RECIPE.md`.
 
-**Harmless to a human reader, not harmless to a parser** — and it means **every document's last real
-line is the line before it**, which matters when appending. **Cause: NOT RECORDED.** Consistency
-across all twelve points at a single write helper rather than twelve independent slips, but no
-transcript swept so far shows the write that introduced it. **Left OPEN.** New content is inserted
-**above** the fragment so the defect is not compounded.
+✅ **CAUSE FOUND AND FIXED 2026-09-21.** `git log -S'</content>'` per document names the introducing
+commit: **twelve separate `github_put_file` calls on 2026-09-19 and 2026-09-20**, each landing as
+*"Update nba/NBA_*.md via Claude MCP bridge"* — the generic message, meaning `message` was never
+passed because **the tool call's closing tags were typed into the `content` argument**, taking the
+real message with them.
+
+**No live write helper is appending it.** `github_put_file` writes exactly the string given;
+`github_patch_file` never touches the tail. **Cause established before stripping**, so the strip is
+permanent. Removed from all twelve, verified zero remaining outside the two code fences that document
+the defect.
+
+⚠ **Recurrence risk**: a future full `github_put_file` of one of these documents can reproduce the
+slip. **Prefer `github_patch_file` for the twelve** — also what their size demands.
 
 ## ⚠ 0.35 THE DESIGN RULE THE SCRAPERS DISAGREE ON — keep every column, or hand-pick and lose signal
 *Recorded 2026-09-21 (T3). **This is one finding, not three** — the pattern is the point.*
