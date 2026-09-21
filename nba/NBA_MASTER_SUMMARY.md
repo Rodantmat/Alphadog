@@ -12797,6 +12797,51 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.29 — PASS 8 (**self-contradiction audit**) — **🔴 a stale row count with a confident verdict attached · 🔑 and the two findings connect · 0/3**
+*2026-09-21. Every object §T8.22–§T8.28 describes, grepped back across the twelve **including this
+file**, looking for the sweep's own earlier text saying something different.*
+
+#### 🔴 T8.29a — **`prop_taxonomy` carries two row counts across four documents, and only one carries the date**
+
+| Document | Says |
+|---|---|
+| `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` line 99 | **`prop_taxonomy \| 0 \| Correctly empty`** — *"canonical prop-key definitions belong to the **Board/Scoring layer, explicitly out of scope**"* |
+| `NBA_MASTER_SUMMARY.md` §T7.9a | **`(0 rows)` — "correctly empty"**, same verdict |
+| `NBA_FINAL_SCORING_CALIBRATION.md` line 1191 | **28 rows** — *"the canonical prop list"* |
+| `NBA_DATABASE.md` §`nba_ref.prop_taxonomy` | **28 rows** — *"Created empty in T1… **seeded in T8**"* |
+
+**Chronologically all four are correct** — 0 on 2026-09-04, 28 after T8 seeded it on 09-09 — **and
+only `NBA_DATABASE.md` says so.** The two "0 rows" entries present a stale count **with a confident
+verdict attached** (*"correctly empty"*), which is the shape most likely to mislead. §T7.9a now
+carries the supersession pointer. *The 09-04 checkpoint is a **dated historical document** and is not
+rewritten — the standing rule against altering the record — so the pointer lives on the sweep's own
+entry.*
+
+#### 🔑 T8.29b — **And the stale verdict's SUBSTANCE is the live question §T8.27b just opened**
+
+The 09-04 judgment was not merely *"empty"* — it was **an architectural claim**: *"canonical prop-key
+definitions belong to the **Board/Scoring layer**."* Set that beside pass 6:
+
+> **`canonical_prop_key` appears 1,218 times in code — all of it the MLB fleet — and ZERO times
+> under `nba/`.**
+
+**So the table was seeded into the config layer that the earlier judgment said should not own it,
+and the Board/Scoring layer that was supposed to own it still does not speak its key.** *The two
+findings are one finding: the canonical prop vocabulary exists on the NBA side without the layer that
+was expected to consume it.*
+
+⚠ *Per rule 6, no cause is offered — what changed between 09-04 and 09-09, and whether the seeding
+superseded the architectural judgment or merely preceded its consumer, is **NOT RECORDED**. It
+belongs to the board/grader transcripts.* **Recorded together in `NBA_OPEN_ITEMS.md` so they are read
+as one question.**
+
+**Checked and clean** — *scope stated exactly, per §T7.62a*: the four objects grepped across all
+three edited documents — `prop_taxonomy` (37 statements), `canonical_prop_key` (16),
+`variation_bands` (21), `build_tier` (13) — **agree everywhere else**, including every statement of
+the 28 / 6 / 13 / 15 / 22 figures. **Objects outside those four were not checked.**
+
+---
+
 ### T8.28 — PASS 7 (**referential integrity / composite key**) — **✅ integrity clean · 🔑 the gap is COVERAGE, and it maps exactly onto `build_tier` · 0/3**
 *2026-09-21. The T8-seeded layer joined on `canonical_prop_key`, in both directions. Novelty grepped
 at the moment of writing, per rule 12.*
