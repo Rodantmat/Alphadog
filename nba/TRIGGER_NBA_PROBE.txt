@@ -1,1 +1,1 @@
-script: probe_pp_game_types.py
+script: probe_pp_game_types_v2.py
