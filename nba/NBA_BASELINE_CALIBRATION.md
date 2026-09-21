@@ -373,10 +373,19 @@ closer to reliability tiers**, and whether any of them blend non-count signals i
 > use**. …**design it as an EXPLICITLY SEPARATE, CLEARLY-LABELLED path FROM DAY ONE — DON'T let it
 > SILENTLY SHARE THRESHOLDS with the main system, and DON'T ASSUME A FIX TO ONE TOUCHES THE OTHER.**"*
 
-**⚠ NBA already has thin-data props on the shared path.** `fgm` and `fta` are recorded as
-*"configs are the **closest certified analogue** — NOT yet certified"* — **certified thresholds
-assigned by analogy**, with no separate label beyond a code comment. `turnovers`, `fg3a`, `ftm`,
-`personal_fouls` are *"configured, NOT yet run."*
+**⚠ NBA already has thin-data props on the shared path.** **`fgm`, `fta`, `oreb` and `dreb`** are
+recorded as *"configs are the **closest certified analogue** — NOT yet certified"* — **certified
+thresholds assigned by analogy**, with no separate label beyond a code comment. **`turnovers`, `fga`,
+`fg3a`, `ftm`, `personal_fouls`** are *"configured, NOT yet run."*
+
+> ⚠ **Both lists corrected 2026-09-21 (§T9.35b, §T9.35c)** — they read *"`fgm` and `fta`"* and omitted
+> `fga`. **The authority is `classification_ladder_v12.py`**: the docstring at **line 11** names five
+> configured-not-run props including **`fga`**, and the `# ADDED 2026-09-12 … NOT yet certified`
+> comment governs the **last four** `PROPS` entries — `fgm`, `fta`, **`oreb`, `dreb`**. 🔴 **`oreb` and
+> `dreb` are also two of the four props missing from `prop_taxonomy`** (§T9.19c) and both ship ladder
+> rows, so they are **uncertified, untaxonomised and live**. ⚠ **`fga` is in two states in the same
+> file** — line 11 above, and `# CERTIFIED both seasons (0.9 / 1.3, 0 band misses)` at line 102;
+> `NBA_GLOSSARY.md` counts it among the certified six. **Which governs is NOT RECORDED.**
 Per-prop tuning exists (`k_stab`, `SHIFT_LAMBDA`) — **but that is parameter variation within one
 system, not the separate labelled path specified.** No hard floor/ceiling caps, no distinct
 prior-strength scale.
