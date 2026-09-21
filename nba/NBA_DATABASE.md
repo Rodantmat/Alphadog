@@ -443,7 +443,15 @@ transcript, where `last_validated_at` is null on all 35 and `real_sample_size_ob
 of its columns — **`build_tier`, `natural_floor`, `direction_skew`** — are named in **none** of the
 thirty documents, though the table is discussed in twelve.
 
-🔴 **And nothing reads it.** **`nba_ref.prop_taxonomy` appears ZERO times in the codebase** — the six
+🔴 **And the vocabulary it defines is unused on the NBA side.** **`canonical_prop_key` — this table's
+primary key — appears 1,218 times in the codebase and ZERO times under `nba/`**; all 1,218 are the
+MLB fleet (`score-prep`, the certifiers, the parlay boards, the market-line-shape classifier). **The
+NBA board scrapers do not map to it at all** — `scrape_underdog_board.py`, `scrape_sleeper_board.py`
+and `scrape_fliff_board.py` contain no `taxonomy` and no `canonical_prop` reference, emitting raw
+board JSON instead. *What translates an NBA board leg into a canonical prop key, if anything, is
+**NOT RECORDED**.*
+
+🔴 **And nothing reads the table itself.** **`nba_ref.prop_taxonomy` appears ZERO times in the codebase** — the six
 files matching `prop_taxonomy` are **MLB's** (`alphadog-v2-static-prop-taxonomy.js`, the MLB parlay
 boards, the phase2b certifier, `verify_schema_all.py`), none schema-qualified to `nba_ref`. For
 contrast, `nba_ref` **is** read elsewhere: `player_name_map` 24 sites, `players` 15,
