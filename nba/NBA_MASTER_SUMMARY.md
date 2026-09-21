@@ -8031,6 +8031,14 @@ live-audit result NEW, grep the twelve documents for the object's own name.** At
 memory.** One grep. *(The count rule and the novelty rule fail together, because both substitute
 what I just looked at for what is on record.)*
 
+**✅ THE MECHANISM THAT ACTUALLY WORKS, established at §T7.43 (pass 14) after the rule failed twice
+inline — the NOVELTY AUDIT, as its own pass:** `git archive` the twelve **as they stood before this
+transcript's re-sweep began** into a scratch tree, then grep **that tree** — not the working tree —
+for the key term of every claim the re-sweep added. **The pre-edit snapshot is the authority,
+because my own new prose cannot vote on its own novelty**, which is precisely how the inline check
+failed at §T7.39c and again at §T7.42a. Added to the angles menu; **run it on every transcript
+before closing.**
+
 🔴 **AND IT FAILED AGAIN ON THE VERY NEXT PASS.** At **pass 11** I labelled §T7.40a a 🔴 new live
 finding; **pass 13 found it recorded at §T2.18 the day before, in this same file, in the same
 words** — a single grep for `1,200` would have returned four places. **Writing the rule is not
