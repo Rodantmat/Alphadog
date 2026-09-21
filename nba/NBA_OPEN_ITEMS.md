@@ -220,6 +220,18 @@ Detail: `NBA_MASTER_SUMMARY.md` §T4.23a.*
 | `nba_darko_debug_html_snippet.txt` | 432,513 B | ✅ documented in detail; owner action already raised |
 | `nba_shotzones_debug_raw.json` | 50,000 B | ❌ **undocumented** |
 | `nba_officials_debug_raw.json` | 2,426 B | ❌ **undocumented** |
+| `nba_officials_diagnostic.json` | 7,736 B | ❌ **undocumented** *(added 2026-09-21)* |
+| `nba_starter_status_diagnostic.json` | 1,473 B | ❌ **undocumented** *(added 2026-09-21)* |
+| **total** | **494,148 B** | |
+
+*⚠ **Count corrected 2026-09-21 from three to five.** The first pass grepped `nba/data/` for
+`*debug*`; two of the five are named `*diagnostic*`. **One habit, two words.** See the standing rule
+in `NBA_MASTER_SUMMARY.md`: a count comes from an authority, never from the pattern that found it.*
+
+*And the habit has a legitimate cause worth stating beside it: **GitHub workflow logs expire** — the
+bridge returns `404 "link may have expired, or run is too old"` — so a failure not diagnosed while
+its log is live may never be diagnosable. **Committing the evidence is a rational response to that.**
+The open item is that it is undocumented and unbounded, not that it is wrong.*
 
 **The documents treat the DARKO dump as a one-off. It is the third instance of a habit**: when a
 scrape fails, write the raw body beside the data and let the workflow's `git add` commit it. **The
