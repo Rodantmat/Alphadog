@@ -1440,7 +1440,12 @@ formulations.** Three questions, cheaper than every gate run they replace.
 ## 8. THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND
 
 ### 8.1 Blowout — on the REAL market spread
-Upgraded from the **r=0.46 derived proxy** to the **real market spread** (307,604 rows, 2,454 games,
+Upgraded from the **r=0.46 derived proxy** to the **real market spread** *(🔴 **the coverage figure below is
+corrected 2026-09-21 by §T11.12b: 2,454 of the 2,460 games in `nba_market.schedule_norm` is
+**99.76%**, not 100% — the "100%" counted the games that were MAPPED, i.e. a denominator taken from
+the numerator's own table. Six games are unmapped, and `game_lines_closing` is shorter still at
+2,410 = 97.97%. The measurements themselves are unaffected in kind; the sample is 99.76% of the two
+seasons rather than all of them.*)* (307,604 rows, 2,454 games,
 100% coverage).
 - A **13+ favourite blows the game open 39.7%** vs **0.4%**
 - **Winning blowouts cost starters MORE minutes than losing ones** (ratio 0.8748 vs 0.9124)
