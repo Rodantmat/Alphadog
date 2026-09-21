@@ -14430,6 +14430,49 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.34 — PASS 33 (**novelty re-audit of passes 26–31, three vocabularies per claim**) — **❌ a lineage defect in my own §T11.31b — the class was already named, twice · 0/3**
+*2026-09-21. **The pass that exists because seven of this sweep's eight retractions were absence
+failures, and pass 26's was a retraction of a pass that had itself just audited novelty.** Every claim
+re-probed in at least three vocabularies (rule 20), every hit opened (rule 26).*
+
+#### ❌ T11.34a — **§T11.31b's lineage is wrong, and the right one is better**
+§T11.31b called the officials/starters gap *"§T11.1b's shape in a second worker."* 🔴 **The exact
+precedent is §T3.8a, in THREE of the twelve**: ***"82 play-type rows scraped but never loaded —
+3,364 vs 3,282, verified still true today"*** — with the diagnosis that matters:
+***"it escaped notice because the scrape count and the load count were reported separately."***
+**That is precisely how this escaped notice.** *§T11.1b is a different failure — a parser bug where
+the rows were never produced.* ***So this is the THIRD and largest instance of a class the sweep had
+already named: two entire seasons against 82 rows.*** **Rule 14, and rule 7 — grep the distinctive
+term before claiming a shape is new, and "new instance" still needs the class named.**
+
+#### ✅ T11.34b — **And the adversarial check RULED OUT the innocent explanation, so the finding is stronger**
+`NBA_MASTER_SUMMARY.md` records ***"thirty-seven of forty NBA data tables can hold exactly one season
+at a time"*** — so the counter-hypothesis is that these two are single-season by construction and the
+absence is by design. ✅ **It fails on the primary key**: `game_officials` is **`(game_id,
+official_id)`**, `player_game_starter_status` is **`(player_id, game_id)`**, and **`game_id` encodes
+the season**, so **both can hold all three at once.** 🔑 **Internal control**:
+**`player_game_log` has the SAME key shape and holds 79,358 player-games across three seasons.**
+***The shape permits multi-season, one sibling uses it, these two do not.*** 📌 And
+`NBA_ENRICHMENT_FACTOR_LOCK.md` already says *"`game_officials` (2025-26 built) + backfill
+2023-24/2024-25 via `boxscoresummaryv3`"* — **1 of thirty, 0 of the twelve**, §T11.2d again.
+
+#### ✅ T11.34c — **Every other novelty count holds, in multiple vocabularies**
+**0 of the twelve**, each probed three ways and every hit opened: **the game-id join** (2 of thirty —
+`NBA_PROJECT_LOG.md` and `ENRICHMENT_MINING_AND_FALLBACKS.md`) · **`BOOKMAKER_NOT_IN_ARCHIVE`** (1) ·
+**the Odds API `us_dfs` region having no Sleeper** (1, `NBA_COMPASS.md`) · **its Pick6 + Dabble
+composition** (**0 of thirty**) · **the Wayback SPA-shell finding** (the *"dead ends"* summary is in 1;
+the measurement is 0) · **`triple_double`'s zero rows** (**0 of thirty**). ✅ **And §T11.28b's
+distinction survives its hardest probe**: *"milestone… More-only"* returns **1 of thirty** and it is
+the **line-layer** sense — *"Sleeper milestones (20+/25+/30+, More-only)"* — **not the taxonomy
+declaring a PROP one-directional**, which is the distinction that entry drew. ⚠ **Rule 22 fired for
+the third time in this run**: a `event_game_map`-vocabulary probe for the game-id join **failed its
+positive control and was discarded rather than reported.**
+
+**Pass outcome: ❌ a lineage defect of mine, corrected; the finding it attaches to is stronger for the
+attack. CLEAN 0/3 · 34 passes.**
+
+---
+
 ### T11.33 — PASS 32 (**live numeric re-verification of everything passes 26–31 added**) — **✅ CLEAN 1/3 — every figure exact, every novelty count holds, and a FOURTH unplanned confirmation of §T10.16c**
 *2026-09-21. **Six consecutive passes found defects and five were the sweep's own method. Those
 defects are fixed in rules 26 and 27; this pass asks the different question — whether the NUMBERS
