@@ -346,6 +346,18 @@ entry.**
 **A full regular season is 1,230 games. The stored 2026-27 slate has 1,200 — exactly 30 short, which
 is exactly one per team.**
 
+### The prefix distribution is evidence for explanation 1, and against a load failure
+*Added 2026-09-21 after the owner's independent verification.*
+
+**2026-27 carries only prefixes `001` and `002`. 2025-26 carries all six.** No playoff rows, no
+All-Star, no play-in, no Cup knockout — none of which exist as fixtures until their brackets resolve.
+
+**An incomplete slate at release produces exactly that shape. A load failure does not** — a partial
+write would drop rows across whatever prefixes the source returned, not eliminate four categories
+cleanly while leaving the two that are published in August fully intact. *Evidence, not proof: the
+`nba_api` #407 alternative stays open, since a source-side shortfall in the regular-season feed would
+also leave `001`/`002` as the only prefixes present.*
+
 **Two candidate explanations, and this entry does not choose between them:**
 1. **NBA Cup contingency (leading candidate, NOT verified).** Each team's Cup-dependent filler game
    is not scheduled at release, so a schedule pulled in early September is legitimately short by one
