@@ -1929,6 +1929,23 @@ its `nba_ref.players` bio update.
 | `nba-static-onoff` | `nba_stats.player_onoff_profile` | literal `'2025-26'` |
 | `nba-static-player-bio` | `nba_stats.player_season_profile` | literal `'2025-26'` |
 | **`nba-static-team-stats`** | **`nba_team.season_profile`** | **literal `'2025-26'`** |
+| 🔴 **`nba-static-player-tracking`** | **`nba_stats.player_tracking_profile`** | **literal `'2025-26'`, line 59** |
+
+🔴 **CORRECTED 2026-09-21 (T7 pass 3): this is FOUR workers, not three.**
+`[LIVE-AUDIT]` — every `alphadog-v2-nba-*.js` carrying `'2025-26'` in an INSERT:
+`static-onoff` (line 77) · `static-player-bio` (73) · **`static-player-tracking` (59)** ·
+`static-team-stats` (59). **`player-tracking` was absent from this list and from
+`NBA_MASTER_SUMMARY.md` §T2.8**, which states *"three workers, three tables, two schemas."*
+
+⚠ **This is the trap catching the warning about the trap.** These entries exist to say the rollover
+fix feels complete after the scrapers and is not — **and then undercounted the write paths by one.**
+A reader working the documented list would fix three of four and leave
+`nba_stats.player_tracking_profile` stamping `'2025-26'` onto 2026-27 rows.
+
+✅ **The scraper side is much healthier than these entries imply**: **18 scrapers now resolve the
+season via the `nba_season` helper.** Of the ten still containing a literal, several are one-time
+backfills over frozen seasons where the literal is **correct** — apply the cadence rule below before
+changing any of them.
 
 **Three workers, three tables, spanning two schemas** (`nba_stats` and `nba_team`) — **so the
 rollover fix has at least four locations**: the scrapers' URLs plus each of these INSERTs. **And no
