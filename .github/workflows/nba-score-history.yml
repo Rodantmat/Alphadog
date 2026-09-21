@@ -65,4 +65,5 @@ jobs:
           SH_TO: ${{ github.event.inputs.to }}
           SH_CHUNK: ${{ matrix.chunk }}
           SH_CHUNKS: '8'
+          SH_SKIP_BUILT_AFTER: ${{ github.event.inputs.skip_built_after }}
         run: python nba/score_history.py
