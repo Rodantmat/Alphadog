@@ -315,6 +315,43 @@ and a scrape that silently returned 401 rows would certify.
 are hardcoded; this one decides whether the system believes its own data. *Not fixed — recorded per
 the sweep's read-only rule. It belongs in `nba_config.system_settings` with the rest.*
 
+**Extended 2026-09-21 (T3 pass 3) — a third threshold, a third arbitrary number:**
+
+| Worker | Certification test | Anchored to a real invariant? |
+|---|---|---|
+| teams | `activeNbaTeams === 30` | **yes** — the league has 30 teams |
+| player bio | `seasonWritten >= 400` | no — ~⅔ of a 582 roster, rounded |
+| **schedule** *(T3)* | **`written >= 1000`** | **no** — a season is 1,230 regular-season games, so this passes on a scrape missing up to 19% of them, and **passed on 2,666 rows spanning two seasons** |
+
+**Three workers, three unrelated numbers, none in config.** The schedule case is the weakest: the
+same constant has to serve a single-season scrape and a two-season one, so it was set low enough
+that neither fails — which means it cannot detect a materially short scrape of either.
+
+---
+
+## 0.33 TWO GITHUB READ PATHS NOW EXIST — and which one a worker uses is invisible from its name
+*Recorded 2026-09-21 (T3 pass 3).*
+
+§0.32 records that `fetchFromGithub()` is copy-pasted across the static writers. **T3 forked it.**
+After the 1 MB contents-API failure on the schedule file (see `NBA_OPEN_ITEMS.md` FROM T3 PASS 1),
+the large-data workers got a second helper:
+
+| Helper | URL | Response handling | Limit |
+|---|---|---|---|
+| `fetchFromGithub` | `api.github.com/repos/…/contents/…` | `JSON.parse(atob(json.content))` — base64 envelope | **~1 MB, fails silently with empty content** |
+| **`fetchFromGithubRaw`** *(T3)* | `raw.githubusercontent.com/…` | `await resp.json()` — direct | **none** |
+
+**The raw variant also drops the `Accept: application/vnd.github+json` header**, since there is no
+envelope to negotiate. T3 applied it proactively to play types after being bitten once on schedule —
+*"used raw.githubusercontent.com from the start instead of waiting to hit the same 1mb file-size
+limit again."*
+
+**The hazard is that nothing about a worker announces which helper it carries.** A worker built by
+copying an older sibling inherits the contents-API version and works fine until its data file crosses
+1 MB, at which point it fails with `unexpected end of JSON input` and nothing points at the cause.
+**`nba/data/nba_schedule_current.json` is 1,225,505 bytes today** *(VERIFIED 2026-09-21)*, so the
+threshold is not hypothetical for this dataset family.
+
 ---
 
 ## 0.32 THE FIVE STATIC WRITERS ARE COPIES OF ONE WORKER — including a self-identifying User-Agent each
