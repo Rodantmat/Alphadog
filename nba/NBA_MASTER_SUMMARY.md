@@ -14430,6 +14430,37 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.40 — PASS 39 (**live numeric re-verification of passes 32–38, on the CORRECTED corpus**) — **✅ CLEAN 1/3 — twenty-three figures exact, six novelty counts identical, and the first band on the true thirty**
+*2026-09-21.*
+
+#### ✅ T11.40a — **Twenty-three figures re-derived, all exact**
+`player_game_log` · `_advanced` · `_scoring` · `_usage` — **79,358 each** *(= 26,401 + 26,306 +
+26,651 ✅, four tables agreeing to the row)* · `team_game_log_advanced` · `_four_factors` ·
+`_scoring` — **7,380 each** *(= 2,460 × 3 ✅)* · `game_officials` **3,681 / 1,227** ·
+`player_game_starter_status` **32,179** · `nba_calendar.games` **2,666** · `schedule_norm` **2,460
+with ZERO non-`002` games** · `board_outcomes` **`player_double_double` 42,436** and
+**`player_triple_double` 0** · `blowout_model` **35 rows / 11 distinct `side`** ·
+`worker_definitions` **21** against **21 worker files** · `nba_daily` **0 tables** ·
+`nba_control.job_runs` **0** · `prop_taxonomy` **28** · `factor_registry` **67** ·
+`baseline_ladder` **206,237**.
+
+#### ✅ T11.40b — **The band on the corrected basis, and the basis change stated**
+**Baseline `5dfb72ab`: 13 / 3 / 695 / 689** — **a TWELFTH consecutive identical measurement of the
+high band, tail and `uncovered12`, and the FIRST `uncovered30` computed over the true thirty.**
+**Working: 38 / 0 / 665 / 665.** ⚠ ***Every `uncovered30` published before pass 39 is 3–4 low; the
+high band, the tail and `uncovered12` are unaffected*** (§T11.39b).
+
+#### ✅ T11.40c — **All six novelty counts identical, each with a passing control**
+`applies_to_side` · `fav`/`dog` as values · the ~123k credits · the 2023-05 / 5-minute / 10-credit
+terms · the derived-board judgement · *"exhausted"* as a word — **0 of thirty, every one, unchanged
+from pass 32.** 🔑 ***Which is the confirmation §T11.39b predicted***: the novelty harness always
+excluded the run log and the PP document, **so a corpus defect in the band harness could not have
+touched these counts — and it did not.**
+
+**Pass outcome: ✅ CLEAN 1/3 · 40 passes.**
+
+---
+
 ### T11.39 — PASS 38 (**instrument audit — settling §T11.38a's unverified mechanism**) — **🔴 the band's "uncovered30" has been measured against THIRTY-TWO documents, including the sweep's own run log · 0/3**
 *2026-09-21. **The pass rule 25 required**: §T11.38a stated its own limit, so the next pass's job was
 to remove it. It did, and the answer is not the one §T11.38a leaned toward.*
