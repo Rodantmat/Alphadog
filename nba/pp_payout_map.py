@@ -315,6 +315,57 @@ def main():
             save("complete (less)")
             return 0
 
+        if MODE == "slips":
+            # SLIPS (2026-09-21): multi-pick rules, measured without product noise.
+            #  BASE  - all-standard slips at 2..6 picks, one player per TEAM (same game allowed, teams distinct), three
+            #          different player sets: verifies the 4/5/6-pick Power bases and Flex tables.
+            #  LEG   - a spread of goblins and demons (nearest to farthest line), each alone vs a standard: its own factor.
+            #  MIXED - that same alternate + (k-1) standards at k = 3..6: payout / its factor = the base PrizePicks
+            #          applies to a slip containing an alternate, per size, with standards exact (factor 1).
+            def team_distinct(pool, k, avoid=(), avoid_players=()):
+                out, seen_t, seen_p = [], set(avoid), set(avoid_players)
+                for r in pool:
+                    t = r.get("team") or ("game:" + str(r["game"]))
+                    if t in seen_t or r["player"] in seen_p:
+                        continue
+                    out.append(r)
+                    seen_t.add(t)
+                    seen_p.add(r["player"])
+                    if len(out) >= k:
+                        break
+                return out
+            center = {(r["player"], r["stat"]): r["line"] for r in std}
+
+            def spread(xs, m):
+                xs = sorted(xs, key=lambda r: r["line"] / (center.get((r["player"], r["stat"])) or r["line"]))
+                if len(xs) <= m:
+                    return xs
+                step = (len(xs) - 1) / (m - 1)
+                return [xs[round(i * step)] for i in range(m)]
+            rng = random.Random(11)
+            n_teams = len({r.get("team") or ("game:" + str(r["game"])) for r in std})
+            result["meta"].update({"mode": "slips", "teams": n_teams})
+            print(f"SLIPS|standards={len(std)}|teams={n_teams}|goblins={len(gob)}|demons={len(dem)}", flush=True)
+            for s in range(3):
+                pool = std[:]
+                rng.shuffle(pool)
+                base_set = team_distinct(pool, 6)
+                for k in range(2, len(base_set) + 1):
+                    run("BASE", [leg(r) for r in base_set[:k]], f"all-standard set {s} size {k}")
+            for a in spread(gob, 8) + spread(dem, 8):
+                p = next((x for x in std if x["game"] != a["game"] and x["player"] != a["player"]), None)
+                if p:
+                    run("LEG", [leg(p), leg(a)])
+                pool = std[:]
+                rng.shuffle(pool)
+                a_team = a.get("team") or ("game:" + str(a["game"]))
+                mates = team_distinct(pool, 5, avoid=[a_team], avoid_players=[a["player"]])
+                for k in range(3, 7):
+                    if len(mates) >= k - 1:
+                        run("MIXED", [leg(r) for r in mates[:k - 1]] + [leg(a)], f"1 {a['odds']} + {k - 1} standards")
+            save("complete (slips)")
+            return 0
+
         # VALIDATE - NBA only: the known Tatum/Wemby pair are NBA projections
         if LEAGUE == 7:
             by_id = {r["id"]: r for r in rows}
