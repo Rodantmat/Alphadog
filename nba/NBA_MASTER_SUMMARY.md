@@ -14419,6 +14419,55 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.27 — PASS 27 (**live numeric re-verification, second of the closing three**) — **✅ CLEAN 2/3 · every figure exact, every partition closing, one predicate stated more precisely**
+*2026-09-21. `[LIVE-AUDIT]`. Every live figure §T10.1–§T10.26 states, re-derived, with rules 17/18 on
+every count and rule 21 on every identifier.*
+
+#### ✅ T10.27a — **Fifteen figure families exact**
+
+| Object | Live, 2026-09-21 | ✅ |
+|---|---|---|
+| `nba_config.factor_registry` | **67 = 31 baseline + 36 enrichment**, **34 enrichment active** | ✅ |
+| `compute_stage` *(literals read off the table, rule 21)* | `phase1_baseline` **15** · `phase2_window` **17** · `live_only_excluded_from_history` **2** · `not_mined` **2** · NULL **31** — **15+17+2+2 = 36, +31 = 67** | ✅ |
+| `nba_config.factor_relevance` | **460 rows · 29 distinct `factor_key`** | ✅ |
+| `nba_score.factor_gate_results` *(schema read off the catalog)* | **104** | ✅ |
+| `nba_ref.referee_assignments` | **0** | ✅ |
+| `nba_ref.teams` / `nba_ref.arenas` | **30 / 30**, **2 distinct `source_key`** | ✅ |
+| `nba_config.classification_config` | **66 rows** | ✅ |
+| **`nba_score.baseline_ladder`** | **206,237 rows** | ✅ |
+| **`used_emp` partition** | **205,678 true + 559 false + 0 NULL = 206,237** — *and **541 + 18 = 559**, the T9 split* | ✅ |
+| `baseline_ladder_runs` | **3 rows**, `loaded_at` **2026-09-11 20:23:10.936 · 2026-09-19 22:35:04.532 · 2026-09-20 03:23:26.856 UTC** | ✅ |
+| Depth regimes *(§T10.26b)* | 2025-11-29 **14/6/6/6/3/2/2**; 2026-01-15 and 2026-03-15 **flat 10** | ✅ |
+| `nba_calendar.games` 2026-27 | **001 preseason 66, 2026-10-03 → 10-16** · **002 regular 1,200, 2026-10-20 → 2027-04-11** | ✅ |
+| Config timestamps | `single_stat_scoreboard_two_seasons` **05:55:58.053020** · `season_opening_study` **20:11:43.921967 UTC** | ✅ |
+| Matchups shards | **7 · 7 · 7 files**; covered **1,228 / 1,230 / 1,229**; empty **2 / 0 / 0**; rows **230,877 / 232,830 / 241,590**; columns **29 / 29 / 28** | ✅ |
+| The four absent objects *(§T10.22b)* | **still 0 of 4 present**; `nba_team.lineup_profile` **8,000**, `player_career_season_totals` **3,644**, `rate_tier` columns **0** | ✅ |
+
+#### 📌 T10.27b — **One predicate stated more precisely (rule 16)**
+
+**`covered` and `empty` in the shard indexes are LISTS OF GAME IDS, not scalar counts** — the figures
+**1,228 / 1,230 / 1,229** and **2 / 0 / 0** are their **lengths**. §T10.21a's table presented them as
+stored numbers.
+
+⚠ **It matters for the defect they carry**: the recorded finding is *"2025-26 says `covered: 1,229`
+with `empty: 0`, so the index's own bookkeeping does not account for one game."* **The precise form is
+that the index lists 1,229 game ids as covered and none as empty, against a 1,230-game season** —
+***the missing game is absent from both lists, not mis-counted in a field***, which is a stronger
+statement and the one the data supports. ✅ **The figures are unchanged.**
+
+#### ✅ T10.27c — **Rules 17/18/21 applied to this pass**
+
+**Population and tree**: every figure above is `[LIVE-AUDIT]` — **the live database and the working
+tree's committed data files at 2026-09-21** — not a document count, so no corpus applies; the shard
+figures are read from `nba/data/`, which is **repository data, not documentation**, and does not move
+with this sweep's writes. **Identifiers**: every schema, table, column and value above was read from
+`information_schema` or from the table itself, never from the prose.
+
+**Pass outcome: 15 figure families exact, every partition closing, both known shard defects still
+live, one predicate sharpened. ✅ CLEAN 2/3 · 27 passes.**
+
+---
+
 ### T10.26 — PASS 26 (**sixth two-direction judgment, baseline-tree reporting**) — **🔑 O5 upgraded from inference to PROOF, in the data, day by day · ✅ CLEAN 1/3**
 *2026-09-21. The closing-three judgment, re-measured on both trees, with the weight on the newest
 habit — passes 22–25 all rest on live queries, and a live query is a measurement at a moment.*
