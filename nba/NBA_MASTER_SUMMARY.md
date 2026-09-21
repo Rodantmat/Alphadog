@@ -9979,7 +9979,10 @@ record that its final defects were editorial.*
 factual assertion §T7.38–§T7.60 makes about the system, grepped back across **the twelve including
 the file being edited**, looking for the sweep's own earlier text saying something different.*
 
-#### 🔴 T7.61a — **The `undifferentiated` claim was corrected in three places and left standing in two**
+#### 🔴 T7.61a — **The `undifferentiated` claim was corrected in four places and left standing in two**
+*(⚠ heading corrected 2026-09-21 by §T9.26a: it read "three places". **Its own body names four** —
+§T7.44a, §T7.50a, `NBA_OPEN_ITEMS.md` and the top of `NBA_DATABASE.md`'s cell section — and so do
+the rule-10 statement and the run log. The heading was the only stale copy.)*
 
 Passes 15 and 21 established that **nothing in `factor_profile_cells` is undifferentiated** — the 13
 are band-keyed, and **34 of 35 cells match their factor's declared form**. That correction was
