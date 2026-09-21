@@ -38,6 +38,7 @@ pass 20 — that gap is this run's signature failure.***
 | **23** | **A count states its population, its tree, AND its sport.** *(Rule 17 for data.)* | T11 (§T11.9c) |
 | **24** | **A column name is not a vocabulary — and comparing TWO tables shows a difference, comparing ALL of them shows whether it is a pattern or a collision.** | T11 (§T11.19b) |
 | **25** | **A claim from a sample STATES the sample — because that sentence is what makes it correctable. A sample note is a to-do, not a disclaimer.** | T11 (§T11.23) |
+| **26** | 🔴 **A COUNT of carriers is not a READING of them.** *"Documented in N of thirty" measures the corpus; **"not recorded" is a claim about its CONTENT** and does not follow from the count — it requires opening the N. **Rule 22's second half applies to NONZERO counts, and for twenty passes it was applied only to zeros.*** | T11 (§T11.27a) |
 
 | | |
 |---|---|
