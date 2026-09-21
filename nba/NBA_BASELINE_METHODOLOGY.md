@@ -97,11 +97,13 @@ only games that precede it · `pre_n / (pre_n + k)` with `fillna(0)` makes game 
 league average instead of undefined or leaked. **Rest days are built the same way**, from
 `game_date.shift(1)` within team-season.
 
-🔴 **Why this belongs in the methodology and not only in a transcript**: the backtest's validity
-rests entirely on as-of correctness. **A component documented as "pre-game rolling net rating,
-r = 0.46" is one reimplementation away from leaking** — `.expanding().mean()` without the `.shift(1)`
-includes the current game, **raises the reported r, and invalidates the result**. The improved number
-is the symptom, not the reassurance.
+**Which part of this is the actual finding**: `.shift(1)` and `.expanding()` implement the
+**documented** fleet-wide invariant — every feature is `shift(1)`-based — so they are an instance of
+a rule already on file. ⚠ **The `fillna(0) * n/(n+k)` shrink is the part recorded nowhere**, and it
+is a **boundary-condition choice, not a leakage guard**: it makes **game 1 of a season the league
+average (0 net rating)** rather than undefined, and blends toward the team's real mean over roughly
+its first ten games. **Without it the component is unusable for the opening weeks of a season** —
+which is precisely the window the system is being prepared for.
 
 ## 5. Real risks in this two-stage separation, named directly (not just "it's correct, done")
 
