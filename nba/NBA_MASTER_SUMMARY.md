@@ -14562,7 +14562,16 @@ the question. Every segment that differs between the two trees opened individual
 left are 285, 305, 354, 475, 537, the same crossings. *Nothing entered either stratum from the
 documents' side.*
 
-#### 🔴🔴 T10.17b — **Turn 73 is quoted for its second half, and its FIRST half is an undeployed production step recorded nowhere**
+#### ❌❌ T10.17b — ~~**Turn 73 is quoted for its second half, and its FIRST half is an undeployed production step recorded nowhere**~~ — **RETRACTED 2026-09-21 by §T10.18a**
+
+> 🔴 **RETRACTED IN FULL, one pass later.** The cron-off decision is recorded in **four** documents —
+> `NBA_OPEN_ITEMS.md` (*"P2: NO CRON YET — deliberately… the cron goes in when the season starts"*,
+> with target strings and the verdict *"this is not a gap — it is a dated action item"*),
+> **`NBA_PROJECT_LOG.md` 478, which NAMES THE STEP** (*"`nba-baseline.yml` — manual trigger only,
+> cron OFF per owner"*), `NBA_COMPASS.md` 56 and the 09-09 checkpoint.
+> **All six probes below were worded in T10's vocabulary and none in the documents' — `cron`, `OFF`,
+> `intentionally`, `manual trigger only`.** *The fifth absence failure on this transcript; rule 20
+> exists because of it. **The text below is kept as written — it is the record of the failure.***
 
 **The segment, in full** *(owner, turn 73)*:
 
