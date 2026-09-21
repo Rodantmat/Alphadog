@@ -267,14 +267,57 @@ season of it starts when the scrapers run.**
 (key v3.2.0); odds api key deactivated → owner renews"*, the owner supplies keys at segment 197, and
 segment 221 validates both (§T11.3a). ***The chronology runs blocked → owner acts → validated.***
 
-📌 **Items 2 and 3 are OWNER DECISIONS and their status after T11 is NOT RECORDED** *(eight
-transcripts unswept)*:
-- **BigDataBall for `c1`/`c2` history** — *"historical prop lines are **paid** (bigdataball) — owner
-  decision; live-only otherwise, calibrated in-season."* **BigDataBall is documented in 7 of thirty,
-  2 of the twelve.**
-- **A Kaggle account** for the free game-line history — *"**kaggle 'NBA betting data Oct 2007–Jun
-  2026'** (owner account)"*, with **`TeamRankings` odds-history scrape** named as the other free
-  fallback. ⚠ **TeamRankings is in 0 of thirty; the Kaggle set in 1 of thirty and 0 of the twelve.**
+❌ ***CORRECTED 2026-09-21 by §T11.27b — pass 22 said the status of items 2 and 3 after T11 was
+"NOT RECORDED". IT IS RECORDED, and in the twelve. The original text is kept below the correction.***
+
+### ✅ ITEM 2 — **BigDataBall: SUPERSEDED, not open**
+**`NBA_MASTER_SUMMARY.md` §T7.14a** — on file in the baseline `5dfb72ab`, **written by this sweep's
+own T7 pass, before T11's passes began** — records the supersession with its transcript named:
+
+> *"**This verdict was overtaken in T13**, which obtained **two full seasons of historical board data
+> from The Odds API** (→ `nba_market.board_snapshots`, 6.6 GB) — a source not considered here.
+> **BigDataBall was never purchased and never needed.**"*
+
+**And `NBA_SYSTEM_ARCHITECTURE.md` carries the same fact from the source's side**: *"The Odds API …
+12 books, $30 plan. **Carries PrizePicks as a bookmaker but NOT the DFS-only markets** (fantasy_score,
+period props). **This superseded the T9 verdict that no retroactive prop archive existed — BigDataBall
+was never needed.**"*
+
+| | |
+|---|---|
+| **T11, 2026-09-10** *(segment 113)* | *"decide on **bigdataball** for c1/c2 history"* — **⛔ an open owner decision** |
+| **T13** *(recorded in `NBA_MASTER_SUMMARY.md` §T7.14a and `NBA_SYSTEM_ARCHITECTURE.md`)* | **The Odds API supplied two full seasons → `board_snapshots`, 6.6 GB. BigDataBall never purchased, never needed.** |
+
+🔑 **The supersession is PARTIAL, and `NBA_SYSTEM_ARCHITECTURE.md` says exactly where it stops**: The
+Odds API carries **PrizePicks as a bookmaker** but **not the DFS-only markets** (`fantasy_score`,
+period props). ***So it closes `c1`/`c2`'s sportsbook side and does NOT close `c4`/`s1–s4` — whose ⛔
+is "no archive exists … boards are not archived anywhere free". The two blocked groups are resolved by
+different facts, and only one of them is resolved.***
+
+### ⚠ ITEM 3 — **Kaggle: the need it existed for is met; the account itself is NOT RECORDED**
+Item 3 was *"optionally a **kaggle** account for the **free game-line history**"*. **That history is
+present**: `nba_market.game_lines_closing` covers **2,410 games / 12,165 rows, 5–7 books** (§T11.12).
+**So the game-line gap Kaggle was a fallback for is closed** — ⚠ **but no document says the Kaggle
+account was or was not opened, and this is an inference from the data being present, not a statement
+anyone made.** **`TeamRankings` remains in 0 of thirty.**
+
+<details><summary><b>The original pass-22 text, retained</b></summary>
+
+> 📌 **Items 2 and 3 are OWNER DECISIONS and their status after T11 is NOT RECORDED** *(eight
+> transcripts unswept)*:
+> - **BigDataBall for `c1`/`c2` history** — *"historical prop lines are **paid** (bigdataball) — owner
+>   decision; live-only otherwise, calibrated in-season."* **BigDataBall is documented in 7 of thirty,
+>   2 of the twelve.**
+> - **A Kaggle account** for the free game-line history — *"**kaggle 'NBA betting data Oct 2007–Jun
+>   2026'** (owner account)"*, with **`TeamRankings` odds-history scrape** named as the other free
+>   fallback. ⚠ **TeamRankings is in 0 of thirty; the Kaggle set in 1 of thirty and 0 of the twelve.**
+
+🔴 **Why it was wrong, and it is the lesson**: the count — *"7 of thirty, 2 of the twelve"* — **was
+correct**. **The carriers were never opened**, and one of the two inside the twelve is **this sweep's
+own ledger saying the decision was overtaken.** ***A count of carriers is not a reading of them.***
+**RULE 26.**
+
+</details>
 
 📌 **And one build note the twelve do not carry**: **`k1` coach rotation's source is Wikipedia season
 pages' *"coaching changes"* tables, *"to compile as a static file"*** — **2 of thirty, 0 of the
