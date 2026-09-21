@@ -856,6 +856,43 @@ the NBA preseason board** (~Oct 3) — the board-row loader (`nba_market.pp_boar
 leagues) captures Fantasy and component lines together on the first full NBA map. (WNBA: only 4 players carried all four
 lines at once — inconclusive; the average gap Fantasy − (PTS + 1.2 REB + 1.5 AST) was +3.3, about what 3 STL + 3 BLK − TOV adds.)
 
+### BACK-SIMULATING PROPS WE HAVE NO HISTORY FOR — the spec (2026-09-21)
+**Why:** when NBA boards go live the lines are real, but the backtest must already be done — for props the archive
+never carried (Fantasy Score, FG/3-PT attempts, free throws, splits, combos, period props).
+
+**Prop families** (WNBA + NBA boards, `nba_market.pp_board_row`):
+| Family | Props | Ladder | Prices |
+|---|---|---|---|
+| A. Formula ladders | Points, Rebounds, Assists, 3PM, PRA, P+R, P+A, R+A | several goblins/demons | formula, capped 18.5× — in the archive |
+| B. Fixed three-rung | Fantasy Score, FG Attempted, 3-PT Attempted | 1 goblin + 1 demon, symmetric | near-fixed points (FS 2.3× / 4.5–4.75×) |
+| C. Alternates only | Turnovers, Blks+Stls, Offensive Rebounds | no standard line | goblins 2.4–2.8×, demons 3.25–3.75× |
+| D. Standard only | FT Made/Attempted, FG Made, Defensive Rebounds, two-player combos | none | factor 1 |
+Universal: the nearest demon never pays under **3.25×**.
+
+**1. PrizePicks' standard line = sportsbook consensus** (NBA archive, 12 nights across both seasons, `window` snapshot):
+points 76% identical / 93% within 0.5 / 99.9% within 1 (1,320 pairs, bias −0.02); PRA 72/91/99.9; P+R, P+A 67–75/91/99.9;
+rebounds, assists, R+A 54–60/99.7–100/100; threes, blocks, steals, turnovers 100% identical. → **book consensus is an
+unbiased, model-independent stand-in for PrizePicks' line.** (A center taken from OUR model would make the backtest
+circular.)
+**2. Every line comes from one projection per player** (WNBA): Fantasy Score = PTS + 1.2 REB + 1.5 AST + 3·(STL+BLK) − TOV
+of the component centers (11 players: mean gap +0.63, sd 1.02; without STL/BLK/TOV +3.38, sd 2.38); **two-player combos =
+sum of the two lines** (18 combos: +0.29, sd 0.24); **OREB + DREB = REB** (5 players: −0.18).
+Tool: `nba_market.pp_norm_inv(p)` (Acklam, round-trip error 7e-8) runs the formula backwards — a priced alternate →
+the center it implies; recovers standards within 0.10–0.44 (rebounds/assists 100% within 0.5, points 92% within 1).
+**3. Fantasy Score for NBA history — center VALIDATED on real outcomes:** center = weighted sum of book-consensus
+component lines, **missing components (mostly STL/BLK/TOV) = the player's prior-30-day MEDIAN, no offset**, rounded to
+.5 → **over the center 51.9%** (1,315 player-nights, 12 nights; target 50%). (First version used 30-day MEANS + the WNBA
++0.6 offset → 43.0%: means overstate small skewed counts that carry weight 3.)
+**Rungs — demon validated, goblin NOT:** gap g = 1.98·C^0.3 (WNBA fit, symmetric) → demons hit **31.9%** (price implies
+~32% ✓) but goblins **73.5%** (price implies ~65%). No symmetric gap fixes both — NBA Fantasy is right-skewed. Either NBA
+Fantasy goblins are genuinely generous or PrizePicks spaces NBA Fantasy differently; **treat Fantasy goblins as
+unverified until the NBA preseason board.** Prices: goblin 2.3×, demon 4.5–4.75×, Less mirrored. Outcomes exact from
+`nba_stats.player_game_log`; the model already ladders `fantasy_score`.
+**4. Not yet validated:** standalone FG/3-PT attempts, free throws, OREB/DREB splits (no book lines — need player-rate
+projections); period props (1Q/1H) and double-double.
+**Correction — goblin floor is not universal:** NBA points-family goblins stop at 2.1× (2.08 floor), NBA rebounds/threes
+reach 2.0×, WNBA goblins reach 1.9× in most stats. Set NBA count-family floors from preseason data.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
