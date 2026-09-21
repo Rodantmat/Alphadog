@@ -14419,6 +14419,66 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.23 — PASS 23 (**literal audit, second half — columns, values and config keys**) — **🔴 `rate_tier` is not a column anywhere, and one concept carries five live column names · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. Pass 22 audited `schema.table` and found 4 of 101 wrong; **columns and
+values were not audited at all**, and §T10.21b's `phase2_enrichment` was a value — so the family with
+a known instance was the one still unchecked.*
+
+#### 🔴 T10.23a — **`rate_tier` does not exist, and the right name is already in these documents**
+
+`nba_config.factor_profile_cells` is described in the twelve as keyed
+*"factor × prop × **rate_tier** × **role_tier** × direction × variation_band"*. **Live, its columns
+are:**
+
+`cell_id` · `factor_key` · `canonical_prop_key` · **`tier_label`** · **`role_tier_key`** ·
+`direction` · `variation_band` · `cap` · `lift` · `penalty` · …
+
+🔴 **`rate_tier` is not a column in ANY `nba%` table** — checked against
+`information_schema.columns` across all eleven `nba%` schemas. **The rate tier is `tier_label`**,
+***which these same documents use correctly eleven times elsewhere.*** **One table, two vocabularies,
+inside one document set.**
+
+✅ **Corrected in `NBA_DATABASE.md` and `NBA_OPEN_ITEMS.md`.** 📌 **Not corrected, deliberately**:
+the `NBA_MASTER_SUMMARY.md` instance is inside a **verbatim quotation** from
+`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247 *(the quote is accurate; the design document uses
+the design's words)*, and `NBA_BASELINE_CALIBRATION.md`'s *"`rate_tier × role_tier × rung` tables"*
+describes **the ladder's in-code concept, not a column**.
+
+#### ⚠ T10.23b — **One concept, five live column names — and the documents use all of them**
+
+| Concept | `factor_profile_cells` | `baseline_ladder` / `baseline_history` | `variation_bands` | `role_tiers` |
+|---|---|---|---|---|
+| **variation band** | `variation_band` | **`var_band`** | **`band_key`** | — |
+| **role tier** | **`role_tier_key`** | `role_tier` | — | `role_tier_key` |
+| **rate tier** | **`tier_label`** | — | — | — |
+| **prop** | `canonical_prop_key` | `prop` | `canonical_prop_key` | — |
+
+**Mentions across the twelve**: `variation_band` **43** · bare `role_tier` **40** · `var_band` **12**
+· `tier_label` **11** · `role_tier_key` **11** · `rate_tier` **4**.
+
+🔑 ***Every one of those names except `rate_tier` is live and correct — for its own table.*** **The
+defect is that nothing said which belongs where**, so a reader joining `factor_profile_cells` to
+`baseline_ladder` writes `var_band = var_band` and gets `column does not exist` on one side.
+✅ **The join map is now in `NBA_DATABASE.md`.**
+
+#### ✅ T10.23c — **Four apparent value defects cleared by rule 20**
+
+| Value | Apparent status | What the documents actually say |
+|---|---|---|
+| `year_founded` | not a column anywhere | ✅ **documented as exactly that** — *"(absent) `owner`, `year_founded` — SCRAPED ON EVERY RUN, WRITTEN NOWHERE, and NOT recoverable from `raw_json`"* |
+| `mondrian_quintile` | not a column | ✅ **it is a VALUE** of `confidence_verification.check_type`, documented as such |
+| `high_vs_low` | not a column | ✅ **a VALUE** of `tier`, and the documents already state *"**No `v2` / `high_vs_low` rows are present at all**"* |
+| `equal_scale_v1` | uncheckable | ✅ **it is `decomposition_method` on `nba_score.real_slip_leg_observations`, which §T10.22b established does not exist** — *the value cannot be verified because its table is gone, and that is already recorded* |
+
+🔑 **Four of five apparent defects were the documents being right.** ***Rule 20 has now cleared 7 of
+11 in pass 22 and 4 of 5 here — eleven apparent defects that a pre-rule-20 pass would have published
+as findings.***
+
+**Pass outcome: 1 defect (`rate_tier`, corrected in two documents), 1 undocumented trap (the
+five-name concept, now mapped), 4 cleared by rule 20. 🔴 CLEAN 0/3 · 23 passes.**
+
+---
+
 ### T10.22 — PASS 22 (**literal audit — every documented identifier read off the system**) — **🔴 four objects asserted live that do not exist, one of them identified by its own row count · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. The angle §T10.21b forced: two wrong identifiers in six passes, both
 written from the prose rather than read from the database. **The first pass since 18 to change the
