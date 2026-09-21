@@ -9745,6 +9745,42 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.59 — PASS 30 (**two-direction judgment, seventh run**) — **⚠ 1 DEFECT, MINE, IN THE PASS BEFORE THIS ONE · 0/3**
+*2026-09-21. **The band has settled: 118 segments, zero entered, zero left, coverage identical at
+928 / 885.** The shift pass 29 predicted has completed, so the extraction is stable again. Direction 2
+unchanged at 32, all self-authorship. The work was judging §T7.58's own claims.*
+
+#### ⚠ T7.59a — **CORRECTION to §T7.58b: `daily_delta` was not "added since" — it is where the helper CAME FROM**
+
+§T7.58b wrote: *"those nine, plus **three added since** — `daily_delta`, `matchups_pergame`,
+`per_game_delta`."* **`nba_season.py`'s own docstring, line 12, says the opposite:**
+
+> *"**Only `scrape_nba_daily_delta.py` auto-detected the season. This module lifts that logic out** so
+> every scraper shares it."*
+
+**`daily_delta` had the logic before the helper existed. The helper is that logic, extracted.**
+Calling it a later adopter inverts the origin.
+
+**The corrected reading of 9 → 12, which is a scope difference rather than growth:**
+
+| Group | Count | |
+|---|---|---|
+| T7's named list — **weekly static stats scrapers to convert** | **9** | `splits` · `lineups` · `player_bio` · `tracking_detail` · `playtypes` · `shotquality` · `onoff` · `team_stats` · `player_tracking` |
+| **The origin** | **1** | `daily_delta` — already auto-detected; **the helper was extracted from it**, so it was never in a list of things to convert |
+| **Per-game delta scrapers** — a different category from "weekly static" | **2** | `matchups_pergame` · `per_game_delta` |
+| **= today's direct callers** | **12** | + 3 transitive via `stats_seasons()` = **15 exposed** |
+
+**So T7's 9 and today's 12 were never the same population**: the 9 was *"weekly static stats scrapers
+that hardcode the season"*, and the 12 is *"everything that calls `active_stats_season()` today."*
+*The exposure figure of 15 is unaffected.*
+
+⚠ **The failure is the sibling of the composite-key one**: I read T7's list and the live call sites
+and差 them, **without reading the helper's own docstring — which I had already quoted twice in
+§T7.51a and §T7.52a for a different sentence.** *Rule: when two counts differ, establish what each
+one was counting before calling the difference growth.*
+
+---
+
 ### T7.58 — PASS 29 (**two-direction judgment, sixth run**) — **🔴🔴 NEW TRANSCRIPT MATERIAL: T7 TESTED THE BOUNDARY AND THE TEST PASSED · 0/3**
 *2026-09-21. The first pass in nine to move the high band: **118 segments, up from 113 — five entered,
 none left**, all five the `nba_season.py` material, now matching because passes 22–28 wrote about it.
