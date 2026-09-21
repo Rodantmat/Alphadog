@@ -9320,6 +9320,70 @@ bands, direction, prop line), and the design document that gets materialised int
 **Seven owner turns sit in the tail**, the most of any transcript; T2–T6 had at most five, and T5 and
 T6 had none.*
 
+### T7.34 — PASS 5 (**results stratum, all 233 segments — last of T7's four**) — **🔴🔴 MAJOR NEW MATERIAL · 0/3**
+*2026-09-21.*
+
+#### 🔴🔴 T7.34a — **THE `raw_json` DOUBLE-ENCODING WAS ON SCREEN ON 2026-09-04 AND WENT UNRECOGNISED**
+
+The 🔴🔴 finding of this whole sweep — every NBA JSONB column stored as a double-encoded string,
+17,902 rows across 14 tables — **was encountered in T7, seventeen days before this sweep found it.**
+The three segments, in order:
+
+```sql
+-- [313]
+SELECT measure_type, jsonb_object_keys(metrics::jsonb) AS key
+FROM nba_stats.player_tracking_detail WHERE measure_type IN ('passing','rebounding') …
+```
+```json
+// [314]
+{ "ok": false, "error": "cannot call jsonb_object_keys on a scalar" }
+```
+```sql
+-- [315]  the workaround
+SELECT measure_type, left(metrics::text, 600) AS sample FROM nba_stats.player_tracking_detail …
+```
+```json
+// [316]  and the evidence, plain in the output
+"sample": "\"{\\\"gp\\\":24,\\\"w\\\":12,\\\"l\\\":12,\\\"min\\\":9.4,\\\"passes_made\\\":7.7, …}\""
+```
+
+**`cannot call jsonb_object_keys on a scalar` is the error a double-encoded column produces** — it is
+the *identical* error this sweep hit on `nba_ref.arenas` while first establishing the finding. **And
+the workaround's output displays the defect directly**: the value opens with `"\"{\\\"` — a JSON
+*string* containing escaped JSON, not an object.
+
+**The diagnosis was one question away and the question was not asked.** The response to the error was
+a cast that made the data readable rather than an inquiry into why the cast was needed, and the work
+moved on. **Nothing in T7 records it; no document records it until 2026-09-21.**
+
+⚠ **Two things follow, and the second is the important one:**
+1. **The bug is older than 2026-09-04** — it predates T7, which merely brushed against it. *When it
+   was introduced is still NOT RECORDED*; the writers date from the static-layer build (T2–T3).
+2. **This is the failure mode the whole sweep exists to catch.** An error message appeared, was
+   worked around, and the workaround was successful enough that nobody asked what the error meant.
+   **It is the same shape as the truthiness bug (§T6.18a) and the 799-row trap (§T5.16a): the system
+   said something was wrong, in a form quiet enough to step over.**
+
+#### ✅ T7.34b — the coverage check's first real output: **`{"missing starter": 0, "missing officials": 3}`**
+`[LIVE-AUDIT]`-equivalent, from T7 itself on 2026-09-04 — **the exact figures this sweep re-derived
+today** (§T6.19a, §T7.31a). **So the three missing-officials games were known, reported, and
+visible in a worker response from the day the check was built**, and remained unfixed and
+undocumented for seventeen days. ✅ The detector worked; nothing consumed its output.
+
+#### ⚠ T7.34c — the completeness check's three drafts, each with its measured result
+`1,400` (status only) → `1,149` (`game_label=''`, which *undercounts* — it excludes 81 labelled
+regular-season games) → **`1,230` via `game_id LIKE '002%'`, exact.** **The middle attempt is the
+instructive one**: free-text matching did not merely feel fragile, **it produced a wrong answer that
+looked plausible.**
+
+#### ✅ Verified, already documented
+`nba_calendar.games` spanning **2025-10-02 → 2026-06-13**; the 30-table row-count inventory totalling
+**2,666** calendar rows; a worker 500 (`column g.home_team_tricode does not exist`) and a bridge
+**504**; the season detector returning **2026-27** for 2026-09-04; and the checkpoint document at
+358 lines / 30,601 bytes. ✅
+
+---
+
 ### T7.33 — PASS 4 (**command stratum, all 233 segments**) — **NEW MATERIAL · 0/3**
 *2026-09-21.*
 
