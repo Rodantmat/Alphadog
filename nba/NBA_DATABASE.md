@@ -330,6 +330,13 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 > **ZERO times** in the codebase. The only config table anything reads is
 > **`nba_config.external_credentials`** (12 call sites, all fetching API keys).
 >
+> **⚠ AND THE LIST IS INCOMPLETE — 2026-09-21 (T7 pass 15).** Live `nba_config` holds **13 tables**;
+> **`variation_bands` (25 rows) has NO code reference anywhere in the repo** and is absent from the
+> list above — **and it is the table that gives the 13 continuous `factor_profile_cells` their
+> `variation_band` key.** `calibration_log` and `worker_definitions` do have repo hits, but **all are
+> MLB's D1 names** (`config_worker_definitions` in `verify_schema_all.py`, MLB workers) — **none
+> `nba_config`-qualified** — so their NBA status is *not* established by those hits.
+>
 > **⚠ PRECISION, 2026-09-21 (T7 pass 11): that is SEVEN TABLES AND ONE COLUMN, not eight tables.**
 > **`nba_config.ewma_alpha` does not exist** — `SELECT` on it errors *relation
 > "nba_config.ewma_alpha" does not exist*. It is a **column of `nba_config.stat_decay_config`**
