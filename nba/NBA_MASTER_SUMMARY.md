@@ -14430,6 +14430,78 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.16 — PASS 15 (**tracing home/away to its consumer, in the code**) — **✅ scoring is NOT exposed to the reversal · 🔴🔴 and the six games are exactly the ones HCA still governs · 0/3**
+*2026-09-21. Read-only code reading (`github_grep_file`). The question §T11.15b left open, answered —
+**and the answer composes two findings into a sharper one.***
+
+#### ✅ T11.16a — **The designation comes from the league's own field, not from either table**
+
+**`classification_ladder_v12.py` line 164:**
+
+```python
+teams["is_home"] = teams["MATCHUP"].str.contains("vs.")
+```
+
+***`is_home` is derived from the box-score `MATCHUP` string*** — `"ATL vs. MIL"` for the designated
+home side, `"ATL @ MIL"` for the away side — **the NBA's own field.**
+
+✅ ***So the scoring path never reads `nba_market.schedule_norm`, and is NOT exposed to its reversed
+orientation.*** **§T11.15's neutral-site problem is a DOCUMENTATION gap for scoring, not a scoring
+defect** — **the verdict rule 6 required, and the reassuring one.** 📌 `is_home` is then a **fitted
+regression factor for all sixteen props** (lines 357–363), and `pg["is_home"] = (TEAM_ID == home_id)`
+at line 301.
+
+#### 🔴🔴 T11.16b — **But HCA is one scalar, and the six games are exactly the ones it still governs**
+
+**Line 181–182:**
+
+```python
+HCA = float((_trg["home_margin"] - (_trg["home_net"] - _trg["away_net"])).mean())
+games["derived_spread"] = (games["home_net"] - games["away_net"]) + HCA + 0.5*games["rest_diff"]
+```
+
+**A single scalar fitted over the TRAIN seasons and added to every game. No neutral-site condition
+anywhere.**
+
+**Line 190–205 — the market-spread override:**
+
+```python
+games["spread_used"] = games["derived_spread"]
+…
+games["spread_used"] = np.where(_mk.notna(), _mk, games["derived_spread"])
+```
+
+*loaded from `nba/data/nba_market_spreads_<season>.json`, which the code's own comment says is
+**"exported from `nba_market.game_lines_snapshots` at the MORNING snapshot"***, and — the comment
+again — ***"Falls back to the derived spread per game when no line exists — never silently, the
+coverage is printed."***
+
+🔴🔑 **THE COMPOSITION, and it is exact.** The export depends on the event→game mapping. **The six
+games with no `event_game_map` row therefore have no market spread** (§T11.12b), **so they fall
+through to `derived_spread` — which carries the full HCA — and those six are precisely the
+NEUTRAL-SITE games where HCA does not apply** (§T11.15a).
+
+***The one place HCA still governs the spread is the one place it is most wrong.***
+
+✅ **What limits it, and it belongs in the same breath**: it is **six games across two seasons**, the
+fallback is **printed, not silent**, and `spread_used` feeds `p_blowout` and `home_favored` —
+**a blowout probability and a favourite flag, not a projection directly.** 📌 **How large the error
+is has NOT been measured; this pass read code and did not run anything** (the sweep is read-only).
+
+#### ✅ T11.16c — **And the second-order mismatch does not materialise**
+
+Line 322 pairs **`is_home` (MATCHUP-derived)** with **`home_spread` (market-derived)**:
+`_own_spread = np.where(pg["is_home"]==1, -_hsp, _hsp)`. ⚠ *A neutral-site game whose two sources
+disagree would put a market `home_spread` on the wrong side here* — ✅ **but the six have no market
+row at all, so the branch is never reached for them.** *Recorded because the hazard is real for any
+future game where the mapping succeeds and the orientation still differs.*
+
+**Pass outcome: the open question answered — scoring reads the league's own field and is not exposed;
+and a composition that makes the neutral-site finding materially worse in exactly six games.
+🔴 CLEAN 0/3 · 16 passes.**
+
+---
+
 ### T11.15 — PASS 14 (**orientation audit**) — **🔑🔑 the six are NEUTRAL-SITE GAMES, and neutral sites appear in no document at all · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. The angle §T11.14a forced. **The cause is established — from the
 system's own authority, not from a guess — and it opens something larger.***
