@@ -14430,6 +14430,61 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.20 — PASS 19 (**fourth two-direction judgment, rule 24's companion applied**) — **🔴 two of my own value-set claims were drawn from a subset, and both are wrong · 0/3**
+*2026-09-21. **Rule 24's companion was written one pass ago and it caught two errors on its first
+application** — the first time in this run a rule has found defects in the pass immediately after
+being written rather than the pass before.*
+
+#### 🔴 T11.20a — **`board_tiers` and `board_tiers_v2` have the SAME ROW COUNT and DIFFERENT VALUE SETS**
+
+§T11.8c read the tier vocabularies off **`board_tiers` only**. Read off **both**:
+
+| column | `board_tiers` | **`board_tiers_v2`** |
+|---|---|---|
+| `kind` | `demon` · `goblin` · `standard` | same |
+| **`anchor_type`** | `explicit` · `switch_point` | 🔴 **`explicit` · `none` · `switch_point`** |
+| **`tier`** | `0` · `−1…−6` · `1…8` | 🔴 **`−7…+8`** |
+
+🔴 ***Both tables hold 2,199,354 rows — identical counts — and v2 carries a third `anchor_type`
+(`none`) and a wider tier range (−7).*** **§T11.8c's vocabularies are corrected**, and **§T11.5b's
+treatment of the two as interchangeable is narrowed**: *the row counts match, the content does not.*
+📌 **What v2 IS, and whether it supersedes v1, is NOT RECORDED** — rule 6.
+
+#### ✅ T11.20b — **`side` is a SUBSET relationship, not a collision — and the subset is informative**
+
+| table | `side` values |
+|---|---|
+| `nba_market.board_snapshots` | **`No` · `Over` · `Under` · `Yes`** |
+| `nba_market.board_outcomes` | **`No` · `Over` · `Under` · `Yes`** |
+| **`nba_score.final_hp`** | **`Over` · `Under`** |
+
+✅ **Not a rule-24 collision — the same vocabulary, and the scoring table carries only two of the four
+values.** 🔑 **And that is a fact worth having**: ***the `Yes`/`No` props never reach `final_hp`***,
+which is consistent with the documented treatment of `double_double` (*"sentinel −1.0, **no ladder**"*).
+📌 `board_outcomes.market_key` has **21** distinct values against `rung_market.market`'s **12** —
+*different breadth, same level of the model.*
+
+✅ **`leg_result`'s five values** (`dnp` · `over_win` · `push` · `under_win` · `unmatched_player`)
+**confirmed — and `leg_result` exists in only one table**, so the subset risk does not apply.
+
+#### 📌 T11.20c — **The band, per rule 18**
+
+**Baseline `5dfb72ab`: 13 / 3 / 695 / 685 — the fifth consecutive identical measurement.** Working
+**22 / 2 / 686 / 678**, unchanged for three. **Overlap 13 in both · 9 working-only · 0
+baseline-only.**
+
+🔑 **Judgment on this transcript's method**: ***rule 24's companion found two defects on its first
+outing, and both were mine, and both were "I read one table and generalised."*** **That is the same
+error as §T11.18b (two tables called drift) and §T11.9b (a value set called a row share)** —
+***three instances in four passes of concluding from a subset*** — **which is why the companion is
+written into rule 24 rather than left as advice.**
+
+**Pass outcome: 2 corrections to my own value-set claims, 1 subset relationship recorded as
+informative rather than defective, the band stable for a fifth measurement.
+🔴 CLEAN 0/3 · 20 passes.**
+
+---
+
 ### T11.19 — PASS 18 (**label-vocabulary audit across the schema**) — **🔴 the pattern is real and `snapshot_label` was the mildest case · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. The angle §T11.18b forced. **The rule-16 discipline pays twice here: it
 narrows one finding and sharpens two others.***
