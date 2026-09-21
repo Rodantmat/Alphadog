@@ -86,8 +86,17 @@ every commit message. Never `git push`.
 | T4 | phase3b-backfill | **10** (re-sweep) | ~12 / 498 | 1 per ~41 | **2026-09-21** ✅ |
 | T5 | phase3c-starter-status | **10** (re-sweep) | ~7 / 375 | 1 per ~54 | **2026-09-21** ✅ |
 | T6 | phase3d-delta | **9** (re-sweep) | ~8 / 527 | 1 per ~66 | **2026-09-21** ✅ |
+| **T7** | **classification-baseline-design** | **36** (re-sweep) | **~40 / 1,081** | **1 per ~27** | **2026-09-21** ✅ |
 
-**Five of twenty closed.** The falling ratio across T2 → T4 → T5 (1 per 9 → 41 → 54) is the expected
+> **T7 is the outlier and the reason matters for T8–T20.** Its 36 passes were not spent on the
+> transcript — **the transcript was read correctly by pass 8.** Passes 9–36 audited **what this sweep
+> wrote about the other documents**, and found **thirteen defects, every one in the sweep's own
+> prose**: three headline findings retired (all three *"unrecorded owner directives"* were
+> recorded), two severities reversed, one internal contradiction, six single-pattern counts.
+> **Eleven standing rules came out of it, and the run's largest live finding (O4) came out of a
+> paragraph read while checking one of those defects.**
+
+**Seven of twenty closed.** The falling ratio across T2 → T4 → T5 (1 per 9 → 41 → 54) is the expected
 shape, not a warning: each transcript arrived with more already documented than the last. **Closure
 is decided by three clean passes at three different angles, never by the ratio.**
 
