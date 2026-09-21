@@ -7727,6 +7727,67 @@ methodology. **Coverage at start**: 438 segments · **375 uncovered vs the twelv
 all 30 — **only a 9-segment self-authorship gap**, so unlike T4 this transcript barely writes the
 documents; its tail is genuine content, not its own payloads.*
 
+# ✅✅ T5 IS CLOSED — 2026-09-21 — 10 PASSES (re-sweep under chronological order)
+
+**Three consecutive clean passes at three different angles**: 8 (cross-document consistency),
+9 (two-direction judgment), 10 (structural value sanity).
+
+### T5.25 — PASS 10 (**angle: does the data obey the rules of the sport?**) — **✅ CLEAN 3/3 — T5 CLOSES**
+*2026-09-21. Not referential integrity (do keys resolve) and not volume (is the count right), but
+**does each row set satisfy a domain invariant that must hold in a real basketball game?***
+
+`[LIVE-AUDIT]` — `player_game_starter_status`, grouped by game:
+
+| Invariant | Result |
+|---|---|
+| games covered | **1,230** |
+| games with **exactly 10 starters** | **1,230 — all of them** |
+| min / max starters per game | **10 / 10** |
+| players per game | avg **26.16**, range **22–30** |
+
+**Every game has exactly five starters per team, with no exceptions across the entire season.** A
+parsing error, a duplicated row, a dropped team or a misread `start_position` would all break this
+invariant, and none does. **This is stronger evidence than any row count**, because it validates the
+*shape* of each game rather than the size of the table.
+
+**It also independently confirms the transcript's own magnitude check**: the run was accepted because
+32,179 rows was *"exactly the expected magnitude (26 players/game average)"* — **measured here at
+26.16.** ✅ The expectation was sound and the data met it.
+
+### T5.24 — PASS 9 (**the two-direction judgment pass, re-run**) — **✅ CLEAN 2/3**
+Direction 2: the same 5 `NBA_PROJECT_LOG.md` self-authorship segments ✅. Direction 1: 47 segments,
+all mapping to correct entries — with the magnitude-verification segment now the band's top match at
+**0.86**, confirming §T5.22b landed. **No defect in either direction.**
+
+---
+
+## T5 FINAL TALLY
+
+**10 passes. All four strata read. Closed on 3 clean passes at 3 angles.**
+**~7 findings across 375 tail segments ≈ 1 per 54** — the lowest yield yet, and the expected shape:
+T5 arrived with 15 sound sections already written, and **the batch check of those sections found them
+correct**.
+
+**What the re-sweep added:**
+
+| Severity | Finding |
+|---|---|
+| 🔴 | **18 distinct `status` values across the fleet, in two generations** — with `ok` meaning *certified*, **there is no fleet-wide programmatic success signal** |
+| 🔴 | **The 799-row trap and T4's missing player are one failure class** — HTTP 200 + zero rows, no error raised; **caught at 97% loss, missed at 1-in-582** |
+| ⚠ | **Five committed diagnostic artifacts, not three** — correcting §T4.23a, and exposing the **third instance of this sweep's single-pattern counting error**, now a standing rule |
+| ⚠ | **The workflow-granularity principle** — why 32 `nba-*.yml` files exist, stated in a workflow header and in no document |
+| ✅ | **A season literal is correct in a one-time backfill** — classify by cadence, so the rollover fix is not over-applied |
+| 📐 | The game-log orphan rate measured as a **20.07% / 9.84% / 0.00%** season gradient, proving the mechanism |
+
+**And two defects in this sweep's own output**, both found here: the artifact undercount, and the
+**T2 ledger row grown to three generations of text** in breach of the four-field rule — stripped back.
+
+---
+
+## ▶ NEXT: T6 — `2026-09-09-02-15-50-nba-expansion-phase3d-delta-complete.txt`
+
+---
+
 ### T5.23 — PASS 8 (**cross-document consistency, checked against live data**) — **✅ CLEAN 1/3**
 *2026-09-21.*
 
