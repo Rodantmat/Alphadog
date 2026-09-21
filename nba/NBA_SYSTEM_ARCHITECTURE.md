@@ -27,7 +27,36 @@ inning pills**.*
 | **PrizePicks** | ✅ **ours** *(raw API, `league_id=7`)* | same-moment MLB diff **1,729 vs 1,353 legs**; ParlayAPI drops ~25% of rungs *nearest the standard line* and lags **`age_seconds ≈ 3,300`** — *full decomposition in `NBA_OPEN_ITEMS.md`* |
 | **Sleeper** | ✅ **ours** — `nba/scrape_sleeper_board.py` + `sleeper-board.yml` | public **`api.sleeper.app/lines/available`**, names via **`/v1/players/<sport>`** (slim map), **both-side multipliers**. 🔑 ***Diff: 405 / 91 vs ParlayAPI's 406 / 92 — PER-STAT IDENTICAL*** → **ours anyway, because it is first-party and free** · **1 of thirty, 0 of the twelve** |
 | **Underdog** | ✅ **ours** *(scraper v3)* | 🔴 **two blind probe rounds TRIPPED CLOUDFLARE** — *"never burst-probe it"* — **and the owner's own *"copy as curl"* capture exposed the lobby-content API.** **Result: 854 lines / 100 players** · **0 of the twelve** |
-| **Fliff** | ⚠ **ParlayAPI** *(not ours)* | **the web app WAS reverse-engineered but is UNFINISHED** — see the owner action in `NBA_OPEN_ITEMS.md` · **0 of the twelve** |
+| **Fliff** | ⚠ **ParlayAPI** *(not ours, as of T12)* | **the web app WAS reverse-engineered but is UNFINISHED** — see the owner action in `NBA_OPEN_ITEMS.md` · **0 of the twelve** · 🔴 **AND READ THE NARROWING BELOW BEFORE USING THIS ROW** |
+
+> ### 🔴 NARROWING, added 2026-09-21 by §T12.5c — **FLIFF IS NOT A PICK'EM BOARD, and my own framing overstated the stakes**
+> *The answer to owner segment 47 was in this transcript all along, at segment 48, and the pass that
+> wrote the row above did not read it. **Rule 6, self-applied.***
+>
+> **Segment 48, verbatim**: ***"fliff is a SOCIAL SPORTSBOOK, not pick'em — its lines carry REAL ODDS
+> (like a book), not flat-payout picks, so for the slip engine it behaves like ANOTHER SPORTSBOOK,
+> not a fourth board. Its value is as a SOFT LINE to compare against, not as a place the picks are
+> graded."*** **0 of thirty** *("social sportsbook", "soft line" — controls `board_outcomes` 26 of
+> thirty, `grade_board_outcomes` 6, both fire)*.
+>
+> ⚠ **So the sharp sentence written at §T12.3c — *"the one board still served by ParlayAPI is served
+> by the source every other comparison rejected"* — is TRUE and MISLEADING.** ***The ParlayAPI
+> defects that decided the other three are LADDER defects — dropped rungs nearest the standard line,
+> stale prices on a pick'em ladder — and Fliff has no pick'em ladder to drop.*** **The finding
+> stands; its weight does not.**
+>
+> ✅ **Two more facts from the same answer, both 0 of thirty**: ***"in ParlayAPI's live feed Fliff is
+> already present, so from opening day we'd have its board live AT NO EXTRA COST; the only question
+> is whether you need its HISTORY for training"*** — **and the cost of that history is all-or-nothing:
+> *"adding it is the full +210 credits per snapshot (~+1.03M for two seasons, ~3.1M total), whether
+> you want one book from that region or all six. **There's no way to buy Fliff alone.**"***
+> 🔑 **And segment 100 gives the reason Fliff was never ours in T12**: ***"fliff is an AUTHENTICATED
+> app API (session tokens, device headers); there's no clean public endpoint"*** — **against Underdog
+> and Sleeper, which *"expose public JSON endpoints (no login) that community tools have used for
+> years — the same situation as PrizePicks."*** **0 of thirty.**
+> 📌 **All of which makes the later supersession legible**: *the live `board_sources_decision` says
+> Fliff is now **our own scraper, "no login"** — so the authenticated-API obstacle was solved after
+> T12, which is exactly what the owner action in `NBA_OPEN_ITEMS.md` was asking for.*
 
 ### 🔑 The Underdog lobby-content API, as captured
 **Host `api.underdogfantasy.com`.** **Mandatory parameters**: `product=fantasy` ·
