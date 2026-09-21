@@ -664,7 +664,9 @@ dominant bug class, appearing in the grader.
 > *"**Goblin/Demon/milestone tails BEYOND the ±6 ladder rungs — NOT separately certified.**"*
 
 **So the certified ±6 ladder does NOT extend to the tails the goblin/demon economics depend on.**
-The rungs are built (`LADDER_DEPTH` now reaches 13–16 for the deep props) but **the leg-level
+The rungs are built (`LADDER_DEPTH` reaches **14–16** for the deep props — *corrected from "13–16"
+2026-09-21 by §T9.39b: **13 is the p95 measurement, not a table value**; the configured deep props are
+`points` 14 · `pts_ast` 14 · `pts_reb` 15 · `pra` 16 · `fantasy_score` 16*) but **the leg-level
 certification standard — band × direction × rung, confidence bands hitting their rate — was only met
 within ±6.** **This is the single most important thing to certify once a live board exists**, because
 T8 nominated the tails as *"the #1 area where a sharp baseline earns the most."*
