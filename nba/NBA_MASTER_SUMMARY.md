@@ -14419,6 +14419,60 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.21 — PASS 21 (**live numeric re-verification, rules 17/18/20 applied to every figure**) — **🔴 one defect, in pass 19's own probe: a value that does not exist · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. Every live figure §T10.1–§T10.20 states, re-derived, with every
+partition summed.*
+
+#### ✅ T10.21a — **Eleven figure families exact, every partition closing**
+
+| Object | Live, 2026-09-21 | ✅ |
+|---|---|---|
+| `nba_config.factor_registry` | **67 = 31 baseline + 36 enrichment**, **34 enrichment active** | ✅ |
+| `compute_stage` partition | **15 + 17 + 2 + 2 = 36**, **+ 31 NULL = 67** | ✅ |
+| `nba_config.factor_relevance` | **460 rows · 29 distinct `factor_key`** | ✅ |
+| `nba_score.factor_gate_results` | **104** | ✅ |
+| `nba_ref.referee_assignments` | **0 rows** — *re-verified; still §T8.34a's unfalsifiable case, tagged **(T15)*** | ✅ |
+| `nba_ref.teams` / `nba_ref.arenas` | **30 / 30** | ✅ |
+| `nba_ref.teams.source_key` | **2 distinct — `NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE` on 5, `STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR` on 25 · 5 + 25 = 30** | ✅ |
+| `nba_calendar.games` 2026-27 | **001 preseason 66 games 2026-10-03 → 10-16 · 002 regular 1,200 games 2026-10-20 → 2027-04-11** | ✅ |
+| `classification_config` timestamps | `single_stat_scoreboard_two_seasons` **05:55:58.053 UTC** · `season_opening_study` **20:11:43.921 UTC** | ✅ |
+| Matchups shards | **7 · 7 · 7**; rows **230,877 / 232,830 / 241,590**; columns **29 / 29 / 28** | ✅ |
+| Shard index bookkeeping | **1,228 + 2 = 1,230** · **1,230 + 0 = 1,230** · **1,229 + 0 = 1,229** | ✅ |
+
+🔴 **Both 2025-26 shard defects are still live**: **one game neither covered nor recorded empty**
+(1,229 with `empty: 0`, against 1,230), and **28 columns where the other two seasons carry 29**
+(`matchupMinutesSort` missing). *Unchanged since pass 4; `NBA_OPEN_ITEMS.md` carries both.*
+
+#### 🔴 T10.21b — **§T10.19a's "system vocabulary" probe used `phase2_enrichment`, and no such value exists**
+
+The phase-2 literal in `factor_registry.compute_stage` is **`phase2_window`**. **`phase2_enrichment`
+is not in the table at all** — it is the prose form (*"17 phase-2"*) turned into an identifier.
+
+**The verdict is unaffected**: the probe's other two literals (`phase1_baseline`,
+`live_only_excluded_from_history`) are real and both return **0 at the baseline**, so
+*"`compute_stage` is in none of the twelve"* still stands. ⚠ **But a third of that probe tested a
+string that could never match**, which makes it *evidence of nothing* rather than evidence of absence
+— **rule 20's third vocabulary is only a vocabulary if it is read off the system.**
+
+🔑 **Same shape as §T10.16e's schema trap — `factor_gate_results` named as `nba_config` when it is
+`nba_score` — and this pass produced the second instance while verifying the first.** ***An identifier
+written from the prose is not the system's vocabulary; it is the documents' vocabulary wearing the
+system's clothes.*** ✅ **All four real literals are now recorded in `NBA_DATABASE.md` with their row
+counts**, so the next probe reads them off the page.
+
+#### 📌 T10.21c — **Rules 17/18/20 applied to this pass's own figures**
+
+**Population and tree, stated**: every figure above is `[LIVE-AUDIT]` — **the live database at
+2026-09-21**, not a document count, so no corpus or tree applies. **The two document-side figures in
+this pass** — the four `compute_stage` literals' presence in the twelve — are **working tree** and
+read **`phase2_window` 1 (this sweep's), the other three 0–3, all 0 at `d29401bd`** ✅ *consistent
+with the baseline claim.*
+
+**Pass outcome: 11 figure families exact, every partition closing, both known defects still live;
+1 defect in this sweep's own probe design. 🔴 CLEAN 0/3 · 21 passes.**
+
+---
+
 ### T10.20 — PASS 20 (**fifth two-direction judgment, reported against the BASELINE tree per rule 18**) — **🔴 pass 18's evidence broke rules 18 and 20 at once · 🔑 and the audit drove a segment from 0.22 to 0.96 · 0/3**
 *2026-09-21. The closing-three judgment, re-measured on both trees rather than carried forward.*
 
