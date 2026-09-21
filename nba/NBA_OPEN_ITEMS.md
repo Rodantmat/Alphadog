@@ -99,6 +99,32 @@
 > thirty / thirty-two document pair, which is two correct counts of two different populations
 > (32 `.md`, less the run log and the out-of-scope PP document)**.
 
+## 🔑 OWNER ACTION — **one browser capture is all that stands between Fliff and our own scraper**
+*Recorded 2026-09-21 (T12 pass 2, §T12.3c). **Transcript `2026-09-11-21-01-23`, segment 636.**
+Probed against the baseline: every fact below is **0 of the twelve**; the carriers are
+`NBA_PROJECT_LOG.md`, `NBA_COMPASS.md` and `scrape_fliff_board.py`.*
+
+**Fliff's web app WAS reverse-engineered, and the work stopped one step short.** **What is known**:
+**`POST app.getfliff.com/api/v1/sports_book_public/`** with a **`sports_book` request envelope** ·
+**version `5.0.34` / cap `285`** · a **location token** · **feed-sync codes `3055` / `3056` /
+`3062`** · **data hosts `m-c*.app.getfliff.com` and pubnub** · ***"reachable without login but
+UNFINISHED."***
+
+🔴 ***THE DECISION RESTS ON ONE OWNER ACTION, stated verbatim***: **"parlayapi stays the fliff source
+UNLESS the owner captures one `sports_book_public` curl."**
+🔑 **And the precedent says it works**: ***the identical ask — a single "copy as curl" from the
+owner's browser — is what unblocked UNDERDOG*** after two blind probe rounds tripped Cloudflare
+*(`NBA_SYSTEM_ARCHITECTURE.md` §0f)*. **Underdog is now our own scraper at 854 lines; Fliff is still
+ParlayAPI.**
+⚠ **Why it matters beyond one board**: **ParlayAPI is the source for Fliff alone now**, and the same
+diff that chose the other three found ParlayAPI **drops ~25% of PrizePicks' ladder rungs, lags ~55
+minutes, and misses Underdog's team markets and inning pills** — ***so the one board still served by
+ParlayAPI is served by the source every other comparison rejected.*** **Stated at evidence strength:
+no same-moment diff of FLIFF against its own API has been run, because the scraper is unfinished —
+whether ParlayAPI's Fliff feed has the same defects is NOT RECORDED.**
+📌 **A dated STATE, not a verdict** *(O9)*: **T13–T20 are unswept, and this is exactly the kind of
+item a later transcript closes.**
+
 ## 🔴🔴 THE 05:30Z OVERNIGHT VERIFICATION — **and it CONFIRMS the scrape-vs-load gap rather than closing it**
 *Recorded 2026-09-21 (T12 pass 1, §T12.2b). **Transcript `2026-09-11-21-01-23`, tail segment 617** —
 a patch into `NBA_PROJECT_LOG.md`, quoted whole.*
