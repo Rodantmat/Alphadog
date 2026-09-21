@@ -8031,6 +8031,20 @@ live-audit result NEW, grep the twelve documents for the object's own name.** At
 memory.** One grep. *(The count rule and the novelty rule fail together, because both substitute
 what I just looked at for what is on record.)*
 
+**⚠ The fifth form, added 2026-09-21 after §T7.44a — the COMPOSITE KEY rule**: **when a document
+specifies a composite key, enumerate the key from that document before querying the table.**
+`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247 gives `factor_profile_cells` a **six-dimensional**
+key; I queried three columns and drew a conclusion from the other three being null — twice, at
+§T7.38b and §T7.39a — before pass 15 found `variation_band` populated on exactly the rows I had
+called unkeyed. **The schema lists columns; only the design says which ones mean something.**
+
+🔴 **This is the SAME HABIT three times in seven passes**, each caught by the next pass and never by
+the one that made it: §T7.38a read a quote without its attribution; §T7.39a read the key columns
+without `formula_expression` in the same row; §T7.44a read three key columns without the three the
+design names. **In all three the missing context was one line away from the thing I read.** *The
+practical form of all three rules is one instruction: **read the neighbours before drawing the
+conclusion** — the sentence above, the column beside, the rest of the key.*
+
 **✅ THE MECHANISM THAT ACTUALLY WORKS, established at §T7.43 (pass 14) after the rule failed twice
 inline — the NOVELTY AUDIT, as its own pass:** `git archive` the twelve **as they stood before this
 transcript's re-sweep began** into a scratch tree, then grep **that tree** — not the working tree —
