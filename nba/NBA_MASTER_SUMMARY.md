@@ -14423,6 +14423,73 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.7 — PASS 6 (**probe-validation audit — positive controls on every surviving absence claim**) — **✅ the method holds, 18 of 20 exact · ❌ one more "no document" retracted · 0/3**
+*2026-09-21. The angle §T11.6c forced, and it reaches back over the whole sweep. **Rule 20 counts
+vocabularies; nothing checked that a pattern could match anything at all.***
+
+#### 📌 T11.7a — **The method, and it is one line**
+
+**Before believing a zero, run the regex against a string the claim itself implies would match.**
+If the control fails, ***the zero is meaningless*** — it says the pattern is broken, not that the
+corpus is empty. *Three failures in this sweep were exactly that: `dec(ember)? 22` against
+`2025-12-22` (§T11.6a), `phase2_enrichment` against `phase2_window` (§T10.21b), and `^\{"ok":`
+against `{ "ok": true` (§T11.2a).*
+
+**Twenty probes re-run with controls — ten T11 claims against `5dfb72ab`, ten surviving T10 claims
+against `d29401bd`. All twenty controls PASS.**
+
+#### ✅ T11.7b — **Eighteen of twenty land exactly; two need a word changed**
+
+✅ **T11, nine confirmed at zero across all thirty with a validated probe**: ParlayAPI's `v3.2.0` /
+Pro tier / unlimited rate · the provider-state listing · the 10–27 republish rate · Betr's
+`2025-11-23` · Pick6's `2025-05-26` · the hardcoded `-05:00` · `board_outcomes`' NULL `bookmaker` ·
+**6,905,452** · the parser-validation lesson. *The tenth, the Pacific-time instruction, returns
+**2 of thirty and 0 of the twelve** — exactly as §T11.1c recorded it.*
+
+✅ **T10, eight confirmed exactly as published**: `compute_stage` **0 / 12, 2 / 30** · its four value
+literals **0 / 0** · `matchupMinutesSort` **0 / 0** · the 31/34 split **2 of thirty, 0 of the twelve**
+*(the "no document states both" claim)* · the A/N/B/K/M codes **3 of the twelve** · `lineups_confirmed`
+as a key **0** against *"confirmed lineup"* as a subject **8 of thirty, 4 of the twelve** — ***the
+exact asymmetry §T10.12a retracted itself over*** · `season_opening_study` **2 of thirty, 0 of the
+twelve**.
+
+❌ **RETRACTION — §T10.8a's *"Platt stays OFF until ~December… in the config, in no document."*** It
+**is** in a document: `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` records *"in-season Platt
+(1000 legs) ⇒ zero projections in October, 62% coverage in November, **Platt 0% until December**."*
+**Corrected to *"in none of the twelve."*** *Seventh absence failure of the sweep — and note the
+shape: **the claim was right about the twelve and wrong about the thirty**, which is rule 17's
+population error wearing rule 7's clothes.*
+
+⚠ **LOOSE-PATTERN WARNING — the opposite failure, and the first one recorded.** The probe
+`over[- ]project|bias at the anchor` returns **3 of thirty, 1 of the twelve** — but the hit inside the
+twelve is `NBA_MASTER_SUMMARY.md` on **bias monotone in the variation band under shrinkage**
+(*"the quantile tier prior COMPRESSES THE EXTREMES"*), **a different over-projection entirely.**
+✅ **§T10.1a's claim stands** — the October season-opening bias was **not** in the twelve — but the
+honest count is **2 of thirty, 0 of the twelve**, not 3 and 1.
+
+🔑 ***So a probe can fail in both directions, and only opening the hits finds the second kind***: a
+pattern too narrow returns a false zero, a pattern too broad returns a false confirmation. **Rule 7
+says open every hit; this is the first time the sweep has caught a false hit rather than a false
+absence.**
+
+#### 🔴 STANDING RULE 22 — **A ZERO IS BELIEVED ONLY AFTER A POSITIVE CONTROL**
+*Added 2026-09-21 after §T11.6a and §T11.7b, with four instances behind it.*
+
+**Before an absence claim is written, the probe is run against a string the claim implies would
+match.** *If the control does not hit, the probe is broken and its zero means nothing.*
+
+**And the companion, from the other direction: every HIT is opened before it is counted** — a pattern
+broad enough to catch the subject is usually broad enough to catch something else.
+
+⚠ **Rules 20 and 22 are not the same rule.** **20** asks *whose words are you using* — the source's,
+the documents', the system's. **22** asks *can this pattern match those words at all.* ***All three of
+this sweep's pattern failures passed rule 20 and would have failed rule 22.***
+
+**Pass outcome: method validated on 20 probes, 18 exact; 1 retraction (§T10.8a) and 1 loose-pattern
+correction (§T10.1a's count, not its claim); rule 22. 🔴 CLEAN 0/3 · 7 passes.**
+
+---
+
 ### T11.6 — PASS 5 (**novelty audit over all thirty vs `5dfb72ab`**) — **❌ two of my own claims overturned, and both by the same probe-design failure · 0/3**
 *2026-09-21. Everything passes 0–4 added, grepped against the pre-T11 snapshot across all thirty, in
 three vocabularies, **with every hit opened.** The next-step row named the risk correctly — on T11 the
