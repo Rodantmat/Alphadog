@@ -1,5 +1,96 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴 `raw_json` IS A DOUBLE-ENCODED STRING ON EVERY NBA STATIC TABLE — the provenance safety net is unqueryable
+*Found 2026-09-21, T2 re-read pass 11. **`[LIVE-AUDIT]` VERIFIED** by live SQL. Detail:
+`NBA_MASTER_SUMMARY.md` §T2.11 (sweep series).*
+
+`jsonb_typeof(raw_json)` returns **`string`**, not `object`, on **1,306 rows across six tables** —
+`nba_ref.teams` (30), `nba_ref.players` (582), `nba_ref.arenas` (30), `nba_ref.officials` (80),
+`nba_stats.player_season_profile` (582), `nba_stats.player_tracking_profile` (582). **Not one row is
+a queryable object.**
+
+**The mechanism**, identical in every writer:
+```js
+raw_json = ${JSON.stringify(arena).slice(0, 2000)}   // a JS *string* bound into a JSONB column
+```
+Postgres accepts a JSON string as valid JSONB and stores it as a scalar, so the column holds
+`"{\"team_id\":1610612742,\"arena_name\":\"American Airlines Center\",…}"` rather than an object.
+
+**Why 🔴🔴 rather than ⚠: it fails silently, and this column is the layer's stated fallback.**
+`NBA_DATABASE.md` describes `raw_json` as the full source payload — the honest-provenance net that
+makes any dropped or unmapped source field recoverable without a re-scrape. **It is not recoverable.**
+
+| Query | Returns | Should return |
+|---|---|---|
+| `raw_json ? 'owner'` | **false** on all 30 arenas | true |
+| `raw_json->>'arena_capacity'` | **NULL** | `"19200"` |
+| `raw_json @> '{"city":"Dallas"}'` | **no rows** | 1 row |
+
+**Nothing throws.** A future backfill, audit or enrichment reaching for `raw_json` concludes the
+source data was never captured, when it is present and merely unreachable.
+
+⚠ **This is a SECOND, independent defect on the same column**, distinct from the one already recorded
+for the play-type table (*"the worker stores `JSON.stringify(r).slice(0,1000)` where `r` is the
+already-reduced record, not the source row"*). **That one is about what was put in. This one is about
+how it was encoded.** A table can have either, or both — `nba_ref.arenas` has both.
+
+**Not fixed, per the standing instruction.** The shape of the fix, for afterwards: the correction is
+in the **writers** — bind the object and let the driver serialize it. Existing rows can be repaired in
+place with `raw_json = (raw_json #>> '{}')::jsonb`, since the content is intact and only the encoding
+is wrong. **Both are writes, so neither is done here.**
+
+⚠ **Scope stated honestly.** Six tables checked — the NBA static layer. **Whether the same
+`JSON.stringify(...).slice()` pattern reaches the Phase 3b/3c/3d tables, the scoring tables or the MLB
+fleet is NOT RECORDED**; those writers have not been swept. The pattern is copied boilerplate across
+the ten static writers (`NBA_WORKERS.md` §0.32), so it is worth asking of every worker that has a
+`raw_json` column.
+
+---
+
+## ⚠⚠ THE FALLBACK HAS A SECOND TRIGGER, AND IT FIRES ON A **SUCCESSFUL** FETCH
+*Found 2026-09-21, T2 re-read pass 12. Extends the existing caveat
+`STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR is the marker to watch`, which named only one of the two.*
+
+**`[LIVE-AUDIT]` VERIFIED** — `alphadog-v2-nba-static-teams.js` **lines 339–340**:
+```js
+if (teams.length !== 30) {
+  sourceKey = fetchError ? "STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR"
+                         : "STATIC_SEED_FALLBACK_AFTER_COUNT_MISMATCH";
+  teams = FALLBACK_TEAMS;
+}
+```
+**`STATIC_SEED_FALLBACK_AFTER_COUNT_MISMATCH` appears in no document.** The branch fires when the
+fetch **succeeded** and returned a count other than 30 — a live, correct response **discarded** for
+the hardcoded list, still reporting `ok: true`.
+
+**The test is an equality, not a floor**, so **32 teams fails it exactly as 29 does.** The worker's own
+source comment treats expansion as harmless — *"a 32-team Seattle/Las Vegas expansion is only in
+early-vote stages for the 2028-29 season … does not affect this list"* — while expansion is precisely
+the input that trips this branch on good data. **A fourth instance of the season-rollover trap family,
+in a new shape: a hardcoded cardinality rather than a season literal.**
+
+**Not urgent for 2026-10-03** (the league is 30 teams). Recorded because the failure is silent and the
+remedy is small: a floor instead of an equality, and a certification string that differs.
+
+### ⚠ And a fallback run is indistinguishable from a live run in the response body
+Both return `ok: true` and the certification string *"NBA static team dictionary seeded — 30 active
+teams + aliases written"* — **character-for-character identical**. Only `source_key` and
+`fetch_method` differ. The existing caveat tells a reader to check the key; **this records that
+checking it is mandatory rather than prudent, because nothing else in the payload carries the
+signal.**
+
+**And the field that used to say so was deleted.** The response once carried a `fetch_note` reading
+*"… first real /run after deploy will show whether the live path or the certified static fallback
+actually served this run — **check `source_key` in the response**."* A patch in T2 replaced that block
+with `final_counts: finalCounts,` alone. *(Supersession: present T2 2026-08-31 → removed T2
+2026-09-01, the live path having been proven by then.)*
+
+**Related measurement**: `external_calls_performed` counts **successes, not attempts** — it reports
+`0` on a run whose own `source_fetch_error` records a direct stats.nba.com call returning HTTP 520.
+It cannot be used to detect a worker hammering a blocked endpoint.
+
+---
+
 ## 🔴🔴 LIVE CREDENTIAL IS IN THESE DOCUMENTS, NOT JUST IN THE TRANSCRIPTS — owner action required
 *Found 2026-09-20 by the T1 judgment pass (pass 88). **VERIFIED** by grep of all 30 `nba/*.md` files.*
 
