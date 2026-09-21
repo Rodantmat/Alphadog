@@ -14419,6 +14419,107 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.15 — PASS 15 (**wrong-tree audit — the census §T10.14a forced**) — **🔴 the counts are right; the POPULATION is unstated 75 times · 0/3**
+*2026-09-21. The angle §T10.14a demanded: **if one document-count table was measured against the
+wrong tree, find every document-count figure in the twelve and establish, for each, which corpus and
+which tree it was taken against.** **No document outside this entry changed.***
+
+#### 📌 T10.15a — **The census, with its predicate stated (rule 16)**
+
+**Predicate, exactly as run** (`scratchpad/t10/census15c.py`, working tree, the **twelve** only): a
+line is a *containment claim* if it matches `in <N> documents` · `appears in <N>` · `in NO document` ·
+`in none of the twelve|thirty` · `<N> of the twelve|thirty`, where `<N>` is a numeral or a spelled
+number ≤ twelve. One claim per line; a line matching twice counts once.
+
+| | Count |
+|---|---|
+| **Containment claims in the twelve** | **121** |
+| …naming their **population** on the line (*"of the twelve"*, *"of the thirty"*) | **46** |
+| …naming a **tree or baseline authority** within ±2 lines (`t9base`, `t10base`, `git archive`, a commit sha) | **6** |
+| …**silent on both** | **75** |
+
+Distribution: `MASTER_SUMMARY` **73** · `OPEN_ITEMS` **31** · `WORKERS` **7** ·
+`SYSTEM_ARCHITECTURE` **5** · `FINAL_SCORING_CALIBRATION` **2** · `GLOSSARY` **1** · `DATABASE` **1**
+· `GOBLIN_DEMON` **1**. *Four of the twelve carry no containment claim at all.*
+
+🔴 **So §T10.14a is not an isolated slip. 6 of 121 document counts in the twelve name the tree they
+were taken against.** The other 115 are readable only by inferring the authority from the pass that
+wrote them — and the pass is not always stated either.
+
+#### 🔴 T10.15b — **RETRACTION: the "64 figures, 15 naming a baseline" count taken earlier in this pass**
+
+An earlier run of this same audit reported **64 document-count figures, 15 naming a baseline
+authority.** ❌ **Retracted — not because it is wrong, but because it is NOT RE-DERIVABLE: its
+predicate was never written down.** The census above uses a stated predicate and gives **121 / 6**.
+The two are not reconcilable without the first one's regex, which no longer exists.
+
+⚠ **This is rule 16 broken inside the pass auditing counts** — *"the prose must state the query's own
+predicate: its grouping, its boundary, its filter."* The rule was written after §T9.34a for exactly
+this failure and has now claimed a pass written to enforce it. **Fifth location of the pattern the run
+log calls the most frequent failure: the rule exists and is applied one pass late.**
+
+#### 🔑 T10.15c — **Three counts re-derived against all three trees: the arithmetic is right and the POPULATION is the defect**
+
+Three *current-property* counts (as distinct from novelty claims) re-derived against the working tree,
+`/tmp/t9base` (`213800e7`) and `/tmp/t10base` (`d29401bd`), under **both** populations the sweep uses:
+
+| Claim as stated | Stated | **Over the twelve** (work / t9base / t10base) | **Over all of `nba/`** (32 files) |
+|---|---|---|---|
+| `partition` in **eight** documents | 8 | **8 / 8 / 8** ✅ | **9 / 9 / 9** |
+| `0 misses of 37` in **seven** | 7 | **7 / 7 / 7** ✅ | **8 / 7 / 8** |
+| `nba_season.py` | — | **4 / 4 / 4** | **8 / 8 / 8** |
+
+🔑 **Every one of them is exact over the twelve and stable across all three trees.** The apparent
+off-by-one that opened this pass was **my own population error, not the documents'** — the first
+derivation globbed `nba/*.md` (32 files) against claims whose population is the twelve.
+
+🔴 **The defect is therefore NOT arithmetic and NOT the wrong tree. It is that the claims do not say
+WHICH CORPUS they count** — and the sweep runs two of them side by side:
+- **the twelve mandated documents** — the thing being written; and
+- **`nba/` entire (32 files)** — which also holds `NBA_SWEEP_RUN_LOG.md`, `NBA_PROJECT_LOG.md`,
+  `NBA_COMPASS.md`, two `NBA_DEEP_DOCUMENTATION_CHECKPOINT_*.md`, the `NBA_ENRICHMENT_*` set, and
+  `PP_PAYOUT_FINDINGS.md` (**out of scope, another session's**).
+
+**A count over `nba/` counts this sweep's own instruments as evidence that the system is documented.**
+The run log is where the sweep records what it found; a term appearing there is the opposite of the
+term being documented.
+
+#### 📌 T10.15d — **One claim has drifted, and only in the population that includes the sweep's instruments**
+
+`0 misses of 37` is **7 in all three trees over the twelve**, and **7 → 8 over all of `nba/`**: at the
+T9 baseline it stood at 7; the eighth instance is **`NBA_SWEEP_RUN_LOG.md`, written by a later pass of
+this sweep quoting the phrase while reporting on it.**
+
+🔑 **This separates two failure modes that look identical in a diff, and the distinction is the reason
+the baseline tree is the authority:**
+- **miscounted when written** — wrong at the moment of publication (§T10.14a's four figures); and
+- **correct when written, then overtaken by the sweep's own writes** — true of the tree it was taken
+  against, false of the tree a reader greps today (this one).
+
+**Only re-deriving against the transcript's baseline tree tells them apart.** A working-tree
+re-derivation shows both as "off by one" and cannot say which.
+
+#### 🔴 STANDING RULE 17 — **A DOCUMENT COUNT MUST NAME ITS POPULATION, AND `nba/` IS NOT THE TWELVE**
+*Added 2026-09-21 after §T10.15c.*
+
+**Every count of the form "in N documents" states which corpus it counted: the twelve, or `nba/`
+entire.** Rule 16 requires the query's predicate; **the population is part of the predicate**, and
+121 claims in the twelve were written without it.
+
+**And the two corpora answer different questions.** *"Is this documented?"* is a question about **the
+twelve**. `nba/` additionally contains the sweep's own instruments (`NBA_SWEEP_RUN_LOG.md`,
+`NBA_MASTER_SUMMARY.md`'s pass log), superseded artefacts (the two checkpoints, `NBA_SYSTEM_DRAFT.md`),
+and **another session's file** (`PP_PAYOUT_FINDINGS.md`) — counting them **inflates coverage with the
+sweep's own prose and with work that is out of scope**.
+
+**Companion to rule 16 and to the baseline-tree rule: the tree says WHEN, the population says WHAT.
+A count needs both.**
+
+**Pass outcome: 1 retraction (§T10.15b, mine, this pass) + 1 systemic defect across 121 claims + rule
+17. 🔴 CLEAN 0/3 · 15 passes.**
+
+---
+
 ### T10.14 — PASS 14 (**live numeric re-verification**) — **🔴 pass 13's own table was measured on the working tree · 0/3**
 *2026-09-21. Every figure passes 9–13 state, re-derived — and the re-derivation is what caught it.*
 
