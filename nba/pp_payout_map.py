@@ -270,8 +270,10 @@ def main():
                 if len(stds) + len(alts) == k:
                     run("FLEX", [leg(r) for r in stds + alts], f"size {k} comp {comp}")
 
-        # ALTALT: alt x alt across games
-        pairs, seen = [], set()
+        # ALTALT: alt x alt across games, STRATIFIED over gob*gob / dem*gob / dem*dem (keys are the
+        # SORTED odds initials: "dd", "dg", "gg") so the consolation-tier rule sees every combination
+        # type (104 demons vs 52 goblins would otherwise swamp a plain random draw with demon*demon)
+        strata, seen = {"gg": [], "dg": [], "dd": []}, set()
         for a in alt:
             for b in alt:
                 if a["game"] == b["game"] or a["player"] == b["player"]:
@@ -280,9 +282,18 @@ def main():
                 if key in seen:
                     continue
                 seen.add(key)
-                pairs.append((a, b))
-        random.Random(7).shuffle(pairs)
-        for a, b in pairs[:20]:
+                kind = "".join(sorted(x["odds"][0] for x in (a, b)))
+                strata[kind].append((a, b))
+        rng = random.Random(7)
+        for v in strata.values():
+            rng.shuffle(v)
+        print(f"ALTALT_POOL|gg={len(strata['gg'])}|dg={len(strata['dg'])}|dd={len(strata['dd'])}|target={N_ALTALT}", flush=True)
+        picked = []
+        while len(picked) < N_ALTALT and any(strata.values()):
+            for k in ("gg", "dg", "dd"):
+                if strata[k] and len(picked) < N_ALTALT:
+                    picked.append(strata[k].pop())
+        for a, b in picked:
             run("ALTALT", [leg(a), leg(b)])
 
         # SAMEGAME: standard + standard, same game
