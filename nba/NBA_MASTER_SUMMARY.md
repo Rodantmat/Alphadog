@@ -14419,6 +14419,60 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.3 — PASS 3 (**two-direction judgment**) — **🔴 T10's terminal deliverable is in ONE document and none of the twelve · 0/3**
+*2026-09-21. Band established: **30 high-band segments**, **103 tail-direction**. Coverage **825 / 689**
+*(down from 831 at pass 0 — this sweep's own writes absorbed six)*.*
+
+#### 🔴 T10.3a — **"Discovery is closed: 34 factors, ~90 sub-factors" — and the twelve say none of it**
+
+The transcript's terminal state, from `NBA_ENRICHMENT_FACTOR_LOCK.md` and nowhere else:
+
+> *"**discovery is closed: 34 factors, ~90 sub-factors, a minutes tree, thin factors, retirements**,
+> and a **baseline/enrichment split that puts everything derivable or day-before-published into the
+> baseline**… the factor set is now **complete at the level of mechanisms**: availability and role
+> **A1–A9, N1–N2** · game state **B1–B5, K1** · matchup **M1–M4, B4** · market **C1–C4, S1–S4** ·
+> officials/schedule **D1–D2** · confidence **E1–E4**."*
+
+**Checked against the twelve, by substance and not only by wording** (rule 2): **`34 factors` · `~90
+sub-factors` · `sub-factors` · `minutes tree` · `discovery is closed` · the A/N/B/K/M/C/S/D/E code
+scheme — every one returns ZERO.** ⚠ **And the twelve do carry factor counts — 67 (`factor_registry`,
+seeded at 29), 15 (the recipe's props), 25 (band rows), 10 (tested at T15/T16) — none of which is the
+34.** ***A reader of the mandated twelve can learn how many rows several tables hold and cannot learn
+what the factor set is.*** **Written to `NBA_FINAL_SCORING_CALIBRATION.md` §7**, where the question is
+asked. **Chronology preserved: this is T10's state; the "ten tested, none survived" verdict stays
+T15/T16's.**
+
+#### ✅ T10.3b — **Direction 2 is 103 segments and every one of them is self-authorship**
+
+| Nearest document | Segments |
+|---|---|
+| **`NBA_ENRICHMENT_FACTOR_LOCK.md`** | **51** |
+| `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` | 25 |
+| `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` | 11 |
+| `NBA_COMPASS.md` | 10 |
+| `NBA_PROJECT_LOG.md` · research · lessons | 6 |
+
+**All five are documents T10 itself writes.** ✅ **And the scores prove the mechanism rather than
+assuming it**: across the 40 printed, **minimum 0.90, median 1.00, and 30 of 40 at ≥ 0.95** — *the
+segment **is** the file being written*. **There is no genuine "covered in other words" candidate
+anywhere in the distribution**, which is what makes this a **false tail (mechanism 3)** rather than a
+coverage gap. 📌 *Pass 2 predicted exactly this; the prediction is recorded as having been tested, not
+assumed.*
+
+#### 📌 T10.3c — **The high band is the smallest of any transcript, and the reason is structural**
+
+**30 segments**, against T9's 52 and T8's 61. *T10's material is carried by the **eighteen**
+non-mandated documents — the 142-segment gap between 825 uncovered-vs-twelve and 689
+uncovered-vs-thirty — so little of it matches the twelve strongly enough to enter the band.*
+⚠ **This makes the twelve-vs-thirty distinction the governing risk for the rest of T10**, exactly as
+§T7.47 found: *the danger is not missing material, it is calling material absent because it sits in a
+document the mandate does not name.*
+
+**Pass outcome: 1 real deliverable gap closed, direction 2 proven a false tail rather than assumed,
+the band's shape explained. 🔴 CLEAN 0/3 · 3 passes.**
+
+---
+
 ### T10.2 — PASS 2 (**tail stratum**) — **🔑 the default mechanism filter under-counted by 18 points, and the tail's headline is already on file · 0/3**
 *2026-09-21. The 831-segment tail classified and its prose stratum read.*
 
