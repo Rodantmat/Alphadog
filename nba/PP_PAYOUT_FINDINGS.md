@@ -422,6 +422,42 @@ actually mined. v2's edge: `implied_p ≥ 0.1253` (furthest mined demon in v2 te
 **Safety fix made at the switch:** the view now LEFT-joins the current model, so if no version were ever current,
 every leg would still appear with `no_current_model` instead of silently vanishing.
 
+### RESCUE TIERS — centers for legs the tier builder could not anchor (applied 2026-09-21)
+Rescued centers live in **`nba_market.pp_anchor_rescue`** — never written into `board_tiers_v2`, which the tier
+builder owns and rebuilds. The view applies a rescue **only where PrizePicks' own price flag confirms it**
+(`flag_agrees`): the flag (`100` = demon, `-137` = goblin) must match the leg's position against the rescued center.
+Each rescued leg reports `anchor_type = 'rescued:<tier>'`, so it can always be told apart from an observed center.
+
+| Tier | Candidates | Flag-confirmed | Priced | Outside calibration |
+|---|---|---|---|---|
+| **same_day_snapshot** — PrizePicks' standard seen in another snapshot, one value all day | 3,227 | **3,104 (96.2%)** | 2,643 | 461 |
+| **sportsbook_consensus** — median of the books' lines, same player/stat/day; PrizePicks posted no standard | 35,951 | **30,273 (84.2%)** | 25,139 | 5,134 |
+
+**Tier B validation** (on 146,938 ladders where both exist): the books' consensus lands within ½ point of
+PrizePicks' standard on **92.5–99.9%** by market — threes 99.5% exact, points family 61–72% exact, assists/rebounds
+~60–66% exact (a 3.4% center error on assists moves a demon's price ~8%).
+
+**⚠ Tier B selection bias — read before relying on it.** The validation population (ladders *with* a PrizePicks
+standard) is not the rescue population (ladders *without* one). PrizePicks may skip the standard precisely *because*
+its projection disagrees with the market. Evidence: **5,652 tier-B candidates sit exactly on the books' line yet carry
+a demon/goblin flag** — PrizePicks' center was elsewhere. The flag check removes flagrant cases; half-point center
+errors that don't flip a leg's kind can still pass. **Treat tier B as lower confidence; filter it out by `anchor_type`
+when precision matters.**
+
+### COVERAGE — final for this build (verified through the view)
+| Center source | Legs | Priced | Share |
+|---|---|---|---|
+| explicit | 1,780,149 | 1,747,376 | 98.2% |
+| switch_point | 375,835 | 355,324 | 94.5% |
+| rescued: same_day_snapshot | 3,104 | 2,643 | 85.1% |
+| rescued: sportsbook_consensus | 30,273 | 25,139 | 83.0% |
+| none (no center) | 9,993 | 0 | — |
+| **Total** | **2,199,354** | **2,130,482** | **96.87%** |
+
+Progression: v1 94.26% → v2 95.61% → + tier A 95.73% → + tier B **96.87%**. Price IDs: **9,036**.
+The 9,993 still without a center = flag-rejected rescues (123 A + 5,678 B) + 5 whose standard moved + 4,187 with no
+center anywhere.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
