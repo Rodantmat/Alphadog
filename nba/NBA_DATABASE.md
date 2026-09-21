@@ -527,6 +527,24 @@ filter the table currently excludes nothing**. ✅ Referential integrity is clea
 `factor_registry`, and all **24** distinct (factor, prop) pairs that carry a fitted cell are graded
 `full`.
 
+> 🔴 **AND THE CHECK RUNS IN THE ONE DIRECTION THAT CANNOT SEE THE GAP — recorded 2026-09-21
+> (T10 pass 6, §T10.6a).** *"0 of 460 orphaned against `factor_registry`"* is the **relevance →
+> registry** direction. **Registry → relevance, live:**
+>
+> | Layer | Registry rows | Has a relevance row | **No relevance row** |
+> |---|---|---|---|
+> | baseline | 31 | **25** | **6** |
+> | **enrichment** | **36** | **4** | **32** |
+> | **Total** | **67** | **29** | **38** |
+>
+> ✅ **25 + 4 = 29** *(the distinct `factor_key`s present)* · **6 + 32 = 38** · **29 + 38 = 67**.
+> 🔴 **The matrix knows 4 of 36 enrichment factors — 89% of that layer is unmapped** — against 25 of
+> 31 baseline. *It was seeded against the **29-factor** registry in T8 and never extended when the
+> registry grew to 67.*
+>
+> ⚠ **Read with the finding above it**: `none` is never written, so the gate **excludes nothing**, and
+> it is **blind to 38 of 67 factors**. *A filter that filters nothing, over a set it half knows.*
+
 ### `nba_config.factor_profile_cells` — **35 rows**
 The fitted **lifts/penalties**, *"in exactly MLB's cell form."* Seeded from research as provisional
 values — *"**these are the values the backtest will move**."*
