@@ -361,7 +361,11 @@ history, at **70% of the file**, against §T11.23c's quotation at **15.7%**.*
 > DEAD**: Wayback CDX — **PP projections API 24 captures in 3 years; UD and Sleeper 0**; the **52k PP
 > board captures are share-entry SPA shells with no lines**; **no GitHub or Kaggle archives.** **Odds
 > API**: free plan historical locked; ***us_dfs region = PrizePicks (+ goblin/demon alternate) +
-> Underdog + Pick6 + Dabble — NO SLEEPER***; plans **$30 / 20k · $59 / 100k · $119 / 5M · $249 /
+> Underdog + Pick6 + Dabble — NO SLEEPER***; ⚠ *(**segment 501's list.** Elsewhere in T11 the same
+> region is given as **"Pick6, Boom, ParlayPlay, Dabble"** beside PrizePicks and Underdog — **SIX
+> books, not four**. Both are in the transcript and the sweep quoted the shorter; §T11.35d, rule 19.
+> **The "no Sleeper" conclusion is unaffected** — Sleeper is in neither list.)* plans **$30 / 20k ·
+> $59 / 100k · $119 / 5M · $249 /
 > 15M**; ~200 credits per game-snapshot. ***NOTHING ANYWHERE HOLDS THE 2024-25 OR 2025-26 SLEEPER
 > BOARDS.*** **Cheapest reliable: Odds API $119 for one month, conditional on the unpublished us_dfs
 > start date — ask support first, or a $30 test.** Fallback per Gemini: ask ParlayAPI support for a
