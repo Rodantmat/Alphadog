@@ -14395,6 +14395,8 @@ qualification the original lacked: **`fga`'s match is ambiguous** — its table 
 row and the O5 row — *all three propagation directions at once, per §T9.28a.*
 
 #### 🔴 T9.30b — **"174 distinct env vars" is 193, and the wrong number was the plausible-looking kind**
+> 🔴 **Corrected again at pass 16 (§T9.31a): the figure is 194 = 191 + 3.** *This entry's 193 was a
+> third wrong answer from a fourth pattern. **Read §T9.31a before quoting any number from here.***
 
 §T9.29a opened with **174**. Re-derived: **193**. The first pattern's character class was `[A-Z_]`,
 so **every variable name containing a digit was truncated** — `A2W_TEST_SEASON`, `B4_TRAIN_SEASON`,
