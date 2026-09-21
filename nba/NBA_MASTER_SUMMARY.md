@@ -8045,6 +8045,14 @@ design names. **In all three the missing context was one line away from the thin
 practical form of all three rules is one instruction: **read the neighbours before drawing the
 conclusion** — the sentence above, the column beside, the rest of the key.*
 
+🔴🔴 **The tenth form, added 2026-09-21 after §T7.61a — A CORRECTION MUST BE APPLIED TO EVERY COPY OF
+THE CLAIM, NOT TO THE ENTRY THAT MADE IT.** Every correction in this sweep was written where the
+wrong claim was **first** made — but by then the claim had been copied into two or three other
+documents. The `undifferentiated` claim was corrected in four places and **left standing in two**,
+one of them eleven lines below its own correction. **Find the copies by grepping the claim's
+distinctive wording, then fix them in the same turn.** *This is the sibling-claim rule (sixth form)
+applied across documents instead of across a list.*
+
 🔴🔴 **The ninth form, added 2026-09-21 after §T7.60a — GREP YOUR OWN DOCUMENT FIRST, NOT ONLY THE
 OTHER TWENTY-NINE.** §T7.58b asserted the opposite of what `NBA_MASTER_SUMMARY.md` and
 `NBA_OPEN_ITEMS.md` **already said twice**, recorded by earlier passes of this same re-sweep. **A
