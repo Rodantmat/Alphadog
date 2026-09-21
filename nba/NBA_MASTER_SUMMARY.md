@@ -9745,6 +9745,42 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.57 — PASS 28 (**call-site audit**) — **✅ CLEAN 1/3 · every count re-derives · one grep trap found**
+*2026-09-21. The sixth count failure came from `grep -rl` (files) where the claim was about callers.
+So: **every "N workers / N scrapers / N tables / N workflows" figure in the T7 entries, re-derived by
+counting the thing the sentence actually names.** All of them hold. One of them holds **only because
+the check happened to use both quote styles.***
+
+**✅ Every count re-derives**: 4 hardcoded workers · 15 exposed scrapers (12 + 3) · 18 helper users ·
+37 season-less PKs · 3 season-keyed PKs · 7 scheduled workflows · 3 Mondays → 6 scheduled runs ·
+35/22/13 cells · 9 band keys · 25 band rows · 8 calibration_log rows, 8 orphaned · 67 / 460 / 13 / 6.
+
+#### ⚠ T7.57a — `[LIVE-AUDIT]` **THE QUOTING TRAP: the hardcoded-season literal splits by quote style, exactly along the fallback line**
+
+**Seven NBA workers carry a hardcoded `2025-26`. The quote style predicts the defect perfectly:**
+
+| Quote style | Workers | Meta fallback |
+|---|---|---|
+| **`'2025-26'`** (single) | `-onoff` · `-player-bio` · `-player-tracking` · `-team-stats` | **NONE — all four** |
+| **`"2025-26"`** (double) | `-backfill` · `-game-officials` · `-starter-status` | **present — all three** |
+
+**Four single-quoted with no fallback, three double-quoted with one. No exceptions either way.**
+
+⚠ **The trap, and it is a live hazard for anyone re-running this audit**: a grep for `'2025-26'`
+returns **exactly the four broken workers**; a grep for `"2025-26"` returns **exactly the three fixed
+ones**. **Either single-style grep produces a clean, plausible, complete-looking answer that is wrong
+by construction** — one says "four workers are broken and that's all of them", the other says "three
+workers hardcode the season and they all have fallbacks". **Both are the whole truth of their own
+pattern and neither is the truth.**
+
+*This is the single-pattern rule's sharpest form yet: **the pattern did not merely undercount, it
+partitioned the population along the very axis being measured.*** *Per rule 6, no explanation is
+offered for why the split is perfect — that belongs to the transcript that fixed the three.*
+
+**Pass outcome: no defect, every count holds, one trap recorded. ✅ CLEAN 1/3.**
+
+---
+
 ### T7.56 — PASS 27 (**cross-document consistency, third run**) — **🔴 A SIXTH SINGLE-PATTERN COUNT — AND IT UNDERSTATED O4 · 0/3**
 *2026-09-21. Angle: read this sweep's new claims against each other and against the documents that
 carry the same figures. **Three different numbers for "how many scrapers use the season helper" are
