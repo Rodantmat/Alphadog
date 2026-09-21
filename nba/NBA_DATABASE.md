@@ -451,7 +451,15 @@ list the whole matrix is built over.
 `direction_skew` · `build_tier` · `natural_floor` · `ladder_step` — and all 28 are `active = 1`.
 **No nulls anywhere.**
 
-🔴 **AND THERE IS A NINTH DESCRIPTIVE COLUMN THE ENUMERATION OMITS — `applies_to_side`**
+❌ **"A NINTH" IS CORRECTED BY §T11.46a — the table has EIGHTEEN columns and FIVE descriptive ones sit
+outside the documented eight**: **`prop_family` · `display_name` · `stat_expression` ·
+`applies_to_side` · `is_composite`** *(plus the key, `active`, `notes` and two timestamps)*.
+📌 **`is_composite` — 18 simple / 10 composite = 28 — is 0 of thirty**, and it partitions the same 28
+rows differently from `prop_family` *(`combo` 6 + `composite` 2 against `is_composite = 1`'s TEN: the
+six combos, the two fantasy props **and the two milestones**)*. ***Two columns, one table, two
+partitions, one documented.***
+
+🔴 **AND `applies_to_side` IS ONE OF THE DESCRIPTIVE COLUMNS THE ENUMERATION OMITS**
 *(`[LIVE-AUDIT]` 2026-09-21, §T11.28b. **0 of thirty**, positive-controlled; `stat_expression` is
 also 0.)* **Fully populated, 28 of 28, and its value set is two:**
 
