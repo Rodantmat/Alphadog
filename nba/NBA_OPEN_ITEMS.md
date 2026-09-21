@@ -321,6 +321,24 @@ workflows; **not a transcript finding**.*
 > | **2026-01-15** | **2026-09-19 22:35:04** | **22** | before, by **1h 23m** | **flat `BT_LADDER_STEPS`** |
 > | **2025-11-29** | **2026-09-20 03:23:26** | **22** | **after, by 3h 25m** | **per-prop `LADDER_DEPTH`** |
 >
+> 🔑🔑 **AND THE ATTRIBUTION IS NOW PROVEN IN THE ROWS, NOT INFERRED FROM TIMESTAMPS (T10 pass 26,
+> §T10.26b).** `SELECT asof, prop, max(abs(ladder_offset)) FROM nba_score.baseline_ladder GROUP BY 1,2`:
+>
+> | prop | `LADDER_DEPTH` | **2025-11-29** | **2026-01-15** | **2026-03-15** |
+> |---|---|---|---|---|
+> | `points` | **14** | **14** ✅ | 10 | 10 |
+> | `rebounds` | **6** | **6** ✅ | 10 | 10 |
+> | `assists` | 5 | **6** ⚠ | 10 | 10 |
+> | `threes_made` | 4 | **6** ⚠ | 10 | 10 |
+> | `oreb` | **3** | **3** ✅ | 10 | *(absent)* |
+> | `steals` | **2** | **2** ✅ | 10 | 10 |
+> | `blocks` | **2** | **2** ✅ | 10 | 10 |
+>
+> ***2025-11-29 carries seven different depths; the other two carry a flat 10 on every prop.*** **The
+> two-regime finding is visible in the data, and the timestamp attribution is confirmed by the rows
+> it predicted.** ⚠ **The `assists` 6-against-5 and `threes_made` 6-against-4 discrepancies already
+> on file are now LOCATED — they are on the per-prop day and only there.** *Why: still NOT RECORDED.*
+>
 > ✅ **Exactly the "after two of three loads" already on file, now with the days named.** *The
 > `source_file` column also names each day's JSON (`nba_baseline_ladder_<asof>.json` plus
 > `nba_baseline_ladder_latest.json`), and the 2026-03-15 load is consistent with
