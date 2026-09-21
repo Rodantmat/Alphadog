@@ -396,6 +396,23 @@ that neither fails — which means it cannot detect a materially short scrape of
 
 ---
 
+## ⚠ 0.42 ALWAYS TEST v3 BEFORE v2 — a rule the project paid for twice
+*Recorded 2026-09-21, T7 re-sweep pass 3. Stated in T7, in no document until now.*
+
+> *"**Always test v3 before v2** for any per-game stats.nba.com endpoint. This cost real time twice
+> in a row — starter status, then officials — before the pattern was recognized and applied
+> proactively for officials."*
+
+**Both failures are documented individually; the rule extracted from them was not.**
+`boxscoretraditionalv2` served HTTP 200 with zero player rows for historical games (799 rows across
+31 of 1,230); `boxscoresummaryv2` carries an upstream warning about data availability after
+**2025-04-10**. **v3 worked in both cases.** *(nba_api's own changelog flags the v2 cutoff — checking
+the client's release notes before choosing a version is the cheap version of this rule.)*
+
+⚠ **And the second time it was applied proactively** — the officials build tested v3 first, on a
+sample, before committing to ~1,230 calls. **The discipline is in the code; only the rule was
+missing from the documents.**
+
 ## 0.41 WHY THERE ARE SO MANY `nba-*.yml` WORKFLOWS — a stated principle, recovered from code
 *Recorded 2026-09-21, T5 re-sweep pass 2. The rule was in a workflow header and in no document.*
 
