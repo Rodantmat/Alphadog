@@ -1580,6 +1580,45 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.12 — PASS 12 (angle: **the results stratum continued — and a live audit it triggered**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+**The transcript material in this pass is modest. What it prompted is not.**
+
+1. 🔴 **`[LIVE-AUDIT]` — the schedule has not been refreshed since the day it was built.**
+   ***VERIFIED by SQL***: `nba_calendar.games` was written **once, 2026-09-02**, and not touched in
+   the 19 days since, though the weekly cron should have fired twice. **The scraper may have run; the
+   worker that loads its output is manual and has not been triggered.** **Season opens
+   2026-10-03.** → `NBA_OPEN_ITEMS.md`, season-critical
+2. 🔴 **The stored 2026-27 regular-season slate is 1,200 games — 30 short of 1,230, exactly one per
+   team.** Two candidate explanations, **and per Rule 1 this entry does not choose**: NBA Cup filler
+   games not yet scheduled at release *(leading, unverified)*, or the known upstream defect T3's own
+   research found — `nba_api` issue #407, *"only gets me 1148"*, open since 2023 with no assignee.
+   **Neither the scraper's completeness gate (completed season only) nor the worker's
+   `written >= 1000` would ever report it.** → same entry
+3. **`season_id` / `game_id` prefixes decoded against real data**: `001` preseason, `002` regular,
+   `003` All-Star, `004` postseason, `005` play-in, `006` Cup Final. *The 2025-26 rows show all six;
+   2026-27 has only `001` and `002`, which is itself consistent with a schedule published before the
+   Cup and play-in brackets exist.*
+4. **DARKO initialises rookies to a common prior** — *"DARKO doesn't know anything about a rookie
+   like Zion Williamson, who has yet to play"* — so **DPM is uninformative for rookies until they
+   accumulate games.** With the season opening in twelve days, every rookie's impact rating will be
+   a prior, not a measurement, for the opening weeks. *A caveat that belongs with the factor, not
+   with the scraper.*
+5. **The CDN mirror has a season-indexed suffix** — `cdn.nba.com/static/json/staticData/
+   scheduleLeagueV2_9.json`, `_1.json` — and needs **no browser-like headers at all**. *The
+   alternative T3 noted and never evaluated is more concretely specified than the note suggested.*
+6. **A published Synergy archetype rule, directly buildable from data already collected**: on-ball
+   perimeter scorers (50+ ISO **and** 50+ PnR ball-handler possessions), self-creation no-screen
+   (50+ ISO **and** 50+ post-up), on-screen scorers (50+ PnR BH **and** 50+ handoff), off-ball
+   floor-spacers (50+ off-screen **and** 50+ spot-up), rim-runners (50+ PnR roll-man **and** 50+
+   put-back). *Concrete thresholds for the role taxonomy the enrichment design calls for.*
+
+**Ratio**: 6 findings from ~30 segments, **3 verified by live SQL**.
+
+**Clean count 0/3** *(the two `[LIVE-AUDIT]` items do not reset it; the four transcript findings do)*.
+**Remaining: ~67 result segments, then the two-direction judgment pass.**
+
 ### T3.11 — PASS 11 (angle: **the results stratum — what the sources actually returned**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21. Results stratum read through segment ~40 of 137.*
 
