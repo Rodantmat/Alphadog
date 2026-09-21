@@ -10,6 +10,46 @@ constraints that shaped it. This is the operational spec.
 
 ---
 
+## 0a. 🔑 THE OUTCOME GRADER — **the design, as the owner was given it, and what the code actually does**
+*Recorded 2026-09-21 (T12 pass 4, §T12.5b). **Transcript `2026-09-11-21-01-23`, owner segment 29 and
+its answer, segment 37.** The grader itself is well documented — `grade_board_outcomes.py` is in 4 of
+the twelve and `nba_market.board_outcomes` in 9 — **so what follows is the DESIGN STATEMENT and the
+three elements of it that were in 0 of thirty.***
+
+**The owner, segment 29, whole**: *"that being said get all available books when the time comes. we
+will also need a **outcome grader**, but that should be **board scoped** i guess, so we would need
+the boards."*
+
+**The answer, segment 37**: ***"the grader is board-scoped BY NATURE: it grades the line that was
+actually offered (player, stat, line, side, book) against what happened, so it needs the boards
+first."***
+
+| | |
+|---|---|
+| **input** | the **CLOSE snapshot** of every board line + our player game logs *(points, rebounds, assists, threes, blocks, steals, turnovers, double-doubles, combos computed; period markets from the periods data)* |
+| **join** | **normalised player name** *(jr./iii/accents/apostrophes stripped)* **+ game date + team** — 🔴 ***and unmatched names get LOGGED rather than silently dropped*** *(**0 of thirty**)* |
+| **rules that mirror the apps** | **DNP → void** · 🔴 ***exact hit on a whole-number line → PUSH*** *(the rule is on file in substance; **this exact statement is 0 of thirty**)* · **goblins/demons graded on their own lines** · **Underdog multipliers carried so the slip engine can simulate real payouts** |
+| **output** | **one row per graded line** — the training target for the slip engine and the ROI simulation |
+| 🔴 **and its second job** | ***the same grader runs LIVE every morning on the previous night's boards, "which is how the derived-Sleeper fallback gets its ROLLING CALIBRATION"*** *(**0 of thirty** — and it is the mechanism that keeps the one board with no history usable)* |
+
+### ✅ `[LIVE-AUDIT]` 2026-09-21 — **the grader ran**
+**`nba_market.board_outcomes` ≈ 6,905,452 rows / 2,151 MB**, **`graded_at` 2026-09-20T02:39Z**;
+**`nba_score.board_scored` ≈ 11,956,460 rows / 2,948 MB.** *So segment 37's "it'll be built the day
+the boards land" is satisfied: the boards landed (27.06M) and the grading ran.* ⚠ **`reltuples`
+estimates** *(rule 30)*. ⚠ **`nba_score.paper_picks` holds **0 rows** exactly** *(`reltuples` = −1,
+never analysed)* — *the "`paper_picks`' purpose" question T11 left open is still open, and the table
+is empty as of today.*
+
+### 📌 And the code states a design intent that NO document carries
+**§T11.5c records that `board_outcomes` has 6,905,452 rows with `bookmaker` and `snapshot_label`
+entirely NULL.** 🔑 ***`grade_board_outcomes.py` says why, in two comments***: **line 160 —
+*"distinct-leg key: the outcome does not depend on bookmaker/snapshot"*** — and **line 193 —
+*"Grade DISTINCT legs, not one row per bookmaker: the outcome of (player, market, line, side)…"***
+🔴 **Both are in the code and in ZERO documents** *(the only other carrier of "distinct legs" is the
+out-of-scope `PP_PAYOUT_FINDINGS.md`)*. ⚠ **Stated as what the code SAYS, not as a verdict on the
+design** *(rule 6)*: ***the corpus recorded the two NULL columns as a fact and did not record the
+stated intent behind them.***
+
 ## 0. LINEAGE — the owner's three-run model *(T1)*, refined through T4–T9
 
 ### 0.1 THE ARCHITECTURE CORRECTION *(T4)* — why the split exists at all
