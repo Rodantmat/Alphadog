@@ -10139,6 +10139,3 @@ Factor lock (5 research passes) · return-ramp · the day-before injury report �
 - **Not every source needs `curl_cffi`** — Wikipedia needs plain `requests`; mixing them up breaks the run.
 - **One-call-per-league endpoints are strongly preferred** over per-team loops.
 - **`source_key` only changes on changed rows** — an upsert property, not a failure.
-</content>
-</parameter>
-<parameter name="message">docs: NBA master summary - transcript 1 pass 1 complete
