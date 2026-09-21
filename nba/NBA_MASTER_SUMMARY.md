@@ -14335,6 +14335,51 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.23 — PASS 8 (**two-direction judgment, second run**) — **🔑 the pattern already has a NAME, and there are actually TWO · 0/3**
+*2026-09-21. Band 52 for a second run, 0 in, 0 out. Rules 8 and 14 on §T9.19–§T9.22 — and the hit
+that mattered was a phrase I used casually.*
+
+#### 🔑 T9.23a — **"Table exists, writer never born" — T1 pass 68 already named this pattern and asked later transcripts to find more**
+
+I have been calling it *"the §2-banner pattern"*. **It has a name, and a standing instruction:**
+
+> **FINDING 3 — ⚠ a named pattern, third instance.** *"Three structures created to match MLB's design
+> and used by nothing: the **eight `nba_config` tunable tables**, **`nba_ref.teams.arena_id`**, and
+> **the two `nba_control` tables**. **Blueprint §6 warns about 'registry entry, dead worker'; this is
+> the mirror — 'table exists, writer never born.'** **Named so later transcripts can be swept for
+> more.**"*
+
+**So T8 pass 4 and T9 passes 6–7 were carrying out an instruction issued at T1 pass 68 without
+knowing it.** *Recorded, and the instance list extended: **`nba_ref.prop_taxonomy`** (T8 pass 4 — the
+first outside `nba_config`).*
+
+#### 🔑 T9.23b — **But it is TWO patterns, and separating them is the useful part**
+
+**The named pattern's own examples split cleanly on one question — was the table ever written?**
+`[LIVE-AUDIT]`:
+
+| | Objects | State |
+|---|---|---|
+| **"Writer never born"** — the named pattern | `nba_control.job_runs` **0 rows** · `nba_control.worker_run_log` **0 rows** · `nba_ref.teams.arena_id` **NULL on all 30** | **empty, and always were** |
+| **"Seeded, then orphaned"** — *a distinct sibling* | **all nine config objects**: `classification_config` 66 · `factor_registry` 67 · `factor_relevance` 460 · `factor_profile_cells` 35 · `variation_bands` 25 · `prop_taxonomy` 28 · `stat_decay_config` 13 · `role_tiers` 6 · `system_settings` 5 | **populated with real values, read by nothing, and in two cases now DIVERGED from the hardcoded copy that superseded them** |
+
+> ### ⇒ **The nine config tables are not "writer never born." They were written once, correctly, and then a hardcoded copy in `classification_ladder_v12.py` became the live version and drifted.**
+> **`stat_decay_config`** — 7 of 10 mappable stats disagree (T1 pass 36) · **`variation_bands`** —
+> 6 props vs `VBANDS_ALL`'s 15 (§T9.21a). **`role_tiers` is the control case**: same structure, same
+> values, no drift *yet*.
+
+⚠ **Why the distinction earns its keep**: an empty table is **visibly** unused — anyone who queries it
+sees zero rows. **A seeded, orphaned table looks authoritative**: it returns plausible values, it is
+described in the documents as *"the single most important config table in the system"*, and **the
+values it returns are wrong by 7 of 10.** *The first pattern wastes a table; the second one misleads
+a reader.* **That is the failure mode worth sweeping later transcripts for.**
+
+*Novelty, opened not just grepped: `third instance` returns four hits — all read; `five composites`
+and `line 114` → zero. The FINDING 3 entry is the one that mattered and it was found by grepping a
+phrase I had used loosely, which is rule 13 working in reverse.*
+
+---
+
 ### T9.22 — PASS 7 (**code-vs-table audit**) — **✅ CLEAN 1/3 · the map, and rule 14 catching a fifth consecutive claim**
 *2026-09-21. The angle pass 6 stumbled into, run across the whole config layer: for every hardcoded
 structure in `classification_ladder_v12.py`, find its table counterpart and measure the divergence.*
