@@ -14593,7 +14593,15 @@ corpus. **Eighth pre-registration, eighth hit.***
 so this is the control behaving as a control.* 🔑 **The working tree's tail is 0 and `uncovered12`
 = `uncovered30` = 664**: every segment the twelve now miss, ALL of `nba/` also misses — **the
 self-authorship gap has closed to zero on this transcript**, which is what §T11.38a's corrected
-measurement predicted once the run log was excluded. *(`EXCL` = `PP_PAYOUT_FINDINGS.md`,
+measurement predicted once the run log was excluded.
+🔴 **NARROWED 2026-09-21 by §T11.55b (pass 54): the EQUALITY is not robust at this precision.** **The
+same measurement one pass later reads `uncovered12` 663 / `uncovered30` 664** — ***the twelve
+apparently covering MORE than all thirty, which is structurally impossible*** — **because the two
+figures are scored by SEPARATELY FITTED vectorizers and are not on a common scale.** **Three
+segments sit within 0.005 of the 0.40 threshold** *(93 at 0.4000/0.3962, 444 at 0.4030/0.3989, 671
+the reverse)*, **and each matches the SAME paragraph of the SAME file in both corpora.** ✅ ***The
+finding survives in the form the instrument supports: the gap is zero TO WITHIN ±1, the instrument's
+resolution. It is not an exact equality and it never was.*** *(`EXCL` = `PP_PAYOUT_FINDINGS.md`,
 `NBA_SWEEP_RUN_LOG.md` — rule 25, both harnesses.)*
 
 #### ✅ T11.52b — **The load-gap causal claim is now TWO-FOR-TWO, not one worker**
