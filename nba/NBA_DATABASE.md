@@ -449,7 +449,42 @@ list the whole matrix is built over.
 ✅ **`[LIVE-AUDIT]` 2026-09-21 (T8 pass 4) — FULLY POPULATED, and that is unusual here.** All **28 of
 28** rows carry every descriptive column — `apps` · `period` · `ot_rule` · `distribution_family` ·
 `direction_skew` · `build_tier` · `natural_floor` · `ladder_step` — and all 28 are `active = 1`.
-**No nulls anywhere.** *Set against its sibling `nba_config.factor_profile_cells`, seeded in the same
+**No nulls anywhere.**
+
+🔴 **AND THERE IS A NINTH DESCRIPTIVE COLUMN THE ENUMERATION OMITS — `applies_to_side`**
+*(`[LIVE-AUDIT]` 2026-09-21, §T11.28b. **0 of thirty**, positive-controlled; `stat_expression` is
+also 0.)* **Fully populated, 28 of 28, and its value set is two:**
+
+| `applies_to_side` | rows | which |
+|---|---|---|
+| **`both`** | **26** | everything else |
+| 🔑 **`more`** | **2** | ***`double_double` AND `triple_double`*** — family `milestone`, `direction_skew` `binary`, `distribution_family` `joint_simulation_binary`, `build_tier` `B`, `ot_rule` `included` — **identical rows** |
+
+🔑🔑 **This turns §T11.20b from an inference into a DECLARATION.** §T11.20b reasoned *from a subset
+relation* — the market tables carry `No`/`Over`/`Under`/`Yes` and `final_hp` only `Over`/`Under`, *"so
+the Yes/No props never reach it"*. ***The taxonomy states it directly***: two props are **`more`-only
+by design**, named in the reference table. **And it is not the Goblin/Demon "More-only" rule** — that
+is a *line-layer* property of the board, documented in five of the twelve; **this is a *prop-level*
+property of the taxonomy, documented in none.**
+
+🔴 **AND THE TWO ARE NOT TREATED ALIKE IN PRODUCTION** *(live, 2026-09-21)*:
+
+| prop | `final_hp` | `baseline_ladder` | `board_scored` | `rung_market` |
+|---|---|---|---|---|
+| `double_double` | **47,504** | **541** | 0 | 0 |
+| 🔴 **`triple_double`** | **0** | **0** | **0** | **0** |
+
+***`triple_double` is in the taxonomy and has never produced a row anywhere.*** ⚠ **Five of the twelve
+document `double_double`'s *"sentinel −1.0, no ladder"* treatment and NONE says `triple_double` shares
+it or that it is unbuilt** — the corpus names the pair only in family enumerations. **Which this is —
+deliberate deferral or an unbuilt prop — is NOT RECORDED** (rule 6).
+
+✅ **And the sentinel path is TOTAL, which sharpens §T9.37a from a majority to a census**:
+`baseline_ladder` **206,237 rows · 559 `used_emp = false` · 541 of them `double_double`** — and
+**`double_double` has exactly 541 rows**, so ***every `double_double` row is `used_emp = false`, 541
+of 541, no exceptions***, the remaining **18** being the documented `threes_made` fall-throughs.
+**541 + 18 = 559** ✅. *"541 of 559"* was true and understated the structure: **it is not that most
+false rows are `double_double` — it is that no `double_double` row is anything else.** *Set against its sibling `nba_config.factor_profile_cells`, seeded in the same
 transcript, where `last_validated_at` is null on all 35 and `real_sample_size_observed` is 0 on all
 35: the taxonomy encodes **decisions**, the cells encode **estimates awaiting a backtest**.* ⚠ Three
 of its columns — **`build_tier`, `natural_floor`, `direction_skew`** — are named in **none** of the
