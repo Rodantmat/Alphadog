@@ -189,6 +189,51 @@ deployment question is precisely the class this sweep is read-only about.*
 
 ---
 
+## 📋 THE FACTOR × SEASON BACKFILL MATRIX — **the instrument that answers "which factors are done"**
+*Transcribed in full 2026-09-21 from T11 segment 112 (§T11.24). **§T11.2d established that the twelve
+carry the owner's requirement — "every enrichment factor needs a two-season backfill" — and NOT the
+instrument that tracks it. This is the instrument.*** **State as of T11, 2026-09-10 — not current;
+eight transcripts after it are unswept.*
+
+**Legend**: **✓** have · **⏳** running · **🔧** built, run pending · **⛔** blocked (owner action) ·
+**–** derived, no external data needed
+
+| factor | 2025-26 | 2024-25 | 2023-24 | source / build note |
+|---|---|---|---|---|
+| **a1** injury status, **n1** P(plays\|Q), **n2** injury class, **a6** late scratch, **a9** suspension | **⏳ chunk 1** | **🔧** | **🔧** | *archive coverage to verify*; `scrape_nba_injury_report.py` backfill mode; **parser fixed for runner extraction** |
+| **a2** teammate-out redistribution | ✓ | ✓ | ✓ | box-score absences + logs; derived + PDFs for as-known — **measurable now** |
+| **a3** return ramp | ✓ | ✓ | ✓ | logs; **in baseline v30** |
+| **a4** rest probability | ✓ logs | ✓ | ✓ | logs + PDF reason class; **⏳ + national-TV flag — verify schedule field**; **all-star / all-NBA lists static, to add**; absence prior measured |
+| **a5** lineup change | ✓ starters | **⏳** | **🔧** | `scrape_nba_starter_status.py`, season slug, `nba-pergame-backfill.yml` |
+| **a7** trade window | ✓ | ✓ | ✓ | logs, team change |
+| **a8** rookie / two-way | ✓ preseason + PDF two-way reason | ✓ preseason | ✓ preseason | season tables, preseason logs |
+| 🔴 **b1/b2** market spread & total, **c3** game-line movement | **⛔** | **⛔** | **⛔** | *"parlayapi key invalid (key v3.2.0); odds api key **deactivated** → **owner renews parlayapi free key** per its signup — then historical game lines"*; **free fallback for history: Kaggle *"NBA betting data Oct 2007–Jun 2026"* (owner account) or a TeamRankings odds-history scrape**; ***the derived spread is the trained fallback in place*** |
+| **b3** leverage / tanking | ✓ | ✓ | ✓ | standings from logs |
+| **b4/m1** opponent absences / primary defender | **⏳** per-game matchups sharded + weekly PT defend | **🔧** | **🔧** | `scrape_nba_matchups_pergame.py`; season-tables as-of weekly |
+| **b5** OT probability | ✓ | ✓ | ✓ | derived |
+| 🔴 **c1/c2** book vs pick'em gap, prop-line movement | **⛔** | **⛔** | **⛔** | ***historical prop lines are PAID (BigDataBall) — owner decision***; live-only otherwise, calibrated in-season |
+| 🔴 **c4, s1–s4** pick'em structure | **⛔** | **⛔** | **⛔** | ***"no archive exists … boards are not archived anywhere free; live from season start; the board scraper will archive every board from day one so the next backfill exists"*** |
+| **d1** referee crew | ✓ officials | **⏳** | **🔧** | `scrape_nba_game_officials.py`, season slug, `nba-pergame-backfill.yml`; **daily assignments scraper to build** |
+| **d2** schedule / travel / day game / altitude | ✓ | ✓ | ✓ | logs dates, home + arenas |
+| **k1** coach rotation profile | ✓ logs | ✓ | ✓ | logs + **coach-by-team-by-date table, source: Wikipedia season pages' *"coaching changes"* tables with dates — to compile as a static file** |
+| **m2** scheme proxy | ✓ current | prior-season table | parity-safe | ⚠ ***"prior-season synergy play types have NO DATE FILTER → use the previous season's table for a given season" — a documented limitation*** |
+| **m3** hustle, **m4** clutch | **⏳** weekly as-of | **⏳** | **⏳** | season-tables as-of weekly |
+| **e1–e4** confidence | **–** | **–** | **–** | **run metadata** — *no backfill applies* |
+
+🔑 **What the matrix settles**: ***three factor groups are blocked and all three are market/board
+history*** — **b1/b2/c3** (resolved inside T11 when the owner renewed the key, §T11.23b), **c1/c2**
+(paid, **owner decision**), **c4/s1–s4** (**no free archive exists for anyone**). **Everything else is
+have, running, or built-and-pending.** *As segment 113 puts it: **"everything else is built or
+running."***
+
+📌 **Four items in this matrix are in NONE of the twelve** *(probed with positive controls against
+`5dfb72ab`)*: **`m2`'s no-date-filter limitation** (1 of thirty) · **the national-TV flag** (3) ·
+**the all-star / all-NBA static lists** (5) · **`k1`'s Wikipedia source** (2). ***All four sit in
+`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` and its neighbours — which is exactly §T11.2d's finding, and
+this table is the fix.***
+
+---
+
 ## 🔴 NO PICK'EM BOARD IS ARCHIVED ANYWHERE FREE — the general form of the Sleeper gap
 *Found 2026-09-21, T11 pass 22 (§T11.23c), from the transcript's own factor × season matrix.
 **Novelty: 0 of thirty, probe positive-controlled.***
