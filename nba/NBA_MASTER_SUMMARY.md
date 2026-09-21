@@ -14373,6 +14373,91 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.32 — PASS 17 (**novelty audit, second run — passes 12–16 vs `/tmp/t9base/nba/`**) — **🔑 the documents PREDICTED §T9.27b, and the patcher's guarantee has an unstated boundary · 0/3**
+*2026-09-21. Every claim passes 12–16 added, grepped against the pre-T9 snapshot, **every hit opened**.
+No defect of mine this pass; two findings get sharper and one of them gets a documented ancestor.*
+
+#### 🔑 T9.32a — **§T9.27b is the CONCRETE INSTANCE of a gap the documents already named twice, in general terms**
+
+`NBA_DATABASE.md` and `NBA_OPEN_ITEMS.md` both carry, from the MLB case (*"only the **self-reported
+version string** revealing the drift"*):
+
+> *"**`baseline_ladder.recipe_version` exists per row** — so NBA has the version-string mechanism;
+> **what is missing is anything comparing it against the config's expectations.**"*
+
+🔴 **The ladder is that case, live, and it is worse than the gap as stated.** Three as-of days, **two
+depth configurations**, and **one identical `recipe_version` string on all three rows**. *The recorded
+gap was "nothing compares the version string to the config." **The live state is that the version
+string does not vary with the config at all**, so there is nothing to compare — the mechanism the
+documents credit NBA with having is present as a column and absent as a signal.*
+
+⚠ **Fifth time a finding of this sweep turns out to have its general form already on file** (§T7.63a ·
+the blueprint's failure mode 2 · §T6.2a → rule 15 · the `BT_LADDER_STEPS` escape hatch → §T9.27a ·
+this). **The pattern is now reliable enough to invert: before writing a live finding, grep the
+documents for the GENERAL statement of it — it is usually there, and the finding's value is that it
+makes the general statement concrete and dated.**
+
+#### 🔑 T9.32b — **The anchor assertions are cited ELEVEN times across EIGHT documents as "the model to copy", and their SCOPE is stated nowhere**
+
+The patcher's guarantee is one line:
+
+```python
+def rep(s, old, new):
+    assert old in s, f"production patch anchor not found: {old[:80]!r}"
+    return s.replace(old, new)
+```
+
+**It asserts that the anchor text still exists in the harness.** It detects **harness drift** — the
+certified recipe changing under the patch — and it does exactly that, loudly, as documented.
+
+⚠ **What it cannot detect is configuration drift introduced BY the replacement**, and that is
+precisely what O5 is: `LADDER_STEPS` is replaced with `int(os.environ.get("BT_LADDER_STEPS", "10"))`,
+**the anchor assertion passes**, and a measured 20-prop table is flattened to one number with nothing
+raised anywhere. ✅ **This contradicts nothing** (rule 3 — every one of the eleven statements is about
+drift in the harness, and is true); **it bounds a claim that is repeated as a general model.**
+*Recorded in `NBA_DATABASE.md` and `NBA_WORKERS.md` beside the existing statements.*
+
+#### ⚠ T9.32c — **A FOURTH season implementation, undocumented — and it currently agrees**
+
+The patcher's replacement source carries its own season function:
+
+```python
+def _season_of(d_):
+    y = d_.year if d_.month >= 10 else d_.year - 1
+    return f"{y}-{str(y + 1)[-2:]}"
+```
+
+**`_season_of` appears in no document — zero hits across all thirty and the baseline.** **VERIFIED by
+executing both functions over every month of 2025, 2026 and 2027: it agrees with
+`active_stats_season()` on all 36**, including the 2026-10-01 boundary. 📌 *Which also shows
+`active_stats_season()`'s `if today.month in (7, 8, 9)` branch is **redundant** — the general branch
+returns the same value for those months.*
+
+**So this is a latent divergence, not a live bug, and it is recorded as such**: **a fourth copy of the
+season rule** — `nba_season.py`, the patcher's `_season_of`, the 47 env defaults, and 45 workflow
+literals — **and nothing keeps the first two in step.** *Language kept to what is verified: they agree
+today.*
+
+#### ✅ T9.32d — **Rule 14, a sixth time: the "Oct 3 vs Oct 1" discrepancy I was about to record is on file FOUR times**
+
+`NBA_COMPASS.md` line 64 says `active_stats_season()` holds *"2025-26 **until Oct 3**"*; the code
+rolls on **Oct 1**. **Already recorded** — *"the boundary was TESTED — on the wrong date"*, *"`2026-10-01`
+and `2026-10-02` were never sampled"*, *"the document is wrong about the code as well: `NBA_COMPASS.md`
+says Oct 3, the code says…"*. **Opening the hits is the only reason this pass did not produce a
+duplicate 🔴.**
+
+#### ✅ T9.32e — **Everything else passes 12–16 added is new across all thirty**
+
+**Zero hits in the baseline** for: the two depth regimes as a live fact · the frozen analysis-layer
+season (the 47 / 45 / 2 inventory) · the three-direction propagation set · the coverage-drift metric ·
+the patcher hiding configuration from static analysis.
+
+**Pass outcome: no defect; one finding given a documented ancestor, one guarantee bounded, one latent
+divergence recorded, one duplicate avoided. 🔑 CLEAN 0/3 · 17 passes** *(the pass changed findings, so
+it does not count toward the closing three).*
+
+---
+
 ### T9.31 — PASS 16 (**live numeric re-verification**) — **🔴 the env count was wrong a SECOND time, and the reason is T9's own subject · 0/3**
 *2026-09-21. Every figure passes 12–15 state, re-derived from its own authority, **by a different
 method than the one that produced it**, with every partition summed.*
