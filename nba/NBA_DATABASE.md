@@ -585,8 +585,19 @@ backtest will move."* Rows created **2026-09-09
 `canonical_prop_key · band_key · band_order · line_min · line_max · percentile_lo · percentile_hi ·
 edge_method · notes · updated_at`
 
-🔑 **`[LIVE-AUDIT]` 2026-09-21 (T8 pass 7) — WHICH PROPS EACH FAMILY SERVES, and how little is
-covered.** The families divide **by prop**: **line magnitude** (`LOW · MID · HIGH · ELITE`) serves
+> 🔴🔴 **READ FIRST — `[LIVE-AUDIT]` 2026-09-21 (T9 pass 6): THIS TABLE IS NOT THE LIVE VARIATION
+> DIMENSION.** The bands the system actually uses are **`VBANDS_ALL`, a Python dict at
+> `nba/backtest/classification_ladder_v12.py` line 114**, read at line 519 (`VBANDS =
+> VBANDS_ALL[prop]`), covering **15 props**: `assists · blocks · dreb · fg3a · fga · fgm · fta ·
+> ftm · oreb · personal_fouls · points · rebounds · steals · threes_made · turnovers`. **This table
+> has 6 and is read by nothing.** *Third instance of the §2-banner pattern, in the same file as the
+> other two (`ROLE_TIERS` line 129, the decay `PROPS` dict).* ⚠ **And the documented expansion
+> checklist explains it**: `NBA_COMPASS.md` line 130 says a new prop requires extending *"PROPS
+> config, `VBANDS_ALL`, and the factor-feature map"* — **three code structures; neither this table
+> nor `prop_taxonomy` is on the list.**
+
+🔑 **`[LIVE-AUDIT]` 2026-09-21 (T8 pass 7) — WHICH PROPS EACH FAMILY SERVES in the TABLE, and how
+little the table covers.** The families divide **by prop**: **line magnitude** (`LOW · MID · HIGH · ELITE`) serves
 **five** — `assists`, `rebounds`, `threes_made`, `pra`, `fantasy_score` — and the **role** family
 (`FRINGE · ROLE · STARTER · STAR · SUPERSTAR`) serves **`points` alone**, which is why it has exactly
 five rows. ⚠ **Only 6 of the 28 taxonomy props have any band**, and the split follows
