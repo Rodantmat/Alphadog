@@ -14424,6 +14424,42 @@ the loader.
 > Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.51 — PASS 36 (**live numeric re-verification**) — **✅ CLEAN 2/3 · every figure exact, and the one that moved moved as documented**
+*2026-09-21. Every figure passes 32–35 state, re-derived from its own authority; timestamps in UTC;
+partitions summed; predicates stated; **every corpus metric reported with the pass that took it.***
+
+#### ✅ T9.51a — **The census rose again, exactly as §T9.48a says it must**
+
+| Pass | Timestamps | Zone-less | In 17:00–23:59 |
+|---|---|---|---|
+| 31 | 111 | 68 | 43 |
+| 33 | 120 | 74 | 47 |
+| **36** | **124** | **78** | **49** |
+
+**This is not a correction and §T9.48a's figures are not wrong** — *they are dated pass 31 and pass 33
+and remain exact for those passes.* **The rise is the documented effect**: passes 34 and 35 quoted
+more timestamps into the twelve while writing about them. **Reported with its pass, per the rule that
+cost passes 33 and 34.**
+
+#### ✅ T9.51b — **Nine figure families exact**
+
+| Claim | Predicate / authority | Result |
+|---|---|---|
+| `LADDER_DEPTH` — **20** keys, **8** documented, **12** not | the dict parsed vs the `NBA_GOBLIN_DEMON.md` table | ✅ **8 + 12 = 20**, **8 of 8** "Fixed to" match |
+| Confidence factors — **10** declared, **9** summed, weights **1.00**, `f_phase` the sole omission | both structures parsed | ✅ exact |
+| `confidence_verification` rows | `count(*)` | ✅ **60** *(= 34 + 5 + 21)* |
+| Ladder rows · `used_emp` true | `count(*)` / `FILTER (WHERE used_emp)` | ✅ **206,237** · **205,678** |
+| The 559 false: `double_double` **541** + `threes_made` **18** | `FILTER (WHERE NOT used_emp AND prop = …)` | ✅ **205,678 + 541 + 18 = 206,237** |
+| Snapshot | `max(snapshot_taken_at)` | ✅ **2026-09-02 19:47:15 UTC** |
+| The three differential logs | `count(*)` summed | ✅ **0** |
+| Band · coverage | `judge9.py`, band `>= 0.45`, coverage `< 0.40` | ✅ **54 · 690 · 675** — **unchanged for a fifth consecutive run** |
+| The five commit times | `%aI` converted to UTC | ✅ **04:57:30 · 05:55:07 · 2026-09-12 02:49:35 · 2026-09-19 23:58:44 · 2026-09-11 17:18:17** |
+
+**Pass outcome: no defect, no finding or severity changed; the single moving figure reported with its
+pass rather than corrected. ✅ CLEAN 2/3 · 36 passes.**
+
+---
+
 ### T9.50 — PASS 35 (**identified-but-not-applied audit**) — **✅ CLEAN 1/3 · no fourth instance, and every non-correction is deliberate**
 *2026-09-21. The angle pass 34 forced: **every entry in the twelve that DIAGNOSES a problem, checked
 against whether the fix reached the text it names.** Two search forms — entries that count locations
