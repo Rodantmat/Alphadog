@@ -14613,6 +14613,7 @@ structure in `classification_ladder_v12.py`, find its table counterpart and meas
 | **`VBANDS_ALL`** (114) | **15 props** | `nba_config.variation_bands` | **6 props / 25 rows** | ❌ | **§T9.21a** (this sweep) |
 | **`ROLE_TIERS`** (129) | **6 tiers** | `nba_config.role_tiers` | **6 rows** | ❌ | values agree; **boundary operators NOT RECORDED** (§T7.41b) |
 | **`LADDER_DEPTH`** (80) | **20 props** | **none — no table exists** | — | — | **see below** |
+| ⚠ **`LADDER_DEPTH`, corrected 2026-09-21 by §T9.27a/§T9.27b** | **20 props — but only when `BT_LADDER_STEPS` is UNSET** | **the env var is the real authority** | `ladder_depth()` returns `int(env)` the moment it is set, for every prop | ❌ **and it IS set** — `nba-baseline.yml` reads `ladder_steps: 10` from `TRIGGER_NBA_BASELINE.txt` | **§T9.27b** — the live table holds **two regimes under one `recipe_version`** |
 | `MAX_TIERS` · `MIN_PER_TIER` · `TIER_BLEND_K` · `LADDER_STEPS` · `BLOWOUT_MARGIN` · `COMPETITIVE_MARGIN` · `SHIFT_LAMBDA` · `K_CELL_BY_PROP` · `P_BLOWOUT_BINS` | literals | *(none)* | — | — | documented as *"Python literals in the recipes"* |
 
 #### ⚠ T9.22a — **Rule 14, fifth consecutive pass: the decay divergence is already measured, and more completely than I measured it**
