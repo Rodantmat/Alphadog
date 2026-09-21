@@ -1179,6 +1179,18 @@ All use **`curl_cffi` with browser impersonation** except where noted.
 **The single source of truth.** 60,176 bytes, 759 lines. Every production builder is a **patcher** over
 it, with **anchor assertions** so a drifted patch fails loudly instead of writing silently.
 
+> ⚠ **The anchor assertion's SCOPE, recorded 2026-09-21 (§T9.32b) — it is cited in eight documents as
+> the model to copy, and what it covers was stated in none of them.** The guarantee is one line:
+> `def rep(s, old, new): assert old in s; return s.replace(old, new)`. **It asserts that the anchor
+> TEXT still exists in the harness**, so it catches the certified recipe drifting under the patch —
+> loudly, exactly as described. ⚠ **It does not and cannot catch configuration introduced by the
+> replacement.** `LADDER_STEPS = 6` is replaced with `int(os.environ.get("BT_LADDER_STEPS", "10"))`;
+> **the assertion passes**, and the measured 20-prop `LADDER_DEPTH` table is flattened to one number
+> with nothing raised anywhere (**O5**, §T9.27b). 📌 **And the replacement source is invisible to
+> static analysis** — three env vars (`BT_REPLAY`, `BT_INJURY`, `BT_CUTOFF`) exist only inside these
+> triple-quoted strings and are string literals to `ast.parse` (§T9.31a). *Harness drift: covered.
+> Config drift: not covered.*
+
 **Constants** (full table and the calibration logic: see `NBA_BASELINE_CALIBRATION.md`):
 `MAX_TIERS=24` · `MIN_PER_TIER=15` · `TIER_BLEND_K=5` · `LADDER_STEPS=6` ·
 `BLOWOUT_MARGIN=20` / `COMPETITIVE_MARGIN=15` · `ROLE_TIERS` (6 bands) ·
