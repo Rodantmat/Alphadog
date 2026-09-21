@@ -10,6 +10,53 @@ infrastructure, and how each is used. Built from the transcripts, not from memor
 
 ---
 
+## 0f. 🔴🔴 THE FOUR LIVE BOARD SOURCES — **each chosen by a same-moment diff, and three of the four had no evidence in the twelve**
+*Recorded 2026-09-21 (T12 pass 2, §T12.3). **Transcript `2026-09-11-21-01-23`, segments 90–91, 570,
+604, 615, 636.** Probed against the baseline `c5798146` with controls (`board_sources_decision` 4 of
+thirty, `scrape_sleeper_board` 6) and every hit opened — rules 20, 22, 26, 28. **Config key:
+`board_sources_decision`.***
+
+🔑 **THE METHOD, and it is the transferable part**: ***"same-moment diffs beat vendor claims … the
+decision for every board came from a same-minute count-by-stat comparison against the app's own API,
+run through a reusable bridge job, not from documentation."*** *ParlayAPI claims PrizePicks — and
+drops ~25% of ladder rungs and lags an hour. It claims Underdog — and **misses team markets and
+inning pills**.*
+
+| board | source chosen | the evidence |
+|---|---|---|
+| **PrizePicks** | ✅ **ours** *(raw API, `league_id=7`)* | same-moment MLB diff **1,729 vs 1,353 legs**; ParlayAPI drops ~25% of rungs *nearest the standard line* and lags **`age_seconds ≈ 3,300`** — *full decomposition in `NBA_OPEN_ITEMS.md`* |
+| **Sleeper** | ✅ **ours** — `nba/scrape_sleeper_board.py` + `sleeper-board.yml` | public **`api.sleeper.app/lines/available`**, names via **`/v1/players/<sport>`** (slim map), **both-side multipliers**. 🔑 ***Diff: 405 / 91 vs ParlayAPI's 406 / 92 — PER-STAT IDENTICAL*** → **ours anyway, because it is first-party and free** · **1 of thirty, 0 of the twelve** |
+| **Underdog** | ✅ **ours** *(scraper v3)* | 🔴 **two blind probe rounds TRIPPED CLOUDFLARE** — *"never burst-probe it"* — **and the owner's own *"copy as curl"* capture exposed the lobby-content API.** **Result: 854 lines / 100 players** · **0 of the twelve** |
+| **Fliff** | ⚠ **ParlayAPI** *(not ours)* | **the web app WAS reverse-engineered but is UNFINISHED** — see the owner action in `NBA_OPEN_ITEMS.md` · **0 of the twelve** |
+
+### 🔑 The Underdog lobby-content API, as captured
+**Host `api.underdogfantasy.com`.** **Mandatory parameters**: `product=fantasy` ·
+`product_experience_id=b34dfd93-…` · `state_config_id=725014ef-…` *(CA)*. **Client headers**:
+`client-version 20260907143253`, a device id, lat/long. 🔑 ***The 10-minute auth0 JWT and the
+3-minute geocomply token are NOT needed for board content*** — *which is why the board is reachable
+at all without a session.*
+**The flow**: match-grouped lines → `lines?match_id&match_type` per match, plus every pill
+*(`filter_type=pickemstat`)* → marketgroup ids seeded → per-player `lines_with_stats?appearance_id`
+*(every market + recent stat values)* → **merge by `line_id`**. 📌 **Self-learning registry
+`boards/underdog_filters_<sport>.json`.**
+🔑 ***And the reason no session endpoint is needed: "the data names its own filters" — Underdog's
+pills are `pickemstat` ids that EVERY LINE ALREADY CARRIES as `pickem_stat_id`, so the scraper learns
+its categories from the lines it already has.***
+
+### ⚠ Four transferable lessons from the same arc *(segment 604)*
+1. 🔴 **GET THE REAL REQUEST BEFORE GUESSING AT ONE.** *Two evenings of guessed Underdog parameters
+   got the runner's request signature challenged by Cloudflare; **a single "copy as curl" from the
+   owner's browser** exposed the mandatory parameters, the version header and the token fact.*
+   ***"Ask for the capture first; never burst-probe a protected host."*** **0 of the twelve.**
+2. **The data usually names its own filters** — *look inside the objects you already have before
+   reverse-engineering the menu.*
+3. **Ladders live somewhere else** — *on every app the alternates are a separate surface (PrizePicks
+   rungs, Underdog alternates, Sleeper boosts).*
+4. 🔴 **The file limit is a DESIGN INPUT** — ***two backfills (the injury season file and the
+   per-game matchups) SILENTLY FAILED AT THE COMMIT STEP AFTER THE SCRAPES SUCCEEDED.*** **Shard by
+   month with an index from the start, commit small files first, size-guard every commit.**
+   *(Already in 1 of the twelve; recorded here for the board layer too.)*
+
 ## 1. THE FOUNDING CONSTRAINT
 
 > *"This is an EXPANSION joining an already-built, already-Postgres-native system, not a migration and
