@@ -10,6 +10,27 @@ writes. Grouped by role.
 
 ---
 
+## 0.00 ⚠⚠ THE HARDCODED-SEASON LITERAL, AND THE GREP TRAP THAT HIDES HALF OF IT
+*`[LIVE-AUDIT]` 2026-09-21 (T7 pass 28).*
+
+**Seven NBA workers carry a hardcoded `2025-26`, and the quote style predicts the defect exactly:**
+
+| Quote style | Workers | Meta-season fallback |
+|---|---|---|
+| **`'2025-26'`** (single) | `alphadog-v2-nba-static-onoff.js` · `-player-bio.js` · `-player-tracking.js` · `-team-stats.js` | **NONE — all four** |
+| **`"2025-26"`** (double) | `-backfill.js` · `-game-officials.js` · `-starter-status.js` | **present — all three** |
+
+⚠ **The trap**: a grep for `'2025-26'` returns **exactly the four broken workers**; a grep for
+`"2025-26"` returns **exactly the three fixed ones**. **Either single-style grep gives a clean,
+complete-looking answer that is wrong by construction.** **Search for both quote styles — or for
+`20[0-9][0-9]-[0-9][0-9]` — whenever re-auditing this.**
+
+✅ **The four with no fallback are the ones that matter**: their targets
+(`player_onoff_profile`, `nba_ref.players`, `player_tracking_profile`, `nba_team.season_profile`)
+have **no season in the primary key**, so from 2026-10-01 they stamp `'2025-26'` onto whatever the
+scraper fetched for an empty `2026-27` and **upsert it over last season's real row** —
+`NBA_OPEN_ITEMS.md` **O4**.
+
 ## 0.0 ⚠ THE COMPLETE SCHEDULE SURFACE — **seven scheduled workflows touch `nba/`, not four**
 *`[LIVE-AUDIT]` 2026-09-21 (T7 pass 24). Enumerated from the workflows directory — the authority —
 not from the `nba-` filename prefix, which is what produced the wrong count in the first place.*
