@@ -6396,6 +6396,88 @@ vs all 30 (71.0%). The 67-segment gap between the two is the **self-authorship**
 writes `NBA_BASELINE_METHODOLOGY.md` and `NBA_HISTORICAL_BACKFILL_PLAN.md`, which are among the 30
 but not the twelve.
 
+### T4.24 — PASS 4 (**results stratum, all 129 segments — the last of T4's four strata**) — **NEW MATERIAL · 0/3**
+*2026-09-21.*
+
+#### 🔴 T4.24a — **`player_career_season_totals` CONTAINS ITS OWN SUBTOTALS: 282 PLAYER-SEASONS ARE STORED TWICE**
+
+The transcript's own verification output, previously unrecorded:
+```
+total rows: 3644
+player-seasons with multiple rows: 282
+  (1630173, '2023-24')   1610612761  25  193
+                         1610612752  49  372
+                         0           74  565      ← 25+49=74,  193+372=565
+```
+**`TEAM_ID = 0` is not a team. It is the season total for a traded player**, and it sits in the table
+**alongside** the per-team rows it sums.
+
+`[LIVE-AUDIT]` **VERIFIED 2026-09-21 across the whole table**, not spot-checked:
+
+| | |
+|---|---|
+| rows | **3,644** |
+| distinct player-seasons | **3,064** |
+| player-seasons with more than one row | **282** |
+| of those, carrying a `team_id = 'nba_0'` row | **282 — all of them** |
+| where the `nba_0` row's `GP` equals the sum of the per-team rows | **282 — all of them** |
+| mismatches | **0** |
+
+**So the redundancy is exact and total.** The documents already record that `TEAM_ID=0` rows are
+*"the confirmed-correct combined total for traded players (empirically verified, not assumed)"* —
+**true, and it is the good news half.** The half not recorded: **because the subtotal is stored
+next to its parts, any aggregate over this table counts those 282 player-seasons twice.**
+
+```sql
+SELECT player_id, sum(pts) FROM nba_stats.player_career_season_totals GROUP BY 1;  -- ⚠ double-counts
+SELECT player_id, sum(pts) FROM nba_stats.player_career_season_totals
+  WHERE team_id <> 'nba_0' GROUP BY 1;                                             -- parts only
+```
+**Neither form is wrong in itself; the table simply cannot be aggregated without choosing one.** And
+nothing in the table announces the choice — there is no `is_total` flag, no row-type column. The
+discriminator is the magic value `'nba_0'`.
+
+⚠ **This is NOT the double-counting already recorded at §T4.11.** That entry resolves a *blowout
+minutes* warning in `nba_score.blowout_model` and concludes the design avoids it. **This is a
+different hazard in a different table, and it is open.** Two things called "double-counting" in the
+same transcript's documentation, only one of them addressed. → `NBA_OPEN_ITEMS.md`.
+
+**Whether any reader currently aggregates this table without the filter is NOT RECORDED** — the
+baseline pipeline that would consume it is a design document in T4, not yet code. **Flagged for the
+transcript that builds it.**
+
+#### 🔍 T4.24b — a CANDIDATE resolution for the `[skip ci]` question T2 left open — **offered, not asserted**
+
+T2 §T2.14a records an unresolved claim: *"the auto-deploy workflow **likely fired** because it
+triggers on any push to main."* It was hedged, never checked, and three candidate explanations were
+listed with none chosen.
+
+**T4's results stratum shows what `github_list_workflow_runs` actually returns after a data commit**,
+seven separate times:
+```
+{ "runs": [ { "id": 33706026264, "name": "pages build and deployment", "conclusion": "success", ... } ] }
+```
+**Every one is `pages build and deployment` — not the auto-deploy.** This is the documented
+`[skip ci]`-does-not-suppress-Pages behaviour, caught in the act across the whole transcript.
+
+**The candidate explanation**: an assistant listing workflow runs after a data commit sees *a run
+that fired*, and may read it as the deploy pipeline when it is Pages. **That fits T2's hedged
+wording exactly.**
+
+⚠ **Recorded as a candidate and nothing more.** T4 shows what fires *here*, in T4; **it is not
+evidence about what fired in T2**, and asserting otherwise would be the same backward-reasoning error
+§T2.14a was written to correct. **The question stays OPEN**; the transcript that introduced
+`[skip ci]` — or one that lists runs by name in T2's own window — can settle it.
+
+#### ✅ Confirmed, no discrepancy
+The first failed shot-quality run's meta files carrying `"error": "0"` — **the bare `"0"` from
+`KeyError(0)`** — are present exactly as §T4.1 BUG 2 describes ✅. Final volumes re-confirmed from the
+verification queries: **player logs 26,651 · team logs 2,460 · career totals 3,644 · bucket rows
+2,244 · delta rows 582 · zone rows 4,656** ✅. A `github_patch_file` failure, *"old_str matches 15
+times, must be unique"*, is the ordinary uniqueness constraint, not a defect.
+
+---
+
 ### T4.23 — PASS 3 (**command stratum, all 103 segments, read to the end**) — **NEW MATERIAL · 0/3**
 *2026-09-21.*
 
