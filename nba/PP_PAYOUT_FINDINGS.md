@@ -464,6 +464,25 @@ Progression: v1 94.26% → v2 95.61% → + tier A 95.73% → + tier B **96.87%**
 The 9,993 still without a center = flag-rejected rescues (123 A + 5,678 B) + 5 whose standard moved + 4,187 with no
 center anywhere.
 
+### MINED PRICES — PER LEG (built 2026-09-21)
+**Mined prices are stored per leg, never per generic Price ID.** Two players with the identical key
+`(market, center, line, side, kind)` carry different real prices (up to ~10%) — PrizePicks prices off its unrounded
+projection. Collapsing mined prices into a key would pin one player's price onto every historical leg sharing it;
+for history the model — effectively an average across players — is the better estimate.
+
+| Object | Contents |
+|---|---|
+| `nba_market.pp_mined_leg` | one row per mined leg per run, keyed `(run_file, projection_id, partner_projection_id)` — PrizePicks' own per-leg identity; quoted 2-pick Power + Flex, de-compressed factor, implied probability |
+| view `nba_market.pp_mined_vs_model` | every mined leg beside the current model's price for its key (compression read from `pp_slip_rules`) — **a standing validation: each load re-tests the model** |
+
+**Removed from `pp_leg_price`:** the generic-key "mined outranks model" layer. It was inert (nothing loaded) but a
+trap for the first mined load. Live legs will attach their own mined price per leg when the live pipeline exists.
+
+**Loaded:** run 1 (156 legs). Runs 2–3 were byte-identical in price (0 changed rows across 45 minutes) — to be
+backfilled by the loader. **Validation (v2):** 115 legs matched a Price ID; median error **3.11%**, bias **−0.73%**.
+7 mined legs are stats with no historical market (Blocked Shots, Double-Double); **34 (22%) have no standard line on
+the live board** — for live legs that is harmless, since the mined price itself is exact.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
