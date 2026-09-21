@@ -1,5 +1,30 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔑 THE VARIATION DIMENSION COVERS **6 OF 28 PROPS** — and the split is exactly `build_tier`
+*`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 (T8 pass 7). Detail: `NBA_MASTER_SUMMARY.md` §T8.28.*
+
+| `prop_taxonomy.build_tier` | Props | With a variation band | With a profile cell |
+|---|---|---|---|
+| **A** — core, all three apps | **13** | **6** | 7 |
+| **B** — derivable, app-specific | **15** | **0** | 2 |
+
+**The 6 banded props**: `points` (role-banded — `FRINGE·ROLE·STARTER·STAR·SUPERSTAR`, the only prop
+using that family) and `assists`, `rebounds`, `threes_made`, `pra`, `fantasy_score` (line magnitude —
+`LOW·MID·HIGH·ELITE`).
+
+**The 22 unbanded**: every Tier B prop — all period layers (`points_1q/1h/2h/4q`, `assists_1q`,
+`rebounds_1q`, `threes_made_1q`, `pra_1q`, `fantasy_score_1q`), the milestones (`double_double`,
+`triple_double`), the attempt props (`fga`, `fg3a`, `ftm`), the defensive/negative props (`blocks`,
+`steals`, `stocks`, `turnovers`, `personal_fouls`) — plus the Tier A composites `pts_ast`, `pts_reb`,
+`reb_ast`.
+
+⚠ **Why this is an open item and not a backlog note**: **variation is one of the owner's five tiering
+dimensions**, and §T8.14b records the band-level residual as *"the empirical vindication of the
+variation dimension"* — *"per-band cells fixed what per-prop k couldn't."* **That evidence comes from
+6 props of 28.** *Whether the other 22 are meant to inherit a default band, to be banded later, or to
+run unbanded is **NOT RECORDED**.* ✅ Referential integrity itself is clean — **0 orphans** in every
+direction tested.
+
 ## 🔴 NO NBA CODE SPEAKS `canonical_prop_key` — the taxonomy's vocabulary is unused on the NBA side
 *`[LIVE-AUDIT]` **VERIFIED** 2026-09-21 (T8 passes 4 and 6). Detail: `NBA_MASTER_SUMMARY.md`
 §T8.25b, §T8.27b.*
