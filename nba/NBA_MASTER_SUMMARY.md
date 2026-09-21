@@ -14427,21 +14427,33 @@ display name **and** by the prose phrase a document would use. **No document cha
 
 #### 📌 T10.13a — **The subject probe, and how far it moves each object**
 
+> 🔴 **THIS TABLE WAS MEASURED ON THE WORKING TREE — corrected 2026-09-21 by §T10.14a.** *The working
+> tree already held passes 1–12's writes, so four of its figures counted this sweep's own text.*
+> **§T10.13b used `/tmp/t10base` correctly; §T10.13a did not.** **The baseline figures, which are what
+> "how well was this documented before the sweep" means, are below.**
+
 | Object | Probe used | In the twelve | In all thirty |
 |---|---|---|---|
-| `altitude_venue` | /altitude/ | **6** | **15** |
-| `national_tv_marquee` | /national tv · marquee/ | 1 | 7 |
+| `altitude_venue` | /altitude/ | **6** | **14** |
+| `national_tv_marquee` | /national tv · marquee/ | **0** | **5** |
 | `market_spread_delta` | /derived spread · market spread/ | **10** | **19** |
-| `market_total_delta` | /pace-implied total · market total/ | 0 | 3 |
+| `market_total_delta` | /pace-implied total · market total/ | **0** | 3 |
 | `late_scratch` | /late scratch/ | 1 | 5 |
 | `referee_assignment` | /referee crew/ | 2 | 9 |
 | `lineup_change` | /confirmed lineup/ | 4 | 7 |
 | **`compute_stage`** | /compute[_ ]stage/ | **0** | **2** |
+| `matchupMinutesSort` | /matchupminutessort · matchup minutes sort/ | **0** | **0** |
 
-🔑 **The spread is the finding.** *Objects this sweep handled as bare keys turn out to be discussed by
-name in up to **19 of thirty** documents — `market_spread_delta` and `altitude_venue` most of all.*
-✅ **And exactly one claim survives the subject probe unchanged: `compute_stage` — 0 in the twelve, 2
-in the thirty**, precisely as §T10.6c recorded.
+*Measured against commit **`d29401bd`**, the pre-T10 baseline.*
+
+🔑 **The spread is the finding, and it survives the correction intact.** *Objects this sweep handled
+as bare keys turn out to be discussed by name in up to **19 of thirty** documents —
+`market_spread_delta` at 19, `altitude_venue` at 14.*
+
+✅ **And the "exactly one" claim is corrected to what the baseline shows: FOUR objects sit at 0 in the
+twelve** — `national_tv_marquee`, `market_total_delta`, `compute_stage`, `matchupMinutesSort` — **and
+`compute_stage` is the one at 0 / 2**, absent from the mandated documents and present in exactly two
+of the thirty, precisely as §T10.6c recorded.
 
 #### ✅ T10.13b — **§T10.1a re-tested at subject level against the BASELINE tree, and it is exactly right**
 
