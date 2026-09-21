@@ -314,13 +314,19 @@ ceiling on a factor's effect. Detail: `NBA_MASTER_SUMMARY.md` §T7.38a.
 | Tier- or role-keyed | **22 of 35** |
 | Without either key | **13 of 35** — **these are the CONTINUOUS FORMULA cells**, see below |
 
-**⚠ REFINED the same day (T7 pass 10, structural value sanity).** This entry first called those 13
-*"undifferentiated caps, a gap against the directive."* **They are not a gap.** The table is two
-populations with zero mixing: **22 bucketed cells** (a flat `lift` or `penalty`, **always** tier- or
-role-keyed) and **13 continuous cells** (a `formula_expression` with `coefficient_a`, both flat
-values NULL, **never** tier-keyed) — e.g. `pace__points__continuous__all__both` =
-`coef_a * ln(proj_pace/league_avg)`. A tier bucket has no meaning for an effect that scales with a
-continuous input. **Every bucketed cap in the system is tier- or role-specific.**
+**⚠ REFINED TWICE the same day (T7 passes 10 and 15).** This entry first called those 13
+*"undifferentiated caps, a gap against the directive"*, then *"not tier-keyed because tiers are
+meaningless for them."* **The correct reading is the third: they are keyed — on `variation_band`.**
+
+The design key is **six-dimensional** — *factor × prop × rate_tier × role_tier × direction ×
+variation_band* (`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247). Live, which key columns are
+populated **is** the population marker: **22 bucketed cells** carry `tier_label` (+ `role_tier_key`)
+with `variation_band` NULL; **13 continuous cells** carry **`variation_band = 'continuous'`** with
+tier and role NULL, and hold a `formula_expression` instead of a flat value — e.g.
+`pace__points__continuous__all__both` = `coef_a * ln(proj_pace/league_avg)`.
+
+**So nothing in the table is undifferentiated. Every cap is specific to the dimension appropriate to
+its form.**
 
 **So against the directive:**
 - **Instruction 2 (*tier-specific, not global*) — SATISFIED wherever the concept applies.** There is
