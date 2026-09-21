@@ -478,12 +478,22 @@ The DARKO scraper does not assume its extraction worked. It carries:
   the candidates tried, needs manual inspection"`
 - **a committed debug artifact** — `output_debug_path.write_text(html1[:20000])`, so the next
   iteration inspects the page's real structure from the repo instead of re-fetching blind.
-  ⚠ **Corrected 2026-09-21 (pass 4): the 20,000-char cap was itself a defect and T3 removed it
-  mid-session** — *"full, untruncated html this time (not just first 20k) **so the next attempt has
-  complete ground truth instead of a partial guess**."* **The truncated artifact had cut off before
-  the hydration payload, which is near the end of the body — so the very evidence needed was the
-  part the cap discarded.** A debug artifact that samples the wrong end of a document is worse than
-  none, because it looks like evidence. *The final scraper writes the whole page.*
+  ⚠ **Corrected pass 4, then CORRECTED AGAIN pass 7 — and the second correction is the one that
+  holds, because it was settled against the live file rather than against stratum order.**
+
+  **Pass 4 claimed T3 removed the cap.** It did, once: a mid-session patch replaced
+  `html1[:20000]` with the full page — *"full, untruncated html this time … so the next attempt has
+  complete ground truth instead of a partial guess."* **But that patch belonged to the v1
+  pagination-guessing scraper, which was then thrown away** and rewritten around the hydration
+  extraction. ***VERIFIED 2026-09-21** on live `main`: `nba/scrape_nba_darko.py` lines 86 and 90
+  both write `html[:20000]`.* **The cap is in the shipped scraper.**
+
+  ⚠ **And that is a live defect, not a historical note.** The hydration payload this scraper depends
+  on sits **in an inline `<script>` near the end of the body** — T3 established that itself. The
+  debug artifact captures the **first** 20,000 characters. **So if this scrape ever fails, the
+  evidence written to the repo is the part of the page that does not contain the data**, and it will
+  look like a captured artifact rather than a miss. *The v1 patch had fixed exactly this; the
+  rewrite lost the fix. Not repaired here, per the sweep's read-only rule.*
 - an explicitly **permissive** first-run parse, documented in its own docstring as *"intentionally
   permissive … if it produces obviously wrong results (e.g. zero rows, or fewer than expected),
   that's **surfaced honestly in the meta file rather than silently accepted**"*
