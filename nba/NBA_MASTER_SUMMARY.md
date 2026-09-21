@@ -2148,6 +2148,61 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+### T2.18 — PASS 18 (**angle: cross-document consistency — do the thirty documents agree with each other?**) — **✅ CLEAN 2/3 · one `[LIVE-AUDIT]` finding, which does not reset**
+*2026-09-21. A fourth distinct angle: not transcript-vs-documents but **document-vs-document**.*
+
+**Schedule totals reconcile exactly.** `[LIVE-AUDIT]` — `nba_calendar.games` by season and prefix:
+
+| Season | 001 | 002 | 003 | 004 | 005 | 006 | total |
+|---|---|---|---|---|---|---|---|
+| 2025-26 | 71 | **1,230** | 7 | 85 | 6 | 1 | 1,400 |
+| 2026-27 | 66 | **1,200** | — | — | — | — | 1,266 |
+
+**2,666 total**, which is the figure carried in 20 places across the documents ✅. The
+*"2026-27 is 1,200 vs 1,230 and has zero playoff / All-Star / Cup-knockout rows"* finding is
+re-confirmed from this direction: **2026-27 has only prefixes 001 and 002**, where 2025-26 has six.
+
+#### ⚠ T2.18a — `[LIVE-AUDIT]` **"all 582 active players" is wrong in two documents, twice over**
+
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` (line 120) and `NBA_PROJECT_LOG.md` (line 354) both
+describe `nba_stats.player_career_season_totals` as *"3,644 rows across all **582 active** players."*
+**`NBA_DATABASE.md` — the authority — says `nba_ref.players` is 582 rows, 525 active**, and pass 17
+verified that live.
+
+**`[LIVE-AUDIT]` VERIFIED 2026-09-21**, the table itself:
+```
+rows 3,644  |  distinct player_id 581  |  of which active 524
+```
+**So the phrase is wrong on both halves**: they are not all active (**524 of 581**), and it is **581
+distinct players, not 582** — one player in the dictionary has no career-totals row at all.
+
+**Recorded as state only. The one-player gap is NOT explained here** — `player_career_season_totals`
+is built in a later transcript this sweep has not reached, and Rule 6 forbids supplying a cause the
+sequence has not yet delivered. **Flagged for that transcript.**
+
+⚠ **Neither file is one of the twelve mandated documents** — the checkpoint is a historical artifact
+and `NBA_PROJECT_LOG.md` is the system's own log, written by the transcripts themselves. **Neither is
+corrected**: editing them would rewrite a historical record to match a later finding, the same error
+as rewriting a date inside a verbatim quote. **This entry is the correction; those lines stay as they
+were written.**
+
+#### 🔷 AUTONOMOUS DECISION — why this finding does NOT reset the clean count
+
+**It is not T2 transcript material.** It came from grepping the document set and verifying against
+live Postgres — never from a T2 segment. The owner's standing scope cap is explicit: *"only
+transcript material resets the clean count; live-system state is tagged `[LIVE-AUDIT]` and does
+not."* **So: recorded, tagged, counter not reset. Pass 18 stands CLEAN 2/3.**
+
+*Alternative rejected*: treating every finding of any kind as a reset. That would make the clean
+count unreachable — the live system will always yield one more observation — and it would collapse
+the distinction the owner drew the cap to protect.
+
+*Contrast with pass 16, which DID reset*: that finding began as a T2 **segment** (the worker's return
+shape, present in the transcript) and was then verified live. **Transcript-sourced, so it reset.**
+The test is where the finding originates, not where it was confirmed.
+
+---
+
 ### T2.17 — PASS 17 (**angle: every documented numeric claim re-verified against live Postgres**) — **✅ CLEAN 1/3**
 *2026-09-21. A third distinct angle: not "did I read it?" but **"is the number still true?"***
 
