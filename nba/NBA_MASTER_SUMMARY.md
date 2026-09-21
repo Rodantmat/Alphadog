@@ -9723,6 +9723,44 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.48 — PASS 19 (**novelty audit, second run — against all THIRTY this time**) — **✅ CLEAN 1/3**
+*2026-09-21. The pass-14 method re-run over everything §T7.44–§T7.47 added, with the seventh rule
+applied: a fresh `git archive` of commit `d33902f9` (the last write before pass 9), grepped across
+**all thirty** documents rather than the twelve — the exact mistake pass 18 diagnosed.*
+
+**✅ Genuinely new — zero occurrences anywhere in the pre-pass-9 thirty:**
+
+| Term | Hits |
+|---|---|
+| `band_key` · `proposed_field` | **NONE** |
+| `last_validated_at` · `semi_automatic` | **NONE** |
+| The `'continuous'` band value; its non-resolution against `variation_bands`; the `calibration_log` 0% join and its two id conventions; the null values under `status='applied'` | **NONE** |
+
+**⚠ One near-miss checked and cleared**: `variation_band` appears in **eight** pre-edit documents —
+but every occurrence is the **key definition**, never the `'continuous'` value and never the
+resolution failure. §T7.45a stands as new.
+
+#### 🔑 T7.48a — **The audit UPGRADES §T7.44a: the six-dimensional key is stated FOUR times, in THREE documents**
+
+§T7.44a cited `NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 247 as *"the design document."* **It is
+not the only one.** The same key is written out in:
+
+| Document | Line |
+|---|---|
+| `NBA_CLASSIFICATION_BASELINE_DESIGN.md` | 247 |
+| `NBA_BASELINE_CALIBRATION.md` | 717 — *"**Cell key**: `factor × prop × tier × role_tier × direction × variation_band`"* |
+| `NBA_FINAL_SCORING_CALIBRATION.md` | **115, 201, 1969** — three times, once as *"The 'preset dictionary' IS the cell [space]"* |
+
+**So when I queried three of six key columns and drew a conclusion from the other three being null,
+the full key was spelled out in four places across three documents.** The fifth standing rule is not
+a fussy refinement — **the information was over-supplied and I read none of it.** *Recorded because
+an audit that only reports what is new, and never what it learned about the previous failure, is half
+an audit.*
+
+**Pass outcome: no duplicate, no defect, one strengthening finding. ✅ CLEAN 1/3.**
+
+---
+
 ### T7.47 — PASS 18 (**sibling-claim audit — every absence assertion, re-tested by substance**) — **🔴 3 MORE FAILURES, ALL AGAINST ONE DOCUMENT · 0/3**
 *2026-09-21. The sixth standing rule applied as its own angle, immediately, because pass 17 showed the
 failure was systematic rather than isolated. **Method**: extract every *"NOT RECORDED" / "nowhere" /
