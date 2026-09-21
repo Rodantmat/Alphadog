@@ -206,7 +206,7 @@ system's own authority, not the id prefix)*:
 
 | table | seasons in `nba/data/` | seasons in Postgres | games | rows |
 |---|---|---|---|---|
-| `nba_stats.game_officials` | **3** | 🔴 **1 — 2025-26 only** | **1,227** *(of 1,230 — three short)* | **3,681** |
+| `nba_stats.game_officials` | **3** | 🔴 **1 — 2025-26 only** | **1,227** ✅ *(see below — NOT a gap)* | **3,681** |
 | `nba_stats.player_game_starter_status` | **3** | 🔴 **1 — 2025-26 only** | 1,230 | **32,179** *(12,300 starters, **10.000/game**)* |
 
 🔑 ***This is the shape §T11.1b recorded for the injury backfill, in a second worker***: **a scrape
