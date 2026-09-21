@@ -8532,6 +8532,59 @@ with a completeness-check bug caught via the `002` GAME_ID prefix.
 **527 uncovered vs the twelve (88.6%)** · 524 vs all 30 — a **3-segment** self-authorship gap, the
 smallest of any transcript. T6 writes almost none of the documents; its tail is all content.*
 
+### T6.18 — PASS 2 (**command stratum, all 153 segments**) — **NEW MATERIAL · 0/3**
+*2026-09-21. Resolves the open thread §T6.17b left for this stratum.*
+
+#### 🔴 T6.18a — **THE "SILENT PARSE ERROR" IS A TRUTHINESS BUG — and it is the cleanest statement of the whole failure class**
+
+§T6.17b left open whether the bug was fixed or merely worked around. **Both, and the fix carries its
+own explanation.** `[LIVE-AUDIT]` **VERIFIED**, `nba/scrape_nba_game_officials.py` **lines 98–107**:
+
+```python
+for i, game_id in enumerate(game_ids):
+    rows, error = fetch_game(game_id, proxies)
+    # Real bug found and fixed (2026-09-03): a game with genuinely zero officials returns
+    # ([], "some_error_string") from fetch_game - checking "rows is not None" treats an
+    # empty list as success (since [] is not None), silently swallowing the error and
+    # dropping the game from output with zero record of it. Must check truthiness instead.
+    if rows:
+        all_rows.extend(rows)
+    else:
+        errors.append({"game_id": game_id, "error": error or "empty_rows"})
+```
+
+**`[] is not None` is `True`.** The original guard accepted an empty list as a successful fetch,
+**discarding the error string that came with it** — so a failed game produced no rows *and* no error
+entry. **Three games vanished from a 1,230-game run with nothing recording their absence.**
+
+⚠ **This is the fourth instance of the no-error-raised class this sweep has met, and the first with a
+named root cause in the code rather than in the endpoint.** The other three are endpoint behaviour —
+`boxscoretraditionalv2` serving HTTP 200 with zero rows (T5), `playercareerstats` returning an empty
+rowset (T4), and the aggregate-vs-per-item counting that let both pass. **This one is ours.**
+**A sentinel check (`is not None`) applied to a collection that can legitimately be empty is the same
+defect in miniature**, and it is the most portable lesson of the four: *test the collection, not the
+sentinel.*
+
+✅ **Handled properly, and worth crediting**: the fix went into the **main scraper** *and* a one-off
+`patch_missing_officials.py` recovered the three games, rather than re-running a 1,230-call job —
+**and the comment explaining why was left in the code**, which is why this entry can state the cause
+exactly rather than infer it. *(The recovery was ultimately partial: 1,227 of 1,230 games are loaded,
+so the three games remained genuinely unavailable even after the fix — the bug hid them, it did not
+cause them.)*
+
+#### ✅ Verified, already documented
+The four-site wiring for both new workers; `curl` against `raw.githubusercontent.com` used repeatedly
+to verify committed data; the diagnostic-before-scrape discipline applied twice more
+(`diagnostic_officials.py` before a ~1,230-call commitment); `nba-game-officials.yml` as another
+dedicated lean workflow; `ALTER TABLE … SET DEFAULT` on `source_key` mid-load; and
+`pg_available_extensions` confirming no `http`/`dblink`/`plpython3u`. ✅
+
+⚠ **One artifact confirmed at source**: the workflow's `git add` list explicitly includes
+`nba/data/nba_officials_debug_raw.json` — **the committed artifact flagged in §T5.18a, here caught
+being added on purpose** to capture the raw field for the three failing games.
+
+---
+
 ### T6.17 — PASS 1 (**reasoning stratum, read to the end**) — **NEW MATERIAL · 0/3**
 *2026-09-21. No owner turns in the tail.*
 
