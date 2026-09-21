@@ -12784,6 +12784,60 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.23 — PASS 2 (**reasoning / results stratum, tail-first**) — **🔑 1 NEW FINDING · 0/3**
+*2026-09-21. The 542-segment tail read lowest-coverage first. **First, its shape**, because it tells
+later passes where not to spend time:*
+
+| Segment shape | Count | |
+|---|---|---|
+| Command output, returncodes, tracebacks, tool-arg blocks | **~200** | **mechanism (0)** — content that can never prose-match |
+| `command:` / `new str:` / `old str:` patch bodies | **103** | mechanism (0) |
+| Web-page navigation chrome | **18** | mechanism (0) — see below |
+| Prose and structured results | **~220** | the only stratum that can carry findings |
+
+**The Underdog fetches are mechanism (0), checked rather than assumed.** Segments 12–16 look like
+app-rules material — *"pick'em scoring — NBA"*, *"settlement & disputes"* — but the captured text is
+**site navigation: menu links, collection URLs and image CDN paths, with no rules content in it.**
+The *substance* of that fetch is already recorded: `NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 13
+names the **Underdog / Sleeper scoring pages** as sources and line 50 carries what was learned from
+them (*"PrizePicks/Underdog include OT in full-game"*). **Nothing to extract.**
+
+#### 🔑 T8.23a — **The derived spread's formula and fit are recorded; its LEAKAGE GUARD is not**
+
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` line 82 records the component and its quality:
+> *"Derived static spread = pre-game rolling net rating (shrunk k=10) + HCA (fit 1.98) + 0.5 × rest
+> diff: **r = 0.44 train / 0.46 test vs final margin, MAE 11.5** — market-grade with zero market
+> data."*
+
+**What no document records is how "pre-game" is enforced.** T8 states it and implements it:
+
+> *"pre-game rolling net rating: mean net rating over the team's previous n games this season, **with
+> a season-start prior of 0 (league average). Strictly games before the current one.**"*
+
+```python
+teams_adv = teams_adv.sort_values(["season","team_id","game_date"])
+teams_adv["pre_net"]  = teams_adv.groupby(["season","team_id"])["net_rating"] \
+                                 .transform(lambda s: s.shift(1).expanding().mean())   # ← the guard
+teams_adv["pre_n"]    = teams_adv.groupby(["season","team_id"]).cumcount()
+k = 10
+teams_adv["pre_net_shrunk"] = teams_adv["pre_net"].fillna(0) * pre_n / (pre_n + k)
+```
+
+**Three separate guards in four lines**: `.shift(1)` excludes the current game; `.expanding()` uses
+only what precedes it; the `pre_n / (pre_n + k)` shrink with `fillna(0)` makes game 1 of a season the
+league average rather than an undefined or a leaked value. **Rest days are built the same way**, from
+`game_date.shift(1)` within team-season.
+
+⚠ **Why this matters enough to record**: the whole backtest's validity rests on as-of correctness,
+and **a component documented only as "pre-game rolling net rating, r = 0.46" is one reimplementation
+away from leaking** — `.expanding().mean()` without the `.shift(1)` includes the game being
+predicted, and would *improve* the reported r while invalidating the result. **The number that would
+look like success is the symptom.** *Novelty verified against the pre-edit thirty (`/tmp/t8base`):
+`pre_net`, `season-start prior` and `strictly games before` return **zero hits**; `derived spread`
+returns eleven files, none of them stating the construction.* → `NBA_BASELINE_METHODOLOGY.md`.
+
+---
+
 ### T8.22 — PASS 1 (**owner stratum**) — **✅ CLEAN 1/3 · all three directives already recorded**
 *2026-09-21. **T8 has only three owner turns.** Each was tested by substance across all thirty
 documents **before** any claim was written — the rule T7 cost thirteen defects to learn.*
