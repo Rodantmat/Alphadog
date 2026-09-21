@@ -14423,6 +14423,59 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.10 — PASS 9 (**live numeric re-verification**) — **✅ CLEAN 1/3 · every figure exact, three arithmetic routes agree, and the `-05:00` sample becomes a census**
+*2026-09-21. `[LIVE-AUDIT]`. First of the closing three. Rules 17, 18, 22 and 23 on every figure.*
+
+#### ✅ T11.10a — **The contamination arithmetic, derived three independent ways**
+
+§T11.9b's **7,762** was a sum. It is now derived without summing:
+
+| route | value |
+|---|---|
+| **Direct** — `count(*) WHERE market_key NOT IN (nba set)` over the whole table | **7,762** |
+| **By app** — Underdog 5,092 + Fliff 1,394 + Sleeper 1,276 | **7,762** |
+| **By label** — all `routine` rows **7,951**, minus Underdog's **189** NBA rows | **7,762** |
+
+✅ **Three routes, one number.** *And `routine` totals **7,951 = 5,281 + 1,394 + 1,276** ✅.*
+
+#### ✅ T11.10b — **The market surface, re-derived**
+
+`board_snapshots` **27,067,871** · `board_outcomes` **6,905,452** with **`bookmaker` populated on 0
+and `snapshot_label` on 0** · `game_lines_closing` **12,165** · `game_lines_snapshots` **307,604** ·
+`rung_market` **1,057,765** · `board_tiers` **2,199,354** = `board_tiers_v2` **2,199,354** =
+**PrizePicks' board rows** *(a three-way identity)* · `board_backfill_log` **5,124**.
+
+🔑 **And a partition that closes exactly, found in the re-derivation**: **`schedule_norm` holds 2,460
+rows — `1,230 × 2`, two complete seasons, 2024-10-22 → 2026-04-12** — while **`event_game_map` holds
+2,454**, ***six games short***, confirmed by the anti-join (`6` schedule rows with no mapping) and by
+`count(DISTINCT game_id) = 2,454`.
+📌 **Recorded as observed; why six are unmapped is NOT RECORDED** (rule 6).
+
+#### ✅ T11.10c — **The injury figures, and the `-05:00` sample becomes a census**
+
+**Indexes**: 2025-26 **176 days / 919,949 rows / 7 shards**; 2024-25 **174 / 418,071 / 7**; the
+2025-26 October shard **19,880 rows, earliest snapshot `2025-10-20`** ✅ — the pre-22-December range
+is present.
+
+🔑 **The offset census re-run over EVERY row rather than a 4,000-row sample: 1,338,020 timestamps
+across all 14 shards, and `-05:00` on 1,338,020 of them — no other offset exists.**
+✅ **And the two figures verify each other: 919,949 + 418,071 = 1,338,020, exactly the number of
+timestamps scanned.** ***§T11.4c was a sample; it is now a census, and it is unanimous.***
+
+#### 📌 T11.10d — **One predicate sharpened (rule 16)**
+
+**The two index families have different shapes**: the **matchups** indexes nest their figures under a
+**`meta`** block; the **injury** indexes are **flat** — `days_done`, `rows`, `shards`, `updated_at` at
+the top level. *§T11.4b presented the injury figures as though they came from a `meta` block, by
+analogy with the matchups ones. The figures are unchanged; the shape was wrong.*
+⚠ **It is §T11.7b's loose-pattern lesson in a third form**: ***a structure inferred by analogy is not
+a structure read.***
+
+**Pass outcome: every figure exact, three arithmetic routes agreeing, one sample upgraded to a
+census, one new exact partition, one predicate sharpened. ✅ CLEAN 1/3 · 10 passes.**
+
+---
+
 ### T11.9 — PASS 8 (**sport-filter audit**) — **✅ the contamination is 0.029% of rows and confined to the live capture · 🔴 and no `nba_market` table can tell you the sport · 0/3**
 *2026-09-21. `[LIVE-AUDIT]`. The angle §T11.8b forced: four passes counted this table without
 filtering `market_key`, so the question is **how far that goes** — and the answer bounds §T11.8a's
