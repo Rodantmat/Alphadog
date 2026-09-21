@@ -209,6 +209,24 @@ system's own authority, not the id prefix)*:
 | `nba_stats.game_officials` | **3** | 🔴 **1 — 2025-26 only** | **1,227** ✅ *(see below — NOT a gap)* | **3,681** |
 | `nba_stats.player_game_starter_status` | **3** | 🔴 **1 — 2025-26 only** | 1,230 | **32,179** *(12,300 starters, **10.000/game**)* |
 
+❌ **CORRECTED 2026-09-21 by §T11.32a, one pass later — the "1,227 of 1,230, three short" above
+implied a gap and there is none.** `nba_game_officials_2025_26_meta.json` records
+**`games_covered: 1227`, `row_count: 3681`** — ***which Postgres matches TO THE ROW*** — plus
+`known_empty_games: [0022500259, 0022500260, 0022500261]`, a `patch_applied` block showing all three
+retried with **`games_recovered: 0`** and `zero_officials_parsed_v3`, and the note
+*"`bug_fixed`: main loop checked `'rows is not None'` instead of truthiness."* **All of it is already
+in FIVE of the twelve** — §T6.19a resolves the three to **2025-11-19 (WAS @ MIN, DEN @ NOP,
+SAC @ OKC), all Final, 9 games that night and 6 with officials**, and states *"this is not scraper
+attrition — they still failed after the bug was fixed."* ***Rule 14: a discrepancy you are about to
+record may already be on file.***
+
+✅ **AND THE CORRECTION STRENGTHENS WHAT REMAINS.** ***Because 2025-26's load matches its JSON exactly,
+the loader demonstrably WORKS*** — so the finding is not *"loads are unreliable"* but the sharper
+***the loader has simply never been run for 2024-25 or 2023-24***, whose rows sit in the repo.
+📌 **And `scrape_nba_game_officials.py` writes JSON only** — no `INSERT`, no `psycopg`, no
+`DATABASE_URL` — **so scrape and load are two workers by design**, which is why a complete scrape says
+nothing about the table.
+
 🔑 ***This is the shape §T11.1b recorded for the injury backfill, in a second worker***: **a scrape
 that reports complete success while the database receives none of it.** *There it was a parser bug
 (`pdfplumber` on the runner) and the rows were never produced; here the rows EXIST, in the repo, and
