@@ -9661,6 +9661,86 @@ season/prefix breakdown exactly ✅.
 
 ---
 
+### T7.42 — PASS 13 (**two-direction judgment, second run**) — **🔴 1 DEFECT — MINE, AND IT BREAKS THE RULE I WROTE ONE PASS EARLIER · 1/3 → 0/3**
+*2026-09-21. 1,081 segments re-scored against the twelve as they stand after passes 8–12. Coverage
+moved: **uncovered vs twelve 944 → 932**, high band (≥0.45) **113 segments**, tail-direction 32.*
+
+#### 🔴 T7.42a — **§T7.40a's "🔴 NEW" was not new. T2 pass 18 recorded it yesterday, in this same file.**
+
+A high-band segment returned T7's own words:
+
+> *"confirmed — **2025-26 is fully complete 1400/1400**, and **2026-27 hasn't started yet 0/1266**,
+> begins oct 3, 2026."*
+
+Which sent me to check what the documents already hold. **They hold all of it:**
+
+| Already recorded | Where |
+|---|---|
+| The full per-prefix table, **2026-27 = 66 + 1,200 = 1,266** | **`NBA_MASTER_SUMMARY.md` §T2.18** — T2 pass 18, **2026-09-21**, this file |
+| *"2026-27 is **1,200 vs 1,230** and has zero playoff / All-Star / Cup-knockout rows"* | **§T2.18, verbatim** |
+| 2026-27 schedule = 1,266 games | `NBA_COMPASS.md` line 65; `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` line 104 |
+| The 2,666 total | ~20 places across the documents |
+
+**So §T7.40a re-announced, as a 🔴 new live finding, a finding recorded one day earlier by this same
+sweep in the file I was editing.** Severity downgraded there.
+
+**What IS genuinely new, and it is narrower**: the **per-team decomposition** — **all thirty teams
+sit at exactly 80 games; none has 81 or 82.** §T2.18 established the 30-game total shortfall; this
+establishes that it is **uniform, two per team**, which rules out the otherwise natural reading that
+a handful of teams are missing games. That distinction is worth keeping. **The headline framing was
+not.**
+
+⚠⚠ **And note when this happened.** I wrote the **novelty rule** — *"before labelling a live-audit
+result NEW, grep the twelve documents for the object's own name"* — at §T7.39c, **as pass 10's
+correction**. I then broke it at **pass 11**, the very next pass, on a number (`1,200`) that a single
+grep would have found in four places. **Writing the rule is not running the rule.** Recorded at the
+standing rules as the first repeat offence after codification, because a rule that fails on its own
+next pass needs the evidence attached to it.
+
+*(One thing the segment does NOT establish, checked before claiming it: **T7 is not the origin of the
+2026-10-03 error.** `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` line 104 already says *"season
+starts 2026-10-03"* — **five days before T7**. The belief predates this transcript; where it started
+is for an earlier one.)*
+
+#### ✅ T7.42b — **Direction 1 verification that PASSED: the alpha correction landed, and design and config agree exactly**
+
+T7 said: *"now the methodology doc still says a single alpha=0.2 — that's now wrong and must be
+corrected **so the design and the config table agree**."* **Both halves verified today:**
+
+`NBA_BASELINE_METHODOLOGY.md` line 25 now reads *"**Per-stat decay rates, not one alpha** (revised
+2026-09-08…)"* ✅ — and every value it names matches `nba_config.stat_decay_config` live:
+
+| Design says | Live `ewma_alpha` | |
+|---|---|---|
+| 3PT% ≈ 0.03 | `fg3_pct` **0.03** | ✅ |
+| rebounding ≈ 0.08 | `reb_rate` **0.08** | ✅ |
+| usage / assist rate ≈ 0.15 | `usg_pct` **0.15**, `ast_rate` **0.15** | ✅ |
+| minutes ≈ 0.20 | `minutes` **0.20** | ✅ |
+| *"3PT% needs far more games to trust than rebounding"* | `shrinkage_stabilization_games` **300 vs 40** | ✅ |
+
+**A promise made in-transcript, kept in the document, and still true against the live table thirteen
+days later.** Recorded because this sweep's negative findings are only worth their weight if the
+positive ones are recorded at the same standard.
+
+#### ⚠ T7.42c — **One gap the same check exposes: the fast EWMA has no config row**
+
+`NBA_BASELINE_METHODOLOGY.md` line 48 specifies *"a second, faster EWMA (e.g. `alpha` ≈0.5, ~3-game
+lookback) alongside the primary one."* **`stat_decay_config` has 13 rows and none of them is that.**
+The table's own rule, stated in the same document, is that the values *"live in
+`nba_config.stat_decay_config` … **never hardcoded**, and the pipeline must read them from there."*
+**For the fast alpha there is nothing to read.** Severity ⚠ rather than 🔴 only because **nothing
+reads the table at all** (§2 banner). → `NBA_OPEN_ITEMS.md`.
+
+#### ✅ T7.42d — **Direction 2: all 32 tail-direction segments are false tail by mechanism (3), self-authorship**
+
+**31 of 32** match `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` at **0.65–1.00**, and the
+32nd matches `NBA_BASELINE_METHODOLOGY.md` at 0.81. **T7's payload IS those files' content** — the
+transcript carries the `put_file` and `str_replace` calls that wrote them, so the segments are the
+documents, arriving in the transcript. **The already-documented mechanism (3), exactly.** No
+extraction defect; **0 real findings in direction 2.**
+
+---
+
 ### T7.41 — PASS 12 (**referential integrity**) — **✅ CLEAN 1/3 · 4 joins, 0 orphans · 2 precision refinements**
 *2026-09-21. Angle: do T7's config tables actually join what they claim to? This is the technique
 that produced the headline on T4, T5 and T6.*
