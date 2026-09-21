@@ -194,6 +194,9 @@ deployment question is precisely the class this sweep is read-only about.*
 **every figure confirmed live** in `nba_config.classification_config` key
 `market_probe_results_2026_09_10`.*
 
+*(The `c1`/`c2` owner decision recorded in the section above — "decide on BigDataBall" — is the
+segment-113 state; §T11.29a is the segment-355 state and supersedes it inside T11.)*
+
 ⚠⚠ **READ THIS BEFORE THE MATRIX BELOW.** **The matrix and the blocked-items list are segments 112–113
 — 12% of the way into T11. This is segment 355, and segment 536 is later still. A transcript's state
 on a subject is its LAST word, not its first** *(rule 27)*.
