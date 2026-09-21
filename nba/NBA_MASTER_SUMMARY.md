@@ -1555,6 +1555,40 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T3.4 — PASS 4 (angle: **the differential worker and the DARKO iterations, read as source**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+**Four findings, one of which corrects an entry this sweep wrote two passes ago.**
+
+1. ⚠ **CORRECTION to T3.2.** Pass 2 recorded the debug artifact as `html1[:20000]`. **T3 removed
+   that cap mid-session** — *"full, untruncated html this time … so the next attempt has complete
+   ground truth instead of a partial guess."* **The 20k cap had truncated before the hydration
+   payload, which sits near the end of the body — the cap discarded precisely the evidence needed.**
+   A debug artifact that samples the wrong end of a document is worse than none, because it looks
+   like evidence. → `NBA_OPEN_ITEMS.md` FROM T3 PASS 2, corrected in place
+2. **`is_first_run` and `countByType` are returned by the differential worker, with a prose caveat
+   in the response body** — *"everything reports as a baseline, not a real change … real
+   differential detection starts from the second run."* **The safeguard travels with the data**
+   rather than living in documentation, which is what a later session reading a stored run record
+   actually needs. Neither field appears in the thirty documents. → FROM T3 PASS 4
+3. **The `undefined` binding bug in concrete form**: `["full_name", t.name, …]` where **the
+   committed teams JSON has no `name` field at all** — it carries `city` and `nickname` separately.
+   *Not a null value; a field that never existed.* Fixed by composing
+   `` `${t.city} ${t.nickname}`.trim() ``. → FROM T3 PASS 4
+4. **A functional pre-commit gate exists and was used once** — `py_compile` **plus** running the
+   real extraction against a captured HTML fixture and asserting on Jokić's ID `203999`, before the
+   commit that auto-deploys. **§0.25 records the standing gate as syntax-only, and that remains true
+   for every other worker.** The fixture came free from the scraper's own committed debug artifact.
+   → `NBA_WORKERS.md` §0.25, extended
+
+**Ratio for this pass**: 9 candidates checked, 4 findings — **44% hit rate on 18 segments**, against
+8% on the output stratum. *The command stratum's duplication makes candidates sparse but distinctive;
+the output stratum's prose generates many candidates that are already covered. Both rates reported
+per the standing instruction.*
+
+**Clean count 0/3.** **Tail still not exhausted**: ~130 of 240 command segments and all 137 result
+segments remain.
+
 ### T3.3 — PASS 3 (angle: **the command stratum continued — worker bodies read as source**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
