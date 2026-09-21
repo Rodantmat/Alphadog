@@ -14,7 +14,7 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 | | |
 |---|---|
-| **Current transcript** | ▶ **T8** — `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt` · **CLEAN 1/3 · 1 pass · owner stratum read.** *(T7 CLOSED 2026-09-21 at 36 passes; its state is kept below for the record.)* |
+| **Current transcript** | ▶ **T8** — `2026-09-09-20-48-33-nba-classification-baseline-backtest-calibration.txt` · **CLEAN 0/3 · 2 passes · owner + tail strata read.** *(T7 CLOSED 2026-09-21 at 36 passes; its state is kept below for the record.)* |
 | **⚠ T8 is NOT a fresh transcript** | **§T8.1–§T8.21 already exist**, written before the chronological-order reset, reaching **CLEAN 3/3 at 15 passes**. **The reset voided the clean count, not the content** — the same position T4/T5/T6 were in, which closed in 9–10 re-sweep passes each. |
 | **T8 corpus** | **615 segments** — 539 assistant, **only 3 owner**. **542 uncovered vs the twelve (88.1%)**, 516 vs all thirty. Tail: `scratchpad/t8/t8_tail.json`; script: `scratchpad/t8/tail8.py`. |
 | **T8 novelty baseline** | ✅ **Commit `700a999b`**, extracted to **`/tmp/t8base/nba/`** (32 files). **Grep that tree, never the working tree** — it is the snapshot taken before the first T8 write. |
