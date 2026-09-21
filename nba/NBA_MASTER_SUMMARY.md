@@ -239,8 +239,10 @@ the three-clean-pass cycle per transcript against the full set.
 | 16 | `2026-09-19-18-20-09-nba-enrichment-blowout-matchup-2026-09-13.txt` | pending |
 | 17 | `2026-09-20-04-58-11-nba-confidence-calibration-final-engine-2026-09-19.txt` | pending — **0/3, not started** *(added to the ledger 2026-09-20)* |
 | 18 | `2026-09-20-06-12-04-nba-pipelines-confidence-board-tiers-2026-09-19.txt` | pending — **0/3, not started** *(added 2026-09-20)* |
-| 19 | `2026-09-20-18-46-12-nba-alphadog-documentation-pass.txt` | pending — **0/3, not started.** ⚠ *transcript of the documentation effort itself* *(added 2026-09-20)* |
-| 20 | `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt` | pending — **0/3, not started.** ⚠ *transcript of the documentation effort itself* *(added 2026-09-20)* |
+| 19 | `2026-09-20-18-46-12-nba-alphadog-documentation-pass.txt` | pending — **0/3, not started.** ⚠ *transcript of the documentation effort itself — IN SCOPE, swept last.* **Its tail will be dominated by self-authorship (false-tail mechanism 3): its `github_put_file` payloads ARE these documents, so they match at ~1.00 against files the scorer does not read. Do not read its uncovered % as undocumented material.** *(added 2026-09-20; scope + caveat 2026-09-21)* |
+| 20 | `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt` | pending — **0/3, not started.** ⚠ *transcript of the documentation effort itself — IN SCOPE, swept last.* **Same self-authorship caveat as T19.** These two carry what exists nowhere else: the pass rule as defined, the DRIFT NOTICE and its cause, the chronological-ordering change and its reasoning, and the coverage tool's design, backtest and false-tail measurements. *(added 2026-09-20; scope + caveat 2026-09-21)* |
+
+*Corpus note, 2026-09-21: `nba/transcripts/` holds **21 `.txt` files — 20 transcripts plus `journal.txt`**, which is not a transcript and is not scored. The sweep is T1–T20.*
 
 *The row that stood here — "| — | live chat 2026-09-19/20 (not yet a transcript file) | pending |" —
 is superseded: those sessions are now **T17 and T18**.*
