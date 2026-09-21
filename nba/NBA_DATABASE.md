@@ -554,7 +554,9 @@ Built after the data-universe research — **9 cheap bulk calls, 3 seasons:**
 **Skipped deliberately**: Opponent / Defense / Misc measure types — *"single-game descriptive, not
 baseline talent."*
 
-### `nba_config.classification_config``config_key` · `config_json` JSONB · `notes` · `updated_at`. The system's decision record — every major
+### `nba_config.classification_config` — **66 rows**
+
+`config_key` · `config_json` JSONB · `notes` · `updated_at`. The system's decision record — every major
 verdict is written here so it is queryable rather than trapped in a log. Keys include
 `prizepicks_goblin_demon_tier_spec`, `board_payout_conversion_rules`, `rejected_on_data`,
 `blowout_model_market_spread_2026_09_13`, `availability_model_n1v3_2026_09_15`,
