@@ -12800,6 +12800,34 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.32 — PASS 11 (**novelty audit**) — **⚠ a TERMINOLOGY COLLISION I created · 0/3**
+*2026-09-21. Grepped against `/tmp/t8base/nba/` (`700a999b`), most confident claims first.*
+
+**✅ Everything passes 7–10 added is new**: `Tier A 6`, `6 of 13`, `role-banded`, `1,218` —
+**zero pre-edit hits, all thirty.** *Two near-misses checked and cleared: `0 of 15` appears pre-edit
+about **coverage scoring at pass 63**, unrelated; `band family` appears pre-edit — see below.*
+
+#### ⚠ T8.32a — **"band family" now means two different things in these documents, and I wrote both**
+
+| Sense | Object | Where |
+|---|---|---|
+| **A factor's FORM** — *"the band family is split in two"* | `factor_registry.form` ∈ {`tiered_bands`, `quantile_bands`, `continuous`, `binary_gate`} | §T7.50c, `NBA_DATABASE.md` (T7 pass 21) |
+| **A variation band's KEY family** — *"the two band families"* | `variation_bands.band_key` ∈ {`LOW·MID·HIGH·ELITE`} vs {`FRINGE·ROLE·STARTER·STAR·SUPERSTAR`} | §T7.45a, §T8.28b (T7 pass 16, T8 pass 7) |
+
+**Two unrelated objects, one phrase, both written by this sweep four days apart.** A reader meeting
+*"the band family is split in two"* and then *"the two band families serve different props"* would
+reasonably take them for the same statement. **Disambiguated in both places**: the first now says
+*"the `band` **FORM** is split in two"* and names the column, with an explicit pointer that it is not
+the `variation_bands` families.
+
+⚠ **This is the tenth rule in a form it had not taken yet.** That rule says a correction must reach
+every **copy of a claim**; this is the inverse — **two different claims that collided on a phrase**,
+neither of them wrong. *Grepping the claim's wording finds both failures; grepping for the object
+finds neither.* **So the check is: before reusing a distinctive phrase, grep it and see what it
+already denotes.**
+
+---
+
 ### T8.31 — PASS 10 (**live numeric re-verification**) — **✅ CLEAN 1/3 · 17 of 17 exact, every partition summed**
 *2026-09-21. Every figure §T8.25–§T8.30 states, re-derived from its authority, with the sums checked
 per rule 11 rather than assumed.*
