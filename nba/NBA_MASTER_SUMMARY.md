@@ -7727,7 +7727,60 @@ methodology. **Coverage at start**: 438 segments · **375 uncovered vs the twelv
 all 30 — **only a 9-segment self-authorship gap**, so unlike T4 this transcript barely writes the
 documents; its tail is genuine content, not its own payloads.*
 
-### T5.21 — PASS 6 (**wiring: is everything T5 built registered, bound and runnable?**) — **✅ CLEAN 2/3**
+### T5.22 — PASS 7 (**the mid-band 0.40–0.45 seam**) — **🔴 NEW MATERIAL · COUNTER RESET 0/3**
+*2026-09-21. 18 segments in the seam neither the tail read nor the judgment band inspects.*
+
+#### 🔴 T5.22a — **THERE ARE EIGHTEEN `status` VALUES ACROSS THE NBA FLEET, IN TWO GENERATIONS**
+
+A seam segment showed a worker returning `status: error ? "failed" : "completed"` — **a fourth
+vocabulary**, where §T4.21b had recorded three. **Rather than add a fourth partial count, I applied
+the standing rule and enumerated the population from an authority** (a full scan of every
+`alphadog-v2-nba-*.js`). `[LIVE-AUDIT]`:
+
+| `status` value | Workers | Generation |
+|---|---|---|
+| `completed` | **17** | shared |
+| `failed_no_data` | 7 | shared |
+| `completed_with_warning` | 7 | shared |
+| `completed_with_errors` | 6 | shared |
+| `failed` | 4 | shared |
+| `completed_with_certification_warning` | 3 | shared |
+| `completed_nba_static_{team,player,official,arena}_dictionary_seed` | 1 each | **bespoke** |
+| `nba_static_{team,player,official,arena}_dictionary_exception` | 1 each | **bespoke** |
+| `failed_nba_static_team_dictionary_certification` | 1 | **bespoke** |
+| `failed_nba_static_player_dictionary_no_fallback_available` | 1 | **bespoke** |
+| `failed_nba_static_{official,arena}_dictionary_no_data` | 1 each | **bespoke** |
+| **18 distinct values** | | |
+
+**The split is generational, and it is clean.** The **four original static workers** — teams,
+players, arenas, officials — each carry **four bespoke strings with the entity name baked in**
+(`completed_nba_static_arena_dictionary_seed`). **Every worker built afterwards** uses the shared
+generic set. **That is why the `completed_with_*` counts all top out around 7: they only exist in the
+second generation.**
+
+⚠ **The consequence, stated with §0.39 beside it.** A caller cannot switch on `ok` — it means
+*certified*, not *succeeded*. And it cannot switch on `status` either — **18 values, 12 of them
+unique to a single worker, and the two generations do not share a success token** (`completed` vs
+`completed_nba_static_arena_dictionary_seed`). **There is no fleet-wide programmatic success signal.**
+A monitor must special-case the four oldest workers or match on prefixes.
+
+**Not urgent before 2026-10-23** — nothing consumes these strings today, which is itself the reason
+the divergence went unnoticed. **Recorded because any future health check or alerting layer meets
+this first.** → `NBA_OPEN_ITEMS.md`.
+
+#### ✅ T5.22b — the 799-bug's lesson, applied in the very next run
+> *"all 1,230 games succeeded, zero errors, 32,179 rows — **exactly the expected magnitude (26
+> players/game average)**. Let's verify this count is real by fetching and counting programmatically,
+> **not just trusting the meta this time**."*
+
+**The corrected behaviour is visible in the transcript**: an explicit magnitude expectation, and
+verification against the data rather than the meta file. ✅ **This is the per-item/magnitude check
+that §T4.22a found missing from the career-totals scraper** — invented here, applied here, and never
+retrofitted.
+
+---
+
+### T5.21 — PASS 6 (**wiring: is everything T5 built registered, bound and runnable?**) — **✅ CLEAN 2/3 *(superseded — pass 7 reset)***
 *2026-09-21.*
 
 | Element | Result |
