@@ -14430,6 +14430,55 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.49 — PASS 48 (**novelty audit of passes 41–47, and the REGISTER's own novelty**) — **❌ two more duplicates · ✅ the register is an ADDITION to the twelve, and the prediction that said so landed · 0/3**
+*2026-09-21.*
+
+#### ✅ T11.49a — **Six of eight ordinary novelty probes hold at 0 of thirty**
+**`is_composite`** · **`nba_market.prop_universe`** · **the stratum partition figures** · **T1-vs-T11
+thinking sizes** · **104 base tables** · **the `regular`/`no-boxscore` phase vocabulary** — *each
+positive-controlled, every hit opened.* ⚠ **The ten composites as a set returns 3 of the twelve and
+they are `prop_family`/`build_tier` partitions, NOT `is_composite`'s ten** — *opened, the sets differ
+(6 vs 10), so the column stays novel.*
+
+#### ❌ T11.49b — **§T11.45c's `team_game_log` completion was already in three of the twelve**
+Pass 44 "completed" the game-keyed class by checking `nba_team.team_game_log` — **7,380 rows, three
+seasons.** 🔴 **That figure is in SIX of thirty and THREE of the twelve**: the 09-04 checkpoint
+*("`team_game_log` / `_advanced` — 7,380 / 7,380 … 3 seasons")*, `NBA_PROJECT_LOG.md` *("Team game
+logs: 7,380 rows (3 seasons × 2,460)")* and `NBA_MASTER_SUMMARY.md` *("7,380 team-game rows, 4,920
+without a calendar row")*. ✅ **The class completion stands** — *the bound over ten tables is still the
+pass's own* — **but the figure was re-derived, not discovered, and the entry did not say so.**
+**Rule 14. The FIFTH duplicate this sweep has caught.**
+
+#### ❌ T11.49c — **§T11.38c's calendar decomposition is four-sixths already on file — and the `006` finding is STRONGER for it**
+🔴 **The 09-04 checkpoint carries the prefix vocabulary with my exact counts**: *"`001`=preseason
+**(71)**, `003`=all-star **(7)**, `004`=playoffs **(85)**, `005`=play-in **(6)**"* — **four of the
+six terms, months before §T11.38c presented the decomposition as new.** ✅ **But the checkpoint
+STOPS AT `005` too.** 🔑🔑 ***So the `006` Cup final is omitted by BOTH the code comment in
+`alphadog-v2-nba-daily-delta.js` AND the documentation, written independently and months apart*** —
+***which makes it a consistent gap in the system's own account of its game-id vocabulary rather than
+one author's oversight.*** **The finding is narrowed in provenance and strengthened in substance.**
+
+#### 🔑 T11.49d — **The register's own novelty: the prediction landed, and §0z earns its place**
+**Pre-registered**: *"most class SIZES will be absent, because a document that enumerates MEMBERS
+rarely states the COUNT — and if so the register is an addition to the twelve, not a restatement."*
+
+| present in the documents | absent from all thirty |
+|---|---|
+| **14 schemas** *(4 of the twelve)* · **6 empty schemas** *(3)* · **21 writers** *(6)* | **104 base tables** · **22 `data_quality` tables** · **6/7 `phase` tables** · **10 game-keyed tables** · **18 `prop_taxonomy` columns** · **33 scrapers** · **32 `.md` files** |
+
+✅ **Seven of ten valid probes absent.** ⚠ **Two hits opened and dismissed**: *"`nba_market` 25"* is
+**`variation_bands` (25 rows)**, and *"32 files"* is **32 `nba-*.yml` WORKFLOW files**, not documents.
+⚠ **Rule 22 fired a FOURTH time** — the `side`-carrier probe **failed its positive control and was
+discarded rather than reported.** 🔑 ***And the three sizes that ARE stated were each a sweep finding
+in their own right*** — **so the pattern is exact: the documents state a count when the count was the
+discovery, and enumerate members silently otherwise.** ***The class register is an addition to the
+twelve.***
+
+**Pass outcome: ❌ two duplicates, one of which strengthens the finding it touches.
+CLEAN 0/3 · 49 passes.**
+
+---
+
 ### T11.48 — PASS 47 (**live numeric re-verification of passes 41–46, and the CLASS REGISTER used as an instrument**) — **❌ the register's own `phase` row was wrong one pass after it was built · 0/3**
 *2026-09-21. **"A register whose rows are not re-derivable is worse than none" — the next-step row's
 own warning, and it landed on the register itself.***
