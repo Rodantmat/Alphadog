@@ -1555,6 +1555,41 @@ that correction applied, per the rule that a superseded claim is recorded, not e
 
 ---
 
+### T2.2 — PASS 2 (angle: **the COMMANDS RUN stratum — 294 segments of tool_use, read as source**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+**Six findings; two VERIFIED on live `main`, four from T2's own source.**
+
+1. **Certification is a hardcoded row-count threshold** — `const certified = seasonWritten >= 400;`
+   (player-bio line 86, verified today). The flag every caller reads to decide whether a run
+   succeeded is a magic number. **The teams worker certifies on `=== 30`, an exact count with a real
+   invariant; player-bio uses an inequality against a round number.** → `NBA_WORKERS.md` §0.31
+2. **The five static writers are copies of one worker**, `fetchFromGithub()` duplicated verbatim in
+   each, differing only in a **self-identifying User-Agent** (`Alphadog-NBA-StaticPlayerBio`,
+   verified line 20). Seven UAs total. Good: GitHub traffic is attributable per worker without
+   logging. Bad: **no shared module**, so a GitHub-read fix must be made seven times.
+   **And the copied route surface means §0.28's no-auth finding holds for all seven.**
+   → `NBA_WORKERS.md` §0.32
+3. **Gemini's tier 1–4 factor list**, recorded **with T2's own epistemic flag** — *"not a result from
+   this system's own backtests … a starting hypothesis for prioritization, nothing more."* It sits
+   in `NBA_ENRICHMENT_FACTORS_RESEARCH.md` and in none of the twelve. → `NBA_OPEN_ITEMS.md` FROM T2 PASS 2
+4. **The officials parser was written twice in one session**, and the rewrite is why the count is
+   **80** and not the **81** rows the Wikipedia page carries — the dedup key plus a name regex drop
+   one. *"80 officials" is partly a parser artifact.* → FROM T2 PASS 2
+5. **`result_set_rows(body, name)`** selects a stats.nba.com result set **by name**, where T1's
+   scrapers read `resultSets[0]` positionally. **Both styles coexist in the codebase**, and the
+   positional one is the same class of defect as the `TeamAbbreviation` and `teamInfoCommon` column
+   disappearances — a silent failure waiting for a reordering. → FROM T2 PASS 2
+6. **`splitName()` and the `Last, First` convention** — prefers `last_comma_first` when present,
+   falls back to whitespace splitting that is lossy for multi-word surnames. → FROM T2 PASS 2
+
+**Stratum composition, and why this pass was cheap.** 294 tool_use segments, and the great majority
+are the same `fetchFromGithub()` body repeated across seven workers plus `bash_tool` / `github_put_file`
+pairs of identical content — the duplication *is* finding 2. **12 candidates checked in one batched
+grep.**
+
+**Clean count 0/3** — pass 2 found new material.
+
 ### T2.1 — PASS 1 (**first pass on T2 under chronological order**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21. T2 = the 2026-09-03 phase-3a enrichment session. Tail at 0.40: **551 of 645 segments
 (85.4%)**. Strata: owner 1 · reasoning 37 · output 72 · commands 294 · results 147.*
