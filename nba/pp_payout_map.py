@@ -255,6 +255,26 @@ def main():
         return rec
 
     try:
+        if MODE == "delta":
+            # MONITORING: quote only legs never mined at this line, plus a rotating sample of already-mined legs
+            # re-quoted to catch PrizePicks repricing a leg whose line did not move. Research sections are skipped.
+            mined = already_mined()
+            partners = pick_distinct(std, 4)
+            new = [r for r in alt if (r["id"], r["line"]) not in mined]
+            before = [r for r in alt if (r["id"], r["line"]) in mined]
+            random.Random(int(time.time()) // 3600).shuffle(before)
+            drift = before[:N_DRIFT]
+            result["meta"].update({"mode": "delta", "baseline_pairs": len(mined), "new_legs": len(new),
+                                   "drift_sample": len(drift)})
+            print(f"DELTA|board_alt={len(alt)}|baseline={len(mined)}|new={len(new)}|drift={len(drift)}", flush=True)
+            for section, legs_ in (("LEG", new), ("DRIFT", drift)):
+                for r in legs_:
+                    p = next((x for x in partners if x["game"] != r["game"] and x["player"] != r["player"]), None)
+                    if p:
+                        run(section, [leg(p), leg(r)])
+            save("complete (delta)")
+            return 0
+
         # VALIDATE
         by_id = {r["id"]: r for r in rows}
         known = [by_id.get(k) or {"id": k, "name": k, "stat": "?", "line": 0, "odds": "?", "game": "?"} for k in KNOWN]
