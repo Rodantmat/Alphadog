@@ -34,10 +34,47 @@ THE LOOP
     2. python3 nba/tools/sweep_coverage.py tails --th 0.40  # per-transcript reading lists
     3. read each tail by stratum (owner -> reasoning -> output -> commands -> results),
        extract findings in bulk, write one consolidated entry per document
-    4. ONE JUDGMENT PASS per transcript, sampling the HIGH-similarity band - the
-       segments this tool calls covered - to check the documents actually got them
-       right.  This is the blind spot the score cannot see.
-    5. a transcript is done when its tail at 0.40 is exhausted AND step 4 is clean.
+    4. ONE JUDGMENT PASS per transcript, in TWO directions, because the score is
+       wrong in both:
+         (a) HIGH band (>= 0.45) - segments this tool calls covered.  Check the
+             documents got them RIGHT, not merely mentioned them.  On T1 this found
+             2 defects in 97 segments, both "mentioned but incomplete" - including a
+             live credential the documentation had quoted instead of referenced.
+         (b) THE TAIL - a measured fraction of it is ALREADY DOCUMENTED and flagged
+             uncovered anyway (see FALSE TAIL below).  So the tail question is not
+             only "is this new?" but "is this already written up in different words,
+             and is that write-up correct?"  A wrong cross-reference is caught here,
+             never in the high band.
+    5. A transcript is done when THE JUDGMENT PASS IS CLEAN.  Coverage decides what
+       to READ; it does not decide when you are finished.  Reading the whole tail is
+       necessary and not sufficient - see below for why the number cannot close it.
+
+FALSE TAIL - measured 2026-09-21, and it is why step 5 changed
+    The 15 GROUND_TRUTH findings were undocumented at pass 63 and were written up by
+    passes 64-87.  Scored against pass-63 documents vs CURRENT documents:
+        mean +0.182, median +0.094
+        10/15 crossed 0.40 - the metric CAN see documentation
+         5/15 stayed below 0.40 DESPITE being documented
+    So "uncovered" does not mean "undocumented".  On this sample a third of correctly
+    documented findings sit in the tail permanently.
+
+    WHAT SEPARATES THEM is not pointer-style writing - pointer phrases are only 2.8%
+    of document paragraphs.  It is QUOTATION vs PARAPHRASE.  The big movers are
+    findings the documents quoted verbatim (get/post invariant +0.548, no job_queue
+    +0.507, web_fetch closed loop +0.391).  The non-movers are findings the documents
+    named as a concept in their own words (self-identifying UA -0.004, honest failure
+    -0.005, WNBA contamination +0.041).  A pointer is just paraphrase taken to its
+    limit.
+
+    CONFOUND, stated rather than ignored: the document corpus grew 3,941 -> 5,453
+    paragraphs over the same period, and a larger corpus raises max-similarity for
+    every segment regardless of content.  Part of the +0.182 mean is that drift.  The
+    signal is the SPREAD, not the mean - corpus growth alone would lift all fifteen
+    roughly equally, and instead they range from -0.005 to +0.548.
+
+    CAVEAT: n=15, and these were chosen as distinctive strings, so they are not a
+    random sample of documented material.  "About a third" is the right strength of
+    claim; a precise false-tail rate is not supported by this sample.
 
 USAGE
     index     structural index of every block in every transcript
