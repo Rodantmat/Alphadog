@@ -311,6 +311,23 @@ made to fail loudly on a mismatch is a design choice this sweep does not make.*
 *Recorded 2026-09-21 (T9 pass 12, §T9.27b). `[LIVE-AUDIT]` — verified by SQL and by reading the
 workflows; **not a transcript finding**.*
 
+> 🔑 **WHICH DAY IS IN WHICH REGIME — resolved 2026-09-21 (T10 pass 25, §T10.25b).**
+> **`nba_score.baseline_ladder_runs` records `loaded_at` per as-of day**, and `LADDER_DEPTH` landed
+> **2026-09-19 23:58:44 UTC**:
+>
+> | as-of day | `loaded_at` (UTC) | props | vs `LADDER_DEPTH` | regime |
+> |---|---|---|---|---|
+> | **2026-03-15** | **2026-09-11 20:23:10** | **18** | before | **flat `BT_LADDER_STEPS`** |
+> | **2026-01-15** | **2026-09-19 22:35:04** | **22** | before, by **1h 23m** | **flat `BT_LADDER_STEPS`** |
+> | **2025-11-29** | **2026-09-20 03:23:26** | **22** | **after, by 3h 25m** | **per-prop `LADDER_DEPTH`** |
+>
+> ✅ **Exactly the "after two of three loads" already on file, now with the days named.** *The
+> `source_file` column also names each day's JSON (`nba_baseline_ladder_<asof>.json` plus
+> `nba_baseline_ladder_latest.json`), and the 2026-03-15 load is consistent with
+> `TRIGGER_NBA_BASELINE.txt`'s last commit of 2026-09-11 17:18 UTC.*
+> ⚠ **What is still NOT RECORDED is what BUILT the two later JSON files** — the table records the
+> **load**, not the build. *That half of the old note stands; the other half is closed.*
+
 **`ladder_depth(prop)` takes an env override before the measured table**, and the override is set on
 the path that built the rows now in Postgres:
 
