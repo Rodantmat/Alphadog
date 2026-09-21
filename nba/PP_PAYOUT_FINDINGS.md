@@ -693,6 +693,40 @@ anchor them; 87 without, excluded). NBA's v2 constants vs a fresh WNBA grid fit 
 league-specific. New stats fit the formula cleanly but are WNBA-only until an NBA board confirms them.
 **RULE: transfer only what both leagues agree on.** Never copy WNBA rebound/assist constants into NBA.
 
+### STANDARDS BACKTEST — exact slip level, and three attempts to break it (2026-09-21)
+**Design.** Standard legs only; **one leg per player per night** (the model's best prop and side); ranked by model value
+within the night and cut into consecutive slips; partial slips dropped. Verified all-standard Power payouts 3.0 / 6.0 /
+10.0× (5- and 6-pick 20 / 37.5× are published but unverified). Voids (push/DNP) revert the slip one size down; fewer than 2
+remaining → refund. Realized payouts use actual joint outcomes, so within-slip correlation is already in the result.
+| Threshold · picks | 2024-25 ROI ± SE | 2025-26 ROI ± SE | leg hit rate |
+|---|---|---|---|
+| 1.30 · 3-pick | +10.3% ± 5.0% | **+23.5% ± 4.6%** | 57.5% / 58.8% |
+| 1.40 · 3-pick | +17.6% ± 6.9% | **+32.1% ± 6.3%** | 58.6% / 60.2% |
+| 1.40 · 4-pick | +18.1% ± 10.9% | +28.1% ± 9.8% | 58.6% / 60.0% |
+| 1.40 · 2-pick | +2.3% ± 3.3% | +9.7% ± 2.9% | 58.6% / 60.1% |
+Consistent with independent legs at those hit rates (e.g. 6 × 0.586³ = 1.207).
+1. **Stale lines — ruled out.** 21–27% of picked legs had a standard line that moved during the day (the overnight model
+   mechanically prefers the stale side, and a line moves for a reason). Restricting to lines that never moved leaves hit
+   rates unchanged (57.6 / 58.6% at 1.30; 58.7 / 59.7% at 1.40).
+2. **Minutes leak — ruled out.** Ladder `proj_min` vs actual minutes (nba_stats.player_game_log), 2,174 player-games on 14
+   dates: MAE 5.46 min, r = 0.713, 10.9% within 1 minute — an honest pre-game projection, not actual minutes.
+3. **Night-clustered SE.** 3-pick @ 1.30, never-moved lines: **+16.7% ± 4.4%** over 324 nights / 4,212 slips (3.8 SE);
+   2024-25 +14.2% ± 6.4%, 2025-26 +18.7% ± 6.1%. Volatile: half the nights lose; some nights lose every slip.
+**Caveats that cannot be tested historically:** the ladder's player list is players who actually played (live picks will
+include some late scratches → voids and reversion); the model's design was developed looking at these seasons (factor
+gating RF_TRAIN 2024-25 / RF_TEST 2025-26), so results are an upper bound. **Live 2026-27 is the real test.**
+
+### WNBA SLIP RULES — identical to NBA (2026-09-21)
+`nba/load_pp_quotes.py` → `nba_market.pp_quote`: every quote, all sections, both leagues (runs after every map, self-
+healing). WNBA delta run: mined legs 337 → **587**.
+**All-standard bases identical:** 2-pick Power 3.0 / Flex 2.0, 0.5; 3-pick Power 6.0 / **Flex 3.0, 1.0** (3-pick Flex now
+verified in both leagues). **Flex tier rule — same pattern per band in both leagues** (share matching NBA's cut rule):
+<2.4× 100% / 100%; 2.4–8× 92.8% / 92.3%; 8–12× 44.6% / 43.1%; 12–19× 33.3% / 24.5% (NBA / WNBA). The Flex logic is
+league-independent → **pool NBA + WNBA 2-pick quotes to solve the tier rule** (above 8× it depends on more than the
+payout band). WNBA reaches 37–44× two-pick payouts with consolations 1.75 and 2.0 — beyond anything NBA showed.
+**Schedule:** no scheduled runs seen at 06:15 or 12:15 UTC; a map run appeared at 18:12 UTC on a commit not made here —
+identify its triggering event from its log before relying on the schedule.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
