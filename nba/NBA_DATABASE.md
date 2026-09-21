@@ -796,6 +796,9 @@ describes **successful** NBA players; those who washed out after 2–3 seasons a
 effects — a 2004 line is not comparable to 2024 without pace/3PT normalisation.
 
 ### Splits *(T4 research, T5 build)*
+> 🔴 **`nba_stats.player_career_season_totals` stores its own subtotals.** *(Added 2026-09-21, T4 re-sweep pass 4.)* `team_id = 'nba_0'` is **not a team** — it is the season total for a traded player, stored **beside** the per-team rows it sums. **`[LIVE-AUDIT]` VERIFIED**: 3,644 rows / **3,064 distinct player-seasons**; **282 have >1 row, all 282 carry an `nba_0` row, and in all 282 that row's `GP` equals the sum of the parts (0 mismatches)**. **Any aggregate over this table double-counts those 282 player-seasons** unless it filters `team_id <> 'nba_0'` (parts) or `= 'nba_0'` (totals, where present). **No `is_total` flag exists** — the discriminator is the magic value. → `NBA_OPEN_ITEMS.md`.
+> ⚠ **And one player is absent entirely**: `nba_1628467` (Maxi Kleber) has no rows. The scrape reported "582 players succeeded" because that figure is `len(players) - len(errors)`, i.e. attempted-minus-errored, not players with data. → `NBA_OPEN_ITEMS.md`.
+
 **⚠ `PRIMARY KEY (player_id, split_type, group_value)` — `season` is a column but NOT in the key.**
 **Live 2026-09-20: `nba_stats.player_splits` = 9,948 rows, 577 players, 2025-26 ONLY.** A second
 season's load would overwrite the first. `nba_team.team_splits` = 581 rows, 30/30, same PK shape.
