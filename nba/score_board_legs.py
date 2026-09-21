@@ -203,9 +203,13 @@ def main():
         print(f"  no availability delta applied ({str(exc)[:60]})", flush=True)
 
     # 4) AS-OF CALIBRATION - the latest cell published at or before today
-    ph = ("1_oct_nov" if datetime.fromisoformat(asof).month in (10, 11) else
-          "2_dec_asb" if datetime.fromisoformat(asof).month in (12, 1) else
-          "3_post_asb" if datetime.fromisoformat(asof).month in (2, 3) else "4_push")
+    # PHASE MUST MATCH THE FIT. build_asof_calibration.phase_of splits on Feb 15 and Mar 16. Until 2026-09-21 a
+    # month-only rule here applied the wrong phase's cells on Feb 1-14 (fit: 2_dec_asb) and Mar 16-31 (fit: 4_push).
+    _dd = datetime.fromisoformat(asof)
+    _m, _day = _dd.month, _dd.day
+    ph = ("1_oct_nov" if _m in (10, 11) else
+          "2_dec_asb" if _m in (12, 1) or (_m == 2 and _day < 15) else
+          "3_post_asb" if (_m == 2 and _day >= 15) or (_m == 3 and _day < 16) else "4_push")
     cal = pd.read_sql("""SELECT DISTINCT ON (prop, band, side) prop, band, side, log_odds_shift
                          FROM nba_score.ladder_calibration_asof
                          WHERE as_of_date <= %s AND phase = %s
