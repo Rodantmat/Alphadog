@@ -7699,6 +7699,41 @@ methodology. **Coverage at start**: 438 segments · **375 uncovered vs the twelv
 all 30 — **only a 9-segment self-authorship gap**, so unlike T4 this transcript barely writes the
 documents; its tail is genuine content, not its own payloads.*
 
+### T5.17 — PASS 2 (**command stratum, all 92 segments**) — **NEW MATERIAL · 0/3**
+*2026-09-21.*
+
+#### ⚠ T5.17a — **A WORKFLOW-GRANULARITY PRINCIPLE, STATED IN CODE AND NOWHERE IN THE DOCUMENTS**
+
+`.github/workflows/nba-starter-status.yml` explains its own existence in its header:
+> *"standalone, targeted workflow — **deliberately not added as another step in `nba-backfill.yml`,
+> which would force re-running all its earlier steps** (career totals…)"*
+
+**A real design principle**: in a workflow whose steps are expensive and sequential, adding a step is
+not free — **it re-runs everything before it.** The backfill workflow's earlier steps include the
+582-call career-totals scrape and two full-season bulk pulls, so appending a 1,230-call job would
+have meant paying for all of it on every retry. **Hence a dedicated workflow with its own trigger
+file.**
+
+**This is why the repo has 32 in-scope `nba-*.yml` files** rather than a few large ones — the
+proliferation is deliberate, and until now unexplained. The documents record the *files*; they do not
+record the *rule*. → `NBA_WORKERS.md`.
+
+#### 🔍 Hypothesis raised and cleared: the workflow count is NOT stale
+`NBA_WORKERS.md` says *"the other 31 `nba-*.yml` files"* (implying 32). **Live count is 33** — which
+looked like documentation drift. **It is not.** The 33rd is **`nba-pp-payout-map.yml`, the concurrent
+session's file, explicitly out of scope.** 33 − 1 = 32 ✅. **The documented count is correct.**
+*Recorded because the scope rule did real work here: without it this would have been filed as a
+defect.*
+
+#### ✅ Verified, already documented
+The `playerPosition` add-then-remove self-correction, the `position_note` meta field, the v2→v3
+switch with its in-code justification, `curl` against `raw.githubusercontent.com` from the sandbox,
+the diagnostic script **and** its dedicated `nba-diagnostic.yml` (both still committed — trigger-file
+driven, no cron, inert), the four edit sites for the starter-status worker, and the chunked
+`allow_write` SQL load. ✅
+
+---
+
 ### T5.16 — PASS 1 (**owner + reasoning strata, read to the end**) — **NEW MATERIAL · 0/3**
 *2026-09-21. **No owner turns in the tail at all** — every one already scores as covered.*
 
