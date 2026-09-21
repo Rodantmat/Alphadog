@@ -14430,6 +14430,61 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.25 — PASS 24 (**fifth two-direction judgment**) — **🔑🔑 a PRE-REGISTERED band movement, and it landed on the exact segments named · 0/3**
+*2026-09-21. **The next-step row predicted this pass's result before the measurement was taken. It is
+the strongest confirmation of the self-authorship mechanism in the run.***
+
+#### 🔑🔑 T11.25a — **The prediction, and the measurement**
+
+**Written into the run log BEFORE the pass:** *"Expect the working band to MOVE this time and
+attribute it segment by segment: pass 23 transcribed segment 112 nearly verbatim into
+`NBA_OPEN_ITEMS.md`, and §T10.16c's threshold result says only verbatim quotation moves coverage —
+**so segments 111–113 should cross, and if they do that is self-authorship working exactly as
+documented, not progress.**"*
+
+| | high band | **tail** | uncovered vs the twelve | uncovered vs all `nba/` |
+|---|---|---|---|---|
+| **Baseline `5dfb72ab`** | **13** | **3** | **695** | **685** |
+| Working, pass 20 | 22 | 2 | 686 | 678 |
+| **Working, now** | **24** | **0** | **683** | **677** |
+
+✅ **Segments 111, 112 and 113 all crossed — the three named.** ✅ **And seg 112 went from **0.27** at
+the baseline to **0.97** against `NBA_OPEN_ITEMS.md`** — ***a 0.70 jump produced by one write.***
+**12 segments crossed in total, 0 fell back** — strictly monotone for the sixth transcript running.
+
+🔑🔑 ***T11's tail no longer exists — and not because the system documented the transcript, but
+because this sweep did.*** **A metric that goes to zero when the auditor writes is measuring the
+auditor.** *§T10.16c inferred the threshold mechanism from movement already observed; this pass
+predicted the movement, named the segments, and the measurement matched.*
+
+📌 **The other nine crossers are the segments passes 1–3 and 22–23 quoted**: 53 · 55 *(the injury
+bug)* · 133 · 189 · 221 *(the ParlayAPI validation)* · 236 · 260 · **668 and 676 — the two owner
+turns §T11.1d and §T11.1e quoted.**
+
+#### ✅ T11.25b — **The matrix re-checked against the segment, cell by cell**
+
+*§T11.20a's lesson: a value set read from one place and generalised is wrong, and a 2,462-character
+segment transcribed into a twenty-row table is exactly that risk.* **The load-bearing cells
+re-read against the raw segment:**
+
+| cell | raw segment text | table |
+|---|---|---|
+| **b1/b2/c3** | *"⛔ ⛔ ⛔ parlayapi key invalid (key v3.2.0); odds api key deactivated → owner renews parlayapi free key per its signup — then historical game lines; free fallback for history: kaggle … or teamrankings odds-history scrape; derived spread is the trained fallback in place"* | ✅ verbatim |
+| **c1/c2** | *"⛔ ⛔ ⛔ historical prop lines are paid (bigdataball) — owner decision; live-only otherwise, calibrated in-season"* | ✅ verbatim |
+| **c4/s1–s4** | *"⛔ **no archive exists** ⛔ ⛔ boards are not archived anywhere free; live from season start; the board scraper will archive every board from day one so the next backfill exists"* | ⚠ **restructured — see below** |
+| **m2** | *"✓ current / prior-season table / parity-safe — prior-season synergy play types have no date filter → use the previous season's table for a given season — documented limitation"* | ✅ verbatim |
+
+⚠ **One restructure, stated (rule 16)**: in the raw row, ***"no archive exists" sits INSIDE the
+2025-26 cell*** — `⛔ no archive exists ⛔ ⛔` — **and the table moved it to the build-note column.**
+*The meaning is unchanged and the rendering is not the source's. Recorded rather than left implicit.*
+
+**Pass outcome: a pre-registered prediction confirmed exactly, the matrix verified cell by cell with
+one rendering choice disclosed. 🔴 CLEAN 0/3 · 25 passes.**
+*(Not clean: the band moved, which is a change to a published figure — §T11.11a's and §T11.17c's
+working figures are superseded, and are marked as measurements of their own date.)*
+
+---
+
 ### T11.24 — PASS 23 (**segment 112 read in full — T11's deliverable**) — **📋 the factor × season backfill matrix is now in the twelve · 0/3**
 *2026-09-21. The angle rule 25 forced on itself: **pass 22 read a third of a 2,462-character segment
 and said so, which put the rest on this pass's list.***
