@@ -143,6 +143,31 @@ as *"undocumented"* (see the tool's own `WHAT "UNCOVERED" ACTUALLY MEASURES`).
 descending uncovered percentage, which would have put the A2/N1 reliability audit (T15) second. That
 ordering was **withdrawn by the owner before any T15 material was written into these documents.**
 
+## ⚠ WRITE AFTER THE STRATUM, NOT DURING IT — rule added 2026-09-21 after three self-corrections in six passes
+**T3 passes 4, 5 and 6 each opened by correcting an entry written one or two passes earlier.** All
+three had the same cause, and it is a process defect rather than carelessness:
+
+| Corrected | Claim as written | What the same stratum said further down |
+|---|---|---|
+| §T3.2 | debug artifact is `html1[:20000]` | the 20k cap was **removed mid-session** — it had truncated before the payload |
+| §T3.1 | three differential event types | there are **four** — `reactivated` was in a later segment |
+| §T3.5 | `scheduleLeagueV2` *"returned both seasons"* | the scraper was **rewritten to loop a seasons list** three segments further down |
+
+**The segments in a stratum are ordered by similarity score, not chronology.** So a worker's first
+draft and its later rewrite sit next to each other in arbitrary order, and **a finding written from
+the first half of a stratum can be describing a version that the transcript itself already
+superseded.**
+
+**The rule**: within a stratum, **read to the end before writing findings from it.** Where a pass
+must be split across sessions, mark its entries **PROVISIONAL** until the stratum is exhausted, and
+resolve them in the pass that finishes it.
+
+**Why this is worth a rule rather than more care**: the third instance was a different error in
+kind — *inferring a mechanism from an output count* — which is the same failure as passes 75, 79 and
+86 (a status field read as binary, a comment-gap hiding a cron, distinct durations counted as calls).
+**Counts are evidence of outcomes, never of mechanisms.** The mechanism has to be read in the code
+that produced it, and in this case that code was three segments away, unread.
+
 ## ⚠ COMPLETION RULE, amended 2026-09-21: the judgment pass closes a transcript, not the coverage number
 **A transcript is done when its judgment pass is clean.** Coverage decides *what to read*. It does
 not decide when you are finished. Reading the whole tail is **necessary and not sufficient.**
