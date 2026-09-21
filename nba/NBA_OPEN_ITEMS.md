@@ -113,6 +113,62 @@ the lessons-transfer mechanism, not in one worker.**
 
 ---
 
+## ⚠⚠ COMMITTED DEBUG ARTIFACTS ARE A PATTERN OF THREE, NOT A ONE-OFF — two are undocumented
+*Found 2026-09-21, T4 re-sweep pass 3. **`[LIVE-AUDIT]` VERIFIED** by listing `nba/data/`.
+Detail: `NBA_MASTER_SUMMARY.md` §T4.23a.*
+
+| File | Size | Status |
+|---|---|---|
+| `nba_darko_debug_html_snippet.txt` | 432,513 B | ✅ documented in detail; owner action already raised |
+| `nba_shotzones_debug_raw.json` | 50,000 B | ❌ **undocumented** |
+| `nba_officials_debug_raw.json` | 2,426 B | ❌ **undocumented** |
+
+**The documents treat the DARKO dump as a one-off. It is the third instance of a habit**: when a
+scrape fails, write the raw body beside the data and let the workflow's `git add` commit it. **The
+habit itself is nowhere recorded**, and it is the habit — not any one file — that will keep producing
+these.
+
+- **`nba_shotzones_debug_raw.json`** is T4's own, from the zone-parsing failure, truncated at
+  exactly **50,000 characters** by the scraper's error path.
+- **`nba_officials_debug_raw.json`** is different and worth a look: keyed by game id, its first entry
+  is `{"0022500259": {"raw_officials_field": [], "summary_keys": [...]}}` — **a capture of the
+  endpoint returning no officials for a game.** Whose transcript produced it, and whether that
+  emptiness was ever resolved, is **NOT RECORDED**; `nba_ref.referee_assignments` belongs to a
+  session this sweep has not reached. **Flagged for it.**
+- A fourth, `nba_player_game_log_2025_26_debug_raw.json`, is named in the backfill workflow's
+  `git add` list but **is not present in `nba/data/`**. **NOT RECORDED** whether it was never
+  produced or was removed.
+
+**Not fixed, per the standing instruction.** The shape of the remedy is a `.gitignore` entry or an
+error path that writes to the runner's scratch rather than the repo — **both are changes to the
+system, so neither is made here.**
+
+---
+
+## ⚠ `[LIVE-AUDIT]` 25 NBA TABLES HAVE NO PRIMARY KEY — inventory only, analysis deferred
+*Recorded 2026-09-21, T4 re-sweep pass 3. Detail: `NBA_MASTER_SUMMARY.md` §T4.23d.*
+
+`information_schema` reports **25 base tables under `nba*` schemas with zero `PRIMARY KEY`
+constraints**:
+- **`nba_market` (8)**: `board_outcomes`, `board_snapshots`, `board_tiers`, `board_tiers_v2`,
+  `event_game_map`, `game_lines_snapshots`, `rung_market`, `schedule_norm`
+- **`nba_score` (15)**: `absence_panel_teams`, `availability_delta`, `baseline_history`,
+  `blowout_model`, `board_scored`, `confidence_verification`, `conformal_confidence`,
+  `factor_gate_results`, `final_hp`, `ladder_calibration_asof`, `redistribution_factors`,
+  `scenario_calibration`, `scenario_realised`, `tier_band_calibration`, `tier_selection_value`
+- **`nba_ref` (2)**: `defender_ratings`, `referee_assignments`
+
+⚠ **This is an inventory, not a finding.** An append-only log or a snapshot table is *correct*
+without a primary key; a dimension table is not. **Nearly all of these belong to the scoring and
+market layers — transcripts this sweep has not reached — so none is assessed here.** Recorded so the
+question is asked in each transcript's own place rather than forgotten.
+
+*(Related and already documented: `nba_stats.player_splits` **does** have a key,
+`(player_id, split_type, group_value)` — **but `season` is not in it**, and the table was built
+alongside a 3-season backfill, so it cannot hold three seasons of the same split for one player.)*
+
+---
+
 ## ⚠⚠ A SCRAPER'S "N PLAYERS SUCCEEDED" IS ATTEMPTS MINUS ERRORS — one player silently has no career totals
 *Found 2026-09-21, T4 re-sweep pass 2. Resolves the gap left open at T2 pass 18. **`[LIVE-AUDIT]`
 VERIFIED**. Detail: `NBA_MASTER_SUMMARY.md` §T4.22a.*
