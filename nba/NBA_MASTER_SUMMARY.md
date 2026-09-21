@@ -14430,6 +14430,53 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.51 — PASS 50 (**the CHARACTERISATION audit — nine claims, three vocabularies each**) — **❌ two credit corrections, and both are about the sweep's OWN METHOD · 0/3**
+*2026-09-21. **§T11.50b relocated the remedy here: the numbers are the sweep's own, the descriptions
+often are not.** Tested.*
+
+#### ❌ T11.51a — **§T11.47c's "an unenumerated class is an undated one" is §T9.28b's rule, extended a THIRD time and not named**
+`NBA_MASTER_SUMMARY.md` carries, in the twelve: ***"a coverage figure is dated by construction; state
+it with the pass that took it"*** — **§T9.28b, written after the 703 → 696 coverage drift** — **and
+the entry quoting it already says *"Applied to coverage, not to the census."*** 🔴 ***So the dating
+principle was on file, had ALREADY been noted as applied too narrowly once, and §T11.47c extended it
+to classes without naming it.*** ✅ **The extension is real and worth having** — *coverage figure →
+census → class* — **but it is §T9.28b's third scope, not a new insight.** **Credit corrected.**
+
+#### ❌ T11.51b — **§T11.48b's "the register inherited a row instead of re-taking it" is a T10 practice, unnamed**
+§T10.20's own header reads *"the closing-three judgment, **re-measured on both trees rather than
+carried forward**."* 🔴 ***The discipline §T11.48b presented as the register's lesson was already
+named and practised ten transcripts earlier.*** ✅ **The instance stands** *(the register did inherit
+a stale `phase` row)* — **the principle is not new.** **Credit corrected.**
+
+#### ✅ T11.51c — **Six characterisations confirmed novel or already correctly credited**
+| claim | verdict |
+|---|---|
+| **`sliding_scale` "nothing reads it"** *(§T11.45b)* | ✅ **correctly credited** — the entry itself named `NBA_DATABASE.md`'s *"a documented design that no running code consults"* class, **which the audit finds in 4–6 of the twelve** |
+| **`phase`'s counter-example is now SCOPED** *(§T11.48c)* | ✅ **0 of thirty** in both specific vocabularies *(the five "counter-example" hits are MLB's, the code's and T1's — opened, different subjects)* |
+| **the tool census / web-call counting** *(§T11.42b)* | ✅ **0 of thirty** |
+| **the reasoning stratum carries no reasoning** *(§T11.43a)* | ✅ the one hit is a **citation** of thinking block 28, not a characterisation — **false, dismissed** |
+| **"documents state a count when the count was the discovery"** *(§T11.49d)* | ✅ **0 of thirty on ALL THREE vocabularies** |
+| **the load gap "not systemic"** *(§T11.37b)* | ✅ *"systemic"* is in the twelve for **patch-by-anchor** and **"called but never defined"** — **different subjects**, phrasing is the sweep's own |
+
+#### 🔑🔑 T11.51d — **The meta-result, and it sharpens §T11.50b again**
+***Two of nine characterisations had unnamed ancestors — and BOTH are about the sweep's own METHOD,
+not about the system.*** **The ancestors are rules the sweep ITSELF wrote** *(§T9.28b at T9, §T10.20's
+practice at T10)*. 🔑 **So the duplication is narrower than "characterisations"**: ***the sweep
+re-derives its OWN METHODOLOGICAL rules, transcript after transcript, because a rule written at T9
+is not where a T11 pass looks.*** ⚠ **And the remedy is structural, not behavioural**: **the
+twenty-seven rules are indexed in the run log with a §-pointer each** — ***a method claim should be
+checked against that index before it is written, exactly as a figure is checked against the
+documents.***
+
+⚠ **Two loose-pattern failures of my own, caught by opening and discarded**: *"both omit it"* matched
+**"both seasons"** *(7 hits, none relevant)* and *"independently the same"* matched nine unrelated
+passages. ⚠ **Rule 22 fired for the EIGHTH and NINTH times** — two controls failed and their probes
+were discarded rather than reported.
+
+**Pass outcome: ❌ two credit corrections, both methodological. CLEAN 0/3 · 51 passes.**
+
+---
+
 ### T11.50 — PASS 49 (**the FIGURE audit — testing the hypothesis five duplicates suggested**) — **✅ CLEAN 1/3 · the hypothesis is WRONG, and the correction is worth more than the hypothesis was**
 *2026-09-21. **The next-step row proposed**: "rule 26 has been applied to ABSENCE claims and not to
 FIGURES — every duplicate was a measurement the sweep re-derived and credited to itself."
