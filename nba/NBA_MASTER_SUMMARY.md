@@ -9742,7 +9742,7 @@ a perfect match, in the *"covered elsewhere in other words"* direction, **by nam
 output, twice.** I read that as *"false tail, mechanism 3, no finding"* — which is correct about the
 extraction — and then wrote *"in no document"* in the prose regardless.
 
-> ### **Standing rule, seventh form: "NOT IN THE TWELVE" IS NOT "IN NO DOCUMENT."**
+> ### **Standing rule, seventh form — also filed at the standing-rules section: "NOT IN THE TWELVE" IS NOT "IN NO DOCUMENT."**
 > The sweep's coverage scan is scored against **the twelve**; the corpus is **thirty**. Before writing
 > *no document / nowhere / undocumented*, grep **all thirty** — and **read the tail-direction output
 > of the current pass first**, because it already names, by filename and score, the document that
