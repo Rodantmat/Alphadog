@@ -265,8 +265,13 @@ def main():
             baseline_hp numeric, cal_shift numeric, final_hp numeric,
             confidence numeric, score numeric, edge numeric, interpolated boolean,
             built_at timestamptz DEFAULT now())""")
-        cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS board_scored_uidx
-            ON nba_score.board_scored (game_date, app, player_id, prop, line, side)""")
+        # DEADLOCK FIX (2026-09-21). CREATE INDEX IF NOT EXISTS takes a SHARE lock on the table BEFORE it
+        # discovers the index exists, and holds it to the end of this transaction. Two scorers running at once
+        # (the history replay's parallel chunks) each held SHARE, then each waited on the other for ROW EXCLUSIVE
+        # to DELETE - a deadlock that failed 181 of 325 replay dates. Create the index only when it is missing.
+        if cur.execute("SELECT to_regclass('nba_score.board_scored_uidx')").fetchone()[0] is None:
+            cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS board_scored_uidx
+                ON nba_score.board_scored (game_date, app, player_id, prop, line, side)""")
         cur.execute("DELETE FROM nba_score.board_scored WHERE game_date = %s", (asof,))
         cur.executemany("""INSERT INTO nba_score.board_scored
             (game_date, season, app, player_id, player, prop, line, side, kind, tier, game_id,
