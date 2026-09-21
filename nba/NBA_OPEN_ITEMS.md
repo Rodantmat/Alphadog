@@ -22,7 +22,33 @@ enrichment factors**, which is the layer this transcript exists to build.
 
 ⚠ **Read the two findings together: a filter that filters nothing, over a set it half knows.**
 
-### 🔴 AND TWO FACTORS ARE EXEMPT FROM BACKFILL BY CONSTRUCTION — *§T10.6c*
+### 🔴 THE PARITY DOCUMENT'S LIVE-ONLY EXAMPLE IS SUPERSEDED AND WAS NEVER UPDATED — *§T10.9a*
+
+`NBA_DAILY_PARITY_AND_BACKFILL.md` §3 defines the category the registry implements:
+
+> *"**(b) Live-only** — the value was never archived and only exists going forward (e.g. **game-day
+> referee assignments**, which are posted hours before tip and not retained)… either **exclude the
+> factor from historical training**, or use a clearly labelled proxy… **Mixing (b) into training as if
+> it were (a) is exactly the leak this document exists to prevent.**"*
+
+🔴 **But `referee_assignment` and `referee_crew` are `phase1_baseline` in `factor_registry`, not
+live-only — and the reclassification is recorded**, in `NBA_PROJECT_LOG.md` line 739: *"Referee
+assignments post in the morning → **baseline stage** (correcting my earlier 'target-only' framing: the
+box-score crew is a faithful reconstruction of what was knowable)."*
+
+⚠ **The parity document still carries the superseded example and mentions neither `compute_stage`, nor
+"baseline stage", nor the correction.** ***The document written to prevent the leak is the one holding
+the stale example.*** 📌 **Not edited by this sweep** — it is not one of the twelve, and the standing
+treatment for a non-mandated document (§T2.18a) is to record against it rather than rewrite it.
+
+🔑 **OWNER DECISION** — update §3's example to one that is actually live-only *(the registry offers
+two: `lineups_confirmed`, `overtime_pace_live`)*, or record the referee reclassification in the parity
+document itself. **A documentation edit outside the twelve; this sweep does not make it.**
+
+### 🔴 AND TWO FACTORS ARE EXEMPT FROM BACKFILL BY CONSTRUCTION — *§T10.6c, narrowed §T10.9a*
+*(⚠ The **category** is documented — `NBA_DAILY_PARITY_AND_BACKFILL.md` §3 above. **What is recorded
+nowhere is which factors are in it**: `lineups_confirmed` and `overtime_pace_live` return zero hits
+across all thirty.)*
 
 `factor_registry.compute_stage` partitions the enrichment layer **15 phase-1 · 17 phase-2 · 2
 live-only · 2 not-mined** *(recorded in `NBA_PROJECT_LOG.md` 739; **confirmed live to the row**, and
