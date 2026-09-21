@@ -541,9 +541,30 @@ the ancestor of the A/B/D/M/N factor codes used in T15–T16 and of
 range or `market_key` listing taken on `bookmaker`/`game_date` alone silently includes other sports**,
 and this sweep made that mistake four times before catching it. **Filter `market_key` to the NBA set,
 or filter out `snapshot_label = 'routine'`, depending on the question.**
-✅ **The historical `window` / `close` rows for PrizePicks and Underdog are the NBA backfill and are
-NOT affected.** 📌 **Whether the cross-sport capture is deliberate is NOT RECORDED** — see
-`NBA_OPEN_ITEMS.md`.
+
+🔑 **BUT THE SIZE OF IT, measured 2026-09-21 (§T11.9b) — and the vocabulary is far more alarming than
+the data:**
+
+| app | unfiltered | **NBA-only** |
+|---|---|---|
+| `prizepicks` | 2,199,354 | **2,199,354 — 100%** |
+| `underdog` | 939,719 | **934,627 — 99.46%** |
+| `betr_us_dfs` | 780,765 | **780,765 — 100%** |
+| `pick6` | 534,188 | **534,188 — 100%** |
+| `fliff` | 1,394 | **0** |
+| `sleeper` | 1,276 | **0** |
+| **all sportsbooks** | **22,611,175** | **22,611,175 — 100%** |
+
+✅ **Total contamination: 5,092 + 1,394 + 1,276 = 7,762 rows of 27,067,871 — 0.029% — every one of
+them in the `routine` label.** ***Most of the `market_key` VALUES are baseball; 99.97% of the ROWS are
+NBA. Both are true, and an entry giving only the first overstates the defect.***
+✅ **The historical `window` / `close` backfill is clean.** 📌 **Whether the cross-sport capture is
+deliberate is NOT RECORDED** — see `NBA_OPEN_ITEMS.md`.
+
+🔴 **And nothing in `nba_market` stores the sport** (§T11.9c): not `board_snapshots`, `board_outcomes`,
+`board_tiers`, `rung_market`, `game_lines_closing`, `game_lines_snapshots`, `event_game_map`,
+`schedule_norm` or `board_backfill_log`. ***The sport is always inferred*** — from `market_key`, from
+team names, or **for the last three, not at all.**
 
 ---
 
