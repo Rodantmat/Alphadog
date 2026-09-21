@@ -2105,6 +2105,50 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+### T2.14 — PASS 14 (**the two-direction judgment pass, re-run against current documents**) — **1 DEFECT · CLEAN COUNT 0/3**
+*2026-09-21. 814 segments. High band (≥0.45): 80. Tail-direction (uncovered vs twelve, ≥0.60 vs all 30): 31.*
+
+**DIRECTION 2 — TAIL, COVERED ELSEWHERE: CLEAN.** All 31 segments resolve to **false-tail mechanism
+(3), self-authorship** — they are the transcript's own `github_put_file` payloads *writing*
+`nba/NBA_PROJECT_LOG.md` (14) and `nba/NBA_ENRICHMENT_FACTORS_RESEARCH.md` (17), matching those files
+at **0.98–1.00** because the segment **is** the file. Their substance — the eight-worker checklist,
+the Phase 3b deferral list, garbage time, the EPM paywall, the weekly-vs-daily split — is correctly
+carried in the twelve. **No write-up found wrong.**
+
+**DIRECTION 1 — HIGH BAND: ONE DEFECT.** The `!== 30` fallback branch now matches
+`NBA_OPEN_ITEMS.md` at **0.73** (§T2.12 landed correctly), and the rest of the band maps to
+documented entries. One segment does not:
+
+#### ⚠ T2.14a — AN UNRECONCILED CONTRADICTION ABOUT WHETHER `[skip ci]` HELD
+
+The high band surfaced this, from T2:
+> *"the auto-deploy workflow **likely fired** because it triggers on **any** push to `main`, not just
+> worker file changes — so **the scraper's data commit landing on `main` pushed it to run**, even
+> though it'll find no worker targets changed in scope."*
+
+**This sits against a documented guard.** T1 originated the `[skip ci]` convention precisely *"so
+that a data commit would not retrigger the deploy pipeline"* — recorded twice, in
+`NBA_MASTER_SUMMARY.md` and `NBA_OPEN_ITEMS.md`.
+
+**`[LIVE-AUDIT]` VERIFIED 2026-09-21** — `.github/workflows/nba-scrape.yml`:
+- **line 150**: `git commit -m "Update NBA teams JSON [skip ci]"` — **the guard is present and live**
+- lines 22–24: `concurrency: group: alphadog-nba-scraper` · `cancel-in-progress: false`
+- lines 151–152: `for i in 1 2 3 4 5; do if git push origin HEAD:main; then` — the push-race retry
+
+**Both cannot be straightforwardly true, and this pass does not resolve which is.** The T2 statement
+is hedged (*"likely"*) and **was never checked in T2** — no run ID, no workflow log, no verification
+follows it. It may be a wrong guess; the guard may have been absent at that moment; or `[skip ci]`
+may not suppress that particular workflow (it demonstrably **does not suppress Pages**, already
+recorded). **The cause is NOT RECORDED and is left OPEN** — recording the contradiction rather than
+picking a side, per the rule that a live-audit finding states what the system is now and never why.
+
+**`[LIVE-AUDIT]` and separately true**: the commit message still reads **"Update NBA teams JSON"**
+although the commit step now covers **all nine entities** via the existence-checking loop (§T2.10).
+Cosmetic, but it is a drift marker of exactly the kind this documentation set already tracks — the
+message was written when the step handled one entity and was never updated as it grew.
+
+---
+
 ### T2.13 — PASS 13 (**the two-direction judgment pass**) — **⚠ VOID, RE-RUN REQUIRED · CLEAN COUNT 0/3**
 *2026-09-21.*
 
