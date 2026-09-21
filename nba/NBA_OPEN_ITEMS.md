@@ -4448,6 +4448,26 @@ documents and tool payloads swept in passes 29–47 — and check each against t
 **This is the method passes 26–28 used**, re-run now that the embedded documents have actually been
 swept.*
 
+### 📊 THE FULL SCALE, COUNTED CORPUS-WIDE 2026-09-21 (T6 pass 4) — 17 instances, not one
+*The correction below is right about the fact and understates the cost by an order of magnitude.*
+
+| Wrong name | Instances |
+|---|---|
+| `Alphadog Bridge:github_str_replace` | **10** |
+| `Alphadog Bridge:str_replace` | 2 |
+| `Alphadog Bridge:github_patch_str_replace` · `:memory_append` · `:memory_write` · `:memory_read` | 1 each |
+| `mcp_alphadog_bridge_mcp_alphadog_bridge_run_sql` | 1 |
+| **17 instances · 7 distinct wrong names · across 7 of 20 transcripts** | |
+
+Spread: T1 (1) · T2 (2) · T4 (5) · T5 (2) · T6 (4) · T7 (2) · one 2026-09-20 session (1).
+**Not a quirk of one chat — a recurring cost across the project's whole history.**
+
+**Two different mistakes share the one error message:**
+1. **Server label prefixed onto a real tool name** — 14 of 17 (`Alphadog Bridge:memory_read`).
+2. **A tool invented that never existed** — 3 of 17. **`github_str_replace` alone is 10 of the 17**,
+   so **a mandated document naming a non-existent tool cost real attempts in at least four separate
+   sessions.**
+
 ### ⚠ CORRECTION · **`github_str_replace` does not exist, and a mandated document listed it**
 `NBA_SYSTEM_ARCHITECTURE.md` listed `github_str_replace` among the bridge's GitHub tools.
 **T1 attempted the call and the bridge rejected it:**
