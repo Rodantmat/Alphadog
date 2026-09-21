@@ -8903,7 +8903,7 @@ needs a manual `run_job` trigger after each weekly scrape."* Owner: *"No, leave 
 player_differential_log    0 rows
 team_differential_log      0 rows
 official_differential_log  0 rows
-player_roster_snapshot   582 rows   ← frozen since 2026-09-03
+player_roster_snapshot   582 rows   ← frozen since 2026-09-02 19:47 UTC  (corrected §T9.35a)
 ```
 
 **The second run never came.** The snapshot is 17 days stale and the logs have never recorded an event.
