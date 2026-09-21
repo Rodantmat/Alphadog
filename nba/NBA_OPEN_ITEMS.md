@@ -439,6 +439,45 @@ observed live yet (verify)**; **probe workflow `nba-probe.yml` + `nba/probe_boar
 *(§T10.17c's failure exactly — an owner turn quoted for its second half only — which is why rule 19
 exists. Two more instances, both mine.)*
 
+### ⚠⚠ TWO MORE, FROM PASS 0's OWN ENTRIES — *rule 19, added by §T11.53c*
+*Found by the pass-52 quotation-boundary audit, which enumerated the population for the first time:
+**19 entries, 74 entry–segment pairs, 37 distinct segments.***
+
+**1 · SEGMENT 668 — §T11.1c quoted its LAST clause and dropped the owner's PLACEMENT CADENCE.**
+The entry quotes *"always when i give you a time or ask a time, i refer to pacific time, i am in san
+diego california, so do not forget it"* and records it as the standing timezone instruction — which
+it is. ***What comes before it in the same turn is a decision:*** *"**prizepicks and sleeper i think
+3 a day is too much**, more than anything **i'll only place the picks in one window, probably 2 hours
+before the first game daily**. **which time it usually start? if i have one time to place it all,
+what would be the best time**"* — and it opens with *"so it is confirmed that we have all needed for
+2 full seasons?"*, **which segment 670 corrects** *("what's confirmed for two full seasons is
+PrizePicks + Underdog. Sleeper is not in The Odds API")*.
+🔑 **Why it matters, and this is the substance, not the wording:** ***"two snapshots per game (window
++ tip−30)" is recorded in FIVE documents*** — `NBA_COMPASS.md` (fact 47), `NBA_PROJECT_LOG.md`,
+`NBA_DAILY_PARITY_AND_BACKFILL.md`, `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`,
+`NBA_MASTER_SUMMARY.md` — **as a settled owner decision**, and ***the number THREE and the owner's
+rejection of it appear in NONE of them*** *(probed across all thirty; the three "three snapshots"
+hits are the weekly differential worker's three snapshot TABLES — opened, different subject)*.
+⚠ **Stated at evidence strength**: the owner's sentence is about **when HE places picks** — *one
+window, ~2 hours before the first game* — and the two-snapshot design is about **when the system
+CAPTURES**. **That the rejection of three caused the choice of two is NOT RECORDED.** *(The ~2-hour
+rule itself IS on file — `NBA_OPEN_ITEMS.md` §4b, "first tip minus 2 hours", and the window's
+correction to 1:15 PM PT — so what was missing is the owner's own statement of it, not the rule.)*
+
+**2 · SEGMENT 197 — §T11.1e's directive table dropped the SCOPE LIMIT.**
+The table records the ParlayAPI-first ordering, the OTZ last-resort clause, Gemini, the two seasons,
+the Sleeper/Underdog/PrizePicks boards, and the gate *"once you're done with the backfill for every
+single factor"* — **all correct.** ***It omits the sentence between them***: *"and that should get
+board snapshots, daily board snapshots for nba. **not to get market data just yet**."*
+🔑 ***The owner scoped the phase to BOARDS and explicitly deferred market data*** — **0 of thirty in
+any vocabulary** *(control: "daily board snapshots" fires; the two hits on the deferral's substance
+are `NBA_SYSTEM_DRAFT.md` and the 09-04 checkpoint treating ParlayAPI as the locked market/board
+source — opened, a different subject)*.
+
+📌 **The shape, across all four instances**: ***a segment of 400–2,000 characters quoted for the one
+clause the entry is about, with the other clauses dropped — and in three of the four the dropped
+clause is the PROVENANCE of something the documents carry as a bare parameter.***
+
 ### 🔴 What this corrects in this sweep's own record
 
 | the sweep said | T11 actually says |
