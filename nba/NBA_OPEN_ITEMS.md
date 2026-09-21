@@ -345,12 +345,37 @@ venue-age or building-effect factor is exactly the kind of enrichment the roadma
 it would reach for `year_founded` first. **Renaming them `franchise_founded` and `team_owner` is the
 fix; not applied, per the sweep's read-only rule.**
 
-### `arena_capacity` is a quoted string while `year_founded` is a bare integer
-`"18624"` versus `1946` — **mixed typing in the same record, from the same source.** Consequences:
-any capacity arithmetic needs an explicit cast, and sorting by capacity sorts **lexically**, so
-`"9000"` outranks `"18624"`. Combined with the already-documented fact that capacity is `null` for
-roughly a third of teams, a capacity-derived factor has three cases to handle — number-as-string,
-`null`, and lexical ordering — none of them signposted.
+### ⚠ EXTENDED AND PARTLY CORRECTED 2026-09-21 — the two bad fields are never loaded, and `altitude_ft` is empty
+***VERIFIED by live SQL** against `nba_ref.arenas`, after the owner independently confirmed the JSON
+values. This both strengthens the finding and corrects part of what the original entry said.*
+
+`nba_ref.arenas` has 13 columns: `arena_id · arena_name · team_id · city · state · capacity ·
+altitude_ft · timezone · source_key · raw_json · data_quality · created_at · updated_at`.
+
+**`year_founded` and `owner` are not among them — and they are not in `raw_json` either.**
+
+```
+rows 30 | capacity filled 19 | altitude_ft filled 0 | raw_json present 30
+raw_json ? 'year_founded' → 0 rows      raw_json ? 'owner' → 0 rows
+```
+
+**So the mislabeled fields are dropped at the write boundary, not merely unread.** They exist only
+in the committed JSON. **That is precisely why nothing has surfaced them, and precisely why a
+venue-age factor would reach for the JSON and find them** — the table looks like it has no venue-age
+data, so the file is where anyone would look next.
+
+**And the risk is not hypothetical, because the table is already shaped for venue factors:**
+`capacity`, `altitude_ft` and `timezone` are all venue-scoped columns. **`altitude_ft` is 0 of 30
+populated** — the column exists and was never filled. *Altitude is Gemini's own tier-4 factor from
+T2 (see FROM T2 PASS 2). The slot was cut and left empty.*
+
+**Correction to this entry's original claim about capacity typing.** The JSON does carry
+`arena_capacity` as a quoted string (`"18624"`) beside a bare-integer `year_founded` (`1946`) — that
+part stands, and it is a real inconsistency in the file. **But `nba_ref.arenas.capacity` is
+`integer`**, so the writer casts on the way in and the lexical-sort hazard **does not reach the
+database**. The original entry implied it did. **What remains true at the table**: capacity is
+populated for **19 of 30** teams, so any capacity-derived factor still has a `NULL` case covering a
+third of the league.
 
 ### The `_debug_headers` technique, worth keeping as a practice
 The arenas scrape's first output committed **`arena_name: null` for all 30 teams plus a
