@@ -271,8 +271,19 @@ exhaustion, not a warning — the two-direction judgment pass is the closure sig
    already handed off.*
 2. **Regular season opens 2026-10-20, not 2026-10-03** — `[LIVE-AUDIT]` verified:
    `nba_calendar.games` prefix 001 (preseason) 66 games 10-03→10-16; prefix 002 (regular) 1,200 games
-   10-20→2027-04-11. **Every urgency label keyed to 10-03 is 17 days early.** The 40 in-document
-   references are left as-is where they sit inside verbatim transcript quotes.
+   10-20→2027-04-11. **Every urgency label keyed to 10-03 is 17 days early.**
+   🔴 ~~*The 40 in-document references are left as-is where they sit inside verbatim transcript
+   quotes.*~~ — **CORRECTED 2026-09-21 (T10 pass 18, §T10.18b): both halves of that sentence were
+   wrong.** **78 mentions across the twelve; 58 carry no correction within ±3 lines; and 36 of those
+   are the documents' OWN ASSERTIVE PROSE, not quotation** — **18 of them outside
+   `NBA_MASTER_SUMMARY.md`**, of which **15 are in `NBA_OPEN_ITEMS.md`, the document the owner acts
+   on**, including a section heading and a live countdown (*"twelve days from this"*).
+   ***The correction was published here and never propagated into the prose it governs.***
+   ✅ **Now corrected**: a standing banner heads `NBA_OPEN_ITEMS.md` and governs its fifteen; the
+   SEASON-START CRITICAL heading, and the single assertive instances in `NBA_WORKERS.md`,
+   `NBA_SYSTEM_DESIGN.md`, `NBA_BASELINE_CALIBRATION.md` and `NBA_DATABASE.md`, are fixed in place.
+   *Dates inside verbatim quotes stay as written — the quote is accurate, the belief it records was
+   not.*
 3. **Entire NBA static layer frozen at build date** — all nine tables last written 2026-08-31→09-03,
    never refreshed since. Cause left OPEN per Rule 6.
 4. **`raw_json` is a double-encoded JSON string across the NBA JSONB surface** — 17,902 rows / 14
