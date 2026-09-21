@@ -8023,6 +8023,14 @@ quote and the sentence below it before claiming the system does the thing.** The
 *"a count comes from an authority, never from the pattern that found it"*: **a behaviour comes from
 the system, never from a document's quotation of some other system's behaviour.**
 
+**⚠ The fourth form, added 2026-09-21 after §T7.39c — the NOVELTY check**: **before labelling a
+live-audit result NEW, grep the twelve documents for the object's own name.** At §T7.39c I marked
+🔴 NEW a finding that `NBA_DATABASE.md` §2 already carries as a `⚠⚠ READ FIRST` banner from T1 pass
+36 — **in the very file I was editing** — and undercounted it five-against-eight while doing so.
+**Novelty is a claim about the documents, so it is tested against the documents, not against
+memory.** One grep. *(The count rule and the novelty rule fail together, because both substitute
+what I just looked at for what is on record.)*
+
 🔴 **This is the THIRD time in this sweep that I have reported a count from a single-pattern search.**
 The others:
 1. **`raw_json`** — measured 1,306 rows / 6 tables by checking the static layer I was already
