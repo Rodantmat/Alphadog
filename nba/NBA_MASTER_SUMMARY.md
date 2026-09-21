@@ -8014,6 +8014,15 @@ reported the *idea* as unrecorded — when the work it asked for was documented 
 writing "nothing records this," search for what the thing would be called by someone who did record
 it.**
 
+**⚠ The third form, added 2026-09-21 after §T7.38a — the mirror of the sibling rule**: **a PRESENCE
+claim quoted out of another document must be tested against its ATTRIBUTION and its SURROUNDING
+VERDICT.** In §T7.30a I matched a quoted threshold on its number and its word (*"capped… 25%"*) and
+reported the system as doing it — while the sentence above the quote attributed the rule to **MLB**
+and the sentence below it stated in bold that **NBA does not have it**. **Read the sentence above the
+quote and the sentence below it before claiming the system does the thing.** The same discipline as
+*"a count comes from an authority, never from the pattern that found it"*: **a behaviour comes from
+the system, never from a document's quotation of some other system's behaviour.**
+
 🔴 **This is the THIRD time in this sweep that I have reported a count from a single-pattern search.**
 The others:
 1. **`raw_json`** — measured 1,306 rows / 6 tables by checking the static layer I was already
