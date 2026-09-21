@@ -12946,7 +12946,13 @@ The *substance* of that fetch is already recorded: `NBA_CLASSIFICATION_BASELINE_
 names the **Underdog / Sleeper scoring pages** as sources and line 50 carries what was learned from
 them (*"PrizePicks/Underdog include OT in full-game"*). **Nothing to extract.**
 
-#### 🔑 T8.23a — **The derived spread's formula and fit are recorded; its LEAKAGE GUARD is not**
+#### ⚠ T8.23a — **The derived spread's SEASON-START PRIOR is unrecorded** *(claim substantially withdrawn)*
+> 🔴 **CORRECTED by §T8.26a.** This entry claimed the **leakage guard** was undocumented. **It is
+> documented four times** — *"every feature is `shift(1)`-based"* in `NBA_BASELINE_CALIBRATION.md`
+> line 774 and `…CHECKPOINT_2026-09-09.md` lines 71 and 151, plus the lesson *"leakage hides as a
+> puzzling anomaly (FRINGE 0.867) — check every baseline is `shift(1)`"*. **What survives is one
+> clause: the `fillna(0) * n/(n+k)` season-start prior**, a boundary-condition choice, not a leakage
+> guard. Read the entry below with that correction.
 
 `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` line 82 records the component and its quality:
 > *"Derived static spread = pre-game rolling net rating (shrunk k=10) + HCA (fit 1.98) + 0.5 × rest
