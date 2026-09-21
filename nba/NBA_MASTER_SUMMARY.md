@@ -14424,6 +14424,55 @@ the loader.
 > Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.49 — PASS 34 (**two-direction judgment, ninth run — weight on RULE 12 and its siblings**) — **🔴 §T9.28b's own finding was never applied to the two rows it described · 0/3**
+*2026-09-21. Band **54 for a fourth run, 0 in, 0 out**; coverage **690 / 675**. Pass 33's defect was a
+rule this run wrote three passes earlier and did not apply — **so this pass asked rule 6's question of
+that failure: where else?***
+
+#### 🔴 T9.49a — **The T9 corpus preamble and the run log's corpus row still read `703 / 685`, undated — and §T9.28b is the entry that identified exactly this**
+
+§T9.28b, at pass 13, wrote: *"**`703 uncovered (91.4%)` is a timestamped measurement stated as a corpus
+fact**… the T9 corpus row states it **in two documents**… the same script now returns 696."* **It
+named the two rows. It did not change them.**
+
+**Twenty-one passes later they still read 703 / 685 with no pass marker, and the current values are
+690 / 675.**
+
+🔴 **This is rule 10 and rule 12 failing together, on the entry that diagnosed the problem.** *The
+correction reached the entry that described it and none of the copies it named — and the rule that
+says "apply it at the moment of writing" was itself applied one pass late at §T9.48a and never here.*
+**Both rows now carry the pass that took the figure, the current value, and the distinction that
+matters:**
+
+> **769 is a property of the transcript and does not move. The uncovered counts are measurements of a
+> corpus this sweep is writing, and they do.**
+
+⚠ **Three instances of this exact shape in one run** — §T9.28b (identified, not applied) · §T9.48a
+(the census, published undated) · §T9.49a (the rows §T9.28b named). *The rule is not the problem; the
+gap between writing a rule and applying it to the text already on the page is.*
+
+#### ✅ T9.49b — **Every other corpus metric in §T9.45–§T9.48 already carries its pass**
+
+| Metric | Carries its pass? |
+|---|---|
+| Band **52 → 54** across passes 3 · 8 · 11 · 16 · 19 · 23 · 25 · 27 · 30 | ✅ tabulated by pass at §T9.40b and §T9.45b |
+| Coverage **703 → 696 → 694 → 691 → 690** | ✅ tabulated by pass at §T9.40b |
+| The timestamp census **111 / 68 / 43 → 120 / 74 / 47** | ✅ dated at §T9.48a |
+| T8's corpus **615 = 609 + 6** | ✅ a transcript property, does not move |
+
+**So the sibling sweep finds one omission and confirms the rest.**
+
+#### ✅ T9.49c — **Band stable for a fourth run**
+
+**54, 0 in, 0 out; coverage 690 / 675, unchanged since pass 30.** *Four consecutive runs with no
+movement in the judgment strata, across a stretch in which the twelve gained §T9.40–§T9.48 — which is
+the evidence that §T9.40b's `rep()` shift was a one-off caused by quoting code, not a trend.*
+
+**Pass outcome: 1 defect — the rows §T9.28b named, unfixed for twenty-one passes — the rest of the
+sibling sweep clean, band stable. 🔴 CLEAN 0/3 · 34 passes.**
+
+---
+
 ### T9.48 — PASS 33 (**live numeric re-verification**) — **🔴 the census ROSE because documenting the problem added instances of it · 0/3**
 *2026-09-21. Every figure passes 29–32 state, re-derived; every timestamp in UTC; every partition
 summed; every predicate stated.*
