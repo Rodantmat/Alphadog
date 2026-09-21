@@ -34,6 +34,16 @@ involved.
 **Board source:** `api.prizepicks.com/projections` returns 403 from the runner;
 **`partner-api.prizepicks.com/projections` serves it.**
 
+**There is no single-leg price.** A 1-pick quote returns **422 — "Must have at least 2 predictions for a
+valid pricing lineup."** VERIFIED probe 5, 2026-09-21. So the per-leg multiplier is mined as a 2-pick
+against a standard partner: `factor = payout / 3`, **de-compressed first** when the payout exceeds ~9.1×.
+
+**PrizePicks' per-leg pricing reconstructs as a symmetric normal tail around the standard line**, with a
+spread specific to each player-stat: the implied sigma is consistent within a ladder to a median CV of
+**0.11** (32 ladders), with **no systematic skew** (demon side wider in 14 of 28; median ratio 1.00). Floor
+goblins must be excluded — their price is clamped, not a probability. **Mining is exact and this is not**,
+so mining is the method; the reconstruction is for sanity checks.
+
 **Tooling:** `nba/pp_payout_map.py` · workflow `.github/workflows/nba-pp-payout-map.yml` · trigger
 `nba/TRIGGER_NBA_PP_MAP.txt` (`max_quotes: N`, `altalt: N`) · output
 `nba/data/pp_payouts/pp_payout_map_<utc>.json`.
