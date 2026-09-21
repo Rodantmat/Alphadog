@@ -14327,6 +14327,54 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.20 — PASS 5 (**referential integrity / composite key**) — **✅ integrity clean · the one failure is already documented · one stale count, out of scope · 0/3**
+*2026-09-21. The production layer joined in both directions. **Rule 14 governed this pass and changed
+its output twice**: both findings I was drafting turned out to be on file.*
+
+**✅ Internal integrity is exact:**
+
+| Check | Result |
+|---|---|
+| `baseline_ladder` rows vs `baseline_ladder_runs.rows` | **206,237 = 206,237** ✅ |
+| Distinct `asof` days, ladder vs runs | **3 = 3** ✅ |
+| Ladder `asof` values missing from runs | **0** ✅ |
+| Distinct players (385) vs `sum(runs.players)` (572) | ✅ **expected** — players recur across days, so the sum exceeds the distinct count |
+
+#### ⚠ T9.20a — **The 100% player join failure is real — and already documented, table by table**
+
+`nba_score.baseline_ladder.player_id` is **bare numeric** (`1630595`); `nba_ref.players.player_id` is
+**prefixed** (`nba_1630173`). **Direct join: 0 of 385. Via `nba_player_id`: 385 of 385. Via
+`'nba_'||id`: 385 of 385.**
+
+**I drafted this as a third instance of the id-convention failure class** (after T6's officials and
+T8's `calibration_log`) — **then opened the grep hits.** `NBA_DATABASE.md` §91 and
+`NBA_OPEN_ITEMS.md` §4863 **already carry the complete table**, from **T1 pass 50**, naming every
+affected table with its row count — *"`nba_score.*` | **bare numeric** | `baseline_history`
+19,343,348 · `final_hp` 19,215,200 · **`baseline_ladder` 206,237** · `board_scored` 110,955 ·
+`availability_delta`…"* — with the measurement, the two working transforms, and the conclusion:
+*"any join from the scoring layer to the reference layer returns zero rows, silently… **This is the
+blueprint's named multi-table ID bug, reproduced.** Which convention is correct is **NOT
+ESTABLISHED** — flagged for human decision."*
+
+**The existing entry is more complete than what this pass derived.** *Recorded as a re-verification:
+six `nba_score` tables carry `player_id`, and **every row in all six is bare numeric — 0 prefixed**,
+confirming the convention split is uniform rather than mixed within a table.*
+
+#### 📌 T9.20b — **One documented count is stale, and the reason is out of scope**
+
+The same entry lists **`board_scored` 110,955**. **Live it is 5,524,359 — fifty times larger.**
+**The cause is visible and belongs to another session**: every row carries
+`built_at` between **2026-09-21 07:23 and 08:05** — **the table was rebuilt in the last hour**, by
+the concurrent session's *"NBA Score History"* workflow (144 game dates, 2024-10-22 → 2026-04-12).
+
+⚠ **Per the standing scope rule, the rebuild itself is NOT documented here** — it belongs to a
+session this sweep has not reached. **What is recorded is only that the figure moved and why the
+sweep is not chasing it**: *the 110,955 was correct when written.* **A later reader comparing the
+documented count to the live one needs to know it is not a discrepancy but a different table
+state.**
+
+---
+
 ### T9.19 — PASS 4 (**live verification of T9's production pipeline**) — **🔑 T9's last open item CLOSED, and an open question ANSWERED · 0/3**
 *2026-09-21. T9's stated gap was item 6 — **"nothing writes the baseline ladder to Postgres yet;
 everything lives in the backtest harnesses."** Checked live. **Rules 12 and 14 applied throughout:
