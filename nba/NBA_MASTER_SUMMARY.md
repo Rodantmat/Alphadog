@@ -12789,6 +12789,47 @@ architecture materialised into `nba_config`.
 > 516 vs all thirty. Tail at `scratchpad/t8/t8_tail.json`. **Novelty baseline: commit `700a999b`,
 > extracted to `/tmp/t8base/nba/`** — grep that tree, never the working tree.
 
+### T8.25 — PASS 4 (**live numeric re-verification**) — **✅ CLEAN 1/3 · 6 of 6 exact · and a tenth table nothing reads**
+*2026-09-21. Every artefact T8 seeded, re-counted live.*
+
+| Artefact | T8 seeded | Live today |
+|---|---|---|
+| `nba_ref.prop_taxonomy` | **28 props** | **28** ✅ |
+| `nba_config.factor_registry` | **29**, layer-tagged | **67** ✅ *(the documented growth, §T8.4 → `NBA_DATABASE.md`'s "67 rows, seeded at 29 in T8")* |
+| `nba_config.variation_bands` · `role_tiers` | 25 · 6 | **25 · 6** ✅ |
+| `nba_config.factor_relevance` · `factor_profile_cells` | 460 · 35 | **460 · 35** ✅ |
+
+#### ✅ T8.25a — `[LIVE-AUDIT]` **The prop taxonomy is FULLY populated — and that is worth recording because its sibling is not**
+
+**28 of 28 rows carry every one of the eight descriptive columns** — `apps` · `period` · `ot_rule` ·
+`distribution_family` · `direction_skew` · `build_tier` · `natural_floor` · `ladder_step` — and all
+28 are `active = 1`. **No nulls anywhere.**
+
+**Set that against `factor_profile_cells`** (§T7.49): 35 rows where `last_validated_at` is null on
+every one and `real_sample_size_observed` is **0 on every one**. **Two tables seeded in the same
+transcript, one complete and one entirely unbacked** — the difference being that the taxonomy
+encodes *decisions* (which props exist, how they grade) while the cells encode *estimates awaiting a
+backtest*. **The taxonomy is the strongest-built artefact T8 produced.**
+
+*Three of its columns — **`build_tier`, `natural_floor`, `direction_skew`** — are named in **none** of
+the thirty documents, although the table itself is discussed in twelve.*
+
+#### 🔴 T8.25b — `[LIVE-AUDIT]` **Nothing reads `nba_ref.prop_taxonomy` either — and this one is outside the §2 banner entirely**
+
+**`nba_ref.prop_taxonomy` appears ZERO times in the codebase.** The six files that match
+`prop_taxonomy` are **MLB's** — `alphadog-v2-static-prop-taxonomy.js`, the MLB parlay boards, the
+phase2b certifier, `verify_schema_all.py` — none of them schema-qualified to `nba_ref`. *(For
+contrast, `nba_ref` **is** read elsewhere: `player_name_map` 24 sites, `players` 15,
+`defender_ratings` 12, `teams` 7.)*
+
+⚠ **This extends the read-by-nothing class beyond `nba_config`.** The `NBA_DATABASE.md` §2 banner
+covers seven `nba_config` tables and a column; §T7.45b added `variation_bands` as an eighth. **The
+prop taxonomy is a ninth object and the first one outside `nba_config`** — so the banner's scope, not
+just its list, was too narrow. *What consumes the taxonomy's grading rules today, if anything, is
+**NOT RECORDED**.* → `NBA_DATABASE.md`.
+
+---
+
 ### T8.24 — PASS 3 (**two-direction judgment**) — **🔴 A SEVENTH SINGLE-PATTERN COUNT, MINE · 🔑 one unrecorded qualifier · 0/3**
 *2026-09-21. 61 high-band segments, 14 tail-direction.*
 
