@@ -14419,6 +14419,57 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.28 — PASS 28 (**literal audit, second run — the bare-identifier surface**) — **✅ CLEAN 3/3 · T10 CLOSES**
+*2026-09-21. The third of the closing three. Pass 22 audited `schema.table`, pass 23 the
+`factor_profile_cells` key columns; this is the rest of the bare-identifier surface.*
+
+#### ✅ T10.28a — **The census, and rule 20 clears every one**
+
+**Predicate** (rule 16): every backticked bare `snake_case` identifier in the twelve — lowercase,
+no dot, at least one underscore — working tree, 2026-09-21; obvious file and env prefixes dropped
+(`BT_`, `nba_`, `scrape_`, `build_`, …). **681 candidates**; the **124 most-mentioned** checked
+against `information_schema.columns` for the eleven `nba%` schemas.
+
+| | Count |
+|---|---|
+| Checked | **124** |
+| Resolve as a live column in ≥1 table | **87** |
+| **Return zero tables** | **37** |
+| …**correctly not columns**, on inspection | **37 of 37** |
+
+**What the 37 actually are** — *every one opened, per rule 20*:
+
+| Class | Examples |
+|---|---|
+| **Confidence / factor-fit variables** (code and JSON, not schema) | `f_prov` · `f_phase` · `f_role` · `f_depth` · `f_time` · `f_impl_own` · `f_impl_opp` · `mu_role` · `k_stab` · `p_over` |
+| **Prop keys — VALUES of the `prop` column, not columns** | `threes_made` · `pts_ast` · `pts_reb` · `reb_ast` · `personal_fouls` · `double_double` · `fantasy_score` |
+| **Factor keys — values of `factor_key`** | `days_rest` · `opp_shot_diet` · `blk_rate` · `tov_rate` · `fg3a_rate` · `ft_poss_pct` · `sf_poss_pct` · `tov_poss_pct` · `score_poss_pct` · `x_ft_pct` |
+| **Source `raw_json` / API fields** | `arena_capacity` *(discussed precisely as a **quoted string** in the scraper's JSON)* · `odds_type` *(a PrizePicks field)* |
+| **A table name, not a column** | `confidence_model` |
+| **A design proposal, explicitly not built** | `relevant_prop_keys` — *"each enrichment factor **should have** `relevant_prop_keys` explicitly declared"* |
+| **Already-recorded absences** | `is_total` — *"**No `is_total` flag exists** — the discriminator is the magic value"* · `year_founded` *(scraped, written nowhere)* · **`rate_tier`** *(§T10.23a)* |
+| **Scenario / local names** | `now_out` · `max_shift` · `returned_lines` |
+
+🔑 ***37 of 37 cleared.*** **Rule 20's running total across the literal audits: 7 of 11 in pass 22,
+4 of 5 in pass 23, 37 of 37 here — 48 apparent defects that a pre-rule-20 pass would have published
+as findings, against 5 real ones.** ***The rule has earned its place: the identifier surface is
+mostly correct, and the naive check is mostly wrong.***
+
+#### ✅ T10.28b — **Closure judgment**
+
+**The closing three are passes 26 · 27 · 28 — three genuinely different angles**, with the
+**two-direction judgment among them** as the criterion requires:
+
+| Pass | Angle | Outcome |
+|---|---|---|
+| **26** | two-direction judgment, baseline-tree reporting | ✅ clean — **O5 upgraded from inference to proof in the rows** |
+| **27** | live numeric re-verification | ✅ clean — **15 figure families exact, every partition closing** |
+| **28** | literal audit, bare-identifier surface | ✅ clean — **37 of 37 apparent defects cleared** |
+
+**T10 CLOSES at 28 passes, CLEAN 3/3.**
+
+---
+
 ### T10.27 — PASS 27 (**live numeric re-verification, second of the closing three**) — **✅ CLEAN 2/3 · every figure exact, every partition closing, one predicate stated more precisely**
 *2026-09-21. `[LIVE-AUDIT]`. Every live figure §T10.1–§T10.26 states, re-derived, with rules 17/18 on
 every count and rule 21 on every identifier.*
