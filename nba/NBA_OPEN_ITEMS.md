@@ -317,6 +317,58 @@ does not protect against the delete above it.**
 
 ---
 
+## FROM T3 PASS 6 — THE SCHEDULE SCRAPER TREATS ITS TWO SEASONS ASYMMETRICALLY, ON PURPOSE *(added 2026-09-21)*
+*Recorded as of 2026-09-03.*
+
+The schedule scraper began as one hardcoded URL (`scheduleLeagueV2?LeagueID=00&Season=2025-26`) and
+was **rewritten within the same session to loop a `seasons` list**, fetching each explicitly. The
+loop's error handling is deliberately **not symmetric**, and the asymmetry is the finding:
+
+```python
+if season == seasons[0] and len(real_games) < 1000:
+    # only the completed season is expected to have ~1230+ games — dump for inspection
+    # if that one looks broken. The upcoming season may legitimately be small/empty if
+    # the schedule hasn't been released yet — not treated as an error.
+    per_season_meta[season]["error"] = f"suspiciously low: {len(real_games)} games, expected ~1230+"
+    output_debug_path.write_text(json.dumps(body)[:100000])
+```
+
+**Only the completed season is allowed to fail the scrape.** An empty upcoming season is a normal
+state — the NBA publishes next season's schedule in August, so between February and August that slot
+is legitimately thin. **Treating it as an error would have made the scraper fail for half the year.**
+
+**Two things worth carrying:**
+- **`real_games` is filtered from `raw_count`** — a game counts only if it has `game_id`,
+  `home_team_id` **and** `away_team_id`, and the meta records both numbers per season. *So a scrape
+  that returns rows of the right shape but missing team IDs is visible as a raw/real gap rather than
+  a silent pass.*
+- **The completed season's threshold is anchored to a real invariant** — `~1230+` is the actual
+  regular-season game count. **This is the one place in T3's scrapers where a magic number is tied
+  to a fact about the world** rather than chosen for margin (contrast the four certification
+  thresholds in `NBA_WORKERS.md` §0.31). *It is in the scraper, not the worker — the worker that
+  loads this data still certifies on `written >= 1000`.*
+
+### The play-types scraper checks both levels before exiting
+`sys.exit(1)` if **either** the player-level or team-level meta carries an error — *"both are
+checked, neither silently skipped."* **A partial success at one level does not mask a failure at the
+other**, which is the failure mode a single combined row count would hide.
+
+### The DARKO source rationale, in the scraper's own docstring
+Recorded because it states why this third-party dependency was considered acceptable:
+- *"rated by NBA analytics experts as the best predictive catch-all metric (**beats even paid
+  EPM/LeBron on RMSE**)"*
+- *"uses the **exact same NBA person IDs** already in our system (`/player/203999` = Jokić's real
+  stats.nba.com person id) — **a clean join, no name-matching**"* — which, given the Jokić diacritic
+  and `Last, First` problems documented elsewhere in this sweep, is the substantive argument
+- *"unlike stats.nba.com, this site is **not confirmed Cloudflare-blocked** from anywhere — but this
+  scraper still runs on a GitHub Actions runner **for consistency with the rest of the pipeline and
+  because its exact anti-bot posture (if any) is unknown until tested for real**"*
+
+*The last point is a deliberate choice to stay on the slower path rather than assume a site is
+friendly — the same reasoning that would have saved time on stats.nba.com had it been available.*
+
+---
+
 ## FROM T3 PASS 4 — THE DIFFERENTIAL WORKER DOCUMENTS ITS OWN SEMANTICS IN ITS RESPONSE *(added 2026-09-21)*
 *Recorded as of 2026-09-03.*
 
