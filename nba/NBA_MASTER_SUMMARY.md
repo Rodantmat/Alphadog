@@ -14430,6 +14430,56 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.24 — PASS 23 (**segment 112 read in full — T11's deliverable**) — **📋 the factor × season backfill matrix is now in the twelve · 0/3**
+*2026-09-21. The angle rule 25 forced on itself: **pass 22 read a third of a 2,462-character segment
+and said so, which put the rest on this pass's list.***
+
+#### 📋 T11.24a — **The matrix, transcribed complete, and written to `NBA_OPEN_ITEMS.md`**
+
+**§T11.2d established that the twelve carry the owner's requirement — *"every enrichment factor needs
+a two-season backfill"* — and NOT the instrument that tracks it.** ***This pass put the instrument in
+the twelve.*** *(The full table, with every source and build note, is in `NBA_OPEN_ITEMS.md`; it is
+not duplicated here.)*
+
+🔑 **What it settles, and it is the answer T11 exists to give:**
+
+| state | factors |
+|---|---|
+| **✓ have, all three seasons** | **a2** · **a3** · **a4** · **a7** · **a8** · **b3** · **b5** · **d2** · **k1** |
+| **⏳ running / 🔧 built, run pending** | **a1/n1/n2/a6/a9** · **a5** · **b4/m1** · **d1** · **m3/m4** · **m2** *(prior-season table, parity-safe)* |
+| 🔴 **⛔ BLOCKED — all three seasons** | **b1/b2/c3** market · **c1/c2** book-vs-pick'em · **c4/s1–s4** pick'em structure |
+| **– no backfill applies** | **e1–e4** confidence — *run metadata* |
+
+🔴 ***All three blocked groups are MARKET OR BOARD HISTORY, and their reasons are different:***
+**b1/b2/c3** was a **dead key** *(resolved inside T11 when the owner renewed it — §T11.23b)* ·
+**c1/c2** is **paid — BigDataBall — an owner decision** · **c4/s1–s4** is **impossible: no free
+archive exists for anyone** *(§T11.23c)*. ***Everything else is have, running, or built-and-pending
+— which is precisely what segment 113 claims: "everything else is built or running."***
+
+#### 📌 T11.24b — **Four items in the matrix were in none of the twelve**
+
+*Probed with positive controls against `5dfb72ab` (rules 20, 22):*
+
+| item | of thirty | of the twelve |
+|---|---|---|
+| **`m2`'s limitation** — *"prior-season synergy play types have **no date filter** → use the previous season's table for a given season"*, marked **parity-safe** | **1** | **0** |
+| **The national-TV flag** — *"⏳ + national-tv flag — verify schedule field"* on `a4` | 3 | **0** |
+| **The all-star / all-NBA static lists**, *"to add"* on `a4` | 5 | **0** |
+| **`k1`'s source** — *Wikipedia season pages' "coaching changes" tables with dates, "to compile as a static file"* | 2 | **0** |
+
+🔑 **`m2`'s is the one worth naming twice**: ***a synergy table with no date filter is a look-ahead
+hazard, and the mitigation — use the PREVIOUS season's table — is why the note says "parity-safe."***
+**A documented limitation that the mandated documents did not document.**
+
+📌 **And `e1–e4` confirms the taxonomy's shape**: the **confidence** factors take **no backfill at
+all** because they are **run metadata** — *not measured from history, produced by the run* — which is
+consistent with `build_confidence_v3.py`'s factors being computed at scoring time (**O6**).
+
+**Pass outcome: T11's deliverable written — the backfill matrix is in the twelve — with four of its
+items recorded there for the first time. 🔴 CLEAN 0/3 · 24 passes.**
+
+---
+
 ### T11.23 — PASS 22 (**predicate-completeness audit**) — **🔴🔴 the tail was three segments and nobody opened them; one is an OWNER-ACTION LIST · 0/3**
 *2026-09-21. The angle §T11.22a earned. **Completing one sample found a second sample that had never
 been completed at all — and it was three segments long.***
