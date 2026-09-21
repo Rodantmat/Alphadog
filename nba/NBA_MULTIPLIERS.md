@@ -619,6 +619,11 @@ truth**"* (COMPASS fact 62).
 ## 8. SLIP-LEVEL OBSERVATIONS — what exists
 
 **`nba_score.real_slip_leg_observations`** — **139 legs**, `decomposition_method='equal_scale_v1'`.
+> 🔴 **`[LIVE-AUDIT]` 2026-09-21 (§T10.24b): this table is NOT in the database**, and it is not on
+> `NBA_DATABASE.md`'s DROPPED-2026-09-19 list either. **Why is NOT RECORDED** — dropped by a session
+> this sweep has not reached, or never created. *The point the 139 legs are cited to make — that
+> **there is no usable NBA slip history** — is unaffected, and in fact stronger.* **Sibling of the
+> `NBA_DATABASE.md` site flagged at §T10.22b; found because pass 22 flagged one of two.**
 
 **`equal_scale_v1`** is the decomposition assumption: a slip's observed total payout is attributed
 across its legs **by equal scaling**. **That is an assumption, not a measurement** — and it is exactly
