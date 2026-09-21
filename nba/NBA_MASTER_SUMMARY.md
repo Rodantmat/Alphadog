@@ -14430,6 +14430,64 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.52 — PASS 51 (**the thirteenth two-direction judgment — pre-registered, aimed at SETTLED claims**) — **❌ two rule-19 quotation omissions, both mine · ✅ one causal claim now rests on two workers, one surface closed · 0/3**
+*2026-09-21. **Pre-registered before measurement**: the band would be unchanged on the baseline and
+the working tree would show zero tail, because passes 49–50 wrote only into files already inside the
+corpus. **Eighth pre-registration, eighth hit.***
+
+#### ✅ T11.52a — **The band, and the seventeenth identical baseline**
+| tree | high | tail | uncovered12 | uncovered30 |
+|---|---|---|---|---|
+| **baseline `5dfb72ab`** | **13** | **3** | **695** | **689** |
+| **working** | **39** | **0** | **664** | **664** |
+
+***The baseline reading is identical for the seventeenth consecutive pass*** — *the tree is frozen,
+so this is the control behaving as a control.* 🔑 **The working tree's tail is 0 and `uncovered12`
+= `uncovered30` = 664**: every segment the twelve now miss, ALL of `nba/` also misses — **the
+self-authorship gap has closed to zero on this transcript**, which is what §T11.38a's corrected
+measurement predicted once the run log was excluded. *(`EXCL` = `PP_PAYOUT_FINDINGS.md`,
+`NBA_SWEEP_RUN_LOG.md` — rule 25, both harnesses.)*
+
+#### ✅ T11.52b — **The load-gap causal claim is now TWO-FOR-TWO, not one worker**
+**§T11.31b** rested on `alphadog-v2-nba-static-game-officials.js` alone. 🔑
+**`alphadog-v2-nba-static-starter-status.js` carries the identical pattern** —
+`let season = input.season || null;` → fallback read of `nba/data/nba_daily_delta_meta.json` →
+`const slug = (season || "2025-26").replace("-", "_");` → `ON CONFLICT (player_id, game_id) DO UPDATE`
+*(officials: `ON CONFLICT (game_id, official_id)`)* — **with a comment stating the multi-season
+intent.** ✅ ***So the finding is confirmed at the right strength: both loaders are multi-season-capable
+and both default to the current season, which is why two seasons sit scraped-but-not-loaded.*** **The
+claim no longer rests on a single file.** *(Still: documented, not fixed — rule 1.)*
+
+#### ✅ T11.52c — **`triple_double` is absent from `board_snapshots` too — the last surface closes**
+`nba_market.board_snapshots` carries **`player_double_double` 274,010** and **no
+`player_triple_double`** *(live SQL, 2026-09-21)*. **That is the captured-feed surface**, the one
+that could have contradicted §0z's six. 🔑 ***Stated at evidence strength: what the board snapshots
+hold is what the scrapers REQUEST. Whether the apps do not OFFER `triple_double` is NOT RECORDED.***
+📌 Written to `NBA_DATABASE.md` *(commit `f087d6b1`)*.
+
+#### ✅ T11.52d — **`injury_report_snapshots` strengthened: four files, and all four are DOCUMENTS**
+The table appears in exactly **`NBA_SWEEP_RUN_LOG.md`**, **`NBA_OPEN_ITEMS.md`**,
+**`NBA_MASTER_SUMMARY.md`**, **`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`** — ***no code, no workflow,
+no worker.*** ⚠ The `nba_daily` workflow hits were the filename `nba_daily_delta_meta.json` again —
+opened and dismissed, as in three prior passes. 🔑 **`[LIVE-AUDIT]`, dated, stated as STATE**: this
+is what the repository holds on 2026-09-21; T12–T20 are unswept and may record its creation.
+
+#### ❌ T11.52e — **Two rule-19 omissions in my own quotations — both found by re-reading the source**
+| segment | what the entry quoted | what it DROPPED |
+|---|---|---|
+| **355** | the market-probing result | ⚠ **the first half is a TO-DO list** — *"verify injury shards Oct–Dec present… then the market probing phase (ParlayAPI first)"* — **the ordering was stated and I recorded only the outcome** |
+| **501** | the bridge-probe line | ⚠ **the tail** — *"bridge probe: summarize-fields patch committed but not observed live yet (verify); probe workflow `nba-probe.yml` + `nba/probe_board_archives.py` exist — no commit runs"* |
+
+***Rule 19 is quote the segment, not the part of it that supports the entry.*** 🔴 **Both omissions
+were mine, both in entries already written, and both are the same failure the CLASS REGISTER was
+built for — an unenumerated population, here the population being the segment's own clauses.**
+📌 Both restored to `NBA_OPEN_ITEMS.md` *(commit `41ee95ae`)*.
+
+**Pass outcome: ❌ two rule-19 quotation omissions. CLEAN 0/3 · 52 passes.** *(The closing three
+restart. Pass 52 takes a genuinely different angle.)*
+
+---
+
 ### T11.51 — PASS 50 (**the CHARACTERISATION audit — nine claims, three vocabularies each**) — **❌ two credit corrections, and both are about the sweep's OWN METHOD · 0/3**
 *2026-09-21. **§T11.50b relocated the remedy here: the numbers are the sweep's own, the descriptions
 often are not.** Tested.*
