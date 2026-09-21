@@ -87,6 +87,29 @@ as live-only? **Both are writes or design decisions this sweep does not make.**
 
 ---
 
+## ⚠ `factor_gate_results` IS IN `nba_score`, AND MOST OF ITS MENTIONS IN THESE DOCUMENTS OMIT THE SCHEMA
+*Found 2026-09-21, T10 pass 16 (§T10.16e). Severity **low**; fix trivial; it costs a reader their
+first query.*
+
+**Live**: `nba_score.factor_gate_results` — **104 rows**, verified. ✅
+
+🔴 **But it is named beside `nba_config.factor_registry` (67) and `nba_config.factor_relevance` (460)
+in almost every passage that discusses the relevance gate — and 15 of its 24 mentions across the
+twelve carry no schema**, in `NBA_DATABASE.md`, `NBA_FINAL_SCORING_CALIBRATION.md`,
+`NBA_GLOSSARY.md`, `NBA_MASTER_SUMMARY.md`, `NBA_OPEN_ITEMS.md` and `NBA_WORKERS.md`.
+
+**The natural inference from the surrounding text is `nba_config`, and it is wrong.** *Recorded
+because this sweep made exactly that inference: the pass-16 verification query named
+`nba_config.factor_gate_results` and errored with `relation … does not exist`.*
+
+📌 **OWNER DECISION (minor)**: qualify the 15 bare mentions, **or** state once in `NBA_GLOSSARY.md`
+that the factor tables span two schemas — `nba_config` for the registry and the relevance matrix,
+`nba_score` for the gate results — and leave the short form alone. *Not fixed: "document, don't fix"
+governs the system, and this is a documentation defect the owner may prefer to settle one way for all
+cross-schema names rather than piecemeal.*
+
+---
+
 ## 🔴 THE 2025-26 MATCHUPS SHARDS ARE ONE GAME SHORT AND ONE COLUMN SHORT
 *Recorded 2026-09-21 (T10 pass 4, §T10.4b). `[LIVE-AUDIT]` — verified from the shard files and their
 index metadata on disk. **Not a transcript finding.***
