@@ -14423,6 +14423,73 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.12 — PASS 11 (**closing novelty audit, rule-22 controlled**) — **🔴 a documented "100% coverage" is 99.76%, and it is in two of the twelve · 0/3**
+*2026-09-21. The pass that would have closed T11. **It found a defect instead, and the defect is a
+claim the mandated documents make.***
+
+#### ✅ T11.12a — **Seven claims confirmed novel, three hits opened**
+
+**Zero across all thirty, every probe positive-controlled (rule 22)**: the cross-sport contamination ·
+**no sport discriminator in `nba_market`** · Sleeper's **zero NBA rows** · the **20-key / 67-key**
+vocabularies · the **six unmapped games** · the **1,338,020-timestamp census** · the **flat-vs-`meta`
+index shapes.**
+
+**Three probes returned hits and all three were opened (rule 7):**
+
+| probe | hits | verdict |
+|---|---|---|
+| `7,?762` / `0\.029` | 2 | ❌ **false hit** — the substring `+0.029` inside a beta range *"−0.056…+0.029"*. **Novel.** |
+| `2,?460` | 6 | ⚠ **value collision, not subject overlap** — `nba_team.team_game_log` holds *"**2,460 rows for 2025-26 — exactly 30 teams × 82 games**"*, and a backfill is costed at *"~2,460 calls"*. **Novel.** |
+| `2,?454` | 4 | 🔴 **REAL MATCH — see below.** |
+
+🔑 **The `2,460` collision is worth its own line**: ***2,460 = 1,230 × 2 = 30 × 82.*** **The same
+number arises from two unrelated identities — two seasons of games, and one season of team-games — and
+a future pass grepping the figure will find three different objects.** *Recorded so the coincidence
+is not mistaken for a cross-reference.*
+
+#### 🔴 T11.12b — **`2,454` is documented — as *"100% coverage"* — and it is 99.76%**
+
+**Four documents, two of them mandated, record the real-market-spread coverage as 2,454 games:**
+
+> `NBA_DATABASE.md`: *"Measured on the **real market spread** (**307,604 rows** available, **2,454
+> games, 100% coverage**)"* · `NBA_FINAL_SCORING_CALIBRATION.md`: *"Upgraded from the r=0.46 derived
+> proxy to the real market spread (**307,604 rows, 2,454 games, 100% coverage**)"* ·
+> `NBA_COMPASS.md` and `NBA_PROJECT_LOG.md` likewise, the latter adding *"`nba/export_market_spreads.py`,
+> **2,454 games, 100% coverage**, as-of legal at 08:00 PT."*
+
+**`[LIVE-AUDIT]`, and the 307,604 matches `game_lines_snapshots` exactly (§T11.10b):**
+
+| measure | value |
+|---|---|
+| `schedule_norm` — games in range 2024-10-22 → 2026-04-12 | **2,460** *(= 1,230 × 2)* |
+| `event_game_map` — distinct games mapped | **2,454** |
+| **Unmapped** | **6** |
+| `game_lines_snapshots` — distinct `event_id` | **2,468** |
+| **`game_lines_closing` — distinct `canonical_event_id`** | **2,410** |
+
+🔴 ***"2,454 games, 100% coverage" is 2,454 of 2,460 — 99.76%.*** **The "100%" is 100% of the games
+that were MAPPED, not 100% of the season** — ***a denominator taken from the numerator's own table***,
+which is §T10.6a's shape: *the integrity check runs in the one direction that cannot see the gap.*
+
+🔴 **And the closing-lines table is further short: 2,410 of 2,460 — 97.97%, fifty games.**
+⚠ `game_lines_snapshots` carries **2,468 distinct events — eight MORE than the schedule holds games.**
+**Why: NOT RECORDED** (rule 6).
+
+**The six unmapped games, named** *(observation only; no cause asserted)*: **2024-12-14** MIL@ATL and
+OKC@HOU · **2025-11-01** DET@DAL · **2025-12-13** OKC@SAS · **2026-01-15** ORL@MEM · **2026-01-18**
+MEM@ORL. 📌 **Two share a date; whether that is meaningful is NOT RECORDED** — *nothing swept so far
+explains any of the six.*
+
+✅ **Corrected in `NBA_DATABASE.md` and `NBA_FINAL_SCORING_CALIBRATION.md`** — the two mandated
+documents carrying the claim. *The blowout-model measurements built on those 2,454 games are
+unaffected in kind; what changes is that the sample is 99.76% of the seasons, not all of them.*
+
+**Pass outcome: 7 claims confirmed novel, 2 false hits dismissed, 1 real defect — a "100% coverage"
+claim in two of the twelve that is 99.76%, with a second table at 97.97%. 🔴 CLEAN 0/3 · 12 passes.**
+*(The closing three reset: passes 9 and 10 were clean, this one is not.)*
+
+---
+
 ### T11.11 — PASS 10 (**second two-direction judgment**) — **✅ CLEAN 2/3 · the key set attacked at its root and it holds**
 *2026-09-21. Second of the closing three, and the two-direction judgment the criterion requires among
 them.*
