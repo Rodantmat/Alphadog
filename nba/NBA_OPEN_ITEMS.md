@@ -1290,6 +1290,30 @@ holds USG%/TS%/net rating, `nba_team.season_profile` holds pace and off/def rati
 `player_onoff_profile` holds the on/off splits. *Those are the tier-1 and tier-2 factors from the
 Gemini list, all landing under a season label the worker chose rather than the data did.*
 
+### A THIRD form of the same debugging move — headers into the error message
+The player-tracking scraper does not wait for a zero-row failure. It checks whether its **key field
+is null across every row**, and if so puts the source's real header list into the error:
+
+```python
+if not any(p.get("avg_speed") is not None for p in players):
+    error = f"suspicious_all_null_avg_speed: real headers were {headers}"
+```
+
+**This catches the exact failure that cost two cycles elsewhere in this project** — a well-formed
+response with a silently empty field, which is what `leagueStandingsV3`'s missing `TeamAbbreviation`
+and `teamInfoCommon`'s missing `ARENA` both were. **A row count cannot see it; a null-check on the
+field you actually came for can.**
+
+**Three forms of one technique now recorded, all from the same two sessions:**
+
+| Form | Where the evidence lands | Scraper |
+|---|---|---|
+| `_debug_headers` array in the output file | committed JSON | arenas |
+| full raw page dumped on low confidence | committed debug artifact | DARKO, schedule |
+| **real header list inside the error string** | **the meta file's `error` field** | **player tracking** |
+
+*The third is the cheapest and the only one that costs nothing when the scrape succeeds.*
+
 ### The `_debug_headers` technique, worth keeping as a practice
 The arenas scrape's first output committed **`arena_name: null` for all 30 teams plus a
 `_debug_headers` array listing the columns `teamInfoCommon` actually returned** — `team_id`,
