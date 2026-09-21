@@ -235,8 +235,17 @@ and **NOT RECORDED** is whether the cross-sport capture is deliberate (one table
 | **`underdog`** | `close` · `routine` · `window` | **939,719** | 2024-10-22 → 2026-09-12 | **380** |
 | ⚠ **`betr_us_dfs`** | `close` · `window` | **780,765** | **2025-11-23** → 2026-04-12 | **131** |
 | ⚠ **`pick6`** | `close` · `window` | **534,188** | **2025-05-26** → 2026-04-12 | **176** |
-| `fliff` | `routine` | 1,394 | 2026-09-13 | **1** |
-| 🔴 **`sleeper`** | `routine` | **1,276** | **2026-09-12** | **1** |
+| `fliff` | `routine` | 1,394 | 2026-09-13 | **1** — 🔴 **0 of them NBA markets** |
+| 🔴 **`sleeper`** | `routine` | **1,276** | **2026-09-12** | **1** — 🔴🔴 **0 of them NBA markets** |
+
+> 🔴🔴 **CORRECTED 2026-09-21 by §T11.8b — the "one day" above is an artifact of counting rows
+> without checking their sport.** **The `routine` rows are the live 2-hour board crons capturing
+> mid-September boards, and mid-September is not NBA season**: of Sleeper's 1,276 rows **ZERO carry an
+> NBA `market_key`** (530 are provably baseball), and of Fliff's 1,394 likewise **zero**; Underdog's
+> `routine` day is **189 NBA rows of 5,281 — 3.6%.**
+> ✅ ***So Sleeper has no NBA board rows at all***, which matches `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`'s
+> *"Sleeper has no history anywhere"* **exactly**. **The PrizePicks and Underdog `window`/`close`
+> figures are the real NBA backfill and are unaffected.**
 
 🔴 **The owner asked for two seasons of board snapshots for *"sleeper, underdog, and prizepicks"*
 (T11 seg 197). Two of the three have them. Sleeper has a single day and a single label.**
