@@ -14423,6 +14423,64 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.13 — PASS 12 (**coverage-claim audit — where does the denominator come from?**) — **🔴 §T10.11's "strongest structural confirmation" is five slices of one table · 0/3**
+*2026-09-21. `[LIVE-AUDIT]`. The angle §T11.12b forced: a *"100% coverage"* was 99.76% because the
+denominator came from the numerator's own table. **That is a shape, and this pass looks for its
+siblings.***
+
+#### 📌 T11.13a — **The test, and the verdicts**
+
+**For each completeness claim in the twelve: what does the numerator count, what does the denominator
+count, and is the denominator INDEPENDENT of the numerator's table?**
+
+| claim | denominator | independent? | live check |
+|---|---|---|---|
+| **`12,300 = 10 starters × 1,230 games`** | **the season schedule** | ✅ **yes** | **1,230 games · 12,300 starters · exactly 10.000 per game** ✅ |
+| **`nba_ref.teams` 30 / `nba_ref.arenas` 30** | **the league is 30 teams** | ✅ **yes** | **30 / 30, 30 distinct `team_id` each side, 0 arena orphans, 0 teams without an arena** ✅ |
+| **`source_key` 5 + 25 = 30** | teams = 30 | ✅ **yes** | verified §T10.27a ✅ |
+| **`0 of 460 `factor_key` orphaned`** | **`factor_relevance` itself** | 🔴 **no** | **0 orphans ✅ — and 38 registry factors unmapped in the other direction** *(§T10.6a, confirmed live)* |
+| **The five registry partitions closing on 67** | **`factor_registry` itself, five times** | 🔴 **no** | see §T11.13b |
+| **Shard `covered + empty`** | the index's own lists | 🔴 **no** | 2025-26's missing game is in **neither list** *(§T10.27b)* |
+| **`2,454 games, 100% coverage`** | `event_game_map` | 🔴 **no** | **99.76% against `schedule_norm`'s 2,460** *(§T11.12b)* |
+
+#### 🔴 T11.13b — **"Five independent partitions" are five slices of one table**
+
+§T10.11 recorded, and called it ***"the strongest structural confirmation this sweep has produced for
+any object"***: the registry is **67 = 28 + 39** (write batch) · **67 = 29 + 38** (relevance
+coverage) · **29 = 28 + 1** (mapped by batch) · **29 = 4 + 25** (by layer) ·
+**67 = 15 + 17 + 2 + 2 + 31** (`compute_stage`).
+
+✅ **All five are exact and all five still hold.** 🔴 **But every one of them partitions
+`nba_config.factor_registry`, so what they establish is that the table is INTERNALLY CONSISTENT — not
+that 67 is the right number of factors.** ***Five slices of one cake are not five cakes.***
+
+⚠ **And no independent denominator for 67 exists in anything swept.** The nearest external statement
+is `NBA_ENRICHMENT_FACTOR_LOCK.md`'s *"34 factors, ~90 sub-factors"* — **which §T10.4 already showed
+is the same table sliced differently (36 enrichment rows, 34 active), not a second count.**
+**NOT RECORDED**: whether the factor set was ever counted against anything outside the registry.
+
+🔑 **What the correction does and does not do**: *it does not weaken any finding built on the
+registry* — the 29/67 relevance gap, the two-batch timestamp and the `compute_stage` distribution are
+all facts about that table and remain exact. **It corrects the WEIGHT §T10.11 put on them**:
+internal consistency is evidence that the table is coherent, and it is not evidence that it is
+complete. *Corrected in place.*
+
+#### ✅ T11.13c — **Three claims pass with genuinely external denominators, and one is worth keeping**
+
+**`12,300 = 10 × 1,230` is the model of a good completeness check**: the numerator is starter rows,
+the denominator is the league's own schedule, and the quotient lands on **exactly 10.000** — *a value
+that can only be right or obviously wrong.* **`teams`/`arenas` is the same shape against the league's
+30 franchises, with the bijection verified in both directions.**
+
+📌 **Operative distinction for every future coverage claim**: ***a denominator is independent when it
+comes from the world — a schedule, a roster size, a league — and not when it comes from the table
+being measured.*** **Where none exists, say so.**
+
+**Pass outcome: 3 claims verified against external denominators, 4 shown to have internal ones (3
+already found, 1 new — the registry's 67), and §T10.11's framing corrected. 🔴 CLEAN 0/3 · 13 passes.**
+
+---
+
 ### T11.12 — PASS 11 (**closing novelty audit, rule-22 controlled**) — **🔴 a documented "100% coverage" is 99.76%, and it is in two of the twelve · 0/3**
 *2026-09-21. The pass that would have closed T11. **It found a defect instead, and the defect is a
 claim the mandated documents make.***
