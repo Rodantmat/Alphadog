@@ -70,6 +70,38 @@ WHAT "UNCOVERED" ACTUALLY MEASURES - read before quoting any percentage
 
     Quote the percentage as "not yet in the twelve".  Never as "undocumented".
 
+STANDING RULES FOR THE READER - adopted 2026-09-21 after four self-corrections in nine passes
+
+    RULE 1. COUNTS ARE EVIDENCE OF OUTCOMES, NEVER OF MECHANISMS.
+        This is the most repeated failure mode in the whole sweep - four instances:
+          pass 75  three crons read as two, because grep -A2 missed one behind comments
+          pass 79  "four red steps", because `skipped` was counted as `failure`
+          pass 86  "thirteen polling sleeps", because distinct durations were counted
+                   instead of calls
+          T3.5     "scheduleLeagueV2 returned both seasons", inferred from a 1400+1266
+                   output count - the scraper had been rewritten to loop a seasons list,
+                   and that code was three segments further down the same stratum
+        A number tells you what happened. It never tells you why. Read the code that
+        produced it before describing the mechanism, and if that code is not in hand,
+        write the outcome and say the mechanism is unread.
+
+    RULE 2. READ TO THE END OF A STRATUM BEFORE WRITING FINDINGS FROM IT.
+        Segments are ordered by SIMILARITY SCORE, not chronology. A worker's first
+        draft and its later rewrite sit adjacent in arbitrary order, so a finding
+        written from the first half of a stratum can describe a version the transcript
+        itself already superseded. Three of the four corrections had this cause.
+
+    RULE 3. A PASS SPLIT ACROSS SESSIONS MARKS ITS ENTRIES **PROVISIONAL**.
+        Resolve them in the pass that finishes the stratum. Pass 8 was the first to
+        need no corrections after rules 1-3 were adopted.
+
+    RULE 4. REPORT FINDINGS-PER-SEGMENT FOR EVERY TRANSCRIPT.
+        Measured so far: T2 closed at 1 per 34; T3 ran at 1 per 6 on the same kind of
+        material. That gap was NOT a difference between the transcripts - it was a
+        difference in how carefully their command strata were read, and it is why T2
+        was reopened. TREAT ANY TRANSCRIPT COMING IN ABOVE ~1-PER-20 AS A SIGNAL THAT
+        THE READING WAS SHALLOW, not that the transcript was thin.
+
 THE THREE FALSE-TAIL MECHANISMS - all measured, read all three together
     A segment in the tail is NOT necessarily undocumented.  Three separate mechanisms
     put already-handled material below 0.40, and they compound:
