@@ -14361,6 +14361,78 @@ the loader.
 > 685 vs all thirty. Tail: `scratchpad/t9/t9_tail.json`. **Novelty baseline: commit `213800e7`,
 > extracted to `/tmp/t9base/nba/`.**
 
+### T9.28 — PASS 13 (**heading-and-summary audit**) — **🔴 the T8 corpus composition survived in TWO places, and rule 11 would have caught it · 0/3**
+*2026-09-21. The angle pass 11 discovered, run deliberately: **every figure that a heading, ledger
+row, corpus preamble or closing summary states, re-derived from the body it claims to summarise.***
+
+**Method, and why the first attempt was discarded.** The obvious test — *does a heading's figure
+appear in its own body?* — returned **583 hits across 1,288 figure-carrying headings**, almost all
+section numbers (`### 3.6`) and headings that ARE the statement (`### nba_ref.players — 582 rows`).
+📌 **A test that flags 45% of its population is not a test.** It was replaced with three targeted
+ones, each against a named authority.
+
+#### 🔴 T9.28a — **The T8 corpus composition was corrected to 609 / 6 in the ledger row and left at 539 / 3 in the corpus preamble AND the run log**
+
+§T8.24a established that **T8 has six owner turns, not three** — the transcript's own segment list
+gives **615 segments, 609 assistant, 6 human**. That correction reached the **ledger row** and
+§T8.29's body. **Two copies survived:**
+
+| Surviving copy | What it still said |
+|---|---|
+| `NBA_MASTER_SUMMARY.md` — the **T8 re-sweep corpus preamble** | *"615 segments — **539 assistant, 3 owner**"* |
+| `NBA_SWEEP_RUN_LOG.md` — the **T8 corpus row** | *"615 segments — 539 assistant, **only 3 owner**"* |
+
+🔴 **And the figures are not merely stale — they are CROSSED.** **539 + 3 = 542**, which is the
+**uncovered** count, not the total; the composition never summed to 615 in either copy. ⚠ **Rule 11
+would have caught this at the moment of writing** — *when verifying a partition, check the parts sum
+to the whole* — **and the partition was sitting on the same line as its own total.** Both fixed, with
+the authority named in place.
+
+🔑 **This is the THIRD direction of the same propagation failure, and together they close the set:**
+
+| | Where the correction landed | Where it stopped |
+|---|---|---|
+| **§T9.25a** | entry + topical docs | **the summary rows** |
+| **§T9.26a** | body + rule text + run log | **the entry's own heading** |
+| **§T9.28a** | entry + **ledger row** | **the corpus preamble and the run-log corpus row** |
+
+**So there is no safe direction.** *A figure is at risk wherever it was **re-typed rather than
+derived** — heading, preamble, ledger row, run log, closing summary — and which copy goes stale is
+not predictable from which one was written first.* **The only reliable check is to grep the figure
+itself across all twelve and sum every partition it belongs to.**
+
+#### ⚠ T9.28b — **`703 uncovered (91.4%)` is a timestamped measurement stated as a corpus fact, and the same script now returns 696**
+
+The T9 corpus row states **703 uncovered vs the twelve (91.4%)** in two documents. **Re-run at pass
+11 with the identical method** — `tail9.py` and `judge9.py` share the doc segmentation, the vectorizer
+parameters (`char_wb`, 4–5, `min_df=2`, `sublinear_tf`) and the 0.40 threshold — **the same corpus now
+returns 696, and 685 vs all thirty returns 679.**
+
+**Nothing is wrong: the method is stable and the documents moved.** *The twelve gained §T9.16–§T9.27
+during the run, and those writes absorbed **7 segments** vs the twelve and **6** vs all thirty.*
+🔑 **Which makes the drift a metric, not an error — it is this sweep's own coverage gain, measured:
+7 of 769.** **Recorded as such rather than "corrected", since the 703 was true when taken.**
+⚠ **The lesson for every remaining transcript: a coverage figure is dated by construction.** *State
+it with the pass that took it, never as a property of the transcript.*
+
+#### ✅ T9.28c — **Every other derived summary figure re-derives exactly**
+
+| Check | Authority | Result |
+|---|---|---|
+| The six **"≈ 1 per N"** finding densities (T4 ×2, T5, T6, T7, T8) | their own numerator / denominator | **6 of 6 correct** — 41.5→41 · 49.8→50 · 53.6→54 · 65.9→66 · 27.0→27 · 30.8→31 ✅ |
+| The six **uncovered percentages** | uncovered / corpus | **6 of 6 exact** — 498/607 = 82.0 · 375/438 = 85.6 · 527/595 = 88.6 · 944/1,081 = 87.3 · 542/615 = 88.1 · 703/769 = 91.4 ✅ |
+| **Every figure in the T1–T9 ledger rows**, against that transcript's entry block | the entry bodies | **all resolved** — the only five apparent misses were the filename timestamp `…-22-38-55` and figures living in the corpus preamble above the first entry ✅ |
+| **Every corpus composition line** (assistant + owner = total) | the line's own total | **5 of 6 sum** — the sixth is §T9.28a ✅ |
+
+**Scope stated exactly**: this pass checked **derived numeric figures in summary positions**. It did
+**not** re-derive prose claims in headings, and it did not check the other eleven documents' headings
+against their bodies — **the discarded first method is why, and a better test for those is NOT
+DESIGNED.**
+
+**Pass outcome: 1 defect in two copies, 1 caveat, everything else exact. 🔴 CLEAN 0/3 · 13 passes.**
+
+---
+
 ### T9.27 — PASS 12 (**novelty audit vs `/tmp/t9base/nba/`, commit `213800e7`**) — **🔴🔴 the ladder in Postgres was built under TWO depth regimes under ONE recipe string · 0/3**
 *2026-09-21. Everything passes 7–11 added, grepped against the pre-T9 snapshot — **every hit opened**
 (rule 14). One defect of mine, one large live finding it led to, and one pattern about this sweep.*
