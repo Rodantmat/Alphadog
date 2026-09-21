@@ -95,6 +95,10 @@ logs** instead.
 **Three recorded consequences, all of the same shape — decisions made without the board in hand:**
 - The ladder was certified at **±6 rungs**; **`LADDER_DEPTH` later measured books laddering to 13–16**
   on the deep props (*"a single fixed depth is wrong in BOTH directions"*).
+  > ⚠ *Disambiguated 2026-09-21 (§T9.39b): **13 is the p95 MEASUREMENT, not a table value.** The
+  > configured deep props are **`points` 14 · `pts_ast` 14 · `pts_reb` 15 · `pra` 16 ·
+  > `fantasy_score` 16** — **no entry in `LADDER_DEPTH` is 13.** The shallow end is **2**
+  > (`steals`, `blocks`), which is what makes "wrong in BOTH directions" exact.*
 - **`norm_market()`** was written without the board; **44% of the board (23,286 legs) would have
   scored nothing, silently.**
 - **Goblin/demon tiers beyond ±6 remain uncertified** — deferred deliberately by the owner as
