@@ -2105,6 +2105,42 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+### T2.5 — PASS 5 (**REOPENED: command stratum re-read at T3's depth**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21. The first pass of the depth re-read, and **two of its four findings are corrections to
+entries this sweep wrote while reading T2 shallowly or reading T3 without T2's context.***
+
+1. ⚠ **CORRECTION to `NBA_WORKERS.md` §0.34.** That entry said the `scope_lock` declaration was
+   unique to the differential worker — *"no other NBA worker does this."* **Wrong.** ***VERIFIED***:
+   `alphadog-v2-nba-static-arenas.js` line 101 declares one and returns it from `/run` at line 156.
+   **The convention came from the teams worker in T1 and was carried into arenas in T2.** What is
+   actually distinctive about the differential worker's version is its **content** — seven tables
+   and a declared write to one it does not own. *A single-table `scope_lock` restates the worker's
+   name; a seven-table one with an exception earns its keep.*
+2. ⚠ **CORRECTION to T3 pass 10's officials finding.** I recorded name-keyed official IDs as an
+   undeclared fragility. **It was declared three times by T2** — ***VERIFIED*** at
+   `alphadog-v2-nba-static-officials.js` line 150, a **`known_limitation` field in the worker's own
+   response**: *"No stats.nba.com official ID crosswalk yet … until box-score officials data provides
+   a real cross-reference"* — plus the scraper's `meta.json` and a source comment naming the resolution
+   plan. **The consequence I described is still unrecorded and still real; the implication that
+   nobody had noticed was not.** *Rule 5 read backwards — absence of documentation in the twelve is
+   not absence of awareness.*
+3. **A second anchored certification threshold**: arenas uses `nba_ref_arenas_rows === 30`, like
+   teams. **Two of the eight thresholds in the codebase are tied to a fact about the world; six are
+   margins.** → `NBA_WORKERS.md` §0.31
+4. **`known_limitation` is a third self-documenting-response pattern**, alongside the differential
+   worker's `is_first_run` note and `scope_lock`. **Three separate conventions for putting caveats
+   where the data travels rather than in documentation** — and all three are absent from the twelve,
+   which is why this sweep kept rediscovering their contents.
+
+**Also noted**: the officials scraper's own gate is `< 50` against an expected ~80, and it names the
+likely cause — *"wikitext table format may have changed"*; `toIntOrNull()` was patched into the
+player-bio update after untyped writes; and T2's Gemini prompts carry explicit anti-sycophancy
+instructions — *"don't just validate what i've already built — actively look for"* gaps, and *"note
+if something needs independent verification rather than taking your word as final."*
+
+**Ratio so far on the re-read**: 4 findings from ~26 segments. **The original pass over this same
+stratum produced 6 findings from 294 segments.**
+
 ### T2.4 — PASS 4 (**the two-direction judgment pass**) — **1 DEFECT FOUND AND FIXED · T2 CLOSES**
 *2026-09-21. 137 segments judged: 70 in the high band, 67 in the tail direction.*
 
