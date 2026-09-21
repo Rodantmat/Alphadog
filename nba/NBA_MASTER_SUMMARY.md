@@ -14430,6 +14430,67 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.39 — PASS 38 (**instrument audit — settling §T11.38a's unverified mechanism**) — **🔴 the band's "uncovered30" has been measured against THIRTY-TWO documents, including the sweep's own run log · 0/3**
+*2026-09-21. **The pass rule 25 required**: §T11.38a stated its own limit, so the next pass's job was
+to remove it. It did, and the answer is not the one §T11.38a leaned toward.*
+
+#### ✅ T11.39a — **The anomaly was never a coverage change: mechanism (1) confirmed, (2) ruled out**
+`/tmp/t11pre` cut from **`150dc820`** *(the commit before the §T11.36a write)* and **verified
+byte-identical by re-cutting**. Scored against the current tree:
+
+| | PRE (`150dc820`) | NOW |
+|---|---|---|
+| `uncovered30` *(as the script computes it)* | **662** | **662** |
+| `uncovered12` | 665 | 665 |
+
+🔑 ***Both trees give 662 — so the 660 → 662 movement did not happen between passes 36 and 37 at
+all.*** **Global drift between the two trees: mean 0.00006, median 0.00004, ONE segment of 712 moving
+more than 0.01, and ZERO crossings in either direction.** ✅ **So §T11.38a's mechanism (2) — that
+editing a paragraph lowered its score — is RULED OUT: no segment's nearest paragraph changed.**
+✅ **Mechanism (1), the re-fit, is confirmed** — and the audit found *what* is churning the corpus.
+
+#### 🔴 T11.39b — **`judge11.py` scores against ALL 32 `.md` files — the run log and the out-of-scope PP document included**
+`doc_paras(tree)` with no filter takes **every `.md` in `nba/`**, which is **32**, not thirty. **It
+includes `NBA_SWEEP_RUN_LOG.md`** — *371 KB, rewritten with a long transcript quotation every single
+pass* — **and `PP_PAYOUT_FINDINGS.md`, which the owner's scope rule puts outside this sweep entirely.**
+***So the headline coverage figure has been measured over a corpus that contains the sweep's own
+working notes, and that corpus changes every pass — which is exactly why the number drifted.***
+
+✅ **Measured, and the contamination is SMALL and bounded:**
+
+| tree | reported *(32 files)* | **true thirty** | error |
+|---|---|---|---|
+| **Baseline `5dfb72ab`** | 685 | 🔴 **689** | **+4** |
+| **Working** | 662 | 🔴 **665** | **+3** |
+
+✅ **And the effect is purely a corpus/IDF one, not a matching one**: ***zero segments have the run log
+as their nearest document, in either tree.*** **It never matched anything; it only moved the weights.**
+
+⚠⚠ **SCOPE OF THE CORRECTION, stated precisely so it does not over-reach**: **the novelty counts are
+NOT affected.** Those come from a different harness that **explicitly excludes both files**, so every
+*"N of thirty"* in passes 26–37 is correct as published. ***Only the band's `uncovered30` figure is
+wrong, by 3–4 segments, and only ever in the conservative direction — it UNDERSTATED how much is
+uncovered.*** **`uncovered12`, the high band and the tail are unaffected** *(the twelve are named
+explicitly by `DOCS`)*.
+
+🔑🔑 **And the deeper point is §T11.25a's, one level up.** That entry said of the tail:
+***"a metric that goes to zero when the auditor writes is measuring the auditor."*** **Here the
+auditor's own run log has been INSIDE the corpus of the headline metric since the sweep began.** *It
+never matched a segment, so the damage is 3–4 counts rather than a rewriting of the conclusions — but
+the sweep measured itself for thirty-eight passes without noticing, and found it only by chasing a
+two-segment anomaly it had pre-registered a prediction against.*
+
+📌 **A second instrument note, from the same pass**: the tree-digest check (§T11.26a) hashes
+**`sha256sum` output including the FILE PATH**, so the same tree cut to a different directory yields a
+different digest. **The original check was unaffected** *(it re-cut to the same paths)*, **but the
+predicate was never stated and a future pass cutting to a new path would see a spurious mismatch.**
+***Content-only digests: `/tmp/t11pre` `c7aa10a225fc5cac`, matching a fresh archive exactly.***
+
+**Pass outcome: 🔴 the sweep's own headline metric corrected, and the anomaly that led here fully
+explained. CLEAN 0/3 · 39 passes.**
+
+---
+
 ### T11.38 — PASS 37 (**ninth two-direction judgment, PRE-REGISTERED — and four attacks on passes 35–36**) — **❌ the first NON-MONOTONE band movement in the run, and it exposes a limit of the instrument · 0/3**
 *2026-09-21. **All four attacks survived; the defect is in the metric the sweep has been quoting.***
 
