@@ -2105,6 +2105,202 @@ all four passes; T3's remaining three strata — output, commands, results — a
 
 **Clean count 0/3** — pass 1 found new material.
 
+### T2.13 — PASS 13 (**the two-direction judgment pass**) — **⚠ VOID, RE-RUN REQUIRED · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+**This pass was run and its result discarded. It is recorded rather than deleted, because why it was
+void is itself a finding.**
+
+⚠⚠ **THE WORKING CLONE WAS 98 COMMITS BEHIND THE REMOTE.** Passes 9–12 and the judgment pass were
+written and scored against `/home/claude/Alphadog` at commit `465d4681` while `origin/main` was at
+`ca45c5ab` — **the entire re-read passes 5–8 output (§T2.5–§T2.8) and T3's closure were missing from
+the local copy.** The divergence surfaced only when a `github_patch_file` call was rejected with
+*"old_str not found in file"* against a ledger row I had just edited locally.
+
+**Three consequences, all now handled:**
+1. **The judgment pass scored the transcript against stale documents**, so its "high band" and
+   "covered elsewhere" verdicts are unusable. **Void; re-run as pass 14.**
+2. **Findings written in passes 9–12 had to be re-checked against the current documents.** Five were
+   already recorded by passes 5–8 and were dropped: `playerHasRealChange`'s field list,
+   `suspicious_all_null_avg_speed`, `year_founded`, `_debug_headers`, and the deploy workflow's
+   `cancel-in-progress`. **Only the genuinely new remainder is written below.**
+3. **Nothing was force-pushed and nothing was overwritten.** The local tree was reset to `origin/main`
+   and the work re-applied on top.
+
+**The standing lesson, added to the loop**: *a pass is written against the documents as they exist on
+`origin/main`, so the clone is fast-forwarded **before** the pass, not after it.* This is the same
+defect class the ledger rule already guards against — **at-a-glance state trusted while stale** — one
+level further out: not the row drifting from the body, but the body drifting from the remote.
+
+---
+
+### T2.12 — PASS 12 (**re-read: the results stratum, read to the end**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21. Deduplicated against passes 5–8 after the clone was fast-forwarded.*
+
+1. ⚠⚠ **THERE IS A SECOND FALLBACK TRIGGER, AND IT FIRES ON A *SUCCESSFUL* FETCH.**
+   `NBA_OPEN_ITEMS.md` records `STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR` as *"the marker to watch"*.
+   **It is not the only marker.** `[LIVE-AUDIT]` **VERIFIED** — `alphadog-v2-nba-static-teams.js`
+   **lines 339–340**:
+   ```js
+   if (teams.length !== 30) {
+     sourceKey = fetchError ? "STATIC_SEED_FALLBACK_AFTER_FETCH_ERROR"
+                            : "STATIC_SEED_FALLBACK_AFTER_COUNT_MISMATCH";
+     teams = FALLBACK_TEAMS;
+   }
+   ```
+   **`STATIC_SEED_FALLBACK_AFTER_COUNT_MISMATCH` appears in no document.** It fires when the fetch
+   **succeeded** and returned a count other than 30 — a live, correct response discarded for the
+   hardcoded list.
+   ⚠ **The test is `!== 30`, an equality, not a floor — so 32 teams fails it exactly as 29 does.**
+   The worker's own comment treats expansion as harmless (*"a 32-team Seattle/Las Vegas expansion is
+   only in early-vote stages for the 2028-29 season … does not affect this list"*) while it is
+   precisely the input that trips this branch on good data. **A fourth instance of the
+   season-rollover trap family, in a new shape: a hardcoded cardinality rather than a season
+   literal.** → `NBA_OPEN_ITEMS.md`.
+
+2. ⚠ **A fallback run and a live run are indistinguishable from the response body.** Both return
+   `"ok": true` and the certification string *"NBA static team dictionary seeded — 30 active teams +
+   aliases written"* — **character-for-character identical**. Only `source_key` and `fetch_method`
+   differ. The existing caveat tells a reader to check the key; **this records why checking it is
+   mandatory rather than prudent.**
+
+3. **And the field that used to say so was deleted.** The worker's response once carried a
+   `fetch_note`: *"live stats.nba.com fetch path is untested from the build session that wrote this
+   worker … first real /run after deploy will show whether the live path or the certified static
+   fallback actually served this run — **check `source_key` in the response**."* A `github_patch_file`
+   in T2 replaced that block with `final_counts: finalCounts,` alone. **Supersession recorded**:
+   `fetch_note` present (T2, 2026-08-31) → removed (T2, 2026-09-01), the live path having been proven
+   by then — **but the removal also deleted the only in-response signpost to finding 2.**
+
+4. **`external_calls_performed` counts successes, not attempts.** The fallback run reports `0` while
+   its own `source_fetch_error` records a direct stats.nba.com call that returned HTTP 520. **The
+   counter cannot be used to detect a worker hammering a blocked endpoint** — relevant because the
+   two runs already recorded cost **78.6 s and 73.2 s** with `external_calls_performed: 0` on both.
+
+5. **`arenas_missing_capacity: 11`** in the T2 run response — and **`[LIVE-AUDIT]` VERIFIED
+   2026-09-21: 11 of 30 still NULL.** Previously recorded only qualitatively (*"some capacities null
+   because the source itself lacks them"*). The number is now fixed. → `NBA_DATABASE.md`.
+
+---
+
+### T2.11 — PASS 11 (**re-read: `raw_json` across the static layer**) — **🔴🔴 MAJOR NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+1. 🔴🔴 **`raw_json` IS A DOUBLE-ENCODED JSON STRING ON EVERY NBA STATIC TABLE.**
+   `[LIVE-AUDIT]` **VERIFIED** by live SQL — `jsonb_typeof(raw_json)` returns **`string`**, not
+   `object`, on **1,306 rows across six tables**:
+
+   | Table | `jsonb_typeof(raw_json)` | Rows |
+   |---|---|---|
+   | `nba_ref.teams` | **`string`** | 30 |
+   | `nba_ref.players` | **`string`** | 582 |
+   | `nba_ref.arenas` | **`string`** | 30 |
+   | `nba_ref.officials` | **`string`** | 80 |
+   | `nba_stats.player_season_profile` | **`string`** | 582 |
+   | `nba_stats.player_tracking_profile` | **`string`** | 582 |
+
+   **The mechanism**, identical in every writer: `raw_json = ${JSON.stringify(x).slice(0, N)}` binds a
+   **JavaScript string** into a JSONB column. Postgres accepts a JSON string as valid JSONB and stores
+   it as a scalar. What lands is
+   `"{\"team_id\":1610612742,\"arena_name\":\"American Airlines Center\",…}"`.
+
+   **It fails silently, and it is the layer's stated safety net.** `raw_json ? 'key'` → **false**;
+   `raw_json->>'field'` → **NULL**; `raw_json @> '{…}'` → **no rows**. Nothing throws. Any future
+   backfill or audit reaching for `raw_json` concludes the source data was never captured.
+
+   ⚠ **This is a second, independent reason `raw_json` is unusable**, distinct from the one already
+   recorded for the play-type table (*"the worker stores the already-reduced record, not the source
+   row"*). **That one is about what was put in; this one is about how it was encoded.** A table can
+   have either defect, or both.
+
+   **Scope stated honestly**: six tables checked — the NBA static layer. **Whether the same pattern
+   reaches the Phase 3b/3c/3d tables, the scoring tables or the MLB fleet is NOT RECORDED.** Those
+   writers have not been swept. The pattern is copied boilerplate across the ten static writers
+   (§0.32), so the question is worth asking of every worker with a `raw_json` column.
+
+2. **The arenas `owner`/`year_founded` gap is worse than "no column" — the repair path is blocked
+   too.** The already-recorded finding is that the scraper collects both and the table has neither
+   column. `[LIVE-AUDIT]` **VERIFIED 2026-09-21**, extending it:
+   - `nba/scrape_nba_stats_arenas.py` **lines 60–61** still collect `"owner": col("OWNER")` and
+     `"year_founded": col("YEARFOUNDED")` — **on every run**.
+   - `alphadog-v2-nba-static-arenas.js` **line 71** writes five source-derived columns only.
+   - **The obvious fix — add the columns, backfill from `raw_json` — does not work.** Across all 30
+     rows, `raw_json ? 'owner'` matches **0** and `raw_json ? 'year_founded'` matches **0**. The
+     stored payload holds **four keys**: `team_id, arena_name, arena_capacity, city`.
+   **Why the stored payload predates the six-field scraper is NOT RECORDED** — the table's last write
+   is `2026-09-01T00:36:24Z` and the six-field committed file carries `scraper_fetched_at:
+   2026-09-01T00:29:22Z`. **Recording the fact; leaving the cause OPEN for the sequence to deliver.**
+
+3. **Four different `.slice()` widths, no stated policy**: `players` 5000 · `player_season_profile`
+   2000 · `arenas` 2000 · `player_tracking_profile` 2000 · `officials` **1000**. A payload exceeding
+   its width is truncated **mid-JSON**, producing a string unparseable even after finding 1 is fixed.
+   **NOT RECORDED anywhere why the widths differ.**
+
+---
+
+### T2.10 — PASS 10 (**re-read: the commit step as a maintenance surface**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+1. **There is a FIFTH hand-maintained edit site per new static entity, and it is the one with the
+   widest blast radius.** The four already recorded are the *worker* wiring (`admin-sql`'s `z.enum`,
+   its `bindingMap`, its `else if` chain, and `generate_wrangler_configs.py`). The fifth is the
+   *scraper* wiring: the explicit file list in `nba-scrape.yml`'s commit step, which grew by two paths
+   per scraper across four successive patches —
+   ```
+   git add nba/data/nba_teams_current.json nba/data/nba_teams_current_meta.json
+         → + nba_players_current{,_meta}.json
+         → + nba_arenas_current{,_meta}.json
+         → + nba_officials_current{,_meta}.json   …
+   ```
+   ⚠ **Its failure mode is not "the new entity is missing" but "the commit dies for everyone."**
+   `git add` on a file the scrape step never produced **hard-fails the commit step**, taking down the
+   commit for every scraper that *did* succeed — the same blast radius as the git-push race, from a
+   different cause. The trigger-file commit message names it: *"a hard-failing `git add` on a file
+   that didn't get produced."*
+
+2. **Superseded by an existence-checking loop** (T2, 2026-09-01): `for f in nba/data/…; do` with a
+   per-file test, so a missing artefact is skipped rather than fatal. **This is the same fix already
+   recorded at §T2.4 as *"the commit step must not hard-fail when one scraper produces no output"* —
+   recorded there as a bug fix, not recognised there as removing a per-scraper maintenance site.**
+   Both framings now stand. **Revised count: five sites, one of which is now loop-based and no longer
+   per-scraper.**
+
+---
+
+### T2.9 — PASS 9 (**re-read: the documents' own integrity**) — **NEW MATERIAL · CLEAN COUNT 0/3**
+*2026-09-21.*
+
+1. ⚠ **ALL TWELVE MANDATED DOCUMENTS END WITH A STRAY TOOL-PAYLOAD FRAGMENT.** Every one of the twelve
+   ends with two lines that are not content — the closing tags of the `github_put_file` call that
+   wrote the file, captured into the file body:
+   ```
+   </content>
+   <parameter name="message">docs: …
+   ```
+   **VERIFIED** by grep against the current `origin/main`: the fragment sits on the second-to-last
+   line of all twelve — `NBA_MASTER_SUMMARY.md` (9902/9903), `NBA_OPEN_ITEMS.md` (8144/8145),
+   `NBA_WORKERS.md` (1277/1278), `NBA_DATABASE.md` (984/985), `NBA_SYSTEM_ARCHITECTURE.md`
+   (1666/1667), `NBA_FINAL_SCORING_CALIBRATION.md` (2326/2327), `NBA_BASELINE_CALIBRATION.md`
+   (1017/1018), `NBA_SYSTEM_DESIGN.md` (799/800), `NBA_MULTIPLIERS.md` (719/720),
+   `NBA_GOBLIN_DEMON.md` (705/706), `NBA_GLOSSARY.md` (585/586), `NBA_RECIPE.md` (340/341).
+
+   **Harmless to a human reader; not harmless to a parser**, and it means **every document's last real
+   line is the line before it** — worth knowing before appending to any of them. **Cause: NOT
+   RECORDED.** Consistency across all twelve points at a single write helper rather than twelve
+   independent slips, but no transcript swept so far shows the write that introduced it. **Left OPEN.**
+   **Not fixed**, per the standing instruction. New content is inserted **above** the fragment so the
+   defect is not compounded. → `NBA_WORKERS.md` §0.38.
+
+2. ⚠ **A NUMBERING COLLISION EXISTS IN THIS FILE AND IS NOT A TYPO.** Two independent `§T2.n` series
+   run here: the **chronological-sweep series** at the top of the T2 block (§T2.1–§T2.13, newest
+   first, the one the ledger row points to) and a **legacy body series** further down
+   (§T2.1–§T2.20, *"PASS n FINDINGS (added 2026-09-20)"*, from the pre-chronological work). **They
+   overlap at §T2.1–§T2.13.** A reference to `§T2.9` is ambiguous without saying which series.
+   **Recorded, not renumbered** — renumbering would invalidate every existing cross-reference. **When
+   citing, say "sweep series" or "legacy body series".**
+
+---
+
 ### T2.8 — PASS 8 (**re-read continued: a third season literal and a third diagnostic form**) — **NEW MATERIAL · CLEAN COUNT 0/3**
 *2026-09-21.*
 
