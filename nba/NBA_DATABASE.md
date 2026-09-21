@@ -982,6 +982,12 @@ Measured on the **real market spread** (307,604 rows available, 2,454 games, 100
 derived r=0.46 proxy was replaced.
 `nba_score.confidence_verification` · `nba_score.availability_delta` ·
 `nba_score.real_slip_leg_observations` (139 legs, `decomposition_method='equal_scale_v1'`)
+> 🔴 **`[LIVE-AUDIT]` 2026-09-21 (§T10.22b): `nba_score.real_slip_leg_observations` is NOT in the
+> database** — and it is **not in the DROPPED list below** either. **Why it is absent is NOT
+> RECORDED** (rule 6): it may have been dropped after 2026-09-19 by a session this sweep has not
+> reached, or never created. ⚠ **`NBA_OPEN_ITEMS.md` rests a finding on it** — *"there is no NBA slip
+> history; `nba_score.real_slip_leg_observations` holds 139 legs, not dated slips"* — **and that
+> finding's direction is unaffected: the table is not there at all.**
 
 **DROPPED 2026-09-19** (superseded, findings preserved in COMPASS): `nba_score.absence_panel`,
 `absence_panel_v2`, `absence_panel_v3`, `redistribution_panel`, `ladder_calibration`.
