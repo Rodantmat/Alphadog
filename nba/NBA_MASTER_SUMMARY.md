@@ -8064,6 +8064,17 @@ documents.* **Same family as the NULL artifact (§T7.64a) and the tail-vs-transc
 (§T8.24a): a clean-looking zero produced by the shape of the question rather than the state of the
 world.**
 
+> ⚠⚠ **EXTENDED 2026-09-21 after §T9.30b — AND THE WRONG NUMBER IS NOT ALWAYS ZERO.** A count of
+> *"distinct env vars"* came back **174**; the true figure is **193**. The pattern's character class
+> was `[A-Z_]`, so **every variable name containing a digit was silently truncated** — `A2W_TEST_SEASON`,
+> `B4_TRAIN_SEASON`, `M1_TEST_SEASON`, `N1_TEST`, `A5_SEASONS` — and the truncated forms collapsed
+> together. 🔴 **This is strictly worse than the zero case: a zero is implausible and invites a second
+> look, whereas 174 looked exactly as plausible as 193.** *No new rule — **this is the first form
+> (a count comes from an authority, never the pattern that found it)**, and §T9.27c's instruction not
+> to mint a sixteenth rule before grepping for the general principle is what kept it here.* **The
+> operative test: before trusting a count, ask what the pattern CANNOT match, then construct one
+> example of it.**
+
 🔴 **The eleventh form, added 2026-09-21 after §T7.64a — WHEN VERIFYING A PARTITION, CHECK THAT THE
 PARTS SUM TO THE WHOLE.** A conformance query reported **34 conforming, 0 non-conforming** against
 **35** cells: the missing row's `variation_band` was NULL, so `= 'continuous'` yielded NULL, the
