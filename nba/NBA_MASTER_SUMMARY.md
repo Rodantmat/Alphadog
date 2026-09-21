@@ -14419,6 +14419,34 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+### T10.7 — PASS 7 (**live numeric re-verification**) — **✅ CLEAN 1/3 · every figure exact, every partition sums**
+*2026-09-21. Every figure passes 1–6 state, re-derived from its own authority; partitions summed,
+predicates stated, timestamps in UTC, corpus metrics carrying the pass that took them. **No document
+changed by this pass.***
+
+| Claim | Predicate / authority | Result |
+|---|---|---|
+| Corpus **872 = 858 assistant + 14 owner** | `segments()` on the transcript | ✅ **sums** |
+| Tail **831 = 572 prose + 255 mechanism + 4 Gemini** | the corrected classifier | ✅ **sums**; **69% / 31%** |
+| Registry **67 = 31 baseline + 36 enrichment**; **65 active** | `nba_config.factor_registry` | ✅ **67 · 31 · 36 · 65** |
+| Relevance coverage **29 mapped + 38 unmapped = 67**; enrichment **4**, baseline **25** | registry ⟕ relevance | ✅ **4 + 25 = 29** |
+| `compute_stage` **15 + 17 + 2 + 2 = 36** enrichment, **31 NULL** baseline | `factor_registry` | ✅ **36 + 31 = 67** |
+| `factor_relevance` **460** rows · `factor_gate_results` **104** | `count(*)` | ✅ exact |
+| Shards — **covered + empty**: 2023-24 **1,228 + 2 = 1,230** · 2024-25 **1,230 + 0 = 1,230** · **2025-26 1,229 + 0 = 1,229** | each index's `meta` | ✅ **and the partition test is what makes the defect visible: two seasons reach 1,230 and the third does not** |
+| Shard rows **230,877 · 232,830 · 241,590**; columns **29 · 29 · 28**; **7 shards each** | same | ✅ exact |
+| Config timestamps — `single_stat_scoreboard_two_seasons` **2026-09-09 05:55:58 UTC**, `season_opening_study` **20:11:43 UTC** | `updated_at`, `timestamptz` | ✅ exact, **UTC by construction** |
+| Coverage series, **each with its pass** | `tail10.py` / `judge10.py`, threshold `< 0.40` | ✅ **831 (p0) → 825 (p3) → 823 (p6)** vs the twelve; **689 (p0, p3) → 688 (p6)** vs all thirty |
+
+🔑 **The partition rule earns its keep twice here.** *The shard indexes are the clearest case this run
+has produced: **two seasons' `covered + empty` reach the season total and the third does not**, and
+that single arithmetic check is the whole of §T10.4b's surviving defect.* *And **4 + 25 = 29** against
+the table's 29 distinct `factor_key`s is what confirms the relevance gap is a coverage fact rather
+than a join artifact.*
+
+**Pass outcome: no defect, no document changed, ten figure families exact. ✅ CLEAN 1/3 · 7 passes.**
+
+---
+
 ### T10.6 — PASS 6 (**two-direction judgment, second run — weight on ABSENCE claims**) — **🔴 the relevance gate knows 4 of 36 enrichment factors · 0/3**
 *2026-09-21. Band **30 → 32** high, **103 → 101** tail, coverage **823 / 688**. Pass 5 retracted two of
 pass 4's absence claims, so every absence claim in §T10.1–§T10.5 was re-probed **with differently
