@@ -9683,7 +9683,11 @@ T7 built a coverage check into `alphadog-v2-nba-daily-delta.js`, with its own co
 `player_game_starter_status` and `game_officials`, surfacing the misses as
 `games_missing_starter_status_sample` and its officials counterpart in the worker's response.
 
-**Nothing in the thirty documents records that this check exists.** And it matters, because **it is
+⚠ ~~**Nothing in the thirty documents records that this check exists.**~~ **WRONG, corrected
+2026-09-21 by §T7.47**: `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md` lines 239–244 record it as
+its own numbered finding — *the promise, the gap, the fix, and the exact figures (0 missing
+starter-status, 3 missing officials)*. **It was missing from the twelve, not from the corpus.** The
+rest of this entry stands, because **it is
 precisely the detector for §T6.19a**: run today it would report **3 games missing officials** — the
 2025-11-19 trio — and **0 missing starter status**, exactly the figures this sweep derived by hand
 from live SQL.
