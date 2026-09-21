@@ -348,6 +348,10 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 ## 2. `nba_config` — NBA control configuration *(T1)*
 
 > ### ⚠⚠ READ FIRST — **nothing in the codebase reads any of these tables except `external_credentials`**
+> > 🔴 **AND THE SCOPE OF THIS BANNER IS TOO NARROW — 2026-09-21 (T8 pass 4).** The class is not
+> > confined to `nba_config`: **`nba_ref.prop_taxonomy` (28 rows, fully populated) is read by
+> > nothing either** — zero code references, the `prop_taxonomy` hits being MLB's own table. **Read
+> > this banner as "the config layer", not as "`nba_config`".**
 > > *The design document's own closing line for this schema, `NBA_CLASSIFICATION_BASELINE_DESIGN.md`
 > > line 252:* **"All tunables live in these tables. Nothing hardcoded."** *(surfaced 2026-09-21,
 > > T7 pass 22 — the sharpest one-line statement of the gap this banner records.)*
