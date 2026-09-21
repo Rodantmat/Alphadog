@@ -108,6 +108,38 @@ proposal to share the control plane.
 > **This is the blueprint's named multi-table ID bug, reproduced.** **Which convention is correct is
 > NOT ESTABLISHED** — flagged for human decision. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 50.
 
+## 0z. 📐 THE CLASS REGISTER — *every population this sweep's bound claims are drawn over, enumerated*
+*Built 2026-09-21, T11 pass 46 (§T11.47). **The permanent remedy for the failure mode §T11.45c
+named**: five distinct passes drew a BOUND from a class they had not enumerated, so the classes are
+enumerated here once and cited thereafter.* ⚠ **Every count is `[LIVE-AUDIT]` and DATED — §T11.47c
+shows a class that CHANGED during the sweep, so an unenumerated class is also an undated one.**
+
+| class | size | enumerated at |
+|---|---|---|
+| **`nba*` schemas** | **14** | §T11.46 |
+| **…of which hold ZERO base tables** | **6** — `nba_archive` · `nba_backtest` · `nba_classification` · `nba_context` · `nba_daily` · `nba_scoring` | §T11.46 |
+| **`nba*` BASE TABLES, all schemas** | **104** | §T11.47 |
+| **`nba_market` base tables** | **25**, ⚠ **of which 12 are `pp_*`** *(out of scope)* | §T11.47 |
+| **Tables carrying `data_quality`** | **22** | §T11.22a |
+| **Tables carrying `phase`** | **6** — `conformal_confidence` · `final_hp` · `ladder_calibration_asof` · `scenario_calibration` · `scenario_realised` · `tier_band_calibration` | §T11.46 |
+| 🔴 **Tables carrying `side`** | **19** total · **6 named `pp_*`** · ***13 in scope*** *(§T11.28a said eleven — see §T11.47b)* | §T11.47 |
+| **Game-keyed tables** *(`nba_stats` + `nba_team`)* | **10** — **8 hold three seasons, 2 hold one** | §T11.45c |
+| **`nba_ref.prop_taxonomy` columns** | **18** *(the documents enumerate 8 as "every descriptive column")* | §T11.46 |
+| **`nba_ref.prop_taxonomy` rows** | **28** | T8 |
+| **`nba_config.factor_registry` rows** | **67** — closes five ways | §T11.28d |
+| **Registered writers** (`worker_definitions`) | **21**, all enabled | §T11.37a |
+| **Worker FILES on disk** (`alphadog-v2-nba-*.js`) | **21** — one-for-one with the registry | §T11.38b |
+| **Scrapers** (`nba/scrape_*.py`) | **33** | §T11.46 |
+| **`nba/*.md`** | **32** — ***30 in scope***, excluding `NBA_SWEEP_RUN_LOG.md` and `PP_PAYOUT_FINDINGS.md` | §T11.39b |
+| **`nba_score.blowout_model`** | **35 rows · 3 `kind`s · 11 distinct `side` values · 11 `kind`‖`side` pairs** | §T11.28a · §T11.35c |
+| **T11 transcript segments** | **712** — `tool_result` 355 · `tool_use` 227 · `text` 64 + 15 · `thinking` 51 | §T11.42a |
+
+🔑 **THE RULE THIS TABLE EXISTS TO SERVE**: ***a BOUND states the class it was drawn over, and the
+class is ENUMERATED before the bound is published*** — **rule 25's shape extended from samples to
+classes** *(§T11.45c)*.
+
+---
+
 ## 1. `nba_ref` — reference / dictionary layer *(T1)*
 
 > ⚠ **THE `*_meta.json` PROVENANCE LAYER** *(recorded 2026-09-20, T1 pass 45 — **VERIFIED on the live
