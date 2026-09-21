@@ -9320,6 +9320,58 @@ bands, direction, prop line), and the design document that gets materialised int
 **Seven owner turns sit in the tail**, the most of any transcript; T2–T6 had at most five, and T5 and
 T6 had none.*
 
+### T7.35 — PASS 6 (**the two-direction judgment pass**) — **2 DEFECTS, BOTH IN THIS SWEEP'S OWN PROSE · 0/3**
+*2026-09-21. 1,081 segments. High band (≥0.45): **114**, the largest of any transcript.
+Tail-direction: 32.*
+
+**DIRECTION 2 — CLEAN.** 32 segments, **31 of them matching `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md`**
+— the five-part checkpoint T7 wrote itself. Textbook mechanism (3), self-authorship. ✅
+
+**DIRECTION 1 — two corrections, both mine.**
+
+#### ⚠ T7.35a — CORRECTION to §T7.30c: **the prop-by-prop STUDY is documented; only the DIRECTIVE was missing**
+
+§T7.30c stated *"Nothing in the documents records this directive."* **Too broad.** The band surfaced
+*"the prop-by-prop study is complete, with multiple sources per prop and Gemini as an independent
+[check]"* at **0.93**, and `NBA_MASTER_SUMMARY.md` line 10780 records the study and its scoping:
+*"the prop-by-prop study scoped itself to the props whose drivers differ."*
+
+**What is actually true, stated precisely:** the **work** the directive asked for was done and is
+documented; **the owner's instruction that prompted it — in his words, establishing that factor
+importance is a per-prop question — is not.** **That is a smaller finding than the one I wrote**, and
+the correction matters because the original phrasing would lead a reader to think the analysis itself
+was missing. *The directive is still worth recording in its own right; §T7.30c stands with this
+qualification attached.*
+
+**The root error is familiar**: I checked whether the owner's *phrasing* appeared, and reported the
+absence as if I had checked for the *substance*. **The standing rule about counts has a sibling:
+an absence claim must be tested against the substance, not the wording.** *(This is the second
+absence-assertion defect in the sweep — see §T5.24's near-miss on the fallback rule.)*
+
+#### ⚠ T7.35b — CONTEXT owed to §T7.32a: **T7 DID make the per-game writers season-aware**
+
+The band shows T7 saying *"now make the two per-game writers season-aware — they hardcode `2025_26`
+and would silently [pull the wrong season]"*. `[LIVE-AUDIT]` **VERIFIED** in
+`alphadog-v2-nba-daily-delta.js` **lines 154, 159**: `f.season || season` — **the season flows from
+the fetched file, with the detected season as fallback. Fixed.**
+
+**This does not contradict §T7.32a — the four still-hardcoded workers are the *weekly static* ones
+(`onoff`, `player-bio`, `player-tracking`, `team-stats`), a different set.** But it changes how that
+finding should be read: **the rollover work was deliberate and partial, not overlooked.** T7 fixed
+the scrapers (18 now use the helper) and the per-game writers, **and did not reach the four weekly
+static writers.** §T7.32a's real weight is that **the documents then recorded three of those four**,
+so the remaining gap is under-described rather than unknown.
+
+#### ✅ Verified, already documented
+The factor-evidence table with academic citations (*"altitude (Denver, Utah) — J. Sports Sciences
+2025"*); the explicit *"where I'm overriding or deferring Gemini"* section; the tier-prior blend
+(*"blended toward population mean with k=5"*); *"Gemini was wrong on one point: potential assists,
+adjusted assists, secondary [assists are already available]"*; the `run_job target=` binding-name
+list; and the 12-job run with per-season counts **26,651 / 26,306 / 26,401** matching the backfill
+exactly. ✅
+
+---
+
 ### T7.34 — PASS 5 (**results stratum, all 233 segments — last of T7's four**) — **🔴🔴 MAJOR NEW MATERIAL · 0/3**
 *2026-09-21.*
 
