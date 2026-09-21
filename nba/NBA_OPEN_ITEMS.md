@@ -366,10 +366,14 @@ calibration transcripts against the instruction rather than inferring from times
 🔴 **TWO BROKEN JOINS IN THE SAME CONFIG LAYER, found 2026-09-21 (T7 pass 16), both missed by the
 pass-12 referential-integrity sweep because it had not enumerated the design's six-dimensional key:**
 
-1. **`factor_profile_cells.variation_band = 'continuous'` resolves to nothing.**
-   `nba_config.variation_bands` holds 9 `band_key` values (`LOW/MID/HIGH/ELITE` and
-   `FRINGE/ROLE/STARTER/STAR/SUPERSTAR`) — **none is `continuous`**, yet 13 cells carry it. It is a
-   **sentinel meaning "not banded"**, not a foreign key, and **nothing in the schema says so**.
+1. ⚠ ~~**`factor_profile_cells.variation_band = 'continuous'` resolves to nothing.**~~ **DOWNGRADED
+   2026-09-21 (T7 pass 21) — this is by design, not a break.** `'continuous'` is the documented
+   factor **form** (`NBA_CLASSIFICATION_BASELINE_DESIGN.md` line 242: *"form (band / continuous /
+   gate)"*), and continuous factors are not banded, so `variation_bands` correctly holds no row for
+   it. **34 of 35 cells are keyed exactly as their factor's declared form requires.** 🔑 **The one
+   real anomaly this surfaced**: `shotdiet__rebounds__3PA_HEAVY__all__more` — factor `opp_shot_diet`
+   declared `form='continuous'` yet **tier-keyed with a flat penalty −0.06 and no formula**, the only
+   cell in the table keyed against its factor's form. *Deliberate or not is **NOT RECORDED**.*
 2. **`calibration_log` joins `factor_profile_cells` at 0% — 8 of 8 orphaned.** Two incompatible id
    conventions (`blowout_risk::points::P_BLOWOUT_GT50` vs
    `blowout__points__WON_GT50__FRINGE__more`) — **the same failure class as the officials join**.
