@@ -13138,7 +13138,15 @@ at the moment of writing, per rule 12.*
 | `variation_bands.canonical_prop_key` → `prop_taxonomy` | **0 of 25** |
 | Every taxonomy prop has at least one `factor_relevance` row | **0 missing of 28** |
 
-#### 🔑 T8.28a — `[LIVE-AUDIT]` **22 of 28 props have NO variation band — and the split is exactly `build_tier`**
+#### ⚠ T8.28a — `[LIVE-AUDIT]` **22 of 28 props have no row in `variation_bands` — but that TABLE is not the live dimension**
+> 🔴🔴 **CORRECTED 2026-09-21 by §T9.21a.** Everything below is true **of the table** and nothing
+> below is true **of the system**. The live variation bands are **`VBANDS_ALL`, a Python dict at
+> `classification_ladder_v12.py` line 114 covering 15 props** — read at line 519, `VBANDS =
+> VBANDS_ALL[prop]` — while `nba_config.variation_bands` has 6 rows and **zero code references**
+> (§T7.45b). **So the variation dimension is built for 15 props, hardcoded**, exactly like
+> `ROLE_TIERS` and the decay `PROPS` dict in the same file. *§T8.14b's "empirical vindication of the
+> variation dimension" rests on 15 props, not 6.* **Read the table below as a record of the stale
+> config copy.**
 
 The one direction that is *not* full is variation coverage, and it is not ragged — **it follows the
 taxonomy's own `build_tier` column precisely:**
