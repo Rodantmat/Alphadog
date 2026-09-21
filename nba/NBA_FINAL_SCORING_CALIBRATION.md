@@ -1273,7 +1273,7 @@ not carry such a flag.**
 | MLB refinement | NBA state |
 |---|---|
 | **Matchup-specific, not team-aggregate, defensive metrics** | ✅ **M1** — the two-way ridge defender ratings (111,768) are per-defender, **not** team DvP. ⚠ But wired **only in the INTERACTION form, never as a main effect**, and `defense_vs_position` (team-aggregate) is what most props read |
-| **"Quality of surrounding lineup" as a DISTINCT input** | ⚠ **Partially.** `nba_stats.lineup_synergy` (8,000 rows) and `teamplayeronoffdetails` exist; the factor lock names *"teammate shooting quality"* as the assists penalty. **But A2 (teammate redistribution) was retracted, and no surviving lineup-quality factor is recorded** |
+| **"Quality of surrounding lineup" as a DISTINCT input** | ⚠ **Partially.** **`nba_team.lineup_profile`** (8,000 rows) and `teamplayeronoffdetails` exist; *(🔴 corrected 2026-09-21, §T10.22b — this read `nba_stats.lineup_synergy`, which exists in no schema; the live table is `nba_team.lineup_profile` and its row count is exactly the 8,000 stated, which is what identifies them as the same object)*; the factor lock names *"teammate shooting quality"* as the assists penalty. **But A2 (teammate redistribution) was retracted, and no surviving lineup-quality factor is recorded** |
 | **Role-specific adjustments for players who don't fit a standard usage pattern** | ✅ **`ROLE_TIERS`** is exactly this — six bands on projected minutes, with **FRINGE** as the explicit non-standard bucket, plus the **discontinuity override** for role changes |
 
 **Two of three landed. The middle one is the gap** — and it is the one the research independently
