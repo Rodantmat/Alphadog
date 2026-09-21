@@ -96,6 +96,40 @@ are *not* this sweep's work and *not* yet in scope. **Fast-forward, then ignore 
 
 ---
 
+### ⚠ STANDING TECHNIQUE — THE REFERENTIAL-INTEGRITY ANGLE, ADDED 2026-09-21
+*Autonomous addition during the unattended run. Recorded with its reasoning and its limits.*
+
+**Ask of every transcript that creates tables: do those tables actually join to each other?** Not
+"is it documented" (coverage), not "is the count right" (volume verification), but **do the foreign
+keys resolve** — and if they don't, *how are the failures distributed?*
+
+**Why it earned a place.** On T4 it ran after seven passes, including a clean volume pass and a clean
+judgment pass, and found the single most consequential item in the transcript: **two of three
+backfilled seasons have zero calendar coverage**, so every schedule-derived feature is computable for
+one season in three. **Row counts were all correct. Every table was documented. The joins were
+empty.** No angle that counts rows or matches prose could have seen it.
+
+**The shape that makes it productive**: `LEFT JOIN` the child to the parent and **group the misses**
+— by season, by team, by source. A uniform miss rate is usually a scope difference worth recording; a
+miss rate that is **0% for one group and 100% for another** is a structural gap, and the boundary
+names the cause. Both of T4's findings had that signature.
+
+**Its limit, stated plainly**: it tests the database, not the transcript. Findings it produces are
+`[LIVE-AUDIT]` and do **not** reset a clean count unless a transcript segment also carries them —
+§T4.27 reset the counter because T4 is the transcript that built those tables and chose that scope.
+
+🔷 **AUTONOMOUS DECISION — the already-closed transcripts are NOT reopened for this angle.**
+T1, T2 and T3 closed under the criteria in force at the time, each on three clean passes at different
+angles. **Reopening them for every newly-invented angle is an unbounded regress** — there is always
+one more question to ask of a live system. *Alternatives rejected*: (a) reopen all three, which would
+restart a sweep that has taken 120+ passes to get this far, and (b) ignore the angle for consistency,
+which would waste a demonstrably productive technique. **The chosen middle**: the angle is standard
+for every remaining transcript (T5→T20), and **anything it finds about tables those earlier
+transcripts built is recorded in `NBA_OPEN_ITEMS.md` regardless of which transcript owns it** — so no
+finding is lost to the decision, only the pass accounting is left alone.
+
+---
+
 ### ⚠ STANDING RULE — ON A RE-READ, THE RATIO IS NOT THE CLOSURE SIGNAL
 *Owner-confirmed, 2026-09-21.*
 
