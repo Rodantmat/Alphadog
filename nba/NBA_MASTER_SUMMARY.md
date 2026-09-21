@@ -14691,6 +14691,17 @@ score_board_legs.py:234     "f_prov": np.where(d["used_emp"].fillna(False).value
 confidence factor — and NOTHING downstream consults `LADDER_DEPTH`.** *The table that knows those
 rungs are out of range is read by the builder and by nobody who scores a leg.*
 
+> ⚠ **QUALIFIED 2026-09-21 by §T9.38b — the literal claim stands and the implication does not.**
+> **No code downstream reads `LADDER_DEPTH`** — that is still exact. **But the confidence model is
+> not depth-blind**: `build_confidence_v3.py:61` carries
+> **`f_depth = np.clip(1.0 - np.abs(ladder_offset) / 14.0, 0.25, 1.0)`** at weight **0.14**, so rung
+> distance IS penalised — 0.857 at offset 2, 0.286 at 10, floored at **0.25** from 10.5 out.
+> 🔴 **The defect is the SCALE, not the absence**: **`14.0` is exactly `LADDER_DEPTH["points"]`,
+> applied to all twenty props.** *`steals` at offset 10 — five times its measured depth of 2 — is
+> penalised identically to `points` at offset 10, which is inside its measured depth of 14.* **The
+> same per-prop-versus-flat failure as O5, one layer up, with the deepest prop's value as the
+> universal constant.**
+
 ⚠ **And the patcher's own comment states the opposite behaviour**:
 > *"deeper rungs with too few samples **fall through the existing hierarchy to the parametric**, which
 > is the designed behaviour."*
