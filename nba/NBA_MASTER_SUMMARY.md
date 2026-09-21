@@ -14430,6 +14430,53 @@ draws from.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.48 — PASS 47 (**live numeric re-verification of passes 41–46, and the CLASS REGISTER used as an instrument**) — **❌ the register's own `phase` row was wrong one pass after it was built · 0/3**
+*2026-09-21. **"A register whose rows are not re-derivable is worse than none" — the next-step row's
+own warning, and it landed on the register itself.***
+
+#### ✅ T11.48a — **Nineteen of twenty-one figures re-derive exactly**
+**SQL (15 of 17)**: schemas **14** · empty **6** · base tables **104** · `nba_market` **25** with
+**12 `pp_*`** · `data_quality` **22** · `side` **19** · `prop_taxonomy` **18 columns / 28 rows** ·
+`factor_registry` **67** · writers **21** · `blowout_model` **35 / 3 kinds / 11 sides** ·
+`prop_universe` **1,667,024**. **Filesystem (3 of 3)**: worker files **21** · scrapers **33** ·
+`nba/*.md` **32**. **Transcript (all)**: partition **355 + 227 + 64 + 51 + 15 = 712** · T11 thinking
+**51 / 3,428 / 124** · T1 thinking **52 / 33,578 / 1,774** · the tool census as **segment** counts.
+✅ **And the band: baseline `5dfb72ab` 13 / 3 / 695 / 689 — a SIXTEENTH identical measurement** —
+working **39 / 0 / 664 / 664** unchanged. 📌 *T1's thinking mean is **645.7**; §T11.44b published
+**646** — rounding, both right, stated.*
+
+#### ❌ T11.48b — **The register's `phase` row: 6 is 7, and the reason is the register's own discipline unapplied**
+🔴 **Seven base tables carry `phase`, not six.** **The seventh is `nba_market.prop_universe`.**
+***The register cited §T11.46 for that row, but the measurement was pass 45's and was not re-taken
+when the register was built at pass 46*** — **and `prop_universe` appeared between the two**
+*(§T11.47c measured exactly that drift and the register still inherited a stale row)*. ✅ **Corrected
+in place and dated.** 🔑 ***The register exists to make bounds re-derivable, and the first
+re-derivation broke one of its own rows — which is the instrument working, not failing.***
+
+#### 🔑🔑 T11.48c — **And the seventh carrier gives `phase` a SEVENTH vocabulary, so §T11.21a's counter-example is now SCOPED**
+**`prop_universe.phase` holds `regular` (1,652,753) and `no-boxscore` (14,271)** — ***nothing to do
+with the six in-scope tables' `1_oct_nov` / `2_dec_asb` / `3_post_asb` / `4_push`.*** ✅ **§T11.21a's
+finding holds for the six**: *`phase` is identical across them, the counter-example rule 24 needed so
+it does not read as "every shared column is suspect."* 🔴 **But it is no longer absolute**:
+***`phase` is identical across the six in-scope tables AND collides with an unrelated meaning in a
+seventh.*** 🔑 ***The column the sweep held up as proof that not every shared column is a collision
+has since acquired one*** — **rule 24 reasserting itself on its own exception.** ⚠ **The seventh
+table is the concurrent session's work; recorded, not swept** *(the owner's standing exclusion)*, and
+**written as a dated state, not a verdict** *(O9)*.
+
+#### ✅ T11.48d — **The apparent second discrepancy was my own query, caught by enumerating**
+A `pp_*` side-carrier count returned **7** against `side`'s **19**. 🔴 **The 19 filters to BASE
+TABLES and the 7 did not** — **`nba_market.pp_leg_price` is a VIEW**, which the standing scope list
+itself calls a view. ✅ **Corrected: of the 19 base tables carrying `side`, SIX are `pp_*`, leaving
+THIRTEEN in scope — the register's `side` row is right as written.** 🔑 *Rule 16 on my own SQL: two
+counts compared across different predicates is the same error as two claims compared across different
+classes, and only enumerating the members showed it.*
+
+**Pass outcome: ❌ one register row corrected one pass after it was written; nineteen of twenty-one
+figures exact. CLEAN 0/3 · 48 passes.**
+
+---
+
 ### T11.47 — PASS 46 (**the enumeration CENSUS §T11.46d admitted it had not taken**) — **📐 the CLASS REGISTER built · ❌ a fifth instance of the failure mode · 🔑 a class that CHANGED mid-sweep · 0/3**
 *2026-09-21. **§T11.46d ended with *"how many T11 contains in total was NOT enumerated"*, and a claim
 that states its own limit puts the completion on the next pass's list** — §T11.21c and §T11.39a are
