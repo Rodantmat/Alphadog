@@ -330,6 +330,18 @@ Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 > **ZERO times** in the codebase. The only config table anything reads is
 > **`nba_config.external_credentials`** (12 call sites, all fetching API keys).
 >
+> **⚠ PRECISION, 2026-09-21 (T7 pass 11): that is SEVEN TABLES AND ONE COLUMN, not eight tables.**
+> **`nba_config.ewma_alpha` does not exist** — `SELECT` on it errors *relation
+> "nba_config.ewma_alpha" does not exist*. It is a **column of `nba_config.stat_decay_config`**
+> (VERIFIED: the only `%ewma%` object in `information_schema`). **The string claim above is
+> unaffected** — a column name appearing zero times in code is still an absence — but *"these
+> tables"* below, and `NBA_MASTER_SUMMARY.md` §T7.39c's *"eight tables"*, both overstated it.
+>
+> **✅ RE-VERIFIED 2026-09-21 at a wider scope** (T7 pass 10): the original grep covered the 190
+> `.py`/`.js` files in `nba/` plus the admin bridge; a grep of the **whole repository, unrestricted
+> by directory or extension**, still finds **zero** code references — one day later, against a repo
+> another session committed to overnight.
+>
 > **These tables are a documented design that no running code consults.** Their values are
 > **maintained by hand alongside hardcoded constants**, not loaded from here. Editing a row changes
 > nothing and raises no error.
