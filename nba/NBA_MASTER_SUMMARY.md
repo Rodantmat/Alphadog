@@ -7727,6 +7727,52 @@ methodology. **Coverage at start**: 438 segments · **375 uncovered vs the twelv
 all 30 — **only a 9-segment self-authorship gap**, so unlike T4 this transcript barely writes the
 documents; its tail is genuine content, not its own payloads.*
 
+### T5.20 — PASS 5 (**referential integrity — the angle that opened T4**) — **✅ CLEAN 1/3 · one `[LIVE-AUDIT]` refinement, non-resetting**
+*2026-09-21.*
+
+**T5's own tables are exemplary — bidirectionally complete, which no other transcript's have been:**
+
+| Check | Result |
+|---|---|
+| `player_game_starter_status` rows | **32,179** ✅ matches the documented load |
+| distinct games covered | **1,230** — *the entire 2025-26 regular season* ✅ |
+| starter-status games missing from `player_game_log` | **0** ✅ |
+| **2025-26 log games missing from starter status** | **0** ✅ |
+| `team_splits` / `defense_vs_position` | 581 / 630 ✅ |
+| players with NULL `position` | **0** ✅ — the position backfill is complete |
+
+**Both directions empty is the strongest completeness result in the sweep so far.** After a bug that
+produced 799 rows across 31 games, the corrected run covers **every game of the season, and nothing
+it should not.**
+
+#### 📐 T5.20a — `[LIVE-AUDIT]` the orphan rate is a clean function of season distance — §T4.27b, measured
+
+§T4.27b recorded that ~10% of game-log rows have no player-dictionary row and called the drop
+*"biased toward departed players."* **That was an assertion. Here it is as a measurement:**
+
+| Season | Rows | Orphans | **%** |
+|---|---|---|---|
+| 2023-24 | 26,401 | 5,299 | **20.07%** |
+| 2024-25 | 26,306 | 2,588 | **9.84%** |
+| **2025-26** | 26,651 | **0** | **0.00%** |
+
+**A monotone gradient to exactly zero.** This does more than confirm the bias — it **proves the
+mechanism**: `nba_ref.players` is precisely the current (2025-26) roster, so the orphan rate *is*
+the attrition curve. **And it resizes the hazard**: an inner join does not cost "about 10%", it costs
+**one row in five on the oldest season** and nothing on the newest — so any model trained across the
+three seasons loses its sample **unevenly, hardest where the aging-curve signal lives.**
+
+#### 🔍 T5.20b — 58 starter-status rows have no dictionary row, and they are fully explained
+The 2025-26 game log has **zero** orphans, yet starter status for the same season has **58**. Checked
+rather than assumed: **all 58 carry a DNP `comment`, none is a starter, and they are 9 distinct
+players.** Box scores list players who *dressed but did not play*; the game log lists players who
+*played*. **The 58 are the difference between those two populations — correct data, not a defect.**
+
+*Recorded per the scope cap as `[LIVE-AUDIT]` refinement of an existing finding: it **does not reset**
+the clean count.*
+
+---
+
 ### T5.19 — PASS 4 (**the two-direction judgment pass**) — **NEW MATERIAL · 0/3**
 *2026-09-21. 438 segments. High band (≥0.45): **46** — the smallest band of any transcript so far.
 Tail-direction: **5**.*
