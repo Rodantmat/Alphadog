@@ -899,7 +899,14 @@ schema contains fields that invite exactly such aliases (`period`, `side`, `line
 > JSON-ENCODED STRING, not a native object** — **needs an EXPLICIT UNWRAP STEP before further JSON
 > operations work correctly.** **This is A RECURRING SHAPE IN THIS SYSTEM, NOT A ONE-OFF.**"*
 
-**NBA's JSONB columns**: `raw_json` on every reference and stats table, `factor_fits` and
+**NBA's JSONB columns**: ~~`raw_json` on every reference and stats table~~ **`raw_json` on `10` of
+the `33` `nba_ref` + `nba_stats` base tables** *(`[LIVE-AUDIT]` corrected 2026-09-22, §T20.28 —
+`nba_ref` **4 of 14**: `arenas` · `officials` · `players` · `teams`; `nba_stats` **6 of 19**:
+`player_career_season_totals` · `player_impact_rating` · `player_onoff_profile` ·
+`player_playtype_profile` · `player_season_profile` · `player_tracking_profile`)*, 🔑 **plus TWO
+more JSON columns under DIFFERENT NAMES that any `raw_json` rule would miss —
+`nba_stats.player_differential_log.details` and `nba_stats.player_tracking_detail.metrics`** —
+`factor_fits` and
 `role_minutes_multiplier` on `baseline_ladder_runs`, `config_json` on `classification_config`, and
 **the enrichment `breakdown`** — which is **stored as a STRING containing JSON**
 (`"breakdown": "[{\"factor_key\":…}]"`), i.e. **exactly this shape.**
