@@ -37915,3 +37915,73 @@ under test)* · **`§T20.56`** *(**PRIOR** — the five older items and how they
 pattern shrank to something true.** ⚠⚠ ***Two of sixteen is not "the corpus is navigationally broken".
 It is "the seam between old findings and new surfaces does not carry state" — and that is a defect you
 can go and look for, which the larger claim was not.***
+
+---
+
+# §T20.112 — T20 PASS 107: ✅🔴 **THE LEDGER SCORES `1` OF `12` — AND ROW `12` IS THE CONTROL THAT RULES OUT THE OTHER EXPLANATION** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads and `SELECT` only.**
+
+## 1. ✅ CLAUSE (ii) — **HIT AT EXACTLY `1`, ITS REGISTERED BAR**
+
+*The bar was set at `1` deliberately — `§T20.111`'s `2 of 16` is `12.5%`, which over twelve rows
+predicts about one and a half, and rounding a prediction up is how a test stops being one.*
+
+> ### 🔴 **ROW `8` — "T16 pass 2's THREE `[LIVE-AUDIT]` decisions" — READS `STANDING (3 sub-items)`. ONE OF THE THREE IS ANSWERED.**
+> **`T16-9`'s own heading**: *"`T16-9 IS ANSWERED — AND THE AUTHOR'S OWN CONDITIONAL HAS FIRED,
+> UNCHECKED`"*. **The author wrote the test** — *"IF IT STAYS AT ZERO once the query completes, the
+> planner isn't using them… WHICH I'D NEED TO FIX"* — **and it has fired**: `board_outcomes_nm_idx`
+> still at `0` scans, siblings at `1,080,188` and `594,932`, with the `EXPLAIN` giving the cause —
+> *"functions on the join columns… so ALL FOUR INDEXES I BUILT WERE IRRELEVANT TO THIS QUERY."*
+> ⇒ ***It needs a `DROP` of `303 MB` of dead index, not a decision. `T16-7` and `T16-8` stand.***
+
+## 2. 🔑🔑 **ROW `12` IS THE CONTROL, AND IT CHANGES WHAT THE HIT MEANS**
+
+**Row `12` reads ✅ `RESOLVED 2026-09-22 — ALL FIVE now carry an inbound route`** — *updated an hour
+earlier by the pass that resolved it (`§T20.90`).*
+⇒ ***So the ledger is NOT structurally incapable of carrying state. It carried row 12's forward,
+correctly, the same day.*** **Row `8` is stale for a different reason: `T16-9`'s answer PRE-DATES the
+ledger's construction, and `§T20.89` pulled the row in by reference without re-checking the item
+behind it.**
+🔑 ***That rules out the alternative explanation — "ledgers drift" — and leaves only the seam one.***
+**`§T20.111`'s refinement is confirmed a third time, now with a control**: *state flows forward from
+the pass that changes it; it does not flow backward to a surface that pulled a stale copy.*
+
+## 3. 🔴 **AND THE PROPAGATION IS NOW VISIBLE: ONE UNCHECKED FACT, TWO SURFACES**
+
+**The same stale state sits in the ranked brief's `D` row** *(corrected at `§T20.111`)* **and in the
+ledger's row `8`** *(corrected here)* — **both pulled from the same unchecked source, neither
+re-derived.** ⇒ ***A seam does not lose state once. It loses it into every surface that draws from
+it, and each copy then looks independently confirmed.***
+
+## 4. ✅ THE FOURTEEN — *sorry, the other eleven — are honest*
+
+*Rows `1`, `2` (rule 46 and the T1–T6 re-read) are live by construction; `4`, `5`, `6`, `7` are
+standing owner matters this sweep cannot settle* — **row `7` explicitly because "every option is a
+write to `NBA_COMPASS.md`, which this sweep never touches"** — *and `9`, `10`, `11` were each
+re-derived live within the last six hours and HELD.* **Row `3` is already annotated `NARROWED TWICE,
+WITHOUT THE OWNER`, which is the honest label, not a stale one.**
+
+## 5. ⚠ **AND THE PASS'S OWN CORRECTIONS MADE THE HEADING WRONG, SO THE HEADING WAS FIXED**
+
+*The ledger was titled* ***"`12` LIVE DECISIONS"***. *With row `12` resolved and row `8` at two of
+three, it is* **`11` live rows.** ✅ **Corrected in place** — *because a ledger whose own total is
+stale is precisely the defect this pass was sent to look for, and leaving it would have been the
+funniest possible failure.*
+
+## 6. ✅ CLAUSE (i) — `RULE 52`
+
+**`2026-09-22T23:04Z`: `650 · 1 · 470 · 467`. All three bands unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: 🔴 **`T16-9 IS ANSWERED` and the `board_outcomes_nm_idx`
+material** *(**PRIOR**, in the BASELINE tree — **the pass claims the MISMATCH, not the answer, for the
+second surface**)* · **`§T20.111`** *(**PRIOR** — the refined hypothesis and the first surface's
+correction; **this pass is its test, not its restatement**)* · **`§T20.89`** *(**PRIOR** — the ledger's
+construction)* · **`§T20.90`** *(**PRIOR** — row 12's resolution, used here as the control)*.
+
+📌 ***The lesson:*** **the hypothesis has now been tested twice, on two surfaces, and scored `2/16`
+and `1/12` — and the second test brought a control the first could not.** ⚠⚠ ***Every stale entry
+found so far was inherited, never generated. This sweep's own work carries its state correctly; what
+it cannot do is notice that something it COPIED had already changed.***
