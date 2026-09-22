@@ -11653,7 +11653,12 @@ official_differential_log  0 rows
 player_roster_snapshot   582 rows   ← frozen since 2026-09-02 19:47 UTC  (corrected §T9.35a)
 ```
 
-**The second run never came.** The snapshot is 17 days stale and the logs have never recorded an event.
+**The second run never came.** The snapshot is ~~17 days stale~~ **frozen SINCE `2026-09-02 19:47
+UTC`** *(17 days when written; **20 days** re-derived 2026-09-22, §T20.26)* **and the logs have never
+recorded an event.** ✅ **All four figures re-derive EXACT 2026-09-22** — `nba_stats.player_roster_snapshot`
+**582** · `nba_stats.player_differential_log` **0** · `nba_ref.team_differential_log` **0** ·
+`nba_ref.official_differential_log` **0** — ***the state has not moved in three weeks; only the
+corpus's arithmetic about "now" did.***
 **T7's "expected on first run" explanation was true then and is not true now.**
 
 **Why this is worse than it looks with the season two weeks out**: September and early October are when
