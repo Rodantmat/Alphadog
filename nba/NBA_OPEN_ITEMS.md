@@ -12635,6 +12635,35 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > still a pointer fix, and it is now a two-pointer fix.**
 > 📌 **The same defect produced three false findings inside §T20.21's own pass and one regression to
 > the T20 ledger — recorded there, not here.**
+>
+> ✅✅ **RE-AUDITED IN FULL ONE PASS LATER, 2026-09-22 (§T20.22) — THE ITEM IS SUPERSEDED IN SCOPE AND
+> ITS DANGLING COUNT GOES TO ZERO.** *(population re-counted from source, **not** reusing the 644:
+> **3,842 `§`-references · 904 distinct ids · 12 documents**, 2026-09-22T14:16:06Z; script
+> `scratchpad/t20/refaudit3.py`)*
+> 🔑 **A THIRD matcher was needed — `§T20.21`'s repair fixed only the sigil.** *Two further causes:*
+> **(a) an EMOJI before the id defeats a prefix anchor** — hundreds of sub-entry headings read
+> `#### 🔑 T9.40b — …`, and `§T9.40b` alone is cited **18 times** while every matcher this sweep had
+> used scored it dangling; **(b) the DEFINING heading usually omits the sigil that every REFERENCE
+> carries** — this item's own "138 of 1,498" statistic, seen from the other side. **v3 newly resolves
+> 306 distinct ids.**
+> ✅ **Final: 49 ids / 105 refs survive v3, and ALL 49 WERE OPENED (rule 48). Five classes —
+> 20 line-number citations in a second grammar (`` `NBA_GOBLIN_DEMON` §371 ``), 7 pointers into
+> `NBA_ARCHITECTURE_BLUEPRINT.md` (outside the twelve), 2 deliberate NEGATIVE references, 10
+> metavariables and coinages (`§T7.32-era` among them — confirmed a COINAGE, which retires the last
+> of this item's original seven), and 🔴 10 GENUINE dangling pointers.**
+> ⇒ **TRUE POINTER-INTEGRITY RATE: 11 broken refs of 3,842 = `0.286%` — 99.71% resolve.**
+> 🔴 **THE SURVIVING DEFECT LIST, which is what remains of this item**: `§0d.1` · `§0.9d.1` ·
+> `§0a-T18-C` · `§4c.1` · `§4c.4` · `§4k.7` *(sub-ids invented at citation time — this item's own
+> prescribed fix applies)* and `§T15.3` · `§T15.4` · `§T15.4b` · `§T15.4d` *(bare parent ids whose
+> level exists only as lettered children; **two were written by §T20.21 itself and are already
+> corrected on ledger row 15**)*.
+> ⚠ **CONCENTRATED, and the concentration sharpens once the classes are stripped:
+> `NBA_SYSTEM_ARCHITECTURE.md` is 4.4× the corpus rate on the raw residue and **14.0×** on the true
+> one; 7 of the twelve are at zero.** 🔑🔑 ***`NBA_OPEN_ITEMS` ranks 3rd on the raw measure and has
+> ZERO class-E defects — the unclassified rate would have sent a fixer to the wrong document.***
+> ⚠ **Two permanent floors on any future run of this audit, recorded so it is not re-discovered:**
+> *the line-number grammar is indistinguishable from a section pointer, and a deliberate
+> "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 **Reference audit, 2026-09-22 (T18 pass 4): 644 `§`-references to transcript sections across the
 twelve — 621 (96.4%) resolve to a heading inside the twelve, 16 resolve only in
 `NBA_SWEEP_RUN_LOG.md`, and 7 resolve NOWHERE**: `§T15.2c` · `§T15.2d` · `§T15.2e` · `§T15.2f` ·
