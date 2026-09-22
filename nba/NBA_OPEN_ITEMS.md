@@ -12126,6 +12126,37 @@ schedule is already loaded (2,666 games). **Not applied — documentation pass o
 > 📌 **Context: `NBA_RECIPE.md` `STEP 12 — THE GAME-DAY TIMELINE`, row 5 · `§T20.95` for the mirror
 > question (the LATEST tip, which bounds `P2`'s grading step and closes green).**
 
+> ## ✅✅✅ **AND THE PRESCRIBED FIX IS FEASIBLE — TESTED `38` OF `38` DAYS, 2026-09-22, T20 pass 92 (`§T20.97`)**
+> *This item's own sentence —* ***"on an early-tip day the game-day report is also filed earlier
+> (8–10 am local for tips at 5 pm local or earlier), so an earlier run is both necessary and
+> possible"*** *— has carried the word **"possible"** since T4 without a test. **It is now tested and
+> it holds.***
+>
+> ▶ **THE ARCHIVE**: the injury report is **not in Postgres** — it is monthly JSON in the repo,
+> `nba/data/nba_injury_report_<season>_<YYYY-MM>.json`, and **every row carries `snapshot_ts`, the
+> NBA's OWN report-generation time, plus the `source_url` of the PDF that names it**
+> *(e.g. `Injury-Report_2025-12-22_09_00AM.pdf`)*. **The 2025-26 archive covers `166` game-days.**
+>
+> ▶ **THE TEST**: for each of the `38` early-tip days *(re-derived from `nba_calendar.games` this
+> pass, not reused — rule 15/17)*, take `cutoff = earliest_tip_PT − 2h`, find the latest snapshot at
+> or before it, and require that snapshot to contain **the early game's own matchup**.
+>
+> > ### ✅ **`38` OK · `0` MISSING · `0` DAYS WITHOUT ARCHIVE ROWS.**
+>
+> ⚠⚠ **BUT THE SLACK IS THE FINDING, AND IT IS THIN**: *distance from the newest eligible report to
+> the trigger moment* — **`0` minutes on `31` of the `38` days · `30` minutes on `6` · `45` on `1`.**
+> ⇒ ***On four days in five the report the fix needs is generated at exactly the minute the fix would
+> fire.*** 🔑 *That is not an accident — the NBA files on the half hour and `earliest_tip − 2h` lands
+> on a half hour too — and it is survivable **because `P3` scrapes the report itself as its first
+> step** rather than assuming a prior run left one. ⚠ **What is NOT measurable from this archive**:
+> `snapshot_ts` is when the NBA GENERATED the report, not when the PDF became fetchable. *Any
+> publication lag eats the whole margin on those 31 days.* **`NOT RECORDED`, and it becomes
+> measurable on `2026-10-20` (rule 6).**
+> ⇒ ✅ **The fix `min(1:15 PM PT, earliest_tip − 2h)` has its input on every early-tip day of the last
+> completed season. 🔴 The open question is no longer whether the data exists — it is whether a
+> trigger with zero minutes of slack is one the owner wants to depend on, or whether
+> `earliest_tip − 2h` should carry a small buffer.** *(OWNER DECISION; not fixed — rule 1.)*
+
 ### DESIGN DRIFT · the pre-flight check became a post-flight audit
 **⚠ CORRECTED 2026-09-20 (T6 pass 5) — this entry was half wrong. There are TWO checks:**
 
