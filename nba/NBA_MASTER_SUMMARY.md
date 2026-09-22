@@ -32444,3 +32444,116 @@ answer is that the ladder is the wrong SHAPE — one absolute width for `threes_
 at 19.0 — and no amount of moving the anchor or adding rungs symmetrically fixes that.**
 ***Two passes ago this was a sentence with no diagnosis. It is now a table with eight rows and a
 ratio that predicts every one of them.***
+
+---
+
+# §T20.59 — T20 PASS 54 · THE MIRROR OF T18-1 — WE UNDER-COVER EIGHT PROPS. WHAT ABOUT THE OTHER TWENTY-TWO?
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: five `SELECT`s.** **Nothing edited, triggered or dispatched;
+`NBA_COMPASS.md` not written to.** ⚠⚠ **AND THIS PASS MUST NOT READ AS A DELETE LIST — everything
+below is a MEASUREMENT for an OWNER DECISION.**
+
+## 0. BOTH VOCABULARIES RE-PINNED FROM SOURCE OVER A FULL WEEK, THEN OVER BOTH SEASONS (rules 17/30)
+
+| | |
+|---|---|
+| **our props** | **30 distinct `prop` values**, `2025-12-01 → 2025-12-07`, **452,000 rungs** |
+| **the board, sample week** | **21 distinct `market_key`s**, each present on **all 7 dates** |
+| **the board, BOTH SEASONS** | **`2024-10-22 → 2026-04-12`, 381 dates, ~26.5M legs — and STILL exactly `21` market_keys** |
+
+⇒ **The 21 map to `13` of our `30` props.** 🔴 **SEVENTEEN of our thirty props have NEVER carried a
+single leg in `board_snapshots`, across two complete seasons.**
+
+⚠⚠ **RULE 20 RUN TO EXHAUSTION BEFORE THAT WAS CALLED AN ABSENCE**, because §T20.54 and §T20.57 both
+turned on a naming question: *the 21-key set was re-derived over the whole two-season window, not one
+week, so a market offered occasionally could not hide; and the full table holds **89** distinct
+`market_key`s — the other 68 are BASEBALL, from `2026-09-12/13` only.* ✅ **KILL: that
+`board_snapshots` holds baseball markets is already on file at §T11.8a.**
+
+## 1. 🔴🔴 CLAUSE (iii) — **55.29% OF OUR NIGHTLY RUNG VOLUME IS FOR PROPS THE BOARD HAS NEVER SHOWN**
+
+**Our 17 unmapped props, as a share of the sample week's rungs:**
+`fantasy_score` **5.09** · `fga` **4.39** · `points_h1` **3.69** · `points_h2` **3.67** · `fgm`
+**3.58** · `fg3a` **3.45** · `dreb` **3.36** · `fta` **3.15** · `personal_fouls` **3.07** · `ftm`
+**3.01** · `points_q4` **2.93** · `points_q4_otx` **2.93** · `points_q1` **2.89** · `oreb` **2.85** ·
+`rebounds_q1` **2.49** · `assists_q1` **2.40** · `threes_made_q1` **2.34** ⇒ **55.29%**
+
+⚠⚠ **AND THE PRE-REGISTRATION'S TRAP WAS REAL — THE SPLIT IS THE WHOLE FINDING.**
+
+### ✅ (a) NINE PROPS — **28.43%** — ARE DFS-ONLY **BY DOCUMENTED DESIGN, AND BUILDING THEM IS CORRECT**
+`fantasy_score` + the eight period props. **P3's own header, quoted:**
+> *"PrizePicks legs reach the board only via the Odds API feed … which carries the standard markets
+> but **NOT the DFS-only ones (fantasy_score, period props)** or the goblin/demon multipliers."*
+
+🔑🔑 **AND THIS PASS CONFIRMS THAT HEADER FROM THE DATA SIDE FOR THE FIRST TIME.** *`board_snapshots`
+carries FOUR DFS books — `prizepicks` **2,199,354** legs / 378 dates · `underdog` **934,438** / 379 ·
+`betr_us_dfs` **780,765** / 131 · `pick6` **534,188** / 176 — **4.4 million DFS legs**, and their
+market vocabularies are:* **`prizepicks` 20 keys · `underdog` 21 · `betr_us_dfs` 21 · `pick6` 19 —
+every one of them a subset of the same 21 STANDARD keys.** ⇒ ***Not one DFS-only market — no
+`fantasy_score`, no period prop — appears under ANY of the four DFS bookmakers in two seasons. The
+feed's limitation is exactly as documented, and it is now measured.***
+⇒ ✅ ***These nine props are the part of the product that is most distinctively the owner's, and our
+own data is structurally incapable of confirming or refuting them. That is a property of the FEED,
+not a defect in the ladder.***
+
+### ⚠ (b) EIGHT PROPS — **26.86%** — ARE ORDINARY BOX-SCORE STATS THAT NO SOURCE WE HOLD HAS EVER SHOWN OFFERED
+`fga` **4.39** · `fgm` **3.58** · `fg3a` **3.45** · `dreb` **3.36** · `fta` **3.15** ·
+`personal_fouls` **3.07** · `ftm` **3.01** · `oreb` **2.85** ⇒ **26.86%**
+
+⚠⚠ **RULE 19, AND THE CLAIM IS DELIBERATELY SMALLER THAN THE TEMPTATION.** *These are NOT DFS-only
+by any documented design — they are plain box-score stats. **But "no market in `board_snapshots`" is
+not "no app offers them", and this sweep cannot see past its own feed.*** ⇒ **The honest finding is
+not "delete them." It is:**
+> 🔴 ***`26.86%` of the nightly rung build is for props that NO source in this system — twelve
+> bookmakers, four of them DFS apps, 26.5 million legs, two full seasons — has ever been recorded
+> offering, and there is no instrument in the system that could tell the owner whether that is right
+> or wrong.***
+
+⚠ **THE COST, SO RULE 19's "only a defect if it costs something" IS SATISFIED**: §T20.51 measured
+`baseline_history` at **59,518 rows per `game_date`**; **at 26.86% that is ~16,000 rungs a night
+built against nothing our data can see**, every night the overnight pipeline runs.
+
+## 2. ✅ WHAT IS **NOT** BEING CLAIMED
+
+⚠ **`sleeper` and `fliff` carry ZERO legs in `board_snapshots` across both seasons** — *and that is
+**already on file**: `NBA_OPEN_ITEMS.md:2410`, **"`scrape_sleeper_board.py` exists and is documented
+— what is missing is HISTORY, not a scraper."*** ✅ **KILLED. And the wiring is verified correct, so
+it is not a bug**: `SLEEPER_OUT_DIR: "boards"` and `FLIFF_OUT_DIR: "boards"` are set in
+`nba-p3-afternoon-light.yml:121`, `nba-boards-market.yml:87,95`, `sleeper-board.yml:41` and
+`fliff-board.yml:38` — **the exact hazard P3's header warns about is closed everywhere it matters.**
+
+## 3. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTY-FIFTH consecutive identical run.** Measured 2026-09-22T17:57:05Z |
+| **(ii)** ≥1 prop has zero app legs over a full week | 🔴🔴 **TRUE — SEVENTEEN of thirty, and not over a week but over 381 dates and 26.5M legs** |
+| **(iii)** they exceed 20% of daily rung volume | 🔴🔴 **TRUE — `55.29%`, and the split is what matters: `28.43%` correct-by-design-and-unverifiable, `26.86%` unexplained** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTY-FIFTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 4. ⚠ VERDICT
+
+🔴 **NOT CLEAN — one new measured finding, recorded as an amendment to T18-1 rather than a new item,
+because it is the same question read backwards.** **T18-1 asked what we fail to price; this asks what
+we price that nothing prices back.**
+✅✅ **AND THE PASS'S BEST RESULT IS A DEFENCE, NOT AN ACCUSATION: the nine DFS-only props —
+`fantasy_score` and the period family, 28.43% of the build — are CORRECT, and the pass proves it by
+measuring that four DFS bookmakers and 4.4 million DFS legs carry nothing but standard markets. A
+less careful pass would have reported "17 props nobody offers, 55% of the build" and told the owner
+to delete the part of his product that is most his own.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **baseball markets in `board_snapshots`** *(§T11.8a)* · **Sleeper's
+missing history** *(`NBA_OPEN_ITEMS.md:2410` — "what is missing is history, not a scraper")* · **the
+eight covered props and the reach table** *(§T20.57/§T20.58)* · **`board_snapshots`' per-date
+magnitudes** *(§T20.51)* · **O5b's 30,989 rows beyond measured depth** *(about depth, not about
+unoffered props)*.
+
+📌 ***The lesson:*** **the same query answers "are we missing the market?" and "is the market missing
+us?", and the two answers have opposite signs. We under-reach on four props worth 5–17% of their app
+legs, and we over-build on seventeen worth 55% of our nightly rungs — except that nine of those
+seventeen are the product, and the only reason we can say so is that somebody wrote the feed's
+limitation into a workflow header eleven days ago.**
+***A pass that had counted without classifying would have been precisely wrong, at scale, in the
+owner's most valuable direction.***
