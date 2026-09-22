@@ -29575,6 +29575,19 @@ that fixes all of them is already written and running in `build_baseline_ladder.
 ⚠⚠ **NOTHING WAS EDITED, TRIGGERED OR DISPATCHED (rule 1).**
 ⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
 
+## 8. 🔴 SWEEP DEFECT, SELF-REPORTED — *a retry duplicated 2,779 bytes*
+
+**While writing this pass's open-item entry, a `github_patch_file` call returned
+`"Anthropic proxy: MCP server connection lost"`. I treated it as a failed write and retried.**
+🔴 **The first write HAD landed. The retry duplicated the entire §T20.34 block — `2,779` bytes,
+byte-identical, verified by offset comparison before removal.** ✅ **Detected by the next patch
+failing with `old_str matches 2 times`, located exactly, and REMOVED in-pass (rule 12); the file now
+carries one copy of each block.**
+📌 ***The lesson is narrow and belongs on the record with the rest: a TRANSPORT error is not a FAILED
+WRITE. Verify the current state before retrying an idempotent-looking operation that is not
+idempotent.*** ⚠ **Recorded here rather than buried in a commit message, because this sweep publishes
+its own defects on the same terms as the system's** *(the standing form since §T20.11)*.
+
 📌 ***The lesson:*** **an enumeration is only as complete as its pattern — `nba/[a-z_0-9]*\.py` missed
 the single most important script in the pipeline because it sits one directory down.** ***What
 caught it was not a better regex but reading the workflow step that invokes it. Three passes running,
