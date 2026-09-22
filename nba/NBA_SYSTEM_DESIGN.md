@@ -10,6 +10,53 @@ constraints that shaped it. This is the operational spec.
 
 ---
 
+## 0z-2. 🔴🔴🔴 **WHY ENUMERATION BEATS PREDICTION, MEASURED — and it is the argument AGAINST the decision that later dropped the scenario simulator** *(T16 pass 2, §T16.3, from COMPASS fact 96 — migration item, **0 of the twelve**)*
+
+> 🔑🔑 ***"With three Questionable rotation players, the MOST-LIKELY BRANCH is the realised one only
+> ~17% OF THE TIME — so assuming the likeliest outcome scores THE WRONG ROSTER IN 83% of those
+> games."***
+
+⚠⚠ **AND THE REASON IS STRUCTURAL, NOT A MODELLING SHORTFALL.** The availability model measures that
+**79% of Questionables are genuine coin flips at 2:30 PM (play rate 0.522) — *BY DESIGN***:
+
+| | |
+|---|---|
+| **teams use the tag to CONCEAL INTENT** | the label is strategic, not informational |
+| **the Active List does not lock until 60 minutes before tip** | the fact does not exist at the window |
+| **clubs file as late as 30 minutes out** | later than any pipeline stage |
+
+> 🔑🔑🔑 ***"NO MODEL REACHES 90% ON INFORMATION THAT DOES NOT EXIST YET — SELECTION DOES, ONCE IT
+> ARRIVES."***
+
+✅ **That is the cleanest statement in the corpus of WHY the architecture enumerates branches rather
+than predicting one**, and it is the justification for N1's unusual selection criterion — *confident-band
+yield rather than log-loss, "because the model's job is ACTIONABLE CALLS and everything else routes to
+the scenario layer"* *(`NBA_BASELINE_CALIBRATION.md` §0z-T16-C)*. 🔑 **The two facts are one design:
+N1 answers what it can answer confidently; the scenario layer absorbs the 79% it cannot.**
+
+### ⚠⚠ AND THIS IS WHERE THE CORPUS CONTRADICTS ITSELF ACROSS SIX DAYS — **both dates on file (rule 5)**
+
+| Date | The position |
+|---|---|
+| **2026-09-13** | **The owner calls PRE-CALCULATED SCENARIOS for the last-minute injury report *NON-NEGOTIABLE*** *(§0z §3 below)* |
+| **2026-09-14/15** | ✅ **BUILT** — COMPASS fact 95(c): `nba/build_scenario_calibration.py`, **1,651 games with uncertainty enumerated**, **only the realised branch stored** (`nba_score.scenario_realised`) — *"the unrealised universe is never written"* |
+| **2026-09-14/15** | 🔑 **JUSTIFIED BY MEASUREMENT** — fact 96, the ~17% / 79% figures above |
+| **2026-09-19** 🔴 | **COMPASS fact 107 (owner decision): TWO pipelines, cutoff 1:15 PM PT, and *"the scenario precompute is DROPPED — with a single window there is nothing to select with."*** |
+
+🔑🔑 **THE REVERSAL IS COHERENT, AND THE COHERENCE IS THE POINT**: **enumeration only pays if a LATER
+stage selects the realised branch.** *Collapse three stages into two and the selection moment
+disappears, so the branches have nothing to resolve against — **fact 107's own reasoning**.* ⚠⚠ **BUT
+THE MEASURED COST OF DROPPING IT IS THE 83% FIGURE, AND NO DOCUMENT PUTS THE TWO TOGETHER**: *with a
+single window the system must either **assume the likeliest branch — wrong in 83% of three-Questionable
+games — or carry the uncertainty into the probability itself.* 🔴 **NOT RECORDED which it does.**
+
+🔑 **The `scenario_realised` design is worth keeping in view regardless**: **enumerate the universe,
+store ONLY the realised branch.** *That is what makes enumeration affordable — the cost is compute at
+phase 2, not storage — and it is why the 1,651-game build exists as evidence rather than as a
+hypothesis.*
+
+---
+
 ## 0z. 🔴🔴🔴 **THE OWNER'S STATEMENT OF WHAT THE SYSTEM IS FOR — AND THE ACCEPTANCE CRITERION IT MUST MEET** *(T16 pass 0, §T16.1, from the 2026-09-13 transcript; **nine of ten probes returned 0 of the twelve AND 0 of the thirty**, positive controls passed)*
 
 ⚠⚠ **T16's owner stratum is the design-authority stratum of this corpus** — **32 turns, 11,487 chars,
