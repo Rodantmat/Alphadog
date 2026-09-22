@@ -11,6 +11,104 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T17-C. ✅✅✅ **`[LIVE-AUDIT]` — OPEN ITEM O6 IS RESOLVED, AND THE v3 CONFIDENCE MODEL IS PROVEN IN PRODUCTION TO FOUR DECIMAL PLACES** *(T17 pass 2, §T17.3; `SELECT` + source read, 2026-09-22)*
+
+### 🔑🔑🔑 **THE PROOF — `f_phase`'S DEDUCTION REPRODUCES THE LIVE CONFIDENCE OFFSETS EXACTLY**
+
+*`nba_score.confidence_model` — **10 rows, `built_at` 2026-09-19T01:25:34Z, `base` 99, `floor` 55** —
+carries **`f_phase` at deduction 9.0625**. The source's `phase_rank` map is
+**`{1_oct_nov: 0.80, 2_dec_asb: 1.00, 3_post_asb: 0.88, 4_push: 0.92}`**, and confidence is
+**`clip(99 − Σ(1−F)·ded, 55, 99.5) / 100`**. **So a leg's phase alone should cost `(1 − rank) ×
+9.0625` points relative to `2_dec_asb`. Measured on 19,215,200 live rows:***
+
+| phase | legs | **max conf** | **observed offset vs `2_dec_asb`** | **predicted `(1−rank)×9.0625/100`** | |
+|---|---|---|---|---|---|
+| `2_dec_asb` *(rank 1.00)* | 8,463,732 | **0.9841** | — | — | |
+| **`1_oct_nov`** *(0.80)* | 4,088,446 | **0.9660** | **0.0181** | **0.018125** | ✅✅ |
+| **`3_post_asb`** *(0.88)* | 3,095,410 | **0.9732** | **0.0109** | **0.010875** | ✅✅ |
+| **`4_push`** *(0.92)* | 3,567,612 | **0.9769** | **0.0072** | **0.00725** | ✅✅ |
+
+✅ **And the MINIMUMS reproduce the identical offsets** *(0.8722 − 0.8540 = 0.0182 · − 0.8613 =
+0.0109 · − 0.8649 = 0.0073)*, **which a coincidence could not do at both ends of the distribution
+across four phases.**
+
+### 🔴🔴🔴 **THEREFORE OPEN ITEM O6 IS CLOSED — and its answer is NOT the one the question assumed**
+
+*O6 (§T9.38a, open since T9) records that **`build_confidence_v3.py`'s `FACTOR_COLS` declares TEN
+factors, `f_phase` has a six-line justification with measured figures, and the `raw` expression sums
+NINE terms without it — with the nine weights totalling exactly 1.00** — and asks: **"should `f_phase`
+enter the sum, with the other weights renormalised, or is it deliberately inspection-only?"***
+
+| | Verified in source, 2026-09-22 |
+|---|---|
+| ✅ **O6's FINDING IS CORRECT AND STILL LIVE** | **Line 85–86**: `raw = 0.16·f_complete + 0.12·f_prov + 0.10·f_time + 0.14·f_depth + 0.10·f_vol + 0.08·f_exp + 0.12·f_role + 0.08·f_books + 0.10·f_agree` — **nine terms, summing to exactly 1.00, and `f_phase` is not among them.** |
+| 🔑🔑 **BUT `raw` IS NOT THE PRODUCT** | **Line 95** returns `clip(0.45 + 0.55·raw, 0.35, 0.99)` from `confidence_of()` — **an INTERMEDIATE**, used to populate `confidence_verification` and to attach the factor columns. **Line 358 then OVERWRITES it**: `d["confidence"] = clip(99.0 − lost, 55.0, 99.5)/100` where `lost = ((1 − F) · ded).sum(axis=1)` over **all TEN of `FACTOR_COLS`**. |
+| ✅✅ **AND THE TEN-FACTOR MODEL IS WHAT SHIPS** | **Lines 344–355 PERSIST it** — *"so `build_final_hp.py` applies exactly this, measured, logic to all 38.7M legs"* — to `nba_score.confidence_model`, **which the arithmetic above proves is live.** |
+
+🔑🔑 **SO THE ANSWER TO O6 IS: `f_phase` IS NOT INSPECTION-ONLY. It is the SECOND-LARGEST deduction in
+the model that actually produces `final_hp.confidence`.** ⚠⚠ **What O6 found is real but is a
+different object: TWO confidence formulas live in one file, and `f_phase` is in one and not the
+other.** 🔑 **O6's remedy — "renormalise the nine weights" — is therefore MOOT for the shipping path,
+and the open question narrows to a code-hygiene one: whether the nine-weight `raw` should still exist
+at all, given it is overwritten before anything downstream reads it.**
+
+✅✅ **AND O6's URGENCY ARGUMENT IS VINDICATED BY THE LIVE DATA**: O6 warned that **`1_oct_nov` carries
+the lowest reliability rank (0.80) and the season opens 2026-10-20.** **Live, `1_oct_nov` has the
+LOWEST mean confidence of any phase — 0.9135 against `2_dec_asb`'s 0.9308.** 🔑 **The factor is doing
+exactly what it was written to do, for exactly the regime the system is about to enter.**
+
+### 🔴🔴 **BUT THE SHIPPED MODEL RESTS ON TWO SIGNALS — SEVEN OF TEN FACTORS MEASURED *EXACTLY* ZERO**
+
+| factor | **deduction** | **separation** |
+|---|---|---|
+| **`f_role`** | **11.2731** | **0.008477** |
+| **`f_phase`** | **9.0625** | **0.001467** |
+| `f_books` | 2.3207 | 0.000013 |
+| `f_agree` · `f_complete` · `f_depth` · `f_exp` · `f_prov` · `f_time` · `f_vol` | **0.9063 each** | 🔴 **0.000000 each** |
+
+⚠⚠ **The budget totals exactly 29.00** *(`DEDUCT_BUDGET = 29.0`, "worst realistic combination lands
+near 70")*, **and seven of the ten factors share an identical floor allocation because they separated
+nothing.** 🔑 **So the eleven-factor epistemic design of §0a-T17-B ships as a TWO-FACTOR model in
+practice: role and phase carry 70% of the budget between them.** ⚠ **That is not a defect of the
+model — it is §0a-T17-B's own diagnosis made concrete: *"our hp is calibrated so uniformly well that
+there's almost nothing to discriminate."*** 🔴 **But it does mean `completeness`, `provenance`,
+`timeliness`, `evidence depth`, `volatility`, `experience` and `market agreement` — seven of the
+owner's named inputs — currently carry a flat 0.9063 each on ZERO measured evidence.**
+
+### ✅ **AND THE CAP MECHANISM IS VERIFIED IN SOURCE, WITH THE FAILURE IT WAS BUILT TO FIX**
+
+*COMPASS fact 102 records "a per-factor cap (**redistributing the excess, not just clipping**)". **The
+source comment explains why the distinction is load-bearing:***
+
+> ***"CAP any single factor, then REDISTRIBUTE THE EXCESS to the others — **clipping and then
+> renormalising by the sum does NOTHING when one factor holds almost all the mass** (clip to 0.35,
+> divide by 0.35, and it is back at 1.0). **That is what let `f_role` take 28.87 of 29 points.**
+> Iterate: clip, hand the surplus to the uncapped factors, repeat."***
+
+⚠ **`CAP = 0.40`, not the 0.35 the transcript proposed** — *the 0.35 version was implemented, found to
+be a no-op for exactly the reason above, and replaced by a 10-iteration clip-and-redistribute.* ✅
+**Live, `f_role` holds 11.2731 / 29 = 38.87% — just under the 0.40 cap, with the mechanism visibly
+binding.**
+
+### ✅ **OTHER LIVE RE-TAKES, 2026-09-22** *(re-take, never quote)*
+
+| Table | live | transcript | |
+|---|---|---|---|
+| `nba_score.conformal_confidence` | **342** | 253 full + 66 mid + 22 coarse + global = **342** | ✅ **exact** |
+| `nba_score.scenario_realised` | **1,942** | **1,942** | ✅ **exact** |
+| `nba_score.baseline_history` | **19,343,348** / 325 dates | 19,343,348 | ✅ **stable, as §0w now predicts** |
+| `nba_score.ladder_calibration_asof` | **9,904** | 3,383 + 3,432 + 2,762 = 9,577 | ⚠ **+327; NOT RECORDED why** *(the transcript's figures are per-source cell counts, which need not sum to the table)* |
+| 🔴 **`nba_score.final_hp` 2025-26** | **140,130 / ONE date** | **19,611,626 / 163 dates** | 🔴🔴 **UNCHANGED since the sweep first measured it — not a transient mid-write state** |
+
+⚠⚠ **THAT LAST ROW MATTERS FOR OPEN ITEM T16-7**: *the sweep's leading hypothesis was a delete-then-write
+in flight. **Re-taken across a span of time, the table has not moved** — so if a rebuild is running, it
+is not writing; and the conformal-vs-v3 question is settled the other way, since **the confidence
+values present ARE v3**, meaning the season that carries them was written and then lost all but one
+date.* 🔴 **OWNER DECISION stands, and it is now sharper: 2025-26's `final_hp` was COMPLETE with the
+current logic and is now 0.7% of itself.**
+
+---
+
 ## 0a-T17-B. 🔴🔴🔴 **THE CONFIDENCE BUILD — SIX VERSIONS, EACH KILLED BY A MEASUREMENT, AND THE LAST ONE IS NOT FINISHED** *(T17 pass 1, §T17.2, the prose stratum read in order and in full — 231 segments / 176,017 chars, the largest in the corpus)*
 
 *COMPASS fact 101 records "three earlier versions were wrong". **The transcript shows SIX, and the
