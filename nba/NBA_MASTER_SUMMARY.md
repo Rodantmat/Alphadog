@@ -36451,3 +36451,100 @@ last step, BASELINE tree**: *"latest tip"* and *"no observed ingestion latency"*
 tested on a case it was not designed for and needed sharpening, and the sharpening came from the rule
 being OBEYED rather than from it failing.** ⚠⚠ ***Two bands, two pinned segments, and the sweep found
 the second one only because it had committed in advance to opening every delta it saw.***
+
+---
+
+# §T20.96 — T20 PASS 91: 🔴🔴🔴 **`P3`'s FIXED CUTOFF SCORES AN ALREADY-TIPPED SLATE ON `38` DAYS A SEASON — `22.8%` OF IT — AND THE PIPELINE CERTIFIES GREEN EVERY TIME** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **`SELECT` ONLY.**
+
+## 1. 🔑 THE RISK WAS ON FILE AS A QUALITY SINCE T4. IT HAD NEVER BEEN A NUMBER.
+
+**`NBA_OPEN_ITEMS.md` §*BUG-OPEN · P3 uses a FIXED 1:15 PM PT — the design called for a DYNAMIC
+trigger*** *(quoted, not re-derived — **PRIOR**)*:
+> *"**Safe on a normal slate** (earliest tip ~4 PM PT) but **wrong on early-tip days**. The NBA
+> regularly schedules **noon and 1 PM Eastern** starts — Christmas, MLK Day, and most weekend
+> national-TV windows. **A 12:00 PM ET tip is 9:00 AM PT, over four hours BEFORE P3 would run.** On
+> those days P3 would score a slate whose games had already tipped."*
+
+⇒ ***`nba_calendar.games` — the very table the prescribed fix is supposed to read — has held the
+count for two completed seasons, and no pass had taken it.*** 🔑 *`§T20.95` bounded the LATEST tip
+one pass earlier; the same column, the same conversion, answers the opposite and more expensive
+question.*
+
+## 2. ✅✅ CLAUSE (ii) — **HIT, AT NEARLY FOUR TIMES THE REGISTERED BAR** *(predicted ≥ 10 days)*
+
+▶ **Live `2026-09-22`, completed season **2025-26**, `game_datetime_utc AT TIME ZONE
+'America/Los_Angeles'`** — **named zone, never a fixed offset, per clause (v); `T20-12` is the open
+item that exists because someone did the other thing:**
+
+| | 2025-26 |
+|---|---|
+| game-days | **167** |
+| 🔴 **days with ≥ 1 tip before `13:15` PT** | **38 — `22.8%` of the season** |
+| 🔴 **games tipping before the cutoff** | **75 of `1,238` — `6.06%`** |
+| 🔴 **average share of that day's slate already tipped when `P3` fires** | **`28.1%`** |
+| earliest tip | **`09:00` PT** *(= noon ET — exactly the figure the item predicts)* |
+
+## 3. ✅ CLAUSE (iii) — **HIT. CONCENTRATED, AND THAT IS THE GOOD NEWS.**
+
+| day | early games | days | earliest |
+|---|---|---|---|
+| **Sunday** | **46** | **22** | `09:00` |
+| **Saturday** | **16** | **10** | `09:00` |
+| Monday | 6 | 3 | `10:00` |
+| Wednesday | 4 | 1 | `10:00` |
+| Thursday | 3 | 2 | `09:00` |
+| ✅ **Tuesday** | **0** | 0 | — |
+| ✅ **Friday** | **0** | 0 | — |
+
+**Weekends carry `62` of `75` early games (`82.7%`) and `32` of `38` days (`84.2%`).** **The six
+non-weekend days are the holidays the item names**: `2025-12-25` *(Christmas)* · `2025-12-31` ·
+`2026-01-15` · `2026-01-19` *(MLK Day)* · `2026-01-26` · `2026-02-02`.
+⇒ 🔑🔑 ***"Christmas, MLK Day, and most weekend national-TV windows" was written from design
+knowledge and survives two seasons of schedule data without a single amendment. What it understates
+is FREQUENCY: this is not an edge case, it is most Sundays.***
+
+## 4. 🔴🔴 **THE HALF THE ITEM DID NOT STATE: THE FAILURE IS SILENT**
+
+**`certify_pipeline.py` `PIPE=p3` asks for five things** *(read at `§T20.94`)*: **scored legs for
+today · no NULL confidence · score in `0–100` · a loaded confidence model · a board archived today.**
+🔴 ***Every one of them is satisfied by a slate that already tipped.*** **Nothing in the pipeline
+looks at a tip time.** ⇒ ***On `38` days a season `P3` certifies **green** while `28%` of the slate is
+in progress.*** **This is a `SILENT` item by the brief's own ranking rule** *(SILENT before LOUD)*,
+which places it above every LOUD item on the list — *and it is not new enough to renumber: it is
+`BUG-OPEN`, already ranked, now priced.*
+
+⚠ **AND ONE ASSERTION IN THIS PASS WAS WRONG AND WAS CAUGHT BY CHECKING IT.** *The threshold note
+first read "no 2025-26 game tipped in that fifteen-minute window, so both thresholds give the same
+75." **Counted rather than assumed: `74` before `13:00`, `75` before `13:15` — exactly `1` game sits
+inside the guard's blind spot.*** ⇒ 🔑 ***`P3`'s shell guard refuses only before `13:00` PT — the
+league FILING deadline — not before the `13:15` doctrine cutoff, and on at least one night a season
+that fifteen minutes is a real game the guard permits scoring after it has tipped.*** **Corrected in
+place the same pass (rule 40).**
+
+## 5. ✅ CLAUSE (iv) AND CLAUSE (i)
+
+✅ **(iv) — the number went INTO the item that states the risk**, under its own `Not applied` line,
+with the prior quoted and nothing struck. **No new open item was created**, so the qualitative
+statement that has carried this since T4 keeps its rank and gains its evidence *(`§T20.90`'s pointer
+discipline; `§T20.94`'s "deliver it where it was asked")*.
+✅ **(i) — `RULE 52` as clarified**: **`2026-09-22T21:37Z`, `649 · 1 · 471 · 469`. Both bands
+unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`BUG-OPEN · P3 uses a FIXED 1:15 PM PT`** *(**PRIOR** —
+the entire qualitative case, quoted; **this pass claims only the count**)* · **`T18-9`'s correction**
+*(**PRIOR** — it already established this framing is the right way round and that an older entry said
+so first)* · **`§T20.94`** *(**PRIOR** — the five `p3` certifier checks, read there, reused here not
+re-derived)* · **`§T20.95`** *(**PRIOR** — the tip-time conversion and the latest-tip mirror)* ·
+**`T20-12`** *(**PRIOR** — why the named zone was used)*. ▶ **RULE 51, last step, BASELINE tree**:
+*"already tipped"* returns **1 file — the host item itself**, opened and quoted above; the
+quantification, the concentration and the weekday breakdown return **`0`**. ⚠ *A first probe on bare
+digits (`22.8`, `6.06`) hit eleven files and was **discarded as a `§T20.83`-class artefact** — the
+probe must be shaped like the CLAIM, not like its numerals.*
+
+📌 ***The lesson:*** **two passes in a row have now taken a column the corpus already owned and
+answered a question the corpus had already asked.** ⚠⚠ ***The sweep's remaining unread material is
+not in the transcripts. It is in the tables the documents cite and nobody queried.***
