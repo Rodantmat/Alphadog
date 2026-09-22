@@ -13385,8 +13385,25 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 > is the owner, whose cause is undiagnosed, and whose subject is whether the product does the thing
 > it exists to do.** **D and E are ranked on their own terms.**
 >
-> ## ▶▶ **FINAL ORDER — ALL THIRTEEN**
-> ### **A · 13 · B · C · 5 · 7 · 12 · D · 9 · 4 · 6 · 3 · 10 · 2 · E · 11 · 1**
+> ## ⚠ FIFTH AMENDMENT — **T20-14, ADDED T20 PASS 55 (§T20.60), 2026-09-22 — THE SECOND ITEM WITH A KNOWN DATE**
+>
+> | # | item | fails | effect | caught? | fix size |
+> |---|---|---|---|---|---|
+> | **→ 8th** | 🔴🔴 **T20-14** — **Betr's access token expires `2026-10-10T06:10:56Z`**, ten days before opening night; its board's only commit is `2026-09-10` | 🔴🔴 **SILENT** — *an expired token yields an empty board, which is indistinguishable from "Betr has no lines tonight"* | **DEGRADES** — one of the five apps the product targets goes dark | 🔴 **NO** | **refresh one token** |
+>
+> 🔑 **It joins T20-13 as the only items with a KNOWN FIRING DATE — `2026-10-10` and `2026-10-20`.**
+> ⚠ **It ranks 8th rather than high, because it costs ONE app of five and is one token, not because
+> its date is far away — its date is the NEARER of the two.**
+> 🔑🔑 **AND IT IS THE THIRD FINDING WITH THE SAME ROOT CAUSE AS `B`**: *Betr is pulled by the
+> Cloudflare bridge job `betr_board_pull`, not by a GitHub Action — and nothing triggers workers
+> (§T20.31: `job_runs` and `worker_run_log` both EMPTY).* ✅ **By contrast the three GitHub-Actions
+> scrapers are demonstrably alive: Sleeper committed `2026-09-22T16:57:05Z`, Fliff
+> `2026-09-22T17:14:27Z`, Underdog `2026-09-21T19:52:37Z`.** ⇒ ***The scraping network is not
+> uniformly dead: the Actions layer runs, the worker layer does not. That is one decision, and it now
+> answers B, C and 14 together.***
+>
+> ## ▶▶ **FINAL ORDER — ALL FOURTEEN**
+> ### **A · 13 · B · C · 5 · 7 · 12 · 14 · D · 9 · 4 · 6 · 3 · 10 · 2 · E · 11 · 1**
 > *(A = T18-1 · B = frozen static layer · C = frozen schedule · D = T16-7/8/9 · E = DARKO evidence;
 > the numerals are T20-n. Seventeen entries because D bundles three and the T20 items keep their own
 > numbering.)*
