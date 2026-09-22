@@ -11,6 +11,54 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T18. 🔴🔴🔴 **"THE SCORE MUST *ENHANCE* THE HIT PROBABILITY — NO KILL GOOD LEGS" — COMPASS FACT 103's ORIGIN, AND IT SETTLES WHAT OPEN ITEM T16-8 IS ABOUT** *(T18 pass 0, §T18.1, owner, 2026-09-19; **0 of the twelve, 0 of the thirty**)*
+
+*Three owner turns, in sequence, and they are the whole of fact 103:*
+
+> **"What about the score having final HP [and] confidence — is it calculated already?"**
+>
+> 🔴 ***"Score should be a 0 TO 100. A leg with high HP and confidence should score HIGH. **Is that
+> what is happening? DOES NOT LOOK LIKE.**"***
+>
+> 🔑🔑 ***"It is important to understand that **the score must ENHANCE the hit probability**. A strong
+> hit probability with strong confidence — **high score**. That should make HP even **MORE ASSERTIVE**
+> as a score. **NO KILL GOOD LEGS.**"***
+
+✅✅ **So the 0–100 contract is the OWNER's, stated as a correction to what he was shown** — *"does not
+look like"* — **and the design principle is his too: confidence must LIFT a well-supported leg, never
+tax it.** 🔑 **COMPASS fact 103's worked example** *(a straight `hp × conf` gives 0.95 HP at 0.90
+confidence a score of 85.5, "worse than the probability alone, which is backwards")* **is the
+arithmetic of "no kill good legs".**
+
+### 🔴🔴 **AND IT SHARPENS OPEN ITEM T16-8 RATHER THAN ANSWERING IT**
+
+⚠⚠ **`[LIVE-AUDIT]` finds `final_hp.score` running to **−52.488** with **36.0% of rows NEGATIVE***
+*(§0a-T16-C §4)*. 🔑 **T17 supplies the formula that produces them — `score = edge × confidence`,
+where edge is distance above break-even — and that formula CANNOT satisfy "0 to 100", because edge is
+negative below break-even and most legs are** *(T17: "average score −3.55 — most legs sit below
+break-even, which is correct").*
+
+| | |
+|---|---|
+| **The owner's contract** *(T18, 09-19)* | **score is 0–100; high HP + high confidence ⇒ high score; never below the probability alone** |
+| **The formula T17 built** | **`score = edge × confidence`** — *"a 92% leg nobody prices differently scores lower than a 64% leg the board needs 57% for with four books behind it"* |
+| **COMPASS fact 103's fix** | **a 0.85 NEUTRAL PIVOT** — above it the score is lifted toward 100 (up to half the remaining headroom), below it pulled down (up to 35%) |
+| 🔴 **The live column** | **−52.488 → 99.99, 36.0% negative** |
+
+🔑🔑 **THE THREE ARE A SEQUENCE, AND THE LIVE COLUMN MATCHES THE FIRST, NOT THE LAST**: *`edge ×
+confidence` is exactly what the owner objected to — **it KILLS good legs** — fact 103 records the
+pivot as the fix, and **the live data still shows the edge-based shape.*** ⚠ **So T16-8's question is
+no longer "is this intended?" — it is *"did the pivot fix ever replicate?"***, the same question
+T17-5 asks of v3 confidence and which the v3 arithmetic answered YES. 🔴 **NOT RECORDED for score;
+T18's own prose stratum is where it would be** *(the owner asks at segment 92 and the fix is
+discussed by segment 130, so pass 1 should settle it)*.
+
+⚠ *Note the ordering constraint the owner adds and the pivot preserves:* **"that should make HP even
+more assertive AS A SCORE"** — *the score is not a second probability; it is a RANKING that must not
+invert the probability's ordering among well-supported legs.*
+
+---
+
 ## 0a-T17-C. ✅✅✅ **`[LIVE-AUDIT]` — OPEN ITEM O6 IS RESOLVED, AND THE v3 CONFIDENCE MODEL IS PROVEN IN PRODUCTION TO FOUR DECIMAL PLACES** *(T17 pass 2, §T17.3; `SELECT` + source read, 2026-09-22)*
 
 ### 🔑🔑🔑 **THE PROOF — `f_phase`'S DEDUCTION REPRODUCES THE LIVE CONFIDENCE OFFSETS EXACTLY**
