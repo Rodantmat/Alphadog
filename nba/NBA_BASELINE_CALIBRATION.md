@@ -609,6 +609,22 @@ used, just kept instead of discarded.**"*
 | stat types | **29** | 📌 **30 distinct `prop` values** |
 | coverage | 2 seasons × every game-day × every rung ±10 | — |
 
+> ⚠⚠ **`§0v.4` — `30` IS WHAT THE LADDER COMPUTES, NOT WHAT THE BACKTEST CAN BE EVALUATED ON**
+> *(inbound pointer added 2026-09-22, T20 pass 85, §T20.90 — repairing a `T20-1` orphan; **nothing in
+> the table above is struck or changed**, the two numbers measure different objects.)*
+> **`§0v.4` of this document — *"THE BACKTEST'S REAL SCOPE LIMIT — the archived board is 13 of ~25
+> PrizePicks stat types"*, quoted from transcript `2026-09-13-01-03-48`, recorded 2026-09-22 (T13
+> pass 2, §T13.3h)** — states the other half: ***"Historically we can train and evaluate on 13; LIVE
+> we'll score all of them."***
+> 🔴🔴 **AND `§0v.4`'s OWN FIGURE HAS BEEN CORRECTED SINCE — FOLLOW THE POINTER TO THE CORRECTION, NOT
+> TO THE `13`.** **`§T20.24` re-derived it live on 2026-09-22** *(`SELECT DISTINCT market_key FROM
+> nba_market.board_snapshots WHERE bookmaker='prizepicks'` → 20 keys; collapsing the 8 `_alternate`
+> variants leaves **`12` base stat types**)* — **so the archive holds `12`, not `13`.**
+> ⇒ ***`baseline_history` carries `30` props because the LADDER computes 30. A PrizePicks-scoped
+> backtest can be graded against an archived board for `12` of them.*** **Both figures are correct;
+> only one of them is a backtest scope.** *(`§0v.4` is at this document's `### 🔴🔴 0v.4` heading; its
+> twin statement is `NBA_MASTER_SUMMARY.md` §T14.2i.)*
+
 **Key: `(game_date, player_id, game_id, prop, period, line)`.** 🔑 **The live table holds ONE MORE
 prop than the session reported, so work continued after it.**
 📌 **The build order, for the record**: **2025-26 singles 11 props / 163 game-days / 3,646,216 rows** ·
