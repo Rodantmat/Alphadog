@@ -34913,3 +34913,99 @@ someone later to find out that it stopped being true.***
 > ✅ **WHAT SURVIVES, AND IT IS WORTH MORE THAN THE HEADLINE IT REPLACES:** **(1)** *every one of the twenty-five unpinned figures in the twelve is exactly right — the sweep's measurements are sound*; **(2)** *the one genuine defect is **PROPAGATION**: `final_hp`'s superseded 2025-26 figure stood un-dated at **two** `NBA_WORKERS.md` sites while three other documents carried the current one — **now repaired at both***; **(3)** ***a correction recorded by ADDITION in another document is invisible to rule 40's instrument, which starts from strikethroughs*** — that observation is new and stands.
 >
 > 📌 ***The lesson, restated after two self-corrections in one pass:*** **this pass set out to measure whether unpinned figures go stale, and twice produced a "stale figure" that was an artifact of how I measured it — once by not checking the corpus, once by not reading the population the document had written down.** ***The figures were fine. The audit was the unreliable instrument, and it took the corpus's own rules — 10, 23, 26 — to catch it.***
+
+---
+
+# §T20.81 — T20 PASS 76: 🔴✅ **THE CHECK BUILT TO CATCH THREE SELF-WITHDRAWALS FOUND A FOURTH ON ITS FIRST RUN — AND IT IS `RULE 51`** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: this session has withdrawn three published claims — §T20.63 (the Betr token), §T20.72 (my own
+rule, a duplicate of `RULE 30`), §T20.80 (its headline, twice). **All three had one cause: the novelty
+check was run on the HARVEST and not on the FINDING.**** ⚠ **And the cost is asymmetric: *a missed
+candidate costs a pass; a prior published as new costs the CORPUS, because it enters as a finding and a
+later reader cannot tell it from one.***
+
+## 📏 THE POPULATION AND THE TEST
+
+`grep -cE "^# §T20\.(69|7[0-9]|80) — " nba/NBA_MASTER_SUMMARY.md` ⇒ **`12` sections**,
+`2026-09-22T19:59:10Z`. **For each: its headline's most distinctive term, grepped against the
+BASELINE tree — the corpus at that section's PARENT commit** *(`git grep … <sha>^`)*.
+
+⚠⚠ **RULE 28 IS THE WHOLE POINT OF THE PARENT COMMIT: *"a NOVELTY probe runs against the BASELINE
+tree."* **Probing today's corpus would return a guaranteed hit on the section's own text and prove
+nothing** — the error that makes a novelty check feel done while doing nothing.
+
+## 🔴 CLAUSE (ii) — **HITS, ON MY OWN PASS FROM NINETY MINUTES EARLIER**
+
+**§T20.79's headline term `"8 passes"`, probed at `b0090e7f^`, returns a hit in this document's own
+TRANSCRIPT LEDGER:**
+
+> *"| 19 | `2026-09-20-18-46-12-nba-alphadog-documentation-pass.txt` | ⏳ **HELD OPEN — CLEAN 0/3 ·
+> 8 passes · detail §T19.1–§T19.11.** **920 segments.**"*
+
+🔴 ***§T20.79 claimed "NEITHER NUMBER WAS READABLE" and "T19's position is stated nowhere". Both
+numbers, the section range AND the segment count were already on file, stated together, in one row.***
+✅ **WITHDRAWN IN PLACE at §T20.79, original kept (rule 40).** *What survives is a PLACEMENT finding —
+the position was in the master summary's ledger and not in the run log's `START HERE` block, which
+§T20.69 established is the successor's first screen — and the repair is still worth its keep.*
+
+## ✅ AND THE OTHER TEN ARE CLEAN — **BECAUSE THE HITS WERE READ, NOT COUNTED**
+
+*Raw hit counts would have condemned most of the corpus:* **`"72.5"` → 32 · `"95.6"` → 13 · `"66.7"`
+→ 10 · `"namespace"` → 8 · `"73.7"` → 7.** 🔴 **Read, they are numeric coincidences in backtest report
+files and unrelated tables, and `"namespace"` in `NBA_DATABASE.md` means a DATABASE namespace, not a
+rule namespace.** ⚠ *`§T20.74`'s `"SEVENTEEN DAYS"` hits are T7's seventeen days — a different subject
+entirely.* ✅ *`§T20.70`'s `"ALL FOURTEEN"` hit IS the finding: the brief's body said FOURTEEN while its
+heading said THIRTEEN, which is exactly what that pass reported — **PRIOR, CORRECTLY CARRIED**.*
+
+| the 12 sections | |
+|---|---|
+| ✅ **NOVEL** | **10** |
+| 🔴 **PRIOR PUBLISHED AS NEW** | **2** — `§T20.80` *(already withdrawn in-pass)* · `§T20.79` *(withdrawn here)* |
+| ⚠ **PRIOR, CORRECTLY CARRIED** | `§T20.70` |
+
+⇒ **Of the eleven not already withdrawn, `1` was a prior published as new — `9.1%`.**
+
+## ✅✅ CLAUSE (iii) — **HITS: THE FOUR WITHDRAWALS SHARE ONE MECHANICALLY DETECTABLE SIGNATURE**
+
+| withdrawal | baseline hit existed? | why the probe missed it |
+|---|---|---|
+| **§T20.63** *(Betr token)* | **yes** | the grep was **truncated by `head -8`** and the truncation read as the result |
+| **§T20.72** *(my rule = `RULE 30`)* | **yes** | the table was **read to COUNT its rows**, never to read row 30 |
+| **§T20.80** *(`final_hp`)* | **yes — 4 documents** | **no probe was run** until after the write-up |
+| **§T20.79** *(T19's position)* | **yes — same document** | **no probe was run** |
+
+⇒ ***In all four the term WAS in the baseline tree. The check that catches all four is one sentence
+long, and running it on twelve sections took a single command and found a fourth instance.***
+
+## 🔑🔑 **`RULE 51` — ADJUDICATED AGAINST ITS NEIGHBOURS BEFORE BEING NUMBERED (§T20.72's method)**
+
+> ### **RULE 51 — *The novelty check runs on the FINDING, against the BASELINE tree, as the LAST step before the entry ships — not on the candidates at the start.***
+
+| nearest rule | what it fixes | does anything survive? |
+|---|---|---|
+| **RULE 28** — *"a NOVELTY probe runs against the BASELINE tree; a DUPLICATE probe runs against the WORKING tree"* | **WHICH TREE** | ✅ yes — it says nothing about WHEN, or about WHAT is probed |
+| **RULE 48** — *"every segment citation is opened against its source BEFORE the entry ships"* | **TIMING**, for CITATIONS | ✅ yes — citations, not findings |
+| **RULE 26** — *"a COUNT of carriers is not a READING of them"* | **READ THE HITS** | ✅ yes — it governs how to treat hits, not what to probe |
+
+⇒ ***Rule 51's OBJECT is what survives: rules 26 and 28 govern probing CANDIDATES, rule 48 governs
+CITATIONS, and **nothing in the corpus says the PUBLISHED FINDING itself must be probed.** Four
+withdrawals in one session are the evidence that the gap is real.*** ✅ **NUMBERED `51`** *(`49`
+retired at §T20.16, `50` taken at §T20.72)* **and given an index row.**
+
+⚠ **CLAUSE (i): tree HOLDS at `649 · 1 · 471 · 470`** *(Δ `484 − 471` = `13`)*.
+
+⚠ **KILLS LOGGED (rules 26/28 — and rule 51, applied to itself)**: **§T20.63, §T20.72, §T20.80**
+*(**PRIOR** — this pass's MOTIVE and its evidence, not re-discovered)* · **rules 26 / 28 / 48**
+*(**PRIOR** — adjudicated against, quoted, and shown not to cover the object)* · **§T20.16's
+rule-49 retirement** *(**PRIOR** — the METHOD precedent for retiring on arrival, which rule 51 did not
+require)*. ▶ **And rule 51 was itself probed against the baseline tree before being numbered:
+`"RULE 50"` at `8895a114^` returns `0`, confirming the numbering sequence was clean.**
+
+📌 ***The lesson:*** **a pass built to audit twelve findings for one specific failure found that
+failure in the pass immediately before it — written by the same author, in the same document, four
+hundred lines from the ledger row that already held the answer.** ***The check is cheap, it is one
+command, and the only reason it works is that it runs on the sentence you are about to publish rather
+than on the question you started with.***
