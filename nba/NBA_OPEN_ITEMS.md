@@ -9877,8 +9877,20 @@ count** is falling.
 > **hard-to-trace** corruption source."*
 
 **Live surfaces where a payload is size-constrained in this build:**
-- **`raw_json` JSONB** on every reference and stats table — if anything trims it to fit, it must drop
-  whole keys
+- **`raw_json` JSONB** ~~on every reference and stats table~~ **on `10` of the `33` `nba_ref` +
+  `nba_stats` base tables** — if anything trims it to fit, it must drop whole keys
+  > 🔴🔴 **`[LIVE-AUDIT]` CORRECTED 2026-09-22 (§T20.28) — AND THE CORRECTION CHANGES THE RULE, NOT
+  > JUST THE COUNT.** *`information_schema.columns`, 2026-09-22:* **`nba_ref` 4 of 14** *(`arenas`,
+  > `officials`, `players`, `teams`)* · **`nba_stats` 6 of 19** *(`player_career_season_totals`,
+  > `player_impact_rating`, `player_onoff_profile`, `player_playtype_profile`,
+  > `player_season_profile`, `player_tracking_profile`)*. ⚠ **21 of 33 carry no JSON column at all.**
+  > 🔑🔑 **AND RULE 20's THIRD VOCABULARY FOUND THE PART THAT MATTERS: probing every `json`/`jsonb`
+  > column rather than the NAME `raw_json` returns `12` tables, not 10 — `player_differential_log`
+  > stores JSON as **`details`** and `player_tracking_detail` as **`metrics`**.** ⇒ ***A truncation or
+  > storage-diet rule written against the string `raw_json` would silently skip two live JSON
+  > columns.*** **The constraint above must be stated by TYPE, not by column name.**
+  > 📌 **Same failure shape as §T20.22 (pointers) and §T20.27 (prose), now found in the LIVE
+  > SCHEMA — the third independent instance, and the first outside the documents.**
 - **The bridge's own tool results** — `max_rows`, and the **grep/read utilities that return truncated
   file content** *(this is the same mechanism that truncated `FALLBACK_AFTER_FETCH_ERROR` to a
   partial string during this documentation effort — a live instance of the pattern, caught only by
