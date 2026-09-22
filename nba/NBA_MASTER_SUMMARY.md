@@ -29924,3 +29924,95 @@ constant between a workflow and a script, a window between a script and a table,
 certifier and a writer.** ***The corpus documented the nodes exhaustively: `build_final_hp` 53
 mentions, `board_scored` 67. It never drew a single edge. That is not an oversight about one fact;
 it is a missing VIEW, and every defect of the last five passes lived in it.***
+
+---
+
+# §T20.39 — PASS 34: *THE EDGE VIEW IS PUBLISHED — AND WRITING IT OUT SHARPENED THE BIGGEST FINDING*
+
+*(T20 pass 34, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY AGAINST THE SYSTEM: repo reads and `SELECT` only. The write went to
+`NBA_WORKERS.md` — THIS SWEEP'S DELIVERABLE, which the owner's amendment permits and which changes
+nothing in the system (rule 1).**
+
+## 1. ✍️ WHAT WAS PUBLISHED
+
+**`NBA_WORKERS.md` §0.00000 — THE WIRING MAP, five parts**: (A) P1/P2/P3 in STEP ORDER with what each
+script writes · (B) the certifier's checks against what the pipelines actually write · (C) the `17`
+multi-writer tables · (D) the non-orphans, recorded so a later pass does not re-flag them ·
+(E) the MLB residue visible in the map.
+*Populations pinned inline and rebuildable from `scratchpad/t20/wiring.py`: **39** workflows · **119**
+script invocations · **33** tables, 2026-09-22T15:52:31Z.*
+
+## 2. 🔴🔴 CLAUSE (ii): **WRITING IT OUT SURFACED FOUR THINGS THE TABLE HID**
+
+**🔑 ① `export_market_spreads.py` WRITES NOTHING TO THE DATABASE.** *It runs in BOTH P2 (step 11) and
+P3 (step 7), its name says it exports market spreads, and §T20.36 flagged its `MS_SEASONS` default —
+but it has no `INSERT` / `CREATE TABLE` at all.* ⇒ ***It is a FILE producer. A reader tracing "where
+do market spreads land" from the name would look in the wrong place, and its season default governs
+a file, not a row.***
+
+**🔑 ② P2 INVOKES THREE LADDER BUILDERS, NOT ONE** — `baseline/build_baseline_ladder.py`,
+`baseline/build_combos_ladder.py`, `baseline/build_periods_ladder.py` *(steps 12–14)*. **§T20.38's
+tabular pass counted them among the 119 and never surfaced them; only rendering P2 in STEP ORDER made
+them visible.** ✅ **And none writes to the DB — all three emit artefacts that `load_baseline_ladder.py`
+(step 15) loads.** 📌 *The combos builder is the one whose absence the corpus records as **"a missing
+combos build costs 44% of the board."***
+
+**🔑 ③ ELEVEN OF P1's FOURTEEN SCRIPTS WRITE NO DATABASE ROW.** *They emit JSON committed to the repo
+for a separate loader.* ⇒ ***T11's headline finding (2) — "the two-hop architecture's second hop is
+missing for a whole family" — becomes COUNTABLE rather than anecdotal: P1's exposure is 11 of 14.***
+
+**🔑🔑 ④ AND THE BIG ONE — see §3.**
+
+## 3. 🔴🔴🔴 CLAUSE (iii): **THE CERTIFIER IS CHECKING THE *SIBLING*, NOT NOTHING**
+
+**§T20.37 reported that P2's and P3's certifier checks assert tables no pipeline writes. TRUE — and
+incomplete in a way that changes the fix.**
+
+| certifier asserts | who writes it | what the pipeline ACTUALLY writes |
+|---|---|---|
+| 🔴 P2 → `nba_score.baseline_history` | `load_baseline_history.py`, **not in P2** | ✅ **`nba_score.baseline_ladder` — live `206,237` rows**, via `load_baseline_ladder.py` step 15 |
+| 🔴 P3 → `nba_score.final_hp` | `build_final_hp.py`, **not in P3** | ✅ **`nba_score.board_scored`**, via `score_board_legs.py` step 10 |
+
+🔑🔑 ***P2 produces `baseline_ladder` and is asked about `baseline_history`. P3 produces
+`board_scored` and is asked about `final_hp`. The certifier is not checking nothing — it is checking
+the SIBLING.***
+⇒ ⚠ **A materially different verdict from §T20.37's, and the better one: the corpus's node-level
+account was right about the FUNCTION of each pipeline and wrong about the OBJECT.** ***The missing
+view cost PRECISION, not comprehension*** — and the fix becomes a real decision rather than a bug
+report: **should the pipeline also build the asserted table, or should the assertion name the table
+the pipeline builds?** 📌 **Sharpened onto open item T20-6.**
+✅ **Clause (iii) HIT — an existing statement is contradicted** *(the certifier's own comment, "the
+overnight pipeline must have PRODUCED TODAY's baseline")* ❌ *and the reassuring branch is only HALF
+available: accurate about function, wrong about object.*
+
+## 4. ✅ LIVE CORROBORATION TAKEN WHILE RENDERING
+
+> `nba_score.baseline_ladder` **206,237** · `baseline_ladder_runs` latest `asof` **2026-03-15** ·
+> `nba_ref.referee_assignments` **0** *(confirming §T10 byte-exact — and P2 invokes its writer)* ·
+> `nba_score.availability_delta` **4,274** · `nba_score.paper_picks` **0**.
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` **FALLS or HOLDS** *(this pass WRITES; a rise would indict the instrument)* | ✅ **HIT — HELD at `470`** at **2026-09-22T15:53:53Z**. 🔑 *And the zero is informative: a ~6 KB addition of genuinely new SYSTEM content moved the T20 band by nothing, because the band measures TRANSCRIPT coverage and the map documents the REPO. **The instrument declined to reward content it was not built to measure — which is the behaviour you want from it.*** |
+| **(ii)** | writing the map surfaces **≥ 1** new edge defect | ✅ **HIT — four.** ❌ *The "pure transcription" branch is not available; §T20.38's tabular pass was not complete.* |
+| **(iii)** | **≥ 1** existing statement contradicted | ✅ **HIT — the certifier's own comments**, and the contradiction is a SHARPENING rather than a reversal. |
+
+✅ **Baseline `636 · 2 · 484 · 481` — THIRTY-SIXTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — four new edge facts, and §T20.37's headline finding materially re-characterised.**
+✅✅ **BUT THIS IS THE FIRST PASS IN THIRTY-FOUR THAT REMOVED A DEFECT CLASS RATHER THAN RECORDING
+ONE: the missing view is no longer missing. `NBA_WORKERS.md` now carries the edge.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **§T20.38 printed the map and §T20.39 wrote it out, and the second found four
+things the first did not — including a re-characterisation of the sweep's largest finding.**
+***Printing a table is not reading it. A cell you render into prose has to be understood; a cell a
+script prints can be skimmed. The discipline that has produced every real finding in this run is one
+thing stated three ways: open the source, open the residue, and now — write it out.***
