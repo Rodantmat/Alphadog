@@ -1610,7 +1610,61 @@ carries a destructive shell step is NOT RECORDED.** → `NBA_OPEN_ITEMS.md` *FRO
 
 ---
 
-## §0.002-T18 — 🔴🔴🔴 THE GAP DETECTOR PASSED AN ENTIRE SEASON AS "NOT A FAILURE"
+## §0.002-T18-CORRECTION — ⚠⚠⚠ THE SECTION BELOW OVERSTATED ITS CASE; THE ORDERING REFUTES IT
+*(written 2026-09-22, same pass, on reading further into the same stratum — **the SECOND such
+retraction in this pass**, and the reason `RULE 39` exists. Recorded in place, per the §0w precedent.)*
+
+### WHAT THE SECTION BELOW GOT WRONG
+
+It says: *"the fallback exists and is correctly argued — and on 2025-26 it was ALSO empty"*, and flags
+*"NOT RECORDED: why the team-log witness was empty for 2025-26 while 2024-25's was not."*
+🔴 ***BOTH ARE WRONG, AND THE CAUSE IS AN ORDERING ERROR: THE FALLBACK DID NOT YET EXIST WHEN THE
+2025-26 RUN EXECUTED.***
+
+### ✅ THE ACTUAL SEQUENCE, FROM THE `tool_use`/`tool_result` ORDER
+
+| # | seg | what happened |
+|---|---|---|
+| 1 | **624–628** | `check_delta_gaps.py` is **written**, and its `if not expected:` branch is terminal: *"nothing to audit — this is expected in the off-season. not a failure."* → `sys.exit(0)`. **No fallback.** |
+| 2 | **639** | dispatched `task=gaps`, **season 2025-26** |
+| 3 | **run `35466211139`, 20:04:19** | *"No COMPLETED games in the schedule for 2025-26 … Nothing to audit … Not a failure."* **exit 0** — ***on the no-fallback version*** |
+| 4 | **647** | 🔑 **the author IMMEDIATELY PATCHES IN the team-game-log fallback**, with the diagnosis in the patch's own comment: *"`nba_schedule_current.json` only carries the UPCOMING season, so in the off-season — or when auditing a past season — it has nothing to compare against."* |
+| 5 | **649** | dispatched again, **season 2024-25** |
+| 6 | **run `35466481270`, 20:09:34** | *"falling back to the team game log as the independent witness"* → **"gaps found: 2 truncated team-games"**, `0022401178` TOR |
+
+⇒ 🔑 ***The blind spot was real, was found by running it, and was FIXED WITHIN FIVE MINUTES BY THE
+AUTHOR HIMSELF.*** **It is not a standing defect of the shipped code** *(the fallback is present in
+live source at `check_delta_gaps.py` lines 77–80, verified 2026-09-22)*.
+
+### ⇒ WHAT SURVIVES, RESTATED AT THE RIGHT STRENGTH
+
+| below | verdict |
+|---|---|
+| *"THE GAP DETECTOR PASSED AN ENTIRE SEASON AS 'NOT A FAILURE'"* | ⚠ **TRUE OF THE VERSION THAT RAN, FOR FIVE MINUTES.** **Retitle it: *a green exit on an empty expected-set, caught and fixed in-session.*** The 🔴🔴🔴 severity is withdrawn. |
+| *"the fallback … on 2025-26 it was ALSO empty"* | ❌ **WITHDRAWN** — the fallback did not exist yet |
+| *"NOT RECORDED: why the team-log witness was empty for 2025-26"* | ❌ **WITHDRAWN** — it was never consulted for 2025-26 |
+| *"the prose's claim … is TRUE OF 2024-25 AND OF NOTHING ELSE"* | ✅ **STANDS, and is now the section's real finding** |
+| the `[LIVE-AUDIT]` schedule table, rule 37 framing, the *"green run with an empty table"* quotation | ✅ **STAND** |
+| the consequence for **T18-6** *(the 0.5% threshold's 2025-26 numerator and its missing denominator)* | ✅ **STANDS UNCHANGED** |
+
+### 🔴 AND THE FINDING THAT REPLACES IT — *the fix was never verified on the season that exposed it*
+
+**After the fallback was added, `check_delta_gaps.py` was re-run on 2024-25 and worked.**
+🔴 ***It was never re-run on 2025-26.*** **No `tool_result` in the 860 mechanism segments shows a
+2025-26 gap audit executing against the team-log witness.**
+⇒ **The season that exposed the blind spot is the one season the fix has not been demonstrated on**,
+and it is the season holding **19,611,626** scored legs. **Severity: MEDIUM** — one dispatch settles
+it. *Open item T18-12. Documented, not fixed.*
+
+🔑 **This is a general shape worth naming and it is not rule 37**: ***a fix written in response to a
+failing run is verified by re-running the case that failed — not by running a different case that
+was already passing.*** *2024-25 had a populated `nba_schedule_current.json` path available; it was
+never the case in doubt.*
+
+---
+
+## §0.002-T18 — ⚠ SEVERITY WITHDRAWN AND SCOPE NARROWED BY THE CORRECTION ABOVE *(2026-09-22)*
+### a green exit on an empty expected-set — caught and fixed in-session, five minutes apart
 *(T18 pass 2, mechanism strata, written 2026-09-22. **Rule 38**: this is the causal layer — what was
 actually RUN and what it RETURNED. The prose credits this component; only the `tool_result` shows what
 it was credited FOR.)*
