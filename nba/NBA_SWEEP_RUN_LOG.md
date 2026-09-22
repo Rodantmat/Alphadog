@@ -138,7 +138,9 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 > Wrong by a factor of eighteen.** 📌 ***A defect rate that arrives in neat consecutive blocks is a
 > bug in the instrument until proven otherwise.***
 
-### 📜 ~~THE FORTY-EIGHT STANDING RULES~~ **THE FORTY-NINE STANDING RULES** — *the index; each is written in full where it was born*
+### 📜 ~~THE FORTY-EIGHT STANDING RULES~~ ~~THE FORTY-NINE STANDING RULES~~ **THE FIFTY STANDING RULES** — *the index; each is written in full where it was born*
+
+🔑 **COUNT AMENDED AGAIN 2026-09-22, T20 pass 76 (§T20.81): `49` → `50`. **`RULE 51` numbered** — *the novelty check runs on the FINDING, against the BASELINE tree, as the LAST step before the entry ships* — born from **four self-withdrawals in one session**, and adjudicated against `RULE 26`, `RULE 28` and `RULE 48` before being given a row.** ▶ *Standing rules are `1`–`48`, `50`, `51`; `49` is RETIRED (§T20.16) and is not reused.*
 
 🔑🔑 **COUNT AMENDED 2026-09-22, T20 pass 67 (§T20.72): `48` → `49`.** *Rules `1`–`48` plus **`RULE 50`**, numbered at §T20.72 after forty-six passes as a blocked candidate; **`49` is RETIRED (§T20.16) and is not reused**.* ⚠⚠ **AND READ THIS BEFORE YOU ADD A RULE.** 🔴 ***§T20.72 adjudicated the three candidates the sweep had refused to number "because the index cannot be read to check for duplication" — and TWO OF THE THREE duplicate rules that are fully written, indexed and readable in one line: `RULE 20` and `RULE 30`. One of the two was written by the immediately preceding pass, which had this table open to count its rows and did not read row 30.*** ⇒ ***The gaps in this index are real (§T20.18: ten rules never written down) but they are NOT why rules get duplicated. **No pass reads this table before adding to it.** §T20.16 said it eleven passes earlier: "USING A RULE IS NOT READING IT."***
 
