@@ -24918,3 +24918,87 @@ Factor lock (5 research passes) · return-ramp · the day-before injury report �
 - **Not every source needs `curl_cffi`** — Wikipedia needs plain `requests`; mixing them up breaks the run.
 - **One-call-per-league endpoints are strongly preferred** over per-team loops.
 - **`source_key` only changes on changed rows** — an upsert property, not a failure.
+
+---
+
+# §T18.4 — THE `thinking` STRATUM, READ OUT AND CENSUSED ACROSS THE WHOLE CORPUS
+*(T18 pass 3, 2026-09-22 · **the last unread stratum of T18**, so **rule 1 is now satisfied for T18**:
+owner 57 · prose 254 · `tool_use` 463 · `tool_result` 397 · `thinking` 34 = **1,205** ✅)*
+
+## 1. T18's `thinking` STRATUM YIELDS NOTHING — *and that was the pre-registered outcome*
+
+**All 34 segments read in full. 2,447 characters, mean 72, longest 239.** **Every one is a
+third-person gerund phrase terminated by an ellipsis** — *"working out multiplier math from wnba
+betting screenshots…"*, *"weighing whether the denormalization is a deliberate design choice…"*,
+*"tracking down the source of truth for time cutoffs…"*, *"debugging why matching minutes freed up
+produced no output…"*.
+
+🔑 **Not one carries a reason, an abandoned alternative, or a doubt.** **Each is an intent label for
+the `tool_use` that follows it, and in every case the adjacent `tool_use` states the same thing with
+its actual parameters.** ⇒ ✅ **Pre-registered clause (iii) — *"at least ONE finding no other stratum
+could have supplied, and if NONE, that is the finding"* — resolves to NONE, which was the stated
+alternative.**
+
+⚠ **KILL LOGGED (rules 26/28): the characterisation itself is NOT new.** **§T11.43a established it,
+§T12.1c confirmed it** *(46 blocks / 3,007 chars / max 84 / mean 65)*, **and the run log already
+carries `T1 thinking 52 / 33,578 / 1,774` with the T1-vs-T11 contrast and an explicit
+`WHY they differ is NOT RECORDED (rule 6) and not guessed`.** *T18 is the THIRD instance of a known
+pattern and is written as such.*
+
+## 2. ✅ WHAT IS NEW — THE CORPUS-WIDE CENSUS, AND THE BREAK IS NOW LOCATED
+
+*The sweep held this per-transcript, never across the corpus. Twenty transcripts, `journal.txt`
+excluded, counted 2026-09-22T11:28:40Z.*
+
+**TOTAL: 886 `thinking` segments · 124,642 chars · mean 140.7 · 679 of 886 (76.6%) terminated by an
+ellipsis.**
+
+### 🔴🔴 AND THE DISTRIBUTION IS NOT A GRADIENT — IT IS A STEP, AND IT IS DATED
+
+| transcript | n | chars | max | segments > 200 chars |
+|---|---|---|---|---|
+| `2026-09-03-03-22-04` | 52 | **33,578** | **1,774** | **47 of 52** |
+| `2026-09-03-04-41-28` | 41 | **15,852** | **1,434** | **37 of 41** |
+| `2026-09-03-22-24-13` | 33 | **17,127** | **1,741** | **26 of 33** |
+| **`2026-09-03-22-38-55`** | 22 | 2,294 | **220** | **1 of 22** |
+| `2026-09-09-01-49-59` | 15 | 1,526 | 137 | 0 |
+| *…all 15 remaining…* | | | **70 – 239** | **0** |
+
+🔑🔑🔑 ***THE STRATUM CHANGES CHARACTER BETWEEN `2026-09-03-22-24-13` AND `2026-09-03-22-38-55` —
+FOURTEEN MINUTES APART, THE SAME EVENING — AND NEVER REVERTS ACROSS THE REMAINING SIXTEEN
+TRANSCRIPTS.***
+
+**Before the break** *(3 transcripts, 66,557 chars)*: **first-person, extended, genuinely
+deliberative** — *"the data.nba.net feed is likely deprecated since that ecosystem was retired around
+2021. the actively maintained option is stats.nba.com…"*, *"i need to build a dedicated weekly
+differential job that specifically detects roster changes…"*.
+**After** *(17 transcripts, 58,085 chars, mean ~86)*: **third-person gerunds, ellipsis-terminated,
+never above 239 chars.**
+
+## 3. ⚠⚠ WHAT THIS DOES AND DOES NOT SETTLE
+
+✅ **It converts an open `NOT RECORDED` into a BOUNDED one.** The run log says *"WHY they differ is
+NOT RECORDED (rule 6) and not guessed."* **That stands — no swept transcript explains it, and this
+section does not guess.** 🔑 **But WHEN is not WHY, and WHEN is now measured**: a step change inside a
+fourteen-minute window on 2026-09-03, permanent thereafter. *A drift would have shown a gradient
+across twenty transcripts; it does not.*
+
+⚠ **The form is now a fingerprint, not just "labels"**: third-person gerund phrases, ellipsis-
+terminated, hard-capped near 240 characters. *That is what lets any future transcript be classified
+in one query instead of by reading.*
+
+🔴 **AND THE CONSEQUENCE THAT MATTERS FOR THIS SWEEP'S OWN COVERAGE**: **the generalisation "the
+`thinking` stratum is labels" is TRUE FOR 17 OF 20 TRANSCRIPTS AND FALSE FOR THE FIRST THREE** — and
+the first three are **T1, T2 and T3**, where the architecture was chosen. **Between them they hold
+66,557 characters of first-person reasoning, more than half the corpus's entire `thinking` volume.**
+⚠⚠ **This is NOT an assertion that they went unread** — **the run log records T1's thinking stratum
+measured at `52 / 33,578 / 1,774` with a mean of 645.7, and T1 pass 65 explicitly recovered a
+rationale *"from T1's thinking blocks"*, so T1's was read and used.** ⚠ **NOT RECORDED: whether T2's
+and T3's thinking strata (15,852 and 17,127 chars) were read at the same depth.** *That is a question
+about the sweep's own history, it is answerable from the T2 and T3 ledger rows, and it is recorded
+here as the thing to check rather than assumed either way.* *(Open item T18-15.)*
+
+🔑 **METHOD NOTE, and it is the reason this section exists at all**: ***a stratum-level
+characterisation is a POPULATION claim (rule 17) and inherits rule 18's discipline — it must name
+which transcripts it covers.*** *"The thinking stratum is labels" named none, and was three
+transcripts wrong.*
