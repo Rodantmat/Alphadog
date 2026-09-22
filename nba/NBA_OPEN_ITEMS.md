@@ -13113,7 +13113,67 @@ restatement by construction.*** *Sample of the probe table: `stat_decay_config` 
 lowest-count hits were opened and confirmed as genuine matches.*
 
 🔑 **CONSEQUENCE FOR THE REMAINING WORK, stated so it is not rediscovered**: ***T19 and T20 cannot
-yield system findings, only METHOD and OWNER findings.*** **Every system fact they narrate is already
+yield system findings, only METHOD and OWNER findings.***
+
+---
+
+# §T20.6 — 🔴 `NBA_FINAL_SCORING_CALIBRATION.md`'s SECTION NUMBERING IS BROKEN, AND IT COST A WRITE
+*(T20 pass 2, 2026-09-22 — **VERIFIED** by `grep -n -E "^## [0-9]+"` against the file at HEAD)*
+
+| defect | evidence |
+|---|---|
+| **`## 14.` appears TWICE** | line **2902** — *"THE STATISTICAL STANDARD, CONSOLIDATED"*; line **2928** — *"THE RESEARCH STANDARD — all 27 lessons"* |
+| **`## 12.` is missing** | the numbered sequence steps **11 → 13** |
+| **`## 20.` precedes `## 19.`** | lines **3534** and **3586** |
+| **`## 15.0c` sits after `## 19.`; `## 15` is absent** | line **3611** |
+| **Severity** | **MEDIUM** — *navigability, against a charter that requires "you know where to look at"* |
+
+## 🔴 THE MEASURED CONSEQUENCE
+**T20 SEG 716 and SEG 722 both tried to patch `## 12. WHERE EDGE IS NOW EXPECTED TO COME FROM`,
+adding a cross-reference to the validation gate. Both failed with `old_str not found`** *(receipts at
+SEG 717, 723)* **— because the section had already been renumbered to `## 19.`** ✅ **VERIFIED
+ABSENT TODAY**: `grep -c -i -F "carries the validation gate" nba/*.md` → **0 in every file.** *The
+target section exists (`## 13. THE VALIDATION GATE FOR ANY STRATEGY`, line 2819); only the pointer
+to it was lost.*
+
+🔑 **THE GENERAL LESSON, and it applies to every future patch**: ***an `old_str` anchored on a
+NUMBERED HEADING is fragile in a document that is still being appended to — the number moves and the
+write fails silently as "not found".*** **Fifteen of T20's sixteen write failures are
+`old_str not found`.** ▶ **Anchor on the heading's TEXT, never on its number.**
+
+## ⚠ AND THE SAME CHECK, CORRECTED UNDER RULE 15
+*A first count of duplicate headings stripped suffixes and made every document look defective.*
+**Re-run on the full heading token, the TRUE duplicates are**: `NBA_FINAL_SCORING_CALIBRATION` **14.**
+· `NBA_GOBLIN_DEMON` **4. 5. 6.** · `NBA_BASELINE_CALIBRATION` **0y. 3. 5.** · `NBA_SYSTEM_DESIGN`
+**0. 0a.** · `NBA_WORKERS` **0.** · `NBA_MULTIPLIERS` **0.** · `NBA_MASTER_SUMMARY` **0.–7.**
+⚠ **NOT ESTABLISHED whether any are by design** — *`NBA_MASTER_SUMMARY` is organised per transcript,
+so repeated top-level numbers may be intentional there.* **Only `NBA_FINAL_SCORING_CALIBRATION`'s is
+demonstrated to have caused a failure.** ▶ **Not fixed — documentation pass.**
+
+---
+
+# §T20.7 — ⚠ T20's SIXTEEN FAILED WRITES ARE UNRECORDED, AND ONE NEVER LANDED
+*(T20 pass 2, 2026-09-22 — every failing receipt enumerated with its segment and target)*
+
+**Sixteen `tool_result` failures across eight of the twelve documents**: SEG **215 · 303 · 305 · 368
+· 384 · 476 · 516 · 594 · 673 · 683 · 717 · 723 · 852 · 883 · 951 · 1001**. **Fifteen are
+`old_str not found in file` or `must be unique`; one (SEG 368) is
+`MCP error -32602: input validation error … expected string, received undefined at path`** — *a call
+issued with no `path` argument.*
+
+🔴 **`grep -c -i -E "old_str|patch failed|patch failure|not found in file"` over T20's prose stratum
+returns `0`.** ***The session reported none of them.***
+⚠ **The twelve carry write-failure censuses for OTHER sessions** *(`NBA_MASTER_SUMMARY.md:2567`,
+`:3788`, `:8262`, `:14543`, `NBA_OPEN_ITEMS.md:6518`)*; **T20's are not among them.**
+
+✅ **OUTCOME, tested against the files as they stand rather than inferred from retries:**
+- **SEG 303** → §T7.27 / §T7.28 **present** *(`NBA_MASTER_SUMMARY.md` 12797, 12810)*
+- **SEG 368** → *"if a2 is ever revisited"* **present** *(`NBA_MASTER_SUMMARY` ×1, `NBA_OPEN_ITEMS` ×1)*
+- 🔴 **SEG 717 + 723** → the §13 cross-reference **ABSENT from every `nba/*.md`** — **see §T20.6**
+
+🔑 **Twelve of sixteen are non-events; one is a real, verified loss; three resolved on inspection.**
+**The value is that the loss was found by reading RECEIPTS and then testing the FILE — not by
+trusting either the retry or the session's own account.** **Every system fact they narrate is already
 in the twelve because these two sessions put it there.** ⇒ **The productive strata in both are the
 OWNER turns** *(which produced two corrections in T20 pass 0 and the charter's extension)* **and the
 MECHANISM strata — `tool_result` receipts and `bash_tool` output — which rule 38 does not touch and
