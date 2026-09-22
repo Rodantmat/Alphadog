@@ -12844,6 +12844,54 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-14 · **NEW · 🔴🔴 SEASON-CRITICAL, DATED · BETR'S ACCESS TOKEN EXPIRES `2026-10-10` — TEN DAYS BEFORE OPENING NIGHT**
+
+**Severity 4 of 7** *(one of five apps; cheap to fix; but it fires on a known date and nothing
+watches it)*. **Found T20 pass 55 (§T20.60), 2026-09-22.** **Evidence: VERIFIED** — the file states
+it, and every date below is from `git log`, not a file mtime.
+
+**`boards/betr_nba_current_meta.json`, quoted verbatim:**
+```
+"source": "betr fantasy graphql getUpcomingEventsV2",
+"fetched_at": "2026-09-10T06:18:28.583Z",
+"token_expires_at": "2026-10-10T06:10:56.000Z",
+```
+
+| | |
+|---|---|
+| token expires | **2026-10-10T06:10:56Z** |
+| preseason opens | **2026-10-03** — 7 days **before** expiry |
+| 🔴 **regular season opens** | **2026-10-20** — 🔴 **TEN DAYS AFTER the token is dead** |
+| last commit of the Betr board | 🔴 **2026-09-10T06:18Z — thirteen days ago, and its ONLY commit** |
+
+⇒ ***Betr covers the first week of preseason and then goes dark, and it is still dark on opening
+night.*** **Betr is one of the five apps the product targets and one of the four DFS books in
+`board_snapshots`** *(`betr_us_dfs` — 780,765 legs over 131 dates, §T20.59)*.
+
+⚠ **THE MECHANISM IS PRIOR WORK — COMPASS fact 55**: *"BETR (built 2026-09-10): bridge job
+`betr_board_pull` … **token = owner's 30-day Keycloak** …"*. **`2026-09-10 + 30 days = 2026-10-10`.**
+🔴 **What is new is the dated consequence, and it was sitting in a field no pass had opened.**
+
+🔑🔑 **SAME ROOT CAUSE AS THE FROZEN STATIC LAYER — THIRD INSTANCE.** *Betr has NO GitHub Actions
+workflow: `grep -l betr .github/workflows/*.yml` returns only `nba-board-archive.yml` and
+`nba-p3-afternoon-light.yml`, which CONSUME the file. The puller is the Cloudflare bridge job
+`betr_board_pull`, and §T20.31 established `nba_control.job_runs` and `worker_run_log` are both
+EMPTY.* ⇒ ***Sleeper and Fliff committed within the hour because they are GitHub Actions on crons.
+Betr has not run in thirteen days because it is a worker, and nothing triggers workers.***
+
+✅ **CONTEXT THAT LIMITS THE SEVERITY, and it is real**: the other three DFS scrapers are
+**demonstrably alive** — `sleeper_nba_current_meta.json` committed **2026-09-22T16:57:05Z**,
+`fliff_nba_current_meta.json` **2026-09-22T17:14:27Z**, `underdog_nba_current_meta.json`
+**2026-09-21T19:52:37Z**, all reporting `ok: true` with `legs: 0` **because the NBA season has not
+started**.
+
+**FIX SIZE: refresh one token** *(and, separately, whatever decides that `betr_board_pull` runs — the
+same decision as the frozen static layer's loaders).*
+
+⚠ **NOT FIXED — DOCUMENTED, per the owner's standing instruction.**
+
+---
+
 ## T20-13 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, FIRES ON OPENING NIGHT · P2's CERTIFIER WILL GO RED EVERY NIGHT FOR THE FIRST TWELVE NIGHTS OF THE SEASON — CORRECTLY**
 
 **Severity 7 of 7 — the only item in this set that fires on a KNOWN DATE, and that date is opening
