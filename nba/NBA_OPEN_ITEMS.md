@@ -12700,8 +12700,32 @@ ids: add a pointer).* **(a)** fix both lists · **(b)** fix only these 5, since 
 finding costs more than a broken link · **(c)** fix neither, and record explicitly that the corpus is
 meant to be READ WHOLE rather than navigated — *which is a defensible position and would retire both
 items, but it should be a decision rather than a default.*
-⚠ **Recorded, not fixed (rule 1).** ⚠ **Severity MEDIUM: nothing is lost, everything named here is
-on disk and correct; what fails is the route to it.**
+⚠ **Recorded, not fixed (rule 1).**
+
+> ### 🔴🔴 **SEVERITY CONFIRMED AT MEDIUM ONE PASS LATER, ON A MEASUREMENT — 2026-09-22 (§T20.24)**
+> **This item was opened with the caveat *"nothing is lost… what fails is the route to it."*
+> **That caveat is now WRONG, and it was tested rather than argued.** *Pass 19 re-derived the two
+> live-checkable findings among the five.* 🔴 **BOTH HAD DRIFTED:**
+> **① `§0v.4`** — *"the Odds API archived **13 stat types** for PrizePicks"* → **the archive holds
+> `12`**; `player_double_double` has **zero** PrizePicks rows *(20 `market_key`s less 8
+> `_alternate` variants, `nba_market.board_snapshots`, 2026-09-22)*. 🔑🔑 **And it is archived for
+> NINE OTHER BOOKS — `274,010` rows, `2024-10-22 → 2026-04-12`, including the DFS books `underdog`
+> (1,960) and `betr_us_dfs` (932)** — so *"there is no archive of them anywhere"* does not hold for
+> that type, and the corpus already prices cross-book consensus (`rung_market`, `avg(books) 2.11`).
+> ✅ *The rest of the list survives: 89 distinct non-PrizePicks `market_key`s contain no `fg made` /
+> `ft made` / `3pt attempted` / `personal fouls` / `oreb` / `dreb` / `dunks` key at all.*
+> **② `§0.9c`'s NOT RECORDED is ANSWERED, and negatively** — *"which regime the system's own board
+> scrape is reading"*: **PrizePicks' `2,199,354` archived rows carry `0` multipliers and `100%`
+> American prices, over a span (`2024-10-22 → 2026-04-12`) that STRADDLES the 2025-08-22 product
+> change.** ⇒ ***`p × m` cannot be tested historically because `m` was never stored. The question is
+> unanswerable from the archive and belongs to the live app.*** ✅ *Positive control: `underdog`
+> carries 413,731 multipliers, range 0.600–7.890 — the column is live, so the zero is real.*
+> ⇒ ⚠⚠ **SEVERITY STAYS MEDIUM. *An unreachable section is a section no pass re-derives, and both
+> that were re-derived had drifted. Reachability is a MAINTENANCE property, not a cosmetic one* —
+> which is what option (c) above ("record the corpus as read-whole rather than navigated") now has
+> to answer.**
+> ✅ **Neither figure was STRUCK — both sections carry dates, so both were ANNOTATED** *(rule 40;
+> §T20.14's error avoided)*.
 📌 **Related, and the reason the hub is the concern**: `NBA_MASTER_SUMMARY.md` holds **878 of the 948
 orphans — 92.6%** — at a **57.76%** orphan rate against `NBA_WORKERS`' 7.14% and
 `NBA_SYSTEM_ARCHITECTURE`'s 4.55%. **The document a fresh session reads first is the most
