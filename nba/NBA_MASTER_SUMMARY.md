@@ -31515,3 +31515,139 @@ tells you a gate is loose; a measurement tells you it is loose by a factor of se
 only one of those is something an owner can prioritise.**
 ***The gate that fires is the gate that was built differently: eleven checks ask "is anything
 there?", one asks "is it as recent as it should be" — and that one is red today.***
+
+---
+
+# §T20.52 — T20 PASS 47 · WHAT A COMPLETE SLATE LOOKS LIKE — AND WHY P2 WILL BE RED ON OPENING NIGHT
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only**: five `SELECT`s and one grep. **Nothing triggered, dispatched or
+written to the live system; `NBA_COMPASS.md` not written to.**
+
+## 0. THE LEAD THIS PASS WAS OWED
+
+**§T20.51 measured that `count(DISTINCT prop) >= 25` failed on 21 of 325 historical dates and then
+wrote, deliberately: *"Whether those 21 are real defects or legitimately short slates is NOT RECORDED
+and this pass does not guess."*** ⚠ **Rule 25 exists because this sweep has left that kind of claim
+standing before and been wrong. One `SELECT` settles it. It was run.**
+
+## 1. 🔴🔴🔴 THE ANSWER — AND IT IS NEITHER BRANCH THE PRE-REGISTRATION NAMED
+
+**All 21 dates, listed in full (rule 17 — not a sample):**
+
+| season | dates | **distinct props** | games on those dates |
+|---|---|---|---|
+| 2024-25 | **2024-10-22 → 2024-10-31** *(10 dates)* | 🔴 **22 — every one** | *(not shown: `nba_calendar.games` does not cover 2024-25 — see the caveat below)* |
+| 2025-26 | **2025-10-21 → 2025-10-31** *(11 dates)* | 🔴 **22 — every one** | **2 · 12 · 2 · 12 · 5 · 9 · 11 · 5 · 10 · 4 · 8** |
+
+⚠⚠ ***The prop count is not low. It is CONSTANT — exactly 22 — while the slate size swings from 2
+games to 12.*** **On 2025-10-22, a TWELVE-game slate carrying 71,862 rows, the prop count is still
+22.** ⇒ 🔑 **CLAUSE (ii) IS ANSWERED IN THE NEGATIVE: these are NOT short slates. Slate size does not
+explain them at all.**
+
+⚠ **RULE 17 CAVEAT, STATED WHERE THE DENOMINATOR IS USED**: the 2024-25 dates return `games = 0`
+because **`nba_calendar.games` does not cover that season** — it is one of the nine tables the
+2026-09-21 SEASON-CRITICAL item records as **frozen at `2026-09-02` and 30 regular-season games
+short**. **`games = 0` there means the calendar has no rows, NOT that no games were played.**
+
+## 2. 🔴🔴🔴 WHAT IS MISSING, AND WHEN IT ARRIVES — A STEP FUNCTION ON NOVEMBER 1, IN BOTH SEASONS
+
+**`SELECT DISTINCT prop` on a full date `EXCEPT` an opening date (2025-12-01 minus 2025-10-22) ⇒
+exactly EIGHT, and every one is a PERIOD prop:**
+```
+assists_q1 · points_h1 · points_h2 · points_q1 · points_q4 · points_q4_otx · rebounds_q1 · threes_made_q1
+```
+**22 + 8 = 30.**
+
+**And the boundary is the same calendar day in two consecutive seasons, with no ramp:**
+
+| | through | from |
+|---|---|---|
+| **2024-25** | **2024-10-31 — 22** | **2024-11-01 — 30** |
+| **2025-26** | **2025-10-31 — 22** | **2025-11-01 — 30** |
+
+🔑🔑 ***A games-played threshold cannot produce this.*** *The two seasons opened on different days
+(2024-10-22 and 2025-10-21), so an "N games played" gate would cut over on two different dates. **It
+cut over on November 1 both times, to the day.** That is a MONTH boundary.*
+⚠ **MECHANISM, at exactly the strength the evidence supports**: `nba/baseline/build_periods_ladder.py`
+partitions its training history on a year-month key — `hist = d[(d["season"].isin(TRAIN) | (d["ym"] <
+month)) & d["tier"].notna()]` — **so in October of a new season there is no completed in-season `ym`
+to draw on, and on November 1 October becomes one.** ⚠⚠ **This is stated as CONSISTENT WITH the
+observation, not as proven: the line above is read from a patch script (`rep(s, …)`) that rewrites the
+builder, not from the executed source. The OBSERVATION is verified across two seasons; the CAUSE is a
+strong reading.**
+
+## 3. 🔴🔴🔴 THE CONSEQUENCE — TWELVE RED NIGHTS, STARTING ON OPENING NIGHT
+
+**The 2026-27 regular season opens `2026-10-20` (Tuesday). The cutover is `2026-11-01`. That is
+TWELVE nights.**
+**P2's certifier asserts `count(DISTINCT prop) >= 25`, with `CERT_STRICT=1`, and its own docstring
+says it *"never warns."***
+
+⇒ 🔴🔴🔴 ***P2 WILL FAIL CERTIFICATION EVERY NIGHT FOR THE FIRST TWELVE NIGHTS OF THE SEASON,
+STARTING ON OPENING NIGHT — and on the evidence of two prior seasons the red will be CORRECT-BY-DESIGN
+BEHAVIOUR, not a defect.*** **22 < 25, twelve times.**
+
+⚠⚠ **AND THE SYSTEM HAS ALREADY WRITTEN DOWN WHY THIS IS THE WORST POSSIBLE OUTCOME.** From
+`nba-p3-afternoon-light.yml:13-14`, and repeated across the corpus:
+> ***"A scheduled job failing nightly against an empty slate teaches everyone to ignore red builds."***
+📌 ***The system is about to teach exactly that, in its first twelve nights, when attention matters
+most — and the lesson will be learned on a gate that is doing its job.***
+
+🔴 **AND THE WINDOWS OVERLAP.** **T20-12** (the hardcoded `PT = -8`, so `p3_cut` runs an hour late
+for every day of PDT) is live from **preseason `2026-10-03` until `2026-11-01`** — **29 days**, which
+contains all twelve of these nights. ⇒ ***The opening fortnight carries both the red certifier and
+the mis-timed cutoff, and neither is visible from the other.***
+
+## 4. ✅✅ CLAUSE (iii) — A DERIVED COMPLETENESS THRESHOLD IS AVAILABLE, AND THE RATIO IS TIGHT
+
+**`nba_score.baseline_history` rows per game, joined to `nba_calendar.games`, over the 152 dates from
+2025-11-01 with a non-zero game count** *(post-cutover only, so the period props are present
+throughout — the partition is deliberate)*:
+
+| games/date | min rows·game⁻¹ | **avg** | max | **SD** |
+|---|---|---|---|---|
+| **1 → 15** | **5,699** | **8,141** | **9,066** | **501 — 6.2% of the mean** |
+
+🔑 **Reported with its dispersion, not as a bare mean (rule 18).** ⇒ ✅ **The relationship is tight
+enough that a completeness gate can be DERIVED from the slate rather than typed as a constant.**
+**As an INPUT TO A DECISION and explicitly not a recommendation**: a floor of **`rows >= 5,000 ×
+games`** sits **below all 152 observed dates** *(worst observed 5,699 — a 12% margin, which is thin
+and is said to be thin)* **and above a 44%-loss slate** *(0.56 × 8,141 = 4,559)*. ⇒ ***The incident in
+the certifier's own docstring — "a missing 44% of the board went unnoticed for TWO DAYS" — would be
+caught by a gate of this shape and is not caught by `> 0`.***
+⚠ **`prop_universe` is MID-REBUILD and is NOT used as a denominator anywhere above; `30` is the
+OBSERVED `max(count(DISTINCT prop))` and is labelled as observed.**
+
+## 5. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; reported as §T20.50 requires: **`484 − 471 = 13` segments covered**, never the absolute level. **Baseline `636 · 2 · 484 · 481` — FORTY-EIGHTH consecutive identical run.** Measured 2026-09-22T17:08:06Z |
+| **(ii)** the 21 dates are explained by slate size | 🔴 **FALSE — and the finding is larger than either branch.** Props are **constant at 22** across slates of 2 to 12 games; the 21 dates are **the opening ~11 days of each of two seasons**, and the missing 8 are **all period props**, arriving as a **step function on November 1 in both** |
+| **(iii)** a completeness threshold can be derived | ✅ **TRUE — rows·game⁻¹ is 8,141 ± 501 over 152 dates**, tight enough to derive a floor; the concrete figure is given **as an input to a decision, with its thin margin named** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FORTY-EIGHTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 6. ⚠ VERDICT
+
+🔴🔴🔴 **NOT CLEAN — and this is the most consequential finding of T20's second half. New open item
+T20-13, and it belongs at the TOP of the opening-day brief, because it fires on OPENING NIGHT and
+every night for eleven more.**
+✅ **The fix is a choice, not an investigation: lower the gate for October, make it
+`>= 22 AND (month != 10 OR …)`, derive it from the slate, or accept twelve red nights knowingly. All
+four are one edit. What must not happen is the owner meeting it unprepared on 2026-10-20.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **the per-date magnitudes `71,044` / `117,885` / `59,518`**
+*(§T20.51, confirmed — the JOIN is what is new)* · **the certifier's structure** *(T20-6)* · **the
+frozen `nba_calendar.games`** *(2026-09-21 item, carried as the caveat in §1)*. ✅ **The opening-window
+step function is NEW: zero hits across `nba/` for `2024-11-01` and for `points_q4_otx`, and the
+corpus's six `"22 props"` hits are all about `nba_score.baseline_ladder`'s 22 distinct props and the
+ladder-block audits — a different table and a different question.** 🔑 *Though they rhyme usefully:
+**22 non-period props + 8 period props = the 30 that `baseline_history` carries from November.***
+
+📌 ***The lesson:*** **the last pass measured that a gate had fired twenty-one times and wrote
+"NOT RECORDED" rather than guess why. One query later the answer is that it fires every October, on
+purpose, for eleven days — and that it will fire on opening night of the season the owner is
+twenty-eight days from.**
+***A "NOT RECORDED" that a single SELECT can settle is not a limit. It is the next pass.***
