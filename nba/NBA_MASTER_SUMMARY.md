@@ -38669,3 +38669,100 @@ terms — the confidence *model* is thoroughly specified. What no document speci
 between the model and the thing that runs.** ⚠⚠ ***A layer can be fully documented at the place it is
 FITTED and completely undocumented at the place it SHIPS, and a coverage measurement cannot tell the
 two apart, because both cite the same names.***
+
+> ⚠ **THE TWO BLOCKS DIRECTLY ABOVE BELONG TO `§T20.113`, NOT TO `§T20.117`** *(noted T20 pass 113,
+> `§T20.118`, 2026-09-22)*. **`§T20.114` was appended against an anchor that sat MID-ENTRY inside
+> `§T20.113`'s rank correction, so every entry from `§T20.114` to `§T20.117` was inserted ahead of
+> `§T20.113`'s closing `RULE 51` block and lesson, which have trailed at the end of the file since.**
+> ✅ **`§T20.110`–`§T20.117` are themselves in correct order** *(verified by heading line number)*;
+> **only this tail is displaced.** 📌 *Left in place with this label rather than moved — a cut-and-paste
+> of two blocks across 550 lines is a larger risk than a mislocated paragraph, and `rule 1`'s spirit
+> is that a recorded defect beats an unrecorded repair.* 🔑 ***And it is this pass's own finding in
+> miniature: an anchor chosen from the middle of a thing instead of its end.***
+
+---
+
+# §T20.118 — T20 PASS 113: 🔴🔴🔴 **THE PASS WAS KILLED BY ITS OWN PRE-REGISTRATION IN THREE MINUTES — AND THE KILL FOUND THAT THIS SWEEP'S ROUTER QUOTES A RANKED LIST THAT DOES NOT EXIST**
+
+*Pass 113, 2026-09-22. Pre-registered as **"THE TESTABILITY PASS — FOR EACH OF THE SIXTEEN BRIEF
+ITEMS, CAN THE OWNER REPRODUCE IT TODAY, AND WITH WHAT EXACT COMMAND?"** with clause (iv): **"kill the
+whole pass if the brief already carries a testability column — check before writing, that is clause
+(ii)'s second job."***
+
+## ① THE KILL FIRED IMMEDIATELY, EXACTLY AS WRITTEN
+
+**`NBA_OPEN_ITEMS.md` already carries the column.** `§T20.75`'s re-derivation table has a fourth
+heading — ***"fixable & provable TODAY?"*** — with a verdict per row and a summary: **`13 of 14`
+fixable and provable today, `1` (`T20-14`, the Betr token, deadline `2026-10-10`) genuinely waiting**,
+closing *"**The fix window does NOT bind. Nothing but one credential is blocked by the calendar.**"*
+✂ **KILLED.** *The pass I designed was already done, fifteen passes ago.*
+
+## ② 🔴 BUT CLAUSE (ii) — "RE-DERIVE THE BRIEF FROM ITS OWN HEADING, NOT FROM MEMORY" — DID NOT AGREE WITH ITSELF
+
+**The column is denominated in `14`. The brief's heading says `SIXTEEN`.** `T20-15` and `T20-17` were
+added afterwards and **carry no verdict** — and `T20-17` is **SEASON-CRITICAL and SILENT.**
+*That much is the familiar seam. What clause (ii) turned up next is not.*
+
+## ③ 🔴🔴🔴 **THE TWO FIRST-READ SURFACES DISAGREE ABOUT THE TOP OF THE OWNER'S PRIORITY LIST**
+
+| where | what it says |
+|---|---|
+| **`NBA_MASTER_SUMMARY.md:32–34`** — the `🟢 START HERE` router, **the first thing any reader sees** | *"…with **SIXTEEN season-critical items in a stated order**:"* **`A · 13 · 17 · B · C · 5 · 7 · 12 · 14 · D · 9 · 4 · 6 · 3 · 10 · 2 · E · 11 · 1 · 15`** |
+| **`NBA_OPEN_ITEMS.md:13948–13949`** — **the brief itself**, and the ONLY ranked string in that document | **`## ▶▶ FINAL ORDER — ALL FOURTEEN`** / **`A · 13 · B · C · 5 · 7 · 12 · 14 · D · 9 · 4 · 6 · 3 · 10 · 2 · E · 11 · 1`** — 🔴 **no `17`. no `15`.** |
+
+**Probes, run before the claim was written**: `grep -rn "A · 13"` across the twelve returns **three**
+hits — the router's string, the brief's string, one narrative line. **`grep -nE "A · 13.*15"` returns
+NOTHING.** ⇒ ***The string the router quotes exists nowhere in the document it points at.***
+
+🔴🔴 **AND `§T20.107` ASSERTS THE OPPOSITE, IN WORDS**: *"the block **quotes the ranked string
+verbatim**, reproduces the brief's own gloss on the letters, and names only the two NUMBERED items at
+the head."* **It quoted `§T20.103`'s NARRATIVE of a correction — not the corrected surface, because
+the surface was never corrected.**
+
+⚠⚠ **THE OPERATIONAL COST, EXACTLY**: **the router tells the owner `T20-17` is ranked THIRD. He opens
+`NBA_OPEN_ITEMS.md`, finds the ranked list, and `T20-17` is not in it at all** — nor is `T20-15`.
+***A router built so the brief would be readable in minutes points at a ranking that contradicts it.***
+
+## ④ 🔑🔑 **AND IT FALSIFIES `§T20.112`'S OWN CONCLUSION**
+
+`§T20.112` closed: ***"Every stale entry found so far was INHERITED, never generated. This sweep's own
+work carries its state correctly; what it cannot do is notice that something it COPIED had already
+changed."***
+
+🔴 **This one was GENERATED.** **`§T20.103` (pass 98) decided `17` belonged third; `§T20.107` (pass
+102) wrote a router quoting that order as the brief's; `NBA_OPEN_ITEMS.md:13949` was touched by
+neither.** ⇒ ***The correction was applied to the DESCRIPTION of a surface and never to the surface,
+and a later pass quoted the description.***
+
+📌 ***The hypothesis, amended for the fifth time and by its own counter-example***: **state goes stale
+when it is carried by REFERENCE instead of re-checked — and a narrative saying "I corrected X" is a
+reference like any other. Re-read the surface, never the sweep's account of the surface.**
+
+## ⑤ WHAT THIS PASS DID
+
+✅ **REPAIRED `NBA_OPEN_ITEMS.md:13948–13949`** — heading now **`ALL SIXTEEN`**, string carries `17`
+third and `15` last, matching the router, with the failure recorded inline. ⚠ **NOT RECONCILED and
+flagged rather than guessed** *(rule 2)*: the string has **20 entries** *(5 letters, 15 numerals, `D`
+bundling three)* against a heading counting **SIXTEEN items**. **The ORDER is now right; the
+DENOMINATOR is marked open.**
+
+✅ **FILLED THE TWO MISSING TESTABILITY VERDICTS AND RAN BOTH RECIPES** *(clause iii — an unrun recipe
+is the rule-2 failure)*:
+
+| item | verdict | command, and what it returned |
+|---|---|---|
+| **`T20-15`** | ✅ **TESTABLE NOW** | `generate_series('2025-10-21','2026-04-12')` `LEFT JOIN` games-per-date ⇒ **`174` days, `7` with zero games: `2025-11-27` · `2025-12-24` · `2026-02-14` · `2026-02-16`–`18` · `2026-04-11`.** 🔑 **Thanksgiving, Christmas Eve, the All-Star break, one April date — the item's `7` reproduces EXACTLY and the dates name themselves.** |
+| **`T20-17`** | ⚠ **PRECONDITION ONLY, NEVER OCCURRENCE** | 🔴 **Unobservable by construction** — `except Exception: pass` leaves no row, no log, no count. ✅ **The pre-flight is real**: read `shards` from `nba_injury_report_<slug>_index.json`, confirm each shard file is fetchable. ▶ **Run on `2025_26`: `7` declared, `0` missing, `176` days_done — the invariant HOLDS, and that is the baseline.** |
+
+⇒ **The summary line should read `15 of 16`, not `13 of 14`.** 🔑 ***And `T20-17` is the first brief
+item whose OCCURRENCE no test can reach — not a gap in the testing, the item's own defect restated: a
+handler that leaves no trace cannot be audited afterwards, only guarded before.***
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: the baseline's `NBA_OPEN_ITEMS.md` carries
+`FINAL ORDER — ALL FOURTEEN` unchanged, and **no document in either tree records the router/brief
+disagreement.** ✅ **NOVEL.**
+
+📌 ***The lesson:*** **the pass I pre-registered was worthless, and the pre-registration is what proved
+it — in three minutes, by its own kill clause.** ⚠⚠ ***A clause written to stop a pass found, in
+stopping it, the worst inconsistency this sweep has produced: not in the system, but in the
+documentation of the system, on the two surfaces built to be read first.***
