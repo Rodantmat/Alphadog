@@ -1824,7 +1824,7 @@ against the remembered symptom rather than the remembered cause.*
 
 | seg | what came back |
 |---|---|
-| **81**, **83**, **328**, **330**, **332** | `{"error": "error occurred during tool execution", "request_id": …}` — **five** aggregate queries against `nba_score.final_hp` |
+| **81**, **83**, **328**, **330**, **332**, **460** | `{"error": "error occurred during tool execution", "request_id": …}` — **SIX** queries against `nba_score.final_hp` ⚠ **CORRECTED 2026-09-22 (pass 5's census): this row first said FIVE and omitted SEG 460**, an `EXPLAIN (ANALYZE, BUFFERS, TIMING OFF)` on the `final_hp ⋈ baseline_history` join. *Found by the mechanical census, not by re-reading — which is the argument for running one.* |
 | **150** | ***"tool 'mcp_alphadog_bridge_run_sql_postgres' is not available in this turn, nor is any other 'mcp_alphadog_bridge_' tool."*** — a hard tool outage, not a query error |
 
 🔑 **This is the executed evidence behind the author's prose claim — recorded by this sweep at T17 as
