@@ -7511,7 +7511,12 @@ investigation method (*query the structured job/worker registry tables first*, t
 search*) (`NBA_WORKERS.md` §0a, §0d) · **§7 / §7a–§7e** — the **hardcoded whitelist tuple**,
 **bulk inserts over individual-row inserts, always**, *"the real fix was one connection option"*, and
 the **DST scheduling gotcha** — *never hardcode a fixed UTC offset; resolve by named timezone* —
-all in `NBA_SYSTEM_ARCHITECTURE.md` §2c and §8a.
+all in `NBA_SYSTEM_ARCHITECTURE.md` §2c, ~~§8a~~ **§4 and §1b** *(pointer corrected 2026-09-22, T20
+pass 86, §T20.91 — **`§8a` never existed**: the lettered series in that document runs `8` · `8b` ·
+`8b-i` · `8b-ii` · `8c` · `8d`, and `8a` is the only gap in it. **The four lessons are all present and
+were located before the pointer was changed**: the hardcoded whitelist tuple, bulk-inserts-always and
+`prepare: false` are under **`§4. THE DEPLOY PIPELINE`**; the named-timezone / DST rule is under
+**`§1b. THE NAMING AND ISOLATION CONVENTION`**.)*
 
 ---
 
