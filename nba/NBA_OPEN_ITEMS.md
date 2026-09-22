@@ -13945,11 +13945,28 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 > uniformly dead: the Actions layer runs, the worker layer does not. That is one decision, and it now
 > answers B, C and 14 together.***
 >
-> ## ▶▶ **FINAL ORDER — ALL FOURTEEN**
-> ### **A · 13 · B · C · 5 · 7 · 12 · 14 · D · 9 · 4 · 6 · 3 · 10 · 2 · E · 11 · 1**
+> ## ▶▶ **FINAL ORDER — ~~ALL FOURTEEN~~ ALL SIXTEEN**
+> ### **A · 13 · 17 · B · C · 5 · 7 · 12 · 14 · D · 9 · 4 · 6 · 3 · 10 · 2 · E · 11 · 1 · 15**
 > *(A = T18-1 · B = frozen static layer · C = frozen schedule · D = T16-7/8/9 · E = DARKO evidence;
-> the numerals are T20-n. Seventeen entries because D bundles three and the T20 items keep their own
-> numbering.)*
+> the numerals are T20-n.)*
+>
+> > 🔴🔴🔴 **REPAIRED 2026-09-22, T20 pass 113 (`§T20.118`) — AND THE REASON IS THIS SWEEP'S OWN
+> > FAILURE, NOT AN INHERITED ONE.** **This line read `A · 13 · B · …` with NO `17` and NO `15`,
+> > under the heading *"ALL FOURTEEN"*, while `NBA_MASTER_SUMMARY.md:32–34` — the `🟢 START HERE`
+> > router, the first thing any reader sees — quoted the order as
+> > **`A · 13 · 17 · B · … · 1 · 15`** and called it **"SIXTEEN season-critical items."**
+> > ⚠⚠ **`§T20.107` states that the router *"quotes the ranked string **verbatim**"*. It did not:
+> > it quoted `§T20.103`'s NARRATIVE of the correction, and the correction was never applied here.**
+> > 🔴 **The operational cost is exact: the router tells a reader that `T20-17` — SEASON-CRITICAL and
+> > SILENT — is ranked THIRD; the reader opens this page, finds this list, and `T20-17` is not in it
+> > at all.** ⇒ ***The two first-read surfaces disagreed about the top of the owner's priority list.***
+> > 🔑🔑 **AND IT FALSIFIES `§T20.112`'s OWN CONCLUSION** — *"Every stale entry found so far was
+> > INHERITED, never generated."* **This one was GENERATED, by `§T20.103` and `§T20.107`, three
+> > passes apart: a correction made to the DESCRIPTION of a surface and never to the surface.**
+> > ⚠ **NOT RECONCILED, and recorded rather than guessed** *(rule 2)*: the string carries **20
+> > entries** — `5` letters and `15` numerals — while the heading counts **SIXTEEN items**, and `D`
+> > bundles three. **The arithmetic behind "SIXTEEN" is the brief's own and this pass did not
+> > reconstruct it; the ORDER is now correct and the DENOMINATOR is flagged.**
 > ⚠ **AND THE "ONE PATTERN" COLLAPSE BELOW IS UNCHANGED BY THIS AMENDMENT** — *B and C are the same
 > fix as each other and neither is a season literal nor a zone constant; they are the **loader**
 > problem, which is a third pattern and already named in item B's own text.*
