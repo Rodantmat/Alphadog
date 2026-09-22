@@ -470,7 +470,46 @@ are Power-shaped reasoning that does not carry to Flex unless the tier shape is 
   *"multiple MLB findings survived every backtest check and were still overturned the moment a real
   placed slip's actual multiplier was checked against the assumed one."*
 - Therefore the **EV conclusions are directional, not confirmed.**
-- `board_tiers_v2` is **built but unverified**.
+- `board_tiers_v2` is ~~**built but unverified**~~ → 🔴 **VERIFIED 2026-09-22 (T12 pass 6, §T12.7c) — and the verification's real result is that HALF THE RULE HAS NOTHING TO CLASSIFY YET.**
+  > **Two tests, per rule 31** *(a design is what the code does, read by mechanism)*:
+  > **1 · THE CODE.** `build_board_tiers_v2.py` **does implement what the twelve say it does**: the
+  > four-way rule *(below the anchor More = goblin / Less = demon; above it More = demon / Less =
+  > goblin)*, **both anchor cases** *(`explicit` and `switch_point`)*, and the **direction-aware tier
+  > sign** — *"v1 signed by kind, which breaks under the four-way rule because a demon-Less is BELOW
+  > the anchor; **v2 signs by POSITION**"*. 📌 **Env `BT2_APPS` (default `prizepicks`) and
+  > `BT2_REBUILD`, and the column `position_vs_anchor`, are in 0 of the twelve.**
+  > **2 · THE DATA.** `nba_market.board_tiers_v2`, **pinned 2026-09-22T07:10:30Z**, `GROUP BY kind,
+  > side, anchor_type, position_vs_anchor` — **ten combinations, summing to 2,199,354 exactly**:
+  >
+  > | kind | side | anchor_type | position | n |
+  > |---|---|---|---|---|
+  > | demon | Over | explicit | above | **586,129** |
+  > | goblin | Over | explicit | below | **448,495** |
+  > | standard | Over | explicit | at | **371,634** |
+  > | standard | **Under** | explicit | at | **371,416** |
+  > | demon | Over | switch_point | above | **240,668** |
+  > | goblin | Over | switch_point | below | **135,166** |
+  > | ⚠ unknown | Over | none | unknown | **43,370** *(2.0%)* |
+  > | ⚠ standard | Over | explicit | **below** | **1,322** |
+  > | ⚠ standard | Under | explicit | **below** | **1,153** |
+  > | ⚠ standard | Over | **switch_point** | at | **1** |
+  >
+  > ✅ **Both anchor cases are exercised** *(explicit 1,780,149 · switch_point 375,835)* **and the
+  > position vocabulary is populated.**
+  > 🔑🔑 **THE RESULT THAT MATTERS, AND IT IS A NEGATIVE ONE**: ***every goblin and every demon row in
+  > all 2.2M is `side = 'Over'`. There is not ONE `Under` alternate.*** **`Under` appears only on
+  > `standard`.** **The code predicts exactly this** — *"through 2025-08 demons and goblins WERE
+  > more-only… our 2024-25 data has literally zero Under rows on alternates; from 2026-08 PrizePicks
+  > enabled Less (MLB and WNBA first, **NBA expected this season**)"*. ***So the four-way machinery is
+  > in place and the half of it that v1 got wrong has had NOTHING to classify: it cannot be validated
+  > against real Less data until the NBA season produces some.*** **"Unverified" was right about the
+  > half that matters, and wrong about the half that could be checked.**
+  > ⚠ **Three residues, recorded and NOT explained** *(rule 6)*: **43,370 rows at
+  > `unknown`/`none`/`unknown`**; **2,475 `standard` rows sitting BELOW their own anchor**; and **ONE
+  > row at `standard`/`switch_point`/`at`, which a switch-point anchor should make impossible by
+  > definition.** *(The residue figures exist in 1–2 of thirty and **0 of the twelve**.)*
+  > ⚠ **Rule 30 again**: **`reltuples` said 2,199,151 — 203 low.** *The exact total came free with the
+  > `GROUP BY`.*
 
 ---
 
