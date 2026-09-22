@@ -125,6 +125,53 @@ failure, and neither was on file.**
 any of these endpoints behaves the same today is NOT RECORDED** — the sweep is read-only and does not
 call third-party APIs.* **A dated STATE** *(O9)*.
 
+### 🔑🔑 AND SIX OF THE EIGHT ARE EXPLAINED — **in the assistant prose of the SAME transcript**
+*Added 2026-09-22 (T12 pass 9, §T12.10c). **§T12.8d recorded these failures as unexplained. They are
+not: the explanation sits in the prose stratum, which pass 7 had not read.*** *Probed against the
+baseline, pinned 2026-09-22T07:38Z; controls `PROXY_URL` and `pickemstat` both fire.*
+
+| failure | the prose that explains it |
+|---|---|
+| **319** `lobbies/scaffolds/matches` → *invalid lobby scaffold* | **seg 320**: *"the scaffold EXISTS — the error says **'match can't be blank'**, the wrong parameter name"* |
+| **327 · 329** `market_filters` → 400 | **seg 330**: ***"`market_filters` need the SESSION TOKEN — not important, the per-match lines carry the props"*** → *"match list → per-match lines with ladders on → merge"* |
+| **520** `oauth2/token/` → *unauthorized client* | **seg 470**: *"prod api base is `https://app.getfliff.com/` with an **embedded oauth client** (the app obtains a token for anonymous browsing)"* |
+| **522 · 525** `sports_book_public/` code 58, and `channels/all/games/` 404 | **seg 523**: ***"the public endpoint answers a VALIDATION ERROR, not an AUTH WALL — so it is reachable, but code 58 is not valid there"*** |
+| 🔴 **545** *"this version of the app is no longer supported"* | **seg 546**: *"now it's **checking the app version** — the bundle has the real `marketingVersion` / `capabilityNumber`; grabbing them"* |
+
+🔑 ***Only segment 367 — the `alternate_lines` 404 — has no explanation anywhere***, **and it is the
+one that is still open** *(the live key's "alternates (ladders) pending one more capture")*.
+
+### 📌 The Fliff protocol, decoded in prose and in NONE of the twelve
+**`operation 58` = the UNIVERSAL FEED (the board feed); `81` = the SYNC FEED for proposals** *(seg
+492)* · **codes 51–56 and 59 are accepted publicly and want a `message_name` field** *(seg 532)* ·
+**`message_name` is the constant `sports_book_request`, and requests carry `operation` and
+`load_data_requests`** *(seg 543)* · **the version the server checks comes from the bundle's
+`marketingVersion` / `capabilityNumber`** *(seg 546)*.
+**Carriers**: `operation 58` and `capabilityNumber` **0 of THIRTY**; `sports_book_request` and
+`marketingVersion` **1 of thirty, 0 of the twelve.**
+⚠ **And the honest status the assistant gave** *(segs 551–552)*: ***"real progress, but NOT a finished
+scraper… Fliff is scrapable in principle without login — the public endpoint is open — but it is the
+most involved of the four: a custom protocol whose operation codes and feed-sync payloads I'd
+[still need]."***
+
+### 📌 Three more from the same stratum, all 0 of the twelve
+🔑 **UNDERDOG REBRANDED**: *"underdog rebranded to **UNDERDOG SPORTS** — the web app is now
+**`app.underdogsports.com`**, so the api host has likely…"* *(seg 278)* — **`underdogsports` 1 of
+thirty, `rebrand` 1, both 0 of the twelve**, ***while the working API host recorded in §0f is still
+`api.underdogfantasy.com`.***
+🔑 **THE PROXY HAS A VENDOR**: *"the probe already used that exact `PROXY_URL` — the same **SCRAPEGW
+residential proxy** as the PrizePicks producer — and the result is informative: **direct = 403 bot
+block on the datacenter [IP]**"* *(seg 136)* — **`scrapegw` is 0 of THIRTY.**
+🔴 **A RAW-CDN STALENESS HAZARD**: *"the run pushed after a **rebase retry** (commit `401c72a5`) — **my
+earlier read hit the RAW CDN CACHE**"* *(seg 385)* — ***a read-after-write hazard against
+`raw.githubusercontent.com` that would make a fresh commit look absent.*** **"raw CDN cache" 0 of
+thirty; "CDN cache" 1 of thirty, 0 of the twelve.**
+📌 **And the research provenance**: *the community scrapers (2023-24) all used **`beta/v5
+over_under_lines`** with plain browser headers — **"that door is closed now"** — and the
+`aidanhall21/underdog-fantasy-pickem-scraper` repo *"uses the old beta/v5 route now blocked; it
+confirms the data STRUCTURE but not the current CALL"* (segs 230, 237, 276).* **`beta/v5` 3 of
+thirty, `aidanhall21` 0, both 0 of the twelve.**
+
 ### 🔴 THE ODDS API SPLITS THE US BOOKS INTO TWO REGIONS — **and the one carrying FLIFF was excluded**
 *Recorded 2026-09-21 (T12 pass 3, §T12.4d). **Transcript segments 39 and 42.** **1 of thirty
 (`NBA_PROJECT_LOG.md`), 0 of the twelve** — control `us_dfs` fires in 8 of thirty.*
