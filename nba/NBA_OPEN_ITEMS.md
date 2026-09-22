@@ -12664,6 +12664,48 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > ⚠ **Two permanent floors on any future run of this audit, recorded so it is not re-discovered:**
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
+
+## T20-1 · **NEW · OWNER DECISION · MEDIUM** · five 🔴 findings nothing in the corpus points at
+
+**Measured 2026-09-22 (§T20.23, the orphan audit — the INVERSE of T18-16's question, never run
+before).** *Population re-counted from source: **1,739 distinct id-shaped heading ids · 2,082 heading
+occurrences · 12 documents**, 2026-09-22T14:21:07Z; script `scratchpad/t20/orphan2.py`.*
+**791 referenced · 948 orphan (54.51%)** — **then classified, because a raw orphan rate means
+nothing**: **305** pass-entry headings *(reachable by the ledger's RANGE pointer)* · **571** lettered
+sub-entries *(the log's natural leaf)* · **6** transcript banners · 🔴 **66 document-native ids, 16 of
+them severity-marked.**
+🔑 **A THIRD citation grammar was found in the process — open-item ids and pipeline/version labels
+are cited BARE, with no `§`** *(`T16-9` 13 bare refs · `T19-3` 8 · `T19-1` 5 · `T18-17` 4 · `T18-1` 3
+· `0a-T17` 6)* — **all six struck from the orphan list; `v1`/`v3`/`P3` are not section ids at all.**
+
+🔴🔴 **WHAT SURVIVES — unreachable under ALL THREE grammars:**
+
+| id | where | the finding | inbound |
+|---|---|---|---|
+| 🔴🔴🔴 `§0z-3` | `NBA_SYSTEM_DESIGN.md:217` | **THE BUILD-ORDER LOCK — what will NOT be built, and in what order the rest comes** *(T17 pass 0, owner, 2026-09-19)* | 1 bare, 0 sigil |
+| 🔴🔴🔴 `§0z-5` | `NBA_SYSTEM_DESIGN.md:96` | **"ENRICHMENT IS THIN BY DESIGN, NOT BY FAILURE"** | 1 bare, 0 sigil |
+| 🔴🔴 `§0v.4` | `NBA_BASELINE_CALIBRATION.md:684` | **the archived board is 13 of ~25 PrizePicks stat types** | **0** |
+| 🔴 `§0.9c` | `NBA_MULTIPLIERS.md:698` | **the product changed underneath the data, STATE-DEPENDENT** | **0** |
+| 🔴 `§KILL-LATE-1` | `NBA_OPEN_ITEMS.md:12817` | the `2:30 PM PT` bulletin trace was on file before this sweep proposed it | **0** |
+
+🔑🔑 **`§0v.4` has a TWIN — `NBA_MASTER_SUMMARY.md` §T14.2i states the same scope limit and is ALSO
+an orphan.** ⇒ ***the limit is recorded twice and nothing points at either copy. Duplication is not
+reachability.***
+⚠ **The owner-facing cost is specific: `§0z-3` is the BUILD-ORDER LOCK — an owner directive about
+what will not be built — and a session navigating by pointers will not reach it.**
+
+🔴 **OWNER DECISION — this item and T18-16 want OPPOSITE fixes.** *T18-16's class E is **pointers
+without targets** (10 ids: retarget or delete the pointer); this is **targets without pointers** (5
+ids: add a pointer).* **(a)** fix both lists · **(b)** fix only these 5, since an unreachable 🔴
+finding costs more than a broken link · **(c)** fix neither, and record explicitly that the corpus is
+meant to be READ WHOLE rather than navigated — *which is a defensible position and would retire both
+items, but it should be a decision rather than a default.*
+⚠ **Recorded, not fixed (rule 1).** ⚠ **Severity MEDIUM: nothing is lost, everything named here is
+on disk and correct; what fails is the route to it.**
+📌 **Related, and the reason the hub is the concern**: `NBA_MASTER_SUMMARY.md` holds **878 of the 948
+orphans — 92.6%** — at a **57.76%** orphan rate against `NBA_WORKERS`' 7.14% and
+`NBA_SYSTEM_ARCHITECTURE`'s 4.55%. **The document a fresh session reads first is the most
+orphan-dense one in the corpus.**
 **Reference audit, 2026-09-22 (T18 pass 4): 644 `§`-references to transcript sections across the
 twelve — 621 (96.4%) resolve to a heading inside the twelve, 16 resolve only in
 `NBA_SWEEP_RUN_LOG.md`, and 7 resolve NOWHERE**: `§T15.2c` · `§T15.2d` · `§T15.2e` · `§T15.2f` ·
