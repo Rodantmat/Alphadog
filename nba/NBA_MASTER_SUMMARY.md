@@ -24929,6 +24929,92 @@ Factor lock (5 research passes) · return-ramp · the day-before injury report �
 
 ---
 
+# §T19.2 — PASS 1: THE GLOSSARY BACKFILL, AND THE CLOSURE STANDARD THIS RUN DRIFTED FROM
+*(T19 pass 1, 2026-09-22 · prose stratum 69 segments / 47,530 chars READ IN ORDER AND IN FULL)*
+
+## PART A — ✅ THE GLOSSARY BACKFILL IS DONE, AND THE CHARTER GAP IS CLOSED
+
+| | before | after |
+|---|---|---|
+| size | 43,356 B *(smallest of the twelve)* | **84,493 B** |
+| charter set — terms in ≥2 of the twelve | **1,016** | 1,016 |
+| **absent from the glossary** | **824 (81.1%)** | **0** |
+| **coverage of the charter set** | **18.9%** | ✅ **100.0%** |
+
+**Added: §Z — THE COMPLETE TERM INDEX**, 824 terms with the document keys that carry each and the
+transcripts they appear in, plus the transcript index continued through T20 and a dated update-log
+entry. ⚠ **One charter field is NAMED AS MISSING RATHER THAN INVENTED**: the charter asks for *"which
+line/message/date and time"*; the index gives DOCUMENT and TRANSCRIPT, **not per-message line
+numbers**, because the sweep records by section and transcript and *fabricating line numbers would be
+worse than omitting them* **(open item T19-2)**.
+
+🔑 **AND THE PRE-REGISTRATION'S THIRD CLAUSE RESOLVED TO ITS STATED ALTERNATIVE, WHICH IS THE
+INFORMATIVE OUTCOME**: it predicted *"at least one term missing from the glossary is ALSO missing from
+every one of the twelve"* — ***none was***, because by construction all 824 appear in ≥2 documents.
+⇒ ***The glossary gap was an INDEX failure, not a COVERAGE failure. The sweep had the content; it had
+no map to it.*** *(Which is exactly the distinction the charter draws, and exactly why the owner asked
+for a glossary as a separate document.)*
+
+---
+
+## PART B — 🔴🔴🔴 THE CLOSURE STANDARD ON FILE IS NOT THE ONE THIS RUN HAS BEEN USING
+
+**T19's prose is this sweep's own methodological evolution, written in real time, and it converges on
+a standard that `NBA_MASTER_SUMMARY.md` already records in full** *(lines ~5430–5438, "THE METHOD, now
+proven and fixed for T2–T16")*:
+
+> **1. Targeted sweeps first** — they build the skeleton fast *(23 passes produced 21 findings)*.
+> **2. Then full sequential reads — and these are the ONLY ones that can count as clean.** Passes
+> 24–25 found 8 more things that 23 sweeps had missed, because **a sweep is pattern-bound: a line
+> matching no pattern survives any number of them, and a grep window can silently truncate a value.**
+> **3. The clean count only starts once sweeps are exhausted** and consecutive full reads come back
+> empty.
+
+**The evidence behind it is strong and is T1's own history**: **28 passes — 1–23 targeted sweeps
+(21 findings), pass 24 a full sequential read that immediately found SIX more, pass 25 two more,
+then 26/27/28 clean.** 🔑 *"Sweeps capture WHAT EXISTS; sequential reading captures WHERE IT CAME
+FROM."*
+
+### 🔴 WHAT THIS RUN ACTUALLY DID FOR T18
+
+| pass | angle | full sequential re-read of T18? | counted clean? |
+|---|---|---|---|
+| 0–3 | corpus/owner · prose · mechanism · thinking | ✅ **yes — every stratum read in order and in full** | ❌ all found material |
+| 4 | two-direction judgment | ❌ instrument | ✅ |
+| 5 | failure census | ❌ instrument | ❌ found material |
+| **6** | **live numeric re-verification** | ❌ **instrument — did not read T18 at all** | ✅ |
+| **7** | **cross-document consistency** | ❌ **instrument — read the TWELVE, not T18** | ✅ |
+| **8** | **wiring / referential integrity** | ❌ **instrument — read the repo and the DB** | ✅ |
+
+⇒ ***T18's CLEAN 3/3 was awarded to three targeted instruments, none of which re-read the transcript.
+Under the standard already recorded in this very document, none of them can count as clean, and T18
+has never had a clean FULL SEQUENTIAL pass.***
+
+⚠⚠ **STATED AT THE RIGHT STRENGTH, because this is the sweep judging itself.** **The owner's charter
+does NOT specify a method** — it says *"at least 3 consecutive passes without having new points not
+documented… the count restart"* **and nothing about how a pass must read.** **So this run did not
+break the OWNER's rule.** ***It diverged from the SWEEP'S OWN recorded conclusion — one adopted on
+direct evidence that targeted passes miss what sequential reading catches.*** **That conclusion is
+better evidenced than the practice that replaced it.**
+
+### ⇒ WHAT IS DONE ABOUT IT, AND WHAT IS NOT
+
+✅ **T18's closure is RE-STATED rather than revoked, with the standard named**: **T18 is CLOSED under
+the VERIFICATION standard (3 consecutive clean verification passes at different angles) and is NOT
+closed under the SEQUENTIAL standard (no clean full-sequential pass).** **Both counts are recorded in
+the run log so no future reader has to guess which was meant.**
+✅ **Going forward, the recorded standard governs: T19 and T20 close on full sequential reads.**
+⚠ **T15, T16 and T17 closed at 4 passes each and are in the same position.** **Recorded as open item
+T19-3; the sweep does NOT silently re-open them, because that is a judgment with a real cost and the
+owner's rule is satisfied either way.**
+
+🔑🔑 **THE GENERAL SHAPE, and it is RULE 41's second instance in a single pass**: ***the sweep's own
+best conclusions are in its documents, and the sweep does not re-read its own documents.*** **The
+glossary failure and this one have the same cause** — *everything the run needed to catch both was
+already written down, in the file it writes into most.*
+
+---
+
 # §T19.1 — PASS 0: T19 AND T20 ARE THIS SWEEP'S OWN SESSIONS, AND T19 HOLDS ITS CHARTER
 *(T19 pass 0, corpus + owner stratum · population pinned 2026-09-22T12:00:40Z · identity check
 2026-09-22T12:01:09Z)*
