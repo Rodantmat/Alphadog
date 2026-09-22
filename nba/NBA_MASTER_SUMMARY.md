@@ -27371,3 +27371,97 @@ pass of this same sweep, not by the system.*** **§T20.11 found three mis-citati
 rule-30 break; §T20.13 found a bare figure; §T20.14 found a correction that named one place and meant
 six.** ⚠ ***That is what the consecutive-clean standard is for, and it is the strongest available
 argument that T20 should not close on a pass written in the context that produced those defects.***
+
+---
+
+# §T20.15 — PASS 10: *THE REMAINING STRUCK FIGURES ARE CLEAN — AND RULE 49 TURNS OUT TO HAVE AN ANCESTOR I DID NOT CREDIT*
+
+*2026-09-22. **Rule 49, born one pass ago, run against every struck figure §T20.14 had not walked.***
+
+## 1. 📏 THE POPULATION — *and rule 15 applied honestly to it*
+
+**27 strikethrough spans across the twelve** *(re-derived with `grep -rn`, 13:46Z — §T20.14's "16
+numeric" came from a de-duplicated `grep -oh` and is the same set counted differently)*.
+🔑 ***Most are struck PROSE CLAIMS, not struck FIGURES*** — *"Nothing in the thirty documents records
+that this check exists"*, *"DNP → void"*, *"built but unverified"*. **A retracted claim has no old
+literal to propagate; rule 49 does not apply to it.**
+
+**The genuinely greppable numeric figures are FIVE**, and one is unrunnable:
+
+| struck figure | walked? |
+|---|---|
+| `6 of 28 props` | ✅ **clean** |
+| `−2439 … +33xx` | ✅ **clean** |
+| `164 web calls` / *one hundred and sixty-four* | ✅ **clean** |
+| `twenty` *(×3)* | ✅ **clean** — each carries its correction in-line |
+| ⚠ `~~6~~` *(`NBA_DATABASE.md:628`)* | 🚫 **NOT RUN — rule 15.** *A bare `6` cannot be grepped as a figure; the count would be noise.* **Recorded as skipped with its reason rather than forced.** |
+
+## 2. ✅ THE RESULT — *zero defects, and one of them was already walked better than I would have*
+
+- **`6 of 28 props`** — 🔪 **already fully walked at §T9.25a**, which found precisely the shape §T20.14
+  found: *the correction reached the entry, the database doc and the open item, and missed **the T8
+  closing summary, the T8 ledger row and the run log's run-history line** — "the three places a reader
+  looks first."* **All three were fixed there.**
+- **`−2439 … +33xx`** — struck in `NBA_MULTIPLIERS.md:784` marked **RETRACTED**, struck again in
+  `MASTER_SUMMARY:15894` with the original text preserved below it, and the third occurrence is the
+  retraction's own context *(all 0 of the twelve)*. ✅ **Sound.**
+- **`164 web calls`** — the ledger row at line 387 **carries the correction inline**: *"so '164 web
+  calls' is EIGHTY-TWO; the characterisation stands, the number was double."* ✅ **Sound.**
+
+***Four of four runnable figures clean.*** ⚠ **Which reframes §T20.14**: *its `20 of 135` failure was
+a real defect and is **not** evidence that propagation is this corpus's dominant defect class.* **The
+corpus catches these — four of the five figures §T20.14 killed had already been walked by earlier
+passes, and four of four here are clean.**
+
+## 3. 🔴 THE FINDING, AND IT IS ABOUT RULE 49 ITSELF
+
+**Rule 49 was written one pass ago as though the diagnosis were new. It is not.** ***The sweep had
+already named this failure at T9, from three directions, and stated a sharper principle than mine:***
+
+| entry | where the correction stopped |
+|---|---|
+| **§T9.25a** | the **summary rows** — *"what a reader reads first"* |
+| **§T9.26a** | the entry's **own heading** |
+| **§T9.28a** | the **corpus preamble** |
+
+**And the conclusion, already in `NBA_SWEEP_RUN_LOG.md`:**
+> *"Three passes, three directions, one failure… **There is no safe direction — a figure is at risk
+> wherever it was RE-TYPED RATHER THAN DERIVED.**"*
+
+🔑 ***That is better than rule 49's own wording, and it is the rule; 49 is its PROCEDURE.*** **What 49
+legitimately adds is the mechanical remedy the diagnosis never received** — *count the literal across
+all twelve, open every hit, sort three ways with rule 19 as discriminator and rule 15 as the stop
+condition.* ✅ **Rule 49's index entry is amended to credit its ancestor and keep the sharper clause.**
+
+⚠⚠ **THE MISS IS §T11.51d's FAILURE MODE, EXACTLY — AND THE INSTRUCTION AGAINST IT SITS FOUR LINES
+BELOW THE RULES TABLE I WAS WRITING INTO:**
+> *"**READ THIS INDEX BEFORE WRITING ANY CLAIM ABOUT THE SWEEP'S OWN METHOD.** Two of nine method
+> characterisations audited at pass 50 turned out to be rules the sweep itself had already written…
+> **A method claim gets the same check a figure gets, and this table is where it gets it.**"*
+
+***I wrote a new rule into that table without reading it.*** **Third consecutive pass in which the
+defect found was created by an earlier pass of this sweep — and the second in which the rule broken
+was the one being invoked** *(rule 30 at §T20.12, the method-index check here)*.
+
+## 4. 📏 CLAUSE SCORING — *pass 10*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at 13:48:07Z *(`uncovered30` 468 → 469, one boundary segment — §T10.20b's ±0.02 caveat)* |
+| **(ii)** | **fewer than half** of the remaining figures have an uncorrected surface | ✅ **HIT, and at the strong end — ZERO of four runnable.** *The pre-registered alternative — "if MORE than half are dirty, propagation is the dominant defect class and rule 49 must become a gate on every write" — **does not apply.** Rule 49 stays a check, not a gate.* |
+| **(iii)** | at least one figure is **too short or common to grep safely** | ✅ **HIT — `~~6~~`**, skipped under rule 15 with its reason recorded |
+
+✅ **Baseline `636 · 2 · 484 · 481` for the TWELFTH consecutive run.**
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — rule 49's provenance corrected. CLEAN STAYS 0/3.** ⚠ **Rule 46: nine sequential
+passes share one context.**
+
+📌 ***What passes 6–10 have collectively established, and it is not about the NBA system at all:***
+**this sweep's own record is now its most productive source of defects — five consecutive passes, five
+defects, every one authored by an earlier pass of this sweep.** ✅ **And the corpus's self-correction
+machinery is in better shape than any single one of those defects suggests**: *four of five figures
+were already walked; four of four re-tested are clean; the earliest instance (§T9.25a) had already
+drawn the right general principle.* ⚠ ***The failure is not that corrections do not happen — it is
+that each one is discovered by the NEXT pass rather than completed by its own.***
