@@ -24921,6 +24921,99 @@ Factor lock (5 research passes) · return-ramp · the day-before injury report �
 
 ---
 
+# §T18.5 — THE TWO-DIRECTION JUDGMENT, AND A REFERENCE AUDIT OF THE SWEEP'S OWN TWELVE
+*(T18 pass 4, 2026-09-22T11:34:13Z · **high band 127 · tail 7**, both stable · the pass the
+completion criterion requires among the three clean passes)*
+
+## DIRECTION B — the tail: **7 of 7 correctly tailed, zero real gaps**
+
+*A tail segment scores **< 0.40 against the twelve but ≥ 0.60 against the thirty** — covered
+somewhere in `nba/`, not in the mandated documents. The question is whether that is right.*
+
+| seg | kind | matched | verdict |
+|---|---|---|---|
+| **366 · 367 · 373 · 375 · 386** | `tool_use` | **`NBA_PROJECT_LOG.md`** | ✅ **correct** — all five are `github_patch_file` calls writing the project log's own 2026-09-13→09-19 entry. **The content belongs there and is there.** |
+| **515** | `tool_result` | `NBA_ENRICHMENT_FACTOR_LOCK.md` | ✅ **correct** — the 2026-09-09 injury-PDF snapshot list. ⚠ *And it is now in the twelve as well, because §0z-8-T18-RETRACTION was built on it this same day.* |
+| **730** | `tool_result` | `NBA_DAILY_PARITY_AND_BACKFILL.md` | ✅ **correct** — the factor-class day-by-day backfill table, the parity doc's own content. |
+
+⚠ **SEG 367 was checked rather than waved through, because it carries measurements a reader could
+think belong in the twelve** — *307,604 market rows · 2,454 games at 100% coverage · a 13+ favourite
+blows the game open **39.7%** of the time and is blown out **0.4%**, a **100:1** asymmetry · winning
+blowouts cost starters **3.99** minutes against **2.86** losing · **24,025** player-games*. ✅ **Every
+one of those figures is already in the twelve** *(8, 17, 42, 8, 2, 4, 2, 5 hits respectively)*. **The
+tail segment is the LOG ENTRY that summarises them, not the evidence.**
+
+## DIRECTION A — the high band: **127 segments, and the defects found are the SWEEP'S OWN**
+
+**Matched-document distribution, and it closes to 127** ✅: `NBA_OPEN_ITEMS` 30 · `NBA_MULTIPLIERS`
+25 · `NBA_WORKERS` 15 · `NBA_SYSTEM_DESIGN` 15 · `NBA_FINAL_SCORING_CALIBRATION` 10 ·
+`NBA_MASTER_SUMMARY` 10 · `NBA_DATABASE` 7 · `NBA_SYSTEM_ARCHITECTURE` 7 · `NBA_GLOSSARY` 4 ·
+`NBA_GOBLIN_DEMON` 4.
+
+### ✅ 1. EVERY ARITHMETIC CLAIM PUBLISHED THIS SESSION, RE-VERIFIED IN CODE
+
+*Re-derived independently rather than re-read — the check that catches a transcription error.*
+
+| claim | recomputed | verdict |
+|---|---|---|
+| §5.2's one-pass SQL yields `f_role` **55.56%**, deduction **16.1111**, others **1.6111**, **total exactly 29.0000** | ✅ reproduced to 4 dp | ✅ **the published table IS that SQL's output** |
+| the live `confidence_model` sums to 29 across **ten** factors, `f_role` **38.87%** | 29.0004 | ✅ |
+| the interpolation tax cannot explain T18-13's gap | 0.00222 against 0.0136 — **6.1× too small** | ✅ |
+| the 0.85 pivot reproduces the board-scorer rows | see below | ⚠ **one published number was WRONG** |
+
+🔴 **A DEFECT IN THIS SWEEP'S OWN WORK, FOUND AND CORRECTED** *(`NBA_DATABASE.md` §0z-T18)*: that
+section gave blocks as **69.5** from hand-arithmetic. **In code it is 68.20 against the reported
+68.2 — exact to two decimals.** *The error understated the agreement it was arguing for.* ✅
+**Corrected in place with both states visible.**
+
+### 🔴 2. A REFERENCE AUDIT — *644 `§`-references across the twelve, every one resolved or not*
+
+| | |
+|---|---|
+| `§`-references to transcript sections | **644** |
+| resolve to a heading **inside the twelve** | **621 (96.4%)** |
+| resolve only in **`NBA_SWEEP_RUN_LOG.md`** | **16** |
+| **resolve NOWHERE** | **7** — `§T15.2c` · `§T15.2d` · `§T15.2e` · `§T15.2f` · `§T17.4` · `§T5` · `§T7.32-era` |
+
+🔴 **The `§T15.2c–f` cluster is the real one**, because it is used **referentially**, not just as a
+dateline: *"§T15.2f's selection filter, caught by a sanity check rather than by inspection"*
+*(`NBA_BASELINE_CALIBRATION` 250)* and *"after the test itself was found broken — §T15.2f"*
+*(`NBA_FINAL_SCORING_CALIBRATION` 1079)*. **A reader who follows either pointer finds nothing.**
+⚠ **Severity LOW and stated as such: the CONTENT is present** — the OREB rebuild is §0y, the Fliff
+fix is §0f-4 — **only the pointer fails.** *Open item T18-16.*
+
+🔴 **AND ONE GENUINELY DANGLING REFERENCE WAS AUTHORED BY THIS SESSION AND IS FIXED**: `§0a-T18-C`,
+in `NBA_FINAL_SCORING_CALIBRATION` §5.2's correction header — **a section id invented for a
+correction that was written inline and never given that heading.** ✅ **Replaced with a pointer to
+`NBA_WORKERS.md` §0.003-T18, which exists.**
+
+### ⚠ 3. A CONVENTION SPLIT THAT MAKES THE DOCUMENTS HARDER TO NAVIGATE THAN THEY LOOK
+**1,498 transcript-section headings exist across the twelve. Only 138 — 9% — carry the `§` sigil in
+the heading itself** *(they are written `## 0.7-T18.`)*, **while essentially every cross-reference
+writes `§0.7-T18`.** ⇒ ***A reader who searches the literal string a document gave them finds the
+REFERENCE and never the SECTION.*** *This is why the first run of this audit reported `§0.7-T18`,
+`§0.8-T18` and `§0a-T18` as dangling when all three exist — **the audit's own first result was a
+false positive, and it is recorded because the correction is the finding***: a reference audit must
+match on the id, never on the sigil. *Open item T18-16.*
+
+## ✅ 4. THE SELF-AUDIT THE NEXT-STEP ROW MANDATED — *do the retractions read correctly cold?*
+
+**Checked: does each retraction appear BEFORE the claim it retracts, in reading order?**
+
+| document | retraction at | claim at | verdict |
+|---|---|---|---|
+| `NBA_SYSTEM_DESIGN` | **1948** §0z-8-T18-RETRACTION | 2031 §0z-8-T18 | ✅ **retraction first** |
+| `NBA_WORKERS` | **1613** §0.002-T18-CORRECTION | 1666 §0.002-T18 | ✅ **retraction first** |
+| `NBA_FINAL_SCORING_CALIBRATION` | **1682** inline at §5.2 | the table immediately below | ✅ **correction first** |
+| `NBA_SYSTEM_DESIGN` 1617 *(the original 2026-09-19 trace, far earlier in the file)* | forward pointer | — | ✅ **present and updated** |
+
+🔑 **A cold reader meets the correction before the error in all four places, and each retracted
+heading carries its own withdrawal in the heading text** — *"⚠ SUPERSEDED IN PART BY THE RETRACTION
+ABOVE"*, *"⚠ SEVERITY WITHDRAWN AND SCOPE NARROWED"*. ⚠ **Neither retracted section was deleted or
+softened in place**, per the §0w precedent.
+
+---
+
 # §T18.4 — THE `thinking` STRATUM, READ OUT AND CENSUSED ACROSS THE WHOLE CORPUS
 *(T18 pass 3, 2026-09-22 · **the last unread stratum of T18**, so **rule 1 is now satisfied for T18**:
 owner 57 · prose 254 · `tool_use` 463 · `tool_result` 397 · `thinking` 34 = **1,205** ✅)*
