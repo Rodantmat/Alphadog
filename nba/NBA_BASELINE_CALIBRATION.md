@@ -52,6 +52,55 @@ them from the game logs is a separate job.** **A dated STATE** *(O9)*.
 
 ---
 
+## 0w. 🔑🔑 THE BASELINE'S THREE PRODUCTION GAPS — **named in T13, and TWO of them are now CLOSED**
+*Recorded 2026-09-22 (T13 pass 2, §T13.3h). **Transcript `2026-09-13-01-03-48`, the closing baseline
+sweep.** **Every live figure re-taken from `nba_score.baseline_ladder_runs`, pinned
+2026-09-22T08:09Z.** `SELECT` only; nothing was run or changed *(rule 1)*.*
+
+**T13 ran a deep sweep of the baseline as a PRODUCTION ARTIFACT — not as a backtest — and its verdict
+is the distinction this document needs**: ***"the artifact is real and correctly shaped, but there
+are three gaps worth naming."***
+
+### THE THREE GAPS AS STATED, AND THEIR STATUS TODAY
+| # | the gap, in T13's words | status **2026-09-22** |
+|---|---|---|
+| **1** | ***"Only ONE SLATE exists.** The baseline has been **certified on two seasons via the backtest harness**, but **as a production artifact it's been run exactly ONCE, for a single day**. Before the engine consumes it daily we should confirm it runs cleanly **across a range of dates**, not just the one it was demoed on."* | ✅ **CLOSED — THREE slates now** |
+| **2** | ***"`baseline_ladder_runs` is EMPTY.** That's the **run-metadata table**, which is exactly what the **freshness gates** we specced are supposed to read — *"was the baseline built today, from what inputs, at what time?"* — **the gate can't work against an empty table**."* | ✅ **CLOSED — 3 rows** |
+| **3** | ***"`periods = 1`.** Only **full-game rows**; the **period ladders (Q1/H1) aren't in the production artifact**, though **the periods builder exists**. Fine if we're not offering period props at launch, **but it should be a DECISION rather than an OMISSION**."* | ⏳ **OPEN — and it is an OWNER decision, not a defect** |
+
+### ✅ THE LIVE RUN-METADATA TABLE — *the gate now has something to read*
+| `asof` | slate games | players | rows | props | `loaded_at` |
+|---|---|---|---|---|---|
+| **2025-11-29** | 8 | 184 | **64,779** | **22** | 2026-09-20T03:23:26Z |
+| **2026-01-15** | 9 | 227 | **90,861** | **22** | 2026-09-19T22:35:04Z |
+| **2026-03-15** | 7 | 161 | **50,597** | **18** | 2026-09-11T20:23:10Z |
+
+**All three carry `history_seasons = {2023-24, 2024-25}` and `current_season = 2025-26`**, and each
+stores its own **`factor_fits`**, **`role_minutes_multiplier`** and **`source_file`** *(the dated
+ladder JSON plus `nba_baseline_ladder_latest.json`)*.
+🔑 ***So the multi-date stability run T13 said it would do was DONE*** — **three slates spanning
+November, January and March, loaded 2026-09-11 → 2026-09-20**, *i.e. entirely after this transcript.*
+
+### 🔴 AND THE 2026-03-15 SLATE IS NOT THE ONE T13 DESCRIBED — **the replay happened**
+| | T13's description | **LIVE row for the same `asof`** |
+|---|---|---|
+| ladder rows | **17,376** | **50,597** |
+| players | **173** | **161** |
+| props | **11** | **18** |
+
+**All three figures differ, and `loaded_at` is 2026-09-11T20:23Z — AFTER the transcript.**
+✅ ***That is the replay T13 queued***: *"that 2026-03-15 run **predates the injury-report
+integration**… it's the same date, so **re-running it now with `bt_injury` present will show exactly
+what the day-of report changes versus the certified numbers**."* 🔑 **The live row is the re-run,
+not the demo.** ⚠⚠ **Stated at evidence strength**: ***a later run EXISTS; whether the baseline was
+RE-CERTIFIED against it is a different claim and is NOT RECORDED.*** **A dated STATE** *(O9)*.
+
+📌 **One further observation, recorded and NOT explained** *(rule 6)*: **the 2026-03-15 row's
+`factor_fits` are SHALLOWER than the other two** — its `steals` fit carries no `f_impl_opp`, and its
+`assists` fit carries neither `f_impl_opp` nor `f_impl_own`, **while both later-loaded slates carry
+all of them.** ⚠ ***The latest slate DATE holds the earliest-loaded and least-complete artifact***,
+**which is the ordering a reader is least likely to expect.** **Why is NOT RECORDED.**
+
 ## 0y. ⚠ WHERE THE BASELINE'S CONSTANTS ACTUALLY LIVE — in Python, not in config
 *VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
 
