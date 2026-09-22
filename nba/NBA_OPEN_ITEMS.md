@@ -12711,6 +12711,64 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-8 · **NEW · 🔴🔴🔴 THE SWEEP'S OWN DEFECT** · 36 commits without `[skip ci]`, one deploy fired, and an MLB scrape destroyed by this session's push rate
+
+**`[LIVE-AUDIT]` 2026-09-22 (§T20.46), read from `github_list_workflow_runs` and
+`github_get_workflow_run_log` — both READS. Nothing was triggered, dispatched or re-run.**
+⚠⚠ **INSTRUMENT LIMIT STATED FIRST (rule 17): the API returned `40` runs spanning
+`15:51:37Z → 16:20:22Z` — TWENTY-NINE MINUTES — and `38` of them are this session's own pushes. It
+cannot answer "has P1 run in 14 days" and no such claim is made.**
+
+🔴🔴🔴 **① `36` OF TODAY'S `576` COMMITS CARRY NO `[skip ci]` — `6.3%`.**
+*Every one has the bridge's DEFAULT message* (`"Patch nba/<file>.md via Claude MCP bridge
+(server-side find/replace)"`) ⇒ ***every one is a `github_patch_file` call where the `message`
+argument was omitted.*** **Spanning `01:28` → `08:59` PT.**
+🔴🔴 **AND IT FIRED A DEPLOY: `AlphaDog v2 Mobile Auto Deploy` ran to `success` at
+`2026-09-22T15:59:23Z` on head_sha `c068a550`**, one of the message-less commits. ***A production
+deploy off a documentation commit is exactly what the `[skip ci]` convention exists to prevent.***
+⚠ **Stated without softening: a standing owner rule, broken 36 times by this sweep, unnoticed until
+pass 41 of 41.**
+
+🔴🔴🔴 **② A SCRAPE WAS PRODUCED AND DESTROYED, CAUSED BY THIS SESSION'S PUSH RATE.**
+*`MLB Automatic Scraper`, run `35751558641`, `2026-09-22T16:03:42Z`, `conclusion: failure`.
+Steps: `Produce PrizePicks MLB JSON` ✅ **SUCCESS** → `Commit board JSON to main` 🔴 **FAILURE**.*
+```
+2 files changed, 186502 insertions(+), 126524 deletions(-)
+ ! [rejected]          HEAD -> main (fetch first)
+error: failed to push some refs to 'https://github.com/Rodantmat/Alphadog'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref.
+##[error]Process completed with exit code 1.
+```
+⇒ ***The scrape SUCCEEDED and its output — 186,502 insertions — was DISCARDED because a concurrent
+pusher won the race to `main`.*** **`scrape.yml`'s commit step is a bare `git push origin HEAD:main`;
+`grep -c "rebase\|for i in"` returns `0`. It runs on `cron: '0 */2 * * *'`.**
+
+✅✅ **③ AND THE GOOD NEWS IS STRUCTURAL — P2 AND P3 ARE IMMUNE BY DESIGN.** *Both commit artefacts
+back to `main` and both wrap the push:*
+```
+for i in 1 2 3 4 5; do
+  if git push origin HEAD:main; then break; fi
+  git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+done
+```
+**Five attempts, fetch-and-rebase between each, randomised backoff — in P2's *"Commit mined data"*
+and P3's *"Commit day-of data"* alike.** 🔑🔑 ***The exact failure that destroyed the MLB scrape is
+already handled on the NBA side. On a game day, with two chat sessions and a scraper all pushing,
+P3's board JSON is NOT at risk — and that retires a worry the opening-day brief would otherwise have
+had to raise.***
+
+🔴 **OWNER DECISION:** **(a)** add the same retry-rebase loop to `scrape.yml` — *it is a five-line
+copy from P3 and it is the only unprotected committer found* · **(b)** decide whether
+`AlphaDog v2 Mobile Auto Deploy` should trigger on documentation-only paths at all *(a `paths-ignore:
+['nba/**.md']` would make the `[skip ci]` convention unnecessary rather than load-bearing)* ·
+**(c)** nothing is owed on the MLB data loss itself — MLB is dropped.
+📌 **AND THE INSTRUCTION TO A FRESH SESSION: `github_patch_file` has a DEFAULT commit message. If
+`message` is omitted, the commit ships WITHOUT `[skip ci]`. Pass it every time.**
+
+---
+
 # 🔴🔴🔴 OPENING-DAY BRIEF — THE SEVEN BLOCKERS, RANKED BY WHAT THEY COST *(T20 pass 40, §T20.45, 2026-09-22)*
 
 > **REGULAR SEASON OPENS `2026-10-20`. PRESEASON `2026-10-03`.**
