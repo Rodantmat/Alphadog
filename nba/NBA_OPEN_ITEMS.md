@@ -1,5 +1,75 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴 **T17 PASS 3 — THE CENSUS IS EMPTY AND A LARGE STATE LOSS EXISTS ANYWAY. THAT IS RULE 37's *SILENT* CATEGORY, DEMONSTRATED.** *(§T17.4, the closure pass; mechanism strata 1,119 of 1,412 segments, 79.2%)*
+
+### ✅ **EVERY DISTINCT FAILURE IS RECORDED — T17's prose names its own bugs by their exact error**
+
+*Pinned 2026-09-22: **16 raw `exit code [1-9]` occurrences**; `NameError` 14 · `KeyError` 17 ·
+`AttributeError` 13 · `ValueError` 10 · `shutdown signal` 11.*
+
+| Failure | Recorded in the prose? |
+|---|---|
+| **`NameError: name 'unc' is not defined`** | ✅ *"I removed the scenario-uncertainty calculation when replacing the confidence block, but a later line still writes `n_uncertain` from it"* |
+| **`AttributeError: 'Pandas' object has no attribute 'n'`** | ✅ *"`n` collides with pandas' internal namedtuple field, so `itertuples` doesn't expose it"* |
+| **`AttributeError: 'Pandas' object has no attribute '_6'`** | ✅ *"I guessed the positional index for the `n` column. **Same class of error as before**"* |
+| **`KeyError: 'n'`** | ✅ *"the select never included the column — **my own query** pulls level, prop, band, side, phase, `s_norm`, `lo_scale`, `hi_scale` and **no `n`**"* |
+| **`KeyError: 'Column not found: per36'`** | ✅ *"`g2` was bound before `per36` existed"* |
+| **`ValueError` — percentiles** | ✅ *"my quartile helper passes 1.01 as an upper bound, which is fine for `pd.cut` bin edges but **invalid for `.quantile`**"* |
+| **`HINT: Perhaps you meant to reference the column "rung_market.player"`** | ✅ *"`rung_market` keys on **player name**, not `player_id`. Checking its actual columns **rather than guessing again**"* |
+| **`shutdown signal` ×2 — the runner OOM-killed** | ✅ *"it died loading all 6.9M `board_outcomes` rows into memory at once — **an infrastructure limit, not a bug**"*, and later *"same memory kill as before"* |
+
+✅✅ **SO THE CENSUS COMES BACK EMPTY — the second time in the sweep** *(after T15)*, **and T17's prose
+is the most self-diagnostic in the corpus: it names the collision, the positional guess, the missing
+column in its own `SELECT`, and the invalid quantile bound.**
+
+### 🔴🔴🔴 **AND YET `final_hp` 2025-26 LOST 19.47 MILLION ROWS, AND NOTHING IN T17 ACCOUNTS FOR IT**
+
+| | |
+|---|---|
+| T17's own completion check | **19,611,626 legs / 163 dates** |
+| `[LIVE-AUDIT]` 2026-09-22, re-taken twice across the session | 🔴 **140,130 legs / ONE date** |
+| Confidence values present | ✅ **v3** *(proven by the phase-wise arithmetic, §T17.3)* — **so the season was written COMPLETE with the current logic** |
+| Recorded failures that could explain it | 🔴 **NONE** |
+
+🔑🔑🔑 **THAT IS THE SILENT CATEGORY MADE CONCRETE.** *Rule 37 names three census outcomes — RECORDED ·
+ATTRIBUTED-BUT-UNDIAGNOSED · SILENT — and §T14.3b's bound says **the census cannot see a silent
+failure**. **T17 is the proof**: the census is exhaustive and empty, the prose is candid to the line
+number, and a **19.47-million-row loss sits in the live system unexplained by either.*** ⚠⚠ **An empty
+census is evidence that nothing failed LOUDLY. It is not evidence that nothing failed.**
+
+⚠ **THE ONE MECHANISM T17 SUPPLIES**, recorded under rule 6 as a candidate and not as a cause: the
+full-season confidence rewrites *"**DELETE prior rows at the start**, so the table is empty until the
+props finish writing"*, **the workflow times out at 60 minutes**, and the transcript ends with
+*"the job has been running ~50 minutes and the workflow times out at 60, **so it will be killed shortly
+without producing results. I can't fetch its log — the API says the link expired.**"* 🔴 **A
+delete-then-write killed at the 60-minute wall leaves exactly the observed shape, and its log is
+unreadable — so it would be silent by construction.** ⚠ **NOT RECORDED whether that is what happened;
+T18 is the same day and is where it would appear.**
+
+### 🔒 **TWO KILLS LOGGED, AND THE SECOND REFINES RULE 36**
+
+**KILL 1 — the COMPASS numbering.** ✅ Whole-sequence check re-run 1 → 107: **`MISSING = [69]` only**,
+unchanged. **No new numbering casualty in the T17 window.**
+
+**KILL 2 — and it is rule 36's TRUE NEGATIVE.** *The T17-window `git log --numstat` audit flagged
+`56acdca0` (−66 / +32 on `NBA_FINAL_SCORING_CALIBRATION.md`) as the largest net deletion, and what it
+removed was alarming: **`## 18. PART D — THE FOUNDATIONAL SELECTION METHODOLOGY`**, a section
+declaring itself **"the ORIGINAL, FOUNDATIONAL rule set — EVERYTHING ELSE in this document is
+DOWNSTREAM of it… Read this before any other strategy work."*** 🔒 **KILLED ON INSPECTION: it was a
+CONDENSATION, not a deletion.** The same commit adds **`## 18. PART D — SELECTION METHODOLOGY, Rules
+B0–B0c`**, preserving the source attribution, the "original, foundational" framing as a quotation,
+**Rule B0** *("never rank by the platform's displayed score… **never trust a platform's own
+confidence/probability display as a substitute for your own real graded buckets**")* and the artefact
+*(`nba_market.board_outcomes`, **6.9M graded legs across 327 dates**)*. ✅ **All present today: `PART D`
+16 of the thirty / 14 of the twelve · `Rule B0` 15 / 9 · the platform-score rule 5 / 2.**
+
+🔑🔑 **THE REFINEMENT RULE 36 NEEDS**: ***a deletion-heavy commit is a SIGNAL TO CHECK, never a
+finding. Rule 36's probe must be run on CONTENT — "what did the old text say that the new text does
+not" — and a `numstat` cannot answer that question.*** ⚠ **Fact 85's overwrite (which DID lose an
+audit) and this one (which lost nothing) have the same `numstat` shape.**
+
+---
+
 ## ✅✅ **T17 PASS 1 — THREE OPEN ITEMS ANSWERED FROM THE TRANSCRIPT, AND ONE LIVE CONDITIONAL THAT HAS FIRED** *(§T17.2)*
 
 ### ✅ **T17-2 IS CLOSED — the 17%-vs-90% tension is answered IN THE TRANSCRIPT, and the two ARE different quantities**
