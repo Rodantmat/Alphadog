@@ -10,7 +10,43 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ---
 
-## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
+# 🟢 START HERE — *everything a fresh session needs, in one screen*
+
+> ⚠ **Added 2026-09-22 at §T20.69, which measured that the section below is `330,889` characters —
+> `≈82,700` tokens, `81.4%` of it superseded rows kept per rule 40 — and that it does NOT contain the
+> next step. This block does. Read it, then go to the two rows named in step 2.**
+>
+> | | |
+> |---|---|
+> | **POSITION** | **T20**, `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt` · **CLEAN 0/3** · **64 passes** · **§T20.1–§T20.69** |
+> | **OWED — RULE 46** | 🔴 **T19 AND T20 EACH OWE TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A FRESH CONTEXT.** *A clean count reached inside the authoring session does not close a transcript (§T19.6, OWNER DECISION).* |
+> | **NEXT** | the **`▶ EXACT NEXT STEP`** row of the table below — it carries the pre-registered clauses, the method and the kills to log |
+>
+> ### THE EIGHT STANDING CONSTRAINTS — *break none of these*
+> 1. **READ-ONLY against the live system.** `SELECT` yes. **NEVER `run_job`, NEVER `github_trigger_workflow`, no dispatch, no deploy, no re-run, no worker or config edit.**
+> 2. **DOCUMENT, DON'T FIX.** *The owner: "You will not fix anything along this process."* ⚠ **Amended: that governs THE SYSTEM, not this sweep's own deliverable — correcting the twelve is required.**
+> 3. **`[skip ci]` in EVERY commit message.** 🔴 **`github_patch_file` HAS A DEFAULT MESSAGE — omit `message` and the commit ships WITHOUT it.** *That cost 36 commits, ≥9 production deploys and one destroyed scrape (**T20-8**).*
+> 4. **`patch_file` only, and only on the TWELVE mandated documents** — never a full `put_file`.
+> 5. **`nba/NBA_COMPASS.md` is READ but NEVER WRITTEN TO.** A COMPASS defect is recorded in `NBA_OPEN_ITEMS.md` with the fact number and the quoted text.
+> 6. **OUT OF SCOPE — the concurrent session's**: `nba/PP_PAYOUT_FINDINGS.md`, `nba/pp_payout_map.py`, `nba/probe_pp_*.py`, `.github/workflows/nba-pp-payout-map.yml`, `nba/data/pp_payouts/`, and the `nba_market.pp_*` / `nba_config.pp_*` objects.
+> 7. **API-KEY AND CREDENTIAL VALUES ARE NEVER REPRODUCED.** Location and safe surrounding facts only — **the repo is PUBLIC.**
+> 8. **`nba_market.prop_universe` is MID-REBUILD** — never a denominator, never a final count.
+>
+> ### THE THREE THINGS THAT WILL MISLEAD YOU IF YOU DO NOT KNOW THEM
+> - 🔴 **`FILE:LINE` citations are `83.7%` DEAD** among the testable, and `66.2%` of internal ones quote nothing to search for (§T20.67). **Resolve by the quoted text; never trust the number.**
+> - ✅ **`§`-section citations resolve at `99.2%`** (§T20.68). **Cite `§T20.47`, never `NBA_MASTER_SUMMARY.md:3102`.**
+> - 🔴 **The standing-rules index below lacks TEN of its FIFTEEN rules** (§T20.18) and cannot be read to check a new rule for duplication. **Two rule candidates are deliberately UNNUMBERED because of it** (§T20.21, §T20.28), and rule 49 was born and retired in seven minutes as a duplicate of rule 40 (§T20.16).
+>
+> ### THE INSTRUMENT
+> **`judge20.py`** *(TF-IDF `char_wb` 4–5, `min_df=2`, `sublinear_tf`, cosine)* — **baseline `636 · 2 · 484 · 481` on SIXTY-FIVE consecutive runs.** Working tree `648 · 1 · 471 · 470`. ⚠ **Report the Δ against the re-measured baseline (`484 − N`), NEVER the absolute level — it is not stable under doc growth (§T20.50).**
+
+## ▶ RESUME NOTE — ~~*the only thing a fresh session needs to continue*~~ **the sweep's full standing record, including every superseded step (rule 40)**
+
+> ⚠ **SELF-DESCRIPTION CORRECTED 2026-09-22 (§T20.69).** *The old subtitle was **true when written** —
+> the note was short and the next-step row was inside it. The note has since grown to `330,889`
+> characters, `81.4%` of them superseded rows, and the next step now sits ninety-three lines past its
+> end. **The claim is about the CURRENT state, so rule 40 says correct it rather than date it.*** ✅
+> **What a fresh session actually needs is the `START HERE` block above.**
 
 > # 🔴🔴🔴 READ THIS BEFORE FOLLOWING ANY `FILE:LINE` POINTER IN THIS CORPUS
 > ## **28% OF THE POINTERS WRITTEN ON 2026-09-22 ARE DEAD. RESOLVE BY SEARCHING THE QUOTED TEXT, NEVER BY THE NUMBER.**
