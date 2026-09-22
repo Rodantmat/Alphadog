@@ -28703,3 +28703,108 @@ never a countdown" is wrong. "Never measure from the reader's clock" is right, a
 across grammars could tell the two apart.*** 🔑 **And the second finding is the one to carry
 forward: a correction that matches on a surface form cannot reach the instances that never used it —
 found in pointers at §T20.22 and in prose here, by different means, on different material.**
+
+---
+
+# §T20.28 — PASS 23: *THE UNIVERSAL-SCOPE AUDIT — THE PATTERN IS REAL AND IT IS NOT ABOUT CORRECTIONS*
+
+*(T20 pass 23, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+*Read-only on the system: `SELECT` only, no `run_job`, no dispatch.*
+
+## 1. 🎯 THE CLAIM UNDER TEST
+
+**§T20.27 asserted a pattern from n=2 — *"a correction that matches on a SURFACE FORM cannot reach
+the instances that never used it"* — found in POINTERS (§T20.22) and in PROSE (§T20.27).**
+⚠ *Exactly the sample size §T20.24 was narrowed for.* **This pass was pre-registered to be able to
+withdraw it.**
+
+> **UNIVERSAL-SCOPE CENSUS, 16 grammars over the twelve, 2026-09-22T14:58:33Z:**
+> `every figure` 31 · `across N files` 6 · `every deadline` 4 · `every urgency` 4 · `corpus-wide` 3 ·
+> `every instance` 3 · `every reference` 2 · `carries everywhere` 1 · `every surface` 1 ·
+> `on every surface` 1 — **`56` instances; `4` are universal-scope claims TESTABLE against the live
+> system or the corpus, and all four were tested.**
+
+## 2. ❌ CLAUSE (ii) MISSES ON ITS OWN TERMS — *and says so*
+
+**Pre-registered: *at least THREE further CORRECTIONS claim a universal scope for a fix applied by
+literal match, and at least one has a surviving casualty.*** 🔴 **Only ONE further universal-scope
+claim failed, and it is not a correction at all — it is an architectural assertion.**
+⇒ ⚠ ***§T20.27's pattern claim is NARROWED in place, for the same reason §T20.24 was: it named the
+wrong carrier.*** **The failure mode is NOT a property of corrections. It is a property of any claim
+whose scope is asserted from a SURFACE FORM — a correction, an architectural statement, a diet rule,
+a pointer audit.** 📌 **The generalisation is weaker in one direction and considerably stronger in
+the other, which is why the clause was written to be losable.**
+
+## 3. 🔴🔴🔴 THE ONE THAT FAILED — *and it reaches the SYSTEM, not just the documents*
+
+**The claim, stated identically in TWO documents** *(`NBA_SYSTEM_ARCHITECTURE.md:902` and
+`NBA_OPEN_ITEMS.md:9880`)*: ***"`raw_json` JSONB on every reference and stats table."*** **In
+`OPEN_ITEMS` it is load-bearing — it is the premise of a truncation/storage-diet constraint.**
+
+> **`information_schema.columns`, 2026-09-22 — `nba_ref` + `nba_stats` BASE TABLES:**
+> 🔴 **`raw_json` on `10` of `33`.** `nba_ref` **4 of 14** *(`arenas` · `officials` · `players` ·
+> `teams`)* · `nba_stats` **6 of 19** *(`player_career_season_totals` · `player_impact_rating` ·
+> `player_onoff_profile` · `player_playtype_profile` · `player_season_profile` ·
+> `player_tracking_profile`)*. **21 of 33 carry no JSON column at all.**
+
+🔑🔑 **AND RULE 20's THIRD VOCABULARY FOUND THE PART THAT MATTERS.** *Probing by TYPE
+(`data_type IN ('json','jsonb')`) rather than by the NAME `raw_json` returns **12** tables, not 10:*
+**`nba_stats.player_differential_log` stores JSON as `details` and `nba_stats.player_tracking_detail`
+as `metrics`.** ⇒ 🔴 ***A truncation or storage-diet rule written against the string `raw_json` would
+silently skip two live JSON columns.*** ✅ **Both documents corrected in-pass (rule 12), and the
+constraint re-stated BY TYPE rather than by column name.**
+
+📌📌 ***THAT IS THE SAME FAILURE SHAPE — the third independent instance, and the FIRST OUTSIDE THE
+DOCUMENTS:*** **§T20.22 in pointers · §T20.27 in prose · §T20.28 in the LIVE SCHEMA.**
+✅ **Clause (iii) HIT in substance: the defect is not local to one author's file — the identical
+over-claim sits in two documents, and its consequence lands in a third place entirely (the
+database).** ***Scattered, therefore structural: no amount of care at writing time catches it.***
+
+## 4. ✅ RULE 22 POSITIVE CONTROL — *a universal-scope claim that is TRUE comes back clean*
+
+**`NBA_MASTER_SUMMARY.md:387`: *"`triple_double` has zero rows **on every surface**."***
+> **`SELECT count(*) FROM (SELECT DISTINCT market_key FROM nba_market.board_snapshots WHERE
+> market_key LIKE '%triple%')` → `0`.** **`nba_score.final_hp` `prop ILIKE '%triple%'` → `0`**, while
+> `prop ILIKE '%double_double%'` → **`47,504`** *(the contrast proves the probe can find a prop when
+> one exists)*.
+✅ **CONFIRMED — the claim holds, and it was NOT flagged. The instrument discriminates rather than
+condemning every "every".**
+
+## 5. 🔴 THE RULE CANDIDATE IS BLOCKED FOR THE **SECOND** TIME
+
+**The finding above wants a standing rule — *"a scope claim is tested by the MEANING, never by the
+form it was written in"*. It is NOT being numbered.** ⚠ **§T20.18 measured that the rules index
+lacks ten of its fifteen rules and cannot be read to check a new rule for duplication; §T20.16's
+lesson (rule 49 born and retired in seven minutes as a duplicate of rule 40) forbids writing one
+blind.**
+🔴🔴 ***This is the SECOND candidate rule the index defect has blocked — §T20.21's positive-control
+rule was the first. The index defect is no longer a documentation gap; it is a BRAKE ON THE SWEEP'S
+OWN METHOD, and it has now cost two rules in eight passes.*** **Escalated onto §T20.18's OWNER
+DECISION.**
+
+## 6. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:01:26Z** |
+| **(ii)** | **≥ 3** further *corrections* over-claim, **≥ 1** with a casualty | ❌ **MISS — exactly ONE further claim failed, and it is not a correction.** ✅ *The pre-registered consequence is taken: **§T20.27's pattern is NARROWED — the carrier is not "corrections" but "any scope asserted from a surface form".** Weaker in one direction, stronger in the other.* |
+| **(iii)** | **≥ 1** casualty in a **DIFFERENT DOCUMENT** from the claim | ✅ **HIT in substance — the identical over-claim sits in TWO documents and its consequence lands in the DATABASE.** *Scattered ⇒ **structural**, which is the branch the clause said would matter: care at writing time cannot catch it.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTY-FIFTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 7. ⚠ VERDICT
+
+🔴 **NOT CLEAN — a false architectural universal corrected in two documents, a storage-diet
+constraint re-stated by type, two JSON columns recovered that a name-based rule would skip, this
+sweep's own pattern claim narrowed, and a second rule blocked by the index defect.
+CLEAN STAYS 0/3.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **the pass was built to withdraw a generalisation and instead re-aimed it.**
+***§T20.27 thought it had found something about how CORRECTIONS fail; what it had found was how
+SCOPE fails — and the proof is that the third instance is not a correction, is not in prose, and is
+not in the documents at all. It is a column name in a live schema.*** 🔑 **The transferable form:
+`raw_json` is what the thing is CALLED; `jsonb` is what it IS. Every instance of this defect, in all
+three places, is a claim that tested the name and reported on the thing.**
