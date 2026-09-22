@@ -3884,7 +3884,9 @@ overreach**, corrected in place.
 **FINDING 2 — measured headroom, and the honest answer is comfortable.** The largest file any of
 the ten reads is **`nba_player_bio_current.json` at 0.27 MB — 27% of the limit**; the rest are
 0.20, 0.18, 0.12, 0.11 and four at 0.01 MB. **`nba_onoff_current.json` was 208,560 chars in T2 and is
-0.18 MB today** — roughly flat. **This is latent, not imminent, and no claim is made otherwise.**
+0.18 MB as measured 2026-09-21** — roughly flat. **This is latent, not imminent, and no claim is made
+otherwise.** *(The bare "today" anchored 2026-09-22, §T20.27; "latent, not imminent" is a JUDGMENT,
+not a countdown, and is correctly left alone.)*
 **What makes it worth recording is the failure mode**: the Contents API **does not error above 1 MB,
 it returns success with the content omitted** — so a worker crossing the line **reports a clean run
 and writes nothing**, and **`nba_control` records nothing either** (pass 68). **Two silent failures
