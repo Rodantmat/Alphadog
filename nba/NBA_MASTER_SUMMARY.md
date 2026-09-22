@@ -27790,3 +27790,68 @@ a rule retired · a rule merged · ten rules discovered to have no text.*
 pass in a dependent context.* ***T20 goes to the next session at 0/3, with the first genuinely clean
 read behind it and two independent ones owed — the same position T19 was left in, and for the same
 reason.***
+
+---
+
+# §T20.20 — PASS 15: *THE AT-A-GLANCE STATE WAS WRONG IN THREE ROWS, AND ONE OF THEM WAS MINE*
+
+*2026-09-22. **The owner-turn obligation audit** — not "is the turn quoted" (§T20.2 settled that) but
+**"was what it ORDERED done, and is the doing recorded."** *The answer arrived one step earlier than
+expected: the instructions are discharged AGAINST THE LEDGER, and the ledger is wrong.*
+
+## 1. 🔴🔴 THE FINDING — *three stale rows in the table the whole effort is steered by*
+
+**Owner SEG 604**: *"at this point you need to get 3 consecutive clean passes on **all the transcripts
+you did half work**!"* **SEG 691**: *"you need to go **one by one** and do it."* ***Both are
+discharged against the progress ledger — a reader decides which transcripts are half-done by reading
+that table.*** **It was wrong in three of its twenty rows.**
+
+| row | what it said | what is true |
+|---|---|---|
+| 🔴 **18** | *"IN PROGRESS — CLEAN 0/3 · **1 pass** · detail §T18.1"* | **CLOSED 2026-09-22 — 9 passes, CLEAN 3/3**, and this file carries **four** §T18 sections (§T18.4–§T18.7) |
+| 🔴 **19** | *"pending — 0/3, **not started**"* | **8 passes, §T19.1–§T19.11**, six standing rules born in it, **held open** under an OWNER DECISION |
+| 🔴 **20** | *"**7 passes** (0–6)"* | **16 passes (0–15)** — ***stale by nine, and written by me at the pass-6 sync*** |
+
+✅ **All three corrected.** *Authority for row 18: `NBA_SWEEP_RUN_LOG.md`'s own sentence, **"T18 closed
+2026-09-22 at 9 passes, CLEAN 3/3."*** *The ledger and the run log had disagreed since.*
+
+## 2. 🔑 THE SHAPE, AND WHY IT IS THE FIFTH INSTANCE
+
+**§T9.25a named it and this file quotes the naming**: ***"a correction propagates to the ENTRY and the
+topical documents, and stops at the SUMMARY ROWS — which are what a reader reads first."*** **Rows 18
+and 19 are exactly that: the entries were written, the summary row was not re-derived.**
+
+🔴🔴 **And row 18 inverts the usual direction.** *The ledger is watched because a stale row can
+over-report progress.* ***This one UNDER-reported it — a closed, 3/3 transcript displayed as
+in-progress at one pass.*** **A reader steering by that table would have re-swept T18 for nothing.**
+
+⚠⚠ ***ROW 20 IS THE ONE THAT MATTERS MOST, BECAUSE IT IS MINE.*** **This file's own §T1 warning:**
+> *"The at-a-glance state is what a future reader trusts first, so it is the thing most worth keeping
+> true — and a stale ledger is the single most likely way this effort ends early against a wrong
+> picture of what remains."*
+
+***I wrote that row at pass 6 and left it stale for nine passes while running five consecutive passes
+auditing the corpus for stale figures.*** **Passes 9–13 walked struck literals, merged a duplicated
+rule and found ten rules with no text — and never re-derived the row recording them.**
+
+## 3. 📏 CLAUSE SCORING — *pass 15*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at 14:04:09Z |
+| **(ii)** | of the 22 owner turns, **at least one instruction's discharge is nowhere recorded** | ⚠ **PARTIAL — and the route was different.** *SEG 604's and SEG 691's discharge IS recorded — in a ledger that misstated three of twenty rows. **The instruction was discharged; the RECORD of the discharge was false**, which is a third state the clause did not anticipate.* |
+| **(iii)** | at least one instruction was discharged **only forward, never retro-applied** | ✅ **HIT — already on file and confirmed again**: the DRIFT NOTICE exempted T1/T2 against owner **SEG 817**'s explicit *"since the **T1** for the new files"* (§T20.9 §4). 📌 *Counted as a confirmation, not a new finding — rules 26/28.* |
+
+⚠ **Clause (ii)'s PARTIAL is rule 37's shape** — *"a failure census has THREE outcomes, not two"*.
+**Here they are: DISCHARGED · NOT RECORDED · and *recorded, but the record is wrong*.**
+✅ **Baseline `636 · 2 · 484 · 481` for the SEVENTEENTH consecutive run.**
+
+## 4. ⚠ VERDICT
+
+🔴 **NOT CLEAN — three ledger rows corrected. CLEAN RESETS TO 0/3** *(pass 14's clean result is
+superseded by this pass's findings; owner **SEG 858**: "anything new for ANY document resets the
+count")*. ⚠ **Rule 46 barred it from counting in any case.**
+
+📌 ***The lesson is narrow and it is about me, not the system:*** **five passes spent auditing the
+corpus for figures that had gone stale, while the row recording those very passes went stale
+underneath them.** ***The instrument does not audit itself, and neither does the auditor.***
