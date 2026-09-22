@@ -31917,3 +31917,123 @@ new is that they were RE-TESTED live, which is rule 21)*.
 would rot. It re-tested every claim it had made about what exists and what is empty, and every one
 held. The single thing that had rotted was a sentence declaring that a correction was finished.**
 ***The system did not move. The bookkeeping did.***
+
+---
+
+# §T20.55 — T20 PASS 50 · THE COMPLETENESS-DECLARATION AUDIT: RULE 40's OWN INSTRUMENT, RUN OVER EVERY STRIKETHROUGH
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only**: greps and one script. **Nothing written to the live system;
+`NBA_COMPASS.md` not written to.**
+
+## 0. THE POPULATION WAS CHANGED MID-PASS, AND THE CHANGE IS RECORDED
+
+**The pre-registration said to enumerate COMPLETENESS DECLARATIONS** — *"now flagged in both"*,
+*"corrected everywhere"*, *"all six sites"*. **That grep returns 60 lines, but 55 of them are
+single-site *"corrected in place"*, which makes NO completeness claim and is not in scope (rule 19).
+Only FIVE were multi-site, and three of those are already on file.**
+
+🔑 **So the population was replaced with the one RULE 40 ITSELF SPECIFIES**, quoted from this log:
+> ***"find every struck-through value in the twelve, then check whether that same value is still
+> asserted UN-STRUCK anywhere else."***
+
+⚠ **This is the same angle with a better enumeration, not a different pass** — *a strikethrough IS
+the old literal, explicitly marked by the correcting pass.* **Recorded rather than done quietly,
+because a pass that silently swaps its population can score any clause it likes.**
+
+| | |
+|---|---|
+| **strikethrough spans in the twelve** | **65** — tree `d8efcd9c1bfb8078fe5d509674cba4350273699e`, 2026-09-22T17:29:42Z |
+| **containing a numeric literal** | **31** |
+| **long enough to grep safely (rule 15)** | **27 — all tested, not a sample** |
+
+⚠⚠ **RULE 26/28, AND IT BITES HARD HERE**: *§T20.13, §T20.14 and §T20.15 all ran strikethrough
+audits — at **27** spans and then **34** spans, 16 numeric.* **The population is now 65 because this
+session's passes 42–49 added strikethroughs. So what this pass genuinely tests is the DELTA plus a
+re-test of the old set, and it is scored that way.**
+
+## 1. THE MECHANICAL SCAN, AND WHY ITS RAW OUTPUT IS WORTHLESS
+
+**A script grepped each struck literal across all twelve and flagged every hit on a line carrying no
+correction marker** (`~~`, `corrected`, `§T`, `retract`, `superseded`, `originally`, `struck`,
+`dated`). **Result: 27 literals tested · 12 with at least one unmarked hit.**
+
+⚠⚠ **ELEVEN OF THE TWELVE ARE SOUND ON INSPECTION (rule 19, and it cannot be automated):**
+
+| literal | unmarked hits | what they actually are |
+|---|---|---|
+| `110,955` | 26 | present-tense assertions of a figure rule 40 classifies as **DATED, not retracted** — *"RIGHT WHEN WRITTEN"* |
+| `100% coverage` | 13 | mostly §T11.12b's own headings and analysis of the finding |
+| `20 of 135` | 4 | §T9.29a's heading and the rule-28 analysis — **and already walked at §T20.14** |
+| `RULE 49` | 3 | section headings about its retirement |
+| `0.18 MB today` | 3 | the time-anchoring audit's own inventory tables |
+| `P2 cron 01:00 PT` · `P3 cron 1:15 PM PT` | 2 each | **attributed quotations inside the passages recording the correction** — `NBA_SYSTEM_ARCHITECTURE.md:633-634` strikes both and states **"P2 — NO CRON" / "P3 — NO CRON"** |
+| `38,686,696 rows` | 1 | **§T20.13's own verbatim quotation of the defective line** it was correcting |
+| `Mondays 19:00 UTC — 12:00 PST / 11:00 PDT` | 1 | §T20.49's quotation of the row it corrected **this session** |
+| `COMPASS fact 176 still describes the old plan` | 1 | an audit's inventory row |
+| `−2439 to +33xx` | 1 | §T9's analysis of the retracted pair |
+
+📌 ***Twelve flags, eleven false positives. The count is mechanical; the judgment is not — and a pass
+that published the 12 would have manufactured eleven defects out of the corpus doing its job.***
+
+## 2. 🔴 THE ONE THAT IS REAL — AND IT FAILS IN A DIFFERENT DOCUMENT FROM THE ONE THAT WAS FIXED
+
+**§T11.12b found that a documented *"100% coverage"* is **99.76%*** — 2,454 of the 2,460 games in
+`nba_market.schedule_norm` — *"the '100%' counted the games that were MAPPED, i.e. a denominator
+taken from the numerator's own table."* **It named the carriers.**
+
+| site | state |
+|---|---|
+| **`NBA_DATABASE.md:1783`** | ✅ **STRUCK**: *"2,454 games, ~~100% coverage~~ 🔴 **99.76% — corrected 2026-09-21, §T11.12b**"* |
+| **`NBA_OPEN_ITEMS.md:2298`** | ✅ **sound** — an attributed quotation of what was documented |
+| 🔴 **`NBA_FINAL_SCORING_CALIBRATION.md:2757-2762`** | ⚠ **carries a full, correct correction note** — *"corrected 2026-09-21 by §T11.12b: 2,454 of the 2,460 games … is **99.76%**, not 100%"* — **and then leaves the literal STANDING, UNSTRUCK, immediately below it**: `(307,604 rows, 2,454 games, 100% coverage).` |
+
+⇒ 🔴 ***The same correction is applied in two FORMS in two documents: one strikes the literal, the
+other annotates around it.*** **The practical consequence is exact: the reader who reaches the
+parenthetical is corrected, and the reader who skims the bullet — or greps `100% coverage` — is
+not.** ✅ **CLAUSE (iii) HITS**: the failure is in a different document from the one that carries the
+struck form, which is §T9.25a's stated failure mode.
+
+## 3. ✅ A CORRECTION RE-VERIFIED LIVE, BY A DIFFERENT PASS THROUGH A DIFFERENT ROUTE
+
+**§T20.13 corrected `NBA_FINAL_SCORING_CALIBRATION.md:1562` from `38,686,696 rows` to
+`19,215,200 rows LIVE`.** ✅ **§T20.53, five passes later and for an unrelated reason, measured
+`nba_score.final_hp` at `19,215,200` rows — independently, from the other end.**
+📌 ***The audit found one correction that had not fully landed and one that had landed exactly, and
+the second is the more reassuring of the two.***
+⚠ **And §T20.53's finding sharpens the same line further**: it says *"both seasons"*, while **162 of
+the 163 `game_date`s are before `2025-07-01`.** *Recorded here as a pointer, not re-opened.*
+
+## 4. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; reported as **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTY-FIRST consecutive identical run.** Measured 2026-09-22T17:33:01Z |
+| **(ii)** ≥1 completeness declaration is FALSE | 🔴 **TRUE, but only just — and the denominator is the finding: `26` of `27` struck literals are correctly and completely propagated. ONE is not** |
+| **(iii)** ≥1 fails in a DIFFERENT document from the one it names | 🔴 **TRUE — `NBA_DATABASE.md` strikes it, `NBA_FINAL_SCORING_CALIBRATION.md` does not** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTY-FIRST consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — one incompletely-propagated correction, corrected in place. No new open item: the
+underlying fact (99.76%, not 100%) is already on file and correct in two of its three sites.**
+✅✅ **AND THE PRINCIPAL RESULT IS AGAIN A RETIREMENT — the second in three passes. Rule 40's own
+instrument, run over every strikethrough in the corpus for the first time, finds the sweep's
+corrections holding at 26 of 27. Combined with §T20.54's 26 of 26 on live-state claims, the two
+audits that most directly ask "can this corpus be trusted?" both answer yes, with one named
+exception each.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **the strikethrough-audit angle itself is PARTLY PRIOR** — §T20.13
+walked 27 spans, §T20.14 walked 34 *(16 numeric)*, §T20.15 walked the prose ones; **the population is
+65 today only because this session added to it, and the pass is scored on that basis** · **the
+`38,686,696` family** *(§T20.13 — 4 occurrences, 3 sound, 1 corrected)* · **`20 of 135`** *(§T20.14)*
+· **`0.18 MB today` and `19 days stale`** *(the time-anchoring audit)* · **`COMPASS fact 176`**
+*(§T20.49)*.
+
+📌 ***The lesson:*** **rule 49 was born to specify this instrument and was retired seven minutes
+later because rule 40 already specified it. Both were right, and neither had run it. Running it took
+one script and found that the corpus is 26 for 27 — a number nobody could have asserted before, and
+the kind of number an owner actually needs.**
+***The instrument flagged twelve. Eleven were the documents doing their job. Naming an instrument is
+not running it, and running it is not reading it.***
