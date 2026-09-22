@@ -1,5 +1,113 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴🔴 **`[LIVE-AUDIT]` COMPASS FACT 69 WAS SILENTLY DESTROYED BY A `github_patch_file` CALL AND IS STILL MISSING TODAY** *(T15 pass 2, §T15.3a, 2026-09-22)*
+
+⚠⚠ **This is an OPEN defect in the live operating document, not a historical one.** *The COMPASS is the
+file every session is told to read first. **It has no fact 69, and nothing in it says so.***
+
+### ✅ VERIFIED FOUR WAYS — the recount, the git history, the diff, and the surviving content
+
+| | Evidence | Pinned |
+|---|---|---|
+| **1** | **The numbering jumps 68 → 70.** `grep -nE "(^|[^0-9])69\."` over `nba/NBA_COMPASS.md` returns **ZERO hits** — the number does not appear in any form. | 2026-09-22 09:28 UTC |
+| **2** | **The recount that found it**: `grep -cE "^[0-9]+\. "` = **111 numbered lines**, highest fact **107**. **111 = 107 distinct − 1 missing (69) + 5 duplicates (1–5, a separate list at the head of the file).** *The arithmetic closes, which is what makes the gap a single missing fact rather than a formatting artifact.* | 2026-09-22 09:28 UTC |
+| **3** | **Git history**: fact 69 is PRESENT in `af540a9` and `07a3039` (**2026-09-11 22:15 PDT = 2026-09-12 05:15 UTC**) and **ABSENT in the very next COMPASS commit, `8e910da` (2026-09-12 16:52 PDT)**. 🔑 **T15's own prose names that exact moment**: *"compass was last updated at **05:15 utc today — facts 66-69**."* | `git log -- nba/NBA_COMPASS.md` |
+| **4** | **The mechanism, read off the diff**: `8e910da` is **8 insertions, 1 deletion** — a `github_patch_file` find-and-replace whose **`old_str` was fact 69's line** and whose **`new_str` was facts 70–77, WITHOUT carrying fact 69's text forward.** ✅ **`facts 66/67/68 before=1 after=1; fact 69 before=1 after=0; fact 70 before=0 after=1.`** | `git show 8e910da -- nba/NBA_COMPASS.md` |
+
+🔑🔑 **THE SAME FAILURE MODE STRUCK TWICE IN THE SAME SESSION, AND ONLY ONE WAS CAUGHT.** *T15's prose
+records the sibling:* ***"my insert split fact 79 — its heading is gone and the body now dangles after
+81. repairing."*** ✅ **That one was repaired in-session.** 🔴 **Fact 69's loss was never noticed —
+because the corrupted fact 79 was VISIBLE as a dangling body, while fact 69's line was cleanly
+replaced and left no trace to see.** ⚠⚠ **A destroyed record that leaves the document well-formed is
+invisible to the author and invisible to every reader after.**
+
+### ✅ WHAT FACT 69 CARRIED — and how much of it survives elsewhere *(rule 7: every distinctive term probed, `.{0,80}` both sides, both trees, 2026-09-22)*
+
+> *Fact 69, verbatim from `af540a9`:* **"REFERENCE TABLES (2026-09-12): `nba_market.game_lines_snapshots`
+> (h2h/spread/total at morning 08:00 PT + window 14:45 PT / first tip − 2h, 10 books, both seasons —
+> ParlayAPI holds closing only); `nba_market.event_game_map` (Odds API event → NBA game id, 96%; built
+> from game-log MATCHUP; `nba_teams_current.json` is EMPTY → static 30-team map); two-way status
+> derived from injury-report reason "G League - Two-Way" (config `two_way_designation_source`). Infra:
+> repo is PUBLIC (Actions free, 20 concurrent jobs), Postgres now 1 vCPU / 2 GB / 47 conn, MLB
+> `backtest` schema dropped (7 GB). Live board archiving is NOT done."**
+
+| Term | thirty | twelve | |
+|---|---|---|---|
+| `game_lines_snapshots` | 57 | 39 | ✅ recovered independently |
+| `event_game_map` | 46 | 30 | ✅ recovered |
+| `14:45` window snapshot | 16 | 11 | ✅ recovered |
+| `nba_teams_current` | 24 | 19 | ✅ recovered |
+| MLB `backtest` schema / 7 GB | 13 | 9 | ✅ recovered |
+| "10 books" | 2 | 1 | ✅ recovered |
+| `47 conn` | 1 | **0** | ⚠ thirty only |
+| **`two_way_designation_source`** | **0** | **0** | 🔴🔴 **LOST EVERYWHERE** |
+
+✅ **So the sweep re-derived almost all of fact 69's content from the transcripts and live audits —
+which is the strongest available argument that this kind of loss is survivable.** 🔴🔴 **One item is
+not: `two_way_designation_source` appears in ZERO of the thirty, ZERO of the twelve, and has NO code
+reference anywhere in the repo** *(`grep -rn` over the whole tree, 2026-09-22: zero hits)*. **COMPASS
+fact 69 was the only place it was ever written down.**
+
+### 🔴🔴 AND THE KEY IS LIVE, LOAD-BEARING, AND NOW UNDOCUMENTED
+
+`[LIVE-AUDIT]` **`SELECT` against `nba_config.classification_config`, 2026-09-22** *(positive control:
+`board_sources_decision` returns 1 on the same query — so the probe is sound; **66 config keys total**)*:
+
+| | |
+|---|---|
+| `config_key` | **`two_way_designation_source`** — **1 row, live** |
+| `updated_at` | **2026-09-12T02:38:24Z** *(decided the same day fact 69 was destroyed)* |
+| `notes` | *"Two-way contract status derived from the injury reports rather than mined."* |
+| `rule` | **A8 `rookie_two_way_limits`**: `two_way(player, date) = EXISTS report row with reason ILIKE %two%way% and snapshot_ts <= cutoff(date) in a trailing window (e.g. 30 days)`; **rookie = `FROM_YEAR == season start year` from `nba_all_players.json`** |
+| `stage` | **`phase1_baseline`** *(known before the window)* |
+| `evidence` | **Dec 2025 shard alone: 23,163 rows, 76 distinct players across 29 teams** |
+
+🔑🔑 **WHY IT MATTERS RIGHT NOW**: **N1 ships with `two-way 0.271` — the LOWEST questionable-resolution
+rate of any reason class**, roughly half the rotation average *(§0a-T15 §4 in
+`NBA_FINAL_SCORING_CALIBRATION.md`)*. **That number is produced by this derivation, and the
+derivation's only written record was deleted.**
+
+### ⚠ A SECOND-ORDER DEFECT THE LIVE CONFIG ITSELF WARNS ABOUT — **the documented literal does not match the parsed one**
+
+*The live config's `source` field says, in its own words:* **"the league lists two-way players with
+reason text `"G League - Two-Way"` — PARSER RENDERS IT `"G League - Two- Way"`"** *(a space inside
+"Two- Way")*, *plus variants `"… Two- Way Injury/Illness - …"` and `"… Two- Way Return to Competition …"`.*
+
+⚠ **Both written records use the UNSPACED form**: destroyed COMPASS fact 69 (*"G League - Two-Way"*)
+and **`nba/scrape_nba_injury_report.py:9`** (*"G League - Two-Way"*). ✅ **The derivation itself is
+SAFE — the config matches with `ILIKE %two%way%`, a wildcard that catches both forms.** 🔴 **But a
+reader copying the documented literal into a new query matches NOTHING**, and there is now no
+document that carries the warning. *Recorded as a trap, not as a live failure — nothing is currently
+broken by it.*
+
+### ⚠ THE PROBE THAT ALMOST BECAME A FALSE POSITIVE — **rule 22's positive control doing its job**
+
+*`nba_score.availability_delta` returned **0 two-way rows** on `reason ILIKE '%two%way%'`. **That is
+not an absence.*** The positive control — `GROUP BY reason` — shows the column holds only
+**`reallocated` (3,446)** and **`now_out` (828)**: **it is a DELTA TYPE, not an injury-report reason.**
+🔒 **Candidate killed before publication.** ⚠ **But one real `[LIVE-AUDIT]` fact fell out of it**:
+**`nba_score.availability_delta` holds 4,274 rows for EXACTLY ONE date, `2025-11-29`** *(`min` = `max`
+= 2025-11-29)*. **The twelve carry the row count `4,274` in seventeen places and NONE of them carry
+the one-date scope** — *so a reader sees a populated table where there is a single-day artifact, on
+the same date O5 records as the per-prop-depth baseline day.*
+
+### 🔴 THE REMEDY — **OWNER DECISION**, because every option is a write
+
+| | Option |
+|---|---|
+| **(a)** | **Restore fact 69** to `nba/NBA_COMPASS.md` from `af540a9`, at its own number, updating *"Live board archiving is NOT done"* — **which fact 75 now supersedes** *(the archiver exists; see `NBA_SYSTEM_ARCHITECTURE.md` §0f-4)*. |
+| **(b)** | **Record `two_way_designation_source` in the twelve only**, and leave the COMPASS numbering gap as a scar with a one-line note. *This sweep has done the second half of (b) here; the COMPASS itself is not written to.* |
+| **(c)** | **Audit the COMPASS for OTHER silent overwrites the same way** — *this sweep found fact 69 by recounting the numbering; the same recount is cheap and has never been run before.* ✅ **Already run once here: 1–107 with only 69 missing, so fact 69 is the ONLY numbering casualty. Nothing rules out an overwrite that preserved the numbering.** |
+
+⚠ **This sweep does not write to `nba/NBA_COMPASS.md`** — it is the live operating document and the
+concurrent build chat writes to it. **The finding is recorded here with the commit SHAs so the repair
+is a two-minute job for whoever takes it.** 🔑 **And the method lesson is general**: ***a
+find-and-replace whose `old_str` is a neighbouring record's line destroys that record and leaves the
+file well-formed. The sweep's own rule — "use a SHORT SINGLE-LINE ANCHOR, grepped for first" — is
+what prevents it, and this is the first evidence in the corpus of what it prevents.***
+
+---
+
 ## 🔴 **T15 PASS 1 — OPEN ITEMS THE TRANSCRIPT LEAVES NAMED AND SCOPED** *(§T15.2, written 2026-09-22 from the 2026-09-12/13 transcript; **transcript-sourced, NOT re-taken live** — tagged so a reader does not mistake them for `[LIVE-AUDIT]` state)*
 
 | # | Item | State as T15 leaves it |
