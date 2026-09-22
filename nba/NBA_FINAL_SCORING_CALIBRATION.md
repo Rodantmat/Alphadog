@@ -8,6 +8,7 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 | Date | What |
 |---|---|
 | 2026-09-20 | Created. Material from T4/T7/T8 (the two-layer contract), T9 (factor-layer size), T15–T16 (factor gates, blowout, matchup) and the live session (final HP, confidence v3, the enhancing score, as-of calibration parity). |
+| **2026-09-21 → 09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `20` commits that this log never recorded.** *T15–T18 and T20 material: **§0a-T15 the factor verdicts with each layer's evidence** · §1b A2's fitted allocator equation · §T15.4a A2 closed 2026-09-13 (both dates) · **§T15.5 the baseline beats every enrichment** · §T16.2 the M1/B4 reversal evidence · §T16.3 the score/confidence contract · §T17.1 the confidence specification · §T17.2 the confidence build in six versions · **§T17.3 open item O6 RESOLVED — `f_phase` is live** · **§T18.1 the owner's score directive** · §T18.2 the score's three formulas · **T18 pass 6: the score formula's drop branch has never fired**. **Corrections in place: the 100% market-spread coverage claim and its surviving literal struck · the one bare `38.7M` assertion corrected (live table is `19,215,200`) · T18 pass 2's budget table corrected in place at §5.2 · one dangling cross-reference fixed · rows 5, 8 and 27 filled from source.*** |
 
 ---
 
