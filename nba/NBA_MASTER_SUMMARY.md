@@ -31374,3 +31374,144 @@ with a constant — so the same pipeline enforces a 13:00 PT gate it computes on
 13:15 PT cutoff it computes another, and the two agree for four months of the year.**
 ***And the probe that nearly missed it was mine: I searched for `TZ:` and the answer was written
 `TZ=`.***
+
+---
+
+# §T20.51 — T20 PASS 46 · THE THRESHOLD AUDIT: THE CERTIFIER'S JOB IS TO REFUSE. WHAT WOULD IT REFUSE?
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only**: file reads and five `SELECT`s. **No dispatch, no `run_job`, no
+re-run, nothing edited, `NBA_COMPASS.md` not written to.**
+
+## 0. POPULATION, ENUMERATED BY READING THE FILE (rules 17/21/30)
+
+**`nba/certify_pipeline.py` read in full — 128 lines, tree
+`f2d77f57ff3a9dc2740327db9942298fa0858706`, 2026-09-22T16:56:17Z.** **TWELVE checks: P1 = 3 · P2 = 4
+· P3 = 5.** **By threshold shape:**
+
+| shape | count | which |
+|---|---|---|
+| **`> 0` — presence** | **5** | P2 `baseline_history has today`, `as-of calibration available` · P3 `final_hp has today`, `confidence model loaded`, `board archived today` |
+| **`== 0` — integrity** | **3** | P2 `no invalid probabilities` · P3 `no NULL confidence`, `score in range 0-100` |
+| **magnitude** | **3** | P1 `> 10000` defender ratings, `> 400` players · P2 `>= 25` distinct props |
+| **freshness** | **1** | P1 `defender_ratings refreshed` — `<= 8 days` |
+
+## 1. 🔴 THE HEADLINE WAS KILLED BEFORE PUBLICATION — RULE 26/28, AND IT IS THE FOURTH TIME IN SIX PASSES
+
+**The draft finding was: *"five of twelve checks pass on one row; the certifier written in response to
+a 44%-missing incident would not catch a 44%-missing incident."*** ⚠⚠ **IT IS ALREADY ON FILE, and in
+sharper words than mine:**
+- **`NBA_WORKERS.md:2065`** — ***"A P3 run that scores ONE leg passes all five checks"***
+- **`NBA_OPEN_ITEMS.md:13978`** — *"All five P3 checks are `count(*) > 0` or `count(bad) == 0`…"*
+- **`NBA_OPEN_ITEMS.md:13977`** — *"gates — P1's `> 10000` defender ratings and `> 400` players, and
+  P2's `count(DISTINCT prop) >= 25`"* — **the three magnitude gates, already enumerated.**
+**KILLED AND LOGGED.** ✅ **And a second kill from the same check**: the three STATIC magnitudes are
+on file too — `111,768` *(13 hits)*, `5,212` *(8)*, `9,904` *(11)*.
+
+🔑🔑 **WHAT THE PRIOR WORK DID NOT DO IS MEASURE WHAT THE THRESHOLDS ARE WEAK *AGAINST*.** *"One leg
+passes" is a structural observation. **How many legs are there?** was never asked, and that is the
+number the owner needs.* **That is this pass.**
+
+## 2. ✅ THE TOLERANCES, MEASURED — WHAT COULD GO MISSING AND STILL CERTIFY
+
+**Live, 2026-09-22.** ⚠ **The season has not started, so `game_date = today` is empty; these are the
+HISTORICAL per-date magnitudes, and they are labelled as such rather than guessed.**
+
+| check | threshold | per-`game_date` magnitude | dates observed | 🔴 could be missing and still pass |
+|---|---|---|---|---|
+| P3 `board archived today` | `> 0` | **avg 71,044 legs** · max 177,251 · min 1,394 | **381** | 🔴 **99.9986%** |
+| P3 `final_hp has today` | `> 0` | **avg 117,885 rows** · max 238,224 · min 13,014 | **163** | 🔴 **99.9992%** |
+| P2 `baseline_history has today` | `> 0` | **avg 59,518 rows** · max 119,112 · min 6,507 | **325** | 🔴 **99.9983%** |
+| P2 `as-of calibration available` | `> 0` | **9,904 cells** *(total, not per-date)* | — | 🔴 **99.99%** |
+| P1 `defender_ratings rows` | `> 10,000` | **111,768** | — | 🔴 **91.1%** |
+| P1 `player name map populated` | `> 400` | **5,212** | — | 🔴 **92.3%** |
+| P3 `confidence model loaded` | `> 0` | **10 rows** with `deduction > 0` | — | 90% |
+
+⚠⚠ **RULE 19, APPLIED AND NOT SKIPPED.** *A low threshold is not automatically a defect, and the
+certifier's own docstring is honest about its vocabulary:* **it says it *"asserts every artefact it
+was supposed to produce is PRESENT and FRESH"*, and `> 0` IS presence.** 🔑 ***The gap is between the
+docstring's WHAT and its WHY: the WHY is "a missing 44% of the board went unnoticed for TWO DAYS",
+and catching that needs COMPLETENESS, which no check in the file measures. The checks answer a
+different question than the incident that motivated them — which is a fairer statement than "the
+checks are wrong", and it is the one the numbers support.***
+
+## 3. 🔴 THE ONE TIGHT THRESHOLD HAS ALREADY FIRED ON REAL DATA — AND NOBODY KNEW
+
+`count(DISTINCT prop) >= 25`, detail string *">= 25 of 30 props"*. **Live over all 325 dates in
+`nba_score.baseline_history`:**
+
+| | |
+|---|---|
+| max distinct props on a date | **30** |
+| **dates at exactly 30** | **304 of 325** |
+| min distinct props on a date | 🔴 **22** |
+| 🔴 **dates BELOW the threshold** | **21 of 325 — 6.5%** |
+
+⇒ 🔴 ***P2's certifier would have failed on twenty-one historical slates.*** **This is the only
+threshold in the file calibrated tightly enough to bite, and the historical record says it bites
+about one slate in fifteen.** ⚠ **Whether those 21 are real defects or legitimately short slates is
+NOT RECORDED and this pass does not guess** — *but the owner is entitled to know, before opening day,
+that `CERT_STRICT=1` on this check implies a red P2 roughly every fifteenth night unless those dates
+are understood.* 🔑 **And it is the exact hazard the corpus names in its own words: *"a scheduled job
+failing nightly against an empty schedule trains everyone to ignore red builds."*** ✅ **Zero hits
+for `21 of 325` across `nba/` ⇒ NEW.**
+
+⚠ **CLAUSE (iii) — the denominator is a constant.** *">= 25 **of 30**" hardcodes 30, and the live max
+is exactly 30, so it is currently accurate and nothing derives it.* ⚠⚠ **The table that would supply
+it, `prop_universe`, is MID-REBUILD by the concurrent session and its counts are NOT final (standing
+owner instruction) — so this is recorded as a pattern instance, not as a number.** 📌 **Third
+instance of pass 45's pattern: a value that should be derived is written as a constant.**
+
+## 4. 🔴🔴 P1's CERTIFIER FAILS TODAY — AND THAT IS THE CERTIFIER WORKING
+
+**`SELECT max(as_of_date) FROM nba_ref.defender_ratings` ⇒ `2026-04-09`.** **Today is 2026-09-22 ⇒
+`166` days.** **Threshold: `<= 8 days`.**
+⇒ 🔴 ***`PIPE=p1` exits 1 right now, on the first of its three checks.***
+
+✅✅ **AND THIS IS THE POSITIVE RESULT OF THE PASS.** *The single check in the whole file that
+measures **freshness against a cadence** rather than presence against zero is the single check that
+catches the system's largest known problem.* **The docstring's claim — *"Freshness is measured
+against the pipeline's own cadence, not a fixed date, so it keeps working next season without
+edits"* — is TRUE, and it is the design the other eleven checks do not follow.**
+
+⚠ **AND `nba_ref.defender_ratings` IS A TENTH FROZEN TABLE.** **The SEASON-CRITICAL item of
+2026-09-21 lists NINE** — `teams`, `arenas`, `officials`, `player_onoff_profile`,
+`player_impact_rating`, `nba_calendar.games`, `player_playtype_profile`, `player_tracking_detail`,
+`players` — **and `defender_ratings` is not among them.** ✅ **Zero hits for `2026-04-09` across
+`nba/` ⇒ NEW.** 🔑 **Combined with §T20.31 (`nba_control.job_runs` and `worker_run_log` both EMPTY,
+*"no NBA job has ever recorded a run in the database"*): the certifier would tell the owner about the
+frozen static layer — *if anyone ran it.*
+
+## 5. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**, and **reported as §T20.50 requires**: the stable figure is the Δ against the re-measured baseline — **`484 − 471 = 13` segments this sweep has covered** — never the absolute level. **Baseline `636 · 2 · 484 · 481` — FORTY-SEVENTH consecutive identical run.** Measured 2026-09-22T17:01:38Z |
+| **(ii)** ≥1 threshold low enough that a badly degraded run still passes | 🔴 **TRUE, and now QUANTIFIED for the first time: 99.998% of a real board, 99.999% of a real scored slate, 91-92% of the two P1 magnitude gates.** ⚠ **The structural claim was PRIOR (killed); the measurement is new** |
+| **(iii)** ≥1 threshold is a constant where the true number is already available | ⚠ **TRUE but recorded at reduced strength: `>= 25 of 30` hardcodes 30 — and `prop_universe`, the table that would derive it, is MID-REBUILD, so the pattern is recorded and the number is not** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FORTY-SEVENTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — three new measured findings**: the tolerances *(99.998% of a board can vanish
+unnoticed)*, the `>= 25` check's **21 of 325** historical failures, and **P1's certifier failing today
+on a TENTH frozen table**. **Recorded as an amendment to the existing certifier item rather than a
+new one, because the structure was already on file — the numbers are what was missing.**
+✅✅ **AND THE PASS'S REAL RESULT IS A DESIGN THAT ALREADY EXISTS IN THE FILE: the freshness check
+works, it is the only one measured against a cadence instead of against zero, and its own docstring
+explains why. Eleven checks need the pattern of the twelfth.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **"one leg passes all five checks"** *(`NBA_WORKERS.md:2065`)* ·
+**"all five P3 checks are `> 0` or `== 0`"** *(`NBA_OPEN_ITEMS.md:13978`)* · **the three magnitude
+gates enumerated** *(`:13977`)* · **T20-6's "7 of 12 assert tables their pipeline never writes"**
+*(confirmed, scored on the remaining five)* · **the three static magnitudes `111,768` / `5,212` /
+`9,904`** *(13, 8 and 11 hits respectively)* · **`certify_pipeline.py:27`'s PST default** *(§T20.50,
+T20-12)*.
+
+📌 ***The lesson:*** **the sweep had already proved the certifier could pass on one row. It had never
+asked how many rows there should be — and the answer is seventy-one thousand. A structural criticism
+tells you a gate is loose; a measurement tells you it is loose by a factor of seventy thousand, and
+only one of those is something an owner can prioritise.**
+***The gate that fires is the gate that was built differently: eleven checks ask "is anything
+there?", one asks "is it as recent as it should be" — and that one is red today.***
