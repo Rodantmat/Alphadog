@@ -31242,3 +31242,135 @@ header spotted the DST crossing, named the months it spans, explained why the cr
 a table, and computed the two rows beneath it correctly from scratch.**
 ***Nine of nine claims held in the file that did the arithmetic; the one that failed is the one that
 explained why the arithmetic was hard.***
+
+---
+
+# §T20.50 — T20 PASS 45 · THE TIMEZONE AUDIT: THE COMMENTS GOT DST WRONG. DOES THE CODE?
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only**: greps and reads on the fast-forwarded clone. **No dispatch, no
+`run_job`, no re-run, no workflow or script edited, `NBA_COMPASS.md` not written to.**
+
+## 0. POPULATION, ENUMERATED FROM ITS SOURCE (rules 17/30)
+
+**The `run:` lines of `nba-p1-weekly-static.yml`, `nba-p2-overnight-heavy.yml` and
+`nba-p3-afternoon-light.yml`, `grep`-extracted and de-duplicated ⇒ 40 distinct scripts**, pinned
+**2026-09-22T16:49:39Z**, tree **`29a4d08a9b5252941e5bde35510ddfe1481ae387`**. **Plus
+`nba/nba_asof.py`, `nba/nba_season.py`, `nba/nba_names.py` and `main.py` ⇒ 44 files examined.**
+
+## 1. ✅✅ THE GOOD NEWS FIRST, BECAUSE IT IS THE BIGGER HALF — THE SLATE DATE IS DST-CORRECT
+
+**P2 `:60` and P3 `:67`, quoted:**
+```
+if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi
+```
+**And P3's refusal guard, `:68` and `:73`:**
+```
+H=$(TZ=America/Los_Angeles date +%H%M)
+if [ "$A" = "$(TZ=America/Los_Angeles date +%F)" ] && [ "$H" -lt "1300" ]; then
+  echo "::error::Refusing to run for TODAY before 13:00 PT - Pacific clubs file until 1:00 PM PT."
+```
+✅ **The two most consequential clock decisions in the system — WHICH SLATE and WHETHER TO RUN — use
+the IANA zone through the shell and are therefore correct on both sides of every DST boundary.**
+**That date is then passed down as `BT_ASOF`, `DELTA_ASOF`, `BS_ASOF` and `CERT_DATE`, so every
+script's own "today" default is overridden by a correctly-resolved value.**
+
+⚠⚠ **AND MY OWN PROBE MISSED THIS AT FIRST, WHICH IS RECORDED RATHER THAN QUIETLY FIXED.** *The
+pre-registration's rule-20 instruction was to "check the workflow `env:` blocks for `TZ` before
+calling a script naive." I grepped for `TZ:` — the YAML key — got **zero hits across all 40 files**,
+and was one step from publishing "no timezone is set anywhere."* 🔑 ***The TZ is set INLINE in the
+shell, as `TZ=America/Los_Angeles date`, which a search for `TZ:` cannot see.*** **The corrected
+probe (`TZ=`) returns four hits, all four of them the lines above.** 📌 ***An instrument aimed at
+one spelling of a thing reports the absence of the thing. That is rule 20 in one sentence and it
+nearly cost this pass its main result — in the opposite direction, by making the system look worse
+than it is.***
+
+## 2. 🔴🔴 AND NOW THE PYTHON LAYER, WHICH IS NOT
+
+| category | count | sites |
+|---|---|---|
+| **(A) DST-aware** | 🔴 **ZERO of 44** | `ZoneInfo` **0** · `pytz` **0** · `dateutil` **0** · `America/Los_Angeles` **0** · `US/Pacific` **0** |
+| **(B) fixed offset** | **3** | `build_availability_delta.py:39` · `certify_pipeline.py:27` · `score_board_legs.py:41` — **all three `PT = timezone(timedelta(hours=-8))`**, i.e. **PST hardcoded** |
+| **(B′) hand-rolled DST rule** | **1** | `scrape_referee_assignments.py:32` |
+| **(C) naive** | **6** | `archive_live_boards.py:208` · three ladder builders' `date.today()` default · `scrape_nba_injury_report.py:197` · `nba_season.py:27,48` *(prior — §T12.7d, killed)* |
+
+🔑 ***Not one file in the pipeline imports a timezone database. The correct handling lives entirely
+in four shell lines; the Python layer inherits its date from them and then does its own arithmetic
+with a constant.***
+
+## 3. 🔴🔴 THE LIVE DEFECT — THE TWO HALVES OF P3 DISAGREE ABOUT WHAT "1:15 PM PT" MEANS
+
+**`nba/build_availability_delta.py:88-90`, quoted:**
+```
+gd = datetime.fromisoformat(asof).date()
+p2_build = datetime.combine(gd, datetime.min.time(), tzinfo=PT) + timedelta(hours=1)    # P2 ~01:00 PT
+p3_cut   = datetime.combine(gd, datetime.min.time(), tzinfo=PT) + timedelta(hours=13, minutes=15)
+```
+**with `PT = timezone(timedelta(hours=-8))` at `:39`.** ⇒ **`p3_cut` is `13:15 −08:00` = `21:15 UTC`,
+every day of the year.** **During PDT the real 1:15 PM PT is `20:15 UTC`.**
+
+🔴 ⇒ ***Whenever DST is in effect, the snapshot window used to compute the availability delta extends
+ONE HOUR PAST the cutoff the workflow itself enforces.*** **P3's guard refuses to run before 13:00 PT
+measured DST-correctly; `build_availability_delta.py` then selects `before`/`after` snapshot sets
+using a boundary that is an hour late.** **`p2_build` is shifted identically.**
+⚠ **And there is NO env override for these two values** — unlike `BS_ASOF`, `CERT_DATE` and
+`BT_ASOF`, the HOURS are computed inside the script. **`DELTA_ASOF` supplies `gd` and nothing
+supplies the offset.**
+
+🔑🔑 **WHEN IT IS LIVE**: **preseason opens `2026-10-03` — ELEVEN DAYS FROM THIS PASS — and that is
+PDT.** **Regular season `2026-10-20` → `2026-11-01` is PDT (12 days).** **`2027-03-14` → season end
+is PDT again.** *Only `2026-11-01 → 2027-03-14` — when `PT = -8` happens to be right — is the window
+correct.*
+
+⚠⚠ **AND THE FILE HAS BEEN BURNED BY A TIMEZONE BUG IN THIS EXACT FUNCTION BEFORE.** Its own comment,
+`:83-87`, quoted:
+> *"ABSOLUTE TIMESTAMPS, NOT HOUR-OF-DAY. The first version computed `h = hour(snapshot_ts)` and took
+> `before` as `h <= 9.0`, which EXCLUDED the day-before report entirely … **which is why 20 real
+> status changes produced zero reallocations.**"*
+
+📌 ***The fix for a timezone bug was to stop using hour-of-day and start using absolute timestamps —
+and the absolute timestamps were built from a hardcoded PST.*** **The lesson was learned one level
+too shallow.**
+
+## 4. ⚠ THE OTHER SITES, EACH WITH WHAT IT DECIDES (clause (iii), per site)
+
+| site | what it decides | verdict |
+|---|---|---|
+| 🔴 `build_availability_delta.py:89-90` | the P2/P3 snapshot window | **LIVE — §3** |
+| ⚠ `archive_live_boards.py:208` — `gd = datetime.now(timezone.utc).astimezone().date()` | the **`game_date`** a board snapshot is filed under | 🔴 **`.astimezone()` with NO argument converts to the RUNNER's local zone, which is UTC — a no-op that reads like a conversion.** ✅ **Safe at P3's own hour** *(13:15 PT = 20:15/21:15 UTC, same calendar day)*, **but the script is invoked from THREE workflows** — `nba-board-archive.yml:54`, `nba-boards-market.yml:119`, `nba-p3:139` — **and the first is `workflow_dispatch`-only with a free `label` input. An operator pull after 16:00 PT (= 00:00 UTC) files under TOMORROW.** ⚠ *P3's header says the `window` label matters because "the grader, the line-movement measurement and every backtest key off this label."* |
+| ⚠ `scrape_referee_assignments.py:32` — `(now - timedelta(hours=7 if 3 < now.month < 11 else 8)).date()` | "today PT" for referee assignments | **The ONLY site that attempts DST at all.** ✅ Correct April–October and November–February. 🔴 **Wrong `2027-03-14 → 2027-03-31`** — it uses −8 while the zone is −7. **Surfaces only for runs in the 07:00–08:00 UTC hour (= 00:00–01:00 PDT), which sits immediately before P2's documented 01:00 PT start** |
+| ✅ `certify_pipeline.py:33` · `score_board_legs.py:96` | "today PT" defaults | **LATENT — P2 sets `CERT_DATE` (`:282`), P3 sets `BS_ASOF` (`:204`) and `CERT_DATE` (`:227`), all from the DST-correct resolver. Live only for a manual invocation** |
+| ✅ three ladder builders' `date.today()` | `ASOF` | **LATENT — P2 sets `BT_ASOF` at `:167`, `:186`, `:210`** |
+| ✅ `scrape_nba_injury_report.py:197,204,229` | a 2-day fetch window; `fetched_at` metadata | **The window is ±1 day and self-covering; `utcnow()` is a metadata stamp — category (D)** |
+
+## 5. CLAUSES, SCORED — AND CLAUSE (i) FAILED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | 🔴 **FAILED — it ROSE: `470 → 471` (Δ=+1)**, high band `649 → 648`, "baseline only" `1 → 2`. **Measured 2026-09-22T16:51:02Z.** ⚠ **ATTRIBUTION ATTEMPTED AND HONESTLY ABANDONED (rule 18)**: the baseline tree is byte-identical and returned `636 · 2 · 484 · 481` for the **FORTY-SIXTH** time, so the instrument is deterministic and the movement is entirely from the WORKING tree — **i.e. from this session's own writes.** **A boundary probe found 35 segments within ±0.015 of the 0.45 cut and 3 within ±0.025 of the 0.40 cut, and NONE of them is about P1's schedule**, so the hypothesis that the DST correction pushed a schedule segment out is **NOT supported.** 🔑 **The mechanism is the instrument's, not the documents': `TfidfVectorizer` is fit on `docs + texts` JOINTLY, so adding text to the twelve changes the IDF weights for EVERY segment globally.** ⇒ ***The absolute level of `uncovered12` is not stable under doc growth and the sweep has been reading it as if it were. The stable figure is the BASELINE, and it has not moved in 46 runs.*** ⚠ **Per-segment scores were never persisted, so a true diff is impossible after the fact — an instrument gap this pass names and does not paper over** |
+| **(ii)** ≥1 site converts UTC→Pacific with a fixed offset | 🔴 **TRUE, at the strongest level: ZERO of 44 files are DST-aware and THREE hardcode `-8`.** ⚠ **But the branch the pre-registration called materially better is HALF-TRUE and stated at full strength: the slate date and the run guard — the decisions that matter most — ARE correct, via `TZ=America/Los_Angeles`** |
+| **(iii)** ≥1 such site decides a day or whether to run | 🔴 **TRUE — `build_availability_delta.py:89-90` sets the snapshot window and has NO env override; `archive_live_boards.py:208` sets `game_date` for the archive and has none either** |
+
+⚠ **Baseline `636 · 2 · 484 · 481` — FORTY-SIXTH consecutive run.** Working **`648 · 1 · 471 · 470`**.
+
+## 6. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — and this is the most season-proximate finding of T20's second half. New open item
+T20-12.** **Preseason opens in ELEVEN DAYS, in PDT, which is precisely when the hardcoded `-8` is
+wrong.**
+✅✅ **AND THE SHAPE IS GOOD: the system's clock handling is correct exactly where it was thought
+about — four shell lines using the IANA zone — and wrong exactly where a constant was typed. There is
+no deep confusion to unpick. `ZoneInfo("America/Los_Angeles")` in three files and one `.astimezone()`
+argument retire the whole item.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **`current_season()`'s `month >= 7` rollover** *(§T12.7d)* · **the
+1:15 PM PT cutoff itself** *(COMPASS 107)* · **`BT_ASOF` / `_season_of()`** *(T20-4, T20-5)* ·
+**P1's inverted DST comment** *(§T20.49, T20-11)*. ✅ **The timezone-in-CODE angle is new: `ZoneInfo`,
+`astimezone` and `timedelta(hours=-8)` return zero hits across the twelve.**
+
+📌 ***The lesson:*** **the shell knew about daylight saving and the Python did not. A slate date
+resolved correctly by `TZ=America/Los_Angeles` was handed to a function that reattached the hours
+with a constant — so the same pipeline enforces a 13:00 PT gate it computes one way and applies a
+13:15 PT cutoff it computes another, and the two agree for four months of the year.**
+***And the probe that nearly missed it was mine: I searched for `TZ:` and the answer was written
+`TZ=`.***
