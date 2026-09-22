@@ -2969,7 +2969,7 @@ already been taken."*
 | **5** | **The three-check discipline on every number before reporting it** — **(a)** correct lane/join *"via a validated join, not a raw flag that may be stale or wrong"* · **(b)** corrupted/known-bad day exclusion *"exclude any day with a confirmed data-quality issue"* · **(c)** day-robustness / leave-one-day-out *"a pooled, aggregate result can be entirely carried by one or two outlier days"* |
 | **6** | **Statistical significance done properly — DAY-LEVEL clustering, not pooled-leg-level, AND properly volume-weighted** |
 | **7** | **Multiple-comparisons correction, scaled to what was ACTUALLY SEARCHED** |
-| **8** | *(sequence continues)* |
+| **8** | **"Insufficient data / underpowered" is a DISTINCT verdict from "confirmed negative" — don't collapse them** — *state the power calculation and track underpowered candidates in their own list with an explicit unblock condition* |
 | **9** | **Check your OWN statistical treatment for bias IN BOTH DIRECTIONS, not just for being "too strict"** |
 | **10** | **Enumerate every possible data source before declaring something "untestable"** |
 | **11** | **A plausible causal story is NOT evidence — test it directly, including your own** |
