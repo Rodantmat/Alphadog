@@ -29811,3 +29811,116 @@ trust unattended"*), it refuses to warn, and it defaults to strict.** ***And it 
 wrong tables. Quality of design and correctness of wiring are independent properties, and no amount
 of the first supplies the second — which is exactly why the check had to be read against the
 workflow that invokes the writer, rather than admired on its own terms.***
+
+---
+
+# §T20.38 — PASS 33: *THE WIRING MAP — `17` OF `33` TABLES HAVE MORE THAN ONE WRITER, AND A TEST HARNESS WRITES SEVEN OF THEM*
+
+*(T20 pass 33, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY AND NO CODE EDITS: repo reads and `SELECT` only (rule 1).**
+
+## 1. 📐 THE MAP — *the edge the corpus never wrote down*
+
+> **`39` workflow files** *(all 40 less `nba-pp-payout-map.yml`, the concurrent session's)* →
+> **`119` distinct script invocations, `116` resolving at the repo root** →
+> **`33` distinct tables written.**
+> *(2026-09-22T15:49:05Z; script `scratchpad/t20/wiring.py`, pattern
+> `python\s+(?:-u\s+)?([A-Za-z0-9_./-]+\.py)` so SUBDIRECTORY paths are matched — the failure mode
+> that cost §T20.35 its 38th script.)*
+
+## 2. 🔴🔴 CLAUSE (iii): **`17` OF `33` TABLES ARE WRITTEN BY MORE THAN ONE WORKFLOW**
+
+| table | writers | workflows |
+|---|---|---|
+| 🔴🔴 **`nba_market.board_snapshots`** | **4** | `nba-board-archive` · `nba-board-backfill` · `nba-boards-market` · **`nba-p3-afternoon-light`** |
+| 🔴 `nba_score.confidence_verification` | 3 | `nba-absence-panel` · `nba-engine-test` · `nba-p2-overnight-heavy` |
+| 🔴🔴 **`nba_score.ladder_calibration_asof`** | **3** | `nba-absence-panel` · `nba-p2-overnight-heavy` · `nba-score-history` |
+| 🔴 `nba_score.baseline_history` | 3 | `nba-baseline-history` · `nba-combos-history` · `nba-periods-history` *(none of them P2 — confirming §T20.37)* |
+| 🔴 `nba_market.rung_market` | 3 | `nba-board-maintenance` · `nba-boards-market` · **`nba-p3-afternoon-light`** |
+| 🔴🔴 **`nba_score.board_scored`** | **2** | **`nba-engine-test`** · **`nba-p3-afternoon-light`** |
+| 🔴 `nba_score.final_hp` · `conformal_confidence` | 2 | `nba-absence-panel` · `nba-engine-test` |
+| 🔴 `nba_score.availability_delta` | 2 | **`nba-engine-test`** · `nba-p3-afternoon-light` |
+| 🔴 `nba_score.confidence_model` | 2 | **`nba-engine-test`** · `nba-p2-overnight-heavy` |
+| 🔴 `nba_market.board_outcomes` | 2 | `nba-grader` · `nba-p2-overnight-heavy` |
+| 🔴 `nba_score.baseline_ladder` · `baseline_ladder_runs` | 2 | `nba-overnight-queue` · `nba-p2-overnight-heavy` |
+| 🔴 `nba_score.blowout_model` | 2 | `nba-absence-panel` · `nba-p2-overnight-heavy` |
+| 🔴 `nba_ref.defender_ratings` | 2 | `nba-absence-panel` · `nba-p1-weekly-static` |
+| 🔴 `nba_ref.referee_assignments` | 2 | `nba-p2-overnight-heavy` · `nba-referees` |
+| 🔴 `nba_ref.player_name_map` | 2 | `nba-board-maintenance` · `nba-overnight-queue` |
+
+⚠⚠ **AND THE CORPUS ALREADY KNOWS WHY THIS MATTERS.** *`storage_diet_plan_2026_09_17`'s first rule:
+**"execute only when no build is running — the loaders delete-and-rewrite under an advisory lock."***
+*And P2's own comment records the incident: **"Passing one season made the builder delete EVERY season
+and rebuild one; on 2026-09-20 03:24 UTC that wiped the whole calibration history."*** 🔑 ***That
+incident was on `ladder_calibration_asof` — which this map shows has THREE writing workflows. The
+concurrency risk the corpus warns about architecturally is ACTUAL, and it has already fired once.***
+
+## 3. 🔴🔴🔴 THE FINDING THAT MATTERS MOST: **A TEST HARNESS WRITES SEVEN PRODUCTION TABLES**
+
+> **`nba-engine-test.yml` invokes:** `build_final_hp.py` · `score_board_legs.py` ·
+> `build_availability_delta.py` · `build_mondrian_confidence.py` · `check_delta_gaps.py` ·
+> `check_prop_calibration.py` · `score_prop_reliability.py` · `find_delta_test_date.py` ·
+> `measure_report_cutoff.py` · `certify_pipeline.py` · 🔴🔴 **`run_storage_diet.py`**.
+
+🔴 **It is the co-writer of `final_hp`, `board_scored`, `confidence_model`, `availability_delta`,
+`conformal_confidence` and `confidence_verification` — and it is the ONLY workflow besides
+`nba-absence-panel` that writes `final_hp` at all** *(§T20.37)*.
+🔴🔴🔴 **AND IT INVOKES `run_storage_diet.py`** — *the executor of the plan open item T20-2 records as
+**"PLANNED — execute ONLY after the full system is complete and no job is mid-write."*** ⇒ ***A
+workflow named "engine test" can execute the storage diet against a `42.95 GB` production database.***
+📌 **Recorded, not assessed: whether that path is gated inside the script is NOT RECORDED here — this
+pass read the invocation, not the guard, and says so rather than implying either.**
+
+## 4. ✅ RULE 48 SAVED THIS PASS FROM TWO FALSE FINDINGS
+
+**(a)** *The map first reported **3 scripts invoked but ABSENT from the repo** —
+`build_training_data.py`, `train_models.py`, `validate_factor_coefficients.py`.* ✅ **FALSE. All three
+exist, in `gbdt_training/`; `gbdt-training.yml` changes directory before invoking them with a bare
+name.** ⇒ **Not an orphan — a third category my pattern did not model: a script invoked from a
+working directory.** 📌 *The pre-registration anticipated two categories (unused file, imported
+library) and reality supplied a third — rule 37's shape again.*
+**(b)** *The map reported **15 of 122 `nba/` scripts never invoked by any workflow**.* ✅ **Three of
+those are LIBRARIES, not orphans: `nba_names.py` is imported by **27** scripts, `nba_season.py` by
+**19**, `nba_asof.py` by **3**.** ⚠ *The rest are explainable and are NOT claimed as defects: the
+three `build_absence_panel*.py` built the panels §T20.29 showed were dropped; six `probe_*.py` are
+diagnostics; two `load_pp_*.py` are the concurrent session's.*
+
+✅ **AND THE MAP SHOWS CORRECT WIRING TOO (rule 22)**: `confidence_model` written by P2 and asserted
+by P3 is a **correct cross-pipeline edge**; `defender_ratings` written and asserted by P1;
+`board_snapshots` written and asserted by P3. ***The system has real cross-pipeline contracts — the
+defects are specific edges, not an absence of design.***
+
+## 5. ⚠ ONE MORE MLB RESIDUE, AND IT IS SCHEDULED
+
+**`gbdt-training.yml` — *"AlphaDog v2 GBDT Model Training"*, `schedule: - cron: "0 9 * * 0"`
+(Sundays 09:00 UTC), `seasons` default `'2025,2026'`.** 🔴 **A v2-era (MLB) training run, ENABLED and
+CRONNED, on a repo whose NBA pipelines P2 and P3 have no cron at all** *(§T20.31)*.
+📌 **Read beside open item T20-3's two enabled MLB scheduler rows: this is a THIRD live MLB schedule,
+and unlike those it is in GitHub Actions where it certainly does fire.**
+
+## 6. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:49:05Z** |
+| **(ii)** | **≥ 3** further writer/invoker mismatches | ✅ **HIT — the engine-test overlap (7 tables), the 4-writer `board_snapshots`, the 3-writer `ladder_calibration_asof`, and a scheduled MLB training workflow.** ❌ *The "bounded at three" branch is not available.* |
+| **(iii)** | **≥ 1** table written by **two** workflows | ✅ **HIT — `17` of `33`, one of them by four.** ❌ *The reassuring "the concurrency risk is architectural rather than actual" branch is refuted by the corpus's own record of the 2026-09-20 03:24 UTC calibration wipe on a three-writer table.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — THIRTY-FIFTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 7. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — `17` of `33` tables have multiple writing workflows, a test harness co-writes seven
+production tables and can invoke the storage diet, and a scheduled MLB training workflow is still
+live. Open item T20-6 extended. CLEAN STAYS 0/3.**
+✅ **Two candidate findings were killed before publication by opening them (rule 48).**
+⚠⚠ **NOTHING WAS EDITED, TRIGGERED OR DISPATCHED (rule 1).**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **five consecutive passes have found defects, and every one was an EDGE — a
+constant between a workflow and a script, a window between a script and a table, a check between a
+certifier and a writer.** ***The corpus documented the nodes exhaustively: `build_final_hp` 53
+mentions, `board_scored` 67. It never drew a single edge. That is not an oversight about one fact;
+it is a missing VIEW, and every defect of the last five passes lived in it.***
