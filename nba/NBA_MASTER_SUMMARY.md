@@ -14430,6 +14430,64 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.8 — PASS 7 (**the MECHANISM stratum — 515 segments, 80% of T12, never read as a stratum**) — **🔴 two OPEN items get their CAUSE · 0/3**
+*2026-09-22. **Every population pinned with its predicate and a UTC timestamp.** `SELECT` only; no
+third-party API was called.*
+
+#### ✅ T12.8a — **The pre-registration was EXACT, and it was a prediction about NOT moving**
+***Predicted: the working band to HOLD within ±1 of 28 / 11 / 590 / 566, because pass 6 quoted no new
+transcript segment — only code and live data.*** **Measured 2026-09-22: 28 / 11 / 590 / 566, exactly,
+baseline unchanged.** **Twenty-second: twenty hits, one miss, two partials.** 🔑 *The first
+pre-registration on this sweep that predicted STASIS and got it — a stronger test than a predicted
+fall, because a fall has many causes and stasis has one.*
+
+#### ✅ T12.8b — **The stratum partitioned, and the first predicate was too coarse**
+**515 segments = `tool_use` 250 + `tool_result` 265.** *First predicate left **218 (42%)** in
+`other` — too weak a denominator to carry a figure* **(rules 17, 23, 30)**. **Refined, pinned
+2026-09-22T07:22Z**: **`mcp_envelope` 190 (36.9%) · `tool_args` 124 (24.1%) · `other` 71 (13.8%) ·
+`patch_body` 68 (13.2%) · `shell_envelope` 20 (3.9%) · `edit_ack` 16 (3.1%) · `sql_stmt` 15 (2.9%) ·
+`code_body` 11 (2.1%)** — ***sums to 515, closes.***
+
+#### ✅ T12.8c — **(a) the writes, and (c) the paths**
+**FOURTEEN `allow_write: true` statements** *(segments 10, 24, 33, 42, 92, 130, 191, 211, 272, 341,
+410, 420, 595, 615)*, targeting **`board_sources_decision` ×8** and **`board_backfill_odds_api` ×2**.
+✅ **Five repo paths written and ALL FIVE still exist** *(pinned 2026-09-22T07:24Z)*:
+`.github/workflows/` **`nba-injury-report.yml` · `nba-probe.yml` · `scrape.yml` · `sleeper-board.yml`
+· `underdog-board.yml`** — *which corroborates §T12.3b's claim that the Sleeper and Underdog scrapers
+were wired as workflows.*
+⚠ **Four apparent "missing" paths — `nba/nba`, `nba/probe`, `nba/scrape`, `nba/trigger` — were my own
+regex truncating at the first space** in the transcript's normalised filenames. **Opened, dismissed;
+the FOURTEENTH kill.** ⚠ **And a bound, not a verdict**: *the queued question "has `sleeper-board.yml`
+ever RUN?" **cannot be answered with the available instrument** — the run-history tool returns recent
+runs with no workflow filter, and the twelve most recent are all Pages builds.* ***Recorded as
+unanswered rather than as a zero*** *(rule 22)*.
+
+#### 🔴🔴 T12.8d — **(b) the EIGHT FAILURES — and two are the cause of items still open**
+*Predicate: `"ok": false` · non-zero `returncode` · HTTP 4xx/5xx. **Segments 319, 327, 329, 367, 520,
+522, 525, 545.** Probed against the baseline, pinned 07:23Z; controls fire.*
+🔑🔑 **SEGMENT 545 IS WHY THE FLIFF SCRAPER STOPPED**: `sports_book_public/` → **400
+`validationerror` — *"fliff error: THIS VERSION OF THE APP IS NO LONGER SUPPORTED."*** *T12 records
+the request carrying **version 5.0.34**.* ***So "ParlayAPI stays the Fliff source unless the owner
+captures one curl" had a precise mechanical cause — the capture would supply a current version
+string*** — **and the live key now records Fliff as our own scraper with no login** *(§T12.4d)*.
+**1 of thirty, 0 of the twelve.**
+🔑 **SEGMENT 367 IS THE CAUSE OF AN ITEM STILL OPEN**: `/v1/lobbies/content/alternate_lines?over_under_id=…`
+→ **404**, and ***`alternate_lines` is in ZERO of the thirty*** — while the live key says Underdog's
+*"alternates (ladders) pending one more capture."* **The open item now has a named endpoint and a
+named failure.**
+📌 **The other six**: `lobbies/scaffolds/matches` → **400 `invalid lobby scaffold`** *(0 of thirty)* ·
+`market_filters` ×2 → **400** *(1 of thirty, 0 of the twelve)* · `oauth2/token/` → **400
+`unauthorized client`** *(0 of thirty)* · `sports_book_public/` → **400 *"invalid value for operation
+code 58"*** · `m-c1…/channels/all/games/` → **404** *(0 of thirty)*.
+🔑 ***A failure is the one thing prose reliably omits, and 80% of this transcript is the only place
+they are recorded.***
+
+**Pass outcome: 🔴 NOT CLEAN and it adds rather than corrects — the last unread stratum yields the
+CAUSE of two open items. ⚠ The closure clock does NOT advance: pass 7 produced new SYSTEM findings,
+not corrections to the sweep's own record. CLEAN 0/3 · 8 passes.**
+
+---
+
 ### T12.7 — PASS 6 (**the RULE-31 SIBLING RE-TEST — rule 6 applied to rule 31, the pass after it was written**) — **✅ one design claim VERIFIED end to end for the first time · 🔴 THREE candidates killed by rule 28 · 0/3**
 *2026-09-22. `SELECT` only. **Every population pinned with its command and a UTC timestamp.***
 
