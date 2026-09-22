@@ -149,6 +149,20 @@ a payout-table validity check and a different subject, **dismissed**.)*
 2. 🔴 ***"injury index files report `days_done: 0` while rows are correct — the counter was never
    written during the shard migration; repair before any job reads it to decide re-fetches."***
    **A stale counter that a re-fetch decision would read as "nothing done."**
+   > 🔴🔴 **CONTRADICTED BY THE ARTIFACT — 2026-09-22 (T12 pass 10, §T12.11c).** *Read the files, per
+   > rules 29 and 31.* **`nba/data/nba_injury_report_2025_26_index.json`, pinned 2026-09-22T07:44Z**:
+   > ***`days_done` is a LIST of 176 date strings*** *(`2025-10-20` … `2026-04-13`)*, **`rows`
+   > 919,949**, **`shards` a list of 7 months**, `updated_at` **2026-09-10T03:02:32Z**. **The 2024-25
+   > file is the same shape: 174 dates, 418,071 rows, 7 shards.**
+   > 🔑 ***So "the counter was never written" is not what the files show — the days ARE written, as a
+   > LIST, and its length is exactly the 176 / 174 the status key itself quotes.*** **This is a
+   > READER problem, not a WRITER problem**: anything that reads `days_done` as an integer gets
+   > nothing, while anything that takes its LENGTH gets the right answer — ***and T12 segment 614
+   > shows a probe doing exactly that, printing `{'days done': 176, …}` on 2026-09-10.***
+   > ⚠ **What is NOT RECORDED**: **which reader reports 0**, and whether a differently-pathed or
+   > third-season index is the one at fault. **The repair the key asks for may be to the READER.**
+   > ⚠ **Stated at evidence strength and NOT acted on** *(rule 1)*: no file, key or pipeline was
+   > changed. **A dated STATE** *(O9)*.
 3. 🔴 ***"2023-24 has NO injury reports — the league archive does not reach back reliably → day-of-report
    factors can only be fitted on TWO seasons, not three (matters for harness training)."***
    ⚠ **This is a scope limit on every day-of-report factor and it is not a bug.**
