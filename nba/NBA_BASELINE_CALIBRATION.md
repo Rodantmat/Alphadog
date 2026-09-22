@@ -15,6 +15,41 @@ document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 
 ---
 
+## 0z-T16. 🔴🔴 **CALIBRATE IN WINDOWS, NOT OVER A FULL SEASON — the owner's directive, and it is the missing justification for `f_phase`** *(T16 pass 0, §T16.1, 2026-09-13; **0 of the twelve, 0 of the thirty**)*
+
+> ***"Now THAT is the kind of calibration we need. You may also need to consider **WINDOWS instead of a
+> full-season comparison**, because **the BEGINNING of the season is less predictable**, [and at] **the
+> END of the regular season there will be more MINUTE SAVINGS in stars**, and so on. **Different times
+> will have different variances**, and the system should be able to **IDENTIFY, UNDERSTAND and TRACK
+> THE PATTERNS** and be ready for it in the new season."***
+
+🔑🔑 **THIS IS THE OWNER-SIDE JUSTIFICATION FOR A FACTOR THE SWEEP HAS FLAGGED AS ORPHANED.** ⚠ **Open
+item O6** *(`NBA_SWEEP_RUN_LOG.md`, §T9.38a)* records that **`build_confidence_v3.py`'s `f_phase` is
+computed, carries a six-line justification with measured figures — *"the gap decaying +1.46 / +1.30 /
++0.88 / +0.13 pp across those four"* — and is NOT IN THE CONFIDENCE SUM**, whose nine weights total
+exactly 1.00. **O6 asks whether `f_phase` should enter the sum and notes the sweep could not find the
+design intent.** ✅ **Here it is: the owner asked for exactly this, in these terms, on 2026-09-13.**
+⚠ **That does not answer O6** *(whether to renormalise nine weights is still a code change this sweep
+does not make)*, **but it removes the possibility that `f_phase` is a stray experiment — it is a
+requested capability, currently computed and unused.**
+
+🔴 **AND O6'S URGENCY CLAIM IS THE OWNER'S OWN POINT BACK AT HIM**: O6 records that **`1_oct_nov`
+carries the LOWEST reliability rank (0.80)** and **the season opens 2026-10-20** — *the regime the
+factor was written to discount is the one the system is about to enter* — which is precisely the
+owner's *"the beginning of the season is less predictable."*
+
+⚠ **The two named patterns are asymmetric and both are testable**: **early season — less predictable**;
+**late regular season — more MINUTE SAVINGS in stars** *(i.e. a minutes-distribution shift, which
+lands on `proj_min` and therefore on the baseline, not on confidence)*. 🔑 **So the directive is not
+one factor's justification — it asks for a SEASON-PHASE treatment in BOTH layers**, and **NOT
+RECORDED** is whether the late-season minutes-savings effect is modelled anywhere.
+
+✅ **AND THE TRANSFERABLE DEMAND**: *"be ready for it in the NEW SEASON"* — **the system is expected to
+carry the learned phase patterns FORWARD**, which is a different requirement from fitting them
+in-sample on two completed seasons.
+
+---
+
 ## 0y. 🔴🔴 **THE OREB REBUILD — FIVE HYPOTHESES, FOUR WRONG — AND THE THIRD SELECTION-FILTER FAILURE** *(T15 pass 1, §T15.2c/§T15.2f, written 2026-09-22 from the 2026-09-12/13 transcript)*
 
 *This section exists because of one owner turn. **OREB had been DROPPED** — excluded from the history
