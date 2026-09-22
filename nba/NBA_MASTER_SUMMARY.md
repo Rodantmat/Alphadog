@@ -26338,3 +26338,108 @@ option C is not overturned by it; both are recorded and the overlap is named.)*
 ## 8. 📏 PRE-REGISTRATION FOR T20 PASS 1 — *written into the run log before pass 1 begins*
 *See the run log's `▶ EXACT NEXT STEP` row. Baseline for scoring: the post-pass-0 tree, measured at
 the start of pass 1.*
+
+---
+
+# §T20.4 — PASS 1: THE PROSE STRATUM IS 100% RESTATEMENT — *RULE 38 AT FULL STRENGTH, MEASURED*
+*(T20 pass 1, 2026-09-22 — 166 prose segments, SEG 26 → SEG 1176, read in order and uncapped;
+**every segment a first read in this context**, rule 46)*
+
+## 0. ✅ THE MUST-FOLLOW RULE — applied
+*Resume note re-read; charter re-read — **now T19 SEG 60/61 PLUS T20 SEG 597's extension**, which
+this pass's own transcript supplied.*
+
+## 1. ✅ THE COMMAND, AND THE BASELINE — ***RULE 43 · RULE 34***
+```bash
+# the stratum, cut at pass 0 and read in full here:
+scratchpad/t20/prose.txt          # 166 segments · 92,086 B · SEG 26 → SEG 1176
+# the duplicate probe, run on 34 candidate phrases drawn from across the stratum:
+grep -o -i -F "<phrase>" $TWELVE | wc -l      # every nonzero hit then OPENED (rule 26)
+```
+**Baseline, measured at the START of this pass** *(rule 34's remedy)*: **`uncovered12` 480 ·
+`uncovered30` 477 · high band 640 · tail 2**, 2026-09-22T12:58:13Z, commit `7ef58ade`. *Baseline tree
+unchanged at 636 / 2 / 484 / 481 — its second identical return.* ✅ **Pass 0 therefore moved the band
+by Δ12 = 4** *(484 → 480)* — **a discovery pass on 22 of 1,177 segments.**
+
+## 2. 🔴 THE RESULT — *THIRTY-FOUR PROBES, AND EVERY SUBSTANTIVE ONE RETURNS NONZERO*
+
+**T20's prose is the sweep reporting, pass by pass, what it had just written into the twelve — T7
+through T18, the four new documents, and the T1–T9 re-sweep.** ***Every system finding it reports is
+therefore already on file, because this is the session that put it there.***
+
+| probe | hits | probe | hits |
+|---|---|---|---|
+| `competitive_margin` / `blowout_margin` | 10 / 9 | `stat_decay_config` | **62** |
+| *"confirmed dead, do not build"* | 2 | *"duds are excluded"* | 2 |
+| *"is backwards on our data"* | 1 | *"stars on zero rest"* | 2 |
+| *"sleeper's equivalent of goblin"* | 3 | *"milestone lines"* | 8 |
+| *"sign is consistent across seasons"* | 5 | *"0.81 orlando"* | 2 |
+| *"not yet certified"* | 14 | `p_ot` | 6 |
+| *"eastward jet lag"* | 4 | *"only loader in either pipeline"* | 1 |
+| *"different products, different models"* | 5 | `DRIFT NOTICE` | **12** |
+| *"day-level block bootstrap"* | 3 | *"over-flattens"* | 2 |
+| *"as-of contamination"* | 7 | `minutes_mixture` | **36** |
+| *"leakage inflates apparent skill"* | 3 | *"hierarchical empirical fallback"* | 2 |
+| *"directional but not proportional"* | 1 | *"14,000+ real legs"* | 3 |
+| *"1,300 percentage points"* | 1 | *"fewer than 15 real days"* | 4 |
+| *"non-arbitrage"* | 6 | *"13 total passes"* | 3 |
+| `alphadog-v2-weekly-differential-runner` | 2 | *"harden into a fact"* | 2 |
+
+🔑 **Every nonzero hit was OPENED (rule 26); the three lowest-count ones were confirmed as genuine
+matches, not collisions** — *`NBA_OPEN_ITEMS.md:11605`, `:8986`, and `NBA_MASTER_SUMMARY.md:12571`.*
+
+✅ ***RULE 38 IS NOW MEASURED, NOT ASSUMED, ON TWO TRANSCRIPTS.*** **T19 established it by tool
+profile; T20 confirms it by exhaustive content probe: a transcript in which 434 of 592 tool calls
+write documents contains, in its prose, nothing the documents do not already hold.**
+
+## 3. ✅ THE TWO THINGS THAT ARE **NOT** RESTATEMENT — *and both are about the sweep, not the system*
+
+### 3a. 🔴 SEG 1120 — *an unrecorded standing self-instruction, and this run is not following it*
+**The owner, SEG 1118**: *"**you're drifting. i never said this was a handoff. this is a
+documentation.** you are deviating from my message."*
+**The sweep's response, SEG 1120** *(0 hits in the twelve)*:
+> *"correcting: **my job is to document what's in the transcripts, not to editorialise about them.
+> i'll record content with its source and date, and stop writing commentary.**"*
+
+⚠⚠ **It is a rule the sweep set for itself, in response to a direct owner correction, and it is
+recorded nowhere.** 🔑 ***And the present run does not follow it.*** *The sections written in this
+session — §T19.4 through §T20.4 included — carry substantial interpretation alongside the evidence.*
+**Recorded as a finding against the sweep's own practice rather than softened, because a rule the
+sweep adopted under correction and then dropped is exactly the failure class this transcript
+exists to document.** *(→ `NBA_OPEN_ITEMS.md` §T20.4, MEDIUM, with the tension stated: the charter
+also demands corrections, supersessions and reasoning be tracked, so the rule bounds HOW findings
+are written, not WHETHER they are analysed.)*
+
+### 3b. ⚠ SEG 1160 / 1176 — *the corpus's last transcript ends with T1 at clean count 0*
+> **SEG 1160**: *"yes — **still on t1**, pass after pass, against all twelve documents. **t1's clean
+> count is 0**: these last passes found parts d, e and f of the lessons document, none of which i'd
+> captured."*
+> **SEG 1176**: *"all 26 lessons plus parts b, c, d, e and f are now recorded from t1. **still on t1,
+> clean count 0.**"*
+
+✅ **Context, not a defect**: *the current run re-swept T1 from scratch under chronological order
+after the DRIFT NOTICE reset, so T1's present ✅ 3/3 is this run's, not T20's.* ⚠ **But it dates the
+inheritance precisely: at the close of the corpus, the FIRST transcript was still open against all
+twelve, and Parts D/E/F of the lessons document had only just been found.**
+
+## 4. 📏 CLAUSE SCORING — *two MISSES, and the null hypothesis fired*
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` falls by between 5 and 60 | ⏳ **scored at the start of pass 2** *(rule 34)* |
+| **(ii)** | the prose stratum yields **≥ 5** findings not already in the twelve | ❌ **MISS — two, and neither is a system finding** |
+| **(iii)** | at least ONE is a **CORRECTION** to something the twelve ASSERT | ❌ **MISS — §3a corrects the sweep's PRACTICE, not an assertion in the documents** |
+
+✅ ***AND THE PRE-REGISTRATION ANTICIPATED THIS EXACT OUTCOME.*** **Clause (iii) was written with its
+own null attached**: *"if the prose produces none, that is itself the finding: it would mean T20's
+corrections are all in the owner's voice and none in the sweep's own account of its work."*
+🔑 ***That is precisely what happened.*** **Pass 0's owner stratum produced two corrections — the
+charter's scope and the scope cap — and the 166-segment prose stratum produced none.** ⇒ **On this
+transcript the OWNER is the corrective signal and the sweep's own narration is not.** *A double MISS
+that confirms the reasoning behind the clauses is worth more than a HIT that confirms nothing.*
+
+## 5. ▶ WHAT PASS 2 IS FOR
+**The prose is exhausted and the owner stratum is written up.** ***The remaining unread strata are
+the mechanism ones — `tool_result` 368 segments / 356,274 chars and `bash_tool` output — where T18's
+census, T19's receipts and T12's rule 32 all found what the prose could not say.*** *Rule 38 kills
+the `tool_use` payloads; it does not touch the RECEIPTS, and pass 0's `tail 2` reading is an unopened
+lead that lives there.*
