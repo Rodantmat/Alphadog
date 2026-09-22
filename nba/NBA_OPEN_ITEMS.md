@@ -12806,3 +12806,67 @@ choice was made, what it costs, and that the owner can reverse it.**
 ⚠ **RELATED AND NOT MERGED**: **open item T19-3** already records that the closure standard on file
 is not the one T15–T18 used. **T19-3 is about the LAST four transcripts; this is about the FIRST
 six.** *They share a cause and are kept separate because their remedies differ in scale.*
+
+✅ **CAUSE FOUND, 2026-09-22, T19 pass 4** *(`NBA_MASTER_SUMMARY.md` §T19.7 §4c)*: **the character-
+window read is PRESCRIBED by `nba/NBA_DOCUMENTATION_PROMPT.md` Part 4.2** — *"`grep -oai "known
+phrase.\{950\}" …` — **this is how the prior sessions covered T1's entire handoff-document body
+without ever loading the file**"* — **with a real reason**: *"**Never `cat` one.** It will flood your
+context and end the session's usefulness."* 🔑 ***So the defect is a genuine constraint met with a
+method that does not satisfy the completeness the same document demands*** *("line by line, message
+by message… zero skipping")*, **and the closing passes used 110–260-char windows against that
+document's own 950.** ⚠ **This does not change the finding or the OWNER DECISION above — it changes
+its character from careless to structural, which is what makes it worth fixing rather than
+apologising for.**
+
+---
+
+# §T19.7 — 🔴🔴🔴 THE SWEEP'S OWN WORK ORDER HAS BEEN IN THE REPO SINCE 2026-09-20, UNREAD
+*(T19 pass 4, 2026-09-22 — **VERIFIED**: `nba/NBA_DOCUMENTATION_PROMPT.md`, **26,685 B**, three
+commits `6c5fd8c6` → `5dbbc2f0` → `1b0861cb`, all dated **2026-09-20**)*
+
+**Found while re-taking the `nba/*.md` population under rule 30** *(`ls -1 nba/*.md | wc -l` → **32**,
+2026-09-22T12:31:52Z)*. **Titled "NBA ALPHADOG — DOCUMENTATION WORK ORDER", it is this sweep's own
+work order and it carries owner instructions the sweep has been running without.**
+
+| what it carries | status before pass 4 | severity |
+|---|---|---|
+| **All TWELVE documents mandated in the owner's VERBATIM words** | 🔴 **the sweep recorded four of them as its own additions** *(§T19.1, rule 41)* | **HIGH — RETRACTED; see below** |
+| *"I want you, **before you start any pass**, to look at the previous message and this message. **This is a must-follow rule! No exception.**"* | ❌ **absent from the twelve and from the run log** | **MEDIUM** |
+| **Part 4.2 — the `grep -oai "…\{950\}"` read method, prescribed** | ❌ unrecorded — *and it is the CAUSE of §T19.6* | **HIGH (context), 0 (new defect)** |
+| **Part 3.1 — the 2026-09-20 pass ledger**: T1 ~30 passes · **T2–T9 VOID** *(swept against 4 of 12 documents)* · T10–T20 not started | ❌ unrecorded as a dated prior state | **MEDIUM** |
+| **Part 9 #1 — *"Sweeping against a subset of documents. T3–T9 were swept against 4 of 8. All counts voided."*** | ❌ unrecorded | **MEDIUM — same defect FAMILY as §T19.6** |
+| **Part 2 — a dated size snapshot of all twelve** *(`MASTER_SUMMARY` 395 KB · `GLOSSARY` 23 KB · `OPEN_ITEMS` 199 KB …)* | ❌ unrecorded | **LOW — useful as a growth baseline** |
+| **Part 7.3 — "Key facts, all VERIFIED"**, incl. *"the weekly differential worker is built but never scheduled"* and the `minutes_mixture` config/code drift | ✅ **independently re-derived by this sweep from transcripts** *(§T3.11a)* | **0 — corroboration** |
+| **Part 4 — transcripts located at `nba/transcripts/`** | 🔴 **STALE: that folder holds `README.md` and `journal.txt` only**; the 20 transcripts are at `/home/claude/nbadoc/transcripts/` | **LOW** |
+
+## 🔴 THE RETRACTION IT FORCES
+**§T19.1 and rule 41 both state the four calibration documents *"were added by the sweep, not
+requested"* and that *"the charter's eight take precedence when effort must be allocated."*** ***Both
+are wrong.*** **The work order's closing section quotes the owner mandating each of the four by
+name.** ✅ **ALL TWELVE ARE OWNER-MANDATED; there is no eight-over-four precedence.** **Struck at
+rule 41 in the run log, 2026-09-22.** ⚠ **RULE 40's second half decides the form: the clause was
+WRONG, not DATED, so it is struck rather than dated.**
+
+## 🔑 WHY IT WENT UNREAD — *and it is a rule 7 failure one level up*
+**The sweep HAS cited this file: `NBA_OPEN_ITEMS.md` line 4073 quotes its step 7b by name.** ***The
+file was opened, one instruction was taken out of it, and the rest was never read.*** ⚠⚠ **Rule 7 —
+*open every hit* — was satisfied for the LINE and not for the FILE.** ⇒ ***A CITATION IS NOT A
+READING.*** *Rule 26 already says a count of carriers is not a reading of them. This is its sibling,
+and it is the one that cost most: **§T19.1 asserted the charter's scope from a transcript segment
+while a fuller statement of that charter sat in the repo, cited in this very document.***
+
+## ▶ WHAT REMAINS OPEN
+1. ⚠ **The must-follow rule** *("before you start any pass, look at the previous message and this
+   message")* **is now on file but has never governed a pass.** *Its operational content is close to
+   what the run log's resume note already does; the gap is that no pass has stated it was applied.*
+   **Adopted from pass 5 onward.**
+2. ⚠ **`nba/NBA_DOCUMENTATION_PROMPT.md` has NOT been swept as a document.** *This entry records what
+   its ten parts contain at a heading level; **a full read for findings has not been done** and is
+   the first item of pass 5.* 🔑 **Stated plainly so this entry is not itself mistaken for the
+   reading it just criticised the sweep for skipping.**
+3. 🔴 **The other 19 non-mandated files in `nba/*.md` have had no equivalent check.** *The population
+   is 32 files; the twelve are mandated, `NBA_COMPASS.md` is read-never-written, `PP_PAYOUT_FINDINGS`
+   is out of scope — **leaving 18 files whose relationship to the sweep is unestablished***, several
+   of which are named in the transcripts as handoff documents *(`NBA_ARCHITECTURE_BLUEPRINT`,
+   `NBA_LESSONS_LEARNED_FROM_MLB`, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN`, `NBA_SYSTEM_DRAFT`)*.
+   **OWNER DECISION is not required — this is sweep scope and pass 5 takes it.**
