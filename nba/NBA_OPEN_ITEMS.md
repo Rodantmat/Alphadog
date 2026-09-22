@@ -12410,6 +12410,23 @@ simplicity the owner explicitly chose *("one run, everything present, no second 
 **The sweep does not decide this and changes nothing.** *(Full evidence and the two bulletin/PDF
 traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 
+## T18-11 · **NEW · HIGH** · the cutoff was decided on policy; the measurement built to check it never returned
+**`nba/measure_report_cutoff.py` exists and states its own standard**: *"policy says the last market
+to file is pacific, at 1 pm pt. **but policy is not evidence — measure it**… if not, 2:30 stays — for
+a reason this time, not by inheritance."* **It measures, from the system's own two seasons of
+archived snapshots, the share of game-days fully covered by 10:00 / 11:00 / 12:00 / 13:00 / 13:15 /
+14:00 / 14:30 / 15:00 PT, the 13:15→14:30 status churn, and the same split by tip time.**
+🔴 **Neither dispatch returned a result in T18**: run `35464255049` failed with
+`ModuleNotFoundError: No module named 'pandas'` *(the probe workflow installs only `curl_cffi`)*, and
+run `35464467204`, moved into `nba-engine-test.yml`, was last seen **pending** — **no `tool_result` in
+any of the 860 mechanism segments carries its output.**
+⇒ **The 1:15 PM PT cutoff rests on the league's published rule (authoritative, and quoted from four
+independent results in T18) and NOT on this measurement.** ⚠ **It is not unfounded — it is
+unverified against the system's own data, by the author's own standard.**
+**Severity: HIGH — one dispatch settles it, the script is written, and the answer could move the
+cutoff up to three hours earlier** *(see T18-9)*. ⚠ **NOT RECORDED: whether it was ever re-run after
+this session.** *(Full evidence: `NBA_SYSTEM_DESIGN.md` §0z-8-T18-RETRACTION.)*
+
 ## T18-10 · **NEW** · the league publishes THREE bulletins; the sweep had recorded one
 **1:30 p.m. / 5:30 p.m. / 8:30 p.m. ET = 10:30 AM / 2:30 PM / 5:30 PM PT** *(same source as T18-9)*.
 **`nba_asof.py` encodes the first two as `ENRICH_CUTOFFS_LOCAL = ["13:30", "17:30"]`** *(verified in
