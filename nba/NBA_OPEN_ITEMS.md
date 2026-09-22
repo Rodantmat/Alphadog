@@ -26,7 +26,7 @@
 > then **UNCAUGHT by a certifier before CAUGHT**. A silent failure costs a season before anyone
 > looks; a loud one costs an evening.*
 >
-> **`A` · `13` · `B` · `C` · `5` · `7` · `12` · `14` · `D` · `9` · `4` · `6` · `3` · `10` · `2` · `E` · `11` · `1` · `15`**
+> **`A` · `13` · 🔴 `17` · `B` · `C` · `5` · `7` · `12` · `14` · `D` · `9` · `4` · `6` · `3` · `10` · `2` · `E` · `11` · `1` · `15`**
 > ⚠ **`T20-15` ADDED 2026-09-22, T20 pass 89 (`§T20.94`) — *both pipelines certify RED on every
 > zero-game day; 2025-26 had `7` of them.*** **It ranks LAST, and the rule is what puts it there**:
 > it is **LOUD** *(a failed build is maximally visible)*, it **does not stop a slate** *(there is no
