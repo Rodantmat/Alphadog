@@ -28597,3 +28597,109 @@ state ("530 rows", "2026-09-02T07:58:37.370Z") is true forever. A number that na
 now ("19 days stale") is false tomorrow and nothing in the system has to change for it to become
 so.*** 🔑 **The sweep's own `[LIVE-AUDIT]` discipline cannot catch it, because the audit was live —
 which is why this took four passes to see.**
+
+---
+
+# §T20.27 — PASS 22: *THE NOW-RELATIVE CENSUS — A TAXONOMY, AND TWO SURVIVORS OF A CORRECTION THAT CLAIMED "EVERY"*
+
+*(T20 pass 22, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+
+## 1. 🎯 THE QUESTION §T20.26 LEFT THE OWNER WITH
+
+**§T20.26 proposed option (d) — *"state a DATE, never a countdown"* — on the strength of ONE grammar
+(`N days stale/since`) that yielded seven instances and three defects.** ⚠ ***An owner asked to adopt
+a writing convention is entitled to know whether the problem is three strings or a class. §T20.20's
+own lesson applies to my own recommendation: a count of carriers is not a reading of them.***
+
+> **FAMILY POPULATION, 15 grammars over the twelve, 2026-09-22T14:53:41Z:** `N days stale` 11 ·
+> `N days since` 2 · `N days early` 5 · `N days late` 2 · `weeks out` 1 · `two weeks` 3 ·
+> `three weeks` 6 · `a month away` 1 · `before the opener` 3 · `until the opener` 1 ·
+> `season opens in` 5 · `as of today` 1 · `right now` 8 · `this week` 3 · `imminent` 2 —
+> **`54` instances.** ✅ **CLAUSE (ii) HIT: the family is 7× the grammar §T20.26 measured.**
+
+## 2. 🔬 THE TAXONOMY — *four classes, and only two of them can rot*
+
+*(every instance opened against its source before classification — **RULE 48**)*
+
+| class | what it is | example | rots? |
+|---|---|---|---|
+| ✅ **A · FIXED-TO-FIXED OFFSETS** | a distance between two dates, neither of which is "now" | *"the scraper layer rolling to `2026-27` on **2026-10-01**, **nineteen days before the opener**"* · *"every deadline keyed to 10-03 is **17 days early**"* | ❌ **NEVER — permanently true** |
+| ✅ **B · QUOTED RUN-TIME REPORTS** | what a program said when it ran | *"correctly FAILED on defender ratings **6 days stale**"* ×3 | ❌ **NEVER — a historical fact** |
+| ⚠ **C · ANCHORED NOW-OFFSETS** | a distance from now, with a recoverable base date | *"**19 days stale**"* from `2026-09-02T07:58Z` · *"From today (2026-09-21): preseason in **12** days, regular season in **29**"* | 🔴 **DAILY — but repairable** |
+| 🔴🔴 **D · UNANCHORED NOW-REFERENCES** | a distance from now with **NO** base date at all | *"the table is empty **as of today**"* · *"is **0.18 MB today**"* · *"**the season opens in two weeks**"* | 🔴🔴 **DAILY, AND UNREPAIRABLE without re-measuring** |
+
+🔑🔑 ***Class A is the discovery.*** **`17 days early` and `19 days early` LOOK exactly like
+`19 days stale` and are permanently correct, because neither endpoint is "now".** ⇒ ***The defect is
+not the word "days". It is whether one endpoint is the reader's clock.*** **A convention that told
+authors to purge durations would have destroyed nine correct statements; option (d) must be stated as
+*"never measure from NOW"*, not *"never state a duration"*.** 📌 **The recommendation SURVIVES the
+test that could have withdrawn it — and it comes back sharper than it went in.**
+
+✅ **RULE 22 POSITIVE CONTROL — a now-relative statement that is CORRECT today must come back
+unflagged:** *"the scraper layer rolling to `2026-27` on **2026-10-01**, nineteen days before the
+opener"* — **`2026-10-20 − 2026-10-01 = 19` ✅ EXACT**, and *"the NBA season opens in October"*
+(4 instances) ✅ **robustly true**. **Neither was flagged. The instrument discriminates.**
+
+## 3. 🔴🔴🔴 CLAUSE (iii): TWO DIRECTION ERRORS, AND THEY SURVIVED A CORRECTION THAT SAID "EVERY"
+
+**`NBA_OPEN_ITEMS.md`'s authority entry reads: *"REGULAR SEASON OPENS **2026-10-20**, NOT 2026-10-03
+— **every urgency label** in these documents is 17 days early"*, and records its own method: the
+string `2026-10-03` *"appears **40 times across 15 files**"*, corrected, with verbatim quotes
+deliberately left intact.**
+
+🔴 **TWO INSTANCES SURVIVED, AND BOTH ARE WRONG BY A FACTOR OF TWO:**
+
+| | claim | written against | **true 2026-09-22** |
+|---|---|---|---|
+| 🔴 | `NBA_MASTER_SUMMARY.md` **§T7.8c heading** — *"AN EDGE CASE, and **the season opens in two weeks**"* | the superseded `2026-10-03` | **28 days · FOUR weeks** |
+| 🔴 | `NBA_OPEN_ITEMS.md` — *"why this is worse than it looks **with the season two weeks out**"* | the superseded `2026-10-03` | **28 days · FOUR weeks** |
+
+⚠⚠ ***Neither sentence contains a date, so a correction matching the literal string `2026-10-03`
+could not see either one.*** 🔑🔑 **This is §T20.22's failure mode exactly — a matcher anchored on a
+surface form missing the instances that never used it — reproduced in PROSE rather than in pointers,
+six documents away, by a different pass, months of work apart.** ***Two independent discoveries of
+one defect shape is no longer a coincidence; it is how this corpus fails.***
+✅ **Both corrected in-pass as DATES (rule 12), and the authority entry's own overstated reach
+recorded on it.**
+
+## 4. ✅ REPAIRS MADE IN-PASS *(rule 12; as DATES, never as refreshed numbers — §T20.26's form)*
+
+| location | was | now |
+|---|---|---|
+| `MASTER_SUMMARY` §T7.8c heading | *"the season opens in two weeks"* | **"THE REGULAR SEASON OPENS `2026-10-20`"** + the casualty note |
+| `OPEN_ITEMS` differential-worker item | *"with the season two weeks out"* | **"REGULAR SEASON OPENING `2026-10-20`"** *(28 days from 2026-09-22)* |
+| `OPEN_ITEMS` opener authority | *"From today (2026-09-21): preseason in 12 days, regular season in 29"* | **the two DATES**, with `11 / 28` re-derived and the original dated beside it |
+| `SYSTEM_DESIGN` `paper_picks` | *"empty as of today"* | **"empty as of `2026-09-22`"** — ✅ `SELECT count(*)` → **`0`**, re-derived |
+| `OPEN_ITEMS` + `MASTER_SUMMARY` file-size pair | *"0.18 MB today"* | **"`0.18 MB` as measured `2026-09-21`"** |
+
+⚠ **Left alone deliberately**: all 9 class-A offsets, all 3 class-B quotations, and *"latent, not
+imminent"* — **a JUDGMENT, not a countdown.** *Stated so a later pass does not "fix" them.*
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T14:55:52Z** |
+| **(ii)** | the family is **≥ 20 instances beyond** the seven `N days` strings | ✅ **HIT — `54` across 15 grammars, 7× the measured grammar.** *The "withdraw the recommendation" branch is not taken — but the recommendation is RESTATED: **"never measure from NOW", not "never state a duration"**, because class A would have been destroyed by the loose version.* |
+| **(iii)** | **≥ 1** statement wrong **in DIRECTION**, not magnitude | ✅ **HIT — two, both wrong by 2×, both pointing at an opener that moved 17 days.** *And both survived the correction that claimed to have found **every** urgency label.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTY-FOURTH consecutive run.** Working `649 · 1 · 470 · 469`.
+📌 **Second consecutive pass with all three clauses resolved cleanly — rule 37's third state has not
+fired since §T20.25.**
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — 6 repairs, 2 direction errors surviving a "every"-claiming correction, one open
+item's reach corrected, and a four-class taxonomy that sharpens an open OWNER DECISION.
+CLEAN STAYS 0/3.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **this pass was pre-registered to be able to WITHDRAW its predecessor's
+recommendation to the owner, and instead it sharpened it — the version §T20.26 proposed would have
+destroyed nine permanently-correct statements alongside the six defective ones.** ***"State a date,
+never a countdown" is wrong. "Never measure from the reader's clock" is right, and only a census
+across grammars could tell the two apart.*** 🔑 **And the second finding is the one to carry
+forward: a correction that matches on a surface form cannot reach the instances that never used it —
+found in pointers at §T20.22 and in prose here, by different means, on different material.**
