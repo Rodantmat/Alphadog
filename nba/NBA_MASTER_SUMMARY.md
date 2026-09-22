@@ -24929,6 +24929,76 @@ Factor lock (5 research passes) · return-ramp · the day-before injury report �
 
 ---
 
+# §T19.3 — PASS 2: THE FULL SEQUENTIAL READ, AND WHY IT FOUND ALMOST NOTHING
+*(T19 pass 2, 2026-09-22 — **the first pass of this run conducted under the restored sequential
+standard**; 920 segments in six ordered blocks)*
+
+## 1. ✅ WHAT WAS READ, AND AT WHAT RESOLUTION — *stated so the omission is auditable*
+
+| class | segments | treatment |
+|---|---|---|
+| **assistant PROSE** | **69** | ✅ **read in full** *(pass 1)* |
+| **OWNER turns** | **12** | ✅ **read in full** *(pass 0)* |
+| all segments, in order | **920** | ✅ **read at a 1,400-char cap — 73.8% of all characters** |
+| **segments exceeding the cap** | **283 (30.8%)** | resolved below |
+
+**The cap was not left unexamined, because a truncating pass is exactly the failure T1's own history
+records** *(its pass 1 truncated at 220–260 chars and cost twenty more passes)*. **The 283 over-cap
+segments were classified:**
+
+| over-cap class | n | disposition |
+|---|---|---|
+| `tool_use: github_patch_file` | **121** | 🔑 **KILLED — these payloads ARE the twelve's source text** *(rule 38 at maximum strength: T19 is the sweep WRITING these documents)* |
+| `tool_use: github_put_file` | **31** | 🔑 **KILLED — same** |
+| assistant `text` | **24** | ✅ already read in full in pass 1 |
+| **`tool_result`** | **107** | ✅ **RE-EXTRACTED AT FULL LENGTH — 357,244 chars — and inspected** |
+
+🔑 **And the 107 were inspected rather than assumed**: **105 of them are `dig.py` digests of T1 and
+T2** — *T19 reading the corpus* — **plus one workflow log and one SQL result already read in place.**
+⇒ ***Their content is T1's and T2's text, and T1 (89 passes) and T2 (19 passes) are both CLOSED by
+this sweep independently.*** **Rules 26/28 kill them twice over: a restatement of a transcript that is
+itself already fully swept.**
+
+## 2. 🔑 THE ONE GENUINELY NEW FINDING — *and it is a provenance finding*
+
+**`psycopg` refuses *"cannot insert multiple commands into a prepared statement"* the moment a query
+carries parameters.** ⇒ **In `nba/build_board_tiers_v2.py` the DDL, the `TRUNCATE` and the
+parameterised `INSERT` are THREE SEPARATE `execute()` calls, not one blob** — and the first build
+failed precisely because they were one blob *(run `35487587311`, step *"board tiers v2 (four-way
+taxonomy)"*, conclusion `failure`)*.
+✅ **Novelty verified: `multiple commands in a prepared statement`, `cannot insert multiple commands`
+and `three separate executes` all return ZERO across the twelve.**
+🔑 **It is a PROVENANCE finding in exactly T1's sense — it explains WHY the shipped script has the
+shape it has**, which no sweep of the finished file would recover.
+
+## 3. 🔴🔴 THE PASS'S REAL RESULT: **T1's EVIDENCE DID NOT REPLICATE, AND THE REASON IS STRUCTURAL**
+
+**The restored standard rests on T1's history: 23 targeted sweeps produced 21 findings, then pass 24
+— a full sequential read — immediately found SIX more, and pass 25 two more.** **On T19 the same
+method produced ONE.**
+
+⚠⚠ **That is not evidence against the standard. It is evidence that the standard has a SCOPE, and the
+scope is identifiable from the transcript's own tool profile:**
+
+| | T1 | T19 |
+|---|---|---|
+| kind of session | **BUILD** — the system being made | **DOCUMENTATION** — the twelve being written |
+| dominant tool | scrapers, `run_job`, `run_sql_postgres` | **`github_patch_file` 279 of 506 (55%)** |
+| what its payloads ARE | evidence about a system | ***the deliverable's own source text*** |
+| sequential-read yield | **8 findings after 23 sweeps** | **1** |
+
+🔑🔑 ***A sequential read recovers PROVENANCE — where something came from. In a build transcript the
+provenance is in the transcript. In a documentation transcript the provenance IS the document, so a
+sequential read re-reads what the sweep already has.***
+⇒ ***THE STANDARD, REFINED RATHER THAN WEAKENED: full sequential reading is required to close a BUILD
+transcript, and is near-costless but near-yieldless on a DOCUMENTATION transcript. T19 and T20 are the
+only two documentation transcripts in the corpus — and they are the last two.***
+
+⚠ **This refinement does NOT retroactively excuse T15–T18** *(open item T19-3)*: **all four are build
+transcripts, which is exactly where T1's evidence says sequential reading pays.**
+
+---
+
 # §T19.2 — PASS 1: THE GLOSSARY BACKFILL, AND THE CLOSURE STANDARD THIS RUN DRIFTED FROM
 *(T19 pass 1, 2026-09-22 · prose stratum 69 segments / 47,530 chars READ IN ORDER AND IN FULL)*
 
