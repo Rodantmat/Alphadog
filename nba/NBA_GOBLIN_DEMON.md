@@ -732,7 +732,15 @@ Standard ≈ median, Demon ≈ 70th–80th, useful range ≈ 15th–85th.**
 
 ### 6.1 The NBA producer
 **`nba/scrape_prizepicks_nba_board.py`** — **completely separate from `main.py` (MLB)**.
-- **`league_id=7`** (COMPASS fact 176) — MLB is `league_id=2`, hardcoded in `main.py`
+- **`league_id=7`** ~~(COMPASS fact 176)~~ — MLB is `league_id=2`, hardcoded in `main.py`
+  > 🔴 **CITATION CORRECTED 2026-09-22 (§T20.43): THERE IS NO COMPASS FACT 176.** *`NBA_COMPASS.md`
+  > is the only compass file in the repo; it numbers **1–107** (106 items, one gap — see below) and
+  > the string `176` appears in it **zero** times.* ⚠ **The citation was inherited from
+  > `.github/workflows/nba-p3-afternoon-light.yml:103** (*"COMPASS fact 176 says 'PrizePicks stays
+  > the MLB producer (repo root) with league_id=7 for NBA'"*), **repeated here and in
+  > `NBA_OPEN_ITEMS.md` without being checked.** ✅ **The technical claim — `league_id=7` for NBA,
+  > `2` for MLB, hardcoded in `main.py` — is CORRECT and independently verified in the workflow's own
+  > comment block; only the ATTRIBUTION is false.**
 - Own output: **`boards/prizepicks_nba_current.json`**
 - Own env namespace: **`PP_NBA_*`**
 - **Multiple candidate URLs** — `partner-api` and `api`; **the `partner-api` host answered while `api`
