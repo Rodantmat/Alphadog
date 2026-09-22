@@ -27714,3 +27714,79 @@ ten of them have no text.*** **Nothing in that chain was about the NBA system.**
 correct use of the last hours of a session that cannot close T20 anyway*** — **rule 46 bars a clean
 verdict from this context, so the highest-value work available was auditing the instrument the next
 session will inherit. It is now measurably better documented than when this session began.**
+
+---
+
+# §T20.19 — PASS 14: *THE FIRST PASS IN FOURTEEN THAT FOUND NOTHING — CLEAN, AND DEPENDENT*
+
+*2026-09-22. **A return to T20's content**, after five passes of instrument audit. **Two of three
+clauses MISSED, and both misses are the corpus coming out ahead of my prediction.***
+
+## 1. 📏 THE WRITE PAYLOADS, RE-DERIVED *(rule 30)*
+
+**Write runs rebuilt from the segment stream by run-level attribution** *(the correction §T20.8 made
+after a first census put 51.8% in a `(no path)` bucket)*: **238 runs carry a path.** ✅ **The
+distribution reproduces §T20.8's census exactly** — `OPEN_ITEMS` 67 · `MASTER_SUMMARY` 52 ·
+`FINAL_SCORING_CALIBRATION` 32 · `GOBLIN_DEMON` 12 · `MULTIPLIERS` 10 · `GLOSSARY` 9 · `DATABASE` 7 ·
+`WORKERS` 5 · `SYSTEM_ARCHITECTURE` 5 · `BASELINE_CALIBRATION` 4 · `SYSTEM_DESIGN` 4 · **`RECIPE` 2
+(1,597 chars)** — *an independent re-derivation two days later, byte-for-byte.*
+
+## 2. ✅ THE TEST — *extending §T20.3's sample, because 34 probes is a sample (rule 25)*
+
+**§T20.3 probed 34 phrases and every substantive one returned nonzero.** ⚠ **34 probes over 434 write
+segments is a SAMPLE, and rule 25 requires a claim from a sample to state the sample.** *So this pass
+drew **twelve more**, all from the write payloads into the two documents with the least verification
+history — `NBA_MULTIPLIERS.md` (10 runs) and `NBA_GOBLIN_DEMON.md` (12 runs) — **and none of the
+twelve is among §T20.3's 34.***
+
+| probe | docs | hits | | probe | docs | hits |
+|---|---|---|---|---|---|---|
+| `2000` *(demon max payout)* | 6 | 28 | | `goblin_pct` | **1** | **1** |
+| `green icon` | **1** | **1** | | `demon_pct` | **1** | **1** |
+| `4/5` · `3/5` *(flex partials)* | 5 · 6 | 16 · 20 | | `clip_floor` | **1** | **2** |
+| `1.4` *(tier step)* | 11 | 227 | | `league_id=7` | 7 | 13 |
+| `42,600` *(ladders)* | 6 | 8 | | `equal_scale_v1` | 5 | 11 |
+| `419,205` *(switch-point legs)* | 3 | 8 | | | | |
+
+🔴 **TWELVE OF TWELVE NONZERO.** ✅ **The four singletons were OPENED (rule 26) and all four are
+genuine, not collisions** — *`NBA_GOBLIN_DEMON.md:318` "goblins carry a **green icon**", `:436`
+`clip_floor: 0.5`, `:439` `goblin_pct: [25, 35]`, `:440` `demon_pct: [70, 80]`.*
+
+✅ ***RULE 38 now rests on 46 probes rather than 34, drawn deliberately from the least-covered
+documents, and the result did not change.*** **T20 wrote its system material into the twelve, and it
+is there.**
+
+## 3. 📏 CLAUSE SCORING — *two misses, both favourable*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` **FALLS by at least 2** | ❌ **MISS — Δ = 0.** `470 → 470` at 14:00:52Z |
+| **(ii)** | finds **at least one** system fact the 34-probe census did not cover | ❌ **MISS — zero of twelve absent** |
+| **(iii)** | at least one such fact is in `MULTIPLIERS` or `GOBLIN_DEMON` | ❌ **UNSCORABLE — no such fact exists** |
+
+🔑 **CLAUSE (i)'s MISS IS SELF-EXPLAINING AND WAS PRE-WRITTEN**: *the clause said "if it does not
+fall, the pass did not actually cover new segment material and says so."* **It did not, because §2
+came back clean — there was no new material to write.** ✅ **Δ = 0 is the correct reading for a
+verification pass, and the series is now 0 · −4 · 0 · −1 · 0 · 0 · 0 · 0 · 0 · 0 · 0 across passes
+4–14, with the single −4 belonging to the one pass that wrote six findings.**
+⚠ **Clause (ii)'s miss is the pre-registered falsifiable direction resolving for the corpus.**
+*Baseline `636 · 2 · 484 · 481` — SIXTEENTH consecutive identical return.*
+
+## 4. ⚠ VERDICT — ***CLEAN, AND IT CANNOT COUNT***
+
+✅🔴 **PASS 14 FOUND NOTHING. It is the first of fourteen to come back clean.**
+⚠⚠ ***AND IT DOES NOT ADVANCE THE CLEAN COUNT, WHICH STAYS 0/3 — RULE 46.*** *This pass shares a
+context window with passes 4–13; it is a re-read, not an independent read, and §T20.10's
+pre-registration named this outcome in advance: **"if pass 5 comes back clean it is recorded as
+CLEAN-BUT-DEPENDENT and the count stays 0/3."*** **That verdict now applies for real.**
+
+📌 **What fourteen passes have established, at the strength the evidence carries:**
+**READ** — *990,596 of 990,596 characters; all five strata; twice.*
+**VERIFIED** — *46 containment probes nonzero · 10 live figures re-run, 9 exact · 40 of its own
+citations opened · the write census reproduced independently two days later.*
+**FOUND** — *four stratum-boundary findings · two published defects repaired · three mis-citations ·
+a rule retired · a rule merged · ten rules discovered to have no text.*
+**NOT ESTABLISHED** — ***that T20 is done.*** *One clean pass in a dependent context is one clean
+pass in a dependent context.* ***T20 goes to the next session at 0/3, with the first genuinely clean
+read behind it and two independent ones owed — the same position T19 was left in, and for the same
+reason.***
