@@ -26443,3 +26443,118 @@ the mechanism ones — `tool_result` 368 segments / 356,274 chars and `bash_tool
 census, T19's receipts and T12's rule 32 all found what the prose could not say.*** *Rule 38 kills
 the `tool_use` payloads; it does not touch the RECEIPTS, and pass 0's `tail 2` reading is an unopened
 lead that lives there.*
+
+---
+
+# §T20.6 — PASS 2: THE RECEIPTS — *A SIXTEEN-FAILURE WRITE CENSUS THE PROSE NEVER MENTIONS*
+*(T20 pass 2, 2026-09-22 — the `tool_result` stratum, 368 segments / 356,274 chars, read by tool and
+in order; **first pass written under SEG 1120's form rule** — source, date, quotation)*
+
+## 0. ✅ THE MUST-FOLLOW RULE — applied
+*Resume note re-read; charter re-read — T19 SEG 60/61 plus T20 SEG 597.*
+
+## 1. ✅ THE COMMANDS — ***RULE 43***
+```bash
+grep -n -E "^## [0-9]+" nba/NBA_FINAL_SCORING_CALIBRATION.md
+grep -o -E "^## [0-9][0-9a-zA-Z.-]*\." nba/<doc>.md | sort | uniq -d   # full token, not stripped
+# receipts profiled and the failures enumerated with their preceding tool_use path:
+python3 - <<'PY' ... segments(T20) ... PY                  # scratchpad/t20/
+```
+**Stratum profile**: `github_patch_file` **207** receipts *(191 are boilerplate `ok:true` envelopes
+under 400 chars)* · `bash_tool` **119** / 256,200 chars · `github_grep_file` **32** ·
+`run_sql_postgres` **6** · `github_put_file` **4**.
+
+## 2. 🔴 FINDING 1 — SIXTEEN FAILED WRITES, ACROSS EIGHT OF THE TWELVE
+
+| # | SEG | error | target |
+|---|---|---|---|
+| 1 | 215 | `old_str not found in file` | `NBA_OPEN_ITEMS.md` |
+| 2 | 303 | `old_str matches 10 times, must be unique` | `NBA_MASTER_SUMMARY.md` |
+| 3 | 305 | `old_str not found` | `NBA_MASTER_SUMMARY.md` |
+| 4 | **368** | `MCP error -32602: input validation error … expected string, received undefined at path` | *(call issued with no `path`)* |
+| 5–16 | 384 · 476 · 516 · 594 · 673 · 683 · **717** · **723** · 852 · 883 · 951 · 1001 | `old_str not found` | `OPEN_ITEMS` · `GLOSSARY` · `OPEN_ITEMS` · `WORKERS` · `SYSTEM_ARCHITECTURE` · `SYSTEM_DESIGN` · `FINAL_SCORING_CALIBRATION` ×4 · `OPEN_ITEMS` ×2 |
+
+🔴 **`grep -c -i -E "old_str|patch failed|patch failure|not found in file"` over T20's 166-segment
+prose stratum returns `0`.** ***The session reported none of these.***
+⚠ **The twelve DO carry write-failure censuses — `NBA_MASTER_SUMMARY.md:2567`, `:3788`, `:8262`,
+`:14543`, `NBA_OPEN_ITEMS.md:6518` — but those record OTHER sessions'** *(e.g. §:3788's "2×
+`old_str not found`, 1× HTTP 409, 1× MCP validation error")*. **T20's sixteen are not among them.**
+🔑 **This is rule 32's shape: the failure is in the mechanism stratum, the account is in the prose,
+and the account does not contain it.**
+
+## 3. ✅ FINDING 2 — TWELVE OF SIXTEEN LANDED ON RETRY; **ONE NEVER DID**, VERIFIED AGAINST THE FILE TODAY
+
+**Each failure was followed forward to its next write against the same path, and — decisively — the
+intended content was grepped in the current documents:**
+
+| SEG | intended content | present today? |
+|---|---|---|
+| 303 | §T7.27 and §T7.28 into `NBA_MASTER_SUMMARY` | ✅ **present** — lines 12797, 12810 |
+| 368 | *"if a2 is ever revisited · check the sample-size gating first"* | ✅ **present** — `NBA_MASTER_SUMMARY` ×1, `NBA_OPEN_ITEMS` ×1 |
+| **717 · 723** | *"§13 carries the validation gate any edge claim must pass"* — a cross-reference into `NBA_FINAL_SCORING_CALIBRATION` §12 | 🔴 **ABSENT** — `grep -c -i -F "carries the validation gate" nba/*.md` returns **0 in every file** |
+
+✅ **The target of that cross-reference EXISTS**: `NBA_FINAL_SCORING_CALIBRATION.md:2819` —
+`## 13. THE VALIDATION GATE FOR ANY STRATEGY`. ***Only the pointer to it is missing.***
+⚠ **Severity LOW as content** *(one navigational cross-reference)*; **the value is the mechanism
+below.**
+
+## 4. 🔴 FINDING 3 — THE CAUSE IS A LIVE NUMBERING DEFECT IN `NBA_FINAL_SCORING_CALIBRATION.md`
+
+**Both failed writes anchored their `old_str` on `## 12. WHERE EDGE IS NOW EXPECTED TO COME FROM`.**
+**VERIFIED, 2026-09-22 — the section is now `## 19.`, at line 3586, and the document's numbered
+sequence is:**
+> `… 8 · 9 · 10 · 11 · **13** · 14 · **14** · 16 · 17 · 18 · **20** · **19** · **15.0c**`
+
+| defect | evidence |
+|---|---|
+| **`## 14.` used TWICE** | line **2902** *"THE STATISTICAL STANDARD, CONSOLIDATED"* · line **2928** *"THE RESEARCH STANDARD — all 27 lessons"* |
+| **`## 12.` missing entirely** | sequence steps 11 → 13 |
+| **`## 20.` precedes `## 19.`** | lines 3534, 3586 |
+| **`## 15.0c` sits after `## 19.`**, and `## 15` itself is absent | line 3611 |
+
+⇒ ***An `old_str` anchored on a numbered heading is fragile in a document that is still being
+appended to: the number moves, and the patch fails silently as "not found".*** **Fifteen of the
+sixteen failures are `old_str not found`.**
+
+⚠⚠ **AND THE MEASUREMENT WAS CORRECTED MID-PASS — rule 15.** *The first count of duplicate headings
+stripped suffixes (`awk '{print $2}'`), so `0a`, `0b`, `7b`, `15.0c` all collapsed to `0`, `7`, `15`
+and every document looked defective.* **Re-run on the FULL heading token, TRUE duplicates are:**
+`NBA_FINAL_SCORING_CALIBRATION` **`14.`** · `NBA_GOBLIN_DEMON` **`4. 5. 6.`** ·
+`NBA_BASELINE_CALIBRATION` **`0y. 3. 5.`** · `NBA_SYSTEM_DESIGN` **`0. 0a.`** · `NBA_WORKERS` **`0.`**
+· `NBA_MULTIPLIERS` **`0.`** · `NBA_MASTER_SUMMARY` **`0.`–`7.`**.
+⚠ **NOT ESTABLISHED: whether any are by design** — *`NBA_MASTER_SUMMARY` is organised per transcript,
+so repeated top-level numbers across transcript blocks may be intentional. Only
+`NBA_FINAL_SCORING_CALIBRATION`'s is demonstrated to have caused a failure.*
+
+## 5. ✅ FINDING 4 — THE `tail 2` OPENED, AND IT POINTS AT THE WORK ORDER
+
+**Pass 0 recorded `tail 2` and left it unopened. Both segments are now identified:**
+
+| SEG | kind | b12 | b30 | nearest match in the thirty |
+|---|---|---|---|---|
+| **482** | `human/text` — **an OWNER turn** | **0.211** | **0.909** | 🔴 **`NBA_DOCUMENTATION_PROMPT.md`** |
+| 994 | `assistant/thinking` | 0.294 | 0.619 | `NBA_LESSONS_LEARNED_FROM_MLB.md` |
+
+**SEG 482, verbatim**: *"you're reporting back again after each pass. i want you to do multiple pass
+until your session has no more way to keep going or you finish the three consecutive passes… it's
+not feasible for you to be interacting with me all the time."*
+
+🔑 ***The tail is by construction material the THIRTY carry and the TWELVE do not — and its one
+substantive member is an owner instruction whose nearest match is the work order.*** **§T19.7 found
+`NBA_DOCUMENTATION_PROMPT.md` by re-deriving the `nba/*.md` population; the coverage band found the
+same gap independently, from the opposite direction.** ⚠ **SEG 994 is a 63-character thinking label —
+a useful negative control: the tail catches noise as well as signal, which is why it is opened rather
+than counted.**
+
+## 6. 📏 CLAUSE SCORING
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` changes by no more than ±10 | ⏳ **scored at the start of pass 3** *(rule 34)* |
+| **(ii)** | the `tool_result` stratum yields **≥ 2** findings the prose did NOT report | ✅ **HIT — four** *(§2, §3, §4, §5)*, **and the prose reports write failures ZERO times** |
+| **(iii)** | the `tail 2` segments are OPENED and IDENTIFIED BY NUMBER, **and at least one is a `tool_result`** | ⚠ **PARTIAL — identified (SEG 482, SEG 994); NEITHER is a `tool_result`.** *One is an owner turn, one a thinking label.* |
+
+🔑 **Clause (iii)'s wrong half is informative**: *the tail was predicted to live in the receipts and
+does not — it lives in the OWNER stratum, which is the same place pass 0's two corrections came from.*
+**On this transcript, three separate instruments — the population re-derivation, the coverage tail,
+and the owner-turn probe — all point at the same two gaps: the work order, and the owner's own
+instructions.**
