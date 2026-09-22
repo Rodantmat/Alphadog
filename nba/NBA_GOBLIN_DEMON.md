@@ -15,6 +15,54 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 
 ---
 
+## 0f. 🔑 THE OWNER'S OWN STATEMENT OF THE RULE — **and the four parts of it the twelve did not carry**
+*Recorded 2026-09-22 (T13 pass 0, §T13.1e). **Transcript `2026-09-13-01-03-48`, owner segments 661
+(3,417 chars) and 693.** Probed against the baseline `4429380d`, pinned 2026-09-22T07:43Z; controls
+`anchor` 57 of thirty and `multiplier` 58 both fire; every hit opened.*
+⚠ **The RULE itself is thoroughly on file and is NOT re-derived here** *(rule 28)*: **`invisible
+anchor` is in 5 of the twelve, `switch point` in 3, the `10.5 / 11.5 / 12.5` example in 2, and
+`LADDER_DEPTH` in 9.** ***What follows is the four parts that are not.***
+
+**1 · 🔴 THE VALIDITY CHECK — *"same payout"* is 1 of thirty and 0 of the twelve; *"cannot be the same
+as a regular"* is 0 of THIRTY.** *Segment 661, verbatim*:
+> ***"once that's done, then you need to see if there's a PATTERN on the multiplier — the money pay
+> you see on the mined data — to see if it makes sense. Because if you have goblin T1, goblin T2
+> with the SAME PAYOUT, that's bullshit, that's not working. Same for demons. And of course they
+> cannot be the same as a REGULAR line."***
+
+🔑 ***This is a three-part FALSIFICATION TEST for any tier assignment***, and it is cheap to run:
+**(a) adjacent goblin tiers must not share a payout · (b) adjacent demon tiers must not share a
+payout · (c) no goblin or demon tier may equal the standard-line multiplier.** ⚠ **A tiering that
+fails any of the three is mis-anchored, not merely imprecise.**
+
+**2 · 🔴 LADDER DEPTH IS PROP-DEPENDENT, AND THE SHALLOW ONES PAY DIFFERENTLY — *"not treated equal"*
+is 0 of THIRTY.** *Segment 693, verbatim*:
+> ***"the goblin and demon tiers are NOT TREATED EQUAL FOR ALL PROP LINES. For points you're gonna
+> have a LADDER of goblins and demons — the first is a good pay, the second less, the third less,
+> and so on for goblins, and the opposite for demons. But when you get a HARD LINE — maybe fantasy
+> score, maybe steals, something that's a LOW COUNT more than anything — you're probably gonna have
+> just ONE. And that goblin or demon is very likely to be a DIFFERENT, A LOT LOWER MULTIPLIER
+> compared to the ones that have the ladder."***
+
+⚠ **`LADDER_DEPTH` the constant is in 9 of the twelve; this is the owner's statement of WHY it
+varies, and of the consequence — *a single-rung prop's goblin is not priced like a deep ladder's
+first rung*.**
+
+**3 · 🔴 WHY THE TIERS MATTER AT ALL — *"different multipliers"* is 0 of THIRTY.** *Segment 661*:
+***"different tiers of different goblins and demons are gonna have DIFFERENT MULTIPLIERS, and that's
+essential for us to find ROI when the time comes."*** 🔑 **The tiering is not taxonomy for its own
+sake — it is the ROI input.**
+
+**4 · 🔴 THE METHOD ORDER — *"whole mechanics"* is 0 of THIRTY.** *Segment 693*: ***"First, understand
+the WHOLE MECHANICS for goblins and demons for NBA, and THEN start focusing on each one of the prop
+lines."*** ⚠ *Stated as an ordering constraint on the research, not as a preference.*
+
+📌 **And the forward-looking half of segment 661, for the record**: *"the system needs to be ready to
+treat goblins and demons **LESS** for the next season, because PrizePicks just rolled an upgrade and
+is doing that for WNBA and also for MLB… **for the past two seasons, very likely, you're only gonna
+have goblin and demon as MORE**."* ✅ ***Which is exactly what §T12.7c measured: not one `Under`
+alternate in 2.2M `board_tiers_v2` rows.***
+
 ## 0g. 🔴 THE MORE-GOBLIN PAYOUT FLOOR IS **1.9×**, NOT 2.08× — *owner-supplied correction, verified live*
 *Recorded 2026-09-22 (T12 pass 5, §T12.6f). **Owner-supplied, then verified against the live system
 rather than taken on the word of the message.** All figures pinned **2026-09-22T07:01:38Z** unless
