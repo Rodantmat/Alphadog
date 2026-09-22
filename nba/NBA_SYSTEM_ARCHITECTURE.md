@@ -182,6 +182,31 @@ host**"* *(`herald-2` is in **0 of thirty**)*. ✅ **And the same-moment diff th
 2,434 legs on 5 MLB games against ParlayAPI's 663 — full ladders vs main lines only, both sides with
 previous price and update time vs American only.**
 
+## 0f-3. 🔑🔑 **THE ADMIN BRIDGE'S CAPABILITY BOUNDARIES — measured from its own failures, and ALL are 0 of the THIRTY**
+*Recorded 2026-09-22 (T14 pass 3, §T14.4). **Found by the mechanism failure census** — 789 segments
+under the predicate `"ok": false` · non-zero `returncode` · `http_status` 4xx/5xx. Probes pinned
+2026-09-22T09:10:19Z.*
+
+**These are not bugs. They are the edges of what the bridge's database role and API scopes permit —
+and each one shaped a decision recorded elsewhere in this corpus.**
+
+| boundary | the error, verbatim | what it cost |
+|---|---|---|
+| 🔴🔴 **cannot CANCEL a running query** | **`permission denied to cancel query`** | ***during the disk crisis a single `CREATE TABLE AS` ran 98 minutes and pushed the disk to 91%, and the bridge could not stop it*** — **which is why jobs are stopped by flipping a workflow's CONCURRENCY GROUP and dispatching a no-op to evict them** *(the technique the corpus records without its cause)* |
+| 🔴 **cannot inspect the WAL directory** | **`permission denied for function pg_ls_waldir`** | **the ~8 GB gap between *"the database is 19 GB"* and *"the disk is 91.6% of 30 GB"* had to be attributed to WAL and temp spill BY INFERENCE**, because the bridge cannot measure it |
+| 📌 **cannot `VACUUM`** | **`vacuum cannot run inside a transaction block`** | **the bridge wraps statements in a transaction**, so ***"vacuum after bulk deletes"* — one of the four operating rules** *(`NBA_DATABASE.md` §0u)* — **cannot be executed THROUGH the bridge and must run from a runner** |
+| 📌 **cannot fetch older run logs** | `github_get_workflow_run_log` → **404, *"link may have expired, or run is too old"*** ×4 | **the same instrument bound §T12.8 recorded** — *a workflow's history is not retrievable after a short window, so a failure not read promptly cannot be read at all* |
+| 📌 **`github_patch_file` needs an EXACT unique match** | **`old_str not found in file. no changes made.`** | *already in 2 of the twelve; recorded as a recurring friction, not a discovery* |
+
+🔑🔑 **THE FIRST TWO ARE THE OPERATIONALLY IMPORTANT PAIR, and together they define the disk
+incident's failure mode**: ***the bridge could neither MEASURE the thing filling the disk nor STOP
+the thing filling it.*** ⚠ **That is the real argument behind *"compute on the runners, not in the
+database"*** — **not only that the database is small, but that the bridge cannot intervene when a
+database-side job goes wrong.**
+⚠ **Stated at evidence strength**: **these are the responses recorded on 2026-09-13.** **Whether the
+role's grants have changed since is NOT RECORDED** — *the sweep is read-only and did not re-test
+them, because re-testing a cancel or `pg_ls_waldir` would itself be an action* **(rule 1).**
+
 ## 0f. 🔴🔴 THE FOUR LIVE BOARD SOURCES — **each chosen by a same-moment diff, and three of the four had no evidence in the twelve** *(⚠ see §0f-1: there are FIVE — Betr is the fifth)*
 *Recorded 2026-09-21 (T12 pass 2, §T12.3). **Transcript `2026-09-11-21-01-23`, segments 90–91, 570,
 604, 615, 636.** Probed against the baseline `c5798146` with controls (`board_sources_decision` 4 of
