@@ -15261,7 +15261,9 @@ of the price.*** **Written to `NBA_MULTIPLIERS.md` §0.9d.**
 ✅ **This turns the owner's own correction** *(`NBA_MULTIPLIERS.md` §3: "not one number per tier")*
 **into a model specification**, and its evidence is **Underdog's ladders — the only per-leg
 multiplier dataset the project actually has**: **1,401 real tiered rungs across 385 ladders**, **233
-distinct Over prices / 211 Under**, **−2439 to +33xx** *(all **0 of the twelve**)*. 🔑 **The
+distinct Over prices / 211 Under**, **−2439 to +33xx** *(all **0 of the twelve**)*. ⚠⚠ **THESE TWO
+FIGURES ARE RETRACTED — see `NBA_MULTIPLIERS.md` §0.9e.1; the retraction reached that file and not
+this one, and is propagated here 2026-09-22 (T18 pass 7).** 🔑 **The
 authority matters and answers the owner's MLB-multiplier warning directly** *(§T13.1d)*: ***these
 came from Underdog's own API — the counterparty, not our internal model.*** **The per-stat evidence
 (PRA): 26.2 average line, 0.85 goblins and 1.20 demons per ladder, offsets −3.56 / +6.28** —
