@@ -12405,6 +12405,22 @@ line/message/date and time."*** **§Z gives the DOCUMENT and the TRANSCRIPT(s); 
 per-message line numbers**, because the sweep's documents record findings by section and transcript
 and **the transcript line offsets were never captured**. ⚠ **Named rather than invented: fabricating
 line numbers would be worse than omitting them.**
+
+> ### ⚠ UNRELATED ITEM RECORDED HERE FOR PROXIMITY — **`ladder_calibration_asof` carries no refit history, so its documented weekly cadence cannot be checked from the table**
+> `[LIVE-AUDIT]` **2026-09-22 (§T20.13)**. **`nba_score.ladder_calibration_asof` holds 9,904 rows
+> against the 9,577 on file** — *and the +327 is not growth.* **`min(built_at) = max(built_at) =
+> 2026-09-21 07:18:58.269286+00`: every row shares one timestamp, and all 9,904 were written after
+> 2026-09-20.** ***The table is truncate-and-replace, so the documented 9,577 describes a previous
+> GENERATION of it, not an earlier count of the same rows.***
+> 🔴 **The consequence**: the refit rule on file is *"weekly, on everything graded strictly before
+> today, with prior-season inheritance for cells without own evidence"* — **and with a single build
+> timestamp the table records nothing about when it was previously fit or whether a weekly cadence is
+> running at all.** *24 distinct `as_of_date` values; one `built_at`.*
+> ⚠ **Severity: MEDIUM before opening night.** *This is the table that replaced the parity-violating
+> pasted constant table, and §5 of the parity directive forbids carrying a constant between days — a
+> rule that can only be enforced if the refit is observable.* **The fix is small and additive: a
+> `refit_run` / `run_id` column, or a companion runs table like `baseline_ladder_runs`, so each refit
+> leaves a trace.** **Not actioned — documented, per "document, don't fix."**
 **Severity: LOW** — a reader can find any term from document + transcript. **The fix, if wanted, is to
 re-extract each transcript with segment indices and add a fourth column** *(the sweep already computes
 segment indices in every pass, so the data exists in the harness even though it is not in the
