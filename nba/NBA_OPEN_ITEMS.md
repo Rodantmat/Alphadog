@@ -13064,6 +13064,30 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 > T20-7 degrade the MODEL, all season; T20-9 degrades the OPERATOR'S ABILITY TO KNOW WHAT IS
 > RUNNING.* ⇒ **third, behind both, ahead of T20-4.**
 > **Amended order: `5 · 7 · 9 · 4 · 6 · 3 · 2 · 1`.**
+>
+> ## ⚠⚠ SECOND AMENDMENT — **T20-10, T20-11 AND T20-12, ADDED T20 PASSES 43-45 (§T20.48-§T20.50), 2026-09-22**
+> *Same discipline: the pass-40 table is untouched, every field is read back from its item, and no
+> finding is created here.*
+>
+> | # | item | fails | effect | caught by a certifier? | fix size |
+> |---|---|---|---|---|---|
+> | **→ 3rd** | 🔴🔴🔴 **T20-12** — `build_availability_delta.py:39` hardcodes `PT = -8`, so `p3_cut` is `21:15 UTC` year-round | 🔴🔴 **SILENT** | **DEGRADES THE MODEL** — for every day of DST the availability-delta window runs an hour past the cutoff P3's own guard enforces | 🔴 **NO** *(nothing checks the window)* | **`ZoneInfo` in 3 files** |
+> | **→ 8th** | 🔴🔴 **T20-10** — `nba-daily-delta.yml` swallows every failure twice | 🔴🔴 **SILENT** *(can produce nothing and report success)* | **DEGRADES** — but **operator-initiated only**, so a human is present | 🔴 **NO** | **three lines** |
+> | **→ 10th** | 🔴 **T20-11** — P1's cron comment and header invert PDT/PST | n/a *(documentation)* | **DEGRADES COMPREHENSION** — nine surfaces state the wrong hour for 133 of the season's first 145 days; **nothing operational breaks** | n/a | **two comment lines** |
+>
+> 🔴🔴 **WHY T20-12 GOES THIRD AND DISPLACES T20-9 TO FOURTH.** *Under the brief's own rule it is
+> SILENT · DEGRADES · UNCAUGHT — the same triple as T20-5, T20-7 and T20-9 — so the tie breaks on
+> what it degrades: **T20-12 degrades the MODEL, as 5 and 7 do; T20-9 degrades the operator.*** ⚠ **It
+> ranks BELOW 5 and 7 because they are wrong every day of the season and T20-12 is wrong only during
+> DST** — ✅ **but it is the FIRST of the eleven to go live: preseason opens `2026-10-03`, eleven days
+> from the pass that found it, in PDT.**
+> **Amended order: `5 · 7 · 12 · 9 · 4 · 6 · 3 · 10 · 2 · 11 · 1`.**
+> 🔑 **AND THE "ONE PATTERN" COLLAPSE BELOW GROWS BY ONE.** *T20-5, T20-4 and half of T20-2 are one
+> defect — **a value that should be derived from the slate date is written as a literal**. **T20-12 is
+> the same defect in the time dimension**: a value that should be derived from the zone is written as
+> a constant — **and, exactly as with `_season_of()`, the correct pattern is ALREADY IN THE REPO**,
+> four lines of `TZ=America/Los_Angeles` in P2 and P3.*
+> ⇒ ***Eleven items, and still not eleven jobs: TWO patterns, one toggle, and three owner decisions.***
 > 🔑 **AND IT DOES NOT JOIN THE "ONE PATTERN" COLLAPSE BELOW** — the season-literal fix does nothing
 > for it. **T20-9 is its own fix: three files, one idiom that already exists in twenty-three others.**
 > ✅ **Which makes it the cheapest item on this brief and the third most costly to leave** —
