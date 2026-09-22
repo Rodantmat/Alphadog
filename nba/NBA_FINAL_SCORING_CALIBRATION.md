@@ -11,6 +11,44 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T18-B. 🔴🔴🔴 **THE SCORE'S THREE FORMULAS — AND `[LIVE-AUDIT]` PROVES THE LIVE COLUMN HOLDS TWO OF THEM SIDE BY SIDE. OPEN ITEM T16-8 IS ANSWERED.** *(T18 pass 1, §T18.2)*
+
+### ✅ **THE ARC — three formulas in one session, each corrected by the owner**
+
+| # | Formula | Behaviour | Fate |
+|---|---|---|---|
+| **1** | **`score = edge × confidence`** *(edge = `(final_hp − 0.56) × 100`)* | **range −53.7 → +42.2, mean ≈ −5.6** — *"most legs sit negative because most legs don't clear break-even"* | 🔴 **REJECTED**: *"that's an EDGE METRIC, not the 0–100 scale you want"* |
+| **2** | **`score = final_hp × confidence × 100`** | 0.95/0.95 → **90.3** · 0.95/0.70 → 66.5 · 0.50/0.95 → 47.5 · 0.22/0.95 → 20.9 | 🔴 **REJECTED BY THE OWNER**: *"**multiplying KILLS GOOD LEGS.** A 95% hp with 90% confidence scoring 85.5 is worse than the hp alone, which is backwards. **Confidence should CONFIRM a strong leg, not TAX it.**"* |
+| **3** ✅ | **THE 0.85-NEUTRAL PIVOT** — above it the score climbs toward 100 by **up to half the remaining headroom**; below it it is pulled down by **up to 35%**; **at neutral the score IS the hit probability** | 0.95/0.95 → **97.4 ⬆** · 0.95/0.85 → **95.0 =** · 0.95/0.70 → **81.7 ⬇** · 0.50/0.95 → 63.2 · 0.22/0.95 → 42.4 | ✅ **SHIPPED — and it is COMPASS fact 103** |
+| — | **`edge` becomes its OWN COLUMN** | *"**edge answers 'is this an OPPORTUNITY'** — a 64% leg the board needs 57% for is valuable, a 92% leg everyone prices at 92% isn't — **score answers 'how GOOD is this leg'**. The slip engine will want both."* | ✅ added |
+
+✅ **VERIFIED IN THE TRANSCRIPT ON REAL ROWS** — *and these are exactly fact 103's worked examples, so fact 103 is this verification*: **0.479 hp / 0.921 conf → 60.16** *(vs 44.11 multiplicative, edge −8.09)* · **0.478 / 0.949 → 65.06** *(vs 45.39)* · **0.434 / 0.952 → 62.71** · **0.468 / 0.884 → 52.78**. 🔑 ***"Every score sits ABOVE `hp × conf`, confirming confidence is LIFTING rather than TAXING"*** — **and the ordering is right: 0.434 at 0.952 OUTRANKS 0.468 at 0.884, so better-supported data wins at a lower probability.**
+
+### 🔴🔴🔴 **BUT THE LIVE COLUMN HOLDS FORMULA 1 *AND* FORMULA 3 — AND THE `built_at` WINDOWS PROVE IT** `[LIVE-AUDIT]` *(`SELECT` 2026-09-22)*
+
+| | rows | **`built_at` window** | seasons | `final_hp` range |
+|---|---|---|---|---|
+| **`score < 0`** | **6,924,101** *(36.0%)* | 🔴 **2026-09-19 03:26:25 → 04:41:39 ONLY — a 75-minute window** | **1** | **0.000 → 0.560** |
+| `score ≥ 0` | 12,291,099 | 2026-09-19 03:26:25 → **22:41:47** | **2** | 0.000 → 1.000 |
+
+🔑🔑🔑 **THE ENHANCING FORMULA CANNOT PRODUCE A NEGATIVE SCORE** *(its worst case, 0.22 hp at 0.95 confidence, is **42.4**)*. **So the 6.9M negative rows are LEFTOVERS from the `edge × confidence` era, written in a 75-minute window on 2026-09-19 and NEVER OVERWRITTEN by the later replication.** ✅✅ **OPEN ITEM T16-8 IS ANSWERED: the negatives are neither intended nor a formula defect — they are a REPLICATION that did not finish.**
+
+### 🔴🔴🔴 **AND THE SAME INCOMPLETE PASS EXPLAINS T16-7 — ONE MECHANISM, TWO SYMPTOMS**
+
+*The **latest** `built_at` in the whole table is **22:41:47**, and it belongs to **2025-26's 140,130 rows on a single date**.* 🔑🔑 ***So the final replication pass began on 2025-26 — which the engine writes by DELETE-then-INSERT per prop — wrote roughly one date's worth, and stopped. It never returned to overwrite 2024-25's stale-score rows.*** **That is one incomplete run producing both symptoms**: a season reduced to 0.7% of itself *(T16-7)* **and** 6.9M rows still carrying a superseded formula *(T16-8)*.
+
+⚠ **AND THE AUTHOR FLAGGED THAT HE COULD NOT VERIFY IT — the instrument failed at exactly the wrong moment**:
+
+> ***"The SQL bridge is timing out on the large aggregates, so **I can't currently verify the final HP replication state**. Small queries work… but **any scan across 38.7M rows errors out. I'd need that to clear before I can honestly report whether the last score/confidence replication finished.**"***
+
+🔴🔴 **AND THE CHECKS THAT *DID* RUN CANNOT SEE EITHER DEFECT.** *The verification recorded as "step 1 complete" was **"both seasons at 30/30"** — a **PROP COUNT** — plus **four sampled rows**.* ⚠⚠ ***A 30/30 prop count is satisfied by ONE DATE's worth of rows, and four sampled rows landed in the 64% that were already correct.*** 🔑 **Neither check has the resolution to detect a 19.5-million-row shortfall or 6.9 million stale scores — and both were run in good faith after the only instrument that could have detected them had failed.**
+
+🔑🔑 **THE TRANSFERABLE RULE, and it is the third instance of this family in three transcripts**: *T16 gave **"verify RUN STATUS and ROW COUNT together, never row count alone"**; T17 gave **"report complete only when all 60 carry a post-22:00 timestamp, not when the jobs report green"**.* ⚠⚠ ***T18 adds the sharpest form: **a COMPLETENESS check must be sized to the defect it is meant to catch. A prop count cannot see a missing date, and a sample cannot see a stale minority.***
+
+⚠ *One thing the transcript shows the author did anticipate:* **"the two replication jobs currently running carry the OLD MULTIPLICATIVE formula, so they'll need a rerun"** and **"rather than let them finish and overwrite with wrong scores, I'll let them clear and then run the correct version."** 🔑 **The sequencing was right; the final pass is the one that did not complete.**
+
+---
+
 ## 0a-T18. 🔴🔴🔴 **"THE SCORE MUST *ENHANCE* THE HIT PROBABILITY — NO KILL GOOD LEGS" — COMPASS FACT 103's ORIGIN, AND IT SETTLES WHAT OPEN ITEM T16-8 IS ABOUT** *(T18 pass 0, §T18.1, owner, 2026-09-19; **0 of the twelve, 0 of the thirty**)*
 
 *Three owner turns, in sequence, and they are the whole of fact 103:*
