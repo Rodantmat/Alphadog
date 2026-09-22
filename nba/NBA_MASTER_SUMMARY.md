@@ -11684,7 +11684,15 @@ from `current_season` (2026-27) while the anchor was `active_stats_season` (2025
 off-by-one-season error in the training window**, which would have silently trained on the wrong three
 seasons.
 
-#### T7.8c — **⚠ AN EDGE CASE, and the season opens in two weeks**
+#### T7.8c — **⚠ AN EDGE CASE, and ~~the season opens in two weeks~~ THE REGULAR SEASON OPENS `2026-10-20`**
+> 🔴 **CORRECTED 2026-09-22 (§T20.27).** *"Two weeks" was written against the **superseded
+> `2026-10-03`** opener and is a **surviving casualty of the 17-day error** that
+> `NBA_OPEN_ITEMS.md`'s *"REGULAR SEASON OPENS 2026-10-20, NOT 2026-10-03"* entry declared it had
+> found **"every urgency label"** of.* ⚠⚠ ***It could not find this one: that correction matched the
+> literal string `2026-10-03` (40 occurrences across 15 files) and THIS SENTENCE CONTAINS NO DATE
+> AT ALL*** — the same failure mode as §T20.22's prefix matcher, in prose instead of pointers.
+> ✅ **From `2026-09-22` the regular season is `28` days away, not fourteen.** **Re-stated as a DATE
+> so it cannot rot again** *(§T20.26 option (d))*.
 `active_stats_season` branches on `month >= 10` → current year. So:
 | Date | `active_stats_season()` | Regular-season games in it |
 |---|---|---|
