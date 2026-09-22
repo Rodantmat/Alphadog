@@ -32,6 +32,31 @@ first."***
 | **output** | **one row per graded line** — the training target for the slip engine and the ROI simulation |
 | 🔴 **and its second job** | ***the same grader runs LIVE every morning on the previous night's boards, "which is how the derived-Sleeper fallback gets its ROLLING CALIBRATION"*** *(**0 of thirty** — and it is the mechanism that keeps the one board with no history usable)* |
 
+### 🔴 CODE CORRECTION, 2026-09-22 (§T12.6d) — **"DNP → void" is the ANSWER's rule and NOT the grader's**
+*The design above is what the owner was told. **`grade_board_outcomes.py` implements something
+different, and better**, and its own docstring says why — read 2026-09-22, lines 9–23.*
+
+> *line 9* — **`leg_result` = what the number did → `over_win` / `under_win` / `push` / `dnp` /
+> `no_stat` / `unmatched_player` / `game_not_found`** *(seven values)*
+> *line 14* — **"Underdog: DNP voids the leg."**
+> *line 15* — 🔑🔑 ***"Baking either rule into `leg_result` would make the data useless for the other
+> operator, so we store [what happened and let each consumer apply its own rule]."***
+
+🔑 ***The apps disagree about DNP, so the grader refuses to choose***: **it records `dnp` as an
+outcome and leaves void-vs-loss to the consumer.** **Recording "DNP → void" as the grader's rule —
+as this entry did from the answer — would have made the table look like it had already taken
+PrizePicks' side.** ⚠ **Rule 29's discipline applied to a DESIGN claim: read the implementation, not
+the description of it.**
+
+✅ **And the other three design rules ARE implemented — two of them under different names, which a
+word search alone would have called missing** *(rule 26 caught it)*:
+| stated rule | in the code |
+|---|---|
+| **unmatched names LOGGED, never silently dropped** | ✅ **and sharper**: *"A player with no box-score row is only a DNP if we can confirm he exists… otherwise **`unmatched_player`**, counted separately. **Never silently treat a join failure as a scratch**"* — **two distinct values, `unmatched_player` and `unmatched_not_in_season`, plus `game_not_found`** |
+| **exact whole-number hit → push** | ✅ *"Lines like 21 or 10 (not 21.5) CAN tie. **Push is a real outcome, not a rounding artifact**"* — and `res = "push"` at line 242 |
+| **goblins/demons graded on their own lines** | ✅ **as `is_alternate boolean`**, and by construction: the key is `(player, market, line, side)`, so a goblin's different line grades separately. ⚠ *The words "goblin"/"demon" appear **zero** times in the file — **a word count would have reported this rule missing***. |
+| **Underdog multipliers carried** | ✅ **as the `price numeric` column** — *same trap, same resolution*. |
+
 ### ✅ `[LIVE-AUDIT]` 2026-09-21 — **the grader ran**
 **`nba_market.board_outcomes` ≈ 6,905,452 rows / 2,151 MB**, **`graded_at` 2026-09-20T02:39Z**;
 **`nba_score.board_scored` ≈ 11,956,460 rows / 2,948 MB.** *So segment 37's "it'll be built the day
