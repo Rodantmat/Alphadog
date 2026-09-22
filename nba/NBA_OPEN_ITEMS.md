@@ -2,6 +2,53 @@
 
 ## 🔴🔴🔴 **T18 PASS 0 — A SEASON-CRITICAL COVERAGE DEFECT THE OWNER NAMES HIMSELF, AND THE SCOPE DECISION THAT ANSWERS T16-7** *(§T18.1, owner, 2026-09-19; **the largest owner stratum in the corpus**)*
 
+> # ✅🔴 **DIAGNOSED 2026-09-22 — T20 PASS 52, §T20.57. ONE CAUSE CONFIRMED, ONE DISPROVED, AND THE REAL SHAPE IS NEITHER.**
+> ⚠ **DIAGNOSIS ONLY — NOT FIXED. What the ladder should become is a product choice and remains an
+> OWNER DECISION.** *Read-only `SELECT`s; historical evidence from `2025-12-03` and `2026-01-10`,
+> joined player-by-player through `nba_ref.player_name_map.display_name` (**134 of 151 matched,
+> 88.7%**).*
+>
+> ## ✅ **"OUR ANCHOR IS NOT AT THE PROPER PLACE" — DISPROVED**
+> **Our `anchor` against the book's STANDARD `player_points` line:**
+>
+> | date | players | our anchor | book line | **diff** | SD | below | above |
+> |---|---|---|---|---|---|---|---|
+> | 2025-12-03 | 125 | 13.44 | 13.32 | ✅ **+0.12** | 1.88 | 43 | 59 |
+> | 2026-01-10 | 87 | 13.59 | 13.29 | ✅ **+0.30** | 2.03 | 29 | 42 |
+>
+> ⚠⚠ **AND THE FIRST ATTEMPT SAID THE OPPOSITE.** *Compared to the median of the ALTERNATE ladder it
+> read **−1.79**, SD 2.02, anchor below for **93 of 126** players — a 7-to-1 lean that looked
+> decisive.* 🔑 **Rule 20 killed it: the median of an alternate ladder is not the book's estimate —
+> books publish more high alternate lines than low ones. Against the STANDARD market the answer is
+> `+0.12`.** 📌 ***One query earlier, this item would have told the owner his anchor was 1.8 points
+> low, and he would have moved it.***
+>
+> ## 🔴🔴 **"THE LADDER IS NOT DEEP ENOUGH" — CONFIRMED, AND MEASURED**
+> **Our ladder: `ladder_offset ∈ [−10,+10]`, `ladder_steps = 10` on all 30 props, step 1.0 ⇒ observed
+> span `20.0` and never more.** **The app's `points` alternate ladder: avg span **25.99** (2025-12-03)
+> and **26.93** (2026-01-10), **max 40.0** both times.**
+> 🔴 **Joined player-by-player, `points`, 2025-12-03 — `18,158` matched app legs: `248` below our
+> floor (1.4%) · `2,050` ABOVE our ceiling (11.3%) · **`2,298` outside our ladder — 12.7%**.**
+> **And four of eight alternate markets offer more rungs than our 21** — `points_rebounds_assists`
+> **83 of 140 (59%), up to 36 rungs** · `points` **87 of 150 (58%), up to 33** · `points_rebounds`
+> 21% · `points_assists` 17%. *(`rebounds`, `assists`, `threes`, `rebounds_assists`: none.)*
+>
+> ## 🔑🔑 **THE REAL SHAPE — A SYMMETRIC LADDER POINTED AT AN ASYMMETRIC MARKET**
+> **The app's alternate ladder measured against that same book's STANDARD line — `20,868` legs,
+> 2025-12-03: `12,017` ABOVE (57.6%) · `7,536` BELOW (36.1%) · average offset **+2.37** · reach
+> **−16.00 … +29.00**.**
+> ⇒ ***The market's ladder is asymmetric. Ours is symmetric — `BT_LADDER_STEPS = 10`, one constant,
+> both recipes (COMPASS 63).***
+> ✅ **So the answer to the owner's sentence is neither of his two candidates exactly: the anchor is
+> at the proper place; the ladder is not deep enough UPWARD.** ⚠ **And that changes the fix: simply
+> lengthening a symmetric ladder buys rungs below the line, where only 1.4% of the misses are, to
+> reach the 11.3% above.** **For scale only — the observed app reach on `points` is `−16 … +29`.
+> WHAT TO DO WITH THAT IS THE OWNER'S.**
+>
+> ⚠ **SCOPE**: two dates in two prior seasons, not a statement about the 2026-27 board; and
+> PrizePicks DFS-only markets are absent from `board_snapshots` by construction *(PP reaches it only
+> via the Odds API feed)*, so their absence above is a property of the feed, not a gap in our ladder.
+
 ### 🔴🔴🔴 **T18-1 — "OUR ANCHOR IS NOT AT THE PROPER PLACE OF THE LADDER, OR THE LADDER IS NOT DEEP ENOUGH"** *(**0 of the twelve, 0 of the thirty**; positive controls `goblin` 636/417, `multiplier` 617/432)*
 
 > ***"Our system should be covering the APP LADDER. **If it is not, we need to change so it covers
