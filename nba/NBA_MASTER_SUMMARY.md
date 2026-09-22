@@ -34494,3 +34494,91 @@ of what the instrument calls uncovered is the sweep's own hands moving. Seventy 
 `471` as work outstanding. It is mostly the shadow of the work already done.** ***An instrument that
 measures a corpus against a transcript will always count the transcript's machinery as missing,
 because the machinery is the one thing a document must never contain.***
+
+---
+
+# §T20.77 — T20 PASS 72: ✅✅ **THE CENSUS — ALL `249` READ. `0` OF `25` CANDIDATES SURVIVED ACROSS THE WHOLE SET, AND §T20.76's SAMPLE WAS REPRESENTATIVE TO `1.2` POINTS** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: §T20.76 read `40` of `249` — `16%` — and published a headline about all `471`.** *It said so
+itself: **"40 is not 249, and this pass does not claim the transcript is exhausted."*** ⚠⚠ ***And a
+NULL result is the one that most needs a census: a sample that finds something proves it exists; a
+sample that finds NOTHING proves only that the sample missed it. `0 of 11` is the weakest possible
+evidence for "there is nothing there."***
+
+## 📏 THE CENSUS POPULATION
+
+**`249` substantive-uncovered minus the `40` already read at §T20.76 = `209`**, pinned
+`2026-09-22T19:36:09Z`. *The 40 were EXCLUDED deliberately — re-reading a pre-classified stratum would
+inflate the denominator with its own answer.* **All `209` were read in four batches, in order.**
+
+| the `209`, classified against §T20.76's OWN definitions *(not re-defined mid-census)* | |
+|---|---|
+| 🔴 **PLUMBING** | **154 — `73.7%`** |
+| ⚠ **DUPLICATE — echoes of ALREADY-SWEPT transcripts** | **41 — `19.6%`** |
+| **CANDIDATE-SUBSTANTIVE** | **14 — `6.7%`** |
+
+## ✅✅ CLAUSE (iii) — **HITS, AND IT VALIDATES THE PREVIOUS PASS**
+
+*Pre-registered: **the census plumbing rate is within `±10` points of the sample's `72.5%`**, and a
+divergence larger than that would force §T20.76's "floor" claim to be re-scoped in place.*
+▶ **Census: `73.7%`. Sample: `72.5%`. Δ = `1.2` points.** ⇒ ***§T20.76's sample was representative and
+its headline stands unamended. The generalisation it was not entitled to make is now earned.***
+
+🔑🔑 **AND THE CENSUS FOUND A SECOND STRUCTURAL CLASS THE SAMPLE MISSED — `41` SEGMENTS, `19.6%`.**
+*They are `tool_result` blocks containing **OTHER TRANSCRIPTS' TEXT** — T6, T7, T8 and T9 quoted back
+into T20 by the sweep's own greps while it was reading them.* 🔴 ***The instrument counts those as T20
+material that the twelve fail to cover. They are not T20 material at all, and they were documented
+under §T6–§T9 years of passes ago.*** ⇒ **So `uncovered12` cannot reach zero for TWO independent
+reasons, not one: the sweep's own machinery (`73.7%`) AND other transcripts' text echoed through it
+(`19.6%`). Together, `93.3%` of the substantive-uncovered set is structurally uncoverable.**
+
+## ✅ CLAUSE (ii) — **FAILS ON A CENSUS. `0` OF `14`, AND `0` OF `25` OVERALL.**
+
+*Every candidate was novelty-checked with distinctive terms and no truncation before anything was
+written.* **Twelve died on the first probe** — `"too fast"` → 2 documents · `"do more in a single"` → 2
+· `"never gonna finish"` → 1 · `"transcript by transcript"` → 3 · `"do not invent"` → 2 ·
+`"do not drift"` → 3 · `"only if that helps"` → 3 · `"stat_decay_config"` → **15** · `"ewma_alpha"`
+→ 8.
+
+⚠⚠ **TWO SURVIVED MY PHRASING AND DIED ON THE CORPUS'S — WHICH IS RULE 20 AGAIN, AND THE SAVE IS WORTH
+RECORDING BECAUSE IT NEARLY PRODUCED THE PASS'S ONLY "FINDING".** *SEG 605 — **"t3-t9's clean passes
+are invalid — a pass that updates 4 of 8 documents isn't clean. resetting those counts"** — returned
+**ZERO** for `"clean passes are invalid"` and `"4 of 8 documents"`.* 🔴 **The corpus records it as
+**"the T3–T9 reset (SEG 604)"** — and not merely records it: it analyses the event as one of only
+**2 of 22 owner turns that arrive as interrupts into an open tool chain**, alongside the charter at
+SEG 597.** 📌 ***My candidate was SEG 605 — the assistant's REPLY. The corpus recorded SEG 604 — the
+OWNER's instruction. The instrument marks 605 uncovered because the documents recorded the order and
+not the acknowledgment of it, which is exactly the right thing for them to have done.***
+
+⇒ ***Combined with §T20.76's `0 of 11`: **`0` of `25` candidates across ALL `249` substantive-uncovered
+segments of T20 carried anything unrecorded.** T20's substantive-uncovered set is EXHAUSTED.***
+
+## 🔴 CLAUSE (i) — **HOLDS, AS PREDICTED, AND FOR THE PREDICTED REASON**
+
+*Pre-registered: **falls if and only if something is WRITTEN; predicted to HOLD unless clause (ii)
+hits.*** ▶ **Measured: `649 · 1 · 471 · 470` — `uncovered12` HOLDS at `471`, Δ = `0`, the NINTH
+consecutive time.** *(High band `648 → 649`: §T20.76's own text, written into the corpus between the
+two runs.)*
+
+## ⚠⚠ WHAT THIS DOES **NOT** MEAN — **RULE 46, STATED BEFORE ANYONE MISREADS THE CENSUS**
+
+***A completed census is not a discharged obligation.*** **This pass read the `249` segments the
+INSTRUMENT flags as substantive-and-uncovered. It did NOT read T20's `1,177` segments in order, and
+RULE 46 requires **TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A FRESH CONTEXT** (§T19.6, OWNER
+DECISION).** ⚠ **T20 still owes both. It hands on at CLEAN 0/3.** *What the census DOES establish is
+narrower and still useful: **the instrument has no more to give on this transcript**, so a successor's
+two reads should not be planned around chasing `uncovered12` down.*
+
+⚠ **KILLS LOGGED (rules 26/28)**: **all `14` candidates** *(the killing term recorded for each above)*
+· **the `41` cross-transcript echoes** *(killed as a CLASS — T6/T7/T8/T9 material swept under its own
+sections)* · **SEG 605 / the T3–T9 reset** *(**PRIOR** — recorded as SEG 604 and already analysed)* ·
+**§T20.76's `40`** *(**PRIOR**, excluded from this census by design)*.
+
+📌 ***The lesson:*** **the previous pass guessed from a sixth of the evidence and turned out to be
+right to within one and a two-tenths of a point — which is luck that only looks like judgement until
+someone checks. The check cost one pass and converted a headline into a fact.** ***And the census
+found what the sample found: the last unread corner of this transcript contains the sweep watching
+itself work.***
