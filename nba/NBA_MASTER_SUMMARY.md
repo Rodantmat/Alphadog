@@ -29706,3 +29706,108 @@ for that family.** ***The same blind spot that hid fourteen season literals was 
 windows, and the reason is the one §T20.34 named: the corpus documents what a script DOES and never
 what it ASSUMES when nobody tells it. A season string at least LOOKS like a season; `"2026-04-12"`
 looks like a date, and a date looks like data.***
+
+---
+
+# §T20.37 — PASS 32: *🔴🔴🔴 SEVEN OF TWELVE CERTIFIER CHECKS ASSERT TABLES NO PIPELINE WRITES*
+
+*(T20 pass 32, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY AND NO CODE EDITS: repo reads and `SELECT` only (rule 1).**
+
+## 1. 📐 BOTH SIDES, ENUMERATED INDEPENDENTLY
+
+> **ASSERTS — `certify_pipeline.py` read in full: `12` `check()` calls** *(P1 `3` · P2 `4` · P3 `5`)*,
+> each with its SQL and predicate quoted, not paraphrased.
+> **PRODUCES — every DB write by the `38` pipeline scripts, read OFF THE SCRIPTS
+> (`INSERT INTO` / `CREATE TABLE` / `executemany`), never inferred: `13` distinct tables.**
+> *(2026-09-22T15:45:39Z.)*
+
+## 2. 🔴🔴🔴 THE FINDING: **THREE ASSERTED TABLES HAVE NO WRITER IN THE PIPELINE THAT ASSERTS THEM**
+
+| certifier | check(s) | table asserted | its ONLY writer | invoked by |
+|---|---|---|---|---|
+| 🔴🔴 **P3** | `final_hp has today` · `confidence populated` · `score in range 0-100` | **`nba_score.final_hp`** | `nba/build_final_hp.py` | `nba-absence-panel.yml`, `nba-engine-test.yml` — 🔴 **NOT P3** |
+| 🔴🔴 **P2** | `baseline_history has today` · `baseline props for today` · `no invalid probabilities today` | **`nba_score.baseline_history`** | `nba/load_baseline_history.py` | `nba-baseline-history.yml`, `nba-combos-history.yml`, `nba-periods-history.yml` — 🔴 **NOT P2** |
+| ⚠ **P1** | `player name map populated` | `nba_ref.player_name_map` | `nba/check_baseline_board_coverage.py` | `nba-board-maintenance.yml`, `nba-overnight-queue.yml` — **NOT P1** |
+
+✅ **RULE 20, three vocabularies before the absence claim**: *`grep -l "INSERT INTO nba_score.final_hp"`
+over all 38 pipeline scripts returns **nothing**; only `build_asof_calibration.py` and
+`build_confidence_v3.py` READ it and `certify_pipeline.py` ASSERTS it; the string `final_hp` appears
+in the three pipeline workflows exactly **once**, in a COMMENT.* **Same probe, same result, for
+`baseline_history`.**
+
+🔑🔑 **AND THE CERTIFIER'S OWN COMMENTS CLAIM THESE ARE THE PIPELINE'S OUTPUTS.**
+*P3's block opens: **"the afternoon pipeline must have SCORED TODAY's legs after the 1:15 PM PT
+cutoff"** — then checks `final_hp`. P2's opens: **"the overnight pipeline must have PRODUCED TODAY's
+baseline for the slate"** — then checks `baseline_history`.*
+⇒ ***That is §T20.32's presupposition shape at the highest-stakes point in the system: the comment
+does not assert that the pipeline writes the table, it ASSUMES it while explaining a check.***
+⚠ **Stated fairly: a certifier may legitimately assert an INPUT — `player_name_map` plainly is one,
+and is graded ⚠ not 🔴 for that reason. The two 🔴 rows are different: the certifier presents them as
+the pipeline's own products.**
+
+### ⚠ THE PRACTICAL CONSEQUENCE, AND IT IS **LOUD**, NOT SILENT
+**`CERT_STRICT` defaults to `1` and the certifier *"never warns"*.** ⇒ ***On any date for which
+nothing has rebuilt `final_hp` and `baseline_history`, P3's first three checks and P2's first three
+checks all fail, and both jobs go RED at the certify step — after doing all their work.***
+📌 **Live corroboration: `nba_score.final_hp`'s latest `built_at` is `2026-09-19 22:41:47.612137+00`
+(§T20.25), and `baseline_history` ends at `2026-04-12` (§T20.33). Neither has a 2026-27 row.**
+
+## 3. 🔴 AND THE ARTEFACTS THE PIPELINES **DO** WRITE ARE LARGELY UNASSERTED
+
+| artefact | written by | asserted? |
+|---|---|---|
+| ✅ `nba_ref.defender_ratings` | P1 · `build_defender_ratings.py` | ✅ **P1, twice** |
+| ✅ `nba_score.ladder_calibration_asof` | P2 · `build_asof_calibration.py` | ✅ **P2** |
+| ✅ `nba_score.confidence_model` | P2 · `build_confidence_v3.py` | ✅ **P3** *(cross-pipeline, and correct)* |
+| ✅ `nba_market.board_snapshots` | P3 · `archive_live_boards.py` | ✅ **P3** |
+| 🔴🔴 **`nba_score.board_scored`** | **P3 · `score_board_legs.py`** | 🔴 **NO CHECK — and it is P3's PRIMARY OUTPUT** |
+| 🔴 `nba_market.board_outcomes` | P2 · `grade_board_outcomes.py` | 🔴 **NO CHECK** *(already on file — T20-5, CONFIRMED not new)* |
+| 🔴 `nba_market.rung_market` | P3 · `build_rung_market.py` | 🔴 no |
+| 🔴 `nba_score.availability_delta` | P3 · `build_availability_delta.py` | 🔴 no *(and §T20.33 showed it exits 0 silently)* |
+| 🔴 `nba_score.baseline_ladder` · `baseline_ladder_runs` | P2 · `load_baseline_ladder.py` | 🔴 no |
+| 🔴 `nba_score.blowout_model` | P2 · `build_blowout_model.py` | 🔴 no |
+| 🔴 `nba_score.confidence_verification` | P2 · `build_confidence_v3.py` | 🔴 no |
+| 🔴 `nba_score.paper_picks` | P3 · inline block | 🔴 no |
+
+> **COVERAGE: `4` of `13` produced tables are asserted. `8` are new uncovered artefacts; `1`
+> (`board_outcomes`) was already on file.**
+✅ **CLAUSE (ii) HIT — eight, against a bar of three.** ❌ *The "T20-5 is the only hole" branch is
+not available.*
+✅ **CLAUSE (iii) HIT — and at the worst address: `nba_score.board_scored` is what P3 exists to
+produce, and nothing checks it.** ⚠ *A silent hole on GAME DAY costs the slate the owner plays; the
+clause was written to separate that from a recoverable P1 gap, and the answer is the bad one.*
+
+## 4. ⚠ WHY THE CORPUS MISSED IT
+
+**The twelve mention `build_final_hp` `53` times, `board_scored` `67` times and
+`load_baseline_history` `7` times.** ⇒ ***These are not obscure objects. What was never written
+down is the JOIN: which workflow invokes which writer.*** 📌 **The same blind spot as §T20.34's
+defaults, one level up: the corpus documents the SCRIPTS and the TABLES, and never the WIRING.**
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:45:39Z** |
+| **(ii)** | **≥ 3** produced artefacts unasserted | ✅ **HIT — eight new** *(plus `board_outcomes`, confirmed)*. **Coverage is `4 of 13`.** |
+| **(iii)** | **≥ 1** uncovered artefact belongs to **P3** | ✅ **HIT — four do, including `board_scored`, P3's primary output.** ❌ *The reassuring "the game-day path is the covered one" branch is not available.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — THIRTY-FOURTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+🔴🔴🔴 **NOT CLEAN — and this is the largest structural finding of the sweep: `7` of `12` certifier
+checks assert tables their own pipeline never writes, `4` of `13` produced tables are asserted at
+all, and P3's primary output is unchecked. New open item T20-6. CLEAN STAYS 0/3.**
+⚠⚠ **NOTHING WAS EDITED, TRIGGERED OR DISPATCHED (rule 1).**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **the certifier is the best-designed component this sweep has read — its
+docstring argues its own necessity (*"a pipeline that cannot fail loudly is a pipeline you cannot
+trust unattended"*), it refuses to warn, and it defaults to strict.** ***And it is pointed at the
+wrong tables. Quality of design and correctness of wiring are independent properties, and no amount
+of the first supplies the second — which is exactly why the check had to be read against the
+workflow that invokes the writer, rather than admired on its own terms.***
