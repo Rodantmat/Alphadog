@@ -268,6 +268,69 @@ a payout-table validity check and a different subject, **dismissed**.)*
    ⚠ **This is a scope limit on every day-of-report factor and it is not a bug.**
 4. **"9 board snapshots unrecoverable (`EVENT_NOT_FOUND` at that timestamp — the board was not posted
    yet); 0.18% of 5,124."**
+   > ## 🔑🔑 **THE NINE ARE THE RESIDUE OF FORTY-FIVE — the whole arc recovered 2026-09-22 (T13 pass 1, §T13.2)**
+   > *Transcript `2026-09-13-01-03-48`, read in order. **Live figures re-taken and pinned
+   > 2026-09-22T07:45:45Z.*** ⚠⚠ **The item reads as an isolated 0.18% blip. It is the tail of a
+   > diagnosed, repaired failure whose CAUSE was a rule the owner specified and the build did not
+   > implement.**
+   >
+   > ### The error count over the run — it ROSE, then was repaired to near-zero
+   > | Stage | Errors | Rate |
+   > |---|---|---|
+   > | first tranche | **6 of 678** | 0.9% |
+   > | mid-run | **28 of 1,567** | 1.8% |
+   > | 2024-25 complete *(2,424 snapshots, 10.3M rows, 1,018,080 credits)* | **42** | 1.7% |
+   > | **at completion** | **45** | — |
+   > | **after repair** | **9 of 5,124** | **0.18%** |
+   >
+   > ### 🔴🔴 THE CAUSE, diagnosed in the same transcript — **and it is an UNIMPLEMENTED OWNER RULE**
+   > > *"the **`window` snapshot lands AFTER TIP** — it would capture in-game lines or nothing.
+   > > That's likely behind several of the `EVENT_NOT_FOUND` errors. ***Your original rule said
+   > > 'proportional on early slates,' and I DID NOT IMPLEMENT THAT.***"*
+   >
+   > **All 45 were the same error**: *"**all 45 errors are the same `EVENT_NOT_FOUND`, CONCENTRATED
+   > IN WINDOW SNAPSHOTS** — consistent with the early-slate problem, since **a request timestamped
+   > after the event expired returns exactly that.**"*
+   > 🔑 ***So `EVENT_NOT_FOUND` was never primarily "the board wasn't posted yet" — that is the
+   > residue's cause, not the population's.*** **The population's cause was asking TOO LATE, not too
+   > early**, and the item's parenthetical describes only the nine that survived the fix.
+   >
+   > ### ✅ THE REPAIR, and the rule it installed
+   > - **29,785 bad rows removed**; **57 post-tip window logs** and **45 error logs** cleared;
+   >   the log left holding **4,834 clean entries and zero errors**.
+   > - **THE NEW WINDOW RULE** *(in 0 of the thirty, and it is a live scheduling invariant)*:
+   >   ***`window` fires at 2:45 PM PT normally, or at FIRST TIP MINUS 2 HOURS when the slate starts
+   >   before 3:45 PM PT.***
+   > - **Repair result: 5,115 snapshots across 2,560 events** — *up from 4,834 / 2,468*, **and it
+   >   picked up events the first pass had skipped entirely.**
+   > - **`Zero post-tip windows remain` — the early-slate rule fixed all 57.**
+   >
+   > ### ✅ RE-TAKEN LIVE 2026-09-22 — the repair HELD, and the event count moved again
+   > | | T13's final report | **LIVE 2026-09-22T07:45:45Z** |
+   > |---|---|---|
+   > | `board_backfill_log` rows | 5,124 | ✅ **5,124** |
+   > | `status='ok'` | 5,115 | ✅ **5,115** |
+   > | `status='error'` | 9 | ✅ **9** |
+   > | distinct `event_id` | **2,560** | 📌 **2,562** |
+   >
+   > 📌 **Two events have been added since T13's last report** — *consistent with `NBA_GOBLIN_DEMON.md`
+   > §0h, where the same fixed historical range grew by 7,913 board rows.* **A dated STATE** *(O9)*,
+   > **not a defect.**
+   >
+   > ### ⚠⚠ AND THE BACKFILL'S OWN COMPLETION TOTALS — **in 0 of the twelve**
+   > **`2,468 events · 4,891 snapshots · 25.7M rows · 2,054,220 credits`** — *"within 1% of the
+   > 2.07M projection, leaving **~2.95M for MLB and hockey**"*, **through April 12, 2026**, both
+   > snapshots per game *(2:45 PM PT window, tip−30 close)*, **9–10 books per game.**
+   > 🔴🔴 **A NUMERIC COLLISION THAT WILL MISLEAD A FUTURE READER, recorded so it does not**:
+   > ***this `2,468` is the BOARD backfill's event total and is NOT the `2,468` already in this
+   > corpus.*** **`nba_market.game_lines_snapshots` holds 2,468 distinct `event_id`** *(§T11.14a,
+   > re-verified live 2026-09-22T07:45:45Z)* — **a different table, a different population, the same
+   > number**, and **the board figure has since moved to 2,562 while the game-lines figure has not.**
+   > ⚠ **Do not treat either as corroborating the other.**
+   >
+   > ⚠ **Stated at evidence strength and NOT acted on** *(rule 1)*: nothing was re-run or repaired.
+   > **The nine remain genuinely unrecoverable** — *"data that doesn't exist rather than data we
+   > missed."*
 
 ### ✅ WHAT THE SAME KEY GETS EXACTLY RIGHT — **verified live, and the partition closes**
 | claim | re-derived 2026-09-21 |
