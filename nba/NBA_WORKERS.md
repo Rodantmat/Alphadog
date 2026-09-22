@@ -72,6 +72,54 @@ the exposure countable rather than anecdotal.**
 | 10b | *(inline block)* | `nba_score.paper_picks` *(live `0`)* |
 | 11 | `certify_pipeline.py` `PIPE=p3` | *(asserts only)* |
 
+### A2 · 🔴🔴🔴 **P3's STEP 6 IS MIS-WIRED, AND `nba_market.board_tiers` HAS NO WRITER** *(added 2026-09-22, §T20.40)*
+
+| | |
+|---|---|
+| **P3 step 6 is NAMED** | *"Board tiers (goblin / standard / demon)"* |
+| **and COMMENTED** | *"Classify every board leg as standard / goblin / demon with its tier and anchor. **The score and the slip engine both need this** — a rung's break-even depends on which variation it is."* |
+| **and RUNS** | `python nba/maintenance_shrink_board_index.py` |
+| **whose own docstring says** | *"**One-off maintenance**: shrink `nba_market.board_snapshots` by replacing the 7-column primary key (5.6 GB on 25.7M rows) with a compact unique expression index on an md5→uuid leg key (~1 GB)."* |
+| **whose only table operation is** | `ALTER TABLE nba_market.board_snapshots DROP CONSTRAINT IF EXISTS board_snapshots_pkey` |
+
+✅ **The script that ACTUALLY builds board tiers is `nba/build_board_tiers_v2.py`** *(`TRUNCATE` +
+`INSERT INTO nba_market.board_tiers_v2`, "four-way taxonomy, both anchor cases")* — **and it is
+invoked by `nba-engine-test.yml` ALONE.**
+
+> 🔴🔴🔴 **`nba_market.board_tiers` — `2,199,354` rows, `378` dates, `2024-10-22 → 2026-04-12` — IS
+> READ BY FOUR SCRIPTS AND WRITTEN BY NONE.** *Readers: `apply_ladder_calibration.py` ·
+> `backtest_tier_selection_value.py` · **`build_confidence_v3.py` (P2 step 18)** ·
+> **`build_rung_market.py` (P3 step 8)**. Writers, probed as `INSERT INTO` · `CREATE TABLE` ·
+> `TRUNCATE` · `COPY` · `UPDATE` across every `.py` in `nba/` and `nba/baseline/`: **ZERO**.*
+
+⇒ ***The tier classification P3's own comment says "the score and the slip engine both need" is
+produced by nothing on the game-day path; `board_tiers` is a frozen historical snapshot and P2 and P3
+read it on every run.*** ⚠ **P3 also runs a script documented as ONE-OFF MAINTENANCE on every game
+day** — *its safety rules are sound (new unique index first, old PK dropped only after `indisvalid`,
+row counts compared), so the risk is **waste and wrong-step, not destruction**.*
+📌 **Open item T20-7 carries the decision. ⚠ RECORDED, NOT FIXED (rule 1).**
+
+### A3 · ✅ THE READ EDGE — *no dead ends, and the blast radii*
+
+> **`116` scripts · `41` tables seen — `33` written, `41` read** *(2026-09-22T15:58:08Z;
+> `scratchpad/t20/readedge.py`)*.
+> ✅✅ **WRITTEN BUT NEVER READ: `0`.** ***Every table this pipeline computes is consumed — the graph
+> has no dead ends.***
+
+**Read fan-out of the six tables `nba-engine-test.yml` co-writes** *(how far an overwrite reaches)*:
+
+| table | readers |
+|---|---|
+| 🔴 `nba_score.final_hp` | **8** — `build_asof_calibration` · `build_confidence_v2`/`v3` · `build_final_hp` · `build_mondrian_confidence` · `certify_pipeline` … |
+| `nba_score.confidence_model` · `confidence_verification` | **4** each |
+| `nba_score.board_scored` · `availability_delta` · `conformal_confidence` | **2** each |
+
+⚠ **NOT dangling inputs, recorded so a later pass does not re-flag them**: a SQL `FROM` probe
+catches Python `from X import Y` — `build_availability_delta`, `nba_asof`, `scipy.sparse`,
+`urllib.parse`, `build_baseline_history`, `classification_ladder_v12` are **imports, not tables**.
+✅ `nba_config.external_credentials` has no programmatic writer **by design** — it is
+manually maintained.
+
 ### B · 🔴 THE CERTIFIER IS ONE TABLE OFF FROM WHAT THE PIPELINES WRITE
 
 | certifier check | asserts | the pipeline actually writes |
