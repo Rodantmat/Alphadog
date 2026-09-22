@@ -12,6 +12,7 @@ established exhaustively, not assumed. Underdog, Sleeper, Fliff and Betr do expo
 |---|---|
 | 2026-09-20 | Created. Per-app structures (T12–T13), the exhaustive PrizePicks ruling-out (live session, COMPASS 106), goblin/demon economics. |
 | 2026-09-20 (2nd pass) | **T1 re-pass**: the MLB multiplier-calibration programme, the four measured mechanics, the real Flex partial-tier observations, the house-edge sanity test, and the inherited MLB document set. |
+| **2026-09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `13` commits that this log never recorded.** *T13–T18 material plus the live audits: **§0.9 the T13 multiplier research arc** (not-scrapable mechanism, base tiers) · **§0.9b.1 PrizePicks' own published rules** (Flex 6-pick 25×) · §0.9d.1 the live price census · **§0.9e.4 the Underdog `alternate_projections` ladder capture, owner-verified** · §0.9e.6 the fantasy-score formula settled for both apps with sources · §0.9i slip-composition rules re-scoped to the owner's ranking · **§6.0 the live contents of `board_payout_conversion_rules`** · **§T18.1/§T18.2 the PrizePicks multiplier hunt and its exhaustive result**. **Corrections in place: §0.9e.1 CORRECTION — Underdog has NO historical ladders (pass 1 recorded the opposite) · the `real_slip_leg_observations` absence flag propagated to its third site · LIVE-AUDIT §0.9c — the PrizePicks archive carries `0` multipliers and `100%` prices.*** |
 
 ---
 
