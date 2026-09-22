@@ -37985,3 +37985,123 @@ construction)* · **`§T20.90`** *(**PRIOR** — row 12's resolution, used here 
 and `1/12` — and the second test brought a control the first could not.** ⚠⚠ ***Every stale entry
 found so far was inherited, never generated. This sweep's own work carries its state correctly; what
 it cannot do is notice that something it COPIED had already changed.***
+
+---
+
+# §T20.113 — T20 PASS 108: 🔴🔴🔴 **THE CONFIDENCE LAYER IS IMPLEMENTED *TWICE*, AND THE TWO IMPLEMENTATIONS DISAGREE ON FIVE OF TEN FACTORS — THE DEDUCTIONS ARE *FITTED* IN `P2` AGAINST ONE FACTOR SET AND *APPLIED* IN `P3` TO A DIFFERENT ONE**
+
+*Pass 108, 2026-09-22. Pre-registered as **"BACK TO THE SYSTEM — SPECIFY THE CONFIDENCE LAYER END TO
+END, AS `§T20.98` DID FOR THE PAPER STRATEGY. `P3` CERTIFIES ON IT, AND THE SWEEP HAS ONLY EVER
+TOUCHED ITS EDGES."** Clause (ii) carried an explicit stopping condition — **"coverage is measured
+first, and a well-covered answer ends the pass"** — and clause (iii) a survival condition: **"at
+least one parameter hardcoded where no document names it."***
+
+## ① COVERAGE WAS MEASURED FIRST, AND IT IS HIGH — THE STOP ALMOST FIRED
+
+**Pinned `2026-09-22`, working tree, the twelve:** `confidence_model` in **7 of 12** *(`SUM` 17 ·
+`OPEN_ITEMS` 10 · `WORKERS` 6 · `DATABASE` 4 · `FCAL` 4 · `DESIGN` 3 · `GLOSSARY` 2)* ·
+`build_confidence_v3` in **8** · `conformal_confidence` in **6** · `confidence_verification` in
+**6** · `CONF_NEUTRAL` in **3**. **`NBA_FINAL_SCORING_CALIBRATION.md:198–212` already carries the
+complete fitted-deduction table**, the `DEDUCT_BUDGET = 29.0`, and the conclusion *"the eleven-factor
+epistemic design of §0a-T17-B ships as a TWO-FACTOR model in practice."* ✅ **On the pre-registered
+test the layer reads as SPECIFIED, and `§T20.110` is the precedent for stopping there.**
+
+🔑🔑 **Clause (iii) is what kept the pass alive — and it hit on the first probe.** `np.full` appears
+**0 times in all twelve documents and 0 times in the BASELINE tree** *(`/tmp/t20base/nba/`,
+2026-09-22)*. **Every document specifies `build_confidence_v3.py`. Not one specifies
+`score_board_legs.py:232–244` — which is the code that actually scores the shipped board.**
+
+## ② THE TWO IMPLEMENTATIONS, SIDE BY SIDE — READ FROM SOURCE, BOTH SIDES
+
+**`P2` step `nba-p2-overnight-heavy.yml:275` → `python nba/build_confidence_v3.py`** *(fits the
+deductions, writes `nba_score.confidence_model`)*. **`P3` step `nba-p3-afternoon-light.yml:206` →
+`python nba/score_board_legs.py`** *(reads those deductions, writes `nba_score.board_scored` — the
+user-facing board)*. **Neither file appears in the other pipeline.**
+
+| factor | `build_confidence_v3.py:58–83` — **FITS** | `score_board_legs.py:232–244` — **SHIPS** | |
+|---|---|---|---|
+| `f_complete` | `anchor·0.4 + proj_min·0.3 + rate36·0.3` — **six values** | `anchor.notna()·0.4 + 0.6` — **two values, `0.6`/`1.0`**; `proj_min` and `rate36` **credited unconditionally** | 🔴 **DIVERGES** |
+| `f_prov` | `used_emp·0.7 + 0.3` | `where(used_emp, 1.0, 0.30)` | ✅ identical |
+| `f_time` | `where(n_uncertain > 0, 0.65, 1.0)` | **`np.full(len(d), 1.0)`** | 🔴 **PINNED** |
+| `f_depth` | `clip(1 − abs(ladder_offset)/14.0, .25, 1)` | identical | ✅ |
+| `f_role` | `role_rank` map, `fillna(0.75)` | identical map | ✅ |
+| `f_vol` | `1 − clip(√(p(1−p)), 0, .5)·0.6` | **`np.full(len(d), 0.75)`** | 🔴 **PINNED** |
+| `f_exp` | `clip(log1p(n)/log1p(800), .3, 1)` | **`np.full(len(d), 0.75)`** | 🔴 **PINNED** |
+| `f_books` | `clip(books/4.0, 0, 1)` | identical | ✅ |
+| `f_agree` | `1 − clip(abs(p_over_book − final_hp)/0.30, 0, 1)`, **else `0.55`** | **`np.full(len(d), 0.55)`** — ***the fallback, for every leg*** | 🔴 **PINNED AT ITS OWN FALLBACK** |
+| `f_phase` | per-row `phase_rank` map | same map, **one value per run** | ✅ *(per-run)* |
+
+🔑 ***`f_agree` is the sharpest of the five.*** **In `P2` the value `0.55` means exactly one thing —
+*no book price was available for this leg*.** **On the shipped board every leg carries it**, including
+legs where the sibling factor `f_books` reports **up to four apps quoting that very line**. **The
+board scores every leg as though the market were silent about it.**
+
+## ③ WHY — AND THE ONE CASE WHERE THE INPUT WAS SITTING RIGHT THERE
+
+**`score_board_legs.py:141` selects NINE columns** — `player_id, prop, line, p_more, p_less, anchor,
+ladder_offset, role_tier, used_emp` — **from `nba_score.baseline_history`.**
+
+**Live column list, `information_schema`, `2026-09-22`: `baseline_history` has TWENTY columns.**
+`n_uncertain` **is not among them** and no book-implied price is either, **so `f_time` and `f_agree`
+are pinned for want of an input** *(and `f_vol`/`f_exp` need a per-player history aggregate `P3`
+never builds)* — **defensible engineering, recorded nowhere.**
+
+🔴🔴 **But `proj_min` and `rate36` ARE among them — columns 19 and 20 — and the `SELECT` does not
+list them.** **`f_complete`'s divergence is AVAILABLE-BUT-UNUSED, not input-absent.**
+
+## ④ THE MAGNITUDE — OPENED, NOT ASSERTED *(`RULE 52`)*
+
+**Live `nba_score.confidence_model`, read `2026-09-22`** *(ten rows; `base 99`, `floor 55`)*:
+`f_role` **11.2731** · `f_phase` **9.0625** · `f_books` **2.3207** · **the other seven `0.9063` each**.
+
+| what | computation | result |
+|---|---|---|
+| **fixed offset from the four pinned factors** | `(1−1.0)·0.9063 + (1−0.75)·0.9063 + (1−0.75)·0.9063 + (1−0.55)·0.9063` | **`0.8610` points on EVERY leg — identical, therefore discriminating nothing** |
+| **share of the budget rendered inert on the shipping path** | `4 × 0.9063 / 29.0` | **`12.50%`** |
+| **`f_complete` — how often the credit is unearned** | `SELECT count(*) FILTER (WHERE proj_min IS NULL OR rate36 IS NULL)` on `baseline_history` | **`9,623,950` of `19,343,348` = `49.7533%`** |
+| **what that credit is worth** | `P2` would score those legs `0.40`; `P3` scores them `1.0` ⇒ `0.60 × 0.9063` | **`0.5438` points granted on HALF the legs that the fitted model would have deducted** |
+
+⚠ **THE DIRECTION IS NOT UNIFORM, AND SAYING SO IS THE POINT**: `f_complete` makes the shipped board
+***more*** confident than the model that was fitted; `f_agree` pinned at the no-price fallback makes
+it ***less***. **They do not cancel by design — nothing arranged them to.**
+
+## ⑤ WHAT THIS DOES *NOT* OVERTURN — AND WHAT IT ADDS
+
+**`NBA_FINAL_SCORING_CALIBRATION.md:198–212` explains the seven `0.9063` deductions as *"they
+separated nothing"*.** 🔑 **That explanation STANDS and is not touched here**: the separation is
+measured **inside `build_confidence_v3.py`** *(`:265` groups `FACTOR_COLS`, `:289–319` derives `sep`)*
+**on `P2`'s own VARYING factors** — a real "nothing to discriminate" result, exactly as recorded.
+
+✅ **What was never recorded is independent of it**: **four of those seven cannot separate anything on
+the shipping path *regardless of what the fit found*, because `P3` feeds them literal constants.**
+**Two different facts, one of which was invisible because the sweep — and every document — specified
+the fitter and never the scorer.**
+
+## ⑥ ONE FURTHER FINDING FELL OUT OF THE SAME BLOCK — THE OFF-LADDER LEG IS CHARGED TWICE
+
+**`score_board_legs.py:152` joins the ladder `how="left"`.** The interpolation block `:157–178` fills
+**`p_more` and `p_less`** for off-ladder rungs — **but not `anchor`, `role_tier` or `used_emp`.**
+So an interpolated leg takes `f_complete = 0.6` *(`0.3625` deducted)*, `f_role` → `fillna(0.75)`,
+`f_prov` → `0.30` — **and then `:250` adds `lost = lost + where(interpolated, 4.0, 0.0)`.**
+🔴 **The same condition is charged twice: `0.3625 + 4.0 = 4.3625` of a `29.0` budget, `15.0%`, for
+being off-ladder — once through the NaN-propagated factors and once through the explicit penalty.**
+*The explicit penalty at `:250` is on file; **the NaN half is not**.*
+
+## ⑦ NOT RECORDED
+
+**Whether the divergence is deliberate.** No comment in either file acknowledges the other; the
+`P3` block carries only `# CONFIDENCE (measured deductions)` at `:224` — **a phrase that is true of
+`P2` and false of four of the ten factors it introduces.** ⚠ *Documented, not fixed (rule 1).*
+
+▶ **Raised as `T20-19` in `NBA_OPEN_ITEMS.md` (`STRUCTURAL`). Brief SIXTEEN → SEVENTEEN.**
+
+▶ **`RULE 51` novelty check, run on the FINDING against the BASELINE tree as the last step:**
+`np.full` **0** in `/tmp/t20base/nba/*.md`; `score_board_legs` never co-occurs with
+`constant`/`hardcod`/`0.55`/`0.75` in any of the twelve; `NBA_GLOSSARY.md:318` lists `f_vol` as a
+term with sources `FCAL,SUM` and **no definition of its shipped value**. ✅ **NOVEL.**
+
+📌 ***The lesson, and it is the pass's real result:*** **the stopping condition was correct on its own
+terms — the confidence *model* is thoroughly specified. What no document specified is the difference
+between the model and the thing that runs.** ⚠⚠ ***A layer can be fully documented at the place it is
+FITTED and completely undocumented at the place it SHIPS, and a coverage measurement cannot tell the
+two apart, because both cite the same names.***
