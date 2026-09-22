@@ -36161,3 +36161,83 @@ run, each in a different way, each caught by the same rule.** ⚠⚠ ***Rule 26 
 It is the only thing standing between this sweep and a corpus of confidently-stated arithmetic about
 words it never looked at.*** 🔑 **And the pass's own headline is the proof that it works on the
 sweep's newest work as readily as on its oldest: `§T20.91` was ninety minutes old.**
+
+---
+
+# §T20.93 — T20 PASS 88: 🔴🔴🔴 **`STEP 12`, THE GAME-DAY TIMELINE — AND WRITING IT PRODUCED ONE SENTENCE THE OWNER NEEDS BEFORE `2026-10-20`: *EXACTLY ONE NBA WORKFLOW FIRES ON A GAME DAY, AND IT IS THE REFEREE CAPTURE*** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.**
+
+## 1. 📐 THE POPULATION, RE-DERIVED FROM THE REPO *(rule 15/17 — `§T20.89`'s census was NOT reused)*
+
+▶ **`2026-09-22T21:17:56Z`, tree `90c347439d98e93a9bb3941ef0d5f5af15f13068`** —
+`ls .github/workflows/` = **40** files · `nba-*.yml` = **34** · minus `nba-pp-payout-map.yml`
+*(the concurrent build chat's, out of scope)* ⇒ **33 in scope** · `grep -c "cron:"` on each ⇒ **3
+carry a cron.** ✅ **`§T20.89`'s prior — *"`nba-*.yml` in scope = 33, with a cron = 3"* — re-derives
+exactly**, and the one extra file is accounted for rather than absorbed.
+
+## 2. 🔴🔴🔴 THE FINDING — *the three crons are not three game-day jobs. They are one.*
+
+| workflow | cron | cadence |
+|---|---|---|
+| **`nba-referees.yml`** | `30 15 * * *` | 🔴 **DAILY — the only automatic event of a game day** |
+| `nba-p1-weekly-static.yml` | `0 19 * * 1` | Mondays — reference data |
+| `nba-scrape.yml` | `0 9 * * 1` | Mondays — static re-check |
+| **the other 30 in scope** | **none** | **`workflow_dispatch:` only** |
+
+⇒ ***The board archive, the day-of injury report, the grader, the daily delta, the absence panel,
+starter status, game lines, the market snapshot, `P2` and `P3` all wait to be pressed.***
+🔑🔑 ***This is `§T20.88`'s P2/P3 finding at its true size. The missing triggers are not two gaps in
+an otherwise automatic day — **they are the day**. What runs by itself is a referee table.***
+✅ **CLAUSE (iv) HIT, and far past its registered bar** *(">2 hand-run steps")*: **every step but one.**
+
+## 3. ❌ CLAUSE (iii) — **MISSED, AND RULE 51 IS WHY**
+
+*Pre-registered: "writing it surfaces at least one timing CONFLICT — two documents that cannot both
+be right about when something runs."* **Four candidate conflicts were found and all four were already
+on file. The novelty check killed them before the entry shipped, which is the rule working.**
+
+| candidate | already recorded at |
+|---|---|
+| `P1`'s comment inverts PDT and PST *(`19:00 UTC` = 12:00 PDT / 11:00 PST)* | `NBA_MASTER_SUMMARY.md` §31131–§31148, **with a day-count table: 12 days at 12:00, 133 at 11:00** |
+| `nba-referees`' *"08:30 UTC-7"* holds only during PDT | `NBA_MASTER_SUMMARY.md:3731` |
+| `P2`'s planned *"09:00 UTC = 01:00 PT"* is PST-only | `NBA_MASTER_SUMMARY.md:3725` |
+| the Python `PT = timezone(timedelta(hours=-8))` hardcode | `NBA_OPEN_ITEMS.md` **`T20-12`**, `build_availability_delta.py:39` |
+
+⇒ 🔑 ***The corpus knew every clock and had never put two of them on the same page.*** **`STEP 12`
+tabulates all five** *(the fifth, `P3`'s planned `'15 21 * * *'`, is **the only comment that states
+both halves of the year and reasons about the consequence**)*. ⚠ **The assembly is the contribution;
+no clock defect is claimed as new, and each row points at where it was recorded.**
+
+## 4. ⚠ CLAUSE (ii) — **HIT: `4` `NOT RECORDED` GAPS, one more than `§T20.88` found**
+
+**① 🔴 WHO PRESSES THE BUTTONS ON OPENING NIGHT** *(the files say the crons go in "at season start";
+no document names who, or by when)* · **② whether `P3` may be run twice in a day** *(the guard asserts
+the cutoff has PASSED, permitting any later run; idempotency of the paper-trading log is unstated)* ·
+**③ what happens on a day with NO GAMES** · **④ how long after the final buzzer box scores are
+complete enough for `P2` step 8 to grade "last night's board"** — *so whether `01:00 PT` is early is
+unestablished.*
+
+## 5. ✅ CLAUSE (i) — `RULE 52`, SECOND RUN
+
+▶ **`2026-09-22T21:20Z`: `648 · 1 · 471 · 469`. Unchanged. No delta to open.** 🔑 **Two consecutive
+passes have now written substantial new material into the twelve and the metric has not moved** —
+*which is consistent with `§T20.89`'s refinement and is **still not evidence for it**, because
+`§T20.91` showed the instrument cannot resolve `±1`. Recorded as an observation, not a result.*
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.88`** *(**PRIOR** — the P2/P3 no-cron finding and
+the `STEP 8`/`9`/`10` material this timeline sequences)* · **`§T20.89`** *(**PRIOR** — `STEP 11`, the
+build order, and the 33/3 workflow census, re-derived rather than reused)* · **`§31131`–`§31148`,
+`:3725`, `:3731`, `T20-12`** *(**PRIOR** — all four clock defects, quoted and pointed at; **clause
+(iii) died on these**)* · **COMPASS fact 107** *(the `1:15 PM PT` cutoff — `NBA_COMPASS.md` is READ,
+never written)*. ▶ **RULE 51 on the FINDING, last step, against the BASELINE tree**: *"the only
+workflow that fires"*, *"one daily cron"* and *"game-day timeline"* return **`0` files** on the
+baseline tree and **`0`** on the working tree.
+
+📌 ***The lesson:*** **the third sequence this sweep has written is the third to find something no
+audit had** — *a prerequisite (`STEP 8`–`10`), an orphaned owner directive (`STEP 11`), and now a
+one-line operating fact with a date on it.* ⚠⚠ ***And the finding was not hidden: it is three cron
+lines in three files the sweep has read many times. It took writing the day out in order for
+"three crons" to become "one of them happens on a game day."***
