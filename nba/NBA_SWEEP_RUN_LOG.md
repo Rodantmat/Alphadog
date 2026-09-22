@@ -12,7 +12,7 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
-### 📜 THE THIRTY-FIVE STANDING RULES — *the index; each is written in full where it was born*
+### 📜 THE THIRTY-SEVEN STANDING RULES — *the index; each is written in full where it was born*
 
 ⚠⚠ **READ THIS INDEX BEFORE WRITING ANY CLAIM ABOUT THE SWEEP'S OWN METHOD** *(§T11.51d, 2026-09-21)*.
 ***Two of nine method characterisations audited at pass 50 turned out to be rules the sweep itself had
