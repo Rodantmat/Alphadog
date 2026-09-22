@@ -1438,8 +1438,16 @@ divided by. **Confusing the two is precisely the error the push-back names.**
 the confidence tier) and **#19** (language no stronger than the evidence).
 
 **Status**: ⚠ **this layout has never been produced for NBA.** There is no NBA slip history to fill
-it — `nba_score.real_slip_leg_observations` holds **139 legs**, not dated slips. Recorded in
+it — ~~`nba_score.real_slip_leg_observations` holds **139 legs**~~, not dated slips. Recorded in
 `NBA_OPEN_ITEMS.md`.
+> 🔴 **`[LIVE-AUDIT]` FLAG PROPAGATED HERE 2026-09-22 (§T20.54) — THIS IS THE THIRD SITE.**
+> **`nba_score.real_slip_leg_observations` is NOT in the database** *(re-verified live 2026-09-22
+> against `pg_class`; first established §T10.22b, flagged at §8 of this document per §T10.24b)*.
+> ⚠ **§T10.24b declared the correction complete — *"Now flagged in both"* — having named two sites.
+> There were three, and this was the one in a `Status` block.** 🔑 **The point the 139 legs are cited
+> to make — that there is NO usable NBA slip history — is unaffected and in fact stronger.**
+> 📌 *Rule 40: "a correction is not a correction until it reaches every document that asserts the old
+> figure" — and, as this shows, every PASSAGE of every document.*
 
 ---
 
