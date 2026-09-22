@@ -14426,6 +14426,74 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+## T15 — `2026-09-18-17-12-53-nba-enrichment-factors-a2-n1-reliability-audit-2026-09-12.txt`
+
+### T15.1 — PASS 0 (**corpus + owner stratum**) — **🔑🔑 an explicit "save this" rule, and an ANTI-REJECTION order inside the factor-rejection transcript**
+*Opened 2026-09-22. **Baseline `6132e96a` → `/tmp/t15base/nba/` (32 `.md`), content-only digest
+`381d4ba1167555f7`, VERIFIED byte-identical**, pinned 09:12:46Z. Corpus 09:14:00Z; band 09:14:28Z;
+probes 09:14:47Z. `SELECT` only.*
+
+#### ✅ T15.1a — **THE CORPUS, and the partition CLOSES**
+**1,098 segments** — `tool_use` **457** · `tool_result` **411** · text **206** · thinking **24**, and
+**457 + 411 + 206 + 24 = 1,098**. **Of the 206 text segments, 21 are OWNER and 185 assistant prose.**
+📌 **The owner stratum is the TERSEST swept — 3,642 chars, mean 173, against T13's mean of 526** —
+⚠ **and the mechanism strata are the LARGEST share of any transcript so far: 868 of 1,098 (79%).**
+🔑 **`thinking` is 24 segments, the smallest count in the corpus.**
+
+#### ✅✅ T15.1b — **THE PRE-REGISTRATION: EXACT**
+**Predicted both trees identical at pass 0.** **WORKING 21 / 18 / 1,062 / 1,015 · BASELINE
+`6132e96a` 21 / 18 / 1,062 / 1,015 · high band in both 21, working-only 0, baseline-only 0.**
+✅ **Exact on every figure.** **Thirty-four pre-registrations: TWENTY-SIX hits, three misses, five
+partials.**
+
+#### 🔑🔑 T15.1c — **THE SAMPLE-FIRST RULE — the only directive in this corpus the owner asked to be PERSISTED**
+> ***"Great — from now on ALWAYS DO A SAMPLE TESTING BEFORE REPLICATE THE FULL DATA! SAVE IT IN YOUR
+> MEMORY: anything that will replicate the full data needs a sample testing and success first."***
+
+**0 of the TWELVE and 0 of the THIRTY** — ⚠ *the two `sample test` hits are "out-of-sample test", a
+different thing, opened and dismissed*. ✅ **And the system has followed it since**: the
+smoke-test-before-full-run pattern recurs from this point on *("one prop pair on one season, so a
+shape mismatch fails in ten minutes rather than three hours")*.
+
+#### 🔴🔴 T15.1d — **THE ANTI-REJECTION ORDER, AND IT LANDS IN THE FACTOR-REJECTION TRANSCRIPT**
+> ***"NO — DO NOT JUST REJECT. FIX IT: granulated, break in tier, figure it out, research, debug,
+> test, simulate. WE CAN'T JUST BE DROPPING IMPORTANT PIECES."***
+
+🔑🔑 **`NBA_GLOSSARY.md` credits T15 with *"A5 — REJECTED/CLOSED"* and COMPASS fact 85 records *"THE
+M1/B4 REJECTIONS WERE WRONG — corrected 2026-09-13."*** ***So this transcript both PRODUCES
+rejections and contains the owner REFUSING them, and the corpus already records that at least two
+were reversed.*** *(**0 of the twelve and 0 of the thirty**.)*
+🔑 **And the fallback the owner will accept is NOT rejection**: *"make the better decision — **drop
+it OR PENALISE it accordingly**"* · *"find the proper penalty level, **fair to it**."* ⚠⚠ ***A graded
+penalty was on the table throughout; whether any factor was penalised rather than dropped is NOT
+RECORDED*** *(pass 1's job)*.
+
+#### 🔑 T15.1e — **THE FACTOR TAXONOMY, AND THE ADVERSARY EFFECT STATED FIVE DAYS EARLY**
+> *"**factors, sub-factors, FACTOR TIERS, PLAYER TIERS per factor/sub-factor, PROPLINE TIERS,
+> VARIATIONS AND DIRECTIONS TIERS**… **for injury and lineups, THE TEAM AND ADVERSARY EFFECT that a
+> missing player or returning player have**… then **replication to all the back data. The final HP
+> needs to be EXTREMELY ACCURATE TO THE REAL HIT RATE, LEG LEVEL, as the baseline.**"*
+
+📌 *`sub-factor` is in 2 of the twelve, `player tier` in 4; **`propline tier` and `variations and
+directions tiers` are in NONE**.* 🔑🔑 ***"The team and adversary effect" is the Wembanyama argument,
+stated FIVE DAYS BEFORE T14 records it*** *(`NBA_SYSTEM_DESIGN.md` §0a.4)* — **so the combinatorial
+objection is the owner's standing position, not a one-off remark.** 📌 **With the granularity
+instruction attached**: *"maybe you need to **open more tiers, make it more granular**."*
+
+#### 🔑 T15.1f — **THE CONDUCT STANDARDS, both 0 of the THIRTY**
+*"always do the **CORRECT STRUCTURAL FIXES — NO SHORTCUTS, NO PATCHES**"* and *"**NOTHING IS LEFT
+OPEN OR HALF BAKED BEHIND**"*, **the latter stated THREE times.** ⚠ **Read against
+`NBA_DAILY_PARITY_AND_BACKFILL.md`'s *"no factor is done until its day-by-day backfill exists"*,
+these are the same standard applied to CONDUCT rather than to data.** **All written to
+`NBA_OPEN_ITEMS.md`.**
+
+**Pass outcome: the corpus measured and closed, all 21 owner turns read, the pass-0 band exact on
+both trees, and four owner directives moved into the twelve — headed by a rule the owner asked to be
+persisted and an anti-rejection order that bears on every verdict this transcript produces.
+CLEAN 0/3 · 1 pass.**
+
+---
+
 ## T14 — `2026-09-13-20-53-23-nba-boards-grader-market-baseline-history-2026-09-11-12.txt`
 
 ### T14.4 — PASS 3 (**the MECHANISM FAILURE CENSUS**) — **✅ the last unread stratum, TWO instrument bounds, and T14 CLOSES**
