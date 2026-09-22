@@ -18,7 +18,8 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 >
 > | | |
 > |---|---|
-> | **POSITION** | **T20**, `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt` · **CLEAN 0/3** · **68 passes** · **§T20.1–§T20.72** *(pass 67 closed 2026-09-22 — the rules-index adjudication, §T20.72, which numbered **RULE 50** and retired two candidates as duplicates; passes 64–66 were §T20.69–§T20.71; this START HERE block is pass 64's repair)* |
+> | **POSITION** | **T20**, `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt` · **CLEAN 0/3** · **69 passes** · **§T20.1–§T20.73** *(pass 68 closed 2026-09-22 — the dead-rule census, §T20.73: **no dead rules**, and **three rule namespaces** found; passes 64–67 were §T20.69–§T20.72; this START HERE block is pass 64's repair)* |
+> | **⏱ SEASON CLOCK** | 🔴 **REGULAR SEASON OPENS `2026-10-20` — 28 days. PRESEASON `2026-10-03` — 11 days.** *The ranked list of everything that must be fixed first is the **OPENING-DAY BRIEF** in `NBA_OPEN_ITEMS.md` — **all FOURTEEN season-critical items** (§T20.70 corrected the count from thirteen).* |
 > | **⚠ RULE COUNT** | **`49` STANDING RULES — `1`–`48` plus `50`; `49` is RETIRED (§T20.16) and is not reused.** 🔴 **Before writing a new rule, READ the index table** — §T20.72 found that **two of the three candidates the sweep refused to number duplicate rules that are fully written and indexed (`RULE 20`, `RULE 30`)**, one of them written by the pass immediately before. *The index's ten gaps are real but are NOT why rules get duplicated.* |
 > | **OWED — RULE 46** | 🔴 **T19 AND T20 EACH OWE TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A FRESH CONTEXT.** *A clean count reached inside the authoring session does not close a transcript (§T19.6, OWNER DECISION).* |
 > | **NEXT** | the **`▶ EXACT NEXT STEP`** row of the table below — it carries the pre-registered clauses, the method and the kills to log |
