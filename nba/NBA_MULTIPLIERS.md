@@ -505,8 +505,47 @@ and **2 of the thirty**, pinned 2026-09-22T07:45:06Z.*
 - **The PRICES behind the percentages**: **−137 → 57.8%** and **−119 → 54.3%**.
 - **The PAIRING TO SLIP SIZE**, which COMPASS states as an undifferentiated range:
   **−137 is the 2-pick break-even; −119 is the 5/6-pick Flex break-even.**
-- **The attribution**: *"−137 is **PrizePicks' CANONICAL break-even price**"* — **not a placeholder
-  or a sentinel**, and **sharp tools price standard legs there.**
+- **The attribution**: *"−137 is **PrizePicks' CANONICAL break-even price**"*, and **sharp tools
+  price standard legs there.**
+
+> ### ⚠⚠ 0.9d.1 **NARROWED 2026-09-22 (T13 pass 2, §T13.3b) — "NOT A PLACEHOLDER" WAS TOO STRONG, AND THE LIVE CENSUS SAYS WHY**
+> **Pass 1 wrote *"not a placeholder or a sentinel."* A later segment of the SAME transcript calls it
+> *"the same flat **−137 PLACEHOLDER**"*.** ✅ **The live price census settles it, and BOTH are right
+> about different questions** *(`nba_market.board_snapshots`, pinned 2026-09-22T08:01Z)*:
+>
+> | bookmaker | market | side | rows | **distinct prices** | sentinel rows *(`price ≤ −10000`)* |
+> |---|---|---|---|---|---|
+> | **prizepicks** | standard | Over | 372,741 | **1** | 0 |
+> | **prizepicks** | standard | Under | 372,569 | **1** | 0 |
+> | **prizepicks** | alternate | Over | 1,454,044 | **2** | 0 |
+> | **prizepicks** | alternate | **Under** | — | ***no rows at all*** | — |
+> | **underdog** | standard | Over | 225,640 | **515** | 83 |
+> | **underdog** | standard | Under | 224,377 | **167** | 83 |
+> | **underdog** | alternate | Over | 244,897 | **826** | 7 |
+> | **underdog** | alternate | Under | 242,845 | **341** | 7 |
+>
+> 🔑🔑 **THE RECONCILIATION**: ***the VALUE is a real market price; the COLUMN carries no
+> information.*** **PrizePicks' standard lines hold ONE distinct price across 745,310 rows and its
+> alternates hold TWO** *(§0h: `+100` and `−137`)* — **so by the only test that matters for a
+> per-leg model, the PrizePicks price column IS a placeholder.** ⚠ **State it that way: `−137` is the
+> canonical break-even PRICE and a constant COLUMN, and the two facts do not conflict.**
+>
+> 🔴 **AND THE SAME CENSUS FALSIFIES A CLAIM THE TRANSCRIPT MAKES ABOUT UNDERDOG.** It states
+> *"Underdog alternates do carry real prices, **while standard lines are flat**."* **They are not:
+> Underdog standard Over carries 515 distinct prices and standard Under 167.** ⚠ **The flat `−137` /
+> `+100` pair appears on Underdog only in the `Yes`/`No` markets** *(984 and 976 rows, 2 distinct
+> prices each)* — ***so the "flat Underdog standard" reading was taken off a Yes/No row or a
+> PrizePicks row, and the transcript never corrects it.*** **Recorded here because a model that
+> assumes Underdog's standard prices are flat throws away 450,017 genuinely priced rows.**
+>
+> ✅ **A THIRD INDEPENDENT CONFIRMATION that PrizePicks has no `Under` alternate**: the group simply
+> does not exist in the price census — *after `board_tiers_v2` (§T12.7c) and the offset join
+> (`NBA_GOBLIN_DEMON.md` §0h).* **Three tables, three queries, one answer.**
+>
+> 🔑🔑 **AND THE SENTINEL IS NOW IDENTIFIED AND COUNTED** — *which the open item asking for it could
+> not do*: **`price ≤ −10000`, minimum `−100000`, on 180 Underdog rows (83 + 83 + 7 + 7) and ZERO
+> PrizePicks rows.** ✅ ***So "excluding sentinel prices" has a concrete predicate and a population***
+> — see `NBA_OPEN_ITEMS.md`, the market-join item.
 
 ⚠ **This matters to `NBA_GOBLIN_DEMON.md` §4.** That section reads `price=-137` as the *v1 code's
 goblin sentinel*. **It is not a sentinel — it is the standard-leg market price**, which is why v1
