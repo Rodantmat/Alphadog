@@ -1608,9 +1608,21 @@ One row per build. `asof` PK · `slate_games` · `players` · `rows` · `props[]
 **`history_seasons[]`** · `current_season` · **`factor_fits` JSONB** ·
 **`role_minutes_multiplier` JSONB** · `source_file` · `loaded_at`.
 
-**`factor_fits` and `role_minutes_multiplier` store the values FITTED IN THAT RUN** — the
-"no pasted constants" rule made auditable. **`history_seasons[]` records what the run was allowed to
-see**, which is the parity rule's evidence.
+~~**`factor_fits` and `role_minutes_multiplier` store the values FITTED IN THAT RUN**~~ 🔴🔴
+**CORRECTED 2026-09-22 (T20 pass 109, `§T20.114`) — THEY STORE **ONE INVOCATION'S** FITS, CHOSEN BY
+FILENAME SORT ORDER.** `build_baseline_ladder.py` **runs once per prop pair** *(eight production
+pairs + three `BT_SAVE_COMPONENTS` builds + combos + periods)*, each writing its own `meta`; the
+merge step at **`nba-p2-overnight-heavy.yml:216`** is `meta = meta or d["meta"]` over a `sorted()`
+glob — **first file wins** — and recomputes **only `rows`, `props` and `players`. `factor_fits`,
+`role_minutes_multiplier`, `history_seasons`, `current_season` and `slate_games` are whichever
+invocation sorted first.** 🔴 **Live, all three rows carry exactly `assists · season_phase · steals`
+against `18`–`22` props — `9.1%` — and no production pair fits `assists` with `steals`: the winner is
+the `BT_SAVE_COMPONENTS=1` DIAGNOSTIC build.** ⚠ **So the sentence that used to follow this one —
+*"you can see what each day's run derived, and compare runs"* — is the exact use the defect defeats;
+the column is the same two props on every row.** ✅ **`history_seasons[]` is subject to the same
+first-file-wins rule and is therefore ALSO one invocation's** — *it is quoted elsewhere as "the
+parity rule's evidence", which now needs that qualification.* ▶ **`T20-20`; nothing reads
+`factor_fits` back, so this corrupts an AUDIT RECORD, not a score. Documented, not fixed (rule 1).**
 
 ### Production contract *(from `nba_config.classification_config.production_baseline_ladder`)*
 - **Builder**: a **patcher over `classification_ladder_v12.py`** — *"single source of truth; anchors
