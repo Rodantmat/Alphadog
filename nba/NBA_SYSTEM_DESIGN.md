@@ -1438,6 +1438,33 @@ real either.
 **The distinguishing information exists** — the schedule says whether games were expected — **but no
 explicit "no games scheduled" state is recorded as implemented.**
 
+> ## 🔴🔴🔴 **THE CERTIFIER ROW ABOVE IS FILLED IN — 2026-09-22, T20 pass 89 (`§T20.94`). THE ANSWER IS WORSE THAN "AMBIGUOUS": ON A ZERO-GAME DAY BOTH PIPELINES CERTIFY *RED*.**
+> *(Read from `nba/certify_pipeline.py` directly — rule 21. **Nothing is changed; this states what the
+> code does.** The table above left the certifier's "Broken" cell as a dash because nobody had opened
+> the file against this question.)*
+>
+> | | zero games | broken |
+> |---|---|---|
+> | **`PIPE=p2`** *(4 checks)* | 🔴 **FAILS 2**: `baseline_history has today` requires `count(*) > 0` for `game_date = today`; `baseline props for today` requires `count(DISTINCT prop) >= 25`. **Both are `0`.** | identical |
+> | **`PIPE=p3`** *(5 checks)* | 🔴 **FAILS 2**: `final_hp has today` requires `count(*) > 0`; `board archived today` requires `board_snapshots` rows for today. **Both are `0`.** | identical |
+> | ✅ **`PIPE=p1`** *(3 checks)* | ✅ **PASSES** — its checks are **date-independent** *(`max(as_of_date)` within 8 days, `defender_ratings > 10k`, `player_name_map > 400`)* | would fail correctly |
+>
+> ⚠⚠ **AND `CERT_STRICT` DEFAULTS TO `1`** *(`certify_pipeline.py:32` — `strict = os.environ.get("CERT_STRICT","1") == "1"`)*, **and neither `nba-p2-overnight-heavy.yml` nor `nba-p3-afternoon-light.yml` sets it.** ⇒ ***`sys.exit(1)`. A red build, with the message "This pipeline did NOT produce what it promised."***
+>
+> ### 🔬 HOW MANY DAYS — **MEASURED LIVE, on a COMPLETED season** *(`nba_calendar.games`, `2026-09-22`)*
+> **2025-26 — `2025-10-21 → 2026-04-12`, `174` calendar days, `167` with games ⇒ 🔴 `7` ZERO-GAME DAYS**:
+> **`2025-11-27` (Thanksgiving) · `2025-12-24` (Christmas Eve) · `2026-02-14`, `2026-02-16`, `2026-02-17`, `2026-02-18` (All-Star break) · `2026-04-11`.**
+> ⚠ *The prior above says "the All-Star break (~5 days), and scattered dates" — **the enumerated figure for a completed season is `7`, and the break contributes `4` of them, not 5.*** ⚠ **The 2026-27 calendar as currently loaded shows `18` in `174` days, but it holds `1,200` games against `1,238` for 2025-26 — **~30 short of a full regular season**, so that figure is NOT final and is recorded only as an upper bound *(rule 30)*.
+>
+> 🔴🔴 **THE COLLISION THAT MAKES THIS URGENT.** *`nba-p2-overnight-heavy.yml`'s own header gives the reason its cron was withheld:* > ***"a scheduled job failing nightly against an empty schedule trains everyone to ignore red builds."***
+> ⇒ ***That reasoning was applied to the OFFSEASON and never to the CALENDAR. The in-season schedule
+> reproduces the same condition at least `7` times a year, on both pipelines — `14` guaranteed red
+> builds — the moment the crons go in.*** 🔴 **OWNER DECISION**: *the fix is small and is exactly the
+> first-class state the MLB lesson above asked for — **gate the two date-scoped checks in each
+> certifier on `nba_calendar.games` having rows for that date**, so a zero-game day certifies green
+> and a genuine zero certifies red. **Not fixed here (rule 1); recorded with its evidence.***
+> 📌 **Full day-by-day context: `NBA_RECIPE.md` `STEP 12 — THE GAME-DAY TIMELINE`, gap ③.**
+
 **And it matters twice over for the season opener**: **2026-10-01 and 10-02 are genuinely zero-game
 days** before opening night on the 3rd, **and they coincide with the `active_stats_season` edge case
 already recorded.** A pipeline run on those dates should report *"no games scheduled"*, not silence
