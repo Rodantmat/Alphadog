@@ -15,9 +15,13 @@
 > handler of `69` in the pipelines' whole called-script set that leaves no trace at all; it drops
 > **shards** of the injury archive, and **`score_board_legs.py:189` reads the resulting
 > `nba_score.availability_delta`.*** ⇒ ***SILENT · it changes which legs `P3` scores · UNCAUGHT by any
-> certifier · and it needs no human error to fire, only a flaky fetch.*** **By the rule below it sits
-> with `A` and `13` at the head of the order; it is listed last in the string only because the string
-> is append-ordered — read the rule, not the position.**
+> certifier · and it needs no human error to fire, only a flaky fetch.*** ⚠ **It is therefore PLACED in
+> the order below rather than appended to it** *(`T20-15` was appended because the rule genuinely put
+> it last; this one the rule puts near the front, and writing it at the end would have been a fudge)*.
+> **Position taken: third, immediately after `A` and `13`.** ⚠ *Its ranking against `A` and `13`
+> specifically was **NOT re-derived this pass** — those two were ranked at `§T20.56`/`§T20.89` and are
+> left where they are; `17` is inserted at the head of the SILENT · DEGRADES · UNCAUGHT group below
+> them.*
 > *Ranking rule, re-derivable: **SILENT before LOUD**, then **STOPS THE SLATE before DEGRADES IT**,
 > then **UNCAUGHT by a certifier before CAUGHT**. A silent failure costs a season before anyone
 > looks; a loud one costs an evening.*
