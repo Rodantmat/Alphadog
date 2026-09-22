@@ -12,7 +12,23 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
-### 📜 THE FORTY-EIGHT STANDING RULES — *the index; each is written in full where it was born*
+### 📜 THE FORTY-NINE STANDING RULES — *the index; each is written in full where it was born*
+
+🔴🔴 **RULE 49 — BORN T20 PASS 9 (§T20.14), 2026-09-22.** ***A CORRECTION IS NOT COMPLETE UNTIL THE OLD
+LITERAL HAS BEEN COUNTED ACROSS ALL TWELVE AND EVERY FLAT SURFACE WALKED. "Corrected in place" names
+ONE place.*** **Born from a FOURTH instance of the same shape, each found by a later pass and none by
+the correcting pass:** *(1) the `2026-10-20` date — 78 mentions, 58 uncorrected (§T10.18b); (2) the
+research-standard table rows 5/8/27, fixed in the body of the very document whose table stayed wrong
+(§T20.9); (3) `38,686,696`, corrected in two documents and left bare in a third (§T20.13); (4)
+**`20 of 135` → `24 of 136`, corrected at 07:15Z and still flat on SIX surfaces at 13:42Z — one of
+them inside an OWNER DECISION, one a section heading, THREE marked as verified ✅ or "exact", and one
+in a DIFFERENT DOCUMENT from the correction** (§T20.14).* ⚠ **The count is mechanical; the judgment is
+not.** ***Rule 19 is the discriminator and it cannot be automated: a hit is a defect only if it asserts
+the old value in the PRESENT TENSE. An attributed, dated historical quotation is sound and must be
+left alone*** — *three of four `38,686,696` occurrences were exactly that.* **So: count the literal,
+then OPEN every hit.** 🔑 **And a corollary worth its own line: THREE of the six missed surfaces
+carried a verification mark.** ***A ✅ records that a figure was once checked, not that it is still
+true, and nothing in this corpus distinguishes the two.***
 
 🔴🔴 **RULE 48 — BORN T20 PASS 6 (§T20.11), 2026-09-22.** ***EVERY SEGMENT CITATION IN A PUBLISHED
 ENTRY IS OPENED AGAINST ITS SOURCE BEFORE THE ENTRY SHIPS — AND A CLAIM ABOUT A COMMAND CITES THE
