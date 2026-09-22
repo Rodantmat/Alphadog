@@ -1183,7 +1183,13 @@ binding + enum + dispatch branch. **A new tool is unusable in the session that a
 
 **BT_ vars** · T8, T9, LIVE · The baseline builder's environment: `BT_ASOF`, `BT_PROPS`, `BT_CUTOFF`
 (baseline|phase1|phase2), `BT_REPLAY`, `BT_INJURY`, `BT_LADDER_STEPS`, `BT_SAVE_COMPONENTS`,
-`BT_TRAIN`/`BT_TEST`.
+~~`BT_TRAIN`/`BT_TEST`~~. 🔴 **CORRECTED 2026-09-22, T20 pass 96 (§T20.101): `BT_TRAIN`/`BT_TEST` are
+INERT in the baseline builder** — *`build_baseline_ladder.py` **replaces** the harness line that reads
+them with season auto-detection from the files on disk, so setting them changes nothing and raises
+nothing.* ⚠ **They remain load-bearing in the HISTORY builders** *(COMPASS fact 66)*, which is why one
+list could not serve both. ➕ **And one flag was missing: `BT_TAG`, which the script sets to `"prod"`
+itself.** ▶ **Full combination→role mapping, with the two silent failures it exposes:
+`NBA_WORKERS.md` — *THE MODE DISPATCH TABLE*.**
 
 ## C
 
