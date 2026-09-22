@@ -12365,6 +12365,34 @@ and no patch toward one, anywhere in the session.** ⇒ **The refactor was not m
 it was never begun.** **Severity: HIGH, unchanged.** *Without it P3 either refits (~64 min, past its
 window) or scores against a ladder it did not fit.*
 
+## T19-1 · 🔴🔴 **NEW · HIGH — A DEFECT IN THIS SWEEP'S OWN DELIVERABLE** · `NBA_GLOSSARY.md` has not been updated through seven transcripts
+**The owner's founding charter (T19 SEG 60, repeated verbatim at SEG 378) names the glossary as one
+of EIGHT mandated documents and gives it the most specific completeness requirement of any of
+them**: *"a map for all important aspects, keywords, terms and tell exactly how and where to find
+them, **on which transcript and which line/message/date and time**… **any material term that shows
+more than once must be in the glossary**."*
+
+**MEASURED 2026-09-22:**
+- **43,356 B — the smallest of the twelve** *(`NBA_MASTER_SUMMARY` 1,990,323 · `NBA_OPEN_ITEMS` 875,355)*
+- **its own Update log has ONE row: `2026-09-20 | Created.`**
+- **its transcript index stops at T16 + "LIVE" — T17 and T18 are absent**
+- **44 commits**, against `NBA_OPEN_ITEMS`' **410** and `NBA_MASTER_SUMMARY`'s **889** — **20 : 1**
+- **last content commit 2026-09-21**, on T11-era `LADDER_DEPTH`/FGA/FTM material
+- **eight of ten central T17/T18 terms absent**: `board_tiers_v2`, `confidence_model`,
+  `certify_pipeline`, `CONF_NEUTRAL`, `measure_report_cutoff`, `f_phase`, `PHASE1_CUTOFF_LOCAL` all
+  return **0**
+
+⇒ **No glossary content commit exists for the sweep of T12 through T18 — seven transcripts, every one
+CLOSED on "three consecutive clean passes."**
+🔑 **Why nine closure passes on T18 alone missed it**: ***every pass measured FINDINGS against a
+TRANSCRIPT; no pass measured the DELIVERABLE against its CHARTER.***
+**Severity: HIGH** — it is a named, mandated document with an explicit completeness rule, and it is
+the document a future reader would reach for first to navigate the other eleven.
+▶ **ACTION: backfill the glossary for T12–T18 and restore its update log and transcript index.**
+*Scheduled as T19 pass 1's work under the amended standing rule ("'document, don't fix' applies to
+the system you're documenting, not to your own deliverable").*
+*(Full evidence and the charter quoted in full: `NBA_MASTER_SUMMARY.md` §T19.1.)*
+
 ## T18-17 · **NEW · OWNER DECISION** · the score formula's penalising half has never fired
 **`[LIVE-AUDIT]` 2026-09-22: of 19,215,200 legs in `nba_score.final_hp`, ZERO have
 `confidence <= 0.85`.** **The live minimum confidence is 0.8540** *(2024-25 0.8540 · 2025-26 0.8722)*,
