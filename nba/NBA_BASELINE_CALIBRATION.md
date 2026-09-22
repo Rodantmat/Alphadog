@@ -15,6 +15,141 @@ document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 
 ---
 
+## 0y. 🔴🔴 **THE OREB REBUILD — FIVE HYPOTHESES, FOUR WRONG — AND THE THIRD SELECTION-FILTER FAILURE** *(T15 pass 1, §T15.2c/§T15.2f, written 2026-09-22 from the 2026-09-12/13 transcript)*
+
+*This section exists because of one owner turn. **OREB had been DROPPED** — excluded from the history
+table after failing certification at **−21.2 pp** on its worst band — and the owner refused it:*
+
+> 🔑🔑 ***"you're right — dropping a prop the board offers is a COVERAGE HOLE, not a solution."***
+> *(the assistant, restating)* — **"NO, do not just reject. FIX IT: granulated, break in tier, figure
+> it out, research, debug, test, simulate. WE CAN'T JUST BE DROPPING IMPORTANT PIECES."** *(owner)*
+
+⚠ **The result is the transcript's largest technical arc, and four of its five hypotheses were wrong.**
+
+### 🔴 THE FIVE HYPOTHESES, IN ORDER, EACH KILLED OR KEPT BY A HELD-OUT GATE SET IN ADVANCE
+
+| # | Hypothesis | Result | Verdict |
+|---|---|---|---|
+| **1** | **`shift_lambda` 0.5** — matching the certified low-count props *(blocks, steals, ftm)*, *"because full parametric ordering overshoots on zero-inflated stats"* | **2025-26: −21.2 pp → −2.5 pp** *(borderline)*; **2024-25: +4.3, +5.7, −3.2 pp** | ❌ **FAILS THE TWO-SEASON RULE** — *"a large improvement… but it is NOT A FIX"* |
+| **2** | **THE OPPORTUNITY BASIS** — the canonical `ORB% ≈ ORB / (FGA − FGM)`, *"offensive rebounds over available opportunities"*, which the literature explicitly names per-36 as wrong for | **moved bias by ~0.02 — essentially nothing** | ❌ **REJECTED ON EVIDENCE DESPITE BEING THE LITERATURE'S ANSWER** |
+| **3** | **Minutes-tier shrinkage** *(shrink toward role-tier peers)* | **FLIPPED THE BIAS SIGN AND AMPLIFIED IT** — high band `+0.241` → **`−0.658`** at k=20 | ❌ **MADE IT WORSE** |
+| **4** | **ARCHETYPE shrinkage — group by DEFENSIVE-REBOUND RATE, not minutes** *(Gemini's correction)* | worst-band bias **0.241 → 0.141**, low end **−0.108 → +0.016** | ✅ **WORKS — 41% better** |
+| **5** | **k sweep** | **k≈3–5: worst-band bias 0.241 → 0.045 (81%), MAE best at the same setting, MONOTONE in k** | ✅✅ **SOLVED AT THE MEAN LEVEL** |
+
+🔑🔑 **THE TRANSFERABLE MOVE, and the reason #3 failed where #4 succeeded** — *Gemini's critique,
+which the transcript credits by name:* **"shrinking toward a MINUTES-based role tier is wrong because
+'starter' mixes a crash-first CENTER with a WING who never touches the offensive glass. The group has
+to be an ARCHETYPE, not a minutes bucket."** ✅ **And the non-circular part is the whole trick:**
+
+> ***"define the archetype by DEFENSIVE REBOUND RATE — correlated with size and role but NOT the
+> target, so the grouping DOESN'T LEAK."***
+
+⚠ **Shrink toward an archetype prior defined by a variable correlated with the target but not the
+target itself, with LIGHT shrinkage.** *Likely applicable to other bursty, zero-inflated low-count
+stats — the transcript says so explicitly and does not claim to have tested it elsewhere.*
+
+### ✅ WHERE IT MAPS IN THE RECIPE — **the structure was already right; the PARAMETERS were wrong**
+
+*`shrunk36 = (n·rate36 + k·tier_prior) / (n + k)`* — **the recipe already shrinks toward a tier prior.**
+The two defects were: **`k_stab` for oreb was 60 — the heaviest prior of any prop — where the sweep
+says ≈4**, and **the prior was ROLE-TIER-based where it should be ARCHETYPE-based.** *Only the `k`
+change was implemented in this transcript* *(`k_stab` 60 → 4, both seasons rebuilt, **556,277 rows**)*.
+
+### ⚠⚠ AND IT STILL DID NOT CERTIFY — **the residual is DISPERSION, not bias, and the signature says so**
+
+*After k=4 the worst bands were **+4.8 and +4.1 pp** against the 2.5 pp threshold. **But the pattern
+changed in a way that decides the diagnosis:*** the bias is **no longer monotone across bands** —
+*"+0.9, +4.8 on the more side and −3.5, +0.3, −2.6, +1.1, +4.1, −0.7, −1.1, +1.1 on the less side —
+**ALTERNATING SIGN, largest errors in the THINNEST bands (744 and 1,436 rows)**."*
+
+> 🔑 ***"that's the signature of NOISE, not bias. the systematic compression i fixed is gone; what's
+> left is the DISTRIBUTION being wrong in the tails of a bursty, zero-inflated count."***
+
+🔴 **THE OPEN ITEM, scoped and named**: *"the negative-binomial dispersion for oreb is fitted
+**GLOBALLY**, and for a stat where a player's outcome is 0, 0, 0, 4, **a single global shape can't
+serve both the bench and the crashers**. **Per-cell dispersion would move it to certified.**"* ⚠
+**At a 0.1 pp cost it is not urgent** *(see `NBA_FINAL_SCORING_CALIBRATION.md` §0a-T15 §6 for the
+penalty)* — **but it is the one thing standing between oreb and certification.**
+
+⚠ **AND THE ALTERNATING SIGN IS WHY THE PENALTY WENT ON CONFIDENCE, NOT ON THE PROBABILITY**:
+*"the errors alternate sign (+4.8, −3.5, −2.6, +4.1), so **shrinking probabilities toward 0.5 would
+fix some bands and BREAK others**. What's actually true is that we're **less certain** about any oreb
+leg than a certified one."* 🔑 **A penalty belongs where the deficiency is — and an alternating-sign
+error is an uncertainty defect, not a directional one.**
+
+### 🔑 WHY OREB FAILS WHERE REBOUNDS PASSES — the mechanism, stated
+
+*The expanding-mean rate estimator **regresses everyone toward the league average**, so the spread of
+predictions is too narrow — low-anchor players under-predicted by **0.11**, high-anchor players
+over-predicted by **0.25**.* ⚠ ***"offensive rebounding is far more CONCENTRATED BY ROLE than total
+rebounding, so compression hurts it much more."*** ✅ **That is also why the failure was band-specific
+from the very first run** — *"it isn't about opportunity at all, it's about the rate estimator
+compressing the distribution of players."*
+
+---
+
+## 0y-2. 🔴🔴 **THE THIRD SELECTION-FILTER FAILURE — and the SANITY GATE that now catches the family**
+
+⚠⚠ **Three bugs in one session, each producing CONFIDENT-LOOKING BUT INVALID results, and each caught
+by a diagnostic that was in place BEFORE the output was read.** *The transcript names this as its own
+durable output: **"that gate is the durable output of this round, since it will catch the same class
+of error in every factor still to come."*** *(The gate itself is on file — COMPASS fact 77; **what is
+new here is the three-bug census and the diagnostic line that caught each one.**)*
+
+| # | The bug | **The diagnostic that caught it** | What it would have produced |
+|---|---|---|---|
+| **1** | **B4 v2's exposure scoping was LEAGUE-WIDE** — *"a player's historical defenders include everyone he's faced across the whole season — players on other teams entirely. **they're all 'missing' tonight because they were never going to play.**"* | 🔑 **`share of exposure missing = 0.934`** — *"the code thinks **93%** of each player's historical defender exposure is unavailable. **that's impossible.**"* | **spurious betas +0.14 to +0.22** and a recorded opponent effect that does not exist. *After the fix the sample **doubled to 4,526 rows** and the betas collapsed to −0.056…+0.029.* |
+| **2** | **The rotation-split `base_min` join was a SELECTION FILTER** — the rolling baseline is computed from **game logs, which contain only games the player ACTUALLY PLAYED**, so *"attaching `base_min` to a report row only succeeds when the player appeared; **every row where he sat gets NaN and drops out of BOTH splits**"* | 🔑 **every split showed `p_plays = 1.000`, including questionable at 530 cases — against an unsplit 0.503** | **both buckets conditioned on having played, which forces the rate to 1.0 BY CONSTRUCTION.** *"A **selection filter disguised as a feature** — the same family of error as the earlier panels, and **exactly what the split was meant to test for**."* |
+| **3** | **The baseline vanished on non-appearances** *(the same root, as a feature-coverage defect)* | coverage of report rows | fixed by computing the baseline from **the team's ROSTER HISTORY**, *"which exists whether or not the player suited up"* → **attaches to 71.2% of report rows** and the 0.828 "available" anomaly resolves as **deep-bench DNPs, not scratches** |
+
+🔑🔑 **THE GATE, as specified**: *"the test should **REFUSE TO REPORT VERDICTS if the feature is
+degenerate**, which is what would have caught v2 before I read its output."* ✅ **It is not a warning —
+it suppresses the verdict.** ⚠ **And the transcript is explicit that the headline N1 numbers were NOT
+affected**, because they *"don't use `base_min` at all and are measured against the full report
+population"* — *the separation of what survived a bug from what did not, stated at the time.*
+
+### ⚠ THE SAME FAMILY, EARLIER IN THE SAME TRANSCRIPT — **five retracted absence panels**
+
+*Before the allocator worked, **five attempts at the absence panel were built and retracted**, each
+failing the **conservation gate** *(the redistributed shares must sum to ~1.0)* for a different
+surface reason but **one underlying one**. Three were missing-receiver variants — a **minutes floor**,
+a **pair-games threshold**, and an **API 2,000-row cap**.* 🔴 **And the headline they produced was
+retracted with it**: *the **"+17.5% usage redistribution"** finding* —
+
+> ***"a SYSTEMATIC ESTIMATOR BIAS REPLICATES PERFECTLY; two-season agreement proves STABILITY, not
+> CORRECTNESS."***
+
+⚠⚠ **That is a standing caution against the corpus's most common validation move.** ✅ **The allocator
+that finally passed** predicts minutes from roster state: **MAE 4.609 vs recent-5's 4.875**, and
+**conservation 0.9930** — *the gate the five failures could not clear.* *Counterfactual multipliers
+graded by role: **deep bench 1.265 → starters 1.222**.*
+
+### 🔑 THREE RESEARCH-DRIVEN STRUCTURAL CORRECTIONS, recorded because each changed the model's SHAPE
+
+| | The correction | Why |
+|---|---|---|
+| **1** | **The 240-minute constraint** *(FiveThirtyEight's rank-ordered depth chart)* | redistribution must **conserve**, not inflate |
+| **2** | **Rate is a DEPENDENT VARIABLE, not a free multiplier** | *the reason the rate response was later rejected as double-counting* |
+| **3** | **Selection bias — fit ONLY on PRE-GAME RULED-OUT absences** | in-game injuries and rest days are different populations |
+
+⚠ **And the finding that cancelled an entire planned pivot** — *Gemini's, and the transcript acts on
+it immediately*: **for PRE-GAME RULED-OUT prediction the control is *games where X did not play at
+all*, NOT within-game stints** — *which removed the play-by-play dependency from the factor's path.*
+
+### ✅ THE ENRICHMENT CONTRACT THE ROUND WAS BUILT ON — **components, never the probability**
+
+> 🔑🔑 ***"enrichment adjusts the baseline's COMPONENTS — projected minutes, per-minute rate,
+> dispersion, `p_plays` — and NEVER the probability itself."***
+
+*Residual cells are keyed **`prop × direction × anchor band × role tier × factor tier`**, and the
+double-count discipline is structural rather than aspirational:* **"anything the baseline ALREADY
+CARRIES contributes ~1.0 and drops out."** ✅ **VERIFIED that the baseline exposes those components**:
+`proj_min` = role minutes × blowout mixture × role multiplier with the return ramp; `rate36` = EWMA
+per-36 with carryover; **`proj_mean = proj_min × rate36 / 36`.** 🔑 **This is why A2 could ship as a
+MINUTES MULTIPLIER while its rate response was rejected — the contract made the two separable.**
+
+---
+
 ## 0x. 🔴 THREE THINGS THE MANDATED DOCUMENTS DID NOT CARRY — **a leakage rule and two measured priors**
 *Recorded 2026-09-21 (T12 pass 1, §T12.2c). **Transcript `2026-09-11-21-01-23`, tail segments 568,
 604.** Each probed against the baseline `c5798146` with positive controls (`pdfplumber` 8 of thirty,
