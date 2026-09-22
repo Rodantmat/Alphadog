@@ -32680,3 +32680,114 @@ outcome a pre-registration is for. What it found instead was in a field called `
 in a 338-byte file, that no pass had opened — a date ten days on the wrong side of opening night.**
 ***The board scrapers that run are fine. The one that does not run is the one nothing triggers, and
 that is now the third finding with the same root cause.***
+
+---
+
+# §T20.61 — T20 PASS 56 · THE WORKER-LAYER CENSUS — TESTING A SENTENCE THIS SWEEP PUT ON THE BRIEF
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: three `SELECT`s and repo greps.** ⚠⚠ **`run_job` WAS NOT CALLED —
+this pass is ABOUT `run_job` and must not use it.** **Nothing edited, triggered or dispatched;
+`NBA_COMPASS.md` not written to.**
+
+## 0. THE CLAIM UNDER TEST — AND IT IS THE SWEEP'S OWN
+
+**§T20.60 produced a unifying sentence and the OPENING-DAY BRIEF now carries it:**
+> *"the GitHub-Actions layer runs on its crons and commits; the WORKER layer does not run at all"* …
+> *"one decision now answers B, C and T20-14 together."*
+
+⚠⚠ ***That is a SCOPE claim resting on THREE instances, published on the one surface §T20.56
+established the owner will actually read — and §T20.28 is this sweep's own record of asserting a
+scope from the instances it happened to have.*** **This pass exists to check it.**
+
+## 1. THE POPULATION, RE-TAKEN RATHER THAN CARRIED (rules 17/21/30)
+
+**Columns read off `information_schema` first** — `nba_config.worker_definitions` is
+`(worker_name, job_key, worker_group, phase_key, display_name, enabled, notes, updated_at)`.
+**`SELECT` at 2026-09-22: `21` rows — unchanged from §T20.54's count — and `enabled = 1` on ALL
+TWENTY-ONE.**
+
+| group | workers |
+|---|---|
+| **01 Static** | **15** — arenas · darko · lineups · officials · onoff · player-bio · players · player-tracking · playtypes · schedule · shotquality · teams · team-stats · tracking-detail · weekly-differential |
+| **02 Historical** | **4** — backfill · game-officials · measure-types · starter-status |
+| **03 Delta** | **1** — daily-delta |
+| **nba_baseline** | **1** — baseline-ladder |
+
+⚠ **And `updated_at` spans `2026-08-31 19:13` → `2026-09-09 19:54` — the build window. Not one
+definition has been touched in thirteen days.**
+
+## 2. 🔑🔑 THE STRUCTURAL FACT THAT MAKES SENSE OF EVERYTHING — MEASURED
+
+**Of the `40` distinct scripts the three pipelines run (§T20.50's enumeration), how many write to
+Postgres?** *(`INSERT INTO` · `ON CONFLICT` · `COPY … FROM` · `execute_values` · `copy_expert`)*
+
+> 🔴 **`13` WRITE to Postgres. `27` write JSON ONLY.**
+> **The writers**: `archive_live_boards` · `build_asof_calibration` · `build_availability_delta` ·
+> `build_blowout_model` · `build_confidence_v3` · `build_defender_ratings` · `build_rung_market` ·
+> `grade_board_outcomes` · `load_baseline_ladder` · `maintenance_shrink_board_index` ·
+> `score_board_legs` · `scrape_nba_daily_delta` · `scrape_referee_assignments`.
+
+⇒ ***The GitHub-Actions layer is a SCRAPER-AND-COMMITTER. The worker layer is the LOADER. They are
+two halves of ONE pipeline, not duplicates — which is exactly why a demonstrably live Actions layer
+(§T20.60: Sleeper and Fliff committed within the hour) and a reference layer frozen at `2026-09-02`
+coexist without contradicting each other.***
+
+⚠⚠ **RULE 26/28 — AND THIS IS THE HONEST CREDIT: THE SPLIT ITSELF IS ALREADY ON FILE.** *The
+2026-09-21 SEASON-CRITICAL item says it in one sentence:* **"`nba-scrape.yml` runs its sixteen
+scrapers on a Monday 09:00 UTC cron and commits fresh JSON. **Every worker that loads that JSON into
+Postgres is triggered by hand via `run_job`.**"** ✅ **KILLED as a discovery.** 🔑 **What this pass
+adds is the CENSUS — which workers, how many, and which of them still matter — turning a qualitative
+sentence into an enumerated decision.**
+
+## 3. ▶ THE CENSUS — AND IT CUTS THE DECISION FROM TWENTY-ONE TO FIFTEEN
+
+| group | n | **covered by an Action that WRITES Postgres?** | **still a live decision?** |
+|---|---|---|---|
+| 🔴 **01 Static** | **15** | 🔴 **NO** — the Actions scrape and commit the JSON; only a worker loads it | 🔴 **YES — these ARE the ten frozen tables** |
+| ✅ **02 Historical** | **4** | no | ✅ **NO — they already ran** |
+| ✅ **03 Delta** | **1** | ✅ **YES** — `scrape_nba_daily_delta.py` writes, and it is a P2 step | ✅ covered |
+| ✅ **nba_baseline** | **1** | ✅ **YES** — `load_baseline_ladder.py` writes, and it is a P2 step | ✅ covered |
+
+⚠ **RULE 19 APPLIED TO THE HISTORICAL FOUR RATHER THAN ASSUMED**, because §T20.31's *"no NBA job has
+ever recorded a run"* is a statement about the **LEDGER**, not about history. **Their targets are
+live and full**: `nba_stats.player_game_log` **79,358** *(and `_advanced`, `_scoring`, `_usage` at the
+same count)* · `nba_stats.player_game_starter_status` **32,179** · `nba_team.team_game_log` **7,380**
+*(and three siblings)* · `nba_stats.game_officials` **3,681**. ⇒ ✅ **They ran. They are one-off
+backfills, not live gaps.**
+
+⇒ ✅✅ ***THE BRIEF'S SENTENCE IS CONFIRMED AND MADE PRECISE: the decision is about the FIFTEEN "01
+Static" workers, not twenty-one — and those fifteen are exactly the loaders for the frozen
+reference layer, the frozen schedule and, by the same mechanism, Betr.***
+
+## 4. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTY-SEVENTH consecutive identical run.** Measured 2026-09-22T18:05:21Z |
+| **(ii)** ≥1 worker feeds a target no Action covers | 🔴 **TRUE — FIFTEEN do**, and they are the static loaders behind every frozen-table finding in T20 |
+| **(iii)** ≥1 worker's target IS covered by an Action | ✅ **TRUE — TWO**, `nba-daily-delta` and `nba-baseline-ladder`, both through P2 · **plus FOUR historical backfills that already ran** ⇒ **the live decision is 15, not 21** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTY-SEVENTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 5. ⚠ VERDICT
+
+✅ **CLEAN OF NEW SYSTEM DEFECTS — and that is the right outcome for a pass whose job was to test the
+sweep's own published claim. No new open item: every element belongs to an item already on the
+brief.**
+✅✅ **THE CLAIM SURVIVES, AND IS NOW SHARPER THAN WHEN IT WAS PUBLISHED: `21` enabled worker
+definitions, `0` recorded runs, `2` covered by P2, `4` already-run backfills ⇒ **`15` loaders are the
+whole of the decision**, and `13` of the pipelines' `40` scripts write to Postgres while `27` write
+only JSON.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **the scrape/load split itself** *(the 2026-09-21 item — "every
+worker that loads that JSON into Postgres is triggered by hand via `run_job`")* · **`job_runs` and
+`worker_run_log` EMPTY** *(§T20.31, re-verified §T20.54)* · **the ten frozen tables** *(2026-09-21
+item)* · **Betr** *(T20-14)* · **the `21` row count** *(§T20.54 — re-taken here with a timestamp,
+unchanged)*.
+
+📌 ***The lesson:*** **a sentence this sweep wrote three passes ago went straight onto the page the
+owner reads, on the strength of three instances. It was right — and it was also 40% too big, because
+six of the twenty-one workers either already ran or are covered by P2.**
+***A scope claim that turns out to be true still needs its denominator, and "wire fifteen loaders" is
+a decision somebody can make on a Tuesday in a way that "the worker layer does not run" is not.***
