@@ -33600,3 +33600,116 @@ said one in a hundred and eighteen. The difference was a single character — wh
 care, is what caught it.**
 ***A defect rate that arrives in neat consecutive blocks is a bug in the instrument until proven
 otherwise.***
+
+---
+
+# §T20.69 — T20 PASS 64 · THE RESUME-NOTE AUDIT — **330,889 CHARACTERS, AND THE NEXT STEP IS NOT IN IT**
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only against the system — no `SELECT` was needed.** **Nothing triggered,
+dispatched or edited in the system; `NBA_COMPASS.md` not written to.**
+
+## 0. THE CLAIM UNDER TEST IS THE HANDOFF'S OWN
+
+**Rule 46 bars T20 from closing here, so this session's actual product is a HANDOFF.** *§T20.56
+audited the OPENING-DAY BRIEF because it is what the OWNER reads. **Nobody has ever audited what the
+SUCCESSOR reads**, and that document opens with a claim about itself:*
+> ***"## ▶ RESUME NOTE — the only thing a fresh session needs to continue"***
+
+## 1. THE CHECKLIST WAS FIXED BEFORE THE NOTE WAS OPENED (rule 17)
+
+**Fourteen items, written first so the audit could not be shaped by what it found**: the standing
+rules · read-only · `[skip ci]` and the default-message trap · `patch_file` only on the twelve ·
+`NBA_COMPASS.md` never written · the concurrent session's out-of-scope set · API keys / PUBLIC repo ·
+`prop_universe` mid-rebuild · current position · **the exact next step** · the transcript ledger · the
+two INDEPENDENT reads owed · the instrument and how to re-run it · the citation warnings.
+
+⚠⚠ **RULE 20 BIT A FOURTH TIME, IN THE AUDIT'S OWN PROBE.** *The first run used `grep -ciE` with
+`\|` for alternation — which under `-E` matches a LITERAL PIPE — and returned false zeros for the
+default-message trap, the out-of-scope set and the citation warnings.* **Corrected to bare `|`, all
+three are present.** 📌 ***Fourth instrument error in one session, and the fourth caught before
+publication.***
+
+## 2. ✅ TWELVE OF FOURTEEN ARE PRESENT
+
+**Present and quotable in the note (lines 13–311)**: the standing-rules table · `run_job` prohibition
+· `[skip ci]` and the `github_patch_file` default-message trap · `NBA_COMPASS.md` · the out-of-scope
+set · PUBLIC-repo warning · `prop_universe` mid-rebuild · the current position and clean count · the
+transcript ledger · the two INDEPENDENT reads owed · the instrument *(4 mentions)* · the citation
+warnings *(9 mentions — this session's own additions at §T20.66–§T20.68)*.
+⚠ **AND ONE IS PRESENT BUT KNOWN-BROKEN — PRIOR, CARRIED, NOT RE-DISCOVERED**: **§T20.18 measured
+that the rules index lacks TEN of its FIFTEEN rules**, a defect that has blocked **two** rule
+candidates from being numbered (§T20.21, §T20.28) and caused rule 49 to be born and retired in seven
+minutes (§T20.16).
+
+## 3. 🔴🔴🔴 THE TWO THAT ARE ABSENT — AND ONE OF THEM IS THE WHOLE POINT OF THE DOCUMENT
+
+| checklist item | state |
+|---|---|
+| 🔴🔴 **the exact next step** | **NOT IN THE RESUME NOTE** |
+| 🔴 **`patch_file` only on the twelve** | **NOT IN THE RESUME NOTE** |
+
+**Both live only in the `▶ EXACT NEXT STEP` row — which sits at line `404`, NINETY-THREE LINES BELOW
+the position row at `311` that ends the note.**
+
+⇒ ***The section that calls itself "the only thing a fresh session needs to continue" does not
+contain the next thing to do.***
+
+## 4. 🔴🔴 AND THE REASON IS MEASURABLE — THE NOTE IS MOSTLY ITS OWN HISTORY
+
+| | |
+|---|---|
+| **resume note** | **330,889 characters** — *≈ **82,700 tokens** at 4 chars/token* |
+| of which, on lines marked **Superseded** | **269,226 — `81.4%`** |
+| explicitly superseded row markers | **26** |
+| whole run log | **1,722,355 characters** |
+
+⚠⚠ **AND THIS IS RULE 40 WORKING EXACTLY AS WRITTEN, WITH A COST NOBODY PRICED**: *"a correct
+supersession must not destroy the original"* — **so twenty-six superseded next-step rows have
+accumulated, each one kept in full, and they are now four-fifths of the document a successor is told
+to read first.**
+⇒ ***A fresh session obeying the instruction spends roughly eighty-three thousand tokens before
+reaching the position row, and the next step is ninety-three lines further on.*** 📌 **Rule 40 is
+right. Its interaction with a document that is also an operational front page was never designed.**
+
+## 5. ⚠ CLAUSE (iii) — THE ASSERTION THAT IS NOW FALSE
+
+**The note's own heading**: *"the only thing a fresh session needs to continue."*
+⚠ **RULE 40's DISCRIMINATOR, APPLIED**: *this was **TRUE WHEN WRITTEN** — the note was short and the
+next-step row was inside it.* **It has been falsified by the note's own growth, and because the claim
+is about the CURRENT state rather than a past measurement, it needs CORRECTING, not dating.**
+
+## 6. ▶ THE REPAIR — A `START HERE` BLOCK, NOT A REWRITE
+
+⚠⚠ **DELETING THE SUPERSEDED ROWS WOULD BREAK RULE 40 AND IS NOT DONE.** ✅ **Instead a compact
+`START HERE` block is placed at the very top of the resume note** — the position, a pointer to the
+next-step row by its `§`-anchor *(the citation scheme §T20.68 measured at 99.2%)*, the eight standing
+constraints, and the owed reads — **in a few hundred characters rather than 330,000**, and the note's
+self-description is corrected to what it actually is.
+
+## 7. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — SIXTY-FIFTH consecutive identical run.** Measured 2026-09-22T18:39:43Z |
+| **(ii)** ≥1 needed thing is absent | 🔴🔴 **TRUE — 2 of 14, and one is the EXACT NEXT STEP** |
+| **(iii)** ≥1 assertion is now false | 🔴 **TRUE — *"the only thing a fresh session needs"*, true when written, falsified by the document's own growth** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — SIXTY-FIFTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 8. ⚠ VERDICT
+
+🔴 **NOT CLEAN — `0/3` stands. No new SYSTEM defect: this is the handoff, which rule 46 makes this
+session's product.**
+✅ **REPAIRED IN THE DELIVERABLE: a `START HERE` block now opens the resume note.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at `0/3` with TWO INDEPENDENT reads owed, exactly as T19
+(§T19.6, OWNER DECISION).**
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.18's "the rules index lacks ten of its fifteen rules"**
+*(prior, the strongest single item, carried not re-discovered)* · **the two blocked rule candidates**
+*(§T20.21, §T20.28)* · **rule 49's retirement** *(§T20.16)*.
+
+📌 ***The lesson:*** **sixty-three passes audited the system, the documents, the figures and the
+citations. The sixty-fourth read the front page of the handoff and found that the instruction "read
+this first" costs eighty-three thousand tokens and stops short of telling you what to do.**
+***Rule 40 says a supersession must not destroy the original. It never said the originals should be
+the first thing anyone reads.***
