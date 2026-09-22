@@ -27558,3 +27558,75 @@ wrong too; §T20.16 found the duplicate and the broken second half.*** ⚠ **Eac
 incomplete until the next pass opened it.** ✅ **That is precisely the property the three-consecutive-
 clean rule exists to detect, and it is why T20 is held at 0/3 rather than closed on a careful-looking
 pass.**
+
+---
+
+# §T20.17 — PASS 12: *THE PROPAGATION RULE HAS BEEN BORN THREE TIMES, AND THE INDEX DOES NOT CONTAIN IT*
+
+*2026-09-22. **The one thing no pass in twenty transcripts has done**: read the rule index end to end
+rather than invoking rules from memory. §T20.16's lesson — **using a rule is not reading it** — executed.*
+
+## 1. 🔴 THE POPULATION DISAGREES WITH ITS OWN HEADING — *the pre-registration's named first finding*
+
+**Heading: FORTY-EIGHT STANDING RULES. Table: THIRTY-SEVEN rows** — `6 · 7 · 8 · 12 · 15 · 16–47`.
+***Absent: 1 · 2 · 3 · 4 · 5 · 9 · 10 · 11 · 13 · 14*** *(plus 48, added as prose above the table)*.
+
+⚠ **The preamble explains it** — *"rules 1–15 … are stated in `NBA_MASTER_SUMMARY.md` at their
+entries"* — **but that is not the split that exists: FIVE of the first fifteen are in the table.**
+*The boundary is arbitrary, and nothing tells a reader which side a given rule falls on.*
+
+📌 **RULE 15 caught my own first measurement.** *A probe for `RULE N —` returned six zeros; a
+**positive control on rules 30 / 40 / 43** (62 / 56 / 38 hits) showed the pattern was wrong, not the
+rules absent.* ✅ **All ten are referenced — 3 to 39 times each. They are not INDEXED.** *That is
+rule 22's second half applied to a nonzero as well as a zero.*
+
+## 2. 🔴🔴🔴 THE FINDING — *rule 10 → rule 40 → rule 49: one rule, three births*
+
+| generation | born | wording |
+|---|---|---|
+| **RULE 10** | T1–T9 | ***"copy propagation — the corrections from passes 15, 21 and 32 are present in every copy"*** |
+| **RULE 40** | **T18** pass 7 | *"a correction is not a correction until it reaches every document that asserts the old figure"* |
+| ~~**RULE 49**~~ | **T20** pass 9 | *"a correction is not complete until the old literal has been counted across all twelve"* — **retired at §T20.16** |
+
+***Three statements of one claim.*** 🔴🔴 **And §T9.26a issued an explicit instruction against exactly
+this, which both later births ignored:**
+> **"Rule 10 needs no further sharpening; it NEEDS APPLYING to headings too."**
+
+🔑 ***Each re-birth was written by a pass that was invoking its predecessor.*** *§T20 invoked rule 40
+**five times** while writing 49; rule 40 was born at T18 into a corpus already referencing rule 10.*
+⚠⚠ ***And §1 supplies the mechanical reason: RULE 10 IS NOT IN THE INDEX.*** **A pass told to "read
+this index before writing any claim about the sweep's own method" cannot find rule 10 there — so the
+rule most likely to be re-invented is precisely the one a reader cannot look up.**
+
+✅ **ACTIONED IN THIS PASS, per rule 12** *(apply a rule in the pass that writes it)*: **rule 40 is
+merged into rule 10 and KEPT rather than deleted, because 40 carries two things 10 does not** —
+**(a) the instrument** *("find every struck-through value in the twelve, then check whether that same
+value is still asserted un-struck anywhere else")* and **(b) the retracted-vs-dated second half**,
+which is what stops the first half becoming busywork.
+> ### ***Operative form: RULE 10 is the claim; RULE 40 is its instrument and its retracted-vs-dated test. Cite 10 for the claim, 40 for the method. Do not write a fourth.***
+
+## 3. 📏 CLAUSE SCORING — *pass 12*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at 13:54:05Z |
+| **(ii)** | reading all rules finds **at least one more pair** that should be merged or retired | ✅ **HIT — 40 ↔ 10**, which makes the retired 49 a *third* generation rather than a first duplicate |
+| **(iii)** | **at least one rule has a SECOND HALF** later passes ignored, as §T20.14 ignored rule 40's | ❌ **MISS — none NEW.** *Two exist and both are already on file*: rule 40's *(recorded one pass ago, §T20.16)* and rule 22's — ***"the second half applies to NONZERO counts, and for twenty passes it was applied only to zeros"*** — *which this pass then used correctly in §1.* |
+
+⚠ **Clause (iii)'s MISS is the healthy kind**: *the search found two instances of the shape and both
+were already documented.* **Rules 26/28 killed them; nothing was claimed twice.**
+✅ **Baseline `636 · 2 · 484 · 481` for the FOURTEENTH consecutive run.**
+
+## 4. ⚠ VERDICT
+
+🔴 **NOT CLEAN — a rule merged, an index defect recorded. CLEAN STAYS 0/3.** ⚠ **Rule 46: eleven
+sequential passes share one context.**
+
+📌 ***The arc of passes 9–12, stated once and plainly:*** **I wrote a rule (49); the next pass found
+its section-level ancestors and mis-credited them; the next found it was a duplicate of a numbered
+rule (40); this one found that 40 was itself a re-birth of rule 10, that T9 had explicitly forbidden
+that re-birth, and that rule 10 is missing from the index a pass is instructed to consult.**
+⚠⚠ ***Four passes to fully correct one paragraph.*** **Every layer was written carefully and every
+layer was wrong in a way only the next pass could see** — the clearest demonstration this run has
+produced of why the standard is three CONSECUTIVE clean passes in INDEPENDENT contexts, and why T20
+is held at 0/3.
