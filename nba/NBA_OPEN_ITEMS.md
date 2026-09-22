@@ -12765,6 +12765,50 @@ its instruction survives the drift · **(c)** mark `action_2` DONE and leave the
 **(d)** leave the plan alone and treat this entry as the correction of record. ⚠ **This sweep
 recommends nothing and changed nothing; the measurements above are the input.**
 
+> ### 🔴🔴🔴 **WIDENED ONE PASS LATER, 2026-09-22 (§T20.30) — THE DIET PLAN WAS NOT ALONE. DRIFT IS THE CONFIG SURFACE'S NORMAL CONDITION.**
+> **`nba_config.classification_config` = `66` rows**, `updated_at` **`2026-09-09T01:52:27.908Z` →
+> `2026-09-19T18:06:07.885Z`**; **`0` rows are `pp_*`** *(the concurrent session's objects are
+> separate TABLES, not rows here — nothing needed excluding)*; **11 rows carry a `status`; 6 were
+> re-derived in full.** ⚠ **RULE 17: the rate is `4 of 6` CHECKED, not "4 of 66" — the other 60 hold
+> model parameters with no live counterpart to disagree with.** ⇒ **`5 of 7` checked across passes
+> 24–25 are stale.**
+>
+> 🔴 **① `final_engine_complete_2026_09_18` — THE CORRECTED FIGURE, A SECOND TIME.** `status`:
+> *"FINAL CALCULATION ENGINE COMPLETE — final HP, confidence and score on **38.7M legs**, both
+> seasons, all 30 props"*. ***`38.7M` is `38,686,696`, the figure §T20.13 corrected to `19,215,200`
+> five days ago — now found in a SECOND live config row, and this one is a COMPLETION STATUS.***
+> ⚠ ***"both seasons"* is true only thinly: 2024-25 = **19,075,070**, 2025-26 = **140,130 on a
+> SINGLE DATE** — the 19,471,496-row loss T17 recorded.**
+> 🔴 **② `absence_panel_measured_2026_09_12` DESCRIBES A DROPPED TABLE** — *"`nba_score.absence_panel`
+> (190,144 rows, 2,281 games…)"*; **the table does not exist**, while `absence_panel_teams` survives
+> (1 MB / 4,630). 🔑🔑 ***Internal contradiction: `storage_diet_plan`'s `action_2` is what listed it
+> for dropping and still reads "PLANNED"; this row describes it as live; it is already gone; neither
+> row moved.***
+> 🔴 **③ `enrichment_backfill_status_2026_09_10` says "10 books" — LIVE IS `14`**: betmgm ·
+> betonlineag · betrivers · **betr_us_dfs** · bovada · draftkings · fanatics · fanduel · **fliff** ·
+> **pick6** · prizepicks · **sleeper** · underdog · williamhill_us. ⚠ **Four added since 2026-09-10,
+> and THREE OF THE FOUR ARE DFS APPS** — the family this system exists to price.
+> 🔴 **④ `redistribution_factor_a2_2026_09_12` `status` "BUILT AND VALIDATED" vs
+> `storage_diet_plan`'s *"the A2 approach which is CLOSED (COMPASS fact 91)"*.** *Nuance:
+> `nba_score.redistribution_factors` survives (16 MB / 51,806) — the FACTORS table lives, the PANEL
+> it was fitted from does not.* ⇒ **Anything reading the config for A2's state gets opposite answers
+> depending which key it reads.**
+>
+> ✅ **RULE 22 CONTROL, from inside the same rows**: *"baseline HP (**19.34M rows**)"* →
+> `baseline_history` **19,343,348** ✅ EXACT; *"**27.06M rows**"* → `board_snapshots` **27,067,871**
+> ✅ EXACT. 📌 ***The same row holds an exact figure and a stale one side by side — a row-level
+> "is this fresh?" check would have passed both.***
+> ⚠ **NOT a defect and recorded as such (rules 26/28)**: `primary_defender_quality_measured`'s
+> *"241,590 pairings"* has no `%matchup%` table in any schema, but that is T11 headline finding (2) —
+> `scrape_nba_matchups_pergame.py` has no registered writer; scraped to JSON, never loaded.
+>
+> 🔑🔑 ***THE MECHANISM, AND IT IS THE ACTIONABLE PART: `nba_config` is written by the job that
+> PRODUCES a result and never by the job that SUPERSEDES it. A row is authored once, at the moment
+> its work finishes, and nothing in the system owns the sentence "this is no longer true."***
+> 🔴 **Folded into this item's OWNER DECISION as option (e): before the opener, sweep
+> `classification_config` for rows whose `status` or named tables are contradicted by live state —
+> the six checked here are a start, not the list.**
+
 ---
 
 ## T20-1 · **NEW · OWNER DECISION · MEDIUM** · five 🔴 findings nothing in the corpus points at
