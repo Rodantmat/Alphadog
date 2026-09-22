@@ -30702,3 +30702,190 @@ today — 576 pushes, 36 of them rule-breaking, one deploy, one destroyed scrape
 ***A read-only sweep is not a side-effect-free sweep. `SELECT` touched nothing; `git push` touched
 everything, 576 times, and the one tool I never thought to point at myself was the one that had been
 recording it all along.***
+
+---
+
+# §T20.47 — T20 PASS 42 · THE PUSH-RACE EXPOSURE MAP: EVERY WORKFLOW THAT WRITES BACK TO `main`
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS, as the owner requires**: the resume note in
+`NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61** and **T20 SEG 597**. Read-only against the live system —
+this pass called `github_list_dir`, `github_grep_file`-equivalent greps on the fast-forwarded clone,
+`github_list_workflow_runs` and `github_get_workflow_run_log`, **all reads**; no dispatch, no
+`run_job`, no re-run, and **no workflow file was edited** (the owner: *"you will not fix anything
+along this process"*).
+
+## 0. WHY THIS ANGLE
+
+**§T20.46 did not theorise the push race — it caught one.** The question it left open is how wide the
+exposure is: **three** of the repository's workflows had been examined from this angle (P2, P3 and
+`scrape.yml`). **Thirty-seven had not.** In October the scraping network fires many workflows into a
+short window, each ending in a commit-back to `main`, so the collision that needed my push cadence
+today happens **by construction** on a game day.
+
+## 1. POPULATION, PINNED (rule 17 / rule 30)
+
+| | |
+|---|---|
+| **Call** | `github_list_dir('.github/workflows')` **and** `ls .github/workflows \| wc -l` on the clone |
+| **Taken** | **2026-09-22T16:27:15Z**, tree **`2b9a4c22fe80b6ffcc7d3d3b6784f4f32d5a7bb7`** |
+| **Result** | **40 workflow FILES**, both methods agreeing |
+| **In scope** | **39** — `nba-pp-payout-map.yml` is the concurrent session's and is **excluded**, as it has been throughout |
+
+⚠ **RULE 20 APPLIED TO THE POPULATION ITSELF.** *"40 workflow files" is a count of FILES, not of
+workflows.* **The run history names `pages build and deployment`, which no file in `.github/workflows/`
+declares** — VERIFIED: `ls -a .github/` returns only `workflows`, and a repo-wide grep for
+`actions/deploy-pages|configure-pages` returns **nothing**. ✅ **The twelve are already precise about
+this**: the only occurrence of the figure reads *"grepping all 40 workflow **files**"*
+(`NBA_MASTER_SUMMARY.md`, the two-auxiliary-workflows paragraph). **No defect. Candidate killed.**
+
+## 2. THE CENSUS — WHO WRITES BACK TO `main`
+
+**Predicate**: a workflow "writes back" if its file contains `git push`. **Rule 20 probe for other
+writers** — `peter-evans/create-pull-request`, `add-and-commit`, `gh api`, `contents: write` — run
+across all 40: **no additional writer found by any of them.**
+
+| | count |
+|---|---|
+| Workflow files | **40** (39 in scope) |
+| **Write back to `main`** | **27** (**26** in scope) |
+| Do **not** write | **13** |
+| ✅ Carry the **five-attempt fetch-rebase loop** | **23 of 26** |
+| 🔴 **Bare push, no retry, no rebase** | **3** |
+
+### 🔴 THE THREE BARE WRITERS
+
+| file | the push, QUOTED | retry | `concurrency:` | prior? |
+|---|---|---|---|---|
+| **`scrape.yml:91`** | `git push origin HEAD:main` | none | present **but see §3** | ✅ **ON FILE — §T20.46.** Confirmed, not new |
+| 🔴 **`gbdt-training.yml:98`** | `git push origin HEAD:main` | none | **ABSENT ENTIRELY** | 🆕 **NEW** |
+| 🔴🔴 **`alphadog-v2-github-auto-deploy.yml:98` and `:116`** | `git push \|\| true` *(twice)* | none | `group: alphadog-v2-deploy`, `cancel-in-progress: true` | 🆕 **NEW** |
+
+⚠ **RULE 26/28 KILL, LOGGED**: `nba-p2-overnight-heavy.yml`, `nba-p3-afternoon-light.yml` and
+`scrape.yml` are already on file at §T20.46. They are carried into the table **as prior findings** and
+**clause (ii) is scored on the remainder only.**
+
+✅ **The 23 protected writers all carry the identical idiom** — quoted from `sleeper-board.yml:53-56`:
+```
+for i in 1 2 3 4 5; do
+  if git push origin HEAD:main; then exit 0; fi
+  git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+done
+exit 1
+```
+🔑 **This is a house pattern, applied deliberately and nearly everywhere. The three exceptions are
+exceptions, not an absence of practice** — which is exactly why they are worth an open item.
+
+## 3. 🔴 `scrape.yml`'s CONCURRENCY GUARD IS INERT FOR SCHEDULED RUNS — NEW
+
+`scrape.yml:42-44`, quoted:
+```
+concurrency:
+  group: alphadog-prizepicks-scraper-${{ github.event.inputs.dispatch_id || github.event.inputs.request_id || github.event.client_payload.dispatch_id || github.event.client_payload.request_id || github.run_id }}
+```
+⚠ **On a `schedule` event none of the four inputs exists, so the key falls through to
+`github.run_id` — which is unique per run.** ⇒ ***Every scheduled run lands in a group of its own and
+is never queued behind another.*** **The block protects dispatch-driven runs from each other and
+protects nothing on the cron path** — which is the path that runs every two hours, `cron: '0 */2 * * *'`.
+Combined with the bare push, a long 16:00 run and a 18:00 run can both be live and both push bare.
+
+## 4. 🔴🔴 THE DEPLOY WORKFLOW REPORTS SUCCESS WHILE LOSING BOTH OF ITS WRITES — THE PASS'S MAIN RESULT
+
+**A prediction was made from the file text and then tested.** `alphadog-v2-github-auto-deploy.yml`
+swallows its push failures with `|| true`, so a rejected push should leave the deploy marker stale
+while the run stays green. **`deployed_sha.txt` on the clone holds `5911b8ac…`, last written at
+`2026-09-22T13:11:41Z`** — yet **`AlphaDog v2 Mobile Auto Deploy` run `35751058086` ran at
+`2026-09-22T15:59:23Z` on `c068a550` and concluded `success`.**
+
+**`github_get_workflow_run_log(35751058086)` — step *"Record last successful deploy marker"*,
+conclusion `success`** (rule 48, quoted verbatim):
+```
+2026-09-22T16:00:19.9978227Z [main 3bc18ede] Auto: record last successful deploy marker [skip ci]
+2026-09-22T16:00:19.9978882Z  1 file changed, 1 insertion(+), 1 deletion(-)
+2026-09-22T16:00:20.2895077Z To https://github.com/Rodantmat/Alphadog
+2026-09-22T16:00:20.2895857Z  ! [rejected]          main -> main (fetch first)
+2026-09-22T16:00:20.2896757Z error: failed to push some refs to 'https://github.com/Rodantmat/Alphadog'
+```
+**And the EARLIER step *"Commit Scoring DB binding/debug log"* shows the same rejection hints at
+`16:00:19.82`, before the wrangler step — so BOTH pushes in the run were rejected and BOTH were
+swallowed.** ⚠⚠ **All seventeen steps report `success`. The job reports `success`.**
+
+🔴🔴 **CONSEQUENCE, stated at full strength**: ***the step named "Deploy selected Workers" succeeded —
+the production Workers WERE deployed from `c068a550` — and the file that records what was deployed
+still says `5911b8ac`, two commits and two hours forty-eight minutes earlier. The repository's own
+record of the deployed state is WRONG, and nothing anywhere is red.*** **Commit `3bc18ede` exists
+only in that runner's workspace; it was created, rejected and discarded.**
+
+⚠ **This is a worse failure mode than `scrape.yml`'s.** `scrape.yml` at least **goes red** — §T20.46
+found it red. **This one goes green.** *A workflow that fails loudly costs you a re-run; a workflow
+that fails silently costs you the ability to know.*
+
+## 5. ⚠⚠ A CORRECTION TO §T20.46 AND TO OPEN ITEM T20-8 — THE DEPLOY DID NOT FIRE ONCE
+
+§T20.46 recorded that my unmarked commits *"fired `AlphaDog v2 Mobile Auto Deploy` (success) on
+`c068a550`"* — **one deploy**, because one was all the 40-run API window could see. **The marker
+file's own history is a far longer record and it was never consulted.**
+
+`git log -- deployed_sha.txt`, clone at `2b9a4c22`, **2026-09-22T16:29Z**:
+- **1,874 commits** have touched the marker over the repository's life.
+- **8 of them are dated 2026-09-22**, from **`12:32:19Z`** to **`13:11:41Z`** — one every ~5 minutes.
+- **Plus run `35751058086` at 15:59Z, which reached the marker step and lost it.**
+
+⇒ 🔴 **AT LEAST NINE production deploy runs today, not one, and the sweep's unmarked commits are the
+trigger. §T20.46's figure was not wrong about its window; it was wrong to be stated without one.
+T20-8 is amended, not retracted.**
+
+⚠ **AND THE CONCURRENCY KEY EXPLAINS THE GAP BETWEEN 36 AND 9.** `alphadog-v2-github-auto-deploy.yml:23-25`
+is `group: alphadog-v2-deploy`, **`cancel-in-progress: true`** — a *fixed* group, unlike `scrape.yml`'s.
+**36 unmarked commits therefore collapse into far fewer runs, because each new one CANCELS the deploy
+in progress.** 🔴 **That cancellation lands inside `python github_mobile_deploy_workers.py --scope
+"$DEPLOY_SCOPE"` — a loop over multiple Workers — so a cancelled run is a PARTIAL deploy.**
+⚠ **EVIDENCE STRENGTH, stated exactly**: the `cancel-in-progress: true` setting and the deploy step
+are **VERIFIED from the file**; **whether any deploy was in fact cancelled mid-Worker-loop today is
+NOT RECORDED** — `github_list_workflow_runs` returns most-recent-first and its 100-run window reaches
+back only to **14:56:04Z**, which does not cover the 12:32–13:11 block.
+
+## 6. ⚠ `gbdt-training.yml` IS THE ONLY WORKFLOW COMMIT IN THE REPOSITORY WITHOUT `[skip ci]` — NEW
+
+`grep -n "git commit -m" .github/workflows/*.yml | grep -v "skip ci"` over all 40 returns **exactly
+one line**, `gbdt-training.yml:97`:
+```
+git diff --staged --quiet && echo "No changes to commit" || git commit -m "Real GBDT model retrain / run log / diagnostic $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+**Every other automated commit in the repository carries `[skip ci]`; this one does not**, and it is
+followed by a bare push with no retry and **no `concurrency:` block of any kind**. `cron: "0 9 * * 0"`
+— **Sundays 09:00 UTC**, which is **02:00 PT**, outside every game-day window, so the blast radius is
+small. **It is MLB residue** and the owner has dropped MLB.
+📌 ***Noted without irony: the repository's single automated commit that omits `[skip ci]` and the
+sweep's own 36 are the same defect, found on the same day, by pointing the same instrument in two
+directions.***
+
+## 7. CLAUSES, SCORED AGAINST THE PRE-REGISTRATION
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 470, Δ=0.** Working `649 · 1 · 470 · 469`; baseline **`636 · 2 · 484 · 481` — FORTY-FOURTH consecutive identical run.** Measured 2026-09-22T16:29:14Z |
+| **(ii)** ≥1 workflow **other than** `scrape.yml` pushes with no retry and no rebase | 🔴 **TRUE — TWO: `gbdt-training.yml` and `alphadog-v2-github-auto-deploy.yml`.** The pre-registration named the better outcome (*"the exposure is ONE FILE and a one-line fix"*) and it did not occur — **but the shape is still good news: 23 of 26 in-scope writers are protected** |
+| **(iii)** ≥2 commit-back workflows can be in their push window simultaneously on a game day **unaided** | ⚠ **UNSCOREABLE ON RUN DATA, and said so rather than inferred.** The **design** admits it — four commit-back workflows share the `*/2` hour set at **`:00` `scrape.yml` · `:15` `sleeper-board` · `:25` `underdog-board` · `:35` `fliff-board`**, gaps of 15/10/10 minutes — but **whether any run exceeds its gap is a DURATION question and no board run appears in the window.** ⚠ *Scheduled runs here are demonstrably delayed: the `0 */2` cron for 16:00 was created at `16:03:42Z`.* **Neither `sleeper-board` nor `underdog-board` was observed at 16:15Z or 16:25Z in a contiguous 100-run window ending 16:27:10Z — recorded as NOT OBSERVED, not as "did not run", because a 12-minute absence does not outrun a known 3.7-minute scheduling delay** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FORTY-FOURTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 8. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — three new system defects and one correction to this sweep's own prior pass.**
+**New open item T20-9** (the three bare writers, with the deploy workflow's silent loss ranked first)
+and **T20-8 amended** from one deploy to at least nine.
+✅✅ **AND THE REAL STRUCTURAL RESULT, stated at full strength because it is the owner's actual
+position: 23 of 26 in-scope commit-back workflows carry the fetch-rebase loop. The scraping network is
+NOT racy. Three files are, one of them badly, and all three are one edit each.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **Kills logged (rules 26/28): the `pages build and deployment` candidate — already on file in this
+document at the "GitHub Pages is enabled on this repository" finding, INCLUDING the fact that
+`[skip ci]` does not suppress it; and the "40 workflows vs 40 workflow files" candidate — the
+documents are already precise.**
+
+📌 ***The lesson:*** **`|| true` is how a pipeline learns to lie. `scrape.yml` lost 186,502
+insertions and went red, and that is why §T20.46 found it. The deploy workflow lost both of its
+writes, reported seventeen green steps, and left the repository asserting a deployed SHA that is two
+commits stale — and nothing would ever have surfaced that, because the only instrument that could
+was the file it failed to write.**
+***Pass 41 found the failure that was recorded. Pass 42 found the one that was not.***
