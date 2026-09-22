@@ -1767,6 +1767,59 @@ chars, no other content)*, **54** `sleep N; echo ok` waits, **47** `github_list_
 polls, **39** `workflow_dispatch` 204 receipts. **618 + 102 + 54 + 47 + 39 = 860** ✅. *Nothing was
 skipped silently; the boilerplate classes are stated so the omission is auditable.*
 
+## §0.004-T18 — 🔴🔴 THE CERTIFIER CANNOT TELL A FULL SLATE FROM ONE ROW
+*(T18 pass 2 · `certify_pipeline.py` written in-session at `tool_use` SEG 601–605, and **re-read from
+LIVE SOURCE 2026-09-22 — 5,920 B, 129 lines, UNCHANGED in structure**. This is a claim about what the
+code CHECKS, verified by reading the code, not an inference about a sequence of runs.)*
+
+**The certifier is the system's answer to its own worst memory**, and it says so: *"a missing 44% of
+the board (the combos ladder) went unnoticed for two days because steps were written `|| echo
+failed`, and four jobs failed silently for an hour while row counts alone looked stable… a pipeline
+that cannot fail loudly is a pipeline you cannot trust unattended — and these three run unattended
+every day."* **`CERT_STRICT=1` by default; any failed check `sys.exit(1)`.**
+
+### ✅ ALL TWELVE CHECKS, WITH THEIR ACTUAL PREDICATES *(live source, verbatim `lambda`s)*
+
+| pipe | check | predicate | is it a PLAUSIBILITY gate? |
+|---|---|---|---|
+| **P1** | `defender_ratings refreshed` | `(today − max(as_of_date)).days <= 8` | ✅ freshness |
+| **P1** | `defender_ratings rows` | `int(v) > 10000` | ✅ **magnitude** |
+| **P1** | `player name map populated` | `int(v) > 400` | ✅ **magnitude** |
+| **P2** | `baseline_history has today` | `int(v) > 0` | ❌ |
+| **P2** | `baseline props for today` | `int(v) >= 25` | ⚠ **magnitude — but on DISTINCT PROPS, not rows** |
+| **P2** | `no invalid probabilities today` | `int(v or 0) == 0` | ❌ *vacuous on a small population* |
+| **P2** | `as-of calibration available` | `int(v) > 0` | ❌ |
+| **P3** | `final_hp has today` | `int(v) > 0` | ❌ |
+| **P3** | `confidence populated` | `count(NULL) == 0` | ❌ *vacuous* |
+| **P3** | `score in range 0-100` | `count(out of range) == 0` | ❌ *vacuous* |
+| **P3** | `confidence model loaded` | `int(v) > 0` | ❌ |
+| **P3** | `board archived today` | `int(v) > 0` | ❌ |
+
+### ⇒ 🔴🔴 **P3 HAS NO MAGNITUDE CHECK AT ALL, AND P3 IS THE PIPELINE THAT RUNS EVERY GAME DAY**
+
+***A P3 run that scores ONE leg passes all five checks***: one row makes `count(*) > 0` true; among
+one row there are zero NULL confidences and zero out-of-range scores, so both `== 0` checks pass
+**vacuously**; the confidence model is a standing table; and one archived board leg satisfies the
+fifth. ⇒ **"5/5 checks passed. Pipeline certified."**
+
+⚠ **And P2's one gate is on `count(DISTINCT prop)`, not rows** — so P2 also certifies on **25 props ×
+one row each**, twenty-five legs standing in for a full slate.
+
+🔑🔑 **THE TRANSCRIPT CONTAINS ITS OWN INDICTMENT, WRITTEN BY THE SAME AUTHOR IN THE SAME SESSION.**
+Of the board scorer he wrote: ***"it asserts legs actually landed, because A GREEN RUN WITH AN EMPTY
+TABLE IS THE FAILURE THAT HIDES BEST."*** **He built that assertion into the scorer and did not build
+it into the certifier — the component whose entire purpose is to make that assertion.**
+⚠ **Stated at evidence strength**: the certifier is **not** empty-table-blind — `> 0` does catch a
+truly empty table, which is the failure its docstring names. **What it cannot catch is a
+PARTIAL slate**, which is the failure the 44%-combos-gap actually was. *The component is built
+against the remembered symptom rather than the remembered cause.*
+
+⚠ **The fix is one line per check and the system already knows the right shape** — P1's `> 10000` and
+`> 400` are exactly it, and P2's own gap audit computes a **rate** for the same reason
+*(§0.002-T18)*. **Documented, not fixed.** *Open item T18-14.*
+
+---
+
 ### 🔴 THE BRIDGE FAILED THREE TIMES IN-SESSION — *the executed evidence for a claim the sweep already carries*
 
 | seg | what came back |
