@@ -38421,6 +38421,36 @@ would otherwise have carried indefinitely — "what else is hiding in the YAML?"
 `§T20`'s timezone census survived this challenge because it wrote down its population. A count that
 states its population can be checked; a count that does not can only be doubted.***
 
+## ⑤ 🔴 `RULE 52` COULD NOT BE SATISFIED THIS PASS — AND THE REASON IS A GAP IN MY OWN METHOD
+
+**`651 · 1 · 469 · 466`** against baseline **`636 · 2 · 484 · 481`**. **Two bands moved by `1`:**
+high band `650 → 651`, `uncovered12` `470 → 469`.
+
+🔴 **NEITHER FLIPPING MEMBER COULD BE IDENTIFIED.** The boundary probe returns the same sitters as
+last pass, all of them *staying* where they were — seg `401` at `+20` millionths *(it was `+2`)*,
+`873` at `+530`, `299` at `+659`, `292` at `−773`; on the `0.4000` line, `655` `−305`, `938` `−453`,
+`322` `+1,456`. **The entrant is somewhere off the boundary, and I cannot name it.**
+
+⚠⚠ **THE REASON IS NOT SUBTLE: I HAVE BEEN COMPARING *COUNTS* ACROSS PASSES WHILE ONLY EVER
+RETAINING THE COUNTS.** `judge20.py` prints four numbers and exits; **the MEMBERSHIP SETS are
+discarded every run.** 🔑 **So a ±1 has only ever been attributable when the mover happened to sit
+near a threshold** — which is why every prior attribution in this sweep *(segs `401`, `595`, `873`,
+`292`)* **is a boundary member. That was not the rule working; that was the only case the method
+could reach.**
+
+⇒ 🔴 **`RULE 52` IS THEREFORE NOT SATISFIED FOR EITHER MOVE, AND BY THE RULE'S OWN TERMS NEITHER IS
+A FINDING.** *Stated rather than papered over: the honest report of an unattributable delta is
+"unattributed", not "cycling".*
+
+✅ **FIXED FORWARD, THIS PASS**: band membership is now snapshotted per pass
+*(`hi` / `unc12` / `unc30` index sets plus every `b12` value)*, so from pass 111 onward **every ±1
+resolves by set difference — `entered` and `left`, by index — instead of by proximity.** *Baseline
+snapshot `p110` written: `hi=651 · unc12=469 · unc30=466`.*
+
+📌 ***The second lesson, and it belongs beside the first:*** **`RULE 52` has been in force for ten
+passes and was satisfiable only by luck. A rule that cannot be checked in the general case is not
+being followed — it is being agreed with.***
+
 ▶ **`RULE 51` novelty check, run on the FINDING against the BASELINE tree as the last step:**
 `np.full` **0** in `/tmp/t20base/nba/*.md`; `score_board_legs` never co-occurs with
 `constant`/`hardcod`/`0.55`/`0.75` in any of the twelve; `NBA_GLOSSARY.md:318` lists `f_vol` as a
