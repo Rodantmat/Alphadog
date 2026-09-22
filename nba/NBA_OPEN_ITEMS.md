@@ -13185,6 +13185,46 @@ and triggered nothing.**
 
 ## T20-6 · **NEW · 🔴🔴🔴 SEASON-CRITICAL · THE LARGEST STRUCTURAL FINDING OF THE SWEEP** · 7 of 12 certifier checks assert tables no pipeline writes
 
+> ## ⚠⚠ AMENDMENT — **THE THRESHOLDS, MEASURED (T20 pass 46, §T20.51, 2026-09-22)**
+> *No new item was opened: the STRUCTURE was already on file here and at `NBA_WORKERS.md:2065`
+> (**"A P3 run that scores ONE leg passes all five checks"**). **What was never measured is what the
+> thresholds are weak AGAINST, and that is the number an owner can act on.***
+>
+> **Live per-`game_date` magnitudes, 2026-09-22.** ⚠ *The season has not started, so `game_date =
+> today` is empty; these are HISTORICAL per-date magnitudes and are labelled as such, not guessed.*
+>
+> | check | threshold | magnitude per `game_date` | dates | 🔴 can be missing and still pass |
+> |---|---|---|---|---|
+> | P3 `board archived today` | `> 0` | **avg 71,044 legs** · max 177,251 | **381** | 🔴 **99.9986%** |
+> | P3 `final_hp has today` | `> 0` | **avg 117,885 rows** · max 238,224 | **163** | 🔴 **99.9992%** |
+> | P2 `baseline_history has today` | `> 0` | **avg 59,518 rows** · max 119,112 | **325** | 🔴 **99.9983%** |
+> | P1 `defender_ratings rows` | `> 10,000` | **111,768** | — | 🔴 **91.1%** |
+> | P1 `player name map populated` | `> 400` | **5,212** | — | 🔴 **92.3%** |
+>
+> 🔴🔴 **AND THE ONE TIGHT THRESHOLD HAS ALREADY FIRED ON REAL DATA.** `count(DISTINCT prop) >= 25`
+> over all **325** dates in `nba_score.baseline_history`: **max 30 · 304 of 325 dates at exactly 30 ·
+> min 22 · and 21 of 325 dates — 6.5% — BELOW the threshold.** ⇒ ***P2's certifier would have failed
+> on twenty-one historical slates.*** ⚠ **Whether those are real defects or legitimately short slates
+> is NOT RECORDED and this pass does not guess — but `CERT_STRICT=1` on this check implies a red P2
+> roughly every fifteenth night until they are understood**, which is the corpus's own named hazard:
+> *"a scheduled job failing nightly against an empty schedule trains everyone to ignore red builds."*
+> ⚠ *">= 25 **of 30**" hardcodes 30; the table that would derive it, `prop_universe`, is MID-REBUILD,
+> so the pattern is recorded and the number is not.*
+>
+> ✅✅ **THE POSITIVE RESULT, AND IT IS THE FIX FOR THE OTHER ELEVEN: the ONE check measured against a
+> CADENCE rather than against zero is the one that catches the system's largest known problem.**
+> P1's `defender_ratings refreshed` — `<= 8 days` — is **RED TODAY**: `max(as_of_date) = 2026-04-09`,
+> **166 days**. ⇒ **`PIPE=p1` exits 1 right now, on its first check.** **Its docstring's claim —
+> *"Freshness is measured against the pipeline's own cadence, not a fixed date, so it keeps working
+> next season without edits"* — is TRUE, and it is the design the other eleven do not follow.**
+> 🔑 **`nba_ref.defender_ratings` is a TENTH frozen table** — not among the nine in the SEASON-CRITICAL
+> static-layer item above. **Combined with §T20.31 (`job_runs` and `worker_run_log` both EMPTY): the
+> certifier would tell the owner about the freeze — if anyone ran it.**
+> ⚠ **RULE 19, applied rather than skipped**: *`> 0` is not automatically wrong — the docstring says
+> it asserts artefacts are **PRESENT**, and `> 0` is presence. The gap is between its WHAT and its
+> WHY: the WHY is "a missing 44% of the board went unnoticed for TWO DAYS", and catching that needs
+> COMPLETENESS, which no check in the file measures.*
+
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.37).** *Both sides enumerated independently: `certify_pipeline.py`
 read in full — **12** `check()` calls (P1 3 · P2 4 · P3 5), each SQL and predicate quoted; and every
 DB write by the **38** pipeline scripts read OFF THE SCRIPTS (`INSERT INTO` / `CREATE TABLE` /
