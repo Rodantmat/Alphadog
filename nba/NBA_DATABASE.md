@@ -108,6 +108,90 @@ proposal to share the control plane.
 > **This is the blueprint's named multi-table ID bug, reproduced.** **Which convention is correct is
 > NOT ESTABLISHED** — flagged for human decision. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 50.
 
+## 0v. 🔴🔴 THE STORAGE INCIDENT, THE SHRINK THAT FIXED IT — **and the shrink has since been consumed six times over** `[LIVE-AUDIT]`
+*Recorded 2026-09-22 (T13 pass 2, §T13.3i). **The incident and the repair are T13's**
+*(`2026-09-13-01-03-48`)*; **every live figure is re-taken and pinned 2026-09-22T08:12:50Z.**
+`SELECT` only — nothing was run, resized or changed *(rule 1)*.*
+
+### 🔴 THE INCIDENT — **the managed primary went READ-ONLY mid-write, because the disk filled**
+> *"The repair run failed with a telling error: **`cannot execute INSERT in a read-only
+> transaction`**. On DigitalOcean managed Postgres that usually means **the primary went read-only —
+> most often because DISK FILLED**."*
+> *"That explains it precisely: **the database is now 23 GB (board table alone 11 GB), so it hit your
+> 20 GB cap mid-run and DigitalOcean flipped the primary READ-ONLY until the auto-expansion
+> completed.** It's not a replica, and read-only is now off, so the expansion took effect."*
+
+⚠⚠ **THE OPERATIONAL WARNING ATTACHED TO IT, and it names the hour**: ***"any write can fail during
+an expansion. This run died mid-insert with a read-only error, and it happened to be a RESUMABLE job
+with a log table, so nothing was lost. ***The daily pipeline won't be so forgiving if it happens at
+2:45 PM PT.*** That's a real argument for the **freshness gates and idempotent tasks** we specced,
+and for **keeping headroom rather than riding the trigger**."***
+🔑 ***The job survived because it was resumable and logged. That is the design property that turned
+an outage into a restart*** — **and it is the argument for the freshness gates, stated from an
+incident rather than from principle.**
+
+### ✅ THE REPAIR — a seven-column primary key replaced by a compact unique index
+**The diagnosis**: *"the index is half the weight… the primary key **spans SEVEN COLUMNS including
+player and market names**."* **Measured: the PK alone was `5,577 MB`.**
+**The safety design, stated before it ran** — *"built so it cannot lose anything"*:
+1. **The new UNIQUE index is built FIRST**, `CONCURRENTLY`; **the old primary key is not touched
+   until the new index reports `valid`.** 🔑 ***"If a single duplicate row existed, the build fails
+   and we stop with the PK intact — so it doubles as a DUPLICATE AUDIT."***
+2. **Row count captured before and after; a mismatch aborts.**
+3. 🔑 **NO `VACUUM FULL`, no table rewrite** — *"a rewrite would need ~11 GB of temporary space
+   against 7 GB of headroom — **that's how you cause the read-only incident we just had, not fix
+   it**."* **Dropping the index releases its space directly.**
+
+⚠ **And a false alarm worth keeping**: the script *failed* — because the earlier, seemingly
+**orphaned** `CONCURRENTLY` build **had actually completed server-side while the client connection
+dropped**. *"The script only failed because it tried to create an index that already exists, and its
+cleanup branch only fires for INVALID ones."* 🔑 ***A tool-call timeout is not a statement about the
+backend*** — the index had gone `152 MB → 700 MB → 814 MB` across three checks after the client gave
+up, *"so the backend continued despite my client timing out."*
+
+| | before | after |
+|---|---|---|
+| database | 23 GB | **19 GB** |
+| board table total | 12 GB | **6,602 MB** |
+| indexes on it | 5,764 MB | **1,001 MB** |
+| rows | 25.7M | **27,059,920** |
+
+✅ ***"4 GB recovered, ZERO rows lost — the count went UP because the gap-repair run added rows in
+the meantime, which is the right direction."*** ✅ **And because a UNIQUE index built successfully
+across all 27M rows, there is PROOF of zero duplicates in that table** — *a correctness guarantee
+obtained as a by-product of a storage fix.*
+
+### ✅ THE SHRINK HELD EXACTLY — re-taken 2026-09-22
+**`nba_market.board_snapshots`: `pg_total_relation_size` 6,604 MB · `pg_indexes_size` 1,001 MB ·
+`reltuples` 27,059,920.** ***Every figure matches T13's post-shrink report to the row, twelve days
+later.***
+
+### 🔴🔴 BUT THE DATABASE IS NOW **43 GB**, AND THE BOARD TABLE IS NO LONGER THE PROBLEM
+| relation | total | `reltuples` |
+|---|---|---|
+| 🔴 **`nba_score.baseline_history`** | **13 GB** | 19,266,864 |
+| 🔴 **`nba_score.final_hp`** | **9,391 MB** | 19,320,938 |
+| `nba_market.board_snapshots` | 6,604 MB | 27,059,920 |
+| `nba_score.board_scored` | 2,948 MB | 11,956,460 |
+| `nba_market.board_outcomes` | 2,151 MB | 6,905,452 |
+| `score.final_board_history` | 1,342 MB | 249,648 |
+| `archive.board_leg_history` | 1,137 MB | 756,768 |
+| ⚠ `nba_market.prop_universe` | 898 MB | *(mid-rebuild — **not stated as final**)* |
+| `archive.market_prop_context_history` | 737 MB | 162,502 |
+| `daily.game_status_stage` | 471 MB | 169,249 |
+| `nba_market.board_tiers` | 459 MB | 2,199,354 |
+| `score.prop_outcome_history` | 380 MB | 343,816 |
+
+🔑🔑 ***The database has gone 19 GB → 43 GB, and `board_snapshots` has not moved a megabyte.*** **The
+two largest objects are now `baseline_history` and `final_hp` — 22.4 GB between them — and neither
+appears anywhere in T13's storage picture.** ⚠⚠ ***So the 4 GB the shrink recovered has since been
+consumed roughly six times over, by the SCORING layer rather than the market layer.***
+⚠ **Rule 6: this records what the system IS. WHY those two tables are that size, whether either
+carries a wide key of the same kind the board table did, and what the current storage cap is, are
+all NOT RECORDED** — **no swept transcript covers them, and T14–T20 are unread.**
+🔑 ***The incident above is therefore not closed by the shrink — the same hazard now sits on
+different tables***, **and the 2:45 PM PT warning applies unchanged.**
+
 ## 0z. 📐 THE CLASS REGISTER — *every population this sweep's bound claims are drawn over, enumerated*
 *Built 2026-09-21, T11 pass 46 (§T11.47). **The permanent remedy for the failure mode §T11.45c
 named**: five distinct passes drew a BOUND from a class they had not enumerated, so the classes are
