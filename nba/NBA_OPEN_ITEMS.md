@@ -12762,6 +12762,32 @@ items, but it should be a decision rather than a default.*
 > runnable · **(c)** declare once, prominently, that every untagged figure is transcript-sourced by
 > default. ⚠ *(c) is nearly free and makes `[LIVE-AUDIT]` meaningful by complement; it is the option
 > §T20.25 would pick if asked.*
+>
+> ### ✅✅ **MECHANISM SETTLED ONE PASS LATER, 2026-09-22 (§T20.26) — IT IS NEITHER REACHABILITY NOR AGE. IT IS FIGURE KIND.**
+> **The tag axis was blocked, so pass 21 stratified by AGE instead** *(population: `34` date-bearing
+> figure contexts dated `2026-09-01`…`2026-09-15` across `nba/*.md`; **16 figures from 6 sections
+> re-derived**, 2026-09-22T14:50:51Z)*.
+> ✅✅ **STORED STATE: `13 of 13` EXACT, three weeks on** — `player_impact_rating` **530** ·
+> last write **2026-09-02T07:58:37.370Z** · `player_onoff_profile` 2025-26 **582** ·
+> **2026-09-01T03:34:40.938Z** · `nba_calendar.games` **1,400 / 1,266** with creation timestamps
+> exact to the millisecond · `baseline_ladder_runs` all three rows **8/184/64,779/22 ·
+> 9/227/90,861/22 · 7/161/50,597/18** with `loaded_at` exact · `player_roster_snapshot` **582** ·
+> the three differential logs **0 / 0 / 0**.
+> 🔴🔴 **DERIVED ELAPSED DURATIONS: `3 of 3` MOVED** — *"19 days stale"* → **20**; *"19 days since…
+> the weekly cron should have fired **twice**"* → **20 days, THREE missed fires**; *"17 days
+> stale"* → **20**. ✅ **All three repaired in-pass as DATES rather than renumbered** *(a fresh
+> countdown is stale tomorrow)*.
+> ✅ **Classified, not just counted (rules 22/48): 7 elapsed-duration strings exist; the three
+> *"correctly FAILED on defender ratings 6 days stale"* are QUOTATIONS of what the P1 certifier
+> reported at run time — permanently true, correctly untouched.**
+> 🔑🔑 ***The system has not moved a byte in three weeks. What drifted is the corpus's ARITHMETIC
+> ABOUT NOW.*** ⚠⚠ **And `[LIVE-AUDIT]` actively MISLABELS this class — the measurement WAS live; it
+> is the subtraction against "today" that rots, which is why four passes were needed to see it.**
+> ⇒ ⚠ **SEVERITY STAYS MEDIUM, but the REPAIR CHANGES: fixing the pointers will not stop the drift,
+> because unreachability is not what caused it.**
+> 🔴 **OWNER DECISION — FOURTH OPTION ADDED: (d) adopt *"state a DATE, never a countdown"* as a
+> writing convention.** ⚠ *It costs nothing, retires this entire class of defect permanently, and is
+> independent of options (a)–(c) above — it can be taken alongside any of them.*
 📌 **Related, and the reason the hub is the concern**: `NBA_MASTER_SUMMARY.md` holds **878 of the 948
 orphans — 92.6%** — at a **57.76%** orphan rate against `NBA_WORKERS`' 7.14% and
 `NBA_SYSTEM_ARCHITECTURE`'s 4.55%. **The document a fresh session reads first is the most
