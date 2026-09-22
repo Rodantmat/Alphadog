@@ -230,6 +230,30 @@ a payout-table validity check and a different subject, **dismissed**.)*
    > **exactly two prices, `+100` and `−137`, on every rung** — **so any hold computed across a
    > PrizePicks–book join is computed against two constants.**
    >
+   > ### ✅ **THE SENTINEL IS NOW IDENTIFIED AND COUNTED — 2026-09-22 (T13 pass 2, §T13.3b)**
+   > *The item asks for sentinel prices to be excluded and never says what one is.* **Live price
+   > census of `nba_market.board_snapshots`, pinned 2026-09-22T08:01Z**:
+   > ***the sentinel is `price ≤ −10000`, minimum `−100000`*** — **180 rows, ALL on Underdog**
+   > *(standard Over 83 · standard Under 83 · alternate Over 7 · alternate Under 7)*, **and ZERO on
+   > PrizePicks.** 🔑 **So the exclusion predicate is concrete, the population it removes is 180 rows,
+   > and it costs nothing.** ⚠ **Whether other books carry their own sentinels is NOT RECORDED** —
+   > *the census covered PrizePicks and Underdog only.*
+   >
+   > ### 🔴🔴 **AND THE SAME ARTIFACT CLASS STRUCK A THIRD TIME IN THIS TRANSCRIPT, WITH A NAMED SIGNATURE**
+   > **The per-tier hit-rate table was wrong on its first run, for the same reason**:
+   > > *"Those numbers are wrong, and I can see why: **I dropped the market from the join, so a
+   > > player's POINTS line of 8.5 was matching his REBOUNDS line of 8.5.** That's the same artifact
+   > > class I flagged earlier — and **it's exactly why the goblin tiers all collapsed to ~50%**."*
+   >
+   > 🔑🔑 ***THE DETECTION RULE THIS GIVES THE ITEM, which it does not currently have***: **a
+   > market-blind join REGRESSES EVERY GROUP TO THE POOL MEAN.** **A tier table that reads flat near
+   > 50% is not evidence of flat pricing — it is the expected output of a join missing
+   > `market_key`.** ✅ **And the corrected join's signature is the opposite**: *"monotonic in both
+   > directions, **which is the signature of a correct join**."* ⚠ **The transcript counts itself at
+   > *"I've now hit that artifact twice"* — it is three** *(the arbitrage signal, the duplicated
+   > ladder rungs, and the tier collapse)*, **which is itself why the validation gate is required
+   > rather than a habit.**
+   >
    > 📌 **AN OBSERVATION IN THE EVIDENCE THAT THE TRANSCRIPT DOES NOT NAME** *(recorded at its own
    > evidence strength — rule 19)*: the verification result set returned **five rows**, and they are
    > **`Aaron Gordon` AND `Eric Gordon`** — *same `market_key` (`player_points_alternate`), same
