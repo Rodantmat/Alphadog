@@ -2082,3 +2082,78 @@ single-valued `baseball_mlb`/`MLB`) · `market.prizepicks_board_current` (`leagu
 `score.real_slip_leg_observations` · `control.user_placed_slips_log`
 
 **All 12 MLB D1 bindings report FALSE** — MLB migrated to Postgres before the NBA build began.
+
+---
+
+## §0z-T18 — THE TWO MEASUREMENT TABLES THE PROSE REPORTED ONLY IN PART
+*(T18 pass 2, mechanism strata · `run_sql_postgres` results quoted verbatim · written 2026-09-22.
+**Both are `[TRANSCRIPT]` figures — queries the author ran on 2026-09-19 — not `[LIVE-AUDIT]`.**)*
+
+### 1. ✅ LADDER DEPTH BY BOOKMAKER — **TWELVE books were measured; the prose named FIVE**
+
+| bookmaker | legs | avg dist | p95 | max |
+|---|---|---|---|---|
+| fanduel | **6,932** | 3.23 | 10.00 | **32.00** |
+| draftkings | 5,585 | 3.06 | 11.00 | 28.00 |
+| betonlineag | 5,469 | 3.87 | 13.00 | 26.00 |
+| bovada | 5,254 | 4.01 | **16.00** | **32.00** |
+| fanatics | 3,940 | **4.78** | 11.00 | 22.00 |
+| williamhill_us | 3,891 | 2.06 | 7.00 | 18.00 |
+| **prizepicks** | **3,518** | **1.98** | **6.00** | **15.00** |
+| betmgm | 2,980 | **1.80** | **5.00** | — |
+| betr_us_dfs | 2,883 | 2.33 | 7.00 | 18.00 |
+| betrivers | … | … | … | … |
+
+⚠ *Distance is in **stat units**, not rungs.* ⚠ **Rule 19 — the rows above are the query's own order
+(`ORDER BY legs DESC`); `betrivers` and anything after it were cut by `max_rows`, so this is the top
+of the list, not certainly all twelve.**
+
+🔑🔑 **THE FACT THE PROSE'S FIVE-BOOK SUMMARY HIDES: PrizePicks is the SHALLOWEST board in the set
+bar one.** *avg 1.98 · p95 6.00 · max 15.00, against bovada's p95 16 and fanduel's max 32.*
+⇒ **The ±10 ladder is generous for the owner's primary app and short only for the SPORTSBOOKS** —
+which is precisely where `rung_market`, the de-vigged book comparison, lives. **So the depth
+shortfall is a MARKET-SIGNAL problem, not a PrizePicks-coverage problem.** *(The conclusion
+`NBA_OPEN_ITEMS` §*PARTIAL · ladder depth…* already carries is unchanged; this is the table behind it,
+and it says which side of the board the shortfall falls on.)*
+🔑 **`betr_us_dfs` appears as a BOOKMAKER in the odds feed** — a DFS app reaching the system through
+the sportsbook channel rather than through its own scraper.
+
+### 2. ✅ THE BOARD SCORER'S FULL PER-PROP RESULT — *the prose printed seven rows of twelve*
+
+| prop | legs | avg hp | avg conf | avg score | interpolated |
+|---|---|---|---|---|---|
+| points | **13,459** | 0.4336 | 0.9580 | 63.1 | **1,294** |
+| pra | 8,419 | 0.4456 | 0.9552 | 63.4 | **966** |
+| rebounds | 6,851 | 0.4144 | 0.9643 | 63.6 | 113 |
+| pts_reb | 6,072 | 0.4923 | 0.9576 | 67.4 | 332 |
+| threes_made | 4,752 | 0.3698 | 0.9675 | 61.5 | 2 |
+| assists | 4,596 | 0.4095 | 0.9677 | 64.0 | 50 |
+| pts_ast | 4,498 | 0.4908 | 0.9601 | 67.7 | 233 |
+| reb_ast | 3,300 | 0.4318 | 0.9619 | 64.2 | 84 |
+| blocks | 220 | 0.4963 | 0.9606 | 68.2 | **0** |
+| stocks | 97 | 0.4843 | 0.9572 | 66.9 | **0** |
+| turnovers | 68 | 0.4967 | 0.9566 | 67.6 | **0** |
+| steals | — | — | — | 68.0 | **0** |
+| **WHOLE BOARD** | **58,395** · 12 props · 12 apps | **0.4375** | **0.9416** | **60.6** | **3,243** |
+
+✅ **The per-prop depth verdict is confirmed a third time, now from the scorer's own output**:
+**points 1,294 and pra 966 off-ladder; steals · blocks · stocks · turnovers exactly ZERO.**
+
+⚠⚠ **A CANDIDATE PATTERN, CHECKED AND KILLED — recorded because the CHECK is the point.** *The score
+column appears to rise as leg count falls (blocks 68.2 · steals 68.0 · turnovers 67.6 against points
+63.1), which would suggest thin props are being scored optimistically.* ❌ **Not a defect — `avg_hp`
+explains it.** *Blocks sit at hp 0.4963 against points' 0.4336, and the shipped pivot
+`score = hp·100 + (100 − hp·100)·lift`, `lift = clip((conf − 0.85)/0.15, 0, 1)·0.50`, reproduces both
+rows from their own hp and conf: points 43.36 + 56.64×0.360 = **63.8** vs the reported 63.1; blocks
+49.63 + 50.37×0.394 = **69.5** vs 68.2.* **Confidence spans only 0.9552→0.9677 across every prop and
+cannot carry a five-point score spread.** *(Rule 8's habit — probe your most confident finding
+first — applied to a PATTERN rather than a figure.)*
+
+### ⚠ ONE ARITHMETIC RESIDUE, RECORDED AND NOT EXPLAINED *(rule 6)*
+**The whole-board `avg_conf` is 0.9416 — BELOW every one of the twelve per-prop confidences, which
+run 0.9552 to 0.9677.** *A mean over the same population cannot fall outside the range of its parts.*
+⚠ **NOT RECORDED: whether the aggregate row and the per-prop rows cover the same legs.** *The
+interpolation tax cannot account for it either — 3,243 of 58,395 is **5.55%**, and 4 points on 5.55%
+of legs is ~0.0022, not the ~0.014 observed.* **A `GROUP BY` on the same table would settle it; this
+sweep does not run one, because these are the transcript's numbers and the table has been rewritten
+since.** *Open item T18-13.*
