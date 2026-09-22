@@ -12701,6 +12701,63 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-6 · **NEW · 🔴🔴🔴 SEASON-CRITICAL · THE LARGEST STRUCTURAL FINDING OF THE SWEEP** · 7 of 12 certifier checks assert tables no pipeline writes
+
+**`[LIVE-AUDIT]` 2026-09-22 (§T20.37).** *Both sides enumerated independently: `certify_pipeline.py`
+read in full — **12** `check()` calls (P1 3 · P2 4 · P3 5), each SQL and predicate quoted; and every
+DB write by the **38** pipeline scripts read OFF THE SCRIPTS (`INSERT INTO` / `CREATE TABLE` /
+`executemany`), never inferred — **13** distinct tables.* ⚠⚠ **READ-ONLY, no code edits (rule 1).**
+
+🔴🔴🔴 **① THREE ASSERTED TABLES HAVE NO WRITER IN THE PIPELINE THAT ASSERTS THEM**
+
+| certifier | check(s) | table | its ONLY writer | invoked by |
+|---|---|---|---|---|
+| 🔴🔴 **P3** | `final_hp has today` · `confidence populated` · `score in range 0-100` | **`nba_score.final_hp`** | `nba/build_final_hp.py` | `nba-absence-panel.yml`, `nba-engine-test.yml` — 🔴 **NOT P3** |
+| 🔴🔴 **P2** | `baseline_history has today` · `baseline props for today` · `no invalid probabilities today` | **`nba_score.baseline_history`** | `nba/load_baseline_history.py` | `nba-baseline-history.yml`, `nba-combos-history.yml`, `nba-periods-history.yml` — 🔴 **NOT P2** |
+| ⚠ **P1** | `player name map populated` | `nba_ref.player_name_map` | `nba/check_baseline_board_coverage.py` | `nba-board-maintenance.yml`, `nba-overnight-queue.yml` — **NOT P1** |
+
+✅ **RULE 20**: `grep -l "INSERT INTO nba_score.final_hp"` over all 38 pipeline scripts returns
+**nothing**; only `build_asof_calibration.py` and `build_confidence_v3.py` READ it; the string
+`final_hp` appears in the three pipeline workflows exactly **once**, in a COMMENT. **Same probe, same
+result, for `baseline_history`.**
+🔑🔑 **THE CERTIFIER'S OWN COMMENTS CLAIM THESE ARE THE PIPELINE'S OUTPUTS** — P3: *"the afternoon
+pipeline must have **SCORED TODAY's legs**"*; P2: *"the overnight pipeline must have **PRODUCED
+TODAY's baseline**"*. ⇒ ***the presupposition shape (T20-1's family) at the highest-stakes point in
+the system.*** ⚠ *Stated fairly: a certifier may legitimately assert an INPUT — `player_name_map`
+plainly is one and is graded ⚠ for that reason. The two 🔴 rows are different: the certifier presents
+them as the pipeline's own products.*
+⚠ **CONSEQUENCE IS LOUD, NOT SILENT**: `CERT_STRICT` defaults to `1` and the certifier *"never
+warns"* ⇒ ***on any date nothing has rebuilt them, P2's first three and P3's first three checks all
+fail and both jobs go RED at certify — after doing all their work.*** 📌 *Live: `final_hp`'s latest
+`built_at` is `2026-09-19 22:41:47.612137+00`; `baseline_history` ends `2026-04-12`. Neither has a
+2026-27 row.*
+
+🔴 **② AND WHAT THE PIPELINES DO WRITE IS LARGELY UNASSERTED — COVERAGE IS `4 of 13`**
+✅ **Asserted**: `defender_ratings` *(P1, twice)* · `ladder_calibration_asof` *(P2)* ·
+`confidence_model` *(P3, cross-pipeline and correct)* · `board_snapshots` *(P3)*.
+🔴🔴 **Unasserted**: **`nba_score.board_scored` — P3's PRIMARY OUTPUT** · `rung_market` ·
+`availability_delta` *(which T20-4 showed exits 0 silently)* · `paper_picks` · `baseline_ladder` ·
+`baseline_ladder_runs` · `blowout_model` · `confidence_verification` · **`board_outcomes`**
+*(already on file — T20-5, CONFIRMED not new)*.
+
+⚠ **WHY THE CORPUS MISSED IT**: the twelve mention `build_final_hp` **53** times, `board_scored`
+**67** times and `load_baseline_history` **7** times. ***These are not obscure objects. What was
+never written down is the JOIN — which workflow invokes which writer.*** 📌 **The same blind spot as
+T20-4's defaults, one level up: the corpus documents the SCRIPTS and the TABLES, never the WIRING.**
+
+🔴 **OWNER DECISION — 28 days out:** **(a)** decide whether P2 should invoke `load_baseline_history.py`
+and P3 `build_final_hp.py`, or whether those checks should be re-pointed at what the pipelines
+actually write *(`baseline_ladder` / `board_scored`)* — **the two answers are not equivalent and only
+you know which was intended** · **(b)** add assertions for P3's `board_scored` and P2's
+`board_outcomes` at minimum — *the two that cover the game-day path and T20-5* · **(c)** treat the
+`4 of 13` coverage ratio as the backlog and work down it before the opener. ⚠ **This sweep changed
+nothing and triggered nothing; the measurements above are the input.**
+📌 **Read beside T20-4 and T20-5: the opening-night picture is now concrete — P3's season constant
+aborts loudly, the grader's window fails silently, and both certifiers go red on tables nothing
+rebuilt.**
+
+---
+
 ## T20-5 · **NEW · 🔴🔴 SEASON-CRITICAL · THE ONLY SILENT ONE** · the grader's default window ends `2026-04-12`, and nothing catches it
 
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.36).** *Surface: **95** `os.environ.get(...)` sites · **71**
