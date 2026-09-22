@@ -29155,3 +29155,93 @@ registration is written when a job is BUILT and nothing retires it when the SPOR
 ***And the document finding is the subtler one: the corpus stated "P2 and P3 have no cron" correctly
 in five places, and the sixth document defeated all five not by contradicting them but by
 presupposing the opposite while discussing something else.***
+
+---
+
+# §T20.32 — PASS 27: *THE PRESUPPOSITION AUDIT — IT IS A CLASS, AND THE DEFECT IS A DROPPED QUALIFIER*
+
+*(T20 pass 27, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY: `SELECT` and repo reads only. No `run_job`, no `github_trigger_workflow`, no
+dispatch, no deploy.**
+
+## 1. 🎯 THE PROBE, MADE DELIBERATE
+
+**Twice now this sweep has found a second-order analysis of an object that does not exist — §T20.28's
+truncation rule for `raw_json` *"on every reference and stats table"* (it is on 10 of 33) and
+§T20.31's DST analysis of P2's and P3's crons (there are none).** ⚠ ***Both were found by accident,
+while looking for something else.*** **This pass runs it as a probe, pre-registered to be able to
+conclude the two were accidents.**
+
+> **CANDIDATE SET, 2026-09-22T15:21:37Z:** second-order language — `drifts` · `its margin` ·
+> `if anything trims` · `will grow` · `when it fires` · `fails when` · `is exposed to` ·
+> `pure cost` · `unused index` — attached to a NAMED system object across the twelve.
+> **`21` instances; every one opened (rule 48); `11` carry a checkable named object.**
+
+## 2. 🔴🔴 THREE FAILURES — *and clause (iii) lands in the worst place*
+
+| # | where | the second-order claim | live check |
+|---|---|---|---|
+| 🔴 **1** | **`NBA_GLOSSARY.md:1598`** | *"the **P3 cron** drifting an hour against a time-sensitive cutoff"* | 🔴 **`nba-p3-afternoon-light.yml` = `workflow_dispatch:` only, no `schedule:` block** |
+| 🔴 **2** | **`NBA_MASTER_SUMMARY.md:20578`** | *"the **P3 cron** drifting an hour"*, citing `NBA_SYSTEM_ARCHITECTURE.md` | 🔴 **same — and this one is the PROPAGATION: the citation survived §T20.31's correction of its source** |
+| 🔴 **3** | **`storage_diet_plan_2026_09_17` → `action_4_index_audit`** *(live config)* | *"`final_hp` carries 3,694 MB of indexes on 38.1M rows… **an unused index on a 38M-row table is pure cost**"* | 🔴 **`pg_stat_user_indexes`: `idx_scan = 0` count on `final_hp` = `0`, on `baseline_history` = `0`. The action would find NOTHING on either named target.** |
+
+🔴🔴 **CLAUSE (iii) HIT, AND IN THE WORST WAY — failure 1 is in `NBA_GLOSSARY.md`, the document a
+reader consults for DEFINITIONS, and failure 2 is in the hub.** ⇒ ***The presuppositions are
+SCATTERED across three documents and a live config row, so a re-read of `NBA_SYSTEM_ARCHITECTURE.md`
+would have reached none of them. The defect is structural.***
+
+🔑🔑 **AND THE PROBE FOUND WHAT THE ACCIDENTS COULD NOT: WHERE THE DEFECT ENTERS.**
+**The corpus writes *"P2's **PLANNED** cron"* THREE times — `NBA_MASTER_SUMMARY.md:3387`,
+`NBA_OPEN_ITEMS.md:5830`, `NBA_OPEN_ITEMS.md:8951` — every one correctly qualified.** **It writes
+*"the P3 cron"* twice, unqualified, and both are wrong.**
+⇒ ***The corpus does not hold a false belief. It holds a correct belief that lost its qualifier in
+transit — and a dropped "planned" reads exactly like a statement of fact.*** 🔑 **That is a far
+cheaper defect to guard than a wrong belief, and a far harder one to see.**
+
+## 3. ✅ WHAT THE INDEX CHECK FOUND INSTEAD — *a real target `action_4` does not name*
+
+> **`pg_stat_user_indexes`, `nba%` schemas, `idx_scan = 0`: `29` unused indexes.**
+> **Exactly ONE exceeds 50 MB: `nba_market.board_outcomes.board_outcomes_nm_idx` — `303 MB`,
+> `idx_scan = 0`.**
+✅ **Byte-exact against `NBA_DATABASE.md` §0x-T16's independently-recorded *"303 MB never scanned"*
+finding — a live re-confirmation, five days on.**
+⇒ ⚠ **`action_4_index_audit`'s INSTRUCTION is sound and its TARGETS are empty: the recoverable
+index cost is 303 MB on a table the action never mentions, not on `final_hp` or `baseline_history`.**
+📌 **Added to open item T20-2, which already records `action_4`'s inverted target order.**
+
+## 4. ✅ RULE 22 POSITIVE CONTROLS — *three, and the probe stayed clean on all three*
+
+1. ✅ **`NBA_MASTER_SUMMARY.md:3721`'s analysis of `nba-referees.yml`'s cron comment** — *"`'30 15 * * *'` is 15:30 UTC; the comment reads it as 08:30 UTC-7, true only during PDT"* — **the cron EXISTS** *(confirmed off the repo, §T20.31)*. **A second-order analysis of a real object, and the probe did not flag it.**
+2. ✅ **`NBA_WORKERS.md:343`'s *"`deployed_sha.txt`, and how it silently drifts"*** — **the file exists in the repo.**
+3. ✅ **Six named scripts all exist**: `check_delta_gaps.py` · `build_book_curves.py` · `check_prop_calibration.py` · `build_absence_panel.py` · `build_redistribution_factors.py` · `nba_asof.py`.
+📌 ***A probe that flagged everything second-order would be worthless. `3 of 11` checkable instances
+failed; 8 passed.***
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:23:11Z** |
+| **(ii)** | **≥ 3** further presupposed objects fail existence | ✅ **HIT — exactly three.** ❌ *The "the two were accidents, the probe is not worth generalising" branch is not available. **`3 of 11` checkable second-order claims rest on an object that is absent or empty.*** |
+| **(iii)** | **≥ 1** failure outside `NBA_SYSTEM_ARCHITECTURE.md` | ✅ **HIT — all three are.** `NBA_GLOSSARY.md` · `NBA_MASTER_SUMMARY.md` · a live `nba_config` row. ⇒ **scattered ⇒ STRUCTURAL; a single-document re-read reaches none of them.** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTY-NINTH consecutive run.** Working `649 · 1 · 470 · 469`.
+📌 **Third consecutive pass with all three clauses resolved cleanly.**
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — three presuppositions confirmed and two corrected in the documents (the third is in
+`nba_config` and was NOT touched, rule 1), one of them in the GLOSSARY, one of them a citation that
+survived the correction of its own source. CLEAN STAYS 0/3.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **the probe was built on the hypothesis that the corpus sometimes believes false
+things about the system. It found the opposite and something more useful.** ***The corpus believes
+TRUE things — "P2's PLANNED cron", three times, correct — and loses the qualifier when the belief is
+carried into a sentence about something else. "The P3 cron drifts an hour" is not a claim about
+whether P3 has a cron; it is a claim about DST that cannot be written without assuming one.***
+🔑 **A false assertion can be contradicted by a search. An assumption smuggled in as the subject of a
+different sentence cannot — which is why it reached the glossary, the hub, and a live config row
+while five documents said the opposite.**
