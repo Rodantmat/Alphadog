@@ -38093,7 +38093,13 @@ being off-ladder — once through the NaN-propagated factors and once through th
 `P3` block carries only `# CONFIDENCE (measured deductions)` at `:224` — **a phrase that is true of
 `P2` and false of four of the ten factors it introduces.** ⚠ *Documented, not fixed (rule 1).*
 
-▶ **Raised as `T20-19` in `NBA_OPEN_ITEMS.md` (`STRUCTURAL`). Brief SIXTEEN → SEVENTEEN.**
+▶ **Raised as `T20-19` in `NBA_OPEN_ITEMS.md` — `MEDIUM, STRUCTURAL`, and ⚠ ***NOT*** **added to the
+season-critical brief, which stays at SIXTEEN.** 📌 *This line first read **"Brief SIXTEEN →
+SEVENTEEN"** and was corrected in place within the same pass, before the item was filed.* 🔑 **The
+test the brief applies is not "how alarming is the finding" but "does it break, or get worse, on
+opening day" — and this one does neither: it needs no trigger, produces no outage, and has simply
+been shipping this way.** ⚠⚠ ***A `🔴🔴🔴` heading is a claim about how hard something was to see, not
+about how urgent it is, and letting the first inflate the second is how a brief stops ranking.***
 
 ▶ **`RULE 51` novelty check, run on the FINDING against the BASELINE tree as the last step:**
 `np.full` **0** in `/tmp/t20base/nba/*.md`; `score_board_legs` never co-occurs with
