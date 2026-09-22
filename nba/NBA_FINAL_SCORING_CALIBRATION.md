@@ -2533,6 +2533,8 @@ above at **§7m, Safeguard 1**. The two sections are one design, split across th
 **✅ NBA's grader has the read side right**: `grade_board_outcomes.py` reads `board_snapshots` and game
 logs, writes `nba_market.board_outcomes` (6.9M legs) — a dedicated outcome table.
 
+> 🔴🔴🔴 **BUT ITS DEFAULT WINDOW ENDS `2026-04-12`, AND P2 NEVER OVERRIDES IT — `T20-5`, the OPENING-DAY BRIEF's *only* `SILENT` blocker.** *Added here T20 pass 78 (§T20.83), 2026-09-22, because **this page previously opened its grader section with the green check above and said nothing about the window** — and a person fixing the grader reads this page, not the open-items list.* ▶ **`grade_board_outcomes.py:167–168`**: `GRADE_START "2024-10-22"` · **`GRADE_END "2026-04-12"`** — *and **`GRADE_START`, `GRADE_END`, `RUNG_FROM`, `RUNG_TO` appear in NONE of `nba-p1/p2/p3`**, so the defaults are what run.* 🔴 ***On opening night the grader's window has already closed: it will grade nothing and report success.*** ⚠ **SILENT — no certifier check covers it.** ▶ **Full item, evidence and severity: `T20-5` in `NBA_OPEN_ITEMS.md` (`[LIVE-AUDIT]` §T20.36); re-derived and HELD at §T20.75.** ⚠ *Documented, not fixed (rule 1).*
+
 **⚠ But the blast radius is NOT fully contained, because of P2's ordering.** The pipeline runs
 **grade (step 3) → … → calibration refit (step 14)** in the same workflow, and the refit writes
 `ladder_calibration_asof`, which **`build_final_hp.py` reads on the next run.**
