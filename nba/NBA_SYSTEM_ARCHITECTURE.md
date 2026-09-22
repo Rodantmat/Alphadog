@@ -7,6 +7,7 @@ infrastructure, and how each is used. Built from the transcripts, not from memor
 | Date | What changed |
 |---|---|
 | 2026-09-20 | Created. Infrastructure, sources and constraints from T1 passes 1–5 and the live session. |
+| **2026-09-21 → 09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `14` commits that this log never recorded.** *T12–T18 material plus the live audits: the four (then **five**) live board sources with the evidence behind each · the `us`/`us2` region split · the Fliff framing narrowed to a social sportsbook · T12's eight failed calls, two of them the cause of open items · the Fliff protocol decode · **§0f-3 the admin bridge's capability boundaries** · **§0f-4 the Fliff fix — three stacked bugs, an owner screenshot as the test oracle** · §0f-5-T18 P3's full-rebuild-vs-board shape defect. **Corrections in place: §0f-1 there are FIVE board sources, not four (Betr) · §0f-2 RETRACTION — the board scrapers do NOT archive every pull · the Sleeper rationale · `raw_json` is on 10 of 33 tables, not every one · two DST rows analysed crons that do not exist (P2/P3 have NO cron).*** |
 
 ---
 
