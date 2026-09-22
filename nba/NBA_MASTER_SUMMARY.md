@@ -34762,3 +34762,106 @@ finding)* · **§T20.78's T19 census** *(**PRIOR**, and **NOT** one of the two r
 📌 ***The lesson:*** **seventy-three passes maintained an increasingly careful record of where T20
 stands, and never once wrote down where T19 stands — while a rule this session wrote held both of them
 open, equally.** ***A handoff tells you where you are. This one told you where half of you is.***
+
+---
+
+# §T20.80 — T20 PASS 75: 🔴 **UNPINNED FIGURES RUN AT `8%` STALE AGAINST PINNED FIGURES' `0%` — AND THE REAL COST IS NOT THE ERROR RATE, IT IS THAT NEITHER MOVED FIGURE COULD BE DATED FROM ITS OWN TEXT** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: §T20.71 measured the claims that HAVE a pin — `0%` of pinned FIGURES wrong, `66.7%` of
+published COMMANDS unrunnable. **The complement had never been measured**, and §T20.79 had just found
+the fourth `DATED`-not-`RETRACTED` instance.** ⚠ **AND THE DIRECTION IS NOT §T20.14's**: *rule 40's
+instrument sweeps for **corrections that failed to propagate** — struck values still asserted
+un-struck. **This sweeps for figures where NO correction was ever made, because nobody noticed they
+had moved.** An instrument aimed at strikethroughs cannot find a figure that was never struck.*
+
+## ✅ THE HARVEST — **DEFINITION FIXED FIRST, CENSUS NOT SAMPLE**
+
+*An **UNPINNED** figure is one asserted in the twelve as CURRENT whose paragraph block carries **no**
+date, **no** tree, **no** timestamp, **no** `as of` qualifier and **no** re-derivation command.*
+▶ **`36` blocks, `2026-09-22T19:49:02Z`. Small enough to CENSUS rather than sample (§T20.77 is the
+precedent for why a null result needs one), so all 36 were read.**
+
+⚠ **FALSE-POSITIVE RATE, REPORTED AS PART OF THE RESULT: `11` of `36` — `30.6%`** — *blocks whose
+figures are TRANSCRIPT-SCOPED historical records ("the transcript reports 3,644 rows"), not standing
+claims about the live system.* **`25` are genuine standing re-derivable figures.**
+
+## ✅✅ TWENTY-THREE OF TWENTY-FIVE HOLD — **EXACTLY, TO THE ROW**
+
+*Each re-derived against the authority its own text names, read-only:* **`nba_stats.player_splits`
+`9,948` rows / `1` distinct season** ✅ · **`player_career_season_totals` `3,644` / `581` players** ✅ ·
+**`game_officials` `3,681` / `1,227` games** ✅ · **`nba_team.lineup_profile` `2,000` per group, four
+group sizes — the API cap hit four times** ✅ · **sportsbook rows `22,611,175`** ✅ · **`sleeper` `1,276`
+rows, one day** ✅ · **`underdog` `413,731` multipliers of `939,719` rows** ✅ · **`board_outcomes`
+`204,307` across the first 11 dates of 2024-25** ✅ · **`board_outcomes` `6,905,452`** ✅ ·
+**`nba_calendar.games` `2,666`** ✅ *(five separate blocks)* · **`1,230` / `1,200` slate** ✅ *(two
+blocks)* · **`final_hp` score min `−52.49`, 2025-26 min `+7.40`** ✅ · **`wins_losses` `1,135`** ✅ ·
+**`n_live_tup` `19,320,938` vs exact `19,215,200`** ✅.
+
+📌 ***The unpinned figures in this corpus are overwhelmingly right. That is worth saying plainly,
+because the pass was built expecting otherwise.***
+
+## 🔴🔴 CLAUSE (ii) — **HITS, AND THE ONE IT FOUND IS OFF BY A FACTOR OF `140`**
+
+**`NBA_WORKERS.md:1864`** asserts, as the reason a gap detector's coverage matters:
+> ***"The 2025-26 season — the season for which `nba_score.final_hp` holds `19,611,626` legs — was
+> never [checked]."***
+
+▶ **Live: `nba_score.final_hp` holds `19,075,070` legs for 2024-25 and `140,130` for 2025-26.**
+🔴 ***The figure is off by a factor of `140`, and it inverts the sentence's own emphasis: 2025-26 is
+the THIN season in `final_hp`, not the large one.***
+
+✅ **AND IT IS `DATED`, NOT `WRONG` — PROVEN BY ARITHMETIC:**
+**`19,075,070 + 19,611,626 = 38,686,696`** ⇒ ***the old `38.7M` total that §T20.8 corrected to
+`19,215,200`. The figure was TRUE when written; the table was rebuilt underneath it.***
+🔴🔴 **§T20.8's correction reached the TOTAL and never reached the PER-SEASON figure — and rule 40's
+propagation instrument could not have found it, because nothing here was ever struck.**
+
+## 🔑🔑 THE SECOND ONE IS THE MORE IMPORTANT, BECAUSE IT CANNOT BE CLASSIFIED AT ALL
+
+**`NBA_OPEN_ITEMS.md:7769`**: *"Goblin side — deepest tier with real volume is **T−3** (`62,542`
+legs). **T−4** collapses to `1,600`, a `39×` fall."* ▶ **Live: `T−3` = `62,183`, `T−4` = `1,308` — a
+`47.5×` fall.** *(Population confirmed, not assumed: every `T−3`/`T−4` leg in `board_tiers` is
+`kind = 'goblin'`, so the comparison is like-for-like — rule 23.)*
+
+⚠⚠ ***AND RULE 40's DISCRIMINATOR CANNOT BE APPLIED. `DATED` or `RETRACTED`? There is nothing in the
+text to date it against.*** 🔑 ***The first figure was rescued only because an arithmetic coincidence
+reconstructed its date. That was luck, not method.***
+
+## ✅ CLAUSE (iii) — **HITS, AND THE HONEST VERSION IS NOT THE RATE**
+
+| | staleness | source |
+|---|---|---|
+| **PINNED figures** | ✅ **`0%`** *(0 of 23)* | §T20.71 |
+| **UNPINNED figures** | 🔴 **`8.0%`** *(2 of 25)* | **this pass** |
+
+⚠ **STATED WITH ITS LIMITS (rule 25): at `n = 25` against `n = 23`, `8%` versus `0%` is SUGGESTIVE,
+NOT DECISIVE. I am not going to claim a statistical result from two events.**
+🔑🔑 ***The argument that does not depend on the rate: **both** pinned and unpinned figures can move —
+but a pinned figure announces WHEN it was true, so a later pass can classify the movement and correct
+it. **Neither unpinned figure could be classified from its own text.** One was saved by arithmetic; the
+other remains unclassifiable. **That is the cost of an unpinned figure, and it does not shrink with the
+sample size.***
+
+## ✅ THE REPAIR
+
+**Both moved figures dated in place, originals kept (rule 40)** — `patch_file` only.
+
+⚠ **CLAUSE (i): tree HOLDS at `649 · 1 · 471 · 470`** *(baseline `636 · 2 · 484 · 481`; Δ `484 − 471` =
+`13`)*.
+
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.71** *(the PINNED-figure measurement — **PRIOR**, the baseline
+clause (iii) compares against)* · **§T20.14 / rule 40's propagation instrument** *(**PRIOR** and the
+OPPOSITE direction — and this pass's `final_hp` finding is the proof that the two directions catch
+different things)* · **the four `DATED` instances of §T20.69/§T20.70/§T20.79** *(**PRIOR** — this
+pass's MOTIVE, excluded from clause (ii))* · **§T20.8's `38.7M` → `19,215,200` correction**
+*(**PRIOR** — carried here as the EXPLANATION of the `final_hp` figure, not re-discovered)*.
+
+📌 ***The lesson:*** **twenty-three of twenty-five unpinned figures in this corpus are exactly right,
+which says the sweep measures carefully. The two that moved say something the twenty-three cannot: a
+figure without a date is not wrong, it is unfalsifiable — and one of these two was only recovered
+because its old value and the current one happened to add up to a number the corpus had already
+corrected somewhere else.*** ***Pinning a figure does not make it true. It makes it possible for
+someone later to find out that it stopped being true.***
