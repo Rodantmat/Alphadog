@@ -519,15 +519,98 @@ numbers, they are the counterparty's.*
 
 | Measured | Value | *of the twelve* |
 |---|---|---|
-| **Real tiered rungs** | **1,401** | **0** |
-| **Distinct ladders** | **385** | **0** |
-| **Distinct prices, Over** | **233** | **0** |
-| **Distinct prices, Under** | **211** | **0** |
-| **Price range** | **−2439 to +33xx** | **0** |
+| **Real tiered rungs** *(external example set)* | **1,401** | **0** |
+| **Distinct ladders** *(external example set)* | **385** | **0** |
+| ~~Distinct prices, Over~~ | ~~233~~ | **RETRACTED — see §0.9e.1** |
+| ~~Distinct prices, Under~~ | ~~211~~ | **RETRACTED — see §0.9e.1** |
+| ~~Price range~~ | ~~−2439 to +33xx~~ | **RETRACTED — see §0.9e.1** |
 
-✅ **This is the only per-leg multiplier dataset the project actually HAS**, and §0.2e's prior says
-Underdog prices *dynamically and efficiently* — **so it is simultaneously the best available
-substitute and the platform where a better `p` alone earns nothing.** Both are true at once.
+### 🔴🔴 0.9e.1 **CORRECTION — RECORDED 2026-09-22 (T13 pass 2, §T13.3a), SUPERSEDING THE ENTRY ABOVE AS FIRST WRITTEN 2026-09-22 (T13 pass 1)**
+⚠⚠ **This entry, written one pass earlier, merged TWO DIFFERENT DATASETS and carried the one the
+transcript itself retracts. Rule 27 exactly: a transcript's state on a subject is its LAST word, and
+pass 1 recorded its first.** *Both dates are kept per rule 5.*
+
+**THE TRANSCRIPT'S OWN RETRACTION**, at a later offset:
+> *"That settles it, and **it corrects something I told you earlier — Underdog has NO LADDERS IN THIS
+> ARCHIVE**. **464,053 of 465,618 player-markets have exactly ONE rung; only 1,565 have two or
+> three.** … ***My earlier statement that we held "233,000 rows of real NBA tiered pricing" was
+> WRONG***: we hold **483,000 rows of real Underdog pricing, but it's ONE RUNG EACH, not tiers.**"*
+
+✅ **RE-TAKEN LIVE AGAINST `nba_market.board_snapshots`, pinned 2026-09-22T08:00Z** *(grouped by
+`event_id · snapshot_label · player · market_key · side`, which is the grouping that reproduces the
+transcript's shape)*: **937,524 player-market-sides · 936,353 with EXACTLY ONE rung (99.87%) · 889
+with two or three · 282 with more · 939,719 rows.**
+🔑 ***The population has roughly doubled since the transcript and the conclusion is STARKER, not
+weaker*** *(99.66% → 99.87%)*. **Underdog's Odds API archive is one priced rung per player-market-
+side. It is not a ladder.**
+
+### ✅ WHAT SURVIVES, STATED AT THE RIGHT STRENGTH
+| Dataset | What it is | Status |
+|---|---|---|
+| **PrizePicks historical tiers** | **the ONLY app with historical tier structure, and it is complete** — *866k graded legs, tiers −3 to +3, both anchor types* | ✅ **held in full** |
+| **Underdog Odds API archive** | **483k rows of genuinely priced lines, ONE RUNG EACH** — *"an excellent second opinion on probability, but it can't teach us Underdog's tier economics"* | ✅ **real, and NOT tiers** |
+| **Underdog LIVE ladders** | the `alternate_projections` endpoint built into the scraper, ***"which does return full ladders with real multipliers — already running every two hours"*** | ⚠ **prospective; NOT RECORDED whether any have landed** |
+| **The 1,401 rungs / 385 ladders** | an **external example set** used as a *"structural prior"*, **not our data** | ⚠ **and see §0.9e.2 — the arithmetic drawn from it was a UNITS ERROR** |
+| **Sleeper** | *"no tiers at all — one line per player-stat, priced by side"* | 🔴 **nothing to map** |
+
+🔑🔑 ***So the sentence pass 1 wrote — "the only per-leg multiplier dataset the project actually has"
+— was true of the wrong table.*** **The per-leg tier dataset the project has is PRIZEPICKS' OWN, via
+the grader and `board_tiers`** *(`NBA_GOBLIN_DEMON.md` §5.4)*, **and Underdog's contribution is a
+priced second opinion on PROBABILITY, not on tier economics.**
+
+### 🔴🔴 0.9e.2 **THE UNITS ERROR — `higher_multiplier` IS A MODIFIER, NOT A PAYOUT, AND THE CONCLUSION REVERSED**
+**The researcher caught this himself, on the owner's correction, and re-derived it:**
+> *"my tier analysis used **`higher_multiplier` from alternate projections AS IF IT WERE THE PAYOUT**.
+> If those fields are modifiers rather than payouts, my 'demon T1 retains 0.74' conclusion is wrong."*
+> *"Your correction was decisive — my earlier table was wrong, and **the conclusion REVERSES**."*
+
+**The corrected value-retained table** *(true payout = decimal(american) × 0.963)*:
+
+| Tier | modifier field | decimal | American | true payout | implied prob | **value kept** |
+|---|---|---|---|---|---|---|
+| **−1 goblin T1** | 0.70 | 1.36 | — | 1.31 | 71.5% | **0.932** |
+| **0 anchor** | 1.19 | 2.31 | — | 2.22 | 46.0% | **0.933** |
+| **+1 demon T1** | 3.21 | 5.82 | — | 5.60 | 23.6% | **0.910** |
+| **+2** | 3.91 | 7.07 | — | 6.81 | 17.1% | **0.896** |
+| **+3** | 4.51 | 8.12 | — | 7.82 | 13.6% | **0.883** |
+| **+4** | 6.76 | 11.88 | — | 11.44 | 8.6% | **0.847** |
+
+🔑 **THREE THINGS CHANGED, in the researcher's own words**:
+1. ***"The hold is 7–15%, not 26–54%."*** — *"my earlier numbers implied Underdog keeps a quarter to
+   half of every leg, **which should have struck me as implausible for a DFS operator — that was the
+   tell I missed**."* ⚠ **That is `NBA_MULTIPLIERS.md` §0.3b's house-edge sanity test catching a
+   real error, and it is the second instance on file.**
+2. ***"The RANKING FLIPS."*** — *"I told you demon T1 was the best-priced rung on the board (0.74 vs
+   0.55 anchor). **It isn't.** The anchor and goblin T1 are the best-priced (0.933, 0.932), and value
+   **decays monotonically the deeper you go into demons** — down to 0.847 at T+4. **So on Underdog,
+   deep demons are where the house edge concentrates, exactly the opposite of what I reported.**"*
+3. ***"The cause was a UNITS ERROR"*** — the modifier was multiplied against a probability as though
+   it were a payout.
+
+✅ **AND WHAT SURVIVED THE REVERSAL IS THE PART THIS DOCUMENT DEPENDS ON**: *"**the structural rule I
+drew from it — price by PROBABILITY SHIFT, not tier label — STILL HOLDS**, because that conclusion
+came from the **per-stat comparison** and is unaffected."* ***§0.9f is therefore load-bearing and
+independently grounded, not a casualty of this correction.***
+
+### ✅ 0.9e.3 **THE FIX THAT WAS INSTALLED — the trap is now LABELLED, and the arithmetic is in config**
+**Three code changes followed, and they are in 0 of the twelve**:
+1. **Ladder de-dupe** on `(player, stat, line, is_main)`, keeping the freshest row by `updated_at`,
+   **with the dropped count reported in the run metadata** — *80 genuine extra rows on 1,363 distinct
+   keys, "the same rung harvested twice by different passes."*
+2. 🔑🔑 **DERIVED PAYOUT FIELDS**: **`higher_payout` / `lower_payout` = `decimal(american) × 0.963`**,
+   and **the raw fields RENAMED to `higher_multiplier_modifier_only` / `lower_multiplier_modifier_only`
+   *"so the trap is LABELLED rather than inviting."*** ⚠ **A naming decision made specifically to
+   stop a repeat — record it as such, not as a schema detail.**
+3. **The verified conversion rules recorded in config**, *"so the NBA side uses the same arithmetic
+   the MLB side has already validated against real placed slips"*:
+   **PrizePicks / Underdog → `decimal × 0.963`** · **Sleeper → `1 + (decimal − 1) × 0.95`** ·
+   **slip = the PRODUCT of legs.**
+⚠ **`0.963` and `0.95` are in 0 of the twelve** *(pinned 2026-09-22T07:59:35Z)*, **and §6's
+conversion section does not carry them.**
+
+✅ **And §0.2e's prior still stands over all of it**: Underdog prices *dynamically and efficiently*,
+**so it is simultaneously the best available second opinion and the platform where a better `p`
+alone earns nothing.** Both remain true at once.
 
 ### 0.9f 🔑🔑 **THE RULE THAT FALLS OUT — model `m` on the PROBABILITY SHIFT, never on the TIER LABEL**
 > *"model the multiplier as a function of the **PROBABILITY SHIFT**, **conditioned on stat and line
