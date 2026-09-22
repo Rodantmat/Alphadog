@@ -26764,8 +26764,11 @@ is nine-before and zero-after** — that is a property of the boundary, not of e
   passes on all the transcripts you did half work!"*
 
 🔑 ***The charter and the reset both landed while a tool chain was still open*** — no assistant summary
-preceded either, so each was absorbed by a turn already mid-task. **SEG 600's acknowledgement is one
-sentence long and the very next call resumes the interrupted `NBA_WORKERS.md` patch (SEG 601).**
+preceded either, so each was absorbed by a turn already mid-task. **SEG 600's acknowledgement runs
+three sentences / 288 characters, and the very next call resumes the interrupted `NBA_WORKERS.md`
+patch (SEG 601).** *⚠ Corrected 2026-09-22 (pass 6, §T20.11): this read "one sentence long." It is
+three — the charter that created four documents was acknowledged in 288 characters before the
+interrupted patch resumed, which is the point the wrong quantifier was reaching for.*
 *The owner stratum shows the words; the tool strata show the chain; only the boundary shows that the
 most binding instruction of the session arrived into an unfinished operation.*
 
