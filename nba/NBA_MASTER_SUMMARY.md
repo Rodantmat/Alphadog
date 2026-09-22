@@ -30016,3 +30016,115 @@ things the first did not — including a re-characterisation of the sweep's larg
 ***Printing a table is not reading it. A cell you render into prose has to be understood; a cell a
 script prints can be skimmed. The discipline that has produced every real finding in this run is one
 thing stated three ways: open the source, open the residue, and now — write it out.***
+
+---
+
+# §T20.40 — PASS 35: *🔴🔴🔴 P3's "BOARD TIERS" STEP RUNS AN INDEX-MAINTENANCE SCRIPT, AND `board_tiers` HAS NO WRITER AT ALL*
+
+*(T20 pass 35, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY AGAINST THE SYSTEM: repo reads and `SELECT` only (rule 1).**
+
+## 1. 📐 THE READ EDGE
+
+> **`116` scripts parsed · `41` distinct tables seen — `33` written, `41` read**
+> *(2026-09-22T15:58:08Z; `scratchpad/t20/readedge.py`).*
+
+## 2. ✅✅ CLAUSE (ii) MISSES, AND IT IS THE COMPLIMENT THE PRE-REGISTRATION PROMISED
+
+> 🔴 **WRITTEN BUT NEVER READ — `0`.**
+
+**Every one of the `33` tables a pipeline script writes is read by another pipeline script.** ❌ *The
+"three dead outputs" branch is not available.* ✅✅ ***The graph has no dead ends. After
+thirty-four passes of defects this is a real structural compliment and the pre-registration committed
+to giving it at full strength: nothing this pipeline computes is thrown away.***
+
+## 3. 🔴🔴🔴 CLAUSE (iii): **`nba_market.board_tiers` IS READ BY FOUR SCRIPTS AND WRITTEN BY NONE**
+
+**The raw probe returned `8` dangling inputs. Opening all eight (rule 48) killed six.**
+⚠ **SIX WERE PYTHON IMPORTS, not tables** — `from build_availability_delta import …`,
+`from nba_asof import …`, `from scipy.sparse import …`, `from urllib.parse import …`,
+`build_baseline_history`, `classification_ladder_v12` — *my `FROM` regex caught `from X import Y`.*
+📌 ***A probe for SQL that matches Python: the same instrument failure this sweep has now made five
+times, and the same discipline caught it.***
+
+**TWO SURVIVED:**
+
+**⚠ `nba_config.external_credentials`** — read by `backfill_board_snapshots.py` and
+`backfill_game_line_snapshots.py`, written by no script. ✅ **NOT claimed as a defect: a
+manually-maintained credentials table is expected to have no programmatic writer.**
+
+> ### 🔴🔴🔴 **`nba_market.board_tiers` — `2,199,354` rows, `378` dates, `2024-10-22 → 2026-04-12`, AND NOTHING WRITES IT**
+> **Read by FOUR scripts** — `apply_ladder_calibration.py` · `backtest_tier_selection_value.py` ·
+> **`build_confidence_v3.py` (P2, step 18)** · **`build_rung_market.py` (P3, step 8)**.
+> **Writers, probed in five forms (`INSERT INTO` · `CREATE TABLE` · `TRUNCATE` · `COPY` · `UPDATE`)
+> across every `.py` in `nba/` and `nba/baseline/`: ZERO.**
+
+## 4. 🔴🔴🔴 AND THE REASON IS A MIS-WIRED STEP ON THE GAME-DAY PIPELINE
+
+**P3's step 6 is named *"Board tiers (goblin / standard / demon)"* and comments:**
+> *"Classify every board leg as standard / goblin / demon with its tier and anchor. **The score and
+> the slip engine both need this** — a rung's break-even depends on which variation it is."*
+
+**It runs:** `python nba/maintenance_shrink_board_index.py`.
+
+**That script's own docstring:**
+> *"**One-off maintenance**: shrink `nba_market.board_snapshots` by replacing the 7-column primary key
+> (5.6 GB on 25.7M rows) with a compact unique expression index on an md5→uuid leg key (~1 GB)."*
+
+**Its only table operation is `ALTER TABLE nba_market.board_snapshots DROP CONSTRAINT IF EXISTS
+board_snapshots_pkey`. It classifies nothing.**
+
+✅ **THE SCRIPT THAT ACTUALLY BUILDS BOARD TIERS IS `nba/build_board_tiers_v2.py`** — *`TRUNCATE` +
+`INSERT INTO nba_market.board_tiers_v2`, "four-way taxonomy, both anchor cases"* — **and it is
+invoked by `nba-engine-test.yml` ALONE.**
+
+⇒ 🔴🔴🔴 ***THE TIER CLASSIFICATION THAT P3's OWN COMMENT SAYS "THE SCORE AND THE SLIP ENGINE BOTH
+NEED" IS PRODUCED BY NOTHING ON THE GAME-DAY PATH. `board_tiers` is a frozen historical snapshot
+ending `2026-04-12`, and P2 and P3 read it on every run.***
+⚠⚠ **AND P3 RUNS A SCRIPT DOCUMENTED AS ONE-OFF MAINTENANCE ON EVERY GAME DAY.** *Its safety rules
+are sound — build the new unique index first, drop the old PK only after `indisvalid`, compare row
+counts — so the risk is WASTE and WRONG-STEP, not destruction. Stated at that strength and no
+higher.*
+
+⚠ **Why the corpus missed it**: the twelve mention `board_tiers` **174** times and
+`build_board_tiers_v2` **14** times, but `maintenance_shrink_board_index` only **2** — ***the
+documentation describes the table and the right builder exhaustively, and barely names the script
+P3 actually runs.*** 📌 **The edge again, exactly as §T20.38 predicted the remaining defects would be.**
+
+## 5. 📊 BLAST RADIUS OF `nba-engine-test.yml`'s SIX CO-WRITTEN TABLES *(the question §T20.38 raised)*
+
+| table | readers |
+|---|---|
+| `nba_score.final_hp` | **8** — `build_asof_calibration` · `build_confidence_v2`/`v3` · `build_final_hp` · `build_mondrian_confidence` · `certify_pipeline` … |
+| `nba_score.confidence_model` · `confidence_verification` | **4** each |
+| `nba_score.board_scored` · `availability_delta` · `conformal_confidence` | **2** each |
+
+⇒ ***An overwrite of `final_hp` by the test harness propagates to eight readers including the
+calibration refit and the certifier. That is the blast radius, and it is the widest in the graph.***
+
+## 6. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` **FALLS or HOLDS** | ✅ **HIT — HELD at `470`** at **2026-09-22T15:58:08Z** |
+| **(ii)** | **≥ 3** dead outputs | ❌ **MISS — `0`.** ✅✅ *The good-news branch, delivered as promised: **the graph has no dead ends**.* |
+| **(iii)** | **≥ 1** dangling input | ✅ **HIT — and it is the deepest finding of the sweep.** *Eight raw, six killed as Python imports, one accepted as a manually-maintained credentials table, and **`nba_market.board_tiers` — 2.2M rows, four readers, zero writers**.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — THIRTY-SEVENTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 7. ⚠ VERDICT
+
+🔴🔴🔴 **NOT CLEAN — P3's board-tiers step runs an index-maintenance script, the real tier builder is
+reachable only from the test harness, and `nba_market.board_tiers` has four readers and no writer.
+New open item T20-7. CLEAN STAYS 0/3.**
+✅✅ **AND THE GOOD NEWS AT FULL STRENGTH: zero dead outputs — every table this pipeline computes is
+consumed.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **§T20.39 published the WRITE edge and called the view no longer missing. It was
+half a view.** ***The READ edge was where the worst defect lived, and it was invisible from the write
+side by construction: a table nothing writes has no row in a writers table. You cannot find a missing
+edge by listing the edges that exist — you have to list the NODES and ask which ones have no edge at
+all.***
