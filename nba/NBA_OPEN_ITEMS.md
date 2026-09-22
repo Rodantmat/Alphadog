@@ -6672,7 +6672,10 @@ and is corrected in place.
 
 **Stated at its real strength: this is latent, not imminent.** The largest file is at **27% of the
 limit** and these are roster-scale files that grow slowly — `nba_onoff_current.json` was **208,560
-characters when T2 fetched it** and is **0.18 MB today**, i.e. roughly flat over three weeks.
+characters when T2 fetched it** and is ~~**0.18 MB today**~~ **`0.18 MB` as measured `2026-09-21`**,
+i.e. roughly flat over the ~three weeks since T2's fetch. *(Anchored 2026-09-22, §T20.27 — an
+unanchored "today" plus an unanchored "three weeks" is the worst now-relative class: it drifts and
+leaves no base date to repair it from.)*
 **No claim is made that any of the ten is close to breaking.**
 
 **What is worth recording is the failure mode, not the margin.** The Contents API **does not error
