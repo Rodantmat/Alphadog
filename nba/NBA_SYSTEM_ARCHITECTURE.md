@@ -10,6 +10,87 @@ infrastructure, and how each is used. Built from the transcripts, not from memor
 
 ---
 
+## 0f-4. 🔴🔴 **THE FLIFF SCRAPER FIX — THREE STACKED BUGS, AND AN OWNER SCREENSHOT AS THE TEST ORACLE** *(T15 pass 1, §T15.2d/§T15.2e, written 2026-09-22 from the 2026-09-12/13 transcript)*
+
+*§T12.8 recorded the Fliff scraper stopping on "this version of the app is no longer supported", and
+`boards/fliff_nba_current.json` refreshes daily today — so the fix landed. **This is HOW.** The owner
+ordered it directly: **"first try to fix fliff scraper before moving to whatever is next"**, and then,
+when the first fix was declared complete, **"there are still legs available on the app that should be
+showing."*** ⚠ **The fix was tested on LIVE MLB boards, because the NBA season had not started — the
+transcript says so in its own words: *"the kind that only surfaces by running the thing end to end,
+which is why it was worth doing on live mlb boards rather than waiting for the nba season."***
+
+### 🔴 THE THREE BUGS, EACH HIDDEN BEHIND THE PREVIOUS ONE
+
+| # | The bug, as the transcript states it | What it cost |
+|---|---|---|
+| **1** | **`player_fkey` sits on the PROPOSAL, not the group** — so `g.get("player_fkey")` is falsy and the conditional **blanked every player name**, *"even though `group_tag` held it"* | **every** leg lost its player; **1,296 legs carried a player where zero did before** the fix |
+| **2** | **the line lives in the SELECTION NAME** (*"brandon pfaadt over 4.5"*), not in `t142_selection_param_1`; the group-tag fallback produced **`"4.5 / 62"`** rather than `4.5` | every line unparseable |
+| **3** | **side detection used `startswith("over")` when Fliff writes the direction MID-STRING** | **silently dropped 1,376 of 1,394 legs** |
+
+*A fourth, of a different kind:* **`event_start_utc` arrives as epoch MILLISECONDS where the column
+expects a timestamp.** *And before any of it, the archiver itself had no Fliff row builder and the
+generic one aborted the whole archive on the first unparseable leg — fixed by **failure isolation**,
+so "one app's broken shape no longer costs the others their archive".*
+
+### 🔑🔑 THE METHOD FINDING — **a partial success is more dangerous than a total failure**
+
+> ***"that last one is the instructive one: it produced 18 legs rather than zero, which looks like a
+> working parser with sparse data rather than a broken one. only comparing against the file's 1,394
+> caught it."***
+
+⚠⚠ **`NBA_OPEN_ITEMS.md` ALREADY POINTS AT THIS AND NEVER RECORDED IT.** Its T2 `_debug_headers`
+entry says the permissive first-run parse *"caught the 50-of-530 failure honestly instead of shipping
+a parser that looked like it worked on sparse data — **the same trap that later cost three stacked
+bugs elsewhere in this project**."* 🔑 **That sentence is a pointer the sweep wrote to a mechanism it
+never wrote down**: probed 2026-09-22 09:2x UTC, `grep -Eoih ".{0,80}player_?fkey.{0,80}"` returns
+**0 of the twelve and 0 of the thirty**, on both the working tree and `/tmp/t15base`. *Rule 7 in
+reverse — the absence was asserted implicitly by a back-reference that named a count and no content.*
+
+### ⚠ AND THE DIAGNOSIS WAS WRONG TWICE BEFORE IT WAS RIGHT — **record all three (rule 5)**
+
+| Date | Diagnosis | Status |
+|---|---|---|
+| 09-12/13 | *"fliff sends empty-string lines on some legs"* → made the generic parser **skip** unparseable legs | ⚠ **partially right, wrong cause** — it was every leg, not some |
+| 09-12/13 | *"every one of fliff's 4,592 legs has an empty line AND an empty player… the archiver is behaving correctly; the gap is **upstream in the fliff scraper**"*, named as a defect in `scrape_fliff_board.py` | ❌ **SUPERSEDED the same session** |
+| 09-12/13 | **Reading the live per-conflict `3062` API directly**: *"the player props ARE there — batter hits 212, batter home runs 210… the scraper is capturing them correctly. the real bug is narrower."* | ✅ **the true cause — the three bugs above** |
+
+> 🔑 ***"rather than guess a third time, reading the actual file."*** — *and the step that ended it was
+> querying the LIVE API rather than re-reading the scraper's source. The `3054` feed carries no
+> `player_fkey` at all; player props come from the per-conflict `3062` call.*
+
+### ✅ THE OWNER'S SCREENSHOT WAS THE TEST ORACLE
+
+*The complaint **"there are still legs available on the app that should be showing"** arrived with a
+screenshot of Fliff's pick'em view showing **2.40× / 1.45× with ladder arrows**. The assistant read
+those as **decimal form of the American odds the feed already returns** — **2.40× = +140** — and drew
+the inference that closed the loop:* ***"so these legs SHOULD be in our data, and the empty player /
+line is exactly what would hide them."***
+
+**After the fix, the named players matched the screenshot exactly** — **Brandon Pfaadt 4.5 pitcher
+strikeouts** and **Kumar Rocker 3.5** — *and the odds confirmed the reading:* **Pfaadt over at +100 =
+2.00×, Rocker over at −135 = 1.74×**; *"the app displays decimal, our feed stores american, same
+numbers."* 🔑 **For a board whose correct answer the system cannot compute, an owner screenshot is
+the only available oracle — and here it caught a defect three rounds of internal diagnosis had
+mis-attributed.**
+
+### ✅ THE LIVE BOARD ARCHIVER — what it landed *(figures from the transcript; **not** re-taken live, and they are MLB boards)*
+
+| App | Legs | Players | Markets |
+|---|---|---|---|
+| Underdog | **5,281** | 216 | 46 |
+| **Fliff** | **1,394** | 119 | 16 |
+| Sleeper | **1,276** | 94 | 14 |
+
+⚠ **Three of the five board sources** *(§0f-1: five, the fifth is Betr)*. The gap it closes, in the
+transcript's words: *"our scrapers **overwrite** their output instead of accumulating an archive —
+without it, **opening day produces no history**."* Rows land in `board_snapshots`, *"same table, same
+shape as the two-season historical backfill, idempotent on re-runs."* ⚠ **`event_id` is NOT NULL and
+live boards have no Odds-API event id, so a stable one is SYNTHESISED** — *recorded here because a
+synthesised key is a joinability constraint downstream.*
+
+---
+
 ## 0f-1. 🔴🔴 **CORRECTION 2026-09-22 (T13 pass 3, §T13.4a) — THERE ARE FIVE BOARD SOURCES, NOT FOUR. THE FIFTH IS BETR.**
 *§0f below was written 2026-09-21 from T12 and is accurate about the four it names. **T13 built a
 fifth**, and the code says so. **Every claim here is VERIFIED against the worker, the repo and the
