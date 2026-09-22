@@ -2988,6 +2988,23 @@ already been taken."*
 | **24** | **Distinguish durable QUALITATIVE platform mechanics from exact NUMERIC values that drift over time** |
 | **25** | **A "safety margin" can compound into an absurd result once exponentiated** |
 | **26** | **Explicitly track a finding's CONFIDENCE TIER** — *"'first real pass' and 'independently re-validated' are NOT the same claim"* |
+| **27** | **A platform's Flex-style PARTIAL-CREDIT mechanics can be structurally different platform to platform — VERIFY, don't assume** — flat fixed partials vs partials that scale with the full-hit multiplier; full entry at §14's body below |
+
+> **⚠ TABLE REPAIRED 2026-09-22 (T20 pass 4 — the first full sequential read of T20).** Until this
+> pass the table carried **26 rows under a heading that reads "all 27 lessons"**, and **two of those
+> rows were not lessons**: row **5** ended `(b) …, (c) …` and row **8** read *`(sequence continues)`*.
+> **Cause, traced in T20 itself**: the table was built at **SEG 921** by grepping T1's escaped-JSON
+> copy of the source with `sort -u | head -18`, which truncated the retrieval; the retry at **SEG 979**
+> printed `--- l8 ---` **with nothing after it** (SEG 980) and the row was left as filler. Both gaps
+> were later recovered *into this document's own body* — lesson 5's (b)/(c) at SEG 941→944, lesson 8
+> at SEG 1169→1171, lesson 27 by T1 pass 30 — **and the table was never brought into line with them.**
+> **This is §T10.18b's shape a second time: a correction that did not reach the surface it governs** —
+> pass 30 corrected this very heading 26 → 27 and added #27 to the body while leaving the table at 26.
+> **All three rows are now filled VERBATIM from `nba/NBA_LESSONS_LEARNED_FROM_MLB.md` — the source
+> document, which is in this repository** (lines 25–26, 36–37, 93) — **not from a transcript's copy of it.**
+> *Operative lesson, and it is lesson **10** turned on this sweep: the pass that recorded "enumerate every
+> possible data source… don't stop at the first or most obvious table" was itself reading one grep of one
+> transcript while the primary source sat in the directory it was writing to.*
 
 ### The ones this project has already proved the hard way
 
