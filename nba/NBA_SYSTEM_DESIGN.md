@@ -10,6 +10,89 @@ constraints that shaped it. This is the operational spec.
 
 ---
 
+## 0z-7. 🔴🔴🔴 **THE TWO-PIPELINE DECISION, MADE IN REAL TIME — COMPASS FACT 107's REASONING, AND IT RESOLVES THE TENSION §0z-2 RECORDED** *(T18 pass 0, §T18.1, owner, 2026-09-19; **the largest owner stratum in the corpus — 57 turns, 26,633 chars, mean 467**)*
+
+*§0z-2 records that fact 107 DROPPED the scenario precompute six days after the owner called it
+non-negotiable, and flags that **"the measured 83% cost was never put beside it"**. **It was. This is
+the argument, and the owner makes it himself across seven turns.***
+
+### 🔴 **THE QUESTION HE ASKS FIRST — and it is a good one**
+
+> ***"The 30 minutes before tip — is that the FIRST game of the day, or before EACH ONE of the games?
+> … Miami plays at 4, so it releases a report at 2:30 and its very last 30 minutes before tip, at
+> 3:30. Golden State is playing at 7 — **they also release at 2:30 p.m. Pacific**, and their very last
+> report is 30 minutes before 7, so 6:30. **Because that DOES affect how we treat data freshness.**"***
+
+🔑🔑 **AND HIS OWN OPERATING PATTERN IS WHAT DECIDES IT**: *"my idea is, after 2:30 we run the last
+piece of pipeline… **I'm not going to be able to use the last 30 minutes before tip anyway.** I'm going
+to put my slips around **3, 3:30**… **that's probably the only run of the day that matters for my
+slips. So data freshness is gonna PENALISE LEGS THAT I'M GONNA USE ANYWAY** — **the data freshness is
+more gonna HURT than HELP.**"*
+
+### 🔴🔴🔴 **THEN HE RUNS THE SWEEP'S OWN METHOD ON THE ASSISTANT** *(0 of the twelve, 0 of the thirty)*
+
+> ***"So who created the full NBA universe was YOU. This chat only, and no other AI, was Claude in
+> this chat. **So if there is any discrepancy, IT'S YOU DRIFTING.** So you need to look at
+> documentation, look at the chat transcripts — I know it's a lot of transcripts to look at — but
+> **YOU were the one drifting. So you need to understand WHY you say 2:30 and now you're saying 1
+> p.m.**"***
+
+⚠⚠ **THAT IS THIS DOCUMENTATION SWEEP'S PREMISE, STATED BY THE OWNER BEFORE THE SWEEP EXISTED**: *a
+discrepancy between what the system does and what the documents say is DRIFT, and the remedy is the
+transcript archive.* 🔑 **And the instruction that follows it is the sweep's brief verbatim**: *"go to
+the documentation and the compass, **see WHEN was the last time you updated, and then go to the CHAT
+HISTORY AND TRANSCRIPT from that same date and time, and update everything from there to now. NO
+EXCEPTION, NO EXCUSES, NO SKIPPING.**"*
+
+### ✅✅ **THE ANSWER, AND IT COLLAPSES THREE DECISIONS INTO ONE**
+
+> ***"We are OVERCOMPLICATING it. We need ONE SIMPLE ANSWER. **I do not need the LAST report. I need
+> ONE DECENT REPORT** — players, lineups, injury report, referee, all the daily factors. Research and
+> understand **what time, Pacific, that information comes**. And then we have our cutoff hour."***
+>
+> ***"The game-day injury report is the last thing that comes up, and the first report comes **around
+> 11 a.m. to 1 p.m. Pacific**. … **We just need TWO pipelines, not three anymore** — the heavy one
+> that runs early morning, and one that does the daily factors after 1 p.m., **around 1:30, or
+> 1:15**… **And all that was because of the data freshness** … **so that one is DEFERRED. We're not
+> gonna use that one.** … **And we do not need the simulations** — there was one simulator that would
+> create all the possible situations for when we run the last pipeline to pick the correct outcome.
+> **We do not need that anymore. That extra processing, extra data that we do not need anymore.**"***
+
+🔑🔑🔑 **SO FACT 107's THREE CLAUSES — two pipelines · the 1:15 PM cutoff · the scenario simulator
+dropped — ARE ONE DECISION WITH ONE REASON.** ***If the complete daily report arrives by 1 p.m., the
+window moves to 1:15; if the window is 1:15 and the owner places slips at 3–3:30, there is no later
+SELECTION MOMENT; and enumeration without a selection moment has nothing to resolve against.*** ✅
+**§0z-2's open question — "does the single-window system assume the likeliest branch or carry the
+uncertainty into the probability?" — is answered a third way: IT DOES NEITHER, because at 1:15 the
+report is already complete for every team and there is little left to enumerate.**
+
+⚠⚠ **AND THAT ALSO CLOSES OPEN ITEM T17-3.** *The freshness gates were recorded as "probably the
+same" — a HEDGE. **They are not a hedge: they are DEFERRED on a stated mechanism** — they would
+penalise legs the owner uses anyway, because his only run of the day is the 1:15 one.* 🔑 **A
+correctness feature rejected not as wrong but as IRRELEVANT TO THE OPERATOR'S ACTUAL WORKFLOW.**
+
+⚠ **ONE RECONCILIATION THE CORPUS NEEDS**: later in the same session the owner says ***"we still have
+THREE pipelines — the WEEKLY STATIC, the heavy overnight one, and the light early-afternoon one."***
+🔑 **Fact 107's "two pipelines" counts the DAILY pair; the weekly static run is a third and separate
+one. Both statements are his, six turns apart, and they are not in conflict.**
+
+### ✅ **THE THREE PIPELINES AS HE SPECIFIES THEM**
+
+| # | Pipeline | Spec |
+|---|---|---|
+| **1** | **WEEKLY STATIC** | *"already configured, not running yet… **schedule once a week** because if there is any team change. **Use cron** … maybe **12 every Monday**"* — ✅ **cron may be set NOW** |
+| **2** | **HEAVY OVERNIGHT DELTA** | *"mine the game logs every day and also do the classification and baseline calculations… **from 1 a.m.**"* ⚠ *"**it's a DELTA setup, a complement day by day — and CANNOT HAVE GAPS. Has to cover ALL teams, players, all games.**"* 🔴 **DO NOT SET CRON — "it's not going to have data to run until the beginning of the season"** |
+| **3** | **LIGHT EARLY-AFTERNOON** | *"the daily mining, the daily factors, final scoring engine, final hit probability, final confidence, final score"* 🔴 **DO NOT SET CRON, same reason** |
+
+🔑🔑 **AND THE VERIFICATION HE SPECIFIES IS A PARITY TEST**: ***"get one day from the PAST that we
+already have a baseline calculation AND a final scoring calculation, and run it END TO END and see if
+it MATCHES the data that we already have — BECAUSE IT NEEDS TO."*** ⚠ **That is the strongest
+statement of the parity standard in the corpus: the new pipeline must REPRODUCE the stored history
+exactly, not merely produce plausible numbers.** ⚠ *He also requires a forward simulation on a
+scheduled game day, since live data will not exist until the opener.*
+
+---
+
 ## 0z-5. 🔴🔴🔴 **"ENRICHMENT IS THIN BY DESIGN, NOT BY FAILURE" — and the corpus's "ten rejected factors" framing is WRONG** *(T17 pass 1, §T17.2)*
 
 ⚠⚠ **THIS CORRECTS A FRAMING THIS SWEEP HAS PUBLISHED.** *`NBA_FINAL_SCORING_CALIBRATION.md`
