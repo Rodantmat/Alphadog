@@ -35724,3 +35724,148 @@ IMPORT, not VALUE.***
 been unreachable since T17, and left the coverage number exactly where it found it.** ***A metric that
 cannot tell the difference between importing a sentence and answering a question is a metric about
 vocabulary, and this session has now proved that twice — once by moving it and once by not.***
+
+---
+
+# §T20.90 — T20 PASS 85: 🔴🔴🔴 **THE ORPHAN AUDIT INFLATED ITS OWN TARGETS' APPARENT REACHABILITY BY `6×`, `13×`, `14×` AND `6×` — AND ONE ORPHAN'S UNREACHABILITY MADE `RULE 51`'s ADJUDICATION PUBLISH A FALSE NEGATIVE** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before this
+pass began — **T19 SEG 60/61** *(document, don't fix; read-only against the live system)* and **T20
+SEG 597** *(strict chronology; supersessions carry both dates and a pointer back)*. **SEG 1120's FORM
+RULE is in force throughout: every claim below carries source, date and quotation.**
+⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** *This is pass 85 of an open transcript.*
+
+## 1. 🔬 THE DISCRIMINATOR — *stated before counting, because the crude number is wrong*
+
+`T20-1` recorded five findings as unreachable: **`§0z-3` and `§0z-5` at "1 bare, 0 sigil"**, and
+**`§0v.4`, `§0.9c`, `§KILL-LATE-1` at "0, any grammar"**. **A bare `grep -c` across the twelve today
+does not reproduce that** — *re-derived live at `2026-09-22T20:50:34Z`, tree
+`77be05bba03eb61487e785aab9484c420334df32`*:
+
+| orphan | `T20-1`'s recorded inbound | **crude `grep -c` today** | **genuine inbound routes** |
+|---|---|---|---|
+| **`§0z-5`** | 1 bare, 0 sigil | **6 matching lines** | 🔴 **0** |
+| **`§0v.4`** | 0, any grammar | **13** | 🔴 **0** |
+| **`§0.9c`** | 0, any grammar | **14** | 🔴 **0** |
+| **`§KILL-LATE-1`** | 0, any grammar | **6** | 🔴 **0** |
+
+🔑🔑 **EVERY ONE OF THOSE `39` LINES WAS OPENED (rule 26 — a COUNT is not a READING), and they fall
+into exactly THREE classes, none of which routes a reader anywhere**:
+
+| class | example | why it is not a route |
+|---|---|---|
+| **① AUDIT MENTIONS** | `NBA_MASTER_SUMMARY.md:28236`, its `NBA_OPEN_ITEMS.md:14340` mirror, the owner-decision ledger row at `NBA_OPEN_ITEMS.md:95` | ***A document that says "X is an orphan" does not route a reader to X.*** It names the target only to indict it. |
+| **② SELF-REFERENCE INSIDE THE DEFINITION SITE** | `NBA_MULTIPLIERS.md:729`, `:731`, `:737` — all three sit in the blockquote appended **beneath the `### 0.9c` heading and above `### 0.9d`** | **A section citing itself is not an inbound reference.** *Three of `§0.9c`'s fourteen hits are `§0.9c` talking about `§0.9c`.* |
+| **③ PRIOR-ATTRIBUTION IN A LATER PASS** | `NBA_MASTER_SUMMARY.md:35692` — *"**`§0z-3` / `§0z-5`** (**PRIOR**, owner-sourced — QUOTED and POINTED AT, never paraphrased as new)"* | **A kill log records what a pass consumed.** It is provenance, not navigation. |
+
+⇒ 🔴🔴🔴 ***THE SWEEP'S OWN INSTRUMENTS ARE THESE ORPHANS' ONLY CITERS. The act of indicting an orphan
+makes it look cited — so an orphan census run twice, naively, would report its own targets as
+repaired.*** **`§T20.89` avoided this by instinct and said so** *(`:35309` — "**And I did NOT re-run
+its orphan analysis with a crude grep**")*; **this pass states the reason.**
+
+## 2. ✅ THE CONTROL — *`§T20.89`'s claimed resolution survives the discriminator*
+
+*Before repairing four, the one already claimed was re-tested under the rule above.* **`§0z-3` has
+three references in `NBA_RECIPE.md` — `:497`, `:511`, `:525`** — in a **different document**, inside
+**`STEP 11 — THE BUILD ORDER`**, in the passage a reader rebuilding the system actually reaches
+*(`:511` is a heading: "**AND THE GATE THAT SITS ON TOP OF ALL OF IT — THE OWNER'S WORDS, `§0z-3`**")*.
+✅ **None of the three is class ①, ② or ③. `§T20.89`'s resolution HOLDS — no fifth withdrawal.**
+🔑 **And that is what fixes the method for this pass: the repair is an inbound pointer written into
+the document that *should already* cite the finding.** ⚠ *This is not the "re-organising documents
+mid-sweep" that `§T20.1` ruled out — no section is moved, renumbered or struck; text is added.*
+
+## 3. ✅✅ THE FOUR REPAIRS — *each host chosen because it was already discussing the orphan's subject and already contradicting or omitting it*
+
+| orphan | **host** | why THAT host | what the pointer carries |
+|---|---|---|---|
+| **`§0z-5`** *"ENRICHMENT IS THIN BY DESIGN, NOT BY FAILURE — the 'ten rejected factors' framing is WRONG"* | 🔴🔴 **`NBA_FINAL_SCORING_CALIBRATION.md`**, at *"**Direct relevance to the ten rejected enrichment factors.**"* | ***`§0z-5` NAMES THIS DOCUMENT AS THE CARRIER OF THE WRONG FRAMING*** — its own words: *"`NBA_FINAL_SCORING_CALIBRATION.md` §0a-T15-SUPERSESSION-2 and §0a-T16 record a long sequence of factor rejections as a single coherent result."* **The retraction pointed forward; the document never pointed back, and still says "the ten" three thousand lines in.** | the retraction verbatim *("**a3, a4, d2 and k1 were NEVER ENRICHMENT CANDIDATES**")*, **plus the limit on it** — `A2` and `B4`, the two that paragraph actually names, are **NOT** among the four struck, so check #8's request stands for both |
+| **`§0v.4`** *"THE BACKTEST'S REAL SCOPE LIMIT"* | **`NBA_BASELINE_CALIBRATION.md`**, at the `nba_score.baseline_history` result table *(row: `stat types │ 29 │ 30 distinct prop values`)* | **The table a reader consults for "how many stat types?" answers `30` and points nowhere.** `§0v.4` sits **76 lines below it** saying the archived PrizePicks board holds a fraction of that. | **both numbers, and why neither is wrong**: `30` is what the LADDER computes; the archive is what a PrizePicks-scoped backtest can be GRADED against — plus `§0v.4`'s own words, *"Historically we can train and evaluate on 13; LIVE we'll score all of them"* |
+| **`§0.9c`** *"THE PRODUCT CHANGED UNDERNEATH THE DATA — and the change is STATE-DEPENDENT"* | **`NBA_MULTIPLIERS.md` §0.9b**, *"THE BASE MULTIPLIER TABLE — the one set of hard numbers the arc produced"* | 🔑 **§0.9b ALREADY CARRIES A "read this against" LIST — *"⚠ Read this against §0.2 and §0.2h, not on its own"* — and `§0.9c` was missing from it.** *The host had the exact slot and left it empty.* | the `2025-08-22` move toward **`Pick'em Arena`** and that it is ***STATE-DEPENDENT, not universal*** — against a table whose own authority line calls it ***"A PUBLISHED TABLE, not a measurement"***, i.e. published **for one product in one jurisdiction**, neither of which it names |
+| **`§KILL-LATE-1`** | 🔴🔴🔴 **`NBA_MASTER_SUMMARY.md` §T20.81 — `RULE 51`'s adjudication** | **see §4 — the host is the rule this orphan fathered** | a correction in place |
+
+⚠ **CLAUSE (iii) — MISS, and cleanly.** *Pre-registered: "at least one of the four cannot be given an
+honest inbound pointer."* **All four had a natural host, and in three of the four the host had already
+left a visible gap** *(a framing it was still propagating, a table that answered a different question,
+a "read this against" list with the entry missing)*. ⇒ ***An orphan is not usually a finding with
+nowhere to belong. It is a finding whose home forgot to mention it.***
+⚠ **CLAUSE (iv) — HIT.** `§0v.4` asserts **13** stat types; **`§T20.24` corrected it to `12` live**
+*(`SELECT DISTINCT market_key FROM nba_market.board_snapshots WHERE bookmaker='prizepicks'` → 20 keys;
+collapsing the 8 `_alternate` variants leaves 12)*. **The pointer carries the correction and both
+dates**, because a route to a superseded number is worse than no route.
+
+## 4. 🔴🔴🔴 THE FINDING — **`RULE 51` WAS ADJUDICATED AGAINST THREE NEIGHBOURS AND MISSED ITS OWN PARENT, BECAUSE THE PARENT IS AN ORPHAN**
+
+**`§T20.81` numbered `RULE 51` after opening rules `26`, `28` and `48`, and concluded**:
+
+> ***"…nothing in the corpus says the PUBLISHED FINDING itself must be probed. Four withdrawals in
+> one session are the evidence that the gap is real."***
+
+🔴🔴 **That negative is FALSE, and the counter-example is one of the four orphans this pass was
+repairing.** **`NBA_OPEN_ITEMS.md`, `§T19.5 — KILL LOG, T19 PASS 3`, `§KILL-LATE-1`**:
+
+> ***"The remedy is one clause and it is cheap: **probe the sentence you are about to write, not the
+> evidence that made you want to write it.**"***
+
+**And it was not a single stray line.** `§T19.8` *(T19 pass 5)* calls it ***"the rule already written
+twice in this session"*** and gives it ***"a third instance and a typographic form."***
+▶ **VERIFIED AGAINST THE BASELINE TREE, NOT THE WORKING ONE** *(rule 28)*: `grep -rn "probe the
+sentence" /tmp/t20base/nba/` returns **exactly two files — `NBA_OPEN_ITEMS.md:12733` and
+`NBA_MASTER_SUMMARY.md:25918`** — ***so the clause was on file, in the baseline, before T20 opened,
+and rule 51's adjudication reached neither.***
+
+### ✅✅ `RULE 51` IS **NOT** WITHDRAWN — *and the distinction is the whole point*
+
+| | the unnumbered clause | **`RULE 51`** |
+|---|---|---|
+| **what to probe** | the sentence you are about to write | the published finding | 
+| **WHICH TREE** | 🔴 **names none** | ✅ **the BASELINE tree** — the distinction rule 28 exists for |
+| **WHEN** | "about to write" | ✅ **the LAST step before the entry ships** |
+| **STATUS** | 🔴 **a line in a kill log — binds nothing** | ✅ **numbered, indexed, and it caught a fourth withdrawal on its first run** |
+
+⇒ **What is corrected is the adjudication's claim of EXHAUSTIVENESS, not the rule.** *Recorded in
+place at `§T20.81` under rule 40's second half — **dated, not struck**.*
+
+### 🔴🔴🔴 AND THIS IS THE FIRST TIME THE SWEEP HAS BEEN ABLE TO **PRICE** AN ORPHAN
+
+**`§T20.1` argued that orphanhood is a defect. It could not show a cost.** *Here is one, measured*:
+**`§KILL-LATE-1` had `0` inbound references under all three citation grammars — so nothing routed
+`RULE 51`'s adjudication to the nearest relative of the rule it was numbering.** *The sweep therefore
+**re-derived its own remedy** across two transcripts and **published an over-broad negative** while
+doing it.* ⇒ ***An orphan does not merely sit unread. It lets the corpus contradict itself in the act
+of improving itself.***
+
+## 5. ⚠ CLAUSE (i) — **HIT, AND IT IS THE FIRST HOLD THIS SWEEP PREDICTED AS A HOLD**
+
+**Pre-registered: *"`uncovered12` HOLDS at `470`"*** — predicted, not hedged, on `§T20.89`'s
+refinement that *writing which IMPORTS language from outside the twelve moves the number; recombining
+what is already inside does not.* ▶ **MEASURED `2026-09-22T21:0*Z`, after all four repairs shipped**:
+
+| | high band | tail | **`uncovered12`** | `uncovered30` |
+|---|---|---|---|---|
+| **WORKING** | 648 | 1 | ✅ **470** | 469 |
+| **BASELINE t20** | 636 | 2 | 484 | 481 |
+
+✅✅ ***HELD, to the unit.*** **Five sizeable passages were added to four of the twelve and the
+instrument did not move**, because every sentence of them cites material already inside. *`§T20.89`
+proved the refinement by moving the number; this pass proves it by predicting that it would not.*
+🔑 **Both halves are now demonstrated, and the second is the stronger one** — *a metric that holds
+under a correct prediction of a hold is behaving like a measurement, not like noise.*
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.1` / `§T20.23` / `§T20.24`** *(**PRIOR** — this pass's
+motive, its orphan list and `§0v.4`'s `13 → 12` correction; quoted and pointed at, never re-derived as
+new)* · **`§T20.89`** *(**PRIOR** — the repair METHOD and the refinement clause (i) tests)* ·
+**`§KILL-LATE-1` and `§T19.8`** *(**PRIOR** — §4's evidence; found in the BASELINE tree and quoted, not
+discovered here)* · **`rules 26 / 28 / 48`** *(**PRIOR** — the three `§T20.81` adjudicated against)*.
+▶ **RULE 51 run on THIS finding as the last step**: the distinctive claims — *an audit inflating its
+own targets' apparent citation count*, and *an orphan causing a false adjudication* — were probed
+against the baseline tree in five phrasings and again in the corpus's own vocabulary; **`0` files
+carry either.** *(The two `"probe the sentence"` hits are the finding's evidence, cited above as
+PRIORS.)* ⚠ **And rule 15's wrap trap fired again, harmlessly**: `"crude grep"` returns `0` in
+`NBA_MASTER_SUMMARY.md` because the corpus hard-wraps between the two words — *the same defect
+`§T20.71` recorded, now with a third instance.*
+
+📌 ***The lesson:*** **the four orphans were repaired in one pass, and the repair of the least
+important-looking one — a methodological kill in a T19 log — is what exposed a false statement inside
+the sweep's own newest rule.** ***The audit that names an orphan is the reason the orphan looks
+cited; the orphan that nothing cites is the reason the corpus repeats itself. Both halves of `T20-1`
+are now demonstrated rather than asserted.***
