@@ -23765,7 +23765,7 @@ silently replace and to whether anything is currently setting it.** `[LIVE-AUDIT
 | **Carrying a hardcoded SEASON-STRING default** (`"2025-26"`, `"2024-25"`, `"2025_26"`, or a season date bound) | **47** |
 | Of those, set by at least one workflow | **45** |
 | **Never set by any workflow — the frozen default is what runs** | **2** — `RUNG_FROM` (`2024-10`) and `RUNG_TO` (`2026-04`), `nba/build_rung_market.py` |
-| NBA Python files importing `nba_season` / `active_stats_season` | **20 of 135** |
+| NBA Python files importing `nba_season` / `active_stats_season` | ~~**20 of 135**~~ → **24 of 136** *(§T12.7d, 07:15Z; propagated §T20.14)* |
 
 🔴 **And "set by a workflow" does not mean computed.** The workflows assign **literals**, or a manual
 input with a **literal fallback**:
