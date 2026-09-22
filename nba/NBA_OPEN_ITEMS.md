@@ -12410,6 +12410,22 @@ simplicity the owner explicitly chose *("one run, everything present, no second 
 **The sweep does not decide this and changes nothing.** *(Full evidence and the two bulletin/PDF
 traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 
+## T18-12 · **NEW · MEDIUM** · the gap-audit fallback was never re-verified on the season that exposed the gap
+**`check_delta_gaps.py` originally had no fallback**: when `nba_schedule_current.json` held no
+completed games for the requested season, it printed *"nothing to audit — this is expected in the
+off-season. not a failure."* and exited 0. **A 2025-26 run did exactly that at 20:04:19.** 🔑 **The
+author diagnosed and patched it within five minutes** — a team-game-log fallback, on the correct
+reasoning that *"the TEAM game log is a SEPARATE pull from the player game log, so using it as the
+expected set is a genuine cross-check, not a circular one."* **The fix is present in live source**
+*(lines 77–80, verified 2026-09-22)*.
+🔴 **He then re-ran it on 2024-25, where it worked — and never re-ran it on 2025-26.** ⇒ **The one
+season that exposed the blind spot is the one season the fix has not been demonstrated on**, and it
+holds **19,611,626** scored legs. **Severity: MEDIUM** — one dispatch settles it.
+🔑 **The general shape, worth keeping**: ***a fix written in response to a failing run is verified by
+re-running the case that FAILED, not by running a different case that was already passing.***
+*(Full evidence and the sweep's own retraction on this point: `NBA_WORKERS.md`
+§0.002-T18-CORRECTION.)*
+
 ## T18-11 · **NEW · HIGH** · the cutoff was decided on policy; the measurement built to check it never returned
 **`nba/measure_report_cutoff.py` exists and states its own standard**: *"policy says the last market
 to file is pacific, at 1 pm pt. **but policy is not evidence — measure it**… if not, 2:30 stays — for
