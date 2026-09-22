@@ -29111,7 +29111,7 @@ and it is not present.*
 
 | workflow | `on:` triggers | |
 |---|---|---|
-| ✅ `nba-p1-weekly-static.yml` | `workflow_dispatch:` + **`schedule: - cron: '0 19 * * 1'`** | Mondays 19:00 UTC = 12:00 PT |
+| ✅ `nba-p1-weekly-static.yml` | `workflow_dispatch:` + **`schedule: - cron: '0 19 * * 1'`** | Mondays 19:00 UTC = **12:00 PDT / 11:00 PST** *(qualified 2026-09-22, §T20.49 / T20-11 — 11:00 PT for 133 of the season's first 145 days)* |
 | 🔴 `nba-p2-overnight-heavy.yml` | **`workflow_dispatch:` ONLY** | no `schedule:` block |
 | 🔴🔴 `nba-p3-afternoon-light.yml` | **`workflow_dispatch:` ONLY** | no `schedule:` block — **and P3 is the EVERY-GAME-DAY pipeline** |
 | ✅ `nba-referees.yml` | `workflow_dispatch:` + **`cron: '30 15 * * *'`** | the rule-22 control: the probe finds crons where they exist |
