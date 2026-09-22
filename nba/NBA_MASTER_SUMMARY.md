@@ -32323,3 +32323,124 @@ a tight standard deviation. It was wrong, and nothing about the number looked wr
 comparand — the same book's own standard line, one query away — said `+0.12`.**
 ***A measurement is only as good as what it is measured against, and the owner would have moved his
 anchor on the strength of the first one.***
+
+---
+
+# §T20.58 — T20 PASS 53 · **THE PER-PROP REACH TABLE** — FINISHING T18-1
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: four `SELECT`s.** **Nothing edited, triggered or dispatched;
+`NBA_COMPASS.md` not written to.** ⚠⚠ **A DIAGNOSIS IS NOT A FIX — the table below is a MEASUREMENT
+handed to the owner; the ladder's shape stays an OWNER DECISION.**
+
+## 0. WHY THIS PASS WAS OWED
+
+**§T20.57 diagnosed T18-1 on `points` alone and said so.** *The owner's sentence is about "the
+LADDER", and §T20.52's own hard-won rule is **"report per prop, never pooled — a pooled figure hides
+a prop-specific defect."*** **Pass 52 had the shape and one row.**
+
+⚠ **SCOPE, REPEATED BECAUSE A PER-PROP TABLE INVITES THE MISREADING**: **HISTORICAL** evidence from
+**`2025-12-03`** and **`2026-01-10`**, two prior seasons — **not a statement about the 2026-27
+board**. **PrizePicks DFS-only markets are absent from `board_snapshots` by construction** *(PP
+reaches it only through the Odds API feed)*, so **no row below is a claim about PrizePicks.**
+
+## 1. 🔴🔴 THE TABLE — AND IT SEPARATES PERFECTLY, ON BOTH DATES
+
+**Eight `_alternate` markets joined player-by-player through
+`nba_ref.player_name_map.display_name`. `81,035` matched legs on 2025-12-03, `41,565` on 2026-01-10.**
+
+| prop | legs *(12-03 / 01-10)* | below our floor | **above our ceiling** | **% OUTSIDE** *(12-03 / 01-10)* | **max above our ceiling** |
+|---|---|---|---|---|---|
+| 🔴 **pra** | 11,961 / 5,240 | 246 / 122 | **1,432 / 780** | 🔴 **14.0 / 17.2** | **+15 / +18** |
+| 🔴 **points** | 18,158 / 11,386 | 248 / 193 | **2,050 / 1,311** | 🔴 **12.7 / 13.2** | **+21 / +20** |
+| 🔴 **pts_reb** | 9,707 / 4,170 | 168 / 104 | 444 / 206 | 🔴 **6.3 / 7.4** | +11 / +12 |
+| 🔴 **pts_ast** | 7,833 / 2,873 | 144 / 68 | 291 / 131 | 🔴 **5.6 / 6.9** | +9 / +9 |
+| ✅ **reb_ast** | 5,867 / 2,281 | **0 / 0** | 8 / 2 | ✅ **0.1 / 0.1** | +3 / +1 |
+| ✅ **rebounds** | 11,993 / 6,606 | **0 / 0** | 7 / 7 | ✅ **0.1 / 0.1** | +2 / +3 |
+| ✅ **assists** | 8,137 / 4,284 | **0 / 0** | 2 / 0 | ✅ **0.0 / 0.0** | +1 / **−1** |
+| ✅ **threes_made** | 7,379 / 4,725 | **0 / 0** | **0 / 0** | ✅ **0.0 / 0.0** | **−3 / −3** |
+
+⇒ ✅✅ **CLAUSE (iii) SCORES DECISIVELY: FOUR props are at `0.0–0.1%` with ZERO below-floor misses on
+both dates. The shortfall is PROP-SPECIFIC, not global.** 🔑 **And `ladder_steps` is ALREADY a
+per-row column — today `10` on every row — so the structure for a per-prop ladder exists and only the
+values are missing.**
+⇒ 🔴 **CLAUSE (ii) SCORES: three props besides `points` exceed 5%, and `pra` exceeds `points`.**
+✅ **The rank order and the magnitudes reproduce five weeks apart.**
+
+## 2. 🔑🔑 THE MECHANISM — A FIXED ABSOLUTE WIDTH AGAINST PROPS OF WILDLY DIFFERENT SCALE
+
+**Our span is `20.0` for every prop *(`ladder_offset ∈ [−10,+10]`, step 1.0)*. The props are not
+the same size:**
+
+| prop | **avg anchor** | **our span ÷ anchor** | % outside |
+|---|---|---|---|
+| **pra** | **19.0** | 🔴 **1.05** | 14.0 / 17.2 |
+| **pts_reb** | **16.4** | 🔴 **1.22** | 6.3 / 7.4 |
+| **pts_ast** | **14.9** | 🔴 **1.34** | 5.6 / 6.9 |
+| **points** | **12.4** | 🔴 **1.62** | 12.7 / 13.2 |
+| **reb_ast** | 7.5 | ✅ 2.68 | 0.1 |
+| **rebounds** | 4.7 | ✅ 4.28 | 0.1 |
+| **assists** | 2.9 | ✅ 6.94 | 0.0 |
+| **threes_made** | **1.4** | ✅ **14.66** | 0.0 |
+
+⇒ 🔴🔴 ***Every prop whose fixed ±10 span is LESS than about twice its anchor is short. Every prop
+whose span exceeds that is fine. The line falls cleanly between `1.62` and `2.68`.***
+**A ±10 ladder is fourteen times the size of a `threes_made` anchor and barely the size of a `pra`
+anchor. That is the whole defect, in one ratio.**
+
+⚠ **AND WHERE THE RATIO DOES *NOT* EXPLAIN IT, SAID PLAINLY RATHER THAN FORCED**: *`points` has a
+HIGHER `% outside` than `pts_reb` and `pts_ast` despite a MORE generous ratio.* **Because `points` is
+the most aggressively laddered market on the board — `124,708` legs in the sample week against
+`50,434` for `points_assists` (§T20.57's census) — so the books post more extreme alternate lines
+there.** ⇒ ***The RATIO sets whether a prop is short; HOW HARD THE BOOK LADDERS IT sets by how much.
+Two variables, and only one of them is ours.***
+
+## 3. ▶ THE MEASUREMENT THE OWNER ASKED FOR — REQUIRED UPWARD REACH, OBSERVED
+
+**`ladder_steps` upward that would have covered the observed board** *(= our current `10` plus the
+max overshoot)*. ⚠⚠ **THIS IS WHAT THE BOARD DID, NOT A RECOMMENDATION. The ladder's shape is an
+OWNER DECISION and is not taken here.**
+
+| prop | today | **observed requirement** *(12-03 / 01-10)* | |
+|---|---|---|---|
+| **points** | 10 | **31 / 30** | 🔴 more than TRIPLE |
+| **pra** | 10 | **25 / 28** | 🔴 |
+| **pts_reb** | 10 | **21 / 22** | 🔴 |
+| **pts_ast** | 10 | **19 / 19** | 🔴 |
+| **rebounds** | 10 | 12 / 13 | ⚠ marginal |
+| **reb_ast** | 10 | 13 / 11 | ⚠ marginal |
+| **assists** | 10 | 11 / 9 | ✅ adequate |
+| **threes_made** | 10 | **7 / 7** | ✅ **we over-reach by 3** |
+
+📌 ***And note the last row: the fix is not uniformly "more". `threes_made` carries three rungs the
+market never offers, on both dates — a small over-build that costs compute and certainty credit for
+nothing.***
+
+## 4. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTY-FOURTH consecutive identical run.** Measured 2026-09-22T17:47:50Z |
+| **(ii)** ≥1 prop besides `points` exceeds 5% outside | 🔴 **TRUE — THREE do**, and **`pra` is worse than `points`** on both dates |
+| **(iii)** ≥1 prop is essentially at zero | ✅✅ **TRUE — FOUR are, with ZERO below-floor misses on both dates, and one OVER-reaches by 3.** **The defect is prop-specific and the fix is a per-prop table** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTY-FOURTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — and T18-1 is now fully diagnosed, per prop, on two dates, with its mechanism named
+and its required reach measured.** **T18-1 and the brief's rank `A` both updated. NOT FIXED: the
+ladder's shape is a product decision and remains an OWNER DECISION.**
+✅✅ **THE ANSWER IN ONE LINE: the anchor is right; the ladder is a FIXED ABSOLUTE WIDTH applied to
+props that differ in scale by a factor of thirteen, so it is far too short for the four biggest
+markets and three rungs too long for the smallest.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **the `points` row and the rung-count census are §T20.57's**
+*(carried, not re-scored)* · **O5 / O5b remain about the ladder's INTERNAL consistency, not its
+reach** · **`BT_LADDER_STEPS = 10` is COMPASS 63.**
+
+📌 ***The lesson:*** **the owner asked whether the anchor was wrong or the ladder too short. The
+answer is that the ladder is the wrong SHAPE — one absolute width for `threes_made` at 1.4 and `pra`
+at 19.0 — and no amount of moving the anchor or adding rungs symmetrically fixes that.**
+***Two passes ago this was a sentence with no diagnosis. It is now a table with eight rows and a
+ratio that predicts every one of them.***
