@@ -88,6 +88,28 @@ compressing the distribution of players."*
 
 ---
 
+## 0y-1. ✅ **THE CALIBRATION CHECKER — `nba/check_prop_calibration.py`** *(T15 pass 2, §T15.3b — migration item: 3 of the thirty, **0 of the twelve** before this)*
+
+**`nba/check_prop_calibration.py`, maintenance task `calibration`.** **Any prop in
+`nba_score.baseline_history` is graded against the box scores BY CONFIDENCE BAND, from stored data.**
+
+🔑🔑 **THE HOLE IT CLOSES** — *the transcript's own words:* ***"until now, a prop's verdict existed
+ONLY in an ephemeral run output."*** *The oreb verdict could not be re-read because the run had
+scrolled out of the workflow list — and the fix was not to retrieve the log but to make the log
+unnecessary:* **"I don't need its log — I can check calibration directly from the data, and that's a
+more useful tool anyway since it works for ANY prop in the history table."**
+
+✅ **VALIDATED AGAINST A KNOWN-CERTIFIED PROP BEFORE IT WAS TRUSTED** — `points`, **459,721 graded
+rows: worst band 0.8 pp on more, 0.9 pp on less**, every band within a point. 🔑 ***"That confirms
+the checker REPRODUCES THE CERTIFICATION STANDARD INDEPENDENTLY, from stored data"*** — *i.e. the
+tool was calibrated against the harness it replaces, rather than asserted to agree with it.*
+
+⚠ **Paired with the RELIABILITY SCORER** *(`NBA_FINAL_SCORING_CALIBRATION.md` §0a-T15 §7)*: **the
+checker answers "does THIS prop calibrate"; the scorer puts EVERY prop on one ruler so penalties are
+derived.** *Together they are what moved ten props from "no verdict at all" to measured.*
+
+---
+
 ## 0y-2. 🔴🔴 **THE THIRD SELECTION-FILTER FAILURE — and the SANITY GATE that now catches the family**
 
 ⚠⚠ **Three bugs in one session, each producing CONFIDENT-LOOKING BUT INVALID results, and each caught
