@@ -161,6 +161,102 @@ and remains NOT RECORDED as measured.**
    a scratch.** ⚠ **Whether those branches are unreachable or simply never triggered is NOT
    RECORDED**, and **a guard that has never fired is not a guard that is known to work.**
 
+## 0a.4 🔑🔑 **THE LEAKAGE TEST, THE DEFECT RULE, AND THE SCENARIO SIZING — T14's answers to the questions §0a.3 left open**
+*Recorded 2026-09-22 (T14 pass 1, §T14.2). **Transcript `2026-09-13-20-53-23`, the prose stratum.**
+⚠ **Much of T14's substance was written by T14 itself into `NBA_COMPASS.md`,
+`NBA_PROJECT_LOG.md` and the new `NBA_DAILY_PARITY_AND_BACKFILL.md` — the EIGHTEEN. What follows is
+the part that belongs in the TWELVE and was not here.** Probes pinned 2026-09-22T08:53:42Z.*
+
+### 🔑🔑 THE LEAKAGE TEST, STATED AS A RULE — **`knowable at the cutoff` is 0 of the TWELVE AND 0 of the THIRTY**
+**The first framing was *"observed-and-archived versus live-only"* — and the owner's push produced a
+correction that replaces it:**
+> *"**On referees I was WRONG.** Assignments are **published the MORNING of the game**, so they are
+> known at our window. The crew that worked a game is therefore **a FAITHFUL RECONSTRUCTION of what
+> would have been known** — using it for a historical day is **SIMULATION, not leakage**.
+> ***The test isn't "was it ARCHIVED" but "WAS IT KNOWABLE AT THE CUTOFF."*** **Referees pass that
+> test. Starters don't**: confirmed lineups drop around **tip−30, AFTER our window**, so for A5 we
+> must derive a projection rather than use who actually started."*
+
+🔑 ***This is strictly better than §0a.3's version of the same trap***, **which reasoned from where
+the data came from.** ⚠⚠ **The archived/live distinction gets the referee case WRONG in both
+directions: officials are never archived and are perfectly admissible; starters are archived and are
+not.**
+
+### 🔑🔑 THE DEFECT RULE — **an audit standard, not a preference**
+> ***"Any factor whose source PUBLISHES BEFORE the window but is still computed in phase 2 is A BUG,
+> not a design choice. That's the audit standard for the enrichment build."***
+
+🔑 **It makes the phase assignment CHECKABLE**: *every factor has a publish time, and a factor sitting
+in the late phase with an early publish time is a defect by definition.*
+📌 **And it forced a concrete re-tag**: *"the registry still tags **referees, rest, schedule, coach
+and matchup** as ENRICHMENT — per the stage rule they compute in the BASELINE phase, so the registry
+needs re-tagging"* — **done later in the same session.**
+
+### ✅ THE PER-FACTOR TIMING TABLE — **phase 2 is reduced to exactly FOUR things**
+| phase | what it holds |
+|---|---|
+| **PHASE 1** *(early, unbounded time)* | **referee crew** *(morning)* · rest / travel / schedule · standings · coach profile · defender quality · weekly tables · 🔑 **the ENTIRE day-before injury picture** — statuses, opponent availability, and **teammate redistribution from the PREVIOUS day's report** |
+| **PHASE 2** *(window → first tip)* | **exactly four**: ① pull the board · ② apply the day-of report and projected-lineup delta · ③ read the market · ④ **rescore ONLY the legs those deltas touch** |
+
+⚠ **The cutoff times here are T13's and are SUPERSEDED — see §0a.3's banner** *(COMPASS fact 107:
+overnight + 1:15 PM PT, no third phase)*. ***The SHAPE transfers; the clock does not.***
+
+### 🔑🔑 THE ARRIVAL-ORDER TABLE — **what actually gates the start time**, and it is in 0 of the twelve
+*Latest first, Pacific:*
+| input | latest arrival |
+|---|---|
+| 🔑 **the league's GAME-DAY 1 PM ET injury report** | **~10:00 AM PT** — ***"the last discrete input before the window"***, published before the 5:30 PM ET final |
+| morning board *(PrizePicks / Underdog)* | ~8–10 AM, from the 2-hour cron |
+| projected lineups | ~8–10 AM, updated through the day — *"a consequence of the injury picture, not independent"* |
+| morning market lines | overnight, continuous |
+| **referee assignments** | **~6–7 AM** *(9–10 AM ET)* — *"earlier than you might expect"* |
+| standings / leverage | ~11 PM the previous night |
+| prior-night box scores, matchups, game logs | **~1–2 AM** *(with occasional stat corrections later)* |
+| day-before injury report | already in hand |
+
+🔑 ***So the heavy compute can begin as early as ~3 AM PT, and the only thing that must wait is the
+SCENARIO ENUMERATION, which is the light part.*** ⚠ **And the 10 AM report is what makes it cheap**:
+*"many 'questionable' names resolve there, so the scenario count at 10:30 is SMALLER than it would be
+at 3 AM."*
+
+### 🔑🔑 THE SCENARIO PRECOMPUTE, SIZED FROM THE SYSTEM'S OWN DATA — **answering the owner's "is that feasible?"**
+**The unit is THE GAME, not the player** — *"a scenario is the **joint availability set of BOTH
+teams**, so when Wembanyama is out it recomputes **his whole roster** (minutes, roles, starters)
+**and the opponent's** (blocks-against, defender quality, scheme)."* ✅ ***Which is exactly the
+combinatorial objection §T14.1e records the owner raising, answered by choosing the right unit.***
+
+| quantity | measured |
+|---|---|
+| uncertain players per team on the day-before report | **typically 0–3** |
+| scenarios per team | **≤ 8** |
+| **joint scenarios per GAME** | **≤ 64 worst case, usually 8–16** |
+| board legs/day, PrizePicks with the ladder | **avg 4,503 · max 8,700 · 107 players** |
+| board legs/day across five apps | **~10–15k normal, ~20k a big Saturday** — ⚠ **but only ~110–130 DISTINCT PLAYERS** |
+| **full matrix per day** | singles at ±10 **22,400 rows** · + combos and fantasy **~36,000** · **× both sides ≈ 72,000 leg-probabilities** |
+| scenario rows | **~30–60k per game ≈ 0.5–1M per day ≈ 50–100 MB/day**, **kept only until selection, then all but the chosen one deleted → ~7 MB/day, ~1.2 GB/season** |
+
+🔑🔑 **AND WHY IT IS CHEAP, which is the load-bearing argument**: ***"the expensive part of the
+baseline is FITTING — tier cutpoints, empirical cells, Platt — from three seasons of history. That
+happens ONCE, overnight. SCORING a scenario is rescaling minutes × rate through cells that already
+exist, then a CDF per rung: vectorized, and linear in rows. A million rows is seconds to a minute of
+pandas, not hours."*** ⚠ **So the 3-hour baseline run is almost entirely the fit, and the per-day
+work is not.**
+📌 **Timing as estimated**: **overnight fit 3–4 h sequential, ~1–1.5 h on six parallel runners ·
+scenario precompute 10–30 min at ~1M rows · selection 1–3 min.** ⚠ **Stated as an estimate with its
+own caveat**: *"the honest range is wider than 15–30 minutes **until we measure it**, because the
+scenario count per game is the unknown."*
+✅ **And the goblin/demon LESS expansion does not threaten it**: *"it doesn't touch stages 1–2 at all,
+because **the matrix already holds BOTH SIDES of every rung** — it only grows the board join, and
+that's a lookup. Even a 40k-leg board is seconds."*
+
+### 🔑 THE ONE CASE THE SCENARIOS DO NOT COVER
+> *"**a SURPRISE** — a player ruled out at the window **who wasn't on the day-before report at all**,
+> a true late scratch. That's the **delta-rule fallback**: recompute only the affected team… From
+> our absence data those are **a small minority of days**."*
+⚠ **The measurement that would pin both numbers — *"how many uncertain players per team on a typical
+report, and how often the late report introduces a name that wasn't there"* — was proposed and is
+NOT RECORDED as run.**
+
 ## 0a.3 🔑🔑 **THE TWO-PHASE CLOCK — where it was designed, the TWO LEAKAGE TRAPS, and the PREMISE UNDER IT THAT WAS LATER FOUND WRONG**
 *Recorded 2026-09-22 (T13 pass 3, §T13.4c). **Transcript `2026-09-13-01-03-48`, the opening prose
 stratum — where the architecture decision was taken.** ⚠ **The phase cutoffs and the freshness gates
