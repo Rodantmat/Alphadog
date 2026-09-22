@@ -1,5 +1,63 @@
 # NBA MASTER SUMMARY — every transcript, message by message
 
+> # 🟢 **START HERE — FOUR QUESTIONS, ONE SCREEN** *(added 2026-09-22, T20 pass 102, §T20.107)*
+>
+> ⚠⚠ **THIS DOCUMENT IS `2,789,201` CHARACTERS — about `697,000` tokens. DO NOT LOAD IT WHOLE.**
+> *It is `53.4%` of the twelve and larger than the entire sweep run log (`§T20.106`). It is a
+> chronological RECORD, read by section and by search — **this block is the way in.** Every line below
+> is a pointer or a quotation; **nothing is asserted here that is not established elsewhere in the
+> twelve.***
+>
+> ## ① WHAT THIS SYSTEM IS
+> **AlphaDog NBA predicts NBA player-prop hit probabilities for DFS apps — PrizePicks, Underdog,
+> Sleeper, Fliff and Betr.** Cloudflare Workers and GitHub Actions feed a DigitalOcean Postgres
+> through Hyperdrive. **Three pipelines do the work**: **`P1`** weekly static reference data ·
+> **`P2`** the overnight heavy run that builds the baseline ladder and grades last night ·
+> **`P3`** the day-of run that scores the board after the **`1:15 PM PT`** injury-report cutoff.
+> 🔴 **THE REGULAR SEASON OPENS `2026-10-20`** *(preseason `2026-10-03`; DST ends `2026-11-01`)*.
+> ▶ **The three pipelines step by step: `NBA_RECIPE.md` `STEP 8` / `STEP 9` / `STEP 10`. A game day
+> hour by hour: `STEP 12`. What must be built before what: `STEP 11`.**
+>
+> ## ② WHAT STATE IT IS IN — *five measured facts, each with its source*
+> | | |
+> |---|---|
+> | 🔴🔴🔴 **Exactly ONE NBA workflow fires on a game day** — `nba-referees.yml`. `P2` and `P3` carry **no `cron`** and every other pipeline job is `workflow_dispatch` only. | `§T20.93`; the **PREREQUISITE** block at the top of `NBA_OPEN_ITEMS.md` |
+> | 🔴🔴 **The system has never run against a live slate.** Every timestamped source is a five-day September backfill, so it holds **zero observed ingestion latency** for anything. | `§T20.95` |
+> | 🔴🔴 **Certification is a liveness test wearing a correctness test's message.** `5` of the `12` checks have **no date predicate at all**, and `> 0` passes on one row of a median `60,398`. | `§T20.104`; open item **`T20-18`** |
+> | ✅ **The twelve now describe every script and function the pipelines execute — `42` of `42`** *(it was `39` at this sweep's baseline)*. | `§T20.99` |
+> | ✅ **Pointer integrity across the twelve: `1` broken reference in `5,164`, and that one is repaired.** | `§T20.91` |
+>
+> ## ③ WHAT BREAKS FIRST
+> ▶ **Go to the top of `NBA_OPEN_ITEMS.md`. It carries the OPENING-DAY BRIEF — `16,230` characters,
+> readable in minutes — with SIXTEEN season-critical items in a stated order:**
+> > **`A` · `13` · `17` · `B` · `C` · `5` · `7` · `12` · `14` · `D` · `9` · `4` · `6` · `3` · `10` ·
+> > `2` · `E` · `11` · `1` · `15`**
+> > *(numbers are `T20-n`; letters are the five older items `§T20.56` found were missing from the brief.)*
+> **The ranking rule, re-derivable**: ***SILENT before LOUD, then STOPS THE SLATE before DEGRADES IT,
+> then UNCAUGHT by a certifier before CAUGHT.***
+> 🔴 **The two numbered items at the head**: **`T20-13`** — *"P2's certifier will go red every night
+> for the first twelve nights of the season — **correctly**"* — and **`T20-17`** — *a dropped
+> injury-archive shard silently truncates `nba_score.availability_delta`, **which `score_board_legs.py`
+> reads***.
+> ⚠ **Nothing on that list is fixed. The owner's standing instruction is *document, don't fix*.**
+>
+> ## ④ WHERE EVERYTHING ELSE IS
+> | if you want… | open |
+> |---|---|
+> | **what is broken, ranked, with evidence** | **`NBA_OPEN_ITEMS.md`** *(read the top block first)* |
+> | how it was built, in order, and what a game day looks like | **`NBA_RECIPE.md`** *(`STEP 0`–`STEP 12`)* |
+> | the pipelines, the certifiers, the swallowed-failure census | **`NBA_SYSTEM_DESIGN.md`** |
+> | every script, and the `BT_*` **mode dispatch table** | **`NBA_WORKERS.md`** |
+> | schemas, tables, sizes | **`NBA_DATABASE.md`** · infra, deploy and sources: **`NBA_SYSTEM_ARCHITECTURE.md`** |
+> | a term you do not recognise | **`NBA_GLOSSARY.md`** *(term → transcript)* |
+> | the baseline ladder · the scoring engine | **`NBA_BASELINE_CALIBRATION.md`** · **`NBA_FINAL_SCORING_CALIBRATION.md`** |
+> | payouts and multipliers · goblin/demon tiers | **`NBA_MULTIPLIERS.md`** · **`NBA_GOBLIN_DEMON.md`** |
+> | **how this documentation was produced, and what is still owed** | **`NBA_SWEEP_RUN_LOG.md`** — *read its own `🟢 START HERE` block only* |
+> | the chronological record itself | **this document, by section and by search** |
+>
+> ⚠ *`NBA_COMPASS.md` is the owner's own file: **read it, never write to it.*** ⚠ *`PP_PAYOUT_FINDINGS.md`
+> and the `pp_*` database objects belong to a concurrent session and are out of this sweep's scope.*
+
 **Purpose.** A complete, per-transcript record of everything done across the whole NBA build. Nothing
 summarised away: every decision, build, fix, dead end and finding, in the order it happened, with the
 transcript it came from so you can go straight to the source.
