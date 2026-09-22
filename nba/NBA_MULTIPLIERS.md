@@ -573,6 +573,60 @@ the thirty.** **It licenses §4b's observational study and FORBIDS any claim of 
 **Read it before §5's EV arithmetic**, which is stated against *observed* factors precisely because
 no derived ones exist.
 
+### 0.9i 🔴 **THE SLIP-COMPOSITION RULES — RE-SCOPED, and the owner RANKS them below the tiering**
+**THE OWNER'S OWN TURN, verbatim** *(T13; "chains" is the transcription as recorded)*:
+> *"Yeah. **Those are rules, and the rules are very important as well.** Um, **same player, same
+> game**. All of those are very important. And **DNP, TIE** — because sometimes **the line is not
+> point five. It's a FLAT LINE, like twenty-one or ten, and that can be a TIE. And that chains
+> multipliers.** … **all of those are EASIER TO LEARN. But what we need to get as SHARP AS POSSIBLE
+> is the tiering with the goblins and demons.**"*
+
+🔑🔑 ***This is a PRIORITY RULING, and it explains the shape of the whole transcript***: the
+composition rules are *"easier to learn"* and were deliberately deferred; **the tiering is where the
+effort was spent.** ⚠ **It also means the composition rules were never researched to the standard
+the tier work was held to** — *so their absence from this corpus is a CHOICE, not an oversight, and
+they remain owed.*
+
+**⚠ 🔴 RULE 26 KILL — the settlement rule was already on file, and stated MORE COMPLETELY:**
+`NBA_COMPASS.md` *(one of the EIGHTEEN)* carries: *"**Leg truth and operator settlement are
+separate** — **PrizePicks REVERTS the lineup on a DNP and TIERS DOWN on a tie, Underdog VOIDS the
+leg**; the slip engine applies the operator rule."* ***So the "third position" this pass set out to
+record was already written, with the tie rule attached, which T13's own prose does not supply.***
+**The candidate is killed as a discovery** *(the eighteenth since T11)* **and survives only as
+corroboration** *(§0.9b.2: three independent sources agree).*
+
+✅ **AND WHAT THE KILL EXPOSES, which is the real finding**: ***`tiers down` is 0 of the TWELVE***
+*(pinned 2026-09-22T07:45:06Z)*. **PrizePicks' tie rule lives only in the eighteen.** **A flat line
+— 21 points, 10 rebounds — can land exactly on the number**, and the operator's response is to
+**tier the slip down**, which **changes the payout without any leg "losing."**
+⚠⚠ **`grade_board_outcomes.py` correctly stores `push` and refuses to resolve it** *(§T12.6d: baking
+either operator's rule into `leg_result` would spoil the data for the other)* — **so the tier-down
+rule has NO implementation anywhere, and the slip engine is where it must live.** **NOT RECORDED:
+whether it does.**
+
+### 0.9j 🔑🔑 **WHAT WAS ACTUALLY LOST IS A LABEL, NOT THE INFORMATION — the reconstructability finding**
+> *"Underdog's historical American prices **ARE REAL** for the alternate/boosted lines, **not
+> placeholders**. That's the same information the multiplier encodes: ***a multiplier and a decimal
+> price are TWO VIEWS OF ONE NUMBER.*** For their standard 'balanced' legs, **payout is fixed by
+> slip size anyway.**"*
+> *"So the payout structure is **RECONSTRUCTABLE FOR BOTH APPS**: **PrizePicks from its published
+> payout tables · Underdog standard from slip-size tables · Underdog boosted/alternate from the
+> prices we did store.** ***What we genuinely lost is Underdog's own multiplier LABEL — a
+> convenience, not the information.***"*
+
+⚠⚠ **This materially changes the posture of §1 and §2.** Those sections are written as an
+availability audit that ends in *ruled out*. **The reconstruction argument says the audit's negative
+result is about a CONVENIENCE FIELD**, and that **for Underdog the priced quantity is already in the
+warehouse** *(§0.9e: 1,401 rungs, 233 distinct Over prices)*.
+🔑 **It does NOT rescue PrizePicks.** *"PrizePicks from its published payout tables"* recovers the
+**slip-shape** term only — **§0.9a's per-leg, submission-time, boost-compounded factor is exactly
+what no table reconstructs**, which is why §0.9a remains the arc's conclusion.
+
+📌 **AND THE SELF-CRITICISM ATTACHED TO IT, worth keeping**: *"**What I should have done: checked the
+stored column after the first date**"* — ⚠ **a first-row schema check, before a long ingest, would
+have caught the dropped label.** **This is a general ingest discipline and it is in 0 of the
+thirty.**
+
 ---
 
 ## 1. WHAT EACH APP EXPOSES
