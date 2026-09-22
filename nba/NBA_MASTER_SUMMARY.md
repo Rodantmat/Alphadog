@@ -33394,3 +33394,104 @@ DROPPED list — cited as absences, not as defects)*.
 and never checked whether its CITATIONS still pointed anywhere. Twenty-eight per cent of them do not
 — including the three that prove its own rediscoveries.**
 ***A pointer into a file you are still writing is a promise you break with your next paragraph.***
+
+---
+
+# §T20.67 — T20 PASS 62 · THE CORPUS-WIDE POINTER AUDIT — **83.7% DEAD, AND TWO-THIRDS CANNOT BE CHECKED AT ALL**
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: repo reads and one local script.** **Nothing triggered, dispatched
+or edited in the system; `NBA_COMPASS.md` not written to.**
+
+## 0. THE HALF §T20.66 LEFT
+
+*Pass 61 measured **this session's** pointers — 32 of 114 dead — placed a standing note and stopped.*
+⚠ **But every session before it also appended to these files and also wrote pointers. A fresh session
+inherits ALL of them.**
+
+## 1. THE MEASUREMENT — EXACT, NOT "DOES A LINE EXIST" (rules 17/30)
+
+**Regex `([A-Za-z0-9_./-]+\.(?:md|py|yml)):(\d+)(?:-(\d+))?` over the TWELVE. For each pointer, the
+longest quotation of ≥25 characters on the citing line or the two following it is taken as the
+target, and the test is whether that text appears within ±6 lines of the cited number.**
+*(§T20.66's own standard: "a line that merely EXISTS is not a resolved pointer.")*
+
+| class | n |
+|---|---|
+| **TOTAL pointers in the twelve** | **337** |
+| **external** — `.py` / `.yml`, never edited by the sweep | **192** |
+| ⚠ **UNTESTABLE** — no usable adjacent quotation | **96** |
+| ✅ **RESOLVES** — quotation within ±6 lines | **8** |
+| 🔴 **DEAD** — quotation is in the file, at a DIFFERENT line | **41** |
+
+> 🔴🔴🔴 **ROT RATE AMONG TESTABLE `.md` POINTERS: `41` of `49` — `83.7%`.**
+
+## 2. 🔴🔴 CLAUSE (ii) — AND THE HONEST COMPARISON IS WORSE THAN THE HEADLINE
+
+⚠ **The two figures must be compared like for like, and §T20.66's `28%` was over its FULL surface
+including 67 stable code pointers.** **Its at-risk `.md` rate was `32` of `36`.**
+
+| | rate |
+|---|---|
+| **this session, at-risk `.md`** | **88.9%** |
+| **corpus-wide, testable `.md`** | **83.7%** |
+
+⇒ ***They agree. This session is NOT an outlier — it is the NORMAL STATE of the corpus, and has been
+for nineteen transcripts.*** 📌 **That is worse news than "today was bad", and it is the reading the
+numbers support.**
+
+## 3. 🔴🔴🔴 THE FINDING NOBODY WAS LOOKING FOR — **96 POINTERS CANNOT BE CHECKED AT ALL**
+
+**Of the `145` `.md` pointers, `96` — `66.2%` — carry NO adjacent quotation.**
+
+⚠⚠ ***That is the WORSE category and it inverts the remedy.*** **§T20.66's standing note tells a
+fresh session to "resolve by searching the quoted text."** ⇒ ***That advice works for a THIRD of the
+corpus's internal citations. For the other two-thirds there is nothing to search for: when the number
+dies, the citation is unrecoverable.***
+🔑 **So the corpus's citation surface splits three ways, and only one of the three is safe:**
+- ✅ **192 external** pointers into `.py`/`.yml` — **the sweep never edits those files**, and §T20.66
+  measured 67 of them stable.
+- ⚠ **49 testable internal** — **8 alive, 41 dead**, but *all 49 recoverable*, because the quotation
+  is there.
+- 🔴 **96 untestable internal** — **state unknown and unknowable**, and **dead-or-alive they are
+  unrecoverable by search.**
+
+## 4. ⚠ CLAUSE (iii) — ONE LOAD-BEARING DEAD POINTER, AND THE DETECTOR WAS NARROW
+
+**`NBA_OPEN_ITEMS.md:13064` cites `NBA_OPEN_ITEMS.md:6363` for** *"The figure is neither RETRACTED
+nor DATED — it is UNQUALIFIED"* — **which is T20-11's own reasoning, written by this session at
+§T20.49, and the pointer is DEAD.**
+⚠⚠ **STATED AT ITS REAL STRENGTH: the load-bearing detector was a crude substring test
+(`owner decision` / `opening-day brief` / `rule `) on the citing LINE only. `1` is a FLOOR, not a
+census** — *among 41 dead pointers and 96 unknown ones, the true number of load-bearing failures is
+NOT RECORDED.*
+
+## 5. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — SIXTY-THIRD consecutive identical run.** Measured 2026-09-22T18:30:35Z |
+| **(ii)** corpus rot exceeds this session's 28% | 🔴🔴 **TRUE — `83.7%` against a headline `28%`; and compared like-for-like, `83.7%` against `88.9%`, which means this session is the NORM, not an outlier** |
+| **(iii)** ≥1 dead pointer is load-bearing | 🔴 **TRUE — one confirmed, under T20-11**, with the detector's narrowness stated |
+
+✅ **Baseline `636 · 2 · 484 · 481` — SIXTY-THIRD consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 6. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — `0/3` stands. No new SYSTEM defect: this is the corpus's own citation surface, and
+it is a handoff defect, which rule 46 makes this session's actual product.**
+✅ **THE ONE PIECE OF GOOD NEWS IS STRUCTURAL AND WORTH ACTING ON: the `192` pointers into `.py` and
+`.yml` are stable BECAUSE THE SWEEP NEVER EDITS THOSE FILES.** ⇒ ***A citation is durable exactly to
+the extent that it points OUT of the corpus. The rot is not a discipline problem; it is what
+happens when a living document cites itself by line number.***
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at `0/3` with TWO INDEPENDENT reads owed, exactly as T19
+(§T19.6, OWNER DECISION).**
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.49's six rotted pointers** and **§T20.66's 32** are PRIOR
+and are SUBSUMED by this measurement, not double-counted — *today's 337 is the whole surface, and the
+41 dead include those already known.*
+
+📌 ***The lesson:*** **the standing note written one pass ago tells a fresh session to recover a dead
+pointer by searching the text quoted beside it. That advice is sound — and it applies to one third of
+the corpus's internal citations, because the other two-thirds never quoted anything.**
+***The corpus has been citing itself by a number for nineteen transcripts, and the number has been
+wrong five times out of six.***
