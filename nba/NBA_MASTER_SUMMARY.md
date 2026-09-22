@@ -25970,7 +25970,7 @@ back.**
 
 1. 🔴 **"Minimum 20 passes per working block."** *(0 hits in the twelve.)* **A quantified operating
    floor the sweep has never recorded or measured itself against.** *T19 stands at 6 passes; T18
-   closed at 9.*
+   closed at 9.* ⚠ **DATED, NOT RETRACTED (rule 40) — T20 pass 74, §T20.79, 2026-09-22: *"T19 stands at 6 passes"* was TRUE when written at §T19.10 (PASS 6) and was superseded by **§T19.11 (PASS 7)** in the same session. **T19's final position is `8` passes (PASS 0 – PASS 7), CLEAN `0/3`** — and it is now stated in the run log's `START HERE` block, where it had never appeared. *The figure was not wrong; nothing told a reader it had moved.*
 2. 🔴 **The angle rule, in its strict form**: *"Each pass must use a different sample and a different
    angle — **explicitly not 'the same query with a different threshold'**."* *(0 hits.)* **The sweep's
    completion criterion says "genuinely different angles"; this is where that phrase comes from and
