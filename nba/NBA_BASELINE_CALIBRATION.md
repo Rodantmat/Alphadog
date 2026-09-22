@@ -15,6 +15,59 @@ document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 
 ---
 
+## 0z-T16-C. 🔴🔴 **TWO VALIDATION TRAPS AND A GRANULARITY RESULT THAT CUTS AGAINST THE OWNER'S OWN INSTINCT** *(T16 pass 2, §T16.3, from COMPASS facts 97–98 — migration items, **0 of the twelve**)*
+
+### 🔴🔴 1 · **PER-TIER SPLITTING IS *HARMFUL* — and the owner has repeatedly asked for more granularity**
+
+*N1 v3 (`nba/fit_n1_model.py`, config `availability_model_n1v3_2026_09_15`) is four layers —
+**hierarchical prior → LightGBM → log-odds stack → confident bands**. Its ablation, on **1,322
+held-out Questionables**:*
+
+| Variant | Result | |
+|---|---|---|
+| **pooled + player-history** | **conf 4.1% @ 79.6%** | ✅ **SELECTED** |
+| pooled-base | 2.8% @ 70.3% | |
+| 🔴 **per-tier splitting** | **AUC 0.62 → 0.59** | ❌ **HARMFUL** |
+
+🔑 ***"~1,300 rows split three ways OVERFITS — and the POOLED MODEL ALREADY SPLITS ON ROLE."*** ⚠⚠
+**RECORD THIS AGAINST THE OWNER'S STANDING INSTRUCTION** *(`NBA_SYSTEM_DESIGN.md` §0z §6: "more
+complex, more granular… break in tier, make it more granular")*: **granularity is not free, and here
+it is measurably negative.** 🔑 **The reconciliation is in the finding itself — the pooled model
+already carries the split the tiers would add, so splitting again spends sample on information the
+model has. That is the same redundancy argument that closed the enrichment factors, applied to model
+STRUCTURE rather than to features.**
+
+✅ **AND THE SELECTION CRITERION IS UNUSUAL AND DELIBERATE**: ***"Selection is on CONFIDENT-BAND YIELD,
+not log-loss"*** — *"because the model's job is **actionable calls**, and everything else routes to
+the scenario layer."* 🔑 **A model chosen for how much it can say CONFIDENTLY rather than how well it
+scores on average — which only makes sense because a second mechanism absorbs what it declines.**
+
+⚠ **Two supporting facts recorded**: **rule-based features from the official policy earn their place**
+*(early-tip deadline 8–10am vs 11am–1pm, the road Out/Doubtful restriction, hours-to-tip)*; and
+🔑 **fringe players are genuinely predictable (66.1% accuracy) while STARTERS ARE NOT (57.1%)** —
+*the inverse of where the value sits, and the reason the scenario layer exists at all.*
+
+### 🔴🔴 2 · **TWO TRAPS, BOTH GENERAL**
+
+**(a) 🔴🔴 THE FINAL STATUS IS THE *ANSWER*, NOT THE FEATURE.** *"Filtering on the last snapshot's
+status returned **7 rows from 2,000+ Questionables**, because **by then almost all have resolved**."*
+✅ **The rule: READ THE STATUS AT THE DECISION CUTOFF.** ⚠⚠ **This is a LEAKAGE trap wearing a
+sample-size disguise** — *the symptom is an absurdly thin result set, not a suspiciously good score,
+which is why it is catchable.* 🔑 **Same family as §0y-2's selection filters: a join that silently
+conditions on the outcome.**
+
+**(b) 🔴 NEVER CHANGE TWO VARIABLES AND ATTRIBUTE THE RESULT TO ONE.** *An earlier run **added player
+history AND split per-tier**, then **blamed the split without evidence**. The ablation — now
+persisted to `factor_gate_results` — showed **the split was indeed harmful BUT the feature was
+HELPFUL**, ***"which the confounded test could not have established."*** 🔑 **The confounded test
+reached the right verdict on one variable by luck and would have discarded a useful feature with it.**
+
+⚠ **Recorded alongside §0y-2's SANITY GATE and §0z-T16-B's `team_game_no` mislabelling**: **four
+distinct validation defects in two sessions, and every one was caught by a diagnostic or an ablation
+placed BEFORE the result was read — never by inspecting the result itself.**
+
+---
+
 ## 0z-T16-B. 🔑🔑🔑 **THE PHASE × BAND CALIBRATION LAYER — the ONE thing in the 2026-09-13 session that beat the baseline out-of-sample, and it wins by CORRECTING the baseline rather than competing with it** *(T16 pass 1, §T16.2)*
 
 ⚠⚠ **Read this against §0z-T16 below**, which carries the owner directive that produced it — *"consider
