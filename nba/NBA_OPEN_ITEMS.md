@@ -295,6 +295,31 @@ a payout-table validity check and a different subject, **dismissed**.)*
    > PrizePicks.** 🔑 **So the exclusion predicate is concrete, the population it removes is 180 rows,
    > and it costs nothing.** ⚠ **Whether other books carry their own sentinels is NOT RECORDED** —
    > *the census covered PrizePicks and Underdog only.*
+    >
+    > ### ✅ **HALF OF THE FIX IS ALREADY IMPLEMENTED — 2026-09-22 (T13 pass 4, §T13.5d)**
+    > **`nba/build_rung_market.py`, which builds the market-probability table this item's "properly
+    > keyed join" would consume, states its own exclusion**:
+    > > *"De-vig is **per book across the two sides of the SAME line**, then averaged across books.
+    > > ***Flat DFS placeholder prices (−137 / +100) are EXCLUDED: they are NOMINAL PRICING, NOT
+    > > ODDS.***"*
+    >
+    > ✅ **So the DFS flat prices are already out**, **and its `BOOKS` list is the eight sportsbooks
+    > explicitly** *(`draftkings, fanduel, betmgm, williamhill_us, betrivers, bovada, betonlineag,
+    > fanatics`)* — ***the DFS apps are excluded from the market side by construction***, which
+    > removes the PrizePicks-vs-book pairing that produced the original artifact.
+    > 🔴 **WHAT IS STILL NOT EXCLUDED IS THE SENTINEL** — **`price ≤ −10000`, min `−100000`, the 180
+    > Underdog rows above.** ***Two different exclusions; only the first is implemented***, and the
+    > sentinel rows sit on the APP side rather than the BOOK side, so the book-scoped `BOOKS` filter
+    > does not reach them.
+    > ✅ **THE TABLE ITSELF, re-taken live 2026-09-22T08:35:32Z**: **`nba_market.rung_market` —
+    > 1,057,765 rows · 378 dates · `avg(books) = 2.11` (min 1, max 8) · `built_at` last
+    > 2026-09-11T03:39:32Z**, columns `game_date, snapshot_label, player, market, line, p_over_book,
+    > p_over_sd, books, built_at, nm`.
+    > 🔑 ***The key INCLUDES `market`*** — **which is precisely the column whose omission produced
+    > both the false arbitrage signal and the collapsed tier table** *(`NBA_GOBLIN_DEMON.md` §5.4)*.
+    > ⚠ **So the properly-keyed join this item demands EXISTS as a table.** **Whether anything
+    > consumes it, and whether the sentinel rows were excluded when it was built, are NOT
+    > RECORDED.** **Documented, not acted on** *(rule 1)*.
    >
    > ### 🔴🔴 **AND THE SAME ARTIFACT CLASS STRUCK A THIRD TIME IN THIS TRANSCRIPT, WITH A NAMED SIGNATURE**
    > **The per-tier hit-rate table was wrong on its first run, for the same reason**:
