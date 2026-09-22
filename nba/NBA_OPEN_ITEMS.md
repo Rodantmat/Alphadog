@@ -1,5 +1,90 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## ✅✅ **T17 PASS 1 — THREE OPEN ITEMS ANSWERED FROM THE TRANSCRIPT, AND ONE LIVE CONDITIONAL THAT HAS FIRED** *(§T17.2)*
+
+### ✅ **T17-2 IS CLOSED — the 17%-vs-90% tension is answered IN THE TRANSCRIPT, and the two ARE different quantities**
+
+> ***"Let me separate two things that the 17% conflates. **The 17% is JOINT-BRANCH PREDICTION
+> ACCURACY.** With 3 independent uncertain players it's **mathematically capped**: if per-player
+> accuracy is `p`, joint accuracy is `p³`. **To hit 90% on three players you need 96.5% per player.**
+> But **the scenario system doesn't need to PREDICT. Its job is COVERAGE** — the realised branch must
+> be among the precomputed set, **which it is by construction, since we enumerate all 2ᵏ**. At 2:30
+> the final report resolves most questionables and **we SELECT, not guess.** The 17% measures
+> prediction from the earlier report, **which is exactly what the architecture exists to avoid.**"***
+
+✅ **And the owner's target was then MET on the axis where it applies**: *"**where your 90% demand
+genuinely applies is PER-PLAYER RESOLUTION**"* — and after the league's own timing rules were encoded
+as features *(the early-tip deadline 8–10am vs 11am–1pm, the road Out/Doubtful restriction,
+hours-to-tip)*, the **confident band reached 80.0% accuracy**, up from 65.0%. 🔑 ***"80% correct in the
+confident band — the accuracy you asked for, ON THE CASES WHERE IT'S ACHIEVABLE."***
+
+⚠ **The sweep's pass-0 entry inferred the two were different quantities and flagged it as an OWNER
+DECISION. They are, and the transcript says so — so T17-2 is CLOSED as answered, not escalated.**
+🔑 **The lesson for the sweep: an apparent owner/measurement contradiction in an owner stratum may be
+resolved later in the same transcript, and pass 0 cannot know that.**
+
+### ✅ **T16-7 IS ANSWERED — `final_hp` WAS 38.7M LEGS, AND ITS EXPECTED POPULATION IS THE FULL LADDER, NOT THE BOARD-SCOPED SET**
+
+*The engine's completion check, verbatim:* **"2024-25 **19,075,070** legs / 30 props · 2025-26
+**19,611,626** / 30 · **total 38,686,696**"** — ✅ **which is COMPASS fact 99's "~38.7M".**
+
+🔑🔑 **AND THE AUTHOR ANSWERS THE OWNER'S "BOARD SCOPED" QUESTION DIRECTLY, WHICH IS WHAT PASS 0 COULD
+NOT RESOLVE**: *"**Caveat 1 — that's the FULL LADDER, not board-scoped.** The 38.7M covers every rung
+at anchor ±10 in both directions. **Only about 2.23 MILLION of those matched a real PrizePicks board
+line with a graded outcome.** The rest are rungs the board never offered. **So the system PRICES
+everything; the VERIFIED subset is 2.23M.**"*
+
+| | rows |
+|---|---|
+| priced (full ladder) | **38,686,696** |
+| **verified against a graded board line** | **~2,230,000 (5.8%)** |
+
+⚠⚠ **SO THE GAP IS REAL AND IT IS NOT A SCOPING CHOICE.** `[LIVE-AUDIT]` **2026-09-22: 2024-25 holds
+19,075,070 — EXACTLY its recorded figure — while 2025-26 holds 140,130 rows on ONE date.** 🔴🔴 **2025-26
+was 19,611,626 six days ago and is 0.7% of that today, while the other season is byte-exact.**
+
+🔑🔑 **AND THE TRANSCRIPT NAMES A MECHANISM THAT FITS, which rule 6 permits recording as a candidate**:
+the confidence rebuilds run repeatedly across both seasons, and the author describes one as *"it
+**DELETES prior v3 rows at the start**, so the table is empty until the props finish writing"* — **a
+delete-then-write whose write did not complete leaves exactly this shape.** ⚠ **The transcript ends
+with two such rebuilds still in flight and a workflow that times out at 60 minutes.** 🔴 **NOT
+RECORDED whether the final pass completed; T18 is where the answer would be. OWNER DECISION stands
+until then, and it is season-critical — the opener is 2026-10-20.**
+
+### 🔴🔴 **T16-9 IS ANSWERED — AND THE AUTHOR'S OWN CONDITIONAL HAS FIRED, UNCHECKED**
+
+*The three expression indexes were built to fix a name-join that would not complete. **The author
+wrote the check the sweep later ran:***
+
+> ***"`idx_scan: 0` just means the planner hasn't consumed them yet; the query is still executing.
+> **That's also the metric worth checking afterward — IF IT STAYS AT ZERO once the query completes,
+> the planner isn't using them and the expression doesn't match exactly, WHICH I'D NEED TO FIX.**"***
+
+🔴🔴 **`[LIVE-AUDIT]`, three days later: `board_outcomes_nm_idx` is STILL AT ZERO SCANS**, while its two
+siblings on the same batch show **1,080,188** and **594,932**. ⚠⚠ **The conditional has fired and there
+is no record of anyone checking it.**
+
+✅ **AND THE TRANSCRIPT ALSO SUPPLIES WHY, in the `EXPLAIN` that finally diagnosed the stall**: *"Postgres
+refused any index because the join condition contained `replace(replace(o.market_key,…))` and
+`lower(regexp_replace(o.player,…))` — **functions on the join columns**. No index can be probed through
+a function call, **so ALL FOUR INDEXES I BUILT WERE IRRELEVANT TO THIS QUERY.**"* 🔑 **The index was
+built against the expression; the query that motivated it uses a DIFFERENT expression on the same
+column — and only `board_outcomes` carries the double `replace(...)` on `market_key` as well as the
+name normalisation.** ⚠ *That is a hypothesis the sweep can state because the transcript states the
+mechanism; **which expression the live index actually indexes is NOT RECORDED** and needs a `\d+`-class
+read the sweep's `SELECT`-only mandate covers but has not run.*
+
+⚠ **Sizes also reconcile**: built at **343 / 97 / 47 MB** *(487 MB total, as COMPASS fact 104 records)*;
+live at **303 / 97 / 47 MB** *(447 MB)* — **`board_outcomes_nm_idx` has shrunk 40 MB**, which closes the
+40 MB discrepancy `NBA_DATABASE.md` §0x-T16 flagged as unexplained.
+
+🔑 **AND THE OWNER'S DIET DIRECTIVE HAS A NAMED TARGET FOR IT**: the transcript's own storage plan lists
+*"**index audit** — `final_hp` carries **3.7 GB** of indexes and `baseline_history` **3.4 GB**;
+**checking `idx_scan` BEFORE THE SEASON STARTS** will show which are actually earning their space."*
+✅ **That audit is exactly what this sweep ran, and it found one.**
+
+---
+
 ## 🔴 **T17 PASS 0 — THREE ITEMS THE OWNER STRATUM OPENS** *(§T17.1, 2026-09-19)*
 
 | # | Item | State |
