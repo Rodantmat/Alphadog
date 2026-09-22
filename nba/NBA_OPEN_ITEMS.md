@@ -67,6 +67,29 @@
 >
 > ⚠ **Nothing here is fixed — the owner's standing instruction is document, don't fix.**
 
+> # 🔴🔴🔴 **THE OWNER-DECISION LEDGER — `12` LIVE DECISIONS, COLLECTED HERE FOR THE FIRST TIME**
+> *Built **T20 pass 80 (§T20.85), 2026-09-22**. **Measured, not asserted: `grep -cE "OWNER DECISION" nba/NBA_OPEN_ITEMS.md` ⇒ `51` mentions across `11` heading-level items, `2026-09-22T20:25:11Z` — and `grep` for any surface naming "all the owner decisions" returns **`0`** across the corpus.*** ⇒ ***The fourteen BLOCKERS got a brief. The DECISIONS never did — and unlike a blocker, a decision cannot be discharged by anyone but the owner, which makes delivery the entire job.***
+> ⚠ **Each row is the question, its state, and a pointer. THE SWEEP DOES NOT CHOOSE (rule 1). Full evidence stays at each item — nothing here is moved or duplicated (rule 40).**
+>
+> | # | the question, in one sentence | state | where |
+> |---|---|---|---|
+> | **1** | 🔴🔴🔴 **Can a transcript close on clean passes produced inside the session that wrote them?** *`RULE 46` says no — two reads sharing a context window are one read. **T19 and T20 each owe TWO INDEPENDENT complete sequential reads from a fresh context**, and neither can be produced here.* | **STANDING** | `§T19.6` · run log `START HERE` |
+> | **2** | 🔴🔴🔴 **Re-read T1–T6 under the restored standard, or accept their `3/3` marks as they are?** *Cost from the ledger's own figures: **`699` content blocks across six transcripts**, plus their other strata — **comparable to all remaining work on T19 and T20**. Options **A** (all six) · **B** (T2 and T6, the weakest closures) · **C**.* | **STANDING — the largest-cost decision in the corpus** | `:14671` |
+> | **3** | 🔴🔴 **Reconstruct the ten never-written-down rules, or leave them as usage?** | ⚠ **NARROWED TWICE, WITHOUT THE OWNER** — *`§T20.72` answered the DUPLICATION half from rows the index already had; `§T20.73` then measured that **reconstruction is unsafe**: three rule namespaces and a collapsed `1–5` row mean usage would canonise the wrong gloss.* **What remains is only the original ten.** | `§T20.18` · `§T20.72` · `§T20.73` |
+> | **4** | 🔴🔴 **`O11` — the T13 credential exposure.** | **STANDING** | `:839` |
+> | **5** | 🔴🔴 **`O8` — two more live API keys sit in a transcript.** | **STANDING** | `:2699` |
+> | **6** | 🔴🔴 **`O10` — the backfill status key asserts three complete seasons; the tables hold one.** | **STANDING** | `:1209` |
+> | **7** | 🔴 **Restore COMPASS fact 69, or record the term in the twelve and leave the numbering gap as a scar?** *Every option is a **write to `NBA_COMPASS.md`**, which this sweep never touches.* | **STANDING** | `:701` |
+> | **8** | 🔴🔴🔴 **T16 pass 2's THREE `[LIVE-AUDIT]` decisions, all SEASON-CRITICAL.** | **STANDING** *(3 sub-items)* | `:507` · `§T16.3` |
+> | **9** | 🔴🔴 **`T20-3` — the scheduler holds ten MLB jobs, two still ENABLED, zero NBA.** `SEASON-CRITICAL` | **STANDING** — *re-derived and HELD `2026-09-22T19:25Z` (`§T20.75`); now also in `NBA_SYSTEM_ARCHITECTURE.md` (`§T20.83`)* | `:14066` |
+> | **10** | 🔴🔴 **`T20-2` — the storage-diet plan is aimed at a database that has since moved.** `SEASON-CRITICAL` | **STANDING** — *`final_hp` **`11 GB`/`38.1M` planned vs `9,391 MB`/`19,215,200` live**; now also in `NBA_DATABASE.md` (`§T20.83`)* | `:14126` |
+> | **11** | 🔴 **`T18-17` — the score formula's penalising half has never fired.** *Design-consistent or a defect?* | **STANDING** — *re-derived EXACTLY `2026-09-22T20:25Z`: **`0` legs at or below `CONF_NEUTRAL = 0.85`**, live minimum `0.8540` (2024-25) / `0.8722` (2025-26)* | `:12747` |
+> | **12** | 🔴 **`T20-1` — five findings that nothing in the corpus points at** *(`§0z-3` the BUILD-ORDER LOCK · `§0z-5` · `§0v.4` · `§0.9c` · `§KILL-LATE-1`)*. *It and `T18-16` want OPPOSITE fixes: pointers without targets vs targets without pointers.* | **STANDING — the five are unchanged** | `:14291` |
+>
+> ⚠ **`O7` (`:1770`) is EXCLUDED — RETRACTED IN FULL, 2026-09-21 (T10 pass 18, `§T10.18a`).**
+> 🔑 **THREE OF THE TWELVE ARE `SEASON-CRITICAL` and also sit on the OPENING-DAY BRIEF above — rows `8`, `9`, `10`.** *The other nine are not opening-night blockers and are ranked by nothing; **that is a statement about this ledger, not a recommendation.***
+> 📌 ***§T20.83 added nine inbound pointers to domain documents — the same CLASS of repair row `12` asks for. It did not touch those five, and `T20-1` stands untouched.***
+
 
 
 ## 🔴🔴🔴 **T18 PASS 0 — A SEASON-CRITICAL COVERAGE DEFECT THE OWNER NAMES HIMSELF, AND THE SCOPE DECISION THAT ANSWERS T16-7** *(§T18.1, owner, 2026-09-19; **the largest owner stratum in the corpus**)*
