@@ -1660,6 +1660,58 @@ summary to a `*_runs` table.
 **Registration is four edits**: bridge **binding map + direct-call list + tool enum**, plus the
 **config generator** for the service binding. **NBA workers use DIRECT dispatch** (the
 `BASE_HITTER_GAME_LOGS_WORKER` pattern), bypassing the queue — deliberate, per the no-orchestrator rule.
+
+### ✅ **ALL TWENTY-ONE, AND EVERY OBJECT EACH ONE WRITES** *(T20 pass 111, `§T20.116`, 2026-09-22)*
+
+*The prose table above names **8** of the 21 by name and groups the rest. This is the complete map,
+extracted from `INSERT INTO` / `UPDATE` / `DELETE FROM` / `CREATE TABLE IF NOT EXISTS` in each file.*
+**Population pinned `2026-09-22T23:32:08Z`: `ls -1 nba/*.js` ⇒ `21`, and
+`nba/worker_manifest_nba.json` ⇒ `21`, with `IN MANIFEST, NO .js` = `[]` and `HAS .js, NOT IN
+MANIFEST` = `[]` — an exact match, no orphan and no phantom.**
+
+| worker (`alphadog-v2-nba-…`) | writes |
+|---|---|
+| `baseline-ladder` | 🔑 `nba_score.baseline_ladder` · `nba_score.baseline_ladder_runs` |
+| `daily-delta` | `nba_stats.player_game_log` · `player_game_log_advanced` · `nba_team.team_game_log` · `team_game_log_advanced` · `nba_team.defense_vs_position` |
+| `static-backfill` | `nba_stats.player_game_log` · `player_game_log_advanced` · `player_splits` · `player_career_season_totals` · `nba_team.team_game_log` · `team_game_log_advanced` · `team_splits` |
+| `static-measure-types` | `nba_stats.player_game_log_scoring` · `player_game_log_usage` · `nba_team.team_game_log_four_factors` · `team_game_log_scoring` |
+| `static-shotquality` | `nba_stats.player_shot_quality` · `player_shot_quality_delta` · `player_shot_zone_profile` |
+| `weekly-differential` | `nba_stats.player_differential_log` · `player_roster_snapshot` · `nba_ref.team_differential_log` · `team_roster_snapshot` · `official_differential_log` · `official_roster_snapshot` · `nba_ref.players` |
+| `static-players` | `nba_ref.players` · `nba_ref.player_aliases` |
+| `static-teams` | `nba_ref.teams` · `nba_ref.team_aliases` |
+| `static-player-bio` | `nba_ref.players` · `nba_stats.player_season_profile` |
+| `static-playtypes` | `nba_stats.player_playtype_profile` · `nba_team.playtype_profile` |
+| `static-schedule` | `nba_calendar.games` |
+| `static-arenas` | `nba_ref.arenas` |
+| `static-officials` | `nba_ref.officials` |
+| `static-game-officials` | `nba_stats.game_officials` |
+| `static-darko` | `nba_stats.player_impact_rating` |
+| `static-lineups` | `nba_team.lineup_profile` |
+| `static-onoff` | `nba_stats.player_onoff_profile` |
+| `static-player-tracking` | `nba_stats.player_tracking_profile` |
+| `static-tracking-detail` | `nba_stats.player_tracking_detail` |
+| `static-starter-status` | `nba_stats.player_game_starter_status` |
+| `static-team-stats` | `nba_team.season_profile` |
+
+✅✅ **AND THE ANSWER TO "IS THE ARCHITECTURE ACTUALLY SEPARATED?" IS YES.** **41 distinct objects
+written by the Workers · 13 by the 40 called Python scripts · intersection exactly TWO** —
+**`nba_score.baseline_ladder` and `nba_score.baseline_ladder_runs`.** ⇒ **`39` of `41` and `11` of
+`13` are single-writer. The Workers own `nba_ref`, `nba_stats`, `nba_team` and `nba_calendar`; the
+scripts own `nba_score`.**
+
+🔴 **The two shared objects are the one seam, and their two writers DISAGREE** — `UPSERT` with no
+stale-row removal and last-wins dedupe on the Worker side, atomic `DELETE`+`INSERT` with
+smallest-offset dedupe and a combo-props abort on the Python side, plus four smaller column
+differences. ▶ **Full comparison: `§T20.116`; item `T20-21` (`MEDIUM, STRUCTURAL, LATENT`).**
+⚠ **And no column in either table records which writer wrote the row** — a provenance discriminator
+was built from `team_id` and `recipe_version` and **run live: both came back dead** *(`team_id=''` 0,
+`team_id IS NULL` 0, `max(length(recipe_version))` 76 against a 200-char cut)*.
+
+📌 **Dated state, not a verdict** *(live `max(updated_at)`, 2026-09-22)*: `nba_calendar.games`
+**2026-09-02** *(2,666)* · `nba_ref.players` **2026-09-03** *(582)* · `nba_stats.player_impact_rating`
+**2026-09-02** *(530)* · `nba_stats.player_game_log` **2026-09-08** *(79,358)*. **The Workers do run.
+The most recent Worker write is fourteen days old, against a 2026-10-03 preseason and a 2026-10-20
+opener; whether that is correct for the off-season is NOT RECORDED.**
 **⚠ Use NBA-specific binding names** — `DAILY_DELTA_RUNNER_WORKER` already exists as a shared/MLB
 binding.
 
