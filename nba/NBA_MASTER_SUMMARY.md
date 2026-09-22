@@ -14709,6 +14709,222 @@ already implied: quoting a SEGMENT does not cover it — only writing PROSE ABOU
 and pass 0's entries are largely lists of directives with short quotations, which is the low-coverage
 shape. **Twenty-seven pre-registrations: twenty-two hits, two misses, THREE partials.**
 
+### T13.3 — PASS 2 (**the prose stratum PAST the multiplier arc — segments 911–1,323**) — **🔴🔴 two of pass 1's own findings RETRACTED by this transcript, and the grader recovered**
+*The 82 assistant-prose segments after the multiplier window, 42,972 chars, **read in full — no
+sample to state** (rule 25). ⚠⚠ **PARTIAL BY DESIGN AND SAID SO: the 107 prose segments BELOW 640
+(62,958 chars) were NOT read and are pass 3's brief.** Corpus pinned 2026-09-22T07:58:28Z:
+`tool_result` 512 · `tool_use` 427 · text 315 *(assistant 250 + owner 65)* · thinking 69 = **1,323,
+the partition CLOSES**. Duplication probed over the twelve, pinned 07:59:35Z. **Live re-takes pinned
+07:45–08:13Z. `SELECT` only.***
+
+#### 🔴🔴 T13.3a — **RETRACTION: UNDERDOG HAS NO HISTORICAL LADDERS — and pass 1 recorded this transcript's FIRST word, not its LAST**
+**§T13.2e / `NBA_MULTIPLIERS.md` §0.9e called Underdog *"the only per-leg multiplier dataset the
+project actually HAS"* and listed 1,401 rungs · 385 ladders · 233/211 distinct prices · −2439…+33xx
+as ONE dataset.** ***They are two, and the second is retracted in this same transcript***:
+> *"**It corrects something I told you earlier — Underdog has NO LADDERS IN THIS ARCHIVE.** 464,053
+> of 465,618 player-markets have exactly ONE rung… ***My earlier statement that we held "233,000 rows
+> of real NBA tiered pricing" was WRONG***: we hold 483,000 rows of real Underdog pricing, but it's
+> **ONE RUNG EACH, not tiers.**"*
+
+✅ **RE-TAKEN LIVE, pinned 2026-09-22T08:00Z** *(grouped by `event_id · snapshot_label · player ·
+market_key · side`, the grouping that reproduces the shape)*: **937,524 player-market-sides ·
+936,353 with exactly ONE rung (99.87%) · 889 with two or three · 282 with more · 939,719 rows.**
+🔑 ***The population has roughly doubled and the conclusion is STARKER, not weaker*** *(99.66% →
+99.87%)*. **The corrected picture**: **PrizePicks is the ONLY app with historical tier structure**
+and we hold it in full; **Underdog's archive is a priced SECOND OPINION ON PROBABILITY, not tier
+economics**; **Underdog tiers must come from the live `alternate_projections` capture** *(running
+every two hours; whether any have landed is NOT RECORDED)*; **Sleeper has no tiers at all.**
+⚠⚠ ***This is rule 27 exactly — a transcript's state on a subject is its LAST word — and pass 1
+broke it one pass after writing RULE 33 about the same failure shape across transcripts.***
+**Corrected in place with BOTH dates** *(rule 5)*.
+
+#### 🔴🔴 T13.3b — **THE SECOND RETRACTION: "−137 is NOT a placeholder" was too strong, and the live price census settles it in BOTH directions**
+**Pass 1 wrote *"not a placeholder or a sentinel."* A later segment of the same transcript says *"the
+same flat −137 PLACEHOLDER."*** ✅ **Live census of `nba_market.board_snapshots`, pinned
+2026-09-22T08:01Z**:
+
+| bookmaker | market | side | rows | **distinct prices** | sentinel *(≤ −10000)* |
+|---|---|---|---|---|---|
+| prizepicks | standard | Over / Under | 372,741 / 372,569 | **1 / 1** | 0 |
+| prizepicks | alternate | Over | 1,454,044 | **2** | 0 |
+| prizepicks | alternate | **Under** | — | ***no rows at all*** | — |
+| underdog | standard | Over / Under | 225,640 / 224,377 | **515 / 167** | 83 / 83 |
+| underdog | alternate | Over / Under | 244,897 / 242,845 | **826 / 341** | 7 / 7 |
+
+🔑🔑 ***The VALUE is a real market price; the COLUMN carries no information.*** **PrizePicks holds
+ONE distinct price across 745,310 standard rows and TWO across its alternates — so for a per-leg
+model the PrizePicks price column IS a placeholder, and `−137` IS the canonical break-even price.
+Both, without conflict.** 🔴 **AND THE CENSUS FALSIFIES A CLAIM THE TRANSCRIPT MAKES AND NEVER
+CORRECTS**: *"Underdog… standard lines are flat"* — **they carry 515 and 167 distinct prices**;
+***the flat `−137`/`+100` pair appears on Underdog only in the `Yes`/`No` markets***, so the reading
+was taken off a Yes/No or a PrizePicks row. **A model that believes it discards 450,017 priced rows.**
+✅ **A THIRD independent confirmation that PrizePicks has no `Under` alternate** *(after
+`board_tiers_v2` and the offset join)*. 🔑🔑 **AND THE SENTINEL IS IDENTIFIED AND COUNTED — `price ≤
+−10000`, min `−100000`, 180 rows, all Underdog, none PrizePicks** — ***so the open item's "exclude
+sentinel prices" now has a predicate and a population it never had.***
+
+#### 🔑🔑 T13.3c — **THE UNITS ERROR: `higher_multiplier` IS A MODIFIER, NOT A PAYOUT — and the ranking REVERSED**
+**Caught by the builder on the owner's correction, and re-derived**: *"my tier analysis used
+`higher_multiplier` **as if it were the payout**… **the conclusion REVERSES**."*
+**Corrected value-retained** *(true payout = decimal × 0.963)*: **goblin T1 0.932 · anchor 0.933 ·
+demon T1 0.910 · T+2 0.896 · T+3 0.883 · T+4 0.847.**
+🔴 **Three things changed**: ***the hold is 7–15%, not 26–54%*** — *"my earlier numbers implied
+Underdog keeps a quarter to half of every leg, **which should have struck me as implausible for a
+DFS operator — that was the tell I missed**"* ⚠ **`NBA_MULTIPLIERS.md` §0.3b's house-edge sanity
+test catching a real error, second instance on file**; ***the RANKING FLIPS*** — *"I told you demon
+T1 was the best-priced rung. **It isn't.** … **on Underdog, deep demons are where the house edge
+concentrates, exactly the opposite of what I reported**"*; **and the cause was units.**
+✅ ***AND THE PART THIS CORPUS DEPENDS ON SURVIVED***: *"**the structural rule — price by PROBABILITY
+SHIFT, not tier label — STILL HOLDS**, because that conclusion came from the per-stat comparison and
+is unaffected."* **So §T13.2e's rule is independently grounded, not a casualty.**
+✅ **The fix installed**: ladder de-dupe on `(player, stat, line, is_main)` keeping the freshest row;
+**derived `higher_payout`/`lower_payout` = decimal × 0.963**, with the raw fields **renamed
+`higher_multiplier_modifier_only`** ***"so the trap is LABELLED rather than inviting"***; and the
+conversion rules into config — **PrizePicks/Underdog `× 0.963`, Sleeper `1 + (decimal − 1) × 0.95`,
+slip = the PRODUCT of legs.** *(`0.963` and `0.95` are **0 of the twelve**.)*
+
+#### 🔑🔑 T13.3d — **THE GRADER'S BUILD, AND THE FULL RUN RE-TAKEN LIVE**
+**The catch that justifies the `unmatched` category**: **1,404 legs from THREE players** — **Herb /
+Herbert Jones · Nicolas / Nic Claxton · Moe / Moritz Wagner** — *"had I let `unmatched` silently
+become `dnp`, those 1,404 legs would have been graded as scratches, and **Herb Jones alone would have
+vanished from every slate he played**."* ✅ **Fixed data-driven, not by hand-list** *(rule:
+`last-name-suffix + first initial`)*, **and extracted to `nba/nba_names.py` so grader and engine
+cannot drift** — *"if it drifts we get **silent mismatches instead of errors**."*
+🔑🔑 **THE STORAGE DECISION**: *"the outcome of 'Jokić over 24.5 points' **doesn't depend on which
+book offered it**, so grading per book **stores the same truth TEN TIMES**"* — **caught mid-run at
+22M projected rows; distinct-leg grading measured 45,606 legs for three dates instead of 152,000.**
+✅ **FULL RUN VERIFIED LIVE EXACTLY: `board_outcomes` 6,905,452 legs across 327 dates**, and the
+partition closes: **`under_win` 3,877,761 (56.16%) · `over_win` 2,780,348 (40.26%) · `dnp` 205,425 ·
+`unmatched_player` 31,687 · `push` 10,231 = 6,905,452.**
+🔑🔑 **AND THE UNDER-SKEW, FLAGGED AS A POSSIBLE GRADING ERROR AND LEFT UNCONFIRMED, IS NOW CONFIRMED
+AT SCALE** — *"on a three-date sample I won't call it confirmed either way; **it's a number to
+re-check on the full run**"*, **and the full run was never reported.** ✅ **56.16% under / 40.26%
+over, 58.24% among decided legs — the sample was right.** ⚠ *The CAUSE (over-shading, blowouts) is
+the builder's explanation and remains NOT RECORDED as measured.*
+🔴 **TWO GAPS THE LIVE TABLE EXPOSES AND THE TRANSCRIPT DOES NOT**: ***`unmatched_player` is NOT
+zero at scale — 31,687 legs, 0.46%***, against *"unmatched is now zero"* **said of the three-date
+smoke test** *(rule 25's exact failure shape; which players is NOT RECORDED)*; and **the table holds
+FIVE `leg_result` values while the docstring declares SEVEN and the design names an eighth** —
+***`no_stat`, `game_not_found` and `unmatched_not_in_season` have ZERO rows across 6.9M legs***,
+**including the category built specifically to stop a matching bug masquerading as a scratch.**
+⚠ **A guard that has never fired is not a guard that is known to work.**
+
+#### 🔑 T13.3e — **`days_done: 0` IS CLOSED BY THE CORPUS — its own author retracted it, and RULE 33 lands a THIRD time**
+> *"**That was MY ERROR, not a bug**: the index key is `days_done`, and **my sweep looked for
+> `days` / `covered_days` / `dates`**. The files are correct and complete — 174 days for 2024-25 and
+> 176 for 2025-26, all 7 shards each. ***Nothing to fix; scratch that item.***"*
+
+🔑🔑 **§T12.11c asked *"which reader reports 0"* and called it NOT RECORDED. It is recorded — the
+reader was the COVERAGE SWEEP that produced this very status key, querying the wrong key name.**
+***§T12.11c re-derived from the artifact what the corpus already stated, by the harder route and
+correctly.*** ⚠⚠ **AND THE STATUS KEY IS STALE**: it still carries *"the counter was never written
+during the shard migration"* — **an item its own author retracted in the same working session.**
+🔑 **Recorded as a documentation-integrity finding: a verified-status record can outlive its own
+retraction.**
+
+#### 🔑🔑 T13.3f — **O10's DIAGNOSIS MOVES FROM INFERRED TO VERIFIED — the coverage sweep says, in its own words, that it read the META FILES**
+**§T12.2 concluded BY INFERENCE that the 05:30Z verification *"is true only of the REPOSITORY."***
+**T13 is where that sweep ran, and it announces its own scope**: *"first, what's actually in the
+**data directory**"* → *"**running the sweep ACROSS THE META FILES**."*
+✅ ***It never queried Postgres.*** **So `1230/1230` for three seasons counts what was SCRAPED AND
+COMMITTED, and the key records it as verification.** 🔴 **And a collision that makes the key read as
+complete**: the same sweep reports **2023-24 starters at `32,385` rows** *(a repository count)*
+while **`player_game_starter_status` holds `32,179` for 2025-26 ONLY** — ***two similar five-figure
+numbers on opposite sides of the gap.*** 📌 **All three items under that key came from one
+repository-side pass, and only one of the three is a database statement.**
+
+#### 🔑🔑 T13.3g — **THE MARKET-CONSENSUS DIRECTIVE ANSWERED — the naive build FAILED on its own numbers**
+**§T13.1d flagged *"WEIGHT properly — there are markets more reliable than others"* as 0 of thirty
+and deferred it.** 🔴 **The naive build ran: 3.69M rows, but *"average books per line is only
+1.48"*** — *"books post DIFFERENT LINES (DK 24.5, FD 25.5), so requiring both sides at the same line
+rarely finds agreement. **That's the wrong way to build it.**"* ⚠ ***A "consensus" averaging 1.48
+books is one book most of the time***, and it would have entered the engine as the market's opinion.
+🔴 **The research overturns two defaults**: ***sharpness is MARKET-specific, not BOOK-specific*** —
+*FanDuel among the sharpest on player props while outside the top five on moneylines, so "a single
+global weight per book is wrong"* — and 🔴🔴 ***PINNACLE IS NOT SHARP ON PLAYER PROPS***, *"a 2026
+study of **600M line movements** found its prop side consistently gives away value"* — **the default
+prior in this field, wrong for this market.** 📌 **NBA props are *"more uniform"* than MLB → modest
+weights.**
+🔑🔑 **AND THE METHOD IMPROVEMENT**: *"those studies infer sharpness from **closing line value**.
+***We have something stronger — 6.9M graded outcomes*** — we can measure each book's calibration
+**directly against what actually happened**, per market."* ✅ ***The concrete payoff of building the
+grader first.*** **The replacement design** *(0 of the twelve)*: **per-book implied CDF across its
+own ladder, MONOTONIZED** — *"crossing means **stale prices, which is itself a signal**"* —
+**interpolate every book at the target rung, weight empirically per market, and read the
+window→close shift as the C3 factor *"at a FIXED line rather than a moving one."*** ⚠ **Whether the
+CDF design was ever built is NOT RECORDED**, and **a live re-take of the ladder-depth figures
+(FanDuel 8.2 lines per player-market, DK 5.3, Caesars 3.8) EXCEEDED the 180-second query limit —
+UNANSWERED, not zero** *(rule 22)*.
+
+#### ✅ T13.3h — **THE BASELINE'S THREE PRODUCTION GAPS — TWO ARE NOW CLOSED, and the replay happened**
+**T13's verdict**: *"the artifact is real and correctly shaped, but **three gaps worth naming**"* —
+**(1) only ONE production slate exists; (2) `baseline_ladder_runs` is EMPTY, so the freshness gates
+have nothing to read; (3) `periods = 1`, and *"it should be a DECISION rather than an OMISSION."*"**
+✅ **Live, pinned 2026-09-22T08:09Z: THREE slates — `2025-11-29` (8 games, 184 players, 64,779 rows,
+22 props) · `2026-01-15` (9, 227, 90,861, 22) · `2026-03-15` (7, 161, 50,597, 18)** — **so gaps 1
+and 2 are CLOSED and the multi-date stability run was done.** 🔴 **And the live `2026-03-15` row is
+NOT the one T13 described** *(17,376 rows / 173 players / 11 props)* — **all three figures differ and
+`loaded_at` is 2026-09-11, after the transcript**: ✅ ***the injury-report replay T13 queued
+HAPPENED.*** ⚠ **Whether the baseline was RE-CERTIFIED against it is a different claim and is NOT
+RECORDED.** 📌 **Recorded and not explained** *(rule 6)*: **the 2026-03-15 row's `factor_fits` are
+SHALLOWER than both later-loaded slates** — ***the latest slate DATE holds the earliest-loaded and
+least-complete artifact.***
+
+#### 🔴🔴 T13.3i — **THE STORAGE INCIDENT, THE SHRINK THAT FIXED IT, AND THE 43 GB THAT UNDID IT** `[LIVE-AUDIT]`
+**The managed primary went READ-ONLY mid-write** — *"`cannot execute INSERT in a read-only
+transaction`… **it hit your 20 GB cap mid-run and DigitalOcean flipped the primary read-only until
+the auto-expansion completed**."* ⚠⚠ **The warning names the hour**: *"any write can fail during an
+expansion… **the daily pipeline won't be so forgiving if it happens at 2:45 PM PT** — that's a real
+argument for the **freshness gates and idempotent tasks** we specced."* 🔑 ***The job survived
+because it was resumable and logged*** — the design property, argued from an incident.
+✅ **The repair**: a **seven-column primary key** *(5,577 MB, including player and market names)*
+replaced by a compact unique index, **built FIRST and `CONCURRENTLY`, with the PK untouched until the
+new index reported `valid`** — *"**if a single duplicate row existed the build fails**, so it doubles
+as a DUPLICATE AUDIT"* — **and explicitly NO `VACUUM FULL`**: *"a rewrite would need ~11 GB of
+temporary space against 7 GB of headroom — **that's how you cause the read-only incident we just had,
+not fix it**."* **Result: 23 GB → 19 GB, board table 12 GB → 6,602 MB, indexes 5,764 → 1,001 MB,
+zero rows lost, and PROOF of zero duplicates across 27M rows.** 📌 **And a false alarm worth
+keeping**: the *"orphaned"* build had **completed server-side after the client timed out** — ***a
+tool-call timeout is not a statement about the backend.***
+✅ **THE SHRINK HELD EXACTLY, twelve days on** *(pinned 08:12:50Z)*: **6,604 MB · 1,001 MB indexes ·
+`reltuples` 27,059,920 — every figure matching.**
+🔴🔴 **BUT THE DATABASE IS NOW 43 GB, AND THE BOARD TABLE IS NOT THE PROBLEM**: the two largest
+objects are **`nba_score.baseline_history` 13 GB** and **`nba_score.final_hp` 9,391 MB — 22.4 GB
+between them, neither anywhere in T13's storage picture.** ***The 4 GB the shrink recovered has been
+consumed roughly six times over, by the SCORING layer.*** ⚠ **Rule 6: what the system IS. Why those
+tables are that size, and the current cap, are NOT RECORDED — no swept transcript covers them.**
+🔑 ***So the incident is not closed by the shrink; the same hazard now sits on different tables.***
+
+#### ⚠ T13.3j — **THE PRE-REGISTRATION: TWO OF THREE — scored a PARTIAL**
+*Harness re-run **2026-09-22T08:13:49Z**, both trees.*
+| | high band | tail | **uncovered12** | uncovered30 |
+|---|---|---|---|---|
+| **BASELINE `4429380d`** | 24 | 16 | **1,274** | 1,234 |
+| **after pass 1** | 29 | 16 | **1,263** | 1,223 |
+| **after pass 2** | **53** | 15 | **1,238** | **1,203** |
+
+🔴 **(i) MISSED**: predicted a further fall *"between 5 and 20"*; **measured 25** *(1,263 → 1,238)*.
+🔑 **The miss is informative and the direction of the error is the point**: *the prediction was sized
+on pass 1's eleven-crossing precedent, and pass 2 read **82 prose segments instead of 61** and wrote
+into **SIX documents instead of three**.* ***The instrument under-reads a pass that spreads across
+documents, not one that goes deep into two.***
+✅ **(ii) HIT, emphatically**: predicted **≥75%** of new crossings outside 640–910; **measured 24 of
+25 = 96.0%** *(the single exception, seg 855, sits in the multiplier window and crossed as a side
+effect)*.
+✅ **(iii) HIT**: **all eleven of pass 1's crossings are still present; NONE reverted.**
+📌 **36 crossings in total, 29 of them into the HIGH band with none lost** — *the new coverage is not
+marginal; most segments crossed all the way.* **Twenty-eight pre-registrations: twenty-two hits, two
+misses, FOUR partials.**
+
+**Pass outcome: the second half of the prose stratum read in full; TWO of pass 1's own findings
+retracted against this transcript's own later words and corrected in place with both dates; the
+grader's build recovered and its full run verified live to the row; the under-skew confirmed at
+scale; a units error and a reversed ranking recorded; O10's diagnosis raised from inferred to
+verified; `days_done` closed by the corpus as RULE 33's third instance; the market-consensus
+directive answered; two of the baseline's three gaps closed; and a live storage finding the corpus
+did not have. ⚠⚠ THE CLOSURE CLOCK DOES NOT ADVANCE — this pass added transcript material heavily.
+⚠ AND IT IS PARTIAL AND SAYS SO: prose segments 1–639 are unread. CLEAN 0/3 · 3 passes.**
+
 **Pass outcome: the arc read in order and its conclusion recorded at the researcher's own strength;
 a base multiplier table grounded twice; a live re-take of the price-encoding measurement that held
 across a 4.3% population increase; the origin and diagnosis of a standing open item; the cause,
