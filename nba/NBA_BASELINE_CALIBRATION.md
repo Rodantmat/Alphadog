@@ -15,6 +15,73 @@ document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 
 ---
 
+## 0z-T17. 🔴🔴🔴 **THE CALIBRATION PARITY VIOLATION — found in something ALREADY APPLIED TO 38.7M LEGS, and fixed** *(T17 pass 1, §T17.2; COMPASS fact 100's evidence)*
+
+⚠⚠ **The phase × band calibration layer of §0z-T16-B — the one genuine out-of-sample win of the whole
+enrichment effort — was built in violation of the system's own governing rule, and the violation was
+found only when the author re-read the COMPASS in full on the owner's order.**
+
+> **COMPASS fact 6**: *"**one fixed recipe; every value is computed IN-RUN from history AS OF THE DAY.
+> NOTHING PASTED.**"* · **`NBA_DAILY_PARITY_AND_BACKFILL.md` §5**: *"**no constant is carried between
+> days.**"*
+
+🔴 ***"My `ladder_calibration` table breaks this. It was FITTED ON 2024-25 and APPLIED TO 2025-26 — a
+pasted table from a fixed train season. That's fine as a research measurement, but **it does not
+'stand for any day'**: on a 2024-25 date it would be applying corrections fitted from **that same
+season's data — LEAKAGE** — and on opening night 2026-27 it would be applying **two-year-old
+constants**."***
+
+🔑🔑 **THE TWO FAILURE MODES ARE DIFFERENT AND BOTH MATTER**: **on a REPLAY of a training-season date it
+LEAKS THE FUTURE**; **on a FORWARD date it applies STALE CONSTANTS.** ⚠ *A table that is merely "fitted
+elsewhere" is not obviously wrong — it becomes wrong the moment the formula is asked to stand for **any**
+day, which is precisely the standard fact 5 sets.*
+
+### ✅ THE FIX — `nba_score.ladder_calibration_asof` (`nba/build_asof_calibration.py`)
+
+**For any game-day `d`, the correction cell is computed from graded legs STRICTLY BEFORE `d`**,
+expanding as the season progresses, **at a weekly cadence**, with **the prior season's SAME-PHASE cell
+inherited until current-season evidence exists**.
+
+| Season | source | cells | refits | avg shift |
+|---|---|---|---|---|
+| 2024-25 | own evidence | 3,383 | 23 | 0.1386 |
+| 2025-26 | own evidence | 3,432 | 23 | 0.1437 |
+| **2025-26** | **prior season (inherited)** | **2,762** | 21 | 0.1571 |
+
+✅ **THREE THINGS VERIFY IT**: **2024-25 carries ZERO inherited cells** — *"it's the first season, so
+there's nothing to inherit. Exactly right"* — **2025-26 carries 2,762**, and **shift magnitudes are
+stable across seasons (0.1386 vs 0.1437)**, *"so the correction is a stable property of the ladder
+rather than a season-specific artifact."* 🔑 **And the engine takes the latest cell at or before each
+leg's game date — never a future one.**
+
+🔑🔑 **AND IT DOES MORE WORK, NOT LESS — which is the strongest evidence the pasted version was wrong**:
+**rebounds moves `0.01516` under the as-of cells against `0.00405` under the pasted table — roughly
+3.7×** — *"because they're fitted on the RELEVANT PRIOR EVIDENCE rather than one blanket season."*
+
+✅✅ **THE PAYOFF IS THE OPENING-NIGHT PROPERTY**: *"**the formula now stands for ANY day**: replay a past
+date and it uses only what was gradeable before it; run it live mid-season and it's the same code path;
+**run it opening night and every cell inherits the prior season's same-phase value.**"* 🔑 **The 2,762
+inherited cells are that mechanism made countable — and they are why §0z-T16-B's phase pattern
+transfers to 2026-10-20 without a month of warm-up.**
+
+### ⚠⚠ **AND THE SAME VIOLATION WAS COMMITTED AGAIN, HOURS LATER, IN THE CONFIDENCE TIERS**
+
+*The confidence tier cutpoints were hardcoded at **0.35 / 0.55 / 0.75**.* 🔴 **COMPASS fact 6 names
+*"tier cutpoints"* EXPLICITLY in its list of values that must be computed in-run with nothing pasted**
+— *"my hardcoded cuts are exactly the violation that fact names — **the same class of error as the
+pasted calibration table I just fixed.**"* ✅ **Fixed the same way: equal-mass quantiles derived in-run
+from the live distribution, with a degeneracy guard.** 🔑 **Two instances of one rule in a single
+session, and the second was recognised only because the first had just taught the pattern.**
+
+### ✅ **AND FACT 5a WAS CONFIRMED IN PASSING, ON 2.1M LEGS**
+
+*Every confidence tier landed **within 0.6 percentage points** of its stated rate — "the fact-5a
+standard comfortably met".* ⚠ **It is fact 5's SECOND half — *"confidence bands that hit their stated
+rate"* — that had never been tested at all, and testing it is what began the confidence rebuild**
+*(`NBA_FINAL_SCORING_CALIBRATION.md` §0a-T17-B)*.
+
+---
+
 ## 0z-T16-C. 🔴🔴 **TWO VALIDATION TRAPS AND A GRANULARITY RESULT THAT CUTS AGAINST THE OWNER'S OWN INSTINCT** *(T16 pass 2, §T16.3, from COMPASS facts 97–98 — migration items, **0 of the twelve**)*
 
 ### 🔴🔴 1 · **PER-TIER SPLITTING IS *HARMFUL* — and the owner has repeatedly asked for more granularity**
