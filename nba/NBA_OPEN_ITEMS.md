@@ -12937,3 +12937,38 @@ navigation error, not a coverage one. **LOW–MEDIUM.**
 
 ▶ **REMEDY**: **add "as of 2026-08-30" to both, and the current sizes alongside.** *Not applied in
 pass 5, per the same rule as §T19.8.*
+
+---
+
+# §T19.10 — 🔴🔴🔴 THE PROGRESS LEDGER IS DENOMINATED IN SIXTEEN; THE CORPUS IS TWENTY
+*(T19 pass 6, 2026-09-22 — **VERIFIED** both ways)*
+
+| | |
+|---|---|
+| **What the deliverable says** | **SEVEN** headings in `NBA_MASTER_SUMMARY.md`: `RUNNING TOTAL: 3 / 4 / 5 / 6 / 7 / 8 / 9 **of 16** transcripts DONE` *(lines 6446 · 7725 · 8729 · 9514 · 12852 · **14399** · 24896)*, each heading a full per-transcript progress table |
+| **What the corpus is** | **20 transcripts + `journal.txt` = 21 entries, 55 M** — `ls -1 /home/claude/nbadoc/transcripts/*.txt \| wc -l` → 20, **2026-09-22** |
+| **The false milestone** | 🔴 **`8 of 16 — HALFWAY`.** ***8 of 20 is 40%.*** **Announced four transcripts early and carried unchallenged through eleven later closures.** |
+| **Where the 16 came from** | **T19 SEG 57/58** — the transcript's own `ls`, listing 16 + journal on 2026-09-20, and *"16 transcripts, ~44 mb"* |
+| **Why it is not merely stale** | **The four missing files — T17, T18, T19, T20 — are ALL dated 2026-09-20. The run log's own first line dates this sweep to *2026-09-21 05:36 UTC*.** ⇒ ***The corpus was already twenty before the sweep's first pass. The sixteen was never this sweep's corpus at any moment.*** |
+| **The internal contradiction** | **The same twelve state the corpus as twenty in THIRTEEN places** *(`"20 transcripts"` ×13, `"of 20 transcripts"` ×5, `"twenty transcripts"` ×7)*. **The sweep knew, and kept both.** |
+| **Severity** | **HIGH** — *it is the figure a reader uses to judge how much of the job is done.* |
+
+## 🔑 CAUSE — ***RULE 30, un-applied to the sweep's own population***
+*"A POPULATION IS RE-DERIVABLE OR IT IS NOT A POPULATION."* **The sixteen was INHERITED FROM THE
+TRANSCRIPT BEING DOCUMENTED and never re-taken from the source.** *One `ls`, at any moment of the
+run, returns twenty.* ⚠⚠ **Rule 30 was born at T11 from the identical shape** — *"a grep of all 190
+`.py`/`.js` files in `nba/`" carried in ten of the twelve while `nba/` holds 157* — **and the sweep's
+own corpus count sat mis-taken while that rule was being written.** ⇒ ***The rule was applied to the
+system's populations and never to the sweep's own.***
+
+## ⚠ REMEDY — *struck and corrected, NOT dated* (rule 40's second half, pointing opposite to §T19.9)
+**These were WRONG when written, not right-then-superseded**, because the corpus was twenty before
+the first heading was authored. **Correct all seven to `of 20`, and correct the HALFWAY claim — 10 of
+20 is halfway, not 8.** *Not applied in pass 6: the pass that finds a defect does not also close it.*
+
+## ✅ AND A PROVENANCE NOTE THAT IS **NOT** A DEFECT
+**The owner's charter (T19 SEG 60/61) says *"all transcripts and history for this chat"* — and it was
+given in the session that listed SIXTEEN.** **The sweep applies it to twenty, which is plainly
+right.** ⚠ **But the expansion has never been stated, and charter scope has now been reasoned about
+twice** *(§T19.1, rule 41)* **without noting that the charter's corpus and the sweep's differ by four
+files — three of which the sweep has already closed.**
