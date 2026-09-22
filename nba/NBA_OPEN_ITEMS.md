@@ -13313,6 +13313,48 @@ recommends nothing and changed nothing; the measurements above are the input.**
 > `classification_config` for rows whose `status` or named tables are contradicted by live state —
 > the six checked here are a start, not the list.**
 
+> ### 💾 **THE DIET HAS A TARGET LIST AFTER ALL — 2026-09-22 (§T20.41): `5.98 GB` BELONGS TO THE DROPPED SPORT**
+> *Population: **25** base tables exceed **100 MB** (all schemas less `pg_catalog`/`information_schema`;
+> `pp_*` excluded — 12 tables, 544 MB). **15 of the 25 are referenced by ZERO `.py` under `nba/` or
+> `nba/baseline/`**, combined **`5,984 MB` ≈ `5.98 GB`, 14% of the database.**
+> 2026-09-22T16:01:50Z.*
+> 🔑🔑 **RULE 20 RE-SCOPED THE CLAIM AND IMPROVED IT**: a repo-wide grep returns **1–14 files for every
+> one of the fifteen** ⇒ ***they are not untouched by CODE, they are untouched by the NBA codebase and
+> referenced by the v2 / MLB system at the repo root.*** **Every one sits in an UNPREFIXED schema**
+> *(`score` · `archive` · `daily` · `market` · `classification` · `backtest` · `team` ·
+> `stats_hitter` · `stats_pitcher`)*, **the v2-era namespaces; NBA uses `nba_*` throughout.**
+> ⇒ ***An archaeology problem becomes a decision: should a dropped sport's `5.98 GB` still sit on a
+> `42.95 GB` disk 28 days before the NBA opener?***
+>
+> **THE FIFTEEN (MB)**: `score.final_board_history` **1,342** · `archive.board_leg_history` **1,137** ·
+> `archive.market_prop_context_history` **737** · `daily.game_status_stage` **471** ·
+> `score.prop_outcome_history` **380** · `stats_pitcher.metric_stage` **275** ·
+> 🔴 `market.prizepicks_board_stage` **206** · `classification.classification_v6_current` **205** ·
+> `market.historical_props_2025` **205** · `backtest.ready_dataset` **203** ·
+> `stats_hitter.metric_stage` **197** · `stats_hitter.game_logs` **188** ·
+> `classification.baseline_v6_current` **177** · `team.bullpen_history` **136** ·
+> `classification.player_classification_current` **125**.
+> 🔴 ***`market.prizepicks_board_stage` is `206 MB` at `reltuples = 0` — an EMPTY table carrying 206 MB
+> of index and bloat. The clearest reclaim in the list, and it needs no judgement about what the data
+> was for.***
+> ⚠ **Thinnest provenance**: `stats_pitcher.metric_stage`, `market.prizepicks_board_stage`,
+> `backtest.ready_dataset`, `stats_hitter.metric_stage` — **`881 MB` combined, each named in exactly
+> ONE file repo-wide and ZERO times in the twelve.**
+>
+> ✅✅ **AND THE CLEAREST GOOD NEWS OF THE SWEEP — THE NBA SIDE CARRIES NO DEAD WEIGHT.** *Of the ten
+> `nba_*` tables over 100 MB, **nine** are referenced by 1–24 files under `nba/`* — `baseline_history`
+> **24** · `board_snapshots` **19** · `board_outcomes` **12** · `final_hp` **10** ·
+> `game_lines_snapshots` **8** · `board_tiers` **5** · `rung_market` **3** · `board_scored` **2** ·
+> `board_tiers_v2` **1**. *The tenth, `nba_market.prop_universe` (898 MB), has no `nba/` reference and
+> that is EXPECTED — it is the concurrent session's mid-rebuild, **OUT OF SCOPE, counts NOT final**.*
+> ⇒ ***T20-2's `42.95 GB` is the honest cost of TWO systems, not accumulated NBA debris.***
+> ✅ **Rule 22 control**: `nba_market.game_lines_snapshots`, the smallest of the ten at 110 MB, returns
+> **8** code references and **62** mentions in the twelve — the probe finds usage where usage exists.
+> 🔴 **OWNER DECISION — option (f): decide whether the v2/MLB tables are retained or retired.** ⚠ *If
+> retired, `5.98 GB` comes back without touching a single NBA object — more than the `4 GB` the
+> original shrink recovered, and more than `action_1`'s re-derived `2–3 GB` (§T20.29). **This sweep
+> changed nothing; the measurement is the input.***
+
 ---
 
 ## T20-1 · **NEW · OWNER DECISION · MEDIUM** · five 🔴 findings nothing in the corpus points at
