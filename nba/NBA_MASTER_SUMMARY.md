@@ -35874,6 +35874,17 @@ proved the refinement by moving the number; this pass proves it by predicting th
 🔑 **Both halves are now demonstrated, and the second is the stronger one** — *a metric that holds
 under a correct prediction of a hold is behaving like a measurement, not like noise.*
 
+> 🔴🔴 **EVIDENCE WITHDRAWN IN PLACE — 2026-09-22, T20 pass 86 (`§T20.91` §3).** *(Rule 40's second
+> half — the measurement above is real and is not struck; its INTERPRETATION does not survive.)*
+> **`§T20.91` opened a `±1` for the first time and found that segment `938` sits EXACTLY on the
+> `b12 < 0.40` threshold** *(it moved `0.4000 → 0.4000`)*, **and that it is a tool-call JSON blob —
+> one of the structurally-uncoverable segments `§T20.76`–`§T20.78` already excluded.** *`TfidfVectorizer`
+> is fitted on `docs + texts` jointly, so any edit anywhere in the twelve perturbs the IDF weights and
+> tips it.* ⇒ ***A `±1` in `uncovered12` is attainable by rounding. The hold above is inside the noise
+> band, and the sentence calling it "behaving like a measurement, not like noise" is exactly the claim
+> that does not survive.*** ✅ **The `14`-point gap to baseline and the `12`-point high-band gain are
+> far outside `±1` and stand unchanged.** *(`RULE 52` was numbered from this.)*
+
 ⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.1` / `§T20.23` / `§T20.24`** *(**PRIOR** — this pass's
 motive, its orphan list and `§0v.4`'s `13 → 12` correction; quoted and pointed at, never re-derived as
 new)* · **`§T20.89`** *(**PRIOR** — the repair METHOD and the refinement clause (i) tests)* ·
