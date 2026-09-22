@@ -35082,3 +35082,90 @@ flagged sixty percent of the corpus on terms like `run_job` and `NBA_MASTER_SUMM
 fifteen headlines read, fifteen terms chosen by hand, five sets of hits opened — it found nothing, and
 the nothing is trustworthy for exactly the reason the thirty-eight were not.** ***A check that can be
 run without reading is a check that is not being run.***
+
+---
+
+# §T20.83 — T20 PASS 78: 🔴🔴🔴 **NINE OF THE FOURTEEN SEASON-CRITICAL DEFECTS ARE NOT IN THE DOCUMENT A FIXER WOULD OPEN — AND ONE OF THEM SITS UNDER A GREEN CHECK** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: `NBA_OPEN_ITEMS.md` is where an item is FILED. It is not where anyone goes to FIX one.** *A
+person repairing P3's season opens `NBA_WORKERS.md`; a person repairing the grader opens
+`NBA_FINAL_SCORING_CALIBRATION.md`.* ⇒ ***If the defect lives only on the brief, the fixer reads the
+domain document, sees nothing wrong, and concludes it is current.***
+
+## ✅ THE MAPPING WAS FIXED BEFORE ANY PROBE RAN (rule 17)
+
+*All fourteen assigned a domain document **first**, in the pass, so the mapping could not be chosen to
+fit the result.* **Population re-derived: `grep -cE "^#{2,4} .*SEASON-CRITICAL" nba/NBA_OPEN_ITEMS.md`
+⇒ `14`, `2026-09-22T20:11:02Z`.** ⚠ **And each item was probed on its DEFECT-BEARING IDENTIFIER — the
+config key, the env var, the workflow step — *never on its `T20-n` label, which is a filing artefact
+and would only ever be found in the filing document*.**
+
+⚠⚠ **RULE 20 RESCUED FOUR OF SEVEN ZEROS.** *The first spelling returned `0` for seven items; a second
+vocabulary recovered `T20-11`, `T20-10`, `T20-6` and `T20-5`.* **And a RULE 22 POSITIVE CONTROL was run
+on the four that stayed at zero — the SUBJECT is present in every one** *(DST/timezone in
+`NBA_SYSTEM_DESIGN` `10` · P3 in `NBA_WORKERS` `14` · "schedul" in `NBA_SYSTEM_ARCHITECTURE` `20` ·
+schedule in `NBA_DATABASE` `8`)* — ***so these are not documents that ignore the topic. They discuss
+the topic and omit the defect.***
+
+## 🔴 THE RESULT — **`5` CARRY THE DEFECT · `5` MENTION THE SUBJECT WITHOUT IT · `4` ABSENT**
+
+| ✅ **IN ITS DOMAIN DOC, WITH THE DEFECT — 5** |
+|---|
+| **T20-11** `NBA_WORKERS` — *"cron `0 19 * * 1` (Mondays **12:00 PDT / 11:00 PST** — qualified 2026-09-22, §T20.49 / T20-11)"* — defect **and** a `§`-pointer |
+| **T20-9** `NBA_WORKERS` — `git push \|\| true`, four occurrences |
+| **T20-7** `NBA_WORKERS:81` — *"🔴🔴🔴 `maintenance_shrink_board_index.py` \| — nothing. SEE BELOW: this step is MIS-WIRED"* |
+| **T20-6** `NBA_WORKERS:20,139` — *"a certifier check between an assertion and a writer **(T20-6)**"* plus the assertion-vs-writer table |
+| **T20-14** `NBA_SYSTEM_ARCHITECTURE` — `token_expires_at` with the pull's dormancy |
+
+| ⚠ **MENTIONS THE SUBJECT, OMITS THE DEFECT — 5** | what the document says instead |
+|---|---|
+| 🔴🔴 **T20-5** | **`NBA_FINAL_SCORING_CALIBRATION:2533` — *"✅ NBA's grader has the read side right"*.** *It then raises a DIFFERENT caveat (P2's ordering) and never mentions **`GRADE_END "2026-04-12"`**, which P2 does not override.* ***T20-5 is the brief's ONLY "SILENT" blocker, and the domain document opens its grader section with a green check.*** |
+| 🔴 **A/D** | **`NBA_DATABASE:189` — `nba_ref.defender_ratings` \| `111,768` \| **✅ exact***. **The row count IS exact. The table is `166` days stale and P1's certifier check for it is RED today.** *`"166 days"` and `"stale"` return `0` in that document.* |
+| **T20-13** | `:2048` gives the MECHANISM — *"`CERT_STRICT=1` by default; any failed check `sys.exit(1)`"* — and not the `22`-vs-`30` October gate that fires it |
+| **T20-10** | `:562` discusses the **deploy** swallow, not `nba-daily-delta.yml`'s three `\|\| echo`; elsewhere `daily-delta` is only named as a job |
+| **T20-2** | `:18` records the plan; `"no longer exists"` returns `0` — the plan is documented, its obsolescence is not |
+
+| 🔴 **ABSENT — 4** *(subject present, defect nowhere)* |
+|---|
+| **T20-12** — `NBA_SYSTEM_DESIGN` discusses the clock in 10 places, never the hardcoded `-8` |
+| **T20-4** — `NBA_WORKERS` names P3 14 times, never `BS_SEASON`'s `"2025-26"` default |
+| **T20-3** — `NBA_SYSTEM_ARCHITECTURE` says "schedul…" 20 times, never `config.scheduled_jobs`' ten MLB jobs |
+| **B/E** — `NBA_DATABASE` names the schedule 8 times, never that it has not been refreshed since build |
+
+⇒ ***CLAUSE (ii) HITS: `9` of `14` defects are not where a fixer would find them. CLAUSE (iii) HITS:
+all fourteen are on the brief; only five reach a domain document.***
+
+🔑🔑 **AND THE TWO WORST SHARE ONE SHAPE, WHICH IS WHY THEY ARE WORSE THAN PLAIN ABSENCE: `T20-5` and
+`A/D` are not silent — they are REASSURING.** *A `✅` and a "read side right" are what a fixer takes as
+permission to look elsewhere.* ⚠ **AND THE CORPUS ALREADY NAMED THIS SHAPE — carried, not
+re-discovered (rules 26/28/51): §T20.14's** *"**a verification mark records that a figure was CHECKED,
+not that it is still TRUE**, and nothing in this corpus distinguishes the two."* ***That was written
+about propagation. It applies here to completeness.***
+
+## ✅ THE REPAIR — **POINTERS, NOT COPIES**
+
+**Each of the nine gets ONE sentence in its domain document: the defect, its severity, and a
+`§`-pointer to the full item** *(`§`-citations resolve at `99.2%`, §T20.63)*. ⚠ **The analysis stays
+where it is — rule 40 forbids destroying the original and nothing here is moved or duplicated.**
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(Δ `484 − 471` = `13`)*.
+
+⚠ **RULE 51 APPLIED TO THIS PASS'S OWN FINDING BEFORE SHIPPING**: *`"domain document"`, `"where a
+fixer"` and `"mentioned without the defect"` each return **`0`** across the twelve; `"read side right"`
+returns exactly one hit — **the line being cited**.* ✅ **Novel.**
+
+⚠ **KILLS LOGGED (rules 26/28/51)**: **§T20.56** *(the brief's COMPLETENESS audit — **PRIOR** and a
+different object: it asked whether the brief lists every item; this asks whether the DOMAIN DOCUMENTS
+carry them)* · **§T20.70** *(the stale mastheads — **PRIOR**, the precedent for the shape)* ·
+**§T20.74/§T20.75** *(the re-derivations — **PRIOR**; this pass locates, it does not re-derive)* ·
+**§T20.14's verification-mark lesson** *(**PRIOR** — quoted and extended from propagation to
+completeness, not restated)*.
+
+📌 ***The lesson:*** **the sweep spent forty passes finding fourteen season-critical defects and filed
+every one of them correctly — in the list of defects. Nine never reached the page a person would open
+with a text editor already running, and two of those pages greet that person with a green check.**
+***A finding that is filed where findings go has been recorded. It has not necessarily been
+delivered.***
