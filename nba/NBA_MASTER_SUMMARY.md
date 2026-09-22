@@ -34865,3 +34865,20 @@ figure without a date is not wrong, it is unfalsifiable — and one of these two
 because its old value and the current one happened to add up to a number the corpus had already
 corrected somewhere else.*** ***Pinning a figure does not make it true. It makes it possible for
 someone later to find out that it stopped being true.***
+
+> # 🔴🔴🔴 **§T20.80 IS CORRECTED BY ITS OWN AUTHOR, MINUTES LATER — RULES 26/28 FAILED, AND BOTH "FINDINGS" WERE ALREADY ON FILE** *(2026-09-22, same pass)*
+>
+> ⚠⚠ **What happened, stated plainly: after writing the section above I ran the rule-10 propagation grep on `19,611,626` — *which I should have run BEFORE publishing, not after* — and the corpus already knew both figures.**
+>
+> | "finding" | where the corpus already had it |
+> |---|---|
+> | `final_hp` 2025-26 = **`140,130`**, not `19,611,626` | 🔴 **`NBA_OPEN_ITEMS.md:292` · `:362` · `:377`** — a `[LIVE-AUDIT]` open item that states *"**2025-26 was 19,611,626 six days ago and is 0.7% of that today, while the other season is byte-exact**"* — **and it already carries the exact arithmetic I presented as my own discovery**: *"2024-25 `19,075,070` / 2025-26 `19,611,626` / total `38,686,696` — which is COMPASS fact 99's ~38.7M."* Also `NBA_FINAL_SCORING_CALIBRATION.md:240`, `:1569` and `NBA_MASTER_SUMMARY.md:27268`. |
+> | goblin `T−3` = **`62,183`**, not `62,542` | 🔴 **`NBA_GOBLIN_DEMON.md:653`** — the live value is already in its table. |
+>
+> 🔴 **SO CLAUSE (ii) AND CLAUSE (iii) ARE RE-SCORED. Measured against what the SWEEP KNOWS rather than against what one document says, the undetected-staleness rate of unpinned figures is `0` of `25` — **the same as the pinned rate**. CLAUSE (iii) FAILS; the `8%` figure above is WITHDRAWN.**
+>
+> 🔑🔑 **AND THE CENSUS DID FIND SOMETHING REAL — IT IS JUST NOT WHAT THE SECTION ABOVE CLAIMED.** ***Both figures were RE-MEASURED by earlier passes, the new value was RECORDED IN ONE DOCUMENT, and the old value was LEFT STANDING UN-DATED IN OTHERS*** — `final_hp`'s at **`NBA_WORKERS.md:1841` and `:1867`**, the goblin's at **`NBA_OPEN_ITEMS.md:7770` and `NBA_MASTER_SUMMARY.md:4385`**. ⚠ **This is a PROPAGATION defect, and the pre-registration's claim that this pass ran "the opposite direction from §T20.14" was ALSO wrong.** 🔑 **But rule 40's instrument still could not have caught it, and the reason is precise and worth keeping: *the instrument looks for a STRUCK value still asserted un-struck. Here the correction was made by ADDING the new figure in another document, never by striking the old one — so there is no strikethrough for the instrument to start from.*** ⇒ ***A correction recorded by addition is invisible to an instrument that starts from deletions.***
+>
+> ✅ **WHAT STANDS FROM THE PASS**: the census method and its numbers *(`36` harvested · `30.6%` false positives · `25` genuine · **`23` re-derived EXACT**)*, and **the four in-place repairs, which are the right repair either way** — the two `NBA_WORKERS.md` sites and the `NBA_OPEN_ITEMS.md` goblin row now carry the current figures with their dates.
+>
+> 📌 ***THE REAL LESSON, AND IT IS THE THIRD TIME THIS SESSION: §T20.63 withdrew a false-new claim about the Betr token; §T20.72 retired my own rule as a duplicate of rule 30; this withdraws a headline. **Every one happened because a novelty check was run on the HARVEST and not on the FINDING.** Rules 26/28 are not a step at the start of a pass. They are the last thing between a measurement and a claim.***
