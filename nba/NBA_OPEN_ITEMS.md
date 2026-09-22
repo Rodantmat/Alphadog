@@ -3156,8 +3156,16 @@ season 2026-27 | prefix 001 (preseason)       66 games   2026-10-03 → 2026-10-
 ```
 
 **`2026-10-03` is the PRESEASON opener.** The whole documentation set has been treating it as the
-date the system must be ready for. It is not. From today (2026-09-21): **preseason in 12 days,
-regular season in 29.**
+date the system must be ready for. It is not. ~~From today (2026-09-21): **preseason in 12 days,
+regular season in 29.**~~ **PRESEASON OPENS `2026-10-03`; REGULAR SEASON OPENS `2026-10-20`.**
+*(As first written on 2026-09-21 this read "12 days / 29"; re-derived 2026-09-22 it is **11 / 28** —
+§T20.27. **Re-stated as DATES**, because the authority on urgency should not itself carry a figure
+that is wrong the next morning; the original is kept beside it, dated, not struck — rule 40.)*
+⚠⚠ **AND THIS ENTRY'S OWN REACH WAS OVERSTATED — it claims *"every urgency label in these documents
+is 17 days early"* and it corrected the ones that CONTAIN THE STRING `2026-10-03`. §T20.27 found
+**two that do not**: `NBA_MASTER_SUMMARY.md` §T7.8c *"the season opens in two weeks"* and this file's
+own *"with the season two weeks out"*. **Both corrected 2026-09-22.** ***A correction that matches on
+a surface form cannot reach the instances that never used it.***
 
 ⚠ **Read every existing "before 2026-10-03" in these documents as "before the preseason opener."**
 The phrase appears **40 times across 15 files**, and **many of those occurrences sit inside verbatim
