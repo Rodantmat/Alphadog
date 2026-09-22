@@ -503,6 +503,90 @@ built from these must be recomputed cell by cell — tier × prop × side.**
 **Against a ~1.75–1.9× observed ceiling** → **T+2 and T+3 can never clear it.**
 **→ Only demon T+1 is ever worth solving.**
 
+### 5.4 🔑🔑 **WHERE §5.1 AND §5.2's HIT RATES CAME FROM — the empirical answer, its POPULATION, and a LIVE re-census**
+*Recorded 2026-09-22 (T13 pass 2, §T13.3c). **§5.1 and §5.2 carried the hit rates with no leg counts,
+no offsets and no source. T13 is where they were produced** — by the grader, over two seasons.
+Live re-census of `nba_market.board_tiers` pinned **2026-09-22T08:02Z**.*
+
+**THE TYPE-LEVEL ANSWER, as stated**: **standard 359,147 legs @ 48.8% · goblin 274,632 @ 66.3% ·
+demon 402,127 @ 24.4%.**
+⚠⚠ **AND THE PROSE'S OWN POPULATION DOES NOT MATCH ITS TABLE** *(rule 16)*: the sentence says
+***"across 856,000 PrizePicks legs"*** **while its three rows sum to 1,035,906.** **The per-tier
+table two segments later says *"866,000 graded legs"* and sums to 865,916** — *which is internally
+consistent.* 🔑 ***So `856,000` is the one figure in the arc with no derivation behind it; use
+865,916, which re-derives.***
+
+#### THE PER-TIER TABLE — as measured then, and as the table stands NOW
+| kind · tier | T13 legs | **LIVE legs** | T13 avg offset | **LIVE avg offset** | hit rate | prob ratio vs 48.8% | payout condition |
+|---|---|---|---|---|---|---|---|
+| **goblin −3** | 31,580 | **62,183** | −4.30 | **−4.39** | **74.1%** | **×1.52** | *can give up ≤34%* |
+| **goblin −2** | 100,705 | **165,722** | −2.83 | **−2.98** | **68.7%** | **×1.41** | *can give up ≤29%* |
+| **goblin −1** | 254,159 | **358,098** | −1.53 | **−1.70** | **61.9%** | **×1.27** | *can give up ≤21%* |
+| **demon +1** | 255,203 | **400,972** | +1.97 | **+2.24** | **32.9%** | **×0.67** | **needs ≥1.48×** |
+| **demon +2** | 149,488 | **300,497** | +3.75 | **+3.86** | **21.3%** | **×0.44** | **needs ≥2.30×** |
+| **demon +3** | 74,781 | **159,235** | +5.07 | **+5.21** | **14.8%** | **×0.30** | **needs ≥3.31×** |
+
+✅ **THE LIVE CENSUS CLOSES EXACTLY**: **standard (tier 0) 745,310 · goblins −1…−6 587,500 · demons
++1…+8 866,544 = 2,199,354**, ***and the standard figure agrees to the row with the independent price
+census*** *(`NBA_MULTIPLIERS.md` §0.9d.1: 372,741 + 372,569 = 745,310)*. **Two unrelated queries,
+one number.**
+🔑 **AND THE LIVE TABLE IS DEEPER THAN THE TRANSCRIPT'S**: **goblin −4 `1,308` · −5 `173` · −6 `16`**
+and **demon +4 `5,195` · +5 `549` · +6 `88` · +7 `7` · +8 `1`** — **tiers −6 … +8, not −3 … +3.**
+⚠ **The deep tiers are thin and were never analysed**: *7,337 legs, 0.33% of the table, and §5.1/§5.2
+say nothing about them.* **A NAMED, DATED remainder.**
+📌 **Every live count is ~1.6–2× the transcript's and EVERY offset has moved OUTWARD** *(both
+directions, consistently)* — **a dated STATE** *(O9)*; **the table has been rebuilt and extended
+since, and the hit rates in §5.1/§5.2 belong to the SMALLER population.** ⚠⚠ **So §5.1/§5.2's rates
+are NOT re-derived here and must not be read as current.**
+
+#### 🔴🔴 THE TABLE WAS WRONG FIRST — and the cause is the corpus's THIRD coarse-join artifact
+> *"Those numbers are wrong, and I can see why: **I dropped the market from the join, so a player's
+> POINTS line of 8.5 was matching his REBOUNDS line of 8.5.** That's the same artifact class I
+> flagged earlier — and **it's exactly why the goblin tiers all collapsed to ~50%**."*
+
+🔑🔑 ***A join that omits `market_key` silently averages unrelated props, and its signature is
+REGRESSION TO THE POOL MEAN — every tier reading ~50%.*** **Recorded as a detection rule**: a tier
+table that is *flat* is not evidence of flat pricing; **it is the expected output of a
+market-blind join.** ⚠ **This is the THIRD instance of the class in one transcript** — *the false
+2.9%-vs-56% arbitrage signal, the duplicated ladder rungs, and this* — **and the transcript's own
+count says *"I've now hit that artifact twice"*, so it under-counts itself.** ✅ **The corrected
+join is *"monotonic in both directions, which is the SIGNATURE OF A CORRECT JOIN."***
+
+#### ✅ THE ANCHOR DERIVATION VALIDATED ON REAL DATA — both cases, and the switch-point case is a real test
+> **Explicit anchor** *(a regular line is present)*: **goblins step −2.03, −3.11, −4.42, −5.45;
+> demons step +2.77, +4.65, +6.00, +7.38, +9.64** — *"clean monotonic ladders up to 5 tiers deep."*
+> **Switch point** *(no regular line)*: **offsets are SYMMETRIC around the implied anchor — goblin T1
+> at −0.95, demon T1 at +0.95** — *"exactly what you'd expect when the anchor sits midway between the
+> innermost goblin and demon. **That's a good validation that the invisible-anchor derivation is
+> correct.**"*
+
+🔑 ***The symmetry is the test, and §2.2's invisible anchor passes it.*** **This is the first
+empirical validation of the switch-point method in this corpus** — §2.2 states the rule and gives the
+`10.5 / 11.5 / 12.5 → 12` example; **it had no measurement behind it until now.**
+
+#### ✅ 5.4a **AND THE LIVE COMPARISON CLOSES §T12.7c's UNEXPLAINED RESIDUE**
+*Pinned 2026-09-22T08:04:40Z.* **§T12.7c recorded v2's `unknown / none / unknown` — 43,370 rows,
+2.0% — as a residue *"recorded and NOT explained"* (rule 6).** **The two tables, side by side, say
+what it IS:**
+
+| `anchor_type` | **`board_tiers` (v1)** | **`board_tiers_v2`** |
+|---|---|---|
+| `explicit` | **1,780,149** | **1,780,149** *(identical)* |
+| `switch_point` | **419,205** | **375,835** |
+| `none` | — | **43,370** |
+| **total** | **2,199,354** | **2,199,354** |
+
+🔑🔑 ***`explicit` is identical to the row in both. The ENTIRE difference lies inside the
+non-explicit population: v1 calls all 419,205 of them `switch_point`; v2 anchors 375,835 and
+declines the rest.*** **`419,205 − 375,835 = 43,370` EXACTLY.** ✅ **So the residue is not a new or
+lost population — it is the subset of v1's switch-point rows that v2's stricter derivation refuses
+to anchor**, *and v1 was anchoring them by assertion rather than by evidence.*
+⚠ **WHY it refuses is NOT established here** *(rule 6)*. 📌 **A HYPOTHESIS, named as one**: T13
+describes exactly this failure on the **Underdog** mapping — *"those rows are ladders with **exactly
+ONE alternate rung and no standard line in that snapshot**, so my midpoint fallback put the anchor on
+top of the only rung"* — **but that passage is about Underdog, not PrizePicks, so it is an ANALOGY,
+not the cause.** **Testable in one query; not run.**
+
 ### 5.3 Why the tails matter anyway
 > *"we're not modelling the mean, **we're modelling the right tail (80th–99th percentile)**. A Gaussian
 > will be systematically wrong there… likely **the #1 area where a sharp baseline earns the most**,
