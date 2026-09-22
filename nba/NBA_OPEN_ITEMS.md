@@ -12094,7 +12094,17 @@ board into the MLB file and the next MLB run would overwrite it.
 **Mitigation built 2026-09-20:** `nba/scrape_prizepicks_nba_board.py`, a separate producer with its own
 URLs (`league_id=7`), its own output (`boards/prizepicks_nba_current.json`) and its own env namespace
 (`PP_NBA_*`). **Live-tested: 192 projections, 104 demons / 52 goblins / 36 standard.**
-Still open: `main.py` itself is untouched, and COMPASS fact 176 still describes the old plan.
+Still open: `main.py` itself is untouched, and ~~COMPASS fact 176 still describes the old plan~~
+**THE PLAN IS NOT IN COMPASS AT ALL** *(corrected 2026-09-22, §T20.43)*.
+> 🔴🔴 ***There is no COMPASS fact 176.*** *`NBA_COMPASS.md` is the only compass file in the repo, it
+> numbers **1–107**, and `176` appears in it **zero** times.* ⚠⚠ **This line asserted, in the PRESENT
+> TENSE, what a non-existent fact "still describes" — the sharpest form of the defect §T20.43 went
+> looking for: not a wrong number a reader follows and finds nothing, but a claim ABOUT the content
+> of an authority that does not carry it.** 📌 **Provenance: the citation originates in
+> `.github/workflows/nba-p3-afternoon-light.yml:103` and was repeated here and in
+> `NBA_GOBLIN_DEMON.md` unchecked.** ✅ **The substance survives: `main.py` IS the MLB producer with
+> `league_id=2` hardcoded, and the NBA plan IS unbuilt — the workflow's own 14-line comment block is
+> the real source and says so at length.**
 
 ### PARTIAL · `board_tiers` is a TWO-way taxonomy; the board is now FOUR-way
 `nba_market.board_tiers` (2.2M legs) derives `kind` from the Odds API **price** (`price=100` → demon,
