@@ -12395,6 +12395,33 @@ acceptance test for P2 was never run.**
 
 ---
 
+## T18-9 · **NEW · OWNER DECISION** · the early-tip clause makes 1:15 PM PT conservative on some slates
+**The NBA rule, as quoted by the web source T18 retrieved** *(mechanism stratum SEG 483/484 — one of
+only two `web_search` calls in the whole transcript)*: teams file the game-day report **11 a.m.–1 p.m.
+local**, **but 8–10 a.m. local for tip-offs at 5 p.m. or earlier**, and **by 1 p.m. local for the
+second game of a back-to-back**.
+⇒ **On a slate with no back-to-back second night and no tip later than 5 p.m. local, every report is
+in by 10 a.m. local — 10:00 AM PT at the latest — three hours before the current cutoff.**
+**Severity: LOW as a defect (1:15 PM PT is never WRONG, only early-conservative); MEDIUM as an
+opportunity**, since an earlier run means an earlier board read and more time before lines move.
+⚠ **OWNER DECISION**: whether P3 should branch on slate shape — *"if no B2B second night and max tip
+≤ 5 p.m. local, run at 10:15 AM PT"* — or keep one fixed 1:15 PM PT window for the operational
+simplicity the owner explicitly chose *("one run, everything present, no second window")*.
+**The sweep does not decide this and changes nothing.** *(Full evidence and the two bulletin/PDF
+traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
+
+## T18-10 · **NEW** · the league publishes THREE bulletins; the sweep had recorded one
+**1:30 p.m. / 5:30 p.m. / 8:30 p.m. ET = 10:30 AM / 2:30 PM / 5:30 PM PT** *(same source as T18-9)*.
+**`nba_asof.py` encodes the first two as `ENRICH_CUTOFFS_LOCAL = ["13:30", "17:30"]`** *(verified in
+live source 2026-09-22)*, and `PHASE2_CUTOFF_LOCAL`'s comment names the 5:30 p.m. ET one. 🔑 **The
+8:30 p.m. ET bulletin appears in no sweep document and in no source constant read so far.**
+**Severity: LOW** — a bulletin is a republication, not a filing deadline, so it does not move the
+cutoff. **Recorded because it is the missing third member of a set the sweep was treating as a
+singleton**, and because **`17:30 ET = 2:30 PM PT`** is the likeliest true origin of the drifted
+figure. ⚠ **NOT RECORDED: whether the 8:30 p.m. ET bulletin is ever ingested.**
+
+---
+
 ## ✅ PRE-REGISTERED CLAUSE (iii) — SCORED HERE, BEFORE THE NEXT PASS
 **Predicted: "at least TWO of the four residue items resolve to NOT RECORDED rather than to a found
 value."** **Outcome: ONE resolves to NOT RECORDED (T18-8, the P2 end-to-end outcome and its acceptance
