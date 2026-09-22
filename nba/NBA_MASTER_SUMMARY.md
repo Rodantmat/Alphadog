@@ -28122,3 +28122,129 @@ corpus's shape is "an id preceded by decoration." What finally worked was not a 
 OPENING ALL 49 SURVIVORS and letting them sort themselves into classes — four of which were never
 defects at all.*** 🔑 **A residue you have not classified is not a finding. It is a to-do list with a
 percentage on it.**
+
+---
+
+# §T20.23 — PASS 18: *THE ORPHAN AUDIT — FIVE SEVERITY FINDINGS NOTHING POINTS AT, AND A HUB THAT HOARDS*
+
+*(T20 pass 18, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **METHOD-ONLY STREAK: this is the THIRD consecutive pass auditing the sweep's apparatus rather
+than the system. Recorded here as the next-step row requires. PASS 19 MUST RETURN TO THE SYSTEM.**
+
+## 1. 🔴🔴 THE FIRST INSTRUMENT WAS DISCARDED BEFORE ANY NUMBER WAS CLAIMED
+
+**v1 of the orphan matcher reported a 60.45% orphan rate over 2,172 ids. It was thrown away.**
+🔴 **Its "ids" included `§AND` · `§BUT` · `§FIVE` · `§NBA` · `§OWNER` · `§STEP` · `§PART` — the first
+WORD of any heading that happens to have no id.** *The emoji-tolerant prefix matcher §T20.22 built to
+see `#### 🔑 T9.40b` fires identically on `#### 🔑 AND THE TWO CASES ARE NOT THE SAME KIND OF WRONG`.*
+⇒ **v2 constrains an id to CONTAIN A DIGIT and not be a bare integer** *(a bare integer is the
+line-number grammar §T20.22 class A)*. 📌 ***Third pass running in which a permissive matcher had to
+be narrowed before it said anything true. The pattern is now stable enough to name: in this corpus
+every matcher fails first toward FALSE POSITIVES, and the discipline that catches it is opening the
+survivors, not tuning the regex.***
+
+✅ **RULE 22 POSITIVE CONTROL — five ids, all drawn from the regime under test**, each a heading v2
+must see *and* a reference the audit must find: **`§T9.40b` (20 refs, emoji-prefixed)** ·
+**`§T10.18b` (17)** · **`§T15.3a` (7, parenthetical)** · **`§0z-T16` (4, document-native)** ·
+**`§T18-16` (1)**. **All five: present in the heading set, correctly scored NON-orphan.**
+
+## 2. 📐 THE POPULATION, RE-COUNTED FROM SOURCE
+
+> **`1,739` distinct id-shaped heading ids · `2,082` heading occurrences · 12 documents**
+> *(2026-09-22T14:21:07Z; script `scratchpad/t20/orphan2.py`. §T20.22's "2,171" is NOT reused —
+> that set was unconstrained and included the prose-word false positives above.)*
+> **REFERENCED `791` · ORPHAN `948` = `54.51%`.**
+
+## 3. ❌ CLAUSE (ii) MISSED — AND IT IS THE OUTCOME THE PRE-REGISTRATION CALLED THE WORSE ONE
+
+**Pre-registered: *the orphan rate is HIGHER in the topical documents than in `NBA_MASTER_SUMMARY.md`,
+because the hub is written and cited by every pass while the topical documents receive one-way
+writes.*** 🔴 **The opposite is true, and it is not close.**
+
+| document | orphan / ids | rate |
+|---|---|---|
+| 🔴 **`NBA_MASTER_SUMMARY.md`** | **878 / 1,520** | **57.76%** |
+| `NBA_OPEN_ITEMS.md` | 38 / 83 | 45.78% |
+| `NBA_DATABASE.md` | 7 / 18 | 38.89% |
+| `NBA_FINAL_SCORING_CALIBRATION.md` | 19 / 61 | 31.15% |
+| `NBA_BASELINE_CALIBRATION.md` | 8 / 29 | 27.59% |
+| `NBA_GOBLIN_DEMON.md` | 4 / 17 | 23.53% |
+| `NBA_SYSTEM_DESIGN.md` | 5 / 27 | 18.52% |
+| `NBA_MULTIPLIERS.md` | 7 / 45 | 15.56% |
+| ✅ `NBA_WORKERS.md` | 1 / 14 | **7.14%** |
+| ✅ `NBA_SYSTEM_ARCHITECTURE.md` | 1 / 22 | **4.55%** |
+| *(`NBA_RECIPE.md` 1/1 and `NBA_GLOSSARY.md` 0/0 — n too small to rank)* | | |
+| **corpus** | **969 / 1,837** | **52.75%** |
+
+⚠ ***`NBA_MASTER_SUMMARY.md` holds 878 of the 948 orphans — 92.6% of them — while holding 87% of the
+ids.*** 🔑 **The hub is the most orphan-dense document in the corpus, and it is the document a fresh
+session reads first.** *The pre-registration said this reading would be the worse finding. It is the
+one that occurred.*
+
+## 4. 🔬 THE 948 ORPHANS, CLASSIFIED — *and most of them are not defects*
+
+*(every class opened and sampled against source — **RULE 48**)*
+
+| class | n | **🔴/OWNER among them** | what it is | verdict |
+|---|---|---|---|---|
+| **B · pass-entry headings `T<n>.<m>`** | **305** | 46 | `T11.16 — PASS 15`, `T10.24 — PASS 24` … | ✅ **NOT ORPHANS IN SUBSTANCE — a ledger row points at the RANGE (`§T10.1–§T10.28`), not at each entry. Reachable by range and by reading order.** |
+| **C · lettered sub-entries `T<n>.<m><x>`** | **571** | 26 | `T13.2h`, `T12.9d` … | ⚠ **the chronological log's natural leaf; uncited is normal, but 26 carry a severity marker** |
+| **A · transcript banners `T<n>`** | 6 | 2 | `T13 — <filename>` | ✅ scaffolding |
+| 🔴 **D · document-native ids** | **66** | **16** | `0z-3`, `0a-T17`, `0v.4`, `KILL-LATE-1` … | 🔴 **the class that matters — a finding filed in a topical document that nothing routes to** |
+
+🔑🔑 **AND A THIRD CITATION GRAMMAR TURNED UP, exactly as classes A–E did in §T20.22: open-item ids
+and pipeline/version labels are cited BARE, with no `§` sigil.** **Tested on every class-D severity
+id** — **`T16-9` has 13 bare references · `T19-3` 8 · `T19-1` 5 · `T18-17` 4 · `T18-1` 3 · `0a-T17`
+6** ⇒ ✅ **all six are REACHABLE and are struck from the orphan list**; and **`v1`/`v3` (148 bare
+hits) and `P3` (159)** are ✅ **not section ids at all — a version label and a pipeline name that
+happen to head a section.**
+
+## 5. 🔴🔴🔴 WHAT SURVIVES: FIVE SEVERITY FINDINGS UNREACHABLE UNDER **ALL THREE** GRAMMARS
+
+| id | document | the finding | inbound refs |
+|---|---|---|---|
+| 🔴🔴🔴 **`§0z-3`** | `NBA_SYSTEM_DESIGN.md:217` | **"THE BUILD-ORDER LOCK — what will NOT be built, and in what order the rest comes"** *(T17 pass 0, owner, 2026-09-19)* | **1 bare, 0 sigil** |
+| 🔴🔴🔴 **`§0z-5`** | `NBA_SYSTEM_DESIGN.md:96` | **"ENRICHMENT IS THIN BY DESIGN, NOT BY FAILURE — and the corpus's 'ten rejected factors' framing is WRONG"** | **1 bare, 0 sigil** |
+| 🔴🔴 **`§0v.4`** | `NBA_BASELINE_CALIBRATION.md:684` | **"THE BACKTEST'S REAL SCOPE LIMIT — the archived board is 13 of ~25 PrizePicks stat types"** | **0, any grammar** |
+| 🔴 **`§0.9c`** | `NBA_MULTIPLIERS.md:698` | **"THE PRODUCT CHANGED UNDERNEATH THE DATA — and the change is STATE-DEPENDENT"** | **0, any grammar** |
+| 🔴 **`§KILL-LATE-1`** | `NBA_OPEN_ITEMS.md:12817` | *the `2:30 PM PT` "league bulletin" trace was already on file when this sweep published it as a proposal* | **0, any grammar** |
+
+🔑🔑 **And `§0v.4` has a TWIN: `§T14.2i` in this document states the same limit — *"THE BACKTEST'S
+SCOPE LIMIT: the archived board is 13 of ~25 PrizePicks stat types"* — and is ALSO an orphan** *(class
+C + severity)*. ⇒ ***A scope limit on the backtest is recorded TWICE in the corpus and nothing points
+at either copy. Duplication is not reachability.***
+
+⚠ **These five are recorded, not fixed** *(rule 1 — and the sweep's own deliverable exception does not
+extend to re-organising documents mid-sweep)*. **They belong with the pointer-repair work already
+scoped by open item T18-16, which §T20.22 reduced to a 10-item class-E list; this adds a SECOND list
+of 5, of the opposite kind.** 🔴 **OWNER DECISION — the two lists want opposite fixes**: *T18-16's
+class E is **pointers without targets** (delete or retarget the pointer); this is **targets without
+pointers** (add a pointer, or accept that a topical document is read whole).* **(a)** fix both ·
+**(b)** fix only the 5, since an unreachable 🔴 finding costs more than a broken link · **(c)** fix
+neither and record the corpus as read-whole rather than navigated.
+
+## 6. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T14:22:15Z** |
+| **(ii)** | orphan rate **HIGHER in the topical documents** than in the hub | ❌ **MISS — decisively inverted.** `MASTER_SUMMARY` **57.76%** vs `WORKERS` **7.14%** / `SYSTEM_ARCHITECTURE` **4.55%**; **the hub holds 92.6% of all orphans.** *The pre-registration named this the WORSE finding, and it is the one that occurred.* |
+| **(iii)** | **≥ 1 orphan carries a 🔴 or OWNER DECISION marker** | ✅ **HIT — 90 of 948 (9.5%) carry one, and after classification FIVE are unreachable under all three grammars.** *The clause's alternative — "if every orphan is prose or scaffolding, the corpus orphans only what it no longer needs" — is refuted.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTIETH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 7. ⚠ VERDICT
+
+🔴 **NOT CLEAN — five unreachable severity findings, one duplicated-and-still-unreachable scope
+limit, one new OWNER DECISION, and a hub that holds 92.6% of the corpus's orphans. CLEAN STAYS 0/3.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **three passes have now each found a citation grammar the previous one did not
+know about — the sigil-bearing id, the bare transcript id, and now the bare open-item id.**
+***Every one was found by OPENING the residue, and none by improving the matcher. A corpus written by
+many passes accumulates conventions the way a codebase accumulates call sites; the only reliable way
+to learn them is to look at what refuses to resolve and ask what it is instead.*** 🔑 **The
+uncomfortable corollary: three grammars were found in three tries, so the right prior is that a
+FOURTH exists and has not yet refused to resolve loudly enough to be noticed.**
