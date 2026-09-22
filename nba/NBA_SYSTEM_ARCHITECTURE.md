@@ -92,6 +92,39 @@ at all without a session.*
 pills are `pickemstat` ids that EVERY LINE ALREADY CARRIES as `pickem_stat_id`, so the scraper learns
 its categories from the lines it already has.***
 
+### 🔴 THE EIGHT FAILED CALLS — **and two of them are the CAUSE of items still open**
+*Recorded 2026-09-22 (T12 pass 7, §T12.8c). **From the mechanism stratum — 515 of T12's 640 segments,
+80% of the transcript, read as a stratum for the first time.** Predicate: `"ok": false` ·
+non-zero `returncode` · HTTP 4xx/5xx. **Eight segments: 319, 327, 329, 367, 520, 522, 525, 545.**
+Probed against the baseline `c5798146`, pinned **2026-09-22T07:23Z**; controls `underdogfantasy`
+8 of thirty and `getfliff` 4 both fire.*
+
+| seg | call | result | in the corpus |
+|---|---|---|---|
+| **319** | `api.underdogfantasy.com/v1/lobbies/scaffolds/matches?match_id=143308&…` | **400 — `invalid lobby scaffold`** | **0 of thirty** |
+| **327 · 329** | `/v1/lobbies/content/market_filters?…&target_id=143308&target_type=game` *(both `empty_if_single_core_pill` values)* | **400** | `market_filters` **1 of thirty, 0 of the twelve** |
+| 🔴 **367** | **`/v1/lobbies/content/alternate_lines?over_under_id=…`** | **404** | **`alternate_lines` 0 of THIRTY** |
+| **520** | `app.getfliff.com/api/v1/oauth2/token/` | **400 — `{"error":"unauthorized client"}`** | **0 of thirty** |
+| **522** | `app.getfliff.com/api/v1/sports_book_public/` | **400 `validationerror` — *"fliff error: invalid value for operation code 58"*** | "operation code" **1 of the twelve** |
+| **525** | `m-c1.app.getfliff.com/api/v1/channels/all/games/` | **404** | **0 of thirty** |
+| 🔴🔴 **545** | `app.getfliff.com/api/v1/sports_book_public/` | **400 `validationerror` — *"fliff error: **THIS VERSION OF THE APP IS NO LONGER SUPPORTED. Please upgrade to the latest version.**"*** | **1 of thirty, 0 of the twelve** |
+
+🔑🔑 **SEGMENT 545 IS THE REASON THE FLIFF SCRAPER WAS "UNFINISHED."** *T12 records the request as
+carrying **version 5.0.34** (§0f); the server rejected that version outright.* ***So "ParlayAPI stays
+the Fliff source unless the owner captures one `sports_book_public` curl" had a precise mechanical
+cause: the capture would supply a CURRENT version string.*** **And it is consistent with the live
+`board_sources_decision`, which now records Fliff as our own scraper with no login** *(§T12.4d)*.
+
+🔑 **SEGMENT 367 IS THE CAUSE OF AN ITEM STILL OPEN.** *The live key says Underdog's **"alternates
+(ladders) pending one more capture"**.* ***The endpoint that would supply them —
+`/v1/lobbies/content/alternate_lines`, called with an `over_under_id` — returned 404, and the string
+`alternate_lines` is in ZERO of the thirty.*** **So the open item has a named endpoint and a named
+failure, and neither was on file.**
+
+⚠ **Stated at evidence strength**: *these are the responses recorded in T12 on 2026-09-10. **Whether
+any of these endpoints behaves the same today is NOT RECORDED** — the sweep is read-only and does not
+call third-party APIs.* **A dated STATE** *(O9)*.
+
 ### 🔴 THE ODDS API SPLITS THE US BOOKS INTO TWO REGIONS — **and the one carrying FLIFF was excluded**
 *Recorded 2026-09-21 (T12 pass 3, §T12.4d). **Transcript segments 39 and 42.** **1 of thirty
 (`NBA_PROJECT_LOG.md`), 0 of the twelve** — control `us_dfs` fires in 8 of thirty.*
