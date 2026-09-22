@@ -33865,3 +33865,115 @@ condition had already failed it, seventy-three minutes after it was written, and
 mastheads had stopped reporting.** ***A re-derivable claim is the only kind a later pass can catch
 instead of the owner. The brief's test worked exactly as designed; what failed is that nothing re-ran
 it for ten passes.***
+
+---
+
+# §T20.71 — T20 PASS 66: 🔴🔴🔴 **THE RE-DERIVATION SWEEP — EVERY PINNED FIGURE IN THE CORPUS IS CORRECT, AND TWO THIRDS OF THE PUBLISHED COMMANDS CANNOT BE RUN** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.** *Population recounted from source: `ls -la
+nba/*.md` ⇒ **`32` markdown files**, **2026-09-22T18:55:08Z**; the twelve confirmed from the charter's
+LAST word under rule 27, not from memory.*
+
+## ▶ WHY THIS PASS EXISTED
+
+*§T20.70 caught the OPENING-DAY BRIEF **only because the brief had written down the command that would
+falsify it**. The owner's standing instruction — **"recount it from its source and pin it with the
+exact query or listing and a timestamp"** — has been followed for dozens of passes, so the corpus is
+now full of pinned, re-runnable claims. **Every one is a trip-wire that has never been tripped.** The
+brief went stale in seventy-three minutes; there was no reason to think it was the only one.*
+
+## ✅ THE HARVEST — **DEFINITION FIXED BEFORE THE FIRST READ (rule 17)**
+
+*A claim is **RE-DERIVABLE** iff it carries **both** an explicit command, grep or SQL in backticks
+**and** a pinned population — a count, a tree sha, a row total, or a UTC timestamp.*
+
+⚠⚠ **RULE 20 — SEVENTH SAVE OF THE SESSION, AND THE ZERO-CLUSTER WAS AGAIN THE TELL.** *The first
+harvest was **LINE-scoped** and returned `32` candidates with **ten of the twelve documents at zero**.
+**The corpus hard-wraps at ~100 characters**, so a command and its pin routinely land on different
+lines — §T20.70's own scope block spans five. **Block-scoped (paragraph runs): `62`.*** 📌 ***A
+conjunction test over a hard-wrapped corpus must be scoped to the PARAGRAPH, not the line — the same
+tell as §T20.68, where false positives clustered in whole consecutive blocks.***
+
+⚠⚠ **AND THEN THE HITS WERE READ, NOT COUNTED (§T20.70's lesson, applied): `39` of the `62` — `62.9%` —
+are FALSE POSITIVES**, an incidental `SELECT` or `select` inside quoted prose or pasted code with no
+runnable command behind it. **`23` are genuine: `12` shell-bearing, `11` SQL-bearing.**
+
+## 🔴🔴🔴 THE RESULT — **THE FIGURES ARE SOUND; THE COMMANDS ARE NOT**
+
+| what was re-run | verdict |
+|---|---|
+| `ls -1 nba/*.md \| wc -l` ⇒ pinned **32** | ✅ **HOLDS — 32** |
+| `ls .github/workflows/*.yml \| wc -l` ⇒ pinned **40**, three sites | ✅ **HOLDS — 40, both methods** |
+| **LIVE SQL** — `nba_score.ladder_calibration_asof`, pinned §T20.53 at **9,904 rows · 24 as-of dates · 2024-10-29 → 2026-01-15**, cited at two sites | ✅✅ **HOLDS EXACTLY — `9,904` · `24` · `2024-10-29` → `2026-01-15`** *(read-only `SELECT`)* |
+| the brief's `grep -E "^#{2,4} .*SEASON-CRITICAL" NBA_OPEN_ITEMS.md` ⇒ **13** | 🔴 **STALE — returns `14`** *(§T20.70's finding, PRIOR, repaired; EXCLUDED from clause (ii))* |
+| §T20's old-stratum population ⇒ pinned **34** | ⚠ **DATED by GROWTH — `58` today, `34` on its own tree** |
+
+▶▶ **AND THE FINDING THE RE-RUNS ACTUALLY PRODUCED: `8` OF THE `12` SHELL-BEARING PINS PUBLISH A
+COMMAND THAT CANNOT BE RUN AS WRITTEN — `66.7%`.**
+
+- **`6` have no file operand** — `grep -E "^#{2,4} .*SEASON-CRITICAL"` with nothing to search.
+- **`1` carries a markdown-escaped pipe** — `ls .github/workflows \| wc -l`; the table escaping leaked into the command.
+- 🔴 **`1` omits `-E`, so its alternation is a LITERAL PIPE and it returns `0`** — the old-stratum probe. *Verified: `grep -c "alpha|beta"` ⇒ `0`, `grep -cE "alpha|beta"` ⇒ `2`.*
+
+⚠⚠ **RULE 20 — EIGHTH SAVE, AND IT BECAME THE PASS'S PRESCRIPTION: the first re-run executed from
+`nba/`, and the pins are written from the REPO ROOT, so `ls -1 nba/*.md` returned `0`.** 📌 ***A
+re-derivation needs its WORKING DIRECTORY as much as its operand. An instrument run in the wrong place
+reports the absence of the thing, exactly as one aimed at the wrong spelling does.***
+
+## ✅✅ CLAUSE (ii) — **SCORED HONESTLY: PARTIALLY MET, AND THE DISTINCTION WAS PRE-REGISTERED**
+
+*Clause (ii) asked for **at least one re-derivable claim other than the brief's that has gone STALE
+since it was pinned**.* ▶ **No pinned FIGURE was found WRONG. One is stale: the old-stratum
+population, `34` at `2026-09-22T14:50:51Z`, re-derives to `58` today.** ⚠ **Rule 19's pre-registered
+split applies — *"a pin that has gone stale because the CORPUS grew is not the same finding as a pin
+that was WRONG when written"* — and this is growth.** 🔑🔑 **PROVEN, NOT ASSUMED: `git log
+--until="2026-09-22T14:50:51Z" -1` ⇒ commit `00b3a2f86c27a0ee698b57b382b9bc0e242273f9`, and the `-E`
+form run over THAT tree returns **exactly `34`**.** ⇒ ***The only reason error and growth could be told
+apart is that the pin carried a TIMESTAMP, which let the tree be restored. A figure pinned without one
+is unfalsifiable in both directions.***
+
+## 🔑🔑 CLAUSE (iii) — **THE PRESCRIPTION, EARNED**
+
+| artifact | reliability | source |
+|---|---|---|
+| **pinned FIGURES** | ✅ **`0%` wrong** *(0 of 23 genuine pins)* | **this pass** |
+| `§`-section citations | ✅ `99.2%` resolve | §T20.63 |
+| bare `FILE:LINE` pointers | 🔴 `83.7%` dead among the testable | §T20.62 |
+| **published COMMANDS** | 🔴🔴 **`66.7%` unrunnable as printed** | **this pass** |
+
+⇒ ***The corpus's most reliable artifact is the pinned figure and its least reliable is the command
+that is supposed to reproduce it. The sweep has been recording its ANSWERS faithfully and its METHODS
+carelessly.***
+
+🔑🔑 **AND THIS EXPLAINS §T20.70 EXACTLY. The OPENING-DAY BRIEF is the ONLY claim in the corpus that
+published a COMPLETE command — flag, pattern AND operand: `grep -E "^#{2,4} .*SEASON-CRITICAL"
+NBA_OPEN_ITEMS.md`. *That is the entire reason it could be re-run, and therefore the entire reason it
+was the one claim ever caught.*** ⇒ **THE RULE THIS PASS EARNS: *a re-derivation pin has THREE parts —
+the COMPLETE, copy-runnable command (flag, operand, and the working directory it is run from); the
+TIMESTAMP or TREE that lets the state be restored; and the FIGURE. The corpus publishes the figure
+every time, the timestamp most times, and a complete command once.*** ⚠ **Offered as a rule CANDIDATE,
+not numbered — **the rules index still lacks ten of its fifteen rules (§T20.18)**, which has now
+blocked a third candidate after §T20.21's and §T20.28's.**
+
+✅ **REPAIRED IN THIS PASS**: both broken commands corrected in place with the complete copy-runnable
+form and the working directory named, **the originals struck and kept (rule 40)**, and the workflow pin
+re-derived and marked `HOLDS`.
+
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.70** *(the brief's own test — PRIOR, and EXPLICITLY EXCLUDED
+from clause (ii), which would otherwise be unfalsifiable)* · **§T20.62 / §T20.63** *(the `FILE:LINE`
+death rate and the `§`-pointer audit — PRIOR and a **DIFFERENT OBJECT**: those measure whether a
+POINTER RESOLVES, this measures whether a TEST STILL PASSES; they appear here only as the comparison
+clause (iii) pre-registered)* · **§T20.50's `TZ:` probe** *(PRIOR, the ancestor of both rule-20 saves
+here)* · **§T20.53's `ladder_calibration_asof` figure** *(PRIOR — re-run as a test OF THE PIN, not
+re-discovered as a finding)*.
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(baseline `636 · 2 · 484 · 481`; Δ `484 − 471` =
+`13` segments covered, unchanged)* — **this pass's product was the corpus's methods, not transcript
+coverage.**
+
+📌 ***The lesson:*** **sixty-six passes have pinned every figure they published and almost never
+published a command anyone else could run. The one time the sweep wrote down a complete test, that test
+caught a real defect seventy-three minutes after it appeared.** ***A figure tells a successor what was
+true. A command tells them how to find out whether it still is — and only one of those two has been
+written down.***
