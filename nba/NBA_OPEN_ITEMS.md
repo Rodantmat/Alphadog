@@ -13326,6 +13326,36 @@ and triggered nothing.**
 > it asserts artefacts are **PRESENT**, and `> 0` is presence. The gap is between its WHAT and its
 > WHY: the WHY is "a missing 44% of the board went unnoticed for TWO DAYS", and catching that needs
 > COMPLETENESS, which no check in the file measures.*
+>
+> ## 🔴🔴 SECOND AMENDMENT — **A GATE THAT WILL BE GREEN ALL SEASON ON A CALIBRATION FROM LAST JANUARY** *(T20 pass 48, §T20.53, 2026-09-22)*
+>
+> **P2's check, quoted:**
+> ```
+> check("as-of calibration available",
+>       "SELECT count(*) FROM nba_score.ladder_calibration_asof", (),
+>       lambda v: v and int(v) > 0, "cells exist")
+> ```
+> **Live, 2026-09-22: `9,904` rows · `24` distinct `as_of_date` · `2024-10-29 → 2026-01-15`.**
+> 🔴 ***The table HAS an `as_of_date` column and the check never reads it.*** **Its newest as-of is
+> `250` days before today and `278` days before opening night**, and `count(*) > 0` will be **GREEN
+> on opening night and every night after**, on a calibration fitted to the middle of last season.
+>
+> 🔑🔑 **THIS IS THE EXACT INVERSE OF T20-13, AND WORSE.** *T20-13 is a gate that goes RED when it
+> should. This one goes GREEN when the artefact is not fit for use — and nothing about it looks
+> wrong.* ✅ **The fix is the pattern already identified in the amendment above**: P1's
+> `defender_ratings refreshed` measures `max(as_of_date)` against a cadence and is RED today.
+> ***`ladder_calibration_asof` has the same shape of column and gets `> 0`. Of the eleven checks that
+> need the twelfth's pattern, this is the one where the column is already there.***
+>
+> ⚠⚠ **AND THIS SUPERSEDES A PRESENT-TENSE CLAIM ELSEWHERE IN THIS FILE.** *The section
+> "What the code does with an empty table" and `NBA_MASTER_SUMMARY.md`'s FINDING 2 both state that
+> the table is EMPTY and that the gate "would fail on today's state."* **It is not empty; the gate
+> passes.** **Both are now annotated with the date and a pointer — DATED, not struck (rule 40): they
+> were true when written.**
+>
+> ✅ **BY CONTRAST `nba_score.confidence_model` IS FRESH** — 10 rows, all at a single
+> `built_at = 2026-09-19 01:25:34.684704+00`. *Recorded because a pass that names one stale artefact
+> should say which ones are not.*
 
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.37).** *Both sides enumerated independently: `certify_pipeline.py`
 read in full — **12** `check()` calls (P1 3 · P2 4 · P3 5), each SQL and predicate quoted; and every
