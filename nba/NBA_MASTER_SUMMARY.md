@@ -36728,3 +36728,96 @@ was discarded as a `§T20.83`-class artefact.*
 the owner will use to decide whether the system works.** ⚠⚠ ***A transcript-driven sweep cannot find
 this by reading transcripts — `standards_3pick_v1` was built on `2026-09-21`, after almost every
 transcript closed. It was reachable only by asking what the pipelines actually call.***
+
+---
+
+# §T20.99 — T20 PASS 94: ✅✅ **THE EXECUTABLE SURFACE IS `42` OBJECTS AND THE TWELVE NOW COVER ALL `42`. AT THE SWEEP'S BASELINE THEY COVERED `39`** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads, `git log`,
+`pg_get_functiondef` and `SELECT` only.**
+
+## 1. 🔴 THE POPULATION — **AND THE FIRST PATTERN MISSED THE HEART OF `P2`**
+
+▶ **`2026-09-22T21:50:20Z`, tree `700d227e2dc37a04bbe77b9e46c4140610fc0788`.** *The `run:` blocks of
+the three pipeline workflows, one level deep — every `nba/*.py` and every DB function invoked from
+inline SQL.*
+
+🔴 **The first enumeration used `nba/[A-Za-z0-9_]*\.py` and returned `37`. It was wrong**, because
+three scripts live in a **subdirectory** and one is invoked with an inline env prefix
+*(`BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py`)*:
+
+> ### **`nba/baseline/build_baseline_ladder.py` · `build_combos_ladder.py` · `build_periods_ladder.py`**
+
+⇒ ***A census of "what the pipelines call" that omitted the baseline-ladder builders — the heart of
+`P2`.*** **Caught by clause (iv), which made a second form mandatory** *(`§T20.71`'s wrap trap,
+`§T20.74`'s blacklist and `§T20.83`'s spelling are the precedents)*. ✅ **Corrected population:
+`40` scripts + `2` DB functions = `42` called objects.** *This is the **fifth** automated census in
+this sweep to be wrong on its first run.*
+
+## 2. ✅ THE WORKING TREE — **COMPLETE, AND THE INSTRUMENT IS ALIVE**
+
+**Every one of the `42` is named in the twelve, in at least two probe forms** *(filename and stem)*.
+**`0` uncovered · `0` thin.** *Least covered: `scrape_nba_onoff.py` **6** mentions across **4**
+documents; `grade_paper_picks` **9**/`3`; `log_paper_picks` **10**/`3`. **Median `24` mentions across
+`4` documents.** Most covered: `score_board_legs.py` **114**/`6`.*
+🔬 **RULE 22 — NEGATIVE CONTROL, because a perfect result is exactly when to check the instrument**
+*(`§T20.92`'s lesson)*: **four invented names — `scrape_nba_unicorns.py`, `nba_score.settle_the_bet`,
+`build_flux_capacitor.py`, `standards_9pick_v7` — all return `0`.** ✅ **The census is live, not dead.**
+
+## 3. 🔑🔑 **THE FINDING IS IN THE OTHER TREE — AND CLAUSE (ii) HITS THERE, EXACTLY**
+
+*Pre-registered: "at least `3` called objects are named in `0` of the twelve."* ❌ **Against the
+WORKING tree that is a MISS — `0`.** ✅ **Against the BASELINE tree it is a HIT, and the number is
+exactly `3`:**
+
+| uncovered at the sweep's baseline | closed by |
+|---|---|
+| **`nba/maintenance_shrink_board_index.py`** | 🔴 **`T20-7`** — *"P3's 'Board tiers' step runs `maintenance_shrink_board_index.py`; `board_tiers` has no writer"*, a **SILENT** season-critical item |
+| **`nba_score.log_paper_picks`** | `§T20.94` |
+| **`nba_score.grade_paper_picks`** | `§T20.98` |
+
+⇒ ✅✅ ***The sweep's coverage of the system's executable surface went from `39 / 42` to `42 / 42`,
+and it can now say so with a before and an after rather than an impression.***
+🔑🔑 **AND THE METHOD POINT IS WORTH MORE THAN THE NUMBER**: *`RULE 28` separates the BASELINE tree
+from the WORKING tree **for novelty probes**. **A coverage census has the same two trees and they
+answer different questions** — the working tree says "is anything missing now?", the baseline says
+"what did this sweep actually add?". **Run on the working tree alone, this pass was a null result.***
+
+## 4. ⚠ CLAUSE (iii) — **PARTIAL, AND THE EXCEPTION IS THE INTERESTING ONE**
+
+*Pre-registered: the uncovered objects are disproportionately RECENT.* ✅ **True for `2` of `3`** —
+the paper-trading functions are dated **`2026-09-21`** by their own workflow comments, after almost
+every transcript closed. ❌ **False for the third**: `maintenance_shrink_board_index.py` was added
+**`2026-09-10`**, older than `certify_pipeline.py` and `build_availability_delta.py` *(both
+`2026-09-19`, `git log --diff-filter=A`)*.
+⇒ 🔑 ***Two mechanisms hide a called object from a documentation sweep, not one***: **① it was built
+after the transcripts** · **② it is called from a step whose NAME DOES NOT DESCRIBE IT.** *`T20-7`'s
+step is headed **"Board tiers (goblin / standard / demon)"** and runs a file whose own docstring
+begins **"One-off…"**. **A reader auditing that pipeline by step name would never look for it.***
+
+## 5. ⚠ CLAUSE (i) — **`RULE 52`, AND A THIRD PINNED SEGMENT**
+
+**`2026-09-22T21:51Z`: `650 · 1 · 471 · 469`. The HIGH BAND moved `649 → 650`, so the delta was
+opened** *(rule 52; judged on MAGNITUDE per `§T20.95`)*:
+
+> ### **SEGMENT `401` CROSSED `>= 0.45` BY MOVING `0.4500 → 0.4500`** — *the change is below the fourth decimal, and the segment is a tool-call JSON blob* (`{"returncode":0,"stdout":…`).
+
+⇒ **NOISE, not a result.** 📌 ***Three threshold-pinned segments are now known across two bands —
+`938` at `0.4000`, `292` and `401` at `0.4500` — and the count has grown every time the sweep has
+looked. `RULE 52` is not a precaution; it is the normal case.***
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.98`** *(**PRIOR** — its closing line is this pass's
+method, and the paper functions are its find)* · **`T20-7`** *(**PRIOR** — the third baseline gap is
+an item this sweep already raised; **not re-discovered, credited**)* · **`§T20.93`** *(**PRIOR** — the
+workflow census this call graph sits inside)* · **`§T20.92`** *(**PRIOR** — the four-wrong-censuses
+record that made clause (iv) binding, and it was right again)* · **`§T20.95`** *(**PRIOR** — rule 52's
+magnitude clarification, applied)*. ▶ **RULE 51, last step, BASELINE tree, probed as the CLAIM**:
+*"executable surface"*, *"call graph"*, *"what the pipelines call"* and *"covered in the twelve"* all
+return **`0` files**.
+
+📌 ***The lesson:*** **a census sent to find holes found none, and was worth running anyway — because
+the same census against the sweep's own starting point measured what the sweep had done.** ⚠⚠ ***The
+twelve now describe every script and every function the three pipelines execute. That is a statement
+this sweep could not make before today, and it is the one an owner needs before `2026-10-20`.***
