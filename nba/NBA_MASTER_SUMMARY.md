@@ -28558,7 +28558,8 @@ next morning, with no system change whatsoever.**
 subtraction against "today" that rots.***
 
 ✅ **ALL THREE FIXED IN-PASS (rule 12), and fixed as DATES rather than renumbered to 20** *(a fresh
-countdown is stale tomorrow; `NBA_OPEN_ITEMS.md:4463`, `:11651` and `NBA_MASTER_SUMMARY.md:1780` now
+countdown is stale tomorrow; the two `NBA_OPEN_ITEMS.md` blocks above and this document's
+`nba_calendar.games` `[LIVE-AUDIT]` entry *(search: `written **once, 2026-09-02**`)* now
 read "stale SINCE <date>" with the original figure dated beside it — rule 40, annotated not struck)*.
 🔴 **And one consequence moved with them: the missed weekly cron fires went from TWO to THREE.**
 
