@@ -658,9 +658,25 @@ a measurement** — and it is the SLIP-SHAPE term of §0.2's decomposition, neve
 | **Flex** | 3 | **2.25×** all · **1.25×** on 2/3 |
 | **Flex** | 4 | **5×** all · **1.5×** on 3/4 |
 
-⚠ **Read this against §0.2 and §0.2h, not on its own.** §0.2's *"4/5 = 0.5 and 3/5 = 0.25"* are
+⚠ **Read this against §0.2, §0.2h and §0.9c, not on its own.** §0.2's *"4/5 = 0.5 and 3/5 = 0.25"* are
 **partial-tier FRACTIONS from MLB**; the rows above are **absolute NBA-era entry payouts**. They are
 different quantities and **must not be multiplied together without re-deriving the convention.**
+
+> ⚠⚠ **`§0.9c` — AND THE TABLE ABOVE DOES NOT SAY WHICH PRODUCT, OR WHICH STATE, IT DESCRIBES**
+> *(inbound pointer added 2026-09-22, T20 pass 85, §T20.90 — repairing a `T20-1` orphan; **no row
+> above is struck or changed**.)* **`§0.9c` — *"THE PRODUCT CHANGED UNDERNEATH THE DATA — and the
+> change is STATE-DEPENDENT"*, four headings below this one** *(authority: the researcher's source
+> review, **self-corrected two segments later**)* — records that PrizePicks moved toward the
+> peer-to-peer **`Pick'em Arena`** on **`2025-08-22`**, and that ***`Pick'em Arena` is
+> STATE-DEPENDENT, not universal.***
+> 🔑 **Why it belongs on THIS table and not only on its own heading**: the rows above are, by their
+> own authority line, ***"A PUBLISHED TABLE, not a measurement"*** — **and a published entry table is
+> published for one product in one jurisdiction.** *Nothing in the table names either.*
+> 🔴 **`§T20.24` then established that the archive can never settle it** *(live, 2026-09-22)*: the
+> board history **straddles the `2025-08-22` change with nothing marking it**, and The Odds API
+> normalises PrizePicks to American odds — ***so `p × m` cannot be tested historically, because `m`
+> was never stored.*** ⇒ ***Take these rows as the slip-shape term of §0.2's decomposition, dated to
+> T13; do not treat them as a live price for a named state.***
 ✅ **The Single-Tier Non-Arbitrage check (§0.2d.1) has NOT been run on these rows** — it is
 arithmetic, not a study, and it is the cheapest next thing this document can do.
 
