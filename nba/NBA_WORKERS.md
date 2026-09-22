@@ -27,6 +27,19 @@ writes. Grouped by role.
 
 ### A · THE THREE PIPELINES IN STEP ORDER
 
+> ⚠⚠ **A NOTE ON "THREE", ADDED 2026-09-22 (§T20.43) — AND IT RESOLVES A MIS-CITATION IN THE SYSTEM.**
+> **All three workflow files open with `# PIPELINE n OF 3 (COMPASS fact 107)`.**
+> 🔴 **COMPASS fact 107 is headed *"TWO PIPELINES, CUTOFF 1:15 PM PT — AND THE SCENARIO SIMULATOR IS
+> DROPPED"* and reads *"ARCHITECTURE: **(1) heavy overnight pipeline** … **and (2) a light 1:15 PM PT
+> pipeline**"*, explicitly *"supersedes the three-phase design in facts 41 and 68"*.**
+> ⇒ ***Each of the three files cites, as its authority for being one of THREE, a fact whose headline
+> is TWO and which explicitly retired a three-phase design.***
+> ✅ **THE RECONCILIATION, stated here because it appears nowhere else in the corpus**: **fact 107
+> describes the DAILY architecture. P1 is WEEKLY** *(cron `0 19 * * 1`, Mondays)* **and sits outside
+> what 107 addresses.** ⇒ **"Three" counts a layer the fact does not discuss; the two are compatible,
+> and neither the workflows nor the twelve had ever said so.**
+> ⚠ **Recorded, not fixed in the system (rule 1): the workflow headers are the SYSTEM's text.**
+
 **P1 — `nba-p1-weekly-static.yml` · 14 invocations · cron `0 19 * * 1` (Mondays 12:00 PT)**
 
 | step | script | writes |
