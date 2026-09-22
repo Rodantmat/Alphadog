@@ -33173,3 +33173,118 @@ forty-eight rules about carefulness, missed three priors. One script that scores
 three in one hundred seconds — including one inside a pass that had been recorded as clean.**
 ***The sweep's instrument for measuring the transcripts was always good enough to measure the sweep.
 It took fifty-nine passes to point it that way.***
+
+---
+
+# §T20.65 — T20 PASS 60 · THE MECHANICAL CHECK, FINISHED — **THE OWNER'S OPEN ITEMS ARE CLEAN: 0 OF 175**
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: one local script over two snapshots.** **Nothing edited in the
+system; `NBA_COMPASS.md` not written to.**
+
+## 0. THE OMISSION THIS PASS EXISTED TO CLOSE
+
+**§T20.64's instrument scored `300` paragraphs — *all of them from `NBA_MASTER_SUMMARY.md`*.** *This
+session also wrote open items **T20-9 … T20-14**, FIVE brief amendments, the T18-1 diagnosis block,
+the T20-6 amendments, and edits to four other documents.* 🔴 **None of it had been checked — and
+§T20.56 established that `NBA_OPEN_ITEMS.md`'s brief is the one surface the owner will actually
+read, while §T20.64 found that the ONE file the instrument HAD seen contained a rediscovery marked
+`✅ CLEAN`.**
+
+## 1. POPULATION — DERIVED MECHANICALLY, PER FILE (rules 17/30)
+
+**Added lines taken by `diff` of each pre-session baseline file against the working file, re-grouped
+into paragraphs (≥120 normalised chars). Same vectoriser as §T20.64, unchanged, so the two passes are
+comparable.**
+
+| file | added paragraphs |
+|---|---|
+| **`NBA_OPEN_ITEMS.md`** | **175** |
+| `NBA_WORKERS.md` | 20 |
+| `NBA_FINAL_SCORING_CALIBRATION.md` | 2 |
+| `NBA_MULTIPLIERS.md` | 2 |
+| `NBA_SYSTEM_DESIGN.md` | 1 |
+| **TOTAL** | **200** |
+
+**Scored against the same baseline: `9,258` paragraphs from `31` pre-session files.**
+
+## 2. ✅✅ THE RESULT — AND THE DISTRIBUTION IS THE HEADLINE
+
+| threshold | count |
+|---|---|
+| **≥ 0.90** | **0** of 200 |
+| **≥ 0.80** | **0** |
+| **≥ 0.70** | **0** |
+| **≥ 0.60** | **1** |
+| ≥ 0.50 | 5 |
+
+| file | ≥ 0.60 |
+|---|---|
+| 🎯 **`NBA_OPEN_ITEMS.md`** | **0 of 175** |
+| `NBA_WORKERS.md` | 0 of 20 |
+| `NBA_SYSTEM_DESIGN.md` | 0 of 1 |
+| `NBA_FINAL_SCORING_CALIBRATION.md` | 0 of 2 |
+| `NBA_MULTIPLIERS.md` | 1 of 2 |
+
+⇒ ✅✅ ***THE OWNER'S OPEN ITEMS — 175 new paragraphs, six new items, five brief amendments and the
+whole T18-1 diagnosis — CARRY NOT ONE PARAGRAPH THAT DUPLICATES THE PRE-SESSION CORPUS AT THIS
+THRESHOLD.*** **Nothing anywhere reaches 0.70.**
+
+## 3. ⚠ THE ONE HIT, OPENED — AND IT IS THE INSTRUMENT WORKING
+
+**`0.6468`, `NBA_MULTIPLIERS.md` against itself**, at line 714:
+> *"If Arena applies, `p × m` (§0.3b) is not even the right test. **~~NOT RECORDED: which regime the
+> system's own board scrape is reading.~~**"*
+
+**`git log -L` attributes it to commit `24bd443a`, `2026-09-22T07:39:22-07:00` — *T20 pass 19
+(§T20.24)*, an earlier pass of this same session — and the very next line announces it:**
+> *"### ✅✅ `[LIVE-AUDIT]` **THE "NOT RECORDED" IS ANSWERED, 2026-09-22 (T20 pass 19, §T20.24) — THE
+> SCRAPE READS NEITHER REGIME. IT READS A PRICE.**"*
+
+⇒ ✅ **Category (b): a deliberate strikethrough of the baseline's own sentence, with its §-pointer
+attached. Correct behaviour, exactly the case rule 19 was pre-registered to protect.**
+
+## 4. ⚠ A SUSPECTED DEFECT IN THE SWEEP'S OWN BASELINE — PROBED, AND DISPROVED
+
+*The hit looked like a provenance problem: if pass 19's edit is at `07:39` and the baseline was cut
+at `12:52`, the baseline should already contain it — so either the tree is older than §T20.63
+claimed, or its pinning was unsound.* **Both were checked:**
+- **All 31 baseline files share the identical mtime `2026-09-22 12:52:20`** — a uniform extraction,
+  not a per-file copy.
+- 🔑 **And the commit's offset resolves it: `2026-09-22T07:39:22−07:00` is `2026-09-22T14:39:22Z`** —
+  **one hour forty-seven minutes AFTER the `12:52:20Z` cut.**
+
+⇒ ✅ ***No anomaly. The baseline is sound and §T20.63's pinning stands.*** 📌 **Recorded rather than
+dropped, because a suspected defect in the instrument that just corrected three passes is worth
+showing the working for — and because the resolution was a timezone offset, which is the same class
+of error T20-11 records in P1's cron comment.**
+
+## 5. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — SIXTY-FIRST consecutive identical run.** Measured 2026-09-22T18:23:05Z |
+| **(ii)** ≥1 non-summary added paragraph scores ≥0.60 | ✅ **TRUE — exactly one, and nothing reaches 0.70** |
+| **(iii)** ≥1 is a genuine prior rather than a deliberate quotation | ✅✅ **FALSE — NO FOURTH MISS.** The single hit is this session's own announced strikethrough |
+
+✅ **Baseline `636 · 2 · 484 · 481` — SIXTY-FIRST consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 6. ⚠ VERDICT
+
+✅✅ **CLEAN — and it is the answer that matters most, because it is about the page the owner will
+act from. T20 → CLEAN 1/3.**
+⚠⚠ **AND THE BOUND IS RESTATED SO THE RESULT IS NOT OVER-READ (rule 18): cosine on `char_wb`
+n-grams is a SURFACE measure. It catches RE-PHRASINGS, not re-discoveries in different words.**
+⇒ ***"0 of 175" means no open-item paragraph REPEATS the corpus. It does not mean no open item
+re-discovers it. This is a FLOOR on novelty checking, not a ceiling, and the three misses §T20.63
+and §T20.64 found were all caught at this same floor.***
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on with TWO INDEPENDENT reads owed, exactly as T19 (§T19.6,
+OWNER DECISION).**
+⚠ **KILLS LOGGED (rules 26/28)**: **the three known misses** *(§T20.47's deploy prior, §T20.60's
+Betr prior, §T20.61's worker census — prior by construction, expected wherever this session quoted
+them, not re-scored)* · **the single `0.6468` hit** *(this session's own pass-19 strikethrough)*.
+
+📌 ***The lesson:*** **the instrument that found three rediscoveries in the summary found none in the
+open items — 175 paragraphs, six new findings, the diagnosis of the owner's own question, and not one
+of them repeating what was already written.**
+***The sweep's bookkeeping was where it went wrong. Its findings were not.***
