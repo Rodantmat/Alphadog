@@ -12723,6 +12723,67 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-13 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, FIRES ON OPENING NIGHT · P2's CERTIFIER WILL GO RED EVERY NIGHT FOR THE FIRST TWELVE NIGHTS OF THE SEASON — CORRECTLY**
+
+**Severity 7 of 7 — the only item in this set that fires on a KNOWN DATE, and that date is opening
+night.** **Found T20 pass 47 (§T20.52), 2026-09-22.** **Evidence: VERIFIED by live SQL across two
+complete seasons.**
+
+**THE FACT.** `nba_score.baseline_history`, distinct `prop` per `game_date`:
+
+| | through | from |
+|---|---|---|
+| **2024-25** | **2024-10-31 — 22 props, every day** | **2024-11-01 — 30, every day** |
+| **2025-26** | **2025-10-31 — 22 props, every day** | **2025-11-01 — 30, every day** |
+
+**A step function on November 1, in both seasons, with no ramp.** **The 8 that arrive are all period
+props** — `points_q1` · `points_q4` · `points_q4_otx` · `points_h1` · `points_h2` · `assists_q1` ·
+`rebounds_q1` · `threes_made_q1` — **and 22 + 8 = 30.**
+
+⚠⚠ **IT IS NOT A SLATE-SIZE EFFECT.** *The count is CONSTANT at 22 while the 2025-26 opening slates
+swing from **2 games to 12** (`2 · 12 · 2 · 12 · 5 · 9 · 11 · 5 · 10 · 4 · 8`). On 2025-10-22 — a
+twelve-game slate carrying 71,862 rows — the prop count is still 22.* **And it cannot be a
+games-played threshold: the two seasons opened on different days (2024-10-22, 2025-10-21) and cut
+over on the same calendar day both times.**
+
+**MECHANISM, at the strength the evidence supports.** `nba/baseline/build_periods_ladder.py`
+partitions training history on a year-month key —
+`hist = d[(d["season"].isin(TRAIN) | (d["ym"] < month)) & d["tier"].notna()]` — **so in October of a
+new season there is no completed in-season `ym`, and on November 1 October becomes one.** ⚠ **Stated
+as CONSISTENT WITH, not proven: that line is read from a patch script (`rep(s, …)`), not from the
+executed source. The observation is verified; the cause is a strong reading.**
+
+🔴🔴🔴 **THE CONSEQUENCE.** **The 2026-27 season opens `2026-10-20`. The cutover is `2026-11-01`.
+TWELVE nights.** **P2 certifies with `count(DISTINCT prop) >= 25`, `CERT_STRICT=1`, and a docstring
+that says it *"never warns."*** ⇒ ***P2 fails certification on opening night and every night for
+eleven more — and on two seasons of evidence that red is CORRECT-BY-DESIGN, not a defect.***
+
+⚠⚠ **AND THE SYSTEM ALREADY WROTE DOWN WHY THIS IS THE WORST OUTCOME**, at
+`nba-p3-afternoon-light.yml:13-14`:
+> ***"A scheduled job failing nightly against an empty slate teaches everyone to ignore red builds."***
+
+🔴 **THE WINDOWS OVERLAP WITH T20-12.** *The hardcoded `PT = -8` makes `p3_cut` an hour late for every
+day of PDT — live from preseason `2026-10-03` to `2026-11-01`, **29 days**, containing all twelve of
+these nights.* ⇒ ***The opening fortnight carries both the red certifier and the mis-timed cutoff, and
+neither is visible from the other.***
+
+✅ **THE FIX IS A CHOICE, NOT AN INVESTIGATION — all four are one edit:** lower the October gate ·
+make the threshold month-aware · derive it from the slate · **or accept twelve red nights knowingly
+and tell whoever watches the builds.** ***What must not happen is meeting it unprepared on
+2026-10-20.***
+
+✅ **AND A DERIVED GATE IS AVAILABLE, MEASURED** (§T20.52 clause (iii)): over the **152** post-cutover
+dates with a known game count, `baseline_history` rows per game is **8,141 ± 501 (SD = 6.2% of the
+mean)**, range **5,699 → 9,066** across slates of **1 to 15 games**. **As an input to a decision and
+explicitly not a recommendation**: a floor of **`rows >= 5,000 × games`** sits below all 152 observed
+dates *(worst observed 5,699 — a 12% margin, which is thin and is said to be thin)* **and above a
+44%-loss slate (4,559)** ⇒ ***it would catch the incident in the certifier's own docstring, which
+`> 0` does not.***
+
+⚠ **NOT FIXED — DOCUMENTED, per the owner's standing instruction.**
+
+---
+
 ## T20-12 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, LIVE IN ELEVEN DAYS · THE PIPELINE'S PYTHON LAYER HARDCODES PST — `p3_cut` IS AN HOUR LATE FOR EVERY DAY OF DAYLIGHT SAVING TIME**
 
 **Severity 6 of 7.** **Found T20 pass 45 (§T20.50), 2026-09-22.** **Evidence: VERIFIED** — file text
