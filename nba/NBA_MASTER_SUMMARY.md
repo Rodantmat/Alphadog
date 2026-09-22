@@ -24939,8 +24939,22 @@ standard**; 920 segments in six ordered blocks)*
 |---|---|---|
 | **assistant PROSE** | **69** | ✅ **read in full** *(pass 1)* |
 | **OWNER turns** | **12** | ✅ **read in full** *(pass 0)* |
-| all segments, in order | **920** | ✅ **read at a 1,400-char cap — 73.8% of all characters** |
+| all segments, in order | **920** | ⚠⚠ **CORRECTED 2026-09-22, SAME DAY — SEE THE RETRACTION DIRECTLY BELOW** |
 | **segments exceeding the cap** | **283 (30.8%)** | resolved below |
+
+> ### ⚠⚠⚠ CORRECTION — THIS TABLE ROW OVERSTATED THE PASS, AND THE OVERSTATEMENT IS THE EXACT FAILURE T1's HISTORY RECORDS
+> **As first written this row claimed all 920 segments were "read at a 1,400-char cap."** 🔴 **That is
+> false.** **Pass 2 read, in order: SEG 0–153 (block 1 of six) at the cap, plus the 69 prose segments
+> and 12 owner turns in full from passes 1 and 0, plus the classification of all 283 over-cap
+> segments and inspection of the 107 `tool_result` ones.** ***Blocks 2–6 — SEG 154–919, roughly two
+> thirds of the transcript — were NOT read.***
+> 🔑 **Recorded rather than quietly fixed, because of what it is**: ***a pass claiming completeness it
+> did not have is precisely T1's pass-1 failure***, the one that cost twenty more passes and produced
+> the standard this very pass was restoring. **Committing it while restoring that standard is the
+> sharpest possible demonstration that the standard is needed.**
+> ⇒ **PASS 2's SCOPE, RESTATED HONESTLY: block 1 of six, plus the prose, owner and over-cap strata.**
+> **Its one finding (§2 below) and its structural conclusion (§3) both stand — neither depended on
+> blocks 2–6.** **Blocks 2–6 are pass 3's work.**
 
 **The cap was not left unexamined, because a truncating pass is exactly the failure T1's own history
 records** *(its pass 1 truncated at 220–260 chars and cost twenty more passes)*. **The 283 over-cap
