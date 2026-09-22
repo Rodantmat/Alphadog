@@ -12,6 +12,7 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 | Date | What |
 |---|---|
 | 2026-09-20 | Created. Material from T13 (the rule, the invisible anchor, validation), T7 (the More-only verification), the live session (the four-way correction, PrizePicks NBA producer). |
+| **2026-09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `9` commits that this log never recorded.** *T13–T16 material plus the live audits: **the owner's own rule statement, and the four parts the twelve lacked** · `board_tiers_v2` verified in code and data, with **the Less half unexercised** · **§0h the labels are encoded in the price**, the T13 measurement re-taken live · §5.4 the empirical per-tier answer with its population · **§0e-T16 the owner's directive that the ladder must not be re-tiered** · §T16.2 the goblin slope error and the alternate-vs-standard split · §T16.3 the final engine's monotone tier behaviour. **Corrections in place: the More-goblin floor is `1.9×`, NOT `2.08×` (owner-supplied, verified live) · a citation to a COMPASS fact that does not exist (176) corrected.*** |
 
 ---
 
