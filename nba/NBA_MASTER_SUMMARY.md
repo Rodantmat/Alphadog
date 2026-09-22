@@ -28097,7 +28097,9 @@ this timestamp. It is not a proof that a prefix matcher cannot mis-resolve in pr
 > **② `§0.9d.1` and `§6.0` have headings that EXIST** — `NBA_MULTIPLIERS.md:770` and `:1295` — **and
 > are invisible to `narrow`, `wide v2` and `v3` alike, because all three test `line.startswith('#')`
 > and these headings are written inside a BLOCKQUOTE** *(`> ### 0.9d.1 …`)*. ▶ **`145` such heading
-> lines across the twelve, declaring `86` distinct ids.**
+> lines across the twelve, declaring ~~`86`~~ **`2`** distinct ids** *(the `86` corrected in place
+> 2026-09-22 by `§T20.92` §1 — it counted the first prose word of each heading; the line count
+> stands, and the two ids are `§0.9d.1` and `§6.0`, both named above)*.
 > **③ `§4c.1`, `§4c.4`, `§0d.1` are NOT "sub-ids invented at citation time"** — they are the
 > convention ***"section X, numbered child item n"***, and each resolves by title on the first try
 > *(`§4c.4` → `NBA_SYSTEM_ARCHITECTURE.md` §4c `### 4. A shared helper can carry its OWN hidden
