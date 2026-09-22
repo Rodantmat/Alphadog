@@ -24929,6 +24929,63 @@ Factor lock (5 research passes) · return-ramp · the day-before injury report �
 
 ---
 
+# §T18.6 — CROSS-DOCUMENT CONSISTENCY: THREE CORRECTIONS THAT NEVER PROPAGATED
+*(T18 pass 7, 2026-09-22 · the angle T2 closed on · **RULE 40 is born here**)*
+
+## THE INSTRUMENT, AND WHY THIS ONE IS SHARP
+
+⚠ **The first instrument tried was blunt and is recorded so it is not tried again**: *group every
+comma-number appearing in ≥2 of the twelve (346 of 659) and flag those with many distinct preceding
+words.* **It returned 108 candidates, almost all noise** — a number legitimately appears in many
+grammatical contexts. *(Rule 15: a pattern tuned wrong mis-measures, and the wrong number is not
+always zero — here it was ~108 too high.)*
+
+✅ **The sharp instrument asks the question the documents themselves answer**:
+***find every struck-through value in the twelve, then check whether the SAME value is still
+asserted UN-STRUCK anywhere else.*** *A strike-through is the sweep's own marker that a figure was
+corrected — so an un-struck twin is a correction that failed to travel.*
+✅ **RULE 22 POSITIVE CONTROL: `19,343,348` — a value known to appear in several files — was found in
+four** *(`NBA_MASTER_SUMMARY`, `NBA_DATABASE`, `NBA_OPEN_ITEMS`, `NBA_FINAL_SCORING_CALIBRATION`)*
+**before any zero was trusted.**
+
+## 🔴 THE RESULT: THREE STRUCK VALUES IN THE TWELVE, AND ALL THREE STILL ASSERTED UN-STRUCK
+
+| struck value | corrected in | still stated flat in | |
+|---|---|---|---|
+| **`110,955`** *(`board_scored` rows)* | `NBA_DATABASE` → **5,524,359 (2026-09-21)** | **`NBA_MASTER_SUMMARY` · `NBA_GLOSSARY` · `NBA_OPEN_ITEMS`** | ✅ **propagated 2026-09-22** |
+| **`233`** *(distinct Over prices)* | `NBA_MULTIPLIERS` §0.9e.1 | **`NBA_MASTER_SUMMARY`, two places** | ✅ **propagated** |
+| **`211`** *(distinct Under prices)* | `NBA_MULTIPLIERS` §0.9e.1 | **`NBA_MASTER_SUMMARY`, two places** | ✅ **propagated** |
+
+⚠ **Rule 15 in force on the instrument's own output**: **`211` and `233` are short numbers with many
+innocent occurrences** — segment counts, source line numbers, a pass's segment total. **Every hit was
+opened; most were noise, and only the `distinct prices` assertions were real.** *Two of three struck
+values produced mostly false positives, which is why the hits must be read and not counted.*
+
+## 🔑 AND THE TWO CASES ARE NOT THE SAME KIND OF WRONG — *this is rule 40's second half*
+
+**`233 / 211` was WRONG.** *The transcript retracts it in its own words*: **"it corrects something I
+told you earlier — Underdog has NO LADDERS IN THIS ARCHIVE… my earlier statement that we held
+'233,000 rows of real NBA tiered pricing' was WRONG."** ✅ *Re-taken live 2026-09-22: 937,524
+player-market-sides, **936,353 with exactly ONE rung — 99.87%**.* ⇒ **It must carry its retraction
+everywhere it appears.**
+
+**`110,955` was RIGHT WHEN WRITTEN.** `board_scored` has simply been rebuilt daily: **110,955 on
+2026-09-20 · 5,524,359 on 2026-09-21 · 12,818,715 on 2026-09-22.** ✅✅ ***And the 2026-09-20 state is
+STILL PHYSICALLY VERIFIABLE — `nba_score.board_scored_snapshot_20260920` holds exactly 110,955
+rows.*** ⇒ **What it needs is a DATE, not a strike-through.**
+
+🔑🔑 ***A DATED figure is corrected by adding "as of T". A WRONG figure is corrected by retracting it.
+Treating the first like the second destroys evidence*** — which is rule 36's lesson *(a correct
+supersession can still destroy content)* arriving from the opposite direction.
+
+✅ **And the derived RATE survives the population change intact**, which is the test that shows the
+finding was never about the population: **6,317 interpolated of 110,955 = 5.7%** here, against the
+transcript's own independent scorer run at **3,243 of 58,395 = 5.55%** *(`NBA_DATABASE` §0z-T18)*.
+*Two populations, two runs, the same rate — so 5.7% is a property of the ladder's depth, not of one
+day's board.*
+
+---
+
 # §T18.5 — THE TWO-DIRECTION JUDGMENT, AND A REFERENCE AUDIT OF THE SWEEP'S OWN TWELVE
 *(T18 pass 4, 2026-09-22T11:34:13Z · **high band 127 · tail 7**, both stable · the pass the
 completion criterion requires among the three clean passes)*
