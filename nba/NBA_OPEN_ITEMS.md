@@ -12711,6 +12711,57 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+# 🔴🔴🔴 OPENING-DAY BRIEF — THE SEVEN BLOCKERS, RANKED BY WHAT THEY COST *(T20 pass 40, §T20.45, 2026-09-22)*
+
+> **REGULAR SEASON OPENS `2026-10-20`. PRESEASON `2026-10-03`.**
+> ⚠ **THIS BRIEF CONTAINS NO NEW FINDINGS (rules 26/28).** *Every field below is READ BACK from the
+> item it summarises; nothing is asserted here that is not established there. Covers **T20-1 … T20-7**
+> — the items opened by T20 passes 28–39. Older open items are NOT re-ranked.*
+> **RANKING RULE (re-derivable):** sort by **SILENT before LOUD**, then **STOPS THE SLATE before
+> DEGRADES IT**, then **UNCAUGHT by a certifier before CAUGHT**. *A silent failure costs a season
+> before anyone looks; a loud one costs an evening.*
+
+| # | item | fails | effect | caught by a certifier? | fix size |
+|---|---|---|---|---|---|
+| **1** | 🔴🔴 **T20-5** — the grader's window ends `2026-04-12` | 🔴🔴 **SILENT** *(prints "grading 0 dates", exits 0)* | **DEGRADES, cumulatively** — the as-of calibration and the confidence model learn from nothing, all season | 🔴 **NO** *(PIPE=p2 never touches `board_outcomes`)* | **one line** ×2 |
+| **2** | 🔴🔴🔴 **T20-7** — P3's "Board tiers" step runs `maintenance_shrink_board_index.py`; `board_tiers` has no writer | 🔴🔴 **SILENT** *(the step succeeds; it simply classifies nothing)* | **DEGRADES** — P2 and P3 read a tier table frozen at `2026-04-12` | 🔴 **NO** | **a decision** *(which script was meant)* |
+| **3** | 🔴🔴 **T20-4** — P3/P2 hardcoded to `"2025-26"`, 14 locations | ⚠ **MIXED** — `score_board_legs` aborts LOUD; `build_availability_delta` returns 0 **SILENT** | 🔴 **STOPS THE SLATE** | ✅ **YES** *(PIPE=p3's five checks)* | **14 lines, one pattern** |
+| **4** | 🔴🔴🔴 **T20-6** — 7 of 12 certifier checks assert tables their pipeline never writes | ✅ **LOUD** *(`CERT_STRICT=1`, "never warns")* | 🔴 **STOPS THE SLATE** — P2 and P3 both go red at certify, after doing all their work | *n/a — it IS the certifier* | **a decision** *(build the table, or re-point the check)* |
+| **5** | 🔴 **T20-3** — two MLB schedules still `enabled`, zero NBA rows; NBA run ledger empty | ✅ **LOUD-ish** | **DEGRADES** — unwanted work on a 42.95 GB disk; and `SELECT`-only observability cannot answer *"did P3 run today?"* | n/a | **a toggle** + a decision |
+| **6** | 🔴 **T20-2** — the storage-diet plan is aimed at a database that no longer exists | n/a *(a plan, not a run)* | **DEGRADES THE DECISION** — a reader budgeting from it double-counts `action_2`'s ~174 MB and mis-targets `action_4` | n/a | **rewrite the plan** |
+| **7** | ⚠ **T20-1** — five 🔴 findings nothing points at | n/a *(navigation)* | **DEGRADES COMPREHENSION** | n/a | **pointers, or a convention** |
+
+## ✅ CLAUSE (ii) — **THE SEVERITY ORDER CONTRADICTS THE DISCOVERY ORDER**
+
+**Found in order 1→7. Ranked by cost: `5 · 7 · 4 · 6 · 3 · 2 · 1`.**
+🔑 ***The two most dangerous were found FIFTH and SEVENTH — last. The one filed as "HIGHEST OPEN
+ITEM" when it was written (T20-4) ranks THIRD, because it fails LOUD and the certifier catches it.***
+⚠⚠ ***T20-6 was called "THE LARGEST STRUCTURAL FINDING OF THE SWEEP" and it ranks FOURTH — it is the
+biggest, and being biggest is not being worst: it fails loudly on the first attempt and the owner
+will see it.*** 📌 **The item titles were written at discovery and rank by impressiveness; this table
+ranks by cost, and they disagree.**
+
+## 🔑🔑 CLAUSE (iii) — **THREE OF THE SEVEN COLLAPSE INTO ONE FIX**
+
+> **T20-5 (`GRADE_END` / `RUNG_TO`) · T20-4 (14 season literals) · and half of T20-2 (the plan's
+> `38.1M rows`, a figure from the same rollover) are all ONE DEFECT: *a value that should be derived
+> from the slate date is written as a literal.***
+✅ **And the fix already exists in the repo** — `nba/baseline/build_baseline_ladder.py`'s
+`_season_of(d_)` derives the season from `BT_ASOF`. **Applying that one pattern retires blockers 1, 3
+and half of 6 on this list.**
+⇒ ***Seven blockers, but not seven jobs: ONE pattern, ONE toggle, and THREE decisions only the owner
+can make (what P3's step 6 was meant to run · whether the certifier's tables get built or its checks
+re-pointed · whether the v2/MLB `5.98 GB` is retained).***
+
+## ⚠ WHAT THIS BRIEF DOES **NOT** SAY
+
+**Nothing here is a recommendation and nothing was changed, triggered or dispatched.** *This sweep
+documents; it does not fix (rule 1, and the owner's standing instruction).* **The ranking is a VIEW
+over the seven entries below — if it disagrees with one of them, the entry is authoritative and the
+brief is wrong.**
+
+---
+
 ## T20-7 · **NEW · 🔴🔴🔴 SEASON-CRITICAL · THE DEEPEST MIS-WIRING FOUND** · P3's "Board tiers" step runs an index-maintenance script, and `board_tiers` has no writer at all
 
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.40).** *Read edge built over the same `116` scripts: **41** distinct
