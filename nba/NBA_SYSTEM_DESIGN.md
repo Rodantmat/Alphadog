@@ -1515,6 +1515,40 @@ reports. 📌 *Naming these is part of the finding: **`67` non-re-raising handle
 scripts once the bar is applied**, and a census that had skipped the reading would have reported
 thirteen times the true number.*
 
+---
+
+## ✅✅ **THE SHELL HALF — AND IT IS CLEAN** *(added 2026-09-22, T20 pass 98, §T20.103)*
+
+> *The census above searched one language; a GitHub Actions step is a **shell** script and swallows
+> differently. **The same bar was applied to the `run:` blocks** — pinned `2026-09-22T22:11:52Z`:
+> **`39` steps, `20` `run: |` blocks** across the three pipelines.*
+
+| construct | found | verdict |
+|---|---|---|
+| **`continue-on-error:`** | ✅ **`0`** in all three pipelines | *GitHub reports such a step green regardless — **none exists here.** ⚠ **And it is a deliberate choice, not an oversight**: `11` other NBA workflows DO carry it — `nba-backfill`, `nba-backtest`, `nba-boards-market`, `nba-daily-delta`, `nba-diagnostic`, `nba-game-officials`, `nba-measure-types`, `nba-pergame-backfill`, `nba-scrape`, `nba-season-tables`, `nba-starter-status` — and `§T2.10a` already documents that policy for the scrape jobs.* |
+| **`\|\| echo failed`** | ✅ **`0`** | *the only two `\|\| echo` hits in all three files are **the headers declaring the policy**: `nba-p2-overnight-heavy.yml:15` — **"both fail the job loudly. No `\|\| echo failed` anywhere"** — and `nba-p1-weekly-static.yml:16`, **"FAILURE POLICY: steps report loudly."*** |
+| **`\|\| true`** | **`4`** | ✅ **all four are `git add … \|\| true` inside commit steps, each followed by `git diff --cached --quiet`** — a CHECKED fallback, excluded by the bar, exactly as the `62` retry handlers were above |
+| **explicit `set -euo pipefail`** | **`7` of `20` blocks** | see below |
+
+### ⚠⚠ **THE THIRTEEN BLOCKS WITHOUT `set -euo pipefail` ARE NOT A DEFECT, AND CHECKING THAT IS THE POINT**
+
+*A multi-command block with no `set -e` **looks** like the shell's `except Exception: pass` — and this
+census was one patch away from publishing twelve of them as findings.* ▶ **What killed it**: **no
+`shell:` and no `defaults:` override exists in any of the three files**, so GitHub's default `run`
+shell on Linux applies — **`bash -e {0}`** — ***and `-e` is therefore already on: a command that is
+not the last CAN fail the step.***
+⚠ **THE PRECISE RESIDUAL, STATED RATHER THAN WAVED AWAY**: *`bash -e {0}` gives `-e` but **not
+`-o pipefail` and not `-u`*** — so a failure inside a **shell pipeline** would still be masked in
+those thirteen blocks. ▶ **Checked: there is not a single shell pipeline in any of them** *(the two
+`|` characters found are inside Python f-strings — `print(f"PAPER_GRADED|{n} picks")`)*.
+⇒ ✅ **RESIDUAL EXPOSURE: ZERO.**
+
+> ## 🔑🔑 **THE CONTRAST IS THE FINDING.**
+> ***The shell layer DECLARES a no-swallow policy in its own headers and keeps it completely. The
+> Python layer declares nothing at the file level and holds the one handler that leaves no trace
+> (`T20-17`).*** **The discipline was written down where it was already being followed, and is absent
+> where it was not.**
+
 **And it matters twice over for the season opener**: **2026-10-01 and 10-02 are genuinely zero-game
 days** before opening night on the 3rd, **and they coincide with the `active_stats_season` edge case
 already recorded.** A pipeline run on those dates should report *"no games scheduled"*, not silence
