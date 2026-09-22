@@ -34220,3 +34220,89 @@ that fire hardest when they do. The defect is not decoration. It is that three d
 number their rules from one, in the same prose, with no way to tell them apart — and the pass that
 measured the resulting confusion two days ago was itself confused by it.** ***A corpus can be
 disciplined about obeying its rules and still not know which rule it is obeying.***
+
+---
+
+# §T20.74 — T20 PASS 69: 🔴 **THE FOURTEEN RE-DERIVED AGAINST LIVE — ALL FIVE TESTABLE ITEMS HOLD EXACTLY, AND THE FIX WINDOW IS SEVENTEEN DAYS, NOT TWENTY-EIGHT** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.** 🔑 **WHY THIS ANGLE: passes 64–68 (§T20.69–
+§T20.73) all audited the SWEEP. The charter's subject is AlphaDog NBA, the regular season opens
+`2026-10-20`, and §T20.70 left a debt — the OPENING-DAY BRIEF's position — recorded as *"flagged for a
+later pass."***
+
+## 🔴 CLAUSE (iii) — **MEASURED, AND IT IS WORSE THAN §T20.70's LINE COUNT SUGGESTED**
+
+**`910,821` characters — `87.0%` of a `1,046,960`-character file — sit above the OPENING-DAY BRIEF**
+*(line `13,282` of `14,993`, `2026-09-22T19:16Z`)*. **What occupies the top instead: the `T18-1`
+ladder diagnosis and a `T17` census entry — both real, neither a ranked list of what must be fixed
+before opening night.**
+
+✅ **REPAIRED, AND WITHOUT MOVING ANYTHING (rule 40): a compact POINTER plus the full ranked order and
+the live re-derivation now sits at the very top of `NBA_OPEN_ITEMS.md`.** *The brief itself is
+untouched — its five amendments are part of the record.*
+
+## ✅ CLAUSE (ii) — **IT FAILS. ALL FIVE LIVE-CHECKABLE ITEMS HOLD EXACTLY, AND THE NEGATIVE IS THE RESULT**
+
+| item | re-derived | verdict |
+|---|---|---|
+| **T20-13** | `baseline_history` — **October `22` distinct props · November `30`** *(892,599 and 3,281,336 rows)* | 🔴 **HELD EXACTLY** |
+| **T20-12** | `PT = timezone(timedelta(hours=-8))` still at `build_availability_delta.py:39`; **no `ZoneInfo`, `pytz` or `America/Los_Angeles` in any NBA `.py`** | 🔴 **HELD** |
+| **T20-4** | `nba-p3-afternoon-light.yml:38` `default: "2025-26"`, `:205` `BS_SEASON: … '2025-26'` | 🔴 **HELD** |
+| **T20-14** | Betr board **still one commit, `2026-09-09`**; `token_expires_at` **`2026-10-10T06:10:56Z`** *(value not reproduced — repo is PUBLIC)* | 🔴 **HELD** |
+| **frozen static layer** | `nba_ref.defender_ratings` `max(as_of_date)` = **`2026-04-09`**, **`166` days**, `111,768` rows | 🔴 **HELD EXACTLY** |
+
+⇒ ***Clause (ii) asked whether any item had CHANGED STATE. None has. Reported as the honest negative
+(§T20.70 and §T20.73 are the precedents), and it is the reassuring kind: **the brief is not drifting —
+the system is simply not being touched.***
+
+## 🔑🔑 THE FINDING NO ITEM STATES — **THE FIX WINDOW IS SEVENTEEN DAYS**
+
+*Across **twelve** board sources — PrizePicks, Betr, FanDuel, DraftKings, BetMGM, Fanatics, Pick6,
+Bovada, BetRivers, BetOnline, William Hill, Underdog — **the newest NBA board row in
+`nba_market.board_snapshots` is `game_date 2026-04-12`, snapshot `2026-04-13`*** *(bovada `04-10`)*.
+✅ **That is the last night of the 2025-26 season and it is exactly correct for an off-season.**
+⚠⚠ ***But it means none of the fourteen can be exercised against live NBA board data until preseason
+on `2026-10-03`. The window between the first NBA board row and opening night is **SEVENTEEN DAYS**,
+not twenty-eight — unless a fix can be validated without live board data.***
+
+## ⚠⚠ RULE 20 — **TENTH SAVE, AND IT IS THE CORPUS'S OWN RECORDED DEFECT, COMMITTED AGAIN BY ME**
+
+*The first freshness query filtered `board_snapshots` with a **BLACKLIST** of MLB market keys and
+returned* **"fliff `2026-09-13`, underdog `2026-09-12`, sleeper `2026-09-12`"** *— which reads as: the
+board archive died nine days ago while the scrapers keep running.* 🔴 **Every one of those rows is
+MLB.** *The blacklist missed `player_runs`, `player_singles`, `player_batter_*`,
+`player_hits_+_runs_+_rbis`, `player_team_total_runs_alternate`, `player_bat_walks`…* ✅ **Re-run with
+a WHITELIST of NBA market keys: twelve sources, all ending `2026-04-12`.**
+
+📌 ***This is §T11.4a exactly — "a row in `nba_market.board_snapshots` is not necessarily an NBA row,
+and four passes of this sweep assumed it was" — the finding that BECAME `RULE 23`: "a count states its
+population, its tree, AND its sport." I cited rule 23 in §T20.72's population line and then failed it
+here, two passes later.*** ⇒ **§T20.73's lesson, demonstrated on myself within one pass: *a corpus can
+be disciplined about obeying its rules and still not know which rule it is obeying.***
+
+## ✅ A RULE-26/28 SAVE — **AN "EXTENSION" THAT WAS THE PRIOR'S CORRECT SCOPING**
+
+*The `-8` hardcode appears in **five** files, not the two T20-12 names —
+`find_delta_test_date.py:30` and `measure_report_cutoff.py:33` are the extras.* 🔴 **I was one step
+from publishing "five files, not two."** ✅ **Checked first: both appear ONLY in
+`nba-engine-test.yml`, never in P1/P2/P3 — and T20-12's population is *"the P1/P2/P3 `run:` lines, 40
+scripts, 44 files."*** ⇒ ***The prior's scope is correct and the extension is not one. Logged as a
+kill.***
+
+⚠ **KILLS LOGGED (rules 26/28)**: **the fourteen items** *(**PRIOR** — this pass RE-DERIVES them, which
+is a different act; every item that still holds is logged **HELD**, not republished)* · **§T20.70's
+position measurement** *(**PRIOR**; re-taken only because the repair needed a current number)* ·
+**§T20.56 and §T20.70** *(the brief's completeness and its heading — **PRIOR**, already repaired)* ·
+**the five-file "extension"** *(killed above)* · **the PrizePicks-absent-from `boards/` scare**
+*(killed: `alphadog-v2-prizepicks-github-board.js` is a **Cloudflare worker**, so PrizePicks has never
+used the repo board path — absence in one directory is not absence)*.
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(baseline `636 · 2 · 484 · 481`; Δ `484 − 471` =
+`13`)*.
+
+📌 ***The lesson:*** **five passes of self-audit ended with the sweep in good order and the system
+untouched. The re-derivation found nothing new and that is the point — every season-critical item is
+exactly where it was left, twenty-eight days out, and the board archive that would let anyone test a
+fix does not wake up for eleven more.** ***The sweep has been auditing its own instruments while the
+thing they point at sits still. Both facts are worth knowing; only one of them has a deadline.***
