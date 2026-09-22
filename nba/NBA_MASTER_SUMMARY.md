@@ -36633,3 +36633,98 @@ ago, turns out to work — and the pass that confirmed it produced a better ques
 was sent to answer.** ⚠⚠ ***Three passes have now converted one qualitative open item into a
 timetable, a price and a feasibility test, entirely from data the corpus already owned. None of it
 required a single write to the live system.***
+
+---
+
+# §T20.98 — T20 PASS 93: 🔴🔴🔴 **THE STRATEGY THE WHOLE SYSTEM WILL BE JUDGED BY WAS NAMED IN `0` OF THE TWELVE AND DESCRIBED IN NONE — AND SPECIFYING IT FOUND A SILENT, PERMANENT GAP IN THE RECORD** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **`pg_get_functiondef`, `SELECT`
+and file reads only. Nothing run, nothing written to the live system.**
+
+## 1. ✅ CLAUSE (ii) — **HIT, AND MORE SHARPLY THAN REGISTERED** *(predicted: named in ≤ 2 of the twelve)*
+
+▶ **`2026-09-22T21:44:53Z`, tree `e7419a5390cc422e557ba98a99f2b5c1669e0c21`** — `standards_3pick_v1`
+appears in **`2` of the twelve**, ⚠ ***and both occurrences are inside one SQL snippet this sweep
+itself quoted at `§T20.94`/`§T20.97`, yesterday's work and today's.***
+▶ **In the BASELINE tree it appears in `0` of the twelve** — its only baseline carrier is
+`PP_PAYOUT_FINDINGS.md`, *the concurrent session's file and out of scope*.
+⇒ ***Before this sweep touched it, the id of the strategy the owner will judge the system by was in
+none of the twelve documents written to describe the system.***
+
+⚠⚠ **AND THE NOVELTY PROBE CAUGHT A PRIOR THAT QUALIFIES THE CLAIM — WHICH IS RULE 26 WORKING ON A
+SECTION ALREADY DRAFTED.** *`§T12.6h`, **`2026-09-22T07:01:11–23Z`**, under* ***"The concurrent
+session's new objects, verified against the live database"***, *already lists* ***"`nba_score.paper_pick_slips(p_date,
+p_threshold, p_snapshot)` and `paper_pick_candidates` likewise; `nba_score.paper_picks` has
+`event_id`."*** ⇒ ***Their EXISTENCE and SIGNATURES were on file. Their CONTENT was not, and the
+section says so in those terms rather than the ones it was drafted in.***
+
+🔑 **THE SCOPE CALL, MADE EXPLICITLY**: *the functions appear to be the concurrent session's work —
+**but `P2` and `P3` call `log_paper_picks` and `grade_paper_picks` directly**, so **what the in-scope
+pipelines EXECUTE is in scope to document.** The build session's own artefacts are not:
+`PP_PAYOUT_FINDINGS.md` is pointed at and never read, `prop_universe`'s counts are **mid-rebuild and
+not final**, and `sim_strategy`'s replay figures are **deliberately not reproduced** (§4 below).*
+
+## 2. ✅ CLAUSE (iii) — **HIT. THE RULE IS FULLY RECOVERABLE, AND IT IS SIMPLER THAN ITS NAME.**
+
+*Written into `NBA_SYSTEM_DESIGN.md` end to end — selection, packing, logging, grading. The core:*
+
+| | as coded |
+|---|---|
+| book | 🔴 **`prizepicks` ONLY** — *Underdog, Sleeper, Fliff, Betr are not eligible* |
+| lines | **standards only** — `market_key NOT LIKE '%alternate'` |
+| props | 🔴 **a hardcoded twelve-prop map inside the function** |
+| value | **`mv = 2 × final_hp`** — an **even-money EV proxy**, not a PrizePicks payout |
+| threshold | `mv >= 1.30` ⇒ ***exactly `final_hp >= 0.65`*** |
+| per player | **one leg — best prop and side** *(`DISTINCT ON (player) ORDER BY mv DESC`)* |
+| packing | **greedy, game-aware, slips close at `3`**, every slip spanning three different games |
+
+## 3. 🔴🔴 CLAUSE (iv) — **HIT, AND THE PARAMETER THAT MATTERS IS A DUPLICATE**
+
+*Registered: "at least one strategy parameter is hardcoded where no document names it… the prediction
+is that there are MORE."* **Found: the book filter, the standards filter, the slip size `3`, the
+`2×` value constant — and one that is not merely undocumented but dangerous:**
+
+> ### ***The identical twelve-prop `m(prop, market_key)` VALUES list is hardcoded TWICE — in `paper_pick_candidates` and in `grade_paper_picks` — with no shared source.***
+
+⇒ 🔴 **A prop added to the selector and not to the grader produces picks that are logged and can NEVER
+be graded.** *The grader's `JOIN m ON m.prop = p.prop` drops them; they keep `result IS NULL` for
+ever; and because the function only ever touches ungraded rows, **nothing reports them missing.***
+***A silent, permanent gap in the record the system is judged by.*** ⚠ **Recorded, not fixed (rule 1).**
+🔑 *And the list is exactly twelve — the number `§T20.24` measured live for the archived PrizePicks
+board — so **`§0v.4`'s backtest scope limit propagates unchanged into the live selection rule.***
+
+## 4. ⚠ A `NOT RECORDED` THAT ONLY ANOTHER SESSION HAS ANSWERED
+
+**Nothing in `P2`, `P3`, the four functions or the twelve says whether a 3-leg slip is a Power Play or
+a Flex**, and `NBA_MULTIPLIERS.md` §0.9b makes the difference large: **Power 3-pick `6×`
+all-or-nothing** against **Flex 3-pick `2.25×` all / `1.25×` on 2/3.**
+⚠ **The only statement anywhere is `nba_score.sim_strategy`'s single row — `std3_power_130`, created
+`2026-09-22T07:10:13Z`, `slip_type: "power"`, noted as the strategy *"rebuilt on the prop universe."***
+🔴 **NOT ADOPTED**: *it postdates the baseline, it is built on the mid-rebuild `prop_universe`, and it
+appears to belong to the build session.* ⇒ **OWNER DECISION — the slip type belongs in the pipeline or
+the config, not only in a validation row written by another session.**
+
+## 5. ✅ CLAUSE (v) AND CLAUSE (i)
+
+✅ **(v)** — **`nba_score.paper_picks` and `paper_results` both hold `0` rows, said plainly**: *expected,
+not a defect — `§T20.95` established the system has never run against a live slate. The section
+documents the MECHANISM and never implies a record exists.*
+✅ **(i)** — **`2026-09-22T21:47Z`: `649 · 1 · 471 · 469`. Both bands unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: 🔴 **`§T12.6h`** *(**PRIOR**, found by the novelty probe
+**after the section was drafted** — the functions' existence and signatures; **the claim was narrowed
+in place rather than published as written**)* · **`§T20.94`** *(**PRIOR** — `log_paper_picks`, the
+primary key and the idempotency analysis, reused not re-derived)* · **`§T20.24`/`§0v.4`** *(**PRIOR** —
+the twelve archived stat types)* · **`NBA_MULTIPLIERS.md` §0.9b and §0.2f** *(**PRIOR** — the payout
+table and the same-game discount the packing rule implements)*. ▶ **RULE 51, last step, BASELINE
+tree, probed as the CLAIM**: *"the twelve-prop map is duplicated"* and *"never be graded"* return
+**`0`**; *"one leg per player"* and *"slip_type"* return **`PP_PAYOUT_FINDINGS.md` only — out of
+scope, noted and not read.** ⚠ *A generic probe on `"duplicated|two copies"` hit thirteen files and
+was discarded as a `§T20.83`-class artefact.*
+
+📌 ***The lesson:*** **the youngest thing in the system was the least documented, and it is the thing
+the owner will use to decide whether the system works.** ⚠⚠ ***A transcript-driven sweep cannot find
+this by reading transcripts — `standards_3pick_v1` was built on `2026-09-21`, after almost every
+transcript closed. It was reachable only by asking what the pipelines actually call.***
