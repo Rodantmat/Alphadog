@@ -2085,6 +2085,51 @@ single-valued `baseball_mlb`/`MLB`) · `market.prizepicks_board_current` (`leagu
 
 ---
 
+## §0z2-T18 — LIVE NUMERIC RE-VERIFICATION OF EVERYTHING T18 PUBLISHED
+*(T18 pass 6, `[LIVE-AUDIT]`, read-only `SELECT`s, **2026-09-22T11:43Z** — roughly three hours after
+the earliest of these figures was first taken this session)*
+
+| figure | published, and where | live 2026-09-22 | |
+|---|---|---|---|
+| `final_hp` `score < 0` | **6,924,101** §0a-T18-B | **6,924,101** | ✅ **EXACT** |
+| `final_hp` `score >= 0` | **12,291,099** §0a-T18-B | **12,291,099** | ✅ **EXACT** |
+| `final_hp` total | 19,215,200 | **19,215,200** | ✅ **EXACT** *(and 6,924,101 + 12,291,099 = 19,215,200 ✓)* |
+| `final_hp` latest `built_at` | **22:41:47** §0a-T18-B | **2026-09-19 22:41:47.612137+00** | ✅ **EXACT to the microsecond** |
+| `final_hp` 2024-25 legs | 19,075,070 | **19,075,070** | ✅ **EXACT** |
+| `final_hp` 2025-26 legs | 140,130 | **140,130** | ✅ **EXACT** |
+| `baseline_history` | **19,343,348** §0w *(T17's correction)* | **19,343,348** | ✅ **EXACT — stable across three days** |
+| `board_snapshots` | 27,067,871 *(T11 pass 3)* | **27,067,871** | ✅ **EXACT** |
+| `confidence_model` rows | **10** §5.2 correction | **10** | ✅ |
+| `confidence_model` `f_role` deduction | **11.2731** §5.2 | **11.2731** | ✅ |
+| `confidence_model` deduction sum | **29.0004** §T18.5 | **29.0004** | ✅ **EXACT to 4 dp** |
+| `f_role` separation | 0.008477 | **0.008477** | ✅ |
+| `f_phase` separation | **0.001467** §5.2 | **0.001467** | ✅ |
+| `board_tiers_v2` | **2,199,354** §0.005-T18 | **2,199,354** | ✅ |
+| `board_tiers` | 2,199,354 | **2,199,354** | ✅ **identical to v2** |
+| `board_scored` | 12,818,715 | **12,818,715** | ✅ |
+| `conformal_confidence` | 342 | **342** | ✅ |
+| `scenario_realised` | 1,942 | **1,942** | ✅ |
+| `schedule_norm` 2024-25 / 2025-26 | 1,230 / 1,230 §0.002-T18 | **1,230 / 1,230** | ✅ |
+
+🔑 **TWENTY FIGURES RE-TAKEN, TWENTY EXACT — 100%, against a pre-registered bar of 90%.**
+⚠⚠ **AND THE PRE-REGISTRATION'S THIRD CLAUSE FAILS, WHICH IS WORTH MORE THAN THE FIRST TWO PASSING.**
+*It predicted **at least one published figure would have MOVED**, on the reasoning that another
+session is writing this database — with the stated consequence that **if none moved, the sweep's
+`[LIVE-AUDIT]` timestamps are doing no work and should be said to be doing none.*** ❌ **None moved.**
+⚠ **But the escape clause's conclusion is TOO STRONG and is not adopted**: **a timestamp that
+documents STABILITY is doing work — it is what let T17's §0w correction be made at all**, when a
+`baseline_history` figure was *believed* to have drifted and provably had not. ⇒ ***Restated at the
+strength the evidence supports: over this session's three-hour window T18's live figures are
+STABLE, and the timestamps record that stability rather than track drift. The right claim for a
+`[LIVE-AUDIT]` figure is "as of T", never "still true".***
+
+⚠ **One TRANSCRIPT figure has moved, and it is not one of the sweep's**: SEG 94 recorded a 2025-26
+minimum score of **−53.68**; the live minimum across both seasons is **−52.49**, and 2025-26's own
+minimum is now **+7.40**. ✅ **Consistent with what the twelve already record** — 2025-26 holds one
+date's 140,130 legs rather than a season, a loss of **19,471,496** rows already on file from T17.
+
+---
+
 ## §0z-T18 — THE TWO MEASUREMENT TABLES THE PROSE REPORTED ONLY IN PART
 *(T18 pass 2, mechanism strata · `run_sql_postgres` results quoted verbatim · written 2026-09-22.
 **Both are `[TRANSCRIPT]` figures — queries the author ran on 2026-09-19 — not `[LIVE-AUDIT]`.**)*
