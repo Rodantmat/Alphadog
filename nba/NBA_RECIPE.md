@@ -500,6 +500,13 @@ already reported.** Full methodology, the three techniques and the six named fai
 > `BT_TRAIN`/`BT_TEST` · `BT_CARRY`"*** — 🔴 **but nothing anywhere maps a COMBINATION to a ROLE.**
 > *`BT_SAVE_COMPONENTS=1` is listed as a knob; that it is what makes step 12 a different job from
 > step 11 is recorded in no document.* ⚠ **Recorded, not fixed (rule 1).**
+> ✅✅ **CLOSED ONE PASS LATER — `NBA_WORKERS.md` now carries *THE MODE DISPATCH TABLE***, written
+> T20 pass 96 (`§T20.101`) from the script itself: **every flag, its default, where it is read, and
+> what it does in the production ladder** — plus the two silent failures the mapping exposes
+> *(**the injury step cannot fail the build**, and **a typo in `BT_CUTOFF` falls back to `baseline`
+> with no warning**)*. 🔴 **And it corrected the env list itself: `BT_TRAIN`/`BT_TEST` are INERT in
+> this builder** *(their anchor line is replaced by season auto-detection)* **while remaining
+> load-bearing in the HISTORY builders — and `BT_TAG` was missing from every document.**
 >
 > 📌 **THE FULL MULTI-ROLE CENSUS OF THE THREE PIPELINES** *(same pin)* — **4 scripts run in more
 > than one step**: **`certify_pipeline.py` ×3** *(`PIPE=p1`/`p2`/`p3` — the mode is IN the step name,
