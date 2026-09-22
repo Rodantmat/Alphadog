@@ -37027,3 +37027,84 @@ and **all were opened** — they are the `§0d.1` prescription and unrelated use
 half that was done — listing the knobs — LOOKED like the whole job.** ⚠⚠ ***Writing the other half
 took one pass and produced two inert flags, four undocumented live ones and two silent failures. The
 list was not a small version of the table. It was a different thing wearing its name.***
+
+---
+
+# §T20.102 — T20 PASS 97: 🔴🔴🔴 **ONE HANDLER IN `69` LEAVES NO TRACE AT ALL — IT DROPS INJURY-ARCHIVE SHARDS, AND WHAT IT FEEDS IS THE SCORED BOARD** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads and `SELECT` only.**
+
+## 1. 📐 POPULATION AND BAR — **RE-DERIVED, NOT REUSED**
+
+▶ **`2026-09-22T22:07:03Z`** — the **`40`** scripts the three pipelines call *(re-enumerated with the
+subdirectory-safe pattern `§T20.99` had to learn)*: **`69` `except` handlers**, **`67`** of which
+neither re-raise nor exit.
+⚠⚠ **THE BAR WAS FIXED BEFORE READING and it excluded far more than it kept**: *a handler counts only
+if it does not re-raise, does not exit non-zero, does not write a checked sentinel — **and the step
+still reports success while the certifier cannot tell.*** ***A retry loop is not a swallow. A designed
+fallback is not a swallow.***
+⇒ 🔑 **`67` non-re-raising handlers reduce to `5` SCRIPTS.** *A census that had counted without
+reading would have reported thirteen times the true number — which is `§T20.92`'s lesson arriving
+before the mistake instead of after it.*
+
+## 2. ❌ CLAUSE (ii) — **MISS BY ONE, AND IT IS REPORTED AS A MISS**
+
+*Pre-registered: "**more than `5`** of the `40` scripts contain a handler that swallows a failure and
+lets the step report success."* **Found: exactly `5`.** ❌ **MISS.** *The temptation to count the `62`
+excluded handlers as partial credit was available and is refused; the bar was written first precisely
+so that it could bind against my own prediction.*
+
+## 3. ✅ CLAUSE (iii) — **HIT, AND ALL FIVE FALL IN THE CLASS THAT MATTERS**
+
+*Registered: "at least `2` sit in ENRICHMENT, which no certifier checks at all."* ▶ **All five do.**
+*`§T20.94` read all twelve checks across the three pipelines: **not one covers enrichment.***
+
+| where | what is lost | why nothing catches it |
+|---|---|---|
+| 🔴🔴🔴 **`build_availability_delta.py:70-71`** | **whole SHARDS of the injury archive** | ***`except Exception: pass`. No message of any kind.*** Only `if inj.empty` is tested ⇒ **a smaller-but-non-empty delta looks normal** |
+| 🔴🔴 **`baseline/build_baseline_ladder.py:103`** *(PRIOR)* **+ `baseline/build_periods_ladder.py:80`** *(NEW — the identical handler, DUPLICATED)* | the whole day-before injury enrichment | one printed line; `PIPE=p2` counts rows and props |
+| 🔴 **`build_defender_ratings.py:64-67`** | matchup SHARDS | `PIPE=p1` checks `defender_ratings > 10000` — ***a partial build clears a floor that low*** |
+| ⚠ **`scrape_nba_season_tables.py:133-139`** | one team's COACHES per failure | **`P1` has no coaches check at all** |
+
+## 4. 🔴🔴🔴 THE HEADLINE — **THE ONLY HANDLER WITH NO TRACE FEEDS THE SCORING STEP**
+
+> ### **`build_availability_delta.py:71` is the only one of the `69` that leaves NO evidence — no print, no counter, no sentinel.**
+> *(The set's only other bare `pass`, `scrape_underdog_board.py:91`, **looks like the worst case and
+> is not**: `registry` is assigned a valid default on the line above and seeded on the lines below.)*
+
+**And `nba/score_board_legs.py:189` reads `FROM nba_score.availability_delta WHERE game_date = %s`.**
+⇒ ***A dropped shard does not degrade a report. It changes which legs `P3` scores, and the only
+evidence is the absence of rows nobody counts.*** ⚠ **No human error is required — one flaky fetch is
+enough**, which is what separates it from `T20-16`. ✅ **Raised as `T20-17`, SEASON-CRITICAL and
+SILENT, and PLACED third in the brief's ranked order rather than appended to it** *(the brief moves to
+**SIXTEEN**; its rank against `A` and `13` was **not** re-derived and is stated as such)*.
+
+## 5. ⚠ **AND IT BREAKS A DISCIPLINE THE CORPUS ALREADY STATES** *(rule 51 turned this from a find into a better one)*
+
+*The novelty probe returned hits and they were opened.* **`NBA_MASTER_SUMMARY.md:5660`**: *"**Baseline
+build** (T14+) — **fail loudly, no swallowing** — the outputs are interdependent; a silently missing
+prop pair is **invisible** and corrupt."* **`NBA_OPEN_ITEMS.md:9577`** repeats it.
+⇒ 🔑🔑 ***So the finding is not "swallowing is bad" — the corpus said that at T14. It is that **the two
+baseline ladder builders each carry a swallowing handler**, in the exact layer the rule names.*** **A
+documented discipline the code does not follow is a stronger statement than a new rule would have
+been, and it belongs to the owner rather than to the sweep.**
+
+## 6. ✅ CLAUSE (i) — `RULE 52`
+
+**`2026-09-22T22:08Z`: `648 · 1 · 470 · 467`. All three bands unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.101`** *(**PRIOR** — the one instance that motivated
+the census; **the second ladder builder is this pass's**)* · **`§T20.94`** *(**PRIOR** — that no
+certifier covers enrichment, reused not re-derived)* · **`§T20.99`** *(**PRIOR** — the 40-script
+population and the subdirectory lesson)* · 🔴 **`NBA_MASTER_SUMMARY.md:5660` / `NBA_OPEN_ITEMS.md:9577`**
+*(**PRIOR**, found by the probe — the stated no-swallowing discipline; **the pass re-framed its claim
+around them rather than publishing over them**)*. ▶ **RULE 51, last step, BASELINE tree, probed as the
+CLAIM**: *"no trace"* and *"cannot fail the build"* return **`1` file each, opened, unrelated**;
+*"swallow"* returns four, **opened, and they are the discipline above.**
+
+📌 ***The lesson:*** **the most dangerous line in forty scripts is two words long and prints nothing.**
+⚠⚠ ***Every other finding in this sweep announced itself somehow — a wrong number, a broken pointer, a
+missing cron. This one is defined by the absence of evidence, which is why a census had to go looking
+for it rather than waiting to trip over it.***
