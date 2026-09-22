@@ -12847,8 +12847,16 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 ## T20-14 · **NEW · 🔴🔴 SEASON-CRITICAL, DATED · BETR'S ACCESS TOKEN EXPIRES `2026-10-10` — TEN DAYS BEFORE OPENING NIGHT**
 
 **Severity 4 of 7** *(one of five apps; cheap to fix; but it fires on a known date and nothing
-watches it)*. **Found T20 pass 55 (§T20.60), 2026-09-22.** **Evidence: VERIFIED** — the file states
-it, and every date below is from `git log`, not a file mtime.
+watches it)*. ⚠⚠ **PROVENANCE CORRECTED 2026-09-22 AT §T20.63 — THIS ITEM IS REAL AND
+SEASON-CRITICAL, AND IT WAS NOT DISCOVERED BY T20.** ***It was already on file before this session,
+in one of the twelve:*** **`NBA_SYSTEM_ARCHITECTURE.md:145-149`** — *"the job runs ON THE WORKER,
+never on a GitHub runner … **Token life 30 days; `token_expires_at` is `2026-10-10T06:10:56Z`** …
+**BUT THE BETR PULL IS NOT RUNNING — one write, twelve days ago, while the others refresh daily**"*
+— **plus `NBA_MASTER_SUMMARY.md:15695` and `NBA_OPEN_ITEMS.md:840`.** ✅ **What T20 pass 55 added is
+a RE-MEASUREMENT with `git log` dates and the opening-night arithmetic, and what it gets WRONG is the
+word "new".** 📌 *The rule-26/28 check was run with the right terms and its output was truncated at
+eight lines; the truncation was read as the result.* **Re-measured T20 pass 55 (§T20.60),
+2026-09-22; every date below is from `git log`, not a file mtime.**
 
 **`boards/betr_nba_current_meta.json`, quoted verbatim:**
 ```
