@@ -35610,3 +35610,91 @@ from the BRIEF**, and the distinction is stated above)*.
 paragraphs of instructions — and the instructions asked a question the audits never had to: *when does
 this run?*** ***A description can be complete and still never be asked the one thing a reader needs
 first.***
+
+---
+
+# §T20.89 — T20 PASS 84: ✅ **`STEP 11` — THE BUILD ORDER IS WRITTEN, AND IT RESOLVES ONE OF `T20-1`'s FIVE ORPHANS. THE NUMBER DID NOT MOVE — AND THAT REFINES THE LESSON** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: `§T20.88` proved that writing finds what auditing cannot, and moved `uncovered12` for the
+first time in ten passes. **The method was established; the question was what to write next** — and the
+answer was the one sequence no document stated: *what must exist before what*.**
+
+## ✅ THE DELIVERABLE — **`STEP 11`, EIGHT STAGES, EVERY FIGURE RE-DERIVED LIVE**
+
+| stage | produces *(live `2026-09-22T20:43Z`)* |
+|---|---|
+| **1** namespace + static layer | `teams` **30** · `arenas` **30** · `officials` **80** · `player_name_map` **5,212** |
+| **2** 🔑 game-log backfill *(one-time, NOT a pipeline)* | `player_game_log` · `_advanced` · `_scoring` · `_usage` — **79,358 EACH** · starter status **32,179** |
+| **3** weekly as-of layer | `defender_ratings` **111,768** — 🔴 **RED, `166` days stale** |
+| **4** the baseline ladder | `baseline_history` — **162**×**30** and **163**×**30** dates × props |
+| **5** as-of calibration | `ladder_calibration_asof` — **9,904** / **24** as-of |
+| **6** board archive | `board_snapshots` — **12** sources, newest NBA `2026-04-12` |
+| **7** the grader | `board_outcomes` — **6,905,452** |
+| **8** the scoring engine | `final_hp` **19,215,200** · confidence · score |
+
+🔑 **Stage 2 re-derives the recipe's own row-9 figure exactly — `79,358` — which is the kind of check
+`STEP 11` exists to make possible.**
+
+## ✅✅ THE SECOND DELIVERABLE — **AN ORPHAN IS RESOLVED**
+
+**`§0z-3` — THE BUILD-ORDER LOCK** *(`NBA_SYSTEM_DESIGN.md:218`, T17 pass 0, **owner**, 2026-09-19)* —
+**is one of the five findings `T20-1` records that nothing in the corpus points at**, and the one
+`T20-1` calls costliest: *"a session navigating by pointers will not reach it."*
+▶ **`STEP 11` quotes it, builds the gate around it, and cites it three times. `grep -c "0z-3"
+nba/NBA_RECIPE.md` ⇒ `3`.** ⇒ ***One repair, two items: the sequence is delivered and the orphan has
+its first inbound pointer.*** ⚠ *`T20-1` itself is unchanged and not re-measured — four orphans
+remain (rules 26/28).*
+
+## ✅ CLAUSE (iii) — **HITS: THREE ORDERING QUESTIONS THE CORPUS DOES NOT ANSWER**
+
+1. 🔴🔴 **Is `final_hp`'s expected size the BOARD-SCOPED set or the FULL LADDER?** ⚠ **PRIOR, carried
+   — `§0z-3` raises it itself** *(the owner: "every single leg for the past two seasons, **board
+   scoped**…")* **and calls it the highest-value open question; it decides whether `T16-7` is a gap or
+   a scoping choice.**
+2. 🔑 **Where stage 2 is triggered from.** ▶ **Verified: the workflow is `nba-backfill.yml` and it has
+   ZERO `cron:` lines — `workflow_dispatch` only. So do `nba-daily-delta.yml` and `nba-periods.yml`**
+   — *and `nba-daily-delta.yml` is the one `T20-10` records as swallowing three failures: **a workflow
+   that never fires on its own AND reports success when it does**.*
+3. **What stages 6–8 do on a day stage 4 failed.** *`NOT RECORDED` (§T20.88).*
+
+## ⚠ RULE 51 CAUGHT A NEAR-MISS, AND RULE 23 RESOLVED IT
+
+*I was about to publish **"8 of 39 in-scope workflows carry a cron"** as context.* 🔴 **The probe found
+a prior: `NBA_MASTER_SUMMARY.md:3362` — *"a correction to pass 75: **THREE NBA workflows carry a
+cron, not two**"*, with `nba-scrape.yml` the one an earlier `grep -A2 "schedule:"` had missed.**
+✅ **Measured like-for-like today: `nba-*.yml` in scope = **`33`**, with a cron = **`3`** —
+`nba-p1-weekly-static.yml` · `nba-referees.yml` · `nba-scrape.yml`. **The prior re-derives exactly.***
+⇒ **My `8 of 39` is a DIFFERENT POPULATION** *(it adds `fliff-board`, `sleeper-board`,
+`underdog-board`, `scrape.yml`, `gbdt-training`)* **and is recorded as an extension of the prior, not
+as a finding.** 📌 ***Rule 23 for the third time this session: the count was not wrong, the population
+was unstated.***
+
+## 🔴 CLAUSE (i) — **MISSED, AND THE MISS IS THE REAL OUTPUT OF THE PASS**
+
+*Pre-registered, unhedged: **`uncovered12` FALLS AGAIN**.* ▶ **Measured: `648 · 1 · 470 · 469` —
+it HOLDS at `470`.**
+
+🔑🔑 **AND THE DIFFERENCE BETWEEN THIS PASS AND THE LAST ONE EXPLAINS IT.** *`STEP 8`/`9`/`10` quoted
+**workflow step names verbatim from `.yml` files** — language that lives OUTSIDE the twelve. `STEP 11`
+**recombined dependency facts the twelve already carried** — `NBA_DATABASE`'s tables, `NBA_WORKERS`'
+wiring map, the certifier's checks.* ⇒ ***§T20.88's lesson was one word too broad. It is not "writing
+moves the number." It is: **writing that brings language in from OUTSIDE the twelve moves it;
+recombining what is already inside does not.*** **And recombination is still the more useful of the
+two — `STEP 11` is the more valuable step and it moved nothing.**
+
+📌 ***Which is the sharpest thing this session can say about its own instrument: `uncovered12` measures
+IMPORT, not VALUE.***
+
+⚠ **KILLS LOGGED (rules 26/28/51)**: **§T20.88** *(the method and the pipeline steps — **PRIOR**)* ·
+**`§0z-3` / `§0z-5`** *(**PRIOR**, owner-sourced — QUOTED and POINTED AT, never paraphrased as new)* ·
+**`T20-1`** *(**PRIOR** — one orphan RESOLVED, the analysis not re-measured)* · **the cron census**
+*(**PRIOR**, `NBA_MASTER_SUMMARY.md:3362` — confirmed exactly, extended by population)* ·
+**`T16-7`'s board-scoped question** *(**PRIOR**, raised by `§0z-3` itself)*.
+
+📌 ***The lesson:*** **the build order took one pass to write, resolved an owner directive that had
+been unreachable since T17, and left the coverage number exactly where it found it.** ***A metric that
+cannot tell the difference between importing a sentence and answering a question is a metric about
+vocabulary, and this session has now proved that twice — once by moving it and once by not.***
