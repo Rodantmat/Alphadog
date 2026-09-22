@@ -6311,8 +6311,16 @@ cells (nothing to inherit), **2025-26 carries 2,762**; shift magnitudes stable a
 | `score_board_legs.py` | reads the same table |
 | `certify_pipeline.py` | **has the correct gate**: `check("as-of calibration available", "SELECT count(*) FROM nba_score.ladder_calibration_asof", … int(v) > 0, "cells exist")` |
 
+> ⚠⚠ **STATE MOVED — DATED, NOT RETRACTED (rule 40). Re-measured 2026-09-22 (§T20.53):
+> `nba_score.ladder_calibration_asof` holds `9,904` rows across `24` distinct `as_of_date`,
+> `2024-10-29 → 2026-01-15`. THE TABLE IS NOT EMPTY AND THE GATE PASSES.** *The analysis below was
+> true when written and is kept in full; only its live premise has moved.* 🔴 **And the passing gate
+> is now the worse outcome — `count(*) > 0` never reads `as_of_date`, whose newest value is 278 days
+> before opening night. See the T20-6 amendment.**
+
 ### ✅ The detector exists and is right — ⚠ but it is in the pipeline that has no cron
-**The `certify_pipeline.py` gate would fail on today's state.** It sits in the **`p2` branch**, and
+**The `certify_pipeline.py` gate would fail on today's state** *(as of that pass — see the dated note
+above; it PASSES as of 2026-09-22)*. It sits in the **`p2` branch**, and
 **P2 carries no `schedule:` block** (pass 75) — deliberately, until the season opens. **So the check
 that catches exactly this cannot fire until someone adds the cron or dispatches P2 by hand.**
 
