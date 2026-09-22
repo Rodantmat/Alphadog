@@ -35892,3 +35892,155 @@ important-looking one — a methodological kill in a T19 log — is what exposed
 the sweep's own newest rule.** ***The audit that names an orphan is the reason the orphan looks
 cited; the orphan that nothing cites is the reason the corpus repeats itself. Both halves of `T20-1`
 are now demonstrated rather than asserted.***
+
+---
+
+# §T20.91 — T20 PASS 86: 🔴🔴🔴 **`T18-16`'s TEN "DANGLING POINTERS" ARE `0` — AND THE `±1` THIS SWEEP HAS BEEN READING AS A SIGNAL IS A SEGMENT SITTING EXACTLY ON THE THRESHOLD** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies throughout: source,
+date, quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.**
+
+## 1. ✅✅ CLAUSE (ii) — **HIT. NONE OF `11` / `10` / `8` REPRODUCES, AND THE TRUE FIGURE IS `1`.**
+
+*Pre-registered: "the recount does not reproduce any of `11` / `10` / `8`."* ▶ **`scratchpad/t20/refaudit3.py`
+re-run UNCHANGED, `2026-09-22T21:01:04Z`, tree `6061af078aa9ce6c24171a41746fb0b15a044563`:**
+
+| | `§T20.22` (14:16:06Z) | **this pass (21:01:04Z)** |
+|---|---|---|
+| `§`-references | 3,842 | **5,164** |
+| distinct ids | 904 | **1,001** |
+| **dangling under v3** | 49 ids / 105 refs | **53 ids / 167 refs** |
+| **class E** | **10** | 🔴 **12 candidates → `0` after opening them** |
+
+⚠⚠ **AND THE PRE-REGISTERED TRAP FIRED ON MY OWN INSTRUMENT FIRST.** *The pre-registration warned
+that a dangling census re-finds every pointer the sweep's own audits **quote while indicting**. My
+exclusion regex matched on the owning heading and **missed `NBA_OPEN_ITEMS.md:12936–12938`**, where
+`T18-16`'s own surviving-defect list names all ten — because that section is headed `§T18.3`, not
+anything that reads like an audit. **`20` of the `45` class-E references are the sweep quoting its own
+defect list.*** 🔑 ***This is `§T20.90`'s inflation, in the opposite direction and on the same day:
+there, naming an orphan made it look cited; here, naming a dangling pointer makes it look live.***
+
+## 2. 🔬 THE TWELVE, OPENED ONE BY ONE — **AND THE PROBLEM IS THE MATCHER, NOT THE CORPUS**
+
+| id | `§T20.22`'s verdict | **what it actually is** |
+|---|---|---|
+| **`§0.9d.1`** | 🔴 dangling | ✅✅ **FALSE POSITIVE — `NBA_MULTIPLIERS.md:770` IS its heading**, correctly namespaced |
+| **`§6.0`** *(unseen at pass 17)* | — | ✅✅ **FALSE POSITIVE — `NBA_MULTIPLIERS.md:1295`** |
+| **`§4c.1`** | 🔴 *"invented at citation time"* | ✅ `NBA_SYSTEM_ARCHITECTURE.md` §4c → `### 1. Adopt existing correct data rather than blindly re-fetching`; citing line: *"the 'don't re-fetch' rule (§4c.1)"* |
+| **`§4c.4`** | 🔴 same | ✅ §4c → `### 4. A shared helper can carry its OWN hidden internal cap`; citing line: *"the 'hidden internal cap' of §4c.4"* — **verbatim** |
+| **`§0d.1`** | 🔴 same | ✅ `NBA_WORKERS.md` §0d → `### 1. One physical file can serve MANY unrelated logical roles`; citing line: *"NBA has multi-role workers already"* |
+| **`§4k.7`** | 🔴 same | ⚠ **CLASS B** — `§4k` heads `NBA_ARCHITECTURE_BLUEPRINT.md:189`, **outside the twelve**, and `§T20.22`'s own class B already holds `§4k` |
+| **`§0a-T18-C`** | 🔴 same | ⚠ **CLASS C** — only non-audit citer is `:25443`, which names it **to say it was authored in error and fixed** |
+| **`§T15.3` `§T15.4` `§T15.4b` `§T15.4d`** | 🔴 dangling | 🔑 **PRIOR — `§T20.68` measured the same four over THE THIRTY and explained them** |
+| 🔴 **`§8a`** *(unseen at pass 17)* | — | 🔴 **THE ONE GENUINE DEFECT — and it is repaired in this pass** |
+
+### 🔴🔴 **BLIND SPOT ①: A HEADING INSIDE A BLOCKQUOTE IS NOT A HEADING TO ANY MATCHER THIS SWEEP HAS BUILT**
+
+**`narrow`, `wide v2` and `v3` all begin `if not line.startswith('#'): continue`.** *A heading written*
+***`> ### ⚠⚠ 0.9d.1 NARROWED 2026-09-22 …`*** *fails that test at character one.*
+▶ **Censused live: `145` blockquoted heading lines across the twelve, declaring `86` distinct ids** —
+`NBA_OPEN_ITEMS` 70 · `NBA_MASTER_SUMMARY` 41 · `NBA_DATABASE` 9 · `NBA_MULTIPLIERS` 9 ·
+`NBA_SYSTEM_ARCHITECTURE` 5 · `NBA_SYSTEM_DESIGN` 3 · `NBA_GOBLIN_DEMON` 3 ·
+`NBA_BASELINE_CALIBRATION` 2 · `NBA_RECIPE` 1 · `NBA_WORKERS` 1 · `NBA_FINAL_SCORING_CALIBRATION` 1.
+⚠ ***And the blockquote is not decoration: it is the sweep's own convention for a LIVE-AUDIT or
+NARROWED insert*** *(`§T20.90` wrote five of them this afternoon)* — **so the sweep has been making
+its own newest findings invisible to its own reference audit, at an accelerating rate.**
+
+### 🔑 **BLIND SPOT ②: `§X.n` IS A WORKING CONVENTION, AND THE PRESCRIBED FIX WOULD HAVE DESTROYED IT**
+
+*`T18-16` prescribes:* ***"give the sub-findings headings, or rewrite the pointers."*** 🔴 **The
+sub-findings HAVE headings.** They are written `### 1.`, `### 4.` — **numbered children with no
+parent prefix** — and `§X.n` means *"section X, child item n"*. **Three of three tested resolved on
+the first try, by title, with no ambiguity.** ▶ **`56` bare numbered child headings under a lettered
+or numbered parent** *(`NBA_SYSTEM_ARCHITECTURE` 23 · `NBA_FINAL_SCORING_CALIBRATION` 12 ·
+`NBA_WORKERS` 7 · `NBA_BASELINE_CALIBRATION` 7 · `NBA_DATABASE` 4 · `NBA_MASTER_SUMMARY` 3)*.
+⇒ ***Rewriting those pointers would have deleted working citations to fix an instrument.*** ✅
+**CLAUSE (iii) HIT** *(≥3 resolve under a different id)*; ✅ **CLAUSE (iv) HIT** *(`§4k.7` points
+outside the twelve and must not be "repaired")*.
+
+### ✅ THE ONE REAL DEFECT, REPAIRED
+
+**`§8a`** — cited at `NBA_OPEN_ITEMS.md:7514` as holding four MLB→NBA lessons. **`NBA_SYSTEM_ARCHITECTURE.md`
+runs `8` · `8b` · `8b-i` · `8b-ii` · `8c` · `8d`; `8a` is the only gap in the series, and no document
+in the thirty declares it.** ▶ **The four lessons were LOCATED before the pointer was touched**: the
+hardcoded whitelist tuple, bulk-inserts-always and `prepare: false` under **`§4. THE DEPLOY
+PIPELINE`**; the named-timezone/DST rule under **`§1b. THE NAMING AND ISOLATION CONVENTION`**.
+**Pointer retargeted to `§2c, §4 and §1b`.**
+
+> ## ✅✅ **TRUE POINTER-INTEGRITY RATE, RE-DERIVED: `1` OF `5,164` = `0.019%` — `99.98%` RESOLVE, AND THE ONE IS NOW FIXED.**
+> *(Recorded: `11` of `3,842` = `0.286%`. **The corpus grew by 1,322 references and its integrity
+> improved fifteen-fold, because the earlier number was measuring the instrument.**)*
+
+## 3. 🔴🔴🔴 CLAUSE (i) — **MISSED. AND THE MISS RETIRES EVERY `±1` READING THIS SWEEP HAS PUBLISHED.**
+
+*Pre-registered: "`uncovered12` **HOLDS at `470`** — a REPLICATION, and the first time this sweep has
+predicted the same outcome twice running."* ❌ **MISS. It rose: `470 → 471`.**
+
+▶ **First, the baseline was verified rather than assumed** *(rule 30)*: the registered `470` was
+measured at `20:56Z`, **before two `§T20.90` patches landed in `NBA_OPEN_ITEMS.md`.** The tree at
+commit `0a82726a` — *the true end of pass 85* — was re-measured and returns **`470`.** ✅ **So the
+`+1` is attributable to this pass alone.**
+
+🔬 **THEN THE DELTA WAS OPENED, WHICH IS THE STEP NOBODY HAS TAKEN BEFORE:**
+
+| | mid *(end of pass 85)* | now | newly uncovered | newly covered |
+|---|---|---|---|---|
+| **`uncovered12`** | **470** | **471** | **`[938]`** | **`[]`** |
+
+> ### 🔴🔴🔴 **SEGMENT `938` MOVED FROM `0.4000` TO `0.4000`.**
+> **The threshold is `b12 < 0.40`. The segment sits ON it, and the flip is below the fourth decimal.**
+
+**And segment 938 is this** *(opened, rule 26)*:
+
+> `{"returncode":0,"stdout":" 5. the three-check discipline on every number before reporting it…`
+
+⇒ 🔑🔑🔑 ***It is a tool-call JSON blob — one of the structurally-uncoverable segments `§T20.76`,
+`§T20.77` and `§T20.78` already ruled out of the documentable set. The `+1` carries no documentation
+meaning at all.*** **The cause is mechanical: `TfidfVectorizer` is fitted on `docs + texts` jointly,
+so ANY edit anywhere in the twelve perturbs the IDF weights, and a segment pinned at the threshold
+tips on rounding.**
+
+### ⚠⚠ WHAT THIS COSTS — *stated against my own work, at its full size*
+
+- **`§T20.88`'s `471 → 470`** — celebrated as *"the first move in ten passes"* and the evidence for
+  **`§T20.89`'s refinement** *(importing moves it, recombining does not)* — **is a `±1` of exactly the
+  size now shown to be attainable by rounding.** ⚠ ***The refinement is NOT refuted; its evidence is
+  withdrawn.*** *It may well be true — it is no longer demonstrated.*
+- **`§T20.90`'s HOLD at `470`**, published as *"the first hold this sweep predicted as a hold"* and as
+  the refinement's replication, **is likewise inside the noise band.**
+- ✅ **What SURVIVES untouched**: the **`14`-point gap to baseline** *(`484 → 470`)* and the **`12`-point
+  high-band gain** *(`636 → 648`)*. **Those are far outside `±1` and every claim resting on them stands.**
+
+## 4. 🔑🔑 **`RULE 52` — ADJUDICATED AGAINST ITS NEIGHBOURS BEFORE BEING NUMBERED** *(§T20.72's method)*
+
+> ### **RULE 52 — *A `±1` move in a threshold metric is not a finding until the FLIPPING MEMBER is identified and shown to be substantive. Open the DELTA, not just the level.***
+
+| nearest rule | what it fixes | does anything survive? |
+|---|---|---|
+| **RULE 26** — *"a COUNT of carriers is not a READING of them"* | **open the HITS** | ✅ yes — a delta is not a hit; rule 26 never reaches a metric that reports only a number |
+| **RULE 30** — *a population is re-counted from its source and pinned* | **the LEVEL** | ✅ yes — this pass obeyed rule 30 *(re-measuring the `470`)* and would still have published the `±1` as real |
+| **RULE 15** — *a pattern tuned elsewhere silently mis-measures* | **probe PATTERNS** | ✅ yes — nothing here is a probe pattern; the instrument is correct and the threshold is arbitrary |
+| **`§T20.76`/`§T20.78`** — *`uncovered12` is a FLOOR* | **the LEVEL's meaning** | ✅ yes — about what the number IS, never about what a CHANGE in it means |
+
+⇒ ***Rule 52's OBJECT is the DELTA, and the corpus governs levels, populations and probes but has
+never governed a change.*** ✅ **NUMBERED `52`** *(`49` retired at §T20.16; `50` §T20.72; `51` §T20.81)*.
+▶ **Probed against the baseline tree before numbering** *(rule 51 applied to rule 52)*: `"RULE 51"`
+returns `0` at baseline, confirming the numbering sequence is clean.
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.22`** *(**PRIOR** — this pass's motive, its matcher
+and its class scheme; corrected in place, not re-derived as new)* · **`§T20.68`** *(**PRIOR** — the
+T15 quartet was already measured over the thirty and explained; **four of the twelve candidates died
+here**)* · **`§T20.76` / `§T20.77` / `§T20.78`** *(**PRIOR** — segment 938's class was already
+established as structurally uncoverable)* · **`§T20.88` / `§T20.89` / `§T20.90`** *(**PRIOR** — the
+readings whose evidence §3 withdraws)* · **`T18-16`** *(**PRIOR** — the item, its 644-reference
+population and its prescribed fix)*. ▶ **RULE 51 on THIS finding, last step, against the BASELINE
+tree**: `"blockquote"` heading-blindness and *"open the delta"* return **`0` files**; the two
+`"probe the sentence"`-style priors above are quoted, not re-discovered.
+
+📌 ***The lesson:*** **a pass sent to repair ten broken pointers found that nine were never broken,
+that the tenth was invisible for a reason the sweep creates fresh every time it writes a LIVE-AUDIT
+insert, and — by insisting on opening a `+1` it could have explained away in a sentence — that the
+sweep's headline metric cannot resolve the quantity it has spent three passes interpreting.**
+***Every instrument this sweep has turned on the system has eventually had to be turned on itself,
+and it has never once come back clean.***
