@@ -161,6 +161,110 @@ and remains NOT RECORDED as measured.**
    a scratch.** ⚠ **Whether those branches are unreachable or simply never triggered is NOT
    RECORDED**, and **a guard that has never fired is not a guard that is known to work.**
 
+## 0a.5 🔑🔑🔑 **BASELINE AND ENRICHMENT ARE ONE SYSTEM — the measured result that invalidates a whole class of factor tests**
+*Recorded 2026-09-22 (T14 pass 2, §T14.3). **Source: `NBA_DAILY_PARITY_AND_BACKFILL.md` §9, an owner
+directive dated 2026-09-13 — one of the EIGHTEEN, read in full for the first time by this sweep.**
+Probed against the twelve, pinned 2026-09-22T09:03:53Z; every hit opened.*
+
+> **THE OWNER'S DIRECTIVE**: *"**The baseline and the enrichment cannot be two different things.**
+> They must agree, complement each other, and produce one final product. ***All the heavy lifting
+> belongs in the baseline; the enrichment layer exists ONLY to carry what the baseline could not have
+> known.***"*
+
+### 🔴🔴 THE MEASUREMENT THAT FORCED IT — **held out on 6,996 real PrizePicks legs** *(`0.7299` / `1.0123` / `0.2652`: **0 of the TWELVE**)*
+| | log-loss | Brier |
+|---|---|---|
+| **certified baseline ALONE** | **0.7299** | **0.2652** |
+| 🔴 **baseline × A2** *(absence redistribution)* | **1.0123** | **0.3317** |
+| baseline × defender | 0.7309 | 0.2656 |
+
+🔑🔑 ***A2 measured WELL IN ISOLATION*** *(minutes MAE **4.641** with outs vs **6.186** ignoring them)*
+***and made the system DRAMATICALLY WORSE when applied on top.*** **The cause is exact**: ***"the
+baseline's `proj_min` ALREADY APPLIES THE INJURY REPORT"*** — *the 2026-03-15 replay went from 173
+roster players to 161 with `BT_INJURY` on — **"multiplying by A2's `min_mult` REAPPLIES the same
+reallocation a second time."***
+
+### 🔑🔑🔑 AND IT IS THE THIRD INSTANCE OF ONE ERROR — **a named class with three data points**
+| # | the patch | what it duplicated | result |
+|---|---|---|---|
+| **1** | **A2 absence redistribution** applied over the certified mean | the baseline's `proj_min`, which already applies the report | **log-loss 0.7299 → 1.0123** |
+| **2** | a **hand-built blowout shrink** | the recipe's **`P(blowout \| spread)` mixture** *(`P_BLOWOUT_BINS` at 0/2/4/6/8/10/12/15, `BLOWOUT_MARGIN = 20`, `COMPETITIVE_MARGIN = 15`)* | **worse** |
+| **3** | a **funnel rebuilt from ROLLING MEANS**, bypassing the anchor | the recipe's `proj_min` | **0.7951 vs 0.7299** — *"beaten by the very anchor it bypassed"* |
+
+⚠⚠ ***"USE THE SYSTEM'S BEST COMPONENT; DO NOT REBUILD A WORSE ONE BESIDE IT."*** 🔑 **The blowout
+constants are already in six of the twelve — what was NOT on file is that a patch on top of them was
+TESTED AND LOST.** *(`double count` is in nine of the twelve as a concept; **the three measured
+instances are not**.)*
+
+### 🔴🔴🔴 **WHY THE HISTORICAL TESTS MISLED — and this invalidates a whole class of factor test**
+> ***"In a REPLAY both layers read the SAME DAY'S REPORT, so the delta is EMPTY and A2 is PURE
+> DUPLICATION.*** To measure enrichment honestly, **the baseline must be rebuilt on the DAY-BEFORE
+> report and the factor applied against the DAY-OF report** — the production configuration.
+> ***Any factor test using ONE report for BOTH layers measures DOUBLE-COUNTING, not value.***"*
+
+🔑🔑 ***This is a test-design defect, not a modelling one, and it is silent***: **the factor does not
+error, it just scores badly — or, worse, scores well for the wrong reason.** ⚠⚠ **Every held-out
+factor result in this corpus should state which report each layer read.** **NOT RECORDED for any of
+them.**
+
+### ✅ THE RULE, AS STATED
+```
+baseline   (phase 1, overnight, day-BEFORE report)  = everything knowable then, done properly
+enrichment (phase 2/3, from the day-of report)      = ONLY THE DELTA vs what the baseline assumed
+```
+*"A star already ruled out overnight is **priced into `proj_min`**; a scratch appearing at the window
+is not. Enrichment applies A2 **only to players whose availability CHANGED after the baseline's
+cutoff**, and only to their team and opponent. **Everything else carries the baseline's value forward
+untouched.**"* *(`only the delta`: **0 of the TWELVE**.)*
+
+### 🔑 THREE CONSEQUENCES FOR FACTOR WORK — **the second is a schema requirement**
+1. **A factor may only touch a component the baseline does NOT contain, or be expressed as a DELTA
+   against what the baseline assumed.**
+2. 🔑🔑 ***"`proj_min` and `rate36` must be EMITTED by the recipe so enrichment adjusts the right
+   COMPONENT rather than multiplying the product"*** — ***"multiplying a mean by a minutes multiplier
+   is NOT the same operation as adjusting minutes and re-deriving the mean."*** ⚠ **`proj_min` and
+   `rate36` appear in ONE of the twelve, as column names; the EMISSION REQUIREMENT is absent.**
+3. **The defender factor is the clean case**: *"the baseline carries **TEAM-level** opponent defence,
+   not **the specific defender**, so a player-level term is genuinely additive."* ✅ **It measured
+   NEUTRAL on the anchor (0.7309 vs 0.7299)** — 🔑 ***"which is what 'no double count, small effect'
+   looks like."*** **A stated signature for distinguishing a real small factor from a duplicate.**
+
+## 0a.6 🔑🔑 **THE THREE-STAGE FUNNEL — where each link sits, and why**
+*Same source, §8, dated 2026-09-13.* ⚠ **The stage COUNT is superseded by COMPASS fact 107's two
+pipelines** *(§0a.3's banner)*; ***the link-by-link placement and its reasoning are not.***
+
+**The funnel**: `minutes → team possessions → usage share → attempts → shot mix → efficiency →
+points → P(over line)`
+
+| link | input it needs | knowable | **stage** |
+|---|---|---|---|
+| `proj_min` base *(role tiers, blowout mixture, coach gate)* | prior-night box scores + morning spread | overnight | **1 — heavy** |
+| **defender ratings** *(two-way ridge, 5 channels, weekly refit)* | prior games | overnight | **1 — heavy** |
+| rate cells / dispersion / Platt *(the certified recipe)* | history as-of | overnight | **1 — heavy** |
+| factor coefficients *(B2/B3/BF, usage allocation, A2 weights)* | history as-of | overnight | **1 — heavy** |
+| team possessions *(pace)* | morning market total | ~overnight | **1**, refreshed if the line moved |
+| **availability scenarios (joint per game)** | **the 1 PM ET report (~10 AM PT)** | mid-morning | **2 — scenarios** |
+| minutes + usage allocation PER SCENARIO | who is out in that branch | mid-morning | **2 — scenarios** |
+| 🔑 **expected defender** *(exposure-weighted over AVAILABLE opponents)* | the branch's opponent roster | mid-morning | **2 — scenarios** |
+| shot mix + efficiency adjustments | expected defender for that branch | mid-morning | **2 — scenarios** |
+| full ladder `P(stat > line)` per scenario | all of the above | mid-morning | **2 — scenarios** |
+| select the realised branch | the day-of report | window | **3 — final** |
+| market adjuster + rank + slip build | the window board and lines | window | **3 — final** |
+
+### 🔑🔑 WHY EXPECTED DEFENDER IS STAGE 2, NOT STAGE 1 — *and the distinction generalises*
+> *"It is **NOT a property of the opponent TEAM**; it is **exposure-weighted over the opponent
+> players who will ACTUALLY BE AVAILABLE**. A different absence branch changes which defenders a
+> player is exposed to, so it has to be recomputed per scenario. ***The RATINGS are stage 1 (they
+> only need prior games); the JOIN is stage 2.***"*
+
+🔑 ***"The ratings are stage 1; the join is stage 2" is a general test for placing any factor***, and
+`expected defender` / `exposure-weighted` are **0 of the TWELVE**.
+
+### ⚠ WHAT STAGE 3 MUST NOT DO
+> *"**No refitting, no re-deriving, no scanning history.** It **selects** the precomputed branch,
+> applies the market adjuster, joins the board and ranks. **Minutes at most. Everything expensive has
+> already happened.**"*
+
 ## 0a.4 🔑🔑 **THE LEAKAGE TEST, THE DEFECT RULE, AND THE SCENARIO SIZING — T14's answers to the questions §0a.3 left open**
 *Recorded 2026-09-22 (T14 pass 1, §T14.2). **Transcript `2026-09-13-20-53-23`, the prose stratum.**
 ⚠ **Much of T14's substance was written by T14 itself into `NBA_COMPASS.md`,
