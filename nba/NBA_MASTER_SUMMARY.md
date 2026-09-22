@@ -34882,3 +34882,22 @@ someone later to find out that it stopped being true.***
 > ✅ **WHAT STANDS FROM THE PASS**: the census method and its numbers *(`36` harvested · `30.6%` false positives · `25` genuine · **`23` re-derived EXACT**)*, and **the four in-place repairs, which are the right repair either way** — the two `NBA_WORKERS.md` sites and the `NBA_OPEN_ITEMS.md` goblin row now carry the current figures with their dates.
 >
 > 📌 ***THE REAL LESSON, AND IT IS THE THIRD TIME THIS SESSION: §T20.63 withdrew a false-new claim about the Betr token; §T20.72 retired my own rule as a duplicate of rule 30; this withdraws a headline. **Every one happened because a novelty check was run on the HARVEST and not on the FINDING.** Rules 26/28 are not a step at the start of a pass. They are the last thing between a measurement and a claim.***
+>
+> ## 🔴🔴🔴 **SECOND CORRECTION, MINUTES AFTER THE FIRST — THE GOBLIN FIGURE NEVER MOVED EITHER. I QUERIED THE WRONG TABLE.**
+> *The propagation grep that produced the correction above also surfaced **`NBA_MASTER_SUMMARY.md:4385`**, which states the population the section above did not read:* > ***"The volume half, measured from `nba_market.board_tiers_v2` (~2.19M legs): goblin side T−3 = 62,542 legs, then T−4 collapses to 1,600 (39×)."***
+> ▶ **Re-derived against `board_tiers_v2`: `T−3` = **`62,542`** · `T−4` = **`1,600`** · total **`2,199,354`** — *the documented figures, exactly, and the table size matches the stated "~2.19M".*** 🔴 ***My `62,183` / `1,308` came from `nba_market.board_tiers` — the **v1** table, a different object. There was no movement and no `47.5×` fall.***
+> ⚠⚠ **RULE 23 — *"a count states its population, its tree, AND its sport"* — FAILED BY THE PASS AUDITING OTHER FIGURES FOR EXACTLY THAT, and it is the SECOND rule-23 failure in three passes** *(§T20.74 compared NBA figures through an MLB blacklist and had to re-run with a whitelist)*. 📌 ***The document DID state its population. The auditor did not read it — which is rule 26 (“a count of carriers is not a reading of them”) committed against a single carrier.***
+>
+> ## ▶▶ **FINAL, CORRECTED SCORE FOR §T20.80**
+> | | |
+> |---|---|
+> | standing unpinned figures harvested | **36** *(false positives `11`, `30.6%`)* |
+> | genuine, re-derivable | **25** |
+> | ✅ **HOLD EXACTLY** | 🔑 **`25` of `25`** |
+> | undetected staleness | ✅ **`0` — identical to the pinned rate (§T20.71)** |
+> | **CLAUSE (ii)** | 🔴 **FAILS** |
+> | **CLAUSE (iii)** | 🔴 **FAILS — the `8%` is withdrawn; pinned and unpinned are indistinguishable at this sample size** |
+>
+> ✅ **WHAT SURVIVES, AND IT IS WORTH MORE THAN THE HEADLINE IT REPLACES:** **(1)** *every one of the twenty-five unpinned figures in the twelve is exactly right — the sweep's measurements are sound*; **(2)** *the one genuine defect is **PROPAGATION**: `final_hp`'s superseded 2025-26 figure stood un-dated at **two** `NBA_WORKERS.md` sites while three other documents carried the current one — **now repaired at both***; **(3)** ***a correction recorded by ADDITION in another document is invisible to rule 40's instrument, which starts from strikethroughs*** — that observation is new and stands.
+>
+> 📌 ***The lesson, restated after two self-corrections in one pass:*** **this pass set out to measure whether unpinned figures go stale, and twice produced a "stale figure" that was an artifact of how I measured it — once by not checking the corpus, once by not reading the population the document had written down.** ***The figures were fine. The audit was the unreliable instrument, and it took the corpus's own rules — 10, 23, 26 — to catch it.***
