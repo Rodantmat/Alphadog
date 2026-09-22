@@ -99,7 +99,24 @@
 > thirty / thirty-two document pair, which is two correct counts of two different populations
 > (32 `.md`, less the run log and the out-of-scope PP document)**.
 
-## 🔴🔴 `[LIVE-AUDIT]` 2026-09-21 — **THE BACKFILL STATUS KEY ASSERTS THREE COMPLETE SEASONS; THE TABLES HOLD ONE**
+## 🔴🔴 **OWNER DECISION O10** · `[LIVE-AUDIT]` — **THE BACKFILL STATUS KEY ASSERTS THREE COMPLETE SEASONS; THE TABLES HOLD ONE**
+> ### ⏳ OPEN — raised for the owner 2026-09-22, **documented and NOT acted on** *(rule 1; no live data, status key or pipeline was changed)*
+> **RE-TAKEN 2026-09-22 AND UNCHANGED**, both sides pinned:
+> | side | pinned (UTC) | query | result |
+> |---|---|---|---|
+> | **tables** | **2026-09-22T07:00:58Z** | `count(*)` and `string_agg(DISTINCT substring(game_id,4,2))` on each table | **`player_game_starter_status` 32,179 rows, season code `25` ONLY · `game_officials` 3,681 rows, `25` ONLY** |
+> | **status key** | **2026-09-22T07:01:05Z** | `config_json->'starters'`, `->'officials'` on `enrichment_backfill_status_2026_09_10` | **`1230/1230` for ALL THREE seasons**, `verified_at` 2026-09-10T22:00Z |
+>
+> 🔑 **The decision the owner has to make is not whether the gap is real — it is what the status key
+> should say.** ***The key is not wrong about the SCRAPE; it is silent about the LOAD***, and every
+> reader so far has taken it for a database statement. **Three shapes, for the owner to choose
+> between**: *(a)* **run the two loaders for 2023-24 and 2024-25** — the workers are proven
+> multi-season-capable and default to the current season, so this is an input, not a code change
+> *(§T11.31b, §T11.52b)*; *(b)* **re-label the key** so each figure says `scraped` or `loaded`; *(c)*
+> **leave both and record the gap**, which is what this sweep has done. ⚠ **Nothing here is
+> reversible by the sweep: it reads and records only.**
+
+### The finding, as first recorded 2026-09-21
 *Recorded 2026-09-21 (T12 pass 3, §T12.4b). **`SELECT` only.** The key is
 `nba_config.classification_config` → `enrichment_backfill_status_2026_09_10`, **`verified_at`
 2026-09-10T22:00Z**, row `updated_at` 2026-09-10 21:51Z. **A dated STATE, not a verdict** (O9).*
