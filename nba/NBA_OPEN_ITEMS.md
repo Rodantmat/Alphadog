@@ -13286,11 +13286,13 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 > **REGULAR SEASON OPENS `2026-10-20`. PRESEASON `2026-10-03`.**
 >
 > ## ✅ SCOPE — **THIS IS THE COMPLETE LIST, AND HERE IS HOW THAT IS KNOWN**
-> **`grep -E "^#{2,4} .*SEASON-CRITICAL" NBA_OPEN_ITEMS.md` ⇒ `13` items**, counted on HEADING lines
-> only *(a marker count counts emphasis; a heading count counts items — rule 15)*, over `14,727`
-> lines, tree `93292d278c4cd44997d6719cf6c38fe574b9eca0`, **2026-09-22T17:35:23Z**. **All thirteen
-> are listed below.** *Re-run that grep to re-derive this claim; if it returns more than thirteen,
+> **`grep -E "^#{2,4} .*SEASON-CRITICAL" NBA_OPEN_ITEMS.md` ⇒ `14` items**, counted on HEADING lines
+> only *(a marker count counts emphasis; a heading count counts items — rule 15)*, over `14,988`
+> lines, tree `92593ef160dbd301b9777a76c7914643bdd1c143`, **2026-09-22T18:48:42Z**. **All fourteen
+> are listed below.** *Re-run that grep to re-derive this claim; if it returns more than fourteen,
 > this brief is out of date.*
+>
+> ~~**`grep …` ⇒ `13` items**, over `14,727` lines, tree `93292d27…`, **2026-09-22T17:35:23Z**. **All thirteen are listed below.** *…if it returns more than thirteen, this brief is out of date.*~~ ⚠ **SUPERSEDED 2026-09-22T18:48Z, T20 pass 65 (§T20.70) — kept under rule 40, which forbids destroying the original.** 🔑🔑 ***THE SUPERSESSION WAS FORCED BY THIS BLOCK'S OWN TEST.** The brief invited re-derivation and named its own falsification condition — **"if it returns more than thirteen, this brief is out of date"** — and §T20.70 ran that grep verbatim and got **`14`**. ⇒ **A re-derivable claim is the only kind that can be caught by a later pass rather than by the owner on opening night. This block worked exactly as designed; what failed was that nothing re-ran it for ten passes.*** ▶ **The fourteenth is `T20-14` (Betr's access token, added §T20.60), which was already in the body and in the `FINAL ORDER — ALL FOURTEEN` block below — it was never missing, only uncounted.**
 >
 > 🔴🔴 **WHY THIS HEADING CHANGED.** *Until 2026-09-22 this page was headed **"THE SEVEN BLOCKERS"**
 > and covered only **T20-1 … T20-7** — the items opened by T20 passes 28–39 — with a scope line in
