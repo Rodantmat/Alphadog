@@ -35257,7 +35257,10 @@ none — because the two that existed had already been found by the pass before 
 was measured with a timestamp attached.** ***The corpus is not over-confident. It is under-delivered —
 and those need opposite repairs.***
 
-> ## ✅ **REPAIR COMPLETE AND VERIFIED — all nine, `2026-09-22T20:15:53Z`**
+> ## ⚠ **THIS BLOCK BELONGS TO `§T20.83`, NOT TO `§T20.84` ABOVE IT — MISPLACED BY ITS OWN AUTHOR, LABELLED T20 pass 80 (§T20.85)**
+> *`§T20.84` was appended with a `patch_file` anchored on `§T20.83`'s closing sentence, which had already been followed by this table — so the new section landed **between `§T20.83` and its own repair record**. **Not moved** (rule 40 — and a move is a delete plus an insert, which is how content gets lost); labelled instead.* 📌 ***A placement defect, committed by the author of three consecutive passes about placement defects, inside the pass that closed one.***
+>
+> ## ✅ **`§T20.83` — REPAIR COMPLETE AND VERIFIED — all nine, `2026-09-22T20:15:53Z`**
 > | item | pointer written into | verified |
 > |---|---|---|
 > | **T20-5** | `NBA_FINAL_SCORING_CALIBRATION.md` — *directly beneath the green check* | ✅ `GRADE_END` |
