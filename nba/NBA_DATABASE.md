@@ -14,6 +14,58 @@ transcript. Where a table was altered later, the change is noted with its transc
 
 ---
 
+## 0w. 🔑🔑 **THE 2026-09-13 SESSION'S TABLES, RE-TAKEN LIVE — five reproduce exactly, one does not** `[LIVE-AUDIT]` *(T16 pass 1, §T16.2; `SELECT` 2026-09-22)*
+
+*T16 builds or fills six tables and states row counts for several. **Every one was re-taken rather than
+quoted** (rule: re-take, never quote).*
+
+| Table | cols | **live rows, 2026-09-22** | T16's figure | |
+|---|---|---|---|---|
+| **`nba_ref.defender_ratings`** | 11 | **111,768** | 111,768 | ✅ **exact** |
+| `nba_score.factor_gate_results` | 9 | **104** | *(19 models · 45 slices · season `2025-26` only)* | ✅ |
+| `nba_score.blowout_model` | 9 | **35** | not stated as a count | ✅ present |
+| `nba_score.tier_band_calibration` | 11 | **149** | not stated as a count | ✅ present |
+| `nba_score.redistribution_factors` | 14 | *(see §0a-T16)* | 51,806 | — |
+| 🔴 **`nba_ref.referee_assignments`** | 7 | **0** | **0** | ⚠ **STILL ZERO NINE DAYS LATER** |
+
+### ⚠ THE REFEREE TABLE IS STILL EMPTY, AND THAT IS *EXPECTED* — **which is exactly why it is worth recording**
+
+*T16 built and scheduled the D1 capture (`nba/scrape_referee_assignments.py`, `nba-referees.yml`,
+**daily 08:30 PT**) and recorded the result honestly at the time:* ***"table created, ZERO rows —
+expected in mid-September with no games. The parser can't be validated until the season starts, so
+I'm recording that honestly rather than assuming it works."*** ✅ **`[LIVE-AUDIT]` confirms 0 rows on
+2026-09-22.** 🔴🔴 **The claim is therefore UNFALSIFIABLE UNTIL 2026-10-20**, and the exposure is
+asymmetric: **assignments are published each morning and NEVER archived**, so *"the archive only
+exists going forward."* ⚠ **If the parser is broken, the first day it can be discovered is the first
+day of irreplaceable data.** *Historical crews come from box scores, which COMPASS fact 58 establishes
+as a faithful reconstruction — so the BACKFILL is safe; only the live capture is at risk.*
+
+### 🔴🔴 **`baseline_history` NO LONGER REPRODUCES T16's COMPLETION FIGURE — and the loss is confined to ONE SEASON**
+
+*T16's end-state verification, stated as the gate the rebuild had to clear:* **"60 of 60 season-props
+rebuilt — 2024-25: 9,537,535 rows / 162 dates · 2025-26: 9,806,608 rows / 163 dates · 0 invalid
+probabilities · 0 missing lines"** *(total **19,344,143**)*.
+
+| Season | T16, 2026-09-13 | **live, 2026-09-22** | Δ |
+|---|---|---|---|
+| 2024-25 | 9,537,535 | **9,537,535** | ✅ **0 — byte-stable** |
+| **2025-26** | 9,806,608 | **9,805,813** | 🔴 **−795** |
+| **total** | 19,344,143 | **19,343,348** | **−795** |
+
+✅ **Everything else holds**: **30 props on both seasons, 162 and 163 dates** — *the shape is intact;
+only 2025-26's row count moved.* ⚠⚠ **NOT RECORDED WHY** *(rule 6 — a live-audit finding records what
+the system IS; the explanation must come from a swept transcript, and none of T1–T16 covers a change
+after 2026-09-13)*. 🔑 **Two facts bear on it and neither is an answer**: **a concurrent session is
+building in this same database**, and **`prop_universe` is mid-rebuild** — *so a reader should treat
+19,344,143 as a dated completion figure, not a current one.*
+
+🔑 **The useful general point**: **the transcript's own verification rule was *"I'll report complete
+only when all 60 carry a post-22:00 timestamp, not when the jobs report green"*** *(`NBA_OPEN_ITEMS.md`,
+T16 operational defects)* — **a stricter gate than most, and nine days later the number it certified
+has still drifted by 795 rows in one season.** ⚠ **A completion check verifies a moment, not a state.**
+
+---
+
 ## 0. THE TWO UNIVERSES
 
 NBA is a **completely separate namespace** from MLB — separate schemas, separate control plane,
