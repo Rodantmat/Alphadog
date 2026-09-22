@@ -12,7 +12,9 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
-### 📜 THE FORTY-THREE STANDING RULES — *the index; each is written in full where it was born*
+### 📜 THE FORTY-FOUR STANDING RULES — *the index; each is written in full where it was born*
+⚠ *Rule 44 is listed immediately before rule 43 in the table below — the row order is not the rule
+order, and the numbers are authoritative.*
 *(count re-taken from the table below, 2026-09-22; the header had read "THIRTY-SEVEN" since rule 37
 and sat six rules stale — **rule 40's own lesson, a dated figure carried forward undated**)*
 
