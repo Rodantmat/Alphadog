@@ -167,6 +167,29 @@ stratum — where the architecture decision was taken.** ⚠ **The phase cutoffs
 are already on file** *(`phase1_cutoff` in 5 of the twelve, `freshness gate` in 6, pinned
 2026-09-22T08:20:06Z)*; **what follows is what those entries do not carry.***
 
+> ## ⚠⚠ **SUPERSEDED IN PART — 2026-09-22 (T13 pass 4, §T13.5b). THE ARCHITECTURE BELOW IS T13's (2026-09-10) AND IT WAS REPLACED ON 2026-09-19.**
+> *Both dates kept (rule 5). **Source: `NBA_COMPASS.md` fact 107, an owner decision** — one of the
+> EIGHTEEN, carrying a conclusion from a transcript this sweep has not read.*
+> > **107. TWO PIPELINES, CUTOFF 1:15 PM PT — AND THE SCENARIO SIMULATOR IS DROPPED** *(owner
+> > decision 2026-09-19; **supersedes the three-phase design in facts 41 and 68**)*.
+> > **ARCHITECTURE: (1) a heavy OVERNIGHT pipeline** *(baseline/delta, can start ~3 AM PT)* **and
+> > (2) a light 1:15 PM PT pipeline** for the day-of factors, board snapshot and rescore.
+> > ***No third phase.***
+> > **THE REAL TIMETABLE (Pacific), every daily factor**: prior-night box scores **~3 AM** ·
+> > **referee assignments ~6–7 AM** · market spread/total from the **08:00** snapshot · projected
+> > lineups through the morning · **boards on demand** · **game-day injury report 11am–1pm LOCAL TO
+> > EACH GAME'S MARKET, so Eastern clubs file by 10 AM PT and PACIFIC clubs are last at 1:00 PM
+> > PT.** ***The injury report is the binding constraint.***
+>
+> 🔑🔑 **So the live shape is OVERNIGHT + 1:15 PM PT, not 1 PM + 2:45 PM**, and **the scenario
+> simulator is dropped.** ⚠ **What follows is still worth reading and is not obsolete**: ***the
+> DELTA argument, the shapes-vs-minutes split, the freshness-gate failure mode and both LEAKAGE
+> TRAPS are properties of ANY two-stage clock*** — **they transfer to the 1:15 PM pipeline
+> unchanged.** **What does NOT transfer is the 2:45 PM PT cutoff and the three-phase framing.**
+> 📌 **And the timetable above is the part the twelve did not carry at all**: ***referee assignments
+> land ~6–7 AM PT and the market snapshot at 08:00*** — **both comfortably inside the overnight
+> phase, which is why the day-of pipeline can be light.**
+
 ### 🔑🔑 THE BIGGEST SPEED WIN IS A **DELTA**, NOT A FASTER ENGINE — *and this is in 0 of the twelve*
 > *"At 2:45, **most legs are unchanged** — same line, same player status. If the window run
 > recomputes only **(a) legs whose line / side / multiplier moved since the morning board**, and
