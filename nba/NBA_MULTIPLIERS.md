@@ -394,6 +394,75 @@ board + graded outcomes, which does not exist until the season runs.
 
 ---
 
+## 0.8-T18. 🔴🔴🔴 **THE PRIZEPICKS MULTIPLIER HUNT — what the owner OBSERVED, what he ordered, and why it was DEFERRED** *(T18 pass 0, §T18.1, owner, 2026-09-19; COMPASS fact 106's origin)*
+
+*COMPASS fact 106 records only the conclusion — **"PRIZEPICKS PER-LEG MULTIPLIERS ARE NOT ON ANY PUBLIC
+SURFACE (config `deferred_prizepicks_multiplier_capture`) — DEFERRED."** **This is the hunt.***
+
+### 🔑🔑 **THE OBSERVED BEHAVIOUR THAT PROVES THE DATA EXISTS** *(2 of the thirty, **0 of the twelve**)*
+
+> ***"The sequence is: I put ONE leg in the slip — **it doesn't show a multiplier**. When I put a
+> SECOND leg, **then it's gonna show the multiplier**, and so on. **So that leg MUST CARRY A
+> MULTIPLIER SOMEWHERE.**"***
+
+🔑 **The inference is sound and it is the whole basis of the search**: *"**if it shows on the app, if
+it shows on the slip, it MUST BE THERE on the app somewhere — or at least retrievable somehow.**"*
+
+### 🔴🔴 **THE CORRECTION THAT MATTERS MOST, AND IT IS 0 OF THE TWELVE AND 0 OF THE THIRTY**
+
+> ***"You're treating goblins as ONE THING and demons as ONE THING — **AND THEY ARE NOT.** **Each
+> goblin on the ladder, each demon on the ladder — if they are MORE, if they are LESS — is
+> DIFFERENT**: for different prop lines, for the tier, for the player form, **even for the team
+> form.** … They're very complicated to just predict and find. **We're gonna need an extremely high
+> number of slips and legs to try it out.**"***
+
+⚠⚠ **READ THAT AGAINST §6.0's `board_payout_conversion_rules` AND §0.9e's per-app ladder**: *those
+record multipliers at the TIER level. **The owner is saying the true granularity is per-rung ×
+direction × prop × tier × player form × team form** — and that a tier-level table is therefore an
+approximation, not the quantity.* 🔑 **That is why he wants the payload rather than a fitted model.**
+
+### ✅ **THE TWO ACCEPTABLE OUTCOMES, STATED AS A SPEC**
+
+> ***"Either we understand EXACTLY what's the logic behind it and we treat it internally, knowing that
+> each goblin, demon, prop line has a specific way to tag them — **OR** we understand that it's
+> VARIABLE, and then we need to **find it on the payload and GRAB IT**. So we have a proper
+> multiplier: either because we understood the logic, or because we're getting the proper multiplier
+> from the payload."***
+
+⚠ **AND HIS RANKING OF THE TWO IS EXPLICIT**: *"the better path is… **understand on the JSON if you
+can find that information. It's a lot easier** … instead of trying to figure out the full logic out
+of the OUTCOMES. If that's the only way, we do it. **But that's going to be harder, longer, more
+complex.**"* 🔑 **So the outcome-fitting approach the corpus documents is the owner's SECOND choice,
+adopted because the first failed.**
+
+### 🔑 **THE METHOD HE SPECIFIED — and the reason for it**
+
+| | |
+|---|---|
+| **Probe a LIVE sport, not NBA** | *"**NBA season is not on yet. You can never forget that** — it's just gonna be on in October. That's why I'm telling you to try with **MLB or WOMEN'S NBA**."* ⚠ **and WNBA is preferred** — *"it's gonna be a lot closer… the multipliers are gonna be very, very similar"* |
+| **Follow the ladder's own discovery path** | 🔑 *"**it's just like the ladder**: first find the path for the sports, then the proper prop lines, then **an EXTRA JSON that brings the ladder variations**. So now we're trying to explore even deeper."* ⚠ *"I do believe there are **extra additional JSONs, calls, paths and endpoints** — maybe we need to call different endpoints."* |
+| **Calibrate against slips he actually placed** | 🔑🔑 *"on the system we have **A LOT OF SLIPS PLACED FOR MLB** and the multipliers that I found when I placed them… **be sure that you're using the board snapshot FROM THE TIME THAT I PLACED, because there are THREE different board snapshots.**"* ✅ **An owner-supplied ground-truth set with an explicit join caution.** |
+| **Do not act on it** | *"**do not update anything yet — just bring the information back to me.**"* |
+
+⚠ **WHAT THE CORPUS ALREADY HAD, in his words**: *"we already have decent information, **but that's on
+TRIAL AND ERROR. It's not assertive, it's not coming from the app** — it's coming from research, from
+slip testing… **the REGULAR lines are always the same, that we already have established. But the
+GOBLINS AND DEMONS have different multipliers that WE DO NOT UNDERSTAND.**"*
+
+### 🔴 **WHY IT WAS DEFERRED — and it is not "the data isn't there"**
+
+*A browser-side probe was blocked: **"Safari cannot run the script because JavaScript is not allowed
+to be used this way."*** ✅ **The owner then established the workaround exists** — *"so if I do that
+from a computer, I can do that from my browser, and that's free, correct?"* — **and deferred it
+anyway**: *"we're gonna add that to the DEFERRED things we need to do, like the ladder for Sleeper and
+the Chalkboard that was on the deferred list. Add this also to the deferred list, **and we're gonna
+try it later.**"* ⚠⚠ **So fact 106's *"not on any public surface"* is a statement about what was
+reachable in that session, not a proven absence — the owner's own standard was *"exhaustively try
+until a point you say there's nothing else we can do,"* and his assessment at the time was **"we
+barely scratched the surface."*** 🔴 **Recorded so the deferral is not read as a negative result.**
+
+---
+
 ## 0.9 🔑🔑 THE T13 MULTIPLIER RESEARCH ARC — **what the research actually LEARNED, and where it stopped**
 *Recorded 2026-09-22 (T13 pass 1, §T13.2). **Transcript `2026-09-13-01-03-48`, the 250-segment
 assistant-prose stratum read in order.** Novelty probed against baseline `4429380d`; duplication
