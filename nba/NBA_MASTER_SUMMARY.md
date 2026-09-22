@@ -35276,3 +35276,77 @@ and those need opposite repairs.***
 > ⚠ **Every pointer is ONE block: the defect, its severity, its live re-derivation with a timestamp, and a `§`-pointer to the full item. No analysis was moved or duplicated (rule 40).** 🔑 **Two of them also carry a cross-link the brief does not**: *`T20-13`'s twelve red nights fall inside `T20-12`'s PDT window*, and *`T20-10`'s swallowed `scrape_nba_schedule.py` is the refresher for the very table recorded as frozen* — **with "NOT RECORDED whether it is the cause" stated explicitly (rule 6).**
 >
 > ⚠⚠ **RULE 20, ON THE VERIFICATION ITSELF:** *the first re-probe reported `B/E` at `0` because I grepped `"not been refreshed"` case-sensitively against text I had written in capitals, and `T20-13` at `42` because I probed the bare digits `"22"`.* ✅ **Re-run properly: `1` and `1`.** 📌 ***Twelfth instance this session of a probe failing on its own spelling — including one inside the step whose only job was to confirm a repair.***
+
+---
+
+# §T20.85 — T20 PASS 80: 🔴 **THE FOURTEEN BLOCKERS GOT A BRIEF. THE TWELVE OWNER DECISIONS HAD NO SURFACE AT ALL — NOW THEY DO** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: §T20.84 closed on *"the corpus is not over-confident, it is UNDER-DELIVERED."* §T20.83 fixed
+delivery for the fourteen SEASON-CRITICAL blockers. **The `OWNER DECISION` items never got the same
+treatment** — and unlike a blocker, *a decision cannot be discharged by anyone but the owner, which
+makes delivery the entire job.***
+
+## ✅ CLAUSE (ii) — **HITS. NO SURFACE COLLECTS THEM.**
+
+**`grep -cE "OWNER DECISION" nba/NBA_OPEN_ITEMS.md` ⇒ `51` mentions across `11` heading-level items**,
+`2026-09-22T20:25:11Z`, *spread from line `507` to line `14,671` of a `15,000`-line file* — plus
+`§T19.6`'s rule-46 decision, which is the one governing this entire session.
+🔴 **And a probe for any surface naming *"all the owner decisions"* returns `0` across the corpus.**
+⇒ ***Twelve live decisions, twelve separate places, no list.***
+
+## ✅ THE LEDGER — **BUILT AT THE TOP OF `NBA_OPEN_ITEMS.md`, BESIDE THE OPENING-DAY BRIEF**
+
+*One row each: the question in a sentence, its state, its pointer.* ⚠ **THE SWEEP DOES NOT CHOOSE
+(rule 1) — it collects and states.** **Full evidence stays at each item; nothing moved or duplicated
+(rule 40).** ▶ **Two of the twelve were re-derived live in this pass rather than copied:**
+- **`T18-17`** — *"the score formula's penalising half has never fired"*: **`0` legs at or below
+  `CONF_NEUTRAL = 0.85` across `19,215,200`**, live minimum **`0.8540`** (2024-25) / **`0.8722`**
+  (2025-26). ✅ **EXACT.**
+- **`T20-1`** — its five orphans *(`§0z-3` the BUILD-ORDER LOCK · `§0z-5` · `§0v.4` · `§0.9c` ·
+  `§KILL-LATE-1`)* are **unchanged**. ⚠ *And I did NOT re-run its orphan analysis with a crude
+  reference count — `T20-1` already distinguishes "1 bare, 0 sigil" from "0", and a raw `grep` count
+  includes the declarations and `T20-1`'s own listing. **Rule 26: counting is not reading, and the
+  item's own measurement is the authority.***
+
+## 🔴 CLAUSE (iii) — **FAILS, AND THE EXCLUSIONS ARE WHY**
+
+*Pre-registered: **at least one `OWNER DECISION` is stale**, with `§T20.18`'s and `§T20.75`'s
+**EXCLUDED as this pass's motive**.* ▶ **Of the remaining ten, none is `ANSWERED`.** *`T20-3`,
+`T20-2` and `T18-17` all re-derive exactly; the credential decisions, the COMPASS restoration, the
+T1–T6 re-read and rule 46 are untouched by any later pass.* ⇒ **Eighth consecutive honest negative
+this session, and the right one: *the decisions are stale in DELIVERY, not in CONTENT*.**
+
+⚠ **THE ONE THAT DID MOVE IS THE EXCLUDED ONE, AND IT IS WORTH STATING FOR THE OWNER: `§T20.18`'s
+rules-index decision has been NARROWED TWICE WITHOUT HIM** — *`§T20.72` answered the duplication half
+from rows the index already carried; `§T20.73` then measured that reconstruction is **unsafe**.*
+**What remains of it is only the original ten.**
+
+## 🔴 A PLACEMENT DEFECT OF MY OWN, CAUGHT AND LABELLED IN THIS PASS
+
+**`§T20.84` was appended with a `patch_file` anchored on `§T20.83`'s closing sentence — which had
+already been followed by `§T20.83`'s repair table. The new section landed BETWEEN `§T20.83` and its
+own repair record.** ✅ **Labelled in place, not moved** *(rule 40 — a move is a delete plus an insert,
+which is how content gets lost)*. 📌 ***Committed by the author of three consecutive passes about
+placement defects, inside the pass that closed one.***
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(Δ `484 − 471` = `13`)*.
+
+⚠ **RULE 51 BEFORE SHIPPING**: *`"no surface collects"` returns `0`; `"OWNER-DECISION LEDGER"`,
+`"decision ledger"` and `"the decisions never did"` return **only `NBA_SWEEP_RUN_LOG.md`** — **this
+pass's own pre-registration, written minutes earlier**, which is the sweep's instrument and not one of
+the twelve.* ✅ **Novel.**
+
+⚠ **KILLS LOGGED (rules 26/28/51)**: **§T20.56 / §T20.70 / §T20.83** *(the OPENING-DAY BRIEF's
+completeness, heading and delivery — **PRIOR** and a different object: that is the BLOCKER list, this
+is the DECISION list)* · **§T19.6's rule-46 decision** *(**PRIOR** — it belongs ON the ledger, it is
+not a finding)* · **§T20.18 / §T20.72 / §T20.73 / §T20.75** *(**PRIOR**, this pass's motive, excluded
+from clause (iii)'s denominator)* · **`T20-1`'s orphan analysis** *(**PRIOR** — carried, explicitly
+not re-derived)*.
+
+📌 ***The lesson:*** **eighty passes produced twelve questions only the owner can answer, and filed
+each one where it was found. Three are season-critical and reachable from the brief; the other nine
+were reachable only by knowing they existed.** ***A decision that nobody can find has not been
+escalated. It has been archived.***
