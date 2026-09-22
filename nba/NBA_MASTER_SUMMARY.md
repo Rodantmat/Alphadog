@@ -32791,3 +32791,93 @@ owner reads, on the strength of three instances. It was right — and it was als
 six of the twenty-one workers either already ran or are covered by P2.**
 ***A scope claim that turns out to be true still needs its denominator, and "wire fifteen loaders" is
 a decision somebody can make on a Tuesday in a way that "the worker layer does not run" is not.***
+
+---
+
+# §T20.62 — T20 PASS 57 · LIVE NUMERIC RE-VERIFICATION OF PASSES 41–56 — **37 FIGURES, 37 EXACT**
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: five `SELECT`s.** **Nothing edited, triggered or dispatched;
+`NBA_COMPASS.md` not written to.**
+⚠⚠ **SECOND OF THE CLOSING THREE, AND A GENUINELY DIFFERENT ANGLE**: *pass 56 was a JUDGMENT angle
+(testing a claim the sweep had published); **this is the LIVE NUMERIC angle**, the one T10 ran four
+times.*
+
+## 0. WHY IT WAS OWED, AND OWED BADLY
+
+*Passes 41–56 are the most measurement-dense stretch of the entire sweep, taken across four hours,
+against a database the owner warned was **"moving under you today"** — and **not one figure had been
+re-taken**. §T20.56 then put many of them on the **OPENING-DAY BRIEF**, the surface the owner will
+act from.* **Rule 18's lesson — *"a live query is a measurement at a moment"* — had never been
+applied to this session's own output.**
+
+⚠ **THE LIST WAS FIXED BEFORE ANY RESULT WAS KNOWN (rule 17): 37 figures, enumerated from
+§T20.46–§T20.61.** ⚠ **`prop_universe` is MID-REBUILD and was listed EXEMPT, not scored.**
+
+## 1. ✅✅ THE RESULT — **37 OF 37 EXACT**
+
+| # | figure | §-pointer | asserted | re-taken |
+|---|---|---|---|---|
+| 1–2 | `nba_ref.defender_ratings` rows · `max(as_of_date)` | §T20.51 | **111,768** · **2026-04-09** | ✅ ✅ |
+| 3 | `nba_ref.player_name_map` rows | §T20.51 | **5,212** | ✅ |
+| 4–6 | `ladder_calibration_asof` rows · distinct `as_of_date` · max | §T20.53 | **9,904** · **24** · **2026-01-15** | ✅ ✅ ✅ |
+| 7–8 | `confidence_model` `deduction > 0` · `built_at` | §T20.53 | **10** · **2026-09-19 01:25:34.684704+00** | ✅ ✅ **microsecond-exact** |
+| 9–10 | `worker_definitions` rows · enabled | §T20.61 | **21** · **21** | ✅ ✅ |
+| 11–12 | `job_runs` · `worker_run_log` | §T20.31/§T20.54 | **0** · **0** | ✅ ✅ |
+| 13–20 | `nba_ref` teams/arenas/officials/players — rows AND `max(updated_at)` | §T20.51/§T20.54 | **30 · 30 · 80 · 582** and **`2026-08-31 23:39:11.988183`** · **`2026-09-01 00:36:24.476638`** · **`2026-09-01 00:53:48.756158`** · **`2026-09-03 18:14:55.31109`** | ✅ **all eight, timestamps to the microsecond** |
+| 21–23 | `final_hp` rows · dates · dates before `2025-07-01` | §T20.53/§T20.56 | **19,215,200** · **163** · **162** | ✅ ✅ ✅ |
+| 24–27 | the four DFS bookmakers' legs | §T20.59 | **2,199,354** · **934,438** · **780,765** · **534,188** | ✅ ✅ ✅ ✅ |
+| 28–29 | `board_snapshots` market_keys (both seasons) · `baseline_history` props | §T20.59 | **21** · **30** | ✅ ✅ |
+| 30–33 | the **November step**, all four boundary points | §T20.52 | `2024-10-31` **22** → `2024-11-01` **30**; `2025-10-31` **22** → `2025-11-01` **30** | ✅ **all four** |
+| 34–37 | the `points` coverage row — matched legs · below · above · % out | §T20.57/§T20.58 | **18,158** · **248** · **2,050** · **12.7%** | ✅ **exact to the leg** |
+
+⇒ ✅✅ ***CLAUSE (ii) FAILS. NOTHING MOVED. Every figure this session put on the opening-day brief
+re-takes exactly, four hours later, including four timestamps to the microsecond and a
+player-by-player join reproduced to the individual leg.*** **Stated at full strength, because the
+pre-registration named this as the outcome worth having: THE BRIEF CAN BE ACTED ON AS WRITTEN.**
+⇒ **CLAUSE (iii) is VOID — nothing moved, so nothing needs dating or retracting.**
+
+## 2. 🔑🔑 AND THE STABILITY IS NOT NEUTRAL — IT IS A FOURTH CONFIRMATION
+
+⚠ **A perfect re-take could mean the sweep is careful. Here it means something sharper, and the
+contrast is inside this same session:**
+
+| what moved today | what did not |
+|---|---|
+| ✅ `boards/sleeper_nba_current_meta.json` — committed **2026-09-22T16:57:05Z** · `fliff` **17:14:27Z** *(§T20.60)* | 🔴 **every NBA Postgres figure above — 37 of 37 unchanged** |
+| ✅ `nba/data/nba_schedule_current.json` — **2026-09-14** *(§T20.53)* | 🔴 `nba_calendar.games` — **2026-09-02** |
+| ✅ this sweep's own `uncovered12` — **470 → 471** *(§T20.50)* | 🔴 `job_runs` · `worker_run_log` — **0 and 0** |
+
+⇒ ***The GitHub-Actions layer moved four times today. The Postgres layer did not move once in four
+hours. That is precisely what "fifteen loaders are never triggered" predicts, and it is now the
+FOURTH independent measurement of the same split*** — §T20.53 (JSON vs table), §T20.60 (board files
+vs reference tables), §T20.61 (13 writers of 40 scripts), and this.
+📌 **A re-verification that finds nothing can still be evidence. It is evidence here.**
+
+## 3. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTY-EIGHTH consecutive identical run.** Measured 2026-09-22T18:10:30Z |
+| **(ii)** ≥1 figure from §T20.46–§T20.61 has moved | ✅✅ **FALSE — 37 of 37 EXACT** |
+| **(iii)** ≥1 moved figure was undated | **VOID — nothing moved** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTY-EIGHTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 4. ⚠ VERDICT
+
+✅✅ **CLEAN — no defect, no figure changed, no document corrected. T20 stands at CLEAN 2/3.**
+⚠⚠ **AND A CLEAN COUNT IS NOT A CLOSURE: RULE 46 BARS T20 FROM CLOSING IN THIS SESSION. It hands on
+at whatever count it reaches, with TWO INDEPENDENT reads owed, exactly as T19 (§T19.6, OWNER
+DECISION).**
+▶ **The third angle, pre-registered: a NOVELTY AUDIT over all thirty against the T20 baseline tree —
+the one angle of the closing three this session has not run.**
+⚠ **KILLS LOGGED (rules 26/28)**: **by construction, every figure here is prior work — the finding
+was the DELTA, and the delta is zero. Nothing is re-reported as a discovery.**
+
+📌 ***The lesson:*** **seventeen passes of live measurement went onto the owner's one-page brief
+without a single re-take. All thirty-seven survive, to the microsecond and to the individual leg —
+and the reason they survive is the defect: nothing in that database has been written to in three
+weeks.**
+***The most reassuring result this sweep has produced and the most alarming one are the same
+measurement.***
