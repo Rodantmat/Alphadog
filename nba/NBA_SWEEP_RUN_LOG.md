@@ -12,7 +12,20 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
-### 📜 THE FORTY-SEVEN STANDING RULES — *the index; each is written in full where it was born*
+### 📜 THE FORTY-EIGHT STANDING RULES — *the index; each is written in full where it was born*
+
+🔴🔴 **RULE 48 — BORN T20 PASS 6 (§T20.11), 2026-09-22.** ***EVERY SEGMENT CITATION IN A PUBLISHED
+ENTRY IS OPENED AGAINST ITS SOURCE BEFORE THE ENTRY SHIPS — AND A CLAIM ABOUT A COMMAND CITES THE
+SEGMENT CARRYING THE COMMAND, NOT THE SEGMENT CARRYING ITS CONSEQUENCE.***
+*Born from a reverse-direction audit of all **40** distinct segment citations in §T20.1–§T20.10:
+**37 correct, 3 wrong, and all three written by passes 4–5**, the SEQUENTIAL passes — not by the
+stratum passes.* 🔑 **The mechanism, and why it is a rule rather than a lapse**: *a stratum pass must
+LOOK UP every id it cites; a sequential pass writes from a held picture of the order, and **every one
+of the three errors is off by a neighbour*** — SEG 590 cited for a patch whose `path:` lands on SEG
+593; SEG 921 (the write) cited for a grep that ran at SEG 915. ⚠ **This is rule 43's own failure mode
+committed inside an entry invoking rule 43** — 43 says *test the claim against the command*; **48 says
+cite the command's own segment, and verify the citation by opening it.** *Cheap: the material is
+already cut, and the check needs no new reading budget.*
 ⚠ *Rules 47, 46, 45 and 44 are listed immediately before rule 43 in the table below — the row order
 is not the rule order, and the NUMBERS are authoritative.*
 
