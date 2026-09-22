@@ -36915,3 +36915,115 @@ table"*, *"runs twice"* and *"step name does not describe"* return **`0` files**
 more than the find would have been — it converts `T20-7` from a symptom into an anomaly.** ⚠⚠ ***And
 the bar that produced the miss was written down BEFORE the reading, which is the only reason a
 tempting near-candidate could be rejected rather than argued into place.***
+
+---
+
+# §T20.101 — T20 PASS 96: ✅🔴 **`§0d.1`'s T1 PRESCRIPTION IS DISCHARGED — AND WRITING THE TABLE FOUND TWO FLAGS THAT DO NOTHING, FOUR THE TWELVE NEVER NAMED, AND TWO SILENT FAILURES** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads only; nothing run.**
+
+## 1. ✅ CLAUSE (ii) — **HIT. AND THE FIRST THING THE SOURCE SAYS IS THAT THE SCRIPT IS NOT A BUILDER.**
+
+▶ **`nba/baseline/build_baseline_ladder.py`, read in full, `2026-09-22T22:00:44Z` — `152` lines, and
+it is a PATCHER**: it reads `nba/backtest/classification_ladder_v12.py`, applies **eight
+anchor-asserted `rep()` string patches**, sets `BT_TAG` if unset, and `exec()`s the result.
+⇒ ***A flag's behaviour depends on whether the patch that reads it survives — and one of them does
+not.*** **The full combination→role mapping is written into `NBA_WORKERS.md` beside the env list it
+completes** *(clause (v) — `§0d.1` says "in ONE place")*, **with an inbound pointer from
+`NBA_RECIPE.md` `STEP 9`.**
+
+## 2. 🔴🔴 THE FINDING — **`BT_TRAIN` AND `BT_TEST` DO NOTHING HERE, AND THE GLOSSARY SAID THEY DID**
+
+**Patch `:40–49` REPLACES the harness's anchor line** —
+`TRAIN = os.environ.get("BT_TRAIN", …); TEST = [os.environ.get("BT_TEST", …)]` — **with season
+auto-detection from the files on disk** *(`_season_of(ASOF)`, a glob over
+`nba_player_game_log_20*.json`, `TEST = [_cur if _cur in _all else _all[-1]]`,
+`TRAIN = [x for x in _all if x < TEST[0]][-2:]`)*.
+⇒ ***Setting `BT_TRAIN` or `BT_TEST` on the production ladder changes nothing and raises nothing.***
+🔴 **`NBA_GLOSSARY.md` listed them under *"The baseline builder's environment"*. Corrected in place.**
+🔑🔑 **AND THE OPPOSITE IS ALSO TRUE, WHICH IS EXACTLY `§0d.1`'s POINT**: *COMPASS fact 66 —*
+***"BT_TRAIN must be explicit … or the test season lands in its own training set (leak + OOM)"*** *— is
+about the **HISTORY** builders and is correct there.* ⇒ ***The same flag is load-bearing in one script
+and inert in another; two true statements that a single flat env list blurred into one false one.
+That is the case for a dispatch table, made by the corpus against itself.***
+
+⚠ **CLAUSE (iii) — MISS on its literal terms, and the inverse is the better finding.** *Registered:
+"at least one flag's DEFAULT differs from what the pipeline sets", `BT_LADDER_STEPS` excluded as a
+PRIOR. **No other flag does.*** ⇒ ***The divergence that matters is not in VALUE but in EFFECT: set or
+unset, `BT_TRAIN`/`BT_TEST` do nothing, and nothing tells you.***
+
+## 3. 🔴 **THE FLAG THAT DISTINGUISHES THE TWO `P2` STEPS IS NOT READ BY THE FILE IT IS SET ON**
+
+**`BT_SAVE_COMPONENTS` appears nowhere in `build_baseline_ladder.py`.** *It is consumed by the
+harness and by `combos_ladder_v1.py`, reaching them through the `exec`.* ⇒ ***`§T20.100` found that
+this flag is what makes `P2` step 12 a different job from step 11; it turns out to be invisible in the
+very file whose invocation carries it.*** **A reader who opened the script to find out what the flag
+does would find nothing at all.**
+
+## 4. 🔴🔴 **FOUR MORE LIVE FLAGS, NAMED IN NONE OF THE TWELVE**
+
+*The patched harness runs under `exec` **in the same environment**, so every flag
+`classification_ladder_v12.py` reads is live in the production ladder:*
+
+| flag | default, as coded | selects |
+|---|---|---|
+| **`BT_BAND_CELLS`** | **`"rebounds"`** *(`:53`)* | which variation-band cells are built |
+| **`BT_SHIFT_MODE`** | **`"threes_made,blocks,steals,ftm"`** *(`:58`)* | the prop set using shift mode |
+| **`BT_KCELL_3PM`** | **`"100"`** *(`:55`)* | the cell-blend constant for threes |
+| **`BT_PHASE`** | **`"1"`** *(`:528`)* | a phase gate inside the harness |
+
+**Each carries a model-shaping default and the twelve named none of them.** ⚠ **All four — and
+`BT_TAG` — are listed in `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md`, a document of the THIRTY.**
+⇒ 🔑 ***The twelve's env list was a SUBSET of what the code reads, and the remainder survived only in
+a checkpoint file the twelve do not route to*** — **`§T20.90`'s orphan problem inverted: not a finding
+nothing points at, but a fact living outside the documents meant to carry it.**
+
+## 5. ⚠⚠ TWO SILENT FAILURES THE MAPPING MADE VISIBLE
+
+**① 🔴 THE INJURY STEP CANNOT FAIL THE BUILD** — *the entire day-before enrichment sits inside
+`try: … except Exception as _exc: print("injury report step skipped:", _exc)`.* ***The report can be
+missing, unparseable or name-unmatched, the ladder still builds, and `P2` still certifies green***
+*(its four checks count rows and props, never enrichment — `§T20.94`)*. **The only trace is one line
+of build log.**
+**② 🔴 A TYPO IN `BT_CUTOFF` IS SILENT** — *`{…}.get(_cut_name, BASELINE_CUTOFF_LOCAL)`, so
+`BT_CUTOFF=phase-1` yields a baseline-cutoff ladder that looks like a phase-1 one.*
+⚠ **Both recorded, neither fixed (rule 1).**
+
+## 6. ✅ CLAUSE (iv) — **THE PRIOR WAS FOLLOWED, AND IT PREVENTED A FALSE CONTRADICTION**
+
+*Registered: the table cannot be written from one file, and `NBA_WORKERS.md` already says why — cite
+it, do not rediscover it.* ▶ **A `grep -rl` reports `BT_CUTOFF`, `BT_REPLAY` and `BT_INJURY` as
+appearing IN `build_baseline_ladder.py`, which reads like a refutation of the prior's
+*"three env vars … exist only inside these triple-quoted strings and are string literals to
+`ast.parse` (§T9.31a)."*** 🔑 ***It is not a refutation — it is the prior's own mechanism seen from the
+grep's side: the hits ARE the patch literals.*** ✅ **`RULE 31` applied** *(a design statement is a
+CLAIM about code, tested by reading the code)*: **the file was read in full before the claim was
+made, and the contradiction dissolved.**
+
+## 7. 🔑🔑 CLAUSE (i) — **`RULE 52`: THE SAME SEGMENT CROSSED BACK**
+
+**`2026-09-22T22:02Z`: `648 · 1 · 470 · 467`.** *All three bands fell by `1`–`2` since `21:56`; the
+deltas were opened against the pre-pass tree:*
+
+> ### **HIGH BAND `649 → 648`, and the leaver is SEGMENT `292` — moving `0.4501 → 0.4500`.**
+
+⇒ 🔴🔴 ***The same segment that ENTERED the high band at `§T20.95` (`0.4500 → 0.4501`) has now LEFT it
+(`0.4501 → 0.4500`). One pinned segment, oscillating on the fourth decimal, in both directions.***
+**That is the cleanest available demonstration that the band is not measuring anything at that
+resolution** — *and `uncovered12` and `uncovered30` were unchanged across this pass's own writes.*
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§0d.1`** *(**PRIOR** — the T1 prescription this discharges;
+quoted, and the pass claims only the discharge)* · **`§T20.100`** *(**PRIOR** — the half-met
+measurement and the two-role finding)* · **`NBA_WORKERS.md` §T9.31a** *(**PRIOR** — the triple-quoted
+string-literal mechanism, cited and followed per clause (iv))* · **`BT_LADDER_STEPS` `6 → 10`**
+*(**PRIOR**, excluded from clause (iii) by pre-registration)* · **COMPASS fact 66** *(**PRIOR** — read,
+never written)*. ▶ **RULE 51, last step, BASELINE tree, probed as the CLAIM**: *"injury report step
+skipped"* and *"cannot fail the build"* return **`0`**; *"dispatch table"* and *"inert"* return many
+and **all were opened** — they are the `§0d.1` prescription and unrelated uses.
+
+📌 ***The lesson:*** **a directive the owner gave at T1 sat half-met for the whole project because the
+half that was done — listing the knobs — LOOKED like the whole job.** ⚠⚠ ***Writing the other half
+took one pass and produced two inert flags, four undocumented live ones and two silent failures. The
+list was not a small version of the table. It was a different thing wearing its name.***
