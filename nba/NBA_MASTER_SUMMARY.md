@@ -3666,9 +3666,18 @@ left unresolved.**
 **every leg gets a zero shift and the as-of calibration is silently a no-op** (it does log
 `0 keys, 0 dated rows`; nothing fails). `score_board_legs.py` reads the same table.
 
+> ⚠⚠ **STATE MOVED — DATED, NOT RETRACTED (rule 40). Re-measured 2026-09-22 at §T20.53:
+> `nba_score.ladder_calibration_asof` now holds `9,904` rows across `24` distinct `as_of_date`,
+> `2024-10-29 → 2026-01-15`. THE TABLE IS NO LONGER EMPTY AND THE GATE NOW PASSES.** *Everything
+> below was TRUE WHEN WRITTEN and is kept in full.* 🔑 **But the passing gate is now the WORSE
+> outcome**: `count(*) > 0` ignores the `as_of_date` column, whose newest value is **278 days before
+> opening night** ⇒ ***green all season on a calibration fitted to the middle of last season***
+> (§T20.53 §2, amended into **T20-6**).
+
 **FINDING 2 — ✅ the detector exists and is correct ⚠ but lives in the pipeline with no cron.**
 `certify_pipeline.py` has `check("as-of calibration available", … count > 0)` — **it would fail on
-today's state** — but it is in the **`p2`** branch, and **P2 has no `schedule:`** (pass 75). The
+today's state** *(as of that pass; see the dated note above — it PASSES as of 2026-09-22)* — but it
+is in the **`p2`** branch, and **P2 has no `schedule:`** (pass 75). The
 writer, `build_asof_calibration.py`, **deletes unconditionally** before refitting and is invoked by
 **only two manual-only workflows**. **Timeline**: the last ladder load was **2026-09-20T03:23:26**
 (a replay of `asof 2025-11-29`) and the table was autoanalyzed **41 seconds later** — **that run
