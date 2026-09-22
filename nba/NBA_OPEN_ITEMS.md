@@ -13155,6 +13155,27 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 > DST** — ✅ **but it is the FIRST of the eleven to go live: preseason opens `2026-10-03`, eleven days
 > from the pass that found it, in PDT.**
 > **Amended order: `5 · 7 · 12 · 9 · 4 · 6 · 3 · 10 · 2 · 11 · 1`.**
+>
+> ## 🔴🔴🔴 THIRD AMENDMENT — **T20-13 GOES FIRST, AND IT IS THE ONLY ITEM WITH A DATE (T20 pass 47, §T20.52, 2026-09-22)**
+>
+> | # | item | fails | effect | caught by a certifier? | fix size |
+> |---|---|---|---|---|---|
+> | **→ 1st** | 🔴🔴🔴 **T20-13** — `baseline_history` carries **22** distinct props in October and **30** from November 1, in **both** prior seasons; P2 gates on `>= 25` with `CERT_STRICT=1` | ✅ **LOUD — twelve times** | 🔴 **STOPS THE SLATE, on opening night and eleven nights after** | *n/a — it IS the certifier, and it is RIGHT* | **one edit, four ways** |
+>
+> ⚠⚠ **WHY IT DISPLACES T20-5 DESPITE FAILING LOUD.** *The brief's rule puts SILENT before LOUD
+> because a silent failure costs a season and a loud one costs an evening. **T20-13 breaks the tie
+> from outside the rule: it is the only item in the set with a KNOWN FIRING DATE, and that date is
+> `2026-10-20`.*** **T20-5 and T20-7 degrade quietly from opening night onward and can be fixed in
+> November with the season's data intact. T20-13 arrives at 22:00 PT on opening night, twelve times,
+> and what it costs is not an evening — it is the owner's trust in the red signal for the rest of the
+> season**, which the corpus names in its own words: *"a scheduled job failing nightly … teaches
+> everyone to ignore red builds."*
+> 🔑 **AND IT IS THE CHEAPEST ITEM ON THE BRIEF TO NEUTRALISE, because it does not need FIXING — it
+> needs DECIDING.** *Knowing it is coming is most of the remedy.*
+> **Amended order: `13 · 5 · 7 · 12 · 9 · 4 · 6 · 3 · 10 · 2 · 11 · 1`.**
+> ⚠ **AND NOTE THE OVERLAP, which no single item shows**: **T20-13's twelve nights sit inside
+> T20-12's 29-day PDT window (`2026-10-03 → 2026-11-01`).** ⇒ ***The opening fortnight carries a red
+> certifier AND a cutoff computed an hour late, and neither is visible from the other.***
 > 🔑 **AND THE "ONE PATTERN" COLLAPSE BELOW GROWS BY ONE.** *T20-5, T20-4 and half of T20-2 are one
 > defect — **a value that should be derived from the slate date is written as a literal**. **T20-12 is
 > the same defect in the time dimension**: a value that should be derived from the zone is written as
