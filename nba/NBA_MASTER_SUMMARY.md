@@ -28248,3 +28248,111 @@ many passes accumulates conventions the way a codebase accumulates call sites; t
 to learn them is to look at what refuses to resolve and ask what it is instead.*** 🔑 **The
 uncomfortable corollary: three grammars were found in three tries, so the right prior is that a
 FOURTH exists and has not yet refused to resolve loudly enough to be noticed.**
+
+---
+
+# §T20.24 — PASS 19: *`[LIVE-AUDIT]` ON THE UNREACHABLE FINDINGS — AND THE UNREACHABILITY COST SOMETHING*
+
+*(T20 pass 19, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+✅ **METHOD-ONLY STREAK BROKEN AT 3 — this pass is against the SYSTEM.** *Read-only throughout:
+`SELECT` only, no `run_job`, no dispatch, no write. `pp_*` objects and `prop_universe` untouched.*
+
+## 1. 🎯 WHY THESE TARGETS
+
+**§T20.23 found five 🔴 findings unreachable under all three citation grammars and opened
+OWNER DECISION T20-1 on them. The hypothesis this pass tests is the one that makes unreachability
+matter at all: *an unreachable finding is an UN-RE-DERIVED one, because nothing leads a pass to
+it.*** **Two of the five assert live-checkable material. Both were re-derived. Both moved.**
+
+## 2. 🔴🔴 `§0v.4` — THE BACKTEST SCOPE LIMIT: THE ARCHIVE HOLDS **12**, NOT 13
+
+**The claim** *(`NBA_BASELINE_CALIBRATION.md:684`, recorded 2026-09-22 from transcript
+`2026-09-13-01-03-48`, T13 pass 2 §T13.3h)*: *"The Odds API archived only **13 stat types** for
+PrizePicks (points, rebounds, assists, threes, blocks, steals, turnovers, PRA, PR, PA, RA, stocks,
+**double-double**)."*
+
+> **`SELECT DISTINCT market_key FROM nba_market.board_snapshots WHERE bookmaker='prizepicks'`**
+> **→ 20 keys, 2026-09-22.** **Less the 8 `_alternate` variants: `12` base stat types.**
+> 🔴 **`player_double_double` returns ZERO PrizePicks rows.**
+
+🔑🔑 **AND THE INTERESTING HALF — IT IS NOT MISSING FROM THE ARCHIVE, ONLY FROM PRIZEPICKS':**
+
+| bookmaker | `player_double_double` rows | span |
+|---|---|---|
+| betmgm | 65,789 | 2024-10-22 → 2026-04-12 |
+| draftkings | 45,897 | 2024-10-22 → 2026-04-12 |
+| fanduel | 45,522 | 2024-10-22 → 2026-04-12 |
+| bovada | 38,893 | 2024-10-22 → 2026-04-12 |
+| williamhill_us | 34,531 | 2024-10-22 → 2026-04-12 |
+| fanatics | 29,812 | 2025-02-10 → 2026-04-12 |
+| betrivers | 10,674 | 2024-10-29 → 2025-06-22 |
+| **underdog** | 1,960 | 2024-11-04 → 2026-04-12 |
+| **betr_us_dfs** | 932 | 2025-11-23 → 2026-04-12 |
+| **TOTAL** | **274,010 · 9 books · two full seasons** | |
+
+⇒ ***The count is off by one in BOTH directions at once: one fewer PrizePicks stat type than stated,
+and one MORE that is evaluable cross-book than the framing implies.*** ⚠ **This matters because the
+corpus already prices cross-book consensus — `rung_market`, `avg(books) = 2.11` — so the claim that
+needed testing was never "13" but *"there is no archive of them anywhere"*, and for double-double it
+does not hold.**
+
+✅ **THE REST OF THE "NO ARCHIVE ANYWHERE" LIST SURVIVES** *(rule 20, full vocabulary enumerated:
+**89 distinct non-PrizePicks `market_key` values**)*: **no `fg made` · `fg attempted` · `ft made` ·
+`ft attempted` · `3pt attempted` · `personal fouls` · `offensive rebounds` · `defensive rebounds` ·
+`dunks` key exists at all.** ⚠ **`player_fantasy_points` is a partial exception that does NOT qualify
+as an archive — `underdog` only, `189` rows, ONE offseason date (`2026-09-12`).** *Stated as the
+narrow thing it is rather than as a second contradiction.*
+
+⚠⚠ **NOT STRUCK — ANNOTATED.** *The 13 is a QUOTED claim, dated to its transcript and to its
+recording date. Rule 40's second half: a figure that was right when written is DATED, not retracted.*
+***§T20.14 struck a dated figure on six surfaces and had to be corrected; that precedent is being
+followed, not repeated.***
+
+## 3. ✅✅ `§0.9c` — A "NOT RECORDED" ANSWERED: THE SCRAPE READS **NEITHER REGIME**
+
+**The open question** *(`NBA_MULTIPLIERS.md:698`)*: *"an against-the-house multiplier and a
+peer-to-peer entry fee are not the same quantity. If Arena applies, `p × m` is not even the right
+test. **NOT RECORDED: which regime the system's own board scrape is reading.**"*
+
+| `bookmaker='prizepicks'` | rows | with `multiplier` | with `price` | span |
+|---|---|---|---|---|
+| | **2,199,354** | 🔴 **0** | ✅ **2,199,354 (100%)** | **2024-10-22 → 2026-04-12** |
+
+🔑🔑 ***The archived window STRADDLES the 2025-08-22 retirement of against-the-house pick'em, and
+nothing in the data marks it.*** **The Odds API normalises PrizePicks to American odds, so the board
+history cannot distinguish pick'em from `Pick'em Arena` on either side of the change, in any state.**
+⇒ 🔴 ***The question is not merely unrecorded — it is UNANSWERABLE FROM THE ARCHIVE. `p × m` cannot
+be tested historically because `m` was never stored for PrizePicks.*** ✅ **The corpus can now state
+WHY the data will never settle it, which converts an open measurement into a closed one with an
+owner-facing answer: the regime question belongs to the LIVE app, exactly as §0.9c argued.**
+
+✅ **RULE 22 POSITIVE CONTROL — the column is live, not dead**: **`underdog` carries 413,731
+multipliers of 939,719 rows, range `0.600 – 7.890`.** *(`draftkings` 0 of 3,652,647 · `betr_us_dfs`
+0 of 780,765 — the multiplier is a DFS field only Underdog's feed populates.)* **PrizePicks' zero is
+a real absence, not an unused column.**
+
+## 4. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T14:38:39Z** |
+| **(ii)** | **≥ 1 unreachable finding asserts a live figure that NO LONGER HOLDS** | ✅✅ **HIT — two of two live-checkable findings moved.** `§0v.4`'s 13 → **12**; `§0.9c`'s open question → **answered, and answered NEGATIVELY**. *The alternative the clause named — "unreachability has cost the owner nothing, drop T20-1 to LOW" — is refuted. **T20-1 STAYS MEDIUM**, on a measurement rather than a judgment.* |
+| **(iii)** | **≥ 1 moved figure carries NO DATE** | ❌ **MISS — and it is the good outcome the clause named.** `§0v.4` carries *"Recorded 2026-09-22 (T13 pass 2, §T13.3h)"* **and** names its source transcript; `§0.9c` dates the product change to **`August 22, 2025`**. ✅ ***The corpus's dating discipline holds on its LEAST-VISITED pages — the strongest place it could be proven, and it means neither figure needed a strike.*** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTY-FIRST consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — two system findings re-derived and both moved; one NOT RECORDED closed; two
+documents annotated `[LIVE-AUDIT]`. CLEAN STAYS 0/3.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson, and it is the one that justifies the three method passes that preceded it:***
+**§T20.23's orphan audit was pure apparatus work, and its payoff arrived one pass later as two
+findings about the SYSTEM that nothing else would have surfaced.** ***An unreachable section is not a
+navigation inconvenience. It is a section no pass re-derives, and the two this sweep re-derived had
+both drifted. Reachability is a MAINTENANCE property, not a cosmetic one — which is the argument
+option (c) of OWNER DECISION T20-1 ("record the corpus as read-whole rather than navigated") now has
+to answer.***
