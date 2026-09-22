@@ -24695,9 +24695,17 @@ app.** The schema is not the blocker.
 `current_season` · **`factor_fits` JSONB** · **`role_minutes_multiplier` JSONB** · `source_file` ·
 `loaded_at`.
 
-**`factor_fits` and `role_minutes_multiplier` store the values FITTED IN THAT RUN.** This is the
-"no pasted constants" rule made auditable — you can see what each day's run derived, and compare runs.
-**`history_seasons[]` records what the run was allowed to see**, which is the parity rule's evidence.
+~~**`factor_fits` and `role_minutes_multiplier` store the values FITTED IN THAT RUN.** This is the
+"no pasted constants" rule made auditable — you can see what each day's run derived, and compare
+runs.~~ 🔴🔴 **CORRECTED 2026-09-22 (T20 pass 109, `§T20.114`): THEY STORE ONE INVOCATION'S FITS,
+CHOSEN BY FILENAME SORT ORDER.** *The builder runs once per prop pair; the merge at
+`nba-p2-overnight-heavy.yml:216` is `meta = meta or d["meta"]` over a `sorted()` glob and recomputes
+**only `rows`, `props`, `players`**. **Live, all three rows carry `assists · season_phase · steals`
+against 18–22 props, and that pairing exists only in the `BT_SAVE_COMPONENTS=1` diagnostic build.***
+⚠ **The struck sentence's second half names the exact use the defect defeats: "compare runs" compares
+the diagnostic build to itself.** ▶ **Full finding `§T20.114`; item `T20-20`; nothing reads it back.**
+**`history_seasons[]` records what the run was allowed to see**, which is the parity rule's evidence —
+⚠ **and it rides the same first-file-wins merge, so it too is one invocation's.**
 
 #### T9.11c — The `production_baseline_ladder` config entry, in full
 | Key | Value |
