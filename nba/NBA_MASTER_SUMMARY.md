@@ -345,6 +345,22 @@ Across T3–T9 I updated `NBA_MASTER_SUMMARY.md`, `NBA_GLOSSARY.md`, `NBA_DATABA
 **So every "clean pass" recorded for T3–T9 was clean against half the document set.** Their counts are
 void. **T1 and T2 stand** — they predate the drift.
 
+> **⚠ THAT LAST SENTENCE WAS WRONG WHEN WRITTEN, and the notice refutes it two lines later.**
+> *Recorded 2026-09-22 (T20 pass 4 — first full sequential read of T20). Superseded, not deleted: the
+> original wording is the record of what the sweep believed on 2026-09-20.*
+> **The exemption cannot hold.** The very next paragraph states that four further documents are mandated
+> *"which **T1–T9** have never been passed against"* — T1 and T2 included — and the corrected procedure
+> directly below it reads *"a pass updates **all 12 documents** or it is not a pass."* By the notice's
+> own rule, T1's and T2's counts were clean against **8 of 12** and were therefore void on exactly the
+> grounds T3–T9's were. The drift the notice names is not the only defect the notice creates.
+> **The owner said so explicitly** — T20 **SEG 817**: *"you should be doing that since the beginning,
+> since the **T1** for the new files and since the **T3** for the files you left behind."* T1+ for the
+> four new documents; T3+ for the four neglected ones. The notice exempted T1 and T2 from both.
+> ✅ **No practical harm — the later sweep overtook it**: the ledger shows **T1 CLOSED on 89 passes**
+> and **T2 CLOSED on 19 passes**, both re-swept from scratch in 2026-09-21 under the twelve-document
+> rule. The exemption was written, contradicted in the same notice, and then simply not acted on.
+> *Kept here because a reader arriving at this notice is told the opposite of what the ledger shows.*
+
 **Four further documents are now mandated** (2026-09-20), which T1–T9 have never been passed against:
 | New document | Scope |
 |---|---|
