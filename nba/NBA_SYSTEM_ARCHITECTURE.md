@@ -2158,3 +2158,103 @@ continuity that isn't there."* **Saying so explicitly is what these two entries 
 | `nba/NBA_LESSONS_LEARNED_FROM_MLB.md` (57,066 B) | *"the single most important document… a research standard built the hard way"* |
 | `nba/NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` (18,034 B) | concept mapping |
 | `nba_config.classification_config` | **machine-readable decisions** — verdicts live in the DB, not in logs |
+
+---
+
+## §0f-5-T18 — ⚠⚠ P3's SHAPE WAS WRONG, AND ONLY RUNNING IT SHOWED THAT
+*(T18 pass 1, prose stratum, `pb.txt` SEG 813–842 · transcript `2026-09-20-06-12-04-nba-pipelines-confidence-board-tiers-2026-09-19.txt` · written 2026-09-22)*
+
+⚠ **Read `NBA_OPEN_ITEMS.md` §T18.2 first.** *Twenty-two of this transcript's headline findings were
+already on file before the transcript was read* — the sweep audited this session from the live system
+and from COMPASS on 2026-09-20, **the day the session ended and before its transcript existed.** What
+follows is the residue: **what the live audit could not carry, because rule 6 forbids it to explain
+WHY.** *This section is causal, not factual.*
+
+### 1. 🔴🔴 THE DEFECT THE DESIGN DOC HAD ALREADY NAMED, BUILT WRONG ANYWAY
+
+**P3 was built to rebuild the entire slate.** It ran **35+ minutes without finishing** on the replay;
+the author's own estimate for the full job is **~64 minutes minimum** *(8 prop pairs × ~8 min/pair,
+plus components, combos and periods)* — **finishing ~3:00 PM, past the placement window and past some
+tip-offs.** *"that's disqualifying for its purpose."*
+
+🔑 **The specification was already correct and already on file.** ***COMPASS fact 68: "the light
+pipeline handles the day-of report, projected-lineup delta, the board and market, and rescores ONLY
+the legs those touch."*** The author's own verdict: ***"the design doc already said this and i built
+it wrong."***
+
+⚠⚠ **AND THIS IS THE SECTION'S POINT, STATED BY ITS AUTHOR**: ***"reading the workflow, it looked
+right — the steps were all present and in the correct order. only RUNNING it exposed that the SHAPE
+was wrong for the time budget it has to fit."*** **A correct step list in a correct order is not a
+correct pipeline.** *Nothing static — not a review, not a diff, not a factor-parity check — can see a
+shape defect. Only a clock can.*
+
+### 2. ✅ THE ARGUMENT THAT SETTLES IT — *the fit CANNOT have changed*
+
+> *"the ~8 minutes per pair is FITTING the recipe — tier tables, factor betas, dispersion — over three
+> seasons of prior games. scoring the slate's players afterwards is cheap. and that yields the key
+> insight: **the fit uses only games STRICTLY BEFORE TODAY, so it is IDENTICAL in p2 at 1 am and p3 at
+> 1:15 pm. nothing that happens between them changes a single prior game.** p3 is currently spending
+> 64 minutes recomputing a model that CANNOT have changed."*
+
+**The one thing that does change between the two runs is the availability list** — and it changes for
+**the affected teams only.** ⇒ **P3's correct cost driver is `board size × status changes`, both small
+and bounded — not the fitting cost, which is fixed and belongs overnight.**
+
+**The resulting four-step P3**: *(1)* P2 persists the fitted model *(tier tables, betas, dispersion)*
+alongside the ladder — **the mechanism already exists**, since `BT_SAVE_COMPONENTS` already pickles
+for combos; *(2)* **P3 LOADS that fit and NEVER REFITS**; *(3)* P3 diffs the day-of report against the
+day-before one and recomputes `proj_min` for affected teams through the allocator; *(4)* **P3 scores
+BOARD-SCOPED, not full-ladder.**
+
+⚠ **NOT RECORDED: whether the "load fit, don't refit" path was ever built.** *The author declined it
+in-session* — ***"this is a real refactor of the builder… i don't want to attempt it and leave it
+half-tested at this point; it needs its own pass with proper verification against the known
+2026-01-15 values."*** **So step (2) is specified, not shipped.** *(Open item T18-4.)*
+
+### 3. ✅ WHAT BOARD-SCOPED MEANS, EXACTLY — *the owner's own boundary*
+
+| | |
+|---|---|
+| **SCORED by P3** | **every rung the apps actually offer** — all prop lines, every ladder rung and alternate, **both directions**, all goblins/standards/demons, across PrizePicks, Underdog, Sleeper and Fliff. *"if it's on a board, it gets a number."* |
+| **NOT SCORED by P3** | **the internal ±10 ladder** for every player × 30 props *(~140k rungs/day)*. *"that exists for backtesting and coverage analysis; live, **a rung nobody offers is a number nobody can use**."* |
+
+**Scale contrast the owner supplied**: the board is **~5–10k legs across apps and growing** *(goblins,
+demons, ladders)* **versus ~140k full-ladder rungs.** 🔑 **And the owner supplied the scaling rule
+that makes it durable**: ***"the slate grows, so p3 must scale with the BOARD, not the LADDER."***
+
+### 4. ✅ THE `bs_source` SWITCH DISSOLVED — *the parity rule doing its own job*
+
+**An open item was closed by discovering it had never existed.** `archive_live_boards.py`
+**normalises every scraper — PrizePicks, Underdog, Sleeper, Fliff, Betr — into `board_snapshots` in
+the same shape.** ⇒ **live and archive are ONE table**, so the `BS_SOURCE=live` switch built into the
+scorer is unnecessary: *"the scorer already reads the right place."*
+
+🔑 **The author names the cause correctly**: ***"that's the parity rule doing its job: the live path
+and the historical path are the SAME PATH BY CONSTRUCTION."*** ⚠ **This is the first instance in the
+corpus of the parity rule ELIMINATING work rather than imposing it** *(`NBA_DAILY_PARITY_AND_BACKFILL.md`
+is the governing directive; the rule is stated throughout as a constraint on what may be pasted)*.
+
+### 5. ✅ THE GAP AUDIT WAS RECALIBRATED FROM A PREDICATE TO A RATE
+
+**It blocked the replay — correctly, by design, and mis-calibrated.** It failed on **any** truncated
+team-game; **7 truncated team-games in 2025-26 halted everything.**
+
+**The domain argument**: *"an nba team must DRESS 8+, but a blowout can see only 7–8 actually play. so
+a handful of thin games is reality; hundreds would be a truncated pull."*
+
+**Recalibrated to a RATE with a measured threshold**: **fails at `> 0.5%`**, calibrated against
+**2024-25 = 2 of ~2,460 team-games (0.08%)** vs **2025-26 = 7**. ⚠ **NOT RECORDED: the 2025-26
+denominator**, so the 2025-26 rate is not stated in the transcript and is not computed here.
+
+🔑 **The generalisable form**: ***a completeness check whose predicate is "any anomaly" cannot
+distinguish a real oddity from a systematic pull failure; only a rate can, and the rate's threshold
+must be measured against a season known to be good.***
+
+### 6. ✅ THE BUILD ORDER IS LOAD-BEARING — *and the history is encoded as a runtime assertion*
+
+The loader carries its own guard — ***"abort: artifact has no combo props — refusing to load a
+singles-only slate"*** — **so combos must exist before the merge.** The author's reading of it:
+***"your combos-gap history is literally encoded as a runtime assertion."***
+
+⚠ **Rule 19**: the quotation covers the guard's existence and its message. **NOT RECORDED in this
+transcript: when that guard was added, or by which session.**
