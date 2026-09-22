@@ -37562,6 +37562,17 @@ two NUMBERED items at the head. The item I could not source was dropped rather t
 *which is what clause (iii) was written to force: **"a first-read surface that introduces unverified
 statements is worse than none."***
 
+> 🔴🔴🔴 **CORRECTED 2026-09-22, T20 pass 113 (`§T20.118`): THE WORD *"VERBATIM"* ABOVE IS FALSE.**
+> **The block quoted `§T20.103`'s NARRATIVE of a ranking correction, not the ranked string in
+> `NBA_OPEN_ITEMS.md` — which at that moment read `A · 13 · B · …` under the heading *"ALL
+> FOURTEEN"*, with NO `17` and NO `15`, and still did eleven passes later.** ⚠⚠ **So the router told
+> the owner that `T20-17` — SEASON-CRITICAL and SILENT — was ranked THIRD in a list that did not
+> contain it.** ✅ **The brief was repaired at `§T20.118` and the two now agree; the failure is
+> recorded at both ends.** 🔑 ***This is the exact failure clause (iii) existed to prevent — "a
+> first-read surface that introduces unverified statements is worse than none" — and it was not
+> caught by the clause, because the clause checked whether each statement had a SOURCE and not
+> whether the source still SAID it.***
+
 ## 4. 📐 WHAT THE BLOCK ANSWERS *(clause (v))*
 
 **① what this system is** — the five apps, the three pipelines, the `1:15 PM PT` cutoff, the
