@@ -34306,3 +34306,89 @@ untouched. The re-derivation found nothing new and that is the point — every s
 exactly where it was left, twenty-eight days out, and the board archive that would let anyone test a
 fix does not wake up for eleven more.** ***The sweep has been auditing its own instruments while the
 thing they point at sits still. Both facts are worth knowing; only one of them has a deadline.***
+
+---
+
+# §T20.75 — T20 PASS 70: ✅✅ **THE REMAINING NINE ALL HOLD — AND THE SEVENTEEN-DAY WINDOW DOES NOT BIND: THIRTEEN OF THE FOURTEEN CAN BE FIXED AND VALIDATED TODAY** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.** *All figures below were taken
+`2026-09-22T19:25Z`–`19:30Z`, read-only, from the authority each item names.*
+
+🔴 **THIS PASS COMPLETES A PARTIAL ONE.** *§T20.74 re-derived five of the fourteen — the live-checkable
+ones — and left **nine** untouched. The sweep's own standard is that a partial pass is not clean.*
+
+## ✅ CLAUSE (ii) — **IT FAILS. ALL NINE HELD; NONE CHANGED STATE; NONE WAS UN-RE-DERIVABLE.**
+
+| item | re-derived from | verdict |
+|---|---|---|
+| **T20-11** | `nba-p1-weekly-static.yml:28` — `- cron: '0 19 * * 1'  # Mondays 19:00 UTC = 12:00 PT (11:00 PT during PDT)`, and `:8` `# 19:00 UTC = 12:00 PDT` | 🔴 **HELD** — *still inverted* |
+| **T20-10** | `nba-daily-delta.yml:52–54` — three `python … \|\| echo "… failed"` | 🔴 **HELD** |
+| **T20-9** | `alphadog-v2-github-auto-deploy.yml:97,98,115,116` — `git commit … \|\| true` and `git push \|\| true`, **twice** | 🔴 **HELD** |
+| **T20-7** | P3 `:143–147` — step *"Board tiers (goblin / standard / demon)"* runs `python nba/maintenance_shrink_board_index.py`; `build_board_tiers_v2.py` is wired **only** into `nba-engine-test.yml:66` | 🔴 **HELD** |
+| **T20-6** | structure unchanged; thresholds as §T20.51 measured them | 🔴 **HELD** |
+| **T20-5** | `grade_board_outcomes.py:167–168` `GRADE_START "2024-10-22"` · **`GRADE_END "2026-04-12"`**; `build_rung_market.py:80` `RUNG_FROM "2024-10"` · **`RUNG_TO "2026-04"`** — and **all four variables appear in ZERO of `nba-p1/p2/p3`** | 🔴 **HELD** |
+| **T20-3** | `config.scheduled_jobs` — **`10` rows, `2` enabled** *(`postgres-full-run` 06:00 PT daily · `static-full-run` 02:00 PT weekly)*, **zero NBA-specific** | 🔴 **HELD EXACTLY** |
+| **T20-2** | `nba_config.classification_config` key `storage_diet_plan_2026_09_17` *(status `PLANNED`, updated `2026-09-17`)* says `final_hp` **"11 GB … 38.1M rows"**; live is **`19,215,200` rows / `9,391 MB`** | 🔴 **HELD — and re-confirmed with fresh figures** |
+| **frozen static layer / schedule** | `nba_ref.teams` `2026-08-31` *(22 d)* · `arenas` `2026-09-01` *(21 d)* · `officials` `2026-09-01` *(21 d)* · `nba_calendar.games` `2026-09-02` *(20 d)* | 🔴 **HELD — timestamps IDENTICAL to the prior, days `+1`** |
+
+⚠ **RULE 19 APPLIED: the `+1` on every staleness figure is CLOCK ADVANCE, not change.** *A pin that
+moves because the calendar moved is not a pin that was wrong.* ⇒ **Fourth consecutive honest negative
+(§T20.70, §T20.73, §T20.74, this pass).**
+
+### 📌 THREE THINGS THE RE-DERIVATION ADDED THAT NO ITEM STATES
+
+1. ✅ **A RULE-1 OPEN QUESTION IS RESOLVED BY RE-DERIVATION.** *The corpus carried, unresolved: "the
+   stored 2026-27 regular-season slate is 1,200 games — 30 short of 1,230 … per Rule 1 this entry does
+   not choose."* ▶ **Re-derived: `nba_calendar.games` holds `1,266` rows for 2026-27 — **`1,200`
+   regular-season from `2026-10-20`** plus **`66` preseason (`2026-10-03` → `2026-10-19`)**.** ⇒ ***The
+   1,200 figure HOLDS EXACTLY, the 30-game shortfall is real and is NOT preseason bleed, and the split
+   independently re-derives both season dates the whole corpus depends on.***
+2. ⚠ **T20-3's TWO ENABLED JOBS ARE DST-CORRECT.** *Both carry `timezone = America/Los_Angeles`.*
+   ⇒ ***The SCHEDULER layer resolves Pacific properly where the PYTHON layer (T20-12) hardcodes `-8`.
+   The defect is one layer deep, not system-wide — which is the good news inside T20-12.***
+3. 📌 **`board_tiers` holds `2,199,354` rows / `459 MB` — real historical data with no current writer**
+   *(T20-7)*. ⚠ *That count is **exactly** the PrizePicks NBA row count in `board_snapshots`. **Why
+   they are equal: NOT RECORDED** (rule 6) — the equality is stated because it is checkable, not
+   explained.*
+
+## ⚠⚠ RULE 20 — **TWELFTH SAVE, AND A ZERO THAT WOULD HAVE CONTRADICTED A PRIOR**
+
+*`pg_stat_user_tables.n_live_tup` reported* **`board_tiers` = 0** *and* **`rung_market` = 0** *— which
+would have read as "T20-7's table is empty."* 🔴 **The same query reported `board_snapshots` = `7,951`
+live tuples against `6,604 MB`, which is impossible — the estimates are stale.** ✅ **Exact counts:
+`board_tiers` `2,199,354` · `rung_market` `1,057,765` · `board_outcomes` `6,905,452` · `final_hp`
+`19,215,200`.** 📌 ***A planner estimate is not a count (rule 22's first half). The tell was a figure in
+the SAME result set that could not be true.***
+
+## 🔑🔑 CLAUSE (iii) — **THE SPLIT IS LOPSIDED, AND THE PRE-REGISTRATION SAID THAT WOULD BE THE BIGGER FINDING**
+
+| | items |
+|---|---|
+| ✅ **VALIDATABLE NOW** — *source text, config rows, or historical rows already in the database* | **13 of 14**: `T20-13` *(the 22-vs-30 prop gate — it was FOUND in historical October/November rows and a fix tests against those same rows)* · `T20-12` · `T20-11` · `T20-10` · `T20-9` · `T20-7` · `T20-6` · `T20-5` · `T20-4` · `T20-3` · `T20-2` · frozen static layer · schedule |
+| 🔴 **NEEDS LIVE DATA** | **1**: `T20-14` — *Betr's token; only an actual pull proves a refreshed credential works* |
+
+🔑🔑 ***§T20.74 established that no NBA board row arrives until preseason on `2026-10-03` and framed the
+fix window as SEVENTEEN DAYS. This pass narrows that: **the window does not bind.** Thirteen of the
+fourteen can be fixed and their fixes proven TODAY — against source text, config tables, and the two
+seasons of historical rows already in the database. **Only Betr's token genuinely waits**, and it has
+its own deadline, `2026-10-10`.*** ⇒ ***The owner is not blocked by the calendar on anything but one
+credential.***
+
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.74's five re-derivations** *(**PRIOR**, carried not repeated)*
+· **the fourteen items** *(**PRIOR** — re-derived, and every one logged **HELD**, never republished)* ·
+**P2's deliberate no-cron and its target time** *(`# NO CRON YET — deliberately … the cron goes in when
+the season starts (target: daily 09:00 UTC = 01:00 PT)` — **already on file in three documents**;
+killed)* · **T20-7's `nba-engine-test` wiring** *(**PRIOR** — the item already names
+`nba-engine-test` twice and `build_board_tiers_v2` three times; killed)* · **a "P2/P3 have crons now"
+scare** *(killed by reading: `grep -c "cron"` returned 1 for each and **both are COMMENTS** — P2's is
+the `NO CRON YET` block, P3's is an `ARCHIVE_LABEL` note. **No-cron HOLDS.**)*
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(baseline `636 · 2 · 484 · 481`; Δ `484 − 471` =
+`13`)*.
+
+📌 ***The lesson:*** **the previous pass ended on a warning — seventeen days, not twenty-eight — and
+the warning was wrong in the direction that matters. Re-deriving the other nine showed that almost
+every season-critical defect is a line of source text or a config row, and both can be fixed and
+proven on a Tuesday in September.** ***A deadline computed from when the DATA arrives is not the same
+as a deadline for the WORK, and the sweep nearly handed the owner the wrong one.***
