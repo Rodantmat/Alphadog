@@ -12711,7 +12711,70 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
-## T20-8 · **NEW · 🔴🔴🔴 THE SWEEP'S OWN DEFECT** · 36 commits without `[skip ci]`, one deploy fired, and an MLB scrape destroyed by this session's push rate
+## T20-9 · **NEW · 🔴🔴 THREE WORKFLOWS PUSH TO `main` WITH NO RETRY — AND THE DEPLOY WORKFLOW SWALLOWS THE FAILURE AND REPORTS SUCCESS**
+
+**Severity 6 of 7.** **Found T20 pass 42 (§T20.47), 2026-09-22.** **Evidence: VERIFIED** — file text
+on tree `2b9a4c22fe80b6ffcc7d3d3b6784f4f32d5a7bb7` plus `github_get_workflow_run_log(35751058086)`.
+
+**THE CENSUS.** Of **40 workflow files** (`github_list_dir('.github/workflows')`, 2026-09-22T16:27:15Z),
+**27 push back to `main`** — **26 in scope**, `nba-pp-payout-map.yml` excluded. **23 of 26 carry the
+house five-attempt fetch-rebase loop and are safe.** **Three do not:**
+
+| # | file | defect | fix |
+|---|---|---|---|
+| **1** | 🔴🔴 **`alphadog-v2-github-auto-deploy.yml:98` and `:116`** | **`git push \|\| true`, twice.** A rejected push is **swallowed** and the run stays **green** | replace both with the loop from `sleeper-board.yml:53-56` |
+| **2** | 🔴 **`gbdt-training.yml:98`** | bare `git push origin HEAD:main`; **no retry, no rebase, and NO `concurrency:` block at all**; **its commit at `:97` is the ONLY automated commit message in the repository without `[skip ci]`** | add the loop **and** `[skip ci]` |
+| **3** | **`scrape.yml:91`** | bare push — **already on file at §T20.46**, where it discarded **186,502 insertions** | add the loop |
+
+**PROVEN, NOT PREDICTED.** `AlphaDog v2 Mobile Auto Deploy` run **`35751058086`**, 2026-09-22T15:59:23Z,
+concluded **`success` on all seventeen steps** — and its step *"Record last successful deploy marker"*
+logged:
+```
+[main 3bc18ede] Auto: record last successful deploy marker [skip ci]
+To https://github.com/Rodantmat/Alphadog
+ ! [rejected]          main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/Rodantmat/Alphadog'
+```
+**The earlier step *"Commit Scoring DB binding/debug log"* shows the same rejection. BOTH pushes lost,
+both swallowed, job green.** ⇒ 🔴 **The Workers WERE deployed from `c068a550`; `deployed_sha.txt`
+still reads `5911b8ac…` (written `13:11:41Z`). The repository's record of the deployed state is wrong
+and nothing is red.**
+
+⚠ **A FOURTH, SEPARATE DEFECT IN THE SAME FILE.** `alphadog-v2-github-auto-deploy.yml:23-25` is
+`group: alphadog-v2-deploy`, **`cancel-in-progress: true`** — a **fixed** group, so a new commit
+**cancels a deploy in progress**, and that cancellation can land inside
+`python github_mobile_deploy_workers.py --scope "$DEPLOY_SCOPE"`, a loop over multiple Workers ⇒
+**a PARTIAL deploy.** ⚠ **The setting is VERIFIED; whether a deploy was in fact cut mid-loop today is
+NOT RECORDED** — the run API's 100-run window reaches back only to 14:56:04Z.
+
+⚠ **AND `scrape.yml`'s OWN GUARD IS INERT ON THE CRON PATH** (§T20.47 §3): its group key is
+`…|| github.run_id`, and on a `schedule` event none of the four inputs exists, so **every scheduled
+run gets a unique group and is never queued.** `cron: '0 */2 * * *'`.
+
+🔑 **WHY THIS MATTERS IN 28 DAYS**: four commit-back workflows share the `*/2` hour set at `:00`
+`scrape.yml` · `:15` `sleeper-board` · `:25` `underdog-board` · `:35` `fliff-board`. **On a game day
+the network pushes into a narrow window by construction.** *Whether any run exceeds its 10–15 minute
+gap is a duration question this pass could not answer and did not guess.*
+
+✅ **THE GOOD NEWS, AT FULL STRENGTH**: **the retry loop is a deliberate house pattern applied to 23
+of 26 writers. The scraping network is not racy. Three files are, and all three are one edit each.**
+
+⚠ **NOT FIXED — DOCUMENTED, per the owner's standing instruction.**
+
+---
+
+## T20-8 · **NEW · 🔴🔴🔴 THE SWEEP'S OWN DEFECT** · 36 commits without `[skip ci]`, ~~one deploy fired~~ **AT LEAST NINE DEPLOYS FIRED** *(amended T20 pass 42, §T20.47)*, and an MLB scrape destroyed by this session's push rate
+
+> ⚠⚠ **AMENDED 2026-09-22 AT §T20.47 — THE MAGNITUDE WAS UNDERSTATED, THE DIAGNOSIS WAS NOT.**
+> This item originally recorded **one** deploy, because one was all the 40-run API window could see.
+> **`git log -- deployed_sha.txt` is a far longer record and was never consulted**: **1,874** commits
+> have touched the marker over the repository's life, **8 of them dated 2026-09-22, from `12:32:19Z`
+> to `13:11:41Z`** — one every ~5 minutes — **plus run `35751058086` at 15:59Z, which reached the
+> marker step and lost the write.** ⇒ 🔴 **at least NINE production deploy runs today, triggered by
+> this sweep's unmarked commits.** ⚠ **Rule 17 in its purest form: the original figure was not wrong
+> about its window; it was wrong to be stated without one.**
+> ✅ **The remedy is unchanged and already recorded**: ***`github_patch_file` HAS A DEFAULT COMMIT
+> MESSAGE — pass `message` every time.***
 
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.46), read from `github_list_workflow_runs` and
 `github_get_workflow_run_log` — both READS. Nothing was triggered, dispatched or re-run.**
