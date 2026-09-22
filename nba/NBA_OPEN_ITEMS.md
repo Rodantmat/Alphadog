@@ -12711,6 +12711,72 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-12 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, LIVE IN ELEVEN DAYS · THE PIPELINE'S PYTHON LAYER HARDCODES PST — `p3_cut` IS AN HOUR LATE FOR EVERY DAY OF DAYLIGHT SAVING TIME**
+
+**Severity 6 of 7.** **Found T20 pass 45 (§T20.50), 2026-09-22.** **Evidence: VERIFIED** — file text
+on tree `29a4d08a9b5252941e5bde35510ddfe1481ae387`, script population enumerated from the P1/P2/P3
+`run:` lines and pinned 2026-09-22T16:49:39Z (**40 scripts, 44 files examined**).
+
+✅✅ **READ THIS FIRST, BECAUSE IT IS THE BIGGER HALF.** **The slate date and the run guard — the two
+clock decisions that matter most — are DST-CORRECT.** P2 `:60` / P3 `:67`:
+`if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi`, and P3's guard at `:68`/`:73` uses
+`TZ=America/Los_Angeles date +%H%M` to refuse a run before 13:00 PT. **That date is passed down as
+`BT_ASOF`, `DELTA_ASOF`, `BS_ASOF` and `CERT_DATE`, so every script's own "today" default is
+overridden by a correctly-resolved value.** ⇒ **There is no deep confusion here. The problem is
+narrow and it is one constant.**
+
+🔴🔴 **THE DEFECT — `nba/build_availability_delta.py`, `:39` and `:88-90`:**
+```
+:39   PT = timezone(timedelta(hours=-8))
+:88   gd = datetime.fromisoformat(asof).date()
+:89   p2_build = datetime.combine(gd, datetime.min.time(), tzinfo=PT) + timedelta(hours=1)
+:90   p3_cut   = datetime.combine(gd, datetime.min.time(), tzinfo=PT) + timedelta(hours=13, minutes=15)
+```
+⇒ **`p3_cut` is `13:15 −08:00` = `21:15 UTC`, every day of the year. During PDT the real 1:15 PM PT
+is `20:15 UTC`.** 🔴 ***So for every day of daylight saving time the snapshot window used to compute
+the availability delta runs ONE HOUR PAST the cutoff the workflow itself enforces — P3's guard
+measures 13:00 PT DST-correctly and this function then selects `before`/`after` with a boundary an
+hour late.*** **`p2_build` is shifted identically.**
+⚠⚠ **AND THERE IS NO ENV OVERRIDE FOR THESE TWO VALUES.** *`DELTA_ASOF` supplies `gd`; nothing
+supplies the offset. Unlike `BS_ASOF`/`CERT_DATE`/`BT_ASOF`, the hours are computed inside the
+script.*
+
+🔑🔑 **WHEN IT IS LIVE — and this is why the severity is 6:**
+
+| window | zone | `p3_cut` |
+|---|---|---|
+| **preseason from `2026-10-03`** *(ELEVEN DAYS OUT)* | **PDT** | 🔴 **one hour late** |
+| `2026-10-20` → `2026-11-01` | **PDT** | 🔴 **one hour late** |
+| `2026-11-01` → `2027-03-14` | PST | ✅ correct |
+| `2027-03-14` → season end | **PDT** | 🔴 **one hour late** |
+
+⚠⚠ **THE FILE HAS BEEN BURNED BY A TIMEZONE BUG IN THIS EXACT FUNCTION BEFORE.** Its own comment,
+`:83-87`: *"ABSOLUTE TIMESTAMPS, NOT HOUR-OF-DAY. The first version computed `h = hour(snapshot_ts)`
+… **which is why 20 real status changes produced zero reallocations.**"* 📌 ***The fix for a timezone
+bug was to stop using hour-of-day and start using absolute timestamps — and the absolute timestamps
+were built from a hardcoded PST. The lesson was learned one level too shallow.***
+
+### THE CENSUS — ZERO of 44 FILES ARE DST-AWARE
+
+`ZoneInfo` **0** · `pytz` **0** · `dateutil` **0** · `America/Los_Angeles` **0** · `US/Pacific` **0**
+*(in Python; the four correct uses are all in shell lines).*
+
+| site | decides | verdict |
+|---|---|---|
+| 🔴 `build_availability_delta.py:89-90` | the P2/P3 snapshot window | **LIVE, no override** |
+| 🔴 `archive_live_boards.py:208` — `gd = datetime.now(timezone.utc).astimezone().date()` | the **`game_date`** a board snapshot is filed under | **`.astimezone()` with NO argument converts to the RUNNER's zone, which is UTC — a no-op that reads like a conversion.** ✅ Safe at P3's own 13:15 PT pull, **but invoked from THREE workflows** (`nba-board-archive.yml:54`, `nba-boards-market.yml:119`, `nba-p3:139`) and the first is dispatch-only — **an operator pull after 16:00 PT files under TOMORROW**, corrupting the label P3's header says *"the grader, the line-movement measurement and every backtest key off"* |
+| ⚠ `scrape_referee_assignments.py:32` — `(now - timedelta(hours=7 if 3 < now.month < 11 else 8)).date()` | "today PT" | **the only site that attempts DST.** ✅ right Apr–Oct and Nov–Feb · 🔴 **wrong `2027-03-14 → 2027-03-31`**; surfaces for runs in the 07:00–08:00 UTC hour, immediately before P2's 01:00 PT start |
+| ✅ `certify_pipeline.py:27,33` · `score_board_legs.py:41,96` | "today PT" defaults | **LATENT** — P2 sets `CERT_DATE` (`:282`), P3 sets `BS_ASOF` (`:204`) and `CERT_DATE` (`:227`) |
+| ✅ three ladder builders' `date.today()` | `ASOF` | **LATENT** — P2 sets `BT_ASOF` (`:167`, `:186`, `:210`) |
+
+**FIX SIZE: `ZoneInfo("America/Los_Angeles")` in three files, plus one argument to `.astimezone()`,
+plus the March boundary in the referee scraper.** *The correct pattern is already in the repo, in the
+shell lines above.*
+
+⚠ **NOT FIXED — DOCUMENTED, per the owner's standing instruction.**
+
+---
+
 ## T20-11 · **NEW · 🔴 P1's CRON COMMENT AND HEADER BOTH INVERT PDT/PST — AND NINE SURFACES REPEAT THE WRONG HOUR**
 
 **Severity 2 of 7** *(documentation, not operation — the consequence is bounded and stated below).*
