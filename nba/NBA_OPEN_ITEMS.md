@@ -88,6 +88,32 @@
 > two variables is ours.**
 > ✅ **`ladder_steps` is ALREADY a per-row column** *(today `10` on every row)* — **the structure for
 > a per-prop ladder exists; only the values are missing.**
+>
+> ## 🔴 **THE SAME QUESTION READ BACKWARDS — T20 PASS 54, §T20.59, 2026-09-22**
+> *The table above asks what the apps offer that we fail to price. **This asks what we price that
+> nothing prices back**, and the two answers have opposite signs.*
+>
+> **Over BOTH seasons — `2024-10-22 → 2026-04-12`, 381 dates, ~26.5M legs — `board_snapshots` carries
+> exactly `21` `market_key`s, mapping to `13` of our `30` props.** 🔴 **SEVENTEEN of thirty have never
+> carried a single leg**, and they are **`55.29%` of the sample week's rung volume.**
+> ⚠⚠ **THE SPLIT IS THE WHOLE FINDING:**
+>
+> | | props | share of nightly rungs | verdict |
+> |---|---|---|---|
+> | ✅ **DFS-only BY DOCUMENTED DESIGN** | `fantasy_score` + the 8 period props | **28.43%** | ✅ **CORRECT TO BUILD — and structurally unverifiable from our own data** |
+> | ⚠ **ordinary box-score stats, no market anywhere in our data** | `fga` `fgm` `fg3a` `fta` `ftm` `dreb` `oreb` `personal_fouls` | **26.86%** | 🔴 **unexplained — ~16,000 rungs a night** |
+>
+> 🔑🔑 **AND THE FIRST ROW IS PROVED, NOT ASSUMED.** *P3's header says the feed "carries the standard
+> markets but NOT the DFS-only ones (fantasy_score, period props)". **`board_snapshots` holds FOUR
+> DFS books — `prizepicks` 2,199,354 legs / 378 dates · `underdog` 934,438 / 379 · `betr_us_dfs`
+> 780,765 / 131 · `pick6` 534,188 / 176 — and their market vocabularies are 20, 21, 21 and 19 keys,
+> every one a subset of the same 21 STANDARD keys.*** ⇒ ***4.4 million DFS legs, not one DFS-only
+> market, two seasons. The feed's limitation is exactly as documented.***
+> ⚠ **WHAT THE SECOND ROW DOES NOT SAY**: *"no market in `board_snapshots`" is NOT "no app offers
+> them" — this sweep cannot see past its own feed.* **The finding is that `26.86%` of the nightly
+> build rests on props no source in the system has ever been recorded offering, and that NO
+> INSTRUMENT EXISTS that could tell the owner whether that is right or wrong.**
+> ⚠ **NOT A DELETE LIST. A MEASUREMENT FOR AN OWNER DECISION.**
 
 ### 🔴🔴🔴 **T18-1 — "OUR ANCHOR IS NOT AT THE PROPER PLACE OF THE LADDER, OR THE LADDER IS NOT DEEP ENOUGH"** *(**0 of the twelve, 0 of the thirty**; positive controls `goblin` 636/417, `multiplier` 617/432)*
 
