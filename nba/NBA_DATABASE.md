@@ -223,9 +223,31 @@ later.***
 two largest objects are now `baseline_history` and `final_hp` — 22.4 GB between them — and neither
 appears anywhere in T13's storage picture.** ⚠⚠ ***So the 4 GB the shrink recovered has since been
 consumed roughly six times over, by the SCORING layer rather than the market layer.***
-⚠ **Rule 6: this records what the system IS. WHY those two tables are that size, whether either
-carries a wide key of the same kind the board table did, and what the current storage cap is, are
-all NOT RECORDED** — **no swept transcript covers them, and T14–T20 are unread.**
+> ### ✅✅ **CORRECTED 2026-09-22 (T13 pass 4, §T13.5a) — THE CORPUS DOES EXPLAIN IT, AND IT IS A DELIBERATE DECISION**
+> ⚠⚠ **This entry, written one pass earlier, said *"no swept transcript covers them."* That is true
+> and MISLEADING: `NBA_COMPASS.md` — one of the EIGHTEEN — covers it directly, and the sweep wrote
+> RULE 33 about exactly this failure two passes before committing it.**
+> > **COMPASS fact 105, dated 2026-09-19**: ***"`final_hp` STAYS DENORMALISED — A DELIBERATE
+> > DECISION, NOT AN OVERSIGHT."*** *"The columns it shares with **`baseline_history`** *(`game_id`,
+> > `anchor`, `band`, `phase`, `prop_tier`, `n_uncertain`, `baseline_hp`)* **look like ~25 GB of
+> > duplication. THEY ARE BOUGHT SPEED.** **Two claims made against slimming were TESTED and one of
+> > them was MY error, so both are recorded.**"*
+>
+> 🔑🔑 ***The two tables this entry identified as the unexplained 22.4 GB are the exact pair the
+> corpus names, the duplication is deliberate, and slimming it was already argued and tested.***
+> **So the finding stands as a STATE and is retracted as a puzzle.** ⚠ **What remains genuinely open
+> is narrower**: **the current storage CAP** *(the 30 GB expansion is long exceeded at 43 GB)*, and
+> **whether the expansion-time write hazard has been re-examined since the tables that now dominate
+> are different ones.** ***Neither is recorded anywhere in this corpus.***
+>
+> 📌 **AND THE OPERATIONAL COST OF THE DENORMALISATION IS RECORDED TOO** *(COMPASS fact 104, *"FOUR
+> PERFORMANCE LESSONS THAT COST ~90 MINUTES EACH"*)*: *"**READ THE PLAN FIRST.** Three query
+> rewrites were guessed before one **`EXPLAIN`** gave the answer immediately: a **Parallel Hash Join
+> was building a hash from 8,270,978 `final_hp` rows** because the join key contained
+> `replace(...)` and `lower(regexp_replace(...))` — 🔑🔑 ***"a FUNCTION ON A JOIN COLUMN means no
+> index can ever be used."***"* ⚠ **That is the same table, and it bears directly on the owner's
+> LATENCY requirement** *(`NBA_OPEN_ITEMS.md`, T13 seg 571 — 0 of thirty)*: **the size is bought
+> speed, and the join key is where the speed was being given back.**
 🔑 ***The incident above is therefore not closed by the shrink — the same hazard now sits on
 different tables***, **and the 2:45 PM PT warning applies unchanged.**
 
