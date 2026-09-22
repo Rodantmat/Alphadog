@@ -36064,3 +36064,91 @@ insert, and — by insisting on opening a `+1` it could have explained away in a
 sweep's headline metric cannot resolve the quantity it has spent three passes interpreting.**
 ***Every instrument this sweep has turned on the system has eventually had to be turned on itself,
 and it has never once come back clean.***
+
+---
+
+# §T20.92 — T20 PASS 87: 🔴🔴 **`§T20.91`'s "`86` IDS" WAS `2`. THE BLIND SPOT IS REAL AND ITS SCOPE WAS INFLATED `43×` BY AN EXTRACTOR THAT READ PROSE WORDS AS SECTION IDS — THE THIRD SUCH ARTEFACT IN TWO PASSES, ALL THREE CAUGHT BY RULE 26** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.**
+
+## 1. ❌ CLAUSE (ii) — **MISSED. THE INTERSECTION IS EMPTY, AND FINDING THAT OUT CORRECTED THE PASS BEFORE IT.**
+
+*Pre-registered: "the intersection is non-empty — at least `1` of the `86` blockquote-declared ids
+ALSO has `0` inbound routes."* **The first run returned `45` of `47` — which was the answer being too
+good, and rule 26 was applied to it.**
+
+> 🔴🔴 **EVERY ONE OF THE `45` WAS A PHANTOM.** *The list read:* **`§SECOND`** · **`§READ`** ·
+> **`§COMPLETED`** · **`§DIAGNOSED`** · **`§All`** · **`§Because`** · **`§BLAST`** · **`§AMENDMENT`** …
+> ⇒ ***They are not section ids. They are the first prose word of a blockquoted heading.*** *My
+> extractor stripped the leading emoji and emphasis — correctly, that is `§T20.22`'s fix (a) — and
+> then took whatever word came next.* **`> ## ⚠⚠ SECOND AMENDMENT — T20-10, T20-11 AND T20-12` became
+> the section id `SECOND`.**
+
+▶ **RE-DERIVED with an id SHAPE — an id begins with a digit, or `T<n>.` / `T<n>-`** *(re-run
+`2026-09-22`, tree `4e32c985d7243cd6def2a91f1683e21384931e5c`)*:
+
+| | `§T20.91` reported | **true** |
+|---|---|---|
+| blockquoted heading LINES | 145 | **149** ⚠ *(the figure was right; it grew by 4 because `§T20.91` itself wrote blockquoted inserts)* |
+| **distinct ids they declare** | 🔴 **86** | ✅ **2** |
+| declared ONLY in a blockquote | *(not separated)* | ✅ **2 — `§0.9d.1` and `§6.0`** |
+| **doubly unreachable** *(blockquote-only AND no inbound route)* | *(predicted ≥1)* | ✅ **`0`** — both carry live routes, **4** and **3** |
+
+⇒ 🔑🔑 ***THE BLIND SPOT IS REAL AND IT IS EXACTLY TWO IDS WIDE — the same two `§T20.91` found by
+hand, before the census was built.*** **The census added nothing but a wrong number.**
+✅ **CLAUSE (iii) — the good outcome it named**: *"a clean miss here is the good outcome and must be
+reported as such."* **No member of the intersection carries a severity marker, because there is no
+intersection.** ⚠ **CLAUSE (iv) — NOT MEASURABLE**: recency cannot be tested at `n = 2`. *Recorded as
+unmeasured, not as a negative result (rule 6).*
+
+## 2. 🔴🔴🔴 **THREE EXTRACTOR ARTEFACTS IN ONE PASS — AND THE THIRD ONE FALSIFIED A FINDING I HAD ALREADY DRAFTED**
+
+| # | the rule the extractor used | what it produced | caught by |
+|---|---|---|---|
+| **①** | *the first word after the emoji is the id* | **45 phantom ids** *(`§SECOND`, `§READ`, `§All` …)* | rule 26 — opened the list |
+| **②** | *an id appearing in a heading line is declared there* | **headings that CITE an id counted as DECLARING it** — `> # §T20.79 IS CORRECTED BY §T20.81` registers both | rule 26 — opened the 9 survivors |
+| **③** | *a declaring heading carries NO sigil; a sigil means a citation* | 🔴 **`16` ids "scored resolving while nothing declares them", with `83` body references** — **drafted as a refutation of `§T20.22`'s clause (ii)** | rule 26 — opened the top eight |
+
+**Artefact ③ deserves its own paragraph, because it was one patch away from being published.**
+The draft read: *v3 scores 16 ids as resolving although nothing declares them, so `§T20.22`'s
+conclusion — "**every matcher this sweep has ever used produces FALSE POSITIVES ONLY… the errors run
+one way, toward crying wolf**" — is false.* ▶ **Then the eight largest were opened against every
+document in the thirty:**
+
+> **`§0z-8-T18` → `NBA_SYSTEM_DESIGN.md:2037`, `## §0z-8-T18 — ⚠ SUPERSEDED IN PART BY THE RETRACTION
+> ABOVE (2026-09-22)`.** *A genuine declaring heading. **It simply carries the `§` sigil**, and my
+> rule had defined that away.* **`§0.002-T18` → `NBA_WORKERS.md:1862`, same form. `§4i` `§4j` `§4n`
+> `§4o` → `NBA_ARCHITECTURE_BLUEPRINT.md`, outside the twelve — `§T20.22`'s class B, behaving
+> correctly.**
+
+⇒ ✅✅ ***`§T20.22`'s CLAUSE (ii) CONCLUSION SURVIVES A DELIBERATE ATTEMPT TO BREAK IT.*** **The
+matchers still err in one direction only.** 🔑 **And the irony is the finding**: *the assumption that
+killed my refutation — "a declaring heading has no sigil" — is the **exact inverse** of the asymmetry
+`§T20.22` itself recorded from the other side* ***("only 138 of 1,498 headings carry the `§` sigil")***.
+**A property that holds for 91% of headings is not a definition, and I used it as one.**
+
+## 3. ⚠ CLAUSE (i) — **`RULE 52`'s FIRST APPLICATION, AND IT COST NOTHING**
+
+*Pre-registered: no prediction; report the level, open any delta.* ▶ **`2026-09-22T21:14Z`:
+`648 · 1 · 471 · 469`.** **Unchanged from the end of pass 86. No delta, so nothing to open.**
+🔑 ***The rule's cost when there is nothing to find is one sentence — which is the argument for it.***
+*Under the old habit this pass would have opened by registering a prediction on a quantity now known
+to be unresolvable at `±1`, and a hold would have been reported as a second replication.*
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.91`** *(**PRIOR** — this pass's motive; **its
+headline figure is corrected in place, not re-discovered**)* · **`§T20.90`** *(**PRIOR** — the orphan
+discriminator this pass reused verbatim)* · **`§T20.22`** *(**PRIOR** — clause (ii), attacked and
+upheld; its 138-of-1,498 asymmetry is quoted, not re-measured)* · **`§T20.70` / `§T20.82` /
+`§T20.83`** *(**PRIOR** — the three earlier all-false-positive censuses this pass's artefacts
+rhyme with)*. ▶ **RULE 51 on THIS finding, last step, against the BASELINE tree**: *"first prose word
+read as a section id"* and *"a heading that cites an id is not a heading that declares it"* return
+**`0` files**.
+
+📌 ***The lesson:*** **four automated censuses of this corpus's own reference surface have now been
+built — `§T20.70`, `§T20.82`, `§T20.83` and this one — and every single one was wrong on its first
+run, each in a different way, each caught by the same rule.** ⚠⚠ ***Rule 26 is not a check on greps.
+It is the only thing standing between this sweep and a corpus of confidently-stated arithmetic about
+words it never looked at.*** 🔑 **And the pass's own headline is the proof that it works on the
+sweep's newest work as readily as on its oldest: `§T20.91` was ninety minutes old.**
