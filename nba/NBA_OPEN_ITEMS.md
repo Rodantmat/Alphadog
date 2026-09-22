@@ -1,5 +1,93 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴🔴 **T16 CONFIRMS §T15.3a FROM THE INSIDE — THE OPERATOR FOUND THIS EXACT FAILURE MODE, NAMED THE RULE, REPAIRED FIVE OTHER CASUALTIES, AND STILL MISSED FACT 69** *(T16 pass 1, §T16.2, from the 2026-09-13 transcript)*
+
+⚠⚠ **Read this immediately before the fact-69 entry below.** *§T15.3a inferred the mechanism from a
+git diff. **T16's prose states it outright, one day later, in the operator's own words** — and the
+reason fact 69 survived every repair is the sharper lesson.*
+
+> 🔑🔑🔑 ***"I OVERWROTE A CANONICAL FACT while inserting new ones, and only caught it because I
+> CHECKED THE NUMBERING AFTERWARD. The lesson applies to the documentation itself: **PATCH-BY-ANCHOR
+> ON A NUMBERED LIST WILL SILENTLY CONSUME THE ANCHOR LINE**, so the sequence needs verifying after
+> every insert."***
+
+### 🔴 FIVE SEPARATE REPAIR EPISODES IN ONE SESSION — **the damage was serial, not a one-off**
+
+| # | What was found | What it cost |
+|---|---|---|
+| 1 | *"My insert split **fact 81** again and left the facts out of order — 80, 82, 83, **orphaned 81 body**, then 79"* | ordering + an orphan |
+| 2 | 🔴🔴 *"My earlier patch **DELETED FACT 77 (the sanity gate)** when I replaced it"* → *"**confirmed — fact 77 is GONE ENTIRELY**. Restoring it"* | **a canonical fact destroyed and restored** |
+| 3 | *"Line 148 is an **orphaned fragment from the old fact 85** — my patch replaced the heading but left the body"* | an orphan |
+| 4 | *"**Duplicate 86s**, an **orphaned fact-90 body** on line 157, an **orphaned fact-87 body** on line 158, and a **missing 90 heading**"* | four defects at once |
+| 5 | *"Facts 87 through 94 in order, orphan removed"* | a fifth pass |
+
+🔴🔴🔴 **AND FACT 69 WAS NEVER AMONG THEM — HERE IS WHY, AND IT IS THE PART THAT GENERALISES.** **Every
+one of those checks was scoped to the BLOCK BEING EDITED** — *"facts **74 through 83**"*, *"facts
+**84–92**"*, *"facts **87 through 94**"*. ⚠⚠ ***A NUMBERING CHECK SCOPED TO THE BLOCK YOU JUST EDITED
+CANNOT SEE A HOLE MADE IN AN EARLIER BLOCK.*** 🔑 **Fact 69 was deleted on 2026-09-12 and the checks
+began on 2026-09-13 at fact 74 — the hole was already behind the window before anyone started
+looking.** ✅ **The remedy is one line and it is the sweep's own recount**: *verify the WHOLE sequence,
+1 → n, not the edited block* — which is exactly how §T15.3a found it (**111 numbered lines = 107
+distinct − 1 missing + 5 duplicates**).
+
+🔑 **So the corroboration is complete and independent**: the sweep inferred the mechanism from a diff;
+the operator states it from experience; **and the one casualty neither caught is the one that sits
+outside a block-scoped check.** ⚠ **Fact 77 was found and restored. Fact 69 was not, and is still
+missing today.**
+
+---
+
+## 🔴🔴 **T16 OPERATIONAL DEFECTS — TWO SELF-INFLICTED POSTGRES DEADLOCKS, AND A SUPERVISION RULE WORTH MORE THAN EITHER FIX** *(T16 pass 1, §T16.2)*
+
+*Recorded because the rebuild they interrupted is the **first non-negotiable factor** going into
+production, and because the supervision failure is general.*
+
+| # | Failure | Cause, in the operator's words |
+|---|---|---|
+| **1** | **`psycopg.errors.DeadlockDetected` on `DELETE FROM nba_score.baseline_history`** — **four of six rebuild jobs died at ~00:00** | *"Each loader does **delete-then-insert inside a transaction**; with four jobs writing to the same table at once, **two took row locks in opposite order** and Postgres killed them. **Running them in parallel CAUSED this.**"* |
+| **2** | **The FIX caused a second deadlock, and this pair died within SECONDS** | *"I put the advisory lock **AFTER the `CREATE TABLE` / `CREATE INDEX IF NOT EXISTS` statements — and those already take TABLE LOCKS**. So one process held table locks waiting for the advisory lock while the other held the advisory lock waiting for the table locks. **I INVERTED THE LOCK ORDER and created a new deadlock.**"* |
+
+✅ **THE CORRECT FIX**: **the advisory lock must be the FIRST statement in the transaction, before any
+DDL**, so every loader acquires the same lock in the same order *(commit `d1b6979`)*. 🔑 **The
+expensive BUILD stays fully parallel; only the LOADER serialises, for a few seconds.**
+
+### 🔴🔴 THE SUPERVISION RULE — **the failure that cost an hour was not the deadlock**
+
+> ***"Straight answer on why it was slow: **IT WASN'T SLOW, IT WAS DEAD.** Four of six jobs failed at
+> ~00:00 and I gave you a time estimate without going back to verify they were still running… I
+> reported progress by querying **ROW COUNTS — a number that looks the same whether jobs are RUNNING
+> or DEAD**. … **Checking `github_list_workflow_runs` takes ONE CALL and I skipped it.** That's not a
+> tooling limit."***
+
+🔑🔑 **THE STANDING RULE THAT CAME OUT OF IT: VERIFY RUN STATUS *AND* ROW COUNT TOGETHER — never row
+count alone.** ⚠ **And the completion rule alongside it**: *"I'll report complete only when **all 60
+carry a post-22:00 timestamp**, **not when the jobs report green**."* 🔑 *Two different distrusts —
+of a stalled counter and of a green check — and the session needed both.*
+
+### ⚠ THREE MORE OPERATIONAL FINDINGS FROM THE SAME STRETCH, RECORDED WITHOUT INTERPRETATION
+
+| | |
+|---|---|
+| **PARALLELISM WAS BEING WASTED** | *"The workflow **already loops semicolon-separated pairs** with a 350-minute timeout. **I've been UNDER-USING it by passing one pair at a time.**"* — and *"**the repo is PUBLIC so Actions gives 20 concurrent jobs** — I'd been serialising unnecessarily."* ⚠ *Per-season **concurrency groups** then allowed both seasons to rebuild at once.* 🔑 **The same public-repo fact that is a credential exposure risk (O8) is also the reason 20 jobs can run at once.** |
+| **A WORKFLOW WITH OVERLOADED INPUTS 404'd** | *"The absence-panel step ran first and **404'd — I passed `points` in the `seasons` input**, which that step used as a season name. **The workflow has accumulated too many toggles SHARING INPUTS**; that's my doing."* |
+| **A GROUPING ERROR MASQUERADED AS A RUNNING JOB** | *"My earlier query returned nothing **because of a grouping error on my side, not because the job was still running**"* — **the inverse of the row-count failure above: a query bug read as job state, twice in one session, in opposite directions.** |
+| **THE STALE-GROUPBY BUG, THIRD INSTANCE** | *"Same bug class as earlier: **`g2` was bound before `per36` existed, so the groupby can't see the new column**"* — after `dreb36` in the 09-12 session. ⚠ **A pandas groupby captured before a column is added is a recurring defect in this codebase, and it fails LOUDLY (`KeyError`), which is why it costs minutes rather than conclusions.** |
+
+---
+
+## 🔴 **T16 OPEN ITEMS — what the 2026-09-13 session leaves named and scoped**
+
+| # | Item | State |
+|---|---|---|
+| **T16-1** 🔴🔴 | **THE VERIFICATION HARNESS THE SESSION CONCLUDED IT SHOULD HAVE BUILT FIRST** | *"The real question isn't 'which factor wins.' It's: **on any day of the past two seasons, how sharp is the final HP, at every granularity?** That's a verification harness, and **it's what I should have built BEFORE any factor work.**"* Specified as **one report over any date range, measuring final HP against outcomes, broken out by `prop × band × direction × rung × role tier × phase`, flagging every cell that misses tolerance.** ⚠ **Whether it was built is NOT RECORDED in this transcript.** 🔑 **It is the owner's acceptance criterion turned into an instrument** *(`NBA_SYSTEM_DESIGN.md` §0z §1)*. |
+| **T16-2** 🔴🔴 | **18 OF 30 PROPS HAVE NO TIER ROWS AND CANNOT USE THE CALIBRATION PATH** | `board_tiers` covers **only 12 markets** — PrizePicks offers goblin/demon tiers on those alone. **`fga`, `ftm`, `dreb`, `fantasy_score`, `double_double` and the seven period props have no tier rows at all.** 🔑 **They need a SECOND path, keyed on the standard board line** *(cells `prop × phase × band × direction`, no tier dimension)*. ⚠ *And `steals`, `blocks`, `turnovers`, `stocks` have tiers (3.9k–8.1k rows) but **fell under the 1,500-leg test minimum after the joins — thin, not broken.*** |
+| **T16-3** 🔴 | **THE FITTED USAGE ALLOCATION WAS REBUILT FOR 2025-26 ONLY** | *"2024-25 still holds the old values, so it needs the same rebuild to keep the seasons comparable."* ⚠ **An inter-season inconsistency on an input that was measured NEGATIVELY CORRELATED with reality in its old form** *(`NBA_FINAL_SCORING_CALIBRATION.md` §0a-T16 §3)*. **NOT RECORDED whether it was done.** |
+| **T16-4** ⚠ | **`team_game_no` COUNTS A PLAYER'S OWN APPEARANCES, NOT TEAM GAMES** | *"A player who missed time is classified as 'earlier' than his team actually is. **That's arguably the right signal for his prediction — but it's not what the label says**, and I'd want it defined deliberately rather than by accident."* 🔑 **Flagged by its own author as a definition that happened rather than was chosen.** |
+| **T16-5** 🔴 | **TWO OF THREE NON-NEGOTIABLES REMAIN** | ✅ **Blowout: COMPLETE** *(`NBA_RECIPE.md` STEP 0-T16)*. 🔴 **Scenario precompute for the last-minute injury report: *"the architecture is SPECIFIED — per game, joint availability of both teams, ≤64 branches, precompute in phase 2, select at 2:30 — BUT NOT BUILT."*** ⚠⚠ **And COMPASS fact 107 (2026-09-19) records the scenario precompute as DROPPED by owner decision — so this item may be closed by a later reversal rather than by a build** *(both dates on file; see `NBA_SYSTEM_DESIGN.md` §0z §3)*. 🔑 **Team matchup: STARTED, and the first measurement is decisive** *(below)*. |
+| **T16-6** 🔑 | **TEAM MATCHUP — the market total beats the derived profile nearly 2:1, and the build is NOT yet done** | **Implied team score vs actual team points: derived season-to-date mean **r = 0.2364**; market-implied (`total/2 − spread/2`) **r = 0.4637**, MAE 9.08.** ✅ **And the player-level effect is real, monotone and directional — 41,497 player-games, by the OPPONENT's implied total**: strong defence (0–108) 5,775 legs → **1.0140**; 108–113 11,142 → **1.0325**; weak defence (113–117) 10,681 → **1.0358** — **a 2.2-point production swing.** ⚠ **The OWN-team bucket shows a U-shape (1.0607 low · 1.0286 middle · 1.0543 high) — *"the blowout effect bleeding in: extreme implied totals mean lopsided games"*** — **so the own-team and opponent channels are not symmetric and must not be modelled as one.** 🔑 **The stated next build: market-implied team and opponent totals replace the derived profile inputs, exactly as the market spread replaced the derived spread.** |
+
+---
+
 ## 🔴🔴🔴 **`[LIVE-AUDIT]` COMPASS FACT 69 WAS SILENTLY DESTROYED BY A `github_patch_file` CALL AND IS STILL MISSING TODAY** *(T15 pass 2, §T15.3a, 2026-09-22)*
 
 ⚠⚠ **This is an OPEN defect in the live operating document, not a historical one.** *The COMPASS is the
