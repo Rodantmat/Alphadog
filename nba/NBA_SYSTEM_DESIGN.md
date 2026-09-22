@@ -1636,7 +1636,7 @@ with); **freshness gate dropped** (uniform penalty discriminates nothing).
 ---
 
 ## 2. P1 — WEEKLY STATIC
-`.github/workflows/nba-p1-weekly-static.yml` · **cron `0 19 * * 1` = Mondays 12:00 PT** ·
+`.github/workflows/nba-p1-weekly-static.yml` · **cron `0 19 * * 1` = Mondays 12:00 PDT / **11:00 PST**** *(qualified 2026-09-22, §T20.49 / T20-11 — 11:00 PT for 133 of the season's first 145 days; the workflow's own `:28` comment inverts PDT and PST)* ·
 concurrency `alphadog-nba-p1-weekly` · timeout 180 min
 
 **Why weekly:** these tables are as-of weekly by construction. The cadence is the original one from T1
