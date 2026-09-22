@@ -12386,6 +12386,25 @@ and exited 0.** ⇒ **The "7" came from a different, date-scoped invocation (the
 HIGH**, because the same evidence shows the audit **cannot see a past season at all** — a green run
 on an empty expected-set, worded as reassurance. *Documented, not fixed.*
 
+### ✅✅ **RESOLVED 2026-09-22 (T18 pass 6) — THE DENOMINATOR IS 2,460, AND THE CALIBRATION WAS SOUND**
+**`[LIVE-AUDIT]`, read-only `SELECT` on `nba_market.schedule_norm`: 2,460 rows total, exactly 1,230
+per season** *(2024-25 2024-10-22→2025-04-13 · 2025-26 2025-10-21→2026-04-12)*. **1,230 games × 2
+teams = 2,460 TEAM-GAMES per season**, which is the audit's own denominator
+*(`total_team_games = sum(len(v) for v in game_players.values())`)*.
+
+| season | truncated | denominator | rate | vs the 0.5% threshold |
+|---|---|---|---|---|
+| 2024-25 | **2** | **2,460** | **0.0813%** | ✅ passes — **and the source comment says "0.08%", EXACT** |
+| 2025-26 | **7** | **2,460** | **0.2846%** | ✅ **passes — it would NOT have halted the pipeline** |
+
+🔑 **So the recalibration was arithmetically sound all along**, and the open item was about a missing
+*statement*, not a missing *basis*. ⚠ **The caveat that keeps this honest: 2,460 is the count of
+SCHEDULED team-games, and the audit counts team-games PRESENT IN THE DELTA — the two coincide only
+for a complete season.** *For a mid-season run the denominator is smaller and the same 7 would score
+a higher rate, so the threshold is most permissive exactly when the season is complete.*
+⚠ **The rest of T18-6 STANDS UNCHANGED**: the season-wide 2025-26 audit still returned *"nothing to
+audit… not a failure"*, and that is T18-12's problem, not this one.
+
 ## T18-7 · **CONFIRMED EXACTLY — the `4` is a literal with nothing behind it**
 ✅ **The line itself, read from the executed patch**:
 `lost = lost + np.where(d["interpolated"].values, 4.0, 0.0)`, then
