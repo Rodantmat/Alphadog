@@ -37180,3 +37180,91 @@ finding I wanted** — *`§T20.100`'s "terse is not lying", `§T20.101`'s grep-v
 now a runtime default I had not checked.* ⚠⚠ ***A census of a language is only as good as one's
 knowledge of what runs it. Twelve blocks looked unguarded and are guarded by a flag nobody wrote
 down, in a file nobody edits, because GitHub supplies it.***
+
+---
+
+# §T20.104 — T20 PASS 99: 🔴🔴🔴 **FIVE OF THE TWELVE CHECKS HAVE NO DATE PREDICATE, AND `> 0` MEANS ONE ROW OF SIXTY THOUSAND** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads and `SELECT` only.**
+
+## 1. 🔑 THE QUESTION FOUR PASSES KEPT ANSWERING WITHOUT ASKING
+
+*`§T20.94`: "`PIPE=p2` fails 2 of 4 on a zero-game day." `§T20.96`: "`P3` certifies GREEN on all 38
+early-tip days." `§T20.102`: "**a partial build clears a floor that low**", "**not one of the twelve
+covers enrichment**." `§T20.103`: "`board archived today` is satisfied by PrizePicks alone."*
+⇒ ***Every one is an answer to* **what survives certification?** *— the only automated statement this
+system makes about its own health, read four times in passing and never once adversarially.***
+▶ **All twelve re-derived from source this pass** *(rule 15/17)*: **`p1` 3 · `p2` 4 · `p3` 5.**
+
+## 2. ✅ CLAUSE (ii) — **HIT, at `6+` against a bar of `4`** *(the two known-weak checks excluded as PRIORS)*
+
+## 3. ✅✅ CLAUSE (iii) — **HIT, AND IN A SHARPER FORM THAN REGISTERED**
+
+*Registered: "at least one check is satisfiable by data from the wrong date or the wrong season."*
+**It is worse than the wrong date. FIVE of the twelve have NO DATE AT ALL:**
+
+| check | pipeline | why it can never fail again |
+|---|---|---|
+| `defender_ratings rows` | p1 | `count(*)` over the **whole table**, `> 10000` |
+| `player name map populated` | p1 | `count(*) > 400`, static |
+| `as-of calibration available` | p2 | `count(*) > 0` over the whole table |
+| `confidence model loaded` | p3 | `count(*) WHERE deduction > 0`, whole table |
+| `defender_ratings refreshed` | p1 | tests `max(as_of_date)` ⇒ **ONE fresh row satisfies it** |
+
+⇒ ***A run that wrote nothing certifies green on all five, because they describe the database's
+history rather than today's work.*** 🔴 **The one that reads worst is `as-of calibration available`**:
+*`P2` step 16 rebuilds the as-of calibration and step 18 refits the confidence model — **the check
+that looks like it covers them counts rows that were there yesterday.***
+
+## 4. 🔴🔴 **AND THE DENOMINATORS MAKE `> 0` CONCRETE** *(live, 2025-26)*
+
+| check | threshold | typical real value |
+|---|---|---|
+| `baseline_history has today` | **`> 0`** | **median `60,398` rows per game-day, `163` days** |
+| `board archived today` | **`> 0`**, **and it names no bookmaker** | **median `8,994`** for PrizePicks alone, `164` days |
+| `baseline props for today` | **`>= 25`** of 30 | **five props may be missing silently** |
+
+⇒ ***A build that produced one row of sixty thousand passes.***
+
+## 5. 🔴 WHAT IS NOT CHECKED AT ALL
+
+**`P1`: 9 steps / 14 scripts → 3 checks on 2 tables** *(teams, arenas, players, bio, season tables,
+team stats, on/off, playtypes, tracking, DARKO, shot quality, static context — **all unchecked**)* ·
+**`P2`: 19 steps → 4 checks** *(grading last night's board, grading paper picks, market spreads, the
+blowout refit and the confidence refit — **unchecked**)* · **`P3`: 11 steps → 5 checks** *(the
+availability delta `T20-17`, the board tiers `T20-7`, the paper-pick log — **unchecked**)*.
+
+## 6. ⚠ A FOURTH POINT, SCOPED HONESTLY RATHER THAN CLAIMED
+
+**`certify_pipeline.py:27` — `PT = timezone(timedelta(hours=-8))`.** ✅ **Harmless in the pipelines**:
+all three pass `CERT_DATE` from `TZ=America/Los_Angeles date +%F`, **named-zone correct**. 🔴 **The
+fallback bites a hand-run certifier during PDT** — *within `T20-12`'s stated scope ("zero DST-aware
+Python in the NBA scripts"), **cited and not re-raised**, and one more instance of `§T20.101`'s
+pattern: running it by hand is not the same job the pipeline runs.*
+
+> ## ⚠⚠ **CLAUSE (iv), HONOURED: NONE OF THE TWELVE IS WRONG.**
+> **Each tests what it says it tests, and a check narrow by design is not a defect.** ⇒ ***The finding
+> is the GAP between what certification is READ as meaning — the certifier's own failure line is
+> "This pipeline did NOT produce what it promised" — and what it MEASURES.*** ✅ **Raised as `T20-18`,
+> MEDIUM and STRUCTURAL, deliberately NOT added to the brief** *(it breaks nothing by itself; it is
+> why other breakages go unnoticed, and each of those has its own item)*. **The brief stays at SIXTEEN.**
+
+## 7. ✅ CLAUSE (i) — `RULE 52`
+
+**`2026-09-22T22:17Z`: `648 · 1 · 470 · 467`. All three bands unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.94`** *(**PRIOR** — the first reading of all twelve;
+re-derived here, not reused)* · **`§T20.96` / `§T20.102` / `§T20.103`** *(**PRIOR** — the four
+in-passing answers this pass assembles; `defender_ratings > 10k` and `board archived today` were
+**excluded from clause (ii)'s count** as theirs)* · **`T20-12`** *(**PRIOR** — the DST hardcode scope)* ·
+**`NBA_GLOSSARY.md:1277-1281`** *(**PRIOR**, returned by the probe — the unscoped `final_hp` DELETE,
+the same no-date-predicate family one layer down)*. ▶ **RULE 51, last step, BASELINE tree**:
+*"certifies green while broken"* and *"what certification measures"* return **`0`**; *"no date
+predicate"* returns the glossary prior above, **opened**.
+
+📌 ***The lesson:*** **the sweep spent ninety-eight passes finding things that were broken, and this
+one asked what would have told anybody.** ⚠⚠ ***The answer is that the system's self-report is a
+liveness test wearing a correctness test's message — and the gap is not in any single check, which is
+why reading them one at a time for four passes never surfaced it.***
