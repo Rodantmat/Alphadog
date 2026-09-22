@@ -1559,7 +1559,20 @@ baseline HP  →  availability delta  →  as-of calibration  →  FINAL HP
                                         score 0–100  +  edge (separate column)
 ```
 
-**Output**: `nba_score.final_hp` — **38,686,696 rows**, both seasons, 30 props.
+**Output**: `nba_score.final_hp` — ~~**38,686,696 rows**~~ **19,215,200 rows LIVE**, both seasons, 30 props.
+
+> 🔴 **CORRECTED 2026-09-22 (T20 pass 8, §T20.13).** *This line asserted **38,686,696** with no
+> qualification — **and this same document proves that figure is 2× the live table at §"the shortfall"
+> (line 679): "total 19,215,200 … 49.7% of the certified ~38.7M."*** **`[LIVE-AUDIT]` 2026-09-22,
+> `SELECT season, count(*) … GROUP BY season`:** **2024-25 = 19,075,070** *(byte-exact against its
+> recorded figure)* · 🔴 **2025-26 = 140,130 on ONE date** *(against 19,611,626 recorded)* ·
+> **total 19,215,200.**
+> ⚠ **38,686,696 remains CORRECT as a historical statement** — it is T17's own completion check and is
+> quoted as such, properly dated, in `NBA_OPEN_ITEMS.md` where the `[LIVE-AUDIT]` correction follows it
+> immediately. **Those instances are sound. This one was not: it stood as bare present-tense fact.**
+> 🔑 ***Third instance of §T10.18b's shape — a correction that reached some surfaces and not others.***
+> *The count is now the only uncorrected 38.7M assertion the twelve contained: 4 occurrences, 3 of them
+> correctly framed as historical quotation, 1 bare. Fixed.*
 `season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor, baseline_hp,
 final_hp, cal_shift, score, edge, confidence, conf_tier, c_exist, c_quality, c_market, prop_tier,
 band, phase, n_uncertain, built_at`.
