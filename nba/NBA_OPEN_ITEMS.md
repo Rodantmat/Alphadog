@@ -12789,7 +12789,50 @@ hand — which is also the moment the missing `season` input would have to be re
 > ⇒ ⚠ **Option (b) above — derive the season from the slate date — is not a redesign; it is applying
 > a pattern this codebase already uses in four places.**
 
-> ### 🔴🔴🔴 **WIDENED ONE PASS LATER, 2026-09-22 (§T20.34) — FIVE MORE LITERALS, ALL IN **P2**. RUNNING TOTAL `7`.**
+> ### ✅ **THE CENSUS IS CLOSED — 2026-09-22 (§T20.35). `14` LOCATIONS. THE LIST IS FINITE.**
+> *Surface: **37** distinct `nba/*.py` scripts invoked by the three pipelines, de-duplicated and **all
+> 37 grepped**, plus a **38th** the first enumeration missed — `nba/baseline/build_baseline_ladder.py`,
+> which lives one directory down. `7` `pp_*` scripts excluded. Six spellings probed.*
+>
+> | pipeline | locations |
+> |---|---|
+> | **P3 (3)** | `nba-p3-afternoon-light.yml` `BS_SEASON` fallback · `score_board_legs.py:97` · `build_availability_delta.py:52` |
+> | **P2 (6)** | `nba-p2-overnight-heavy.yml:31`, `:128`, `:274` · `check_delta_gaps.py:42` · `build_confidence_v3.py:99` · 🆕 `build_blowout_model.py:48` |
+> | 🔴 **P1 (2)** | 🆕 `build_defender_ratings.py:114` · 🆕 `scrape_nba_season_tables.py:146` — **a SCRAPER** |
+> | **P2+P3 shared (2)** | 🆕 `export_market_spreads.py:23–24` *(a season→date-range MAP with no 2026-27 entry)* and `:29` |
+> | **Auxiliary (3)** | 🆕 `nba-absence-panel.yml:136`, `:231` · `nba-market-spreads.yml:39` |
+>
+> ✅ **`DEF_SEASONS`, `BM_SEASONS` and `MS_SEASONS` are passed by NO pipeline workflow** *(all 40
+> workflow files grepped)* ⇒ **those three scripts run on their literal defaults every time.**
+> 🔴🔴 **P1 IS NOT CLEAN — the §T20.34 positive control below is CORRECTED.** *It reported
+> "`nba-p1-weekly-static.yml` — ZERO season literals". True of the WORKFLOW, false of the PIPELINE.*
+> 📌 ***§T20.21's unnumbered rule firing on this sweep's own work one pass later — a control run on
+> the YAML, a claim made about the pipeline.***
+> ⚠ **A scraper with a stale season→window map is the worse failure shape: a builder fails loud and
+> empty; a scraper succeeds and writes wrong-season data.** *Bounded — `scrape_nba_season_tables.py:110`
+> resolves seasons correctly by COUNT, so line 146's map is a secondary path.*
+> ✅✅ **THE FIX IS ALREADY WRITTEN AND RUNNING — `nba/baseline/build_baseline_ladder.py` patches the
+> hardcoded `TRAIN/TEST` out and derives the season from the slate date:**
+> ```python
+> ASOF = _date.fromisoformat(os.environ.get("BT_ASOF", str(_date.today())))
+> def _season_of(d_):
+>     y = d_.year if d_.month >= 10 else d_.year - 1
+>     return f"{y}-{str(y + 1)[-2:]}"
+> _cur = _season_of(ASOF)
+> TEST = [_cur if _cur in _all else _all[-1]]; TRAIN = [x for x in _all if x < TEST[0]][-2:]
+> ```
+> ⇒ ***Option (b) is not a design task. It is `_season_of()`, copied to 14 places.***
+> ⚠ *Caveat: if no `nba_player_game_log_2026_27.json` exists yet, `_cur` is not in `_all` and it falls
+> back to `_all[-1]` — last season, **silently**. Graceful, but silent.*
+> 🔑 **The authors already wrote this failure mode down, twice, without fixing it**:
+> `build_asof_calibration.py:5` *"THE DEFECT. The first calibration table was fitted on 2024-25 and
+> applied to 2025-26: a constant carried…"*; `scrape_nba_per_game_delta.py:7` *"scrapers hardcode
+> 'every game in the full-season JSON'. **On day 1 of the 2026-27 season** that path…"*.
+>
+> 🔴 **SWEEP DEFECT, SELF-REPORTED (rule 12, 2026-09-22 §T20.35)**: *the §T20.34 block below was
+> written TWICE — a `github_patch_file` call reported "MCP server connection lost" AFTER the write had
+> landed, and the retry duplicated 2,779 bytes verbatim. **The duplicate is removed here.** The lesson
+> is narrow and worth the line: **a transport error is not a failed write — verify before retrying.***
 > *Censused: the THREE pipeline workflows in full (P1 12 script invocations · P2 15 · P3 12) plus
 > **8** of their scripts grepped directly, in four spellings (`2025-26`, `2025_26`, `2026-27`,
 > `2026_27`) plus `get\(.*SEASON` and `season\s*=`.* ⚠ **RULE 17: a FLOOR, not a total — 8 of ~35
