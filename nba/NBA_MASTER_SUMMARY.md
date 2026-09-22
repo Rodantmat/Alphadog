@@ -26795,8 +26795,16 @@ defect, in the one transcript the earlier finding did not cover.*
 
 ### 3d. 🔑 **The DRIFT NOTICE's origin is a three-stratum sequence, and its key sentence is in no document**
 
-**SEG 587/588 (owner, verbatim charter) → SEG 589 (prose) → SEG 590 (`tool_use`, the first
-`NBA_RECIPE.md` patch of the session).** **SEG 589 is the admission the whole reset rests on:**
+**SEG 587/588 (owner, verbatim charter) → SEG 589 (prose) → SEG 590 (`tool_use`, the first remediation
+patch of the session).** **SEG 589 is the admission the whole reset rests on:**
+
+> ⚠ **CORRECTED 2026-09-22 (pass 6, §T20.11).** *This read "the first `NBA_RECIPE.md` patch."* **It is
+> a `NBA_WORKERS.md` patch** — the write run SEG 590–593 carries `path: nba/nba workers.md` on SEG 593.
+> **The first `tool_use` naming `nba recipe.md` is SEG 606** (the ledger + DRIFT NOTICE write) **and the
+> first substantive RECIPE content patch is SEG 648** — *58 segments after the admission.* 📌 **The
+> three-stratum chain is unaffected and the correction sharpens it: the first thing repaired after the
+> admission was WORKERS, and RECIPE — the document that ends the session with 2 calls and 1,597
+> characters — waited another 58 segments.**
 
 > *"you're right — i drifted. **i've been updating summary, glossary, database and open items, but
 > recipe, workers, system architecture and system design have not been updated since t1-t3.** fixing
