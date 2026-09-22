@@ -444,6 +444,38 @@ different quantities and **must not be multiplied together without re-deriving t
 ✅ **The Single-Tier Non-Arbitrage check (§0.2d.1) has NOT been run on these rows** — it is
 arithmetic, not a study, and it is the cheapest next thing this document can do.
 
+#### 0.9b.1 ✅ **PRIZEPICKS' OWN PUBLISHED RULES, captured verbatim in T13 — the AUTHORITY behind the table**
+*The rows above are not the researcher's inference; T13 captured the operator's own copy.*
+> *"**Power Play** remains **all-or-nothing**, where **every pick has to hit** to cash, with
+> **multipliers up to 37.5×**. **Flex Play** offers a cushion: you can still cash smaller payouts if
+> **one or two picks miss**, **topping out at 25× on a perfect 6-pick**."*
+> *"**Demons** are harder to win, but including them opens the door for **higher payouts — up to
+> 2000×**. **Goblins** are easier to win, but they **DECREASE your payout multipliers**."*
+> *"**Pick 2–6 players.**"* · ⚠⚠ *"**MULTIPLIERS ARE SUBJECT TO CHANGE.**"*
+
+🔑 **`Flex 6-pick = 25×` completes the table above** *(the Flex rows there stop at 4 picks)*, **and
+`Power 6-pick = 37.5×` is now stated by the OPERATOR, not only by the researcher.**
+⚠⚠ ***"Multipliers are subject to change" is PrizePicks' own confirmation of §0.9a*** — **the
+dynamic-pricing claim is not an inference about the platform, it is the platform's own disclaimer.**
+*(The `up to 2000×` demon ceiling is already on file — `NBA_GOBLIN_DEMON.md` §1.0, captured in T8.
+**Confirmed, not new.**)*
+
+#### 0.9b.2 ⚠ **AN INDEPENDENT CORROBORATION FROM OUTSIDE THE SWEEP'S SCOPE — recorded, not adopted**
+🔴 **Rule 26: `37.5` is 1 of the thirty, and the single hit is `PP_PAYOUT_FINDINGS.md`** — **the
+concurrent session's file, which this sweep does not write to and does not treat as its own prior
+work** *(standing scope rule)*. **Opened, as rule 26 requires.** It records, from **live payout
+mining** rather than from a published page: **`3.0 / 6.0 / 10.0 / 20.0 / 37.5×` for 2–6 picks**,
+with 5- and 6-pick moving from *"published but unverified"* to **verified**.
+✅ ***Two independent routes — the operator's published table (T13) and mined live payouts (the build
+chat) — produce the same five numbers.*** **That is the strongest grounding any figure in this
+document has**, and it is stated here as corroboration only; **the build chat's file remains its
+own.**
+
+📌 **The same file independently states `Voids (push/DNP) REVERT the slip one size down`** — which
+**agrees with T13's settlement rule and with `NBA_COMPASS.md`'s *"PrizePicks reverts the lineup on a
+DNP and tiers down on a tie."*** 🔑 ***Three independent sources, one answer*** — and see §0.9i for
+why the sweep records this as a CONFIRMATION rather than a discovery.
+
 ### 0.9c 🔴 **THE PRODUCT CHANGED UNDERNEATH THE DATA — and the change is STATE-DEPENDENT**
 *Authority: the researcher's source review, then **self-corrected two segments later**.*
 
