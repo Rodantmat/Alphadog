@@ -29185,8 +29185,8 @@ conclude the two were accidents.**
 
 | # | where | the second-order claim | live check |
 |---|---|---|---|
-| 🔴 **1** | **`NBA_GLOSSARY.md:1598`** | *"the **P3 cron** drifting an hour against a time-sensitive cutoff"* | 🔴 **`nba-p3-afternoon-light.yml` = `workflow_dispatch:` only, no `schedule:` block** |
-| 🔴 **2** | **`NBA_MASTER_SUMMARY.md:20578`** | *"the **P3 cron** drifting an hour"*, citing `NBA_SYSTEM_ARCHITECTURE.md` | 🔴 **same — and this one is the PROPAGATION: the citation survived §T20.31's correction of its source** |
+| 🔴 **1** | **`NBA_GLOSSARY.md`** *(the timezone-defect list)* | *"the **P3 cron** drifting an hour against a time-sensitive cutoff"* | 🔴 **`nba-p3-afternoon-light.yml` = `workflow_dispatch:` only, no `schedule:` block** |
+| 🔴 **2** | **`NBA_MASTER_SUMMARY.md`** *(the "every one of them a timezone error" paragraph)* | *"the **P3 cron** drifting an hour"*, citing `NBA_SYSTEM_ARCHITECTURE.md` | 🔴 **same — and this one is the PROPAGATION: the citation survived §T20.31's correction of its source** |
 | 🔴 **3** | **`storage_diet_plan_2026_09_17` → `action_4_index_audit`** *(live config)* | *"`final_hp` carries 3,694 MB of indexes on 38.1M rows… **an unused index on a 38M-row table is pure cost**"* | 🔴 **`pg_stat_user_indexes`: `idx_scan = 0` count on `final_hp` = `0`, on `baseline_history` = `0`. The action would find NOTHING on either named target.** |
 
 🔴🔴 **CLAUSE (iii) HIT, AND IN THE WORST WAY — failure 1 is in `NBA_GLOSSARY.md`, the document a
