@@ -2153,3 +2153,90 @@ nothing a 1:00 PM PT team-filing cutoff has not already secured, and it costs th
 hours.* ✅ **`nba-p3-afternoon-light.yml` already encodes the corrected reasoning inline and guards it
 at runtime** — *"Refusing to run for TODAY before 13:00 PT — Pacific clubs file until 1:00 PM PT"*
 *(verified live, line 74, 2026-09-22)*.
+
+---
+
+# 🔴🔴🔴 **`standards_3pick_v1` — THE PAPER-TRADING STRATEGY, SPECIFIED END TO END** *(written 2026-09-22, T20 pass 93, §T20.98)*
+
+> 🔑 **WHY THIS SECTION EXISTS.** *`P3` step 4b logs the night's picks and `P2` grades them the next
+> morning. **That record is the evidence the owner will use to decide whether any of this works** —
+> and it is the youngest thing in the system: the workflow comments date it* ***"PAPER TRADING
+> (2026-09-21)"***, *after T1–T18 closed.*
+> ▶ **MEASURED `2026-09-22T21:44:53Z`, tree `e7419a5390cc422e557ba98a99f2b5c1669e0c21`**: the string
+> `standards_3pick_v1` appeared in **2 of the twelve**, *and both occurrences are inside one SQL
+> snippet this sweep itself quoted at `§T20.94`/`§T20.97`.* **In the sweep's BASELINE tree it appears
+> in none of the twelve** — *its only baseline carrier is `PP_PAYOUT_FINDINGS.md`, which belongs to
+> the concurrent build session and is out of this sweep's scope.* ⇒ ***The mechanism the system will
+> be judged by was undocumented in every document meant to describe the system.***
+> ⚠ **Everything below is read from `pg_get_functiondef` and the workflow files, live `2026-09-22`.
+> Nothing was run and nothing was written. `nba_score.paper_picks` and `nba_score.paper_results` both
+> hold `0` rows — expected, not a defect: the system has never run against a live slate (`§T20.95`).**
+
+## 1. SELECTION — `nba_score.paper_pick_candidates(p_date, p_threshold DEFAULT 1.30, p_snapshot DEFAULT NULL)`
+
+*Its own header: **"identical for live logging and historical replay… Writes nothing."***
+
+| step | rule, as coded |
+|---|---|
+| **snapshot** | default = **the most recently fetched PrizePicks snapshot for that date** — `ORDER BY s.fetched_at DESC, s.snapshot_label DESC LIMIT 1` — i.e. *"what is on the board at logging time"* |
+| **book** | 🔴 **`bookmaker = 'prizepicks'` and `app = 'prizepicks'` ONLY.** *Underdog, Sleeper, Fliff and Betr are not eligible.* |
+| **line type** | **standards only** — `market_key NOT LIKE '%alternate'` |
+| **prop universe** | 🔴 **a HARDCODED twelve-prop map inside the function**: `points · rebounds · assists · threes_made · pts_reb · pts_ast · reb_ast · pra · blocks · steals · stocks · turnovers` |
+| **model value** | **`mv = 2 × final_hp`** — an **even-money EV proxy**, not a PrizePicks payout |
+| **threshold** | `mv >= p_threshold`, default **`1.30`** ⇒ ***exactly `final_hp >= 0.65`*** |
+| **one per player** | `DISTINCT ON (player) ORDER BY player, mv DESC` — **the best prop and side, one leg per player** |
+| **rank** | `row_number() OVER (ORDER BY mv DESC, player)` |
+
+## 2. PACKING — `nba_score.paper_pick_slips(...)`
+
+*Its own header, quoted:* > ***"Greedy game-aware packing (2026-09-21): picks in rank order; each goes
+into the first open slip that has no leg from its game; a new slip opens when none fits; slips close
+at 3 legs. Every slip spans three DIFFERENT games (PrizePicks pays same-game slips less: a 2-pick of
+opponents paid 2.9x, and same-game Flex partials are cut)."***
+📌 *Slip size **`3`** is hardcoded (`cnt[i] < 3`). The rationale is the same-game correlation discount
+already on file at `NBA_MULTIPLIERS.md` §0.2f.*
+
+## 3. LOGGING — `nba_score.log_paper_picks(p_date, p_threshold DEFAULT 1.30)`
+
+**First log wins** *(`IF EXISTS … RAISE NOTICE … RETURN 0`)*, writing `strategy, game_date, player,
+prop, line, side, model_value, final_hp, pick_rank, slip_no, threshold, snapshot_label, event_id` —
+under **`PRIMARY KEY (strategy, game_date, player)`**. *Full idempotency analysis at `§T20.94`.*
+
+## 4. GRADING — `nba_score.grade_paper_picks()`, called by `P2` step 3b
+
+Joins `nba_market.board_outcomes` on `game_date, player, line, side` with
+`replace(market_key,'_alternate','')`, takes `DISTINCT ON (strategy, game_date, player)` by
+`snapshot_label DESC`, and sets **`void`** on `push`/`dnp`, **`hit`** when `over_win`/`Over` or
+`under_win`/`Under`, else **`miss`**. **Only rows with `result IS NULL` are touched.**
+
+## 5. 🔴🔴 THE DEFECT THIS SPECIFICATION EXPOSES — **THE TWELVE-PROP MAP IS DUPLICATED**
+
+***The identical `m(prop, market_key)` VALUES list is hardcoded TWICE — once in
+`paper_pick_candidates` and once in `grade_paper_picks` — with no shared source.***
+⇒ 🔴 **A prop added to the selector and not to the grader produces picks that are logged and can
+NEVER be graded**: the grader's `JOIN m ON m.prop = p.prop` simply drops them, they keep
+`result IS NULL` for ever, and — because the function only touches ungraded rows — **nothing ever
+reports them as missing.** *A silent, permanent gap in the record the system is judged by.*
+⚠ **Recorded, not fixed (rule 1).** 🔑 *Note the list is also exactly twelve, which is the number
+`§T20.24` measured live for the archived PrizePicks board — so **`§0v.4`'s backtest scope limit
+propagates unchanged into the live selection rule.***
+
+## 6. ⚠ `NOT RECORDED` — **IS THE 3-LEG SLIP A POWER PLAY OR A FLEX?** *(rule 6)*
+
+**Nothing in `P2`, `P3`, the four functions or the twelve says which PrizePicks product a
+`standards_3pick_v1` slip represents**, and the two are not close: `NBA_MULTIPLIERS.md` §0.9b records
+**Power Play 3-pick = `6×` all-or-nothing** against **Flex 3-pick = `2.25×` all, `1.25×` on 2/3**.
+⚠⚠ **The only statement anywhere is OUTSIDE this sweep's scope and is hours old**: `nba_score.sim_strategy`
+holds a single row, **`std3_power_130`, created `2026-09-22T07:10:13Z`**, whose params carry
+`slip_type: "power"` and whose note describes *"the paper-trading standards strategy
+(standards_3pick_v1) rebuilt on the prop universe."*
+🔴 **This sweep does NOT adopt that row**: it postdates the sweep's baseline, it is built on
+`prop_universe` — **which the owner has stated is mid-rebuild and whose counts are not final** — and
+it appears to belong to the concurrent build session. **Its replay figures are deliberately not
+reproduced here.** ⇒ 🔴 **OWNER DECISION: the slip type belongs in the pipeline or the config, not
+only in a validation row written by another session.**
+
+📌 **Pointers**: `§T20.94` *(idempotency, and the `p3` certifier checks)* · `NBA_RECIPE.md`
+`STEP 12` row 5 *(where 4b sits in the day)* · `NBA_MULTIPLIERS.md` §0.9b *(the payout table)* and
+§0.2f *(the same-game discount this packing rule implements)* · `NBA_BASELINE_CALIBRATION.md` §0v.4
+*(the twelve-stat-type scope limit)*.
