@@ -3183,6 +3183,26 @@ Recorded in `NBA_OPEN_ITEMS.md`.
 > actual POWER CALCULATION** (how many days would be needed to detect the effect size in question)
 > **and track genuinely underpowered candidates in their own lis[t]**."*
 
+> ⚠⚠ **`§0z-5` — THE "TEN" IN THE PARAGRAPH BELOW IS THE FRAMING THAT WAS RETRACTED** *(inbound
+> pointer added 2026-09-22, T20 pass 85, §T20.90 — repairing a `T20-1` orphan. **The finding is not
+> re-opened and nothing below is struck**; rule 40's second half.)*
+> **`NBA_SYSTEM_DESIGN.md` §0z-5 — *"ENRICHMENT IS THIN BY DESIGN, NOT BY FAILURE — and the corpus's
+> 'ten rejected factors' framing is WRONG"* (T17 pass 1, §T17.2, owner-adjacent research)** — **names
+> THIS DOCUMENT as the carrier of that framing** *(its words: "`NBA_FINAL_SCORING_CALIBRATION.md`
+> §0a-T15-SUPERSESSION-2 and §0a-T16 record a long sequence of factor rejections as a single coherent
+> result")* **and retracts it in the author's own words**:
+> > ***"**a3, a4, d2 and k1 were NEVER ENRICHMENT CANDIDATES.** §7's stage table already assigns all
+> > four to **BASELINE**, and §4 notes a3 is 'measured; in baseline v30'. **So my gate wasn't testing
+> > new factors — it was testing DUPLICATES of things the baseline already computes. The zero gains
+> > weren't a discovery; THE DOCUMENT PREDICTED THEM.** My 'ten rejected factors' framing was wrong:
+> > **several were never candidates.**"***
+> ⇒ ***Read "the ten" below as ten GATE RESULTS, not ten enrichment candidates.*** 🔑 **This SHARPENS
+> #8's request rather than weakening it**: a factor the baseline already computes cannot be
+> *underpowered* — its zero was **predicted**, so it needs no power calculation, and striking `a3`,
+> `a4`, `d2`, `k1` shortens the list #8 asks to be tracked. ✅ **And it does not touch the two this
+> paragraph actually names — `A2` and `B4` are NOT among the four §0z-5 strikes, so the
+> underpowered-vs-confirmed-negative distinction stands for both of them unchanged.**
+
 **Direct relevance to the ten rejected enrichment factors.** `nba_score.factor_gate_results` stores
 `n`, `log_loss`, `brier`, `gain_vs_anchor` and `shrink_beta` — **so the sample size is recorded per
 verdict**, but the transcripts record the outcomes as rejections rather than splitting them into
