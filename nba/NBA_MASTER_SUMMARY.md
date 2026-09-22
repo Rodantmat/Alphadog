@@ -36356,3 +36356,98 @@ a failure — and the sweep has now measured that it does not look like one: *it
 ⚠⚠ ***And the shape recurs: a document asked a question, left a cell blank, and nothing in
 eighty-nine passes opened the one file that answers it. `§T20.90` priced an orphan; this prices a
 blank cell.***
+
+---
+
+# §T20.95 — T20 PASS 90: ✅✅ **`01:00 PT` IS FIVE HOURS AFTER THE LAST BALL GOES UP — AND `RULE 52` FIRED ON THE *OTHER* BAND, ON A SUBSTANTIVE SEGMENT, WHICH CORRECTS ITS OWN FIRST APPLICATION** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **`SELECT` ONLY throughout.**
+
+## 1. ✅ CLAUSE (ii) — **HIT, AND THE COLUMN EXISTS**
+
+*Re-derived from `information_schema` before any query was written (rule 15/17 — the schema was NOT
+assumed)*: **`nba_calendar.games` carries `game_datetime_utc timestamp with time zone`.**
+
+## 2. ✅✅ **④a — `01:00 PT` IS COMFORTABLY AFTER THE LAST BUZZER. THE GAP CLOSES GREEN.**
+
+▶ **Live `2026-09-22`, completed season 2025-26, `game_datetime_utc AT TIME ZONE 'America/Los_Angeles'`,
+`1,238` games:**
+
+| | |
+|---|---|
+| earliest tip | **09:00 PT** |
+| 🔑 **latest tip** | **20:00 PT** |
+| tips at ≥ 20:00 | **15** |
+| tips at ≥ 21:00 | ✅ **0** |
+| tips at ≥ 22:00 | ✅ **0** |
+
+⇒ ***The last ball of the last night of that season went up FIVE HOURS before `P2`'s intended
+`09:00 UTC` = `01:00 PT`*** *(six during PDT)*. **A game would have to run five hours to still be in
+progress.** ✅ **No assumption about game duration is needed to close it, and none was made.**
+❌ **CLAUSE (iii) MISSED — and it named this as the good outcome**: *"If the margin is comfortable,
+that is the good answer and it closes the gap green."* 🔑 **THE ASYMMETRY IT EXPOSES**: *the corpus
+reasons about the **earliest** tip at length — `§4b`'s rule for P3's trigger is literally **"today's
+earliest real tip-off minus 2 hours"** — and had **never once bounded the latest**. The question that
+protects the grading step is the mirror image of the question that protects the scoring step, and
+only one of them had been asked.*
+
+## 3. 🔴 **④b — `NOT RECORDED`, AND IT CANNOT BE MEASURED FROM THIS SYSTEM.** ✅ **CLAUSE (iv) HIT.**
+
+*Pre-registered: "if the data carries no ingestion or completion timestamp, the answer stays `NOT
+RECORDED` and the pass says so… **conflating the two would be exactly the overreach `§T20.94` warned
+about**."* ▶ **Every timestamped source was checked, live `2026-09-22`:**
+
+| source | rows | timestamp span | distinct days |
+|---|---|---|---|
+| `nba_stats.player_game_log.updated_at` | **79,358** | `2026-09-03 05:37` → `2026-09-08 08:19` | 🔴 **2** |
+| `nba_market.board_snapshots.fetched_at` | **27,067,871** | `2026-09-10 02:56` → `2026-09-13 00:56` | 🔴 **3** |
+
+⇒ 🔴🔴 ***Two completed seasons of data, loaded in five days of September 2026. The system has never
+run against a live slate, so it holds ZERO observed ingestion latency for ANY source.***
+**Every "the data will be there by then" statement in the corpus is a design assumption, not a
+measurement — including this pass's, which is why ④a was answered from the SCHEDULE and not from the
+data.** ⚠ **It becomes measurable on `2026-10-20` and not before.**
+
+⚠ **KILL LOGGED, and it cost a second finding.** *A third source was checked —
+**`nba_ref.referee_assignments` holds `0` rows**, and it is fed by the only workflow with a daily
+cron. **That is a PRIOR and a well-covered one**: `NBA_DATABASE.md:204` (**"STILL ZERO NINE DAYS
+LATER"**), `NBA_WORKERS.md:63` (**"live count 0"**), `NBA_OPEN_ITEMS.md:1028`/`:1035`, and
+`NBA_COMPASS.md` fact 87 (**"BUILT, SCHEDULED, UNVERIFIED"**). **Not republished.***
+
+## 4. 🔴🔴🔴 CLAUSE (i) — **`RULE 52` FIRED, ON THE BAND NOBODY WAS WATCHING**
+
+**`uncovered12` held at `471`. The HIGH BAND moved `648 → 649`** *(`2026-09-22T21:32Z`)* — **and
+rule 52 binds on any threshold metric, so the delta was opened rather than reported.**
+
+> ### **SEGMENT `292` CROSSED `>= 0.45` BY MOVING `0.4500 → 0.4501`.**
+
+🔴🔴 **AND IT IS NOT A TOOL-CALL BLOB. It is an owner message** — *"six transcripts done. t7 at 18
+passes - every single one has found new material…"* — **substantive prose, the kind of segment the
+twelve exist to cover.**
+
+⇒ ***HAD RULE 52 BEEN APPLIED AS `§T20.91` REASONED IT, THIS WOULD HAVE BEEN PUBLISHED AS A REAL
+GAIN.*** *That section dismissed its `+1` on two grounds — the segment was threshold-pinned **and** it
+was structurally uncoverable — and the second ground did the rhetorical work.* **Here only the first
+ground holds, and it is sufficient on its own.**
+
+> ## 🔑🔑 **`RULE 52`, CLARIFIED IN PLACE (not a new rule): *the test is the MAGNITUDE of the flipping member's change, not its content.* A member that crosses a threshold by `1e-4` is noise whether or not it is substantive.**
+
+📌 **AND THE STRUCTURAL FACT IS NOW GENERAL**: ***both of `judge20.py`'s reported bands have a segment
+pinned to four decimals at their threshold*** — **`uncovered12`: segment `938` at `0.4000`** ·
+**high band: segment `292` at `0.4500`**. *Any `±1` on either band can be rounding, and
+`TfidfVectorizer` refits IDF on `docs + texts` at every run, so **every edit anywhere in the twelve
+is a fresh chance to tip one.***
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.93`/`§T20.94`** *(**PRIOR** — gap ④ is their question
+and their lesson is why it was reopened)* · **`§4b`'s earliest-tip rule** *(**PRIOR** — quoted as the
+mirror image, not re-derived)* · **the empty `referee_assignments` table** *(**PRIOR** ×4, above)* ·
+**`§T20.91`** *(**PRIOR** — rule 52 and segment `938`; **clarified here, not restated**)*. ▶ **RULE 51,
+last step, BASELINE tree**: *"latest tip"* and *"no observed ingestion latency"* return **`0`**;
+*"zero rows"* returns many and **all were opened** — they are the referee prior.
+
+📌 ***The lesson:*** **a rule written three passes ago to stop the sweep over-reading a `+1` was
+tested on a case it was not designed for and needed sharpening, and the sharpening came from the rule
+being OBEYED rather than from it failing.** ⚠⚠ ***Two bands, two pinned segments, and the sweep found
+the second one only because it had committed in advance to opening every delta it saw.***
