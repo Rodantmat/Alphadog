@@ -73,6 +73,29 @@
 > ⚠ **THIS IS DELIBERATE AND ON FILE — it is not a newly discovered defect.** *P2's workflow says so in its own header:* > *"**NO CRON YET — deliberately.** The NBA season opens in October; until real games exist there is nothing for this to mine, and a scheduled job failing nightly against an empty schedule trains everyone to ignore red builds. **The cron goes in when the season starts** (target: daily `09:00 UTC` = `01:00 PT`, which is after the last West-Coast game finalises and leaves eight hours before P3's 1:15 PM cutoff)."*
 > 🔴🔴 **WHAT IS NEW IS THAT THIS BRIEF NEVER SAID IT.** *The fourteen items above enumerate what BREAKS WHEN THE PIPELINES RUN. **None of them states that two of the three will not run until someone adds a schedule.*** ⚠ *`§T20.56`'s completeness audit could not have caught it — that audit counted `SEASON-CRITICAL` headings, and this TODO has never been given one.*
 > ⇒ ***ADDING P2's CRON IS A PREREQUISITE FOR EVERY OTHER P2 ITEM ON THIS BRIEF. `T20-13`'s twelve red nights cannot fire if nothing fires.***
+>
+> ## 🔴🔴🔴 **WIDENED `2026-09-22`, T20 pass 88 (§T20.93) — IT IS NOT TWO PIPELINES. IT IS THE WHOLE DAY.**
+> ▶ **Re-derived from the repo `2026-09-22T21:17:56Z`, tree `90c347439d98e93a9bb3941ef0d5f5af15f13068`**
+> *(`ls .github/workflows/` = **40**; `nba-*.yml` = **34**, minus the build chat's `nba-pp-payout-map.yml`
+> ⇒ **33 in scope**; `grep -c "cron:"` on each ⇒ **3**)*:
+>
+> | workflow | cron | cadence |
+> |---|---|---|
+> | **`nba-referees.yml`** | `30 15 * * *` | 🔴 **DAILY** |
+> | `nba-p1-weekly-static.yml` | `0 19 * * 1` | Mondays — reference data |
+> | `nba-scrape.yml` | `0 9 * * 1` | Mondays — static re-check |
+> | **the other 30** | none | **`workflow_dispatch:` only** |
+>
+> > ### 🔴🔴🔴 **EXACTLY ONE NBA WORKFLOW FIRES ON A GAME DAY, AND IT IS THE REFEREE CAPTURE.**
+>
+> ***The board archive, the day-of injury report, the grader, the daily delta, the absence panel,
+> starter status, game lines, the market snapshot, `P2` and `P3` all wait to be pressed.***
+> ⚠ **So the prerequisite above is stated too narrowly.** *It is not "two of the three pipelines will
+> not run." **On `2026-10-20` the system's entire automatic output for a game day is a referee
+> table.*** 🔴 **OWNER DECISION — and it has a date on it**: *the workflow files say the crons go in
+> "at season start"; **no document names who adds them or by when**, and the season opens in 28 days.*
+> ▶ **The full hour-by-hour sequence, with all five clocks laid side by side, is `NBA_RECIPE.md`
+> `STEP 12 — THE GAME-DAY TIMELINE`.**
 > ⚠⚠ **AND `P3`'s INTENDED TIME IS `NOT RECORDED` ANYWHERE (rule 6).** *P2's workflow names `09:00 UTC`. **No document names P3's.** The `1:15 PM PT` cutoff is a **GUARD** — it says when P3 may NOT run, not when it will.* ▶ **Full write-up: `§T20.88`; the pipelines as built: `NBA_RECIPE.md` `STEP 8`/`STEP 9`/`STEP 10`.**
 
 > # 🔴🔴🔴 **THE OWNER-DECISION LEDGER — `12` LIVE DECISIONS, COLLECTED HERE FOR THE FIRST TIME**
