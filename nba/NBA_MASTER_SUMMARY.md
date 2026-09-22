@@ -1776,8 +1776,13 @@ what remains before T3 can close.**
 **The transcript material in this pass is modest. What it prompted is not.**
 
 1. 🔴 **`[LIVE-AUDIT]` — the schedule has not been refreshed since the day it was built.**
-   ***VERIFIED by SQL***: `nba_calendar.games` was written **once, 2026-09-02**, and not touched in
-   the 19 days since, though the weekly cron should have fired twice. **The scraper may have run; the
+   ***VERIFIED by SQL***: `nba_calendar.games` was written **once, 2026-09-02**, and ~~not touched in
+   the 19 days since, though the weekly cron should have fired twice~~ **not touched SINCE**
+   *(19 days and two missed weekly fires when written on 2026-09-21; **20 days and THREE missed
+   fires** re-derived 2026-09-22, §T20.26 — and the underlying rows are byte-exact: **2025-26 = 1,400**
+   created `2026-09-02T20:24:11.403Z → 20:24:55.401Z`, **2026-27 = 1,266** created
+   `20:24:55.428Z → 20:25:35.429Z`)*. ⚠ **Re-stated as a DATE rather than a countdown: the countdown
+   is wrong the next morning while the state behind it has not moved at all.** **The scraper may have run; the
    worker that loads its output is manual and has not been triggered.** **Season opens
    2026-10-03.** → `NBA_OPEN_ITEMS.md`, season-critical
 2. 🔴 **The stored 2026-27 regular-season slate is 1,200 games — 30 short of 1,230, exactly one per
