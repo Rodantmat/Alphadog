@@ -30235,3 +30235,97 @@ the probe and the whole repo to the reader. Rule 20's second vocabulary cost one
 a wrong alarm into a real decision the owner can act on. Every instrument in this sweep has failed
 the same way — too narrow a definition of where to look — and the same cheap correction has worked
 every time.***
+
+---
+
+# §T20.42 — PASS 37: *THE REVERSE CHECK — THE CORPUS HAD ALREADY DONE IT, AND MY POPULATION WAS HAND-COPIED*
+
+*(T20 pass 37, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY AGAINST THE SYSTEM: `SELECT` and repo reads only (rule 1).**
+
+## 1. 📐 BOTH POPULATIONS
+
+> **NAMED IN THE TWELVE: `145` distinct `schema.table` tokens across `1,623` mentions**, extracted
+> against the 25 live namespaces *(`nba_*`, `score`, `archive`, `daily`, `market`, `classification`,
+> `backtest`, `team`, `stats_*`, `config`, `control`, `context`, `ref`, …)*.
+> **LIVE: `374` objects — `368` BASE TABLES + `6` VIEWS** *(`pg_catalog`/`information_schema`
+> excluded)*, 2026-09-22T16:06:27Z.
+> **Set difference, after killing the `pp_*` names as the concurrent session's: `17` genuinely
+> absent.**
+
+## 2. 🔴 A SWEEP DEFECT, SELF-CAUGHT: **MY FIRST POPULATION WAS HAND-COPIED**
+
+**The first set difference returned `32` candidates. `6` of them were MY transcription errors** —
+I pasted the live listing into a scratch file by hand and dropped whole runs of it, so
+**`market.prizepicks_board_current` · `market.sleeper_board_current` · `market.underdog_board_current`
+· `ref.umpire_tendency` · `score.real_slip_leg_observations` · `stats_pitcher.game_logs` were
+reported missing when all six EXIST.**
+✅ **Caught by re-running the existence check as a single `LEFT JOIN information_schema.tables` over
+the candidate list — exact, and re-derivable.** 📌 ***RULE 30 exists for precisely this: a population
+you TYPE is not a population you can RE-TAKE. Every prior pass pinned its population with a command;
+this one pinned 374 names with my fingers, and 19% of its headline was false.***
+
+## 3. ✅✅ THE RESULT: **THE CORPUS HAD ALREADY AUDITED THIS**
+
+**Opening all `17` against their citing lines (rule 48) returns a verdict this sweep has not seen
+before in thirty-seven passes:**
+
+> **`NBA_MASTER_SUMMARY.md` already carries the audit**, including the sentence
+> *"…and FOUR are objects asserted live that do not exist: **`nba_stats.lineup_synergy` →
+> `nba_team.lineup_profile`** (identified by its own 8,000-row count), **`nba_stats.player_career_totals`
+> → `player_career_season_totals`** (the §T4 double-count table)… **`nba_market.board_tiers_ud`** (a
+> section heading for no table) and **`nba_score.real_slip_leg_observations`** (not live, not on the
+> DROPPED list). **Two corrected**…"*
+
+| the 17 | status |
+|---|---|
+| `nba_market.book_curves` · `book_calibration` · `market_consensus` · `market_fair` | ✅ **on file** — §T13.5: *"`build_book_curves.py` EXISTS … and NONE of its tables does"* |
+| `nba_score.absence_panel` · `nba_score.ladder_calibration` | ✅ **on file** — dropped by the diet's `action_2` (§T20.29) |
+| `nba_market.board_tiers_ud` · `nba_stats.lineup_synergy` · `nba_stats.player_career_totals` · `nba_score.real_slip_leg_observations` | ✅ **on file** — the four-object audit quoted above |
+| `nba_config.factor_gate_results` | ✅ **on file** — §T10.16e, *"named to the wrong schema"*; the real one is `nba_score.factor_gate_results` |
+| `nba_stats.official_roster_snapshot` · `nba_market.sleeper_board_current` | ✅ **on file** — *"the by-analogy trap … the real one is `nba_ref.`"*, *"documented as such"* |
+| `nba_stats.darko` | ✅ **an EXPLICIT NEGATIVE** — the corpus says *"**not** `nba_stats.darko`"* |
+| `backtest.baseline_v6_asof` · `control.control_job_queue` | ✅ **v2/MLB-era**, cited historically |
+| `nba_score.paper_pick_slips` | ⚠ **NOT CLAIMED** — cited as `paper_pick_slips(p_date, p_threshold, p_snapshot)`, a FUNCTION signature, not a table |
+
+❌ **CLAUSE (ii) MISSES IN SUBSTANCE.** *Seventeen names are absent, so the count clears the bar — but
+**rules 26/28 apply hard: essentially none is NEW.*** ✅✅ ***This is the first pass in thirty-seven
+whose finding is that the corpus had already done the work. The twelve's object-level account is
+ACCURATE, and it is accurate because a prior pass audited it and said so in the same words this pass
+would have used.***
+
+## 4. ⚠ CLAUSE (iii): **NO PRESENT-TENSE FALSE CLAIM SURVIVES**
+
+**Every absent name appears in a CORRECTION, an explicit negative, a historical citation, or a
+navigational index** *(`NBA_DATABASE.md`'s object cross-reference lists WHERE an object is mentioned;
+it does not assert that it is live)*. ❌ **Clause (iii) MISS.**
+✅ ***The reassuring branch is the one the evidence supports: the corpus is not wrong about its nouns
+— it is a CHRONICLE, and a chronicle that records a dropped table is correct.*** 📌 **That
+distinction was pre-registered precisely to decide whether this pass produced a defect list or an
+index, and the answer is: an index.**
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` **FALLS or HOLDS** | ✅ **HIT — HELD at `470`** at **2026-09-22T16:06:27Z** |
+| **(ii)** | **≥ 3** named tables do not exist | ⚠ **COUNT HIT (17), SUBSTANCE MISS.** *Rules 26/28: essentially all already on file.* ✅ **The pre-registered good-news branch is delivered: the twelve's object-level account is accurate.** |
+| **(iii)** | **≥ 1** absent table claimed in the **PRESENT tense** | ❌ **MISS — none.** ✅ *"The corpus is a chronicle, not a defect list" is the branch the evidence supports.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — THIRTY-NINTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+⚠ **NOT CLEAN — but for a new reason: the only genuine defect this pass produced was its OWN, a
+hand-copied population that made 6 of 32 candidates false.**
+✅✅ **THE SYSTEM-FACING RESULT IS A CLEAN ONE, and it is the first of its kind here: `145` table
+names across `1,623` mentions, `17` absent, and every one already classified by the corpus itself.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **thirty-six passes established that this corpus's weakness is EDGES and its
+strength is NODES. This pass tested the nodes directly and the strength held — 145 names, zero
+uncorrected errors.** ***And the one thing that did go wrong went wrong in the instrument, because I
+typed a population instead of deriving one. The rule against that (30) was written by an earlier pass
+of this same sweep, and I broke it while auditing whether the corpus breaks its own rules.***
