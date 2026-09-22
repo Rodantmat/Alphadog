@@ -34686,3 +34686,79 @@ the one measure the previous two passes had put in the headline. Widening the me
 that the earlier census had already identified brought the two transcripts to within two points of each
 other.** ***A law that fails on its second case was never a law; it was the first case, stated
 confidently. The second case is what turns it into one — or into a fact about the first case.***
+
+---
+
+# §T20.79 — T20 PASS 74: 🔴 **RULE 46 HOLDS TWO TRANSCRIPTS OPEN AND THE RESUME NOTE STATED THE POSITION OF ONE. T19's WAS NOWHERE A SUCCESSOR COULD READ IT** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: §T20.78 spent a whole pass on T19 and made obvious what seventy-three passes had not.** *The
+run log's `START HERE` block, its POSITION row, its SEASON CLOCK row and its ledger all state **T20's**
+position. **T19's was stated nowhere** — and RULE 46 holds BOTH open, requiring TWO INDEPENDENT
+COMPLETE SEQUENTIAL READS OF EACH.* ⇒ ***This is exactly the defect §T20.69 found and repaired for
+T20's next step, left standing for the other half of the same obligation.***
+
+## ✅ CLAUSE (ii) — **HITS. NEITHER NUMBER WAS READABLE; BOTH HAD TO BE RECONSTRUCTED.**
+
+**From source, complete copy-runnable command from the repo root** *(rules 30/23 — give the count its
+command, not its adjective)*: `grep -cE "^# §T19\.[0-9]+" nba/NBA_MASTER_SUMMARY.md` ⇒ **`8`**,
+`2026-09-22T19:45:29Z`.
+
+| T19, reconstructed | |
+|---|---|
+| **passes** | **`8` — PASS 0 through PASS 7** *(§T19.1=P0 · .2=P1 · .3=P2 · .4=P3 · .7=P4 · .8=P5 · .10=P6 · .11=P7)* |
+| **clean count** | **`0/3`** |
+| **independent complete sequential reads on record** | **ONE** *(passes 2+3), and it FOUND MATERIAL |
+| **owed** | 🔴 **TWO more, from a fresh context** |
+
+🔴🔴 **AND NEITHER FIGURE APPEARS IN THE RESUME NOTE. BOTH LIVE ONLY INSIDE `§T19.11`'s PROSE, roughly
+`26,150` lines into a `2.5 MB` document**, in its §3:
+
+> ***"T19's honest state: CLEAN 0/3, with ONE independent complete sequential read on record (passes
+> 2+3), which found material. The two further independent clean reads the rule requires cannot be
+> produced inside this session."***
+
+⚠ **A SECOND OBSTACLE THE RECONSTRUCTION HIT, AND A SUCCESSOR WOULD TOO: T19's ELEVEN SECTIONS ARE
+SPLIT ACROSS TWO DOCUMENTS.** *`§T19.5`, `§T19.6` and `§T19.9` are in `NBA_OPEN_ITEMS.md` (lines
+`14566`, `14596`, `14786`), not the master summary.* 🔴 ***So the obvious probe returns `8` of `11`,
+with gaps at 5, 6 and 9 — and the natural reading of a gap is that something is missing. Nothing is
+missing; it is filed elsewhere.***
+
+## ✅ CLAUSE (iii) — **HITS, WITH A STALE ASSERTION THAT IS NOT THE ONE THE PRE-REGISTRATION NAMED**
+
+*The pre-registration carried the `"T19 — NOT YET STARTED"` ledger row as **PRIOR** and required the
+clause to be scored on **what ELSE** is stale.* ▶ **Found: `NBA_MASTER_SUMMARY.md:25972` —
+*"T19 stands at 6 passes; T18 closed at 9."*** ⚠ **RULE 40 DISCRIMINATOR APPLIED: `DATED`, NOT
+`RETRACTED`.** *It was TRUE when written at §T19.10 (PASS 6) and was superseded by **§T19.11 (PASS 7)**
+in the same session, hours later.* ✅ **Dated in place, original kept.**
+
+📌 ***Both stale T19 assertions are the same shape as §T20.70's opening-day brief: a figure that was
+right when written, inside a document that kept growing, with nothing to tell a reader it had moved.
+The sweep has now found this pattern four times — the brief's heading, the resume note's
+self-description, nine document mastheads, and here — and every instance is `DATED`, never
+`RETRACTED`. **The corpus does not record falsehoods. It records truths and then outlives them.***
+
+## ✅ THE REPAIR
+
+1. ✅ **A `POSITION — T19` row now sits in the `START HERE` block beside T20's**, carrying the pass
+   count, the clean count, the one read on record, the two owed, the reconstruction command with its
+   timestamp, the split-across-two-documents warning, and §T19.11's own words.
+2. ✅ **`NBA_MASTER_SUMMARY.md:25972` dated in place** with the correct final figure.
+3. ⚠ **`§T19.11` is also where RULE 46 was born** — *"Two reads sharing a context window are one read
+   for counting purposes"* — and that provenance is now on the successor's first screen, where the
+   rule that governs the whole handoff should be.
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(baseline `636 · 2 · 484 · 481`; Δ `484 − 471` =
+`13`)*.
+
+⚠ **KILLS LOGGED (rules 26/28)**: **§T19.6 and RULE 46 itself** *(**PRIOR** — the OWNER DECISION that
+T19 hands on with two reads owed; carried, not re-discovered)* · **the `"T19 — NOT YET STARTED"`
+ledger row** *(**PRIOR**, named in the pre-registration and explicitly excluded from clause (iii))* ·
+**§T20.69** *(**PRIOR** — the METHOD precedent for auditing the successor's surface, not this pass's
+finding)* · **§T20.78's T19 census** *(**PRIOR**, and **NOT** one of the two reads T19 owes)*.
+
+📌 ***The lesson:*** **seventy-three passes maintained an increasingly careful record of where T20
+stands, and never once wrote down where T19 stands — while a rule this session wrote held both of them
+open, equally.** ***A handoff tells you where you are. This one told you where half of you is.***
