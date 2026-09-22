@@ -35350,3 +35350,96 @@ not re-derived)*.
 each one where it was found. Three are season-critical and reachable from the brief; the other nine
 were reachable only by knowing they existed.** ***A decision that nobody can find has not been
 escalated. It has been archived.***
+
+---
+
+# §T20.86 — T20 PASS 81: 🔴🔴🔴 **THE RECIPE STOPS AT T2. EVERYTHING AFTER IT IS A SUMMARY TABLE HEADED *"PENDING THEIR OWN TRANSCRIPT PASSES"* — AND THOSE PASSES ALL HAPPENED** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: §T20.75 measured that `NBA_RECIPE.md` took **ONE** content commit across T3–T20 against
+`NBA_DATABASE`'s 28, called it *"the same shape as RULE 41 / T19-1"*, and said plainly: *"Whether the
+recipe genuinely needed nothing, or was never measured against its charter, **HAS NOT BEEN TESTED**."*
+**This pass tests the CONTENT; §T20.75 counted the COMMITS.*** ⚠ *And the recipe is not a minor
+document — it is the one that says HOW TO REBUILD THE SYSTEM.*
+
+## 📏 THE STRUCTURE, ENUMERATED FROM SOURCE
+
+`grep -cE "^#{2,3} " nba/NBA_RECIPE.md` ⇒ **`27` headings**, `2026-09-22T20:30:34Z`.
+
+| what the recipe contains | |
+|---|---|
+| `STEP 0` · `0a` · `0b` · `0c` · `0d` · `STEP 1`–`STEP 7` | **every one cites `(T1)`, `(T1 → T2)` or `(T2)`** |
+| `STEP 0-T16` | 🔑 **the ONE content commit §T20.75 counted — and it was added at the TOP, out of step order** |
+| **everything from T3 onward** | 🔴 **`## STEPS 8+ — outlined from the journal, pending their own transcript passes`** — *a **14-row summary table, one row per transcript*** |
+
+## 🔴 THE HEADING IS STALE, AND IT IS THE WHOLE FINDING IN SIX WORDS
+
+> ***"STEPS 8+ — outlined from the journal, **pending their own transcript passes**"***
+
+⚠ **RULE 40: `DATED`, NOT `RETRACTED`.** *It was true when written. **Since then T3–T18 have ALL
+CLOSED on three consecutive clean passes, and T19 and T20 have been swept to `0/3` with rule 46's
+reads owed.*** ⇒ ***The passes happened. Eighteen transcripts of them. The steps were never written,
+and the heading still promises them.***
+
+## 🔴🔴🔴 CLAUSE (iii) — **HITS. THE THREE PIPELINES ARE ONE CLAUSE OF ONE ROW.**
+
+*The operating spine of the entire system — **P1 weekly-static · P2 overnight-heavy · P3
+afternoon-light**, their order, their `1:15 PM PT` cutoff, their gating, their certifier — appears in
+the recipe exactly once:*
+
+> **`| 21 | The final calculation engine — final HP, confidence, score, edge; as-of calibration parity
+> fix; **the three pipelines** | live session |`**
+
+🔴 ***Four words, in a summary row, in a table headed "pending".*** ⚠ **And this sweep audited those
+pipelines in depth at `§T20.33`–`§T20.46` — the hardcoded season, the mis-wired "Board tiers" step,
+the twelve certifier predicates, the swallowed failures. **None of it reached the rebuild document.***
+
+## ⚠ CLAUSE (ii) — **ONE STEP IS INCOMPLETE, SCORED HONESTLY RATHER THAN AS A CONTRADICTION**
+
+**Row 12 — `THE SEASON-HARDCODING FIX`** — states its own scope: *"shared `active_stats_season()`
+**across 9 scrapers**, then the same bug again in the per-game WRITERS."* ▶ **Measured today,
+`2026-09-22T20:30:59Z`:** **`129` NBA Python files** *(`nba/*.py` + `nba/backtest/*.py`)* · **`20` use
+`nba_season`** · **`43` carry a literal `"2025-26"`** · 🔴 **`41` of those `43` do not use
+`nba_season` at all.**
+
+⚠⚠ **THE REACH FIGURE IS A PRIOR AND IS CARRIED, NOT RE-DISCOVERED (rules 26/28/51):** *`"20 of 135"`
+and its correction `"24 of 136"` are on file in `NBA_MASTER_SUMMARY`, `NBA_OPEN_ITEMS` and the run log
+(§T12.7d, propagated §T20.14).* 🔑 ***What is NEW is that the REBUILD DOCUMENT records the fix and not
+its limit*** — **§T20.83's delivery shape, on the document an owner reaches for first after a
+disaster.** ⚠ **RULE 19 APPLIED: this is `INCOMPLETE`, not `CONTRADICTED`. Row 12 is TRUE of the nine
+scrapers it names. A reader is not told the other forty-one exist.**
+
+## ✅ **AND THAT ANSWERS §T20.75's OPEN QUESTION — THE HALF IT LEFT UNTESTED**
+
+> *§T20.75: "Whether the recipe genuinely needed nothing, or was never measured against its charter,
+> has not been tested."*
+
+▶ ***It did not "genuinely need nothing". It needed the entire T3–T20 build promoted from a summary
+table into steps, and it was never measured against its charter.*** **RULE 41's shape, confirmed on a
+second document — the first was `NBA_GLOSSARY.md`, found with no content commit for T12–T18 while
+seven transcripts closed `3/3`.**
+
+## ✅ THE REPAIR
+
+**One block at the `STEPS 8+` heading**: the heading dated, the pipeline gap named with pointers to
+`§T20.33`–`§T20.46`, and row 12's limit stated. ⚠ **`patch_file` only; nothing elsewhere moved or
+duplicated (rule 40); the summary table itself is untouched — it is accurate, it is simply not a
+recipe.**
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(Δ `484 − 471` = `13`)*.
+
+⚠ **RULE 51 BEFORE SHIPPING**: *`"one clause of one row"` and `"rebuild document"` return **`0`**;
+`"pending their own transcript passes"` returns **only `NBA_RECIPE.md`** — the heading being cited.*
+✅ **Novel.**
+
+⚠ **KILLS LOGGED (rules 26/28/51)**: **§T20.75's commit-count observation** *(**PRIOR** and this pass's
+MOTIVE — it counted COMMITS, this tests CONTENT)* · **RULE 41 / T19-1** *(**PRIOR**, the precedent)* ·
+**§T20.33–§T20.46's pipeline audits** *(**PRIOR** — cited as what the recipe omits, not re-derived)* ·
+**the `"20 of 135"` → `"24 of 136"` reach figure** *(**PRIOR**, §T12.7d / §T20.14 — carried)*.
+
+📌 ***The lesson:*** **eighty-one passes swept twenty transcripts, and the document that tells someone
+how to build this system from nothing still ends at the second one, above a table that promises the
+rest is coming.** ***A summary of what was done is not an instruction for doing it again — and the
+difference only matters on the day someone needs the second one.***
