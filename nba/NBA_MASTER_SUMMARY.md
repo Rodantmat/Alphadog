@@ -14430,6 +14430,53 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.9 — PASS 8 (**the THEN-VS-NOW diff — and the pass's own PREMISE was wrong**) — **🔴 the pre-registration MISSED · 0/3**
+*2026-09-22. `SELECT` only; no third-party API called. All populations pinned.*
+
+#### 🔴 T12.9a — **The pre-registration MISSED, and the reason is a finding about the instrument**
+***Predicted: `uncovered12` to FALL, with segments 319, 327, 329, 367, 520, 522, 525 and 545 among
+the crossings — pass 7 quoted their URLs and error bodies.*** **Measured: 28 / 11 / 590 / 566,
+IDENTICAL. Not one crossed.** **Twenty-third: twenty hits, TWO misses, two partials.**
+🔑 ***Quoting an error body does not cover its segment***: a `tool_result` envelope is dominated by
+JSON structure — keys, braces, quoting — so the quoted human-readable fragment is a small share of
+its char n-grams. **This is the CONVERSE of §T12.4a's fourth form**: *prose segments can be covered by
+describing their subject; **mechanism segments resist coverage by quotation.*** ⚠ **And it bounds
+every future prediction**: *a pass that quotes only mechanism should predict STASIS, not a fall.*
+
+#### 🔴 T12.9b — **The pass's PREMISE was wrong, and the census says so**
+*The brief assumed the 190 `mcp_envelope` results were a dated snapshot of the live DATABASE.*
+**Envelope key census, pinned 2026-09-22T07:31Z**: `name` **295** · `status` **277** · `conclusion`
+**210** · `path` **104** · `size` **83** · `type` **82** · `http status` **53** · `body preview`
+**53** · `url` / `bytes` **51** · `player` / `stat` / `line` **51 each** · `commit sha` / `file sha`
+**46** · `matched line number` / `snippet` **42**.
+🔑 ***T12's envelopes are a snapshot of the REPOSITORY, of GITHUB ACTIONS and of THIRD-PARTY HTTP —
+they contain essentially no SQL result rows.*** **So the planned database then-vs-now diff had almost
+no base, and most of what they do contain cannot be re-taken at all, because the sweep calls no
+third-party API.** ✅ **Recorded rather than quietly re-scoped.**
+
+#### ✅ T12.9c — **What the envelopes DO carry: 199 workflow-run and step records**
+**Non-success: 19 — and sixteen are `cancelled` Pages/deploy churn.** 🔴 **THREE are genuine
+failures, and all three are in ZERO of the thirty**: **`commit board json to main` — FAILURE** ·
+**`run-task` — FAILURE** · **`mlb automatic scraper` — FAILURE** *(MLB is out of scope; noted, not
+swept)*.
+🔑 **`commit board json to main` is an INSTANCE of a class the corpus already names**: *the successful
+variant in the same records is **`commit board json to main WITH REBASE RETRY`** (4 successes)*, and
+***"push race" is in 4 of the twelve and "rebase" in 4*** — **so the class is documented and this
+occurrence is not.** ⚠ **It is also the same shape as §T12.3e's *"two backfills SILENTLY FAILED AT
+THE COMMIT STEP after the scrapes succeeded"*** — **a commit step failing behind a successful
+scrape.**
+
+#### 🔴 T12.9d — **One kill, the FIFTEENTH**
+**"the rebase retry is the fix for the push race"** — ***killed by rule 28***: **"push race" 5 of
+thirty / 4 of the twelve, "rebase" 6 / 4.** *The class, the mechanism and the mitigation are all on
+file; only the three failed RUN records are not.*
+
+**Pass outcome: 🔴 a missed pre-registration whose cause is a real instrument bound, a wrong premise
+recorded rather than re-scoped, three unrecorded workflow failures, and one kill. CLEAN 0/3 · 9
+passes.**
+
+---
+
 ### T12.8 — PASS 7 (**the MECHANISM stratum — 515 segments, 80% of T12, never read as a stratum**) — **🔴 two OPEN items get their CAUSE · 0/3**
 *2026-09-22. **Every population pinned with its predicate and a UTC timestamp.** `SELECT` only; no
 third-party API was called.*
