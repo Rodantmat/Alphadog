@@ -12756,6 +12756,53 @@ nothing and triggered nothing; the measurements above are the input.**
 aborts loudly, the grader's window fails silently, and both certifiers go red on tables nothing
 rebuilt.**
 
+> ### 🔴🔴 **EXTENDED ONE PASS LATER, 2026-09-22 (§T20.38) — THE FULL WIRING MAP**
+> *`39` workflow files (all 40 less `nba-pp-payout-map.yml`) → `119` distinct script invocations,
+> `116` resolving at the repo root → `33` distinct tables written. Script
+> `scratchpad/t20/wiring.py`; the pattern matches SUBDIRECTORY paths, the failure that cost §T20.35
+> its 38th script.*
+>
+> 🔴🔴 **`17` OF `33` TABLES ARE WRITTEN BY MORE THAN ONE WORKFLOW**, led by
+> **`nba_market.board_snapshots` with FOUR** *(`nba-board-archive`, `nba-board-backfill`,
+> `nba-boards-market`, **P3**)* and three tables with three
+> *(`confidence_verification`, **`ladder_calibration_asof`**, `baseline_history`, `rung_market`)*.
+> ⚠⚠ **AND THE CORPUS ALREADY KNOWS WHY THAT MATTERS**: the diet plan's first rule is *"execute only
+> when no build is running — **the loaders delete-and-rewrite under an advisory lock**"*, and P2's own
+> comment records the incident — *"Passing one season made the builder delete EVERY season and rebuild
+> one; **on 2026-09-20 03:24 UTC that wiped the whole calibration history**"*. 🔑 ***That incident was
+> on `ladder_calibration_asof`, which has THREE writing workflows. The concurrency risk is not
+> architectural — it has already fired once.***
+>
+> 🔴🔴🔴 **A TEST HARNESS WRITES SEVEN PRODUCTION TABLES.** `nba-engine-test.yml` invokes
+> `build_final_hp.py` · `score_board_legs.py` · `build_availability_delta.py` ·
+> `build_mondrian_confidence.py` · `check_delta_gaps.py` · `check_prop_calibration.py` ·
+> `score_prop_reliability.py` · `certify_pipeline.py` · 🔴🔴 **`run_storage_diet.py`**.
+> ⇒ **It co-writes `final_hp`, `board_scored`, `confidence_model`, `availability_delta`,
+> `conformal_confidence` and `confidence_verification`, and with `nba-absence-panel` it is one of only
+> TWO workflows that write `final_hp` at all.**
+> 🔴 ***And it can invoke the executor of the storage diet — the plan T20-2 records as "PLANNED —
+> execute ONLY after the full system is complete and no job is mid-write" — against a `42.95 GB`
+> production database.*** 📌 **Recorded, not assessed: whether that path is gated INSIDE the script is
+> NOT RECORDED — this pass read the invocation, not the guard, and says so rather than implying
+> either.**
+>
+> ⚠ **A THIRD LIVE MLB SCHEDULE, and this one certainly fires**: `gbdt-training.yml` —
+> *"AlphaDog v2 GBDT Model Training"*, **`cron: "0 9 * * 0"`** (Sundays 09:00 UTC), `seasons` default
+> `'2025,2026'` — **enabled, in GitHub Actions, on a repo whose NBA P2 and P3 have no cron at all.**
+> *Read beside T20-3's two enabled MLB scheduler rows.*
+>
+> ✅ **TWO CANDIDATE FINDINGS KILLED BEFORE PUBLICATION (rule 48)**: the three "absent" scripts
+> `build_training_data.py` / `train_models.py` / `validate_factor_coefficients.py` **exist in
+> `gbdt_training/`** and are invoked after a `cd` — a third category the pattern did not model; and
+> three of the fifteen "never invoked" scripts are **LIBRARIES** — `nba_names.py` imported by **27**
+> scripts, `nba_season.py` by **19**, `nba_asof.py` by **3**.
+> ✅ **THE MAP SHOWS CORRECT WIRING TOO**: `confidence_model` written by P2 and asserted by P3 is a
+> correct cross-pipeline contract; so are `defender_ratings` (P1↔P1) and `board_snapshots` (P3↔P3).
+> ***The defects are specific edges, not an absence of design.***
+> 🔴 **ADDED TO THIS ITEM'S OWNER DECISION**: **(d)** decide whether `nba-engine-test.yml` should be
+> able to write production tables at all, and whether `run_storage_diet.py` belongs in it ·
+> **(e)** retire or disable `gbdt-training.yml`'s cron with the other MLB residue.
+
 ---
 
 ## T20-5 · **NEW · 🔴🔴 SEASON-CRITICAL · THE ONLY SILENT ONE** · the grader's default window ends `2026-04-12`, and nothing catches it
