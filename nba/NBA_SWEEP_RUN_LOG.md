@@ -119,6 +119,25 @@ already written*** — **§T9.28b's *"a coverage figure is dated by construction
 *"re-measured rather than carried forward"*** — **because a rule written at T9 is not where a T11 pass
 looks.** ***A method claim gets the same check a figure gets, and this table is where it gets it.***
 
+> ### 🔴 THE INDEX DOES NOT CONTAIN THE RULES IT IS THE INDEX OF — *measured 2026-09-22 (§T20.17)*
+> **The heading reads FORTY-EIGHT. The table carries THIRTY-SEVEN rows**, numbered
+> **6 · 7 · 8 · 12 · 15 · 16–47**. ***Missing entirely: 1 · 2 · 3 · 4 · 5 · 9 · 10 · 11 · 13 · 14***
+> *(and 48, which was added as prose above the table rather than as a row).*
+> ⚠ **The sentence below explains the gap — "rules 1–15 … are stated in `NBA_MASTER_SUMMARY.md` at
+> their entries" — but the split it describes is not the split that exists: FIVE of the first fifteen
+> (6, 7, 8, 12, 15) ARE in the table.** *So the boundary is not 1–15 vs 16+; it is arbitrary.*
+> 🔴🔴 **And the most consequential absentee is RULE 10 — the propagation rule**, referenced eight
+> times across the corpus, sharpened twice at §T9.25a and §T9.26a, **and re-born as rule 40 (T18) and
+> again as rule 49 (T20, retired).** ***A pass told to "read this index before writing any claim about
+> the sweep's own method" cannot find rule 10 in it — which is a mechanical explanation for why the
+> propagation rule kept being re-invented.***
+> ⚠ **Not repaired in this pass** *(back-filling ten rule bodies is a reading pass over T1–T9's
+> entries, and rule 12 forbids deferring only what the pass itself wrote)*. **Recorded as the index's
+> own defect, with the ten numbers named so the back-fill is a bounded task.**
+> 📌 *Rule 15's lesson applies to this very measurement: a first probe for these rules using
+> `RULE N —` returned six zeros, and a **positive control on rules 30/40/43** showed the pattern was
+> wrong, not the rules absent. They ARE referenced — 3 to 39 times each. They are not INDEXED.*
+
 *Rules 1–15 were born in T1–T9 and are stated in `NBA_MASTER_SUMMARY.md` at their entries. Rules
 16–27 are T9–T11's and each carries a §-pointer. **Apply them from pass 0 of a transcript, not from
 pass 20 — that gap is this run's signature failure.***
