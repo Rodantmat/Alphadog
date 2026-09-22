@@ -12115,9 +12115,14 @@ schedule is already loaded (2,666 games). **Not applied — documentation pass o
 > five."*** 🔴 *And the failure is **SILENT**: on an affected day `P3` certifies **green** — its five
 > checks ask for scored legs, non-null confidence, score in range, a loaded model and an archived
 > board, **and every one of those is satisfied by a slate that already tipped**. Nothing in the
-> pipeline notices.* 📌 **Threshold note**: *the count uses `13:15` PT, the stated cutoff; `P3`'s
-> shell guard actually refuses only before `13:00` PT, and no 2025-26 game tipped in that fifteen-minute
-> window, so both thresholds give the same `75`.*
+> pipeline notices.* 📌 🔴 **THRESHOLD NOTE — AND THE FIFTEEN MINUTES ARE NOT EMPTY.** *The count above uses
+> `13:15` PT, the stated cutoff. **`P3`'s shell guard refuses only before `13:00` PT.** Counted both
+> ways: **`74` games tip before `13:00`, `75` before `13:15` — exactly `1` game lands inside the
+> guard's fifteen-minute blind spot.*** ⇒ ***The guard is set to the league FILING deadline
+> (`1:00 PM PT`), not to the doctrine cutoff (`1:15 PM PT`), and on at least one night a season that
+> difference is a real game that `P3` is permitted to score after it has tipped.*** ⚠ *This sentence
+> originally asserted the window was empty; **it was checked rather than assumed and the assertion
+> was wrong.** Corrected in place the same pass (rule 40).*
 > 📌 **Context: `NBA_RECIPE.md` `STEP 12 — THE GAME-DAY TIMELINE`, row 5 · `§T20.95` for the mirror
 > question (the LATEST tip, which bounds `P2`'s grading step and closes green).**
 
