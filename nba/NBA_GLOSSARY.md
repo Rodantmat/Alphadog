@@ -1595,7 +1595,10 @@ a demon-Less sits below the anchor.
 time or ask a time, i refer to pacific time, i am in san diego california, so do not forget it**."*
 **Every time the owner states or asks for is PT.** ⚠ **Added 2026-09-21 (§T11.1c) because it was in
 none of the twelve**, and it is the missing premise behind several recorded timezone defects — the
-blame timestamps published in −0700, the P3 cron drifting an hour against a time-sensitive cutoff,
+blame timestamps published in −0700, ~~the P3 cron drifting an hour against a time-sensitive
+cutoff~~ **(corrected 2026-09-22, §T20.32 — `nba-p3-afternoon-light.yml` carries `workflow_dispatch:`
+ONLY and NO `schedule:` block, so there is no P3 cron to drift; the real exposure is that P3 does not
+fire on a schedule at all)**,
 and the injury-PDF timestamps in Eastern. → `NBA_MASTER_SUMMARY.md` §T11.1c.
 
 **window** · T11, LIVE · The decision snapshot label. **1:15 PM PT** (corrected from 2:45 — see
