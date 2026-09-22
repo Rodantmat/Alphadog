@@ -1719,8 +1719,13 @@ Rebounds ELITE under-projected in both → **structural**, kept. 3PM mid-bands *
 **cancelled out in the averages**."* A ladder accurate to 1 pp can hold a +5.4 and a −3.5 band.
 
 **③ No pasted constants.** HCA, `P(blowout|spread)` and the blowout ratios are **derived from TRAIN
-inside the run**. `baseline_ladder_runs.factor_fits` / `.role_minutes_multiplier` store what each run
-derived.
+inside the run**. ~~`baseline_ladder_runs.factor_fits` / `.role_minutes_multiplier` store what each
+run derived.~~ 🔴🔴 **CORRECTED 2026-09-22 (T20 pass 109, `§T20.114`): they store what ONE of the
+run's thirteen-plus invocations derived**, because the merge step is `meta = meta or d["meta"]` over a
+`sorted()` glob and recomputes only `rows`, `props` and `players`. **Live: `assists · season_phase ·
+steals` on all three rows, against 18–22 props.** ⚠ **The PRINCIPLE stands — the fits ARE derived in
+the run, nothing is pasted — but the AUDIT TRAIL that was supposed to prove it covers 2 props of 22.**
+▶ **`T20-20`. Documented, not fixed (rule 1).**
 
 **④ Per-player granularity fails — three times.** Player-own L0 cells *"REJECTED ON DATA (n=40–80;
 regression-noise dominated; ELITE rebounds ±7.7)"*; A2's with/without table retracted; conformal
