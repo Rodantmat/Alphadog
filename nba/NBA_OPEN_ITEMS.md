@@ -12701,6 +12701,65 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-7 · **NEW · 🔴🔴🔴 SEASON-CRITICAL · THE DEEPEST MIS-WIRING FOUND** · P3's "Board tiers" step runs an index-maintenance script, and `board_tiers` has no writer at all
+
+**`[LIVE-AUDIT]` 2026-09-22 (§T20.40).** *Read edge built over the same `116` scripts: **41** distinct
+tables seen — **33** written, **41** read. Script `scratchpad/t20/readedge.py`.* ⚠⚠ **READ-ONLY, no
+code edits (rule 1).**
+
+🔴🔴🔴 **① `nba_market.board_tiers` — `2,199,354` rows, `378` dates, `2024-10-22 → 2026-04-12` —
+IS READ BY FOUR SCRIPTS AND WRITTEN BY NONE.**
+**Readers**: `apply_ladder_calibration.py` · `backtest_tier_selection_value.py` ·
+**`build_confidence_v3.py` (P2, step 18)** · **`build_rung_market.py` (P3, step 8)**.
+**Writers, probed in five forms — `INSERT INTO` · `CREATE TABLE` · `TRUNCATE` · `COPY` · `UPDATE` —
+across every `.py` in `nba/` and `nba/baseline/`: ZERO.**
+
+🔴🔴🔴 **② AND THE REASON IS A MIS-WIRED STEP ON THE GAME-DAY PIPELINE.**
+*P3's step 6 is named **"Board tiers (goblin / standard / demon)"** and comments: "Classify every
+board leg as standard / goblin / demon with its tier and anchor. **The score and the slip engine both
+need this** — a rung's break-even depends on which variation it is."*
+**It runs `python nba/maintenance_shrink_board_index.py`, whose own docstring reads: "**One-off
+maintenance**: shrink `nba_market.board_snapshots` by replacing the 7-column primary key (5.6 GB on
+25.7M rows) with a compact unique expression index…". Its only table operation is
+`ALTER TABLE nba_market.board_snapshots DROP CONSTRAINT IF EXISTS board_snapshots_pkey`. It
+classifies nothing.**
+✅ **The script that ACTUALLY builds board tiers is `nba/build_board_tiers_v2.py`** *(`TRUNCATE` +
+`INSERT INTO nba_market.board_tiers_v2`, "four-way taxonomy, both anchor cases")* — **invoked by
+`nba-engine-test.yml` ALONE.**
+⇒ 🔴🔴🔴 ***The tier classification P3's own comment says "the score and the slip engine both need"
+is produced by NOTHING on the game-day path. `board_tiers` is a frozen historical snapshot ending
+`2026-04-12`, and P2 and P3 read it on every run.***
+⚠⚠ **And P3 runs a script documented as ONE-OFF MAINTENANCE on every game day.** *Its safety rules
+are sound — new unique index first, old PK dropped only after `indisvalid`, row counts compared — so
+the risk is **waste and wrong-step, not destruction**. Stated at that strength and no higher.*
+
+⚠ **WHY THE CORPUS MISSED IT**: the twelve mention `board_tiers` **174** times and
+`build_board_tiers_v2` **14** times, but `maintenance_shrink_board_index` only **2**. ***The
+documentation describes the table and the right builder exhaustively and barely names the script P3
+actually runs.***
+
+✅✅ **THE GOOD NEWS, AT FULL STRENGTH: `0` DEAD OUTPUTS.** *Every one of the 33 tables a pipeline
+script writes is read by another pipeline script.* ***The graph has no dead ends — nothing this
+pipeline computes is thrown away.***
+✅ **Six of eight raw "dangling inputs" were KILLED (rule 48) as Python `from X import Y` statements
+caught by a SQL `FROM` regex**; `nba_config.external_credentials` is accepted as a
+manually-maintained table and NOT claimed.
+
+📊 **BLAST RADIUS of `nba-engine-test.yml`'s six co-written tables** *(the question T20-6 raised)*:
+`final_hp` **8 readers** *(including the calibration refit and the certifier)* ·
+`confidence_model` and `confidence_verification` **4** each · `board_scored`, `availability_delta`,
+`conformal_confidence` **2** each. ⇒ ***an overwrite of `final_hp` by the test harness propagates to
+eight readers — the widest blast radius in the graph.***
+
+🔴 **OWNER DECISION — 28 days out:** **(a)** decide what P3's step 6 was MEANT to run — if it is
+`build_board_tiers_v2.py`, the game-day path has never classified tiers · **(b)** decide whether
+`board_tiers` or `board_tiers_v2` is canonical, since four scripts read the former and only the
+latter has a builder · **(c)** remove `maintenance_shrink_board_index.py` from the daily path
+whatever else is decided — it is a one-off by its own documentation. ⚠ **This sweep changed nothing
+and triggered nothing.**
+
+---
+
 ## T20-6 · **NEW · 🔴🔴🔴 SEASON-CRITICAL · THE LARGEST STRUCTURAL FINDING OF THE SWEEP** · 7 of 12 certifier checks assert tables no pipeline writes
 
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.37).** *Both sides enumerated independently: `certify_pipeline.py`
