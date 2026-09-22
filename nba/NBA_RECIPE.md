@@ -458,6 +458,44 @@ already reported.** Full methodology, the three techniques and the six named fai
 >
 > ✅ **THE TABLE BELOW IS ACCURATE. It is simply a record of what was done, not an instruction for doing it again — and `§T20.86` exists because that difference only matters on the day someone needs the second one.**
 
+---
+
+# STEP 8 — **P1 · THE WEEKLY STATIC LAYER** *(written T20 pass 83, §T20.88, from `.github/workflows/nba-p1-weekly-static.yml` read `2026-09-22T20:38:28Z`)*
+
+**What it is for.** Everything that changes weekly or slower: rosters, arenas, officials, season-long team and player aggregates, defender ratings. **Nothing here is slate-specific.**
+**When it runs.** `cron: '0 19 * * 1'` — **Mondays 19:00 UTC**, plus `workflow_dispatch`. ⚠ **`T20-11`: the comment on that line inverts PDT/PST — 19:00 UTC is `12:00 PT` only while DST is in effect, `11:00 PT` after `2026-11-01`.**
+**What it does, in order** *(the workflow's own step names)*: **Teams and arenas** → **Players and bio** → **Weekly as-of season tables** *(`scrape_nba_season_tables.py` — `pt_defend`, `hustle`, `clutch`, `coaches`, `all_players`)* → **Team stats, on/off, playtypes, tracking** → **DARKO and shot quality** → **Defender ratings** *(`build_defender_ratings.py` — two-way ridge, weekly as-of)* → **Static context** *(`build_static_context.py`, coach changes)* → **Commit weekly data files** → **Certify the weekly layer**.
+**What gates it.** `certify_pipeline.py` with `PIPE=p1` — **3 of the certifier's 12 checks**: `defender_ratings refreshed (<= 8 days)` · `defender_ratings rows (> 10,000)` · `player name map populated (> 400)`. **`CERT_STRICT=1` by default; any failed check exits 1.**
+🔴 **WHAT BREAKS IT TODAY.** `defender_ratings` is **`166` days stale** *(`max(as_of_date) = 2026-04-09`)*, so **the first P1 check is RED right now** — see the frozen-static-layer item and `§T20.51`. ⚠ **And `§T20.31`: `nba_control.job_runs` and `worker_run_log` are both EMPTY — the detector exists; nothing runs it.**
+
+---
+
+# STEP 9 — **P2 · THE OVERNIGHT HEAVY PASS** *(same source, same reading)*
+
+**What it is for.** Last night's results in, tonight's baseline out. **This is where the ladder is built.**
+**When it runs.** 🔴🔴 ***IT DOES NOT. `nba-p2-overnight-heavy.yml` has NO `schedule:` and NO `cron:` — `workflow_dispatch` only.*** *The workflow says so itself, deliberately:* > *"**NO CRON YET — deliberately.** The NBA season opens in October; until real games exist there is nothing for this to mine… **The cron goes in when the season starts** (target: daily `09:00 UTC` = `01:00 PT`, which is after the last West-Coast game finalises and leaves eight hours before P3's 1:15 PM cutoff)."* ⚠ **Adding that cron is a prerequisite for every other P2 item on the OPENING-DAY BRIEF.**
+**What it does, in order**: **Resolve slate date** *(`TZ=America/Los_Angeles date +%F` — DST-correct)* → **Daily delta ingestion** → **Injury report (day-before filing)** → **Referee assignments and per-game matchups** → **Baseline inputs: season files, quarters, schedule** → **Commit mined data** → **Delta gap audit** *(`check_delta_gaps.py`)* → **Grade last night's board outcomes** *(`grade_board_outcomes.py`)* → **Grade paper-trading picks** → **Market spreads and totals** → **Build baseline ladder (all prop pairs)** → **Components, combos and periods for today's slate** → **Merge per-pair ladders** → **Commit the merged ladder** → **Load baseline into Postgres** *(`load_baseline_ladder.py`)* → **As-of ladder calibration** *(`build_asof_calibration.py`)* → **Refit the blowout model** → **Refit the confidence deduction model** *(`build_confidence_v3.py`)* → **Certify P2**.
+**What gates it.** `PIPE=p2` — **4 checks**: `baseline_history has today` · `baseline props for today (>= 25)` · `no invalid probabilities today` · `as-of calibration available`.
+🔴🔴🔴 **WHAT BREAKS IT TODAY.** **`T20-13`, ranked FIRST on the brief**: `baseline_history` carries **`22`** distinct props in October and **`30`** from November 1, in both prior seasons — against a `>= 25` gate with `CERT_STRICT=1` ⇒ ***twelve consecutive red nights from opening night through `2026-10-31`.*** ⚠ **`T20-5`**: the grader's `GRADE_END` defaults to `"2026-04-12"` and P2 passes only `DATABASE_URL`, so **on opening night it grades nothing and reports success — the brief's only `SILENT` blocker.** ⚠ **`T20-10`**: `nba-daily-delta.yml` swallows three failures with `|| echo`.
+
+---
+
+# STEP 10 — **P3 · THE AFTERNOON LIGHT PASS** *(same source, same reading)*
+
+**What it is for.** The decision moment: pull today's boards, score every leg, produce the picks.
+**When it runs.** 🔴🔴 ***ALSO NO CRON — `workflow_dispatch` only.*** *It does carry a **guard**: step 1 resolves the slate date and **asserts the `1:15 PM PT` cutoff has passed**, using `TZ=America/Los_Angeles date +%H%M` — DST-correct.*
+**What it does, in order**: **Resolve slate date and assert the cutoff has passed** → **Day-of injury report** → **Other board scrapers** → **Archive boards into Postgres** *(`archive_live_boards.py`, `ARCHIVE_LABEL="window"` — this pull IS the decision snapshot)* → **Board tiers (goblin / standard / demon)** → **Market snapshot and rung market** → **Commit day-of data** → **Availability delta** *(`build_availability_delta.py`)* → **Score the board** *(`score_board_legs.py`, all apps, all rungs, both directions)* → **Log paper-trading picks** → **Certify P3**.
+**What gates it.** `PIPE=p3` — **5 checks**: `final_hp has today` · `confidence populated` · `score in range 0-100` · `confidence model loaded` · `board archived today`.
+🔴🔴🔴 **WHAT BREAKS IT TODAY.** **`T20-7`**: the step named *"Board tiers (goblin / standard / demon)"* **runs `python nba/maintenance_shrink_board_index.py`** — an index-maintenance script; the real builder `build_board_tiers_v2.py` is wired only into `nba-engine-test.yml`. ⚠ **`T20-4`**: `BS_SEASON` defaults to `"2025-26"` at `:38` and `:205` — **last season**. ⚠ **`T20-12`**: `build_availability_delta.py:39` hardcodes `PT = -8`, so `p3_cut` is an hour late for every day of PDT — *including the first twelve nights of the season*. ⚠ **`T20-6`**: 7 of the 12 certifier checks assert tables no pipeline writes, and every threshold is `> 0` against real magnitudes of `59,000`–`118,000` rows per date.
+
+---
+
+## ⚠⚠ **STEPS 11+ — `NOT RECORDED` (rule 6), and stated rather than smoothed** *(§T20.88)*
+
+- **How P2 and P3 are to be TRIGGERED in production.** *P1 has a cron. **P2 and P3 have none**, and only P2's workflow states an intended time (`09:00 UTC`). **No document states P3's.** The `1:15 PM PT` cutoff is a GUARD, not a schedule — it says when P3 may not run, not when it will.*
+- **What happens when a pipeline fails.** *No retry policy, no alerting path and no on-call step is recorded anywhere in the twelve. `nba_control.job_runs` and `worker_run_log` are EMPTY (§T20.31).*
+- **The order between P2 and P3 on a day when P2 fails.** *P3 reads what P2 wrote. **Whether P3 should refuse to run, run degraded, or run anyway is NOT RECORDED.***
+
 | Step | What | Transcript |
 |---|---|---|
 | 8 | **DARKO DPM** — four failures before the real mechanism: check for embedded data first → page is SSR, not JS-walled → guessed pagination got 50/530 and was **honestly flagged** → it's **SvelteKit not Next.js** → self-caught `//` vs `#` slip → **the full dataset is in the `kit.start()` hydration script** → JS bare decimals (`.534094`) are invalid JSON and need repair → **530/530, Jokić +6.76**. Stored as **`player_impact_rating`, NOT `darko`** (single-maintainer bus factor). **The weekly differential layer** — 6 tables, 3 snapshot/log pairs; had to exist BEFORE the next upsert because the writers overwrite; proven by **simulating** a change, not by observing zero events; a race and a **Hyperdrive cache artifact** diagnosed along the way. **Schedule 2,666 games** (1,400 + 1,266 already published) — and the **1 MB Contents API silent-empty bug** → `raw.githubusercontent.com`. **Play types** (11 types × 2 groupings × 2 levels = 44 calls after the cheap path failed), **tracking detail** (8 families, 4,652 rows), **shot quality** | T3 |
