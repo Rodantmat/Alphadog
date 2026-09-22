@@ -14509,6 +14509,213 @@ past two seasons, very likely, you're only gonna have goblin and demon as MORE"*
 seven directives and four rule-parts moved into the twelve, and this sweep's own criterion traced to
 its source. CLEAN 0/3 · 1 pass.**
 
+### T13.2 — PASS 1 (**the multiplier research arc**) — **🔑🔑 the arc's conclusion, its base table, its discarded experiment, and RULE 33**
+*The 250-segment assistant-prose stratum read in order — the largest prose stratum of any transcript
+swept — against the 65 owner turns already read at pass 0. **Novelty probed against baseline
+`4429380d`; duplication probed against the WORKING tree over the twelve; both pinned
+2026-09-22T07:45:06Z** *(controls `demon` 46 of thirty / 12 of the twelve, `flex` 19 / 7 — both
+fire)*. **Live re-takes pinned 2026-09-22T07:45:45Z and 07:47Z. `SELECT` only; nothing changed.***
+
+#### 🔑🔑 T13.2a — **THE ARC'S CONCLUSION, in the researcher's own words: *"Have I figured out the PrizePicks multiplier? NO."***
+**`NBA_MULTIPLIERS.md` §2 already ruled PrizePicks out on four negative lines of evidence. What the
+twelve did not carry is the MECHANISM and the verdict**: the payout is *"computed at **entry level
+when you submit**"*, *"set based on the projections **available at the time of lineup submission**"*,
+and *"**dynamic** — PrizePicks adjusts them, **including without moving the line**"*, with the boost
+a *"per-leg factor applied **multiplicatively** to the base entry multiplier"*.
+🔑 **Two consequences are load-bearing and are new**: ***a stored multiplier without a capture
+timestamp is not a measurement*** — **which couples the multiplier programme directly to the owner's
+latency requirement** *(§T13.1d: a slow pipeline prices against a quote that has already moved)* —
+and ***line-movement monitoring cannot detect repricing***, so **`m` cannot be inferred from a line
+history.** **Written to `NBA_MULTIPLIERS.md` §0.9a.**
+
+#### ✅ T13.2b — **THE BASE MULTIPLIER TABLE, and it is grounded twice over**
+**Power Play 2/3/4/5/6 = `3× · 6× · 10× · 20× · 37.5×`; Flex 3-pick `2.25×`/`1.25×`, 4-pick
+`5×`/`1.5×`, and — from PrizePicks' own published copy, captured in T13 — **6-pick Flex `25×`**.
+✅ **The operator's page states the ceiling itself** *("multipliers up to 37.5×", "topping out at 25×
+on a perfect 6-pick", demons "up to 2000×")* **and carries the disclaimer *"MULTIPLIERS ARE SUBJECT
+TO CHANGE"*** — ***which is the platform's own confirmation of T13.2a***, not an inference about it.
+🔴 **RULE 26, and it cuts across the scope rule**: `37.5` is **1 of the thirty**, and the single hit
+is **`PP_PAYOUT_FINDINGS.md` — the concurrent session's file**, which this sweep does not write to
+and does not count as its own prior work. **Opened as rule 26 requires**: it records
+**`3.0 / 6.0 / 10.0 / 20.0 / 37.5×`** from **live payout mining**, 5- and 6-pick moving from
+*"published but unverified"* to **verified**. ✅ ***Two independent routes — a published page and
+mined live payouts — produce the same five numbers***, which is the strongest grounding any figure in
+`NBA_MULTIPLIERS.md` has. **Written to §0.9b, §0.9b.1, §0.9b.2.** ⚠ **The 2000× demon ceiling was
+already on file** *(`NBA_GOBLIN_DEMON.md` §1.0, T8)* — **confirmed, not new; the TWENTIETH kill.**
+
+#### 🔑🔑 T13.2c — **THE LABELS ARE ENCODED IN THE PRICE — T13's measurement RE-TAKEN LIVE, and it held**
+**T13 joined every PrizePicks `%_alternate` row to its standard row over 2024-10-22 → 2025-04-13 and
+classified by line direction.** ✅ **Re-run against the same SQL and the same fixed range, pinned
+2026-09-22T07:47Z**:
+
+| `price` | direction | T13 rows | **LIVE rows** | T13 offset | **LIVE offset** |
+|---|---|---|---|---|---|
+| **+100** | harder → **DEMON** | 108,730 | **113,356** | +4.21 | **+4.22** |
+| **−137** | easier → **GOBLIN** | 74,863 | **78,135** | −2.87 | **−2.87** |
+| | *four exception cells* | 184 | **199** | | |
+| | **TOTAL** | **183,777** | **191,690** | | |
+
+✅ **Both partitions close**, and **T13's own *"~180 of 183,000, 0.1%"* re-derives exactly to 184 of
+183,777.** 🔑 ***The table grew 4.3% for a CLOSED historical range and the average offsets moved by
+at most 0.01*** — **a robustness result the transcript could not produce**, and the growth is the
+gap-repair pass of §T13.2f still landing rows. 🔴 **`Under` appears in NONE of the twelve cells,
+then or now** — ✅ ***independent confirmation of §T12.7c on a different table with a different
+query***, and of the owner's own prediction. ⚠⚠ **And it establishes what it does NOT give**:
+**two prices across the whole population cannot express tier depth**, so ***a two-valued price column
+can LABEL a rung and can never PRICE one.*** **Written to `NBA_GOBLIN_DEMON.md` §0h.**
+
+#### 🔴 T13.2d — **THE −137 / −119 ANCHORS — RE-SCOPED, because the percentages were already on file**
+🔴 **The SEVENTEENTH kill, partial.** `NBA_COMPASS.md` *(the eighteen)* already states *"standard legs
+hit **48.8%** (break-even **54.3–57.8%** → PrizePicks' edge is **5.5–9 points**)"* — **a consequence
+T13's prose never draws.** *`57.8` is **0 of the twelve**, 2 of the thirty.* ✅ **What T13 adds, and
+only this**: the **prices** behind the percentages (**−137 → 57.8%**, **−119 → 54.3%**), the
+**pairing to slip size** that COMPASS leaves as an undifferentiated range (**−137 = 2-pick; −119 =
+5/6-pick Flex**), and the **attribution** — *"−137 is PrizePicks' **canonical break-even price**"*,
+**not a sentinel.** ⚠⚠ **That corrects how `NBA_GOBLIN_DEMON.md` §4 reads the value**: v1's
+derivation was reading a **real market price**, not an arbitrary tag — ***the label is a consequence
+of the price.*** **Written to `NBA_MULTIPLIERS.md` §0.9d.**
+
+#### 🔑🔑 T13.2e — **THE RULE THAT FALLS OUT, and the dataset that supports it**
+> *"model the multiplier as a function of the **PROBABILITY SHIFT**, conditioned on stat and line
+> magnitude — ***never on the tier label***."*
+
+✅ **This turns the owner's own correction** *(`NBA_MULTIPLIERS.md` §3: "not one number per tier")*
+**into a model specification**, and its evidence is **Underdog's ladders — the only per-leg
+multiplier dataset the project actually has**: **1,401 real tiered rungs across 385 ladders**, **233
+distinct Over prices / 211 Under**, **−2439 to +33xx** *(all **0 of the twelve**)*. 🔑 **The
+authority matters and answers the owner's MLB-multiplier warning directly** *(§T13.1d)*: ***these
+came from Underdog's own API — the counterparty, not our internal model.*** **The per-stat evidence
+(PRA): 26.2 average line, 0.85 goblins and 1.20 demons per ladder, offsets −3.56 / +6.28** —
+⚠ ***demons sit roughly 1.5× as far from the anchor as goblins, so a label-based model assumes a
+symmetry the data denies.*** **This is the measured form of the owner's "ladder depth is
+PROP-DEPENDENT" directive** *(§T13.1e, 0 of thirty)* — **and it is ONE prop; the rest are NOT
+RECORDED.** **Written to `NBA_MULTIPLIERS.md` §0.9e/§0.9f and `NBA_GOBLIN_DEMON.md` §0h.1.**
+
+#### 🔑🔑 T13.2f — **RULE 33: THE NINE `EVENT_NOT_FOUND` SNAPSHOTS ARE THE RESIDUE OF FORTY-FIVE — and their whole arc is in a DIFFERENT TRANSCRIPT**
+**The open item reads as an isolated 0.18% blip.** T13 carries the entire trajectory: **6 of 678
+(0.9%) → 28 of 1,567 (1.8%) → 42 → 45 at completion → 9 after repair.**
+🔴🔴 **THE CAUSE IS AN UNIMPLEMENTED OWNER RULE, stated by the builder**: *"the **window snapshot
+lands AFTER TIP** … ***Your original rule said 'proportional on early slates,' and I DID NOT
+IMPLEMENT THAT***"* — and *"**all 45 errors** are the same `EVENT_NOT_FOUND`, **concentrated in
+window snapshots**."* 🔑 ***So `EVENT_NOT_FOUND` was never primarily "the board wasn't posted yet"
+— that is the residue's cause, not the population's. The population's cause was asking TOO LATE.***
+✅ **The repair**: **29,785 bad rows removed**, 57 post-tip window logs and 45 error logs cleared,
+**a new window rule — `2:45 PM PT normally, or FIRST TIP MINUS 2 HOURS when the slate starts before
+3:45 PM PT`** *(0 of thirty)* — **and 5,115 snapshots across 2,560 events, up from 4,834 / 2,468.**
+✅ **Re-taken live 2026-09-22T07:45:45Z: 5,124 = 5,115 ok + 9 error, EXACTLY as recorded** — 📌 **and
+distinct `event_id` is now 2,562, two above T13's last report.** **A dated STATE** *(O9)*.
+
+> ## 🔑🔑 **RULE 33 — A FAILURE'S CAUSE CAN LIVE IN A DIFFERENT TRANSCRIPT, NOT ONLY A DIFFERENT STRATUM**
+> **RULE 32 was born at §T12.10 from eight failures whose causes sat two segments later in the SAME
+> transcript. §T12.11's sibling re-test then applied it by grepping EACH ITEM'S OWN TRANSCRIPT**, and
+> concluded of this item and one other that they *"have ZERO mentions after the segments that raised
+> them, **so there is no later resolution to have missed**."*
+> ✅ ***That verdict is correct about T12 and wrong about the corpus.*** **The cause, the diagnosis,
+> the repair, the installed rule and the residue are all in T13** — **and so is the origin of the
+> false-arbitrage item** *(§T13.2g)*, **the second of the two.** ***Both items the sibling re-test
+> cleared were resolved in a transcript it never opened.***
+> ⚠⚠ **THE RULE**: ***an open item's cause and resolution are searched across the CORPUS, not within
+> the file that raised it; and a "no later resolution" verdict earned from one transcript must state
+> that scope in its own words.*** 🔑 **The failure mode is specific and cheap to avoid**: **a status
+> key, a done-list or a hand-off note is written in ONE transcript about work done in ANOTHER** —
+> **so the item and its evidence are structurally guaranteed to be in different files.**
+
+#### 🔑🔑 T13.2g — **THE FALSE 2.9%-vs-56% ARBITRAGE SIGNAL: origin, diagnosis and the fix still owed**
+**Recorded as having no origin in the corpus. It has one, in T13.** ✅ **And the item's wording
+misleads**: *"a coarse join **produced** a false signal"* reads as a defect that got through —
+***it was flagged as untrustworthy in the same breath it was produced***: *"something I don't trust,
+and it's worth showing you why **rather than reporting it as a finding**."* **The verification**:
+for **Aaron Gordon Over 24.5**, the books agree with each other *(+1300 / +1700 / +1300 ≈ 6–7%)* and
+**Underdog has no row at that rung at all** — *"the anomaly is in how my aggregate query paired
+Underdog rows to book rows, **not in the underlying data**."* 🔑 **THE FIX, verbatim and STILL
+OPEN**: *"a properly keyed join — **matching on the exact rung within a ladder, and EXCLUDING
+SENTINEL PRICES**."* ⚠ ***"Excluding sentinel prices" is a second requirement the open item does not
+carry***, and §T13.2c is why it bites: **the PrizePicks alternate population carries exactly two
+prices on every rung.** 📌 **An observation in the evidence the transcript does NOT name**: the
+five-row verification set contains **both `Aaron Gordon` and `Eric Gordon`** at the same market,
+side, line and timestamp — ⚠ **a surname collision is consistent with the rows and is NOT stated by
+the source, so it is a HYPOTHESIS** *(rule 19)*. **Written to `NBA_OPEN_ITEMS.md`.**
+
+#### 🔴 T13.2h — **WHAT GEMINI PRODUCED, and why it was DISCARDED — a negative result deliberately preserved**
+**The owner directed Gemini's use explicitly. The reliability test chosen was CONSISTENCY ACROSS
+FRAMINGS**, *"since a model asked for specific numbers will produce them"*. **The same scenarios
+produced different numbers**: **2-pick + 1 demon `4×` vs `3.6×`; 3-pick + 1 demon `6.5×` vs `6×`.**
+> **The examples were discarded, and the negative result recorded explicitly *"so nobody re-runs this
+> experiment later."***
+
+✅ **Recorded here for exactly that reason**, and the test generalises: ***an LLM-supplied numeric
+constant is admissible only if it is stable across re-asking.*** ⚠ **`Gemini` is in 9 of the twelve
+as a review and adversarial tool; this is the first record of it used as a SOURCE OF NUMBERS and
+failing.** **Written to `NBA_MULTIPLIERS.md` §0.9g.**
+
+#### 🔴 T13.2i — **THREE MORE KILLS, AND THE ONE THAT EXPOSED A REAL GAP**
+🔴 **EIGHTEENTH kill — the DNP "third position."** T13's *"DNP → the lineup REVERTS"* was to be
+recorded as a third stance against the answer's "void" and the grader's neutrality. **`NBA_COMPASS.md`
+already carries it, and more completely**: *"PrizePicks **reverts the lineup on a DNP and TIERS DOWN
+on a tie**, Underdog **voids the leg**; the slip engine applies the operator rule."* **Killed as a
+discovery; kept as corroboration** — **and `PP_PAYOUT_FINDINGS.md` independently states *"Voids
+(push/DNP) revert the slip one size down"*, so ✅ three independent sources agree.**
+✅ ***But the kill exposed the gap it was hiding***: 🔴🔴 **`tiers down` is 0 of the TWELVE.**
+**PrizePicks' TIE rule lives only in the eighteen** — **a flat line (21 points, 10 rebounds) can land
+exactly on the number, and the operator tiers the slip down, changing the payout with no leg
+losing.** ⚠ **`grade_board_outcomes.py` correctly stores `push` and refuses to resolve it**
+*(§T12.6d)*, **so the tier-down rule has no implementation anywhere; the slip engine is where it must
+live, and whether it does is NOT RECORDED.**
+🔴 **TWENTY-FIRST kill — a numeric coincidence, killed before it became a corroboration.** T13's
+backfill completion totals *(**2,468 events · 4,891 snapshots · 25.7M rows · 2,054,220 credits**,
+within 1% of projection, **~2.95M credits left for MLB and hockey**)* share the figure **2,468** with
+`nba_market.game_lines_snapshots`' distinct-event count *(§T11.14a, re-verified live)*. ***Different
+table, different population, same number*** — **and the board figure has since moved to 2,562 while
+the game-lines figure has not.** **Recorded in `NBA_OPEN_ITEMS.md` as a collision so a future reader
+does not read one as confirming the other.**
+
+#### 🔑 T13.2j — **THE OWNER'S PRIORITY RULING, AND THE LIMIT HE SET**
+> *"**Those are rules, and the rules are very important as well.** Same player, same game… and **DNP,
+> TIE**, because sometimes the line is **a flat line, like twenty-one or ten**… **all of those are
+> EASIER TO LEARN. But what we need to get as SHARP AS POSSIBLE is the tiering with the goblins and
+> demons.**"*
+> *"**We're never gonna be able to get exactly the way the PrizePicks multiplier works**, so we are
+> doing our best work possible… **they do change, they do switch.**"*
+
+🔑🔑 ***The first explains the shape of the entire transcript*** — the composition rules were
+deliberately deferred, so **their absence from the corpus is a CHOICE, not an oversight, and they
+remain owed.** ⚠⚠ ***The second is the owner's own confidence tier on the whole multiplier
+programme, and it is 0 of the thirty***: **it licenses the observational study of §4b and FORBIDS any
+claim of a solved formula.** **Written to `NBA_MULTIPLIERS.md` §0.9h/§0.9i.**
+📌 **And the reconstructability finding** *(§0.9j)*: *"**a multiplier and a decimal price are two
+views of one number**… the payout structure is **reconstructable for both apps**… ***what we
+genuinely lost is Underdog's own multiplier LABEL — a convenience, not the information.***"*
+⚠ **It does not rescue PrizePicks** — a published table recovers the **slip-shape** term only, and
+**§T13.2a's per-leg, submission-time, boost-compounded factor is precisely what no table
+reconstructs.**
+
+#### ⚠ T13.2k — **THE PRE-REGISTRATION: DIRECTION RIGHT, ATTRIBUTION WRONG — scored a PARTIAL**
+*Harness `scratchpad/t13/judge13.py`, run **2026-09-22T07:52:30Z**, both trees scored.*
+| | high band | tail | **uncovered12** | uncovered30 |
+|---|---|---|---|---|
+| **BASELINE `4429380d`** | 24 | 16 | **1,274** | 1,234 |
+| **WORKING** | **29** | 16 | **1,263** | **1,223** |
+
+**Predicted: `uncovered12` FALLS, because pass 0 quoted eighteen owner segments into the twelve.**
+✅ **It fell — by 11 — the high band rose 24 → 29 with none lost, and all 11 crossings are named**:
+segs **655, 660, 693, 773, 778, 793, 807, 844, 876, 880, 900**, covered by **`NBA_MULTIPLIERS.md`
+(8) · `NBA_GOBLIN_DEMON.md` (2) · `NBA_OPEN_ITEMS.md` (1)**.
+🔴 ***But the prediction's REASON was wrong, and the honest score is a PARTIAL.*** **The harness was
+run AFTER this pass's five patches landed, so the movement is pass 0 and pass 1 combined** — **and of
+the eleven crossings, exactly ONE (the owner's ladder-depth turn, covered by `NBA_GOBLIN_DEMON.md`
+§0f) belongs to pass 0. The other ten are pass 1's own targets.** ⚠⚠ ***Pass 0 quoted eighteen owner
+segments and moved the band by one.*** 🔑 **The instrument is telling us something §T12.8's bound
+already implied: quoting a SEGMENT does not cover it — only writing PROSE ABOUT its substance does**,
+and pass 0's entries are largely lists of directives with short quotations, which is the low-coverage
+shape. **Twenty-seven pre-registrations: twenty-two hits, two misses, THREE partials.**
+
+**Pass outcome: the arc read in order and its conclusion recorded at the researcher's own strength;
+a base multiplier table grounded twice; a live re-take of the price-encoding measurement that held
+across a 4.3% population increase; the origin and diagnosis of a standing open item; the cause,
+repair and residue of another; FIVE kills (17th–21st); RULE 33; and one gap the kills exposed —
+`tiers down` in 0 of the twelve. 🔴 The clean count does NOT advance: this pass added transcript
+material. CLEAN 0/3 · 2 passes.**
+
 ---
 
 ## T12 — `2026-09-11-21-01-23-nba-board-scrapers-fliff-docs-2026-09-10.txt`
