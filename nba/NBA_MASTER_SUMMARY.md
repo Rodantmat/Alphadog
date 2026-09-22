@@ -33713,3 +33713,153 @@ citations. The sixty-fourth read the front page of the handoff and found that th
 this first" costs eighty-three thousand tokens and stops short of telling you what to do.**
 ***Rule 40 says a supersession must not destroy the original. It never said the originals should be
 the first thing anyone reads.***
+
+---
+
+# §T20.70 — T20 PASS 65: 🔴🔴🔴 **THE FIRST-SCREEN AUDIT — THE OPENING-DAY BRIEF FAILED ITS OWN FALSIFICATION TEST, AND THE MASTHEAD THAT SAYS WHAT CHANGED HAS NOT CHANGED IN 130 COMMITS** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.** *Rule 27's cross-transcript clause was applied
+to the charter itself: its FIRST word (T19 SEG 60/61) names EIGHT documents, its LAST word (T20 SEG
+597) names TWELVE — **"on top of that original message i need you to create few more dedicated
+files…"** — and the population was recounted from source, not from memory.*
+
+> **POPULATION, PINNED.** `ls -la nba/*.md` ⇒ **`32` markdown files**, **2026-09-22T18:44:47Z**. The
+> **twelve** mandated by the charter's last word are all present. The run log is **NOT** one of the
+> twelve and is **out of this pass's population** (§T20.69 already audited it). `NBA_COMPASS.md` is
+> measured as a thirteenth row and **is never written to**.
+
+## ▶ WHY THIS PASS EXISTED
+
+*§T20.69 measured ONE surface — the resume note — and found it `81.4%` superseded with its single most
+important row ninety-three lines below where the note ends. **That defect is not a property of the
+resume note; it is a property of an append-only corpus governed by a no-destroy rule**, which is what
+all thirty documents are.* ⇒ ***§T20.56 audited the top of `NBA_OPEN_ITEMS.md` because that is the
+surface the OWNER reads. This pass asked whether the twelve open the way the resume note opened.***
+
+## ✅ CLAUSE (ii) — **PRE-REGISTERED, AND IT FAILS. THE TWELVE DO NOT HAVE THE RESUME NOTE'S DEFECT.**
+
+**Pre-registered before any document was opened**: *"first screen" = the first `4,000` characters of
+body after the H1*; supersession markers = `~~` · `Superseded` · `WITHDRAWN` · `RETRACTED` · `AMENDED`
+· `no longer` · `was wrong`. **Positive control run first — every one of the seven patterns fires in
+the corpus (`157` · `163` · `29` · `154` · `20` · `88` · `91`), so no zero from them is a dead pattern.**
+
+| | raw first-screen density | **after reading every hit** |
+|---|---|---|
+| `NBA_SYSTEM_ARCHITECTURE.md` | `12.9%` | ✅ **`0.0%`** |
+| `NBA_DATABASE.md` | `11.4%` | ✅ **`0.0%`** |
+| `NBA_BASELINE_CALIBRATION.md` | `2.6%` | ✅ **`0.0%`** |
+| the other nine | `0.0%` | ✅ `0.0%` |
+
+⚠⚠ **RULE 20, FIFTH SAVE OF THE SESSION — AND THE FIRST IN THE OPPOSITE DIRECTION.** *The four earlier
+saves (`TZ:` vs `TZ=` §T20.50 · `norm_name` vs `display_name` §T20.57 · the bare-`§` resolution test
+§T20.68 · the `\|` alternator under `-E` §T20.69) were all instruments reporting **FALSE ABSENCE**.
+This one reported **FALSE PRESENCE**: **every single first-screen marker hit across the twelve is a
+false positive** — `no longer` matched **the quoted Fliff error string** *"this version of the app is
+no longer supported"*; `superseded` matched **a table row naming four superseded database panels**;
+`was wrong` matched **a heading about a diagnosis** being wrong twice. **Not one was the document
+superseding its own content.*** 📌 ***An instrument aimed at one spelling of a thing reports the
+absence of the thing — and an instrument aimed at a WORD reports the presence of a thing that is only
+being TALKED ABOUT. Both are rule 20; the corpus quotes error messages, so a marker census over prose
+must be read, not counted.***
+
+✅ **THE HONEST NEGATIVE RESULT, STATED AS SUCH: the twelve open clean.** *Whole-document supersession
+density runs `0.5%`–`12.0%` (median `1.5%`), against the resume note's `81.4%`. **The pre-registered
+clause (ii) is scored FAILED and is not rescued by re-definition.***
+
+## 🔴🔴🔴 CLAUSE (iii) — **WHAT READING FOUND THAT COUNTING COULD NOT: THE OPENING-DAY BRIEF FAILED ITS OWN TEST**
+
+**The brief carries a re-derivation block and names its own falsification condition, in its own words:**
+
+> ***"`grep -E "^#{2,4} .*SEASON-CRITICAL" NBA_OPEN_ITEMS.md` ⇒ `13` items** … over `14,727` lines,
+> tree `93292d27…`, **2026-09-22T17:35:23Z**. **All thirteen are listed below.** Re-run that grep to
+> re-derive this claim; **if it returns more than thirteen, this brief is out of date.**"*
+
+▶▶ **RE-RUN VERBATIM — `14,988` lines, tree `92593ef160dbd301b9777a76c7914643bdd1c143`,
+`2026-09-22T18:48:42Z` — IT RETURNS `14`.** 🔴 **By its own stated criterion, the brief was out of date.**
+
+🔑 **THE FOURTEENTH IS `T20-14` (Betr's access token, `nba/NBA_OPEN_ITEMS.md:12847`) — AND IT WAS NEVER
+MISSING.** *The **FIFTH AMENDMENT (§T20.60, T20 pass 55)** added it to the body **and** to the
+`FINAL ORDER — ALL FOURTEEN` block. **It updated the content and the order, and left the COMPLETENESS
+CLAIM at the top of the page at thirteen** — the heading and the SCOPE paragraph directly beneath it.*
+
+⚠ **RULE 40: `DATED`, NOT `RETRACTED`.** *"Thirteen" was TRUE at `17:35:23Z` and was falsified
+**seventy-three minutes later** by an amendment to the same page.*
+
+🔴🔴 **AND THE PAGE DIAGNOSED THIS EXACT ERROR IN ITSELF, TEN PASSES BEFORE COMMITTING IT AGAIN.** *Its
+own words, four paragraphs below the heading that just repeated the mistake:*
+
+> ***"A definite article in a heading is a completeness claim. It sat above a footnote that said the
+> opposite, at the top of a fourteen-thousand-line file, for a reader twenty-eight days from a
+> season."***
+
+⇒ ***An amendment discipline that updates the CONTENT and the FINAL ORDER but not the COMPLETENESS
+CLAIM will re-break the top on every amendment. The brief did not fail because nobody checked — it
+failed because the CHECK lives at the bottom of the page and the CLAIM lives at the top.***
+
+✅ **REPAIRED IN THIS PASS**: heading ⇒ **ALL FOURTEEN**, with the old text struck rather than deleted
+(rule 40); the scope block re-derived and re-pinned, **with the superseded `13`-claim kept beneath it**.
+
+## 🔴🔴 THE SECOND FINDING — **THE MASTHEAD "UPDATE LOG" IS A DEAD INSTRUMENT IN ELEVEN OF THE TWELVE**
+
+*Every one of the twelve opens with a masthead whose one job is to say what is current.* **Measured
+against `git`:**
+
+| document | last update-log date | commits since | verdict |
+|---|---|---|---|
+| `NBA_GLOSSARY.md` | **2026-09-22** | — | ✅ **the only CURRENT one** |
+| `NBA_DATABASE.md` | 2026-09-20 | **28** | 🔴 STALE |
+| `NBA_SYSTEM_DESIGN.md` | 2026-09-20 | **21** | 🔴 STALE |
+| `NBA_FINAL_SCORING_CALIBRATION.md` | 2026-09-20 | **20** | 🔴 STALE |
+| `NBA_SYSTEM_ARCHITECTURE.md` | 2026-09-20 | **14** | 🔴 STALE |
+| `NBA_MULTIPLIERS.md` | 2026-09-20 | **13** | 🔴 STALE |
+| `NBA_WORKERS.md` · `NBA_BASELINE_CALIBRATION.md` | 2026-09-20 | **12** each | 🔴 STALE |
+| `NBA_GOBLIN_DEMON.md` | 2026-09-20 | **9** | 🔴 STALE |
+| `NBA_RECIPE.md` | 2026-09-20 | **1** | 🔴 STALE |
+| `NBA_MASTER_SUMMARY.md` · `NBA_OPEN_ITEMS.md` | **none** | 1,000 · 479 total | ⚠ **no update log at all** |
+
+**⇒ `130` commits after the last update-log row, across nine documents, none recorded.** *A reader
+opening any of them saw **"Created 2026-09-20"** and had every reason to believe nothing had changed.*
+
+🔑🔑 **WHY THE GLOSSARY IS THE EXCEPTION IS THE WHOLE POINT: it got its row because RULE 41 / open item
+T19-1 forced a backfill into it.** ***The update log is maintained only where an audit forced it — which
+means it is not a discipline, it is an artifact of being caught.*** ⚠ **`NBA_MASTER_SUMMARY.md` is
+DEFENSIBLE and is not counted as a failure: it declares an *"Update protocol"* instead — *"every entry
+carries the date it was ADDED"* — and that protocol IS being followed.**
+
+⚠⚠ **RULE 20, SIXTH SAVE — AND IT WOULD HAVE ERASED THE ONE GOOD DOCUMENT.** *The first extractor
+required rows matching `| 20`. The glossary's current row reads `| **2026-09-22** |` — **bolded** —
+so it was skipped, and the first answer was **"10 of 12 stale"**, which would have reported the single
+document where RULE 41's backfill LANDED as one of the failures.* 📌 ***Two rule-20 catches in one
+pass; both were caught by a result that disagreed with a prior (§T20.56's record that a dated
+update-log row WAS added to the glossary). A prior is an instrument test.***
+
+✅ **REPAIRED IN THIS PASS — ALL NINE**: each stale masthead now carries a dated backfill row naming
+what actually landed, **derived from that document's own commit history, not from memory**.
+
+⚠ **ONE OBSERVATION LEFT OPEN, DELIBERATELY NOT CLOSED**: `NBA_RECIPE.md` took **one** content commit
+across the sweep of T3–T20, against `NBA_DATABASE`'s 28 over the same window — **the same shape as
+RULE 41 / T19-1**, where the glossary was found to have none for T12–T18. *Whether the recipe genuinely
+needed nothing, or was never measured against its charter, **has not been tested**. Recorded in that
+file's own update log and here; it is a candidate for a later pass, not a finding.*
+
+## 📌 THE THIRD THING, MEASURED AND NOT ACTED ON
+
+**The OPENING-DAY BRIEF sits at line `13,282` of `14,988` — `88.6%` of the way down a `1.04 MB` file.**
+*§T20.56 audited the brief's CONTENTS and found five of thirteen items missing; **its POSITION was never
+examined**. This is recorded, not repaired: moving it is a restructure of the owner's document, and the
+heading/scope repair above was the pre-registered deliverable. **Flagged for a later pass.***
+
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.56** *(the brief's completeness audit — PRIOR; it examined
+CONTENTS, and the fifth amendment that broke the count came AFTER it, so the heading defect is not a
+re-discovery; the position finding is explicitly separated from it)* · **§T20.69** *(the resume note —
+PRIOR, different document, and the run log is out of population)* · **§T19.1 / RULE 41** *(PRIOR — it
+is the EXPLANATION for why the glossary is the only current update log, and is carried, not re-found)*
+· **§T20.63's citation prescription** *(PRIOR, not restated)*.
+
+📌 ***The lesson:*** **the counting half of this pass returned a clean negative — the twelve are not
+buried. The reading half found that the one page in the corpus that named its own falsification
+condition had already failed it, seventy-three minutes after it was written, and that eleven of twelve
+mastheads had stopped reporting.** ***A re-derivable claim is the only kind a later pass can catch
+instead of the owner. The brief's test worked exactly as designed; what failed is that nothing re-ran
+it for ten passes.***
