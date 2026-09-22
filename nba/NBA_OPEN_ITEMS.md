@@ -12701,6 +12701,72 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-2 · **NEW · OWNER DECISION · 🔴 SEASON-CRITICAL** · the live storage-diet plan is aimed at a database that no longer exists
+
+**`[LIVE-AUDIT]` 2026-09-22 (§T20.29).** *Read off the system (rule 21):
+`nba_config.classification_config` → **`storage_diet_plan_2026_09_17`**, `status` **"PLANNED"**.
+Live distribution re-taken 2026-09-22T15:05:22Z over **368 base tables, all schemas, total
+`42.95 GB`**; **`pp_*` EXCLUDED as the concurrent session's — 12 tables, 544 MB**;
+`nba_market.prop_universe` (898 MB, rank 8) is MID-REBUILD, size reported, counts NOT final.*
+⚠⚠ **NOTHING WAS CHANGED — `SELECT` only. The plan lives in `nba_config` and this sweep does not
+write there (rule 1). It is the owner's to amend.**
+
+🔴🔴 **① THE `biggest_tables` BLOCK IS WRONG IN FIVE OF SIX ROWS**
+
+| plan target *(2026-09-17)* | plan states | live 2026-09-22 | rank | |
+|---|---|---|---|---|
+| `baseline_history` | 11 GB · idx **3,390** | **12,812 MB · idx `4,929`** | **#1** | 🔴 index **+45%** |
+| `final_hp` | 11 GB · idx 3,694 · **38.1M rows** | **9,391 MB · idx `2,266` · `19.3M` rows** | **#2** | 🔴🔴 **pre-truncation figures** |
+| `board_snapshots` | 6,604 MB | **6,604 MB** | #3 | ✅ the only row that holds |
+| `board_outcomes` | 1,366 MB | **2,151 MB** | #5 | 🔴 **+57%** |
+| `board_tiers` | 362 MB | **459 MB** | **#11** | 🔴 no longer a big table |
+| `rung_market` | 206 MB | **253 MB** | **#15** | 🔴 no longer a big table |
+| *(unnamed)* | — | **`nba_score.board_scored` 2,948 MB** | **#4** | 🔴 **a top-five object the plan omits** |
+
+⚠ **`measured_total: "~31 GB against a 30 GiB disk"` is stale by ~12 GB** — live **42.95 GB**,
+consistent with §0v's independently-recorded `19 GB → 43 GB`.
+
+🔴🔴 **② `action_4_index_audit` NAMES THE WRONG TABLE FIRST.** *It says `final_hp` **3,694 MB** of
+indexes, `baseline_history` **3,390 MB**.* **Live: `final_hp` `2,266` (−39%), `baseline_history`
+`4,929` (+45%)** ⇒ ***`baseline_history` now carries more than DOUBLE `final_hp`'s index footprint
+and is the largest index surface in the database.*** ✅ **The instruction — check
+`pg_stat_user_indexes.idx_scan` before the season — is still right; only the target order is
+inverted.**
+
+✅✅ **③ `action_2_drop_superseded` IS ALREADY DONE, AND THE PLAN STILL SAYS "PLANNED".** *(rule 20,
+three vocabularies: exact name, `ILIKE '%absence%'/'%redistrib%'/'%panel%'/'%ladder_cal%'`, every
+schema)* — **`absence_panel` · `absence_panel_v2` · `absence_panel_v3` · `redistribution_panel` ·
+`nba_score.ladder_calibration` ALL GONE.** *Survivors are the intended replacements, not renamed
+targets:* `ladder_calibration_asof` **2 MB / 9,904 rows** *(matching §T20.13's pass-8 figure exactly)*
+· `absence_panel_teams` **1 MB / 4,630** · `redistribution_factors` **16 MB / 51,806**.
+⚠ ***The ~174 MB this action projects has already been recovered — a reader budgeting the diet from
+this plan would DOUBLE-COUNT it.***
+
+⚖️ **④ `action_1_slim_final_hp` — RIGHT TOTAL, WRONG ARITHMETIC.** ✅ *the "22 GB holds the same
+information twice" still holds: `9,391 + 12,812 = 22,203 MB ≈ 21.7 GB`* — 🔴 **but by COINCIDENCE:
+`final_hp` shrank ~1.6 GB while `baseline_history` grew ~1.8 GB and the errors cancel.**
+🔴🔴 **The stated *"Est. 4–6 GB recovered"* was computed against 38.1M rows; the table holds 19.3M.
+Live heap is `9,391 − 2,266 = 7,125 MB`, so seven duplicated columns of a fourteen-column keep-list
+cannot yield 4–6 GB — a proportional re-derivation lands near `2–3 GB`.** ⚠ *Stated as a bound, not
+a figure: the exact saving needs column-width measurement, which §T20.29 did not run.*
+
+🔴🔴🔴 **⑤ THE FINDING BEHIND ALL OF THE ABOVE — A CORRECTION THAT STOPPED AT THE DOCUMENTS.**
+**§T20.13 corrected `38,686,696` → `19,215,200 rows LIVE` on three document surfaces.
+`storage_diet_plan_2026_09_17` still says *"38.1M rows"*, twice, in the live database.** ⇒ ***§T9.25a's
+shape (*"a correction stops at the summary rows"*) extended to a surface no pass had considered: the
+correction propagated through the DOCUMENTS and stopped at the DATABASE, leaving the worse copy in
+the place that gets executed from.*** 📌 **Fourth instance of the surface/scope family — §T20.22
+pointers · §T20.27 prose · §T20.28 live schema · §T20.29 live config.**
+
+🔴 **OWNER DECISION — with the regular season opening `2026-10-20`:** **(a)** re-measure and rewrite
+`storage_diet_plan_2026_09_17` in `nba_config` before executing any of it · **(b)** execute only
+`action_4` (the index audit) now, retargeted at `baseline_history` first, since it is read-only and
+its instruction survives the drift · **(c)** mark `action_2` DONE and leave the rest planned ·
+**(d)** leave the plan alone and treat this entry as the correction of record. ⚠ **This sweep
+recommends nothing and changed nothing; the measurements above are the input.**
+
+---
+
 ## T20-1 · **NEW · OWNER DECISION · MEDIUM** · five 🔴 findings nothing in the corpus points at
 
 **Measured 2026-09-22 (§T20.23, the orphan audit — the INVERSE of T18-16's question, never run
