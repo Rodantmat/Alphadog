@@ -27855,3 +27855,139 @@ count")*. ⚠ **Rule 46 barred it from counting in any case.**
 📌 ***The lesson is narrow and it is about me, not the system:*** **five passes spent auditing the
 corpus for figures that had gone stale, while the row recording those very passes went stale
 underneath them.** ***The instrument does not audit itself, and neither does the auditor.***
+
+---
+
+# §T20.21 — PASS 16: *THE LEDGER RECONCILIATION — AND THE INSTRUMENT THAT RAN IT WAS WRONG*
+
+*(T20 pass 16, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+## 0. 🔴🔴🔴 READ THIS FIRST — THIS PASS RETRACTS ITS OWN HEADLINE
+
+**Pass 16 was commissioned by §T20.20 to reconcile all twenty ledger rows against the corpus. It ran,
+it reported three defective rows — 15, 16 and 17 — and it CORRECTED them in-pass under rule 12.**
+🔴 **Then, re-deriving the same twenty rows with a WIDENED instrument, two of those three findings
+collapsed and one of them was a REGRESSION I had just written into the log.**
+
+| | pass-16 claim, as first published | verified state | verdict |
+|---|---|---|---|
+| **Row 15** | *"claimed §T15.1–§T15.5; only §T15.1 exists"* | **§T15.1 · .2 · .3 · .4 · .5 ALL EXIST** | ❌ **FALSE — and my "correction" narrowed a CORRECT row. REVERTED.** |
+| **Row 16** | *"claimed §T16.1–§T16.5; **ZERO** §T16 sections exist"* | **§T16.1–§T16.4 exist; .5 does not** | ⚠ **WRONG REASON, RIGHT TO TOUCH — off by ONE at the top, not zero** |
+| **Row 17** | *"claimed §T17.1–§T17.5; **ZERO** §T17 sections exist"* | **§T17.1–§T17.4 exist; .5 does not** | ⚠ **same** |
+
+***The corrections to rows 16 and 17 stand on their MERIT — they added the document locators the rows
+never carried — but the sentence justifying them was false and is struck here, not silently
+rewritten*** *(rule 40's retracted-vs-dated test: this is a RETRACTION, not a dated figure)*.
+
+## 1. 🔑🔑 WHY THE INSTRUMENT FAILED — A CONVENTION SPLIT AT T15
+
+**The pass-16 instrument was `grep -c "^#\{1,4\} §\?T<N>\." nba/NBA_MASTER_SUMMARY.md` — it assumes
+the logical section id IS the heading prefix.** ✅ **That assumption is EXACTLY TRUE for T1–T14** and
+✅ **exactly false from T15 on.**
+
+| regime | narrow instrument (MASTER heading-prefix) | wide instrument (id anywhere on any heading, all `nba/*.md`) | set difference |
+|---|---|---|---|
+| **T1 – T14** | 111·20·18·30·25·25·65·36·52·28·59·11·6·4 | **identical, all fourteen** | **+0** |
+| **T15** | 1 | **5** | **+4** |
+| **T16** | 0 | **4** | **+4** |
+| **T17** | 0 | **4** | **+4** |
+| **T18** | 4 | **7** | **+3** |
+| **T19** | 8 | **11** | **+3** |
+| **T20** | 16 | **20** | **+4** |
+
+🔑 ***At T15 the sweep changed how it files: sections stopped living in `MASTER_SUMMARY` under their
+own id and went into the TOPIC documents under document-native headings — `## 0z-T16.`, `## 0a-T18.`,
+`## 0y-T17-B.`, `## T18-16` — with the logical id demoted into the heading's parenthetical:***
+`## 0a-T18. **"THE SCORE MUST ENHANCE…"** *(T18 pass 0, §T18.1…)*`. **Every one of the twenty-two
+"missing" sections is present and cited; none is lost. The DEFECT IS IN THE POINTER LAYER ONLY.**
+
+✅ **Where they actually live** *(`grep` over all `nba/*.md` heading lines, 2026-09-22)*: **§T15.2** →
+`BASELINE_CALIBRATION` · `FINAL_SCORING_CALIBRATION` · `OPEN_ITEMS` · `SYSTEM_ARCHITECTURE`;
+**§T16.1** → `BASELINE_CALIBRATION` · `GOBLIN_DEMON` · `SYSTEM_DESIGN`; **§T16.4** → `OPEN_ITEMS`;
+**§T17.1** → `DATABASE` · `FINAL_SCORING_CALIBRATION` · `OPEN_ITEMS` · `SYSTEM_DESIGN`; **§T17.4** →
+`OPEN_ITEMS`; **§T18.1** → `FINAL_SCORING_CALIBRATION` (`## 0a-T18.`); **§T19.5/.6/.9 and
+§T20.2/.3/.5/.7** → `OPEN_ITEMS` *(all ten are OWNER DECISIONS and open items, correctly filed)*.
+
+## 2. 🔴🔴 THE POSITIVE CONTROL WAS DRAWN FROM THE WRONG REGIME
+
+**Pass 16 DID run a rule-22 positive control — the same pattern returned 91 headings for T13/T14, and
+the instrument was declared sound on that basis.** 🔴 ***T13 and T14 sit INSIDE the region where
+narrow == wide. The control could not have detected the failure it was run to exclude.***
+
+📌 ***A positive control drawn from inside the regime where an instrument is known to work says
+nothing about the regime the claim is about.*** **This is a candidate standing rule and it is NOT
+being numbered here** — ⚠ **§T20.18 measured that the rules index does not contain ten of the fifteen
+rules it indexes, so it cannot be read to check a new rule for duplication, and §T20.16's lesson
+(*"USING A RULE IS NOT READING IT"* — rule 49 born and retired in seven minutes as a duplicate of
+rule 40) forbids writing one blind.** 🔑🔑 ***So §T20.18's index defect now has a MEASURED COST: it
+has blocked a rule from being born.*** **Folded into the OWNER DECISION already open at §T20.18.**
+
+## 3. 🔴🔴 CROSS-PASS CONSEQUENCE — OPEN ITEM T18-16 SHARES THE DEFECT
+
+**T18-16** *(`NBA_OPEN_ITEMS.md`)* reports **644 `§`-references audited, 7 resolving NOWHERE**:
+`§T15.2c` · `§T15.2d` · `§T15.2e` · `§T15.2f` · `§T17.4` · `§T5` · `§T7.32-era`.
+
+✅ **FIVE OF THE SEVEN RESOLVE.** *(verified by opening the heading lines, rule 48)* —
+`§T15.2c` and `§T15.2f` are in `NBA_BASELINE_CALIBRATION.md:311`'s heading parenthetical
+*(`## 0y. … (T15 pass 1, §T15.2c/§T15.2f…)`)*; `§T15.2d` and `§T15.2e` in
+`NBA_SYSTEM_ARCHITECTURE.md:13` *(`## 0f-4. … (T15 pass 1, §T15.2d/§T15.2e…)`)*; `§T17.4` in
+`NBA_OPEN_ITEMS.md:84` *(`## … T17 PASS 3 … (§T17.4, the closure pass)`)*.
+🔴 **Only `§T5` and `§T7.32-era` are genuinely unresolvable — and both are MALFORMED pointers
+(a bare transcript id; a prose coinage), not missing sections.**
+
+⚠⚠ ***T18-16's own text anticipated exactly this and still fell into it***: it records that its first
+run was a false positive and concludes ***"a reference audit must match on the id, never on the
+sigil."*** **The id was the right rule; the missing half is WHERE ON THE LINE.** ✅ **T18-16 is
+DOWNGRADED from 7 dangling to 2, its severity stays LOW, and its real finding — the convention split,
+1,498 headings of which only 138 carry `§` — is CONFIRMED and is the same finding as §1 above,
+arrived at from the other direction.** *(rules 26/28: the convention split is NOT re-counted as new.)*
+
+## 4. ✅ THE TWENTY-ROW RECONCILIATION, AS IT STANDS AFTER REPAIR
+
+**Sections present per transcript, wide instrument, all twelve documents, 2026-09-22:**
+
+| T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 |
+|---|---|---|---|---|---|---|---|---|---|
+| 111 *(1–119)* | 20 | 18 | 30 | 25 | 25 | 65 | 36 | 52 | 28 |
+
+| T11 | T12 | T13 | T14 | T15 | T16 | T17 | T18 | T19 | T20 |
+|---|---|---|---|---|---|---|---|---|---|
+| 59 | 11 | 6 | 4 | **5** | **4** | **4** | **7** | **11** | **20** |
+
+🔑 **T1 is the only series with INTERNAL gaps: 111 sections numbered 1–119, missing
+`30 · 32 · 34 · 36 · 39 · 43 · 45 · 47`.** ✅ **BENIGN, and proven so: all eight have ZERO inbound
+references anywhere in `nba/*.md` — they are unused numbers, not dangling pointers.** *(rule 11: the
+answer is the set difference, and the set difference here is empty of consequence.)*
+✅ **T15–T20 have NO internal gaps once the wide instrument is used.** *(The apparent gaps —
+§T19.5/.6/.9, §T20.2/.3/.5/.7 — are the `OPEN_ITEMS` entries listed in §1.)*
+
+⚠ **Rows 1–6 and 10, 11, 14, 15, 18, 19, 20 carry NO machine-parseable `§T<n>.<a>–§T<n>.<b>` range at
+all**, so the reconciliation cannot score them as agree/disagree — **13 of 20 rows are unscoreable by
+the method §T20.20 commissioned.** 📌 ***That is the method's own limit, stated rather than papered
+over: the reconciliation this pass was asked to run can only be run on 7 of 20 rows.***
+❌ **Row 2 was flagged by the first script and is a FALSE POSITIVE — it deliberately names a sweep
+SERIES (§T2.9–§T2.19), not a full range. Opened, checked, NOT claimed.**
+
+## 5. 📋 CLAUSE SCORING *(pre-registered in `NBA_SWEEP_RUN_LOG.md` before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T14:07:49Z** |
+| **(ii)** | re-deriving all twenty rows finds **AT LEAST TWO MORE disagreements** | ✅ **HIT — but only just, and only AFTER the instrument was repaired.** *Scored on the defective measurement it would have read 3; the true count is **2** (rows 16 and 17, each off by one at the top). The clause survives at exactly its threshold, and a third "finding" was my own regression.* |
+| **(iii)** | at least one disagreement is in a **PASS COUNT** rather than a status | ❌ **MISS — all are SECTION-POINTER defects**, neither counts nor statuses. ⚠ **Rule 37's third state again** *(cf. §T20.20 clause (ii))*: the pre-registration offered two buckets and reality used a third. |
+
+✅ **Baseline `636 · 2 · 484 · 481` for the EIGHTEENTH consecutive run** — working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — two ledger rows genuinely defective, one self-inflicted regression reverted, one
+open item downgraded from 7 to 2. CLEAN STAYS 0/3** *(owner **SEG 858**)*.
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT REGARDLESS — T20 is handed on at 0/3 with two
+INDEPENDENT reads owed from a FRESH session, the same position as T19 (§T19.6 OWNER DECISION).**
+
+📌 ***The lesson, stated against the pass that earned it:*** **§T20.20 ended
+*"the instrument does not audit itself, and neither does the auditor."* Pass 16 was that audit — and
+it published three findings from an instrument whose validity it had tested only where it was known
+to hold.** ***An auditor auditing the auditor is still one instrument. What caught it was running a
+SECOND, differently-shaped instrument over the SAME population and taking the set difference
+seriously — which is rule 11, applied to the sweep instead of to the system.***
