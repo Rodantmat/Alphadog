@@ -354,6 +354,38 @@ a payout-table validity check and a different subject, **dismissed**.)*
    > > That's likely behind several of the `EVENT_NOT_FOUND` errors. ***Your original rule said
    > > 'proportional on early slates,' and I DID NOT IMPLEMENT THAT.***"*
    >
+   > ### 🔑🔑 **COMPLETED 2026-09-22 (T13 pass 3, §T13.4b) — THE OWNER CAUGHT IT, THE COUNT WAS 38, AND ONLY THE WINDOW WAS AFFECTED**
+   > **The earlier entry recorded the CAUSE as an owner rule the build did not implement. It missed
+   > that the DETECTION was also the owner's, and it missed the measurement.**
+   > **The builder's first answer offers three candidate flaws and asks which**, and the owner's push
+   > produced the measurement two segments later: *"**Good catch — let me measure it rather than
+   > assume.** Checking how many window snapshots were taken after their game had already started."*
+   > > ✅ *"**38 window snapshots landed at or after tip — exactly the early-slate problem you
+   > > predicted.**"*
+   > > ✅ *"Confirmed and quantified: **27 DATES, 38 EVENTS — all weekend/holiday early slates (tips
+   > > 12:10–14:40 PT)**, where the 2:45 snapshot landed after tip. ***The CLOSE snapshots are all
+   > > clean — 0 after tip — so only the WINDOW needs repair.***"*
+   >
+   > 🔑 ***So the arc is 38 → 57, not a single number***: **38 measured mid-run on 2024-25 alone; 57
+   > cleared after both seasons were in.** **Both are correct at their own moment, and the entry
+   > above quotes only the second.**
+   > ✅ **AND THE CLOSE SNAPSHOT WAS NEVER AT RISK** — *a fact the repair description does not carry,
+   > and it halves the blast radius of the whole incident.*
+   >
+   > **THE RULE'S RATIONALE, which the earlier entry recorded without**: *"a 12:40 PT Saturday slate
+   > gets a 10:40 PT window — **early enough to be pre-tip, late enough to be after the league's
+   > game-day report for those games**, and **it mirrors what you'd actually do: one snapshot for the
+   > slate, two hours before the first ball goes up**."* 🔑 **`tip` means THE FIRST GAME OF THE DATE,
+   > computed from the actual commence time the events call already returns** — *"so **it
+   > self-adjusts for weekends, holidays, London games, and DST without any hardcoded time**."*
+   > **THE REPAIR COST: only the 38 re-pull — ~16k credits.**
+   >
+   > 🔴 **AND A DEPLOYMENT FACT IN 0 OF THIRTY, recorded because it explains why the fix did not
+   > apply immediately**: *"note the currently-running job **uses the code as it was AT DISPATCH**,
+   > so it keeps 2:45 for the rest of this season."* ***A GitHub Actions run pins its code at
+   > dispatch time***, **so a mid-run fix reaches the next run, never the running one** — which is
+   > why the repair had to be a separate sweep afterwards.
+   >
    > **All 45 were the same error**: *"**all 45 errors are the same `EVENT_NOT_FOUND`, CONCENTRATED
    > IN WINDOW SNAPSHOTS** — consistent with the early-slate problem, since **a request timestamped
    > after the event expired returns exactly that.**"*
