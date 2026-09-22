@@ -12410,6 +12410,21 @@ simplicity the owner explicitly chose *("one run, everything present, no second 
 **The sweep does not decide this and changes nothing.** *(Full evidence and the two bulletin/PDF
 traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 
+## T18-15 · **NEW · METHOD** · were T2's and T3's `thinking` strata read at T1's depth?
+**The sweep's standing characterisation — "the `thinking` stratum is labels" (§T11.43a, confirmed
+§T12.1c and again at T18 pass 3) — is TRUE for 17 of 20 transcripts and FALSE for the first three.**
+**T1 / T2 / T3 carry 33,578 / 15,852 / 17,127 chars of first-person extended reasoning** *(max 1,774
+/ 1,434 / 1,741; 47 / 37 / 26 segments over 200 chars)*, against a hard cap near 240 chars everywhere
+after `2026-09-03-22-38-55`. **Together they are 66,557 chars — more than half the corpus's entire
+`thinking` volume.**
+✅ **T1's was read**: the run log records it measured at `52 / 33,578 / 1,774`, mean 645.7, and **T1
+pass 65 recovered a rationale *"from T1's thinking blocks"***.
+⚠ **NOT RECORDED: whether T2's and T3's were read at that depth, or read under the later "labels"
+expectation.** **This is answerable from the T2 and T3 ledger rows — one check, no re-reading unless
+it comes back short.** **Severity: METHOD, potentially HIGH** *(T1–T3 are where the architecture was
+chosen)*, **and it is recorded as the thing to CHECK, not as a claim that anything was missed.**
+*(Census and break-point evidence: `NBA_MASTER_SUMMARY.md` §T18.4.)*
+
 ## T18-14 · **NEW · HIGH** · the certifier has no magnitude check on P3 and certifies on a single row
 **`certify_pipeline.py` (live source, 2026-09-22): of its twelve checks, only THREE are plausibility
 gates — P1's `> 10000` defender ratings and `> 400` players, and P2's `count(DISTINCT prop) >= 25`.**
