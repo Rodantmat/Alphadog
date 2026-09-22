@@ -29593,3 +29593,116 @@ the single most important script in the pipeline because it sits one directory d
 caught it was not a better regex but reading the workflow step that invokes it. Three passes running,
 the thing that found the defect was OPENING THE SOURCE, and the thing that hid it was trusting a
 match.***
+
+---
+
+# §T20.36 — PASS 31: *🔴🔴 THE GRADER'S DEFAULT WINDOW ENDS `2026-04-12`, AND NOTHING CATCHES IT*
+
+*(T20 pass 31, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY AND NO CODE EDITS: repo reads and `SELECT` only (rule 1).**
+
+## 1. 📐 THE DEFAULT SURFACE, ENUMERATED IN FULL
+
+> **`95` `os.environ.get(...)` sites · `71` distinct variables · across `36` of the `38` pipeline
+> scripts pinned at §T20.35** *(2026-09-22T15:40:51Z; every site extracted, every default recorded,
+> each cross-checked against the `env:` blocks of all three pipeline workflows)*.
+> ⚠ **RULE 26/28: the `14` season-family locations are CONFIRMED, not re-counted. The findings below
+> are a DIFFERENT family — date and month WINDOWS — and are new.**
+
+## 2. 🔴🔴🔴 THE FINDING: **TWO HARDCODED WINDOWS THAT END BEFORE THE SEASON STARTS**
+
+| script | line | default | passed by its pipeline? |
+|---|---|---|---|
+| 🔴🔴 **`nba/grade_board_outcomes.py`** | **167–168** | `GRADE_START "2024-10-22"` · **`GRADE_END "2026-04-12"`** | 🔴 **NO — P2's step passes only `DATABASE_URL`** |
+| 🔴🔴 **`nba/build_rung_market.py`** | **80** | `RUNG_FROM "2024-10"` · **`RUNG_TO "2026-04"`** | 🔴 **NO — P3's step passes only `DATABASE_URL`** |
+
+*(Verified: `GRADE_START`, `GRADE_END`, `RUNG_FROM`, `RUNG_TO`, `MS_SEASONS`, `BM_SEASONS` appear in
+**none** of `nba-p1/p2/p3`.)*
+
+### 🔴 The grader is the severe one — *and it is the first blocker nothing catches*
+
+```python
+start = os.environ.get("GRADE_START", "2024-10-22")
+end   = os.environ.get("GRADE_END",   "2026-04-12")
+cur.execute("SELECT DISTINCT game_date FROM nba_market.board_snapshots
+             WHERE game_date BETWEEN %s AND %s ORDER BY 1", (start, end))
+```
+⇒ ***On the morning of 2026-10-21, opening night (`2026-10-20`) falls OUTSIDE the window. `dates`
+comes back empty, the script prints `"grading 0 dates"` and exits 0.***
+
+🔑🔑 **AND THE CONSEQUENCE IS STATED BY P2's OWN COMMENT**: *"**This must happen BEFORE the
+calibration refit, because the as-of calibration and the confidence deductions both learn from
+graded outcomes** — ungraded…"* ⇒ ***the as-of calibration and the confidence model would learn from
+nothing, all season, while every job stayed green.***
+
+🔴🔴🔴 **THE CERTIFIER DOES NOT CATCH IT.** *`certify_pipeline.py` `PIPE=p2` asserts: `baseline_history`
+has today · ≥ 25 props · zero invalid probabilities · `ladder_calibration_asof` rows exist.*
+***None of those touches `board_outcomes`.*** ⚠⚠ **Every other opening-day blocker this sweep has
+found fails LOUD — §T20.33's season constant aborts, and the P3 certifier's five checks close the
+empty-board path. This one is SILENT end to end, and it is the only one of which that is true.**
+
+## 3. 🔴 CLAUSE (iii): **A SECOND DOCSTRING CONTRADICTION — AND IT IS A "NOW-RELATIVE" ONE**
+
+> **`nba/build_rung_market.py`, line 16** *(the module docstring)*:
+> ***"Env: DATABASE_URL, RUNG_FROM=YYYY-MM, RUNG_TO=YYYY-MM (defaults cover **both seasons**)."***
+> **Line 80**: `months(os.environ.get("RUNG_FROM","2024-10"), os.environ.get("RUNG_TO","2026-04"))`
+
+🔑🔑 ***This is SUBTLER than §T20.34's `check_delta_gaps.py`, which was simply false. "Defaults cover
+both seasons" is TRUE TODAY and becomes FALSE ON 2026-10-20 — because "both seasons" names a SET
+whose membership changes.*** ⇒ ***It is §T20.27's now-relative class, in a docstring: "both seasons"
+is a countdown in disguise.***
+✅ **CLAUSE (iii) HIT — the second instance exists, so §T20.34's finding was NOT an accident.**
+📌 **And the two are different species: one states a FALSE default, one a TRUE-BUT-EXPIRING one. A
+checker for the first would not find the second.**
+
+## 4. ⚠ THE REST OF THE SURFACE — *characterised, and mostly sound*
+
+🔴 **Also risky, recorded but lower**: `grade_board_outcomes.py:44` `GH_OWNER "Rodantmat"` /
+`GH_REPO "Alphadog"` *(hardcoded repo identity)* · `load_baseline_ladder.py:37` `LOAD_ASOF` default
+**`"2026-03-15"`** — *a PAST SLATE date; **P2 does pass `LOAD_ASOF`**, so it is covered in the
+pipeline and dangerous only on a manual invocation* · `scrape_nba_matchups_pergame.py:96`
+`MAX_GAMES "1400"` *(the 2025-26 calendar count)*.
+⚠ **THE THREE BOARD SCRAPERS STILL DEFAULT TO MLB**: `FLIFF_SPORTS "mlb,nba"` ·
+`SLEEPER_SPORTS "mlb,nba"` · `UNDERDOG_SPORTS "MLB,NBA"` — **and MLB is dropped.** *Not a failure,
+but wasted requests against a proxy on every game day.*
+⚠ **SHELF-LIFE CLIENT PARAMETERS IN `scrape_underdog_board.py`**: `UNDERDOG_CLIENT_VERSION` is a
+version string **dated `2026-09-07`**, plus `UNDERDOG_PXID`, `UNDERDOG_STATE_CONFIG` and a hardcoded
+geolocation. ***A stale client version is a classic silent-scraper-death, and none of these is passed
+by P3.*** ⚠ **No value is reproduced here** *(the standing rule: the repo is PUBLIC; location and
+surrounding facts only)*.
+
+✅ **RULE 22 — THE SOUND DEFAULTS, NAMED**: **19 × `PROXY_URL ""`, every one passed by its workflow**
+· `certify_pipeline.py:32` **`CERT_STRICT "1"`** — *the safe default, confirming §T20.33* ·
+`scrape_nba_injury_report.py:171` **`INJURY_MODE "daily"`** *(the documented right one)* and `:210`
+`INJURY_SEASON_SLUG` **derived from the dates** · `build_asof_calibration.py:116` `AC_SEASONS `**`""`**
+⇒ *rebuild every season present* · `scrape_nba_daily_delta.py:79` `NBA_DELTA_SEASON `**`""`**` or
+detect_current_season()`. 📌 ***Most of the 95 are fine. The defects are a FAMILY — windows — not a
+tendency.***
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:40:51Z** |
+| **(ii)** | **≥ 3** non-season defaults wrong or risky for opening day | ✅ **HIT — four flagged** *(`GRADE_END`, `RUNG_TO`, `LOAD_ASOF`, the three MLB sport lists)*, **two of them season-critical.** ❌ *The "the 14 season literals are the whole of it" branch is NOT available.* |
+| **(iii)** | **≥ 1** default contradicted by its own docstring or workflow | ✅ **HIT — `build_rung_market.py:16` vs `:80`.** ⇒ **§T20.34's instance was not an accident; it is a class.** 🔑 *And the second is a different SPECIES — true-but-expiring rather than false — so a checker for the first would miss it.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — THIRTY-THIRD consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — and this pass found the worst blocker on the board: the grader's default window
+ends `2026-04-12`, P2 passes nothing, it exits 0 printing "grading 0 dates", and the P2 certifier
+does not check grading at all. Every other opening-day defect found so far fails LOUD; this one is
+silent end to end and starves the calibration and confidence layers for a whole season.**
+**New open item T20-5. CLEAN STAYS 0/3.**
+⚠⚠ **NOTHING WAS EDITED, TRIGGERED OR DISPATCHED (rule 1).**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **§T20.35 closed the SEASON family and called the list finite. It was finite —
+for that family.** ***The same blind spot that hid fourteen season literals was hiding two date
+windows, and the reason is the one §T20.34 named: the corpus documents what a script DOES and never
+what it ASSUMES when nobody tells it. A season string at least LOOKS like a season; `"2026-04-12"`
+looks like a date, and a date looks like data.***
