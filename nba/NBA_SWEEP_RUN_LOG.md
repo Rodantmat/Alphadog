@@ -12,9 +12,9 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
-### 📜 THE FORTY-SIX STANDING RULES — *the index; each is written in full where it was born*
-⚠ *Rules 46, 45 and 44 are listed immediately before rule 43 in the table below — the row order is
-not the rule order, and the NUMBERS are authoritative.*
+### 📜 THE FORTY-SEVEN STANDING RULES — *the index; each is written in full where it was born*
+⚠ *Rules 47, 46, 45 and 44 are listed immediately before rule 43 in the table below — the row order
+is not the rule order, and the NUMBERS are authoritative.*
 
 🔴 **THE SIX BORN IN T19 ARE ALL ABOUT THE SWEEP ITSELF, AND THAT IS THE PATTERN WORTH SEEING**:
 **41** *(no pass measures the deliverable against its charter)* · **42** *(score a prediction when its
