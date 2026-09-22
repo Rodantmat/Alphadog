@@ -1,5 +1,78 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴 **T16 PASS 3 — THE MECHANISM FAILURE CENSUS, AND IT IS *NOT* EMPTY: A THIRD FAILURE CATEGORY** *(§T16.4, the closure pass; the largest mechanism stratum in the corpus — `tool_use` 471 + `tool_result` 388 = 859 of 1,064 segments, 80.7%)*
+
+*Pinned 2026-09-22: **12 raw `exit code [1-9]` occurrences → FIVE distinct causes**; `deadlock` 25 ·
+`psycopg.errors` 9 · `404` 17 · `cancelled` 16.*
+
+| # | Failure in the mechanism strata | Recorded in the prose? |
+|---|---|---|
+| 1 | **`urllib.error.HTTPError: HTTP Error 404: Not Found`** | ✅ **YES** — the overloaded workflow input *("I passed `points` in the `seasons` input, which that step used as a season name")* |
+| 2 | **`KeyError: 'Column not found: per36'`** | ✅ **YES** — *"`g2` was bound before `per36` existed, so the groupby can't see the new column"* |
+| 3 | **`ValueError: Mismatching dimensions along axis 0: {881, 882}`** | ✅ **YES** — *"my ridge-penalty construction was **off by one row**. Simplifying it"* |
+| 4 | **`psycopg.errors.DeadlockDetected` ×2** | ✅ **YES**, both diagnosed in full *(see the operational-defects entry below)* |
+| **5** | 🔴🔴 **`IndentationError: unexpected indent` at `nba/build_redistribution_factors.py` line 101**, `exit code 1`, **2026-09-13T17:47:50Z** | 🔴 **NO — `"indent"` appears ZERO times in the 156-segment prose stratum** |
+
+### 🔑🔑 **A THIRD CATEGORY: *ATTRIBUTED-BUT-UNDIAGNOSED* — the symptom is recorded and the cause is not**
+
+⚠ **This is not a silent failure, and that is what makes it new.** *The prose records the SYMPTOM of
+exactly that builder failing to apply:*
+
+> **SEG 280**: ***"the values are unchanged and `built_at` is from yesterday — so either THE RUN
+> FAILED or THE UPDATE DIDN'T APPLY. Checking:"***
+> **SEG 293**: *"the rebuild applied — 2025-26 usage multiplier moved from 1.3696 → 1.5728…"*
+
+🔑 **So the account runs: detection → (gap) → resolution.** **The `IndentationError` — a patch that
+produced syntactically invalid Python in the A2 factor builder — is what made the values unchanged,
+and it is never named.** ⚠⚠ **STATED PRECISELY**: *the sweep verifies the error, its file, its line,
+its timestamp and its exit code, and verifies that the prose never mentions indentation while
+recording a not-applied rebuild of **that same builder**. **Whether the `IndentationError` IS that run
+is NOT RECORDED** — the sweep states the coincidence of file and symptom, not the identity.*
+
+🔑🔑 **AND IT REFINES §T14.3b's BOUND.** *That bound says **the failure census cannot see a SILENT
+failure**. T16 adds a case between "recorded" and "silent":* ***a failure whose SYMPTOM the prose
+records and whose CAUSE it does not.*** **Those ARE visible to the census — precisely because the
+prose's own account has a gap the mechanism strata fill.** ⚠ **Three transcripts, three census
+results: T14 found silent failures; T15's came back empty; T16's found one attributed-but-undiagnosed.**
+
+🔒 **ONE KILL, and rule 22's positive control is what caught it**: **`NameError` returned 4 hits — all
+four are inside the assistant's own GREP PATTERNS** *(`"grep": "Traceback|Error|NameError|KeyError|line [0-9]+, in"`)*,
+**not actual errors.** ⚠ **A search string matching itself in the log of the search.** *Candidate
+killed before publication.*
+
+### 🔴 **THE WHOLE-SEQUENCE NUMBERING CHECK, RE-RUN — AND A SIXTH CASUALTY THAT IS *NOT* A NUMBERING HOLE**
+
+✅ **Re-run 2026-09-22 over the entire COMPASS, 1 → 107, not block-scoped: `MISSING = [69]` ONLY**
+*(duplicates 1–5 are the separate list at the file head)*. **So fact 69 remains the only numbering
+casualty, and pass 3's specific probe — "did a sixth go unrepaired?" — is answered NO by numbering.**
+
+⚠⚠ **BUT NUMBERING CANNOT SEE AN OVERWRITE THAT PRESERVES THE NUMBER, AND THE GIT AUDIT FOUND ONE.**
+**Commit `cd8d06a2` (2026-09-13 10:13 PDT, +5 −7) REPLACED fact 85 entirely.** The old fact 85 was
+***"THE SIX REJECTIONS ARE PROVISIONAL, NOT SETTLED"*** and carried a **five-item audit of which
+feature each rejection actually used** — including the two sharpest lines: ***"A5 is the one rejection
+that stands on MECHANISM rather than measurement"*** and ***"Second flaw across ALL of them: every
+test was a MAIN EFFECT ONLY."*** **The new fact 85 is *"THE M1/B4 REJECTIONS WERE WRONG"* with the
+defender-ratings result.**
+
+✅ **THE OVERWRITE IS LEGITIMATE — a provisional claim superseded by a settled one once the re-test
+landed.** 🔑🔑 **AND IT STILL DESTROYED THE AUDIT, because the settled claim answers the question
+while the old one recorded HOW IT WAS ASKED.** ⚠ **Measured on the baseline tree (pre-pass-1):
+`"points allowed per possession"` **2 of thirty, 0 of twelve** · `"main effect only"` 3 / 1 ·
+**`"stands on mechanism"` 0 of thirty AND 0 of twelve** · `"never fitted"` 1 / 0.**
+
+✅✅ **THE SWEEP HAD ALREADY RECOVERED IT — INDEPENDENTLY, AND WITHOUT KNOWING IT WAS LOST.** *T16 pass
+1 wrote the full six-row rejection audit into `NBA_FINAL_SCORING_CALIBRATION.md` §0a-T16 §2 **from the
+transcript** (SEG 183), hours before this pass discovered the COMPASS had overwritten it.* 🔑🔑 **That
+is the sweep's value stated concretely: not only coverage, but REDUNDANCY — reading the transcript
+recovered an audit the live operating document had replaced, and neither the operator nor the sweep
+knew at the time.**
+
+🔑 **THE RULE THIS ADDS TO §T15.3a's**: ***a CORRECT supersession can still destroy content. Checking
+that the numbering survived proves only that nothing was UNNUMBERED — it says nothing about what the
+new text stopped saying.***
+
+---
+
 ## 🔴🔴🔴 **T16 PASS 2 — THREE `[LIVE-AUDIT]` OWNER DECISIONS, ALL SEASON-CRITICAL** *(§T16.3, `SELECT` 2026-09-22; the opener is 2026-10-20)*
 
 | # | Finding | Why it needs the owner |
