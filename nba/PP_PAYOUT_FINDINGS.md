@@ -979,6 +979,51 @@ confirmed on REAL lines: its ≥1.30 picks pay on both sides (steals 1.39 / 1.32
 (140), FTA Under 1.294 / 1.205 (112). 3PA 1.03–1.14; FGA 1.01–1.09; **rebound splits fail** (DREB Under 0.99 / 0.99, OREB
 Over 0.76 / 0.94) — exclude. Free throws are a candidate only after the NBA preseason board validates the proxy lines.
 
+### PROP UNIVERSE — every workable leg, both seasons (2026-09-21/22)
+**`nba_market.prop_universe`: 1,667,024 legs, 20 props, 327 regular-season nights** — 1,088,192 real archived PrizePicks legs
+(100% of classified archive legs) + 578,832 simulated. **Usable** (model probability, graded, unflagged): **1,606,151**.
+Sources: REAL = `pp_model_vs_price` (lines, model p, outcomes) with multipliers from `pp_leg_price_cons` (materialized current
+conservative prices, kind-matched — the Item-1 table's own factors predate the conservative model: goblins +3.1%, demons
++7.5–109%). SIMULATED = `fs_backsim` (Fantasy 128,680: standard Over/Under, goblin, demon) + `derived_backsim` (337,748: FGA,
+FGM, FTA, FTM, 3PA points-scaled; OREB/DREB rebounds-share; Over/Under) + `derived_alt_backsim` (112,404: FGA/3PA goblins and
+demons, policy `derived_alt_rules`: FGA gap 2.0, 3PA gap 1.0/2.0 from center 7, goblins 2.1×, demons 4.0×/3.25×).
+**Columns:** game (event_id pre-game from `player_game_map`, home/away, team_id from box score) · leg (prop, kind, side, line) ·
+provenance (line_source real/simulated; price_source exact / model-conservative / policy-conservative; method) · factor +
+two_pick (= 3 × factor) · model_p · stat_actual · result (hit / miss / push / void = sat out / NULL = ungraded) · hit · phase · flag.
+**Labels:** phase from the NBA game-ID season-type digit (mode per night). `no-boxscore` = 30 nights the game log lacks (28
+play-in/playoff nights Apr 15 – May 13 2025 + NBA Cup finals Dec 17 2024 and Dec 16 2025): 14,271 legs, ungraded. flag
+`demon_priced_below_standard` (148: the 7% longshot haircut took a near-standard demon under 1.0); `kind_price_mismatch` (0).
+**Rebuild chain, per season:** `refresh_leg_price_cons` → `build_fs_backsim` → `build_derived_backsim` →
+`build_derived_alt_backsim` → `rebuild_prop_universe` (the build sets phase and flags at insert; `finalize_prop_universe` is a
+verifier that rewrites only rows that disagree — final run corrected 0).
+**Final audit — 12 integrity checks, all 0:** standards exactly 1.0 and demons above 1.0 unless flagged; goblins below 1.0 and
+never under 1.843×; demons never over 18.5×; two_pick = 3 × factor; no null factor or phase; no graded leg on a no-boxscore
+night; no ungraded leg on a regular night; simulated pushes only on Fantasy (x.5 Fantasy scores exist); no alternate Unders.
+**Not simulated (no evidence):** Turnovers / Blks+Stls / OREB alternates (WNBA posts them without a standard — no spacing
+reference), Double-Double (no PrizePicks data at all), quarter props (no data).
+**Engineering fixes (don't repeat these):** (1) *Planner misestimate* — the live view `pp_leg_price` joins on expressions; the
+planner expects ~757 rows per season instead of ~1M and picks a nested loop: the first universe build ran 9 min and was
+cancelled. Materializing the prices (+ ANALYZE) → a season builds in under a minute. (2) *Nondeterministic duplicates* — the
+first price table was keyed without kind; 34 of 2.19M groups carry the same line as two kinds in one snapshot (19 universe
+legs exposed), so the price picked was arbitrary (flags moved 153 → 158 between refreshes). Now kind is in the key, ties go
+window snapshot first then the LOWER factor, and each leg takes the price matching its PrizePicks kind (else the lowest);
+1,289,896 price rows. (3) *Double writes* — phase and flags were set by an UPDATE of every row after insert (2025-26 rebuild
+~10 min, table bloated to 938 MB). Now set at insert (2025-26 rebuilds inside the connection limit); VACUUM ANALYZE run.
+
+### GOBLIN FLOOR CORRECTED — 2.08× → 1.9× (2026-09-21)
+The slip rule `goblin_floor` (marked VERIFIED: deepest goblins 2.1× displayed, true ≈2.08×) **is wrong.** Clean evidence — More
+goblin + STANDARD partner (partners checked on the board), DIFFERENT games: **NBA 2.0×** (3 distinct legs: SGA 3PM 0.5, Tatum 3PM
+1.5, Cunningham REB 3.5; 9 quotes over 3 runs); **WNBA 1.9×** (26 legs, 36 quotes) and 2.0× (46 legs, 62 quotes). Not a
+same-game discount: every sub-floor quote is a different-game pair.
+**The formula needs no floor:** without one it tracks real WNBA points-family prices (c 1.87, verified equal to NBA) —
+real/formula 1.019 at 1.9×, 1.025 at 2.0×, 0.999 at 2.1×, 0.96–1.02 from 2.2× to 2.9× (130 quotes). The old floor overpriced
+legs really paying 1.9× by 9.5% and 2.0× by 4%, and put the "conservative" price of the deepest goblins (2.018×) ABOVE what
+PrizePicks pays — optimistic, against the owner rule.
+**Fix:** new price version `pp-leg-v2-sqrt-cap-conservative-floor190` (goblin_floor_factor 0.6933 → 0.6333; otherwise identical),
+priced BEFORE switching (9,036 keys) and diffed: only 1,024 goblin keys changed, all cheaper (now 1.843×–2.017×, avg −6.5%);
+standards, demons, Under and unknown-kind keys identical. Switched atomically; `goblin_floor` rule → superseded with evidence.
+In the universe: 80,756 real goblins now priced below the old conservative floor, 20,738 at the new minimum 1.843×.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
