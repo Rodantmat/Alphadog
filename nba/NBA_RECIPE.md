@@ -523,7 +523,7 @@ already reported.** Full methodology, the three techniques and the six named fai
 ## ⚠⚠ **`NOT RECORDED` (rule 6) — the ordering questions the corpus does not answer**
 
 1. 🔴🔴 **Is `final_hp`'s expected size the BOARD-SCOPED set or the FULL LADDER?** *`§0z-3` raises this itself and calls it the highest-value open question: the owner asks* > *"so every single leg for the past two seasons, **BOARD SCOPED**, have a final hit probability and a confidence percentage, correct?"* — ***and "board scoped" is a far smaller population than the full ladder. **This distinction decides whether `T16-7` is a gap or a scoping choice**, and nothing in the twelve settles it.***
-2. **Where stage 2 (the game-log backfill) is triggered from.** *It is not one of the three pipelines. **No workflow in the repo runs it on a schedule**, and no document says who runs it on a rebuild.*
+2. **Where stage 2 (the game-log backfill) is triggered from.** *It is not one of the three pipelines.* ▶ **Verified `2026-09-22T20:45Z`: the workflow is `nba-backfill.yml`, and it contains ZERO `cron:` lines — `workflow_dispatch` only.** ⚠ **So do `nba-daily-delta.yml` and `nba-periods.yml`** *(and `nba-daily-delta.yml` is the one `T20-10` records as swallowing three failures with `|| echo` — **a workflow that never fires on its own AND reports success when it does**)*. 🔑 ***Combined with `STEP 9`/`STEP 10`: of the workflows that feed this build order, only `P1` is scheduled. Everything else waits for a human or for `§0z-3`'s "Claude worker … one by one via prompt."*** **Who runs stage 2 on a rebuild is `NOT RECORDED`.**
 3. **Whether stages 6–8 can run at all on a day stage 4 failed.** *P3 reads what P2 wrote — **refuse, run degraded, or run anyway is NOT RECORDED** (§T20.88).*
 
 ---
