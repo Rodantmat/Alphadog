@@ -16126,9 +16126,15 @@ and 2 are CLOSED and the multi-date stability run was done.** 🔴 **And the liv
 NOT the one T13 described** *(17,376 rows / 173 players / 11 props)* — **all three figures differ and
 `loaded_at` is 2026-09-11, after the transcript**: ✅ ***the injury-report replay T13 queued
 HAPPENED.*** ⚠ **Whether the baseline was RE-CERTIFIED against it is a different claim and is NOT
-RECORDED.** 📌 **Recorded and not explained** *(rule 6)*: **the 2026-03-15 row's `factor_fits` are
-SHALLOWER than both later-loaded slates** — ***the latest slate DATE holds the earliest-loaded and
-least-complete artifact.***
+RECORDED.** 📌 ~~**Recorded and not explained** *(rule 6)*~~ ✅✅ **ANSWERED 2026-09-22 (T20 pass 109,
+`§T20.114`)**: **the 2026-03-15 row's `factor_fits` are SHALLOWER than both later-loaded slates** —
+***the latest slate DATE holds the earliest-loaded and least-complete artifact.*** 🔑 **The three
+missing keys are ALL the implied-from-market family** *(`f_impl_opp`, `f_impl_own`)* **and nothing
+else is missing** — one input family absent, not general shallowness. 🔴🔴 **And the question under
+it, never asked until pass 109: why does a slate of 18–22 props carry fits for `assists` and `steals`
+ONLY — on this row and both others?** **Because the merge is `meta = meta or d["meta"]` over a
+`sorted()` glob and no production pair fits `assists` with `steals`: the winner is the
+`BT_SAVE_COMPONENTS=1` diagnostic build.** ▶ **`§T20.114` · `T20-20`.**
 
 #### 🔴🔴 T13.3i — **THE STORAGE INCIDENT, THE SHRINK THAT FIXED IT, AND THE 43 GB THAT UNDID IT** `[LIVE-AUDIT]`
 **The managed primary went READ-ONLY mid-write** — *"`cannot execute INSERT in a read-only
