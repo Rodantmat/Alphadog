@@ -25509,3 +25509,200 @@ here as the thing to check rather than assumed either way.* *(Open item T18-15.)
 characterisation is a POPULATION claim (rule 17) and inherits rule 18's discipline — it must name
 which transcripts it covers.*** *"The thinking stratum is labels" named none, and was three
 transcripts wrong.*
+
+---
+
+# §T19.4 — PASS 3: THE READ PASS 2 DID NOT DO, AND WHAT IT FOUND IN THE SWEEP'S OWN CLOSURES
+*(T19 pass 3, 2026-09-22 — blocks 2–6, **SEG 154 → SEG 919**, read in order and uncapped, completing
+the full sequential read of T19's 920 segments that §T19.3 recorded as owed)*
+
+## 1. ✅ WHAT WAS READ — *and the population, pinned*
+
+**Source**: `scratchpad/t19/seq2.txt` … `seq6.txt`, the six ordered blocks cut at pass 2 from
+`sweep_coverage.segments` over
+`/home/claude/nbadoc/transcripts/2026-09-20-18-46-12-nba-alphadog-documentation-pass.txt`.
+**Line counts re-taken from source, 2026-09-22T12:18Z**: `seq1–seq5` **462** lines each, `seq6`
+**450** — **2,760 total**. **Blocks 2–6 = SEG 154 → SEG 919**, read at **no character cap**, every
+segment's body in view. ✅ **Together with pass 2's block 1 (SEG 0–153), T19's 920 segments have now
+been read sequentially and in full.**
+
+⚠ **One bound inherited from the capture, stated rather than assumed**: T19's own `tool_result`
+bodies are truncated by the transcript capture at ~4,000 chars. **Pass 2 read the 107 over-cap
+results separately from `full_results.txt` (357,244 chars).** *This pass read the blocks as cut; it
+does not re-open those bodies, which pass 2 already covered.*
+
+## 2. 🔴🔴🔴 THE HEADLINE — *EVERY CLOSING PASS THAT CLOSED T1–T6 WAS A TRUNCATED READ, AND EACH WAS RECORDED AS A COMPLETE ONE*
+
+**T19 is the sweep writing the twelve, so its `bash_tool` stratum contains the literal commands of
+every pass T1–T6 ran.** ***Reading them in order shows that the eighteen passes which produced the
+`3/3 clean` closures of T1, T2, T3, T4, T5 and T6 were character-capped and line-capped excerpts,
+while the sections they wrote describe them as complete sequential reads.***
+
+**VERIFIED — the closing passes, their caps and their coverage.** *Cap = the `grep -oe "…{0,N}"`
+character window applied per content block. `Shown` = the UPPER BOUND on blocks displayed, derived
+from the `sed`/`head`/`tail` limits in the recorded command; the true figure can only be lower.
+`Blocks` = the transcript's content-block count **as T19's own ledger states it** (SEG 402, 513, 603,
+737, 828, 905) — not independently re-derived here.*
+
+| T | pass | blocks | shown ≤ | coverage | cap, chars/block | the command's own SEGs |
+|---|---|---|---|---|---|---|
+| **T1** | 26 | 87 | 56 | **64.4%** | 130 · 150 | 389 · 391 · 394 |
+| **T1** | 27 | 87 | 48 | **55.2%** | **110** | 398 · 400 |
+| **T1** | 28 | 87 | **87** | 100.0% | 200 | 404 · 406 |
+| **T2** | 9 | 136 | 27 | **19.9%** | 120 | 497 |
+| **T2** | 10 | 136 | 56 | **41.2%** | 150 | 502 · 504 |
+| **T2** | 11 | 136 | 69 | **50.7%** | 190 | 509 · 511 |
+| **T3** | 8 | 117 | 60 | **51.3%** | 160 | 599 · 601 |
+| **T3** | 9 | 117 | 59 | **50.4%** | 200 | 606 · 608 |
+| **T3** | 10 | 117 | 62 | **53.0%** | 240 | 612 · 614 |
+| **T4** | 10 | 119 | 80 | **67.2%** | 180 | 732 · 734 |
+| **T4** | 11 | 119 | 57 | **47.9%** | 230 | 740 · 742 |
+| **T4** | 12 | 119 | 58 | **48.7%** | 260 | 746 · 748 |
+| **T5** | 6 | 115 | 78 | **67.8%** | 170 | 824 · 826 |
+| **T5** | 7 | 115 | 42 | **36.5%** | 210 | 831 |
+| **T5** | 8 | 115 | 57 | **49.6%** | 250 | 835 · 837 |
+| **T6** | 6 | 125 | 64 | **51.2%** | 170 | 901 · 903 |
+| **T6** | 7 | 125 | 42 | **33.6%** | 215 | 907 |
+| **T6** | 8 | 125 | **24** | **19.2%** | 255 | 911 |
+
+🔴 **EIGHTEEN closing passes · 2,097 block-slots available · at most 1,026 displayed · 48.9%.**
+🔴 ***ONE of the eighteen displayed every block — T1 pass 28 — and it still capped each block at 200
+characters.***
+🔴 **T6's final clean pass, the one that closed T6 and with it the whole data layer, displayed AT
+MOST 24 of 125 blocks (19.2%), drawn from the middle region only** *(`sed -n '23,70p' | head -24`,
+SEG 911)* — **blocks 1–22 and 71–125 appear in no command of that pass.**
+
+**AND TWO OF THE EIGHTEEN WERE NOT EVEN WHOLE-TRANSCRIPT IN INTENT, WHICH THE SECTIONS SAY OUT LOUD:**
+- **T2 pass 9** is headed in T19's own text *"pass 9 final blocks, 610-739, sequential - clean 1/3"*
+  *(SEG 499)* — **a named partial region, counted as the first of three consecutive clean passes.**
+- **T2 pass 10** is *"pass 10 full sequential, blocks 143-460 - clean 2/3"* *(SEG 507)* — **also a
+  named region, counted as the second.**
+  🔑 ***So two-thirds of T2's closure is explicitly regional on its own face, and the third pass
+  (SEG 513) then describes the set as "complete read of every block from 2 → 739".***
+
+**WHAT THE SECTIONS CLAIM, VERBATIM, ALONGSIDE THOSE COMMANDS:**
+> *"a full sequential read of every one of t1's 87 message-level content blocks"* — **§T1.56, written
+> from a 110-character window** *(SEG 402 ← SEG 398/400)*.
+> *"complete read of every block from 2 → 739"* — **§T2.20, written from `head -34` + `head -35` on a
+> 136-block file** *(SEG 513 ← SEG 509/511)*.
+> *"complete read at maximum context. every block maps to a documented entry."* — **§T3.18, §T4.20,
+> §T5.15, §T6.16, all four written from capped, line-limited excerpts** *(SEG 616 · 750 · 839 · 913)*.
+
+## 3. 🔴🔴 AND THE STANDARD THOSE PASSES VIOLATED IS THE ONE THEY THEMSELVES HAD JUST WRITTEN
+
+**The sequential-read standard is not a late invention and did not drift in at T15–T18.** ***It was
+born two passes earlier than the closures that broke it, in the same transcript, and its stated
+reason is the exact mechanism the closures then used.***
+
+**T1 pass 24, SEG 332/333** — the founding statement:
+> *"every targeted sweep is pattern-bound, and an instruction that matches no pattern survives any
+> number of them. **only a full sequential re-read can close a transcript.** passes 24+ are therefore
+> full re-reads in segments, not sweeps."*
+
+**T1 pass 24's closing note, SEG 344** — the reason, and it names the instrument:
+> *"a line that matches no pattern survives any number of them, **and a grep window can silently
+> truncate a value**. only full sequential reading counts as a clean pass."*
+
+**T1 pass 25, SEG 374** — the completion criterion, stated exactly as this run restored it:
+> *"**a pass counts as clean only if all six segments are clean.**"*
+
+🔑🔑 ***T1 pass 24 diagnosed "a grep window can silently truncate a value" and passes 26, 27 and 28 —
+the three that closed T1 — were grep windows of 130/150, 110 and 200 characters.*** **The failure is
+not that the standard was unknown. It is that the standard was stated in prose and the NEXT COMMAND
+did not implement it, and no pass afterwards compared the two.**
+
+⚠⚠ **PRECISION ABOUT WHAT THIS DOES *NOT* CLAIM, because the evidence does not reach it:**
+- ❌ **It does NOT claim T1–T6 are wrongly documented.** *Whether material was missed is a separate
+  question that only re-reading those six transcripts can answer. **This pass did not re-read them.***
+- ❌ **It does NOT claim the findings in §T1.x–§T6.x are unreliable.** *Every one this pass saw was
+  carried with its quotation and, in dozens of cases, corroborated against the live database.*
+- ✅ **It DOES establish, from the commands themselves, that eighteen passes were described as
+  complete when they were partial** — *which is a claim about the CLOSURE RECORD, not about the
+  content.* **The `3/3` marks on T1–T6 certify less than they say.**
+
+## 4. ⚠⚠ TWO CLOSED TRANSCRIPTS WERE LATER FACTUALLY OVERTURNED — *the corroboration, from the record*
+
+**If the closures certified less than they claimed, the prediction is that later transcripts should
+occasionally contradict a closed one. They do, twice, and T19 records both.**
+
+**(a) T1's alias figure, overturned by T2 pass 4** *(SEG 443, 446)*. **T1 pass 11 (SEG 258) published
+*"nba ref.team aliases - 157 rows in t1, 162 in t2 … the five-row difference is the progression from
+fallback to live source, not a discrepancy."* T1 then closed `3/3` at pass 28.** **T2 pass 4 read the
+`tool_result` values and reversed it**: *"`aliases written` = rows upserted in that run; 162 = total
+active rows in the table … **correction to t1.21.**"* 🔑 **A causal story in a closed transcript,
+replaced by an upsert property.**
+
+**(b) T1's MCP-enum conclusion, overturned by T6** *(SEG 858, 869, 913)*. **T1 concluded a newly
+deployed binding is unusable for the whole session** *(§T1.8, and the constraint is quoted at SEG
+349/391)*. **T6 disproves it**: *"after 2 of 33 manual chunks, a re-check found the enum had refreshed
+and the worker loaded the rest in 25 seconds … **the enum refreshes between turns.**"* **And T6 pass
+8 resolves the mechanism** — *"the mcp tool's **hard client-side validation** blocking the new worker
+binding"* — *which is why no server-side route could work around it.*
+
+🔑 **Both corrections are RIGHT and both are recorded.** ***The point is when they arrived: after the
+transcript they correct had been certified clean three times over.*** **That is the signature of a
+closure standard that was not doing the work its name claims.**
+
+## 5. ⚠ A RESTATEMENT THIS SWEEP PUBLISHED AS NEW — *logged as a kill, after the fact*
+
+**`NBA_SYSTEM_DESIGN.md` §0z-8-T18 proposed a "league-bulletin" trace for the `2:30 PM PT` figure,
+was retracted the same day under rule 39, and the retraction recorded the sweep's recorded trace as
+CORRECT.** ***What the sequential read now adds is that the trace was not the sweep's to propose: it
+was already written into `NBA_SYSTEM_DESIGN.md` at its creation, in T19, at SEG 234***, verbatim:
+> *"the 2:30 pm pt figure was drift - traced to a list of observed injury-pdf timestamps in eastern
+> `2:30 pm et = 11:30 am pt`, and to `nba_asof.py`'s `phase2_cutoff_local = "17:45"` after the 5:30 pm
+> et day-of report - **a league bulletin, not a filing deadline.** `nba_asof.py` already had
+> `phase1_cutoff_local = "16:00"` = 1:00 pm pt, which is the correct anchor."*
+
+🔴 **RULES 26/28 KILL, LOGGED LATE** *(→ `NBA_OPEN_ITEMS.md` §T19.5)*. **The candidate should have
+died on a duplicate probe against the WORKING tree before §0z-8-T18 was written. It did not, because
+the probe was run on the words of the EVIDENCE (`ENRICH_CUTOFFS_LOCAL`, `17:30`) and not on the words
+of the CLAIM (`league bulletin`).** 🔑 ***That is the identical cause already recorded for the T18-9
+mis-framing — "a novelty probe on the words of the EVIDENCE is not a novelty probe on the words of the
+CLAIM" — now at n=2, in the same session, from two different passes.***
+
+## 6. 📏 RULE 34, SCORED — *and a re-score of §T19.3's own verdict*
+
+**The pre-registration in force was written into the run log before pass 2, against the post-pass-1
+tree (`uncovered12` **433** · `uncovered30` **425**, 2026-09-22T12:15:02Z).** **Re-measured on the
+working tree at 2026-09-22T12:25:15Z, before this section was written: `uncovered12` **432** ·
+`uncovered30` **424** · high band 443 · tail 0** *(baseline unchanged at 438 / 0 / 437 / 426 — its
+**nineteenth** identical return, rule 18)*.
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` on the WORKING tree of the twelve falls by 0–30 | **HIT** — 433 → 432, **Δ = 1** *(at the instrument's ±1 resolution; rule 18's third extension)* |
+| **(ii)** | **a full sequential read of T19's 920 segments** finds ≥ 3 findings pass 0 and pass 1 missed | 🔁 **RE-SCORED MISS → HIT** — **five** *(§2, §3, §4a, §4b, §5)* |
+| **(iii)** | at least one is a PROVENANCE finding | **HIT** — §3, §4 and §5 are all provenance |
+
+🔴🔴 **THE RE-SCORE IS ITSELF THE FINDING, AND IT IS A RULE-34 FAILURE IN A SHAPE RULE 34 DOES NOT
+COVER.** **§T19.3 scored clause (ii) a MISS on one finding. But the clause names its intervention
+explicitly — *"a full sequential read of T19's 920 segments"* — and at the moment it was scored, that
+read had covered 154 of 920 segments.** ***The prediction was measured against an intervention that
+had not happened.*** ⚠ **Rule 34 guards the LATE boundary** *(never score a named intervention
+against a tree that contains a LATER one)*. **This is the EARLY boundary, and it is the same error:
+the state measured does not correspond to the intervention named.** *(→ **RULE 42**, written in full
+in the run log.)*
+
+🔑 **Note what the honest correction costs and what it buys.** *The MISS was published, and this
+section overturns the sweep's own verdict in the sweep's favour — which is the direction a
+self-assessment should be most suspicious of.* ✅ **So the ground is stated as narrowly as possible:
+the re-score rests on the clause's OWN WORDING, quoted above from the run log, and on the segment
+count of what pass 2 actually read, which §T19.3 published against itself.** ❌ **It does not rest on
+the findings being good.**
+
+## 7. ✅ WHAT PASS 3 SETTLES
+
+1. ✅ **T19's 920 segments are read, sequentially and in full**, across passes 2 and 3. *The restored
+   standard has now been satisfied once, on one transcript.*
+2. 🔴 **The closure record for T1–T6 overstates what its passes did** — eighteen passes, 48.9% of
+   block-slots at most, described as complete. *Recorded, not repaired: **document, don't fix**, and
+   re-reading six closed transcripts is an OWNER DECISION on scope* *(→ `NBA_OPEN_ITEMS.md` §T19.6)*.
+3. ✅ **The sequential standard's provenance is fixed at T1 pass 24**, with its reason and its
+   completion criterion quoted. *It was never absent; it was never implemented.*
+4. ⚠ **T15–T17 are NOT re-opened here** — that decision was already recorded as open item T19-3 and
+   this section adds evidence to it, not a verdict.
+5. 🔑 **The pattern across §3, §4 and §5 is one thing said three ways**: ***this sweep, and the build
+   sessions before it, have repeatedly written the correct rule in prose and then not executed it in
+   the next command — and the only instrument that has ever caught it is reading the commands
+   themselves.***
