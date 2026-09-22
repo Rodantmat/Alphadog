@@ -57,6 +57,110 @@ word search alone would have called missing** *(rule 26 caught it)*:
 | **goblins/demons graded on their own lines** | ✅ **as `is_alternate boolean`**, and by construction: the key is `(player, market, line, side)`, so a goblin's different line grades separately. ⚠ *The words "goblin"/"demon" appear **zero** times in the file — **a word count would have reported this rule missing***. |
 | **Underdog multipliers carried** | ✅ **as the `price numeric` column** — *same trap, same resolution*. |
 
+## 0a.1 🔑🔑 **THE GRADER'S BUILD — what it caught, the storage decision, and a LIVE re-take of every figure**
+*Recorded 2026-09-22 (T13 pass 2, §T13.3d). **Transcript `2026-09-13-01-03-48`, the prose stratum
+past segment 1,040 — where the grader §0a describes was actually BUILT.** Every live figure pinned
+**2026-09-22T08:06Z**. `SELECT` only.*
+
+### 🔴🔴 THE CATCH THAT JUSTIFIES THE WHOLE `unmatched` CATEGORY
+**The smoke test returned 1,404 unmatched legs from just THREE distinct players** — and they were not
+a join failure, they were **nickname and spelling mismatches between the books' naming and the NBA's
+official register**:
+
+| board name | NBA official |
+|---|---|
+| **Herb Jones** | Herbert Jones |
+| **Nicolas Claxton** | Nic Claxton |
+| **Moe Wagner** | Moritz Wagner |
+
+> *"**Had I let `unmatched` silently become `dnp`, those 1,404 legs would have been graded as
+> scratches — and Herb Jones alone would have vanished from every slate he played.** That's precisely
+> the quiet corruption you were pointing at."*
+
+🔑 ***The category §0a records as a design rule earned its place on its first real run.*** ✅ **The
+fix is deliberately NOT a hand-list**: *"it needs to be **data-driven** rather than a hand-list,
+since this will recur across 500+ players and two seasons"* — **the rule is `last-name-suffix +
+first initial`**, unambiguous, *"which will catch the same class automatically across both seasons."*
+✅ **And it was extracted into a SHARED MODULE, `nba/nba_names.py`** — *exact → override →
+unambiguous alias* — **because *"the engine and grader must import the same code, so the mapping
+can't drift."*** ⚠⚠ **That is a stated failure mode, not a convenience**: *"if it drifts we get
+**silent mismatches instead of errors**."*
+
+### ✅ THE FULL CASE TABLE, as the builder stated it
+| case | handling |
+|---|---|
+| no box-score row, **plays this season** | `dnp` |
+| no row, **known league-wide but not this season** | `unmatched_not_in_season` — **flagged, never silently a scratch** |
+| **name unresolvable** | `unmatched_player` — flagged |
+| **listed with 0 minutes** | 🔑 **`dnp`, NOT a 0-point under** |
+| **exact landing on a whole-number line** | **`push`** |
+| **alternates** | graded **on their own line**, tagged `is_alternate` |
+| **double-double** | **yes/no logic, not over/under** |
+| **both snapshots** | **graded separately** |
+| **operator settlement** | 🔑 **kept OUT of the leg result** — *PrizePicks reverts on DNP and tiers down on a tie, Underdog voids; the slip engine applies the operator rule on top* |
+
+⚠ **A FIGURE THE PROSE GIVES TWO WAYS** *(rule 16)*: pushes on three dates are reported as
+**`182 found`** in one segment and **`80 in three dates`** in another. **Neither is re-derivable from
+the other; the live count settles the order of magnitude below.**
+
+### 🔑🔑 THE STORAGE DECISION — **grade DISTINCT LEGS, not one row per bookmaker**
+> *"The outcome of **'Jokić over 24.5 points'** is a property of the **player, stat, line and side**.
+> **It doesn't depend on which book offered it**, so grading it separately for DraftKings, FanDuel,
+> PrizePicks and seven others **stores the same truth TEN TIMES**."*
+
+**Caught mid-run**: *"it's graded 1.07M legs in 17 dates, so **the full run lands around 22M rows —
+and most of that is redundant**."* ✅ **Measured on the smoke test: 45,606 legs for three dates
+instead of 152,000 — a 3.3× reduction**, *"and larger across the full run since more books overlap
+mid-season."* ⚠ **This is the design note `grade_board_outcomes.py` line 160 states** — *"the outcome
+does not depend on bookmaker/snapshot"* — **with the number behind it.** 📌 *"Caught before it filled
+the disk rather than after"*, **on a database that had hit its storage cap earlier the same session.**
+
+### ✅ THE FULL RUN, RE-TAKEN LIVE — **and the partition CLOSES**
+| | transcript | **LIVE 2026-09-22T08:06Z** |
+|---|---|---|
+| graded legs | **6,905,452** | ✅ **6,905,452** |
+| dates | **327** | ✅ **327** |
+
+| `leg_result` | legs | share |
+|---|---|---|
+| **`under_win`** | **3,877,761** | **56.16%** |
+| **`over_win`** | **2,780,348** | **40.26%** |
+| `dnp` | 205,425 | 2.97% |
+| 🔴 **`unmatched_player`** | **31,687** | **0.46%** |
+| `push` | 10,231 | 0.15% |
+| | **6,905,452** | **100%** ✅ |
+
+### 🔑🔑 THE UNDER-SKEW WAS FLAGGED AS A RED FLAG AND LEFT UNCONFIRMED — **it is now confirmed at scale**
+**The builder refused to call it**: *"**58% under / 40.5% over.** A properly graded board should sit
+near 50/50 on the standard lines… **I need to confirm that's the cause rather than a systematic
+grading error**"*, and, on standard lines alone *(56.4% under / 43.3% over, alternates 60.6%)*:
+*"the standard-line skew is plausible — **NBA player props are documented to go under more often than
+over, since books shade overs for public money and blowouts truncate minutes** — **but on a
+three-date sample I won't call it confirmed either way. It's a number to re-check on the full run.**"*
+⚠ **The full-run distribution was promised and the segments read do not report it.**
+
+✅ ***It is re-checked here, on all 6,905,452 legs: 56.16% under / 40.26% over — and 58.24% under
+among DECIDED legs.*** 🔑 ***The three-date sample was right, and the skew is a property of the
+board, not a grading error.*** ⚠ **Stated at evidence strength: this confirms the RATIO the sample
+showed. Whether the CAUSE is over-shading and blowout-truncated minutes is the builder's explanation
+and remains NOT RECORDED as measured.**
+
+### 🔴 TWO THINGS THE LIVE TABLE SHOWS THAT THE TRANSCRIPT DOES NOT
+1. 🔴🔴 ***`unmatched_player` IS NOT ZERO AT SCALE — 31,687 legs, 0.46%.*** **The transcript
+   declares *"unmatched is now zero, all 1,404 legs resolved"* and *"zero unmatched"* — both on the
+   THREE-DATE smoke test.** ***The full two-season run carries a residue roughly 23× the size of the
+   original catch, and it is nowhere recorded.*** ⚠ **Exactly rule 25's failure shape: a fix proven
+   on a sample, reported without the sample, and never re-taken at scale.** **WHICH players are NOT
+   RECORDED** — *one `GROUP BY` would name them, and it was not run here* **(rule 1: documented, not
+   fixed).**
+2. 📌 **The table holds FIVE distinct `leg_result` values.** **§T12.6d records the docstring
+   declaring SEVEN** *(`over_win` / `under_win` / `push` / `dnp` / `no_stat` / `unmatched_player` /
+   `game_not_found`)*, **and the design above names an eighth, `unmatched_not_in_season`.**
+   🔴 ***So `no_stat`, `game_not_found` and the not-in-season category have ZERO rows across 6.9M
+   legs*** — **including the one category built specifically to stop a matching bug masquerading as
+   a scratch.** ⚠ **Whether those branches are unreachable or simply never triggered is NOT
+   RECORDED**, and **a guard that has never fired is not a guard that is known to work.**
+
 ### ✅ `[LIVE-AUDIT]` 2026-09-21 — **the grader ran**
 **`nba_market.board_outcomes` ≈ 6,905,452 rows / 2,151 MB**, **`graded_at` 2026-09-20T02:39Z**;
 **`nba_score.board_scored` ≈ 11,956,460 rows / 2,948 MB.** *So segment 37's "it'll be built the day
