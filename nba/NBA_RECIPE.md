@@ -619,12 +619,45 @@ of four documents.*
    the crons go in "at season start". **No document names who adds them, or by when.*** ⚠ *This is
    the prerequisite `§T20.88` found and it is still open; the timeline makes its shape concrete —
    **until those two lines exist, the system produces nothing on a game day except a referee table.***
-2. **WHETHER `P3` MAY BE RUN MORE THAN ONCE IN A DAY.** *The cutoff guard asserts the cutoff has
-   PASSED, which permits any later run; **whether a second run is safe, idempotent, or double-writes
-   the paper-trading log is `NOT RECORDED`.***
-3. **WHAT HAPPENS ON A DAY WITH NO GAMES.** *`P3` resolves a slate date and asserts a cutoff; **no
-   document states whether an empty slate is a clean no-op or a failure**, and `STEP 9`'s note that a
-   nightly red build "trains everyone to ignore red builds" makes the answer matter.*
+2. ~~**WHETHER `P3` MAY BE RUN MORE THAN ONCE IN A DAY.**~~ ✅✅ **ANSWERED 2026-09-22, T20 pass 89
+   (`§T20.94`) — YES, IT IS SAFE, AND THREE INDEPENDENT MECHANISMS SAY SO** *(read from source and
+   the live schema; nothing was run)*:
+   **① a guard clause in the database.** `nba_score.log_paper_picks(p_date, p_threshold)` —
+   *"`IF EXISTS (SELECT 1 FROM nba_score.paper_picks p WHERE p.strategy = 'standards_3pick_v1' AND
+   p.game_date = p_date) THEN RAISE NOTICE 'paper picks for % already logged - first log wins';
+   RETURN 0; END IF;`"* — **so a second run returns `0` and writes nothing**, matching the
+   workflow's own comment *("First log wins - a night already logged is never overwritten")*.
+   **② a primary key underneath it.** `nba_score.paper_picks` carries **`PRIMARY KEY (strategy,
+   game_date, player)`** *(`pg_constraint`, live `2026-09-22`)* — **the only one of `P3`'s write
+   targets that has a uniqueness constraint at all.**
+   **③ date-scoped delete-and-replace in the scorer.** `nba/score_board_legs.py:275` —
+   **`DELETE FROM nba_score.board_scored WHERE game_date = %s`** followed by an insert with
+   **`ON CONFLICT (game_date, app, player_id, prop, line, side) DO UPDATE`**.
+   ⚠ **AND THE CONTRAST IS WORTH THE LINE**: *that delete is correctly date-scoped, while the
+   `DELETE FROM nba_score.final_hp` recorded at `NBA_GLOSSARY.md:1277-1281` carries **no date
+   predicate** and is the stated cause of `final_hp` 2025-26 = 140,130.* **Two deletes in the same
+   pipeline family; one is scoped and one is not** *(the second is a PRIOR — pointed at, not
+   re-derived)*.
+   📌 **Operator note, same reading**: *the cutoff guard refuses a run for **TODAY** before **13:00
+   PT** — the league filing deadline — **not before the 13:15 doctrine cutoff**; and **a replay of a
+   PAST date is always permitted** (`"A manual replay of a PAST date is always fine"`).*
+3. ~~**WHAT HAPPENS ON A DAY WITH NO GAMES.**~~ 🔴🔴🔴 **ANSWERED 2026-09-22, T20 pass 89
+   (`§T20.94`) — AND THE ANSWER IS A DEFECT: BOTH `P2` AND `P3` CERTIFY *RED*.**
+   *Read from `nba/certify_pipeline.py`:* **`PIPE=p2` fails `2` of `4`** *(`baseline_history has
+   today` needs `count(*) > 0`; `baseline props for today` needs `count(DISTINCT prop) >= 25` — both
+   are `0`)* · **`PIPE=p3` fails `2` of `5`** *(`final_hp has today`; `board archived today` — both
+   `0`)* · ✅ **`PIPE=p1` passes, because its three checks are date-independent.**
+   ⚠⚠ **`CERT_STRICT` defaults to `1`** *(`certify_pipeline.py:32`)* **and neither pipeline's
+   workflow sets it** ⇒ ***`sys.exit(1)`.***
+   ▶ **HOW OFTEN, measured live on a COMPLETED season** *(`nba_calendar.games`, `2026-09-22`)*:
+   **2025-26 had `7` zero-game days in `174`** — *Thanksgiving `2025-11-27`, Christmas Eve
+   `2025-12-24`, the All-Star break `2026-02-14 / 16 / 17 / 18`, and `2026-04-11`.* ⇒ 🔴 **`14`
+   guaranteed red builds a season across the two pipelines, the moment the crons go in** — *for the
+   exact reason `STEP 9` gave for withholding them:* ***"a scheduled job failing nightly against an
+   empty schedule trains everyone to ignore red builds."*** **That reasoning was applied to the
+   offseason and never to the calendar.**
+   📌 **Recorded in full, with the MLB lesson it answers, at `NBA_SYSTEM_DESIGN.md` — *"NO GAMES
+   SCHEDULED" MUST BE A FIRST-CLASS STATE*, whose certifier row this closed.**
 4. **THE ORDER OF `P2` AND THE PREVIOUS DAY'S OUTCOMES.** *`P2` step 8 grades "last night's board",
    but **no document states how long after the final buzzer the box scores are complete enough to
    grade**, so whether `01:00 PT` is early is unestablished.*
