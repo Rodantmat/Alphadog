@@ -34461,6 +34461,8 @@ is nothing left to write," and it answered the second.***
 
 ## 🔑🔑 WHAT THIS MEANS FOR A NUMBER THE SWEEP HAS QUOTED FOR SEVENTY PASSES
 
+> 🔴 **RE-SCOPED IN PLACE — T20 pass 73, §T20.78, 2026-09-22, as that pass's pre-registration required.** *The `72.5%` plumbing figure below, and §T20.77's censused `73.7%`, are **PROPERTIES OF T20, NOT OF THE METHOD**. **T19's censused plumbing rate is `59.5%` — `14.2` points lower**, because T19 is where the sweep read T1–T6 wholesale and `36.1%` of its uncovered set is OTHER TRANSCRIPTS' TEXT echoed through `bash_tool` (T20: `19.6%`).* ✅ **THE FLOOR ITSELF SURVIVES AND GENERALISES — measured as PLUMBING + ECHO it is `93.3%` (T20) and `95.6%` (T19), **`2.3` points apart**.** ⇒ ***What is uncoverable is stable across transcripts; what MAKES it uncoverable is a property of what that transcript was doing.*** **Original kept below, per rule 40.**
+
 ***`uncovered12 = 471` has been read as a documentation debt. It is a FLOOR.*** **Forty percent of
 T20's segments are the sweep's own instrumentation — the greps it ran, the arguments it passed, and the
 sentences it used to introduce its own findings — and no document can ever cover them.** ⇒ **The metric
