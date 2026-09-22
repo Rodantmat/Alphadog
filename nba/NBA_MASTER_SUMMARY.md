@@ -14428,6 +14428,150 @@ draws from.**
 
 ## T14 — `2026-09-13-20-53-23-nba-boards-grader-market-baseline-history-2026-09-11-12.txt`
 
+### T14.4 — PASS 3 (**the MECHANISM FAILURE CENSUS**) — **✅ the last unread stratum, TWO instrument bounds, and T14 CLOSES**
+*The only strata never read: **`tool_use` 368 + `tool_result` 367 + `thinking` 54 = 789 segments,
+587,632 chars**. **Scoped to the failure predicate ONLY**, as pre-registered. Census pinned
+2026-09-22T09:10:01Z; probes 09:10:19Z; live 09:10:22Z. `SELECT` only.*
+
+#### ⚠ T14.4a — **PASS 2's HELD PREDICTION, SCORED UNDER RULE 34 — a PARTIAL, and the MISS is the pass's best finding**
+*Harness run **2026-09-22T09:09:09Z**, **BEFORE this pass wrote anything** — the first prediction in
+this run scored on an uncontaminated tree.*
+| | after pass 1 | **after pass 2** |
+|---|---|---|
+| `uncovered12` | 924 | **923** |
+| `uncovered30` | 891 | **891** |
+
+🔴 **(i) MISSED, badly** — predicted a fall of **10–40**; **measured 1.**
+✅ **(ii) HIT** — predicted `uncovered30` to fall by LESS than `uncovered12`; **measured 0 against 1.**
+🔑🔑🔑 **AND THE MISS IS AN INSTRUMENT FINDING, not a modelling one.** **Pass 1 moved the band by 31;
+pass 2 moved it by ONE — and pass 2 was the larger pass by content.** ***The difference is that pass
+2 MIGRATED material out of `NBA_DAILY_PARITY_AND_BACKFILL.md`: it read a DOCUMENT and wrote the
+document's phrasing, so the twelve gained text that matches THE EIGHTEEN, not T14's own segments.***
+
+> ## ⚠⚠ **BOUND ON THE BAND INSTRUMENT (rule 18's fourth extension) — THE BAND CANNOT MEASURE A MIGRATION PASS**
+> **`uncovered12` scores the TWELVE against the TRANSCRIPT.** ***A pass that moves material from the
+> eighteen into the twelve adds no transcript coverage, because its source is a DOCUMENT, not a
+> segment*** — **so a migration pass will always read as near-stasis however much it writes.**
+> 🔑 **The corollary is a gap in the sweep's instruments**: **there is NO measurement of migration
+> completeness**, and the natural one — ***score the twelve against the EIGHTEEN rather than against
+> a transcript*** — **has never been run.** ⚠ **Same species as §T12.9a's bound** *(quoting a JSON
+> error body does not cover its segment)*: **the band measures a specific similarity and is silent
+> about everything else.**
+
+✅ **RULE 34 did exactly what it was written for**: *had the harness run after this pass, the census
+writes would have contaminated the score and the bound would have been invisible.* **Thirty-three
+pre-registrations: twenty-five hits, three misses, FIVE partials.**
+
+#### ✅ T14.4b — **THE CENSUS: 789 segments, 21 hits, and ZERO false positives**
+**All 21 are `tool_result`.** 🔑 **T13's census needed three dismissals** *(grep results whose own
+SEARCH PATTERN matched the predicate)*; **this one needed none** — *the predicate was already tight
+and the transcript's tool mix differs.*
+| family | n |
+|---|---|
+| **our own SQL / schema** | **11** — *`book_calibration` and `book_curves` do not exist ×2 · `baseline_history` does not exist ×2 (before it was built) · `event_game_map` does not exist ×2 · `column "family"` ×2 · `created_at` · ambiguous `relname` · `vacuum cannot run inside a transaction block`* |
+| 🔑 **bridge permission** | **2** — ***`permission denied to cancel query`*** and ***`permission denied for function pg_ls_waldir`*** |
+| **GitHub API** | **4** — `github_get_workflow_run_log` 404 |
+| **shell** | **2** — `returncode 1` |
+| **bridge edit** | **1** — `old_str not found in file` |
+
+✅ **`nba_market.event_game_map` EXISTS live** *(built after those errors — consistent with the 96%
+report)*; 🔴 **`book_curves` is STILL absent**, ***its third confirmation across three transcripts***
+*(T13's census, T14's, and the live schema check)*.
+
+#### 🔑🔑 T14.4c — **THE BRIDGE CANNOT MEASURE OR STOP A RUNAWAY DATABASE JOB** *(`pg_ls_waldir`, `cancel query`, `vacuum`: all 0 of the TWELVE and 0 of the THIRTY)*
+***During the disk crisis the bridge could neither MEASURE the thing filling the disk nor STOP it.***
+**`permission denied to cancel query`** is why jobs are killed by flipping a workflow's concurrency
+group and dispatching a no-op — *a technique the corpus records without its cause*. **`permission
+denied for function pg_ls_waldir`** is why the ~8 GB gap between *"the database is 19 GB"* and *"the
+disk is 91.6% of 30 GB"* had to be attributed to WAL and temp spill **by inference**. **And
+`vacuum cannot run inside a transaction block`** means ***one of the four operating rules cannot be
+executed through the bridge at all.***
+🔑 ***This is the real argument behind "compute on the runners, not in the database"*** — **not only
+that the database is small, but that the bridge cannot intervene when a database-side job goes
+wrong.** **Written to `NBA_SYSTEM_ARCHITECTURE.md` §0f-3.**
+
+#### ⚠⚠ T14.4d — **AND THE SECOND BOUND: THE CENSUS CANNOT SEE THIS TRANSCRIPT'S MOST CONSEQUENTIAL FAILURES**
+**Three of T14's most instructive failures produce NO failure envelope and are absent from all 21
+hits:**
+1. 🔴🔴 **the OUT-OF-MEMORY crash that exposed the training leak** — ***the single most consequential
+   failure in the transcript*** *(§T14.2d)* — **it killed a runner and was reported in PROSE
+   (*"the memory gave out"*), never as `ok: false`**;
+2. **the three coach-scraper failures** — *regex → 0 rows; `read_html` → a path error; column-signature
+   → no match* — ***each returned SUCCESSFULLY with nothing in it***;
+3. **`nba_teams_current.json` holding zero records** — ***a DATA emptiness that made a CODE bug look
+   like a data problem***, and every call "succeeded".
+
+> ## ⚠⚠ **BOUND ON THE FAILURE CENSUS — A SILENT FAILURE HAS NO ENVELOPE**
+> ***The predicate finds calls that REPORTED failure. It cannot find a job killed by the runner, a
+> scraper that returns zero rows, or an empty file that every reader accepts.*** 🔑 **And those are
+> precisely the failures this corpus keeps recording as its worst** — **the `echo ... failed` pattern
+> that let a 56%-complete slate report green, the training leak, the empty teams file.**
+> ⚠ **So the census is a CHEAP, BOUNDED instrument: it enumerates the loud failures completely and
+> is blind to the quiet ones**, **and its output should always be stated with that bound** — *which
+> §T13.6's census was not.*
+
+#### ⚠⚠ T14.4e — **NO NEW SYSTEM HEADLINE — the pre-registered closure fires**
+**§T14.4c is a capability boundary that EXPLAINS decisions already recorded; §T14.4b confirms tables
+already known absent; §T14.4a and §T14.4d are instrument bounds — method, not system.** ✅ **Every
+one is worth having and none changes what the system is understood to be.** **T14 CLOSES.**
+
+**Pass outcome: the last stratum read under a narrow predicate; 21 failures in five families with no
+false positives; the bridge's inability to measure or stop a runaway job recorded as the real
+argument for computing on the runners; pass 2's held prediction scored cleanly under RULE 34; and
+TWO instrument bounds — the band cannot measure a migration pass, and the census cannot see a silent
+failure. CLEAN 0/3 · 4 passes — CLOSED ON THE CLOSURE JUDGMENT.**
+
+---
+
+## ✅✅ T14 — CLOSED 2026-09-22 · **4 passes · §T14.1–§T14.4 · 32 sub-findings over 1,004 segments ≈ 1 per 31.4**
+**ALL STRATA READ**: **owner 33 · assistant prose 182 · `tool_use` 368 · `tool_result` 367 ·
+thinking 54 = 1,004, and the partition CLOSES.** **Clean count 0/3 — CLOSED ON THE STANDING CLOSURE
+JUDGMENT, pre-registered two passes ahead.** 🔑 **T13 took six passes for 1,323 segments; T14 took
+FOUR for 1,004, as the next-step row said it should.**
+
+### 🔴 SYSTEM HEADLINES — *documented, none fixed (rule 1)*
+1. 🔴🔴 **"CERTIFIED" NEVER MEANT "STORED."** The baseline was proven on both seasons and **its
+   per-leg, per-day probabilities were discarded** — *"the harness kept only the CALIBRATION
+   STATISTICS"* — **and `nba_score.baseline_history` (≈19.3M rows, 30 props) exists only because the
+   owner pushed back on "it's done."**
+2. 🔴🔴 **A2 MADE THE MODEL DRAMATICALLY WORSE** *(log-loss 0.7299 → 1.0123 on 6,996 held-out legs)*
+   **because the baseline's `proj_min` already applies the injury report** — ***the third measured
+   instance of one duplication error*** — **and *any factor test using ONE report for BOTH layers
+   measures DOUBLE-COUNTING, not value***, which invalidates a whole class of held-out test silently.
+3. 🔴🔴 **THE REPO IS PUBLIC** — *"the code, docs and board files are readable by anyone"* — **which
+   makes the standing no-credential-values rule a security control, not a formality.**
+4. 🔴🔴 **THE LIVE BOARD ARCHIVER WRITES THE WRONG SHAPE**: it has fired on **two days in ten**,
+   covers **three of five apps** *(PrizePicks and Betr absent)*, and labels every row **`routine`
+   instead of `window` / `close`** — ***so the live rows cannot be joined to the two seasons as
+   like-for-like, which is the entire point of the parity requirement.***
+5. 🔴 **THE BACKTEST'S EVIDENCE COVERS 13 of ~25 PRIZEPICKS STAT TYPES** — *"there is no archive of
+   [the others] anywhere"* — **while the baseline reaches 29–30 of ~31**: ***the model can score more
+   of the board than the archive can ever evaluate.***
+6. 🔴 **A TRAINING LEAK THAT ONLY AN OOM CRASH EXPOSED** — the harness's default training set
+   included the test season — ***"both runs would have looked fine if the memory hadn't given out."***
+7. 🔴 **THE GOVERNING PARITY DOCUMENT CONTRADICTS ITSELF** on `D1 referees`: its **FACTOR INVENTORY**
+   says *not backfillable, target-only*; its **stage table** places D1 in the **baseline**.
+
+### 🔑 METHOD OUTPUT — **RULE 34 and TWO INSTRUMENT BOUNDS**
+***RULE 34 — a prediction about pass N is measured BEFORE pass N+1 writes*** *(earned from a miss
+whose cause was the sweep's own protocol, and applied the very next pass — the first time in this run
+that rule 12 has been honoured immediately)*. **Plus two bounds**: ***the band cannot measure a
+MIGRATION pass*** *(pass 2 wrote a document's content and moved `uncovered12` by one)*, and ***the
+failure census cannot see a SILENT failure*** *(the OOM crash, the zero-row scrapers, the empty
+file)*.
+🔑🔑 **AND THE TRANSCRIPT-LEVEL PATTERN, which is the most useful thing T14 taught**: ***T14
+documented itself into the EIGHTEEN as it went***, **so this sweep's work on it was MIGRATION rather
+than discovery** — **the second instance of a class §T12.1 named** — ***which means the twelve
+systematically lag the eighteen after any session ending in a documentation burst, and the sweep
+should expect that shape again at T19 and T20, which are themselves documentation passes.***
+
+**Five pre-registrations on T14: TWO HITS, ONE MISS, ONE PARTIAL, ONE held-and-scored**
+*(running total: thirty-three — twenty-five hits, three misses, five partials)*.
+
+**FOURTEEN OF TWENTY CLOSED. SIX REMAIN — T15–T20.**
+
+---
+
 ### T14.3 — PASS 2 (**the EIGHTEEN-TO-TWELVE migration audit**) — **🔑🔑🔑 the measured result that invalidates a whole class of factor test, and a governing document that contradicts itself**
 *`NBA_DAILY_PARITY_AND_BACKFILL.md` **read in full for the first time by this sweep** *(253 lines,
 16,857 bytes)* — **the governing document T14 created, one of the EIGHTEEN.** Probes over the twelve
