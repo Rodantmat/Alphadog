@@ -13279,7 +13279,9 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 
 ---
 
-# 🔴🔴🔴 OPENING-DAY BRIEF — ~~THE SEVEN BLOCKERS~~ **ALL THIRTEEN SEASON-CRITICAL ITEMS**, RANKED BY WHAT THEY COST *(T20 pass 40, §T20.45; **COMPLETED T20 pass 51, §T20.56**, 2026-09-22)*
+# 🔴🔴🔴 OPENING-DAY BRIEF — ~~THE SEVEN BLOCKERS~~ ~~ALL THIRTEEN SEASON-CRITICAL ITEMS~~ **ALL FOURTEEN SEASON-CRITICAL ITEMS**, RANKED BY WHAT THEY COST *(T20 pass 40, §T20.45; **COMPLETED T20 pass 51, §T20.56**; **COUNT CORRECTED T20 pass 65, §T20.70, 2026-09-22**)*
+
+> 🔴🔴 **THE CORRECTION, AND WHY IT MATTERS MORE THAN A NUMBER.** *This heading read **"ALL THIRTEEN"** until 2026-09-22T18:48Z. The **FIFTH AMENDMENT (§T20.60, T20 pass 55)** added **T20-14** to the body and to the `FINAL ORDER — ALL FOURTEEN` block below — **and left this heading, and the SCOPE paragraph directly under it, at thirteen.*** ⚠ **RULE 40: this is `DATED`, NOT `RETRACTED`** — *"thirteen" was TRUE when written at `17:35:23Z` and was falsified seventy-three minutes later by an amendment to the same page.* 🔑🔑 ***AND THIS PAGE DIAGNOSED THE EXACT ERROR IN ITSELF, ELEVEN PASSES BEFORE COMMITTING IT AGAIN — its own words, still standing four paragraphs below:*** > ***"A definite article in a heading is a completeness claim. It sat above a footnote that said the opposite, at the top of a fourteen-thousand-line file, for a reader twenty-eight days from a season."*** ⇒ ***An amendment discipline that updates the CONTENT and the FINAL ORDER but not the COMPLETENESS CLAIM at the top will re-break the top on every amendment. The brief did not fail because nobody checked; it failed because the check lives at the bottom and the claim lives at the top.*** ✅ **The body was never wrong — T20-14 has been listed since §T20.60. Only the count above it was.**
 
 > **REGULAR SEASON OPENS `2026-10-20`. PRESEASON `2026-10-03`.**
 >
