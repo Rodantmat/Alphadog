@@ -306,7 +306,7 @@ pass 20 — that gap is this run's signature failure.***
 | **7** | **Before asserting something is unrecorded, grep its distinctive term — and OPEN EVERY HIT.** | T7 |
 | **8** | Run the novelty grep on the finding you are most confident about, first. | T7 |
 | **9–11** | Sibling checks · call-site checks · the authority is named, never inferred | T7 |
-| **12** | **Apply a rule in the pass that writes it.** *(The most-broken rule in the run.)* | T7 |
+| **12** | **Apply a rule in the pass that writes it.** *(The most-broken rule in the run.)* ⚠ **§T20.72 (T20 pass 67): rule 12 has NO COMPANION SAYING *read the index before adding to it* — and that absence, not the index's gaps, is what produced FOUR duplicate rule births in one session.** | T7 |
 | **13–14** | Judge the entries' claims, not the extraction · a discrepancy you are about to record may already be on file | T7–T9 |
 | **15** | **A pattern tuned elsewhere silently mis-measures — and the wrong number is not always zero.** | T9 |
 | **16** | **The prose states the query's own predicate: its grouping, its boundary, its filter.** | T9 (§T9.34a) |
