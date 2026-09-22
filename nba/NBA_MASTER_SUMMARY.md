@@ -22480,7 +22480,7 @@ judgment. **117 sub-entries, of which 53 carry a severity marker — ≈ 1 findi
 | **O5** | **The baseline ladder holds TWO depth regimes under ONE `recipe_version`** — and §T9.43a found the cause is chronological: `LADDER_DEPTH` landed **2026-09-19 23:58:44 UTC**, after two of the three loads. **The override is still live and the trigger still reads `ladder_steps: 10`.** |
 | **O5b** | **30,989 rungs sit beyond their prop's measured depth, 92.3% of them at p ≤ 0.01 or ≥ 0.99 — and all of them carry full provenance credit**, because `f_prov` is `used_emp` rescaled and **`used_emp` means "a cell existed", not "the cell had samples"** (§T9.42b). |
 | **O6** | **`f_phase` is computed, justified in six lines with measured figures, attached to the frame — and absent from the weighted sum**, whose nine weights total exactly 1.00. |
-| **O4b** | **The season rolls in one layer and is frozen in the other** — 47 env vars carry hardcoded season defaults, 45 set to literals, and `nba_season.py` reaches **20 of 135** NBA Python files. |
+| **O4b** | **The season rolls in one layer and is frozen in the other** — 47 env vars carry hardcoded season defaults, 45 set to literals, and `nba_season.py` reaches ~~**20 of 135**~~ **24 of 136** NBA Python files *(re-taken 2026-09-22T07:15Z, §T12.7d; propagated §T20.14 — **an OWNER DECISION was carrying a superseded figure**)*. |
 | **§T9.19c** | **Four ladder props are absent from `prop_taxonomy`**, and §T9.35c found **two of them (`oreb`, `dreb`) are also uncertified** — *uncertified, untaxonomised and in production at once.* |
 
 **The methodological result is larger than any single finding.** *Of the 31 🔴 sub-entries, the large
