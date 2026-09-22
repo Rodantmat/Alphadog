@@ -14332,6 +14332,27 @@ them severity-marked.**
 are cited BARE, with no `§`** *(`T16-9` 13 bare refs · `T19-3` 8 · `T19-1` 5 · `T18-17` 4 · `T18-1` 3
 · `0a-T17` 6)* — **all six struck from the orphan list; `v1`/`v3`/`P3` are not section ids at all.**
 
+> ## ✅✅ **STATUS `2026-09-22` — ALL FIVE ARE NOW REACHABLE. `T20-1` IS CLOSED ON ITS OWN TERMS.**
+> *(`§0z-3` repaired by **§T20.89**, T20 pass 84; the remaining four by **§T20.90**, T20 pass 85.
+> **The table below is the finding as RECORDED and is not struck** — rule 40's second half.)*
+>
+> | orphan | **inbound route now** | where |
+> |---|---|---|
+> | `§0z-3` | ✅ **3** | `NBA_RECIPE.md` **`STEP 11 — THE BUILD ORDER`** *(`:497`, `:511`, `:525`)* |
+> | `§0z-5` | ✅ **1** | `NBA_FINAL_SCORING_CALIBRATION.md`, at *"the ten rejected enrichment factors"* — **the framing §0z-5 retracts** |
+> | `§0v.4` | ✅ **1** | `NBA_BASELINE_CALIBRATION.md`, at the `baseline_history` result table — **carrying §T20.24's `13 → 12` correction** |
+> | `§0.9c` | ✅ **1** | `NBA_MULTIPLIERS.md` **§0.9b**, added to its existing *"read this against"* list |
+> | `§KILL-LATE-1` | ✅ **1** | `NBA_MASTER_SUMMARY.md` **§T20.81** — **the `RULE 51` adjudication it should have governed** |
+>
+> ⚠⚠ **READ `§T20.90` BEFORE RE-MEASURING THIS ITEM.** *A crude `grep -c` reports these five as
+> reachable **6 / 13 / 14 / 6** times over even when they are not: the sweep's own audit sections name
+> every orphan they indict, a definition site cites itself, and kill logs record priors.* ***The
+> discriminator excludes (a) the definition site, (b) the orphan-audit sections, (c) the run log.***
+> 🔴🔴 **AND THE REPAIR OF `§KILL-LATE-1` FOUND A FALSE STATEMENT INSIDE `RULE 51`** — the adjudication
+> claimed *"nothing in the corpus says the PUBLISHED FINDING itself must be probed"* while
+> `§KILL-LATE-1` said exactly that, in the baseline tree, before T20 opened. **Corrected in place at
+> `§T20.81`; the rule itself stands.** ⇒ ***the measured cost of an orphan — see `§T20.90` §4.***
+
 🔴🔴 **WHAT SURVIVES — unreachable under ALL THREE grammars:**
 
 | id | where | the finding | inbound |
