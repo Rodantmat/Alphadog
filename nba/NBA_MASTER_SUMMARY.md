@@ -32037,3 +32037,123 @@ one script and found that the corpus is 26 for 27 — a number nobody could have
 the kind of number an owner actually needs.**
 ***The instrument flagged twelve. Eleven were the documents doing their job. Naming an instrument is
 not running it, and running it is not reading it.***
+
+---
+
+# §T20.56 — T20 PASS 51 · THE BRIEF-COMPLETENESS AUDIT: THE OWNER WILL READ ONE PAGE
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only**: greps and reads. **Nothing written to the live system;
+`NBA_COMPASS.md` not written to.**
+
+## 0. POPULATION, ENUMERATED BY HEADING (rules 15/17/30)
+
+**`NBA_OPEN_ITEMS.md` is `14,727` lines**, tree `93292d278c4cd44997d6719cf6c38fe574b9eca0`,
+**2026-09-22T17:35:23Z**. ⚠ **Counted on HEADING LINES ONLY (`^#{2,4}`), because a marker count is a
+count of emphasis and a heading count is a count of ITEMS — rule 15, applied before any figure was
+published.**
+
+> **`grep -E "^#{2,4} .*SEASON-CRITICAL"` ⇒ `13` items.**
+
+## 1. 🔴🔴🔴 CLAUSE (ii) SCORES — FIVE OF THE THIRTEEN ARE NOT ON THE BRIEF
+
+| # | season-critical item | on the brief? |
+|---|---|---|
+| 1 | **T18-1** — *"our anchor is not at the proper place of the ladder, or the ladder is not deep enough"* | 🔴 **NO** |
+| 2 | **T16-7 / T16-8 / T16-9** — three `[LIVE-AUDIT]` owner decisions | 🔴 **NO** |
+| 3 | **THE ENTIRE NBA STATIC LAYER IS FROZEN AT ITS BUILD DATE** | 🔴 **NO** |
+| 4 | **THE SCHEDULE HAS NOT BEEN REFRESHED SINCE THE DAY IT WAS BUILT** | 🔴 **NO** |
+| 5 | **THE DARKO SCRAPER'S FAILURE EVIDENCE IS THE WRONG 20 KB OF THE PAGE** | 🔴 **NO** |
+| 6–13 | **T20-2 … T20-7, T20-12, T20-13** *(plus T20-9/10/11 by amendment)* | ✅ yes |
+
+⚠⚠ **RULE 19 APPLIED BEFORE THE COUNT WAS CALLED A DEFECT, AS THE PRE-REGISTRATION REQUIRED.** *The
+brief DECLARES its scope in writing: **"Covers T20-1 … T20-7 — the items opened by T20 passes 28–39.
+Older open items are NOT re-ranked."** An item outside a declared scope is not, by itself, a defect.*
+🔴 **THE DEFECT IS THE GAP BETWEEN THE HEADING AND THE FOOTNOTE, AND THAT IS WHAT IS BEING CALLED:**
+> **`# 🔴🔴🔴 OPENING-DAY BRIEF — THE SEVEN BLOCKERS, RANKED BY WHAT THEY COST`**
+
+***"THE SEVEN BLOCKERS" is a definite article and a completeness claim.*** **It sits at the top of a
+14,727-line file, in a heading, above a scope line in small print that says the opposite.** ⇒ **A
+reader twenty-eight days from a season reads the heading and acts. This is §T9.25a's failure mode —
+*"a correction propagates to the ENTRY and the topical documents, and stops at the SUMMARY ROWS,
+which are what a reader reads first"* — with a FINDING substituted for a correction.**
+
+## 2. 🔴🔴 CLAUSE (iii) SCORES THREE TIMES OVER — THE MISSING ITEMS FIRE ON OPENING DAY
+
+| missing item | when it fires | evidence |
+|---|---|---|
+| **The frozen static layer** | 🔴 **opening night** | its own words: *"On opening night the system would score against a roster, schedule, impact-rating, play-type and tracking snapshot taken five weeks earlier"* |
+| **The frozen schedule** | 🔴 **opening night** | `nba_calendar.games` — **2025-26: 1,400 games · 2026-27: 1,266 games · oldest and newest write both `2026-09-02T20:24`, ONE distinct write day each** |
+| **T16-7/8/9** | 🔴 **dated in its own heading** | *"the opener is `2026-10-20`"* |
+
+🔑🔑 **AND THE LARGEST OF THE FIVE IS THE ONE THE OWNER RAISED HIMSELF.** **T18-1, quoted:**
+> ***"Our system should be covering the APP LADDER. If it is not, we need to change so it covers it.
+> **Our anchor is not at the proper place of the ladder, or the ladder is not deep enough** — plus
+> everything else you have open."***
+
+⚠⚠ ***A coverage defect stated by the OWNER as an observation, with two candidate causes and NO
+diagnosis — `0 of the twelve, 0 of the thirty` — and it is not on the page the owner will read.***
+📌 **Of thirteen season-critical items, the one that is missing and matters most is the one he
+reported.**
+
+## 3. ⚠ TWO SELF-CORRECTIONS THIS PASS FORCES ON EARLIER PASSES OF ITS OWN SESSION
+
+🔴 **(a) §T20.53 BREACHED RULE 26/28 AND DID NOT KNOW IT.** *It recorded, as "supporting context,
+explicitly not as a finding", that `nba_score.final_hp` holds `162` of its `163` dates before
+`2025-07-01`.* **That is `T16-7`, already on file since T16, in sharper form:** *"`nba_score.final_hp`
+— the table COMPASS fact 66 says the engine READS — covers ONE SEASON PLUS A SINGLE DAY. 2024-25:
+**19,075,070 rows / 162 dates**."* ✅ **§T20.53 labelled it non-new and cited the general claim, so
+the damage is bounded — but it cited §T20.31 and the frozen-layer item, and the real prior was T16-7,
+which it never found.** 📌 ***The kill was right and the citation was wrong, which is its own small
+lesson: a rule-26/28 check that stops at the first plausible prior is not a check.***
+
+⚠ **(b) AND ONE THE SESSION SHOULD NOT OVERSTATE.** **T16-8** records `final_hp.score` running to
+**−52.488** with **`6,924,101` of `19,215,200` rows — 36.0% — NEGATIVE**, across 20 of 30 props and
+both sides, against a contract of **0–100** — *and P3's certifier carries* `score in range 0-100`
+*as a* `count(out of range) == 0` *check.* 🔑 **The tempting synthesis is "P3 will go red like P2
+does in T20-13". IT IS NOT SUPPORTED**: `NBA_FINAL_SCORING_CALIBRATION.md:83` records that all
+6,924,101 were written in a **single 75-minute window on `2026-09-19 03:26:25 → 04:41:39`** — *one
+contaminated build, not a property of the scorer* — **and the certifier check is DATE-SCOPED, so it
+would not see them anyway.** ⇒ ***What IS true, and is the smaller honest claim: an integrity check
+scoped to `game_date = today` cannot see 6.9 million already-stored rows that violate the contract
+the check exists to enforce.*** **`NBA_WORKERS.md:2059` already calls this check *"❌ vacuous"*;
+this adds why.**
+
+## 4. ✅ THE DELIVERABLE — THE BRIEF IS COMPLETED, NOT MERELY CRITICISED
+
+**The pre-registration required it**: *"if the brief is incomplete, COMPLETING IT is the deliverable,
+not merely reporting it"* — under the charter's amendment that *"document, don't fix" applies to the
+system, not to the deliverable.*
+✅ **A FOURTH AMENDMENT is published on the brief**: the five missing items are added and ranked by
+the brief's own stated rule, the *"SEVEN BLOCKERS"* heading is superseded, and the scope line is
+replaced with a census that states how many season-critical items exist and that all of them are
+listed.
+
+## 5. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; reported as **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTY-SECOND consecutive identical run.** Measured 2026-09-22T17:36:36Z |
+| **(ii)** ≥1 season-critical item is not on the brief | 🔴🔴 **TRUE — FIVE of THIRTEEN**, including the frozen static layer, which every other finding in T20 leans on |
+| **(iii)** ≥1 missing item fires on or before opening day | 🔴 **TRUE — THREE do**, and one of the three is dated in its own heading |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTY-SECOND consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 6. ⚠ VERDICT
+
+🔴🔴🔴 **NOT CLEAN — and this is the most owner-facing defect T20 has found, because it is a defect
+in the one surface built to be read.** **No new open item: all five missing items already EXIST and
+are correct where they live. The defect was that the page above them claimed to be the list.**
+✅✅ **FIXED IN THE DELIVERABLE: the brief now carries all thirteen.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **T20-2 … T20-13 are all already on the brief** *(confirmed, not
+new)* · **T20-8 is deliberately absent — it is the SWEEP's defect, not a system blocker, and that is
+now stated on the brief rather than left implicit** · **the five missing items are all PRIOR
+findings; nothing about them is discovered here except that they are missing from one page.**
+
+📌 ***The lesson:*** **fifty passes audited what the system does and what the documents say. The
+fifty-first asked what the owner would actually read, and found that the page written to be his
+single source — headed "THE SEVEN BLOCKERS" — was missing five of thirteen, including the frozen
+static layer that half of T20's other findings depend on, and including the one defect he had
+reported himself.**
+***A corpus can be right in every line and still fail at the top of the page.***
