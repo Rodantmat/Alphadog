@@ -33977,3 +33977,116 @@ published a command anyone else could run. The one time the sweep wrote down a c
 caught a real defect seventy-three minutes after it appeared.** ***A figure tells a successor what was
 true. A command tells them how to find out whether it still is — and only one of those two has been
 written down.***
+
+---
+
+# §T20.72 — T20 PASS 67: 🔴🔴🔴 **THE BROKEN INDEX IS NOT WHY RULES GET DUPLICATED. TWO OF THE THREE BLOCKED CANDIDATES DUPLICATE RULES THAT ARE FULLY WRITTEN, INDEXED AND READABLE — AND ONE OF THE TWO IS MINE, FROM LAST PASS** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.** *Population pinned with a complete,
+copy-runnable command from the repo root, per §T20.71's own prescription applied in the pass that
+follows it:* `grep -cE "^\| \*\*[0-9]{1,2}\*\* \|" nba/NBA_SWEEP_RUN_LOG.md` ⇒ **`37` rows**,
+`2026-09-22T19:00:53Z`, run-log blob `a05d741d87922a0ca681f24d0a0f118384281b7f`.
+
+## 🔴 FIRST — **THIS PASS'S OWN CLAUSE (ii) IS KILLED BY A PRIOR, AND THE KILL IS REPORTED, NOT BURIED**
+
+*Pass 67 pre-registered: **"the TRUE rule count, recounted from source, differs from what the index
+lists."*** ⚠⚠ **That is §T20.18, verbatim, thirteen passes earlier — heading and all:**
+
+> **§T20.18 — PASS 13: *TEN OF THE FORTY-EIGHT STANDING RULES HAVE NEVER BEEN WRITTEN DOWN*** …
+> *"**The bounded task §T20.17's index defect made concrete** — locate the ten absent rules and give
+> them rows. **The task could not be completed, and why it could not is the finding.**"*
+
+⇒ ***Clause (ii) is scored KILLED BY PRIOR (rules 26/28). The count, the absent set (`1 · 2 · 3 · 4 ·
+5 · 9 · 10 · 11 · 13 · 14`, plus `48` present only as prose) and the reason are all §T20.18's, and are
+carried here, not re-discovered.*** ⚠ **The pre-registration was written from the resume note's
+summary of §T20.18 and not from §T20.18 itself — which is rule 26 (*a count of carriers is not a
+reading of them*) failing in the PRE-REGISTRATION rather than in the finding. Recorded as such.**
+
+📌 **AND THE INHERITED SUMMARY WAS WRONG IN ITS WORDS.** *The resume note renders §T20.18 as "the rules
+index lacks ten of its fifteen rules." **§T20.18 says ten of the FORTY-EIGHT.*** *The "fifteen" comes
+from §T20.21/§T20.28 quoting it that way. **Both readings point at the same ten rules, but one is a
+claim about the INDEX and the other is a claim about the CORPUS — and it is the corpus one that is
+true: those ten were never written down anywhere.***
+
+## ✅✅ CLAUSE (iii) — **PRE-REGISTERED, AND IT HITS: TWO OF THE THREE ARE DUPLICATES**
+
+*Pre-registered: **"at least ONE of the three blocked candidates is a DUPLICATE of a rule already on
+file"** — deliberately, because a clause that can only inflate the rule count is not a test.*
+
+| candidate | nearest rule already on file | verdict |
+|---|---|---|
+| **A — §T20.21**: *"a positive control drawn from the regime where an instrument is KNOWN to work says nothing about the regime the claim is about."* | **RULE 22** *(T11 §T11.7b)*: *"A zero is believed only after a POSITIVE CONTROL; and every hit is opened before it is counted."* | ✅ **SURVIVES — NOT a duplicate.** *Rule 22 requires a control; A constrains **where the control must be drawn from**. Nothing in 22 says it.* |
+| **B — §T20.28**: *"a scope claim is tested by the MEANING, never by the form it was written in."* | **RULE 20** *(T10 §T10.18a)*: *"Probes are counted in VOCABULARIES, not in number: the source's, the documents', the system's."* | 🔴 **DUPLICATE.** *A scope claim is tested BY a probe, and a probe spanning vocabularies is a probe on meaning rather than form. Applying §T20.16's own test — "nothing of 49 survives that 40 did not already say" — nothing of B survives rule 20.* |
+| **C — §T20.71**: *"a pin has three parts — the complete copy-runnable command including its working directory, the timestamp or tree, and the figure."* | **RULE 30** *(T11)*: *"A POPULATION IS RE-DERIVABLE OR IT IS NOT A POPULATION… **the remedy is one clause: give the count its command, not its adjective**"* **+ RULE 23**: *"A count states its population, its tree, AND its sport."* | 🔴🔴 **DUPLICATE.** *Rule 30 is the command; rule 23 is the tree. Together they are C's three parts — already numbered, already indexed.* |
+
+## 🔴🔴🔴 THE FINDING — **AND IT OVERTURNS §T20.18's CAUSAL CLAIM**
+
+**§T20.18 concluded:** > ***"You cannot check whether a rule already says something if the rule has
+never been written down."***
+
+⚠⚠ **THAT DOES NOT EXPLAIN B OR C. `RULE 20` AND `RULE 30` ARE BOTH FULLY WRITTEN, BOTH IN THE INDEX,
+BOTH READABLE IN ONE LINE — AND BOTH WERE DUPLICATED ANYWAY.** *Only the FIRST duplicate birth — rule
+49 → rule 40 → rule 10 — involved an unreadable target. **Of the three candidates the index defect is
+credited with blocking, two collide with rules the index carries perfectly well.***
+
+🔴🔴 **AND C IS MINE — §T20.71, ONE PASS AGO.** *That pass read the index table **to count its rows**
+and then wrote a rule that **row 30 of the same table already states**. It did not read row 30.
+§T20.16 named this exact failure eleven passes earlier — **"USING A RULE IS NOT READING IT"** — and the
+lesson was never turned into a check.*
+
+⇒ ***THE CAUSE IS NOT THAT THE INDEX CANNOT BE READ. THE CAUSE IS THAT NO PASS READS IT BEFORE WRITING
+A RULE.*** **Rule 12 — *"apply a rule in the pass that writes it (the most-broken rule in the run)"* —
+has no companion saying *read the index before adding to it*, and that absence, not the gaps, is what
+produced four duplicate births in one session.**
+
+🔑🔑 **AND THE BLOCKING POLICY MADE IT STRICTLY WORSE.** *§T20.21 and §T20.28 both declined to number
+their candidates **because the index was broken**, escalating instead to an OWNER DECISION whose option
+(d) reads: **"adopt the two candidates on the owner's word alone, since the duplication check is exactly
+what the index cannot currently provide."*** 🔴 ***The index could provide it. Rows 20 and 22 are two of
+the thirty-seven rows that ARE there. Reading them takes a minute and resolves both candidates — one
+survives, one is a duplicate.*** ⇒ ***The index defect did not block two rules. The BELIEF that the
+index defect blocks rules blocked them — and candidate A, which duplicates nothing, has sat unnumbered
+for forty-six passes as a result.***
+
+## ✅ THE REPAIR — **WHAT THIS PASS ACTUALLY CHANGED**
+
+1. ✅ **CANDIDATE A IS NUMBERED — `RULE 50`** *(49 is retired and is not reused)*, born §T20.21,
+   adjudicated here. **Index row added.**
+2. 🔴 **CANDIDATE B — RETIRED ON ARRIVAL**, duplicate of **rule 20**, recorded with its pointer exactly
+   as §T20.16 recorded rule 49's retirement.
+3. 🔴 **CANDIDATE C — RETIRED ON ARRIVAL**, duplicate of **rules 30 + 23**, same treatment. *It was
+   written by §T20.71 and is withdrawn by §T20.72 one pass later — rule 49's interval was seven
+   minutes; this one was one pass.*
+4. ✅ **`RULE 48` GIVEN ITS INDEX ROW** — born §T20.11, it had existed only as prose above the table,
+   which is why §T20.18 counted ELEVEN numbers absent from the rows and TEN rules absent from the
+   corpus.
+5. ✅ **THE OWNER DECISION NARROWED, NOT CLOSED**: the duplication question it was escalated for is now
+   answered mechanically. **What remains for the owner is only the original ten** — *whether rules
+   1–5, 9, 10, 11, 13, 14 are reconstructed from usage, or left as usage.*
+
+⚠ **AND ONE MEASUREMENT SAYS RECONSTRUCTION IS NOT FREE — §T20.18 DID NOT TEST THIS.** *Harvesting every
+inline gloss of the form* `rule N — <gloss>` *across the master summary, run log and open items:*
+**rules `4`, `13` and `48` have ZERO inline glosses; rule `1` has FIVE mutually different ones and rule
+`9` has SEVEN** — *"the authority, never the prose that reports it"* vs *"the page text does not
+establish which"* vs *"the sweep's own deliverable exception"*; *"own-document contradiction"* vs
+*"the authority is named, not inferred."* 🔴 ***These are not paraphrases of one proposition. The corpus
+has been citing the same rule NUMBER for different rules.*** ⇒ **Reconstruction from usage would not
+recover the rules; it would canonise whichever gloss a later pass happened to read. Recorded for the
+owner's decision, not acted on.**
+
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.18** *(the count, the absent set and the never-written-down
+finding — **PRIOR**, and it **KILLS this pass's own clause (ii)**, scored as killed)* · **§T20.16**
+*(rule 49's birth-and-retirement — **PRIOR**, and the METHOD precedent followed here for B and C)* ·
+**§T20.21, §T20.28, §T20.71** *(the three candidates — **PRIOR**; this pass adjudicates them, it does
+not re-derive them)* · **§T20.17** *(the rule 40 → rule 10 merge — **PRIOR**, quoted as the first
+duplicate birth and not re-diagnosed)*.
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(baseline `636 · 2 · 484 · 481`; Δ `484 − 471` =
+`13` segments covered, unchanged)*.
+
+📌 ***The lesson:*** **the sweep has spent thirteen passes treating a broken table of contents as the
+reason its rules keep being born twice. Two of the three rules it refused to write collide with rules
+sitting in that table, fully legible — and the collision this pass is proudest of finding is its own,
+written one pass earlier, by a pass that had the table open in front of it.** ***An index that cannot
+be read is a problem you can measure. An index nobody reads is a problem that measures you.***
