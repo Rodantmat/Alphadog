@@ -30737,9 +30737,9 @@ today happens **by construction** on a game day.
 
 | | |
 |---|---|
-| **Call** | `github_list_dir('.github/workflows')` **and** `ls .github/workflows \| wc -l` on the clone |
+| **Call** | `github_list_dir('.github/workflows')` **and** ~~`ls .github/workflows \| wc -l`~~ → **corrected T20 pass 66 (§T20.71)**: `ls .github/workflows/*.yml | wc -l`, run from the **repo root** *(the struck form carries a markdown-escaped pipe `\|` and is unrunnable as printed; the original is kept under rule 40)* |
 | **Taken** | **2026-09-22T16:27:15Z**, tree **`2b9a4c22fe80b6ffcc7d3d3b6784f4f32d5a7bb7`** |
-| **Result** | **40 workflow FILES**, both methods agreeing |
+| **Result** | **40 workflow FILES**, both methods agreeing · ✅ **RE-DERIVED 2026-09-22T18:55Z (§T20.71): `40` both ways — the pin HOLDS** |
 | **In scope** | **39** — `nba-pp-payout-map.yml` is the concurrent session's and is **excluded**, as it has been throughout |
 
 ⚠ **RULE 20 APPLIED TO THE POPULATION ITSELF.** *"40 workflow files" is a count of FILES, not of
