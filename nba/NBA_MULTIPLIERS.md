@@ -394,6 +394,156 @@ board + graded outcomes, which does not exist until the season runs.
 
 ---
 
+## 0.7-T18. 🔴🔴🔴 **THE MULTIPLIER HUNT'S RESULT — EXHAUSTIVE, DEFINITIVE, AND IT OVERTURNS THE STORED GOBLIN ESTIMATE** *(T18 pass 1, §T18.2)*
+
+*§0.8-T18 below records what the owner ordered. **This is what the hunt found**, and COMPASS fact 106's
+one-line *"not on any public surface"* is the summary of it.*
+
+### ✅ **1 · THE BOARD PAYLOAD DOES NOT CARRY IT — the complete field list, and a zero grep**
+
+**Every attribute PrizePicks sends per projection**: `adjusted_odds · board_time · custom_image ·
+description · end_time · event_type · flash_sale_line_score · game_id · group_key · hr_20 · in_game ·
+is_live · is_live_scored · is_promo · league_ppid · line_score · odds_type · projection_type · rank ·
+refundable · start_time · stat_display_name · stat_type · status · today · tv_channel · updated_at`.
+**Relationships**: duration, game, league, new_player, projection_type, score, stat_type. 🔴 **No
+payout. No multiplier. No factor. No coefficient.**
+
+✅ **AND A FULL-PAYLOAD GREP CONFIRMS IT**: `multiplier|payout|factor|coefficient` returns **ZERO
+matches across 691,431 lines** of the live **17.6 MB `prizepicks_mlb_current.json`**. ⚠ **The two
+odds-adjacent fields carry labels, not prices**: **`odds_type: "demon"`** and **`adjusted_odds: true`
+— a BOOLEAN flag meaning "this leg is priced off-standard", never the amount.**
+
+### ✅ **2 · THE ENDPOINT SWEEP — and the wall is PER-ENDPOINT, not per-IP**
+
+*Run through the working scraper's exact transport — **`curl_cffi` with `impersonate="chrome124"` plus
+the proxy** *(egress **50.120.60.213, US/California** — the correct jurisdiction)* — **the same path
+that captured the 17.6 MB file**:
+
+| Target | Result |
+|---|---|
+| `/payout_tables` · `/entries/quote` · `/entries/preview` · `/graphql` · `/stat_types` · `/projection_filters` | 🔴 **DataDome interstitial** (`geo.captcha-delivery.com`) |
+| **`partner-api.prizepicks.com/payouts`** | ✅ **a clean `{"status":404,"error":"not found"}` — a REAL application response** |
+
+🔑 **That 404 is the informative one**: *"that host isn't bot-walled, so 404 means **the path genuinely
+does not exist there**."* ⚠ **And since the projections endpoint works through the identical path,
+the block is per-ENDPOINT — PrizePicks guards anything beyond the public board.**
+
+### 🔴 **3 · THE WEBPACK-BUNDLE TECHNIQUE THAT SOLVED UNDERDOG FAILS HERE**
+
+*COMPASS fact 49 records the Underdog ladder being solved by **scanning webpack chunks** for the
+endpoint the client calls. Applied to PrizePicks:*
+
+| Target | Result |
+|---|---|
+| `app.prizepicks.com/board` | 🔴 **403 DataDome — the app SHELL itself is bot-walled, HTML included** |
+| `www.prizepicks.com` | ⚠ **200, 20 bundles — but this is the MARKETING site, not the app** |
+| the one `multiplier` hit | 🔒 **`volumeMultiplier` in a Lottie animation library — a false positive, killed** |
+
+⚠⚠ ***"DataDome guards the CLIENT SHELL, not just the API — which is STRICTER than Underdog, where
+the bundle scan worked."*** 🔑 **So the technique is not wrong; the target is harder.** *(iOS 17+
+blocking bookmarklets closed the owner-side shortcut as well.)*
+
+### 🔑🔑🔑 **4 · THE DECISIVE EVIDENCE IS MARKET-WIDE, NOT OUR OWN PROBES**
+
+> ***"EIGHT independent commercial PrizePicks scrapers, all reverse-engineered, ALL list the same
+> fields: 'odds types (standard, demon, goblin)' — **the LABEL, every time. NOT ONE exposes a
+> PrizePicks multiplier.**"***
+
+⚠ **And the same vendors advertise payout multipliers for the COMPETITORS**:
+
+| App | What their scrapers extract |
+|---|---|
+| 🔴 **PrizePicks** | **"odds types (standard, demon, goblin)" — TIER LABELS ONLY** |
+| Underdog | *"American and decimal odds, **payout multipliers**"* |
+| Sleeper | *"over/under lines, **payout multipliers**"* |
+| DraftKings Pick6 | *"over/under **multipliers**"* |
+| Betr | tiers + values via GraphQL |
+
+🔑 *"These are COMPETING vendors with every commercial incentive to extract more, and one lists **51
+fields per prop** — yet none has a PrizePicks payout field. **That's about as close to proof as
+reverse-engineering gets.**"* ✅✅ **AND IT EXPLAINS THE OWNER'S OBSERVATION EXACTLY**: *"one leg shows
+nothing because **THERE IS NOTHING TO SHOW** — the factor only exists once the entry is priced
+**SERVER-SIDE**, which is why the number appears on the second leg and why it sits behind the
+**authenticated entry endpoint** that DataDome guards."*
+
+### 🔴🔴🔴 **5 · THE OWNER'S SEVEN WNBA SCREENSHOTS — AND THEY OVERTURN THE STORED GOBLIN ESTIMATE**
+
+*$20 entry, Power Play. **`implied product = displayed ÷ base`**:*
+
+| Picks | Composition | Displayed | Base | **Implied product** |
+|---|---|---|---|---|
+| 4 | **4 goblins** | 2.1x | 10x | 🔴 **0.210** |
+| 3 | **3 goblins (all rebounds)** | 1.8x | 6x | 🔴 **0.300** |
+| 3 | 3 goblins | 2.7x | 6x | 0.450 |
+| 3 | 1 demon + 2 goblins | 3.5x | 6x | 0.583 |
+| 2 | 1 demon + 1 goblin | 2.2x | 3x | 0.733 |
+| 2 | 1 goblin + 1 demon-less | 2.4x | 3x | 0.800 |
+| 4 | **2 demons + 2 goblins** | 15.5x | 10x | **1.550** |
+
+🔴🔴 **(a) GOBLINS ARE FAR MORE PUNITIVE THAN THE STORED ESTIMATE.** *Four goblins → 0.210 → **≈0.677
+per leg** if equal; three rebounds goblins → 0.300 → **0.669 each**.* ⚠⚠ **The config says *"goblin
+~0.75–0.90× typical"*. **The real number is nearer 0.67** — a 10–25% overstatement of what a goblin
+leg is worth, in the direction that makes goblin slips look better than they are.**
+
+🔑 **(b) DEMONS ARE STRONGER THAN GUESSED.** *Two demons + two goblins → 1.55; with goblins at ~0.68
+each (0.46 product), **the two demons must contribute ~3.37 — roughly 1.84 each**, at the top of the
+guessed 1.20–1.50 (extreme 1.75–1.9) range.*
+
+✅ **(c) AND A SOLVABLE SYSTEM EXISTS**: **Naz Hillmon's 2.5-rebounds goblin appears in two slips and
+Kamilla Cardoso in four at different lines** — *"same leg, different slips, **so the individual
+factors can be PINNED rather than assumed equal**."* 🔑 **A few more HOMOGENEOUS slips (all legs same
+prop/line/side) would read each factor exactly.**
+
+⚠⚠ **AND THIS IS WHY IT MATTERS FOR THE STORED DATA**: `score.real_slip_leg_observations` holds **139
+leg observations, all decomposed via `equal_scale_v1`** — *"**derived by ASSUMING every leg in a slip
+carried an equal share — they are INFERRED from slip totals, not READ from the app.**"* 🔑 **The
+screenshots are the first direct read, and they disagree with the inference.**
+
+### ✅ **6 · THE PRICING LAW, AND WHY IT IS BOTH TRUE AND INSUFFICIENT**
+
+*Already solved and documented at the repo root (`prizepicks_pricing_model_solved.md`,
+`goblin_demon_multiplier_study_dossier.md`), **2026-09-05, from 22,470 graded legs**:*
+
+> 🔑🔑 ***"PrizePicks prices every goblin leg FROM ITS PROBABILITY — not from line, tier, or distance
+> arithmetic."*** **`multiplier × p_hit` is approximately CONSTANT across all 7 cells measured, with
+> multipliers spanning 1.1067–1.2179.**
+
+| | |
+|---|---|
+| **Distance is NOT monotonic** | +0.5 → 1.2017 · +1.0 → **1.1067** · +2.5 → 1.1129 · +3.0 → 1.1247 — *"**distance is only a COORDINATE; p is what is PRICED**"* |
+| **The anchor matters because it determines p** | *"singles 1.5-less prices at **1.2017** when the anchor is 1.0, but **1.1067** when the anchor is 0.5 — **an 8.6% gap from the anchor alone**"* |
+| **Prop identity barely matters once p is fixed** | two different props at the same line and distance priced within **1.06%** |
+| **The read procedure** | *"a HOMOGENEOUS 4-pick where every leg shares prop, line, side and anchor… **per-leg = the 4th ROOT** of the displayed power multiplier"* |
+
+✅ **AND THE STORED OBSERVATIONS CONFIRM THE OWNER'S "EACH GOBLIN IS DIFFERENT"**: *walks-allowed more
+at the **1.5** line prices **1.4253–1.5009**; the **0.5** line **1.1150–1.1650** — **a 30% gap between
+rungs of the same prop**, with **5% variation still present WITHIN a single line**, which is *"the
+player-and-day-specific probability moving."**
+
+🔑 **THE DERIVATION THAT FOLLOWS**: **`multiplier ≈ constant / p`**, with the constant fitted per sport
+from the 139 placed-leg observations joined to the board snapshot at placement time — ✅ **and the
+system now HAS a well-calibrated `p` (0.5643 log-loss).** ⚠⚠ **BUT THE OWNER KILLS THAT PATH**:
+*"**the factor varies by rung, side, prop, player form, team form. That's a space too large to solve
+with slips.**"* 🔑 **And his second argument is the stronger one: *"if the app RENDERS it, the client
+RECEIVED it. The client cannot invent a number it wasn't given"*** — **which is what redirected the
+hunt from inference to the client, and to the DataDome wall.**
+
+### 🔴 **7 · WHAT REMAINS — and it is a five-minute job on the owner's side**
+
+*Every route that does not require an authenticated session is closed. **The remaining one is the
+owner's own browser**, and it has a precedent: **COMPASS facts 49 and 50 record Underdog and Fliff
+being solved from cURLs the owner captured.** The recipe, as given:*
+
+> **Open `app.prizepicks.com` logged in → DevTools → Network → filter **Fetch/XHR** → add the FIRST
+> leg → **CLEAR the list** → add the SECOND leg. Whatever fires in that final step is the answer.
+> Right-click → Copy → **Copy as cURL**.**
+
+⚠ *Desktop DevTools is free; the iOS routes (**Inspect Browser** ~$5, or **HTTP Catcher / Proxyman**
+for the native app) were offered as alternatives.* 🔑 **Recorded so the deferral carries its exit
+condition rather than reading as a dead end.**
+
+---
+
 ## 0.8-T18. 🔴🔴🔴 **THE PRIZEPICKS MULTIPLIER HUNT — what the owner OBSERVED, what he ordered, and why it was DEFERRED** *(T18 pass 0, §T18.1, owner, 2026-09-19; COMPASS fact 106's origin)*
 
 *COMPASS fact 106 records only the conclusion — **"PRIZEPICKS PER-LEG MULTIPLIERS ARE NOT ON ANY PUBLIC
