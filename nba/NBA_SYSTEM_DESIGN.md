@@ -28,7 +28,7 @@ first."***
 |---|---|
 | **input** | the **CLOSE snapshot** of every board line + our player game logs *(points, rebounds, assists, threes, blocks, steals, turnovers, double-doubles, combos computed; period markets from the periods data)* |
 | **join** | **normalised player name** *(jr./iii/accents/apostrophes stripped)* **+ game date + team** — 🔴 ***and unmatched names get LOGGED rather than silently dropped*** *(**0 of thirty**)* |
-| **rules that mirror the apps** | **DNP → void** · 🔴 ***exact hit on a whole-number line → PUSH*** *(the rule is on file in substance; **this exact statement is 0 of thirty**)* · **goblins/demons graded on their own lines** · **Underdog multipliers carried so the slip engine can simulate real payouts** |
+| **rules that mirror the apps** | ~~**DNP → void**~~ 🔴 **SEE THE CODE CORRECTION BELOW — the grader deliberately does NOT do this** · 🔴 ***exact hit on a whole-number line → PUSH*** *(the rule is on file in substance; **this exact statement is 0 of thirty**)* · **goblins/demons graded on their own lines** · **Underdog multipliers carried so the slip engine can simulate real payouts** |
 | **output** | **one row per graded line** — the training target for the slip engine and the ROI simulation |
 | 🔴 **and its second job** | ***the same grader runs LIVE every morning on the previous night's boards, "which is how the derived-Sleeper fallback gets its ROLLING CALIBRATION"*** *(**0 of thirty** — and it is the mechanism that keeps the one board with no history usable)* |
 
