@@ -10,6 +10,129 @@ writes. Grouped by role.
 
 ---
 
+## 0.00000 🗺️🗺️ **THE WIRING MAP — WORKFLOW → SCRIPT → TABLE** *(published 2026-09-22, T20 pass 34, §T20.39)*
+
+> 🔑🔑 **WHY THIS SECTION EXISTS.** *This document has described every SCRIPT and
+> `NBA_DATABASE.md` every TABLE, and until now nothing described the EDGE between them.*
+> **Five consecutive T20 passes each found a defect, and every one lived on an edge** — a season
+> constant between a workflow and a script *(T20-4)*, a date window between a script and a table
+> *(T20-5)*, a certifier check between an assertion and a writer *(T20-6)*. ***The map below is the
+> missing view, written down so the blind spot that produced all three closes.***
+> **POPULATIONS, pinned 2026-09-22T15:52:31Z** *(rebuildable: `scratchpad/t20/wiring.py`; the
+> invocation pattern matches SUBDIRECTORY paths — `nba/baseline/*.py` was lost to a root-only pattern
+> once already)*: **`39` workflow files** *(all 40 less `nba-pp-payout-map.yml`, the concurrent
+> session's)* · **`119` distinct script invocations** · **`33` distinct tables written.**
+> ⚠ **Every cell below was opened against its source (rule 48). Rows that RESTATE an open item are
+> marked; the map does not republish old findings as new ones.**
+
+### A · THE THREE PIPELINES IN STEP ORDER
+
+**P1 — `nba-p1-weekly-static.yml` · 14 invocations · cron `0 19 * * 1` (Mondays 12:00 PT)**
+
+| step | script | writes |
+|---|---|---|
+| 1–11 | `scrape_nba_stats_teams` · `_arenas` · `_players` · `player_bio` · `season_tables` · `team_stats` · `onoff` · `playtypes` · `player_tracking` · `darko` · `shotquality` | **— nothing to the DB** |
+| 12 | `build_defender_ratings.py` | `nba_ref.defender_ratings` |
+| 13 | `build_static_context.py` | **— nothing to the DB** |
+| 14 | `certify_pipeline.py` `PIPE=p1` | *(asserts only)* |
+
+🔑 ***Eleven of P1's fourteen scripts write NO database row.*** **They emit JSON that is committed to
+the repo, and a separate loader must pick it up — the two-hop architecture.** ⚠ **This is exactly the
+shape of T11's headline finding (2): *the second hop is missing for a whole family.* The map makes
+the exposure countable rather than anecdotal.**
+
+**P2 — `nba-p2-overnight-heavy.yml` · 19 invocations · 🔴 NO CRON (`workflow_dispatch:` only)**
+
+| step | script | writes |
+|---|---|---|
+| 1–3 | `scrape_nba_daily_delta` · `_per_game_delta` · `_injury_report` | — |
+| 4 | `scrape_referee_assignments.py` | `nba_ref.referee_assignments` ⚠ **live count `0`** |
+| 5–8 | `scrape_nba_matchups_pergame` · `sync_season_files_from_delta` · `scrape_nba_periods` · `scrape_nba_schedule` | — |
+| 9 | `check_delta_gaps.py` | — *(audit; 🔴 `GAP_SEASON` default `"2025-26"` — T20-4)* |
+| 10 | `grade_board_outcomes.py` | `nba_market.board_outcomes` 🔴 *(window ends `2026-04-12` — T20-5)* |
+| 11 | `export_market_spreads.py` | **— nothing to the DB** *(a FILE producer despite the name)* |
+| 12–14 | `baseline/build_baseline_ladder.py` · `baseline/build_combos_ladder.py` · `baseline/build_periods_ladder.py` | **— nothing to the DB** *(they emit the ladder artefacts)* |
+| 15 | `load_baseline_ladder.py` | **`nba_score.baseline_ladder`** *(live `206,237`)* · `nba_score.baseline_ladder_runs` *(latest `asof` **2026-03-15**)* |
+| 16 | `build_asof_calibration.py` | `nba_score.ladder_calibration_asof` |
+| 17 | `build_blowout_model.py` | `nba_score.blowout_model` |
+| 18 | `build_confidence_v3.py` | `nba_score.confidence_model` · `nba_score.confidence_verification` |
+| 19 | `certify_pipeline.py` `PIPE=p2` | *(asserts only)* |
+
+**P3 — `nba-p3-afternoon-light.yml` · 11 invocations · 🔴 NO CRON (`workflow_dispatch:` only)**
+
+| step | script | writes |
+|---|---|---|
+| 1–4 | `scrape_nba_injury_report` · `scrape_sleeper_board` · `scrape_underdog_board` · `scrape_fliff_board` | — ⚠ *no PrizePicks producer — the documented HARD GAP* |
+| 5 | `archive_live_boards.py` | `nba_market.board_snapshots` |
+| 6 | `maintenance_shrink_board_index.py` | — |
+| 7 | `export_market_spreads.py` | — |
+| 8 | `build_rung_market.py` | `nba_market.rung_market` 🔴 *(window ends `2026-04` — T20-5)* |
+| 9 | `build_availability_delta.py` | `nba_score.availability_delta` *(live `4,274`)* 🔴 *(season default; returns 0 silently — T20-4)* |
+| 10 | `score_board_legs.py` | **`nba_score.board_scored`** — **P3's PRIMARY OUTPUT** |
+| 10b | *(inline block)* | `nba_score.paper_picks` *(live `0`)* |
+| 11 | `certify_pipeline.py` `PIPE=p3` | *(asserts only)* |
+
+### B · 🔴 THE CERTIFIER IS ONE TABLE OFF FROM WHAT THE PIPELINES WRITE
+
+| certifier check | asserts | the pipeline actually writes |
+|---|---|---|
+| 🔴 **P2** `baseline_history has today` *(+2 more)* | `nba_score.baseline_history` — **written by `load_baseline_history.py`, which P2 does NOT invoke** | ✅ **`nba_score.baseline_ladder`** *(206,237 rows, via `load_baseline_ladder.py`, step 15)* |
+| 🔴 **P3** `final_hp has today` *(+2 more)* | `nba_score.final_hp` — **written by `build_final_hp.py`, which P3 does NOT invoke** | ✅ **`nba_score.board_scored`** *(via `score_board_legs.py`, step 10)* |
+| ⚠ **P1** `player name map populated` | `nba_ref.player_name_map` — written by `check_baseline_board_coverage.py`, not P1 | *(legitimately an INPUT check)* |
+
+🔑🔑 ***The certifier is not checking nothing — it is checking the SIBLING. P2 produces
+`baseline_ladder` and is asked about `baseline_history`; P3 produces `board_scored` and is asked
+about `final_hp`.*** ⚠ **That is a sharper statement than "the check has no writer", and it changes
+the fix: the question is whether the pipeline should also build the asserted table, or whether the
+assertion should name the table the pipeline builds.** 📌 **Open item T20-6 carries the decision.**
+
+### C · 🔴 THE `17` TABLES WITH MORE THAN ONE WRITING WORKFLOW
+
+| writers | table | workflows |
+|---|---|---|
+| **4** | `nba_market.board_snapshots` | `nba-board-archive` · `nba-board-backfill` · `nba-boards-market` · **P3** |
+| **3** | `nba_score.ladder_calibration_asof` | `nba-absence-panel` · **P2** · `nba-score-history` |
+| **3** | `nba_score.baseline_history` | `nba-baseline-history` · `nba-combos-history` · `nba-periods-history` |
+| **3** | `nba_score.confidence_verification` | `nba-absence-panel` · `nba-engine-test` · **P2** |
+| **3** | `nba_market.rung_market` | `nba-board-maintenance` · `nba-boards-market` · **P3** |
+| **2** | `final_hp` · `conformal_confidence` | `nba-absence-panel` · `nba-engine-test` |
+| **2** | `board_scored` · `availability_delta` | `nba-engine-test` · **P3** |
+| **2** | `confidence_model` | `nba-engine-test` · **P2** |
+| **2** | `board_outcomes` | `nba-grader` · **P2** |
+| **2** | `baseline_ladder` · `baseline_ladder_runs` | `nba-overnight-queue` · **P2** |
+| **2** | `blowout_model` | `nba-absence-panel` · **P2** |
+| **2** | `defender_ratings` | `nba-absence-panel` · **P1** |
+| **2** | `referee_assignments` | **P2** · `nba-referees` |
+| **2** | `player_name_map` | `nba-board-maintenance` · `nba-overnight-queue` |
+
+⚠⚠ **THE RISK IS NOT THEORETICAL.** *The storage-diet plan's first rule is **"execute only when no
+build is running — the loaders delete-and-rewrite under an advisory lock"**, and P2's own comment
+records the consequence: **"Passing one season made the builder delete EVERY season and rebuild one;
+on 2026-09-20 03:24 UTC that wiped the whole calibration history."*** 🔑 ***That was
+`ladder_calibration_asof` — a THREE-writer table.***
+🔴🔴 **AND `nba-engine-test.yml` IS A CO-WRITER OF SIX OF THEM** *(`final_hp`, `board_scored`,
+`confidence_model`, `availability_delta`, `conformal_confidence`, `confidence_verification`)* **and
+also invokes `run_storage_diet.py`.** ⚠ *Whether that path is gated inside the script is NOT
+RECORDED — the invocation was read, not the guard.*
+
+### D · ✅ NOT ORPHANS — *recorded so a later pass does not re-flag them*
+
+**Libraries, imported rather than invoked**: `nba_names.py` *(imported by **27** scripts)* ·
+`nba_season.py` *(**19**)* · `nba_asof.py` *(**3**)*.
+**Invoked from a working directory, not the repo root**: `build_training_data.py` ·
+`train_models.py` · `validate_factor_coefficients.py` — **all three exist in `gbdt_training/`** and
+`gbdt-training.yml` `cd`s before calling them.
+**Deliberately unwired**: `build_absence_panel.py` / `_v2` / `_v3` *(their tables were dropped —
+§T20.29)* · six `probe_*.py` diagnostics · two `load_pp_*.py` *(the concurrent session's)*.
+
+### E · ⚠ MLB RESIDUE VISIBLE IN THE MAP
+
+**`gbdt-training.yml`** — *"AlphaDog v2 GBDT Model Training"*, **`cron: "0 9 * * 0"` (Sundays 09:00
+UTC), `seasons` default `'2025,2026'`** — **enabled and firing, on a repo whose NBA P2 and P3 have
+no cron at all.** 📌 *Read beside open item T20-3's two enabled MLB rows in `config.scheduled_jobs`.*
+
+---
+
 ## 0.0000 🔴🔴🔴 **THE THREE PIPELINES, AND THE OWNER'S EXPLICIT CRON INSTRUCTION — *SET IT ON ONE, NOT ON THE OTHER TWO*** *(T18 pass 0, §T18.1, owner, 2026-09-19)*
 
 ⚠⚠ **This is an operational instruction with a deadline attached, and it is the opposite of what a
