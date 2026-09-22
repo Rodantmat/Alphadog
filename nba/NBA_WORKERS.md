@@ -64,7 +64,7 @@ the exposure countable rather than anecdotal.**
 |---|---|---|
 | 1–4 | `scrape_nba_injury_report` · `scrape_sleeper_board` · `scrape_underdog_board` · `scrape_fliff_board` | — ⚠ *no PrizePicks producer — the documented HARD GAP* |
 | 5 | `archive_live_boards.py` | `nba_market.board_snapshots` |
-| 6 | `maintenance_shrink_board_index.py` | — |
+| 6 | 🔴🔴🔴 `maintenance_shrink_board_index.py` | **— nothing. SEE BELOW: this step is MIS-WIRED** |
 | 7 | `export_market_spreads.py` | — |
 | 8 | `build_rung_market.py` | `nba_market.rung_market` 🔴 *(window ends `2026-04` — T20-5)* |
 | 9 | `build_availability_delta.py` | `nba_score.availability_delta` *(live `4,274`)* 🔴 *(season default; returns 0 silently — T20-4)* |
