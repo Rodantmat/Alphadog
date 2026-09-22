@@ -394,6 +394,155 @@ board + graded outcomes, which does not exist until the season runs.
 
 ---
 
+## 0.9 🔑🔑 THE T13 MULTIPLIER RESEARCH ARC — **what the research actually LEARNED, and where it stopped**
+*Recorded 2026-09-22 (T13 pass 1, §T13.2). **Transcript `2026-09-13-01-03-48`, the 250-segment
+assistant-prose stratum read in order.** Novelty probed against baseline `4429380d`; duplication
+probed against the WORKING tree over the twelve, **both pinned 2026-09-22T07:45:06Z**; controls
+`demon` 46 of thirty / 12 of the twelve and `flex` 19 / 7 both fire. **Every hit opened (rule 26);
+three candidates re-scoped and logged below.*** ⚠ **Rule 1: no multiplier value below comes from the
+prose that reports it — each names the AUTHORITY that produced it.**
+
+### 0.9a ⚠⚠ **THE PER-LEG MULTIPLIER IS NOT SCRAPABLE — and this is the arc's CONCLUSION, stated by the researcher**
+**§2 already rules PrizePicks out on four negative lines of evidence. T13 adds the MECHANISM and the
+researcher's own verdict**, which the twelve did not carry:
+
+> *"there is **no fixed multiplier**… the payout is **computed at ENTRY LEVEL when you submit**"*
+> *"payouts are set based on **the projections available AT THE TIME OF LINEUP SUBMISSION**"*
+> *"the multipliers are **dynamic** — PrizePicks adjusts them, **including WITHOUT MOVING THE LINE**"*
+> — and the closing self-assessment: ***"Have I figured out the PrizePicks multiplier? NO."***
+
+🔑 **Two of these are load-bearing and are new**:
+- ***The payout is a function of SUBMISSION TIME.*** A multiplier observed at 1:00 pm is not the
+  multiplier paid at 1:45 pm. **Every stored multiplier therefore needs a capture timestamp**, and
+  §4b's protocol does not currently require one. ⚠ **This interacts directly with the owner's
+  latency requirement** *(T13 seg 571, `NBA_OPEN_ITEMS.md`)*: a slow pipeline does not merely place
+  slips late, **it prices them against a quote that has already moved.**
+- ***The line can stay still while the multiplier moves.*** So **line-movement monitoring cannot
+  detect repricing**, and any inference of `m` from a line history is unsound.
+
+**And the BOOST is a separate multiplicative term**: *"a **per-leg factor applied MULTIPLICATIVELY to
+the base entry multiplier**"*, **which compounds**. Any observed payout may carry a boost the
+observer cannot see — **a confound §4b's protocol must exclude, not average over.**
+
+### 0.9b **THE BASE MULTIPLIER TABLE — the one set of hard numbers the arc produced**
+*Authority: the researcher's statement of PrizePicks' published entry table. **A PUBLISHED TABLE, not
+a measurement** — and it is the SLIP-SHAPE term of §0.2's decomposition, never the per-leg factor.*
+
+| Slip type | Picks | Payout |
+|---|---|---|
+| **Power Play** | 2 | **3×** |
+| **Power Play** | 3 | **6×** |
+| **Power Play** | 4 | **10×** |
+| **Power Play** | 5 | **20×** |
+| **Power Play** | 6 | **37.5×** |
+| **Flex** | 3 | **2.25×** all · **1.25×** on 2/3 |
+| **Flex** | 4 | **5×** all · **1.5×** on 3/4 |
+
+⚠ **Read this against §0.2 and §0.2h, not on its own.** §0.2's *"4/5 = 0.5 and 3/5 = 0.25"* are
+**partial-tier FRACTIONS from MLB**; the rows above are **absolute NBA-era entry payouts**. They are
+different quantities and **must not be multiplied together without re-deriving the convention.**
+✅ **The Single-Tier Non-Arbitrage check (§0.2d.1) has NOT been run on these rows** — it is
+arithmetic, not a study, and it is the cheapest next thing this document can do.
+
+### 0.9c 🔴 **THE PRODUCT CHANGED UNDERNEATH THE DATA — and the change is STATE-DEPENDENT**
+*Authority: the researcher's source review, then **self-corrected two segments later**.*
+
+- **PrizePicks retired against-the-house pick'em in the US on `August 22, 2025`**, replacing it with
+  the **peer-to-peer `Pick'em Arena`**.
+- ⚠ **The correction**: ***`Pick'em Arena` is STATE-DEPENDENT, not universal.*** The first statement
+  was too strong and the researcher narrowed it in place.
+- 📌 **The one question research could not settle and the app settles in ten seconds**: ***which
+  regime applies in California*** — *the owner's own jurisdiction, and therefore the one that decides
+  whether any of this is the right product at all.*
+- **PrizePicks' own X account**: *"you can now **pick LESS on select demon & goblin picks**"* —
+  ✅ **which is the public announcement behind the four-way rule in `NBA_GOBLIN_DEMON.md` §1.1**, and
+  it is the first DATED source for it in this corpus.
+
+🔑 **Why this is first-order**: **an against-the-house multiplier and a peer-to-peer entry fee are not
+the same quantity.** If Arena applies, `p × m` (§0.3b) is not even the right test. **NOT RECORDED:
+which regime the system's own board scrape is reading.**
+
+### 0.9d ⚠ **THE −137 / −119 ANCHORS — RE-SCOPED, because the numbers were already on file**
+🔴 **Rule 26 kill, partial — the SEVENTEENTH candidate re-scoped since T11.** `NBA_COMPASS.md`
+*(one of the EIGHTEEN, not the twelve)* already states: *"standard legs hit **48.8%** (break-even
+**54.3–57.8%** → PrizePicks' edge is **5.5–9 points**)"*. **So both break-even percentages, and a
+consequence T13's prose never draws, were on file before this pass.** *`57.8` is **0 of the twelve**
+and **2 of the thirty**, pinned 2026-09-22T07:45:06Z.*
+
+**What T13 adds, and only this**:
+- **The PRICES behind the percentages**: **−137 → 57.8%** and **−119 → 54.3%**.
+- **The PAIRING TO SLIP SIZE**, which COMPASS states as an undifferentiated range:
+  **−137 is the 2-pick break-even; −119 is the 5/6-pick Flex break-even.**
+- **The attribution**: *"−137 is **PrizePicks' CANONICAL break-even price**"* — **not a placeholder
+  or a sentinel**, and **sharp tools price standard legs there.**
+
+⚠ **This matters to `NBA_GOBLIN_DEMON.md` §4.** That section reads `price=-137` as the *v1 code's
+goblin sentinel*. **It is not a sentinel — it is the standard-leg market price**, which is why v1
+could use it as a label at all. **The label is a CONSEQUENCE of the price, not a tag attached to it.**
+
+### 0.9e 🔑🔑 **UNDERDOG IS THE SUBSTITUTE SOURCE — *"Underdog publishes exactly what PrizePicks hides"***
+*Authority: **Underdog's own API — i.e. THE OPERATOR**, which is the distinction that answers the
+owner's MLB-multiplier warning (T13 seg 848, `NBA_OPEN_ITEMS.md`): these are not our internal
+numbers, they are the counterparty's.*
+
+| Measured | Value | *of the twelve* |
+|---|---|---|
+| **Real tiered rungs** | **1,401** | **0** |
+| **Distinct ladders** | **385** | **0** |
+| **Distinct prices, Over** | **233** | **0** |
+| **Distinct prices, Under** | **211** | **0** |
+| **Price range** | **−2439 to +33xx** | **0** |
+
+✅ **This is the only per-leg multiplier dataset the project actually HAS**, and §0.2e's prior says
+Underdog prices *dynamically and efficiently* — **so it is simultaneously the best available
+substitute and the platform where a better `p` alone earns nothing.** Both are true at once.
+
+### 0.9f 🔑🔑 **THE RULE THAT FALLS OUT — model `m` on the PROBABILITY SHIFT, never on the TIER LABEL**
+> *"model the multiplier as a function of the **PROBABILITY SHIFT**, **conditioned on stat and line
+> magnitude** — ***never on the tier label***."*
+
+✅ **This CONFIRMS the owner's own correction in §3** *(*"the factor is NOT one number per tier — it
+varies by rung, side, prop, player form and team form"*)* **and turns it into a model specification.**
+*`probability shift` is **0 of the twelve** and **1 of the thirty**, pinned 2026-09-22T07:45:06Z.*
+
+**The per-stat evidence behind it** *(PRA, from the Underdog ladders)*: **average line 26.2** ·
+**0.85 goblins per ladder** · **1.20 demons per ladder** · **goblin offset −3.56** ·
+**demon offset +6.28**. ⚠ **The asymmetry is the point**: **demons sit nearly twice as far from the
+anchor as goblins do**, and **a label-based model cannot express that at all.**
+🔑 ***This is the measured form of the owner's "ladder depth is PROP-DEPENDENT" directive*** *(T13
+seg 661, `NBA_OPEN_ITEMS.md`, 0 of thirty)* — **and it is one prop. The other props are NOT RECORDED.**
+
+### 0.9g 🔴 **WHAT GEMINI PRODUCED — and why it was DISCARDED**
+*The owner directed Gemini's use explicitly. **The result was thrown away, and the reason is a
+reusable test.***
+
+**The reliability test applied: CONSISTENCY ACROSS FRAMINGS.** The same scenarios were put to Gemini
+more than once, and **the same scenario produced DIFFERENT numbers**:
+
+| Scenario | First answer | Second answer |
+|---|---|---|
+| **2-pick + 1 demon** | **4×** | **3.6×** |
+| **3-pick + 1 demon** | **6.5×** | **6×** |
+
+> **Verdict**: the examples were **DISCARDED**, and the researcher recorded the negative result
+> explicitly ***"so nobody re-runs this experiment later."***
+
+✅ **Recorded here for exactly that reason.** 🔑 **And the test generalizes**: *an LLM-supplied
+numeric constant is admissible only if it is STABLE ACROSS RE-ASKING* — **which is a free check, and
+the cheapest one in this document.** ⚠ **`Gemini` is in 9 of the twelve as a review/adversarial tool;
+this is the first record of it being used as a SOURCE OF NUMBERS and failing.**
+
+### 0.9h 🔴 **THE LIMIT THE OWNER SET — the honest ceiling on all of the above**
+> *"**we're never gonna be able to get exactly the way the PrizePicks multiplier works**, so we are
+> doing our best work possible… **they do change, they do switch**."*
+
+⚠⚠ **This is the owner's own confidence tier on the entire multiplier programme, and it is in 0 of
+the thirty.** **It licenses §4b's observational study and FORBIDS any claim of a solved formula.**
+**Read it before §5's EV arithmetic**, which is stated against *observed* factors precisely because
+no derived ones exist.
+
+---
+
 ## 1. WHAT EACH APP EXPOSES
 
 | App | Multiplier availability | Where |
