@@ -12,9 +12,25 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
-### 📜 THE FORTY-NINE STANDING RULES — *the index; each is written in full where it was born*
+### 📜 THE FORTY-EIGHT STANDING RULES — *the index; each is written in full where it was born*
 
-🔴🔴 **RULE 49 — BORN T20 PASS 9 (§T20.14), 2026-09-22.** ***A CORRECTION IS NOT COMPLETE UNTIL THE OLD
+🔴🔴🔴 **RULE 49 IS RETIRED, 2026-09-22 (§T20.16), SEVEN MINUTES AFTER IT WAS WRITTEN — IT IS A
+DUPLICATE OF RULE 40, WHICH SITS NINE ROWS BELOW IT IN THIS SAME TABLE.**
+**RULE 40, born T18 pass 7**: ***"A CORRECTION IS NOT A CORRECTION UNTIL IT REACHES EVERY DOCUMENT
+THAT ASSERTS THE OLD FIGURE"*** — **and it already specifies the instrument §T20.14 believed it was
+inventing**: *"find every struck-through value in the twelve, then check whether that same value is
+still asserted UN-STRUCK anywhere else."* ✅ **Nothing of 49 survives that 40 did not already say.**
+⚠⚠ **AND RULE 40'S SECOND HALF — WHICH §T20.14 BROKE.** ***"Distinguish a RETRACTED figure from a
+DATED one."*** *`233/211` was WRONG and must carry its retraction everywhere; `110,955` was **RIGHT
+WHEN WRITTEN** and needs a DATE, not a correction.* 🔴 **`20 of 135` is a DATED figure, not a retracted
+one** — §T12.7d records that it moved because `current_season()` rolls on `month >= 7`, i.e. **the
+season rolled over; the figure was correct when written.** ***§T20.14 struck it on six surfaces, which
+tells a reader it was an error. It was not.*** **Framing corrected at §T20.14; the propagation itself
+stands, because every surface also carries the date and the §-pointer.**
+🔑 ***The count in this heading went 48 → 49 → 48 within one session. That is the honest number.***
+
+*(Superseded text of rule 49, kept per rule 40's own principle — a correct supersession must not
+destroy the original:)* 🔴🔴 **RULE 49 — BORN T20 PASS 9 (§T20.14), 2026-09-22.** ***A CORRECTION IS NOT COMPLETE UNTIL THE OLD
 LITERAL HAS BEEN COUNTED ACROSS ALL TWELVE AND EVERY FLAT SURFACE WALKED. "Corrected in place" names
 ONE place.***
 
