@@ -49,7 +49,38 @@ version available at 2:30. **A null under ideal conditions is a valid null under
 🔑 **The asymmetry is the durable rule: a POSITIVE result fitted on post-game truth is an UPPER BOUND
 and must be re-measured at window time; a NULL fitted on post-game truth is already conservative.**
 
+### ✅ 1b · **A2's FITTED ALLOCATOR, WRITTEN OUT** *(T15 pass 2, §T15.3b — migration item: 4 of the thirty, **0 of the twelve** before this)*
+
+**`allocator_share = exp( 0.2214 + 0.3953·log(as-of min) + 0.5160·log(recent-5) + 0.0043·log1p(games) )`**,
+**normalised × team minutes** — `nba/fit_minutes_allocator.py`.
+
+🔑🔑 **THE FACTOR IS THE DIFFERENCE OF TWO ALLOCATIONS** — over **{played + ruled out}** vs **{played}**
+— *which is what makes it conserving by construction rather than by tuning.*
+`nba/build_redistribution_factors.py` → **`nba_score.redistribution_factors`, 51,806 rows,
+conservation 1.0015.** ⚠ **Cold start = a bench prior of 8 minutes, NEVER dropped** *(dropping a
+cold-start player would break conservation — the gate the five retracted panels could not clear)*.
+**Two-season `min_mult` 1.3228 / 1.3147.** **Skips `stocks` / `blocks` / `steals` / `fouls`** — the
+four of nineteen props that do not improve.
+
+⚠ *The **0.5160** weight on recent-5 against **0.3953** on as-of minutes is why the A5 rejection
+follows structurally: **recent-5 already dominates the allocation**, so a binary starter flag has
+nothing left to add (§3 below).*
+
 ### ⚠⚠ 2 · THE POPULATION RULE T15 STATES IN ITS OWN WORDS — **the same class as §T14.3a**
+
+🔴🔴 **AND THE CORPUS NOW CARRIES *THREE* A2 MINUTE-MAE TRIPLETS ON THREE DIFFERENT POPULATIONS**
+*(T15 pass 2 cross-check, §T15.3b — none of the three is wrong, and none is comparable to the others)*:
+
+| Triplet | Population | Contrast being drawn |
+|---|---|---|
+| **4.609** allocator vs **4.875** recent-5 | the allocator's own accuracy test | **is the allocator better than the naive minutes estimate?** |
+| **4.641** with outs · **6.186** ignoring outs · **5.029** as-of mean | **held out on ABSENCE GAMES** | 🔑 *"allocating while IGNORING absences is WORSE than doing nothing"* |
+| **6.210** none · **4.580** window · **4.368** perfect | **ALL 13,989 player-games** | **how much of perfect knowledge survives at the window (88%)** |
+
+⚠⚠ **A reader who takes any two of these as the same measurement will conclude the factor got worse
+or better between runs. It did neither — the POPULATION changed.** 🔑 **This is the population rule
+applied to the corpus's own figures, and it is why every A2 number in these documents is now written
+with its population attached.**
 
 *A2's per-prop gain appears in this transcript at **three different magnitudes**, and all three are
 correct:* **pra +0.347 · points +0.097** *(the original per-prop gate)* **vs points +0.054**
