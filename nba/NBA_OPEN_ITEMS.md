@@ -12340,3 +12340,66 @@ recorded with both.**
 correction**: the board scorer's **interpolation counts** — **points 1,294 and PRA 966 off-ladder,
 steals/blocks/stocks/turnovers ZERO** — reproduce the depth verdict from a completely different
 measurement. *Two independent instruments, one conclusion.*
+
+---
+
+# §T18.3 — THE FOUR RESIDUE ITEMS, SETTLED FROM EXECUTED EVIDENCE
+*(T18 pass 2, mechanism strata · written 2026-09-22 · **this is the pass's pre-registered clause
+(iii)**: "at least TWO of the four resolve to NOT RECORDED rather than to a found value")*
+
+## T18-4 · **UPGRADED: OPEN → NEVER ATTEMPTED** · the "load fit, don't refit" path
+**Pass 1 recorded it as "specified, not shipped."** **The mechanism strata sharpen that.** ✅ **Every
+occurrence of `BT_SAVE_COMPONENTS` in all 860 mechanism segments belongs to the PRE-EXISTING combos
+mechanism**, `.github/workflows/nba-combos-history.yml`, whose own header reads: *"components first —
+the singles harness with `BT_SAVE_COMPONENTS=1` pickles the full test season, then the combos recipe
+in all-dates mode, then load. Fails loudly."* 🔴 **There is no `BT_LOAD_FIT`, no fit-load call site,
+and no patch toward one, anywhere in the session.** ⇒ **The refactor was not merely left unfinished —
+it was never begun.** **Severity: HIGH, unchanged.** *Without it P3 either refits (~64 min, past its
+window) or scores against a ladder it did not fit.*
+
+## T18-6 · **CONFIRMED, AND THE REASON IS WORSE THAN "UNRECORDED"** · the gap audit's 2025-26 denominator
+**See `NBA_WORKERS.md` §0.002-T18 for the full evidence.** In short: the threshold comment claims
+calibration on *"2024-25 had 2 of ~2,460 (0.08%) and 2025-26 had 7."* 🔴 **Only the 2024-25 half was
+produced by an executed run** *(20:09:34 — `gaps found: 2 truncated team-games`, naming `0022401178`
+TOR)*. **The season-wide 2025-26 run, five minutes earlier at 20:04:19, returned *"No COMPLETED games
+in the schedule for 2025-26 … Nothing to audit — this is expected in the off-season. Not a failure."*
+and exited 0.** ⇒ **The "7" came from a different, date-scoped invocation (the P2 replay on
+2026-01-15), and no denominator for it exists anywhere in the transcript.** **Severity: MEDIUM →
+HIGH**, because the same evidence shows the audit **cannot see a past season at all** — a green run
+on an empty expected-set, worded as reassurance. *Documented, not fixed.*
+
+## T18-7 · **CONFIRMED EXACTLY — the `4` is a literal with nothing behind it**
+✅ **The line itself, read from the executed patch**:
+`lost = lost + np.where(d["interpolated"].values, 4.0, 0.0)`, then
+`d["confidence"] = np.clip(base - lost, floor, 99.5) / 100.0`.
+**The entire justification is the comment beside it**: *"an interpolated rung is genuinely less
+supported than a fitted one — say so."* 🔴 **No fit, no measurement, no comparison of interpolated-rung
+outcomes against fitted ones appears in any of the 860 mechanism segments.** ⇒ **`4.0` is a chosen
+constant**, exactly as pass 1 stated, **now verified against the code that ships it rather than the
+prose that describes it.** **Severity: MEDIUM, unchanged.**
+
+## T18-8 · **NEW · the P2 end-to-end run resolves to NOT RECORDED**
+**Pass 1 left P2's final steps (merge → commit → load → certify) unresolved — the prose says the run
+"aged off the recent list" TWICE.** ✅ **The mechanism strata confirm the run reached the load step and
+FAILED there**: at **2026-09-19 21:19:55** the log carries three consecutive 404s —
+`nba_baseline_ladder_2026-01-15.json: HTTP Error 404: Not Found`,
+`…_combos.json: 404`, `…_periods.json: 404` — the loader fetching over `raw.githubusercontent` for
+files that were never committed. 🔴🔴 **But that is the run BEFORE the commit fix.** **NO
+`tool_result` in this transcript shows a P2 run completing merge → commit → load → certify.** ⇒ **The
+answer is NOT RECORDED, and pass 1's open item stands unchanged.** ⚠⚠ **And the comparison the author
+himself called "the real test" — *"2026-01-15 should reproduce 140,130 legs at mean confidence
+0.930"* — WAS NEVER MADE IN THIS TRANSCRIPT.** *The nearest executed figure is a single-prop line at
+20:18:01 — `turnovers 4,006 legs, mean final−baseline 0.00004, mean conf 0.930` — which matches the
+0.930 but is one prop, not the 140,130-leg slate.* **Severity: HIGH — the session's own stated
+acceptance test for P2 was never run.**
+
+---
+
+## ✅ PRE-REGISTERED CLAUSE (iii) — SCORED HERE, BEFORE THE NEXT PASS
+**Predicted: "at least TWO of the four residue items resolve to NOT RECORDED rather than to a found
+value."** **Outcome: ONE resolves to NOT RECORDED (T18-8, the P2 end-to-end outcome and its acceptance
+test).** **The other three resolved to FOUND VALUES that sharpened them** — T18-4 upgraded from
+*unshipped* to *never begun*; T18-6 confirmed with the audit's own log lines; T18-7 confirmed against
+the shipping literal. ❌ **MISS.** 🔑 **And the miss is informative in the same direction rule 38
+points**: *the mechanism strata answered three of four questions the prose had left open, which is
+exactly what a stratum of executed evidence is FOR.* **The prediction under-rated it.**
