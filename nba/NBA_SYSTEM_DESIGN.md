@@ -2166,8 +2166,21 @@ at runtime** — *"Refusing to run for TODAY before 13:00 PT — Pacific clubs f
 > `standards_3pick_v1` appeared in **2 of the twelve**, *and both occurrences are inside one SQL
 > snippet this sweep itself quoted at `§T20.94`/`§T20.97`.* **In the sweep's BASELINE tree it appears
 > in none of the twelve** — *its only baseline carrier is `PP_PAYOUT_FINDINGS.md`, which belongs to
-> the concurrent build session and is out of this sweep's scope.* ⇒ ***The mechanism the system will
-> be judged by was undocumented in every document meant to describe the system.***
+> the concurrent build session and is out of this sweep's scope.*
+> ⚠⚠ **AND ONE PRIOR MUST BE QUALIFIED BEFORE THE CLAIM IS MADE (rules 26/28/51).** *`§T12.6h`
+> already recorded these objects on **`2026-09-22T07:01:11–23Z`**, under the heading* ***"The
+> concurrent session's new objects, verified against the live database"***, *listing*
+> ***"`nba_score.paper_pick_slips(p_date, p_threshold, p_snapshot)` and `paper_pick_candidates`
+> likewise; `nba_score.paper_picks` has `event_id`."*** ⇒ ***Their EXISTENCE and SIGNATURES were on
+> file. What follows — what they SELECT, how they PACK, how they GRADE, and the defect in §5 — was
+> not.***
+> 🔑 **THE SCOPE CALL, STATED RATHER THAN DODGED**: *these functions appear to be the concurrent
+> session's work, **but `P2` and `P3` call `nba_score.log_paper_picks` and `nba_score.grade_paper_picks`
+> directly**, so **what the in-scope pipelines execute is in scope to document.** The build session's
+> OWN artefacts are not, and are pointed at rather than reproduced — `PP_PAYOUT_FINDINGS.md`,
+> `prop_universe`'s counts (**mid-rebuild, not final**) and `sim_strategy`'s replay figures (§6).*
+> ⇒ ***The mechanism the system will be judged by was named but never described in any document meant
+> to describe the system.***
 > ⚠ **Everything below is read from `pg_get_functiondef` and the workflow files, live `2026-09-22`.
 > Nothing was run and nothing was written. `nba_score.paper_picks` and `nba_score.paper_results` both
 > hold `0` rows — expected, not a defect: the system has never run against a live slate (`§T20.95`).**
