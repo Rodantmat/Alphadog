@@ -12802,6 +12802,27 @@ items, but it should be a decision rather than a default.*
 > 🔴 **OWNER DECISION — FOURTH OPTION ADDED: (d) adopt *"state a DATE, never a countdown"* as a
 > writing convention.** ⚠ *It costs nothing, retires this entire class of defect permanently, and is
 > independent of options (a)–(c) above — it can be taken alongside any of them.*
+>
+> ### 🔴 **OPTION (d) RESTATED ONE PASS LATER, 2026-09-22 (§T20.27) — THE FIRST WORDING WOULD HAVE DESTROYED NINE CORRECT STATEMENTS**
+> **A 15-grammar census of the twelve returned `54` now-relative instances** *(2026-09-22T14:53:41Z)*
+> — **7× the single grammar option (d) was proposed from.** ✅ **The recommendation SURVIVES the test
+> that could have withdrawn it, and comes back sharper:**
+>
+> | class | example | rots? |
+> |---|---|---|
+> | ✅ **A · fixed-to-fixed offsets** | *"**19 days before the opener**"* · *"every deadline keyed to 10-03 is **17 days early**"* | ❌ **never** |
+> | ✅ **B · quoted run-time reports** | *"correctly FAILED on defender ratings **6 days stale**"* ×3 | ❌ **never** |
+> | ⚠ **C · anchored now-offsets** | *"19 days stale"* from `2026-09-02T07:58Z` | 🔴 daily, **repairable** |
+> | 🔴🔴 **D · unanchored now-references** | *"empty **as of today**"* · *"the season opens in **two weeks**"* | 🔴🔴 daily, **unrepairable without re-measuring** |
+>
+> 🔑🔑 ***`17 days early` LOOKS exactly like `19 days stale` and is permanently correct, because
+> neither endpoint is "now". The defect is not the word "days" — it is whether one endpoint is the
+> READER'S CLOCK.*** ⇒ **⚠ OPTION (d) IS RESTATED AS: *"never measure from the reader's clock"*, NOT
+> *"never state a duration"*.** *The loose wording would have purged **9** permanently-correct
+> class-A and class-B statements along with the 6 real defects.*
+> ✅ **Six repairs made in-pass, all as DATES** *(§T7.8c · this file's differential-worker item · the
+> opener authority's own countdown · `paper_picks` "as of today" → `2026-09-22`, `SELECT count(*)`
+> re-derived at **0** · the `0.18 MB today` pair)*.
 📌 **Related, and the reason the hub is the concern**: `NBA_MASTER_SUMMARY.md` holds **878 of the 948
 orphans — 92.6%** — at a **57.76%** orphan rate against `NBA_WORKERS`' 7.14% and
 `NBA_SYSTEM_ARCHITECTURE`'s 4.55%. **The document a fresh session reads first is the most
