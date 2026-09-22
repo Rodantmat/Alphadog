@@ -26981,3 +26981,97 @@ segment level — 990,596 of 990,596 characters of T20 have been read across pas
 was an open question §T20.9 left implicit, and it is the strongest thing this pass produced.**
 📌 **Operative lesson for every future counting pass**: ***state the cap AND its size, and make the
 overflow artefact carry segment ids — an overflow you cannot cite is not a remedy.***
+
+---
+
+# §T20.11 — PASS 6, THE REVERSE DIRECTION: *EVERY SEGMENT CITATION IN §T20 OPENED AGAINST ITS SOURCE — AND THREE ARE WRONG*
+
+*2026-09-22. **The one angle not yet run on T20.** Passes 0–5 all ran **T20 → documents**: what does
+the transcript say that the twelve lack? **This pass runs documents → T20**: take every §T20.x
+assertion that cites a segment, open that segment, and check it says what the entry says.*
+⚠ **RULE 19 governs: a quotation covers only what it quotes.** ⚠ **RULE 46: this pass shares the
+context of 4 and 5 — it can reset the count and cannot advance it, stated in advance.**
+
+## 1. 📏 THE POPULATION, RE-DERIVED *(rule 30)*
+
+`grep -o "SEG [0-9]\+"` over §T20.1–§T20.10 *(`NBA_MASTER_SUMMARY.md` from the §T20.1 heading,
+770 lines, 2026-09-22T13:28Z)* → **40 distinct segment citations.** *Five of the highest-frequency
+are `SEG 60`, which is **T19**'s charter segment and not a T20 citation at all; it is excluded.*
+**All 40 opened in `scratchpad/t20/`. Result: 37 correct, 3 wrong.**
+
+## 2. 🔴 THE THREE ERRORS — *and all three are mine, from passes 4 and 5*
+
+### 2a. 🔴 **SEG 590 was called "the first `NBA_RECIPE.md` patch." It is a `NBA_WORKERS.md` patch.**
+**VERIFIED**: the write run **SEG 590–593** carries `path: nba/nba workers.md` on **SEG 593** — the
+`path:` lands on the run's last segment, which is exactly the multi-segment shape §T20.8's write
+census was built to handle. **The first `tool_use` naming `nba recipe.md` is SEG 606; the first
+substantive RECIPE content patch is SEG 648.**
+✅ **The finding survives and sharpens**: *the first document repaired after the drift admission was
+WORKERS, and **RECIPE waited another 58 segments** — consistent with its ending the session on 2
+calls and 1,597 characters (§T20.8).*
+
+### 2b. 🔴 **SEG 600 was called "one sentence long." It is three sentences, 288 characters.**
+**VERIFIED**: *"understood. / standing rules acknowledged: 12 documents … 3 consecutive clean before
+moving on. / first closing the drift on workers, then creating the four new files."*
+✅ **The point survives** — a 288-character acknowledgement of a charter that created four documents,
+then straight back into the interrupted patch — **but the quantifier was compression, not measurement.**
+
+### 2c. 🔴 **The `sort -u | head -18` grep was attributed to SEG 921. SEG 921 is the WRITE.**
+**VERIFIED**: **SEG 915** is the command, **SEG 916** its truncated result, **SEG 921** the write that
+consumed it. *§T20.10 then repeated the slip in the other direction, citing "the `head -18` retrieval
+at SEG 916" — the result, not the command.*
+🔑 ***This is rule 43's own failure mode, committed inside the entry that invokes rule 43***: **a claim
+about a command must cite the segment carrying the COMMAND, not the segment carrying its consequence.**
+
+## 3. 🔑 THE PATTERN — *and it settles the pre-registered question against my own expectation*
+
+**Clause (iii) predicted at least one error in an entry written by passes 0–3** — *on the theory that
+the stratum passes, quoting segments read in isolation, were the ones at risk.* **ZERO are.
+All three are in passes 4–5.**
+
+**The pre-registered alternative was written down and it is the one that holds**: *"if every error is
+in passes 4–5 instead, **recency is the risk factor rather than isolation**, and THAT is the finding."*
+
+🔑 **And the mechanism is visible in the shape of all three errors — every one is OFF BY A NEIGHBOUR:**
+
+| error | cited | correct | distance |
+|---|---|---|---|
+| the RECIPE patch | SEG 590 | SEG 606 / 648 | the run's `path:` is on **SEG 593**, 3 later |
+| the grep | SEG 921 | SEG 915 | **6 earlier** |
+| the sentence count | SEG 600 | *(no wrong id — a compressed quantifier)* | — |
+
+***Passes 0–3 read one stratum at a time and had to LOOK UP every id they cited. Passes 4–5 read
+1,177 segments in sequence and wrote from a held picture of that sequence — which is precisely the
+condition under which a claim gets attributed to a neighbouring segment.*** **The sequential read
+that rule 32 vindicates is the same read that makes this error class likely**, and §T20.9's own
+§3c — *a command's text versus its label* — is the finding that should have predicted it.
+
+## 4. 📏 CLAUSE SCORING — *pass 6*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` **falls again, by 1–8** | ❌ **MISS — Δ = 0.** `471 → 471` at 13:28:30Z |
+| **(ii)** | the reverse pass finds **AT LEAST TWO** unsupported claims | ✅ **HIT — three** |
+| **(iii)** | **at least one** error is in an entry from passes 0–3 | ❌ **MISS — zero; all three are passes 4–5**, which is the alternative the pre-registration named |
+
+🔑 **CLAUSE (i)'s MISS IS THE USEFUL ONE, AND IT INDICTS MY OWN REASONING, NOT THE INSTRUMENT.** *The
+pre-registration argued §T20.10 is "largely ABOUT the instrument rather than about T20's segments, so
+rule 35 predicts a SMALLER Δ" — **and then predicted 1–8 instead of following that reasoning to 0.***
+**Rule 35's supersession case says a write that does not describe THIS transcript's segments adds no
+coverage of them. §T20.10 describes `cut.py` and a character census. Δ = 0 is exactly right.**
+⚠ ***The reasoning was correct and the number did not follow it*** — the same failure shape as §T15.4d,
+where a direction claim was read off a magnitude rule. **Recorded as a MISS, not rationalised.**
+✅ **Baseline returned `636 · 2 · 484 · 481` for the EIGHTH consecutive run.**
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — three corrections written. CLEAN STAYS 0/3.** ⚠ **And rule 46 would have barred a
+clean verdict regardless: passes 4, 5 and 6 are one context reading three times.**
+
+📌 **What six passes have established about T20, stated at the strength the evidence carries:**
+**READ** — *990,596 of 990,596 characters, all five strata, verified twice.*
+**FOUND** — *four stratum-boundary findings, two published defects in the twelve, three mis-citations
+of its own, two candidates correctly killed.*
+**NOT ESTABLISHED** — *that any of it is complete.* ***Six dirty passes in a row is not a transcript
+resisting closure; it is the standard working as MLB's Part E said it would — "13 total passes before
+finally reaching two consecutive clean ones."*** **T20 is at six.**
