@@ -27163,3 +27163,116 @@ about the system**: ***the last two findings have both been the sweep breaking a
 that invokes it*** — rule 43 at §T20.11, rule 30 here. **Both were caught by the next pass, neither by
 the pass itself.** ⚠ ***That is an argument for the consecutive-clean standard and against the
 assumption that a carefully-written pass is a checked one.***
+
+---
+
+# §T20.13 — PASS 8: *A STALENESS TEST AGAINST THE LIVE DATABASE — ONE FIGURE MOVED, ONE ASSERTION WAS ALREADY WRONG*
+
+*2026-09-22. **The population was counted BEFORE the clause was written** — the correction §T20.12
+demanded of itself, applied.*
+
+## 1. 📏 THE POPULATION, COUNTED FIRST *(rule 30, the way pass 7 failed to)*
+
+**§T20's own sections carry NO live-system claims at all.** *Measured over its 967 lines:*
+`[LIVE-AUDIT]` tags **0** · schema-qualified `nba_*.` objects **0** · `N rows` claims **0** ·
+"verified live 20xx-xx-xx" **0**.
+
+✅ ***And that is correct, not a gap.*** **T20's system content was verified at pass 1 by the right
+instrument for it — a 34-probe DOCUMENT-CONTAINMENT census** *(§T20.3)*: *does what T20 reported
+already exist in the twelve?* **Every substantive probe returned nonzero.** *T20 is the session that
+WROTE that material into the twelve, so containment is the question that bears on it.*
+⚠ ***But containment asks "did this reach the documents?" — it cannot ask "is it still true?"***
+
+**So the test was widened, with the new population counted before the clause was scored** — **the four
+documents T20 itself created, none of which has ever had a live numeric re-verification pass**
+*(4 of 40 such passes name any of them)*:
+
+| document | lines | distinct `nba_*` objects | `N rows` claims |
+|---|---|---|---|
+| `NBA_FINAL_SCORING_CALIBRATION.md` | 3,699 | **26** | 26 |
+| `NBA_BASELINE_CALIBRATION.md` | 1,777 | 10 | 11 |
+| `NBA_GOBLIN_DEMON.md` | 1,119 | 10 | 6 |
+| `NBA_MULTIPLIERS.md` | 1,452 | 4 | 5 |
+| **total** | **8,047** | **50** | **48** |
+
+## 2. ✅ TEN FIGURES RE-RUN AGAINST POSTGRES — *nine exact, one moved*
+
+**`SELECT` only, 2026-09-22T13:37Z.** *Read-only against the live system, per the standing rule.*
+
+| object | documented | live | |
+|---|---|---|---|
+| `nba_config.role_tiers` | 6 | **6** | ✅ |
+| `nba_config.stat_decay_config` | 13 | **13** | ✅ |
+| `nba_config.factor_registry` | 67 | **67** | ✅ |
+| `nba_config.factor_relevance` | 460 | **460** | ✅ |
+| `nba_config.factor_profile_cells` | 35 | **35** | ✅ |
+| `nba_score.confidence_model` | 10 | **10** | ✅ |
+| `nba_score.factor_gate_results` | 104 | **104** | ✅ |
+| `nba_score.redistribution_factors` | 51,806 | **51,806** | ✅ |
+| `nba_stats.player_career_season_totals` | 3,644 | **3,644** | ✅ |
+| 🔴 **`nba_score.ladder_calibration_asof`** | **9,577** | **9,904** | 🔴 **MOVED +327** |
+
+### 🔑 And the moved one is more interesting than a drift
+
+**`SELECT min(built_at), max(built_at) …` returns the SAME timestamp for all 9,904 rows:
+`2026-09-21 07:18:58.269286+00`. Every row was written after 2026-09-20.**
+
+***So the table was not incrementally refit — it was TRUNCATED AND REBUILT in a single write, the day
+after T20's session and in the middle of this sweep's own run.*** **The documented 9,577 does not
+describe an earlier count of the same rows; it describes a previous GENERATION of the table.**
+
+⚠ **AND IT MEANS THE DOCUMENTED CADENCE IS UNFALSIFIABLE FROM THE TABLE.** *The refit rule on file is
+"weekly, on everything graded strictly before today, with prior-season inheritance for cells without
+own evidence."* **With `min(built_at) == max(built_at)` there is no history in the table at all** —
+nothing records when it was previously fit, or whether a weekly cadence is running. *24 distinct
+`as_of_date` values, one build timestamp.* 📌 **Recorded, not repaired.**
+
+## 3. 🔴 THE DEFECT THE STALENESS TEST SURFACED — *an assertion that was already wrong in its own document*
+
+**`NBA_FINAL_SCORING_CALIBRATION.md` stated, unqualified:**
+> **Output**: `nba_score.final_hp` — **38,686,696 rows**, both seasons, 30 props.
+
+**`[LIVE-AUDIT]` 2026-09-22 — `SELECT season, count(*) FROM nba_score.final_hp GROUP BY season`:**
+
+| season | rows |
+|---|---|
+| 2024-25 | **19,075,070** *(byte-exact against its recorded figure)* |
+| 🔴 **2025-26** | **140,130** — against **19,611,626** recorded |
+| **total** | **19,215,200 — 49.7% of the asserted 38.7M** |
+
+🔪 **THE SHORTFALL ITSELF IS NOT A NEW FINDING AND IS KILLED** *(rules 26/28)*: `NBA_DATABASE.md:1623`
+heads the table **"19,215,200 rows LIVE (2026-09-20). Previously documented: 38.7M,"** with the full
+season split; **this same document** carries **"total 19,215,200 … 49.7% of the certified ~38.7M"**
+and marks 2025-26 🔴🔴 **UNCHANGED**; `NBA_OPEN_ITEMS.md` names the loss as **19,471,496 rows**.
+**Thoroughly on file. KILLED.**
+
+🔴 **WHAT SURVIVES IS THE UNCORRECTED SURFACE.** *All four occurrences of `38,686,696` in the twelve
+were opened (rule 26).* **Three are sound** — they quote T17's own completion check, attributed and
+dated, with the `[LIVE-AUDIT]` correction immediately following. **One was bare present-tense fact,
+in the very document that disproves it 883 lines earlier.** ✅ **Corrected in place this pass.**
+🔑 ***Third instance of §T10.18b's shape: a correction that reached some surfaces and not others.***
+*First the 2026-10-20 date in 78 places; then §14's research-standard table; now this.* ⚠ ***Three
+instances is a pattern, not a coincidence — a correction in this corpus does not propagate unless
+someone counts the surfaces and walks them.***
+
+## 4. 📏 CLAUSE SCORING — *pass 8*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at 13:39:31Z |
+| **(ii)** | **at least one** figure has **moved** since it was written | ✅ **HIT — `ladder_calibration_asof` 9,577 → 9,904**, and it is a full rebuild, not a drift |
+| **(iii)** | the `pp_*` objects are **still out of scope and still present** *(control)* | ✅ **HIT — 15 `pp\_%` tables live in `nba_market` / `nba_config`.** *The scope boundary this sweep has honoured for twenty transcripts still has something to honour.* |
+
+✅ **All three HIT, and the population was counted before any of them was scored.** *Baseline returned
+`636 · 2 · 484 · 481` for the TENTH consecutive run.*
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — one document corrected, two findings recorded. CLEAN STAYS 0/3.**
+⚠ **Rule 46: five sequential passes now share one context; none of them could have advanced the count.**
+
+📌 **What pass 8 adds that the previous seven could not**: *every earlier pass measured the sweep
+against the transcript or against itself.* **This one measured the documents against the live
+database — and 9 of 10 figures written on 2026-09-20 are still exact two days later, while the one
+that moved moved because the system rebuilt it.** ***That is a good result for the documents and a
+reminder about the one number that was never re-checked at all.***
