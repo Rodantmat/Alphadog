@@ -12,6 +12,45 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
+> # 🔴🔴🔴 READ THIS BEFORE FOLLOWING ANY `FILE:LINE` POINTER IN THIS CORPUS
+> ## **28% OF THE POINTERS WRITTEN ON 2026-09-22 ARE DEAD. RESOLVE BY SEARCHING THE QUOTED TEXT, NEVER BY THE NUMBER.**
+> **Measured at T20 pass 61 (§T20.66), 2026-09-22**: of **114** distinct `FILE:LINE` pointers written
+> by that session, **32 no longer resolve** — **32 of the 36** that point into `.md` files the same
+> session then appended to *(six new open items, five brief amendments, three annotation blocks)*.
+> **Every insertion shifts every line number below it.**
+>
+> | pointer class | n | state |
+> |---|---|---|
+> | into `.md` files that session **edited** | 36 | 🔴 **32 DEAD** *(2 of those still name the right subject — its text was deliberately changed)* |
+> | into `.md` files it did **not** edit | 10 | ✅ stable |
+> | into `.py` / `.yml` — never edited | **67** | ✅ **all stable** |
+>
+> ✅✅ **THE RECOVERY IS ALREADY IN THE TEXT: that session QUOTES what it cites, almost without
+> exception.** *§T20.63 reproduces `NBA_MASTER_SUMMARY.md:3102`'s sentence in full; §T20.64
+> reproduces `NBA_OPEN_ITEMS.md:1728`'s in full; the Betr prior is quoted verbatim in three places.*
+> ⇒ ***Take the quoted sentence and `grep` for it. The number is dead; the quotation is not.***
+>
+> 🔴 **THE FIVE THAT MATTER MOST, because they carry the session's own three rediscoveries** —
+> resolve these by their quoted text, listed here so a fresh session can find them in one search
+> each:
+> - the **deploy prior** — *"ends `git push || true` (not), so a rejected push leaves a stale anchor
+>   and silently widens the next deploy's scope"* ~~`NBA_MASTER_SUMMARY.md:3102`~~
+> - the **worker-census prior** — *"The 21 that DO exist: 15 `01 Static`"* ~~`NBA_OPEN_ITEMS.md:1728`~~
+> - the **Betr prior** — *"Token life 30 days; `token_expires_at` is `2026-10-10T06:10:56Z`"*
+>   `NBA_SYSTEM_ARCHITECTURE.md` ✅ *(that file was NOT edited — this one still resolves)*
+> - the **Sleeper-history kill** — *"what is missing is history, not a scraper"*
+>   ~~`NBA_OPEN_ITEMS.md:2410`~~
+> - the **corrected P1 cron row** — *"Mondays 19:00 UTC — 12:00 PST / 11:00 PDT"*
+>   ~~`NBA_OPEN_ITEMS.md:5812`~~
+>
+> ⚠⚠ **AND THE RULE FOR EVERY FUTURE PASS, from §T20.49 and re-earned at §T20.66: *ANCHOR TO
+> SEARCHABLE CONTENT, DO NOT RENUMBER.*** *Renumbering was rejected as the repair here precisely
+> because rule 46 guarantees a fresh session will edit these files again, and every renumbered
+> pointer would rot on its first append.* ⇒ **Cite by quotation. If a line number is given, give it
+> as a convenience beside the quotation, never instead of it.**
+> ✅ **By contrast the same session's IDENTIFIERS are sound: `49` of `49` `nba_*.*` objects correct —
+> `40` exist as asserted and `9` are absent as asserted (§T20.66).**
+
 ### 📜 THE FORTY-EIGHT STANDING RULES — *the index; each is written in full where it was born*
 
 🔴🔴🔴 **RULE 49 IS RETIRED, 2026-09-22 (§T20.16), SEVEN MINUTES AFTER IT WAS WRITTEN — IT IS A
