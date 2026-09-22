@@ -26,6 +26,36 @@
 > | **T20-14** | Betr board: still **ONE commit, `2026-09-09`**; `token_expires_at` **`2026-10-10T06:10:56Z`** — **18 days out, 10 days before opening night.** *(Value never reproduced; the repo is PUBLIC.)* | 🔴 **HELD** |
 > | **frozen static layer** | `nba_ref.defender_ratings`: `max(as_of_date)` = **`2026-04-09`**, **`166` days stale**, `111,768` rows. P1's certifier check `defender_ratings refreshed (<= 8 days)` is **RED**. | 🔴 **HELD EXACTLY** |
 >
+> ## ✅ **THE REMAINING NINE, RE-DERIVED — 2026-09-22T19:25Z (§T20.75). ALL HELD.**
+> | item | re-derivation | state | **fixable & provable TODAY?** |
+> |---|---|---|---|
+> | **T20-11** | `nba-p1-weekly-static.yml:28` — `# Mondays 19:00 UTC = 12:00 PT (11:00 PT during PDT)`, still inverted | 🔴 HELD | ✅ **YES** — comment text |
+> | **T20-10** | `nba-daily-delta.yml:52–54` — three `python … \|\| echo "… failed"` | 🔴 HELD | ✅ **YES** — workflow text |
+> | **T20-9** | `alphadog-v2-github-auto-deploy.yml:97,98,115,116` — `git commit … \|\| true`, `git push \|\| true`, **twice** | 🔴 HELD | ✅ **YES** — workflow text |
+> | **T20-7** | P3 `:143–147` *"Board tiers (goblin / standard / demon)"* runs `maintenance_shrink_board_index.py`; `build_board_tiers_v2.py` only in `nba-engine-test.yml:66`. `board_tiers` holds **2,199,354 rows / 459 MB** | 🔴 HELD | ✅ **YES** — wiring + historical rows |
+> | **T20-6** | structure unchanged; thresholds as §T20.51 measured | 🔴 HELD | ✅ **YES** — historical magnitudes |
+> | **T20-5** | `grade_board_outcomes.py:167–168` **`GRADE_END "2026-04-12"`**; `build_rung_market.py:80` **`RUNG_TO "2026-04"`** — all four vars in **ZERO** of P1/P2/P3 | 🔴 HELD | ✅ **YES** — source defaults |
+> | **T20-3** | `config.scheduled_jobs` — **10 rows, 2 enabled** *(`postgres-full-run` 06:00 PT daily · `static-full-run` 02:00 PT weekly)*, **zero NBA** | 🔴 HELD EXACTLY | ✅ **YES** — config rows |
+> | **T20-2** | `storage_diet_plan_2026_09_17` *(`PLANNED`)* says `final_hp` **"11 GB, 38.1M rows"**; live **`19,215,200` rows / `9,391 MB`**. `board_outcomes` 1,366 → **2,151 MB** | 🔴 HELD | ✅ **YES** — live table sizes |
+> | **static layer / schedule** | `teams` `2026-08-31` (22 d) · `arenas`/`officials` `2026-09-01` (21 d) · `nba_calendar.games` `2026-09-02` (20 d) | 🔴 HELD *(days `+1` = clock, not change)* | ✅ **YES** — live tables |
+>
+> ## 🔑🔑 **THE ANSWER THE SEVENTEEN-DAY WINDOW FORCED — AND IT IS GOOD NEWS**
+> | | |
+> |---|---|
+> | ✅ **FIXABLE AND PROVABLE TODAY** | 🔑 **13 of 14** — every item above, plus `T20-13`, `T20-12`, `T20-4` *(source text, config rows, or the two seasons of historical rows already in the database)* |
+> | 🔴 **GENUINELY WAITS FOR LIVE DATA** | **1** — `T20-14`, Betr's token: only an actual pull proves a refreshed credential works. **Its own deadline is `2026-10-10`.** |
+>
+> ⇒ ***The fix window does NOT bind. Nothing but one credential is blocked by the calendar.***
+>
+> ### ✅ AND A RULE-1 OPEN QUESTION, RESOLVED BY RE-DERIVATION *(§T20.75)*
+> *The corpus carried, undecided: "the stored 2026-27 regular-season slate is 1,200 games — 30 short
+> of 1,230 … per Rule 1 this entry does not choose."* ▶ **`nba_calendar.games` holds `1,266` rows for
+> 2026-27 — `1,200` regular-season from `2026-10-20`, plus `66` preseason (`2026-10-03`–`10-19`).**
+> ⇒ ***The 1,200 HOLDS EXACTLY; the 30-game shortfall is real and is NOT preseason bleed.***
+>
+> ⚠ **`T20-3`'s two enabled jobs both carry `timezone = America/Los_Angeles`** — ***the SCHEDULER layer
+> is DST-correct where the PYTHON layer (`T20-12`) is not. The defect is one layer deep.***
+>
 > 🔑🔑 **AND ONE THING THE RE-DERIVATION ESTABLISHED THAT NO ITEM SAYS.** *Across **twelve** board
 > sources — **PrizePicks, Betr, FanDuel, DraftKings, BetMGM, Fanatics, Pick6, Bovada, BetRivers,
 > BetOnline, William Hill, Underdog** — **the newest NBA board row in `nba_market.board_snapshots` is
