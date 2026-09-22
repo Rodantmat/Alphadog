@@ -11661,7 +11661,10 @@ recorded an event.** ✅ **All four figures re-derive EXACT 2026-09-22** — `nb
 corpus's arithmetic about "now" did.***
 **T7's "expected on first run" explanation was true then and is not true now.**
 
-**Why this is worse than it looks with the season two weeks out**: September and early October are when
+**Why this is worse than it looks with the ~~season two weeks out~~ REGULAR SEASON OPENING
+`2026-10-20`** *(corrected 2026-09-22, §T20.27 — **the second surviving casualty of the 17-day
+opener error**, invisible to a correction that matched the literal string `2026-10-03`; **28 days
+from 2026-09-22, not fourteen**)*: **September and early October are when**
 roster churn peaks — training-camp signings, two-way conversions, waivers, camp invites and final
 cuts. **Every one of those is exactly what this worker detects, and none are being detected.**
 When it is eventually run, it will emit one enormous catch-up batch rather than a usable history.
