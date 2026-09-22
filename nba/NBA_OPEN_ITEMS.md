@@ -13110,12 +13110,31 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 
 ---
 
-# 🔴🔴🔴 OPENING-DAY BRIEF — THE SEVEN BLOCKERS, RANKED BY WHAT THEY COST *(T20 pass 40, §T20.45, 2026-09-22)*
+# 🔴🔴🔴 OPENING-DAY BRIEF — ~~THE SEVEN BLOCKERS~~ **ALL THIRTEEN SEASON-CRITICAL ITEMS**, RANKED BY WHAT THEY COST *(T20 pass 40, §T20.45; **COMPLETED T20 pass 51, §T20.56**, 2026-09-22)*
 
 > **REGULAR SEASON OPENS `2026-10-20`. PRESEASON `2026-10-03`.**
-> ⚠ **THIS BRIEF CONTAINS NO NEW FINDINGS (rules 26/28).** *Every field below is READ BACK from the
-> item it summarises; nothing is asserted here that is not established there. Covers **T20-1 … T20-7**
-> — the items opened by T20 passes 28–39. Older open items are NOT re-ranked.*
+>
+> ## ✅ SCOPE — **THIS IS THE COMPLETE LIST, AND HERE IS HOW THAT IS KNOWN**
+> **`grep -E "^#{2,4} .*SEASON-CRITICAL" NBA_OPEN_ITEMS.md` ⇒ `13` items**, counted on HEADING lines
+> only *(a marker count counts emphasis; a heading count counts items — rule 15)*, over `14,727`
+> lines, tree `93292d278c4cd44997d6719cf6c38fe574b9eca0`, **2026-09-22T17:35:23Z**. **All thirteen
+> are listed below.** *Re-run that grep to re-derive this claim; if it returns more than thirteen,
+> this brief is out of date.*
+>
+> 🔴🔴 **WHY THIS HEADING CHANGED.** *Until 2026-09-22 this page was headed **"THE SEVEN BLOCKERS"**
+> and covered only **T20-1 … T20-7** — the items opened by T20 passes 28–39 — with a scope line in
+> small print saying older items were "NOT re-ranked."* **§T20.56 found FIVE of the thirteen missing,
+> including the frozen static layer that half of T20's other findings depend on, and including the
+> one defect the OWNER reported himself.** ⇒ ***A definite article in a heading is a completeness
+> claim. It sat above a footnote that said the opposite, at the top of a fourteen-thousand-line file,
+> for a reader twenty-eight days from a season.*** **Corrected, not excused.**
+>
+> ⚠ **T20-8 is deliberately NOT on this brief** — *it is the SWEEP's own defect (commits without
+> `[skip ci]`, a deploy fired, a scrape destroyed), not a blocker in the owner's system. Stated here
+> rather than left implicit.*
+>
+> ⚠ **THIS BRIEF CONTAINS NO NEW FINDINGS (rules 26/28).** *Every field is READ BACK from the item it
+> summarises; nothing is asserted here that is not established there.*
 > **RANKING RULE (re-derivable):** sort by **SILENT before LOUD**, then **STOPS THE SLATE before
 > DEGRADES IT**, then **UNCAUGHT by a certifier before CAUGHT**. *A silent failure costs a season
 > before anyone looks; a loud one costs an evening.*
