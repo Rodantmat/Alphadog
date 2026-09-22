@@ -30532,3 +30532,75 @@ and then spent those same eleven passes manufacturing broken edges of my own —
 into the only files I was permitted to touch.** ***The constraint I have been working under all day
 turns out to have been protecting something: a rule that forbids you to write is also a rule that
 keeps your references to that thing true. What rots is what you are allowed to change.***
+
+---
+
+# §T20.45 — PASS 40: *THE OPENING-DAY BRIEF — THE TWO WORST BLOCKERS WERE FOUND LAST, AND THREE SHARE ONE FIX*
+
+*(T20 pass 40, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **THIS PASS IS SYNTHESIS, NOT DISCOVERY. It produced NO new findings (rules 26/28): every field
+was read back from the item it summarises. READ-ONLY against the system; `NBA_COMPASS.md` untouched.**
+
+## 1. ✍️ WHAT WAS PUBLISHED
+
+**`NBA_OPEN_ITEMS.md` now opens with the OPENING-DAY BRIEF** — a seven-row table over **T20-1 …
+T20-7** carrying four fields per blocker, all read back from its own entry: **FAILS LOUD or SILENT ·
+STOPS THE SLATE or DEGRADES IT · CAUGHT BY A CERTIFIER? · FIX SIZE**.
+**Ranking rule, stated so it can be re-derived: SILENT before LOUD, then STOPS before DEGRADES, then
+UNCAUGHT before CAUGHT.** *A silent failure costs a season before anyone looks; a loud one costs an
+evening.* ⚠ **Older open items are explicitly NOT re-ranked, and the brief says so.**
+
+## 2. ✅ CLAUSE (ii) HIT: **THE SEVERITY ORDER CONTRADICTS THE DISCOVERY ORDER**
+
+> **Discovered `1 → 7`. Ranked by cost: `5 · 7 · 4 · 6 · 3 · 2 · 1`.**
+
+🔑🔑 ***The two most dangerous — T20-5 (the grader's silent window) and T20-7 (P3's mis-wired tier
+step) — were found FIFTH and SEVENTH. Last.***
+⚠ **T20-4 was titled *"HIGHEST OPEN ITEM"* when it was written and ranks THIRD**, because it fails
+LOUD (`raise SystemExit(1)`) and the P3 certifier's five checks catch it.
+⚠⚠ **T20-6 was titled *"THE LARGEST STRUCTURAL FINDING OF THE SWEEP"* and ranks FOURTH.** ***It is
+the biggest. Being biggest is not being worst: it fails loudly on the first attempt and the owner
+will see it.***
+📌 ***The item titles were written at the moment of discovery and rank by IMPRESSIVENESS. This table
+ranks by COST. They disagree, and the disagreement is the finding: a sweep that files by excitement
+hands its reader the wrong priority list.***
+
+## 3. 🔑🔑 CLAUSE (iii) HIT: **THREE OF SEVEN COLLAPSE INTO ONE FIX**
+
+> **T20-5** *(`GRADE_END "2026-04-12"` / `RUNG_TO "2026-04"`)* · **T20-4** *(14 season literals)* ·
+> **and half of T20-2** *(the diet plan's `38.1M rows`, a figure from the same rollover)*
+> **are ONE DEFECT: *a value that should be DERIVED from the slate date is written as a LITERAL.***
+
+✅ **And the fix is already in the repo**: `nba/baseline/build_baseline_ladder.py`'s
+`_season_of(d_)` derives the season from `BT_ASOF` and cross-checks it against the game-log files
+that exist *(§T20.35)*.
+⇒ ***Seven blockers, but NOT seven jobs: ONE pattern, ONE toggle, and THREE decisions only the owner
+can make*** — **what P3's step 6 was meant to run · whether the certifier's tables get BUILT or its
+checks RE-POINTED · whether the v2/MLB `5.98 GB` is retained.**
+
+## 4. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` **FALLS or HOLDS** | ✅ **HIT — HELD at `470`** at **2026-09-22T16:18:47Z** |
+| **(ii)** | the cost order **contradicts** the discovery order | ✅ **HIT — decisively.** ❌ *The "the sweep's instincts were calibrated, the numbering is already the priority list" branch is not available.* |
+| **(iii)** | **≥ 2** blockers share a single fix | ✅ **HIT — three, and the fix already exists in the codebase.** ❌ *The harder "all seven are independent" branch is not the answer, which is the good news.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FORTY-SECOND consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 5. ⚠ VERDICT
+
+⚠ **NO NEW DEFECTS — by construction. This pass produced a VIEW, not a finding, and its value is that
+the view disagrees with the file order it summarises.**
+✅✅ **The owner now has one table instead of seven entries and seventeen §-sections, ranked by what
+each blocker costs him, with the three that share a fix named together.**
+⚠⚠ **CLEAN STAYS 0/3 — a synthesis pass cannot earn a clean verdict, and RULE 46 bars one from this
+context regardless. T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **forty passes of discovery produced seven blockers filed in the order I
+stumbled on them, with titles written in the heat of finding them — "HIGHEST OPEN ITEM", "THE
+LARGEST STRUCTURAL FINDING OF THE SWEEP" — and neither superlative survives a cost ranking.**
+***The last thing a long audit owes its reader is not another finding. It is the order to read them
+in, and that order cannot be written until the finding stops.***
