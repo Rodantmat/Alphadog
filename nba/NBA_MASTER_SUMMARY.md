@@ -26177,3 +26177,164 @@ reads are the first work of the next session and T20 waits.**
 2026-09-22T12:48:37Z — the THIRD consecutive zero**, *confirming rule 35's narrowed form on a fourth
 reading: text about the sweep's own method cannot move an instrument that scores coverage of this
 transcript's segments, however much of it is written.*
+
+---
+
+# §T20.1 — PASS 0: THE OWNER STRATUM OF THE LAST TRANSCRIPT IS ENTIRELY UNRECORDED — *AND IT EXTENDS THE CHARTER, CONTRADICTS A STANDING SWEEP RULE, AND ORDERS A RE-SWEEP*
+*(T20 pass 0, 2026-09-22 — `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt`, **the
+last transcript in the corpus**, read for the first time)*
+
+## 0. ✅ THE MUST-FOLLOW RULE — applied
+*Resume note re-read; charter re-read at T19 SEG 60/61 before the pass began.* 🔑 **And this pass
+found where that rule comes from — see §4.**
+
+## 1. ✅ THE POPULATION, PINNED — *rules 17 / 21 / 30, with the commands*
+
+```bash
+# partition, 2026-09-22T12:52:39Z
+python3 -c "from sweep_coverage import segments; ..."   # scratchpad/t20/partition.py
+# corpus, re-taken after §T19.10 rather than inherited:
+ls -1 /home/claude/nbadoc/transcripts/*.txt | wc -l      # → 21 entries = 20 transcripts + journal.txt
+```
+
+| stratum | segments | chars | mean |
+|---|---|---|---|
+| `assistant/tool_use` | **592** | 534,998 | 903 |
+| `assistant/tool_result` | **368** | 356,274 | 968 |
+| `assistant/text` *(prose)* | **166** | 85,748 | 516 |
+| `assistant/thinking` | **29** | 2,384 | **82** |
+| `human/text` *(owner)* | **22** | 11,192 | 508 |
+| **TOTAL** | **1,177** | **990,596** | |
+
+✅ **IT CLOSES: 592 + 368 + 166 + 29 + 22 = 1,177 = `len(segs)`.**
+✅ **FROZEN BASELINE CUT** at commit **`9893664d`** — `git archive`, **32 files**, content-only digest
+over `nba/*.md` in sorted-path order = **`26555a5e52031c26`**.
+✅ **IDENTITY CHECK EXACT, 2026-09-22T12:53:25Z** — both trees return **high band 636 · tail 2 ·
+`uncovered12` 484 · `uncovered30` 481**, with the high band **636 in both, 0 working-only, 0
+baseline-only**.
+⚠ **`thinking` mean = 82 chars — third-person gerund labels**, *consistent with §T19's finding that
+the stratum is labels in 17 of 20 transcripts and prose only in T1–T3.*
+
+## 2. ✅ RULE 38 CONFIRMED ON ARRIVAL — *T20 is the sweep writing the twelve*
+| tool | calls | share |
+|---|---|---|
+| **`github_patch_file`** | **402** | **67.9%** |
+| `bash_tool` | 120 | 20.3% |
+| `github_grep_file` | 32 | 5.4% |
+| `github_put_file` | 32 | 5.4% |
+| `run_sql_postgres` | **6** | 1.0% |
+
+⇒ ***434 of 592 tool calls (73.3%) write documents; six touch the database.*** **T20 did not run the
+system, it wrote about it — so its `tool_use` payloads ARE the twelve's own text and are restatements
+by construction.** **The WHY lives in the prose (166 segments), the owner turns (22) and the
+`bash_tool` output.**
+
+## 3. 🔴🔴🔴 THE FINDING — *ALL 22 OWNER TURNS ARE ABSENT FROM THE TWELVE*
+
+**Thirteen distinctive phrases, one per owner turn, probed against the working tree of the twelve
+(rule 28) — `grep -o -i -F`:**
+
+| SEG | phrase | hits |
+|---|---|---|
+| 597 | *"on top of that original message"* · *"few more dedicated files"* · *"must follow rule"* | **0 · 0 · 0** |
+| 604 | *"all the transcripts you did half work"* | **0** |
+| 691 | *"did you do three consecutive passes"* | **0** |
+| 771 | *"from t3 and on"* | **0** |
+| 817 | *"since the t1 for the new files"* | **0** |
+| 858 | *"anything new for any document resets"* · *"looking at every document on every pass"* | **0 · 0** |
+| 905 | *"back reporting after each one"* | **0** |
+| 978 | *"your passes are still"* | **0** |
+| 1118 | *"i never said this was a handoff"* | **0** |
+| 1159 | *"transcript by transcript, passes by passes"* | **0** |
+
+🔴 ***THIRTEEN OF THIRTEEN RETURN ZERO.*** **The owner stratum of the last transcript — the one
+carrying the charter's extension and four standing rules — has never been read.**
+
+## 4. 🔴🔴🔴 SEG 597 — ***THE CHARTER IS EXTENDED HERE, AND IT NAMES TWELVE***
+
+**The four calibration documents are mandated in the owner's own words, in a transcript:**
+> *"**on top of that original message** i need you to create **few more dedicated files**: **baseline
+> pipeline calibration** — dedicated file about the calibration of the baseline hit probability and
+> any formula, tier, granulation, bonus, penalties, caps, logic… · **final scoring engine pipeline
+> calibration**… · **multipliers**: anything related to multipliers for any apps… · **goblin/demon
+> identification**: anything related to goblins and demons ingestion for prizepicks — the parsing,
+> anchors, invisible anchors, switch line, regular line anchor, goblins and demons less and more,
+> goblins and demons over and under the anchor, goblin and demons ladders…"*
+
+**And the must-follow rule's source is the same turn:**
+> *"**i want to before start any pass, look at the previous message and this message. this is a must
+> follow rule! no exception.**"*
+
+✅ ***THIS IS THE SECOND, INDEPENDENT CONFIRMATION OF §T19.7's RETRACTION*** — *the first came from
+`nba/NBA_DOCUMENTATION_PROMPT.md`; this one is the owner speaking, in the corpus.* **All twelve are
+owner-mandated.**
+
+🔑🔑 **AND IT IS ***RULE 27*** ACROSS TRANSCRIPTS — *a transcript's state on a subject is its LAST
+word, not its first.*** **§T19.1 read the charter at T19 SEG 60/61, found it named EIGHT, and treated
+that as the charter.** ***It was the charter's FIRST word. Its LAST word is T20 SEG 597, one
+transcript later, and it names TWELVE.*** ⚠ **§T19.1 is not wrong — it is INCOMPLETE, and the
+incompleteness was structural: the extension lived in the only transcript the sweep had not read.**
+*Rule 27 has been applied within transcripts since T11; this is its first application ACROSS them,
+and it cost a published rule.*
+
+## 5. 🔴🔴🔴 SEG 858 — ***THE OWNER'S RESET RULE CONTRADICTS THE SWEEP'S OWN SCOPE CAP, AND THE SCOPE CAP CLOSED A TRANSCRIPT***
+
+**The owner, SEG 858:**
+> *"continue and be sure that you are **looking at every document on every pass** — **anything new for
+> ANY document resets the count** and you need three clean passes again — **that's for ALL
+> documents.**"*
+
+**The sweep's standing rule, in its own words** *(`NBA_MASTER_SUMMARY.md:373` and `:15644`, and the
+run log at two places)*:
+> *"the standing **SCOPE CAP** says **only TRANSCRIPT material resets the clean count**."*
+
+🔴 ***THESE ARE OPPOSITE RULES, AND THE SWEEP'S IS THE NARROWER ONE.*** ⚠⚠ **AND IT WAS
+LOAD-BEARING**: `NBA_MASTER_SUMMARY.md:373` records it as **the argument that closed T13** —
+*"T13's prose was exhausted at pass 3; passes 4 and 5 drew their findings from `NBA_COMPASS.md`…"* —
+and the run log repeats it: *"on the strict criterion the clock does not advance, **but by the
+standing SCOPE CAP** … this pass added almost none."*
+
+⇒ **UNDER THE OWNER'S RULE, findings from COMPASS, the repository or the database that land in any of
+the twelve DO reset the count.** 🔴 **T13's closure rests on a rule the owner did not give, in the
+direction of closing sooner.** *(→ `NBA_OPEN_ITEMS.md` §T20.1, HIGH, with the scope of affected
+closures marked NOT ESTABLISHED — this pass verified the rule conflict and T13's dependence on it,
+and has not audited every other closure for the same dependence.)*
+
+## 6. 🔴🔴 SEG 604 · 691 · 771 · 817 — ***THE OWNER ORDERED A RE-SWEEP, AND NAMED ITS BOUNDS***
+
+> **604**: *"not just workers — recipe, workers, system architecture and system design as well. you
+> said it. **at this point you need to get 3 consecutive clean passes on all the transcripts you did
+> half work! mandatory again!**"*
+> **691**: *"**did you do three consecutive passes** for the ones that you the new files and the ones
+> that you did not do properly on the beginning? **you need to go one by one and do it.**"*
+> **771**: *"don't forget **from t3 and on**, you need to also update the files that you did not
+> update properly last time."*
+> **817**: *"you should be doing that since the beginning — **since the T1 for the new files and since
+> the T3 for the files that you left behind**."*
+
+🔑 ***The bounds are explicit and the sweep has never recorded them***: **T1 onward for the four
+calibration documents; T3 onward for the documents left behind.** ⚠ **This is the same defect
+`nba/NBA_DOCUMENTATION_PROMPT.md` records** *(Part 9 #1, *"T3–T9 were swept against 4 of 8. All counts
+voided"*; Part 3.1, *"T2–T9 VOID"*)* — **found at T19 pass 4 in a repo file, and here in the owner's
+own voice, with a different and wider boundary.** ⇒ **It also bears directly on `NBA_OPEN_ITEMS.md`
+§T19.6's OWNER DECISION: the owner has already ruled that half-swept transcripts must be redone.**
+*(That ruling addresses a DIFFERENT defect — subset-of-documents, not truncated reads — so §T19.6's
+option C is not overturned by it; both are recorded and the overlap is named.)*
+
+## 7. ⚠ THE REMAINING OWNER TURNS — *recorded, all previously absent*
+- **SEG 1118** — 🔑 *"**you're drifting. i never said this was a handoff. this is a documentation.**
+  you are deviating from my message."* **A named drift, corrected by the owner.**
+- **SEG 191 · 482 · 905 · 978** — the session-length and no-reporting rule, escalating: *"make your
+  sessions longer… they're too, too short"* → *"i want you to do multiple pass until your session has
+  no more way to keep going"* → *"you're back reporting after each one and that's a waste of time"* →
+  *"**your passes are still too fast — you can do more in a single section or we're never gonna
+  finish**."*
+- **SEG 958 · 1013 · 1035 · 1062 · 1077 · 1098** — *"continue, do not drift… **do not invent, do not
+  hallucinate!**"* six times, and **1098** adds a scope rule: ***"mlb data is only if that helps in
+  nba system."***
+- **SEG 1159** — *"**are you still doing transcript by transcript, passes by passes, as the original
+  plan as we start?** that's the way that you need to do."*
+
+## 8. 📏 PRE-REGISTRATION FOR T20 PASS 1 — *written into the run log before pass 1 begins*
+*See the run log's `▶ EXACT NEXT STEP` row. Baseline for scoring: the post-pass-0 tree, measured at
+the start of pass 1.*
