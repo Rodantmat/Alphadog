@@ -597,6 +597,68 @@ side. It is not a ladder.**
 the grader and `board_tiers`** *(`NBA_GOBLIN_DEMON.md` §5.4)*, **and Underdog's contribution is a
 priced second opinion on PROBABILITY, not on tier economics.**
 
+### ✅✅ 0.9e.4 **THE UNDERDOG LADDER CAPTURE — BUILT, MEASURED, AND VERIFIED AGAINST THE OWNER'S OWN SCREENSHOT**
+*Recorded 2026-09-22 (T13 pass 3, §T13.4f). **The opening prose stratum of the same transcript — the
+capture that §0.9e.1's "live ladders" row points at.** This is the ONE Underdog tier dataset that is
+real, and it is not the archive.*
+
+**HOW IT WAS FOUND — and the method is the transferable part**: *"their web app hides its logic in
+**~80 lazily-loaded code chunks**, so I gave the worker a tool to **grep all of them from the
+runtime's chunk map**; **chunk 4113** held the call."* ⚠ **The preceding segments are five failed
+guesses at plausible paths**, and the turn that ends them is explicit: *"**let me stop guessing and
+read Underdog's own web bundle**."* 🔑 ***Read the bundle, don't guess the path*** — the same method
+that solved Fliff.
+
+**THE ENDPOINT**: **`GET /v3/over_unders/{id}/alternate_projections`** *(6 of the twelve carry the
+name; the chunk and the method are in **0 of thirty**)*, **returning every rung of the ladder with
+BOTH sides' multipliers and prices** — and 🔑🔑 **two probabilities per side that no other app
+supplies**: ***Underdog's own fantasy implied probability AND a SPORTSBOOK REFERENCE probability***
+*(e.g. higher 2.5: **72% vs 76%**)*. ⚠⚠ ***"That's the pick'em-SHADING signal from the factor lock,
+served straight from the source"*** — **the gap between a pick'em price and the book consensus,
+which §7 otherwise has to reconstruct, published inside one response.**
+📌 **The same hunt surfaced Underdog's own LINE-MOVEMENT series — implied probability every 20
+minutes per market — for the C3 factor** *(0 of thirty)*.
+
+**THE MEASURED RUN**: **562 lines flagged `has_alternates` → 2,061 ladder legs, ZERO errors, ~2 extra
+minutes per run.**
+
+### ✅ AND THE OWNER CHECKED IT AGAINST HIS OWN SCREEN — *the only external validation of a multiplier in this corpus*
+> *"your Underdog screenshot matches what the ladder pull captured **exactly**: **2.5 → 1.31× /
+> 2.77× · 3.5 (main) → 1.87× / 1.87× · 4.5 → 2.65× / 1.33× · 5.5 → 5.11×** — **so Underdog is
+> confirmed.**"*
+
+🔑🔑 ***A real, complete, two-sided Underdog ladder with real multipliers, verified against the app's
+own display.*** **Note the shape**: **the main rung is symmetric (1.87× / 1.87×)** and **the wings
+are inverse — as one side's multiplier rises the other falls** *(2.65 / 1.33 at 4.5)*. ⚠ **This is
+exactly §0.9f's probability-shift structure, visible in four rungs**, **and it is the strongest
+answer available to lesson #16's demand that a multiplier be confirmed against a real quote
+(§0.3a2).**
+⚠⚠ **Stated at evidence strength**: **this is FOUR RUNGS of ONE market on ONE day, owner-verified.**
+**It licenses the METHOD and the STRUCTURE; it is not a calibration.** *(And it is Underdog, not
+PrizePicks — §0.9a's conclusion is untouched.)*
+
+### 📌 0.9e.5 **WHERE EVERY APP'S LADDER LIVES — the capture status table, as T13 left it**
+| app | ladder / variation object | status |
+|---|---|---|
+| **PrizePicks** | standard / goblin / demon rungs **in the feed** | ✅ captured |
+| **Underdog** | **`alternate_projections`** rungs + fantasy & sportsbook probabilities | ✅ captured *(new in T13)* |
+| **Fliff** | **alternate lines as SEPARATE PROPOSALS per market** | ✅ captured |
+| **Betr** | **NINE tiers** *(regular · mini/boosted/super-boosted/boosted-4 · edge 1–4)* | ✅ captured — *see `NBA_SYSTEM_ARCHITECTURE.md` §0f-1* |
+| 🔴 **Sleeper** | ⚠ **main line captured; alt stats EXIST and are NOT** | ⏳ **open** |
+
+🔴 **SLEEPER IS THE ONE GAP, AND IT IS WELL-CHARACTERISED.** **The first conclusion was that Sleeper
+has no ladder at all** — *"its GraphQL schema introspection is open and **has no alternate-line query
+at all**… **Sleeper prices the ladder into the per-side multipliers on that single line**"* — ⚠ **and
+the owner's screenshot overturned it**: *"**Sleeper clearly DOES have alt stats — 3+ 1.23×, 5+ 2.63×,
+6+ 4.19×** — mine were in a different object than I looked."*
+🔑 **The diagnosis**: *"the alt stats '3+ K', '5+ K' are **a DIFFERENT MARKET SHAPE — not
+`over_under`**"*, **the public feed carries only `"normal"` lines**, **`line_type` is the alt marker
+and the app must request them**, **REST parameters are ignored**, and **the GraphQL schema has no alt
+query.** ⚠⚠ ***So Sleeper's alternates are reachable only by capture, and the transcript says so
+plainly***: *"**guessing paths is the wrong tool here — the same lesson as Underdog. One capture from
+your phone settles it.**" ***This is the second time in one transcript that path-guessing failed and
+bundle-reading or capture succeeded.***
+
 ### 🔴🔴 0.9e.2 **THE UNITS ERROR — `higher_multiplier` IS A MODIFIER, NOT A PAYOUT, AND THE CONCLUSION REVERSED**
 **The researcher caught this himself, on the owner's correction, and re-derived it:**
 > *"my tier analysis used **`higher_multiplier` from alternate projections AS IF IT WERE THE PAYOUT**.
