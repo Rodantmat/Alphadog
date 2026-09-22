@@ -12749,6 +12749,29 @@ blocks"*, and *"complete read of every block from 2 → 739"*.**
 
 **The full table, with the segment of every command, is in `NBA_MASTER_SUMMARY.md` §T19.4 §2.** *The
 worst case is T6's closing pass — at most **24 of 125 blocks, 19.2%**, from the middle region only.*
+
+> ### 🔴 EXTENDED 2026-09-22 (§T20.9 §3c) — **T7 has the same defect, and T7 was not in the population above**
+> *The entry above measures **T1–T6**. **T7 was never measured** — and it is the transcript that
+> produced more findings than any other in the run (21 passes, 18 with new material).*
+> **T7's block listing is 154 lines**, pinned by every `sed` window run against `/tmp/t7full.txt`.
+> **Its three closing passes, by the commands that ran:**
+>
+> | pass | command | slots | of 154 |
+> |---|---|---|---|
+> | **19** (SEG 293) | `sed -n '111,154p' \| head -24`, 215-char window | 111–134 | **15.6%** |
+> | **20** (SEG 298+300) | `sed -n '1,45p' \| tail -22` + `sed -n '46,100p' \| head -22`, 240-char | 24–67 | **28.6%** |
+> | **21** (SEG 310) | `sed -n '100,154p' \| head -28`, 260-char window | 100–127 | **18.2%** |
+> | **UNION** | — | 24–67, 100–134 | **79 / 154 = 51.3%** |
+>
+> 🔴 ***Slots 1–23, 68–99 and 135–154 — 75 of 154, 48.7% — appeared in NONE of the three passes that
+> certified T7 clean***, and each slot is a 215–260-character window rather than a block. **All three
+> are labelled *"full sequential"* in the sections they wrote** (§T7.26, §T7.27, §T7.29).
+> 📌 **T8 is the contrast**: its closing passes 13/14/15 covered far more of a **53-block** listing.
+> ***The shortfall scales with transcript size*** — which predicts the same defect is worst exactly
+> where it matters most, and T7 is the largest transcript of the seven.
+> ⚠ **Bearing on the re-sweep**: T7 was reset by the DRIFT NOTICE and re-swept under the current
+> standard, so this is a defect in the **superseded** closure record, not in T7's present state.
+> *It is recorded because the superseded record is still what a reader of §T7.29 is told.*
 *Two of T2's three closing passes are named regional on their own face (`blocks 610-739`,
 `blocks 143-460`) and were still counted `clean 1/3` and `clean 2/3`.*
 
