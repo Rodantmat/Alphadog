@@ -28481,3 +28481,109 @@ pre-registration makes it reportable — without one, "0% vs 0%" would have been
 confirmation that the corpus is healthy, when what it actually shows is that both samples were drawn
 from the stratum that cannot drift.*** 🔑 **A control group is not a control if it differs from the
 treatment group on a variable neither was chosen for.**
+
+---
+
+# §T20.26 — PASS 21: *THE AGE STRATUM — EVERY STORED FIGURE EXACT, EVERY COUNTDOWN WRONG*
+
+*(T20 pass 21, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+*Read-only throughout: `SELECT` only, no `run_job`, no dispatch. `pp_*` and `prop_universe` untouched.*
+
+## 1. 🎯 THE DESIGN §T20.25 POINTED AT
+
+**§T20.25 proved the corpus cannot be stratified by TAG (`[LIVE-AUDIT]` 365 vs `[TRANSCRIPT]` 1) and
+named the variable that IS recoverable: every dated figure carries its own date.** **This pass
+stratifies by AGE — live-checkable figures whose stated date is `2026-09-15` or earlier — and it
+settles a thread that has now run four passes.**
+
+> **OLD-STRATUM POPULATION: `34` date-bearing figure contexts dated `2026-09-01` … `2026-09-15`
+> across `nba/*.md` excluding the run log** *(2026-09-22T14:50:51Z; `grep -n "2026-09-0[0-9]T|2026-09-1[0-5]T|Recorded 2026-09-1[0-5]"`)*.
+> **Sample re-derived: `16` figures from `6` sections, spanning 5 documents.** ✅ **Well-powered —
+> the underpowered escape the pre-registration allowed is not needed.**
+
+## 2. ✅✅ THE STORED STATE: **13 of 13 EXACT**, three weeks on
+
+| claim, and its stated date | live 2026-09-22 | |
+|---|---|---|
+| `nba_stats.player_impact_rating` **530 rows**, last write **2026-09-02T07:58Z** | **530** · **2026-09-02T07:58:37.370Z** | ✅ **EXACT to the millisecond** |
+| `nba_stats.player_onoff_profile` 2025-26 **582 rows**, last write **2026-09-01T03:34Z** | **582** · **2026-09-01T03:34:40.938Z** | ✅ **EXACT** |
+| `nba_calendar.games` 2025-26 **1,400**, written 2026-09-02 | **1,400** · created `20:24:11.403Z → 20:24:55.401Z` | ✅ **EXACT** |
+| `nba_calendar.games` 2026-27 **1,266** | **1,266** · created `20:24:55.428Z → 20:25:35.429Z` | ✅ **EXACT** |
+| `baseline_ladder_runs` `2025-11-29`: **8 / 184 / 64,779 / 22**, `loaded_at` 2026-09-20T03:23:26Z | **8 / 184 / 64,779 / 22** · `03:23:26.856Z` | ✅ **EXACT** |
+| `baseline_ladder_runs` `2026-01-15`: **9 / 227 / 90,861 / 22**, `loaded_at` 2026-09-19T22:35:04Z | **9 / 227 / 90,861 / 22** · `22:35:04.532Z` | ✅ **EXACT** |
+| `baseline_ladder_runs` `2026-03-15`: **7 / 161 / 50,597 / 18**, `loaded_at` **2026-09-11T20:23:10Z** | **7 / 161 / 50,597 / 18** · `20:23:10.936Z` | ✅ **EXACT — eleven days on** |
+| `player_roster_snapshot` **582**, frozen 2026-09-02 19:47 UTC | **582** | ✅ |
+| `player_differential_log` / `team_` / `official_` **0 / 0 / 0** | **0 / 0 / 0** | ✅ |
+
+⚠ **Compared like to like throughout — `count(*)` to `count(*)`, a season filter to the same filter —
+the trap §T20.25 walked into deliberately and named.** *`props` was counted from the stored array
+(22 / 22 / 18 entries), not read from prose.*
+
+## 3. 🔴🔴 THE DERIVED DURATIONS: **3 of 3 MOVED** — *and the state behind them did not*
+
+| claim | where | base date | stated | **live 2026-09-22** |
+|---|---|---|---|---|
+| *"**19 days stale**"* | `NBA_OPEN_ITEMS.md:4463` | 2026-09-02T07:58Z | 19 | 🔴 **20** |
+| *"not touched in the **19 days** since, though the weekly cron should have fired **twice**"* | `NBA_MASTER_SUMMARY.md:1780` | 2026-09-02 | 19 · twice | 🔴 **20 · THREE times** |
+| *"the snapshot is **17 days stale**"* | `NBA_OPEN_ITEMS.md:11651` | 2026-09-02 19:47 UTC | 17 | 🔴 **20** |
+
+✅ **RULE 48 / RULE 22 — the family was censused and CLASSIFIED, not just counted.** *Seven
+elapsed-duration strings exist in `nba/*.md`.* **Four are NOT corpus arithmetic and are correctly
+left alone**: the three *"correctly FAILED on defender ratings **6 days stale**"* instances are
+**quotations of what the P1 certifier reported AT RUN TIME — a historical fact, permanently true**;
+the seventh is this pass's own pre-registration text in the run log. ⇒ ***3 of 3 genuine corpus
+countdowns had drifted; 0 of 4 quoted ones needed touching.***
+
+🔑🔑 ***AND THAT IS THE RESULT THE WHOLE THREAD WAS LOOKING FOR: the system has not moved a byte in
+three weeks. What drifted is the corpus's ARITHMETIC ABOUT NOW.*** **Drift in this corpus is driven
+by neither reachability (§T20.24) nor tag or age of the measurement (§T20.25) but by the KIND of
+figure**: **a stored-state figure is stable indefinitely; a derived elapsed duration is wrong the
+next morning, with no system change whatsoever.**
+⚠⚠ ***And `[LIVE-AUDIT]` actively MISLABELS this class — the measurement WAS live; it is the
+subtraction against "today" that rots.***
+
+✅ **ALL THREE FIXED IN-PASS (rule 12), and fixed as DATES rather than renumbered to 20** *(a fresh
+countdown is stale tomorrow; `NBA_OPEN_ITEMS.md:4463`, `:11651` and `NBA_MASTER_SUMMARY.md:1780` now
+read "stale SINCE <date>" with the original figure dated beside it — rule 40, annotated not struck)*.
+🔴 **And one consequence moved with them: the missed weekly cron fires went from TWO to THREE.**
+
+## 4. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T14:50:51Z** |
+| **(ii)** | **≥ 2** old figures have **moved** | ✅ **HIT — exactly 3, and all of one kind.** *The alternative ("if the old stratum is also at zero, the two §T20.24 findings are the exception") is refuted — but not in the direction expected: **the STORED old figures are at `0/13`, matching §T20.25's same-day strata exactly.** Age does not drive drift. Figure KIND does.* |
+| **(iii)** | **≥ 1** moved figure is stated **without any date** | ✅ **HIT — all three.** *None of the countdowns carried a derivation date; two sit under `[LIVE-AUDIT]` headings, which is precisely the mislabel above.* 📌 **Rule 37's third state does NOT apply this time — the first clean two-of-two clause HIT since §T20.22.** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTY-THIRD consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 5. ⚖️ THE FOUR-PASS THREAD, SETTLED
+
+| pass | claim | status after this pass |
+|---|---|---|
+| **§T20.24** | *"reachability is a MAINTENANCE property"* | ⚠ **SUPERSEDED, not struck.** *Its two drifted findings were a `[TRANSCRIPT]` quote and an open question — neither a stored figure. **Reachability is not what moved them.*** |
+| **§T20.25** | *"the drift study cannot be run as the corpus is labelled"* | ✅ **TRUE OF THE TAG AXIS AND WORKED AROUND** — stratifying by AGE was runnable, and it answered the question the tag axis could not. |
+| **§T20.26** *(here)* | **drift is a property of FIGURE KIND** | ✅ **`0/13` stored · `3/3` derived durations.** *The cleanest split this sweep has measured.* |
+
+🔴 **OPEN ITEM T20-1 — mechanism now SETTLED, severity unchanged at MEDIUM.** *The two findings
+§T20.24 re-derived did drift and the owner's cost is real; but the mechanism is not unreachability,
+so **fixing the pointers will not stop the drift**. The fix that would is a convention: **state a
+DATE, never a countdown.*** ⚠ **Recorded against the OWNER DECISION already open there, as a fourth
+option (d): adopt "dates, not countdowns" as a writing rule, which costs nothing and retires this
+entire class.**
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — three countdowns drifted and were repaired, one consequence figure moved with them,
+a four-pass mechanism question settled, and a fourth option added to an open OWNER DECISION.
+CLEAN STAYS 0/3.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **four passes chased "which figures go stale" through reachability, then tags,
+then age — and the answer was in the GRAMMAR of the figure all along.** ***A number that names a
+state ("530 rows", "2026-09-02T07:58:37.370Z") is true forever. A number that names a distance from
+now ("19 days stale") is false tomorrow and nothing in the system has to change for it to become
+so.*** 🔑 **The sweep's own `[LIVE-AUDIT]` discipline cannot catch it, because the audit was live —
+which is why this took four passes to see.**
