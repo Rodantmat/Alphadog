@@ -14709,6 +14709,214 @@ already implied: quoting a SEGMENT does not cover it — only writing PROSE ABOU
 and pass 0's entries are largely lists of directives with short quotations, which is the low-coverage
 shape. **Twenty-seven pre-registrations: twenty-two hits, two misses, THREE partials.**
 
+### T13.4 — PASS 3 (**the last unread prose — segments 1–639**) — **🔴🔴 a FIFTH board source, and the premise under T13's window decision shown to be a timezone drift**
+*The 107 assistant-prose segments below the multiplier window, 62,958 chars, **read in full**. ✅
+**WITH THIS PASS THE PROSE STRATUM IS EXHAUSTED: 250 of 250 assistant-text segments read** *(61 at
+pass 1, 82 at pass 2, 107 here)*. **Duplication probed over the twelve, pinned 2026-09-22T08:20:06Z.
+Live and repo re-takes pinned 08:20–08:29Z. `SELECT` only; nothing run or changed.***
+
+#### 🔴🔴 T13.4a — **THERE ARE FIVE BOARD SOURCES, NOT FOUR — BETR IS THE FIFTH, AND IT CARRIES NINE NATIVE TIERS**
+**`NBA_SYSTEM_ARCHITECTURE.md` §0f is titled *"THE FOUR LIVE BOARD SOURCES"* and has ZERO mentions
+of Betr. The code says five.** ✅ **VERIFIED**: **`nba/archive_live_boards.py` reads *"prizepicks,
+underdog, sleeper, fliff, **betr**"* and its `ARCHIVE_APPS` DEFAULT is all five**; it documents
+Betr's leg shape as ***`stat, line, TIER, sides`*** — **the only one of the five whose leg carries a
+native `tier`**; and **the worker holds the puller** *(reads `betr_access_token` from
+`nba_config.external_credentials`, calls `betr fantasy graphql getUpcomingEventsV2` with
+`jurisdiction: "CA"`, writes `boards/betr_<league>_current.json`)*. 🔑 **The unlock**: ***"Betr sends
+the token WITHOUT the `Bearer` prefix — that alone was my 401."***
+✅ **THE NINE TIERS ARE IN THE ARTIFACT WITH COUNTS, AND THE PARTITION CLOSES** —
+`boards/betr_mlb_current_meta.json`, 5 events / **1,684 legs** / 102 players: **BOOSTED 403 ·
+MINI_BOOSTED 346 · SUPER_BOOSTED 281 · REGULAR 248 · BOOSTED_4 129 · EDGE_1 108 · EDGE_2 97 · EDGE_3
+41 · EDGE_4 31 = 1,684** ✅. ***The richest goblin/demon-equivalent structure of any app here, and
+the tier ships as a FIELD rather than having to be inferred*** *(`nine tiers`, `SUPER_BOOSTED`,
+`EDGE_1` each **0 of the twelve**)*.
+🔴🔴 **AND BETR IS DIFFERENT IN KIND — it is the only one using the owner's own account**: *"the
+other four **serve their boards PUBLICLY, so our scrapers are ANONYMOUS and touch no account. Betr
+doesn't**… their terms treat automated access as a violation. **The realistic worst case isn't legal
+trouble; it's account limits or closure — which for a book you actually play on is the real cost.**"*
+✅ **The mitigation reasons from the right premise** — *"**what flags automation is the SHAPE of the
+traffic, not the count**"* — **twice daily with JITTER, through the residential proxy, NBA-scoped,
+the app's own headers**, so *"the account's footprint is **'someone who checks the board twice a day
+from home,' which is what you are**."*
+🔴 **BUT THE PULL IS NOT RUNNING**: *last write per artifact* — **fliff 2026-09-22T05:19Z · sleeper
+08-09-22T04:54Z · underdog 2026-09-21T19:52Z · betr_nba AND betr_mlb both 2026-09-10T06:18Z, the
+same second, twelve days ago and never again.** ⚠ **The empty NBA boards are EXPECTED** *(the
+2026-27 season has not started; Fliff and Sleeper also return `ok` with zero legs)* — ***the finding
+is the CADENCE.*** 📌 **And the two default lists disagree**: `archive_live_boards.py` expects
+**five**, `.github/workflows/nba-boards-market.yml` defaults to **four**. ⚠ *That the disagreement is
+WHY is CONSISTENT and NOT ESTABLISHED* **(rule 6)**. 📌 **Token expires 2026-10-10 — eighteen days
+out.**
+🔴🔴 **AND A SECOND ARTIFACT GAP, ON THE PRIMARY BOARD**: `nba/scrape_prizepicks_nba_board.py`
+declares `OUTPUT_JSON = boards/prizepicks_nba_current.json` and the workflow runs it with
+`PP_NBA_OUT_DIR: "boards"` — ***and `boards/` holds 23 files, NONE of them PrizePicks, for either
+league***, while the other four apps have both files for both leagues. ⚠ **WHY is NOT ESTABLISHED**,
+and the workflow *explicitly permits* silent per-app failure *("allowed to fail individually")*;
+**a live check could not separate the mechanisms — `github_list_workflow_runs` has no workflow
+filter and the thirty most recent runs are all Pages builds: UNANSWERED, not zero** *(rule 22,
+§T12.8's bound)*. 🔑 ***This sits directly under T11's standing headline about the missing second
+hop — and it is the PRIMARY board.***
+
+#### 🔑🔑 T13.4b — **THE EARLY-SLATE ARC COMPLETED: THE OWNER CAUGHT IT, THE COUNT WAS 38, AND ONLY THE WINDOW WAS AT RISK**
+**§T13.2f recorded the cause as an owner rule the build did not implement. It missed that the
+DETECTION was the owner's too, and it missed the measurement.** *"**Good catch — let me measure it
+rather than assume**"* → *"**38 window snapshots landed at or after tip — exactly the early-slate
+problem you predicted**"* → *"**27 DATES, 38 EVENTS — all weekend/holiday early slates (tips
+12:10–14:40 PT)**… ***the CLOSE snapshots are all clean, 0 after tip, so only the WINDOW needs
+repair***."*
+🔑 **So the arc is 38 → 57** *(38 measured mid-run on 2024-25; 57 cleared after both seasons)*, **and
+the close snapshot was never at risk — which halves the blast radius of the incident.**
+✅ **The rule's rationale, previously recorded without one**: a 12:40 PT slate gets a 10:40 PT window,
+*"**early enough to be pre-tip, late enough to be after the league's game-day report for those
+games**"*, with `tip` = **the first game of the date, from the actual commence time the events call
+returns** — *"so **it self-adjusts for weekends, holidays, London games, and DST without any
+hardcoded time**."* **Repair cost: only the 38 re-pull, ~16k credits.**
+🔴 **And a deployment fact in 0 of thirty**: *"the currently-running job **uses the code as it was AT
+DISPATCH**"* — ***a GitHub Actions run pins its code when dispatched, so a mid-run fix reaches the
+next run and never the running one***, which is why the repair had to be a separate sweep.
+
+#### 🔑🔑 T13.4c — **THE TWO-PHASE CLOCK, TWO LEAKAGE TRAPS, AND A PREMISE THAT WAS LATER FOUND WRONG**
+**The phase cutoffs and freshness gates are already on file. What is not**: 🔑🔑 ***the biggest speed
+win is a DELTA, not a faster engine*** — *"at 2:45 most legs are unchanged… recompute only legs whose
+line/side/multiplier moved and every leg for players on teams the final report touched, and you're
+**rescoring a few HUNDRED legs instead of a few THOUSAND**; **everything else carries its 1 pm score
+forward**"* — **which is an architectural answer to the owner's latency requirement, not an
+optimisation.** ✅ **The split**: distribution SHAPES, conditional multipliers as TABLES, and
+board-shaped pre-scoring all move early; 🔴 ***MINUTES cannot*** — *"anything computed THROUGH
+minutes, and therefore `p_over`, has to wait."* ✅ **The gate's failure mode, stated**: *"refuses to
+run on a board older than X minutes or without the day-of report, and **says so loudly instead of
+silently scoring stale data — that's the failure mode that quietly costs money**."*
+🔴🔴 **TWO LEAKAGE TRAPS, FLAGGED BEFORE BUILDING**: **(1) starters are box-score truth, known only
+after tip** — *"**if the historical run uses it, backtests will look great and live will
+underperform**"*, and the actual data is ***"fine to use as the EVALUATION TARGET, never as an
+INPUT"***; **(2) `game_lines_closing` is CLOSING odds, also post-window** — as-of market context
+needs the line **at the window timestamp** *(~30 credits/date, ~10k for both seasons)*.
+🔑 **Trap 1 narrows this corpus's own starter-load headline: for phase 2, loading it would BE the
+leak.**
+✅✅ **AND BOTH OF T13's OPEN QUESTIONS ARE ANSWERED BY THE CORPUS — RULE 33's FOURTH AND FIFTH
+INSTANCES, both in the EIGHTEEN and both dated AFTER T13**: **the projected-lineup proxy was
+REJECTED** *(COMPASS fact 82, 2026-09-13 — "**A5 PROJECTED LINEUPS — REJECTED AS REDUNDANT**… **the
+leak risk DISSOLVES rather than needing mitigation**")*, ***so the answer to "proxy from the report
+or mine a public source?" was NEITHER***; and 🔴🔴 ***the `2:30 PM PT` injury report — the premise
+under T13's entire window trade-off — IS A TIMEZONE ERROR*** *(COMPASS facts 104/107, owner decision
+2026-09-19)*: *"**THE 2:30 PM PT ANCHOR WAS MY DRIFT, traced to its origin** — a list of OBSERVED
+injury-PDF timestamps that were ***EASTERN, from the PDF filenames***… ***2:30 PM ET is 11:30 AM
+PT***… **the real binding constraint is 1:00 PM PT**."*
+⚠⚠ **T13 offered the owner three window options framed as a *"genuine conflict"* — strict `tip−2h`
+vs never-earlier-than-2:45 vs `tip−90min` — where the conflict was ENTIRELY that `tip−2h` would sit
+*"30 minutes before the final injury report."* ***There is no 2:30 PM PT report. The conflict did
+not exist.*** ✅ **THE DECISION SURVIVES ITS BROKEN REASON — the real deadline (1:00 PM PT) is
+EARLIER than 2:45, so the window still sits after every filing and the 25.7M-row backfill is not
+compromised.** 🔑 *A correct decision reached through a wrong premise is still worth correcting,
+because the premise is what the NEXT decision is made from.* 🔴 **One consequence is unresolved**:
+**the early-slate rule can set the window as early as ~10:40 AM PT — BEFORE the 11am–1pm local filing
+window closes.** ⚠ **Whether those snapshots precede their own games' filings is NOT RECORDED
+anywhere**, and **it is a different question from the post-tip problem the rule was built to fix.**
+
+#### 🔑🔑 T13.4d — **THE STORAGE INCIDENT WAS PREDICTED ~400 SEGMENTS EARLIER, AND THE FIX WAS DECLINED**
+**Measured from real data mid-backfill, not estimated**: **446 bytes/row (518 MB heap + 542 MB index
+for 2.5M rows)** — ***"the index is as big as the data, because the primary key is SEVEN COLUMNS
+including player and market names"*** — **db at 14 GB, projected to 21–22 GB**, *"**that crosses your
+80% trigger (16 GB), so the auto-expand will fire MID-RUN**."* **Two options were put with a
+recommendation — trim the index (~40%, no data loss, reversible) YES; drop sportsbook alternates
+(⚠ *"not reversible without a re-pull"*) NO** — and 🔴🔴 **the owner declined: *"no schema changes,
+full detail kept."*** ***The same remedy was then applied AFTER the outage.***
+⚠ **Recorded as a decision arc, not a criticism** — option 2 was correctly refused and *"no schema
+changes"* during a live 2M-credit run is defensible. 🔑 **The transferable lesson is SEQUENCING**:
+***the cheap reversible fix is cheapest before the deadline, and the argument for it is strongest
+exactly when there is least appetite to act on it.*** *(`no schema changes` / `full detail kept`:
+**0 of the twelve**.)*
+
+#### 🔑 T13.4e — **O11 MATERIALLY CHANGED: THE PASSWORD WAS REFUSED, AND THE DISCIPLINE WAS NOT UNIFORM**
+**O11 records the exposure and not the handling.** ✅ *"**Please don't send me the SMS code, and I
+won't use the password** — the login should happen in your browser, not through me… **the password
+is now sitting in a chat log, so I'd recommend changing it after this**"* · *"**the refresh token is
+the only thing the scraper keeps**, stored in the credentials table… **never in memory or docs**"* ·
+*"**I'm not storing the password anywhere.**"* **The credential was offered, REFUSED, rotation
+recommended, and the build proceeded on a scoped token.**
+🔴 **But a few hundred segments later the FULL POSTGRES CONNECTION STRING — including the password —
+is pasted back into the chat TWICE**, as copy-paste instructions for a GitHub secret *(no value
+reproduced)*, **with rotation likewise recommended.** 🔑 ***The rule applied was "don't handle the
+credential" for a third-party login and "relay the credential" for our own database.*** ⚠ **Whether
+either was rotated is NOT RECORDED — so O11 is narrower and sharper than its table suggests: it is
+about ROTATION, not handling.** 📌 **And the capability boundary that forced it, in 0 of the
+twelve**: the bridge **can write files and trigger workflows but CANNOT create GitHub secrets** —
+*"the secrets API needs encrypted uploads it doesn't support."*
+
+#### ✅✅ T13.4f — **THE UNDERDOG LADDER CAPTURE, VERIFIED AGAINST THE OWNER'S OWN SCREENSHOT**
+**§T13.3a's corrected picture said Underdog tiers must come from live capture and that whether any
+had landed was NOT RECORDED. They had — in this same transcript.** **Found by method, not by
+guessing**: *"**let me stop guessing and read Underdog's own web bundle**"* → *"their web app hides
+its logic in **~80 lazily-loaded code chunks**, so I had the worker **grep them all from the
+runtime's chunk map**; **chunk 4113** held the call"* → **`GET /v3/over_unders/{id}/alternate_projections`**,
+returning every rung with **both sides' multipliers and prices** and 🔑🔑 **two probabilities per
+side — Underdog's own fantasy implied probability AND a SPORTSBOOK REFERENCE probability** *(higher
+2.5: **72% vs 76%**)* — ***"that's the pick'em-SHADING signal from the factor lock, served straight
+from the source."*** **Measured: 562 flagged lines → 2,061 ladder legs, zero errors, ~2 extra minutes
+per run.** 📌 **Same hunt surfaced Underdog's line-movement series, implied probability every 20
+minutes, for C3** *(0 of thirty)*.
+✅ **AND THE OWNER CHECKED IT AGAINST HIS SCREEN — the only external validation of a multiplier in
+this corpus**: *"your Underdog screenshot matches what the ladder pull captured **exactly**: **2.5 →
+1.31× / 2.77× · 3.5 (main) → 1.87× / 1.87× · 4.5 → 2.65× / 1.33× · 5.5 → 5.11×**."* 🔑 **The main
+rung is symmetric and the wings are inverse — §0.9f's probability-shift structure visible in four
+rungs**, ⚠ **and it is four rungs of one market on one day: it licenses the METHOD and the
+STRUCTURE, not a calibration.**
+🔴 **SLEEPER IS THE ONE REMAINING LADDER GAP, and it is well-characterised** — **the first conclusion
+(*"there is no ladder to capture"*) was OVERTURNED BY THE OWNER'S SCREENSHOT** *(alt stats **3+
+1.23×, 5+ 2.63×, 6+ 4.19×**)*, **diagnosed as *"a DIFFERENT MARKET SHAPE — not `over_under`"***, with
+**`line_type` the alt marker, REST parameters ignored and no GraphQL alt query.** ⚠⚠ ***Twice in one
+transcript path-guessing failed and bundle-reading or capture succeeded.***
+
+#### 🔑 T13.4g — **THE PARLAYAPI DOWNGRADE'S REASONING, AND A CORRECTION THE CORPUS DID NOT INHERIT**
+**§T13.1d recorded the downgrade TERMS as 0 of thirty; this is the working.** **Why books are not
+scraped**: *"DK/FD/MGM props… **are the hardest targets in this whole space** *(Akamai/Imperva,
+geofenced, endpoints changed often)*, and **keeping five book scrapers alive is a maintenance job in
+itself — that's precisely what an aggregator is for**."* **Measured usage 3,715 credits/month, *"most
+of that my probing"*; steady state ~100/day NBA, ~300/day with MLB and hockey ≈ 9k — under half the
+tier.** 🔑 ***"The `/props` endpoint and the bookmaker list are NOT tier-gated — only the ARCHIVE
+was."*** ✅ **Two safeguards, both 0 of thirty: log the `x-requests-remaining` header the bridge
+already reads into `nba_control`; and *"our own board scrapers archive every pull from opening day —
+so we build our own history rather than relying on the vendor's."*** 📌 **And the exception named:
+DraftKings `Pick6` IS a board, already in the `us_dfs` history.**
+⚠ **A correction made inside the transcript**: the Fliff ping returned **`"Fliff is not available in
+California"`, restriction `15001`**, and the first write-up concluded *"a market signal, not a book
+to play"* — 🔴 **the owner corrected it twice** *("you're in California and use Fliff… the scraper
+stands as built")*. ✅ **`15001` is 0 of the TWELVE, so the corpus never inherited the wrong version**
+— recorded so a future reader meeting the raw response does not re-derive it. 📌 **Plus the protocol
+the corpus lacked**: **`fc_mobile_api_public` with EMPTY auth and location tokens — no login, no geo
+check — in three steps (`ping` → global sync → per-event sync)**, ⚠ *"the sync must go to the
+**`herald-2`** feed host, not the core host"* *(0 of thirty)*, **against a same-moment diff of 2,434
+legs to ParlayAPI's 663.**
+
+#### ✅✅ T13.4h — **THE PRE-REGISTRATION: THREE OF THREE — the first clean HIT since the partials began**
+*Harness re-run **2026-09-22T08:29:14Z**.*
+| | high band | tail | **uncovered12** | uncovered30 |
+|---|---|---|---|---|
+| **BASELINE `4429380d`** | 24 | 16 | **1,274** | 1,234 |
+| after pass 1 | 29 | 16 | 1,263 | 1,223 |
+| after pass 2 | 53 | 15 | 1,238 | 1,203 |
+| **after pass 3** | **67** | 15 | **1,221** | **1,187** |
+
+✅ **(i) HIT** — predicted a fall of **15–40**; measured **17** *(1,238 → 1,221)*.
+✅ **(ii) HIT** — predicted **≥75%** of new crossings in segments 1–639; measured **16 of 18 =
+88.9%** *(the two exceptions, 1269 and 1293, are the `days_done` retraction this pass also wrote
+about)*.
+✅ **(iii) HIT** — **none of pass 2's 36 crossings reverted.**
+🔑🔑 ***The widened band is why (i) landed, and the band was widened on the bound pass 2's MISS
+produced*** — *"the instrument under-reads a pass that SPREADS across documents."* ***A bound earned
+from a miss paid for itself one pass later.*** 📌 **High band 24 → 67, none lost; 54 crossings in
+total.** **Twenty-nine pre-registrations: TWENTY-THREE hits, two misses, four partials.**
+
+**Pass outcome: the prose stratum EXHAUSTED at 250 of 250; a FIFTH board source recovered with its
+nine tiers verified in the artifact and its pull shown not to be running; the primary board's output
+file shown absent; the early-slate arc completed and re-attributed to the owner; the two-phase
+delta-scoring design and two leakage traps recorded, with BOTH of their open questions answered from
+the eighteen (RULE 33's fourth and fifth instances) — including the finding that the premise under
+T13's window decision is a timezone drift, while the decision itself survives; the storage incident
+shown to have been predicted and its fix declined; O11 narrowed to a rotation decision; and the
+Underdog ladder capture verified against the owner's own screen. ⚠⚠ THE CLOSURE CLOCK DOES NOT
+ADVANCE — this pass added transcript material heavily. ✅ But the prose is now exhausted, and pass 4
+is the two-direction judgment. CLEAN 0/3 · 4 passes.**
+
 ### T13.3 — PASS 2 (**the prose stratum PAST the multiplier arc — segments 911–1,323**) — **🔴🔴 two of pass 1's own findings RETRACTED by this transcript, and the grader recovered**
 *The 82 assistant-prose segments after the multiplier window, 42,972 chars, **read in full — no
 sample to state** (rule 25). ⚠⚠ **PARTIAL BY DESIGN AND SAID SO: the 107 prose segments BELOW 640
