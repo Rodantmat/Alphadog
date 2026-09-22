@@ -13200,6 +13200,40 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 > 🔑 **AND IT IS THE CHEAPEST ITEM ON THE BRIEF TO NEUTRALISE, because it does not need FIXING — it
 > needs DECIDING.** *Knowing it is coming is most of the remedy.*
 > **Amended order: `13 · 5 · 7 · 12 · 9 · 4 · 6 · 3 · 10 · 2 · 11 · 1`.**
+>
+> ## 🔴🔴🔴 FOURTH AMENDMENT — **THE FIVE THAT WERE NEVER ON THIS PAGE** *(T20 pass 51, §T20.56, 2026-09-22)*
+> *Every field read back from the item it summarises; nothing new is asserted. Ranked by this brief's
+> own rule — **SILENT before LOUD, STOPS THE SLATE before DEGRADES IT, UNCAUGHT before CAUGHT** —
+> with T20-13's precedent that a KNOWN FIRING DATE breaks a tie from outside the rule.*
+>
+> | # | item | fails | effect | caught? | fix size |
+> |---|---|---|---|---|---|
+> | **→ A** | 🔴🔴🔴 **THE OWNER'S OWN FINDING — T18-1**: *"Our system should be covering the APP LADDER… **our anchor is not at the proper place of the ladder, or the ladder is not deep enough**"* | 🔴🔴 **SILENT** — *it is a product-coverage defect, not a run failure* | 🔴🔴 **DEGRADES THE PRODUCT ITSELF** — if the anchor or depth is wrong, every rung the apps offer outside our ladder is unscored | 🔴 **NO** — **`0 of the twelve, 0 of the thirty`; TWO candidate causes and NO diagnosis** | **a diagnosis, then unknown** |
+> | **→ B** | 🔴🔴 **THE ENTIRE NBA STATIC LAYER IS FROZEN AT ITS BUILD DATE** — ten tables *(nine tabulated + `nba_ref.defender_ratings`, §T20.51)*, last written `2026-08-31 → 2026-09-03` | 🔴🔴 **SILENT** *(row counts are correct; only the dates are old)* | 🔴 **DEGRADES FROM OPENING NIGHT** — its own words: *"the system would score against a roster, schedule, impact-rating, play-type and tracking snapshot taken five weeks earlier"* | ⚠ **PARTLY** — **P1's `defender_ratings refreshed` check is RED TODAY** (§T20.51); the other eleven checks cannot see staleness | **one decision** — *wire the loaders into the cron, or schedule the `run_job` calls* |
+> | **→ C** | 🔴 **THE SCHEDULE HAS NOT BEEN REFRESHED SINCE THE DAY IT WAS BUILT** — `nba_calendar.games`: **2025-26 `1,400` · 2026-27 `1,266` · oldest and newest write both `2026-09-02T20:24`, ONE distinct write day each**, and 30 regular-season games short | 🔴🔴 **SILENT** | 🔴 **DEGRADES FROM OPENING NIGHT** — *and it is the DENOMINATOR for slate-size checks (§T20.52)* | 🔴 **NO** | **same fix as B** |
+> | **→ D** | 🔴🔴 **T16-7 / T16-8 / T16-9 — three `[LIVE-AUDIT]` owner decisions**, heading dated *"the opener is 2026-10-20"*: `final_hp` covers **one season plus a single day** *(2024-25: 19,075,070 rows / 162 dates)* · `final_hp.score` runs to **−52.488** with **6,924,101 of 19,215,200 rows (36.0%) NEGATIVE** against a **0–100** contract, across 20 of 30 props · `board_outcomes_nm_idx` is **303 MB with `idx_scan` = 0** | ⚠ **MIXED** | 🔴 **DEGRADES THE PRODUCT'S OUTPUT** — 36% of stored scores violate the contract the product publishes | 🔴 **NO** — *P3's `score in range 0-100` check is DATE-SCOPED, so it cannot see 6.9M already-stored violations (`NBA_WORKERS.md:2059` calls it "❌ vacuous")* | **three owner decisions** |
+> | **→ E** | 🔴 **THE DARKO SCRAPER'S FAILURE EVIDENCE IS THE WRONG 20 KB** — `nba/scrape_nba_darko.py:86` writes `html[:20000]` on a low-count failure | ✅ **LOUD** *(it detects and reports)* | **DEGRADES DIAGNOSIS ONLY** — the saved evidence is the page head, not the part that failed to parse | *n/a* | **one slice expression** |
+>
+> 🔑🔑 **WHERE THEY LAND.** **B and C fire on opening night and are SILENT and largely UNCAUGHT, which
+> under this brief's own rule places them immediately behind T20-13** *(which has a date)* **and ahead
+> of T20-5 and T20-7** *(which degrade from opening night but are one table each, while B is ten
+> tables and C is the denominator under several other checks)*. **A is placed FIRST of all, for a
+> reason that is not in the rule and is stated openly: it is the only item on this page whose source
+> is the owner, whose cause is undiagnosed, and whose subject is whether the product does the thing
+> it exists to do.** **D and E are ranked on their own terms.**
+>
+> ## ▶▶ **FINAL ORDER — ALL THIRTEEN**
+> ### **A · 13 · B · C · 5 · 7 · 12 · D · 9 · 4 · 6 · 3 · 10 · 2 · E · 11 · 1**
+> *(A = T18-1 · B = frozen static layer · C = frozen schedule · D = T16-7/8/9 · E = DARKO evidence;
+> the numerals are T20-n. Seventeen entries because D bundles three and the T20 items keep their own
+> numbering.)*
+> ⚠ **AND THE "ONE PATTERN" COLLAPSE BELOW IS UNCHANGED BY THIS AMENDMENT** — *B and C are the same
+> fix as each other and neither is a season literal nor a zone constant; they are the **loader**
+> problem, which is a third pattern and already named in item B's own text.*
+> ⇒ ***Thirteen items, and still not thirteen jobs: THREE patterns — a season literal that should be
+> derived from the slate date, a zone constant that should be derived from the zone, and a loader
+> that is never triggered — plus one toggle, four owner decisions, and ONE DIAGNOSIS THAT HAS NEVER
+> BEEN DONE.***
 > ⚠ **AND NOTE THE OVERLAP, which no single item shows**: **T20-13's twelve nights sit inside
 > T20-12's 29-day PDT window (`2026-10-03 → 2026-11-01`).** ⇒ ***The opening fortnight carries a red
 > certifier AND a cutoff computed an hour late, and neither is visible from the other.***
