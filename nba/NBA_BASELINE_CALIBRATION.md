@@ -52,6 +52,78 @@ them from the game logs is a separate job.** **A dated STATE** *(O9)*.
 
 ---
 
+## 0u. 🔑🔑 **THE PARITY RULE AS THE GOVERNING DOCUMENT STATES IT — and the A5 rejection's actual measurement**
+*Recorded 2026-09-22 (T14 pass 2, §T14.3c). **Source: `NBA_DAILY_PARITY_AND_BACKFILL.md` §§1, 5, 6 —
+an owner directive of 2026-09-11, read in full for the first time by this sweep.** Probed against the
+twelve, pinned 2026-09-22T09:03:53Z.*
+
+> **THE RULE**: *"**Every daily factor must be backfilled DAY BY DAY, producing exactly the object the
+> live pipeline would have produced ON THAT DAY, from ONLY the information available at that day's
+> cutoff.** This applies to the baseline and to the enrichment layer equally. **Without it there is no
+> realistic back data — a backtest built on anything else is measuring a world that will never
+> exist.**"*
+> *"It is not enough that a factor EXISTS for a past date. It must have been **CONSTRUCTED THE SAME
+> WAY, at the same cutoff, with the same inputs and THE SAME FALLBACKS** as the live run."*
+
+### 🔴 WHAT IT FORBIDS — *four, and each names a real temptation*
+1. **Building a factor once over a whole season and slicing it per date** — *"season aggregates leak
+   the future."*
+2. **Using any end-of-season table, final roster, or post-game truth as an input to a past day.**
+3. **Using data that exists today but was not published before that day's cutoff.**
+4. 🔑 **Filling a gap with a later value *"because the value barely changes."***
+
+### ✅ WHAT IT REQUIRES — *and the third is the one nobody expects*
+1. **One value per `(factor, entity, DATE)`, produced by the same code path as production.**
+2. **The cutoff recorded WITH it, so it can be audited.**
+3. 🔑🔑 ***"Where the live pipeline would FALL BACK (missing report, thin sample), the backfill FALLS
+   BACK THE SAME WAY — a backfill that is MORE COMPLETE THAN PRODUCTION IS AS WRONG AS ONE THAT IS
+   LESS."*** *(`more complete than production`: **0 of the TWELVE**.)*
+⚠⚠ ***The third inverts the usual instinct.*** **A backfill that quietly succeeds where production
+would have fallen back produces a backtest the live system can never reproduce** — **and it fails in
+the flattering direction, which is why it survives review.**
+🔑 **And the consequence is stated as a completion test**: ***"NO FACTOR IS 'DONE' UNTIL ITS
+DAY-BY-DAY BACKFILL EXISTS AND MATCHES THE LIVE CONSTRUCTION."***
+📌 **Why it matters at all, in one line**: *"a single factor that quietly used future information
+inflates the backtest, and **the inflation is INVISIBLE — the numbers look better, not broken.**"*
+
+### ✅ 0u.1 **THE A5 REJECTION — the MEASUREMENT, which the twelve carry the verdict of but not the evidence**
+🔴 **KILL, and it is the 27th since T11**: **A5's rejection is already on file** — `NBA_GLOSSARY.md`
+records *"**A5 — lineup change · T15 · REJECTED/CLOSED.** A derived as-of proxy is redundant"*, and
+`NBA_MASTER_SUMMARY.md` carries COMPASS fact 82. ***What is NOT on file is the number.***
+
+**The proxy was BUILT** *(last game's starters, minus those ruled out, plus the highest as-of-minutes
+replacement)* **and tested HELD OUT — negative on every prop** *(`0.032` and `0.035`: **0 of the
+TWELVE**)*:
+| prop | Δ MAE |
+|---|---|
+| **points** | **−0.032** |
+| rebounds | −0.008 |
+| assists | −0.008 |
+| **pra** | **−0.035** |
+
+🔑🔑 **AND THE REASON IS THE VALUABLE PART, because it generalises**: ***"the allocator already uses
+RECENT-5 MINUTES, which encodes starting status CONTINUOUSLY AND WITH MAGNITUDE; a binary starter
+flag DISCARDS THAT MAGNITUDE."*** ⚠ ***A binary feature that summarises a continuous one the model
+already has does not add information — it removes it.***
+✅ **And the consequence for the leakage question**: ***"the leak risk DISSOLVES rather than needing
+mitigation — we do not need projected lineups, so there is nothing to leak."***
+⚠⚠ **This narrows this corpus's own starter-load headline a second time** *(`NBA_SYSTEM_DESIGN.md`
+§0a.3 narrowed it once)*: **the two unloaded seasons of `player_game_starter_status` would have fed
+a proxy that was built, tested and rejected.** **The data remains the EVALUATION TARGET, which is
+what it was always admissible as.**
+
+### ✅ 0u.2 **WHAT MUST STAY TRUE AS THE BASELINE CHANGES — three invariants, and the second has already been violated once**
+1. **`BT_ASOF` drives everything; no constant is carried between days.**
+2. 🔴 **The ladder depth is a build parameter (`BT_LADDER_STEPS`, now 10), *"applied identically in the
+   singles recipe and the combos recipe — they are **SEPARATE CERTIFIED FILES** and each has its own
+   constant."*** ⚠⚠ ***That invariant is written because it was broken***: raising the depth reached
+   the singles and left the combos at ±6, leaving **252 combo legs out of range** until the second
+   constant was found and patched. 🔑 **An invariant recorded with its own counter-example is the
+   strongest form this corpus has.**
+3. ✅ **The artifact must contain singles AND combos — *"the loader REFUSES a singles-only slate."***
+   🔑 **A gate installed because a silent `echo ... failed` in every workflow step let a 56%-complete
+   slate load and report green for two days.**
+
 ## 0v. 🔑🔑🔑 **"CERTIFIED" NEVER MEANT "STORED" — the distinction that produced `baseline_history`**
 *Recorded 2026-09-22 (T14 pass 1, §T14.2b). **Transcript `2026-09-13-20-53-23`.** ⚠ **`NBA_COMPASS.md`
 carries the phrase and the row count; what follows moves it into the twelve with the reasoning and a
