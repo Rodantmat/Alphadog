@@ -15,6 +15,144 @@ document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 
 ---
 
+## 0z-T16-B. 🔑🔑🔑 **THE PHASE × BAND CALIBRATION LAYER — the ONE thing in the 2026-09-13 session that beat the baseline out-of-sample, and it wins by CORRECTING the baseline rather than competing with it** *(T16 pass 1, §T16.2)*
+
+⚠⚠ **Read this against §0z-T16 below**, which carries the owner directive that produced it — *"consider
+WINDOWS instead of a full-season comparison… different times will have different variances."* **This
+is the measurement that answered it.**
+
+### ✅ THE RESULT — **fitted on 2024-25, applied to 2025-26, held out**
+
+| | log-loss | Brier |
+|---|---|---|
+| raw ladder | 0.6349 | 0.2215 |
+| **phase × band calibrated** | **0.6281** | **0.2187** |
+| **gain** | **+0.0068** | **+0.0028** |
+
+*on **105,663 points legs**.* 🔑 ***"That's the first thing tested today that BEATS the baseline on
+held-out data — and it does it by CORRECTING the baseline rather than COMPETING with it, which is the
+lesson the whole session pointed at."*** ⚠ **The transcript flags its own comparability trap**: *"the
+raw ladder scores 0.6349 here versus the 0.7150 I measured earlier on the points-only anchor test.
+**DIFFERENT POPULATIONS** — this covers the whole tiered ladder across all bands, that one covered
+board-matched points legs at offset 0 — **so the numbers aren't directly comparable, and I don't want
+to imply the correction closed that gap.**"*
+
+### ✅ EXTENDED TO 8 PROPS — **621,684 legs, EVERY ONE IMPROVED, out-of-sample**
+
+| prop | legs | raw | calibrated | gain |
+|---|---|---|---|---|
+| **pra** | 92,829 | 0.6646 | 0.6566 | **+0.0080** |
+| pts+ast | 72,353 | 0.6360 | 0.6290 | +0.0070 |
+| pts+reb | 84,176 | 0.6360 | 0.6300 | +0.0060 |
+| points | 105,663 | 0.6349 | 0.6291 | +0.0058 |
+| assists | 62,881 | 0.5739 | 0.5700 | +0.0039 |
+| rebounds | 78,613 | 0.5831 | 0.5798 | +0.0033 |
+| reb+ast | 78,259 | 0.6229 | 0.6196 | +0.0032 |
+| **threes** | 46,910 | 0.5638 | 0.5623 | **+0.0015** |
+
+🔑🔑 **THE ORDERING IS THE FINDING — combos gain MOST, single low-count stats LEAST**: *"a combo sums
+three noisy counts, so **its ladder accumulates more distributional error for the calibration to
+correct**, while a threes ladder is already close to its true shape."* ✅✅ **AND IT DOVETAILS WITH THE
+RELIABILITY AUDIT EXACTLY** *(`NBA_FINAL_SCORING_CALIBRATION.md` §0a-T15 §8)*: **combos carry the
+LOWEST raw lift (pra 7.5%) and the HIGHEST calibration gain (+0.0080).** 🔑 ***The baseline projects
+them worst, and the correction recovers most there*** — two independent measurements agreeing on
+where the combos' weakness lives.
+
+### 🔴🔴 THEN THE SCOPE COLLAPSE — **and the owner's "test ALL prop lines every time" is what exposed it**
+
+⚠ **First the coverage gap**: **`board_tiers` covers only 12 markets** — *PrizePicks offers
+goblin/demon tiers on those 12 only.* **The other 18 props — `fga`, `ftm`, `dreb`, `fantasy_score`,
+`double_double` and the seven period props — have NO TIER ROWS AT ALL**, so they cannot be calibrated
+through this path. *And `steals`, `blocks`, `turnovers`, `stocks` have tiers (3.9k–8.1k rows) but fell
+under the 1,500-leg test minimum after the joins — **thin, not broken.*** 🔑 ***"The remaining 18 props
+need a DIFFERENT calibration path — keyed on the STANDARD BOARD LINE rather than tier. That's not a
+variation of this test; it's a SECOND PATH."***
+
+🔴🔴 **THEN THE ALL-30 RUN CAME BACK ESSENTIALLY NULL, AND IT CONTRADICTS THE TIER RESULT**:
+
+| | |
+|---|---|
+| props improved | **6**, all by **+0.0001 to +0.0002** |
+| props unchanged | 11 |
+| **props made WORSE** | **13**, including **points −0.0007** and **pts+ast −0.0011** |
+
+⚠ ***"The difference is the POPULATION: that test covered only BOARD-MATCHED legs at real PrizePicks
+lines (~100k per prop); this one covers EVERY RUNG of the full ladder (~900k per prop, anchor ±10)."***
+🔑🔑 **THE MECHANISM, and it is the governing scope rule**: ***"the correction works WHERE THE BOARD
+ACTUALLY OFFERS LINES, and does NOTHING across the full ladder — because most ladder rungs are far
+from the anchor, sit at EXTREME PROBABILITIES where there's no room to correct, and SWAMP the middle
+bands where the miscalibration lives."***
+
+🔴 **SO THE CALIBRATION SHIPS SCOPED TO BOARD-OFFERED LINES. "Applying it everywhere is
+NEUTRAL-TO-HARMFUL."** ⚠ **And the self-correction is recorded**: *"my '621,684 legs all improved'
+framing was right for its population but **I let it imply general applicability**. Testing all 30
+props across the full ladder — **which you insisted on** — is what exposed that."* 🔑 **A second
+instance, four days after §T15.2a's, of the same class: a figure correct for its population and wrong
+the moment the population is left implicit.**
+
+### 🔴🔴 WHAT THE LAYER ENCODES — **two measured regularities, both with mechanisms**
+
+**Cells are keyed `prop × kind × tier × phase × band × direction`, with a SHRINKAGE FALLBACK HIERARCHY
+so thin cells fall back rather than inject noise** — stored in **`nba_score.tier_band_calibration`**.
+*Direction is a cell dimension because **"over and under on the same ladder can be wrong in OPPOSITE
+directions"**.*
+
+**① THE GOBLIN LADDER'S SLOPE ERROR** — 🔴 **under-confident at LOW probabilities, over-confident at
+HIGH ones**: *goblin t-2 at model **0.318** actually hits **0.622** (**+30 points**); at model
+**0.877** it hits **0.746** (**−13 points**). **"The same inversion appears across every tier."***
+
+**② THE PHASE DECAY** *(calendar-anchored)*:
+
+| Phase | legs | model | actual | **gap** |
+|---|---|---|---|---|
+| **1 — Oct–Nov** | 33,685 | 0.4604 | 0.4750 | **+1.46 pp** |
+| 2 — Dec → All-Star break | 63,561 | 0.4568 | 0.4699 | +1.30 pp |
+| 3 — post-ASB | 22,983 | **0.4440** | 0.4528 | +0.88 pp |
+| **4 — push (mid-Mar+)** | 25,920 | 0.4550 | 0.4563 | **+0.13 pp** |
+
+🔑 **The model is UNDER-confident early and essentially calibrated by the playoff push.** ✅ **And the
+post-ASB regime shows in the MODEL'S OWN OUTPUT, not only in outcomes — its average probability drops
+to 0.4440, the lowest of any phase**: *"it's already anticipating reduced production after the break,
+consistent with the research that heavy-minutes players slow down post-break."* 🔑 **The push phase is
+where the model is SHARPEST (+0.13), which is counterintuitive given the rest-management noise** —
+*"by March the empirical cells have a full season of current data, and that outweighs the added
+chaos."*
+
+### ⚠⚠ THE FIRST PHASE SPLIT WAS MEASURING SOMETHING ELSE — **and it was caught, not shipped**
+
+*A game-count split reported a much larger effect — **+5.05 / +2.76 / +1.15 pp** across games 1–15 /
+16–60 / 61+.* 🔴 **It was wrong, and the transcript diagnoses it precisely**: ***"my `team_game_no`
+counts a player's OWN APPEARANCES, not team games, so a player who missed time is classified as
+'earlier' than his team actually is"*** — **putting returning-from-injury players in the "early"
+bucket all season, which is exactly where the model is most conservative.** ✅ ***"The CALENDAR version
+measures the SEASON REGIME; the game-count version was measuring something else AND MISLABELLING
+IT."*** 🔑 **A label that names a different quantity than the column computes — the same family as
+§T15.2f's selection filter, caught by a sanity check rather than by inspection.**
+
+### ✅ THE PHASE BOUNDARIES ARE RESEARCH-BACKED, AND THE FIRST SPLIT MISSED THREE OF THEM
+
+*Four independent sources converge* — ⚠ *and the sweep records the boundaries the original
+three-phase split **missed entirely**:* **the ALL-STAR BREAK is a genuine regime change** *("underdogs
+win more post-All-Star break as playoff teams rest stars"; "players who log heavy minutes through
+December tend to slow down post-break")* · **the TRADE DEADLINE (early Feb) resets roles through
+roster churn** · **the FINAL STRETCH SPLITS IN TWO** *("teams with something to play for elevate their
+effort; teams with nothing to play for rest their stars and coast", plus "tanking teams with winning
+records who stop competing once their seed is locked")* · **Oct–Nov confirmed soft** *("lines are
+softer because books are still calibrating to roster changes, new coaching systems")*.
+
+### 🔑🔑 AND IT TRANSFERS TO A NEW SEASON — **which is the whole point**
+
+> ***"It's CALENDAR-ANCHORED, so opening night 2026-27 inherits October's correction WITHOUT NEEDING A
+> MONTH OF DATA FIRST… The model can't know 2026-27 rotations, but it can know that THE FIRST FIFTEEN
+> GAMES BEHAVE LIKE THE FIRST FIFTEEN GAMES."***
+
+✅ **That is the direct answer to the owner's *"be ready for it in the new season"*** *(§0z-T16 below)*
+⚠ **and it is season-critical: the opener is 2026-10-20, and Phase 1 is where the model is LEAST
+calibrated (+1.46 pp).** 🔑 **Also recorded as the shape of a correct change**: *"a single season-wide
+correction is wrong — it would OVER-correct late-season legs and UNDER-correct early ones."*
+
+---
+
 ## 0z-T16. 🔴🔴 **CALIBRATE IN WINDOWS, NOT OVER A FULL SEASON — the owner's directive, and it is the missing justification for `f_phase`** *(T16 pass 0, §T16.1, 2026-09-13; **0 of the twelve, 0 of the thirty**)*
 
 > ***"Now THAT is the kind of calibration we need. You may also need to consider **WINDOWS instead of a
