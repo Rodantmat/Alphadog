@@ -25706,3 +25706,165 @@ the findings being good.**
    sessions before it, have repeatedly written the correct rule in prose and then not executed it in
    the next command — and the only instrument that has ever caught it is reading the commands
    themselves.***
+
+---
+
+# §T19.7 — PASS 4: THE WORK ORDER HAS BEEN IN THE REPO SINCE 2026-09-20, AND IT RETRACTS A STANDING RULE
+*(T19 pass 4, 2026-09-22 — rule 41's own charter instrument, run on T19; **it returned its intended
+result and then found something that invalidates part of rule 41 itself**)*
+
+## 1. ✅ THE COMMAND THIS PASS IS BUILT ON — *quoted into its own section, per **RULE 43**, on the first pass conducted under it*
+
+```bash
+# population: the EIGHT documents the charter names (T19 SEG 60/61), in nba/, at commit 17f5b23d
+for f in NBA_MASTER_SUMMARY NBA_GLOSSARY NBA_RECIPE NBA_SYSTEM_ARCHITECTURE \
+         NBA_DATABASE NBA_WORKERS NBA_SYSTEM_DESIGN NBA_OPEN_ITEMS; do
+  grep -c -i "T19" "nba/$f.md"; grep -c -E "^#+ .*§?T19" "nba/$f.md"; done
+# strict re-count, after the false positive below:
+grep -oE '(^|[^0-9A-Za-z])T19([^0-9:]|$)' nba/$f.md | wc -l
+```
+*Run 2026-09-22T12:31:52Z. Charter re-read first with
+`sed -n '/^### SEG 60 /,/^### SEG 62 /p' seq1.txt`.*
+
+## 2. ⚠ THE AUDIT'S OWN RESULT — *and a measurement artefact caught by rule 26*
+
+| charter document | strict `T19` refs | `§T19` headings | carries a dated T19 entry? |
+|---|---|---|---|
+| `NBA_MASTER_SUMMARY.md` | 52 | **5** | ✅ |
+| `NBA_OPEN_ITEMS.md` | 32 | **2** | ✅ |
+| `NBA_GLOSSARY.md` | 10 | 0 | ✅ *(transcript-index row, dated update-log row, §Z heading, 4 term rows)* |
+| `NBA_RECIPE.md` | **0** | 0 | ❌ |
+| `NBA_SYSTEM_ARCHITECTURE.md` | **0** | 0 | ❌ |
+| `NBA_DATABASE.md` | **0** | 0 | ❌ |
+| `NBA_WORKERS.md` | **0** | 0 | ❌ |
+| `NBA_SYSTEM_DESIGN.md` | **0** | 0 | ❌ |
+
+🔑 **RULE 26 EARNED ITS KEEP.** *The first count gave `NBA_SYSTEM_ARCHITECTURE.md` **one** `T19` hit.
+**Opened, it is an ISO-8601 timestamp** — `| \`underdog_nba_current.json\` | **2026-09-21T19:52:37Z**
+|` — and the positive control confirms the mechanism (`grep -o "2026-09-2[0-9]T19"` returns
+`2026-09-21T19`).* ⚠ **Rule 15's trap, exactly: a pattern tuned elsewhere silently mis-measures.**
+**Had the hit not been opened, architecture would be recorded as carrying T19 content when it carries
+none.**
+
+## 3. 🔁 AND THE VERDICT INVERTS — *RULE 41's instrument returns a FALSE POSITIVE here, and the rule needs its second step*
+
+**Rule 41 as written says: *"A mandated document with no entry for the transcript just closed is a
+CLOSURE DEFECT, whatever the passes said."*** ***By that test, five of eight are defects. They are
+not.***
+
+**T19 is a DOCUMENTATION transcript.** *It builds no worker, creates no table, adds no pipeline step
+and performs no recipe step.* **Its content — established by the full sequential read in §T19.4 — is
+the sweep's own method.** ⇒ ***`NBA_RECIPE`, `NBA_DATABASE`, `NBA_WORKERS`, `NBA_SYSTEM_DESIGN` and
+`NBA_SYSTEM_ARCHITECTURE` correctly hold nothing from T19, because T19 holds nothing of their kind.***
+
+🔑🔑 **RULE 41 EXTENSION — THE TEST HAS TWO STEPS, NOT ONE:**
+> **(a) does the document carry a dated entry for the transcript just closed?**
+> **(b) if not — does the transcript CONTAIN content of that document's kind?**
+> ***Only (a)-false AND (b)-true is a closure defect.*** **(a)-false and (b)-false is correct
+> silence, and recording it as a defect manufactures work while teaching the sweep to distrust a
+> true null.**
+
+⚠ **The T12–T18 glossary gap remains a genuine defect under the two-step test** — *those seven
+transcripts held hundreds of material terms, so (b) was true.* **This is what separates the two
+cases, and the one-step rule could not.**
+
+## 4. 🔴🔴🔴 THE PASS'S ACTUAL HEADLINE — *`nba/NBA_DOCUMENTATION_PROMPT.md` HAS BEEN IN THE REPO SINCE 2026-09-20*
+
+**While re-taking the `nba/*.md` population (rule 30), the audit found a file the sweep has never
+read: `nba/NBA_DOCUMENTATION_PROMPT.md`, 26,685 B, three commits, all 2026-09-20** *(`6c5fd8c6` →
+`5dbbc2f0` → `1b0861cb`)*, titled **"NBA ALPHADOG — DOCUMENTATION WORK ORDER"**. ***It is this
+sweep's own work order, and it carries owner instructions the sweep has been running without.***
+
+### 4a. 🔴🔴🔴 IT MANDATES ALL TWELVE DOCUMENTS IN THE OWNER'S OWN WORDS — ***RULE 41's FINAL CLAUSE IS RETRACTED***
+
+**§T19.1 published, and rule 41 repeats: *"the charter names EIGHT while the sweep maintains TWELVE —
+the four extra (`NBA_BASELINE_CALIBRATION`, `NBA_FINAL_SCORING_CALIBRATION`, `NBA_MULTIPLIERS`,
+`NBA_GOBLIN_DEMON`) were added by the sweep, not requested."*** 🔴 ***THAT IS WRONG.*** **The work
+order's closing section, `THE OWNER'S INSTRUCTIONS, VERBATIM`, quotes the owner mandating each one:**
+> *"**Baseline pipeline calibration**: dedicated file about the calibration of the baseline hit
+> probability and any formula, tier, granulation, bonus, penalties, caps, logic or anything else…"*
+> *"**Final scoring engine pipeline calibration**: dedicated file about the calibration of the final
+> hit probability, final confidence, final score…"*
+> *"**Multipliers**: anything related to multipliers for any apps. All the formulas, logic,
+> references, tests, slips, examples…"*
+> *"**Goblin/demon identification**: anything related to goblins and demons ingestion for PrizePicks.
+> The parsing, anchors, invisible anchors, switch line…"*
+
+✅ ***ALL TWELVE ARE OWNER-MANDATED. THE SWEEP ADDED NOTHING.*** **Retracted in the run log at rule
+41; the rest of rule 41 — the charter-audit instrument and the `NBA_GLOSSARY` finding — stands
+unaffected.** 🔑 **And the retraction matters practically: rule 41 told future passes that "the
+charter's eight take precedence when effort must be allocated." *There is no such hierarchy.***
+
+### 4b. ⚠⚠ IT CARRIES A STANDING OWNER RULE THE SWEEP HAS NEVER FOLLOWED
+> *"I want you, **before you start any pass**, to look at the previous message and this message.
+> **This is a must-follow rule! No exception.**"*
+
+**Not recorded anywhere in the twelve or in the run log before now.** *Its operational content is
+close to what the run log's resume note already does, but it is an explicit owner rule and it was
+absent.*
+
+### 4c. 🔴🔴 IT PRESCRIBES THE TRUNCATING READ — *so **RULE 43**'s defect has a documented CAUSE*
+
+**Part 4.2, "The read method that works":**
+> ```bash
+> grep -oai "known phrase.\{950\}" nba/transcripts/<file>.txt | head -1
+> ```
+> *"Returns the match plus the next ~950 characters… **This is how the prior sessions covered T1's
+> entire handoff-document body without ever loading the file.**"*
+
+🔑🔑 ***The character-window read that §T19.4 found under every closing pass of T1–T6 is not a lapse
+by those passes. It is the method this work order prescribes*** — **executed with windows of 110–260
+characters instead of 950.** ⚠ **The work order also states the reason, and the reason is real**:
+*"**Never `cat` one.** It will flood your context and end the session's usefulness."* ⇒ ***So the
+defect is a genuine constraint met with a method that does not satisfy the completeness the same
+document demands*** *("line by line, message by message… zero skipping")*. **Rule 43's finding
+stands; its cause is now named, and it is structural rather than careless.**
+
+### 4d. ✅ IT CORROBORATES THE SWEEP FROM AN INDEPENDENT DIRECTION
+**Part 7.3, "Key facts, all VERIFIED" (2026-09-20), includes findings this sweep re-derived from
+transcripts without knowing they were on file**: *"the **weekly differential worker is built but
+never scheduled** — all three log tables empty, snapshot frozen since 2026-09-03"* **(T3's finding,
+§T3.11a)** · *"**`minutes_mixture` in config specifies three components the recipe does not
+implement** — config and code have drifted"* · `nba_ref.arenas` *"`altitude_ft` and `timezone` are
+0-of-30 populated"*. ⚠ **Also a dated size snapshot of all twelve** *(`MASTER_SUMMARY` 395 KB,
+`GLOSSARY` 23 KB, `OPEN_ITEMS` 199 KB …)* — **a genuine 2026-09-20 baseline for growth, and it is
+where `NBA_GLOSSARY`'s 23 KB → 43 KB → 84 KB trajectory can now be dated from.**
+
+### 4e. ⚠ AND IT RECORDS THE SAME DEFECT CLASS §T19.6 FOUND, TWO DAYS EARLIER
+**Part 9, failure mode #1**: *"**Sweeping against a subset of documents.** T3–T9 were swept against
+4 of 8. **All counts voided.**"* **Part 3.1's ledger**: *"T2 – T9 — **VOID.** Prior clean counts were
+earned against only 4 of 12 documents."* 🔑 ***A prior closure record in this project has already
+been voided once, for a defect of the same family as §T19.6's*** — *there the population of
+DOCUMENTS was short; here the population of TEXT was.* **Neither was caught by the pass that made it.**
+
+### 4f. ⚠ ONE STALE FACT IN IT, recorded so it is not inherited
+**The work order gives the transcript location as `nba/transcripts/`.** **VERIFIED 2026-09-22: that
+folder holds `README.md` and `journal.txt` only** — *the 20 transcripts live at
+`/home/claude/nbadoc/transcripts/` (21 entries incl. `journal.txt`), which is where this sweep reads
+them.* **LOW severity; noted so a future session does not search the repo for them.**
+
+## 5. 🔑 WHY THIS WAS NOT FOUND FOR NINETEEN TRANSCRIPTS — *rule 7, and the shape of the miss*
+
+**The sweep HAS cited this file — once.** `NBA_OPEN_ITEMS.md` line 4073 quotes **step 7b** of its
+execution loop by name. ***So the file was opened, one instruction was taken out of it, and the rest
+was never read.*** ⚠⚠ **Rule 7 says: *before asserting something is unrecorded, grep its distinctive
+term — and OPEN EVERY HIT.*** **This is the same failure one level up: *open every hit* was satisfied
+for the line and not for the FILE.** 🔑 ***A citation is not a reading.*** *Rule 26 already says a
+count of carriers is not a reading of them; this adds that **a QUOTATION from a document is not a
+reading of it either** — and §T19.1 went on to assert the charter's scope from a transcript segment
+while a fuller statement of it sat in the repo, cited in the sweep's own open-items file.*
+
+## 6. 📏 CLAUSE SCORING — *deferred to the start of pass 5, per **RULE 34**'s remedy*
+**Clauses (ii) and (iii) are resolved by §2 above and are recorded now; clause (i) is a band
+measurement and is scored on the state this pass leaves.**
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` on the WORKING tree of the twelve changes by no more than ±10 | ⏳ **scored at the start of pass 5** *(rule 34: run the harness on the state the previous pass left)* |
+| **(ii)** | of the EIGHT charter documents, **at least TWO** carry no dated T19 entry | ✅ **HIT — five do not** *(`RECIPE`, `SYSTEM_ARCHITECTURE`, `DATABASE`, `WORKERS`, `SYSTEM_DESIGN`)* |
+| **(iii)** | **`NBA_RECIPE.md` is one of them** | ✅ **HIT — 0 strict `T19` references** |
+
+⚠⚠ **BOTH HITS, AND BOTH MEAN THE OPPOSITE OF WHAT THEY WERE WRITTEN TO MEAN.** ***The clauses were
+built to detect a repeat of the glossary defect. They detected correct silence instead*** — **which
+is why §3's two-step extension exists, and why a pre-registration that HITS still has to be read
+rather than ticked.**
