@@ -15,6 +15,34 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 
 ---
 
+## 0e-T16-C. ✅✅ **THE CLEANEST SANITY CHECK IN THE SYSTEM — the final engine's tier behaviour is MONOTONE ACROSS ALL SEVEN TIERS, and the standard line lands on a coin flip** *(T16 pass 2, §T16.3, from COMPASS fact 99 — **6 of the thirty, ZERO of the twelve**)*
+
+*The final calculation engine's leg-level accuracy is **0.5643 log-loss on 1,248,826 graded PrizePicks
+legs**. Its tier behaviour:*
+
+| Tier | **measured hit probability** |
+|---|---|
+| **easy goblins** | **0.6996** |
+| **standard line** | **0.5014** |
+| **hard demons** | **0.2167** |
+
+🔑🔑 ***"Monotone across ALL SEVEN TIERS — and the standard line landing on a COIN FLIP is the cleanest
+possible sanity check."*** ⚠⚠ **That is worth stating as a principle: a board whose standard line is
+efficiently priced SHOULD come out at ~0.50, so a system that reproduces 0.5014 without being fitted
+to do so has demonstrated it is reading the board correctly rather than reproducing its own priors.**
+
+✅ **AND IT CORROBORATES §0e-T16-B FROM A DIFFERENT DIRECTION.** That section measures the **standard
+board delivering 56.7% against a claimed 73.1%** on high-edge legs, while **alternates deliver 72.7%
+against a claimed 75.8%.** 🔑 **Here the whole standard tier prices at 0.5014 — the same conclusion
+reached by two unrelated measurements: *the standard line carries no exploitable edge, and the
+alternate ladder is where the pricing is structural.***
+
+⚠ **The two are NOT the same number and must not be conflated**: **0.5014 is the tier's overall
+measured rate across all legs**; **56.7% is the realised rate on the subset the model called ≥66%.**
+*The first says the tier is a coin flip; the second says the model cannot pick within it.*
+
+---
+
 ## 0e-T16-B. 🔴🔴🔴 **THE GOBLIN LADDER'S SLOPE ERROR, AND THE FIRST MEASURED SIGN THAT THE ALTERNATE BOARD IS WHERE THE EDGE IS** *(T16 pass 1, §T16.2, 2026-09-13)*
 
 ### ✅✅ FIRST — **THE ANSWER TO §0e-T16's OPEN QUESTION, AND IT CORRECTS THIS SWEEP'S OWN HEDGE**
