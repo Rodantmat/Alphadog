@@ -12410,6 +12410,39 @@ re-extract each transcript with segment indices and add a fourth column** *(the 
 segment indices in every pass, so the data exists in the harness even though it is not in the
 documents)*.
 
+> ### ⚠ MEASURED 2026-09-22 (§T20.12) — **the reason given above is true of T1–T18 and false of T19–T20**
+> *This item explains the gap by saying **"the sweep's documents record findings by section and
+> transcript."** That describes a uniform practice. It is not uniform — **it changed at T19 and the
+> change was never recorded.***
+>
+> | sections in `NBA_MASTER_SUMMARY.md` | lines | distinct `SEG`/`turn` citations | density |
+> |---|---|---|---|
+> | **T1–T18** | **24,834** | **6** *(five `turn N` in §T10, one `SEG` in §T18)* | 1 per **4,139** lines |
+> | **T19–T20** | **1,835** | **74** | 1 per **24** lines |
+> | | | | 🔴 **a 167× step at T19** |
+>
+> 🔴 **§T1 cites zero segments across 3,719 lines. §T11 zero across 3,726. §T7 zero across 3,347** —
+> *the richest transcript in the run.* **The consequence is operational, not cosmetic**: when §T19.4
+> audited T1–T6's closing passes and §T20.9 §3c audited T7's, **neither could read the commands out of
+> the sections — both had to re-open the transcripts and re-locate every one.** ***A claim in §T20 can
+> be checked by opening a segment; a claim in §T7 can be checked only by re-reading T7.***
+> ⚠ **And it bounds a rule this sweep wrote one pass earlier: RULE 48** *(every citation opened against
+> its source before it ships)* **is enforceable on 2 of 20 transcripts.**
+>
+> ### 🔴 OWNER DECISION — **back-fill segment pointers into §T1–§T18, or accept the asymmetry?**
+> **The data exists** — every pass computes segment indices, and every transcript is still cut in the
+> harness. **The cost is a re-read of eighteen transcripts** to locate each existing claim, which is
+> the whole sweep again, not a pass. **Three options:**
+> **(a)** back-fill fully — every §T1–§T18 claim gets a segment pointer *(highest cost, makes the whole
+> record auditable in one pass rather than eighteen)*;
+> **(b)** back-fill only the **load-bearing** claims — headline findings and ledger-row assertions
+> *(bounded, and it is exactly the set a future reader will challenge first)*;
+> **(c)** accept the asymmetry, and **amend this item's stated reason** so it no longer describes a
+> changed practice as a constant *(zero cost; the record stays honest about itself but stays
+> un-auditable)*.
+> ⚠ **Not actioned — recorded with its evidence, per "document, don't fix."** *The reason sentence
+> above is corrected by this block rather than rewritten, per rule 40.*
+
 ## T19-1 · 🔴🔴 **RESOLVED 2026-09-22 (same pass)** · `NBA_GLOSSARY.md` has not been updated through seven transcripts
 **The owner's founding charter (T19 SEG 60, repeated verbatim at SEG 378) names the glossary as one
 of EIGHT mandated documents and gives it the most specific completeness requirement of any of
