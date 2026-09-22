@@ -1549,6 +1549,78 @@ those thirteen blocks. ▶ **Checked: there is not a single shell pipeline in an
 > (`T20-17`).*** **The discipline was written down where it was already being followed, and is absent
 > where it was not.**
 
+---
+
+# 🔴🔴🔴 **WHAT CERTIFIES GREEN WHILE BROKEN — THE TWELVE CHECKS, READ ADVERSARIALLY** *(written 2026-09-22, T20 pass 99, §T20.104)*
+
+> 🔑 **THE QUESTION.** *The certifiers are the only automated statement this system makes about its own
+> health. Four passes have each found an answer to this question in passing —* `§T20.94` *(zero-game
+> days),* `§T20.96` *(38 early-tip days certify green),* `§T20.102` *("a partial build clears a floor
+> that low"; "not one of the twelve covers enrichment"),* `§T20.103` *("`board archived today` is
+> satisfied by PrizePicks alone")* — ***and nobody had asked it directly.***
+> ▶ **All twelve re-derived from `nba/certify_pipeline.py` this pass** *(rule 15/17 — not reused)*:
+> **`PIPE=p1` `3` · `p2` `4` · `p3` `5`.** **Row-count denominators taken live, 2025-26:**
+> `baseline_history` **median `60,398` rows per game-day across `163` days** · `board_snapshots`
+> (PrizePicks) **median `8,994` across `164` days**.
+
+## 🔴 FINDING 1 — **FIVE OF THE TWELVE HAVE NO DATE PREDICATE AT ALL**
+
+| check | pipeline | SQL |
+|---|---|---|
+| `defender_ratings rows` | p1 | `SELECT count(*) FROM nba_ref.defender_ratings` — **whole table** |
+| `player name map populated` | p1 | `SELECT count(*) FROM nba_ref.player_name_map` |
+| `as-of calibration available` | p2 | `SELECT count(*) FROM nba_score.ladder_calibration_asof` |
+| `confidence model loaded` | p3 | `SELECT count(*) FROM nba_score.confidence_model WHERE deduction > 0` |
+| `defender_ratings refreshed` | p1 | tests `max(as_of_date)` ⇒ **ONE fresh row satisfies it** |
+
+⇒ ***Once those tables are populated they can never fail again.*** **A run that wrote nothing certifies
+green on all five**, because they describe the database's history rather than today's work.
+🔴 **`as-of calibration available` is the one that reads worst**: *`P2` step 16 rebuilds the as-of
+calibration and step 18 refits the confidence model — **the check that looks like it covers them
+counts rows that were there yesterday.***
+
+## 🔴🔴 FINDING 2 — **`> 0` MEANS ONE ROW OUT OF SIXTY THOUSAND**
+
+| check | threshold | typical real value |
+|---|---|---|
+| `baseline_history has today` | **`> 0`** | 🔴 **median `60,398` rows** |
+| `board archived today` | **`> 0`**, and **any bookmaker** | 🔴 **median `8,994` for PrizePicks alone** |
+| `final_hp has today` | **`> 0`** | a full slate is tens of thousands |
+| `baseline props for today` | **`>= 25`** of 30 | ⚠ **five props may be missing silently** |
+
+⇒ ***A build that produced one row of sixty thousand passes.*** **And `board archived today` does not
+name a bookmaker, so — as `§T20.103` showed for `P3`'s three-scraper step — Sleeper, Underdog and
+Fliff can all be absent from a slate while the check is green.**
+
+## 🔴 FINDING 3 — **WHAT IS NOT CHECKED AT ALL**
+
+| pipeline | steps | checks | what they touch |
+|---|---|---|---|
+| **`P1`** | **9 steps, 14 scripts** | 3 | `defender_ratings`, `player_name_map` — ***teams, arenas, players, bio, season tables, team stats, on/off, playtypes, tracking, DARKO, shot quality and static context are unchecked*** |
+| **`P2`** | **19 steps** | 4 | `baseline_history` ×3 + one static — ***grading last night's board, grading paper picks, market spreads, the blowout refit and the confidence refit are unchecked*** |
+| **`P3`** | **11 steps** | 5 | `final_hp` ×3, `confidence_model`, `board_snapshots` — ***the availability delta (`T20-17`), the board tiers (`T20-7`) and the paper-pick log are unchecked*** |
+
+⚠ **And `§T20.102` already established the summary line**: ***not one of the twelve covers
+enrichment.***
+
+## ⚠ FINDING 4 — **THE CERTIFIER'S OWN CLOCK IS DST-NAIVE, AND THE PIPELINES BYPASS IT**
+
+**`certify_pipeline.py:27` — `PT = timezone(timedelta(hours=-8))`**, and `:33` —
+`today = os.environ.get("CERT_DATE") or datetime.now(PT).date().isoformat()`.
+✅ **In the pipelines this is harmless**: all three pass `CERT_DATE` explicitly from
+`TZ=America/Los_Angeles date +%F`, which is **named-zone correct**.
+🔴 **The fallback is the exposure, and it is a hand-run exposure**: *a certifier invoked without
+`CERT_DATE` during PDT computes "today" from a fixed `-8` offset.* ⚠ **Within `T20-12`'s stated scope**
+*("zero DST-aware Python in the NBA scripts") — cited, not re-raised* — **and one more instance of
+`§T20.101`'s pattern: running it by hand is not the same job the pipeline runs.**
+
+> ## ⚠⚠ **WHAT THIS IS AND IS NOT**
+> ***None of the twelve is wrong.*** **Each tests what it says it tests**, and a check that is narrow
+> by design is not a defect — `confidence model loaded` is meant to test the model, not the slate.
+> ⇒ ***The finding is the GAP BETWEEN what certification is read as meaning ("the pipeline produced
+> what it promised" — the certifier's own failure message) and what it measures.*** **Recorded as
+> `T20-18`; not fixed (rule 1).**
+
 **And it matters twice over for the season opener**: **2026-10-01 and 10-02 are genuinely zero-game
 days** before opening night on the 3rd, **and they coincide with the `active_stats_season` edge case
 already recorded.** A pipeline run on those dates should report *"no games scheduled"*, not silence
