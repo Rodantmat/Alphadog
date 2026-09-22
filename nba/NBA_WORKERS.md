@@ -7,6 +7,7 @@ writes. Grouped by role.
 | Date | What changed |
 |---|---|
 | 2026-09-20 | Created. Cloudflare workers and static scrapers from T1–T2; engine/board/pipeline scripts from the live session and the journal. |
+| **2026-09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `12` commits that this log never recorded.** *T15–T18 material plus the live audits: **§T15.4c the concurrency-group self-cancellation** · **T18 pass 2: the gap detector passing an entire season as not-a-failure** · **§0.004-T18 the certifier's twelve predicates read from live source** · **§0.005-T18 the mechanism failure census** (43 real results parsed) · **§T18.1 the three pipelines with the owner's explicit cron intent** · **the WORKFLOW → SCRIPT → TABLE wiring map published**, then extended with the mis-wired P3 step 6 and its read edge. **Corrections in place: §0.002-T18 corrected — the gap-audit fallback did not exist · §0.003-T18 corrected by the census — six bridge tool-execution failures · "PIPELINE n OF 3" reconciled with COMPASS fact 107's TWO · P1's cron time qualified 12:00 PDT / 11:00 PST.*** |
 
 ---
 
