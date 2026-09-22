@@ -13444,6 +13444,21 @@ dates *(worst observed 5,699 — a 12% margin, which is thin and is said to be t
 on tree `29a4d08a9b5252941e5bde35510ddfe1481ae387`, script population enumerated from the P1/P2/P3
 `run:` lines and pinned 2026-09-22T16:49:39Z (**40 scripts, 44 files examined**).
 
+> ▶ **SITE LIST EXTENDED 2026-09-22, T20 pass 110 (`§T20.115`) — AND THE ORIGINAL COUNT IS UPHELD,
+> NOT CORRECTED.** A repo-wide sweep for `timedelta(hours=-8)` returns **SIX** sites, against this
+> item's **`(B) fixed offset | 3`**. 🔑 **The three are RIGHT for the population this item pinned**
+> *(40 called scripts + 4 shared modules)*: **`measure_report_cutoff.py:33` and
+> `find_delta_test_date.py:30` are neither, so their absence is correct.** ✅ ***`RULE 23` defended a
+> prior pass against a later one — a count that states its population can be checked.***
+> 🔴 **The sixth is different and is added here: `nba-boards-market.yml:138`,
+> `PT = timezone(timedelta(hours=-8))` — a PYTHON line inside a YAML `run:` block.** ⚠⚠ **It is
+> invisible to BOTH halves of this item's instrument: not a Python file, and not a shell line.**
+> ⚠ **DORMANT TODAY** — that workflow is `workflow_dispatch` only *(its header: "**NO CRON YET**…
+> **Cron goes in at season start**")* and nothing else invokes it. 🔴 **It stops being dormant the
+> moment that cron is added**, and its header already names it as *"callable… by P3 at the 1:15 PM PT
+> decision window"* — **the same window this item is about.** ▶ **So whoever fixes the constant must
+> fix SIX sites, not three, and the sixth is not in any script.**
+
 ✅✅ **READ THIS FIRST, BECAUSE IT IS THE BIGGER HALF.** **The slate date and the run guard — the two
 clock decisions that matter most — are DST-CORRECT.** P2 `:60` / P3 `:67`:
 `if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi`, and P3's guard at `:68`/`:73` uses
