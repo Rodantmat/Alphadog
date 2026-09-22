@@ -11,6 +11,214 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T17-B. 🔴🔴🔴 **THE CONFIDENCE BUILD — SIX VERSIONS, EACH KILLED BY A MEASUREMENT, AND THE LAST ONE IS NOT FINISHED** *(T17 pass 1, §T17.2, the prose stratum read in order and in full — 231 segments / 176,017 chars, the largest in the corpus)*
+
+*COMPASS fact 101 records "three earlier versions were wrong". **The transcript shows SIX, and the
+order matters**: the conformal version that fact 101 lists as a failure came AFTER the hand-weighted
+one and was itself killed by the same principle that fact 102 states. **This is the sequence.***
+
+### 🔴 v1 — **HAND-WEIGHTED PILLARS, AND THE FIRST VERIFICATION OF FACT 5b EVER RUN**
+
+*Weights chosen by reasoning: **`c_exist` 30% · `c_quality` 45% · `c_market` 25%**. Mean confidence
+landed at **0.541**, then 0.575 once the market join worked, then **0.5562 / 0.5570** across the two
+seasons.* ⚠ *The author's own note at the time: "my weights are too punitive — **I subtract up to 0.35
+for band gap and another 0.35 for scenario uncertainty, so a typical leg loses a THIRD of its
+confidence before anything is actually wrong with it.**"*
+
+**Then fact 5's second half — *"confidence bands that hit their stated rate"* — was tested for the
+first time**, on **2.1M graded legs**:
+
+| tier | n | stated | actual | **gap** |
+|---|---|---|---|---|
+| low | 48,745 | 0.6923 | 0.6918 | **0.0005** |
+| medium | 1,363,404 | 0.4202 | 0.4189 | 0.0014 |
+| high | 541,367 | 0.4906 | 0.4867 | 0.0039 |
+| **elite** | 148,458 | 0.4884 | 0.4940 | 🔴 **0.0056** |
+
+🔴 ***"The gap gets WORSE as confidence rises. That's backwards."*** ✅ **And fact 5a passed
+comfortably in the same table — every tier within 0.6 pp.**
+
+### 🔴🔴 THE COMPONENT BREAKDOWN — **"the confidence formula is 75% noise and 25% signal"**
+
+| pillar | top-quartile gap | bottom-quartile gap | **separation** | |
+|---|---|---|---|---|
+| `c_exist` *(30% of weight)* | 0.0015 | 0.0015 | **0.0000** | ❌ **no discrimination at all** |
+| **`c_quality`** *(45% of weight)* | 0.0030 | 0.0002 | 🔴 **−0.0028** | ❌ **INVERTED** |
+| `c_market` *(25%)* | 0.0005 | 0.0021 | **+0.0015** | ✅ **works** |
+
+🔑🔑 **AND THE MECHANISM OF THE INVERSION IS THE FINDING**: *"my quality pillar **penalises cells that
+historically missed** — but those cells are precisely the ones **the as-of calibration now corrects
+hardest**. **I was DOUBLE-PENALISING AN ERROR THAT'S ALREADY BEEN FIXED.**"* ⚠ **A quality signal that
+is valid before a correction is applied becomes inverted after it — and nothing flags the change.**
+
+### 🔴🔴🔴 THEN THE VERIFICATION ITSELF WAS FOUND INVALID — **fact 102's measurement error, caught here**
+
+> ***"Elite legs had mean hp **0.4884** and low legs **0.6923**. A leg at 0.49 sits at **MAXIMUM
+> BERNOULLI VARIANCE, p(1−p) = 0.25**; one at 0.69 has 0.21. **I compared raw gaps across groups with
+> different intrinsic noise — so elite HAD to look worse regardless of how well calibrated it was.**"***
+
+⚠⚠ **So *"confidence is inverted"* was a MEASUREMENT ARTIFACT, not a finding — and the component
+breakdown above was measured the same way.** 🔑 **The sweep records both the verdict and its
+retraction (rule 5), because the component numbers are still what motivated every later version.**
+
+### ✅ v2 — **MONDRIAN GROUP-CONDITIONAL CONFORMAL PREDICTION, and it discriminated monotonically**
+
+*The literature's fix for exactly this: **normalized nonconformity `|won − hp| / √(p(1−p))`**
+(studentized residuals, so groups with different intrinsic noise are comparable), with **Mondrian
+group-conditional grouping on `prop × band × side × phase`** and **a minimum group size with a
+fallback hierarchy** — because the research "warns explicitly that per-group quantiles destabilise on
+thin samples".*
+
+**Held out on 1.05M legs:**
+
+| quintile | n | predicted | **realised normalized residual** |
+|---|---|---|---|
+| **best** | 210,198 | 0.6629 | **0.6273** |
+| good | 210,197 | 0.8022 | 0.7921 |
+| mid | 210,197 | 0.9043 | 0.8876 |
+| low | 210,197 | 0.9753 | 0.9665 |
+| **worst** | 210,198 | 0.9984 | **0.9957** |
+
+🔑 **Monotone, with predicted tracking realised within 0.01–0.02 in every quintile — *"the best-confidence
+legs are genuinely 37% more reliable than the worst"*.** ✅ **`nba_score.conformal_confidence`: 253 full
+groups, 66 mid, 22 coarse, plus a global fallback; group scores span 0.566 → 1.004.** ⚠ **`c_market`
+survived as a 15% modifier — the one hand-built pillar that measured positive; existence and quality
+were dropped.**
+
+### 🔴🔴 THEN THE *TIER LABEL* BROKE — FOUR TIMES — AND IT WAS THE SAME PARITY VIOLATION AGAIN
+
+*Fixed cuts at **0.35 / 0.55 / 0.75** against a confidence distribution spanning ~0.52–0.61 gave
+**high 68% · medium 32% · elite 0.04% · low ZERO**.* ⚠⚠ **COMPASS fact 6 names *"tier cutpoints"*
+explicitly among the values that must be **computed in-run, nothing pasted** — **so the hardcoded cuts
+are the SAME VIOLATION CLASS as the pasted calibration table fixed hours earlier**, and the research
+agrees: *"binning-based evaluation with bins containing an equal number of samples are shown to have
+lower bias"*, with authors explicitly urging against equal-width bins.
+
+⚠ **Attempt 2 failed for a different reason and it is worth keeping**: *"the cutpoints are derived from
+the GROUP confidence distribution (341 groups), but the leg confidence is `0.85 × group_conf + 0.15 ×
+c_market − penalty`… **I'm computing quantiles on ONE distribution and applying them to ANOTHER.**"*
+
+🔑🔑🔑 **THE ROOT CAUSE, FOUND ONLY BY MEASURING THE REAL DISTRIBUTION**: **95 distinct confidence values
+across 1.7M legs — 362 group combinations collapse to 95 values, `c_market` contributes 5 levels, and
+~18,000 legs share each value.** ⚠ ***"NO BINNING SCHEME CAN SPLIT TIES — which is why four re-cutting
+attempts all produced 54/46/0.1/0. I was tuning bin edges on a variable with NO RESOLUTION TO BIN."***
+✅ **The fix was resolution, not binning**: continuous per-leg terms — **group score 55% · market 15% ·
+evidence depth 15% · extremity (distance from 0.50) 15%** — took it from **95 to 412 distinct values**,
+with cutpoints sampled from the **live leg distribution** rather than the group table.
+
+| pass | low | medium | high | elite |
+|---|---|---|---|---|
+| 1 | 54% | 46% | 0.1% | **0%** |
+| 2 | 54.2% | 32.2% | 13.3% | 0.3% |
+| **3** | **40.2%** | 18.4% | 20.6% | **20.9%** |
+
+⚠ *"Elite went from ZERO legs to 845,039 — a fifth of the board."* 🔑 **And the author names the
+general lesson: *"I have 19M rows with real confidence values sitting in the database and I've been
+INFERRING the distribution from a 341-row group table instead of MEASURING it."***
+
+### 🔴🔴🔴 v3 — **THE OWNER REJECTED THE WHOLE APPROACH, AND HE WAS RIGHT ON THE PRINCIPLE**
+
+> ***"Confidence is NOT A RANKING. I forced equal-mass quartiles onto it, which **guarantees 25% of legs
+> get called 'low' no matter how good the data is**. That's backwards. **Confidence is an ABSOLUTE
+> measure of data quality.**"***
+
+✅ **That is COMPASS fact 101's failure (a) — and it happened HERE, at the END of the sequence, not at
+the start.** 🔑🔑 **AND THE CONFORMAL VERSION IS INDICTED BY THE SAME PRINCIPLE, which is fact 102's
+aleatoric/epistemic distinction being born**: ***"the normalized residual `|won − hp| / √(p(1−p))` is
+DOMINATED BY ALEATORIC NOISE — it measures how RANDOM THE OUTCOME WAS, not how good our DATA was. A
+coin-flip leg with perfect data scored badly under it. **That's the same confound in a new disguise,
+and it's why elite kept landing on low-hp legs.**"***
+
+### ✅ **THE ELEVEN FACTORS, THREE FAMILIES** — *the specification the corpus carries only as "seven named inputs"*
+
+| Family | Factors |
+|---|---|
+| **DATA** — *is it there and is it real?* | **completeness** *(anchor, projected minutes, rate, injury report, opponent profile present)* · **provenance** *(main source vs derived — the real market spread not the r = 0.46 proxy; the published report not inference; an **empirical cell not a parametric fallback**)* · **timeliness** *(freshness at the decision cutoff — report age, line age)* · **evidence depth** *(the sample behind this leg's cell — "multiple sources call this THE MOST CRITICAL FACTOR: a 60% rate over 50 observations is numerically identical to 60% over 5,000 and vastly less reliable")* |
+| **SUBJECT** — *how predictable is this player?* | **game-to-game volatility** `σ(game rating − long-term rating)` · 🔑 **NEGATIVE volatility** `σ(δ where δ < 0)` — *"downside surprises, which matter ASYMMETRICALLY for overs"* · **form stability** *(short- vs long-term rating gap)* · **role stability** *(minutes consistency)* |
+| **MARKET** — *does it corroborate us?* | **book count at this exact rung** · **market agreement** *(our hp vs the de-vigged book probability — already in `rung_market.p_over_book` and unused for confidence)* · **line stability** *(morning vs window movement — the closing-line-value principle, "the most reliable benchmark for consistency")* |
+
+### ✅ **v3 MEASURED — and it is the reading the owner asked for**
+
+*Across **2,230,442 graded legs**, all eight check types written:*
+
+| prop | legs | **confidence** | **realised \|gap\|** |
+|---|---|---|---|
+| turnovers | 28,372 | **0.9030** | **0.0000** |
+| steals | 42,135 | 0.9011 | 0.0003 |
+| blocks | 57,961 | 0.8966 | 0.0007 |
+| rebounds | 587,378 | 0.8890 | 0.0009 |
+| points | 1,118,716 | 0.8832 | 0.0016 |
+| assists | 395,880 | 0.8950 | 0.0024 |
+
+🔑 ***"Confidence is 88–90%, not 40–60% — that's the thermometer reading you said it should give."***
+
+**AND THE GROUP BREAKDOWNS TRACK ASSERTIVENESS IN EVERY FAMILY**:
+
+| Group | lowest confidence | highest confidence |
+|---|---|---|
+| **role tier** | **fringe 0.8546, gap 0.0283** | **iron-man 0.8928, gap 0.0008** — 🔑 **a 35× accuracy difference** |
+| rung distance | tail 0.8522 | anchor 0.9115 |
+| variation | goblins 0.8940, gap 0.0143 | **standard 0.9135, gap 0.0004** |
+| phase | post-ASB loosest, 0.0031 | Dec–ASB 0.0006 · push 0.0009 |
+
+✅ **1,267,582 legs in the 0.88–1.00 band against 11,143 in 0.75–0.82 — "no 20–40% nonsense anywhere."**
+
+### 🔴🔴 **BUT THE WEIGHT-FITTING FAILED TWICE, AND THE SECOND FAILURE IS THE BEST METHOD FINDING IN THE TRANSCRIPT**
+
+⚠ **First the spread problem**: *"the ORDERING is already correct… but **confidence spans SIX POINTS while realised gaps vary 35×**. A thermometer whose range is a tenth of what it measures can't separate an assertive leg from a shaky one."*
+
+🔴 **Attempt 1 — a regression on `−log(gap)` COLLAPSED TO A CONSTANT**: **every group read 90.8**, fringe
+(0.0283) scoring identically to iron-men (0.0008). *"Targeting `−log gap` across cells whose gaps are
+all tiny gave the regression **almost no variance to fit**."*
+
+🔴 **Attempt 2 — a separation test returned EXACTLY ZERO for eight of nine factors**, dumping the whole
+29-point budget onto book count *(which separated by 0.000133)*.
+
+🔑🔑🔑 **AND THE OWNER CAUGHT THE AUTHOR ABOUT TO HAND-TUNE, WHICH PRODUCED THE ACTUAL DIAGNOSIS**:
+*"you're right — I was about to hand-tune weights again after the measurement came back degenerate.
+**That's the same mistake I've made repeatedly today.** Let me first find out **why** every factor
+measured zero separation, **because a result that clean is usually a BUG, not a FINDING**."*
+
+> 🔑🔑 ***"My separation test compares the TOP 30% of each factor against the BOTTOM 30%. For `f_role`
+> the values are iron-man 1.0, high-usage 0.97, starter 0.93, rotation 0.85, bench 0.70, fringe 0.50 —
+> and **fringe players are only 2.6% of legs (58,969 of 2.23M)**. They sit far inside a bottom-30%
+> bucket **dominated by rotation at 0.85**. So the test compared **0.85 against 0.95** and correctly
+> found almost no difference, **while the real signal lives in a 2.6% TAIL it never isolated.**"***
+
+⚠⚠ ***A SIGNAL CONCENTRATED IN A SMALL TAIL IS INVISIBLE TO A COARSE QUANTILE SPLIT.*** ✅ **Two
+structural fixes**: **measure at the 5th vs 95th percentile** with per-factor lo/hi gaps printed, and
+**cap any single factor at 35% of the budget** so the model cannot rest on one sensor.
+
+### 🔴🔴🔴 **AND THE DEEPEST REASON CONFIDENCE IS HARD HERE — stated by the author and worth carrying**
+
+> ***"Our hp is calibrated so UNIFORMLY WELL that **there's almost nothing to discriminate** — every
+> band sits within **0.16 percentage points** of its stated probability. **When the worst-calibrated
+> slice of 2.2 million legs misses by 0.16 pp, a confidence score has NO MEANINGFUL VARIATION IN
+> ACCURACY TO TRACK.** … **Its job isn't to flag bad probabilities, because there essentially aren't
+> any. Its job is to flag THIN DATA**: a fringe player, a rung no book prices, an unresolved roster, a
+> derived cell."***
+
+✅ **That is the owner's own prediction confirmed** *("our system is very sharp on the data, so
+confidence should be very high")* **and it explains why every fitting attempt struggled: the target
+variable is nearly constant by design.**
+
+### 🔴🔴 **THE TRANSCRIPT ENDS WITH CONFIDENCE UNFINISHED — three specific gaps, named by its author**
+
+| # | Gap |
+|---|---|
+| **1** | **It does not yet predict accuracy.** The bands spread correctly (0.65 → 1.00) but the realised gap is **FLAT across all of them: 0.0016 / 0.0011 / 0.0012 / 0.0016.** |
+| **2** | **It is measured on only 6 of 30 props** *(points, rebounds, assists, blocks, steals, turnovers — the ones with graded board outcomes in that join)*. **The combos, period props, fantasy_score and double_double have not been sampled at all.** |
+| **3** | 🔴🔴 **IT IS NOT WRITTEN ANYWHERE.** *"`build_confidence_v3.py` is a MEASUREMENT SCRIPT. **The confidence column in `final_hp` still holds the OLD CONFORMAL VALUES**, not this logic. **Nothing downstream would read what we just built.**"* |
+
+⚠⚠ **SO GAP 3 IS THE CAVEAT THE AUTHOR HIMSELF FLAGS AS THE ONE THAT MATTERS, and it bears directly on
+`[LIVE-AUDIT]`**: **the live `confidence` column spans 0.8540–0.9841 with mean 0.9240.** 🔑 *COMPASS
+fact 101 describes v3 (**"starts at 99 and loses points for NAMED deficiencies"**, mean **0.92–0.95**)
+and the live mean matches that range* — **so either the replication pass ran after this transcript, or
+the conformal values happen to land in the same range.** 🔴 **NOT RECORDED which, and T18 is where the
+answer would be.**
+
+---
+
 ## 0a-T17. 🔴🔴🔴 **THE CONFIDENCE SPECIFICATION, IN THE OWNER'S OWN WORDS — the source of COMPASS facts 101–103, and it carries FOUR requirements the corpus did not hold** *(T17 pass 0, §T17.1, from the 2026-09-19 transcript; **eight of ten probes returned 0 of the twelve AND 0 of the thirty**, positive controls passed — `confidence` returns 456 of the thirty and 300 of the twelve on the same machinery)*
 
 ⚠⚠ **T17's owner stratum is the CONFIDENCE design-authority stratum: 41 turns, 13,690 chars — the most
