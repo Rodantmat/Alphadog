@@ -10,6 +10,91 @@ constraints that shaped it. This is the operational spec.
 
 ---
 
+## 0z-3. 🔴🔴🔴 **THE BUILD-ORDER LOCK — what will NOT be built, and in what order the rest comes** *(T17 pass 0, §T17.1, owner, 2026-09-19; **0 of the twelve, 0 of the thirty**, positive controls passed)*
+
+> ***"**Leg correlation is a SLIP-BUILDING level — we will not work on that until we have the final HP
+> and score sharpened to perfection.** **Freshness gates** probably the same. **ORCHESTRATOR WILL NOT
+> EXIST — just the daily functions, and THE CLAUDE WORKER WILL EXECUTE ONE BY ONE VIA PROMPT.** …We
+> need to finish **all the enrichment factor pipeline, final HP, score and confidence REPLICATED TO
+> THE FULL DATABASE** — only then do we move to the points you said. So **any open essential factors
+> for this phase are still ENRICHMENT RELATED.**"***
+
+🔑🔑 **THIS IS A GATE, AND IT DISPOSES OF THREE ITEMS THE CORPUS CARRIES AS OPEN WORK**:
+
+| Item | Status under this turn |
+|---|---|
+| **leg correlation** | ⏸ **DEFERRED by decision** — slip-building level, blocked on final HP + score |
+| **freshness gates** | ⏸ **"probably the same"** — ⚠ *hedged, not decided; the sweep records the hedge as a hedge* |
+| 🔴 **the orchestrator** | ❌ **WILL NOT EXIST** — *"just the daily functions, and the Claude worker will execute one by one via prompt"* |
+
+⚠ **THE ORCHESTRATOR DECISION IS NOT NEW — IT IS A DATED RE-ISSUE, AND THE KILL IS LOGGED.** *The
+corpus already records it four independent ways* *(`"no orchestrator, confirmed as the explicit
+design"` · `"there is deliberately no orchestrator"` · `"NBA has no orchestrator by design"` ·
+`"explicitly NO orchestrator — each run triggered manually, worker by worker"`, **22 of the thirty and
+18 of the twelve**)*, **including a note that the owner had already restated it in his own words.** 🔑
+**What T17 adds is the MECHANISM in his words — *"the Claude worker will execute one by one via
+prompt"* — which names WHO runs the daily functions, and that is the piece the four existing records
+leave implicit.**
+
+🔴🔴 **THE GATING CONDITION IS THE ONE TO CARRY**: ***"final HP, score and confidence REPLICATED TO THE
+FULL DATABASE."*** ⚠⚠ **`[LIVE-AUDIT]` 2026-09-22: `nba_score.final_hp` holds 2024-25 at 162 dates and
+2025-26 at ONE date** *(open item **T16-7**)* — **so by this turn's own condition the gate is not yet
+met**, and the items behind it stay deferred. 🔑 **BUT READ IT WITH THE OWNER'S SCOPE WORD**: later in
+the same session he asks *"so every single leg for the past two seasons, **BOARD SCOPED**, have a
+final hit probability and a confidence percentage, correct?"* — ⚠⚠ **"BOARD SCOPED" is a much smaller
+population than the full ladder, and whether `final_hp`'s expected size is the board-scoped set or the
+full ladder is NOT RECORDED. That distinction decides whether T16-7 is a gap or a scoping choice, and
+it is pass 1's highest-value question.**
+
+⚠ **And a fourth disposal, on the market-movement factor**: *"market movement is going to be **too
+weak with so close market mining data points** — so if the test doesn't show much evidence of
+improvement, **better leave it out**."* 🔑 **The owner pre-authorising a rejection on a stated
+mechanism, which is the inverse of his T16 anti-rejection order and shows the two are not a blanket
+rule but a judgment about whether the FEATURE was fairly built.**
+
+---
+
+## 0z-4. 🔴🔴 **THE SCENARIO CALIBRATION DESIGN, AND THE 17%-vs-90% TENSION THE CORPUS LEAVES UNRESOLVED** *(T17 pass 0, §T17.1; **0 of the twelve, 0 of the thirty**)*
+
+> ***"The scenario precompute should be run on the FULL SEASON — **for CALIBRATION only, because we
+> already know the outcome**. It should be run on **EVERY SINGLE MATCH** for calibration, and then it
+> should be **DELETED**. We just keep the real outcome… because it's gonna keep too much data that's
+> unneeded — **that should be MILLIONS OF ROWS that's just gonna eat up space.** We need to run on the
+> two seasons, get the proper logic that's gonna run daily, and then **we just keep the real outcome,
+> NOT ALL THE UNIVERSE.**"***
+
+✅ **COMPASS fact 95(c) is this design executed**: `nba/build_scenario_calibration.py`, **1,651 games
+with uncertainty enumerated, only the realised branch stored** (`nba_score.scenario_realised`), *"the
+unrealised universe is never written."* 🔑 **The owner specified both halves — enumerate everything to
+CALIBRATE, store only the outcome to SURVIVE — and the storage argument is his, not an
+implementation detail.**
+
+### ⚠⚠ AND THE TENSION THE SWEEP MUST RECORD RATHER THAN RESOLVE
+
+| | |
+|---|---|
+| **COMPASS fact 96** *(measured)* | *"With three Questionable rotation players the most-likely branch is the realised one **only ~17%** of the time… **79% of Questionables are genuine coin flips at 2:30 BY DESIGN**… **NO MODEL REACHES 90% ON INFORMATION THAT DOES NOT EXIST YET — SELECTION DOES, once it arrives."*** |
+| 🔴 **The owner, on being shown it** | ***"That's where calibration comes. We need to calibrate to the point where there's an extremely high number of assertivity. **So seventeen percent is definitely TERRIBLE. WE NEED A NINETIES. Very high.**"*** |
+| *and* | *"probably you're gonna need to **split, have different tiers and layers, granulate different player profiles** to have more assertiveness… make it more complex, more steps if needed, **because we need extremely high assertiveness.**"* |
+
+🔑🔑 **THE TWO ARE NOT THE SAME QUANTITY, AND NOTHING IN THE CORPUS SAYS SO.** *Fact 96's ~17% is **the
+probability that the most-likely BRANCH is the realised one** — a property of the branch distribution
+under genuine coin flips. The owner's "nineties" is **assertiveness of the final number**. **A system
+can be 90%+ assertive about a leg's probability while being 17% likely to guess the roster — indeed
+that is the enumeration architecture's entire claim.*** ⚠ **NOT RECORDED anywhere that these are
+different quantities**, and the owner's reply reads as a rejection of the measurement rather than a
+demand on a different axis. 🔴 **OWNER DECISION**: *confirm which quantity the "nineties" target
+applies to.* ⚠⚠ **It matters now because COMPASS fact 107 (2026-09-19, the SAME DAY) DROPS the
+scenario precompute** *(§0z-2 below)* — **so the mechanism that answers the 17% is being removed in
+the same session the owner demands 90%.**
+
+⚠ **Note also the granularity instruction — *"split, have different tiers and layers"* — lands two days
+after COMPASS fact 97b measured PER-TIER SPLITTING as HARMFUL** *(AUC 0.62 → 0.59 on N1;
+`NBA_BASELINE_CALIBRATION.md` §0z-T16-C)*. **Both dates on file; the tension is real and is the second
+instance of it.**
+
+---
+
 ## 0z-2. 🔴🔴🔴 **WHY ENUMERATION BEATS PREDICTION, MEASURED — and it is the argument AGAINST the decision that later dropped the scenario simulator** *(T16 pass 2, §T16.3, from COMPASS fact 96 — migration item, **0 of the twelve**)*
 
 > 🔑🔑 ***"With three Questionable rotation players, the MOST-LIKELY BRANCH is the realised one only
