@@ -15,6 +15,76 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 
 ---
 
+## 0e-T16-B. 🔴🔴🔴 **THE GOBLIN LADDER'S SLOPE ERROR, AND THE FIRST MEASURED SIGN THAT THE ALTERNATE BOARD IS WHERE THE EDGE IS** *(T16 pass 1, §T16.2, 2026-09-13)*
+
+### ✅✅ FIRST — **THE ANSWER TO §0e-T16's OPEN QUESTION, AND IT CORRECTS THIS SWEEP'S OWN HEDGE**
+
+*§0e-T16 below records the owner's directive that **"the ladder should not be electing one"** and
+notes: **"stated as a correction, so something WAS electing — NOT RECORDED what."*** 🔴 **It is now
+recorded, and nothing in the PIPELINE was electing — the ANALYSIS was.** The assistant's own reply:
+
+> ***"That's a correction to my ANALYSIS, not to the system. The ladder already produces a final HP
+> for every rung, both directions: `baseline_history` carries `p_more` and `p_less` at anchor ±10 for
+> all 30 props. **COVERAGE IS COMPLETE.** My mistake was **FILTERING TO model ≥ 66% for the
+> analysis**, which framed it as **PICKING LEGS rather than PRICING ALL OF THEM.**"***
+
+✅ **So the directive changed how the system is MEASURED, not how it computes** — **and the change of
+frame is what produced the findings below**, which a top-slice filter would have hidden.
+
+### 🔴🔴 THE PRODUCT FINDING — **the alternate ladder clears break-even by 15 points; the standard board does not clear it at all**
+
+*High-edge legs (model ≥ 66%), **30,974 graded legs** — the measurement made BEFORE the owner's
+correction, kept because it is the cleanest statement of the split:*
+
+| | n | **model says** | **actually hit** | overstatement |
+|---|---|---|---|---|
+| **alternate goblin / demon** | **25,909** | 75.8% | **72.7%** | **3 points** |
+| **standard line** | 5,065 | 73.1% | **56.7%** | 🔴 **16 points** |
+
+🔑🔑 ***"Against a 55.0–57.7% break-even, **72.7% on alternates clears it by 15 points**, while **56.7%
+on standard lines is right at the line and not exploitable after variance.**"*** ✅ **And it matches
+the independently recorded finding that PrizePicks' standard board is efficiently priced while the
+alternate ladder's pricing is structural rather than sharp.**
+
+⚠⚠ **TWO CAUTIONS STATED AT THE TIME, AND BOTH STAND**: **(1) goblins carry REDUCED PAYOUTS** — *the
+tier work measured observed factors taking **40–53% of payout** while **goblins only afford 21–34%**,
+"so a 72.7% hit rate on a goblin doesn't automatically clear ITS OWN break-even; **the payout table
+decides that**"*; **(2) the model's 3-point overstatement at the high end must be folded in.** 🔑 **The
+defined next step is to compute TRUE BREAK-EVEN PER TIER from the measured payout factors and
+intersect it with this calibration** — *see §0g below for the 1.9× More-goblin floor, which is an
+input to exactly that computation.*
+
+### 🔴🔴 THE SLOPE ERROR — **the goblin ladder is under-confident LOW and over-confident HIGH, on every tier**
+
+*Only visible because every band was priced rather than the top slice:*
+
+| | model says | actually hits | gap |
+|---|---|---|---|
+| **goblin t-2, low band** | 0.318 | **0.622** | 🔴 **+30 points** |
+| **goblin t-2, high band** | 0.877 | 0.746 | 🔴 **−13 points** |
+
+🔑 ***"The same inversion appears across EVERY TIER. That's a CALIBRATION SLOPE problem specific to the
+goblin ladder, and it's CORRECTABLE."***
+
+### 🔑🔑 AND WHERE THE HEADROOM IS — **the deepest goblins in the MIDDLE probability bands**
+
+| cell | model | **actual** | n |
+|---|---|---|---|
+| **goblin t-3 over, 0.55–0.60 band** | 0.579 | **0.754** | 601 |
+| goblin t-3 over, next band down | 0.523 | **0.697** | — |
+
+⚠⚠ ***"The deepest goblins in the middle probability bands are where the model most UNDERSTATES — and
+those are cells a top-slice filter would NEVER have surfaced."*** 🔑 **Both findings are PRICING
+corrections, not selection rules**, which is precisely the owner's point in §0e-T16: *"every leg gets
+its HP; the bands then tell us WHERE that HP is systematically wrong and BY HOW MUCH."*
+
+✅ **The correction is stored per cell in `nba_score.tier_band_calibration`, keyed `prop × kind × tier
+× phase × band × direction`, and it beats the baseline OUT-OF-SAMPLE** — *fitted on 2024-25, applied
+to 2025-26; see `NBA_BASELINE_CALIBRATION.md` §0z-T16-B for the full result, the phase decay, and the
+scope limit that confines it to **board-offered lines**.*
+
+---
+
 ## 0e-T16. 🔴🔴🔴 **THE LADDER MUST NOT ELECT A VARIATION — EVERY LEG, EVERY VARIATION, EVERY DIRECTION GETS A FINAL HP** *(owner directive, 2026-09-13; T16 pass 0, §T16.1; **0 of the twelve and 0 of the thirty**, positive controls passed — `goblin` returns 581 of the thirty and 383 of the twelve on the same machinery)*
 
 > 🔴🔴 ***"The ladder should NOT be electing one — goblin, demon or regular. **ALL legs, ALL variations,
