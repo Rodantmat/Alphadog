@@ -38307,6 +38307,120 @@ instrument is the sweep's own deliverable and altering its definition mid-sweep 
 prior reading. **The correct use is the one applied here: open the member before believing the
 number.***
 
+---
+
+# §T20.115 — T20 PASS 110: ✅🔴 **THE INLINE-CODE CENSUS IS COMPLETE — THE POPULATION IS `7`, THE CLASS IS CLOSED, AND THE YIELD IS THREE LOW-SEVERITY SITES PLUS ONE OF MY OWN CANDIDATES KILLED**
+
+*Pass 110, 2026-09-22. Pre-registered as **"THE INLINE-CODE CENSUS — ENUMERATE EVERY LINE OF
+EXECUTABLE LOGIC THAT LIVES INSIDE A WORKFLOW YAML AND NOWHERE ELSE, ACROSS THE WHOLE
+`.github/workflows/` TREE."** Clause (vi) allowed a clean stop. **It half-fired: the population is
+real and small, and after this pass all of it is documented.***
+
+## ① THE POPULATION, DERIVED FROM SOURCE — TWO COUNTS, TWO COMMANDS, ONE TIMESTAMP
+
+**`2026-09-22T23:25:43Z`, against `main`.**
+
+| what | command | result |
+|---|---|---|
+| **workflows** | `ls -1 .github/workflows/*.yml` | **40**, of which **`nba-pp-payout-map.yml` is OUT OF SCOPE** *(the concurrent session's)* ⇒ **39 in scope** |
+| **inline blocks** | `grep -nE "<<'EOF'\|<<EOF\|python +-c\|python3 +-c\|node +-e"` | **7**, in **5 files** |
+
+**The seven:** `nba-p2:144` · `nba-p2:214` · `nba-p3:215` · `nba-baseline.yml:67` ·
+**`nba-boards-market.yml:135`** · **`nba-injury-report.yml:71`** · **`nba-injury-report.yml:72`**.
+
+✅ **FOUR ARE ALREADY ON FILE FROM `§T20.114` and are killed here by clause (iv), logged:** the two
+paper-trading DB-function callers *(plumbing — four lines each, `SELECT nba_score.grade_paper_picks()`
+/ `log_paper_picks()`)*, the `P2` ladder merge, and its `nba-baseline.yml` twin. **THREE ARE NEW.**
+
+⇒ 🔑 **The class `§T20.114` opened is now CLOSED by enumeration: seven inline blocks exist in this
+repo, and after this entry every one of them is documented.**
+
+## ② 🔴 ONE OF MY OWN CANDIDATES WAS KILLED, AND THE KILL IS THE MORE USEFUL RESULT
+
+**I found six `PT = timezone(timedelta(hours=-8))` sites in the repo** — `build_availability_delta.py:39`
+· `certify_pipeline.py:27` · `score_board_legs.py:41` · `measure_report_cutoff.py:33` ·
+`find_delta_test_date.py:30` · **`nba-boards-market.yml:138`** — **against `NBA_MASTER_SUMMARY.md:31413`,
+which publishes `(B) fixed offset | 3`.** *I drafted "the census says three; there are six."*
+
+🔴 **KILLED — the census is RIGHT, and it is right because it pinned its population.** Three lines
+above the table: *"…**⇒ 40 distinct scripts**, pinned… + `nba/nba_asof.py`, `nba/nba_season.py`,
+`nba/nba_names.py` and `main.py` **⇒ 44 files examined**."* **`measure_report_cutoff.py` and
+`find_delta_test_date.py` are neither called scripts nor shared modules, so they are outside the
+stated population and their absence is correct, not an undercount.** ✅ ***`RULE 23` doing exactly
+the job it was written for — and it defended a prior pass against this one.***
+
+⚠⚠ **What survives the kill is narrower and is the pass's actual point**: **`nba-boards-market.yml:138`
+is a Python line inside a YAML `run:` block.** The same pass measured the **shell** layer too *(four
+`TZ=America/Los_Angeles date` lines)* and the **Python** layer *(44 files)*. 🔑 **This site is in
+NEITHER — a Python statement no Python census can reach and no shell census would recognise.** ⇒ **It
+is not a correction to the count; it is a site outside the counted universe.** *And the section's own
+lesson, written one paragraph earlier — "an instrument aimed at one spelling of a thing reports the
+absence of the thing" — applies to it one level further out than the section could see.*
+
+## ③ THE THREE NEW SITES, RANKED HONESTLY
+
+### **(1) `nba-boards-market.yml:135–152` — an ASSERTION the corpus does not know exists**
+
+```python
+total = sum(n for _, n in rows)
+if total == 0:
+    raise SystemExit(f"NO BOARD LEGS captured for {gd} - the scrapers ran but nothing landed.")
+```
+
+Step name: ***"Assert the pull captured something"***, with the comment *"A board pull that captured
+nothing must be VISIBLE. **This is the failure that hides best: every step green, no legs in the
+table, and the scorer quietly prices an empty slate.**"*
+
+🔑 **This is a REAL GUARD against the exact failure mode `NBA_SYSTEM_DESIGN.md`'s ***WHAT CERTIFIES
+GREEN WHILE BROKEN*** is about — and it is credited in no document.** *Probes: `Assert the pull`
+**0 of 12, 0 of 30, 0 in the baseline tree**; `NO BOARD LEGS` **0 / 0 / 0**.* ⇒ ⚠ **On this one point
+the corpus is more pessimistic than the system.** 📌 *Recorded as a POSITIVE finding — the sweep owes
+the system its guards as much as its gaps.*
+
+### **(2) `nba-boards-market.yml:138` — the sixth fixed `-8`, invisible to both censuses**
+
+⚠ **Severity LOW TODAY, and the reason is stated in the file's own header**: *"**NO CRON YET** — the
+season opens in October and a job failing nightly against an empty slate teaches everyone to ignore
+red builds. **Cron goes in at season start.**"* **`on:` is `workflow_dispatch` only, and a grep across
+all 40 workflows finds nothing invoking it.** ⇒ **Dormant.** 🔴 **But the header also says it is
+*"callable… by P3 at the 1:15 PM PT decision window"*, and cron is scheduled to be added at season
+start — at which point this site joins the DST problem the corpus tracks as `T20-12`, and no document
+lists it.** ▶ *Added to `T20-12`'s site list rather than raised as its own item.*
+
+### **(3) `nba-injury-report.yml:71` — a swallowed failure with a reassuring message**
+
+```bash
+done_n=$(python -c "import json,sys;print(len(json.load(open('$idx'))['days_done']))" 2>/dev/null || echo 0)
+total=$(python -c "from datetime import date;print((date.fromisoformat('$INJURY_TO')-date.fromisoformat('$INJURY_FROM')).days+1)")
+```
+
+🔴 **A missing or malformed index is indistinguishable from "zero days done".** The loop's exit test
+is `if [ "$done_n" -ge "$total" ]`, which can then never be true, so the job runs all twelve chunks or
+its **270-minute** budget and exits **0** printing ***"time budget reached; re-trigger to continue"***
+— **a message that describes normal partial progress.** ⚠⚠ **And the asymmetry is in adjacent lines:
+`:72` has no `|| echo`, so an unset `INJURY_FROM`/`INJURY_TO` fails hard. One swallows, one doesn't.**
+⚠ **Severity LOW: `INJURY_MODE != "backfill"` returns at `:65` before this loop, so it is
+backfill-only, and the workflow is `workflow_dispatch: {}` with no cron.** *Probes: `done_n` **0/0/0**,
+`re-trigger to continue` **0/0/0**.*
+
+## ④ WHAT THIS PASS DID *NOT* FIND, SAID PLAINLY
+
+**No new season-critical item. No scoring defect. The brief stays at SIXTEEN and no `T20-*` item is
+raised** — *(2)* extends `T20-12`'s site list, *(1)* is a positive, *(3)* is a dormant manual path.
+✅ **That is the pre-registered clause (vi) outcome in its honest form: a bounded population,
+enumerated, with a small yield — and the yield's smallness is itself the result, because it means
+`§T20.114`'s defect was the exception in this population rather than the rule.**
+
+▶ **`RULE 51`, on the findings, against the BASELINE tree, last:** `Assert the pull` **0/0/0** ·
+`NO BOARD LEGS` **0/0/0** · `done_n` **0/0/0** · `re-trigger to continue` **0/0/0** ·
+`with_market` **0/0/0**. ✅ **NOVEL.**
+
+📌 ***The lesson:*** **the census took one `ls` and one `grep` and it retired a question the sweep
+would otherwise have carried indefinitely — "what else is hiding in the YAML?" — with a number.**
+⚠⚠ ***And it cost one of my own candidates, killed by a prior pass's discipline rather than by mine:
+`§T20`'s timezone census survived this challenge because it wrote down its population. A count that
+states its population can be checked; a count that does not can only be doubted.***
+
 ▶ **`RULE 51` novelty check, run on the FINDING against the BASELINE tree as the last step:**
 `np.full` **0** in `/tmp/t20base/nba/*.md`; `score_board_legs` never co-occurs with
 `constant`/`hardcod`/`0.55`/`0.75` in any of the twelve; `NBA_GLOSSARY.md:318` lists `f_vol` as a
