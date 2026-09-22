@@ -12726,6 +12726,32 @@ items, but it should be a decision rather than a default.*
 > to answer.**
 > ✅ **Neither figure was STRUCK — both sections carry dates, so both were ANNOTATED** *(rule 40;
 > §T20.14's error avoided)*.
+>
+> ### ⚖️ **RE-SCOPED ONE PASS LATER, 2026-09-22 (§T20.25) — THE MECHANISM IS UNTESTED, THE SEVERITY IS NOT**
+> **A controlled test was run and it CANNOT decide the question.** *Two matched `[LIVE-AUDIT]`
+> samples from the same document — **HIGH reachability `§0v` (13 refs, 22 figures, pinned
+> 08:12:50Z)** and **LOW reachability `§0z2-T18` (0 refs, 18 figures, pinned 11:43Z)** — drawn from
+> strata of **286** and **343** sections respectively.* ✅ **HIGH `22/22` EXACT · LOW `18/18` EXACT —
+> `0%` drift in BOTH.** ⚠⚠ ***But both samples are `[LIVE-AUDIT]` figures taken TODAY, while the two
+> findings that drifted were `[TRANSCRIPT]` claims from 2026-09-13 recorded nine days later.
+> Reachability, tag and age are entangled and this design separates none of them.***
+> ⇒ **§T20.24's *"reachability is a MAINTENANCE property"* is NARROWED, not struck** *(rule 40 —
+> under-determined, not false)*: **"both unreachable findings that were re-derived had drifted;
+> whether REACHABILITY or AGE-AND-TAG drives that is UNTESTED."**
+> ✅ **SEVERITY STAYS MEDIUM regardless — the two drifted findings are a fact whatever explains
+> them, and the cost to the owner does not depend on the mechanism.** *Recorded so a later pass does
+> not read the narrowing as a downgrade.*
+> 🔴🔴 **AND THE REASON THE TEST CANNOT BE RUN IS ITSELF A DEFECT — THE TAG SYSTEM IS ONE-SIDED**:
+> **`[LIVE-AUDIT]` appears `365` times across `nba/*.md`** *(MASTER_SUMMARY 149 · OPEN_ITEMS 73 ·
+> DATABASE 40 · RUN_LOG 40 · FINAL_SCORING 15 · WORKERS 8 · SYSTEM_DESIGN 2 · MULTIPLIERS 2 ·
+> GLOSSARY 1 · BASELINE_CALIBRATION 1)*; **`[TRANSCRIPT]` appears `1` time**, at
+> `NBA_DATABASE.md:2135`. ⇒ ***the corpus marks what it VERIFIED and almost never what it merely
+> QUOTED, so the stratum that CAN drift has no tag, cannot be enumerated, and cannot be sampled.***
+> 🔴 **OWNER DECISION (added here, same repair programme)**: **(a)** tag `[TRANSCRIPT]` going
+> forward only · **(b)** back-fill the tag corpus-wide — the only version that makes a drift study
+> runnable · **(c)** declare once, prominently, that every untagged figure is transcript-sourced by
+> default. ⚠ *(c) is nearly free and makes `[LIVE-AUDIT]` meaningful by complement; it is the option
+> §T20.25 would pick if asked.*
 📌 **Related, and the reason the hub is the concern**: `NBA_MASTER_SUMMARY.md` holds **878 of the 948
 orphans — 92.6%** — at a **57.76%** orphan rate against `NBA_WORKERS`' 7.14% and
 `NBA_SYSTEM_ARCHITECTURE`'s 4.55%. **The document a fresh session reads first is the most
