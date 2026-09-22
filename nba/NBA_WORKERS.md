@@ -1866,6 +1866,8 @@ TRUE OF 2024-25 AND OF NOTHING ELSE.*** **The 2025-26 season — the season for 
 `nba_score.final_hp` holds 19,611,626 legs — was never audited, and the audit reported that as a
 pass.**
 
+> ⚠⚠ **FIGURE DATED, NOT RETRACTED — T20 pass 75 (§T20.80), 2026-09-22T19:50Z. RE-DERIVED LIVE: `nba_score.final_hp` holds **`19,075,070`** legs for `2024-25` and **`140,130`** for `2025-26`.** 🔴 ***The `19,611,626` is off by a factor of `140` TODAY, and it inverts this sentence's emphasis: 2025-26 is the THIN season in `final_hp`, not the large one.*** ✅ **AND IT WAS TRUE WHEN WRITTEN, PROVEN BY ARITHMETIC: `19,075,070 + 19,611,626 = 38,686,696` — the old **`38.7M`** total that **§T20.8** corrected to `19,215,200`. The table was rebuilt underneath the figure.** 🔴🔴 ***§T20.8's correction reached the TOTAL and never reached this PER-SEASON figure — and rule 40's propagation instrument could not have found it, because nothing here was ever struck. That is the gap §T20.80 exists to measure.*** ⚠ **THE FINDING ITSELF IS UNAFFECTED**: *2025-26 was still never audited, the audit still reported that as a pass, and open item **T18-12** still stands. **Only the magnitude that made it sound urgent has moved** — and on today's figures the unaudited season is small, which LOWERS the exposure rather than raising it.* **Original kept, per rule 40.**
+
 ### ✅ THE CAUSE IS VERIFIED IN SOURCE, NOT INFERRED FROM LIVE STATE *(rule 6)*
 
 **`nba/check_delta_gaps.py`, read directly 2026-09-22** *(9,182 B, 195 lines)*:
