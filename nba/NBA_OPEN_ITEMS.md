@@ -12410,6 +12410,26 @@ simplicity the owner explicitly chose *("one run, everything present, no second 
 **The sweep does not decide this and changes nothing.** *(Full evidence and the two bulletin/PDF
 traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 
+## T18-16 · **NEW · LOW** · seven `§`-references in the twelve resolve nowhere, and the heading convention hides the rest
+**Reference audit, 2026-09-22 (T18 pass 4): 644 `§`-references to transcript sections across the
+twelve — 621 (96.4%) resolve to a heading inside the twelve, 16 resolve only in
+`NBA_SWEEP_RUN_LOG.md`, and 7 resolve NOWHERE**: `§T15.2c` · `§T15.2d` · `§T15.2e` · `§T15.2f` ·
+`§T17.4` · `§T5` · `§T7.32-era`.
+🔴 **`§T15.2c–f` is the real cluster because it is used REFERENTIALLY, not only as a dateline** —
+*"§T15.2f's selection filter, caught by a sanity check rather than by inspection"*
+(`NBA_BASELINE_CALIBRATION` 250) and *"after the test itself was found broken — §T15.2f"*
+(`NBA_FINAL_SCORING_CALIBRATION` 1079). **A reader who follows either finds nothing.**
+⚠ **Severity LOW, and stated as such: the CONTENT is present** — the OREB rebuild is §0y, the Fliff
+fix is §0f-4 — **only the pointer fails.** **The fix is to give the sub-findings headings, or to
+rewrite the four pointers to name the sections that hold them.**
+⚠ **And a convention split makes the whole set harder to navigate than it looks: of 1,498
+transcript-section headings in the twelve, only 138 (9%) carry the `§` sigil** *(they are written
+`## 0.7-T18.`)*, **while essentially every cross-reference writes `§0.7-T18`.** ⇒ **a reader who
+searches the literal string a document handed them finds the REFERENCE and never the SECTION.**
+🔑 **Recorded because the audit's own first run was a FALSE POSITIVE on exactly this** — it reported
+`§0.7-T18`, `§0.8-T18` and `§0a-T18` as dangling when all three exist. ***A reference audit must
+match on the id, never on the sigil.*** *(Full table: `NBA_MASTER_SUMMARY.md` §T18.5.)*
+
 ## T18-15 · **NEW · METHOD** · were T2's and T3's `thinking` strata read at T1's depth?
 **The sweep's standing characterisation — "the `thinking` stratum is labels" (§T11.43a, confirmed
 §T12.1c and again at T18 pass 3) — is TRUE for 17 of 20 transcripts and FALSE for the first three.**
