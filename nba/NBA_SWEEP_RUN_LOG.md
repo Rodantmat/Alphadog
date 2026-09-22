@@ -138,6 +138,23 @@ looks.** ***A method claim gets the same check a figure gets, and this table is 
 > `RULE N —` returned six zeros, and a **positive control on rules 30/40/43** showed the pattern was
 > wrong, not the rules absent. They ARE referenced — 3 to 39 times each. They are not INDEXED.*
 
+> 🔴🔴🔴 **THE SENTENCE BELOW IS FALSE FOR TEN OF THE FIFTEEN — measured 2026-09-22 (§T20.18).**
+> ***Rules 1 · 2 · 3 · 4 · 5 · 9 · 10 · 11 · 13 · 14 are USED at their entries, not STATED there.***
+> **Each is referenced 3–39 times and none has a canonical statement.** *What exists is usage —
+> "Rule 11 generalised: when two methods disagree on a count, the answer is the set difference",
+> "Rule 5 read backwards", "Rule 13 asked what 'correctly empty' already denotes", "Rule 9 —
+> own-document contradiction", "Rule 2 breach (writing mid-stratum)".* **A reader can infer each
+> rule's shape from how it was applied; a reader cannot read the rule.**
+> ✅ **RULE 22 POSITIVE CONTROL — the same probe returns a canonical statement for all four indexed
+> rules tested (30 · 40 · 43 · 22).** *The instrument works; the statements are absent.* ⚠ **Rule 10
+> shows two, and BOTH were written by this session's passes 11–12 while diagnosing its absence.**
+> 🔑 ***This is the mechanical cause of the propagation rule's three births: you cannot check whether
+> a rule already says something if the rule has never been written down.***
+> 🔴 **OWNER DECISION at §T20.18** — *(a)* reconstruct and adopt all ten · *(b)* reconstruct **rule 10**
+> at minimum, since its absence has demonstrably cost three generations · *(c)* amend this sentence so
+> it no longer claims they are stated. ⚠ **Nothing was fabricated: ten rule texts inferred from usage
+> would be ten sentences no pass ever adopted, which is §T19.4's "named rather than invented."**
+
 *Rules 1–15 were born in T1–T9 and are stated in `NBA_MASTER_SUMMARY.md` at their entries. Rules
 16–27 are T9–T11's and each carries a §-pointer. **Apply them from pass 0 of a transcript, not from
 pass 20 — that gap is this run's signature failure.***
