@@ -33288,3 +33288,109 @@ them, not re-scored)* · **the single `0.6468` hit** *(this session's own pass-1
 open items — 175 paragraphs, six new findings, the diagnosis of the owner's own question, and not one
 of them repeating what was already written.**
 ***The sweep's bookkeeping was where it went wrong. Its findings were not.***
+
+---
+
+# §T20.66 — T20 PASS 61 · THE LITERAL AUDIT OF THIS SESSION'S OWN OUTPUT — **32 OF 114 POINTERS ARE BROKEN**
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only against the system: one `SELECT` and repo reads.** **Nothing
+triggered or dispatched; `NBA_COMPASS.md` not written to.**
+⚠⚠ **A THIRD DISTINCT ANGLE: 56 JUDGMENT · 57 LIVE NUMERIC · 58–60 NOVELTY. *All of those ask
+whether a CLAIM is true or new. None asks whether the POINTERS the claims are written with still
+resolve.***
+
+## 0. POPULATIONS, EXTRACTED MECHANICALLY AND PINNED FIRST (rules 17/30)
+
+**From the same session-added corpus §T20.64/§T20.65 built — `351,150` characters — using
+`([A-Za-z0-9_./-]+\.(?:md|py|yml)):(\d+)(?:-(\d+))?` and ``` `nba_[a-z]+\.[a-z_]+` ```:**
+
+| | |
+|---|---|
+| distinct **`FILE:LINE` pointers** | **114** |
+| distinct **`nba_*.*` identifiers** | **52** *(49 in scope; `pp_*` excluded)* |
+
+## 1. 🔴🔴🔴 CLAUSE (ii) — **32 OF 36 AT-RISK POINTERS ARE BROKEN. 89%.**
+
+**Resolution method: for each pointer into a `.md` file THIS SESSION EDITED, compare the line at that
+number in the working file against the same line in the pre-session baseline. A different line means
+text was inserted above it and the number no longer names what the citation says it does.**
+
+| class | n | verdict |
+|---|---|---|
+| into `.md` files **this session edited** | **36** | ✅ 4 resolve · 🔴🔴 **32 ROTTED** |
+| into `.md` files **not edited** | 10 | ✅ stable |
+| into `.py` / `.yml` — **never edited** | **67** | ✅ **all stable** |
+| file missing / line past EOF | 1 | ⚠ |
+| **TOTAL** | **114** | 🔴 **32 broken — 28% of the session's entire pointer surface** |
+
+⚠ **RULE 19 SPLITS THE 32, AND TWO ARE NOT ROT**: `NBA_FINAL_SCORING_CALIBRATION.md:1562` *(was the
+bare `38,686,696` line, now the struck-and-corrected one)* and `NBA_MULTIPLIERS.md:1441` *(now
+carries the flag this session put there)* — **the pointer still names the right SUBJECT, whose text
+the session deliberately changed.** ⇒ 🔴 **30 are TRUE ROT.**
+
+### 🔴🔴 AND THE WORST OF THEM CARRY THIS SESSION'S OWN SELF-CORRECTIONS
+
+| pointer | what it was cited FOR | what line it hits now |
+|---|---|---|
+| **`NBA_MASTER_SUMMARY.md:3102`** | §T20.63's evidence for the **deploy prior** | *"undocumented.** Mechanism 3 also explains why a transcript that wrote documentation…"* |
+| **`NBA_OPEN_ITEMS.md:1728`** | §T20.64's evidence for the **worker-census prior** | `>` |
+| **`NBA_OPEN_ITEMS.md:840`** · **`NBA_MASTER_SUMMARY.md:15695`** | §T20.63's evidence for the **Betr prior** | a referee-crew table row · a conversion-rules paragraph |
+| **`NBA_OPEN_ITEMS.md:2410`** | §T20.59's Sleeper-history kill | *"Four documents — `NBA_DATABASE.md` and…"* |
+| **`NBA_OPEN_ITEMS.md:5812`** | §T20.49's corrected cron row | *"the causal chain that produced it."* |
+
+⇒ ***The citations that prove this session's three rediscoveries no longer resolve. A fresh session —
+which rule 46 GUARANTEES — would follow them and land nowhere.***
+
+## 2. ✅✅ CLAUSE (iii) FAILS — **THE IDENTIFIER SURFACE IS SOUND, 49 OF 49**
+
+**`information_schema.tables`, 2026-09-22: of the 49 in-scope `nba_*.*` identifiers this session
+wrote, `40` EXIST and `9` are ABSENT** — and **all nine are objects the session cited PRECISELY
+BECAUSE they do not exist**: `nba_score.absence_panel` · `nba_score.ladder_calibration` *(both on the
+DROPPED-2026-09-19 list)* · `nba_config.factor_gate_results` *(§T10.16e's wrong qualification,
+quoted as such)* · and the six §T20.54 verified absent — `nba_daily.injury_report_snapshots` ·
+`nba_stats.lineup_synergy` · `nba_config.ewma_alpha` · `nba_stats.darko` ·
+`nba_stats.player_career_totals` · `nba_score.real_slip_leg_observations`.
+⇒ ✅✅ ***Not one identifier was written as if it existed when it does not. `40/40` present as
+asserted, `9/9` absent as asserted.*** **Stated at full strength: the session's FACTUAL surface holds;
+only its LINE NUMBERS rotted.**
+
+## 3. ▶ THE REPAIR — ANCHOR, DO NOT RENUMBER (§T20.49's rule, and the reason for it)
+
+⚠⚠ **RENUMBERING THE 30 WOULD BE THE WRONG FIX AND WOULD FAIL IMMEDIATELY**: *rule 46 guarantees a
+fresh session will edit these same files, and every insertion re-breaks every number below it. §T20.49
+already established the remedy — **"repaired by ANCHORING TO SEARCHABLE CONTENT, NOT RENUMBERING."***
+✅ **AND THE MITIGATION IS ALREADY IN THE TEXT: this session QUOTES what it cites, almost without
+exception** — §T20.63 reproduces `:3102`'s sentence in full, §T20.64 reproduces `:1728`'s in full,
+the Betr prior is quoted verbatim in three places. ⇒ ***Every rotted pointer has its target's text
+beside it, so the citation is recoverable by SEARCH even though the number is dead.***
+▶ **So the repair is a STANDING NOTE, placed where a fresh session reads first — in the run log's
+resume note — rather than thirty edits that rot again on the next append.**
+
+## 4. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — SIXTY-SECOND consecutive identical run.** Measured 2026-09-22T18:27:03Z |
+| **(ii)** ≥1 `FILE:LINE` pointer no longer resolves | 🔴🔴🔴 **TRUE — `32` of `114`; `32` of the `36` at risk; `30` after rule 19 removes two content-updates** |
+| **(iii)** ≥1 identifier does not exist as written | ✅✅ **FALSE — `49` of `49` correct**, including nine deliberate absences |
+
+✅ **Baseline `636 · 2 · 484 · 481` — SIXTY-SECOND consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 5. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — the clean count returns to `0/3`.** **No new SYSTEM defect: this is entirely the
+sweep's own output, and it is a defect in the HANDOFF, which rule 46 makes this session's actual
+product.**
+✅✅ **AND THE OTHER HALF IS THE REASSURANCE: `49` of `49` identifiers correct, `67` of `67` code
+pointers stable, and every rotted citation carries its target's text verbatim beside it.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at `0/3` with TWO INDEPENDENT reads owed, exactly as T19
+(§T19.6, OWNER DECISION).**
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.49's six rotted pointers and its anchoring remedy** *(prior;
+this pass scores only pointers written SINCE)* · **the nine absent identifiers** *(§T20.54 and the
+DROPPED list — cited as absences, not as defects)*.
+
+📌 ***The lesson:*** **the session spent four passes checking whether its CLAIMS were true and new,
+and never checked whether its CITATIONS still pointed anywhere. Twenty-eight per cent of them do not
+— including the three that prove its own rediscoveries.**
+***A pointer into a file you are still writing is a promise you break with your next paragraph.***
