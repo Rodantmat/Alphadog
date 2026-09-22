@@ -1465,6 +1465,56 @@ explicit "no games scheduled" state is recorded as implemented.**
 > and a genuine zero certifies red. **Not fixed here (rule 1); recorded with its evidence.***
 > 📌 **Full day-by-day context: `NBA_RECIPE.md` `STEP 12 — THE GAME-DAY TIMELINE`, gap ③.**
 
+---
+
+# 🔴🔴🔴 **THE SWALLOWED-FAILURE CENSUS — WHERE A PIPELINE CAN DO LESS THAN IT CLAIMS AND STILL CERTIFY GREEN** *(written 2026-09-22, T20 pass 97, §T20.102)*
+
+> 🔑 **WHY.** *`§T20.101` found one instance while reading a script for another reason: `P2`'s
+> day-before injury enrichment sits in a `try/except` that prints one line and continues.* **This is
+> the `SILENT` class the brief ranks above everything else, so it was counted rather than left as an
+> anecdote.**
+> ▶ **POPULATION RE-DERIVED `2026-09-22T22:07:03Z`** *(rule 15/17, not reused from `§T20.99`)*: **the
+> `40` scripts the three pipelines call** — **`69` `except` handlers**, of which **`67` neither
+> re-raise nor exit.**
+> ⚠⚠ **THE BAR, FIXED BEFORE READING**: *a handler counts only if **(a)** it does not re-raise,
+> **(b)** it does not exit non-zero, **(c)** it does not write a sentinel the pipeline later checks —
+> **and the step still reports success while the certifier cannot tell.*** ***A retry loop is not a
+> swallow. A designed fallback is not a swallow.***
+
+## 🔴 CLASS A — **`5` SCRIPTS WHERE A PARTIAL FAILURE IS INVISIBLE**
+
+| where | what is lost | why nothing catches it |
+|---|---|---|
+| 🔴🔴🔴 **`build_availability_delta.py:70-71`** — `for sh in idx.get("shards", []): try: rows.extend(fetch(...)) except Exception: pass` | **whole SHARDS of the injury-report archive** | ***`pass`. No message of any kind.*** The code then tests only `if inj.empty` — **so losing some shards yields a smaller-but-non-empty delta that looks normal.** `PIPE=p3`'s five checks never look at it. |
+| 🔴🔴 **`baseline/build_baseline_ladder.py:103`** *(PRIOR, `§T20.101`)* **and `baseline/build_periods_ladder.py:80`** | **the entire day-before injury enrichment** | one printed line; the ladder builds; `PIPE=p2` counts rows and props, never enrichment |
+| 🔴 **`build_defender_ratings.py:64-67`** | **matchup SHARDS** — one printed line per shard, `if not frames: return empty` | `PIPE=p1` checks `defender_ratings > 10000` rows — ***a partial build clears a floor that low*** |
+| ⚠ **`scrape_nba_season_tables.py:133-139`** | **one team's COACHES** per failure | the file is written with fewer records; **`P1` has no coaches check at all** |
+
+> ## 🔴🔴🔴 **THE SHARPEST FACT: `build_availability_delta.py:71` IS THE ONLY HANDLER OF THE `69` THAT LEAVES NO TRACE WHATSOEVER — AND WHAT IT FEEDS IS THE SCORED BOARD.**
+> **`score_board_legs.py:189` reads `FROM nba_score.availability_delta WHERE game_date = %s`.**
+> ⇒ ***A silently truncated availability delta does not merely degrade a report; it changes the legs
+> `P3` scores, and the only evidence that anything happened is the absence of rows nobody counts.***
+
+## ⚠ AND IT BREAKS A DISCIPLINE THIS CORPUS ALREADY STATES
+
+**`NBA_MASTER_SUMMARY.md` records the rule for exactly this layer**: *"**Baseline build** (T14+) —
+**fail loudly, no swallowing** — the outputs are interdependent; a silently missing prop pair is
+**invisible** and corrupt"*, and `NBA_OPEN_ITEMS.md` repeats it: *"the baseline build **forbids
+swallowing failures**."*
+⇒ 🔴 ***The two baseline ladder builders each carry a swallowing handler. The discipline is
+documented, and the code does not follow it.*** ⚠ **Recorded, not fixed (rule 1).**
+
+## ✅ CLASS B — **CORRECTLY NOT DEFECTS, NAMED SO THEY ARE NOT RE-FOUND**
+
+*The bar excluded far more than it kept.* **Retry loops** *(`last_error = str(exc); if attempt < 3:
+time.sleep(5)` — about forty of the sixty-seven)* record the error and fall through. **Designed
+fallbacks** are correct: the other bare `pass` in the whole set, **`scrape_underdog_board.py:91`**,
+*looks like the worst case and is not* — `registry` is assigned a valid default on the line above and
+seeded on the lines below. **Per-leg skips** in `archive_live_boards.py` increment a counter the run
+reports. 📌 *Naming these is part of the finding: **`67` non-re-raising handlers reduce to `5`
+scripts once the bar is applied**, and a census that had skipped the reading would have reported
+thirteen times the true number.*
+
 **And it matters twice over for the season opener**: **2026-10-01 and 10-02 are genuinely zero-game
 days** before opening night on the 3rd, **and they coincide with the `active_stats_season` edge case
 already recorded.** A pipeline run on those dates should report *"no games scheduled"*, not silence
