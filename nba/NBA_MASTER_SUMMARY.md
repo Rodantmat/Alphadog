@@ -29351,3 +29351,96 @@ corpus documents what the pipeline is FOR, and `"2025-26"` is a default, not a d
 ***A constant does not appear in any description of a system; it only appears in its source. That is
 why the open-items list was complete about P3's architecture and silent about the one line that will
 stop it on the first game day.***
+
+---
+
+# §T20.34 — PASS 29: *THE SEASON-CONSTANT CENSUS — FIVE MORE, ALL IN P2, AND ONE DOCSTRING LIES ABOUT ITS OWN CODE*
+
+*(T20 pass 29, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY, AND NO CODE EDITS: repo reads and `SELECT` only. The scripts are the SYSTEM, not this
+sweep's deliverable — a hardcoded constant found here is DOCUMENTED and handed to the owner
+(rule 1, and the owner's standing instruction *"you will not fix anything along this process"*).**
+
+## 1. 📐 THE SURFACE, AND ITS HONEST LIMIT
+
+> **Censused in full: the THREE pipeline workflows** — `nba-p1-weekly-static.yml` *(12 script
+> invocations)* · `nba-p2-overnight-heavy.yml` *(15)* · `nba-p3-afternoon-light.yml` *(12)*.
+> **Plus `8` of their scripts grepped directly**: `score_board_legs.py` ·
+> `build_availability_delta.py` · `check_delta_gaps.py` · `build_confidence_v3.py` ·
+> `load_baseline_ladder.py` · `archive_live_boards.py` · `certify_pipeline.py` · `nba_asof.py`.
+> ⚠ **RULE 17, stated plainly: this is the three workflows COMPLETE and `8` of their scripts, NOT all
+> of them. The counts below are a floor, not a total.** *`pp_*` scripts excluded as the concurrent
+> session's.*
+> ⚠ **Rule 20 — probed in four spellings: `2025-26`, `2025_26`, `2026-27`, `2026_27`, plus
+> `get\(.*SEASON` and `season\s*=`.**
+
+## 2. 🔴🔴🔴 FIVE NEW LITERALS, **ALL REACHED BY P2**
+
+| # | location | code | |
+|---|---|---|---|
+| 🆕 **1** | `nba-p2-overnight-heavy.yml:31` | `default: "2025-26"` *(the `workflow_dispatch` `season` input)* | **the root of the other two** |
+| 🆕 **2** | `nba-p2-overnight-heavy.yml:128` | `GAP_SEASON: ${{ github.event.inputs.season \|\| '2025-26' }}` | → `check_delta_gaps.py` |
+| 🆕 **3** | `nba-p2-overnight-heavy.yml:274` | `C3_SEASONS: ${{ github.event.inputs.season \|\| '2025-26' }}` | → `build_confidence_v3.py` |
+| 🔴🔴 **4** | **`nba/check_delta_gaps.py:42`** | `season = os.environ.get("GAP_SEASON", "2025-26")` → `slug = season.replace("-","_")` | **a FILENAME slug, like `build_availability_delta.py`** |
+| 🆕 **5** | `nba/build_confidence_v3.py:99` | `seasons = [… os.environ.get("C3_SEASONS", "2024-25,2025-26") …]` | **two literals in one default** |
+
+✅ **CLAUSE (ii) HIT — five, against a bar of three.** ❌ ***The clean-verdict branch is not
+available: the codebase is NOT otherwise season-parameterised.***
+✅ **CLAUSE (iii) HIT — every one of the five is reached by P2, not P3.** ⇒ ***The rollover risk is
+SYSTEMIC, spread across at least two of the three pipelines, and the fix is a shared resolver rather
+than three edits.*** 📌 **With §T20.33's two, the running total is `7` season literals across P2 and
+P3, every one of which fails on the same date.**
+
+## 3. 🔴🔴🔴 THE ONE THAT MATTERS MOST: **A DOCSTRING THAT CONTRADICTS ITS OWN CODE**
+
+> **`nba/check_delta_gaps.py`, line 24** *(the module docstring)*:
+> ***"Env: DATABASE_URL, GAP_SEASON, GAP_FROM, GAP_TO (defaults: **current season**, full range)"***
+> **`nba/check_delta_gaps.py`, line 42** *(the code, eighteen lines below)*:
+> ***`season = os.environ.get("GAP_SEASON", "2025-26")`***
+
+🔑🔑 ***The file documents dynamic resolution and implements a literal.*** **A reader auditing this
+script for season-safety — reading its own documentation, in its own file, written by its own
+author — concludes it is safe. It is not.**
+📌 ***This is §T20.32's presupposition shape at its sharpest and at the shortest possible range: not
+a corpus document eighteen thousand lines from the code, but a docstring eighteen LINES from the
+statement that falsifies it.*** ⚠ **And it explains why the corpus never caught it: the twelve
+mention `check_delta_gaps` **25** times and `build_confidence_v3` **28** times — they are
+well-documented scripts — while `GAP_SEASON` appears **2** times, both merely as an env-var NAME in a
+list, and `C3_SEASONS` appears **0** times. ***The corpus documented the scripts and never their
+defaults.***
+
+## 4. ✅ RULE 22 POSITIVE CONTROLS — *three, and the probe stayed clean on all three*
+
+1. ✅✅ **`nba-p1-weekly-static.yml` — ZERO season literals.** *It passes `SEASONS_N` (a **count**, default `'1'`) and `MODE: "season"` — season-agnostic by construction.* **P1 is the correct shape and is the reason clause (iii) is a finding rather than a tautology.**
+2. ✅ **`nba/nba_asof.py` — ZERO season constants** *(the documented example of the right pattern: a resolved value, not a literal)*.
+3. ✅ **`nba/archive_live_boards.py` — ZERO** ; ✅ **`nba/load_baseline_ladder.py` — ZERO** *(it READS `current_season` out of the ladder artefact's own metadata and stores it — the resolver shape, done right)* ; ✅ **`nba/certify_pipeline.py` — season-agnostic**, keyed on `game_date` only, which is why it catches the wrong-season failure that §T20.33 traced.
+📌 ***4 of the 8 scripts grepped are clean. A probe that condemned all eight would be worthless.***
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:31:42Z** |
+| **(ii)** | **≥ 3** further hardcoded season/league literals | ✅ **HIT — five** *(and the surface is a floor: 8 of ~35 scripts grepped)*. ❌ *The "two-line fix, say it at full strength" branch is NOT available.* |
+| **(iii)** | **≥ 1** reached by **P1 or P2** rather than P3 | ✅ **HIT — all five are P2's.** ⇒ ***SYSTEMIC: the fix is a shared resolver, not three edits.*** ✅ **And P1 is clean, which makes the contrast evidence rather than noise.** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — THIRTY-FIRST consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — five further season literals, all in P2, one of them a filename slug and one of
+them contradicted by its own docstring eighteen lines above it. Running total `7`. Open item T20-4
+extended. CLEAN STAYS 0/3.**
+✅ **P1 is clean and `load_baseline_ladder.py` shows the correct resolver shape already exists in this
+codebase — the fix has a working example inside the repo.**
+⚠⚠ **NOTHING WAS EDITED, TRIGGERED OR DISPATCHED (rule 1).**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **§T20.33 said a constant appears only in a system's source, never in its
+description. This pass found the exception that proves it and makes it worse — `check_delta_gaps.py`
+DOES describe its default, in its own docstring, and the description is FALSE.** ***So the rule is
+not "read the source because the docs are silent." It is "read the source because the docs are an
+account, and an account of a default is exactly the kind of thing that is written once and never
+re-read against the line below it."***
