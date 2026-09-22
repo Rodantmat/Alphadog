@@ -560,6 +560,14 @@ the `GLOBAL_REDEPLOY_FILES` full-fleet trigger, but with no marker in the code t
 a jittered `sleep $((RANDOM % 5 + 2))` between attempts, and a hard `exit 1` if all five fail —
 which is also why its checkout needs `fetch-depth: 0` and `persist-credentials: true`. **Two
 workflows in one repo with opposite push-failure discipline, and the one that swallows is the one
+
+> 🔴🔴 **AND A THIRD WORKFLOW SWALLOWS TOO — `nba-daily-delta.yml`, `T20-10`, and this page named `daily-delta` only as a job.** *Added here T20 pass 78 (§T20.83), 2026-09-22.* ▶ **`.github/workflows/nba-daily-delta.yml:52–54`, verbatim:**
+> ```
+> python nba/sync_season_files_from_delta.py || echo "season-file sync failed"
+> python nba/scrape_nba_periods.py           || echo "periods refresh failed"
+> python nba/scrape_nba_schedule.py          || echo "schedule refresh failed"
+> ```
+> 🔴 ***Three steps, three swallows: the workflow can produce nothing and still report success — `SILENT`, and no certifier covers it.*** ⚠ **Note which scripts these are: `scrape_nba_schedule.py` is the refresher for `nba_calendar.games`, the table recorded as **not refreshed since the day it was built** — *a silent failure here is exactly how that state persists unnoticed*. **NOT RECORDED whether it is the cause** (rule 6).** ▶ **Full item: `T20-10` in `NBA_OPEN_ITEMS.md`; re-derived and HELD at §T20.75, `2026-09-22T19:25Z`.** ⚠ *Documented, not fixed (rule 1).*
 whose failure corrupts deploy scope.** *Not fixed — recorded per the sweep's read-only rule.*
 
 ### The manual override nobody has written down
