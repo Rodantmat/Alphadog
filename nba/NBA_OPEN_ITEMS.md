@@ -14342,6 +14342,39 @@ caught this one and will catch the next.*** ⚠ **This sweep changed nothing and
 description of P3.* ⚠⚠ **READ-ONLY: `SELECT` and repo reads only. Nothing triggered, dispatched or
 written (rule 1).**
 
+> ✅✅ **RE-DERIVED INDEPENDENTLY AND CONFIRMED IN EVERY PARTICULAR — T20 pass 112 (`§T20.117`),
+> 2026-09-22.** *A three-layer season census run from scratch — 40 called scripts, 39 in-scope
+> workflows, 21 Workers, populations re-pinned `2026-09-22T23:39:03Z` — reproduced this item's whole
+> family and found **nothing it had missed**: the seven season-selecting variables, the four never set
+> by any pipeline, the three pinned to `'2025-26'` through a `github.event.inputs.season ||` fallback
+> that **a cron run always takes**, the ladder's silent `_all[-1]`, and the four Workers' bare SQL
+> literals *(`NBA_WORKERS.md:305`)*. **Four candidates raised, four killed as already-on-file.**
+> ***This item is right.*** **TWO things survived, and both are added below.**
+>
+> 🔴🔴 **(1) THE OBVIOUS REMEDY FOR THIS ITEM CRASHES.** **`nba/export_market_spreads.py:38` is
+> `lo, hi = BOUNDS[season]` — an UNGUARDED dict subscript**, and `BOUNDS` *(`:22–24`)* holds only
+> `2023-24`, `2024-25`, `2025-26`. ⇒ **Setting `MS_SEASONS=2026-27` in `P2`, which is exactly what
+> fixing this item looks like, raises `KeyError: '2026-27'` and fails the step.** ⚠ *It is therefore
+> not another instance of the defect — it is a **trap inside the fix**, and whoever works this list
+> will hit it.* ✅ **THE PATCH SHAPE IS ALREADY IN THE REPO, BY THE SAME HAND**:
+> **`nba/scrape_nba_season_tables.py:147–148`** has the identical dict with the identical gap and
+> guards it — `w = WINDOWS.get(season)` / `if not w: print("no window for", season); continue`.
+> 🔑 ***One file guards the lookup and its sibling does not; that asymmetry is the evidence it is an
+> oversight, and it supplies the two-line fix.***
+>
+> 🔴🔴 **(2) THE BREAK DOES NOT HAPPEN ON OPENING NIGHT — AND NOTHING SAID SO.** *Both halves were
+> already filed; their composition was not.* **While the ladder's `_all[-1]` fallback and `BS_SEASON`
+> BOTH say `2025-26`, they AGREE and `P3` runs.** 🔴 **The moment the first
+> `nba/data/nba_player_game_log_2026_27.json` lands, the ladder flips to `2026-27` — and the YAML
+> literal cannot flip — so from that day `score_board_legs.py:145` raises
+> `SystemExit(1)`: `"ABORT: no baseline ladder for <date> - P2 must run before P3."`**
+> ⚠⚠ ***The system will look fine through the rollover and break on a later, unrelated-looking day,
+> with an error that blames `P2`, which is not the cause.*** 📌 *Corroborated live 2026-09-22:
+> `nba_score.baseline_history` holds `2024-25` (**9,537,535** rows) and `2025-26` (**9,805,813**,
+> last date **`2026-04-12`**) and nothing else.* ▶ **This changes WHEN to test, not WHETHER: a
+> smoke-test run with `BT_ASOF` set past the rollover will not reproduce it unless a `2026-27`
+> game-log file exists.**
+
 🔴🔴🔴 **THE DEFECT**
 
 | | line | code | what the workflow passes |
