@@ -20576,8 +20576,11 @@ bugs, never as a standing rule.**
 
 ⚠⚠ **And it composes with defects this sweep has already recorded, every one of them a timezone
 error**: **§T7's blame timestamps published in −0700, two of which cross midnight in UTC** · the **P3
-cron drifting an hour** (`NBA_SYSTEM_ARCHITECTURE.md`: *"UTC in the workflow — **drifts an hour** —
-against a cutoff that IS time-sensitive"*) · the injury-PDF timestamps in **Eastern** against
+~~cron drifting an hour~~ **cron that DOES NOT EXIST** *(corrected 2026-09-22, §T20.32 — the cited
+`NBA_SYSTEM_ARCHITECTURE.md` row was itself a presupposition and is corrected at §T20.31;
+`nba-p3-afternoon-light.yml` carries `workflow_dispatch:` only. **This instance is the PROPAGATION:
+the citation survived the correction of its source, which is §T9.25a's shape applied to a
+presupposition rather than a figure**)* · the injury-PDF timestamps in **Eastern** against
 `PHASE2_CUTOFF_LOCAL`. ***A standing owner instruction that every time he states is Pacific is the
 missing premise all of those needed, and it is in none of the mandated documents.***
 
