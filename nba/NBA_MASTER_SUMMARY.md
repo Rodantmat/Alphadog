@@ -37841,3 +37841,77 @@ observation would have been precisely the wrong move.*
 cost a hundred lines of measurement to establish that the measurement already existed — and the
 finding it did produce, that the corpus's failures are routes rather than facts, is worth more than
 the diagnosis it went looking for.***
+
+---
+
+# §T20.111 — T20 PASS 106: ✅🔴 **THE HYPOTHESIS SURVIVES AT EXACTLY ITS BAR — `2` OF THE SIXTEEN ARE ANSWERED AND CARRIED OPEN, AND THE OTHER FOURTEEN ARE HONEST** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads and `SELECT` only.**
+
+## 1. THE TEST, AND WHY IT COULD HAVE FAILED
+
+*`§T20.110` asserted a pattern three times over — **"this corpus's failure mode is NAVIGATIONAL, not
+evidential"** — and never tested it.* **Clause (iv) made failure publishable**: ***"a clean `0 of 16`
+FALSIFIES the hypothesis, which is the MORE VALUABLE outcome… a test that cannot fail is not a
+test."*** **Bar, fixed first**: *"already answered" means **a document STATES the resolution** — not
+that related material exists, not that a live query would settle it — **and every claimed instance is
+opened and quoted.**
+
+## 2. ✅ **`2` OF `16`. CLAUSE (ii) HITS AT EXACTLY ITS REGISTERED BAR, AND NOT ABOVE IT.**
+
+| | item | the answer that already exists |
+|---|---|---|
+| **`E`** | the DARKO failure evidence | *(`§T20.110`)* — measured to the character in `NBA_MASTER_SUMMARY.md` before this sweep began |
+| 🔴 **`D`, in part** | **`T16-9`** | **its own heading reads `T16-9 IS ANSWERED — AND THE AUTHOR'S OWN CONDITIONAL HAS FIRED, UNCHECKED`** |
+
+**`T16-9` in full**: *the author wrote the test himself —* ***"IF IT STAYS AT ZERO once the query
+completes, the planner isn't using them and the expression doesn't match exactly, WHICH I'D NEED TO
+FIX"*** *— and `board_outcomes_nm_idx` is **still at `0` scans while its two siblings show `1,080,188`
+and `594,932`**, with the `EXPLAIN` supplying the cause:* ***"functions on the join columns… so ALL
+FOUR INDEXES I BUILT WERE IRRELEVANT TO THIS QUERY."***
+⇒ ***The brief's `D` row calls it one of "three `[LIVE-AUDIT]` OWNER DECISIONS". It is not a decision
+about whether the index works — that is settled. It is a `DROP` of `303 MB` of dead index.***
+
+## 3. ✅✅ **AND THE FOURTEEN OTHERS ARE HONEST — WHICH IS THE RESULT WORTH HAVING**
+
+*Every remaining brief item was checked for an unanswered question, then each question checked for an
+existing answer.* **Only three carry `NOT RECORDED` at all, and all three are evidence limits the
+sweep stated about itself, with the reason attached:**
+- **`T20-3`** — *"`nba_control.job_runs` is empty, so the database cannot answer it"*
+- **`T20-6`** — *"this pass read the invocation, not the guard, and says so rather than implying"*
+- **`T20-9`** — *"the run API's 100-run window reaches back only to `14:56:04Z`"*
+
+⇒ ***None is an answer sitting unrouted. They are limits, correctly labelled.*** ✅ **CLAUSE (iv)
+honoured: no genuinely open item was recorded as answered to make the number, and the count stopped
+at `2` rather than being rounded up to a pattern.**
+
+## 4. 🔑🔑 **THE HYPOTHESIS SURVIVES — BUT NARROWER THAN IT WAS STATED**
+
+*`§T20.110` said the corpus's failure mode is navigational. **The test says something more precise:***
+
+> ## **BOTH INSTANCES ARE MATERIAL THAT PRE-DATES THE BRIEF'S OWN CONSTRUCTION. THE SIXTEEN ITEMS THE SWEEP RAISED AND RE-DERIVED ARE ALL CORRECTLY STATED.**
+
+⇒ ***The navigational failure is not a property of the corpus in general. It is a property of the
+SEAM — where older, already-settled material was pulled into a newer surface by reference and its
+state was not carried across with it.*** **`§T20.56` pulled five older items onto the brief; two of
+the five are mis-stated in exactly this way, and `1` of the `11` numbered items is.**
+🔑 *That is a sharper claim than the one it replaces, it names where to look next, and it is the
+version that survived a test designed to kill it.*
+
+## 5. ✅ CLAUSE (i) — `RULE 52`
+
+**`2026-09-22T23:00Z`: `650 · 1 · 470 · 467`. All three bands unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: 🔴 **`NBA_OPEN_ITEMS.md`'s own `T16-9 IS ANSWERED` section
+and the `board_outcomes_nm_idx` material** *(**PRIOR**, and in the BASELINE tree — **the pass claims
+the MISMATCH between it and the brief, not the answer**)* · **`§T20.110`** *(**PRIOR** — the hypothesis
+under test)* · **`§T20.56`** *(**PRIOR** — the five older items and how they reached the brief)*.
+▶ **RULE 51, last step, BASELINE tree**: *"carried as open"* and *"wrongly carried"* return **`0`**;
+*"T16-9 IS ANSWERED"* returns the prior itself, **opened and quoted.**
+
+📌 ***The lesson:*** **the sweep asserted a pattern three times and, when it finally tested it, the
+pattern shrank to something true.** ⚠⚠ ***Two of sixteen is not "the corpus is navigationally broken".
+It is "the seam between old findings and new surfaces does not carry state" — and that is a defect you
+can go and look for, which the larger claim was not.***
