@@ -12074,6 +12074,53 @@ and possible*.
 **min(1:15 PM PT, earliest_tip − 2h)**, computing the earliest tip from `nba_calendar.games` — the
 schedule is already loaded (2,666 games). **Not applied — documentation pass only.**
 
+> ## 🔴🔴🔴 **MEASURED FOR THE FIRST TIME — 2026-09-22, T20 pass 91 (`§T20.96`). THE PREDICTION ABOVE IS EXACTLY RIGHT, AND IT IS BIGGER THAN IT SOUNDS: `38` DAYS A SEASON, NOT A HANDFUL.**
+> *(This item has carried the risk as a QUALITY since T4. **Nothing above is struck or corrected —
+> every clause of it is confirmed.** What follows is the count, which nobody had taken, from the very
+> table the fix is supposed to read: `nba_calendar.games`. Live `2026-09-22`, completed season
+> **2025-26**, `game_datetime_utc AT TIME ZONE 'America/Los_Angeles'` — **named zone, never a fixed
+> offset**, which is the defect `T20-12` exists for.)*
+>
+> | | 2025-26 |
+> |---|---|
+> | game-days in the season | **167** |
+> | 🔴 **days with ≥ 1 tip before `13:15` PT** | **38 — `22.8%` of the season** |
+> | 🔴 **games tipping before the cutoff** | **75 of `1,238` — `6.06%`** |
+> | 🔴 **average share of that day's slate already tipped when `P3` fires** | **`28.1%`** |
+> | earliest tip of the season | **`09:00` PT** *(= noon ET, exactly as this item predicts)* |
+>
+> ### ✅ **AND THEY ARE CONCENTRATED — WHICH IS THE GOOD NEWS, BECAUSE IT MAKES THE RISK RULE-SHAPED**
+>
+> | day | early games | days | earliest |
+> |---|---|---|---|
+> | **Sunday** | **46** | **22** | `09:00` |
+> | **Saturday** | **16** | **10** | `09:00` |
+> | Monday | 6 | 3 | `10:00` |
+> | Wednesday | 4 | 1 | `10:00` |
+> | Thursday | 3 | 2 | `09:00` |
+> | ✅ **Tuesday** | **0** | 0 | — |
+> | ✅ **Friday** | **0** | 0 | — |
+>
+> ⇒ **Weekends carry `62` of the `75` early games (`82.7%`) and `32` of the `38` days (`84.2%`).**
+> **The six non-weekend days are the holidays this item names**: **`2025-12-25`** *(Christmas — 2
+> games, first `09:00`)* · **`2025-12-31`** *(4, `10:00`)* · **`2026-01-15`** *(1, `11:00`)* ·
+> **`2026-01-19`** *(MLK Day — 3, `10:00`)* · **`2026-01-26`** *(2, `10:30`)* · **`2026-02-02`**
+> *(1, `12:00`)*.
+> ⇒ 🔑🔑 ***"Christmas, MLK Day, and most weekend national-TV windows" was written from design
+> knowledge and it survives contact with two seasons of schedule data without a single amendment.
+> What it understates is the FREQUENCY: this is not an edge case, it is most Sundays.***
+>
+> ⚠⚠ **WHAT THE NUMBER CHANGES FOR THE OWNER.** *The fix `min(1:15 PM PT, earliest_tip − 2h)` was
+> already specified and already cheap. **The count moves it from "correctness tidy-up" to "one day in
+> five."*** 🔴 *And the failure is **SILENT**: on an affected day `P3` certifies **green** — its five
+> checks ask for scored legs, non-null confidence, score in range, a loaded model and an archived
+> board, **and every one of those is satisfied by a slate that already tipped**. Nothing in the
+> pipeline notices.* 📌 **Threshold note**: *the count uses `13:15` PT, the stated cutoff; `P3`'s
+> shell guard actually refuses only before `13:00` PT, and no 2025-26 game tipped in that fifteen-minute
+> window, so both thresholds give the same `75`.*
+> 📌 **Context: `NBA_RECIPE.md` `STEP 12 — THE GAME-DAY TIMELINE`, row 5 · `§T20.95` for the mirror
+> question (the LATEST tip, which bounds `P2`'s grading step and closes green).**
+
 ### DESIGN DRIFT · the pre-flight check became a post-flight audit
 **⚠ CORRECTED 2026-09-20 (T6 pass 5) — this entry was half wrong. There are TWO checks:**
 
