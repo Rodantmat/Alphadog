@@ -630,8 +630,21 @@ taxonomy: NBA has no opposing-role prop family, so one `nba_stats` replaces MLB'
 | Surface | Form | Risk |
 |---|---|---|
 | **P1 cron `0 19 * * 1`** | UTC | **drifts an hour across DST** — documented as *"harmless, because nothing here is cutoff-sensitive"* ✅ |
-| **P2 cron 01:00 PT** | UTC in the workflow | **drifts an hour** — and P2's margin is already **2 hours tighter** than the lag research endorsed |
-| **P3 cron 1:15 PM PT** | UTC in the workflow | **drifts an hour** — against a cutoff that IS time-sensitive |
+| ~~**P2 cron 01:00 PT**~~ **P2 — NO CRON** | `workflow_dispatch:` only | 🔴 **the DST risk is MOOT and the real risk is that it never fires** |
+| ~~**P3 cron 1:15 PM PT**~~ **P3 — NO CRON** | `workflow_dispatch:` only | 🔴🔴 **the DST risk is MOOT and the real risk is that it never fires — P3 is the pipeline that runs EVERY GAME DAY** |
+
+> ### 🔴🔴🔴 **`[LIVE-AUDIT]` CORRECTED 2026-09-22 (§T20.31) — TWO ROWS OF THIS TABLE ANALYSE THE DST DRIFT OF CRONS THAT DO NOT EXIST**
+> *Read off the repo (rule 21), not from prose:* **`nba-p2-overnight-heavy.yml` and
+> `nba-p3-afternoon-light.yml` each carry exactly ONE `on:` trigger — `workflow_dispatch:` — and NO
+> `schedule:` block.** ✅ **`nba-p1-weekly-static.yml` DOES carry `- cron: '0 19 * * 1'`** *(Mondays
+> 19:00 UTC = 12:00 PT)* **and `nba-referees.yml` carries `- cron: '30 15 * * *'`** — *so the probe
+> finds crons where crons exist; the P2/P3 absence is real, not instrument failure (rule 22).*
+> ✅✅ **THE REST OF THE CORPUS HAD THIS RIGHT ALL ALONG** — `NBA_SYSTEM_DESIGN.md` §1288/§1293 and
+> `NBA_MASTER_SUMMARY.md` (three separate entries) all state ***"P2 and P3 still have no cron"***.
+> ⇒ ***This table is the outlier, and it is the most dangerous shape of outlier: it does not deny the
+> absence, it silently PRESUPPOSES the presence by analysing a second-order property of it.*** 🔑 **A
+> reader auditing DST exposure here would conclude P3 is scheduled and merely drifting.**
+> ⚠ **Rows corrected above; the DST analysis for P1 stands unchanged and is correct.**
 | **`nba_asof.py` — `PHASE1_CUTOFF_LOCAL = "16:00"`** | **a LOCAL time string**, not an offset | ✅ **the correct form** |
 | The injury-report archive | *"the season crosses DST"* — already recorded as a caveat on the hourly backfill | 🔴🔴 **MEASURED 2026-09-21 (§T11.4c) — the caveat was noted and the code does the wrong thing: every `snapshot_ts` in all 14 month-shards, both seasons, carries a HARDCODED `-05:00`.** *No other offset exists in the data.* **The season opens and closes inside EDT (−04:00), so the opening fortnight and the closing month are stamped an hour late** — ***this is precisely the "fixed offset" the row below names as wrong.*** Full entry in `NBA_OPEN_ITEMS.md` |
 
