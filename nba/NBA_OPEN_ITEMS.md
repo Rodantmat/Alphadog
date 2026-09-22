@@ -12943,6 +12943,50 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > prescribed fix applies)* and `§T15.3` · `§T15.4` · `§T15.4b` · `§T15.4d` *(bare parent ids whose
 > level exists only as lettered children; **two were written by §T20.21 itself and are already
 > corrected on ledger row 15**)*.
+
+> ## ✅✅✅ **STATUS `2026-09-22` (T20 pass 86, §T20.91) — RE-DERIVED FROM SOURCE: THE GENUINE DANGLING COUNT IS `1`, AND IT IS NOW REPAIRED. CLASS E IS `0`.**
+> *(**The list above is the finding as RECORDED and is not struck** — rule 40's second half. What
+> follows is what each id turned out to be when opened against its target, `2026-09-22T21:01:04Z`,
+> tree `6061af078aa9ce6c24171a41746fb0b15a044563`, instrument `scratchpad/t20/refaudit3.py` re-run
+> unchanged.)*
+>
+> | id | recorded verdict | **verdict on re-derivation** |
+> |---|---|---|
+> | `§0.9d.1` | 🔴 dangling | ✅✅ **FALSE POSITIVE — the heading EXISTS**, `NBA_MULTIPLIERS.md:770`, and is correctly namespaced. **It is inside a BLOCKQUOTE**, so no matcher this sweep has built ever saw it. |
+> | `§6.0` *(not in the recorded list)* | — | ✅✅ **FALSE POSITIVE, same cause** — `NBA_MULTIPLIERS.md:1295`, blockquoted. |
+> | `§4c.1` | 🔴 *"invented at citation time"* | ✅ **RESOLVES** — `NBA_SYSTEM_ARCHITECTURE.md` §4c, child heading `### 1. Adopt existing correct data rather than blindly re-fetching`, **which is what the citing line calls it** *("the 'don't re-fetch' rule")*. |
+> | `§4c.4` | 🔴 same | ✅ **RESOLVES** — §4c `### 4. A shared helper can carry its OWN hidden internal cap`; the citing line says *"the 'hidden internal cap' of §4c.4"*. **Verbatim match.** |
+> | `§0d.1` | 🔴 same | ✅ **RESOLVES** — `NBA_WORKERS.md` §0d `### 1. One physical file can serve MANY unrelated logical roles`; the citing line says *"NBA has multi-role workers already"*. |
+> | `§4k.7` | 🔴 same | ⚠ **CLASS B, not E** — `§4k` is a heading in **`NBA_ARCHITECTURE_BLUEPRINT.md:189`, outside the twelve**, and this item's own class B already holds `§4k`. *A sub-point of an out-of-scope section is out of scope.* |
+> | `§0a-T18-C` | 🔴 same | ⚠ **CLASS C** — its only non-audit reference is `NBA_MASTER_SUMMARY.md:25443`, which cites it **to say it was authored in error and fixed**. *Cited only to be negated — this item's own class C.* |
+> | `§T15.3` `§T15.4` `§T15.4b` `§T15.4d` | 🔴 dangling | 🔑 **PRIOR, already settled — `§T20.68` (T20 pass 63) measured the same four over THE THIRTY**, named them with `§T16.5`/`§T17.5` as *"the six"*, and explained them: *"all 27 non-canonical anchors come from T15 (16) · T16 (5) · T17 (5) · T18 (1) — the four transcripts closed at the SHORTEST pass counts."* |
+> | 🔴 `§8a` *(not in the recorded list)* | — | 🔴 **THE ONE GENUINE DANGLING POINTER — and it is now REPAIRED.** `NBA_SYSTEM_ARCHITECTURE.md` has `8` · `8b` · `8b-i` · `8b-ii` · `8c` · `8d`; **`8a` is the only gap in the series.** Retargeted above to the sections that actually hold its four lessons. |
+>
+> 🔑🔑 **THE TWO CAUSES, AND NEITHER IS "POINTERS WITHOUT TARGETS":**
+> **① 🔴 BLOCKQUOTED HEADINGS — A SIXTH MATCHER BLIND SPOT, UNFOUND BY `narrow`, `wide v2` OR `v3`.**
+> Every matcher tests `line.startswith('#')`; **a heading written `> ### 0.9d.1 …` fails that test.**
+> ▶ **Censused live: `145` blockquoted heading lines across the twelve, declaring `86` distinct
+> ids** — `NBA_OPEN_ITEMS` 70 · `NBA_MASTER_SUMMARY` 41 · `NBA_DATABASE` 9 · `NBA_MULTIPLIERS` 9 ·
+> `NBA_SYSTEM_ARCHITECTURE` 5 · `NBA_SYSTEM_DESIGN` 3 · `NBA_GOBLIN_DEMON` 3 · `NBA_BASELINE_CALIBRATION` 2 ·
+> `NBA_RECIPE` 1 · `NBA_WORKERS` 1 · `NBA_FINAL_SCORING_CALIBRATION` 1.
+> **② 🔑 `§X.n` IS A WORKING CONVENTION, NOT AN INVENTION.** *"Section X, numbered child item n"* —
+> and it resolves on the first try, by title, every time it was tested. **The child headings are
+> written `### 1.`, `### 4.` with no parent prefix, so the matcher cannot connect them.**
+> ▶ **Censused live: `56` bare numbered child headings under a lettered or numbered parent** —
+> `NBA_SYSTEM_ARCHITECTURE` 23 · `NBA_FINAL_SCORING_CALIBRATION` 12 · `NBA_WORKERS` 7 ·
+> `NBA_BASELINE_CALIBRATION` 7 · `NBA_DATABASE` 4 · `NBA_MASTER_SUMMARY` 3.
+>
+> 🔴🔴 **THE REMEDY FLIPS, AND THIS IS THE OWNER-FACING CHANGE.** This item prescribed *"give the
+> sub-findings headings, or rewrite the pointers."* ***Rewriting the pointers would have destroyed a
+> citation convention that works*** — the pointers were right and the instrument was wrong.
+> ⚠ 🔴 **OWNER DECISION — two mechanical options, neither urgent, both cheap**: **(a)** namespace the
+> `56` child headings *(`### 1.` under `## 4c.` becomes `### 4c.1.`)*, which makes every `§X.n`
+> citation resolve corpus-wide and needs no pointer touched; or **(b)** leave them and record `§X.n`
+> as a documented convention, teaching any future matcher both it and the blockquote form.
+> ⇒ ✅✅ **TRUE POINTER-INTEGRITY RATE, RE-DERIVED: `1` broken reference of `5,164` = `0.019%` —
+> `99.98%` resolve.** *(The recorded rate was `11` of `3,842` = `0.286%`. **The corpus grew by 1,322
+> references since and its integrity improved by an order of magnitude**, because the earlier figure
+> was measuring the instrument.)* ✅ **This item is now EMPTY of defects.**
 > ⚠ **CONCENTRATED, and the concentration sharpens once the classes are stripped:
 > `NBA_SYSTEM_ARCHITECTURE.md` is 4.4× the corpus rate on the raw residue and **14.0×** on the true
 > one; 7 of the twelve are at zero.** 🔑🔑 ***`NBA_OPEN_ITEMS` ranks 3rd on the raw measure and has
