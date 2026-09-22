@@ -38101,6 +38101,174 @@ opening day" — and this one does neither: it needs no trigger, produces no out
 been shipping this way.** ⚠⚠ ***A `🔴🔴🔴` heading is a claim about how hard something was to see, not
 about how urgent it is, and letting the first inflate the second is how a brief stops ranking.***
 
+---
+
+# §T20.114 — T20 PASS 109: 🔴🔴🔴 **THE CLASS IS REAL — `baseline_ladder_runs.factor_fits` SHIPS *ONE COMPONENT BUILD'S* FITS AS THE SLATE'S, AND THREE DOCUMENTS SAY THE OPPOSITE IN SO MANY WORDS**
+
+*Pass 109, 2026-09-22. Pre-registered as **"GENERALISE `§T20.113`: WHERE ELSE DOES THE CORPUS SPECIFY
+THE FITTER AND NEVER THE SHIPPER? ENUMERATE EVERY NAMED QUANTITY COMPUTED IN TWO PLACES ACROSS THE
+CALLED-SCRIPT SET."** Clause (vi) allowed a clean negative to close the class. **It did not fire.***
+
+## ① CLAUSE (ii) — THE POPULATION, RE-DERIVED FROM SOURCE, AND IT CORRECTS THE INHERITED COUNT
+
+**Command, run `2026-09-22T23:17:37Z` against `main`:**
+`grep -hoE 'python +nba/[A-Za-z0-9_/]+\.py' .github/workflows/nba-p{1,2,3}-*.yml | sed 's/python *//' | sort -u`
+⇒ **40 scripts**, matching `§T20.99`'s corrected figure. ✅ *The subdirectory members that `§T20.99`'s
+first enumeration missed — `nba/baseline/build_baseline_ladder.py` and its two siblings — are
+present.*
+
+🔴 **BUT THE SECOND PROBE — `grep -nE 'python3|python +-|python -m'` — FOUND WHAT THE FIRST COULD
+NOT: THREE INLINE `python - <<'EOF'` HEREDOCS INSIDE THE PIPELINE YAMLs.** `nba-p2:144` ·
+`nba-p2:214` · `nba-p3:215`. **Two of them are merely the callers of the two DB functions already
+counted** *(`nba_score.grade_paper_picks()` and `nba_score.log_paper_picks()`)*. 🔴 **The third —
+`nba-p2:214`, *"Merge per-pair ladders"* — is BUSINESS LOGIC THAT EXISTS ONLY INSIDE A YAML FILE,
+counted nowhere, tested nowhere, and it is the subject of everything below.**
+
+⇒ **The executable surface is `40` scripts + `1` inline merge + `2` DB functions = `43`, not `42`.**
+*Corrected here; `§T20.99`'s `42` is superseded on this one point and correct on the rest.*
+
+## ② WHAT THE MERGE DOES — AND THE ONE LINE THE WHOLE FINDING TURNS ON
+
+**`build_baseline_ladder.py` is written to run ONE PROP PAIR PER INVOCATION** *(the YAML says so at
+`nba-p2:174–176`: "calling it once would silently produce only the default pair")*. **`P2` invokes it
+EIGHT times** — `points,rebounds` · `assists,threes_made` · `fga,fg3a` · `ftm,fta` · `fgm,dreb` ·
+`steals,blocks` · `turnovers,personal_fouls` · `oreb` — **then THREE more times with
+`BT_SAVE_COMPONENTS=1`** *(`points,rebounds` · **`assists,steals`** · `blocks,turnovers`)*, **then
+combos, then periods.** Each invocation writes its own `nba_baseline_ladder_{asof}_{tag}.json` with
+its own `meta`, and **`build_baseline_ladder.py:142` puts `"factor_fits": FACTOR_FITS` in that
+`meta`** — where `FACTOR_FITS[prop]` is populated per prop at
+`backtest/classification_ladder_v12.py:492`.
+
+**The merge, `nba-p2-overnight-heavy.yml:214–231`:**
+
+```python
+for f in sorted(glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json")):
+    d = json.load(open(f)); rows += d["ladder"]; meta = meta or d["meta"]
+...
+meta["rows"] = len(rows)
+meta["props"] = sorted({r["prop"] for r in rows})
+meta["players"] = len({r["player_id"] for r in rows})
+```
+
+🔑🔑 **`meta = meta or d["meta"]` — FIRST FILE WINS, and the file list is `sorted()`, so "first"
+means ALPHABETICALLY FIRST.** ⚠⚠ **Exactly three fields are then recomputed across all pairs:
+`rows`, `props`, `players`. EVERY OTHER FIELD IN THE MERGED `meta` IS ONE ARBITRARY INVOCATION'S** —
+including **`factor_fits`**, **`role_minutes_multiplier`**, `history_seasons`, `current_season` and
+`slate_games`. **`load_baseline_ladder.py:84–91` then writes that `meta` into
+`nba_score.baseline_ladder_runs` as the run's audit record.**
+
+## ③ VERIFIED LIVE — AND THE WINNER IS NOT EVEN ONE OF THE EIGHT PRODUCTION PAIRS
+
+**`SELECT` on `nba_score.baseline_ladder_runs`, `2026-09-22`. All three rows in the table:**
+
+| `asof` | `rows` | `players` | `props` | **`factor_fits` keys** |
+|---|---|---|---|---|
+| `2026-03-15` | 50,597 | 161 | **18** | **`assists`, `season_phase`, `steals`** |
+| `2026-01-15` | 90,861 | 227 | **22** | **`assists`, `season_phase`, `steals`** |
+| `2025-11-29` | 64,779 | 184 | **22** | **`assists`, `season_phase`, `steals`** |
+
+🔴🔴🔴 **No production pair produces `assists` + `steals`.** *`assists` ships with `threes_made`;
+`steals` ships with `blocks`.* **The ONLY invocation that fits both is the `BT_SAVE_COMPONENTS=1`
+DIAGNOSTIC build — `assists,steals` — whose purpose is to pickle components for the combos builder,
+and whose artefact sorts before `..._assists_threes_made.json` alphabetically.** ⚠ *Identified by
+elimination from the pair list, which is exhaustive and read from source above.*
+
+⇒ ***The slate's audit record carries the fits of `2` of its `22` props — `9.1%` — from a build that
+was never meant to be the slate's.*** **The three columns beside it are correct.**
+
+## ④ THREE DOCUMENTS STATE THE OPPOSITE, IN WORDS, AND THEY ARE WRONG
+
+| where | what it says |
+|---|---|
+| **`NBA_MASTER_SUMMARY.md:24698`** | *"**`factor_fits` and `role_minutes_multiplier` store the values FITTED IN THAT RUN.** This is the 'no pasted constants' rule made auditable — **you can see what each day's run derived, and compare runs.**"* |
+| **`NBA_DATABASE.md:1611`** | *"**`factor_fits` and `role_minutes_multiplier` store the values FITTED IN THAT RUN**"* |
+| **`NBA_BASELINE_CALIBRATION.md:1722`** | *"`baseline_ladder_runs.factor_fits` / `.role_minutes_multiplier` **store what each run**…"* |
+
+🔴 **They store the values fitted in ONE of a run's thirteen-plus invocations, chosen by filename
+sort order.** ⚠⚠ **And the sentence that follows the claim — *"you can see what each day's run
+derived, and compare runs"* — is the precise use the defect defeats: the column is the same two props
+on every row, so comparing runs compares the diagnostic build to itself.**
+
+## ⑤ IT ALSO DISCHARGES *TWO* `RULE 6` PARKED ITEMS — AND CORRECTS HOW THEY WERE READ
+
+**`NBA_MASTER_SUMMARY.md:16129` and `NBA_BASELINE_CALIBRATION.md:791–795` both park the same
+observation:** *"📌 **Recorded and not explained** (rule 6): **the 2026-03-15 row's `factor_fits` are
+SHALLOWER than the other two** — its `steals` fit carries no `f_impl_opp`, and its `assists` fit
+carries neither `f_impl_opp` nor `f_impl_own`… ***The latest slate DATE holds the earliest-loaded and
+least-complete artifact.*** **Why is NOT RECORDED.**"*
+
+**Live sub-factor keys, same query:**
+
+| `asof` | `assists` fit | `steals` fit |
+|---|---|---|
+| `2026-03-15` | `f_opp_def f_pace is_b2b is_home` | `f_opp_tov f_pace is_b2b is_home` |
+| `2026-01-15` · `2025-11-29` | **`f_impl_opp f_impl_own`** `f_opp_def f_pace is_b2b is_home` | **`f_impl_opp`** `f_opp_tov f_pace is_b2b is_home` |
+
+✅ **The observation's FACTS are confirmed exactly.** 🔑 **What was never noticed is that the three
+missing keys are `f_impl_opp` and `f_impl_own` — ALL of them the IMPLIED-FROM-MARKET family, and
+NOTHING ELSE is missing.** ⇒ **The gap is not "shallower"; it is one coherent family absent, which
+points at market-odds availability at build time rather than at run quality.** ⚠ *Why that family was
+absent on that build remains **NOT RECORDED** — but the SHAPE of the gap now is, and the shape is what
+makes it answerable.*
+
+🔴🔴 **AND THE LARGER MISREADING**: **both prior notes compared the three blobs to each other and
+neither asked why a slate of 22 props has fits for `assists` and `steals` only.** ⚠⚠ ***The question
+that was never asked is the one that had the answer.***
+
+📌 **A third reading is affected**: `NBA_MASTER_SUMMARY.md:19630` treats **`is_home`** as *"a live
+factor in `baseline_ladder_runs.factor_fits`, betas ≈ 0.0246"* — **true of the `assists,steals`
+component build, and not established for the other twenty props.** *Left standing with this pointer
+rather than rewritten, because the beta itself is correctly quoted.*
+
+## ⑥ THE SAME MERGE EXISTS IN A SECOND WORKFLOW — AND THE TWO COPIES DIVERGE ON THE GUARD
+
+**`nba-baseline.yml:64–81` carries the same heredoc.** *(That is the manually-triggered baseline
+workflow — **cron OFF by the owner's decision**, per `O7`; it is not one of the three pipelines, and
+it is stated here with that caveat because it writes the artefact the loader reads.)* **Diffed line
+by line:**
+
+| | `nba-p2-overnight-heavy.yml:214` | `nba-baseline.yml:64` |
+|---|---|---|
+| **guard** | `if not meta: raise SystemExit("ABORT: no per-pair ladder files for {asof} — the builds produced nothing")` | **`if meta:`** |
+| **on an empty build** | 🔴 **FAILS LOUDLY** | 🔴🔴 **writes nothing, deletes the glob anyway, and EXITS 0** |
+
+⚠⚠ **A SWALLOWED FAILURE, and a new one** — the `SWALLOWED-FAILURE CENSUS` in
+`NBA_SYSTEM_DESIGN.md` enumerated Python `except` handlers and shell blocks; **it did not cover code
+embedded in YAML, because until clause (ii) of this pass no census knew that code was there.**
+🔑 **The two copies are the same logic maintained twice — `T20-16`'s pattern, a different instance.**
+
+## ⑦ AND A THIRD WRITER OF THE SAME TABLE
+
+`nba/alphadog-v2-nba-baseline-ladder.js:64–67` — **a Cloudflare Worker** — writes
+`nba_score.baseline_ladder_runs` too, and by a different mechanism: **`INSERT … ON CONFLICT … SET
+factor_fits=excluded.factor_fits` (UPSERT)**, against `load_baseline_ladder.py:83–84`'s **`DELETE`
+then `INSERT`**. ⚠ **One table, two writers, two semantics.** *Recorded; which one produced the three
+live rows is **NOT RECORDED** and `source_file` does not distinguish them.*
+
+## ⑧ SEVERITY — RANKED BY THE TEST, NOT BY THE HEADING *(`§T20.113`'s standing example)*
+
+✅ **`factor_fits` IS NEVER READ BACK.** Probe across `*.py`, `*.js`, `*.sql`, `*.yml`: the only
+non-writer mentions are the two `print(... if k not in ("factor_fits",))` lines that **exclude it**.
+**No scorer, no certifier and no config consumes it.** ⇒ 🔑 **This corrupts an AUDIT RECORD, not a
+score. `T20-20`, `MEDIUM/STRUCTURAL`. The brief stays at SIXTEEN.**
+
+⚠ **But it is the audit record the corpus points at as proof of the owner's own no-pasted-constants
+rule** — *"the 'no pasted constants' rule made auditable"* — **and for eleven of thirteen invocations
+it proves nothing.**
+
+▶ **`RULE 51`, run on the FINDING against the BASELINE tree as the last step:** `meta or d[` → **0**
+in the twelve, **0** in all thirty, **0** in `/tmp/t20base/nba/`. `assists_steals` → **0 / 0 / 0**.
+`Merge per-pair` → **0 in the baseline tree.** ⚠ *`factor_fits` scores **6 of 12** and
+`baseline_ladder_runs` **8 of 12** — **high name-coverage, which is precisely the `§T20.113` trap**;
+the mentions were opened and read, and three of them assert the opposite of the truth.* ✅ **NOVEL.**
+
+📌 ***The lesson, and it is the reason the class was worth generalising:*** **`§T20.113` found the
+corpus documenting a FITTER and missing a SHIPPER inside one Python file. This pass found the same
+shape one level up — the fitter is a script the corpus knows well, and the shipper is nine lines of
+Python living inside a YAML step that no enumeration had ever counted.** ⚠⚠ ***Code that is not in a
+file the sweep lists is code the sweep cannot check, and a census that counts scripts will never
+find it.***
+
 ▶ **`RULE 51` novelty check, run on the FINDING against the BASELINE tree as the last step:**
 `np.full` **0** in `/tmp/t20base/nba/*.md`; `score_board_legs` never co-occurs with
 `constant`/`hardcod`/`0.55`/`0.75` in any of the twelve; `NBA_GLOSSARY.md:318` lists `f_vol` as a
