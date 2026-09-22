@@ -746,6 +746,8 @@ timestamps. **Source: Wikipedia "List of NBA referees"** (the stats API has no r
 join. Paired with `nba/nba_names.py`.
 
 ### `nba_ref.defender_ratings` — 111,768 rows *(T16)*
+
+> 🔴🔴 **THE ROW COUNT IS EXACT AND THE TABLE IS DEAD — `166` DAYS STALE.** *Added T20 pass 78 (§T20.83), 2026-09-22, because **this document marks the table `✅ exact` at `:189` and says nothing about its age** — and a person checking the static layer reads this page.* ▶ **`SELECT max(as_of_date) FROM nba_ref.defender_ratings` ⇒ **`2026-04-09`** — `166` days stale, re-derived live `2026-09-22T19:16Z` (§T20.74), `111,768` rows.** 🔴 **AND THE SYSTEM ALREADY DETECTS IT: P1's certifier check `defender_ratings refreshed (<= 8 days)` is **RED TODAY** — `PIPE=p1` exits 1 on its first check.** ⚠ ***What is missing is not the detector; it is anyone running it*** *(`nba_control.job_runs` and `worker_run_log` are both EMPTY — §T20.31).* 📌 **`✅ exact` records that a COUNT was checked, not that the TABLE is current — §T20.14's lesson, and the reason this note sits here rather than only on the brief.** ▶ **Full item: the frozen-static-layer entry in `NBA_OPEN_ITEMS.md` (a tenth table, §T20.51); re-derived and HELD at §T20.74.** ⚠ *Documented, not fixed (rule 1).*
 Two-way ridge `Y = mu + alpha(off) + beta(def)`, 5 channels, reliability-shrunk, weekly as-of, both
 seasons. Has `as_of_date`.
 
