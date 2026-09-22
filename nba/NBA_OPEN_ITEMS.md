@@ -226,6 +226,50 @@ the D1 referee LIVE capture · the live board archiver to Postgres · the scenar
 freshness gates.**
 🔑 ***"That's construction rather than mining; nothing else stands in front of it."***
 
+> ## ✅✅ **THE "OPEN — BUILD" LIST AUDITED AGAINST THE CODE AND THE DATABASE — 2026-09-22 (T14 pass 2, §T14.3d)**
+> ⚠ **Rule 31: a design is what the code does.** **Repo listing pinned 2026-09-22T09:05:50Z; live
+> figures 09:06:02Z.** ***Every one of the seven has a builder. Three have landed, three have not,
+> and one landed in the wrong SHAPE.***
+>
+> | item | builder | landed? |
+> |---|---|---|
+> | **A5 projected-lineup proxy** | **`nba/fit_a5_projected_lineups.py`** | ✅ **built, tested, REJECTED** — *consistent with the record* |
+> | **D1 referee live capture** | **`nba/scrape_referee_assignments.py`** + **`.github/workflows/nba-referees.yml`** | 🔴🔴 **`nba_ref.referee_assignments` = 0 ROWS** |
+> | **scenario precompute** | **`nba/build_scenario_calibration.py`** | ✅ **`nba_score.scenario_realised` 1,942 rows · `nba_score.scenario_calibration` 29 rows** |
+> | **freshness gates** | **`nba/gate_remaining_factors.py`** *(a gate; whether it is THE freshness gate is NOT ESTABLISHED)* | ⚠ **unverified** |
+> | **live board archiver** | **`nba/archive_live_boards.py`** + **`.github/workflows/nba-board-archive.yml`** | 🔴 **ran — but see below** |
+> | day-by-day factor tables · M1 wiring | — | ⏳ **not audited this pass** |
+>
+> ### 🔴🔴 **THE REFEREE CAPTURE IS THE "BUILDER EXISTS, TABLE DOESN'T" SHAPE AGAIN — third instance**
+> **The scraper exists, the workflow exists, and `nba_ref.referee_assignments` holds ZERO rows** —
+> ***twelve days after T14 listed the capture as open, and unchanged from §T10.26's earlier
+> measurement.*** 🔑 **This is the same shape as `book_curves` / `book_calibration` / `market_fair`
+> (§T13.5c) and the season-tables writers (T11's standing headline).** ⚠⚠ **And it matters more than
+> the others**: **D1 is class (b) — *the value only exists going forward*** — so ***every day the
+> capture does not run is a day of referee data that can never be recovered.***
+>
+> ### 🔴🔴 **THE LIVE BOARD ARCHIVER HAS RUN — AND IT WRITES THE WRONG SHAPE**
+> **T14's requirement was explicit**: *"**the WINDOW and CLOSE snapshots must land in
+> `board_snapshots`, THE SAME SHAPE AS THE HISTORICAL PULL**."*
+> **What is actually there, for `game_date` beyond the historical backfill's 2026-04-12 end**:
+> | bookmaker | rows | dates | date | `snapshot_label` |
+> |---|---|---|---|---|
+> | underdog | 5,281 | 1 | 2026-09-12 | 🔴 **`routine`** |
+> | fliff | 1,394 | 1 | 2026-09-13 | 🔴 **`routine`** |
+> | sleeper | 1,276 | 1 | 2026-09-12 | 🔴 **`routine`** |
+> | 🔴 **prizepicks** | — | — | — | ***no rows at all*** |
+> | 🔴 **betr** | — | — | — | ***no rows at all*** |
+>
+> 🔑🔑 **THREE DEFECTS, and the third is the one that defeats the purpose**: **① the PRIMARY board is
+> absent** *(consistent with `NBA_SYSTEM_ARCHITECTURE.md` §0f-1: `boards/` holds no PrizePicks
+> file)*; **② Betr is absent** *(consistent with its pull not having written since 2026-09-10)*;
+> **③ the label is `routine`, not `window` / `close`** — ***so the live rows do NOT match the
+> historical pull's shape and cannot be joined to the two seasons as like-for-like***, **which is
+> the entire point of the parity requirement.**
+> ✅ **So T14's item is CONFIRMED and SHARPENED**: **it is not "the archiver does not exist" — it is
+> *the archiver exists, has fired on two days in ten, covers three of five apps, and writes a third
+> label*.** ⚠ **Documented, not acted on** *(rule 1)*.
+
 ### 📌 OPEN — SMALL
 **`oreb` retune · periods missing ~11 dates (the quarter files) · `dunks` (needs play-by-play — the
 owner's call) · three coach dates at low confidence · `nba_teams_current.json` is EMPTY · the Sleeper
