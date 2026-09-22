@@ -28538,7 +28538,7 @@ the trap §T20.25 walked into deliberately and named.** *`props` was counted fro
 
 | claim | where | base date | stated | **live 2026-09-22** |
 |---|---|---|---|---|
-| *"**19 days stale**"* | `NBA_OPEN_ITEMS.md:4463` | 2026-09-02T07:58Z | 19 | 🔴 **20** |
+| *"**19 days stale**"* | `NBA_OPEN_ITEMS.md` — the `player_impact_rating` `[LIVE-AUDIT]` block *(search: `last_write 2026-09-02T07:58Z`)* | 2026-09-02T07:58Z | 19 | 🔴 **20** |
 | *"not touched in the **19 days** since, though the weekly cron should have fired **twice**"* | `NBA_MASTER_SUMMARY.md:1780` | 2026-09-02 | 19 · twice | 🔴 **20 · THREE times** |
 | *"the snapshot is **17 days stale**"* | `NBA_OPEN_ITEMS.md:11651` | 2026-09-02 19:47 UTC | 17 | 🔴 **20** |
 
