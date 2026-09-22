@@ -37758,3 +37758,86 @@ figure to test rather than discover)* · **`§T20.56`** *(**PRIOR** — that `T1
 answerable.** ⚠⚠ ***It sat undiagnosed through eighteen transcripts and a hundred and four passes —
 and the data that settles it has been sitting in a boolean column on twelve million rows the whole
 time.***
+
+---
+
+# §T20.110 — T20 PASS 105: 🔴 **RULE 51 KILLED THE WHOLE PASS — `E` WAS NEVER UNDIAGNOSED. IT WAS UNROUTED, WHICH IS THE THIRD TIME THIS SWEEP HAS MISTAKEN ONE FOR THE OTHER** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads only. The DARKO page
+was NOT fetched** *(the pre-registration forbade it: "the charter's read-only rule covers the outside
+world too")* — **everything below comes from a captured page already committed to the repo.**
+
+## 1. WHAT THE PASS MEASURED, AND IT WAS RIGHT
+
+*The claim under test, from `§T20.56`:* ***"THE DARKO SCRAPER'S FAILURE EVIDENCE IS THE WRONG 20 KB OF
+THE PAGE."*** ▶ **`nba/scrape_nba_darko.py`** searches the whole document —
+`re.search(r'players:\[(.*?)\],seasons:', html, re.S)` — **and on failure preserves `html[:20000]`, a
+fixed prefix** *(`:86` and `:90`)*. ▶ **Measured against `nba/data/nba_darko_debug_html_snippet.txt`,
+`432,417` characters, in the repo:**
+
+| marker | first occurrence |
+|---|---|
+| `__sveltekit` | 202,618 |
+| `kit.start` | 202,937 |
+| 🔴 **`players:[`** *(the regex's opening)* | **203,026** |
+| `],seasons:` *(its closing)* | **432,097** |
+
+⇒ **The payload spans `229,071` characters beginning ten times deeper than the cap reaches — so *no*
+`20,000`-character window can contain it.** ✅ **The claim is correct.**
+
+## 2. 🔴🔴 **AND EVERY NUMBER OF IT WAS ALREADY ON FILE, IN THE BASELINE TREE**
+
+**`NBA_MASTER_SUMMARY.md`, before this sweep began:**
+> ***"3. The payload offset, measured exactly: `players:[` begins at character `203,026` of a
+> `432,417`-character page. The live scraper's debug cap is `20,000`. This is the hard number behind
+> the season-critical item — the cap misses the data by a factor of ten."***
+
+*And `:1809`: the committed artefact is* ***"already useless. VERIFIED"***; *`NBA_OPEN_ITEMS.md:4631`:*
+***"VERIFIED on live `main`"***; *its size is recorded in four separate places.*
+⇒ ***My measurement reproduced a prior to the character. The pass produced NO new finding about
+DARKO, and says so.*** 🔑 **This is the seventh time `RULE 51` has stopped a pass at the last step,
+and the first time it has stopped ALL of one.**
+
+## 3. ✅ **WHAT IS ACTUALLY TRUE, AND IT IS ABOUT THE BRIEF**
+
+***`E` is one of the most thoroughly diagnosed items in the corpus, and it was diagnosed before this
+sweep started.*** *`§T20.56` listed it correctly among five season-critical items **missing from the
+brief** — but the ranked string then carried `E` as though it were an open QUESTION, `§T20.108` named
+it, and this pass went to answer it.* **It did not need answering. It needed its answer surfaced.**
+
+> ## 🔑🔑 **THIRD INSTANCE OF ONE SHAPE, ON THREE DIFFERENT SURFACES**
+> **`§T20.90`** — *a finding nothing points at* **(`T20-1`'s orphans)** · **`§T20.108`** — *a ranking
+> whose entries are unexplained letters* · **`§T20.110`** — *an item carried as open whose answer is
+> already written.* ⇒ ***In every one, the information existed and the ROUTE did not. This sweep has
+> now spent three passes discovering that its corpus's failure mode is navigational, not
+> evidential.***
+
+✅ **DELIVERED**: the brief's `E` row now **points at the existing diagnosis, quotes its measurement,
+carries today's re-derivation as a date-stamp, and states what `E` actually needs** — ***a DECISION
+about the slice (anchor the window on the marker, or raise the cap), not a diagnosis.*** **Nothing was
+republished.**
+
+## 4. ✅ CLAUSE (i) — `RULE 52`, ATTRIBUTED AND IDENTIFIED
+
+**`2026-09-22T22:56Z`: `650 · 1 · 470 · 467`. The high band moved `649 → 650`.**
+▶ **Against the pre-pass tree this pass's own writes moved NOTHING** *(`650 → 650`)*; **the `+1`
+belonged to `§T20.109`, pass 104's own closing entry**, and the flipping member is **segment `401`,
+`0.4500 → 0.4500`** — *a tool-call blob, already known and pinned since `§T20.99`.* **NOISE.**
+📌 *The high band's three pinned members are now observed CYCLING: `292` in at `§T20.95` and out at
+`§T20.101`; `401` in at `§T20.99` and again at `§T20.109`; `873` in at `§T20.108`.*
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: 🔴🔴 **`NBA_MASTER_SUMMARY.md:1738-1739`, `:1809`,
+`NBA_OPEN_ITEMS.md:4631`, `NBA_GLOSSARY.md:548`** *(**PRIOR** — the entire diagnosis, found by the
+probe **after the measurement was taken**; **the pass claims none of it**)* · **`§T20.56`** *(**PRIOR**
+— that `E` was missing from the brief, which was true and is not the same as missing a diagnosis)* ·
+**`§T20.108`** *(**PRIOR** — the letter mapping)*. ⚠ **A side-observation about `P1` committing
+`nba/data/*.json` while `nba-scrape.yml` lists the `.txt` explicitly was DROPPED rather than
+published** — *in a pass whose whole lesson is "this was already known", adding a half-checked
+observation would have been precisely the wrong move.*
+
+📌 ***The lesson:*** **a pass that finds nothing is only wasted if it says nothing.** ⚠⚠ ***This one
+cost a hundred lines of measurement to establish that the measurement already existed — and the
+finding it did produce, that the corpus's failures are routes rather than facts, is worth more than
+the diagnosis it went looking for.***
