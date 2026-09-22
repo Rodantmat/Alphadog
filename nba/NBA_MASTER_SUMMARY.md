@@ -27991,3 +27991,134 @@ it published three findings from an instrument whose validity it had tested only
 to hold.** ***An auditor auditing the auditor is still one instrument. What caught it was running a
 SECOND, differently-shaped instrument over the SAME population and taking the set difference
 seriously — which is rule 11, applied to the sweep instead of to the system.***
+
+---
+
+# §T20.22 — PASS 17: *THE WHOLE REFERENCE SURFACE — 3,842 POINTERS, AND ELEVEN OF THEM DANGLE*
+
+*(T20 pass 17, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass, as the resume note requires — T19 SEG 60/61 and T20 SEG 597.**
+**SEG 1120's form rule applied throughout: source, date, quotation.**
+
+## 1. 📐 THE POPULATION, RE-COUNTED FROM SOURCE — *not* T18-16's 644
+
+⚠ **T18-16's figure of "644 `§`-references" was NOT reused** *(rule 30: a population is re-counted
+from its source and pinned)*. **Re-enumerated 2026-09-22T14:16:06Z over the twelve** *(all twelve
+present and checked, `nba/*.md`)*:
+
+> **`3,842` `§`-references · `904` distinct ids · 12 documents.**
+> *(`re.findall(r'§[0-9A-Za-z][0-9A-Za-z.\-]*', line)` on every NON-heading line; heading lines are
+> definitions, not references. Script: `scratchpad/t20/refaudit3.py`.)*
+
+📌 ***That is 6× T18-16's 644, and the difference is a POPULATION difference, not a defect in either
+count***: **T18-16 counted references *to transcript sections*; this counts every `§`-token,
+including the document-native ids (`§0z-T16`, `§4k`, `§T18-16`) that §T20.21 showed are the dominant
+scheme from T15 onward.** ✅ **T18-16 is not contradicted; it is superseded in scope.**
+
+## 2. 🔴🔴 THREE MATCHERS, AND MY OWN PASS-16 "WIDE" MATCHER WAS ALSO BROKEN
+
+| matcher | what it anchors on | resolves | **dangles** |
+|---|---|---|---|
+| **narrow** *(the sweep's historical matcher, and T18-16's)* | id immediately after the `#`s | 440 ids / 2,098 refs | **464 ids / 1,744 refs** |
+| **wide v2** *(§T20.21's repair — `§id` anywhere on a heading line)* | adds sigil-bearing ids mid-line | 549 / 2,790 | **355 / 1,052** |
+| 🔑 **v3** *(this pass)* | **+ emoji/emphasis-tolerant prefix, + BARE `T<n>.<m><x>` ids anywhere on a heading line** | **855 / 3,737** | ✅ **49 ids / 105 refs** |
+
+🔴 ***§T20.21 repaired the matcher and still left two-thirds of the dangling set unexplained, because
+it fixed only the sigil problem.*** **v3 found the other two:**
+**(a) 🔑 AN EMOJI BEFORE THE ID DEFEATS A PREFIX ANCHOR.** *Hundreds of sub-entry headings are
+written `#### 🔑 T9.40b — …`, `#### 🔴🔴 T10.18b — …`, `#### 🔴 T8.24a — …`. The id is at the head
+of the heading's TEXT but not at the head of the LINE.* **`§T9.40b` alone is cited 18 times and
+scored as dangling by every matcher this sweep has used until now.**
+**(b) 🔑 THE DEFINING HEADING OFTEN OMITS THE SIGIL WHILE EVERY REFERENCE CARRIES IT** — *the exact
+asymmetry T18-16 recorded from the other side: "only 138 of 1,498 headings carry the `§` sigil."*
+✅ **306 distinct ids are resolved by v3 that wide v2 could not see.**
+
+## 3. ✅✅ CLAUSE (ii) — THE OLD INSTRUMENT WAS PURELY CONSERVATIVE, AND THAT IS THE RESULT
+
+**Pre-registered: *the wide matcher reveals AT LEAST ONE reference the narrow matcher scored as
+RESOLVING that in fact dangles.*** ❌ **MISS — and the pre-registration named this outcome and what
+it would mean.** **Tested directly: `narrow_resolved ⊆ v3_resolved` is `True`, with the difference
+set EMPTY** *(0 ids resolved by narrow and not by v3)*.
+
+⇒ 🔑🔑 ***Every matcher this sweep has ever used produces FALSE POSITIVES ONLY. No published pointer
+claim that said "this reference resolves" was ever wrong; the errors run one way, toward crying
+wolf.*** **This is a materially better risk profile than §T20.21 assumed when it wrote the clause,
+and it retroactively bounds the damage of the T15 convention split: the split cost the sweep
+CONFIDENCE, never CORRECTNESS, in the resolving direction.**
+⚠ *Stated with its limit: this is proven for the three matchers on file, over this population, at
+this timestamp. It is not a proof that a prefix matcher cannot mis-resolve in principle.*
+
+## 4. 🔬 THE 49 DANGLING IDS, OPENED ONE BY ONE — FIVE CLASSES, AND ONLY ONE IS A DEFECT
+
+*(every id below opened against its citing line before it was classified — **RULE 48**)*
+
+| class | n ids | what it is | verdict |
+|---|---|---|---|
+| **A · LINE-NUMBER CITATIONS IN A SECOND GRAMMAR** | **20** | `` `NBA_GOBLIN_DEMON` §371, §705–711, §795 ``·`` `NBA_GLOSSARY` §320 ``·`` `NBA_DATABASE.md` §91 ``·`` `NBA_ARCHITECTURE_BLUEPRINT.md` §334 `` — **a file name followed by `§<line>`** | ✅ **NOT DEFECTS — a different citation grammar sharing the sigil.** 🔴 *But they are INDISTINGUISHABLE to any section matcher, and every future reference audit will re-flag all twenty.* |
+| **B · REFERENCES INTO THE THIRTY, NOT THE TWELVE** | **7** | `§4g` `§4h` `§4k` `§4l` `§4m` `§6a` `§7a` — **all seven resolve to headings in `NBA_ARCHITECTURE_BLUEPRINT.md`** | ✅ **NOT DEFECTS — cross-corpus pointers.** *Same shape as T18-16's "16 resolve only in `NBA_SWEEP_RUN_LOG.md`."* |
+| **C · DELIBERATE NEGATIVE REFERENCES** | **2** | `§T16.5` · `§T17.5` — cited **only** by §T20.21 and ledger rows 16/17 **to say they do not exist** | ✅ **CORRECT BY CONSTRUCTION.** 🔑 *A pointer audit cannot tell "broken" from "asserted absent" — a permanent floor on any such audit's precision.* |
+| **D · METAVARIABLES AND PROSE COINAGES** | **10** | `§T1.x` `§T6.x` `§T20.x` `§T2.n` `§n` `§T7.32-era` `§2-banner` … | ✅ **NOT POINTERS.** *`§T7.32-era` is 2 of T18-16's original 7 — confirmed a coinage, not a target.* |
+| 🔴 **E · GENUINELY DANGLING SECTION POINTERS** | **10** | `§0d.1` · `§0.9d.1` · `§0a-T18-C` · `§4c.1` · `§4c.4` · `§4k.7` · `§T15.3` · `§T15.4` · `§T15.4b` · `§T15.4d` | 🔴 **DEFECTS — no heading anywhere in `nba/` (all 32 files checked, not just the twelve)** |
+
+> ✅ **THE CORPUS'S TRUE POINTER-INTEGRITY RATE: 11 broken references out of 3,842 = `0.286%`.**
+> *(99.71% of every `§`-pointer in the twelve resolves.)*
+
+🔑 **Class E splits into two causes, and the second is mine:**
+**(1) `§4c.1` `§4c.4` `§4k.7` `§0d.1` `§0.9d.1` `§0a-T18-C`** — *sub-ids invented at citation time
+for sections that were never given one* **(the fix T18-16 already prescribes: "give the sub-findings
+headings, or rewrite the pointers").**
+🔴🔴 **(2) `§T15.3` `§T15.4` `§T15.4b` `§T15.4d` — BARE PARENT IDS WHOSE LEVEL EXISTS ONLY AS LETTERED
+CHILDREN.** ***Two of those four I wrote MYSELF, ten minutes before this audit ran***, restoring
+ledger row 15 in §T20.21 §0. **The restoration was right about the sections and wrong about their
+ids.** ✅ **CORRECTED IN-PASS (rule 12): row 15 now cites `§T15.3a` · `§T15.3b` · `§T15.4a` ·
+`§T15.4c` — the ids that carry headings — with the parent-level caveat stated on the row.**
+📌 ***A pass that audits pointers caught the pointers the previous pass wrote, one pass later. That
+is rule 34 working at its designed interval, for once on the sweep's own output.***
+
+## 5. ⚠ CLAUSE (iii) — CONCENTRATION, MEASURED BOTH WAYS
+
+| | raw v3 dangling *(105 refs, all five classes)* | **class E only** *(11 refs, the true defects)* |
+|---|---|---|
+| **corpus rate** | 2.73% | **0.286%** |
+| **`NBA_SYSTEM_ARCHITECTURE.md`** | **12.00%** — **4.4×** | **4.00% — 14.0×** |
+| next | `NBA_WORKERS` 7.35% · `NBA_SYSTEM_DESIGN` 6.59% · `NBA_OPEN_ITEMS` 4.87% | `NBA_WORKERS` 5.1× · `NBA_GOBLIN_DEMON` 4.7× · `NBA_SYSTEM_DESIGN` 3.8× |
+| **clean at 0.00%** | `GLOSSARY` · `RECIPE` · `BASELINE_CALIBRATION` | **7 of the 12** |
+
+✅ **HIT on both measurements, and the concentration SHARPENS as the classes are stripped away —
+`NBA_SYSTEM_ARCHITECTURE.md` goes from 4.4× to 14× the corpus rate.** 🔑 **And the raw and the true
+rankings DISAGREE below the top**: *`NBA_OPEN_ITEMS` is 3rd on the raw measure and has **zero** class-E
+defects — its 35 raw flags are almost all class A line-number citations.* ⇒ ***The unclassified rate
+would have sent a fixer to the wrong document. Classification was not presentation; it changed the
+answer.***
+
+## 6. 📋 CLAUSE SCORING *(pre-registered in `NBA_SWEEP_RUN_LOG.md` before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T14:17:38Z** |
+| **(ii)** | the wide matcher reveals **≥ 1 reference narrow scored as RESOLVING that dangles** | ❌ **MISS — `narrow ⊆ v3`, difference set EMPTY.** ✅ *The pre-registration named this outcome: the old instrument was **purely conservative**, so every published "resolves" claim is safe.* **A MISS that is the better news of the two.** |
+| **(iii)** | dangling refs **concentrated — ≥ 1 document at > 2× the corpus rate** | ✅ **HIT twice over — `NBA_SYSTEM_ARCHITECTURE.md` at 4.4× raw and 14.0× on the true residue** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — NINETEENTH consecutive run.** Working `649 · 1 · 470 · 469`;
+high band in both 635, working-only 14, baseline-only 1.
+⚠ **Rule 22 positive control, run in the regime UNDER TEST as §T20.21 demands** — the control on
+T1–T14 *(where narrow ≡ wide)* returns agreement and proves nothing; **the T15–T20 control is the
+306 ids v3 newly resolves, each of which is a heading that exists and was previously scored
+missing.** *Both run; labelled.*
+
+## 7. ⚠ VERDICT
+
+🔴 **NOT CLEAN — 10 genuinely dangling pointers found, 2 of them written by the previous pass and
+corrected here; T18-16's remaining "2 dangling" is now resolved to `§T7.32-era` being a COINAGE, so
+the item's dangling count is 7 → 2 → effectively 0, and its real content is the 10 of class E.
+CLEAN STAYS 0/3.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **§T20.21 said the cure for a bad instrument is a second instrument over the same
+population. Pass 17 ran a THIRD, and it found what the second missed — an emoji.** ***The number of
+instruments is not the point; each one encodes an assumption about the DATA's shape, and this
+corpus's shape is "an id preceded by decoration." What finally worked was not a better matcher but
+OPENING ALL 49 SURVIVORS and letting them sort themselves into classes — four of which were never
+defects at all.*** 🔑 **A residue you have not classified is not a finding. It is a to-do list with a
+percentage on it.**
