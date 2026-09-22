@@ -1840,6 +1840,7 @@ live source at `check_delta_gaps.py` lines 77–80, verified 2026-09-22)*.
 ⇒ **The season that exposed the blind spot is the one season the fix has not been demonstrated on**,
 and it is the season holding **19,611,626** scored legs. **Severity: MEDIUM** — one dispatch settles
 it. *Open item T18-12. Documented, not fixed.*
+⚠⚠ **FIGURE DATED — T20 pass 75 (§T20.80), 2026-09-22: live `nba_score.final_hp` holds **`140,130`** legs for `2025-26` (`19,075,070` for `2024-25`).** *The `19,611,626` was true when written — `19,075,070 + 19,611,626` = the old `38.7M` total §T20.8 corrected — and the table has since been rebuilt.* ✅ **`T18-12` STANDS: the season was still never audited. **Severity is if anything LOWER**, because the unaudited season is now small.** ▶ **Second site of this figure dated at `:1866`; both carry the correction (rule 10 — a correction reaches every copy).** **Original kept, per rule 40.**
 
 🔑 **This is a general shape worth naming and it is not rule 37**: ***a fix written in response to a
 failing run is verified by re-running the case that failed — not by running a different case that
