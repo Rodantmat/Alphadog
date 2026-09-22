@@ -35838,7 +35838,8 @@ of improving itself.***
 
 **Pre-registered: *"`uncovered12` HOLDS at `470`"*** — predicted, not hedged, on `§T20.89`'s
 refinement that *writing which IMPORTS language from outside the twelve moves the number; recombining
-what is already inside does not.* ▶ **MEASURED `2026-09-22T21:0*Z`, after all four repairs shipped**:
+what is already inside does not.* ▶ **MEASURED `2026-09-22T20:56Z`, after all four repairs shipped** *(instrument: `judge20.py`, char
+n-gram TF-IDF `char_wb` 4–5, `min_df=2`, `sublinear_tf`, cosine via `linear_kernel`)*:
 
 | | high band | tail | **`uncovered12`** | `uncovered30` |
 |---|---|---|---|---|
