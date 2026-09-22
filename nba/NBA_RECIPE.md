@@ -490,7 +490,45 @@ already reported.** Full methodology, the three techniques and the six named fai
 
 ---
 
-## ⚠⚠ **STEPS 11+ — `NOT RECORDED` (rule 6), and stated rather than smoothed** *(§T20.88)*
+---
+
+# STEP 11 — **THE BUILD ORDER: what must exist before what** *(written T20 pass 84, §T20.89, 2026-09-22)*
+
+> 🔑🔑 **WHY THIS STEP EXISTS.** *`STEP 0`–`STEP 7` say how the founding work was done; `STEP 8`–`STEP 10` say what the three pipelines do. **Nothing said in what ORDER a person rebuilding from nothing must create the layers** — and the owner's own directive on the subject, **`§0z-3` THE BUILD-ORDER LOCK** in `NBA_SYSTEM_DESIGN.md:218` *(T17 pass 0, §T17.1, owner, 2026-09-19)*, **is one of the five findings `T20-1` records that nothing in the corpus points at.** ***This step is that pointer.***
+> ⚠ **Every stage's figures were re-derived live `2026-09-22T20:43Z`, read-only. Anything the corpus does not settle is marked `NOT RECORDED` (rule 6) rather than inferred.**
+
+| # | stage | requires | produces *(live figures)* | how you know it worked |
+|---|---|---|---|---|
+| **1** | **Namespace + static layer** *(P1)* | *nothing* | `nba_ref.teams` **30** · `arenas` **30** · `officials` **80** · `player_name_map` **5,212** | P1 certifier: `player name map populated (> 400)` |
+| **2** | 🔑 **Game-log backfill** *(one-time, NOT a pipeline)* | stage 1 *(player ids)* | `nba_stats.player_game_log` · `_advanced` · `_scoring` · `_usage` — **79,358 rows EACH** · `player_game_starter_status` **32,179** | **all four log tables equal**; and this re-derives the recipe's own row-9 figure exactly |
+| **3** | **Weekly as-of layer** *(P1)* | stage 2 | `nba_ref.defender_ratings` **111,768** · season tables · playtypes · tracking · DARKO | P1: `defender_ratings refreshed (<= 8 days)` + `rows (> 10,000)` — 🔴 **RED TODAY, `166` days stale** |
+| **4** | 🔑🔑 **The baseline ladder** *(P2)* | stages 2–3 | `nba_score.baseline_history` — 2024-25 **162** dates × **30** props *(9,537,535)* · 2025-26 **163** × **30** *(9,805,813)* | P2: `baseline_history has today` · `baseline props for today (>= 25)` — 🔴 **`T20-13`: October carries only `22`** |
+| **5** | **As-of calibration** *(P2)* | stage 4 | `nba_score.ladder_calibration_asof` — **9,904** rows · **24** as-of dates · `2024-10-29 → 2026-01-15` | P2: `as-of calibration available` · ⚠ **the parity rule: every value computed IN-RUN from history AS OF THE DAY — nothing pasted** *(COMPASS fact 6; `NBA_BASELINE_CALIBRATION.md` §T17.2 records the one violation of it, found and fixed)* |
+| **6** | **Board archive** *(P3)* | *independent of 1–5* | `nba_market.board_snapshots` — **12** sources; newest NBA `game_date` **`2026-04-12`** *(correct for an off-season)* | P3: `board archived today` · ⚠ **threshold is `> 0` against a real magnitude of **~71,000 legs per date** (`T20-6`)** |
+| **7** | **The grader** *(P2, next morning)* | stages 2 + 6 | `nba_market.board_outcomes` — **6,905,452** | 🔴 **`T20-5`: `GRADE_END` defaults to `"2026-04-12"` and P2 passes only `DATABASE_URL` — on opening night it grades nothing and reports success** |
+| **8** | **The scoring engine** *(P3)* | stages 4 + 5 + 6 | `nba_score.final_hp` **19,215,200** *(2024-25 `19,075,070` · 2025-26 `140,130`)* · confidence · score | P3: `final_hp has today` · `confidence populated` · `score in range 0-100` · `confidence model loaded` |
+
+## 🔴🔴🔴 **AND THE GATE THAT SITS ON TOP OF ALL OF IT — THE OWNER'S WORDS, `§0z-3`**
+
+> ***"Leg correlation is a SLIP-BUILDING level — we will not work on that until we have the final HP and score sharpened to perfection. Freshness gates probably the same. ORCHESTRATOR WILL NOT EXIST — just the daily functions, and THE CLAUDE WORKER WILL EXECUTE ONE BY ONE VIA PROMPT. …We need to finish all the enrichment factor pipeline, final HP, score and confidence REPLICATED TO THE FULL DATABASE — only then do we move to the points you said."***
+
+| what the gate disposes of | status |
+|---|---|
+| **leg correlation** | ⏸ **DEFERRED by decision** — slip-building level, blocked on final HP + score |
+| **freshness gates** | ⏸ *"probably the same"* — ⚠ **a hedge, recorded as a hedge, not a decision** |
+| 🔴 **an orchestrator** | ❌ **WILL NOT EXIST** — *"the Claude worker will execute one by one via prompt"* |
+
+⚠⚠ **THE GATING CONDITION IS NOT YET MET, BY ITS OWN TERMS**: *"final HP, score and confidence **replicated to the full database**"* — and `final_hp` holds 2024-25 at **162 dates** against 2025-26 at **ONE** *(open item `T16-7`)*.
+
+## ⚠⚠ **`NOT RECORDED` (rule 6) — the ordering questions the corpus does not answer**
+
+1. 🔴🔴 **Is `final_hp`'s expected size the BOARD-SCOPED set or the FULL LADDER?** *`§0z-3` raises this itself and calls it the highest-value open question: the owner asks* > *"so every single leg for the past two seasons, **BOARD SCOPED**, have a final hit probability and a confidence percentage, correct?"* — ***and "board scoped" is a far smaller population than the full ladder. **This distinction decides whether `T16-7` is a gap or a scoping choice**, and nothing in the twelve settles it.***
+2. **Where stage 2 (the game-log backfill) is triggered from.** *It is not one of the three pipelines. **No workflow in the repo runs it on a schedule**, and no document says who runs it on a rebuild.*
+3. **Whether stages 6–8 can run at all on a day stage 4 failed.** *P3 reads what P2 wrote — **refuse, run degraded, or run anyway is NOT RECORDED** (§T20.88).*
+
+---
+
+## ⚠⚠ **STEPS 12+ — `NOT RECORDED` (rule 6), and stated rather than smoothed** *(§T20.88)*
 
 - **How P2 and P3 are to be TRIGGERED in production.** *P1 has a cron. **P2 and P3 have none**, and only P2's workflow states an intended time (`09:00 UTC`). **No document states P3's.** The `1:15 PM PT` cutoff is a GUARD, not a schedule — it says when P3 may not run, not when it will.*
 - **What happens when a pipeline fails.** *No retry policy, no alerting path and no on-call step is recorded anywhere in the twelve. `nba_control.job_runs` and `worker_run_log` are EMPTY (§T20.31).*
