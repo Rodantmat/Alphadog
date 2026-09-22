@@ -136,11 +136,33 @@ probabilities · 0 missing lines"** *(total **19,344,143**)*.
 | **total** | 19,344,143 | **19,343,348** | **−795** |
 
 ✅ **Everything else holds**: **30 props on both seasons, 162 and 163 dates** — *the shape is intact;
-only 2025-26's row count moved.* ⚠⚠ **NOT RECORDED WHY** *(rule 6 — a live-audit finding records what
-the system IS; the explanation must come from a swept transcript, and none of T1–T16 covers a change
-after 2026-09-13)*. 🔑 **Two facts bear on it and neither is an answer**: **a concurrent session is
-building in this same database**, and **`prop_universe` is mid-rebuild** — *so a reader should treat
-19,344,143 as a dated completion figure, not a current one.*
+only 2025-26's row count moved.*
+
+### ✅✅ **RESOLVED AT T17 PASS 1 (§T17.2) — AND THIS SWEEP'S ORIGINAL READING WAS WRONG**
+
+⚠⚠ **The 795 rows were NOT lost after the sweep began.** **T17's own pipeline inventory, taken
+2026-09-19, records `baseline_history` at exactly `19,343,348` — the live figure today** — and T17's
+matchup-replication summary records **2025-26 at `9,805,813`**, also today's figure. 🔑 **So the change
+happened between T16's completion (2026-09-13) and T17's matchup rebuild (2026-09-19), it is recorded
+inside the corpus, and the table has been STABLE ever since.**
+
+| | 2024-25 | 2025-26 | total |
+|---|---|---|---|
+| **T16, 2026-09-13** *(the blowout rebuild's completion check)* | 9,537,535 | **9,806,608** | 19,344,143 |
+| **T17, 2026-09-19** *(the matchup rebuild + pipeline inventory)* | 9,537,535 | **9,805,813** | **19,343,348** |
+| **`[LIVE-AUDIT]` 2026-09-22** | 9,537,535 | **9,805,813** | **19,343,348** |
+
+🔴 **CORRECTION, RECORDED RATHER THAN EDITED AWAY (rule 5)**: *this entry originally read the 795-row
+difference as **drift since the sweep began** and as evidence that "a completion check verifies a
+moment, not a state". **The second half of that lesson still stands** — T16's certified figure did stop
+being true — **but the cause is a documented rebuild inside the corpus, not unexplained drift**, and
+the table has not moved in the three days since.* ⚠ **The sweep's own mistake was reaching for an
+explanation (the concurrent session, `prop_universe`) before the transcript that contained the answer
+had been read — the failure rule 6 exists to prevent, committed by this sweep.**
+
+⚠ **NOT RECORDED**: which of the two 2025-26 figures is the correct one, or what the matchup rebuild
+did to drop 795 rows. *Both runs report **0 invalid probabilities and 0 missing lines**, so neither
+flags a defect.*
 
 🔑 **The useful general point**: **the transcript's own verification rule was *"I'll report complete
 only when all 60 carry a post-22:00 timestamp, not when the jobs report green"*** *(`NBA_OPEN_ITEMS.md`,
