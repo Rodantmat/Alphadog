@@ -32881,3 +32881,137 @@ and the reason they survive is the defect: nothing in that database has been wri
 weeks.**
 ***The most reassuring result this sweep has produced and the most alarming one are the same
 measurement.***
+
+---
+
+# §T20.63 — T20 PASS 58 · THE NOVELTY AUDIT OVER ALL THIRTY — **TWO OF THIS SESSION'S FINDINGS WERE ALREADY ON FILE**
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: greps against a snapshot.** **Nothing edited in the system;
+`NBA_COMPASS.md` not written to.**
+⚠⚠ **THIRD OF THE CLOSING THREE, AND A THIRD DISTINCT ANGLE**: *56 was JUDGMENT · 57 was LIVE NUMERIC
+· **this is NOVELTY**.*
+
+## 0. THE BASELINE TREE, PINNED (rule 30)
+
+**`/tmp/t20base/nba/` — `32` `.md` files, cut `2026-09-22 12:52`, `31` in scope
+(`PP_PAYOUT_FINDINGS.md` excluded as the concurrent session's).** ✅ **VERIFIED as a pre-work
+snapshot**: it contains **none** of `§T20.45`, `§T20.46`, `§T20.50`, `§T20.57` or `§T20.62`. **Its
+`NBA_MASTER_SUMMARY.md` is `2,056,908` bytes against the working `2,509,011` — this session added
+`452,103` bytes to that file alone.**
+
+🔑 **AND THE SEARCH SPACE IS THE POINT**: *every rule-26/28 check this session ran grepped the
+**TWELVE**. The corpus is **THIRTY**.* **`NBA_COMPASS.md`, `NBA_PROJECT_LOG.md`, the two checkpoints
+and the rest were never in the space — and §T20.49 found `COMPASS fact 51` mis-cited while §T20.60
+leaned on `COMPASS fact 55`.**
+
+## 1. THE PROBE — 16 CLAIM FAMILIES, FIXED BEFORE ANY GREP (rule 17)
+
+**Each of §T20.46–§T20.62's headline findings was reduced to a claim family and probed in three
+vocabularies against all 31 files.** **Thirteen came back with ZERO hits.** **Three had hits, and all
+three were opened (rule 26).**
+
+## 2. ✅ ONE HIT WAS NOISE — AND THE MECHANICAL PROBE COULD NOT TELL
+
+**`"37 of 37"` — 4 hits, ALL of them §T10's literal audit**: *"37 of 37 apparent defects cleared"*,
+*"Rule 20's running total across the literal audits: 7 of 11 in pass 22, 4 of 5 in pass 23, 37 of 37
+here"*. **Same numeral, different subject.** ✅ **Rule 19 killed it. Recorded because it is the
+control: the instrument flags, judgment decides.**
+
+## 3. 🔴🔴 THE FIRST GENUINE PRIOR — §T20.47's DEPLOY FINDING, AND THE PRIOR IS *BETTER*
+
+**`NBA_MASTER_SUMMARY.md:3102` (baseline), quoted in full:**
+> *"**`deployed_sha.txt` is the deploy-scope anchor** — `git_changed_files()` diffs against the last
+> *successful* deploy's SHA, not `HEAD~1`, so scope is cumulative across failed deploys. The writer
+> is gated `if: success()` (correct) but **ends `git push || true` (not), so a rejected push leaves a
+> stale anchor and silently widens the next deploy's scope.** → `NBA_WORKERS.md` §0.26"*
+
+**And `NBA_WORKERS.md:366`: *"**`git push || true` is the problem.**"* with §0.26/§0.27 carrying the
+analysis, including *"Two bot commits per successful deploy, both `[skip ci]`, both `git push ||
+true`."***
+
+⚠⚠ **RULE 19 APPLIED HONESTLY: the prior answers the SAME question, and answers it further.**
+*§T20.47 established that the run reports `success` while losing both writes and that
+`deployed_sha.txt` is stale — **the prior already had the swallow, the stale anchor, and a
+CONSEQUENCE §T20.47 MISSED: because `git_changed_files()` diffs against that anchor, a stale anchor
+silently WIDENS THE NEXT DEPLOY'S SCOPE.*** ⇒ 🔴 **§T20.47 presented this as `🆕 NEW`. It was not.**
+✅ **What IS new is the live demonstration** — run `35751058086`, seventeen green steps, the rejection
+quoted from the log, and the marker measured stale at `5911b8ac` — **and that is worth keeping, as a
+demonstration, not as a discovery.**
+
+## 4. 🔴🔴🔴 THE SECOND — §T20.60's BETR FINDING WAS ALREADY WRITTEN, IN ONE OF THE TWELVE
+
+**`NBA_SYSTEM_ARCHITECTURE.md:145-149` (baseline), quoted in full:**
+> *"📌 **The token lives in the credentials table and the job runs ON THE WORKER, never on a GitHub
+> runner** — **which is why Betr has no `.github/workflows` entry and its absence there is by design,
+> not an omission.** **Token life 30 days; `token_expires_at` is `2026-10-10T06:10:56Z`** — ⚠ **about
+> eighteen days from this entry.**"*
+> *"### 🔴🔴 **BUT THE BETR PULL IS NOT RUNNING — one write, twelve days ago, while the others refresh
+> daily**"*
+
+**Plus `NBA_MASTER_SUMMARY.md:15695`** — *"Token expires 2026-10-10 — eighteen days…"* — **and
+`NBA_OPEN_ITEMS.md:840`** — *"the Betr token expires ~2026-10-10 · a schedule for the twice-daily
+Betr pull."*
+
+⇒ 🔴🔴🔴 ***EVERY element §T20.60 called new was already there: the exact timestamp, the 30-day life,
+the worker-not-an-Action explanation which §T20.60 offered as its own insight, and even its
+"positive" about the live board layer — "one write, twelve days ago, while the others refresh
+daily."*** **§T20.60 wrote *"in a field no pass had opened"* and *"the DATED CONSEQUENCE is new."*
+BOTH ARE FALSE.**
+
+## 5. ⚠⚠ THE MECHANISM OF BOTH MISSES — AND THEY ARE DIFFERENT, WHICH MATTERS
+
+| | §T20.47 | §T20.60 |
+|---|---|---|
+| **was a rule-26/28 check run?** | 🔴 **no — `git push \|\| true` was never grepped** | ✅ **yes, and with the right terms** |
+| **why it failed** | **a check not run** | 🔴🔴 **the grep was piped through `head -8`, it returned more than eight hits, and I READ THE TRUNCATION AS THE RESULT** |
+
+📌 ***The second is the sharper lesson and it generalises past this sweep: a truncated search returns
+a confident negative. `head -N` on a novelty check is not a limit on display — it is a silent
+limit on the CLAIM, and nothing in the output says so.***
+⚠ **Neither miss is the blind spot this pass was designed to find.** *The pre-registration predicted
+priors hiding OUTSIDE the twelve, in COMPASS or the checkpoints.* **Both priors are INSIDE the
+twelve — in `NBA_MASTER_SUMMARY.md`, `NBA_WORKERS.md`, `NBA_SYSTEM_ARCHITECTURE.md` and
+`NBA_OPEN_ITEMS.md`** — **which is worse, because those files WERE in the search space.**
+
+## 6. ✅ WHAT THE AUDIT CLEARED — 13 OF 16
+
+**Zero hits, in three vocabularies each, across all 31 baseline files**: the `[skip ci]` commit census
+· the `nba-daily-delta` `|| echo` violation · P1's inverted PDT/PST · the zero-DST-aware-Python
+census and `p3_cut` · the certifier tolerances and the `21 of 325` prop-gate failures · the November
+`22 → 30` step and the twelve red nights · the stale as-of-calibration gate · the `26 of 26`
+live-state result · the `26 of 27` corrections result · the brief's five missing items · the whole
+T18-1 diagnosis *(anchor `+0.12`, the span÷anchor ratio, the asymmetric market, the per-prop reach
+table)* · the `55.29% / 28.43% / 26.86%` split and the DFS bookmakers' standard-only vocabulary · the
+worker census *(`15` not `21`, `13` of `40` scripts writing Postgres)*.
+⇒ ✅ ***Thirteen of sixteen claim families are genuinely new against the FULL thirty — not merely
+against the twelve.***
+
+## 7. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTY-NINTH consecutive identical run.** Measured 2026-09-22T18:14:19Z |
+| **(ii)** ≥1 claim already existed in the thirty | 🔴🔴 **TRUE — TWO of sixteen: §T20.47's deploy swallow and §T20.60's Betr token** |
+| **(iii)** ≥1 prior sits OUTSIDE the twelve | ✅ **FALSE — and that is the worse answer.** Both priors are INSIDE the twelve, in files every check searched |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTY-NINTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 8. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — and the clean count RESETS to `0/3`.** *Pass 56 and pass 57 were clean; pass 58 is
+not; the streak is broken and recorded as broken.*
+✅ **NO NEW SYSTEM DEFECT — both findings are the sweep's own bookkeeping. §T20.47 and §T20.60 are
+annotated in place, their priors credited, and T20-14 is re-credited rather than withdrawn: the item
+is REAL and season-critical, it was simply not discovered here.**
+⚠⚠ **RULE 46 BARS CLOSURE REGARDLESS — T20 hands on at `0/3` with TWO INDEPENDENT reads owed,
+exactly as T19 (§T19.6, OWNER DECISION).**
+⚠ **KILLS LOGGED (rules 26/28)**: **the `"37 of 37"` collision** *(§T10's literal audit — same
+numeral, different subject)* · **and every kill the session already logged is prior by construction
+and was not re-scored.**
+
+📌 ***The lesson:*** **seventeen passes checked their own novelty against the twelve documents and
+called it rule 26/28. The thirty-document check found two misses — and neither was hiding in the
+eighteen files nobody searched. One was a grep never run; the other was a grep run correctly and read
+through `head -8`.**
+***A truncated search returns a confident negative, and nothing in the output says so.***
