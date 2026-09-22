@@ -11,6 +11,110 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T15-SUPERSESSION-2. 🔴🔴🔴 **AND IT IS WIDER THAN A2 — THE CERTIFIED BASELINE BEATS *EVERY* ENRICHMENT FACTOR AT THE LEG LEVEL** *(T15 pass 4, §T15.5, 2026-09-22)*
+
+**COMPASS fact 88 (2026-09-13), config `enrichment_reality_check_2026_09_13`** — ✅ **`[LIVE-AUDIT]`
+verified by `SELECT` against `nba_config.classification_config`, 2026-09-22, `updated_at`
+2026-09-13T19:25:18Z.** *Leg-level on **real PrizePicks points lines, 2025-26**:*
+
+| Model | log-loss | |
+|---|---|---|
+| **`anchor` — the certified baseline** | **0.7150** *(Brier **0.2594**)* | ✅ **wins** |
+| `anchor × defender` | 0.7309 | ⚠ **neutral — the closest any factor came** |
+| `shrunk + novelty A2` | 0.7924 | ❌ |
+| a funnel rebuilt from **rolling means plus factors** | 0.7951 | ❌ *"**beaten by the very anchor it bypassed**"* |
+| `novelty-weighted A2` | 0.8165 | ❌ |
+| **`flat A2`** | **0.9065** | ❌❌ |
+
+🔴🔴 **THE RETRACTION, VERBATIM**: ***"A2's earlier 'shipped and validated' claim is RETRACTED: it was
+measured against a ROLLING-MEAN STRAWMAN, not against the system's own baseline."***
+
+⚠⚠ **AND THAT NAMES §0a-T15'S EXACT DEFECT.** **T15's A2 gate was allocator MAE `4.609` against
+`recent-5`'s `4.875`.** 🔑 ***`recent-5` IS the rolling-mean strawman.*** **This is COMPASS rule 90.4
+— *"always compare against the system's OWN BEST COMPONENT, never a strawman built for the test"* —
+applied to the factor that motivated it.** *So §0a-T15's figures are correct measurements of the
+wrong comparison: **the question "is the allocator better than a rolling mean?" was answered
+correctly, and it was never the question the engine asks.***
+
+### 🔑🔑 THE MECHANISM, AND THE BEST METHOD RULE IN THE CORPUS *(COMPASS fact 89 — 3 of the thirty, **0 of the twelve** before this)*
+
+*The four forms were not four guesses; they were a **sharpening sequence**: **flat → component-level →
+novelty-weighted → magnitude-refit**. It **recovered 60% of the damage (0.9065 → 0.7924)** and
+**converged TOWARD the anchor WITHOUT PASSING IT**.*
+
+> 🔑🔑🔑 ***"When every refinement moves a factor closer to doing NOTHING, the LIMIT OF THE SEQUENCE
+> IS THE BASELINE — the signal is not MIS-APPLIED, it is ALREADY PRESENT."***
+
+⚠⚠ **That is a general test, and it is the one §0a-T15's round did not have**: *a factor whose
+successive improvements all shrink its own effect is not being implemented badly — it is
+**redundant**, and the sequence's own shape says so before any single verdict does.*
+
+**Mechanically**: **`proj_min` is built from the AS-OF ROSTER STATE and RECENT MINUTES**, so *"a player
+whose teammate has been out **already shows elevated minutes there**"* — **A2 mostly re-reads
+information the baseline reads from the same source.** ✅ **The low-novelty slice isolates it exactly**:
+*legs where the absence was already priced into recent form — **flat A2 0.9065 vs anchor 0.7150.***
+⚠ **A discrepancy recorded, not resolved: fact 89 says 4,699 legs; `nba_score.factor_gate_results`
+says `low_novelty` n = 4,695.** **NOT RECORDED which is right** *(the two may be different
+populations, as §2 above warns).*
+
+🔑 **AND IT IS THE SAME FINDING AS §0a-T15 §3's A5 REJECTION, ONE LAYER UP.** *A5 was rejected because
+**recent-5 minutes already encode starting status**; A2 is closed because **`proj_min` already encodes
+the absence**. **Both factors were redundant against the same component, and only the second round
+tested against it.***
+
+### 🔑🔑 A2 IS NOT CLOSED AS "NO SIGNAL" — IT IS CLOSED AS "NOT YET MEASURED WHERE SIGNAL COULD BE"
+
+⚠⚠ **The config's own `next_test` field carries the defined path, and NO document carries it**
+*(probed 2026-09-22: **0 of the twelve, 0 of the thirty**, both trees)*:
+
+> ***"Rebuild the baseline with a DAY-BEFORE INJURY CUTOFF, then apply A2 ONLY to players whose status
+> CHANGED between that cutoff and the 2:30 PM report."***
+
+🔑 **That is a materially different state from B4's null**, and the distinction matters for the build
+order: **B4 was measured and found empty; A2 was measured on a population where the baseline had
+already seen the same information, and the population that could separate them has not been built.**
+
+✅ **AND THE SAME CONFIG FIELD CARRIES §T14.3a VERBATIM**: ***"Any test that reads the same report for
+both layers measures DOUBLE-COUNTING, not value."*** ⚠ *The rule is already well recorded (7 of the
+thirty, 5 of the twelve — the sweep derived it at T14 from a different transcript). **What is new is
+that it exists as a LIVE CONFIG FIELD dated 2026-09-13** — independent corroboration of a sweep
+finding, from the system itself rather than from another reading of the same text.*
+
+### 🔴 COMPASS FACT 92 IS ABOUT THIS SESSION, AND IT NAMES A DEFECT THE TRANSCRIPT'S OWN PROSE DOES NOT
+
+> ***"TWO conclusions THIS SESSION were drawn from TRUNCATED CI LOG WINDOWS that clipped a block
+> mid-way and MIXED NUMBERS BETWEEN SLICES."***
+
+⚠⚠ **T15's prose records the log problem ONCE — *"the oreb run has scrolled out of the run list"* —
+and treats it as an inconvenience that motivated building the calibration checker.** **Fact 92 says it
+actually CORRUPTED TWO CONCLUSIONS.** 🔴 **NOT RECORDED: which two.** *Recorded here as an open
+identification rather than guessed at — and it is a caution on every figure in §0a-T15 that was read
+from a run output rather than from a table.*
+
+✅ **The remedy, in three parts**: **every slice prints on ONE LINE so nothing can be clipped**;
+**verdicts write to `nba_score.factor_gate_results`**; and the standing rule — 🔑 ***"Any verdict that
+exists only in an Actions log is NOT A VERDICT."***
+
+🔑🔑 **THE PATTERN, THREE TIMES IN TWO DAYS**: the **calibration checker** *(`NBA_BASELINE_CALIBRATION.md`
+§0y-1)*, the **reliability scorer** *(§0a-T15 §7)*, and **`factor_gate_results`** — **each time, the fix
+for an unreadable result was to STOP DEPENDING ON THE LOG.** ⚠ *A system that reads its own results
+from ephemeral output has no memory of its own verdicts, and this session hit that wall three times
+before naming it.*
+
+### ✅ WHAT SURVIVES — **the enrichment half of §0a-T15 is retracted; the baseline and infrastructure half stands**
+
+| | |
+|---|---|
+| ❌ **RETRACTED** | **A2's ship claim** *(fact 88)*; and by extension every §0a-T15 verdict that rests on an MAE-on-the-mean gate against a rolling-mean comparison. |
+| ⚠ **UNSAFE IN BOTH DIRECTIONS** | **B4's and M1's nulls** — COMPASS fact 85 already says they were **WRONG**, *"the earlier nulls measured a crude feature and a main-effect-only fit, not the absence of signal"* *(rule 90.1)*. **A rejection measured on the wrong layer is no safer than a ship measured on the wrong layer.** |
+| ✅ **SURVIVES AND IS BUILT ON** | **N1's measured probabilities** — COMPASS fact 97 builds **N1 v3** on top of them *(`availability_model_n1v3_2026_09_15`, `nba/fit_n1_model.py`, four layers)*. **N1 was a MEASUREMENT, not a factor verdict, and measurements were not what failed.** |
+| ✅ **SURVIVES** | **The oreb rebuild and the certified / penalized / excluded policy** *(baseline layer, graded at the leg level from the start)*; **the 27 / 3 / 0 all-props audit**; **the Fliff fix**; **the live board archiver**; **the calibration checker**; **the reliability scorer**; **the sanity gate**. |
+
+🔑 **The dividing line is clean and worth stating as a rule: what T15 MEASURED stands; what T15
+JUDGED on an MAE gate against a strawman does not.**
+
+---
+
 ## 0a-T15-SUPERSESSION. 🔴🔴🔴 **READ THIS BEFORE §0a-T15 — A2 WAS CLOSED THE DAY AFTER IT SHIPPED, AND IT IS THE ONLY FACTOR T15 SHIPS** *(T15 pass 3, §T15.4a, 2026-09-22)*
 
 ⚠⚠ **RULE 5, BOTH DATES.** **§0a-T15 below is an accurate account of the 2026-09-12/13 round and every
