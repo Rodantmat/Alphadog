@@ -154,6 +154,27 @@ looks.** ***A method claim gets the same check a figure gets, and this table is 
 > at minimum, since its absence has demonstrably cost three generations · *(c)* amend this sentence so
 > it no longer claims they are stated. ⚠ **Nothing was fabricated: ten rule texts inferred from usage
 > would be ten sentences no pass ever adopted, which is §T19.4's "named rather than invented."**
+>
+> 🔴🔴🔴 **ESCALATED 2026-09-22 (§T20.28) — THIS IS NO LONGER A DOCUMENTATION GAP. IT IS A BRAKE ON
+> THE SWEEP'S OWN METHOD, AND IT HAS NOW COST TWO RULES IN EIGHT PASSES.**
+> **Two candidate standing rules have been found, evidenced, and DELIBERATELY LEFT UNNUMBERED
+> because the index cannot be read to check them for duplication** *(§T20.16's lesson: rule 49 was
+> born and retired in seven minutes as a duplicate of rule 40 — **"USING A RULE IS NOT READING
+> IT"**)*:
+> 1. 🔑 **§T20.21** — ***"a positive control drawn from the regime where an instrument is KNOWN to
+>    work says nothing about the regime the claim is about."*** *(Born from the pass-16 control that
+>    ran on T13/T14, inside the region where narrow ≡ wide, and therefore could not detect the
+>    failure it was run to exclude.)*
+> 2. 🔑 **§T20.28** — ***"a scope claim is tested by the MEANING, never by the form it was written
+>    in."*** *(Born from three independent instances of one shape: §T20.22 in POINTERS, §T20.27 in
+>    PROSE, §T20.28 in the LIVE SCHEMA — `raw_json` is what the thing is CALLED, `jsonb` is what it
+>    IS, and all three failures tested the name and reported on the thing.)*
+> ⚠⚠ ***Both are backed by measurement, both are unnumbered, and both will be lost to a fresh session
+> that reads the index rather than these entries.*** **Option (b) — reconstruct rule 10 at minimum —
+> no longer covers the cost; the decision now also governs whether new rules can be BORN at all.**
+> 🔴 **FOURTH OPTION (d): adopt the two candidates above as numbered rules on the owner's word
+> alone**, *since each has its evidence and its birth section recorded here, and the duplication
+> check is exactly what the index cannot currently provide.*
 
 *Rules 1–15 were born in T1–T9 and are stated in `NBA_MASTER_SUMMARY.md` at their entries. Rules
 16–27 are T9–T11's and each carries a §-pointer. **Apply them from pass 0 of a transcript, not from
