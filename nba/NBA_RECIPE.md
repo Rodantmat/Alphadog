@@ -658,9 +658,29 @@ of four documents.*
    offseason and never to the calendar.**
    📌 **Recorded in full, with the MLB lesson it answers, at `NBA_SYSTEM_DESIGN.md` — *"NO GAMES
    SCHEDULED" MUST BE A FIRST-CLASS STATE*, whose certifier row this closed.**
-4. **THE ORDER OF `P2` AND THE PREVIOUS DAY'S OUTCOMES.** *`P2` step 8 grades "last night's board",
-   but **no document states how long after the final buzzer the box scores are complete enough to
-   grade**, so whether `01:00 PT` is early is unestablished.*
+4. **THE ORDER OF `P2` AND THE PREVIOUS DAY'S OUTCOMES** — ⚠ **SPLIT IN TWO AND HALF-ANSWERED
+   2026-09-22, T20 pass 90 (`§T20.95`). The question conflated a BUZZER with a BOX SCORE.**
+   **④a — IS `01:00 PT` AFTER THE LAST BUZZER? ✅✅ YES, AND COMFORTABLY.** ▶ *Measured live on the
+   completed **2025-26** season* *(`nba_calendar.games.game_datetime_utc AT TIME ZONE
+   'America/Los_Angeles'`, `1,238` games, `2026-09-22`)*: **earliest tip `09:00` PT · LATEST TIP
+   `20:00` PT · only `15` games tipped at `20:00` or later · `ZERO` tipped at `21:00` or later.**
+   ⇒ ***The last ball of the last night of that season went up five hours before `P2`'s intended
+   `09:00 UTC` = `01:00 PT` start*** *(and six, during PDT)*. **A game would have to run five hours
+   to still be in progress.** ✅ **The gap closes green, and no assumption about game duration is
+   needed to close it.** 🔑 *Note the asymmetry this exposes: the corpus reasons extensively about
+   the **earliest** tip — it is `§4b`'s rule for P3's trigger, "today's earliest real tip-off minus
+   2 hours" — and **had never once bounded the latest**.*
+   **④b — WHEN IS A BOX SCORE COMPLETE ENOUGH TO GRADE? 🔴 `NOT RECORDED`, AND IT CANNOT BE MEASURED
+   FROM THIS SYSTEM.** *A tip time bounds the BUZZER; it says nothing about when the numbers become
+   readable.* ▶ **Every timestamped source was checked and every one shows a BACKFILL, not live
+   capture** *(live, `2026-09-22`)*: **`nba_stats.player_game_log.updated_at` — `79,358` rows across
+   `2` distinct days, `2026-09-03` → `2026-09-08`** · **`nba_market.board_snapshots.fetched_at` —
+   `27,067,871` rows across `3` distinct days, `2026-09-10` → `2026-09-13`.**
+   ⇒ 🔴🔴 ***The system has never run against a live slate, so it holds ZERO observed ingestion
+   latency for ANY source.*** **Every "the data will be there by then" statement in the corpus is a
+   design assumption, not a measurement** — *including this one, which is why ④a was answered from
+   the schedule rather than from the data.* ⚠ **It becomes measurable on `2026-10-20` and not
+   before.**
 
 > 📌 **POINTERS OUT** *(§T20.90's discipline — a step that cites a finding gives it a real route)*:
 > **`STEP 9`** and **`STEP 10`** for what `P2`/`P3` do · **`STEP 11`** for the build order beneath
