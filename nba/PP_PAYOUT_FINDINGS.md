@@ -1024,6 +1024,40 @@ priced BEFORE switching (9,036 keys) and diffed: only 1,024 goblin keys changed,
 standards, demons, Under and unknown-kind keys identical. Switched atomically; `goblin_floor` rule → superseded with evidence.
 In the universe: 80,756 real goblins now priced below the old conservative floor, 20,738 at the new minimum 1.843×.
 
+### VOID / PUSH REVERSION — verified from PrizePicks' own schedules (2026-09-22)
+`pp_quote.power_srp` / `flex_srp` (2,662 quotes) hold PrizePicks' reversion schedules. Rule `reversion_values` (verified):
+**All-standard Power** — r legs left → the r-pick base (20, 10, 6, 3), **1.5× for a single survivor**, refund only if none left.
+**All-standard Flex** — r ≥ 3 → the r-pick Flex schedule (10/2/0.4, 6/1.5, 3/1); **r = 2 → 3× Power-style** (NOT the 2-pick Flex
+2/0.5); r = 1 → 1.5×. **79 of 79** schedule entries match (n = 2–6, every remaining count, Power and Flex, incl. same-game-adjusted).
+**Mixed slips** — PrizePicks shows the payout of the r **LOWEST-factor** legs of the original slip (worst case for the bettor):
+within one price step 99.5% / 96.6% / 91.3% for 2 / 3 / 4 legs left (mean ratio 0.997 / 1.004 / 1.002); keep-highest matches
+0–20%. 5 left: 57.5% (ratio 1.019, the partial multi-alt law runs low); 1 left: 1.5 × factor runs ~6% under PrizePicks.
+Settlement by the displayed worst case or by the actual survivors both pay ≥ keep-lowest → grading by keep-lowest is conservative.
+Functions: `nba_market.pp_power_after_voids(factors[], live)`, `nba_market.pp_flex_standard_payout(legs, hits, original)`.
+
+### SLIP SIMULATOR — built and validated (2026-09-22)
+`nba_score.sim_strategy` (named strategies; params: n, slip_type power|flex, min_value = leg value 2 × factor × model_p, kinds,
+sources, props, sides, max_slips_per_night) → `nba_score.simulate_slips(strategy, from, to)` → `nba_score.sim_slip` (one row per
+slip: legs, factors, model probabilities, conservative full payout, model EV, hits/misses/voids, graded payout, profit) →
+`nba_score.sim_results` (per strategy × season: ROI, night-clustered SE, t, leg hit rate, claimed vs realized payout per unit).
+Per night: unflagged graded universe legs above min_value, ONE leg per player, greedy packing in value order into slips of n legs
+from n DIFFERENT games; Power priced by `pp_slip_power_conservative` (any mix), Flex all-standard only (the verified schedule).
+**Validation** — `std3_power_130` (real standards, value ≥ 1.30, 3-pick Power) reproduces the independent window-line replay:
+2024-25 **+10.2% ± 6.3%** (1,971 slips; replay +10.1%), 2025-26 **+20.4% ± 5.3%** (2,408; replay +18.0%), both **+15.8% ± 4.1%**
+(4,379 slips, 310 nights, t 3.85); every slip priced at the exact 6.0×; 312 void legs graded by reversion. Test week: 3 legs from
+3 games in every slip, payouts only 0 / 3.0 / 6.0, model EV = 6 × ∏p exactly. Claimed 2.33 per unit vs realized 1.16.
+(A suspicious leg — Pritchard P+R standard 28.5 — checked against the raw board: genuinely the standard; ladder 23.5/24.5 goblins,
+34.5/39.5 demons. Kind labels hold.)
+
+### LEG EDGE MAP — first readout (2026-09-22)
+View `nba_market.leg_edge_map`: every graded, unflagged regular-season universe leg by season × prop × kind × side × source ×
+claimed-value bucket; claimed = 2 × factor × model_p, realized = 2 × factor × hit (a standard needs 1.10 in a 3-pick; alternates
+face lower mixed bases, ~1.14). Confident picks (claimed ≥ 1.30), realized 2024-25 / 2025-26: real standard Over **1.133 / 1.130**
+(14,429 legs), real standard Under 1.099 / **1.131** (26,970), real goblin Over **1.137** / 1.100 (2,480), real demon Over 1.060 /
+1.018 (73,495), simulated standard Over 1.098 / **1.123** (6,236), simulated standard Under 0.984 / 1.026 (9,299), simulated goblin
+1.163 / 1.149 (120), simulated demon 0.968 / 0.982 (2,876). Real standards carry edge in both seasons; demons and simulated Unders
+do not; the model claims 1.36–1.63 everywhere (overconfident). Next: per-prop cells, then strategies built from the cells that hold.
+
 ### ORIGINAL BUILD CHECKLIST (2026-09-21, before the build) — SUPERSEDED by BUILD STATUS above
 *Kept for the record. Items 1–3 are built; item 7 is resolved structurally; see BUILD STATUS and REMAINING.*
 1. **Schema** — the four tables and the view
