@@ -161,6 +161,103 @@ and remains NOT RECORDED as measured.**
    a scratch.** ⚠ **Whether those branches are unreachable or simply never triggered is NOT
    RECORDED**, and **a guard that has never fired is not a guard that is known to work.**
 
+## 0a.3 🔑🔑 **THE TWO-PHASE CLOCK — where it was designed, the TWO LEAKAGE TRAPS, and the PREMISE UNDER IT THAT WAS LATER FOUND WRONG**
+*Recorded 2026-09-22 (T13 pass 3, §T13.4c). **Transcript `2026-09-13-01-03-48`, the opening prose
+stratum — where the architecture decision was taken.** ⚠ **The phase cutoffs and the freshness gates
+are already on file** *(`phase1_cutoff` in 5 of the twelve, `freshness gate` in 6, pinned
+2026-09-22T08:20:06Z)*; **what follows is what those entries do not carry.***
+
+### 🔑🔑 THE BIGGEST SPEED WIN IS A **DELTA**, NOT A FASTER ENGINE — *and this is in 0 of the twelve*
+> *"At 2:45, **most legs are unchanged** — same line, same player status. If the window run
+> recomputes only **(a) legs whose line / side / multiplier moved since the morning board**, and
+> **(b) every leg for players on teams touched by the final injury report or a lineup change**,
+> you're typically **rescoring a few HUNDRED legs instead of a few THOUSAND**. ***Everything else
+> carries its 1 pm score forward.***"*
+
+🔑 **That is the answer to the owner's latency requirement** *(§T13.1d: "MLB runs ~30 min, leaving me
+only 15 minutes")* — **and it is an architectural answer, not an optimisation one.**
+
+### ✅ WHAT CAN MOVE TO THE EARLY PHASE, AND THE ONE THING THAT CANNOT
+| moves early | why |
+|---|---|
+| **per-player distribution SHAPES** — *"the per-minute or per-possession rate distribution for each stat, fitted from the ladder"* | ***"these don't depend on who's out"*** |
+| **conditional multipliers as TABLES, not applied values** — with/without-teammate, return-ramp curves, defender-quality by quintile, opponent scheme, pace, rest/travel, coach rotation profile, referee crew | precomputable off the clock |
+| **board-shaped pre-scoring** off the morning board *(the 2-hour cron already has it)* | full scores for every leg as of the early cutoff |
+| 🔴 **MINUTES — CANNOT MOVE** | ***"projected minutes depend on the final out list, so anything computed THROUGH minutes — the actual projection, and therefore `p_over` — has to wait"*** |
+
+🔑 ***With the shapes precomputed, the window work is "a RESCALE plus a CDF EVALUATION per leg —
+milliseconds each, thousands of legs."*** **The expensive part is not the maths; it is the
+dependency on the out list.**
+
+### ✅ THE FRESHNESS GATE'S FAILURE MODE, STATED — *and it is why the gate exists*
+> *"each task writes a checkpoint row *(what it produced, at what timestamp)*. **The scoring step
+> REFUSES to run on a board older than X minutes or without the day-of report, and SAYS SO LOUDLY
+> instead of silently scoring stale data.** ***That's the failure mode that quietly costs money.***"*
+> *"**idempotent + resumable tasks** returning a compact status line… **same pattern as the backfill
+> log that just let us pause and resume mid-run.**"*
+⚠ **The second sentence is the evidence for the first**: the design was argued from an incident in
+the same session *(`NBA_DATABASE.md` §0v)*, **not from principle.**
+
+### 🔴🔴 TWO LEAKAGE TRAPS, FLAGGED BEFORE BUILDING RATHER THAN AFTER
+> **1. STARTERS.** *"Our starter status comes from **box scores** — that's **who ACTUALLY started,
+> known only after tip**. At 2:45 you'd have reported/projected lineups, not that. ***If the
+> historical run uses it, backtests will look great and live will underperform.*** Fix: **exclude
+> actual starters from phase 2** and derive a projected starter/rotation proxy… **then validate that
+> proxy against the actual data — which is fine to use as the EVALUATION TARGET, never as an
+> INPUT.**"*
+> **2. GAME LINES.** *"**`game_lines_closing` is CLOSING odds — also post-window.** For as-of market
+> context we need **spread / total / moneyline AT THE WINDOW TIMESTAMP**. Cheap to add: the
+> historical odds endpoint covers all games on a date in one request — ~30 credits per date, **about
+> 10k credits for both seasons**."*
+
+🔑🔑 **Trap 1 bears directly on this corpus's standing headline that two seasons of starter status
+were scraped and never loaded** *(T11)*. ***For phase 2, loading it would be the leak.*** **The gap
+remains real for the evaluation target and for phase-1 use — but its significance is narrower than
+"missing data," and the entry that records it should say so.**
+
+### ✅ AND BOTH OF T13's OPEN QUESTIONS ARE ANSWERED BY THE CORPUS — **RULE 33's FOURTH AND FIFTH INSTANCES**
+**T13 left both traps open and asked the owner to choose.** ***Both were settled in the days after,
+and the answers are in `NBA_COMPASS.md` — one of the EIGHTEEN, carrying conclusions from transcripts
+this sweep has NOT YET READ.*** *(Read 2026-09-22T08:24Z.)*
+
+**1. The projected-lineup proxy → REJECTED, and the trap DISSOLVED** *(COMPASS fact 82, dated
+**2026-09-13** — three days after T13)*:
+> *"**A5 PROJECTED LINEUPS — REJECTED AS REDUNDANT.** The parity doc flagged A5 as **leak risk #1**
+> *(box-score `starter_status` is post-tip truth)*… ***The leak risk DISSOLVES rather than needing
+> mitigation — we do not need projected lineups, so there is nothing to leak.***"*
+🔑 ***T13 asked "proxy from the injury report alone, or mine a public source?" — the answer was
+NEITHER***, reached by a held-out test rather than by choosing between the two options offered.
+
+**2. 🔴🔴 THE `2:30 PM PT` INJURY REPORT — THE PREMISE UNDER T13's WHOLE WINDOW TRADE-OFF — IS A
+TIMEZONE ERROR** *(COMPASS facts 104 and 107, owner decision dated **2026-09-19**)*:
+> *"**THE 2:30 PM PT ANCHOR WAS MY DRIFT, traced to its origin**: the 2026-09-09 session recorded a
+> list of **OBSERVED injury-PDF snapshot timestamps (12:30 / 1:00 / 2:30 / 3:30 / 4:00 / 6:45 / 7:45
+> PM) — *EASTERN*, from the PDF filenames** — alongside the correct policy on the same line
+> *("game-day 11am–1pm local")*. ***2:30 PM ET is 11:30 AM PT.*** It was then promoted to 'the 2:30
+> PM PT day-of report' and **repeated as established in facts 68, 73, 74 and 96**."*
+> *"The real binding constraint is **1:00 PM PT**, and the pipeline runs at **1:15–1:30 PM PT**."*
+> *"the rule is **11am–1pm LOCAL to each game's market**, so **Pacific clubs file last at 1:00 PM
+> PT**."*
+
+⚠⚠ **T13's entire window argument is built on the drifted figure.** It offers the owner three
+options framed as a *"genuine conflict with your own earlier rule"* — **strict `tip−2h` (2:00 pm PT
+on a 4 pm slate) · `tip−2h` but never earlier than 2:45 · `tip−90min` "right at the report"** —
+where **the conflict is entirely that a strict `tip−2h` would sit *"30 minutes BEFORE the final
+injury report."*** ***There is no 2:30 PM PT report. The conflict did not exist.*** **The owner
+answered *"resuming exactly as it was — 2:45 pm PT window + tip−30 close."***
+
+✅ **THE DECISION SURVIVES ITS BROKEN REASON, and this is the point of recording it**: **the real
+deadline is 1:00 PM PT, which is EARLIER than 2:45 PM PT**, ***so a 2:45 window still sits safely
+after every club has filed*** — **and the 25.7M-row historical backfill taken at that timestamp is
+NOT compromised.** 🔑 **A correct decision reached through a wrong premise is still worth correcting,
+because the premise is what the next decision will be made from.**
+🔴 **AND ONE CONSEQUENCE THAT IS NOT RESOLVED**: **the early-slate rule sets the window to `first tip
+− 2 hours`**, which on the measured early slates *(tips 12:10–14:40 PT)* **puts it as early as ~10:40
+AM PT** — ***before the 11am–1pm local filing window closes.*** ⚠ **Whether those early-slate window
+snapshots precede their own games' injury filings is NOT RECORDED anywhere in this corpus**, **and
+it is a different question from the post-tip problem the rule was built to fix.** **Documented, not
+acted on** *(rule 1)*.
+
 ## 0a.2 🔑🔑 **MARKET CONSENSUS — the owner's WEIGHTING directive, the build that FAILED, and the design that replaced it**
 *Recorded 2026-09-22 (T13 pass 2, §T13.3g). **§T13.1d flagged this owner directive as 0 of THIRTY and
 deferred its substance. This is the substance.** All figures are the transcript's own measurements
