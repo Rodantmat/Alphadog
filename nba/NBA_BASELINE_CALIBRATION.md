@@ -52,6 +52,130 @@ them from the game logs is a separate job.** **A dated STATE** *(O9)*.
 
 ---
 
+## 0v. 🔑🔑🔑 **"CERTIFIED" NEVER MEANT "STORED" — the distinction that produced `baseline_history`**
+*Recorded 2026-09-22 (T14 pass 1, §T14.2b). **Transcript `2026-09-13-20-53-23`.** ⚠ **`NBA_COMPASS.md`
+carries the phrase and the row count; what follows moves it into the twelve with the reasoning and a
+live re-take.** Live figures pinned **2026-09-22T08:53:45Z**. `SELECT` only.*
+
+**The owner asked for a day-by-day baseline and was told it was done. It was not, and the correction
+is the clearest statement of a distinction this document depends on:**
+> *"Let me be precise, because I've been imprecise about this before.
+> **WHAT WAS TRUE**: the baseline is **CERTIFIED on both seasons** — the harness computed a
+> probability for **every leg on every game-day** of both seasons, compared them to outcomes, and
+> **proved the recipe calibrated**. That claim is correct.
+> **WHAT WAS NOT TRUE**: ***those per-leg, per-day probabilities were NEVER STORED.*** The harness
+> computed them, **measured calibration from them, and kept only the CALIBRATION STATISTICS.** What
+> got persisted as a queryable table was **ONE DAY**.
+> So when I said 'the baseline is done' I meant '**the recipe is proven**' — and I should have said
+> explicitly that **the day-by-day table the engine needs to read didn't exist yet.**"*
+> *"It wasn't done… ***I was conflating 'CERTIFIED' with 'STORED.'*** That's on me."*
+
+🔑🔑 ***A certification is a STATEMENT ABOUT A RECIPE; a table is an ARTIFACT. The harness proved the
+first and discarded the second.*** ⚠ **And the reason it was discarded is benign and worth keeping**:
+*"the production wrapper builds a virtual slate for a FUTURE day, and the harness's output frame
+drops player and game identity — **both fine for their original purposes, and neither anticipated
+needing the historical table**."*
+✅ **So the rebuild changed nothing**: *"**not recomputing anything or changing the recipe** — it's
+**PERSISTING what certification already computed**, keyed by date… **same numbers the certification
+used, just kept instead of discarded.**"*
+
+### ✅✅ THE RESULT — `nba_score.baseline_history`, RE-TAKEN LIVE
+| | as reported | **LIVE 2026-09-22T08:53:45Z** |
+|---|---|---|
+| rows | **18.78M** | **`reltuples` ≈ 19,266,864** ⚠ *(an ESTIMATE, not a count — rule 30)* |
+| stat types | **29** | 📌 **30 distinct `prop` values** |
+| coverage | 2 seasons × every game-day × every rung ±10 | — |
+
+**Key: `(game_date, player_id, game_id, prop, period, line)`.** 🔑 **The live table holds ONE MORE
+prop than the session reported, so work continued after it.**
+📌 **The build order, for the record**: **2025-26 singles 11 props / 163 game-days / 3,646,216 rows** ·
+**2024-25 singles 162 game-days** *(together ~7.19M)* · **combos 2.7M + 2.61M → 12.49M** · **then four
+new box-score stats and eight period sets → 18.78M.**
+🔴 **`oreb` was EXCLUDED, and the reason is the recipe working**: *"failed calibration — **−21 pp on
+the 'more' side near low anchors**; rows deleted, config marked for retuning… **a zero-inflated stat
+with anchors at 0.5–1.5 doesn't fit the negative-binomial-with-zero-adjust shape that works for
+fouls.** It needs its own treatment, and **I'd rather it be absent than wrong**."*
+⚠ **Two caveats stated at the time**: the three stats that passed were **provisional, not certified**
+until both seasons landed, and **`dreb` has one deep-rung cell at +5.9 pp on elite rebounders' "less"
+side "worth watching."** 📌 **Periods cover 152 of 163 game-days — the quarter files are missing ~11
+dates, a data-file gap rather than a recipe one.**
+
+### 🔴🔴 0v.1 **A TRAINING LEAK THAT ONLY AN UNRELATED CRASH EXPOSED**
+> *"The 2024-25 failure was worth catching for more than the crash: ***the workflow had let the
+> harness's DEFAULT TRAINING SET INCLUDE THE TEST SEASON.*** On 2025-26 the default happened to be
+> correct; **on 2024-25 it was a LEAK.** ***Both runs would have looked fine if the memory hadn't
+> given out*** — which is exactly the kind of silent problem the parity directive exists to
+> prevent. **Training seasons are now set explicitly per season, matching how certification ran.**"*
+
+🔑🔑 ***A leak that produces no error, no warning and a plausible number, found only because an
+out-of-memory crash stopped the run.*** ⚠⚠ **This is the strongest argument in the corpus for the
+parity directive, and it is an accident.**
+
+### ✅ 0v.2 **AND THIS IS WHY §0w's FIRST "GAP" IS WITHDRAWN**
+**§0w recorded three production gaps from T13 and marked gap 1 closed because three slates now
+exist.** ***The gap itself was withdrawn as a misframing in T14, against the compass:***
+> *"**Fact 6**: one fixed recipe where **every value is computed in-run from history AS OF THAT
+> DAY**, nothing pasted. **Fact 5**: certification means calibrated at the leg level on both seasons
+> with the same recipe. **Fact 32**: production is the backtest plus virtual slate rows.
+> **So a single day's run is INHERENTLY SHARP**: the recipe recomputes tier cutpoints, Platt
+> scaling, dispersion, factor betas and phase ratios from all history up to that date, **every
+> time**. ***There's nothing to "prove stable across dates" — that was me applying a TRAIN/DEPLOY
+> MENTAL MODEL that doesn't fit this design.*** The 17,376 rows aren't a demo of one lucky day;
+> **they're what the certified recipe produces for ANY day you point it at.**"*
+> *"**Gap 3, periods = 1 — also BY DESIGN.** Fact 27 covers period certification separately."*
+
+🔑 ***So of §0w's three gaps, TWO were withdrawn as misframings and only `baseline_ladder_runs` ever
+stood*** *(COMPASS fact 34: the loader writes both halves, and the metadata half was not landing)*.
+✅ **§0w's live figures are unaffected — three slates and a populated runs table are facts. What is
+corrected is the FRAMING: multi-date stability was never required of this design.**
+⚠⚠ **AND THE SELF-ASSESSED LESSON IS WORTH MORE THAN THE CORRECTION**: ***"when something looks
+anomalous in a system this documented, THE COMPASS IS THE FIRST STOP, NOT THE LAST. I burned three
+exchanges on a non-issue that fact 16 would have answered immediately."*** 🔑 **The same lesson this
+sweep keeps re-learning as RULE 33.**
+
+### 🔑🔑 0v.3 **HOW MUCH OF THE BOARD THE BASELINE CAN ACTUALLY SCORE — 89.6%, and the residual decomposes**
+⚠ **The headline figure is already on file** *(`NBA_WORKERS.md` names `nba/check_season_coverage.py`
+as the producer of the 89.6%)* — **what follows is the decomposition, which is not.**
+**634,330 PrizePicks window legs → 568,322 with a baseline probability, across the ENTIRE 2025-26
+season with shared name resolution.**
+
+| prop | legs | matched | line gap | out of range | player missing |
+|---|---|---|---|---|---|
+| stocks | 2,286 | **94.9%** | 0 | 0 | 107 |
+| turnovers | 2,511 | 94.3% | 1 | 0 | 133 |
+| threes made | 48,085 | 94.1% | 4 | 0 | 2,573 |
+| blocks | 1,198 | 93.3% | 1 | 0 | 79 |
+| steals | 2,192 | 93.2% | 0 | 0 | 134 |
+| assists | 66,866 | 90.5% | 2,388 | 0 | 3,531 |
+| reb+ast | 81,664 | 89.7% | 3,714 | 42 | 4,224 |
+| pts+ast | 68,273 | 88.4% | 628 | **3,638** | 3,243 |
+| pts+reb | 83,187 | **86.8%** | 1,674 | **4,804** | 4,139 |
+
+🔑 **Three readings, and they separate a defect from a decision**: **① name resolution is no longer a
+problem** — *"the unresolved column is effectively zero across the board, so the alias logic did its
+job season-wide"*; **② the dominant residual (~5%) is *"player missing that day"*** — **mostly
+two-way and fringe players below the roster filter, plus players who DNP'd** *(no box score → no
+row, **which is correct behaviour**)*; **③ points-based combos lose ~5% to out-of-range**, ***"deep
+demons on high scorers past ±10 — exactly the tail we chose to stop at. That's a DECISION, not a
+defect, and it's only on the combos."***
+
+### 🔴🔴 0v.4 **THE BACKTEST'S REAL SCOPE LIMIT — the archived board is 13 of ~25 PrizePicks stat types**
+> *"**The historical board is NOT the full PrizePicks menu.** The Odds API archived only **13 stat
+> types** for PrizePicks *(points, rebounds, assists, threes, blocks, steals, turnovers, PRA, PR,
+> PA, RA, stocks, double-double)*. PrizePicks' actual NBA board **also runs fg made, fg attempted,
+> ft made, ft attempted, 3pt attempted, personal fouls, offensive rebounds, defensive rebounds,
+> dunks, fantasy score, and the PERIOD props.** ***None of those exist in the two-season board
+> history — there is no archive of them anywhere***, which we established when we exhausted the
+> sources. **Historically we can train and evaluate on 13; LIVE we'll score all of them.**"*
+
+⚠⚠ ***Every backtest number in this corpus — the per-tier hit rates, the 89.6% coverage, the
+market-calibration result — is measured over 13 of ~25 stat types.*** **That is a scope limit on the
+evidence, not on the system, and it belongs beside every figure drawn from the two-season board.**
+✅ **The BASELINE side was then taken to 29–30 of ~31 stat types**, **leaving only `dunks`** *(needs
+play-by-play / shot data — new mining)* **and `oreb`** *(excluded for calibration)*. 🔑 ***So the
+asymmetry is permanent and one-directional: the model can score more of the board than the archive
+can ever evaluate.***
+
 ## 0w. 🔑🔑 THE BASELINE'S THREE PRODUCTION GAPS — **named in T13, and TWO of them are now CLOSED**
 *Recorded 2026-09-22 (T13 pass 2, §T13.3h). **Transcript `2026-09-13-01-03-48`, the closing baseline
 sweep.** **Every live figure re-taken from `nba_score.baseline_ladder_runs`, pinned
