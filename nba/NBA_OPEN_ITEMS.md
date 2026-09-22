@@ -7500,6 +7500,14 @@ flagged** with a **−4 confidence** penalty, and the result is stored in
 `nba_score.board_scored.interpolated`.
 
 **Measured, VERIFIED 2026-09-20**: **110,955 scored legs, 6,317 interpolated — 5.7%.**
+⚠⚠ **THE POPULATION IS DATED; THE RATE IS THE FINDING** *(propagated here 2026-09-22, T18 pass 7 —
+`NBA_DATABASE.md` carried this correction and this file did not)*: **`board_scored` was 110,955 rows
+on 2026-09-20, 5,524,359 on 2026-09-21 and 12,818,715 on 2026-09-22.** ✅ **The 110,955 state is
+still physically verifiable — `nba_score.board_scored_snapshot_20260920` holds exactly 110,955
+rows.** 🔑 **And the rate replicates on an independent population**: the transcript's own scorer run
+reports **3,243 interpolated of 58,395 = 5.55%** *(`NBA_DATABASE.md` §0z-T18)*, against **5.7%**
+here. *Two populations, two runs, the same rate — which is what makes the 5.7% a property of the
+ladder's depth rather than of one day's board.*
 
 **So the direction is the opposite of MLB's case and the trap is the mirror image.** MLB's raw column
 was sparse and reconstruction *enlarged* the effective sample; **NBA's reconstruction *adds* 5.7% of
