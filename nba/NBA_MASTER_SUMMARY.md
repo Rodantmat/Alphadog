@@ -38570,6 +38570,95 @@ that only ever reports what is broken cannot tell the owner which parts of the s
 worrying about. `39` of `41` and `11` of `13` is an answer to "is the architecture actually
 separated?", and it is yes.***
 
+---
+
+# §T20.117 — T20 PASS 112: 🔴✅ **THE SEASON-ROLLOVER AUDIT WAS ALREADY DONE — I RE-DERIVED IT INDEPENDENTLY AND IT HOLDS IN EVERY PARTICULAR. TWO THINGS SURVIVE, AND ONE OF THEM BREAKS THE OBVIOUS FIX**
+
+*Pass 112, 2026-09-22. Pre-registered as **"THE SEASON-ROLLOVER AUDIT — ACROSS ALL THREE ENUMERATED
+POPULATIONS, WHAT STILL SAYS `2025-26`, AND WHAT COMPUTES THE SEASON INSTEAD? PRESEASON IS ELEVEN
+DAYS OUT."** Clause (vi) offered a stopping condition for "every literal is an overridden default".
+**A different stop fired: the census already exists, as `T20-4` and `§T20.36`.***
+
+## ① THE THREE POPULATIONS, RE-DERIVED *(clause ii — rule 28 applies to the sweep's own figures)*
+
+**`2026-09-22T23:39:03Z`**: called scripts **40** · in-scope workflows **39** · Workers **21**.
+*All three match `§T20.99` / `§T20.115` / `§T20.116`.*
+
+## ② WHAT I FOUND — AND THEN FOUND ALREADY ON FILE. FOUR KILLS, LOGGED
+
+| what I derived | where it already lives | verdict |
+|---|---|---|
+| **Seven season-selecting variables; four never set by any pipeline** *(`DELTA_SEASON` · `BM_SEASONS` · `DEF_SEASONS` · `MS_SEASONS`)*, **three set to the literal `'2025-26'`** via `${{ github.event.inputs.season \|\| '2025-26' }}`, **which a cron run always falls through** | **`NBA_MASTER_SUMMARY.md:29384–29426`, `:29584–29591`** — *"`DEF_SEASONS`, `BM_SEASONS` and `MS_SEASONS` are passed by NO pipeline workflow — verified"*; **`NBA_OPEN_ITEMS.md:14284`, `:14439`**; item **`T20-4`** | ✂ **KILLED** |
+| **The ladder builder auto-detects the season but falls back to `_all[-1]` when the current season's game-log file is absent** | **`NBA_MASTER_SUMMARY.md:29629`** and **`NBA_OPEN_ITEMS.md:14460`**, verbatim: *"falls back to `_all[-1]` — **last season, silently.** Graceful, but silent."* | ✂ **KILLED** |
+| **Four Workers write a bare `'2025-26'` SQL literal into a `season` column** *(`static-onoff` · `-player-bio` · `-player-tracking` · `-team-stats`)* | **`NBA_WORKERS.md:305`** — a table row reading **`'2025-26'` (single) \| those four files \| NONE — all four** | ✂ **KILLED** |
+| **Two Workers ARE season-aware** *(`starter-status`, `game-officials`: `input.season` → `nba_daily_delta_meta.json.season` → default)* | `active_stats_season` scores **7 of 12**; the T7 fix is quoted in the corpus | ✂ **KILLED** *(and it was a candidate for a DEFECT until I read `game-officials.js:46–48` and found it carries the same fix as `starter-status.js`, not the unfixed shape)* |
+
+✅ ***Four independent re-derivations, four exact matches. That is the strongest confirmation this
+sweep can give its own earlier work, and it is worth the pass on its own.***
+
+## ③ 🔴 WHAT SURVIVES (1) — **THE OBVIOUS FIX FOR `T20-4` CRASHES**
+
+**`nba/export_market_spreads.py`:**
+
+```python
+BOUNDS = {"2023-24": (...), "2024-25": (...), "2025-26": ("2025-10-21", "2026-04-12")}
+...
+seasons = [s.strip() for s in os.environ.get("MS_SEASONS", "2024-25,2025-26").split(",")]
+for season in seasons:
+    lo, hi = BOUNDS[season]      # :38 - UNGUARDED
+```
+
+🔑🔑 **`BOUNDS` has no `2026-27` key, and `:38` is a bare subscript.** ⇒ **The natural remedy for
+`T20-4` — setting `MS_SEASONS=2026-27` in `P2` — does not fix it. It raises `KeyError: '2026-27'` and
+the step fails.** ⚠⚠ **So this is not a second instance of `T20-4`; it is a TRAP INSIDE `T20-4`'s
+remedy**, and a person working the open-items list will hit it. *Probe: `BOUNDS[season]` → **0** in the
+twelve, **0** in all thirty, **0** in the baseline tree.*
+
+✅ **AND THE PATCH SHAPE ALREADY EXISTS IN THE REPO, BY THE SAME HAND.**
+**`nba/scrape_nba_season_tables.py:147–148`** holds the identical dict with the identical gap and
+**guards it**:
+
+```python
+w = WINDOWS.get(season)
+if not w: print("no window for", season); continue
+```
+
+⇒ 🔑 ***One file guards the lookup and its sibling does not. That asymmetry is the evidence it is an
+oversight rather than a decision — and it supplies the two-line fix.***
+
+## ④ 🔴 WHAT SURVIVES (2) — **THE FAILURE IS NOT ON OPENING NIGHT, AND NOTHING SAYS SO**
+
+**Both halves are on file; their COMPOSITION is not, and the composition is the part that tells the
+owner WHEN to expect the break.**
+
+| | |
+|---|---|
+| **half one** *(on file)* | the ladder builder resolves `_season_of(ASOF)` correctly — `2026-10-20` ⇒ `2026-27` — **but takes `_all[-1]` while `nba/data/nba_player_game_log_2026_27.json` does not exist** |
+| **half two** *(on file, `T20-4`)* | `BS_SEASON` is pinned to the literal `'2025-26'` in `nba-p3:205`, and `score_board_legs.py:142` queries `baseline_history WHERE game_date = %s AND season = %s` |
+| 🔑 **the composition** *(**NOT** on file)* | **While both say `2025-26`, they AGREE, and P3 runs.** **The moment the first `2026-27` game-log file lands, the ladder flips to `2026-27` and the YAML literal does not** — *a literal cannot flip* — **and from that day `score_board_legs.py:145` raises `SystemExit(1)`: `"ABORT: no baseline ladder for <date> - P2 must run before P3."`** |
+
+⇒ ⚠⚠ ***The system will look fine through the rollover and break on a later, unrelated-looking day —
+and the error message will blame `P2`, which is not the cause.*** 📌 *Corroborated live:
+`nba_score.baseline_history` holds **`2024-25` (9,537,535 rows)** and **`2025-26` (9,805,813 rows,
+last date `2026-04-12`)** and nothing else.* *Probes: `P3 will abort` · `starts aborting` ·
+`flips to 2026-27` → **0/0/0** each.*
+
+▶ **Both added to `T20-4`, which already holds the family. No new item, and the brief stays at
+SIXTEEN** — *clause (vii) said this pass should be willing to inflate the brief if the test was met;
+**it was not met, because `T20-4` already carries the season-critical rank for this family** and a
+second entry would double-count it.*
+
+▶ **`RULE 51`, on the findings, against the BASELINE tree, last:** `BOUNDS[season]` **0/0/0** ·
+`P3 will abort` **0/0/0** · `flips to 2026-27` **0/0/0**. ⚠ *`DELTA_SEASON`, `MS_SEASONS`,
+`BM_SEASONS`, `DEF_SEASONS` each score **2 of 12 and 0 in the baseline tree** — **they entered the
+corpus during this sweep**, and opening those mentions is what produced the four kills above.* ✅ **The
+two survivors are NOVEL.**
+
+📌 ***The lesson:*** **a pass that re-derives known work and says so is not a wasted pass — it is the
+only evidence anyone will ever have that the known work was right.** ⚠⚠ ***And the two things it did
+add are both of a kind no single-defect audit produces: a trap inside another item's REMEDY, and a
+consequence that exists only when two filed facts are held side by side.***
+
 ▶ **`RULE 51` novelty check, run on the FINDING against the BASELINE tree as the last step:**
 `np.full` **0** in `/tmp/t20base/nba/*.md`; `score_board_legs` never co-occurs with
 `constant`/`hardcod`/`0.55`/`0.75` in any of the twelve; `NBA_GLOSSARY.md:318` lists `f_vol` as a
