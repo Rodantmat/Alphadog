@@ -32157,3 +32157,169 @@ single source — headed "THE SEVEN BLOCKERS" — was missing five of thirteen, 
 static layer that half of T20's other findings depend on, and including the one defect he had
 reported himself.**
 ***A corpus can be right in every line and still fail at the top of the page.***
+
+---
+
+# §T20.57 — T20 PASS 52 · **T18-1 DIAGNOSED** — THE OWNER'S OWN FINDING, ANSWERED
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: ten `SELECT`s.** **Nothing triggered, dispatched or written to the
+live system; no script or workflow edited; `NBA_COMPASS.md` not written to.**
+⚠⚠ **AND THE OWNER'S STANDING RULE, APPLIED HERE ABOVE ALL: *"You will not fix anything along this
+process."* A DIAGNOSIS IS NOT A FIX. What follows changes no code and recommends no change; it
+answers a question and hands the decision back.**
+
+## 0. THE QUESTION, IN THE OWNER'S WORDS (2026-09-19, §T18.1)
+
+> ***"Our system should be covering the APP LADDER. If it is not, we need to change so it covers it.
+> **Our anchor is not at the proper place of the ladder, or the ladder is not deep enough** — plus
+> everything else you have open."***
+
+**Recorded as `0 of the twelve, 0 of the thirty`. Two candidate causes. No diagnosis. Fifty-one
+passes went past it.** ✅ **Zero hits across `nba/` for `12.7%` or `above our ceiling`, and one for
+`player_points_alternate` — the comparison below has never been run.**
+
+## 1. POPULATIONS AND THE JOIN, PINNED (rules 17/21/30)
+
+**Schemas read off `information_schema`, not from any document (rule 21):** the app side is
+`nba_market.board_snapshots` — `market_key · player · side · line · bookmaker · game_date`; our side
+is `nba_score.baseline_history` — `prop · line · **anchor** · ladder_offset · ladder_steps ·
+player_id · game_date`.
+
+⚠⚠ **RULE 20 ON THE JOIN, AND IT MATTERED**: `nba_ref.player_name_map` is `(player_id, norm_name,
+display_name)`. **`norm_name = lower(player)` matches `0` of `151`. `display_name = player` matches
+`134` of `151` — 88.7%.** *Had the first spelling been trusted, the entire pass would have reported
+an empty comparison as a finding.*
+
+⚠ **SCOPE, STATED BEFORE ANY RESULT**: this is **HISTORICAL** evidence from two dates in two prior
+seasons — **`2025-12-03` and `2026-01-10`** — not a statement about the 2026-27 board. ⚠ **And
+PrizePicks DFS-only markets are NOT in `board_snapshots`** *(PP legs arrive only via the Odds API
+feed)*, so their absence below is a property of the feed, **not a gap in our ladder.**
+
+## 2. ✅ FIRST, THE PART THAT IS FINE — EVERY APP MARKET MAPS TO ONE OF OUR PROPS
+
+**21 distinct `market_key`s on the board in the sample week; 30 distinct `prop`s on our side.**
+Every app market maps: `player_points → points` · `player_rebounds → rebounds` ·
+`player_assists → assists` · `player_threes → threes_made` · `player_points_rebounds_assists → pra` ·
+`player_points_rebounds → pts_reb` · `player_points_assists → pts_ast` ·
+`player_rebounds_assists → reb_ast` · `player_blocks → blocks` · `player_steals → steals` ·
+`player_turnovers → turnovers` · `player_blocks_steals → stocks` ·
+`player_double_double → double_double`. ⇒ ✅ ***No app MARKET is uncovered. The defect, if any, is
+inside a market, not between them.***
+
+## 3. 🔴🔴 CLAUSE (ii) — *"THE LADDER IS NOT DEEP ENOUGH"* — **CONFIRMED, AND MEASURED**
+
+**Our ladder is `ladder_offset ∈ [−10, +10]` with `ladder_steps = 10` on all 30 props. Observed
+`max(line) − min(line)` is `20.0` and NEVER more — the step is 1.0 and the cap is structural.**
+
+**Rungs offered per player-prop on the `_alternate` (ladder) markets, `2025-12-03`:**
+
+| market | player-props | avg rungs | max | 🔴 **offering more than our 21** |
+|---|---|---|---|---|
+| `player_points_rebounds_assists_alternate` | 140 | **22.3** | **36** | 🔴 **83 — 59%** |
+| `player_points_alternate` | 150 | **22.0** | **33** | 🔴 **87 — 58%** |
+| `player_points_rebounds_alternate` | 140 | 16.5 | 27 | 🔴 **29 — 21%** |
+| `player_points_assists_alternate` | 138 | 14.6 | 28 | 🔴 **23 — 17%** |
+| `player_rebounds_assists_alternate` · `player_rebounds_alternate` · `player_assists_alternate` · `player_threes_alternate` | 135–147 each | 6.3–10.6 | 10–17 | ✅ **0** |
+
+**And in RANGE, not merely in count — reproduced on a second date five weeks later:**
+
+| | players | **avg span** | **max span** |
+|---|---|---|---|
+| **APP `player_points_alternate`**, 2025-12-03 | 150 | **25.99** | **40.0** |
+| **OURS `points`**, 2025-12-03 | 180 | **17.69** | **20.0** |
+| **APP**, 2026-01-10 | 97 | **26.93** | **40.0** |
+| **OURS**, 2026-01-10 | 127 | **17.74** | **20.0** |
+
+🔴 **THE COST, JOINED PLAYER-BY-PLAYER** — `points`, 2025-12-03, **18,158 matched app legs**:
+
+| | legs | share |
+|---|---|---|
+| below our floor | **248** | 1.4% |
+| 🔴 **above our ceiling** | **2,050** | **11.3%** |
+| 🔴 **TOTAL OUTSIDE OUR LADDER** | **2,298** | **12.7%** |
+
+⇒ ***On the highest-volume market on the board, one app leg in eight is a leg we do not price — and
+eight of every nine misses are ABOVE us.***
+
+## 4. ✅✅ CLAUSE (iii) — *"OUR ANCHOR IS NOT AT THE PROPER PLACE"* — **DISPROVED. AND THE CHECK THAT DISPROVED IT FIRST PRODUCED THE OPPOSITE ANSWER**
+
+⚠⚠ **THIS IS THE PASS'S MOST IMPORTANT MOMENT AND IT IS RECORDED IN FULL RATHER THAN TIDIED AWAY.**
+
+**The first test compared our `anchor` to the MEDIAN OF THE ALTERNATE LADDER and appeared to confirm
+the owner's first cause outright**: 126 players, **our anchor 13.37 vs app median 15.16 — `−1.79`,
+SD 2.02 — our anchor BELOW for 93 of 126 (73.8%), above for 13 (10.3%).** *A 7-to-1 lean. It looked
+decisive.*
+
+🔑🔑 **RULE 20 KILLED IT: the median of an ALTERNATE ladder is not the book's estimate.** *A book
+publishes more high alternate lines than low ones because that is where the parlay product lives.*
+**The book's actual estimate is the STANDARD market, `player_points`. Re-run against it:**
+
+| date | players | our anchor | **book line** | **diff** | SD | anchor below | anchor above |
+|---|---|---|---|---|---|---|---|
+| **2025-12-03** | 125 | 13.44 | **13.32** | ✅ **+0.12** | 1.88 | 43 | 59 |
+| **2026-01-10** | 87 | 13.59 | **13.29** | ✅ **+0.30** | 2.03 | 29 | 42 |
+
+⇒ ✅✅ ***OUR ANCHOR AGREES WITH THE BOOK, to a tenth of a point, on both dates, with the lean
+slightly HIGH rather than low.*** **The owner's first cause is DISPROVED for `points`, and the
+`−1.79` was an artefact of the comparand.**
+📌 ***Reported at full strength because the pre-registration said disproving a cause is worth as much
+as proving one — and because a pass that had stopped one query earlier would have told the owner his
+anchor was 1.8 points low, and he would have moved it.***
+
+## 5. 🔑🔑 THE DIAGNOSIS — NEITHER OF THE OWNER'S TWO CAUSES, EXACTLY
+
+**The linchpin measurement.** *The app's alternate ladder, measured against that same book's STANDARD
+line — `2025-12-03`, `20,868` alternate legs joined to their own standard market:*
+
+| | |
+|---|---|
+| legs **ABOVE** the book line | **12,017 — 57.6%** |
+| legs **BELOW** the book line | **7,536 — 36.1%** |
+| average offset | **+2.37** |
+| **reach** | **−16.00 … +29.00** |
+
+⇒ 🔴🔴🔴 ***THE APP LADDER IS ASYMMETRIC. It runs 29 points above the book line and 16 below. OUR
+LADDER IS SYMMETRIC: ±10, one step each side, `BT_LADDER_STEPS = 10` as a single constant applied to
+both the singles and the combos recipe (COMPASS 63).***
+
+**So the answer to the owner's sentence is:**
+> ✅ **The anchor IS at the proper place.**
+> 🔴 **The ladder is NOT deep enough — and specifically, it is not deep enough UPWARD, because it is
+> SYMMETRIC and the market it is meant to cover is not.**
+
+📌 ***That is a better answer than either candidate he offered, and it changes what the fix is:*** not
+moving the anchor, and not simply lengthening a symmetric ladder — **which would add rungs below the
+line, where only 1.4% of the misses are, to buy the 11.3% above.** ⚠⚠ **WHAT THE LADDER SHOULD BE IS
+AN OWNER DECISION AND IS NOT DECIDED HERE.** *For scale only, from the numbers above: the observed
+app reach on `points` is `−16 … +29`.*
+
+## 6. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTY-THIRD consecutive identical run.** Measured 2026-09-22T17:43:41Z |
+| **(ii)** the apps offer lines outside our range | 🔴🔴 **CONFIRMED — 12.7% of matched `points` legs, 89% of them above our ceiling; four of eight alternate markets exceed our rung count, up to 36 rungs against our 21; our span caps at 20.0 against an app average of 26.0–26.9 and a max of 40.0** |
+| **(iii)** our anchor is systematically offset | ✅✅ **DISPROVED — `+0.12` and `+0.30` against the book's standard line on two dates, SD ≈ 1.9–2.0.** *The apparent `−1.79` was a wrong comparand, caught by rule 20* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTY-THIRD consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 7. ⚠ VERDICT
+
+🔴🔴🔴 **NOT CLEAN — but this is the pass T20 existed to produce. The owner's own finding, open since
+2026-09-19 and ranked `A` on the brief one pass ago, is DIAGNOSED: one cause confirmed, one
+disproved, and the real shape named — a symmetric ladder pointed at an asymmetric market.**
+⚠⚠ **NOT FIXED. `T18-1` is updated with the diagnosis and remains an OWNER DECISION, because what the
+ladder should become is a product choice and the charter forbids this sweep from making it.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **O5** *(two depth regimes under one `recipe_version`)* and **O5b**
+*(30,989 rows beyond their prop's measured `LADDER_DEPTH`)* are ALREADY ON FILE and are about the
+ladder's INTERNAL consistency — **they say nothing about whether it reaches the app's rungs, which is
+the owner's question and is what is new here** · **`BT_LADDER_STEPS = 10` is COMPASS 63** · **the
+`board_snapshots` per-date magnitudes are §T20.51's.**
+
+📌 ***The lesson:*** **the first comparand said the anchor was 1.79 points low, with a 7-to-1 lean and
+a tight standard deviation. It was wrong, and nothing about the number looked wrong. The second
+comparand — the same book's own standard line, one query away — said `+0.12`.**
+***A measurement is only as good as what it is measured against, and the owner would have moved his
+anchor on the strength of the first one.***
