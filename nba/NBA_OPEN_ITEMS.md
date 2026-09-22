@@ -13112,6 +13112,24 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-17 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, SILENT · A DROPPED INJURY-ARCHIVE SHARD SILENTLY TRUNCATES THE AVAILABILITY DELTA — AND THAT FEEDS THE SCORED BOARD**
+*Added **T20 pass 97 (§T20.102), 2026-09-22**, from a census of every `except` handler in the `40`
+scripts the three pipelines call. **Read from source; nothing was run.***
+
+| | |
+|---|---|
+| **The code** | `nba/build_availability_delta.py:70-71` — `for sh in idx.get("shards", []): try: rows.extend(fetch(f"nba_injury_report_{slug}_{sh}.json").get("rows") or []) ` **`except Exception: pass`** |
+| 🔴🔴 **Why this one and not the other 68** | ***It is the only handler of the `69` in the whole called-script set that leaves NO TRACE WHATSOEVER*** — not a print, not a counter, not a sentinel. *(The only other bare `pass`, `scrape_underdog_board.py:91`, is a designed fallback with a valid default already assigned.)* |
+| **What is lost** | **Whole SHARDS of the injury-report archive.** The code then tests only `if inj.empty` ⇒ **losing some shards yields a smaller-but-non-empty delta that looks completely normal.** |
+| 🔴🔴🔴 **Why it is season-critical rather than cosmetic** | **`nba/score_board_legs.py:189` reads `FROM nba_score.availability_delta WHERE game_date = %s`.** ⇒ ***It does not degrade a report — it changes which legs `P3` scores, and the only evidence is the absence of rows nobody counts.*** |
+| **Why no certifier catches it** | `PIPE=p3`'s five checks *(scored legs · non-null confidence · score in range · model loaded · board archived)* **never look at the availability delta** — `§T20.94` read all twelve checks across the three pipelines and **not one covers enrichment**. |
+| **Trigger** | ⚠ **No human error required** — a single flaky shard fetch is enough. *That is what separates it from `T20-16`, which is latent until someone edits one list and not the other.* |
+| **Rank** | **SILENT**, which the brief's own rule puts above every LOUD item. ⇒ **added to the opening-day brief; the brief moves from FIFTEEN to SIXTEEN.** |
+| 🔑 **It has company, and a stated rule against it** | Four other Class-A sites — `baseline/build_baseline_ladder.py:103` and `baseline/build_periods_ladder.py:80` *(the identical injury handler, DUPLICATED)*, `build_defender_ratings.py:64-67` *(partial shards clear `P1`'s `> 10k` floor)*, `scrape_nba_season_tables.py:139` *(coaches, no check exists)*. ⚠ **And the corpus already forbids this for exactly this layer**: *"**Baseline build (T14+) — fail loudly, no swallowing** — a silently missing prop pair is invisible and corrupt."* |
+| **Full census** | `NBA_SYSTEM_DESIGN.md` — ***THE SWALLOWED-FAILURE CENSUS***, including the `62` handlers the bar correctly excluded. **Not fixed (rule 1).** |
+
+---
+
 ## T20-16 · **NEW · ⚠⚠ MEDIUM, LATENT, SILENT · THE PAPER-TRADING PROP MAP IS HARDCODED TWICE, AND A MISMATCH PRODUCES PICKS THAT CAN NEVER BE GRADED**
 *Added **T20 pass 93 (§T20.98), 2026-09-22**, while specifying `standards_3pick_v1`. **Read from
 `pg_get_functiondef`; nothing was run or changed.***
