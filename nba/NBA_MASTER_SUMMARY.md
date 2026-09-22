@@ -38451,6 +38451,125 @@ snapshot `p110` written: `hi=651 · unc12=469 · unc30=466`.*
 passes and was satisfiable only by luck. A rule that cannot be checked in the general case is not
 being followed — it is being agreed with.***
 
+---
+
+# §T20.116 — T20 PASS 111: ✅🔴 **THE WORKER LAYER IS A GENUINE SEPARATION OF CONCERNS — `2` SHARED OBJECTS OUT OF `41` — AND THE TWO WRITERS OF THOSE TWO DISAGREE IN SIX SPECIFIC WAYS**
+
+*Pass 111, 2026-09-22. Pre-registered as **"THE THIRD UN-ENUMERATED POPULATION — THE WORKER / `.js`
+LAYER. WHICH ARE DEPLOYED, AND WHICH WRITE DATABASE OBJECTS THE PYTHON LAYER ALSO WRITES?"**
+Clause (vi) allowed a clean architectural stop. **It nearly fired, and the exception is exactly the
+object `§T20.115` stumbled on.***
+
+## ① THE POPULATION, AND A CANDIDATE OF MINE KILLED BEFORE IT REACHED THE PAGE
+
+**`2026-09-22T23:32:08Z`, against `main`:** `ls -1 nba/*.js` ⇒ **21**; repo-wide
+`find . -name '*.js' -not -path './node_modules/*'` ⇒ **163** *(the other 142 are MLB or shared —
+out of scope, kept as cross-system context)*.
+
+🔴 **FIRST CANDIDATE, DRAFTED THEN KILLED**: `ls wrangler*nba*` returns **nothing**, while **121**
+`wrangler.alphadog-v2-*.jsonc` files sit committed at the repo root — *every one of them MLB.*
+**I drafted "21 NBA Workers exist and not one has a wrangler config."** ✂ **KILLED by reading
+`generate_wrangler_configs.py:45–51`**: for a worker whose name starts `alphadog-v2-nba-`, *"the
+generated config… is written to `nba/wrangler.<worker>.jsonc`"* — **generated at deploy time from
+`nba/worker_manifest_nba.json` and not committed.** ✅ **Not a defect. The asymmetry with MLB is a
+committed-artefact convention, nothing more.**
+
+✅ **AND THE MANIFEST IS EXACT**: `nba/worker_manifest_nba.json` lists **21**; `nba/*.js` is **21**;
+**`IN MANIFEST, NO .js` = `[]` and `HAS .js, NOT IN MANIFEST` = `[]`.** *No orphan file, no phantom
+entry. Recorded as a positive — this is the kind of drift the sweep has found everywhere else.*
+
+## ② THE WRITE-TARGET MAP — ALL TWENTY-ONE, AND THE INTERSECTION
+
+**`NBA_WORKERS.md` names `8` of the `21` Workers by name** and covers the rest with grouped shorthand
+*("the officials writer", "the backfill worker")*, with write targets given in prose. **The
+systematic map and the intersection below are computed here for the first time.**
+
+**Method**: `INSERT INTO` / `UPDATE` / `DELETE FROM` / `CREATE TABLE IF NOT EXISTS` targets extracted
+from each of the `21` Workers and from the `40` called Python scripts of `§T20.99`.
+
+| layer | distinct `schema.table` write targets |
+|---|---|
+| **the 21 Workers** | **41** |
+| **the 40 called scripts** | **13** |
+| 🔑 **WRITTEN BY BOTH** | **`2` — `nba_score.baseline_ladder` and `nba_score.baseline_ladder_runs`** |
+
+⇒ ✅✅ **`39` of `41` Worker targets and `11` of `13` Python targets are SINGLE-WRITER.** **The
+division of labour is real and it is clean: the Workers own `nba_ref`, `nba_stats`, `nba_team` and
+`nba_calendar`; the scripts own `nba_score`.** ⚠ **The one seam is the ladder — and it is the seam
+`§T20.115` found by accident and did not pursue.**
+
+## ③ THE TWO WRITERS OF THE SEAM, COMPARED AT COLUMN LEVEL
+
+*`§T20.115` recorded only "UPSERT vs DELETE+INSERT". That note is on file and a second telling would
+be nothing; **the comparison below is what it was missing.***
+
+| | `load_baseline_ladder.py:72–91` | `alphadog-v2-nba-baseline-ladder.js:54–70` |
+|---|---|---|
+| **write mode** | `DELETE … WHERE asof` then `INSERT`, **in ONE non-autocommit transaction** — its own comment: *"NOT autocommit: delete+insert must be atomic. **A failed insert after a committed delete once emptied the table — never again.**"* | **`INSERT … ON CONFLICT … DO UPDATE`**, per batch, **no transaction** |
+| 🔴 **stale rows** | **REMOVED** — the `DELETE` clears the whole `asof` first | 🔴 **NEVER REMOVED.** *An UPSERT cannot delete: a rung present in an earlier load and absent from a later one SURVIVES in the table* |
+| 🔴 **dedupe rule** | keeps the row with the **SMALLEST `abs(offset)`** *(`if off < cur[0]`)* | keeps the **LAST row in file order** *(`seen.set(key, r)`)* |
+| 🔴 **corrupt-artefact guard** | **`raise SystemExit("ABORT: artifact has no combo props - refusing to load a singles-only slate")`** | 🔴 **NO SUCH GUARD** |
+| `team_id` when missing | **`''`** *(`str(r.get("team_id") or "")`)* | **`NULL`** *(`nn(...)`)* |
+| `recipe_version` | **truncated to 200 chars**, `''` if absent | **full length**, `NULL` if absent |
+| `game_date` when missing | passed through as-is | **defaults to `asof`** |
+| rows missing `player_id`/`game_id`/`prop`/`line` | **kept** | **dropped by the `.filter()`** |
+
+🔑🔑 **THE THREE THAT CHANGE OUTCOMES**: **(a)** the Worker leaves stale rungs behind, and
+`score_board_legs.py` reads `baseline_ladder`; **(b)** the two dedupe rules select **different rows**
+whenever a key repeats — **and the Worker's own comment says they do** *("rungs clipped to the natural
+floor (0.5) can repeat within a ladder")*; **(c)** the Python path refuses a singles-only slate as
+corrupt and the Worker loads it. ⚠ **No evidence exists that the Worker path has been used for a
+reload — this is a latent divergence, not an observed failure.**
+
+## ④ I BUILT A PROVENANCE DISCRIMINATOR, RAN IT, AND IT CAME BACK INCONCLUSIVE
+
+**`§T20.115` left "which writer produced the live rows" as NOT RECORDED. Two columns should have
+settled it** — `team_id` *(`''` vs `NULL`)* and `recipe_version` *(≤200 vs full)*.
+
+**Live, `nba_score.baseline_ladder`, `2026-09-22`, all three `asof` values:**
+`team_id = ''` → **0** · `team_id IS NULL` → **0** *(the artefact always supplies it)* ·
+`max(length(recipe_version))` → **76**, **under the 200-char cut, so truncation never bit.**
+
+⇒ 🔴 **Both discriminators are dead in the live data, and the answer stands as NOT RECORDED —
+now with the test that failed to resolve it.** 🔑 **The finding is the reason: NO COLUMN IN EITHER
+TABLE RECORDS WHICH WRITER WROTE THE ROW.** `source_file` names the *artefact*, identically for both
+paths. *Stated so the next reader does not repeat the attempt.*
+
+## ⑤ 🔴 MY HEADLINE CANDIDATE WAS A DUPLICATE, AND `RULE 51` CAUGHT IT AT THE LAST STEP
+
+**Probe: references to `alphadog-v2-nba-baseline-ladder` outside its own file** ⇒ only
+`nba/worker_manifest_nba.json` and `generate_wrangler_configs.py`. **`alphadog-v2-orchestrator.js`
+and `alphadog-v2-control-room.js` contain `0` references to ANY `alphadog-v2-nba-` worker.**
+*I drafted: "a third of the system's write surface is driven from outside the repository."*
+
+✂ **KILLED — it is already on file, twice, and as DESIGN rather than discovery.**
+**`NBA_WORKERS.md:384`**: *"**bypasses `control_job_queue` + orchestrator entirely (NBA has no
+orchestrator by design)**."* **`:1662`**: *"**NBA workers use DIRECT dispatch**… bypassing the queue —
+**deliberate, per the no-orchestrator rule**."* ⚠ **Rules 26/28; the kill is logged here rather than
+buried.**
+
+✅ **AND THE WORKERS DO RUN — verified live so the killed claim leaves no false impression**:
+`max(updated_at)` on four Worker-only tables — `nba_calendar.games` **2026-09-02** *(2,666 rows)* ·
+`nba_ref.players` **2026-09-03** *(582)* · `nba_stats.player_impact_rating` **2026-09-02** *(530)* ·
+`nba_stats.player_game_log` **2026-09-08** *(79,358)*. 📌 *Pinned as a dated state, not a verdict:
+the most recent Worker write is **fourteen days old**, against a **2026-10-03** preseason and
+**2026-10-20** opener. Whether that is correct for the off-season is **NOT RECORDED**.*
+
+▶ **Raised as `T20-21` in `NBA_OPEN_ITEMS.md` (`MEDIUM, STRUCTURAL`). The brief stays at SIXTEEN** —
+*the divergence is latent, needs the Worker path to be used for a reload, and nothing shows that it
+has been.*
+
+▶ **`RULE 51`, on the findings, against the BASELINE tree, last:** `ON CONFLICT (asof)` **0/0/0** ·
+`refusing to load a singles-only` **0/0/0**. ⚠ *`worker_manifest_nba` scores **6 of 12** and
+`generate_wrangler_configs` **6 of 12** — **high name-coverage again**, and again the mentions were
+opened: they document the registration mechanism, not the write semantics.* ✅ **NOVEL.**
+
+📌 ***The lesson:*** **three populations have now been enumerated — Python scripts, inline YAML,
+Workers — and the third one came back CLEAN.** ⚠⚠ ***That is worth as much as the defects: a sweep
+that only ever reports what is broken cannot tell the owner which parts of the system he can stop
+worrying about. `39` of `41` and `11` of `13` is an answer to "is the architecture actually
+separated?", and it is yes.***
+
 ▶ **`RULE 51` novelty check, run on the FINDING against the BASELINE tree as the last step:**
 `np.full` **0** in `/tmp/t20base/nba/*.md`; `score_board_legs` never co-occurs with
 `constant`/`hardcod`/`0.55`/`0.75` in any of the twelve; `NBA_GLOSSARY.md:318` lists `f_vol` as a
