@@ -33495,3 +33495,108 @@ pointer by searching the text quoted beside it. That advice is sound — and it 
 the corpus's internal citations, because the other two-thirds never quoted anything.**
 ***The corpus has been citing itself by a number for nineteen transcripts, and the number has been
 wrong five times out of six.***
+
+---
+
+# §T20.68 — T20 PASS 63 · THE `§`-POINTER AUDIT — **99.2% RESOLVE. THE CORPUS ALREADY HAS THE DURABLE MECHANISM.**
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: repo reads and one local script.** **Nothing triggered, dispatched
+or edited in the system; `NBA_COMPASS.md` not written to.**
+
+## 0. THE UNTESTED RECOMMENDATION THIS PASS EXISTED TO TEST
+
+**§T20.67 closed by putting a prescription at the top of the resume note a fresh session reads
+first:**
+> ✅ *"Inside the corpus, cite by QUOTATION and by **`§`-section** — never by line number alone."*
+
+⚠⚠ ***It was written WITHOUT CHECKING WHETHER `§`-SECTIONS RESOLVE — a recommendation resting on an
+untested assumption, which is precisely the class §T20.28 exists to punish.***
+
+## 1. ⚠⚠ RULE 20 BIT FOR THE THIRD TIME TODAY, AND THE FIRST ANSWER WAS WRONG BY A FACTOR OF EIGHTEEN
+
+**The first resolution test asked whether each cited anchor appears somewhere WITHOUT the `§` sigil —
+on the assumption that a heading declares `T9.28b` and a citation writes `§T9.28b`.**
+> 🔴 **It returned `110` dangling of `709` — a `15.5%` failure rate — and the dangling set was
+> suspiciously clustered: `T15.2 … T15.5`, `T16.1 … T16.5`, `T17.1 … T17.4`, whole consecutive
+> blocks.**
+
+🔑 **The clustering was the tell. The corpus's headings CARRY the sigil** — a census of declaration
+shapes returns **`74 × "# §T#.#"`** — **so a test demanding a bare form marks every canonically
+declared section as dangling.**
+✅ **CORRECTED TEST: an anchor is declared if it opens a HEADING line, with or without `§`.**
+
+| test | dangling | rate |
+|---|---|---|
+| 🔴 first *(bare declaration required)* | **110** | 15.5% |
+| ✅ corrected *(heading-anchored, sigil optional)* | **27** | 3.8% |
+
+📌 ***Third rule-20 save of the session*** — after `norm_name` vs `display_name` (§T20.57, which
+would have reported an empty comparison as a finding) and `TZ:` vs `TZ=` (§T20.50, which would have
+made the system look worse than it is). **Here it was a factor of eighteen on the defect count.**
+
+## 2. ✅✅ THE RESULT — AND IT EARNS THE PRESCRIPTION
+
+**`709` distinct `§T` anchors cited across the twelve; `1,536` declared as headings across the
+thirty:**
+
+| class | n | share |
+|---|---|---|
+| ✅ **declared canonically** — the anchor opens a heading | **682** | **96.2%** |
+| ✅ **locatable** — appears inside some heading, not at its start | **21** | 3.0% |
+| 🔴 **TRULY DANGLING** — appears in NO heading anywhere in the thirty | **6** | **0.8%** |
+
+> ## ✅✅ **TRUE RESOLUTION RATE: `703` of `709` — `99.2%`.**
+
+**The six**: `T15.3` · `T15.4` · `T15.4b` · `T15.4d` · `T16.5` · `T17.5`.
+⚠ **And their concentration is the explanation, checked rather than assumed (rule 19)**: *all 27
+non-canonical anchors come from **T15 (16) · T16 (5) · T17 (5) · T18 (1)** — the four transcripts
+closed at the SHORTEST pass counts, whose findings were written inline in summary rows rather than as
+numbered `§`-sections.* ⇒ **Not a citation-discipline failure across the corpus; a by-product of four
+short closures.**
+
+## 3. 🔑🔑 THE COMPARISON THE HANDOFF NEEDS
+
+| citation scheme | alive | denominator | rate |
+|---|---|---|---|
+| 🔴 **`FILE:LINE`, internal** | 8 | 49 testable *(§T20.67)* | **16.3%** |
+| ✅ **`§`-section** | **703** | **709** | **99.2%** |
+
+⇒ ***The corpus does not need a new citation system. It has one, it works six times better, and it is
+already the form this session's own self-corrections were written in.*** **§T20.63 and §T20.64 cite
+`§T20.47`, `§T20.60`, `§T11.56b` — and every one of those resolves today while the `FILE:LINE`
+pointers in the same paragraphs are dead.**
+✅ **THE PRESCRIPTION IS EARNED AND THE STANDING NOTE IS AMENDED WITH THE NUMBER**, so a fresh session
+trusts the mechanism it should be using.
+
+## 4. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — SIXTY-FOURTH consecutive identical run.** Measured 2026-09-22T18:35:57Z |
+| **(ii)** ≥1 cited `§` does not exist | 🔴 **TRUE — `6`, and they are named** |
+| **(iii)** the `§` rate materially exceeds the line rate | ✅✅ **TRUE — `99.2%` against `16.3%`, a factor of six.** The prescription is earned, not assumed |
+
+✅ **Baseline `636 · 2 · 484 · 481` — SIXTY-FOURTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — six dangling anchors; `0/3` stands.** *No new SYSTEM defect: this is the corpus's own
+citation surface.*
+✅✅ **AND THIS IS THE PASS THAT TURNS TWO BAD ONES INTO A PRESCRIPTION. §T20.66 and §T20.67
+established that the corpus's line numbers are 84% dead and two-thirds unrecoverable. This one
+establishes that the corpus's OTHER citation scheme — the one it already uses everywhere — resolves
+at `99.2%`. The handoff does not inherit a broken citation system; it inherits a working one and a
+broken habit.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at `0/3` with TWO INDEPENDENT reads owed, exactly as T19
+(§T19.6, OWNER DECISION).**
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.49's `COMPASS fact 51` mis-citation** *(a different scheme —
+COMPASS fact numbers, not `§T` anchors)* · **§T20.63/§T20.64's own `§`-pointers** *(prior by
+construction; they are inside the 703 that resolve)*.
+
+📌 ***The lesson:*** **the first test said one citation in six was dangling and the corrected test
+said one in a hundred and eighteen. The difference was a single character — whether a heading writes
+`§T16.3` or `T16.3` — and the wrong answer was clustered so obviously that the clustering, not the
+care, is what caught it.**
+***A defect rate that arrives in neat consecutive blocks is a bug in the instrument until proven
+otherwise.***
