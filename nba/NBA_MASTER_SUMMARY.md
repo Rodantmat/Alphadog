@@ -26558,3 +26558,99 @@ does not — it lives in the OWNER stratum, which is the same place pass 0's two
 **On this transcript, three separate instruments — the population re-derivation, the coverage tail,
 and the owner-turn probe — all point at the same two gaps: the work order, and the owner's own
 instructions.**
+
+---
+
+# §T20.8 — PASS 3: THE WRITE CENSUS CONFIRMS THE OWNER'S OWN COMPLAINT, QUANTITATIVELY
+*(T20 pass 3, 2026-09-22 — the `tool_use` stratum, 592 segments, and the `thinking` stratum, 29;
+**with this pass all five of T20's strata are read**)*
+
+## 0. ✅ THE MUST-FOLLOW RULE — applied
+*Resume note re-read; charter re-read — T19 SEG 60/61 plus T20 SEG 597. SEG 1120's form rule in
+force.*
+
+## 1. ✅ THE COMMAND, AND A MEASUREMENT CORRECTED BEFORE IT WAS PUBLISHED — ***RULE 30 · RULE 15***
+
+**A first census attributed writes by looking for `path:` inside each `tool_use` segment. It put
+`225 of 434` segments (51.8%) in a `(no path)` bucket** — *because a `github_patch_file` call spans
+several consecutive `tool_use` segments and only one of them carries the path.*
+
+```python
+# corrected: a write CALL is a run of consecutive write-tool tool_use segments,
+# terminated by its tool_result; the run inherits whichever segment carries path:
+runs = []            # scratchpad/t20/  — 2026-09-22T13:08Z
+```
+✅ **Corrected result: 211 distinct write calls across 434 segments; only 2 still lack a path.**
+⚠ *The uncorrected figure would have been published as a 52% unattributable rate. It is an
+attribution artefact, not a property of the transcript — the third measurement this run has caught
+before publication (§T19.8's en-dash, §T20.6's stripped suffixes, this).*
+
+## 2. 🔴 THE CENSUS — *and it lands on the owner's SEG 604*
+
+| target | calls | share | chars |
+|---|---|---|---|
+| `NBA_OPEN_ITEMS` | **67** | 31.8% | 93,521 |
+| `NBA_MASTER_SUMMARY` | **52** | 24.6% | 174,206 |
+| `NBA_FINAL_SCORING_CALIBRATION` | 32 | 15.2% | 81,057 |
+| `NBA_GOBLIN_DEMON` | 12 | 5.7% | 26,019 |
+| `NBA_MULTIPLIERS` | 10 | 4.7% | 30,517 |
+| `NBA_GLOSSARY` | 9 | 4.3% | 12,961 |
+| `NBA_DATABASE` | 7 | 3.3% | 8,874 |
+| **`NBA_WORKERS`** | **5** | 2.4% | 12,446 |
+| **`NBA_SYSTEM_ARCHITECTURE`** | **5** | 2.4% | 20,789 |
+| `NBA_BASELINE_CALIBRATION` | 4 | 1.9% | 24,973 |
+| **`NBA_SYSTEM_DESIGN`** | **4** | 1.9% | 11,963 |
+| **`NBA_RECIPE`** | **2** | 0.9% | **1,597** |
+
+**The owner, T20 SEG 604**: *"**not just workers — recipe, workers, system architecture and system
+design as well.** you said it. at this point you need to get 3 consecutive clean passes on all the
+transcripts you did half work! mandatory again!"*
+
+🔴 ***THE FOUR DOCUMENTS HE NAMED RECEIVED 16 OF 211 WRITE CALLS — 7.6% — IN THE SESSION IN WHICH HE
+NAMED THEM.*** **`NBA_RECIPE.md` received two calls totalling 1,597 characters across 1,177
+segments: the smallest share of any of the twelve.** ✅ **A fourth independent instrument reaching the
+same conclusion as §T20.2's owner turns and `NBA_DOCUMENTATION_PROMPT.md`'s Part 9 #1.**
+
+⚠ **NOT ESTABLISHED: whether the 16 calls were SUFFICIENT.** *A small document correctly needs fewer
+writes than a large one; call count measures attention, not adequacy. What it establishes is that
+the owner's characterisation was accurate, not that the documents are still short.*
+
+## 3. ✅ THE `thinking` STRATUM — *a null, as predicted, and a caution that sharpens it*
+
+**29 segments, 2,384 chars, mean 82 — third-person gerund phrases, ellipsis-terminated, 60–145
+chars. No content. Clause (iii) HIT.**
+
+⚠ **AND TWO LABELS DEMONSTRABLY MIS-DESCRIBE THEIR OWN SEGMENT:**
+- **SEG 535** — *"fitting a mixture model to **movie** performance data"* *(the context is the period
+  mixture and band validation)*
+- **SEG 939** — *"reviewing lessons on common failure patterns in **enterprise deals**"* *(the context
+  is the MLB lessons document)*
+
+🔑 ***So the stratum is not merely thin — its labels cannot be trusted as descriptions of what was
+being reasoned about.*** **§T19 established the stratum is labels in 17 of 20 transcripts; this adds
+that the labels are sometimes wrong about their own subject, which is a reason to read the
+neighbouring segments rather than the label.**
+
+## 4. 📏 CLAUSE SCORING
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` changes by no more than ±10 | ⏳ **scored at the start of pass 4** *(rule 34)* |
+| **(ii)** | the four calibration documents receive **FEWER** writes than `MASTER_SUMMARY` + `OPEN_ITEMS` | ✅ **HIT — 58 vs 119 calls; 162,566 vs 267,727 chars.** *Both measures agree.* |
+| **(iii)** | the `thinking` stratum yields **NOTHING** | ✅ **HIT** — *and it functions as the positive control it was written to be* |
+
+⚠ **Clause (ii) carried an alternative reading — *"if instead they dominate, the drift the owner named
+was already being repaired before he named it, and that is the finding."*** **They do not dominate.
+The four he named took 7.6% of the session's writes.**
+
+## 5. ✅ STRATUM COVERAGE — T20
+| stratum | segments | read in |
+|---|---|---|
+| owner | 22 | **pass 0** |
+| prose | 166 | **pass 1** |
+| `tool_result` | 368 | **pass 2** |
+| `tool_use` | 592 | **pass 3** |
+| `thinking` | 29 | **pass 3** |
+| **total** | **1,177** | ✅ **all five read** |
+
+▶ **T20's counting passes — the full sequential reads that can advance the clean count (rules 44/45/46)
+— begin at pass 4.** ⚠ **CLEAN 0/3: every pass so far has found new material.**
