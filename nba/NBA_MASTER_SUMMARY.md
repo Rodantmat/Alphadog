@@ -14430,6 +14430,55 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.10 — PASS 9 (**the ASSISTANT-PROSE stratum read IN FULL**) — **🔑🔑 six of pass 7's eight failures were explained in the same transcript · 0/3**
+*2026-09-22. **68 segments, 34,717 characters — small enough to read entirely, so there is no sample
+to state** (§T11.43's precedent; rules 17, 23, 25, 30). Pinned 2026-09-22T07:36Z: max 1,702, min 64,
+mean 511.*
+
+#### ✅ T12.10a — **The STASIS prediction landed a second time**
+***Predicted, on §T12.9a's new bound: pass 8 quoted only envelope KEYS and workflow step NAMES —
+mechanism — so the band must HOLD.*** **Measured 28 / 11 / 590 / 566, identical; baseline unchanged.**
+**Twenty-fourth: twenty-one hits, two misses, two partials.** 🔑 *Two consecutive stasis predictions,
+both exact — the bound §T12.9a produced from a MISS is now carrying weight.*
+
+#### 🔑🔑 T12.10b — **SIX OF PASS 7's EIGHT FAILURES ARE EXPLAINED, in this same transcript**
+*§T12.8d recorded them as unexplained. **They are not** — the explanation sits in the prose stratum,
+which pass 7 had not read.* **319** → *"the scaffold EXISTS — the error says **'match can't be
+blank'**, the wrong parameter name"* · **327/329** → ***"`market_filters` need the SESSION TOKEN —
+not important, the per-match lines carry the props"*** · **520** → *"an **embedded oauth client**;
+the app obtains a token for anonymous browsing"* · **522/525** → ***"a VALIDATION ERROR, not an AUTH
+WALL — reachable, but code 58 is not valid there"*** · **545** → *"now it's **checking the app
+version** — the bundle has the real `marketingVersion`/`capabilityNumber`"*.
+🔑 ***Only segment 367 — the `alternate_lines` 404 — is explained NOWHERE, and it is the one still
+open.*** ⚠ **The lesson is about method, not about T12**: ***a failure and its cause live in
+different strata, so a stratum read alone will present a solved problem as an open one.***
+
+#### 📌 T12.10c — **The Fliff protocol, decoded in prose, in none of the twelve**
+**`operation 58` = the universal/board feed, `81` = the sync feed** *(0 of thirty)* · **codes 51–56
+and 59 are accepted publicly and want a `message_name`** · **`message_name` = the constant
+`sports_book_request`, with `operation` and `load_data_requests`** *(1 of thirty)* · **the version the
+server checks is the bundle's `marketingVersion`/`capabilityNumber`** *(1 and 0 of thirty)*.
+⚠ **And the honest status given at the time**: *"**real progress, but NOT a finished scraper**…
+scrapable in principle without login — the public endpoint is open — but **the most involved of the
+four: a custom protocol whose operation codes and feed-sync payloads** [remained]."*
+
+#### 📌 T12.10d — **Three more, all 0 of the twelve**
+🔑 **UNDERDOG REBRANDED to *Underdog Sports*, web app `app.underdogsports.com`** *(1 of thirty)* —
+***while the working API host §0f records is still `api.underdogfantasy.com`.***
+🔑 **THE PROXY HAS A VENDOR**: *"the same **SCRAPEGW residential proxy** as the PrizePicks producer…
+**direct = 403 bot block on the datacenter [IP]**"* — **`scrapegw` is 0 of THIRTY.**
+🔴 **A RAW-CDN STALENESS HAZARD**: *"the run pushed after a rebase retry (commit `401c72a5`) — **my
+earlier read hit the RAW CDN CACHE**"* — ***a read-after-write hazard that makes a fresh commit look
+absent.*** **0 of thirty for the phrase; 1 of thirty for "CDN cache".**
+📌 **And pass 8's unexplained `commit board json to main` FAILURE is explained here too**, at segment
+76: *"the scraper produced its board but **its push collided with my concurrent commits (no retry in
+that older workflow)**."*
+
+**Pass outcome: 🔴 NOT CLEAN — it corrects §T12.8d's framing and adds the Fliff protocol, the
+rebrand, the proxy vendor and the CDN hazard. CLEAN 0/3 · 10 passes.**
+
+---
+
 ### T12.9 — PASS 8 (**the THEN-VS-NOW diff — and the pass's own PREMISE was wrong**) — **🔴 the pre-registration MISSED · 0/3**
 *2026-09-22. `SELECT` only; no third-party API called. All populations pinned.*
 
