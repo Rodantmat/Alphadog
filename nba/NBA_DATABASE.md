@@ -11,6 +11,7 @@ transcript. Where a table was altered later, the change is noted with its transc
 | Date | What changed |
 |---|---|
 | 2026-09-20 | Created. `nba_ref`, `nba_config`, `nba_control` from T1 passes 3–4. MLB reference tables from T1 pass 2. Large tables from the live session. |
+| **2026-09-21 → 09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `28` commits that this log never recorded.** *T11–T18 material plus the live audits: the CLASS REGISTER (every population the sweep's bounds are drawn over) · `data_quality` as a per-table provenance marker · `snapshot_label`'s per-table vocabularies and the `board_tiers`/`v2` subset relation · `blowout_model.side`'s three vocabularies · `prop_taxonomy`'s enumerated eighteen · the `triple_double` gap (274,010 `dd`, zero `td`) · **§0v the read-only storage incident** and its ~400-segment-earlier prediction · **§0u the infrastructure limits** (30 GiB cap, 2 GB RAM, PUBLIC repo) · T16's live index audit and six re-taken tables · **§T17.2 the storage diet plan** · T18's twelve-book ladder-depth table · T18 pass 6's twenty re-taken live figures. **Corrections in place: the 100% market-spread coverage claim · "a ninth" → the enumerated eighteen · the phase row 6 → 7 · §0v twice · §0w's 795-row difference · 0z-T18's hand-arithmetic.*** |
 
 ---
 
