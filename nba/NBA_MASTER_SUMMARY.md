@@ -14430,6 +14430,109 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.6 — PASS 5 (**the FIRST two-direction judgment on T12**) — **🔴 four corrections, THREE of them to this sweep's own T12 work · 🔑🔑 RULE 31 · 0/3**
+*2026-09-22. **Built to attack every claim §T12.1–§T12.5 published at its weakest joint.** `SELECT`
+only. **Every population below is pinned with its query and a UTC timestamp**, because the live
+system is being changed by a concurrent session today.*
+
+#### ⚠ T12.6a — **The pre-registration was PARTIAL, and it is recorded as partial**
+***Predicted: baseline unchanged, `uncovered12` to FALL, with segments 30, 37, 48, 100 and 134 among
+the crossings.*** **Measured** *(2026-09-22T06:59:47Z)*: **baseline 9 / 15 / 618 / 585 unchanged ✅ ·
+working 27 / 11 / 593 / 568**, so the fall landed ✅ — 🔴 **but only THREE of the five named crossed
+(30, 37, 48); 100 and 134 did NOT, and segment 29 crossed unnamed.** **Twentieth pre-registration:
+nineteen hits, one miss, ONE PARTIAL** — *scored as partial rather than rounded to a hit.*
+
+#### ✅ T12.6b — **ATTACK 1: §T12.1d against segment 90 read WHOLE — it survives**
+**Every clause is accounted for**: the two-column table *(our scraper / ParlayAPI)*, the three
+mechanisms, the Nick Martinez and total-bases examples, *"roughly a quarter of the board's rungs"*,
+*"same stat taxonomy otherwise — no stat we track was missing on either side"*, the name-normalisation
+hazard, and the shared `standard`/`goblin`/`demon` labels. 📌 **One refinement**: *the entry records
+that ParlayAPI has MORE distinct players (104) on FEWER legs (1,353) and leaves the cause implicit —
+**it is the 341 live micro-market legs**, drawn from players not on the pre-game slate.*
+
+#### 🔴 T12.6c — **ATTACK 3: a rule-19 omission in my own §T12.3b, and an invented rationale**
+*The Sleeper figures AGREE across segments 211, 215, 435 and 570 ✅ (rule 27). **Three clauses were
+dropped**, and one of them changes the finding.*
+1. **The decomposition**: *"**player+line 180/180 matched, ours-only 0, parlay-only 1 — parity on
+   coverage**"* — which is what *"per-stat identical"* rests on.
+2. 🔴🔴 **THE REASON SLEEPER IS OURS**: *"**ours keeps REAL PER-SIDE MULTIPLIERS; ParlayAPI CONVERTS
+   TO AMERICAN ODDS** — use ours, ParlayAPI fallback."* ***§T12.3b and §0f said "ours anyway, because
+   it is first-party and free." That reason is MINE, not the transcript's*** — **and it could not be
+   the reason, because on coverage the two are at parity, which is the whole point of 180/180.**
+3. 🔴 **UNDERDOG HAD A THIRD STATE**: between segment 134's *"ParlayAPI (bot-protected)"* and segment
+   570's 854 lines sits a measured failure — *"**ours 100 legs / 15 players, IN-GAME ONLY, vs
+   ParlayAPI's 747 / 100 pre-game**; our search endpoint call serves only the LIVE view; the pre-game
+   parameter is unknown and probing was blocked tonight by Cloudflare"* → *"**ParlayAPI PRIMARY until
+   the pre-game parameter is found**."* 🔑 ***So the owner's capture did not speed things up — it
+   turned a 100-leg live-only feed into an 854-line pre-game board.***
+📌 **Also recovered**: segment 215's summary table states PrizePicks as ***"ours +28%"*** *(1,729 /
+1,353 = 1.278 ✅)* and Fliff as *"coverage n/a · ParlayAPI odds · ParlayAPI."* **Corrected in `NBA_SYSTEM_ARCHITECTURE.md` §0f.**
+
+#### 🔴🔴 T12.6d — **ATTACK 5: the grader's CODE corrects the design I recorded from the answer**
+**`grade_board_outcomes.py`, docstring lines 9–23, read 2026-09-22**: `leg_result` takes **seven**
+values — `over_win` / `under_win` / `push` / `dnp` / `no_stat` / `unmatched_player` /
+`game_not_found` — and line 15 says why: 🔑 ***"Baking either rule into `leg_result` would make the
+data useless for the other operator"*** *(line 14: "Underdog: DNP voids the leg")*.
+🔴 ***So "DNP → void", which §T12.5b took from the answer, is NOT what the grader does***: **the apps
+disagree, so it stores `dnp` and leaves void-vs-loss to the consumer.** **Recording the answer's rule
+would have made the table look as though it had already taken PrizePicks' side.**
+✅ **And TWO WORD-SEARCH FALSE ALARMS killed by opening the code** *(rule 26)*: **"goblin"/"demon"
+appear ZERO times — the discriminator is `is_alternate`, and the key `(player, market, line, side)`
+grades a goblin on its own line by construction**; **"multiplier" appears zero times — it is the
+`price` column.** ***A word count would have reported two implemented rules as missing.***
+
+#### 🔴 T12.6e — **ATTACK 2: §T12.2c's scope was overstated on two of its seven**
+*Re-probed against the baseline in THREE vocabularies (rule 20), pinned 2026-09-22T07:05Z, command
+recorded.* ✅ **The leak-the-future rule survives a second vocabulary** — *"end-of-season table" **5 of
+thirty, 0 of the twelve*** — **and so does the YAML bug** *("step name", "no job", "job-less run" all
+1 of thirty, 0 of the twelve, while "yaml" alone is in 3 of the twelve)*.
+🔴 **But `absence prior` is in 2 of the TWELVE and `defender quality` in 4** — *opened: the two
+absence-prior hits are this sweep's own quotations of a done-list and a matrix row, i.e. the NAME;
+the defender-quality hits are the FACTOR as documented.* ***So what is 0 of the twelve is the
+MEASUREMENT — `n = 59,785`, the base rates, "folklore reversed", "toughest quintile",
+`elasticity 0.39` — and NOT the factor.*** ✅ **The substance survives; §T12.2c's phrasing claimed a
+wider absence than it had measured.** *(Rule 2: an absence claim is tested against the substance.)*
+
+#### ✅ T12.6f — **ATTACK 4 re-taken a day later: unchanged, and now the OWNER ITEM**
+**Pinned 2026-09-22T07:00:58Z** — `player_game_starter_status` **32,179 rows, season code `25`
+ONLY**; `game_officials` **3,681 rows, `25` ONLY** *(`string_agg(DISTINCT substring(game_id,4,2))`)*.
+**Pinned 2026-09-22T07:01:05Z** — `enrichment_backfill_status_2026_09_10` still asserts
+**`1230/1230` for all three seasons**, `verified_at` 2026-09-10T22:00Z. ***Both sides unchanged from
+2026-09-21; the finding survives a full re-take.***
+
+#### ✅ T12.6g — **The owner's goblin-floor correction, verified rather than taken on trust**
+**`nba_config.pp_slip_rules.goblin_floor` is `status = 'superseded'`** *(pinned 2026-09-22T07:01:38Z,
+`updated_at` 2026-09-21T21:47:40Z)*: **2.08× → 1.9×**, factor **0.6933 → 0.6333**, evidence *"More-goblin
+2-pick quotes with a STANDARD partner from a DIFFERENT game paid 2.0× on NBA (SGA 3PM 0.5, Tatum 3PM
+1.5, Cunningham REB 3.5) and 1.9× (26 legs) / 2.0× (46 legs) on WNBA."* ✅ **Confirmed by the pricing
+model**: current version **`pp-leg-v2-sqrt-cap-conservative-floor190`**, `goblin_floor_factor`
+**0.6333** *(pinned 07:02:02Z)*. 🔑 ***And nothing in this corpus needed retracting: the 2.08× floor
+is stated in exactly ONE file — `nba/PP_PAYOUT_FINDINGS.md`, the concurrent session's own and out of
+scope.*** **Written to `NBA_GOBLIN_DEMON.md` §0g.**
+
+#### ✅ T12.6h — **The concurrent session's new objects, verified against the live database**
+*All pinned 2026-09-22T07:01:11–23Z.* **Six tables present** — `fs_backsim` (32,170) ·
+`derived_backsim` (179,712) · `derived_alt_backsim` (112,404) · `player_game_map` (35,793) ·
+`pp_leg_price_cons` (1,289,896, **and `kind` is present**) · `prop_universe` (1,665,572, ⚠ **MID-REBUILD
+— not final**). **Ten functions present with their signatures**, including
+`nba_score.paper_pick_slips(p_date, p_threshold, p_snapshot)` and `paper_pick_candidates` likewise;
+**`nba_score.paper_picks` has `event_id`.** 🔑 **And the populations did NOT move**: **base tables
+104, `nba_market` 25 — identical to 2026-09-21** *(`information_schema`, pinned 07:01:23Z)*, **so
+every §0z bound taken yesterday still stands today.**
+
+#### 🔑🔑 T12.6i — **RULE 31, and it earned itself twice in one attack**
+> **RULE 31 — A DESIGN IS WHAT THE CODE DOES. A design statement — in an answer, a spec or a
+> document — is a CLAIM ABOUT CODE, and it is tested by reading the code, never by trusting the
+> description.** ⚠ **And the reading is done by MECHANISM, not by keyword**: *at pass 5 the same
+> attack found one rule the code contradicts (**"DNP → void"**) and two rules a word search called
+> missing that the code implements under other names (**`is_alternate`, `price`**).*
+
+**Pass outcome: 🔴 four corrections — three to this sweep's own T12 entries and one to a design claim
+— one partial pre-registration, one owner-supplied correction verified, the concurrent session's
+objects pinned, and a new standing rule. CLEAN 0/3 · 6 passes.**
+
+---
+
 ### T12.5 — PASS 4 (**the OWNER-ANSWER audit — every owner turn paired with the answer it received**) — **🔴 my own Fliff framing narrowed by an answer that was in the transcript all along · 0/3**
 *2026-09-21. **The brief came from a rule-6 obligation**: pass 3 found a substantive finding inside
 the ANSWER to segment 38, and this sweep had been reading the questions.*
