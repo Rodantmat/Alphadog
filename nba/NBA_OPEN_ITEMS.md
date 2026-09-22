@@ -4460,7 +4460,12 @@ silently dropped."* **Three scrapers, one session: one keeps everything, two han
 hand-picking ones discarded fields that map onto certified props.**
 
 ### `[LIVE-AUDIT]` — and this table has not been refreshed either
-`last_write 2026-09-02T07:58Z` — **19 days stale**, the same pattern as `nba_calendar.games`.
+`last_write 2026-09-02T07:58Z` — ~~**19 days stale**~~ **stale SINCE `2026-09-02T07:58Z`** *(19 days
+when written on 2026-09-21; **20 days** re-derived 2026-09-22, §T20.26)*, **the same pattern as
+`nba_calendar.games`.** ⚠ **Re-stated as a DATE rather than a countdown because the countdown is
+wrong the next morning** *(§T20.26: all three of the corpus's derived elapsed durations had moved
+while every stored figure they rest on was byte-exact — `player_impact_rating` is still **530 rows**
+with `last write` **2026-09-02T07:58:37.370Z**, unchanged)*.
 
 ### Unverified, and worth one check before the season
 The leaderboard page displays **"minimum 20 games played"** adjacent to the rankings. **Whether that
