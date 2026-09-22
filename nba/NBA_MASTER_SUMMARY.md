@@ -38783,3 +38783,107 @@ disagreement.** ✅ **NOVEL.**
 it — in three minutes, by its own kill clause.** ⚠⚠ ***A clause written to stop a pass found, in
 stopping it, the worst inconsistency this sweep has produced: not in the system, but in the
 documentation of the system, on the two surfaces built to be read first.***
+
+---
+
+# §T20.119 — T20 PASS 114: 🔴🔴🔴 **THE ROUTER'S PROMISE AUDITED CLAIM BY CLAIM — TWO OF ITS TEN FAIL, AND THE WORSE ONE TELLS THE OWNER NOTHING RUNS ON A GAME DAY WHILE THE BOARD SCRAPERS RUN TWELVE TIMES A DAY**
+
+*Pass 114, 2026-09-22. Pre-registered as **"THE CROSS-SURFACE CLAIM AUDIT — EVERY STATEMENT A
+FIRST-READ SURFACE MAKES ABOUT ANOTHER DOCUMENT, RE-CHECKED AGAINST THAT DOCUMENT,"** because
+`§T20.118` found its defect by accident and named the class: **"a narrative saying 'I corrected X' is
+a reference like any other."** Clause (vi) allowed a clean stop. **It did not fire.***
+
+## ① THE POPULATION *(clause ii — and it is not what the sweep has been saying)*
+
+**`grep -n "START HERE"` across the twelve plus the run log, `2026-09-22T23:53:46Z`: TWO surfaces
+carry the heading** — **`NBA_MASTER_SUMMARY.md:3`** *(the router, `§T20.107`)* and
+**`NBA_SWEEP_RUN_LOG.md:13`** *(the resume block, `§T20.69`, re-measured at `§T20.105`)*.
+⚠ **`NBA_OPEN_ITEMS.md` carries NO such heading** — its brief is a first-read surface **by position
+and by the router pointing at it**, not by a marker. *Stated because the sweep has repeatedly spoken
+of first-read surfaces without ever counting them.*
+
+**The router opens with a promise, and the promise is what this pass tests**: *"Every line below is a
+pointer or a quotation; **nothing is asserted here that is not established elsewhere in the
+twelve.**"*
+
+## ② THE AUDIT — TEN CHECKABLE CLAIMS, FOUR VERDICTS
+
+| # | the router's claim | verdict | measured |
+|---|---|---|---|
+| 1 | *"Exactly **ONE NBA workflow** fires on a game day — `nba-referees.yml`"* | 🔴🔴🔴 **FALSE** | **FOUR fire** — see ③ |
+| 2 | *"`42` of `42`"* executed objects documented | 🔴 **STALE** | **`43`** since `§T20.115` |
+| 3 | *"THIS DOCUMENT IS `2,789,201` CHARACTERS"* | ⚠ **STALE** | **`2,954,675`** *(+5.9%)* |
+| 4 | *"`53.4%` of the twelve"* | ⚠ **STALE** | **`54.0%`** *(twelve = `5,470,935`)* |
+| 5 | *"the OPENING-DAY BRIEF — `16,230` characters"* | ⚠ **STALE** | **`24,058`** *(+48%)* |
+| 6 | *"larger than the entire sweep run log"* | ✅ **HOLDS** | `2,954,675` > `2,195,284` |
+| 7 | *"`5` of the `12` checks have no date predicate"* | ✅ **HOLDS** | `12` SELECT checks; `5` `count(*)` with no date term |
+| 8 | the ranked string · *"SIXTEEN season-critical items"* | ✅ **HOLDS** | *as of `§T20.118`'s repair, one pass ago* |
+| 9 | *"`NBA_SWEEP_RUN_LOG.md` — read its own `🟢 START HERE` block only"* | ✅ **HOLDS** | it exists, at `:13` |
+| 10 | *"`1` broken reference in `5,164`"* | ⚠ **UNVERIFIABLE HERE** | *would need `§T20.91`'s pointer audit re-run over `5,164` references; named rather than assumed* |
+
+⇒ **`4` HOLD · `3` STALE · `1` FALSE · `1` UNVERIFIABLE · and #2 is a STALE that matters like a
+FALSE.** **All eight resolved verdicts were repaired IN THE ROUTER, not described here** *(clause
+vii — `§T20.118`'s literal lesson)*.
+
+## ③ 🔴🔴🔴 CLAIM 1 — **THE POPULATION QUALIFIER THE ROUTER DROPPED, AND WHAT IT COSTS**
+
+**`§T20.93` is CORRECT and it pinned its population**: *"`nba-*.yml` in scope = **33** … `grep -c
+"cron:"` on each ⇒ **3** carry a cron"*, of which `nba-referees.yml` is the only daily one.
+🔑 **`sleeper-board.yml`, `underdog-board.yml` and `fliff-board.yml` DO NOT BEGIN WITH `nba-`.**
+**They were outside `§T20.93`'s population by construction — and the router restated the finding
+without the qualifier.**
+
+**Measured, `2026-09-22`, `grep -E "^\s+- cron:"` across all 40 workflows:**
+
+| workflow | cron | NBA? |
+|---|---|---|
+| `nba-referees.yml` | `30 15 * * *` — **daily** | yes |
+| **`sleeper-board.yml`** | **`15 */2 * * *` — every 2 h** | **`sports` default `"mlb,nba"`** |
+| **`underdog-board.yml`** | **`25 */2 * * *`** | **`sports` default `"MLB,NBA"`** |
+| **`fliff-board.yml`** | **`35 */2 * * *`** | **`sports` default `"mlb,nba"`** |
+| `nba-p1-weekly-static.yml` | `0 19 * * 1` — Mondays | yes *(not a game-day event)* |
+| `nba-scrape.yml` | `0 9 * * 1` — Mondays | yes *(not a game-day event)* |
+
+✅ **AND THE BRIEF THE ROUTER POINTS AT ALREADY HOLDS THE LIVE PROOF**: *"the three GitHub-Actions
+scrapers are demonstrably alive: Sleeper committed `2026-09-22T16:57:05Z`, Fliff
+`2026-09-22T17:14:27Z`, Underdog `2026-09-21T19:52:37Z`."* ⇒ 🔴 ***The router's headline
+state-of-the-system fact contradicts the document it sends the reader to, and the document is the one
+with the evidence.***
+
+⚠⚠ **WHY IT MATTERS OPERATIONALLY, AND WHAT SURVIVES**: an owner planning opening night reads *"exactly
+one thing runs automatically"* and concludes the boards are not being pulled. **They are — twelve
+times a day, both sports.** 🔑 **What is true, and is the real finding, is narrower and sharper:
+`P1` is the only PIPELINE with a cron; `P2` and `P3` have none.** ⇒ ***The inputs arrive on a
+schedule. Nothing on a schedule consumes them.***
+
+## ④ 🔴 CLAIM 2 — **AND THIS ONE IS MINE, ONE PASS AFTER I NAMED THE FAILURE**
+
+`§T20.115` (pass 110) established that the pipelines' executable surface is **`43`**, not `42` —
+`40` scripts + **`1` inline YAML block** *(the ladder merge at `nba-p2-overnight-heavy.yml:214`, nine
+lines of Python counted by no census that counts files)* + `2` DB functions. **The router still said
+`42 of 42` four passes later.**
+
+⚠⚠ ***That is `§T20.118`'s defect exactly — a correction written into the narrative and not onto the
+surface — committed by the pass that found it, and surviving `§T20.118` itself.*** 📌 **The
+hypothesis needs no sixth amendment; it needs a procedure, and clause (vii) of this pass's
+pre-registration is that procedure: *every repair goes to the surface, and the pass is not closed
+until it has.***
+
+## ⑤ WHAT THE SECOND SURFACE DOES RIGHT, AND IT IS THE MODEL
+
+**`NBA_SWEEP_RUN_LOG.md:13–32` states its own size, then — in the same block — says the figure went
+wrong and re-measures it**: *"**RE-MEASURED T20 pass 100 (§T20.105), `2026-09-22T22:19:59Z` — AND THE
+FIGURE ABOVE IS NOW WRONG BY `5.9×`.**"* ⚠ *Its `2,004,659` is now `2,195,284`, so it is stale again —
+**but it is stale as a DATED STATE, with the mechanism named.*** 🔑 ***A self-referential number
+cannot be kept true; it can only be dated and re-measured. The run log does that and the router did
+not — which is why three of the router's five failures were size figures.***
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `"START HERE"` returns **0 files** in
+`/tmp/t20base/nba/` *(the surface did not exist at baseline)*; `sleeper-board`/`underdog-board`/
+`fliff-board` co-occur with `cron` in **0** documents of either tree. ✅ **NOVEL.**
+
+📌 ***The lesson:*** **the router's own promise — *"nothing is asserted here that is not established
+elsewhere"* — was true of every line and still produced a false headline, because a claim can have an
+impeccable source and lose the qualifier that made the source true.** ⚠⚠ ***A summary is not a
+quotation. The failure mode of a router is not invention; it is COMPRESSION — and compression is
+exactly what a first-read surface is for.***
