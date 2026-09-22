@@ -7,6 +7,7 @@ constraints that shaped it. This is the operational spec.
 | Date | What changed |
 |---|---|
 | 2026-09-20 | Created. P1/P2/P3 as built and tested in the live session; lineage from the owner's three-run model in T1. |
+| **2026-09-21 → 09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `21` commits that this log never recorded.** *T15–T18 material plus the live audits: **§0a.1 the grader's build** (the alias catch, distinct-leg storage) and its stated intent · **§0a.2 market consensus** — the owner's weighting directive answered; `build_book_curves.py` exists but nothing reads it · **§0a.3 the two-phase clock** (delta scoring, the shapes/minutes split) · **§0a.4 the knowable-at-cutoff leakage test — 0 of thirty** · §0a.5 baseline and enrichment as one system (the A2 held-out result) · **§T16.3 why enumeration beats prediction (~17%/79%)** · §T17.1 the build-order lock (no orchestrator) · §T17.2 enrichment is thin BY DESIGN · **§T18.1 the two-pipeline decision's full reasoning** · §0z-8-T18 the 2:30 PM PT trace. **Corrections in place: the DNP-void design claim corrected from the grader's code · §0a.3 marked SUPERSEDED IN PART by COMPASS fact 107 · §0z-8-T18's trace claim RETRACTED · an unanchored "as of today" anchored · P1's cron time qualified PDT/PST.*** |
 
 ---
 
