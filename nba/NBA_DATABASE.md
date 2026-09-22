@@ -108,6 +108,98 @@ proposal to share the control plane.
 > **This is the blueprint's named multi-table ID bug, reproduced.** **Which convention is correct is
 > NOT ESTABLISHED** — flagged for human decision. `NBA_OPEN_ITEMS.md` → FROM T1 PASS 50.
 
+## 0u. 🔑🔑 THE INFRASTRUCTURE LIMITS, MEASURED — **and the 43 GB finally resolves** `[LIVE-AUDIT]`
+*Recorded 2026-09-22 (T14 pass 1, §T14.2c). **Transcript `2026-09-13-20-53-23`.** **Live schema
+census pinned 2026-09-22T08:54Z.** `SELECT` only; nothing run or changed *(rule 1)*.*
+
+### 🔴🔴 THE REPO IS PUBLIC — **0 of the TWELVE**, and it bears on every credential item
+> *"**GitHub — THE REPO IS PUBLIC.** Actions minutes on standard runners are **FREE AND UNLIMITED
+> for public repositories**, which is why four scrapers running twelve times a day have never
+> touched a limit. **The Pro plan's 3,000-minute quota only applies to PRIVATE repos.**"*
+> ⚠ *"**The caveat**: public means **the code, docs and board files are readable by ANYONE** —
+> credentials aren't in the repo *(they're in Postgres)*, so nothing sensitive is exposed, but
+> ***it's a choice you should be making knowingly rather than by default***."*
+
+🔑🔑 ***This explains a cost fact and creates a security one.*** ⚠⚠ **It bears directly on the four
+credential exposures on file** *(O8, O11 and their siblings)*: **the standing rule that no credential
+value is reproduced in these documents is not a formality — these documents are public.**
+📌 **The binding GitHub limits are therefore not minutes**: **20 concurrent jobs · 6 hours per job ·
+runners with 2–4 cores and 7–16 GB RAM** — *"running the six prop pairs as six parallel jobs fits
+easily."*
+
+### ✅ CLOUDFLARE, AND THE RULE THAT FOLLOWS
+**$5 plan: 10M requests and 30M CPU-milliseconds a month included; overage $0.02 per million CPU-ms**
+— *"even a spike costs cents. The bridge does lookups and small writes; it's nowhere near the limit."*
+🔑 ***"RULE: nothing computational runs on workers."***
+
+### 🔴🔴 THE DATABASE IS THE REAL CONSTRAINT, AND THE NUMBERS SAY WHY
+> *"DigitalOcean Postgres, **1 GB RAM / 1 vCPU — this is the real constraint, and it's the one that
+> already bit us**. About **22 CONNECTIONS max**, **~256 MB of shared buffers**, small work memory.
+> **Big sorts SPILL TO DISK** — ***that's what turned a 27M-row `CREATE TABLE AS` into a 98-minute
+> run that nearly filled the disk.***"*
+
+✅ **FOUR RULES FOLLOW, and they are the operating discipline for the whole system** *(0 of the
+twelve)*:
+1. 🔑🔑 ***COMPUTE ON THE RUNNERS, NOT IN THE DATABASE.*** *Fits, scenario scoring, joins between big
+   tables — all in pandas on a 7–16 GB runner.* **Postgres only stores results and answers indexed
+   lookups.**
+2. **BATCHED WRITES, FEW CONCURRENT WRITERS** — *5–10k-row batches; at most 2–3 jobs writing at once;*
+   ***"six parallel builders are fine; they just shouldn't all insert in the same minute — stagger
+   the load step."***
+3. **NO LARGE JOINS SERVER-SIDE** — *"the coverage and calibration checks I ran as SQL will move to
+   runner-side pandas for the daily pipeline."*
+4. **CHUNK BY MONTH, VACUUM AFTER BULK DELETES, LEAN INDEXES.**
+
+⚠ **And the CPU alerts were diagnosed rather than assumed**: ***"the CPU alerts were caused by ME,
+not by the system. Every 70–100% spike lines up with the ANALYSIS QUERIES I ran this week — full
+scans over 25M board rows, distinct counts, the calibration joins. That's not the production
+workload."*** 🔑 **In production the database does three things: *batched inserts from the scrapers,
+the scenario precompute once a day, and a burst of indexed lookups at selection time.***
+📌 **Why 2 GB was the right buy**: *"**memory is the real constraint**… you're at 75–85% of 1 GB,
+which leaves Postgres ~256 MB of shared buffers — **that's why big operations spill to disk and then
+burn CPU sorting.** Doubling RAM roughly doubles the cache — **the single biggest improvement per
+dollar**."* **Connections 22 → 47 matters**: *"six parallel baseline runners + four board scrapers +
+the bridge + MLB workers + Hyperdrive's pool can plausibly approach 22."* **NVMe skipped**: *"it helps
+exactly when queries spill to disk — and if we move compute off the database, spills become rare."*
+📌 **The sizing to design toward, for two sports**: **2 vCPU / 4 GB / 60 GiB / 97 connections** —
+*"NBA alone is ~15 GB and will grow… hockey built the same way is roughly the same again; **two
+sports land at ~30–35 GB**."*
+
+### ✅✅ THE MLB BACKTEST SCHEMA WAS DROPPED — **and it is confirmed live**
+> *"Dropped the MLB backtest schema — **1,177 tables, verified no live worker reads it** *(only two
+> code comments referenced it)*. **Database went from 21 GB → 15 GB.**"*
+⚠ **Note the discipline before the delete**: *"**before deleting anything in MLB, I'll verify it's
+genuinely backtest-only and that nothing live reads it — that schema name alone isn't proof**"*, and
+the live MLB workers most likely to read it were checked by name.
+✅ **CONFIRMED**: **the `backtest` schema now holds ONE table at 203 MB** *(pinned 08:54Z)*.
+
+### 🔑🔑 AND THE LIVE SCHEMA CENSUS RESOLVES §0v's 43 GB COMPLETELY
+| schema | tables | total |
+|---|---|---|
+| 🔴 **`nba_score`** | 22 | **25 GB** |
+| **`nba_market`** | 25 | **11 GB** |
+| `archive` | 9 | 1,924 MB |
+| `score` *(MLB)* | 28 | 1,904 MB |
+| `classification` *(MLB)* | 14 | 602 MB |
+| `market` *(MLB)* | 32 | 549 MB |
+| `daily` *(MLB)* | 35 | 495 MB |
+| `stats_hitter` / `stats_pitcher` *(MLB)* | 16 / 15 | 456 / 404 MB |
+| `team` *(MLB)* | 11 | 218 MB |
+| **`backtest`** *(MLB)* | **1** | **203 MB** |
+| `nba_stats` | 19 | 130 MB |
+
+🔑🔑 ***THE SITUATION HAS COMPLETELY INVERTED.*** **T14 measured NBA at 11 GB against MLB's ~14.5 GB,
+with MLB's backtest schema alone at 7.1 GB.** **Today NBA is ~36 GB** *(`nba_score` 25 +
+`nba_market` 11)* **and MLB is roughly 4.6 GB.** ***MLB was cut as the owner directed, and NBA grew
+into the space and past it.***
+✅ **And `nba_score`'s 25 GB is now explained end to end**: **`baseline_history` ~13 GB**
+*(§`NBA_BASELINE_CALIBRATION.md` §0v — 19.3M rows, 30 props, two seasons, every game-day, every
+rung)* **plus `final_hp` ~9.4 GB** *(COMPASS fact 105: deliberately denormalised, "bought speed")*.
+⚠⚠ **SO THE OWNER'S CEILING IS THE OPEN QUESTION, NOT THE CAUSE**: ***he set 30 GiB as the maximum
+on 2026-09-13; NBA ALONE is now ~36 GB and the database is 43 GB.*** **Whether the plan was resized
+to the 60 GiB tier is NOT RECORDED in anything swept** *(T15–T20 are unread)*. **Documented, not
+acted on.**
+
 ## 0v. 🔴🔴 THE STORAGE INCIDENT, THE SHRINK THAT FIXED IT — **and the shrink has since been consumed six times over** `[LIVE-AUDIT]`
 *Recorded 2026-09-22 (T13 pass 2, §T13.3i). **The incident and the repair are T13's**
 *(`2026-09-13-01-03-48`)*; **every live figure is re-taken and pinned 2026-09-22T08:12:50Z.**
