@@ -4230,6 +4230,18 @@ does not protect against the delete above it.**
 ---
 
 ## 🔴🔴 SEASON-CRITICAL · `[LIVE-AUDIT]` · THE ENTIRE NBA STATIC LAYER IS FROZEN AT ITS BUILD DATE *(added 2026-09-21)*
+
+> ⚠⚠ **AMENDED 2026-09-22 (§T20.51, T20 pass 46) — A TENTH TABLE, AND THE SYSTEM'S OWN CERTIFIER
+> ALREADY DETECTS THIS.** **`nba_ref.defender_ratings`: `max(as_of_date) = 2026-04-09` — 166 days
+> stale.** *It is not among the nine tabulated below.* 🔑 **And P1's certifier check
+> `defender_ratings refreshed` (`<= 8 days`) is RED TODAY — `PIPE=p1` exits 1 on its first check.**
+> ⇒ ***The conclusion below — that nothing reports staleness — needs one qualification: the
+> CERTIFIER does, for this one table, by the only check in the file measured against a cadence. What
+> is missing is not the detector; it is anyone running it*** *(§T20.31: `nba_control.job_runs` and
+> `worker_run_log` are both EMPTY).*
+> ⚠ **The body's statement *"every worker's certification is a row-count threshold … and a stale
+> table has exactly the right row count"* remains TRUE of the other eleven checks** — §T20.51
+> measured them: a real board averages **71,044 legs per `game_date`** against a `> 0` gate.
 ***VERIFIED by live SQL, 2026-09-21.** Live-system state — does not affect any transcript's clean
 count. **This generalises the schedule finding below: it is not one table, it is all nine.***
 
