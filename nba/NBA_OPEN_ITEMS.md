@@ -12793,6 +12793,19 @@ and is the largest index surface in the database.*** ✅ **The instruction — c
 `pg_stat_user_indexes.idx_scan` before the season — is still right; only the target order is
 inverted.**
 
+> ### 🔴🔴 **AND THE TARGETS ARE EMPTY — `[LIVE-AUDIT]` 2026-09-22 (§T20.32)**
+> **`action_4`'s premise is *"an unused index on a 38M-row table is pure cost"*, aimed at `final_hp`
+> and `baseline_history`.** > **`pg_stat_user_indexes`, `nba%` schemas: `idx_scan = 0` count on
+> `final_hp` = `0`; on `baseline_history` = `0`.** ⇒ ***The action would find NOTHING on either
+> named target.***
+> ✅ **THE REAL TARGET, WHICH `action_4` NEVER MENTIONS: `29` unused indexes exist in `nba%`, and
+> exactly ONE exceeds 50 MB — `nba_market.board_outcomes.board_outcomes_nm_idx`, **`303 MB`,
+> `idx_scan = 0`**.** 🔑 **Byte-exact against `NBA_DATABASE.md` §0x-T16's independently-recorded
+> *"303 MB never scanned"* — a live re-confirmation five days on.**
+> ⇒ ⚠ **The recoverable index cost is `303 MB` on `board_outcomes`, not gigabytes on `final_hp`.**
+> 📌 *Classified by §T20.32 as a PRESUPPOSITION failure — the action analyses the cost of unused
+> indexes on two tables without establishing that either has any.*
+
 ✅✅ **③ `action_2_drop_superseded` IS ALREADY DONE, AND THE PLAN STILL SAYS "PLANNED".** *(rule 20,
 three vocabularies: exact name, `ILIKE '%absence%'/'%redistrib%'/'%panel%'/'%ladder_cal%'`, every
 schema)* — **`absence_panel` · `absence_panel_v2` · `absence_panel_v3` · `redistribution_panel` ·
