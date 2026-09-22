@@ -144,7 +144,13 @@
 > `STEP 12 — THE GAME-DAY TIMELINE`.**
 > ⚠⚠ **AND `P3`'s INTENDED TIME IS `NOT RECORDED` ANYWHERE (rule 6).** *P2's workflow names `09:00 UTC`. **No document names P3's.** The `1:15 PM PT` cutoff is a **GUARD** — it says when P3 may NOT run, not when it will.* ▶ **Full write-up: `§T20.88`; the pipelines as built: `NBA_RECIPE.md` `STEP 8`/`STEP 9`/`STEP 10`.**
 
-> # 🔴🔴🔴 **THE OWNER-DECISION LEDGER — `12` LIVE DECISIONS, COLLECTED HERE FOR THE FIRST TIME**
+> # 🔴🔴🔴 **THE OWNER-DECISION LEDGER — ~~`12` LIVE DECISIONS~~ `11` LIVE ROWS, COLLECTED HERE FOR THE FIRST TIME**
+> ⚠ **COUNT CORRECTED `2026-09-22`, T20 pass 107 (`§T20.112`), by this sweep's own two corrections**:
+> **row `12` is ✅ RESOLVED** *(`§T20.90` — all five `T20-1` orphans now carry an inbound route)*, and
+> **row `8` bundles three sub-items of which `T16-9` is ANSWERED, so it stands at `2`, not `3`**
+> *(`§T20.111`/`§T20.112`)*. ⇒ **`11` live rows · `12` live decisions once row 8's bundle is counted
+> out.** 🔑 *The heading is corrected here rather than left, because a ledger whose own total is stale
+> is the exact defect this pass was sent to look for.*
 > *Built **T20 pass 80 (§T20.85), 2026-09-22**. **Measured, not asserted: `grep -cE "OWNER DECISION" nba/NBA_OPEN_ITEMS.md` ⇒ `51` mentions across `11` heading-level items, `2026-09-22T20:25:11Z` — and `grep` for any surface naming "all the owner decisions" returns **`0`** across the corpus.*** ⇒ ***The fourteen BLOCKERS got a brief. The DECISIONS never did — and unlike a blocker, a decision cannot be discharged by anyone but the owner, which makes delivery the entire job.***
 > ⚠ **Each row is the question, its state, and a pointer. THE SWEEP DOES NOT CHOOSE (rule 1). Full evidence stays at each item — nothing here is moved or duplicated (rule 40).**
 >
