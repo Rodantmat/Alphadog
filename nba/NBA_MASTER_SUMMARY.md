@@ -34090,3 +34090,131 @@ reason its rules keep being born twice. Two of the three rules it refused to wri
 sitting in that table, fully legible — and the collision this pass is proudest of finding is its own,
 written one pass earlier, by a pass that had the table open in front of it.** ***An index that cannot
 be read is a problem you can measure. An index nobody reads is a problem that measures you.***
+
+---
+
+# §T20.73 — T20 PASS 68: ✅🔴 **THE DEAD-RULE CENSUS FINDS NO DEAD RULES — AND THE THREE FALSE POSITIVES IT DID FIND EXPOSE *THREE RULE NAMESPACES*, ONE OF WHICH CONTAMINATED §T20.72's OWN MEASUREMENT** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔴 **THIS PASS IS FIRST OF ALL A DEBT.** *§T20.72's pre-registration carried a rule-19 clause that was
+never scored:* > ***"a rule that has never once been APPLIED is not the same as a rule that is missing
+from the index — score them separately, or the rebuilt index just re-enshrines dead rules."***
+*Rule 34 says a pre-registration is SCORED. Pass 67 repaired the index and left open the clause that
+decides whether the repair was worth anything. **Discharged here.***
+
+## 📏 POPULATION — *rules 30 and 23 APPLIED, not cited (a rule this pass tests is a rule this pass obeys)*
+
+`grep -oE "^\| \*\*[0-9]{1,2}\*\* \|" nba/NBA_SWEEP_RUN_LOG.md | grep -oE "[0-9]+" | sort -n` from the
+**repo root** ⇒ **`39` indexed rules**, `2026-09-22T19:08:27Z`. ⚠ **The ten never written down
+(§T20.18) and retired `49` are OUT OF POPULATION — a rule with no statement cannot be scored for
+application.**
+
+⚠⚠ **RULE 20 — NINTH SAVE OF THE SESSION, AND THE FIRST ONE CAUGHT *BEFORE* PUBLICATION RATHER THAN
+AFTER.** *The first citation census matched `\b[Rr]ules? N\b` and **missed every compound citation** —
+and the compound is this corpus's house idiom: **`rules 26/28` appears `75` times and `rule 26/28`
+another `58`**. **Rule 28 read `77` when it is `158`; rule 23 read `13` when it is `42`; rule 18
+`111` → `144`.*** ✅ **Caught by running an IDIOM POSITIVE CONTROL first — rule 22's first half, applied
+prospectively for once instead of retrospectively.** 📌 ***Eight previous rule-20 saves were autopsies.
+This one was a seatbelt.***
+
+## ✅ THE SAMPLE — **DECLARED BEFORE IT WAS DRAWN (rule 25)**
+
+*"Applied" fixed before the first read:* ***a citation is an APPLICATION only when the same block
+carries a concrete act the rule demands — a probe run, a control executed, a count re-derived, a
+candidate killed, a figure dated, a hit opened. A rule named beside a conclusion it did not produce is
+a DECORATION.***
+
+- **EXHAUSTIVE** for the six rules cited `≤6` times — **`33 · 39 · 42 · 45 · 47 · 50`** ⇒ **21 citations**, every one read.
+- **PLUS 30 SYSTEMATIC** — every **81st** of the remaining pool of **`2,450`** citations across the twelve and the run log.
+
+## 🔴 CLAUSE (ii) — **TECHNICALLY HIT, SUBSTANTIVELY NOT MET, AND SAID SO**
+
+*Pre-registered: **"at least ONE of the 39 indexed rules has ZERO applications."*** ▶ **Exactly one
+qualifies: `RULE 50` — numbered two passes ago at §T20.72, with one citation, its own birth row.**
+⇒ ***A rule born minutes before the census cannot be a dead rule. The clause is scored HIT on the
+letter and **NOT MET** on what it was hunting, and the distinction is recorded rather than smoothed.***
+
+✅✅ **EVERY OTHER INDEXED RULE IS ALIVE — INCLUDING ALL SIX OF THE LEAST-CITED.** *rule 42 **4/4
+applied** · rule 47 **4 applied, 1 decoration** · rule 33 **3 applied, 1 decoration** · rule 45 **2
+applied, 1 ambiguous, 1 decoration** · rule 39 **one real act cited twice**.* 📌 ***The least-cited
+rules are the SPECIALISED ones — they fire rarely and, when they fire, they do work. Low citation
+count does not find dead rules.***
+
+## ✅✅ CLAUSE (iii) — **IT FAILS, AND THE FAILURE IS THE GOOD NEWS**
+
+*Pre-registered: **"citation count and application count are WEAKLY related — the most-cited rules are
+not the most-applied,"** with the honest-negative escape written in beside it.*
+
+| the 30-citation systematic sample | |
+|---|---|
+| **APPLIED** | **23** |
+| **AMBIGUOUS** | **1** |
+| **DECORATION** | 🔑 **0** |
+| out of population *(rules 10, 49)* | 3 |
+| 🔴 **false positives** | **3** |
+| **application density, scorable** | ✅ **23 / 24 = `95.8%`** |
+
+⇒ ***Heavily-cited rules are applied at the same rate as barely-cited ones. **Citation and application
+track each other.** The corpus does not name-drop its rules — and the false-positive rate on this
+census, `3/30 = 10%`, is the lowest of any marker census this session against §T20.70's `62.9%` and
+§T20.71's `62.9%`.*** **Clause (iii) is scored FAILED and is not rescued by re-definition (§T20.70 is
+the precedent).**
+
+## 🔴🔴🔴 THE FINDING — **ALL THREE FALSE POSITIVES HAVE ONE CAUSE: THIS CORPUS HAS *THREE* RULE NAMESPACES**
+
+| namespace | defined where | bare citations |
+|---|---|---|
+| **the sweep's rules `1`–`50`** | this run log's index | **`2,462`** |
+| 🔴 **`NBA_COMPASS.md` fact 90 — *"FOUR RULES FOR EVERY FUTURE FACTOR"*, numbered `(1)`–`(4)`** | COMPASS fact 90 | *cited bare as "rule 2", and sometimes disambiguated as `rule 90.2` / `90.4`* |
+| 🔴 **the blueprint's DOTTED rules — `rule 1.2`, `rule 1.6`, `rule 5.1`** | `NBA_ARCHITECTURE_BLUEPRINT.md` | **`19` dotted** |
+| ⚠ lettered — `Rule B0`, `rule N`, `rule I` | various | **`15`** |
+
+⇒ ***"Rule 2" is AMBIGUOUS in this corpus, and rule 2 is one of the ten that were never written
+down — so a successor reconstructing it from usage would canonise a FACTOR rule about MAE as a METHOD
+rule about absence claims.***
+
+## 🔴🔴 **AND IT CORRECTS §T20.72 — MY OWN PASS, ONE PASS LATER**
+
+*§T20.72 published:* > ***"These are not paraphrases of one proposition. The corpus has been citing the
+same rule NUMBER for different rules."***
+
+⚠ **Its evidence for rule `2` was two glosses: *"an absence claim is tested against the substance"* and
+*"MAE ON THE MEAN IS THE WRONG METRIC — the product is P(stat > line)."*** 🔴 ***The second is COMPASS
+fact 90's factor rule 2. It is not the sweep's rule 2 at all. §T20.72's measurement was contaminated by
+a namespace it did not know existed.*** ✅ **THE CLAIM SURVIVES — but its CAUSE changes, and the change
+is the point: *contamination is fixable; incoherence is not*.** *The same interval as §T20.72 → §T20.71
+and §T20.16 → rule 49: **one pass**.*
+
+## ✅ **AND RULE 1 IS RECOVERABLE — WHICH NARROWS THE OWNER DECISION AGAIN**
+
+**`104` unambiguous rule-1 citations were read** *(the dotted `1.2`/`1.6` blueprint hits excluded)*, and
+**they are consistent**, in three strands: > *"documented and none fixed **(rule 1)**"* · *"stated as
+unverified **per Rule 1** — the page text does not establish which"* · *"**rule 1 is now satisfied for
+T18**: owner 57 · prose 254 · `tool_use` 463 · `tool_result` 397 · `thinking` 34 = 1,205 ✅"*
+
+⚠⚠ **BUT THE THREE STRANDS ARE THREE DIFFERENT RULES — AND THE INDEX IS WHY.** *Its collapsed row reads*
+**`1–5` | "The early discipline: read all strata · record every message · severity on every finding ·
+chronological order · supersessions carry both dates."** ⇒ ***The corpus cites "rule 1" for whichever of
+the five it means, because the index gave the five ONE ROW. The five are RECOVERABLE — their usage is
+consistent — but they are not SEPARABLE from usage alone.*** **Recorded for the owner's decision; not
+acted on.**
+
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.16** *(“using a rule is not reading it” — **PRIOR**, this
+pass's premise)* · **§T20.72** *(the adjudications and the no-pass-reads-the-index cause — **PRIOR**;
+this pass asks a different question — not whether rules are READ before being written, but whether they
+are APPLIED after being numbered — and **corrects §T20.72's gloss evidence rather than restating it**)*
+· **§T20.18** *(the ten never written down — **PRIOR** and **OUT OF POPULATION**)* · **§T20.70 /
+§T20.71** *(the two 62.9% false-positive rates — **PRIOR**, cited only as the comparison this pass's
+10% is measured against)*.
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(baseline `636 · 2 · 484 · 481`; Δ `484 − 471` =
+`13`)*.
+
+📌 ***The lesson:*** **the census went looking for rules the sweep cites and never obeys, and found
+none — `95.8%` of sampled citations are real applications, and the six rules nobody cites are the six
+that fire hardest when they do. The defect is not decoration. It is that three different documents
+number their rules from one, in the same prose, with no way to tell them apart — and the pass that
+measured the resulting confusion two days ago was itself confused by it.** ***A corpus can be
+disciplined about obeying its rules and still not know which rule it is obeying.***
