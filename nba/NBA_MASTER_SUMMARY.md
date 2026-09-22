@@ -14709,6 +14709,134 @@ already implied: quoting a SEGMENT does not cover it — only writing PROSE ABOU
 and pass 0's entries are largely lists of directives with short quotations, which is the low-coverage
 shape. **Twenty-seven pre-registrations: twenty-two hits, two misses, THREE partials.**
 
+### T13.5 — PASS 4 (**the two-direction judgment + a corpus-wide RULE-33 sweep of T13's own claims**) — **🔴🔴 three of this sweep's own T13 entries corrected, and a live config that answers two of them**
+*The required judgment angle. **Both halves run**: the band on both trees, and the rule-33 sweep the
+next-step row pre-registered. **The eighteen enumerated and probed** *(18 files, pinned
+2026-09-22T08:34:40Z)*; **live re-takes pinned 08:35:32Z. `SELECT` only; nothing run or changed.***
+
+#### ✅✅ T13.5a — **CORRECTED: the 22.4 GB is EXPLAINED, and it is a DELIBERATE DECISION**
+**§T13.3i wrote that the two tables dominating the 43 GB database were unexplained and that *"no
+swept transcript covers them."*** 🔴 ***True, and misleading — `NBA_COMPASS.md` covers it directly,
+and this sweep wrote RULE 33 about exactly that failure two passes before committing it.***
+> **COMPASS fact 105 (2026-09-19)**: ***"`final_hp` STAYS DENORMALISED — A DELIBERATE DECISION, NOT
+> AN OVERSIGHT."*** *"The columns it shares with **`baseline_history`** … **look like ~25 GB of
+> duplication. THEY ARE BOUGHT SPEED.** **Two claims made against slimming were TESTED and one of
+> them was MY error, so both are recorded.**"*
+
+🔑 ***The exact pair this sweep flagged; the duplication named; slimming already argued and tested.***
+**The finding stands as a STATE and is retracted as a puzzle.** ⚠ **What remains open is narrower**:
+**the current storage cap** *(43 GB is long past the 30 GB expansion)* and **whether the
+expansion-time write hazard has been re-examined now that different tables dominate.**
+📌 **And the cost of the denormalisation is recorded too** *(fact 104)*: **a Parallel Hash Join
+building a hash from 8,270,978 `final_hp` rows because the join key held `replace(...)` /
+`lower(regexp_replace(...))`** — 🔑 ***"a FUNCTION ON A JOIN COLUMN means no index can ever be
+used"*** — **one of four lessons that *"cost ~90 minutes each"*, and it bears directly on the owner's
+latency requirement.**
+
+#### ⚠⚠ T13.5b — **SUPERSEDED: T13's two-phase clock was replaced on 2026-09-19**
+**§T13.4c recorded T13's 1 PM / 2:45 PM design as the architecture.** **COMPASS fact 107, an owner
+decision, replaces it**: ***"TWO PIPELINES, CUTOFF 1:15 PM PT — AND THE SCENARIO SIMULATOR IS
+DROPPED"***, *supersedes the three-phase design*, **architecture = a heavy OVERNIGHT pipeline
+(from ~3 AM PT) and a light 1:15 PM PT pipeline. *No third phase.*** ✅ **Marked superseded in place
+with both dates** *(rule 5)*, **and scoped honestly**: ***the DELTA argument, the shapes-vs-minutes
+split, the freshness-gate failure mode and both LEAKAGE TRAPS are properties of ANY two-stage clock
+and transfer unchanged***; **only the 2:45 cutoff and the three-phase framing do not.**
+📌 **And fact 107's REAL TIMETABLE is in 0 of the twelve**: **prior-night box scores ~3 AM · referee
+assignments ~6–7 AM · market spread/total from the 08:00 snapshot · projected lineups through the
+morning · boards on demand · the injury report 11am–1pm LOCAL, Pacific clubs last at 1:00 PM PT** —
+🔑 **which is why the day-of pipeline can be light: almost everything lands overnight.**
+
+#### 🔴🔴 T13.5c — **THE MARKET-CONSENSUS OPEN LOOP CLOSED — the CDF design WAS built, and NONE of its tables exists**
+**§T13.3g left *"whether the CDF design was ever built"* as a named dated open loop.** ✅
+**`nba/build_book_curves.py` EXISTS and its docstring is the design almost verbatim**, including the
+1.5-books-per-line argument and *"**Pinnacle is NOT sharp on props despite reputation**… we have
+**6.9M graded outcomes**, so we measure each book's calibration against what actually happened."*
+✅ **It also carries the ladder-depth figures the live re-take could not produce** *(§T13.3g's
+UNANSWERED — **FanDuel 8.2 lines per player-market, DraftKings 5.3**)*, **so rule 22's open question
+is answered by a different instrument.**
+🔴🔴 **AND ITS THREE DECLARED TABLES DO NOT EXIST** *(pinned 08:35:32Z, **positive controls fire**)*:
+**`book_curves` 0 · `book_calibration` 0 · `market_fair` 0**, against **`rung_market` 1** and
+**`board_outcomes` 1**. 🔑 ***A builder whose docstring is the design, and not one of its three
+tables on the database — the exact shape of this corpus's standing missing-second-hop headline.***
+✅✅ **AND THE REASON IS IN THE CODE**: `nba/build_rung_market.py`, the scoped replacement that DID
+land, says *"**materializing implied curves for all 15.4M book rows cost 3 GB and NEARLY FILLED THE
+DISK**"* and *"**a single `CREATE TABLE AS` over 27M rows ran 1h38m and pushed the disk to 91%**."*
+🔑🔑 ***So the market layer's shape was set by the STORAGE CEILING, not by the modelling argument —
+the same ceiling as the read-only incident, and neither entry had the connection.***
+⚠ **What is live is closer to the design T13 REJECTED**: **`rung_market`, 1,057,765 rows, 378 dates,
+`avg(books) = 2.11` (min 1, max 8)**, de-vigged *"per book across the two sides of the SAME line,
+then averaged"* — **the same-line family**, better than the naive 1.48 because it is DFS-rung-scoped
+over eight books, ***but with no weight column and no calibration table: the owner's empirical
+weighting is answered in DESIGN and in CODE and NOT in DATA.***
+✅ **And `rung_market` CONFIRMS the placeholder finding in the system's own words** — *"**Flat DFS
+placeholder prices (−137 / +100) are EXCLUDED: they are NOMINAL PRICING, NOT ODDS**"* — **a third
+independent confirmation of §T13.3b, this time from the system.** ⚠ **But it is NOT the sentinel
+exclusion the open item needs** *(`price ≤ −10000`, app-side)*: **two different exclusions, one
+implemented.** 🔑 **And its key INCLUDES `market`** — ***the very column whose omission produced both
+the false arbitrage signal and the collapsed tier table.***
+
+#### 🔴🔴 T13.5d — **THE CONVERSION-RULES CONFIG: §6 NAMED THE KEY AND CARRIED NONE OF IT, AND THIS SWEEP MISSED TWO THINGS IN IT**
+**`nba_config.classification_config.board_payout_conversion_rules`, read live.** ✅✅ **Its `source`
+is the strongest provenance in this corpus**: ***"owner MLB chat, verified against app screenshots +
+19 PLACED SLIPS (2026-09-10)."*** 🔑🔑 ***That is exactly what lesson #16 demands, and §4b's protocol
+treats it as outstanding*** — ⚠ **it is outstanding for PRIZEPICKS PER-LEG FACTORS and NOT for the
+CONVERSION ARITHMETIC. The two must not be conflated again.**
+✅ **The Underdog constant is worked on three real legs** *(+114 → 0.963 · +138 → 0.971 · −189 →
+0.942, mean 0.96, **matching 0.963 fitted independently from the 19 slips**)* — **a 0.942–0.971
+spread with an independent fit agreeing.**
+🔴 **AND THE SLIP RULE HAS A HAIRCUT THIS SWEEP OMITTED**: **§T13.3c recorded *"slip = the PRODUCT of
+legs"*; the config adds *"observed **2–8% slip-level haircut** vs the plain product; model as the
+plain product (conservative)."*** ⚠⚠ ***The product is a deliberately conservative approximation of
+something 2–8% lower — the same order as the edges this document hunts.*** **Corrected.**
+🔑 **`DO_NOT_USE` is a FIELD, not a comment** — *"`higher_multiplier` / `lower_multiplier` … are
+MODIFIERS, not payouts"* — **stronger than the column rename §T13.3c records.** ✅ **And
+`correction_2026_09_10` stores the whole reversal with the per-stat evidence and states that the
+probability-shift rule is unaffected** — ***so §T13.2e's rule is carried by the CONFIG, not only by
+this sweep's reading of the prose.*** 📌 **Its per-stat numbers are MLB (strikeouts, batter walks),
+which §0.5's transfer rule governs: the MECHANIC transfers, the NUMBERS do not.**
+🔴 **Two `data_hygiene_todo` items sit OPEN in live config and are in 0 of the twelve** — the ladder
+de-dupe and *"derive the ladder payout from the American price rather than storing modifier fields
+under payout-like names"* — ⚠ **§T13.3c recorded both as DONE from the transcript's description, and
+the config still lists them as TODO.** ***Whether the config was never updated or the work is
+outstanding is NOT RECORDED, and rule 31 says the code decides, which this pass did not check.***
+
+#### ✅ T13.5e — **RULE 20 RE-PROBE: the `tiers down` absence SURVIVES three vocabularies**
+*Pinned 2026-09-22T08:38:50Z.* **Source vocabulary** `tiers down` now returns three files — 🔑 **all
+three are THIS SWEEP'S OWN pass-2/3 writes, which is rule 28's working-tree caveat exactly, and it
+was 0 before pass 2.** **Documents' vocabulary** *(`tie|push` within 60 chars of
+`tier|revert|down|slip`)* **returns only tier-LABEL and `role_tier_key` noise — no statement of the
+operator rule.** **System vocabulary** returns the GRADER's push *(`leg_result = push`, *"a real
+outcome, not a rounding artifact"*)* — **the leg-level truth, not the slip-level response.**
+✅ ***So the claim holds and is sharpened: the grader's PUSH was on file; PrizePicks' TIER-DOWN
+response to one was not. Two different levels.***
+
+#### ✅✅ T13.5f — **THE PRE-REGISTRATION: STASIS PREDICTED AND MEASURED**
+*Harness re-run **2026-09-22T08:38:12Z**.* **Predicted: `uncovered12` moves by AT MOST 3 from 1,221
+and the high band by at most 3 from 67, because a judgment pass writes corrections rather than new
+transcript prose.** ✅ **Measured `uncovered12` 1,221 → 1,219 (moved 2)** and ✅ **high band 67 → 68
+(moved 1)** — **both inside the bound.** 🔑 *A stasis prediction is the stronger test: a fall has
+many causes, stasis has one (§T12.7's precedent).* **Thirty pre-registrations: TWENTY-FOUR hits, two
+misses, four partials.**
+
+#### ⚠⚠ T13.5g — **THE CLOSURE READING, STATED PLAINLY**
+**On the strict criterion the clock does not advance: pass 4 produced system findings** *(three
+absent tables, `rung_market`'s design, two live TODOs)* **as well as corrections.** 🔑 ***But the
+standing SCOPE CAP is the right instrument here: only TRANSCRIPT material resets the clean count,
+and live-system state is `[LIVE-AUDIT]`.*** ***Measured against that rule, pass 4 added almost
+nothing that resets it*** — **§T13.5a, §T13.5b and §T13.5c's answers came from `NBA_COMPASS.md`, the
+repository and the database, not from T13**, **whose prose stratum was exhausted at pass 3.**
+⚠⚠ ***That is the signal T12's closure record names: a transcript is finished when its findings stop
+coming from its own text.*** **The pre-registered judgment therefore stands unchanged — pass 5 is
+the MECHANISM stratum's FAILURE CENSUS, narrowly scoped, and T13 CLOSES ON IT.**
+
+**Pass outcome: the judgment run on both trees with a stasis prediction that landed; three of this
+sweep's own T13 entries corrected against the corpus, the repository and the live database; the
+market-consensus open loop closed with its builder found and its three tables shown absent; the
+conversion-rules config read for the first time, supplying the 19-placed-slip provenance and a 2–8%
+slip haircut this sweep had omitted; and one absence claim re-probed in three vocabularies and
+upheld. ⚠⚠ THE CLEAN COUNT DOES NOT ADVANCE ON THE STRICT CRITERION — but by the standing scope cap
+this pass added almost no transcript material, which is the closure signal. CLEAN 0/3 · 5 passes.**
+
 ### T13.4 — PASS 3 (**the last unread prose — segments 1–639**) — **🔴🔴 a FIFTH board source, and the premise under T13's window decision shown to be a timezone drift**
 *The 107 assistant-prose segments below the multiplier window, 62,958 chars, **read in full**. ✅
 **WITH THIS PASS THE PROSE STRATUM IS EXHAUSTED: 250 of 250 assistant-text segments read** *(61 at
