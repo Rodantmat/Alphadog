@@ -37360,3 +37360,88 @@ step, BASELINE tree**: *"exceeds any context"*, *"passes item by item and fails 
 usable, because size is not an item.** ⚠⚠ ***`§T20.69` measured the note's size and treated it as the
 EXPLANATION for its two missing items. It was the finding. Thirty-six passes later the items are all
 present and the note is six times worse.***
+
+---
+
+# §T20.106 — T20 PASS 101: ✅🔴 **THE TWELVE ARE NOT DILUTED — AND THE HUB FAILS A DIFFERENT WAY: `2,789,201` CHARACTERS, LARGER THAN THE ENTIRE RUN LOG** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads only.**
+
+## 1. 📐 THE MARKER SET, STATED BEFORE THE MEASUREMENT *(clause (iv))*
+
+*Explicit supersession words only —* `SUPERSEDED` · `WITHDRAWN` · `RETRACTED` · `CORRECTED IN PLACE` ·
+`[LIVE-AUDIT]` · `RE-SCOPED` · `NARROWED` · `DATED, NOT` · `EVIDENCE WITHDRAWN`. 🔴 ***Bare
+`~~strikethrough~~` is deliberately EXCLUDED***: this sweep uses it for ordinary in-line corrections
+*(`~~18~~ 19`, `~~FIFTEEN~~ SIXTEEN`)*, **and counting it would have inflated every figure below.**
+▶ **Pinned `2026-09-22T22:24:16Z`. Samples opened in three documents before publishing (rule 26).**
+
+## 2. ❌ CLAUSE (ii) — **MISS, DECISIVELY, AND IT IS THE GOOD ANSWER**
+
+*Registered: "at least one of the twelve carries a higher superseded share than the run log's note
+does (`71.9%`)."* **None does. The maximum is `11.3%`.**
+
+| document | chars | marker share |
+|---|---|---|
+| 🔴 **`NBA_MASTER_SUMMARY`** | **2,789,201** | **11.3%** |
+| `NBA_OPEN_ITEMS` | 1,088,845 | 2.2% |
+| `NBA_FINAL_SCORING_CALIBRATION` | 257,607 | 3.2% |
+| `NBA_SYSTEM_DESIGN` | 172,836 | 1.4% |
+| `NBA_SYSTEM_ARCHITECTURE` | 161,826 | 0.9% |
+| `NBA_DATABASE` | 159,862 | 5.1% ⚠ |
+| `NBA_WORKERS` | 151,639 | 2.7% |
+| `NBA_BASELINE_CALIBRATION` | 120,206 | 1.0% |
+| `NBA_MULTIPLIERS` | 97,685 | 2.1% |
+| `NBA_GLOSSARY` | 84,326 | 0.4% |
+| `NBA_GOBLIN_DEMON` | 68,289 | 0.4% |
+| `NBA_RECIPE` | 66,354 | 3.1% |
+| **TOTAL** | **5,218,676** | |
+
+⚠ **AND ONE FIGURE IS KNOWINGLY OVERSTATED, WHICH THE SAMPLE CAUGHT**: *`NBA_DATABASE`'s `5.1%`
+includes rows like* ***"DROP FOUR SUPERSEDED PANELS — `absence_panel` 87 MB…"*** *— **a superseded
+DATABASE object, not a superseded document passage.** The true share is lower; **the marker set
+cannot tell the two apart and the entry says so rather than quoting the number clean.***
+
+## 3. 🔴🔴 **THE HUB FAILS A DIFFERENT WAY, AND THE CONTRAST IS THE FINDING**
+
+> ### **`NBA_MASTER_SUMMARY.md` is `2,789,201` characters — `53.4%` of the twelve, and LARGER THAN THE ENTIRE RUN LOG (`2,004,659`).**
+
+⇒ ***The run log's note failed by DILUTION — `71.9%` of it superseded. The master summary is only
+`11.3%` superseded and fails by VOLUME.*** **Two different failure modes wearing the same symptom,
+and the fix for one is not the fix for the other**: *you cannot bound the hub by telling a reader to
+skip the archive, because there is no archive — it is `2.5M` characters of current statement.*
+🔑 **And `§T20.1` already measured the other half of this from the citation side** *(**PRIOR**,
+quoted)*: ***"`NBA_MASTER_SUMMARY.md` holds `878` of the `948` orphans — `92.6%` — while holding
+`87%` of the ids… the most orphan-dense document in the corpus, and it is the document a fresh
+session reads first."*** ⇒ **Density and volume are the same fact counted twice.**
+
+## 4. ✅✅ CLAUSE (iii) — **SURVIVES, AND IT VALIDATES `§T20.105`'s REPAIR**
+
+*Registered as a prediction I expected to survive, with the harder outcome named: "if the
+owner-facing block has diluted too, the owner-facing repair failed the same way."*
+▶ **It has not. The block a person actually reads at the top of `NBA_OPEN_ITEMS.md` is lines `1`–`144`,
+`16,230` characters — about `4,000` tokens.** **Bounded, and readable in minutes.**
+🔑🔑 ***And the reason is the design, not luck: it was built as a SEPARATE FIRST-READ SURFACE rather
+than as the top of the record.*** **That is exactly what `§T20.105` did for the run log one pass
+ago** — *so the owner-facing side has been running the proven version of that repair since `§T20.56`,
+and the successor-facing side only acquired it yesterday.*
+⚠ **One stale figure, dated in place**: the block claimed the brief sat **`910,821`** characters below
+it; **re-derived, `950,947`.** *A `4.4%` drift — against the note's `5.9×`.*
+
+## 5. ✅ CLAUSE (i) — `RULE 52`
+
+**`2026-09-22T22:25Z`: `648 · 1 · 470 · 467`. All three bands unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.105`** *(**PRIOR** — the dilution test and the
+`71.9%` benchmark this pass borrows)* · 🔴 **`§T20.1`'s orphan density** *(**PRIOR**, quoted — **the
+volume finding is its measurement seen from another angle and is credited, not re-derived**)* ·
+**`§T20.56`/`§T20.89`** *(**PRIOR** — the owner-facing brief whose boundedness clause (iii) tests)*.
+▶ **RULE 51, last step, BASELINE tree**: *"fails by volume"*, *"too large to read"* and the figures
+return **`0`**; *"dilution"* returns two files, **opened — both are statistical dilution, unrelated.**
+
+📌 ***The lesson:*** **the sweep's own record and the sweep's own product broke in opposite
+directions, and only one of them was visible from inside.** ⚠⚠ ***A document that is `11%` superseded
+and `2.8M` characters long will pass every dilution test ever written. The twelve are healthy by the
+measure this pass brought and unreadable by the measure it did not — which is why the finding is
+recorded as a SIZE, with no claim that the sweep knows what to do about it.***
