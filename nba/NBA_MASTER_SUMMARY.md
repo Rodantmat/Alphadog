@@ -14426,6 +14426,169 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+## T14 — `2026-09-13-20-53-23-nba-boards-grader-market-baseline-history-2026-09-11-12.txt`
+
+### T14.1 — PASS 0 (**corpus + owner stratum**) — **🔑🔑 the owner's OWN architecture proposal, his COST CEILINGS, and two of T13's queued items CANCELLED**
+*Opened 2026-09-22. **Baseline `5fbb9c1e` → `/tmp/t14base/nba/` (32 `.md`), content-only digest
+`937d39e3611851b7`, VERIFIED byte-identical**, pinned 08:43:56Z. **Corpus pinned 08:45:37Z;
+probes 08:46:49Z. `SELECT` only.***
+
+#### ✅ T14.1a — **THE CORPUS, and the partition CLOSES**
+**1,004 segments** — `tool_use` **368** · `tool_result` **367** · text **215** · thinking **54** —
+**and 368 + 367 + 215 + 54 = 1,004** *(from the transcript's own segment list, never the tail —
+§T8.24a)*. **Of the 215 text segments, 33 are OWNER and 182 assistant prose** *(owner 17,656 chars,
+mean 535; prose 107,151 chars)*. 📌 **Smaller than T13's 1,323 but the same shape, and the filename
+says why: `boards-grader-market` becomes `boards-grader-market-BASELINE-HISTORY`** — ***this is the
+next session on the same subjects, three days later***, **so rule 28 duplication is the dominant
+risk and was probed first.**
+
+#### ✅✅ T14.1b — **THE PRE-REGISTRATION: EXACT**
+**Predicted: at pass 0 the band must be IDENTICAL on both trees, because nothing has been written
+for T14 yet.** *Harness `scratchpad/t14/judge14.py`, run 2026-09-22T08:46:24Z.*
+**WORKING 28 / 13 / 955 / 920 · BASELINE `5fbb9c1e` 28 / 13 / 955 / 920 · high band in BOTH 28,
+working-only 0, baseline-only 0.** ✅ **Exact on every figure.** **Thirty-one pre-registrations:
+TWENTY-FIVE hits, two misses, four partials.**
+
+#### 🔴 T14.1c — **THREE KILLS BEFORE WRITING — the 22nd, 23rd and 24th since T11**
+*Rule 28 in both directions; every hit opened; the probe that produced two of these was itself
+broken and is recorded in §T14.1d.*
+1. 🔴 **THE MARKET'S ROLE.** The owner states it plainly — *"**market in our system is a CONFIDENCE
+   ADJUSTER and a RANKING SIGNAL for slip building. Our system creates our own probability; market
+   is used but NOT the absolute truth, just an adjuster factor**"* — **and `COMPASS fact 62` already
+   says exactly that**, cited in **two of the twelve**. ***A re-assertion, not a new rule.*** ✅ **Its
+   value is the DATE: the owner re-states it on 2026-09-13, so the rule is live, not historical.**
+2. 🔴 **THE FANTASY-SCORE FORMULA WARNING.** *"we have fantasy score, and I think Underdog also have
+   fantasy score. **For MLB the fantasy score was DIFFERENT to both apps**… **for a long time we ran
+   a BROKEN LOGIC**… research online, find reliable sources, **multiple**, and be sure we have both
+   correct."* — **and the corpus already carries *"the per-platform fantasy-score formula rule"* and
+   the MLB *"FANTASY-SCORE FORMULA BUG"* as lesson #14**, in **three of the twelve**.
+   ***The NBA restatement of a recorded MLB lesson.*** ✅ **What is new is narrow and worth keeping**:
+   the owner asks for **multi-source verification of BOTH apps' formulas**, and notes ***"they might
+   be the same, but they might not"*** — **a check, not a finding.**
+3. 🔴 **THE HARDWARE SPEC.** **`2 GB RAM` is already in three of the twelve.**
+
+#### 🔴🔴 T14.1d — **A BROKEN PROBE FOUND, AND IT HAD ALREADY PRODUCED TWO FALSE ABSENCES**
+**The first novelty probe of this pass used `.{90}` of required context BEFORE the match.** ⚠⚠
+***A required lookbehind cannot match a hit near the START OF A LINE***, **and four candidates came
+back with zero hits that a corrected `.{0,80}` probe finds immediately** *(pinned 08:46:49Z)*.
+🔴 **Two of this sweep's own published absences rested on that shape** and are withdrawn in place:
+**`NBA_DATABASE.md` §0v's *"the current storage CAP … is not recorded anywhere in this corpus"*** —
+***it is in `NBA_SYSTEM_ARCHITECTURE.md`***: *"2 GB RAM"* and *"Disk ~30 GiB with autoscale; hit its
+cap once mid-run."*
+🔑🔑 **This is RULE 15 exactly — *a pattern tuned elsewhere silently mis-measures, and the wrong
+number is not always zero*** — **and it is the same class as §T12.8c's four "missing" paths and
+§T12.7a's broken enumeration.** ⚠ ***Three instances now, all of them a regex that was right about
+its subject and wrong about its anchoring.*** **The remedy is one character: `.{0,N}`, never `.{N}`.**
+
+#### 🔑🔑 T14.1e — **THE OWNER'S OWN ARCHITECTURE PROPOSAL: PRECOMPUTE EVERY SCENARIO, THEN DISCARD**
+> *"what I'm thinking is **PRECALCULATE**. So we can do the deltas and the baseline pipeline
+> earlier, and **we PRECALCULATE ALL DELTA OUTCOMES POSSIBLE**. So once we get the data that comes
+> later — the injury report or the lineups — **we already have the possible outcomes**. Let's say
+> they can have five outcomes or ten outcomes… **when that comes up, we just PICK the one that is
+> the real scenario, and we DISCARD the other ones**… then we delete the data that's unneeded, so
+> we can still have a clean database."*
+
+🔑🔑 **AND THE ARGUMENT THAT MAKES IT HARD, which the owner supplies himself**:
+> *"injury report comes and **a specific player is out. It does NOT change only that player**. It
+> changes **ALL the players on that team**, because many others are gonna have **more minutes and
+> different roles. Different starters. And the same goes for the OTHER team.** So let's say
+> **Wemby does not play** — that makes a huge difference: **blocks are gonna be lower, defense is
+> gonna be less strong.** So that changes a lot for BOTH teams. **So that's a big universe of
+> players. Is that feasible to recalculate? Is there a way to make it cheap in processing and
+> storage?**"*
+
+⚠⚠ ***This is the argument §T13.4c's delta design assumes away.*** **T13's rule was *"recompute only
+legs whose line moved, and every leg for players on teams the final report touched"* — and the
+owner's point is that ONE out player touches BOTH teams' minutes, roles and starters**, ***so the
+delta set is not "a few hundred legs"; it is two full rosters re-projected.*** 🔑 **The two designs
+are the same shape and disagree about the size of the delta, and neither is measured.**
+🔴🔴 **AND THE OUTCOME IS ALREADY ON FILE, SIX DAYS LATER**: **`COMPASS fact 107` (2026-09-19)
+records *"TWO PIPELINES, CUTOFF 1:15 PM PT — AND THE SCENARIO SIMULATOR IS DROPPED."*** ***So the
+owner's precompute proposal was taken up and then dropped, and T14 is where it was made.*** **RULE
+33's SIXTH instance, and it landed at pass 0 exactly as the next-step row said it should** *(rule
+12: apply a rule in the pass that needs it, not twenty passes later)*.
+📌 **And he scoped the load himself**: *"it's gonna run in the MORNING — **even if it takes FOUR
+HOURS, that's alright**"*, with the warning that **the leg universe will GROW**: *"it's very likely
+that PrizePicks is gonna put the option for **goblins and demons LESS**… probably not on every one,
+but a whole lot of them, **so that's gonna increase even more that universe**."* ✅ ***Which is the
+four-way rule (`NBA_GOBLIN_DEMON.md` §1.1) stated as a CAPACITY problem rather than a taxonomy one.***
+
+#### 🔑🔑 T14.1f — **THE COST CEILINGS — hard operational constraints, and they are 0 of THIRTY**
+> *"**For Cloudflare, I'm paying the FIVE DOLLAR plan, and I don't want to go over any of the
+> limits**, because I don't want to pay extra money for that. **Same thing with GitHub. I'm paying
+> the FOUR DOLLAR plan. I don't want to go over any limit.** And also the database. **My server has
+> only one gig of RAM.** So that's another thing to have in consideration — **think about processing
+> multiple things at the same time.**"*
+
+🔑 ***Every parallelism decision in this system has a stated budget, and the corpus did not carry
+it.*** ⚠ **And the binding alert is CPU, not disk**: *"**the alerts I've been getting are CPU more
+than anything**."* **The full storage/spec arc is in `NBA_DATABASE.md` §0v.**
+📌 **And the MLB origin story, also 0 of thirty, which is why MLB is out of scope**: *"**MLB was a
+huge big testing learning ground for me. The strategy is not doing well — I'm not making any
+money.** … **the real test for the system is gonna be NBA.** … **this system started as a PROMPT
+SYSTEM ON GEMINI, a sequence of prompts I was running, then it became a system. The system became
+multiple versions. That's why MLB is so mixed up and nasty — different versions, dead code.** So do
+not worry much about the MLB system."* 🔑 ***The sweep's standing "MLB is dropped" rule now has the
+owner's own reason behind it***, **and hockey is named as the next parallel sport.**
+
+#### 🔑 T14.1g — **TWO OF T13's QUEUED ITEMS ARE CANCELLED BY OWNER DIRECTIVE**
+**§T13.3/§T13.4 carried T13's closing queue, which included *"coach-change dates, all-star/all-NBA
+lists, national-TV flag, referee assignments scraper."*** **The owner settles two of them here:**
+> *"**the ALL-STARS I rather it to be BLOCKED — they change, it is very volatile, so DON'T MINE IT,
+> DON'T GIVE LEGS TO IT.** **National TV flag** — I don't even know what that is, how they differ
+> from a regular game. **If it's just a regular game, TREAT IT LIKE ONE.**"*
+
+✅ **`all-star` is in six of the twelve and `national tv` in one — but as the `game_id` prefix `003`
+and as a desk-work item, NOT as this directive** *(every hit opened, rule 26)*. 🔑 ***So two items
+the corpus still lists as work are cancelled, and one of them is cancelled for a REASON that
+generalises: a volatile, changing attribute should not become a leg.***
+
+#### 🔑 T14.1h — **THE BASELINE DIRECTIVES — three, and the anchoring rule is 0 of THIRTY**
+1. ✅ *"the baseline creates a **FULL MATRIX** that may not even have a leg available for the full
+   variations, **but that is BY DESIGN, not duplication** — check compass, check documentation,
+   you are forgetting things."* ⚠ **An owner correction of an assistant's own finding.**
+2. 🔑 *"you also must check **if the baseline covers all the variations that show on the board
+   LADDERS**, to see if it needs to be EXPANDED or if it is doing its job."*
+3. 🔑🔑 ***"the baseline should be ANCHORED ON THE PREVIOUS GAME, so we do not have a huge coverage
+   variation — what the player had in the past game should be very close to what it will be on the
+   board for next game, NOT THE OUTCOME, but WHAT THE BOARD OFFERED."*** *(`anchored on the previous
+   game` / `previous game`: **0 of the twelve and 0 of the thirty**.)*
+⚠⚠ ***The third is a coverage rule stated as an anchoring rule, and the distinction it draws — the
+previous game's BOARD, not the previous game's OUTCOME — is exactly the leakage boundary
+`NBA_SYSTEM_DESIGN.md` §0a.3 records.*** **Two independent statements of the same line.**
+
+#### 🔴 T14.1i — **THE FULL-BACKFILL DIRECTIVE, stated twice and at length**
+> *"**every factor that's gonna run when the system is live, we need to have it BACKFILLED, OR
+> DERIVED, OR SIMULATED**… **every single factor needs to have a DAY-BY-DAY REAL DATA**… so we can
+> make a proper final hit probability for each leg and compare with the board."*
+> *"**the baseline must be doing exactly the same, having a day-by-day PROPORTIONAL TO THE
+> REALITY.**"* · *"for the **referee assignment** — **simulate what was the assignment**, or if you
+> already have the referee that was on that game that day, you already have it."*
+> *"**document this, and document everything else that is open since the last documentation** —
+> compass, all documents, and **create new documents if needed**. **Look at the date of the last
+> update and look at the chat history and transcripts since then**, to be sure to have everything."*
+
+🔑 ***The parity rule extended to EVERY factor, by the owner, with a worked example*** — **and the
+last sentence is a documentation directive whose shape this sweep is itself executing.**
+
+#### ⚠ T14.1j — **AN OWNER CONDUCT DIRECTIVE, recorded because it is about how work is REPORTED**
+**Three consecutive turns**: *"**this was done before. You already told me TWICE that this has been
+done before.**"* → *"**That's a lot of explanation. I need an ASSERTIVE ANSWER.** … I already told
+multiple times that this shouldn't [need] to be done."* → *"**but, yes, get the shit done. Is there
+space enough to run all of it?**"*
+🔑 **Two instructions sit inside it and both bear on this corpus**: ***answer assertively rather than
+at length***, and ***do not re-do work already reported as done*** — ⚠ **which is the same failure
+this sweep's own closure judgment exists to catch, arriving from the owner's side.**
+
+**Pass outcome: the corpus measured and closed, all 33 owner turns read, the pass-0 band exact on
+both trees, THREE candidates killed before writing, a BROKEN PROBE found that had already produced
+two published false absences, the owner's own scenario-precompute architecture recovered together
+with the combinatorial argument that undercuts T13's delta sizing, his cost ceilings and the MLB
+origin story, two queued items cancelled by directive, and a baseline anchoring rule in 0 of thirty.
+CLEAN 0/3 · 1 pass.**
+
+---
+
 ## T13 — `2026-09-13-01-03-48-nba-boards-grader-market-2026-09-10.txt`
 **THE GOBLIN/DEMON MULTIPLIER RESEARCH · BETR & CHALKBOARD · THE GRADER · MARKET CONSENSUS**
 *1,323 content blocks — **the largest transcript swept** — and **65 owner turns**, four times any
