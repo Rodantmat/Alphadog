@@ -164,6 +164,27 @@ anything else from reading them.* **(c)** *If rotation already happened, the rec
 > | **tables** | **2026-09-22T07:00:58Z** | `count(*)` and `string_agg(DISTINCT substring(game_id,4,2))` on each table | **`player_game_starter_status` 32,179 rows, season code `25` ONLY · `game_officials` 3,681 rows, `25` ONLY** |
 > | **status key** | **2026-09-22T07:01:05Z** | `config_json->'starters'`, `->'officials'` on `enrichment_backfill_status_2026_09_10` | **`1230/1230` for ALL THREE seasons**, `verified_at` 2026-09-10T22:00Z |
 >
+> ## ✅✅ **THE DIAGNOSIS IS NOW VERIFIED FROM THE SOURCE, NOT INFERRED — 2026-09-22 (T13 pass 2, §T13.3f)**
+> **§T12.2 concluded, by INFERENCE, that the verification *"is true only of the REPOSITORY."*
+> T13 is where that sweep was run, and it says so in its own words as it starts:**
+> > *"Running the coverage sweep. First, what's actually in the **data directory**."*
+> > *"Everything's present. ***Running the sweep ACROSS THE META FILES***."*
+>
+> 🔑🔑 ***The coverage sweep read `nba/data/*` meta files. It never queried Postgres.*** **So the
+> `1230/1230` for all three seasons is a count of what was SCRAPED AND COMMITTED, and the status key
+> records it as verification.** ✅ **O10's diagnosis moves from INFERRED to VERIFIED** *(rule 31: the
+> claim is tested against what was actually done, not against what the record says)*.
+>
+> ✅ **AND THE SWEEP'S OWN OUTPUT CONFIRMS THE SHAPE**, with a figure the twelve did not carry:
+> **the 2023-24 starters rerun *"worked — now 1230/1230 with zero errors, 32,385 rows, up from
+> 32,328"*** — 🔴 ***a REPOSITORY count of 32,385 for 2023-24, while `player_game_starter_status`
+> holds 32,179 rows for 2025-26 ONLY.*** **Two similar five-figure numbers describing different
+> seasons on different sides of the gap** — ⚠ **precisely the collision that makes this key read as
+> complete.** **Recorded so a future reader does not match them.**
+> 📌 **The same sweep is also the source of the two items below it** *(the `days_done` counter,
+> retracted by its own author, and the 2023-24 injury-report limit)* — **so all three came from one
+> repository-side pass, and only one of the three is a database statement.**
+>
 > 🔑 **The decision the owner has to make is not whether the gap is real — it is what the status key
 > should say.** ***The key is not wrong about the SCRAPE; it is silent about the LOAD***, and every
 > reader so far has taken it for a database statement. **Three shapes, for the owner to choose
