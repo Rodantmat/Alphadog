@@ -11,6 +11,114 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T16-C. 🔴🔴🔴 **THE SCORE / CONFIDENCE CONTRACT — and `[LIVE-AUDIT]` FINDS THE LIVE TABLE CONTRADICTING IT** *(T16 pass 2, §T16.3, the migration audit over COMPASS facts 87–107; `SELECT` 2026-09-22)*
+
+### 🔑🔑 1 · **CONFIDENCE IS A DATA THERMOMETER, NOT A PROBABILITY** *(owner directive; COMPASS fact 101)*
+
+*It measures **how far the DATA supports this leg's hit probability** — factors mined and present,
+complete, **REAL vs derived**, market corroboration, player consistency, form.* **It starts at 99 and
+loses points for NAMED deficiencies**; a fully-supported leg reads ~99 and the floor (~55) needs
+everything to stack against it at once. 🔑 *"Measured mean **0.92–0.95**, **which is the point: our
+data IS good, so confidence IS high**. The 20–40% band is **impossible by construction** because the
+core factors are always present."*
+
+⚠⚠ **THREE EARLIER VERSIONS WERE WRONG AND EACH FAILURE TAUGHT SOMETHING** — *worth carrying because
+each is a general trap:*
+
+| | The version | Why it failed |
+|---|---|---|
+| **(a)** | **equal-mass quartiles** | **FORCE 25% of legs to be "low" however good the data** — *a **RANKING**, not a thermometer* |
+| **(b)** | hand-weighted pillars | **failed verification on 2.1M legs**: *existence separated **NOTHING (0.0000)**, quality was **INVERTED (−0.0028)**, only market backing worked (**+0.0015**)* |
+| **(c)** | the conformal version | scored `\|won − hp\| / √(p(1−p))`, **which is dominated by ALEATORIC noise — so a coin-flip leg with PERFECT data scored badly** |
+
+### 🔑🔑🔑 2 · **ALEATORIC vs EPISTEMIC — the distinction that fixed it** *(COMPASS fact 102)*
+
+> ***"Aleatoric uncertainty is the event's own randomness and is ALREADY STATED BY THE HP — a 0.50
+> probability IS 'this is a coin flip'; encoding it again in confidence DOUBLE-COUNTS it. Confidence
+> must measure EPISTEMIC uncertainty only — OUR IGNORANCE, which better data could reduce."***
+
+⚠⚠ **AND IT EXPLAINS A MEASUREMENT ERROR WORTH REMEMBERING**: **comparing RAW `|actual − stated|`
+across confidence tiers is INVALID when the tiers sit at different probabilities, because Bernoulli
+variance PEAKS AT 0.50** — *"elite legs averaging HP **0.488** HAD to look worse than low legs at
+**0.692** whatever their true reliability."* 🔑 **A metric that is a function of the thing being
+compared cannot compare it — the same family as §0a-T15's "MAE on the mean is the wrong metric".**
+
+✅ **DEDUCTION WEIGHTS ARE MEASURED, NOT ASSIGNED**: each factor's share comes from **how much realised
+`|gap|` separates its high-value legs from its low-value legs**, with a **per-factor cap that
+REDISTRIBUTES the excess rather than clipping it**, and a floor for factors that measure no
+separation. 🔑 **Role carries the most — fringe players miss by 0.0283 against iron-men at 0.0008, a
+35× difference.** ⚠ **And season phase is a factor here too: Oct–Nov 0.80 · Dec–ASB 1.00 · post-ASB
+0.88 · push 0.92** — *the same phase shape the calibration layer measures independently
+(`NBA_BASELINE_CALIBRATION.md` §0z-T16-B), and the source of open item **O6**'s `f_phase`.*
+
+### 🔴🔴 3 · **SCORE IS 0–100 AND CONFIDENCE *ENHANCES* IT, NEVER TAXES IT** *(COMPASS fact 103 — **0 of the twelve AND 0 of the thirty**; a discovery, not a migration item)*
+
+> ***"A straight product (`hp × conf`) KILLS good legs — **0.95 HP at 0.90 confidence scores 85.5,
+> WORSE than the probability alone**, which is backwards."***
+
+✅ **The fix: confidence pivots around a 0.85 NEUTRAL** — **above it the score is lifted toward 100 (up
+to HALF the remaining headroom); below it pulled down (up to 35%).** *Verified on live rows at the
+time:* **0.478 HP / 0.949 conf → 65.06** *(vs 45.39 multiplicative)*; **0.434 HP / 0.952 conf →
+62.71 OUTRANKS 0.468 HP / 0.884 conf → 52.78** — 🔑 ***so better-supported data wins at equal
+probability***, which is the whole purpose. ✅ **And `edge` is now its OWN COLUMN** *(distance above
+break-even)* **because it answers a different question**: *"**edge is 'is this an opportunity', score
+is 'how good is this leg'** — the slip engine wants both."*
+
+### 🔴🔴🔴 4 · `[LIVE-AUDIT]` — **THE LIVE TABLE DOES NOT HONOUR "0–100". 36% OF IT IS NEGATIVE.** *(`SELECT` over `nba_score.final_hp`, 2026-09-22)*
+
+| Measured | Value |
+|---|---|
+| **`score` range** | 🔴 **−52.488 → 99.99** *(the contract says **0–100**)* |
+| **rows with `score < 0`** | 🔴 **6,924,101 of 19,215,200 — 36.0%**, across **20 of 30 props and BOTH sides** |
+| where they sit | **entirely below `final_hp` ≈ 0.6**: deciles 1–6 contain every negative; **deciles 7–10 contain ZERO** |
+| spread at fixed HP | **decile 1 spans −52.49 to +46.00** — *a ~98-point swing at essentially constant probability* |
+| **`confidence` range** | **0.8540 → 0.9841, mean 0.9240** |
+
+✅ **The mean CONFIRMS fact 101 exactly** *(0.92–0.95 predicted, 0.9240 measured)*. 🔑🔑 **But the
+MINIMUM is 0.8540 — essentially AT fact 103's 0.85 neutral pivot — so in practice virtually every leg
+sits on the LIFT side and the "pulled down up to 35%" branch is nearly unexercised.** ⚠ **The stated
+~55 floor is never approached: the entire live range spans 0.13.**
+
+🔴🔴 **SO THE NEGATIVES CANNOT COME FROM THE CONFIDENCE PULL-DOWN** — they are confined to low-`final_hp`
+legs and scale with how far below ~0.6 the probability sits. ⚠⚠ **NOT RECORDED whether this is
+intended** *(a deliberate below-break-even penalty would explain the shape, and `edge` is described as
+"distance above break-even", but **no swept transcript says the SCORE carries one**)* **or a formula
+defect.** **Rule 6: this records what the system IS.**
+
+🔴 **OWNER DECISION** — *"Score is 0–100" is stated as a design contract in the COMPASS and as an
+owner-facing property. **The live column returns values down to −52.5 on more than a third of its
+rows.** Either the contract's wording needs correcting, or the formula does — and a slip engine that
+ranks on `score` behaves very differently under the two readings.* ⚠ **This sweep does not change
+code or data.**
+
+### 🔴🔴🔴 5 · `[LIVE-AUDIT]` — **AND THE ENGINE'S OUTPUT TABLE COVERS ONE SEASON PLUS A SINGLE DAY**
+
+*COMPASS fact 99 certifies the final calculation engine (`nba/build_final_hp.py`, config
+`final_engine_complete_2026_09_18`):* ***"VERIFIED: 60/60 season-props, BOTH SEASONS, ~38.7M legs,
+zero invalid probabilities."*** *Leg-level accuracy **0.5643 log-loss on 1,248,826 graded PrizePicks
+legs**.*
+
+| Season | **live rows** | props | **dates** | `built_at` |
+|---|---|---|---|---|
+| **2024-25** | **19,075,070** | 30 | **162** | 2026-09-19 18:21 UTC |
+| 🔴🔴 **2025-26** | **140,130** | 30 | 🔴 **1 — `2026-01-15` only** | 2026-09-19 22:41 UTC |
+| **total** | **19,215,200** | | | **49.7% of the certified ~38.7M** |
+
+🔴🔴🔴 **THE CURRENT SEASON'S HALF OF THE ENGINE'S OUTPUT TABLE IS ONE GAME-DATE DEEP — and that date,
+`2026-01-15`, is one of the three as-of days open item O5 already tracks.** ⚠⚠ **NOT RECORDED WHY**
+*(rule 6; a concurrent session is building in this database and `prop_universe` is mid-rebuild, and
+the 2025-26 rows carry the LATER `built_at`, which is consistent with a rebuild in flight — but no
+swept transcript says so)*. 🔴 **Season-critical**: **the opener is 2026-10-20**, `final_hp` is what
+COMPASS fact 66 says **the engine READS**, and **only 32% of its rows carry an `edge` at all**
+(6,226,642 of 19,215,200 — expected, since `edge` needs a board line to compare against).
+
+🔑 **THE GENERAL POINT, and it is the second instance in two passes** *(the first: `baseline_history`
+2025-26 sitting 795 rows short of its certified figure — `NBA_DATABASE.md` §0w)*: ***a certification
+records that a table was complete at a moment. It says nothing about the table today, and in this
+system nine days was enough for one figure to drift by 795 rows and another to fall by half.***
+
+---
+
 ## 0a-T16. 🔴🔴🔴 **THE EVIDENCE BEHIND THE SUPERSESSION — AND IT ANSWERS EVERY QUESTION T15 LEFT OPEN** *(T16 pass 1, §T16.2, the prose stratum read in order and in full — 156 segments / 108,570 chars)*
 
 *§0a-T15-SUPERSESSION and §0a-T15-SUPERSESSION-2 below were written from **COMPASS facts 88–92**.
