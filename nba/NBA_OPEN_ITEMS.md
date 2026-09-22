@@ -99,6 +99,63 @@
 > thirty / thirty-two document pair, which is two correct counts of two different populations
 > (32 `.md`, less the run log and the out-of-scope PP document)**.
 
+## 🔴🔴 **OWNER DECISION O11** — **T13 IS THE LARGEST CREDENTIAL EXPOSURE IN THE CORPUS**
+*Recorded 2026-09-22 (T13 pass 0, §T13.1c). **Transcript `2026-09-13-01-03-48`, 1,323 segments, 65
+owner turns.** **NO VALUE IS REPRODUCED HERE** — location and the safe surrounding facts only, per
+the standing rule. This is the FOURTH credential exposure the sweep has recorded (O8 was the third).*
+
+| owner segment | what it contains | why it matters |
+|---|---|---|
+| **238** | **a live account email and password**, pasted in the clear, with an SMS-code offer | ⚠ *and segment 240: **"you can use and discard, i trust you, and i'll change it afterwards"*** — ***whether it was changed afterwards is NOT RECORDED*** |
+| **243 · 244 · 245 · 246** | **four full `curl` captures**: a **Keycloak `openid-connect/token`** exchange, an **Ably realtime `requestToken`**, a **`ws-token-request` carrying a bearer JWT**, and the **`api.fantasy.betr.app/graphql`** call | *the bearer JWT is a live session token; the GraphQL capture is the one §0f records as the Betr puller's basis* |
+| **437** | **a new Odds API key**, pasted in the clear, with *"update only for the nba for now"* | *supersedes the key recorded at O8; **both are now in the transcript archive*** |
+| 🔴🔴 **500** | ***the full DigitalOcean Postgres connection block*** — **host, port, database, pool, username, password and `sslmode=verify-full`** | ***this is the production database's primary credential, in a plain-text transcript that lives in the repository*** |
+
+⚠⚠ **THE DECISION THE OWNER HAS TO MAKE**, and the sweep does not make it: **(a) rotate** the
+Postgres password, the Betr account password and the Odds API key, then **(b) decide what happens to
+the transcript archive itself** — *`/home/claude/nbadoc/transcripts/` holds twenty files and at least
+four of them carry live secrets; the sweep reads them and never reproduces a value, but nothing stops
+anything else from reading them.* **(c)** *If rotation already happened, the record should say so —
+**it currently does not**.*
+⚠ **Nothing was changed** *(rule 1)*. **A dated STATE** *(O9)*.
+
+## 🔴 T13's OWNER DIRECTIVES THAT THE TWELVE DID NOT CARRY
+*Recorded 2026-09-22 (T13 pass 0, §T13.1d). Probed against the baseline `4429380d`, pinned
+2026-09-22T07:40Z; controls `PrizePicks` 63 of thirty and `goblin` 46 both fire; every hit opened.*
+
+1. 🔴🔴 **THE LATENCY REQUIREMENT — 0 of THIRTY.** *Segment 571, whole*: **"will the
+   enrichment/scoring engine pipeline (board + daily context + market + scoring engine) be **faster
+   than MLB**? because **MLB is running around 30 min, leaving me only 15 minutes to place slips**"**
+   — ***a hard performance budget on the whole NBA pipeline, stated by the owner and recorded
+   nowhere.*** ⚠ *And segment 609 sets how it will be measured: "let's have everything finished, then
+   we calculate how long… **the mining itself is fast; what takes long is the SCORING ENGINE**."*
+2. 🔴 **THE PARLAYAPI DOWNGRADE'S TERMS — 0 of THIRTY** *(the downgrade itself is in 2 of the twelve)*.
+   *Segments 286 and 289*: **"if scraping prop-lines books is easy, I can downgrade my ParlayAPI
+   account, pay less"** → **"starter downgrade **$5/mo, 20,000 credits/mo, no rate limit, 168h
+   historical data**, manage via Stripe portal"**, *conditional on **"we are directly scraping all
+   apps now — PP, Sleeper, UD and Fliff"*** — ⚠ **and on MLB and hockey still needing it.**
+3. 🔴 **THE MARKET-CONSENSUS WEIGHTING REQUIREMENT — 0 of THIRTY** *("consensus" itself is in 4 of the
+   twelve)*. *Segment 1274*: **"the consensus is for market… **be sure that you WEIGHT properly.
+   There are markets that are MORE RELIABLE THAN OTHERS, and research the proper way to do that**"**
+   — ***an unweighted consensus is explicitly not what was asked for.***
+4. 🔴 **THE MLB-MULTIPLIER WARNING — 0 of THIRTY.** *Segment 848*: **"even our internal **MLB
+   multipliers are not sharp enough**. That's why I said it's better even not to look at it — but
+   once you already looked, **be careful what you follow**. Use proper NBA information."**
+   🔑 ***This is a standing caution against exactly the cross-sport reuse the corpus does elsewhere.***
+5. 🔴 **TIER CONTEXT IS ALREADY ON THE SNAPSHOTS — 0 of THIRTY.** *Segment 1176*: **"the tier context
+   should be **already on the board snapshots** — what's goblin, what's demon, and which tier. So
+   that should **not need to be redone, just MAPPED**."**
+6. 🔴 **UNDERDOG AND SLEEPER NEED THE TIERING TOO — 0 of THIRTY.** *Segment 1208*: **"Underdog and
+   Sleeper also need the tiering system… close all the gaps… finish it first, and then we do the
+   scoring engine."**
+7. 📌 **THE PICK WINDOW'S LOWER BOUND** — *segment 567*: **"we said **2 hours before the first game
+   start. 1:45pm** I believe was what we agreed. Maybe **1:30pm, or even 1pm — but NOT 9am**. Only
+   for weekends that the games start early."** *(`1:45` is in 2 of the twelve; **`1:30 pm` is 1 of
+   thirty and 0 of the twelve**.)* ⚠ *And segment 614 reopens it: "we're doing 2:45 for every day —
+   for the early days 2:45 is not going to cut it. **For weekends and special days, are you doing an
+   EARLY snapshot?**"* — ***the answer is NOT RECORDED at pass 0's offset*** *(rule 27: the last word
+   is pass 1's job)*.
+
 ## 🔴🔴 **OWNER DECISION O10** · `[LIVE-AUDIT]` — **THE BACKFILL STATUS KEY ASSERTS THREE COMPLETE SEASONS; THE TABLES HOLD ONE**
 > ### ⏳ OPEN — raised for the owner 2026-09-22, **documented and NOT acted on** *(rule 1; no live data, status key or pipeline was changed)*
 > **RE-TAKEN 2026-09-22 AND UNCHANGED**, both sides pinned:
