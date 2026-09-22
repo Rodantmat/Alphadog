@@ -12864,9 +12864,76 @@ while a fuller statement of that charter sat in the repo, cited in this very doc
    its ten parts contain at a heading level; **a full read for findings has not been done** and is
    the first item of pass 5.* 🔑 **Stated plainly so this entry is not itself mistaken for the
    reading it just criticised the sweep for skipping.**
-3. 🔴 **The other 19 non-mandated files in `nba/*.md` have had no equivalent check.** *The population
-   is 32 files; the twelve are mandated, `NBA_COMPASS.md` is read-never-written, `PP_PAYOUT_FINDINGS`
-   is out of scope — **leaving 18 files whose relationship to the sweep is unestablished***, several
-   of which are named in the transcripts as handoff documents *(`NBA_ARCHITECTURE_BLUEPRINT`,
-   `NBA_LESSONS_LEARNED_FROM_MLB`, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN`, `NBA_SYSTEM_DRAFT`)*.
-   **OWNER DECISION is not required — this is sweep scope and pass 5 takes it.**
+3. ✅ **RESOLVED BY PASS 5** *(`NBA_MASTER_SUMMARY.md` §T19.8 §4)* — **the population is SEVENTEEN, not
+   eighteen** *(32 files minus the twelve, `NBA_COMPASS.md`, `PP_PAYOUT_FINDINGS.md` and this run
+   log; re-taken 2026-09-22T12:31:52Z)*, **all seventeen are NAMED in the twelve, and THIRTEEN are
+   described** by the document inventory at `NBA_SYSTEM_ARCHITECTURE.md` lines 2125–2160. **See
+   §T19.8 below for the four that are not.**
+
+---
+
+# §T19.8 — ⚠⚠ FOUR REPO DOCUMENTS, 85,232 B, THAT THE TWELVE NAME AND DO NOT DESCRIBE
+*(T19 pass 5, 2026-09-22 — **VERIFIED** by `ls -1 nba/*.md` → 32 at 12:31:52Z, minus the twelve,
+`NBA_COMPASS.md`, `PP_PAYOUT_FINDINGS.md` and `NBA_SWEEP_RUN_LOG.md` ⇒ **17**; each probed by
+basename against the twelve and every hit opened, rule 26)*
+
+| file | size | named in the 20 transcripts | in the `NBA_SYSTEM_ARCHITECTURE` inventory | severity |
+|---|---|---|---|---|
+| `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` | **26,943 B** | **9 of 20** | ❌ | **MEDIUM** |
+| `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` | **17,701 B** | **9 of 20** | ❌ | **MEDIUM** |
+| `NBA_ENRICHMENT_ENGINE_DESIGN.md` | **13,903 B** | **4 of 20** | ❌ *(all 4 mentions in the twelve are name-drops in lists)* | **MEDIUM** |
+| `NBA_DOCUMENTATION_PROMPT.md` | **26,685 B** | 0 *(it postdates them)* | ❌ | **HIGH — see §T19.7** |
+
+🔑 **THE SHARPEST CASE IS A SIBLING MISS — RULE 9, UN-RUN**: *the inventory gives
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_**2026-09-04**.md` a full role line —* **"30,601 B, 359 lines, 10
+sections; §8 'what's explicitly NOT built yet, and why' is the continuity section; every number
+re-pulled from live Postgres"** — *and gives its **2026-09-09** twin nothing at all, though the twin
+is named in nine transcripts.*
+
+⚠ **NOT CLAIMED: that these files hold undocumented FINDINGS.** *Their content may be fully absorbed
+through the transcripts that discuss them. **What is missing is the inventory entry that says what
+each one is*** — which is the same gap §T19.7 found on the work order, and there it cost a retracted
+rule.
+
+▶ **REMEDY — sweep scope, not an owner decision.** **Four inventory rows in
+`NBA_SYSTEM_ARCHITECTURE.md`, then a read of each for findings.** *Not applied in pass 5: the pass
+that finds a gap does not also close it, so the audit and the remedy are not the same pass scoring
+itself.*
+
+---
+
+# §T19.9 — ⚠ THE HANDOFF SIZES ARE **DATED, NOT WRONG** — AND `NBA_RECIPE.md` STEP 1 UNDERSTATES THE LESSONS DOCUMENT BY A WHOLE PART
+*(T19 pass 5, 2026-09-22 — **RULE 40's second half**, and the first read of this gap was wrong)*
+
+**Three of the twelve state the handoff sizes as Blueprint **95,803 B**, Lessons **57,066 B**, Domain
+**18,034 B**.** **Actual today: 98,722 · 63,967 · 18,034.** ⚠ **These are NOT errors.** **VERIFIED by
+walking each file's byte size across its own commit history** *(`git log --format="%h %ad" -- <file>
+| while read h d; do git show $h:<file> | wc -c; done`)*:
+
+| file | recorded | is the exact size at | superseded by | today |
+|---|---|---|---|---|
+| `NBA_ARCHITECTURE_BLUEPRINT.md` | 95,803 B | **`e5ce01af`, 2026-08-30** | `39668fb3`, 2026-08-31 | **98,722 B** |
+| `NBA_LESSONS_LEARNED_FROM_MLB.md` | 57,066 B | **`b67561b3`, 2026-08-30** | `28c225a7` → 59,986; **`492c005a`, 2026-09-09 — *"Part H: enrichment backfill + market/board sourcing lessons"*** | **63,967 B** |
+| `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` | 18,034 B | — | — | **18,034 B ✅ current** |
+
+✅ **Both figures appear in NINE of the twenty transcripts, so they are transcript-sourced readings,
+correct when taken.** 🔑 ***A DATED figure is corrected by adding "as of"; a WRONG figure by
+retracting it. Treating the first like the second destroys evidence*** *(rule 36's lesson)*.
+
+## 🔴 WHAT IS ACTUALLY DEFECTIVE — the missing date, in two places that matter
+1. **`NBA_MASTER_SUMMARY.md:554`** — *"**Handoff document sizes (exact):** …"* **"Exact" with no
+   date.** *Needs: "exact as of 2026-08-30."*
+2. **`NBA_RECIPE.md:283`** — *"Read the three handoff documents **in full** (Blueprint 95,803 B,
+   Lessons 57,066 B, Domain 18,034 B)."* 🔴 ***A reader following step 1 today reads 6,901 bytes more
+   of the lessons document than the step accounts for — and that surplus is **Part H** in its
+   entirety*** *("Lessons from the enrichment backfill, market and board-sourcing phase,
+   2026-09-10")*. **Plus 2,919 bytes of blueprint added 2026-08-31.**
+
+⚠ **Part H itself is NOT undocumented** — *it is recorded in five places* *(`NBA_MASTER_SUMMARY.md`
+§5370–5381, `NBA_FINAL_SCORING_CALIBRATION.md:2939–2940`, `NBA_GLOSSARY.md:1608/1613`,
+`NBA_OPEN_ITEMS.md:9271`)*, **and the candidate "Parts G and H were never swept" was KILLED on
+inspection.** ***The defect is only that the recipe's step-1 sizes predate it,*** which is a
+navigation error, not a coverage one. **LOW–MEDIUM.**
+
+▶ **REMEDY**: **add "as of 2026-08-30" to both, and the current sizes alongside.** *Not applied in
+pass 5, per the same rule as §T19.8.*
