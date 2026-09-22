@@ -1614,6 +1614,13 @@ Every other daily input lands earlier:
 
 **⇒ One window at 1:15 PM PT holds every club's report.**
 
+⚠⚠ **SEE §0z-8-T18 (2026-09-22) BEFORE CITING THE TRACE BELOW.** *The CONCLUSION stands — 1:00 PM PT
+binds, 1:15 PM PT is the cutoff, now externally confirmed by the league's own rule. The ORIGIN story
+below is the weaker of two: `nba_asof.py` carries `ENRICH_CUTOFFS_LOCAL = ["13:30", "17:30"]`, and
+**`17:30 ET = 2:30 PM PT` exactly** — the league's 5:30 p.m. ET republication bulletin, a named
+constant needing no timezone error and explaining the SELECTION that a seven-item snapshot list
+cannot. **Both traces are kept; neither is deleted.***
+
 **The 2:30 PM PT figure was drift** — traced to a list of observed injury-PDF timestamps in *Eastern*
 (2:30 PM ET = 11:30 AM PT), and to `nba_asof.py`'s `PHASE2_CUTOFF_LOCAL = "17:45"  # after the 5:30 PM
 ET day-of report` — a league **bulletin**, not a filing deadline. `nba_asof.py` already had
