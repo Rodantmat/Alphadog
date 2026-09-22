@@ -14426,6 +14426,91 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+## T13 — `2026-09-13-01-03-48-nba-boards-grader-market-2026-09-10.txt`
+**THE GOBLIN/DEMON MULTIPLIER RESEARCH · BETR & CHALKBOARD · THE GRADER · MARKET CONSENSUS**
+*1,323 content blocks — **the largest transcript swept** — and **65 owner turns**, four times any
+previous. **PASS 0 2026-09-22** · novelty baseline `4429380d` → `/tmp/t13base/nba/` (32 `.md`),
+content-only digest `27cb845656734b72`, verified byte-identical.*
+
+### T13.1 — PASS 0 (**corpus + owner stratum**) — **🔴🔴 the largest credential exposure in the corpus · 🔑 the origin of this sweep's own completion criterion · 0/3**
+*2026-09-22.*
+
+#### ✅ T13.1a — **The corpus, and the partition closes**
+| stratum | segments |
+|---|---|
+| `tool_result` | **512** |
+| `tool_use` | **427** |
+| assistant `text` | **250** |
+| assistant `thinking` | **69** |
+| **owner** `text` | **65** |
+| **total** | **1,323** ✅ *512 + 427 + 250 + 69 + 65 = 1,323* |
+
+🔑 **65 owner turns, 34,229 characters, mean 526** — *against T12's 11 and T11's 15.* ***This is the
+most owner-directed transcript in the run, and the owner stratum is where the directives live, so
+pass 0's deliverable is the whole of it: all 65 read, each quoted whole where it is quoted at all***
+*(rule 19)*.
+
+#### 🔴🔴 T13.1b — **THE LARGEST CREDENTIAL EXPOSURE IN THE CORPUS — OWNER DECISION O11**
+**Five owner turns carry live secrets**: **segment 238** an account **email and password** in the
+clear *(with segment 240: "you can use and discard, I trust you, and **I'll change it afterwards**"
+— **whether it was changed is NOT RECORDED**)* · **segments 243–246** four full `curl` captures
+including a **Keycloak token exchange**, an **Ably `requestToken`** and a **bearer JWT** · **segment
+437** a **new Odds API key** *(superseding O8's)* · 🔴🔴 **segment 500 the FULL DigitalOcean Postgres
+connection block — host, port, database, pool, username, PASSWORD and `sslmode=verify-full`.**
+***No value is reproduced anywhere in the twelve*** *(standing rule)*. **Raised in
+`NBA_OPEN_ITEMS.md` as O11, with the decision stated and not taken.**
+
+#### 🔑🔑 T13.1c — **THE ORIGIN OF THIS SWEEP'S OWN COMPLETION CRITERION**
+*Segment 693, the owner, verbatim*:
+> ***"just ONE PASS is not enough. So you need THREE CONSECUTIVE PASSES trying to learn more… and if
+> you do not learn anything on three consecutive passes, then probably there is nothing else. But
+> EACH TIME THAT YOU LEARN SOMETHING NEW, THE COUNTER RESETS, and you need again three consecutive
+> passes with no learning."***
+
+🔑 ***The criterion this documentation sweep has run on for roughly seventy-five passes — three
+consecutive clean passes, the count resetting on any new finding — was given HERE, at T13, for the
+GOBLIN/DEMON MULTIPLIER RESEARCH.*** **The sweep inherited it from a different task.** *("counter
+resets" is in 2 of the twelve; **its provenance is in none**.)* ⚠ **Recorded because a rule whose
+origin is unknown gets applied where it does not belong — which is exactly what §T12's closure
+record found happening.**
+
+#### 🔴 T13.1d — **Seven owner directives the twelve did not carry**
+*Probed against the baseline, pinned 2026-09-22T07:40Z; controls `PrizePicks` 63 and `goblin` 46
+both fire.* 🔴🔴 **THE LATENCY REQUIREMENT — 0 of THIRTY**: *"will the pipeline (board + daily
+context + market + scoring engine) be **faster than MLB**? **MLB is running around 30 min, leaving
+me only 15 minutes to place slips**"* *(segment 571)*, with segment 609 setting how it is measured:
+*"the mining itself is fast; **what takes long is the SCORING ENGINE**."* · 🔴 **the ParlayAPI
+downgrade's TERMS — 0 of thirty** *($5/mo, 20,000 credits, no rate limit, 168h historical; the
+downgrade itself is in 2 of the twelve)* · 🔴 **the MARKET-CONSENSUS WEIGHTING requirement — 0 of
+thirty**: *"be sure that you **WEIGHT properly** — there are markets that are **more reliable than
+others**"* · 🔴 **the MLB-MULTIPLIER WARNING — 0 of thirty**: *"even our internal **MLB multipliers
+are not sharp enough**… be careful what you follow. Use proper NBA information"* · 🔴 **tier context
+is ALREADY on the snapshots and needs only MAPPING — 0 of thirty** · 🔴 **Underdog and Sleeper need
+the tiering too — 0 of thirty** · 📌 **the pick window's lower bound**: *"1:45pm… maybe **1:30pm, or
+even 1pm — but NOT 9am**"*, and segment 614 reopens it for weekends. **All seven written to
+`NBA_OPEN_ITEMS.md`.**
+
+#### 🔑 T13.1e — **The owner's own statement of the goblin/demon rule, and its four unrecorded parts**
+⚠ **The rule itself is thoroughly on file and was NOT re-derived** *(rule 28: `invisible anchor` 5 of
+the twelve, `switch point` 3, the `10.5/11.5/12.5` example 2, `LADDER_DEPTH` 9)*. **What was not**:
+🔴 **the three-part VALIDITY CHECK** — *"if you have goblin T1, goblin T2 with the **same payout**,
+that's bullshit… and of course **they cannot be the same as a REGULAR line**"* *(1 of thirty and **0
+of THIRTY** respectively)* · 🔴 **ladder depth is PROP-DEPENDENT and the shallow ones pay
+differently** — *"**not treated equal** for all prop lines… a hard line like fantasy score or steals,
+a **low count**, you're probably gonna have just ONE, and that one is **a lot lower multiplier**"*
+*(0 of thirty)* · 🔴 **why the tiers matter at all** — *"different tiers… **different multipliers**,
+and that's **essential for us to find ROI**"* *(0 of thirty)* · 🔴 **the method order** — *"first
+understand the **whole mechanics**… THEN focus on each prop line"* *(0 of thirty)*. **Written to
+`NBA_GOBLIN_DEMON.md` §0f.** ✅ **And segment 661's forward half is CONFIRMED by §T12.7c**: *"for the
+past two seasons, very likely, you're only gonna have goblin and demon as MORE"* — **and
+`board_tiers_v2` holds not one `Under` alternate in 2.2M rows.**
+
+**Pass outcome: the corpus measured and closed, all 65 owner turns read, one owner decision raised,
+seven directives and four rule-parts moved into the twelve, and this sweep's own criterion traced to
+its source. CLEAN 0/3 · 1 pass.**
+
+---
+
 ## T12 — `2026-09-11-21-01-23-nba-board-scrapers-fliff-docs-2026-09-10.txt`
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
