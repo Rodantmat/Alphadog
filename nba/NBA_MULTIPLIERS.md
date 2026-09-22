@@ -659,6 +659,31 @@ plainly***: *"**guessing paths is the wrong tool here — the same lesson as Und
 your phone settles it.**" ***This is the second time in one transcript that path-guessing failed and
 bundle-reading or capture succeeded.***
 
+### ✅✅ 0.9e.6 **THE FANTASY-SCORE FORMULA, SETTLED FOR BOTH APPS — and it was a live MLB bug class**
+*Recorded 2026-09-22 (T14 pass 1, §T14.2d). **The owner raised it twice and demanded multiple
+sources.** `fantasy ×1.2` is **0 of the TWELVE** *(2 of the thirty)*, pinned 2026-09-22T08:53:42Z.*
+
+**WHY IT WAS ASKED — a recorded failure, not a hypothetical**:
+> *"We have **fantasy score**, and I think that Underdog also have fantasy score. **For MLB, the
+> fantasy score was DIFFERENT to both apps.** So be sure that you have **the proper logic for BOTH
+> apps**. And ***for a long time, we ran a BROKEN LOGIC*** — **it was not the correct points that was
+> going for fantasy score.** So be sure: **research online, find reliable sources, MULTIPLE**, and be
+> sure that we have both correct. ***They might be the same, but they might not.***"*
+
+| app | formula | source |
+|---|---|---|
+| **Underdog NBA** | **points ×1 + rebounds ×1.2 + assists ×1.5 + steals ×3 + blocks ×3 − turnovers ×1** | **their official help centre, dated 2026-05-31** |
+| **PrizePicks NBA** | ***the same formula*** | *"confirmed against their playbook's calculator partners **and the NBA's official fantasy standard**"* |
+
+✅ ***Both identical for NBA, and both match what the recipe already computes.***
+⚠ **TWO CAVEATS STATED AT THE TIME AND KEPT**: **PrizePicks' own chart *"didn't render as text"***, so
+that confirmation is indirect — *"**I'll verify it against ONE LIVE GRADED LEG in week one**"*,
+***an open verification item, not a closed one***; **and the DraftKings table was flagged as *"the
+trap to avoid"***, a different scoring standard that looks like the same thing.
+🔑🔑 **The transferable point is the owner's, not the formula**: ***a per-app scoring formula is a
+place where a system can run wrong for a long time with NO ERROR***, **because every leg grades
+cleanly against the wrong number. MLB did exactly that.**
+
 ### 🔴🔴 0.9e.2 **THE UNITS ERROR — `higher_multiplier` IS A MODIFIER, NOT A PAYOUT, AND THE CONCLUSION REVERSED**
 **The researcher caught this himself, on the owner's correction, and re-derived it:**
 > *"my tier analysis used **`higher_multiplier` from alternate projections AS IF IT WERE THE PAYOUT**.
