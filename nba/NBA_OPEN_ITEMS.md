@@ -1,5 +1,44 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+> # 🔴🔴🔴 **READ THIS FIRST — THE OPENING-DAY BRIEF IS `910,821` CHARACTERS BELOW THIS LINE**
+> ### ⏱ **REGULAR SEASON OPENS `2026-10-20` — 28 DAYS. PRESEASON `2026-10-03` — 11 DAYS.**
+>
+> *Placed at the top **T20 pass 69 (§T20.74), 2026-09-22**. §T20.70 measured that the brief sits at
+> **`87.0%`** of a **`1.05 MB`** file and recorded it as "flagged for a later pass"; this is that pass.*
+> ⚠ **The brief itself is NOT moved — rule 40 forbids destroying the original, and its amendment
+> history is part of the record. This is a POINTER plus the ranked order.** ▶ **Full brief:
+> search this file for `OPENING-DAY BRIEF`.**
+>
+> ## ▶ **ALL FOURTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
+> *Ranking rule, re-derivable: **SILENT before LOUD**, then **STOPS THE SLATE before DEGRADES IT**,
+> then **UNCAUGHT by a certifier before CAUGHT**. A silent failure costs a season before anyone
+> looks; a loud one costs an evening.*
+>
+> **`A` · `13` · `B` · `C` · `5` · `7` · `12` · `14` · `D` · `9` · `4` · `6` · `3` · `10` · `2` · `E` · `11` · `1`**
+> *(numbers are `T20-n`; letters are the five older items §T20.56 found were missing from the brief.)*
+>
+> ## ✅ **RE-DERIVED AGAINST THE LIVE SYSTEM — 2026-09-22T19:16Z, `SELECT` ONLY, NOTHING CHANGED**
+> | item | re-derivation | state |
+> |---|---|---|
+> | **T20-13** *(ranked 1st)* | `baseline_history`: **October = `22` distinct props · November = `30`**, both prior seasons. P2 gates on `>= 25` with `CERT_STRICT=1`. | 🔴 **HELD EXACTLY** — *red from opening night through Oct 31: **twelve nights**.* |
+> | **T20-12** | `PT = timezone(timedelta(hours=-8))` still at `build_availability_delta.py:39`; **zero DST-aware Python** in the NBA scripts. | 🔴 **HELD** |
+> | **T20-4** | `nba-p3-afternoon-light.yml:38,205` — `default: "2025-26"`, `BS_SEASON: ${{ … \|\| '2025-26' }}`. | 🔴 **HELD** — *the 2026-27 season opens in 28 days.* |
+> | **T20-14** | Betr board: still **ONE commit, `2026-09-09`**; `token_expires_at` **`2026-10-10T06:10:56Z`** — **18 days out, 10 days before opening night.** *(Value never reproduced; the repo is PUBLIC.)* | 🔴 **HELD** |
+> | **frozen static layer** | `nba_ref.defender_ratings`: `max(as_of_date)` = **`2026-04-09`**, **`166` days stale**, `111,768` rows. P1's certifier check `defender_ratings refreshed (<= 8 days)` is **RED**. | 🔴 **HELD EXACTLY** |
+>
+> 🔑🔑 **AND ONE THING THE RE-DERIVATION ESTABLISHED THAT NO ITEM SAYS.** *Across **twelve** board
+> sources — **PrizePicks, Betr, FanDuel, DraftKings, BetMGM, Fanatics, Pick6, Bovada, BetRivers,
+> BetOnline, William Hill, Underdog** — **the newest NBA board row in `nba_market.board_snapshots` is
+> `game_date 2026-04-12`, snapshot `2026-04-13`.*** **That is the last night of the 2025-26 season and
+> it is exactly correct for an off-season — nothing is broken.** ⚠ ***But it means none of these items
+> can be exercised against live NBA board data until preseason on `2026-10-03`, which leaves
+> SEVENTEEN DAYS between the first NBA board row and opening night.*** **The fix window is not 28
+> days. It is 17, unless a fix is validated without live board data.**
+>
+> ⚠ **Nothing here is fixed — the owner's standing instruction is document, don't fix.**
+
+
+
 ## 🔴🔴🔴 **T18 PASS 0 — A SEASON-CRITICAL COVERAGE DEFECT THE OWNER NAMES HIMSELF, AND THE SCOPE DECISION THAT ANSWERS T16-7** *(§T18.1, owner, 2026-09-19; **the largest owner stratum in the corpus**)*
 
 > # ✅🔴 **DIAGNOSED 2026-09-22 — T20 PASS 52, §T20.57. ONE CAUSE CONFIRMED, ONE DISPROVED, AND THE REAL SHAPE IS NEITHER.**
