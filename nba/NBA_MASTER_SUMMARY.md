@@ -32,8 +32,10 @@
 > | ✅ **Pointer integrity across the twelve: `1` broken reference in `5,164`, and that one is repaired.** | `§T20.91` |
 >
 > ## ③ WHAT BREAKS FIRST
-> ▶ **Go to the top of `NBA_OPEN_ITEMS.md`. It carries the OPENING-DAY BRIEF — `16,230` characters,
-> readable in minutes — with SIXTEEN season-critical items in a stated order:**
+> ▶ **Go to the top of `NBA_OPEN_ITEMS.md`. It carries the OPENING-DAY BRIEF — ~~`16,230`~~
+> `24,058` characters *(re-measured `2026-09-22`, `§T20.119`; `+48%` since `§T20.107`, as `T20-15`,
+> `T20-17`, `T20-18`, the testability rows and the `§T20.118` repair landed)* — with SIXTEEN
+> season-critical items in a stated order:**
 > > **`A` · `13` · `17` · `B` · `C` · `5` · `7` · `12` · `14` · `D` · `9` · `4` · `6` · `3` · `10` ·
 > > `2` · `E` · `11` · `1` · `15`**
 > > *(numbers are `T20-n`; letters are the five older items `§T20.56` found were missing from the brief.)*
