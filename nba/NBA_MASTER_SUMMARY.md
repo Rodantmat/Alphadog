@@ -31651,3 +31651,135 @@ ladder-block audits — a different table and a different question.** 🔑 *Thou
 purpose, for eleven days — and that it will fire on opening night of the season the owner is
 twenty-eight days from.**
 ***A "NOT RECORDED" that a single SELECT can settle is not a limit. It is the next pass.***
+
+---
+
+# §T20.53 — T20 PASS 48 · THE COLD-START AUDIT: THE DATABASE HAS SEEN TWO OPENING FORTNIGHTS
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only**: nine `SELECT`s. **Nothing triggered, dispatched or written to the
+live system; `NBA_COMPASS.md` not written to.**
+
+## 0. KEYS READ OFF `information_schema`, NOT ASSUMED (rule 21) — AND RULE 20 EARNED ITS KEEP IMMEDIATELY
+
+| table | date keys |
+|---|---|
+| `nba_score.baseline_history` | `game_date`, `loaded_at` |
+| `nba_score.final_hp` | `game_date`, `built_at` |
+| `nba_market.board_snapshots` | `game_date`, `fetched_at` |
+| **`nba_market.board_outcomes`** | `game_date`, `graded_at` |
+| `nba_score.ladder_calibration_asof` | **`as_of_date`**, `built_at` |
+| `nba_score.confidence_model` | `built_at` *(only)* |
+
+⚠ **`board_outcomes` is in `nba_market`, not `nba_score`** — the first probe looked in `nba_score`
+and returned nothing. *Had the result been taken at face value the table would have been reported as
+having no date column. Rule 20, on the first query of the pass.*
+
+## 1. ✅✅ CLAUSE (ii) SCORES THE GOOD BRANCH — T20-13 IS ISOLATED
+
+**Opening 11 dates vs the following ~21, both seasons, rows per date:**
+
+| artefact | 2024-25 open → steady | 2025-26 open → steady | regime? |
+|---|---|---|---|
+| `board_snapshots` | **57,389 → 60,870** *(−6%)* | **96,540 → 100,653** *(−4%)* | ✅ **none** |
+| `board_outcomes` | **18,573 → 18,665** *(−0.5%)* | **26,004 → 25,015** *(+4%)* | ✅ **none** |
+| `baseline_history` | 42,205 → 56,610 *(−25%)* | 43,628 → 54,455 *(−20%)* | ⚠ **the SAME effect as T20-13** — 22/30 props is −27%, so this is the prop step showing through, not a second finding |
+
+⇒ ✅✅ ***Apart from the prop count already recorded as T20-13, NO artefact has an opening-window
+regime. The board is captured at full size from night one and the grader grades from night one.
+T20-13 is an isolated gate-calibration problem and the opening fortnight is otherwise ordinary.***
+**Stated at full strength, because the pre-registration named this as the materially better branch.**
+
+📌 ⚠ **AND THE PRE-REGISTRATION'S OWN GUESS WAS WRONG, WHICH IS WORTH MORE THAN IF IT HAD BEEN
+RIGHT.** *It reasoned that `"board_outcomes` has nothing to grade on night one".* **It has 204,307
+rows across the first 11 dates of 2024-25 and 286,048 across 2025-26's** — *because what it grades is
+the PREVIOUS night's board, and the board exists from the first night there is one.* ***A plausible
+mechanism, written into a pre-registration, and refuted by the first query that touched it.***
+
+## 2. 🔴 CLAUSE (iii) SCORES — A CHECK THAT WILL BE GREEN ALL SEASON ON A CALIBRATION FROM LAST JANUARY
+
+**P2's certifier, quoted:**
+```
+check("as-of calibration available",
+      "SELECT count(*) FROM nba_score.ladder_calibration_asof", (),
+      lambda v: v and int(v) > 0, "cells exist")
+```
+**Live, 2026-09-22:** `nba_score.ladder_calibration_asof` — **9,904 rows · 24 distinct `as_of_date` ·
+min `2024-10-29` · max `2026-01-15`.**
+
+⇒ 🔴 ***The table HAS an `as_of_date` column. The check does not look at it.*** **Its newest as-of is
+`2026-01-15` — `250` days before today and `278` days before opening night — and `count(*) > 0`
+will be GREEN on opening night and every night after, on a calibration fitted to the middle of last
+season.**
+
+🔑🔑 **THIS IS THE EXACT INVERSE OF T20-13 AND THE FIX IS ALREADY NAMED.** *T20-13 is a gate that goes
+RED when it should. This is a gate that goes GREEN when the artefact is not fit for use — which is
+worse, because nothing about it looks wrong.* ✅ **§T20.51 found the pattern that works: P1's
+`defender_ratings refreshed` measures `max(as_of_date)` against a cadence, and it is RED today.
+`ladder_calibration_asof` has the same shape of column and gets `> 0`.** ***Eleven checks need the
+twelfth's pattern, and this is the one where the column is already sitting there.***
+
+✅ **BY CONTRAST, `confidence_model` IS FRESH**: 10 rows, **all** carrying a single
+`built_at = 2026-09-19 01:25:34.684704+00` — three days old. *Its `> 0` check is green and honestly
+so. Said because a pass that finds one stale artefact should say which ones are not.*
+
+## 3. 🔴🔴 A LIVE CONTRADICTION INSIDE THE CORPUS — AND RULE 40 SAYS DATE IT, DO NOT STRIKE IT
+
+**Two passages, present tense, assert this table is EMPTY:**
+- **`NBA_MASTER_SUMMARY.md:3670`** — *"`certify_pipeline.py` has `check("as-of calibration available",
+  … count > 0)` — **it would fail on today's state**"*, and *"**that run touched it and left it
+  empty**"*
+- **`NBA_OPEN_ITEMS.md:6294-6306`** — *"What the code does with an empty table"*, *"**The
+  `certify_pipeline.py` gate would fail on today's state.**"*
+
+🔴 **Live it holds 9,904 rows across 24 as-of dates. The gate PASSES.** ⚠⚠ **And the corpus contains
+BOTH readings**: §T20.51, six hundred lines below, records **9,904** — as do ten other places.
+⇒ ***Two parts of the same corpus describe opposite live states, and nothing connects them.***
+
+⚠ **RULE 40'S DISCRIMINATOR APPLIED**: *this is a **DATED** fact, not a **RETRACTED** one. The table
+WAS empty when that pass read it; it has since been repopulated.* ⇒ **Both passages are annotated
+with the date and a pointer, and neither is struck.** ✅ **Corrected in this sweep's own deliverable,
+which the charter's amendment permits.**
+
+## 4. ⚠ SUPPORTING CONTEXT — `final_hp` IS A BACKTEST, QUANTIFIED
+
+**`nba_score.final_hp`: `19,215,200` rows · `163` distinct `game_date` · `2024-10-22 → 2026-01-15`
+— and `162` of the `163` dates are before `2025-07-01`.** ⇒ **ONE date in 2025-26 or later, and
+`ZERO` rows in `2025-10-21 → 2025-11-21`.**
+⚠ **RECORDED AS SUPPORTING CONTEXT, NOT AS A FINDING**: *the general claim is PRIOR and on file —
+§T20.31's `job_runs`/`worker_run_log` are empty, "no NBA job has ever recorded a run in the
+database", and the 2026-09-21 item's "the only thing that has touched an NBA table since the build is
+a human testing it."* 🔑 **What is new is the shape: the product's own output table — score and
+confidence per leg — holds one season of backtest and a single spot-check day.** ⇒ ***The system has
+never produced a `final_hp` for an opening window in the regime it will actually face.***
+
+## 5. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; reported as **`484 − 471 = 13` segments covered** (§T20.50), never the absolute level. **Baseline `636 · 2 · 484 · 481` — FORTY-NINTH consecutive identical run.** Measured 2026-09-22T17:21:30Z |
+| **(ii)** ≥1 artefact besides `baseline_history` shows an opening-window regime | ✅✅ **FALSE — THE GOOD BRANCH.** `board_snapshots` within **6%** and `board_outcomes` within **4%** of steady state from night one, in **both** seasons. **T20-13 is isolated** |
+| **(iii)** ≥1 regime makes a check go GREEN on an unfit artefact | 🔴 **TRUE — `as-of calibration available` is `count(*) > 0` on a table whose newest `as_of_date` is `2026-01-15`, `278` days before opening night.** Recorded as an amendment to T20-6, whose subject it is |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FORTY-NINTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — one new system defect (a green gate on a 278-day-stale calibration, amended into
+T20-6) and one live contradiction inside the corpus (dated, not struck).**
+✅✅ **AND THE PASS'S PRINCIPAL RESULT IS A RETIREMENT, WHICH IS WHAT THE OWNER MOST NEEDED: the
+opening fortnight is ORDINARY. The board is captured at full size from night one, the grader grades
+from night one, and T20-13 is the only cold-start regime in the system. The first two weeks were
+uncharacterised; they are now characterised, and they are fine apart from one gate.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **`baseline_history`'s 22→30 step** *(T20-13, carried and not
+re-scored)* · **the per-date magnitudes** *(§T20.51)* · **`grade_board_outcomes.py`'s window**
+*(T20-5)* · **the certifier's structure** *(T20-6)* · **"P3 has never run in production"** *(§T20.31
+and the 2026-09-21 item — the `final_hp` quantification is carried as supporting context, explicitly
+not as a finding)*.
+
+📌 ***The lesson:*** **the pass set out to find what breaks in a cold start and found that almost
+nothing does — and then found, in the same queries, a check that has been green for 250 days on a
+calibration from last January. The cold start was never the risk. The risk was the gate that cannot
+tell a cold start from a warm one, because it was written to count rows in a table that has a date
+column three characters away.**
