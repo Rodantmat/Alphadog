@@ -1008,6 +1008,73 @@ the standard. Primary record: `NBA_BASELINE_CALIBRATION.md` §5.6.
 
 **`nba_config.classification_config` key: `board_payout_conversion_rules`.**
 
+> ## 🔑🔑 **6.0 THE KEY'S ACTUAL CONTENTS — READ LIVE 2026-09-22 (T13 pass 4, §T13.5e)**
+> ⚠⚠ **This section has NAMED that key since it was written and carried NONE of what is in it.**
+> **Read with `SELECT` only; nothing changed** *(rule 1)*. ***And it is a stronger authority than any
+> transcript prose in this document, because of its `source` field.***
+>
+> ### ✅✅ `source` — **the strongest provenance any multiplier figure in this corpus has**
+> > ***"owner MLB chat, verified against app screenshots + 19 PLACED SLIPS (2026-09-10)."***
+>
+> 🔑🔑 ***Nineteen REAL PLACED SLIPS.*** **That is precisely what lesson #16 demands** *(§0.3a2:
+> "get that number from a real, current slip-builder quote — **the FINAL, DECISIVE step**")*, **and
+> §4b's capture protocol treats it as still outstanding.** ⚠ **It is outstanding for PRIZEPICKS
+> per-leg factors; it is NOT outstanding for the CONVERSION arithmetic, which has been confirmed
+> against real placed slips already.** **The two must not be conflated again.**
+>
+> ### ✅ THE RULES, verbatim
+> | app | rule | verified |
+> |---|---|---|
+> | **Sleeper** | **`payout_multiplier = 1 + (decimal − 1) × 0.95`** | ***"exact"*** |
+> | **Underdog** | **`payout_multiplier = decimal(American price) × 0.963`** | **worked on three real legs** *(below)* |
+> | **slip** | **`slip multiplier = PRODUCT of leg multipliers`** | ⚠ **see the haircut** |
+>
+> **The Underdog verification, as stored**: *"Feltner ER 2.5 under **+114 → 2.14 dec → app 2.06
+> (0.963)**; Hagen Smith ER 0.5 over **+138 → 2.38 → app 2.31 (0.971)**; **under −189 → 1.53 → app
+> 1.44 (0.942)**; **mean 0.96**; ***matches 0.963 fitted independently from 19 placed slips***."*
+> 🔑 **Three legs spanning +138 to −189, a 0.942–0.971 spread around 0.963, and an independent fit
+> agreeing** — *the constant is measured, not assumed.*
+>
+> ### 🔴🔴 **THE SLIP-LEVEL HAIRCUT — which this sweep recorded the product rule WITHOUT**
+> > ***"observed 2–8% slip-level haircut vs the plain product; MODEL AS THE PLAIN PRODUCT
+> > (conservative)."***
+>
+> ⚠⚠ **§T13.3c recorded *"slip = the PRODUCT of legs"* and omitted this.** ***The product is not
+> exact — it is a deliberately CONSERVATIVE approximation of something 2–8% lower***, **and a
+> 2–8% error at slip level is the same order as the edges this whole document hunts.** **Corrected
+> here.**
+>
+> ### 🔑🔑 **`DO_NOT_USE` — the units-error trap is encoded as a FIELD, not just a comment**
+> > ***"`higher_multiplier` / `lower_multiplier` from `alternate_projections` are MODIFIERS, not
+> > payouts — using them as payouts produces a units error."***
+>
+> ✅ **That is stronger than the column rename §0.9e.3 records: the prohibition is machine-readable
+> and lives beside the rule it protects.**
+>
+> ### ✅ `correction_2026_09_10` — **the reversal, stored in the system, with the per-stat evidence**
+> > *"my earlier NBA-chat analysis used UD modifier fields as payouts and reported **demon T1 as the
+> > best-priced rung (0.74 kept vs 0.55 anchor)**. **RECOMPUTED with the verified rule**: value kept
+> > is **anchor 0.933 · goblin T1 0.932 · demon T1 0.910 · T+2 0.896 · T+3 0.883 · T+4 0.847** →
+> > **UD hold is 7–15% and DECAYS with demon depth; deep demons are the WORST value, not the best.**
+> > **The per-stat finding — *tier +1 is 1.18× at 43% on strikeouts vs 6.07× at 12% on batter walks
+> > → price by probability shift, never by tier label* — is UNAFFECTED and still holds.**"*
+>
+> ✅ **Every figure matches §0.9e.2 exactly, and the system states the survival of §0.9f itself** —
+> *so the probability-shift rule is carried by the CONFIG, not only by this sweep's reading of the
+> prose.* 📌 **And the two per-stat numbers are MLB** *(strikeouts, batter walks)* — ⚠ **which
+> §0.5's transfer rule governs: the MECHANIC transfers, the NUMBERS do not.**
+>
+> ### 🔴 `data_hygiene_todo` — **two OPEN items sitting in live config, in 0 of the twelve**
+> 1. *"**ladder rows: de-dupe on `(player, prop, line)` keeping the freshest row** — multiple harvest
+>    passes create duplicates at different prices; **a selector could otherwise pick the same leg
+>    twice**."*
+> 2. *"**derive the ladder payout from the American price rather than storing modifier fields under
+>    payout-like names**."*
+> ⚠ **§0.9e.3 records both as DONE from the transcript's description. The config still lists them as
+> TODO.** ***Whether the config was simply never updated, or the work is genuinely outstanding, is
+> NOT RECORDED*** — **and rule 31 says the code decides, which this pass did not check.**
+> **Documented, not acted on.**
+
 **The general form**: a leg's break-even probability is `1 / factor`. A leg is +EV when
 `hit_probability > 1 / factor`.
 - Demon T+1 at 32.9% needs `1/0.329 = 3.04×`… **but the required factor of 1.48× reflects the
