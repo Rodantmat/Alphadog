@@ -2047,6 +2047,8 @@ failed`, and four jobs failed silently for an hour while row counts alone looked
 that cannot fail loudly is a pipeline you cannot trust unattended — and these three run unattended
 every day."* **`CERT_STRICT=1` by default; any failed check `sys.exit(1)`.**
 
+> 🔴🔴🔴 **AND THAT IS WHAT FIRES `T20-13`, THE BRIEF'S NUMBER-ONE ITEM — TWELVE RED NIGHTS FROM OPENING NIGHT.** *Added here T20 pass 78 (§T20.83), 2026-09-22: **this page gave the MECHANISM (`CERT_STRICT=1` → `sys.exit(1)`) and not the GATE that trips it**, and a person working on the certifier reads this page.* ▶ **P2's check requires `>= 25` distinct props in `baseline_history`.** **Live, both prior seasons: OCTOBER carries `22` distinct props; NOVEMBER carries `30`** *(re-derived `2026-09-22T19:16Z`, §T20.74 — `892,599` and `3,281,336` rows)*. 🔴 ***So from opening night `2026-10-20` through `2026-10-31` the gate cannot be met — **twelve consecutive red nights**, and with `CERT_STRICT=1` each one exits non-zero.*** ⚠ **Those same twelve nights are inside `T20-12`'s PDT window, where `p3_cut` is an hour late.** ▶ **Full item: `T20-13` in `NBA_OPEN_ITEMS.md` (§T20.52), ranked FIRST on the OPENING-DAY BRIEF; re-derived and HELD at §T20.74.** ⚠ *Documented, not fixed (rule 1).*
+
 ### ✅ ALL TWELVE CHECKS, WITH THEIR ACTUAL PREDICATES *(live source, verbatim `lambda`s)*
 
 | pipe | check | predicate | is it a PLAUSIBILITY gate? |
