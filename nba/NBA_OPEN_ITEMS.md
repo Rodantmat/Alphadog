@@ -13112,6 +13112,22 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-16 · **NEW · ⚠⚠ MEDIUM, LATENT, SILENT · THE PAPER-TRADING PROP MAP IS HARDCODED TWICE, AND A MISMATCH PRODUCES PICKS THAT CAN NEVER BE GRADED**
+*Added **T20 pass 93 (§T20.98), 2026-09-22**, while specifying `standards_3pick_v1`. **Read from
+`pg_get_functiondef`; nothing was run or changed.***
+
+| | |
+|---|---|
+| **The duplication** | The identical twelve-entry `m(prop, market_key)` `VALUES` list — `points · rebounds · assists · threes_made · pts_reb · pts_ast · reb_ast · pra · blocks · steals · stocks · turnovers` — is hardcoded **inside `nba_score.paper_pick_candidates`** *(selection)* **and again inside `nba_score.grade_paper_picks`** *(grading)*, **with no shared source.** |
+| 🔴 **The failure** | A prop added to the selector and not to the grader is **logged and never graded**: the grader's `JOIN m ON m.prop = p.prop` drops the row, `result` stays `NULL` for ever, and **because the function only ever touches rows `WHERE result IS NULL`, nothing reports them as missing.** |
+| **Why it matters more than its severity suggests** | `nba_score.paper_picks` → `paper_results` **is the record the owner will use to judge whether the system works.** *A silent hole in it is not a reporting bug; it is a hole in the evidence.* |
+| **Why MEDIUM and not season-critical** | **It is LATENT — it cannot fire unless someone edits one list and not the other**, and it is dormant while `P2`/`P3` have no trigger. ⚠ *Deliberately NOT added to the opening-day brief; the brief stays at **fifteen**.* |
+| 🔑 **Note on the list itself** | It is exactly **twelve**, the number `§T20.24` measured live for the archived PrizePicks board ⇒ ***`§0v.4`'s backtest scope limit propagates unchanged into the live selection rule.*** |
+| ⚠ **Provenance and scope** | The functions appear to be the **concurrent build session's** work *(`§T12.6h` recorded their signatures at `2026-09-22T07:01Z`)*, **but `P2` and `P3` call them directly**, so what the in-scope pipelines execute is in scope to document. **Not fixed (rule 1).** |
+| **Full specification** | `NBA_SYSTEM_DESIGN.md` — ***`standards_3pick_v1` — THE PAPER-TRADING STRATEGY, SPECIFIED END TO END*** *(selection · packing · logging · grading)*. |
+
+---
+
 ## T20-15 · **NEW · 🔴🔴 SEASON-CRITICAL · BOTH `P2` AND `P3` CERTIFY *RED* ON EVERY ZERO-GAME DAY — `7` OF THEM IN THE LAST COMPLETED SEASON**
 *Added **T20 pass 89 (§T20.94), 2026-09-22**, answering gap ③ of `NBA_RECIPE.md` `STEP 12`. **Read
 from source and the live calendar; nothing was run and nothing was changed.***
