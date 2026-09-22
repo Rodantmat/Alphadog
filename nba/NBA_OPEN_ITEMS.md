@@ -155,6 +155,77 @@ anything else from reading them.* **(c)** *If rotation already happened, the rec
 **it currently does not**.*
 ⚠ **Nothing was changed** *(rule 1)*. **A dated STATE** *(O9)*.
 
+## 🔑🔑 T14's OWNER DIRECTIVES — **two items CANCELLED, three constraints, and a rule the corpus did not have**
+*Recorded 2026-09-22 (T14 pass 0, §T14.1). **Transcript `2026-09-13-20-53-23`, all 33 owner turns
+read.** Probed against baseline `5fbb9c1e` and the working tree, pinned 2026-09-22T08:46:49Z; every
+hit opened *(rule 26)*. **Documented, not acted on** *(rule 1)*.*
+
+### ✅✅ TWO QUEUED ITEMS ARE CANCELLED BY DIRECTIVE — **remove them from the work list**
+**T13's closing queue still carries *"coach-change dates, all-star/all-NBA lists, national-TV flag,
+referee assignments scraper"* as work.** **Two of the four are settled here:**
+> 🔴 ***"The ALL-STARS I rather it to be BLOCKED — they change, IT IS VERY VOLATILE, so DON'T MINE
+> IT, DON'T GIVE LEGS TO IT."***
+> 📌 *"**National TV flag** — I don't even know what that is, how they differ from a regular game.
+> **If it's just a regular game, TREAT IT LIKE ONE.**"*
+
+✅ **`all-star` is in six of the twelve and `national tv` in one — but only as the `game_id` prefix
+`003` and as a desk-work item, never as this directive** *(every hit opened)*.
+🔑 ***And the all-star reason GENERALISES beyond all-stars: a volatile, changing attribute should
+not become a leg.*** ⚠ **Only `coach-change dates` and the `referee assignments scraper` remain from
+that queue** — **and the referee one is re-scoped by the backfill directive below.**
+
+### 🔑🔑 THE COST CEILINGS — **hard constraints on every parallelism decision, and 0 of THIRTY**
+> *"**For Cloudflare, I'm paying the FIVE DOLLAR plan, and I don't want to go over any of the
+> limits**, because I don't want to pay extra money for that. **Same thing with GitHub. I'm paying
+> the FOUR DOLLAR plan. I don't want to go over any limit.** And also the database. **My server has
+> only one gig of RAM.** So that's another thing to have in consideration — ***think about
+> processing multiple things at the same time.***"*
+
+⚠ **The binding alert is CPU, not disk**: *"**the alerts I've been getting are CPU more than
+anything**."* **The storage/spec arc, the `nyc3` / PostgreSQL 18 cluster identity and the *"THE
+THIRTY GIGS IS THE MAX"* ceiling are in `NBA_DATABASE.md` §0v** — 🔴 **including the live
+contradiction that the database measured 43 GB on 2026-09-22.**
+
+### 🔴 THE FULL-BACKFILL DIRECTIVE — **the parity rule extended to EVERY factor, with a worked example**
+> *"**Every factor that's gonna run when the system is live, we need to have it BACKFILLED, OR
+> DERIVED, OR SIMULATED**… ***every single factor needs to have a DAY-BY-DAY REAL DATA***… so we can
+> make a proper final hit probability for each leg and compare with the board."*
+> *"For the **referee assignment** — **SIMULATE what was the assignment**, or if you already have the
+> referee that was on that game that day, you already have it."*
+> *"**And the baseline must be doing exactly the same, having a day-by-day PROPORTIONAL TO THE
+> REALITY.**"*
+
+🔑 ***This re-scopes the referee item from "build a scraper" to "ensure every live factor has
+day-by-day history, by mining, derivation or simulation"*** — **a larger and more specific
+requirement than the queue records.**
+📌 **And the documentation directive attached to it**: *"**document this, and document everything
+else that is open since the last documentation** — compass, all documents, and **create new
+documents if needed**. **Look at the date of the last update and look at the chat history and
+transcripts since then**, to be sure to have everything."*
+
+### 🔑🔑 THE BASELINE ANCHORING RULE — **0 of the TWELVE and 0 of the THIRTY**
+> ***"The baseline should be ANCHORED ON THE PREVIOUS GAME, so we do not have a huge coverage
+> variation — what the player had in the past game should be very close to what it will be on the
+> board for next game. NOT THE OUTCOME, but WHAT THE BOARD OFFERED."***
+
+⚠⚠ ***A coverage rule that draws exactly the leakage boundary `NBA_SYSTEM_DESIGN.md` §0a.3 records
+from a different direction*** — **the previous game's BOARD is admissible; the previous game's
+OUTCOME is the thing that must not leak.** **Two independent statements of the same line.**
+📌 **With two companions**: *"the baseline creates a **FULL MATRIX** that may not even have a leg
+available for the full variations — **that is BY DESIGN, not duplication**"* *(an owner correction
+of an assistant's own finding)*, and *"**check if the baseline covers all the variations that show
+on the board LADDERS**, to see if it needs to be EXPANDED or if it is doing its job."*
+
+### ⚠ AND ONE CONDUCT DIRECTIVE, recorded because it is about how work is REPORTED
+**Three consecutive turns**: *"**this was done before. You already told me TWICE that this has been
+done before.**"* → *"**That's a lot of explanation. I need an ASSERTIVE ANSWER.**"* → *"but, yes,
+**get the shit done**."*
+🔑 **Two instructions sit inside it**: ***answer assertively rather than at length***, and ***do not
+re-do work already reported as done*** — ⚠ **the same failure this sweep's own closure judgment
+exists to catch, arriving from the owner's side.**
+
+---
+
 ## 🔴 T13's OWNER DIRECTIVES THAT THE TWELVE DID NOT CARRY
 *Recorded 2026-09-22 (T13 pass 0, §T13.1d). Probed against the baseline `4429380d`, pinned
 2026-09-22T07:40Z; controls `PrizePicks` 63 of thirty and `goblin` 46 both fire; every hit opened.*
