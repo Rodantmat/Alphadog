@@ -26703,8 +26703,12 @@ standing rule, because a kill is evidence that the check ran.*
 | **27** | *absent* | heading reads **"all 27 lessons"**; the table stopped at **26** |
 
 🔑 ***The cause is visible only in sequence, and that is the point of this pass.***
-- **SEG 921** built the table from a grep of **T1's escaped-JSON copy** of the source, piped through
-  `sort -u | head -18` — **the retrieval was truncated by the command that produced it.**
+- **SEG 915** ran the grep against **T1's escaped-JSON copy** of the source, piped through
+  `sort -u | head -18`; **SEG 916** returned it, truncated in sorted order; **SEG 921** wrote the table
+  from that result — **the retrieval was truncated by the command that produced it.** *⚠ Corrected
+  2026-09-22 (pass 6, §T20.11): this attributed the grep to SEG 921, which is the WRITE. **Rule 43's
+  own failure mode — a claim about a command must cite the segment carrying the COMMAND, not the
+  segment carrying its consequence.***
 - **SEG 979** retried: `for n in 8 21 22 23 25 11 19 20 …`. **SEG 980 printed `--- l8 ---` with
   nothing after it.** The row stayed filler.
 - Both gaps were **later recovered into this same document's own body** — lesson 5's (b)/(c) at
