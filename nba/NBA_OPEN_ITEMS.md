@@ -294,6 +294,73 @@ Betr boards · Underdog's history is SINGLE-RUNG.**
 
 ---
 
+## 🔑🔑 T15's OWNER DIRECTIVES — **an explicit "save this" rule, and an ANTI-REJECTION order that bears on every verdict in the transcript**
+*Recorded 2026-09-22 (T15 pass 0, §T15.1). **Transcript `2026-09-18-17-12-53`, all 21 owner turns
+read** *(3,642 chars, mean 173 — the TERSEST owner stratum swept; T13's mean was 526)*. Probed
+against baseline `6132e96a` and the working tree, pinned 2026-09-22T09:14:47Z; every hit opened.
+**Documented, not acted on** *(rule 1)*.*
+
+### 🔑🔑 **THE SAMPLE-FIRST RULE — the owner asked explicitly for it to be kept** *(0 of the TWELVE and 0 of the THIRTY)*
+> ***"Great — from now on ALWAYS DO A SAMPLE TESTING BEFORE REPLICATE THE FULL DATA! SAVE IT IN YOUR
+> MEMORY: anything that will replicate the full data needs a sample testing and success first."***
+
+⚠ **The two `sample test` hits in the twelve are *"out-of-sample test"*, a different thing entirely**
+*(opened and dismissed — rule 26)*. 🔑 ***This is a standing operational rule the owner asked to be
+persisted, and it is the only directive in this corpus phrased that way.*** ✅ **And the system has
+followed it since** — *the smoke-test-before-full-run pattern appears repeatedly after this point:
+"one prop pair on one season, so a shape mismatch fails in ten minutes rather than three hours."*
+
+### 🔴🔴 **THE ANTI-REJECTION ORDER — and it lands in the FACTOR-REJECTION transcript**
+> ***"NO — DO NOT JUST REJECT. FIX IT: granulated, break in tier, figure it out, research, debug,
+> test, simulate. WE CAN'T JUST BE DROPPING IMPORTANT PIECES."***
+
+🔑🔑 **`NBA_GLOSSARY.md` credits T15 with *"A5 — REJECTED/CLOSED"*, and COMPASS fact 85 records
+*"THE M1/B4 REJECTIONS WERE WRONG — corrected 2026-09-13."*** ***So this transcript both produces
+rejections and contains the owner refusing them***, ⚠ **and the corpus already records that at least
+two were reversed.** *(`do not just reject` / `dropping important pieces`: **0 of the twelve and 0 of
+the thirty**.)*
+📌 **With the reasoning attached**: *"**what will do B4's job?** If nothing, we have to fix or find
+the proper alternative — **unless A2 does it all**"*, and *"but that can be changed with the last
+updated lineups and injury report — **that must be taken care of properly**."*
+🔑 **And the fallback the owner will accept**: *"make the better decision — **drop it OR PENALISE it
+accordingly**"* · *"find the proper penalty level, **fair to it**."* ⚠⚠ ***So "reject" was never the
+only option on the table; a graded penalty was.*** **Whether any factor was penalised rather than
+dropped is NOT RECORDED** *(pass 1's job)*.
+
+### 🔑 **THE STRUCTURAL-FIX AND COMPLETENESS DIRECTIVES** *(both 0 of the twelve and 0 of the thirty)*
+> *"always do the **CORRECT STRUCTURAL FIXES — NO SHORTCUTS, NO PATCHES** — real fixes that produce
+> real proper data and results."*
+> *"every single step needs to be as close to perfection as possible. **ONLY THEN WE MOVE ON. NOTHING
+> IS LEFT OPEN OR HALF BAKED BEHIND.**"* — **stated THREE times across the transcript** *("nothing
+> left broken or open behind"; "nothing left behind, all gaps and issues need solution")*.
+
+⚠ **Read against `NBA_DAILY_PARITY_AND_BACKFILL.md`'s *"no factor is done until its day-by-day
+backfill exists"*, these are the same standard applied to CONDUCT rather than to data.**
+
+### 🔑 **THE FACTOR TAXONOMY THE OWNER ASKED FOR — a design spec, and `propline tier` is 0 of the THIRTY**
+> *"Do you have the logic already? **factors, sub-factors, FACTOR TIERS, PLAYER TIERS per
+> factor/sub-factor, PROPLINE TIERS, VARIATIONS AND DIRECTIONS TIERS** — all that, and if it applies.
+> **For injury and lineups, THE TEAM AND ADVERSARY EFFECT that a missing player or returning player
+> have.** Each factor needs to be deeply studied and understood… then training, sharpening and
+> calibration, **then replication to all the back data. The final HP created needs to be EXTREMELY
+> ACCURATE TO THE REAL HIT RATE, LEG LEVEL, as the baseline.**"*
+
+📌 *`sub-factor` is in 2 of the twelve and `player tier` in 4; **`propline tier` and
+`variations and directions tiers` are in NONE***. 🔑🔑 ***"The team and adversary effect" is the
+Wembanyama argument***, **stated here five days BEFORE T14 records it** *(`NBA_SYSTEM_DESIGN.md`
+§0a.4)* — **so the combinatorial objection is the owner's standing position, not a one-off remark.**
+📌 **And the granularity instruction that follows it**: *"maybe you need to **open more tiers, make
+it more granular** — but everything needs to be as close to perfection as possible."*
+
+### 📌 **AND A STANDING INSTRUCTION WORTH READING AGAINST §T13.2h**
+**The owner directs Gemini's use FOUR times** *("use Gemini for insight when needed"; "research
+online, deep, multiple passes and reliable and strong sources")*. ⚠ **`NBA_MULTIPLIERS.md` §0.9g
+records that Gemini's NUMBERS failed a controlled reproducibility test and were discarded, while its
+MECHANISM descriptions were kept.** 🔑 ***Both are current: the directive is to use it, and the
+recorded finding is which of its outputs are admissible.*** **Neither supersedes the other.**
+
+---
+
 ## 🔑🔑 T14's OWNER DIRECTIVES — **two items CANCELLED, three constraints, and a rule the corpus did not have**
 *Recorded 2026-09-22 (T14 pass 0, §T14.1). **Transcript `2026-09-13-20-53-23`, all 33 owner turns
 read.** Probed against baseline `5fbb9c1e` and the working tree, pinned 2026-09-22T08:46:49Z; every
