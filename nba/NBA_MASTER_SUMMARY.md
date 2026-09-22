@@ -27482,3 +27482,79 @@ machinery is in better shape than any single one of those defects suggests**: *f
 were already walked; four of four re-tested are clean; the earliest instance (§T9.25a) had already
 drawn the right general principle.* ⚠ ***The failure is not that corrections do not happen — it is
 that each one is discovered by the NEXT pass rather than completed by its own.***
+
+---
+
+# §T20.16 — PASS 11: *RULE 49 IS RULE 40 — AND IT WAS WRITTEN WHILE INVOKING RULE 40 FIVE TIMES*
+
+*2026-09-22. **§T11.51d's instruction executed FIRST, before any clause was scored**: read the rules
+index, then audit §T20's own method claims against it. That order is the whole pass.*
+
+## 1. 📏 THE POPULATION, COUNTED BEFORE SCORING
+
+**§T20's method-claim surface: 95.** *`rule N` invocations **70** · "this pass" **21** · "has never" /
+"never been" **3** · "for the first time" **1** · "no pass has" **0**.* **The three highest-risk forms
+were opened individually; all three are sound** *(T20 read for the first time · the owner stratum
+never read · the SEG 817 bounds never recorded — each checked against the ledger and the index).*
+
+## 2. 🔴🔴🔴 THE FINDING — *RULE 49 IS A DUPLICATE OF RULE 40, AND RULE 40 SPECIFIES THE INSTRUMENT I THOUGHT I INVENTED*
+
+**RULE 40, born T18 pass 7, already in this index:**
+> 🔴🔴🔴 **"A CORRECTION IS NOT A CORRECTION UNTIL IT REACHES EVERY DOCUMENT THAT ASSERTS THE OLD
+> FIGURE."** *The instrument is simple and should be run at every closure:* ***"find every
+> struck-through value in the twelve, then check whether that same value is still asserted UN-STRUCK
+> anywhere else."***
+
+***That is, verbatim, the method §T20.14 ran and §T20.15 refined, both believing it new.*** **Nothing
+of rule 49 survives that rule 40 did not already say.** ✅ **RULE 49 RETIRED. The rule count went
+48 → 49 → 48 inside one session, and 48 is the honest number.**
+
+⚠ **§T20.15's OWN provenance correction was incomplete.** *It credited §T9.25a, §T9.26a and §T9.28a —
+the section-level ancestors — and concluded the diagnosis "never got a rule." **It had one. It was
+promoted to numbered RULE 40 at T18**, nine rows below where rule 49 was added.*
+
+## 3. 🔴 AND RULE 40'S SECOND HALF IS THE ONE §T20.14 BROKE
+
+> *"⚠⚠ **AND THE RULE HAS A SECOND HALF, BECAUSE THE FIRST HALF ALONE PRODUCES BUSYWORK**:
+> ***distinguish a RETRACTED figure from a DATED one.*** `233/211` was WRONG and must carry its
+> retraction everywhere. `110,955` was **RIGHT WHEN WRITTEN** … so what it needs is a DATE, not a
+> correction."*
+
+***`20 of 135` is a DATED figure, not a retracted one.*** **§T12.7d records exactly why it moved**:
+`current_season()` rolls on `month >= 7`, **so the season rolled over and the file count changed. The
+figure was correct when written.**
+🔴 **§T20.14 struck it on six surfaces** — `~~20 of 135~~ → 24 of 136` — **which tells a reader the old
+number was an error.** ✅ **The walk itself was right and stands**; every one of the six also carries
+the date and the §-pointer, which is what rule 40's second half actually asks for. **The strike is the
+defect, and it is now flagged at §T20.14 rather than silently rewritten** *(rule 40's own principle: a
+correct supersession must not destroy the original).*
+
+## 4. 📏 CLAUSE SCORING — *and clause (iii)'s MISS is sharper than either HIT*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at 13:51:10Z |
+| **(ii)** | **at least one more** method characterisation restates a rule the sweep already wrote | ✅ **HIT — rule 49 ↔ rule 40**, and it is a whole rule rather than a sentence |
+| **(iii)** | the restatement is of a rule born in a transcript **§T20 never cites** | ❌ **MISS — and the truth is worse.** *§T20 mentions **T18 eight times** and invokes **rule 40 five times**.* |
+
+🔑🔑 ***THE MISS IS THE FINDING.*** *The pre-registration guessed the risk lay in rules born in
+transcripts §T20 had never opened.* **The opposite is true: rule 40 was cited five times — as a tool,
+for framing supersessions correctly — while its own claim was being written up as a new rule nine rows
+above it.**
+> ### ⚠⚠ ***USING A RULE IS NOT READING IT.***
+> **§T11.51d says "read this index before writing any claim about the sweep's own method." I invoked
+> rule 40 repeatedly and never read it.** *An invocation retrieves the rule's NAME from memory; only
+> opening it retrieves its CONTENT — and rule 40's content contained both the duplicate and the second
+> half that §T20.14 went on to break.*
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — a rule retired, a mis-framing corrected, an incomplete correction completed. CLEAN
+STAYS 0/3.** ⚠ **Rule 46: ten sequential passes share one context.**
+
+📌 ***Six consecutive passes, six defects, every one authored by an earlier pass of this sweep — and
+the chain is now three deep: §T20.14 wrote rule 49; §T20.15 corrected its provenance and got that
+wrong too; §T20.16 found the duplicate and the broken second half.*** ⚠ **Each correction was itself
+incomplete until the next pass opened it.** ✅ **That is precisely the property the three-consecutive-
+clean rule exists to detect, and it is why T20 is held at 0/3 rather than closed on a careful-looking
+pass.**
