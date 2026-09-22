@@ -27,10 +27,59 @@ context, and which document section. Any material term appearing more than once 
 | T16 | `2026-09-19-18-20-09-nba-enrichment-blowout-matchup-2026-09-13` | 09-13 |
 | LIVE | the 2026-09-19/20 session (not yet a transcript file) | 09-18 → 09-20 |
 
+**Transcript index — CONTINUED 2026-09-22**
+| # | file | covers |
+|---|---|---|
+| T17 | `2026-09-20-04-58-11-nba-confidence-calibration-final-engine-2026-09-19` | 09-19 |
+| T18 | `2026-09-20-06-12-04-nba-pipelines-confidence-board-tiers-2026-09-19` | 09-19 |
+| T19 | `2026-09-20-18-46-12-nba-alphadog-documentation-pass` | 09-20 |
+| T20 | `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep` | 09-20 |
+
 **Update log**
 | Date | What changed |
 |---|---|
 | 2026-09-20 | Created. Terms from T1 (10 passes), T2 (1 pass), the journal, and the live session. |
+| **2026-09-22** | 🔴🔴 **BACKFILL — this file had NO content commit for the sweep of T12 through T18** *(seven transcripts, each closed on three consecutive clean passes; 44 commits here against `NBA_MASTER_SUMMARY`'s 889; the index above stopped at T16)*. **Cause and full evidence: `NBA_MASTER_SUMMARY.md` §T19.1 and open item T19-1; the rule it produced is RULE 41 — *no pass measures the deliverable against its charter*.** **Added: the transcript index through T20, and §Z — THE COMPLETE TERM INDEX, 824 terms.** |
+
+---
+
+# §Z — THE COMPLETE TERM INDEX *(added 2026-09-22, T19 pass 1)*
+
+⚠⚠ **WHAT THIS IS, AND WHAT IT IS NOT — read this before using it.**
+**The owner's charter** *(T19 SEG 60, repeated verbatim at SEG 378)* **requires**: *"a map for all
+important aspects, keywords, terms and tell exactly how and where to find them, **on which transcript
+and which line/message/date and time**… **any material term that shows more than once must be in the
+glossary**."*
+
+**THE CHARTER TEST, MEASURED 2026-09-22.** *Operationalising "material term" as a backticked
+identifier — `snake_case` or `schema.table` — is a PROXY for the owner's word, and it is stated so it
+can be argued with:*
+
+| | |
+|---|---|
+| distinct backticked identifiers across the other eleven documents | **1,552** |
+| of those, appearing in **two or more** of the twelve *(the charter's threshold)* | **1,016** |
+| **absent from this file before today** | **824 — 81.1% of the charter set** |
+
+⇒ ***Before this backfill the glossary carried under a fifth of what the charter requires.*** **The
+824 are listed below.**
+
+🔑 **The sections A–W above are DEFINITIONAL — they say what a term MEANS — and are unchanged. This
+index is NAVIGATIONAL — it says WHERE a term is used. The charter asks for both; the definitional
+half was being written and the navigational half was not.**
+
+⚠⚠ **ONE CHARTER FIELD IS NOT CARRIED, AND IS NAMED RATHER THAN INVENTED.** The charter asks for
+*"which line/message/date and time"*. **This index gives the DOCUMENT and the TRANSCRIPT. It does NOT
+give per-message line numbers**, because the sweep's documents record findings by section and
+transcript, not by transcript line offset, and **fabricating line numbers would be worse than
+omitting them.** *(Open item T19-2.)*
+
+⚠ **Transcript attribution is by NEAREST ENCLOSING HEADING**, so a term used in a section headed
+`§T13.3a` attributes to T13. **A dash (—) means the term appears only in sections whose headings
+carry no transcript marker** — usually the standing reference sections — **not that its origin is
+unknown.** *Up to five transcripts are shown per term.*
+
+**Document keys**: `SUM` `GLO` `REC` `ARC` `DB` `WRK` `DSN` `OPEN` `BCAL` `FCAL` `MUL` `GD`.
 
 ---
 
