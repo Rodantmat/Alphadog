@@ -2759,7 +2759,11 @@ corrected 2026-09-21 by §T11.12b: 2,454 of the 2,460 games in `nba_market.sched
 the numerator's own table. Six games are unmapped, and `game_lines_closing` is shorter still at
 2,410 = 97.97%. The measurements themselves are unaffected in kind; the sample is 99.76% of the two
 seasons rather than all of them.*)* (307,604 rows, 2,454 games,
-100% coverage).
+~~100% coverage~~ 🔴 **99.76% — the literal struck here 2026-09-22 (§T20.55) to match
+`NBA_DATABASE.md:1783`, which struck it on 2026-09-21.** *The correction note above this line has
+been correct since §T11.12b; what was missing was the strike on the figure itself, so the literal
+survived both a skim and a grep.* 📌 *Rule 40: a correction is not complete until the OLD LITERAL
+stops being asserted — an annotation beside it is not a strike through it.*).
 - A **13+ favourite blows the game open 39.7%** vs **0.4%**
 - **Winning blowouts cost starters MORE minutes than losing ones** (ratio 0.8748 vs 0.9124)
 - **Competitive games run starters +3.3% ABOVE baseline** (`v1 = 1.0333`)
