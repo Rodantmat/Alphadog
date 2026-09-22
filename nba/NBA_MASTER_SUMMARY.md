@@ -34995,6 +34995,32 @@ CITATIONS, and **nothing in the corpus says the PUBLISHED FINDING itself must be
 withdrawals in one session are the evidence that the gap is real.*** ✅ **NUMBERED `51`** *(`49`
 retired at §T20.16, `50` taken at §T20.72)* **and given an index row.**
 
+> 🔴🔴 **CORRECTION IN PLACE — 2026-09-22, T20 pass 85 (§T20.90). `RULE 51` STANDS; THE SENTENCE
+> IMMEDIATELY ABOVE IT DOES NOT.** *(Rule 40's second half — dated, not struck.)*
+> ⚠ **The adjudication opened THREE neighbours — rules `26`, `28`, `48` — and concluded *"nothing in
+> the corpus says the PUBLISHED FINDING itself must be probed."* **That is false, and the
+> counter-example is `§KILL-LATE-1`.**
+> **`NBA_OPEN_ITEMS.md`, `§T19.5 — KILL LOG, T19 PASS 3`, `§KILL-LATE-1`** *(recorded 2026-09-22)*
+> states the remedy outright:
+> > ***"The remedy is one clause and it is cheap: **probe the sentence you are about to write, not
+> > the evidence that made you want to write it.**"***
+> **And it was not alone.** `§T19.8` of this document *(T19 pass 5)* calls it ***"the rule already
+> written twice in this session"*** and gives it ***"a third instance and a typographic form."***
+> ⇒ ***The clause had THREE recorded instances before rule 51 was numbered at T20 pass 76, and the
+> adjudication reached none of them.***
+> ✅✅ **WHY `RULE 51` IS NOT WITHDRAWN — IT ADDS TWO THINGS THE CLAUSE NEVER HAD.** *(i)* **the
+> TREE** — the clause names no tree; rule 51 fixes the probe to the **BASELINE** tree, which is the
+> distinction rule 28 exists for; *(ii)* **NUMBERED AND INDEXED STATUS** — an unnumbered clause
+> buried in a kill log binds nothing, which is precisely what happened. **What is corrected is the
+> adjudication's claim of EXHAUSTIVENESS, not the rule.**
+> 🔴🔴🔴 **AND THIS IS THE MEASURED COST OF AN ORPHAN — the first one this sweep has been able to
+> price.** **`§KILL-LATE-1` is one of `T20-1`'s five orphans: `0` inbound references under all three
+> citation grammars.** *Nothing routed rule 51's adjudication to the nearest relative of the rule it
+> was numbering — so the sweep paid for the same lesson twice and published an over-broad negative
+> while doing it.* ⇒ ***`T20-1` argued that orphanhood is a defect. This is the instance where it
+> demonstrably cost something.*** *(Inbound pointer discharged: `§KILL-LATE-1` is now cited from the
+> rule it fathered.)*
+
 ⚠ **CLAUSE (i): tree HOLDS at `649 · 1 · 471 · 470`** *(Δ `484 − 471` = `13`)*.
 
 ⚠ **KILLS LOGGED (rules 26/28 — and rule 51, applied to itself)**: **§T20.63, §T20.72, §T20.80**
