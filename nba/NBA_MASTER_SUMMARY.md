@@ -25996,3 +25996,106 @@ specific places:**
 described, the work-order miss was a one-off rather than a class."*** ***It is a class.*** **Four
 files, 85,232 B, and the pattern is the same one every time: the sweep names a document, takes one
 fact out of it, and never records what it holds.**
+
+---
+
+# §T19.10 — PASS 6: THE SWEEP HAS BEEN COUNTING ITS OWN PROGRESS AGAINST A CORPUS OF SIXTEEN
+*(T19 pass 6, 2026-09-22 — **counting pass #2**, block 1 read fresh and uncapped; the pass's verdict
+was settled by block 1 and its scope is stated in §4 below rather than implied)*
+
+## 0. ✅ THE MUST-FOLLOW RULE — applied
+**Resume note re-read; charter re-read at T19 SEG 60/61 with
+`sed -n '/^### SEG 60 /,/^### SEG 62 /p' seq1.txt`.**
+
+## 1. 🔴🔴🔴 THE FINDING — *seven progress headings, a denominator of 16, and a corpus of 20*
+
+**T19's own `ls` at SEG 57 lists the corpus it was documenting**: *17 entries — **16 transcripts +
+`journal.txt`**, 2.4 M … 2.9 M each, 2026-09-03 → 2026-09-19*. **SEG 58 states it in words: *"16
+transcripts, ~44 mb."*** ✅ **Correct for T19, on 2026-09-20.**
+
+🔴 **THE CORPUS IS TWENTY.** **VERIFIED, `ls -1 /home/claude/nbadoc/transcripts/*.txt | wc -l` →
+**21** (20 transcripts + `journal.txt`), **55 M**, 2026-09-22.** **The four not in T19's listing:**
+
+| # | file | dated |
+|---|---|---|
+| **T17** | `2026-09-20-04-58-11-nba-confidence-calibration-final-engine-2026-09-19.txt` | 2026-09-20 |
+| **T18** | `2026-09-20-06-12-04-nba-pipelines-confidence-board-tiers-2026-09-19.txt` | 2026-09-20 |
+| **T19** | `2026-09-20-18-46-12-nba-alphadog-documentation-pass.txt` *(itself)* | 2026-09-20 |
+| **T20** | `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt` | 2026-09-20 |
+
+⚠⚠ ***ALL FOUR PREDATE THIS SWEEP.*** **The run log's own first line: *"Mode: continuous and
+unattended, started **2026-09-21 05:36 UTC**."*** ⇒ ***The corpus was already twenty before this
+sweep's first pass. The sixteen was never this sweep's corpus at any moment of its run.***
+
+### 🔴 AND THE DENOMINATOR IS IN THE DELIVERABLE — SEVEN TIMES
+**`grep -n -E "RUNNING TOTAL: [0-9]+ of 16" nba/NBA_MASTER_SUMMARY.md`:**
+
+| line | heading |
+|---|---|
+| 6446 | `## RUNNING TOTAL: 3 of 16 transcripts DONE` |
+| 7725 | `## RUNNING TOTAL: 4 of 16 transcripts DONE` |
+| 8729 | `## RUNNING TOTAL: 5 of 16 transcripts DONE` |
+| 9514 | `## RUNNING TOTAL: 6 of 16 transcripts DONE` |
+| 12852 | `## RUNNING TOTAL: 7 of 16 transcripts DONE` |
+| **14399** | **`## RUNNING TOTAL: 8 of 16 transcripts DONE — **HALFWAY**`** |
+| 24896 | `## RUNNING TOTAL: 9 of 16 transcripts DONE` |
+
+**Each heads a full per-transcript progress table.** 🔴 ***"8 of 16 — HALFWAY" is a FALSE
+MILESTONE: 8 of 20 is 40%.*** **The sweep announced its own halfway point four transcripts early and
+carried the claim unchallenged through eleven more closures.**
+
+### ⚠ AND THE CONTRADICTION IS INTERNAL, WHICH IS WHAT MAKES IT DIAGNOSTIC
+**The same twelve state the corpus as twenty in THIRTEEN places** *(`"20 transcripts"` ×13,
+`"of 20 transcripts"` ×5, `"twenty transcripts"` ×7)*. ⇒ ***The sweep knew the corpus was twenty and
+kept a progress ledger denominated in sixteen, in the same file, for the whole run.***
+
+## 2. 🔑 THE CAUSE, AND IT IS A RULE THE SWEEP ALREADY WROTE
+
+***RULE 30: "A POPULATION IS RE-DERIVABLE OR IT IS NOT A POPULATION."*** **The sixteen was
+**INHERITED FROM THE TRANSCRIPT BEING DOCUMENTED** — T19 SEG 57/58 — **and never re-taken from the
+source.** *One `ls` at any point in the run returns twenty.* ⚠⚠ **Rule 30 was born at T11 (§T11.57b)
+from exactly this shape** — *"a grep of all 190 `.py`/`.js` files in `nba/`" carried in TEN of the
+twelve while `nba/` holds 157* — **and the sweep's own corpus count was sitting mis-taken while that
+rule was being written.** 🔑 ***The rule was applied to the system's populations and never to the
+sweep's own.***
+
+⚠ **Rule 40's second half decides the remedy, and here it points the other way from §T19.9**: **these
+are not dated figures that were right when written.** *The corpus was twenty from before the run
+began, so every one of the seven was **wrong at the moment it was written**.* ⇒ ***Struck and
+corrected, not dated.*** *(Not applied in this pass — the pass that finds a defect does not also
+close it.)*
+
+## 3. ✅ WHAT THE CHARTER ACTUALLY SCOPED — *a provenance note, not a defect*
+**The owner's charter (SEG 60/61) says *"all transcripts and history for this chat"* — and it was
+given in the session that listed SIXTEEN.** **The sweep applies it to twenty.** ✅ **That expansion is
+plainly right** *(the owner's words are "all", and T17–T20 are history of the same chat)* — **but it
+has never been stated, and the sweep has twice reasoned about charter scope** *(§T19.1, rule 41)*
+**without noting that the charter's own corpus and the sweep's differ by four files.**
+
+## 4. ⚠⚠ THIS PASS'S SCOPE, STATED BEFORE IT CAN BE MISREAD
+
+✅ **READ IN PASS 6: block 1, `seq1.txt`, SEG 0 → SEG 153, in order and UNCAPPED.**
+❌ **NOT READ IN PASS 6: blocks 2–6, SEG 154 → SEG 919.**
+
+🔑 **AND THE VERDICT IS ALREADY SETTLED, BECAUSE THE EVIDENCE IS ASYMMETRIC**: ***one dirty block
+settles NOT-CLEAN; only every block settles CLEAN.*** **Block 1 returned new material, so pass 6 is
+not clean and T19's count stays at 0/3 — and no amount of further reading could change that.**
+⚠⚠ **But the verdict is not the only thing a pass owes.** ***The COVERAGE obligation is unmet:
+blocks 2–6 are owed and are carried to pass 7.*** *(→ **RULE 45**, run log.)*
+
+⚠ **One further limit, stated because §T19.3 was corrected for the absence of exactly this
+sentence**: **blocks 2–6 were read in full during pass 3, earlier in this same session.** *A re-read
+inside the same context is weaker evidence than an independent one, and pass 7 should say which kind
+it is.*
+
+## 5. 📏 CLAUSE SCORING — *two clauses CARRIED under **RULE 42***
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` changes by no more than ±10 | ⏳ **scored at the start of pass 7** *(rule 34)* |
+| **(ii)** | **a second full sequential read of all 920 segments** finds at most TWO findings passes 2+3 missed | 🔄 **CARRIED — the named intervention did not complete: 154 of 920 segments read.** *One finding so far.* |
+| **(iii)** | ZERO of what it finds comes from the `tool_use: github_patch_file` stratum | 🔄 **CARRIED — same reason.** *Consistent so far: §1's finding came from a `bash_tool` `ls` result at SEG 57.* |
+
+✅ ***RULE 42's SECOND APPLICATION, AND THE FIRST PROSPECTIVE ONE.*** *At §T19.3 the sweep scored a
+920-segment clause at 154 segments and called it a MISS. **Here the same situation is recognised
+before scoring rather than after**, and the clauses are carried with the count that made them
+unmeasurable — which is the whole of what rule 42 asks.*
