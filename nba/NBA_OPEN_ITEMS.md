@@ -13245,6 +13245,25 @@ scripts the three pipelines call. **Read from source; nothing was run.***
 
 ---
 
+## T20-21 · **NEW · ⚠⚠ MEDIUM, STRUCTURAL, LATENT · THE LADDER HAS TWO WRITERS AND THEY DISAGREE IN SIX WAYS — ONE OF THEM NEVER REMOVES STALE RUNGS AND ONE OF THEM HAS NO CORRUPT-ARTEFACT GUARD**
+*Added **T20 pass 111 (§T20.116), 2026-09-22**, by enumerating the Worker layer. **Read from source
+on both sides plus three `SELECT`s; nothing was run or changed.***
+
+| | |
+|---|---|
+| **The seam, and how narrow it is** | A write-target map of **all 21 NBA Workers (41 objects)** against the **40 called Python scripts (13 objects)** gives an intersection of **exactly TWO**: `nba_score.baseline_ladder` and `nba_score.baseline_ladder_runs`. ✅ **39 of 41 and 11 of 13 are single-writer — the Workers own `nba_ref`/`nba_stats`/`nba_team`/`nba_calendar`, the scripts own `nba_score`.** ⚠ **This item is the one exception.** |
+| **The two writers** | `nba/load_baseline_ladder.py:72–91` *(called by `P2`)* and `nba/alphadog-v2-nba-baseline-ladder.js:54–70` *(`POST /run`, direct dispatch — `NBA_WORKERS.md:1662`, "no-orchestrator rule")*. |
+| 🔴 **(a) STALE ROWS ARE NEVER REMOVED BY THE WORKER** | Python does **`DELETE … WHERE asof`** then `INSERT` **in one non-autocommit transaction** — its own comment: *"**A failed insert after a committed delete once emptied the table — never again.**"* The Worker does **`INSERT … ON CONFLICT … DO UPDATE`**. **An UPSERT cannot delete**, so a rung present in an earlier load and absent from a later one **survives**. ⚠ **`score_board_legs.py` reads `baseline_ladder`.** |
+| 🔴 **(b) THE TWO DEDUPE RULES PICK DIFFERENT ROWS** | Python keeps the row with the **smallest `abs(offset)`**; the Worker keeps the **last row in file order**. 🔑 **And the Worker's own comment says duplicates occur**: *"rungs clipped to the natural floor (0.5) can repeat within a ladder."* |
+| 🔴 **(c) THE CORRUPT-ARTEFACT GUARD EXISTS ON ONE SIDE ONLY** | Python: **`raise SystemExit("ABORT: artifact has no combo props - refusing to load a singles-only slate")`**. The Worker has **no such guard** and will load a singles-only slate. *(Combos are ~44% of the board — `nba-p2:180`.)* |
+| **(d)–(f) smaller, but they make the data distinguishable in principle** | `team_id` missing → Python `''`, Worker `NULL` · `recipe_version` → Python **truncated to 200**, Worker full-length · `game_date` missing → Worker **defaults to `asof`**, Python passes through · rows missing `player_id`/`game_id`/`prop`/`line` → Worker **drops**, Python **keeps**. |
+| 🔴 **AND THERE IS NO PROVENANCE COLUMN** | A discriminator was built from (d) and (e) and **run live**: `team_id = ''` → **0**, `team_id IS NULL` → **0** *(the artefact always supplies it)*; `max(length(recipe_version))` → **76**, under the 200-char cut. ⇒ **Both dead. No column in either table records which writer wrote the row** — `source_file` names the artefact, identically for both paths. ⚠ **So "which loader produced the live rows" stands as NOT RECORDED**, now with the test that failed to resolve it. |
+| **Why MEDIUM and NOT in the season-critical brief** | ⚠ **LATENT — it needs the Worker path to be used for a RELOAD of an `asof` that already has rows, and nothing shows that has happened.** The live table holds three `asof` values, all internally consistent. **It breaks nothing today and does not get worse on opening day. The brief stays at SIXTEEN.** |
+| **OWNER DECISION** | ▶ **Which loader is canonical?** *If the Python path is, the Worker's `baseline_ladder` write is dead weight that can diverge silently; if the Worker is, it needs the `DELETE`, the offset-dedupe and the combo guard to match.* ⚠ **Cheapest hardening regardless: add a `written_by` column, so the question this item could not answer becomes answerable.** |
+| **Full finding** | `NBA_MASTER_SUMMARY.md` — **`§T20.116`**, with the full write-target map and the column-level table. **Not fixed (rule 1).** |
+
+---
+
 ## T20-20 · **NEW · ⚠⚠ MEDIUM, STRUCTURAL · THE PER-RUN AUDIT RECORD SHIPS *ONE INVOCATION'S* FITS AS THE SLATE'S — AND THREE DOCUMENTS STATED THE OPPOSITE UNTIL THIS ITEM WAS RAISED**
 *Added **T20 pass 109 (§T20.114), 2026-09-22**, while generalising `§T20.113`'s fitter/shipper class.
 **Read from source across three workflow YAMLs plus two `SELECT`s; nothing was run or changed.***
