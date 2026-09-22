@@ -32768,6 +32768,19 @@ Postgres is triggered by hand via `run_job`.**"** ✅ **KILLED as a discovery.**
 adds is the CENSUS — which workers, how many, and which of them still matter — turning a qualitative
 sentence into an enumerated decision.**
 
+> 🔴🔴🔴 **THE CENSUS BELOW IS PRIOR WORK — FOUND 2026-09-22 AT §T20.64 BY A MECHANICAL NOVELTY CHECK
+> (cosine `0.9264`), AND THIS PASS'S `✅ CLEAN` MARK IS WITHDRAWN.** **`NBA_OPEN_ITEMS.md`,
+> pre-session:** `:1692` *"**`nba_config.worker_definitions` holds 21 writers, all `enabled = 1`, and
+> NONE of them covers:**"* with a full coverage table · `:1728` *"**The 21 that DO exist**: **15
+> `01 Static`** (arenas · darko · lineups · officials · onoff · player-bio · players ·
+> player-tracking · playtypes · schedule · shotquality · teams · team-stats · tracking-detail …)"* ·
+> `:6781` *"**21**, every row `enabled = 1`"* · **and `:1703` had ALREADY NARROWED it — *"NARROWED
+> 2026-09-21 by §T11.56b — tested by OUTPUT PATH … The table above was built by NAME"*** — **which is
+> the very methodological point this pass believed it was contributing.**
+> ✅ **WHAT GENUINELY STANDS FROM THIS PASS**: the **`13` of `40`** pipeline scripts that write to
+> Postgres *(no prior found)*, and the **rule-19 verification that the four historical backfills'
+> targets already hold rows** *(79,358 · 32,179 · 7,380 · 3,681)*. **The census itself does not.**
+
 ## 3. ▶ THE CENSUS — AND IT CUTS THE DECISION FROM TWENTY-ONE TO FIFTEEN
 
 | group | n | **covered by an Action that WRITES Postgres?** | **still a live decision?** |
