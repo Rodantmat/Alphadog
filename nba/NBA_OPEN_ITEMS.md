@@ -1,5 +1,20 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴🔴 **T16 PASS 2 — THREE `[LIVE-AUDIT]` OWNER DECISIONS, ALL SEASON-CRITICAL** *(§T16.3, `SELECT` 2026-09-22; the opener is 2026-10-20)*
+
+| # | Finding | Why it needs the owner |
+|---|---|---|
+| **T16-7** 🔴🔴🔴 | **`nba_score.final_hp` — the table COMPASS fact 66 says the engine READS — covers ONE SEASON PLUS A SINGLE DAY.** **2024-25: 19,075,070 rows / 162 dates.** 🔴 **2025-26: 140,130 rows / ONE date, `2026-01-15`** *(one of the three as-of days open item **O5** already tracks)*. **Total 19,215,200 — 49.7% of fact 99's certified *"both seasons, ~38.7M legs"*.** *Both carry `built_at` 2026-09-19; the 2025-26 rows are the LATER build.* | **Is 2025-26 mid-rebuild, or did it lose its history?** ⚠ **NOT RECORDED** *(rule 6 — no swept transcript covers a change after 2026-09-13; a concurrent session is building in this database and `prop_universe` is mid-rebuild)*. **The sweep cannot tell "in flight" from "lost", and the difference decides whether anything must happen before the opener.** |
+| **T16-8** 🔴🔴 | **`final_hp.score` returns values down to −52.488, and 6,924,101 of 19,215,200 rows — 36.0% — are NEGATIVE**, across 20 of 30 props and both sides. **COMPASS fact 103 states the contract as *"SCORE IS 0–100"*.** *Negatives are confined to `final_hp` below ~0.6 (deciles 1–6); deciles 7–10 contain zero. Decile 1 spans −52.49 to +46.00 — a ~98-point swing at essentially constant probability.* ⚠ *They cannot come from the confidence pull-down: live confidence runs **0.8540–0.9841**, so virtually every leg sits above fact 103's **0.85 neutral pivot** and the "pulled down up to 35%" branch is nearly unexercised.* | **Either the contract's wording is wrong or the formula is.** 🔑 **A slip engine that RANKS on `score` behaves very differently under the two readings** — and `edge` already exists as the separate "distance above break-even" column, so a below-break-even penalty inside `score` would duplicate it. *Full detail in `NBA_FINAL_SCORING_CALIBRATION.md` §0a-T16-C §4.* |
+| **T16-9** 🔴 | **`board_outcomes_nm_idx` — 303 MB, `idx_scan` = 0** across the whole window these statistics cover *(`pg_stat_database.stats_reset` is NULL; a restart-driven counter reset cannot be ruled out)*. ⚠ **Its three siblings, built in the same batch on the same normalised-name join, show 23.4M / 1.08M / 595k scans over that same window**, so the zero is not a short-window artifact. | **Drop it, or find the query it was built for.** 🔑 **COMPASS fact 104 supplies the likely answer**: *"a FUNCTION ON A JOIN COLUMN means no index can ever be used — which is why all four indexes built that day were irrelevant to it."* ⚠ **303 MB against a storage budget §0v of `NBA_DATABASE.md` records as already consumed several times over, plus a write cost on every insert.** |
+
+⚠⚠ **AND A PATTERN ACROSS T16-7 AND `NBA_DATABASE.md` §0w**: ***a certification records that a table
+was complete at a MOMENT. Nine days later one certified figure had drifted by 795 rows and another had
+fallen by half.*** 🔑 **The sweep's standing practice — re-take, never quote — is what surfaced both;
+neither would have been visible from the documents alone.**
+
+---
+
 ## 🔴🔴🔴 **T16 CONFIRMS §T15.3a FROM THE INSIDE — THE OPERATOR FOUND THIS EXACT FAILURE MODE, NAMED THE RULE, REPAIRED FIVE OTHER CASUALTIES, AND STILL MISSED FACT 69** *(T16 pass 1, §T16.2, from the 2026-09-13 transcript)*
 
 ⚠⚠ **Read this immediately before the fact-69 entry below.** *§T15.3a inferred the mechanism from a
