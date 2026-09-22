@@ -37268,3 +37268,95 @@ predicate"* returns the glossary prior above, **opened**.
 one asked what would have told anybody.** ⚠⚠ ***The answer is that the system's self-report is a
 liveness test wearing a correctness test's message — and the gap is not in any single check, which is
 why reading them one at a time for four passes never surfaced it.***
+
+---
+
+# §T20.105 — T20 PASS 100: 🔴🔴🔴 **THE HANDOFF PASSES ALL FOURTEEN CHECKS AND FAILS AS A DOCUMENT — THE RESUME NOTE HAS GROWN `5.9×` IN THIRTY-SIX PASSES AND IS NOW `98.0%` OF THE RUN LOG** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION**, which is why the handoff is this
+session's actual product and why it is worth auditing twice.
+
+## 1. ✅ THE CHECKLIST WAS RECOVERED VERBATIM, NOT RECONSTRUCTED *(clause (ii))*
+
+*`§T20.69` fixed **fourteen** items before opening the note so the audit could not be shaped by what
+it found — **and that protection is void if a re-audit invents its own list.*** **Recovered from
+`§T20.69` §1**: *the standing rules · read-only · `[skip ci]` and the default-message trap ·
+`patch_file` only on the twelve · `NBA_COMPASS.md` never written · the concurrent session's
+out-of-scope set · API keys / PUBLIC repo · `prop_universe` mid-rebuild · current position · **the
+exact next step** · the transcript ledger · the two INDEPENDENT reads owed · the instrument and how
+to re-run it · the citation warnings.*
+
+## 2. ✅✅ **`14 / 14` PRESENT — AND `§T20.69`'s TWO ABSENCES WERE BOTH FIXED**
+
+*It found `12 / 14`, with **the exact next step** and **`patch_file` only on the twelve** living at
+line `404` while the note ended at `311`.* ▶ **Both are inside the note today** *(the note now runs
+lines `13`–`793`; the `▶ EXACT NEXT STEP` row sits at `512`)*. ✅ **And every piece of the new
+material is reachable** — `T20-15`, `T20-16`, `T20-17`, `T20-18`, `RULE 50`/`51`/`52`, the brief's
+growth to **SIXTEEN**, `T20-1` and `T18-16` closed, `STEP 11`/`STEP 12`, the dispatch table and the
+swallow census — **most of them in the first forty lines.** ❌ **CLAUSE (iv) MISSES: nothing is absent.**
+
+⚠⚠ **AND TWO OF MY OWN PROBES REPORTED FALSE ABSENCES — THE FIFTH INSTRUMENT SELF-CATCH.** *The first
+run flagged `patch_file only on the twelve` and `current position` as MISSING. **`patch_file` appears
+`201` times in the note and `never … put_file` `27`; `POSITION — T20` appears once — I had probed a
+phrase and a boundary instead of the thing.*** *This is `§T20.69`'s own trap — its first run used
+`grep -ciE` with `\|` and returned three false zeros — **recurring in the pass that re-audits it.***
+
+## 3. 🔴🔴🔴 **THE FINDING: IT PASSES ITEM BY ITEM AND FAILS AS A DOCUMENT**
+
+| | §T20.69, pass 64 | **now, pass 100** |
+|---|---|---|
+| **the resume note** | `330,889` chars *(≈82,700 tokens)* | 🔴 **`1,964,792` — `≈491,000` tokens** |
+| supersession-marked lines | `26` | **`183`** |
+| superseded share | `81.4%` | `71.9%` |
+| the whole run log | `1,722,355` | **`2,004,659`** |
+
+> ## ⇒ **THE NOTE IS `98.0%` OF THE ENTIRE RUN LOG, AND AT `≈491,000` TOKENS IT EXCEEDS ANY CONTEXT A FRESH SESSION CAN BRING.**
+
+🔑 ***The pre-registration named the mechanism before the measurement: "a note that is only ever
+appended to degrades by DILUTION, not by error — which is the failure mode an author cannot feel."***
+**Thirty-six passes each appended one correct row.**
+
+## 4. 🔴🔴 **AND THE REPAIR `§T20.69` BUILT HAS ITSELF GONE STALE — INCLUDING ABOUT THE RULES**
+
+*`§T20.69`'s fix was the `🟢 START HERE` block, "everything a fresh session needs, in one screen".*
+**Three of its figures were wrong, and one of them badly:**
+
+| | said | is |
+|---|---|---|
+| the section below it | `330,889` chars | **`1,964,792`** |
+| 🔴🔴 **`⚠ RULE COUNT`** | **`49` STANDING RULES — `1`–`48` plus `50`** | **`51` — `1`–`48` plus `50`, `51`, `52`** |
+| `uncovered12` | `471` for ten passes | `470` *(and per `RULE 52` that `±1` is not a result)* |
+
+⇒ 🔴 ***The RULE COUNT row said `49` while the row two above it quotes `RULE 51` by name.*** **The
+block was wrong about the count while citing one of the rules it failed to count, for thirty-six
+passes.** ✅ **CLAUSE (iii) HIT — on the one surface that mattered most.**
+
+## 5. ✅ THE REPAIR *(clause (vi) — the deliverable, where the fix exception applies)*
+
+**All three figures corrected in place**, and the `START HERE` block now states **the reading contract
+the note's size makes necessary**:
+> ***"read THIS block and the `▶ EXACT NEXT STEP` row. Everything else below is the standing RECORD,
+> kept under rule 40 — it is reference, not required reading, and you are not expected to load it."***
+🔑 *The superseded rows are **not** deleted: rule 40 keeps them, and `§T20.69` was right that they are
+the sweep's record. **What changed is that the document now tells a successor which part is the
+handoff and which part is the archive** — which is the only repair available that does not destroy
+evidence.*
+
+## 6. ✅ CLAUSE (i) — `RULE 52`
+
+**`2026-09-22T22:22Z`: `648 · 1 · 470 · 467`. All three bands unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: 🔴 **`§T20.69`** *(**PRIOR** — its checklist recovered
+verbatim, its two absences confirmed fixed, its `START HERE` block audited; **this pass claims the
+re-measurement and the staleness, not the audit's design**)* · **`§T20.18`'s "the rules index lacks
+ten of its fifteen rules"** *(**PRIOR**, carried by `§T20.69` and not re-discovered)* · **`§T20.95` /
+`§T20.100`** *(**PRIOR** — rule 52 and the pinned segments the dated figure cites)*. ▶ **RULE 51, last
+step, BASELINE tree**: *"exceeds any context"*, *"passes item by item and fails as a document"* and
+*"standing record … not required reading"* all return **`0` files**.
+
+📌 ***The lesson:*** **an audit that checks items will keep passing a document that has stopped being
+usable, because size is not an item.** ⚠⚠ ***`§T20.69` measured the note's size and treated it as the
+EXPLANATION for its two missing items. It was the finding. Thirty-six passes later the items are all
+present and the note is six times worse.***
