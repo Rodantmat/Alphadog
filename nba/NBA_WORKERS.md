@@ -1727,6 +1727,8 @@ This is blueprint §9's **whole-universe comparison** applied to the write path:
 a universe at once, not the one currently suspected.*
 
 ### ✅ Correctly scoped — the delete matches exactly what the run rewrites
+
+> ⚠ **TEN SCRIPTS ARE LISTED BELOW. THERE IS AN ELEVENTH, AND IT IS THE ONE THAT IS *NOT* SCOPED: `build_final_hp.py`.** *Back-pointer added T20 pass 79 (§T20.84) — **the defect is already documented fifty lines above, at `### ⚠⚠ FE_DATE IS A READ FILTER, NOT A WRITE SCOPE — confirmed destructive`**, and in `NBA_GLOSSARY.md` under `FE_DATE`. **This heading is sound; a reader who lands on the table alone should not have to take its green check as covering every writer.*** ▶ *`DELETE FROM nba_score.final_hp WHERE season AND prop` carries **no date predicate**, so a slate-scoped run replaces the whole season × prop partition — **CONFIRMED FIRED**: 2025-26 holds one date and `140,130` rows.*
 | Script | Statement | Scope |
 |---|---|---|
 | `score_board_legs.py` | `DELETE FROM nba_score.board_scored WHERE game_date = %s` | one slate — **the P3 scorer** |
