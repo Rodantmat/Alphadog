@@ -10,7 +10,111 @@ infrastructure, and how each is used. Built from the transcripts, not from memor
 
 ---
 
-## 0f. 🔴🔴 THE FOUR LIVE BOARD SOURCES — **each chosen by a same-moment diff, and three of the four had no evidence in the twelve**
+## 0f-1. 🔴🔴 **CORRECTION 2026-09-22 (T13 pass 3, §T13.4a) — THERE ARE FIVE BOARD SOURCES, NOT FOUR. THE FIFTH IS BETR.**
+*§0f below was written 2026-09-21 from T12 and is accurate about the four it names. **T13 built a
+fifth**, and the code says so. **Every claim here is VERIFIED against the worker, the repo and the
+artifacts, pinned 2026-09-22T08:20–08:23Z.** Nothing was run or changed *(rule 1)*.*
+
+### ✅ VERIFIED IN THE CODE — the system's own default list says FIVE
+- **`nba/archive_live_boards.py`** — *"reads whichever board files exist (**prizepicks, underdog,
+  sleeper, fliff, betr**)"*, and **`ARCHIVE_APPS` defaults to `"prizepicks,underdog,sleeper,fliff,betr"`.**
+- **Its per-app shape note names Betr's leg structure**: ***`betr → legs[]: stat, line, TIER, sides`***
+  — 🔑 **the only one of the five whose leg carries a native `tier` field.**
+- **The worker `alphadog-v2-admin-sql.js` holds the puller**: it reads **`betr_access_token` from
+  `nba_config.external_credentials`**, calls **`betr fantasy graphql getUpcomingEventsV2`** with
+  `jurisdiction: "CA"`, `origin: https://picks.betr.app`, a `fantasy-api-version` and a
+  `promotions-api-version`, and writes **`boards/betr_<league>_current.json` + `_meta.json`** with
+  `[skip ci]`.
+- 🔑 **The unlock, stated in the transcript**: ***"Betr sends the token WITHOUT the `Bearer` prefix —
+  that alone was my 401"***, plus the app's own headers *(`channel: mobile_web`, the API version,
+  the jurisdiction)*.
+
+### ✅ THE NINE TIERS ARE IN THE ARTIFACT, WITH COUNTS, AND THE PARTITION CLOSES
+**`boards/betr_mlb_current_meta.json`, fetched `2026-09-10T06:18:28Z`: 5 events · 1,684 legs · 102
+players**, `ok: true`, `http_status: 200`:
+
+| tier | legs | | tier | legs |
+|---|---|---|---|---|
+| **BOOSTED** | 403 | | **EDGE_1** | 108 |
+| **MINI_BOOSTED** | 346 | | **EDGE_2** | 97 |
+| **SUPER_BOOSTED** | 281 | | **EDGE_3** | 41 |
+| **REGULAR** | 248 | | **EDGE_4** | 31 |
+| **BOOSTED_4** | 129 | | **TOTAL** | **1,684** ✅ |
+
+🔑🔑 ***Betr exposes NINE named tiers natively — the richest goblin/demon-equivalent structure of any
+app in this system*** *(PrizePicks has three labels; Underdog derives tiers from position)*, **and
+the tier ships as a field rather than having to be inferred.** ⚠ **`nine tiers`, `SUPER_BOOSTED`
+and `EDGE_1` are each in 0 of the TWELVE** *(pinned 2026-09-22T08:20:06Z)*.
+
+### 🔴🔴 WHY BETR IS DIFFERENT IN KIND — **it is the only one that uses the owner's own account**
+> *"**PrizePicks, Underdog, Sleeper and Fliff serve their boards PUBLICLY, so our scrapers are
+> ANONYMOUS and touch no account. Betr doesn't.** Every request would carry your account's token, so
+> **it's your account reading the board**… **their terms treat automated access as a violation. The
+> realistic worst case isn't legal trouble; it's account limits or closure — which for a book you
+> actually play on is the real cost.**"*
+
+✅ **The mitigation that was actually designed, and its reasoning**: *"**what flags automation is the
+SHAPE of the traffic, not the count**"* — so **twice daily** *(the morning look and the 2:45 pm PT
+window)* **with jitter rather than a fixed cron minute**, **routed through the same residential proxy
+as the PrizePicks producer** so the IP looks like a person in California, **scoped to the leagues
+actually played**, and **using the web app's own headers** — *"the account's footprint is 'someone
+who checks the board twice a day from home,' **which is what you are**."*
+⚠ **And the residual risk is stated, not waved away**: *"it's your account, and their terms say no
+automation — **but it's the same order of risk as using the app normally**."*
+📌 **The token lives in the credentials table and the job runs ON THE WORKER, never on a GitHub
+runner** — **which is why Betr has no `.github/workflows` entry and its absence there is by design,
+not an omission.** **Token life 30 days; `token_expires_at` is `2026-10-10T06:10:56Z`** — ⚠ **about
+eighteen days from this entry.**
+
+### 🔴🔴 BUT THE BETR PULL IS NOT RUNNING — **one write, twelve days ago, while the others refresh daily**
+*Last commit per board artifact, pinned 2026-09-22T08:22Z:*
+| artifact | last written (UTC) | latest meta |
+|---|---|---|
+| `fliff_nba_current.json` | **2026-09-22T05:19:54Z** | `ok`, 0 events / 0 legs |
+| `sleeper_nba_current.json` | **2026-09-22T04:54:24Z** | `ok`, 0 legs |
+| `underdog_nba_current.json` | **2026-09-21T19:52:37Z** | `ok`, 3 legs |
+| 🔴 **`betr_nba_current.json`** | **2026-09-10T06:18:31Z** | `ok`, 0 events / 0 legs |
+| 🔴 **`betr_mlb_current.json`** | **2026-09-10T06:18:30Z** | `ok`, **1,684 legs** |
+
+⚠ **The empty NBA boards are EXPECTED and are not the finding** — *the 2026-27 season has not
+started* *(`nba_season.py` returns `2026-27`; §T12.7)*, **and Fliff, Sleeper and Underdog all return
+`ok` with nothing to report.** 🔑 ***The finding is the CADENCE: three of the five were fetched
+within 48 hours; Betr's two files were written in the same second twelve days ago and never again.***
+**The twice-daily pull the design describes is not producing writes.**
+
+🔴 **AND THE LIKELY MECHANISM IS A DISAGREEMENT BETWEEN TWO DEFAULT LISTS** *(both read
+2026-09-22T08:23Z)*:
+| file | its default app list |
+|---|---|
+| `nba/archive_live_boards.py` | **`prizepicks,underdog,sleeper,fliff,betr`** — **FIVE** |
+| `.github/workflows/nba-boards-market.yml` | **`prizepicks,underdog,sleeper,fliff`** — **FOUR** |
+
+***The archiver expects five boards; the producer workflow's default never pulls the fifth.***
+⚠ **Stated at evidence strength**: **the two lists differ — that is VERIFIED.** **That this is WHY
+Betr has no recent write is CONSISTENT and NOT ESTABLISHED** *(rule 6)*, since the Betr job is a
+worker bridge job invoked by a Cowork task, not a workflow step, so the workflow's list may simply
+never have been its trigger. **Either way the pull is not happening.**
+
+### 🔴🔴 AND A SECOND ARTIFACT GAP, ON THE PRIMARY BOARD
+**`nba/scrape_prizepicks_nba_board.py` declares its output explicitly** — *"Output:
+`boards/prizepicks_nba_current.json` + `_meta.json`, **the shape `archive_live_boards.py` expects**"*,
+with `OUT_DIR = Path(os.getenv("PP_NBA_OUT_DIR", "boards"))` — **and
+`.github/workflows/nba-boards-market.yml` runs it with `PP_NBA_OUT_DIR: "boards"`, with `prizepicks`
+first in the workflow's own default app list.**
+🔴 ***`boards/` holds 23 files and NOT ONE of them is a PrizePicks file*** — *not for NBA, not for
+MLB* — **while the other four apps in that same default list all have `_current.json` + `_meta.json`
+for both leagues.**
+⚠ **Rule 6 — this records what the repository IS.** **WHY is NOT ESTABLISHED**, and the plausible
+mechanisms are not separated: the file may be ignored by git, written elsewhere, or the step may be
+failing silently — 📌 **and the workflow explicitly permits the last one**: its own comment says the
+board steps are *"allowed to fail individually, because a missing Fliff board should not stop
+PrizePicks."* ⚠⚠ **A live check could not separate them**: `github_list_workflow_runs` **returns
+recent runs with no workflow filter** *(§T12.8's recorded bound on this instrument)*, **and the
+thirty most recent are all Pages builds — UNANSWERED, not zero** *(rule 22)*.
+🔑 ***This sits directly under T11's standing headline that the two-hop architecture's second hop is
+missing for a whole scraper family — and it is the PRIMARY board.***
+
+## 0f. 🔴🔴 THE FOUR LIVE BOARD SOURCES — **each chosen by a same-moment diff, and three of the four had no evidence in the twelve** *(⚠ see §0f-1: there are FIVE — Betr is the fifth)*
 *Recorded 2026-09-21 (T12 pass 2, §T12.3). **Transcript `2026-09-11-21-01-23`, segments 90–91, 570,
 604, 615, 636.** Probed against the baseline `c5798146` with controls (`board_sources_decision` 4 of
 thirty, `scrape_sleeper_board` 6) and every hit opened — rules 20, 22, 26, 28. **Config key:
