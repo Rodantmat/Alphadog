@@ -35533,3 +35533,80 @@ the other ten are healthy — but only after its own first instrument accused th
 missing the three transcripts that created it.** ***Two documents drifted. The other ten just stopped
 saying where their material came from, which looks identical from the outside and is not the same
 illness.***
+
+---
+
+# §T20.88 — T20 PASS 83: ✅🔴 **THE PIPELINE STEPS ARE WRITTEN — AND WRITING THEM FOUND WHAT EIGHTY-TWO PASSES OF AUDITING DID NOT: THE BRIEF NEVER SAYS THE PIPELINES WILL NOT RUN** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: `§T20.86` established that the operating spine — `P1` · `P2` · `P3` — appeared in the rebuild
+document as FOUR WORDS in one summary row. **It dated the heading, named the gap, and did not fill
+it.** Nineteen of the last twenty passes MEASURED the corpus; this one ADDS to it.**
+
+## ✅ THE DELIVERABLE — **`STEP 8` · `STEP 9` · `STEP 10`, ONE PER PIPELINE**
+
+*Written from `.github/workflows/nba-p1-weekly-static.yml`, `nba-p2-overnight-heavy.yml`,
+`nba-p3-afternoon-light.yml` and `nba/certify_pipeline.py`, all read `2026-09-22T20:38:28Z`.*
+**Each step states: what it is for · when it runs · what it does, in the workflow's own step names ·
+what gates it · what breaks it today.**
+
+✅ **CLAUSE (ii) HITS — every factual clause carries a pointer, and the certifier split was re-derived
+rather than recalled: `PIPE=p1` **3** checks · `p2` **4** · `p3` **5** = **12**.** *The "what breaks
+it today" lines POINT at the brief's items — `T20-13`, `T20-12`, `T20-11`, `T20-10`, `T20-7`, `T20-6`,
+`T20-5`, `T20-4` — rather than restating them (rules 26/28).*
+
+## 🔴🔴🔴 CLAUSE (iii) — **HITS, AND IT IS THE PASS'S REASON FOR EXISTING**
+
+*Pre-registered hypothesis: **"writing an instruction exposes what reading a description does not,
+because a recipe must say what to do NEXT and a description only has to be true."*** ▶ **Writing
+`STEP 9` required answering *"when does it run?"* — and the answer is:**
+
+> 🔴🔴 ***IT DOES NOT. `nba-p2-overnight-heavy.yml` and `nba-p3-afternoon-light.yml` each contain
+> ZERO `schedule:` and ZERO `cron:` lines. `workflow_dispatch` only.***
+
+⚠ **THE FACT IS A PRIOR AND IS CARRIED, NOT RE-DISCOVERED**: *`NBA_OPEN_ITEMS.md:6583` — **"P2 and P3
+genuinely have no cron"** — and P2's workflow says so deliberately in its own header:* > *"**NO CRON
+YET — deliberately** … The cron goes in when the season starts (target: daily `09:00 UTC` = `01:00
+PT`)."*
+
+🔴🔴🔴 **WHAT IS NEW IS WHERE IT ISN'T: THE OPENING-DAY BRIEF NEVER MENTIONS IT.** *Probed across the
+brief's whole region — `cron` and `trigger` appear only in the context of `scrape.yml`'s inert guard
+and the deploy workflow.* ⇒ ***The brief enumerates FOURTEEN things that will break when the pipelines
+RUN. It does not state that two of the three will not run at all until someone adds a schedule.***
+⚠ **AND `§T20.56`'s completeness audit could not have caught it: that audit counted `SEASON-CRITICAL`
+HEADINGS, and this TODO has never been given one.** 📌 ***Adding P2's cron is a PREREQUISITE for every
+other P2 item on the brief — `T20-13`'s twelve red nights cannot fire if nothing fires.***
+
+## ⚠ THREE THINGS THE WRITING COULD NOT ANSWER — **`NOT RECORDED` (rule 6), stated rather than smoothed**
+
+1. **How `P3` is to be triggered.** *P2's workflow names an intended time; **no document names P3's**. The `1:15 PM PT` cutoff is a **GUARD** — it says when P3 may NOT run, not when it will.*
+2. **What happens when a pipeline fails.** *No retry policy, no alerting path, no on-call step anywhere in the twelve — and `nba_control.job_runs` and `worker_run_log` are both EMPTY (§T20.31).*
+3. **What `P3` should do on a day `P2` failed.** *P3 reads what P2 wrote. **Refuse, run degraded, or run anyway — NOT RECORDED.***
+
+## 🔴 CLAUSE (i) — **MISSED, AND THE MISS IS THE SECOND FINDING**
+
+*Pre-registered: **`uncovered12` predicted to HOLD**, with the reason stated in advance so it could
+fail — "the steps are SYNTHESISED from other documents, so they add no transcript language."*
+▶ **Measured: `649 · 1 · 470 · 469`. `uncovered12` `471` → **`470`**; high band `648` → **`649`**.**
+⇒ ***A FALL, and the pre-registration named what that would mean: the synthesis pulled in language the
+twelve did not already carry.*** 🔑🔑 **THE NUMBER HAD HELD FOR TEN CONSECUTIVE PASSES. The only thing
+that moved it was WRITING — not auditing, not censusing, not re-deriving.** 📌 ***Consistent with
+§T20.76 as re-scoped by §T20.78: the floor is real, and the part above the floor responds to exactly
+one thing.***
+
+⚠ **RULE 51 BEFORE SHIPPING**: *`"no trigger at all"`, `"the pipelines will not run"`,
+`"prerequisite for every other"` and the step heading itself each return **`0`** against the baseline
+tree `5dddd77a^`.* ✅ **Novel.**
+
+⚠ **KILLS LOGGED (rules 26/28/51)**: **§T20.86** *(**PRIOR** — it NAMED the gap, this FILLS it)* ·
+**§T20.33–§T20.46** *(the pipeline audits — **PRIOR**, cited throughout, never re-derived)* · **the
+fourteen brief items** *(**PRIOR**, pointed at, never restated)* · **the no-cron FACT**
+*(**PRIOR** — `NBA_OPEN_ITEMS.md:6583` and P2's own header; **what is published as new is its absence
+from the BRIEF**, and the distinction is stated above)*.
+
+📌 ***The lesson:*** **eighty-two passes audited this corpus and the eighty-third wrote three
+paragraphs of instructions — and the instructions asked a question the audits never had to: *when does
+this run?*** ***A description can be complete and still never be asked the one thing a reader needs
+first.***
