@@ -14,6 +14,35 @@ transcript. Where a table was altered later, the change is noted with its transc
 
 ---
 
+## 0y-T17. 🔑🔑 **"WE NEED A DIET" — the owner's standing storage directive, and it is CONDITIONAL** *(T17 pass 0, §T17.1, owner, 2026-09-19; **0 of the twelve, 0 of the thirty**)*
+
+> ***"Are we being DATA SIZE AWARE? Is there anywhere we are wasting space?"***
+>
+> ***"Once the full system is complete we do that, but **WE NEED A DIET, DEFINITELY** — of course
+> **without losing data, reliability, progress** — just smart addressing data."***
+
+🔑🔑 **THREE THINGS ARE SPECIFIED AND ALL THREE MATTER**: **(1) the diet is COMMITTED — *"definitely"***;
+**(2) it is SEQUENCED AFTER completion — *"once the full system is complete"***; **(3) it is BOUNDED —
+*"without losing data, reliability, progress."*** ⚠ **So storage reclamation is deferred work with a
+stated constraint, not an open question — and §0v's storage incident and §0u's infrastructure limits
+are the context it was asked in.**
+
+✅ **AND THE SAME SESSION SHOWS THE DESIGN PRINCIPLE ALREADY APPLIED**: the scenario precompute
+*"should be run on **every single match** for calibration, and then it should be **DELETED** — we just
+keep the real outcome… **that should be MILLIONS OF ROWS that's just gonna eat up space**"*
+*(`NBA_SYSTEM_DESIGN.md` §0z-4)*. 🔑 **Enumerate to calibrate, store only the outcome — the diet as an
+architectural choice rather than a cleanup.**
+
+🔴 **THIS SWEEP HAS ALREADY FOUND ONE CANDIDATE, AND IT COSTS NOTHING TO GIVE UP**: **`board_outcomes_nm_idx`
+— 303 MB with ZERO scans** across the whole window these statistics cover, while its three same-batch
+siblings on the same normalised-name join show 23.4M / 1.08M / 595k *(§0x-T16 below, open item
+**T16-9**)*. ⚠ **It is dead weight by the directive's own test — *"smart addressing data" without
+losing data, reliability or progress* — since an index the planner never chooses holds no
+information.** 🔑 **And COMPASS fact 104 supplies the likely cause: a function on the join column makes
+an index unusable no matter how well it matches.**
+
+---
+
 ## 0x-T16. 🔴🔴 **THE FOUR PERFORMANCE LESSONS, AND A LIVE INDEX AUDIT THAT FINDS 303 MB NEVER SCANNED** `[LIVE-AUDIT]` *(T16 pass 2, §T16.3, from COMPASS fact 104 — **2 of the thirty, 1 of the twelve**; `SELECT` 2026-09-22)*
 
 ### 🔑🔑 THE FOUR LESSONS — **"~90 minutes each"**
