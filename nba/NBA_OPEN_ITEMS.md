@@ -13394,6 +13394,26 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 > 🔑 **It joins T20-13 as the only items with a KNOWN FIRING DATE — `2026-10-10` and `2026-10-20`.**
 > ⚠ **It ranks 8th rather than high, because it costs ONE app of five and is one token, not because
 > its date is far away — its date is the NEARER of the two.**
+> ## ✅ **THE ROOT CAUSE, CENSUSED — T20 PASS 56, §T20.61, 2026-09-22.** *The sentence above said
+> "one decision answers B, C and 14." **It is true, and it is 40% smaller than it sounds.***
+> **`nba_config.worker_definitions`, re-taken 2026-09-22: `21` rows, `enabled = 1` on ALL of them,
+> `updated_at` spanning `2026-08-31 → 2026-09-09` and nothing since. `nba_control.job_runs` and
+> `worker_run_log`: `0` rows (§T20.31, re-verified §T20.54).**
+>
+> | group | n | covered by an Action that WRITES Postgres? | live decision? |
+> |---|---|---|---|
+> | 🔴 **01 Static** | **15** | 🔴 **NO** | 🔴 **YES — these ARE the loaders for the frozen tables** |
+> | ✅ **02 Historical** | 4 | no | ✅ **NO — already ran**: `player_game_log` **79,358** · `player_game_starter_status` **32,179** · `team_game_log` **7,380** · `game_officials` **3,681** |
+> | ✅ **03 Delta** | 1 | ✅ `scrape_nba_daily_delta.py`, a P2 step | ✅ covered |
+> | ✅ **nba_baseline** | 1 | ✅ `load_baseline_ladder.py`, a P2 step | ✅ covered |
+>
+> ⇒ ***THE DECISION IS FIFTEEN LOADERS, NOT TWENTY-ONE WORKERS.***
+> 🔑 **And the structural reason the two layers can disagree without contradicting each other, now
+> measured: of the `40` scripts P1/P2/P3 run, **`13` write to Postgres and `27` write JSON only**.
+> The Actions layer SCRAPES AND COMMITS; the worker layer LOADS.** ⚠ *The split itself is prior work
+> — the SEASON-CRITICAL item above states it: "every worker that loads that JSON into Postgres is
+> triggered by hand via `run_job`." What §T20.61 adds is the count.*
+>
 > 🔑🔑 **AND IT IS THE THIRD FINDING WITH THE SAME ROOT CAUSE AS `B`**: *Betr is pulled by the
 > Cloudflare bridge job `betr_board_pull`, not by a GitHub Action — and nothing triggers workers
 > (§T20.31: `job_runs` and `worker_run_log` both EMPTY).* ✅ **By contrast the three GitHub-Actions
