@@ -18,7 +18,7 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 >
 > | | |
 > |---|---|
-> | **POSITION** | **T20**, `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt` · **CLEAN 0/3** · **64 passes** · **§T20.1–§T20.69** |
+> | **POSITION** | **T20**, `2026-09-20-19-56-26-nba-alphadog-documentation-pass-t1-deep.txt` · **CLEAN 0/3** · **65 passes** · **§T20.1–§T20.69** *(pass 64 closed 2026-09-22 — the resume-note audit, §T20.69; this START HERE block is its repair)* |
 > | **OWED — RULE 46** | 🔴 **T19 AND T20 EACH OWE TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A FRESH CONTEXT.** *A clean count reached inside the authoring session does not close a transcript (§T19.6, OWNER DECISION).* |
 > | **NEXT** | the **`▶ EXACT NEXT STEP`** row of the table below — it carries the pre-registered clauses, the method and the kills to log |
 >
