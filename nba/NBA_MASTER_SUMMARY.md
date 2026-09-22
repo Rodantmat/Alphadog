@@ -29041,3 +29041,114 @@ config surface's NORMAL CONDITION, not an accident of one row.** ***And the mech
 row is authored once, at the moment its work is finished, and nothing in the system owns the sentence
 "this is no longer true."*** 🔑 **The sharpest instance is entirely internal: one config row planned a
 table's deletion, a second described that table as live, the deletion happened, and neither moved.**
+
+---
+
+# §T20.31 — PASS 26: *THE JOB-STATE SURFACE — THE SCHEDULER HOLDS TEN MLB JOBS, TWO STILL ENABLED, AND ZERO NBA*
+
+*(T20 pass 26, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY, and this is the pass where it matters most: `SELECT` and `list_dir`/`grep_file` only.
+NO `run_job`, NO `github_trigger_workflow`, no dispatch, no deploy. A pipeline is exactly the thing
+this sweep must not touch.**
+
+## 1. 📐 THE SURFACE, ENUMERATED FROM `information_schema`
+
+> **`93` base tables match the job-state shape** *(schemas `nba_control` · `nba_daily` · `config` ·
+> `daily`, plus any table ending `_status` / `_log` / `_state` / `_stage` / `_runs` / `_registry`
+> across all schemas)*, **`pp_*` excluded**, 2026-09-22T15:18:59Z.
+> **`40` workflow files in `.github/workflows/`** — **`33` NBA-prefixed**, `6` non-NBA, and
+> **`nba-pp-payout-map.yml` EXCLUDED as the concurrent session's.**
+
+## 2. 🔴🔴🔴 THE SCHEDULER TABLE IS ALL MLB, AND TWO ROWS ARE STILL **ENABLED**
+
+> **`config.scheduled_jobs` — `10` rows, `updated_at` 2026-06-09 → 2026-07-23. ZERO carry an NBA
+> `job_key`.**
+
+| `job_key` | when | `enabled` | last touched |
+|---|---|---|---|
+| 🔴 **`postgres-full-run`** | **daily 06:00 PT** | **1** | 2026-07-23 |
+| 🔴 **`static-full-run`** | **weekly, Mon 02:00 PT** | **1** | 2026-07-13 |
+| `board-full-run` ×3 | 22:00 / 09:00 / 13:00 PT | 0 | 2026-06-09 |
+| `daily-full-run` ×2 | 07:00 / 13:00 PT | 0 | 2026-06-30 / 07-22 |
+| `context-history-full-run` | 03:00 PT | 0 | 2026-07-22 |
+| `incremental-morning-full-run` | 06:00 PT | 0 | 2026-07-22 |
+| `scoring-full-run` | 07:00 PT | 0 | 2026-07-14 |
+
+🔴🔴 ***Every one of these is an MLB-era job key, and MLB is DROPPED. Two remain ENABLED — a daily
+06:00 PT run and a weekly Monday 02:00 PT run — against a `42.95 GB` database, 28 days before the
+NBA opener.*** ⚠ **Whether anything still ticks this table is NOT RECORDED** — *`nba_control.job_runs`
+is empty (below), so the database itself cannot answer it; that is the question for the owner, and it
+is the difference between two dead rows and two live jobs competing for the disk.*
+
+✅ **NOT a two-hop defect, and said so (rule 20, third vocabulary):** *the NBA's 33 workflows are
+scheduled by GitHub Actions `cron:` in the YAML, not by this table — a DIFFERENT scheduler, by
+design, and the corpus records that design. The absence of NBA rows here is architecture, not a gap.*
+📌 **Clause (iii) therefore scores on the MLB residue, not on a missing NBA hop.**
+
+## 3. 🔴🔴 THE NBA'S OWN RUN LEDGER IS **EMPTY**
+
+> **`nba_control.job_runs` = `0` rows. `nba_control.worker_run_log` = `0` rows.**
+> ✅ *Live control surfaces exist and are not dead: `control.worker_state` was written
+> **2026-09-22 08:46:41.310298+00** — today — and `control.system_state` holds one row,
+> `state_key GLOBAL`, `lock_flag 0`, `status IDLE`, `running_job_key NULL`, last updated
+> **2026-07-25 15:30:04.898581+00**.*
+
+⇒ ***No NBA job has ever recorded a run in the database.*** **Consistent with the architecture — the
+scraping network is GitHub Actions and the run history lives there — but the consequence is precise
+and worth stating: `SELECT`-only observability cannot answer "did P3 run today?"** ⚠ **Twenty-eight
+days out, the only record that a game-day pipeline fired is a GitHub Actions run log.**
+✅ **`lock_flag 0 / IDLE` is the SAFE state** — *a stale lock would have been the dangerous find here,
+and it is not present.*
+
+## 4. 🔴🔴🔴 **P2 AND P3 HAVE NO CRON — CONFIRMED OFF THE REPO, AND ONE DOCUMENT PRESUPPOSED OTHERWISE**
+
+| workflow | `on:` triggers | |
+|---|---|---|
+| ✅ `nba-p1-weekly-static.yml` | `workflow_dispatch:` + **`schedule: - cron: '0 19 * * 1'`** | Mondays 19:00 UTC = 12:00 PT |
+| 🔴 `nba-p2-overnight-heavy.yml` | **`workflow_dispatch:` ONLY** | no `schedule:` block |
+| 🔴🔴 `nba-p3-afternoon-light.yml` | **`workflow_dispatch:` ONLY** | no `schedule:` block — **and P3 is the EVERY-GAME-DAY pipeline** |
+| ✅ `nba-referees.yml` | `workflow_dispatch:` + **`cron: '30 15 * * *'`** | the rule-22 control: the probe finds crons where they exist |
+
+✅✅ **THE CORPUS HAD THIS RIGHT — `NBA_SYSTEM_DESIGN.md` §1288/§1293 and three separate
+`NBA_MASTER_SUMMARY` entries all state *"P2 and P3 still have no cron."*** **This pass CONFIRMS the
+twelve on the single most season-critical operational fact available, which is worth recording at the
+same strength as a defect.**
+
+🔴 **ONE DOCUMENT WAS THE OUTLIER, AND IN THE MOST DANGEROUS SHAPE.**
+`NBA_SYSTEM_ARCHITECTURE.md`'s DST-exposure table carried rows reading
+***"P2 cron 01:00 PT … drifts an hour"*** and ***"P3 cron 1:15 PM PT … drifts an hour — against a
+cutoff that IS time-sensitive."*** ⚠⚠ ***It never asserts the crons exist. It PRESUPPOSES them, by
+analysing a second-order property of them.*** **A reader auditing DST exposure there concludes P3 is
+scheduled and merely drifting.** ✅ **Both rows corrected in-pass (rule 12); P1's DST row stands and
+is correct.**
+📌 **A negation is easy to search for; a PRESUPPOSITION is not — which is why five documents agreeing
+did not protect the sixth.**
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:18:59Z** |
+| **(ii)** | a job-state row stale in the **DANGEROUS** direction (says DONE ⇒ SKIP) | ✅ **NO SUCH ROW FOUND — and the pre-registration requires this be said PLAINLY rather than buried.** *`control.system_state` is `lock_flag 0 / IDLE / running_job_key NULL`; the NBA run ledger is empty rather than falsely populated; no row claims completed work that is not done.* 🔑 **The staleness that IS present runs the OTHER way — two enabled MLB schedules for a dropped sport, which causes UNWANTED WORK, not a silent skip. That is the recoverable direction.** |
+| **(iii)** | a registration with no workflow, or a workflow with no registration | ✅ **HIT, but NOT as a missing hop.** *All 33 NBA workflows are GitHub-cron scheduled by design, so their absence from `config.scheduled_jobs` is architecture (rule 20). **The finding is the residue: 10 MLB registrations, 2 enabled, whose workflows and sport are gone.*** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTY-EIGHTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — ten stale MLB scheduler rows with two still enabled, an empty NBA run ledger, and a
+DST table analysing two crons that do not exist. CLEAN STAYS 0/3.**
+✅✅ **AND THE GOOD NEWS, AT FULL STRENGTH: no job-state row is stale in the dangerous direction, the
+global lock is `IDLE`, and the corpus's account of P1/P2/P3 scheduling is CONFIRMED against the repo
+on the most season-critical fact it holds.**
+⚠⚠ **NOTHING WAS TRIGGERED, DISPATCHED OR WRITTEN (rule 1).**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **§T20.30 found the config surface drifts because nothing owns the sentence
+"this is no longer true." The scheduler shows the same mechanism with a sharper edge — a job
+registration is written when a job is BUILT and nothing retires it when the SPORT is dropped.**
+***And the document finding is the subtler one: the corpus stated "P2 and P3 have no cron" correctly
+in five places, and the sixth document defeated all five not by contradicting them but by
+presupposing the opposite while discussing something else.***
