@@ -477,6 +477,333 @@ unknown.** *Up to five transcripts are shown per term.*
 | `lower_multiplier` | MUL,SUM | T13 |
 | `lower_payout` | MUL,SUM | T13 |
 
+### M
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `main_file` | OPEN,SUM | T1 |
+| `manual_alias` | ARC,DB,OPEN,SUM | T1 T2 |
+| `market.prizepicks_board_current` | DB,OPEN,SUM | T1 |
+| `market.sleeper_board_current` | DB,OPEN,SUM | T1 |
+| `market.underdog_board_current` | DB,OPEN | — |
+| `market_fair` | OPEN,SUM | T13 |
+| `market_filters` | ARC,SUM | T12 |
+| `market_key` | DB,GD,OPEN,SUM | T11 T16 |
+| `market_probe_results_2026_09_10` | OPEN,SUM | T11 |
+| `market_spread_delta` | OPEN,SUM | T10 |
+| `market_total_delta` | OPEN,SUM | T10 |
+| `max_api_calls_per_tick` | DB,SUM | T1 |
+| `max_rows` | ARC,DB,OPEN | — |
+| `max_shift` | BCAL,OPEN,SUM | T10 |
+| `max_tick_ms` | DB,SUM | T1 |
+| `measure_report_cutoff` | OPEN,SUM | T19 |
+| `memory_append` | OPEN,SUM | T1 T4 |
+| `memory_class` | DB,SUM | T7 |
+| `memory_read` | OPEN,SUM | T1 T6 |
+| `memory_write` | OPEN,SUM | T1 T4 |
+| `message` | DB,OPEN,SUM,WRK | T2 |
+| `message_name` | ARC,SUM | T12 |
+| `metrics` | SUM,WRK | T3 |
+| `min_lookback_games` | DB,FCAL,SUM | T7 |
+| `min_mult` | DSN,FCAL,SUM | T14 T15 |
+| `min_real_sample_threshold` | BCAL,DB,OPEN,SUM | T7 T8 |
+| `minuscule` | OPEN,SUM | T9 |
+| `minutes_by_margin` | DB,OPEN,SUM | T4 T11 T16 |
+| `minutes_model_v1` | DB,SUM | T4 T11 T16 |
+| `mlb_133` | OPEN,SUM | T1 |
+| `mlb_team_id` | OPEN,SUM | T1 |
+| `morning` | DB,SUM | T11 |
+
+### N
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `n_uncertain` | DB,OPEN | T17 |
+| `natural_floor` | DB,SUM | T8 |
+| `nba_0` | DB,SUM | T4 T5 |
+| `nba_1610612737` | DB,OPEN,SUM | T1 T10 |
+| `nba_1628467` | DB,OPEN | T4 T5 |
+| `nba_1629178` | DB,OPEN,SUM | T6 |
+| `nba_archive` | ARC,DB,OPEN,SUM | T1 T11 |
+| `nba_arenas_current.json` | OPEN,SUM,WRK | T2 |
+| `nba_backtest` | ARC,DB,OPEN,SUM | T1 T11 |
+| `nba_baseline_ladder_latest.json` | BCAL,OPEN | — |
+| `nba_calendar` | ARC,DB,OPEN,SUM | T1 T7 T11 |
+| `nba_calendar.games` | DB,DSN,OPEN,SUM | T1 T2 T3 T4 T6 |
+| `nba_certifier` | ARC,OPEN | — |
+| `nba_classification` | ARC,DB,OPEN,SUM | T1 T11 |
+| `nba_config.calibration_log` | DB,SUM | T8 T11 |
+| `nba_config.ewma_alpha` | DB,SUM | T1 T7 T10 |
+| `nba_config.factor_gate_results` | OPEN,SUM | T10 |
+| `nba_config.factor_profile_cells` | DB,FCAL,OPEN,SUM | T1 T7 T8 T10 |
+| `nba_config.factor_registry` | BCAL,DB,DSN,FCAL,OPEN,SUM | T1 T7 T8 T10 T11 |
+| `nba_config.factor_relevance` | DB,FCAL,OPEN,SUM | T8 T10 |
+| `nba_config.pp_slip_rules` | DB,GD,SUM | T7 |
+| `nba_config.role_tiers` | BCAL,DB,OPEN,SUM | T8 T9 |
+| `nba_config.system_settings` | ARC,DB,OPEN,SUM,WRK | T1 |
+| `nba_config.variation_bands` | DB,OPEN,SUM | T7 T8 T9 |
+| `nba_context` | ARC,DB,OPEN,SUM | T1 T11 |
+| `nba_daily` | ARC,DB,OPEN,SUM | T1 T11 |
+| `nba_daily.injury_report_snapshots` | OPEN,SUM | T10 T11 |
+| `nba_darko_debug_html_snippet.txt` | OPEN,SUM | T3 T4 T5 |
+| `nba_differential_check_cadence` | DB,SUM | T1 |
+| `nba_fantasy_pts` | DB,SUM | T4 |
+| `nba_game_id` | DB,OPEN,SUM | T1 |
+| `nba_game_officials_2025_26_meta.json` | OPEN,SUM | T11 |
+| `nba_market.board_backfill_log` | DB,OPEN,SUM | T11 |
+| `nba_market.board_tiers` | DB,GD,OPEN,SUM,WRK | T1 T11 |
+| `nba_market.board_tiers_ud` | DB,GD,OPEN,SUM | T10 |
+| `nba_market.board_tiers_v2` | DB,GD,OPEN,SUM,WRK | T1 T12 |
+| `nba_market.book_calibration` | DSN,SUM | T13 |
+| `nba_market.book_curves` | DSN,SUM | T13 |
+| `nba_market.event_game_map` | DB,OPEN,SUM | T14 |
+| `nba_market.game_lines_closing` | ARC,DB,OPEN,SUM | T1 T11 |
+| `nba_market.game_lines_snapshot_log` | DB,SUM | T11 |
+| `nba_market.game_lines_snapshots` | DB,OPEN,SUM | T11 T13 |
+| `nba_market.market_fair` | DSN,SUM | T13 |
+| `nba_market.prop_universe` | DB,SUM | T11 |
+| `nba_market.rung_market` | DB,DSN,MUL,OPEN,SUM | T7 T11 T13 |
+| `nba_market.schedule_norm` | DB,FCAL,OPEN,SUM,WRK | T11 T18 |
+| `nba_market.sleeper_board_current` | OPEN,SUM | T1 T10 |
+| `nba_official_id` | DB,SUM | T6 |
+| `nba_official_ray_acosta` | DB,OPEN,SUM | T6 |
+| `nba_officials_current.json` | OPEN,WRK | — |
+| `nba_officials_debug_raw.json` | OPEN,SUM | T4 T5 |
+| `nba_officials_diagnostic.json` | OPEN,SUM | T4 T5 |
+| `nba_onoff_current.json` | OPEN,SUM | T1 |
+| `nba_player_bio_current.json` | OPEN,SUM | T1 |
+| `nba_player_game_log_2025_26_debug_raw.json` | OPEN,SUM | T4 |
+| `nba_player_id` | ARC,DB,OPEN,SUM | T1 T2 T3 T4 T9 |
+| `nba_players_current.json` | OPEN,WRK | — |
+| `nba_ref.official_roster_snapshot` | DB,SUM | T3 T9 |
+| `nba_ref.officials` | ARC,DB,OPEN,SUM,WRK | T1 T2 T6 T11 |
+| `nba_ref.player_aliases` | DB,OPEN,SUM | T1 T2 |
+| `nba_ref.player_name_map` | DB,OPEN,SUM,WRK | T2 |
+| `nba_ref.prop_taxonomy` | ARC,DB,FCAL,OPEN,SUM,WRK | T1 T7 T8 T9 T11 |
+| `nba_ref.referee_assignments` | DB,OPEN,SUM | T4 T8 T9 T10 T11 |
+| `nba_ref.team_aliases` | ARC,DB,OPEN,SUM,WRK | T1 T2 |
+| `nba_ref.team_differential_log` | DB,SUM,WRK | T3 T8 T9 |
+| `nba_ref.team_roster_snapshot` | DB,SUM | T3 T9 |
+| `nba_schedule_current.json` | OPEN,SUM,WRK | T1 T3 T9 T18 |
+| `nba_score.absence_panel` | DB,SUM | T4 T10 T16 |
+| `nba_score.availability_delta` | DB,FCAL,OPEN | T4 T16 |
+| `nba_score.baseline_ladder` | DB,GD,OPEN,SUM,WRK | T3 T9 T10 |
+| `nba_score.baseline_ladder_runs` | BCAL,DB,OPEN,SUM | T1 T2 T9 T10 T13 |
+| `nba_score.blowout_model` | DB,OPEN,REC,SUM | T4 T7 T8 T11 T16 |
+| `nba_score.confidence_model` | DB,FCAL,OPEN,SUM | T17 |
+| `nba_score.conformal_confidence` | DB,FCAL | — |
+| `nba_score.ladder_calibration` | DB,FCAL,OPEN,SUM | T1 T10 |
+| `nba_score.ladder_calibration_asof` | BCAL,DB,FCAL,OPEN,SUM | T1 T11 |
+| `nba_score.paper_picks` | DB,DSN,SUM | T11 T12 |
+| `nba_score.real_slip_leg_observations` | DB,MUL,OPEN,SUM | T4 T10 T16 |
+| `nba_score.redistribution_factors` | DB,FCAL | T15 T16 |
+| `nba_score.scenario_calibration` | DB,OPEN,SUM | T14 |
+| `nba_score.scenario_realised` | DB,DSN,FCAL,OPEN,SUM | T14 T17 |
+| `nba_score.tier_band_calibration` | BCAL,DB,GD | T16 |
+| `nba_scoring` | ARC,DB,OPEN,SUM | T1 T11 |
+| `nba_season` | OPEN,SUM | T3 T7 T9 |
+| `nba_shotzones_debug_raw.json` | OPEN,SUM | T4 T5 |
+| `nba_starter_status_diagnostic.json` | OPEN,SUM | T4 T5 |
+| `nba_stats.game_officials` | ARC,DB,OPEN,SUM,WRK | T1 T3 T6 T9 T11 |
+| `nba_stats.lineup_synergy` | FCAL,OPEN,SUM | T10 |
+| `nba_stats.official_roster_snapshot` | SUM,WRK | T10 |
+| `nba_stats.player_career_season_totals` | DB,FCAL,OPEN,SUM | T1 T2 T4 T5 T7 |
+| `nba_stats.player_career_totals` | FCAL,OPEN,SUM | T1 T10 |
+| `nba_stats.player_differential_log` | DB,SUM,WRK | T3 T8 T9 |
+| `nba_stats.player_game_log` | DB,OPEN,SUM | T4 |
+| `nba_stats.player_game_log_scoring` | DB,SUM | T7 |
+| `nba_stats.player_game_log_usage` | DB,OPEN,SUM | T7 |
+| `nba_stats.player_game_starter_status` | DB,OPEN,SUM | T5 T11 |
+| `nba_stats.player_impact_rating` | DB,OPEN,SUM | T2 T3 |
+| `nba_stats.player_onoff_profile` | DB,OPEN,SUM | T2 T6 T7 |
+| `nba_stats.player_playtype_profile` | DB,OPEN,SUM | T3 |
+| `nba_stats.player_roster_snapshot` | DB,SUM | T3 T9 |
+| `nba_stats.player_season_profile` | DB,OPEN,SUM | T2 T7 |
+| `nba_stats.player_shot_quality` | DB,SUM | T3 T4 |
+| `nba_stats.player_shot_quality_delta` | DB,OPEN,SUM | T3 T4 T11 |
+| `nba_stats.player_shot_zone_profile` | DB,SUM | T3 T4 |
+| `nba_stats.player_splits` | DB,OPEN,SUM | T4 T5 |
+| `nba_stats.player_tracking_detail` | DB,OPEN,SUM | T3 |
+| `nba_stats.player_tracking_profile` | DB,OPEN,SUM | T2 T7 |
+| `nba_team` | ARC,DB,OPEN,SUM | T1 T2 T7 T11 |
+| `nba_team.defense_vs_position` | DB,FCAL,OPEN,SUM | T5 T7 T11 |
+| `nba_team.lineup_profile` | DB,FCAL,OPEN,SUM | T6 T7 T10 |
+| `nba_team.playtype_profile` | DB,OPEN,SUM | T3 T7 |
+| `nba_team.season_profile` | DB,OPEN,SUM,WRK | T2 T7 |
+| `nba_team.team_game_log` | DB,OPEN,SUM | T4 T11 |
+| `nba_team.team_game_log_four_factors` | DB,SUM | T7 |
+| `nba_team.team_game_log_scoring` | DB,SUM | T7 |
+| `nba_team.team_splits` | DB,SUM | T4 T5 T7 |
+| `nba_team_id` | ARC,DB,OPEN,SUM | T1 T3 T11 T15 |
+| `nba_teams_current.json` | OPEN,SUM,WRK | T1 T14 |
+| `nba_teams_current_meta.json` | DB,OPEN | T1 |
+| `net_rating` | DB,SUM | T2 |
+| `new_official` | OPEN,SUM | T3 |
+| `new_player` | DB,OPEN,SUM | T3 |
+| `new_str` | OPEN,SUM | T1 T4 |
+| `new_team_id` | DB,SUM | T3 |
+| `new_value` | DB,OPEN,SUM | T3 |
+| `nickname` | DB,OPEN,SUM | T1 T3 |
+| `no_stat` | DSN,SUM | T12 T13 |
+| `nodejs_compat` | ARC,OPEN,SUM | T1 |
+| `non_push_sample` | BCAL,OPEN | — |
+| `normal_filter` | BCAL,OPEN | — |
+| `not_mined` | DB,SUM | T10 |
+| `now_out` | FCAL,OPEN,SUM | T10 |
+
+### O
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `o_dpm` | DB,SUM | T2 T3 |
+| `object` | OPEN,SUM | T2 |
+| `odds_api_board_backfill` | ARC,OPEN,SUM | T1 T11 |
+| `odds_type` | GD,MUL,OPEN,SUM | T8 T10 |
+| `oddspapi_api_key` | DB,OPEN | — |
+| `off_rating` | DB,SUM | T2 |
+| `official_differential_log` | SUM,WRK | T3 T8 T9 |
+| `official_id` | DB,OPEN,SUM | T3 T6 |
+| `official_roster_snapshot` | OPEN,SUM,WRK | T3 |
+| `officials` | ARC,DB,OPEN,SUM,WRK | T2 T11 |
+| `offset` | BCAL,FCAL | — |
+| `old_str` | OPEN,SUM | T1 T3 T4 |
+| `old_team_id` | DB,SUM | T3 |
+| `old_value` | DB,OPEN,SUM | T3 T7 |
+| `on_off_dpm` | DB,SUM | T2 T3 |
+| `operation` | ARC,SUM | T12 |
+| `opp_forced_to_rate` | DB,SUM | T7 |
+| `opp_miss_rate` | DB,SUM | T7 |
+| `opp_rim_attempt_rate` | DB,SUM | T7 |
+| `opp_shot_diet` | DB,OPEN,SUM | T7 T10 |
+| `opp_turnover_rate` | DB,SUM | T7 |
+| `opponent_position` | DB,SUM | T5 |
+| `oreb_pct` | DB,SUM | T2 |
+| `ot_rule` | DB,GD,OPEN,SUM | T1 T8 T9 |
+| `over_under` | MUL,SUM | T13 |
+| `over_win` | DB,DSN,FCAL,GD,OPEN,SUM | T11 T12 T13 |
+| `overtime_pace_live` | OPEN,SUM | T10 |
+| `owns_db_binding` | DB,SUM | T1 |
+
+### P
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `p_blowout` | DB,OPEN,REC,SUM | T4 T11 T16 |
+| `p_dud` | OPEN,SUM | T7 |
+| `p_less` | ARC,BCAL,DB,GD,OPEN,SUM | T9 T16 |
+| `p_more` | ARC,BCAL,DB,GD,OPEN,SUM | T4 T5 T9 T16 |
+| `p_over` | BCAL,DSN,FCAL,SUM | T10 T13 |
+| `p_plays` | BCAL,FCAL | T14 |
+| `p_raw` | ARC,BCAL,DB,FCAL,OPEN,SUM | T1 T9 |
+| `pace__points__continuous__all__both` | OPEN,SUM | T7 |
+| `paper_picks` | DSN,SUM | T11 T12 |
+| `parlay_game_lines_backfill` | ARC,OPEN,SUM | T1 |
+| `patch_applied` | OPEN,SUM | T11 |
+| `pdfplumber` | BCAL,OPEN,SUM,WRK | T11 T12 |
+| `penalty` | DB,FCAL,OPEN,SUM | T1 T7 T10 |
+| `per_page` | OPEN,SUM | T1 |
+| `per_type` | SUM,WRK | T3 |
+| `period` | ARC,DB,GD,OPEN,SUM | T8 T9 T11 T17 |
+| `periods_ladder_v1` | DB,SUM | T4 T11 T16 |
+| `personal_fouls` | BCAL,DB,OPEN,SUM | T1 T8 T9 T10 |
+| `pg_ls_waldir` | ARC,SUM | T14 |
+| `pg_stat_database.stats_reset` | DB,OPEN | T16 |
+| `pg_stat_user_tables.n_live_tup` | OPEN,SUM | T1 |
+| `pg_total_relation_size` | DB,OPEN | — |
+| `phase1_baseline` | DB,OPEN,SUM | T10 |
+| `phase2_enrichment` | DB,SUM | T10 T11 |
+| `phase2_window` | DB,SUM | T10 T11 |
+| `phase_key` | DB,SUM,WRK | T1 T11 |
+| `phase_rank` | FCAL,SUM | T9 |
+| `pick6` | ARC,DB,OPEN,SUM | T11 |
+| `pickem_stat_id` | ARC,SUM | T12 |
+| `platt_fits` | BCAL,FCAL,OPEN,SUM | T9 |
+| `platt_log` | BCAL,OPEN | — |
+| `player_age` | DB,SUM | T4 |
+| `player_aliases` | ARC,OPEN,WRK | — |
+| `player_assists` | ARC,DB,OPEN,SUM | T11 |
+| `player_batter_hits` | DB,OPEN,SUM | T11 |
+| `player_blocks` | DB,OPEN,SUM | T11 |
+| `player_blocks_steals` | DB,FCAL,OPEN,SUM | T11 |
+| `player_career_season_totals` | OPEN,SUM | T2 T4 T10 |
+| `player_double_double` | DB,FCAL,OPEN,SUM | T11 |
+| `player_doubles` | OPEN,SUM | T11 |
+| `player_earned_runs_allowed` | DB,OPEN,SUM | T11 |
+| `player_fantasy_points` | DB,FCAL,OPEN,SUM | T11 |
+| `player_first_inning_runs` | OPEN,SUM | T11 |
+| `player_fkey` | ARC,SUM | — |
+| `player_game_log` | ARC,DB,FCAL,OPEN,SUM | T1 T4 T5 T6 T7 |
+| `player_game_log_advanced` | OPEN,SUM | T4 |
+| `player_game_starter_status` | ARC,BCAL,DB,OPEN,SUM,WRK | T3 T4 T5 T6 T7 |
+| `player_game_starter_status.comment` | FCAL,OPEN,SUM | T8 |
+| `player_home_runs` | DB,OPEN,SUM | T11 |
+| `player_ids` | DB,SUM | T6 |
+| `player_impact_rating` | ARC,DB,OPEN,REC,SUM | T2 T3 |
+| `player_name_map` | DB,SUM | T8 |
+| `player_onoff_profile` | DB,OPEN,SUM,WRK | T2 T7 |
+| `player_outs` | DB,OPEN,SUM | T11 |
+| `player_pitcher_strikeouts` | DB,OPEN,SUM | T11 |
+| `player_playtype_profile` | DB,OPEN,SUM | T2 T3 T7 |
+| `player_points` | ARC,DB,OPEN,SUM | T11 |
+| `player_points_rebounds_assists` | DB,FCAL,OPEN,SUM | T11 |
+| `player_rbis` | DB,OPEN,SUM | T11 |
+| `player_rebounds` | ARC,DB,OPEN,SUM | T11 |
+| `player_roster_snapshot` | OPEN,SUM,WRK | T3 |
+| `player_rows_written` | OPEN,SUM | T3 |
+| `player_season_profile` | DB,OPEN,SUM,WRK | T2 T7 |
+| `player_shot_quality` | DB,SUM | T3 T4 T7 |
+| `player_singles` | DB,OPEN,SUM | T11 |
+| `player_splits` | DB,OPEN,SUM | T4 T5 T7 T11 |
+| `player_steals` | DB,OPEN,SUM | T11 |
+| `player_stolen_bases` | DB,OPEN,SUM | T11 |
+| `player_team_total_runs` | DB,OPEN,SUM | T11 |
+| `player_threes` | DB,FCAL,OPEN,SUM | T11 |
+| `player_total_bases` | DB,OPEN,SUM | T11 |
+| `player_tracking_detail` | DB,OPEN,SUM | T7 |
+| `player_tracking_detail.metrics` | OPEN,SUM | T2 |
+| `player_tracking_profile` | DB,OPEN,SUM,WRK | T2 T7 T11 |
+| `player_triple_double` | DB,SUM | T11 |
+| `player_turnovers` | DB,OPEN,SUM | T11 |
+| `playerdashboardbygeneralsplits` | ARC,DB,SUM | T4 T5 |
+| `playergamelogs` | ARC,OPEN,SUM | T4 T5 |
+| `playerindex` | ARC,OPEN,REC,SUM | T1 T5 |
+| `players_unchanged_skipped` | OPEN,SUM | T2 |
+| `playmaking` | DB,OPEN | T1 |
+| `plpython3u` | OPEN,SUM | T6 |
+| `plus_minus` | DB,SUM | T4 T5 T6 |
+| `plusone_poss_pct` | OPEN,SUM,WRK | T3 |
+| `points_1h` | DB,OPEN | T1 |
+| `points_1q` | DB,OPEN | T1 |
+| `points_2h` | DB,OPEN | T1 |
+| `points_4q` | DB,OPEN | T1 |
+| `points_rebounds_assists` | FCAL,OPEN | — |
+| `position_vs_anchor` | GD,SUM | T12 |
+| `potential_assist_rate` | DB,SUM | T7 |
+| `pra_1q` | DB,OPEN,SUM | T1 T8 T11 |
+| `pre_post_allstar` | DB,OPEN | T4 T5 |
+| `prior_season` | DB,FCAL,SUM | T11 |
+| `prizepicks_mlb_current.json` | MUL,OPEN,SUM | T1 |
+| `product_experience_id` | OPEN,SUM | T1 T12 |
+| `proj_min` | ARC,BCAL,DB,DSN,FCAL,SUM | T14 T16 |
+| `prop_family` | DB,SUM | T11 |
+| `prop_taxonomy` | BCAL,DB,OPEN,SUM,WRK | T1 T7 T8 T9 T11 |
+| `prop_taxonomy.build_tier` | DB,OPEN | — |
+| `prop_universe` | DB,FCAL,OPEN,SUM | T11 T12 T16 T17 |
+| `proposed_value` | DB,OPEN,SUM | T7 |
+| `psycopg` | OPEN,SUM | T11 |
+| `pt_defend` | BCAL,SUM | T11 |
+| `pts_total` | DB,SUM | T2 |
+| `public` | DB,SUM | T1 |
+| `put_file` | OPEN,SUM,WRK | T1 T7 T8 T11 T18 |
+| `py_compile` | SUM,WRK | T1 T3 |
+
+### Q
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `quantile_bands` | DB,SUM | T7 T8 |
+| `questionable` | DSN,FCAL,SUM | T8 |
+
 ---
 
 ## A
