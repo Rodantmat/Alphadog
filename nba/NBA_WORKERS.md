@@ -2066,6 +2066,8 @@ every day."* **`CERT_STRICT=1` by default; any failed check `sys.exit(1)`.**
 
 ### ⇒ 🔴🔴 **P3 HAS NO MAGNITUDE CHECK AT ALL, AND P3 IS THE PIPELINE THAT RUNS EVERY GAME DAY**
 
+> 🔴🔴🔴 **AND P3 IS STILL HARDCODED TO *LAST* SEASON — `T20-4`, the brief's HIGHEST-ranked pure-P3 item.** *Added here T20 pass 78 (§T20.83), 2026-09-22: **this document names P3 fourteen times and never mentioned `BS_SEASON`**, and a person working on P3 reads this page.* ▶ **`.github/workflows/nba-p3-afternoon-light.yml`** — `:38` `default: "2025-26"` and `:205` `BS_SEASON: ${{ github.event.inputs.season || '2025-26' }}`. 🔴 ***The 2026-27 regular season opens `2026-10-20`. Unless the input is supplied by hand every run, P3 scores the wrong season.*** ▶ **Full item: `T20-4` in `NBA_OPEN_ITEMS.md`; re-derived and HELD at §T20.75, `2026-09-22T19:25Z`.** ⚠ **`VALIDATABLE NOW`** — *it is workflow text; the fix and its proof need no live board data (§T20.75).* ⚠ *Documented, not fixed (rule 1).*
+
 ***A P3 run that scores ONE leg passes all five checks***: one row makes `count(*) > 0` true; among
 one row there are zero NULL confidences and zero out-of-range scores, so both `== 0` checks pass
 **vacuously**; the confidence model is a standing table; and one archived board leg satisfies the
