@@ -28356,3 +28356,123 @@ navigation inconvenience. It is a section no pass re-derives, and the two this s
 both drifted. Reachability is a MAINTENANCE property, not a cosmetic one — which is the argument
 option (c) of OWNER DECISION T20-1 ("record the corpus as read-whole rather than navigated") now has
 to answer.***
+
+---
+
+# §T20.25 — PASS 20: *THE CONTROLLED TEST OF §T20.24 — AND IT CANNOT BE RUN, FOR A REASON WORTH MORE THAN THE RESULT*
+
+*(T20 pass 20, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+*Read-only throughout: `SELECT` only, no `run_job`, no dispatch. `pp_*` and `prop_universe` untouched.*
+
+## 1. 🎯 WHAT THIS PASS WAS COMMISSIONED TO RISK
+
+**§T20.24 concluded *"reachability is a MAINTENANCE property"* — from a sample of TWO, both drawn
+from the unreachable stratum, with NO CONTROL GROUP.** ⚠ *That conclusion is load-bearing: open item
+T20-1's MEDIUM severity rests on it.* **This pass was pre-registered to put it at risk against a
+control, not to repeat it.**
+
+## 2. 📐 THE TWO STRATA, ENUMERATED FROM SOURCE
+
+> **HIGH reachability** *(a section id with **≥ 5** inbound references, any of the three grammars)*
+> **carrying ≥ 1 live-checkable figure: `286` sections.**
+> **LOW reachability** *(**0** inbound references under all three grammars)*: **`343` sections.**
+> *(2026-09-22T14:42:31Z; script `scratchpad/t20/strata.py`. Both strata are well-powered — the
+> underpowered escape the pre-registration allowed for is NOT needed.)*
+
+**Matched samples drawn from the SAME document (`NBA_DATABASE.md`), both `[LIVE-AUDIT]` tables, both
+taken today:**
+
+| | section | refs | pinned | figures |
+|---|---|---|---|---|
+| **HIGH** | **`§0v`** — the storage incident and the shrink | **13** | **2026-09-22T08:12:50Z** | **22** *(11 sizes + 11 `reltuples`)* |
+| **LOW** | **`§0z2-T18`** — live numeric re-verification of everything T18 published | **0** | **2026-09-22T11:43Z** | **18** re-derivable |
+
+🔑 **The HIGH sample is the OLDER of the two by three and a half hours — which biases the test
+AGAINST the hypothesis and makes it conservative in the right direction.**
+
+## 3. 📊 THE RESULT: `0%` DRIFT IN **BOTH** STRATA
+
+> ✅ **HIGH — `22 of 22` EXACT**, six hours on. `baseline_history` **13 GB / 19,266,864** ·
+> `final_hp` **9,391 MB / 19,320,938** · `board_snapshots` **6,604 MB / 27,059,920** ·
+> `board_scored` **2,948 MB / 11,956,460** · `board_outcomes` **2,151 MB / 6,905,452** ·
+> `final_board_history` **1,342 MB / 249,648** · `board_leg_history` **1,137 MB / 756,768** ·
+> `market_prop_context_history` **737 MB / 162,502** · `game_status_stage` **471 MB / 169,249** ·
+> `board_tiers` **459 MB / 2,199,354** · `prop_outcome_history` **380 MB / 343,816`.**
+> ⚠ **Compared `reltuples` to `reltuples`, never to `count(*)`** — *§0v's row column is the planner
+> estimate, and `final_hp` reads 19,320,938 there against an exact 19,215,200; that is an
+> estimator difference, **not** a drift, and conflating them would have manufactured a finding.*
+>
+> ✅ **LOW — `18 of 18` EXACT.** `final_hp` **6,924,101 / 12,291,099 / 19,215,200**, latest
+> `built_at` **2026-09-19 22:41:47.612** *(to the millisecond)* · 2024-25 **19,075,070** · 2025-26
+> **140,130** · `baseline_history` **19,343,348** · `board_snapshots` **27,067,871** ·
+> `confidence_model` **10 rows**, `f_role` deduction **11.2731**, deduction sum **29.0004** ·
+> `board_tiers_v2` / `board_tiers` **2,199,354 / 2,199,354** · `board_scored` **12,818,715** ·
+> `conformal_confidence` **342** · `scenario_realised` **1,942** · `schedule_norm`
+> **1,230 / 1,230**.
+
+## 4. 🔴🔴 THE TEST IS **CONFOUNDED**, AND SAYING SO IS THE FINDING
+
+❌ **Clause (ii) does NOT refute §T20.24 — because the samples are not matched on the variable that
+actually predicts drift.** ⚠⚠ ***Both strata here are `[LIVE-AUDIT]` figures taken TODAY. The two
+figures §T20.24 found drifting were `[TRANSCRIPT]` claims quoted from a 2026-09-13 session and
+recorded nine days later.*** **Reachability, tag and age are entangled, and this design separates
+none of them.**
+
+🔴🔴 **AND THE REASON THEY CANNOT BE SEPARATED IS MEASURABLE — THE TAG SYSTEM IS ONE-SIDED:**
+
+> **`[LIVE-AUDIT]` appears `365` times across `nba/*.md`** *(MASTER_SUMMARY 149 · OPEN_ITEMS 73 ·
+> DATABASE 40 · RUN_LOG 40 · FINAL_SCORING 15 · WORKERS 8 · SYSTEM_DESIGN 2 · MULTIPLIERS 2 ·
+> GLOSSARY 1 · BASELINE_CALIBRATION 1)*.
+> 🔴 **`[TRANSCRIPT]` appears `1` time — `NBA_DATABASE.md:2135`** *(opened, rule 48: *"Both are
+> `[TRANSCRIPT]` figures — queries the author ran on 2026-09-19 — not `[LIVE-AUDIT]`"*)*.
+
+⇒ 🔑🔑 ***The corpus marks what it VERIFIED and almost never marks what it merely QUOTED. So the
+un-verified stratum — the one that can drift — has no tag, cannot be enumerated, and cannot be
+sampled. A drift study of this corpus is not possible as the corpus is currently labelled.***
+📌 **That is a stronger and more actionable result than either outcome the clause anticipated: it
+names a missing instrument rather than reporting a rate.**
+
+🔴 **OWNER DECISION — added to open item T20-1** *(it is the same repair programme)*: **(a)** tag
+transcript-sourced figures `[TRANSCRIPT]` as they are written from here, leaving the back-catalogue
+alone · **(b)** back-fill the tag across the corpus, which is the only version that makes the drift
+study runnable · **(c)** accept that every untagged figure is transcript-sourced by default and say
+so once, prominently, instead of tagging. ⚠ *Option (c) is nearly free and would make `[LIVE-AUDIT]`
+meaningful by complement — it is the option this pass would pick if asked.*
+
+## 5. ⚖️ §T20.24's LESSON — RE-SCOPED, NOT RETRACTED
+
+⚠⚠ **Rule 40's test applied to my own conclusion**: *§T20.24 was not shown FALSE, so it is not
+struck; it was shown UNDER-DETERMINED by its evidence, so it is narrowed in place.*
+
+| as written (§T20.24) | as it stands after this pass |
+|---|---|
+| *"Reachability is a MAINTENANCE property, not a cosmetic one."* | ⚠ **"Both unreachable findings that were re-derived had drifted. Whether reachability or AGE-AND-TAG drives that is UNTESTED — the two are entangled and the corpus cannot currently be stratified to separate them."** |
+
+✅ **Open item **T20-1** stays **MEDIUM** — the two drifted findings are a fact whatever explains
+them, and the cost to the owner does not depend on the mechanism.** *Recorded so a later pass does
+not read the narrowing as a downgrade.*
+
+## 6. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T14:46:34Z** |
+| **(ii)** | drift rate **higher in LOW** than in HIGH | ⚠ **NEITHER — `0%` vs `0%`, and the design is CONFOUNDED.** *The clause offered "higher" (confirm) or "comparable" (refute, retract §T20.24, drop T20-1 to LOW). **Reality used a third state: the samples cannot distinguish the hypotheses**, so neither branch may be taken.* 📌 **Rule 37's third state for the fourth pass running.** |
+| **(iii)** | **≥ 1 HIGH-reachability figure has ALSO drifted** | ❌ **MISS — `0 of 22`.** *Which, read with clause (ii)'s `0 of 18`, says only that same-day `[LIVE-AUDIT]` figures are stable over six hours — a real but narrow fact, and NOT evidence about reachability.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTY-SECOND consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 7. ⚠ VERDICT
+
+🔴 **NOT CLEAN — a one-sided tag system found and quantified (365 vs 1), a new OWNER DECISION, and
+this sweep's own previous conclusion narrowed. CLEAN STAYS 0/3.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **the pass was designed to answer a question and instead proved the question
+unanswerable with the corpus as labelled.** ***That is the more useful outcome, and only a
+pre-registration makes it reportable — without one, "0% vs 0%" would have been written up as
+confirmation that the corpus is healthy, when what it actually shows is that both samples were drawn
+from the stratum that cannot drift.*** 🔑 **A control group is not a control if it differs from the
+treatment group on a variable neither was chosen for.**
