@@ -14709,6 +14709,145 @@ already implied: quoting a SEGMENT does not cover it — only writing PROSE ABOU
 and pass 0's entries are largely lists of directives with short quotations, which is the low-coverage
 shape. **Twenty-seven pre-registrations: twenty-two hits, two misses, THREE partials.**
 
+### T13.6 — PASS 5 (**the MECHANISM stratum's FAILURE CENSUS**) — **✅ the last unread stratum, narrowly scoped, and T13 CLOSES ON IT**
+*The only strata never read: **`tool_result` 512 + `tool_use` 427 + `thinking` 69 = 1,008 segments,
+769,818 chars**, pinned 2026-09-22T08:41:32Z. **Scoped to the failure predicate ONLY** — `"ok":
+false` · non-zero `returncode` · `http_status` 4xx/5xx — **as the next-step row pre-registered, and
+nothing else was extracted from it.** `SELECT` only.*
+
+#### ✅ T13.6a — **THE CENSUS: 27 predicate hits, 24 genuine failures, in five families**
+**Three hits were FALSE POSITIVES and are dismissed** *(rule 26: opened before counting)* — **two
+`github_grep_file` results returning `"ok": true`** whose own search PATTERN matched the predicate,
+**and one `github_patch_file` body.** ⚠ ***A failure regex run over tool ARGUMENTS matches the
+argument, not a failure*** — **the same class as §T12.8c's four "missing" paths.**
+
+| family | n | what |
+|---|---|---|
+| **third-party HTTP** | **8** | chalkboard **530** · betr graphql **401 ×3** · underdog **404 ×2** · sleeper **500 ×2** · odds API **404 ×2** *(10 with the odds-API pair split out)* |
+| **our own SQL / schema** | **7** | `column "notes" … does not exist` · `column "game_date" does not exist` · `relation "board_snapshots_pkey" does not exist` · `column "created_at" does not exist` · 🔑 **three MISSING MARKET TABLES** |
+| **infrastructure** | **3** | 🔑🔑 **`write connection closed …hyperdrive.local:5432`** |
+| **GitHub API** | **3** | run-log **404 ×2** *("link may have expired, or run is too old")* · workflow dispatch **422** |
+| **shell** | **1** | `returncode: 1`, a Python `urllib` traceback |
+
+#### 🔑🔑 T13.6b — **A NAMED INFRASTRUCTURE FAILURE MODE THAT SHAPED THE ARCHITECTURE — and it is 0 of THIRTY**
+***`{"ok": false, "error": "write connection closed <hash>.hyperdrive.local:5432"}` — THREE times***
+*(`write connection closed` and `hyperdrive.local`: **0 of the twelve and 0 of the thirty**, pinned
+2026-09-22T08:42:01Z)*.
+🔑 ***This is the mechanism behind a design decision already on file***: *"the connection dropped
+before commit, **so the table didn't persist** — **this query is too heavy for a 4-minute tool
+call**. Moving it to Actions where it has hours."* ⚠⚠ **So *"move the heavy build to Actions"* is not
+a preference — it is a response to a NAMED, REPEATING failure of the Hyperdrive write path under
+long transactions**, **and the corpus recorded the decision without its cause.**
+📌 **It is the same shape as the index-shrink false alarm** *(`NBA_DATABASE.md` §0v: the
+`CONCURRENTLY` build completed server-side after the client timed out)* — ***a dropped tool
+connection says nothing about what the backend did***, **and here it cost a commit.**
+
+#### 🔴🔴 T13.6c — **FOUR MARKET-LAYER TABLES WERE ATTEMPTED AND NONE OF THEM EXISTS**
+**The census supplies a FOURTH name this sweep had not recorded**, and all four error in the
+transcript itself on 2026-09-10 and are still absent twelve days later *(pinned 2026-09-22T08:41:57Z,
+**control `rung_market` = 1**, `nba_market` holds **29** tables)*:
+
+| table | in-transcript | **live 2026-09-22** |
+|---|---|---|
+| 🔑 **`nba_market.market_consensus`** | `relation … does not exist` | 🔴 **absent** |
+| `nba_market.book_curves` | `relation … does not exist` | 🔴 **absent** |
+| `nba_market.book_calibration` | `relation … does not exist` | 🔴 **absent** |
+| `nba_market.market_fair` | *(declared in `build_book_curves.py`)* | 🔴 **absent** |
+| `nba_market.rung_market` *(control)* | — | ✅ **present, 1,057,765 rows** |
+
+⚠ **Read correctly**: *a `does not exist` error DURING a build session is ordinary iteration, not
+proof of failure.* ***The finding is the PAIRING — the same four names error then and are still
+absent now.*** ✅ **`market_consensus` is 0 of the THIRTY in the baseline**, so the name is new to
+this corpus. 🔑 **This CONFIRMS and EXTENDS §T13.5c rather than adding a new headline**: **the naive
+consensus T13 said it *"built — 3.69M rows"* has no table either**, ***so of five market-layer tables
+named across the arc, exactly one landed, and it is the scoped one the storage ceiling forced.***
+
+#### 📌 T13.6d — **THREE SMALLER MECHANICAL FACTS, each in 0 of the twelve**
+1. 🔑 **A SECOND Underdog 404 beside the known one.** §T12.8 recorded
+   `/v1/over_unders/{id}/alternate_lines` → 404 as the reason the alternates were pending.
+   **`/v1/over_unders/{id}/over_under_lines` → 404 in the same block** — ✅ **and both are superseded
+   by the endpoint that WORKED**, `/v3/over_unders/{id}/alternate_projections` *(§T13.4f)*.
+   ***Two guessed v1 paths failed and the v3 path read out of the bundle succeeded*** — **the
+   mechanical evidence for "read the bundle, don't guess the path."**
+2. 📌 **Chalkboard's failure has a code**: **HTTP 530, body `error code: 1016`** on
+   `api.chalkboard.io` — *a Cloudflare origin-resolution failure, not a bot wall* — **which is the
+   mechanical basis for the *"not reachable from a browser… only a phone-proxy capture would work"*
+   deferral already on file.**
+3. 📌 **A bridge capability boundary**: `github_trigger_workflow` → **422 `"unexpected inputs
+   provided: 'slug', 'steps'"`** *(`unexpected inputs provided`: **0 of the twelve**)* — **the
+   dispatch API rejects inputs a workflow does not declare**, ⚠ **which is a silent-failure shape
+   for any future dispatch whose inputs drift from its `workflow_dispatch` block.**
+
+#### ⚠⚠ T13.6e — **NO NEW SYSTEM HEADLINE — so the pre-registered closure fires**
+***The next-step row pre-registered: "T13 CLOSES AT PASS 5 unless pass 5 produces a SYSTEM headline
+— not a method one."*** **It did not.** **§T13.6b is the CAUSE of a decision already recorded;
+§T13.6c CONFIRMS and extends §T13.5c; §T13.6d is three mechanical details.** ✅ **Every one is worth
+having and none of them changes what the system is understood to be.**
+🔑 ***And the deeper signal is the one §T13.5g named: T13's findings stopped coming from T13.***
+**Pass 4's answers came from `NBA_COMPASS.md`, the repository and the database; pass 5's from a
+predicate over a stratum that, by §T12.7's precedent, yields causes rather than findings.**
+**T13 CLOSES.**
+
+**Pass outcome: the last unread stratum read under a narrow predicate; 24 genuine failures in five
+families with three false positives opened and dismissed; a named Hyperdrive write-path failure that
+turns out to be the cause of the move to Actions; a fourth missing market table; and three
+mechanical details. No new system headline. CLEAN 0/3 · 6 passes — CLOSED ON THE CLOSURE JUDGMENT.**
+
+---
+
+## ✅✅ T13 — CLOSED 2026-09-22 · **6 passes · §T13.1–§T13.6 · 45 sub-findings over 1,323 segments ≈ 1 per 29.4**
+**ALL STRATA READ**: **owner 65 · assistant prose 250 · `tool_result` 512 · `tool_use` 427 ·
+thinking 69 = 1,323, and the partition CLOSES.** **Clean count 0/3 — CLOSED ON THE STANDING CLOSURE
+JUDGMENT, pre-registered two passes ahead**, *and the judgment was reached EARLY by design: T12's
+closure record found that sweep auditing itself for six passes while eight transcripts sat unread,
+and this one stopped at six.*
+
+🔑 **THE CLOSURE ARGUMENT, stated as the rule that carried it**: ***the standing SCOPE CAP says only
+TRANSCRIPT material resets the clean count.*** **T13's prose was exhausted at pass 3; passes 4 and 5
+drew their findings from `NBA_COMPASS.md`, the repository, the live database and a failure
+predicate.** ***A transcript is finished when its findings stop coming from its own text.***
+
+### 🔴 SYSTEM HEADLINES — *documented, none fixed (rule 1)*
+1. 🔴🔴 **THERE ARE FIVE LIVE BOARD SOURCES, NOT FOUR** — **Betr is the fifth**, with **nine NATIVE
+   tiers** verified in the artifact *(1,684 legs, the partition closing)*, **the only one whose leg
+   carries a `tier` field and the only one using the owner's OWN ACCOUNT** — ***and its pull has not
+   written since 2026-09-10 while the other four refresh daily.***
+2. 🔴🔴 **THE PRIMARY BOARD HAS NO OUTPUT FILE** — `scrape_prizepicks_nba_board.py` declares
+   `boards/prizepicks_nba_current.json`; **`boards/` holds 23 files and none is PrizePicks, for
+   either league**, while the other four apps have both files for both.
+3. 🔴🔴 **FIVE MARKET-LAYER TABLES WERE NAMED ACROSS THE ARC AND EXACTLY ONE LANDED** —
+   `market_consensus`, `book_curves`, `book_calibration` and `market_fair` are all absent; only the
+   **scoped `rung_market`** exists, ***and the code records that the full build "nearly filled the
+   disk," so the storage ceiling — not the modelling argument — set the market layer's shape.***
+4. 🔴 **THE PRIZEPICKS PER-LEG MULTIPLIER IS NOT SCRAPABLE, AND THE MECHANISM IS NOW RECORDED** —
+   **computed at entry level AT SUBMISSION**, **adjusted WITHOUT the line moving**, with a boost
+   that **compounds multiplicatively** — ***so a stored multiplier without a capture timestamp is not
+   a measurement, and `m` cannot be inferred from a line history.***
+5. 🔴 **THE NINE `EVENT_NOT_FOUND` SNAPSHOTS ARE THE RESIDUE OF FORTY-FIVE** — caused by an owner
+   rule the build did not implement, **detected by the owner**, repaired with 29,785 rows removed
+   and a `first tip − 2 hours` early-slate rule installed.
+
+### 🔑 METHOD OUTPUT — **RULE 33, and it landed FIVE times in three passes**
+***"A failure's cause can live in a DIFFERENT TRANSCRIPT, not only a different stratum"*** —
+**the `EVENT_NOT_FOUND` residue · the false-arbitrage origin · `days_done` retracted by its own
+author · the projected-lineup proxy REJECTED · the `2:30 PM PT` injury report shown to be a TIMEZONE
+DRIFT.** ⚠⚠ ***And the sweep broke its own new rule twice while writing it*** — **pass 2 retracted
+two of pass 1's findings, and pass 4 retracted pass 2's "no swept transcript covers them."**
+🔑 **THE HONEST CHARACTERISATION OF THIS TRANSCRIPT'S SWEEP**: ***nearly every pass corrected the
+pass before it***, **because T13 is the largest transcript in the corpus and its own later segments,
+and the eighteen, keep overturning its earlier ones.** ✅ **Every correction was made in place with
+both dates** *(rule 5)* **rather than quietly re-scoped.**
+
+**Pre-registrations across T13: five, of which THREE HITS, ONE MISS and ONE PARTIAL** *(running
+total: thirty — twenty-four hits, two misses, four partials)*. ⚠ **The MISS produced the bound that
+made the next prediction land**: ***the band instrument under-reads a pass that SPREADS across
+documents rather than going DEEP into two.***
+
+**THIRTEEN OF TWENTY CLOSED. SEVEN REMAIN — T14–T20 — and pass 3 proved they hold corrections to
+material already published.**
+
+---
+
 ### T13.5 — PASS 4 (**the two-direction judgment + a corpus-wide RULE-33 sweep of T13's own claims**) — **🔴🔴 three of this sweep's own T13 entries corrected, and a live config that answers two of them**
 *The required judgment angle. **Both halves run**: the band on both trees, and the rule-33 sweep the
 next-step row pre-registered. **The eighteen enumerated and probed** *(18 files, pinned
