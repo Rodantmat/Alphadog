@@ -34392,3 +34392,105 @@ the warning was wrong in the direction that matters. Re-deriving the other nine 
 every season-critical defect is a line of source text or a config row, and both can be fixed and
 proven on a Tuesday in September.** ***A deadline computed from when the DATA arrives is not the same
 as a deadline for the WORK, and the sweep nearly handed the owner the wrong one.***
+
+---
+
+# §T20.76 — T20 PASS 71: 🔴🔴🔴 **`uncovered12` IS NOT A DOCUMENTATION DEBT. IT IS A FLOOR — `72.5%` OF THE "UNCOVERED" SEGMENTS ARE THE SWEEP'S OWN TOOL-CALLS, AND ZERO OF FORTY CARRIED ANYTHING UNRECORDED** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.** ⚠⚠ **RULE 44: this IS a reading pass, so it
+COULD have found new material. **RULE 46 still bars closure**, and a read from THIS context does not
+count toward the two INDEPENDENT reads T20 owes.**
+
+🔴 **WHY IT EXISTED: passes 64–70 did not read the transcript, and `uncovered12` reported `471`, Δ = 0,
+seven times running.** *That is not stability; it is the instrument measuring nothing. **And the
+instrument can enumerate the 471 — nobody had ever opened them.***
+
+## 📏 THE POPULATION, ENUMERATED FOR THE FIRST TIME
+
+**T20 holds `1,177` segments; `471` (`40.0%`) score below the `0.40` coverage threshold against the
+twelve.** *Of those, **`249` (`52.9%`) pass the instrument's own `substance()` filter.* **Sample
+DECLARED BEFORE DRAWING (rule 25): `40`, every 6th of the 249 substantive-uncovered, systematic so the
+draw is not chosen by what looks interesting.**
+
+## 🔴🔴🔴 CLAUSE (iii) — **THE BIGGER-FINDING BRANCH, AND IT WAS PRE-REGISTERED AS SUCH**
+
+*Pre-registered: **"the 471 are NOT uniformly low-value — if they ARE, that is the bigger finding."***
+
+| the 40 sampled, READ | |
+|---|---|
+| 🔴 **PLUMBING** | **29 — `72.5%`** |
+| candidate-substantive | 11 — `27.5%` |
+
+**What "plumbing" means here, concretely**: *`grep` command strings sent to `bash_tool` (SEG 14, 100,
+192, 298, 500, 521, 576)* · *`github_grep_file` / `github_patch_file` ARGUMENTS — `old_str`, `new_str`,
+`pattern`, `context lines` (SEG 276, 464, 556, 657, 722, 933)* · *one-line CONNECTIVE sentences whose
+content is in the next segment — **"this is the most operationally important finding so far.
+recording it:"** (SEG 34), **"now system design - adding the p1 gaps t3/t7 exposed"** (SEG 783),
+**"recording in the goblin/demon document:"** (SEG 964)* · *`thinking` stubs truncated to a clause
+(SEG 206, 422, 1080)*.
+
+⇒ ***None of these can be "covered" by a document, because a document does not quote the grep that
+found the thing — it records the thing. The instrument's `substance()` filter passed all forty.***
+
+## ✅ CLAUSE (ii) — **IT FAILS, AND IT FAILS COMPLETELY: `0` OF `11` SURVIVED**
+
+*Every one of the eleven candidates was novelty-checked against the corpus before anything was written
+(rules 26/28). **All eleven were already on file.*** *Distinctive-term checks, all run without
+truncation:* **`"do not move before fixing"` → 4 documents** · **`"under-predicted"` → 5** ·
+**`"honest ~1.0"` → 4** · **`"trend factor"` → 3** · **`"block bootstrap"` → 3** ·
+**`"delta-phase worker"` → 1**.
+
+⚠ **ONE SURVIVED TO A SECOND ROUND AND THEN DIED TOO — and it is worth recording because it is exactly
+the shape `uncovered12` is supposed to catch.** *SEG 857 carries the bootstrap's **UNIT** clause —
+**"resample entire days with replacement, never individual legs"** — and `"resample entire days"`
+returns **only `NBA_LESSONS_LEARNED_FROM_MLB.md`, which is one of the THIRTY but NOT one of the
+TWELVE**. **That is a genuine `uncovered12` signature.*** 🔴 **It is still a kill:
+`NBA_FINAL_SCORING_CALIBRATION.md:2935` — one of the twelve — carries it verbatim in substance:
+*"Day-level block bootstrap — resample days, never legs, and weight by volume."*** 📌 ***The
+instrument flagged a real absence of LANGUAGE over a presence of KNOWLEDGE. That is the whole finding
+in one segment.***
+
+## 🔴 CLAUSE (i) — **A MISS, AND THE MISS IS THE PROOF**
+
+*Pre-registered: **`uncovered12` FALLS BY AT LEAST `5`** — the first clause in seven passes to predict
+movement, written precisely so it could fail.* ▶ **Measured after the pass: `648 · 1 · 471 · 470` —
+`uncovered12` HOLDS at `471`, Δ = `0`, the EIGHTH consecutive time.** ⇒ ***It did not move because
+there was nothing to write. The clause was built to distinguish "the sweep is not writing" from "there
+is nothing left to write," and it answered the second.***
+
+## 🔑🔑 WHAT THIS MEANS FOR A NUMBER THE SWEEP HAS QUOTED FOR SEVENTY PASSES
+
+***`uncovered12 = 471` has been read as a documentation debt. It is a FLOOR.*** **Forty percent of
+T20's segments are the sweep's own instrumentation — the greps it ran, the arguments it passed, and the
+sentences it used to introduce its own findings — and no document can ever cover them.** ⇒ **The metric
+cannot reach zero, the residue is not incompleteness, and a pass that leaves it unchanged has not
+necessarily failed to find anything.**
+
+⚠ **RELATION TO THE PRIOR, STATED SO THIS IS NOT READ AS A RESTATEMENT (rules 26/28).** *The run log
+already records* ***"the band is blind to method output"*** *— born at T18 pass 3. **That is about the
+HIGH BAND and about the WRITING side**: the sweep's own method-output prose does not raise the band.*
+🔑 ***This is the mirror on the READING side, and it is a different object: the UNCOVERED count is
+blind to the difference between unrecorded KNOWLEDGE and unrecordable PLUMBING in the TRANSCRIPT. The
+prior explains why a judgment pass does not raise the band; this explains why no pass can ever empty
+the uncovered set.***
+
+⚠ **BOUNDS, STATED AS SUCH (rule 25).** *From a sample of `40` drawn systematically from `249`:
+`27.5%` candidate-substantive extrapolates to roughly **`68`** of the 249, and **`0` of the `11`
+sampled candidates survived a novelty check**. *The honest reading is that the genuine unrecorded
+remainder is small and may be zero — **but 40 is not 249, and this pass does not claim the transcript
+is exhausted.** **RULE 46 requires two INDEPENDENT complete sequential reads from a fresh context, and
+this does not substitute for one.***
+
+⚠ **KILLS LOGGED (rules 26/28)**: **all eleven candidates** *(listed above with the term that killed
+each)* · **§T18 pass 3's "the band is blind to method output"** *(**PRIOR** — carried, and explicitly
+distinguished as the WRITING-side mirror of this finding)* · **SEG 123's `NO CRON YET` block**
+*(killed at §T20.75 one pass earlier)* · **SEG 689's "left recipe, workers, system architecture and
+system design frozen at T1–T3"** *(**PRIOR** — it is **RULE 41 / open item T19-1**, and §T20.75 already
+carries the `NBA_RECIPE` observation)*.
+
+📌 ***The lesson:*** **the pass predicted the number would fall, and it did not — because forty percent
+of what the instrument calls uncovered is the sweep's own hands moving. Seventy passes have quoted
+`471` as work outstanding. It is mostly the shadow of the work already done.** ***An instrument that
+measures a corpus against a transcript will always count the transcript's machinery as missing,
+because the machinery is the one thing a document must never contain.***
