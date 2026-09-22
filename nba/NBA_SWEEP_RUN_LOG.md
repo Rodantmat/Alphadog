@@ -12,19 +12,24 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
-### 📜 THE FORTY-FIVE STANDING RULES — *the index; each is written in full where it was born*
-⚠ *Rules 45 and 44 are listed immediately before rule 43 in the table below — the row order is not
-the rule order, and the NUMBERS are authoritative.*
+### 📜 THE FORTY-SIX STANDING RULES — *the index; each is written in full where it was born*
+⚠ *Rules 46, 45 and 44 are listed immediately before rule 43 in the table below — the row order is
+not the rule order, and the NUMBERS are authoritative.*
 
-🔴 **THE FIVE BORN IN T19 ARE ALL ABOUT THE SWEEP ITSELF, AND THAT IS THE PATTERN WORTH SEEING**:
+🔴 **THE SIX BORN IN T19 ARE ALL ABOUT THE SWEEP ITSELF, AND THAT IS THE PATTERN WORTH SEEING**:
 **41** *(no pass measures the deliverable against its charter)* · **42** *(score a prediction when its
 named intervention is COMPLETE)* · **43** *(a method claim is tested against the COMMAND, not the
 sentence)* · **44** *(a pass that does not read the transcript neither resets nor advances the count)*
-· **45** *(the verdict and the coverage obligation are separate)*. ⚠⚠ ***T19 is the transcript in
-which the sweep documents itself, and every rule it has produced is a defect in the sweep's own
-method that nineteen transcripts of auditing the SYSTEM never surfaced.*** 🔑 *The instrument that
-found each one was the same: **re-derive the sweep's own populations and read the sweep's own
-commands, with the discipline it already applies to the system's.***
+· **45** *(the verdict and the coverage obligation are separate)* · **46** *(a clean pass must be
+INDEPENDENT — two reads sharing a context are one read)*. ⚠⚠ ***T19 is the transcript in which the
+sweep documents itself, and every rule it has produced is a defect in the sweep's own method that
+nineteen transcripts of auditing the SYSTEM never surfaced.*** 🔑 *The instrument that found each one
+was the same: **re-derive the sweep's own populations and read the sweep's own commands, with the
+discipline it already applies to the system's.***
+
+🔑🔑 **AND 43 AND 46 ARE A PAIR — READ THEM TOGETHER.** ***A closure needs reads that are BOTH
+complete AND independent. T1–T6's were independent and truncated; a same-context re-read is complete
+and dependent. Either one alone produces a 3/3 that certifies less than it says.***
 *(count re-taken from the table below, 2026-09-22; the header had read "THIRTY-SEVEN" since rule 37
 and sat six rules stale — **rule 40's own lesson, a dated figure carried forward undated**)*
 
