@@ -15,6 +15,53 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 
 ---
 
+## 0g. 🔴 THE MORE-GOBLIN PAYOUT FLOOR IS **1.9×**, NOT 2.08× — *owner-supplied correction, verified live*
+*Recorded 2026-09-22 (T12 pass 5, §T12.6f). **Owner-supplied, then verified against the live system
+rather than taken on the word of the message.** All figures pinned **2026-09-22T07:01:38Z** unless
+stated. `SELECT` only.*
+
+**What the live rule says** — `nba_config.pp_slip_rules`, `rule_key = 'goblin_floor'`,
+**`status = 'superseded'`**, `updated_at` **2026-09-21T21:47:40Z**:
+
+```json
+{"factor": 0.6933, "two_pick": 2.08,
+ "superseded_by": {"factor": 0.6333, "two_pick": 1.9,
+                   "evidence": "lowest More-goblin payout seen: 1.9x (WNBA, 36 quotes)"}}
+```
+
+> *"**SUPERSEDED 2026-09-21: the 2.08× (2.1× displayed) floor does NOT hold.** More-goblin 2-pick
+> quotes **with a STANDARD partner from a DIFFERENT game** paid **2.0× on NBA** (3 distinct legs:
+> **SGA 3PM 0.5, Tatum 3PM 1.5, Cunningham REB 3.5**) and **1.9× (26 legs) / 2.0× (46 legs) on
+> WNBA**. The pricing formula without a floor tracks them (**real/formula 1.02**). Pricing now floors
+> at **1.9×** (`pp-leg-v2-sqrt-cap-conservative-floor190`). **Original note**: deepest goblins price
+> at 2.1× regardless of depth; true value just under 2.086. The floor is **per goblin and
+> multiplies** (two floor goblins paid **1.4×**)."*
+
+✅ **And the pricing model confirms it**, pinned **2026-09-22T07:02:02Z**: the CURRENT model is
+**`pp-leg-v2-sqrt-cap-conservative-floor190`** *(`is_current = true`, created 2026-09-21T21:46:54Z)*
+with **`goblin_floor_factor` = 0.6333**, against **0.6933** in every earlier version
+*(`pp-leg-v1-normal`, `pp-leg-v2-sqrt`, `pp-leg-v2-sqrt-full`)*.
+
+### ✅ WHAT NEEDED RETRACTING IN THIS CORPUS — **nothing, and that is the finding**
+*Searched every `.md` in `nba/` for `2.08`, `2.086`, `goblin_floor`, `2.1×`/`2.1x`, and for
+goblin-near-floor prose, **pinned 2026-09-22T07:02Z**, excluding `nba/data/`, `backtest/` and the run
+log:*
+🔑 ***The 2.08× floor is stated as fact in exactly ONE file — `nba/PP_PAYOUT_FINDINGS.md` — which is
+the concurrent build session's own document and is out of this sweep's scope.*** **No document among
+the twelve or the eighteen ever carried it**, so **there is nothing here to retract** and the
+correction is recorded above as a new dated fact rather than as a supersession of our own prose.
+⚠ **`PP_PAYOUT_FINDINGS.md` is left to the session that writes it** *(standing scope rule, reaffirmed
+by the owner 2026-09-22)*.
+
+### ⚠ WHY IT MATTERS HERE, stated at evidence strength
+**The floor is the factor a More-goblin leg is priced at when the model's `implied_p` exceeds 0.5**,
+so it sets the **cheapest** leg the board offers — ***and a floor set 9.5% too high makes every
+deep-goblin slip look worse than it is*** *(2.08 → 1.9 is −8.7% on the two-pick quote; the note's
+"two floor goblins paid 1.4×" shows the error compounds per leg)*. ⚠ **What this does NOT say**: the
+NBA evidence is **three distinct legs** and the 1.9× itself is **WNBA**; ***whether NBA ever prints
+below 2.0× is NOT RECORDED***, and the note is explicit that the 1.9× observation is WNBA's.
+**A dated STATE** *(O9)*.
+
 ## 1. THE RULE
 
 ### 1.0 PrizePicks' OWN DESCRIPTION *(captured verbatim in T8)*
