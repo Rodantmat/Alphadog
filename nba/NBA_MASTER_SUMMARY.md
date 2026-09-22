@@ -37108,3 +37108,75 @@ CLAIM**: *"no trace"* and *"cannot fail the build"* return **`1` file each, open
 ⚠⚠ ***Every other finding in this sweep announced itself somehow — a wrong number, a broken pointer, a
 missing cron. This one is defined by the absence of evidence, which is why a census had to go looking
 for it rather than waiting to trip over it.***
+
+---
+
+# §T20.103 — T20 PASS 98: ✅✅ **THE SHELL HALF IS CLEAN — AND THE PASS CAME ONE PATCH FROM PUBLISHING TWELVE FALSE ALARMS** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads only.**
+
+## 1. 📐 POPULATION — **`20` `run:` BLOCKS ACROSS `39` STEPS**, re-derived `2026-09-22T22:11:52Z`
+
+## 2. ❌❌ **BOTH SUBSTANTIVE CLAUSES MISSED, AND THAT IS THE RESULT**
+
+| clause | registered | found |
+|---|---|---|
+| **(ii)** | *"at least `3` shell-level swallows outside the commit steps"* | ❌ **`0`** |
+| **(iii)** | *"at least one multi-command `run:` block has no `set -euo pipefail`… the shell's version of `except Exception: pass`"* | ❌ **DEAD — the premise was wrong about the RUNTIME, not about the code** |
+| **(iv)** | *"`continue-on-error:` is checked for explicitly; a clean zero is a real result"* | ✅ **`0`, and it is a clean zero** |
+
+### 🔴 CLAUSE (iii) IN FULL, BECAUSE IT IS THE PASS'S REAL LESSON
+
+**Thirteen of the twenty blocks carry no `set -euo pipefail`, and four of them run three or four
+scripts in a row.** *That is a complete, tidy finding — **P1's "Team stats, on/off, playtypes,
+tracking" runs four scrapers; P3's "Other board scrapers" runs Sleeper, Underdog and Fliff** — and if
+only the last command's status counted, **an entire app's board could vanish from a slate while `P3`
+certified green**, since `board archived today` is satisfied by PrizePicks alone. **It was drafted.**
+▶ **WHAT KILLED IT**: ***no `shell:` and no `defaults:` block exists in any of the three files***, so
+GitHub's default `run` shell on Linux applies — **`bash -e {0}`** — ***and `-e` is already on.*** **A
+command that is not the last DOES fail the step.**
+⚠ **AND THE RESIDUAL WAS MEASURED RATHER THAN WAVED AWAY**: *`bash -e {0}` supplies `-e` but **not
+`-o pipefail` and not `-u`**, so a failure inside a shell **pipeline** would still be masked in those
+thirteen.* ▶ **There is not one shell pipeline in any of them** *(the two `|` characters found are
+inside Python f-strings — `print(f"PAPER_GRADED|{n} picks")`)*. ⇒ ✅ **RESIDUAL EXPOSURE: ZERO.**
+
+## 3. ✅ WHAT THE THREE PIPELINES ACTUALLY DO
+
+- **`continue-on-error:` — `0`.** ⚠ **A deliberate choice, not an absence**: `11` other NBA workflows
+  DO carry it *(`nba-backfill`, `nba-backtest`, `nba-boards-market`, `nba-daily-delta`,
+  `nba-diagnostic`, `nba-game-officials`, `nba-measure-types`, `nba-pergame-backfill`, `nba-scrape`,
+  `nba-season-tables`, `nba-starter-status`)*, **and `§T2.10a` already documents that policy for the
+  scrape jobs** *(**PRIOR** — found by the novelty probe, cited not re-derived)*.
+- **`|| echo failed` — `0`.** *The only two `|| echo` occurrences in all three files are **the headers
+  declaring the policy**: `nba-p2-overnight-heavy.yml:15` — **"both fail the job loudly. No
+  `|| echo failed` anywhere"** — and `nba-p1-weekly-static.yml:16`, **"FAILURE POLICY: steps report
+  loudly."***
+- **`|| true` — `4`, all `git add … || true` followed by `git diff --cached --quiet`**: a CHECKED
+  fallback, excluded by the same bar that excluded `§T20.102`'s `62` retry handlers.
+
+> ## 🔑🔑 **THE CONTRAST IS THE FINDING.**
+> ***The shell layer DECLARES a no-swallow policy in its own headers and keeps it completely. The
+> Python layer declares nothing at the file level and holds the one handler that leaves no trace.***
+> **The discipline was written down where it was already being followed, and is absent where it was
+> not** — *which is also why `§T20.102`'s `T20-17` was reachable only by reading, and this pass's
+> twelve candidates evaporated on contact with a runtime default.*
+
+## 4. ✅ CLAUSE (i) — `RULE 52`
+
+**`2026-09-22T22:12Z`: `648 · 1 · 470 · 467`. All three bands unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.102`** *(**PRIOR** — the Python half, its bar reused
+verbatim)* · 🔴 **`§T2.10a`'s `continue-on-error` policy and `NBA_MASTER_SUMMARY.md:3204`'s
+"`15 of 16` scrape steps"** *(**PRIOR**, found by the probe — **it scopes this pass's zero to the
+PIPELINES and stops it being stated as a repo-wide fact**)* · **`NBA_WORKERS.md`'s push-failure
+discipline note** *(**PRIOR**, cited per clause (iii) of the pre-registration)*. ▶ **RULE 51, last
+step, BASELINE tree**: *"bash -e"*, *"default shell"* and *"pipefail"* return **`0` files each**;
+*"continue-on-error"* returns four, **all opened**, and they are the scrape-job policy above.
+
+📌 ***The lesson:*** **three passes running, the pre-registered verification bar has killed the
+finding I wanted** — *`§T20.100`'s "terse is not lying", `§T20.101`'s grep-versus-patch-literal, and
+now a runtime default I had not checked.* ⚠⚠ ***A census of a language is only as good as one's
+knowledge of what runs it. Twelve blocks looked unguarded and are guarded by a flag nobody wrote
+down, in a file nobody edits, because GitHub supplies it.***
