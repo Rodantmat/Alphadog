@@ -11,6 +11,184 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T16. 🔴🔴🔴 **THE EVIDENCE BEHIND THE SUPERSESSION — AND IT ANSWERS EVERY QUESTION T15 LEFT OPEN** *(T16 pass 1, §T16.2, the prose stratum read in order and in full — 156 segments / 108,570 chars)*
+
+*§0a-T15-SUPERSESSION and §0a-T15-SUPERSESSION-2 below were written from **COMPASS facts 88–92**.
+**This section is written from the transcript those facts summarise**, and the transcript is the
+authority. **Four things it corrects or completes, two of them corrections to THIS SWEEP'S OWN
+hedges.***
+
+### ✅✅ 1 · **THE FOUR QUESTIONS T15 HANDED OVER, ANSWERED**
+
+| | T15's open question | **T16's answer** |
+|---|---|---|
+| **(d)** | *"Which of the four A2 forms is NOT persisted to `factor_gate_results`?"* *(§T15.4a qualification (a))* | ⚠ **The premise was wrong.** The four forms are **flat → COMPONENT-LEVEL → novelty-weighted → magnitude-refit ("shrunk")**, and **the component-level test IS in the table**: T16 measures it at **0.9231 against the anchor's 0.7206 on the 13,319 legs where A2 fires** — **byte-identical to the table's `flat_A2` / `fires` row.** *So either the component-level run carries the `flat_A2` label or the two produced the same figure; **NOT RECORDED which**.* |
+| **(c)** | *"WHICH two conclusions were corrupted by truncated CI logs?"* *(COMPASS fact 92)* | ✅ **BOTH ARE IN THE TRANSCRIPT, AND THE SECOND IS CAUGHT IN THE ACT.** *"The log window keeps **cutting off the high-novelty block's anchor line**, so I can't confirm whether the 0.7924 figure sits against the anchor's 0.7150 or against a different anchor value on that subset. **The numbers I've been quoting for the high-novelty slice may be MIXING TWO BLOCKS.**"* — and *"**I've now TWICE drawn conclusions from partial log output.**"* 🔑 **The corrupted reading was the high-novelty slice, quoted three times before it was checked**; the queryable re-run replaced it with **0.7436 vs 0.7946**. |
+| **(e)** | *"`4,699` (fact 89) vs `4,695` (the live table) — which is right?"* | ✅ **`4,695`.** The transcript says *"on **4,695** legs where the absence was already priced into recent form"*, matching `factor_gate_results`. **Fact 89's `4,699` is the outlier.** |
+| **(c) of §T15.4a** | *"T15 shipped a COMPONENT-LEVEL multiplier, so the shipped form's own leg-level number is NOT RECORDED."* | 🔴 **CORRECTED — IT IS RECORDED, AND IT IS THE WORST ONE.** *"On the 13,319 legs where A2 actually fires: anchor alone **0.7206**; A2 applied correctly to minutes **0.9231**. Applying it at the component level — **the operation the engine design specified** — is still substantially worse. **So the collapse wasn't a wrong-operation artifact; A2 genuinely damages the projection when layered onto the certified baseline.**"* |
+
+### 🔴🔴 2 · **THE M1/B4 REVERSAL — THE OWNER ORDERED IT, AND IT WORKED** *(COMPASS fact 85's evidence)*
+
+**The first M1 verdict was a clean null and the sanity gate passed**: *0 of 7 props, gains −0.001 to
+−0.002, **sd 0.147, 7.7 defenders per player-game, 5,116 test rows**, betas **+0.066 to +0.102** — the
+correct sign, too small to beat the noise.* ⚠ **Then the owner refused it** *(`NBA_SYSTEM_DESIGN.md`
+§0z §6: **"why do we have a CRUDE defender feature? MAKE A DECENT ONE!"**)*, **and the audit that
+followed found the flaw in four of six rejections:**
+
+| Rejection | Feature actually used | Crude? |
+|---|---|---|
+| **B4 v2** defender-quality change | points allowed / possession | ❌ **yes — the exact metric just replaced** |
+| **B4 v3** rim protection | blocks-per-36 × minutes | ❌ **yes, and worse — the research says rim protection is largely DETERRENCE, shots never attempted, which block counts specifically MISS** |
+| **M1** defender level | the same crude metric | ❌ **yes — same flaw** |
+| **rate response** | usage multiplier from the allocator | ⚠ **partly — the usage allocation was ASSUMED proportional to baseline usage share, never fitted** |
+| **B4 v1** opponent vacated minutes | raw minutes sum | ⚠ yes, but subsumed by the better versions |
+| **A5** projected lineups | binary starter flag | ✅ **this one HOLDS — a binary flag is strictly LESS information than the continuous projected minutes the allocator already computes. Only A5 survives on MECHANISM rather than measurement.** |
+
+✅ **THE PROPERLY BUILT FEATURE — `nba_ref.defender_ratings`**: a **two-way fixed-effects ridge** that
+separates the defender's effect from the offensive player's, then shrinks for reliability.
+**111,768 ratings across both seasons, 22 weekly as-of dates (Nov 4 → Apr 9), 500 defenders, FIVE
+channels:**
+
+| Channel | defenders | mean reliability | sd of shrunk rating |
+|---|---|---|---|
+| `def_pts` | 500 | 0.436 | **3.79** per 100 poss |
+| `def_foul` | 500 | 0.436 | 0.68 per 100 |
+| `def_tov` | 500 | 0.436 | 0.44 per 100 |
+| `def_fg` | 498 | 0.449 | **2.58 pp** |
+| `def_3p` | 455 | 0.448 | **1.73 pp** |
+
+🔑 *Three things it gets right that the crude version did not:* **offence-adjusted** *(a defender who
+draws the opponent's best scorer every night no longer looks bad by construction — the core flaw the
+Sloan work identifies)*; **reliability is CARRIED, not assumed** *(mean 0.44 means a typical rating is
+shrunk more than half way to the mean — correct for a metric with "almost no year-to-year
+correlation")*; **five channels, not one** *(`def_3p`'s 1.73 pp spread is materially smaller than
+`def_fg`'s 2.58 — exactly right, since three-point defence is the noisiest signal in basketball)*.
+
+🔑🔑🔑 **AND THE RE-TEST'S DECISIVE DETAIL — EVERY WIN COMES FROM THE INTERACTION, NOT THE MAIN
+EFFECT**: **4 props helped — `pra` (`def_pts`: base 6.574 → main 6.569 → interactions **6.524**),
+`fta` (`def_foul`: 1.761 → 1.758 → 1.756), `points`, `fga`.** ⚠ **On `pra` the main effect gains
+0.005 and the interaction gains 0.050 — TEN TIMES MORE.** **The A2 interaction coefficient is the
+largest term in every case: +0.088 on pra, +0.213 on fta, +7.383 on threes.** 🔑 ***"Books misprice
+when factors move TOGETHER — a key teammate injury in a favourable matchup"*** *(the practitioner
+source that predicted it)* — **and every earlier factor test fitted main effects only.**
+
+### 🔴🔴 3 · **THE PRODUCTION USAGE ALLOCATION WAS NEGATIVELY CORRELATED WITH REALITY**
+
+*The minutes side of A2 is a proper conserving allocation; **the USAGE side was hardcoded as
+proportional to baseline usage share and never fitted.** Measured:*
+
+| Allocation | MAE | **correlation with reality** |
+|---|---|---|
+| **p0 — proportional to baseline usage** *(the assumption IN PRODUCTION)* | 0.1977 | 🔴 **−0.0235** |
+| p1 — proportional to allocated minutes | 0.2073 | +0.0936 |
+| **p2 — fitted** | **0.1944** | **+0.1095** → **+0.1225** after ridge |
+
+🔴 ***"The assumption currently in production doesn't merely fit poorly — IT POINTS THE WRONG WAY.
+That's WORSE THAN ALLOCATING AT RANDOM."*** 🔑 **And the fitted coefficients say why**: **minutes lift
+is the dominant term (+0.026 standardised)** while baseline usage, baseline minutes and the creator
+flag are all near zero and slightly negative — ***"who absorbs the vacated shots is driven mainly by
+WHOSE MINUTES INCREASE, not by who was already a high-usage player."*** ⚠ **The unregularised fit
+produced betas of −15.7 and −22.0** — caught as *"the signature of a fit that was overfitting"* —
+**ridge brought them to −0.008…+0.026 AND improved held-out correlation**, which is the diagnostic.
+⚠ **Rebuild effect: the 2025-26 usage multiplier moved 1.3696 → 1.5728 with sd 0.369 → 0.866** — *the
+fitted allocation **concentrating** vacated usage on specific players rather than spreading it.* 🔴
+**2024-25 was left on the old values in this stretch — an inter-season inconsistency, recorded.**
+⚠ *Also caught by the owner in passing and fixed: **"I just HARDCODED STANDARDISATION CONSTANTS I
+GUESSED AT"** — the fit now emits the real values.*
+
+### 🔴🔴 4 · **THE FUNNEL — BUILT, MEASURED AT −13.8%, AND THEN DESTROYED BY THE ANCHOR**
+
+*Research (RotoGrinders, Stokastic, Basketball-Reference's SPS, academic shot-chart models) rejected
+the scalar-multiplier approach outright:* ***"it's not some kind of simple multiplication problem. It
+all works together — opportunity FUNNELS DOWN through median projected minutes and adjusted baseline
+stats."*** **The chain: minutes → possessions → usage share → attempts → efficiency → points**, each
+factor acting at its own link *(RotoGrinders' weights: **minutes 20–25%, usage 15–20%, pace 5–10%** —
+minutes dominate, as the funnel has it)*.
+
+✅ **Measured on 5,216 real PrizePicks legs**: **funnel without factors 0.9227 log-loss / 0.3317 Brier
+/ 6.324 MAE → funnel WITH factors 0.7951 / 0.2881 / 5.392 — a 13.8% log-loss reduction**, against
+scalar tests that had measured **0.000 to 0.002** and called the same factors worthless.
+
+🔑🔑 **THE THREE ERRORS THAT COMPOUNDED TO HIDE IT**, stated by the transcript: **(1) crude features**;
+**(2) scalar application** — *"one multiplier on the final mean, where OPPOSING EFFECTS CANCEL: a
+teammate out pushes usage UP while a tough defender pushes efficiency DOWN, netting ~1.03 and looking
+like nothing — and where the per-36 rate already contains an average defender, so the adjustment
+double-counts"*; **(3) the wrong metric** — *"MAE on the mean is blind to a factor that RESHAPES THE
+DISTRIBUTION, which is exactly what matchup factors do."* ⚠ **Error 3 was identified by Gemini**:
+*"a tough defender might barely move a player's average while **CUTTING HIS CEILING** substantially —
+that changes the probability of an over at a high line enormously, and shows up as NOTHING in MAE."*
+
+🔴🔴 **THEN THE ANCHOR TEST KILLED THE FUNNEL TOO** *(6,996 real legs)*: **certified baseline anchor
+alone 0.7299 · anchor × defender 0.7309 · the funnel + factors 0.7951 · anchor × A2 1.0123 · anchor ×
+A2 × defender 1.0184.** ***"The certified baseline alone beats my funnel-with-factors by 8%. MY FUNNEL
+WAS NEVER BETTER THAN THE SYSTEM — IT WAS BETTER THAN A ROLLING-MEAN STRAWMAN I BUILT MYSELF."*** 🔑
+**That sentence is COMPASS rule 90.4's origin, and §0a-T15-SUPERSESSION-2 quotes its conclusion; this
+is where it happened.**
+
+### ⚠ 5 · **A DIAGNOSIS THE TRANSCRIPT ITSELF RETRACTS — and the retraction is architecturally important**
+
+*The first explanation of the A2 collapse was **"the baseline's `proj_min` already applies the injury
+report, so A2 applies it twice"**. ⚠ **That is WRONG for `baseline_history`, and the transcript says
+so**:*
+
+> ***"The injury layer lives in `build_baseline_ladder.py` — THE PRODUCTION WRAPPER — not in the
+> certified recipe"***, with a **game-day 09:00 ET cutoff** and the comment *"roster rows include DNPs
+> (43 of 173 that day) — the enrichment layer removes them"*. ***"`baseline_history` is built from the
+> RECIPE, which has NO injury handling at all. So the anchor I tested against never contained the
+> injury report."***
+
+🔴🔴 **TWO PATHS WITH DIFFERENT INJURY SEMANTICS, AND THAT IS ITSELF WORTH KNOWING**: **the production
+ladder applies the report at 09:00 ET; `baseline_history` does not apply it at all.** ✅ **The delta
+framing still stands for PRODUCTION** *(where the wrapper applies the report and enrichment carries
+only changes after it)*, **but it is not what the historical test was measuring.** ⚠ **The final
+cause is neither**: *"the baseline's `proj_min` is built from the **AS-OF ROSTER STATE**, so it
+already reflects who has been playing. If a star has been out, his teammates' recent minutes are
+already elevated… A2 then adds a further 30% for an absence the baseline has effectively priced
+**through recent form**."* 🔑 ***"That's the same rolling-mean contamination identified in the very
+first panel — it never went away, it just moved."***
+
+✅ **AND THE COMPONENT INTERFACE NOW EXISTS**: **`proj_min` and `rate36` are emitted from the recipe
+into `baseline_history`** *(avg `proj_min` **24.45**, points rate **16.5 per 36**, rebounds **7.15 per
+36**)* — ***"the component interface the engine design always required and never had"*** — which is
+what let the component-level test run at all.
+
+### 🔑🔑 6 · **THE THREE-STAGE PLACEMENT, WITH THE CALL THAT MATTERS**
+
+| Stage | When | What |
+|---|---|---|
+| **1** | **overnight, heavy, unbounded time** | the certified recipe's `proj_min` *(role tiers, blowout mixture, coach gate)*, **defender ratings**, rate cells, dispersion, Platt, and **all factor coefficients** — *"this is where the expensive fitting lives"* |
+| **2** | **mid-morning, after the 1 PM ET report** | availability scenarios per game, and per branch: minutes and usage allocation, **the expected-defender JOIN**, shot mix, efficiency, the full ladder |
+| **3** | **2:30 PM, minutes only** | select the realised branch, apply the market adjuster, join the board, rank — *"no fitting, no history scans, nothing expensive"* |
+
+🔑🔑 **THE KEY PLACEMENT CALL**: ***"defender RATINGS are stage 1 but the defender JOIN is stage 2 — a
+player's expected defender depends on which opponents are available IN THAT BRANCH, so it cannot be
+precomputed once."*** ⚠ *Superseded in its clock by COMPASS fact 107's two pipelines at 1:15 PM PT
+(2026-09-19); **the ratings-vs-join split is orthogonal to the clock and stands.***
+
+### 🔑🔑🔑 7 · **THE REALIGNMENT RESULT — what the owner's order actually produced**
+
+*After the owner ordered a full COMPASS re-read (`NBA_SYSTEM_DESIGN.md` §0z §9), the assistant named
+its own drift in one paragraph, and it is the session's most useful sentence:*
+
+> ***"What I lost sight of — FACT 5: the standard is LEG-LEVEL CALIBRATION, band × direction × rung,
+> on both seasons, same recipe. **NOT log-loss races against comparators I built.** I spent the
+> session chasing factor wins and grading them with the wrong yardstick."***
+>
+> ***"What's non-negotiable and already decided (facts 7b, 68): the baseline owns everything knowable
+> by the morning build, including the day-before injury report and referee assignments. **Enrichment
+> prices only the SAME-DAY RESIDUAL.** … That split isn't up for re-litigation — **my A2 work kept
+> violating it** by re-applying what the baseline already carries."***
+
+🔴🔴 **AND THE INSTRUMENT IT CONCLUDES IS MISSING** — *"the real question isn't 'which factor wins.'
+It's: **on any day of the past two seasons, how sharp is the final HP, at every granularity?** That's
+a **VERIFICATION HARNESS**, and it's **what I should have built BEFORE any factor work**"* — one
+report over any date range measuring final HP against outcomes, **broken out by prop × band ×
+direction × rung × role tier × phase, flagging every cell that misses tolerance.** 🔑 **That is the
+owner's acceptance criterion turned into an instrument** *(`NBA_SYSTEM_DESIGN.md` §0z §1)*, **and
+whether it was built is NOT RECORDED in this transcript.**
+
+---
+
 ## 0a-T15-SUPERSESSION-2. 🔴🔴🔴 **AND IT IS WIDER THAN A2 — THE CERTIFIED BASELINE BEATS *EVERY* ENRICHMENT FACTOR AT THE LEG LEVEL** *(T15 pass 4, §T15.5, 2026-09-22)*
 
 **COMPASS fact 88 (2026-09-13), config `enrichment_reality_check_2026_09_13`** — ✅ **`[LIVE-AUDIT]`
