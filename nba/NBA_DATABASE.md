@@ -113,6 +113,43 @@ proposal to share the control plane.
 *(`2026-09-13-01-03-48`)*; **every live figure is re-taken and pinned 2026-09-22T08:12:50Z.**
 `SELECT` only — nothing was run, resized or changed *(rule 1)*.*
 
+### 🔑🔑 THE INCIDENT WAS PREDICTED, THE FIX WAS OFFERED, AND THE OWNER DECLINED IT — *the full decision arc*
+*Recorded 2026-09-22 (T13 pass 3, §T13.4d). **The same transcript, ~400 segments EARLIER than the
+incident below.***
+
+**The measurement was taken from real data mid-backfill, not estimated** — *"let me measure the
+actual footprint rather than estimate; we have 225 games of real data now"*:
+> *"**446 bytes per row** *(518 MB heap + 542 MB index for 2.5M rows)* — ***the index is as big as
+> the data, because the primary key is SEVEN COLUMNS including player and market names***.
+> The database is currently **14 GB**. Both seasons ≈ 19M rows → **~8.5 GB for this table**, so the
+> db lands around **21–22 GB**. ***That crosses your 80% trigger (16 GB), so the auto-expand to 30 GB
+> will fire MID-RUN*** — it'll work, but it's a permanent bump in your monthly bill."*
+
+**Two options were put, with a recommendation**:
+| option | effect | recommended? |
+|---|---|---|
+| **1. Trim the index** — replace the seven-column PK with a compact hash key plus a lean index on `(game_date, event_id)` | **~40% saving, no data loss, ~3 GB back, faster inserts**; *"I'd do this BETWEEN seasons so nothing in flight is disturbed"* | ✅ **yes** |
+| **2. Skip sportsbook alternate markets** — *"the eight alternate markets are the bulk of the rows; essential for PrizePicks/Underdog (that's the goblin/demon ladder), but for DraftKings/FanDuel mostly noise for our purpose"* | ~a third fewer rows, ⚠ ***"not reversible without a re-pull"*** | 🔴 **no** |
+
+> *"My recommendation: **do option 1, skip option 2** — keep all the data, cut the index weight…
+> **storage is cheap compared to re-pulling 2M credits of history.**"*
+
+🔴🔴 **THE OWNER DECLINED**: *"understood — ***no schema changes, full detail kept***."*
+🔑🔑 ***So the read-only incident below was forecast in detail — the trigger, the table, the cause
+(a seven-column key whose index equals the data) and the remedy — roughly 400 segments before it
+happened; the remedy was declined; and the SAME remedy was then applied AFTER the outage.***
+⚠⚠ **Recorded as a decision arc, not as a criticism**: **option 2 was irreversible and was correctly
+refused, and *"no schema changes"* during a live 2M-credit backfill is a defensible call.** 🔑 **The
+transferable lesson is about SEQUENCING, and it is the same one the incident teaches: *the cheap,
+reversible fix is cheapest before the deadline, and the argument for it is strongest exactly when
+there is least appetite to act on it.*** **`no schema changes` / `full detail kept` are in 0 of the
+twelve** *(pinned 2026-09-22T08:20:06Z)*.
+
+📌 **And one more forecast that landed**: *"rows are running **~7,800 per game** rather than my
+earlier **9,400** estimate, so both seasons should land nearer **19M rows (~3.5 GB + indexes)**"* —
+**the final figure was 25.7M, then 27,059,920 after gap repair.** ⚠ **Both per-game estimates were
+low; the projection method (measure, then extrapolate) was right and the sample was early.**
+
 ### 🔴 THE INCIDENT — **the managed primary went READ-ONLY mid-write, because the disk filled**
 > *"The repair run failed with a telling error: **`cannot execute INSERT in a read-only
 > transaction`**. On DigitalOcean managed Postgres that usually means **the primary went read-only —
