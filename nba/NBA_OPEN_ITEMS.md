@@ -12711,6 +12711,80 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-11 · **NEW · 🔴 P1's CRON COMMENT AND HEADER BOTH INVERT PDT/PST — AND NINE SURFACES REPEAT THE WRONG HOUR**
+
+**Severity 2 of 7** *(documentation, not operation — the consequence is bounded and stated below).*
+**Found T20 pass 44 (§T20.49), 2026-09-22.** **Evidence: VERIFIED** — file text on tree
+`d94417650129c910ff1996f3d39d5367cd2b343b`, population pinned 2026-09-22T16:42:00Z.
+
+**THE SOURCE — `.github/workflows/nba-p1-weekly-static.yml`, two places:**
+```
+:28   - cron: '0 19 * * 1'        # Mondays 19:00 UTC = 12:00 PT (11:00 PT during PDT)
+:6-8  # 12:00 PT Monday = 19:00 UTC Monday in PST and 19:00 UTC = 12:00 PDT — the season crosses
+      # DST, so the cron is set in UTC and the hour drifts by one between November and March.
+```
+🔴 **PDT is UTC−7 ⇒ `19:00 UTC = 12:00 PDT`. PST is UTC−8 ⇒ `19:00 UTC = 11:00 PST`.** The inline
+comment says 11:00 *"during PDT"*; the header says 12:00 PT *"in PST"* — **and contradicts itself in
+the same sentence with the correct `19:00 UTC = 12:00 PDT`.** *(A 12:00 PST start needs `'0 20 * * 1'`.)*
+
+**WHAT IT COSTS, COMPUTED** — season opens **2026-10-20**, DST ends **2026-11-01**, resumes **2027-03-14**:
+
+| window | days | P1 actually fires |
+|---|---|---|
+| 2026-10-20 → 2026-11-01 | **12** | **12:00 PT** ✅ as documented |
+| 2026-11-01 → 2027-03-14 | **133** | 🔴 **11:00 PT** |
+
+✅ **WHY SEVERITY 2 AND NOT HIGHER** — P1's own header: *"nothing in this pipeline is
+cutoff-sensitive"*, and P1 is placed *"deliberately far from P2 (daily 01:00 PT) so the two can never
+contend."* **11:00 PT is still far from 01:00 PT.** ⇒ **Nothing breaks. Every operator reading any of
+nine surfaces is simply told the wrong hour for 133 of the season's first 145 days.**
+
+**PROPAGATION — and it reached this sweep.** ✅ **`NBA_OPEN_ITEMS.md`'s cron table carried the same
+swap and is CORRECTED in place (§T20.49)**; the two rows beneath it (`nba-scrape.yml`,
+`nba-referees.yml`) were **derived and are right**, which is what isolates the cause: *row 1 was
+re-typed from the workflow's comment.* **Bare `"Mondays 12:00 PT"` remains unqualified at**
+`NBA_MASTER_SUMMARY.md:703`, `:29114` · `NBA_OPEN_ITEMS.md:6880`, `:10577` ·
+`NBA_SYSTEM_ARCHITECTURE.md:640` · `NBA_SYSTEM_DESIGN.md:1178`, `:1639` · `NBA_WORKERS.md:43`,
+`:1782`. ⚠ **`NBA_OPEN_ITEMS.md:6363` is an ATTRIBUTED QUOTATION of the file's comment (rule 40
+category (b)) — sound as a quotation, left standing.**
+⚠ **The figure is neither RETRACTED nor DATED — it is UNQUALIFIED. `12:00 PT` is true today
+(2026-09-22 is PDT). The fix is a qualifier, not a strike.**
+
+⚠⚠ **NOT A KNOWLEDGE GAP.** `NBA_MASTER_SUMMARY.md:18834` reasons correctly about the identical
+hazard for another workflow — *"15:30 UTC is 08:30 PDT and 07:30 PST, and the NBA season is mostly
+PST"* — and **P3's own header gets it right**: *"'15 21 * * *' = 21:15 UTC = 1:15 PM PST (and 2:15 PM
+PDT)"*. **Same family, same style, opposite correctness. An isolated slip.**
+
+### ⚠ TWO SMALLER ITEMS FOUND IN THE SAME PASS, RECORDED HERE
+
+**(a) 🔴 P1 MIS-CITES COMPASS FACT 51.** `nba-p1-weekly-static.yml:12`: *"these tables are as-of
+weekly by construction (**COMPASS fact 51** / the parity doc)."* **`NBA_COMPASS.md:114`, fact 51, is
+a list of measured effect sizes** — absence priors, M1 defender quality, return ramps — **and says
+nothing about weekly as-of cadence.** A grep of all 111 numbered facts for *"weekly"* returns one
+hit, fact 100 (calibration parity), which is not it either. ⚠ **Only the COMPASS half is called;
+"the parity doc" was not tested.** ⚠⚠ **`NBA_COMPASS.md` IS NOT WRITTEN TO — recorded here only, per
+the standing owner rule.**
+
+**(b) ⚠ P2 USES THE SECTION NUMBER `6)` TWICE** — `:256 # 6) REFIT the learned layers…` and
+`:277 # 6) CERTIFY…`. P2's header says it *"CERTIFIES its output (step 6)"*, which resolves correctly
+only because the reader knows what certify means. *(The header's "step 2" for the delta audit is
+correct: `:125 # 2) AUDIT THE DELTA`.)* **Documentation hygiene in a season-critical pipeline.**
+
+**(c) ⚠ `main.py:539` REPORTS URLs IT DID NOT PROBE.** `:412` is
+`urls = override_urls or PRIZEPICKS_MLB_PROJECTIONS_URLS` and `:458` iterates `urls`, but `:539`
+records `"source_urls_probed": PRIZEPICKS_MLB_PROJECTIONS_URLS` — **the constant.** ⇒ **Take the
+`PRIZEPICKS_PROJECTIONS_URLS` route toward an NBA board (already on file at the T20-era PrizePicks
+item) and the run's own metadata names the MLB URLs instead.** *Provenance metadata that lies is how
+a wrong board becomes an unexplainable score.*
+
+**FIX SIZE: two comment lines in P1** *(plus one citation, one section number, one variable name)*.
+
+⚠ **THE WORKFLOW AND `main.py` ARE NOT FIXED — DOCUMENTED, per the owner's standing instruction.**
+*Only this sweep's own propagated table row was corrected, which the charter's amendment permits:
+"document, don't fix" applies to the system, not to the deliverable.*
+
+---
+
 ## T20-10 · **NEW · 🔴🔴 `nba-daily-delta.yml` SWALLOWS EVERY FAILURE TWICE — AND ONE OF THE TWO IS THE IDIOM THIS SYSTEM FORBIDS BY NAME**
 
 **Severity 5 of 7.** **Found T20 pass 43 (§T20.48), 2026-09-22.** **Evidence: VERIFIED** — file text
