@@ -259,8 +259,29 @@ a payout-table validity check and a different subject, **dismissed**.)*
    > READER problem, not a WRITER problem**: anything that reads `days_done` as an integer gets
    > nothing, while anything that takes its LENGTH gets the right answer — ***and T12 segment 614
    > shows a probe doing exactly that, printing `{'days done': 176, …}` on 2026-09-10.***
-   > ⚠ **What is NOT RECORDED**: **which reader reports 0**, and whether a differently-pathed or
-   > third-season index is the one at fault. **The repair the key asks for may be to the READER.**
+   > ## ✅✅ **CLOSED BY THE CORPUS — 2026-09-22 (T13 pass 2, §T13.3e). THE ITEM'S OWN AUTHOR RETRACTED IT, IN WRITING, IN T13.**
+   > ⚠⚠ **Everything above is correct and none of it was necessary.** **The transcript that WROTE
+   > this item also scratches it, a few hundred segments later:**
+   > > *"**Let me verify before 'fixing' something that may not be broken** — the index writer looks
+   > > correct."*
+   > > *"***That was MY ERROR, not a bug***: the index key is **`days_done`**, and **my sweep looked
+   > > for `days` / `covered_days` / `dates`**. The files are correct and complete — **174 days for
+   > > 2024-25 (Oct 22 → Apr 13) and 176 for 2025-26 (Oct 20 → Apr 13)**, with all 7 monthly shards
+   > > each. ***Nothing to fix; scratch that item.***"*
+   > > *(and in the block summary)* *"**injury index: VERIFIED CORRECT** — the *'days_done: 0'* was
+   > > **my sweep reading the wrong key**, not a data problem."*
+   >
+   > 🔑🔑 **SO THE ANSWER TO *"WHICH READER REPORTS 0"* WAS ON FILE ALL ALONG: the COVERAGE SWEEP
+   > that produced this very status key, querying the wrong key name.** **§T12.11c re-derived from
+   > the artifact what the corpus already stated** — *the right answer, by the harder route.*
+   > ⚠⚠ **AND THE STATUS KEY IS STALE**: `enrichment_backfill_status_2026_09_10` still carries
+   > *"the counter was never written during the shard migration; repair before any job reads it"* —
+   > ***an item its own author retracted in the same working session.*** **The key was never
+   > updated.** 🔴 **Nothing was changed here** *(rule 1)*; **recorded as a DOCUMENTATION-INTEGRITY
+   > finding: a verified-status record can outlive its own retraction.**
+   > 🔑 **THIS IS RULE 33's THIRD AND SHARPEST INSTANCE** *(the nine `EVENT_NOT_FOUND` snapshots and
+   > the false-arbitrage signal are the first two)*: **§T12.11's sibling re-test cleared this item by
+   > grepping T12 and finding no later mention. Its resolution is in T13, and it is explicit.**
    > ⚠ **Stated at evidence strength and NOT acted on** *(rule 1)*: no file, key or pipeline was
    > changed. **A dated STATE** *(O9)*.
 3. 🔴 ***"2023-24 has NO injury reports — the league archive does not reach back reliably → day-of-report
