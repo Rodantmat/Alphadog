@@ -28743,8 +28743,9 @@ the other, which is why the clause was written to be losable.**
 
 ## 3. 🔴🔴🔴 THE ONE THAT FAILED — *and it reaches the SYSTEM, not just the documents*
 
-**The claim, stated identically in TWO documents** *(`NBA_SYSTEM_ARCHITECTURE.md:902` and
-`NBA_OPEN_ITEMS.md:9880`)*: ***"`raw_json` JSONB on every reference and stats table."*** **In
+**The claim, stated identically in TWO documents** *(`NBA_SYSTEM_ARCHITECTURE.md`'s "NBA's JSONB
+columns" line and `NBA_OPEN_ITEMS.md`'s "Live surfaces where a payload is size-constrained" list)*:
+***"`raw_json` JSONB on every reference and stats table."*** **In
 `OPEN_ITEMS` it is load-bearing — it is the premise of a truncation/storage-diet constraint.**
 
 > **`information_schema.columns`, 2026-09-22 — `nba_ref` + `nba_stats` BASE TABLES:**
