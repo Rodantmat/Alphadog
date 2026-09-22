@@ -35170,6 +35170,93 @@ with a text editor already running, and two of those pages greet that person wit
 ***A finding that is filed where findings go has been recorded. It has not necessarily been
 delivered.***
 
+---
+
+# §T20.84 — T20 PASS 79: ✅ **THE FALSE-REASSURANCE CENSUS — EVERY MARK TESTED IS SOUND, AND THE NEAR-MISS IS THE FINDING** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: §T20.83 found two `✅` marks standing over live defects — the grader's *"read side right"* and
+`defender_ratings`' *"exact"*. **A missing warning lets a reader look further; a green check tells them
+not to.** The complement had never been measured.**
+
+## ✅ THE MARK SET AND THE POPULATION — **BOTH FIXED BEFORE ANY GREP (rule 17)**
+
+*A **reassurance mark** is `✅` · `VERIFIED` · `exact` · `confirmed` · `sound`, **applied to a claim
+about the LIVE SYSTEM** — not to a claim about a transcript, a pass, or the sweep's own process.*
+▶ **`627` across the twelve, `2026-09-22T20:18:19Z`.**
+
+⚠⚠ **AND THE POPULATION WAS SCOPED, WITH ITS REASON STATED BEFORE THE DRAW: `467` of the `627`
+(`74%`) sit in `NBA_MASTER_SUMMARY.md` and `NBA_OPEN_ITEMS.md` — the NARRATIVE RECORD and the FILING
+document, where a `✅` means "this pass verified X" rather than standing reassurance to a fixer.**
+⇒ **Population = the `160` marks in the TEN DOMAIN DOCUMENTS**, which is §T20.83's frame: *where a
+fixer reads*. **Sample DECLARED BEFORE READING (rule 25): `30`, every 5th.**
+
+## ✅✅ CLAUSE (ii) — **IT FAILS. EVERY LIVE-TESTABLE MARK IS SOUND, TO THE ROW.**
+
+| mark | re-derived live | verdict |
+|---|---|---|
+| `NBA_RECIPE:267` — *"✅ VERIFIED HELD: MLB's `config.worker_definitions` holds **116 rows, 0 NBA**"* | **`116`** · NBA-named **`0`** | ✅ **EXACT** |
+| `NBA_DATABASE:440` — *"Today NBA is **~36 GB**"* | NBA schemas **`36 GB`** *(non-NBA `7,784 MB`; database `44 GB`)* | ✅ **EXACT** |
+| `NBA_DATABASE:1663` / `NBA_FINAL_SCORING_CALIBRATION:1528` — *"`baseline_history` is **intact — VERIFIED: 163 distinct dates × 30 props**"* | 2025-26 **`163` dates · `30` props · `9,805,813` rows** | ✅ **EXACT** |
+| `NBA_SYSTEM_DESIGN:1107` — *"`rung_market`, **pinned 2026-09-22T08:35Z: 1,057,765 rows · 378 dates**"* | **`1,057,765`** | ✅ **EXACT** |
+| `NBA_SYSTEM_ARCHITECTURE:114` — *"the nine tiers are in the artifact… `boards/betr_mlb_current_meta.json`, **5 events · 1,684 legs**"* | **`5` · `1,684`**, `by_tier` carries **`9`** keys | ✅ **EXACT** |
+
+⚠ **`NBA_DATABASE:197`'s `defender_ratings … ✅ exact` was EXCLUDED FROM THE DENOMINATOR — it is
+§T20.83's, already repaired (rules 26/28).**
+
+## 🔑🔑 THE NEAR-MISS, AND IT IS WHAT THE PASS IS ACTUALLY FOR
+
+**`NBA_WORKERS.md:1729` is headed *"✅ Correctly scoped — the delete matches exactly what the run
+rewrites"* and tabulates TEN scripts. `build_final_hp.py` — the one script whose `DELETE` is NOT
+scoped — is not among them.** *And `NBA_GLOSSARY.md:1277` records exactly that:* > ***"`FE_DATE` …
+A READ FILTER, NOT A WRITE SCOPE. The `DELETE FROM nba_score.final_hp WHERE season AND prop` carries
+**no date predicate**, so a scoped write replaces the whole season × prop partition with one slate.
+**CONFIRMED FIRED**: the 2025-26 partition holds one date and 140,130 rows."***
+
+🔴 **I was one step from publishing "`NBA_WORKERS` carries a green check over a destructive delete."**
+✅ **Then I read the document instead of the table: `NBA_WORKERS.md:1679` — **fifty lines ABOVE the
+green heading** — is itself headed *"⚠⚠ `FE_DATE` IS A READ FILTER, NOT A WRITE SCOPE — confirmed
+destructive"*.** ⇒ ***The document carries both, warning first. The mark is SOUND IN CONTEXT.***
+⚠ **What remains is presentational and gets one line, not a finding: the `✅` table lists ten scripts
+and gives no back-pointer to the eleventh.** 📌 ***Fifth near-miss this session killed by reading
+rather than counting — and the first one killed by reading the fifty lines ABOVE the hit.***
+
+🔑 **AND IT ANSWERS A QUESTION §T20.80 STUMBLED OVER WITHOUT RESOLVING**: *that pass found `final_hp`'s
+2025-26 partition at `140,130` and could only date it by arithmetic.* **The GLOSSARY entry is the
+CAUSE, on file the whole time: an unscoped `DELETE` replacing a season × prop partition with one
+slate.**
+
+## 📋 SCORING
+
+**(ii) 🔴 FAILS** — *`0` contradicted marks outside the two §T20.83 already repaired. The
+pre-registration named this: **the two were isolated.*** **(iii) ⚠ MOOT** — *there is nothing to
+cluster; reported as inapplicable rather than dressed up.* **(i) ✅ HOLDS — `648 · 1 · 471 · 470`**
+*(Δ `484 − 471` = `13`)*.
+
+🔑🔑 **THE ONE PATTERN WORTH KEEPING, AND IT CONNECTS TO §T20.80**: *every mark that survived testing
+carries its figure **with a pin** — `"pinned 2026-09-22T08:35Z"`, `"live rows, 2026-09-22"`,
+`"fetched 2026-09-10T06:18:28Z"`, a named artifact path.* ⇒ ***The corpus's reassurance marks are
+sound for the same reason §T20.80 found its unpinned figures sound: this sweep measures carefully.
+What it has been unreliable at is not MEASURING — it is DELIVERING the measurement to the page that
+needs it (§T20.83) and NOVELTY-CHECKING the sentence it writes about it (§T20.81).***
+
+⚠ **RULE 51 BEFORE SHIPPING**: *`"omits build_final_hp"` and `"eleventh script"` return **`0`**;
+`"no date predicate"` returns `NBA_GLOSSARY` — **the entry being cited**; `"Correctly scoped"` returns
+`NBA_WORKERS` alone.* ✅ **Novel.**
+
+⚠ **KILLS LOGGED (rules 26/28/51)**: **§T20.14** *("a ✅ records that a figure was once CHECKED, not
+that it is still TRUE") — **PRIOR AND CENTRAL**; it is the lesson this pass operationalised, and it was
+found in PROPAGATION while this pass looked in CONTRADICTION* · **§T20.83's two repairs** *(**PRIOR**,
+excluded from the denominator)* · **the `FE_DATE` write-scope defect** *(**PRIOR** — `NBA_GLOSSARY:1277`
+and `NBA_WORKERS:1679`; carried as the near-miss's resolution, not re-discovered)*.
+
+📌 ***The lesson:*** **the census went looking for green checks standing over live defects and found
+none — because the two that existed had already been found by the pass before it, and everything else
+was measured with a timestamp attached.** ***The corpus is not over-confident. It is under-delivered —
+and those need opposite repairs.***
+
 > ## ✅ **REPAIR COMPLETE AND VERIFIED — all nine, `2026-09-22T20:15:53Z`**
 > | item | pointer written into | verified |
 > |---|---|---|
