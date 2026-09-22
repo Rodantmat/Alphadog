@@ -15873,7 +15873,13 @@ the partition CLOSES**. Duplication probed over the twelve, pinned 07:59:35Z. **
 
 #### 🔴🔴 T13.3a — **RETRACTION: UNDERDOG HAS NO HISTORICAL LADDERS — and pass 1 recorded this transcript's FIRST word, not its LAST**
 **§T13.2e / `NBA_MULTIPLIERS.md` §0.9e called Underdog *"the only per-leg multiplier dataset the
-project actually HAS"* and listed 1,401 rungs · 385 ladders · 233/211 distinct prices · −2439…+33xx
+project actually HAS"* and listed 1,401 rungs · 385 ladders · ~~233/211 distinct prices~~ · ~~−2439…+33xx~~
+⚠⚠ **RETRACTED — propagated here 2026-09-22 (T18 pass 7). `NBA_MULTIPLIERS.md` §0.9e.1 carried this
+retraction and this file did not.** ***The transcript retracts it in its own words***: *"it corrects
+something I told you earlier — **Underdog has NO LADDERS IN THIS ARCHIVE**… my earlier statement that
+we held '233,000 rows of real NBA tiered pricing' was **WRONG**."* ✅ **Re-taken live 2026-09-22:
+937,524 player-market-sides, 936,353 with EXACTLY ONE rung (99.87%).** *Read §0.9e.1 before citing
+the numbers on this line.* Original text continues: 233/211 distinct prices · −2439…+33xx
 as ONE dataset.** ***They are two, and the second is retracted in this same transcript***:
 > *"**It corrects something I told you earlier — Underdog has NO LADDERS IN THIS ARCHIVE.** 464,053
 > of 465,618 player-markets have exactly ONE rung… ***My earlier statement that we held "233,000 rows
