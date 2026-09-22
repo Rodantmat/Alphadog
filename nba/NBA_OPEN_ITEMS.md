@@ -48,6 +48,46 @@
 > ⚠ **SCOPE**: two dates in two prior seasons, not a statement about the 2026-27 board; and
 > PrizePicks DFS-only markets are absent from `board_snapshots` by construction *(PP reaches it only
 > via the Odds API feed)*, so their absence above is a property of the feed, not a gap in our ladder.
+>
+> ## 🔴🔴 **COMPLETED PER PROP 2026-09-22 — T20 PASS 53, §T20.58.** *`points` alone is not "the ladder".*
+> **Eight `_alternate` markets, joined player-by-player, `81,035` matched legs on 2025-12-03 and
+> `41,565` on 2026-01-10:**
+>
+> | prop | **% of app legs OUTSIDE our ladder** *(12-03 / 01-10)* | below our floor | **max above our ceiling** | **upward reach the board required** *(today: 10)* |
+> |---|---|---|---|---|
+> | 🔴 **pra** | **14.0 / 17.2** | 246 / 122 | **+15 / +18** | **25 / 28** |
+> | 🔴 **points** | **12.7 / 13.2** | 248 / 193 | **+21 / +20** | **31 / 30** |
+> | 🔴 **pts_reb** | **6.3 / 7.4** | 168 / 104 | +11 / +12 | 21 / 22 |
+> | 🔴 **pts_ast** | **5.6 / 6.9** | 144 / 68 | +9 / +9 | 19 / 19 |
+> | ✅ **reb_ast** | 0.1 / 0.1 | **0 / 0** | +3 / +1 | 13 / 11 |
+> | ✅ **rebounds** | 0.1 / 0.1 | **0 / 0** | +2 / +3 | 12 / 13 |
+> | ✅ **assists** | 0.0 / 0.0 | **0 / 0** | +1 / −1 | 11 / 9 |
+> | ✅ **threes_made** | **0.0 / 0.0** | **0 / 0** | **−3 / −3** | **7 / 7 — we OVER-reach by 3** |
+>
+> ⚠⚠ **THE LAST COLUMN IS WHAT THE BOARD DID, NOT A RECOMMENDATION. The ladder's shape is the
+> owner's decision and is not taken here.**
+>
+> ### 🔑🔑 **THE MECHANISM — one absolute width against props that differ in scale by 13×**
+> | prop | avg anchor | **our span (20.0) ÷ anchor** | % outside |
+> |---|---|---|---|
+> | **pra** | 19.0 | 🔴 **1.05** | 14.0 |
+> | **pts_reb** | 16.4 | 🔴 **1.22** | 6.3 |
+> | **pts_ast** | 14.9 | 🔴 **1.34** | 5.6 |
+> | **points** | 12.4 | 🔴 **1.62** | 12.7 |
+> | reb_ast | 7.5 | ✅ 2.68 | 0.1 |
+> | rebounds | 4.7 | ✅ 4.28 | 0.1 |
+> | assists | 2.9 | ✅ 6.94 | 0.0 |
+> | threes_made | **1.4** | ✅ **14.66** | 0.0 |
+>
+> ⇒ ***Every prop whose fixed ±10 span is less than about TWICE its anchor is short; every prop above
+> that is fine. The line falls cleanly between `1.62` and `2.68`.***
+> ⚠ **Where the ratio does NOT explain it, said plainly**: *`points` is worse than `pts_reb` and
+> `pts_ast` despite a more generous ratio, because `points` is the most aggressively laddered market
+> on the board (`124,708` legs in the sample week vs `50,434` for `points_assists`).* ⇒ **The ratio
+> sets WHETHER a prop is short; how hard the book ladders it sets BY HOW MUCH — and only one of those
+> two variables is ours.**
+> ✅ **`ladder_steps` is ALREADY a per-row column** *(today `10` on every row)* — **the structure for
+> a per-prop ladder exists; only the values are missing.**
 
 ### 🔴🔴🔴 **T18-1 — "OUR ANCHOR IS NOT AT THE PROPER PLACE OF THE LADDER, OR THE LADDER IS NOT DEEP ENOUGH"** *(**0 of the twelve, 0 of the thirty**; positive controls `goblin` 636/417, `multiplier` 617/432)*
 
