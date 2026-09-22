@@ -2143,9 +2143,23 @@ the sportsbook channel rather than through its own scraper.
 column appears to rise as leg count falls (blocks 68.2 · steals 68.0 · turnovers 67.6 against points
 63.1), which would suggest thin props are being scored optimistically.* ❌ **Not a defect — `avg_hp`
 explains it.** *Blocks sit at hp 0.4963 against points' 0.4336, and the shipped pivot
-`score = hp·100 + (100 − hp·100)·lift`, `lift = clip((conf − 0.85)/0.15, 0, 1)·0.50`, reproduces both
-rows from their own hp and conf: points 43.36 + 56.64×0.360 = **63.8** vs the reported 63.1; blocks
-49.63 + 50.37×0.394 = **69.5** vs 68.2.* **Confidence spans only 0.9552→0.9677 across every prop and
+`score = hp·100 + (100 − hp·100)·lift`, `lift = clip((conf − 0.85)/0.15, 0, 1)·0.50`, reproduces
+every row from its own hp and conf.* ⚠ **CORRECTED IN PLACE 2026-09-22 (pass 4, direction A):** *the
+first version of this line gave blocks as **69.5** from hand-arithmetic. **Recomputed in code it is
+68.20 against the reported 68.2 — EXACT to two decimals**, so the earlier figure was wrong and it
+understated the agreement. The correction is recorded rather than edited away.*
+
+| prop | hp | conf | **formula** | reported | diff |
+|---|---|---|---|---|---|
+| **blocks** | 0.4963 | 0.9606 | **68.20** | **68.2** | **+0.00** |
+| threes_made | 0.3698 | 0.9675 | 61.66 | 61.5 | +0.16 |
+| pra | 0.4456 | 0.9552 | 64.00 | 63.4 | +0.60 |
+| points | 0.4336 | 0.9580 | 63.75 | 63.1 | +0.65 |
+
+*The small positive residuals are expected: the pivot is non-linear in hp, so evaluating it at a
+prop's MEAN hp overshoots the mean of the per-leg scores (Jensen). **Blocks, the thinnest prop with
+the least spread, lands exactly — which is the pattern that confirms the explanation rather than
+merely being consistent with it.*** **Confidence spans only 0.9552→0.9677 across every prop and
 cannot carry a five-point score spread.** *(Rule 8's habit — probe your most confident finding
 first — applied to a PATTERN rather than a figure.)*
 
