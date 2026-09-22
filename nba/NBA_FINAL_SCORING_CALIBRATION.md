@@ -1679,10 +1679,32 @@ two is wrong — which is exactly how the conformal attempt failed.
 **10 factors. Base 99, floor 55.** Starts at 99 and **deducts for named deficiencies**, with weights
 **measured from realised-gap separation**.
 
-| Factor | Budget |
+⚠⚠⚠ **CORRECTION IN PLACE, 2026-09-22 (T18 pass 2, §0a-T18-C) — THE TABLE BELOW IS A SUPERSEDED
+NINE-FACTOR STATE, AND IT CONTRADICTS §*AND THE CAP MECHANISM IS VERIFIED IN SOURCE* OF THIS SAME
+DOCUMENT.** *The correction is recorded rather than edited away, per the §0w precedent.*
+**(1)** The heading says **10 factors**; the table lists **`f_role` + eight others = NINE**, and
+`16.1111 + 8 × 1.6111 = 29.0` exactly — **so these are the nine-factor weights, before `f_phase`
+existed.** **(2)** `55.6%` **is above the `CAP = 0.40` the same session imposed**, because the write
+that produced it *(T18 `tool_use` SEG 50, `allow_write: true`)* is a **one-pass SQL**
+— `least(sh, 0.40)` → `greatest(sh, 0.04)` → normalise — **and normalising AFTER the floor re-inflates
+the capped factor past its own cap.** ✅ **Arithmetic verified independently, exact**: separations
+`f_role` 0.008477 · `f_books` 0.000013 · seven zeros ⇒ shares 0.99847 / 0.00153 / 0 ⇒ cap ⇒ floor ⇒
+sum `0.40 + 8 × 0.04 = 0.72` ⇒ **`0.40 / 0.72 = 55.56%`**, and `0.5556 × 29 = 16.111` — **the table's
+own numbers.** 🔴🔴 ***That is the IDENTICAL no-op this document quotes the author diagnosing and
+fixing in Python forty-five segments earlier*** *("clip to 0.35, divide by 0.35, and it is back at
+1.0")* — **fixed in one language and reintroduced in the other, in the same session.**
+✅ **THE LIVE TABLE IS THE AUTHORITY AND IT HONOURS THE CAP** *(`[LIVE-AUDIT]` 2026-09-22, read-only
+SELECT on `nba_score.confidence_model`, **ten** rows)*: **`f_role` 11.2731 = 38.87% · `f_phase` 9.0625
+= 31.25% · `f_books` 2.3207 = 8.00% · seven others 0.9063 = 3.13% each**, summing to 29.00.
+⚠ **Rule 6: WHY the live figures differ from this session's is NOT RECORDED** — `f_phase` carries a
+measured separation of **0.001467** that no run in T18 produced, so a later session fitted it, and
+**T19 and T20 are unread.** *The sweep records the two states and the arithmetic linking them; it does
+not name the run that bridged them.*
+
+| Factor | Budget ⚠ *superseded — see the correction above* |
 |---|---|
-| **`f_role`** | **55.6%** |
-| eight others | **5.6% floor each** |
+| **`f_role`** | **55.6%** ⚠ *nine-factor state; above the 0.40 cap; live value is 38.87%* |
+| eight others | **5.6% floor each** ⚠ *live value is 3.13% across SEVEN others, with `f_phase` and `f_books` above the floor* |
 | **season phase** | Oct-Nov **0.80** · Dec-ASB **1.00** · post-ASB **0.88** · push **0.92** |
 
 **Why `f_role` dominates**: **fringe players miss by 0.0283; iron-men by 0.0008 — a 35× gap.**
