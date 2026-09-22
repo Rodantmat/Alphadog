@@ -12702,3 +12702,107 @@ test).** **The other three resolved to FOUND VALUES that sharpened them** — T1
 the shipping literal. ❌ **MISS.** 🔑 **And the miss is informative in the same direction rule 38
 points**: *the mechanism strata answered three of four questions the prose had left open, which is
 exactly what a stratum of executed evidence is FOR.* **The prediction under-rated it.**
+
+---
+
+# §T19.5 — KILL LOG, T19 PASS 3 *(rules 26/28)*
+*(2026-09-22 — the sequential read of blocks 2–6, SEG 154 → SEG 919)*
+
+**RULE 38 GOVERNS THIS TRANSCRIPT AT MAXIMUM STRENGTH**: *T19 is the sweep writing the twelve, so
+every `github_patch_file` / `github_put_file` payload in it **IS** the text of a mandated document.*
+**Blocks 2–6 hold roughly 280 such payloads. All are restatements by construction and none was
+carried as a finding.** *They are killed as a class, and the class is named rather than enumerated —
+the enumeration would be a table of the twelve documents' own contents.*
+
+**THE ONE KILL WORTH LOGGING INDIVIDUALLY, BECAUSE IT IS LATE:**
+
+### 🔴 KILL-LATE-1 — *the `2:30 PM PT` "league bulletin" trace was already on file when this sweep published it as a proposal*
+| | |
+|---|---|
+| **Where it was already written** | `NBA_SYSTEM_DESIGN.md`, **at the document's creation, T19 SEG 234** — *"the 2:30 pm pt figure was drift … `phase2_cutoff_local = "17:45"` after the 5:30 pm et day-of report - **a league bulletin, not a filing deadline**"* |
+| **Where the sweep published it as new** | `NBA_SYSTEM_DESIGN.md` **§0z-8-T18**, T18 pass 2, headed *"the trace this sweep recorded is probably the wrong one"* |
+| **What already happened to it** | **Fully retracted the same day** in **§0z-8-T18-RETRACTION** under **rule 39**, after `bash_tool` SEG 545/546 measured the injury archive directly. *The retraction stands and is correct.* |
+| **What this kill adds** | **The claim should never have reached publication at all** — *not because it was wrong about the mechanism, but because it restated the working tree.* **A duplicate probe against the WORKING tree (rule 28) on the string `league bulletin` would have returned a hit in the very file being edited.** |
+| **Why the probe missed** | 🔑 ***The novelty probe was run on the words of the EVIDENCE — `ENRICH_CUTOFFS_LOCAL`, `17:30`, `2:30 pm` — and not on the words of the CLAIM — `league bulletin`.*** |
+| **Severity** | **MEDIUM.** *No document currently asserts the duplicated claim; the retraction removed it. The severity is methodological.* |
+
+⚠⚠ **n = 2, IN THE SAME SESSION, FROM TWO DIFFERENT PASSES.** **The identical cause is already on
+file for the T18-9 mis-framing** *(probed `8 and 10 a.m.` = 0 and never `earliest tip` = 6)*.
+🔑 ***So this is no longer an incident. It is a repeatable failure of how the sweep probes: the
+probe is built from the terms that CONVINCED the sweep, which are by construction the terms the
+existing documents would not use.*** **The remedy is one clause and it is cheap: *probe the sentence
+you are about to write, not the evidence that made you want to write it.***
+
+---
+
+# §T19.6 — 🔴🔴🔴 THE CLOSURE RECORD FOR T1–T6 CERTIFIES LESS THAN IT STATES
+*(T19 pass 3, 2026-09-22 — **VERIFIED from the commands themselves**, which T19 preserves verbatim)*
+
+## THE FINDING
+
+**The eighteen passes that produced the `3/3 clean` closures of T1, T2, T3, T4, T5 and T6 read each
+content block through a `grep -oe "…{0,N}"` window of 110–260 characters, and displayed at most
+1,026 of 2,097 available block-slots — 48.9%.** ***One of the eighteen displayed every block, and it
+still capped each block at 200 characters.*** **The sections those passes wrote describe them as
+*"complete read at maximum context"*, *"a full sequential read of every one of t1's 87 …content
+blocks"*, and *"complete read of every block from 2 → 739"*.**
+
+**The full table, with the segment of every command, is in `NBA_MASTER_SUMMARY.md` §T19.4 §2.** *The
+worst case is T6's closing pass — at most **24 of 125 blocks, 19.2%**, from the middle region only.*
+*Two of T2's three closing passes are named regional on their own face (`blocks 610-739`,
+`blocks 143-460`) and were still counted `clean 1/3` and `clean 2/3`.*
+
+## 🔑 AND THE STANDARD WAS ALREADY WRITTEN — TWO PASSES EARLIER, IN THE SAME TRANSCRIPT
+
+**T1 pass 24 (SEG 332/333/344)**: *"**only a full sequential re-read can close a transcript** … a
+line that matches no pattern survives any number of them, **and a grep window can silently truncate a
+value**."* **T1 pass 25 (SEG 374)**: *"**a pass counts as clean only if all six segments are clean.**"*
+🔴 ***The three passes that then closed T1 were grep windows of 130/150, 110 and 200 characters.***
+
+## ⚠⚠ WHAT IS AND IS NOT CLAIMED — *language at evidence strength*
+
+- ✅ **VERIFIED**: the commands, their caps, their line limits, and the completeness language of the
+  sections written from them. *All quoted from T19's own `bash_tool` and `github_patch_file` strata.*
+- ⚠ **UPPER BOUND, not a measurement**: the `shown` column is derived from each command's
+  `sed`/`head`/`tail` limits. **The true coverage can only be lower.**
+- ⚠ **INHERITED, not re-derived**: the per-transcript block counts (87 · 136 · 117 · 119 · 115 · 125)
+  are **T19's own ledger figures**. *This pass did not re-partition T1–T6.*
+- ❌ **NOT CLAIMED**: that T1–T6 are wrongly documented, or that their findings are unreliable.
+  ***Whether material was missed is a different question and requires re-reading those six
+  transcripts, which this pass did not do.***
+- ✅ **CLAIMED**: **the `3/3` marks on T1–T6 certify a weaker thing than the words attached to them.**
+
+## 📌 CORROBORATION FROM THE RECORD — *two closed transcripts later overturned*
+
+1. **T1.21's alias story** — *"the five-row difference is the progression from fallback to live
+   source"* — **overturned by T2 pass 4** *(SEG 443/446)*: `aliases_written` is an upsert count, 162
+   is the table total. **T1 was closed `3/3` at the time.**
+2. **T1's MCP-enum conclusion** — a new binding is unusable for the whole session — **overturned by
+   T6** *(SEG 858/869/913)*: the enum refreshes between turns; the validation is **client-side**.
+   **T1 was closed `3/3` at the time.**
+
+🔑 **Both corrections are correct and both are documented.** ***The point is the timing: a closure
+standard doing what its name claims should not leave two factual reversals to be found by the next
+transcript's sweep.***
+
+## 🔴 OWNER DECISION — *scope, and the sweep will not take it unilaterally*
+
+**The remedy is a re-read of T1–T6 under the restored standard.** **Cost, from the ledger's own
+figures: 699 content blocks across six transcripts, plus their `tool_use`/`tool_result`/`thinking`
+strata.** *That is comparable to the entire remaining work on T19 and T20.*
+
+| option | what it means |
+|---|---|
+| **A — re-read all six** | The only option that makes the `3/3` marks mean what they say. **Largest cost.** |
+| **B — re-read T2 and T6 only** | The two weakest closures *(T2 has two regional passes; T6's final pass showed ≤19.2%)*. **Targeted, and both already have a documented reversal or the lowest coverage.** |
+| **C — annotate and proceed** | **What this entry does.** The closure record is corrected in place; T7–T20 continue under the restored standard. **No re-read.** |
+
+⚠ **The sweep has taken option C as the default and is proceeding**, per the standing instruction to
+decide rather than wait — *and because the alternative silently spends the remaining budget on
+transcripts whose content is already the most heavily corroborated in the corpus, every one of them
+cross-checked against the live database in dozens of places.* ✅ **This entry is the record that the
+choice was made, what it costs, and that the owner can reverse it.**
+
+⚠ **RELATED AND NOT MERGED**: **open item T19-3** already records that the closure standard on file
+is not the one T15–T18 used. **T19-3 is about the LAST four transcripts; this is about the FIRST
+six.** *They share a cause and are kept separate because their remedies differ in scale.*
