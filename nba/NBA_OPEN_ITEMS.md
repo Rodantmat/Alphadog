@@ -149,7 +149,18 @@
 > | `nba-scrape.yml` | `0 9 * * 1` | Mondays — static re-check |
 > | **the other 30** | none | **`workflow_dispatch:` only** |
 >
-> > ### 🔴🔴🔴 **EXACTLY ONE NBA WORKFLOW FIRES ON A GAME DAY, AND IT IS THE REFEREE CAPTURE.**
+> > ### 🔴🔴🔴 ~~**EXACTLY ONE NBA WORKFLOW FIRES ON A GAME DAY, AND IT IS THE REFEREE CAPTURE.**~~
+> > ### 🔴🔴🔴 **CORRECTED `2026-09-22`, T20 pass 114 (`§T20.119`): EXACTLY ONE `nba-*.yml` WORKFLOW FIRES ON A GAME DAY — BUT THREE BOARD SCRAPERS FIRE EVERY TWO HOURS, AND THEY ARE NOT NAMED `nba-*`.**
+> > ⚠ **The table above is correct for the population it states — `nba-*.yml`, 33 in scope. The
+> > headline was not, because three NBA jobs live outside that naming convention**:
+> > **`sleeper-board.yml` `15 */2 * * *`** · **`underdog-board.yml` `25 */2 * * *`** ·
+> > **`fliff-board.yml` `35 */2 * * *`** — **each with `nba` in its DEFAULT `sports` input**, so every
+> > scheduled run pulls the NBA board. ✅ **And this page already carried the live proof**: *"the three
+> > GitHub-Actions scrapers are demonstrably alive — Sleeper `2026-09-22T16:57:05Z`, Fliff
+> > `2026-09-22T17:14:27Z`, Underdog `2026-09-21T19:52:37Z`."* 🔑🔑 **WHAT SURVIVES IS SHARPER THAN
+> > WHAT WAS CLAIMED: `P1` is the only PIPELINE with a cron; `P2` and `P3` have none.**
+> > ⇒ ***The inputs arrive on a schedule. Nothing on a schedule consumes them.*** *(The prerequisite
+> > below is unchanged and is if anything strengthened: the boards pile up unused.)*
 >
 > ***The board archive, the day-of injury report, the grader, the daily delta, the absence panel,
 > starter status, game lines, the market snapshot, `P2` and `P3` all wait to be pressed.***
