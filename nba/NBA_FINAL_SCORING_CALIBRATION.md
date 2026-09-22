@@ -11,6 +11,68 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T15-SUPERSESSION. 🔴🔴🔴 **READ THIS BEFORE §0a-T15 — A2 WAS CLOSED THE DAY AFTER IT SHIPPED, AND IT IS THE ONLY FACTOR T15 SHIPS** *(T15 pass 3, §T15.4a, 2026-09-22)*
+
+⚠⚠ **RULE 5, BOTH DATES.** **§0a-T15 below is an accurate account of the 2026-09-12/13 round and every
+figure in it stands.** ***Its headline does not.*** **A2 teammate redistribution — the single factor
+that survived that round's gate — was closed on 2026-09-13, and it does not ship in any form.**
+
+| Date | Verdict | Gate |
+|---|---|---|
+| **2026-09-12/13** | ✅ **A2 SHIPS as a minutes multiplier, 15 of 19 props** | **MAE on the mean** — minutes MAE, then per-prop MAE, then MAE under window-time information |
+| **2026-09-13** 🔴 | ❌ **A2 IS CLOSED — "it does not ship in any of four forms"** *(COMPASS fact 91)* | **LOG-LOSS AT THE LEG LEVEL against the board anchor** |
+
+### ✅ `[LIVE-AUDIT]` **VERIFIED IN FULL — every figure reproduces from `nba_score.factor_gate_results`** *(`SELECT`, 2026-09-22; the table holds **104 rows · 19 models · 45 slices · season `2025-26` only**)*
+
+| Slice | n | **anchor** | `shrunk_novelty_A2` | `novelty_A2` | `flat_A2` |
+|---|---|---|---|---|---|
+| `all` | 15,024 | **0.7231** | 0.7540 *(−0.0308)* | 0.7592 *(−0.0361)* | **0.9034 *(−0.1803)*** |
+| `fires` | 13,319 | **0.7206** | 0.7546 *(−0.0339)* | 0.7605 *(−0.0398)* | **0.9231 *(−0.2025)*** |
+| **`high_novelty`** | 866 | **0.7436** | **0.7946 *(−0.0511)*** | 0.8112 *(−0.0676)* | 0.8353 *(−0.0917)* |
+| `low_novelty` | 4,695 | **0.7147** | 0.7273 *(−0.0125)* | 0.7287 *(−0.0139)* | 0.9056 *(−0.1909)* |
+
+🔑🔑 **THE DECISIVE FINDING IS THE SLICE, NOT THE TOTAL** — *fact 91's own words:* ***"the HIGH-NOVELTY
+slice — the one place the mechanism predicted A2 SHOULD work, since a brand-new absence is information
+the baseline CANNOT have — is where it does WORST (−0.051 vs −0.013 on low novelty). That is the
+OPPOSITE of the hypothesis."*** **The mechanism's explanation**: *"a star's first game out is exactly
+when a coach IMPROVISES, and the baseline's conservative projection handles that uncertainty better
+than a confident multiplier. **Being more aggressive when the situation is least predictable is
+backwards.**"*
+
+### 🔑🔑 WHY THE TWO VERDICTS DISAGREE — **and it is the corpus's own rule that explains it**
+
+*COMPASS fact 90, **"FOUR RULES FOR EVERY FUTURE FACTOR (earned the hard way this session)"** —
+⚠ **1 of the thirty and ZERO of the twelve before this entry**, and **rule 2 is the one that closed A2**:*
+
+| # | The rule | |
+|---|---|---|
+| **1** | **A null is only as strong as the feature that produced it** | *a crude defender metric produced false nulls that a proper two-way ridge overturned — which is why **COMPASS fact 85 says the M1/B4 rejections were WRONG*** |
+| **2** 🔴🔴 | **MAE ON THE MEAN IS THE WRONG METRIC** — *the product is **P(stat > line)**, and a factor can **reshape the distribution without moving the mean**, so **grade at the LEG LEVEL on real board lines**.* | 🔑 ***Every verdict in §0a-T15 was decided on MAE. This rule is why A2's MAE win did not survive a leg-level gate — and, in the other direction, why B4's and M1's MAE nulls were not safe either.*** |
+| **3** | **Never duplicate a baseline internal** | *a hand-built blowout shrink duplicated the recipe's `P(blowout\|spread)` mixture, and a rolling-mean funnel duplicated `proj_min` — **both made results worse*** |
+| **4** | **Always compare against the system's OWN BEST COMPONENT, never a strawman built for the test** | *the `anchor` column above is that comparison made concrete* |
+
+⚠⚠ **SO THE 88% WINDOW-KNOWLEDGE RESULT IN §0a-T15 §1 IS NOT WRONG AND IS NOT A REASON TO SHIP.** It
+measures how much of A2's **minutes-MAE** value survives at window time. **Rule 2 says minutes MAE was
+never the product.** 🔑 **Both facts hold together: A2 predicts minutes well and prices legs worse
+than the anchor.** *That is the cleanest example in the corpus of §T14.3a's family — **a factor
+measured on the wrong layer.***
+
+### ⚠ THREE THINGS THIS SWEEP RECORDS AS QUALIFICATIONS, NOT AS DOUBTS
+
+| | |
+|---|---|
+| **(a)** | **Fact 91 names FOUR forms tested** *(flat on the mean · component-level · novelty-weighted · magnitude-refit against the baseline's minutes residual)*; **`factor_gate_results` holds THREE** — `flat_A2`, `novelty_A2`, `shrunk_novelty_A2`, plus `anchor`. ⚠ **One of the four is NOT persisted**, so *"evidence… queryable"* is true of three forms. **NOT RECORDED**: which one is missing. |
+| **(b)** | **The table carries season `2025-26` ONLY** *(`min` = `max`)*. ⚠ **A factor was closed on ONE season, while a PROP needs TWO to certify** *(the rule that rejected oreb twice, §0y in `NBA_BASELINE_CALIBRATION.md`)*. **Recorded as an asymmetry between the factor gate and the prop gate — not as a claim that the verdict is wrong.** |
+| **(c)** | **`flat_A2` loses by 0.18–0.20 log-loss — an order of magnitude worse than the shrunk form.** ⚠ T15 shipped a **component-level** multiplier *(it adjusts `proj_min`)*, which is **not** `flat_A2`, so the shipped form's own leg-level number is **NOT RECORDED** unless it is the missing fourth. *Stated as an open identification, not an inference.* |
+
+🔑 **AND THE DURABLE POINT FOR THE ENGINE**: **`nba_score.factor_gate_results` (`season, slice, model, n,
+log_loss, brier, gain_vs_anchor`) is where factor verdicts now live** — *"queryable, **no longer parsed
+from CI logs**"* — **the same move as the calibration checker** *(`NBA_BASELINE_CALIBRATION.md` §0y-1)*:
+**a verdict that outlives the run that produced it.** ⚠ **Twice in two days, the fix for an unreadable
+result was to stop depending on the log.**
+
+---
+
 ## 0a-T15. 🔑🔑 **THE FIRST FACTOR RESULTS IN THE CORPUS THAT STATE EACH LAYER'S INFORMATION SET — and the CERTIFIED / PENALIZED / EXCLUDED policy** *(T15 pass 1, §T15.2a–c, written 2026-09-22 from the 2026-09-12/13 transcript)*
 
 ### 🔑🔑 1 · THE QUESTION §T14.3a ASKED, ANSWERED HERE FOR THE FIRST TIME
