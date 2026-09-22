@@ -29444,3 +29444,139 @@ DOES describe its default, in its own docstring, and the description is FALSE.**
 not "read the source because the docs are silent." It is "read the source because the docs are an
 account, and an account of a default is exactly the kind of thing that is written once and never
 re-read against the line below it."***
+
+---
+
+# §T20.35 — PASS 30: *THE CENSUS CLOSES — FOURTEEN LOCATIONS, P1 IS NOT CLEAN, AND THE FIX IS ALREADY WRITTEN*
+
+*(T20 pass 30, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY AND NO CODE EDITS: repo reads and `SELECT` only (rule 1).**
+
+## 1. 📐 THE SURFACE — *floor converted to total*
+
+> **`37` distinct `nba/*.py` scripts invoked by the three pipelines, de-duplicated from
+> `nba-p1-weekly-static.yml`, `nba-p2-overnight-heavy.yml` and `nba-p3-afternoon-light.yml`** —
+> **all 37 present in the repo, all 37 grepped**, 2026-09-22T15:35:54Z.
+> ⚠ **Plus a 38th the first enumeration MISSED: `nba/baseline/build_baseline_ladder.py`** — *it lives
+> in a SUBDIRECTORY, so the pattern `nba/[a-z_0-9]*\.py` did not match it. **Caught by reading the P2
+> ladder step rather than trusting the glob** — rule 48, and a reminder that an enumeration is only
+> as complete as its pattern.*
+> **`7` `pp_*` scripts excluded as the concurrent session's. `129` `.py` files exist under `nba/`
+> in total; the 38 above are the ones the three pipelines actually run.**
+> **Probed in six spellings**: `2025-26` · `2025_26` · `2024-25` · `2024_25` · `2026-27` · `2026_27`,
+> plus `league_id`, `get\(["']?[A-Z_]*SEASON` and `season\s*=\s*["']`.
+
+## 2. 🔴🔴🔴 SIX NEW LOCATIONS — *and one of them refutes this sweep's own positive control*
+
+| # | location | code | reached by |
+|---|---|---|---|
+| 🆕 **1** | **`nba/build_defender_ratings.py:114`** | `os.environ.get("DEF_SEASONS", "2024-25,2025-26")` | 🔴🔴 **P1** — *and P1's step passes only `DATABASE_URL`* |
+| 🆕 **2** | `nba/build_blowout_model.py:48` | `os.environ.get("BM_SEASONS", "2024-25,2025-26")` | **P2** — *passes nothing* |
+| 🆕 **3** | `nba/export_market_spreads.py:23–24` | `WINDOWS = {"2024-25": ("2024-10-22","2025-04-13"), "2025-26": ("2025-10-21","2026-04-12")}` — **a season→date-range MAP with no `2026-27` entry** | **P2 AND P3** |
+| 🆕 **4** | `nba/export_market_spreads.py:29` | `os.environ.get("MS_SEASONS", "2024-25,2025-26")` | **P2 AND P3** |
+| 🆕 **5** | **`nba/scrape_nba_season_tables.py:146`** | `WINDOWS = {"2023-24": …, "2024-25": …, "2025-26": …}` | 🔴 **P1 — and it is a SCRAPER** |
+| 🆕 **6** | auxiliary workflows | `nba-absence-panel.yml:136` `DEF_SEASONS: … \|\| '2025-26'` · `:231` `BM_SEASONS: "2024-25,2025-26"` · `nba-market-spreads.yml:39` `MS_SEASONS: … \|\| '2024-25,2025-26'` | outside the three pipelines |
+
+✅ **`DEF_SEASONS`, `BM_SEASONS` and `MS_SEASONS` are passed by NO pipeline workflow** — *verified by
+grepping all 40 workflow files; they appear only in the two auxiliary workflows above.* ⇒ ***every
+one of those three scripts runs on its literal default, every time.***
+
+### 🔴🔴 THE SELF-CORRECTION — *§T20.34's positive control was drawn at the wrong level*
+
+**§T20.34 reported, as a rule-22 positive control: *"`nba-p1-weekly-static.yml` — ZERO season
+literals … P1 is the correct shape."*** ⚠ **That statement is TRUE of the WORKFLOW and FALSE of the
+PIPELINE.** 🔴 **P1 invokes `build_defender_ratings.py`, whose season default is a literal, and
+`scrape_nba_season_tables.py`, whose `WINDOWS` map ends at 2025-26 — so P1 is NOT clean.**
+📌 ***This is §T20.21's unnumbered rule candidate firing on my own work, one pass later: "a positive
+control drawn from the regime where an instrument is known to work says nothing about the regime the
+claim is about." The control was run on the YAML and the claim was made about the PIPELINE.***
+✅ **Corrected here; §T20.34's clause (iii) result is unaffected — all five of ITS literals are still
+P2's — but its characterisation of P1 is withdrawn.**
+
+## 3. ✅✅ THE FIX IS ALREADY WRITTEN, IN THE MOST IMPORTANT SCRIPT IN THE PIPELINE
+
+**`nba/baseline/build_baseline_ladder.py` patches out the hardcoded
+`TRAIN = "2023-24,2024-25"; TEST = "2025-26"` and replaces it with a resolver:**
+
+```python
+ASOF = _date.fromisoformat(os.environ.get("BT_ASOF", str(_date.today())))
+def _season_of(d_):
+    y = d_.year if d_.month >= 10 else d_.year - 1
+    return f"{y}-{str(y + 1)[-2:]}"
+_cur = _season_of(ASOF)
+_all = sorted({... from nba_player_game_log_20*.json filenames ...})
+TEST = [_cur if _cur in _all else _all[-1]]; TRAIN = [x for x in _all if x < TEST[0]][-2:]
+```
+
+🔑🔑 ***It derives the season FROM THE SLATE DATE and cross-checks it against the data files that
+actually exist. That is exactly option (b) of open item T20-4 — already implemented, in the ladder
+builder.*** ⇒ **The fix is not a design. It is `_season_of()`, copied.**
+⚠ **RULE 48 discrimination, stated so a later pass does not re-flag it**: *the literals `"2023-24,2024-25"`
+and `"2025-26"` DO appear on that line — inside the `rep()` **search** string, i.e. the text being
+REMOVED. They are not live defaults.*
+⚠ **One caveat, recorded rather than counted**: if no `nba_player_game_log_2026_27.json` exists yet,
+`_cur` is not in `_all` and it falls back to `_all[-1]` — **last season, silently.** *Graceful, but
+silent.*
+
+## 4. ✅ RULE 22 — THE CORRECT SHAPES ALREADY IN THIS CODEBASE
+
+| script | how it resolves the season | |
+|---|---|---|
+| `scrape_nba_daily_delta.py:79` | `os.environ.get("NBA_DELTA_SEASON","").strip() or detect_current_season()` | ✅ |
+| `scrape_nba_matchups_pergame.py:77` | `os.environ.get("SEASON") or active_stats_season()` | ✅ |
+| `scrape_nba_injury_report.py:210` | `os.environ.get("INJURY_SEASON_SLUG", f"{d0.year}_{str(d1.year)[-2:]}")` — **derived from the dates** | ✅ |
+| `scrape_nba_periods.py:60` · `scrape_nba_season_tables.py:110` | `stats_seasons(int(env))` — **a COUNT, not a season** | ✅ |
+| `build_asof_calibration.py:116` | `AC_SEASONS` default `""` ⇒ rebuild every season present | ✅ |
+| `certify_pipeline.py` | keyed on `game_date` only | ✅ |
+| `load_baseline_ladder.py` | reads `current_season` out of the artefact's metadata | ✅ |
+
+🔑 **And the codebase has already written down this exact failure mode, twice:**
+`build_asof_calibration.py:5` — ***"THE DEFECT. The first calibration table was fitted on 2024-25 and
+applied to 2025-26: a constant carried…"***; `scrape_nba_per_game_delta.py:7` — ***"scrapers hardcode
+'every game in the full-season JSON'. **On day 1 of the 2026-27 season** that path…"***
+📌 ***The system's authors anticipated the rollover in prose, in two files, and the constants are
+still there. That is the same shape as §T20.34's docstring — the account is right and the line below
+it is not.***
+⚠ **NOT defects, classified and left alone (rule 48)**: `build_static_context.py:29,97`'s
+`{"2023-24":…, "2024-25":…}` is a **historical backfill** of coach changes, and its own docstring says
+*"2025-26 already has dated entries"*; `check_delta_gaps.py:158` and `scrape_nba_daily_delta.py:11`
+are **comments**.
+
+## 5. 📋 THE CONSOLIDATED LIST THE OWNER ASKED FOR — *the census is CLOSED*
+
+> **`14` locations carry a season literal that is wrong from `2026-10-20`:**
+> **P3 (3)** — `nba-p3-afternoon-light.yml` `BS_SEASON` fallback · `score_board_legs.py:97` ·
+> `build_availability_delta.py:52`
+> **P2 (5)** — `nba-p2-overnight-heavy.yml:31`, `:128`, `:274` · `check_delta_gaps.py:42` ·
+> `build_confidence_v3.py:99` · `build_blowout_model.py:48`
+> **P1 (2)** — `build_defender_ratings.py:114` · `scrape_nba_season_tables.py:146`
+> **P2 + P3 shared (2)** — `export_market_spreads.py:23–24` and `:29`
+> **Auxiliary (3)** — `nba-absence-panel.yml:136`, `:231` · `nba-market-spreads.yml:39`
+> *(P2's three workflow entries share one root: the `season` input's `default: "2025-26"`.)*
+
+## 6. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:35:54Z** |
+| **(ii)** | **≥ 3** more literals beyond the seven | ✅ **HIT — six.** ❌ *The "the seven are the complete list" branch is not available — but the census IS now closed at **14**, which is the bounded list the clause was written to obtain.* |
+| **(iii)** | **≥ 1** literal in a **SCRAPER** rather than a builder | ✅ **HIT — `scrape_nba_season_tables.py:146`, and it is in P1.** ⚠ **Its consequence is the worse kind the clause named: a builder fails loud and empty; a scraper with a stale season→window map succeeds and writes wrong-season data.** ⚠ *Stated at the strength the evidence supports: line 110 resolves seasons correctly by COUNT, so the `WINDOWS` map at 146 is a secondary path — the failure is bounded, not total.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — THIRTY-SECOND consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 7. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — six new locations, the census closed at 14, P1 shown NOT clean, and this sweep's
+own positive control corrected. CLEAN STAYS 0/3.**
+✅✅ **AND THE HEADLINE THE OWNER CAN ACT ON: the list is FINITE, it is 14 lines, and the resolver
+that fixes all of them is already written and running in `build_baseline_ladder.py`.**
+⚠⚠ **NOTHING WAS EDITED, TRIGGERED OR DISPATCHED (rule 1).**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **an enumeration is only as complete as its pattern — `nba/[a-z_0-9]*\.py` missed
+the single most important script in the pipeline because it sits one directory down.** ***What
+caught it was not a better regex but reading the workflow step that invokes it. Three passes running,
+the thing that found the defect was OPENING THE SOURCE, and the thing that hid it was trusting a
+match.***
