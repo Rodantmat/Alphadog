@@ -50,6 +50,29 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 > as a convenience beside the quotation, never instead of it.**
 > ✅ **By contrast the same session's IDENTIFIERS are sound: `49` of `49` `nba_*.*` objects correct —
 > `40` exist as asserted and `9` are absent as asserted (§T20.66).**
+>
+> ## 🔴🔴🔴 **AMENDED ONE PASS LATER (§T20.67) — IT IS NOT A ONE-DAY PROBLEM. IT IS THE CORPUS.**
+> **All `337` `FILE:LINE` pointers in the twelve, measured 2026-09-22 by whether the text quoted
+> beside each one still appears within ±6 lines of the number it cites:**
+>
+> | class | n | state |
+> |---|---|---|
+> | ✅ **external — `.py` / `.yml`** | **192** | **STABLE — the sweep never edits those files** |
+> | ✅ **testable internal, alive** | **8** | resolves |
+> | 🔴 **testable internal, DEAD** | **41** | **`83.7%` of the testable `.md` surface** |
+> | 🔴🔴 **UNTESTABLE — NO adjacent quotation** | **96** | ***state unknown, and UNRECOVERABLE if dead*** |
+>
+> ⚠⚠ **COMPARED LIKE FOR LIKE, THIS SESSION IS THE NORM, NOT AN OUTLIER**: its at-risk `.md` rate was
+> **`32/36` = 88.9%**; the corpus-wide testable rate is **`41/49` = 83.7%**. ***The corpus has been
+> citing itself by line number for nineteen transcripts and the number has been wrong five times out
+> of six.***
+> 🔴🔴 **AND IT INVERTS THE ADVICE ABOVE FOR TWO-THIRDS OF CASES**: *"resolve by searching the quoted
+> text" works only where a quotation exists.* **`96` of the `145` internal pointers — `66.2%` — carry
+> NONE.** ⇒ ***For those there is nothing to search for. When the number dies, the citation is gone.***
+> ✅ **THE STRUCTURAL LESSON, AND IT IS ACTIONABLE**: *the 192 stable pointers are stable BECAUSE they
+> point OUT of the corpus.* ⇒ **A citation is durable exactly to the extent that it points at a file
+> the sweep does not write. Inside the corpus, cite by QUOTATION and by `§`-section — never by line
+> number alone.**
 
 ### 📜 THE FORTY-EIGHT STANDING RULES — *the index; each is written in full where it was born*
 
