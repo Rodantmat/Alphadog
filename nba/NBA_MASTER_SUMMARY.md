@@ -35169,3 +35169,20 @@ every one of them correctly — in the list of defects. Nine never reached the p
 with a text editor already running, and two of those pages greet that person with a green check.**
 ***A finding that is filed where findings go has been recorded. It has not necessarily been
 delivered.***
+
+> ## ✅ **REPAIR COMPLETE AND VERIFIED — all nine, `2026-09-22T20:15:53Z`**
+> | item | pointer written into | verified |
+> |---|---|---|
+> | **T20-5** | `NBA_FINAL_SCORING_CALIBRATION.md` — *directly beneath the green check* | ✅ `GRADE_END` |
+> | **A/D** | `NBA_DATABASE.md` — *at the `defender_ratings` section* | ✅ `166` days |
+> | **T20-12** | `NBA_SYSTEM_DESIGN.md` — *at `0a.3 THE TWO-PHASE CLOCK`* | ✅ `timezone(timedelta(hours=-8))` |
+> | **T20-4** | `NBA_WORKERS.md` — *at P3's magnitude-check section* | ✅ `BS_SEASON` |
+> | **T20-3** | `NBA_SYSTEM_ARCHITECTURE.md` — *above "The never-fire cron idiom"* | ✅ `scheduled_jobs` |
+> | **B/E** | `NBA_DATABASE.md` — *at the `nba_calendar.games` "Absent here" line* | ✅ `not been refreshed` |
+> | **T20-13** | `NBA_WORKERS.md` — *beside `CERT_STRICT=1`* | ✅ `twelve consecutive red nights` |
+> | **T20-10** | `NBA_WORKERS.md` — *beside the push-discipline passage* | ✅ `season-file sync failed` |
+> | **T20-2** | `NBA_DATABASE.md` — *at the storage-diet plan* | ✅ `38.1M` |
+>
+> ⚠ **Every pointer is ONE block: the defect, its severity, its live re-derivation with a timestamp, and a `§`-pointer to the full item. No analysis was moved or duplicated (rule 40).** 🔑 **Two of them also carry a cross-link the brief does not**: *`T20-13`'s twelve red nights fall inside `T20-12`'s PDT window*, and *`T20-10`'s swallowed `scrape_nba_schedule.py` is the refresher for the very table recorded as frozen* — **with "NOT RECORDED whether it is the cause" stated explicitly (rule 6).**
+>
+> ⚠⚠ **RULE 20, ON THE VERIFICATION ITSELF:** *the first re-probe reported `B/E` at `0` because I grepped `"not been refreshed"` case-sensitively against text I had written in capitals, and `T20-13` at `42` because I probed the bare digits `"22"`.* ✅ **Re-run properly: `1` and `1`.** 📌 ***Twelfth instance this session of a probe failing on its own spelling — including one inside the step whose only job was to confirm a repair.***
