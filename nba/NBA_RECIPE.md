@@ -478,6 +478,37 @@ already reported.** Full methodology, the three techniques and the six named fai
 **What gates it.** `PIPE=p2` — **4 checks**: `baseline_history has today` · `baseline props for today (>= 25)` · `no invalid probabilities today` · `as-of calibration available`.
 🔴🔴🔴 **WHAT BREAKS IT TODAY.** **`T20-13`, ranked FIRST on the brief**: `baseline_history` carries **`22`** distinct props in October and **`30`** from November 1, in both prior seasons — against a `>= 25` gate with `CERT_STRICT=1` ⇒ ***twelve consecutive red nights from opening night through `2026-10-31`.*** ⚠ **`T20-5`**: the grader's `GRADE_END` defaults to `"2026-04-12"` and P2 passes only `DATABASE_URL`, so **on opening night it grades nothing and reports success — the brief's only `SILENT` blocker.** ⚠ **`T20-10`**: `nba-daily-delta.yml` swallows three failures with `|| echo`.
 
+> ## 🔑🔑 **ONE FILE, TWO ROLES — `build_baseline_ladder.py` RUNS TWICE IN `P2`** *(added 2026-09-22, T20 pass 95, §T20.100)*
+> ▶ **Mapped from the workflow's own `run:` blocks, `2026-09-22T21:54:52Z`** *(`P1` **9** steps ·
+> `P2` **19** · `P3` **11**)*: **`nba/baseline/build_baseline_ladder.py` is invoked by TWO different
+> steps of `P2`** —
+>
+> | step | invocation | role |
+> |---|---|---|
+> | **"Build baseline ladder (all prop pairs)"** | `BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py` | the ladder itself |
+> | **"Components, combos and periods for today's slate"** | 🔑 **`BT_SAVE_COMPONENTS=1` `BT_PROPS=$pair`** `python nba/baseline/build_baseline_ladder.py` *(then `build_combos_ladder.py`, `build_periods_ladder.py`)* | the per-prop COMPONENTS the combos builder needs |
+>
+> ⚠ ***A reader looking for where the ladder builder runs finds the first step and stops.*** **The
+> second step's name is accurate — it does produce components — but it does not say which file
+> produces them**, and the two roles are separated by **one environment variable**.
+> 🔑 **THIS IS `NBA_WORKERS.md` §0d.1's PATTERN, BY NAME**: ***"A single physical worker file can
+> serve MANY UNRELATED LOGICAL ROLES, selected AT RUNTIME by a `mode` PARAMETER, not by which file it
+> is… NEVER ASSUME 'ONE FILE = ONE JOB.'"*** **And §0d.1's prescription is the part that is only
+> half-met**: ***"DOCUMENT THE MODE DISPATCH TABLE EXPLICITLY IN ONE PLACE, don't let it become
+> IMPLICIT."*** ▶ **The env NAMES are in one place — `NBA_WORKERS.md`: *"Env: `BT_ASOF` · `BT_PROPS` ·
+> `BT_CUTOFF` · `BT_REPLAY` · `BT_INJURY` · `BT_LADDER_STEPS` · `BT_SAVE_COMPONENTS` ·
+> `BT_TRAIN`/`BT_TEST` · `BT_CARRY`"*** — 🔴 **but nothing anywhere maps a COMBINATION to a ROLE.**
+> *`BT_SAVE_COMPONENTS=1` is listed as a knob; that it is what makes step 12 a different job from
+> step 11 is recorded in no document.* ⚠ **Recorded, not fixed (rule 1).**
+>
+> 📌 **THE FULL MULTI-ROLE CENSUS OF THE THREE PIPELINES** *(same pin)* — **4 scripts run in more
+> than one step**: **`certify_pipeline.py` ×3** *(`PIPE=p1`/`p2`/`p3` — the mode is IN the step name,
+> the good pattern)* · **`scrape_nba_injury_report.py` ×2** *("Injury report (day-before filing)" vs
+> "Day-of injury report" — **the roles are named**)* · **`export_market_spreads.py` ×2** *("Market
+> spreads and totals" in `P2`, "Market snapshot and rung market" in `P3`)* · 🔴
+> **`build_baseline_ladder.py` ×2** *(**the only one whose two roles are not distinguishable from the
+> step names**)*.
+
 ---
 
 # STEP 10 — **P3 · THE AFTERNOON LIGHT PASS** *(same source, same reading)*
