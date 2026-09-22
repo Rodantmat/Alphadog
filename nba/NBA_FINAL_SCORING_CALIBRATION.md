@@ -11,6 +11,226 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T15. 🔑🔑 **THE FIRST FACTOR RESULTS IN THE CORPUS THAT STATE EACH LAYER'S INFORMATION SET — and the CERTIFIED / PENALIZED / EXCLUDED policy** *(T15 pass 1, §T15.2a–c, written 2026-09-22 from the 2026-09-12/13 transcript)*
+
+### 🔑🔑 1 · THE QUESTION §T14.3a ASKED, ANSWERED HERE FOR THE FIRST TIME
+
+*§T14.3a's rule: **"any factor test using ONE report for BOTH layers measures DOUBLE-COUNTING, not
+value."** Across the swept corpus **no factor result states which report each layer read.** T15 is the
+first that does — **because the assistant discovered mid-session that it had been using one.***
+
+> ***"both b4 tests used WHO ACTUALLY PLAYED, derived from box scores. that's POST-GAME TRUTH. at
+> 2:30 pm pt the engine won't know that; it will know the day-of injury report and the projected
+> lineups… so what i actually tested is b4 with PERFECT ABSENCE KNOWLEDGE."***
+
+⚠ **And the consequence it drew is the one that matters, because it runs the other way:**
+
+> ***"the inverse is the important consequence… **a2 was ALSO fitted and validated on perfect
+> knowledge**. its +0.347 mae gain on pra assumes we know exactly who's out… **a2's live value will
+> be lower than its measured value, and by an amount we haven't quantified.**"***
+
+✅ **IT WAS THEN QUANTIFIED.** The allocator's absence input was rebuilt from the **2:30 pm report
+as-of**, with Questionable weighted by the measured `p_plays` rather than treated as present or
+absent, and the same held-out gate re-run — **out of sample on 13,989 player-games**:
+
+| Information set | Minutes MAE |
+|---|---|
+| **A** — no absence knowledge | **6.210** |
+| **C** — WINDOW knowledge *(2:30 pm report, N1-weighted)* | **4.580** |
+| **B** — PERFECT knowledge *(post-game truth)* | **4.368** |
+
+🔑 **Window knowledge captures 88% of the value of perfect knowledge.** *The gap between knowing
+nothing and knowing everything is **1.84 minutes**; the 2:30 pm report delivers **1.63** of it.* ✅
+**The cost of uncertainty — questionables resolving either way, late scratches — is 0.21 minutes.**
+
+⚠ **AND THE NULL SURVIVES THE SAME TEST A PRIORI, which is why B4 did not need re-running:** *"if the
+factor carries **no signal even with perfect information**, it cannot carry signal with the noisier
+version available at 2:30. **A null under ideal conditions is a valid null under degraded ones.**"*
+🔑 **The asymmetry is the durable rule: a POSITIVE result fitted on post-game truth is an UPPER BOUND
+and must be re-measured at window time; a NULL fitted on post-game truth is already conservative.**
+
+### ⚠⚠ 2 · THE POPULATION RULE T15 STATES IN ITS OWN WORDS — **the same class as §T14.3a**
+
+*A2's per-prop gain appears in this transcript at **three different magnitudes**, and all three are
+correct:* **pra +0.347 · points +0.097** *(the original per-prop gate)* **vs points +0.054**
+*(the window-time re-run)*. **The reason is the POPULATION, not the method:**
+
+> ***"this test scores ALL player-games (13,989), whereas the earlier per-prop test scored ONLY GAMES
+> WITH ABSENCES. diluted across every game including those with no absences at all, the average gain
+> necessarily shrinks. **both numbers are correct for their population, and the operationally
+> relevant one is the absence-game figure, since that's when the factor fires.**"***
+
+⚠ **So a factor's quoted value is meaningless without its population, and the two populations differ
+by roughly 6×.** *Recorded because the corpus quotes the +0.347 figure without its population.*
+
+### ✅ 3 · THE FACTOR VERDICT TABLE AS T15 LEAVES IT *(the 09-12/13 round — see §T15.2h on the date)*
+
+| Factor | Verdict in T15 | Population / information set | Figures |
+|---|---|---|---|
+| **A2** teammate redistribution *(minutes multiplier)* | ✅ **SHIPPED** | allocator fitted on roster state; **validated three ways** | conservation **0.9930**; allocator MAE **4.609** vs recent-5 **4.875**; OOS `p0` 4.830 / `p1` 4.733 / `p2` 4.753; **15 of 19 props improve**, gains scaling with minutes-dominance — pra **+0.347**, pts+reb +0.281, pts+ast +0.253, points +0.097 |
+| **A2 rate response** | ❌ **REJECTED** | held-out | *"double-counts what minutes already carry"* |
+| **N1** status resolution | ✅ **MEASURED** *(not a ship/reject — a measured input A2 now consumes)* | full report population, **both seasons** | see §4 below |
+| **B4** opponent availability **v1** *(vacated minutes)* | ❌ **REJECTED** | **post-game truth**, 19 props | **0 of 19**; the earlier **+6.5% opponent signal was BLOWOUT CONTAMINATION** |
+| **B4 v2** *(expected defender-quality change)* | ❌ **REJECTED** *(after the test itself was found broken — §T15.2f)* | **post-game truth**, **4,526** test rows, 11 props | **0 of 11**; betas collapsed to **−0.056…+0.029** once correct, *versus the spurious **+0.14…+0.22** from the broken version* |
+| **B4 v3** RIM PROTECTION | ⚠⚠ **NOT TESTED IN T15 — COMMISSIONED BY IT** | — | see §5 below |
+| **M1** defender-quality LEVEL | ⚠⚠ **NOT TESTED IN T15** | — | appears only as a **pending build item** (*"M1 wiring"*, *"M1 defender-quality integration into the harness"*). **Verified 2026-09-22**: `0 of 7`, `5,116`, `12,738`, `63.8%`, `0 of 5 props` — **zero hits in the transcript.** *COMPASS fact 84's M1 rejection and fact 86's v3 closure therefore belong to a LATER transcript, which `NBA_GLOSSARY.md` already attributes to **T16**.* |
+| **A5** projected lineups | ❌ **REJECTED — REDUNDANT** | held-out, per prop | **negative on every prop**: points **−0.032**, rebounds −0.008, assists −0.008, pra **−0.035** |
+
+🔑🔑 **THE A5 REJECTION DISSOLVES A LEAK RISK RATHER THAN MITIGATING IT** — *and this is the part the
+parity document needs:* **A5 was leak risk #1** *(box-score `starter_status` is post-tip truth)*.
+The mechanism of the null is structural, not a failure of the proxy:
+
+> ***"the allocator already uses RECENT-5 MINUTES, which encodes starting status almost completely. a
+> player who starts plays 30 minutes; the recent-minutes signal captures that CONTINUOUSLY, while a
+> binary starter flag THROWS AWAY THE MAGNITUDE. adding it back as a coarse multiplier LOSES
+> information… we don't need projected lineups at all, so there's nothing to leak. **the risk
+> disappears rather than needing mitigation.**"***
+
+⚠ *Also recorded from the research step: **the NBA does not require lineups before tipoff** — they
+are announced **~30 minutes out**, i.e. AFTER the 2:30 pm window — and **projected lineups are
+human-curated subscription products** set 24–30 hours ahead. **So at the window A5 must be derived
+in-house or not at all**, which is what made the redundancy finding decisive rather than incidental.*
+
+### ✅ 4 · N1 — **THE LEAGUE'S OWN PROBABILITY TABLE IS WRONG ON THREE OF FIVE STATUSES**
+
+*Context from the research step: **the NBA overhauled injury reporting in December 2025**, fixing
+league-defined probabilities and adding an explicit **AVAILABLE** status — **a mid-season format
+change inside the 2025-26 data.** The assistant's rule: **"league-defined numbers are what teams are
+TOLD to mean; what matters is what actually happens"** — so it measured them on the archive.*
+
+| Status | n | **Measured `p_plays`** | League-defined | |
+|---|---|---|---|---|
+| Out | 10,150 | **0.001** | 0.00 | ✅ |
+| Questionable | 1,456 | **0.503** | 0.50 | ✅ **a true coin flip** |
+| Available | 1,220 | **0.828** | 1.00 | ❌ |
+| Probable | 582 | **0.923** | 0.75 | ❌ |
+| **Doubtful** | 312 | **0.006** | 0.25 | ❌🔴 **DOUBTFUL MEANS OUT** |
+
+🔴 ***"treating doubtful as a 25% chance would be a SERIOUS ERROR; our a2 build already grouped it
+with out, which this validates."*** ✅ **And after the selection-filter fix of §T15.2f, the two
+statuses that matter split into two different factors wearing one label:**
+
+| Status | **Rotation ≥15 min** | **Fringe <15 min** |
+|---|---|---|
+| Questionable | **0.552** *(n=1,074)* | **0.312** *(n=234)* |
+| Available | **0.956** *(n=824)* | 0.555 *(n=236)* |
+| Probable | **0.961** *(n=457)* | — |
+
+⚠ **The 0.828 anomaly was deep-bench DNPs, not late scratches** — *"for the players the allocator
+actually cares about, available means 0.956 and probable 0.961 — effectively playing."* 🔑 **And the
+league's nominal 0.50 UNDERSTATES the population that matters**: questionable rotation players play
+**55.2%**. *Further modulated by reason class — **G-League two-way 0.271**, back 0.488, soft tissue
+0.539 — and by team — **Atlanta 0.326 → Golden State 0.676**.* 🔑 ***"that's a real, fittable
+sub-factor, and it's exactly the cell structure the lock specified."***
+
+### 🔑🔑 5 · B4 IS LEFT **CLOSED-WITH-A-SUBCASE**, AND T15 SPECIFIES THE TEST T16 RUNS
+
+*⚠ 0 of the twelve and 0 of the thirty, probed 2026-09-22.* **B4 was not abandoned — the transcript
+names the remaining formulation, its population, its gate, and says it must be run first:**
+
+> ***"one piece is still genuinely open on the opponent side, and it's a different factor: b4's
+> RIM-PROTECTION SUB-CASE — the blocks-against and interior-scoring channel, where losing a specific
+> rim protector plausibly does move a driver's efficiency… it's testable the same way: fit the
+> residual on absences of HIGH-BLOCK-RATE OPPONENTS ONLY, gate it on held-out mae. **if you want b4
+> fully closed rather than closed-with-a-subcase, that's the one test remaining, and i'd run it
+> before declaring the opponent side done.**"***
+
+✅ **COMPASS fact 86 records exactly that test closing** *(v3 rim protection, 0 of 5 props, 12,738
+test rows, 63.8% of games have a rim protector out)* — **so the T16 result answers a question T15
+wrote, with the population T15 specified.** *Recorded because the corpus carries the answer without
+the commission, which makes the v3 test look like an afterthought rather than a planned closure.*
+
+⚠ **AND WHY THE NULL IS MECHANICALLY SENSIBLE RATHER THAN A GAP** — *the transcript's own reasoning,
+which is what makes it a finding instead of a failure to find one:* **opponent defence is ALREADY IN
+THE BASELINE** *(opponent defensive profile, DvP by position, pace, and the day-before
+opponent-availability version)*, so **B4 was only ever the same-day RESIDUAL on top of it**. A
+player's exposure **spreads across several defenders**, so losing one shifts expected defender quality
+only slightly, and **the replacement is usually of similar quality — NBA rotations are compressed at
+the top**. M1's genuinely large effect *(−5.5% to +6.7% across quintiles, 12 pp toughest-vs-easiest)*
+is about **WHICH TEAM you face** — a baseline factor from the full opponent profile, **not a same-day
+delta**. 🔑 **And opponent absences ARE priced, on the side where they demonstrably matter**: *"a2
+runs on BOTH rosters… so opponent absences are priced on the absent team's own production, **not
+smeared onto the other team's rate**."*
+
+### 🔑🔑 6 · **CERTIFIED / PENALIZED / EXCLUDED — the three-tier policy the system did not have**
+
+⚠⚠ **0 of the twelve AND 0 of the thirty** *(probed 2026-09-22, `grep -Eoih ".{0,80}(somewhere to
+land|besides .in. or .out.|general policy it didn).{0,80}"`, both trees)* — **and it is a governing
+rule, not a note.** *It exists because the owner refused a rejection **twice**:*
+
+| Owner turn | The instruction |
+|---|---|
+| seg 827 | ***"NO, do not just reject — FIX IT: granulated, break in tier, figure it out, research, debug, test, simulate. WE CAN'T JUST BE DROPPING IMPORTANT PIECES."*** |
+| seg 949 | *"yes, make the be**tt**er decision, **drop it OR PENALIZE IT ACCORDINGLY**"* |
+| seg 962 | *"ok, find the **proper penalty level, FAIR TO IT**, and keep going"* |
+
+✅ **The answer, in the assistant's words:** *"that also gives the system a general policy it didn't
+have — **certified / penalized / excluded** — so future props have somewhere to land besides 'in' or
+'out'. **that's probably worth more than the oreb fix itself.**"*
+
+🔑🔑 **AND THE PENALTY IS *DERIVED*, NOT DECLARED — the rule that makes the tier usable.** *The
+reliability scorer measures every prop on one ruler — **ECE, worst band, Brier, lift over a base-rate
+model, both seasons** — and the penalty is **the amount the prop's volume-weighted ECE trails the
+certified median (0.20 pp)**.*
+
+⚠⚠ **RECORD BOTH DECISIONS (rule 5) — the assistant OVERTURNED ITS OWN PENALTY WITHIN MINUTES:**
+
+| | Penalty written | Basis | Status |
+|---|---|---|---|
+| **First** | **one confidence tier down · barred from the top slip tier · at most ONE oreb leg per slip · skipped when the edge doesn't clear threshold** | the **worst-band** number (5.41 pp) | ❌ **RETRACTED — *"an OVERREACTION to a worst-band number"*** |
+| **Second** ✅ | **−0.1 pp of stated confidence, ELIGIBLE EVERYWHERE, NO CAP**, with a flag only on legs landing in the one thin band | **volume-weighted ECE 0.28 vs certified median 0.20** | ✅ **the standing rule** |
+
+🔑 *Why the first was wrong:* **that 5.41 pp miss lives in a single band of 744 legs out of 556,277**
+— *"almost every oreb leg sits in bands that calibrate as well as any certified prop."* 🔑 **And the
+scorer caught the over-correction within minutes of it being made**, which is the argument for the
+tool: *"penalties are **derived rather than declared**, and any future prop lands on the same ruler."*
+
+### ✅ 7 · THE ALL-PROPS RELIABILITY AUDIT — **ten props, a third of the table, had NO verdict at all**
+
+⚠ **Before this audit, 10 of 30 props — roughly 5.4m rows of baseline probabilities — sat in the
+history table with no reliability verdict**, because `score_prop_reliability.py` could not derive
+their outcome from a box-score column: **7 period props** *(points q1/h1/h2/q4/q4_otx, rebounds q1,
+assists q1, threes_made q1 — needing quarter-level data)*, **fantasy_score** *(needs the
+1/1.2/1.5/3/3/−1 formula)*, **double_double** *(needs yes/no logic)*, and **stocks** *(in the combo
+map, dropped by the column check)*. 🔑 **The owner pushed for the extension; it caught two props that
+would have shipped as certified:**
+
+| Prop | n | ECE | Worst band | Brier | Lift | Verdict |
+|---|---|---|---|---|---|---|
+| **fantasy_score** | **994,879** | 0.41 | **2.92** | 0.2022 | **5.2%** | 🔴 **−0.3 pp** |
+| **double_double** | 47,912 | 0.57 | **7.32** *(worst in the system)* | 0.0592 | 17.7% | 🔴 **−0.4 pp** |
+| oreb | 556,277 | 0.28 | 5.41 | 0.0501 | 25.8% | **−0.1 pp** |
+| assists_q1 | 443,513 | 0.22 | 3.22 | 0.0360 | 26.1% | **−0.0 pp** *(rounding-level)* |
+| stocks | 564,973 | 0.15 | 0.94 | 0.0536 | 25.0% | ✅ certified |
+| threes_made_q1 | 432,907 | 0.17 | 2.03 | **0.0232 — best Brier in the system** | **27.3% — highest lift** | ✅ certified |
+
+🔴 ***"fantasy_score is the one that matters commercially — nearly a million rows, our HIGHEST-VOLUME
+prop, and it was NEVER VERIFIED."*** *Why it is weak is mechanical: it is a weighted sum of six noisy
+counts, so **the errors compound while the predictable role signal gets diluted**.*
+
+✅ **Final state: 27 certified · 3 penalized (fantasy_score −0.3, double_double −0.4, oreb −0.1) · 0
+unverified**, where ten had no verdict that morning. *Quoted from the transcript; **not** re-taken
+live — the audit's own summary calls the absence of new problems "the audit's real value".*
+
+### 🔑🔑 8 · THE STRATEGIC FINDING FOR THE SLIP ENGINE — **the board's deepest markets are its least exploitable**
+
+**Lift over a base-rate model** — *"the low-count props carry two to three times more predictive edge
+than the high-volume combos, because a combo averages three noisy counts together while a single stat
+is genuinely forecastable from role"*:
+
+| High edge | Lift | | Low edge | Lift |
+|---|---|---|---|---|
+| threes_made_q1 | **27.3%** | | pts+ast | 9.2% |
+| steals | 26.9% | | **pra** | **7.5%** |
+| assists_q1 | 26.1% | | **fantasy_score** | **5.2%** |
+| oreb | 25.8% | | | |
+| stocks | 25.0% | | | |
+
+🔑 ***"weighting slips toward VOLUME would be weighting toward the LEAST EDGE."*** ⚠ **This is a slip-
+construction constraint, and it points the opposite way from board depth.**
+
+---
+
 ## 0b. THE FOUNDING SCOPE DECISION — reuse vs rebuild
 *Source: T1, `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §4. Recorded 2026-09-20.*
 
