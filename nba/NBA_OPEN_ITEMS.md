@@ -12357,6 +12357,24 @@ and no patch toward one, anywhere in the session.** ⇒ **The refactor was not m
 it was never begun.** **Severity: HIGH, unchanged.** *Without it P3 either refits (~64 min, past its
 window) or scores against a ladder it did not fit.*
 
+## T18-17 · **NEW · OWNER DECISION** · the score formula's penalising half has never fired
+**`[LIVE-AUDIT]` 2026-09-22: of 19,215,200 legs in `nba_score.final_hp`, ZERO have
+`confidence <= 0.85`.** **The live minimum confidence is 0.8540** *(2024-25 0.8540 · 2025-26 0.8722)*,
+**three thousandths above the shipped `CONF_NEUTRAL = 0.85`.** ⇒ **the `drop` term —
+`clip(−cdev,0,1)×0.35`, "up to 35% off when the data is thin" — has never been non-zero on a
+production row. Every live leg is LIFTED.**
+✅ **Consistent with the design, not a contradiction of it**: COMPASS fact 101 says the deduction
+model's *"floor (~55) needs everything to stack against it at once"*, so a confidence floor far above
+0.85 is the designed consequence.
+⚠ **OWNER DECISION, two coherent options and the sweep chooses neither**: *(a)* **raise
+`CONF_NEUTRAL` into the realised distribution** (its median or 25th percentile) so both halves
+engage and the score separates well-supported from thin legs more sharply; *(b)* **keep 0.85 and
+accept the score as a one-sided enhancer** — which is literally what the owner asked for, *"the score
+must ENHANCE the hit probability — no kill good legs"*. **(b) may well be right.** **What is recorded
+is that the code implements a two-sided rule and the data only ever exercises one side.**
+⚠ **Rule 6: whether 0.85 was chosen before or after the deduction floor was known is NOT RECORDED.**
+*(Full arithmetic: `NBA_FINAL_SCORING_CALIBRATION.md` §0a-T18-D.)*
+
 ## T18-6 · **CONFIRMED, AND THE REASON IS WORSE THAN "UNRECORDED"** · the gap audit's 2025-26 denominator
 **See `NBA_WORKERS.md` §0.002-T18 for the full evidence.** In short: the threshold comment claims
 calibration on *"2024-25 had 2 of ~2,460 (0.08%) and 2025-26 had 7."* 🔴 **Only the 2024-25 half was
