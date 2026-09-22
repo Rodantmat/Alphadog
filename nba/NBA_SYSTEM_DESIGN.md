@@ -1934,3 +1934,98 @@ From `nba_config.classification_config.production_baseline_ladder`:
 | **`BT_CARRY`** | **October producing ZERO projections** |
 
 **Open before opening day:** see `NBA_OPEN_ITEMS.md` — ranked, with the Postgres-loader question first.
+
+---
+
+## §0z-8-T18 — 🔴🔴🔴 THE `2:30 PM PT` TRACE THIS SWEEP RECORDED IS PROBABLY THE WRONG ONE
+*(T18 pass 2, mechanism strata · written 2026-09-22 · **this section corrects the SWEEP's own causal
+account, not the system's** — the operational conclusion is unchanged and is reinforced)*
+
+⚠ **What is NOT in question.** **The binding constraint is still 1:00 PM PT and the cutoff is still
+1:15 PM PT.** *That is unchanged, and this section strengthens it with an external authority the
+sweep did not previously hold.* **§967, §1617, `NBA_OPEN_ITEMS` §*BUG-FIXED · the 2:30 PM PT cutoff
+was drift* and `NBA_MASTER_SUMMARY` 15745–15752 are all correct in their CONCLUSION.** **What this
+section revises is the ORIGIN STORY those entries attach to it.**
+
+### THE RECORDED TRACE — *what the sweep says today*
+
+> *"2:30 PM ET is 11:30 AM PT"* — the number came from a **2026-09-09 list of observed injury-PDF
+> snapshot timestamps** *(12:30 / 1:00 / **2:30** / 3:30 / 4:00 / 6:45 / 7:45 PM)* that were
+> **Eastern**, and it **lost its ET label** on the way into fact 41.
+
+⚠ **That story requires an ERROR to produce the number, and it does not explain the SELECTION**:
+**seven timestamps were in that list and nothing in it privileges 2:30 over 3:30 or 6:45.**
+
+### ✅ THE COMPETING TRACE — *read from live source, 2026-09-22, `nba/nba_asof.py` (6,295 B, 126 lines)*
+
+```
+PHASE1_CUTOFF_LOCAL  = "16:00"   # 1:00 PM PT
+PHASE2_CUTOFF_LOCAL  = "17:45"   # 2:45 PM PT (the owner's pick window; after the 5:30 PM ET day-of report)
+ENRICH_CUTOFFS_LOCAL = ["13:30", "17:30"]
+```
+
+🔑🔑🔑 ***`17:30 ET = 2:30 PM PT`, EXACTLY.*** **And `13:30` and `17:30` are not arbitrary: the
+module's own docstring names what they are** — *"ENRICH_CUTOFFS = 13:30, 17:30, and tip-30min → the
+enrichment runs."*
+
+⇒ **`2:30 PM PT` is a CORRECT conversion of a NAMED CONSTANT that has been in the source all along.**
+**No timezone error is needed to produce it.** 🔑 **And unlike a seven-item list, `ENRICH_CUTOFFS_LOCAL`
+has exactly two entries — so the selection question the PDF story cannot answer, this one answers by
+construction.**
+
+### ✅ THE EXTERNAL AUTHORITY, FOUND INSIDE T18 ITSELF *(mechanism stratum, `web_search`, SEG 483/484)*
+
+*The session ran exactly **two** `web_search` calls in 1,205 segments. This was one of them.*
+⚠ **Authority named, per rule 11: this is a web-search result quoted in T18, not a primary NBA rules
+document. It is recorded as such.**
+
+> *"teams are required to submit a game-day injury report **between 11 a.m. and 1 p.m. local time**
+> and **between 8 and 10 a.m. for tip-offs 5 p.m. or earlier** on game days (besides the second game
+> of a back-to-back)… For the second game of a back-to-back, teams must report the same information
+> **by 1 p.m. local time** on the day of the game. **The league usually issues its own reports at
+> 1:30 p.m., 5:30 p.m., and 8:30 p.m.**"*
+
+**Three things fall out, and the first two are NOT RECORDED anywhere in the thirty** *(novelty probe
+2026-09-22: `8 and 10 a.m.` **0/0** · `5 p.m. or earlier` **0/0** · `1:30 p.m., 5:30` **0/0** ·
+`8:30 p.m` **0/0**)*:
+
+**1. 🔑 THE EARLY-TIP CLAUSE.** For a tip-off at **5 p.m. local or earlier**, the filing window is
+**8–10 a.m. local**, not 11 a.m.–1 p.m. ⇒ **on an all-early slate every report is in by 10 a.m.
+local, and the binding Pacific constraint becomes 10:00 AM PT, not 1:00 PM PT.** **The 1:15 PM PT
+cutoff is therefore CORRECT but CONSERVATIVE on such slates** — it is the worst case, not the only
+case. ⚠ **The back-to-back clause keeps 1 p.m. local as the floor whenever a second-night team is on
+the slate**, so the general answer does not move. *Open item T18-9.*
+
+**2. 🔑 THE LEAGUE PUBLISHES THREE BULLETINS — 1:30 / 5:30 / 8:30 p.m. ET.** In Pacific that is
+**10:30 AM / 2:30 PM / 5:30 PM PT**. 🔴🔴 ***The middle one IS "2:30 PM PT."*** **And
+`ENRICH_CUTOFFS_LOCAL = ["13:30", "17:30"]` is the first two of them, to the minute.** *The sweep had
+recorded only the 5:30 p.m. ET bulletin, via `PHASE2_CUTOFF_LOCAL`'s comment; there are three.*
+
+**3. ✅ THE TEAM RULE IS CONFIRMED VERBATIM, FROM TWO INDEPENDENT PLACES.** The external source says
+*"11 a.m. and 1 p.m. local time"*; `nba_asof.py`'s docstring, written long before, says *"game-day
+report lands 11 AM-1 PM local; B2B second-night report 1 PM local."* **The correct rule was in the
+source the entire time.**
+
+### ⇒ THE REVISED ACCOUNT — *stated at evidence strength, with both stories kept*
+
+🔑 ***The error was almost certainly one of CATEGORY, not of TIMEZONE: a league REPUBLICATION
+BULLETIN (5:30 p.m. ET = 2:30 p.m. PT, a named constant in `nba_asof.py`) was promoted to "the
+day-of injury report DEADLINE" — a team filing obligation it never was.*** **Fact 41 then wrote *"the
+2:30 pm PT day-of injury report"*, and facts 73, 74 and 96 cited it as established.**
+
+⚠⚠ **BOTH TRACES ARE KEPT AND NEITHER IS DELETED** *(rule 4 — a supersession carries both dates and a
+pointer to the earlier entry)*. **The PDF-snapshot trace is recorded at §967, §1617,
+`NBA_OPEN_ITEMS` and `NBA_MASTER_SUMMARY` 15745–15752, dated 2026-09-19 from the transcript's own
+prose; this bulletin trace is dated 2026-09-22 and rests on live source plus an external authority.**
+**The sweep does not have a document in which the author states which one he meant**, so:
+⚠ **NOT RECORDED: which origin the author had in mind.** *What IS verified: the arithmetic
+(`17:30 ET = 2:30 PM PT`), the constant's presence in live source, the league's three bulletin times
+per the quoted source, and the fact that the bulletin story needs no error while the PDF story needs
+both an error and an unexplained selection among seven candidates.*
+
+🔴 **AND THE PRACTICAL CONSEQUENCE IS THE SAME EITHER WAY, WHICH IS WHY THIS IS A TRACE CORRECTION AND
+NOT A REOPENING**: **a bulletin is not a deadline.** *Waiting for the 5:30 p.m. ET republication buys
+nothing a 1:00 PM PT team-filing cutoff has not already secured, and it costs three and a half
+hours.* ✅ **`nba-p3-afternoon-light.yml` already encodes the corrected reasoning inline and guards it
+at runtime** — *"Refusing to run for TODAY before 13:00 PT — Pacific clubs file until 1:00 PM PT"*
+*(verified live, line 74, 2026-09-22)*.
