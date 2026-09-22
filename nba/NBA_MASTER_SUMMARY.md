@@ -37578,3 +37578,94 @@ the corpus before this sweep built three of them.*
 it to the largest of them.** ⚠⚠ ***The block took one pass and `4,708` characters. What made it
 possible was not insight — `§T20.106` had already measured everything in it — but a size budget
 written down before the writing, which is the only reason a router did not become a fourth brief.***
+
+---
+
+# §T20.108 — T20 PASS 103: 🔴🔴🔴 **THE OWNER'S RANKING PUTS HIS OWN REPORTED DEFECT FIRST AND NEVER NAMES IT — THE LEGEND SITS `13,759` LINES BELOW THE LIST** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads only.**
+
+## 1. ✅ CLAUSE (ii) — **HIT. ALL FIVE RESOLVE, FROM A STATED MAPPING.**
+
+*Clause (iv) forbade inference: **"a letter is RESOLVED only when a document STATES the mapping.
+Deducing it from position in the string, from severity, or from which items are left over is
+FORBIDDEN."*** ▶ **The legend exists, at `NBA_OPEN_ITEMS.md:13794`:**
+> *"(A = T18-1 · B = frozen static layer · C = frozen schedule · D = T16-7/8/9 · E = DARKO evidence;
+> the numerals are T20-n. Seventeen entries because D bundles three…)"*
+
+⚠ *`§T20.56`, which found the five, listed them as a NUMBERED `1`–`5` table — **so the numbered list
+and the lettered string are different orderings and the mapping could not have been deduced from
+either.** The pass that tried would have had a `40%` chance of being right about `A`.*
+
+## 2. 🔴🔴🔴 CLAUSE (iii) — **HIT, AND IT IS THE FINDING: FOUR OF THE FIVE ARE RANKED AND NEVER NAMED**
+
+| letter | in the brief's TOP BLOCK *(the page a person reads INSTEAD of the file)* |
+|---|---|
+| 🔴 **`A` — `T18-1`** | **ABSENT** |
+| ✅ `B` — the frozen static layer | present *(3 mentions)* |
+| 🔴 **`C` — the frozen schedule** | **ABSENT** |
+| 🔴 **`D` — `T16-7`/`8`/`9`** | **ABSENT** |
+| 🔴 **`E` — the DARKO failure evidence** | **ABSENT** |
+
+> ## ⇒ **THE TOP-RANKED ENTRY ON THE OWNER'S BRIEF IS `A`, AND `A` IS THE DEFECT THE OWNER REPORTED HIMSELF.**
+> **`T18-1`, in his words** *(quoted by `§T20.56`)*: ***"Our system should be covering the APP LADDER.
+> If it is not, we need to change so it covers it. **Our anchor is not at the proper place of the
+> ladder, or the ladder is not deep enough** — plus everything else you have open."***
+> *`§T20.56` on it: **"Of thirteen season-critical items, the one that is missing and matters most is
+> the one he reported"** — a coverage defect with two candidate causes and **no diagnosis**, `0` of
+> the twelve and `0` of the thirty.*
+
+## 3. ⚠⚠ **IT IS `§T20.69`'s DEFECT, ON THE OTHER SURFACE, AT `148×` THE DISTANCE**
+
+*`§T20.69` found the `▶ EXACT NEXT STEP` row at line `404` while the resume note ended at `311`:*
+***"the single most important row sits ninety-three lines below the document that exists to point at
+it."*** ▶ **Here the ranked string is at line `35` and its legend at line `13,794` — a gap of
+`13,759` lines**, on the surface the OWNER reads.
+🔑🔑 **AND IT IS ALSO `§T20.56`'s OWN FINDING RECURRING ONE LEVEL UP**: *that pass found five
+season-critical items missing from the brief. **They were added to the RANKING. Four of them were
+never added to the PAGE.*** ⇒ ***A correction that reaches the index and stops before the text is the
+same failure `§T9.25a` named — "a correction propagates to the ENTRY and the topical documents, and
+stops at the SUMMARY ROWS, which are what a reader reads first" — with the summary row and the entry
+in the same file, thirteen thousand lines apart.***
+
+## 4. ✅ THE FIX *(clause (v) — in the string, where the reader is)*
+
+**All five letters are now named in the top block itself**, each with its item and a quotation from
+the source — `A` with the owner's own words, `B` with its live re-derivation *(`defender_ratings`
+`max(as_of_date)` = `2026-04-09`)*, `C` with its *(`nba_calendar.games`, oldest and newest write both
+`2026-09-02T20:24`)*, `D` with why the string has seventeen entries for sixteen items, `E` with its
+heading. ⚠ **No item is re-ranked, renamed or re-scoped.**
+📐 **BLOCK SIZE, REPORTED AS THE CLAUSE REQUIRED**: **`16,230` → `19,220` characters, `+18.4%`,
+`≈4,800` tokens.** ✅ **Still bounded, still minutes to read** — *and the comparison that matters is
+`§T20.105`'s: the resume note grew `5.9×` by appending; this grew `18%` by resolving.*
+
+## 5. 🔴 CLAUSE (i) — **`RULE 52`, AND A FIFTH PINNED SEGMENT**
+
+**`2026-09-22T22:31Z`: `649 · 1 · 470 · 467`. The high band read `648` at `22:28Z`, so the delta was
+opened — and attributed rather than assumed.**
+▶ **Against the pre-pass tree, this pass's own writes moved NOTHING** *(`649 → 649`, entered `[]`,
+left `[]`)*. ▶ **The `+1` belonged to `§T20.107`, pass 102's own closing entry**, and the flipping
+member is:
+
+> ### **SEGMENT `873`, `0.4500 → 0.4500`** — *a shell-command echo* (`command: cd /mnt/transcripts && echo "=== t1 sweep b ===" …`).
+
+📌📌 **FIVE pinned segments are now known, THREE of them on the high band alone**: `938` and `385` at
+`0.4000`, **`292`, `401` and `873` at `0.4500`.** ***The count has grown every single time the sweep
+has looked — five for five — and rule 52 has now been worth its cost on four separate passes.***
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.107`** *(**PRIOR** — it recorded the drop that
+motivated this, and its clause (iii) is why the gap was documented rather than guessed at)* ·
+**`§T20.56`** *(**PRIOR** — the five items, their quotations and the numbered table; **this pass claims
+only the letter mapping's INACCESSIBILITY, not the items**)* · **`§T20.69`** *(**PRIOR** — the
+row-below-the-note defect this repeats)* · **`§T9.25a`** *(**PRIOR** — the correction-stops-at-the-
+summary-row failure mode)*. ▶ **RULE 51, last step, BASELINE tree**: *"frozen static layer"*,
+*"ranked list whose"* and *"unexplained letter"* return **`0`**; `T18-1` and the DARKO item return
+hits, **opened — they are the items themselves, which is the point: the ITEMS were on file and their
+PLACE IN THE RANKING was not.**
+
+📌 ***The lesson:*** **a ranking is a claim about priority, and a letter is not an item.** ⚠⚠ ***For
+fifty-two passes the brief has told the owner what matters most in a symbol that appears nowhere else
+on the page — and the sweep quoted that string into two other documents before anyone tried to read
+it as a reader would.***
