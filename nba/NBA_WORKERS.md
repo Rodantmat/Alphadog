@@ -1578,7 +1578,25 @@ NOTHING)** · `BT_SHIFT_LAMBDA` · `BT_PLAYER_L0`.
 > | **`BT_LADDER_STEPS`** | 🔴 **`"10"` in production — the certified recipe's own constant is `6`** | patch `:39` | ladder depth ±N. *`P2` deliberately does not set it* **(PRIOR — recorded above)** |
 > | **`BT_SAVE_COMPONENTS`** | unset | 🔴 **NOT read by this file at all** — consumed by the harness and `combos_ladder_v1.py` | ***this is the flag that makes `P2` step 12 a different job from step 11*** |
 > | **`BT_TRAIN` / `BT_TEST`** | — | 🔴🔴 **INERT HERE** | **the anchor line that reads them is REPLACED** *(patch `:40–49`)* **by season auto-detection from the files on disk.** ⚠ *They remain load-bearing in the HISTORY builders — COMPASS fact 66: **"BT_TRAIN must be explicit … or the test season lands in its own training set (leak + OOM)"** — which is a statement about `build_*_history.py`, not about this script.* |
-> | **`BT_TAG`** | **`"prod"`, set by the script itself** *(`:151`)* | `:151` | 🔴 **named in ZERO of the twelve before this entry** |
+> | **`BT_TAG`** | **`"prod"`, set by the script itself** *(`:151`)* | `:151` | 🔴 **named in ZERO of the twelve before this entry** *(it is listed once in `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md`, one of the THIRTY — see the block below)* |
+>
+> ## 🔴🔴 **AND FOUR MORE FLAGS REACH PRODUCTION THROUGH THE `exec`, EACH DEFAULTED IN CODE, NAMED IN NONE OF THE TWELVE**
+> *`build_baseline_ladder.py` `exec`s the patched harness **in the same environment**, so every flag
+> `nba/backtest/classification_ladder_v12.py` reads is live in the production ladder. **Four of them
+> the twelve have never named**, and each carries a model-shaping default:*
+>
+> | flag | default, as coded | what it selects |
+> |---|---|---|
+> | **`BT_BAND_CELLS`** | **`"rebounds"`** *(`:53`; the harness's own docstring says `props\|all\|0`)* | which variation-band cells are built |
+> | **`BT_SHIFT_MODE`** | **`"threes_made,blocks,steals,ftm"`** *(`:58`)* | the prop set that uses shift mode |
+> | **`BT_KCELL_3PM`** | **`"100"`** *(`:55` — `K_CELL_BY_PROP = {"threes_made": …}`)* | the cell-blend constant for threes |
+> | **`BT_PHASE`** | **`"1"`** *(`:528`)* | a phase gate inside the harness |
+>
+> ⚠ **All four are listed in `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` — a document of the
+> THIRTY, not of the twelve.** ⇒ ***The twelve's env list was a SUBSET of what the code reads, and the
+> remainder survived only in a checkpoint file that the twelve do not route to.*** 🔑 *This is
+> `§T20.90`'s orphan problem in the other direction: not a finding nothing points at, but a fact that
+> lives outside the documents meant to carry it.* ⚠ **Recorded, not changed (rule 1).**
 >
 > ## ⚠⚠ TWO SILENT FAILURES THE TABLE MAKES VISIBLE
 > **① 🔴 THE INJURY STEP CANNOT FAIL THE BUILD.** *The whole day-before enrichment block sits inside
