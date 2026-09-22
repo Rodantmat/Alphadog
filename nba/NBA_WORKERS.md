@@ -10,6 +10,57 @@ writes. Grouped by role.
 
 ---
 
+## 0.000 🔴 **EDITING A WORKFLOW FILE RIGHT AFTER DISPATCHING IT CANCELS THE RUN — and a CANCELLED run is not a FAILED one** *(T15 pass 3, §T15.4c, from the 2026-09-12/13 transcript)*
+
+*Verbatim from the transcript, and it is the operator diagnosing himself:*
+
+> 🔴 ***"I CANCELLED MY OWN JOB. Editing the workflow TWICE right after dispatching it tripped the
+> CONCURRENCY GROUP and killed the run. The fix is trivial — FINISH EDITS, THEN DISPATCH — but it
+> cost a cycle."***
+>
+> ***"…was CANCELLED at 07:42, NOT FAILED — my two rapid workflow edits triggered the concurrency
+> group and killed the run I'd just dispatched. My own edits RACED THE JOB."***
+
+⚠⚠ **THE READING TRAP, AND IT IS WHY THIS IS RECORDED**: **a self-cancelled run appears in the run
+list with a non-success conclusion**, so **an operator reading only the conclusion column diagnoses a
+broken job and re-debugs code that was never the problem.** 🔑 **The distinguishing evidence is the
+CONCLUSION VALUE — `cancelled`, not `failure` — and the timestamp's proximity to the workflow-file
+commits.** *Probed 2026-09-22: **0 of the twelve and 0 of the thirty** carry this distinction.*
+
+✅ **Concurrency groups themselves are well documented here** *(9 of the thirty, 8 of the twelve —
+including `nba-engine-test.yml` having its own group)*. **What was missing is the FAILURE MODE they
+create**: *the group exists to stop two runs colliding, and a dispatch followed immediately by an edit
+to the same workflow file is exactly two runs colliding — with the operator on both sides of it.*
+
+🔑 **THE RULE, in the transcript's own words: FINISH THE EDITS, THEN DISPATCH.**
+
+---
+
+## 0.001 ✅ **THE MECHANISM FAILURE CENSUS FOR T15 CAME BACK EMPTY AGAINST THE PROSE** *(T15 pass 3, §T15.4c — the first time in this sweep)*
+
+*The mechanism strata are **868 of T15's 1,098 segments (79%) — the largest share in the corpus**.
+The census's question was §T14.3b's: **what failed here that the prose did not record?***
+
+| # | Failure signature in the mechanism strata | Recorded in the prose? |
+|---|---|---|
+| 1 | **`NOT NULL` violation on the board archive** — *"Failing row contains (2026-09-12, **null**, routine, …, underdog, player_total_runs, LAD @ MIA Total Runs O/U, Over, 8.5, −118, …)"*, `exit code 1` @ 2026-09-12T23:21:54Z | ✅ **YES** — *"`event_id` is not null and live boards have no odds-api event id. Synthesising a stable one."* |
+| 2 | **`ValueError: could not convert string to float: ''`**, `exit code 1` @ 23:26:18Z | ✅ **YES** — the Fliff empty-line bug *(`NBA_SYSTEM_ARCHITECTURE.md` §0f-4)* |
+| 3 | **Postgres cast error** — *"HINT: You will need to rewrite or cast the expression"*, `exit code 1` @ 2026-09-13T00:48:56Z | ✅ **YES** — *"Fliff sends `event_start_utc` as epoch MILLISECONDS while the column expects a timestamp."* |
+| 4 | **`KeyError: 'Column not found: dreb36'`**, `exit code 1` @ 2026-09-13T01:33:57Z | ✅ **YES** — *"the `g` groupby was created BEFORE `dreb36` existed, so it can't see the column. Rebinding it."* |
+| 5 | **the self-cancelled run** *(§0.000 above)* | ✅ **YES**, and diagnosed in full |
+
+✅✅ **FIVE FAILURES, FIVE PROSE ENTRIES — T15's account of its own mechanism is COMPLETE.** ⚠ **That
+is the INVERSE of T14's census result**, and it is a finding about the transcript rather than about
+the system: *T15 is the candid one.* 🔑 **The failure that matters is therefore NOT in this table** —
+**it is the class §T15.3a opened: a write that SUCCEEDED and lost something.** *The census cannot see
+those (§T14.3b), and `exit code 1` is precisely the signal they do not produce.* ⚠ **Pinned
+2026-09-22: `##[error]Process completed with exit code [1-9]` = **8 raw occurrences → 4 distinct
+causes**; `Killed` = 15, of which **2 are the self-cancellation** and the rest quote T14's OOM
+incident as context, not new failures.** *All four distinct causes are Fliff-or-archetype work; none
+is unexplained.*
+
+---
+
 ## 0.00 ⚠⚠ THE HARDCODED-SEASON LITERAL, AND THE GREP TRAP THAT HIDES HALF OF IT
 *`[LIVE-AUDIT]` 2026-09-21 (T7 pass 28).*
 
