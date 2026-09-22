@@ -30431,3 +30431,104 @@ punched in the authority; `fact 176` is a number the CODE invented and the docum
 ***The corpus's own discipline was sound — it cited faithfully. What it never did was check that the
 thing it was citing faithfully was there. Fidelity to a source is not verification of it, and a
 citation copied from a comment is a citation nobody has checked.***
+
+---
+
+# §T20.44 — PASS 39: *LINE NUMBERS ROT — AND THE ONLY ONES THAT ROTTED ARE THE ONES RULE 1 LET ME TOUCH*
+
+*(T20 pass 39, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY AGAINST THE SYSTEM: repo reads and `SELECT` only. `NBA_COMPASS.md` READ ONLY.**
+
+## 1. 📐 THE POINTER POPULATION
+
+> **`187` `file:line` pointers across the twelve · `108` distinct targets**, 2026-09-22T16:14:51Z.
+> **Top targets**: `NBA_OPEN_ITEMS.md` 22 · `NBA_MASTER_SUMMARY.md` 18 · `build_confidence_v3.py` 11 ·
+> `nba-p2-overnight-heavy.yml` 11 · `score_board_legs.py` 10.
+> **`183` in range · `4` NO SUCH FILE** — ⚠ **and two of those four are RULE 20's false-positive
+> class**: `_combos.json:404` and `_periods.json:404` are an **HTTP 404 in prose**, not pointers.
+
+## 2. ✅✅ EVERY POINTER INTO A **SYSTEM** FILE RESOLVES — *19 of 19, byte-exact*
+
+| pointer | line `n` actually contains |
+|---|---|
+| `score_board_legs.py:97` | `season = os.environ.get("BS_SEASON", "2025-26")` ✅ |
+| `build_availability_delta.py:52` · `check_delta_gaps.py:42` · `build_confidence_v3.py:99` · `build_blowout_model.py:48` · `build_defender_ratings.py:114` · `export_market_spreads.py:29` | the exact `os.environ.get(...)` line claimed ✅ |
+| `grade_board_outcomes.py:167` / `:168` | `GRADE_START "2024-10-22"` / `GRADE_END "2026-04-12"` ✅ |
+| `build_rung_market.py:80` / `:16` | the `months(...)` call / the *"defaults cover both seasons"* docstring ✅ |
+| `check_delta_gaps.py:24` | the *"defaults: current season"* docstring ✅ |
+| `scrape_nba_season_tables.py:146` | the `WINDOWS` map ✅ |
+| `nba-p2-overnight-heavy.yml:31` / `:128` / `:274` | `default: "2025-26"` / `GAP_SEASON:` / `C3_SEASONS:` ✅ |
+| `nba-p3-afternoon-light.yml:103` | `# COMPASS fact 176 says "PrizePicks stays the MLB producer…"` ✅ |
+| `certify_pipeline.py:32` · `load_baseline_ladder.py:37` | `CERT_STRICT "1"` / `LOAD_ASOF "2026-03-15"` ✅ |
+
+## 3. 🔴🔴🔴 CLAUSE (iii): **SIX OF SIXTEEN `.md` POINTERS I WROTE TODAY HAVE ALREADY ROTTED**
+
+| pointer, as published | what line `n` holds now |
+|---|---|
+| 🔴 `NBA_MASTER_SUMMARY.md:20578` | the §T7 blame-timestamp clause — the P3-cron text moved |
+| 🔴 `NBA_OPEN_ITEMS.md:4463` | a code fence |
+| 🔴 `NBA_OPEN_ITEMS.md:11651` | a `blowout_model` sentence |
+| 🔴 `NBA_MASTER_SUMMARY.md:11687` | *"seasons."* — the §T7.8c heading moved |
+| 🔴 `NBA_OPEN_ITEMS.md:11664` | the differential-worker quote, shifted |
+| 🔴 `NBA_SYSTEM_ARCHITECTURE.md:902` | *"'Silently' is the important word here"* |
+
+⚠ **`NBA_MASTER_SUMMARY.md:1780` was FLAGGED BY MY CHECK AND IS NOT BROKEN** — *the line carries the
+right content and my probe wanted a word from the line above.* **Opened, checked, NOT claimed (rule
+48).**
+
+🔑🔑 ***EVERY ROTTED POINTER WAS CREATED BY THIS SWEEP IN PASSES 27–38, AND EVERY ONE POINTS INTO A
+FILE THIS SWEEP THEN APPENDED TO.*** **The insertions shifted every line below them.**
+
+## 4. 🔑🔑 THE FINDING — *and it is an argument for rule 1*
+
+> **`19 of 19` pointers into `.py` and `.yml` files resolve exactly.**
+> **`6 of 16` pointers into `.md` files — the twelve — are broken.**
+
+***The difference is not care. It is PERMISSION.*** **Rule 1 — *"document, don't fix"* — forbade me
+from touching a single system file, so their line numbers could not move. The twelve are this
+sweep's deliverable and I edited them thirty-nine times today, so their line numbers moved
+constantly.**
+⇒ ***A line number is a pointer into a file's EDIT HISTORY, not into its content. It survives exactly
+as long as nobody writes above it — which makes it safe for files you are forbidden to change and
+worthless for files you are here to change.***
+📌 **§T20.22 measured the `§`-pointer surface at 99.71% sound and never tested this grammar. Same
+corpus, same day, and the failure rate on my own same-day `.md` pointers is `37.5%`.**
+
+## 5. ✅ REPAIRED IN-PASS BY **ANCHORING, NOT RENUMBERING** *(rule 12)*
+
+**The pre-registration required the repair to be a content anchor** — *a renumbered pointer rots
+again on the next edit, exactly as §T20.26 re-stated countdowns as DATES rather than refreshing
+them.* **Five citations rewritten to name the SECTION and a searchable string**: *"the
+`player_impact_rating` `[LIVE-AUDIT]` block (search: `last_write 2026-09-02T07:58Z`)"*, *"the
+weekly-differential-worker item (search: `The second run never came`)"*, *"`NBA_SYSTEM_ARCHITECTURE.md`'s
+'NBA's JSONB columns' line"*, *"the timezone-defect list"*, *"the 'every one of them a timezone error'
+paragraph"*.
+⚠ **`40` line pointers remain in `NBA_MASTER_SUMMARY.md` and `17` in `NBA_OPEN_ITEMS.md`** — *most
+predate this session and point at stable regions.* **Not renumbered wholesale: that would be
+re-creating the defect at scale.** 📌 **Recorded as a bounded, known surface rather than fixed
+blindly.**
+
+## 6. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` **FALLS or HOLDS** | ✅ **HIT — HELD at `470`** at **2026-09-22T16:14:51Z** |
+| **(ii)** | **≥ 3** pointers whose line does not carry the claimed content | ✅ **HIT — six.** ❌ *The "discipline is exact" branch is not available for `.md`; it IS available for `.py`/`.yml`, where 19 of 19 hold.* |
+| **(iii)** | **≥ 1** broken pointer **written by me this session** | ✅ **HIT — ALL SIX.** *Not one broken pointer predates this session; not one points into a file rule 1 protected.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FORTY-FIRST consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 7. ⚠ VERDICT
+
+🔴 **NOT CLEAN — six self-inflicted pointer breaks, repaired by anchoring. CLEAN STAYS 0/3.**
+✅✅ **AND A GENUINE RESULT ABOUT THE SYSTEM-FACING WORK: every one of the 19 code and workflow
+pointers this sweep published today is byte-exact.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **I spent eleven passes documenting that this corpus's defects live on EDGES,
+and then spent those same eleven passes manufacturing broken edges of my own — at a `37.5%` rate,
+into the only files I was permitted to touch.** ***The constraint I have been working under all day
+turns out to have been protecting something: a rule that forbids you to write is also a rule that
+keeps your references to that thing true. What rots is what you are allowed to change.***
