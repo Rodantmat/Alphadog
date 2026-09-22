@@ -144,6 +144,26 @@ the bridge already reads into `nba_control`, so a month trending toward the cap 
 and ***"since the cheap tier keeps only 7 days of history, our own board scrapers archive every pull
 from opening day — so we build our own history rather than relying on the vendor's."***
 
+> ### 🔴🔴 **RETRACTED BY ITS OWN AUTHOR — 2026-09-22 (T14 pass 1, §T14.2a). THE SECOND SAFEGUARD DOES NOT EXIST.**
+> **This entry recorded the archiving claim as a SAFEGUARD, from T13 (2026-09-10). The next session
+> audited it and withdrew it:**
+> > *"**I said earlier that our scrapers 'ARCHIVE EVERY PULL FROM OPENING DAY.' THEY DON'T in a
+> > usable way**: each run **OVERWRITES `boards/<app>_current.json`**. **Git history keeps old
+> > versions, but that is not a queryable archive and it bloats the repo.** For the parity
+> > requirement from opening day, **the window and close snapshots must land in `board_snapshots` in
+> > Postgres, the same shape as the historical pull.** ***Open — build item.***"*
+>
+> ✅ **AND PASS 3 OBSERVED THE MECHANISM WITHOUT RECOGNISING IT** *(§T13.4a)*: **each app has exactly
+> ONE `_current.json` whose commit timestamp moves** — *fliff and sleeper within hours, betr frozen
+> since 2026-09-10*. ***That is the overwrite, seen from the outside.*** **There is no accumulating
+> archive on disk; the history is git's, not the warehouse's.**
+> 🔑🔑 **So the ParlayAPI downgrade rests on ONE safeguard, not two** — **the
+> `x-requests-remaining` logging stands; the self-built history does not exist yet** — ⚠ **and the
+> downgrade's stated cost, *"you lose only history beyond 168 hours, and we no longer need it,"* is
+> true of the two HISTORICAL seasons and NOT of the season about to start.**
+> ⚠⚠ **RULE 33's SEVENTH instance, and this one corrects THIS SWEEP'S OWN pass-3 write** — *recorded
+> in place with both dates (rule 5) rather than quietly re-scoped.*
+
 ### ⚠ A CORRECTION MADE INSIDE THE TRANSCRIPT — *rule 27 in miniature, and worth flagging*
 **The Fliff ping response returned `"sorry, Fliff is not available in California"`, restriction code
 `15001`**, and the first write-up drew the conclusion — *"**for you it's a market signal to compare
