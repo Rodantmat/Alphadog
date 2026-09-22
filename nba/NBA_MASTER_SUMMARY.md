@@ -36548,3 +36548,88 @@ probe must be shaped like the CLAIM, not like its numerals.*
 📌 ***The lesson:*** **two passes in a row have now taken a column the corpus already owned and
 answered a question the corpus had already asked.** ⚠⚠ ***The sweep's remaining unread material is
 not in the transcripts. It is in the tables the documents cite and nobody queried.***
+
+---
+
+# §T20.97 — T20 PASS 92: ✅✅ **THE PRESCRIBED FIX FOR `§T20.96`'s `38` DAYS IS FEASIBLE — `38` OF `38` — AND ON `31` OF THEM IT HAS EXACTLY ZERO MINUTES OF SLACK** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **`SELECT` and file reads only.**
+
+## 1. 🔑 THE ONE UNTESTED WORD IN THE WHOLE CHAIN
+
+*`§T20.96` priced the early-tip defect at `38` days a season. The remedy has been specified since T4 —
+`min(1:15 PM PT, earliest_tip − 2h)` — and it moves `P3` **earlier**, while the `1:15` doctrine exists
+because the report is not complete until Pacific clubs file at `1:00 PM PT`.* **The item resolves that
+tension in one clause, quoted:**
+> *"Note this interacts with the injury-report cutoff: on an early-tip day the game-day report is also
+> filed earlier (8–10 am local for tips at 5 pm local or earlier), so an earlier run is **both
+> necessary and possible**."*
+
+⇒ ***"Possible" was doing all the work and nothing had ever checked it. If the report is not filed by
+`earliest_tip − 2h`, the only prescribed remedy for `22.8%` of the season does not exist.***
+
+## 2. ✅ CLAUSE (ii) — **HIT, AND THE ARCHIVE IS NOT WHERE ANYONE WOULD LOOK**
+
+🔴 **There is NO injury table in Postgres** — *all eight `nba*` schemas enumerated from
+`information_schema`, `2026-09-22`.* ✅ **The archive is monthly JSON in the repo**,
+`nba/data/nba_injury_report_<season>_<YYYY-MM>.json`, **and every row carries `snapshot_ts` — the
+NBA's own report-generation time — alongside the `source_url` of the PDF that names it**
+*(`Injury-Report_2025-12-22_09_00AM.pdf`)*. **The 2025-26 archive covers `166` game-days.**
+🔑 *The prediction was registered as **not a safe one**, because `§T20.95` had just found every
+timestamped Postgres source to be a five-day September backfill. **This source is different: the
+timestamps are the LEAGUE's, not the scraper's**, so they survive a backfill intact — which is why the
+question is answerable at all.*
+
+## 3. ✅✅ CLAUSE (iii) — **HIT. `38` OF `38`.**
+
+*Method: the `38` early-tip days were **re-derived from `nba_calendar.games` this pass** (rule 15/17,
+clause (iv) — `§T20.96`'s list was not reused), each with its earliest tip and that game's matchup in
+Pacific time by **named zone**. For each day: `cutoff = earliest_tip − 2h`; take the latest
+`snapshot_ts` at or before it; require that snapshot to contain **the early game's own matchup**.*
+
+> ### ✅ **`38` OK · `0` MISSING · `0` DAYS WITHOUT ARCHIVE ROWS.**
+
+## 4. ⚠⚠ **THE FINDING IS THE SLACK, AND IT IS THIN**
+
+| distance from the newest eligible report to the trigger moment | days |
+|---|---|
+| 🔴 **`0` minutes** | **31** |
+| `30` minutes | 6 |
+| `45` minutes | 1 |
+
+⇒ ***On four days in five, the report the fix needs is generated at exactly the minute the fix would
+fire.*** 🔑 **Not an accident**: *the NBA files on the half hour and `earliest_tip − 2h` lands on a
+half hour too.* ✅ **Survivable as designed, because `P3` scrapes the report as its own first step**
+*(`nba-p3-afternoon-light.yml`, step 1 — "the day-of injury report", headed **"THE BINDING INPUT"**)*
+**rather than assuming an earlier run left one.**
+🔴 **AND THE LIMIT, STATED**: *`snapshot_ts` is when the league **GENERATED** the report, not when the
+PDF became **fetchable**.* ***Any publication lag eats the entire margin on those 31 days, and the
+archive cannot measure it.*** **`NOT RECORDED` (rule 6); measurable from `2026-10-20`.**
+⇒ ✅ **The data exists on every early-tip day of the last completed season. 🔴 The open question has
+MOVED rather than closed: not "is the input there?" but "is a trigger with zero minutes of slack one
+the owner wants to depend on, or should `earliest_tip − 2h` carry a buffer?"** *(OWNER DECISION.)*
+
+## 5. ✅ CLAUSE (i) — `RULE 52` AS CLARIFIED
+
+▶ **`2026-09-22T21:42Z`: `649 · 1 · 471 · 469`. Both bands unchanged. No delta to open.**
+📌 *Four consecutive passes have written substantial material into the twelve with neither band
+moving. **Recorded as an observation and nothing more** — `§T20.91` established the instrument cannot
+resolve `±1`, and a run of zeros is not evidence for a refinement it cannot test.*
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`BUG-OPEN · P3 uses a FIXED 1:15 PM PT`** *(**PRIOR** — the
+"both necessary and possible" clause is its sentence; **this pass tests it and claims only the test**)* ·
+**`§T20.96`** *(**PRIOR** — the `38` days, re-derived not reused)* · **`§T20.95`** *(**PRIOR** — the
+backfill finding that made clause (ii) a real prediction)* · **the injury archive and `snapshot_ts`**
+*(**PRIOR** — documented across `NBA_WORKERS.md`, `NBA_SYSTEM_ARCHITECTURE.md`, `NBA_DATABASE.md` and
+COMPASS; **only the feasibility test is new**)*. ▶ **RULE 51, last step, BASELINE tree, probed as the
+CLAIM and not as its numerals** *(`§T20.96`'s lesson)*: *"filed in time"*, *"report is available by"*
+return **`0` files**; *"feasible rather than merely necessary"* returns **1 — the host item itself**,
+which is the sentence under test.
+
+📌 ***The lesson:*** **a remedy that has sat in an open item since T4, costed at `38` days one pass
+ago, turns out to work — and the pass that confirmed it produced a better question than the one it
+was sent to answer.** ⚠⚠ ***Three passes have now converted one qualitative open item into a
+timetable, a price and a feasibility test, entirely from data the corpus already owned. None of it
+required a single write to the live system.***
