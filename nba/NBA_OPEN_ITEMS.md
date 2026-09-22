@@ -284,6 +284,59 @@
 > INSTRUMENT EXISTS that could tell the owner whether that is right or wrong.**
 > ⚠ **NOT A DELETE LIST. A MEASUREMENT FOR AN OWNER DECISION.**
 
+> # ✅🔴 **DIAGNOSIS ATTEMPT — 2026-09-22, T20 pass 104 (§T20.109). THE OWNER NAMED TWO CAUSES; THE ARCHIVE SEPARATES THEM, AND ONLY ONE IS SUPPORTED.**
+> *(`SELECT` only. **Stated as a diagnosis ATTEMPT with its limits, because it answers a question the
+> owner asked about his own system.** Measured over **`776,215` PrizePicks legs, the whole 2025-26
+> season**, joining `nba_score.board_scored` to `nba_score.baseline_history` on
+> `(game_date, player_id, prop)`. **`ladder_steps` was READ from the table — it is `10`, the
+> production depth, not the certified recipe's `6`** *(`§T20.101`)*.)*
+>
+> | the owner's words | verdict |
+> |---|---|
+> | ***"our anchor is not at the proper place of the ladder"*** | ❌ **NOT SUPPORTED.** **The median `line − anchor` across all `776,215` legs is `0.00` — exactly.** *The mean is `+0.580`, which is right-SKEW (the board offers more lines above the anchor than below), **not displacement**.* |
+> | ***"or the ladder is not deep enough"*** | ✅ **CONFIRMED — and it is asymmetric.** |
+>
+> ## 🔴 THE DEPTH DEFECT, SIZED
+> | | 2025-26, PrizePicks |
+> |---|---|
+> | legs scored | **776,215** |
+> | flagged `interpolated` *(no exact rung)* | **58,221 — `7.50%`** |
+> | 🔴 **of those, CLAMPED beyond the ladder's ends** | **14,338 — `1.847%`** *(one leg in 54)* |
+> | benign between-rung interpolation | 43,883 — `5.65%` |
+> | **above the top rung** | **12,885 — `89.9%` of the clamped** |
+> | below the bottom rung | 1,453 — `10.1%` |
+> | 🔴 **furthest excursion above the top rung** | **`+24.0` line units** |
+>
+> ## 🔑🔑 **AND THE MECHANISM IS THE PART THAT MATTERS — THEY ARE CLAMPED, NOT EXTRAPOLATED**
+> **`nba/score_board_legs.py:168-170`**, in its own words:
+> > *"`if lo.empty or hi.empty:` **# beyond both ends - clamp to the nearest fitted rung**"*
+> ⇒ ***A line `24` above the deepest rung is priced with the DEEPEST RUNG'S PROBABILITY. The model
+> cannot tell the two apart.***
+> 🔴 **AND THE CONFIDENCE LAYER CANNOT EITHER**: `:250` adds **`4.0`** to `lost` for **any**
+> `interpolated` leg — *"an interpolated rung is genuinely less supported than a fitted one - say
+> so"* — **so a clamped leg (unsupported) and a between-rung fill (well supported) receive exactly
+> the same deduction.** ⚠ **The `interpolated` flag stores that a leg was off-ladder and NOT whether
+> it was interpolated or clamped.** *Recorded, not fixed (rule 1).*
+>
+> ## ⚠⚠ WHAT IS **NOT** NEW HERE, CREDITED RATHER THAN REPUBLISHED *(rules 26/28/51)*
+> **`NBA_BASELINE_CALIBRATION.md` §0v.3 already decomposes the residual per prop for the whole
+> 2025-26 season with an explicit *"out of range"* column** — **pts+reb `4,804`, pts+ast `3,638`,
+> reb+ast `42`, and `0` for assists, threes, blocks, steals, stocks and turnovers** — and
+> `build_baseline_ladder.py`'s own comment records the 2026-03-15 check *(“102 pts_reb legs, 81
+> pts_ast, 69 pra, 60 points out of ladder range”)*. ⇒ ***WHERE the defect lives was already on file
+> and is not claimed here.*** **What this pass adds: the ANCHOR half of the owner's sentence
+> (answered negatively), the season-wide SIZE of the clamped set, its `89.9%` upward asymmetry, the
+> `+24.0` maximum, and the mechanism-and-consequence above.**
+>
+> ⚠ **LIMITS, STATED**: *PrizePicks only — the other eleven apps are not measured here; the per-prop
+> split was re-run for December 2025 only and reproduced `§0v.3`'s ordering (`pts_reb 4.34%` ·
+> `pts_ast 4.06%` · `pra 2.23%` · `points 0.96%` · `reb_ast 0.02%` · threes/rebounds/assists `0.00%`),
+> **but the season-wide per-prop query exceeded the bridge's 180-second limit and is NOT MEASURED
+> here** (rule 6).*
+> 🔴 **OWNER DECISION — the knob exists and is per-run**: **`BT_LADDER_STEPS`**, whose production
+> default is `10` and which **`P2` deliberately does not set** *(`NBA_WORKERS.md`'s MODE DISPATCH
+> TABLE)*. **Whether to deepen it, and for which props, is not a documentation decision.**
+
 ### 🔴🔴🔴 **T18-1 — "OUR ANCHOR IS NOT AT THE PROPER PLACE OF THE LADDER, OR THE LADDER IS NOT DEEP ENOUGH"** *(**0 of the twelve, 0 of the thirty**; positive controls `goblin` 636/417, `multiplier` 617/432)*
 
 > ***"Our system should be covering the APP LADDER. **If it is not, we need to change so it covers
