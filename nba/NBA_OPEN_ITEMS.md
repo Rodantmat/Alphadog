@@ -9,7 +9,15 @@
 > history is part of the record. This is a POINTER plus the ranked order.** ▶ **Full brief:
 > search this file for `OPENING-DAY BRIEF`.**
 >
-> ## ▶ **ALL ~~FOURTEEN~~ FIFTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
+> ## ▶ **ALL ~~FOURTEEN~~ ~~FIFTEEN~~ SIXTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
+> 🔴🔴🔴 **`T20-17` ADDED 2026-09-22, T20 pass 97 (`§T20.102`), AND THE RANKING RULE PUTS IT NEAR THE
+> TOP, NOT THE BOTTOM** — *`build_availability_delta.py:71` is **`except Exception: pass`**, the only
+> handler of `69` in the pipelines' whole called-script set that leaves no trace at all; it drops
+> **shards** of the injury archive, and **`score_board_legs.py:189` reads the resulting
+> `nba_score.availability_delta`.*** ⇒ ***SILENT · it changes which legs `P3` scores · UNCAUGHT by any
+> certifier · and it needs no human error to fire, only a flaky fetch.*** **By the rule below it sits
+> with `A` and `13` at the head of the order; it is listed last in the string only because the string
+> is append-ordered — read the rule, not the position.**
 > *Ranking rule, re-derivable: **SILENT before LOUD**, then **STOPS THE SLATE before DEGRADES IT**,
 > then **UNCAUGHT by a certifier before CAUGHT**. A silent failure costs a season before anyone
 > looks; a loud one costs an evening.*
