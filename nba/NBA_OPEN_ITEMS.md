@@ -12365,7 +12365,40 @@ and no patch toward one, anywhere in the session.** ⇒ **The refactor was not m
 it was never begun.** **Severity: HIGH, unchanged.** *Without it P3 either refits (~64 min, past its
 window) or scores against a ladder it did not fit.*
 
-## T19-1 · 🔴🔴 **NEW · HIGH — A DEFECT IN THIS SWEEP'S OWN DELIVERABLE** · `NBA_GLOSSARY.md` has not been updated through seven transcripts
+## T19-3 · 🔴🔴 **NEW · METHOD, HIGH** · T15–T18 were closed on a standard this sweep had already superseded
+**`NBA_MASTER_SUMMARY.md` records the sweep's own method** *(lines ~5430–5438, "THE METHOD, now proven
+and fixed for T2–T16")*: **targeted sweeps build the skeleton, then *"full sequential reads — and
+these are the ONLY ones that can count as clean"*, and *"the clean count only starts once sweeps are
+exhausted"*.** **Its evidence is T1's own 28-pass history: 23 targeted sweeps produced 21 findings;
+pass 24, a full sequential read, immediately found SIX more; pass 25 two more.**
+🔴 **T18's CLEAN 3/3 was awarded to passes 6 (live numeric), 7 (cross-document) and 8 (wiring) — all
+three targeted instruments, none of which re-read the transcript.** **T18 has never had a clean full
+sequential pass.** **T15, T16 and T17 closed at 4 passes each and are in the same position.**
+⚠⚠ **The OWNER's rule is NOT broken** — his charter specifies *"3 consecutive passes without having
+new points not documented"* and says nothing about how a pass must read. **What was broken is the
+SWEEP'S OWN recorded conclusion**, adopted on direct evidence that targeted passes miss what
+sequential reading catches.
+✅ **DONE**: T18's closure is **re-stated with its standard named** — closed under the VERIFICATION
+standard, not closed under the SEQUENTIAL standard — **and both counts are in the run log**. **T19 and
+T20 close on full sequential reads.**
+⚠ **NOT DONE, deliberately: T15–T17 are NOT silently re-opened.** *Re-opening three closed transcripts
+is a real cost, the owner's rule is satisfied either way, and this is his call.*
+🔑 **Same root cause as T19-1**: ***the sweep does not re-read its own documents, so its best
+conclusions sit unused in the file it writes into most.***
+*(Full table and evidence: `NBA_MASTER_SUMMARY.md` §T19.2.)*
+
+## T19-2 · **NEW · LOW** · the glossary index carries document + transcript, not line/message
+**The charter asks the glossary to say where a term is found *"on which transcript and which
+line/message/date and time."*** **§Z gives the DOCUMENT and the TRANSCRIPT(s); it does not give
+per-message line numbers**, because the sweep's documents record findings by section and transcript
+and **the transcript line offsets were never captured**. ⚠ **Named rather than invented: fabricating
+line numbers would be worse than omitting them.**
+**Severity: LOW** — a reader can find any term from document + transcript. **The fix, if wanted, is to
+re-extract each transcript with segment indices and add a fourth column** *(the sweep already computes
+segment indices in every pass, so the data exists in the harness even though it is not in the
+documents)*.
+
+## T19-1 · 🔴🔴 **RESOLVED 2026-09-22 (same pass)** · `NBA_GLOSSARY.md` has not been updated through seven transcripts
 **The owner's founding charter (T19 SEG 60, repeated verbatim at SEG 378) names the glossary as one
 of EIGHT mandated documents and gives it the most specific completeness requirement of any of
 them**: *"a map for all important aspects, keywords, terms and tell exactly how and where to find
