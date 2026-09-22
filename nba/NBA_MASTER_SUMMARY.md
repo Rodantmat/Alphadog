@@ -28927,3 +28927,117 @@ the documentation and stops at the database leaves the WORSE copy in the place t
 from.*** 🔑 **And it is the same shape a fourth time: §T20.13 corrected the figure wherever the
 figure was WRITTEN — the plan holds the same figure somewhere nobody was looking, because it is not
 a document.**
+
+---
+
+# §T20.30 — PASS 25: *THE CONFIG SURFACE — THE DIET PLAN WAS NOT ALONE, AND THE CORRECTED FIGURE LIVES IN TWO ROWS*
+
+*(T20 pass 25, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY. `SELECT` only. NOTHING in `nba_config` was written, amended or corrected — the
+config is the SYSTEM's, not this sweep's deliverable; drift found there is documented and handed to
+the owner (rule 1).**
+
+## 1. 📐 THE SURFACE, RE-COUNTED FROM SOURCE
+
+> **`nba_config.classification_config` = `66` rows**, `updated_at` spanning
+> **`2026-09-09T01:52:27.908Z` → `2026-09-19T18:06:07.885Z`** *(2026-09-22T15:13:51Z)*.
+> ⚠ **`0` rows here are `pp_*`** — the concurrent session's objects are separate TABLES
+> (`nba_config.pp_pricing_model`, `nba_config.pp_slip_rules`), not rows of this key-value surface, so
+> nothing had to be excluded. **Said explicitly because the pre-registration required the exclusion
+> count.**
+> **`11` rows carry an explicit `status` field. `6` rows were re-derived in full against live state.**
+> ⚠ **RULE 17 — the rate is `4 of 6` CHECKED, not "4 of 66": the other 60 rows hold model parameters
+> and decisions that have no live counterpart to disagree with.**
+
+## 2. 🔴🔴🔴 FOUR OF SIX CHECKED ROWS ARE STALE — *and one repeats pass 24's exact figure*
+
+### 🔴 ① `final_engine_complete_2026_09_18` — **THE SAME CORRECTED FIGURE, A SECOND TIME**
+> `status`: *"FINAL CALCULATION ENGINE COMPLETE — final HP, confidence and score on **38.7M legs**,
+> both seasons, all 30 props"*
+
+🔴🔴 ***`38.7M` is `38,686,696` — the figure §T20.13 corrected to `19,215,200 rows LIVE` five days
+ago.*** **§T20.29 found it once, in `storage_diet_plan_2026_09_17` (*"38.1M rows"*, twice). It is in
+a SECOND config row, and this one is a COMPLETION STATUS.**
+⚠ **And *"both seasons"* is true only in the thinnest sense**: live `final_hp` holds **2024-25 =
+19,075,070** and **2025-26 = 140,130 on a SINGLE DATE** *(both re-derived §T20.25)* — **the
+19,471,496-row loss T17 recorded.** ***A status reading COMPLETE over "both seasons" describes a
+table one of whose seasons is one day long.***
+
+### 🔴 ② `absence_panel_measured_2026_09_12` — **DESCRIBES A TABLE THAT NO LONGER EXISTS**
+> *"panel: **`nba_score.absence_panel` (190,144 rows, 2,281 games, ~400 distinct absences per
+> season)** + `absence_panel_teams` (conservation totals)"*
+
+🔴 **`nba_score.absence_panel` does not exist** *(§T20.29, rule 20, three vocabularies)*. ✅ **Its
+companion `absence_panel_teams` DOES — 1 MB / 4,630 rows.**
+🔑🔑 ***AND THE CONTRADICTION IS INTERNAL TO THE CONFIG: `storage_diet_plan_2026_09_17`'s
+`action_2_drop_superseded` is what listed `absence_panel` for dropping — and its own `status` still
+reads "PLANNED". One row says "we plan to drop it", another describes it as live with 190,144 rows,
+and it is already gone. Neither row moved when the drop happened.***
+
+### 🔴 ③ `enrichment_backfill_status_2026_09_10` — **"10 books" IS NOW 14**
+> *"5115 snapshots / 2560 events / **27.06M rows** / **10 books** incl PrizePicks + Underdog +
+> DK/FD/MGM/Caesars/BetRivers/Bovada/BetOnline/Fanatics / 21 markets"*
+
+> **Live `SELECT DISTINCT bookmaker FROM nba_market.board_snapshots` → `14`:** betmgm · betonlineag ·
+> betrivers · **betr_us_dfs** · bovada · draftkings · fanatics · fanduel · **fliff** · **pick6** ·
+> prizepicks · **sleeper** · underdog · williamhill_us.
+🔴 **Four books added since 2026-09-10 — `betr_us_dfs`, `fliff`, `pick6`, `sleeper`** — and **three
+of the four are DFS apps**, the family this system exists to price. ✅ *`williamhill_us` is Caesars'
+Odds API key, so the named ten all resolve; the drift is additive.*
+
+### 🔴 ④ `redistribution_factor_a2_2026_09_12` — **STATUS CONTRADICTED BY ANOTHER CONFIG ROW**
+> `status`: *"**BUILT AND VALIDATED** — factor A2 (teammate-out redistribution) exists as a
+> conserving, role-graded multiplier"*
+
+🔴 **`storage_diet_plan_2026_09_17` says, of the panels it dropped, *"all from the A2 approach which
+is **CLOSED** (COMPASS fact 91)"* — and `redistribution_panel` is indeed gone.** ⚠ *Nuance stated:
+`nba_score.redistribution_factors` **survives at 16 MB / 51,806 rows** — the FACTORS table lives, the
+PANEL it was fitted from does not.* ⇒ ***Two config rows, five days apart, one calling A2 BUILT AND
+VALIDATED and the other calling it CLOSED. Anything reading the config for A2's state gets opposite
+answers depending which key it reads.***
+
+## 3. ✅ RULE 22 POSITIVE CONTROL — *drawn from inside the same rows*
+
+> ✅ `final_engine_complete_2026_09_18`'s chain figure *"baseline HP (**19.34M rows**…)"* →
+> `nba_score.baseline_history` = **19,343,348** ✅ **EXACT**
+> ✅ `enrichment_backfill_status_2026_09_10`'s *"**27.06M rows**"* →
+> `nba_market.board_snapshots` = **27,067,871** ✅ **EXACT**
+📌 ***The same config row holds an exact figure and a stale one side by side — which is why a
+row-level "is this row fresh?" check would have passed both rows.***
+
+## 4. ⚠ ONE CHECKED ROW IS **NOT** A DEFECT, AND IS RECORDED AS SUCH
+
+**`primary_defender_quality_measured`** asserts *"per-game matchups 2025-26 (**241,590 pairings**)"*.
+🔴 **No table matching `ILIKE '%matchup%'` exists in ANY schema** *(rule 20)*. ✅ **But this is NOT a
+contradiction**: `241,590` is one of the three SHARD row counts the corpus already records
+*(230,877 / 232,830 / 241,590)*, and `scrape_nba_matchups_pergame.py` is named in **T11's headline
+finding (2)** as one of four scrapers with **no registered writer** — *the data is scraped to JSON
+and never loaded.* ⇒ **Consistent with a defect already on file, not a new one.**
+📌 **Recorded so a later pass does not re-count it (rules 26/28).**
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:13:51Z** |
+| **(ii)** | **≥ 3** further config rows contradicted by live state | ✅ **HIT — four.** ❌ *The "isolated artifact, the config surface is sound" branch — which would have been the first stored surface in this thread to come back clean — is not available. **`5 of 7` config rows checked across passes 24–25 are stale.*** |
+| **(iii)** | **≥ 1** row stale in a **`status` FIELD** rather than a figure | ✅ **HIT — two, plus pass 24's.** *`final_engine_complete`'s "COMPLETE … on 38.7M legs, both seasons" and `redistribution_factor_a2`'s "BUILT AND VALIDATED" against another row's "CLOSED".* ⚠ **Both are ACTIONABLE-wrong, which is the distinction the clause was written to draw: a stale figure misinforms, a stale status misdirects.** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTY-SEVENTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — four further stale config rows, two wrong statuses, two config rows in direct mutual
+contradiction about A2, four bookmakers missing from the backfill status (three of them DFS apps),
+and the corrected `38.7M` figure found in a SECOND live config row. CLEAN STAYS 0/3.**
+⚠⚠ **NOTHING IN `nba_config` WAS CHANGED (rule 1) — recorded against open item T20-2.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **§T20.29 asked whether one stored plan had drifted; this pass shows drift is the
+config surface's NORMAL CONDITION, not an accident of one row.** ***And the mechanism is visible:
+`nba_config` is written by the job that PRODUCES a result and never by the job that supersedes it. A
+row is authored once, at the moment its work is finished, and nothing in the system owns the sentence
+"this is no longer true."*** 🔑 **The sharpest instance is entirely internal: one config row planned a
+table's deletion, a second described that table as live, the deletion happened, and neither moved.**
