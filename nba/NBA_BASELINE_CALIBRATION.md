@@ -788,11 +788,28 @@ what the day-of report changes versus the certified numbers**."* 🔑 **The live
 not the demo.** ⚠⚠ **Stated at evidence strength**: ***a later run EXISTS; whether the baseline was
 RE-CERTIFIED against it is a different claim and is NOT RECORDED.*** **A dated STATE** *(O9)*.
 
-📌 **One further observation, recorded and NOT explained** *(rule 6)*: **the 2026-03-15 row's
-`factor_fits` are SHALLOWER than the other two** — its `steals` fit carries no `f_impl_opp`, and its
-`assists` fit carries neither `f_impl_opp` nor `f_impl_own`, **while both later-loaded slates carry
-all of them.** ⚠ ***The latest slate DATE holds the earliest-loaded and least-complete artifact***,
-**which is the ordering a reader is least likely to expect.** **Why is NOT RECORDED.**
+📌 ~~**One further observation, recorded and NOT explained** *(rule 6)*~~ ✅✅ **ANSWERED 2026-09-22,
+T20 pass 109 (`§T20.114`) — AND THE BIGGER QUESTION UNDER IT WAS NEVER ASKED.** *Original observation,
+whose facts are confirmed exactly:* **the 2026-03-15 row's `factor_fits` are SHALLOWER than the other
+two** — its `steals` fit carries no `f_impl_opp`, and its `assists` fit carries neither `f_impl_opp`
+nor `f_impl_own`, **while both later-loaded slates carry all of them.** ⚠ ***The latest slate DATE
+holds the earliest-loaded and least-complete artifact***, **which is the ordering a reader is least
+likely to expect.**
+
+> ✅ **WHAT THE SHAPE OF THE GAP SAYS** *(live sub-factor keys, `2026-09-22`)*: `2026-03-15` has
+> `assists → f_opp_def f_pace is_b2b is_home` and `steals → f_opp_tov f_pace is_b2b is_home`; the
+> other two add **`f_impl_opp` + `f_impl_own`** to `assists` and **`f_impl_opp`** to `steals`.
+> 🔑 **All three missing keys are the IMPLIED-FROM-MARKET family and NOTHING ELSE is missing** — so
+> the artifact is not "shallower", it is **missing exactly one input family**, which points at market
+> odds at build time rather than at run quality. ⚠ **Why that family was absent on that build is
+> still NOT RECORDED** — *but the gap now has a shape, and a shaped gap is answerable.*
+>
+> 🔴🔴 **AND THE QUESTION THAT HAD THE REAL ANSWER WAS NEVER ASKED**: *why does a slate of 18–22
+> props have `factor_fits` for **`assists` and `steals` ONLY** — on this row and on both others?*
+> **Because the merge step takes the alphabetically-first invocation's `meta` wholesale, and no
+> production pair fits `assists` with `steals` — the winner is the `BT_SAVE_COMPONENTS=1` DIAGNOSTIC
+> build.** ▶ **`§T20.114`, item `T20-20`.** ⚠ ***This note compared the three blobs to each other for
+> two passes without once asking what the blob was supposed to contain.***
 
 ## 0y. ⚠ WHERE THE BASELINE'S CONSTANTS ACTUALLY LIVE — in Python, not in config
 *VERIFIED 2026-09-20 (T1 pass 36) by grep of all 190 `.py`/`.js` files plus the MCP admin bridge.*
