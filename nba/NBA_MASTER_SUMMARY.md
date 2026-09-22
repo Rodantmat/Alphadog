@@ -30797,6 +30797,19 @@ is never queued behind another.*** **The block protects dispatch-driven runs fro
 protects nothing on the cron path** — which is the path that runs every two hours, `cron: '0 */2 * * *'`.
 Combined with the bare push, a long 16:00 run and a 18:00 run can both be live and both push bare.
 
+> ⚠⚠ **PRIORITY CORRECTED 2026-09-22 AT §T20.63 — THIS DIAGNOSIS WAS ALREADY ON FILE AND THE PRIOR
+> IS BETTER.** **`NBA_MASTER_SUMMARY.md:3102`** *(pre-session)*: *"The writer is gated `if:
+> success()` (correct) but **ends `git push || true` (not), so a rejected push leaves a stale anchor
+> and silently widens the next deploy's scope**"* — and **`NBA_WORKERS.md:366`**: *"**`git push ||
+> true` is the problem**"*, with §0.26/§0.27 carrying the analysis.
+> 🔴 **The `🆕 NEW` marker below is WITHDRAWN.** ✅ **What remains genuinely this pass's is the LIVE
+> DEMONSTRATION** — run `35751058086`, seventeen green steps, the rejection quoted from the log, and
+> `deployed_sha.txt` measured stale — **which is worth keeping as a demonstration, not as a
+> discovery.** ⚠⚠ **AND THE PRIOR CARRIES A CONSEQUENCE THIS PASS MISSED**: *`git_changed_files()`
+> diffs against `deployed_sha.txt`, so a stale anchor does not merely mis-record the deployed SHA —
+> **it silently WIDENS THE NEXT DEPLOY'S SCOPE.*** 📌 *The rule-26/28 check for this claim was never
+> run (§T20.63 §5).*
+
 ## 4. 🔴🔴 THE DEPLOY WORKFLOW REPORTS SUCCESS WHILE LOSING BOTH OF ITS WRITES — THE PASS'S MAIN RESULT
 
 **A prediction was made from the file text and then tested.** `alphadog-v2-github-auto-deploy.yml`
