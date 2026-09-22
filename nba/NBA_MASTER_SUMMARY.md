@@ -30329,3 +30329,103 @@ strength is NODES. This pass tested the nodes directly and the strength held —
 uncorrected errors.** ***And the one thing that did go wrong went wrong in the instrument, because I
 typed a population instead of deriving one. The rule against that (30) was written by an earlier pass
 of this same sweep, and I broke it while auditing whether the corpus breaks its own rules.***
+
+---
+
+# §T20.43 — PASS 38: *THE COMPASS CITATIONS — ONE FACT IS MISSING, ONE NEVER EXISTED, AND THREE FILES CITE "TWO" AS AUTHORITY FOR "THREE"*
+
+*(T20 pass 38, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **`NBA_COMPASS.md` WAS READ AND NOT WRITTEN. NOT A CHARACTER.** *That prohibition is older than
+every rule in this log and is not suspended by a pass that audits it.*
+
+## 1. 📐 BOTH POPULATIONS
+
+> **CITED: `266` citation tokens → `59` distinct fact numbers, range `5`–`176`**, across the twelve.
+> **CARRIED: `NBA_COMPASS.md` — the ONLY compass file in the repo** *(rule 20: `find -iname
+> "*compass*"` returns exactly one)* — **numbers `1`–`107`, `106` items present.**
+> **2026-09-22T16:10:32Z.**
+
+## 2. 🔴 CITED BUT ABSENT: **EXACTLY TWO, AND THE FIRST IS AN INDEPENDENT CONFIRMATION**
+
+### ✅ **`fact 69` — cited `32` times, and it is THE ONE GAP IN COMPASS's OWN NUMBERING**
+**COMPASS runs `1`–`107` with exactly one hole, at `69`.** ⇒ ***An instrument that knew nothing about
+the corpus's history re-derived, from numbering alone, the finding `NBA_OPEN_ITEMS.md` already
+carries: **"`[LIVE-AUDIT]` COMPASS FACT 69 WAS SILENTLY DESTROYED BY A `github_patch_file` CALL AND
+IS STILL MISSING TODAY"** (§T15.3a).***
+📌 **CONFIRMED, not new (rules 26/28) — and the confirmation is worth more than a new finding: two
+unrelated methods, one answer, and the corpus's account survives an adversarial re-derivation.**
+⚠ **32 citations point into the hole.**
+
+### 🔴 **`fact 176` — cited twice in the twelve, and COMPASS stops at `107`**
+**The string `176` appears in `NBA_COMPASS.md` ZERO times.** **Its three citations:**
+
+| where | text |
+|---|---|
+| **the SYSTEM** — `.github/workflows/nba-p3-afternoon-light.yml:103` | *"COMPASS fact 176 says **'PrizePicks stays the MLB producer (repo root) with league_id=7 for NBA'**"* |
+| `NBA_GOBLIN_DEMON.md:735` | *"`league_id=7` (COMPASS fact 176) — MLB is `league_id=2`, hardcoded in `main.py`"* |
+| 🔴🔴 `NBA_OPEN_ITEMS.md` | *"**COMPASS fact 176 still describes the old plan**"* |
+
+🔑🔑 ***PROVENANCE: the citation ORIGINATES IN THE WORKFLOW COMMENT and was repeated into two of the
+twelve without being checked.*** ✅ **The SUBSTANCE survives everywhere — `main.py` is the MLB
+producer with `league_id=2` hardcoded and the NBA producer is unbuilt; the workflow's own 14-line
+comment block is the real source and says so at length. Only the ATTRIBUTION is false.**
+✅ **Both corrected in-pass (rule 12).**
+
+## 3. 🔴🔴🔴 CLAUSE (iii): **A SUBSTANTIVE MIS-CITATION — "TWO" QUOTED AS AUTHORITY FOR "THREE"**
+
+**All three pipeline files open with `# PIPELINE n OF 3 (COMPASS fact 107)`.**
+**COMPASS fact 107 is headed *"**TWO PIPELINES**, CUTOFF 1:15 PM PT — AND THE SCENARIO SIMULATOR IS
+DROPPED"* and reads *"ARCHITECTURE: **(1) heavy overnight pipeline** … **and (2) a light 1:15 PM PT
+pipeline**"*, explicitly *"**supersedes the three-phase design in facts 41 and 68**"*.**
+
+⇒ ***Each of the three files cites, as its authority for being one of THREE, a fact whose headline is
+TWO and which explicitly retired a three-phase design.***
+✅ **CLAUSE (iii) HIT in its strongest form: the fact EXISTS and says something DIFFERENT. A reader
+who follows this citation finds a real fact and believes the wrong count.**
+
+✅ **THE RECONCILIATION — supplied rather than merely flagged**: **fact 107 describes the DAILY
+architecture; P1 is WEEKLY** *(cron `0 19 * * 1`)* **and sits outside what 107 addresses.** *The two
+are compatible.* 🔴 ***But that sentence existed nowhere — not in the workflows, not in the twelve,
+and not in COMPASS. A grep for any reconciliation returns zero.*** ✅ **Written into
+`NBA_WORKERS.md` §A in this pass.** ⚠ **The workflow headers are the SYSTEM's text and were NOT
+touched (rule 1).**
+
+## 4. ✅ RULE 22 — THE RESOLVING CITATIONS ARE EXACT
+
+**Sampled high-traffic facts, comparing the citing line against COMPASS's text:**
+**fact 107** — the twelve cite it consistently as *"TWO pipelines at 1:15 PM PT"*, *"the SCENARIO
+SIMULATOR IS DROPPED"*, *"data freshness DROPPED, not deferred"*: ✅ **every one matches.**
+**fact 105** *(`final_hp` stays denormalised — deliberate, "THEY ARE BOUGHT SPEED")* ✅ ·
+**fact 104** *(four performance lessons; "a FUNCTION ON A JOIN COLUMN means no index can ever be
+used")* ✅ · **fact 106** *(PrizePicks per-leg multipliers are not on any public surface)* ✅.
+📌 ***57 of the 59 cited numbers resolve, and the sampled attributions are accurate. The twelve are
+scrupulous with the authority they CAN see — the two failures are a HOLE someone else made and a
+number the CODE invented.***
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` **FALLS or HOLDS** | ✅ **HIT — HELD at `470`** at **2026-09-22T16:10:32Z** |
+| **(ii)** | **≥ 3** citations absent or misstating their fact | ✅ **HIT — three distinct defects**: `fact 69` absent *(confirmed on file)* · `fact 176` **never existed** *(new)* · `fact 107` **cited for a count it contradicts, in three files** *(new)*. ❌ *The "the corpus's use of its authority is EXACT" branch is not fully available — though §4 shows it is exact everywhere the authority actually exists.* |
+| **(iii)** | **≥ 1** mis-citation **SUBSTANTIVE**, not merely numeric | ✅ **HIT — two.** *`fact 107`'s count, and `NBA_OPEN_ITEMS`' **present-tense** claim about what the non-existent `fact 176` "still describes".* ⚠ **The second is precisely the failure the clause was written to detect: not a wrong number a reader follows and finds nothing, but an assertion ABOUT the content of an authority that does not carry it.** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FORTIETH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — one invented fact number corrected in two documents, one present-tense claim about a
+non-existent authority corrected, and a three-file count mis-citation reconciled in writing for the
+first time. CLEAN STAYS 0/3.**
+✅✅ **AND THE CORPUS'S RECORD IS GOOD WHERE IT COULD BE: `57` of `59` cited facts resolve, the
+sampled attributions are exact, and the missing `fact 69` was independently re-derived from COMPASS's
+numbering alone — confirming the corpus's own finding by a method that knew nothing about it.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **both failures came from outside the twelve. `fact 69` is a hole someone else
+punched in the authority; `fact 176` is a number the CODE invented and the documentation inherited.**
+***The corpus's own discipline was sound — it cited faithfully. What it never did was check that the
+thing it was citing faithfully was there. Fidelity to a source is not verification of it, and a
+citation copied from a comment is a citation nobody has checked.***
