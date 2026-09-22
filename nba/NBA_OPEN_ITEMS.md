@@ -2638,7 +2638,7 @@ at all.**
 | **With a hardcoded season-string default** (`"2025-26"`, `"2024-25"`, `"2025_26"`, or a season date bound) | **47** |
 | Set by at least one workflow — **to a literal, or to an input with a literal fallback** | **45** |
 | **Never set by anything; the frozen default is what runs** | **2** — `RUNG_FROM` (`2024-10`), `RUNG_TO` (`2026-04`) in `nba/build_rung_market.py` |
-| NBA Python files importing `nba_season` / `active_stats_season` | **20 of 135** |
+| NBA Python files importing `nba_season` / `active_stats_season` | ~~**20 of 135**~~ → **24 of 136** *(re-taken 2026-09-22T07:15Z, §T12.7d; propagated here 2026-09-22 by §T20.14 — **this was the CROSS-DOCUMENT surface the correction never reached**)* |
 
 ```yaml
 UA_TEST_SEASON: "2025-26"        RT_TRAIN_SEASON: "2024-25"       N1_TEST: "2025-26"
