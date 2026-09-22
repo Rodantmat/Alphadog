@@ -1767,6 +1767,87 @@ chars, no other content)*, **54** `sleep N; echo ok` waits, **47** `github_list_
 polls, **39** `workflow_dispatch` 204 receipts. **618 + 102 + 54 + 47 + 39 = 860** ✅. *Nothing was
 skipped silently; the boilerplate classes are stated so the omission is auditable.*
 
+## §0.005-T18 — THE MECHANISM FAILURE CENSUS (RULE 37), WITH ITS PARTITION CLOSING
+*(T18 pass 5, 2026-09-22 · **predicate fixed BEFORE the pass so it could not be widened to fit**:
+every `tool_result` whose payload carries `"conclusion": "failure"`, `"ok": false`, a 4xx/5xx
+`status`, `Traceback`, `Error`, `error occurred during tool execution`, or a tool-unavailability
+notice)*
+
+### ✅ RULE 22 POSITIVE CONTROL RAN FIRST — *all seven patterns fired on a known-positive string*
+*Before any zero is trusted. T16's census produced false positives from the sweep's own grep
+patterns, and this very pass produced five more (below).*
+
+### THE CENSUS — **397 `tool_result` · 48 signal hits (12.1%) · 5 FALSE POSITIVES · 43 REAL**
+
+🔴 **THE FIVE FALSE POSITIVES, NAMED, BECAUSE THE CLASS RECURS** — *in every one, the word `error`
+is part of the CONTENT being read, not a failure of the read*:
+**SEG 176** the `board_payout_conversion_rules` config, which contains *"trial and error"* and *"a
+units error"* · **SEG 440** COMPASS fact 102's text, *"a measurement error worth remembering"* ·
+**SEG 590** `nba-daily-delta.yml`, which literally contains `continue-on-error: true` · **SEG 1103**
+a grep returning the code fragment `error" or ""` · **SEG 1160** a bash line reading *"error, not a
+product"*.
+🔑 ***A census on a tool's OUTPUT cannot distinguish the tool failing from the tool successfully
+returning a document about failure.*** *(Rule 15's shape: a pattern tuned elsewhere mis-measures, and
+the wrong number is not always zero — here it was five too high.)*
+
+### ✅ THE 43 REAL RESULTS, PARTITIONED — **and the partition CLOSES**
+
+| group | n | segments |
+|---|---|---|
+| **Workflow runs concluding `failure`** | **19** | 190·192·199·416·531·533·642·643·652·654·762·764·787·789·923·925·928·1188·1190 |
+| **`github_get_workflow_run_log` — job list `not found` (404)** | **7** | 122·410·616·919·987·1003·1202 |
+| **Bridge `error occurred during tool execution`** | **6** | 81·83·328·330·332·460 |
+| **SQL relation / column does not exist** | **4** | 922·944·1187·1200 |
+| **`github_get_workflow_run_log` — *"could not fetch log text (link may have expired, or run is too old)"*** | **3** | 778·796·810 |
+| **`github_grep_file` 404 — file does not exist** | **2** | 164·1164 |
+| **Bridge tool unavailable for a whole turn** | **1** | 150 |
+| **PrizePicks `HTTP Error 403: Forbidden` inside a run log** | **1** | 201 |
+| **TOTAL** | **43** ✅ | *6+1+7+3+2+4+19+1 = 43* |
+
+### 🔑 RULE 37's THREE OUTCOMES, AND THE ONE THAT MATTERS
+
+**RECORDED** — the transcript names the failure AND its cause, and the twelve carry it: the six
+bridge errors and the one outage *(§0.003-T18)*; the probe's `can't find '__main__' module`
+*(diagnosed and fixed in-session)*; `ModuleNotFoundError: pandas` *(T18-11)*; `VACUUM FULL` defeated
+by the disk pressure that made it necessary *(`NBA_OPEN_ITEMS` §CAVEAT)*; the gap audit's **intended**
+red *(§0.002-T18 — a failure that is the component working)*; the DataDome 403s *(§0.7-T18)*.
+
+🔴🔴 **ATTRIBUTED-BUT-UNDIAGNOSED — the ten log-read failures, and they are the mechanism behind the
+transcript's most consequential gap.** **Seven 404s on the job list and three *"link may have
+expired, or run is too old"*, two of the three on the SAME job id `105963684307`.** *The prose
+attributes this — **"it aged off the recent list before I could read its result"** — and never
+diagnoses it.* ⇒ ***This is WHY T18-8 exists: the P2 end-to-end run's outcome, and the 140,130-leg /
+0.930-confidence comparison the author called "the real test", were never read because the log could
+not be fetched.*** **The failure was not in the pipeline. It was in the instrument used to observe
+it.** 🔑 **Rule 37's middle outcome, doing exactly the work it was written for.**
+
+**SILENT — none found.** *Every one of the 43 surfaces in the transcript itself. The census's job was
+to find failures the transcript does not show, and in T18 there are none: the author read and
+reported his failures, which is the opposite of the pattern rule 37 was born from.*
+
+### ✅ THE FOUR SQL "DOES NOT EXIST" ERRORS RESOLVED AGAINST LIVE STATE — *and they are NOT defects*
+**SEG 922** `relation "nba_score.board_scored" does not exist` · **SEG 944** `column "built_at" does
+not exist` · **SEG 1187 & 1200** `relation "nba_market.board_tiers_v2" does not exist` — **and 1187
+and 1200 are the LAST two SQL failures in a 1,205-segment transcript**, i.e. ***T18 ENDS with the
+four-way tier rebuild dispatched and its table not yet confirmed.***
+✅ **`[LIVE-AUDIT]` 2026-09-22 settles it**: **`nba_market.board_tiers_v2` = 2,199,354 rows —
+EXACTLY equal to `nba_market.board_tiers`** · **`nba_score.board_scored` = 12,818,715 rows** · and a
+**`nba_score.board_scored_snapshot_20260920`** at 110,955 rows. ⇒ **Both tables landed, and the
+snapshot's date says the work completed the same day the transcript ends.** ⚠ **Rule 6: the sweep
+records that they exist and match; it does not claim which run created them, because no swept
+transcript says.**
+
+### ⚠ THE RUN LEDGER — *the number behind "nineteen defects, every one found by execution"*
+**135 distinct workflow run ids appear in T18**: **74 success · 23 CANCELLED · 20 pending/other ·
+18 failure.** **Restricted to `nba*`-named runs — the ones this session dispatched — 33 distinct:
+15 success · 11 pending/other · 7 failure.**
+🔑 **So roughly ONE IN THREE of the session's own NBA runs failed**, and **23 cancelled runs** are the
+self-cancelling auto-deploys already recorded at §0.000. ***The failure rate IS the method: thirty-
+seven dispatches and a one-in-three failure rate is what "found by running it, not by reading it"
+costs.***
+
+---
+
 ## §0.004-T18 — 🔴🔴 THE CERTIFIER CANNOT TELL A FULL SLATE FROM ONE ROW
 *(T18 pass 2 · `certify_pipeline.py` written in-session at `tool_use` SEG 601–605, and **re-read from
 LIVE SOURCE 2026-09-22 — 5,920 B, 129 lines, UNCHANGED in structure**. This is a claim about what the
