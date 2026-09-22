@@ -1,5 +1,15 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴 **T17 PASS 0 — THREE ITEMS THE OWNER STRATUM OPENS** *(§T17.1, 2026-09-19)*
+
+| # | Item | State |
+|---|---|---|
+| **T17-1** 🔴🔴 | **"KV2 NEEDS TO BE THE NEWEST LOGIC. IS IT? IF NOT, IT NEEDS TO BE FIXED."** *(0 of the twelve, 0 of the thirty)* — verbatim: *"the KV1 doesn't really matter, but **the KV2 needs to be the most accurate, the NEWEST LOGIC**. Is it the newest logic? If not, it needs to be fixed."* | ⚠⚠ **A direct owner question with a conditional instruction attached, and the corpus records NEITHER the question NOR the answer.** 🔴 **NOT RECORDED**: what KV1 and KV2 are, which logic each carries, or whether the check was made. 🔑 **Pass 1's job** — *and if the transcript does not answer it, it is an **OWNER DECISION**, since the sweep is read-only and a KV namespace's contents are not a `SELECT`.* |
+| **T17-2** 🔴🔴 | **THE 17%-vs-90% TENSION** — the owner calls fact 96's measured ~17% *"definitely TERRIBLE — we need a NINETIES"*, on the same day fact 107 DROPS the mechanism that answers it. | 🔴 **OWNER DECISION** — *the two are almost certainly different quantities* *(branch-selection probability vs assertiveness of the final number)*, **and nothing in the corpus says so**, so the reply reads as a rejection of the measurement. *Full entry: `NBA_SYSTEM_DESIGN.md` §0z-4.* |
+| **T17-3** ⚠ | **"FRESHNESS GATES — PROBABLY THE SAME"** | ⚠ **A HEDGE, recorded as a hedge.** *Leg correlation is deferred by a clear decision; freshness gates get "probably". **NOT RECORDED** whether that ever firmed up — and the corpus carries freshness gates as open engine-side work in several places* *(53 of the thirty, 38 of the twelve)*. |
+
+---
+
 ## 🔴🔴 **T16 PASS 3 — THE MECHANISM FAILURE CENSUS, AND IT IS *NOT* EMPTY: A THIRD FAILURE CATEGORY** *(§T16.4, the closure pass; the largest mechanism stratum in the corpus — `tool_use` 471 + `tool_result` 388 = 859 of 1,064 segments, 80.7%)*
 
 *Pinned 2026-09-22: **12 raw `exit code [1-9]` occurrences → FIVE distinct causes**; `deadlock` 25 ·
