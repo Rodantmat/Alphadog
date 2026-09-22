@@ -12711,6 +12711,63 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-10 · **NEW · 🔴🔴 `nba-daily-delta.yml` SWALLOWS EVERY FAILURE TWICE — AND ONE OF THE TWO IS THE IDIOM THIS SYSTEM FORBIDS BY NAME**
+
+**Severity 5 of 7.** **Found T20 pass 43 (§T20.48), 2026-09-22.** **Evidence: VERIFIED** — file text
+on tree `698d7c030d060e760c1f39532c10e247a6219cc9`, population pinned 2026-09-22T16:34:35Z.
+
+**THE RULE, quoted from the corpus** — `NBA_SYSTEM_DESIGN.md` §6 and **COMPASS fact 63**:
+> ***"No `|| echo failed` anywhere. That pattern left 44% of a slate missing while the job reported green."***
+
+**Restated in four workflow headers**: `nba-p1-weekly-static.yml:16` · `nba-p2-overnight-heavy.yml:15`
+· `nba-overnight-queue.yml:4` · `nba-baseline-history.yml:7` *(and `nba-baseline.yml:52`)*.
+
+🔴 **THE VIOLATION — `nba-daily-delta.yml:52-54`, executable code, step *"Baseline inputs — mirror
+season files from the delta, refresh current-season quarters, refresh schedule"*:**
+```
+python nba/sync_season_files_from_delta.py || echo "season-file sync failed"
+python nba/scrape_nba_periods.py           || echo "periods refresh failed"
+python nba/scrape_nba_schedule.py          || echo "schedule refresh failed"
+```
+
+🔴🔴 **AND THE SWALLOW IS DOUBLED.** All **three** of the workflow's work steps carry
+`continue-on-error: true` — `:39` *(daily delta ingestion)* · `:45` *(per-game delta)* · `:55` *(the
+step above)*. **The `|| echo` makes the shell exit 0; `continue-on-error` would have made the step
+green anyway.** **Its commit step then runs `[ -f "$f" ] && git add "$f"` over a 44-path list, so a
+file that was never produced is skipped in silence, and ends `if git diff --cached --quiet; then echo
+"No delta JSON changes to commit."; exit 0; fi`.**
+⇒ ⚠⚠ ***The workflow can produce nothing at all and report complete success. The only trace is three
+echo lines in a log.***
+
+**WHAT IT FEEDS**: `sync_season_files_from_delta.py` mirrors the current season's delta bulk files
+into the season-named files **the recipe reads**; `scrape_nba_periods.py` refreshes current-season
+quarter files; `scrape_nba_schedule.py` refreshes `nba/data/nba_schedule_current.json`. *(Per the
+2026-09-09 checkpoint's description of this same step.)*
+
+⚠ **WHAT THIS ITEM DOES NOT CLAIM.** **It is NOT the cause of the frozen static layer.** §T20.48
+measured both sides: `nba_schedule_current.json` last moved **2026-09-14T16:38:33Z** (commit
+`b3a5dfac`) while `nba_calendar.games` sits at **2026-09-02 20:25** ⇒ **the JSON layer is alive and
+the LOADER is the gap**, exactly as the SEASON-CRITICAL item of 2026-09-21 inferred. **These are two
+independent defects and only one of them has fired.**
+
+✅ **CONTEXT THAT LIMITS THE SEVERITY** — and it is why this is 5 and not 6: **`nba-daily-delta.yml`
+is NOT scheduled.** It fires on `workflow_dispatch` or a push to `nba/TRIGGER_NBA_DAILY_DELTA.txt`,
+and **no automated workflow writes any `TRIGGER_*` path**, so it cannot run unattended. *A human
+pushed the button — but under §T2.10a's own test (**"never let an invisible failure pass"**) that
+human sees a **green** run, which is the visibility the idiom removes.*
+
+✅✅ **AND THE SURROUNDING RESULT IS GOOD NEWS, recorded here so this item is not read alone**:
+**P1, P2 and P3 carry ZERO swallowing constructs** — verified across all six forms (§T20.48 §3) —
+and **33 of the repository's 48 `continue-on-error: true` are in ten operator-initiated workflows,
+visible by construction.** *The discipline is real; it is not universal.*
+
+**FIX SIZE: three lines** — drop the `|| echo …` and let the step fail — **plus a decision** on
+whether the three `continue-on-error: true` belong on a workflow that feeds the recipe.
+
+⚠ **NOT FIXED — DOCUMENTED, per the owner's standing instruction.**
+
+---
+
 ## T20-9 · **NEW · 🔴🔴 THREE WORKFLOWS PUSH TO `main` WITH NO RETRY — AND THE DEPLOY WORKFLOW SWALLOWS THE FAILURE AND REPORTS SUCCESS**
 
 **Severity 6 of 7.** **Found T20 pass 42 (§T20.47), 2026-09-22.** **Evidence: VERIFIED** — file text
