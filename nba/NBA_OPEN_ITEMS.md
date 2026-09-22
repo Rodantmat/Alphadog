@@ -1,5 +1,86 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴🔴🔴 **T18 PASS 0 — A SEASON-CRITICAL COVERAGE DEFECT THE OWNER NAMES HIMSELF, AND THE SCOPE DECISION THAT ANSWERS T16-7** *(§T18.1, owner, 2026-09-19; **the largest owner stratum in the corpus**)*
+
+### 🔴🔴🔴 **T18-1 — "OUR ANCHOR IS NOT AT THE PROPER PLACE OF THE LADDER, OR THE LADDER IS NOT DEEP ENOUGH"** *(**0 of the twelve, 0 of the thirty**; positive controls `goblin` 636/417, `multiplier` 617/432)*
+
+> ***"Our system should be covering the APP LADDER. **If it is not, we need to change so it covers
+> it. Our anchor is not at the proper place of the ladder, or the ladder is not deep enough** — plus
+> everything else you have open."***
+
+⚠⚠ **A COVERAGE DEFECT STATED BY THE OWNER AS AN OBSERVATION, WITH TWO CANDIDATE CAUSES AND NO
+DIAGNOSIS.** 🔑 **It bears directly on work the sweep has already recorded**: **open item O5** *(the
+ladder holds TWO depth regimes under ONE `recipe_version` — per-prop on one as-of day, flat 10 on the
+other two)*; **open item O5b** *(30,989 rows sit beyond their prop's measured `LADDER_DEPTH` and carry
+FULL provenance credit)*; and **§0e-T16-B's measured finding that the alternate ladder is where the
+edge lives** *(alternates deliver 72.7% against a 55.0–57.7% break-even; standard lines 56.7%)*.
+🔴🔴 **If the ladder does not reach the app's rungs, the system is not pricing the market it has
+measured as the profitable one — and the opener is 2026-10-20.** ⚠ **NOT RECORDED which of the two
+causes it is; pass 1 is where the diagnosis would be.**
+
+⚠ **AND THE SLATE IS ABOUT TO GROW**: *"**the slate will be BIGGER than what you have now — new
+goblins and demons on PrizePicks, all the ladders for all apps, so it will be HEAVY. Find the proper
+logic.**"*
+
+### ✅✅ **T16-7's SCOPE QUESTION IS ANSWERED BY THE OWNER DIRECTLY**
+
+> ***"The full pipeline 3 needs to be **BOARD SCOPED — all legs, prop lines, all apps, all ladder
+> variations and directions**."***
+> ***"I mean **the ladder ON THE BOARD**, yes — **but NOT the full ladder on the baseline if
+> unneeded, not on the board.**"***
+
+🔑🔑 **So the intended population is explicit: the FINAL SCORING pipeline is board-scoped across every
+app and every variation, and the baseline's rungs beyond the board are *"unneeded"*.** ⚠⚠ **That does
+NOT dissolve T16-7** — *T17 measured `final_hp` at **38.7M legs on the FULL ladder** with only ~2.23M
+board-matched, and the live table holds **2024-25 complete and 2025-26 at 140,130 rows on ONE date.***
+🔑 **If anything it sharpens the item: the stored population is the one the owner calls unneeded, and
+the one he asked for — all apps, all variations — is a DIFFERENT and probably larger set than
+PrizePicks-only board matches.** 🔴 **OWNER DECISION stands.**
+
+### ⚠ **T18-2 — THE STORAGE DIET'S LARGEST ITEM WAS REVERSED BY THE OWNER, ON BACKTEST GROUNDS** *(0 of the twelve, 0 of the thirty)*
+
+*`storage_diet_plan_2026_09_17`'s top item was **slimming `final_hp` to a join table, 4–6 GB** —
+"we're holding 22 GB for information stored twice" (`NBA_DATABASE.md` §0y-T17-B).* 🔑 **The owner
+authorised the cleanup** — *"do the cleanup, but **be sure you are not deleting anything that we
+use**… we just want to delete redundant information… **for example, we did the confidence and there
+were MULTIPLE VERSIONS — so we just keep the completely full LAST version for each one of the
+legs**"* — **and then reversed the slimming specifically:**
+
+> ***"Once we're completely done with the final score system, **we're going to start doing a lot of
+> BACKTESTS** — we're going to create logics to generate slips, and that's going to be **days of
+> backtesting, multiple logics, all the time**. So **maybe it's better we leave as is so we can do our
+> backtest FASTER**… **if the slim logic for the index is gonna make it slower and more complex for
+> backtesting, it's better we do not do that.**"***
+
+🔑🔑 **A DENORMALISATION DEFENDED ON WORKLOAD GROUNDS — and it is the same argument COMPASS fact 105
+records** *("`final_hp` STAYS DENORMALISED — A DELIBERATE DECISION, NOT AN OVERSIGHT")*. ✅ **Fact 105
+has an owner behind it, and this is the reasoning.** ⚠ **AND A CONSTRAINT HE ADDS**: *"if you do a
+heavy join, **that's going to break the server — the two gigs of RAM it has is not going to be
+enough**"* — *the same 2 GB limit `NBA_DATABASE.md` §0u records, cited by the owner as a design
+input.* ⚠ **He does not close it outright**: *"**don't withdraw just yet** — probe, try, test,
+simulate… and **put it in the compass, because maybe [it can be] done later if you upgrade the
+server. But do not just drop it yet.**"*
+
+🔴🔴 **AND ONE LINE IS A CANDIDATE CAUSE FOR T16-7'S LOSS, recorded under rule 6 as a candidate only**:
+***"we did the confidence and there were multiple versions, so we just keep the completely full LAST
+version for each one of the legs."*** ⚠ **A cleanup that keeps "the last version for each leg" is a
+delete-heavy operation over `final_hp` authorised in the same session that T17's certified 19,611,626
+legs became 140,130.** 🔴 **NOT RECORDED whether it ran, or on what scope; T18's prose stratum is
+where the answer would be, and it is pass 1's highest-value target.**
+
+### ⚠ **T18-3 — THE END-TO-END PARITY TEST THE OWNER SPECIFIES**
+
+> ***"Get one day from the PAST that we already have a baseline calculation and also the final scoring
+> calculation, and **run it END TO END and see if it MATCHES the data that we already have — BECAUSE
+> IT NEEDS TO.**"***
+
+🔑 **The strongest statement of the parity standard in the corpus: the new pipeline must REPRODUCE the
+stored history exactly, not merely produce plausible numbers.** ⚠ **NOT RECORDED whether that test was
+run or what it returned** — *and it is the one test that would have caught a `final_hp` loss
+immediately.*
+
+---
+
 ## 🔴🔴 **T17 PASS 3 — THE CENSUS IS EMPTY AND A LARGE STATE LOSS EXISTS ANYWAY. THAT IS RULE 37's *SILENT* CATEGORY, DEMONSTRATED.** *(§T17.4, the closure pass; mechanism strata 1,119 of 1,412 segments, 79.2%)*
 
 ### ✅ **EVERY DISTINCT FAILURE IS RECORDED — T17's prose names its own bugs by their exact error**
