@@ -9,12 +9,19 @@
 > history is part of the record. This is a POINTER plus the ranked order.** ▶ **Full brief:
 > search this file for `OPENING-DAY BRIEF`.**
 >
-> ## ▶ **ALL FOURTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
+> ## ▶ **ALL ~~FOURTEEN~~ FIFTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
 > *Ranking rule, re-derivable: **SILENT before LOUD**, then **STOPS THE SLATE before DEGRADES IT**,
 > then **UNCAUGHT by a certifier before CAUGHT**. A silent failure costs a season before anyone
 > looks; a loud one costs an evening.*
 >
-> **`A` · `13` · `B` · `C` · `5` · `7` · `12` · `14` · `D` · `9` · `4` · `6` · `3` · `10` · `2` · `E` · `11` · `1`**
+> **`A` · `13` · `B` · `C` · `5` · `7` · `12` · `14` · `D` · `9` · `4` · `6` · `3` · `10` · `2` · `E` · `11` · `1` · `15`**
+> ⚠ **`T20-15` ADDED 2026-09-22, T20 pass 89 (`§T20.94`) — *both pipelines certify RED on every
+> zero-game day; 2025-26 had `7` of them.*** **It ranks LAST, and the rule is what puts it there**:
+> it is **LOUD** *(a failed build is maximally visible)*, it **does not stop a slate** *(there is no
+> slate)*, and it is **CAUGHT — it IS the certifier firing.** 🔑 ***Recorded with its tension rather
+> than ranked around it: this is a LOUD item whose entire cost falls on the SILENT-detection system.
+> Fourteen false reds a year is how `T20-13`'s real red night gets scrolled past*** — which is the
+> argument `nba-p2-overnight-heavy.yml`'s own header makes for withholding its cron.
 > *(numbers are `T20-n`; letters are the five older items §T20.56 found were missing from the brief.)*
 >
 > ## ✅ **RE-DERIVED AGAINST THE LIVE SYSTEM — 2026-09-22T19:16Z, `SELECT` ONLY, NOTHING CHANGED**
