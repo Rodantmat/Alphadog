@@ -296,6 +296,34 @@ looks.** ***A method claim gets the same check a figure gets, and this table is 
 > 🔴 **FOURTH OPTION (d): adopt the two candidates above as numbered rules on the owner's word
 > alone**, *since each has its evidence and its birth section recorded here, and the duplication
 > check is exactly what the index cannot currently provide.*
+>
+> ---
+>
+> ## ✅✅ **RESOLVED IN PART — 2026-09-22, T20 PASS 67 (§T20.72). THE DUPLICATION CHECK DID NOT NEED THE OWNER, AND IT DID NOT NEED THE MISSING TEN.**
+> 🔴🔴 ***Option (d)'s premise — "the duplication check is exactly what the index cannot currently
+> provide" — IS FALSE, and this block is the reason two rules sat unnumbered for forty-six passes.***
+> **Both candidates were checked against the rows the index DOES carry:**
+> - ✅ **Candidate 1 (§T20.21) SURVIVES and is now `RULE 50`.** *Checked against **RULE 22** — rule 22
+>   requires a positive control; candidate 1 constrains **where it may be drawn from**. Not a
+>   duplicate.*
+> - 🔴 **Candidate 2 (§T20.28) is a DUPLICATE of `RULE 20` and is RETIRED ON ARRIVAL.** *A scope claim
+>   is tested BY a probe; rule 20 already requires probes to span vocabularies rather than one form.*
+> ⚠ **Rows 20 and 22 are two of the thirty-seven rows that were in the table the whole time. The check
+> took one reading.** ⇒ ***The index defect did not block these rules. The BELIEF that it blocks rules
+> blocked them.*** 📌 **A third candidate has since been adjudicated the same way — §T20.71's
+> three-part-pin rule, a duplicate of `RULE 30` + `RULE 23`, written by the pass immediately before
+> the one that caught it.**
+>
+> ▶▶ **WHAT STILL NEEDS THE OWNER, AND IT IS NARROWER THAN THIS BLOCK CLAIMS: ONLY THE ORIGINAL TEN.**
+> *Whether rules **`1` · `2` · `3` · `4` · `5` · `9` · `10` · `11` · `13` · `14`** — which §T20.18
+> established were **never written down anywhere**, not merely missing from this table — are
+> RECONSTRUCTED from usage or LEFT as usage.* ⚠⚠ **AND §T20.72 MEASURED THAT RECONSTRUCTION IS NOT
+> FREE: rules `4`, `13` and `48` have ZERO inline glosses in the corpus; rule `1` has FIVE mutually
+> different ones and rule `9` has SEVEN** *("the authority, never the prose that reports it" vs "the
+> page text does not establish which"; "own-document contradiction" vs "the authority is named, not
+> inferred")*. 🔴 ***Those are not paraphrases of one proposition — the corpus has been citing the
+> same rule NUMBER for different rules. Reconstruction would canonise whichever gloss a later pass
+> happened to read.***
 
 *Rules 1–15 were born in T1–T9 and are stated in `NBA_MASTER_SUMMARY.md` at their entries. Rules
 16–27 are T9–T11's and each carries a §-pointer. **Apply them from pass 0 of a transcript, not from
