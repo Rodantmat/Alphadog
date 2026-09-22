@@ -23743,7 +23743,7 @@ what the pattern CANNOT match, then construct one example of it.**
 | Set as a YAML env key in a workflow *(strict `^\s{2,}NAME:\s*\S` match, not a loose search)* | **45** | ✅ |
 | Never set by anything | **2** — `RUNG_FROM`, `RUNG_TO` | ✅ |
 | **45 + 2 = 47** | ✅ **partition sums** (rule 11) | ✅ |
-| Files naming `nba_season` / `active_stats_season` | **20 of 135** | ✅ |
+| Files naming `nba_season` / `active_stats_season` | ~~**20 of 135**~~ → **24 of 136** | ⚠ **re-taken 2026-09-22T07:15Z (§T12.7d); propagated by §T20.14** |
 
 **Pass outcome: 2 count defects, both mine, both corrected across every copy; the substance of
 §T9.27b and §T9.29a stands unchanged. 🔴 CLEAN 0/3 · 15 passes.**
