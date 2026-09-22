@@ -14,6 +14,60 @@ transcript. Where a table was altered later, the change is noted with its transc
 
 ---
 
+## 0x-T16. 🔴🔴 **THE FOUR PERFORMANCE LESSONS, AND A LIVE INDEX AUDIT THAT FINDS 303 MB NEVER SCANNED** `[LIVE-AUDIT]` *(T16 pass 2, §T16.3, from COMPASS fact 104 — **2 of the thirty, 1 of the twelve**; `SELECT` 2026-09-22)*
+
+### 🔑🔑 THE FOUR LESSONS — **"~90 minutes each"**
+
+**(a) 🔴🔴 READ THE PLAN FIRST.** *"**Three query rewrites were GUESSED before one `EXPLAIN` gave the
+answer immediately**: a Parallel Hash Join was building a hash from **8,270,978 `final_hp` rows**
+because the join key contained `replace(...)` and `lower(regexp_replace(...))`."* 🔑🔑 ***"A FUNCTION
+ON A JOIN COLUMN MEANS NO INDEX CAN EVER BE USED — which is why ALL FOUR INDEXES BUILT THAT DAY WERE
+IRRELEVANT TO IT."*** ⚠ **Four indexes built to fix a problem indexes structurally could not fix.**
+
+**(b) MATERIALISE, THEN JOIN ON PLAIN COLUMNS** — resolve the functions into a temp table, **index and
+`ANALYZE` it**.
+
+**(c) LOOP PER PROP** — *"one prop plans healthily; **all 30 at once sorts ~19.6M rows in a single
+merge join**."*
+
+**(d) 🔑 WRITE RESULTS *INSIDE* THE LOOP** — *"a run that accumulates 30 props in memory and writes at
+the end **produces NOTHING on a stall and says NOTHING about where it stalled**."* ⚠ **The same
+principle as T16's supervision rule** *(`NBA_OPEN_ITEMS.md`: row count alone cannot distinguish
+running from dead)*: **a process that emits nothing until it succeeds is unobservable while it runs.**
+
+⚠ **And a workflow change with the same shape**: **`.github/workflows/nba-engine-test.yml` gives
+read-only tests their OWN concurrency group**, *"because every 4-minute validation used to queue
+behind every 45-minute write."*
+
+### 🔴🔴 THE LIVE INDEX AUDIT — **all four exist; one has never been scanned**
+
+| Index | Table | **live size** | fact 104 | **scans** |
+|---|---|---|---|---|
+| **`baseline_history_lookup_idx`** *(covering)* | `baseline_history` | **1,541 MB** | 1,334 MB — ⚠ **+207 MB, +15.5%** | ✅ **23,364,453** |
+| 🔴 **`board_outcomes_nm_idx`** | `board_outcomes` | **303 MB** | — | 🔴🔴 **0** |
+| `board_tiers_nm_idx` | `board_tiers` | 97 MB | — | ✅ 1,080,188 |
+| `rung_market_nm_idx` | `rung_market` | 47 MB | — | ✅ 594,932 |
+
+⚠ **The three expression indexes sum to 447 MB against fact 104's stated 487 MB** — *a 40 MB
+difference; **NOT RECORDED** whether that is a different measurement basis or reclaimed bloat.*
+
+🔴🔴 **`board_outcomes_nm_idx` carries 303 MB and `idx_scan = 0`.** ⚠⚠ **STATED PRECISELY**:
+`pg_stat_database.stats_reset` is **NULL** for this database, so **no explicit statistics reset is
+recorded** — but the sweep **cannot rule out a counter reset on a server restart**, so the claim is
+**"zero scans across the whole window these statistics cover"**, not "never used since creation". 🔑
+**Its three siblings, created in the same batch and covering the same normalised-name join, show
+23.4M / 1.08M / 595k scans over that same window — so the zero is not an artifact of a short window.**
+
+⚠ **THIS MATTERS AGAINST THE STORAGE POSITION**: §0v records the storage incident and that the shrink
+has since been consumed several times over, and §0u records the infrastructure limits. **303 MB of
+index that the planner is not choosing is 303 MB of that budget**, *and it also slows every write to
+`board_outcomes`.* 🔴 **OWNER DECISION**: *drop it, or find out which query it was built for and why
+that query stopped using it* — **and lesson (a) above is the likely answer, since a function on the
+join column makes an index unusable no matter how well it matches.** ⚠ **This sweep does not drop
+indexes.**
+
+---
+
 ## 0w. 🔑🔑 **THE 2026-09-13 SESSION'S TABLES, RE-TAKEN LIVE — five reproduce exactly, one does not** `[LIVE-AUDIT]` *(T16 pass 1, §T16.2; `SELECT` 2026-09-22)*
 
 *T16 builds or fills six tables and states row counts for several. **Every one was re-taken rather than
