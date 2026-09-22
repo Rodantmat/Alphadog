@@ -544,7 +544,13 @@ until 2026-09-20.** → `NBA_WORKERS.md` §0.15.
 **the two ID conventions** · LIVE · `player_id` is **prefixed `nba_<id>`** in `nba_ref.*` and
 `nba_stats.*`, and **bare numeric** in every `nba_score.*` table. **VERIFIED 2026-09-20**:
 `nba_score.board_scored` → `nba_ref.players` on `player_id` matches **0 of 110,955**; with
-`'nba_'||player_id`, **110,955**. **Types are uniform (all TEXT); only the values differ.** Latent —
+`'nba_'||player_id`, **110,955**. ⚠⚠ **THE POPULATION FIGURE IS DATED; THE FINDING IS NOT**
+*(propagated here 2026-09-22, T18 pass 7 — `NBA_DATABASE.md` carried this correction and this file
+did not)*: **`board_scored` was 110,955 rows on 2026-09-20, 5,524,359 on 2026-09-21 and 12,818,715 on
+2026-09-22** — *a table under active daily rebuild*. ✅ **The 110,955 state remains physically
+verifiable: `nba_score.board_scored_snapshot_20260920` holds exactly 110,955 rows.** 🔑 **The JOIN
+defect is unaffected — it concerns the `player_id` PREFIX, not how many rows carry it.**
+**Types are uniform (all TEXT); only the values differ.** Latent —
 the scoring path joins score→score — but **any cross-layer join returns nothing, silently.**
 **Blueprint §2's named multi-table ID bug, reproduced.** → `NBA_DATABASE.md` ·
 `NBA_OPEN_ITEMS.md` *FROM T1 PASS 50*.
