@@ -40,7 +40,7 @@ writes. Grouped by role.
 > and neither the workflows nor the twelve had ever said so.**
 > ⚠ **Recorded, not fixed in the system (rule 1): the workflow headers are the SYSTEM's text.**
 
-**P1 — `nba-p1-weekly-static.yml` · 14 invocations · cron `0 19 * * 1` (Mondays 12:00 PT)**
+**P1 — `nba-p1-weekly-static.yml` · 14 invocations · cron `0 19 * * 1` (Mondays **12:00 PDT / 11:00 PST** — *qualified 2026-09-22, §T20.49 / T20-11: `19:00 UTC` is 12:00 PT only while DST is in effect; from **2026-11-01 to 2027-03-14**, i.e. **133 of the season's first 145 days**, P1 fires at **11:00 PT**. The workflow's own comment at `:28` has PDT and PST swapped*)**
 
 | step | script | writes |
 |---|---|---|
