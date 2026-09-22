@@ -13029,6 +13029,24 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-15 · **NEW · 🔴🔴 SEASON-CRITICAL · BOTH `P2` AND `P3` CERTIFY *RED* ON EVERY ZERO-GAME DAY — `7` OF THEM IN THE LAST COMPLETED SEASON**
+*Added **T20 pass 89 (§T20.94), 2026-09-22**, answering gap ③ of `NBA_RECIPE.md` `STEP 12`. **Read
+from source and the live calendar; nothing was run and nothing was changed.***
+
+| | |
+|---|---|
+| **What happens** | On a date with no games, the date-scoped certifier checks return `0`. **`PIPE=p2` fails `2` of `4`** *(`baseline_history has today` needs `count(*) > 0`; `baseline props for today` needs `count(DISTINCT prop) >= 25`)*. **`PIPE=p3` fails `2` of `5`** *(`final_hp has today`; `board archived today`)*. |
+| **Why it is fatal rather than cosmetic** | **`CERT_STRICT` defaults to `1`** *(`nba/certify_pipeline.py:32` — `strict = os.environ.get("CERT_STRICT","1") == "1"`)* **and neither workflow sets it** ⇒ `sys.exit(1)`, printing *"This pipeline did NOT produce what it promised."* |
+| ✅ **Not universal** | **`PIPE=p1` PASSES** — its three checks are date-independent *(`max(as_of_date)` within 8 days, `defender_ratings > 10k`, `player_name_map > 400`)*. **The one pipeline that has a live cron today is the one that cannot fail this way.** |
+| 🔬 **How often — MEASURED, completed season** | `nba_calendar.games`, live `2026-09-22`: **2025-26, `2025-10-21 → 2026-04-12`, `174` calendar days, `167` with games ⇒ `7` ZERO-GAME DAYS** — `2025-11-27` *(Thanksgiving)* · `2025-12-24` *(Christmas Eve)* · `2026-02-14`, `2026-02-16`, `2026-02-17`, `2026-02-18` *(All-Star break)* · `2026-04-11`. ⇒ 🔴 **`14` guaranteed red builds a season across the two pipelines.** |
+| ⚠ **The 2026-27 figure is NOT final** | The loaded calendar shows `18` zero-game days in `174`, but holds **`1,200` games against `1,238` for 2025-26 — ~30 short of a full regular season**, so `18` is an **upper bound only** *(rule 30)*. |
+| 🔴🔴 **The collision** | `nba-p2-overnight-heavy.yml`'s own header gives the reason its cron was withheld: *"**a scheduled job failing nightly against an empty schedule trains everyone to ignore red builds.**"* ***That reasoning was applied to the OFFSEASON and never to the CALENDAR.*** |
+| 🔴 **OWNER DECISION** | **Gate the date-scoped checks in each certifier on `nba_calendar.games` having rows for that date** — a zero-game day then certifies green and a genuine zero certifies red. *This is exactly the **first-class "NO GAMES SCHEDULED" state** the MLB lesson in `NBA_SYSTEM_DESIGN.md` asked for "from day one", and the distinguishing data already exists in the calendar.* ⚠ **Not fixed (rule 1).** |
+| **Where else** | `NBA_SYSTEM_DESIGN.md` — *"NO GAMES SCHEDULED" MUST BE A FIRST-CLASS STATE*, whose certifier row this item closed · `NBA_RECIPE.md` `STEP 12`, gap ③. |
+| **Prerequisite** | **Dormant until the crons go in.** *It cannot fire while `P2` and `P3` are `workflow_dispatch` only — which is the PREREQUISITE block at the top of this brief, and is why this item ranks last.* |
+
+---
+
 ## T20-14 · **NEW · 🔴🔴 SEASON-CRITICAL, DATED · BETR'S ACCESS TOKEN EXPIRES `2026-10-10` — TEN DAYS BEFORE OPENING NIGHT**
 
 **Severity 4 of 7** *(one of five apps; cheap to fix; but it fires on a known date and nothing
