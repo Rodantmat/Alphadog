@@ -14430,6 +14430,52 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.11 — PASS 10 (**the RULE-32 SIBLING RE-TEST — every open item checked for a later resolution**) — **🔴🔴 one open item's DIAGNOSIS contradicted by the artifact · ✅ four confirmed still open by positive evidence · 0/3**
+*2026-09-22. All populations pinned. `SELECT` only; nothing written to the system.*
+
+#### ✅ T12.11a — **The enumeration, and the prediction landed**
+***Predicted: `uncovered12` to FALL, since pass 9 quoted PROSE from seventeen segments.*** **Measured
+588 / 564** *(from 590 / 566)*, **baseline unchanged. Twenty-fifth: twenty-two hits, two misses, two
+partials.**
+**TEN open items enumerated and each grepped in its own transcript for a later resolution**, pinned
+2026-09-22T07:42Z: *the `alternate_lines` 404 · `days_done: 0` · the false arbitrage signal · the
+nine `EVENT_NOT_FOUND` snapshots · `paper_picks` · `injury_report_snapshots` · the season-tables
+writer · `triple_double`'s zero rows · `sliding_scale`'s dead partition · the officials/starters
+load gap.*
+
+#### ✅ T12.11b — **FOUR are confirmed still open by POSITIVE evidence, not by assumption**
+***`triple_double`, `sliding_scale`, `EVENT_NOT_FOUND` and `paper_picks` have ZERO mentions in their
+own transcripts after the segments that raised them*** — **so there is no later resolution to have
+missed.** 🔑 *That is a different and better statement than "still open": it is the search that
+justifies it.* ⚠ **And the false 2.9%-vs-56% arbitrage signal has NO origin in T12 at all** — *my
+three apparent hits were web-search results (the Odds API MCP server's own description), **opened and
+dismissed*** — **so it post-dates this transcript and is correctly open.**
+
+#### 🔴🔴 T12.11c — **`days_done: 0` — the open item's DIAGNOSIS is contradicted by the artifact**
+*Read the files, per rules 29 and 31.* **`nba_injury_report_2025_26_index.json`, pinned
+2026-09-22T07:44Z: `days_done` is a LIST of 176 DATE STRINGS**, `rows` 919,949, `shards` a list of
+seven months; **the 2024-25 file is the same shape — 174 dates, 418,071 rows.**
+🔑 ***So "the counter was never written during the shard migration" is not what the files show: the
+days ARE written, as a list, whose length is exactly the 176 / 174 the status key itself quotes.***
+**It is a READER problem, not a writer problem** — *and T12 segment 614 shows a probe reading it
+correctly on 2026-09-10, printing `{'days done': 176, …}`.* ⚠ **Which reader reports 0 is NOT
+RECORDED.** **Corrected in `NBA_OPEN_ITEMS.md`; nothing was changed in the system.**
+
+#### 📌 T12.11d — **Three more, all 0 of thirty**
+🔑 **The two 2023-24 starter timeouts have their MECHANISM**, verbatim from segment 614:
+***`{'game_id': '0022300079', 'error': 'failed to perform, curl: 28 operation [timed out]'}`*** —
+**`curl: 28` is an operation timeout.** 📌 **An ODDS API MCP SERVER exists** *(`npx @odds-api/mcp`,
+`ODDS_API_BASE_URL=https://api.odds-api.net/v1`)* — *"events, odds, bookmaker comparison, arbitrage,
+positive EV, line movement, **account usage/limits**"* — **relevant to a system that buys Odds API
+credits.** 📌 **An Apify actor `zen-studio/underdog-player-props`** — *a paid alternative for Underdog
+props, found during the same research.* 📌 **And T11 segment 681's honest constraint**: *"needs me to
+**chain runs** — each chunk is ~2 hours and the next has to be triggered after the previous lands."*
+
+**Pass outcome: 🔴 NOT CLEAN — one open item's diagnosis corrected against the artifact, four
+confirmed open by positive evidence, and three unrecorded facts. CLEAN 0/3 · 11 passes.**
+
+---
+
 ### T12.10 — PASS 9 (**the ASSISTANT-PROSE stratum read IN FULL**) — **🔑🔑 six of pass 7's eight failures were explained in the same transcript · 0/3**
 *2026-09-22. **68 segments, 34,717 characters — small enough to read entirely, so there is no sample
 to state** (§T11.43's precedent; rules 17, 23, 25, 30). Pinned 2026-09-22T07:36Z: max 1,702, min 64,
