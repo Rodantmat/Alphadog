@@ -10,6 +10,183 @@ constraints that shaped it. This is the operational spec.
 
 ---
 
+## 0z. 🔴🔴🔴 **THE OWNER'S STATEMENT OF WHAT THE SYSTEM IS FOR — AND THE ACCEPTANCE CRITERION IT MUST MEET** *(T16 pass 0, §T16.1, from the 2026-09-13 transcript; **nine of ten probes returned 0 of the twelve AND 0 of the thirty**, positive controls passed)*
+
+⚠⚠ **T16's owner stratum is the design-authority stratum of this corpus** — **32 turns, 11,487 chars,
+mean 359**, including the two longest owner turns the sweep has read *(3,220 and 2,095 chars)*. **It
+is where the system's acceptance criterion, its non-negotiables and its layer split are stated in the
+owner's own words, and almost none of it was on file.**
+
+### 🔑🔑 1 · THE ACCEPTANCE CRITERION — **"decimals of difference"** *(0 of twelve, 0 of thirty)*
+
+> ***"What I need from this system: with baseline and the final hit probability after enrichment, they
+> need to be PRECISE. They need to be as SHARP AS POSSIBLE TO REALITY — **leg per leg, band per band,
+> day by day, player by player, prop line per prop line, variation per variation, direction by
+> direction.** … I need that the system has a formula that I'm gonna run every day, and that every day
+> that hit probability percentage given to any specific leg, any specific day, any specific team, any
+> specific prop line, variation or direction is gonna be extremely ASSERTIVE. … When I say extremely,
+> **I want DECIMALS OF DIFFERENCE, or as close to that as possible.**"***
+
+⚠ **The scope is explicit and it is the finest granularity stated anywhere in the corpus**: *leg ·
+band · day · player · prop line · variation · direction* — **seven axes, all at once.** ✅ **And the
+validation population is named**: *"any day that I get this full pipeline — baseline, enrichment,
+everything together — and I run it on **any day of the past two seasons**, that needs to be extremely
+sharp for any leg."* ⚠ **With one exclusion the owner states himself**: *"of course there are
+situations that's gonna get out of the probability — the player is off, or an injury in the middle of
+the game. **But besides the ABNORMALITIES, the system needs to be extremely sharp.**"*
+
+### 🔑🔑🔑 2 · THE DISPOSAL RULE — **the owner ACCEPTS factor rejections, provided the final HP is sharp** *(0 of twelve, 0 of thirty)*
+
+> ***"So if you say that's a fail, that's not needed, or it's being DOUBLE USED, or whatever — as soon
+> as that final hit probability percentage is extremely [sharp] … then I'M FINE. I'm fine. That's what
+> you need to understand."***
+
+⚠⚠ **THIS IS THE DECISIVE CONTEXT FOR THE ENRICHMENT RETRACTION** *(`NBA_FINAL_SCORING_CALIBRATION.md`
+§0a-T15-SUPERSESSION-2: the certified baseline beats every enrichment factor)*. 🔑 **The owner's
+criterion is the OUTPUT's sharpness, not the number of factors that ship — so "the baseline already
+carries it" is a PASS under his own standard, not a failure.** ⚠ *Recorded because the corpus records
+the rejections and not the standard that makes them acceptable, which leaves a reader to infer that
+six of seven candidates failing is a problem. **By this turn, it is not.***
+
+⚠ **And he is explicit about what he does and does not want to be told**: *"you're explaining me a lot
+of betas and alphas and shit that I'm not gonna understand. **You are researching. You are looking at
+the articles, the studies, the systems out there. YOU are the one who needs to understand that** —
+understand what meets the final level of assertiveness."*
+
+### 🔴🔴 3 · THE THREE NON-NEGOTIABLE FACTORS, IN THE OWNER'S OWN WORDS *(the origin of COMPASS fact 95)*
+
+> ***"There are factors that need to be PROPERLY TREATED. Whatever the fuck it is — in baseline, in
+> enrichment, I don't care, but it needs to be properly treated.***
+> ***· **BLOWOUT PREVENTION IS NON-NEGOTIABLE** — "blowouts are gonna happen, and when they happen
+> everything gets screwed. Everything that was historically accurate in a blowout situation is not
+> gonna be that way."***
+> ***· **PRE-CALCULATED SCENARIOS FOR THE LAST-MINUTE INJURY REPORT AND LINEUPS** — "we need to have
+> the precalculated scenarios for the last-minute injury report and lineups, pick up the correct one.
+> That's NON-NEGOTIABLE."***
+> ***· **TEAM MATCHUP IS NON-NEGOTIABLE** — "a team that plays a bad team, a weak attack, a weak
+> defense, or a strong defense, a strong attack — those kinds of things are non-negotiable."***
+> ***Everything else is bells and whistles… if it works great, if it helps great, if it does not, we
+> deal with the best we can do with it."***
+
+🔑🔑 **THE NON-NEGOTIABLE / BELLS-AND-WHISTLES SPLIT IS A PRIORITISATION RULE THE CORPUS DID NOT
+CARRY** — *`non-negotiable` appears 13 times in the thirty and 6 in the twelve, but **the owner's own
+three-item list with the "everything else" clause is new here***. ⚠ **AND NOTE WHAT IT MEANS FOR THE
+SCENARIO SIMULATOR**: **the owner calls pre-calculated scenarios NON-NEGOTIABLE on 2026-09-13**, and
+**COMPASS fact 107 records the scenario precompute as DROPPED by owner decision on 2026-09-19.**
+**Both dates recorded (rule 5); the later one governs, and the reversal is the owner's own.**
+
+⚠ *He also states the data position that underwrites the demand:* *"we have two seasons of full back
+data, and a third season with more data that can help… **it's unbelievable that we cannot get [it]
+with the data we have**."*
+
+### 🔴🔴 4 · THE LAYER SPLIT — **THREE processing times, stated twice** *(0 of twelve, 0 of thirty in this form)*
+
+> ***"You have to remember that we have THREE PROCESSING TIMES. We have the HEAVY one that we're gonna
+> run OVERNIGHT. We have the PRE-FINAL one that's gonna run somewhat in the morning. And then we have
+> the FINAL one that's just gonna get the real outcome out of the simulations and do a board."***
+>
+> *and, restated with clocks:* ***"the ones that's gonna carry the strong processing that's gonna take
+> a while, that's gonna work OVERNIGHT. Then the SECOND phase, which is gonna run AFTER 1 PM, and the
+> LAST phase that's gonna run AFTER 2:30 PM. **The second and the third need to be as LIGHT as
+> possible.**"***
+
+⚠⚠ **SUPERSEDED, AND BOTH DATES ARE ON FILE (rule 5)**: **COMPASS fact 107 (owner decision
+2026-09-19) — *"TWO pipelines, cutoff 1:15 PM PT, and the scenario simulator is DROPPED"*, which fact
+107 itself says supersedes the three-phase design in facts 41 and 68.** 🔑 **What T16 adds is the
+clearest statement of the three-phase version and its clocks — and the LINEAGE OF THE 2:30 WINDOW:
+*2:30 PM PT was the THIRD phase's start, and the third phase is the one that was dropped.***
+
+🔴🔴 **AND THAT LEAVES A MISMATCH NO DOCUMENT PUTS SIDE BY SIDE** *(0 of twelve, 0 of thirty)*:
+**COMPASS fact 73 records N1's probabilities as measured *"at the 2:30 PM PT cutoff"*** — the
+`0.552` / `0.312` / doubtful-means-out values the engine reads — **while fact 107 puts the pipeline's
+cutoff at 1:15 PM PT.** ✅ **Both clocks are individually well documented** *(`2:30 PM PT`: 35 of the
+thirty, 13 of the twelve · `1:15 PM PT`: 42 and 32)* — **they have simply never been compared.** ⚠
+**NOT RECORDED: whether probabilities fitted on a 2:30 as-of transfer to a 1:15 one.** *The sweep
+notes only that fact 68's amended text says the report rule is 11am–1pm LOCAL, so Pacific clubs file
+last at 1:00 PM PT — which makes 1:15 a plausible post-filing cutoff and the gap plausibly small.
+**Plausibly small is not measured.***
+
+### 🔑🔑 5 · **"BASELINE AND ENRICHMENT CANNOT BE TWO DIFFERENT THINGS"** *(0 of twelve, 0 of thirty)*
+
+> ***"The baseline and enrichment cannot be two different things. They need to AGREE, and they need to
+> work together and COMPLEMENT each other. **ALL THE HEAVYWEIGHT NEEDS TO BE ON THE BASELINE**, but
+> they need to TALK and have the proper final product."***
+
+🔑 **This is the owner stating, on 2026-09-13, the architecture that the enrichment reality check
+would confirm empirically the same day** — *"all the heavyweight on the baseline"* is exactly what
+`anchor 0.7150` beating every factor measures. ⚠ **And it is the owner's answer to the
+double-counting problem before the measurement existed**: *"be sure that those factors are not
+already in the baseline. **And if it is — if it's being used properly.**"*
+
+### 🔴 6 · THE ORDER THAT REOPENED THE REJECTED FACTORS — *the origin of COMPASS fact 85* *(0 of twelve, 0 of thirty)*
+
+> 🔴 ***"So IMPROVE IT! Why do we have a CRUDE defender feature? MAKE A DECENT ONE! **I never asked for
+> crude** — same for all other pieces of this system! I always asked for RICH, DEEP, COMPLETE,
+> RELIABLE!"***
+>
+> *and, generalising it across every prior rejection:* ***"For the previous items that failed,
+> shouldn't you have done the same? Something more complex, and that does the job? **Was it not the
+> same issue? BE SURE BEFORE MOVING ON.**"***
+>
+> *and again:* ***"I still think those rejected factors you are not handling properly. You need more
+> complex, more granular, more comprehensive application and use of it."***
+
+✅ **COMPASS fact 85 — *"THE M1/B4 REJECTIONS WERE WRONG, corrected 2026-09-13"* — and COMPASS rule
+90.1 — *"a null is only as strong as the feature that produced it"* — are the RESULT of these turns.**
+🔑 **The corpus carries the conclusion and not the instruction that produced it**, which matters
+because *the instruction is general*: **it applies to every rejection, not only M1's.**
+
+### ⚠ 7 · TWO STANDING TEST DIRECTIVES, SIBLINGS OF T15'S SAMPLE-FIRST RULE *(both 0 of twelve, 0 of thirty)*
+
+| | |
+|---|---|
+| **TEST ALL PROP LINES, EVERY TIME** | ***"You need to test ALL prop lines EVERY TIME. Every time that you do something that affects all of them, you need to test all of them."*** *(restated: "be sure you did all the prop lines, all the thirty-or-so prop lines")* |
+| **PARTIAL CALIBRATION IS NOT ACCEPTABLE** | ***"I CAN'T HAVE SOME OF THEM CALIBRATED AND SOME NOT. So do your work and finish."*** |
+
+⚠⚠ **THE SECOND SITS IN TENSION WITH T15'S CERTIFIED / PENALIZED / EXCLUDED POLICY**
+*(`NBA_FINAL_SCORING_CALIBRATION.md` §0a-T15 §6, 2026-09-12/13)*, **which exists precisely to let a
+prop be partly trusted.** 🔑 **The two are reconcilable — the policy's own premise is that penalties
+are DERIVED from measurement, so every prop IS calibrated and some carry a measured discount — but
+the corpus records neither turn, so nothing reconciles them.** **Recorded as a tension to resolve, not
+as a contradiction: the owner's turn is about a prop having NO verdict, which is the state the
+all-props audit closed** *(27 / 3 / **0 unverified**)*.
+
+⚠ *Sampling discipline is re-stated here too, matching T15's SAMPLE-FIRST rule:* *"all samples,
+different times of the season, different players, different prop lines **before running the whole
+thing** … you need to do a large amount of samples before replicating it."*
+
+### ⚠ 8 · THE RESEARCH STANDARD, RE-ISSUED *(recorded as a re-issue — the standard itself is on file, 9 of the thirty and 9 of the twelve; **kill logged**)*
+
+*"Ground this decision in multiple sourcing research, **no guessing, no assumptions**."* · *"Don't take
+Gemini as absolute truth. Be sure to research other independent sources, reliable, **multiple** of
+them."* 🔑 **Dated instance recorded because T15's decisive oreb fix came FROM Gemini** *(the archetype
+correction)* — **so the standard and the dependency are in the same week.**
+
+### ⚠ 9 · THE REALIGNMENT ORDER, AND WHAT IT SAYS ABOUT THE COMPASS
+
+> ***"First, what I need you to do is REALIGN YOURSELF. Read the WHOLE compass file and get everything
+> back together, because you start to forgetting things and you cannot forget anything. So I need you
+> to completely see — **no skipping, no summarizing, no compacting** — the whole compass file. … I
+> think you're OVERCOMPLICATING things, or you're OVERSIMPLIFYING things."***
+
+🔑 **The COMPASS is the owner's designated realignment instrument**, which is the standing reason this
+sweep reads it and never writes to it — ⚠ **and it is the document from which fact 69 was silently
+deleted the day before** *(`NBA_OPEN_ITEMS.md` §T15.3a)*. **A realignment instrument with a silent hole
+in it is a sharper problem than a numbering gap.**
+
+### ⚠ 10 · THE OPERATING RECORD — *recorded as fact, without interpretation*
+
+*The transcript's last stretch is the owner polling a long-running job:* **five identical turns —
+*"check status, progress and sample to see if job is being properly done"*** — around *"how long for
+it to finish? … everything has to be IN QUEUE, so it runs automatically"*, *"you did not give me a
+time estimate… assertive and short answer"*, *"why is it going so slow? you said 2 hours, it has been
+the double of it already"*, and ***"your lazy work is pissing me off, you are on opus medium, I am
+paying $250 a month; your behavior is unacceptable."*** ⚠ **Recorded because it is part of the record
+and because it dates a cost and a service expectation** *(`opus`: **0 of the thirty**)*; **the sweep
+draws no conclusion from it.**
+
+---
+
 ## 0a. 🔑 THE OUTCOME GRADER — **the design, as the owner was given it, and what the code actually does**
 *Recorded 2026-09-21 (T12 pass 4, §T12.5b). **Transcript `2026-09-11-21-01-23`, owner segment 29 and
 its answer, segment 37.** The grader itself is well documented — `grade_board_outcomes.py` is in 4 of
