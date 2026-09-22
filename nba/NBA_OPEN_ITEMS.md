@@ -12965,8 +12965,12 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > 🔑🔑 **THE TWO CAUSES, AND NEITHER IS "POINTERS WITHOUT TARGETS":**
 > **① 🔴 BLOCKQUOTED HEADINGS — A SIXTH MATCHER BLIND SPOT, UNFOUND BY `narrow`, `wide v2` OR `v3`.**
 > Every matcher tests `line.startswith('#')`; **a heading written `> ### 0.9d.1 …` fails that test.**
-> ▶ **Censused live: `145` blockquoted heading lines across the twelve, declaring `86` distinct
-> ids** — `NBA_OPEN_ITEMS` 70 · `NBA_MASTER_SUMMARY` 41 · `NBA_DATABASE` 9 · `NBA_MULTIPLIERS` 9 ·
+> ▶ **Censused live: `145` blockquoted heading lines across the twelve, declaring ~~`86`~~ **`2`** distinct
+> ids** 🔴 *(the `86` corrected in place 2026-09-22 by `§T20.92` — it read the first prose word of each
+> blockquoted heading as an id, producing `§SECOND`, `§READ`, `§COMPLETED`…; re-derived with an id
+> shape, the two are **`§0.9d.1`** and **`§6.0`**, the same two found by hand above. **The blind spot
+> is real and exactly two ids wide.** The per-document spread that follows is the LINE count and
+> stands.)* — `NBA_OPEN_ITEMS` 70 · `NBA_MASTER_SUMMARY` 41 · `NBA_DATABASE` 9 · `NBA_MULTIPLIERS` 9 ·
 > `NBA_SYSTEM_ARCHITECTURE` 5 · `NBA_SYSTEM_DESIGN` 3 · `NBA_GOBLIN_DEMON` 3 · `NBA_BASELINE_CALIBRATION` 2 ·
 > `NBA_RECIPE` 1 · `NBA_WORKERS` 1 · `NBA_FINAL_SCORING_CALIBRATION` 1.
 > **② 🔑 `§X.n` IS A WORKING CONVENTION, NOT AN INVENTION.** *"Section X, numbered child item n"* —
