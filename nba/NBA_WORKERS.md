@@ -1607,3 +1607,123 @@ carries a destructive shell step is NOT RECORDED.** → `NBA_OPEN_ITEMS.md` *FRO
 
 **Every workflow:** `persist-credentials: true`, **retry-with-rebase on push**, and **no
 `|| echo failed`**.
+
+---
+
+## §0.002-T18 — 🔴🔴🔴 THE GAP DETECTOR PASSED AN ENTIRE SEASON AS "NOT A FAILURE"
+*(T18 pass 2, mechanism strata, written 2026-09-22. **Rule 38**: this is the causal layer — what was
+actually RUN and what it RETURNED. The prose credits this component; only the `tool_result` shows what
+it was credited FOR.)*
+
+### THE TWO RUNS, FIVE MINUTES APART, SAME SCRIPT — *both quoted from the executed log*
+
+| when *(executed, in-log)* | season | what `check_delta_gaps.py` printed | exit |
+|---|---|---|---|
+| **2026-09-19 20:04:19** | **2025-26** | *"No COMPLETED games in the schedule for 2025-26 in range [start .. end]."* → ***"Nothing to audit — this is expected in the off-season. Not a failure."*** | **0 — GREEN** |
+| **2026-09-19 20:09:34** | **2024-25** | *"newest completed slate in schedule: 2025-04-13 / newest slate in the delta: 2025-04-13 OK"* → ***"gaps found: 2 truncated team-games"***, naming **`0022401178` TOR, only 7 players** | **non-zero — RED** |
+
+🔑🔑 ***The prose's claim is "gap detector — ran on a full season, caught 2 real anomalies." That is
+TRUE OF 2024-25 AND OF NOTHING ELSE.*** **The 2025-26 season — the season for which
+`nba_score.final_hp` holds 19,611,626 legs — was never audited, and the audit reported that as a
+pass.**
+
+### ✅ THE CAUSE IS VERIFIED IN SOURCE, NOT INFERRED FROM LIVE STATE *(rule 6)*
+
+**`nba/check_delta_gaps.py`, read directly 2026-09-22** *(9,182 B, 195 lines)*:
+- **line 49** — the expected set is built from **`fetch("nba_schedule_current.json")`**, a repo file, **not** from Postgres.
+- **line 67** — `if "final" not in status: continue` — ***"only completed games can be in the logs."***
+- **lines 77–80** — the script's own comment states the limitation: ***"`nba_schedule_current.json` only carries the UPCOMING season, so in the off-season — or WHEN AUDITING A PAST SEASON — it has nothing to compare against."***
+- It then **falls back to an independent witness**, the **TEAM game log**, with the reasoning recorded: *"a SEPARATE pull from the player game log, so using it as the expected set is a genuine cross-check, not a circular one."*
+
+⇒ **The fallback exists and is correctly argued — and on 2025-26 it was ALSO empty**, because the
+executed run reached the terminal `sys.exit(0)` message rather than the team-log audit.
+⚠ **NOT RECORDED: why the team-log witness was empty for 2025-26 while 2024-25's was not.** *Rule 6 —
+no swept transcript explains it, and this sweep does not explain it from live state.*
+
+### ⚠ `[LIVE-AUDIT]` 2026-09-22 — *what the schedule holds now, recorded as fact, not as cause*
+
+**`nba_market.schedule_norm`** *(read-only `SELECT`, bucketed on `game_date` — the table has only
+`game_id`, `game_date`, `home`, `away`; it carries **no** season or status column)*:
+
+| bucket | games | first | last |
+|---|---|---|---|
+| 2024-25 | **1,230** | 2024-10-22 | 2025-04-13 |
+| **2025-26** | **1,230** | 2025-10-21 | **2026-04-12** |
+
+**So a full 1,230-game 2025-26 schedule exists in Postgres, ending five months before the audit
+ran.** ⚠⚠ **Stated at the strength the evidence supports: this table is a SCHEDULE and carries no
+status column, so it is evidence that the games were SCHEDULED, never that they were played or
+captured.** *The 19.6M scored legs are the evidence for that, and they are recorded elsewhere.* 🔑
+**And it is NOT the table the audit reads** — the audit reads a repo JSON file, so this row count
+does not contradict the audit; it measures the distance between what the system knows and what the
+audit can see.
+
+### 🔑 THIS IS RULE 37's THIRD OUTCOME, IN ITS PUREST FORM
+
+**Rule 37**: *a failure census has three outcomes — RECORDED · ATTRIBUTED-BUT-UNDIAGNOSED · SILENT.*
+**A green exit on an empty expected-set is the SILENT outcome**, and here the silence is *worded as
+reassurance*: **"Not a failure."**
+
+⚠⚠ **And the transcript contains its own refutation, written by the same author about a different
+component in the same session**: ***"it asserts legs actually landed, because A GREEN RUN WITH AN
+EMPTY TABLE IS THE FAILURE THAT HIDES BEST."*** 🔑 **He wrote that assertion into the board scorer and
+did not write it into the gap audit.** *(Rule 18's pattern: the refutation was in hand before the
+claim was made.)*
+
+### ⚠ CONSEQUENCE FOR THE 0.5% THRESHOLD — *open item T18-6, now upgraded*
+
+The recalibration comment states the threshold was *"calibrated on measured data: 2024-25 had 2 of
+~2,460 (0.08%) and 2025-26 had 7."* 🔴 **Of that pair, only the 2024-25 half was produced by an
+executed run in this transcript** *(20:09:34, `gaps found: 2`)*. **The 2025-26 "7" was produced by a
+DIFFERENT invocation — the P2 replay scoped to 2026-01-15 — not by the season-wide audit, which on
+2025-26 returned nothing at all. Its denominator is stated nowhere.** ⇒ **The threshold's calibration
+rests on one measured season and one unmeasured figure.** *Documented, not fixed.*
+
+---
+
+## §0.003-T18 — ✅ THE MECHANISM STRATA, PINNED AND ACCOUNTED FOR
+*(rules 17/21/25 · population pinned 2026-09-22T11:08:21Z from `sweep_coverage.segments`)*
+
+**T18 = 1,205 segments, and the partition CLOSES**: `tool_use` **463** + `tool_result` **397** +
+assistant text **254** + human **57** + `thinking` **34** = **1,205** ✅.
+**Mechanism strata = 860 = 71.4%**, **597,662 chars** *(`tool_use` 241,732 + `tool_result` 355,930)*.
+
+**Tool census — the whole of `tool_use`, and it closes to 463** ✅:
+
+| tool | calls |
+|---|---|
+| `github_patch_file` | **113** |
+| `github_put_file` | **87** |
+| `bash_tool` | **75** |
+| `run_sql_postgres` | **65** |
+| `github_grep_file` | **53** |
+| `github_trigger_workflow` | **37** |
+| `github_get_workflow_run_log` | **31** |
+| `web_search` | **2** |
+
+🔑 **`github_trigger_workflow` 37 is the number behind "nineteen defects, every one found by
+execution"** — *thirty-seven dispatched runs is what "running it" cost.*
+🔑 **`github_put_file` 87 against `github_patch_file` 113** — **87 whole-file writes in one session**,
+against a sweep standing rule that forbids `put_file` on its own documents.
+
+**⚠ READING RESOLUTION, DECLARED (rule 25).** All 860 were passed through a classifier and **every one
+is accounted for**: **618 SUBSTANTIVE**, read; **242 BOILERPLATE**, counted and characterised —
+**102** `github_patch_file` 200-OK receipts *(`{ok, status 200, commit_sha, file_sha, note}`, < 300
+chars, no other content)*, **54** `sleep N; echo ok` waits, **47** `github_list_workflow_runs` result
+polls, **39** `workflow_dispatch` 204 receipts. **618 + 102 + 54 + 47 + 39 = 860** ✅. *Nothing was
+skipped silently; the boilerplate classes are stated so the omission is auditable.*
+
+### 🔴 THE BRIDGE FAILED THREE TIMES IN-SESSION — *the executed evidence for a claim the sweep already carries*
+
+| seg | what came back |
+|---|---|
+| **81**, **83**, **328**, **330**, **332** | `{"error": "error occurred during tool execution", "request_id": …}` — **five** aggregate queries against `nba_score.final_hp` |
+| **150** | ***"tool 'mcp_alphadog_bridge_run_sql_postgres' is not available in this turn, nor is any other 'mcp_alphadog_bridge_' tool."*** — a hard tool outage, not a query error |
+
+🔑 **This is the executed evidence behind the author's prose claim — recorded by this sweep at T17 as
+the reason an incomplete replication pass went unverified — that *"the SQL bridge is timing out on the
+large aggregates."*** ⚠ **Language at evidence strength**: the results show **failures**, and one of
+them is an availability outage rather than a timeout. **The transcript does not print a timeout
+message**, so *"timing out"* remains the author's characterisation, not a verified diagnosis. **What
+IS verified: five aggregate queries against `final_hp` failed, and the whole bridge was unavailable
+for one turn.**
