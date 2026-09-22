@@ -27075,3 +27075,91 @@ of its own, two candidates correctly killed.*
 **NOT ESTABLISHED** — *that any of it is complete.* ***Six dirty passes in a row is not a transcript
 resisting closure; it is the standard working as MLB's Part E said it would — "13 total passes before
 finally reaching two consecutive clean ones."*** **T20 is at six.**
+
+---
+
+# §T20.12 — PASS 7: *RULE 48 IS ENFORCEABLE ON 2 OF 20 TRANSCRIPTS — THE RECORD'S CITABILITY IS A STEP FUNCTION AT T19*
+
+*2026-09-22. **The pass was pre-registered to run rule 48 against a CLOSED transcript — T10 was named
+as "the strongest candidate, a large citation surface." Rule 30 was then applied, as the method row
+required, and it killed the premise.***
+
+## 1. 🔴 THE POPULATION, RE-DERIVED — *and it does not exist*
+
+**T10's sections: 1,843 lines. Distinct segment citations: ZERO. Distinct `turn N` citations: FIVE**
+*(turns 0, 73, 121, 484, 548)*. **The named target has a citation surface of 5.**
+
+So the re-derivation was widened to every transcript's sections in `NBA_MASTER_SUMMARY.md`
+*(re-derived 2026-09-22T13:33Z, heading pattern `^#{1,4} (?:§)?T(\d+)\.\d+`)*:
+
+| | lines of sections | distinct SEG/turn citations | density |
+|---|---|---|---|
+| **T1–T18** | **24,834** | **6** | 1 per **4,139** lines |
+| **T19–T20** | **1,835** | **74** | 1 per **24** lines |
+| | | | 🔴 **167× step** |
+
+🔴 ***T1 has 3,719 lines of sections and cites zero segments. T11 has 3,726 and cites zero. T7 has
+3,347 — the richest transcript in the run, 21 passes, 18 with new material — and cites zero.***
+**The entire T1–T18 citation surface is six pointers: five `turn N` in T10 and one `SEG` in T18.**
+
+## 2. 🔑 WHAT THIS MEANS FOR RULE 48 — *born one pass ago, and already bounded*
+
+**Rule 48 says every segment citation is opened against its source before the entry ships.** *Pass 6
+ran it on T20's 40 citations and found 3 wrong.* ***It cannot be run on eighteen of the twenty
+transcripts, because their sections contain almost nothing to open.***
+
+⚠ **AND THIS IS NOT A COSMETIC PROPERTY OF THE RECORD.** *When §T19.4 audited T1–T6's closing passes,
+it could not read the commands out of the sections — **it had to go back to the transcripts and
+re-locate every one**. The same was true of §T20.9 §3c for T7. **A claim in §T7 can be checked only by
+re-reading T7; a claim in §T20 can be checked by opening a segment.*** **That difference is the
+difference between a record that is auditable and one that must be re-derived.**
+
+## 3. ⚠ THE PRACTICE IS DESCRIBED AS UNIFORM AND IS NOT
+
+**Open item T19-2** records the charter gap for the term index and explains it:
+> *the charter asks for "which line/message/date and time"; the index gives DOCUMENT and TRANSCRIPT,
+> not per-message line numbers, **because the sweep records by section and transcript** and
+> fabricating line numbers would be worse than omitting them.*
+
+🔑 ***"The sweep records by section and transcript" is true of T1–T18 and false of T19–T20.*** **The
+sweep began citing segments at T19 and never went back** — *which is explicable (T19 and T20 are the
+transcripts in which the sweep documents itself, so its own segments are the subject matter) and is
+still a change in practice that the record describes as a constant.* **Recorded, not repaired: back-
+filling 24,834 lines of sections with segment pointers is a re-read of eighteen transcripts, which is
+an OWNER DECISION, not a pass.**
+
+## 4. 🔪 KILLED BEFORE IT WAS WRITTEN *(rules 26/28 — the kill log)*
+
+| candidate | why it died |
+|---|---|
+| *"`NBA_GLOSSARY.md` gives 93 T-pointers and only **4** line/message pointers, against a charter that asks for 'which line/message/date and time'"* | 🔪 **ALREADY RECORDED** — `NBA_MASTER_SUMMARY.md:25047` and `NBA_OPEN_ITEMS.md:12404` both name it, and it is **open item T19-2**. *The measurement is new; the finding is not.* **KILLED.** |
+
+## 5. 📏 CLAUSE SCORING — *pass 7, and two of three are unscorable*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = −1.** `471 → 470` at 13:33:06Z |
+| **(ii)** | rule 48 on a closed transcript finds an error rate **above T20's 7.5%** | ❌ **UNSCORABLE — there is no denominator.** T10's surface is 5; T1–T18's combined is 6 |
+| **(iii)** | at least one mis-citation is **load-bearing** | ❌ **UNSCORABLE — same cause** |
+
+🔴 **AND THE UNSCORABLE CLAUSES ARE MY OWN FAULT, IN A SPECIFIC AND NAMEABLE WAY.** *The pass-7 method
+row asserted **"T10 (28 passes, §T10.1–§T10.28) is the strongest candidate"** for a large citation
+surface — **and I had not counted it.*** ⚠⚠ ***That row also instructs the pass to "re-derive the
+population per rule 30." I wrote a pre-registration against a population I had not derived, inside the
+row that tells the next pass to derive it.*** **Rule 30 broken in the act of invoking rule 30 — the
+same shape as §T20.11's rule-43 error one pass earlier, and the second consecutive instance of it.**
+📌 ***Operative correction, and it is the real yield of this pass: a pre-registration must name the
+population's SIZE, measured, not its plausibility.*** *"T10 is the strongest candidate" is a guess
+wearing a citation's clothes.*
+✅ **Baseline returned `636 · 2 · 484 · 481` for the NINTH consecutive run.**
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — §1–§3 are new material. CLEAN STAYS 0/3.** ⚠ **Rule 46 bars a clean verdict from this
+context regardless; four sequential passes now share one window.**
+
+🔑 **The pattern across passes 6 and 7 is worth stating plainly, because it is about this sweep and not
+about the system**: ***the last two findings have both been the sweep breaking a rule inside the entry
+that invokes it*** — rule 43 at §T20.11, rule 30 here. **Both were caught by the next pass, neither by
+the pass itself.** ⚠ ***That is an argument for the consecutive-clean standard and against the
+assumption that a carefully-written pass is a checked one.***
