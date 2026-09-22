@@ -28091,6 +28091,28 @@ this timestamp. It is not a proof that a prefix matcher cannot mis-resolve in pr
 > ✅ **THE CORPUS'S TRUE POINTER-INTEGRITY RATE: 11 broken references out of 3,842 = `0.286%`.**
 > *(99.71% of every `§`-pointer in the twelve resolves.)*
 
+> 🔴🔴 **CORRECTED IN PLACE — 2026-09-22, T20 pass 86 (§T20.91). CLASS E IS `0`, NOT `10`, AND `v3`
+> HAS A SIXTH BLIND SPOT THIS PASS DID NOT FIND.** *(Rule 40's second half — dated, not struck. The
+> classification above is the finding as recorded; §T20.91 opened each of its ten against its target.)*
+> **② `§0.9d.1` and `§6.0` have headings that EXIST** — `NBA_MULTIPLIERS.md:770` and `:1295` — **and
+> are invisible to `narrow`, `wide v2` and `v3` alike, because all three test `line.startswith('#')`
+> and these headings are written inside a BLOCKQUOTE** *(`> ### 0.9d.1 …`)*. ▶ **`145` such heading
+> lines across the twelve, declaring `86` distinct ids.**
+> **③ `§4c.1`, `§4c.4`, `§0d.1` are NOT "sub-ids invented at citation time"** — they are the
+> convention ***"section X, numbered child item n"***, and each resolves by title on the first try
+> *(`§4c.4` → `NBA_SYSTEM_ARCHITECTURE.md` §4c `### 4. A shared helper can carry its OWN hidden
+> internal cap`, against a citing line reading "the 'hidden internal cap' of §4c.4")*. ▶ **`56` bare
+> numbered child headings under a lettered parent.**
+> **④ `§4k.7` is CLASS B** *(`§4k` heads `NBA_ARCHITECTURE_BLUEPRINT.md:189`, outside the twelve —
+> this pass's own class B already holds `§4k`)*; **`§0a-T18-C` is CLASS C** *(cited only at `:25443`,
+> which says it was authored in error and fixed)*; **the T15 quartet is a PRIOR** *(`§T20.68` measured
+> the same four over the thirty and explained them)*.
+> ⇒ ✅✅ **RE-DERIVED RATE `2026-09-22T21:01:04Z`: `1` broken reference of `5,164` = `0.019%`** — and
+> that one, `§8a`, **was repaired in the same pass.** 🔑 ***The 0.286% was measuring the instrument,
+> not the corpus. §T20.22's own clause-(ii) result — "every matcher this sweep has ever used produces
+> FALSE POSITIVES ONLY" — predicted exactly this and was stated one section above the table it
+> should have been applied to.***
+
 🔑 **Class E splits into two causes, and the second is mine:**
 **(1) `§4c.1` `§4c.4` `§4k.7` `§0d.1` `§0.9d.1` `§0a-T18-C`** — *sub-ids invented at citation time
 for sections that were never given one* **(the fix T18-16 already prescribes: "give the sub-findings
