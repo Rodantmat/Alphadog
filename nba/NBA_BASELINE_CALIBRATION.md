@@ -64,7 +64,7 @@ are three gaps worth naming."***
 ### THE THREE GAPS AS STATED, AND THEIR STATUS TODAY
 | # | the gap, in T13's words | status **2026-09-22** |
 |---|---|---|
-| **1** | ***"Only ONE SLATE exists.** The baseline has been **certified on two seasons via the backtest harness**, but **as a production artifact it's been run exactly ONCE, for a single day**. Before the engine consumes it daily we should confirm it runs cleanly **across a range of dates**, not just the one it was demoed on."* | ✅ **CLOSED — THREE slates now** |
+| **1** | ***"Only ONE SLATE exists.** The baseline has been **certified on two seasons via the backtest harness**, but **as a production artifact it's been run exactly ONCE, for a single day**. Before the engine consumes it daily we should confirm it runs cleanly **across a range of dates**, not just the one it was demoed on."* | 🔴 **WITHDRAWN AS A GAP — see §0v.1** *(three slates do exist, but the gap itself was a misframing)* |
 | **2** | ***"`baseline_ladder_runs` is EMPTY.** That's the **run-metadata table**, which is exactly what the **freshness gates** we specced are supposed to read — *"was the baseline built today, from what inputs, at what time?"* — **the gate can't work against an empty table**."* | ✅ **CLOSED — 3 rows** |
 | **3** | ***"`periods = 1`.** Only **full-game rows**; the **period ladders (Q1/H1) aren't in the production artifact**, though **the periods builder exists**. Fine if we're not offering period props at launch, **but it should be a DECISION rather than an OMISSION**."* | ⏳ **OPEN — and it is an OWNER decision, not a defect** |
 
