@@ -238,7 +238,38 @@ consumed roughly six times over, by the SCORING layer rather than the market lay
 > **So the finding stands as a STATE and is retracted as a puzzle.** ⚠ **What remains genuinely open
 > is narrower**: **the current storage CAP** *(the 30 GB expansion is long exceeded at 43 GB)*, and
 > **whether the expansion-time write hazard has been re-examined since the tables that now dominate
-> are different ones.** ***Neither is recorded anywhere in this corpus.***
+> are different ones.**
+>
+> ### 🔴🔴 **CORRECTED AGAIN — 2026-09-22 (T14 pass 0, §T14.1d). "THE CURRENT STORAGE CAP IS NOT RECORDED" WAS WRONG, AND THE PROBE THAT MISSED IT WAS BROKEN.**
+> ⚠⚠ **The cap IS on file, in the TWELVE**: **`NBA_SYSTEM_ARCHITECTURE.md` carries *"2 GB RAM"* and
+> *"Disk ~30 GiB with autoscale; hit its cap once mid-run and DigitalOcean flipped the primary…"***,
+> **and `NBA_DATABASE.md` itself says the denormalised columns *"buy backtest speed on 2 GB RAM."***
+> 🔴 **THE CAUSE OF THE MISS IS A BROKEN PATTERN, and it is RULE 15 exactly** *(a pattern tuned
+> elsewhere silently mis-measures, and the wrong number is not always zero)*: **the probe required
+> `.{90}` of context BEFORE the match, so it could not match a hit near the START OF A LINE — and
+> both of these are line-initial.** ✅ **Re-taken with `.{0,80}`, pinned 2026-09-22T08:46:49Z, the
+> hits appear immediately.** ***The absence claim is withdrawn.***
+>
+> ### ✅ WHAT IS ACTUALLY NEW, FROM T14's OWNER STRATUM *(2026-09-13)* — **and it SHARPENS the item rather than closing it**
+> **The owner states the cluster and the ceiling directly**: ***"not 91% of 20, IT IS AT 91% OF 30
+> GIGS"*** — **`alphadog-v2-postgres`, first-project, 1 GB RAM / 1 vCPU / 30 GiB disk / primary only
+> / `nyc3` / PostgreSQL 18** *(`postgresql 18` and `nyc3`: **0 of the twelve AND 0 of the thirty**,
+> pinned 2026-09-22T08:46:49Z)*.
+> 🔑🔑 **AND THE CEILING IS AN OWNER DECISION, NOT A PLAN DEFAULT**: ***"it is not gonna expand it.
+> THE THIRTY GIGS IS THE MAX."***
+> ✅ **THE UPGRADE HE THEN MADE**: **shared CPU / 1 vCPU / 2 GB RAM / connection limit 47 / 30 GiB
+> SSD / autoscale +10 GiB per node at 80% / primary only / $30.45 per month** — ⚠ **and the trigger
+> was not disk**: ***"the alerts I've been getting are CPU MORE THAN ANYTHING."***
+> 🔴🔴 **SO THERE IS A LIVE CONTRADICTION WORTH RAISING**: **the owner set 30 GiB as the maximum on
+> 2026-09-13, and the database measured 43 GB on 2026-09-22** *(§0v)* — ***autoscale has fired at
+> least twice past the stated ceiling.*** ⚠ **Whether the cap was later raised deliberately is NOT
+> RECORDED in any transcript swept so far** *(T15–T20 are unread)*. **Documented, not acted on**
+> *(rule 1)*.
+> 📌 **And the retention decision meant to pay for it, in 0 of the thirty**: ***"just delete the
+> BACKTEST — the MLB, if you are sure is backtest, you can delete everything, and KEEP everything
+> that's LIVE on the MLB pipeline"***, *"soon enough I will delete everything for MLB, because on the
+> next season that's gonna be reconstructed just like we're doing here."* ⚠ **Whether that deletion
+> happened is NOT RECORDED**, **and it is the obvious first place to look for the 43 GB.**
 >
 > 📌 **AND THE OPERATIONAL COST OF THE DENORMALISATION IS RECORDED TOO** *(COMPASS fact 104, *"FOUR
 > PERFORMANCE LESSONS THAT COST ~90 MINUTES EACH"*)*: *"**READ THE PLAN FIRST.** Three query
