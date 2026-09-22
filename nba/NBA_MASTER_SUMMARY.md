@@ -25868,3 +25868,131 @@ measurement and is scored on the state this pass leaves.**
 built to detect a repeat of the glossary defect. They detected correct silence instead*** — **which
 is why §3's two-step extension exists, and why a pre-registration that HITS still has to be read
 rather than ticked.**
+
+---
+
+# §T19.8 — PASS 5: THE WORK ORDER SWEPT, THE SEVENTEEN AUDITED, AND RULE 26 KILLED THREE CANDIDATES
+*(T19 pass 5, 2026-09-22 — **the first pass conducted under the owner's must-follow rule**, and the
+first whose kill log is larger than its finding list)*
+
+## 0. ✅ THE MUST-FOLLOW RULE, APPLIED AND SAID SO
+**`nba/NBA_DOCUMENTATION_PROMPT.md` carries an owner rule found at pass 4 and never previously
+followed**: *"I want you, **before you start any pass**, to look at the previous message and this
+message. **This is a must-follow rule! No exception.**"* ✅ **Before this pass began, the run log's
+resume note was re-read and the charter was re-read at T19 SEG 60/61.** *Recorded here because rule
+43 says a pass that cannot show it did the thing has not shown it.*
+
+## 1. ✅ THE COMMANDS THIS PASS IS BUILT ON — ***RULE 43***
+```bash
+# PART A — duplicate probe, 12 candidates, against the WORKING tree of the twelve (rule 28)
+for p in "20 passes per working block" "13 total passes" "no automated mining worker" \
+         "four axes" "outrank" "pooling level" "roughly 10%" "flood your context" … ; do
+  grep -o -i -F "$p" $TWELVE | wc -l ; done          # then EVERY nonzero hit opened (rule 26)
+# PART B — population, re-derivable (rule 30)
+ls -1 nba/*.md                                        # → 32, 2026-09-22T12:31:52Z
+#   minus the twelve, NBA_COMPASS.md, PP_PAYOUT_FINDINGS.md, NBA_SWEEP_RUN_LOG.md  → 17
+for f in $SEVENTEEN; do grep -o -i -F "$(basename $f .md)" $TWELVE | wc -l ; done
+git log --format="%h %ad" -- <file> | while read h d; do git show $h:<file> | wc -c ; done
+```
+
+## 2. 🔒 THE KILL LOG — *five killed, and **three of the five were killed by RULE 26 alone***
+
+| candidate from the work order | already on file at | verdict |
+|---|---|---|
+| **The 13-pass / 2-clean MLB precedent** *("kept finding genuinely new, real issues across 13 total passes before finally reaching two consecutive clean ones")* — the ORIGIN of the owner's three-pass rule | `NBA_OPEN_ITEMS.md:9817–9820` *("⚠ THE PASS-COUNT PRECEDENT — MLB needed 13 passes to reach two consecutive clean")* · `NBA_FINAL_SCORING_CALIBRATION.md:3414` | 🔒 **KILL** |
+| **The confident-negative case** *("a confident claim that 'no automated mining worker exists' was wrong — the logic existed as an internal step inside a larger, differently-named runner file")* | `NBA_FINAL_SCORING_CALIBRATION.md:2664` | 🔒 **KILL** |
+| **The EVIDENCE HIERARCHY** — *"execution history and live code outrank config; config outranks static manifests and documents"* | `NBA_OPEN_ITEMS.md:8144–8145` **verbatim**, and APPLIED at `NBA_MASTER_SUMMARY.md:4649` and `NBA_SYSTEM_DESIGN.md:1395` | 🔒 **KILL** |
+| **The four axes that make a pass genuinely different** *(measurement · pooling level · structure · domain-specific interaction)* | `NBA_FINAL_SCORING_CALIBRATION.md:3074` — a table row *"Pooling level \| player-level **vs** prop-line-level"* | 🔒 **KILL** |
+| **Execution-loop step 7b, the ledger-row sync** | `NBA_OPEN_ITEMS.md:4073`, cited by name | 🔒 **KILL** *(already known)* |
+| *(Part B candidate)* **Parts G and H of the lessons document** — *"never swept"* | **documented in FIVE places**: `NBA_MASTER_SUMMARY.md:5370–5381` *(Part G = 10 lessons, Part H = 12)* · `NBA_FINAL_SCORING_CALIBRATION.md:2939–2940` · `NBA_GLOSSARY.md:1608, 1613` · `NBA_OPEN_ITEMS.md:9271` | 🔒 **KILL** |
+| *(Part B candidate)* **Part D, the B0–B0c selection methodology** — *"absent from all twelve"* | `NBA_OPEN_ITEMS.md:138–141` — recorded as `## 18. PART D — SELECTION METHODOLOGY, Rules B0–B0c`, **and already killed once as a condensation rather than a deletion** | 🔒 **KILL** |
+
+### 🔑 AND THE METHOD NOTE IS THE PASS'S REAL OUTPUT — *two of the three rule-26 kills were candidates the FIRST probe said were NEW*
+| candidate | first probe | result | why it missed |
+|---|---|---|---|
+| the four axes | `"four axes"` | **0** | the documents record the axes **by name** *(`Pooling level`)*, never by the collective noun |
+| Part D / B0–B0c | `"B0-B0c"` | **0** | the documents use an **EN-DASH**, `B0–B0c`. *The probe used a hyphen.* |
+
+⚠⚠ ***A zero from a single-form probe is not a zero.*** **This is rule 15's trap** *(a pattern tuned
+elsewhere silently mis-measures)* **meeting the rule already written twice in this session** —
+***probe the sentence you are about to write, not the evidence that made you want to write it*** —
+**and it now has a third instance and a typographic form.** 🔑 **Had rule 26's "open every hit" not
+been paired with a second probe wording, this pass would have published TWO false discoveries** —
+*and §T11.53e records that at pass 52 the baseline would have licensed six.* ✅ **The instrument that
+caught both was the same one: probe again in the documents' own vocabulary, then open what comes
+back.**
+
+## 3. ✅ PART A — WHAT SURVIVED *(four, all from `nba/NBA_DOCUMENTATION_PROMPT.md`)*
+
+1. 🔴 **"Minimum 20 passes per working block."** *(0 hits in the twelve.)* **A quantified operating
+   floor the sweep has never recorded or measured itself against.** *T19 stands at 6 passes; T18
+   closed at 9.*
+2. 🔴 **The angle rule, in its strict form**: *"Each pass must use a different sample and a different
+   angle — **explicitly not 'the same query with a different threshold'**."* *(0 hits.)* **The sweep's
+   completion criterion says "genuinely different angles"; this is where that phrase comes from and
+   it carries an explicit NEGATIVE case the sweep has never quoted.**
+3. ⚠ **A dated completion figure**: *"Two prior sessions produced the documents in their current
+   state and completed **roughly 10% of the sweep**."* *(0 hits.)* **2026-09-20. The only dated
+   progress estimate in the record that is not this sweep's own.**
+4. ⚠ **Part 3.1's dated ledger and Part 9 #1** — *T1 ~30 passes · **T2–T9 VOID**, swept against 4 of
+   12 documents · T10–T20 not started* — **recorded at heading level in `NBA_OPEN_ITEMS.md` §T19.7
+   and nowhere else.** 🔑 **It is a dated PRIOR STATE of the same ledger this sweep maintains, and it
+   proves a closure record in this project has already been voided once.**
+
+## 4. 🔴 PART B — THE SEVENTEEN, AND WHAT THE INVENTORY MISSES
+
+**Population, re-taken 2026-09-22T12:31:52Z**: `ls -1 nba/*.md` → **32**, minus the twelve mandated,
+minus `NBA_COMPASS.md` *(read, never written)*, minus `PP_PAYOUT_FINDINGS.md` *(the build chat's)*,
+minus `NBA_SWEEP_RUN_LOG.md` ⇒ **17 files.**
+
+✅ **ALL SEVENTEEN ARE NAMED IN THE TWELVE** *(lowest: `NBA_ENRICHMENT_ENGINE_DESIGN` at 4
+mentions)*. ⚠ **But rule 26 applies to the twelve as it applies to anything else: NAMED is not
+DESCRIBED.** **`NBA_SYSTEM_ARCHITECTURE.md` lines 2125–2160 carry a real document inventory with a
+role for each entry. THIRTEEN of the seventeen are in it. FOUR are not:**
+
+| file | size | named in transcripts | described anywhere in the twelve |
+|---|---|---|---|
+| `NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` | 26,943 B | **9 of 20** | ❌ — **and its SIBLING, the 2026-09-04 checkpoint, IS in the inventory with a full role line** |
+| `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` | 17,701 B | **9 of 20** | ❌ |
+| `NBA_ENRICHMENT_ENGINE_DESIGN.md` | 13,903 B | **4 of 20** | ❌ — *all four mentions in the twelve are name-drops in lists* |
+| `NBA_DOCUMENTATION_PROMPT.md` | 26,685 B | 0 of 20 *(it postdates them)* | ❌ — **pass 4's finding** |
+
+🔴 **85,232 B of repo documentation that the twelve name and do not describe.** 🔑 **The
+09-04/09-09 checkpoint pair is the sharpest case — RULE 9's sibling check, un-run**: *the inventory
+gives the 09-04 checkpoint 30,601 B, 359 lines, 10 sections and its continuity section, and gives its
+09-09 twin nothing at all.*
+
+## 5. ⚠ AND TWO FIGURES IN THAT INVENTORY ARE **DATED, NOT WRONG** — *rule 40's second half, and it nearly went the other way*
+
+**The inventory and two other documents state the handoff sizes as `NBA_ARCHITECTURE_BLUEPRINT.md`
+**95,803 B** and `NBA_LESSONS_LEARNED_FROM_MLB.md` **57,066 B**.** **Actual, 2026-09-22: 98,722 B and
+63,967 B.** ⚠ **The first read of that gap was "these are wrong." They are not.** **VERIFIED by
+walking each file's byte size across its own commit history:**
+
+| file | recorded | that is the size at | superseded by | today |
+|---|---|---|---|---|
+| `NBA_ARCHITECTURE_BLUEPRINT.md` | 95,803 B | **`e5ce01af`, 2026-08-30** *(its second-to-last commit)* | `39668fb3`, 2026-08-31 | **98,722 B** |
+| `NBA_LESSONS_LEARNED_FROM_MLB.md` | 57,066 B | **`b67561b3`, 2026-08-30** | `28c225a7` → 59,986 · **`492c005a`, 2026-09-09, *"Part H: enrichment backfill + market/board sourcing lessons"*** | **63,967 B** |
+
+✅ **Both are exact byte counts of real commits, and both appear in NINE of the twenty transcripts —
+so they are transcript-sourced, legitimately dated readings.** 🔑 ***RULE 40's second half decides
+the remedy: a DATED figure is corrected by adding "as of", a WRONG figure by retracting it. Treating
+the first like the second destroys evidence.*** 🔴 **What IS a defect is the missing date, in two
+specific places:**
+- **`NBA_MASTER_SUMMARY.md:554` labels them *"Handoff document sizes (**exact**)"* with no date.**
+- **`NBA_RECIPE.md:283` instructs: *"Read the three handoff documents **in full** (Blueprint 95,803 B,
+  Lessons 57,066 B, Domain 18,034 B)."*** ⇒ ***A reader following the recipe's own step 1 today reads
+  6,901 bytes more of the lessons document than the step accounts for — and that surplus is Part H in
+  its entirety.*** *(`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` at 18,034 B is CURRENT and correct.)*
+
+## 6. 📏 CLAUSE SCORING
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` changes by no more than ±10 | ⏳ **scored at the start of pass 6** *(rule 34)* |
+| **(ii)** | the work-order sweep yields **≥ 3** findings not already in the twelve | ✅ **HIT — four** *(§3)*, **against five kills** |
+| **(iii)** | **≥ 1** of the unchecked files is transcript-named **and** undescribed in the twelve | ✅ **HIT — four undescribed, three of them transcript-named** *(9, 9 and 4 of 20)* |
+
+⚠ **Clause (iii) also carried its own null hypothesis — *"if every one turns out to be already
+described, the work-order miss was a one-off rather than a class."*** ***It is a class.*** **Four
+files, 85,232 B, and the pattern is the same one every time: the sweep names a document, takes one
+fact out of it, and never records what it holds.**
