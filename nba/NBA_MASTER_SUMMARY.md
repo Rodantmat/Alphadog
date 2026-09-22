@@ -36821,3 +36821,97 @@ return **`0` files**.
 the same census against the sweep's own starting point measured what the sweep had done.** ⚠⚠ ***The
 twelve now describe every script and every function the three pipelines execute. That is a statement
 this sweep could not make before today, and it is the one an owner needs before `2026-10-20`.***
+
+---
+
+# §T20.100 — T20 PASS 95: ✅ **`T20-7` IS AN ANOMALY, NOT A PATTERN — `39` STEP NAMES AUDITED AND NO OTHER ONE LIES. THE DEFECT THAT SURVIVES IS OF A DIFFERENT KIND: ONE FILE, TWO ROLES, ONE ENV VAR** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads and `SELECT` only.**
+
+## 1. 📐 THE POPULATION, RE-DERIVED — **AND IT CORRECTED ONE OF MY OWN FIGURES**
+
+▶ **`2026-09-22T21:54:52Z`** — `grep -c '^      - name:'` on the three pipeline workflows:
+**`P1` `9` steps · `P2` `19` · `P3` `11` = `39`**, of which **`33` step→script mappings.**
+🔴 **`§T20.93`'s `STEP 12` states `P2` has "18 steps". It has `19`** — *and the arrow list in that
+very sentence has always contained nineteen items, so the prose miscounted my own list.* ✅
+**Corrected in place (rule 40).** ⚠ *This is why clause-level population re-derivation is a standing
+rule rather than a courtesy: the figure was one pass old and written by the same author.*
+
+## 2. ❌ CLAUSE (ii) — **MISS, AND THE MISS IS THE RESULT**
+
+*Pre-registered: "at least one MORE step name does not describe what its step runs", `T20-7`
+excluded as a PRIOR; and — quoted from the pre-registration — **"a clean miss is a real and
+publishable outcome and would mean `T20-7` is an isolated defect rather than a pattern."***
+
+▶ **All `33` mappings opened against the scripts they name. Not one other step name would send a
+reader to the wrong file.** *The nearest candidate was tested against the pre-registered bar and
+**failed it honestly**: `P2`'s "Components, combos and periods for today's slate" runs
+`build_baseline_ladder.py` again, but with **`BT_SAVE_COMPONENTS=1`** — **so the name is accurate,
+it does produce components.** The registered bar was explicit — **"a TERSE name is not a LYING name"** —
+and it was applied against my own preferred finding.*
+
+⇒ ✅✅ ***`T20-7` — "Board tiers (goblin / standard / demon)" running `maintenance_shrink_board_index.py` —
+is the single instance in `39` steps. It is an anomaly, and that RAISES its significance rather than
+lowering it: it is not a symptom of loose naming discipline, it is a one-off wiring error in an
+otherwise carefully named system.***
+⚠ **CLAUSE (iii) — NOT MEASURABLE**: *concentration cannot be tested at `n = 1` with that one
+excluded as a prior.* **Recorded as unmeasured, not as a negative (rule 6).**
+
+## 3. 🔑 WHAT SURVIVES IS A DIFFERENT DEFECT — **AND `§0d.1` NAMED IT IN ADVANCE**
+
+**`nba/baseline/build_baseline_ladder.py` is invoked by TWO steps of `P2`, separated by one
+environment variable** *(`BT_SAVE_COMPONENTS=1`)*. **A reader looking for where the ladder builder
+runs finds the first step and stops.**
+🔑 **`NBA_WORKERS.md` §0d.1, quoted** — *the MLB lesson, recorded at T1*:
+> ***"A single physical worker file can serve MANY UNRELATED LOGICAL ROLES, selected AT RUNTIME by a
+> `mode` PARAMETER, not by which file it is… NEVER ASSUME 'ONE FILE = ONE JOB.' … DOCUMENT THE MODE
+> DISPATCH TABLE EXPLICITLY IN ONE PLACE, don't let it become IMPLICIT."***
+
+▶ **HALF-MET, MEASURED**: all **`7`** `BT_*` flags used by the pipelines are documented — each in
+**4–8** of the twelve — and `NBA_WORKERS.md` carries them in one line *("**Env**: `BT_ASOF` ·
+`BT_PROPS` · `BT_CUTOFF` · `BT_REPLAY` · `BT_INJURY` · `BT_LADDER_STEPS` · `BT_SAVE_COMPONENTS` ·
+`BT_TRAIN`/`BT_TEST` · `BT_CARRY`")*. 🔴 ***But that is a list of KNOBS, not a DISPATCH TABLE.
+Nothing anywhere maps a COMBINATION to a ROLE*** — *that `BT_SAVE_COMPONENTS=1` is what makes step 12
+a different job from step 11 is recorded in no document.* ⚠ **Recorded, not fixed (rule 1); written
+into `NBA_RECIPE.md` `STEP 9`, the page a fixer opens** *(clause (v))*.
+
+📌 **THE MULTI-ROLE CENSUS**, same pin — **`4` scripts run in more than one step**:
+**`certify_pipeline.py` ×3** *(`PIPE=p1`/`p2`/`p3` — **the mode is IN the step name; the good
+pattern**)* · **`scrape_nba_injury_report.py` ×2** *(day-before vs day-of — **roles named**)* ·
+**`export_market_spreads.py` ×2** · 🔴 **`build_baseline_ladder.py` ×2 — the only one whose two roles
+cannot be told apart from the step names.**
+
+## 4. 🔴 CLAUSE (i) — **`RULE 52`, AND THE LAST BAND FELL**
+
+**`2026-09-22T21:56Z`: `650 · 1 · 471 · 468`. `uncovered30` moved `469 → 468`, so the delta was
+opened:**
+
+> ### **SEGMENT `385` CROSSED `b30 < 0.40` BY MOVING `0.4000 → 0.4001`** — *and it is a tool-call parameter echo* (`context lines: 3 max matches: 2 path: … pattern: …`).
+
+⇒ **NOISE.** 📌📌 ***AND THE STRUCTURE IS NOW COMPLETE: EVERY BAND `judge20.py` REPORTS HAS A SEGMENT
+PINNED TO FOUR DECIMALS AT ITS THRESHOLD.***
+
+| band | threshold | pinned segment(s) |
+|---|---|---|
+| `uncovered12` | `b12 < 0.40` | **`938`** at `0.4000` |
+| `uncovered30` | `b30 < 0.40` | **`385`** at `0.4000` |
+| high band | `b12 >= 0.45` | **`292`** and **`401`** at `0.4500` |
+
+*`§T20.91` found the first, `§T20.95` the second, `§T20.99` the third, this pass the fourth.* ⇒ ***A
+`±1` on ANY reported band is attainable by rounding. `RULE 52` is not a precaution about one metric;
+it is the operating condition of the whole instrument.***
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.99`** *(**PRIOR** — mechanism ② is its sentence and
+this pass tests it)* · **`T20-7`** *(**PRIOR**, excluded from the count by pre-registration)* ·
+**`NBA_WORKERS.md` §0d.1** *(**PRIOR** — the MLB one-file-many-roles lesson, quoted; **this pass
+claims only that its prescription is half-met**)* · **`§T20.93`** *(**PRIOR** — `STEP 12`, whose step
+count this pass corrects in place)* · **`§T20.91`/`§T20.95`** *(**PRIOR** — rule 52 and the earlier
+pinned segments)*. ▶ **RULE 51, last step, BASELINE tree, probed as the CLAIM**: *"mode dispatch
+table"*, *"runs twice"* and *"step name does not describe"* return **`0` files**.
+
+📌 ***The lesson:*** **a pass that went looking for more lies found none, and the honest miss is worth
+more than the find would have been — it converts `T20-7` from a symptom into an anomaly.** ⚠⚠ ***And
+the bar that produced the miss was written down BEFORE the reading, which is the only reason a
+tempting near-candidate could be rejected rather than argued into place.***
