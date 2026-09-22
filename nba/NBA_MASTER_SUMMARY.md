@@ -35959,7 +35959,14 @@ there, naming an orphan made it look cited; here, naming a dangling pointer make
 
 **`narrow`, `wide v2` and `v3` all begin `if not line.startswith('#'): continue`.** *A heading written*
 ***`> ### ⚠⚠ 0.9d.1 NARROWED 2026-09-22 …`*** *fails that test at character one.*
-▶ **Censused live: `145` blockquoted heading lines across the twelve, declaring `86` distinct ids** —
+▶ **Censused live: `145` blockquoted heading lines across the twelve, declaring ~~`86`~~ 🔴 `2` distinct ids** —
+> 🔴🔴 **THE `86` IS CORRECTED IN PLACE — 2026-09-22, T20 pass 87 (`§T20.92` §1). The LINE count is
+> right; the ID count was produced by reading the first prose word of each blockquoted heading as a
+> section id** *(`§SECOND`, `§READ`, `§COMPLETED`, `§All` …)*. **Re-derived with an id shape — an id
+> begins with a digit, or `T<n>.` / `T<n>-` — the `149` such lines today declare `2` ids: `§0.9d.1`
+> and `§6.0`.** ⇒ ***The blind spot is REAL and it is exactly two ids wide — the same two this
+> section found by hand. Its scope was overstated 43×; its existence was not.*** *(The per-document
+> spread below is the LINE count and stands.)*
 `NBA_OPEN_ITEMS` 70 · `NBA_MASTER_SUMMARY` 41 · `NBA_DATABASE` 9 · `NBA_MULTIPLIERS` 9 ·
 `NBA_SYSTEM_ARCHITECTURE` 5 · `NBA_SYSTEM_DESIGN` 3 · `NBA_GOBLIN_DEMON` 3 ·
 `NBA_BASELINE_CALIBRATION` 2 · `NBA_RECIPE` 1 · `NBA_WORKERS` 1 · `NBA_FINAL_SCORING_CALIBRATION` 1.
