@@ -24929,6 +24929,67 @@ Factor lock (5 research passes) · return-ramp · the day-before injury report �
 
 ---
 
+# §T18.7 — WIRING: EVERY OBJECT T18's SECTIONS ASSERT, RESOLVED — **16/16**
+*(T18 pass 8, 2026-09-22 · T4's closing angle · **the pass that closes T18 at 3/3**)*
+
+**Population**: the **47 T18-authored sections across 8 of the twelve, 168,810 characters**, extracted
+by heading level *(a section runs to the next heading of the same or higher level)*.
+
+⚠ **THE FIRST EXTRACTOR WAS WRONG AND IS RECORDED SO IT IS NOT REPEATED**: it reset on *any* heading,
+so a nested sub-heading terminated its parent section. **It captured 41,241 chars — 24% of the true
+population — and found 3 relations instead of 6.** ***An audit reporting "100% resolve" on a quarter
+of the population would have been worse than no audit*** *(rule 15 again, and the third instrument
+this session to mis-measure before being fixed)*.
+
+## ✅ RELATIONS — **6/6 EXIST**, with a planted negative control
+
+| asserted | status |
+|---|---|
+| `nba_market.board_tiers` · `nba_market.board_tiers_v2` · `nba_market.schedule_norm` | **EXISTS** |
+| `nba_score.final_hp` · `nba_score.board_scored` · `nba_score.board_scored_snapshot_20260920` | **EXISTS** |
+| *`nba_score.THIS_SHOULD_NOT_EXIST`* — **planted** | **MISSING** ✅ |
+
+🔑 **The negative control is the point: a resolver that returns EXISTS for everything proves
+nothing.** *Rule 22 run in both directions.*
+
+## ✅ SCRIPTS AND WORKFLOWS — **10/10 EXIST**, each with its live byte size
+
+| object | bytes |
+|---|---|
+| `nba/nba_asof.py` | 6,295 |
+| `nba/check_delta_gaps.py` | 9,182 |
+| `nba/certify_pipeline.py` | 5,920 |
+| `nba/archive_live_boards.py` | 12,248 |
+| `nba/measure_report_cutoff.py` | **5,106** — *the script T18-11 says never returned a result: **it exists and is complete*** |
+| `main.py` | 27,744 |
+| `prizepicks_mlb_current.json` | 17,629,573 |
+| `nba/data/nba_schedule_current.json` | 1,225,505 |
+| `.github/workflows/` — `nba-combos-history.yml` · `nba-daily-delta.yml` · `nba-engine-test.yml` · `nba-p3-afternoon-light.yml` | all present in the 40-file listing |
+
+## ✅ THE RECALL CHECK — *what makes the 100% meaningful*
+
+**The pre-registration predicted at least one object would NOT resolve, on the reasoning that a 100%
+result would more likely mean the audit was too lenient than that the sweep was perfect.** ❌ **That
+prediction MISSED, and its reasoning is refuted by measurement rather than waved away**: re-extracting
+with **no backtick requirement** returns **exactly the same sets** — 6 relations, 6 `.py`, 4 `.yml`,
+**nothing missed**. ⇒ ***The population is complete, so the 100% is a real 100% and not a sampling
+artefact.***
+
+🔑 **The honest reading of the result: T18's sections are CONSERVATIVE about naming objects.** Eight
+passes over 1,205 segments produced assertions about only **sixteen** named objects, every one of
+which exists. *The sweep's exposure here is not wrong names — it is that a section can be wrong about
+a REAL object, which is what passes 4, 6 and 7 tested instead.*
+
+## 🔑 ONE INCIDENTAL FINDING THE LISTING HANDED OVER
+
+**`nba/data/` holds `nba_team_game_log_2024_25.json` AND `nba_team_game_log_2025_26.json`
+(1,316,313 bytes).** ⇒ **The independent witness that `check_delta_gaps.py` falls back to EXISTS FOR
+2025-26.** **So T18-12 — the fix never re-verified on the season that exposed the gap — needs nothing
+but one dispatch; no missing input stands in the way.** *(Rule 6: that the file exists is what is
+recorded. Whether its contents would satisfy the audit is NOT RECORDED and is not guessed.)*
+
+---
+
 # §T18.6 — CROSS-DOCUMENT CONSISTENCY: THREE CORRECTIONS THAT NEVER PROPAGATED
 *(T18 pass 7, 2026-09-22 · the angle T2 closed on · **RULE 40 is born here**)*
 
