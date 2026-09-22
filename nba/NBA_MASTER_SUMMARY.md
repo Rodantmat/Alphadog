@@ -26856,3 +26856,113 @@ individually competent and collectively blind in one specific way — **every fi
 relation, not a fact.** A count that changes at a turn boundary, an instruction that arrives mid-chain,
 a command that contradicts its own label, a table that contradicts its own heading. **Rule 32 is now
 measured rather than argued: 6 of 6 findings in this pass required adjacency.***
+
+---
+
+# §T20.10 — PASS 5: *CLOSING THE CAP — PASS 4 READ 100% OF THE SEGMENTS AND 86.8% OF THE CHARACTERS*
+
+*2026-09-22. **A re-read, and it says so** (rule 46): pass 5 shares a context window with pass 4, so
+it CANNOT advance the clean count whatever it finds. It was run for a different reason — **to test
+pass 4's own instrument**, which is rule 43 turned on the pass that invoked rule 43.*
+
+## 1. 🔴 THE CAP, MEASURED — *pass 4 disclosed it and never sized it*
+
+§T20.9 stated its method honestly: *"payload bodies capped at 1,600 chars."* **It never said how much
+that hid.** Measured:
+
+| | |
+|---|---|
+| segments | **1,177 — 100% read** ✅ |
+| characters | **990,596 total · 859,758 shown · 86.8%** |
+| **hidden by the cap** | **130,838 — 13.2%, in 144 segments (12.2%)** |
+
+🔑 ***And the loss is not spread evenly — it is almost entirely one stratum:***
+
+| stratum | character mass | shown |
+|---|---|---|
+| `tool_use` | 534,998 | **99.1%** |
+| `text` | 96,940 | **98.4%** |
+| `thinking` | 2,384 | **100%** |
+| **`tool_result`** | **356,274** | 🔴 **65.0%** |
+
+***A third of the `tool_result` stratum's mass sat beyond pass 4's window*** — the stratum that carries
+live query returns, file reads and grep output. **"Full sequential read" was true of segments and
+not of characters, and the distinction had not been drawn.**
+
+## 2. 🔴 THE OVERFLOW FILE WAS UNATTRIBUTED BY CONSTRUCTION — *and it was the designated remedy*
+
+**VERIFIED against the command that wrote it** *(rule 43)*. `scratchpad/t20/cut.py`, final loop:
+
+```python
+over=[s for s in segs if s.get('type')=='tool_result' and len(s['text'])>1600]
+for s in over: f.write(f"### [{s.get('name','?')}] ({len(s['text'])})\n{s['text']}\n\n")
+```
+
+**`name` is not a key these segments carry, so every one of the 80 headers rendered `### [?]`.**
+*The `dump()` helper directly above it iterates `for i,s in enumerate(segs)` and writes `SEG {i}`
+correctly; the overflow loop iterates `for s in over` — **no index, by omission**.*
+🔑 ***So the one file §T20.9's method row named as the answer to the cap was the one file whose
+contents could not be cited back to a segment.*** ✅ **Regenerated this pass as
+`full_results_ids.txt` with ids restored — 80 receipts, 129,509 B — and read in full.**
+
+⚠ **AND THE OVERFLOW FILE COVERED ONLY ONE OF THE THREE OVER-CAP TYPES:**
+
+| over-cap type | segs | hidden chars | in the overflow file? |
+|---|---|---|---|
+| `tool_result` | 80 | **124,524** | ✅ yes |
+| `tool_use` | 42 | 4,766 | 🔴 **no — nowhere** |
+| `text` *(incl. 4 owner turns)* | 22 | 1,548 | 🔴 **no — nowhere** |
+
+***6,314 characters had no record in any artefact this sweep produced.*** ✅ **All 64 were read
+directly this pass.**
+
+## 3. ✅ WHAT THE HIDDEN 13.2% ACTUALLY CONTAINED — *a null, and the null is the result*
+
+**All 124,524 overflow characters read; all 6,314 uncaptured tails read. NOTHING NEW ABOUT THE SYSTEM
+OR THE TRANSCRIPT'S CONTENT.** *Measured rather than asserted: 9-gram shingling of the overflow
+against the shown text puts **45.8% of it verbatim elsewhere in what pass 4 already read** — the
+receipts are dominated by the repeated tails of grep block-listings.*
+
+**The 64 uncaptured tails are sentence-endings, `path:` declarations and resume markers** — *"resume
+at t7 pass 5"* (SEG 99), *"t1's clean count is back to zero. continuing."* (SEG 857), *"path:
+nba/nba open items.md"* (SEG 429). **Median tail: 41 characters.**
+✅ **The four owner tails (SEG 587 · 588 · 597 · 598, 110–177 chars) were never at risk** —
+`owner.txt` was dumped **uncapped** (`dump('owner.txt', …)` passes no `cap`), so pass 0 read them
+whole, and all four are already quoted in the twelve.
+
+🔑 **ONE TAIL IS WORTH KEEPING, AND IT CONFIRMS §T20.9 §2 EXACTLY.** **SEG 921's tail — 799 characters
+— carries research-standard lessons 18 through 26 in full**, including *"**19** language strength must
+never exceed evidence strength — a standing, mechanical discipline."*
+***So the write that produced the defective table HAD lessons 18–26 in hand and still emitted
+`(sequence continues)` at row 8.*** **The gap was never a writing failure — it was the `head -18`
+retrieval at SEG 916 returning items in sorted order, where `8` never arrived.** *The traced cause
+published in §T20.9 is now confirmed from the write's own payload.*
+📌 *And **SEG 1096's own tail was truncated** mid-sentence — *"…the wrong value until a later full read
+caught it."* **The sentence describing how a grep window hides a value was itself hidden by a window.***
+
+## 4. 📏 CLAUSE SCORING — *pass 5*
+
+*Pre-registered in the run log before the pass, against the post-pass-4 tree.*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` **FALLS by at least 3** | ✅ **HIT — Δ = −4.** `475 → 471` at 2026-09-22T13:23:49Z. *§T20.9's writes were a discovery write in rule 35's sense, as predicted.* Series: 4 · 3 · 1 · 1 · **0** · **−4** |
+| **(ii)** | a second read finds **AT LEAST ONE** finding pass 4 missed | ✅ **HIT — two** (§1, §2) ⚠ ***but BOTH are about the INSTRUMENT, not the transcript. On CONTENT, pass 5 came back clean.*** |
+| **(iii)** | **at most ONE** is a stratum-boundary finding | ✅ **HIT — ZERO are.** *The pre-registration's alternative — "if pass 5 finds several more, the boundary seam is deeper than pass 4 established" — is **resolved the other way: pass 4 exhausted the seam.*** |
+
+✅ **The baseline returned `636 · 2 · 484 · 481` for the SEVENTH consecutive run.**
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — the count stays 0/3**, on two grounds, either sufficient:
+1. **New material was found** (§1, §2) and lands in one of the twelve. *Owner **SEG 858**: "anything
+   new for **ANY** document resets the count."* **The retired scope cap would have excused this as
+   non-transcript material; it is retired precisely so it cannot.**
+2. ⚠⚠ **RULE 46 — pass 5 shares a context with pass 4. Even a clean result could not have advanced
+   the count.** *Stated in advance, in the pre-registration, not discovered afterwards.*
+
+✅ **WHAT IS NOW CLOSED**: *pass 4's coverage is complete at the CHARACTER level, not merely the
+segment level — 990,596 of 990,596 characters of T20 have been read across passes 4 and 5.* **That
+was an open question §T20.9 left implicit, and it is the strongest thing this pass produced.**
+📌 **Operative lesson for every future counting pass**: ***state the cap AND its size, and make the
+overflow artefact carry segment ids — an overflow you cannot cite is not a remedy.***
