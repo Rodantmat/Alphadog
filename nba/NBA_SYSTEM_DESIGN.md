@@ -1944,7 +1944,90 @@ From `nba_config.classification_config.production_baseline_ladder`:
 
 ---
 
-## §0z-8-T18 — 🔴🔴🔴 THE `2:30 PM PT` TRACE THIS SWEEP RECORDED IS PROBABLY THE WRONG ONE
+## §0z-8-T18-RETRACTION — ⚠⚠⚠ THIS SWEEP OVERCLAIMED, AND THE RETRACTION IS RECORDED, NOT EDITED AWAY
+*(written 2026-09-22, ~40 minutes after §0z-8-T18 below, by the same pass, on reading further into the
+same stratum. **The §0w precedent governs: a correction by this sweep is recorded in place with both
+states visible.**)*
+
+🔴🔴 **§0z-8-T18 BELOW IS HEADED *"THE TRACE THIS SWEEP RECORDED IS PROBABLY THE WRONG ONE"* AND CALLS
+THE PDF-SNAPSHOT TRACE *"the weaker of two."* ***BOTH CLAIMS ARE RETRACTED.*** **The PDF-snapshot
+trace is CORRECT, and the evidence that settles it was 130 lines further into the stratum this same
+pass was reading.**
+
+### ✅ WHAT SETTLES IT — *the archive measured directly, in the transcript* (`bash_tool` SEG 545/546)
+
+The author queried the backfill's own index and shards and printed what is actually there:
+
+| | |
+|---|---|
+| 2025-26 index | **7 shards** |
+| shard `2025-11` | **68,447 rows · 30 game dates** |
+| snapshots per game date | **min 24 · median 48 · max 48** |
+| example date 2025-11-04 | **48 timestamps, EVERY ONE at `:30` past the hour**, `2025-11-03T00:30:00-05:00` → `2025-11-04T23:30:00-05:00` |
+| `source_url` sample | `https://ak-static.cms.nba.com/referee/injury/injury-report_2025-11-01_12am.pdf` |
+
+🔑🔑🔑 ***The archive is HOURLY, ON THE HALF-HOUR, IN EASTERN (`-05:00`). `14:30-05:00` — "2:30 pm ET"
+— is an ORDINARY DAILY FILENAME, present on every single game date.***
+
+⇒ **The 2026-09-09 line *"observed snapshots at 12:30 pm, 01:00 pm, 02:30 pm, 03:30 pm, 04:00 pm,
+06:45 pm, 07:45 pm"* was a HAND-SAMPLE of an hourly archive, not a schedule** *(and `01:00` / `06:45`
+/ `07:45` are not on the `:30` grid at all, so the sample is not even a clean subset)*. **`2:30 pm`
+needed no special origin: it was simply in the sample, and the sample was in Eastern.**
+
+### ⇒ WHAT IS WITHDRAWN, EXACTLY
+
+| §0z-8-T18 claimed | verdict |
+|---|---|
+| *"the trace this sweep recorded is probably the wrong one"* | ❌ **WITHDRAWN** — the recorded trace is right |
+| *"the PDF story needs both an error and an unexplained selection among seven candidates"* | ❌ **WITHDRAWN** — the seven were a sample of forty-eight, so there is no privileged selection to explain in EITHER story; *"drift"* is the whole explanation |
+| *"`2:30 PM PT` is a CORRECT conversion of a NAMED CONSTANT"* | ⚠ **DOWNGRADED to a COINCIDENCE, correctly computed.** `ENRICH_CUTOFFS_LOCAL = ["13:30","17:30"]` is real in live source and `17:30 ET = 2:30 PM PT` is exact — **but a matching number is not a causal link**, and the sweep had no evidence it was one |
+| the league-rule quotations, the early-tip clause, the three bulletin times, T18-9, T18-10 | ✅ **ALL STAND** — independently sourced, all still absent from the thirty before this pass |
+
+🔑🔑 **THE METHOD FAILURE, NAMED PLAINLY**: ***an arithmetic coincidence was promoted to a causal trace,
+and the promotion happened because the pass wrote at the moment it found the coincidence instead of
+at the end of the stratum.*** **That is rule 12's failure — *apply a rule in the pass that writes it*
+— turned on rule 25: reading in order and in full is not only about coverage, it is about not
+publishing from the middle of a document.** ⚠ **And the sweep had already named this exact failure at
+§0w and called it *"the exact failure rule 6 exists to prevent, committed by this sweep."* It has now
+been committed twice.**
+
+---
+
+### 🔴🔴 AND THE FINDING THAT REPLACES IT — *the cutoff was never measured*
+
+**The author wrote `nba/measure_report_cutoff.py` for exactly this question**, and stated its standard
+in the file's own docstring:
+
+> *"policy says the last market to file is pacific, at 1 pm pt. **but policy is not evidence — measure
+> it.**… if 1 pm pt covers ~100% of games and the 13:15→14:30 churn is negligible, the earlier cutoff
+> is safe and phase 2 can run 75 minutes sooner. **if not, 2:30 stays — for a reason this time, not by
+> inheritance.**"*
+
+**It measures, per game-day, from the system's own two seasons of archived snapshots**: the earliest
+snapshot in which each game's teams carry a real status; the share of game-days fully covered by
+**10:00 / 11:00 / 12:00 / 13:00 / 13:15 / 14:00 / 14:30 / 15:00 PT**; the status churn between 13:15
+and 14:30; and the same split **by tip time, "since early tips file 8-10am local."**
+
+🔴🔴 **IT NEVER RETURNED A RESULT IN THIS TRANSCRIPT.**
+
+| run | outcome |
+|---|---|
+| `35464255049` *(the probe workflow)* | ❌ **FAILED** — `ModuleNotFoundError: No module named 'pandas'`. *The probe workflow installs only `curl_cffi`.* |
+| `35464467204` *(moved into `nba-engine-test.yml`, which does install pandas; dispatched `task=cutoff`)* | ⚠ **last seen `status: "pending", conclusion: null`** — **no `tool_result` anywhere in the 860 mechanism segments reports its output.** No coverage table, no churn figure, no by-tip-time split. |
+
+⇒ ✅ **THE 1:15 PM PT CUTOFF RESTS ON POLICY REASONING — the league rule, which is authoritative — AND
+NOT ON THE MEASUREMENT ITS OWN AUTHOR BUILT TO CHECK IT.** ⚠⚠ **Stated at evidence strength: the
+cutoff is NOT unfounded** *(11 a.m.–1 p.m. local is the league's own rule, quoted from four
+independent results in this transcript)*. **What is missing is the author's own stated standard —
+"policy is not evidence, measure it" — applied to his own conclusion.** *Open item T18-11.*
+
+🔑 **And the early-tip clause recorded at T18-9 was NOT news to the author** — his own docstring says
+*"early tips file 8-10am local"*, written before this sweep found it. **It is news to the THIRTY, which
+is what the novelty probe measures and all that was ever claimed.**
+
+---
+
+## §0z-8-T18 — ⚠ SUPERSEDED IN PART BY THE RETRACTION ABOVE *(2026-09-22)* — the `2:30 PM PT` trace
 *(T18 pass 2, mechanism strata · written 2026-09-22 · **this section corrects the SWEEP's own causal
 account, not the system's** — the operational conclusion is unchanged and is reinforced)*
 
