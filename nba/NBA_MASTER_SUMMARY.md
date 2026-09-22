@@ -28522,6 +28522,8 @@ settles a thread that has now run four passes.**
 
 > **OLD-STRATUM POPULATION: `34` date-bearing figure contexts dated `2026-09-01` … `2026-09-15`
 > across `nba/*.md` excluding the run log** *(2026-09-22T14:50:51Z; `grep -n "2026-09-0[0-9]T|2026-09-1[0-5]T|Recorded 2026-09-1[0-5]"`)*.
+>
+> ⚠⚠ **COMMAND CORRECTED IN PLACE — T20 pass 66 (§T20.71), 2026-09-22. THE FIGURE WAS RIGHT; THE PUBLISHED COMMAND WAS UNRUNNABLE.** *As printed above it has **no `-E`**, so under basic regex the `|` is a **literal pipe character**, and it has **no file operand**. Copied and run, it returns **`0`**.* ✅ **THE COMPLETE, COPY-RUNNABLE FORM, from the REPO ROOT:** > ```sh > grep -hE "2026-09-0[0-9]T|2026-09-1[0-5]T|Recorded 2026-09-1[0-5]" $(ls nba/*.md | grep -v NBA_SWEEP_RUN_LOG) | wc -l > ``` ✅✅ **AND THE PIN VERIFIES EXACTLY.** *Run against the tree as of its own timestamp — `git log --until="2026-09-22T14:50:51Z" -1` ⇒ commit `00b3a2f86c27a0ee698b57b382b9bc0e242273f9` — it returns **`34`**, the pinned figure.* ▶ **Re-run on today's tree it returns `58`. RULE 40 / RULE 19: this is `DATED` by CORPUS GROWTH, not `RETRACTED` by error — and the two were distinguishable only because the pin carried a TIMESTAMP, which let the tree be restored.**
 > **Sample re-derived: `16` figures from `6` sections, spanning 5 documents.** ✅ **Well-powered —
 > the underpowered escape the pre-registration allowed is not needed.**
 
