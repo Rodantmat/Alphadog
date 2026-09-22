@@ -37669,3 +37669,92 @@ PLACE IN THE RANKING was not.**
 fifty-two passes the brief has told the owner what matters most in a symbol that appears nowhere else
 on the page — and the sweep quoted that string into two other documents before anyone tried to read
 it as a reader would.***
+
+---
+
+# §T20.109 — T20 PASS 104: ✅🔴 **THE OWNER'S TOP-RANKED ITEM IS DIAGNOSED — HE NAMED TWO CAUSES, THE ARCHIVE SEPARATES THEM, AND ONLY ONE IS SUPPORTED** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **`SELECT` and file reads only.**
+
+## 1. ✅ CLAUSE (ii) — **HIT. THE CAUSES SEPARATE CLEANLY.**
+
+*His sentence:* ***"Our anchor is not at the proper place of the ladder, or the ladder is not deep
+enough."*** ⇒ **Anchor PLACEMENT is the CENTRE of the `line − anchor` distribution; ladder DEPTH is
+its TAILS.** ▶ **Measured over `776,215` PrizePicks legs, the whole 2025-26 season**, joining
+`nba_score.board_scored` to `nba_score.baseline_history` on `(game_date, player_id, prop)`.
+⚠ **Clause (iv) honoured on both traps**: *the anchor was **READ** from `baseline_history`, never
+assumed; and `ladder_steps` was **read as `10`** — the production depth — **not the certified recipe's
+`6`**, which would have overstated the defect by construction (`§T20.101`).*
+
+| the owner's words | verdict |
+|---|---|
+| ***"our anchor is not at the proper place"*** | ❌ **NOT SUPPORTED — the median `line − anchor` is `0.00`, exactly.** *The `+0.580` mean is right-SKEW, not displacement.* |
+| ***"or the ladder is not deep enough"*** | ✅ **CONFIRMED, and asymmetric.** |
+
+## 2. 🔴 THE DEPTH DEFECT, SIZED — **AND THE `interpolated` FLAG SPLIT FOR THE FIRST TIME**
+
+**`58,221` legs (`7.50%`) carry `interpolated`** — *no exact ladder rung.* **That flag has been stored
+on every leg of two seasons and had never been decomposed:**
+
+| | |
+|---|---|
+| 🔴 **clamped beyond the ladder's ends** | **14,338 — `1.847%`**, one leg in 54 |
+| benign between-rung interpolation | 43,883 — `5.65%` |
+| **above the top rung** | **12,885 — `89.9%` of the clamped** |
+| below the bottom | 1,453 — `10.1%` |
+| 🔴 **furthest excursion above the top** | **`+24.0` line units** |
+
+## 3. 🔑🔑 **THE MECHANISM IS THE PART THAT MATTERS — CLAMPED, NOT EXTRAPOLATED**
+
+**`score_board_legs.py:168-170`**: *"`if lo.empty or hi.empty:` **# beyond both ends - clamp to the
+nearest fitted rung**"*. ⇒ ***A line `24` above the deepest rung is priced with the DEEPEST RUNG'S
+PROBABILITY.***
+🔴 **AND THE CONFIDENCE LAYER CANNOT TELL EITHER**: `:250` adds **`4.0`** to `lost` for **any**
+`interpolated` leg — *"an interpolated rung is genuinely less supported than a fitted one - say so"* —
+**so a clamped leg and a well-supported between-rung fill take exactly the same deduction.**
+⇒ ***The system records THAT a leg was off-ladder and not WHETHER it was supported.*** *Recorded, not
+fixed (rule 1).*
+
+## 4. ⚠⚠ **RULE 51 KILLED HALF THE PASS, AND THE HALF IT KILLED WAS THE PRETTIEST**
+
+*The per-prop breakdown — `pts_reb` worst, then `pts_ast`, `pra`, `points`, with the single-count
+props at zero — is **already on file**.* **`NBA_BASELINE_CALIBRATION.md` §0v.3** decomposes the whole
+2025-26 season per prop with an explicit ***"out of range"*** column — **pts+reb `4,804` · pts+ast
+`3,638` · reb+ast `42` · `0` for assists, threes, blocks, steals, stocks, turnovers** — and
+`build_baseline_ladder.py`'s comment records the 2026-03-15 check. ⇒ ***WHERE the defect lives was
+known. It is credited, not republished.***
+✅ **What this pass adds, and only this**: **the ANCHOR half of the owner's sentence, answered
+negatively** · **the season-wide size of the CLAMPED set** · **its `89.9%` upward asymmetry** · **the
+`+24.0` maximum** · **the split of a flag nobody had split** · **and the clamp-versus-extrapolate
+mechanism with its confidence consequence.**
+
+## 5. ⚠ LIMITS, STATED *(clause (v) — "a half-answer labelled as one is worth more than a confident one")*
+
+*PrizePicks only; the other eleven apps are not measured.* *The per-prop re-run covers **December 2025
+only** and reproduced `§0v.3`'s ordering exactly — `pts_reb 4.34%` · `pts_ast 4.06%` · `pra 2.23%` ·
+`points 0.96%` · `reb_ast 0.02%` · threes/rebounds/assists `0.00%`.* 🔴 **The season-wide per-prop
+query exceeded the bridge's 180-second limit twice and is written `NOT MEASURED` rather than
+estimated (rule 6).**
+🔴 **OWNER DECISION**: **`BT_LADDER_STEPS`** is per-run, its production default is `10`, and **`P2`
+deliberately does not set it** *(`NBA_WORKERS.md`'s MODE DISPATCH TABLE, `§T20.101`)*. **Whether to
+deepen it, and for which props, is not a documentation decision.**
+
+## 6. ✅ CLAUSE (i) — `RULE 52`
+
+**`2026-09-22T22:52Z`: `649 · 1 · 470 · 467`. All three bands unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: 🔴 **`NBA_BASELINE_CALIBRATION.md` §0v.3** *(**PRIOR**, found
+by the probe **after the per-prop table was already drafted** — the whole WHERE half)* ·
+**`build_baseline_ladder.py`'s coverage comment** *(**PRIOR**, named in the pre-registration as a
+figure to test rather than discover)* · **`§T20.56`** *(**PRIOR** — that `T18-1` had no diagnosis)* ·
+**`§T20.101`** *(**PRIOR** — `LADDER_STEPS = 10` in production, which clause (iv) required)* ·
+**`§T20.108`** *(**PRIOR** — that `A` is `T18-1`)*. ▶ **RULE 51, last step, BASELINE tree**:
+*"points-based combos"* returned `NBA_BASELINE_CALIBRATION.md`, **opened — it is §0v.3**;
+*"clamp to the nearest"* returned three files, **opened — none is about the ladder**.
+
+📌 ***The lesson:*** **the owner asked a question in the form of a disjunction, and a disjunction is
+answerable.** ⚠⚠ ***It sat undiagnosed through eighteen transcripts and a hundred and four passes —
+and the data that settles it has been sitting in a boolean column on twelve million rows the whole
+time.***
