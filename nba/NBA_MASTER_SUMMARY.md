@@ -27277,3 +27277,97 @@ against the transcript or against itself.* **This one measured the documents aga
 database — and 9 of 10 figures written on 2026-09-20 are still exact two days later, while the one
 that moved moved because the system rebuilt it.** ***That is a good result for the documents and a
 reminder about the one number that was never re-checked at all.***
+
+---
+
+# §T20.14 — PASS 9: *WALKING THE SURFACES — A CORRECTION FROM SIX HOURS EARLIER HAD REACHED ONE PLACE AND MISSED SIX*
+
+*2026-09-22. **Built on the lesson §T20.13 drew from three instances of the same shape**: a correction
+in this corpus does not propagate unless someone counts the surfaces and walks them. **This pass
+counted them.***
+
+## 1. 📏 THE SUPERSESSION SURFACE, COUNTED FIRST *(rule 30)*
+
+*Over the twelve, 2026-09-22T13:42Z:* `CORRECTED` **65** · `RETRACTED` **51** · `SUPERSEDED` **29** ·
+`VOID` **22** · `RETIRED` **6** · `Previously documented` **4**. **Strikethrough spans: 34, of which
+16 contain a number** — *the cleanest population, because a strike is the sweep's own marker that a
+figure was replaced.*
+
+## 2. 🔪 FOUR OF THE SIXTEEN WERE ALREADY WALKED — *killed before writing (rules 26/28)*
+
+| struck figure | why it died |
+|---|---|
+| `110,955` *(board_scored)* | 🔪 **a surface-walk table already exists** — corrected in `NBA_DATABASE` → 5,524,359, with `MASTER_SUMMARY` · `GLOSSARY` · `OPEN_ITEMS` listed and marked ✅ **propagated 2026-09-22** |
+| `233` / `211` *(distinct prices)* | 🔪 **same table, both ✅ propagated** — *and it records the rule-15 caveat that most hits were innocent collisions* |
+| `100% coverage` | 🔪 **§T11.12b** — *"a documented '100% coverage' is 99.76%, and it is in two of the twelve"* |
+| `38,686,696` *(final_hp)* | 🔪 **walked one pass ago at §T20.13** — 4 occurrences, 3 sound, 1 corrected |
+
+✅ ***The instrument this pass was built to invent already existed, and had been run on four figures.***
+**So the test narrowed to the corrected figure that table does not cover.**
+
+## 3. 🔴 THE FINDING — *`20 of 135` → `24 of 136`, corrected at 07:15Z, still flat on SIX surfaces at 13:42Z*
+
+**§T12.7d, 2026-09-22T07:15Z**, re-took `nba_season.py`'s reach by execution — *`find nba -name '*.py' | grep -v '/data/'` = 136* — and recorded **24 of 136** *(+4 carriers, +1 file)*, closing with **"Corrected in place."**
+
+**Ten occurrences of the literal `20 of 135` opened across the twelve (rule 26):**
+
+| surface | verdict |
+|---|---|
+| `MASTER_SUMMARY:16358–9` | ✅ **the correction itself** |
+| `MASTER_SUMMARY:16366` | ✅ **sound** — a kill-log *counting* the string, not asserting it |
+| `MASTER_SUMMARY:211` · `:388` | ✅ **sound** — ledger rows carrying both figures and the re-take |
+| 🔴 `MASTER_SUMMARY:22483` | **flat — inside OWNER DECISION `O4b`** |
+| 🔴 `MASTER_SUMMARY:23687` | **flat — and marked "exact ✅" in a verification table** |
+| 🔴 `MASTER_SUMMARY:23746` | **flat — second verification table, marked ✅** |
+| 🔴 `MASTER_SUMMARY:23757` | **flat — a SECTION HEADING (§T9.29a)** |
+| 🔴 `MASTER_SUMMARY:23767` | **flat — table row** |
+| 🔴🔴 **`NBA_OPEN_ITEMS.md:2641`** | **flat — and in a DIFFERENT DOCUMENT from the correction** |
+
+***"Corrected in place" was true of one place and false of six.*** ✅ **All six propagated this pass;
+re-checked after: the only surviving flat instances are the correction, the kill-log count, and the
+§T9.29a heading — annotated beneath rather than rewritten** *(rule 47: anchor on heading TEXT; rule 40:
+a correct supersession must not destroy the original)*.
+
+⚠ **Three of the six were marked as VERIFIED when they were wrong** — two tables carrying ✅ and one
+"exact." 🔑 ***A verification mark records that a figure was checked, not that it is still true — and
+nothing in the corpus distinguishes the two.***
+📌 **The figure moved for an innocent reason**: `current_season()` rolls on `month >= 7`, so the file
+count changed with the season rollover, not with a bug. **The defect is entirely in propagation.**
+
+## 4. 🔴🔴 RULE 49 — *four instances is no longer a pattern, it is a missing step*
+
+> ### **A CORRECTION IS NOT COMPLETE UNTIL THE OLD LITERAL HAS BEEN COUNTED ACROSS ALL TWELVE AND EVERY FLAT SURFACE WALKED. "Corrected in place" names ONE place.**
+
+**The four instances, all found by a later pass and none by the correcting pass:**
+| # | figure | correction reached | surfaces it missed |
+|---|---|---|---|
+| 1 | the `2026-10-20` date | §T10.18b | **78 mentions, 58 uncorrected, 36 assertive** |
+| 2 | research-standard rows 5 / 8 / 27 | body of `FINAL_SCORING` | **the §14 table in the same document** |
+| 3 | `38,686,696` | `NBA_DATABASE` + `OPEN_ITEMS` | **one bare assertion in `FINAL_SCORING`** |
+| 4 | `20 of 135` | §T12.7d | **six, one cross-document** |
+
+⚠ **The discriminator is rule 19 and it cannot be automated**: *a hit is a defect only if it asserts
+the old value in the present tense.* **An attributed historical quotation is sound and must be left
+alone** — three of four `38,686,696` occurrences were exactly that. ***So the count is mechanical and
+the judgment is not: every hit gets opened.***
+
+## 5. 📏 CLAUSE SCORING — *pass 9*
+
+| clause | as pre-registered | outcome |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at 13:44:41Z |
+| **(ii)** | **at least one** corrected figure still has an uncorrected surface | ✅ **HIT — six**, from a correction six hours old |
+| **(iii)** | at least one uncorrected surface is in **another document** | ✅ **HIT — `NBA_OPEN_ITEMS.md:2641`**, the cross-document leak the clause named as "a different and worse failure mode" |
+
+✅ **All three HIT. Baseline `636 · 2 · 484 · 481` for the ELEVENTH consecutive run.**
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — six surfaces corrected, RULE 49 born. CLEAN STAYS 0/3.** ⚠ **Rule 46: seven
+sequential passes now share one context.**
+
+📌 ***The honest shape of the last four passes: every one of them found a defect created by an earlier
+pass of this same sweep, not by the system.*** **§T20.11 found three mis-citations; §T20.12 found a
+rule-30 break; §T20.13 found a bare figure; §T20.14 found a correction that named one place and meant
+six.** ⚠ ***That is what the consecutive-clean standard is for, and it is the strongest available
+argument that T20 should not close on a pass written in the context that produced those defects.***
