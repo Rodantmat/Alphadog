@@ -12701,6 +12701,66 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-3 · **NEW · OWNER DECISION · 🔴 SEASON-CRITICAL** · the scheduler holds ten MLB jobs, two still ENABLED, and zero NBA
+
+**`[LIVE-AUDIT]` 2026-09-22 (§T20.31).** ⚠⚠ **READ-ONLY throughout: `SELECT` and repo listings only.
+NO `run_job`, NO `github_trigger_workflow`, no dispatch, no deploy (rule 1).**
+*Population: **93** base tables matching the job-state shape across all schemas (`pp_*` excluded),
+2026-09-22T15:18:59Z; **40** workflow files — **33** NBA-prefixed, `nba-pp-payout-map.yml` excluded
+as the concurrent session's.*
+
+🔴🔴🔴 **① `config.scheduled_jobs` = `10` rows, `updated_at` 2026-06-09 → 2026-07-23, and ZERO carry
+an NBA `job_key`.** **Two are still `enabled = 1`:**
+
+| `job_key` | when | enabled |
+|---|---|---|
+| 🔴 **`postgres-full-run`** | **daily 06:00 PT** | **1** |
+| 🔴 **`static-full-run`** | **weekly, Mon 02:00 PT** | **1** |
+| `board-full-run` ×3 · `daily-full-run` ×2 · `context-history-full-run` · `incremental-morning-full-run` · `scoring-full-run` | various | 0 |
+
+***Every key is MLB-era, and MLB is DROPPED.*** ⚠ **Whether anything still ticks this table is
+**NOT RECORDED** — `nba_control.job_runs` is empty, so the database cannot answer it. That is the
+difference between two dead rows and two live jobs competing for a `42.95 GB` disk 28 days before the
+opener, and it is the owner's to settle.**
+✅ **NOT a missing two-hop (rule 20, third vocabulary): the 33 NBA workflows are scheduled by GitHub
+Actions `cron:` in the YAML — a different scheduler, by design. The absence of NBA rows here is
+architecture, not a gap.**
+
+🔴🔴 **② THE NBA'S OWN RUN LEDGER IS EMPTY** — `nba_control.job_runs` **0 rows**,
+`nba_control.worker_run_log` **0 rows**. ✅ *The control surfaces are alive:*
+`control.worker_state` written **2026-09-22 08:46:41.310298+00** (today); `control.system_state` =
+one row, `GLOBAL`, **`lock_flag 0`, `status IDLE`, `running_job_key NULL`**, last updated
+2026-07-25. ⇒ ***No NBA job has ever recorded a run in the database, so `SELECT`-only observability
+cannot answer "did P3 run today?" — the only record that a game-day pipeline fired is a GitHub
+Actions run log.***
+
+✅✅ **③ THE GOOD NEWS, AT FULL STRENGTH — NOTHING IS STALE IN THE DANGEROUS DIRECTION.** *No row
+claims completed work that is not done; the global lock is clear and IDLE; the empty ledger is empty
+rather than falsely populated.* 🔑 **The staleness that IS present runs the OTHER way — enabled
+schedules for a dropped sport cause UNWANTED WORK, not a silent SKIP. That is the recoverable
+direction, and it is the first time in this thread a stored surface has come back safe.**
+
+🔴🔴🔴 **④ P2 AND P3 HAVE NO CRON — CONFIRMED OFF THE REPO (rule 21).**
+`nba-p2-overnight-heavy.yml` and `nba-p3-afternoon-light.yml` each carry exactly one `on:` trigger,
+**`workflow_dispatch:`**, and no `schedule:` block. ✅ *Rule 22 control: `nba-p1-weekly-static.yml`
+carries `- cron: '0 19 * * 1'` and `nba-referees.yml` `- cron: '30 15 * * *'` — the probe finds
+crons where crons exist.* ✅✅ **The corpus already said so in five places and is CONFIRMED.**
+🔴 **But `NBA_SYSTEM_ARCHITECTURE.md`'s DST-exposure table carried *"P2 cron 01:00 PT"* and
+*"P3 cron 1:15 PM PT"* rows — it never asserted the crons exist, it PRESUPPOSED them while analysing
+their drift.** ✅ **Corrected in-pass.** 📌 ***A negation is easy to search for; a presupposition is
+not — which is why five documents agreeing did not protect the sixth.***
+
+🔴 **OWNER DECISION — 28 days to the opener:** **(a)** disable or delete the two enabled MLB
+schedules · **(b)** confirm whether anything still ticks `config.scheduled_jobs` at all, which
+decides whether (a) is urgent or cosmetic · **(c)** decide whether P3 gets a `schedule:` block before
+opening day, or stays dispatch-only by design — *the corpus records the original reason
+(**"nothing is live until the NBA season opens in October"**) and records that it **"stops applying
+the moment the season starts"*** · **(d)** decide whether NBA runs should write to
+`nba_control.job_runs` so the database can answer "did it run?". ⚠ **This sweep recommends nothing,
+changed nothing and triggered nothing; the measurements above are the input.**
+
+---
+
 ## T20-2 · **NEW · OWNER DECISION · 🔴 SEASON-CRITICAL** · the live storage-diet plan is aimed at a database that no longer exists
 
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.29).** *Read off the system (rule 21):
