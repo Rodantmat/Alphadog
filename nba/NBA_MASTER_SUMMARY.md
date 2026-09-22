@@ -32557,3 +32557,126 @@ seventeen are the product, and the only reason we can say so is that somebody wr
 limitation into a workflow header eleven days ago.**
 ***A pass that had counted without classifying would have been precisely wrong, at scale, in the
 owner's most valuable direction.***
+
+---
+
+# §T20.60 — T20 PASS 55 · THE SECOND VOCABULARY — AND A TOKEN THAT DIES TEN DAYS BEFORE OPENING NIGHT
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: repo reads and `git log`.** **Nothing edited, triggered or
+dispatched; `NBA_COMPASS.md` not written to; the concurrent session's `pp_*` files not read.**
+
+## 0. WHY THIS PASS EXISTED — TO TRY TO BREAK THE PREVIOUS ONE
+
+**§T20.59 closed on an ABSENCE claim about an INSTRUMENT**, which is the class this sweep has been
+wrong about most often:
+> 🔴 *"there is no instrument in the system that could tell the owner whether that is right or wrong."*
+
+⚠ **Rule 20 requires three vocabularies and pass 54 had probed exactly one — `board_snapshots`.**
+**The second is `boards/`, where the DFS scrapers write JSON that never passes through the Odds API
+feed.**
+
+## 1. THE POPULATION — AND EVERY DATE TAKEN FROM `git log`, NOT FROM A FILE MTIME (rule 17)
+
+**`boards/` holds `23` files, tree `529d3eb8e3ba0a5b86c114e7f53a87e40d20d7ab`,
+2026-09-22T17:59:37Z. Four are NBA boards:**
+
+| file | size | **last COMMITTED** | legs |
+|---|---|---|---|
+| `underdog_nba_current.json` | **23,704 B** | 2026-09-21T19:52:37Z | **0** |
+| `fliff_nba_current.json` | 759 B | ✅ **2026-09-22T17:14:27Z — 46 minutes before this measurement** | **0** |
+| `sleeper_nba_current.json` | 331 B | ✅ **2026-09-22T16:57:05Z — 64 minutes before** | **0** |
+| 🔴 `betr_nba_current.json` | 312 B | 🔴 **2026-09-10T06:18Z — THIRTEEN DAYS, and its only commit** | **0** |
+
+*(Their MLB siblings, for scale: `fliff_mlb` **15.7 MB**, `underdog_mlb` **5.0 MB**, `betr_mlb`
+**1.3 MB**, `sleeper_mlb` **1.0 MB** — the scrapers work; the NBA board is empty because the season
+has not started.)*
+
+## 2. ⚠ CLAUSE (iii) COMES BACK NEGATIVE — AND THAT IS THE RESULT, NOT A FAILURE
+
+**Every one of the four NBA metas reports `ok: true` and ZERO legs:**
+- `sleeper_nba_current_meta.json` — *`"legs": 0, "by_wager_type": {}, "by_line_type": {}`*, fetched
+  **2026-09-22T16:57:04Z**
+- `fliff_nba_current_meta.json` — *`"events": 0, "markets": 0, "legs": 0, "by_market": {}`*, fetched
+  **2026-09-22T17:14:08Z** *(and `channels_seen` lists 30 live channels — the feed is answering)*
+- `underdog_nba_current_meta.json` — **3 matches found** (`match_grouped_lines[core] → 3`) and
+  **`lines[match=211122|211123|211124] → 0`** for all three
+- `betr_nba_current_meta.json` — *`"events": 0, "legs": 0, "players": 0, "by_stat": {}`*
+
+⇒ ✅ ***The second vocabulary is EMPTY. §T20.59's absence claim survives its second probe and is now
+properly ESTABLISHED rather than asserted — and the reason is dated and benign: there is no NBA board
+to capture yet.*** 📌 **A confirmed absence is a result. Recorded as one.**
+
+## 3. ✅✅ THE UNEXPECTED POSITIVE — **THE BOARD LAYER IS ALIVE WHILE THE REFERENCE LAYER IS FROZEN**
+
+🔑🔑 **THREE OF THE FOUR DFS SCRAPERS COMMITTED WITHIN THE LAST TWENTY-FOUR HOURS** — Sleeper
+**64 minutes** ago, Fliff **46 minutes** ago, Underdog yesterday — **while every NBA reference table
+is frozen at `2026-09-02`** *(the 2026-09-21 SEASON-CRITICAL item, ten tables)*.
+
+⇒ ***The scraping network is NOT uniformly dead, and saying so plainly matters: the GitHub-Actions
+layer runs on its crons and commits; the WORKER layer does not run at all.*** **§T20.53 already
+measured the same split from the other side — `nba_schedule_current.json` moved `2026-09-14` while
+`nba_calendar.games` sat at `2026-09-02`.** 📌 **Two independent measurements, same conclusion: the
+loader is the gap, not the scrapers.**
+
+## 4. 🔴🔴 THE FINDING — **BETR'S TOKEN EXPIRES TEN DAYS BEFORE OPENING NIGHT**
+
+**`boards/betr_nba_current_meta.json`, quoted verbatim:**
+```
+"source": "betr fantasy graphql getUpcomingEventsV2",
+"fetched_at": "2026-09-10T06:18:28.583Z",
+"token_expires_at": "2026-10-10T06:10:56.000Z",
+```
+
+⚠ **THE MECHANISM IS PRIOR WORK — COMPASS fact 55**: *"BETR (built 2026-09-10): bridge job
+`betr_board_pull` … **token = owner's 30-day Keycloak** …"*. ✅ **KILLED as a mechanism.**
+🔴 **WHAT IS NEW IS THE DATED CONSEQUENCE, and the file states it in a field nobody had read:**
+
+| | |
+|---|---|
+| token expires | **2026-10-10T06:10:56Z** |
+| preseason opens | **2026-10-03** — **7 days BEFORE expiry** |
+| 🔴 **regular season opens** | **2026-10-20** — 🔴 **TEN DAYS AFTER THE TOKEN IS DEAD** |
+
+⇒ ***Betr covers the first week of preseason and then goes dark, and it is still dark on opening
+night.*** **Betr is one of the five apps the product targets** *(PrizePicks, Underdog, Sleeper,
+Fliff, Betr)* **and one of the four DFS books in `board_snapshots`** *(`betr_us_dfs`, 780,765 legs
+over 131 dates, §T20.59)*.
+
+🔑 **AND IT HAS THE SAME ROOT CAUSE AS THE FROZEN STATIC LAYER, WHICH IS WHY IT WENT UNNOTICED.**
+*Betr has no GitHub Actions workflow — `grep -l betr .github/workflows/*.yml` returns only
+`nba-board-archive.yml` and `nba-p3-afternoon-light.yml`, which CONSUME the file.* **The puller is
+the Cloudflare bridge job `betr_board_pull` (COMPASS 55), and §T20.31 established that
+`nba_control.job_runs` and `worker_run_log` are both EMPTY — no worker job has ever recorded a run.**
+⇒ ***Sleeper and Fliff ran an hour ago because they are GitHub Actions on crons. Betr has not run in
+thirteen days because it is a worker, and nothing triggers workers.*** **Same cause, third instance.**
+
+## 5. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTY-SIXTH consecutive identical run.** Measured 2026-09-22T18:00:57Z |
+| **(ii)** `boards/` holds ≥1 committed NBA DFS board file | ✅ **TRUE — four of them** |
+| **(iii)** ≥1 of the seventeen unmapped props appears there | ⚠ **FALSE — all four carry ZERO legs.** **§T20.59's absence claim survives its second vocabulary and is now established.** *The instrument exists; it is simply empty until the season starts* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTY-SIXTH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 6. ⚠ VERDICT
+
+🔴 **NOT CLEAN — one new season-critical, DATED finding: Betr's access token expires `2026-10-10`,
+ten days before opening night, and its board has not been pulled since `2026-09-10`. New open item
+T20-14.**
+✅✅ **AND TWO REAL POSITIVES: the DFS scraping layer is DEMONSTRABLY ALIVE — three of four committed
+within twenty-four hours, two of them within the hour — and §T20.59's absence claim, the one this
+pass set out to break, SURVIVED a genuine second probe.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **the 30-day Keycloak token mechanism** *(COMPASS fact 55 — only
+the dated consequence is new)* · **the board scrapers themselves** *(T12, extensively)* · **Sleeper's
+missing history** *(`NBA_OPEN_ITEMS.md:2410`)* · **the four DFS bookmakers' 21-key vocabulary**
+*(§T20.59)* · **the frozen reference layer** *(2026-09-21 item)*.
+
+📌 ***The lesson:*** **the pass was written to break its predecessor and failed to, which is the
+outcome a pre-registration is for. What it found instead was in a field called `token_expires_at`,
+in a 338-byte file, that no pass had opened — a date ten days on the wrong side of opening night.**
+***The board scrapers that run are fine. The one that does not run is the one nothing triggers, and
+that is now the third finding with the same root cause.***
