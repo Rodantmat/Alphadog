@@ -34075,6 +34075,8 @@ has been citing the same rule NUMBER for different rules.*** ⇒ **Reconstructio
 recover the rules; it would canonise whichever gloss a later pass happened to read. Recorded for the
 owner's decision, not acted on.**
 
+> 🔴🔴 **CORRECTED ONE PASS LATER — T20 pass 68, §T20.73, 2026-09-22. THE CLAIM SURVIVES; ITS CAUSE DOES NOT, AND THE CAUSE IS THE PART THAT MATTERS.** *The paragraph above cites, as evidence for rule `2`, the gloss **"MAE ON THE MEAN IS THE WRONG METRIC — the product is P(stat > line)."*** 🔴 ***That is `NBA_COMPASS.md` fact 90's FACTOR rule 2 — "FOUR RULES FOR EVERY FUTURE FACTOR", numbered (1)–(4) — not the sweep's rule 2. §T20.73 found **THREE rule namespaces** in this corpus, all cited bare as "rule N": the sweep's `1`–`50` (`2,462` citations), COMPASS fact 90's `(1)`–`(4)`, and the blueprint's DOTTED `1.2` / `1.6` / `5.1` (`19`), plus lettered `Rule B0` (`15`).*** ⇒ **This measurement was CONTAMINATED by a namespace it did not know existed — and *contamination is fixable where incoherence is not*.** ✅ **AND §T20.73 RE-TESTED RULE `1` CLEANLY: `104` unambiguous citations, **consistent**, in three strands that turn out to be three of the five rules the index's collapsed `1–5` row merged.** ⇒ ***The ten are more recoverable than this paragraph claims. What blocks reconstruction is not incoherent usage; it is one collapsed index row and three undisambiguated namespaces.*** **Original kept above, per rule 40.**
+
 ⚠ **KILLS LOGGED (rules 26/28)**: **§T20.18** *(the count, the absent set and the never-written-down
 finding — **PRIOR**, and it **KILLS this pass's own clause (ii)**, scored as killed)* · **§T20.16**
 *(rule 49's birth-and-retirement — **PRIOR**, and the METHOD precedent followed here for B and C)* ·
