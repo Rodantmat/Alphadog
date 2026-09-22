@@ -12614,7 +12614,27 @@ simplicity the owner explicitly chose *("one run, everything present, no second 
 **The sweep does not decide this and changes nothing.** *(Full evidence and the two bulletin/PDF
 traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 
-## T18-16 · **NEW · LOW** · seven `§`-references in the twelve resolve nowhere, and the heading convention hides the rest
+## T18-16 · **DOWNGRADED 7 → 2 · LOW** · ~~seven~~ **two** `§`-references in the twelve resolve nowhere, and the heading convention hides the rest
+
+> 🔴🔴 **DOWNGRADED 2026-09-22 (§T20.21 §3) — FIVE OF THE SEVEN RESOLVE.** *(each heading line opened
+> against its source, rule 48)* — **`§T15.2c` · `§T15.2f`** → `NBA_BASELINE_CALIBRATION.md:311`
+> *(`## 0y. … (T15 pass 1, §T15.2c/§T15.2f…)`)*; **`§T15.2d` · `§T15.2e`** →
+> `NBA_SYSTEM_ARCHITECTURE.md:13` *(`## 0f-4. … (T15 pass 1, §T15.2d/§T15.2e…)`)*; **`§T17.4`** →
+> `NBA_OPEN_ITEMS.md:84` *(`## … T17 PASS 3 … (§T17.4, the closure pass)`)*.
+> 🔴 **Only `§T5` and `§T7.32-era` remain unresolvable — and both are MALFORMED pointers** *(a bare
+> transcript id; a prose coinage)*, **not missing sections. The referential cluster this item was
+> built around does not exist.**
+> ⚠⚠ ***The audit's own rule was right and half-stated.*** It concluded *"a reference audit must
+> match on the id, never on the sigil"* — **the missing half is WHERE ON THE LINE: from T15 onward
+> the sweep files sections into the topical documents under document-native headings
+> (`## 0z-T16.`, `## 0a-T18.`, `## T18-16`) with the logical id demoted into the heading's
+> PARENTHETICAL.** *A matcher anchored at the start of the heading finds none of them.*
+> ✅ **This item's REAL finding — the convention split, 1,498 transcript-section headings of which
+> only 138 (9%) carry the `§` sigil — is CONFIRMED, independently, from the other direction**
+> *(§T20.21 §1)*, **and is NOT re-counted as new** *(rules 26/28)*. **Severity stays LOW: the fix is
+> still a pointer fix, and it is now a two-pointer fix.**
+> 📌 **The same defect produced three false findings inside §T20.21's own pass and one regression to
+> the T20 ledger — recorded there, not here.**
 **Reference audit, 2026-09-22 (T18 pass 4): 644 `§`-references to transcript sections across the
 twelve — 621 (96.4%) resolve to a heading inside the twelve, 16 resolve only in
 `NBA_SWEEP_RUN_LOG.md`, and 7 resolve NOWHERE**: `§T15.2c` · `§T15.2d` · `§T15.2e` · `§T15.2f` ·
