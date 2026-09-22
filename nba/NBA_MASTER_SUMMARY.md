@@ -30889,3 +30889,173 @@ writes, reported seventeen green steps, and left the repository asserting a depl
 commits stale — and nothing would ever have surfaced that, because the only instrument that could
 was the file it failed to write.**
 ***Pass 41 found the failure that was recorded. Pass 42 found the one that was not.***
+
+---
+
+# §T20.48 — T20 PASS 43 · THE GREEN-RUN AUDIT: HOW MANY WAYS CAN THIS SYSTEM FAIL AND STILL REPORT SUCCESS?
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only**: `github_list_dir`, greps on the fast-forwarded clone, two
+`SELECT`s. **No dispatch, no `run_job`, no re-run, no workflow or script edited.**
+
+## 0. POPULATION, RE-PINNED — NOT CARRIED FORWARD (rule 30)
+
+`github_list_dir('.github/workflows')` **and** `ls .github/workflows/*.yml | wc -l`, both **40**, at
+**2026-09-22T16:34:35Z**, tree **`698d7c030d060e760c1f39532c10e247a6219cc9`**. **39 in scope**
+(`nba-pp-payout-map.yml` excluded). ✅ *All forty names and byte sizes identical to pass 42's listing
+— nothing moved under the sweep between the two passes.*
+
+## 1. THE CENSUS — EVERY CONSTRUCT THAT TURNS A FAILURE INTO A GREEN TICK
+
+| construct | hits | files |
+|---|---|---|
+| `continue-on-error: true` | **48** | **11** of 40 |
+| `\|\| true` | **46** | — |
+| `\|\| echo` | **12** | 8 |
+| `2>/dev/null` | **18** | — |
+| `exit 0` | **42** | — |
+| `\|\| :` | **0** | — |
+| `set +e` | **0** | — |
+| `if: always()` | **7** | 3 *(all cleanup / diagnostic-dump steps — category A)* |
+
+⚠⚠ **THE COUNT ALONE IS WORTHLESS AND RULE 19 SAYS SO**: `rm -f x || true` is correct engineering,
+`git push || true` is a lie, **and no grep distinguishes them.** Every hit was opened.
+
+## 2. 🔴🔴 THE FINDING — THE ONE IDIOM THIS SYSTEM FORBIDS BY NAME IS LIVE IN ONE WORKFLOW
+
+**The policy, quoted from the corpus** — `NBA_SYSTEM_DESIGN.md` §6 and **COMPASS fact 63**:
+> ***"No `|| echo failed` anywhere. That pattern left 44% of a slate missing while the job reported
+> green."***
+
+**It is restated in four workflow headers** — `nba-p1-weekly-static.yml:16`, `nba-p2-overnight-heavy.yml:15`,
+`nba-overnight-queue.yml:4`, `nba-baseline-history.yml:7` — and in `nba-baseline.yml:52`.
+
+🔴 **AND `nba-daily-delta.yml` LINES 52-54 ARE THE FORBIDDEN IDIOM, VERBATIM, IN EXECUTABLE CODE**
+*(step: "Baseline inputs — mirror season files from the delta, refresh current-season quarters,
+refresh schedule")*:
+```
+python nba/sync_season_files_from_delta.py || echo "season-file sync failed"
+python nba/scrape_nba_periods.py           || echo "periods refresh failed"
+python nba/scrape_nba_schedule.py          || echo "schedule refresh failed"
+```
+🔴🔴 **AND THE STEP ALSO CARRIES `continue-on-error: true` — as do BOTH OF THE WORKFLOW'S OTHER WORK
+STEPS** (`:39` delta ingestion · `:45` per-game delta · `:55` this one). ⇒ ***Every failure in this
+workflow is swallowed TWICE: the `|| echo` makes the shell exit 0, and `continue-on-error` would have
+made the step green regardless.*** **Its commit step then runs `[ -f "$f" ] && git add "$f"` over a
+44-path list — a file that was never produced is skipped in silence — and ends
+`if git diff --cached --quiet; then echo "No delta JSON changes to commit."; exit 0; fi`.**
+⚠⚠ ***The workflow can produce nothing at all and report complete success. The only trace is three
+echo lines in a log.*** **That is the 44% incident's mechanism, reconstructed exactly, in the
+workflow named `NBA Daily Delta Ingestion`.**
+
+✅ **RULE 26/28 CHECKED BEFORE WRITING**: the three quoted strings —
+`"season-file sync failed"`, `"periods refresh failed"`, `"schedule refresh failed"` — return
+**ZERO hits across `nba/`**. **`nba-daily-delta.yml` is documented as a workflow** (COMPASS's workflow
+list; the 2026-09-09 checkpoint describes this very step) **and its swallowing is recorded nowhere.**
+**NEW.**
+
+## 3. ✅✅ CLAUSE (iii) SCORES THE GOOD BRANCH, AND IT IS VERIFIED RATHER THAN QUOTED
+
+**P1, P2 and P3 carry ZERO failure-swallowing constructs.** Exhaustive probe of all six forms across
+the three files:
+
+| | `continue-on-error` | `set +e` | `if: always()` | `2>/dev/null` | `\|\| echo` in code | `\|\| true` |
+|---|---|---|---|---|---|---|
+| `nba-p1-weekly-static.yml` | **0** | 0 | 0 | 0 | **0** | 1 — `git add nba/data/*.json \|\| true` |
+| `nba-p2-overnight-heavy.yml` | **0** | 0 | 0 | 0 | **0** | 2 — both `git add <glob> \|\| true` |
+| `nba-p3-afternoon-light.yml` | **0** | 0 | 0 | 0 | **0** | 1 — `git add nba/data/*.json boards/*.json \|\| true` |
+
+**Every `|| true` present is category (A)**: `git add` over a glob that may match nothing, each one
+immediately followed by `if git diff --cached --quiet; then …; exit 0; fi`, which is the correct
+handling of an empty stage. **Each pipeline's `exit 0`s are the empty-result short-circuit and the
+push-loop's success exit — category (B).**
+
+🔑🔑 **WHY THIS IS NOT A RESTATEMENT.** The corpus already **quotes** P2's own header claim — *"No
+`|| echo failed` anywhere"* (`NBA_OPEN_ITEMS.md`, the delta-gap-audit row). ***A workflow's claim
+about itself is prose, and rule 21 says read it off the system.*** **This is the first time that claim
+was tested against the file; it holds. P1 and P3 had never been checked at all, and they hold too.**
+⇒ ***The green tick on the three workflows the season actually depends on is TRUSTWORTHY. Stated at
+full strength, because the pre-registration named this branch as the materially better one.***
+
+## 4. ⚠ CLAUSE (ii) IS TRUE, AND ITS RESOLUTION IS FAVOURABLE — THE TRIGGER CROSS-CUT
+
+**48 `continue-on-error: true` across 11 files.** Crossed against pass 42's cron census:
+
+| | files | constructs |
+|---|---|---|
+| 🔴 **SCHEDULED** | **1** — `nba-scrape.yml` (`cron: '0 9 * * 1'`), **15 of the 48** | ✅ **PRIOR WORK — §T2.10a** |
+| ✅ **operator-initiated only** | **10** | **33** |
+
+**All ten fire only on `workflow_dispatch` plus a push to their own dedicated
+`nba/TRIGGER_NBA_<NAME>.txt`** — VERIFIED per file — **and no automated workflow writes any
+`TRIGGER_*` path** (P1/P2/P3 and `nba-scrape` commit only `nba/data/*` and `boards/*`).
+⇒ **None of the ten can fire unattended.** **Under §T2.10a's own test — *"the rule is not 'never
+tolerate failure', it is 'never let an invisible failure pass'"* — 33 of the 48 are visible by
+construction, because a human pushed the button.**
+🔴 **`nba-daily-delta.yml` is one of the ten, and it is the exception that the test itself
+condemns**: an operator who pushed the button sees a **green** run whose failure is three echo lines
+deep in a log. *That is precisely the visibility the principle requires and the idiom removes.*
+
+## 5. ✅ A NEW MEASUREMENT FROM THE OTHER SIDE OF A PRIOR FINDING
+
+**The SEASON-CRITICAL item of 2026-09-21** — *"THE ENTIRE NBA STATIC LAYER IS FROZEN AT ITS BUILD
+DATE"*, nine tables — **inferred** that the JSON scrapers may have run and *"nothing read their
+output."* **That inference is now measured directly:**
+
+| layer | object | last moved |
+|---|---|---|
+| **repo JSON** | `nba/data/nba_schedule_current.json` | **2026-09-14T16:38:33Z** *(commit `b3a5dfac`)* |
+| **Postgres** | `nba_calendar.games` *(per the 09-21 item)* | **2026-09-02 20:25** |
+
+⇒ ✅ ***The JSON layer is ALIVE and the loader is the gap.*** **The scraper refreshed the schedule
+file eight days ago and the table never saw it.** 🔑 **This also kills any temptation to blame §2's
+`|| echo` for the freeze** — *the swallowing is a real defect and it is NOT the cause of this one.*
+⚠ **Kill logged**: re-querying the four `nba_ref` tables reproduced the 09-21 item's own table
+(`teams` 30 / `2026-08-31T23:39:11Z` · `arenas` 30 / `2026-09-01T00:36:24Z` · `officials` 80 /
+`2026-09-01T00:53:48Z` · `players` 582 / `2026-09-03T18:14:55Z`) — **that item covers nine tables and
+partitions them by whether the writer upserts unconditionally. It is strictly better. Nothing added.**
+
+⚠ **MINOR, and it cost this pass ten minutes**: **`nba-scrape.yml` commits ALL forty-three of its
+output files under the message `"Update NBA teams JSON"`** — so `b3a5dfac`, which refreshed the
+schedule, is labelled as a teams update. *Documentation hygiene, not a failure.*
+
+## 6. ⚠⚠ THE INSTRUMENT CAUGHT ME AGAIN, BEFORE PUBLICATION
+
+**A claim was drafted and was FALSE**: *"all twelve `|| echo` hits are in comments stating the
+policy."* **Rule 26 — open every hit — killed it.** The true split is **5 comments · 7 executable**:
+`gbdt-training.yml:86` (`git symbolic-ref … || echo "DETACHED HEAD"`, informational) ·
+`nba-injury-report.yml:59,71,86` (`|| echo 0` defaulting a byte size and a JSON count) · **and the
+three in `nba-daily-delta.yml`, which are §2.** 📌 ***The finding of this pass was inside the claim
+that would have hidden it: had "all twelve are comments" been published, `nba-daily-delta.yml` would
+have been certified clean by the very sentence that read it.***
+
+## 7. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 470, Δ=0.** Working `649 · 1 · 470 · 469`; baseline **`636 · 2 · 484 · 481` — FORTY-FIFTH consecutive identical run.** Measured 2026-09-22T16:39:06Z |
+| **(ii)** ≥1 swallowing construct on a step whose failure would matter, beyond T20-9's two `\|\| true` | 🔴 **TRUE — and the honest resolution is mostly good news.** 33 of 48 are operator-initiated and visible by construction; 15 are prior work; **one workflow, `nba-daily-delta.yml`, is a real new defect** |
+| **(iii)** ≥1 of P1/P2/P3 swallows on a data step | ✅✅ **FALSE — THE GOOD BRANCH, VERIFIED.** Zero constructs in all three. **The claim existed only as P2's quotation of itself; it has now been read off the system (rule 21) and it holds** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FORTY-FIFTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 8. ⚠ VERDICT
+
+🔴 **NOT CLEAN — one new system defect: `nba-daily-delta.yml` swallows every failure twice. Open item
+T20-10.**
+✅✅ **AND THE PASS'S LARGER RESULT IS A RETIREMENT, NOT AN ALARM: the three season-critical pipelines
+are verified free of swallowing, and 33 of the 48 tolerated failures in the repository are visible by
+construction under the corpus's own test.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **FOUR KILLS LOGGED (rules 26/28)**: **(a)** the "two idioms, opposite verdicts, nothing reconciles
+them" candidate — **§T2.10a already reconciles them with a table and a better principle**: *"the rule
+is not 'never tolerate failure' — it is 'never let an invisible failure pass'"*; **(b)**
+`nba-scrape.yml`'s 15-of-16 `continue-on-error` — **§T2.10a**; **(c)** the nine frozen static tables —
+**the SEASON-CRITICAL item of 2026-09-21**; **(d)** the four-table live freshness re-query — **same
+item, nine tables, better partitioned.**
+
+📌 ***The lesson:*** **this system wrote its own rule, in five documents and four workflow headers,
+naming the exact string that cost it 44% of a slate — and then wrote that string three times in a
+workflow nobody re-read. A rule is not enforcement. `grep` is.**
+***The three pipelines the season depends on obey it, and that is the finding worth carrying: the
+discipline is real, it is just not universal, and the one file that breaks it is one edit wide.***
