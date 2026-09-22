@@ -710,8 +710,31 @@ why the sweep records this as a CONFIRMATION rather than a discovery.
   it is the first DATED source for it in this corpus.
 
 🔑 **Why this is first-order**: **an against-the-house multiplier and a peer-to-peer entry fee are not
-the same quantity.** If Arena applies, `p × m` (§0.3b) is not even the right test. **NOT RECORDED:
-which regime the system's own board scrape is reading.**
+the same quantity.** If Arena applies, `p × m` (§0.3b) is not even the right test. ~~**NOT RECORDED:
+which regime the system's own board scrape is reading.**~~
+
+> ### ✅✅ `[LIVE-AUDIT]` **THE "NOT RECORDED" IS ANSWERED, 2026-09-22 (T20 pass 19, §T20.24) — THE SCRAPE READS NEITHER REGIME. IT READS A PRICE.**
+> **`SELECT count(*), count(multiplier), count(price), min(game_date), max(game_date)
+> FROM nba_market.board_snapshots WHERE bookmaker='prizepicks'` → 2026-09-22:**
+>
+> | rows | with `multiplier` | with `price` | span |
+> |---|---|---|---|
+> | **2,199,354** | 🔴 **0** | ✅ **2,199,354 (100%)** | **2024-10-22 → 2026-04-12** |
+>
+> 🔑🔑 ***The archived window STRADDLES the 2025-08-22 product change, and nothing in the data marks
+> it.*** **The Odds API normalises PrizePicks to American odds, so the board history cannot
+> distinguish against-the-house pick'em from `Pick'em Arena` — on either side of the change, for
+> either regime, in any state.**
+> ⇒ ***The question §0.9c raises is not merely unrecorded: it is UNANSWERABLE FROM THE ARCHIVE.***
+> **`p × m` cannot be tested historically because `m` was never stored.** ⚠ **The regime question
+> therefore remains an OWNER question about the live app, exactly as §0.9c says — but the corpus can
+> now state WHY the data will never settle it, rather than leaving it as an open measurement.**
+> ✅ **RULE 22 POSITIVE CONTROL — the column is live, not dead**: `underdog` carries **413,731
+> multipliers of 939,719 rows, range `0.600 – 7.890`.** *(`draftkings` 0 of 3,652,647 and
+> `betr_us_dfs` 0 of 780,765 — so the multiplier is a DFS-book field that only Underdog's feed
+> populates.)*
+> 📌 **Found because §T20.23's orphan audit flagged §0.9c as unreachable under all three citation
+> grammars. *Nothing had led a pass back to this NOT RECORDED since it was written.***
 
 ### 0.9d ⚠ **THE −137 / −119 ANCHORS — RE-SCOPED, because the numbers were already on file**
 🔴 **Rule 26 kill, partial — the SEVENTEENTH candidate re-scoped since T11.** `NBA_COMPASS.md`
