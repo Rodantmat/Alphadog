@@ -161,6 +161,72 @@ and remains NOT RECORDED as measured.**
    a scratch.** ⚠ **Whether those branches are unreachable or simply never triggered is NOT
    RECORDED**, and **a guard that has never fired is not a guard that is known to work.**
 
+## 0a.2 🔑🔑 **MARKET CONSENSUS — the owner's WEIGHTING directive, the build that FAILED, and the design that replaced it**
+*Recorded 2026-09-22 (T13 pass 2, §T13.3g). **§T13.1d flagged this owner directive as 0 of THIRTY and
+deferred its substance. This is the substance.** All figures are the transcript's own measurements
+unless marked live.*
+
+**THE DIRECTIVE**: *"be sure that you **WEIGHT properly** — **there are markets that are MORE
+RELIABLE than others**."*
+
+### 🔴 THE NAIVE BUILD RAN, AND IT FAILED ON ITS OWN NUMBERS
+> *"Consensus built — **3.69M rows** — but **average books per line is only 1.48**, which exposes a
+> real limitation: **books post DIFFERENT LINES** (DraftKings at 24.5, FanDuel at 25.5), so
+> **requiring both sides at the same line rarely finds agreement across books**. ***That's the wrong
+> way to build it.***"*
+
+🔑 ***A same-line join across books is structurally near-empty, and `1.48` is the number that proves
+it.*** ⚠ **A "consensus" averaging 1.48 books is not a consensus** — **it is one book most of the
+time**, and it would have entered the engine as the market's opinion.
+
+### 🔴 WHAT THE RESEARCH CHANGED — three findings, and two of them overturn a default assumption
+1. 🔑🔑 ***SHARPNESS IS MARKET-SPECIFIC, NOT BOOK-SPECIFIC.*** *"FanDuel ranks among the **sharpest
+   for player props** while **not cracking the top five on moneylines**."* ⚠ ***"So a single global
+   weight per book is WRONG"*** — **which is precisely the shape a naive implementation takes.**
+2. 🔴🔴 ***PINNACLE IS NOT SHARP ON PLAYER PROPS.*** *"a 2026 study of **600M line movements** found
+   its prop side **consistently gives away value**, despite its reputation on sides/totals."*
+   ⚠ *"Good thing we don't have it; **bad assumption to have carried in**."* **Recorded because
+   Pinnacle-as-the-sharp-reference is the default prior in this field and it is wrong for this
+   market.**
+3. 📌 **For NBA props specifically, books are *"more uniform"* than MLB** — ***so weights should be
+   MODEST, not extreme.***
+
+### 🔑🔑 AND THE METHOD IMPROVEMENT, which is the strongest claim in this block
+> *"Those studies **infer sharpness from CLOSING LINE VALUE**. ***We have something stronger — 6.9M
+> graded outcomes.*** We can measure **each book's calibration DIRECTLY against what actually
+> happened, per market**, and **derive weights EMPIRICALLY instead of importing someone's table**."*
+
+✅ ***The grader is what makes this possible*** — **`nba_market.board_outcomes`, 6,905,452 legs
+verified live** *(§0a.1)* — **and it is the concrete payoff of building the grader first** *(the
+ordering argument: "the grader is the TRAINING TARGET")*.
+
+### ✅ THE REPLACEMENT DESIGN — four steps, in 0 of the twelve
+| # | step |
+|---|---|
+| **1** | **Per book, build the implied CDF across ITS OWN ladder** — each rung's de-vigged probability, **MONOTONIZED**: *"probabilities must decrease as the line rises; 🔑 **crossing means STALE PRICES, which is itself a signal**"* |
+| **2** | **Evaluate every book at the TARGET line** *(the PrizePicks or Underdog rung actually being considered)* **by interpolating its own curve** — *"now all books are comparable at the same point, which the naive join could only do **1.48 books at a time**"* |
+| **3** | **Weight the books EMPIRICALLY**, per market, against the 6.9M graded outcomes — *"since sharpness is market-specific and NBA props are fairly uniform, **I expect modest weights, and we'll KNOW rather than assume**"* |
+| **4** | 🔑 **Two snapshots give a MOVEMENT signal** — *"how a book's curve shifts from window to close **is the C3 factor**, and now **measurable at a FIXED line rather than a moving one**"* |
+
+🔑🔑 **Step 1's monotonicity check is a free data-quality instrument**: *a crossing is not noise to
+smooth, it is a stale price to flag.* 🔑 **And step 4 re-grounds an existing factor**: **C3 was a
+line-movement factor measured against a line that itself moves; the CDF makes it measurable at a
+fixed point.** ⚠ **Whether the C3 definition in this corpus was updated to match is NOT RECORDED.**
+
+### ⚠ THE LADDER DEPTH THAT MAKES IT POSSIBLE — *the transcript's measurement, NOT re-taken*
+**FanDuel averages 8.2 lines per player-market (up to 27) · DraftKings 5.3 · Caesars 3.8** —
+*"a full implied distribution per player per market, not a single point."*
+⚠⚠ **A live re-take was attempted and is UNANSWERED, not zero** *(rule 22)*: the per-book
+distinct-line census over `board_snapshots` **exceeded the 180-second query limit at
+2026-09-22T08:08Z**. ***These three figures therefore stand as the transcript's, dated 2026-09-10,
+and are the only ones in this section not independently confirmed.***
+
+### 📌 STATUS AT THE END OF THE TRANSCRIPT
+**The naive consensus (3.69M rows) was built and is to be REPLACED, not extended.** **The curves job
+was queued behind the derived-tables job in the same concurrency group and was still running.**
+⚠ **Whether the CDF design was ever built is NOT RECORDED in the segments read** — **a NAMED, DATED
+open loop** *(O9)*, **and it sits directly under the owner's directive.**
+
 ### ✅ `[LIVE-AUDIT]` 2026-09-21 — **the grader ran**
 **`nba_market.board_outcomes` ≈ 6,905,452 rows / 2,151 MB**, **`graded_at` 2026-09-20T02:39Z**;
 **`nba_score.board_scored` ≈ 11,956,460 rows / 2,948 MB.** *So segment 37's "it'll be built the day
