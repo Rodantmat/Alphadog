@@ -155,6 +155,65 @@ anything else from reading them.* **(c)** *If rotation already happened, the rec
 **it currently does not**.*
 ⚠ **Nothing was changed** *(rule 1)*. **A dated STATE** *(O9)*.
 
+## 🔑🔑🔑 T14's CLOSING AUDIT — **the system's own complete status, answered to the owner's "is everything covered now?"**
+*Recorded 2026-09-22 (T14 pass 1, §T14.2e). **Transcript `2026-09-13-20-53-23`, the final owner turn
+and its answer** — ***rule 27: a transcript's state on a subject is its LAST word.*** ⚠ **This is the
+most complete status statement in the corpus and it is reproduced because it was produced by the
+system about itself, not inferred.** **Documented, not acted on** *(rule 1)*.*
+
+⚠⚠ **THE AUDIT'S OWN HEADLINE, and it is a correction**: ***"Two things surfaced that I'd told you
+were handled and weren't — those first."***
+1. 🔴🔴 **LIVE BOARD ARCHIVING IS NOT SOLVED** — *"I said earlier that our scrapers **'archive every
+   pull from opening day.' They don't in a usable way**: each run **overwrites
+   `boards/<app>_current.json`**. Git history keeps old versions, but **that's not a queryable
+   archive and it bloats the repo**. For the parity requirement from opening day, **the window and
+   close snapshots must land in `board_snapshots` in Postgres**."* ***Open — build item.***
+   ⚠ **This sweep recorded the withdrawn claim as a safeguard in `NBA_SYSTEM_ARCHITECTURE.md` §0f-2
+   and has corrected it there.**
+2. 🔴 **The session's own work was undocumented until the end** — *"compass and the log are current
+   through 09-11; everything from today needs the same pass."*
+
+### ✅ CLOSED — **every mining and backfill item raised across the session**
+**two-season boards (27M) · outcomes (6.9M) · PrizePicks tiers · market adjuster at the DFS rungs ·
+game lines at BOTH snapshots · baseline history for 29–30 stat types on both seasons · combos ·
+periods · injury reports · starters · officials · matchups · coach changes · two-way status ·
+event→game map (96%) · name resolution · fantasy formulas · database sizing · index shrink · the MLB
+backtest drop · registry re-tag · loader gates and `baseline_ladder_runs`.**
+> ***"Nothing in that list has a gap I know of."***
+📌 **Also closed from earlier sessions and named explicitly**: the Odds API upgrade, the 2023-24
+starters rerun, the Underdog ladder, the Fliff scraper, the Betr puller, the coach-change dates, the
+2026-03-15 injury replay, the grader, and the demon/goblin verdict.
+
+### 🔴 STILL OPEN — **all CONSTRUCTION, and it is the enrichment phase itself**
+**the day-by-day factor tables (one per derive family) · the A5 projected-lineup proxy · M1 wiring ·
+the D1 referee LIVE capture · the live board archiver to Postgres · the scenario precompute · the
+freshness gates.**
+🔑 ***"That's construction rather than mining; nothing else stands in front of it."***
+
+### 📌 OPEN — SMALL
+**`oreb` retune · periods missing ~11 dates (the quarter files) · `dunks` (needs play-by-play — the
+owner's call) · three coach dates at low confidence · `nba_teams_current.json` is EMPTY · the Sleeper
+boost-promo field · ParlayAPI usage logging · the fantasy-score check against one live graded leg in
+week one.**
+⚠ **`nba_teams_current.json` holding zero records is worth its own line**: it silently broke the
+event→game map *(every game failed to resolve, and because each game appears in two teams' logs,
+**exactly half resolved — which made a CODE bug look like a DATA problem**)*. **It was worked around
+by hardcoding the 30 franchises; the empty file itself remains.**
+
+### ⏳ OPEN — **OWNER-SIDE**
+**the Sleeper alt-lines capture · the Chalkboard proxy capture · the PrizePicks calibration slips ·
+the Betr token expires ~2026-10-10 · a schedule for the twice-daily Betr pull.**
+🔑 **The last two are the live cause of `NBA_SYSTEM_ARCHITECTURE.md` §0f-1's finding that the Betr
+pull has not written since 2026-09-10.**
+
+### ⚠⚠ ACCEPTED LIMITS — **stated as limits, not as gaps**
+**no 2023-24 injury reports · nine unrecoverable board snapshots · no historical Sleeper / Fliff /
+Betr boards · Underdog's history is SINGLE-RUNG.**
+🔑 ***A list of things that will never be fixed is as valuable as a list of things that will*** —
+**and three of the four are absences this sweep independently re-derived, at some cost.**
+
+---
+
 ## 🔑🔑 T14's OWNER DIRECTIVES — **two items CANCELLED, three constraints, and a rule the corpus did not have**
 *Recorded 2026-09-22 (T14 pass 0, §T14.1). **Transcript `2026-09-13-20-53-23`, all 33 owner turns
 read.** Probed against baseline `5fbb9c1e` and the working tree, pinned 2026-09-22T08:46:49Z; every
