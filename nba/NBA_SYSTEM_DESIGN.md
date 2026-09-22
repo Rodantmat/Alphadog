@@ -341,11 +341,79 @@ distinct-line census over `board_snapshots` **exceeded the 180-second query limi
 2026-09-22T08:08Z**. ***These three figures therefore stand as the transcript's, dated 2026-09-10,
 and are the only ones in this section not independently confirmed.***
 
-### 📌 STATUS AT THE END OF THE TRANSCRIPT
-**The naive consensus (3.69M rows) was built and is to be REPLACED, not extended.** **The curves job
-was queued behind the derived-tables job in the same concurrency group and was still running.**
-⚠ **Whether the CDF design was ever built is NOT RECORDED in the segments read** — **a NAMED, DATED
-open loop** *(O9)*, **and it sits directly under the owner's directive.**
+### ✅✅ THE OPEN LOOP IS CLOSED — **2026-09-22 (T13 pass 4, §T13.5c): the CDF design WAS BUILT, IT BROKE THE DISK, AND IT WAS REPLACED BY A SCOPED VERSION**
+*This entry, written one pass earlier, left *"whether the CDF design was ever built"* as a NAMED
+DATED open loop. **The repository and the live schema answer it together, pinned
+2026-09-22T08:35:32Z.** `SELECT` only.*
+
+**`nba/build_book_curves.py` EXISTS, and its docstring is the design almost verbatim** — including
+the two arguments this section records *(*"books post different lines (DK 24.5, FD 25.5), so
+requiring both sides at the SAME line finds only ~1.5 books per line"* and *"published rankings
+weight books by closing-line value… **Pinnacle is NOT sharp on props despite reputation**. We have
+**6.9M graded outcomes**, so we measure each book's calibration against what actually happened")*.
+✅ **It also carries the ladder-depth figures a live re-take could not produce** *(§0a.2's UNANSWERED,
+rule 22)* — ***FanDuel averages 8.2 lines per player-market, DraftKings 5.3*** — **so the figures are
+now confirmed from the code rather than from a timed-out query.**
+
+**Its three declared outputs**: **`nba_market.book_curves`** *(per book·snapshot·date·player·market·line,
+de-vigged `p_over`, **monotonized across the ladder**)* · **`nba_market.book_calibration`** *(per
+book·market **log-loss + Brier + count, vs graded outcomes**)* · **`nba_market.market_fair`**
+*(weighted fair `p_over` **evaluated at every DFS rung that was offered**)*. **Env: `DATABASE_URL`,
+`STEP=curves|calibration|fair|all`.**
+
+### 🔴🔴 **AND NONE OF THE THREE TABLES EXISTS**
+*`information_schema.tables`, pinned 2026-09-22T08:35:32Z, **with positive controls** (rule 22):*
+| table | exists |
+|---|---|
+| `nba_market.book_curves` | 🔴 **0** |
+| `nba_market.book_calibration` | 🔴 **0** |
+| `nba_market.market_fair` | 🔴 **0** |
+| `nba_market.rung_market` *(control)* | ✅ **1** |
+| `nba_market.board_outcomes` *(control)* | ✅ **1** |
+
+🔑🔑 ***A builder whose docstring is the design, and not one of its three tables on the database***
+— **exactly the shape of this corpus's standing headline that the two-hop architecture's second hop
+is missing for a whole family.**
+
+### ✅ **AND THE REASON IS IN THE CODE — IT WAS TRIED AND IT NEARLY FILLED THE DISK**
+**`nba/build_rung_market.py` is the scoped replacement that DID land, and it says why**:
+> *"**WHY SCOPED**: the engine only ever needs the book's opinion **at lines the DFS apps actually
+> offered**. ***Materializing implied curves for all 15.4M book rows cost 3 GB and NEARLY FILLED THE
+> DISK***; the scoped version is ~2.2M rows."*
+> *"**WHY CHUNKED**: one month per transaction keeps WAL and temp spill small. ***A single
+> `CREATE TABLE AS` over 27M rows ran 1h38m and pushed the disk to 91%.*** Monthly blocks finish in
+> seconds each and can be resumed — the table records which months are done."*
+
+🔑🔑 ***So the market layer's shape was set by the STORAGE CEILING, not by the modelling argument***
+— **the same ceiling as the read-only incident** *(`NBA_DATABASE.md` §0v)*. **That is the connection
+between the two, and neither entry had it.**
+
+### ⚠ WHAT IS LIVE IS CLOSER TO THE DESIGN T13 REJECTED — **stated precisely**
+**`nba_market.rung_market`, pinned 2026-09-22T08:35Z: 1,057,765 rows · 378 dates · columns
+`game_date, snapshot_label, player, market, line, p_over_book, p_over_sd, books, built_at, nm` ·
+`built_at` last 2026-09-11T03:39:32Z.**
+**Its de-vig is *"per book across the two sides of the SAME line, then averaged across books"*** —
+***the same-line family, not the interpolated-CDF family.*** ✅ **It is better than the 1.48 the
+naive build measured — `avg(books)` is `2.11`, min 1, max 8 — because it is scoped to DFS rungs and
+draws on eight books**, ⚠ **but it is still an average of whichever books happened to post that
+exact line, and the empirical per-market WEIGHTING the owner asked for is not in it: there is no
+weight column and no calibration table.**
+🔑 ***So the owner's directive is answered in DESIGN and in CODE, and is NOT answered in DATA.***
+**Documented, not acted on** *(rule 1)*.
+
+### ✅ **AND `rung_market` INDEPENDENTLY CONFIRMS THE PLACEHOLDER FINDING — in the system's own words**
+> *"**Flat DFS placeholder prices (−137 / +100) are EXCLUDED: they are NOMINAL PRICING, NOT ODDS.**"*
+
+🔑🔑 ***The code uses the word "placeholder" for exactly the two prices `NBA_MULTIPLIERS.md` §0.9d.1
+identified by census, and excludes them from the market layer.*** **That is a third independent
+confirmation, this time from the system itself**, and **it settles the `−137` question as the system
+already settled it.**
+⚠ **BUT IT IS NOT THE SENTINEL EXCLUSION THE OPEN ITEM ASKS FOR.** `rung_market` excludes **the flat
+DFS prices**; the arbitrage item requires excluding **`price ≤ −10000` sentinels** *(180 Underdog
+rows, `NBA_OPEN_ITEMS.md`)*. ***Two different exclusions, and only the first is implemented.***
+📌 **`BOOKS` in that builder is the eight sportsbooks explicitly** — `draftkings, fanduel, betmgm,
+williamhill_us, betrivers, bovada, betonlineag, fanatics` — **so the DFS apps are excluded from the
+market side by construction, which is correct and was nowhere recorded.**
 
 ### ✅ `[LIVE-AUDIT]` 2026-09-21 — **the grader ran**
 **`nba_market.board_outcomes` ≈ 6,905,452 rows / 2,151 MB**, **`graded_at` 2026-09-20T02:39Z**;
