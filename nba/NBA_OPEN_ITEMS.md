@@ -1,6 +1,12 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
-> # 🔴🔴🔴 **READ THIS FIRST — THE OPENING-DAY BRIEF IS `910,821` CHARACTERS BELOW THIS LINE**
+> # 🔴🔴🔴 **READ THIS FIRST — THE OPENING-DAY BRIEF IS ~~`910,821`~~ **`950,947`** CHARACTERS BELOW THIS LINE**
+> *(figure re-derived and dated `2026-09-22`, T20 pass 101, §T20.106 — the file has grown since it was
+> written. **And the block you are reading is `16,230` characters, about `4,000` tokens: bounded, and
+> deliberately so.** `§T20.105` found the run log's resume note had grown to `≈491,000` tokens by
+> appending; **this block did not, because it was built as a separate first-read surface rather than
+> as the top of the record** — which is the design that worked and the one now applied to the run log
+> too.)*
 > ### ⏱ **REGULAR SEASON OPENS `2026-10-20` — 28 DAYS. PRESEASON `2026-10-03` — 11 DAYS.**
 >
 > *Placed at the top **T20 pass 69 (§T20.74), 2026-09-22**. §T20.70 measured that the brief sits at
