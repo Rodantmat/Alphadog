@@ -29245,3 +29245,109 @@ whether P3 has a cron; it is a claim about DST that cannot be written without as
 🔑 **A false assertion can be contradicted by a search. An assumption smuggled in as the subject of a
 different sentence cannot — which is why it reached the glossary, the hub, and a live config row
 while five documents said the opposite.**
+
+---
+
+# §T20.33 — PASS 28: *🔴 OPENING-DAY READINESS — P3 IS HARDCODED TO LAST SEASON, IN TWO PLACES*
+
+*(T20 pass 28, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY, ABSOLUTELY: `SELECT` and repo reads only. NO `run_job`, NO `github_trigger_workflow`,
+no dispatch, no deploy. *Running P3 to find out whether it works is the one thing this pass must not
+do* — it writes to the live database.**
+
+## 1. 📐 P3's DEPENDENCIES, READ OFF THE WORKFLOW — *not off the corpus*
+
+> **`.github/workflows/nba-p3-afternoon-light.yml`, 229 lines. `12` scripts enumerated:**
+> `scrape_nba_injury_report.py` *(THE BINDING INPUT)* · `scrape_sleeper_board.py` ·
+> `scrape_underdog_board.py` · `scrape_fliff_board.py` · `archive_live_boards.py` ·
+> `maintenance_shrink_board_index.py` · `export_market_spreads.py` · `build_rung_market.py` ·
+> `build_availability_delta.py` · `score_board_legs.py` · an inline paper-trading block ·
+> `certify_pipeline.py`.
+⚠ **Rule 21 applied deliberately: the dependency list comes from the YAML and the scripts, never from
+the corpus's description of P3 — §T20.32 had just proved that description carried a presupposition.**
+
+## 2. 🔴🔴🔴 THE FINDING: **TWO SCRIPTS DEFAULT TO `"2025-26"`, AND THE UPCOMING SEASON IS `2026-27`**
+
+| | line | code | what the workflow passes |
+|---|---|---|---|
+| 🔴 **`score_board_legs.py`** | **97** | `season = os.environ.get("BS_SEASON", "2025-26")` | `BS_SEASON: ${{ github.event.inputs.season \|\| '2025-26' }}` — **the fallback is hardcoded too** |
+| 🔴🔴 **`build_availability_delta.py`** | **52** | `season = os.environ.get("DELTA_SEASON", "2025-26")` | 🔴 **NOTHING — the workflow passes `DELTA_ASOF`, `DELTA_FROM`, `DELTA_TO` and NO season at all** |
+
+> **LIVE `nba_score.baseline_history`, 2026-09-22:**
+> **`2024-25` — 9,537,535 rows, 2024-10-22 → 2025-04-13**
+> **`2025-26` — 9,805,813 rows, 2025-10-21 → 2026-04-12**
+> 🔴 **NO `2026-27` ROWS EXIST.**
+
+⇒ ***On `2026-10-20`, a P3 dispatched without a `season` input queries
+`baseline_history WHERE game_date = '2026-10-20' AND season = '2025-26'` and gets nothing.***
+🔑 **And `build_availability_delta.py`'s season is worse than a filter — it becomes a FILENAME**:
+`slug = season.replace("-","_")` drives **three** fetches —
+`nba_injury_report_2025_26_index.json`, `nba_injury_report_2025_26_{shard}.json` and
+`nba_player_game_log_2025_26.json`. ⇒ ***The availability delta would read LAST SEASON's injury
+report and LAST SEASON's game logs.*** ⚠ **And its shard loop is `except Exception: pass`, so a
+missing shard is swallowed silently as well.**
+
+## 3. ⚖️ THE FAILURE MODES — *one loud, one silent, and the job still goes red*
+
+| script | on an empty ladder | exit |
+|---|---|---|
+| ✅ `score_board_legs.py:144` | `print("ABORT: no baseline ladder for {asof} - P2 must run before P3."); raise SystemExit(1)` | 🔴 **FAILS THE JOB — the safe direction** |
+| 🔴 `build_availability_delta.py:148` | `print(" no baseline for {asof} - P2 must run first"); return` | ⚠ **RETURNS 0 — a silent step-level no-op** |
+
+✅✅ **AND THE CERTIFIER CLOSES THE REMAINING SILENT PATH.** *`score_board_legs.py:117` also has
+`if board.empty: print("No board legs…"); return` — an exit-0 path on an empty board.*
+**`certify_pipeline.py` with `PIPE=p3` then asserts `final_hp has today > 0`, `confidence` non-NULL,
+`score` in 0–100, `confidence_model` loaded and `board archived today > 0`, with `CERT_STRICT`
+defaulting to `1` and *"Failing the job so it is visible."*** ⇒ ***An empty or wrong-season P3 CANNOT
+silently certify. Two independent guards catch it.*** **Recorded at full strength — this is the
+design working.**
+
+🔴 **BUT THE DIAGNOSTIC NAMES THE WRONG CAUSE, AND ON THE WORST POSSIBLE DAY.** *Both messages say
+**"P2 must run before P3"**.* ***On opening day the true cause is the season constant, not a missing
+P2 run. An operator would run P2, watch it succeed, re-run P3, and abort identically.*** 🔑 **A
+guard that fails correctly and explains incorrectly costs a full debug cycle at 1:15 PM on the first
+game day.**
+
+## 4. 📋 THE READINESS TABLE — *new vs already on file (rules 26/28)*
+
+| # | blocker | status |
+|---|---|---|
+| 🔴 **1** | **`BS_SEASON` / `DELTA_SEASON` hardcoded to `"2025-26"`; `baseline_history` has no `2026-27`** | 🆕 **NEW — `BS_SEASON` appears `0` times across the twelve** |
+| 🔴 **2** | **P3 has no `schedule:` block** — `workflow_dispatch:` only | ✅ on file (§T20.31) |
+| 🔴 **3** | **PrizePicks not wired for NBA** — *"a HARD GAP, not a configuration detail"*; `main.py` is the MLB producer with `league_id=2` as a literal in all four URLs and output fixed to `prizepicks_mlb_current.json`; *"TODO before opening day"* | ✅ on file (3 mentions in the twelve) |
+| 🔴 **4** | `nba_calendar.games` untouched since `2026-09-02`; the weekly cron has not fired | ✅ on file (§T20.26) |
+| 🔴 **5** | `player_roster_snapshot` frozen since `2026-09-02`; three differential logs at `0/0/0` | ✅ on file (§T20.26) |
+
+⚠ **`ARCHIVE_APPS` is `"prizepicks,underdog,sleeper,fliff,betr"` while the scrape step runs only
+`sleeper`, `underdog` and `fliff`** — *consistent with blocker 3 rather than a separate defect:
+PrizePicks reaches the archive through the Odds API feed, and `betr` through no P3 step at all.*
+📌 **Recorded, not counted as new.**
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:27:28Z** |
+| **(ii)** | **≥ 3** inputs stale/empty/wrongly-shaped enough to make an opening-day run **WRONG** | ✅ **HIT — five.** ❌ *The "only the cron blocks it, say so at full strength" branch is NOT available.* ⚠ **But the adjacent good news is stated at that strength anyway: both wrong-season paths FAIL SAFE and the certifier closes the silent one.** |
+| **(iii)** | **≥ 1** blocker **not already on the open-items list** | ✅ **HIT — exactly one, and it is the most severe.** *`BS_SEASON` appears **0** times in the twelve; `"P2 must run before P3"` **0** times; the season-constant class is entirely unrecorded.* ❌ *The "the list is complete for the game-day path" branch is not available.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — THIRTIETH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 6. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — a NEW season-critical blocker: P3's two scoring scripts are hardcoded to last
+season, one of them silently, and neither is mentioned anywhere in the twelve. New open item T20-4.
+CLEAN STAYS 0/3.**
+✅✅ **AND THE GOOD NEWS AT FULL STRENGTH: nothing was found that would let a wrong or empty P3 run
+CERTIFY. The loud abort, the strict certifier and its five P3 assertions all work as designed.**
+⚠⚠ **NOTHING WAS TRIGGERED, DISPATCHED OR WRITTEN (rule 1).**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **twenty-seven passes audited the corpus's account of the system. This one read
+the system's own executable text and found a defect none of the twelve had recorded — because the
+corpus documents what the pipeline is FOR, and `"2025-26"` is a default, not a design.**
+***A constant does not appear in any description of a system; it only appears in its source. That is
+why the open-items list was complete about P3's architecture and silent about the one line that will
+stop it on the first game day.***
