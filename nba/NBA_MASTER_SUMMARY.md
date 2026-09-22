@@ -14430,6 +14430,66 @@ draws from.**
 **BOARD SCRAPERS · FLIFF · THE PARLAYAPI-VS-OWN-SCRAPER DECISION**
 *640 content blocks · **PASS 0 2026-09-21** · novelty baseline `c5798146` → `/tmp/t12base/nba/` (32 `.md`), content-only digest `44eeaa56cbbc5eb1`, verified byte-identical*
 
+### T12.7 — PASS 6 (**the RULE-31 SIBLING RE-TEST — rule 6 applied to rule 31, the pass after it was written**) — **✅ one design claim VERIFIED end to end for the first time · 🔴 THREE candidates killed by rule 28 · 0/3**
+*2026-09-22. `SELECT` only. **Every population pinned with its command and a UTC timestamp.***
+
+#### ✅ T12.7a — **The pre-registration, and the enumeration was WRONG and re-taken**
+***Predicted: baseline unchanged, `uncovered12` to fall, with segments 211, 215 and 435 crossing.***
+**Measured** *(2026-09-22T07:09:06Z)*: **baseline 9 / 15 / 618 / 585 ✅ · working 28 / 11 / 590 / 566**
+— **211 and 215 crossed; 435 did NOT, and 213 crossed unnamed** *(the same 211/213/215 config-write
+cluster)*. **Twenty-first: nineteen hits, one miss, TWO partials.**
+🔴 **AND THE ENUMERATION'S FIRST PATTERN WAS BROKEN.** *It required an unprefixed backtick name and
+so missed every `` `nba/x.py` `` mention — **13 objects / 33 claims**.* **Corrected pattern, pinned
+2026-09-22T07:10Z: 23 code objects carrying 49 design claims across the twelve** — *and
+`build_board_tiers_v2.py`, the sharpest target of all, was among the ten it had missed.*
+⚠ **Bound stated** *(§T11.58a's precedent)*: **3 of the 23 are opened** — `grade_board_outcomes.py`
+*(pass 5)*, `build_board_tiers_v2.py` and `nba_season.py` — ***the other 20 carry forward as a named,
+dated remainder rather than being sampled silently.***
+
+#### ✅ T12.7b — **`build_board_tiers_v2.py`: the code does what the twelve say it does**
+**The four-way rule, both anchor cases (`explicit`, `switch_point`) and the direction-aware tier sign
+are all implemented as described** — *"v1 signed by kind, which breaks under the four-way rule because
+a demon-Less is BELOW the anchor; **v2 signs by POSITION**"*. 📌 **`BT2_APPS`/`BT2_REBUILD` and the
+column `position_vs_anchor` are in 0 of the twelve.**
+
+#### 🔑🔑 T12.7c — **And the DATA verifies it — with a negative result that is the real finding**
+**`nba_market.board_tiers_v2`, pinned 2026-09-22T07:10:30Z, ten combinations summing to 2,199,354
+exactly**: **demon/Over/explicit/above 586,129 · goblin/Over/explicit/below 448,495 ·
+standard/Over/explicit/at 371,634 · standard/Under/explicit/at 371,416 ·
+demon/Over/switch_point/above 240,668 · goblin/Over/switch_point/below 135,166** ⚠ **·
+unknown/none/unknown 43,370 (2.0%) · standard/explicit/BELOW 1,322 + 1,153 · standard/switch_point/at 1.**
+✅ **Both anchor cases exercised** *(explicit 1,780,149 · switch_point 375,835)*.
+🔴🔴 ***EVERY goblin and demon row in all 2.2M is `side = 'Over'`. There is not ONE `Under` alternate***
+— **exactly as the code predicts** *("through 2025-08 demons and goblins WERE more-only… from 2026-08
+PrizePicks enabled Less, NBA expected this season")*. ***So the four-way machinery is in place and the
+half of it that v1 got wrong has had NOTHING to classify.*** **"Built but unverified" was right about
+the half that matters and wrong about the half that could be checked — now checked.** ⚠ **Three
+residues recorded and NOT explained** *(rule 6)*. ⚠ **Rule 30 again: `reltuples` said 2,199,151 — 203
+low; the `GROUP BY` gave the exact total free.** 📌 Written to `NBA_GOBLIN_DEMON.md`.
+
+#### ✅ T12.7d — **`nba_season.py`: verified by EXECUTION, and its coverage figure has moved**
+***`current_season()` returns `2026-27` TODAY*** *(run 2026-09-22T07:15Z)* — **because it rolls on
+`month >= 7`, not on opening night.** 🔴 **And the twelve's *"20 of 135 NBA Python files"* re-takes to
+**24 of 136***(pinned 07:15Z, commands recorded)* — **+4 carriers, +1 file, a dated STATE** *(O9)*.
+**Corrected in place.**
+
+#### 🔴 T12.7e — **THREE candidates killed before writing — the eleventh, twelfth and thirteenth**
+| candidate | killed by |
+|---|---|
+| **the whole `board_tiers_v2` "discovery"** *(the four-way rule, the switch point, the 42,600-ladder validation, the zero-`Under` fact, the 2026-08 Less enablement)* | **RULE 28 — all of it is already in the twelve**: `board_tiers_v2` **6 of the twelve** · `42,600` **4** · `switch_point` **5** · "zero Under rows" **2** · "enabled Less" **2** · "four-way" **8**. ***Only the live census and the code-level env/column names were new.*** |
+| **the July rollover as a discovery** | **RULE 28** — `month >= 7` **1 of the twelve**, "July" **2**, `start_year` **2**, "upcoming season" **2**, and the exact string *"20 of 135"* **2 of the twelve** |
+| **`nba_season.py`'s docstring saying *"2026-10-03 when the 2026-27 season starts"*** | **the standing date banner at the head of `NBA_OPEN_ITEMS.md` already governs it** — *"where a date is inside a verbatim quote or a file header, it is left as written"* — **so the banner anticipated this exact case** |
+
+🔑 ***Three kills in one pass, and the largest looked like a headline for ten minutes.*** **Running
+total: thirteen candidates killed by rules 26/28 since T11.**
+
+**Pass outcome: 🔴 NOT CLEAN — a status upgraded and a coverage figure re-dated, both of them facts
+about the SYSTEM. ✅ The design-claim population enumerated (23 objects / 49 claims, after a broken
+first pattern), three opened, twenty carried forward, and three candidates killed. CLEAN 0/3 · 7
+passes.**
+
+---
+
 ### T12.6 — PASS 5 (**the FIRST two-direction judgment on T12**) — **🔴 four corrections, THREE of them to this sweep's own T12 work · 🔑🔑 RULE 31 · 0/3**
 *2026-09-22. **Built to attack every claim §T12.1–§T12.5 published at its weakest joint.** `SELECT`
 only. **Every population below is pinned with its query and a UTC timestamp**, because the live
