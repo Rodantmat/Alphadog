@@ -11,6 +11,58 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T18-D. 🔴🔴🔴 **THE PENALISING HALF OF THE SCORE FORMULA HAS NEVER FIRED**
+*(T18 pass 6 — live numeric re-verification · `[LIVE-AUDIT]` read-only `SELECT`, 2026-09-22T11:43Z)*
+
+**The shipped score is a two-sided pivot around `CONF_NEUTRAL = 0.85`, and the author's own comment
+states both sides**: *"above it the score is lifted toward 100, below it the score is PULLED DOWN…
+**data we stand behind enhances; thin data penalises**."*
+
+```
+cdev  = (confidence − 0.85) / (1 − 0.85)
+lift  = clip( cdev, 0, 1) × 0.50     # up to half the remaining headroom to 100
+drop  = clip(−cdev, 0, 1) × 0.35     # up to 35% off when the data is thin
+score = clip( hp·100 + (100 − hp·100)·lift − hp·100·drop, 0, 100 )
+```
+
+### 🔴🔴 THE `drop` TERM IS DEAD CODE IN PRACTICE
+
+| live measurement, `nba_score.final_hp` | value |
+|---|---|
+| legs with `confidence < 0.85` | **0** |
+| legs with `confidence = 0.85` | **0** |
+| **minimum confidence over all 19,215,200 legs** | **0.8540** |
+| maximum confidence | 0.9841 |
+| per season | 2024-25 min **0.8540** · 2025-26 min **0.8722** |
+
+⇒ ***Not one leg in 19.2 million sits at or below the neutral point, so `drop` has never been
+non-zero. The formula's penalising half has never engaged on a single production row.*** **The
+realised confidence range is 0.8540 → 0.9841 — a span of 0.13 — against a pivot sitting THREE
+THOUSANDTHS below its floor.** 🔑 **The pivot is, in production, a floor.**
+
+⚠⚠ **STATED AT EVIDENCE STRENGTH, AND THIS IS NOT A CLAIM THAT THE DESIGN IS WRONG.** **It is
+arithmetic on the shipped formula and the live column, nothing more.** ✅ **The system's own
+documentation ANTICIPATES the cause and is consistent with it** — COMPASS fact 101: *"a fully-
+supported leg reads ~99 and **the floor (~55) needs everything to stack against it at once**"*, and
+*"the 20-40% band is impossible by construction because the core factors are always present."*
+*So a confidence floor far above 0.85 is the designed consequence of a deduction model that starts at
+99 and only rarely stacks.* ⚠ **Rule 6: WHY 0.85 was chosen as the neutral, and whether it was chosen
+before or after the deduction floor was known, is NOT RECORDED** — no swept transcript says, and this
+sweep does not guess.
+
+🔑 **THE CONSEQUENCE THAT IS WORTH THE OWNER'S ATTENTION, stated as a question rather than a verdict**:
+**every live leg is LIFTED, by between `0.013×` and `0.50×` of its headroom to 100.** *A score that
+only ever enhances cannot separate a well-supported leg from a poorly-supported one as sharply as a
+two-sided one would — the discriminating power sits entirely in the upper half of the lift range.*
+⚠ **OWNER DECISION — two coherent options, and the sweep does not choose**: *(a)* **raise
+`CONF_NEUTRAL` into the realised distribution** *(the median or the 25th percentile of live
+confidence), so both halves engage; or *(b)* **keep 0.85 and accept the score as a one-sided
+enhancer**, which is exactly what the owner asked for — *"the score must ENHANCE the hit probability —
+no kill good legs"* *(§0a-T18)*. **(b) may well be right; what is recorded here is that the code
+implements a two-sided rule and the data only ever exercises one side.** *Open item T18-17.*
+
+---
+
 ## 0a-T18-B. 🔴🔴🔴 **THE SCORE'S THREE FORMULAS — AND `[LIVE-AUDIT]` PROVES THE LIVE COLUMN HOLDS TWO OF THEM SIDE BY SIDE. OPEN ITEM T16-8 IS ANSWERED.** *(T18 pass 1, §T18.2)*
 
 ### ✅ **THE ARC — three formulas in one session, each corrected by the owner**
