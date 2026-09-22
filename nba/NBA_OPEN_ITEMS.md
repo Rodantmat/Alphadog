@@ -12192,3 +12192,151 @@ reach us only through the DFS scrapers, which is what the live pipeline reads. M
 ### DEFERRED (owner-sequenced) · leg correlation, live plumbing
 Leg correlation is slip-building-stage work and will be treated there, not in this pipeline.
 Live plumbing is LAST — nothing is live until the NBA season opens in October.
+
+---
+
+# §T18.2 — ⚠⚠ THE KILL LOG: T18 ARRIVED PRE-SWEPT
+*(T18 pass 1, prose stratum second half, `pb.txt` lines 121–381 read in order and in full · written
+2026-09-22, tree pinned at `c5525b20`)*
+
+## THE FINDING OF THIS PASS IS THAT ITS CANDIDATES WERE ALREADY ON FILE
+
+**T18's transcript is `2026-09-20-06-12-04-nba-pipelines-confidence-board-tiers-2026-09-19.txt`.**
+**The section immediately above this one is `## FROM THE LIVE SESSION 2026-09-19/20 (not yet a
+transcript file)`, `*added 2026-09-20*`, and it carries 22 `###` entries** *(counted from the file at
+line 12042 to EOF, `awk` over `NBA_OPEN_ITEMS.md` at 2026-09-22T11:01:32Z — **22**)*.
+
+🔑🔑 ***THEY ARE THE SAME SESSION.*** **The sweep audited T18 from the live system and from COMPASS on
+the day T18 ended — before its transcript existed — and wrote 22 of its headline findings then.**
+
+### THE KILLS — *rules 26/28, logged rather than re-written*
+
+**Every candidate below was carried out of the prose stratum, checked against the twelve, and KILLED
+as a restatement of the sweep's own earlier work. None is re-written.**
+
+| # | Candidate from T18's prose | Already on file at |
+|---|---|---|
+| 1 | **The 2:30 PM PT cutoff was drift** — observed injury-PDF snapshot timestamps in *Eastern*, promoted to a deadline, delabelled, propagated into COMPASS facts 41/68/73/74/96 | `NBA_OPEN_ITEMS` §*BUG-FIXED · the 2:30 PM PT cutoff was drift* · `NBA_SYSTEM_DESIGN` §967, §1617 · `NBA_MASTER_SUMMARY` 15745–15752 |
+| 2 | `PHASE1_CUTOFF_LOCAL = "16:00"` = 1:00 PM PT; `PHASE2_CUTOFF_LOCAL = "17:45"` is the **league bulletin**, not a filing deadline | same three |
+| 3 | **`float(x or 0)` returns NaN — NaN is truthy** — 6,748 NaN overrides bound for the scorer | `NBA_OPEN_ITEMS` §*BUG-FIXED · `float(x or 0)`…* |
+| 4 | **`market_key` → prop mapping would have dropped 44% of the board** | `NBA_OPEN_ITEMS` §*BUG-FIXED · market_key → prop mapping…* |
+| 5 | **A caught exception left a poisoned transaction** — traceback pointed 60 lines away | `NBA_OPEN_ITEMS` §*BUG-FIXED · a caught exception…* |
+| 6 | **The loader reads over HTTP** (`raw.githubusercontent`), so uncommitted files are invisible | `NBA_OPEN_ITEMS` §*BUG-FIXED · loader reads over HTTP…* |
+| 7 | **The per-pair build needs a merge step** | `NBA_OPEN_ITEMS` §*BUG-FIXED · the per-pair build needs a merge step* |
+| 8 | **Five wrong env var names** (`IR_MODE`→`INJURY_MODE`, `SPORT`→`SLEEPER_SPORTS`, `SLEEPER_OUT_DIR`, `UNDERDOG_SPORTS` nonexistent, `PP_LEAGUE_ID` nonexistent) | `NBA_OPEN_ITEMS` §*BUG-FIXED · five wrong env var names…* |
+| 9 | **PrizePicks is NOT wired for NBA** — `main.py` hardcoded to MLB, `league_id=2` a literal in all four URLs, output fixed to the MLB file | `NBA_OPEN_ITEMS` §*BUG-OPEN · PrizePicks is NOT wired for NBA…* |
+| 10 | **`board_tiers` is two-way; the board is now four-way** — *below the anchor more=goblin/less=demon; above it more=demon/less=goblin* | `NBA_OPEN_ITEMS` §*PARTIAL · `board_tiers` is a TWO-way taxonomy…* · `NBA_GOBLIN_DEMON` §830 |
+| 11 | **The tier sign convention breaks** — v1 signed by *kind*, v2 must sign by *position* | `NBA_OPEN_ITEMS` §*CAVEAT · tier sign convention breaks…* |
+| 12 | **The invisible/switch-point anchor** — *"10.5 goblin, 11.5 goblin, 12.5 demon → 12 is the anchor"*, **419,205 legs**, validated on **42,600 ladders** | `NBA_GOBLIN_DEMON` §371, §705–711, §795 · `NBA_GLOSSARY` §320 — **and the file goes FURTHER than the transcript**, holding the v1-vs-v2 residue `419,205 − 375,835 = 43,370` |
+| 13 | **Zero Under rows on alternates through 2025-08; `less` enabled 2026-08** | `NBA_GOBLIN_DEMON` §830 · `NBA_MASTER_SUMMARY` §16325 · `NBA_OPEN_ITEMS` §12058 |
+| 14 | **PrizePicks per-leg multipliers are on no public surface** | `NBA_OPEN_ITEMS` §*DEFERRED · PrizePicks per-leg multipliers…* — and **this sweep's own §0.7-T18** *(`NBA_MULTIPLIERS`, written in this same pass)* |
+| 15 | **Ladder depth: too shallow for the books, too deep for low-count props** | `NBA_OPEN_ITEMS` §*PARTIAL · ladder depth is too shallow…* |
+| 16 | **`fantasy_score` has never appeared in the NBA board archive** — the one date carrying `player_fantasy_points` also carries `player_first_inning_runs`, so it is MLB data | `NBA_OPEN_ITEMS` §*CAVEAT · `fantasy_score` has never appeared…* |
+| 17 | **P3's reallocation path verified on ONE date only** — Klay Thompson, 2025-11-29, **828 legs → overs 0.0122 / unders 0.9834**, 3,446 teammate overrides | `NBA_OPEN_ITEMS` §*PARTIAL · P3's reallocation path…* — figures present in the twelve *(novelty probe 2026-09-22: `0.9834` × 3, `3,446` × 4, `58,395` × 2)* |
+| 18 | **The injury backfill is HOURLY, not 15-minute** | `NBA_OPEN_ITEMS` §*CAVEAT · the injury backfill is HOURLY…* |
+| 19 | **`archive_label` defaults to `routine`** — the decision snapshot would be indistinguishable from a cron pull | on file *(5 case-insensitive hits across the twelve)* |
+| 20 | **Data-freshness gate dropped; scenario precompute dropped** | `NBA_OPEN_ITEMS` §*DROPPED · data-freshness gate* · §*DROPPED · scenario precompute…* |
+| 21 | **79% of questionables unresolved at the cutoff, by design** | `NBA_SYSTEM_DESIGN` §309 *(COMPASS fact 96)* |
+| 22 | **`final_hp` denormalised · `VACUUM FULL` cannot run on it · a 0-scan index may be load-bearing** | three `### CAVEAT` entries, same section |
+
+**⇒ 22 candidates carried, 22 killed.** *The only material that survived is in
+`NBA_SYSTEM_ARCHITECTURE.md` §0f-5-T18 — six causal findings — and the four items below.*
+
+---
+
+## ⚠⚠ RULE 38 — *born here*
+
+> **A transcript the sweep already audited LIVE arrives pre-killed. Its text is then worth reading for
+> exactly one thing: the CAUSAL layer rule 6 forbids a live audit to carry — how each fact was found,
+> what it cost, and what was tried and rejected. Sweep it for WHY, never for WHAT.**
+
+**Rule 6** *(born T7)* says **a live-audit finding records what the system IS and never explains WHY
+unless a swept transcript supplies the cause.** 🔑 **Rule 38 is rule 6 read from the other end**: the
+live audit takes the WHAT and *leaves the WHY behind by construction*, so the transcript of an
+already-audited session holds **nothing but** the WHY. *Reading it for facts is guaranteed to produce
+restatements — which is exactly what this pass produced, 22 times.*
+
+⚠ **The cost this rule would have saved is measurable and is recorded honestly: this pass read 254
+prose segments / 153,534 chars to write six sections and four open items.** *Had rule 38 been applied
+at pass 0, the same yield would have come from reading for causal turns only.*
+
+⚠⚠ **AND THE RULE HAS A LIMIT, STATED SO IT IS NOT OVER-APPLIED**: **it licenses a narrower READING,
+never a shorter one.** *Rule 25 still governs — the stratum is read IN ORDER AND IN FULL. Rule 38
+changes what a candidate has to clear to be written, not how much text is read.*
+
+---
+
+## THE RESIDUE — *four items the live audit could not have carried*
+
+### T18-4 · **OPEN** · the "load fit, don't refit" path is SPECIFIED, NOT SHIPPED
+P3's correct design requires P2 to persist the fitted model *(tier tables, betas, dispersion)* and P3
+to **load** it rather than rebuild it. **The mechanism exists** — `BT_SAVE_COMPONENTS` already pickles
+for combos — **but the builder has no load path.** The author declined to build it in-session:
+*"this is a real refactor of the builder… i don't want to attempt it and leave it half-tested at this
+point; it needs its own pass with proper verification against the known 2026-01-15 values."*
+**Severity: HIGH.** *Without it P3 either refits (~64 min, past the window) or scores against a
+ladder it did not fit.* ⚠ **NOT RECORDED: whether any later session built it.**
+
+### T18-5 · **CLOSED-BY-DISCOVERY** · the `BS_SOURCE` switch was never needed
+`archive_live_boards.py` normalises **every** scraper into `board_snapshots` in one shape, so live and
+archive are one table. **The switch built into the scorer is dead code.** *(Zero occurrences of
+`bs_source` across the twelve before this entry — so this is the first record of it.)*
+**Severity: LOW** *(dead code, not a defect)*. 🔑 **Recorded because of its cause, not its effect:
+this is the parity rule ELIMINATING work — the live and historical paths are the same path by
+construction.**
+
+### T18-6 · **OPEN** · the gap audit's 2025-26 denominator is NOT RECORDED
+The threshold was recalibrated from *"any truncated team-game"* to *"rate > 0.5%"*, measured against
+**2024-25 = 2 of ~2,460 team-games (0.08%)**. **The 2025-26 count is given as 7; its denominator is
+not.** ⇒ **the 2025-26 rate is unstated in the transcript and is NOT computed here.** *If 2025-26 is a
+comparable ~2,460, 7 is 0.28% and passes; a materially shorter season could push it past 0.5% and
+halt the pipeline.* **Severity: MEDIUM — one SELECT settles it, and the sweep does not run it** *(the
+threshold is a live config value; documenting, not fixing)*.
+
+### T18-7 · **OPEN** · off-ladder rungs are interpolated and taxed — the policy is recorded, its calibration is not
+When an app offers a rung outside the built range, the scorer **interpolates in log-odds from the two
+nearest fitted rungs, flags it, and deducts 4 confidence points.** *"an interpolated rung genuinely is
+less supported than a fitted one, and the number should say so rather than pretend."*
+⚠ **NOT RECORDED: where 4 comes from.** *No fit, no measurement, no comparison of interpolated-rung
+outcomes against fitted ones appears in the transcript.* **It is a chosen constant.**
+**Severity: MEDIUM.** 🔑 **And the author states the deeper objection himself, so it is quoted rather
+than inferred**: the owner's ***"interpolation is a patch, not a fix — if apps offer rungs we don't
+build, the ladder is too shallow or the anchor is misplaced"***, which is what produced the
+per-prop depth work in the first place. ⇒ **the deduction and the depth fix address the same defect
+from opposite ends, and BOTH are live.**
+
+---
+
+## ⚠ ONE FIGURE FROM THE TRANSCRIPT THAT IS NOT ON FILE — *and why it is not written as a finding*
+
+**The books' ladder depth is PROPORTIONAL to the anchor, not a fixed step count.**
+
+| prop | avg anchor | p95 dist | p95 ÷ anchor |
+|---|---|---|---|
+| points | 15.9 | 13.0 | **0.82** |
+| rebounds | 5.7 | 5.0 | **0.88** |
+| assists | 4.3 | 4.0 | **0.93** |
+| steals | 1.1 | 1.0 | **0.87** |
+| blocks | 0.8 | 1.0 | *1.30* |
+
+***"books ladder out to roughly ±85–90% of the anchor, consistently across props. that's the real rule
+— not a fixed number of steps."***
+
+⚠⚠ **This is NOT written as a new finding, because `NBA_OPEN_ITEMS` already carries §*PARTIAL · ladder
+depth is too shallow for the books, too deep for low-count props* — the same conclusion.** *The table
+is recorded here only as the MEASUREMENT BEHIND that entry, which is the causal layer rule 38 says the
+live audit cannot carry.* **Kill 15 stands.**
+
+⚠ **And the transcript corrects itself on it mid-stream, which is why the raw table is unsafe to
+quote without the correction**: an earlier reading assumed **0.5** step sizes for rebounds/assists/
+steals/blocks; ***"correction to my earlier reading: all these props use step: 1.0, not 0.5."*** **The
+`±10 steps` verdicts in the first version of the table — "rebounds just right", "assists wasteful" —
+were computed on the wrong step size and were restated.** *(Final verdicts: points short by 3;
+rebounds/assists wasteful; steals/blocks very wasteful.)* 🔑 **Rule 13 applied to a transcript's own
+arithmetic: the later turn in the same transcript supersedes the earlier one, and the supersession is
+recorded with both.**
+
+⚠ **Independent confirmation is on file and is the reason the conclusion is safe despite the
+correction**: the board scorer's **interpolation counts** — **points 1,294 and PRA 966 off-ladder,
+steals/blocks/stocks/turnovers ZERO** — reproduce the depth verdict from a completely different
+measurement. *Two independent instruments, one conclusion.*
