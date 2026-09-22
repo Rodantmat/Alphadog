@@ -13124,6 +13124,23 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-18 · **NEW · ⚠⚠ MEDIUM, STRUCTURAL · CERTIFICATION MEASURES LESS THAN IT IS READ AS MEANING — `5` OF THE `12` CHECKS HAVE NO DATE PREDICATE, AND `> 0` MEANS ONE ROW OF SIXTY THOUSAND**
+*Added **T20 pass 99 (§T20.104), 2026-09-22**, from an adversarial read of all twelve checks in
+`nba/certify_pipeline.py`. **Read from source with live denominators; nothing was run.***
+
+| | |
+|---|---|
+| ⚠ **What this is NOT** | ***No check is wrong.*** Each tests what it says it tests, and a check that is narrow by design is not a defect. **The item is the GAP between what certification is READ as meaning — the certifier's own failure line is *"This pipeline did NOT produce what it promised"* — and what it MEASURES.** |
+| 🔴 **`5` of `12` have no date predicate** | `defender_ratings rows` · `player name map populated` · `as-of calibration available` · `confidence model loaded` — **whole-table counts** — plus `defender_ratings refreshed`, which tests `max(as_of_date)` and so is **satisfied by ONE fresh row**. ⇒ ***Once populated they can never fail; a run that wrote nothing certifies green on all five.*** |
+| 🔴 **The worst-reading one** | **`as-of calibration available`.** *`P2` step 16 rebuilds the as-of calibration and step 18 refits the confidence model — **the check that looks like it covers them counts rows that were there yesterday.*** |
+| 🔴🔴 **`> 0` against live denominators** | `baseline_history has today` → **median `60,398` rows per game-day** *(163 days, 2025-26)* · `board archived today` → **median `8,994`** for PrizePicks alone *(164 days)*, **and it names no bookmaker** ⇒ **Sleeper, Underdog and Fliff can all be missing while it is green** *(`§T20.103`)* · `baseline props for today` → `>= 25` of 30, so **five props may be missing silently**. |
+| 🔴 **Coverage** | **`P1`: 9 steps / 14 scripts → 3 checks on 2 tables** *(teams, arenas, players, bio, season tables, team stats, on/off, playtypes, tracking, DARKO, shot quality, static context — **all unchecked**)* · **`P2`: 19 steps → 4 checks** *(grading, paper grading, market spreads, blowout refit, confidence refit — **unchecked**)* · **`P3`: 11 steps → 5 checks** *(availability delta `T20-17`, board tiers `T20-7`, paper-pick log — **unchecked**)*. ⚠ **`§T20.102`: not one of the twelve covers enrichment.** |
+| ⚠ **A fourth, smaller point** | **`certify_pipeline.py:27` — `PT = timezone(timedelta(hours=-8))`.** ✅ Harmless in the pipelines *(all three pass `CERT_DATE` from `TZ=America/Los_Angeles date +%F`, named-zone correct)*; 🔴 **the fallback bites a hand-run certifier during PDT.** *Within **`T20-12`**'s stated scope — cited, not re-raised.* |
+| **Why MEDIUM and not season-critical** | **It breaks nothing by itself** — it is the reason other breakages go unnoticed, and each of those has its own item *(`T20-7`, `T20-15`, `T20-17`)*. ⚠ *Deliberately NOT added to the opening-day brief; the brief stays at **SIXTEEN**.* |
+| **Full table** | `NBA_SYSTEM_DESIGN.md` — ***WHAT CERTIFIES GREEN WHILE BROKEN***. **Not fixed (rule 1).** |
+
+---
+
 ## T20-17 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, SILENT · A DROPPED INJURY-ARCHIVE SHARD SILENTLY TRUNCATES THE AVAILABILITY DELTA — AND THAT FEEDS THE SCORED BOARD**
 *Added **T20 pass 97 (§T20.102), 2026-09-22**, from a census of every `except` handler in the `40`
 scripts the three pipelines call. **Read from source; nothing was run.***
