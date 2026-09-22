@@ -24929,6 +24929,124 @@ Factor lock (5 research passes) · return-ramp · the day-before injury report �
 
 ---
 
+# §T19.1 — PASS 0: T19 AND T20 ARE THIS SWEEP'S OWN SESSIONS, AND T19 HOLDS ITS CHARTER
+*(T19 pass 0, corpus + owner stratum · population pinned 2026-09-22T12:00:40Z · identity check
+2026-09-22T12:01:09Z)*
+
+## 1. ✅ WHAT T19 AND T20 ARE — *established by tool profile, not by filename*
+
+| | T19 `2026-09-20-18-46-12-nba-alphadog-documentation-pass` | T20 `2026-09-20-19-56-26-…-t1-deep` | T18, for contrast |
+|---|---|---|---|
+| segments | **920** | **1,177** | 1,205 |
+| partition closes | ✅ 69 + 20 + 313 + 506 + 12 | ✅ 166 + 29 + 368 + 592 + 22 | ✅ |
+| owner turns / chars | **12 / 7,190** | **22 / 11,192** | 57 / 26,633 |
+| `github_patch_file` | **279 (55% of all tool calls)** | **402 (68%)** | 113 (24%) |
+| `run_sql_postgres` | **13** | **6** | 65 |
+| `github_trigger_workflow` | **2** | **0** | 37 |
+
+🔑🔑 ***These sessions WROTE DOCUMENTS; they did not run the system.*** **T19 and T20 are the sweep's
+own documentation passes** — **the last two transcripts in the corpus are the corpus documenting
+itself.**
+
+## 2. 🔴🔴🔴 THE COVERAGE BAND MEASURES **AUTHORSHIP** HERE, NOT COVERAGE
+
+**The pass-0 identity check is EXACT** *(both trees: high band 438 · tail 0 · `uncovered12` 437 ·
+`uncovered30` 426)*, **and the figures look spectacular** — **52.5% of T19's segments already score
+≥ 0.40 against the twelve, against T18's 12%.** ⚠⚠ **It is an artefact, and the diagnostic proves it:**
+
+| segment class | in high band | rate |
+|---|---|---|
+| **`tool_use: github_patch_file`** | **268 of 279** | **96.1%** |
+| **`tool_use: github_put_file`** | **58 of 66** | **87.9%** |
+| `tool_use: bash_tool` | 67 of 137 | 48.9% |
+| `tool_result: bash_tool` | 23 of 131 | 17.6% |
+| **assistant PROSE** | **17 of 81** | **21.0%** |
+| `tool_result: github_patch_file` | **0 of 147** | **0.0%** |
+| `thinking` | 0 of 20 | 0.0% |
+
+⇒ ***326 of 438 high-band segments — 74.4% — are document-writing calls, matching the documents their
+own payloads created. A 96.1% hit rate on `patch_file` calls is a tautology, not a measurement.***
+✅ **The receipts confirm it from the other side: `tool_result: github_patch_file` scores 0 of 147**,
+because a 200-OK receipt carries no document text.
+
+🔑 **CORRECTED FIGURE**: excluding the 345 document-writing calls, **112 of 575 segments are in the
+high band — 19.5%, so 80.5% UNCOVERED**, which is an ordinary transcript. ***T19's apparent coverage
+collapses by two thirds once its own authorship is removed.***
+⚠⚠ **AND THE CONVERSE IS WHERE T19's VALUE IS: its assistant PROSE is only 21% covered — 64 of 81
+prose segments are not in the twelve.**
+
+## 3. ✅ THE OWNER STRATUM IS THE SWEEP'S FOUNDING CHARTER — *all 12 turns read*
+
+**Segments 60 and 61, repeated VERBATIM at 378 and 379 when the owner caught a drift** *(*"this is my
+original message! do not drift!"*)*, **are the instruction that created these documents.** The
+charter, in his words:
+
+> *"i need you to look the full transcripts, one by one! you do these documents: **summary** — you
+> will list everything done over that transcript/conversation, small, big, important, less important,
+> any progress or update in the system must be listed. **each message must be included**.
+> **glossary** — you will make a map for all important aspects, keywords, terms and tell exactly how
+> and where to find them, **on which transcript and which line/message/date and time**. **recipe** —
+> a cake recipe on how the system was built, each step done. **system architecture**… **database** —
+> a comprehensive complete list of all tables and columns… **workers**… **system design** — the 3
+> pipelines in detail… you will do transcript file by transcript file, **line by line, message by
+> message**. updating the files precisely, **zero skipping, zero excuses**!… **any material term that
+> shows more than once must be in the glossary**. also update the existing files, in case anything
+> else was missing."*
+
+> *"the information comes from oldest to newest and **the updates on documents must have a date
+> reference**… **do multiple passes**… **at least 3 consecutive passes without having new points not
+> documented, if you had 2 passes and nothing new, but in the third you have something new, the count
+> restart** and that is **per transcript**… i also need **another file** with: deferred, dropped,
+> partial, postponed, caveats, waiting and incomplete functions… **also any bug or error found along
+> the way. you will not fix anything along this process**, if any issue, it will be documented and
+> fixed after you finish it."*
+
+🔑 **Every standing rule of this run has its origin here, verbatim**: the **three-consecutive-clean-
+passes rule with the restart clause, per transcript**; **document-don't-fix**; **dated updates**;
+**oldest-to-newest**; and the eighth document — `NBA_OPEN_ITEMS.md`.
+🔑 **And the four-way goblin/demon taxonomy is stated by the OWNER here** *(SEG 48)*: ***"under anchor
+goblin are more and demons are less; over the anchor goblins are less and demons are more"*** — the
+rule `board_tiers_v2` implements.
+⚠ **SEG 134 / 252 / 321 / 415 / 704 are the unattended-operation instructions**: *"continue, you don't
+have to report after each pass"*, *"the 3 consecutive clean passes rule is mandatory, keep going"*,
+*"you must also use the full length of the session"*.
+
+## 4. 🔴🔴🔴 THE CHARTER NAMES **EIGHT** DOCUMENTS. THE SWEEP MAINTAINS **TWELVE** — AND HAS BEEN FAILING ONE OF THE EIGHT.
+
+**Mandated by name**: summary · glossary · recipe · system architecture · database · workers ·
+system design · *(SEG 61)* the deferred/dropped/partial/caveats/bugs file. **= EIGHT.**
+**The other four — `NBA_BASELINE_CALIBRATION`, `NBA_FINAL_SCORING_CALIBRATION`, `NBA_MULTIPLIERS`,
+`NBA_GOBLIN_DEMON` — were added by the SWEEP, not requested.** *(Defensible under "also update the
+existing files"; recorded because the distinction has never been stated.)*
+
+### 🔴🔴 **`NBA_GLOSSARY.md` HAS NOT BEEN UPDATED THROUGH SEVEN TRANSCRIPTS**
+
+| evidence | value |
+|---|---|
+| size | **43,356 B — the SMALLEST of the twelve** *(`NBA_MASTER_SUMMARY` 1,990,323 · `NBA_OPEN_ITEMS` 875,355)* |
+| its own **Update log** | **ONE row: `2026-09-20 \| Created.`** |
+| its transcript index | stops at **T16 + "LIVE"** — **T17 and T18 absent** |
+| commits touching it | **44**, against `NBA_OPEN_ITEMS` **410** and `NBA_MASTER_SUMMARY` **889** — a **20 : 1** ratio |
+| last content commit | **2026-09-21**, on `LADDER_DEPTH` / FGA / FTM — **T11-era material** |
+| central T17/T18 terms present | `board_tiers_v2` **0** · `confidence_model` **0** · `certify_pipeline` **0** · `CONF_NEUTRAL` **0** · `measure_report_cutoff` **0** · `f_phase` **0** · `PHASE1_CUTOFF_LOCAL` **0** — **eight of ten absent** |
+
+⇒ ***No glossary content commit exists for the sweep of T12 through T18 — seven transcripts, every
+one of them CLOSED on "three consecutive clean passes."*** **And the charter's most specific
+completeness requirement is the glossary's: *"any material term that shows more than once must be in
+the glossary."***
+
+🔑🔑🔑 **THE REASON NINE CLOSURE PASSES ON T18 ALONE DID NOT CATCH THIS IS THE FINDING BEHIND THE
+FINDING**: ***every pass measured FINDINGS against a TRANSCRIPT. No pass ever measured the
+DELIVERABLE against its CHARTER.*** **A document can satisfy every pass rule the sweep wrote for
+itself and still be failing the instruction that created it.** *(RULE 41, born here.)*
+
+⚠⚠ **Scope, stated honestly: this is a defect in the SWEEP'S OWN DELIVERABLE, which the amended
+standing rule puts in scope** *("'document, don't fix' applies to the system you're documenting, not
+to your own deliverable")*. **It is recorded here in full and entered as open item T19-1; the
+glossary backfill is pass 1's work, not pass 0's.**
+
+---
+
 # §T18.7 — WIRING: EVERY OBJECT T18's SECTIONS ASSERT, RESOLVED — **16/16**
 *(T18 pass 8, 2026-09-22 · T4's closing angle · **the pass that closes T18 at 3/3**)*
 
