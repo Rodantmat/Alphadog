@@ -104,6 +104,42 @@
 owner turns.** **NO VALUE IS REPRODUCED HERE** — location and the safe surrounding facts only, per
 the standing rule. This is the FOURTH credential exposure the sweep has recorded (O8 was the third).*
 
+> ## 🔑🔑 **MATERIAL ADDITION — 2026-09-22 (T13 pass 3, §T13.4e). THE PASSWORD WAS REFUSED, AND THE REFUSAL IS ON THE RECORD.**
+> **The table below records the EXPOSURE. It does not record that the credential was declined, which
+> changes the shape of the decision the owner has to make.** *Read in the assistant prose adjacent
+> to the same owner turns:*
+> > *"**Please don't send me the SMS code, and I won't use the password** — the login should happen
+> > in your browser, not through me. Two reasons: **the code is meant to prove it's you on your
+> > device**, and **the password is now sitting in a chat log, so I'd recommend changing it after
+> > this**."*
+> > *"**The refresh token from step 2 is the only thing the scraper keeps**, stored in the
+> > credentials table like the API keys, **never in memory or docs**."*
+> > *"it genuinely wouldn't work well from my side, apart from the principle. **Betr's login is a
+> > browser flow (Keycloak with a PKCE redirect and the SMS challenge)**… **scripting that flow from
+> > a Cloudflare Worker is exactly the kind of login attempt their fraud checks flag — the thing
+> > we're trying to avoid on your account.**"* · *"**I'm not storing the password anywhere.**"*
+>
+> ✅ **So segment 238's credential was offered, explicitly REFUSED, rotation was recommended, and the
+> build proceeded on a scoped token instead.** 🔑 **That is the correct handling and it belongs in
+> the record beside the exposure.**
+>
+> ### 🔴 BUT THE DISCIPLINE WAS NOT APPLIED UNIFORMLY — **and the asymmetry is the finding**
+> **The same transcript, a few hundred segments later, PASTES THE FULL POSTGRES CONNECTION STRING —
+> user, host, port, database and PASSWORD — back into the chat, twice**, as copy-paste instructions
+> for creating a GitHub secret. ***No value is reproduced here*** *(standing rule)*.
+> ⚠ **The mitigation was offered there too** — *"also please **rotate that password afterwards**
+> (DigitalOcean → cluster → users → reset), **since it's now in this chat**"* — **but the credential
+> was reproduced rather than refused**, ***which is the opposite of what was done for the account
+> password ten minutes of transcript earlier.***
+> 🔑 ***The rule applied was "don't handle the credential" for a third-party login and "relay the
+> credential" for our own database.*** ⚠ **Whether either password was ever rotated is NOT
+> RECORDED** — **and O11's decision is therefore narrower and sharper than the table suggests: it is
+> about ROTATION, not about handling.**
+> 📌 **One further fact recorded at the time and worth keeping**: the bridge **can write files and
+> trigger workflows but CANNOT create GitHub secrets** — *"the secrets API needs encrypted uploads
+> it doesn't support"* — ***which is exactly why the string had to travel through the chat at all,
+> and is a capability boundary in 0 of the twelve.***
+
 | owner segment | what it contains | why it matters |
 |---|---|---|
 | **238** | **a live account email and password**, pasted in the clear, with an SMS-code offer | ⚠ *and segment 240: **"you can use and discard, i trust you, and i'll change it afterwards"*** — ***whether it was changed afterwards is NOT RECORDED*** |
