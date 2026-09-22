@@ -23755,6 +23755,7 @@ what the pattern CANNOT match, then construct one example of it.**
 silently replace and to whether anything is currently setting it.** `[LIVE-AUDIT]` throughout.*
 
 #### 🔴 T9.29a — **`nba_season.py` reaches 20 of 135 NBA Python files; the rest take the season from an env default typed `"2025-26"`**
+> ⚠ **HEADING FIGURE SUPERSEDED — re-taken 2026-09-22T07:15Z (§T12.7d) to 24 of 136** *(+4 carriers, +1 file)*. **Propagated here 2026-09-22 by §T20.14; the heading text is left intact per rule 47 (an `old_str` anchors on heading TEXT) and rule 40 (a correct supersession must not destroy the original).** *The finding — that most NBA Python files take the season from a frozen env default rather than from `nba_season.py` — is unaffected; only the ratio moved.*
 
 **The inventory** — `os.environ.get("NAME"…)` across `nba/**/*.py`:
 
