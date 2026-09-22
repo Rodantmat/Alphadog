@@ -10,6 +10,55 @@ writes. Grouped by role.
 
 ---
 
+## 0.0000 🔴🔴🔴 **THE THREE PIPELINES, AND THE OWNER'S EXPLICIT CRON INSTRUCTION — *SET IT ON ONE, NOT ON THE OTHER TWO*** *(T18 pass 0, §T18.1, owner, 2026-09-19)*
+
+⚠⚠ **This is an operational instruction with a deadline attached, and it is the opposite of what a
+reader would assume from "the pipelines are built".**
+
+| # | Pipeline | Schedule | **CRON?** |
+|---|---|---|---|
+| **1** | **WEEKLY STATIC** — *"already configured, not running yet"*; catches **team changes** | *"once a week… maybe **12 every Monday**"*, chosen so it **does not clash with the daily heavy run** | ✅ ***"You can already SET THE CRON."*** |
+| **2** | **HEAVY OVERNIGHT DELTA** — mines the game logs daily, then the classification and baseline calculations | **from 1 a.m.** *(the owner's "good wiggle room" against the Monday weekly run)* | 🔴 ***"DO NOT schedule cron just yet, because it's not going to have data to run until the beginning of the season."*** |
+| **3** | **LIGHT EARLY-AFTERNOON** — daily mining, daily factors, final scoring engine, final HP, confidence, score | **1:15–1:30 PM PT** *(§0z-7 of `NBA_SYSTEM_DESIGN.md`)* | 🔴 ***"And it's going to be the same for pipeline 3."*** |
+
+🔑🔑 **THE DELTA CONSTRAINT ON PIPELINE 2, IN HIS WORDS**: ***"remember that it's a DELTA SETUP, so
+it's a COMPLEMENT day by day. And **CANNOT HAVE GAPS — has to cover ALL teams, ALL players, ALL
+games**."*** ⚠ **A delta pipeline with a gap silently under-reports forever, because nothing
+re-derives the missing day.**
+
+⚠ **AND BOTH DAILY PIPELINES CARRY THE FULL SET, NOT A SPLIT**: *"for BOTH of the pipelines, you
+understand that you have to put **ALL the mining steps PLUS all the scoring steps, the calculation
+steps, for BOTH of them**."* 🔑 **Plus the coverage audit he orders**: *"**identify in the
+documentation EVERY SINGLE FACTOR** for the baseline pipeline and **every single factor** for the
+final scoring engine pipeline. **Be sure that you have a WORKER THAT MINES EACH ONE**… they are ready
+for when the season comes up, **nothing missing, all the calculation steps there.**"*
+
+✅ **VERIFICATION IS SPECIFIED AS A PARITY TEST, NOT A SMOKE TEST**: *"get a game day that's coming up
+on the new schedule and simulate it… **you can also get one day from the PAST that we already have a
+baseline calculation and also the final scoring calculation, and run it END TO END and see if it
+MATCHES the data that we already have — BECAUSE IT NEEDS TO.**"* ⚠ *(open item **T18-3**: NOT RECORDED
+whether it was run.)*
+
+### 🔴 **A SEPARATE NBA SCRAPER — "NOTHING INTERTWINED WITH MLB"**
+
+> ***"Create a NEW scraper for NBA, use the same structure proven to work. **Create a SEPARATED WORKER
+> for all boards and market as well — NOTHING INTERTWINED WITH MLB.**"***
+>
+> ***"Look at the MLB scraper and be sure the system is ready for the **goblins and demons, MORE and
+> LESS, UNDER and OVER the anchor, the VISIBLE REGULAR LINE ANCHOR and the INVISIBLE ANCHOR SWITCH
+> LINE**, plus all the ladder — also the same for all apps. **You have done this work already! It must
+> all be in the history, transcripts and documentation.**"***
+
+⚠⚠ **THE ISOLATION REQUIREMENT IS THE INSTRUCTION, and it is stated twice.** 🔑 **And the owner's
+remedy for the rebuild is the transcript archive**: *"**you already did the whole work, it's in the
+transcripts — you just need to wire NBA with exactly the same logic**"* and *"**find the proper
+transcript. We cannot waste all the time we already did on this! All the work is pretty much
+done.**"* ⚠ *Recorded because it is the same instruction that produced this documentation sweep
+(`NBA_SYSTEM_DESIGN.md` §0z-7) — **the owner treats the transcripts as the system's authoritative
+memory, and asks for re-derivation from them rather than re-invention.***
+
+---
+
 ## 0.000 🔴 **EDITING A WORKFLOW FILE RIGHT AFTER DISPATCHING IT CANCELS THE RUN — and a CANCELLED run is not a FAILED one** *(T15 pass 3, §T15.4c, from the 2026-09-12/13 transcript)*
 
 *Verbatim from the transcript, and it is the operator diagnosing himself:*
