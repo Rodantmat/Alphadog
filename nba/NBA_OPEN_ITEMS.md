@@ -13245,6 +13245,27 @@ scripts the three pipelines call. **Read from source; nothing was run.***
 
 ---
 
+## T20-19 · **NEW · ⚠⚠ MEDIUM, STRUCTURAL · THE CONFIDENCE LAYER IS IMPLEMENTED TWICE AND THE TWO DISAGREE ON FIVE OF TEN FACTORS — THE DEDUCTIONS ARE FITTED AGAINST ONE FACTOR SET AND APPLIED TO ANOTHER**
+*Added **T20 pass 108 (§T20.113), 2026-09-22**, while specifying the confidence layer end to end.
+**Read from source on both sides plus two `SELECT`s; nothing was run or changed.***
+
+| | |
+|---|---|
+| **Where** | **FITS:** `build_confidence_v3.py:58–83`, run by `P2` *(`nba-p2-overnight-heavy.yml:275`)*, writes `nba_score.confidence_model`. **SHIPS:** `score_board_legs.py:232–244`, run by `P3` *(`nba-p3-afternoon-light.yml:206`)*, writes `nba_score.board_scored` — **the user-facing board.** Neither file appears in the other pipeline. |
+| **The divergence** | **Five of ten factors differ.** Four are literal constants on the shipping path — `f_time` `np.full(1.0)` · `f_vol` `np.full(0.75)` · `f_exp` `np.full(0.75)` · `f_agree` `np.full(0.55)` — against `P2`'s `where(n_uncertain>0, .65, 1)` · `1−clip(√(p(1−p)),0,.5)·0.6` · `clip(log1p(n)/log1p(800),.3,1)` · `1−clip(abs(p_over_book−final_hp)/0.30,0,1)`. The fifth, `f_complete`, is `anchor·0.4 + proj_min·0.3 + rate36·0.3` in `P2` and `anchor.notna()·0.4 + 0.6` in `P3`. |
+| 🔑 **The sharpest single fact** | **`0.55` is `P2`'s own value for *"no book price was available for this leg."*** On the shipped board **every leg carries it**, including legs where the sibling factor `f_books` reports up to four apps quoting that line. **The board scores every leg as though the market were silent about it.** |
+| **Magnitude — measured, not asserted** *(`RULE 52`)* | Live `confidence_model` `2026-09-22`: `f_role` `11.2731` · `f_phase` `9.0625` · `f_books` `2.3207` · seven others `0.9063` each, budget `29.0`. ▶ **Fixed offset from the four pinned factors: `0.8610` points on EVERY leg — identical, therefore discriminating nothing.** ▶ **Share of budget inert on the shipping path: `4 × 0.9063 / 29.0 = 12.50%`.** ▶ **`f_complete`: `9,623,950` of `19,343,348` `baseline_history` rows (`49.7533%`) have `proj_min`/`rate36` NULL — `P2` would score them `0.40`, `P3` scores them `1.0`, worth `0.5438` points granted on half the legs the fitted model would have deducted.** |
+| **Direction is not uniform** | `f_complete` makes the board ***more*** confident than the fitted model; `f_agree` at the fallback makes it ***less***. **Nothing arranged them to cancel.** |
+| 🔴 **One case is available-but-unused, not input-absent** | `score_board_legs.py:141` selects **nine** columns from `nba_score.baseline_history`. Live `information_schema` `2026-09-22`: the table has **twenty**. `n_uncertain` and a book price are **not** among them — so `f_time`/`f_agree` are pinned for want of an input. **But `proj_min` and `rate36` ARE — columns 19 and 20 — and the `SELECT` simply does not list them.** |
+| **The off-ladder leg is charged twice** | `:152` joins `how="left"`; `:157–178` fills `p_more`/`p_less` for off-ladder rungs **but not `anchor`/`role_tier`/`used_emp`**. So an interpolated leg takes `f_complete = 0.6`, `f_role → 0.75`, `f_prov → 0.30` — **and then `:250` adds an explicit `+4.0`.** `0.3625 + 4.0 = 4.3625` of `29.0` = **`15.0%`** for one condition. *The explicit penalty is on file; the NaN half is not.* |
+| **Why no certifier catches it** | `PIPE=p3`'s five checks are *scored legs · non-null confidence · score in range · model loaded · board archived* — **a constant-fed confidence passes all five trivially.** No check compares the two implementations. *(`§T20.94` read all twelve checks; not one covers this.)* |
+| **Why MEDIUM and NOT added to the season-critical brief** | ⚠ **It breaks nothing and it does not get worse on opening day.** The board scores; the magnitudes are under one point of twenty-nine. **Unlike `T20-17` it needs no trigger and produces no outage — it has simply been shipping this way.** 🔑 **The brief stays at SIXTEEN.** *Stated here so a later reader does not have to re-derive why a `🔴🔴🔴` finding was ranked MEDIUM.* |
+| **NOT RECORDED** | **Whether the divergence is deliberate.** No comment in either file acknowledges the other; `P3`'s block carries only `# CONFIDENCE (measured deductions)` at `:224` — **true of `P2`, false of four of the ten factors it then introduces.** |
+| **OWNER DECISION** | ▶ **Should `P3` compute the five, or should the fit be re-run against what `P3` can actually supply?** *Both are defensible and they give different numbers; the sweep does not choose (rule 1).* **The cheapest half is free: adding `proj_min, rate36` to the `:141` `SELECT` restores `f_complete` with no new data.** |
+| **Full specification** | `NBA_MASTER_SUMMARY.md` — **`§T20.113`**, with the ten-factor side-by-side table. **Not fixed (rule 1).** |
+
+---
+
 ## T20-16 · **NEW · ⚠⚠ MEDIUM, LATENT, SILENT · THE PAPER-TRADING PROP MAP IS HARDCODED TWICE, AND A MISMATCH PRODUCES PICKS THAT CAN NEVER BE GRADED**
 *Added **T20 pass 93 (§T20.98), 2026-09-22**, while specifying `standards_3pick_v1`. **Read from
 `pg_get_functiondef`; nothing was run or changed.***
