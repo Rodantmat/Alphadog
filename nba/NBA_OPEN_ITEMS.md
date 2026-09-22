@@ -12852,6 +12852,26 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 | **6** | 🔴 **T20-2** — the storage-diet plan is aimed at a database that no longer exists | n/a *(a plan, not a run)* | **DEGRADES THE DECISION** — a reader budgeting from it double-counts `action_2`'s ~174 MB and mis-targets `action_4` | n/a | **rewrite the plan** |
 | **7** | ⚠ **T20-1** — five 🔴 findings nothing points at | n/a *(navigation)* | **DEGRADES COMPREHENSION** | n/a | **pointers, or a convention** |
 
+> ## ⚠⚠ AMENDMENT — **AN EIGHTH BLOCKER, ADDED T20 PASS 42 (§T20.47), 2026-09-22**
+> *The table above is left exactly as pass 40 wrote it (rule 40: a supersession must not destroy the
+> original). **T20-9 is inserted by this amendment, not by rewriting the ranking.*** ⚠ **No new
+> finding here either — every field is read back from T20-9.**
+>
+> | # | item | fails | effect | caught by a certifier? | fix size |
+> |---|---|---|---|---|---|
+> | **→ 3rd** | 🔴🔴 **T20-9** — `alphadog-v2-github-auto-deploy.yml` pushes with `\| \| true`, twice | 🔴🔴 **SILENT** *(run `35751058086` lost BOTH writes and reported `success` on all seventeen steps)* | **DEGRADES THE OPERATOR, not the model** — `deployed_sha.txt` asserts a SHA two commits and ~2h48m stale while the Workers run newer code | 🔴 **NO** *(it is the deploy workflow; nothing audits it)* | **two lines** *(the loop from `sleeper-board.yml:53-56`)*, plus **one line** each for `gbdt-training.yml` and `scrape.yml` |
+>
+> **PLACEMENT, under the brief's own ranking rule** — *SILENT before LOUD, then STOPS THE SLATE
+> before DEGRADES IT, then UNCAUGHT before CAUGHT.* **T20-9 is SILENT · DEGRADES · UNCAUGHT, which
+> is the same triple as T20-5 and T20-7**, so the tie is broken on **what it degrades**: *T20-5 and
+> T20-7 degrade the MODEL, all season; T20-9 degrades the OPERATOR'S ABILITY TO KNOW WHAT IS
+> RUNNING.* ⇒ **third, behind both, ahead of T20-4.**
+> **Amended order: `5 · 7 · 9 · 4 · 6 · 3 · 2 · 1`.**
+> 🔑 **AND IT DOES NOT JOIN THE "ONE PATTERN" COLLAPSE BELOW** — the season-literal fix does nothing
+> for it. **T20-9 is its own fix: three files, one idiom that already exists in twenty-three others.**
+> ✅ **Which makes it the cheapest item on this brief and the third most costly to leave** —
+> *the only row where those two facts coincide.*
+
 ## ✅ CLAUSE (ii) — **THE SEVERITY ORDER CONTRADICTS THE DISCOVERY ORDER**
 
 **Found in order 1→7. Ranked by cost: `5 · 7 · 4 · 6 · 3 · 2 · 1`.**
