@@ -14428,6 +14428,183 @@ draws from.**
 
 ## T14 — `2026-09-13-20-53-23-nba-boards-grader-market-baseline-history-2026-09-11-12.txt`
 
+### T14.2 — PASS 1 (**the assistant-prose stratum, all 182 segments, read in order**) — **🔑🔑🔑 "CERTIFIED never meant STORED", the knowable-at-cutoff leakage test, and RULE 34**
+*All 182 prose segments, 107,151 chars, **read in full in one pass** *(98 below segment 500, 84
+above)*. **Probes pinned 2026-09-22T08:53:42Z; live re-takes 08:53:45Z and 08:54Z. `SELECT` only.***
+
+#### 🔑🔑 T14.2a — **THE PATTERN THAT SHAPES THIS WHOLE PASS: T14 DOCUMENTED ITSELF INTO THE EIGHTEEN**
+**T14 ends by writing its own work into `NBA_COMPASS.md` (phase 12, facts 66–69),
+`NBA_PROJECT_LOG.md`, and a NEW governing document — `NBA_DAILY_PARITY_AND_BACKFILL.md`.** ✅ **So
+probe after probe returns *"0 of the twelve, N of the thirty"*** — **the 89.6% coverage, the
+`baseline_history` row count, *"certified never meant stored"*, the MLB backtest drop, the public
+repo, the fantasy formula.** ⚠⚠ ***This sweep's job for T14 is therefore NOT discovery — it is
+MOVING what T14 put in the eighteen into the TWELVE.***
+🔑 ***And it is the SECOND instance of a class §T12.1 already named***: *"the owner's documentation
+directive was followed into the EIGHTEEN, not the twelve."* **Two transcripts, same behaviour — it
+is a pattern, not an accident**, ⚠ **and it means the twelve systematically lag the eighteen after
+any session that ends in a documentation burst.**
+🔴 **TWO KILLS follow directly** *(25th and 26th)*: **the 89.6% board-coverage headline is already in
+`NBA_WORKERS.md`**, which even names its producer **`nba/check_season_coverage.py`** — *only the
+per-prop decomposition is new*; and **`baseline_history` is in NINE of the twelve** — *only the
+"certified ≠ stored" reasoning and the live re-take are new.*
+
+#### 🔴🔴 T14.2b — **RETRACTED BY ITS OWN AUTHOR: the board scrapers do NOT archive every pull**
+**§T13.4g recorded, as one of the ParlayAPI downgrade's two safeguards, that *"our own board scrapers
+archive every pull from opening day."*** **T14's closing audit withdraws it:**
+> *"**I said earlier that our scrapers 'archive every pull from opening day.' THEY DON'T in a usable
+> way**: each run **OVERWRITES `boards/<app>_current.json`**. **Git history keeps old versions, but
+> that is not a queryable archive and it bloats the repo.** … **the window and close snapshots must
+> land in `board_snapshots` in Postgres.** ***Open — build item.***"*
+
+✅ ***And pass 3 SAW the mechanism without recognising it***: **each app has exactly ONE
+`_current.json` whose commit timestamp moves** *(§T13.4a)* — **that is the overwrite, observed from
+outside.** 🔑🔑 **So the downgrade rests on ONE safeguard, not two**, ⚠ **and its stated cost —
+*"you lose only history beyond 168 hours, and we no longer need it"* — is true of the two HISTORICAL
+seasons and FALSE of the season about to start.** **RULE 33's SEVENTH instance, correcting this
+sweep's own write. Corrected in place with both dates.**
+
+#### 🔑🔑🔑 T14.2c — **"CERTIFIED" NEVER MEANT "STORED" — and it is the cleanest distinction in the corpus**
+**The owner asked for a day-by-day baseline and was told it was done. It was not:**
+> *"**WHAT WAS TRUE**: the baseline is **CERTIFIED on both seasons** — the harness computed a
+> probability for every leg on every game-day and **proved the recipe calibrated**.
+> **WHAT WAS NOT TRUE**: ***those per-leg, per-day probabilities were NEVER STORED*** — the harness
+> **kept only the CALIBRATION STATISTICS**. What got persisted was **ONE DAY**.
+> So when I said 'the baseline is done' I meant '**the recipe is proven**'… ***I was conflating
+> 'CERTIFIED' with 'STORED.' That's on me.***"*
+
+🔑 ***A certification is a statement about a RECIPE; a table is an ARTIFACT.*** ✅ **The rebuild
+changed nothing** — *"persisting what certification already computed… same numbers, just kept
+instead of discarded."* ✅✅ **RE-TAKEN LIVE**: **`nba_score.baseline_history` exists, `reltuples`
+≈ 19,266,864** *(against 18.78M reported — and `reltuples` is an ESTIMATE, rule 30)* **and holds 30
+distinct `prop` values against the 29 stated** — 🔑 **so work continued after the session.**
+🔴 **`oreb` was EXCLUDED for failing calibration at −21 pp near low anchors** — *"a zero-inflated
+stat… **I'd rather it be absent than wrong**"* — and **`dunks` is unbuilt** *(needs play-by-play)*.
+**Written to `NBA_BASELINE_CALIBRATION.md` §0v.**
+
+#### 🔴🔴 T14.2d — **A TRAINING LEAK THAT ONLY AN UNRELATED CRASH EXPOSED**
+> *"The 2024-25 failure was worth catching for more than the crash: ***the workflow had let the
+> harness's DEFAULT TRAINING SET INCLUDE THE TEST SEASON.*** On 2025-26 the default happened to be
+> correct; **on 2024-25 it was a LEAK.** ***Both runs would have looked fine if the memory hadn't
+> given out.***"*
+
+🔑🔑 ***A leak that produces no error, no warning and a plausible number, caught only because an
+out-of-memory crash stopped the run.*** ⚠⚠ **The strongest argument in the corpus for the parity
+directive — and it arrived by accident.** **Training seasons are now set explicitly per season.**
+
+#### 🔑🔑 T14.2e — **THE LEAKAGE TEST, RESTATED AS A RULE — `knowable at the cutoff` is 0 of the TWELVE AND 0 of the THIRTY**
+**The first framing was *"observed-and-archived versus live-only."* It was wrong and was corrected:**
+> *"**On referees I was WRONG.** Assignments are **published the MORNING of the game**, so the crew
+> that worked a game is **a FAITHFUL RECONSTRUCTION of what would have been known** — using it for a
+> historical day is **SIMULATION, not leakage**. ***The test isn't "was it ARCHIVED" but "WAS IT
+> KNOWABLE AT THE CUTOFF."*** **Referees pass. Starters don't**: confirmed lineups drop around
+> **tip−30**, after the window."*
+
+🔑 ***Strictly better than §T13.4c's version***, ⚠ **and the archived/live test gets the referee case
+wrong in BOTH directions: officials are never archived and are admissible; starters are archived and
+are not.** ✅ **With a DEFECT RULE attached**: ***"any factor whose source publishes before the
+window but is still computed in phase 2 is A BUG, not a design choice — that's the audit standard"***
+— **which forced a concrete registry re-tag of referees, rest, schedule, coach and matchup into the
+baseline stage.** **Written to `NBA_SYSTEM_DESIGN.md` §0a.4, with the per-factor timing table and
+the arrival-order table** *(🔑 **the league's game-day 1 PM ET report lands ~10:00 AM PT — "the last
+discrete input before the window"**; **referee assignments ~6–7 AM**)*.
+
+#### 🔑🔑 T14.2f — **THE SCENARIO PRECOMPUTE, SIZED FROM THE SYSTEM'S OWN DATA**
+**§T14.1e recorded the owner's proposal and his combinatorial objection. T14 answers it by choosing
+the right unit**: ***"a scenario is the JOINT availability set of BOTH TEAMS, so when Wembanyama is
+out it recomputes his whole roster AND the opponent's."*** **Measured: 0–3 uncertain players per
+team → ≤8 scenarios per team → ≤64 per GAME worst case, usually 8–16.** **Board legs/day: PrizePicks
+avg 4,503, max 8,700, 107 players; ~10–15k across five apps, ~20k on a big Saturday — but only
+~110–130 DISTINCT PLAYERS.** **Full matrix ≈ 72,000 leg-probabilities per day; scenarios ~0.5–1M
+rows/day ≈ 50–100 MB, all but the selected one deleted → ~7 MB/day, ~1.2 GB/season.**
+🔑🔑 **And the load-bearing argument for why it is cheap**: ***"the expensive part of the baseline is
+FITTING… that happens ONCE, overnight. Scoring a scenario is rescaling minutes × rate through cells
+that already exist, then a CDF per rung: vectorized, linear in rows."*** ⚠ **Stated as an estimate
+with its own caveat** — *"the honest range is wider than 15–30 minutes **until we measure it**"* —
+**and the measurement that would pin it was proposed and is NOT RECORDED as run.**
+
+#### 🔴🔴 T14.2g — **THE REPO IS PUBLIC — 0 of the TWELVE — and the infrastructure rules that follow**
+> *"**GitHub — THE REPO IS PUBLIC.** Actions minutes are **free and unlimited for public
+> repositories**… ⚠ **the caveat: the code, docs and board files are readable by ANYONE** —
+> credentials aren't in the repo *(they're in Postgres)* — ***"it's a choice you should be making
+> knowingly rather than by default."***"*
+
+⚠⚠ ***This bears on all four credential exposures on file***: **the standing rule that no credential
+value is reproduced in these documents is not a formality — these documents are public.**
+✅ **Four operating rules, all 0 of the twelve**: ***compute on the RUNNERS, not in the database*** ·
+**batched writes, 2–3 concurrent writers, stagger the load step** · **no large joins server-side** ·
+**chunk by month, vacuum after bulk deletes, lean indexes.** 📌 **And the CPU alerts were diagnosed,
+not assumed**: *"**the CPU alerts were caused by ME, not by the system** — every spike lines up with
+the analysis queries I ran this week."*
+
+#### ✅✅ T14.2h — **THE 43 GB RESOLVES COMPLETELY**
+**The MLB backtest schema was dropped — 1,177 tables, ~7 GB, after verifying no live worker read it
+— and the database went 21 GB → 15 GB.** ✅ **CONFIRMED live: the `backtest` schema now holds ONE
+table at 203 MB.** 🔑🔑 **And the schema census inverts T14's own picture**: **T14 measured NBA at
+11 GB against MLB's ~14.5 GB; today `nba_score` is 25 GB and `nba_market` 11 GB — NBA ~36 GB — while
+all MLB schemas together are ~4.6 GB.** ***MLB was cut as directed and NBA grew into the space and
+past it.*** ✅ **`nba_score`'s 25 GB is now explained end to end: `baseline_history` ~13 GB plus
+`final_hp` ~9.4 GB.** ⚠⚠ **So the open question is the CEILING, not the cause**: **the owner set
+30 GiB as the maximum; NBA alone is ~36 GB.** **Written to `NBA_DATABASE.md` §0u.**
+
+#### 🔴🔴 T14.2i — **THE BACKTEST'S SCOPE LIMIT: the archived board is 13 of ~25 PrizePicks stat types**
+> *"**The historical board is NOT the full PrizePicks menu.** The Odds API archived only **13 stat
+> types**… PrizePicks' actual NBA board **also runs fg made/attempted, ft made/attempted, 3pt
+> attempted, personal fouls, offensive and defensive rebounds, dunks, fantasy score, and the PERIOD
+> props.** ***None of those exist in the two-season board history — there is no archive of them
+> anywhere.*** **Historically we can train and evaluate on 13; LIVE we'll score all of them.**"*
+
+⚠⚠ ***Every backtest figure in this corpus — the per-tier hit rates, the 89.6% coverage, the
+market-calibration result — is measured over 13 of ~25 stat types.*** **A scope limit on the
+EVIDENCE, and it belongs beside every figure drawn from the two-season board.** ✅ **The baseline was
+taken to 29–30 of ~31**, 🔑 ***so the asymmetry is permanent and one-directional: the model can score
+more of the board than the archive can ever evaluate.***
+
+#### ✅ T14.2j — **THE FANTASY-SCORE FORMULA SETTLED, AND IT WAS A LIVE MLB BUG CLASS**
+**Both apps identical for NBA — `points ×1 + rebounds ×1.2 + assists ×1.5 + steals ×3 + blocks ×3 −
+turnovers ×1`** *(Underdog's official help centre dated 2026-05-31; PrizePicks confirmed indirectly
+against its playbook partners and the NBA standard)* — **and both match what the recipe already
+computes.** ⚠ **Two caveats kept**: PrizePicks' own chart *"didn't render as text"*, so **a live
+graded-leg check in week one is still owed**; and **the DraftKings table is *"the trap to avoid."***
+🔑 **The owner's point is the transferable one**: ***"for a long time we ran a BROKEN LOGIC"*** —
+**a per-app scoring formula can be wrong for months with no error, because every leg grades cleanly
+against the wrong number.**
+
+#### 🔑🔑 T14.2k — **RULE 34: THE PRE-REGISTRATION MISSED ON BOTH CLAUSES, AND THE CAUSE IS THE PROTOCOL, NOT THE MODEL**
+*Harness re-run **2026-09-22T08:59:27Z**: **WORKING 59 / 13 / 924 / 891 · BASELINE `5fbb9c1e` 28 /
+13 / 955 / 920**; **32 crossings**, high band 28 → 59 with none lost.*
+🔴 **(i) MISSED** — predicted a fall of **5–25**; measured **31**. 🔴 **(ii) MISSED** — predicted
+**≥75%** of crossings to be OWNER segments; measured **11 of 32 = 34.4%.**
+✅ **AND THE DIAGNOSIS IS EXACT.** **The prediction was about what PASS 0 wrote. The harness is only
+run at the END of pass 1, so it necessarily absorbs PASS 1's writes too** — **and pass 1 wrote
+heavily about ASSISTANT prose** *(segs 524, 549, 558, 668, 748, 756, 763, 767, 880, 966, 982…)*.
+🔑 **All eleven owner crossings are segments pass 0 quoted** *(172, 190, 427, 480, 522, 559, 673,
+742, 750, 758, 769)* — ***so had it been measured when intended, clause (ii) would have scored 11 of
+11 and clause (i)'s fall would have been ~11, inside the band. BOTH would have been HITS.***
+
+> ## 🔑🔑 **RULE 34 — A PREDICTION ABOUT PASS N IS MEASURED BEFORE PASS N+1 WRITES.**
+> *The band harness scores the WORKING TREE, which accumulates. A pre-registration written about one
+> pass's writes and measured after the next pass's writes is **scored against a different
+> intervention than the one it named.*** ⚠⚠ **This has now cost TWO scores** — **§T13.2k's PARTIAL
+> and this MISS** — ***and in both the prediction was right about its own pass.***
+> 🔑 **The remedy is cheap and is adopted from here**: ***run the harness at the START of a pass, on
+> the state the previous pass left, and score the previous pass's prediction there*** — **or state
+> the prediction as CUMULATIVE and predict the combined effect.** **Never score a named intervention
+> against a tree that contains a later one.**
+
+**Thirty-two pre-registrations: twenty-five hits, THREE misses, four partials.**
+
+**Pass outcome: all 182 prose segments read in order; the pattern that T14 documented itself into the
+eighteen identified, with the sweep's job re-scoped to moving it into the twelve; one of this sweep's
+own pass-3 writes retracted by its own author; "certified never meant stored" and `baseline_history`
+re-taken live at 30 props; a training leak that only a crash exposed; the knowable-at-cutoff leakage
+test and its defect rule; the scenario precompute sized from real board data; the repo found to be
+PUBLIC; the 43 GB resolved end to end; the backtest's 13-of-25 scope limit; the fantasy formula
+settled; TWO kills; and RULE 34, earned from a miss whose cause is the sweep's own scoring protocol.
+⚠⚠ The clean count does NOT advance — this pass added transcript material heavily. CLEAN 0/3 ·
+2 passes.**
+
+---
+
 ### T14.1 — PASS 0 (**corpus + owner stratum**) — **🔑🔑 the owner's OWN architecture proposal, his COST CEILINGS, and two of T13's queued items CANCELLED**
 *Opened 2026-09-22. **Baseline `5fbb9c1e` → `/tmp/t14base/nba/` (32 `.md`), content-only digest
 `937d39e3611851b7`, VERIFIED byte-identical**, pinned 08:43:56Z. **Corpus pinned 08:45:37Z;
