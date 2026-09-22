@@ -1558,6 +1558,40 @@ it, with **anchor assertions** so a drifted patch fails loudly instead of writin
 `BT_SAVE_COMPONENTS` · `BT_TRAIN`/`BT_TEST` · **`BT_CARRY` (default "1" — without it October produces
 NOTHING)** · `BT_SHIFT_LAMBDA` · `BT_PLAYER_L0`.
 
+> # 🔴🔴🔴 **THE MODE DISPATCH TABLE — `§0d.1`'s T1 PRESCRIPTION, DISCHARGED** *(written 2026-09-22, T20 pass 96, §T20.101)*
+> *`§0d.1`, the MLB lesson recorded at T1:* ***"NEVER ASSUME 'ONE FILE = ONE JOB.' … DOCUMENT THE MODE
+> DISPATCH TABLE EXPLICITLY IN ONE PLACE, don't let it become IMPLICIT."*** **The list above names the
+> knobs. It has never said which combination selects which JOB. This does.**
+> ▶ **Read from `nba/baseline/build_baseline_ladder.py` in full, `2026-09-22T22:00:44Z`. Nothing was
+> run.** ⚠ **`build_baseline_ladder.py` is `152` lines and is a PATCHER, not a builder**: it reads
+> `nba/backtest/classification_ladder_v12.py`, applies **eight anchor-asserted `rep()` string
+> patches**, sets `BT_TAG` if unset, and `exec()`s the result. ***So a flag's behaviour depends on
+> whether the patch that reads it survives — and one of them does not.***
+>
+> | flag | default | where it is read | what it does in the PRODUCTION ladder |
+> |---|---|---|---|
+> | **`BT_ASOF`** | **today** | patch `:42` | the slate date — and it also selects the season *(`_season_of`)* and the output filename |
+> | **`BT_PROPS`** | unset | patch `:143` **and** the harness | **here it is the output filename TAG only** *(`nba_baseline_ladder_<ASOF>_<pair>.json`)*; the per-prop restriction is the harness's job |
+> | **`BT_REPLAY`** | `"0"` | patch `:54` | `=1` lets games with `game_status == 3` **(final)** form a virtual slate ⇒ **replay a past day** |
+> | **`BT_INJURY`** | `"1"` — **ON** | patch `:78` | applies the day-before report at the cutoff; **requires a non-empty virtual slate** |
+> | **`BT_CUTOFF`** | `"baseline"` | patch `:83` | picks `BASELINE` / `PHASE1` / `PHASE2_CUTOFF_LOCAL` from `nba/nba_asof.py` |
+> | **`BT_LADDER_STEPS`** | 🔴 **`"10"` in production — the certified recipe's own constant is `6`** | patch `:39` | ladder depth ±N. *`P2` deliberately does not set it* **(PRIOR — recorded above)** |
+> | **`BT_SAVE_COMPONENTS`** | unset | 🔴 **NOT read by this file at all** — consumed by the harness and `combos_ladder_v1.py` | ***this is the flag that makes `P2` step 12 a different job from step 11*** |
+> | **`BT_TRAIN` / `BT_TEST`** | — | 🔴🔴 **INERT HERE** | **the anchor line that reads them is REPLACED** *(patch `:40–49`)* **by season auto-detection from the files on disk.** ⚠ *They remain load-bearing in the HISTORY builders — COMPASS fact 66: **"BT_TRAIN must be explicit … or the test season lands in its own training set (leak + OOM)"** — which is a statement about `build_*_history.py`, not about this script.* |
+> | **`BT_TAG`** | **`"prod"`, set by the script itself** *(`:151`)* | `:151` | 🔴 **named in ZERO of the twelve before this entry** |
+>
+> ## ⚠⚠ TWO SILENT FAILURES THE TABLE MAKES VISIBLE
+> **① 🔴 THE INJURY STEP CANNOT FAIL THE BUILD.** *The whole day-before enrichment block sits inside
+> `try: … except Exception as _exc: print("injury report step skipped:", _exc)`* ⇒ ***the report can be
+> missing, unparseable or name-unmatched and the ladder still builds, and `P2` still certifies green***
+> *(its four checks count rows and props, never enrichment — `§T20.94`)*. **The only trace is one line
+> of build log.**
+> **② 🔴 A TYPO IN `BT_CUTOFF` IS SILENT.** *`{"baseline":…, "phase1":…, "phase2":…}.get(_cut_name,
+> BASELINE_CUTOFF_LOCAL)` — **an unrecognised value falls back to `baseline` with no warning**, so
+> `BT_CUTOFF=phase-1` produces a baseline-cutoff ladder that looks like a phase-1 one.*
+> ⚠ **Both recorded, neither fixed (rule 1).** 📌 **Pointer: `NBA_RECIPE.md` `STEP 9` for where the two
+> invocations sit in `P2`.**
+
 ### `nba/backtest/combos_ladder_v1.py`
 Certified combos recipe — **its own `LADDER_STEPS`**. Joint simulation over calibrated marginals with
 **per-player covariance**. **Requires `BT_SAVE_COMPONENTS=1` singles pickled first.**
