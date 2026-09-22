@@ -1563,6 +1563,24 @@ those thirteen blocks. ▶ **Checked: there is not a single shell pipeline in an
 > `baseline_history` **median `60,398` rows per game-day across `163` days** · `board_snapshots`
 > (PrizePicks) **median `8,994` across `164` days**.
 
+> ✅✅ **A THIRTEENTH CHECK EXISTS AND THIS SECTION DID NOT KNOW IT — added 2026-09-22, T20 pass 110
+> (`§T20.115`).** **`nba-boards-market.yml:135–152`, step *"Assert the pull captured something"*:**
+> `total = sum(n for _, n in rows); if total == 0: raise SystemExit("NO BOARD LEGS captured for {gd} -
+> the scrapers ran but nothing landed.")` — **over `nba_market.board_snapshots` grouped by
+> `bookmaker` for today's PT date.** 🔑 **Its own comment states the failure mode this whole section
+> is about**: *"A board pull that captured nothing must be VISIBLE. **This is the failure that hides
+> best: every step green, no legs in the table, and the scorer quietly prices an empty slate.**"*
+> ⚠⚠ **IT IS NOT ONE OF `certify_pipeline.py`'s twelve** — it is **nine lines of Python inside a YAML
+> `run:` block**, which is why every census that counted scripts missed it *(probes: `Assert the
+> pull` and `NO BOARD LEGS` each **0 of 12, 0 of 30, 0 in the baseline tree**)*. ⚠ **DORMANT TODAY**:
+> that workflow is `workflow_dispatch` only — *"**NO CRON YET**… **Cron goes in at season start**"* —
+> and nothing else invokes it, **so it guards nothing until the cron is added.** 📌 ***Recorded as a
+> POSITIVE: on this one point the corpus was more pessimistic than the system, and a section about
+> what certifies green while broken owes the system its real guards as much as its gaps.***
+> ⚠ **It is also the ONLY `raise` among the seven inline blocks that does not duplicate a repo
+> script** — the full inline-code census is `§T20.115`, population **`7` blocks in `5` files across
+> `39` in-scope workflows**, pinned `2026-09-22T23:25:43Z`.
+
 ## 🔴 FINDING 1 — **FIVE OF THE TWELVE HAVE NO DATE PREDICATE AT ALL**
 
 | check | pipeline | SQL |
