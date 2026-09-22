@@ -1134,7 +1134,10 @@ market side by construction, which is correct and was nowhere recorded.**
 the boards land" is satisfied: the boards landed (27.06M) and the grading ran.* ⚠ **`reltuples`
 estimates** *(rule 30)*. ⚠ **`nba_score.paper_picks` holds **0 rows** exactly** *(`reltuples` = −1,
 never analysed)* — *the "`paper_picks`' purpose" question T11 left open is still open, and the table
-is empty as of today.*
+is ~~empty as of today~~ **empty as of `2026-09-22`** — ✅ **`SELECT count(*) FROM
+nba_score.paper_picks` → `0`, re-derived 2026-09-22 (§T20.27).** *An UNANCHORED "today" was the worst
+of the four now-relative classes §T20.27 found: it drifts like a countdown **and** carries no base
+date, so a later reader cannot even tell whether it was true when written. Anchored here.*
 
 ### 📌 And the code states a design intent that NO document carries
 **§T11.5c records that `board_outcomes` has 6,905,452 rows with `bookmaker` and `snapshot_label`
