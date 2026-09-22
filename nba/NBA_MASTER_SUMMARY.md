@@ -32632,7 +32632,22 @@ measured the same split from the other side — `nba_schedule_current.json` move
 `nba_calendar.games` sat at `2026-09-02`.** 📌 **Two independent measurements, same conclusion: the
 loader is the gap, not the scrapers.**
 
-## 4. 🔴🔴 THE FINDING — **BETR'S TOKEN EXPIRES TEN DAYS BEFORE OPENING NIGHT**
+> 🔴🔴🔴 **WITHDRAWN AS A DISCOVERY 2026-09-22 AT §T20.63 — EVERY ELEMENT BELOW WAS ALREADY ON FILE,
+> IN ONE OF THE TWELVE.** **`NBA_SYSTEM_ARCHITECTURE.md:145-149`** *(pre-session)*: *"The token lives
+> in the credentials table and **the job runs ON THE WORKER, never on a GitHub runner** — which is
+> why Betr has no `.github/workflows` entry and **its absence there is by design, not an omission.**
+> **Token life 30 days; `token_expires_at` is `2026-10-10T06:10:56Z`** — about eighteen days from
+> this entry."* followed by *"**BUT THE BETR PULL IS NOT RUNNING — one write, twelve days ago, while
+> the others refresh daily.**"* **Also `NBA_MASTER_SUMMARY.md:15695` and `NBA_OPEN_ITEMS.md:840`.**
+> ⇒ ***The exact timestamp, the 30-day life, the worker-not-an-Action explanation this pass offered
+> as its own insight, and even its "positive" about the live board layer — all already written.***
+> 🔴 **The claims below that this was *"in a field no pass had opened"* and that *"the DATED
+> CONSEQUENCE is new"* are FALSE and are struck.** ✅ **T20-14 remains a REAL and season-critical open
+> item — it is simply not this pass's discovery, and it is re-credited there.**
+> 📌 *The rule-26/28 check WAS run, with the right terms — and its output was piped through `head -8`,
+> it returned more than eight hits, and the truncation was read as the result (§T20.63 §5).*
+
+## 4. ~~🔴🔴 THE FINDING~~ **THE RE-MEASUREMENT** — **BETR'S TOKEN EXPIRES TEN DAYS BEFORE OPENING NIGHT**
 
 **`boards/betr_nba_current_meta.json`, quoted verbatim:**
 ```
