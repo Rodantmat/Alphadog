@@ -36241,3 +36241,118 @@ audit had** — *a prerequisite (`STEP 8`–`10`), an orphaned owner directive (
 one-line operating fact with a date on it.* ⚠⚠ ***And the finding was not hidden: it is three cron
 lines in three files the sweep has read many times. It took writing the day out in order for
 "three crons" to become "one of them happens on a game day."***
+
+---
+
+# §T20.94 — T20 PASS 89: 🔴🔴🔴 **BOTH `P2` AND `P3` CERTIFY *RED* ON EVERY ZERO-GAME DAY — `7` OF THEM LAST SEASON — FOR THE EXACT REASON THEIR CRONS WERE WITHHELD** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **READ-ONLY THROUGHOUT: source
+files and `SELECT` only. Nothing was triggered, deployed or written to the live system.**
+
+## 1. ✅ CLAUSE (ii) — **HIT. GAP ② IS ANSWERED FROM SOURCE AND SCHEMA, UNAMBIGUOUSLY: `P3` IS SAFE TO RUN TWICE.**
+
+**Three independent mechanisms, each verified:**
+
+**① A GUARD CLAUSE IN THE DATABASE** *(live `pg_get_functiondef`, `2026-09-22`)* —
+`nba_score.log_paper_picks(p_date, p_threshold)`:
+> *"`IF EXISTS (SELECT 1 FROM nba_score.paper_picks p WHERE p.strategy = 'standards_3pick_v1' AND
+> p.game_date = p_date) THEN RAISE NOTICE 'paper picks for % already logged - first log wins';
+> RETURN 0; END IF;`"*
+
+**② A PRIMARY KEY UNDERNEATH IT** — `nba_score.paper_picks` carries **`PRIMARY KEY (strategy,
+game_date, player)`**. ✅ **CLAUSE (iv) HIT**: the schema decides it, as registered. ⚠ *And the
+registered alternative — "if no such constraint exists anywhere in `P3`'s write set, that absence is
+itself the finding" — was live: of the four write targets checked, **`paper_picks` is the only one
+with any uniqueness constraint at all.** `final_hp` and `board_snapshots` have none.*
+
+**③ DATE-SCOPED DELETE-AND-REPLACE IN THE SCORER** — `nba/score_board_legs.py:275`,
+**`DELETE FROM nba_score.board_scored WHERE game_date = %s`**, then insert with
+**`ON CONFLICT (game_date, app, player_id, prop, line, side) DO UPDATE`**.
+
+⚠ **THE CONTRAST EARNS ITS LINE**: *that delete is correctly date-scoped, while the
+`DELETE FROM nba_score.final_hp` recorded at `NBA_GLOSSARY.md:1277-1281` carries **no date
+predicate** and is the stated cause of `final_hp` 2025-26 = 140,130* **(PRIOR — pointed at, not
+re-derived)**. 📌 *Operator detail from the same read: the guard refuses **TODAY** before **13:00 PT**
+— the league filing deadline, not the 13:15 doctrine cutoff — and **a replay of a PAST date is always
+permitted.***
+
+## 2. 🔴🔴🔴 GAP ③ — **ANSWERED, AND THE ANSWER IS A SEASON-CRITICAL DEFECT**
+
+**A PRIOR asked this question and left one cell empty.** `NBA_SYSTEM_DESIGN.md`, *"NO GAMES SCHEDULED"
+MUST BE A FIRST-CLASS STATE* — the MLB lesson, quoted there:
+> *"**the system COULD NOT ORIGINALLY DISTINGUISH 'GENUINELY ZERO GAMES TODAY' (e.g. ALL-STAR BREAK)
+> from 'SOMETHING IS BROKEN AND RETURNED ZERO ROWS.'** Build an EXPLICIT, FIRST-CLASS 'NO GAMES
+> SCHEDULED' STATE into the NBA pipeline FROM DAY ONE."*
+
+**Its ambiguity table lists `P2`'s delta gap audit and `P3`'s scored-leg count — and for *The
+certifiers* it says only *"assert freshness and row counts"*, with the "Broken" column left as a
+dash.** 🔑 ***Nobody had opened `certify_pipeline.py` against the question. The answer is not
+ambiguity — it is failure:***
+
+| | zero games | broken |
+|---|---|---|
+| **`PIPE=p2`** *(4 checks)* | 🔴 **FAILS 2** — `baseline_history has today` needs `count(*) > 0`; `baseline props for today` needs `count(DISTINCT prop) >= 25` | identical |
+| **`PIPE=p3`** *(5 checks)* | 🔴 **FAILS 2** — `final_hp has today`; `board archived today` | identical |
+| ✅ **`PIPE=p1`** *(3 checks)* | ✅ **PASSES — date-independent** *(`max(as_of_date)` ≤ 8 days, `> 10k` ratings, `> 400` players)* | would fail correctly |
+
+⚠⚠ **`CERT_STRICT` defaults to `1`** *(`certify_pipeline.py:32`)* **and neither workflow sets it**
+⇒ **`sys.exit(1)`**, printing *"This pipeline did NOT produce what it promised."*
+
+### 🔬 HOW OFTEN — **MEASURED ON A COMPLETED SEASON, NOT ON THE ONE STILL LOADING**
+
+▶ `nba_calendar.games`, live `2026-09-22`: **2025-26, `2025-10-21 → 2026-04-12`, `174` calendar days,
+`167` with games ⇒ 🔴 `7` ZERO-GAME DAYS** — **`2025-11-27`** *(Thanksgiving)* · **`2025-12-24`**
+*(Christmas Eve)* · **`2026-02-14`, `2026-02-16`, `2026-02-17`, `2026-02-18`** *(All-Star break)* ·
+**`2026-04-11`**. ⇒ **`14` guaranteed red builds a season across the two pipelines.**
+⚠ **THE 2026-27 FIGURE WAS DELIBERATELY NOT USED AS THE HEADLINE** *(rule 30)*: the loaded calendar
+shows **`18` in `174`**, but holds **`1,200` games against `1,238`** for 2025-26 — **~30 short of a
+full regular season**, with an implausible eight-day block `2026-12-04 → 2026-12-11` that is far more
+likely an unpublished NBA Cup window than a real dark stretch. **Recorded as an upper bound only.**
+
+### 🔴🔴 THE COLLISION THAT MAKES IT URGENT
+
+`nba-p2-overnight-heavy.yml`'s own header, quoted, is the reason its cron was withheld:
+> *"**a scheduled job failing nightly against an empty schedule trains everyone to ignore red
+> builds.**"*
+
+⇒ ***That reasoning was applied to the OFFSEASON and never to the CALENDAR.*** **The in-season
+schedule reproduces the same condition at least seven times a year, on both pipelines, the moment the
+crons go in.** 🔴 **OWNER DECISION — and it is the small fix the MLB lesson already asked for**: gate
+each certifier's date-scoped checks on `nba_calendar.games` having rows for that date. **The
+distinguishing data exists; only the check does not.** ⚠ **Not fixed — recorded (rule 1).**
+
+## 3. ❌ CLAUSE (iii) — **MISSED, AND THE PREMISE WAS WRONG RATHER THAN THE QUESTIONS**
+
+*Pre-registered: "at least one of the two is NOT answerable and stays `NOT RECORDED` — a pass that
+answers every question it asked is usually asking questions it had already answered."* ❌ **Both were
+answered.** 🔑 **But the reasoning behind the clause does not survive contact with the outcome**:
+*both questions were genuinely unanswered in the twelve — `§T20.93` wrote them because the corpus was
+silent — and both were answerable in one file each.* ⇒ ***The clause conflated "the corpus is silent"
+with "the system is silent." A `NOT RECORDED` is a statement about the documents, and the documents
+are not the only source.*** ⚠ **This is the useful half of the miss and it generalises to the other
+two gaps**: *gap ① is an OWNER DECISION and genuinely cannot be answered here; **gap ④ was dismissed
+as needing in-season data and that dismissal is now suspect — `nba_stats.player_game_log` holds two
+completed seasons.*** **Registered for a later pass rather than answered here.**
+
+## 4. ✅ CLAUSE (i) — `RULE 52`, THIRD RUN
+
+▶ **`2026-09-22T21:26Z`: `648 · 1 · 471 · 469`. Unchanged. No delta to open.**
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: 🔴 **`NBA_SYSTEM_DESIGN.md`'s *"NO GAMES SCHEDULED" MUST BE A
+FIRST-CLASS STATE*** *(**PRIOR, and the novelty probe found it** — *"the NBA calendar has real
+zero-game days: the All-Star break (~5 days), and scattered dates"* was already on file, **so this
+pass claims only the certifier consequence and the enumerated count, and delivers both INTO that
+section's empty cell**)* · **`§T20.93`** *(**PRIOR** — gaps ② and ③ are its questions)* ·
+**`NBA_GLOSSARY.md:1277-1281`** *(**PRIOR** — the unscoped `final_hp` delete, quoted as contrast)* ·
+**`§T20.88`** *(**PRIOR** — the no-cron rationale quoted from the workflow header)*. ▶ **RULE 51, last
+step, BASELINE tree**: *"certify red on a zero-game day"* and *"first log wins"* return **`0`** in the
+twelve; *"no games"* and *"All-Star break"* return hits, **all opened**, and the prior above is what
+they are.
+
+📌 ***The lesson:*** **the prior stated the risk in 2020's words — a zero-game day must not look like
+a failure — and the sweep has now measured that it does not look like one: *it is reported as one*.**
+⚠⚠ ***And the shape recurs: a document asked a question, left a cell blank, and nothing in
+eighty-nine passes opened the one file that answers it. `§T20.90` priced an orphan; this prices a
+blank cell.***
