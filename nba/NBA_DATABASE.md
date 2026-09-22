@@ -14,6 +14,87 @@ transcript. Where a table was altered later, the change is noted with its transc
 
 ---
 
+## 0y-T17-B. 🔴🔴 **THE STORAGE DIET PLAN, AS RECORDED — `storage_diet_plan_2026_09_17`, and the system is at ~31 GB on a 30 GiB disk** *(T17 pass 1, §T17.2)*
+
+⚠⚠ **The measurement that triggered it**: *"we're at roughly **31 GB on a 30 GiB disk with autoscale**
+— worth acting on."* ✅ **The plan is recorded as a config key, explicitly *"ready to execute when the
+system is complete"* rather than run** *(the sequencing the owner set — §0y-T17 below)*.
+
+| # | Item | Size | Why it is safe to give up |
+|---|---|---|---|
+| **1** 🔴 | **SLIM `final_hp` TO A JOIN TABLE** | **4–6 GB** | *"`final_hp` is **11 GB and mostly redundant**. It duplicates `game_id`, `anchor`, `band`, `phase`, `prop_tier`, `n_uncertain` and `baseline_hp` — **every one derivable from `baseline_history` on the same key**, which is itself 11 GB. **We're holding 22 GB for information stored TWICE.**"* ✅ **Keep the keys plus what is genuinely new: `final_hp`, `cal_shift`, `score`, `confidence` and its three components.** |
+| **2** | **DROP FOUR SUPERSEDED PANELS** | **174 MB** | `absence_panel` 87 MB · `absence_panel_v3` 50 MB · `absence_panel_v2` 17 MB · `redistribution_panel` 20 MB — *"every one belongs to the **a2 approach, which is closed**. Their findings live in COMPASS and config; **the tables themselves are rebuildable from the scripts.**"* ⚠ **Plus the pasted `ladder_calibration`, superseded by the as-of version — *"and it was a parity violation besides."*** |
+| **3** | **`VACUUM FULL` the delete-and-rewrite tables** | — | *"`board_snapshots` is **6.6 GB for 7,951 live rows** — mostly the two-season historical archive, which is legitimately needed, **but 5.6 GB of heap suggests bloat** after all the delete-and-rewrite cycles."* ⚠ **One table at a time, since it takes an EXCLUSIVE lock.** |
+| **4** 🔑 | **INDEX AUDIT** | `final_hp` **3.7 GB** · `baseline_history` **3.4 GB** | ***"checking `idx_scan` BEFORE THE SEASON STARTS will show which are actually earning their space."*** ✅✅ **This sweep ran that audit and it found one: `board_outcomes_nm_idx`, 303 MB, zero scans** *(open item **T16-9**)*. |
+
+🔑🔑 **THREE RULES WERE WRITTEN INTO THE PLAN, and they are the transferable part**: **only run when no
+job is mid-write** · **verify row counts either side of each step** · ***"NEVER DROP ANYTHING WHOSE
+FINDINGS AREN'T ALREADY RECORDED."*** ⚠ **That third rule is why the four dead panels are droppable and
+why this sweep's documentation of them matters: the findings survive the tables.**
+
+---
+
+## 0y-T17-C. 🔴🔴 **FOUR INDEXES, THREE WRONG DIAGNOSES, AND ONE `EXPLAIN` — the origin of COMPASS fact 104** *(T17 pass 1, §T17.2)*
+
+*A confidence-sampling query would not complete. **Three diagnoses were made by intuition and all three
+were wrong, at ~30 minutes per cycle.*** ⚠ **The sequence is worth keeping because each fix was
+reasonable and each failed:**
+
+| Attempt | Diagnosis | Result |
+|---|---|---|
+| 1 | *"a function on the join column prevents index use"* → **three expression indexes** on the normalised-name join *(343 + 97 + 47 MB)* | ❌ **still 29 minutes** |
+| 2 | *"the query drives from `final_hp` (38.7M rows) outward with two unconstrained `LEFT JOIN`s, so rows multiply before filtering"* → **restructure to drive from the ~1.2M graded legs, pre-aggregating in CTEs** | ❌ **the same 28-minute wall** |
+| 3 | *"`baseline_history` has a unique key on `(game_date, player_id, game_id, prop, period, line)` but the join looks it up by `(game_date, player_id, prop, line)` — **a composite index only works LEFT-TO-RIGHT**, and the lookup skips `game_id` and `period` in the middle"* → **a covering index, 1,334 MB over 19.34M rows** | ❌ **still 24 minutes** |
+
+🔑🔑🔑 **THEN ONE `EXPLAIN` GAVE THE ANSWER IMMEDIATELY, and it was none of the three**:
+
+> ***"`Parallel Hash Join` cost=1,444,968..1,799,877 — `Parallel Seq Scan on final_hp rows=8,270,978`
+> ← **hashing 8.3M rows**. Postgres chose a hash join… it **refuses a nested-loop-with-index-lookup
+> because the join key contains `replace(replace(o.market_key,…))`** — **a function on the join
+> column — so the unique index on `final_hp` can't be probed. MY INDEXES WERE IRRELEVANT: the planner
+> was never going to use them with a computed key in the condition.**"***
+
+⚠⚠ **AND EVEN THAT WAS NOT THE END** — materialising the graded side into a temp table with the
+functions resolved moved the bottleneck rather than removing it, and the final `EXPLAIN` located it:
+**one prop costs 1.18M with an 841k-row incremental sort; all 30 at once sorts ~19.6M rows in a single
+merge join.** ✅ **The per-prop loop — which `build_final_hp.py` already did — was the fix.**
+
+🔑🔑 **THE RULE THE AUTHOR ADOPTS, in his own words**: ***"on any query that doesn't return promptly,
+READ THE PLAN FIRST — that's now a rule I should treat as NON-NEGOTIABLE, the same way
+sample-testing is."*** ⚠ *It took ~90 minutes to learn and one call to apply.*
+
+✅ **THE FOUR INDEXES ARE PERMANENT INFRASTRUCTURE ANYWAY, and the transcript says why**: *"any future
+query joining baseline components to a leg — **the grader, the calibration checker, the edge backtest,
+the enrichment layer** — was paying the same cost and now won't."* 🔑 **`baseline_history_lookup_idx`
+is covering (`INCLUDE proj_min, rate36, used_emp, role_tier`), so the join is satisfied from the index
+alone without touching the heap — and `[LIVE-AUDIT]` shows it at 23.4M scans, the busiest index in the
+system.** ⚠ **Three of the four earn their keep; the fourth is open item T16-9.**
+
+### ⚠ **A THIRD INSTANCE OF ONE PATTERN, NAMED BY ITS AUTHOR**
+
+> ***"THREE separate jobs have now been killed by pulling millions of rows into the runner. The fix
+> each time is to **PUSH THE JOIN INTO POSTGRES**. That's a pattern I should apply BY DEFAULT rather
+> than after a failure."***
+
+⚠ *And the same lesson in a different costume, one that had already been learned that day:* **"I should
+have written the per-prop results to the database INSIDE THE LOOP from the start, so partial progress
+survived and each iteration was visible. Instead everything accumulates in memory and writes at the
+end, which means **a stall anywhere produces NOTHING and TELLS US NOTHING.** That's the same lesson as
+the CI-log problem earlier today, **and I didn't apply it here.**"* ✅ **Once applied, it worked
+immediately — *"the per-prop writes also fixed the visibility problem: progress is now visible as it
+happens and partial results survive."***
+
+### ⚠ **AND A WORKFLOW BOTTLENECK THAT COST MOST OF AN HOUR**
+
+*"**The single concurrency group on that workflow means every test queues behind every long write.**
+With **34 toggles sharing one workflow**, a **45-minute season write blocks a 4-minute sample**."* ✅
+**Fixed with a separate no-write test workflow** — *"this test started immediately and runs in parallel
+with the season write that was blocking it."* 🔑 **The same move COMPASS fact 104 records for
+`nba-engine-test.yml`, and the second concurrency-group finding in two transcripts** *(the first being
+T16's self-cancelled run — `NBA_WORKERS.md` §0.000)*.
+
+---
+
 ## 0y-T17. 🔑🔑 **"WE NEED A DIET" — the owner's standing storage directive, and it is CONDITIONAL** *(T17 pass 0, §T17.1, owner, 2026-09-19; **0 of the twelve, 0 of the thirty**)*
 
 > ***"Are we being DATA SIZE AWARE? Is there anywhere we are wasting space?"***
