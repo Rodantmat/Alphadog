@@ -25,7 +25,27 @@ inning pills**.*
 | board | source chosen | the evidence |
 |---|---|---|
 | **PrizePicks** | ✅ **ours** *(raw API, `league_id=7`)* | same-moment MLB diff **1,729 vs 1,353 legs**; ParlayAPI drops ~25% of rungs *nearest the standard line* and lags **`age_seconds ≈ 3,300`** — *full decomposition in `NBA_OPEN_ITEMS.md`* |
-| **Sleeper** | ✅ **ours** — `nba/scrape_sleeper_board.py` + `sleeper-board.yml` | public **`api.sleeper.app/lines/available`**, names via **`/v1/players/<sport>`** (slim map), **both-side multipliers**. 🔑 ***Diff: 405 / 91 vs ParlayAPI's 406 / 92 — PER-STAT IDENTICAL*** → **ours anyway, because it is first-party and free** · **1 of thirty, 0 of the twelve** |
+| **Sleeper** | ✅ **ours** — `nba/scrape_sleeper_board.py` + `sleeper-board.yml` | public **`api.sleeper.app/lines/available`**, names via **`/v1/players/<sport>`** (slim map), **both-side multipliers**. 🔑 ***Diff (03:51Z vs 03:53Z): 405 legs / 91 players vs ParlayAPI's 406 / 92 — per-stat counts IDENTICAL, **player+line 180/180 matched, ours-only 0, parlay-only 1 — parity on coverage***** · 🔴 ***AND THE REASON IS NOT PARITY, IT IS THE MULTIPLIERS***: **"ours keeps REAL PER-SIDE MULTIPLIERS; ParlayAPI CONVERTS TO AMERICAN ODDS — use ours, ParlayAPI fallback"** · **1 of thirty, 0 of the twelve** |
+
+> #### 🔴 CORRECTION, 2026-09-22 (§T12.6c) — **two of my own sentences about this row were wrong**
+> **1 · The Sleeper rationale.** *This row previously read "**ours anyway, because it is first-party
+> and free**."* ***That reason is mine, not the transcript's.*** **Segments 211, 215 and 435 all give
+> the same actual reason, and it is a data-fidelity one**: ***ParlayAPI converts Sleeper's per-side
+> multipliers to AMERICAN ODDS, and the slip engine needs the real multipliers.*** **On coverage the
+> two are at parity — that is the point of the 180/180 line — so coverage could not have decided it.**
+> *Rule 19: the entry quoted the figures and dropped the clause that explained them.*
+>
+> **2 · The Underdog arc had a THIRD state, and it is the one that motivates the capture.** *The row
+> below records the 854-line result. **Between segment 134's "ParlayAPI (bot-protected)" and segment
+> 570's 854 lines there is a measured intermediate failure**, stated at segments 211, 215 and 435:*
+> ***"underdog: ours 100 legs / 15 players — IN-GAME ONLY — vs ParlayAPI's 747 / 100 pre-game; our
+> search endpoint call serves only the LIVE view; the pre-game parameter is unknown and probing was
+> blocked tonight by Cloudflare"*** → ***"ParlayAPI PRIMARY until the pre-game parameter is found."***
+> 🔑 **So the owner's "copy as curl" did not merely speed things up — it turned a 100-leg live-only
+> feed into an 854-line pre-game board, and without it Underdog would have stayed on ParlayAPI.**
+> 📌 **Also from segment 215's own summary table, and worth keeping**: **PrizePicks is stated as
+> *"ours +28%"*** *(1,729 / 1,353 = 1.278 ✅ — the normalised form of the diff)*, **and Fliff as
+> *"coverage n/a · ParlayAPI odds · ParlayAPI"*.**
 | **Underdog** | ✅ **ours** *(scraper v3)* | 🔴 **two blind probe rounds TRIPPED CLOUDFLARE** — *"never burst-probe it"* — **and the owner's own *"copy as curl"* capture exposed the lobby-content API.** **Result: 854 lines / 100 players** · **0 of the twelve** |
 | **Fliff** | ⚠ **ParlayAPI** *(not ours, as of T12)* | **the web app WAS reverse-engineered but is UNFINISHED** — see the owner action in `NBA_OPEN_ITEMS.md` · **0 of the twelve** · 🔴 **AND READ THE NARROWING BELOW BEFORE USING THIS ROW** |
 
