@@ -12,6 +12,7 @@ document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 | Date | What |
 |---|---|
 | 2026-09-20 | Created. Material from T4 (methodology), T7 (design + live code), T8 (calibration), T9 (factor layer, periods, combos). |
+| **2026-09-21 → 09-22** | 🔴 **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers `12` commits that this log never recorded.** *T12–T17 material plus the live audits: the leakage rule and two measured priors from T12's tail · §0w the baseline's three production gaps from T13 · **§0u the parity rule as stated** (its four forbids, three requires) · **§0v "certified never meant stored"**, `baseline_history` re-taken live · **§0y/§0y-2 the `oreb` five-hypothesis rebuild** · §0y-1 the calibration checker · **§0z-T16 calibrate in windows, not full seasons** · **§T16.2 the phase × band calibration layer** · §T16.3 per-tier splitting measured HARMFUL · **§T17.2 the calibration parity violation — found in something already applied to 38.7M legs, and fixed**. **Correction in place: LIVE-AUDIT §0v.4 — the PrizePicks archive holds 12 stat types.*** |
 
 ---
 
