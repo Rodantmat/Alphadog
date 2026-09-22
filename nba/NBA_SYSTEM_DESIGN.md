@@ -10,6 +10,127 @@ constraints that shaped it. This is the operational spec.
 
 ---
 
+## 0z-5. 🔴🔴🔴 **"ENRICHMENT IS THIN BY DESIGN, NOT BY FAILURE" — and the corpus's "ten rejected factors" framing is WRONG** *(T17 pass 1, §T17.2)*
+
+⚠⚠ **THIS CORRECTS A FRAMING THIS SWEEP HAS PUBLISHED.** *`NBA_FINAL_SCORING_CALIBRATION.md`
+§0a-T15-SUPERSESSION-2 and §0a-T16 record a long sequence of factor rejections as a single coherent
+result. **The author reached the same framing — "ten tested candidates, and the pattern is
+consistent" — and then retracted it after re-reading the governing documents.***
+
+> ***"**a3, a4, d2 and k1 were NEVER ENRICHMENT CANDIDATES.** §7's stage table already assigns all four
+> to **BASELINE**, and §4 notes a3 is 'measured; in baseline v30'. **So my gate wasn't testing new
+> factors — it was testing DUPLICATES of things the baseline already computes. The zero gains weren't
+> a discovery; THE DOCUMENT PREDICTED THEM.** My 'ten rejected factors' framing was wrong: **several
+> were never candidates.**"***
+
+*The gate that produced them, for the record — **1,248,826 graded legs**: a3 return ramp **+0.00001**,
+a4 rest/b2b/3-in-4 **−0.00002**, k1 coach change **−0.00002**, all three combined **−0.00003**.* 🔑
+**Correct measurements of a question the stage table had already answered.**
+
+🔑🔑🔑 **AND THE POSITIVE STATEMENT IS THE ONE TO CARRY**:
+
+> ***"**ENRICHMENT IS THIN BY DESIGN, NOT BY FAILURE.** §7 lists what actually belongs in phase 2: the
+> 2:30 day-of report, late scratches, projected lineups (rejected), the 2:45 line movement, the
+> book-vs-pick'em gap, and the board itself. **That's the complete set.** The 0.004–0.014 movement I
+> kept treating as a SHORTFALL **is the architecture working as specified — the heavy lifting belongs
+> in the baseline.**"***
+
+⚠⚠ **So the corpus's recurring "the baseline beats every enrichment factor" finding is TRUE but
+MIS-FRAMED as a surprise.** ✅ **It is the design. The owner states it independently — *"all the
+heavyweight needs to be on the baseline"* (§0z §5) — and §7 of the parity document enumerates phase 2's
+complete contents.** 🔑 **The genuine discovery was never "factors fail"; it was that SEVERAL FACTORS
+WERE TESTED AT THE WRONG STAGE, and the measurement cost was paid to re-derive what the stage table
+already said.**
+
+⚠ **The sweep's own failure alongside it**: *it read a long rejection sequence as a single finding
+without checking whether the rejected items were ever candidates. **Rule 7's shape — grep the
+distinctive term before asserting — applied to a FRAMING rather than to a fact.***
+
+---
+
+## 0z-6. ✅ **THE AVAILABILITY MODEL — how "80% confident-band accuracy" was actually reached, and the three bugs on the way** *(T17 pass 1, §T17.2; COMPASS fact 97's evidence)*
+
+### 🔴 THREE BUGS, EACH CAUGHT BY A GUARD OR BY THE OWNER, NONE BY INSPECTION
+
+| # | Bug | How it surfaced |
+|---|---|---|
+| **1** | **A BACKWARD-LOOKING TEAM ACCUMULATOR** — the scenario builder resolved a player's team from games he had already appeared in, so *"for the vast majority of questionable players the lookup is against a team they haven't appeared for yet"* | 🔑 **0 games with uncertainty for 2024-25 and 7 for 2025-26, against 363,689 and 827,562 injury rows** — *"a scenario layer that **silently finds no uncertainty** would have looked fine in production while doing nothing at all"* ✅ **Fixed by reading the team from the injury-report row itself, which carries `matchup` ("hou@okc") and the team's full name — *"I never used either"*** |
+| **2** | **A UNIFORM TRAINING LABEL** — *"`divide by zero encountered in log` at `np.log(base / (1 − base))`, and accuracy 0.0000 across the board. **`base` is 0 or 1**, which means the played-flag lookup is failing"* | ✅ **A guard was added that ABORTS rather than reports**: *"abort: train base rate 0.0000 on 8 rows is not a plausible questionable play rate"* — 🔑 *"a guard like that would have **failed loudly** here instead of producing zeros"* |
+| **3** | 🔴🔴 **FILTERING ON THE FINAL STATUS** — *"I filtered on `last_status == 'questionable'` — the status at the FINAL snapshot. But **by the final report, nearly every questionable has been resolved**. **Only 7 players stayed questionable to the end.** **The final status is the ANSWER, not the feature.**"* | ✅ **Fixed by reading the status at the 2:30 PM DECISION CUTOFF** — the last snapshot before the window *(COMPASS fact 98a)* |
+
+### ✅ THE FOUR LAYERS, AND EACH ONE EARNS ITS PLACE
+
+| Layer | accuracy | AUC |
+|---|---|---|
+| flat 0.552 | 0.5144 | **0.4781** *(worse than a coin flip)* |
+| L1 hierarchical prior | 0.5582 | 0.5790 |
+| L2 gradient boosting | 0.5825 | 0.6217 |
+| **L3 stacked** | **0.5870** | **0.6299** |
+
+⚠ **AND THE AUC GAP AGAINST THE PUBLISHED LITERATURE IS EXPLAINED RATHER THAN EXCUSED**: *"our AUC of
+0.63 versus the published NBA injury-risk study's 0.83 is **expected: they predict INJURY OCCURRENCE
+from workload over weeks; we predict **A COACH'S SAME-DAY INTENT, WHICH IS DELIBERATELY CONCEALED.**"*
+🔑 **And the model's honesty is verified by its own uncertain band: *"the uncertain band's play rate is
+0.529 — if the model were broken, that band would be SKEWED. It sits at the TRUE BASE RATE, meaning
+the model correctly identifies WHICH CASES IT CANNOT CALL."***
+
+### 🔑🔑 THE LEAGUE'S OWN RULES WERE THE FEATURE THAT GOT IT TO 80%
+
+*Three rule-based discriminators, straight from the official source:* **(1) report deadlines differ by
+tip time — the game-day report is due 11am–1pm local, but 8–10am for tips at 5pm or earlier**, *"so for
+early games our 2:30 window is PAST the final deadline"*; **(2) road games have a different rule** —
+*"a team may only list a player as out or doubtful for a road game if the player did not travel or is
+not present in the visiting market"*, so **a road questionable means something different from a home
+one**; **(3) the active list locks 60 minutes before tip — the true resolution moment.**
+
+| | before | **after** |
+|---|---|---|
+| confident band size | 3.0% | **4.2%** |
+| **confident band accuracy** | 65.0% | ✅ **80.0%** |
+| leaning-play accuracy | 69.6% | 72.3% |
+| genuinely uncertain | 80.5% | 79.0% |
+
+### 🔑 THE ROLE SPLIT — **and the operational rule it implies**
+
+| role | n | play rate | accuracy | confident share | **confident accuracy** |
+|---|---|---|---|---|---|
+| **fringe (<15 min)** | 254 | 0.343 | **0.658** | 11.8% | ✅ **86.7%** |
+| rotation (15–25) | 429 | 0.539 | 0.580 | 2.8% | 66.7% |
+| starter (25+) | 639 | 0.567 | 0.571 | 2.0% | 76.9% |
+
+🔑🔑 ***"TRUST THE MODEL FOR FRINGE PLAYERS, AND ROUTE STARTERS AND ROTATION PLAYERS TO THE SCENARIO
+LAYER — which is exactly the split the architecture already supports. NOT ONE THRESHOLD FOR
+EVERYONE."*** ⚠ *"That's the psychological-warfare effect the research described: **teams hang the tag
+on MEANINGFUL players deliberately**, and the resolving decision genuinely isn't made until warmups."*
+
+### ⚠⚠ **MARKET MOVEMENT WAS REJECTED TWICE — and the second rejection is the honest one**
+
+*The hypothesis was strong and the research backed it: **"one star player ruled out can swing a spread
+by 4–5 points within minutes"** and **"beat reporters at shootaround, warmups, travel updates… move
+markets before anything is official"** — **"the market knows before the report does."*** 🔴 **First
+rejection (confident band 4.2% → 3.3%, accuracy 80.0% → 77.3%) was attributed to the author's own
+join**: *"any miss defaults to **0.0**, which the model reads as **'no movement' rather than
+'unknown'** — that dilutes a genuinely strong signal into noise."* ✅ **Re-tested with a proper NaN join
+and a `has_move` indicator — and it STILL failed** *(0.6794 / 0.6191 / 73.5% against 0.6780 / 0.6216 /
+79.6%)*. 🔑 **THE STRUCTURAL REASON**: *"**our window snapshot is 14:45 PT**, while the injury-driven
+line moves happen **at shootaround and in the final 60 minutes before tip — AFTER our capture. We're
+measuring a window that closes before the information arrives.** A **tip-60 snapshot** would test it
+fairly; our current data cannot."* ⚠ **So the factor is not refuted — it is unmeasurable with the data
+the system currently captures, and the capture change that would test it is named.**
+
+### 🔑🔑 **AND A SELECTOR BUG WORTH MORE THAN THE MODEL — a yield metric that a human would reject**
+
+*The automatic selector initially ranked **"per-tier + player history" top at 0.0469 purely because it
+flagged 6.7% of cases**, despite **worse accuracy (70.5% vs 79.6%) and materially worse AUC (0.589 vs
+0.622)**.* 🔴 ***"A WIDER BAND OF WEAKER CALLS ISN'T BETTER — A BAD CALL COSTS A LEG."*** ✅ **Fixed with
+an ACCURACY FLOOR ≥75% applied BEFORE maximising share, with AUC as tie-break** — *"so the automatic
+selector can't pick a configuration a human would reject on sight."* **Four configurations were then
+rejected by the floor**, and the selected one is **pooled + player history: 79.6% confident accuracy on
+4.1% of cases.** 🔑 **A selection metric is a model too, and this one was wrong in a way no amount of
+model quality would have fixed.**
+
+---
+
 ## 0z-3. 🔴🔴🔴 **THE BUILD-ORDER LOCK — what will NOT be built, and in what order the rest comes** *(T17 pass 0, §T17.1, owner, 2026-09-19; **0 of the twelve, 0 of the thirty**, positive controls passed)*
 
 > ***"**Leg correlation is a SLIP-BUILDING level — we will not work on that until we have the final HP
