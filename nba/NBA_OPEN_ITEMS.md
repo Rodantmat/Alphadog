@@ -93,6 +93,23 @@
 >
 > ⇒ ***The fix window does NOT bind. Nothing but one credential is blocked by the calendar.***
 >
+> ## 🔴 **THE COLUMN ABOVE IS DENOMINATED IN `14`. THE BRIEF IS `16`.** *(T20 pass 113, `§T20.118`)*
+> **`T20-15` and `T20-17` were added to the brief AFTER `§T20.75` built that table and were never
+> given a verdict** — and `T20-17` is **SEASON-CRITICAL and SILENT**. *Both recipes below were RUN,
+> read-only, `2026-09-22`; a test recipe that has not been executed is exactly the
+> language-exceeding-evidence failure rule 2 forbids.*
+>
+> | item | **fixable & provable TODAY?** | the command, and what it returned |
+> |---|---|---|
+> | **`T20-15`** *(zero-game days certify RED)* | ✅ **YES — `TESTABLE NOW`, one `SELECT`** | `generate_series('2025-10-21','2026-04-12')` `LEFT JOIN` a `count(*)` of `nba_calendar.games` by `game_date` ⇒ **`174` days in the window, `7` with zero games: `2025-11-27` · `2025-12-24` · `2026-02-14` · `2026-02-16` · `2026-02-17` · `2026-02-18` · `2026-04-11`.** 🔑 **Thanksgiving, Christmas Eve, the All-Star break and one April date — the item's `7` reproduces EXACTLY, and the dates name themselves.** *The certifier half needs only a source read of `certify_pipeline.py`; nothing has to run.* |
+| **`T20-17`** *(a dropped injury shard silently truncates the delta)* | ⚠ **PARTLY — `TESTABLE NOW` as a PRECONDITION, never as an OCCURRENCE** | 🔴 **The occurrence is unobservable BY CONSTRUCTION** — `build_availability_delta.py:70–71` is `except Exception: pass`, so a dropped shard leaves no row, no log line and no count. ✅ **But the precondition IS checkable, and this is the pre-flight to run before every slate**: read `shards` from `nba/data/nba_injury_report_<slug>_index.json` and confirm every `nba_injury_report_<slug>_<shard>.json` is fetchable. ▶ **Run `2026-09-22` on `2025_26`: `7` shards declared, `0` missing, `176` days_done — the invariant HOLDS today, which is the baseline a later run is compared against.** ⚠ *The handler fetches over `raw.githubusercontent`, so "present in the repo" is the proxy for "fetchable"; a network failure is not reproducible in advance.* |
+>
+> ⇒ ⚠ **The summary line above should read `15 of 16`, not `13 of 14`** — *`T20-15` joins the
+> provable column outright and `T20-17` joins it only for its precondition.* 🔑 ***And `T20-17` is the
+> first item in this brief whose OCCURRENCE no test can ever reach — which is not a gap in the
+> testing, it is the item's own defect restated: a handler that leaves no trace cannot be audited
+> after the fact, only guarded before it.***
+>
 > ### ✅ AND A RULE-1 OPEN QUESTION, RESOLVED BY RE-DERIVATION *(§T20.75)*
 > *The corpus carried, undecided: "the stored 2026-27 regular-season slate is 1,200 games — 30 short
 > of 1,230 … per Rule 1 this entry does not choose."* ▶ **`nba_calendar.games` holds `1,266` rows for
