@@ -12789,6 +12789,41 @@ hand — which is also the moment the missing `season` input would have to be re
 > ⇒ ⚠ **Option (b) above — derive the season from the slate date — is not a redesign; it is applying
 > a pattern this codebase already uses in four places.**
 
+> ### 🔴🔴🔴 **WIDENED ONE PASS LATER, 2026-09-22 (§T20.34) — FIVE MORE LITERALS, ALL IN **P2**. RUNNING TOTAL `7`.**
+> *Censused: the THREE pipeline workflows in full (P1 12 script invocations · P2 15 · P3 12) plus
+> **8** of their scripts grepped directly, in four spellings (`2025-26`, `2025_26`, `2026-27`,
+> `2026_27`) plus `get\(.*SEASON` and `season\s*=`.* ⚠ **RULE 17: a FLOOR, not a total — 8 of ~35
+> scripts.**
+>
+> | # | location | code |
+> |---|---|---|
+> | 🆕 1 | `nba-p2-overnight-heavy.yml:31` | `default: "2025-26"` — the `workflow_dispatch` `season` input, **root of the next two** |
+> | 🆕 2 | `nba-p2-overnight-heavy.yml:128` | `GAP_SEASON: ${{ … \|\| '2025-26' }}` → `check_delta_gaps.py` |
+> | 🆕 3 | `nba-p2-overnight-heavy.yml:274` | `C3_SEASONS: ${{ … \|\| '2025-26' }}` → `build_confidence_v3.py` |
+> | 🔴🔴 4 | **`nba/check_delta_gaps.py:42`** | `season = os.environ.get("GAP_SEASON","2025-26")` → `slug = season.replace("-","_")` — **a FILENAME slug** |
+> | 🆕 5 | `nba/build_confidence_v3.py:99` | `os.environ.get("C3_SEASONS","2024-25,2025-26")` — **two literals in one default** |
+>
+> ⇒ ***SYSTEMIC, not confined to P3: at least two of the three pipelines carry the defect, so the fix
+> is a SHARED RESOLVER, not three edits.***
+> 🔴🔴🔴 **AND THE SHARPEST INSTANCE — A DOCSTRING THAT CONTRADICTS ITS OWN CODE.**
+> `check_delta_gaps.py` **line 24**: *"Env: DATABASE_URL, GAP_SEASON, GAP_FROM, GAP_TO (defaults:
+> **current season**, full range)"*. **Line 42**: `season = os.environ.get("GAP_SEASON", "2025-26")`.
+> ***The file documents dynamic resolution and implements a literal, eighteen lines apart.*** **A
+> reader auditing this script for season-safety, using its own documentation, concludes it is safe.**
+> ⚠ **And it explains why the corpus missed it: the twelve mention `check_delta_gaps` **25** times and
+> `build_confidence_v3` **28** times, while `GAP_SEASON` appears **2** times (both merely as an
+> env-var NAME in a list) and `C3_SEASONS` **0**. *The corpus documented the scripts and never their
+> defaults.***
+> ✅✅ **THE FIX ALREADY EXISTS IN THIS REPO — four of the eight scripts are clean, and two show the
+> right shape**: `nba-p1-weekly-static.yml` passes `SEASONS_N` (a **count**, default `'1'`) and
+> `MODE: "season"`, carrying **zero** season literals; `nba/load_baseline_ladder.py` READS
+> `current_season` out of the ladder artefact's own metadata instead of assuming it;
+> `nba/nba_asof.py` and `nba/archive_live_boards.py` are also clean. ✅ *`certify_pipeline.py` is
+> season-agnostic, keyed on `game_date` only — which is exactly why it catches the wrong-season
+> failure.*
+> ⇒ ⚠ **Option (b) above — derive the season from the slate date — is not a redesign; it is applying
+> a pattern this codebase already uses in four places.**
+
 ---
 
 ## T20-3 · **NEW · OWNER DECISION · 🔴 SEASON-CRITICAL** · the scheduler holds ten MLB jobs, two still ENABLED, and zero NBA
