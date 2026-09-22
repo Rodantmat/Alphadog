@@ -12419,11 +12419,31 @@ after `2026-09-03-22-38-55`. **Together they are 66,557 chars — more than half
 `thinking` volume.**
 ✅ **T1's was read**: the run log records it measured at `52 / 33,578 / 1,774`, mean 645.7, and **T1
 pass 65 recovered a rationale *"from T1's thinking blocks"***.
-⚠ **NOT RECORDED: whether T2's and T3's were read at that depth, or read under the later "labels"
-expectation.** **This is answerable from the T2 and T3 ledger rows — one check, no re-reading unless
-it comes back short.** **Severity: METHOD, potentially HIGH** *(T1–T3 are where the architecture was
-chosen)*, **and it is recorded as the thing to CHECK, not as a claim that anything was missed.**
-*(Census and break-point evidence: `NBA_MASTER_SUMMARY.md` §T18.4.)*
+✅ **MEASURED RATHER THAN LEFT OPEN** *(2026-09-22T11:31:19Z; the ledger rows were checked first and
+do not settle it — T1's names 89 passes, T2's 19, T3's 14, and T3's says "all 466 TAIL segments read",
+which is a different stratum; T4's is the first to say "all FOUR strata read", and T4 is the first
+transcript past the break)*. **So the sweep's own coverage instrument was run on the long (>200 char)
+`thinking` blocks of each, against the twelve — WITH A CONTROL, because an uncovered rate has no
+meaning without one** *(rule 22)*:
+
+| transcript | `thinking` uncovered | **prose** uncovered | `tool_result` uncovered |
+|---|---|---|---|
+| T1 `03-22-04` | **77%** (36 of 47) | **50%** (n=38) | 92% (n=200) |
+| T2 `04-41-28` | **73%** (27 of 37) | **54%** (n=39) | 98% (n=303) |
+| T3 `22-24-13` | **69%** (18 of 26) | **40%** (n=35) | 98% (n=247) |
+
+🔑 **The ordering is `prose < thinking < tool_result` on ALL THREE, with no exception** — **thinking
+is 19–29 points less represented in the twelve than the PROSE OF THE SAME TRANSCRIPTS, and 15–29
+points more represented than raw tool output.**
+⚠⚠ **STATED AT EVIDENCE STRENGTH, AND THIS IS THE WHOLE CAVEAT**: **the instrument measures LEXICAL
+overlap, so it cannot distinguish "not absorbed" from "absorbed in different words."** **A high
+uncovered rate is NORMAL and expected for `tool_result` — raw output is not meant to be copied into
+documents.** ⇒ ***The measurement does NOT show that anything was missed. What it shows is an
+ORDERING, and the ordering is consistent.***
+⇒ **NARROWED TO A BOUNDED, CHEAP ACTION**: **81 long `thinking` segments across T1–T3 sit below the
+0.40 coverage threshold** *(36 + 27 + 18)*. **That is a readable quantity — one focused pass, not a
+re-sweep.** **Severity: METHOD, MEDIUM** *(downgraded from "potentially HIGH" now that it is
+measured and bounded)*. *(Census and break-point evidence: `NBA_MASTER_SUMMARY.md` §T18.4.)*
 
 ## T18-14 · **NEW · HIGH** · the certifier has no magnitude check on P3 and certifies on a single row
 **`certify_pipeline.py` (live source, 2026-09-22): of its twelve checks, only THREE are plausibility
