@@ -203,6 +203,49 @@ a payout-table validity check and a different subject, **dismissed**.)*
 1. 🔴🔴 ***"market join must be properly keyed before the engine consumes it — a coarse join produced
    a FALSE 2.9%-vs-56% ARBITRAGE SIGNAL."*** **A join defect that manufactured an apparent
    53-point edge.** *`coarse join` · `market join` · `properly keyed` — **0 of thirty each.***
+   > ## 🔑🔑 **ORIGIN AND DIAGNOSIS FOUND — 2026-09-22 (T13 pass 1, §T13.2)**
+   > *Transcript `2026-09-13-01-03-48`, the prose stratum. ⚠⚠ **This item was recorded as having no
+   > origin in the corpus. It has one — in a DIFFERENT TRANSCRIPT from the one that raised it.***
+   >
+   > **THE SIGNAL, as first produced**: *"for **130 Over rungs**, the sportsbook consensus implies
+   > **2.9%** while Underdog prices the same player, same stat, same line, same timestamp at
+   > **−130 (56.4%)**. **If real, that's a free-money arbitrage of absurd size — which almost always
+   > means a data problem, not an edge.**"*
+   > 🔑 ***It was never believed.*** **It was flagged as untrustworthy IN THE SAME BREATH it was
+   > produced** — *"something I don't trust, and it's worth showing you why rather than reporting it
+   > as a finding."* ⚠ **The open item's wording — *"a coarse join PRODUCED a false signal"* — reads
+   > as a defect that got through. It did not get through; it was caught immediately.**
+   >
+   > **THE VERIFICATION, quoted**: *"for **Aaron Gordon Over 24.5** at that exact timestamp, the
+   > books agree closely with each other (**+1300 Bovada, +1700 DraftKings, +1300 FanDuel ≈ 6–7%**),
+   > and **Underdog has NO ROW at that rung at all**. So the books are internally consistent, and
+   > **the anomaly is in how my aggregate query paired Underdog rows to book rows — not in the
+   > underlying data.**"*
+   >
+   > **THE REQUIRED FIX, stated verbatim and STILL OPEN**: *"the per-tier hold analysis needs a
+   > **properly keyed join — matching on the EXACT RUNG WITHIN A LADDER, and EXCLUDING SENTINEL
+   > PRICES** — before any number from it goes anywhere near the model."*
+   > 🔑 ***"Excluding sentinel prices" is a second requirement the item does not carry at all***, and
+   > it is not optional: `NBA_GOBLIN_DEMON.md` §0h shows the PrizePicks alternate population carries
+   > **exactly two prices, `+100` and `−137`, on every rung** — **so any hold computed across a
+   > PrizePicks–book join is computed against two constants.**
+   >
+   > 📌 **AN OBSERVATION IN THE EVIDENCE THAT THE TRANSCRIPT DOES NOT NAME** *(recorded at its own
+   > evidence strength — rule 19)*: the verification result set returned **five rows**, and they are
+   > **`Aaron Gordon` AND `Eric Gordon`** — *same `market_key` (`player_points_alternate`), same
+   > `side`, same `line` 24.5, same `snapshot_ts`, prices +1300/+1700/+1300 against +2144/+2000.*
+   > ⚠⚠ **The transcript attributes the artifact only to "how my aggregate query paired rows" and
+   > NEVER names a mechanism. A surname collision is consistent with the rows shown and is NOT
+   > stated by the source** — **so it is a HYPOTHESIS, and the proper keying above must be tested
+   > against it rather than assumed to cover it.**
+   >
+   > ⚠ **THE GENERALISATION, which is why this item outranks its size** *(quoted)*: *"it's the same
+   > class of error that would **silently produce a beautiful, wrong backtest**: a market-data join
+   > that **looks right, aggregates cleanly, and quietly pairs mismatched rungs.**"*
+   > **It is therefore a REQUIRED VALIDATION STEP before the scoring engine consumes market data at
+   > all** — **not a defect to repair once.**
+   > ⚠ **Stated at evidence strength and NOT acted on** *(rule 1)*: no join, query or pipeline was
+   > changed.
 2. 🔴 ***"injury index files report `days_done: 0` while rows are correct — the counter was never
    written during the shard migration; repair before any job reads it to decide re-fetches."***
    **A stale counter that a re-fetch decision would read as "nothing done."**
