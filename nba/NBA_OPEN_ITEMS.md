@@ -12803,6 +12803,39 @@ rebuilt.**
 > able to write production tables at all, and whether `run_storage_diet.py` belongs in it ·
 > **(e)** retire or disable `gbdt-training.yml`'s cron with the other MLB residue.
 
+> ### 🔑🔑 **SHARPENED ONE PASS LATER, 2026-09-22 (§T20.39) — THE CERTIFIER IS CHECKING THE *SIBLING*, NOT NOTHING**
+> *Found by RENDERING the map into `NBA_WORKERS.md` §0.00000 rather than printing it — four facts
+> the tabular pass had not surfaced.*
+>
+> | certifier asserts | who writes it | what the pipeline ACTUALLY writes |
+> |---|---|---|
+> | 🔴 P2 → `nba_score.baseline_history` | `load_baseline_history.py`, **not in P2** | ✅ **`nba_score.baseline_ladder` — live `206,237` rows**, via `load_baseline_ladder.py` **step 15** |
+> | 🔴 P3 → `nba_score.final_hp` | `build_final_hp.py`, **not in P3** | ✅ **`nba_score.board_scored`**, via `score_board_legs.py` **step 10** |
+>
+> 🔑🔑 ***P2 produces `baseline_ladder` and is asked about `baseline_history`; P3 produces
+> `board_scored` and is asked about `final_hp`.*** ⇒ ⚠ **The corpus's node-level account was right
+> about the FUNCTION of each pipeline and wrong about the OBJECT — the missing view cost PRECISION,
+> not comprehension.**
+> ⚠⚠ **AND IT CHANGES OPTION (a) FROM A BUG REPORT INTO A REAL DECISION**: *should the pipeline also
+> BUILD the asserted table, or should the assertion NAME the table the pipeline builds?* **Only you
+> know which was intended, and the two are not equivalent: `baseline_ladder` (206,237 rows, one
+> slate) and `baseline_history` (19.34M rows, two seasons) are different objects at different
+> grains, as are `board_scored` (12.8M) and `final_hp` (19.2M).**
+>
+> 🔑 **THREE FURTHER EDGE FACTS from the same rendering**: ① **`export_market_spreads.py` writes
+> NOTHING to the database** — it runs in BOTH P2 (step 11) and P3 (step 7) and has no
+> `INSERT`/`CREATE TABLE` at all; *it is a FILE producer, so its `MS_SEASONS` default governs a file,
+> not a row* · ② **P2 invokes THREE ladder builders, not one** — `build_baseline_ladder.py`,
+> `build_combos_ladder.py`, `build_periods_ladder.py` (steps 12–14), **none of which writes to the DB**;
+> *the combos builder is the one whose absence the corpus prices at **"44% of the board"*** ·
+> ③ **ELEVEN of P1's FOURTEEN scripts write no database row**, which makes T11's headline finding (2)
+> *("the two-hop architecture's second hop is missing for a whole family")* **countable: P1's exposure
+> is 11 of 14.**
+> ✅ **Live while rendering**: `baseline_ladder` **206,237** · `baseline_ladder_runs` latest `asof`
+> **2026-03-15** · `nba_ref.referee_assignments` **0** *(confirming §T10 byte-exact, and P2 invokes
+> its writer)* · `availability_delta` **4,274** · `paper_picks` **0**.
+> ✅✅ **THE MISSING VIEW IS NO LONGER MISSING — `NBA_WORKERS.md` §0.00000 now carries the edge.**
+
 ---
 
 ## T20-5 · **NEW · 🔴🔴 SEASON-CRITICAL · THE ONLY SILENT ONE** · the grader's default window ends `2026-04-12`, and nothing catches it
