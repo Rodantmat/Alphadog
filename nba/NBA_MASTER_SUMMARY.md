@@ -23684,7 +23684,7 @@ the larger number.* **Corrected in all five copies.**
 | `LADDER_DEPTH` — **20 keys** | **the block read, not counted by pattern** | **20** ✅ |
 | **13 match / 7 not / 20 keys / +2 non-keys = 22 props** | live max-offset per prop vs the block | **sums** ✅ |
 | Season defaults **47**, set **45**, never set **2**, **45 + 2 = 47** | AST **and** strict YAML key match | **exact, both methods agree** ✅ |
-| Files naming `nba_season` — **20 of 135** | directory walk | **exact** ✅ |
+| Files naming `nba_season` — ~~**20 of 135**~~ → **24 of 136** | directory walk | ⚠ **was marked "exact ✅" — re-taken 2026-09-22T07:15Z (§T12.7d), propagated by §T20.14** |
 | **T8 corpus 615 = 609 assistant + 6 human** | `segments()` on the T8 transcript | **exact — and it sums**, which §T9.28a's stale copy never did ✅ |
 | `VBANDS_ALL` **2** references · `variation_bands` **0** | repo-wide, all file types | **exact** ✅ |
 | Coverage, re-measured | `judge9.py`, identical parameters | **694 / 677** — *drifted again from 696 / 679 (pass 11) and 703 / 685 (pass 0)* |
