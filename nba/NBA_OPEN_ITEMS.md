@@ -12468,7 +12468,37 @@ acceptance test for P2 was never run.**
 
 ---
 
-## T18-9 · **NEW · OWNER DECISION** · the early-tip clause makes 1:15 PM PT conservative on some slates
+## T18-9 · ⚠⚠⚠ **CORRECTED 2026-09-22 (T19 pass 1) — THIS ENTRY WAS FRAMED BACKWARDS, AND AN EXISTING ENTRY ALREADY SAID SO**
+🔴 **As first written, T18-9 called the early-tip clause an OPPORTUNITY — *"1:15 PM PT is correct but
+conservative; every report is in by 10 a.m. local, so P3 could run earlier."*** ***That is the wrong
+way round, and this file already carried the right one.***
+✅ **The existing entry — `NBA_OPEN_ITEMS.md` §*P3's trigger is wrong on early-tip days* — states it
+correctly and is older**: the original design was explicit that the master run *"isn't a fixed clock
+time — NBA start times shift day to day — so it needs to be computed dynamically from
+`nba_calendar.games`: **today's earliest real tip-off minus 2 hours**."* **P3 uses a fixed 1:15 PM PT.
+The NBA regularly schedules noon and 1 PM Eastern starts** *(Christmas, MLK Day, weekend national-TV
+windows)*, **and a 12:00 PM ET tip is 9:00 AM PT — so on those days P3 would score a slate whose
+games had ALREADY TIPPED.** **The fix is `min(1:15 PM PT, earliest_tip − 2h)`, and the schedule data
+is already loaded.**
+⇒ ***The early-tip clause is not an opportunity to run EARLIER by choice. It is the same fact that
+makes the fixed trigger WRONG — and the failure direction is scoring after tip-off, not leaving value
+on the table.***
+🔑 **What T18-9's evidence DOES add to the existing entry, and all it adds**: the NBA's own filing
+rule explains WHY early tips are a distinct regime — ***teams file 8–10 a.m. local for tip-offs at 5
+p.m. or earlier***, rather than 11 a.m.–1 p.m. *(quoted from the web source T18 retrieved at SEG
+483/484; authority named per rule 11)*. **So on an early-tip slate the reports ARE in early — which is
+what makes `earliest_tip − 2h` feasible rather than merely necessary.**
+⚠⚠ **HOW THIS SWEEP GOT IT WRONG, recorded because the lesson is rule 7's**: the pass probed
+`8 and 10 a.m.` and `5 p.m. or earlier` — both returned **0** — and concluded the material was novel.
+**It never probed `earliest tip`, which returns SIX hits and would have surfaced the entry that
+already had the conclusion.** ***A novelty probe on the words of the EVIDENCE is not a novelty probe
+on the words of the CLAIM.*** *(Rule 7: before asserting something is unrecorded, grep its
+distinctive term — and the distinctive term is the CLAIM's, not the source's.)*
+**Severity: HIGH** *(inherited from the existing entry — scoring a tipped slate is a correctness
+failure, not a missed optimisation)*. **The OWNER DECISION framing is WITHDRAWN: there is nothing to
+decide, only a fix to apply after the sweep ends.**
+
+### *(original text of T18-9, kept per the §0w precedent)* · the early-tip clause makes 1:15 PM PT conservative on some slates
 **The NBA rule, as quoted by the web source T18 retrieved** *(mechanism stratum SEG 483/484 — one of
 only two `web_search` calls in the whole transcript)*: teams file the game-day report **11 a.m.–1 p.m.
 local**, **but 8–10 a.m. local for tip-offs at 5 p.m. or earlier**, and **by 1 p.m. local for the
