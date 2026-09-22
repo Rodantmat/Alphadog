@@ -17,6 +17,16 @@ transcript. Where a table was altered later, the change is noted with its transc
 
 ## 0y-T17-B. 🔴🔴 **THE STORAGE DIET PLAN, AS RECORDED — `storage_diet_plan_2026_09_17`, and the system is at ~31 GB on a 30 GiB disk** *(T17 pass 1, §T17.2)*
 
+> 🔴🔴 **THE PLAN IS AIMED AT A DATABASE THAT HAS SINCE MOVED — `T20-2`, an OWNER DECISION.** *Added here T20 pass 78 (§T20.83), 2026-09-22: **this page records the plan and not its obsolescence**, and a person about to execute it reads this page.* ▶ **Re-derived live `2026-09-22T19:25Z` (§T20.75), `nba_config.classification_config` key `storage_diet_plan_2026_09_17`, status `PLANNED`:**
+> | the plan says | live today |
+> |---|---|
+> | `final_hp` **"11 GB … 38.1M rows"** | 🔴 **`9,391 MB` · `19,215,200` rows** *(exact count)* |
+> | `board_outcomes` `1,366 MB` | 🔴 **`2,151 MB`** — grown `57%` |
+> | `board_tiers` `362 MB` | **`459 MB`** · `2,199,354` rows |
+> | `rung_market` `206 MB` | **`253 MB`** · `1,057,765` rows |
+> | `board_snapshots` `6,604 MB` | ✅ **`6,604 MB`** — unchanged *(no NBA board row since `2026-04-12`)* |
+> 🔑 ***The plan's single largest saving — "slim `final_hp`, 4–6 GB" — was sized against a table that has since halved on its own. Its arithmetic needs re-taking before it is executed, and its own status line already says "execute ONLY after the full system is complete and no job is mid-write".*** ⚠ **`n_live_tup` is NOT used above: it reported `19,320,938` for `final_hp` and `0` for `board_tiers`, while `board_snapshots` showed `7,951` live tuples against `6.6 GB` — the estimates are stale (§T20.75).** ▶ **Full item: `T20-2` in `NBA_OPEN_ITEMS.md`; re-derived and HELD at §T20.75.** ⚠ *Documented, not fixed (rule 1).*
+
 ⚠⚠ **The measurement that triggered it**: *"we're at roughly **31 GB on a 30 GiB disk with autoscale**
 — worth acting on."* ✅ **The plan is recorded as a config key, explicitly *"ready to execute when the
 system is complete"* rather than run** *(the sequencing the owner set — §0y-T17 below)*.
