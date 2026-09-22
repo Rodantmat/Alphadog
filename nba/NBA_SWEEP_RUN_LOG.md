@@ -16,7 +16,25 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 🔴🔴 **RULE 49 — BORN T20 PASS 9 (§T20.14), 2026-09-22.** ***A CORRECTION IS NOT COMPLETE UNTIL THE OLD
 LITERAL HAS BEEN COUNTED ACROSS ALL TWELVE AND EVERY FLAT SURFACE WALKED. "Corrected in place" names
-ONE place.*** **Born from a FOURTH instance of the same shape, each found by a later pass and none by
+ONE place.***
+
+> ⚠⚠ **PROVENANCE CORRECTED 2026-09-22, ONE PASS LATER (§T20.15) — RULE 49 IS A PROCEDURE FOR AN
+> ALREADY-NAMED FAILURE, NOT A NEW DIAGNOSIS.** ***The sweep had already diagnosed this at T9, in
+> three directions, and written the better general principle.*** **§T9.25a** — *"a correction
+> propagates to the ENTRY and the topical documents, and **stops at the SUMMARY ROWS**, which are what
+> a reader reads first"*; **§T9.26a** — the entry's own heading; **§T9.28a** — the corpus preamble;
+> and the closing statement already in this log: ***"Three passes, three directions, one failure…
+> there is no safe direction — a figure is at risk wherever it was RE-TYPED RATHER THAN DERIVED."***
+> 🔑 **That last clause is sharper than rule 49's own wording and is the real rule; keep it.**
+> ✅ **What 49 adds is the MECHANICAL REMEDY the diagnosis never got**: *take the old value as a
+> literal, count it across all twelve, and OPEN every hit (rule 26) to sort into **(a)** bare
+> present-tense assertion — defect · **(b)** attributed, dated historical quotation — sound · **(c)**
+> collision — noise, with **rule 19** as the discriminator and **rule 15** as the stop condition when
+> a literal is too short to grep safely.*
+> ⚠ ***This provenance miss is §T11.51d's failure mode exactly*** — *"READ THIS INDEX BEFORE WRITING
+> ANY CLAIM ABOUT THE SWEEP'S OWN METHOD… two of nine method characterisations turned out to be rules
+> the sweep itself had already written"* — **and the instruction sits four lines below this table.
+> It was not followed before rule 49 was written.** **Born from a FOURTH instance of the same shape, each found by a later pass and none by
 the correcting pass:** *(1) the `2026-10-20` date — 78 mentions, 58 uncorrected (§T10.18b); (2) the
 research-standard table rows 5/8/27, fixed in the body of the very document whose table stayed wrong
 (§T20.9); (3) `38,686,696`, corrected in two documents and left bare in a third (§T20.13); (4)
