@@ -28808,3 +28808,122 @@ SCOPE fails — and the proof is that the third instance is not a correction, is
 not in the documents at all. It is a column name in a live schema.*** 🔑 **The transferable form:
 `raw_json` is what the thing is CALLED; `jsonb` is what it IS. Every instance of this defect, in all
 three places, is a claim that tested the name and reported on the thing.**
+
+---
+
+# §T20.29 — PASS 24: *THE STORAGE DIET IS AIMED AT A DATABASE THAT NO LONGER EXISTS*
+
+*(T20 pass 24, written 2026-09-22 · **RULE 46 STILL BINDS — T20 CANNOT CLOSE IN THIS SESSION**)*
+
+✅ **Charter re-read before this pass — T19 SEG 60/61 and T20 SEG 597. SEG 1120's form rule applied.**
+⚠⚠ **READ-ONLY, and deliberately so: `SELECT` only. Nothing trimmed, dropped, vacuumed, reindexed or
+resized — §0v records that a `VACUUM FULL` is exactly how the read-only incident was caused (rule 1).**
+
+## 1. 🎯 WHY THIS, NOW
+
+**The owner's directive `§0y-T17` — *"WE NEED A DIET"* — is CONDITIONAL and SEASON-CRITICAL, and the
+regular season opens `2026-10-20`.** **§T20.28 found a diet CONSTRAINT written against a column
+name; this pass checks the PLAN itself, which has never been re-read against live state.**
+
+> **PLAN, read off the system (rule 21):** `nba_config.classification_config` →
+> **`storage_diet_plan_2026_09_17`**, `status` = ***"PLANNED — execute ONLY after the full system is
+> complete and no job is mid-write."***
+> **LIVE DISTRIBUTION, re-taken 2026-09-22T15:05:22Z:** `pg_total_relation_size` /
+> `pg_indexes_size` / `reltuples` over **368 base tables, all schemas**, total **`42.95 GB`**.
+> ⚠ **`pp_*` objects EXCLUDED as the concurrent session's: `12` tables, `544 MB`.**
+> ⚠ **`nba_market.prop_universe` (898 MB, rank 8) is MID-REBUILD — size reported, counts NOT final.**
+
+## 2. 🔴🔴🔴 THE PLAN'S OWN TABLE OF "BIGGEST TABLES" IS WRONG IN FIVE OF SIX ROWS
+
+| plan target *(2026-09-17)* | plan states | **live 2026-09-22** | live rank | |
+|---|---|---|---|---|
+| `baseline_history` | 11 GB · heap 7,881 · **idx 3,390** · 19.25M rows | **12,812 MB · idx `4,929`** | **#1** | 🔴 **GREW; index +45%** |
+| `final_hp` | 11 GB · heap 7,343 · idx 3,694 · **38.1M rows** | **9,391 MB · idx `2,266` · `19.3M` rows** | **#2** | 🔴🔴 **the plan holds the PRE-TRUNCATION table** |
+| `board_snapshots` | 6,604 MB | **6,604 MB** | #3 | ✅ **EXACT — the only row that holds** |
+| `board_outcomes` | 1,366 MB | **2,151 MB** | #5 | 🔴 **+57%** |
+| `board_tiers` | 362 MB | **459 MB** | **#11** | 🔴 **+27%, and no longer a big table** |
+| `rung_market` | 206 MB | **253 MB** | **#15** | 🔴 **+23%, and no longer a big table** |
+| — *(not named at all)* | — | **`nba_score.board_scored` 2,948 MB** | **#4** | 🔴 **a top-five object the plan does not mention** |
+
+🔴🔴🔴 **THE HEADLINE — A CORRECTION THE CORPUS ALREADY MADE NEVER REACHED THE SYSTEM'S OWN PLAN.**
+**§T20.13 corrected `38,686,696` to `19,215,200 rows LIVE` across three document surfaces.
+`storage_diet_plan_2026_09_17` still says *"38.1M rows"* — twice.** ⇒ ***§T9.25a's shape (*"a
+correction stops at the summary rows"*) extended to a surface no pass had considered: the correction
+propagated through the DOCUMENTS and stopped at the database.*** 📌 **Fourth instance of the
+surface/scope family — §T20.22 pointers · §T20.27 prose · §T20.28 live schema · §T20.29 live config.**
+
+⚠ **`measured_total: "~31 GB against a 30 GiB disk"` is stale by ~12 GB — live total is `42.95 GB`**,
+consistent with §0v's independently-recorded `19 GB → 43 GB`.
+
+## 3. 🔴🔴 `action_4_index_audit` NAMES THE WRONG TABLE
+
+> *"`final_hp` carries **3,694 MB** of indexes on 38.1M rows, `baseline_history` **3,390 MB**. Check
+> `pg_stat_user_indexes.idx_scan` before the season starts."*
+
+| | plan | **live** | |
+|---|---|---|---|
+| `final_hp` indexes | 3,694 MB | **2,266 MB** | ⬇ **−39%** |
+| `baseline_history` indexes | 3,390 MB | **4,929 MB** | ⬆ **+45%** |
+
+⇒ ***The action points at `final_hp` first. Today `baseline_history` carries more than DOUBLE
+`final_hp`'s index footprint and is the largest index surface in the database.*** ✅ **The action's
+INSTRUCTION is still right — check `idx_scan` before the season — but its TARGET ORDER is inverted.**
+
+## 4. ✅✅ `action_2_drop_superseded` IS **ALREADY DONE** — *and the plan still says PLANNED*
+
+**All five objects it names are GONE** *(rule 20, three vocabularies: probed by exact name, by
+`ILIKE '%absence%' / '%redistrib%' / '%panel%' / '%ladder_cal%'`, and across every schema)*:
+
+> `absence_panel` (87 MB) · `absence_panel_v2` (17 MB) · `absence_panel_v3` (50 MB) ·
+> `redistribution_panel` (20 MB) · `nba_score.ladder_calibration` — **none exists.**
+> ✅ **Survivors are the intended replacements, not the targets**: `nba_score.ladder_calibration_asof`
+> **2 MB / 9,904 rows** *(matching §T20.13's pass-8 figure exactly)*, plus
+> `nba_score.absence_panel_teams` **1 MB / 4,630** and `nba_score.redistribution_factors`
+> **16 MB / 51,806** — **different tables, not renamed panels.**
+
+🔴 ***So `status: "PLANNED"` is false for one of the plan's four actions, and the ~174 MB it projects
+as recoverable has already been recovered.*** ⚠ **A reader budgeting the diet from this plan would
+double-count that saving.**
+
+## 5. ⚖️ `action_1_slim_final_hp` — RIGHT TOTAL, WRONG ARITHMETIC
+
+> *"`final_hp` duplicates game_id, anchor, band, phase, prop_tier, n_uncertain and baseline_hp …
+> **22 GB currently holds the same information twice** … **Est. 4–6 GB recovered**, zero information
+> lost."*
+
+✅ **The `22 GB` still holds: `9,391 + 12,812 = 22,203 MB ≈ 21.7 GB` — within 2%.**
+🔴 ***But it holds by COINCIDENCE: `final_hp` shrank ~1.6 GB while `baseline_history` grew ~1.8 GB.
+The two errors cancel.***
+🔴🔴 **And the saving does not survive the row-count correction.** *The 4–6 GB was estimated against
+**38.1M** `final_hp` rows; the table holds **19.3M**. Its live heap is `9,391 − 2,266 = 7,125 MB`, so
+seven duplicated columns out of a fourteen-column keep-list cannot yield 4–6 GB from a 7.1 GB heap —
+**a proportional re-derivation lands near `2–3 GB`**, a **>50%** shortfall against the stated range.*
+✅ **CLAUSE (iii) HIT at more than twice its 20% threshold.** ⚠ *Stated as a bound, not a precise
+figure: the exact saving needs column-width measurement, which this pass does not run.*
+
+## 6. 📋 CLAUSE SCORING *(pre-registered before this pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `uncovered12` moves by **no more than ±3** | ✅ **HIT — Δ = 0.** `470 → 470` at **2026-09-22T15:05:22Z** |
+| **(ii)** | the plan **names an object no longer in the top five**, or **omits a top-three** | ✅ **HIT on both limbs.** *Names `board_tiers` (**#11**) and `rung_market` (**#15**); and while all three of today's top three ARE named, it omits **`board_scored`, #4 at 2,948 MB**.* ❌ *The "plan is still correctly aimed" branch — which would have been the first stored artifact in this thread to come back clean — is not available.* |
+| **(iii)** | the projected saving differs by **> 20%** | ✅ **HIT — >50%.** *4–6 GB estimated against 38.1M rows; the table holds 19.3M.* |
+
+✅ **Baseline `636 · 2 · 484 · 481` — TWENTY-SIXTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 7. ⚠ VERDICT
+
+🔴 **NOT CLEAN — the live storage plan's size table is wrong in five of six rows, its status is false
+for one of four actions, its index action names the wrong table, and its headline saving rests on a
+row count the corpus corrected five days ago. CLEAN STAYS 0/3.**
+⚠⚠ **NOTHING WAS FIXED IN THE SYSTEM (rule 1) — the plan lives in `nba_config` and this sweep does
+not write there. Recorded for the owner; see the new open item.**
+⚠⚠ **RULE 46 BARS CLOSURE FROM THIS CONTEXT — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+
+📌 ***The lesson:*** **every previous pass in this thread found the corpus's account of the system
+drifting. This one found the SYSTEM'S OWN STORED PLAN drifting, five days after it was written, while
+the documents that describe it had already been corrected.** ***A correction that propagates through
+the documentation and stops at the database leaves the WORSE copy in the place that gets executed
+from.*** 🔑 **And it is the same shape a fourth time: §T20.13 corrected the figure wherever the
+figure was WRITTEN — the plan holds the same figure somewhere nobody was looking, because it is not
+a document.**
