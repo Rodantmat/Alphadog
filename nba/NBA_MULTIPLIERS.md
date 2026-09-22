@@ -588,7 +588,7 @@ side. It is not a ladder.**
 |---|---|---|
 | **PrizePicks historical tiers** | **the ONLY app with historical tier structure, and it is complete** — *866k graded legs, tiers −3 to +3, both anchor types* | ✅ **held in full** |
 | **Underdog Odds API archive** | **483k rows of genuinely priced lines, ONE RUNG EACH** — *"an excellent second opinion on probability, but it can't teach us Underdog's tier economics"* | ✅ **real, and NOT tiers** |
-| **Underdog LIVE ladders** | the `alternate_projections` endpoint built into the scraper, ***"which does return full ladders with real multipliers — already running every two hours"*** | ⚠ **prospective; NOT RECORDED whether any have landed** |
+| **Underdog LIVE ladders** | the `alternate_projections` endpoint built into the scraper, ***"which does return full ladders with real multipliers — already running every two hours"*** | ✅ **BUILT, MEASURED AND OWNER-VERIFIED — see §0.9e.4** |
 | **The 1,401 rungs / 385 ladders** | an **external example set** used as a *"structural prior"*, **not our data** | ⚠ **and see §0.9e.2 — the arithmetic drawn from it was a UNITS ERROR** |
 | **Sleeper** | *"no tiers at all — one line per player-stat, priced by side"* | 🔴 **nothing to map** |
 
