@@ -12365,6 +12365,18 @@ and no patch toward one, anywhere in the session.** ⇒ **The refactor was not m
 it was never begun.** **Severity: HIGH, unchanged.** *Without it P3 either refits (~64 min, past its
 window) or scores against a ladder it did not fit.*
 
+## T19-4 · **NEW · CAVEAT** · `psycopg` rejects multi-command SQL the moment a query is parameterised
+**`cannot insert multiple commands into a prepared statement`** — raised by `psycopg` when a single
+`execute()` carries both several statements AND bind parameters. **It killed the first
+`build_board_tiers_v2.py` run** *(`nba-engine-test.yml`, run `35487587311`, step "board tiers v2
+(four-way taxonomy)", conclusion `failure`)*, **where `CREATE TABLE … ; TRUNCATE … ; INSERT … %(apps)s`
+was one blob.**
+✅ **The shipped fix, and the reason the script looks the way it does**: **the DDL, the `TRUNCATE` and
+the parameterised `INSERT` are THREE SEPARATE `execute()` calls.**
+🔑 **Recorded as a CAVEAT rather than a bug** — the behaviour is `psycopg`'s, not the system's — **and
+because the same shape recurs in every builder that creates-then-fills a table.**
+**Severity: LOW** *(fixed, and it fails loudly)*. *(T19 pass 2, `NBA_MASTER_SUMMARY.md` §T19.3.)*
+
 ## T19-3 · 🔴🔴 **NEW · METHOD, HIGH** · T15–T18 were closed on a standard this sweep had already superseded
 **`NBA_MASTER_SUMMARY.md` records the sweep's own method** *(lines ~5430–5438, "THE METHOD, now proven
 and fixed for T2–T16")*: **targeted sweeps build the skeleton, then *"full sequential reads — and
