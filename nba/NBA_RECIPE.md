@@ -551,3 +551,86 @@ already reported.** Full methodology, the three techniques and the six named fai
 | 19 | Enrichment engine, **A2 five failed panels**, N1 status resolution, prop reliability audit, live board archiver | T15 |
 | 20 | **A2 retracted**, defender ratings rebuilt, **blowout on the real market spread**, matchup via market-implied totals, 60-season-prop rebuild, phase-aware calibration | T16 |
 | 21 | **The final calculation engine** — final HP, confidence, score, edge; as-of calibration parity fix; the three pipelines | live session |
+
+---
+
+# 🔴🔴🔴 **STEP 12 — THE GAME-DAY TIMELINE** *(written 2026-09-22, T20 pass 88, §T20.93)*
+
+> 🔑 **`STEP 0`–`STEP 7` say how the founding work was done. `STEP 8`/`9`/`10` say what each pipeline
+> DOES. `STEP 11` says in what ORDER the layers must be BUILT. **Nothing said what a DAY looks like** —
+> what fires, against which clock, and what a person must start by hand because nothing starts it.**
+> ⚠⚠ **This is not an explainer. With the regular season opening `2026-10-20`, it is the operating
+> procedure**, and the first line of it is the one nobody had written down.
+
+## 🔴🔴🔴 THE FACT THE TIMELINE EXISTS TO STATE
+
+> ## **EXACTLY ONE NBA WORKFLOW FIRES ON A GAME DAY, AND IT IS THE REFEREE CAPTURE.**
+
+▶ **Re-derived from the repo, `2026-09-22T21:17:56Z`, tree `90c347439d98e93a9bb3941ef0d5f5af15f13068`**
+*(`ls .github/workflows/` = **40** files; `nba-*.yml` = **34**, of which `nba-pp-payout-map.yml`
+belongs to the concurrent build chat and is **out of scope** ⇒ **33 in scope**; `grep -c "cron:"` on
+each)*:
+
+| workflow | cron | cadence | game-day relevance |
+|---|---|---|---|
+| `nba-referees.yml` | `30 15 * * *` | **DAILY** | ✅ **the only one** |
+| `nba-p1-weekly-static.yml` | `0 19 * * 1` | Mondays | reference data, not a game-day job |
+| `nba-scrape.yml` | `0 9 * * 1` | Mondays | static re-check, not a game-day job |
+| **the other 30** | 🔴 **none** | — | **`workflow_dispatch:` only** |
+
+⇒ ***The board archive, the injury report, the grader, the daily delta, the absence panel, starter
+status, game lines, the market snapshot, `P2` and `P3` — every one of them waits to be pressed.***
+🔑 *This is `§T20.88`'s P2/P3 finding at its full size: **the missing triggers are not two gaps in an
+otherwise automatic day; they are the day.***
+
+## ⏱ THE DAY, IN ORDER — *and what starts each row*
+
+| # | when *(PT)* | what | trigger | source |
+|---|---|---|---|---|
+| **1** | **~01:00** *(PST; `09:00 UTC`, so **02:00 during PDT**)* | **`P2` — the overnight heavy run.** 18 steps: resolve slate → daily-delta ingestion → day-before injury filing → referees & per-game matchups → baseline inputs → commit → **delta gap audit** → **grade last night's board** → grade paper picks → market spreads/totals → **build the baseline ladder** → components/combos/periods → merge → commit → load into Postgres → **as-of calibration** → **refit blowout** → **refit confidence deduction** → `certify P2` | 🔴 **NONE — `workflow_dispatch:` only.** *The intended cron is stated in the file and deliberately withheld until the season starts.* | `.github/workflows/nba-p2-overnight-heavy.yml`, `STEP 9` |
+| **2** | **~06:00–07:00** | NBA publishes the day's **referee assignments** *(they are never archived by the league, so if they are not captured they are gone)* | — | `nba-referees.yml` header |
+| **3** | **~08:30** *(PDT; **07:30 once DST ends `2026-11-01`**)* | **`nba-referees.yml` captures the assignments** | ✅ **cron `30 15 * * *`** — **the day's only automatic event** | the workflow file |
+| **4** | **12:00 noon** | **The game-day injury report is DUE from the league** | — | `nba-p3-afternoon-light.yml` header, COMPASS fact 107 |
+| **5** | **13:15 — THE CUTOFF** | ***The first moment the full slate is knowable.*** **`P3` — the day-of light run.** 11 steps: **assert the cutoff has passed** → day-of injury report → other board scrapers → **archive boards into Postgres** → board tiers *(goblin / standard / demon)* → market snapshot & rung market → commit day-of data → **availability delta** → **score the board (all apps, all rungs, both directions)** → log paper-trading picks → `certify P3` | 🔴 **NONE — `workflow_dispatch:` only.** *Intended cron `'15 21 * * *'`, stated in the file.* | `.github/workflows/nba-p3-afternoon-light.yml`, `STEP 10` |
+| **6** | **≥ 16:00** | **earliest tip** | — | `nba-p3` header |
+| **7** | **overnight** | outcomes land; **they are graded by the NEXT day's `P2` step 8**, not by anything on this day | 🔴 none | `P2` step *"Grade last night's board outcomes"* |
+
+## ⏱ THE FOUR CLOCKS, LAID SIDE BY SIDE FOR THE FIRST TIME
+
+*Each of these is **already recorded** — the timeline's contribution is putting them in one table
+(rules 26/28: all four are PRIORS, quoted and pointed at, none re-discovered here).*
+
+| clock | written as | what it actually is | already on file at |
+|---|---|---|---|
+| **`P1`** `0 19 * * 1` | *"Mondays 19:00 UTC = 12:00 PT (11:00 PT during PDT)"* | 🔴 **inverted** — `19:00 UTC` is **12:00 PDT** and **11:00 PST**; the season runs **12 days at 12:00 PT and 133 at 11:00** | `NBA_MASTER_SUMMARY.md` §31131–§31148 |
+| **`nba-referees`** `30 15 * * *` | *"08:30 UTC-7 = ~08:30 PT"* | ⚠ **true only during PDT** — from `2026-11-01` it runs **07:30 PT**. *It still clears the ~06:00–07:00 posting, but the margin narrows from ~90 minutes to as little as 30* | `NBA_MASTER_SUMMARY.md:3731` |
+| **`P2`** *(planned)* `0 9 * * *` | *"09:00 UTC = 01:00 PT"* | ⚠ **PST-correct, PDT-wrong** — **02:00 PT for the season's first 12 days** | `NBA_MASTER_SUMMARY.md:3725` |
+| **`P3`** *(planned)* `15 21 * * *` | *"1:15 PM PST (and 2:15 PM PDT…)"* | ✅ **the only one whose comment states BOTH** — and it reasons about the consequence *("still clears the earliest 4 PM PT tip by 105 minutes")* | the workflow file |
+| **the Python layer** | `PT = timezone(timedelta(hours=-8))` | 🔴 **a PST hardcode with no DST awareness — `T20-12`** | `nba/build_availability_delta.py:39`; `NBA_OPEN_ITEMS.md` `T20-12` |
+
+⇒ 🔑🔑 ***Three of the five describe themselves in the wrong half of the year, and the season crosses
+DST on `2026-11-01`, twelve days after opening night.*** ⚠ **None of this is new and none of it is
+disputed** — *what is new is that a reader can now see all five at once instead of in five sections
+of four documents.*
+
+## ⚠⚠ WHAT THE TWELVE DO NOT SAY — `NOT RECORDED` *(rule 6 — written as gaps, never inferred)*
+
+1. 🔴 **WHO PRESSES THE BUTTONS ON OPENING NIGHT.** *`P2` and `P3` have no trigger and the files say
+   the crons go in "at season start". **No document names who adds them, or by when.*** ⚠ *This is
+   the prerequisite `§T20.88` found and it is still open; the timeline makes its shape concrete —
+   **until those two lines exist, the system produces nothing on a game day except a referee table.***
+2. **WHETHER `P3` MAY BE RUN MORE THAN ONCE IN A DAY.** *The cutoff guard asserts the cutoff has
+   PASSED, which permits any later run; **whether a second run is safe, idempotent, or double-writes
+   the paper-trading log is `NOT RECORDED`.***
+3. **WHAT HAPPENS ON A DAY WITH NO GAMES.** *`P3` resolves a slate date and asserts a cutoff; **no
+   document states whether an empty slate is a clean no-op or a failure**, and `STEP 9`'s note that a
+   nightly red build "trains everyone to ignore red builds" makes the answer matter.*
+4. **THE ORDER OF `P2` AND THE PREVIOUS DAY'S OUTCOMES.** *`P2` step 8 grades "last night's board",
+   but **no document states how long after the final buzzer the box scores are complete enough to
+   grade**, so whether `01:00 PT` is early is unestablished.*
+
+> 📌 **POINTERS OUT** *(§T20.90's discipline — a step that cites a finding gives it a real route)*:
+> **`STEP 9`** and **`STEP 10`** for what `P2`/`P3` do · **`STEP 11`** for the build order beneath
+> them · **`§0z-3`** for the owner's build-order lock · **`T20-12`** for the Python DST hardcode ·
+> **`T20-5`** for `grade_board_outcomes.py`'s hardcoded date window, which is the same class of defect
+> one layer down.
