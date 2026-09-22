@@ -114,6 +114,54 @@ thirty most recent are all Pages builds — UNANSWERED, not zero** *(rule 22)*.
 🔑 ***This sits directly under T11's standing headline that the two-hop architecture's second hop is
 missing for a whole scraper family — and it is the PRIMARY board.***
 
+## 0f-2. 🔑 **TWO MORE THINGS FROM THE SAME DECISION BLOCK — the ParlayAPI downgrade's REASONING, and a correction the corpus may have taken at face value**
+*Recorded 2026-09-22 (T13 pass 3, §T13.4g).*
+
+### ✅ WHY THE SPORTSBOOKS ARE NOT SCRAPED — *the reasoning behind a decision already on file*
+> *"Scraping DraftKings / FanDuel / BetMGM props ourselves **is not easy — they're the hardest
+> targets in this whole space** *(Akamai/Imperva bot walls, geofenced, endpoints changed often)*,
+> and **keeping five book scrapers alive is a maintenance job in itself. That's precisely what an
+> aggregator is for, and I wouldn't replace it with scrapers.**"*
+🔑 **The division that results**: ***pick'em boards = our scrapers · sportsbooks = ParlayAPI live +
+The Odds API history.*** 📌 **And the one exception named**: **DraftKings `Pick6` IS a board** *(a
+pick'em)* — **already in The Odds API `us_dfs` history and carried live by ParlayAPI** — *"a candidate
+for its own scraper like the others, **but only if you actually use it**."*
+
+### ✅ THE DOWNGRADE ARITHMETIC — *§T13.1d recorded the TERMS as 0 of thirty; this is the working*
+| need | in-season volume | alternative |
+|---|---|---|
+| sportsbook prop lines *(book-vs-pick'em gap)* | **2–4 pulls/day × 3 credits** | The Odds API live `us` region — **~10k credits/day, too expensive on the cheap plan** |
+| game lines + line movement | **~30 pulls/day** | The Odds API game odds are cheap |
+| board fallback | **only when a scraper breaks** | none needed most days |
+| historical archive | **done — no longer needed** | — |
+
+**Measured usage: 3,715 credits this month, *"most of that my probing."*** **Steady state ≈ 100
+credits/day for NBA; ~300/day with MLB and hockey ≈ 9k/month — under half of the 20k tier.**
+🔑 ***"The `/props` endpoint and the bookmaker list are NOT tier-gated — only the ARCHIVE was"***,
+**so the downgrade loses only history beyond 168 hours**, *"and we no longer need it."*
+✅ **Two safeguards specified with it, both in 0 of thirty**: **log the `x-requests-remaining` header
+the bridge already reads into `nba_control`, so a month trending toward the cap raises a warning**;
+and ***"since the cheap tier keeps only 7 days of history, our own board scrapers archive every pull
+from opening day — so we build our own history rather than relying on the vendor's."***
+
+### ⚠ A CORRECTION MADE INSIDE THE TRANSCRIPT — *rule 27 in miniature, and worth flagging*
+**The Fliff ping response returned `"sorry, Fliff is not available in California"`, restriction code
+`15001`**, and the first write-up drew the conclusion — *"**for you it's a market signal to compare
+against, not a book to play**."* 🔴 **The owner corrected it twice**: *"noted and corrected —
+**you're in California and use Fliff**, so that restriction entry doesn't apply to your account"* ·
+*"**Fliff: corrected — you play it from California**; the scraper stands as built."*
+✅ **`15001` and the restriction text are in 0 of the TWELVE** *(pinned 2026-09-22T08:20:06Z)*, **so
+the corpus did not inherit the wrong version** — **recorded here so that a future reader who meets
+the raw `15001` response does not re-derive it.**
+📌 **And the Fliff protocol detail the corpus lacked**: *"the board **isn't behind the RPC** I'd found
+earlier at all; the web app uses a simpler JSON call — **`fc_mobile_api_public` with an EMPTY auth
+token and EMPTY location token: no login, no geo check**"*, in **three steps — `ping` (returns the
+feed host) → a **global sync** (every active event) → a **per-event sync** (the whole board for that
+game)** — ⚠ *"the only wrinkle was that **the sync must go to the `herald-2` feed host, not the core
+host**"* *(`herald-2` is in **0 of thirty**)*. ✅ **And the same-moment diff that justified it: ours
+2,434 legs on 5 MLB games against ParlayAPI's 663 — full ladders vs main lines only, both sides with
+previous price and update time vs American only.**
+
 ## 0f. 🔴🔴 THE FOUR LIVE BOARD SOURCES — **each chosen by a same-moment diff, and three of the four had no evidence in the twelve** *(⚠ see §0f-1: there are FIVE — Betr is the fifth)*
 *Recorded 2026-09-21 (T12 pass 2, §T12.3). **Transcript `2026-09-11-21-01-23`, segments 90–91, 570,
 604, 615, 636.** Probed against the baseline `c5798146` with controls (`board_sources_decision` 4 of
