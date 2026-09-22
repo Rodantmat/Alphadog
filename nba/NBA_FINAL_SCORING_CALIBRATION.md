@@ -2966,7 +2966,7 @@ already been taken."*
 | **2** | **Never apply a tier/pool-level multiplier to a heterogeneous population** — MLB's costliest error; use `Σ wᵢ(pᵢ·mᵢ)` per cell |
 | **3** | **Multiple, genuinely DIFFERENT research passes per candidate** — *"not the same query with a different threshold"* |
 | **4** | **Gemini as a genuine ADVERSARY, not a rubber stamp** — *"asked to SET ITS OWN [test/criteria]"* |
-| **5** | **The three-check discipline on every number before reporting it** — (a) correct lane/join, (b) …, (c) … |
+| **5** | **The three-check discipline on every number before reporting it** — **(a)** correct lane/join *"via a validated join, not a raw flag that may be stale or wrong"* · **(b)** corrupted/known-bad day exclusion *"exclude any day with a confirmed data-quality issue"* · **(c)** day-robustness / leave-one-day-out *"a pooled, aggregate result can be entirely carried by one or two outlier days"* |
 | **6** | **Statistical significance done properly — DAY-LEVEL clustering, not pooled-leg-level, AND properly volume-weighted** |
 | **7** | **Multiple-comparisons correction, scaled to what was ACTUALLY SEARCHED** |
 | **8** | *(sequence continues)* |
