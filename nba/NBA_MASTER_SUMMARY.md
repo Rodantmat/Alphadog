@@ -27334,7 +27334,24 @@ nothing in the corpus distinguishes the two.***
 📌 **The figure moved for an innocent reason**: `current_season()` rolls on `month >= 7`, so the file
 count changed with the season rollover, not with a bug. **The defect is entirely in propagation.**
 
-## 4. 🔴🔴 RULE 49 — *four instances is no longer a pattern, it is a missing step*
+> ## 🔴🔴🔴 THIS SECTION'S RULE 49 IS RETIRED — *and its propagation mis-framed a DATED figure as a RETRACTED one*
+> **Recorded 2026-09-22 by §T20.16, two passes later.** ***Rule 49 is a duplicate of RULE 40***
+> *(born T18 pass 7)*: **"A CORRECTION IS NOT A CORRECTION UNTIL IT REACHES EVERY DOCUMENT THAT
+> ASSERTS THE OLD FIGURE"** — **and rule 40 already specifies the instrument this section believed it
+> was inventing**: *"find every struck-through value in the twelve, then check whether that same value
+> is still asserted UN-STRUCK anywhere else."*
+> 🔴 **AND RULE 40'S SECOND HALF IS THE ONE THIS SECTION BROKE**: *"distinguish a RETRACTED figure from
+> a DATED one — `233/211` was WRONG and must carry its retraction everywhere; `110,955` was **RIGHT
+> WHEN WRITTEN** and needs a DATE, not a correction."*
+> ***`20 of 135` is a DATED figure.*** **§T12.7d records why it moved**: `current_season()` rolls on
+> `month >= 7`, **so the season rolled over and the count changed — the figure was correct when
+> written.** ⚠ **Striking it on six surfaces tells a reader it was an error. It was not.**
+> ✅ **The propagation itself stands** — every one of the six also carries the date and the §-pointer,
+> which is what rule 40's second half actually requires. **What was wrong is the strike, not the walk.**
+> 📌 *Kept rather than rewritten, per rule 40's own principle: a correct supersession must not destroy
+> the original.*
+
+## 4. ~~🔴🔴 RULE 49~~ — *four instances is no longer a pattern, it is a missing step* **(RETIRED — see the block above)**
 
 > ### **A CORRECTION IS NOT COMPLETE UNTIL THE OLD LITERAL HAS BEEN COUNTED ACROSS ALL TWELVE AND EVERY FLAT SURFACE WALKED. "Corrected in place" names ONE place.**
 
