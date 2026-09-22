@@ -11,6 +11,136 @@ The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION
 
 ---
 
+## 0a-T17. 🔴🔴🔴 **THE CONFIDENCE SPECIFICATION, IN THE OWNER'S OWN WORDS — the source of COMPASS facts 101–103, and it carries FOUR requirements the corpus did not hold** *(T17 pass 0, §T17.1, from the 2026-09-19 transcript; **eight of ten probes returned 0 of the twelve AND 0 of the thirty**, positive controls passed — `confidence` returns 456 of the thirty and 300 of the twelve on the same machinery)*
+
+⚠⚠ **T17's owner stratum is the CONFIDENCE design-authority stratum: 41 turns, 13,690 chars — the most
+owner turns of any transcript — including four long specification turns (1,931 · 1,594 · 1,210 · 968
+chars).** *§0a-T16-C below carries the COMPASS's summary of this design. **This is where it was
+specified.***
+
+### 🔑🔑🔑 1 · **THE DEFINITION, AND IT IS STATED AS A CORRECTION**
+
+> ***"The confidence reflects NOT the hit probability, but the ASSERTIVENESS OF THE DATA WE HAVE on
+> the probability that was generated. What's the amount of data I have? Are the factors properly
+> mined? Are they COMPLETE? Are they RELIABLE? Is it the REAL factor or is it DERIVED? How does the
+> MARKET support that hit probability? How CONSTANT is that player? How is the FORM? How is the TEAM
+> FORM? … **The confidence is MY THERMOMETER** — is my data real and reliable, supporting that final
+> hit probability percentage — **because like 20%, 40%, 60% of confidence makes no sense. That's
+> totally stupid.**"***
+
+✅ **COMPASS fact 101's *"data thermometer, not a probability"* is this turn.** 🔑 **And the seven named
+inputs are the specification**: *mined · complete · reliable · **REAL vs DERIVED** · market
+corroboration · player consistency · form (player and team)*.
+
+### 🔴🔴 2 · **THE FLOOR — "NEVER LOWER THAN 60, 70%" — AND *"NO CAPS"*** *(0 of the twelve, 0 of the thirty)*
+
+> ***"That confidence SHOULD NOT BE LOWER THAN LIKE 60, 70%. NEVER — because hardly ever are we not
+> gonna have data to back it up. So the confidence should be VERY HIGH, because our system is very
+> sharp on the data… **We're not trying to make a low confidence — THE OPPOSITE.**"***
+>
+> 🔴 ***"NO CAPS. I DON'T WANT CAPS, I WANT REAL LOGIC."***
+
+⚠⚠ **RECORD THE *"NO CAPS"* LINE AGAINST COMPASS FACT 102, WHICH SPECIFIES A CAP**: *"each factor's
+share comes from how much realised `|gap|` separates its high-value legs from its low-value legs,
+**with a per-factor cap (REDISTRIBUTING the excess, not just clipping)** and a floor for factors that
+measure no separation."* 🔑 **The two are reconcilable and the reconciliation is in fact 102's own
+parenthesis — a cap that REDISTRIBUTES is not a cap that CLIPS, and the owner's objection is to
+clipping a real signal.** ⚠ **But no document states that reconciliation, and a reader meeting "no
+caps" and "per-factor cap" in two places has no way to tell which governs.**
+
+✅ **AND THE FLOOR IS ACKNOWLEDGED BY THE OWNER LATER IN THE SAME SESSION**: *"I understand that the
+bottom, **the 55 for the confidence**, is like **if everything goes against you**, right? Which is
+hardly ever."* 🔑 **So fact 101's ~55 floor is not an imposed cap — it is the arithmetic bottom of the
+deduction stack, and the owner reads it that way.** ✅ **`[LIVE-AUDIT]` confirms the floor is never
+approached: live confidence runs 0.8540–0.9841** *(§0a-T16-C §4)*, **inside the owner's own stated
+expectation of *"some may even score 100, some 90, 95, some have missing data or the market's not
+backing up, so maybe 75, 80."***
+
+### 🔑🔑🔑 3 · **THE CALIBRATION TARGET — and it is an operational definition, not a preference** *(0 of the twelve, 0 of the thirty)*
+
+> ***"The calibration of the confidence is on **HOW ASSERTIVE OUR FINAL HIT PROBABILITY IS on these two
+> past seasons**. And you should look at **which groups have LOWER assertiveness on the final HP — the
+> confidence should be LOWER** — and the ones that are very, very precise should have a HIGHER
+> confidence as well."***
+>
+> *and, restated:* ***"be sure that on legs that are ASSERTED the confidence is higher, and legs that
+> are not so assertive the confidence is less high accordingly — **of course not FORCED**, but find
+> the proper SIGNALS."***
+
+🔑🔑 **That makes confidence a MEASURED per-group reliability of the HP itself**, which is exactly
+COMPASS fact 102's *"deduction weights are MEASURED, not assigned"* — ⚠ **and the *"of course not
+forced"* is the owner pre-empting the equal-mass-quartile failure fact 101 records** *(a ranking that
+forces 25% of legs to be "low" however good the data)*. 🔑 **The owner specified the fix before he saw
+the failure.**
+
+⚠ **AND THE GROUPS ARE ENUMERATED, REPEATEDLY**: *"all player tiers, all season times, all prop lines,
+different teams, different variations, goblins, demons, different apps"* · *"player tiers, prop lines,
+variation, direction, all kinds of different groups **that can change drastically in confidence**"*.
+
+### 🔑🔑 4 · **THE THREE-PART DEFINITION OF THE PRODUCT** *(0 of the twelve, 0 of the thirty)*
+
+> ***"**Final HP is the MAIN PRODUCT.** **Confidence** is the real confidence of that leg — data
+> existence and completion, also the quality of data and assertiveness and certainty, and finally the
+> market data backing it up and also the quality and amount of data of it. And **the SCORE is BOTH —
+> final HP and confidence into consideration.**"***
+>
+> *and on enrichment's job:* ***"be sure the enrichment pipeline has any kind of enhancement — **this
+> should be the job for the enrichment: getting the baseline and making it even more accurate.**"***
+
+⚠⚠ **THAT LAST CLAUSE IS THE OWNER STATING, ON 2026-09-19, THE CONCLUSION THE 09-13 SESSION REACHED BY
+MEASUREMENT** *(§0a-T15-SUPERSESSION-2: the certified baseline beats every enrichment factor, and the
+one thing that beat it out-of-sample was a CORRECTION to the baseline rather than a competitor)*. 🔑
+**"Enrichment's job is to make the baseline more accurate" and "the phase × band calibration layer
+wins by correcting the baseline" are the same statement, reached six days apart from opposite
+directions.**
+
+### ✅ 5 · **THE HP SHAPE THE OWNER EXPECTS — and it is what COMPASS fact 99b measures**
+
+> ***"One very easy goblin needs to be a VERY HIGH hit probability percentage. **The average legs
+> should be around the 50% band.** And very hard goblins should be near a VERY LOW number."***
+
+| | owner's expectation | **fact 99b, measured** |
+|---|---|---|
+| easy goblins | *"very high"* | **0.6996** |
+| **average / standard line** | ***"around the 50% band"*** | ✅ **0.5014** |
+| hard demons | *"a very low number"* | **0.2167** |
+
+🔑🔑 **The engine reproduces the owner's stated shape without having been fitted to it, and the standard
+line lands on a coin flip** — *which `NBA_GOBLIN_DEMON.md` §0e-T16-C records as the cleanest sanity
+check in the system. **This is the specification it satisfies.***
+
+⚠ *And the turn that produced it was a challenge, not a confirmation:* *"these percentage numbers
+you're giving to me, **they look weird — they don't look like what I need**, unless you're showing me
+different percentages of something else."*
+
+### ⚠ 6 · **AN EXPLICIT MLB CROSS-REFERENCE INSTRUCTION** *(0 of the twelve, 0 of the thirty)*
+
+> ***"You can take a look at the CURRENT MLB SYSTEM as well and see how the confidence works and have
+> a reference there. **JUST A REFERENCE, because the system is not perfect.**"***
+
+🔑 **Recorded because the sweep's standing scope note is that MLB is dropped and kept only as
+cross-system context — and here the owner explicitly directs the confidence design to consult it,
+with the qualification attached.** ⚠ *`NBA_LESSONS_LEARNED_FROM_MLB.md` exists in the thirty; whether
+the confidence build actually consulted it is **NOT RECORDED** and is pass 1's question.*
+
+### ⚠ 7 · **THE STANDING SAMPLING ORDER, ESCALATED**
+
+> 🔴 ***"STOP GUESSING, EXPAND YOUR SAMPLES!!! Stop being lazy and doing shortcuts. **SAMPLE EVERYTHING
+> BEFORE STARTING REPLICATING** — player tiers, prop lines, variations, directions. Exhaust online
+> research, documentation check."***
+>
+> ***"Start testing fixes on LARGE SAMPLES — don't even waste time letting it finish… **just a SCOPED
+> run**, so we don't need to waste time and resource running it all again. But be sure you test ALL
+> POSSIBLE SAMPLES."***
+>
+> 🔴 ***"You cannot deploy shit if you are not sure."***
+
+✅ **This is T15's SAMPLE-FIRST rule** *(the only directive the owner asked to be persisted)* **restated
+three times in one session, and extended: the sample must SPAN the groups, and a fix is tested on a
+SCOPED run rather than a full re-run.**
+
+---
+
 ## 0a-T16-C. 🔴🔴🔴 **THE SCORE / CONFIDENCE CONTRACT — and `[LIVE-AUDIT]` FINDS THE LIVE TABLE CONTRADICTING IT** *(T16 pass 2, §T16.3, the migration audit over COMPASS facts 87–107; `SELECT` 2026-09-22)*
 
 ### 🔑🔑 1 · **CONFIDENCE IS A DATA THERMOMETER, NOT A PROBABILITY** *(owner directive; COMPASS fact 101)*
