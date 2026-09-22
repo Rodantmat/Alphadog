@@ -66,6 +66,14 @@
 > days. It is 17, unless a fix is validated without live board data.**
 >
 > ⚠ **Nothing here is fixed — the owner's standing instruction is document, don't fix.**
+>
+> ## 🔴🔴🔴 **PREREQUISITE — READ BEFORE THE FOURTEEN: `P2` AND `P3` HAVE NO TRIGGER AT ALL**
+> *Added **T20 pass 83 (§T20.88), 2026-09-22**, when writing `STEP 9` of `NBA_RECIPE.md` forced the question the audits never had to ask — **"when does it run?"***
+> ▶ **`nba-p2-overnight-heavy.yml` and `nba-p3-afternoon-light.yml` each contain ZERO `schedule:` and ZERO `cron:` lines** *(verified `2026-09-22T20:38:28Z`)*. **`workflow_dispatch` only.** *`P1` has a cron; `P2` and `P3` do not.*
+> ⚠ **THIS IS DELIBERATE AND ON FILE — it is not a newly discovered defect.** *P2's workflow says so in its own header:* > *"**NO CRON YET — deliberately.** The NBA season opens in October; until real games exist there is nothing for this to mine, and a scheduled job failing nightly against an empty schedule trains everyone to ignore red builds. **The cron goes in when the season starts** (target: daily `09:00 UTC` = `01:00 PT`, which is after the last West-Coast game finalises and leaves eight hours before P3's 1:15 PM cutoff)."*
+> 🔴🔴 **WHAT IS NEW IS THAT THIS BRIEF NEVER SAID IT.** *The fourteen items above enumerate what BREAKS WHEN THE PIPELINES RUN. **None of them states that two of the three will not run until someone adds a schedule.*** ⚠ *`§T20.56`'s completeness audit could not have caught it — that audit counted `SEASON-CRITICAL` headings, and this TODO has never been given one.*
+> ⇒ ***ADDING P2's CRON IS A PREREQUISITE FOR EVERY OTHER P2 ITEM ON THIS BRIEF. `T20-13`'s twelve red nights cannot fire if nothing fires.***
+> ⚠⚠ **AND `P3`'s INTENDED TIME IS `NOT RECORDED` ANYWHERE (rule 6).** *P2's workflow names `09:00 UTC`. **No document names P3's.** The `1:15 PM PT` cutoff is a **GUARD** — it says when P3 may NOT run, not when it will.* ▶ **Full write-up: `§T20.88`; the pipelines as built: `NBA_RECIPE.md` `STEP 8`/`STEP 9`/`STEP 10`.**
 
 > # 🔴🔴🔴 **THE OWNER-DECISION LEDGER — `12` LIVE DECISIONS, COLLECTED HERE FOR THE FIRST TIME**
 > *Built **T20 pass 80 (§T20.85), 2026-09-22**. **Measured, not asserted: `grep -cE "OWNER DECISION" nba/NBA_OPEN_ITEMS.md` ⇒ `51` mentions across `11` heading-level items, `2026-09-22T20:25:11Z` — and `grep` for any surface naming "all the owner decisions" returns **`0`** across the corpus.*** ⇒ ***The fourteen BLOCKERS got a brief. The DECISIONS never did — and unlike a blocker, a decision cannot be discharged by anyone but the owner, which makes delivery the entire job.***
