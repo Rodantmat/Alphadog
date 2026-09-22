@@ -35009,3 +35009,76 @@ failure in the pass immediately before it — written by the same author, in the
 hundred lines from the ledger row that already held the answer.** ***The check is cheap, it is one
 command, and the only reason it works is that it runs on the sentence you are about to publish rather
 than on the question you started with.***
+
+---
+
+# §T20.82 — T20 PASS 77: ✅🔴 **`RULE 51` RUN RETROACTIVELY: `0` OF `15` EARLIER SECTIONS PUBLISHED A PRIOR — AND THE FIRST ATTEMPT TO AUTOMATE THE RULE FLAGGED `38` OF `64` SECTIONS, ALL FALSELY** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: `RULE 51` was twelve sections old. §T20.81 ran it on `§T20.69`–`§T20.80` and found one prior
+published as new. **`§T20.1`–`§T20.68` had never been probed**, and the answer is the first honest
+estimate of how much of T20's eighty-one sections is genuinely new.**
+
+## 🔴🔴🔴 **THE FIRST INSTRUMENT FAILED, AND THAT IS THIS PASS'S MOST USEFUL RESULT**
+
+*The probe was first automated: **for each section, pick the rarest comma-formatted number or backticked
+identifier in its first 1,500 characters, then `git grep` it at the parent commit.*** ▶ **It flagged
+`38` of `64` sections.** 🔴 **Every flag was an artefact.** *The terms it chose were:*
+**`github_patch_file`** *(§T20.8, §T20.43)* · **`NBA_MASTER_SUMMARY.md`** *(§T20.17, §T20.18)* ·
+**`run_job`** *(§T20.28)* · **`prop_universe`** *(§T20.25, §T20.26)* · **`NBA_SWEEP_RUN_LOG.md`**
+*(§T20.20, §T20.67, §T20.68)* — ***tool names and filenames, which appear everywhere and are not any
+section's headline claim.***
+
+⚠⚠ **RULE 15, ON MY OWN INSTRUMENT: *"a pattern tuned elsewhere silently mis-measures."* The script
+optimised for RARITY IN THE SECTION. Rule 51 asks for THE HEADLINE CLAIM'S distinctive term. **Those
+are different things, and only one of them can be computed without reading.***
+
+⇒ 🔑🔑 ***`RULE 51` CANNOT BE AUTOMATED. Choosing the finding's distinctive term requires reading the
+finding — which means the rule's cost is one careful minute per entry and cannot be amortised away.***
+⚠ **PRECISION, because the corpus already attaches this phrase elsewhere (rule 51 applied to this very
+sentence): `"cannot be automated"` appears twice in this document, both times about **RULE 19's**
+discriminator. **Rule 51 is the SECOND rule with that property, for a different reason** — rule 19
+resists automation because relevance is a judgement; rule 51 resists it because SALIENCE is.**
+
+## ✅ THE PROPER RUN — **SAMPLE DECLARED BEFORE READING (rule 25)**
+
+**`15` sections, every 4th of the `64` that carry an `# §T20.n` heading in `§T20.1`–`§T20.68`**, and
+**each term taken by READING its headline**, as the rule requires.
+
+| | |
+|---|---|
+| ✅ **zero baseline hits** | **10** — `§T20.1` `"SEG 597"` · `§T20.13` `"staleness test"` · `§T20.17` `"born three times"` · `§T20.21` `"retracts its own headline"` · `§T20.33` `"hardcoded to LAST season"` · `§T20.37` `"no pipeline writes"` · `§T20.41` `"5.98 GB"` · `§T20.45` `"three share one fix"` · `§T20.49` `"self-claim"` · `§T20.61` `"worker-layer census"` |
+| 🔴 **hits — every one READ** | **5** |
+
+**And all five are coincidences or adjacent-subject priors correctly in the neighbourhood:**
+- **`§T20.9` `"1,177"` → 3 hits.** 🔑 ***The baseline text reads "The MLB backtest schema was dropped — **1,177 tables**, ~7 GB." A numeric collision with a completely different subject*** — and §T20.9's claim was never the count, it was what a stratum-wise sweep structurally cannot see. ✅ **NOVEL**
+- **`§T20.57` `"+0.12"` → 3 hits.** *Two are backtest report files; the third is `+0.1225` from a ridge fit.* ✅ **NOVEL**
+- **`§T20.53` `"opening fortnight"` → 3 hits.** *The nearest is §T20.52's certifier finding — **an adjacent subject, a different claim**. Rule 19, as the pre-registration fixed it: "PRIOR PUBLISHED AS NEW means the section CLAIMED novelty for something already on file — not that an earlier section touched the same subject."* ✅ **NOVEL**
+- **`§T20.29` `"no longer exists"` → 2 hits** *(a file path; T11's tail)*. ✅ **NOVEL**
+- **`§T20.25` `"cannot be run"` → 1 hit** *(the citation audit's reach across transcripts)*. ✅ **NOVEL**
+
+## 📋 CLAUSE SCORING
+
+**(ii) 🔴 FAILS — `0` of `15` were priors published as new.** *The pre-registration named this outcome
+and what it would mean: **the defect is a property of THIS SESSION's later passes**, which are the ones
+written at the greatest distance from the transcript. All four withdrawals — §T20.63, §T20.72,
+§T20.79, §T20.80 — sit in `§T20.63`–`§T20.80`.*
+
+**(iii) ✅ HITS, technically — `0%` here against §T20.81's `9.1%`, Δ = `9.1`, inside `±10`.**
+⚠ **STATED WITH ITS LIMITS (rule 25): at `n = 15` with ZERO events, this sample cannot distinguish `0%`
+from `9%`. The clause passes on arithmetic and proves little; I am not going to dress it up.**
+
+**(i) ⚠ tree HOLDS at `648 · 1 · 471 · 470`** *(baseline `636 · 2 · 484 · 481`; Δ `484 − 471` = `13`)*.
+
+⚠ **KILLS LOGGED (rules 26/28/51)**: **§T20.81** *(the rule, the probe, the 12-section result —
+**PRIOR**, the baseline clause (iii) compares against)* · **§T20.63, §T20.72, §T20.79, §T20.80**
+*(**PRIOR**, already counted and excluded from this denominator)* · **rule 19's "cannot be automated"**
+*(**PRIOR** — quoted and distinguished above rather than restated)*.
+
+📌 ***The lesson:*** **the pass tried to make a cheap rule cheaper by automating it, and the automation
+flagged sixty percent of the corpus on terms like `run_job` and `NBA_MASTER_SUMMARY.md`. Done properly —
+fifteen headlines read, fifteen terms chosen by hand, five sets of hits opened — it found nothing, and
+the nothing is trustworthy for exactly the reason the thirty-eight were not.** ***A check that can be
+run without reading is a check that is not being run.***
