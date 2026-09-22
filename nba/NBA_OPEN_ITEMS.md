@@ -12421,10 +12421,17 @@ CLOSED on "three consecutive clean passes."**
 TRANSCRIPT; no pass measured the DELIVERABLE against its CHARTER.***
 **Severity: HIGH** — it is a named, mandated document with an explicit completeness rule, and it is
 the document a future reader would reach for first to navigate the other eleven.
-▶ **ACTION: backfill the glossary for T12–T18 and restore its update log and transcript index.**
-*Scheduled as T19 pass 1's work under the amended standing rule ("'document, don't fix' applies to
-the system you're documenting, not to your own deliverable").*
-*(Full evidence and the charter quoted in full: `NBA_MASTER_SUMMARY.md` §T19.1.)*
+✅✅ **RESOLVED 2026-09-22, SAME PASS.** **`NBA_GLOSSARY.md` 43,356 B → 84,493 B**; **§Z — THE
+COMPLETE TERM INDEX added, 824 terms** with the documents that carry each and the transcripts they
+appear in; **transcript index continued through T20**; **dated update-log entry added**.
+**Re-measured after the backfill: of the 1,016 terms meeting the charter's "appears in two or more"
+test, 0 remain absent — coverage 18.9% → 100.0%.**
+🔑 **And the resolution identified what kind of failure it was**: **every one of the 824 appears in
+≥2 of the twelve**, so ***the gap was an INDEX failure, not a COVERAGE failure — the sweep had the
+content and had no map to it***, which is precisely the distinction the charter draws by asking for a
+glossary as a separate document. ⚠ *One charter field remains unmet and is named rather than
+invented: per-message line numbers (open item T19-2).*
+*(Full evidence and the charter quoted in full: `NBA_MASTER_SUMMARY.md` §T19.1 and §T19.2.)*
 
 ## T18-17 · **NEW · OWNER DECISION** · the score formula's penalising half has never fired
 **`[LIVE-AUDIT]` 2026-09-22: of 19,215,200 legs in `nba_score.final_hp`, ZERO have
