@@ -12410,6 +12410,35 @@ simplicity the owner explicitly chose *("one run, everything present, no second 
 **The sweep does not decide this and changes nothing.** *(Full evidence and the two bulletin/PDF
 traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 
+## T18-14 · **NEW · HIGH** · the certifier has no magnitude check on P3 and certifies on a single row
+**`certify_pipeline.py` (live source, 2026-09-22): of its twelve checks, only THREE are plausibility
+gates — P1's `> 10000` defender ratings and `> 400` players, and P2's `count(DISTINCT prop) >= 25`.**
+🔴 **All five P3 checks are `count(*) > 0` or `count(bad) == 0`, and the two `== 0` checks are
+VACUOUS on a small population.** ⇒ **A P3 run that scores ONE leg prints "5/5 checks passed. Pipeline
+certified."** ⚠ **P2 is barely better: its one gate is on DISTINCT PROPS, so 25 props × one row each
+certifies.**
+🔑 **The author wrote the correct assertion into the board scorer in the same session** — *"it asserts
+legs actually landed, because a green run with an empty table is the failure that hides best"* — **and
+not into the certifier, whose whole purpose is that assertion.**
+⚠ **Precisely stated: `> 0` DOES catch a truly empty table. What it cannot catch is a PARTIAL slate —
+which is what the remembered 44% combos gap actually was.** *The component is built against the
+remembered symptom rather than the remembered cause.*
+**Severity: HIGH** — these three pipelines are designed to run unattended daily, and the certifier is
+the only thing standing between a partial run and a silently wrong board. **The fix is one line per
+check, and the system already contains the right shape** (P1's thresholds; the gap audit's rate).
+**Severity is on the DESIGN, not on any observed failure — no partial-slate run is recorded.**
+*(Full check-by-check table: `NBA_WORKERS.md` §0.004-T18.)*
+
+## T18-13 · **NEW · LOW** · the board scorer's aggregate confidence sits below every per-prop confidence
+**In the 58,395-leg run: whole-board `avg_conf` **0.9416**, while all twelve per-prop confidences run
+**0.9552 → 0.9677**.** *A mean cannot fall outside the range of its parts over the same population.*
+⚠ **NOT RECORDED: whether the aggregate row and the per-prop rows cover the same legs.** **The
+interpolation tax does not account for it** — 3,243 of 58,395 is **5.55%**, and 4 points on 5.55% of
+legs is ~0.0022 against the ~0.014 observed. **Severity: LOW** *(a reporting question, not a scoring
+one — the per-leg values are the ones that ship)*, **and one `GROUP BY` settles it.** *The sweep does
+not run it: these are 2026-09-19 transcript figures and the table has been rewritten since.*
+*(Table: `NBA_DATABASE.md` §0z-T18.)*
+
 ## T18-12 · **NEW · MEDIUM** · the gap-audit fallback was never re-verified on the season that exposed the gap
 **`check_delta_gaps.py` originally had no fallback**: when `nba_schedule_current.json` held no
 completed games for the requested season, it printed *"nothing to audit — this is expected in the
