@@ -1679,7 +1679,8 @@ two is wrong — which is exactly how the conformal attempt failed.
 **10 factors. Base 99, floor 55.** Starts at 99 and **deducts for named deficiencies**, with weights
 **measured from realised-gap separation**.
 
-⚠⚠⚠ **CORRECTION IN PLACE, 2026-09-22 (T18 pass 2, §0a-T18-C) — THE TABLE BELOW IS A SUPERSEDED
+⚠⚠⚠ **CORRECTION IN PLACE, 2026-09-22 (T18 pass 2; evidence in `NBA_WORKERS.md` §0.003-T18 for the
+stratum this came from) — THE TABLE BELOW IS A SUPERSEDED
 NINE-FACTOR STATE, AND IT CONTRADICTS §*AND THE CAP MECHANISM IS VERIFIED IN SOURCE* OF THIS SAME
 DOCUMENT.** *The correction is recorded rather than edited away, per the §0w precedent.*
 **(1)** The heading says **10 factors**; the table lists **`f_role` + eight others = NINE**, and
