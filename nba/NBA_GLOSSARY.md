@@ -804,6 +804,237 @@ unknown.** *Up to five transcripts are shown per term.*
 | `quantile_bands` | DB,SUM | T7 T8 |
 | `questionable` | DSN,FCAL,SUM | T8 |
 
+### R
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `rate36` | BCAL,DB,DSN,FCAL,SUM | T14 |
+| `rate_tier` | DB,OPEN,SUM | T10 |
+| `rationale` | DB,SUM | T7 |
+| `raw_count` | OPEN,SUM | T3 |
+| `raw_json` | ARC,DB,OPEN,REC,SUM,WRK | T1 T2 T3 T4 T5 |
+| `reactivated` | OPEN,SUM | T3 |
+| `real_games` | OPEN,SUM | T3 |
+| `real_sample_size_observed` | DB,OPEN,SUM | T4 T5 T7 T8 |
+| `reallocated` | FCAL,OPEN,SUM | — |
+| `reb_pct` | ARC,FCAL,OPEN,SUM,WRK | T3 T7 T9 |
+| `reb_rate` | OPEN,SUM | T7 |
+| `reb_total` | DB,SUM | T2 |
+| `rebounding` | DB,OPEN | T1 |
+| `rebounds_1q` | OPEN,SUM | T1 T8 |
+| `recipe_version` | DB,OPEN,SUM | T9 T18 |
+| `redistribution_factors` | DB,OPEN,SUM | T1 T4 T10 |
+| `ref_teams` | DB,OPEN,SUM | T1 T15 |
+| `referee_assignment` | OPEN,SUM | T10 |
+| `referee_assignments` | OPEN,SUM | T4 T8 T15 |
+| `referee_crew` | OPEN,SUM | T10 |
+| `referer` | OPEN,SUM | T1 |
+| `regular` | DB,SUM | T11 |
+| `relevant_prop_keys` | FCAL,OPEN,SUM | T1 T10 |
+| `reltuples` | BCAL,DB,DSN,GD,OPEN,SUM | T12 T13 T14 |
+| `request_id` | DB,SUM | T1 |
+| `research_notes` | OPEN,SUM | T10 |
+| `result_set_rows` | OPEN,SUM | T4 |
+| `returncode` | ARC,SUM | T12 T13 |
+| `returned_lines` | OPEN,SUM | T1 T10 |
+| `role_minutes_multiplier` | ARC,BCAL,DB,OPEN,SUM | T1 T9 |
+| `role_tier_key` | DB,OPEN,SUM | T7 T10 T13 |
+| `rows_written` | OPEN,SUM | T3 |
+| `run_at` | DB,OPEN,SUM,WRK | T1 T9 |
+| `run_id` | DB,OPEN,SUM | T1 |
+| `run_sql` | ARC,OPEN,SUM | T1 |
+| `run_sql_postgres` | ARC,DB,OPEN,SUM,WRK | T1 T11 T18 T19 T20 |
+| `rung_market` | ARC,DB,DSN,FCAL,OPEN,SUM,WRK | T4 T11 T13 T17 |
+
+### S
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `scenario_calibration` | DB,OPEN,SUM,WRK | T1 T4 T11 |
+| `scenario_realised` | DB,DSN,OPEN,SUM,WRK | T4 T11 T18 |
+| `sched_static_weekly` | ARC,OPEN | — |
+| `schedule_norm` | DB,OPEN,SUM | T4 T11 T18 |
+| `schedule_profile_key` | DB,SUM | T1 |
+| `scheduleleaguev2` | ARC,SUM,WRK | T3 |
+| `schema_config_db.sql` | DB,OPEN | T15 |
+| `scope_lock` | OPEN,SUM,WRK | T2 T3 |
+| `score.real_slip_leg_observations` | DB,MUL,OPEN,SUM | T4 T10 T16 |
+| `score_poss_pct` | OPEN,SUM,WRK | T3 T10 |
+| `scrape.yml` | OPEN,SUM | T1 T12 |
+| `scrape_nba_backfill_2025_26` | SUM,WRK | T4 |
+| `scrape_nba_backfill_measure_types` | OPEN,SUM | T7 |
+| `scrape_nba_career_totals` | SUM,WRK | T4 |
+| `scrape_nba_daily_delta` | OPEN,SUM | T7 |
+| `scrape_nba_lineups` | OPEN,SUM,WRK | T7 |
+| `scrape_nba_matchups_pergame` | OPEN,SUM | T7 |
+| `scrape_nba_onoff` | OPEN,SUM,WRK | T7 |
+| `scrape_nba_per_game_delta` | OPEN,SUM | T7 |
+| `scrape_nba_player_bio` | OPEN,SUM | T7 |
+| `scrape_nba_player_tracking` | OPEN,SUM | T7 |
+| `scrape_nba_playtypes` | OPEN,SUM | T7 |
+| `scrape_nba_shotquality` | OPEN,SUM | T4 T7 |
+| `scrape_nba_splits` | OPEN,SUM | T4 T7 |
+| `scrape_nba_team_stats` | OPEN,SUM | T7 |
+| `scrape_nba_tracking_detail` | OPEN,SUM | T7 |
+| `scrape_sleeper_board` | ARC,SUM | T12 |
+| `scrapegw` | ARC,SUM | T12 |
+| `search_path` | OPEN,SUM | T11 T15 |
+| `season_id` | DB,SUM | T3 T4 |
+| `semi_automatic` | DB,OPEN,SUM | T7 |
+| `sf_poss_pct` | OPEN,SUM,WRK | T3 T10 |
+| `shards` | OPEN,SUM | T11 T12 |
+| `shooting` | DB,OPEN | T1 |
+| `shot_quality_delta` | DB,OPEN,SUM | T3 T4 |
+| `shrink_beta` | FCAL,OPEN | T1 |
+| `shrinkage_stabilization_games` | BCAL,DB,FCAL,OPEN,SUM | T7 |
+| `single_absence` | FCAL,OPEN,SUM | T1 |
+| `single_call_all_playtypes` | OPEN,SUM | T3 |
+| `skip_mining` | ARC,WRK | — |
+| `skipped` | OPEN,SUM | T1 |
+| `slate_games` | DB,OPEN,SUM | T1 T9 |
+| `sleeper` | ARC,DB,OPEN,REC,SUM | T1 T11 |
+| `sliding_scale` | DB,SUM | T4 T11 T12 T16 |
+| `snapshot_label` | DB,DSN,GD,MUL,OPEN,SUM | T11 T12 |
+| `snapshot_taken_at` | DB,SUM,WRK | T3 T8 T9 |
+| `snapshot_ts` | ARC,OPEN,SUM | T11 |
+| `sort_order` | DB,SUM | T7 |
+| `source_fetch_error` | OPEN,SUM | T2 |
+| `source_file` | BCAL,DB,OPEN,SUM | T1 T9 T10 |
+| `sports_book` | OPEN,SUM | T12 |
+| `sports_book_public` | ARC,OPEN,SUM | T12 |
+| `sports_book_request` | ARC,SUM | T12 |
+| `spread_used` | OPEN,SUM | T11 |
+| `spreads` | DB,SUM | T11 |
+| `stabilization_reference_games` | BCAL,SUM | T7 T8 |
+| `start_position` | DB,SUM | T5 |
+| `starter_status` | DSN,FCAL,SUM | T11 T13 T15 |
+| `stat_expression` | DB,SUM | T11 |
+| `stat_key` | DB,SUM | T7 |
+| `static_prop_taxonomy` | OPEN,SUM | T8 |
+| `stats_hitter` | DB,OPEN,SUM | T1 |
+| `stats_pitcher` | DB,OPEN,SUM | T1 |
+| `stats_pitcher.game_logs` | OPEN,SUM | T2 |
+| `stats_seasons` | OPEN,SUM | T7 |
+| `stl_rate` | DB,OPEN,SUM | T7 |
+| `stolen_base_family` | FCAL,OPEN | — |
+| `storage_diet_plan_2026_09_17` | DB,OPEN | T17 T18 |
+| `str_replace` | ARC,OPEN,SUM | T1 T7 |
+| `synergyplaytypes` | ARC,SUM,WRK | T3 |
+
+### T
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `tail_lines` | OPEN,SUM | T1 |
+| `team_aliases` | ARC,DB,OPEN,SUM,WRK | T1 |
+| `team_change` | DB,OPEN | T3 |
+| `team_game_log` | OPEN,SUM | T1 T4 T11 |
+| `team_game_log_advanced` | OPEN,SUM | T11 |
+| `team_game_log_four_factors` | ARC,SUM,WRK | T3 T9 T10 |
+| `team_game_no` | BCAL,OPEN,SUM | T16 |
+| `team_roster_snapshot` | OPEN,SUM,WRK | T3 |
+| `team_splits` | OPEN,SUM | T4 T5 |
+| `teamdashboardbygeneralsplits` | DB,SUM | T4 T5 |
+| `teamdetails` | ARC,DB,OPEN,REC,SUM,WRK | T2 T8 |
+| `teamgamelogs` | ARC,OPEN,SUM | T4 |
+| `teammate_shooting_quality` | DB,SUM | T7 |
+| `teamplayeronoffdetails` | ARC,DB,FCAL,SUM | T2 T3 |
+| `test_season` | FCAL,SUM | T9 |
+| `thinking` | ARC,DB,OPEN,SUM,WRK | T1 T2 T3 T11 T12 |
+| `threes_made_1q` | OPEN,SUM | T1 T8 |
+| `tier_band_calibration` | DB,OPEN,SUM | T4 T11 |
+| `tier_label` | DB,OPEN,SUM | T7 T10 |
+| `tier_selection_value` | DB,OPEN,SUM | T4 T11 |
+| `tiered_bands` | DB,SUM | T7 T8 |
+| `tiered_inelastic` | BCAL,DB,FCAL,OPEN,WRK | T1 |
+| `timestamptz` | DB,OPEN,SUM | T1 T9 T10 |
+| `tool_use` | DB,FCAL,OPEN,SUM,WRK | T1 T2 T6 T11 T12 |
+| `tools` | OPEN,SUM | T11 T15 |
+| `total_fga` | DB,OPEN,SUM | T3 T4 T5 |
+| `total_log_lines` | OPEN,SUM | T1 |
+| `tov_poss_pct` | OPEN,SUM,WRK | T3 T10 |
+| `tov_rate` | DB,OPEN,SUM | T7 T10 |
+| `trigger_reason` | ARC,OPEN,SUM | T1 T9 |
+| `triple_double` | DB,OPEN,SUM | T1 T8 T10 T11 T12 |
+| `ts_pct` | DB,SUM | T2 |
+| `two_way_designation_source` | OPEN,SUM | — |
+
+### U
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `undefined` | OPEN,SUM | T3 |
+| `under_win` | DB,DSN,FCAL,GD,OPEN,SUM | T11 T12 T13 |
+| `underdog` | ARC,DB,OPEN,REC,SUM | T1 T4 T11 T16 |
+| `underdog_board_current` | OPEN,SUM | T1 |
+| `unmatched` | DSN,SUM | T13 |
+| `unmatched_not_in_season` | DB,DSN,FCAL,GD,OPEN,SUM | T12 T13 |
+| `unmatched_player` | DB,DSN,FCAL,GD,OPEN,SUM | T11 T12 T13 |
+| `updated_at` | ARC,DB,FCAL,GD,MUL,OPEN,SUM,WRK | T1 T2 T3 T4 T7 |
+| `urllib` | OPEN,SUM | T13 |
+| `us_dfs` | ARC,OPEN,SUM | T11 T13 |
+| `us_ex` | ARC,SUM | T12 |
+| `usage_share` | DB,SUM | T7 |
+| `used_emp` | DB,FCAL,OPEN,SUM | T9 T10 |
+| `usg_pct` | ARC,DB,FCAL,OPEN,SUM,WRK | T2 T3 T7 T9 |
+
+### V
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `validate_blowout_upgrade` | DB,SUM | T4 T11 T16 |
+| `validationerror` | ARC,SUM | T12 |
+| `var_band` | DB,SUM | T9 T10 |
+| `variant` | FCAL,OPEN | — |
+| `variation_band` | DB,OPEN,SUM | T1 T4 T5 T7 T10 |
+| `variation_bands` | DB,OPEN,SUM | T1 T7 T8 T9 T10 |
+| `variation_bands.band_key` | DB,SUM | T4 T5 T7 T8 |
+| `vars_present` | SUM,WRK | T2 |
+| `verified_at` | OPEN,SUM | T12 |
+| `volume` | DB,OPEN,SUM | T1 |
+
+### W
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `w_pct` | DB,OPEN,SUM | T4 T5 T6 |
+| `web_fetch` | OPEN,SUM | T1 T3 T11 |
+| `web_search` | DB,DSN,OPEN,SUM,WRK | T1 T2 T11 T18 |
+| `weekly` | OPEN,SUM,WRK | T5 T7 |
+| `wins_losses` | DB,OPEN | T4 T5 |
+| `worker_group` | DB,SUM,WRK | T1 |
+| `worker_manifest.json` | ARC,OPEN,SUM,WRK | T1 |
+| `worker_manifest_nba.json` | ARC,OPEN,REC,SUM | T1 T6 |
+| `worker_name` | DB,SUM,WRK | T1 |
+| `workers.dev` | ARC,OPEN,SUM | T1 |
+| `wrangler` | ARC,OPEN | T1 |
+| `wrangler.json` | ARC,WRK | — |
+
+### X
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `x_ast_100` | OPEN,SUM,WRK | T3 |
+| `x_fg3_pct` | OPEN,SUM,WRK | T3 |
+| `x_fg_pct` | OPEN,SUM,WRK | T3 |
+| `x_ft_pct` | OPEN,SUM,WRK | T3 T10 |
+| `x_minutes` | OPEN,SUM,WRK | T3 |
+| `x_pace` | OPEN,SUM,WRK | T3 |
+| `x_pts_100` | OPEN,SUM,WRK | T3 |
+
+### Y
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `year_founded` | DB,OPEN,SUM,WRK | T2 T6 T10 |
+| `years_pro` | DB,SUM | T2 |
+
+### Z
+
+| Term | Documents | Transcript(s) |
+|---|---|---|
+| `zero_officials_parsed_v3` | OPEN,SUM | T11 |
+
 ---
 
 ## A
