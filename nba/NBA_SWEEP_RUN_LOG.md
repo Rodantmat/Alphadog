@@ -12,7 +12,12 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## ▶ RESUME NOTE — *the only thing a fresh session needs to continue*
 
-### 📜 THE THIRTY-SEVEN STANDING RULES — *the index; each is written in full where it was born*
+### 📜 THE FORTY-THREE STANDING RULES — *the index; each is written in full where it was born*
+*(count re-taken from the table below, 2026-09-22; the header had read "THIRTY-SEVEN" since rule 37
+and sat six rules stale — **rule 40's own lesson, a dated figure carried forward undated**)*
+
+⚠⚠ **RULE 43 IS THE ONE TO READ FIRST IF YOU READ ONLY ONE** — *it is the rule the other
+forty-two were all stated in prose and then not executed by.*
 
 ⚠⚠ **READ THIS INDEX BEFORE WRITING ANY CLAIM ABOUT THE SWEEP'S OWN METHOD** *(§T11.51d, 2026-09-21)*.
 ***Two of nine method characterisations audited at pass 50 turned out to be rules the sweep itself had
