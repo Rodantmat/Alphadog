@@ -31792,3 +31792,128 @@ nothing does — and then found, in the same queries, a check that has been gree
 calibration from last January. The cold start was never the risk. The risk was the gate that cannot
 tell a cold start from a warm one, because it was written to count rows in a table that has a date
 column three characters away.**
+
+---
+
+# §T20.54 — T20 PASS 49 · THE LIVE-STATE CONTRADICTION AUDIT: WHICH OF THE CORPUS'S CLAIMS ARE STILL TRUE?
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only**: greps and three `SELECT`s. **Nothing triggered or written to the
+live system; `NBA_COMPASS.md` not written to.**
+
+## 0. POPULATION, PINNED (rules 17/30)
+
+**Grep of the TWELVE for present-tense live-state assertions** — `is empty` · `are empty` ·
+`zero rows` · `0 rows` · `does not exist` · `no rows` · `never written` · `holds no` — **tree
+`540b7a1ea8071a21441e91f012f246f44848a38c`, 2026-09-22T17:24:42Z:**
+
+| | |
+|---|---|
+| **matching lines in the twelve** | **446** *(205 SUM · 126 OPEN · 33 DB · 17 WRK · 15 DSN · 15 FCAL · 13 ARC · 8 MUL · 4 GLO · 4 BCAL · 3 RCP · 3 GD)* |
+| **of those, naming a `nba_*.<table>`** | **96** *(the testable subset; `pp_*` excluded as out of scope)* |
+| **distinct objects named** | **26** |
+| **tested live** | **26 — all of them, not a sample** |
+
+## 1. ✅✅ CLAUSE (iii) SCORES THE GOOD BRANCH — EVERY ABSENCE CLAIM IS STILL TRUE
+
+**Six objects the twelve assert DO NOT EXIST. `pg_class` ⋈ `pg_namespace`, 2026-09-22:**
+
+| claimed | live | verdict |
+|---|---|---|
+| `nba_stats.player_career_totals` | **absent** | ✅ **still true** *(its documented replacement `nba_stats.player_career_season_totals` exists, 3,644 rows)* |
+| `nba_stats.lineup_synergy` | **absent** | ✅ **still true** *(its documented replacement `nba_team.lineup_profile` estimates at **exactly 8,000** — the figure the corpus uses to identify it)* |
+| `nba_daily.injury_report_snapshots` | **absent** | ✅ **still true** |
+| `nba_config.ewma_alpha` | **absent** | ✅ **still true** *(documented as a COLUMN of `nba_config.stat_decay_config`)* |
+| `nba_stats.darko` | **absent** | ✅ **still true** *(an explicit negative — the source is `nba_stats.player_impact_rating`, 530 rows)* |
+| `nba_score.real_slip_leg_observations` | **absent** | ✅ **still true** |
+
+**And every emptiness claim, re-derived live rather than carried forward (rule 21):**
+
+| object | live rows | verdict |
+|---|---|---|
+| `nba_control.job_runs` | **0** | ✅ §T20.31 **holds** |
+| `nba_control.worker_run_log` | **0** | ✅ §T20.31 **holds** |
+| `nba_ref.referee_assignments` | **0** | ✅ **holds** |
+| `nba_ref.team_differential_log` | **0** | ✅ **holds** |
+| `nba_stats.player_differential_log` | **0** | ✅ **holds** |
+
+⇒ ✅✅ ***Of 26 objects carrying a present-tense live-state claim in the twelve, TWENTY-SIX are still
+accurate. Not one absence or emptiness claim has rotted — through a day in which this sweep pushed
+hundreds of commits and the owner warned that "the live system is moving under you today."***
+**Stated at full strength: the pre-registration named this the materially better branch, and it is
+the branch the data chose.** ⚠ **The one exception is `ladder_calibration_asof`, which is §T20.53's
+and is KILLED as prior, not counted here.**
+
+🔑 **Re-verifying `job_runs` and `worker_run_log` is rule 21, not a restatement**: *§T20.31's
+conclusion — "no NBA job has ever recorded a run in the database" — is the load-bearing premise under
+T20-3, under the frozen-static item, and under §T20.51's "the certifier would tell the owner, if
+anyone ran it." It had not been re-read since. It holds.*
+
+## 2. 🔴 CLAUSE (ii) SCORES — AND THE CONTRADICTION IS INSIDE A SINGLE DOCUMENT, 67 LINES APART
+
+**`NBA_MULTIPLIERS.md` carries FOUR references to `real_slip_leg_observations`. Three are sound:**
+- **`:497`** and **`:1386`** write it **unprefixed** — `score.real_slip_leg_observations` — in an
+  explicit **MLB-precedent** context. ✅ *A different system; not a claim about the NBA schema.*
+- **`:1374`** carries the flag immediately beneath it: *"🔴 `[LIVE-AUDIT]` 2026-09-21 (§T10.24b): this
+  table is NOT in the database."* ✅ **Sound — and this is the site §T10.24b fixed.**
+
+🔴 **`:1441` IS BARE**, inside a block headed **`Status`** — the block a reader consults for current
+state:
+> *"**Status**: ⚠ this layout has never been produced for NBA. There is no NBA slip history to fill
+> it — **`nba_score.real_slip_leg_observations` holds 139 legs**, not dated slips."*
+
+⇒ ***Prefixed, present tense, no flag — and sixty-seven lines above it the same document says the
+table is not in the database.*** **Two passages of one file asserting opposite live states.**
+
+⚠⚠ **AND THE CLAIM THAT FAILED IS THE CLAIM THAT THE CORRECTION HAD LANDED.** §T10.24b's own words:
+> *"**(1) `NBA_MULTIPLIERS.md` also asserts `nba_score.real_slip_leg_observations` … and §T10.22b
+> flagged only the `NBA_DATABASE.md` site.** ***§T9.28b's shape exactly: named two, fixed one.***
+> ✅ **Now flagged in both.**"*
+
+📌 ***A pass that diagnosed "named two, fixed one" named two and fixed two — and there were three.
+The same shape a third time, found by the rule the corpus wrote about the first two*** — **rule 40:
+*"A CORRECTION IS NOT A CORRECTION UNTIL IT REACHES EVERY DOCUMENT THAT ASSERTS THE OLD FIGURE."***
+✅ **`:1441` corrected in this sweep's own deliverable, which the charter's amendment permits.**
+
+## 3. ⚠ A CANDIDATE CONSIDERED AND DELIBERATELY NOT CALLED (rule 19)
+
+**`NBA_GLOSSARY.md` lists FIVE of the six non-existent objects as ordinary entries with no absence
+marker** — `:536` `nba_config.ewma_alpha` · `:547` `nba_daily.injury_report_snapshots` · `:598`
+`nba_score.real_slip_leg_observations` · `:608` `nba_stats.lineup_synergy` · `:611`
+`nba_stats.player_career_totals`.
+⚠⚠ **IT IS NOT A DEFECT, AND THE FILE'S OWN CONTRACT SAYS SO.** *Its column header is
+`| Term | Documents | Transcript(s) |` — **a TERM INDEX, not an object catalogue.** It records which
+documents mention a term and which transcripts it came from, and those terms ARE mentioned. It also
+indexes `nba_config.factor_gate_results`, which §T10.16e established is wrongly schema-qualified —
+**faithfully recording terms as they appear, including wrong ones, is the index doing its job.***
+📌 ***Written down rather than dropped, because this sweep's documented habit is to over-call, and a
+pass that found one real contradiction is exactly where a second gets invented.***
+
+## 4. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; reported as **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — FIFTIETH consecutive identical run.** Measured 2026-09-22T17:26:48Z |
+| **(ii)** ≥1 more pair of passages asserts contradictory live state | 🔴 **TRUE — and worse than across two documents: `NBA_MULTIPLIERS.md:1441` vs `:1374`, sixty-seven lines apart in ONE file.** The correcting pass declared itself complete and missed a third site |
+| **(iii)** ≥1 present-tense absence claim is FALSE live | ✅✅ **FALSE — THE GOOD BRANCH, UNANIMOUSLY: 26 of 26 objects still accurate; six absences and five emptinesses all confirmed** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FIFTIETH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 5. ⚠ VERDICT
+
+🔴 **NOT CLEAN — one live contradiction inside `NBA_MULTIPLIERS.md`, corrected in place. No new open
+item: the object is already on file as non-existent, and the defect is a propagation miss, not a
+system fact.**
+✅✅ **AND THE PASS'S PRINCIPAL RESULT IS THE STRONGEST REASSURANCE T20 HAS PRODUCED: the corpus's
+claims about live state have HELD. Twenty-six of twenty-six. The documents can be trusted on what
+exists and what is empty — which is exactly what an owner twenty-eight days out needs them for.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **KILLS LOGGED (rules 26/28)**: **the `ladder_calibration_asof` pair** *(§T20.53)* · **the
+`NBA_MULTIPLIERS.md:1374` site** *(§T10.24b, already flagged)* · **the glossary candidate** *(§3 —
+contract fulfilled, not called)* · **the six non-existent objects themselves** *(T10/T11-era; what is
+new is that they were RE-TESTED live, which is rule 21)*.
+
+📌 ***The lesson:*** **the sweep spent forty-nine passes worrying that its picture of a moving system
+would rot. It re-tested every claim it had made about what exists and what is empty, and every one
+held. The single thing that had rotted was a sentence declaring that a correction was finished.**
+***The system did not move. The bookkeeping did.***
