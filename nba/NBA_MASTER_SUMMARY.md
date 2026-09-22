@@ -31059,3 +31059,186 @@ naming the exact string that cost it 44% of a slate — and then wrote that stri
 workflow nobody re-read. A rule is not enforcement. `grep` is.**
 ***The three pipelines the season depends on obey it, and that is the finding worth carrying: the
 discipline is real, it is just not universal, and the one file that breaks it is one edit wide.***
+
+---
+
+# §T20.49 — T20 PASS 44 · THE SELF-CLAIM AUDIT: THE CODE SAYS THINGS ABOUT ITSELF. ARE THEY TRUE?
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only**: `github_list_dir` and greps on the fast-forwarded clone. **No
+dispatch, no `run_job`, no re-run, no workflow or script edited, and `NBA_COMPASS.md` NOT WRITTEN TO.**
+
+## 0. POPULATIONS, PINNED (rules 17/30)
+
+`github_list_dir('.github/workflows')` **and** `ls .github/workflows/*.yml | wc -l`, both **40**, at
+**2026-09-22T16:42:00Z**, tree **`d94417650129c910ff1996f3d39d5367cd2b343b`**. **39 in scope.**
+**Comment corpus**: `grep -n "^\s*#"` over the 39 ⇒ **271 comment lines in 22 files** — *and
+**17 files carry no comment at all***. **P3 alone has 83, P2 has 59, `nba-boards-market.yml` 26,
+P1 19.** **COMPASS**: **111 numbered facts, highest number `107`.**
+
+## 1. 🔴🔴 THE FINDING — P1 STATES THE DST RELATIONSHIP BACKWARDS, AND THIS SWEEP COPIED IT
+
+**`nba-p1-weekly-static.yml:28`, the cron's own inline comment, quoted:**
+```
+- cron: '0 19 * * 1'        # Mondays 19:00 UTC = 12:00 PT (11:00 PT during PDT)
+```
+**And the header, lines 6-8:** *"12:00 PT Monday = 19:00 UTC Monday **in PST** and 19:00 UTC = 12:00
+PDT — the season crosses DST, so the cron is set in UTC and the hour drifts by one between November
+and March."*
+
+🔴 **BOTH HAVE PDT AND PST SWAPPED.** **PDT is UTC−7 ⇒ `19:00 UTC = 12:00 PDT`. PST is UTC−8 ⇒
+`19:00 UTC = 11:00 PST`.** The inline comment says 11:00 *"during PDT"*; the header says 12:00 PT
+*"in PST"* — **and then contradicts itself in the same sentence with the correct `19:00 UTC = 12:00
+PDT`.** *(A `12:00 PST` start would require `cron: '0 20 * * 1'`.)*
+
+🔑 **WHAT IT MEANS FOR THE SEASON, computed rather than asserted** — regular season opens
+**2026-10-20** (Tuesday), **DST ends 2026-11-01** and **resumes 2027-03-14**:
+
+| window | days | P1 actually fires at |
+|---|---|---|
+| 2026-10-20 → 2026-11-01 | **12** | **12:00 PT** ✅ *(the documented figure)* |
+| 2026-11-01 → 2027-03-14 | **133** | 🔴 **11:00 PT** |
+
+⇒ ***The documented time is right for the first twelve days of the season and wrong for the next
+hundred and thirty-three.***
+
+### 🔴 AND THE SWEEP PROPAGATED IT — RULE 40, TEXTBOOK
+
+**`NBA_OPEN_ITEMS.md:5812`**, in the sweep's own cron table:
+> `| nba-p1-weekly-static.yml | '0 19 * * 1' | Mondays 19:00 UTC — 12:00 PST / 11:00 PDT |`
+
+⚠⚠ **THE SAME SWAP — AND THE TWO ROWS BENEATH IT ARE CORRECT**: `nba-scrape.yml` *"09:00 UTC —
+01:00 PST / 02:00 PDT"* ✅ and `nba-referees.yml` *"15:30 UTC — 07:30 PST / 08:30 PDT"* ✅.
+🔑 ***Rows 2 and 3 were DERIVED. Row 1 was RE-TYPED from the workflow's wrong comment.*** **That is
+rule 40's own closing clause, quoted from this log: *"a figure is at risk wherever it was RE-TYPED
+RATHER THAN DERIVED."***
+
+⚠⚠ **AND THIS IS NOT A KNOWLEDGE GAP.** `NBA_MASTER_SUMMARY.md:18834` already reasons correctly
+about the very same hazard for a different workflow: *"15:30 UTC is **08:30 PDT and 07:30 PST**, and
+**the NBA season is mostly PST**"* — **and `NBA_OPEN_ITEMS.md:6384` draws the consequence in full.**
+***The sweep knew the direction, applied it correctly to `nba-referees.yml`, and left P1 wrong.***
+
+### THE BARE ASSERTIONS (rule 40's category (a))
+
+**`"Mondays 12:00 PT"` is asserted UNQUALIFIED in at least eight places across six documents** —
+`NBA_MASTER_SUMMARY.md:703` and `:29114` · `NBA_OPEN_ITEMS.md:6880` and `:10577` ·
+`NBA_SYSTEM_ARCHITECTURE.md:640` · `NBA_SYSTEM_DESIGN.md:1178` and `:1639` · `NBA_WORKERS.md:43` and
+`:1782` *(plus `NBA_DOCUMENTATION_PROMPT.md:349`, outside the twelve)*.
+⚠ **RULE 40'S DISCRIMINATOR APPLIED**: **`NBA_OPEN_ITEMS.md:6363` is category (b) — an ATTRIBUTED
+QUOTATION of the workflow's comment inside a table of what the files say. It is sound as a quotation
+and is annotated, not struck.** **The rest are category (a): bare present-tense assertions.**
+🔑 **AND THE FIGURE IS NEITHER RETRACTED NOR DATED — it is UNQUALIFIED.** *`12:00 PT` is true today,
+2026-09-22, which is PDT. The correction is a qualifier, not a strike.*
+
+⚠ **CONSEQUENCE, stated at its real size and no larger**: P1's own header says *"nothing in this
+pipeline is cutoff-sensitive"* and that P1 is placed *"deliberately far from P2 (daily 01:00 PT) so
+the two can never contend"* — **11:00 PT is still far from 01:00 PT. The operational cost is
+near zero; the documentation cost is that every operator reading any of nine surfaces is told the
+wrong hour for 133 of the season's first 145 days.** **New open item T20-11.**
+
+## 2. 🔴 P1 MIS-CITES COMPASS FACT 51
+
+**`nba-p1-weekly-static.yml:12`**: *"WHY WEEKLY AND NOT DAILY: these tables are as-of weekly by
+construction (**COMPASS fact 51** / the parity doc)."*
+**`NBA_COMPASS.md:114`, fact 51, quoted:** *"Measured facts to reuse: absence prior (base 10.4%, B2B
+13.5%, stars 33+ road B2B 17.6% …); M1 defender quality (toughest quintile −5.5% …); return ramp
+0.87/0.97/1.01 …"* — **a list of measured effect sizes. Nothing about weekly as-of cadence.**
+⚠ **RULE 20 APPLIED**: a grep of all 111 numbered facts for *"weekly"* returns **one** hit, fact 100,
+which is the calibration-parity violation — **not this claim either.**
+⚠ **SCOPED HONESTLY: only the COMPASS half of the citation is wrong.** *"the parity doc" may well
+carry it; that half was not tested and is not being called.* **`NBA_COMPASS.md` IS NOT WRITTEN TO —
+this is recorded here and in T20-11 only.** ✅ **Zero hits for `"fact 51"` across `nba/` ⇒ NEW.**
+
+## 3. ✅ P2's SECTION NUMBERING HAS TWO SECTIONS NUMBERED `6)`
+
+P2's header asserts *"the pipeline AUDITS ITSELF against the schedule (**step 2**) and CERTIFIES its
+output (**step 6**), and both fail the job loudly."*
+⚠⚠ **RULE 20 SAVED THIS ONE FROM A FALSE POSITIVE.** By GitHub step order the audit is the **7th**
+named step and the certify the **19th** — which looked like an error until the file was probed for a
+second numbering. **P2 uses logical section comments**, and against those the claim **HOLDS**:
+`:125 # 2) AUDIT THE DELTA … against the SCHEDULE, not itself` ✅ and `:277 # 6) CERTIFY` ✅.
+🔴 **But `:256` is `# 6) REFIT the learned layers…` — `6)` is used TWICE.** *The header's "step 6"
+resolves to the certify only because the reader already knows what "certify" means.* **Documentation
+hygiene in the pipeline the season depends on. Zero hits across `nba/` ⇒ NEW.**
+
+## 4. ✅✅ CLAUSE (ii)'s OTHER SIDE — P3's HEADER CLAIMS WERE TESTED AND EVERY ONE HOLDS
+
+**P3 makes the most, and the most falsifiable, claims of any file. All were read off the system
+(rule 21):**
+
+| P3's claim | tested against | verdict |
+|---|---|---|
+| *"`league_id=2` appears as a literal in **all four URLs**"* | `main.py:33-36` | ✅ **four URLs, four literals** |
+| *"the output is fixed to `prizepicks_mlb_current.json`"* | `main.py:38` `OUTPUT_JSON = Path(...)` | ✅ **a module constant** |
+| *"`archive_live_boards.py` defaults `ARCHIVE_LABEL` to `routine`"* | `nba/archive_live_boards.py:205` | ✅ **exact** |
+| *"Sleeper defaults to `.` (the repo ROOT)"* | `nba/scrape_sleeper_board.py:22` | ✅ **exact** |
+| *"while Underdog defaults to `boards`"* | `nba/scrape_underdog_board.py:25` | ✅ **exact** |
+| *"Sleeper's default is multi-sport (`mlb,nba`)"* | `nba/scrape_sleeper_board.py:56` | ✅ **exact** |
+| *"`'15 21 * * *'` = 21:15 UTC = 1:15 PM PST (and 2:15 PM PDT)"* | arithmetic | ✅ **both correct** |
+| *"clears the earliest 4 PM PT tip by 105 minutes"* | 16:00 − 14:15 | ✅ **105** |
+| *"~8 minutes per pair" ⇒ "64 minutes"* | 8 pairs × 8 min | ✅ |
+
+🔑🔑 ***P3 and P1 were written in the same style, in the same family, by the same hand — and P3's
+arithmetic is right in exactly the place P1's is wrong.*** **P3 states `21:15 UTC = 1:15 PM PST` and
+`2:15 PM PDT`, which is the correct direction. P1 states the reverse of it.** ⇒ **The defect in §1 is
+an isolated slip, not a systematic misunderstanding — which is why T20-11 is a two-line fix and not a
+review of every time in the corpus.**
+
+## 5. ⚠ A NEW SMALL DEFECT FOUND ON THE DOCUMENTED NBA PATH
+
+**`NBA_OPEN_ITEMS.md:12092` already records** that `main.py` has a `PRIZEPICKS_PROJECTIONS_URLS`
+override *"so it CAN be pointed at NBA"* — **prior work, killed as a candidate.** **What is new is
+what happens if you take that path:**
+```
+412:    urls = override_urls or PRIZEPICKS_MLB_PROJECTIONS_URLS     ← the override is live
+458:        for url in urls:                                        ← and consumed
+539:        "source_urls_probed": PRIZEPICKS_MLB_PROJECTIONS_URLS,  ← 🔴 the CONSTANT, not `urls`
+```
+⇒ ⚠ **Set the override and the run's own metadata reports the MLB URLs it did not probe.** *Small,
+but it sits directly on the one route the corpus names toward an NBA board, and provenance metadata
+that lies is how a wrong board becomes an unexplainable score.* ✅ **Zero hits for
+`source_urls_probed` across `nba/` ⇒ NEW.**
+
+## 6. ⚠ ONE CLAIM DELIBERATELY *NOT* CALLED A DEFECT
+
+P1's header: *"Each step here either succeeds or the job goes red. **The only tolerated failures are
+the ones marked, with the reason given.**"* **P1 has exactly one toleration — `git add
+nba/data/*.json || true` at `:107` — and it is NOT marked and carries NO reason.**
+⚠⚠ **RULE 19 SAYS THIS IS NOT A DEFECT AND IT IS RECORDED AS HOLDING.** *The header's subject is
+STEP-level failure (its own context is `|| echo failed` and "the job goes red"). `git add || true` is
+a sub-command whose only failure mode is a glob matching nothing, and it is immediately handled by
+`if git diff --cached --quiet; then …; exit 0; fi`. The step itself runs `set -euo pipefail` and
+`exit 1`s after five failed pushes.* 📌 ***Written down because this sweep's documented habit is to
+over-call, and a pass that found three real defects is exactly where the fourth gets invented.***
+
+## 7. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 470, Δ=0.** Working `649 · 1 · 470 · 469`; baseline **`636 · 2 · 484 · 481` — FORTY-SIXTH consecutive identical run.** Measured 2026-09-22T16:45:41Z |
+| **(ii)** ≥1 workflow-header claim is FALSE of its own file | 🔴 **TRUE — P1's cron comment and header both invert PDT/PST**, and the file's own cron settles it. ⚠ **But the branch the pre-registration called "materially better" is half-true and is stated at full strength: of the nine independently checkable claims in P3's header, NINE HOLD** |
+| **(iii)** ≥1 COMPASS fact asserting something checkable is FALSE or STALE | 🔴 **TRUE — P1's "COMPASS fact 51" does not support the claim it is cited for.** ⚠ **The stronger candidate, `fact 176` in a COMPASS that stops at 107, is PRIOR WORK — `NBA_MASTER_SUMMARY.md:30363` already has it, "cited twice in the twelve". Killed** |
+
+✅ **Baseline `636 · 2 · 484 · 481` — FORTY-SIXTH consecutive run.** Working `649 · 1 · 470 · 469`.
+
+## 8. ⚠ VERDICT
+
+🔴 **NOT CLEAN — three new defects (P1's inverted DST, the fact-51 mis-citation, P2's duplicate
+`6)`) plus one new code defect (`main.py:539`) and one propagation into this sweep's own table.
+New open item T20-11; `NBA_OPEN_ITEMS.md:5812` corrected in place.**
+✅✅ **AND THE PASS'S LARGER RESULT IS A RETIREMENT: the workflow headers are, on the whole,
+TRUSTWORTHY OPERATOR DOCUMENTATION. Nine of nine checkable P3 claims hold, including six exact
+defaults in four different source files. The sweep has been assuming these comments might be stale;
+they are not.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
+⚠ **SIX KILLS LOGGED (rules 26/28)**: **fact 176** *(`NBA_MASTER_SUMMARY.md:30363`)* · **fact 107's
+"TWO vs THREE"** *(`NBA_WORKERS.md` §0.00000)* · **P3's 1:15 PM PT cutoff** *(COMPASS 107,
+extensively)* · **the P1/P2/P3 cron facts** *(§T20.31)* · **`PRIZEPICKS_PROJECTIONS_URLS` can be
+pointed at NBA** *(`NBA_OPEN_ITEMS.md:12092`)* · **P2's `|| echo` self-claim** *(§T20.48)*.
+
+📌 ***The lesson:*** **a comment that identifies a hazard is not a comment that survives it. P1's
+header spotted the DST crossing, named the months it spans, explained why the cron is written in UTC
+— and then stated the drift backwards, twice. The sweep read that comment, copied the wrong half into
+a table, and computed the two rows beneath it correctly from scratch.**
+***Nine of nine claims held in the file that did the arithmetic; the one that failed is the one that
+explained why the arithmetic was hard.***
