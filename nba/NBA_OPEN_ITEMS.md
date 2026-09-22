@@ -1,5 +1,27 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+## 🔴 **T15 PASS 1 — OPEN ITEMS THE TRANSCRIPT LEAVES NAMED AND SCOPED** *(§T15.2, written 2026-09-22 from the 2026-09-12/13 transcript; **transcript-sourced, NOT re-taken live** — tagged so a reader does not mistake them for `[LIVE-AUDIT]` state)*
+
+| # | Item | State as T15 leaves it |
+|---|---|---|
+| **T15-1** 🔴 | **OREB per-cell dispersion** — *"the negative-binomial dispersion for oreb is fitted **globally**, and for a stat where a player's outcome is 0, 0, 0, 4, a single global shape can't serve both the bench and the crashers"* | **The one thing between oreb and certification.** The MEAN defect is fixed and measured *(worst-band bias 0.241 → 0.045, 81%)*; the residual is **alternating-sign noise in thin bands**. ⚠ *"At a 0.1 pp cost it isn't urgent, and it's **scoped and documented rather than forgotten**."* |
+| **T15-2** 🔴🔴 | **`fantasy_score` carries a −0.3 pp penalty and is the HIGHEST-VOLUME prop on the board** *(994,879 rows)* | **It had NO reliability verdict at all until this session**, and it carries **the lowest lift of any prop, 5.2%**, against a 2.92 pp worst band. ⚠ **Commercially the most exposed number in the table** — *"a weighted sum of six noisy counts, so the errors compound while the predictable role signal gets diluted."* |
+| **T15-3** 🔴 | **`double_double` — worst calibration in the system, 7.32 pp**, penalised −0.4 pp on **47,912 rows** | *"far thinner than anything else — a yes/no market graded on a 0.5 line, **structurally different from every other prop**."* ⚠ *No fix is proposed in T15; the penalty is the whole treatment.* |
+| **T15-4** ⚠ | **`dunks` remains EXCLUDED pending play-by-play** | Baseline coverage as T15 leaves it: **29 of PrizePicks' ~31 stat types** *(28 certified + oreb penalised)*, **only `dunks` out**. ⚠ **NOT re-taken live** — the live count may differ. |
+| **T15-5** ⚠ | **Two of five board sources still do not archive** | Underdog **5,281**, Fliff **1,394**, Sleeper **1,276** land; **PrizePicks and Betr do not appear in the archiver's output** in this transcript. *See `NBA_SYSTEM_ARCHITECTURE.md` §0f-4; §0f-1 already records the Betr pull as not running and §0f-3 the primary PrizePicks board as having no output file.* |
+| **T15-6** ⚠ | **The live archiver's `event_id` is SYNTHESISED** — *"`event_id` is not null and live boards have no odds-api event id"* | A **joinability constraint downstream**: archived live rows cannot join to Odds-API events on that key. *Recorded, not diagnosed — T15 does not say what the synthesis rule is.* |
+| **T15-7** 🔑 | **`k_stab` for oreb was 60 — the heaviest prior of any prop — against a swept optimum of ≈4** | ⚠ **The sweep was MONOTONE in k across 3/5/8/12/20 with MAE best at the same setting**, so the old value was not a local choice. 🔑 **OPEN QUESTION T15 does not ask: are the OTHER props' `k_stab` values audited the same way?** *Only oreb's was swept.* |
+
+🔑🔑 **AND ONE PROCESS ITEM WORTH MORE THAN THE FIXES** *(the transcript's own judgment)*: the
+**reliability scorer** measures every prop on one ruler — **ECE, worst band, Brier, lift over a
+base-rate model, both seasons** — *"so penalties are **DERIVED rather than declared**, and any future
+prop lands on the same scale automatically."* ✅ **It caught two props that would have shipped as
+certified, and it caught the assistant's own over-correction on oreb within minutes.** ⚠ **Paired
+with the CALIBRATION CHECKER**, which closed a different hole: *"until now, a prop's verdict existed
+only in an ephemeral run output"* — the checker re-verifies any prop **from stored data**, without
+depending on a harness log that scrolls away. *Validated against `points` — worst band 0.8 pp on
+more, 0.9 pp on less, reproducing the certification standard independently.*
+
 > ## 🔴🔴 READ FIRST — **EVERY DEADLINE IN THIS DOCUMENT KEYED TO `2026-10-03` IS 17 DAYS EARLY**
 > *Standing correction, added 2026-09-21 (§T10.18b). It applies to the whole document and is not
 > repeated at each site.*
