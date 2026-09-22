@@ -7768,7 +7768,7 @@ goblins at **74.1 / 68.7 / 61.9%** (T−3/−2/−1) and demons at **32.9 / 21.3
 
 ### ⚠⚠ The actionable result: the demon ladder has a fourth tier nobody priced
 - **Goblin side — deepest tier with real volume is T−3** (62,542 legs). **T−4 collapses to 1,600, a
-  39× fall.** **§5's goblin economics already stop at T−3**, so the documented range matches the
+  39× fall.** ⚠⚠ **RE-DERIVED 2026-09-22T19:52Z, T20 pass 75 (§T20.80): live `nba_market.board_tiers` holds **`T−3` = `62,183`** and **`T−4` = `1,308`** — a **`47.5×` fall**.** *(Population confirmed, not assumed: every `T−3`/`T−4` leg is `kind = 'goblin'`, so the comparison is like-for-like — rule 23.)* 🔴 ***AND RULE 40's DISCRIMINATOR CANNOT BE APPLIED: `DATED` or `RETRACTED`? The original carries no date, tree or timestamp, so there is nothing to date the movement against. **The conclusion is UNAFFECTED — T−4 is still a collapse and §5's range still matches — but the figures themselves are now unfalsifiable in their original form, which is why they are re-pinned here.*** **Original kept, per rule 40.** **§5's goblin economics already stop at T−3**, so the documented range matches the
   volume-supported range — **but that was never the stated reason, and now it is.**
 - **⚠ Demon side — deepest tier with real volume is T+4, and §5's economics stop at T+3.**
   **T+4 carries 117,010 legs across 2,758 distinct player-props.** **T+5 is where the collapse
