@@ -690,6 +690,36 @@ defect, and it's only on the combos."***
 > history — there is no archive of them anywhere***, which we established when we exhausted the
 > sources. **Historically we can train and evaluate on 13; LIVE we'll score all of them.**"*
 
+> ### ⚠⚠ `[LIVE-AUDIT]` **RE-DERIVED 2026-09-22 (T20 pass 19, §T20.24) — THE ARCHIVE HOLDS `12`, NOT `13`, AND THE MISSING ONE IS ARCHIVED FOR NINE OTHER BOOKS**
+> 🔑 **NOT A RETRACTION — the quote above is a QUOTED CLAIM, dated to its transcript
+> (`2026-09-13-01-03-48`) and recorded 2026-09-22. It is DATED, not struck** *(rule 40's second half;
+> §T20.14's error is the precedent being avoided)*. **What follows is the archive as it stands
+> today.**
+> **`SELECT DISTINCT market_key FROM nba_market.board_snapshots WHERE bookmaker='prizepicks'`
+> → 20 keys, 2026-09-22.** **Collapsing the 8 `_alternate` variants leaves `12` base stat types**:
+> `points` · `rebounds` · `assists` · `threes` · `blocks` · `steals` · `turnovers` · `points_rebounds_assists` ·
+> `points_rebounds` · `points_assists` · `rebounds_assists` · `blocks_steals` *(= "stocks")*.
+> 🔴 **`player_double_double` — the thirteenth on the list above — has ZERO PrizePicks rows.**
+> 🔑🔑 **AND IT IS NOT MISSING FROM THE ARCHIVE, ONLY FROM PRIZEPICKS': `player_double_double`
+> carries `274,010` rows across NINE bookmakers spanning `2024-10-22 → 2026-04-12`** — **betmgm
+> 65,789 · draftkings 45,897 · fanduel 45,522 · bovada 38,893 · williamhill_us 34,531 · fanatics
+> 29,812 · betrivers 10,674 · underdog 1,960 · betr_us_dfs 932.**
+> ⇒ ***The scope limit is real and the count is off by one in BOTH directions at once: one fewer
+> PrizePicks stat type than stated, and one MORE that is evaluable cross-book than the framing
+> implies.*** ⚠ **The corpus already prices cross-book consensus (`rung_market`, `avg(books) = 2.11`),
+> so "no archive of them anywhere" is the part that needed testing — and for double-double it does
+> not hold.**
+> ✅ **RULE 20, three vocabularies before an absence**: `player_double_double` exists as a key,
+> exists for nine books, and returns zero rows only when filtered to `bookmaker='prizepicks'`.
+> ✅ **The rest of the "no archive anywhere" list SURVIVES**: the full non-PrizePicks vocabulary is
+> **89 distinct `market_key` values**, and it contains **no** `fg made` / `fg attempted` / `ft made` /
+> `ft attempted` / `3pt attempted` / `personal fouls` / `offensive rebounds` / `defensive rebounds` /
+> `dunks` key at all. ⚠ **`player_fantasy_points` is the one partial exception and it does NOT
+> qualify as an archive: `underdog` only, `189` rows, on a SINGLE offseason date (`2026-09-12`).**
+> 📌 **Found because §T20.23's orphan audit flagged this section as unreachable under all three
+> citation grammars — *an unreachable finding is also an un-re-derived one*, and this is the
+> measurement that proves the cost was real.**
+
 ⚠⚠ ***Every backtest number in this corpus — the per-tier hit rates, the 89.6% coverage, the
 market-calibration result — is measured over 13 of ~25 stat types.*** **That is a scope limit on the
 evidence, not on the system, and it belongs beside every figure drawn from the two-season board.**
