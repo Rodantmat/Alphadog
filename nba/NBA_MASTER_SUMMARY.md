@@ -35443,3 +35443,93 @@ MOTIVE — it counted COMMITS, this tests CONTENT)* · **RULE 41 / T19-1** *(**P
 how to build this system from nothing still ends at the second one, above a table that promises the
 rest is coming.** ***A summary of what was done is not an instruction for doing it again — and the
 difference only matters on the day someone needs the second one.***
+
+---
+
+# §T20.87 — T20 PASS 82: ✅🔴 **RULE 41 ON ALL TWELVE — THE OTHER TEN ARE SOUND. THE HOLES ARE CITATION GAPS, NOT CONTENT GAPS — AND THE FIRST INSTRUMENT SAID THE OPPOSITE** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: `RULE 41` was born when `NBA_GLOSSARY.md` was found with no content commit for T12–T18 —
+seven transcripts, each closed `3/3`. `§T20.86` has just found the same shape on `NBA_RECIPE.md`.
+**Two of the twelve, found by accident, eleven passes apart. Nobody had ever run the test on the other
+ten.***
+
+## 🔴🔴🔴 THE FIRST INSTRUMENT FAILED, AND IT FAILED ALARMINGLY — **THIRD TIME THIS SESSION**
+
+*The first matrix asked: **which transcripts do each document's COMMIT SUBJECTS name?*** ▶ **It returned
+`NBA_BASELINE_CALIBRATION` as `T1 · T15 · T16 · T17 · T20` — missing `T7`, `T8` and `T9`, which are the
+baseline's OWN founding transcripts.** 🔴 **False, and its own masthead says so:** *"Created. Material
+from **T4** (methodology), **T7** (design + live code), **T8** (calibration), **T9** (factor layer,
+periods, combos)."* ⇒ ***All of it landed in ONE creation-day commit whose message names no transcript
+at all.***
+
+⚠⚠ **RULE 15: the instrument measured how commits are WORDED, not what documents CONTAIN.** 📌 *Third
+automated first-pass instrument to fail this session — after §T20.82's term-picker (`38` of `64`
+flagged, every flag an artefact) and §T20.80's two population errors. **The pattern is now stable
+enough to state: an automated proxy for a judgement is wrong until read.***
+
+## ✅ THE CORRECTED MEASURE — **TRANSCRIPT ATTRIBUTIONS PRESENT IN EACH DOCUMENT'S TEXT**
+
+| document | of 20 transcripts attributed |
+|---|---|
+| `NBA_DATABASE` | **18** |
+| `NBA_FINAL_SCORING_CALIBRATION` | **16** |
+| `NBA_SYSTEM_ARCHITECTURE` · `NBA_SYSTEM_DESIGN` | **15** |
+| `NBA_BASELINE_CALIBRATION` · `NBA_WORKERS` | **12** |
+| 🔴 `NBA_GLOSSARY` | **10** |
+| `NBA_MULTIPLIERS` | **7** |
+| `NBA_RECIPE` · `NBA_GOBLIN_DEMON` | **6** |
+
+## ✅ CLAUSE (ii) — **FAILS. THE HOLES ARE CITATION GAPS, AND I TESTED THE STRONGEST ONE.**
+
+*The sharpest candidate: **`NBA_WORKERS` attributes nothing to `T12`, and T12's deliverable was the
+board scrapers** — the workers document's core subject.* ▶ **Read, not counted:**
+**`scrape_fliff_board` ×4 · `scrape_sleeper_board` ×3 · `scrape_underdog_board` ×3 ·
+`scrape_prizepicks_nba_board` ×2.** *Same for T16/T17's subjects: `build_final_hp` ×9 ·
+`defender_ratings` ×5 · `blowout_model` ×4 · `storage_diet` ×2.*
+⇒ ***The material is there. The transcript NUMBER is not.*** **Ninth consecutive honest negative.**
+
+⚠ **RULE 19 APPLIED AS PRE-REGISTERED: a hole is `DRIFT` only if the transcript carried material that
+BELONGED in that document. `NBA_GOBLIN_DEMON` at `6` is not drift — most transcripts have nothing for
+it.**
+
+## 🔑🔑 CLAUSE (iii) — **HITS, AND THE ANOMALY IS THE POINT**
+
+**Coverage tracks SCOPE: broad-mandate documents sit at `15`–`18`, narrow-subject documents at `6`–`7`.**
+🔴 ***The single exception is `NBA_GLOSSARY.md` at `10` — and its mandate is the BROADEST of the twelve:***
+> ***"any material term that shows more than once must be in the glossary."***
+
+⇒ ***The matrix, built for a different purpose and blind to which document was which, independently
+re-identifies `RULE 41`'s original document as the one outlier relative to its own charter.***
+⚠ **PRIOR — carried, not re-discovered** *(RULE 41 / open item T19-1, and the `§T19.2` glossary
+backfill)*.
+
+## 📌 TWO THIN SPOTS, EACH WORTH A LINE AND NOT MORE
+
+- **`T19` appears in NONE of the ten domain documents; `T20` appears in ALL TEN.** *Both are the
+  sweep's own sessions. The difference is that this session wrote domain content and T19's did not —
+  which is what `§T20.83` and `§T20.86` were.*
+- **`Betr`, the fifth board source, has NO producer in the repo at all** *(four board JSONs, no
+  script — its pull runs on the worker)* **and exactly ONE cell in `NBA_WORKERS.md`:**
+  *"| Betr | Betr | bridge job, owner's Keycloak token |"* — against 2–4 script mentions for each of
+  the other four. ⚠ *Thin, not absent; `T20-14` carries its token expiry in `NBA_SYSTEM_ARCHITECTURE`.*
+
+⚠ **CLAUSE (i): tree HOLDS at `648 · 1 · 471 · 470`** *(Δ `484 − 471` = `13`)*.
+
+⚠ **RULE 51 BEFORE SHIPPING**: *`"citation gaps, not content"`, `"commit-message vocabulary"` and
+`"broadest of the twelve"` each return **`0`**; `"any material term that shows more than once"` returns
+`NBA_GLOSSARY` and `NBA_MASTER_SUMMARY` — **the charter clause being quoted**.* ✅ **Novel.**
+
+⚠ **KILLS LOGGED (rules 26/28/51)**: **RULE 41 / T19-1** *(the glossary — **PRIOR**, this pass's motive,
+**EXCLUDED from clause (ii)'s denominator**, and re-identified here by an independent measure rather
+than re-derived)* · **§T20.86** *(the recipe — **PRIOR**, excluded)* · **§T20.70's masthead audit**
+*(**PRIOR** and a DIFFERENT measurement: it counted TOTAL commits per document since creation; this
+measures their DISTRIBUTION ACROSS TRANSCRIPTS)* · **§T20.75's `NBA_RECIPE` commit count** *(**PRIOR**)*.
+
+📌 ***The lesson:*** **the pass set out to find a third document with RULE 41's disease and found that
+the other ten are healthy — but only after its own first instrument accused the baseline document of
+missing the three transcripts that created it.** ***Two documents drifted. The other ten just stopped
+saying where their material came from, which looks identical from the outside and is not the same
+illness.***
