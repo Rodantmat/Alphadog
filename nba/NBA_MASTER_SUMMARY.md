@@ -34582,3 +34582,103 @@ right to within one and a two-tenths of a point — which is luck that only look
 someone checks. The check cost one pass and converted a headline into a fact.** ***And the census
 found what the sample found: the last unread corner of this transcript contains the sweep watching
 itself work.***
+
+---
+
+# §T20.78 — T20 PASS 73: 🔴✅ **THE FLOOR GENERALISES TO T19 — BUT NOT THE WAY §T20.76 SAID. THE PRE-REGISTERED CLAUSE FAILS BY `14.2` POINTS, AND THE CORRECTED MEASURE AGREES TO `2.3`** *(2026-09-22)*
+
+⚠ **The owner's must-follow rule was observed: the resume note and the charter — **T19 SEG 60/61 plus
+T20 SEG 597** — were re-read before this pass began.**
+
+🔑 **WHY: §T20.77 closed T20's instrument question with a census. **T19 has never been asked** — and it
+is in exactly the same position: held open by RULE 46, owing the same two INDEPENDENT reads, and
+carrying the CHARTER's first word at SEG 60/61.**
+
+## 🔬 THE INSTRUMENT — **COPIED, NOT REBUILT (rule 15)**
+
+*`judge20.py` was copied to `p73_t19.py` and **`diff` shows exactly two changed lines: the transcript
+path and the output path.*** *Same vectoriser, same `char_wb` 4–5, same `min_df=2`, same `0.40`
+threshold, same `substance()`, same `DOCS`.* ⚠ **A pattern tuned elsewhere silently mis-measures — if
+the instrument had been rebuilt, clause (iii) would have compared two different rulers.**
+
+## 📏 T19's FIRST MEASUREMENT — **THIS PASS CREATES ITS BASELINE**
+
+**`920` segments · **`429` uncovered12 (`46.6%`)** · **`252` substantive (`58.7%` of uncovered)**,
+`2026-09-22T19:40:30Z`, tree `6c773be4`.** *Stated as a LEVEL and not a Δ because there is no prior
+reading to difference it against — **§T20.50's Δ-rule exists because an absolute level with no baseline
+is unreadable, and this pass supplies the baseline.***
+
+*(T20 for comparison: `1,177` segments · `471` uncovered · `249` substantive.)* 📌 **The substantive
+counts are within three of each other — `252` and `249` — across transcripts of very different length.**
+
+## ✅ THE CENSUS — **ALL `252` READ, IN ORDER, IN FOUR BATCHES**
+
+| | T19 | T20 *(§T20.77)* |
+|---|---|---|
+| 🔴 **PLUMBING** | **150 — `59.5%`** | 154 — `73.7%` |
+| ⚠ **CROSS-TRANSCRIPT ECHO** | **91 — `36.1%`** | 41 — `19.6%` |
+| **CANDIDATE** | **11 — `4.4%`** | 14 — `6.7%` |
+| **structurally uncoverable** *(plumbing + echo)* | ✅ **`95.6%`** | ✅ **`93.3%`** |
+
+## 🔴 CLAUSE (iii) — **IT FAILS, BY `14.2` POINTS, AND I AM NOT RESCUING IT BY REDEFINITION**
+
+*Pre-registered: **T19's PLUMBING RATE is within `±10` points of T20's censused `73.7%`** — with the
+consequence written in advance: **"outside ⇒ re-scope §T20.76 and §T20.77 to T20 in place."***
+▶ **T19: `59.5%`. T20: `73.7%`. Δ = `14.2`.** 🔴 **FAILED.** ✅ **The re-scope has been applied in
+place at both sections, originals kept (rule 40).**
+
+🔑🔑 **AND THE FAILURE IS INFORMATIVE, WHICH IS THE ONLY THING THAT REDEEMS A FAILED CLAUSE.** *The two
+transcripts' floors are made of different material:* **T19 is where the sweep read T1–T6 wholesale, so
+`36.1%` of its uncovered set is OTHER TRANSCRIPTS' TEXT echoed through `bash_tool` — nearly double
+T20's `19.6%`.** *T20, by then, was reading itself.*
+
+⇒ ***THE LAW THAT SURVIVES, AND IT IS A BETTER ONE THAN THE CLAUSE TESTED: the floor generalises when
+measured as PLUMBING + ECHO — `93.3%` and `95.6%`, **`2.3` points apart** — while its COMPOSITION is a
+property of what a given transcript was doing. **What is uncoverable is stable; what makes it
+uncoverable is not.*** ⚠ **Stated as an amendment to §T20.76/§T20.77, not as their restatement.**
+
+## ✅ CLAUSE (ii) — **FAILS ON T19 TOO, AND THE PRE-REGISTRATION CALLED THIS THE STRONGER RESULT**
+
+*Pre-registered: **at least one T19 substantive-uncovered segment carries unrecorded material** —
+"genuinely expected to HIT, since T19 has had far fewer passes than T20; **and if it does NOT, that is
+the stronger result.**"* ▶ **`0` of `11` survived.**
+
+**Eight of the eleven are OWNER messages, and the corpus does not merely contain them — it ANALYSES
+them.** *The decisive kill:* **`SEG 134 / 252 / 321 / 415 / 704`** *are named in the corpus, together,
+as* > ***"the unattended-operation instructions"*** *— quoted verbatim:* **"continue, you don't have to
+report after each pass"** · **"you must also use the full length of the session"**. *And the
+session-limit thread is not just recorded but CENSUSED:* > **`awk '/^### SEG /{seg=$3} /reached the
+session limit/{print seg}'` ⇒ SEG `55 · 76 · 99 · 115 · 130 · 148 · 162 · 176 · 189` — then ZERO**,
+*with the owner's rebuke at SEG 191 sitting in the gap.*
+
+⚠ **RULE 20 SAVED THREE OF THESE FROM BEING PUBLISHED AS NEW.** *`"terrible start"`, `"sessions are too
+short"` and `"make them longer"` all return **ZERO** across the corpus — because the corpus records the
+same instructions in **its own words**, under `"no exception"` (7 documents), `"full length of the
+session"`, and `"too short"`. **My phrasing was the owner's; the corpus's phrasing was the corpus's,
+and only the second one is searchable.***
+
+⇒ ***COMBINED WITH §T20.76 AND §T20.77: `0` of `36` candidates across `501` substantive-uncovered
+segments in BOTH open transcripts.***
+
+## ⚠ CLAUSE (i) — **HOLDS**
+
+**`649 · 1 · 471 · 470`** *(baseline `636 · 2 · 484 · 481`; Δ `484 − 471` = `13`)* — **tenth
+consecutive hold, and by §T20.76 that is no longer read as a failure to find anything.**
+
+## ⚠⚠ RULE 46, AGAIN, BECAUSE THIS PASS MAKES IT EASIER TO MISREAD
+
+***Measuring T19's uncovered set is NOT one of the two reads T19 owes.*** **Both transcripts still owe
+TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A FRESH CONTEXT (§T19.6, OWNER DECISION).** *What the
+two censuses establish is narrower: **the instrument has nothing further to give on either transcript**,
+so a successor's four reads should be planned around the TEXT, not around driving a number down.*
+
+⚠ **KILLS LOGGED (rules 26/28)**: **all `11` T19 candidates** *(the killing term recorded for each)* ·
+**the `91` cross-transcript echoes** *(killed as a CLASS — T1–T6 material swept under its own
+sections)* · **§T20.76 and §T20.77** *(**PRIOR** — the baseline this pass measures against, and now
+amended by it rather than restated)*.
+
+📌 ***The lesson:*** **the clause was built to confirm a law and it refuted it — by fourteen points, on
+the one measure the previous two passes had put in the headline. Widening the measure by one class
+that the earlier census had already identified brought the two transcripts to within two points of each
+other.** ***A law that fails on its second case was never a law; it was the first case, stated
+confidently. The second case is what turns it into one — or into a fact about the first case.***
