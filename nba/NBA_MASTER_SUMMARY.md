@@ -34763,6 +34763,18 @@ finding)* · **§T20.78's T19 census** *(**PRIOR**, and **NOT** one of the two r
 stands, and never once wrote down where T19 stands — while a rule this session wrote held both of them
 open, equally.** ***A handoff tells you where you are. This one told you where half of you is.***
 
+> # 🔴🔴🔴 **§T20.79 IS CORRECTED BY §T20.81 — THE FOURTH SELF-WITHDRAWAL, AND IT WAS CAUGHT BY THE CHECK BUILT TO CATCH IT** *(T20 pass 76, 2026-09-22)*
+>
+> **§T20.81 probed this section's headline term — `"8 passes"` — against the BASELINE tree (`b0090e7f^`, the corpus as it stood BEFORE this section was written, per rule 28). It returns a hit in this very document's TRANSCRIPT LEDGER:**
+>
+> > *"| 19 | `2026-09-20-18-46-12-nba-alphadog-documentation-pass.txt` | ⏳ **HELD OPEN — CLEAN 0/3 · 8 passes · detail §T19.1–§T19.11.** **920 segments.**"*
+>
+> 🔴 ***So the claim above — "NEITHER NUMBER WAS READABLE", "T19's position is stated nowhere", "both had to be RECONSTRUCTED" — is FALSE. Both numbers, the section range and the segment count were already on file, stated together, in one ledger row.*** **WITHDRAWN.**
+>
+> ✅ **WHAT SURVIVES, AND IT IS A PLACEMENT FINDING RATHER THAN AN ABSENCE FINDING:** *T19's position was in the **transcript ledger of `NBA_MASTER_SUMMARY.md`** — it was **not** in the run log's `START HERE` block, which §T20.69 established is the successor's first screen.* **The repair stands and is still worth its keep: the position now appears where a successor actually reads, beside T20's.** ⚠ *Also standing: clause (iii)'s dating of `"T19 stands at 6 passes"` at `:25972`, and the observation that `§T19.5`/`.6`/`.9` live in `NBA_OPEN_ITEMS.md` — the ledger row says "detail §T19.1–§T19.11" and does not mention the split.*
+>
+> 📌 ***And note what this cost me to find: the section above was written ninety minutes earlier by the same author, in the same document that already contained the answer, four hundred lines from where the ledger sits. **Rules 26/28 failed not because the corpus was hard to search, but because I did not search it for the thing I was about to say.***
+
 ---
 
 # §T20.80 — T20 PASS 75: 🔴 **UNPINNED FIGURES RUN AT `8%` STALE AGAINST PINNED FIGURES' `0%` — AND THE REAL COST IS NOT THE ERROR RATE, IT IS THAT NEITHER MOVED FIGURE COULD BE DATED FROM ITS OWN TEXT** *(2026-09-22)*
