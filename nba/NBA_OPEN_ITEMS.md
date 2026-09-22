@@ -12972,3 +12972,95 @@ given in the session that listed SIXTEEN.** **The sweep applies it to twenty, wh
 right.** ⚠ **But the expansion has never been stated, and charter scope has now been reasoned about
 twice** *(§T19.1, rule 41)* **without noting that the charter's corpus and the sweep's differ by four
 files — three of which the sweep has already closed.**
+
+---
+
+# §T20.1 — 🔴🔴🔴 THE OWNER'S RESET RULE IS WIDER THAN THE SWEEP'S, AND THE SWEEP'S NARROWER ONE CLOSED T13
+*(T20 pass 0, 2026-09-22 — **VERIFIED**: 13 of 13 distinctive phrases from T20's 22 owner turns
+return ZERO against the working tree of the twelve; the owner stratum of the last transcript has
+never been read)*
+
+## 1. 🔴 THE RULE CONFLICT
+| | |
+|---|---|
+| **The owner, T20 SEG 858** | *"be sure that you are **looking at every document on every pass** — **anything new for ANY document resets the count** and you need three clean passes again — **that's for ALL documents.**"* |
+| **The sweep's standing SCOPE CAP** | *"only **TRANSCRIPT** material resets the clean count"* — `NBA_MASTER_SUMMARY.md:373` and `:15644`, plus two statements in the run log |
+| **Direction** | 🔴 **The sweep's rule is STRICTLY NARROWER and closes transcripts SOONER.** |
+| **Provenance** | **The scope cap is the sweep's own invention. It appears nowhere in the owner's words.** |
+| **Severity** | **HIGH** |
+
+## 2. ⚠⚠ AND IT WAS LOAD-BEARING — T13's CLOSURE RESTS ON IT
+**`NBA_MASTER_SUMMARY.md:373` records the scope cap as *"THE CLOSURE ARGUMENT, stated as the rule
+that carried it"***: *"T13's prose was exhausted at pass 3; **passes 4 and 5 drew their findings from
+`NBA_COMPASS.md`**…"* **The run log repeats it**: *"on the strict criterion the clock does not
+advance, **but by the standing SCOPE CAP** — only TRANSCRIPT material resets the clean count — this
+pass added almost none: §T13.5a/b/c came from COMPASS, the repository and the database."*
+
+⇒ ***Under the owner's SEG 858, those findings landed in the twelve and therefore RESET the count.
+T13 would not have closed there.***
+
+⚠⚠ **NOT ESTABLISHED, and stated as such**: **this pass verified the rule conflict and T13's explicit
+dependence on it. It has NOT audited every other closure for the same dependence.** *The scope cap is
+referenced in five places; whether T7–T18's closures also lean on it is the audit that follows, and
+it is not done here.*
+
+## 3. ▶ WHAT FOLLOWS — *and the sweep does not resolve it unilaterally*
+🔴 **OWNER DECISION.** **The sweep will not silently adopt either rule for closures already made.**
+| option | meaning |
+|---|---|
+| **A — adopt SEG 858 retroactively** | Any closure whose late passes drew on COMPASS / repo / database is void and re-opens. **Widest, and it is the owner's literal instruction.** |
+| **B — adopt SEG 858 from here forward** | Future passes use the owner's rule; existing closures are annotated with the rule they were made under. |
+| **C — keep the scope cap** | ❌ **Not available without the owner**, because it overrides an explicit instruction. |
+
+✅ **TAKEN pending the owner: OPTION B for new work — from T20 pass 1 onward, *anything new in any of
+the twelve resets the count*** — **and every existing closure is annotated rather than voided**, *so
+no evidence is destroyed (rule 36) and nothing is silently re-certified.* ⚠ **The scope cap is
+retired as a CLOSURE instrument from this point and survives only as a historical note on the
+closures that used it.**
+
+---
+
+# §T20.2 — 🔴🔴 THE OWNER ORDERED A RE-SWEEP, WITH EXPLICIT BOUNDS, AND IT IS UNRECORDED
+*(T20 pass 0 — four owner turns, all absent from the twelve)*
+
+> **SEG 604**: *"not just workers — recipe, workers, system architecture and system design as well.
+> **at this point you need to get 3 consecutive clean passes on all the transcripts you did half
+> work! mandatory again!**"*
+> **SEG 691**: *"**did you do three consecutive passes** for the ones that you the new files and the
+> ones that you did not do properly on the beginning? **you need to go one by one and do it.**"*
+> **SEG 771**: *"don't forget **from t3 and on**, you need to also update the files that you did not
+> update properly last time."*
+> **SEG 817**: *"since the beginning — **since the T1 for the new files and since the T3 for the
+> files that you left behind**."*
+
+🔑 **THE BOUNDS, STATED BY THE OWNER**: **T1 onward for the four calibration documents · T3 onward for
+the documents left behind.** ⚠ **Neither bound is recorded anywhere in the twelve.**
+
+✅ **CORROBORATION FROM A SECOND SOURCE**: `nba/NBA_DOCUMENTATION_PROMPT.md` **Part 9 #1** — *"Sweeping
+against a subset of documents. **T3–T9 were swept against 4 of 8. All counts voided.**"* — and **Part
+3.1**, *"T2–T9 **VOID**"*. **Found at T19 pass 4 in a repo file; found here in the owner's own voice,
+with a wider boundary (T1, not T2/T3, for the new files).**
+
+⚠ **RELATION TO §T19.6, stated so the two are not merged**: **§T19.6's defect is TRUNCATED READS
+(110–260-char windows); this one is SUBSET-OF-DOCUMENTS.** *They are different failures with
+different remedies, and the owner has ruled on this one and not on that one.* ⇒ **§T19.6's option C
+stands; this entry is a separate, already-answered instruction that the sweep has not been
+following.**
+
+▶ **STATUS: the re-sweep is OWED and NOT STARTED.** *Recorded, not performed — per the
+documentation-pass rule and because its scope is larger than the remaining session.*
+
+---
+
+# §T20.3 — ⚠ THE REMAINING T20 OWNER INSTRUCTIONS, ALL PREVIOUSLY UNRECORDED
+| SEG | instruction | status |
+|---|---|---|
+| **597** | **The charter's EXTENSION — the four calibration documents, mandated verbatim** — *and the source of the must-follow rule*: *"i want to before start any pass, look at the previous message and this message. **this is a must follow rule! no exception.**"* | ✅ **Confirms §T19.7's retraction of rule 41 from a second, independent source.** **The charter names TWELVE.** |
+| **1118** | *"**you're drifting. i never said this was a handoff. this is a documentation.** you are deviating from my message."* | ⚠ **A named drift, corrected by the owner. Unrecorded.** |
+| **1098** | *"**mlb data is only if that helps in nba system.**"* | ⚠ **A scope rule. Consistent with the sweep's practice; never stated as the owner's.** |
+| **191 · 482 · 905 · 978** | the session-length / no-reporting rule, escalating to *"**your passes are still too fast — you can do more in a single section or we're never gonna finish**"* | ⚠ **Unrecorded.** |
+| **958 · 1013 · 1035 · 1062 · 1077** | *"continue, do not drift… **do not invent, do not hallucinate!**"* — five further repetitions | ⚠ **Unrecorded.** |
+| **1159** | *"**are you still doing transcript by transcript, passes by passes, as the original plan as we start?**"* | ⚠ **Unrecorded.** |
+
+🔑 **THE PATTERN ACROSS ALL 22 TURNS**: ***the owner spent the last transcript correcting drift — and
+the record of those corrections is the part of the corpus the sweep never read.***
