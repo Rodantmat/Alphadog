@@ -5809,7 +5809,7 @@ when scanning YAML for a key's value, match the key and the value independently,
 **Corrected count**:
 | Workflow | cron | Meaning |
 |---|---|---|
-| `nba-p1-weekly-static.yml` | `'0 19 * * 1'` | Mondays 19:00 UTC — 12:00 PST / 11:00 PDT |
+| `nba-p1-weekly-static.yml` | `'0 19 * * 1'` | ~~Mondays 19:00 UTC — 12:00 PST / 11:00 PDT~~ 🔴 **CORRECTED 2026-09-22 (§T20.49): Mondays 19:00 UTC — 11:00 PST / 12:00 PDT.** *PDT is UTC−7, PST is UTC−8. The two rows below were derived and are right; this one was RE-TYPED from `nba-p1-weekly-static.yml:28`, whose own comment has PDT and PST swapped. See **T20-11**.* |
 | **`nba-scrape.yml`** | **`'0 9 * * 1'`** | **Mondays 09:00 UTC — 01:00 PST / 02:00 PDT** |
 | `nba-referees.yml` | `'30 15 * * *'` | daily 15:30 UTC — 07:30 PST / 08:30 PDT |
 
