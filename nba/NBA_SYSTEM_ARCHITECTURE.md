@@ -1527,6 +1527,8 @@ binding map + direct-call list + tool enum, **plus the generator**), not three.
 **Inherited caveat, from MLB's own code comments:** *"Cloudflare/GitHub deploys may not apply wrangler
 var-only edits reliably"* — which is why endpoint and header defaults are hard-coded as fallbacks.
 
+> 🔴🔴 **THE DATABASE-SIDE SCHEDULER HOLDS TEN JOBS, TWO ENABLED, AND *ZERO* NBA — `T20-3`, an OWNER DECISION.** *Added here T20 pass 78 (§T20.83), 2026-09-22: **this document says "schedul…" twenty times and never mentioned `config.scheduled_jobs`**, and a person auditing what actually runs reads this page.* ▶ **`SELECT job_key, job_name, enabled, timezone, local_time FROM config.scheduled_jobs` ⇒ `10` rows, `2026-09-22T19:25Z`.** **ENABLED: `postgres-full-run` (06:00 PT daily) · `static-full-run` (02:00 PT weekly).** **DISABLED: `board-full-run` ×3 · `context-history-full-run` · `daily-full-run` ×2 · `incremental-morning-full-run` · `scoring-full-run`.** 🔴 ***Every name is from the MLB-era generic set. Nothing in this table is NBA-specific, and the NBA pipelines P1/P2/P3 are GitHub Actions workflows that this scheduler does not drive at all.*** ✅ **ONE PIECE OF GOOD NEWS, recorded because it bears on `T20-12`: both enabled rows carry `timezone = America/Los_Angeles` — *the SCHEDULER layer resolves Pacific correctly where the PYTHON layer hardcodes `-8`. The DST defect is one layer deep, not system-wide* (§T20.75).** ▶ **Full item: `T20-3` in `NBA_OPEN_ITEMS.md`; re-derived and HELD at §T20.75.** ⚠ *Documented, not fixed (rule 1).*
+
 ### The never-fire cron idiom
 ```python
 cfg["triggers"] = {"crons": ["0 0 30 2 *"]}   # February 30th — a date that cannot occur
