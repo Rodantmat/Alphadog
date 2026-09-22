@@ -155,6 +155,42 @@ anything else from reading them.* **(c)** *If rotation already happened, the rec
 **it currently does not**.*
 ⚠ **Nothing was changed** *(rule 1)*. **A dated STATE** *(O9)*.
 
+## 🔴🔴 THE GOVERNING PARITY DOCUMENT CONTRADICTS ITSELF ON ITS OWN HEADLINE EXAMPLE
+*Recorded 2026-09-22 (T14 pass 2, §T14.3b). **`NBA_DAILY_PARITY_AND_BACKFILL.md`, read in full for
+the first time by this sweep** *(253 lines, 16,857 bytes)*. **Documented, not fixed** *(rule 1)* —
+***and this is a document, not the system, so the standing "document, don't fix" rule applies to it
+exactly as it does to code.***
+
+**`D1 referee crew` is the example the document uses to teach its own central distinction, and the
+document holds BOTH the superseded position and its correction, in four places:**
+
+| § | what it says about D1 | position |
+|---|---|---|
+| **§3** *(the two classes)* | *"**live-only** — the value was **never archived**… officials from the box score are post-hoc truth — usable as the **TARGET** of a prediction, **never as an input to a past day**"* | 🔴 **SUPERSEDED** |
+| **§4** *(the FACTOR INVENTORY)* | **`D1 | b | ❌`** — *"assignments are game-day and **not archived**… **historical use is target-only**"* | 🔴 **SUPERSEDED** |
+| **§6.2** *(open work)* | *"**(Correction: assignments ARE knowable before the window — see §7 — so the box-score crew is a FAITHFUL HISTORICAL RECONSTRUCTION.)**"* | ✅ **CURRENT** |
+| **§7** *(stage assignment)* | **`D1 referee crew | ~6–7 AM | BASELINE | none`** | ✅ **CURRENT** |
+
+⚠⚠ **THE HAZARD IS SPECIFIC, NOT COSMETIC.** ***§4 is the FACTOR INVENTORY — the table a reader
+consults to ask "can this factor be backfilled?" — and it answers ❌ for a factor §7 places in the
+baseline stage.*** 🔑 **A reader who stops at §4, which is the natural place to stop, gets the
+superseded answer and excludes a usable factor from training.**
+📌 **§3's CLASSIFICATION is affected too, not just the row**: the document's whole (a)/(b) taxonomy is
+*"observed-and-archived versus live-only"*, ***and the correction replaces the test itself*** —
+**`NBA_SYSTEM_DESIGN.md` §0a.4: *the test is "WAS IT KNOWABLE AT THE CUTOFF," not "was it
+ARCHIVED."*** ⚠ **So §3 does not merely mis-file D1; it states a test the same document later
+abandons.**
+✅ **What is NOT in doubt**: **§7 and §6 are dated later and are consistent with each other and with
+`NBA_COMPASS.md`**, so **the CURRENT position is that referee assignments post ~6–7 AM PT and are a
+baseline-stage factor.**
+🔑 **RECORDED AS A CLASS, because this sweep has now seen it twice**: ***a document that carries a
+correction in one section and the corrected text in another is more dangerous than one that is simply
+wrong***, **because each section reads as authoritative on its own.** *(The other instance:
+`enrichment_backfill_status_2026_09_10` still carrying the `days_done` item its own author retracted
+— see that item above.)*
+
+---
+
 ## 🔑🔑🔑 T14's CLOSING AUDIT — **the system's own complete status, answered to the owner's "is everything covered now?"**
 *Recorded 2026-09-22 (T14 pass 1, §T14.2e). **Transcript `2026-09-13-20-53-23`, the final owner turn
 and its answer** — ***rule 27: a transcript's state on a subject is its LAST word.*** ⚠ **This is the
