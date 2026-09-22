@@ -38283,6 +38283,30 @@ Python living inside a YAML step that no enumeration had ever counted.** ⚠⚠ 
 file the sweep lists is code the sweep cannot check, and a census that counts scripts will never
 find it.***
 
+## ⑨ `RULE 52` ON THE INSTRUMENT — AND IT CAUGHT SOMETHING ABOUT THE INSTRUMENT ITSELF
+
+**`650 · 1 · 470 · 466`** against baseline **`636 · 2 · 484 · 481`**. **Two bands moved by `1`;
+both deltas were opened, as the rule requires.**
+
+| band | move | flipping member | verdict |
+|---|---|---|---|
+| **high band** | `649 → 650` | **seg `401` at `0.450002`** — **`+2` MILLIONTHS** above `0.4500`, after sitting `27` millionths BELOW it one pass ago | 🔴 **NOT substantive. NOT a finding.** *Two consecutive flips on a `3 × 10⁻⁵` movement identify `401` as the instrument's single most volatile member.* |
+| **`uncovered30`** | `467 → 466` | **seg `595` at `0.400013`** — `+13` millionths above `0.4000`, **but its BASELINE value is `0.192076`, a delta of `+0.207937`** | ⚠ **Large delta — and still NOT a coverage gain** |
+
+🔑🔑 **Segment `595` was OPENED, and it is a TOOL-CALL ECHO, not substance**: *"context lines: 3 max
+matches: 2 path: nba/nba workers.md pattern: 4. baseline engine"* — **a grep invocation.** It crossed
+the threshold because this pass and `§T20.113` wrote a great many `file:line` and path references,
+**so the documents now resemble grep strings more than they did.** ⇒ **The instrument recorded a
+`0.21` improvement in covering a line that is not content.**
+
+🔴🔴 **AND THAT EXPOSES A PROPERTY OF `judge20.py` WORTH RECORDING ONCE**: its `tail` band filters
+with **`substance(segs[i]['text'])`** — but **`uncovered12` and `uncovered30` are raw threshold
+counts, `(b < 0.40).sum()`, with NO substance filter.** ⚠ ***Two of the four numbers this sweep has
+reported every pass for a hundred passes can move on a tool echo.*** 📌 *Recorded, not changed — the
+instrument is the sweep's own deliverable and altering its definition mid-sweep would break every
+prior reading. **The correct use is the one applied here: open the member before believing the
+number.***
+
 ▶ **`RULE 51` novelty check, run on the FINDING against the BASELINE tree as the last step:**
 `np.full` **0** in `/tmp/t20base/nba/*.md`; `score_board_legs` never co-occurs with
 `constant`/`hardcod`/`0.55`/`0.75` in any of the twelve; `NBA_GLOSSARY.md:318` lists `f_vol` as a
