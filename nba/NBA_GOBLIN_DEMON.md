@@ -110,6 +110,72 @@ NBA evidence is **three distinct legs** and the 1.9× itself is **WNBA**; ***whe
 below 2.0× is NOT RECORDED***, and the note is explicit that the 1.9× observation is WNBA's.
 **A dated STATE** *(O9)*.
 
+## 0h. 🔑🔑 THE LABELS ARE **ENCODED IN THE PRICE** — measured on 183,777 rows, **re-taken live on 191,690**
+*Recorded 2026-09-22 (T13 pass 1, §T13.2). **Source: T13's own measurement over
+`nba_market.board_snapshots`, 2024-10-22 → 2025-04-13. RE-TAKEN LIVE against the same SQL and the
+same fixed date range, pinned 2026-09-22T07:47Z** — rule 31: read the system, not the description.*
+
+**The method**: join every `%_alternate` PrizePicks row to the **standard** row for the same
+`event_id · snapshot_label · player · stat · side`, and classify the alternate by **which direction
+its line moved**.
+
+| `price` | Direction vs the standard line | T13 rows *(2026-09-10)* | **LIVE rows** *(2026-09-22)* | T13 avg offset | **LIVE avg offset** |
+|---|---|---|---|---|---|
+| **+100** | **harder** → **DEMON** | 108,730 | **113,356** | **+4.21** | **+4.22** |
+| **−137** | **easier** → **GOBLIN** | 74,863 | **78,135** | **−2.87** | **−2.87** |
+| −137 | same line | 95 | 97 | 0.00 | 0.00 |
+| −137 | harder | 72 | 85 | +2.49 | +2.36 |
+| +100 | easier | 9 | 9 | −1.39 | −1.39 |
+| +100 | same line | 8 | 8 | 0.00 | 0.00 |
+| | **TOTAL** | **183,777** | **191,690** | | |
+| | **exceptions** | **184 = 0.100%** | **199 = 0.104%** | | |
+
+✅ **Both partitions CLOSE** *(108,730+74,863+95+72+9+8 = 183,777; 113,356+78,135+97+85+9+8 = 191,690)*,
+and **T13's stated *"~180 rows out of 183,000, 0.1%"* re-derives EXACTLY to 184 of 183,777.**
+
+### 🔑 THREE THINGS THIS ESTABLISHES, AND THEY ARE DIFFERENT CLAIMS
+
+**1. The historical data DOES carry the goblin/demon labels — they were never lost.**
+> *"the historical PrizePicks data **does** carry the goblin/demon labels, **encoded in the price**:
+> **+100 = Demon** (harder line, boosted payout) and **−137 = Goblin** (easier line, reduced payout)."*
+
+⚠⚠ **This corrects how §4 reads `price=-137`.** §4 calls it the value **v1 derives `kind` from**, as
+though it were an arbitrary sentinel. **It is not a sentinel — it is the standard-leg market price**
+*(`NBA_MULTIPLIERS.md` §0.9d: −137 is PrizePicks' canonical break-even, 57.8%)*. **So v1's derivation
+was reading a real economic quantity, not a tag** — which is why it worked on Over rows at all.
+
+**2. The mapping is STABLE under a 4.3% increase in rows — a robustness result T13 could not produce.**
+**The table grew by 7,913 rows for a FIXED, CLOSED date range** *(the gap-repair pass of §0h.1 still
+landing rows into 2024-25)*, **and the average offsets moved by at most 0.01.** ⚠ **The exceptions
+grew slightly faster than the population** *(0.100% → 0.104%)*, **which is a STATE, not a trend** —
+two observations do not make one.
+
+**3. 🔴 `Under` does not appear in ANY of the twelve cells, then or now.**
+✅ **Independent confirmation of §T12.7c on a DIFFERENT table with a DIFFERENT query** — that
+finding was measured on `board_tiers_v2` *(not one `Under` alternate in 2.2M rows)*; this is
+`board_snapshots`. ***Two tables, two queries, same answer*** — **and it is exactly what the owner
+predicted at T13 seg 661** *("for the past two seasons you're only gonna have goblin and demon as
+MORE")*, **now confirmed a second way.**
+
+### ⚠ WHAT THIS DOES **NOT** ESTABLISH
+**It gives the LABEL, not the MULTIPLIER.** `+100` and `−137` are **two prices for the whole
+population** — *the same two values on every rung* — so they **cannot express tier depth**, which is
+precisely §5.0d's step function and `NBA_MULTIPLIERS.md` §3's *"not one number per tier."*
+🔑 ***A two-valued price column can label a rung and can never price one.*** **The per-rung price
+lives on Underdog** *(`NBA_MULTIPLIERS.md` §0.9e: 1,401 rungs, 233 distinct Over prices)*, **not
+here.**
+
+### 0h.1 **THE MODELLING RULE THIS FORCES** — *condition on the SHIFT, never on the label*
+**`NBA_MULTIPLIERS.md` §0.9f records the rule in full.** Its evidence sits in the offset column
+above: **demons average +4.22 from the anchor while goblins average −2.87** — ***demons sit roughly
+1.5× as far out as goblins***, so **"goblin" and "demon" are not symmetric distances wearing
+different names.** ⚠ **Any model keyed on the LABEL silently assumes a symmetry the data denies.**
+**The per-stat form of this** *(PRA: 26.2 average line, 0.85 goblins and 1.20 demons per ladder,
+offsets −3.56 / +6.28)* **is in `NBA_MULTIPLIERS.md` §0.9f. One prop is measured; the rest are NOT
+RECORDED.**
+
+---
+
 ## 1. THE RULE
 
 ### 1.0 PrizePicks' OWN DESCRIPTION *(captured verbatim in T8)*
