@@ -33043,3 +33043,120 @@ called it rule 26/28. The thirty-document check found two misses — and neither
 eighteen files nobody searched. One was a grep never run; the other was a grep run correctly and read
 through `head -8`.**
 ***A truncated search returns a confident negative, and nothing in the output says so.***
+
+---
+
+# §T20.64 — T20 PASS 59 · THE MECHANICAL NOVELTY CHECK — **A THIRD PRIOR, AND THE CLEAN COUNT WAS ALREADY WRONG**
+
+⚠ **CHARTER RE-READ BEFORE THIS PASS**: the resume note in `NBA_SWEEP_RUN_LOG.md`, **T19 SEG 60/61**
+and **T20 SEG 597**. **Read-only: one local script over two snapshots.** **Nothing edited in the
+system; `NBA_COMPASS.md` not written to.**
+
+## 0. WHY AN INSTRUMENT AND NOT ANOTHER GREP
+
+**§T20.63 diagnosed a failure of INSTRUMENT, not of care**: *"the grep WAS run, with the right
+terms — and its output was piped through `head -8` … the truncation was read as the result."*
+⇒ **The remedy cannot be more grepping.** **It is the TF-IDF matcher this sweep already trusts —
+`char_wb` 4–5, `min_df=2`, `sublinear_tf`, cosine via `linear_kernel` — which has returned
+`636 · 2 · 484 · 481` on FIFTY-NINE consecutive runs and CANNOT truncate, because it scores every
+pair.** ▶ **Pointed in a direction it has never been pointed: this session's added paragraphs against
+the pre-session THIRTY.**
+
+## 1. THE TWO CORPORA AND THE DISTRIBUTION — REPORTED BEFORE THE HEADLINE (rules 17/18)
+
+| | |
+|---|---|
+| **baseline** | `/tmp/t20base/nba/` — **9,258 paragraphs** *(≥120 normalised chars)* from **31 files**, cut `2026-09-22 12:52`, verified to contain none of §T20.45–§T20.63 |
+| **session-added** | **300 paragraphs** — `NBA_MASTER_SUMMARY.md` from the `# §T20.46` heading to EOF, split mechanically on blank lines, **not hand-picked** |
+
+**Best cosine of each added paragraph against the whole baseline:**
+
+| threshold | count |
+|---|---|
+| **≥ 0.80** | **3** of 300 |
+| **≥ 0.70** | **6** |
+| **≥ 0.60** | **7** |
+| ≥ 0.50 | 14 |
+| ≥ 0.40 | 28 |
+
+⚠⚠ **WHAT A CLEAN RESULT HERE WOULD AND WOULD NOT LICENSE (rule 18), stated before the finding:**
+*cosine on `char_wb` n-grams is a **SURFACE** measure.* ⇒ ***It catches RE-PHRASINGS. It cannot
+catch a prior expressed in different words. A low score is not evidence of novelty; a high score is
+evidence of duplication.*** **This instrument bounds the claim in one direction only.**
+
+## 2. ALL SEVEN PAIRS AT ≥ 0.60 WERE OPENED (rule 26)
+
+| cosine | added paragraph | baseline match | class |
+|---|---|---|---|
+| **1.0000** | §T20.56 quoting T18-1 | `NBA_OPEN_ITEMS.md` — the owner's own words | ✅ **(b) quoting a prior ON PURPOSE** |
+| 🔴 **0.9264** | §T20.61's worker-group table | `NBA_OPEN_ITEMS.md:1728` | 🔴 **(a) GENUINE PRIOR — §3** |
+| **0.8240** | §T20.56's "the largest of the five is the one the owner raised himself" | the same owner quotation | ✅ **(b)** |
+| **0.7202** | §T20.54 quoting §T10.24b's *"named two, fixed one"* | `NBA_MASTER_SUMMARY.md` | ✅ **(b), announced** |
+| **0.7193** | §T20.54 quoting `NBA_MULTIPLIERS.md:1441` | `NBA_MULTIPLIERS.md` | ✅ **(b), announced** |
+| **0.7102** | §T20.51's certifier-shape table | `NBA_WORKERS.md`'s check table | ✅ **prior ALREADY CREDITED at §T20.51** *(`NBA_WORKERS.md:2059`)* |
+| **0.6173** | §T20.49 quoting the cron row it corrected | `NBA_OPEN_ITEMS.md` | ✅ **(b), announced** |
+
+📌 ***Five of seven are the session quoting a prior deliberately — which is the instrument working,
+not a defect, and is exactly the case rule 19 was pre-registered to protect.***
+
+## 3. 🔴🔴🔴 THE THIRD PRIOR — §T20.61's WORKER CENSUS, AND IT WAS MARKED **CLEAN**
+
+**`NBA_OPEN_ITEMS.md` (pre-session), three places:**
+> **`:1692`** — *"🔴🔴 **`nba_config.worker_definitions` holds 21 writers, all `enabled = 1`, and NONE
+> of them covers:**"* — **followed by a table of scrapers, their outputs in `nba/data/`, their writer
+> and their Postgres table, every cell `🔴 none`.**
+> **`:1728`** — *"**The 21 that DO exist**: **15 `01 Static`** *(arenas · darko · lineups · officials ·
+> onoff · player-bio · players · player-tracking · playtypes · schedule · shotquality · teams ·
+> team-stats · tracking-detail …)*"*
+> **`:6781`** — *"| `nba_config.worker_definitions` (live registry) | **21**, every row `enabled = 1` |"*
+> **`:1703`** — *"### 🔴 **NARROWED 2026-09-21 by §T11.56b — tested by OUTPUT PATH**, one of the four
+> is PARTIALLY covered … The table above was built by NAME. **Pass 55 re-tested it by the thing that
+> actually matters** …"*
+
+⇒ 🔴🔴 ***§T20.61's census — "21 rows, all enabled, 15 Static", the coverage classification, and even
+the methodological point that coverage must be tested by what a thing WRITES rather than by its NAME
+— was all already on file, and the prior had already been NARROWED once.***
+
+⚠⚠ **AND §T20.61 WAS RECORDED AS `✅ CLEAN`. IT STARTED THE STREAK THAT REACHED 2/3.**
+⇒ 🔴🔴🔴 ***THE CLEAN COUNT WAS ALREADY WRONG BEFORE PASS 58 BROKE IT. Pass 56 is re-marked NOT
+CLEAN; the run never legitimately reached 2/3; pass 57 (`37 of 37`) remains the only genuinely clean
+pass of the three.***
+
+✅ **WHAT §T20.61 DID GENUINELY ADD, and it is small but real**: **the `13` of `40` pipeline scripts
+that write to Postgres** *(no prior found — the baseline's "13 scrapers" hits are about season
+strings, a different claim)* **and the rule-19 verification that the four historical backfills'
+targets already hold rows** *(`player_game_log` 79,358 · `player_game_starter_status` 32,179 ·
+`team_game_log` 7,380 · `game_officials` 3,681)*. **Those stand; the census does not.**
+
+## 4. CLAUSES, SCORED
+
+| clause | verdict |
+|---|---|
+| **(i)** `uncovered12` falls or holds | ✅ **HOLDS — 471, Δ=0**; **`484 − 471 = 13` segments covered** (§T20.50). **Baseline `636 · 2 · 484 · 481` — SIXTIETH consecutive identical run.** Measured 2026-09-22T18:19:02Z |
+| **(ii)** ≥1 added paragraph scores ≥0.60 against the baseline | ✅ **TRUE — 7 of 300**, on a threshold inherited from `judge20.py`'s own tail test rather than invented |
+| **(iii)** ≥1 such pair is a CLAIM, beyond the two §T20.63 found | 🔴🔴 **TRUE — §T20.61's worker census**, which the grep checks missed and which was marked CLEAN |
+
+✅ **Baseline `636 · 2 · 484 · 481` — SIXTIETH consecutive run.** Working `648 · 1 · 471 · 470`.
+
+## 5. ⚠ VERDICT
+
+🔴🔴 **NOT CLEAN — a third prior, and a correction to this session's own clean count. `0/3` stands,
+and pass 56's `✅ CLEAN` is withdrawn.**
+✅ **NO NEW SYSTEM DEFECT — all three misses are the sweep's own bookkeeping, and every one is now
+annotated in place with its prior quoted.**
+✅✅ **AND THE METHOD RESULT IS THE DURABLE ONE: a mechanical, non-truncatable novelty check exists,
+costs one script, runs in under two minutes over 9,258 baseline paragraphs, and found in one pass
+what three separate grep checks missed. ⚠ It catches re-phrasings, not re-discoveries — so it is a
+FLOOR on novelty checking, not a ceiling.**
+⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at `0/3` with TWO INDEPENDENT reads owed, exactly as T19
+(§T19.6, OWNER DECISION).**
+⚠ **KILLS LOGGED (rules 26/28)**: **§T20.47's deploy prior and §T20.60's Betr prior** *(§T20.63 —
+expected to score, prior by construction, not re-scored)* · **the certifier-shape table**
+*(§T20.51 already credited `NBA_WORKERS.md:2059`)* · **the five deliberate quotations** *(category
+(b) — the session announcing its own priors, which is correct behaviour)*.
+
+📌 ***The lesson:*** **three grep-based novelty checks, run carefully by a sweep that had written
+forty-eight rules about carefulness, missed three priors. One script that scores every pair found all
+three in one hundred seconds — including one inside a pass that had been recorded as clean.**
+***The sweep's instrument for measuring the transcripts was always good enough to measure the sweep.
+It took fifty-nine passes to point it that way.***
