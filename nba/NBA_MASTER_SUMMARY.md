@@ -34537,6 +34537,8 @@ under §T6–§T9 years of passes ago.*** ⇒ **So `uncovered12` cannot reach ze
 reasons, not one: the sweep's own machinery (`73.7%`) AND other transcripts' text echoed through it
 (`19.6%`). Together, `93.3%` of the substantive-uncovered set is structurally uncoverable.**
 
+> ✅🔴 **CONFIRMED AND RE-SCOPED — T20 pass 73, §T20.78, 2026-09-22.** *The same census was run on **T19** with the instrument COPIED and only its transcript path changed: `920` segments · `429` uncovered · `252` substantive · **`0` of `11` candidates novel**.* 🔴 **The two RATES above do NOT transfer — T19 is `59.5%` plumbing and `36.1%` echo against T20's `73.7%` / `19.6%`, a `14.2`-point divergence that FAILED §T20.78's pre-registered `±10` clause.** ✅✅ **But the SPLIT-INTO-TWO-CLASSES insight above is exactly what rescues the law: measured as PLUMBING + ECHO the floor is `93.3%` (T20) and `95.6%` (T19) — **`2.3` points apart, and it generalises**.** 📌 ***This section identified the second class; §T20.78 established that the second class is what makes the floor a law rather than a fact about T20.*** ⇒ **Across both open transcripts: `0` of `36` candidates in `501` substantive-uncovered segments.**
+
 ## ✅ CLAUSE (ii) — **FAILS ON A CENSUS. `0` OF `14`, AND `0` OF `25` OVERALL.**
 
 *Every candidate was novelty-checked with distinctive terms and no truncation before anything was
