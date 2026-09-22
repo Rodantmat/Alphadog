@@ -12701,6 +12701,61 @@ traces: `NBA_SYSTEM_DESIGN.md` §0z-8-T18.)*
 > *the line-number grammar is indistinguishable from a section pointer, and a deliberate
 > "§X does not exist" is indistinguishable from a broken one.* **Both will re-flag every time.**
 
+## T20-4 · **NEW · 🔴🔴 SEASON-CRITICAL · HIGHEST OPEN ITEM** · P3 is hardcoded to LAST season, in two scripts
+
+**`[LIVE-AUDIT]` 2026-09-22 (§T20.33).** *Dependencies read OFF `.github/workflows/nba-p3-afternoon-light.yml`
+(229 lines, **12** scripts) and off the scripts themselves — rule 21, never from the corpus's
+description of P3.* ⚠⚠ **READ-ONLY: `SELECT` and repo reads only. Nothing triggered, dispatched or
+written (rule 1).**
+
+🔴🔴🔴 **THE DEFECT**
+
+| | line | code | what the workflow passes |
+|---|---|---|---|
+| 🔴 **`nba/score_board_legs.py`** | **97** | `season = os.environ.get("BS_SEASON", "2025-26")` | `BS_SEASON: ${{ github.event.inputs.season \|\| '2025-26' }}` — **the fallback is hardcoded too** |
+| 🔴🔴 **`nba/build_availability_delta.py`** | **52** | `season = os.environ.get("DELTA_SEASON", "2025-26")` | 🔴 **NOTHING — the workflow passes `DELTA_ASOF`, `DELTA_FROM`, `DELTA_TO` and NO season** |
+
+> **LIVE `nba_score.baseline_history`:** **`2024-25`** 9,537,535 rows *(2024-10-22 → 2025-04-13)* ·
+> **`2025-26`** 9,805,813 rows *(2025-10-21 → 2026-04-12)*. 🔴 **NO `2026-27` ROWS EXIST.**
+
+⇒ ***On `2026-10-20`, a P3 dispatched without a `season` input queries
+`baseline_history WHERE game_date = '2026-10-20' AND season = '2025-26'` and gets nothing.***
+🔑 **In `build_availability_delta.py` the season is worse than a filter — it becomes a FILENAME**
+(`slug = season.replace("-","_")`), driving three fetches: `nba_injury_report_2025_26_index.json`,
+`nba_injury_report_2025_26_{shard}.json`, `nba_player_game_log_2025_26.json`. ⇒ ***the availability
+delta would read LAST SEASON's injury report and LAST SEASON's game logs.*** ⚠ **Its shard loop is
+`except Exception: pass`, so a missing shard is swallowed silently too.**
+
+⚖️ **FAILURE MODES — one loud, one silent, and the job still goes red**
+- ✅ `score_board_legs.py:144` → `print("ABORT: no baseline ladder for {asof} - P2 must run before P3."); raise SystemExit(1)` — **fails the job.**
+- ⚠ `build_availability_delta.py:148` → `print(" no baseline for {asof} - P2 must run first"); return` — **exits 0; a silent step-level no-op.**
+- ⚠ `score_board_legs.py:117` → `if board.empty: … return` — a second exit-0 path.
+- ✅✅ **`certify_pipeline.py` `PIPE=p3` CLOSES ALL OF IT**: asserts `final_hp has today > 0`,
+  `confidence` non-NULL, `score` in 0–100, `confidence_model` loaded, `board archived today > 0`,
+  with `CERT_STRICT` defaulting to `1` and *"Failing the job so it is visible."* ⇒ ***a wrong-season
+  or empty P3 CANNOT silently certify. Recorded at full strength: this is the design working.***
+
+🔴 **BUT THE DIAGNOSTIC NAMES THE WRONG CAUSE, ON THE WORST POSSIBLE DAY.** *Both messages say
+**"P2 must run before P3"**. On opening day the true cause is the season constant. An operator would
+run P2, watch it succeed, re-run P3, and abort identically.* 🔑 **A guard that fails correctly and
+explains incorrectly costs a full debug cycle at 1:15 PM on the first game day.**
+
+🆕 **THIS IS NEW**: `BS_SEASON` appears **0** times across the twelve; *"P2 must run before P3"* **0**
+times; the season-constant class is **entirely unrecorded**. ✅ *Related but distinct from **O4** —
+"the scraper layer rolls to 2026-27 on 2026-10-01; the analysis layer never rolls at all" — which
+names the SYMPTOM class; this names the two lines.*
+
+🔴 **OWNER DECISION — 28 days out, and this is the cheapest fix on the list:** **(a)** pass an
+explicit `season` to both scripts from the workflow and remove both `"2025-26"` literals ·
+**(b)** derive the season from the slate date so it can never be wrong again *(the shape
+`nba_asof.py` already uses for the cutoff — a resolved value, not a constant)* · **(c)** at minimum,
+change both abort messages to name the season they queried, so the next operator sees the cause.
+⚠ **This sweep changed nothing and triggered nothing.**
+📌 **Read beside T20-3: P3 also has no `schedule:` block, so on opening day it must be dispatched by
+hand — which is also the moment the missing `season` input would have to be remembered.**
+
+---
+
 ## T20-3 · **NEW · OWNER DECISION · 🔴 SEASON-CRITICAL** · the scheduler holds ten MLB jobs, two still ENABLED, and zero NBA
 
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.31).** ⚠⚠ **READ-ONLY throughout: `SELECT` and repo listings only.
