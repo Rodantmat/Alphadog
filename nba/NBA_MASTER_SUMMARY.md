@@ -14428,6 +14428,133 @@ draws from.**
 
 ## T14 — `2026-09-13-20-53-23-nba-boards-grader-market-baseline-history-2026-09-11-12.txt`
 
+### T14.3 — PASS 2 (**the EIGHTEEN-TO-TWELVE migration audit**) — **🔑🔑🔑 the measured result that invalidates a whole class of factor test, and a governing document that contradicts itself**
+*`NBA_DAILY_PARITY_AND_BACKFILL.md` **read in full for the first time by this sweep** *(253 lines,
+16,857 bytes)* — **the governing document T14 created, one of the EIGHTEEN.** Probes over the twelve
+pinned 2026-09-22T09:03:53Z; repo listing 09:05:50Z; live figures 09:06:02Z. `SELECT` only.*
+
+#### 🔑🔑🔑 T14.3a — **BASELINE AND ENRICHMENT ARE ONE SYSTEM — and A2 made the model DRAMATICALLY WORSE**
+**The owner's directive**: *"**the baseline and the enrichment cannot be two different things**… **all
+the heavy lifting belongs in the baseline; the enrichment layer exists ONLY to carry what the
+baseline could not have known.**"*
+**Held out on 6,996 real PrizePicks legs** *(`0.7299` / `1.0123` / `0.2652`: **0 of the TWELVE**)*:
+**certified baseline alone `0.7299` log-loss / `0.2652` Brier · baseline × A2 `1.0123` / `0.3317` ·
+baseline × defender `0.7309` / `0.2656`.**
+🔑🔑 ***A2 measured WELL IN ISOLATION*** *(minutes MAE 4.641 with outs vs 6.186 without)* ***and made
+the system dramatically worse applied on top***, because ***"the baseline's `proj_min` ALREADY
+APPLIES THE INJURY REPORT"*** — the 2026-03-15 replay went 173 → 161 players with `BT_INJURY` on —
+*"multiplying by A2's `min_mult` **reapplies the same reallocation a second time**."*
+🔴🔴 **AND IT IS THE THIRD INSTANCE OF ONE ERROR**: **A2 over `proj_min`** · **a hand-built blowout
+shrink duplicating the recipe's `P(blowout | spread)` mixture** · **a funnel rebuilt from ROLLING
+MEANS, *"beaten by the very anchor it bypassed"* (0.7951 vs 0.7299)**. ⚠⚠ ***"USE THE SYSTEM'S BEST
+COMPONENT; DO NOT REBUILD A WORSE ONE BESIDE IT."*** 🔑 **`double count` is in NINE of the twelve as
+a concept — the three MEASURED instances are in none.**
+🔴🔴🔴 **AND THE TEST-DESIGN FINDING IS THE BIGGEST THING IN THIS PASS**: ***"In a REPLAY both layers
+read the SAME DAY'S REPORT, so the delta is EMPTY and A2 is PURE DUPLICATION… Any factor test using
+ONE report for BOTH layers measures DOUBLE-COUNTING, not value."*** ⚠⚠ ***That invalidates a whole
+class of held-out factor test, silently — the factor does not error, it just scores badly, or worse,
+scores well for the wrong reason.*** **Every held-out factor result in this corpus should state which
+report each layer read; NOT RECORDED for any of them.**
+✅ **Three consequences**, the second a schema requirement: a factor may only touch a component the
+baseline lacks or be a DELTA; 🔑 ***"`proj_min` and `rate36` must be EMITTED by the recipe so
+enrichment adjusts the right COMPONENT rather than multiplying the product"*** *(both appear in ONE
+of the twelve, as column names; the requirement is absent)*; and **the defender factor is the clean
+case — neutral at 0.7309 vs 0.7299, *"which is what 'no double count, small effect' looks like"***.
+**Written to `NBA_SYSTEM_DESIGN.md` §0a.5.**
+
+#### 🔑🔑 T14.3b — **THE THREE-STAGE FUNNEL, AND "THE RATINGS ARE STAGE 1; THE JOIN IS STAGE 2"**
+**`minutes → team possessions → usage share → attempts → shot mix → efficiency → points → P(over
+line)`, with every link placed by when its inputs become knowable.** ⚠ **The stage COUNT is
+superseded by COMPASS fact 107's two pipelines; the link-by-link placement is not.**
+🔑 **The sharpest argument**: **expected defender is stage 2, not stage 1**, because *"it is **NOT a
+property of the opponent TEAM**; it is **exposure-weighted over the opponent players who will
+actually be AVAILABLE**… ***the RATINGS are stage 1; the JOIN is stage 2***"* — **a general test for
+placing any factor**, and `expected defender` / `exposure-weighted` are **0 of the twelve**.
+⚠ **And what stage 3 must NOT do**: *"**no refitting, no re-deriving, no scanning history** — it
+SELECTS the precomputed branch… **everything expensive has already happened.**"*
+**Written to `NBA_SYSTEM_DESIGN.md` §0a.6.**
+
+#### 🔴🔴 T14.3c — **THE GOVERNING DOCUMENT CONTRADICTS ITSELF ON ITS OWN HEADLINE EXAMPLE**
+**`D1 referee crew` is the example the parity document uses to teach its central distinction, and it
+holds BOTH positions**: **§3 and §4 say *"live-only… not archived… historical use is TARGET-ONLY"***
+while **§6.2 and §7 say *"assignments ARE knowable before the window… the box-score crew is a
+FAITHFUL HISTORICAL RECONSTRUCTION"* and place D1 in the BASELINE stage.**
+⚠⚠ **The hazard is specific**: ***§4 is the FACTOR INVENTORY — the table a reader consults to ask
+"can this be backfilled?" — and it answers ❌ for a factor §7 places in the baseline.*** 🔑 **And §3
+does not merely mis-file D1: its whole (a)/(b) taxonomy IS the archived-versus-live test that §6/§7
+abandon.**
+🔑🔑 **RECORDED AS A CLASS, because this sweep has now seen it twice** — *the other being
+`enrichment_backfill_status_2026_09_10` still carrying the `days_done` item its own author retracted*
+— ***a document that carries a correction in one section and the corrected text in another is more
+dangerous than one that is simply wrong, because each section reads as authoritative alone.***
+
+#### ✅✅ T14.3d — **THE "OPEN — BUILD" LIST AUDITED AGAINST CODE AND DATABASE** *(rule 31)*
+***All seven items have a builder. Three have landed, three have not, and one landed in the WRONG
+SHAPE.***
+✅ **`nba/fit_a5_projected_lineups.py`** *(built, tested, rejected — consistent)* · ✅ **the scenario
+precompute is real**: **`nba_score.scenario_realised` 1,942 rows, `nba_score.scenario_calibration`
+29 rows** · ⚠ **`nba/gate_remaining_factors.py`** exists but whether it is THE freshness gate is NOT
+ESTABLISHED.
+🔴🔴 **THE REFEREE CAPTURE IS "BUILDER EXISTS, TABLE DOESN'T" — THIRD INSTANCE**:
+**`nba/scrape_referee_assignments.py` AND `.github/workflows/nba-referees.yml` both exist, and
+`nba_ref.referee_assignments` holds ZERO rows** — **unchanged from §T10.26 and twelve days after T14
+listed it open.** ⚠⚠ **And it matters more than the other instances: D1 is class (b), *the value only
+exists going forward*, so *every day the capture does not run is referee data that can never be
+recovered.***
+🔴🔴 **THE LIVE BOARD ARCHIVER HAS RUN — AND WRITES THE WRONG SHAPE.** **Beyond the backfill's
+2026-04-12 end: underdog 5,281 rows (2026-09-12) · fliff 1,394 (2026-09-13) · sleeper 1,276
+(2026-09-12) — and PrizePicks and Betr have NO rows at all.** 🔑🔑 **All three carry
+`snapshot_label = 'routine'`, not `window` / `close`** — ***so the live rows do not match the
+historical pull's shape and cannot be joined to the two seasons as like-for-like, which is the entire
+point of the parity requirement.*** ✅ **T14's item is confirmed and sharpened: not "the archiver
+doesn't exist" but *it exists, has fired on two days in ten, covers three of five apps, and writes a
+third label*.**
+
+#### ✅ T14.3e — **THE PARITY RULE ITSELF, AND THE REQUIREMENT NOBODY EXPECTS**
+**Four FORBIDS** *(season aggregates sliced per date · end-of-season tables · data published after
+the cutoff · **filling a gap with a later value "because the value barely changes"**)* **and three
+REQUIRES**, of which the third inverts the usual instinct: 🔑🔑 ***"where the live pipeline would
+FALL BACK, the backfill FALLS BACK THE SAME WAY — a backfill that is MORE COMPLETE THAN PRODUCTION IS
+AS WRONG AS ONE THAT IS LESS."*** *(**0 of the twelve**.)* ⚠ **It fails in the FLATTERING direction,
+which is why it survives review** — *"a single factor that quietly used future information inflates
+the backtest, and **the inflation is INVISIBLE: the numbers look better, not broken**."*
+✅ **With a completion test**: ***"no factor is 'done' until its day-by-day backfill exists and
+MATCHES THE LIVE CONSTRUCTION."***
+
+#### 🔴 T14.3f — **THE A5 MEASUREMENT — the twelve carry the verdict and not the evidence** *(27th kill)*
+**A5's rejection is already on file** *(`NBA_GLOSSARY.md`: "A5 — lineup change · T15 ·
+REJECTED/CLOSED"; COMPASS fact 82)* — ***the NUMBERS are not***: the proxy was built and tested held
+out, **negative on every prop — points −0.032, rebounds −0.008, assists −0.008, pra −0.035 MAE**
+*(**0 of the twelve**)*. 🔑🔑 **And the reason generalises**: ***"the allocator already uses RECENT-5
+MINUTES, which encodes starting status CONTINUOUSLY AND WITH MAGNITUDE; a binary starter flag
+DISCARDS that magnitude."*** ⚠⚠ ***A binary feature that summarises a continuous one the model
+already has does not add information — it removes it.*** ✅ **And this narrows this corpus's starter-
+load headline a SECOND time: the two unloaded seasons would have fed a proxy that was built, tested
+and rejected.** **The data remains the EVALUATION TARGET, which is what it was always admissible as.**
+📌 **Plus three baseline invariants, the second written because it was broken**: `BT_ASOF` drives
+everything · **the ladder depth is one parameter applied to TWO SEPARATE CERTIFIED FILES, each with
+its own constant** *(which is exactly how 252 combo legs stayed at ±6)* · **the loader REFUSES a
+singles-only slate** *(a gate installed because a silent `echo ... failed` let a 56%-complete slate
+report green for two days)*. **Written to `NBA_BASELINE_CALIBRATION.md` §0u.**
+
+#### ⚠ T14.3g — **THE PRE-REGISTRATION IS HELD, NOT SCORED — RULE 34 APPLIED IN THE PASS AFTER IT WAS WRITTEN**
+**The harness was NOT run at the end of this pass, and that is deliberate.** 🔑 **RULE 34 says a
+prediction about pass N is measured BEFORE pass N+1 writes**, so **pass 2's cumulative prediction —
+*`uncovered12` falls from 924 by 10–40, AND `uncovered30` falls by LESS than `uncovered12` does* —
+is scored on the harness run at the START of pass 3.** ⚠⚠ **Rule 12 is the most-broken rule in this
+run — *apply a rule in the pass that writes it* — and this is the first time a rule has been applied
+the very next pass.**
+
+**Pass outcome: the governing parity document read in full and migrated into the twelve; the A2
+held-out result and the three-instance duplication class recorded; the test-design defect that
+invalidates single-report factor tests identified; the three-stage funnel and the ratings-versus-join
+rule; a governing document shown to contradict itself on its own headline example; the "open — build"
+list audited against code and database, finding all seven built, the referee table still empty and
+the live archiver writing a third label; the parity rule's counter-intuitive fallback requirement;
+and one kill. ⚠⚠ The clean count does NOT advance. CLEAN 0/3 · 3 passes.**
+
+---
+
 ### T14.2 — PASS 1 (**the assistant-prose stratum, all 182 segments, read in order**) — **🔑🔑🔑 "CERTIFIED never meant STORED", the knowable-at-cutoff leakage test, and RULE 34**
 *All 182 prose segments, 107,151 chars, **read in full in one pass** *(98 below segment 500, 84
 above)*. **Probes pinned 2026-09-22T08:53:42Z; live re-takes 08:53:45Z and 08:54Z. `SELECT` only.***
