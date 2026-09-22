@@ -73,6 +73,27 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 > point OUT of the corpus.* ⇒ **A citation is durable exactly to the extent that it points at a file
 > the sweep does not write. Inside the corpus, cite by QUOTATION and by `§`-section — never by line
 > number alone.**
+>
+> ## ✅✅ **AND THAT PRESCRIPTION IS NOW MEASURED, NOT ASSUMED (§T20.68, 2026-09-22)**
+> *It was written one pass earlier without checking that `§`-sections resolve. They do:*
+>
+> | citation scheme | alive | denominator | **rate** |
+> |---|---|---|---|
+> | 🔴 **`FILE:LINE`, internal** | 8 | 49 testable | **16.3%** |
+> | ✅ **`§`-section** | **703** | **709** | **99.2%** |
+>
+> **`709` distinct `§T` anchors are cited across the twelve and `1,536` are declared as headings
+> across the thirty: `682` declared canonically (96.2%) · `21` locatable inside some heading · 🔴 `6`
+> truly dangling — `T15.3` · `T15.4` · `T15.4b` · `T15.4d` · `T16.5` · `T17.5`**, all from the four
+> transcripts closed at the shortest pass counts, whose findings were written inline rather than as
+> numbered sections.
+> ⇒ ***THE HANDOFF DOES NOT INHERIT A BROKEN CITATION SYSTEM. IT INHERITS A WORKING ONE AND A BROKEN
+> HABIT.*** **Cite `§T20.47`, not `NBA_MASTER_SUMMARY.md:3102` — the first still resolves today and
+> the second does not.**
+> ⚠ **And a warning for whoever re-runs this measurement: the first attempt reported `110` dangling
+> because it demanded a declaration WITHOUT the `§` sigil, while the corpus's headings CARRY it.
+> Wrong by a factor of eighteen.** 📌 ***A defect rate that arrives in neat consecutive blocks is a
+> bug in the instrument until proven otherwise.***
 
 ### 📜 THE FORTY-EIGHT STANDING RULES — *the index; each is written in full where it was born*
 
