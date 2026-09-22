@@ -15,6 +15,38 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 
 ---
 
+## 0e-T16. 🔴🔴🔴 **THE LADDER MUST NOT ELECT A VARIATION — EVERY LEG, EVERY VARIATION, EVERY DIRECTION GETS A FINAL HP** *(owner directive, 2026-09-13; T16 pass 0, §T16.1; **0 of the twelve and 0 of the thirty**, positive controls passed — `goblin` returns 581 of the thirty and 383 of the twelve on the same machinery)*
+
+> 🔴🔴 ***"The ladder should NOT be electing one — goblin, demon or regular. **ALL legs, ALL variations,
+> ALL directions should have a final HP.** Different bands and variations will have different hit
+> rate, and **THERE IS WHERE POSSIBLE ROI RESIDES**, so all get properly calculated."***
+
+⚠⚠ **This is an architectural instruction, not a preference**, and it is stated as a correction — *"the
+ladder should NOT be electing"* — **so at 2026-09-13 something in the pipeline was electing one
+variation per leg, and the owner stopped it.** 🔑 **NOT RECORDED: what was electing, or whether the
+election was removed.** *The sweep records the directive and its date; the implementation question
+belongs to T16's later passes and to the live pipeline.*
+
+### 🔑🔑 WHY IT MATTERS MORE THAN IT READS — **the owner locates the EDGE in the spread across variations**
+
+*The reasoning is given in the same breath and it is an ROI argument, not a completeness argument:*
+**"different bands and variations will have different hit rate, and THERE IS WHERE POSSIBLE ROI
+RESIDES."** ⚠ **So scoring only the elected variation does not merely lose coverage — it discards
+exactly the dispersion the edge is supposed to come from.**
+
+✅ **AND IT CONVERGES WITH A MEASURED FINDING FROM THE DAY BEFORE**
+*(`NBA_FINAL_SCORING_CALIBRATION.md` §0a-T15 §8)*: **lift over a base-rate model is 2–3× higher on the
+low-count and short-period props than on the headline combos** — *threes_made_q1 **27.3%**,
+assists_q1 26.1%, oreb 25.8%, stocks 25.0%, against **pra 7.5%** and **fantasy_score 5.2%***. 🔑 **Two
+independent routes to the same conclusion: the edge is in the thin, varied markets, not the deep
+ones — the owner from design intuition, the reliability scorer from measurement.**
+
+⚠ **Recorded against §0f below** *(the owner's statement of the goblin/demon rule)* **and §0g** *(the
+1.9× More-goblin floor)*: **those govern what a goblin or demon IS and what it pays; this one governs
+that none of them may be skipped.**
+
+---
+
 ## 0f. 🔑 THE OWNER'S OWN STATEMENT OF THE RULE — **and the four parts of it the twelve did not carry**
 *Recorded 2026-09-22 (T13 pass 0, §T13.1e). **Transcript `2026-09-13-01-03-48`, owner segments 661
 (3,417 chars) and 693.** Probed against the baseline `4429380d`, pinned 2026-09-22T07:43Z; controls
