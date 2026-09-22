@@ -42,6 +42,27 @@
 > argument `nba-p2-overnight-heavy.yml`'s own header makes for withholding its cron.
 > *(numbers are `T20-n`; letters are the five older items §T20.56 found were missing from the brief.)*
 >
+> ## 🔴🔴🔴 **THE LETTERS, NAMED HERE FOR THE FIRST TIME** *(T20 pass 103, §T20.108, 2026-09-22)*
+> ⚠ **The mapping existed — at line `13,794` of this file, `13,759` lines below the string it
+> explains.** *Four of the five letters appeared NOWHERE in this top block, which is the page you are
+> meant to read INSTEAD of the file.* ***A ranked list whose top entry is an unexplained letter is not
+> a ranking.*** **Resolved from the stated legend, not inferred** *(rule 26)*:
+>
+> | | item | what it is, in the source's own words |
+> |---|---|---|
+> | 🔴🔴🔴 **`A`** | **`T18-1`** | ***"Our system should be covering the APP LADDER. If it is not, we need to change so it covers it. **Our anchor is not at the proper place of the ladder, or the ladder is not deep enough** — plus everything else you have open."*** ⚠ **The OWNER raised this himself.** `§T20.56`: *"Of thirteen season-critical items, the one that is missing and matters most is the one he reported"* — **a coverage defect with two candidate causes and NO diagnosis, `0` of the twelve and `0` of the thirty.** |
+> | **`B`** | **the frozen static layer** | *"On opening night the system would score against a roster, schedule, impact-rating, play-type and tracking layer built weeks earlier."* ✅ **Re-derived in the table below**: `nba_ref.defender_ratings` `max(as_of_date)` = **`2026-04-09`**. |
+> | **`C`** | **the frozen schedule** | *"THE SCHEDULE HAS NOT BEEN REFRESHED SINCE THE DAY IT WAS BUILT"* — `nba_calendar.games`, **oldest and newest write both `2026-09-02T20:24`** (`§T20.56`). |
+> | **`D`** | **`T16-7` / `T16-8` / `T16-9`** | three `[LIVE-AUDIT]` **OWNER DECISIONS**, *"dated in its own heading — the opener is `2026-10-20`"*. **`D` bundles three, which is why the string has seventeen entries.** |
+> | **`E`** | **the DARKO scraper's failure evidence** | *"THE DARKO SCRAPER'S FAILURE EVIDENCE IS THE WRONG 20 KB OF THE PAGE."* |
+>
+> ⚠⚠ **This is `§T20.69`'s defect on the OWNER's surface.** *That pass found the `▶ EXACT NEXT STEP`
+> row at line `404` while the resume note ended at `311` — **"the single most important row sits
+> ninety-three lines below the document that exists to point at it."*** ***Here the gap is `13,759`
+> lines, and the row is the top of the owner's ranking.*** 🔑 **And it is `§T20.56`'s own finding
+> recurring one level up: it found five items missing from the brief, they were added to the RANKING,
+> and four of them were never added to the PAGE.**
+>
 > ## ✅ **RE-DERIVED AGAINST THE LIVE SYSTEM — 2026-09-22T19:16Z, `SELECT` ONLY, NOTHING CHANGED**
 > | item | re-derivation | state |
 > |---|---|---|
