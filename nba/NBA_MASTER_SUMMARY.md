@@ -35747,6 +35747,15 @@ been unreachable since T17, and left the coverage number exactly where it found 
 cannot tell the difference between importing a sentence and answering a question is a metric about
 vocabulary, and this session has now proved that twice — once by moving it and once by not.***
 
+> 🔴🔴 **EVIDENCE WITHDRAWN IN PLACE — 2026-09-22, T20 pass 86 (`§T20.91` §3).** *(Rule 40's second
+> half — dated, not struck.)* **The `471 → 470` this section rests on is a `±1`, and `§T20.91` showed
+> a `±1` is attainable by rounding**: segment `938` sits exactly on the `b12 < 0.40` threshold and
+> tips on the IDF perturbation that ANY edit to the twelve produces. ⚠ ***The refinement — "writing
+> that IMPORTS language from outside the twelve moves the number; recombining what is already inside
+> does not" — is NOT refuted. Its evidence is withdrawn.*** *It may well be true; a `±1` cannot
+> demonstrate it.* 🔑 **What this section's OTHER deliverable — `STEP 11` and the `§0z-3` repair — does
+> not depend on the metric at all, and stands.**
+
 ---
 
 # §T20.90 — T20 PASS 85: 🔴🔴🔴 **THE ORPHAN AUDIT INFLATED ITS OWN TARGETS' APPARENT REACHABILITY BY `6×`, `13×`, `14×` AND `6×` — AND ONE ORPHAN'S UNREACHABILITY MADE `RULE 51`'s ADJUDICATION PUBLISH A FALSE NEGATIVE** *(2026-09-22)*
