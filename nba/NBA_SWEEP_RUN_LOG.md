@@ -30,6 +30,20 @@ discipline it already applies to the system's.***
 🔑🔑 **AND 43 AND 46 ARE A PAIR — READ THEM TOGETHER.** ***A closure needs reads that are BOTH
 complete AND independent. T1–T6's were independent and truncated; a same-context re-read is complete
 and dependent. Either one alone produces a 3/3 that certifies less than it says.***
+
+🔴🔴🔴 **RETIRED AS A CLOSURE INSTRUMENT, 2026-09-22 (T20 pass 0, `NBA_OPEN_ITEMS.md` §T20.1) — THE
+"SCOPE CAP".** ~~*Only TRANSCRIPT material resets the clean count.*~~ ***It was the SWEEP'S OWN
+INVENTION and it contradicts an explicit owner rule in the direction of closing sooner.***
+**T20 SEG 858, the owner**: *"be sure that you are **looking at every document on every pass** —
+**anything new for ANY document resets the count** and you need three clean passes again — **that's
+for ALL documents.**"* ⚠⚠ **AND THE SCOPE CAP WAS LOAD-BEARING**: `NBA_MASTER_SUMMARY.md:373` names
+it *"THE CLOSURE ARGUMENT, stated as the rule that carried it"* **for T13**, whose passes 4 and 5
+drew their findings from `NBA_COMPASS.md`, the repository and the database. ⇒ **Under the owner's
+rule those findings reset the count and T13 does not close there.** ✅ **OPTION B TAKEN pending the
+owner: the OWNER'S rule governs from T20 pass 1 onward; every existing closure is ANNOTATED with the
+rule it was made under rather than voided** *(rule 36 — a correct supersession can still destroy
+content)*. ⚠ **NOT ESTABLISHED: whether T7–T18's closures also lean on the scope cap. It is
+referenced in five places; only T13's dependence is verified. That audit is owed.**
 *(count re-taken from the table below, 2026-09-22; the header had read "THIRTY-SEVEN" since rule 37
 and sat six rules stale — **rule 40's own lesson, a dated figure carried forward undated**)*
 
