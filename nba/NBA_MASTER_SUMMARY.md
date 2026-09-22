@@ -37503,3 +37503,78 @@ directions, and only one of them was visible from inside.** ⚠⚠ ***A document
 and `2.8M` characters long will pass every dilution test ever written. The twelve are healthy by the
 measure this pass brought and unreadable by the measure it did not — which is why the finding is
 recorded as a SIZE, with no claim that the sweep knows what to do about it.***
+
+---
+
+# §T20.107 — T20 PASS 102: ✅✅ **THE HUB HAS A WAY IN — `4,708` CHARACTERS AGAINST A `20,000` BUDGET, AND EVERY LINE OF IT A POINTER** *(2026-09-22)*
+
+⚠ **THE OWNER'S MUST-FOLLOW RULE, OBSERVED**: the resume note and the charter were re-read before
+this pass — **T19 SEG 60/61** and **T20 SEG 597**. **SEG 1120's FORM RULE applies: source, date,
+quotation.** ⚠⚠ **RULE 46 — T20 CANNOT CLOSE IN THIS SESSION.** ✅ **File reads only.**
+
+## 1. ✅ CLAUSE (ii) — **HIT. THE BIGGEST DOCUMENT HAD NO BOUNDED WAY IN.**
+
+▶ **Re-derived `2026-09-22T22:27:21Z` by the same method `§T20.106` used on `NBA_OPEN_ITEMS.md`**
+*(lines `1` → the first line that is neither blank nor a blockquote)*: **the leading block was `60`
+characters — a title and a blank line.** *What followed was a three-paragraph preamble —* **"Purpose /
+How to use it / Update protocol"** *— which tells a reader **how the document is organised** and
+answers **none** of: what is this system, what state is it in, what breaks first, where is everything
+else.*
+⇒ ***`§T20.56` built a first-read surface for the owner. `§T20.105` built one for the successor.
+`NBA_MASTER_SUMMARY.md` — `53.4%` of the twelve, the document `§T20.1` calls "the document a fresh
+session reads first" — had neither.***
+
+## 2. ✅✅ CLAUSE (iv) — **THE BUDGET BOUND, AND THE BLOCK CAME IN AT `23.5%` OF IT**
+
+*Registered: **a hard `20,000`-character budget, fixed before writing so it could not grow to fit what
+I wanted to say**, with cuts to be made by the brief's own ranking rule and recorded.*
+▶ **Delivered: `4,708` characters — `≈1,177` tokens. No cut was needed.**
+🔑 *It is also **deliberately smaller than the owner's `16,230`-character block**, and that is the
+right shape: **the owner's block is a BRIEF — it must carry the evidence. The hub's block is a ROUTER
+— it must carry nothing but the way onward.*** *A router that grew to a brief would have reproduced
+the problem it exists to solve.*
+
+## 3. ✅ CLAUSE (iii) — **NOTHING NEW IS ASSERTED IN IT**
+
+**Every line is a pointer or a quotation**, and the five state-of-the-system facts each name their
+source: **one workflow fires on a game day** *(`§T20.93`)* · **never run against a live slate**
+*(`§T20.95`)* · **certification is a liveness test** *(`§T20.104`, `T20-18`)* · **`42 / 42` executed
+objects documented** *(`§T20.99`)* · **`1` broken pointer in `5,164`** *(`§T20.91`)*.
+⚠⚠ **AND THE CLAUSE BOUND ONCE, AS DESIGNED.** *The brief's ranked order opens `A · 13 · 17`, and I
+could not establish from the twelve what **`A`** is — the letters are the five older items `§T20.56`
+restored, and the re-derivation tables list them by name rather than by letter.* ⇒ ***So the block
+quotes the ranked string verbatim, reproduces the brief's own gloss on the letters, and names only the
+two NUMBERED items at the head. The item I could not source was dropped rather than described*** —
+*which is what clause (iii) was written to force: **"a first-read surface that introduces unverified
+statements is worse than none."***
+
+## 4. 📐 WHAT THE BLOCK ANSWERS *(clause (v))*
+
+**① what this system is** — the five apps, the three pipelines, the `1:15 PM PT` cutoff, the
+`2026-10-20` opening, and pointers to `STEP 8`–`12` · **② what state it is in** — the five measured
+facts above, each with its section · **③ what breaks first** — the OPENING-DAY BRIEF, its ranked
+string, its ranking rule, and `T20-13` and `T20-17` quoted · **④ where everything else is** — a
+twelve-row map from question to document, plus the two scope warnings *(`NBA_COMPASS.md` is read and
+never written; the `pp_*` objects belong to the concurrent session)*.
+⚠ **And it opens with the number that makes it necessary**: ***"THIS DOCUMENT IS `2,789,201`
+CHARACTERS — about `697,000` tokens. DO NOT LOAD IT WHOLE."***
+
+## 5. ✅ CLAUSE (i) — `RULE 52`
+
+**`2026-09-22T22:28Z`: `648 · 1 · 470 · 467`. All three bands unchanged. No delta to open.**
+📌 *A `4,708`-character addition to the twelve moved nothing, which is what `§T20.89`'s refinement
+would predict for a block built entirely of the corpus's own language — **recorded as an observation,
+not as evidence, because `§T20.91` established the instrument cannot resolve `±1`.***
+
+⚠ **KILLS LOGGED (rules 26 / 28 / 51)**: **`§T20.106`** *(**PRIOR** — the volume measurement and the
+`16,230`-character comparison that motivated this)* · **`§T20.105`** *(**PRIOR** — the run log's
+`START HERE` repair, the design this copies)* · **`§T20.56`** *(**PRIOR** — the owner's brief, the
+original instance)* · **`§T20.1`** *(**PRIOR** — "the document a fresh session reads first")* · **every
+fact inside the block** *(**PRIOR** by construction — clause (iii) permits nothing else)*. ▶ **RULE 51,
+last step, BASELINE tree**: **`"START HERE"` returns `0` files** — *no such surface existed anywhere in
+the corpus before this sweep built three of them.*
+
+📌 ***The lesson:*** **three entry points, one design, and it took a hundred and two passes to apply
+it to the largest of them.** ⚠⚠ ***The block took one pass and `4,708` characters. What made it
+possible was not insight — `§T20.106` had already measured everything in it — but a size budget
+written down before the writing, which is the only reason a router did not become a fourth brief.***
