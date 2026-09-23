@@ -953,6 +953,59 @@ combinatorial objection §T14.1e records the owner raising, answered by choosing
 | **full matrix per day** | singles at ±10 **22,400 rows** · + combos and fantasy **~36,000** · **× both sides ≈ 72,000 leg-probabilities** |
 | scenario rows | **~30–60k per game ≈ 0.5–1M per day ≈ 50–100 MB/day**, **kept only until selection, then all but the chosen one deleted → ~7 MB/day, ~1.2 GB/season** |
 
+> ### 🔬 §F6.27 — **RE-AUDITING `§F2.7`'s DIRECTION-(a) PROBE UNDER `RULE 58`, AND WHY THE UNDERDOG ROW WAS MISSING**
+>
+> *Added `2026-09-23`. **`§F2.7` scanned every HIGH-BAND segment — the band the judge calls COVERED —
+> for numeric tokens absent from the twelve, and reported `309` missing tokens across `122` candidate
+> segments from `3,331` high-band segments and `8,708` numeric tokens.** `RULE 58` says that result
+> has to be re-checked, because `highband.py`'s `variants()` does comma-grouping **and nothing
+> else** — the exact narrow set `§F6.23` had just shown to over-report absences by `72%`.*
+>
+> | on the `202` missing tokens the instrument stored | count |
+> |---|---|
+> | still absent, **narrow** variants *(as `§F2.7` computed)* | **`173`** |
+> | still absent, **wide** variants *(percent forms, roundings)* | ✅ **`111`** |
+> | ⇒ **demoted by `RULE 58`** | **`62` — `36%`** |
+>
+> ✅✅ **AND THE `111` SURVIVORS ARE OVERWHELMINGLY NOT FIGURES**, classified:
+>
+> | class | n | share |
+> |---|---|---|
+> | plain integers ≥`4` digits — *line numbers, file sizes, chunk offsets, process ids* | `59` | **`53.2%`** |
+> | epoch-ms / run ids | `20` | `18.0%` |
+> | NBA **team** ids *(`1610612739`…)* | `11` | `9.9%` |
+> | NBA **player** ids | `7` | `6.3%` |
+> | elapsed / high-precision timings | `3` | `2.7%` |
+> | other | `11` | `9.9%` |
+>
+> ⇒ ***`§F2.7`'s CONCLUSION survives its arithmetic being wrong: the high band really does hold very
+> few genuine missing figures.*** 🔑 **But the reason is not the one `§F2.7` gave.** *Its `TRANSIENT`
+> filter checks a `±40`-character window for words like `run_id`, `bytes` or `.py`; **a bare
+> `process 907042 waits for RowExclusiveLock` or a `total lines: 8146` in a tool result carries none
+> of those words nearby and passes straight through.*** **The filter's design assumes the noise
+> announces itself. It mostly does not.**
+>
+> ### ✅ The residue, read by hand — and it yielded exactly one table
+>
+> *Every non-identifier survivor was traced back to its segment. **Almost all are tool-output noise**
+> — `{"returncode":0,"stdout":"num chunks: 5\n0 702831 …"}`, `"total_lines": 5075`, PostgreSQL
+> process ids from the deadlock incident. **Several apparent gaps were demoted on inspection**: `65.8`
+> is the fringe-accuracy `0.658` already in `2` documents; the whole `N1` role table (`254`/`429`/`639`,
+> `0.343`, `86.7%`, `11.8%`) is already carried.*
+>
+> 🔑 **What survived is the board-size table's per-app rows — added above.** *The twelve carry the
+> PrizePicks row and both aggregates; **`2,574`, `~3,500` and `~1,000–2,500 each` were in `0` of the
+> twelve.*** ⇒ **It matters because these are the sizing inputs for `§F6.22`'s `10-15 min`
+> end-to-end target: the aggregate says how much work a night is, the per-app rows say where it
+> comes from and which scraper dominates.**
+>
+> ⚠ **`RULE 54` — and one deliberate omission.** *`T22`'s `anchor_type × pct_priced` table
+> (`switch_point` `375,835` legs, `355,324` priced, `94.5%`) came up in the residue and **is NOT
+> written up**: it is PrizePicks payout-mapping work, which belongs to the concurrent session and is
+> out of this sweep's scope. **Recorded as a scope decision, not as an oversight.*** *`WINDOW`: the
+> `202` tokens `highband.py` stored, which is its `top`-`25`-per-transcript cap, **not all `309`** —
+> the demotion rate is measured on a sample, and the full re-run was not performed.*
+
 🔑🔑 **AND WHY IT IS CHEAP, which is the load-bearing argument**: ***"the expensive part of the
 baseline is FITTING — tier cutpoints, empirical cells, Platt — from three seasons of history. That
 happens ONCE, overnight. SCORING a scenario is rescaling minutes × rate through cells that already
