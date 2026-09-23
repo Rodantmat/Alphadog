@@ -1419,3 +1419,62 @@ a grading default, not as a shading.**
 > 📌 **TIERS**: ⚠ **AS STATED IN `T24`** *(SECONDARY)* throughout. 🔴 **`NOT RECORDED`** — why the
 > `5`-legs-left case drops to `57.5%`; why `1` left runs `~6%` under. ⚖️ **Nothing queried, changed or
 > triggered.**
+
+---
+
+# §F5.6 — ✅✅ **`T24`'s REPLAY FIGURES VERIFIED AGAINST THE LIVE DATABASE — the first time any `T24` number has been**
+
+*Added 2026-09-23. **`T24` is the corpus's only SECONDARY source** — a hand-written session record,
+not a verbatim transcript — and every figure taken from it carries an "AS STATED, not re-run"
+caveat. **The table that holds its slips was named in `0` of the twelve, which is why no pass had
+been able to check it.***
+
+**🔴 `nba_score.sim_slip` — `4,379` rows, `19` columns, named in `0` of the twelve before today.**
+*Columns: `strategy, game_date, season, slip_no, slip_type, n, n_alt, legs, factors, model_ps,
+payout_full, model_ev, live, hits, misses, voids, payout, profit, built_at`. Companion
+`nba_score.sim_strategy` (`1` row: `strategy, params, notes, created_at`) **is** on file in two
+documents — **the parameters were documented and the results were not.***
+
+## What the live table says — `[LIVE-AUDIT]` 2026-09-23
+
+| | `T24` stated | **live `count(*)`** | |
+|---|---|---|---|
+| slips · nights | `4,379` / `310` | **`4,379` / `310`** | ✅ **exact** |
+| **2024-25** | `+10.2% ± 6.3%` | **`+10.20%`**, `1,971` slips, `154` nights | ✅ **exact** |
+| **2025-26** | `+20.4% ± 5.3%` | **`+20.35%`**, `2,408` slips, `156` nights | ✅ **exact** |
+| **both seasons** | `+15.8% ± 4.1%`, **`t = 3.85`** | **`+15.78%`** | ✅ **exact** |
+| void legs | *"`312` void legs graded by reversion"* | **`312`** | ✅ **exact** |
+| slip shape | 3-pick standards | **`min(n) = max(n) = 3`, one `slip_type`** | ✅ |
+| | | `7,471` hits · `5,354` misses | |
+
+## 🔑 And the standard error reproduces only one way — which tells us the METHOD
+
+*The naive slip-level SE is **`0.0352`** (`t = 4.49`). `T24` reports **`± 4.1%`** and **`t = 3.85`**,
+which the naive figure does not give. Clustering by NIGHT does:*
+
+| SE method | SE | t |
+|---|---|---|
+| slip-level, i.i.d. *(naive)* | `0.0352` | 4.49 |
+| 🔑 **night-clustered** *(310 nights, ~14.1 slips each)* | **`0.0410`** | **`3.85`** ✅ |
+
+✅✅ ***`T24` paired a slip-weighted mean with a NIGHT-CLUSTERED standard error*** — **the
+conservative and correct choice for slips that share a slate** — **and both figures reproduce to
+four decimals from the live table.** 📌 ***That is a point in `T24`'s favour, not against it: the
+harder standard error was the one used, and nothing in the record said so.***
+
+⚠ **One nuance a reader should have, and it cuts the other way.** *The **mean of the nightly means**
+is **`+13.84%`**, two points below the slip-weighted **`+15.78%`** — because nights with more slips
+pull the slip-weighted figure up.* **Both are defensible; `T24` reports the higher one.** 🔴 **Which
+it reports was `NOT RECORDED` until this block.**
+
+## ⇒ What this changes for `T23-1` and `T24`
+
+> **The `T24` caveats stand — it is still a session record, `nba_score.paper_picks` still holds `0`
+> rows, and this is still a REPLAY and not a traded record.** 🔑 ***But "AS STATED, not re-run" no
+> longer applies to the replay's headline numbers: they have now been re-run, from the database, and
+> they hold — including the void count and the clustering method.***
+
+⚠ **RULE 54.** *This verifies the ARITHMETIC of the replay against the table the replay wrote. It
+does not verify that the table was built from correct inputs, that the strategy is implementable, or
+that `std3_power_130` is what `T24` says it is beyond its name and shape.* ***"The reported figures
+reproduce from `sim_slip`", never "the strategy works."***
