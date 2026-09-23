@@ -749,6 +749,51 @@ later.***
 | `nba_market.board_snapshots` | 6,604 MB | 27,059,920 |
 | `nba_score.board_scored` | 2,948 MB | 11,956,460 |
 
+> ### 🗂 **§T24.3 — THE `prop_universe` OBJECT SET, AND THE `12` INTEGRITY CHECKS THAT GUARD IT**
+> *`T24` pass `3`, recorded `2026-09-23`. **`T24` is a SECONDARY SOURCE — a session record, not a
+> verbatim transcript** *(its own header says so)*. ⚠ **`nba_market.prop_universe` is MID-REBUILD;
+> every count here is a dated snapshot, never a final figure.***
+>
+> **The objects this session created — none of them `pp_*`, so all in scope:**
+>
+> | kind | objects |
+> |---|---|
+> | **tables** | `nba_market.fs_backsim` · `derived_backsim` · `derived_alt_backsim` · **`prop_universe`** · `player_game_map` · `pp_leg_price_cons` *(recreated with `kind` in the PK)* · `nba_score.sim_strategy` · `sim_slip` · `paper_picks` gained `event_id` |
+> | **views** | `nba_score.sim_results` · 🔑 **`nba_market.leg_edge_map`** |
+> | **functions** | `build_fs_backsim` · `build_derived_backsim` · `build_derived_alt_backsim` · `build_prop_universe` · `finalize_prop_universe` · `rebuild_prop_universe` · `refresh_leg_price_cons` · `pp_flex_standard_payout` · `pp_power_after_voids` · `nba_score.paper_pick_candidates` *(recreated, returns `event_id`)* · `paper_pick_slips` · `log_paper_picks` · **`simulate_slips`** |
+>
+> 🔑 ***`nba_market.leg_edge_map` is the view whose readout this corpus quotes throughout*** — *the
+> `1.133` / `1.130` real-standard-Over figures, the `73,495` real demons, the `1.36`–`1.63` claimed
+> band. **The numbers were recorded; the view's NAME was not**, so a reader could not get back to
+> them.* 📌 *That is exactly the `§F7.9` defect — a figure repeated with no route home — caught in
+> `T24` and closed here.*
+>
+> ### ✅ **THE `12` INTEGRITY CHECKS — ALL RETURNED `0`**
+> *The final audit of the universe build. Recorded as a set because **the set is the guarantee**:*
+> **standards exactly `1.0`** · **demons above `1.0`** unless flagged · **goblins below `1.0` and
+> never under `1.843×`** · **demons never over `18.5×`** *(the `§T23.6` cap, enforced)* ·
+> `two_pick = 3 × factor` · no null `factor` or `phase` · **no graded leg on a no-boxscore night** ·
+> **no ungraded leg on a regular night** · simulated pushes only on Fantasy *(`x.5` Fantasy scores
+> exist)* · **no alternate Unders** *(the `100%`-More property, enforced)*.
+>
+> 🔑🔑 ***Four of the twelve checks are this corpus's own findings turned into assertions*** — the
+> `18.5×` cap, the `1.843×` floor, alternate-More-only, and the `no-boxscore` night set. **A finding
+> that becomes a constraint in a build script stops being something a reader has to remember.**
+>
+> ### 📊 **THE DATED SNAPSHOT** *(`2026-09-22`; `prop_universe` is mid-rebuild — do not quote as final)*
+> `1,667,024` legs · `20` props · `327` regular-season nights · **usable `1,606,151`** · void
+> *(player sat out)* `24,995` · push `9,657` · **`14,271` legs left UNGRADED on `30` `no-boxscore`
+> nights** *(`28` play-in/playoff + **the two NBA Cup finals**)*. ⚠ *`ungraded` and `void` are
+> different states and the distinction is load-bearing: **`void` means the player sat out; `ungraded`
+> means the box score does not exist.***
+>
+> ### 🔧 **AND THREE ENGINEERING FAILURES RECORDED AS "DO NOT REPEAT"**
+> | | |
+> |---|---|
+> | **planner misestimate** | *the live view joins on EXPRESSIONS, so the planner expected `~757` rows per season instead of `~1 M` and chose a nested loop* — **the first build ran `9` minutes unfinished.** Fix: materialise + `ANALYZE` → **under a minute** |
+> | **nondeterministic duplicates** | *the price table was keyed without `kind`; `34` of `2.19 M` key-snapshot groups carry one line as two kinds, so the price picked was arbitrary* — **flags moved `153` → `158` between refreshes with no input change.** 🔑 ***A count that changes when nothing changes is the signature of a missing key column*** — the same defect shape as `F6-1`'s `ot_rule` |
+> | **double writes** | *phase and flags set by an `UPDATE` over every row after insert* — **`~10` min per season and the table bloated to `938 MB`.** Fix: set at insert; `VACUUM ANALYZE` |
+>
 > ### 💾 **§T23.11 — WRITE CHURN: `final_hp` HAS BEEN WRITTEN `13.4×` MORE TIMES THAN IT HOLDS ROWS**
 > **`[LIVE-AUDIT]` `2026-09-23`** *(`pg_stat_user_tables`; `T23` found it `2026-09-21`, re-derived here)*
 >
