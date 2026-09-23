@@ -4767,9 +4767,26 @@ recorded here as decoration.***
 
 ### 4 · **THE FOURTH FORM, AND THE `why`**
 
-*`§F6.12` recorded that `A2` was tested in four forms. **`flat multiplier` and `magnitude refit
-against the baseline minutes residual` appear in `0` of the twelve**; `component-level` and
-`novelty-weighted` appear in `1` each. The list, `VERBATIM`:*
+🔴🔴 **THIS SUB-SECTION WAS WRONG WHEN FIRST WRITTEN AND IS CORRECTED IN PLACE.** ~~*"`flat
+multiplier` and `magnitude refit against the baseline minutes residual` appear in `0` of the
+twelve."*~~ ***They do not. All four forms were already on file, in this very document, in the
+`THREE THINGS THIS SWEEP RECORDS AS QUALIFICATIONS` block at `§(a)` above*** — *`magnitude-refit`
+**`3` times**, `component-level` **`6`**, `novelty-weighted` **`4`**, `flat on the mean` **`1`**,
+all present at commit `800109b2~1`, before this section existed.* 🔑 **My probe searched
+`magnitude refit` — space, lower case — against a corpus that writes `magnitude-refit`. A hyphen
+and a capital letter.**
+
+📜 ***FOURTH SPELLING-PROBE FAILURE OF THIS PASS, and the pattern is now the dominant error mode:***
+*`§F6.21` (the penalty rule, documented four paragraphs from where I put the section), `§F6.22`
+(the delta rule's "a few HUNDRED legs instead of a few THOUSAND", which I probed as "hundreds of
+legs instead"), the `defect_rule` (present in two documents, probed with the config row's snake_case
+key), and this one.* ⇒ **`RULE 58`, proposed: *a `0`-of-`12` result is a claim about MY QUERY until
+the concept has been probed in at least two spellings — hyphenation, case, and the corpus's own
+English rather than the source's identifier.*** *The corpus writes prose; config rows write keys;
+`grep -F` matches neither across the gap.*
+
+*The list is retained below because it is `VERBATIM` from the live row and `§(a)` paraphrases it,
+but it is a CORROBORATION, not a recovery:*
 
 | # | Form tested |
 |---|---|
