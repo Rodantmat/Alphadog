@@ -1861,6 +1861,34 @@ text from forty minutes earlier** — `git show 971f3cbe~1` gives **`0`**. 🔑 
 forced. When a count moves in the direction that flatters the verifier, check which commit put it
 there.***
 
+## §F6.15 – §F6.16 — the live config corpus, and the defect it uncovered
+
+| § | finding | where |
+|---|---|---|
+| **`§F6.15`** | **CENSUS OF `nba_config.classification_config` — `66` rows.** *`40` of the `66` `config_key`s are named in **`0` of the twelve**.* ⚠ **`RULE 54`: this measures KEY-NAME CITATION, not content coverage** — `ladder`, `guards`, `dispersion` and `minutes_mixture` score `8`–`12` only because they are common English words, and the first row drilled (`enrichment_subfactor_tree`, `~90` sub-factor leaves) turned out to be a machine-readable index of `NBA_ENRICHMENT_FACTOR_LOCK.md`, **which exists and which the twelve reference by name in `5` documents while explicitly flagging that it is not one of them** *(`T21-1` territory, already filed)*. | *census only* |
+| 🔴🔴 **`§F6.16`** | **AND THE SECOND ROW DRILLED OVERTURNED MY OWN `F6-1`.** `open_defects_2026_09_11` settles the duplication question — *"NOT a defect. BY DESIGN"*, rung is a cell dimension — **and records its author making my exact error**: *"I called this duplication, then a loader key bug. Both wrong."* 🔴 ***Reading the loader to confirm that found something neither the row nor `T14` nor I had seen: `load_baseline_ladder.py:51`'s merge key OMITS `ot_rule`, which is a column of the destination table's PRIMARY KEY.*** | **`F6-1`, re-rated `🔴🔴 SEASON-CRITICAL`** |
+
+✅✅ **AND THE PREDICTION MATCHED PRODUCTION TO THE ROW.** *`nba_baseline_ladder_2026-03-15.json`
+holds **`52,018` rows and `52,018` distinct keys under the true PK — zero duplicates**. Live
+`nba_score.baseline_ladder` holds **`50,597`**. **`52,018 − 50,597 = 1,421`**, the exact count of
+`include`/`exclude` pairs the loader's five-column key conflates — computed from source before the
+table was queried.* 🔴 **P2 runs that loader** (`nba-p2-overnight-heavy.yml:254`); the loader with
+the correct seven-column key is the worker, which P2 does not call.
+
+🔴 **THREE OF MY OWN CLAIMS RETRACTED IN ONE PASS:**
+
+| I wrote (`§F6.8`) | The source says |
+|---|---|
+| *"the loader's primary key silently keeps whichever arrives last"* | ❌ **no `ON CONFLICT` exists in `load_baseline_ladder.py`** — `DELETE WHERE asof` + plain `INSERT`, and the collapse is an explicit Python merge keeping **min `\|offset\|`**. Its docstring: *"we keep the rung NEAREST THE ANCHOR deterministically **rather than whichever row happened to arrive last**."* **I attributed the WORKER's rule to the Python loader.** |
+| *"`1,421` duplicate keys in the `2026-03-15` file"* | ❌ **zero duplicates under the real PK** — my key was the loader's key, and the loader's key is the defect |
+| *"this is **not data loss**. It is a determinism defect"* | ❌ **it is data loss: `1,421` rows, confirmed live** |
+
+📌 ***The pattern is now four for four this session: every time one of my instruments found a
+"defect", the corpus or the source had already ruled on it — and the one time the ruling was
+incomplete, the gap was in a direction none of us had looked.*** 🔑 **`T14`'s `~0.0005`, repeated
+by the config row's `only_caveat`, is the one figure that does need correcting: measured across the
+`1,421` groups, **median `0.0061`, max `0.2128`**, `91.7%` above `0.001`.**
+
 ⚠ **RULE 54 on `§F6.13`.** *`n`, the sample, the stat and the seasons behind the `-0.024` are all
 `NOT RECORDED`, and `-0.024` is approximately zero in absolute terms — **the load-bearing reading is
 "the prior carries no usable signal"**, and the directional reading is weaker and recorded as such.
