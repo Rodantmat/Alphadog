@@ -274,7 +274,7 @@ that is the useful part.
 > ▶ **Target, from that same comment: `daily 09:00 UTC = 01:00 PT`** — *after the last West-Coast game
 > finalises, eight hours before `P3`'s `1:15 PM PT` cutoff.*
 > **Edit `.github/workflows/nba-p2-overnight-heavy.yml`**, adding under `on:`
-> `` schedule: [{cron: '0 9 * * *'}] ``. ⚠ **`P1` is the only NBA workflow with a live cron today** —
+> `` schedule: [{cron: '0 9 * * *'}] ``. ⚠ **`P1` is the only PIPELINE with a live cron — but NOT the only NBA workflow.** ***Measured `2026-09-23`: `4` active crons — `nba-p1-weekly-static` (`0 19 * * 1`), `nba-scrape` (`0 9 * * 1`), `nba-referees` (`30 15 * * *`, daily) and `nba-pp-payout-map` (`15 */6 * * *`, the build chat's, out of scope).*** 🔴 **An earlier line here said "`P1` is the only NBA workflow with a live cron" — that was wrong, corrected `§F7.23`.** —
 > *re-derive:* `` grep -l "^ *- *cron:" .github/workflows/nba-*.yml ``
 > 🔴🔴 **DO NOT DO THIS BEFORE FIXING `T23-2`** — *a `P2` cron on a season `P3` aborts on schedules a
 > nightly failure, which is the exact thing the comment above exists to prevent.*
