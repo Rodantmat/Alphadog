@@ -7,7 +7,8 @@ that is the useful part.
 ---
 
 > # 📑 **INDEX — `NBA_RECIPE.md`**
-> **`47` sections · `~92,000` bytes · built `2026-09-23`.**
+> **~~`47`~~ → `59` sections · ~~`~92,000`~~ → `85,896` bytes · `927` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**; this file had the largest proportional miss, **`12` of `59` (`20%`)**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`. ⚠ *The byte figure was also approximate (`~92,000`) and is now exact.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
 > rotted within a day)*. **Search for the quoted `STEP` label.**
