@@ -1502,6 +1502,28 @@ family.** ⚠ *`morning` covers **2,468** events against `window`'s **2,466** �
 | **`market`** | `nba_market.game_lines_snapshots` | **`h2h` · `spreads` · `totals`** — game-level bet types |
 | **`market`** | 🔴 **`nba_market.rung_market`** | 🔴 **`player_points` · `player_assists` · …** — *player prop keys* |
 
+> ### 🎯 **§T22.24 — EXACTLY ONE TABLE IN THE BOARD/SCORE/TIER FAMILY CARRIES A PROBABILITY COLUMN**
+> *`T22` pass `24`, live `information_schema` query `2026-09-21`, recorded `2026-09-23`. **Probe
+> columns: `final_hp`, `hit_probability`, `p_hit`, `prob`, `final_probability`.***
+>
+> | table | has a probability column |
+> |---|---|
+> | ✅ **`nba_score.board_scored`** | **`1` — the only one** |
+> | `nba_market.board_snapshots` · `board_tiers` · `board_tiers_v2` · `board_outcomes` · `board_backfill_log` | **`0`** |
+> | `nba_score.tier_band_calibration` · `tier_selection_value` | **`0`** |
+> | `nba_config.role_tiers` | **`0`** |
+>
+> 🔑🔑 ***This is the structural reason the PrizePicks edge list is a JOIN and not a column.*** *The
+> model's probability lives in exactly one place, and it is not on the board. **Every leg-level
+> comparison of "our probability vs theirs" has to cross from `nba_score` into `nba_market`** — which
+> is why `§T22.23`'s coverage of `board_scored` is the gating fact, and why `board_tiers_v2`'s empty
+> `price`/absent `multiplier` (`§T22.14`, `§T22.20`) is the other half of the same gap.*
+>
+> ⚠ **`RULE 54`.** *`WINDOW`: nine tables matched by `table_name ILIKE '%score%' OR '%board%' OR
+> '%leg%' OR '%tier%'` in schemas `nba%`, `2026-09-21`. **The five probe column NAMES are the window's
+> real boundary** — a probability stored under a name outside that list reads as `0` here. **`RULE
+> 58`: this is a claim about those five spellings, not about the database.***
+
 📌 **`nba_score.board_scored.kind` is entirely NULL** — a third unpopulated discriminator after
 `board_outcomes`' two.
 
