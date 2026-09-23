@@ -42017,3 +42017,73 @@ derived alternates; **usable `1,606,151`**)*.
 > 🔴 **`NOT RECORDED`** — whether the scoring identity holds as tightly on NBA lines; whether
 > PrizePicks' true Fantasy scale is `+3`, as distinct from `+3` reproducing the grid.
 > ⚖️ **`pp_*` objects and `prop_universe` not queried; nothing changed or triggered.**
+
+---
+
+# §T24.2 — ✅✅ **TWO INDEPENDENT IMPLEMENTATIONS AGREE, AND THE EDGE MAP SAYS WHICH TIERS ACTUALLY PAY**
+
+*T24 pass 2, 2026-09-23. **Content written to `NBA_GOBLIN_DEMON.md` `§0i-T24` and `§0j-T24`** — clause
+(ii). This is the pass record. **All six components score `0` in both trees.***
+
+## 1. ✅✅✅ **THE CROSS-VALIDATION — a different data path, the same answer** *(`T24` §8)*
+
+*Strategy `std3_power_130` — real standards, value `≥ 1.30`, 3-pick Power — run through the **new
+simulator over `prop_universe`**, against the **independent window-line replay** of `§T24.1`:*
+
+| | **replay** *(window lines)* | **simulator** *(universe)* |
+|---|---|---|
+| 2024-25 | `+10.1% ± 6.1%` *(`1,755`)* | **`+10.2% ± 6.3%`** *(`1,971`)* |
+| 2025-26 | `+18.0% ± 5.6%` *(`2,166`)* | **`+20.4% ± 5.3%`** *(`2,408`)* |
+| **both** | **`+14.5% ± 4.2%`** *(`3,921` / `309` nights)* | **`+15.8% ± 4.1%`** *(`4,379` / `310` nights)*, **`t = 3.85`** |
+
+> ⇒ ✅✅ ***Two implementations over two different data paths agree to `~1.3` percentage points, well
+> inside either standard error.*** **That is a genuine cross-validation, not a re-run** — *the replay
+> reads window lines directly; the simulator reads the universe table with its own pricing,
+> packing and void handling.* 🔑 **Corroborating checks stated with it**: *every slip priced at the
+> exact `6.0×`; `312` void legs graded by reversion; test-week verification that every slip had
+> `3` legs from `3` games, payouts only `0 / 3.0 / 6.0`, and model `EV = 6 × ∏p`.*
+> ⚠ **The three caveats from `§T24.1` §1 still apply in full** — *replay not traded record;
+> `T24`-sourced; `paper_picks` is `0` rows.*
+
+## 2. 🔴🔴 **THE EDGE MAP — and it kills the largest population** *(`T24` §9 → `§0i-T24`)*
+
+> 🟢 **Real standard Over `1.133`/`1.130`** *(`14,429` legs, `56.5%`)* · 🟢 **real standard Under
+> `1.099`/`1.131`** *(`26,970`)* · ⚠ **real goblin Over `1.137`/`1.100`** *(`2,480`, `66.5%`)* ·
+> 🔴🔴 **real demon Over `1.060`/`1.018`** *(**`73,495` legs**, `25.7%`)* · 🔴 simulated Unders and
+> simulated demons **fail**.
+
+> 🔑🔑🔑 **AND A BAR THIS CORPUS HAS NEVER DISTINGUISHED**: *a **standard** needs `1.10` in a 3-pick
+> Power; **an alternate needs `~1.14`**, because alternates face a lower mixed base — **`5.33` against
+> `6.0`.*** ⇒ ⚠ ***Every comparison this corpus has made against a single breakeven has been too
+> generous to goblins and demons.***
+> ✅ **AND IT AGREES WITH THE PRICING SIDE, REACHED INDEPENDENTLY**: `§0h-T22` found *"demons underpay
+> as a class, `−8%` to `−10%`"* **from prices**; this finds the same thing **from outcomes**.
+> **Two methods, one answer.**
+> 🔴 **"The model claims `1.36–1.63` everywhere"** ⇒ ***the claim does not discriminate between
+> segments that pay and segments that do not — which is why `§0.14-T23`'s ranks-but-overconfident
+> result matters operationally: a threshold on the MAGNITUDE selects demons at scale.***
+
+## 3. ✅ **VOID / PUSH REVERSION — VERIFIED, `79` OF `79`** *(`T24` §7 → `§0j-T24`)*
+
+> 🔑🔑 ***"A VOID IS NEVER A REFUND."*** **The slip shrinks to the smaller base** *(`r` legs left →
+> the `r`-pick base `20/10/6/3`; `1.5×` for a single survivor; refund only if none left)* — **and
+> that sentence appears nowhere else in this corpus**, while being the single most consequential fact
+> for EV arithmetic on any slip carrying injury risk.
+> 🔑 **Mixed slips settle on the `r` LOWEST-factor legs** — *the worst case for the bettor* — matched
+> within one price step **`99.5%`/`96.6%`/`91.3%`** for `2`/`3`/`4` left, while **keep-highest matches
+> `0–20%`**, so the alternative is decisively excluded.
+> ✅ **And grading by keep-lowest is conservative BY CONSTRUCTION** — *"settlement by the displayed
+> worst case or by the actual survivors both pay ≥ keep-lowest"* ⇒ **the owner's "aim for less
+> earnings" rule implemented as a grading default rather than as a shading.**
+
+## 4. ✅ **THE OVERCONFIDENCE, NOW MEASURED AT THE SLIP LEVEL TOO**
+
+**Claimed `2.334` per unit vs realized `1.158`** ⇒ **`2.0×` on the payout, `8.4×` on the edge**
+*(`1.334` claimed above fair vs `0.158` realized)*. ⚠ **Recorded both ways deliberately** — *"`2×`"
+and "`5–8×`" describe one defect at two scales, and the corpus should not carry one without the
+other.*
+
+📌 ***The lesson:*** **the strongest evidence in this corpus is now two independent paths agreeing —
+and the most useful artefact is a table saying which of eight segments actually pays.** *Both arrived
+in a SECONDARY source, which is exactly why `§T21.0` fixed its evidence tier on arrival rather than
+after something had been over-claimed.*
