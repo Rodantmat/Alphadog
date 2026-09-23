@@ -1484,6 +1484,40 @@ would have shipped as certified:**
 | stocks | 564,973 | 0.15 | 0.94 | 0.0536 | 25.0% | ✅ certified |
 | threes_made_q1 | 432,907 | 0.17 | 2.03 | **0.0232 — best Brier in the system** | **27.3% — highest lift** | ✅ certified |
 
+> 🔴🔴 **ADDED 2026-09-23, `§F2.8` — THE SEVEN-ROW PERIOD-PROP TABLE WAS ON FILE AS ITS TWO
+> OVERLAPPING ROWS.** *The table above is the **flagged/penalised** set. `T15` also certified a
+> **PERIOD-PROP** set of seven, and only the two props that appear in both — `threes_made_q1` and
+> `assists_q1` — reached the twelve. **The five period-only rows were absent**: `459,203`,
+> `546,483`, `675,093`, `678,232` and `530,343` each returned **`0` hits across all twelve.***
+> **Found by the high-band audit (`§F2.7`)** — the segment scores `b12 = 0.51`, i.e. the judge
+> calls it COVERED.
+>
+> **`T15`, verbatim: *"all seven period props are now verified, and they're excellent."***
+>
+> | period prop | n | ECE | worst band | Brier | lift | verdict |
+> |---|---|---|---|---|---|---|
+> | 🔴 **rebounds_q1** | **459,203** | 0.17 | 1.99 | **0.0503** | **25.1%** | ✅ certified |
+> | threes_made_q1 | 432,907 | 0.17 | 2.03 | 0.0232 | 27.3% | ✅ certified *(already above)* |
+> | 🔴 **points_q4_otx** | **546,483** | 0.17 | **0.81** | 0.1156 | 17.5% | ✅ certified |
+> | 🔴 **points_h2** | **675,093** | 0.18 | **0.37** *(best worst-band of the seven)* | 0.1381 | 13.4% | ✅ certified |
+> | 🔴 **points_h1** | **678,232** | 0.18 | 0.78 | 0.1273 | 14.5% | ✅ certified |
+> | assists_q1 | 443,513 | 0.22 | 3.22 | 0.0360 | 26.1% | **−0.0 pp**, rounding-level *(already above)* |
+> | 🔴 **points_q1** | **530,343** | 0.24 | 0.85 | 0.1033 | 18.1% | ✅ certified |
+>
+> **`T15`'s own summary: *"six certified outright, `assists_q1` a rounding-level −0.0 pp."***
+>
+> 🔑 **WHY THE OMISSION MATTERS RATHER THAN BEING TIDY-UP.** *The five missing rows are the
+> **points** period markets and `rebounds_q1` — a live PrizePicks surface — and they are the
+> evidence for §8's strategic finding directly below* (*"the board's deepest markets are its least
+> exploitable"*). **§8 is on file; four of the seven rows underneath it were not.** ⇒ **the
+> conclusion was documented and the table it rests on was two-sevenths documented.** 📌 *The same
+> shape as `§0.16-F2`: a verdict kept, its experiment dropped.*
+>
+> ⚠ **Quoted from `T15`, not re-taken live — exactly as the surrounding section states of its own
+> figures.** ⚠ **`NOT RECORDED`: whether the period props' `n` are legs, player-games or rows, and
+> over which seasons** — *`T15` gives the counts without a population, and the twelve do not supply
+> one.*
+
 🔴 ***"fantasy_score is the one that matters commercially — nearly a million rows, our HIGHEST-VOLUME
 prop, and it was NEVER VERIFIED."*** *Why it is weak is mechanical: it is a weighted sum of six noisy
 counts, so **the errors compound while the predictable role signal gets diluted**.*
