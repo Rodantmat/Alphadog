@@ -1526,6 +1526,13 @@ delta and an aggregate.**
 > | `player_steals` | `13,064` | `0.6%` |
 > | `player_blocks` | `7,478` | `0.3%` |
 > | **TOTAL** | **`2,199,354`** | ✅ **sums exactly** |
+
+> ✅✅ **`[LIVE-AUDIT]` `2026-09-23` — ALL TWELVE FIGURES RE-DERIVED AGAINST THE LIVE DATABASE AND
+> EVERY ONE REPRODUCES TO THE ROW.** *`SELECT base_market, count(*) … GROUP BY base_market` returned
+> the identical twelve counts two days after `T22` measured them, and `side` (`Over 1,826,785` /
+> `Under 372,569`), the `2,475` off-centre standards and the `2,199,354` total all reproduce exactly.*
+> 🔑 ***This table is stable, not a snapshot*** — `board_tiers_v2` has not been rebuilt since
+> `2026-09-21`, **which is itself worth knowing before anyone treats it as current for opening night.**
 >
 > | other field | value | n |
 > |---|---|---|
