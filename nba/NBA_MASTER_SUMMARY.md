@@ -650,6 +650,33 @@ wrong-but-plausible.* **The at-a-glance state is what a future reader trusts fir
 most worth keeping true** — and a stale ledger is the single most likely way this effort ends early
 against a wrong picture of what remains.
 
+> ### 🔴🔴 **§T21.7 — THIS EXACT DEFECT WAS DIAGNOSED IN `T21` ON `2026-09-21`, BY LINE NUMBER, AND IT HAPPENED ANYWAY**
+> *`T21` pass `7`, recorded `2026-09-23`.*
+>
+> *Watching this sweep run, `T21` wrote:* ***"line `71` still reads `0/3 - active. 29 passes` while
+> the body is at pass `32`. The summary table at the top hasn't been updated to match the entries
+> below it. Minor, but it's the same class of problem as the `16`-file ledger — **a header that is
+> stale relative to the content under it.** If it drifts further you'll lose the at-a-glance
+> state."***
+>
+> ⇒ 🔑🔑🔑 ***THE WARNING WAS WRITTEN, THE PRINCIPLE ABOVE WAS WRITTEN, AND TWO DAYS LATER `§F7.5`
+> MEASURED THE SAME CLASS ACROSS ALL TWELVE AND FOUND IT EVERYWHERE***: **byte counts exact in `1` of
+> `11` files, line counts in `0` of `6`, section counts in `12` of `12`.**
+>
+> **The two records agree on the mechanism and disagree on the remedy, and the disagreement is the
+> finding.** *`T21` called it "minor" and prescribed vigilance — *update the header after every
+> pass*. **`§F7.5` measured that vigilance failing in eleven files out of twelve and concluded the
+> value is structurally unmaintainable**: a census written inside the index it describes is
+> invalidated by the commit that publishes it. ⇒ ***A figure nobody re-derives is not kept true by
+> resolving to keep it true. `sections` survived because the index ROUTES on it; `bytes` and `lines`
+> decayed because nothing reads them.***
+>
+> 📌 **`§F7.5`'s repair follows from that**: *sections marked authoritative and re-derived; bytes and
+> lines marked approximate-and-dated. **Not "try harder" — "stop publishing the figures that cannot
+> stay true."*** ⚠ *And the owner has since sharpened it further: **publish only figures that stay
+> true, or that carry their own date and a one-line recipe to re-derive them.** Applied from `§F7.11`
+> onward.*
+
 ## 📍 **THE TRANSCRIPT INDEX** — *`24` rows · **`~236,000` characters** · the longest stretch in this corpus*
 
 > 🔴🔴 **ORIENTATION BEACON, added `2026-09-23`, `§F7.8`. READ THIS BEFORE SCROLLING INTO THE TABLE
