@@ -14211,6 +14211,26 @@ for a credential**, and the table applied one test to both.*
 `balldontlie` integration is still in use at all.** *If the integration is dead, disabling the key
 is simpler than rotating it — but that is the owner's call and this sweep did not test the key.*
 
+> 🔴🔴🔴 **AND THE RULE HAD BEEN REASONED OUT CORRECTLY, IN THE SAME TRANSCRIPT — `§F5.3`, added
+> 2026-09-23.** *Recovered from `T1`'s reasoning stratum — one of only three transcripts where that
+> stratum survives — the assistant's own words at the moment the owner handed over the key:*
+>
+> > ***"i shouldn't put credentials into claude's persistent memory file since that's meant for
+> > personal facts, not infrastructure secrets. instead i should store it in the actual system
+> > database the way this project already handles other keys, like the parlay api key pattern in the
+> > external credentials config table … storing it safely following the existing credentials
+> > pattern."***
+>
+> 🔑 ***The decision was right, it was made for the right reason, and it was made minutes before the
+> documentation of that same transcript quoted the value into a public repo.*** **`§T1.31` did not
+> fail to know the rule. It failed to apply it to its own output.**
+>
+> ⚠ **And the sentence stating the rule — *personal facts vs infrastructure secrets* — was in `0` of
+> the twelve until today.** *`"personal facts"` and `"infrastructure secrets"` each returned **`0`
+> of `12`** before `§F5.3`.* ⇒ ***no later pass could check itself against a rule that existed only
+> in a transcript's reasoning block.*** **It is now on file in `NBA_SYSTEM_ARCHITECTURE.md`
+> `§F5.3` §4.**
+
 📌 ***Found only because `§F2.12` scanned for credential SHAPES rather than for known strings.***
 *`sweep_coverage.py`'s own docstring records that the `T1` judgment pass caught **a** quoted
 credential; this instance survived that catch, in the very pass named `IDs, hashes, commit SHAs`.*
