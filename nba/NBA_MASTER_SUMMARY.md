@@ -41127,3 +41127,81 @@ crammed in here.*
 it named its own worst case and weighted it correctly.** *It was still unanswerable, because every
 branch shared an assumption the asker never surfaced: that the thing had a history. **Checking when
 `P1` was created took one `git log` and dissolved all three.***
+
+---
+
+# §T21.5 — ✅ **`patch_file` CAN SILENTLY DELETE A PRIOR WARNING. I AUDITED ALL `106` OF MY OWN DELETIONS TODAY: `0` LOST**
+
+*T21 pass 5, 2026-09-23. The survivor carried forward from `§T21.4`: `T21` SEG `1315` names a defect
+in this sweep's own tooling. **The right response to "your tool can destroy record" is not to note
+it — it is to check whether it did.***
+
+## 1. THE MECHANISM — *`T21` SEG `1315`, and it scores `0/0` in both trees*
+
+> *"the differential worker's warning was not ignored — **it was OVERWRITTEN**, when a later patch in
+> the same session **used that exact paragraph as its `old_str`**. An outcome the documents recorded
+> as 'built but never scheduled' **had a history, and that history was a question that got deleted
+> rather than answered**."*
+
+🔑 **The mechanism is specific and it is inherent to the tool.** `github_patch_file` takes an
+`old_str` and a `new_str`. ***If `old_str` spans a paragraph that contains something you did not
+intend to touch, that content is gone, the call returns `ok: true`, and nothing in the result
+mentions it.*** ⚠ **There is no diff in the response. The write looks identical whether it preserved
+or destroyed.**
+
+## 2. 🔑🔑 SO: **DID I DO IT?** — *the audit, `124` file-touches, `2026-09-23`*
+
+*Method: for every commit of mine today touching `nba/`, take every DELETED line and ask whether its
+text reappears in the SAME commit's ADDED lines, after normalising away markdown markers and `~~`.*
+
+```
++2,930 / −108   across 124 file-touches, 106 deleted lines with ≥15 normalised characters
+```
+
+| disposition | n | what it is |
+|---|---|---|
+| ✅ **anchor rewrite** | **73** | `patch_file` replaces the anchor line with itself-plus-more; git scores that as `−1/+N`. **Nothing removed.** |
+| ✅ **strikethrough, original kept** | **~19** | e.g. `bfa267ea` — `> ## ~~**EXACTLY ONE NBA WORKFLOW FIRES ON A GAME DAY…**~~` with the correction beneath; `a887fe94` — `~~*(P1)*~~ 🔴 NOT P1 — CORRECTED`; `f43f7f57` — `apps ~~, which are what BS_SOURCE=live reads,~~` |
+| ✅ **run-log header rewrite, body chained** | **~13** | the `▶ EXACT NEXT STEP` rows become `~~PASS N — COMPLETE~~ … ▶ PASS N WAS:` and the position rows chain the old text after **"and prior:"** |
+| ⚠ **replaced rather than struck, substance preserved** | **1** | `72299cd6` — `T20-25`'s *"THE FIX IS TWO LINES"* row became *"THE FIX — AND IT GETS SIMPLER"*. **The old remedy survives inside the new row** *("in SQL, precompute the key, or apply the same folding in the `ON` clause")*, but it was **not struck through**, and the stricter reading of rule 40 says it should have been. **Recorded against myself.** |
+| 🔴 **substance lost** | **`0`** | — |
+
+> ✅✅ **VERDICT: `0` of `106`. No warning, finding or prior claim was destroyed by my patches today.**
+> ⚠ **And the audit corrected itself twice before producing that number** — *the first run reported
+> `33` "genuinely removed" lines; the second, after normalising `~~`, reported the same `33` with a
+> different composition; only opening the diffs showed that **every one was an anchor rewrite, a
+> strikethrough, or a header change my substring test could not see.*** 🔑 ***A test that flags `33`
+> false positives and `1` true one is still the test that found the true one.***
+
+## 3. ⚠ WHAT THE AUDIT DOES **NOT** COVER, STATED RATHER THAN GLOSSED
+
+- **It covers `2026-09-23` only** — *today's `124` file-touches. The sweep has made **thousands** of
+  `patch_file` calls across prior sessions, and `SEG 1315` documents a real loss in one of them.*
+  **Whether earlier sessions lost content is `NOT ESTABLISHED`**, and the same script would answer it
+  over a wider date range — *named as the settling evidence rather than asserted either way.*
+- **It cannot detect a loss where the deleted text also appears elsewhere in the additions by
+  coincidence** — *a false NEGATIVE. With `+2,930` lines of additions, that risk is real, and it is
+  why the result is stated as "`0` detected", not "`0` occurred".*
+
+## 4. ✅ THE MITIGATION THAT ALREADY WORKS, NAMED SO IT IS DELIBERATE
+
+***Anchor on the SHORTEST unique string, and make `new_str` begin with `old_str` verbatim.***
+*That is what `73` of today's `106` deletions are — the additive pattern — and it makes destruction
+structurally impossible rather than merely unlikely.* ⚠ **Where a correction must alter existing
+text, strike it through; never replace it.** 🔑 **And `§T20.136`'s `RULE 53` applies here too: the
+check is the diff, not the intention.**
+
+## 5. 📋 CLAUSE SCORING
+
+| clause | result |
+|---|---|
+| the survivor from `§T21.4` taken up, not dropped | ✅ **HIT** |
+| `RULE 51` before writing | ✅ **`0/0`** in both trees for the `old_str`-overwrite mechanism |
+| the tool defect tested against MY OWN work, not just noted | ✅ **HIT — `106` deletions examined** |
+| every flagged line adjudicated, none left "probably fine" | ✅ **HIT — `105` cleared by inspection, `1` recorded against myself** |
+| limits of the audit stated | ✅ **HIT — today only; false-negative risk named** |
+
+📌 ***The lesson:*** **a tool that reports `ok: true` for a destructive write is a silent-evidence
+problem, and this corpus already has a name for that class** *(`§T21.4`'s kill list: the DARKO debug
+artifact, "a failed scrape committing the first 20 kB")*. **The sweep found that pattern in the
+system three times before finding it in its own hands.**
