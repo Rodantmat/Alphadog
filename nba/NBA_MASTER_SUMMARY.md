@@ -41,8 +41,17 @@
 > > *(numbers are `T20-n`; letters are the five older items `§T20.56` found were missing from the brief.)*
 > **The ranking rule, re-derivable**: ***SILENT before LOUD, then STOPS THE SLATE before DEGRADES IT,
 > then UNCAUGHT by a certifier before CAUGHT.***
-> 🔴 **The two numbered items at the head**: **`T20-13`** — *"P2's certifier will go red every night
-> for the first twelve nights of the season — **correctly**"* — and **`T20-17`** — *a dropped
+> 🔴🔴🔴 **READ `T20-25` FIRST — ADDED 2026-09-23 (`§T20.127`), AND IT IS THE ONLY ITEM ON THE BRIEF
+> THAT IS ALREADY LOSING LEGS ON EVERY SLATE.** **The player bridge is BUILT with one normaliser and
+> READ with another** — the writer folds accents and strips `jr/sr/ii/iii/iv/v`, the reader does
+> neither — so **`54` of the `582`-player roster (`9.28%`) can never match**, and on the archived slate
+> `2026-01-15` that silently dropped **`11` of `162` players and `6,479` of `107,888` board rows —
+> `6.01%`**, including all **`1,057`** of `Jaren Jackson Jr`'s legs. ⚠ **The suffix half is live now;
+> the accent half arms the moment a source sends `Dončić`/`Jokić` as spelled.** ✅ **Two-line fix.**
+> *(The count above reads SIXTEEN; the brief is now **SEVENTEEN** — see its heading.)*
+>
+> 🔴 **The two numbered items previously at the head**: **`T20-13`** — *"P2's certifier will go red every
+> night for the first twelve nights of the season — **correctly**"* — and **`T20-17`** — *a dropped
 > injury-archive shard silently truncates `nba_score.availability_delta`, **which `score_board_legs.py`
 > reads***.
 > ⚠ **Nothing on that list is fixed. The owner's standing instruction is *document, don't fix*.**
