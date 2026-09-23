@@ -739,6 +739,39 @@ sample.**
 > ordinal rung index.** *Two legs on rung `+2` differ because `+2` rebounds and `+2` points are not
 > the same distance in probability space.*
 >
+> ### 📊 **THE MEASURED TABLE — `§T22.17`, every row a `demon +1`, `2026-09-21` live quotes**
+> *Added `2026-09-23`. **Seven legs, all on the same RUNG, and the payout more than doubles across
+> them.** `dist` is line − standard; `pct` is that distance relative to the standard line.*
+>
+> | player | stat | line | standard | dist | **pct** | **power** |
+> |---|---|---|---|---|---|---|
+> | Wembanyama | rebounds | `11.5` | `11` | `+0.5` | **`+4.5%`** | **`3.25`** |
+> | LeBron | pts+rebs | `24.5` | `23.5` | `+1.0` | **`+4.3%`** | **`3.25`** |
+> | Wembanyama | pts+rebs | `39.5` | `37.5` | `+2.0` | **`+5.3%`** | **`3.5`** |
+> | Tatum | pts+rebs+asts | `44.5` | `41.5` | `+3.0` | **`+7.2%`** | **`3.5`** |
+> | Tatum | pts+rebs | `39.5` | `36.5` | `+3.0` | **`+8.2%`** | **`4.0`** |
+> | SGA | pts+asts | `39.5` | `36.5` | `+3.0` | **`+8.2%`** | ⚠ **`3.75`** |
+> | Brunson | pts+rebs+asts | `39.5` | `35.5` | `+4.0` | **`+11.3%`** | **`4.0`** |
+>
+> 🔑🔑 **READ THE TABLE IN THIS ORDER AND IT SETTLES THREE THINGS AT ONCE:**
+>
+> **1 · The rung is constant and the price is not.** *Every row is `demon +1`. **Power runs `3.25` →
+> `4.0`, a `23%` spread on one rung.*** ⇒ *the ordinal index carries no price information.*
+>
+> **2 · It is the RELATIVE distance, not the absolute one.** *Rows `4`, `5` and `6` all sit `+3.0`
+> away in raw units and pay `3.5`, `4.0`, `3.75`. **Sorted by `pct` instead, the table is almost
+> perfectly monotonic**: `4.3%`→`3.25`, `4.5%`→`3.25`, `5.3%`→`3.5`, `7.2%`→`3.5`, `8.2%`→`4.0`,
+> `11.3%`→`4.0`.* 🔑 ***`+3` rebounds is a long way; `+3` points+rebounds+assists is not.***
+>
+> **3 · The one row that breaks monotonicity is the per-player variance, measured.** ⚠ **Tatum and
+> SGA sit at the SAME `+8.2%` and pay `4.0` and `3.75`** — *a `6.3%` gap between two legs identical on
+> every observable.* ⇒ ***That is the same effect `§T22.10` names as the `±10%` accuracy ceiling,
+> visible here in a single pair.*** **No formula keyed on `(stat, line, center)` can separate them.**
+>
+> 📌 ***This table is the evidence for the heading above it.*** *It was in `T22`'s bash output and in
+> none of the twelve — `RULE 55`: the conclusion was recorded at `§T22.9` before its table existed,
+> and the table is filed here rather than the conclusion being softened.*
+>
 > 🔑🔑 **THE CONSEQUENCE, STATED AT FULL STRENGTH**: ***any expected-value calculation that keys a
 > multiplier off a rung number is wrong, and it is wrong by up to `43%` on demons*** *(`5.25` vs
 > `7.5`)* ***and `27%` on goblins*** *(`2.2` vs `2.8`)*. **A tier-indexed lookup table cannot
