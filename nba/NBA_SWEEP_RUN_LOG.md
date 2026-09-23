@@ -2058,7 +2058,9 @@ from a live re-derivation each time rather than incremented — `OPEN_ITEMS` `90
 - 🔴 **`prop_universe` counts are NOT final** — mid-rebuild; `1,666,903` rows / `898 MB` observed
   2026-09-23 and recorded as an observation, not a figure.
 - 🔴 **Open for the owner: `F2-1`** *(rotate)* · **`T21-1`** *(the reference-not-copy directive)* ·
-  **`T20-3`(e)** *(the MLB crons)* · **`T23-1`** *(the model vs PrizePicks)* · **`T10-F1`**.
+  **`T20-3`(e)** *(the MLB crons)* · **`T23-1`** *(the model vs PrizePicks)* · **`T10-F1`** · 🆕
+  **`F6-2`** *(no control for the post-`09:00 ET` scratch slice)* · 🆕 **the `-05:00` atomic-fix
+  decision** *(`§F6.14` §4)*.
 ▶ **RULE 46 UNCHANGED: `T19` and `T20` each owe two INDEPENDENT complete sequential reads from a
 fresh context; `T20` cannot close in this session.**
 
