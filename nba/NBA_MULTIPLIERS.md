@@ -1931,8 +1931,22 @@ out-of-sample test at `§0.10-T22` §3 meaningful.*
 > 🔑🔑🔑 **THIS IS `§0.9-T22` §5's LAST CLAUSE PAYING OUT.** *The owner asked for granularity
 > *"to cover all we know and **also leave space for possible mistakes**."* ⇒ ***A key that can be
 > INCONSISTENT is a key that can be CAUGHT being inconsistent. The `63` are the design working as
-> specified, one day after it was specified.*** ⚠ 🔴 **`NOT RECORDED`: whether the `63` were
-> subsequently resolved, and how.** *A `T23`/`T24` question — named, not assumed.*
+> specified, one day after it was specified.*** ~~⚠ 🔴 **`NOT RECORDED`: whether the `63` were
+> subsequently resolved, and how.** *A `T23`/`T24` question — named, not assumed.*~~
+>
+> ## ✅✅ **RESOLVED `2026-09-22` — AND THE FIX IS IN THE KEY, EXACTLY WHERE THE DESIGN SAID IT SHOULD BE** *(recorded `§T24.1` §6, 2026-09-23)*
+> **`T24` §5.1, engineering fix 2**: *"the first price table was **keyed WITHOUT `kind`**; **`34` of
+> `2.19 M` key-snapshot groups carry the same line as two kinds** (`19` universe legs exposed), **so
+> the price picked was ARBITRARY** — flags moved **`153 → 158` between refreshes**. Now **`kind` is
+> in the primary key**, ties break window-snapshot-first then **lower factor**, and each leg takes the
+> price matching its PrizePicks kind (else the lowest, **so no leg is dropped**). `1,289,896` price
+> rows."* ⇒ ✅ **`T24`'s final audit reports `kind_price_mismatch` = `0`.**
+> 🔑🔑 **NOTE WHAT THE SYMPTOM WAS**: ***the flag count MOVED BETWEEN IDENTICAL REFRESHES — `153 → 158`.***
+> **A build that is not reproducible is the tell, and it was caught by running it twice.**
+> 🔑 **And the remedy honours the granularity principle** *(§2 above)*: the defect was that the key
+> omitted one of the leg's **raw facts**, and the fix was to put it back — **not to add a
+> model parameter or a tie-break heuristic on top.**
+> ⚠ **`AS STATED IN T24`** *(SECONDARY source; the `pp_*` tables were not queried by this sweep).*
 
 ## 5. ⚠ **TWO POPULATION FACTS THAT SHAPE ANY BACKFILL** *(SEG `466`)*
 
