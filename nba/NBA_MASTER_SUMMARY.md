@@ -40004,3 +40004,70 @@ kill. ✅ **The AST census and the docstring note are NOVEL; the two dead levers
 dead lever by accident and left the obvious question open — "how many more are there?" — and an
 unanswered question of that shape gets re-asked, at cost, forever. The answer is two, both known, and
 now nobody has to look again.***
+
+---
+
+# §T20.132 — T20 PASS 127: ✅🔑 **THE GRADER'S YIELD IS `100.00%` ON EVERY DATE TESTED — AND IN PROVING IT THE PASS BUILT THE POSITIVE CONTROL `T20-25` DID NOT HAVE**
+
+*Pass 127, 2026-09-23. Pre-registered as **"THE GRADER'S YIELD, END TO END — `board_snapshots` →
+`board_outcomes`. WHAT FRACTION OF OFFERED LEGS EVER GETS A RESULT, AND WHERE DO THE REST GO?"**
+Clause (vi): **"if the yield is high and every ungraded leg falls into a class the corpus already
+explains, the pass SAYS SO AND STOPS."** *It does — and clause (iii)'s drop-classification is what
+produced the control.*
+
+## ① THE CONTRACT, READ FIRST *(clause ii)*
+
+**`grade_board_outcomes.py:9`** defines the closed set of outcomes:
+`over_win · under_win · push · dnp · no_stat · unmatched_player · game_not_found` *(plus
+`unmatched_not_in_season` at `:217`)*. **`:197` grades `SELECT DISTINCT market_key, player, side,
+line FROM board_snapshots`** — *distinct LEGS, not rows* — and the header records the design
+decisions that matter: **DNP is stored raw because *"PrizePicks: DNP REVERTS the lineup… Underdog:
+DNP voids the leg. Baking either rule into `leg_result` would make the data useless for the other
+operator"***; and **`:19–22`: *"A player with no box-score row is only a DNP if we can confirm he
+exists and his team played that day. If the name does not resolve at all it is a DATA problem, not a
+DNP."*** ⇒ **The grader has a dedicated failure class for exactly the defect `T20-25` is about.**
+
+## ② THE YIELD — THREE DATES, ALL PERFECT
+
+| date | offered distinct legs | graded rows | settled *(over/under)* | `dnp` | 🔑 **other classes** |
+|---|---|---|---|---|---|
+| `2025-11-29` | **26,896** | **26,896** | 25,854 | 1,010 | **`0`** |
+| `2026-01-15` | **29,537** | **29,537** | 28,048 | 1,455 | **`0`** |
+| `2026-03-15` | **20,509** | **20,509** | 19,900 | 587 | **`0`** |
+
+⇒ ✅✅ ***`100.00%` yield on every date tested. Not one `unmatched_player`, `no_stat`,
+`unmatched_not_in_season` or `game_not_found` — the three failure classes the grader defines are all
+empty.*** **Clause (vi)'s stop fires.**
+
+✂ **KILL LOGGED — the over/under skew is on file.** *`2026-01-15` reads `under_win` `55.20%` ·
+`over_win` `39.76%` · `dnp` `4.93%` · `push` `0.12%`, and `NBA_MASTER_SUMMARY.md:16082` already
+records the corpus-wide partition: **`under_win` 3,877,761 (56.16%) · `over_win` 2,780,348 (40.26%)
+· `dnp` 205,425**.* **Measured here, matching, and not restated as a finding.**
+
+## ③ 🔑🔑 AND THE DROP-CLASSIFICATION BUILT A CONTROL NOBODY DESIGNED
+
+**Same date. Same table. Same board. Two joins.**
+
+| | join | distinct players | **unresolved** |
+|---|---|---|---|
+| **the GRADER** | `norm_name()` — **the canonical function**, folds accents, strips suffixes *(`grade_board_outcomes.py:64–67`)* | **161** | ✅ **`0`** |
+| **the SCORER** | `lower(regexp_replace(b.player,'[^A-Za-z]','','g'))` — **neither** *(`score_board_legs.py:114`)* | 162 | 🔴 **`11`** |
+
+🔴🔴🔴 **AND THE GRADER RESOLVED `9` SUFFIXED PLAYERS ON THAT DATE — the same nine the scorer lost**
+*(`Gary Payton II`, `Gary Trent Jr`, `Isaiah Stewart II`, `Jabari Smith Jr`, `Jaime Jaquez Jr`,
+`Jaren Jackson Jr`, `Kevin Porter Jr.`, `Vincent Williams Jr`, `Wendell Carter Jr` — `§T20.127`)*.
+
+⇒ ***`T20-25` is no longer an argument from source. It is two measurements on the same input, and the
+only variable is which normaliser the join uses.*** ✅ **Added to `T20-25` as its positive control.**
+*(The `161` vs `162` is the grader's `DISTINCT market_key, player, side, line` population against the
+scorer's distinct `player`; it does not affect the control.)*
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: the `100%`-yield measurement and the
+grader-vs-scorer control appear in neither tree; `leg_result`'s value set and the over/under partition
+are on file and are **killed above, not restated**. ✅ **NOVEL.**
+
+📌 ***The lesson:*** **the pass's headline was a clean stop, and the control was a by-product of the
+clause that made it stop** — *classify the drops, and the class that came back empty turned out to be
+the one another pass had measured full.* ⚠⚠ ***Two components read the same column of the same table
+on the same day; one loses nine players and the other loses none. That comparison existed for months
+and nobody had reason to make it until a pass was required to count what the grader threw away.***
