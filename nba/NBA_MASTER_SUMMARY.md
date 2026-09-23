@@ -39152,3 +39152,94 @@ path-tagged record of every run that actually happened.** ⚠⚠ ***And it came 
 control for free: two workflows, one repository, the same weekday schedule — one leaves a trace on both
 Mondays and the other leaves none anywhere. That is the comparison RULE 22 asks for, and the history
 supplied it without being asked.***
+
+---
+
+# §T20.123 — T20 PASS 118: 🔴✅ **THE SCRAPERS ARE ALIVE AND THE BOARDS ARE EMPTY — `max legs EVER` IS `0`, `0` AND `3`. THE FACT WAS ON FILE; THE MEASUREMENT WAS NOT, AND IT CORRECTS MY OWN `§T20.120`**
+
+*Pass 118, 2026-09-23. Pre-registered as **"SCRAPER RELIABILITY, MEASURED FROM THE HISTORY — WHAT IS
+EACH BOARD SCRAPER'S REAL INTERVAL, WHERE ARE ITS GAPS, AND WHY DOES UNDERDOG LAND `27` WHERE ITS
+SIBLINGS LAND `63` AND `69`?"***
+
+## ① THE REAL CADENCE, RE-DERIVED *(clause ii — `§T20.122`'s counts not inherited)*
+
+**Every bot commit touching each board file, `--since=2026-08-24`, measured `2026-09-23T00:16:07Z`:**
+
+| app | n | first → last | median gap | mean | **max gap** | >12 h | >24 h |
+|---|---|---|---|---|---|---|---|
+| `sleeper` | **63** | `09-10 03:26` → `09-22 21:18` | `4.76 h` | `4.93 h` | `7.87 h` | **0** | **0** |
+| `fliff` | **69** | `09-10 05:39` → `09-22 21:38` | `4.58 h` | `4.47 h` | `7.89 h` | **0** | **0** |
+| 🔴 `underdog` | **27** | `09-10 03:36` → `09-21 19:52` | **`3.44 h`** | `10.78 h` | 🔴 **`72.41 h`** *(`09-14 00:33` → `09-17 00:57`)* | **5** | **3** |
+| `scrape.yml` *(MLB control)* | 243 | `08-24 01:45` → `09-23 00:08` | `2.41 h` | `2.97 h` | `22.96 h` | 1 | 0 |
+
+🔑 **THE DISCRIMINATION CLAUSE (iii) ASKED FOR**: **Underdog's MEDIAN gap is `3.44 h` — TIGHTER than
+either sibling.** ⇒ ***Its deficit is not a slower cadence. It is BLOCKS OF SILENCE*** — three holes
+over 24 hours including one of **three days** — **and `SCHEDULE DIFFERS IN PRACTICE` is eliminated.**
+
+✅ **`COMMITS ONLY ON CHANGE` confirmed, and confirmed EQUAL**: all three workflows carry the
+**identical** guard — `if git diff --cached --quiet; then echo "No changes."; exit 0; fi`. **So the
+instrument under-counts runs the same way for all three, and the comparison between them is fair.**
+
+⚠ **`RUNS FAIL` vs `SCRAPE RETURNS UNCHANGED` cannot be separated from the commit history alone.**
+📌 ***And this is now the SECOND question blocked by the same missing capability*** — `§T20.122`'s
+`P1` question was the first. **What would close both: the ability to list runs filtered to one
+workflow.**
+
+## ② 🔴🔴🔴 BUT THE MEASUREMENT FOUND SOMETHING BIGGER THAN THE COUNT
+
+**Board content at every commit in each file's entire history** *(`git show <sha>:<path>`, `legs`
+array length)*:
+
+| app | bytes now | `legs` now | 🔴 **MAX `legs` EVER, ACROSS EVERY COMMIT** | first commit |
+|---|---|---|---|---|
+| `sleeper_nba_current.json` | **331** | **0** | 🔴 **`0`** | `2026-09-10T03:26:35Z` |
+| `fliff_nba_current.json` | **757** | **0** | 🔴 **`0`** | `2026-09-10T05:39:11Z` |
+| `underdog_nba_current.json` | `23,704` | `3` | **`3`** *(from `2026-09-10T04:22:35Z`)* | `2026-09-10T03:36:34Z` |
+
+⇒ ***SINCE THE DAY THEY WERE TURNED ON, SLEEPER AND FLIFF HAVE NEVER ONCE PRODUCED A SINGLE NBA LEG,
+AND UNDERDOG HAS NEVER PRODUCED MORE THAN THREE.***
+
+## ③ ✂ THE FACT IS ON FILE AND CORRECTLY FRAMED — THE KILL, LOGGED
+
+**`NBA_MASTER_SUMMARY.md:15795`**: *"**The empty NBA boards are EXPECTED**"* ·
+**`:32709`**: *"the scrapers work; **the NBA board is empty because the season**…"* ·
+**`:20053`** and **`NBA_OPEN_ITEMS.md:2774`**: *"**SLEEPER HAS ZERO NBA BOARD ROWS**"*.
+✂ **KILLED as a headline.** ⚠ **It is the off-season; an empty September DFS board is correct, and the
+corpus says so.**
+
+✅ **WHAT IS NEW IS THE MEASUREMENT, AND `legs=0` · `max legs` · `331 bytes` each return `0/0/0` across
+both trees.** *The corpus knew the boards were empty **today**; it had never measured them across the
+scrapers' whole history.* ⇒ **"Expected" becomes "never once, in `63` and `69` commits over thirteen
+days"** — *and that is the difference between a state and an exercise record.*
+
+## ④ 🔴 AND IT CORRECTS MY OWN `§T20.120`, TWO PASSES OLD
+
+`§T20.120` wrote: *"`3` apps × `12` pulls a day × `~10` days ≈ **`360` NBA board pulls scraped,
+committed, and overwritten**."* ⚠⚠ **That arithmetic is right and its implication is wrong.** **For two
+of the three apps every one of those pulls carried `legs = 0`** — *nothing of value was destroyed,
+because nothing of value was ever in them.* ✅ **Corrected in place at `§T20.120`**, and `T20-22`'s
+severity is unchanged *(the loader still has no trigger; what it would have loaded was empty)*.
+
+📌 **AND THE SAME CORRECTION REACHES `§T20.119`**: it cited the three scrapers' commit timestamps as
+evidence they are *"demonstrably alive"* — **true, and I let it imply that boards exist.** 🔑 ***A
+commit proves the scraper RAN. It does not prove a board EXISTS. Those are different claims and this
+sweep merged them for two passes.***
+
+## ⑤ WHAT THIS MEANS FOR OPENING NIGHT, STATED AT EVIDENCE STRENGTH
+
+**NOT a defect. A total absence of exercise.** `§T20.95` established the system has never run against
+a live slate; **this measures it at the board level**: on `2026-10-03` the Sleeper and Fliff NBA
+`legs` arrays go from **`0` to hundreds for the first time in their history**, through
+`archive_live_boards.py`'s per-app normalisers *(`rows_sleeper`, `rows_fliff`)* which **have never
+processed a non-empty NBA payload.** ⚠ *Whether those normalisers are correct is **NOT ESTABLISHED** —
+they were written from MLB shapes and one September sample, and no test in the repo covers them.*
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `legs=0` **0/0/0** · `max legs` **0/0/0** ·
+`331 bytes` **0/0/0**; `demonstrably alive` scores **2 in the twelve and 0 in the baseline** — *this
+sweep's own phrase, which is exactly why the correction in ④ was owed.* ✅ **NOVEL.**
+
+📌 ***The lesson:*** **a fact can be on file, correctly framed, and still unmeasured — and the
+measurement is what turns "expected" into a number that bounds the risk.** ⚠⚠ ***And the pass that
+measures it is the one that catches the sweep quoting its own evidence past what the evidence says:
+"demonstrably alive" was true of the scraper and false of the board, and I wrote it twice before
+opening a single file.***
