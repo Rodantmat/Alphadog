@@ -31809,6 +31809,10 @@ every night for eleven more.**
 ✅ **The fix is a choice, not an investigation: lower the gate for October, make it
 `>= 22 AND (month != 10 OR …)`, derive it from the slate, or accept twelve red nights knowingly. All
 four are one edit. What must not happen is the owner meeting it unprepared on 2026-10-20.**
+🔴 *(**CORRECTED 2026-09-23, §T20.136**: *"twelve"* is wrong — **every night of the season**, because
+`certify_pipeline.py` fails `baseline_history has today` before reaching this gate, on every date
+(`T20-6`). **All four fixes above remain exactly right and all four remain one edit** — they simply
+do not turn the build green on their own until `T20-6` is resolved.)*
 ⚠⚠ **RULE 46 BARS CLOSURE — T20 hands on at 0/3, two INDEPENDENT reads owed.**
 ⚠ **KILLS LOGGED (rules 26/28)**: **the per-date magnitudes `71,044` / `117,885` / `59,518`**
 *(§T20.51, confirmed — the JOIN is what is new)* · **the certifier's structure** *(T20-6)* · **the
