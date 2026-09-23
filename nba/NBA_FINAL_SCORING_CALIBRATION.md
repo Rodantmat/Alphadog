@@ -1918,20 +1918,33 @@ construction constraint, and it points the opposite way from board depth.**
 > > ***"`penalty_pp` = the prop's n-weighted ECE minus the median ECE of the certified set
 > > (`0.20 pp`). **Derived, never declared.**"*** — `penalty_rule`, `VERBATIM`
 >
-> | prop | `n` | ECE pp | − median `0.20` | ⇒ `penalty_pp` |
-> |---|---|---|---|---|
-> | `oreb` | `556,277` | `0.28` | `0.08` | **`0.1`** |
-> | `fantasy_score` | `994,879` | `0.41` | `0.21` | **`0.3`** |
-> | `double_double` | `47,912` | `0.57` | `0.37` | **`0.4`** |
+> | prop | `n` | ECE pp | `ECE − 0.20` | published `penalty_pp` | reproduces? |
+> |---|---|---|---|---|---|
+> | `oreb` | `556,277` | `0.28` | `0.08` | **`0.1`** | ✅ *(rounds to `0.1`)* |
+> | `double_double` | `47,912` | `0.57` | `0.37` | **`0.4`** | ✅ *(rounds to `0.4`)* |
+> | 🔴 `fantasy_score` | `994,879` | `0.41` | `0.21` | **`0.3`** | 🔴 **NO — `0.21` rounds to `0.2`** |
 >
 > 🔑 ***"Derived, never declared" is the load-bearing half*** — **the penalty is a measured distance
 > from the certified set's own median, so it re-derives whenever the set is re-scored and no one ever
 > chooses a number.** 📌 *The same discipline as the `variation_bands` rule and the `prior_strength`
 > constants: the corpus's recurring standard is that a constant which cannot be re-derived from
-> stored data is not allowed to exist.* ⚠ **`RULE 54`: the three rows above reproduce the published
-> penalties to the stated precision, but **the rounding rule is `NOT RECORDED`** — `0.21` → `0.3` and
-> `0.08` → `0.1` are consistent with rounding up to one decimal, which this pass infers rather than
-> reads.
+> stored data is not allowed to exist.*
+>
+> 🔴🔴 **BUT THE RULE AS STATED DOES NOT REPRODUCE ONE OF ITS THREE OUTPUTS, AND THAT IS RECORDED,
+> NOT SMOOTHED.** *Two of three fall out of `ECE − 0.20` at one decimal. **`fantasy_score` does not**:
+> `0.41 − 0.20 = 0.21`, and no rounding convention takes `0.21` to `0.3`. ⚠ **`NOT RECONCILED.**
+> Three readings are open and the row settles none of them: (a) the stated median `0.20 pp` is
+> rounded and the true value is nearer `0.11`, in which case `oreb` and `double_double` would come
+> out at `0.2` and `0.5` instead — so that does not work either; (b) `fantasy_score` carries an extra
+> term the rule does not mention, plausibly its `5.2%` lift, the lowest in the system; (c) the
+> published `0.3` was set before the rule was formalised and never re-derived.* ⇒ ***Reading (b) or
+> (c) would both mean the penalty for the system's highest-volume prop is the one number in this
+> audit that is NOT derived — which is precisely what the rule's own name forbids.***
+>
+> ⚠ **I published this table once with `fantasy_score` shown as reproducing, and corrected it within
+> the hour.** *`0.21 → 0.3` was written down and not checked against `0.08 → 0.1` beside it. **The
+> arithmetic was in the same table as the claim.** 📌 *Third self-caught defect of this pass; `RULE
+> 55`'s companion — **a derivation is not recorded until it has been RUN on every row it claims.***
 >
 > ⚠ **AND THE PRINCIPLE BEHIND THE AUDIT, also in `0` of the twelve:** *before it ran, **TEN props —
 > `5.4M` rows, a third of the table — had NO verdict at all**, because the scorer silently skipped
