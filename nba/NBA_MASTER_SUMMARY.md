@@ -41455,3 +41455,96 @@ transcript**."* **Until now the case for it was stated in terms of FILE SIZE** *
 📌 ***The lesson:*** **this sweep has measured its findings obsessively and never once measured its
 own rate.** *Doing it took one re-run of an instrument that already existed, and it turned the
 owner's format directive from a stylistic preference into the difference between finishing and not.*
+
+---
+
+# §T22.5 — 🔴🔴🔴 **THE COVERAGE INSTRUMENT AND THE OWNER'S FORMAT DIRECTIVE ARE IN DIRECT CONFLICT, AND THE SWEEP'S COMPLETION RULE DEPENDS ON THE INSTRUMENT**
+
+*T22 pass 5, 2026-09-23. **`§T22.4`, written minutes earlier, inferred that a pointer-style entry
+would cover more segments per pass than a prose one. This pass tested that inference by writing one
+and re-measuring. It is false, and the reason it is false is structural.***
+
+## 1. 🔬 THE EXPERIMENT — *pre-declared in `§T22.4`, run immediately*
+
+**`NBA_MULTIPLIERS.md` `§0.11-T22` was written in the directive's shape**: seven findings, each an
+assertive standalone claim plus a `SEG` pointer, in one compact table rather than four long
+sections. **Then the same instrument, same thresholds, was re-run.**
+
+| `T22` | high band | uncovered12 |
+|---|---|---|
+| after `§T22.1`–`§T22.3` *(four long prose sections)* | `26` | `855` |
+| **after `§T22.5`'s dense pointer table** | 🔴 **`25`** | 🔴 **`855`** |
+
+> ⇒ 🔴🔴 ***ZERO segments covered. The high band went DOWN by one.*** **`§T22.4`'s inference is
+> falsified by direct measurement, one pass after it was published.**
+
+## 2. 🔑🔑🔑 **WHY — AND IT IS NOT A DEFECT IN EITHER THE FORMAT OR THE INSTRUMENT**
+
+**`judge21.py` is a char-`n`-gram TF-IDF cosine matcher** *(`char_wb`, `4–5`, `sublinear_tf`)*. **A
+transcript segment moves out of `uncovered` when the twelve contain text that OVERLAPS IT
+LEXICALLY.**
+
+| | what it does | what the instrument sees |
+|---|---|---|
+| **a prose entry** | **reproduces** the segment — quotes it, tabulates its numbers, restates its wording | ✅ **high overlap ⇒ segment covered** |
+| **a pointer entry** | **summarises** it and says where the original is | 🔴 **low overlap ⇒ segment stays uncovered**, however well the finding is captured |
+
+> ⇒ 🔑🔑🔑 ***THE INSTRUMENT MEASURES HOW MUCH OF THE TRANSCRIPT HAS BEEN COPIED INTO THE DOCUMENTS.
+> THAT IS PRECISELY WHAT THE OWNER INSTRUCTED THE SWEEP TO STOP DOING.***
+>
+> **`T21-1`, the owner, `T21` SEG `1233`**: *"the files should be a **reference, not a full detailed
+> copy of the transcript**… **i don't want so heavy of files again**."*
+> **The completion rule** *(`§T21.6` ②, the other chat's own words)*: *"`nba/tools/` … **the
+> completion rule depends on it**. protect it like the documents."*
+
+## 3. 🔴🔴 **THE STRUCTURAL CONSEQUENCE, STATED PLAINLY**
+
+> ***Adopting the owner's format would make the sweep's own completion metric permanently
+> unsatisfiable.*** **The two cannot both be honoured**: coverage rises when the documents duplicate
+> the transcripts; the directive forbids duplication. **Every segment converted to a pointer is a
+> segment the instrument reports as UNDOCUMENTED.**
+
+⚠ **This is not an argument against either one.** *It is an argument that **"three consecutive clean
+passes at `<X%` uncovered" cannot be the completion rule under a pointer format**, and a different
+completion test would be needed* — *e.g. "every FINDING in the transcript is claimed by an entry",
+which counts findings rather than characters and which no instrument here measures.*
+
+🔴 **OWNER DECISION — added to `T21-1` as a fourth consideration.** *It changes what the four options
+cost: option (d) "abandon the format" now also means "keep a completion rule that works", and
+options (a)/(b)/(c) all imply replacing the completion rule as well as the file format.*
+
+## 4. ⚠⚠ **AND THE SELF-CRITICISM IS THE SHARPEST PART**
+
+**`§T22.4` caveat 2, written by me, in the same section as the inference it invalidates:**
+
+> *"**The instrument rewards text similarity, not understanding.** A pointer entry might cover more
+> segments per pass by this metric while carrying less meaning. **The metric is a proxy and is named
+> as one.**"*
+
+⇒ 🔴 ***I wrote the caveat, then reasoned as though it did not apply — and even the caveat guessed
+the direction WRONG*** *(it worried a pointer might score too HIGH; it scores at zero)*.
+
+> 🔑 **THIS IS THE THIRD INSTANCE OF ONE SHAPE IN FOUR PASSES**, and it is now a pattern with a name:
+> **`§T20.136`** — stated `RULE 53`, violated it in the introducing paragraph.
+> **`§T21.0`** — classed `T24` SECONDARY, then used `T24`'s abstract to call a corpus number wrong.
+> **`§T22.4`** — named the metric a proxy, then built a structural argument on it.
+> ⇒ ***Stating a limitation is doing something other than respecting it, and in all three cases the
+> statement discharged the feeling of having handled it.*** ✅ **And in all three the CATCH came from
+> a pre-registered output — a grep, a stopping clause, a re-measurement — never from re-reading my
+> own prose.** 📌 **`RULE 54`, proposed: *a caveat about an instrument must be applied as a
+> constraint on the same pass's conclusions, or it is decoration. Where a caveat and a conclusion sit
+> in one section, the conclusion must state which side of the caveat it falls on.***
+
+## 5. 📋 CLAUSE SCORING
+
+| clause | result |
+|---|---|
+| test `§T22.4`'s inference rather than adopting it | ✅ **HIT — written, measured, falsified in one pass** |
+| correct the falsified claim at source | ✅ **HIT — `§T22.4` struck and superseded in place, both dates** |
+| state what survives and what does not | ✅ **HIT — the `~44×` ratio and `5.0`/pass STAND; only the inference to format is retracted** |
+| the seven findings themselves | ✅ **kept — `NBA_MULTIPLIERS.md` `§0.11-T22`; they are good entries that this metric cannot see** |
+| `RULE 51` | ✅ the instrument/directive conflict scores `0` in both trees |
+
+📌 ***The lesson:*** **the sweep built an instrument, then let the instrument define what "done"
+means, and never asked whether its definition matched the owner's.** *One re-run of an existing tool
+showed they are opposites. **That question was available on day one and cost nothing to ask.***
