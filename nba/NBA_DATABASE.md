@@ -1562,8 +1562,17 @@ delta and an aggregate.**
 > | …of those, with **more than one line** | **`236,890`** — ⇒ ***`44.3%` of ladders are a single line and have no rungs at all*** |
 > | average lines per ladder | **`2.47`** |
 > | 🔴 **maximum lines on one ladder** | **`13`** |
-> | 🔴🔴 **rows carrying a value in the `multiplier` column** | **`0` — of `2,199,354`** |
-> | distinct values in the `price` column | **`2`** |
+> | 🔴🔴 **rows carrying a value in the `multiplier` column** | **`0` — of `2,199,354`** ⚠ **on `board_snapshots`, NOT this table — see the correction below** |
+> | distinct values in the `price` column | **`2`** ⚠ *same — `board_snapshots`* |
+>
+> > ⚠⚠ **CORRECTION, `§T22.20`, made by LIVE RE-DERIVATION on `2026-09-23`.** *The two rows marked
+> > above were first written here as properties of `board_tiers_v2`. **`board_tiers_v2` HAS NO
+> > `multiplier` COLUMN AT ALL** — the query errors. **Both belong to `nba_market.board_snapshots`**,
+> > which holds the same `2,199,354` PrizePicks rows:* `rows_with_multiplier = 0`, `distinct prices =
+> > 2`. 🔑 ***The finding is unchanged and arguably stronger: the price column is empty on the
+> > snapshot table, and the tier table does not even have one.*** *Recorded rather than silently
+> > repointed — `RULE 53`, and it is the second time this session that an attribution, not a number,
+> > was the error.*
 >
 > 🔑🔑 **`max lines = 13` IS THE INDEPENDENT CONFIRMATION OF A FINDING THE CORPUS ALREADY HAD FROM THE
 > OTHER SIDE.** *`T1`'s startup-plan review recorded that **the ladder was certified at `±6` rungs**
