@@ -8,7 +8,10 @@
 > #### ✅✅ §F6.26 — **THE DEFINITIONS ARE WHY THIS INDEX VERIFIES AND THE OTHERS DO NOT**
 >
 > *Re-derived
-> `2026-09-23` against the file: **`2,797` · `1,703` · `739` all reproduce EXACTLY.*** 🔑 ***And the
+> `2026-09-23` against the file: **`2,798` headings · `1,703` `§`-sections · `739` distinct
+> `§T`*n*`.`*m* labels — all three reproduce EXACTLY.*** ⚠ *`2,797` at the moment of derivation;
+> **`2,798` once this section's own heading existed.** `§F6.19`'s byte self-reference has a heading
+> twin, and it bites whenever the census text is itself a section.* 🔑 ***And the
 > re-derivation's first attempt got `358` for the `§`-section count*** — because I probed "headings
 > containing a `§`" instead of the definition written right here, ***"headings that name a
 > `T`*n*`.`*m* section"***, which also catches `### T11.10 — PASS 9` with no `§` at all. **Four more
