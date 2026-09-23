@@ -32,7 +32,7 @@ that is the useful part.
 > | 🔴 **why the blowout mixture changed, and the two beliefs it corrected** | **`STEP 0-T16`** |
 > | **the founding constraints and who this was built for** | **`STEP 0`** · **`STEP 0a`** |
 > | ⚠ **the rules that were never written down — and the one not holding** | **`STEP 0d`** |
-> | ⚠ **the verification discipline that was supposed to run alongside every step** | **`STEP 0c`** *(misplaced — sits after `STEP 7`)* |
+> | ⚠ **the verification discipline that was supposed to run alongside every step** | **`STEP 0c`** *(between `STEP 0b` and `STEP 0d`, where the build order puts it)* |
 > | **why scraping moved to GitHub Actions** | **`STEP 4`** |
 > | 🔴 **what is NOT recorded** *(stated as gaps, never inferred)* | **`STEP 11`'s two `NOT RECORDED` blocks** · **`STEP 12`'s** |
 >
