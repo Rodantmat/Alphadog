@@ -8281,6 +8281,30 @@ Complete read at maximum context. **Every block maps to a documented entry. Noth
 Two details resolved to their full form in this pass, both refinements rather than new findings:
 - The `resultSets`-as-dict bug produced **`KeyError(0)`**, which *"renders as literally `\"0\"` when
   stringified"* — which is why the error message was uninformative and the cause took a second look.
+
+> ### 🔬 **§T21.9b — THE COVERAGE INSTRUMENT'S OWN ORIGIN DEFECT WAS THE SAME CLASS, AND `T21` RECORDED IT** *(`T21` pass `9`, recorded `2026-09-23`)*
+>
+> *`T21` reviewed the matcher when it was first proposed and reported the result of its backtest —
+> checking out the documents as they stood at pass `63` and asking whether the matcher would have
+> surfaced what passes `64`–`87` actually found:*
+>
+> | | |
+> |---|---|
+> | first run | 🔴 **`73%`** |
+> | root cause | ***"segmentation, not ranking — tool-use inputs were JSON-stringified, so paragraph structure was hidden"*** |
+> | after the fix | re-measured, local, reproducible, against its own ground truth |
+>
+> 🔑🔑 ***THE INSTRUMENT UNDERCOUNTED BECAUSE OF HOW IT SPLIT THE TEXT, NOT HOW IT SCORED IT.*** ⚠
+> **That is the identical failure mode as every instrument error this sweep has made since**: `§F7.7`
+> went through **five** resolver versions — `§`-prefixed labels, bare numeric, `T`/`F`-prefixed,
+> non-greedy truncation, and a decoration class missing `🔍`/`❌` — and **every one of them was a
+> SEGMENTATION or TOKENISATION error, none was a scoring error**, and **every one of them
+> undercounted in the pessimistic direction.**
+>
+> ⇒ 🔑 ***`RULE 58`'s deepest form: when a text instrument returns a surprisingly low number, suspect
+> how it CUT the text before you suspect what it found.*** **The corpus's first instrument failed
+> this way, was diagnosed correctly at the time, and the diagnosis was not carried forward — which is
+> why it had to be re-learned five times.**
 - The league eFG% by defender distance: **0–2 ft "Very Tight" = 46.7%, 6+ ft "Wide Open" = 58.9%** —
   *"a sensible, real spread"*. These are the league baselines the Shot Quality Delta formula weights.
 
