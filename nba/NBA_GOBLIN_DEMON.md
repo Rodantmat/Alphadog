@@ -297,6 +297,30 @@ stated. `SELECT` only.*
 > at 2.1× regardless of depth; true value just under 2.086. The floor is **per goblin and
 > multiplies** (two floor goblins paid **1.4×**)."*
 
+> ## 🔴🔴 **§T23.7 — SUPERSEDED AGAIN, AND THIS TIME THE CORRECTION IS TO THE *SHAPE*, NOT THE VALUE**
+> *(`T23`, `2026-09-21`, recorded `2026-09-23`.)*
+>
+> > ***"Correction: the `2.08×` goblin floor isn't universal. It varies BY STAT and BY LEAGUE, so I'll
+> > set NBA's from preseason data."***
+>
+> | | |
+> |---|---|
+> | first recorded | `2.08×` *(factor `0.6933`)* |
+> | superseded `2026-09-21` | `1.9×` *(factor `0.6333`, `pp-leg-v2-sqrt-cap-conservative-floor190`)* |
+> | 🔴 **superseded again, same day** | **there is no single floor** — *it is a per-stat, per-league parameter* |
+>
+> 🔑🔑 ***A CONSTANT THAT NEEDED CORRECTING TWICE IN ONE DAY WAS NOT A BADLY MEASURED CONSTANT. IT WAS
+> A PARAMETER WITH A MISSING INDEX.*** *Each measurement was correct for the stat and league it was
+> taken on, and each was published as universal.* ⇒ **The pattern is worth naming, because this
+> corpus contains other scalars fitted across heterogeneous populations** — *and `RULE 26`'s "never
+> apply a tier/pool-level multiplier to a heterogeneous population" is the MLB lesson that predicted
+> it.*
+>
+> ⚠ **NBA's own floor is therefore NOT YET KNOWN** and is scheduled to be set from **the preseason
+> board of `2026-10-03`**. *Until then the conservative mode's `−3%` goblin margin is what stands
+> between the model and a floor that is too high.* 📌 *`§T23.6` item `1` in `NBA_MULTIPLIERS.md`
+> carries the related cap; the two are different parameters at opposite ends of the same ladder.*
+
 ✅ **And the pricing model confirms it**, pinned **2026-09-22T07:02:02Z**: the CURRENT model is
 **`pp-leg-v2-sqrt-cap-conservative-floor190`** *(`is_current = true`, created 2026-09-21T21:46:54Z)*
 with **`goblin_floor_factor` = 0.6333**, against **0.6933** in every earlier version
