@@ -622,6 +622,55 @@ sport-specific pricing model. The same company applies the same structure across
 **⚠ And even the mechanics have a shelf life** — the More-only rule was a durable mechanic **until
 2026-08**. *(§4)*
 
+> ## 🔴🔴 **§T22.8 — AND ON `2026-09-21` THE LIVE BOARD SHOWED MORE-ONLY AGAIN**
+> ### *(`T22` pass `8`, recorded `2026-09-23`. **An observation, not yet a contradiction — but it has to be settled before tier labelling can be trusted.**)*
+>
+> *`T22` had the owner open a real PrizePicks board and describe what was on it:*
+>
+> > ***"Every goblin and demon card shows only `↑ More` — no Less button — while standard cards show
+> > both. The documents record a four-way rule where, since `2026-08`, goblins and demons exist on
+> > the Less side too. On your board, in this mode, they don't."***
+>
+> | | |
+> |---|---|
+> | what the twelve record | **the four-way rule** — since `2026-08`, goblins and demons exist on **both** sides; `nba/build_board_tiers_v2.py` implements it, ⚠ *"not yet verified"* |
+> | what the live board showed, `2026-09-21` | 🔴 **More-only on every goblin and demon card** |
+> | the board's mode | **`game_mode=prizepools`** — *present on every league call in the capture* |
+> | the board's state | ⚠ **inconsistent within one session — `state_code=ca` on one call, `state_code=co` on another** |
+>
+> ⚠ **`T22` refused to call it a contradiction, and that restraint is the right call**: *"it may be
+> specific to `prizepools` or to the state, so it isn't a contradiction yet — **but it's an
+> observation that doesn't match what's written, and it matters for how the tiers get labelled.**"*
+>
+> 🔑🔑 ***PrizePicks serves a DIFFERENT GAME MODEL in some states, and a prize-pool model may not pay
+> fixed multipliers the way Power Play does.*** ⇒ ***Every multiplier figure in these documents is
+> implicitly scoped to a game mode and a state, and none of them say which.*** **That is the finding,
+> and it is larger than the More-only question it came from.**
+>
+> ### 📋 **THE `game_types` PAYLOAD, VERBATIM — three fields the twelve do not carry**
+> *(the `2.1 kB` response that fires when the SECOND leg is added; one leg cannot form a valid entry,
+> so nothing prices until there are two)*
+>
+> | field | value observed |
+> |---|---|
+> | `power play` *(id `2`)* | `payouts: {"2": {"2": 2.2}}` |
+> | `flex play` *(id `1`)* | `payouts: {"2": {"2": 1.8, "1": 0.25}}` |
+> | `payouts_srp` *(both)* | `power: [1.2, 0.0, 0.0]` · `flex: [1.2, 0.0, 0.0]` |
+> | 🔴 **`is_adjusted`** | **`true`** |
+> | 🔴 **`is_cashout_eligible`** | **`true`** — *not recorded anywhere in the twelve* |
+> | 🔴 **`is_max_payout_alert`** | **`false`** — *not recorded anywhere in the twelve* |
+>
+> ⚠ **`is_cashout_eligible: true` matters more than it looks.** *A cash-out facility changes the
+> expected value of a slip that a fixed-multiplier model prices as all-or-nothing. **Recorded as an
+> observed field, with no claim about whether the system should use it** — `RULE 55`: the conclusion
+> is not recorded because the table under it does not exist yet.*
+>
+> ⚠ **AND ONE PRIZEPICKS TERM THE CORPUS STILL CANNOT DEFINE**: *the board displayed* ***"Reversion
+> lineup payouts are different than standard. Learn more."*** *`T22` said plainly:* ***"I don't know
+> what PrizePicks means by reversion."*** **It is still not defined in the twelve.** 🔑 *Recorded as a
+> named unknown rather than omitted — an undefined term on the live board is a gap a reader can
+> close; an omitted one is a gap nobody knows to look for.*
+
 ---
 
 ## 5.0b ⚠ **THE STRUCTURAL MISPRICING — real, measured, and never exploited**
