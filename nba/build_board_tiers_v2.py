@@ -105,13 +105,27 @@ JOIN (SELECT *, COALESCE(explicit_anchor, (top_shorter + low_longer)/2.0) AS anc
 
 def main():
     apps = [a.strip() for a in os.environ.get("BT2_APPS", "prizepicks").split(",") if a.strip()]
+    # SCOPE (2026-09-23). This used to TRUNCATE board_tiers_v2 and rebuild it from the ENTIRE archive on
+    # every run - 25.7M snapshot rows, 2.2M tier rows. P3 runs this at the 1:15 PM cutoff, so that meant
+    # minutes of avoidable work on the critical path AND a window where nba_market.pp_leg_price (which
+    # reads this table) saw an EMPTY table mid-rebuild.
+    # Default is now ONE slate: delete that date's rows and rebuild just them. BT2_ALL=1 restores the
+    # full truncate-and-rebuild for backfills; BT2_DATE=YYYY-MM-DD targets another date.
+    full = os.environ.get("BT2_ALL", "0") == "1"
+    gd = None if full else (os.environ.get("BT2_DATE", "").strip()
+                            or datetime.now(timezone(timedelta(hours=-8))).date().isoformat())
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
-    print(f"building board_tiers_v2 for {apps} (four-way taxonomy, both anchor cases)", flush=True)
+    print(f"building board_tiers_v2 for {apps} "
+          f"({'FULL archive rebuild' if full else 'slate ' + gd}, four-way taxonomy, both anchor cases)", flush=True)
     with conn.cursor() as cur:
         cur.execute(DDL)
-        cur.execute("TRUNCATE nba_market.board_tiers_v2")
-        cur.execute(SQL, {"apps": apps})
+        if full:
+            cur.execute("TRUNCATE nba_market.board_tiers_v2")
+        else:
+            cur.execute("DELETE FROM nba_market.board_tiers_v2 WHERE game_date = %s AND bookmaker = ANY(%s)",
+                        (gd, apps))
+        cur.execute(SQL, {"apps": apps, "gd": gd})
     conn.commit()
 
     with conn.cursor() as cur:
