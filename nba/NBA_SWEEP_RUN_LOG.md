@@ -2416,7 +2416,12 @@ from a live re-derivation each time rather than incremented — `OPEN_ITEMS` `90
 
 - 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
   context. `T20` CANNOT CLOSE IN THIS SESSION.**
-- 🔴 **Direction (b) over the `~12,686` substantive uncovered segments** — no single pass closes it.
+- 🔴 **Direction (b)** — ~~over the `~12,686` substantive uncovered segments~~ ⇒ **RESCOPED
+  `2026-09-23`, `§F6.28`: `2,369` PROSE segments** *(`human/text` + `assistant/text`)* **plus
+  `~8,700` `tool_use`/`tool_result`.** *`83.5%` of the corpus's segments are machine strata. The
+  prose band was swept numerically this pass — `2,956` tokens, `179` absent, `122` candidates read —
+  and `T1`–`T12`, `T19`, `T20` yielded **`6` absent figures between them**. **No single pass closes
+  the rest, and a numeric probe cannot see a finding that carries no numbers.***
 - 🔴 **`T22`'s in-scope remainder**, with `§F2.4`'s correction applied *(its out-of-scope fraction is
   higher than the `31.6%` measured)*.
 - 🔴 **`prop_universe` counts are NOT final** — mid-rebuild; `1,666,903` rows / `898 MB` observed
