@@ -2038,6 +2038,28 @@ layer — it is not a minutes factor, it is an availability factor — which is 
 the wrong layer" reasoning that closed `A2`, reached independently and FOUR DAYS EARLIER
 (`2026-09-09` vs `2026-09-13`).***
 
+## ✅ §F6.25 — **THE `nba_config` SCHEMA CENSUSED IN FULL, AND THE VERDICT IS MOSTLY GOOD**
+
+*All `14` tables of `nba_config` enumerated and the substantive ones read against the twelve.
+**Read-only**, `2026-09-23`.*
+
+| table | rows | verdict |
+|---|---|---|
+| `classification_config` | `66` | ✅ narrative well covered; **`§F6.23`** found `16` absent figures out of `304`, **`§F6.16`** found a live defect while checking one |
+| 🔴 `calibration_log` | `8` | 🔴 **`§F6.24` — decisions documented, `sample_size` in `0` of `12`** |
+| ✅ `stat_decay_config` | `13` | ✅ **fully covered** — `ewma_alpha`, `memory_class`, `min_lookback_games`, `shrinkage_stabilization_games` and the per-stat rationales all present in `2`–`11` documents |
+| ✅ `system_settings` | `5` | ✅ **fully covered** — all five keys and their values in `2`–`7` documents |
+| ✅ `factor_relevance` | `460` | ✅ **covered** — `440 full` / `20 partial`, `29` factors × `28` props, `0` rows carry notes |
+| — | | `role_tiers` `6` · `variation_bands` `25` · `factor_registry` `67` · `factor_profile_cells` `35` — *heavily cited throughout the twelve; not re-censused cell by cell* |
+| ⛔ out of scope | | `pp_pricing_model` · `pp_slip_rules` · `pp_conservative_policy` — **the concurrent session's** |
+| ⛔ not read | | `external_credentials` — *`NBA_DATABASE.md` already records it VERIFIED two ways; **its values are never reproduced**, `F2-1`* |
+
+🔑 **AND `RULE 58` EARNED ITS KEEP ON THE LAST ONE.** *Three `factor_relevance` keys —
+`scoring_composition`, `teammate_competition`, `opp_scheme` — returned **`0` of `12`** as
+identifiers. **All three are present as English**: "scoring composition" `2`, "teammate competition"
+`3`, "opponent scheme" `3`. ⇒ ***`3` of `3` would have been filed as gaps by the pre-`RULE 58`
+method, in the same pass that numbered the rule.***
+
 📜 **`RULE 57` NUMBERED from `§F6.21`** — *a derivation is not recorded until it has been RUN on every
 row it claims* — **and `RULE 53` DISCHARGED for the count change**: corrected string
 ``55 numbered`` → ``56 numbered``, whole-file window ⇒ **RAW `1` site in the twelve, CLASSIFIED a
