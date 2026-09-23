@@ -513,7 +513,7 @@ table's.***
 > ## 🔴 WHAT ACTUALLY HAPPENED
 > | | then (`2026-09-21`) | now (`2026-09-23`, measured) |
 > |---|---|---|
-> | the twelve | **`1.1 MB`** — *"becoming too heavy"* | 🔴 **`6,363,357` bytes on `2026-09-23` — `5.8×`** *(it read `5,672,870` earlier the same day)*. 🔁 **Re-derive, never quote:** `` cat nba/NBA_*.md \| wc -c `` |
+> | the twelve | **`1.1 MB`** — *"becoming too heavy"* | 🔴 **`~6.4 MB`, roughly `5.8×`** — ***no exact figure, deliberately***: this row held two different totals on one day, each stale on commit. 🔁 **Re-derive:** `` cat nba/NBA_*.md \| wc -c `` |
 > | `nba/transcripts/` | `README.md` + `journal.txt` | 🔴 **`README.md` + `journal.txt`** *(and the journal is stale: `11,478` vs the owner's `14,284`)* |
 > | the pointer format | specified | 🔴 **never adopted** |
 >
