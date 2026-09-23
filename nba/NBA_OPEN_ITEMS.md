@@ -15,10 +15,13 @@
 > `T20-8`, `T20-12`, `T20-17`…`T20-25` are all table-only.*** **`T20-25` is SEASON-CRITICAL and is
 > one of them.**
 >
-> ## ▶ START HERE — *the three live OWNER DECISIONS, newest first*
+> ## ▶ START HERE — ~~*the three live OWNER DECISIONS*~~ **the FOUR live OWNER DECISIONS, newest first**
+>
+> *Count amended `2026-09-23`, `§F2.12`: `3` → `4`. **`F2-1` added at the top — it is the only one that is a SECURITY item and the only one where the damage is already done.***
 >
 > | item | what it asks you to decide | 🚩 |
 > |---|---|---|
+> | 🔴🔴🔴 **`F2-1`** | **ROTATE THE `balldontlie` API KEY.** *It was published IN FULL in this repo — which is PUBLIC — by `§T1.31`, the pass that swept for UUIDs, as evidence it was "already documented". **Redacted from `HEAD` 2026-09-23; `git log -S` still finds it in `2` commits, so redaction is not retraction.*** | 🔴🔴🔴 |
 > | **`T23-1`** | 🔴🔴 **The model does not beat PrizePicks** *(`1.08 M` legs)* — **but standards-only clears the 3-pick breakeven in both seasons and the game-aware replay returns `+14.5%`.** *Four options: shrink toward market · use as RANKER only · revisit the `0.15` Platt guard *(nearly free)* · build 3-pick+ standards only.* | 🔴🔴 |
 > | **`T21-1`** | 🔴 **The document-form directive is blocked** — its precondition *(transcripts in the repo)* **would publish `18` credential-shaped strings incl. `3` Postgres URLs to a PUBLIC repo.** *Four options + **rotate regardless**. And a LATER owner message may already answer it the other way.* | 🔴 |
 > | **`T22-1`** | ⚠ **"the keep my million board in underdog"** — an owner request with **`0` record anywhere**. *Still wanted, or dropped?* | ⚠ |
