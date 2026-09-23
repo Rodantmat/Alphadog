@@ -40995,3 +40995,135 @@ instruction says to hand over rather than decide.*
 of its documents and none auditing whether their FORM is what was asked for.** *The instruction that
 defines the deliverable was sitting in an unswept transcript, `0%` covered, while the files it
 governs grew `5.2×` past the size that prompted it.*
+
+---
+
+# §T21.4 — 🔴🔴🔴 **`P1` HAS NEVER COMMITTED, AND THE THREE-WAY QUESTION ASKED ABOUT IT HAS A FOURTH ANSWER: IT WAS TWO DAYS OLD**
+
+*T21 pass 4, 2026-09-23. `T21` SEG `1325` poses a directed diagnostic and asks for it to be run.
+**This pass runs it**, read-only, and the answer is none of its three branches.*
+
+## 1. THE QUESTION, AS POSED *(`T21` SEG `1325`, verbatim)*
+
+> *"earlier documentation records that `P1`'s certifier **'correctly failed on defender ratings 6
+> days stale'** — so it asserts freshness somewhere. **If it checked these nine tables it would fail
+> every week at 18–21 days.** So one of three is true: **1.** it checks the committed json, which is
+> fresh, not postgres, which is stale · **2.** `P1` has not actually been running · **3.** it has
+> been failing weekly and nobody noticed… **if it's 3, that is its own finding and arguably worse
+> than the freeze, because an alarm that fires unread is a stronger false assurance than no alarm at
+> all.**"*
+
+✅ **RULE 51 — the question and every element of its answer score `0` in the working tree and `0` in
+the baseline** *(pinned `2026-09-23T02:13:51Z`, window `±300`)*.
+
+## 2. 🔴 BRANCH **1** — **ELIMINATED FROM SOURCE**
+
+`certify_pipeline.py`, `PIPE=p1`, read this session:
+
+```python
+check("defender_ratings refreshed",
+      "SELECT max(as_of_date) FROM nba_ref.defender_ratings", (),
+      lambda v: v is not None and (datetime.fromisoformat(today).date() - v).days <= 8,
+      "<= 8 days old")
+```
+
+⇒ **It reads POSTGRES, not the committed JSON.** *And live, `2026-09-23T01:35:22Z`:
+`max(as_of_date)` = **`2026-04-09`**, **`167` days**, `111,768` rows.* ⇒ ***The check would fail by a
+factor of twenty.*** ✅ **Branch 1 is false.**
+
+## 3. 🔴🔴 BRANCHES **2** AND **3** — **AND THE EVIDENCE PRODUCES A FOURTH**
+
+**`P1`'s own commit step** *(`nba-p1-weekly-static.yml:107–114`)*:
+```bash
+git add nba/data/*.json || true
+if git diff --cached --quiet; then echo "No weekly file changes."; exit 0; fi
+git commit -m "NBA P1 weekly static [skip ci]"
+```
+
+**A full census of every bot commit subject in the repository, all refs, all time:**
+
+| bot commit subject | n |
+|---|---|
+| `Auto: record last successful deploy marker` | **1,874** |
+| `Update PrizePicks MLB current board JSON` | 657 |
+| `Update Fliff board JSON` · `Update Sleeper board JSON` · `Update Underdog board JSON` | 70 · 64 · 27 |
+| `Update NBA teams JSON` · `PP payout map` · `NBA injury report data` | 25 · 16 · 10 |
+| … *(fifteen more subjects)* | … |
+| 🔴🔴 **`NBA P1 weekly static`** | 🔴🔴 **`0` — it does not appear at all** |
+
+✅ **And Actions is demonstrably firing**: deploy markers on **every day `2026-09-15 → 2026-09-22`**,
+board scrapers committing **today**. *This is not a dead repository.*
+
+> ## 🔑🔑🔑 THE FOURTH ANSWER — **`P1` IS FOUR DAYS OLD**
+> | | |
+> |---|---|
+> | `nba-p1-weekly-static.yml` **created** | **`e0ac2f53`, `2026-09-19 12:52:43 -0700`** — *"P1: weekly static pipeline, Mondays 12:00 PT"* |
+> | its cron | `- cron: '0 19 * * 1'` — **Mondays only** |
+> | Mondays between creation and today | 🔴 **exactly ONE: `2026-09-21`** |
+> | `NBA P1 weekly static` commits | **`0`** |
+>
+> ⇒ ***All three branches presuppose a WEEKLY HISTORY — "it would fail EVERY WEEK", "failing WEEKLY
+> and nobody noticed". There was no weekly history to have. `P1` had existed for two days and had
+> had at most ONE scheduled opportunity to fire when the question was asked.***
+
+## 4. ⚠ WHAT REMAINS `NOT ESTABLISHED`, AND EXACTLY WHAT WOULD SETTLE IT
+
+**Whether `P1` fired on `2026-09-21` cannot be determined from commits**, because
+`if git diff --cached --quiet … exit 0` means **a run that changes no file leaves no commit** — and
+with the static layer frozen, *"No weekly file changes"* is the EXPECTED path.
+
+⚠ **Note the step semantics**: that `exit 0` ends the STEP successfully, **not the job** — so
+**`Certify P1` still runs**, and on `167`-day-stale `defender_ratings` it fails with
+`CERT_STRICT` defaulting to `1`. ⇒ **If `P1` fired on `2026-09-21`, it went RED at its final step and
+left no commit. If it did not fire, nothing happened. The two are indistinguishable from the repo.**
+
+📌 **What would settle it, named** *(rule 6)*: **the Actions run list filtered to
+`nba-p1-weekly-static.yml`.** ⚠ *The bridge's `github_list_workflow_runs` **ignores its workflow
+argument** — two calls with different spellings returned the same twenty most-recent runs — so this
+sweep cannot filter it. **Stated as a tool limitation, not as an absence of evidence.***
+
+## 5. 🔴 AND A SIDE-EFFECT OF THIS SWEEP, MEASURED AND OWNED
+
+**All twenty of the most recent Actions runs are `pages build and deployment`, triggered by MY OWN
+documentation commits** *(`2026-09-23T01:53Z → 02:11Z`, eighteen of them `cancelled` as each
+superseded the last)*.
+
+> ⚠⚠ **TWO HONEST CONSEQUENCES:**
+> **(a)** ***`[skip ci]` does not suppress the GitHub Pages builder.*** *The standing rule puts
+> `[skip ci]` in every commit message, and it works for repo-defined workflows — **no NBA pipeline
+> has been triggered, and the read-only constraint on the system holds** — but the Pages deployment
+> is GitHub-managed and fires anyway. **The claim "my commits trigger nothing" would be false**, and
+> it is corrected here rather than left implied.*
+> **(b)** ***This sweep's commit volume has pushed the real pipeline history out of the observable
+> window.*** **The twenty-run view is `100%` my own commits** — *so the sweep has measurably degraded
+> the observability of the system it is documenting, which is a cost worth stating.*
+
+## 6. 📋 KILLS LOGGED *(rules 26/28 — checked BEFORE writing, all already on file)*
+
+| candidate from `T21`'s uncovered strata | hits in the twelve |
+|---|---|
+| the **DARKO discard** *(9 of 24 fields, `x_minutes`)* — *"the most consequential finding in the sweep so far"* | **10** ✅ on file |
+| the **DARKO debug artifact** / 20 kB truncation | **19** ✅ on file |
+| **play-type offensive-only** + the registry that *"makes a check lie"* | **7** ✅ on file |
+| **balldontlie key rotation** | **54** ✅ on file |
+| *"an entry's absence isn't evidence the issue was never seen"* | **3** ✅ on file |
+
+📌 ***Five candidates killed, two survived.*** *The second survivor —* **`patch_file` overwrote a
+prior warning because a later patch used that exact paragraph as its `old_str`** *(`0/0`, `T21` SEG
+`1315`)* — *is a defect in this sweep's own tooling and is carried to the next pass rather than
+crammed in here.*
+
+## 7. 📋 CLAUSE SCORING
+
+| clause | result |
+|---|---|
+| run SEG `1325`'s diagnostic, read-only | ✅ **HIT — branch 1 eliminated from source; branches 2/3 dissolved by a fact none of them contained** |
+| every branch adjudicated or explicitly `NOT ESTABLISHED` | ✅ **HIT — 1 false · 2/3 superseded · the `2026-09-21` firing `NOT ESTABLISHED`, with the settling evidence named** |
+| `RULE 51` before publishing | ✅ **HIT — `0/0` on all five elements** |
+| kills logged before writing | ✅ **HIT — five** |
+| no live change, no trigger | ✅ **`SELECT` + `git log` + one directory listing only** |
+
+📌 ***The lesson:*** **a question with three branches feels exhaustive, and this one was asked well —
+it named its own worst case and weighted it correctly.** *It was still unanswerable, because every
+branch shared an assumption the asker never surfaced: that the thing had a history. **Checking when
+`P1` was created took one `git log` and dissolved all three.***
