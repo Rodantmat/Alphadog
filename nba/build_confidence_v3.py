@@ -152,9 +152,12 @@ def main():
     print("ensuring the baseline_history covering index (first run builds it; minutes)", flush=True)
     try:
         with conn.cursor() as cur:
-            cur.execute("""CREATE INDEX IF NOT EXISTS baseline_history_lookup_idx
-                ON nba_score.baseline_history (game_date, player_id, prop, line)
-                INCLUDE (proj_min, rate36, used_emp, role_tier)""")
+            # DEADLOCK (§T23.5, guarded 2026-09-23) - and here it also saves a pointless lock on a very
+            # large table: this index takes minutes to build on the first run and exists on every run after.
+            if cur.execute("SELECT to_regclass('nba_score.baseline_history_lookup_idx')").fetchone()[0] is None:
+                cur.execute("""CREATE INDEX baseline_history_lookup_idx
+                    ON nba_score.baseline_history (game_date, player_id, prop, line)
+                    INCLUDE (proj_min, rate36, used_emp, role_tier)""")
         conn.commit()
         print("  baseline_history_lookup_idx ready", flush=True)
     except Exception as exc:  # noqa: BLE001
