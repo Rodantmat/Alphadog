@@ -548,14 +548,19 @@ check was run before the rebuild counted, not after — which is what kept the f
 
 ---
 
-## STEPS 8+ — outlined from the journal, ~~pending their own transcript passes~~
+## STEPS 8+ — the journal's summary table *(superseded as a recipe by `STEP 8`–`STEP 13` below)*
 
-> # 🔴🔴🔴 **READ THIS BEFORE USING THE TABLE BELOW AS A RECIPE — IT IS A SUMMARY, NOT A SET OF STEPS**
-> *Added **T20 pass 81 (§T20.86), 2026-09-22**.*
+> ### ✅ **WHAT THIS BLOCK IS NOW — updated `2026-09-23`**
 >
-> ⚠⚠ **THE HEADING IS `DATED`, NOT `RETRACTED` (rule 40): *"pending their own transcript passes"* was TRUE when written. **Since then T3–T18 have ALL CLOSED on three consecutive clean passes, and T19 and T20 have been swept to `0/3` with `RULE 46`'s independent reads owed.*** ⇒ ***The passes happened — eighteen transcripts of them. The steps below were never promoted from summary rows into steps.***
+> **The table below is a RECORD of what was done, not an instruction for doing it again.** *It is
+> accurate; it is just a summary.*
 >
-> 🔴🔴 **WHAT THIS COSTS, CONCRETELY: the operating spine of the system appears in this document exactly once — four words in row `21`.** *`P1` weekly-static · `P2` overnight-heavy · `P3` afternoon-light — **their order, their `1:15 PM PT` cutoff, their gating, their twelve-check certifier — none of it is here.*** ▶ **It is documented, in depth, elsewhere: `NBA_SYSTEM_DESIGN.md` (the two-phase clock, the build-order lock) · `NBA_WORKERS.md` (the WORKFLOW → SCRIPT → TABLE wiring map, the certifier's predicates) · and the audits at `§T20.33`–`§T20.46`.** ⚠ *Someone rebuilding from this document alone would not know the pipelines exist.*
+> ✅ ***The gap it used to warn about is CLOSED.*** **`STEP 8`–`STEP 13` follow immediately and are
+> real steps**, each written from the workflow file it describes: **`STEP 8` `P1` weekly-static** ·
+> **`STEP 9` `P2` overnight-heavy** · **`STEP 10` `P3` afternoon-light** · **`STEP 11` the build order**
+> · **`STEP 12` the game-day timeline and the four clocks** · **`STEP 13` the opening-night dry run.**
+> ⇒ *The `1:15 PM PT` cutoff, the gating, the certifier and the build order are all in this document.*
+> 📚 *What this block said before, and why: `NBA_SWEEP_RUN_LOG.md` → `§T20.86`, `§F7.20`.*
 >
 > ⚠ **AND ROW `12` STATES A FIX WITHOUT ITS LIMIT.** *`THE SEASON-HARDCODING FIX` is true of what it names — **"shared `active_stats_season()` across 9 scrapers"** — but the reach is narrower than a reader will assume.* ▶ **Measured `2026-09-22T20:30:59Z`: `129` NBA Python files (`nba/*.py` + `nba/backtest/*.py`) · **`20` use `nba_season`** · **`43` carry a literal `"2025-26"`** · 🔴 **`41` of those `43` do not use `nba_season` at all**.** *(The reach was first measured at `§T12.7d` as "20 of 135" and corrected to "24 of 136" — see `NBA_OPEN_ITEMS.md`.)* 🔴 **And it is live today: `T20-4` records `nba-p3-afternoon-light.yml:38,205` still defaulting `BS_SEASON` to `"2025-26"`, eleven days from preseason.**
 >
