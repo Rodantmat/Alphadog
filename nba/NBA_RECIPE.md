@@ -212,6 +212,73 @@ that is the useful part.
 > 📌 **`apply_schema_all.py`** *(repo root)* is the applier. **`NBA_DATABASE.md`** carries the prose
 > for each table — what the columns mean, which are load-bearing, and the gotchas.
 >
+> ### 🗂 **THE `34` WORKFLOWS, CLASSIFIED** *(every file read `2026-09-23`, `§F7.23`)*
+>
+> *Re-derive the list:* `` ls .github/workflows/nba-*.yml `` · *and the active crons:*
+> `` for f in .github/workflows/nba-*.yml; do awk '/^on:/,/^jobs:/' $f | grep -E '^ *- *cron:'; done ``
+>
+> 🔴 **`4` ACTIVE CRONS — not one.** `nba-p1-weekly-static` `0 19 * * 1` · `nba-scrape` `0 9 * * 1` ·
+> **`nba-referees` `30 15 * * *` (DAILY)** · `nba-pp-payout-map` `15 */6 * * *` ⚠ *(the build chat's —
+> **OUT OF SCOPE**, listed only so it is not mistaken for NBA pipeline work)*.
+> ***Everything else is `workflow_dispatch` and/or `on: push: paths:` — manual or file-triggered, by
+> the no-orchestrator decision.***
+>
+> #### ① **REQUIRED TO REBUILD** — *run these once, in this order, to get from empty to current*
+>
+> | workflow | does | after |
+> |---|---|---|
+> | **`nba-scrape`** | the founding static scrape — teams, players | schemas exist |
+> | **`nba-backfill`** | 🔑 **the one-time game-log backfill** *(`scrape_nba_backfill_2025_26.py`, `scrape_nba_career_totals.py`)* — **`STEP 11` stage `2`, NOT a pipeline** | static layer |
+> | **`nba-measure-types`** | the additional measure-type backfill | `nba-backfill` |
+> | **`nba-pergame-backfill`** · **`nba-season-tables`** · **`nba-periods`** · **`nba-starter-status`** · **`nba-game-officials`** | the per-game, season, period, starter and officials layers | game logs |
+> | **`nba-baseline-history`** · **`nba-periods-history`** · **`nba-combos-history`** | **build `baseline_history`** *(all three run `load_baseline_history.py`)* — **the heart of the system** | all stats layers |
+> | **`nba-score-history`** | `build_asof_calibration.py` + `score_history.py` — **the as-of calibration** | `baseline_history` |
+> | **`nba-board-backfill`** · **`nba-game-lines`** | historical boards and closing lines | independent |
+> | **`nba-absence-panel`** | the redistribution panel and minutes allocator | game logs |
+>
+> #### ② **REQUIRED TO OPERATE** — *these run every season, every day*
+>
+> | workflow | cadence |
+> |---|---|
+> | **`nba-p1-weekly-static`** | ✅ **cron `0 19 * * 1`** — the weekly as-of layer |
+> | **`nba-p2-overnight-heavy`** | 🔴 **NO CRON** — overnight; the ladder and the grader |
+> | **`nba-p3-afternoon-light`** | 🔴 **NO CRON** — the `1:15 PM PT` run that produces the picks |
+> | **`nba-referees`** | ✅ **cron `30 15 * * *`** — daily referee assignments |
+> | **`nba-injury-report`** | the cutoff's input *(also a `P3` step)* |
+> | **`nba-boards-market`** · **`nba-board-archive`** | board capture *(also `P3` steps)* |
+> | **`nba-grader`** | grades last night *(also a `P2` step)* |
+> | **`nba-daily-delta`** | the daily game-log delta *(also a `P2` step)* |
+> | **`nba-overnight-queue`** | `load_baseline_ladder.py` + the coverage check |
+> | **`nba-board-maintenance`** | index shrink + `build_market_derived.py` — **periodic, not daily** |
+>
+> #### ③ **HISTORICAL, DIAGNOSTIC OR OUT OF SCOPE** — *a fresh build does not need these*
+>
+> **`nba-diagnostic`** · **`nba-probe`** · **`nba-engine-test`** *(`build_final_hp.py` + `build_board_tiers_v2.py` — a test harness, **not the production path**)* · **`nba-backtest`** · **`nba-baseline`** *(superseded by the `-history` trio)* · **`nba-pairs`** · **`nba-market-spreads`** *(an exporter)* · ⚠ **`nba-pp-payout-map`** — 🔴 **OUT OF SCOPE: the concurrent build chat owns it, with `nba/pp_payout_map.py` and the `pp_*` Postgres objects.**
+>
+> ⚠ **`nba-board-maintenance` and `nba-engine-test` are the two most easily mis-read**: *the first
+> sounds optional and is not (it shrinks a `6.6 GB` table's index); the second sounds like the engine
+> and is a test harness.*
+>
+> ### 🔐 **SECRETS AND VARIABLES — the NAMES, and what breaks without each**
+>
+> 🔴🔴🔴 **NO VALUE, NO FRAGMENT OF A VALUE, EVER. THE REPO IS PUBLIC.** *`F2-1` exists because a key
+> was published in it; `T22-1b` because a session cookie sits in the transcripts; **`F7-1` because an
+> instrument wrote credential-bearing output into the working tree.** **This block names KEYS only.***
+>
+> *Re-derive the full set:*
+> `` grep -rhoE '\$\{\{ *secrets\.[A-Z_0-9]+' .github/workflows/nba-*.yml | sort -u ``
+>
+> | name | consumed by | breaks |
+> |---|---|---|
+> | **`DATABASE_URL`** | **every workflow that writes** — the Postgres connection | ***everything.*** *Nothing loads, nothing scores.* |
+> | **`GITHUB_TOKEN`** | the commit-back steps in the scrapers | *scrapes run and their output is never committed, so the Workers never see it* |
+> | ⚠ **worker/bridge secrets** | `generate_wrangler_configs.py` and `github_write_worker_secrets_file.py`, **both at the REPO ROOT** — they emit the per-worker `wrangler` config and the secrets file | *workers deploy without bindings and fail at first query* |
+> | **`nba_config.external_credentials`** *(a TABLE, not a secret store)* | scrapers that need a third-party key read it from Postgres | 🔴 ⚠ **`credential_value_encrypted` IS A MISNOMER — the column is NOT encrypted** *(`NBA_GLOSSARY.md`, `T–W`)*. **Anyone with read access to the database has the keys.** |
+>
+> ⇒ 📌 ***The provisioning ORDER is: create the database and set `DATABASE_URL` → run
+> `generate_wrangler_configs.py` → deploy the workers (`admin-sql` LAST) → insert the
+> `nba_config.external_credentials` rows → then run any scraper.***
+>
 > #### ⚠⚠ **THE ONE THING STILL NOT DERIVABLE**
 >
 > | | |
