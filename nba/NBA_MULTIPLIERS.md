@@ -1845,3 +1845,94 @@ guessed.*
 > sort it equally well; the transcript does not name the underlying variable)*; and the `alt×alt`
 > `EV = 0.747/0.748` is measured **on `alt×alt` pairs specifically**, so whether the flat `25%` holds
 > on standard-containing slips is **not** established here. ⚖️ **`pp_*` objects not queried.**
+
+---
+
+# 0.13-T22. 🔑🔑 **THE PER-LEG PRICING MODEL AND THE KEY THAT COMPRESSES TWO SEASONS `256×`** *(T22 pass 7, §T22.7, 2026-09-23)*
+
+## 1. 🔑🔑🔑 **THE PER-LEG LAW, WITH ITS FITTED CONSTANTS** *(SEG `466`)*
+
+> *"per leg: **PrizePicks prices each line as the probability of beating it under a count
+> distribution centered on the STANDARD line, with spread `c × √(standard line)`**"*
+
+| family | `c` |
+|---|---|
+| **points family** | **`2.0`** |
+| **rebounds · assists · threes** | **`1.25`** |
+| **rebounds + assists** | **`1.4`** |
+
+⇒ 🔑 ***The model is not fitted to the payouts — it is fitted to a DISTRIBUTION, and the payout falls
+out of it.*** **That is why `§0.10-T22`'s compression is a separate, higher-level correction: the
+per-leg price comes from the distribution, and the slip price then compresses above `9.1×`.**
+⚠ **Two layers, two fits, and they are independently checkable** — *which is what made the
+out-of-sample test at `§0.10-T22` §3 meaningful.*
+
+## 2. 🔑🔑🔑 **THE KEY-GRANULARITY PRINCIPLE, AND IT IS THE RIGHT ONE** *(SEG `470`)*
+
+> *"the key must be built from **the leg's RAW FACTS, not from my model's parameters**. Everything
+> I've found says a leg's price is determined by **four observable things: the STAT, the STANDARD
+> LINE, the LEG's LINE, and the SIDE**."*
+
+> ⇒ ✅✅ ***A key made of observations survives a model change; a key made of model parameters does
+> not.*** **This is the implementation of the owner's design at `§0.9-T22` §5** — *"the price is
+> centralized in the db and the price ids are tagged on each leg"* — **and it is what makes his
+> stated purpose achievable**: *"if multipliers change, we just change them on the database instead
+> of changing all multipliers on 2 seasons of data."* 🔑 *Had the key carried `c`, or `λ`, or the
+> goblin floor, every refit would have invalidated every tag.*
+
+## 3. ✅ **THE COMPRESSION, AND IT CROSS-CONFIRMS AGAINST THE LIVE DATABASE** *(SEG `491`)*
+
+| | |
+|---|---|
+| legs | **`2,199,354`** |
+| distinct price ids | **`8,573`** *(`6,945` goblin/demon + `1,691` standards at factor `1`)* |
+| **reduction** | 🟢 **`256×`** — *"two full seasons of PrizePicks pricing live in a table the size of a spreadsheet"* |
+
+> ✅✅ **CROSS-CONFIRMED, and this one is not "as stated".** *My own independent `SELECT` at
+> `2026-09-23T02:22:06Z` (`§0.9-T22` §4) returned **`prizepicks` = `2,199,354` rows in
+> `nba_market.board_snapshots`.*** ⇒ ***The transcript's leg count and the live table agree
+> EXACTLY, two days apart, from two different queries.*** **That is a genuine verification of the
+> population the whole pricing build rests on.**
+
+## 4. ✅✅ **AND THE COUNT CAUGHT A DEFECT — WHICH IS THE OWNER'S OWN DESIGN CLAUSE PAYING OUT**
+
+> *"the count also caught a consistency problem worth surfacing now: **at least `63` keys are tagged
+> STANDARD on some legs and GOBLIN/DEMON on others. One price id must mean one kind.** The build will
+> **FLAG these rather than silently pick one** — that's exactly the kind of mistake the design should
+> expose."*
+
+> 🔑🔑🔑 **THIS IS `§0.9-T22` §5's LAST CLAUSE PAYING OUT.** *The owner asked for granularity
+> *"to cover all we know and **also leave space for possible mistakes**."* ⇒ ***A key that can be
+> INCONSISTENT is a key that can be CAUGHT being inconsistent. The `63` are the design working as
+> specified, one day after it was specified.*** ⚠ 🔴 **`NOT RECORDED`: whether the `63` were
+> subsequently resolved, and how.** *A `T23`/`T24` question — named, not assumed.*
+
+## 5. ⚠ **TWO POPULATION FACTS THAT SHAPE ANY BACKFILL** *(SEG `466`)*
+
+- 🔑 **`2025-26` carries about `3×` the ALTERNATE volume of `2024-25`** — *"PrizePicks expanded its
+  ladders"* ⇒ ***any two-season backfill is DOMINATED by last season***, and a model fitted across
+  both is effectively weighted to the wider ladders. ⚠ **A sampling fact with consequences for every
+  two-season average in this corpus.**
+- ✅ **`zero` Under rows on alternates across both seasons** — `1.45 M` alternate rows, every one
+  `More`; standard lines carry both sides. *(Already on file at `7` hits — **killed as a finding**,
+  recorded here only because it is the premise of the point above.)*
+
+## 6. ⚠ **THE STATE-RESOLUTION CONSTRAINT ON ANY COLLECTOR** *(SEG `144`)*
+
+> *"**payouts depend on which state the app resolves to** — that's why you're seeing `prizepools`.
+> **The collector has to resolve to the state you actually play in, or it maps somebody else's
+> pricing.**"* — and, on the obvious shortcut: *"**not recommended: a headless browser in the
+> cloud.** DataDome is built to catch exactly that, and **pushing a real-money session through a
+> datacenter IP at a different location is the pattern that gets accounts frozen.**"*
+
+⇒ 🔑 ***A payout map is only valid for the jurisdiction it was collected in.*** **Any future
+collection design must pin the state, and the `game_mode: "prizepools"` in `§0.9-T22`'s body is the
+observable that records which one.**
+
+---
+
+> 📌 **TIERS**: ✅ **VERIFIED** — the `2,199,354` leg count *(independent live `SELECT`, `§0.9-T22` §4)*.
+> ⚠ **AS STATED IN `T22`** — the `c` constants, the `8,573`/`256×` reduction, the `63` inconsistent
+> keys, the `3×` alternate-volume ratio, the state constraint. 🔴 **`NOT RECORDED`** — how the `63`
+> were resolved; whether `c` was re-fitted after the goblin-floor correction. ⚖️ **`pp_*` objects not
+> queried; nothing probed or changed.**
