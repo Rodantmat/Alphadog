@@ -63,7 +63,7 @@ context, and which document section. Any material term appearing more than once 
 > | **U** | **unread config tables** `T–W` |
 > | **V** | **variation** `L–N` |
 > | **W** | **what does NOT transfer from MLB** `L–N` · **whole-universe comparison** `T–W` · **window** `T–W` · **worker_invocation_logs** `T–W` · **write-path filter bug** `T–W` |
-> | **X** | **x_* expected-rate family** `X–Z` |
+> | **X** | **`x_*` expected-rate family** `X–Z` |
 > | **Y** | **year_founded** `X–Z` · **years_pro** `X–Z` |
 > | **Z** | **zero_officials_parsed_v3** `X–Z` |
 >
