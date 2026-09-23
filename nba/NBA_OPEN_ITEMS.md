@@ -5483,6 +5483,47 @@ does not protect against the delete above it.**
 
 ---
 
+## 🔴🔴🔴 SEASON-CRITICAL · `[LIVE-AUDIT]` · **`T23-2` — `P2` AND `P3` BOTH HARDCODE `2025-26` AS THE DEFAULT SEASON, AND THE REGULAR SEASON IS `2026-27`**
+### *(`T23` pass `8`, flagged `2026-09-21`; **re-verified against the live workflow files `2026-09-23`**)*
+
+> ***`T23`, verbatim:*** *"`P2` and `P3` both default to the `2025-26` season. **On `2026-27` dates
+> `P3` will find no model ladder and abort, which means NO SCORES AND NO PAPER PICKS.**"*
+
+✅ **RE-VERIFIED LIVE `2026-09-23` — the defaults are still there, in both files:**
+
+| file | line | text |
+|---|---|---|
+| `.github/workflows/nba-p2-overnight-heavy.yml` | `31` | `default: "2025-26"` |
+| " | `128` | `GAP_SEASON: ${{ github.event.inputs.season \|\| '2025-26' }}` |
+| " | `274` | `C3_SEASONS: ${{ github.event.inputs.season \|\| '2025-26' }}` |
+| `.github/workflows/nba-p3-afternoon-light.yml` | `38` | `default: "2025-26"` |
+| " | `205` | `BS_SEASON: ${{ github.event.inputs.season \|\| '2025-26' }}` |
+| ✅ `.github/workflows/nba-p1-weekly-static.yml` | — | **no season literal at all** |
+
+🔴🔴 **THE FAILURE MODE IS SILENT-ADJACENT, WHICH IS WHY IT NEEDS TO BE HERE AND NOT IN A DESIGN
+DOCUMENT.** *`P3` does not produce wrong scores on opening night — **it produces none**, because it
+looks for a `2025-26` model ladder on a `2026-27` date, finds nothing, and aborts. **And `P3` is the
+step the paper-trading log hangs off**, so the live confirmation of the standards strategy
+*(`T23-1`)* does not start either.*
+
+⚠ **THE DATES MAKE THIS THE NARROWEST WINDOW OF ANY OPEN ITEM**: **preseason `2026-10-03`, regular
+season `2026-10-20`.** *Both `P2` and `P3` currently have **no cron** — deliberate until the season —
+so nothing has failed yet and nothing will announce it. **The first scheduled run IS the first
+failure.***
+
+🔑🔑 ***THIS IS THE THIRD MEMBER OF A FAMILY THIS CORPUS ALREADY HAS TWO OF***: the frozen static
+layer *(scrapers scheduled, loaders manual)* and the nine tables hardcoded to `2025-26`.
+⇒ ***`§T22.26`'s candidate frame — "scrapers are scheduled, loaders are manual" — does not cover this
+one.*** **A better candidate, now that there are three: *the system was built inside one season and
+every place that season appears is a literal.*** *Recorded as a candidate, not a conclusion — the
+transcripts that built `P2` and `P3` are `T18`, and `T18` is where the grouping earns its place.*
+
+⚠ **Why this is an OWNER DECISION and not a fix**: *changing a workflow default is a repo write to
+live pipeline configuration.* **Read-only against the live system is the standing rule, and this
+sweep does not edit workflows.** 📌 *The change itself is two lines in each file, or one
+`active_stats_season()` call — **but which of those is right is a design choice, and the wrong one
+re-creates the same defect next October.***
+
 > ### ⚖ **§T22.26 — THE UNIFYING PARENT FOR THIS ITEM WAS PROPOSED, THEN WITHDRAWN ON PURPOSE. THE WITHDRAWAL IS THE RECORD.**
 > *(`T22` pass `26`, recorded `2026-09-23`. **A documentation decision, filed with its reasoning
 > because the reasoning is more reusable than the decision.**)*
