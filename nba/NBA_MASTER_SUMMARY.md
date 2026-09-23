@@ -793,6 +793,32 @@ resolve them in the pass that finishes it.
 **Why this is worth a rule rather than more care**: the third instance was a different error in
 kind — *inferring a mechanism from an output count* — which is the same failure as passes 75, 79 and
 86 (a status field read as binary, a comment-gap hiding a cron, distinct durations counted as calls).
+> ### 🔁 **§T21.11 — THIS RULE IS ONE OF THREE PROCESS FIXES `T21` ORDERED TOGETHER, AND IT IS THE MOST-BROKEN RULE IN THE PROJECT** *(`T21` pass `11`, recorded `2026-09-23`)*
+>
+> *Only the third of the three survived into the record. All three, verbatim:*
+>
+> | # | fix | status in the twelve |
+> |---|---|---|
+> | **1** | **Read to the END OF A STRATUM before writing from it** | 🔴 **not recorded anywhere** |
+> | **2** | **Mark SPLIT-PASS entries provisional** | 🔴 **not recorded as a rule** |
+> | **3** | *"Counts are evidence of outcomes, never of mechanisms"* | ✅ **recorded — the sentence directly below** |
+>
+> 🔴🔴 **AND `T21` ATTACHED A COUNT TO `#3` THAT IS NOT IN THE RECORD EITHER**: ***"That third one has
+> now caused FOUR errors across passes `75`, `79`, `86` and `T3.5` — it is your MOST REPEATED FAILURE
+> MODE."***
+>
+> 🔑🔑 ***A rule recorded without its violation count reads like advice. With the count it reads like
+> a warning, and the difference decides whether the next reader slows down at it.*** ⚠ *Fixes `1` and
+> `2` exist because of a specific incident: `T2` was closed at `1` finding per `34` segments and `T3`
+> ran at `1` per `6` — **not because `T3` was richer, but because `T2`'s command stratum had been read
+> more shallowly.*** ⇒ ***"This is the SECOND time this project has found that 'closed' meant
+> different things on different transcripts."*** *The first was the `DRIFT NOTICE`. `T2` was reopened
+> and marked **"depth inconsistency, not procedural failure"** so the record would distinguish it from
+> the drift resets.*
+>
+> 📌 **Fix `1` is why this sweep reads a whole stratum before filing**, and fix `2` is why a pass that
+> stops mid-stratum must say so. *Both are restored to the record here rather than left as habits.*
+
 **Counts are evidence of outcomes, never of mechanisms.** The mechanism has to be read in the code
 that produced it, and in this case that code was three segments away, unread.
 
