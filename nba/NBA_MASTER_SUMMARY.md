@@ -379,6 +379,13 @@
 ## 4 · ✅✅ **THE COMPLETE TABLE — ALL `86`, `§F7.12`, `2026-09-23`**
 
 > 🔁 **RE-DERIVE THE POPULATION; DO NOT QUOTE THE COUNT.** *`86` is today's value, not a constant.*
+>
+> ✅✅ **VERIFIED AFTER WRITING: `88` of `88`.** *The check was run against the live file the moment
+> this block landed — **every comma-grouped figure appearing in `4` or more of the twelve now has an
+> entry here.*** 🔑 ***And the population moved `86` → `88` BECAUSE OF THIS TABLE***: listing `86`
+> figures in `NBA_MASTER_SUMMARY.md` pushed two more over the four-document threshold. **The table
+> covers them too, so it is self-covering — but the mechanism is `§F6.19`'s self-reference in its
+> benign form, and it is why the COUNT is re-derived and never quoted.**
 > ```bash
 > python3 - <<'EOF'
 > import re, collections
