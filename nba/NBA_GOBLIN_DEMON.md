@@ -11,7 +11,8 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 ---
 
 > # 📑 **INDEX — `NBA_GOBLIN_DEMON.md`**
-> **~~`82`~~ → `99` sections · `97,608` bytes · built `2026-09-23`; census corrected same day (`§F2.14`) and **re-derived after every subsequent pass** — `92 → 96 → 99`.**
+> **Goblin and demon identification for PrizePicks** — parsing, anchors, invisible anchors / switch
+> points, ladders, tier signs, and the taxonomy change that made v1 obsolete.
 > 📏 **`113` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_GOBLIN_DEMON.md ``
 > | 🔑🔑 **the books are right to within a point on `776,000` legs** — *the mechanism behind `T23-1`, and it condemns deep demons from a second market* | **`§F6.7`** |
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
