@@ -1957,7 +1957,61 @@ construction constraint, and it points the opposite way from board depth.**
 > arithmetic was in the same table as the claim.** 📌 *Third self-caught defect of this pass; `RULE
 > 55`'s companion — **a derivation is not recorded until it has been RUN on every row it claims.***
 >
-> ✅ **ONE SENTENCE WORTH ADDING, and it is the audit's own justification:** ***"Unverified is not
+> > ### 🔑 **§F6.28 — THREE MEASUREMENTS FROM THE UNCOVERED PROSE BAND, ONE OF THEM SUPERSEDED**
+>
+> *Added `2026-09-23` by the direction-(b) probe pre-registered at `§F6.28`. **Every figure returned
+> `0` of `12` under the WIDE variant set.** Sources: `T15`, `T17`.*
+>
+> #### 1 · The redistribution panel that `A2` was built on — `T15`
+>
+> | | |
+> |---|---|
+> | the panel | **`97,563` rows · `1,152` games · `393` distinct absent players · `2,342` team-game conservation rows**, `2025-26` |
+> | 🔑 **why the first attempt returned zero** | *"the injury report writes names as `"doncic, luka"` while the player register writes `"luka doncic"`, so normalizing WITHOUT FLIPPING produced `doncicluka` versus `lukadoncic` and nothing ever matched"* |
+> | 🔑🔑 **the judgment** | ***"A panel that silently matched SOME names would have been far worse than one that matched NONE."*** |
+>
+> 📌 ***That sentence is the corpus's cleanest statement of why loud failure beats quiet
+> degradation*** — the same argument as `§F6.20`'s `\|\| echo failed` and `§F6.21`'s *"unverified is
+> not the same as fine"*, reached from a third direction. ⚠ **And it is the `flip_last_first()` name
+> trap `§F6.12` records, caught here at the moment it fired.**
+>
+> #### 2 · 🔴 The two-season agreement table — **RECORDED WITH ITS SUPERSESSION, NOT AS A RESULT**
+>
+> | season | rows | games | minutes multiplier | usage multiplier |
+> |---|---|---|---|---|
+> | `2024-25` | `25,737` | `1,216` | `1.3228` | `1.3772` |
+> | `2025-26` | `26,069` | `1,216` | `1.3147` | `1.3696` |
+>
+> *`T15`'s reading: **"agreement within `0.6%` on both — and this time it means something, because
+> the estimator CONSERVES.** Earlier I warned that two-season agreement proves stability rather than
+> correctness; here we have both, since the model passed an independent predictive test — MAE
+> `4.641` with outs versus `6.186` ignoring them."*
+>
+> 🔴🔴 **AND `A2` WAS CLOSED ELEVEN DAYS LATER IN ALL FOUR FORMS.** *Read this table beside
+> `0a-T15-SUPERSESSION` above and `§F6.12`'s retraction. **The "this time it means something"
+> argument is exactly the one the retraction dismantles** — `"two-season agreement proves stability,
+> NOT correctness. A biased estimator reproduces its bias."* ⇒ ***The MAE test it leans on is a
+> MINUTES-MAE test, and `RULE 2` of the four-rules table says minutes MAE was never the product.***
+> 📌 **Recorded because the numbers are real and nowhere else on file; `NOT` recorded as support for
+> `A2`, which does not ship.**
+>
+> #### 3 · ✅ The calibration check after the matchup factors went in — `T17`
+>
+> | | |
+> |---|---|
+> | rebounds, **`360,120` graded rows** | LESS side worst band **`1.4 pp` — PASS**, *improved from `1.7 pp` pre-matchup* |
+> | | MORE side every band within `1.6 pp` **except `[0.65, 0.70)` at `−6.2 pp` on `1,108` rows** |
+> | | *"that's the same thin pocket as before — **`0.3%` of the prop**, and it was there pre-matchup at `−5.9 pp`"* |
+> | points | the large `[0.90, 1.01)` band sits at **`67,136` rows with `+0.0 pp` — dead on** |
+>
+> ✅ ***"the market-implied matchup factors went in WITHOUT degrading calibration, and the less side
+> actually tightened."*** 🔑 **This is the check `RULE 2` demands and `§0a-T15` did not have**: a
+> factor admitted only after the leg-level bands were re-measured, with the pre- and post- numbers
+> side by side. ⚠ **`RULE 54`: `360,120` here vs `360,272` in the `prop_confidence_policy` row's
+> post-rebuild check — two runs, two populations, `152` rows apart; `NOT RECONCILED`, and neither
+> was re-run by this pass.**
+
+✅ **ONE SENTENCE WORTH ADDING, and it is the audit's own justification:** ***"Unverified is not
 > the same as fine."*** *`§7` above records the ten props and the two that would have shipped as
 > certified; **this is the line the owner's extension rests on**, and it names this corpus's central
 > failure shape in five words — **a skip that logs nothing reads as a pass.** Same shape and same
