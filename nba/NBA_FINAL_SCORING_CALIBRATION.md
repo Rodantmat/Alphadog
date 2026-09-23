@@ -4666,12 +4666,17 @@ measures overlap rather than contribution.*** 📌 **It is the same failure shap
 four-rules table at `§1282` above — "never duplicate a baseline internal" — but stated for a
 factor's DATA SOURCE rather than for its FORM, which is the case the four rules do not cover.**
 
-🔴 **`OWNER DECISION` — folded into `T20-3`(e), not opened as a new item.** *Building a
-day-before-cutoff baseline is a production change. This session **documents** it and does not
-propose it: the prior work is closed, the slice is named, and whether it is worth a second ladder
-configuration is the owner's call. **`NOT RECORDED`: any estimate of how many legs per night fall
-in the post-`09:00 ET` scratch window** — which is the number that would decide it, and which no
-transcript computes.*
+🔴 **`OWNER DECISION` — filed as `F6-2` in `NBA_OPEN_ITEMS.md`.** *Building a day-before-cutoff
+baseline is a production change. This session **documents** it and does not propose it: the prior
+work is closed, the slice is named, and whether it is worth a second ladder configuration is the
+owner's call. **`NOT RECORDED`: any estimate of how many legs per night fall in the post-`09:00 ET`
+scratch window** — which is the number that would decide it, and which no transcript computes.*
+
+> ⚠ **CORRECTION, same pass, `§F6.13`.** *This section as first committed (`800109b2`) filed both
+> this decision and the `-0.024` follow-up **under `T20-3`(e)**. That was wrong: `T20-3`(e) is the
+> MLB-crons-still-running sub-item and has nothing to do with the baseline cutoff. **Corrected to
+> `F6-2` in `7f631460` and this commit, and the item was then actually written** — `RULE 55`: a
+> pointer to an item is not a filing until the item exists.*
 
 ### 3 · 🔴 **THE DECISIVE FINDING'S DELTAS — the numbers under `§F6.12`'s verdict**
 
