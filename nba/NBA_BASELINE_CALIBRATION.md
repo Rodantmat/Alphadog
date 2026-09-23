@@ -7,7 +7,8 @@ and the evidence behind each.
 ---
 
 > # 📑 **INDEX — `NBA_BASELINE_CALIBRATION.md`**
-> **~~`106`~~ → ~~`115`~~ → ~~`119`~~ → ~~`124`~~ → ~~`130`~~ → ~~`132`~~ → `136` sections · ~~`124,558`~~ → ~~`130,763`~~ → `157,697` bytes *(at parent commit; `§F6.19`)* · ~~`1,847`~~ → `1,936` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> **How the baseline is built and checked** — the projection chain, the empirical cells, the
+> certification ladder, and what each calibration decision was measured against.
 > 📏 **`136` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_BASELINE_CALIBRATION.md ``
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
