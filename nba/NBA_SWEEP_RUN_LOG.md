@@ -1728,6 +1728,52 @@ never "the strategy works."*** **Every other `T24` caveat stands: replay not tra
 
 ---
 
+## §F5.7 — the RESULTS stratum, and **the headline `12,685` corrected a second time**
+
+**`§F5.1` left `RESULTS RETURNED` at `7.2%` covered — the lowest after reasoning. Before calling
+that a gap, the content was classified.** *Sampled `448` substantive `tool_result` segments across
+`T9`/`T14`/`T18`:*
+
+| | |
+|---|---|
+| 🔪 **JSON / API receipts** — `{"ok": true, "commit_sha": …}`, run-log fetches, file-fetch headers | **324 · `72%`** |
+| everything else — web-fetch page text, script `stdout`, table dumps | 124 · `28%` |
+
+⇒ ***a commit receipt is not something the twelve should ever contain, and it is nearly
+three-quarters of what is "uncovered" in that stratum.***
+
+### Measured corpus-wide, because a sample is not a census
+
+*`substance()` — the instrument's own noise filter — lets receipts through. Counted across all 24
+transcripts with the receipt shapes `"ok"`, `"status"`, `"commit sha"`, `"file sha"`, `"note"`,
+`"row count returned"`, `"returncode"`, `"run id"`, `"job"`, `"truncated"`:*
+
+| | |
+|---|---|
+| substantive uncovered *(the `§F5.1` headline)* | **12,680** |
+| 🔪 **receipt-shaped** | **1,605 · `12.7%`** |
+| **remainder** | **11,075** |
+
+*Worst offenders are the META transcripts — `T19` **37.3%**, `T20` **21.1%** — which is exactly
+right: those sessions are almost entirely tool calls against the repo.*
+
+### 🔑 The headline, corrected twice now
+
+> **`§F2.6` measured `24%` of the TAIL as the documents' own authoring. `§F5.7` measures `12.7%`
+> of the whole substantive-uncovered band as API receipts. `§F5.2` showed a further `1,194`
+> "uncovered" segments are summary labels with nothing in them.** ⇒ ***the "`~12,686` segments of
+> remaining work" figure this campaign has been quoting is inflated by every one of those, and the
+> honest remainder is `11,075` before a single one has been read.***
+>
+> 📌 ***Three separate corrections, all downward, all to numbers I published myself.*** **That is
+> what a floor looks like when you keep testing it: it moves.**
+
+⚠ **RULE 54.** *The receipt filter is a shape regex over the first `400` characters — it under-counts
+a receipt whose JSON starts late, and would over-count prose that quotes one.* ***`12.7%` is a
+floor on the noise, so `11,075` is a CEILING on the remaining work, not an estimate of it.***
+
+---
+
 # 📜 §F4 — THE CERTIFICATION REGISTER
 
 *Issued **2026-09-23**. **This certifies what was DONE and what its evidence is. It does not certify
