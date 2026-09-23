@@ -170,14 +170,17 @@ def main():
         if cur.execute("SELECT to_regclass('nba_market.board_outcomes_date_idx')").fetchone()[0] is None:
             cur.execute("CREATE INDEX board_outcomes_date_idx ON nba_market.board_outcomes (game_date, leg_result)")
 
-        # SEASON ROLLOVER (fixed 2026-09-23, same class as T23-2 but not in its audit). GRADE_END used
-        # to default to a hardcoded "2026-04-12" - last season's final date. P2 passes no range, so from
-        # the first 2026-27 night this would have selected ZERO dates, printed "grading 0 dates" and
-        # exited GREEN, with the as-of calibration and the confidence refit quietly learning from
-        # nothing new. The floor stays 2024-10-22 (the first archived board date - a fact, not a season
-        # assumption); the ceiling is now today. UTC is never behind PT, so today's slate is covered.
-        start = os.environ.get("GRADE_START", "2024-10-22")
-        end = os.environ.get("GRADE_END") or datetime.utcnow().date().isoformat()
+        # SCOPE (2026-09-23). The default range was the WHOLE archive - 2024-10-22 to a hardcoded
+        # 2026-04-12 - and P2 passes no range, so every nightly run re-graded every date since October
+        # 2024: measured at 2.48M legs and 132 dates in the first 13 minutes of a replay, to add one
+        # night. The nightly job needs last night plus a little slack for late box-score corrections,
+        # so the default is a rolling 7-day window ending today. A full sweep is still one env away:
+        # GRADE_START=2024-10-22 GRADE_END=<today>, which is what backfills and audits use.
+        # (The old ceiling was also dead from 2026-27 on - it would have graded ZERO dates and exited
+        # green, starving the calibration. Same class as T23-2.)
+        today_utc = datetime.utcnow().date()
+        start = os.environ.get("GRADE_START") or (today_utc - timedelta(days=7)).isoformat()
+        end = os.environ.get("GRADE_END") or today_utc.isoformat()
         cur.execute("""SELECT DISTINCT game_date FROM nba_market.board_snapshots
                        WHERE game_date BETWEEN %s AND %s ORDER BY 1""", (start, end))
         dates = [r[0] for r in cur.fetchall()]
