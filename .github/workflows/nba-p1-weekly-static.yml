@@ -47,7 +47,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy curl_cffi lxml html5lib
+      # scipy IS REQUIRED (fixed 2026-09-23). build_defender_ratings.py does `from scipy import sparse`
+      # for its two-way ridge. This line omitted scipy while P2 and P3 both install it, so the defender
+      # step died with ModuleNotFoundError EVERY Monday - and because it dies mid-pipeline, the three
+      # steps after it (static context, COMMIT, certify) were skipped, so the whole week's scraping was
+      # thrown away uncommitted and never reached Postgres. That is why the static layer's timestamps sat
+      # at 2026-09-03 and defender_ratings at 2026-04-09 while the cron ran fine every week.
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib
 
       # --- identity: who is on which team. Trades and two-way call-ups move these weekly. -----------
       - name: Teams and arenas
