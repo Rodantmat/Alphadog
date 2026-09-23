@@ -14472,8 +14472,129 @@ engine must never read the file directly — only the deduplicated table"**, and
 today is `NOT RECORDED`* · **(c)** decide whether the `1,414` differing-probability keys need
 re-generating or whether last-write-wins is acceptable.
 
-⚠ **`NOT RECORDED`: which of the two rows the loader actually kept for those `1,414` keys**, and
-therefore whether the live table's probabilities are the ones any given backtest used.
+⚠ ~~**`NOT RECORDED`: which of the two rows the loader actually kept for those `1,414` keys**, and
+therefore whether the live table's probabilities are the ones any given backtest used.~~
+
+---
+
+### 🔴🔴 **`§F6.16` — THE RE-DIAGNOSIS. THE `NOT RECORDED` ABOVE IS DISCHARGED, AND EVERY WORD OF MY DIAGNOSIS WAS WRONG**
+
+*Same day, `2026-09-23`. **Triggered by a live config row I had not read when I filed this** —
+`nba_config.classification_config.open_defects_2026_09_11`, which settles the duplication question
+outright and whose author records making my exact mistake:*
+
+> ***"`my_error`: I called this duplication, then a loader key bug. Both wrong — checked against
+> COMPASS facts 15/16 after the owner pushed back."***
+> ***"`FINAL_2026-09-11`: NOT a defect. BY DESIGN. The builder emits a full anchor +/- RUNG MATRIX
+> because at build time it does not know which lines the board will offer. COMPASS fact 16:
+> probabilities are hierarchical empirical cells with RUNG as a cell dimension … For integer stats
+> several rungs land on the same line value (anchor 2.5 assists reaches line 0.5 at offsets -6, -5,
+> -4 with p_more 0.8703/0.8703/0.8698) — that is the matrix, not duplication."***
+
+#### 1 · ❌ **RETRACTED — "the loader's primary key silently keeps whichever arrives last"**
+
+**There is no primary-key conflict path in the production loader at all.** *`nba/load_baseline_ladder.py`,
+read at source:*
+
+| line | what it actually does |
+|---|---|
+| `:72` | `DELETE FROM nba_score.baseline_ladder WHERE asof = %s` |
+| `:74` | plain `INSERT` — 🔑 **no `ON CONFLICT` clause anywhere in the file** |
+| `:50-59` | the collapse happens **in Python, before the insert**: `off = abs(float(r.get("offset") or 0))` … `if cur is None or off < cur[0]: best[key] = (off, r)` |
+
+🔑 ***And its own docstring says the opposite of what I wrote:*** *"Several rungs can land on the
+same line for integer stats (COMPASS fact 16: rung is a cell dimension) — that is by design; **we
+keep the rung NEAREST THE ANCHOR deterministically rather than whichever row happened to arrive
+last.**"* ⇒ **"Keeps whichever arrives last" is the behaviour of a DIFFERENT loader** —
+`nba/alphadog-v2-nba-baseline-ladder.js:52`, whose own comment reads *"dedupe on the PK, keep the
+last"* — **and that worker is not the pipeline path.** *I attributed the worker's rule to the
+Python loader and then reasoned from it. `T14`'s original sentence carries the same error.*
+
+#### 2 · ❌ **RETRACTED — "the `2026-03-15` file carries `1,421` duplicate keys"**
+
+✅ **`nba_baseline_ladder_2026-03-15.json`: `52,018` rows, `52,018` distinct keys under the
+DESTINATION TABLE'S ACTUAL PRIMARY KEY** `(player_id, game_id, prop, period, ot_rule, line)`.
+🔴 ***ZERO duplicates. The `1,421` I reported were an artifact of MY key, which I had copied from
+the loader — and the loader's key is the defect.***
+
+| the key | columns | distinct keys, three dated files |
+|---|---|---|
+| ✅ the table's real PK | `player_id · game_id · prop · period · **ot_rule** · line` | **`207,658`** |
+| 🔴 `load_baseline_ladder.py:51` | `player_id · game_id · prop · period · line` — **`ot_rule` OMITTED** | **`206,237`** |
+| | | ⇒ 🔴🔴 **`1,421` rows lost** |
+
+#### 3 · 🔴🔴 **THE REAL DEFECT — and it is data loss, not a determinism nit**
+
+**`ot_rule` (`include` / `exclude` overtime) is a column of `nba_score.baseline_ladder`'s primary
+key. The production loader's merge key omits it, so it collapses the `include` row and the
+`exclude` row of the same line into ONE, and discards the other.** *The survivor is chosen by
+`abs(offset)`, with dict-insertion order breaking ties — so **which overtime rule survives is
+arbitrary**.*
+
+*The four rows that made this visible — one player, one game, `points`, line `0.5`, in the
+`2026-03-15` artifact:*
+
+| `period` | `ot_rule` | `anchor` | `offset` | `p_more` | loader's 5-col key | fate |
+|---|---|---|---|---|---|---|
+| `H2` | include | `6.5` | `-6` | `0.8604` | *(distinct — period differs)* | ✅ kept |
+| `Q1` | include | `5.5` | `-5` | `0.8867` | *(distinct — period differs)* | ✅ kept |
+| `Q4` | **exclude** | `3.5` | `-3` | **`0.5983`** | 🔴 **same** | ✅ kept *(first at `|offset|=3`)* |
+| `Q4` | **include** | `3.5` | `-3` | **`0.7601`** | 🔴 **same** | 🔴🔴 **DISCARDED** |
+
+⇒ ***A `0.1618` probability difference between two rows that are not duplicates of each other in any
+sense — they are the same line under two different overtime rules — and the pipeline keeps one at
+random and throws the other away.***
+
+#### 4 · ✅✅ **LIVE CONFIRMATION — the prediction matched production to the row**
+
+| `asof` | file rows | distinct under the true PK | 🔴 live `nba_score.baseline_ladder` | delta |
+|---|---|---|---|---|
+| `2025-11-29` | `68,217` | `64,779` | **`64,779`** | `0` ✅ |
+| `2026-01-15` | `100,437` | `90,861` | **`90,861`** | `0` ✅ |
+| 🔴 **`2026-03-15`** | `52,018` | **`52,018`** | 🔴 **`50,597`** | 🔴🔴 **`-1,421`** |
+
+🔑 ***`52,018 − 50,597 = 1,421`, exactly the number predicted from the source before the table was
+queried.*** **And the live `2026-03-15` partition carries `1,368 exclude` against `49,229 include`
+— the arbitrary split left behind by the tie-break.** *The two earlier artifacts lose nothing
+because they contain **no `ot_rule` variation at all** (`distinct_ot = 1`), which is why this
+survived every audit: the defect only bites the artifact that has periods with an overtime rule.*
+
+#### 5 · ✅ **What the config row got right, and the one thing it understates**
+
+✅ ***The `FINAL_2026-09-11` verdict is CORRECT for what it was judging.*** *The `3,438` and
+`9,576` collapses in the two earlier files ARE the rung matrix, they ARE by design, and rung IS a
+cell dimension. **The owner was right and the author's self-correction was right.*** 🔑 *The
+`ot_rule` loss is a different thing that did not exist in those artifacts — **it is not a
+counter-example to the ruling, it is outside it.***
+
+🔴 **The one figure to correct**: the row's `only_caveat` says *"`p_more` is accurate either way
+(differences `~0.0005`)"*, and `T14` said the same. **Measured across the `1,421` affected groups:
+median `0.0061`, mean `0.0136`, max `0.2128`** — **`91.7%` exceed `0.001`, `35.5%` exceed `0.01`,
+`6.3%` exceed `0.05`.** ⇒ ***`~0.0005` understates the median by about `12×` and the worst case by
+`400×`. The caveat's framing is right — "the offset column should not be read as THE rung" — its
+magnitude is not.***
+
+#### 6 · 🔴🔴 **WHY THIS IS SEASON-CRITICAL, AND WHAT CLOSES IT**
+
+🔴 **`.github/workflows/nba-p2-overnight-heavy.yml:254` — `run: python nba/load_baseline_ladder.py`.**
+**The defective loader is the production path** *(also `nba-overnight-queue.yml:43`)*. **The correct
+seven-column key exists, in `alphadog-v2-nba-baseline-ladder.js`, which P2 does not call.**
+
+**▶ What would close it** — *and this sweep proposes nothing; it records:*
+1. add `ot_rule` to the merge key at `load_baseline_ladder.py:51`, matching the table's PK;
+2. decide whether the `2026-03-15` partition is reloaded, since `1,421` of its rows have never been
+   in the table;
+3. reconcile the two loaders — *they disagree on the rung-matrix tie-break too (`min |offset|` vs
+   `keep the last`), and on the `2026-03-15` slate alone there are **`194` keys where they would
+   write `p_more` values more than `0.02` apart**.*
+
+⚠ **`RULE 54` — the bound.** *`WINDOW`: the three dated artifacts committed under `nba/data/` and
+the live table, `2026-09-23`. **`NOT TRACED`: whether any consumer reads `ot_rule` at all** — if
+every reader filters to `include`, the practical loss is the `1,368 exclude` rows rather than all
+`1,421`. **`NOT MEASURED`: what a rebuilt `2026-03-15` partition would change downstream.** And
+`nba_baseline_ladder_latest.json` is byte-identical to the `2025-11-29` artifact (`md5
+e383fe82…`), so the worker's no-`asof` fallback loads a November slate — recorded as an
+observation, not as a second item.*
 
 ---
 
