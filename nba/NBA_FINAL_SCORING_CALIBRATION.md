@@ -4627,11 +4627,45 @@ shipped-claim retracted."` This is the same row that produced `§F6.12`. `§F6.1
 RETRACTION; this section records the three parts of the row that the retraction did **not**
 cover — what the session kept, what it says to test next, and the deltas behind the verdict.*
 
-### 0 · 🔬 **The absence test that selected this section — stated before the section was written**
+> # 🔴🔴🔴 **RETRACTION — READ THIS BEFORE THE REST OF `§F6.13`**
+>
+> ***Most of this section recovered nothing. It duplicates `0a-T15-SUPERSESSION` above, which is in
+> this same document, roughly two hundred lines up.*** *Re-probed `2026-09-23` at commit
+> `800109b2~1` — the state before `§F6.13` was written — **case-insensitively and in the corpus's
+> own spelling**, which is what the first probe failed to do:*
+>
+> | what `§F6.13` claimed was in `0` of `12` | where it already was |
+> |---|---|
+> | 🔴 the `−0.051` / `−0.013` slice deltas *(`§3`)* | **`FSC` `0a-T15-SUPERSESSION`, verbatim** — *"is where it does WORST (`−0.051` vs `−0.013` on low novelty)"* |
+> | 🔴 the whole slice table *(`§3`)* | **already there WITH TWO MORE COLUMNS** — `shrunk_novelty_A2`, `novelty_A2` AND `flat_A2` per slice, `[LIVE-AUDIT]`-verified from `nba_score.factor_gate_results` |
+> | 🔴 the `next_test` day-before-cutoff quote *(`§2`)* | **verbatim, under its own heading** — *"A2 IS NOT CLOSED AS 'NO SIGNAL' — IT IS CLOSED AS 'NOT YET MEASURED WHERE SIGNAL COULD BE'"* |
+> | 🔴 *"any test that reads the same report for both layers measures double-counting"* *(`§2`)* | **already there, WITH ITS OWN COVERAGE CENSUS** — "`7` of the thirty, `5` of the twelve" |
+> | 🔴 the `why` quote, *"being more aggressive when the situation is LEAST predictable is backwards"* *(`§4`)* | **verbatim** |
+> | 🔴 the four forms *(`§4`)* | **already corrected once above** — see the `§4` note |
+>
+> 🔑🔑 ***The earlier section is BETTER than the one I wrote: it has more columns, it is
+> `[LIVE-AUDIT]`-verified against the table rather than read off a config row, and it already
+> carries the coverage census my section was supposedly performing.*** **I did not read `200` lines
+> up in the file I was editing.**
+>
+> ✅ **WHAT ACTUALLY SURVIVES, and it is two things:**
+>
+> | ✅ | the fitted usage allocation's **`−0.024`** — `§1` below. *Re-verified: the four `0.024`-ish hits in the twelve are `is_home` betas `≈0.0246`, a `0.0242` in a threshold grid, and a `0.024` in a `RECIPE` table — **all different numbers.** The gap is real.* |
+> |---|---|
+> | ✅ | the `09:00 ET` **scratch-after-cutoff** framing — `§2`. *The earlier section says the separating population "has not been built"; **it does not say WHERE the baseline's blindness begins**, and the mechanism (`build_baseline_ladder.py`'s `09:00 ET` roster freeze) is what makes the slice narrow and definable.* ⇒ **That, plus the source-level finding in `F6-2` that `cutoff_ts()` cannot express a day-before cutoff at all, is the item's reason to exist.** |
+>
+> 📌 ***`§3` and `§4` below are left in place, struck at the head, because the retraction is only
+> legible beside what it retracts — and because a reader arriving at `§F6.13` from the run log must
+> be sent upward, not merely told "nothing here".***
+
+### 0 · 🔬 ~~The absence test that selected this section — stated before the section was written~~ 🔴 **THE TEST THAT FAILED**
 
 *Every string below was grepped across all twelve at pinned commit `07b5b303`, per `RULE 53`.
 **WINDOW: the twelve mandated documents only** — `NBA_COMPASS.md` and the other `nba/*.md` are
-outside it and are not counted.*
+outside it and are not counted.* 🔴🔴 ***AND ELEVEN OF THE FOURTEEN ROWS BELOW ARE WRONG*** — *not
+because the greps mis-ran, but because they were run in ONE spelling, case-sensitively, against a
+corpus that writes the same facts as English prose with hyphens and capitals. **The table is kept as
+the evidence of how a `0`-of-`12` census fails.***
 
 | String from the live row | In the twelve, before this section |
 |---|---|
