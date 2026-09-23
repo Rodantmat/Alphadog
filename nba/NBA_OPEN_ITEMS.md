@@ -15,7 +15,23 @@
 > history is part of the record. This is a POINTER plus the ranked order.** ▶ **Full brief:
 > search this file for `OPENING-DAY BRIEF`.**
 >
-> ## ▶ **ALL ~~FOURTEEN~~ ~~FIFTEEN~~ SIXTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
+> ## ▶ **ALL ~~FOURTEEN~~ ~~FIFTEEN~~ ~~SIXTEEN~~ SEVENTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
+> 🔴🔴🔴 **`T20-25` ADDED 2026-09-23, T20 pass 122 (`§T20.127`), AND THE RANKING RULE PUTS IT AT OR NEAR
+> THE TOP — IT IS THE ONLY ITEM ON THIS BRIEF THAT IS *ALREADY LOSING LEGS ON EVERY SLATE*.**
+> **The player bridge is built with one normaliser and read with another**: the writer
+> *(`check_baseline_board_coverage.py:40–43`)* folds accents and **strips `jr/sr/ii/iii/iv/v`**; the
+> reader *(`score_board_legs.py:112–113`)* does **neither** — `lower(regexp_replace(b.player,
+> '[^A-Za-z]','','g'))`. ⇒ **`54` of the `582`-player roster (`9.28%`) have a reader key that cannot
+> equal their writer key**, and on the archived slate `2026-01-15` that cost **`11` of `162` players
+> and `6,479` of `107,888` board rows — `6.01%`, silently dropped**, including **every one of
+> `Jaren Jackson Jr`'s `1,057` legs**. ⚠ **The suffix half is LIVE; the ACCENT half is LATENT and arms
+> the moment a source sends `Dončić`/`Jokić` as spelled — which is what the DFS apps will do.**
+> ✅ **The fix is two lines in one place.** ▶ **`T20-25`.**
+>
+> ⚠ **DENOMINATOR NOTE** *(rule 2, carried from `§T20.118`)*: the ranked string below has **not** been
+> re-ordered for `T20-25` — **its order is `§T20.103`'s and its arithmetic was already flagged
+> NOT RECONCILED**. *`T20-25` is ranked here, in words, by the brief's own rule; whoever next touches
+> the string should place it at the head and reconcile the count in the same edit.*
 > 🔴🔴🔴 **`T20-17` ADDED 2026-09-22, T20 pass 97 (`§T20.102`), AND THE RANKING RULE PUTS IT NEAR THE
 > TOP, NOT THE BOTTOM** — *`build_availability_delta.py:71` is **`except Exception: pass`**, the only
 > handler of `69` in the pipelines' whole called-script set that leaves no trace at all; it drops
