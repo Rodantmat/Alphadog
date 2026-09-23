@@ -1840,8 +1840,19 @@ This stub is the pointer, not a copy — `RULE 40`: a supersession records where
 
 ## PENDING
 Terms are added as each transcript completes its passes.
-**Status 2026-09-20**: **T1 at pass 30, clean count 0/3** (pass 29 — blueprint §7f/§7g/§9;
-pass 30 — lesson #27 and the lesson-count correction). **T2 at 0/3 pending re-sweep. T3–T9 void
-per the DRIFT NOTICE. T10–T20 not started.**
-*This block previously read "T1 is at pass 10 (clean count 0); T2 at pass 1" — stale, superseded
-2026-09-20.*
+
+**Status `2026-09-23`** *(`§F7.4`)*:
+
+| | state |
+|---|---|
+| **`T1`–`T18`** | ✅ **swept.** `T16` and `T17` carry **no `§Tn` block in `NBA_MASTER_SUMMARY.md`** — their material is in the TOPICAL files (`§0a-T16` / `§0e-T16` / `§0z-T16`; `§0y-T17`; `§0a-T17*`). *A reader who looks for them in the summary and concludes they were never swept has read the ledger, not the corpus.* |
+| **`T19`, `T20`** | ✅ **`RULE 46` DISCHARGED `2026-09-23` (`§F7.1`)** — `920` + `1,177` = **`2,097` segments read in full, twice each, in two different orders, from a post-compaction context**. **One genuine gap in `2,097`** *(`T19` segs `58`–`59`: the journal diagnosis — see `journal.txt` in `J–K`)*. ⚠ *Reader independence was **not** achieved — no subagents are permitted — and is named as such rather than claimed.* |
+| **`T21`–`T24`** | 🟢 **OPEN in the sweep ledger.** `T21` `6` passes *(remainder bounded at ~15 segments)* · `T22` `7` · `T23` `4` · `T24` `2`. ⚠ **`T24` is a SECONDARY SOURCE** — a session record, not a verbatim transcript. |
+| **direction (b)** | 🔴 `2,369` uncovered substantive **prose** segments remain *(of `20,740` total, only `3,429` are prose at all — `§F6.28`)*, plus ~`8,700` machine segments. |
+
+⚠ **This line is the one a successor checks first, so it is the one most likely to be stale.**
+*It previously read `Status 2026-09-20: T1 at pass 30, clean count 0/3 … T10–T20 not started` —
+**wrong by ten transcripts** by the time it was found, because the glossary's status was written
+once and never re-derived while the ledger it described moved underneath it. Before that it read
+`T1 is at pass 10; T2 at pass 1`.* ⇒ **`§F7.6` treats every masthead and status line in the twelve
+as a derived value that must be re-dated or deleted, never left to rot.**
