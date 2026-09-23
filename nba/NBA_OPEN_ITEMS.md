@@ -14765,6 +14765,79 @@ hour late.*** **`p2_build` is shifted identically.**
 supplies the offset. Unlike `BS_ASOF`/`CERT_DATE`/`BT_ASOF`, the hours are computed inside the
 script.*
 
+> ## 🔴🔴 **`§F6.17` — THE CONSEQUENCE ABOVE DOES NOT OCCUR, AND THE REASON MAKES THIS ITEM AND THE `-05:00` ITEM ONE DEFECT**
+>
+> *Added `2026-09-23`. **The constant is wrong exactly as this item says.** What is corrected is the
+> effect: `p3_cut` being an hour late **cannot shift this window, because the only data it filters
+> is late by the same hour.*** *Read-only: source read, one local data check, no writes.*
+>
+> ### 1 · What `build_availability_delta.py` actually compares against
+>
+> ✅ **VERIFIED at source (`:66-79`, `:94-97`)**: the frame is built **only** from
+> `nba_injury_report_{slug}_{shard}.json`, and both `p2_build` and `p3_cut` are compared against
+> `day["snapshot_ts"]` — **the injury archive's timestamps and nothing else.** 🔑 ***Those are the
+> timestamps the `🔴🔴 EVERY INJURY SNAPSHOT TIMESTAMP CARRIES A HARDCODED `-05:00`` item in this
+> file measured at `1,338,020` of `1,338,020`.***
+>
+> ### 2 · The arithmetic — the two hardcoded offsets are three hours apart, which is the true ET↔PT gap in BOTH zones
+>
+> *Let `W` be a report's true wall-clock **ET** time. The scraper stores it as `W −05:00`, i.e. the
+> instant `W + 5h` UTC — **one hour late during EDT, exactly as that item says.** `p3_cut` is
+> `13:15 −08:00` = `21:15` UTC — **one hour late during PDT, exactly as this item says.** Put them
+> together:*
+>
+> | | |
+> |---|---|
+> | condition | `W + 5 ≤ 21:15` |
+> | reduces to | **`W ≤ 16:15` ET, wall-clock** |
+> | during PST | `16:15` ET = **`13:15` PT** ✅ |
+> | during **PDT** | `16:15` EDT = **`13:15` PDT** ✅ |
+>
+> ⇒ ***The window selects snapshots published at or before `1:15 PM` PT wall-clock, year-round. The
+> hour the offset adds to the cutoff is the same hour it already added to every row.***
+>
+> ### 3 · ✅✅ **MEASURED, not derived — on a real daylight-saving game date**
+>
+> *`2025-10-28` (inside the EDT window), `nba_injury_report_2025_26_2025-10.json`, `48` distinct
+> snapshots for that game date:*
+>
+> | | stored | wall-clock ET | **wall-clock PT** |
+> |---|---|---|---|
+> | `p3_cut` | — | — | *intended `13:15`* |
+> | **last admitted** *(40th of 48)* | `2025-10-28T15:30:00-05:00` | `15:30` | ✅ **`12:30`** |
+> | **first excluded** | `2025-10-28T16:30:00-05:00` | `16:30` | ✅ **`13:30`** |
+>
+> 🔑 ***The boundary falls between `12:30` and `13:30` PT — straddling the intended `13:15` — on a
+> PDT date. If this item's prediction held, the window would have run to `14:15` PT and admitted the
+> `17:30` ET snapshot. It did not.*** 📌 *The archive is hourly on the half-hour, so the cutoff's
+> exact minute has never been resolvable anyway: `13:15` lands in the gap between two snapshots.*
+>
+> ### 4 · 🔴🔴 **AND THIS IS WHY THE ITEM'S OWN REMEDY IS THE DANGEROUS PART**
+>
+> ⚠⚠ ***"Whoever fixes the constant must fix SIX sites" is righter than it knew — and incomplete.***
+> **Replacing `timezone(timedelta(hours=-8))` with `ZoneInfo("America/Los_Angeles")` in
+> `build_availability_delta.py` would BREAK a window that is currently correct**, because the
+> `−05:00` on the other side would no longer be cancelled: during PDT the cutoff would move to
+> `20:15` UTC while the rows stayed at `W + 5`, and the window would then end at **`12:15` PT — an
+> hour EARLY**, losing the last hour of pre-cutoff reports. *That is the failure the `-05:00` item
+> predicted, arriving through the fix rather than the defect.*
+>
+> | the six `timedelta(hours=-8)` sites | what the offset decides | verdict |
+> |---|---|---|
+> | 🔴 `build_availability_delta.py:89-90` · `find_delta_test_date.py:82-83` · `measure_report_cutoff.py:61` | **compared against injury `snapshot_ts`** | ✅ **cancels — correct today, breaks if fixed alone** |
+> | `certify_pipeline.py:33` · `score_board_legs.py:96` · `nba-boards-market.yml:138` | `datetime.now(PT).date()` — *"what day is it"* | ⚠ **different class**: only misdates a run between `00:00` and `01:00` PDT; the first two are overridden by `CERT_DATE` / `BS_ASOF` from the shell's `TZ=America/Los_Angeles date`, per this item's own ✅✅ paragraph |
+>
+> ⇒ 🔴 **`OWNER DECISION`, and it is the same one the `-05:00` item carries: this is ONE atomic
+> change across the scraper and the consumers, or NO change.** *See `§F6.14` §4 in that item for the
+> other half. **A partial fix in either direction is strictly worse than the present state.***
+>
+> ⚠ **`RULE 54` — what is NOT corrected here.** *This section corrects the **consequence** on the
+> three Class-B sites only. ✅ **The census stands** — `ZoneInfo` `0`, `pytz` `0`, `dateutil` `0`
+> across `44` files; **the constants are genuinely not DST-aware**, and any FUTURE consumer that
+> compares one of them against a tz-correct series will be an hour out. **The severity `6` rating is
+> left for the owner to re-set**; this pass records that the named live consequence does not occur,
+> not that the item is closed.*
+
 🔑🔑 **WHEN IT IS LIVE — and this is why the severity is 6:**
 
 | window | zone | `p3_cut` |
