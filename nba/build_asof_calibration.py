@@ -139,8 +139,12 @@ def main():
         cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.ladder_calibration_asof (
             season text, as_of_date date, prop text, phase text, band text, side text,
             log_odds_shift numeric, n int, source text, built_at timestamptz DEFAULT now())""")
-        cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS ladder_cal_asof_uidx
-            ON nba_score.ladder_calibration_asof (as_of_date, prop, phase, band, side)""")
+        # DEADLOCK (§T23.5, fixed 2026-09-23). `CREATE UNIQUE INDEX IF NOT EXISTS` takes a FULL TABLE
+        # LOCK before discovering the index already exists, and holds it to commit - two parallel
+        # catch-up runs then deadlock each other. Check first; the lock is only paid on the first run.
+        if cur.execute("SELECT to_regclass('nba_score.ladder_cal_asof_uidx')").fetchone()[0] is None:
+            cur.execute("""CREATE UNIQUE INDEX ladder_cal_asof_uidx
+                ON nba_score.ladder_calibration_asof (as_of_date, prop, phase, band, side)""")
     conn.commit()
     # NOTHING IS DELETED HERE. Every cell is computed first; the old cells are replaced in ONE transaction at the
     # end, and only if the new build produced cells. An empty build never overwrites history.
