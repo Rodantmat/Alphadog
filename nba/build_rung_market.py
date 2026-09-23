@@ -27,8 +27,14 @@ CREATE TABLE IF NOT EXISTS nba_market.rung_market (
   game_date date, snapshot_label text, player text, market text, line numeric,
   p_over_book numeric, p_over_sd numeric, books int,
   built_at timestamptz DEFAULT now());
-CREATE INDEX IF NOT EXISTS rung_market_idx ON nba_market.rung_market (game_date, player, market, line, snapshot_label);
 """
+
+# DEADLOCK (§T23.5, fixed 2026-09-23). The index is created separately and ONLY when missing:
+# `CREATE INDEX IF NOT EXISTS` takes a full table lock before it discovers the index already exists,
+# which is what deadlocks parallel catch-up runs against each other.
+INDEX_NAME = "nba_market.rung_market_idx"
+INDEX_DDL = ("CREATE INDEX rung_market_idx ON nba_market.rung_market "
+             "(game_date, player, market, line, snapshot_label)")
 
 DELETE_BLOCK = "DELETE FROM nba_market.rung_market WHERE game_date >= %(d0)s AND game_date < %(d1)s;"
 
