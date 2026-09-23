@@ -140,11 +140,19 @@ jobs:
 
       # Classify every board leg as standard / goblin / demon with its tier and anchor. The score and
       # the slip engine both need this - a rung's break-even depends on which variation it is.
+      # 🔴 FIXED 2026-09-23: this step ran `nba/maintenance_shrink_board_index.py` - a ONE-OFF
+      # maintenance job (it replaces board_snapshots' 7-column primary key with a compact expression
+      # index on 25.7M rows). So tiers were NEVER built for the decision-moment board, and a heavy
+      # index rebuild ran on the critical path at the cutoff, against the table the scorer reads next.
+      # The real builder is build_board_tiers_v2.py (four-way taxonomy, signed by position vs anchor).
+      # ⚠ BT2_APPS is prizepicks only - that is the script's own default and the only app whose
+      # goblin/demon rungs this taxonomy describes. Tiers for the other archived apps are NOT built here.
       - name: Board tiers (goblin / standard / demon)
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python nba/maintenance_shrink_board_index.py
+          BT2_APPS: "prizepicks"
+        run: python nba/build_board_tiers_v2.py
 
       # 3) THE MARKET at the window - de-vigged book probability per rung
       - name: Market snapshot and rung market
