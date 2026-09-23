@@ -1783,6 +1783,55 @@ floor on the noise, so `11,075` is a CEILING on the remaining work, not an estim
 
 ---
 
+---
+
+# §F6 — READING THE UNCOVERED BAND, with the probe pointed the other way
+
+**`§F5.7` left `11,075` substantive uncovered segments and said what remained was reading. So the
+`§F2.7` missing-figure probe — built for the COVERED band — was pointed at the UNCOVERED one:**
+*for every uncovered, substantive, non-receipt, non-label segment, list the figures that appear
+nowhere in the twelve; keep the segments carrying **four or more**.*
+
+| | |
+|---|---|
+| segments carrying **≥4 figures absent from all twelve** | **172** |
+| 🟢 `T18` · `T19` · `T20` · `T21` | **`0` each — nothing left in them by this test** |
+| largest | `T12` **26** · `T15` **17** · `T8` **16** · `T23` **15** · `T13` **13** · `T22` **12** · `T17` **11** |
+
+## ✅ What it found — six blocks written at source
+
+| § | finding | where |
+|---|---|---|
+| **`§F6.1`** | 🔴 **the pass-2 tier table's leg counts, avg confidence and distinct-values columns** — `§F2.8` had fixed pass 3 and **pass 2 was missing the same way**; plus **the one-iteration-lag explanation** for why the tiers are not quartiles | `FSC` |
+| **`§F6.2`** | 🔴🔴 **the Questionable BAND model** — **`80.5%` of questionables are genuinely uncertain at `2:30 PM` (play rate `0.529`, a coin flip); only `18.6%` can be pushed to a lean, and leans run `70–73%` correct** — ***and it is the justification for the scenario layer, which the corpus documents everywhere and never justifies*** | `FSC` |
+| **`§F6.3`** | 🔑 **the ONLY external benchmark in the corpus** — published 95% bootstrap CIs for betting ROI by sport; **NBA `1.66 – 25.58%`**, and `T23-1`'s `+15.8%` sits inside it | `FSC` |
+| **`§F6.5`** | 🔑 **three tables under existing verdicts**: `A2` by WHO is absent *(alpha `n=5,506`, usage `×1.177` vs role `×1.091` — the Wally Pipp effect)* · the per-prop `A2` gate *(`15` of `19` improve; combos gain `3–4×`)* · the **`oreb` archetype fix** *(`k=8`, worst-band bias `0.241 → 0.141`, `41%` improvement, four hypotheses with verdicts)* | `FSC` |
+| **`§F6.6`** | 🔴🔴 **every archived Underdog board is the CALIFORNIA board** — `UNDERDOG_LAT`/`UNDERDOG_LON` pin a San Diego County coordinate and `state_config_id` pins the CA rule set; **Fliff scopes by EGRESS IP instead.** ✅ *Correct by design — the owner is in California — but that it WAS a design was nowhere on file* | `SYSTEM_ARCHITECTURE` |
+
+🔑 **And `§F6.5` contains the find of this pass: a PRE-REGISTERED PREDICTION the corpus kept the
+outcome of but not the prediction.** *Before `B4` was tested, `T15` wrote: "**a chunk is almost
+certainly selection bias: absences cluster in blowouts, and blowouts inflate everyone's rate through
+garbage time** … if the opponent effect survives that conditioning it's a real `B4` factor; if it
+collapses, it was garbage time."* **`B4` v1 was later rejected `0` of `19`, and `§3`'s table records
+the reason as *"BLOWOUT CONTAMINATION."*** ⇒ ***the corpus recorded that the prediction came true
+without recording that it had been made.*** 📌 **A confirmed prediction is much stronger evidence
+than a post-hoc explanation, and the corpus was carrying the weaker version.**
+
+## 🔪 And the kills, each with its reason
+
+| block | verdict |
+|---|---|
+| **`T22` `12` · `T23` `15`** | 🔪 **OUT OF SCOPE — almost all are `message: pp findings: …` commits to `PP_PAYOUT_FINDINGS.md`**, plus `nba_config.pp_pricing_model` and `pp_norm_cdf`. **The concurrent session's work.** *Confirms `§F2.4`'s warning that its token filter under-counted.* |
+| **`T12` `26`** | 🔪 **HTTP artifacts** — `User-Agent` fragments (`537.36`, `Chrome/124.0`), `client-device-id` UUIDs. ✅ **Except the geo headers, which became `§F6.6`.** |
+| **`T8` `16`** | 🔪 **implementation constants** from `classification_ladder_v1.py` — band mean-ratio cells, IoD shrinkage `k=3`. **The MECHANISM is documented in 8 documents** *(`mean-ratio` in 3, `dispersion` in 8, `overdispersion` in 3, `negative binomial` in 3)*; the v1 cell values are not load-bearing. |
+| **`T13` `13`** | 🔪 **already covered** — `359,147` / `274,632` / `402,127` standard-goblin-demon hit rates, `1,401` rungs across `385` ladders, the `+6.28` demon offset — **all in `NBA_GOBLIN_DEMON.md`**, ***including `1,035,906`, meaning a prior pass had already caught that the parts do not sum to the stated `856,000`.*** |
+
+⚠ **RULE 54.** *The probe requires **four** absent figures in one segment — a single important number
+sitting alone is invisible to it, and so is any finding carrying no numbers at all.* ***"`172`
+number-dense segments were found and worked", never "the uncovered band is now read."***
+
+---
+
 # 📜 §F4 — THE CERTIFICATION REGISTER
 
 *Issued **2026-09-23**. **This certifies what was DONE and what its evidence is. It does not certify
