@@ -1957,18 +1957,16 @@ construction constraint, and it points the opposite way from board depth.**
 > arithmetic was in the same table as the claim.** 📌 *Third self-caught defect of this pass; `RULE
 > 55`'s companion — **a derivation is not recorded until it has been RUN on every row it claims.***
 >
-> ⚠ **AND THE PRINCIPLE BEHIND THE AUDIT, also in `0` of the twelve:** *before it ran, **TEN props —
-> `5.4M` rows, a third of the table — had NO verdict at all**, because the scorer silently skipped
-> anything without a matching box-score column (the `7` period props, `fantasy_score`,
-> `double_double`, `stocks`).* ⇒ 🔑 ***"Unverified is not the same as fine. Extending it caught TWO
-> props that would have shipped as certified."*** 📌 *Another instance of this corpus's central
-> failure shape — **a skip that logs nothing reads as a pass** — and the same remedy as `§F6.20`'s
-> `|| echo failed`: make the absence detectable rather than fix the thing that was absent.*
+> ✅ **ONE SENTENCE WORTH ADDING, and it is the audit's own justification:** ***"Unverified is not
+> the same as fine."*** *`§7` above records the ten props and the two that would have shipped as
+> certified; **this is the line the owner's extension rests on**, and it names this corpus's central
+> failure shape in five words — **a skip that logs nothing reads as a pass.** Same shape and same
+> remedy as `§F6.20`'s `|| echo failed`: make the ABSENCE detectable rather than fix the thing that
+> was absent.*
 >
-> ✅ **One figure completes the lift table above**: `threes_made` **`23.9%`** *(`0` of `12`)*, and
-> `rebounds_q1` **`25.1%`**. *And the period props were graded by wiring the quarter box scores
-> (`nba_player_game_log_q{1..4}_{season}.json`) into the scorer: **`6` certified outright,
-> `assists_q1` at a rounding-level `−0.0 pp`.***
+> ✅ **And one figure completes the lift table above**: `threes_made` **`23.9%`** — **`0` of `12`**,
+> re-checked. *`rebounds_q1` `25.1%`, "six certified outright" and the quarter-box-score wiring are
+> **already at `§F2.8`'s seven-row period table** and are NOT added here.*
 
 ---
 
