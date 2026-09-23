@@ -4772,11 +4772,15 @@ scratch window** — which is the number that would decide it, and which no tran
 > `F6-2` in `7f631460` and this commit, and the item was then actually written** — `RULE 55`: a
 > pointer to an item is not a filing until the item exists.*
 
-### 3 · 🔴 **THE DECISIVE FINDING'S DELTAS — the numbers under `§F6.12`'s verdict**
+### 3 · ~~🔴 **THE DECISIVE FINDING'S DELTAS**~~ 🔴🔴 **RETRACTED — SEE `0a-T15-SUPERSESSION` ABOVE, WHICH HAS THIS TABLE AND MORE**
 
-*The four `anchor_wins_every_slice` log-loss pairs are already recorded in `2` of the twelve. **The
-DELTAS are not, and the deltas are what carry the argument** — `§F6.12` states that `A2` does worst
-where it should do best, and these are the two numbers that say so.*
+~~*The four `anchor_wins_every_slice` log-loss pairs are already recorded in `2` of the twelve. **The
+DELTAS are not, and the deltas are what carry the argument.***~~ 🔴 ***Both halves of that sentence
+are false.*** **The deltas are recorded verbatim** *(`"−0.051` vs `−0.013` on low novelty"`)* **and
+the table is recorded with `three` A2 variants per slice instead of this one's `best A2` column, and
+`[LIVE-AUDIT]`-verified from `nba_score.factor_gate_results` rather than read from a config row.**
+⇒ ***Go there. The table below is a strictly weaker copy and is retained only so this retraction has
+something to point at.***
 
 | Slice | Anchor | Best `A2` | **Delta** | `n` |
 |---|---|---|---|---|
