@@ -3,6 +3,110 @@
 **Purpose.** What each piece of code is, where it lives, what it does, what it needs, and what it
 writes. Grouped by role.
 
+---
+
+> # 📑 **INDEX — `NBA_WORKERS.md`**
+> **`109` sections · `159,199` bytes · `2,223` lines · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> rotted within a day)*. **Search for the quoted `§` label.**
+> 🔴🔴 **THE `§0.x` NUMBERING IS DENSE, DEEP AND OUT OF ORDER.** *The file runs `0.00000`, `0.0000`,
+> `0.000`, `0.001`, `0.00`, `0.0`, `0`, `0.14`, `0.15`, `0.2`, `0.23`–`0.31`, then `0.42`, `0.41`,
+> `0.39`, `0.36`, `0.37`, `0.38`, `0.35`, `0.34`, `0.33`, `0.32`, `0.3`, `0.4`, `0.5` — **the `0.3x`
+> and `0.4x` blocks run BACKWARDS**.* ⇒ ***Do not navigate by number. Use this index.***
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | 🗺️ **which workflow runs which script and writes which table** | **`§0.00000` — THE WIRING MAP** |
+> | 🔴 **the three pipelines and the owner's explicit cron instruction** | **`§0.0000`** |
+> | ⚠ **the complete schedule surface** *(seven scheduled workflows touch `nba/`, not four)* | **`§0.0`** |
+> | **what a specific piece of code IS** | Cloudflare writers **`§1`** · static scrapers **`§2`** · board scrapers **`§3`** · baseline engine **`§4`** · scoring engine **`§5`** · verifiers **`§6`** · workflows **`§7`** |
+> | 🔴 **what CERTIFIES, and whether the check means anything** | **`§0.31`** *(hardcoded row-count thresholds)* · **`§0.39`** *(`ok: certified` across 18 workers)* · 🔴 **`§0.004-T18`** *(the certifier cannot tell a full slate from one row)* |
+> | 🔴 **every destructive statement in the codebase** | **`§6b`** · ⚠ **`§6c`** *(SQL only — workflows can delete files too)* |
+> | ⚠⚠ **the hardcoded-season literal, and the grep trap that hides half of it** | **`§0.00`** |
+> | ⚠ **why `[skip ci]` is a convention, not a guard** | **`§0.29`** |
+> | ⚠ **`POST /run` carries no authentication** | **`§0.28`** |
+> | ⚠ **how `deployed_sha.txt` silently drifts** | **`§0.26`** |
+> | 🔴 **editing a workflow right after dispatching it CANCELS the run** | **`§0.000`** |
+> | ⚠⚠ **before assuming anything is "live"** | **`§0d` — SYSTEM SELF-KNOWLEDGE** |
+> | **the four-step wiring pattern, and its blast radii** | **`§0`** · **`§0.2`** · **`§0.37`** |
+> | ⚠ **the design rule the scrapers DISAGREE on** *(keep every column vs hand-pick)* | **`§0.35`** |
+>
+> ## 📋 EVERY SECTION, IN LOGICAL ORDER
+>
+> ### 🗺️ **A · THE MAPS — start here**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.00000`** | 🗺️🗺️ **THE WIRING MAP — WORKFLOW → SCRIPT → TABLE** *(`T20` pass 34, `§T20.3x`)* | 🗺️ |
+> | **`0.0000`** | 🔴 **The three pipelines, and the owner's explicit cron instruction — SET IT ON ONE, NOT ON ALL** | 🔴 |
+> | **`0.0`** | ⚠ **The complete schedule surface — SEVEN scheduled workflows touch `nba/`, not four** | ⚠ |
+> | **`0.4`** | **The two registries — and the count that proves the isolation held** | |
+>
+> ### 🧱 **B · THE CODE, BY ROLE**
+> | § | what it covers |
+> |---|---|
+> | **`1`** | **CLOUDFLARE WORKERS — Postgres writers** |
+> | **`4b`** | **Cloudflare writer workers built `T3`–`T9`** |
+> | **`2`** | **STATIC SCRAPERS** — GitHub Actions, `nba/data/` |
+> | **`3`** | **BOARD SCRAPERS** |
+> | **`4`** | **BASELINE ENGINE** |
+> | **`5`** | **SCORING ENGINE** |
+> | **`6`** | **VERIFIERS** |
+> | **`7`** | **WORKFLOWS** — *incl.* **`§0.41`** *why there are so many `nba-*.yml`, a stated principle recovered from code* |
+>
+> ### ⚙️ **C · THE WIRING PATTERN AND ITS HAZARDS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0`** | **The four-step wiring pattern** *(established `T2`)* | |
+> | **`0.2`** | ⚠ **The four wiring steps have different DEPLOY BLAST RADII** | ⚠ |
+> | **`0.37`** | **A fifth hand-maintained edit site per new static entity — with the widest blast radius** | ⚠ |
+> | **`0.14`** · **`0.15`** | ⚠ The shared dispatch path's unstated invariant · the dispatch enum and the second per-worker mode | ⚠ |
+> | **`0.30`** | **The service-binding deploy order — a real bug, and the permanent fix** | |
+> | **`0.32`** | **The five static writers are COPIES of one worker** — *incl. a self-identifying User-Agent* | |
+> | **`0.33`** | **Two GitHub read paths now exist — and which one a worker uses is invisible from its name** | ⚠ |
+> | **`0.34`** | **The `scope_lock` declaration** — a worker that states every table it may write | |
+> | **`0.3`** | ⚠ **Every worker's operating constants are HARDCODED — the founding rule is not holding** | ⚠ |
+> | **`0.5`** | ⚠ **The worker architecture was a NON-GOAL before it was a design** | ⚠ |
+>
+> ### 🚨 **D · DEPLOY AND RUNTIME HAZARDS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.000`** | 🔴 **Editing a workflow file right after dispatching it CANCELS the run** — and a cancelled run is not a failed one | 🔴 |
+> | **`0.25`** | ⚠ **The pre-commit syntax gate — the only local check before an auto-deploying push** | ⚠ |
+> | **`0.26`** | ⚠ **The deploy-scope anchor — `deployed_sha.txt`, and how it silently drifts** | ⚠ |
+> | **`0.27`** | ⚠ **Dead D1 provisioning still runs on every deploy — including every NBA deploy** | ⚠ |
+> | **`0.28`** | ⚠ **`POST /run` carries NO AUTHENTICATION** — fleet-wide, and NBA inherited it faithfully | ⚠ |
+> | **`0.29`** | ⚠ **The deploy trigger has no path filter — `[skip ci]` is a CONVENTION, not a guard** | ⚠ |
+> | **`0.42`** | ⚠ **Always test v3 before v2 — a rule the project paid for twice** | ⚠ |
+>
+> ### ✅ **E · CERTIFICATION, DESTRUCTION AND WHAT THE CHECKS MISS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.31`** | ⚠ **Certification is a hardcoded ROW-COUNT THRESHOLD — and each worker picks its own** | ⚠ |
+> | **`0.39`** | 🔴 **`ok: certified` — the `ok` field IS the certification verdict, across `18` workers** | 🔴 |
+> | **`0.004-T18`** | 🔴🔴 **THE CERTIFIER CANNOT TELL A FULL SLATE FROM ONE ROW** | 🔴🔴 |
+> | **`6b`** | **EVERY DESTRUCTIVE STATEMENT IN THE CODEBASE — the complete audit** | |
+> | **`6c`** | ⚠ **That audit covers SQL ONLY — workflows can delete files too** | ⚠ |
+> | **`0e`** | ⚠ **The scope-parameter audit** — every mode/scope argument must constrain the WRITE, not the response | ⚠ |
+>
+> ### 📋 **F · DATA-QUALITY AND METHOD**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.00`** | ⚠⚠ **The hardcoded-season literal, and the GREP TRAP that hides half of it** | ⚠⚠ |
+> | **`0.23`** | 🔴 **The injury archive changes filename pattern mid-season — and the first backfill silently caught it** | 🔴 |
+> | **`0.24`** | 🔴 **Validate a parser on the RUNNER'S OWN extraction, not on your own** | 🔴 |
+> | **`0.36`** | **`raw_json` is written as a STRING by every static writer — the column is unqueryable** | ⚠ |
+> | **`0.35`** | ⚠ **The design rule the scrapers DISAGREE on — keep every column, or hand-pick and lose signal** | ⚠ |
+> | **`0.38`** | ⚠ **All twelve mandated documents end with a stray tool-payload fragment** | ⚠ |
+> | **`0a`** · **`0d`** | **The investigation methodology** for a large existing system · ⚠⚠ **SYSTEM SELF-KNOWLEDGE — read before assuming anything is "live"** | ⚠⚠ |
+> | **`0.001`** · **`0.003-T18`** · **`0.005-T18`** | The `T15` mechanism-failure census *(came back empty)* · the mechanism strata pinned · the census with its partition closing | |
+> | **`0.002-T18`** + **`-CORRECTION`** | ⚠⚠⚠ **The section overstated its case; the ordering refutes it** — *severity withdrawn, scope narrowed.* **Read the CORRECTION first.** | ⚠⚠⚠ |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`A` to find anything; `B` for what a piece of code is; `C`/`D` for
+> why a change is riskier than it looks; `E` for how much a green check is worth; `F` for the traps.***
+
 **Update log**
 | Date | What changed |
 |---|---|
