@@ -6,7 +6,8 @@ context, and which document section. Any material term appearing more than once 
 ---
 
 > # 📑 **INDEX — `NBA_GLOSSARY.md`**
-> **`39` sections · `85,359` bytes · `1,639` lines · built `2026-09-23`.**
+> **~~`39`~~ → `44` sections · ~~`85,359`~~ → `89,948` bytes · ~~`1,639`~~ → `1,709` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠⚠ **THIS FILE CONTAINS *TWO* A–Z STRUCTURES AND THEY ARE NOT THE SAME THING.** *That is the one
 > fact you need before using it, and nothing in the file said so:*
