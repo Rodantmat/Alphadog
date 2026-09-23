@@ -512,14 +512,16 @@ three cases where they demonstrably do not mean the same thing everywhere they a
 
 ---
 
-> # 🟢 **START HERE — FOUR QUESTIONS, ONE SCREEN** *(added 2026-09-22, T20 pass 102, §T20.107)*
+> # 📋 **THE FOUR QUESTIONS, ANSWERED WITH SOURCES** *(added 2026-09-22, `§T20.107`; demoted from a second entry point `2026-09-23`, `§F7.22`)*
 >
-> ⚠⚠ **THIS DOCUMENT IS ~~`2,789,201`~~ `2,954,675` CHARACTERS — about `739,000` tokens. DO NOT LOAD
-> IT WHOLE.** *It is ~~`53.4%`~~ **`54.0%`** of the twelve *(`5,470,935` chars total)* and larger than
-> the entire sweep run log *(`2,195,284` — `§T20.106`)*. It is a chronological RECORD, read by section
-> and by search — **this block is the way in.*** **Re-measured `2026-09-22T23:53Z`, T20 pass 114
-> (`§T20.119`); the struck figures were `§T20.107`'s and are `5.9%` low. ⚠ A self-referential size
-> grows with every pass — read the DATE on it, not the digits.**
+> ⬆ **THE ENTRY POINT IS `🧭 START HERE` AT THE TOP OF THIS FILE.** *This block is the long form of the
+> same four questions, with the measured fact and its `§` source on every line. **Read the top block to
+> orient; read this one when you need the evidence.***
+>
+> ⚠⚠ **DO NOT LOAD THIS FILE WHOLE — it is the largest of the twelve.** 🔁 **`RULE 59` — re-derive,
+> never quote:** `` wc -c nba/NBA_MASTER_SUMMARY.md `` *(and* `` wc -c nba/NBA_*.md | tail -1 `` *for the
+> set).* ***It previously published a character count here; that figure was `9.8%` low within a day and
+> is removed rather than re-stamped.***
 > *Every line below is a pointer or a quotation; **nothing is asserted here that is not established
 > elsewhere in the twelve** — and `§T20.119` audited that promise claim by claim: **two failed**, both
 > corrected in place below and both recorded at `§T20.119`.*
