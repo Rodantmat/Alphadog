@@ -1297,6 +1297,57 @@ before they are counted, and `ENV_VAR` coverage is tested by NAME only — **a v
 twelve with the WRONG DEFAULT would score as covered***, which is exactly the defect `T20-4` and
 `T20-5` are. ***"`0` env vars are ABSENT", never "the configuration is correct."***
 
+---
+
+## §F3.1 — PRE-REGISTRATION: the OWNER-TURN audit, and the certification it is meant to support
+
+*Registered **2026-09-23** before the instrument was written.*
+
+**The owner asked for the work to be *"done, verified and certified."* Certification needs a claim
+that can be checked, and "we read everything" is not one. This is the strongest checkable claim
+available, and the brief itself nominates the stratum:**
+
+> *`NBA_DOCUMENTATION_PROMPT.md` ranks the strata **owner → reasoning → output → commands →
+> results**, and `sweep_coverage.py` encodes the top one as `('human','text') → 'OWNER SAID'`.*
+> **Everything the owner ever typed is a bounded, enumerable population.** *The pipeline's behaviour
+> is not; the owner's instructions are.*
+
+### The pre-registered instrument — `owneraudit.py`
+
+1. Parse all **24** transcripts and keep **only** segments where `role == 'human'` and
+   `type == 'text'` — the owner's own words, nothing else.
+2. Score each against the twelve with the **unchanged** judge *(same vectoriser, same `0.40`
+   threshold, fitted per transcript, exactly as `§F2.1`)*.
+3. Report, per transcript and in total: owner turns · covered · uncovered · uncovered **and**
+   substantive.
+4. **Every uncovered substantive owner turn is listed and adjudicated BY HAND.** No sampling.
+
+### Pre-registered outputs, published whatever they say
+
+- the owner-turn population, per transcript and total,
+- the uncovered count and the uncovered-substantive count,
+- for each uncovered-substantive turn: **RECORDED ELSEWHERE** *(in the twelve, in other words)* ·
+  **MECHANICAL** *(“ok”, “go on”, a pasted URL, a file drop)* · **OUT OF SCOPE** · or 🔴
+  **GENUINELY MISSING**,
+- and for every genuinely missing one, the correction, applied at source.
+
+### Pre-registered failure modes, fixed here
+
+- 🔴 **Most uncovered owner turns will be MECHANICAL** — assent, a pasted blob, a "continue". *The
+  rule is fixed now: a turn is MECHANICAL only if it carries no instruction, no decision, no
+  correction, no constraint and no fact. **If it carries any of those it is adjudicated in full,
+  however short.***
+- 🔴 **`T24` is not a transcript** — it is a hand-written session record with no `Human:` turns
+  *(`§F2.1` ⑤)*. **It will return zero owner turns, and that is a statement about the FILE, not
+  coverage.** *It gets a separate, explicit treatment rather than a zero row.*
+- ⚠⚠ **The twelve are read at a PINNED COMMIT recorded in the result** — `§F2.3` and `§F2.10` both
+  failed by measuring against a tree this session had just written to.
+- ⚠⚠ **RULE 54 in advance:** a lexical judge scores an owner instruction as COVERED when the
+  documents contain *text like it*. **It cannot tell whether the instruction was OBEYED, or recorded
+  with its meaning intact.** ***So this pass may never certify that the owner's directives were
+  followed. Its strongest available conclusion is: "every owner turn is REPRESENTED in the twelve,
+  and these N were adjudicated by hand."*** **Representation, not compliance.**
+
 ### ▶ STILL OWED, unchanged and stated at full strength
 
 - 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
