@@ -1553,11 +1553,49 @@ delta and an aggregate.**
 > otherwise have been charged as goblins or demons."* 🔑 **The taxonomy label and the line's position
 > are independent facts, and `2,475` rows prove they disagree.**
 >
-> ⚠ **`RULE 54`.** *`WINDOW`: `nba_market.board_tiers_v2` at `2026-09-21`, `bookmaker='prizepicks'`,
-> both seasons. **Shares are computed here, not queried** — they are arithmetic on the published
-> counts, and the counts sum to the stated total exactly. **`NOT DONE`: this is `board_tiers_v2`;
-> `board_tiers` holds the same `2,199,354` rows with DIFFERENT value sets (below) and was not
-> broken down the same way.***
+> ### 📐 **§T22.14 — THE LADDER SHAPE OF THE SAME `2.2 M` ROWS** *(`T22` pass `14`, same live session)*
+>
+> | | |
+> |---|---|
+> | date span | **`2024-10-22` → `2026-04-12`**, **`378` dates** |
+> | distinct **player-markets** *(one ladder each)* | **`425,054`** |
+> | …of those, with **more than one line** | **`236,890`** — ⇒ ***`44.3%` of ladders are a single line and have no rungs at all*** |
+> | average lines per ladder | **`2.47`** |
+> | 🔴 **maximum lines on one ladder** | **`13`** |
+> | 🔴🔴 **rows carrying a value in the `multiplier` column** | **`0` — of `2,199,354`** |
+> | distinct values in the `price` column | **`2`** |
+>
+> 🔑🔑 **`max lines = 13` IS THE INDEPENDENT CONFIRMATION OF A FINDING THE CORPUS ALREADY HAD FROM THE
+> OTHER SIDE.** *`T1`'s startup-plan review recorded that **the ladder was certified at `±6` rungs**
+> while **books were later measured laddering to `13`–`16` on the deep props**. **Here is PrizePicks'
+> own two-season history reaching `13`** — so the `±6` certification covers a ladder that demonstrably
+> goes to at least `13`. ⇒ **Everything beyond `±6` is real, present in the data, and uncertified.**
+>
+> 🔴 **`0` rows carry a multiplier, and only `2` distinct prices exist across `2.2 M` legs.** ⇒ ***The
+> price information a payout model needs was never in this table.*** *That is the whole reason a
+> separate pricing layer had to be built, and it is stated here as a property of `board_tiers_v2`
+> rather than left implicit in the existence of the thing that replaced it.*
+>
+> ### 📉 **AND THE STANDARD LINE MOVES WITHIN A SINGLE DAY, ON NEARLY ONE LADDER IN FIVE**
+> | | n |
+> |---|---|
+> | day-ladders *(one player-market-date)* | **`205,572`** |
+> | 🔴 **…whose STANDARD line moved during that day** | **`37,719` — `18.3%`** |
+> | alternate rows matched to a standard **in the same snapshot** | `1,040,543` of `1,454,044` |
+> | alternate rows matched to a standard **anywhere that day** | `1,308,424` |
+>
+> ⚠⚠ ***An alternate's distance from "the standard line" is ambiguous on `18.3%` of ladders, because
+> there were two standard lines that day.*** 🔑 **This is why the same-snapshot match (`1,040,543`)
+> and the same-day match (`1,308,424`) differ by `267,881` legs — and any goblin/demon
+> classification that resolves the anchor at day granularity is guessing on that gap.** *`§T22.9`'s
+> line-not-rung pricing makes the ambiguity a PRICING error, not just a labelling one.*
+>
+> ⚠ **`RULE 54`.** *`WINDOW`: `nba_market.board_tiers_v2` and `nba_market.board_snapshots` at
+> `2026-09-21`, `bookmaker='prizepicks'`, both seasons. **Shares are computed here, not queried** —
+> arithmetic on the published counts, which sum to the stated totals exactly. **`NOT DONE`: this is
+> `board_tiers_v2`; `board_tiers` holds the same `2,199,354` rows with DIFFERENT value sets (below)
+> and was not broken down the same way.** **`NOT DONE`: whether the `18.3%` movement is line movement
+> or a re-post was not distinguished.***
 
 🔴 **AND `board_tiers` vs `board_tiers_v2`: SAME ROW COUNT, DIFFERENT VALUE SETS** *(§T11.20a)*
 
