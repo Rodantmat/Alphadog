@@ -860,6 +860,31 @@ The team dictionary. 30 active rows.
 | `arena_id` | TEXT | ⚠⚠ **DEAD COLUMN — NULL on all 30 rows, written by no code.** *Corrected 2026-09-20 (T1 pass 65); this table previously described it as a link to `nba_ref.arenas`.* **VERIFIED live**: 30/30 NULL, and zero writes across all 190 code files. **The real link runs the other way** — `nba_ref.arenas.team_id`, populated on all 30 rows. **Join on `arenas.team_id`; a join through `teams.arena_id` returns 30 NULLs and looks like a scrape failure.** Origin: T1 deferred the assignment *"to a dedicated verification pass later"* that never ran and became unnecessary. → `NBA_OPEN_ITEMS.md` *FROM T1 PASS 65*. |
 | `active` | INTEGER | DEFAULT 1 |
 | `source_key` | TEXT | e.g. `NBA_GITHUB_COMMITTED_STATS_NBA_SCRAPE`. **Only updates on rows that actually changed** — 25 of 30 kept old keys when data was identical |
+> ### 🔴🔴 **§T22.10 — THE DOUBLE-ENCODING BUG IS AN INHERITED REGRESSION, NOT AN ORIGINAL NBA DEFECT** *(`T22` pass `10`, recorded `2026-09-23`)*
+>
+> *The row below records WHAT `raw_json` is. `T22` established WHERE IT CAME FROM, and the answer
+> changes how it should be fixed:*
+>
+> | | |
+> |---|---|
+> | the MLB writer produced double-encoded rows | **`2026-03-25` → `2026-07-24`** |
+> | the bad rows **stop** on `2026-07-24` | ⇒ *the MLB writer was fixed that day — **inferred from the data, not confirmed in code*** |
+> | the old MLB rows | 🔴 **never repaired** |
+> | 🔴🔴 **the NBA static layer was built** | **`2026-08-31` → `2026-09-03` — A MONTH AFTER THAT FIX** |
+>
+> ⇒ 🔑🔑 ***"A fix that didn't transfer."*** **The NBA layer was written from the pre-fix MLB pattern
+> and reintroduced a bug that had already been found and corrected in the system it was copied from.**
+>
+> 📌 **WHY THIS MATTERS BEYOND THIS COLUMN**: *the whole NBA build is a port of MLB. **Every MLB fix
+> dated between the pattern being copied and the NBA code being written is a candidate for the same
+> regression**, and nothing in this corpus checks that class.* ⚠ **Recorded as a pattern with one
+> confirmed instance — `RULE 55`: the general claim is not made, only the instance and the question
+> it raises.** ⚠ **MLB itself is DROPPED** *(owner, `T22`)*, **so the MLB-side repair is out of scope;
+> what stays in scope is that the NBA side inherited it.**
+>
+> ⚠ *The fix date is inferred from where the bad rows stop, not read from a commit. **Stated at that
+> strength deliberately** — `RULE 1.6`, language strength never exceeds evidence strength.*
+
 | `raw_json` | JSONB | ⚠⚠ **NOT a queryable object — a double-encoded JSON STRING.** *Corrected 2026-09-21 (T2 re-read pass 11); previously described here as "full source payload" with no caveat.* **`[LIVE-AUDIT]` VERIFIED**: `jsonb_typeof(raw_json)` = **`string`** on **all 1,306 rows across all six NBA static tables** (`teams` 30, `players` 582, `arenas` 30, `officials` 80, `player_season_profile` 582, `player_tracking_profile` 582). Every writer binds `${JSON.stringify(x).slice(0, N)}` — a JS string — into the JSONB column. **`raw_json ? 'key'`, `raw_json->>'field'` and `raw_json @> '{…}'` all return false/NULL/no-rows rather than erroring**, so a query against it silently concludes the data was never captured. Content is intact; only the encoding is wrong. → `NBA_OPEN_ITEMS.md`. |
 | `created_at`, `updated_at` | TIMESTAMPTZ | DEFAULT now() |
 
