@@ -1622,12 +1622,25 @@ owner figures are `owneraudit.py` + the phrase test at `§F3.2`; `hb` is the hig
 
 ## §F4.4 — the one-line certificate
 
-> ***Twenty-four transcripts and twelve documents were swept with seven purpose-built instruments,
+> ***Twenty-four transcripts and twelve documents were swept with nine purpose-built instruments,
 > every instrument pre-registered or published with its own failure modes, every number re-derived
-> from its authority, and every correction — including the eight that were mine — applied at source
-> and logged. What that produces is a measured, auditable floor, not a guarantee. `T19` and `T20`
-> remain open by the owner's own `RULE 46`, and they are the reason this certificate says CERTIFIED
-> IN PART.***
+> from its authority, all `440` owner turns scored and all `72` unfindable ones adjudicated by hand,
+> and every correction — including the nine that were mine — applied at source and logged. What that
+> produces is a measured, auditable floor, not a guarantee. `T19` and `T20` remain open by the
+> owner's own `RULE 46`, and they are the reason this certificate says CERTIFIED IN PART.***
+
+## §F4.5 — 🔴 **THE FIVE THINGS THE OWNER MUST ACT ON, in the order they would hurt**
+
+| | item | why it is his and not the sweep's |
+|---|---|---|
+| **1** | 🔴🔴🔴 **`F2-1` — ROTATE.** A **live production Postgres password** sits in `T13`; a **`balldontlie` API key was published in the public repo** and is still in `2` commits | *credentials can only be rotated by their owner; redaction is not retraction* |
+| **2** | 🔴🔴🔴 **`T20-5` — the grader's window.** Now **three** sites, not one: the script plus **two in `nba-grader.yml`**, which passes `GRADE_END` explicitly | *a code change, which this sweep is forbidden to make* |
+| **3** | 🔴🔴 **`T23-1` — the model does not beat PrizePicks** on `1.08 M` legs, **with the standards-only exception that clears the 3-pick breakeven in both seasons**; the full grid and its leakage control are now at `§0.16-F2` | *a strategy decision* |
+| **4** | 🔴 **`T20-3`(e) — the MLB work is still running.** Four `market.*` tables written **2026-09-23**, and `scrape.yml`'s `0 */2 * * *` backstop **is not the scheduler this item's remedy points at** | *disabling a cron is a deploy action* |
+| **5** | ⚠ **`T21-1` + `T10-F1`** — the document-form directive *(now a census: `16` values in `4` files, `T13` holding `28` of `50` hits)*; and `5` commissioned enrichment factors with no record of being dropped | *both need the owner's intent, not more measurement* |
+
+⚠ **Nothing in this campaign changed code, triggered a job, deployed, or wrote to the live system.
+`SELECT` and repo reads only.**
 
 ### ▶ STILL OWED, unchanged and stated at full strength
 
