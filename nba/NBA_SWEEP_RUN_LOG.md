@@ -1050,8 +1050,56 @@ shape, the `SAFE` context filter can over-filter, and files over `25 MB` and all
 skipped.* ***"One credential found across the repo", never "the repo is clean."***
 
 ▶ **STILL OWED: direction (a) is now run once over the whole band; direction (b) remains open on
-the `~12,686` substantive uncovered segments, which no single pass can close; and the repo-wide
-credential-shape scan above.**
+the `~12,686` substantive uncovered segments, which no single pass can close.**
+✅ **The repo-wide credential-shape scan is DISCHARGED — `§F2.12` ⑤, same day.**
+
+---
+
+# §F2 — WHERE THE RE-SWEEP STANDS
+
+**Both sweeps the owner asked for are now RUN once, end to end, and neither is CLOSED.**
+
+| | pass | what it did | outcome |
+|---|---|---|---|
+| **FILES** | `§F1.1` | built a precise index at the head of all twelve | 🔴 **12 of 12 files had a structural defect**, none findable by reading |
+| | `§F1.2` | cross-file collision + corpus-vs-LIVE | `1` genuine defect *(a dropped qualifier)*; **`6` of my own reversed by `count(*)`**; `7` killed |
+| **TRANSCRIPTS** | `§F2.1` | re-measured **all 24** against the corpus | the census; the meta/content gap **killed as self-reference** |
+| | `§F2.2`/`§F2.3` | `T10`'s tail of 100 | `33` factors, **`5` genuinely absent** → `T10-F1`; **my enumeration wrong twice** |
+| | `§F2.4` | `T22`/`T23`, the least covered | 🔑 **`T23`'s threshold grid + leakage control** → `§0.16-F2`, `T23-1` upgraded |
+| | `§F2.5`/`§F2.6` | the `330`-segment transfer map, then its correction | **`3` of `4` concentrations FALSE TAILS; `24%` of the band is the documents' own authoring** |
+| | `§F2.7`–`§F2.9` | direction (a), the covered band, **first time at scale** | **`3,331` segments · `3` genuine incompletenesses** → **RULE 55** |
+| | `§F2.10` | the rule count | **mine was wrong**; `RULE 54` numbered, `52 → 54` |
+| | `§F2.11` | enumeration audit of the twelve | ✅ **`8` of `8` populations MATCH — both errors found were mine** |
+| | `§F2.12` | credential SHAPE scan, twelve then repo-wide | 🔴🔴🔴 **a live key published by the UUID-sweep pass** → redacted, **`F2-1`** |
+
+### 🔑 The one sentence this campaign earns
+
+> ***Every defect found in these fourteen passes was found by pointing a NEW instrument at the
+> corpus, and none by reading it again.*** *Headings enumerated (`§F1.1`) · a set re-derived from
+> its authority (`§F1.2`, `§F2.3`) · the COVERED band probed instead of the tail (`§F2.7`) · secret
+> SHAPES instead of known secret STRINGS (`§F2.12`).* **The twelve had been read, by this sweep's
+> own count, more than 140 times.**
+
+### ⚠ And the uncomfortable half of it
+
+> **Of the enumeration and measurement errors surfaced in these two days, roughly half are MINE**
+> — `§F2.3` twice, `§F2.10`, `§F2.11` twice, plus `§F1.2`'s six `reltuples` reversals. **Three of
+> those came AFTER I had written the rule that would have prevented them.** 📌 ***Which is `RULE 54`
+> stated as a fact about this sweep rather than as a caution: writing a rule is not obeying it, and
+> the only thing that has reliably caught me is a PRE-REGISTERED OUTPUT I could not quietly
+> revise.***
+
+### ▶ STILL OWED, unchanged and stated at full strength
+
+- 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
+  context. `T20` CANNOT CLOSE IN THIS SESSION.**
+- 🔴 **Direction (b) over the `~12,686` substantive uncovered segments** — no single pass closes it.
+- 🔴 **`T22`'s in-scope remainder**, with `§F2.4`'s correction applied *(its out-of-scope fraction is
+  higher than the `31.6%` measured)*.
+- 🔴 **`prop_universe` counts are NOT final** — mid-rebuild; `1,666,903` rows / `898 MB` observed
+  2026-09-23 and recorded as an observation, not a figure.
+- 🔴 **Open for the owner: `F2-1`** *(rotate)* · **`T21-1`** *(the reference-not-copy directive)* ·
+  **`T20-3`(e)** *(the MLB crons)* · **`T23-1`** *(the model vs PrizePicks)* · **`T10-F1`**.
 ▶ **RULE 46 UNCHANGED: `T19` and `T20` each owe two INDEPENDENT complete sequential reads from a
 fresh context; `T20` cannot close in this session.**
 
