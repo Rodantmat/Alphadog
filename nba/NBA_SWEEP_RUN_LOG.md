@@ -2167,9 +2167,9 @@ fresh context; `T20` cannot close in this session.**
 > Wrong by a factor of eighteen.** 📌 ***A defect rate that arrives in neat consecutive blocks is a
 > bug in the instrument until proven otherwise.***
 
-### 📜 ~~THE FORTY-EIGHT STANDING RULES~~ ~~THE FORTY-NINE STANDING RULES~~ ~~THE FIFTY STANDING RULES~~ ~~THE FIFTY-ONE STANDING RULES~~ ~~THE FIFTY-TWO STANDING RULES~~ **THE FIFTY-FOUR STANDING RULES** — *the index; each is written in full where it was born*
+### 📜 ~~THE FORTY-EIGHT STANDING RULES~~ ~~THE FIFTY-ONE STANDING RULES~~ ~~THE FIFTY-TWO STANDING RULES~~ ~~THE FIFTY-FOUR STANDING RULES~~ **THE FIFTY-FIVE STANDING RULES** — *the index; each is written in full where it was born*
 
-> **`1`–`48` · `49` RETIRED, not reused · `50` · `51` · `52` · `53` · `54` · `55` ⇒ `54` numbered.**
+> **`1`–`48` · `49` RETIRED, not reused · `50` · `51` · `52` · `53` · `54` · `55` · `56` ⇒ `55` numbered.**
 > *Re-derived from this log's own numbering statements 2026-09-23 (`§F2.10`), not carried forward
 > from any earlier count — the previous header said `51` and was two amendments stale.*
 
