@@ -29,6 +29,8 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 > | 🔴🔴🔴 **WHICH THRESHOLD AND PICK COUNT ACTUALLY PAY** — the full `3 × 5 × 2` `ROI` grid | **`§0.16-F2`** ⚠ *newest; the numbers `§0.14-T23`'s verdict was drawn from* |
 > | ✅✅ **is the backtest edge just stale pre-move lines?** — the leakage control, and it holds | **`§0.16-F2` §3** |
 > | 🔴 **the only LOSING cell in the grid** *(2-pick, 2024-25, thresholds `1.20`/`1.30`)* | **`§0.16-F2` §2** |
+> | 🔴 **the SEVEN period props and their certification figures** *(`points_q1/h1/h2/q4_otx`, `rebounds_q1`, …)* | **`§7`, `§F2.8` block** — *five of the seven rows were added 2026-09-23* |
+> | 🔴 **the pass-3 confidence-tier LEG COUNTS** *(not just the percentages)* | **`§F2.8` block in the v2 tier section** — *total `4,046,520`* |
 > | 🔴 **the penalising half of the score formula has NEVER FIRED** | **`§0a-T18-D`** |
 > | 🔴 **the score's THREE formulas, and which two the live column holds** | **`§0a-T18-B`** |
 > | 🔑 **"the score must ENHANCE the hit probability — no kill good legs"** | **`§0a-T18`** |
