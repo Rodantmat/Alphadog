@@ -40477,6 +40477,26 @@ across the twelve now returns **`8` sites, `8` corrected, `0` outstanding.**
 >
 > ⇒ ✅ **`17` true sites · `17` accounted · `0` outstanding — and this time the number is the output of
 > the command, pasted, not a recollection of my edits.**
+>
+> ## 🔴 **AND THE `17` WAS ALSO WRONG — THE FINAL RUN, PASTED** *(third count, `2026-09-23`)*
+> *The `17` came from a classifier with a ±420-character window that could not see correction
+> notices placed further up a long block, and it under-counted self-quotations. **Re-run with a
+> ±2,600-character window after all repairs landed:***
+>
+> ```
+> {'corrected_or_selfquote': 37, 'exempt_pdt_overlap': 3, 'exempt_prereq_quote': 3,
+>  'false_positive': 9, 'OUTSTANDING': 1}      true-context total: 44
+> OUTSTANDING ×1 = "the boards ARE being pulled automatically twelve times a day"  ← board pulls, NOT this claim
+> ```
+> ⇒ ✅ **`44` true-context hits · `37` corrected or self-quoted · `6` exempt · `1` misclassified false
+> positive · `0` genuinely outstanding.**
+>
+> 🔑🔑🔑 ***THE COUNT MOVED THREE TIMES — `8` → `17` → `44` — AND ONLY THE THIRD WAS MEASURED WITH AN
+> INSTRUMENT WIDE ENOUGH TO SEE ITS OWN CORRECTIONS.*** ⚠ **Recorded in full rather than smoothed to
+> the final figure**, because the sequence is the finding: *the first count was memory, the second
+> was a too-narrow grep, the third was the grep fixed. **Two of the three were published before they
+> were true.*** 📌 **`RULE 53` amended a second time in the same pass: the sweep command's WINDOW must
+> be wide enough to contain a correction block, and the window size is published with the count.**
 
 ## 6. ✅✅ CLAUSE (iv) — **FOUR LIVE `SELECT` CHECKS, AND A POSITIVE CONTROL ON THE CORPUS'S OWN TAXONOMY**
 
