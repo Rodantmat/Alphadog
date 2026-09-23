@@ -16,8 +16,8 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 > 📏 **`113` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_GOBLIN_DEMON.md ``
 > | 🔑🔑 **the books are right to within a point on `776,000` legs** — *the mechanism behind `T23-1`, and it condemns deep demons from a second market* | **`§F6.7`** |
 >
-> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* *(`§T20.22`: `6` of `16` line-number pointers
-> rotted within a day)*. **Search for the quoted `§` label.**
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* **Search for the quoted `§` label.**
+> 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
 > 🔴🔴 **THIS FILE'S SECTION NUMBERING IS BROKEN — USE THIS INDEX, NOT THE NUMBERS.** *Measured
 > `2026-09-23`: **`§4` appears TWICE*** *("why v1 is now wrong" and "the ladder config")*, ***`§6`
 > appears TWICE*** *("ingestion" and "the research standard")*, and ***"OPEN ITEMS SPECIFIC TO THIS
