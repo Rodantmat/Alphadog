@@ -1,5 +1,64 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+# 🔴🔴🔴 ACT ON THIS — *the whole decision surface, above everything else*
+
+**Built `2026-09-23`, `§F7.2`. This block is the top of the file because it is the part that is
+ACTED ON.** *Everything below it — the index, the census methodology, the evidence, the history — is
+what you read when this block sends you there. **No row here is a pointer alone: each states what
+breaks and what closes it.** The proof for every row is in this file under its own ID; search the
+quoted ID, never a line number.*
+
+⚠ **Re-derive before acting.** *Counts and dates here were true at the commit that wrote them. The
+items themselves are stable; the tallies are not. `§F6.19`: re-derive sections, never chase bytes.*
+
+## 🔴 A · OWNER DECISIONS — *nothing below moves without you*
+
+| # | item | the decision | why it cannot be taken here |
+|---|---|---|---|
+| **1** | 🔴🔴🔴 **`F2-1`** | **ROTATE the `balldontlie` API key — and the production Postgres password.** *The key was published IN FULL in this PUBLIC repo by `§T1.31` — the pass that swept for UUIDs — as evidence it was "already documented". Redacted from the working tree; **still live in `2` commits.*** | rotation is a credential action |
+| **2** | 🔴🔴 **`T23-1`** | **The model does not beat PrizePicks** on `1.08 M` legs, two seasons — *but standards-only clears the `3`-pick break-even in both.* **Ship the narrow strategy, or hold?** | a strategy call, not a measurement |
+| **3** | 🔴 **`T21-1`** | **The document-form directive is blocked**: its precondition *(transcripts in the repo)* would publish `18` credential-shaped strings, `3` of them Postgres URLs. | the precondition is the hazard |
+| **4** | 🔴 **`T20-3`** | **The scheduler holds ten MLB jobs, two still ENABLED, and zero NBA.** *Sub-item (e): the MLB work is still running — four `market.*` tables written `2026-09-23`.* | disabling a cron is a deploy |
+| **5** | 🔴 **`T20-2`** | **The live storage-diet plan targets a database that has since moved.** *A reader budgets against the wrong system.* | re-planning is a write |
+| **6** | 🆕 🔴🔴 **the `-05:00` / `-08:00` atomic fix** | **ONE change across seven files, or NONE.** *`§F6.14` + `§F6.17`: the injury archive's hardcoded `-05:00` and the pipeline's hardcoded `-08:00` are **three hours apart, which is the true ET↔PT gap in BOTH standard and daylight time — so they CANCEL**, and every window is correct in wall-clock terms today. **Fixing either one alone breaks a window that currently works.*** | a partial fix is worse than the defect |
+| **7** | 🆕 **`F6-2`** | **The one absence slice the baseline structurally cannot see** *(a scratch after the `09:00 ET` roster freeze)* **has no control to test it against** — `nba_asof.py:39-40`'s `cutoff_ts()` cannot express a day-before cutoff at all. **Build the control, or close the question?** | a second ladder configuration is production |
+| **8** | 🆕 **`F6-3`** | **`fantasy_score`'s `0.3 pp` penalty does not derive from the rule that says all penalties are derived** *(`0.41 − 0.20 = 0.21`, not `0.3`)*, on the system's highest-volume prop. **Re-run the scorer, or accept?** | re-running the scorer is a write |
+| **9** | **`T20-1`** | **Five 🔴 findings nothing in the corpus points at** — a navigation decision. | a convention, not a fact |
+| **10** | **`T18-17`** | **The score formula's penalising half has never fired.** | intent, not measurement |
+| **11** | **`T22-1`** | *"the keep my million board in underdog"* — an owner request with **`0` record anywhere.** *Still wanted, or dropped?* | only you know |
+
+## 🔴 B · SEASON-CRITICAL — *what breaks when the pipelines run* · opener **`2026-10-20`**, preseason **`2026-10-03`**
+
+**`19` items carry a `SEASON-CRITICAL` heading.** *⚠ The ranked ordering below `7` is `NOT RECONCILED` — the roster's own `DENOMINATOR NOTE` says so, and `§F6.18` measured three disagreeing counts on one page (`14` · `17` · `19`). **The ranking is the brief's; the completeness is this table's.***
+
+| item | what breaks | loud or silent |
+|---|---|---|
+| 🔴🔴 **`T20-4`** | **P3 and P2 are hardcoded to `"2025-26"` in `14` locations** — last season, on opening night | ⚠ mixed |
+| 🔴🔴 **`T20-5`** | **the grader's default window ends `2026-04-12`** and **nothing catches it** — *three sites, not one* | 🔴 **SILENT** — *the brief's only silent blocker* |
+| 🔴🔴🔴 **`T20-6`** | **`7` of `12` certifier checks assert tables NO PIPELINE WRITES** — *the largest structural finding of the sweep* | ✅ loud · **stops the slate** |
+| 🔴🔴🔴 **`T20-7`** | **P3's "Board tiers" step runs an index-maintenance script**, and `board_tiers` has no writer at all | 🔴 **SILENT** |
+| 🔴🔴🔴 **`T20-12`** | the Python layer hardcodes PST — ⚠ **but see OWNER DECISION `6`: `§F6.17` shows the predicted consequence DOES NOT OCCUR**, and the remedy is now the risk | — |
+| 🔴🔴🔴 **`T20-13`** | **P2's certifier goes RED every night for the first twelve nights** — *and it is CORRECT to* | ✅ loud |
+| 🔴🔴 **`T20-14`** | **Betr's access token expires `2026-10-10`** — ten days before opening night | 🔴 dated |
+| 🔴🔴 **`T20-15`** | **P2 and P3 certify RED on every zero-game day** — `7` of them last season | ✅ loud |
+| 🔴🔴🔴 **`T20-17`** | **a dropped injury-archive shard silently truncates the availability delta** — and that feeds the scored board | 🔴 **SILENT** |
+| 🔴🔴🔴 **`T20-25`** | **the player bridge is written with one normaliser and read with another** — `6.01%` of a real slate's board rows silently dropped, **running now** | 🔴 **SILENT** |
+| 🆕 🔴🔴 **`F6-1`** | **the production loader's merge key omits `ot_rule`, a PK column, and drops `1,421` rows** — *confirmed live, and `§F6.28` §3 shows it firing on `2026-09-11` too* | 🔴 **SILENT** |
+| 🔴🔴 **`T23-1`** | **the model does not beat PrizePicks** | — *see `A2`* |
+| 🔴 **`T20-2`** · 🔴 **`T20-3`** | *both also OWNER DECISIONS — see `A4`, `A5`* | — |
+| 🔴 *(heading-only, no ID)* | **the entire NBA static layer is FROZEN at its build date** · **the schedule has not been refreshed since the day it was built** · **the DARKO scraper's failure evidence is the wrong `20 KB` of the page** · **`T18 PASS 0`'s coverage defect** · **`T16 PASS 2`'s three `[LIVE-AUDIT]` decisions** | search the heading text |
+
+## ✅ C · WHERE THE REST OF THIS FILE IS
+
+| you want | it is |
+|---|---|
+| the ranked brief with its evidence | ⬇ **`OPENING-DAY BRIEF`**, immediately below this block |
+| an item's full record | search its **ID** — `58` of `76` items have their own heading; **`18` are table rows only**, all from `T15`–`T17` |
+| the file's own census and how to re-derive it | ⬇ the **`📑 INDEX`**, below the brief |
+| what this sweep did, and what it still owes | `NBA_SWEEP_RUN_LOG.md` — **`🟢 START HERE`** |
+
+---
+
 > # 📑 **INDEX — `NBA_OPEN_ITEMS.md`**
 > **~~`797`~~ → ~~`909`~~ → ~~`919`~~ → ~~`931`~~ → ~~`932`~~ → `933` sections · `1,276,275` bytes *(at parent commit — see the byte-count note below)* · ~~`70`~~ → ~~`74`~~ → ~~`75`~~ → `76` items · built `2026-09-23`; census corrected same day (`§F2.13`/`§F2.14`) and **re-derived after every subsequent pass** — `901 → 902 → 905 → 909`.**
 > ⚠ *The original `797` came from a heading detector anchored at line start, blind to **blockquoted** headings. **This file had the largest absolute miss of the twelve — `99` hidden headings** — which is also why its `39`/`31` heading-vs-table split was wrong. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
