@@ -5126,6 +5126,43 @@ only useful if the sources are reachable.** They are not:
   `github_put_file` must pass content through the model's context, which 2–3 MB per file makes
   impossible. **Cloning and reading work; writing binary-scale files does not.**
 
+> ### 📏 **T21-4 — THE WRITE-PATH COST, MEASURED RATHER THAN ASSERTED** *(`T21` pass `7`, `§T21.7`, recorded `2026-09-23`)*
+>
+> *The paragraph above says the write is "impossible." **`T21` measured it**, against a real file,
+> and the arithmetic is what makes the constraint non-negotiable rather than merely inconvenient:*
+>
+> | file | size | cost in `github_put_file` calls |
+> |---|---|---|
+> | ✅ **`nba/transcripts/journal.txt`** | `11.6 kB` | **`1×` — done, one call, instantly** |
+> | 🔴 **`T1`** | `2.4 MB` | **`207×`** |
+> | 🔴🔴 **all `20` transcripts** | `55 MB` | **`4,700×`** |
+>
+> 🔑🔑 **THE MECHANISM, AND WHY NO WORKAROUND EXISTS**: *`github_put_file` takes the file's bytes **as
+> a parameter**, so every byte must be emitted as an output token — one transcript is `≈600,000`
+> tokens of pure output.* ⇒ ***"There is no chunk size that fixes that — chunking changes the NUMBER
+> OF CALLS, not the total bytes."*** **That single sentence is the whole reason standing constraint
+> `4` reads "`patch_file` only, and never a full `put_file`."**
+>
+> ✅ **Three alternative routes were TESTED, not assumed** *(the `RULE 58` posture, applied by `T21`
+> before `RULE 58` existed)*:
+>
+> | route | result |
+> |---|---|
+> | the bridge worker from the sandbox | 🔴 **`x-deny-reason: host not allowed`** — blocked by the egress allowlist |
+> | a GitHub credential inside the container | 🔴 **none exists** — the token lives in the bridge worker's secrets, unreadable |
+> | `api.github.com` direct | ⚠ **reachable, `200`** — *but rejects unauthenticated writes* |
+>
+> ⚠ **And a fourth route was OFFERED AND DECLINED ON PRINCIPLE.** *A fine-grained scoped token — one
+> repo, contents read/write, one-day expiry — would have worked. It was put to the owner as option
+> `B` with its cost stated plainly: **"it does put a credential in the chat log."** **The owner ran
+> the push himself instead.*** 🔑 ***A capability that requires writing a secret into a public-repo
+> session is not a capability; recorded because the cheaper-looking option was the wrong one and the
+> reasoning should outlive the decision.***
+>
+> 📌 **WHY THIS IS FILED HERE AND NOT AS A NEW ITEM**: *it does not open anything. It CLOSES the
+> question of whether the constraint above could be engineered around — **it cannot, and now the file
+> says so with a number instead of an adjective.***
+
 **What the owner needs to do**: commit the 20 `.txt` files to `nba/transcripts/` from a machine with
 repo access (drag-and-drop into the GitHub web UI works, or `git add nba/transcripts/ && git push`),
 **or** add this repository to the session's authorized set so `git push` works here.
