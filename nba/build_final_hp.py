@@ -273,9 +273,15 @@ def main():
                 c_exist numeric, c_quality numeric, c_market numeric,
                 prop_tier text, band text, phase text, n_uncertain int,
                 built_at timestamptz DEFAULT now())""")
-            cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS final_hp_uidx
-                ON nba_score.final_hp (game_date, player_id, prop, line, side)""")
-            cur.execute("CREATE INDEX IF NOT EXISTS final_hp_lookup ON nba_score.final_hp (season, game_date, prop)")
+            # DEADLOCK (§T23.5, guarded 2026-09-23 - this script is now run by P2, so it is on the
+            # pipeline path). `IF NOT EXISTS` takes a full table lock before discovering the index
+            # exists; final_hp is one of the largest tables, and a catch-up replay running beside the
+            # nightly build would deadlock against it.
+            if cur.execute("SELECT to_regclass('nba_score.final_hp_uidx')").fetchone()[0] is None:
+                cur.execute("""CREATE UNIQUE INDEX final_hp_uidx
+                    ON nba_score.final_hp (game_date, player_id, prop, line, side)""")
+            if cur.execute("SELECT to_regclass('nba_score.final_hp_lookup')").fetchone()[0] is None:
+                cur.execute("CREATE INDEX final_hp_lookup ON nba_score.final_hp (season, game_date, prop)")
 
     for season in seasons:
         plist = props or [r[0] for r in conn.execute(
