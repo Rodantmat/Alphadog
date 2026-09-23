@@ -96,7 +96,19 @@ def confidence_of(d, attach=False):
 
 
 def main():
-    seasons = [s.strip() for s in os.environ.get("C3_SEASONS", "2024-25,2025-26").split(",")]
+    # SEASONS (T23-2, fixed 2026-09-23). Was a hardcoded "2024-25,2025-26": from 2026-27 the refit
+    # would have kept learning from two stale seasons and ignored the live one. stats_seasons(2) is
+    # the shared helper - "the 2 most recent seasons that have real game data, most recent first",
+    # anchored on active_stats_season. NOT [active_stats_season()] + prior_seasons(2), which produces
+    # a duplicate and drops a season in the off-season (the bug recorded in nba_season.py).
+    env = os.environ.get("C3_SEASONS", "").strip()
+    if env:
+        seasons = [s.strip() for s in env.split(",")]
+    else:
+        import sys
+        sys.path.insert(0, "nba")
+        from nba_season import stats_seasons
+        seasons = stats_seasons(2)
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
 
