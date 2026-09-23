@@ -2365,6 +2365,17 @@ fresh context; `T20` cannot close in this session.**
 > twelve carry prose. `grep -F` on the identifier crosses that gap for numbers and for nothing
 > else.***
 >
+> 🔴🔴 **AMENDED WITHIN THE HOUR, `§F6.23` — *IT IS NOT A RULE ABOUT WORDS.*** *Having numbered it,
+> I built a NUMERIC instrument to escape it: every distinct number of `4+` digits or `3`–`6` decimals
+> across all `66` live config rows — **`304` figures** — tested against the twelve, on the reasoning
+> that "a figure is a figure however the sentence is phrased".* 🔴 ***The narrow run reported `57`
+> absences. The wide run — adding percentage forms and roundings — reported `16`. `41` of the `57`,
+> `72%`, were present as `0.5712 → 57.1%`, `0.6614 → 66.1%`, `0.6237 → 0.62`.*** ⇒ **`RULE 58`
+> extended: *a number has spellings too — percent, rounding, comma-grouping — and "spelling-invariant"
+> is the assumption that makes you trust the run.*** 📌 *Both counts published per `RULE 53`; `RULE
+> 54` bounds them — `16` is a floor, `57` a ceiling, because the wide set can also match a rounding
+> against an unrelated figure, and this pass does not claim to have pinned the true value.*
+>
 > 😐 **AND IT CAUGHT THE DISCHARGE GREP FOR ITS OWN NUMBERING, WITHIN THE MINUTE.** *`RULE 53`
 > required re-grepping the corrected string ``56 numbered`` → ``57 numbered``. The first run returned
 > **`0` sites for the correction I had just written** — because this log writes it as
