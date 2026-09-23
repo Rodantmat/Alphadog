@@ -19,18 +19,7 @@ context, and which document section. Any material term appearing more than once 
 > | **1** | **`§Z — THE COMPLETE TERM INDEX`** *(added `2026-09-22`, `T19` pass 1)* — headings `A` … `Z`, **`27` letter blocks** | **A flat lookup: term → where it is defined** | ✅ **START HERE.** You have a term and want to find it. |
 > | **2** | **The main body** — `A` · `B` · `C` · `D` · `E–F` · `G–I` · **`J–K`** · `L–N` · **`O`** · `P–S` *(with `P–S (continued)` nested under it as `###`)* · `T–W` · `PENDING` | **The definitions themselves** | You have found the term and want the full entry. |
 >
-> ✅ **REPAIRED `2026-09-23` (`§F7.4`) — the body range is now contiguous `A … W`.** *It previously
-> read:* 🔴 *"there is no `J`, `K` or `O` block in the body — a term starting with one of those is in
-> `§Z`'s index and, if defined, inside another range's block"*, ***and* `P–S` appeared TWICE**, the
-> second copy **after `T–W`**, so an alphabetical reader had already walked past it. `§Z` carried `7`
-> `J`/`K` terms and `29` `O` terms with nowhere to go — including **`ot_rule`, whose omission from a
-> merge key is the `F6-1` season-critical data loss.**
->
-> ⚠ **CORRECTION, same pass.** *This note first read:* ~~*"`X`, `Y`, `Z` still have no body block:
-> `§Z` lists `5` such terms… a real remaining gap, stated rather than smoothed over."*~~ **Both
-> halves were wrong. The count is `10`, not `5`** *(`RULE 56`)* — and a ten-term gap I was already
-> inside the file to fix is not a finding, it is deferral. **`X–Z` was written.** ⇒ **the body range
-> is `A … Z`, complete, with no letter lacking a block.**
+> *Body blocks run `A … Z` with no letter missing.*
 >
 > ## ▶ FIND IT FAST
 >
