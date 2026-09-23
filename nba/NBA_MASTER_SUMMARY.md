@@ -40535,3 +40535,129 @@ rather than asserted. Recorded at full strength — this is the corpus working.*
 *Three passes running, the defect was that a check was scoped to the thing being checked. Rule 53
 replaces a judgment ("did I sweep the siblings?") with an output ("here is the grep count"), which is
 the only kind of answer that cannot be scored `HIT` by an optimistic reader of my own work.*
+
+---
+
+# §T21.0 — 🟢🟢🟢 **INTAKE: FOUR NEW SOURCES, `+19.1%` CORPUS, AND ONE OF THEM IS NOT A TRANSCRIPT**
+
+*T21 pass 0, 2026-09-23. **The owner delivered `alphadog-nba-transcripts-2026-09-22.zip` mid-sweep**
+with the instruction to document them the same way and keep going. **This pass takes them in,
+establishes their chronology from the evidence rather than from their filenames, classifies their
+evidence strength, and opens `T21`. It claims NO findings** — an intake is not a pass over content.*
+
+## 1. ✅✅ THE CHRONOLOGY IS SELF-VERIFYING — **and it was NOT taken from the filenames**
+
+*Filenames are EXPORT times and they lie: `T21`'s filename is `2026-09-21-04-21-09` while its first
+content block is `2026-09-20T18:31:02Z`, which is **before** `T20`'s filename stamp. **Every ordering
+below is from the `start_timestamp`/`stop_timestamp` fields inside the files.***
+
+| # | transcript | first content | last content | gap to previous |
+|---|---|---|---|---|
+| **T20** | `…documentation-pass-t1-deep` | `2026-09-20T06:23:08Z` | `2026-09-20T18:32:03Z` | — |
+| **T21** | `…documentation-sweep` | **`2026-09-20T18:31:02Z`** | `2026-09-21T02:20:54Z` | ✅ **overlaps by `61` s** |
+| **T22** | `…pp-multipliers-build` | **`2026-09-21T02:20:17Z`** | `2026-09-21T06:16:40Z` | ✅ **overlaps by `37` s** |
+| **T23** | `…pp-multipliers-backtest-build` | **`2026-09-21T06:16:15Z`** | `2026-09-21T19:57:04Z` | ✅ **overlaps by `25` s** |
+| **T24** | `…prop-universe-slip-simulator.md` | 🔴 **none — no timestamps** | 🔴 **none** | ⚠ see §3 |
+
+🔑 ***Each file opens inside the previous one's final minute. The chain is unbroken from T1
+(`2026-08-31T07:16:12Z`) through T23 (`2026-09-21T19:57:04Z`) — twenty-three files, no gap, no
+overlap beyond the handover block.*** ✅ **The ordering `T21 · T22 · T23` is therefore EVIDENCE, not
+an assumption from the filenames, and the standing chronological rule is satisfiable exactly.**
+
+⚠ **ONE GAP, NAMED**: `T23` ends `2026-09-21T19:57Z`; `T24` carries the filename `2026-09-22-19-37-47`.
+**What happened in the ~`24` hours between is `NOT RECORDED` (rule 6)** — *and this sweep was itself
+running through that window, which is a coincidence of timing and not evidence of anything.*
+
+## 2. 📊 THE CENSUS, PINNED — **the new material is `+19.1%` of what 131 passes have covered**
+
+| | files | blocks | bytes |
+|---|---|---|---|
+| **T1–T20** *(swept)* | `20` | `17,061` | `57,558,006` |
+| 🟢 **T21–T23** *(new, timestamped)* | `3` | **`3,254`** | **`10,381,478`** |
+| **total** | `23` | **`20,315`** | **`67,939,484`** |
+
+**Per file, with the block mix** *(a block = one `{"start_timestamp"…}` object; this is the unit the
+sweep has been calling a segment)*:
+
+| | blocks | text | thinking | tool_use | rank by size |
+|---|---|---|---|---|---|
+| `T21` documentation-sweep | **1,224** | 758 | **47** | 420 | **4th of 23** |
+| `T22` pp-multipliers-build | **979** | 413 | **320** | 264 | 9th |
+| `T23` pp-multipliers-backtest | **1,051** | 383 | **381** | 282 | 6th |
+| *(T20, for comparison)* | 1,041 | 599 | 75 | 369 | 7th |
+
+⚠ **I nearly published *"T21 is the largest transcript in the corpus."* It is not — it is 4th, behind
+`2026-09-20-04-58-11` (`1,518`), `2026-09-13-01-03-48` (`1,333`) and `2026-09-20-06-12-04` (`1,317`).
+*Counted before claiming, per the standing rule that cost two passes.***
+
+🔑 **AND THE BLOCK MIX SPLITS THE NEW MATERIAL INTO TWO KINDS.** *`T21` is tool-dense and
+thinking-sparse (`420` tool_use vs `47` thinking) — the signature of a documentation session. `T22`
+and `T23` invert it (`320` and `381` thinking against `264`/`282` tool_use) — **the most
+reasoning-dense files in the corpus**, and the signature of a research-and-build session.* ⇒ ***They
+will not sweep the same way: `T21`'s value is in what it DID, `T22`/`T23`'s in what was DECIDED and
+why.***
+
+## 3. 🔴🔴 **T24 IS NOT A TRANSCRIPT, AND IT SAYS SO ITSELF**
+
+**The journal's own new entry for it**: *"**SESSION RECORD, written by Claude — not an
+auto-generated verbatim transcript**; the earlier, compacted part of the same conversation is in
+`2026-09-21-20-34-21-nba-alphadog-pp-multipliers-backtest-build.txt`."*
+
+⇒ **T24 is `T23`'s CONTINUATION after a compaction, rendered as an authored summary.** It has
+**no timestamps, `21,670` bytes, `355` lines** against T23's `3,843,075` bytes.
+
+> 🔑🔑🔑 **EVIDENCE CLASS, SET NOW SO IT CANNOT DRIFT LATER: T24 IS A SECONDARY SOURCE.**
+> *It is the same class as `NBA_COMPASS.md` — an authored account, not a verbatim record.* **Under
+> the standing rule that LANGUAGE STRENGTH MAY NEVER EXCEED EVIDENCE STRENGTH, nothing sourced only
+> to T24 may be marked `VERIFIED`.** It is recorded as **`AS STATED IN THE SESSION RECORD (T24)`**
+> until it is confirmed **(a)** by live `SELECT`, **(b)** in T23's verbatim text, or **(c)** in the
+> repo. ⚠ *This is not scepticism about its contents — it is the same rule that governs COMPASS,
+> applied on arrival rather than retrofitted after something has been over-claimed.*
+
+## 4. ⚠⚠ WHAT T24'S ABSTRACT PUTS ON NOTICE — **flagged now, adjudicated when T24 is swept**
+
+*From the journal entry, quoted, NOT yet verified:*
+
+| claim | why it matters here |
+|---|---|
+| 🔴🔴 ***"GOBLIN FLOOR CORRECTED `2.08x` → `1.9x` … the old 'verified' floor made conservative prices optimistic"*** | **A number this corpus recorded as VERIFIED is said to be WRONG.** ▶ Bears on **`NBA_GOBLIN_DEMON.md`** and **`NBA_MULTIPLIERS.md`**, two of the twelve. **Highest-priority item in the new material.** |
+| ⚠ `nba_market.prop_universe` — ***"1,667,024 legs, 20 props, 327 nights"*** | **The standing instruction is explicit: `prop_universe` is mid-rebuild and its counts are NOT to be documented as final.** ⇒ *recorded as a dated session-record figure, flagged NOT CONFIRMED.* |
+| ⚠ *"a list of corrections to earlier claims"* | **T24 corrects its own predecessors.** Those corrections must be carried into the twelve with both dates, per the supersession rule. |
+| ⚠ *"three engineering fixes (planner misestimate, nondeterministic price keys, double writes)"* | System changes made by that session — **documented, never re-applied; rule 1 holds.** |
+| ⚠ *"slip simulator validated against the independent replay (`+15.8% ± 4.1%`)"* · *"standards replay `+14.5%`"* | Performance claims. **Session-record class until reproduced.** |
+
+## 5. ⚖️ **THE SCOPE RECONCILIATION — `T22`/`T23`/`T24` vs THE `pp_*` EXCLUSION**
+
+*The standing exclusion names the CONCURRENT session's artefacts: `nba/PP_PAYOUT_FINDINGS.md`,
+`nba/pp_payout_map.py`, `nba/probe_pp_*.py`, `.github/workflows/nba-pp-payout-map.yml`, its trigger
+files and bot commits, and the Postgres objects `nba_market.pp_price_key` · `pp_price` ·
+`pp_leg_price` · `nba_config.pp_pricing_model` · `pp_slip_rules`.*
+
+**`T22`, `T23` and `T24` are TRANSCRIPTS OF THE SESSION THAT BUILT THE PRICING WORK, and
+`NBA_MULTIPLIERS.md` and `NBA_GOBLIN_DEMON.md` are two of the twelve mandated documents.**
+
+> ✅ **DECIDED, and stated so the owner can overturn it in one line**: ***documenting what
+> `T22`/`T23`/`T24` SAY is IN SCOPE; touching the excluded FILES and Postgres OBJECTS is not.***
+> **The exclusion is about not colliding with a live build, not about leaving two mandated documents
+> unwritten.** ⚠ *So: their content is swept into the twelve; `PP_PAYOUT_FINDINGS.md` is still left
+> alone; the `pp_*` tables are still not queried; nothing is edited, triggered or deployed.*
+> 🔴 **OWNER DECISION — if the intent was that the pricing work stays undocumented until the build
+> chat lands it, say so and this reverses immediately.** *Recorded here rather than assumed silently,
+> because guessing wrong in either direction is expensive: too narrow leaves the twelve incomplete,
+> too wide duplicates another chat's work.*
+
+## 6. 📌 HOUSEKEEPING, RECORDED
+
+- ✅ **`journal.txt` grew `11,596` → `14,284` bytes**: exactly **four new entries**, one per new file,
+  each an authored abstract. *The pre-existing `133` lines are byte-identical — nothing was rewritten.*
+  **The old copy is preserved before overwrite** so the delta stays checkable.
+- ✅ **`RULE 46` still binds**: `T19` and `T20` each still owe **two INDEPENDENT complete sequential
+  reads from a fresh context**, and **T20 cannot close in this session.** *Four new transcripts do not
+  discharge that debt — they add to it.*
+- ✅ **The coverage instrument is unchanged and its baseline is unchanged** *(`636 · 2 · 484 · 481`)*.
+  ⚠ **But `judge20.py` scores against `T20`'s text only.** *Extending it to T21–T24 is a tooling
+  change, pre-registered for the next pass rather than made silently mid-intake.*
+
+📌 ***The intake claims nothing about the contents of the four files. It establishes what they are,
+in what order, how strong each one is as evidence, and which of the twelve they will touch — so the
+first content pass starts from a pinned population rather than an impression.***
