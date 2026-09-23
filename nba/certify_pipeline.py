@@ -67,7 +67,7 @@ def main():
     # schedule itself is missing or stale, every day would look like a no-game day and the certifier
     # would skip its whole job in silence - so that case fails loudly instead.
     no_games_today = False
-    if pipe in ("p2", "p3"):
+    if pipe in ("p1", "p2", "p3"):
         with conn.cursor() as cur:
             cur.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (today,))
             slate_games = int(cur.fetchone()[0] or 0)
