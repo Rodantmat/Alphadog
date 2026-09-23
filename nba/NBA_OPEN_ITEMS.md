@@ -14265,6 +14265,60 @@ credential; this instance survived that catch, in the very pass named `IDs, hash
 
 ---
 
+## F6-2 · **NEW · OWNER DECISION · MEDIUM** · the one absence slice the baseline structurally cannot see has no control to test it against
+
+*Filed 2026-09-23, `§F6.13`. **Read-only**: a `SELECT` against
+`nba_config.classification_config` and greps of the twelve. Nothing was changed, and this item
+**proposes nothing** — it records a decision the closed `A2` programme leaves on the owner's desk.*
+
+### The finding, `VERBATIM` from the live row
+
+> ***"the one thing the baseline structurally CANNOT see is a scratch announced AFTER its cutoff
+> (production: `09:00 ET` in `build_baseline_ladder.py`). That is a narrow, well-defined slice and
+> it requires the day-before-baseline configuration to test at all. Everything else about an
+> absence is already in recent form."***
+> — `nba_config.classification_config`, `config_key = 'enrichment_reality_check_2026_09_13'`,
+> `THE_REMAINING_OPPORTUNITY`, `updated_at 2026-09-13T19:25:18.669Z`
+
+### Why it is an item and not a closed question
+
+*`A2` is `CLOSED` — `§F6.12`, four forms tested, anchor wins every slice. **But the row that closes
+it also names, in the same breath, the one slice where absence information could still be worth
+something, and states that the system as built cannot test it.*** The two facts are inseparable:
+
+| | |
+|---|---|
+| **The slice** | a scratch announced **after** the baseline's `09:00 ET` roster freeze — information the ladder provably cannot hold |
+| **Why everything else is dead** | *"already in recent form"* — the `4,695`-leg low-novelty slice measured exactly that and `A2` lost (`-0.013`) |
+| 🔴 **Why it cannot be tested** | *"it requires the **day-before-baseline configuration** to test at all"* — production has one cutoff, so a factor reading the afternoon report shares an input with the baseline grading it |
+| **What the test would be** | *"rebuild the baseline with a day-before injury cutoff, then apply `A2` ONLY to players whose status changed between that cutoff and the `2:30 PM` report"* |
+
+🔑 **And the general rule the row states while saying so, which appears nowhere else in the
+corpus:** ***"Any test that reads the same report for both layers measures double-counting, not
+value."*** 📌 *Same failure shape as `never duplicate a baseline internal`, but for a factor's DATA
+SOURCE rather than its FORM — the case the four-rules table does not cover.*
+
+### 🔴 What the owner is being asked, and what is `NOT RECORDED`
+
+**The decision: is a second baseline-ladder configuration (day-before cutoff) worth building, purely
+as a measurement control?** *It is a production change and therefore outside this sweep.*
+
+| `NOT RECORDED` anywhere reachable from this session | Why it matters |
+|---|---|
+| 🔴 **how many legs per night fall in the post-`09:00 ET` scratch window** | *this is the number that decides the question, and no transcript computes it* |
+| the sample, stat, seasons and method behind the **`-0.024`** usage-allocation correlation | *the fitted allocation is listed as SURVIVING; the fit itself is unidentified — see `§F6.13` §1* |
+| any confidence interval on the decisive `n = 866` high-novelty slice | *`§F6.13` §3; the verdict holds on ordering, not magnitude* |
+
+⚠ **`RULE 54`.** *Everything above is the config row's own account. **This session did not
+re-measure the `09:00 ET` cutoff, the novelty split, or the `-0.024`** — `build_baseline_ladder.py`
+was read for the cutoff and agrees; the rest is recorded at the row's authority, not verified
+independently.*
+
+📌 ***Filed as `MEDIUM` and not `SEASON-CRITICAL`: nothing breaks on opening day if this is never
+built. It is a foregone-opportunity question, and the opportunity is explicitly narrow.***
+
+---
+
 ## F6-1 · **NEW · ⚠ HIGH** · the baseline-ladder FILES still carry duplicate keys, `1,414` of them with DIFFERENT probabilities — and the table cannot show it
 
 *Filed 2026-09-23, `§F6.8`. **`T14` flagged this on 2026-09-11 and it is still present.** Read-only:
