@@ -15,7 +15,6 @@ writes. Grouped by role.
 > | 🔴🔴🔴 **the grader workflow — and `T20-5`'s stale `2026-04-12` window, a SECOND and THIRD time** | **`§F2.16` §1** |
 > | ✅ **`nba-score-history.yml`'s two-job pipeline** *(`AC_K=400`, 8-way score matrix, "refuses to write an empty build")* | **`§F2.16` §2** |
 > | 📊 **`continue-on-error` across all 40 workflows** — `11` files, `48` occurrences | **`§F2.16` §3** |
-> ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.** 🔑 **This file's own `§T22.29` is the section that exposed it** — written as `` `§T22.29` ``, with backticks between the label and the dash, invisible to three of the nine.)* *(`§T20.22`: `6` of `16` line-number pointers
 > rotted within a day)*. **Search for the quoted `§` label.**
