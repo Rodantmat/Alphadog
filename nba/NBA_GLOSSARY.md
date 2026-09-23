@@ -6,7 +6,6 @@ context, and which document section. Any material term appearing more than once 
 ---
 
 > # 📑 **INDEX — `NBA_GLOSSARY.md`**
-> **~~`39`~~ → ~~`44`~~ → `47` sections · ~~`85,359`~~ → ~~`89,948`~~ → `105,868` bytes · ~~`1,639`~~ → ~~`1,709`~~ → `1,914` lines · `194` bold term entries · built `2026-09-23`, census corrected same day (`§F2.14`), **re-derived `2026-09-23` after `§F7.4` repaired the body.**
 > **Every term used across the NBA system — what it means, and where it came from.** *Two structures:
 > **`§Z`** is the flat lookup (term → location, covers `A`–`Z`); the **body blocks** hold the
 > definitions. Where they disagree, the body is newer.*
