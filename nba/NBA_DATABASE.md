@@ -10,7 +10,8 @@ transcript. Where a table was altered later, the change is noted with its transc
 ---
 
 > # 📑 **INDEX — `NBA_DATABASE.md`**
-> **`117` sections · `171,747` bytes · `2,343` lines · built `2026-09-23`.**
+> **~~`117`~~ → `134` sections · ~~`171,747`~~ → `179,470` bytes · ~~`2,343`~~ → `2,451` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
 > rotted within a day)*. **Search for the quoted `§` label.**
