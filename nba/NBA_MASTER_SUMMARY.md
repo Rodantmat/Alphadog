@@ -568,6 +568,37 @@ wrong-but-plausible.* **The at-a-glance state is what a future reader trusts fir
 most worth keeping true** — and a stale ledger is the single most likely way this effort ends early
 against a wrong picture of what remains.
 
+## 📍 **THE TRANSCRIPT INDEX** — *`24` rows · **`~236,000` characters** · the longest stretch in this corpus*
+
+> 🔴🔴 **ORIENTATION BEACON, added `2026-09-23`, `§F7.8`. READ THIS BEFORE SCROLLING INTO THE TABLE
+> BELOW.** *Measured the same day: **from the `⚠ DRIFT NOTICE` heading above to the next heading
+> after this table is `244,260` characters with no heading of any kind** — `≈61,000` tokens, the
+> single longest headingless run in the twelve, and **`7.6%` of this file.** *A reader who lands
+> inside it and scrolls up to orient themselves reaches `DRIFT NOTICE — 2026-09-20` and learns
+> nothing about where they are.* **This heading exists so that they reach this instead.**
+>
+> 🔴🔴 **AND THE ROWS ARE NOT LINES YOU CAN SKIM.**
+>
+> | the longest lines in this file | chars |
+> |---|---|
+> | **row `11`** — `…nba-enrichment-backfill-dfs-boards-2026-09-10.txt` | 🔴🔴 **`96,266`** *(`≈24,000` tokens **on one line**)* |
+> | **row `9`** — `…nba-baseline-production-pipeline.txt` | **`36,577`** |
+> | **row `12`** · **row `14`** · **row `13`** · **row `10`** | `31,944` · `18,727` · `15,731` · `14,864` |
+>
+> ⇒ 🔑 ***Six table rows carry `214,000` characters between them. Inside one, there is not even a line
+> break to orient by, let alone a heading.***
+>
+> ## ✅ **HOW TO FIND YOUR PLACE IN IT**
+> 1. **Search BACKWARDS for the newline followed by `| `** — the row always opens `| `*n*` | `*filename*` |`. **That number is the transcript you are inside.**
+> 2. **Then leave the table.** *The row is a SUMMARY. The detail is at `§T`*n*`.`*m* — search that label instead, per the `🧭 POINTER RESOLUTION` block above.*
+> 3. ⚠ **Do not read the table top to bottom.** *It is a status ledger, not a narrative; rows `9`–`15` alone would cost `≈54,000` tokens.*
+>
+> ⚠ **NOT REPAIRED, DELIBERATELY.** *Splitting the long rows into headed sections would mean cutting
+> `214,000` characters out of a table and re-inserting them elsewhere — **a move, which is a delete
+> plus an insert, on the single densest block of findings in the corpus.** The owner's standing rule
+> decides it: **losing a finding while tidying is worse than the untidiness.** ⇒ **A beacon and a
+> navigation procedure, not surgery.***
+
 | # | File | Pass status |
 |---|---|---|
 | 1 | `2026-09-03-03-22-04-nba-expansion-phase1-static.txt` | ✅ **CLOSED 2026-09-21 — 89 passes** (88 counted, pass 55 VOID). Closed on the amended rule: tail at 0.40 fully read **and** judgment pass clean in **both** directions (97 high-band + 32 tail-direction segments, 0 outstanding defects). Two owner actions handed off, neither a doc defect. Detail: §T1.59–§T1.119. |
