@@ -1965,6 +1965,36 @@ passes' apparent byte "drift" is explained by this and needs no investigation.*
 one edit, roughly tens to hundreds of bytes. **A gap of kilobytes still means a pass did not
 re-derive**, which is exactly how the `BASELINE_CALIBRATION` miss was caught.*
 
+## §F6.20 – §F6.21 — two more config rows drilled, and one of them was mostly already on file
+
+| § | finding | where |
+|---|---|---|
+| ✅ **`§F6.20`** | **`baseline_board_coverage_2026_09_11` — the per-player measurement that found the `44%` combos gap.** *The twelve record the CAUSE in five documents (`\|\| echo failed`, `BT_SAVE_COMPONENTS`, the freshness gate) and the MEASUREMENT in **none**: the singles table (`points 541/419/77%`, `rebounds 441/378/86%`, `assists 344/305/89%`, `threes_made 236/228/97%`), the `60` out-of-range, the `66` line gaps, the `65` unresolved names, and the combos line **`PRA 450 · PR 431 · RA 407 · PA 357 · stocks 15 = 1,660 legs (44%) with ZERO baseline rows`** — every figure `0` of `12`.* ✅✅ **AND VERIFIED CLOSED LIVE**: the `2026-03-15` partition now carries all seven combo props (`pra 3,227` … `double_double 158`), and the guard exists — `load_baseline_ladder.py:66-68`, `raise SystemExit("ABORT: artifact has no combo props")`. | `BASELINE_CALIBRATION` |
+| 🔴 **`§F6.21`** | **`prop_reliability_audit_2026_09_13` — and THIS ONE I GOT WRONG FIRST.** *I probed with the config row's own keys — `penalty_pp`, `n-weighted ECE`, `median ECE`, `revised_engine_rules` — got `0` of `12` on all of them, and wrote a section claiming the penalty rule was undocumented. **It is documented, four paragraphs above where I put the section**, in English: `§6` states the rule AND both oreb decisions in a two-row table; `§7` states the ten unverified props; `§F2.8` states the period-prop table. 🔑 **`§F2.3`'s lesson — test the CONCEPT, not your chosen spelling — committed again by me and corrected in place within the hour.*** | `FSC` |
+
+🔴🔴 **WHAT SURVIVED THAT CORRECTION IS THE BETTER FINDING, AND IT EARNED `RULE 57`.**
+
+> ***"`penalty_pp` = the prop's n-weighted ECE minus the median ECE of the certified set (`0.20 pp`).
+> **Derived, never declared.**"***
+
+| prop | ECE | `ECE − 0.20` | published | ✔ |
+|---|---|---|---|---|
+| `oreb` | `0.28` | `0.08` | `0.1` | ✅ |
+| `double_double` | `0.57` | `0.37` | `0.4` | ✅ |
+| 🔴 `fantasy_score` | `0.41` | `0.21` | **`0.3`** | 🔴 **no rounding takes `0.21` to `0.3`** |
+
+⇒ ***The system's highest-volume prop carries the one penalty in the audit that does not derive from
+the rule whose entire claim is that penalties are derived.*** **`NOT RECONCILED`** *(and the
+alternative medians do not rescue it: at `0.11` the other two would read `0.2` and `0.5`)*. 📌 **And
+I published that table once with `fantasy_score` shown as reproducing** — `0.21 → 0.3` written down
+and not checked against `0.08 → 0.1` in the row above it. **The arithmetic was inside the claim.**
+
+📜 **`RULE 57` NUMBERED from this** — *a derivation is not recorded until it has been RUN on every
+row it claims* — **and `RULE 53` DISCHARGED for the count change**: corrected string
+``55 numbered`` → ``56 numbered``, whole-file window ⇒ **RAW `1` site in the twelve, CLASSIFIED a
+false positive** *(`NBA_MASTER_SUMMARY.md:566`, "56 numbered **sub-findings**", unrelated)*;
+**`1` site in this log, this pass's own write. `0` outstanding.**
+
 ⚠ **RULE 54 on `§F6.13`.** *`n`, the sample, the stat and the seasons behind the `-0.024` are all
 `NOT RECORDED`, and `-0.024` is approximately zero in absolute terms — **the load-bearing reading is
 "the prior carries no usable signal"**, and the directional reading is weaker and recorded as such.
