@@ -424,7 +424,39 @@ table's.***
 > > | `T12` *(`…board-scrapers-fliff-docs`)* | `8` key assignments · `1` JWT |
 > > | `T11` *(`…enrichment-backfill-dfs-boards`)* | `7` `api key = <uuid>` |
 > > | `T1` *(`…expansion-phase1-static`)* | `6` key assignments |
-> > | **the other `21` files** | ✅ **nothing** |
+> > | ~~**the other `21` files**~~ | ~~✅ **nothing**~~ 🔴🔴 **CORRECTED `2026-09-23`, `§T22.12` — see directly below** |
+> >
+> > ### 🔴🔴🔴 **§T22.12 — THE CENSUS MISSED A CREDENTIAL BECAUSE IT WAS LOOKING FOR THE WRONG SHAPE**
+> > *(`T22` pass `12`, `2026-09-23`. **`RULE 58` applied to a security census — and it is the most
+> > consequential place that rule has ever applied.**)*
+> >
+> > 🔴 **`T22` (`…pp-multipliers-build`, one of the "other `21`") CARRIES A LIVE REAL-MONEY ACCOUNT
+> > SESSION.** *The owner pasted `curl` commands from the PrizePicks web app. They carry **two named
+> > session cookies and a cookie holding the account profile** — `T22` named all three and stated the
+> > hazard itself:* ***"Anyone with them can act as you on an account with real money in it."***
+> > ⚠ **Names only. Values are NEVER reproduced — the repo is PUBLIC** *(standing constraint `7`)*.
+> >
+> > | | |
+> > |---|---|
+> > | why the census missed it | 🔑🔑 **its shape list was `api key = <uuid>` · `eyJ…` JWT · `postgres://` · `user:pass@` · DO host · `password = …`.** ***A browser session cookie is none of those six shapes.*** |
+> > | what that means for the census | ⚠ **its method is sound and its `16`/`50` figures stand.** **What does NOT stand is the sentence "the other `21` files: nothing"** — that was a claim about the SHAPE LIST, stated as a claim about the FILES. |
+> > | the `RULE 58` form | ***"A `0` result is a claim about YOUR QUERY, not about the corpus."*** **Here the query was a regex family, and the concept it missed was not a spelling variant — it was an entire credential CLASS.** |
+> >
+> > ✅ **WHAT IS STILL TRUE, AND IT IS THE SAME GOOD NEWS**: *`nba/transcripts/` holds only
+> > `readme.md` and `journal.txt`, so **this has never been committed either** — `0` sites, `0`
+> > commits, exactly as for the `T13` password.*
+> > 🔴 **AND THE SAME BAD NEWS, ONE STEP WORSE**: *it is in a file that is **copied between machines,
+> > attached to chats and handed to tools** — and **it is in BOTH offline zips the owner downloaded**
+> > *(`§T21.7`)*. **A session cookie also needs no rotation ceremony to kill: logging out ends it.**
+> > `T22`'s own instruction was exactly that. **Whether it was done is unknown to this sweep.** ⇒
+> > filed as **`T22-1b`** in the `ACT ON THIS` table at the top of this file.
+> >
+> > 📌 **AND IT ADDS A THIRD, INDEPENDENT REASON `T21-1` IS BLOCKED.** *The first was `18` (→`16`)
+> > credential-shaped strings. The second was `F2-1`'s live Postgres password in `T13`. **The third is
+> > that the census defining "sanitise four files" was built on a shape list that has now been shown
+> > incomplete — so the sanitisation target is not `4` files but "`4` files plus whatever the next
+> > shape reveals."*** ⚠ **That does not make the job intractable; it makes "how do we know we are
+> > done?" the real question, and it did not have one before.**
 > >
 > > ⇒ ***The blocked precondition is not "sanitise 64.8 MB". It is "sanitise four files, of which
 > > one holds more than half."*** **That is a tractable job, and this item could not say so before
