@@ -377,7 +377,7 @@
 > TABLE IS NOW COMPLETE — ALL `86`, BELOW.** *`86`, not `84`, because this session's own writes added
 > two; the population is re-derived, not carried.*
 
-## 4 · ✅✅ **THE COMPLETE TABLE — ALL `86`, `§F7.12`, `2026-09-23`**
+## 4 · ✅✅ **THE COMPLETE TABLE — EVERY SHARED FIGURE, `§F7.12`, `2026-09-23`** *(`RULE 59`: the count is NOT in this heading, because the count moves. **Re-derive it** with the block below; it read `88` of `88` at `§F7.12` and **`88` of `88` again at the `§F7.16` re-verification, after ~`130` further commits.**)*
 
 > 🔁 **RE-DERIVE THE POPULATION; DO NOT QUOTE THE COUNT.** *`86` is today's value, not a constant.*
 >
