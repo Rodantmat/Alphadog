@@ -990,6 +990,39 @@ combinatorial objection §T14.1e records the owner raising, answered by choosing
 >
 > *Every non-identifier survivor was traced back to its segment. **Almost all are tool-output noise**
 > — `{"returncode":0,"stdout":"num chunks: 5\n0 702831 …"}`, `"total_lines": 5075`, PostgreSQL
+> ### 🔴🔴 **§T23.5 — A SECOND, STRUCTURALLY DIFFERENT DEADLOCK: `CREATE UNIQUE INDEX` INSIDE THE WRITE TRANSACTION**
+> *(`T23` pass `5`, `2026-09-21`, recorded `2026-09-23`. **Distinct from the `psycopg.errors.DeadlockDetected ×2` already catalogued in `NBA_OPEN_ITEMS.md` — different mechanism, different trigger, different blast radius.**)*
+>
+> 🔴 **What happened**: *a historical scoring run over all `325` dates, fanned out across **`8`
+> parallel jobs**, **scored `144` and failed `181` on Postgres deadlocks.***
+>
+> **The mechanism, and it is a reusable Postgres trap:**
+> > *The scorer executes **`CREATE UNIQUE INDEX IF NOT EXISTS` inside its write transaction.
+> > Postgres LOCKS THE TABLE BEFORE it discovers the index already exists, and holds that lock until
+> > commit.** Two scorers running at once each held the lock, then each waited on the other to delete
+> > its date.*
+>
+> 🔑🔑 ***`IF NOT EXISTS` is not a cheap no-op under concurrency. It is a full table lock that
+> happens to do nothing.***
+>
+> ⚠⚠ **AND THE REASON IT WAS INVISIBLE FOR THE WHOLE LIFE OF THE SYSTEM IS THE IMPORTANT PART**:
+> ***"`P3` scores ONE DATE ALONE, so this never showed until my `8` parallel jobs."***
+> ⇒ 🔑 ***A defect that only exists under parallelism cannot be found by a pipeline that is never
+> parallel.*** **`P3` will never surface it; any backfill, replay or catch-up run will surface it
+> immediately.** *That is a class of bug this corpus has no other instance of, and it is worth
+> stating as a class: **the production schedule is a narrower test than the recovery path it depends
+> on.***
+>
+> ✅ **Fix recorded** *(applied by the concurrent session — the work is out of scope, the mechanism is
+> not)*: **the index is created only when it is actually missing.** *Behaviour identical for a single
+> run; the failed dates **rolled back cleanly**, so nothing was half-written, and the runner now
+> resumes without redoing good dates and retries failures once.*
+>
+> ⚠ **`RULE 54`.** *`WINDOW`: one historical run, `2026-09-21`, `8` parallel jobs, `325` dates.
+> **`144`/`181` is one observation, not a rate** — the split depends on job count and scheduling.
+> **`NOT DONE`: no other writer in the system was audited for the same pattern**, and the search is
+> one grep: `CREATE UNIQUE INDEX IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS` inside a transaction.*
+
 > process ids from the deadlock incident. **Several apparent gaps were demoted on inspection**: `65.8`
 > is the fringe-accuracy `0.658` already in `2` documents; the whole `N1` role table (`254`/`429`/`639`,
 > `0.343`, `86.7%`, `11.8%`) is already carried.*
