@@ -1,7 +1,8 @@
 # NBA MASTER SUMMARY — every transcript, message by message
 
 > # 📑 **INDEX — `NBA_MASTER_SUMMARY.md`**
-> **~~`2,715`~~ → ~~`2,797`~~ → `2,798` headings · ~~`1,650`~~ → `1,703` `§`-sections · `~3.21 MB` *(`3,212,494` bytes)* · ~~`42,297`~~ → `42,327` lines · built `2026-09-23`, census corrected same day (`§F2.14`); ✅ **all three primary figures RE-DERIVED EXACT `2026-09-23`, `§F6.26`** — `2,797` headings, `1,703` `§`-sections, `739` distinct `§T`*n*`.`*m* labels, each reproducing to the unit from the published definitions below.**
+> **The record of what every transcript contained** — the sweep ledger, the per-transcript findings
+> (`§T`*n*`.`*m*), the canonical figure table, and the corrections made to each.
 > 📏 **`2,883` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY.md ``
 > ⚠ *The original heading count came from a detector anchored at line start, blind to the **blockquoted** headings this corpus uses heavily — **`76` hidden in this file, `294` across the twelve (`6.0%`)**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 > 🔑 **And the POPULATION DEFINITIONS, published because the count is meaningless without them** *(`§F2.11`: getting the definition right is the expensive half)*: **`headings`** = any ATX heading, blockquoted or not. **`§-sections`** = **headings that name a `T`*n*`.`*m* section** *(`1,703`)* — **not** distinct `§T`*n*`.`*m* labels appearing anywhere in the text *(`739`)*, and **not** distinct `§`-labels of every form *(~~`1,096`~~ → `1,100`)*. **Three defensible readings, a 2.3× spread between them.**
