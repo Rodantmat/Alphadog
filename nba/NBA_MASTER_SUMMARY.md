@@ -41847,3 +41847,33 @@ deadline itself.
 > 📌 **TIERS**: ⚠ **AS STATED IN `T23`** — all figures; quotations verbatim; **not re-run by this
 > sweep**. 🔴 **`NOT RECORDED`** — the standards-only slip-level backtest; which constant set is
 > current; the WNBA deadline date. ⚖️ **`pp_*` objects not queried; the WNBA table not read.**
+
+---
+
+# §T22.2 · §T22.3 · §T22.6 · §T22.7 · §T23.4 — 📋 **THE FIVE PASS RECORDS WHOSE CONTENT WENT TO THE SUBJECT DOCUMENTS**
+
+> 🔴 **WRITTEN AS A REPAIR, AND THE DEFECT WAS MINE.** *A verification pass on `2026-09-23` found
+> that **the run log cites `§T22.1–§T22.7` and `§T23.1–§T23.4`, but this file contained only
+> `§T22.1`, `§T22.4`, `§T22.5`, `§T23.1`, `§T23.2`, `§T23.3`.*** **Five `§` references pointed at
+> nothing.** ⚠ **Cause, and it is an irony worth recording**: *those five passes obeyed `§T22.1`'s
+> clause (ii) — **"write the finding into the document that owns the subject, NOT into
+> `NBA_MASTER_SUMMARY.md`"** — and I then failed to leave the PASS RECORD here.* ⇒ 🔑 ***The clause
+> that moved content out of this file was correct; what was missing was the pointer back.***
+> 📌 **This is `§T20.22`'s pointer-integrity class, self-inflicted, caught by an audit rather than by
+> re-reading. Listed out of numeric order because the surrounding sections are already written and
+> rule 40 forbids moving them.**
+
+| § | pass | the finding, in one line | where the content lives |
+|---|---|---|---|
+| **§T22.2** | T22 p2 | 🔑 **The pricing law: multiplicative, partner-independent, compressed above `9.1×` as `9.1 × (product/9.1)^0.857`** — fitted on `20` pairs, **confirmed out of sample on three never quoted together** *(`13.25→13.5`, `15.75→15.5`, `22.5→22.5`)*; a naive model **overstates demon stacks `~13%` at `20×`**. ⚠ *The parameters were in this file `7` times and in the owning document `0` — the placement defect `§T21.3` named.* | **`NBA_MULTIPLIERS.md` `§0.10-T22`** |
+| **§T22.3** | T22 p3 | 🔑 **The Flex consolation tier**: `<2.5×` → `0.25` *(`37/38`)*, `2.5–5×` → `0.5` *(`69/69`)*, above `5×` mixed; **the giveback `flex_full ÷ power` = `0.83/0.69/0.57/0.46`**; **the tier is NOT a function of the payout** *(identical `11×` slips got `0.5` and `1.25`)*; ✅ **a hypothesis rejected AND diagnosed as under-powered** — *"cracking the rule needs `alt×alt` slips"*; ⚠ **tier-B selection bias, `5,652` candidates.** | **`NBA_GOBLIN_DEMON.md` `§0h-T22`** |
+| **§T22.6** | T22 p6 | 🔑🔑 **`is_adjusted` — the first DIRECT server-side evidence of a mechanic this corpus only ever inferred**; base rates Power `2/2 → 2.2×`, Flex `2/2 → 1.8×`, `1/2 → 0.25×`. 🔑🔑🔑 **The house edge is a FLAT `25%` on both slip types** *(Power `EV 0.748`, Flex `0.747`, `160` stratified `alt×alt` pairs)* ⇒ ***Flex redistributes EV, it does not create it — `§0.2d.2`'s "in principle" is closed.*** ✅ **And `§T22.3`'s open question is answered by the experiment it specified**: the tier is driven by **RISK** *(`~75–77%`)*, `p(exactly one)` **excluded at `15.6%`**. | **`NBA_MULTIPLIERS.md` `§0.12-T22`**; `§0.3` and `§0h-T22` amended at source |
+| **§T22.7** | T22 p7 | 🔑 **The per-leg law**: *probability of beating the line under a count distribution centred on the STANDARD line, spread `c × √(standard line)`*. 🔑🔑 **The key-granularity principle** — *"built from the leg's RAW FACTS, not from my model's parameters"* — **stat · standard line · leg line · side**. ✅ **`2,199,354` legs → `8,573` price ids, `256×`** — **and the leg count CROSS-CONFIRMS my own live `SELECT` exactly**. ✅ **`63` keys tagged both kinds — the owner's *"leave space for possible mistakes"* clause paying out one day later.** | **`NBA_MULTIPLIERS.md` `§0.13-T22`** |
+| **§T23.4** | T23 p4 | 🔑 **The WNBA fit table in full, with the MATCH RATE**: NBA `c` within one display step — points `62%`, **rebounds `28%`**, assists `35%` ⇒ ⚠⚠ ***even where the constant transfers to `0.01`, the individual price is right only `~⅔` of the time — a precision ceiling measured here for the first time.*** 🟢 **And three constants for stats NBA does not price**: `fg_attempted` `1.22`, **`fantasy_score` `2.08`**, `3pt_attempted` `1.16` — *exactly the gap-filling the owner asked for.* ✅ **A per-league refit cuts error `~17–20%` → `~4%`.** | **`NBA_MULTIPLIERS.md` `§0.15-T23`** |
+
+📌 ***The lesson, and it is small but exact:*** **a rule that redirects output must also say where the
+INDEX entry goes.** *Clause (ii) said "not into the summary" and I read it as "nothing into the
+summary". **Five passes of good work became five broken references** — and the audit that caught it
+was a `fences`/`§`-consistency check that took one command and had never been run before.*
+✅ **Added to the standing close procedure: after writing a pass, verify its `§` resolves in the file
+the run log cites.**
