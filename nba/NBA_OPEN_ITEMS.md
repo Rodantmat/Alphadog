@@ -451,6 +451,31 @@ table's.***
 > > `T22`'s own instruction was exactly that. **Whether it was done is unknown to this sweep.** ⇒
 > > filed as **`T22-1b`** in the `ACT ON THIS` table at the top of this file.
 > >
+> > ### 📊 **THE RE-SCAN, RUN ON ALL `24` TRANSCRIPTS BEFORE THIS WAS WRITTEN** *(`RULE 57`)*
+> > *Both shape families, every file, `2026-09-23`. **Hit counts, and distinct values where they can
+> > be counted without reproducing them.***
+> >
+> > | shape | hits | where |
+> > |---|---|---|
+> > | 🆕 **session-cookie names** | **`23`** | 🔴 **`21` in `T22`, `2` in `T23`** — *`T23` carries it too, which this item did not know* |
+> > | 🆕 **`x-device-id`** | **`22`** *(`1` distinct value)* | `20` in `T22`, `2` in `T23` |
+> > | `api key = <uuid>` | `7` | `T11` |
+> > | `postgres://` | `3` | `T13` |
+> > | `user:pass@` | `9` | `T12` `6` · `T13` `3` |
+> > | `password = …` | `10` | `T13` |
+> > | ⚠ **`eyJ…`** | `23` hits, **`11` DISTINCT, across `8` FILES** | *`T6` `T9` `T12` `T13` `T14` `T21` `T22` `T23`* |
+> >
+> > ⚠⚠ **THE `eyJ` ROW NEEDS ITS CAVEAT STATED, NOT ITS NUMBER QUOTED.** *Distinct value lengths run
+> > `26` → `1,513` characters. **A `26`-character `eyJ…` match is almost certainly not a token** —
+> > `eyJ` is just base64 for `{"`, and it occurs in ordinary encoded text. **Only the two longest
+> > (`910` and `1,513`) have the shape of real bearer tokens.*** ⇒ ***So "`8` files, not `4`" is NOT
+> > a correction to the census — it is a different query with a looser filter, and it is published
+> > with that stated rather than as a finding.*** **`RULE 53`: raw count `23`, classification
+> > `11` distinct of which `≥2` are credential-shaped by length, window all `24` transcripts.**
+> >
+> > ✅ **What the re-scan DOES establish beyond doubt**: *the session-cookie class is real, is in
+> > **two** files, and **was invisible to every prior credential audit in this corpus.***
+> >
 > > 📌 **AND IT ADDS A THIRD, INDEPENDENT REASON `T21-1` IS BLOCKED.** *The first was `18` (→`16`)
 > > credential-shaped strings. The second was `F2-1`'s live Postgres password in `T13`. **The third is
 > > that the census defining "sanitise four files" was built on a shape list that has now been shown
