@@ -1351,6 +1351,8 @@ fresh context; `T20` cannot close in this session.**
 > *Re-derived from this log's own numbering statements 2026-09-23 (`§F2.10`), not carried forward
 > from any earlier count — the previous header said `51` and was two amendments stale.*
 
+## §F2.10 — the rule count was mine and it was wrong
+
 🔴🔴 **THE LINE BELOW WAS WRONG WITHIN THE HOUR AND IS CORRECTED IN PLACE, STRUCK, NOT DELETED —
 `§F2.10`.** ~~*"COUNT AMENDED 2026-09-23, `§F2.9`: `54` → `55`."*~~ **`RULE 54` had been PROPOSED at
 `§T22.5` and NEVER NUMBERED, so there was no `54` to amend from.** *Re-derived from this log, the
