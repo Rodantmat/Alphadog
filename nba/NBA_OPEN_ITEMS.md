@@ -14023,8 +14023,11 @@ dates *(worst observed 5,699 — a 12% margin, which is thin and is said to be t
 discovery** — the material is in `nba/NBA_ENRICHMENT_FACTOR_LOCK.md`, which is not one of the twelve.*
 
 **`T10` pass 1 locked an owner-directed factor taxonomy — *"find every factor that gives any edge at
-the enrichment level"*. Re-derived from that file 2026-09-23: **26 codes** (`A1`–`A9`, `B1`–`B5`,
-`C1`–`C4`, `D1`–`D4`, `E1`–`E4`). `NBA_FINAL_SCORING_CALIBRATION.md`'s verdict table carries **8**.
+the enrichment level"*. Re-derived from that file 2026-09-23: ~~**26 codes** (`A1`–`A9`, `B1`–`B5`,
+`C1`–`C4`, `D1`–`D4`, `E1`–`E4`)~~ → 🔴 **CORRECTED same day, `§F2.3`: `33` FACTORS.** *My
+enumeration stopped at the `A`–`E` families and missed **`K1`, `M1`–`M4`, `N1`, `N2`** — two of
+which (`M1`, `N1`) sit in the verdict table it was being compared against.*
+`NBA_FINAL_SCORING_CALIBRATION.md`'s verdict table carries **8** of the `33`.
 
 🔴 **Absent from all twelve, by code AND by description:**
 
