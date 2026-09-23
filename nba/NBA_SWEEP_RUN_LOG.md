@@ -2146,6 +2146,50 @@ UNCOVERED-SUBSTANTIVE band, *not* the high band `§F2.7` worked.
    established the reasoning stratum barely exists from `T4` on. **"`n` number-dense segments were
    worked", never "the uncovered band is read."***
 
+## 🔑🔑 §F6.28 — **RESULT: THE UNCOVERED BAND IS `83%` MACHINE OUTPUT, AND ITS PROSE IS NEARLY CLEAN**
+
+*The instrument pre-registered above, run on all `23` transcripts. **No parameter changed after
+output was seen.***
+
+| | |
+|---|---|
+| total segments | **`20,740`** |
+| 🔑🔑 **PROSE segments** *(`human/text` + `assistant/text`)* | **`3,429` — `16.5%`** |
+| uncovered-substantive, prose only | **`2,369`** |
+| numeric tokens in that band | `2,956` |
+| absent, **narrow** variants | `279` |
+| absent, **WIDE** variants | ✅ **`179`** |
+| candidate segments | `122` |
+
+🔑🔑🔑 ***THE HEADLINE IS THE FIRST ROW, AND IT REFRAMES WHAT IS LEFT.*** **The `~11,000`
+substantive uncovered segments this sweep has been carrying as its open work are `83.5%`
+`tool_use` and `tool_result` — command lines and their output.** *The PROSE strata — what the owner
+said and what the assistant concluded, the top two of the brief's five — are **`3,429` segments in
+total**, of which **`2,369`** sit uncovered.* ⇒ ***Direction (b) is an order of magnitude smaller
+than its headline number when scoped to the strata the brief ranks first.***
+
+✅ **AND THE PROSE BAND IS NEARLY CLEAN NUMERICALLY.** *`T1`–`T12`, `T19`, `T20` together produced
+**`6` absent figures in total** across `~500` uncovered prose segments. **All `179` come from
+`T13`–`T18` and `T21`–`T23`** — the build-heavy sessions.*
+
+📐 **`RULE 58` REPRODUCED ITS OWN MAGNITUDE ON AN INDEPENDENT POPULATION**: narrow `279` → wide
+`179` = **`36%` demoted**, *the same `36%` `§F6.27` measured on `§F2.7`'s stored sample.* 🔑 **Two
+different bands, two different instruments, the same over-report rate.**
+
+### What the `122` candidates yielded, read by hand
+
+| § | recovered | where |
+|---|---|---|
+| ✅ **`§F6.28` §1–§2** *(`BCAL`)* | **the SEASON-WIDE board coverage** — *"`85%` of PrizePicks points legs and `82%` of rebounds legs, `103,532` and `85,391` board legs, matched exactly on player, date and line … consistent with the single-slate `77–86%`"* — ***the only measurement showing the season build and the certified per-day recipe agree*** · and the **`±6 → ±10` ladder rebuild** (`36,895` → `45,965` → `44,544` loaded; points `9,283` · rebounds `3,451` · assists `3,160`), **which is `§F6.20`'s "rung-depth setting" diagnosis being ACTED ON** | `BCAL` |
+| 🔴🔴 **`§F6.28` §3** *(`BCAL` + `F6-1`)* | **`T14`'s own two numbers, one message apart, show `F6-1` firing on `2026-09-11`**: `45,965 − 44,544 = 1,421`, **the same `1,421`** as `52,018 − 50,597` today, **on the same slate** *(`18` props / `161` players matches exactly one committed artifact)*. ⇒ ***The artifact grew `6,053` rows in twelve days and the loss did not move by one.*** | `F6-1` upgraded |
+| ✅ **`§F6.28` `FSC`** | the **redistribution panel** (`97,563` rows · `1,152` games · `393` absent players · `2,342` conservation rows) and its name-flip failure — ***"a panel that silently matched SOME names would have been far worse than one that matched NONE"*** · the **two-season agreement table**, recorded **with its supersession** · the **post-matchup calibration check** (rebounds `360,120` graded, LESS side `1.4 pp` improved from `1.7`, points' big band `+0.0 pp` on `67,136`) | `FSC` |
+| ⛔ **not written up** | `T22`/`T23` PrizePicks payout-pricing figures — **the concurrent session's scope** | *scope decision* |
+
+✅✅ **AND THE `9,283` / `3,451` / `3,160` RECONCILE TO THE LIVE TABLE EXACTLY** — *`§F6.16`'s
+`SELECT` over `nba_score.baseline_ladder WHERE asof='2026-03-15'` returns the same three integers, a
+fortnight after the transcript wrote them.* 🔑 ***A figure READ in one place and MEASURED in
+another is the strongest verification this sweep can produce.***
+
 📜 **`RULE 57` NUMBERED from `§F6.21`** — *a derivation is not recorded until it has been RUN on every
 row it claims* — **and `RULE 53` DISCHARGED for the count change**: corrected string
 ``55 numbered`` → ``56 numbered``, whole-file window ⇒ **RAW `1` site in the twelve, CLASSIFIED a
