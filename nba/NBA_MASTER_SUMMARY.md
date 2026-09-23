@@ -39664,3 +39664,111 @@ says nothing about how the key is built versus how it is read.** ✅ **NOVEL.**
 forward-only. It was measuring the wrong thing.** ⚠⚠ ***A lookup table has two correctness
 properties — what is IN it, and whether the key you build matches the key you search with — and a
 completeness check can pass perfectly while the second one fails on nine percent of the league.***
+
+---
+
+# §T20.128 — T20 PASS 123: 🔴🔴🔴 **THERE IS A CANONICAL NORMALISER, IMPORTED BY `27` SCRIPTS, AND THE THREE CONSUMERS THAT DO NOT USE IT ARE THE THREE THAT ARE BROKEN — INCLUDING THE ONE THAT FITS THE CONFIDENCE MODEL**
+
+*Pass 123, 2026-09-23. Pre-registered as **"THE NORMALISER CENSUS — `§T20.127` FOUND ONE WRITER/READER
+PAIR THAT DISAGREES. ENUMERATE EVERY PLACE A NAME OR KEY IS NORMALISED, AND CHECK EACH PAIR."***
+
+## ① THE CENSUS *(clause ii, `2026-09-23T00:46:29Z`)* — SEVEN SITES, THREE TIERS
+
+🔑🔑 **A CANONICAL IMPLEMENTATION EXISTS.** **`nba/nba_names.py:37–41`**, and its docstring names this
+exact case:
+
+```python
+def norm_name(s):
+    """Lowercase, strip accents, drop suffixes and punctuation: 'Luka Dončić' -> 'lukadoncic'."""
+    s = unicodedata.normalize("NFKD", str(s or "")).encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", "", s)
+    return re.sub(r"[^a-z]", "", s)
+```
+
+**It is imported by `27` scripts** *(`grep -rl` across `nba/*.py` + `nba/baseline/*.py`)*, and
+**`NBA_DATABASE.md:856` already says `player_name_map` is "Paired with `nba/nba_names.py`."**
+
+| tier | site | accents | suffixes | verdict |
+|---|---|---|---|---|
+| **canonical** | **`nba_names.py:37–41`** *(imported by 27)* | ✅ fold | ✅ strip | — |
+| **duplicate** | `check_baseline_board_coverage.py:40–43` *(the map's WRITER)* | ✅ | ✅ | ✅ **AGREE** — byte-identical copy |
+| **duplicate** | `grade_board_outcomes.py:64–67` *(the grader)* | ✅ | ✅ | ✅ **AGREE** — byte-identical copy |
+| 🔴 **partial** | `baseline/build_baseline_ladder.py:87` · `build_periods_ladder.py:65` — `_norm()` | ✅ fold | 🔴 **NO** | ⚠ **DISAGREE on suffixes** |
+| 🔴 **weak** | `score_board_legs.py:114` *(SQL)* | 🔴 | 🔴 | 🔴 **DISAGREE** — `§T20.127`, `T20-25` |
+| 🔴 **weak** | **`build_confidence_v3.py:169`** *(SQL, **INNER JOIN**)* | 🔴 | 🔴 | 🔴🔴 **DISAGREE — NEW** |
+| 🔴 **weak** | **`build_availability_delta.py:114–120`** *(Python, re-implemented)* | 🔴 | 🔴 | 🔴🔴 **DISAGREE — NEW** |
+
+⇒ 🔑🔑 ***The three that get it wrong are exactly the three that RE-IMPLEMENT the key inline instead
+of importing the module the corpus says the table is paired with.*** **The two that copy-pasted the
+function are correct. The two ladder builders copied half of it.**
+
+## ② 🔴🔴 THE CONFIDENCE MODEL IS FITTED ON A BOARD THAT EXCLUDES THOSE PLAYERS
+
+**`build_confidence_v3.py:166–169`**, quoted:
+
+```sql
+FROM nba_market.board_outcomes o
+JOIN nba_ref.player_name_map m
+  ON m.norm_name = lower(regexp_replace(o.player,'[^A-Za-z]','','g'))
+```
+
+⚠ **It is an INNER `JOIN`** — a miss does not become a NULL, **it removes the row from `tmp_graded`
+entirely**, and `tmp_graded` is the population the deductions are fitted on.
+
+**Measured, `board_outcomes`, January 2026, graded legs only:**
+
+| | |
+|---|---|
+| graded legs | **705,852** |
+| 🔴 **excluded from the fit** | **`43,969` — `6.23%`** |
+| 🔴 **distinct players lost** | **`23`** |
+
+⇒ ***`nba_score.confidence_model` — the ten deductions `§T20.113` specified — was fitted on a
+population that systematically omits every suffixed and accented player.*** ⚠ *Whether that biases
+the deductions is **NOT ESTABLISHED**; that the population is biased is measured.*
+
+## ③ 🔴🔴 AND THE AVAILABILITY DELTA CANNOT RESOLVE THEM EITHER
+
+**`build_availability_delta.py:114–120`**, quoted — note it adds a **good** feature the others lack,
+`"Last, First"` inversion, and still gets the key wrong:
+
+```python
+def norm(s):
+    s = str(s or "")
+    if "," in s:
+        last, _, first = s.partition(",")
+        s = f"{first.strip()} {last.strip()}"
+    return re.sub(r"[^A-Za-z]", "", s).lower()
+```
+
+**Joined at `:121` against `player_name_map.norm_name`** ⇒ **an injury-report entry for
+`Jaren Jackson Jr.`, `Dončić` or `Jokić` never resolves to a `player_id`.** 🔴 **And `:127` then
+prints *"changes did not resolve to known player_ids - no delta written"* and returns** — ⚠ **the
+same script `T20-17` is about, now with a second way to produce nothing.**
+
+## ④ WHAT THIS DOES TO `T20-25`
+
+**`§T20.127` filed it as one join. It is three consumers**, and their losses are independent:
+**scoring** *(`6.01%` of a slate's rows)* · **the confidence fit** *(`6.23%` of graded legs, `23`
+players)* · **the availability delta** *(unmeasurable — it drops the change, not a row)*.
+✅ **AND THE FIX GETS SIMPLER, NOT HARDER**: *the canonical function already exists and 27 scripts
+already import it; the repair is to make these three use it — in SQL by precomputing the key, in
+`build_availability_delta.py` by deleting the local `norm()` and importing.* ▶ **`T20-25` updated.**
+⚠ *Documented, not fixed (rule 1).*
+
+✂ **KILL LOGGED**: the `score_board_legs.py` pair is `§T20.127`/`T20-25` and is **not** retold here —
+it appears in the table as the census's third weak site and nothing more. *`norm_market` was
+re-examined as a PAIR, as clause (iv) permitted: `archive_live_boards.py` writes market keys with
+`lower().replace(" ","_")` and `score_board_legs.py:82` strips `_alternate` before lookup — **the two
+agree**, and `§T20.125` already measured the result at `11` of `11`.*
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `four implementations` · `canonical normaliser`
+· `re-implement` · `tmp_graded` · `27 scripts` — **all `0/0/0`.** ⚠ *`nba_names` scores **6 of 12** and
+the mentions were **opened**: they establish it as a shared library and even state the pairing —
+**and not one says three consumers bypass it.*** ✅ **NOVEL.**
+
+📌 ***The lesson:*** **the defect is not that the system lacks a canonical normaliser. It has one, it
+is correct, its docstring names the exact failing case, and twenty-seven scripts import it.** ⚠⚠ ***A
+shared library does not protect the call sites that never call it — and the ones that never call it
+are invisible precisely because the library is there, documented, and paired with the table in the
+data dictionary.***
