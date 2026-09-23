@@ -6,7 +6,8 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 ---
 
 > # 📑 **INDEX — `NBA_FINAL_SCORING_CALIBRATION.md`**
-> **~~`211`~~ → `253` sections · `347,306` bytes *(at parent commit; see the byte-count note in `NBA_OPEN_ITEMS.md`'s index — `§F6.19`)* · built `2026-09-23`; census corrected same day (`§F2.14`) and **re-derived after every subsequent pass** — `224 → 234 → 236 → 247 → 249`.**
+> **How a raw projection becomes a final hit probability** — the confidence model, the scoring chain,
+> the calibration evidence, and the backtests behind each constant.
 > 📏 **`274` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_FINAL_SCORING_CALIBRATION.md ``
 > ⚠ *The original `211` came from a heading detector anchored at line start, which is blind to the **blockquoted** headings this corpus uses heavily — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
