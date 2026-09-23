@@ -2361,3 +2361,92 @@ singles-only slate"*** — **so combos must exist before the merge.** The author
 
 ⚠ **Rule 19**: the quotation covers the guard's existence and its message. **NOT RECORDED in this
 transcript: when that guard was added, or by which session.**
+
+---
+
+# §F5.3 — 🔑🔑 **THE ORIGIN REASONS: why four load-bearing architectural decisions were made**
+
+*Recovered 2026-09-23 from the ASSISTANT REASONING stratum of `T1`–`T3` — **the only three
+transcripts in which that stratum survives** (`§F5.2`: from `T4` onward it is machine-generated
+summary labels, `0.0%` first-person across `1,194` blocks). **These are the assistant's own
+deliberations, quoted; the sweep did not infer them.***
+
+**The pattern across all four: the MECHANISM is thoroughly documented and the REASON is in `0` of
+the twelve.** *Verified by grep before writing: `external_credentials` **8** documents · `trigger
+file`/`TRIGGER_` **6** · `path filter` **4** · `SvelteKit`/`__data.json` **7**/**2** ·
+`player_differential_log` **6** — while **"network access is restricted"**, **"push trigger"**,
+**"workflow_dispatch events"**, **"full isolation"**, **"separate job queue"**, **"personal facts"**
+and **"infrastructure secrets"** each return **`0` of `12`.***
+
+## 1 · 🔑 WHY GITHUB ACTIONS IS THE SCRAPING LAYER — *it was a SANDBOX limit, not a design preference*
+
+> ***"since bash tool's network is restricted to a specific allowlist that doesn't include
+> stats.nba.com or balldontlie.io, i'm realizing i should use web search and web fetch instead,
+> since those operate outside the sandbox's domain restrictions"*** — `T1`
+>
+> ***"running a live backfill from bash isn't possible since network access is restricted to
+> specific domains that don't include the nba api, so i'll focus on … writing the cloudflare worker
+> code"*** — `T1`
+
+**The corpus records the OTHER reason at full strength — that Cloudflare Workers' egress IPs are
+blocked outright by every `stats.nba.com` domain (`520`/`403`, confirmed via `/probe-sources`).**
+🔑 ***It does not record that the ASSISTANT'S OWN sandbox was independently unable to reach those
+hosts.*** **Two different constraints, pointing at the same answer, and only one is on file.**
+📌 *A reader who only knows the Workers block would reasonably ask "why not just run it from the
+session?" — and the answer is in this block and nowhere else.*
+
+## 2 · 🔑 WHY THE TRIGGER-FILE PATTERN EXISTS — *a capability gap, reasoned through and solved*
+
+> ***"my file-committing capabilities trigger push-based workflows, but not ones that only respond
+> to workflow dispatch events … repository dispatch would require an api call i don't have a tool
+> for either. push seems like the simplest path forward given what's actually available to me.***
+> ***rather than triggering on every push to the nba folder — which risks accidental frequent runs —
+> i'm thinking a cleaner approach is a dedicated empty marker file that acts as a manual 'trigger
+> button': i add a path filter for that specific file, then any time i want to run the scrape i just
+> touch that file using my existing commit tools. this gives me full control without needing any new
+> capability at all."*** — `T1`
+
+✅ **The `TRIGGER_*.txt` files and their `paths:` filters are documented in `6` of the twelve. The
+reason they are a DEDICATED EMPTY MARKER rather than a path filter on `nba/` is in none of them** —
+and it is a deliberate guard against **accidental frequent runs**, which is a live concern for a
+repo where every documentation commit touches `nba/`. 🔑 ***That reason is also why every commit in
+this sweep carries `[skip ci]`.***
+
+## 3 · 🔑 WHY NBA IS A SEPARATE UNIVERSE DOWN TO THE CONTROL PLANE — *a self-correction*
+
+> ***"i need to correct my earlier decision — the user actually wants full isolation, so nba needs
+> its own separate job queue and worker definitions tables too, not shared control-plane ones."***
+> — `T1`
+>
+> ***"i think the right path is to correct my earlier 'shared control plane' mistake and treat nba
+> as a fully separate universe with no exceptions."*** — `T1`
+
+**The separate-universe rule is everywhere in the corpus. That it was a CORRECTION of an earlier
+shared-control-plane design is recorded nowhere.** 🔑 ***This is why `nba_control.job_runs` and
+`nba_config.worker_definitions` exist as NBA-only tables rather than rows in the MLB control
+plane*** — *and it is the direct ancestor of `T20-3`, which finds **ten MLB jobs and zero NBA** in
+`config.scheduled_jobs`: **the NBA side was deliberately built NOT to use that table.*** **`T20-3`
+④ already reaches the same conclusion from the repo side — *"the absence of NBA rows here is
+architecture, not a gap"* — and this block is the DECISION that made it so.**
+
+## 4 · 🔒 WHY CREDENTIALS LIVE IN `nba_config.external_credentials` — *and the rule that `§T1.31` then broke*
+
+> ***"regarding storage, i shouldn't put credentials into claude's persistent memory file since
+> that's meant for personal facts, not infrastructure secrets. instead i should store it in the
+> actual system database the way this project already handles other keys, like the parlay api key
+> pattern in the external credentials config table … storing it safely following the existing
+> credentials pattern."*** — `T1`
+
+🔴🔴🔴 ***This is the reasoning that immediately PRECEDED the leak `§F2.12` found.*** **The decision
+was reached correctly and for the right reason — a credential belongs in the system database, not in
+a notes file — and then `§T1.31`, the pass that swept for UUIDs, wrote the value itself into
+`NBA_MASTER_SUMMARY.md` in a PUBLIC repository.** *See `F2-1`.*
+
+📌 ***The rule was reasoned out at `T1` and violated by the documentation OF `T1`.*** **And the
+sentence that states the rule — the distinction between personal facts and infrastructure secrets —
+was in `0` of the twelve until today, so no later pass could check itself against it.**
+
+⚠ **RULE 54** — *these are the assistant's own contemporaneous deliberations, quoted verbatim, and
+they are evidence of **what was intended**, not proof that the system was built that way. Each
+mechanism's CURRENT state is documented elsewhere in this corpus and verified there; this section
+supplies the missing WHY and nothing more.*
