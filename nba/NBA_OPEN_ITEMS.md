@@ -38,7 +38,37 @@
 > extrapolated prices are excluded from every verdict."* ⇒ 🔑 ***The single strategy that cleared the
 > 3-pick breakeven is `58%`/`80%` demons — exactly the population the method says it overstates.***
 >
+> ## ✅✅✅ **AMENDED SAME DAY, T23 pass 3 (`§T23.3`) — THERE IS A SEGMENT THAT CLEARS, AND IT IS THE CLEAN ONE**
+> *`T23` SEG `492`, the segment breakdown the headline above does not contain. **`0/0` in both trees.**
+> Model value `≥ 1.40`, one leg per player-prop-day, realized value ± SE:*
+>
+> | segment | **2024-25** | **2025-26** |
+> |---|---|---|
+> | 🟢 **standard OVER** | **`1.195 ± 0.027`** *(n=`1,324`)* | **`1.211 ± 0.035`** *(n=`773`)* |
+> | 🟢 **standard UNDER** | **`1.116 ± 0.013`** *(n=`5,622`)* | **`1.148 ± 0.012`** *(n=`6,880`)* |
+> | 🔴 **demon** | `1.164 ± 0.021` *(n=`9,667`)* | `1.095 ± 0.013` *(n=`30,494`)* |
+> | 🟢 **standards combined** | **`1.131`** | **`1.155`** *(hit rate `~57–58%`)* |
+> | **3-pick breakeven** | `1.1006` | `1.1006` |
+>
+> ⇒ ✅✅ ***STANDARDS-ONLY CLEARS THE 3-PICK BREAKEVEN IN BOTH SEASONS*** — *and `standard OVER` clears
+> it by `~3.5σ` and `~3σ`.*
+> 🔑🔑🔑 **AND THIS SEGMENT IS EXEMPT FROM THE CAVEAT THAT INVALIDATED THE OTHER ONE**:
+> ***"standards have FACTOR 1 — no compression, no rounding — so LEG VALUE IS EXACT SLIP VALUE."***
+> ⇒ **The `≥1.40` demon-heavy strategy was overstated by the leg-level method; the standards result
+> is not.** *"Demons are inconsistent and underpay as a class."*
+> 📌 **The transcript's own next step**: *"an exact slip-level backtest of a **standards-only**
+> strategy (pushes/DNPs revert the slip size)."* 🔴 **`NOT RECORDED`: whether it was run** — *a
+> `T24` question.*
+>
+> ⚠⚠ **SO THE HEADLINE ABOVE IS TRUE AND INCOMPLETE.** *"The model doesn't beat PrizePicks" holds
+> **overall** and **on 2-picks**. **It does not hold for standards at 3-picks**, which is a real
+> strategy with `~14,600` legs of support across two seasons and no methodological discount.*
+> ✅ **Both halves kept, because the owner's `SEG 704` standard is the WHOLE picture — and a brief
+> that carried only the negative half would have been the more misleading document.**
+>
 > ## 🔴 OWNER DECISION
+> ⚠ **Re-weighted by the amendment above: option (d) is no longer a fallback — it is the
+> measured-positive path.**
 > **(a)** **Shrink the model's edge toward the market** *(SEG `379` records this as the step under
 > consideration)* — **or** **(b)** treat the model as a RANKER only and select on rank rather than on
 > claimed edge — **or** **(c)** revisit the `0.15` Platt guard, which (7) says is costing accuracy —
