@@ -582,6 +582,8 @@ with cutpoints sampled from the **live leg distribution** rather than the group 
 >
 > ---
 >
+> ### §F6.1 — pass 2 was missing the same way
+>
 > 🔴 **AND PASS 2 WAS MISSING THE SAME WAY — ADDED 2026-09-23, `§F6.1`.** *The `§F2.8` correction
 > above restored pass 3's leg counts. **Pass 2's were absent too**, along with two columns the table
 > never had: `1,250,042` · `741,922` · `307,908` · `7,250` each returned **`0` of `12`**.*
