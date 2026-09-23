@@ -39551,3 +39551,107 @@ check**, and **not one names its writer or says nothing schedules it.*** ✅ **N
 📌 ***The lesson:*** **the clean result and the finding came from the same query.** ⚠⚠ ***A test for
 foreign rows is a test of what the ids MEAN, and running it across every table in a database will
 tell you, whether you asked or not, that half of them are speaking a different language.***
+
+---
+
+# §T20.127 — T20 PASS 122: 🔴🔴🔴 **THE BRIDGE IS BUILT WITH ONE NORMALISER AND READ WITH ANOTHER — `6.01%` OF A REAL SLATE'S BOARD ROWS WERE SILENTLY DROPPED, INCLUDING EVERY LEG FOR JAREN JACKSON JR**
+
+*Pass 122, 2026-09-23. Pre-registered as **"THE NAME-MATCH YIELD — THE BRIDGE JOINS ON A NORMALISED
+NAME. HOW MANY BOARD LEGS HAS IT ACTUALLY FAILED TO MAP, AND WHO ARE THEY?"** — because `T20-24`
+asserted a forward-only risk **it did not measure**, and clause (ii) required reading the normaliser
+before measuring anything.*
+
+## ① THE TWO NORMALISERS, READ FROM SOURCE — AND THEY ARE NOT THE SAME FUNCTION
+
+**THE WRITER** — `check_baseline_board_coverage.py:40–43`, which builds `player_name_map.norm_name`:
+
+```python
+def norm_name(s):
+    s = unicodedata.normalize("NFKD", str(s or "")).encode("ascii", "ignore").decode().lower()
+    s = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", "", s)
+    return re.sub(r"[^a-z]", "", s)
+```
+
+**THE READER** — `score_board_legs.py:112–113`, the `LEFT JOIN` every board leg passes through:
+
+```sql
+LEFT JOIN nba_ref.player_name_map m
+       ON m.norm_name = lower(regexp_replace(b.player,'[^A-Za-z]','','g'))
+```
+
+| step | writer | reader |
+|---|---|---|
+| accent folding *(NFKD → ASCII)* | ✅ **yes** | 🔴 **NO** — a non-ASCII letter fails `[^A-Za-z]` and is **deleted** |
+| suffix strip *(`jr sr ii iii iv v`)* | ✅ **yes** | 🔴 **NO** |
+| lowercase · letters-only | ✅ | ✅ |
+
+⇒ 🔴🔴🔴 ***The key is WRITTEN one way and LOOKED UP another. For any player with a suffix or a
+non-ASCII letter the two keys differ, so the join misses — even though the player is in the map.***
+*"Jaren Jackson Jr." → writer `jarenjackson`, reader `jarenjacksonjr`.
+"Nikola Jokić" → writer `nikolajokic`, reader `nikolajoki` — **the `ć` is dropped, not folded.***
+
+## ② THE ROSTER-WIDE MAGNITUDE: `54` OF `582`
+
+| | |
+|---|---|
+| current roster in `nba_ref.players` | **582** |
+| present in `player_name_map` | **582** *(`§T20.126`: the map is complete)* |
+| 🔴 **whose reader key ≠ writer key** | **`54` — `9.28%`** |
+
+**`35` suffix**: *Jaren Jackson Jr. · Michael Porter Jr. · Jabari Smith Jr. · Gary Trent Jr. · Tim
+Hardaway Jr. · Kelly Oubre Jr. · Bobby Portis Jr. · Trey Murphy III · Jimmy Butler III · Dereck Lively
+II · Gary Payton II · Wendell Carter Jr. · Larry Nance Jr. · Scotty Pippen Jr. · Walter Clayton Jr. ·
+Jaime Jaquez Jr. · Kevin Porter Jr. · Derrick Jones Jr. · Robert Williams III · Marvin Bagley III …*
+**`19` non-ASCII**: *🔴 **Luka Dončić** · 🔴 **Nikola Jokić** · **Kristaps Porziņģis** · Nikola Vučević ·
+Jusuf Nurkić · Dennis Schröder · Bogdan Bogdanović · Nikola Jović · Nikola Topić · Moussa Diabaté ·
+Vít Krejčí · Kasparas Jakučionis …*
+
+## ③ 🔴🔴🔴 AND IT IS NOT HYPOTHETICAL — MEASURED ON A REAL ARCHIVED SLATE
+
+**`nba_market.board_snapshots`, `game_date = 2026-01-15`, joined exactly as `score_board_legs.py`
+joins it:**
+
+| | |
+|---|---|
+| distinct board players | **162** |
+| matched | **151** |
+| 🔴 **UNMATCHED** | **`11` — `6.79%`** |
+| board rows | **107,888** |
+| 🔴 **ROWS DROPPED** | **`6,479` — `6.01%`** |
+
+**The eleven, in full**: *Gary Payton II · Gary Trent Jr · Isaiah Stewart II · Jabari Smith Jr ·
+Jaime Jaquez Jr · **Jaren Jackson Jr** · Kevin Porter Jr. · Vincent Williams Jr · Wendell Carter Jr ·
+**Moe Wagner** · **Ron Holland***. ⚠ *`Jaren Jackson Jr` alone carried **1,057** rows on that date.*
+
+🔑 **THE DISCRIMINATION CLAUSE (iv) DEMANDED, AND IT MATTERS**: **the Odds-API board sends ASCII** —
+it carries **`"Luka Doncic"`**, not `"Luka Dončić"` — **so the ACCENT half of the defect does not bite
+on today's archive source.** ⇒ ***The `6.01%` measured above is the SUFFIX half alone*** *(plus two
+short-form names, `Moe`/`Moritz` and `Ron`/`Ronald`, which are a separate and smaller problem)*.
+🔴🔴 **The accent half is LATENT and arms the moment a source sends the real spelling — and the DFS
+apps, which are what `BS_SOURCE=live` reads, are exactly such a source.** ⚠ **`§T20.123` measured that
+those apps have delivered `0` NBA player props ever, so their spelling is `NOT RECORDED` — but
+`Dončić` and `Jokić` are the two highest-volume prop players in the league, and they sit on the wrong
+side of this join.**
+
+## ④ SEVERITY — AND THIS ONE GOES ON THE BRIEF
+
+**It is not a future risk. It is running now**, on the only NBA board source that has ever been
+populated, and `score_board_legs.py:132–133` **counts the misses and drops them** — *the count is
+printed, so it is not invisible, but a run that scores 94% of a board reports success.*
+⇒ 🔴 **`T20-25`, SEASON-CRITICAL. The opening-day brief moves from SIXTEEN to SEVENTEEN.**
+*(The brief's test is "does it break, or get worse, on opening day." **This already breaks, every
+slate, and the accent half gets strictly worse the moment the live apps deliver a board.**)*
+
+✅ **AND THE FIX IS TWO LINES, IN ONE PLACE**: make the reader do what the writer does — fold accents
+and strip suffixes in the `ON` clause, or precompute the reader's key with the same Python
+`norm_name`. ⚠ *Documented, not fixed (rule 1).*
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `Jaren Jackson` **0/0/0**; `norm_name` scores
+**2 of 12** and the mentions were **opened** — `NBA_DATABASE.md:855` describes the table *("`norm_name`
+→ `player_id`. The shared resolution layer used by the grader, the scorers and every board…")* **and
+says nothing about how the key is built versus how it is read.** ✅ **NOVEL.**
+
+📌 ***The lesson:*** **`§T20.126` proved the map was `582`-of-`582` complete and concluded the risk was
+forward-only. It was measuring the wrong thing.** ⚠⚠ ***A lookup table has two correctness
+properties — what is IN it, and whether the key you build matches the key you search with — and a
+completeness check can pass perfectly while the second one fails on nine percent of the league.***
