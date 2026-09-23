@@ -2060,6 +2060,30 @@ identifiers. **All three are present as English**: "scoring composition" `2`, "t
 `3`, "opponent scheme" `3`. ⇒ ***`3` of `3` would have been filed as gaps by the pre-`RULE 58`
 method, in the same pass that numbered the rule.***
 
+## ✅ §F6.26 — **END-OF-PASS VERIFICATION, run over everything `§F6.11`–`§F6.25` wrote**
+
+| check | result |
+|---|---|
+| ✅ **index census, all twelve** | **`12` of `12` EXACT** after re-derivation — `2,798` · `932` · `249` · `167` · `136` · `130` · `134` · `137` · `132` · `99` · `44` · `59` |
+| ✅ **`NBA_MASTER_SUMMARY.md`'s three published definitions** | **all reproduce to the unit**: `2,798` headings · **`1,703`** `§`-sections · **`739`** distinct `§T`*n*`.`*m* labels. *`§`-labels of every form corrected `1,096` → `1,100`; lines `42,297` → `42,327`.* |
+| 🔴→✅ **`§F6.`*n* cross-references** | `26` referenced · **`§F6.26` was DANGLING** *(written inside the index blockquote with no heading of its own — the same defect `§F2.10` had)*. **Given a heading; `0` dangling now.** |
+| ✅✅ **credential-shape scan, the twelve + this log** | **`30` raw hits, `30` CLASSIFIED SAFE, `0` live.** |
+| 🔴 **section-count drift caught** | `NBA_BASELINE_CALIBRATION.md` said `115`, was `119` — **`§F6.11`, my own, had not re-derived.** *`§F6.19`.* |
+
+🔑 **THE CREDENTIAL SCAN'S CLASSIFICATION, because a count alone would be worthless here.** *`29` of
+the `30` are `40`-hex strings, and **every one was put through `git cat-file -t` and returned a real
+object in this repository** — `commit`, `tree` or `blob`. **They are the sweep's own pinned-commit
+citations.** *(Values were never printed: each was reduced to `(shape, length, sha256[:8])` and the
+context lines were redacted before display, per `F2-1`'s standing rule — **THE REPO IS PUBLIC**.)*
+**The thirtieth is the literal string `http://username:password@hostname:port` in this log** — a
+documented FORMAT quoted from a source comment, no value in it. ⇒ ***`0` credential-shaped strings
+in the corpus are credentials.***
+
+📌 ***`F2-1` remains OPEN and this changes nothing about it*** — *the published `balldontlie` key is
+gone from the working tree but still in `2` commits of a PUBLIC repo, and a production Postgres
+password sits in `T13`. **Rotation is the remedy and it is the owner's.** This scan says only that
+the sweep has not ADDED one.*
+
 📜 **`RULE 57` NUMBERED from `§F6.21`** — *a derivation is not recorded until it has been RUN on every
 row it claims* — **and `RULE 53` DISCHARGED for the count change**: corrected string
 ``55 numbered`` → ``56 numbered``, whole-file window ⇒ **RAW `1` site in the twelve, CLASSIFIED a
