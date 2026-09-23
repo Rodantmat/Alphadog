@@ -40772,3 +40772,96 @@ with an abstract that looked like it overturned a published number. It did not. 
 of it by a day, by a method — live verification over message-trust — that the transcripts themselves
 could not have supplied.** ⚠ *What the pass cost was one over-read of one word, made by me, in the
 section that forbade it.*
+
+---
+
+# §T21.2 — 🔴🔴🔴 **THE INSTRUMENT NOW READS THE NEW MATERIAL, AND `T22`/`T23` ARE `95–97%` UNDOCUMENTED**
+
+*T21 pass 2, 2026-09-23. `§T21.0` pre-registered extending the coverage instrument to the new
+transcripts as a tooling change to be made openly rather than silently. **This is that change and its
+first reading — and the reading reframes what is left to do.***
+
+## 1. 🔧 THE INSTRUMENT — **`judge21.py`, and what was deliberately NOT changed**
+
+`judge21.py` is `judge20.py` with **one line different: the transcript path.** *Identical
+`TfidfVectorizer` (`char_wb`, `4–5`, `min_df=2`, `sublinear_tf`, `max_features=300000`), identical
+`linear_kernel` cosine, identical `0.45` high band and `0.40` coverage threshold, identical
+`doc_paras` with the same `EXCL` set (`NBA_SWEEP_RUN_LOG.md`, `PP_PAYOUT_FINDINGS.md` — the THIRTY,
+per `§T11.39b`), identical `substance()` filter.* ⇒ ***The numbers below are comparable to every
+`636 · 2 · 484 · 481` reading in this file. Nothing was tuned to make the new material look any
+particular way.***
+
+## 2. 📊 THE FIRST READING — *working tree, `2026-09-23`*
+
+| | segments | high band | uncovered12 | **% uncovered** | tail |
+|---|---|---|---|---|---|
+| **T21** documentation-sweep | `1,327` | `669` | `612` | **`46.1%`** | `17` |
+| 🔴🔴 **T22** pp-multipliers-build | `897` | **`13`** | `870` | 🔴🔴 **`97.0%`** | **`0`** |
+| 🔴🔴 **T23** pp-multipliers-backtest | `938` | **`27`** | `893` | 🔴🔴 **`95.2%`** | **`0`** |
+| *(T20, after 131 passes)* | `1,041` | `651` | `469` | `45.1%` | `1` |
+
+🔑 **`tail = 0` on both is the sharper number than the percentage.** *The tail counts segments the
+TWELVE miss but the other eighteen documents catch. **Zero means nothing anywhere in the thirty
+covers this material** — it is not filed in the wrong document, it is not filed.*
+
+## 3. ✅ RULE 20 — **THE READING CHECKED IN BOTH DIRECTIONS BEFORE IT WAS BELIEVED**
+
+*A `97%` reading is exactly the shape a broken tokeniser produces, so the segments were opened.*
+
+**Positive control — the top-scoring `T22` segments** *(`0.675`, `0.609`, `0.552`)*: all three are
+**`github_grep_file` results echoing this corpus's own text back** — `nba/NBA_GOBLIN_DEMON.md`,
+`nba/NBA_OPEN_ITEMS.md`, and a workflow's commit step. ⇒ ⚠⚠ ***So part of the `3%` "covered" is
+FALSE-TAIL MECHANISM 3 — the transcript quoting our documents at us, not documentation of the
+transcript.*** **The true coverage is LOWER than `3%`, not higher.**
+
+**Negative control — the lowest-scoring substantive segments** *(`0.074`–`0.080`)*: real work —
+`NormalDist` analysis over `pp_payout_map_…json`, the compression pair `t,k = 9.1, 0.857` with its
+`comp`/`decomp` functions, and `INSERT INTO nba_market.pp_mined_leg (…)`. ⇒ ✅ **Genuine, substantive,
+undocumented pricing material. The instrument is reading correctly.**
+
+## 4. 📊 THE DEFENSIBLE NUMBER — **substance-filtered, tool-output separated**
+
+*The raw `uncovered12` counts every block including shell echoes, so they overstate. Filtered through
+the same `substance()` the sweep has used throughout, and with raw tool-output split out:*
+
+| | substantive segs | **uncovered AND substantive** | of which raw tool-output | **net** |
+|---|---|---|---|---|
+| **T21** | `1,085` | **`386`** | `43` | `343` |
+| **T22** | `777` | **`751`** | `204` | `547` |
+| **T23** | `773` | **`734`** | `129` | `605` |
+| **total** | `2,635` | 🔴🔴 **`1,871`** | `376` | 🔴 **`1,495`** |
+
+> 🔴🔴🔴 **THE HEADLINE, AND IT RESETS THE PLAN.**
+> **`1,495` substantive, non-tool-output, undocumented segments arrived in one zip.**
+> **`T20` — after `131` passes — has `469` uncovered segments in total.**
+> ⇒ ***The new material carries roughly `3–4×` the undocumented substance that the sweep's entire
+> `131`-pass effort has left on the table, and `T22`/`T23` are effectively untouched.***
+
+🔑🔑 **AND THE TWO WORST-COVERED FILES ARE THE SOURCE MATERIAL FOR TWO MANDATED DOCUMENTS.**
+`NBA_MULTIPLIERS.md` and `NBA_GOBLIN_DEMON.md` are two of the twelve; `T22` *(PrizePicks per-leg
+multipliers: `/game_types` endpoint, two-season pricing database)* and `T23` *(two-season backtest,
+WNBA cross-check, conservative mode, Fantasy Score mechanics, slip pricing rules)* are where that
+subject was actually worked out. ⇒ ***Those two documents have been written without their primary
+sources, because their primary sources did not exist until today.***
+
+⚠ **`T21`'s `46.1%` is NOT comparable to `T22`/`T23`'s.** *`T21` is the transcript of this
+documentation effort: its `github_put_file` payloads ARE these documents, so its "coverage" is
+self-authorship, the caveat already carried for `T19`/`T20`.* ⇒ **`T21`'s real undocumented share is
+HIGHER than `46.1%`; the figure is a floor and must not be quoted as an achievement.**
+
+## 5. 📋 CLAUSE SCORING
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | extend the instrument **without changing its scoring** | ✅ **HIT — one line differs: the transcript path.** *Diffable against `judge20.py`.* |
+| **(ii)** | publish the first reading for all three, comparable to the standing baseline | ✅ **HIT — table in §2, same thresholds** |
+| **(iii)** | `RULE 20` in both directions before believing a surprising number | ✅ **HIT — and it found that part of the `3%` is self-echo**, so the reading was revised DOWN, against my own interest in a tidy figure |
+| **(iv)** | separate raw tool-output from substance | ✅ **HIT — `1,871` → `1,495` net** |
+| **(v)** | `RULE 52` vs `bands_p132.json` | ✅ **`entered=[] left=[]` ×3 — twenty-third consecutive** *(on the `T20` instrument, which this pass does not touch)* |
+
+📌 ***What this pass changes is not a fact about the system — it is a fact about the work
+remaining.*** **For `131` passes the constraint was finding anything new in `T20`. That constraint is
+gone: there are `~1,495` undocumented substantive segments sitting in two files that feed two
+mandated documents.** ⇒ **The next passes are chronological content sweeps of `T21`, then `T22`, then
+`T23`, then `T24` — and the pace should be coverage-driven, not novelty-driven, because for the first
+time in this sweep the material is genuinely unread.**
