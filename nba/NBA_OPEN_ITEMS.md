@@ -2193,6 +2193,33 @@ a payout-table validity check and a different subject, **dismissed**.)*
    > **`2,468 events · 4,891 snapshots · 25.7M rows · 2,054,220 credits`** — *"within 1% of the
    > 2.07M projection, leaving **~2.95M for MLB and hockey**"*, **through April 12, 2026**, both
    > snapshots per game *(2:45 PM PT window, tip−30 close)*, **9–10 books per game.**
+   >
+   > > 🔴 **THE BUDGET THE SPEND HAS TO FIT IN WAS NEVER STATED — ADDED 2026-09-23, `§F3.4`.**
+   > > *Every cost above is on file and the CEILING is not: a reader has to reconstruct it by adding
+   > > `2.07M + 2.95M`. **The owner gave it directly** (`T13`, verbatim):*
+   > >
+   > > > ***"179,673 used of 5,000,000 credits · monthly · plans reset on the 1st of each month at
+   > > > 12am UTC · so far and it going 420 credits per tick"***
+   > >
+   > > | | |
+   > > |---|---|
+   > > | **monthly ceiling** | 🔴 **`5,000,000` credits** — *in `0` of the twelve before today* |
+   > > | **reset** | 🔴 **the `1st` of each month, `00:00 UTC`** — *in `0` of the twelve* |
+   > > | usage when quoted | `179,673` *(`3.6%`)* |
+   > > | per-snapshot cost | `420` credits ✅ *(already on file, 3 documents)* |
+   > > | the backfill actually spent | `2,054,220` ✅ *(above)* — **`41.1%` of one month's ceiling** |
+   > >
+   > > 🔑 **THE RESET DATE IS THE OPERATIONALLY LOAD-BEARING HALF, and it is the half that was
+   > > missing.** *A `2.05M`-credit backfill is `41%` of the budget if it starts on the 2nd and can
+   > > be **unaffordable if it starts on the 28th** — the same job, the same cost, a different
+   > > outcome. **`~2.95M left` is only true WITHIN a calendar month**, and nothing in the twelve
+   > > said so.* ⇒ ***a cost recorded without its budget is not actionable*** — **`RULE 55` in its
+   > > fifth costume.**
+   > >
+   > > ⚠ **`AS STATED BY THE OWNER`, not re-taken live.** *`179,673` is a reading from `T13`
+   > > (2026-09-13) and is now stale by definition; **the ceiling and the reset rule are the durable
+   > > facts and are what this block is for**.* 🔴 **`NOT RECORDED`: the current balance, and
+   > > whether the plan has changed since.**
    > 🔴🔴 **A NUMERIC COLLISION THAT WILL MISLEAD A FUTURE READER, recorded so it does not**:
    > ***this `2,468` is the BOARD backfill's event total and is NOT the `2,468` already in this
    > corpus.*** **`nba_market.game_lines_snapshots` holds 2,468 distinct `event_id`** *(§T11.14a,
