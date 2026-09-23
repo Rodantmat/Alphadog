@@ -113,7 +113,7 @@
 > ## ✅ **RE-DERIVED AGAINST THE LIVE SYSTEM — 2026-09-22T19:16Z, `SELECT` ONLY, NOTHING CHANGED**
 > | item | re-derivation | state |
 > |---|---|---|
-> | **T20-13** *(ranked 1st)* | `baseline_history`: **October = `22` distinct props · November = `30`**, both prior seasons. P2 gates on `>= 25` with `CERT_STRICT=1`. | 🔴 **HELD EXACTLY** — *red from opening night through Oct 31: **twelve nights**.* |
+> | **T20-13** *(ranked 1st)* | `baseline_history`: **October = `22` distinct props · November = `30`**, both prior seasons. P2 gates on `>= 25` with `CERT_STRICT=1`. | 🔴 **HELD EXACTLY** — *red from opening night through Oct 31: **twelve nights**.* 🔴 **CORRECTED 2026-09-23, §T20.136: the FACT held; the DURATION did not — red EVERY night of the season, because `baseline_history has today` fails before the prop gate is reached (`T20-6`).** | 
 > | **T20-12** | `PT = timezone(timedelta(hours=-8))` still at `build_availability_delta.py:39`; **zero DST-aware Python** in the NBA scripts. | 🔴 **HELD** |
 > | **T20-4** | `nba-p3-afternoon-light.yml:38,205` — `default: "2025-26"`, `BS_SEASON: ${{ … \|\| '2025-26' }}`. | 🔴 **HELD** — *the 2026-27 season opens in 28 days.* |
 > | **T20-14** | Betr board: still **ONE commit, `2026-09-09`**; `token_expires_at` **`2026-10-10T06:10:56Z`** — **18 days out, 10 days before opening night.** *(Value never reproduced; the repo is PUBLIC.)* | 🔴 **HELD** |
