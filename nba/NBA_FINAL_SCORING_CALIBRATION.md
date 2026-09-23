@@ -26,6 +26,9 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 > | if you need… | go to |
 > |---|---|
 > | 🔴🔴🔴 **whether the model actually beats the book** *(`1.08 M` legs)* | **`§0.14-T23`** ⚠ *newest; read first* |
+> | 🔴🔴🔴 **WHICH THRESHOLD AND PICK COUNT ACTUALLY PAY** — the full `3 × 5 × 2` `ROI` grid | **`§0.16-F2`** ⚠ *newest; the numbers `§0.14-T23`'s verdict was drawn from* |
+> | ✅✅ **is the backtest edge just stale pre-move lines?** — the leakage control, and it holds | **`§0.16-F2` §3** |
+> | 🔴 **the only LOSING cell in the grid** *(2-pick, 2024-25, thresholds `1.20`/`1.30`)* | **`§0.16-F2` §2** |
 > | 🔴 **the penalising half of the score formula has NEVER FIRED** | **`§0a-T18-D`** |
 > | 🔴 **the score's THREE formulas, and which two the live column holds** | **`§0a-T18-B`** |
 > | 🔑 **"the score must ENHANCE the hit probability — no kill good legs"** | **`§0a-T18`** |
