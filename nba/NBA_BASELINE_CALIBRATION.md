@@ -2,7 +2,96 @@
 
 **Scope.** Everything governing the **baseline hit probability** — the classification/baseline
 pipeline. Formulas, tiers, granulation, lifts, penalties, caps, shrinkage, distributions, calibration
-and the evidence behind each. The final scoring engine (final HP, confidence, score) is a separate
+and the evidence behind each.
+
+---
+
+> # 📑 **INDEX — `NBA_BASELINE_CALIBRATION.md`**
+> **`106` sections · `124,558` bytes · `1,847` lines · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> rotted within a day)*. **Search for the quoted `§` label.**
+> 🔴🔴 **TWO STRUCTURAL DEFECTS, MEASURED `2026-09-23`:**
+> **① `§0y` APPEARS TWICE** — *"THE OREB REBUILD"* and *"WHERE THE BASELINE'S CONSTANTS ACTUALLY
+> LIVE"*. **They are unrelated sections with the same label.**
+> **② A STRAY `h1` MID-FILE**: `# turnovers/fouls tested at 0.5 and 0.25 and were WORSE than
+> replacement -> stay replacement` — **a config comment that escaped its code fence and now renders
+> as a top-level heading**, splitting `§3.7 Shrinkage` from `§3.9b`. *(Same class as
+> `NBA_WORKERS.md` `§0.38`.)* ⚠ **Documented, not repaired — the line carries real content and rule 1
+> holds.**
+> 🔴 **And the `0*` blocks run backwards**: `0z-T17` → `0z-T16-C` → `0z-T16-B` → `0z-T16` → `0y` →
+> `0y-1` → `0y-2` → `0x` → `0u` → `0v` → `0w` → `0y`②.
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | 🔴 **the calibration parity violation** *(found in something ALREADY APPLIED to `38.7M` legs)* | **`§0z-T17`** |
+> | 🔑 **the owner's directive to calibrate in WINDOWS, not over a full season** | **`§0z-T16`** |
+> | 🔑 **the phase × band calibration layer** *(the one thing from `2026-09-13` that survived)* | **`§0z-T16-B`** |
+> | ⚠ **two validation traps, and a granularity result that cuts against the owner's own instinct** | **`§0z-T16-C`** |
+> | 🔑 **why "CERTIFIED" never meant "STORED"** *(the distinction that produced `baseline_history`)* | **`§0v`** |
+> | 🔑 **the parity rule as the governing document states it** | **`§0u`** |
+> | ⚠ **where the baseline's constants ACTUALLY live** *(in Python, not in config)* | **`§0y`② — the SECOND `0y`** |
+> | 🔴 **the `oreb` rebuild — five hypotheses, four wrong** | **`§0y`① — the FIRST `0y`** |
+> | 🔴 **the third selection-filter failure, and the sanity gate that catches the family** | **`§0y-2`** |
+> | ✅ **the calibration checker** — `nba/check_prop_calibration.py` | **`§0y-1`** |
+> | **the boundary — what the baseline may and may not see** | **`§1`** |
+> | **the five-dimension tiering architecture** | **`§2`** |
+> | **the computation, in order** | **`§3`** *(→ `3.7` shrinkage, `3.9b` technique, `3.10b` the as-of leak)* |
+> | **the factor layer — lifts and penalties** | **`§4`** |
+> | 🔑 **the permanent rules** | **`§5`** *(→ `5.2` three academic cautions, `5.6` out-of-sample is necessary but NOT sufficient)* |
+> | ✅ **the certified result** · **what "calibrated" means, and does not** | **`§8`** · **`§9`** |
+>
+> ## 📋 EVERY SECTION, IN LOGICAL ORDER
+>
+> ### 🎯 **A · THE GOVERNING RULES AND THE PARITY QUESTION**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0u`** | 🔑 **THE PARITY RULE as the governing document states it** — and the A5 rejection's actual measurement | 🔑 |
+> | **`0z-T17`** | 🔴 **THE CALIBRATION PARITY VIOLATION — found in something ALREADY APPLIED to `38.7M` legs** | 🔴🔴 |
+> | **`0z-T16`** | 🔴 **CALIBRATE IN WINDOWS, NOT OVER A FULL SEASON — the owner's directive** | 🔴 |
+> | **`0z-T16-B`** | 🔑 **THE PHASE × BAND CALIBRATION LAYER** — the one thing in the `2026-09-13` session that survived | 🔑 |
+> | **`0z-T16-C`** | 🔴 **Two validation traps, and a granularity result that cuts AGAINST the owner's own instinct** | 🔴 |
+> | **`0v`** | 🔑 **"CERTIFIED" NEVER MEANT "STORED"** — the distinction that produced `baseline_history` | 🔑 |
+> | **`9`** | **WHAT "CALIBRATED" MEANS — and does not** | |
+>
+> ### 🧮 **B · THE COMPUTATION ITSELF**
+> | § | what it covers |
+> |---|---|
+> | **`1`** | **THE BOUNDARY — what the baseline may and may not see** |
+> | **`2`** | **THE FIVE-DIMENSION TIERING ARCHITECTURE** *(`T8`)* |
+> | **`3`** | **THE COMPUTATION, IN ORDER** |
+> | **`3.7`** | **Shrinkage** ⚠ *followed by the stray `h1` described above* |
+> | **`3.9b`** | **THE CALIBRATION TECHNIQUE — what to use and what to reject** |
+> | **`3.10b`** | ⚠ **THE AS-OF LEAK — a known failure with MLB precedent** |
+> | **`4`** | **THE FACTOR LAYER — lifts and penalties** |
+> | **`6`** | **THE PERIOD LAYER — where the mixture IS implemented** |
+> | **`7`** | **COMBOS — joint structure, never a direct fit** |
+> | **`8`** | ✅ **THE CERTIFIED RESULT** |
+>
+> ### 📏 **C · THE PERMANENT RULES AND THE CAUTIONS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`5`** | **THE PERMANENT RULES** | |
+> | **`5.2`** | **Three academic-literature cautions for the calibration loop** | |
+> | **`5.6`** | ⚠⚠ **OUT-OF-SAMPLE VALIDATION IS NECESSARY BUT NOT SUFFICIENT** | ⚠⚠ |
+> | **`0x`** | 🔴 **Three things the mandated documents did NOT carry** — a leakage rule and two measured priors | 🔴 |
+>
+> ### 🔧 **D · THE REBUILDS, THE GAPS AND THE CHECKER**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0y`①** | 🔴 **THE `oreb` REBUILD — five hypotheses, FOUR WRONG — and the third selection-filter failure** | 🔴 |
+> | **`0y-1`** | ✅ **THE CALIBRATION CHECKER** — `nba/check_prop_calibration.py` *(`T15` pass 2)* | ✅ |
+> | **`0y-2`** | 🔴 **The third selection-filter failure — and the SANITY GATE that now catches the family** | 🔴 |
+> | **`0w`** | 🔑 **The baseline's THREE PRODUCTION GAPS — named in `T13`, and TWO are now CLOSED** | 🔑 |
+> | **`0y`②** | ⚠ **WHERE THE BASELINE'S CONSTANTS ACTUALLY LIVE — in Python, not in config** ⚠ *second section labelled `0y`* | ⚠ |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`A` is what calibration is allowed to be, `B` is how it is
+> computed, `C` is what will fool you, `D` is what was rebuilt and what is still open.***
+> ⚠ **This file governs the BASELINE only.** *The final hit probability, confidence, score and edge
+> live in **`NBA_FINAL_SCORING_CALIBRATION.md`** — and that file's `§0.14-T23` reports that the
+> baseline's **tails are too wide**, measured on `1.08 M` legs.* The final scoring engine (final HP, confidence, score) is a separate
 document: `NBA_FINAL_SCORING_CALIBRATION.md`.
 
 **Source of truth in code**: `nba/backtest/classification_ladder_v12.py` (now v18) —
