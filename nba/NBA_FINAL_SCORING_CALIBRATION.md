@@ -4534,6 +4534,59 @@ optimises for.**
 
 ---
 
+# 0.18b-T24. 📉 **§T24.8 — THE PER-PROP RESULTS, WHICH ARE WHAT THE NEXT PHASE ACTUALLY NEEDS**
+*`T24` pass `8`, recorded `2026-09-23`. **`T24-2` item `1` asks for per-prop edge cells as the next
+phase; these are the per-prop numbers that already exist, and they were in none of the twelve.***
+
+### **A · FANTASY SCORE, conservative, realised value per leg** *(`2024-25` / `2025-26`)*
+| leg | model `p` | actual | **realised** |
+|---|---|---|---|
+| goblin `2.2×`, a point harder | `0.62` | `0.67` | **`0.976` / `0.983`** |
+| standard Over, centre `+1` | `0.45` | `0.47` | **`0.939` / `0.942`** |
+| standard Under, centre `−1` | `0.46` | `0.42` | 🔴 **`0.851` / `0.841`** |
+| demon `4.0×`, a point harder | `0.30` | `0.29` | 🔴 **`0.763` / `0.771`** |
+
+✅ *Realised value climbs **monotonically** with the model's claim (`0.83` → `1.06`–`1.07` top
+bucket, both seasons)* — **the model ranks Fantasy legs correctly.** 🔴 **And the best leg per
+player-night returns `1.03`–`1.04`, BELOW the `3`-pick breakeven of `1.10`.** ⇒ ***Correct ranking
+and insufficient level are different failures, and only the second one excludes the prop***
+*(`T24-2` item `7`)*. ⚠ *"Real lines may show the one-point penalty is too harsh. Revisit on the NBA
+preseason board."*
+
+### **B · DERIVED PROPS at claimed ≥`1.30`** *(`2024-25` / `2025-26`; group realised `1.063 ± 0.017` / `1.093 ± 0.016`, below `1.10`)*
+| prop · side | legs | `2024-25` | `2025-26` |
+|---|---|---|---|
+| ✅🔑 **FTM Over** | `364` *(hit `65%`)* | **`1.293`** | **`1.322`** |
+| **FTA Under** | `112` | `1.294` | `1.205` |
+| **FTM Under** | `140` | `1.258` | `1.205` |
+| 3PA Over | — | `1.144` | `1.089` |
+| 3PA Under | — | `1.034` | `1.125` |
+| FGA Over | — | `1.061` | `1.092` |
+| FGA Under | — | `1.006` | `1.085` |
+| DREB Under | — | `0.988` | `0.990` |
+| 🔴 **OREB Over** | — | **`0.757`** | **`0.944`** — *fails* |
+
+🔑🔑 ***FREE THROWS ARE THE CANDIDATE FAMILY, and they are the only one that clears `1.10` in both
+seasons.*** *`FTM Over` at `1.293`/`1.322` on `364` legs with a `65%` hit rate is the single
+strongest derived cell.* ⚠ **Conditional on the preseason validating the proxy lines** — *these are
+simulated lines, not real ones.*
+
+### **C · AND ON REAL LINES, THE LOW-COUNT PROPS CARRY EDGE ON BOTH SIDES**
+*From the Under-artifact investigation — **these use REAL PrizePicks lines, not simulated ones**,
+which makes them the more trustworthy half of this section:*
+
+| prop | Under | Over |
+|---|---|---|
+| **steals** | **`1.390`** | `1.319` |
+| **turnovers** | `1.286` | `1.255` |
+| **blocks** | — | **`1.354`** |
+
+*Top picks, `60`–`70%` hit.* 🔑 ***Edge on BOTH sides of the same prop is the signature of a real
+mispricing rather than a directional bias*** — *and it is the observation that separated the genuine
+low-count edge from the `~80%`-Unders artifact that first produced it.*
+
+---
+
 # 0.18-T24. 📐 **§T24.5 — THE DERIVED-LINE ESTIMATOR TABLE, WITH ITS SAMPLE SIZES** *(`RULE 56`)*
 *`T24` pass `5`, recorded `2026-09-23`. **The twelve referenced "`§4.4`'s points-scaled estimators"
 without ever carrying the table that chose them.** ⚠ `T24` is a secondary source.*
