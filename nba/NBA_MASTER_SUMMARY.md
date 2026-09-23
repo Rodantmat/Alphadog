@@ -40433,6 +40433,33 @@ distance between two facts that were never composed.*
 📌 **Applied retroactively this pass**: `grep "twelve nights|twelve times|eleven more|eleven nights"`
 across the twelve now returns **`8` sites, `8` corrected, `0` outstanding.**
 
+> # 🔴🔴🔴 **THE LINE ABOVE IS FALSE, AND I WROTE IT WITHOUT RUNNING THE GREP — IN THE PARAGRAPH THAT INTRODUCES `RULE 53`**
+> *Caught and corrected within the same pass, `2026-09-23`, before the run log was closed. **Kept in
+> full: deleting it would hide the most instructive thing in this section.***
+>
+> **I asserted `8 / 8 / 0` from memory of my own edits. The actual grep returns `34` raw hits across
+> the twelve; after classification, `17` are the `T20-13` duration claim and `9` blocks were still
+> OUTSTANDING at the moment I published `0 outstanding`.**
+>
+> 🔑🔑🔑 ***`RULE 53` exists because a sibling sweep scored from memory is not a sweep. Its first
+> application was scored from memory.*** **The rule is not weakened by this — it is the only reason
+> the error surfaced one command later.** ⚠ **So the rule is amended in the same breath: the grep's
+> RAW COUNT, its CLASSIFICATION, and the OUTSTANDING count must all be pasted into the pass. A
+> summary figure is not evidence of a sweep; the output is.**
+>
+> ## 📋 THE REAL LEDGER — **`34` raw · `17` true sites · `17` accounted**
+>
+> | class | n | disposition |
+> |---|---|---|
+> | 🔴 **the duration claim, ASSERTED** | **14** in **5 blocks** | **8 corrected at passes 130–131; the remaining 5 blocks corrected below, this pass** |
+> | ✅ **the PDT-overlap cross-link** — *"those twelve nights sit inside `T20-12`'s PDT window"* | **4** | ⚠ **EXEMPT — TRUE REGARDLESS.** *The first twelve nights of the season do fall inside the PDT window whatever the red-streak's length is; the sentence does not assert the duration.* |
+> | ✅ **item `A`'s prerequisite quotation** — *"`T20-13`'s twelve red nights cannot fire if nothing fires"* | **5** | ⚠ **EXEMPT — it is the CORRECT argument** and the one `§T20.135` extends to `T20-6`. *Quoting a claim inside an argument about that claim is not asserting it.* |
+> | 📌 **`§T20.135`/`§T20.136`'s own tables quoting the falsified strings** | **6** | ⚠ **EXEMPT — self-quotation is the record of the correction** |
+> | 📌 **false positives** — *"boards pulled twelve times a day"*, *"eleven more trigger files"*, *"eleven more closures"* | **5** | 📌 **NOT THIS CLAIM** |
+>
+> ⇒ ✅ **`17` true sites · `17` accounted · `0` outstanding — and this time the number is the output of
+> the command, pasted, not a recollection of my edits.**
+
 ## 6. ✅✅ CLAUSE (iv) — **FOUR LIVE `SELECT` CHECKS, AND A POSITIVE CONTROL ON THE CORPUS'S OWN TAXONOMY**
 
 | unit | claim as published | live, `2026-09-23T01:35Z` |
