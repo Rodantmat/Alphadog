@@ -2326,3 +2326,83 @@ them is an availability outage rather than a timeout. **The transcript does not 
 message**, so *"timing out"* remains the author's characterisation, not a verified diagnosis. **What
 IS verified: five aggregate queries against `final_hp` failed, and the whole bridge was unavailable
 for one turn.**
+
+---
+
+# §F2.16 — 🔴 **FOUR WORKFLOW FILES ARE NAMED NOWHERE IN THE TWELVE, AND ONE OF THEM HOLDS A SEASON-CRITICAL DEFECT**
+
+*Added 2026-09-23 by the transcript re-sweep, direction (b). **Found by an instrument, not by
+reading**: extract every identifier from the `~12,686` uncovered-substantive segments, rank by
+mentions × spread, keep the ones absent from all twelve. **`285` identifiers seen · `121` absent** —
+and once the Python-traceback noise was discarded *(`stats.norm`, `stats.nbinom`, `base.py`,
+`cursor.py` and the rest are **scipy and site-packages frames**, not this system)*, **what survived
+was workflow filenames.**
+
+**Re-derived from the authority** *(`.github/workflows/` listing, 2026-09-23, `40` files, each
+filename grepped across all twelve)*:
+
+| workflow | mentions in transcripts | transcripts | in the twelve |
+|---|---|---|---|
+| 🔴 **`nba-backtest.yml`** | 17 | 5 *(`T8`,`T9`,`T10`,`T12`,`T18`)* | ❌ **`0` of 12** |
+| 🔴 **`nba-grader.yml`** | 11 | 3 *(`T13`,`T14`,`T18`)* | ❌ **`0` of 12** |
+| 🔴 **`nba-measure-types.yml`** | 6 | 5 *(`T7`,`T9`,`T10`,`T12`,`T18`)* | ❌ **`0` of 12** |
+| 🔴 **`nba-score-history.yml`** | 9 | 1 *(`T23`)* | ❌ **`0` of 12** |
+
+**The other `36` are all named at least once** *(`nba-p3-afternoon-light.yml` `8` documents,
+`nba-p1`/`nba-p2` `7`, `nba-engine-test.yml` and `nba-referees.yml` `6`…)*. ⇒ ***`4` of `40`, and
+they are not obscure: three of the four are named in five separate transcripts each.***
+
+## 1 · 🔴🔴🔴 `nba-grader.yml` — **`name: NBA Outcome Grader`** — and it holds `T20-5`'s defect a second time
+
+| | |
+|---|---|
+| triggers | **`workflow_dispatch:` only — no `schedule:`** *(consistent with `T20-3` ④)* |
+| timeout | **`330` minutes** |
+| runs | `python nba/grade_board_outcomes.py` |
+| inputs | `start` *(default **`2024-10-22`**)* · 🔴 `end` *(default **`2026-04-12`**)* · `limit_dates` *(default `0`, "use a small number for a smoke test")* |
+| `env:` | `DATABASE_URL` · `GRADE_START: ${{ inputs.start \|\| '2024-10-22' }}` · 🔴 `GRADE_END: ${{ inputs.end \|\| '2026-04-12' }}` · `GRADE_LIMIT_DATES` |
+
+🔴🔴🔴 ***`T20-5` locates the stale `2026-04-12` window in `grade_board_outcomes.py:167–168`. It is
+ALSO here — twice — and the workflow passes `GRADE_END` EXPLICITLY.*** **So a corrected script
+receives the stale date from the workflow and behaves exactly as before. Three sites must change,
+not one.** *Filed onto `T20-5`; the item's severity is unchanged and its REMEDY is.*
+
+## 2 · `nba-score-history.yml` — **`name: NBA Score History`** — a two-job pipeline with no record in the twelve
+
+**Its own header comment states the purpose:** *"Scores the model over PAST dates into
+`nba_score.board_scored`, point-in-time (`nba/score_history.py`), so the model has a scored history
+to compare against PrizePicks' prices."* ⚠ *That comment cites `nba/PP_PAYOUT_FINDINGS.md, pending
+item 1` — **but this workflow is NOT on the concurrent session's exclusion list** (only
+`nba-pp-payout-map.yml` is), so it is recorded here.*
+
+| job | what it runs | env |
+|---|---|---|
+| **`calibrate`** | `nba/build_asof_calibration.py` — *"rebuild the as-of calibration, every season in `final_hp`, oldest first"* | **`AC_K: '400'`** · **`AC_CADENCE_DAYS: '7'`** |
+| **`score`** *(`needs: calibrate`)* | `nba/score_history.py`, an **8-way matrix** — *"Score chunk N of 8"* | `SH_FROM` · `SH_TO` · `SH_CHUNK` · **`SH_CHUNKS: '8'`** · `SH_SKIP_BUILT_AFTER` |
+
+✅ **Safety properties, quoted from the file:** *"oldest first; **refuses to write an empty build**"*
+· *"**Manual only**"* · *"**Re-running is safe: a date is replaced whole**."* 🔑 **A
+refuses-to-write-empty guard is the opposite of the silent-failure class this corpus tracks — worth
+recording as a POSITIVE control on the codebase's habits.**
+
+## 3 · `nba-backtest.yml` and `nba-measure-types.yml` — **file-triggered, and both use the forbidden idiom**
+
+**Both fire on `workflow_dispatch: {}` AND on `push:` with a `paths:` filter** — the trigger-file
+pattern this corpus documents. `nba-backtest.yml` *(`name: NBA Backtest`)* runs
+`nba/backtest/minutes_model_v1.py` among others; `nba-measure-types.yml` *(`name: NBA Measure Types
+Backfill`)* runs `nba/scrape_nba_backfill_measure_types.py` with `PROXY_URL`.
+
+🔪 **`continue-on-error: true` — KILLED under rules 26/28, with the count recorded.** *Both use it,
+and so do nine other workflows. **Re-derived 2026-09-23: `11` of `40` workflows, `48` occurrences**
+— `nba-scrape.yml` **15** · `nba-backtest.yml` **12** · `nba-backfill.yml` **4** ·
+`nba-boards-market.yml` **4** · `nba-daily-delta.yml` **3** · `nba-diagnostic.yml` **3** ·
+`nba-pergame-backfill.yml` **2** · `nba-season-tables.yml` **2** · `nba-game-officials.yml`,
+`nba-measure-types.yml`, `nba-starter-status.yml` **1** each.* **The IDIOM and its rationale are
+thoroughly on file** *(`§T2.10a`; *"15 of 16 scrape steps"*; `T20-10` for `nba-daily-delta.yml`)*
+⇒ **not a new finding. The corpus-wide COUNT is the only new part, and it is recorded here rather
+than filed as an item.**
+
+⚠ **RULE 54.** *The gap scan ranks identifiers by mentions and spread; it cannot see a workflow
+discussed only by its `name:` (`"NBA Outcome Grader"`) rather than its filename, and it discards
+anything the segmenter's normalisation mangles.* ***"`4` of `40` filenames are absent", never "these
+are the only undocumented workflows."***
