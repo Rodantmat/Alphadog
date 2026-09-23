@@ -1244,3 +1244,101 @@ an identity if the terms are the same terms.*
 > account.* 🔴 **`NOT RECORDED`** — the above-`5×` consolation rule · what the tier IS a function of ·
 > the surviving half-point residual in tier B. ⚖️ **`pp_*` objects not queried; nothing changed or
 > triggered.**
+
+---
+
+# 0i-T24. 🔑🔑🔑 **THE LEG EDGE MAP — WHICH TIERS ACTUALLY PAY, MEASURED PER SEGMENT** *(T24 pass 2, §T24.2, 2026-09-23)*
+
+> ⚠ **`AS STATED IN THE SESSION RECORD (`T24`, SECONDARY)** throughout — `§T21.0` §3. **Not re-run by
+> this sweep; the `prop_universe` and `pp_*` objects were not queried.** *This is the most actionable
+> table in the corpus and its evidence tier is stated first for that reason.*
+
+## 1. 🔑 **THE BARS, AND THEY ARE NOT THE SAME FOR EVERY KIND**
+
+| slip | what a **standard** leg needs | what an **alternate** leg needs |
+|---|---|---|
+| **3-pick Power** | **`1.10`** | 🔴 **`~1.14`** |
+| **2-pick Power** | **`1.155`** | — |
+
+> 🔑 ***Alternates face a HIGHER bar because they face a LOWER mixed base — `5.33` against `6.0` in a
+> 3-pick.*** **A goblin or demon must clear `~1.14`, not `1.10`.** ⚠ **This corpus has been comparing
+> every kind against one breakeven.** *`claimed = 2 × factor × model_p`; `realized = 2 × factor × hit`.*
+
+## 2. 🔴🔴 **THE TABLE — confident picks (`claimed ≥ 1.30`), realized `2024-25` / `2025-26`**
+
+| source · kind · side | legs | **2024-25** | **2025-26** | hit | verdict |
+|---|---|---|---|---|---|
+| 🟢 **real standard Over** | `14,429` | **`1.133`** | **`1.130`** | `56.5%` | ✅ **clears `1.10` both seasons** |
+| 🟢 **real standard Under** | `26,970` | `1.099` | **`1.131`** | `55.8%` | ⚠ **marginal in 24-25 (`1.099` vs `1.10`)** |
+| ⚠ **real goblin Over** | `2,480` | `1.137` | `1.100` | `66.5%` | ⚠ **near its HIGHER `~1.14` bar — does not clearly clear** |
+| 🔴 **real demon Over** | **`73,495`** | `1.060` | `1.018` | `25.7%` | 🔴 **fails, both seasons, on the largest population** |
+| ⚠ simulated standard Over | `6,236` | `1.098` | `1.123` | `55.6%` | ⚠ mixed |
+| 🔴 simulated standard Under | `9,299` | `0.984` | `1.026` | `50.3%` | 🔴 **fails** |
+| 🟢 simulated goblin Over | `120` | `1.163` | `1.149` | `82.5%` | ⚠ **clears, on `120` legs** |
+| 🔴 simulated demon Over | `2,876` | `0.968` | `0.982` | `37.5%` | 🔴 **fails** |
+
+> ⇒ 🔑🔑🔑 ***REAL STANDARDS CARRY EDGE IN BOTH SEASONS. DEMONS — REAL OR SIMULATED — DO NOT.
+> SIMULATED UNDERS DO NOT. GOBLINS SIT NEAR THEIR HIGHER BAR.***
+> 🔴 **And the failing population is the biggest one**: `73,495` real demon Over legs at `1.060` and
+> `1.018`. ⚠ *This is the same conclusion `§0h-T22` reached from the pricing side (**"demons underpay
+> as a class, `−8%` to `−10%`"**) — **arrived at independently, from outcomes rather than from
+> prices.*** ✅ **Two different methods, one answer.**
+
+## 3. 🔴 **AND THE MODEL CLAIMS EDGE EVERYWHERE, INCLUDING WHERE THERE IS NONE**
+
+> *"**The model claims `1.36–1.63` everywhere** — raw confidence overstates the edge."*
+
+⇒ ⚠⚠ ***The claim does not discriminate between the segments that pay and the segments that do
+not.*** **That is precisely why `§0.14-T23`'s finding — the model RANKS but is `~5×` over-confident —
+matters operationally: the ranking is usable, the magnitude is not, and a threshold applied to the
+magnitude selects demons at scale.** *(`73,495` demon legs cleared `1.30` and returned `1.02`.)*
+
+## 4. ✅ **SLIP-LEVEL CONFIRMATION OF THE SAME OVERCONFIDENCE** *(`T24` §8)*
+
+**Claimed `2.334` per unit against realized `1.158`** across the validated simulation ⇒ **a `2.0×`
+overstatement at the SLIP level**, consistent with the `~5×` edge overstatement at the leg level
+*(edge is the part above `1.0`: `1.334` claimed vs `0.158` realized ⇒ **`8.4×`**)*. ⚠ *Stated both
+ways because "`2×`" and "`5–8×`" describe the same defect on different scales and the corpus should
+not carry one without the other.*
+
+---
+
+# 0j-T24. ✅✅ **VOID / PUSH REVERSION — VERIFIED FROM PRIZEPICKS' OWN SCHEDULES, `79` OF `79`**
+
+*`pp_quote.power_srp` / `flex_srp`, **`2,662` quotes**. Rule `reversion_values`, marked **verified**.*
+
+| case | rule |
+|---|---|
+| **all-standard POWER** | `r` legs left → **the `r`-pick base** *(`20`, `10`, `6`, `3`)*; **`1.5×` for a single survivor**; **refund only if NONE left** |
+| **all-standard FLEX** | `r ≥ 3` → the `r`-pick Flex schedule *(`10/2/0.4`, `6/1.5`, `3/1`)*; 🔑 **`r = 2` → `3×` POWER-style, NOT the 2-pick Flex `2/0.5`**; `r = 1` → `1.5×` |
+| **match rate** | ✅ **`79` of `79`** schedule entries, `n = 2–6`, every remaining count, Power and Flex, **including same-game-adjusted quotes** |
+
+> 🔑🔑 ***"A VOID IS NEVER A REFUND."*** **The slip shrinks to the smaller base; it does not return
+> the stake.** *That is the single most consequential sentence for EV arithmetic on any slip with
+> injury risk, and it appears nowhere else in this corpus.*
+
+## **MIXED SLIPS — and the rule is the worst case for the bettor**
+
+> *"PrizePicks shows the payout of the `r` **LOWEST-factor** legs of the original slip."*
+
+| legs left | within one price step | mean ratio |
+|---|---|---|
+| `2` | **`99.5%`** | `0.997` |
+| `3` | **`96.6%`** | `1.004` |
+| `4` | **`91.3%`** | `1.002` |
+| `5` | ⚠ `57.5%` | `1.019` — *"the partial multi-alt law runs low"* |
+| `1` | — | ⚠ `1.5 × factor` runs **`~6%` under** PrizePicks |
+
+🔴 **keep-HIGHEST matches `0–20%`** ⇒ **the alternative hypothesis is decisively excluded.**
+✅ **AND THE GRADING CHOICE IS CONSERVATIVE BY CONSTRUCTION**: *"settlement by the displayed worst
+case or by the actual survivors **both pay ≥ keep-lowest** → grading by keep-lowest is conservative
+either way."* 🔑 **This is the owner's `§T23.1` §3 rule — *"aim for less earnings"* — implemented as
+a grading default, not as a shading.**
+
+*Functions: `nba_market.pp_power_after_voids(factors[], live)`, `nba_market.pp_flex_standard_payout(legs, hits, original)`.*
+
+---
+
+> 📌 **TIERS**: ⚠ **AS STATED IN `T24`** *(SECONDARY)* throughout. 🔴 **`NOT RECORDED`** — why the
+> `5`-legs-left case drops to `57.5%`; why `1` left runs `~6%` under. ⚖️ **Nothing queried, changed or
+> triggered.**
