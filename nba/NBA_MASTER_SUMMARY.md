@@ -35332,7 +35332,9 @@ later pass."***
 ## 🔴 CLAUSE (iii) — **MEASURED, AND IT IS WORSE THAN §T20.70's LINE COUNT SUGGESTED**
 
 **`910,821` characters — `87.0%` of a `1,046,960`-character file — sit above the OPENING-DAY BRIEF**
-*(line `13,282` of `14,993`, `2026-09-22T19:16Z`)*. **What occupies the top instead: the `T18-1`
+*(line `13,282` of `14,993`, `2026-09-22T19:16Z`)*. ⚠ **THIS IS THE `2026-09-22` LAYOUT, NOT TODAY'S.**
+***The brief now sits at the TOP of `NBA_OPEN_ITEMS.md` as `ACT ON THIS` § `B`; only its amendment
+history remains further down.*** *Figure kept as the measurement that justified the repair.* **What occupies the top instead: the `T18-1`
 ladder diagnosis and a `T17` census entry — both real, neither a ranked list of what must be fixed
 before opening night.**
 
