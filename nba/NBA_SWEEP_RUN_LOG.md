@@ -2556,6 +2556,71 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 > made, and a reader who trusts `§F7.5` is exactly the reader who needs this.** `RULE 40` keeps the
 > old stamp legible; `RULE 59` stops it being believed.*
 
+> ### 🔴🔴🔴 **§F7.15 — THE POINTER AUDIT, RE-RUN. NINE DETECTORS, NINE ANSWERS, ONE UNCHANGED CORPUS — SO THE RATE IS RETIRED AND THE RESOLVER SHIPS INSTEAD.**
+>
+> *`2026-09-23`, the findability re-verification, after ~`110` commits. **`§F7.7` warned about exactly
+> this and I walked into it anyway. That is the entry.***
+>
+> #### 1 · What `§F7.7` said, and what happened when I re-ran it
+>
+> > 🔑 ***"Every published dangling rate in this corpus's history has been an artifact of the
+> > detector, and every one of them was more pessimistic than the truth."*** *(`§F7.7`, five versions,
+> > five answers.)*
+>
+> **I re-ran the audit and produced four more versions.** *Not variants — genuinely different
+> detectors, each of which looked right while I was writing it:*
+>
+> | v | the detector | dangling | what it got wrong |
+> |---|---|---|---|
+> | **6** | label must sit in a `^(?:>\s*)*#{1,6}\s` heading | **`1,447`** | 🔴 **this corpus defines most sections as BOLDED BLOCKQUOTE LINES, not `#` headings** |
+> | **7** | + bolded-lead definition form | **`1,325`** | still heading-biased |
+> | **8** | label followed by a title separator `—`/`–`/`:` | **`1,170`** | different set, not a smaller one |
+> | **9** | union of `6`–`8` | **`394`** | 🔴 **still flagged `§T22.29`, `§T22.20`, `§T24.6` — sections I WROTE TODAY** |
+> | **10** | markup stripped first, then `8` | **`509`** | *worse than `9`, by a detector that is strictly better informed* |
+>
+> 🔑 **The tell was `§T22.29`.** *It is written* `` *(added `2026-09-23`, `§T22.29` — the owner's
+> standing rule…)* `` **— and the BACKTICKS sit between the label and the em dash, so the separator
+> test misses it.** *A corpus that writes the same label as* `§T22.29` *,* `` `§T22.29` `` *and*
+> `**§T22.29**` *has no single lexical definition of "defined", and every rate I publish is really a
+> measurement of which of those three spellings I happened to anticipate.*
+>
+> #### 2 · The decision — **the dangling RATE is retired. It is not re-measured, and no successor should.**
+>
+> ⚠ ***`RULE 58` says a `0`-of-`12` is a claim about your query. `§F7.15` is the general case: a
+> corpus-wide RATE over a hand-written label convention is a claim about your REGEX, and nine
+> attempts did not converge.*** **Publishing a tenth would be publishing a number the eleventh
+> detector invalidates — which is precisely what `RULE 59` forbids.**
+>
+> ⇒ **What a reader actually needs is never the rate. It is: *does THIS pointer, the one in front of
+> me, resolve?*** *That question has an exact, spelling-proof, never-stale answer, and it is one line:*
+>
+> ```bash
+> # resolve any § pointer — all spellings, all 32 files, no detector involved:
+> grep -rn "§T9.40b" nba/*.md
+> ```
+>
+> ✅ **RUN ON THE FOUR HARDEST CASES BEFORE PUBLISHING** *(`RULE 57`)*: **`§T22.29`** ⇒ `6` hits ·
+> **`§T9.40b`** ⇒ `34` · **`§T15.1`** ⇒ `6` · **`§T24.6`** ⇒ `2`. 🔑 ***All four were flagged
+> "dangling" by at least one of the nine detectors. Not one of them is dangling.***
+>
+> #### 3 · What survives from `§F7.7`, and what does not
+>
+> | | |
+> |---|---|
+> | ✅ **UPHELD — and it is the load-bearing finding** | ***`155` pointer occurrences in the twelve resolve ONLY outside the twelve: the mandated set is NOT closed under its own citations.*** *That is a structural fact about scope, not a detector artifact, and it is why the resolver greps `nba/*.md` and not the twelve.* |
+> | ✅ **UPHELD** | **the bare-numeric finding** — `2,473` pointers (`37.5%`) lead with a number, and `955` of them (`38.62%`) point ACROSS files with no filename. *That is a WRITING defect, measurable without a definition of "defined".* |
+> | 🔴 **RETIRED** | ~~**`98.79%` resolve · `80` dangling · `13` distinct**~~ — *and every earlier figure it superseded.* **Not because it was wrong, but because it is unverifiable: it is detector `5` of `10`, and `10` disagrees with `5` by an order of magnitude.** |
+>
+> #### 4 · 🔑 **`RULE 60`**
+>
+> > 🔴🔴🔴 ***A CORPUS-WIDE RATE OVER A HAND-WRITTEN CONVENTION IS NOT A MEASUREMENT — IT IS A
+> > MEASUREMENT OF YOUR REGEX. Do not publish it. Publish the one-line command that answers the
+> > single instance a reader actually has in hand, and RUN it on the hardest cases first.***
+>
+> *`RULE 59` retires the self-describing FIGURE. `RULE 60` retires the corpus-wide RATE. Both are the
+> owner's one instruction —* **"when a repair risks losing a finding, build the resolver instead"** *—
+> arriving at the same place from two directions.*
+
 ### 2 · The method — every segment accounted for, none skipped unmeasured
 
 **Two complete reads of each transcript, in two DIFFERENT ORDERS**, because order is what a single
