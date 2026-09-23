@@ -4,8 +4,10 @@
 > **The record of what every transcript contained** — the sweep ledger, the per-transcript findings
 > (`§T`*n*`.`*m*), the canonical figure table, and the corrections made to each.
 > 📏 **`2,883` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY.md ``
-> ⚠ *The original heading count came from a detector anchored at line start, blind to the **blockquoted** headings this corpus uses heavily — **`76` hidden in this file, `294` across the twelve (`6.0%`)**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
-> 🔑 **And the POPULATION DEFINITIONS, published because the count is meaningless without them** *(`§F2.11`: getting the definition right is the expensive half)*: **`headings`** = any ATX heading, blockquoted or not. **`§-sections`** = **headings that name a `T`*n*`.`*m* section** *(`1,703`)* — **not** distinct `§T`*n*`.`*m* labels appearing anywhere in the text *(`739`)*, and **not** distinct `§`-labels of every form *(~~`1,096`~~ → `1,100`)*. **Three defensible readings, a 2.3× spread between them.**
+> 🔑 **THE COUNT IS MEANINGLESS WITHOUT ITS POPULATION.** *Three defensible readings, a `2.3×` spread:*
+> **`headings`** = any ATX heading, blockquoted or not · **`§-sections`** = headings that NAME a
+> `T`*n*`.`*m* section · **`§`-labels** = distinct labels appearing anywhere in the text. *The `📏`
+> figure above counts headings. Say which you mean before quoting any of them.*
 >
 > #### ✅✅ §F6.26 — **THE DEFINITIONS ARE WHY THIS INDEX VERIFIES AND THE OTHERS DO NOT**
 >
