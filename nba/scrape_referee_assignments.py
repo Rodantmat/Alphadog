@@ -96,8 +96,12 @@ def main():
             CREATE TABLE IF NOT EXISTS nba_ref.referee_assignments (
                 game_date date, matchup text, slot int, official_name text, official_number text,
                 source text, captured_at timestamptz DEFAULT now())""")
-        cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS referee_assignments_uidx
-            ON nba_ref.referee_assignments (game_date, matchup, slot)""")
+        # DEADLOCK (§T23.5, fixed 2026-09-23). This is the dangerous shape: the index DDL sits in the
+        # SAME transaction as the INSERT below, so `IF NOT EXISTS` holds a full table lock for the whole
+        # write. Two parallel runs deadlock. Checking first means no lock after the first run.
+        if cur.execute("SELECT to_regclass('nba_ref.referee_assignments_uidx')").fetchone()[0] is None:
+            cur.execute("""CREATE UNIQUE INDEX referee_assignments_uidx
+                ON nba_ref.referee_assignments (game_date, matchup, slot)""")
         if rows:
             cur.executemany("""INSERT INTO nba_ref.referee_assignments
                 (game_date, matchup, slot, official_name, official_number, source)
