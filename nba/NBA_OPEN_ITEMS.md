@@ -85,6 +85,7 @@ table's.***
 > # 📑 **INDEX — `NBA_OPEN_ITEMS.md`**
 > **Everything unresolved, and everything only the owner can decide.** *`ACT ON THIS` at the top of
 > this file is the whole decision surface; the rest is the evidence under it.*
+> 📏 **`944` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_OPEN_ITEMS.md ``
 > ⚠ *The original `797` came from a heading detector anchored at line start, blind to **blockquoted** headings. **This file had the largest absolute miss of the twelve — `99` hidden headings** — which is also why its `39`/`31` heading-vs-table split was wrong. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE ITEM IDs AND HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16`
