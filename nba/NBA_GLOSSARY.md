@@ -35,9 +35,8 @@ context, and which document section. Any material term appearing more than once 
 > | if you need… | go to |
 > |---|---|
 > | ✅ **to look up any term** | **`§Z — THE COMPLETE TERM INDEX`**, then the matching body block |
-> | **a definition for a term starting `A`–`W`** | the matching body block — **`A` `B` `C` `D` `E–F` `G–I` `J–K` `L–N` `O` `P–S` `T–W`**, contiguous since `§F7.4` |
+> | ✅ **a definition for a term starting with ANY letter** | the matching body block — **`A` `B` `C` `D` `E–F` `G–I` `J–K` `L–N` `O` `P–S` `T–W` `X–Z`**. **Complete `A … Z` since `§F7.4`**; before that pass, `J` `K` `O` `X` `Y` `Z` had index entries and no definition section. |
 > | **`P`–`S`** | body **`P–S`** — *its `(continued — research-standard structure)` half is now nested directly beneath it, not after `T–W`* |
-> | 🔴 **`X`, `Y`, `Z`** | 🔴 **no body block exists** — use **`§Z`** to locate the definition |
 > | ⚠ **terms known to be missing** | **`PENDING`** — *and read its status table: it is the line most likely to be stale* |
 > | **the transcript IDs referenced throughout** | the **Transcript IDs** table, immediately below |
 > | **how to pull a term's source text from a transcript** | **How to use it**, below — *the `grep -o` recipe* ⚠ *see the caveat next* |
