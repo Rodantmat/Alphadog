@@ -60,6 +60,27 @@
 > through at least two sessions; rotating the key is the stronger move regardless of what happens to
 > the files."*
 >
+> ## 🔴🔴🔴 **⑤ AND A LATER OWNER MESSAGE SAYS THE OPPOSITE — THIS MAY ALREADY BE ANSWERED** *(T23 pass 1, `§T23.1`, 2026-09-23)*
+>
+> | | | |
+> |---|---|---|
+> | **`T21` SEG `1233`** *(earlier — `T21` ends `2026-09-21T02:20Z`)* | *"a **reference, not a full detailed copy**… **the information is always going to be on the transcripts**, so each file should be a guide to **where it is on the transcript**"* | ⇒ transcripts REMAIN the source |
+> | 🔑 **`T23` SEG `704`** *(LATER — `T23` runs `2026-09-21T06:16 → 19:57Z`)* | *"we're gonna fix pipeline two and three **once the documentation is complete**… so you can see the whole picture. **You have reference for everything. YOU DO NOT HAVE TO BE LOOKING INTO THE CHAT TRANSCRIPTS ANYMORE.**"* | ⇒ documents **REPLACE** the transcripts |
+>
+> ⇒ 🔴🔴🔴 ***A pointer-style document REQUIRES looking into the transcripts — that is its entire
+> mechanism. These cannot both hold.*** ✅ **The owner's own ordering rule** *(`T21` SEG `1283`:
+> *"there is an order… transcript two did the continuation and fixes"*) **makes the LATER statement
+> govern**, which points at **self-contained documents — option (d)**.
+> ⚠ **BUT I AM READING TWO MESSAGES AGAINST EACH OTHER, AND A THIRD POSITION IS COHERENT**:
+> ***self-sufficient for FINDINGS, pointer for EVIDENCE*** — neither message states it, and it would
+> satisfy both. 🔴 **OWNER: which?** *One line settles the whole item.*
+> 🔑 **And it reframes `§T22.5`**: the instrument's bias toward reproduction is **aligned with
+> `SEG 704`**, not opposed to the owner — *the conflict is owner-vs-owner, and the instrument happens
+> to implement the later one.*
+> 🔑🔑 **`SEG 704` also states the ACCEPTANCE CRITERION this list has never carried**: **"complete"
+> does not mean a coverage percentage — it means *a reader with the twelve and no transcripts can see
+> the whole picture*.** ▶ **`§T23.1`.**
+>
 > ## 🔴 THE DECISION — *one line settles it*
 > | | option | cost | unlocks |
 > |---|---|---|---|
