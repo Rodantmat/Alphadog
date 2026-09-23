@@ -5,7 +5,9 @@
 > ⚠ *The original heading count came from a detector anchored at line start, blind to the **blockquoted** headings this corpus uses heavily — **`76` hidden in this file, `294` across the twelve (`6.0%`)**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 > 🔑 **And the POPULATION DEFINITIONS, published because the count is meaningless without them** *(`§F2.11`: getting the definition right is the expensive half)*: **`headings`** = any ATX heading, blockquoted or not. **`§-sections`** = **headings that name a `T`*n*`.`*m* section** *(`1,703`)* — **not** distinct `§T`*n*`.`*m* labels appearing anywhere in the text *(`739`)*, and **not** distinct `§`-labels of every form *(~~`1,096`~~ → `1,100`)*. **Three defensible readings, a 2.3× spread between them.**
 >
-> ✅✅ **`§F6.26` — THE DEFINITIONS ARE WHY THIS INDEX VERIFIES AND THE OTHERS DO NOT.** *Re-derived
+> #### ✅✅ §F6.26 — **THE DEFINITIONS ARE WHY THIS INDEX VERIFIES AND THE OTHERS DO NOT**
+>
+> *Re-derived
 > `2026-09-23` against the file: **`2,797` · `1,703` · `739` all reproduce EXACTLY.*** 🔑 ***And the
 > re-derivation's first attempt got `358` for the `§`-section count*** — because I probed "headings
 > containing a `§`" instead of the definition written right here, ***"headings that name a
