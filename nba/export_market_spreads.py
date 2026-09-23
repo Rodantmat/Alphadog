@@ -25,13 +25,38 @@ BOUNDS = {"2023-24": ("2023-10-24", "2024-04-14"),
 OUT = Path("nba/data")
 
 
+def season_bounds(season):
+    """The date window for a season.
+
+    SEASON ROLLOVER (fixed 2026-09-23, same class as T23-2). BOUNDS holds the exact first/last
+    regular-season dates for the seasons already played and had NO 2026-27 row, so `BOUNDS[season]`
+    raised KeyError for anything newer. Any season not in the table gets a generous derived window
+    (Oct 1 -> Jun 30), which is only ever used to bound a query, so being wide costs nothing and
+    covers preseason through the finals.
+    """
+    if season in BOUNDS:
+        return BOUNDS[season]
+    y = int(season.split("-")[0])
+    return (f"{y}-10-01", f"{y + 1}-06-30")
+
+
 def main():
-    seasons = [s.strip() for s in os.environ.get("MS_SEASONS", "2024-25,2025-26").split(",")]
+    # SEASONS. Was a hardcoded "2024-25,2025-26" default, and NEITHER P2 NOR P3 passes MS_SEASONS -
+    # so from 2026-27 both pipelines would have re-exported two stale seasons and produced no market
+    # spreads for today's slate, feeding the blowout model and the matchup factors nothing new.
+    env = os.environ.get("MS_SEASONS", "").strip()
+    if env:
+        seasons = [s.strip() for s in env.split(",")]
+    else:
+        import sys
+        sys.path.insert(0, "nba")
+        from nba_season import stats_seasons
+        seasons = stats_seasons(2)
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
     OUT.mkdir(parents=True, exist_ok=True)
     for season in seasons:
-        lo, hi = BOUNDS[season]
+        lo, hi = season_bounds(season)
         rows = conn.execute("""
             SELECT m.game_id, s.game_date::text,
                    max(CASE WHEN s.market='spreads' AND s.outcome=s.home_team THEN s.point END) AS home_spread,
