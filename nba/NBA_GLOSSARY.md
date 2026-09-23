@@ -59,14 +59,21 @@ context, and which document section. Any material term appearing more than once 
 > ⇒ **This is the fastest route to anything in the file, and it is the only structure covering the
 > whole alphabet.**
 >
-> ### 📘 **B · THE BODY — THE DEFINITIONS** *(`9` ranges + `2` extras)*
+> ### 📘 **B · THE BODY — THE DEFINITIONS** *(`11` ranges + `PENDING`, covering `A … Z` with no gap)*
 > | block | covers |
 > |---|---|
 > | **`A`** · **`B`** · **`C`** · **`D`** | one letter each |
 > | **`E–F`** · **`G–I`** · **`L–N`** · **`T–W`** | merged ranges |
-> | **`P–S`** | ⚠ **first of two** |
-> | **`P–S (continued — research-standard structure)`** | ⚠ **second `P–S`** — *the research-standard vocabulary* |
-> | **`PENDING`** | ⚠ **terms identified but not yet defined** |
+> | ✅ **`J–K`** · **`O`** · **`X–Z`** | **added `2026-09-23`, `§F7.4`** — *these three letters-ranges had `§Z` entries and no definitions* |
+> | **`P–S`** | *with **`P–S (continued — research-standard structure)`** nested beneath it as `###` — moved `§F7.4` from its old position after `T–W`* |
+> | **`PENDING`** | ⚠ **terms identified but not yet defined — and the sweep status table** |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`§Z` is the lookup, the body is the definition, `PENDING` is the
+> state of the sweep that feeds both.*** **`§Z` wins on *where a term lives*; the body wins on *what
+> it means*; and where the two disagree the body is newer, because terms are defined into the body
+> after `§Z` lists them.** ⚠ **A term in `§Z` with no body entry is not an error — it is the sweep
+> not having reached it.** 🔑 *The single most consequential entry in the file is **`ot_rule`** in
+> `O`: a primary-key column that a loader's merge key omits, costing `1,421` rows per run.*
 >
 > 📌 **COVERAGE OF `T12`–`T18` TERMS — RE-MEASURED LIVE `2026-09-23`, AND THE OLDER FINDING NO LONGER HOLDS**
 > *An earlier pass recorded that central `T17`/`T18` terms were absent from this file. **Re-counted
