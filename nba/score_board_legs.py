@@ -94,7 +94,15 @@ def sigmoid(z):
 
 def main():
     asof = os.environ.get("BS_ASOF") or datetime.now(PT).date().isoformat()
-    season = os.environ.get("BS_SEASON", "2025-26")
+    # SEASON (T23-2, fixed 2026-09-23). This used to default to a hardcoded "2025-26", so from the
+    # first 2026-27 date the scorer would run against a season with no data - and P3 has no cron yet,
+    # so the first scheduled run would have been the first failure. The shared helper is the one
+    # source of truth (it also honours an NBA_SEASON override, and returns the season that actually
+    # HAS game data, which differs from the calendar season in the Jul-Sep off-season).
+    import sys
+    sys.path.insert(0, "nba")
+    from nba_season import active_stats_season
+    season = os.environ.get("BS_SEASON") or active_stats_season()
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
 
