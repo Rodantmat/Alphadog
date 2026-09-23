@@ -39782,3 +39782,80 @@ is correct, its docstring names the exact failing case, and twenty-seven scripts
 shared library does not protect the call sites that never call it — and the ones that never call it
 are invisible precisely because the library is there, documented, and paired with the table in the
 data dictionary.***
+
+---
+
+# §T20.129 — T20 PASS 124: ✅🔴 **MY LEADING CANDIDATE WAS KILLED BY MY OWN TEST — THE FOUR PRIVATE SEASON RESOLVERS ARE *SEMANTICALLY RIGHT*. WHAT THEY DO NOT HAVE IS THE OVERRIDE, AND THAT BREAKS THE ONE LEVER THE CORPUS POINTS AT**
+
+*Pass 124, 2026-09-23. Pre-registered as **"THE SHARED-LIBRARY BYPASS CENSUS — `nba_names.py` HAS
+THREE CALL SITES THAT RE-IMPLEMENT IT. DO `nba_season.py` AND `nba_asof.py` TOO, AND DO THE COPIES
+AGREE?"***
+
+## ① THE CENSUS *(clause ii, `2026-09-23T00:50:32Z`)*
+
+| library | exports | **importers** | private re-implementations |
+|---|---|---|---|
+| `nba_names.py` | 5 | **27** | `2` identical + `3` weak inline — **`§T20.128`, killed here** |
+| **`nba_season.py`** | 4 | **19** | 🔴 **`4`** — `grade_board_outcomes.py:70` · `baseline/build_baseline_ladder.py:43` · `build_combos_ladder.py:14` · `build_periods_ladder.py:15` |
+| ✅ **`nba_asof.py`** | 7 | 2 | ✅ **`0` — no private copy of `cutoff_ts`, `status_asof`, `table_asof` or any sibling exists.** **CLEAN.** |
+
+## ② 🔴 I DRAFTED "THE ROLLOVER MONTHS DISAGREE" — AND MY OWN TEST KILLED IT
+
+**`nba_season.current_season()` rolls over at month `>= 7` (JULY). All four private copies roll over
+at month `>= 10` (OCTOBER).** *That looked like a whole-season disagreement, and today is inside the
+window.*
+
+**Run, no database, `nba_season` imported directly:**
+
+| date | `current_season()` | `active_stats_season()` | private `_season_of()` |
+|---|---|---|---|
+| `2026-06-30` | `2025-26` | `2025-26` | `2025-26` |
+| `2026-07-01` | **`2026-27`** | `2025-26` | `2025-26` |
+| **`2026-09-23`** *(today)* | **`2026-27`** | `2025-26` | `2025-26` |
+| `2026-10-02` | `2026-27` | `2026-27` | `2026-27` |
+| `2026-12-01` | `2026-27` | `2026-27` | `2026-27` |
+
+✂ **KILLED.** ***The private copies reproduce `active_stats_season()` EXACTLY, across the whole
+range — not `current_season()`.*** **And that is the right semantic for a ladder builder**, for the
+reason `active_stats_season`'s own docstring gives: *"in Jul-Sep the 'current' season is the UPCOMING
+one… but it has zero games played… stats scrapers use THIS: the most recent season with real games."*
+⇒ **Verdict `DIFFERENT PURPOSE`, verified rather than assumed — the copies are semantically correct.**
+
+## ③ 🔴🔴 WHAT SURVIVED IS NARROWER AND WORSE: **NONE OF THE FOUR HONOURS `NBA_SEASON`**
+
+**`current_season()` and `active_stats_season()` both open with**
+`override = os.environ.get("NBA_SEASON", "").strip(); if override: return override`.
+
+**The four private copies do not.** *Measured*: `grep -c "NBA_SEASON"` = **`0`** and
+`grep -c "nba_season"` = **`0`** in every one of the four.
+
+⇒ 🔴🔴🔴 ***Setting `NBA_SEASON` moves the `19` importers and leaves the grader and all three ladder
+builders computing their own answer.*** **A split-brain season, produced by the one operator lever
+the corpus points at.**
+
+**AND THE CORPUS POINTS AT IT IN SO MANY WORDS** — `NBA_MASTER_SUMMARY.md:11764`: *"**Both honour an
+`NBA_SEASON` environment override — so any run can be pinned for replay.**"* ⚠ **"Any run" is false:
+four scripts cannot be pinned, and two of them build the ladder the third then grades.** ✅ **Corrected
+in place at its source.**
+
+🔑 **This is `T20-4`'s trap one layer down**, and the third of its shape this sweep has found:
+`§T20.117`'s `BOUNDS[season]` `KeyError` on the obvious fix · `§T20.128`'s three consumers that
+bypass a canonical normaliser · **and now four scripts that ignore the override the fix would use.**
+⇒ ***The remedy for the season family does not reach everything it looks like it reaches.***
+
+## ④ ONE MORE VERDICT, AND IT IS `DIFFERENT PURPOSE` TOO
+
+**`grade_board_outcomes.season_of()` returns `2026_27` with an UNDERSCORE** where everything else
+returns `2026-27`. ✅ **Correct by purpose**: `:182` is `slug = season_of(d)` — **a FILENAME slug**,
+and the injury-report archive is named `nba_injury_report_2025_26_*.json`. *Stated so a later reader
+does not "fix" it.*
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `NBA_SEASON` scores **3 of 12** and the mentions
+were **opened** — `SUM:9837` and `:11764` establish the override and claim any run can be pinned,
+`:23912` records it is *"set by no workflow"*, `:9655` records that **zero Workers reference it** —
+**and not one says four SCRIPTS compute the season without it.** ✅ **NOVEL.**
+
+📌 ***The lesson:*** **the pass's headline was wrong and the pre-registration's own test is what
+proved it — the four copies were not a rollover bug, they were an uncredited re-derivation of the
+right function.** ⚠⚠ ***A duplicate that computes the correct answer is not harmless: it inherits the
+semantics and not the CONTROLS, so it stays right exactly until someone tries to change it.***
