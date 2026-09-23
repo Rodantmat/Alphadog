@@ -6,7 +6,8 @@ infrastructure, and how each is used. Built from the transcripts, not from memor
 ---
 
 > # 📑 **INDEX — `NBA_SYSTEM_ARCHITECTURE.md`**
-> **~~`113`~~ → `134` sections · `180,101` bytes · built `2026-09-23`; census corrected same day (`§F2.14`) and **re-derived after every subsequent pass** — `125 → 130 → 134`.**
+> **How the system is put together** — the stack, the stores, the worker universe, the repo layout,
+> and the constraints that shaped each choice.
 > 📏 **`136` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_SYSTEM_ARCHITECTURE.md ``
 > | 🔑🔑 **WHY four load-bearing decisions were made** *(GitHub Actions · the trigger-file pattern · full isolation · where credentials live)* | **`§F5.3`** — *recovered from the only three transcripts where the reasoning stratum survives* |
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
