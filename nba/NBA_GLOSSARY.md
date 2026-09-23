@@ -11,13 +11,8 @@ context, and which document section. Any material term appearing more than once 
 > definitions. Where they disagree, the body is newer.*
 > 📏 **`47` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_GLOSSARY.md ``
 >
-> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* *(`§T20.22`: `6` of `16` line-number pointers
-> rotted within a day)*. **Search for the quoted letter-block heading or the term in bold.**
-> *Added `2026-09-23`, `§F7.4` — this file was one of two of the twelve whose index carried no
-> anchor rule, and it is the file whose line numbers move most, because every new term shifts them.*
->
-> ⚠⚠ **THIS FILE CONTAINS *TWO* A–Z STRUCTURES AND THEY ARE NOT THE SAME THING.** *That is the one
-> fact you need before using it, and nothing in the file said so:*
+> 🔗 **Anchors are heading text, never line numbers.** *To resolve a `§` pointer:* `` grep -rn "§T9.40b" nba/*.md ``
+> 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
 >
 > | | structure | what it is | when to use it |
 > |---|---|---|---|
