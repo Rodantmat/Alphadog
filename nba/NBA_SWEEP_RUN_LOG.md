@@ -2670,6 +2670,70 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 > ⚠ **RECORDED AS A STANDING HAZARD, NOT A RULE** *(it is an instance of `RULE 44`, not a new law)*:
 > **`NBA_MASTER_SUMMARY.md` holds `2` transcript ledgers. Updating one is a `50%` update.**
 
+> ### 🔴🔴🔴 **§F7.17 — I BROKE THE `[skip ci]` CONSTRAINT `25` TIMES, AND THE CONSTRAINT ITSELF TURNS OUT NOT TO DO WHAT IT CLAIMS**
+>
+> *`2026-09-23`, final audit of my own commits. **Two findings. The first is my failure; the second is
+> a correction to a STANDING CONSTRAINT and matters more.***
+>
+> #### 1 · 🔴 The breach — mine, `T20-8`'s exact mechanism, in the session that documents `T20-8`
+>
+> > **Standing constraint 3, verbatim:** *"`[skip ci]` in EVERY commit message. 🔴 `github_patch_file`
+> > **HAS A DEFAULT MESSAGE** — omit `message` and the commit ships WITHOUT it. That cost `36` commits,
+> > `≥9` production deploys and one destroyed scrape (`T20-8`)."*
+>
+> | | |
+> |---|---|
+> | **commits shipped with the bridge's default message** | 🔴 **`25`** — *`Patch nba/… via Claude MCP bridge (server-side find/replace)`* |
+> | **window** | `2026-09-23T06:42Z` → `07:57Z` — **this session's PRE-COMPACTION stretch** |
+> | **since the compaction** | ✅ **`158` commits, `158` carrying `[skip ci]`. `0` breaches.** |
+> | **files affected** | `NBA_OPEN_ITEMS` `8` · `NBA_FINAL_SCORING_CALIBRATION` `4` · `NBA_SWEEP_RUN_LOG` `3` · `NBA_RECIPE` `3` · `NBA_BASELINE_CALIBRATION` `3` · `NBA_SYSTEM_DESIGN` `2` · `NBA_MASTER_SUMMARY` `2` |
+>
+> ⚠ ***The parameter is OPTIONAL in the tool schema and the default is silent. Nothing fails, nothing
+> warns, and the commit looks normal in every view except the message itself*** — which is exactly why
+> `T20-8` cost what it cost, and why it recurred here in the session whose job is to document it.
+> 📌 **Recorded, not quietly fixed: a rewrite would destroy the evidence that the rule is unenforceable
+> by intention alone.**
+>
+> #### 2 · 🔑🔑 **THE CORRECTION THAT MATTERS: `[skip ci]` DOES NOT STOP GITHUB'S BUILT-IN PAGES WORKFLOW**
+>
+> *Measured while auditing the breach, `2026-09-23`, against the live run list:*
+>
+> > 🔴 ***Every one of the `158` commits that DID carry `[skip ci]` still triggered a
+> > `pages build and deployment` run.*** *Not some. All of them.*
+>
+> **Why:** *`[skip ci]` is honoured by **user-defined** workflows in `.github/workflows/`. **`pages
+> build and deployment` is GitHub-MANAGED** — it is not in that folder, has no `if:` clause this repo
+> controls, and ignores the marker entirely.* ⇒ ***The standing constraint's PREMISE — "`[skip ci]`
+> prevents deploys" — is true only of the workflows this repo owns. It was never true of all of them,
+> and no pass before this one checked.***
+>
+> #### 3 · ✅ What the breach actually cost — **nothing, and that is luck, not the rule working**
+>
+> *Checked across the `100` most recent runs, spanning the breach window and everything after:*
+>
+> | | |
+> |---|---|
+> | `pages build and deployment` | **all of them** — *docs-only; almost every one `cancelled` by the next commit superseding it* |
+> | `NBA PP Payout Map` | **`1`** run, `16:56:11Z`, sha `f8265aa` — ⚠ **the CONCURRENT BUILD CHAT's bot, OUT OF SCOPE, on its own trigger — not mine** |
+> | 🔑 **`P1` / `P2` / `P3` / any scraper** | ✅ **`0`. NONE RAN.** |
+>
+> ⇒ ✅ **No production deploy, no scrape destroyed, no `T20-8` repeat in consequence.** ⚠ ***But the
+> reason is that `P2` and `P3` have NO CRON and `P1`'s is weekly — not that `[skip ci]` held. The
+> guard that was supposed to protect the system was firing a workflow on every single commit for the
+> entire sweep, and the system was safe for an unrelated reason.***
+>
+> #### 4 · 📌 What a successor must carry forward
+>
+> 1. **Pass `message` on EVERY `github_patch_file` call. The default is silent and the schema will not
+>    stop you.** *`25` of mine slipped through in `75` minutes.*
+> 2. 🔴 **Do not state that `[skip ci]` prevents deploys.** *State what is true:* ***it suppresses this
+>    repo's OWN workflows and does not suppress GitHub-managed ones.*** *Amend constraint `3` in place
+>    rather than dropping it — the marker is still required, it just does less than advertised.*
+> 3. ⚠ **`RULE 43` applied to a CONSTRAINT rather than a pass**: *a claim about a guard is tested
+>    against the runs that actually fired, never against the sentence describing it.* **Nothing in
+>    `130` commits of careful `[skip ci]` discipline would have revealed this; only reading the run
+>    list did.**
+
 ### 2 · The method — every segment accounted for, none skipped unmeasured
 
 **Two complete reads of each transcript, in two DIFFERENT ORDERS**, because order is what a single
