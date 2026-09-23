@@ -2734,6 +2734,53 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 >    `130` commits of careful `[skip ci]` discipline would have revealed this; only reading the run
 >    list did.**
 
+> ### 🔴🔴🔴 **§F7.18 — THE SWEEP'S OWN COVERAGE INSTRUMENT WRITES CREDENTIAL-BEARING OUTPUT INTO A PUBLIC REPO'S WORKING TREE, BY DEFAULT, UNGITIGNORED**
+>
+> *`2026-09-23`, caught by a working-tree check at the very end of the sweep — **not by any pass**.*
+>
+> #### 1 · What was sitting there
+>
+> | | |
+> |---|---|
+> | **file** | `nba/tools/scored.json` — **`18,135,489` characters (`18` MB)**, untracked |
+> | **what it is** | `sweep_coverage.py`'s scoring output: **every scored segment of the corpus, with its VERBATIM TEXT inlined** |
+> | 🔴 **what it contains** | **`2` distinct `postgres(ql)://` URIs · `1` HTTPS URL carrying inline credentials · `3` distinct token/secret-shaped assignments · `129` distinct `40`+ char alphanumeric blobs** |
+> | ✅ **git history** | **NEVER COMMITTED.** *`git log --all -- '*scored.json'` ⇒ empty. Deleted from the working clone unread-into-the-record; **no value was reproduced anywhere, here or in any document**.* |
+>
+> #### 2 · 🔑 Why it was there, and why nothing would have stopped it
+>
+> **`sweep_coverage.py`'s `--out` defaults to `scored.json` — a RELATIVE path.** *So it lands in
+> whatever directory the tool is invoked from, and this session's working directory **is**
+> `nba/tools/`. The file therefore materialised **inside the repo working tree**.*
+>
+> 🔴 **And `.gitignore` does not cover it.** *It lists `secrets.production.json`, `.env`,
+> `.env.production`, `*.local.json`, `.wrangler/`, `node_modules/`, `__pycache__/` —* ***no
+> `scored.json`, no `*.json` rule for `nba/tools/`.***
+>
+> ⇒ ⚠⚠ ***One `git add -A` away from publishing two Postgres URIs to a PUBLIC repository.*** **This is
+> the same class as `F2-1`** *(the `balldontlie` key that WAS published by a sweep pass and is still in
+> `2` commits)* **and it is the exact precondition `T21-1` is BLOCKED on** *(the owner's document-form
+> directive, refused because putting transcript text in this repo would expose credential-shaped
+> strings incl. Postgres URLs).* 🔑 ***`T21-1` reasoned about the danger of putting transcript text in
+> the repo while a derivative of that text was already sitting in the working tree, unignored.***
+>
+> #### 3 · 📌 Recorded, NOT fixed — and that is deliberate
+>
+> **The fix is a `.gitignore` line. `.gitignore` is NOT in this sweep's write set** *(the twelve plus
+> this run log)*, **and standing constraint `2` is `DOCUMENT, DON'T FIX`.** ⇒ **Filed as `F7-1` for the
+> owner** *(`NBA_OPEN_ITEMS.md`)*, **not patched.** *The one thing done was removing the file from the
+> local clone, which changes nothing on the remote.*
+>
+> #### 4 · ⚠ What a successor must do BEFORE running the instrument
+>
+> 1. **Invoke it with an explicit `--out` OUTSIDE the repo** *(a scratch directory)*. **Never rely on
+>    the default.**
+> 2. **Check `git status` for untracked output after ANY instrument run.** *This was found by a
+>    working-tree check, after `~150` commits, with every pass believing itself read-only.*
+> 3. 🔑 ***"Read-only against the live system" was honoured exactly — and it does not mean read-only
+>    against the REPO. An instrument that only READS the corpus can still WRITE a copy of it
+>    somewhere public.*** **That distinction had no rule; it now has this section.**
+
 ### 2 · The method — every segment accounted for, none skipped unmeasured
 
 **Two complete reads of each transcript, in two DIFFERENT ORDERS**, because order is what a single
