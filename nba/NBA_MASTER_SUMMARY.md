@@ -114,11 +114,8 @@
 > 3. **For a finding you cannot place**, search the **subject word** — headings are written as full
 >    sentences and are unusually descriptive.
 > 4. ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling this corpus uses — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine different detectors gave nine different corpus-wide rates on an unchanged corpus; the rate is retired — `§F7.15`, `RULE 60`.**)* *(`§T20.22`: `6` of `16` line-number pointers
->    rotted within a day; `§T20.67`: `83.7%` of testable `FILE:LINE` citations are dead)*. **Search
->    for the quoted `§` label or the quoted text.** *Added as a stated rule `2026-09-23`, `§F7.8` —
->    **this file and `NBA_OPEN_ITEMS.md` were the only two of the twelve whose index never said it**,
->    which is notable because this is the file whose line numbers move most: it grew `2,794` bytes
->    during the single day that measured them.*
+>    **Search for the quoted `§` label or the quoted text.**
+> 5. 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
 >
 > 📌 **WHAT THIS FILE IS, AND IS NOT**: ***it is the PASS RECORD — what was examined, what was found,
 > what was killed and why.*** **The subject matter itself lives in the eleven topical documents.**
