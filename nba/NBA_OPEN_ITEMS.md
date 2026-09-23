@@ -1,5 +1,60 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+> # 🔴🔴🔴 **T21-1 · OWNER DECISION · THE DOCUMENT-FORM DIRECTIVE IS BLOCKED, AND ITS PRECONDITION WOULD PUBLISH CREDENTIALS**
+> *Filed 2026-09-23, T21 pass 3, `§T21.3`. **Placed at the very top because it is the only item on
+> this page about what these documents ARE, rather than about the system they describe.***
+>
+> ## THE INSTRUCTION *(`T21` SEG 1233, the owner, verbatim)*
+> > *"the files should be a **reference, not a full detailed copy of the transcript**… **i don't want
+> > so heavy of files again**… **each file should be a guide of that specific kind of data to where
+> > it is on the transcript**, with assertive information and the instructions on how to get it."*
+>
+> ✅ **It was ACCEPTED and fully specified** *(SEG 1234–1239: the 1–3-line assertive claim plus a
+> precise `T`-number/`grep -n` pointer; verbatim quoting only where wording carries meaning; **five
+> exemptions that stay full content** — live-SQL/grep-verified facts · **this file in its entirety** ·
+> the pass ledger and drift notice · measured numbers · flagged contradictions; and **no
+> retro-conversion**, new work only)*.
+>
+> ## 🔴 WHAT ACTUALLY HAPPENED
+> | | then (`2026-09-21`) | now (`2026-09-23`, measured) |
+> |---|---|---|
+> | the twelve | **`1.1 MB`** — *"becoming too heavy"* | 🔴 **`5,672,870` bytes — `5.2×`** |
+> | `nba/transcripts/` | `README.md` + `journal.txt` | 🔴 **`README.md` + `journal.txt`** *(and the journal is stale: `11,478` vs the owner's `14,284`)* |
+> | the pointer format | specified | 🔴 **never adopted** |
+>
+> **The directive's own stated blocker — *"commit all 20 `.txt` transcripts… otherwise you are
+> building an index to files no other session can open"* — was never cleared.** ⚠ **Every `T`/`SEG`
+> pointer this sweep has written is unresolvable for any session but this one.**
+>
+> ## 🔴🔴🔴 AND THE BLOCKER CANNOT BE CLEARED AS WRITTEN — **THE REPO IS PUBLIC**
+> *All `23` transcripts scanned. **COUNTS ONLY; no value printed, stored or written anywhere.***
+> | file | matched | n |
+> |---|---|---|
+> | `2026-09-13-01-03-48-nba-boards-grader-market-2026-09-10.txt` | 🔴 **Postgres connection URLs `3`** · JWT-shaped `5` · Bearer `2` | **10** |
+> | `2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt` | `api_key=` | **7** |
+> | `2026-09-11-21-01-23-nba-board-scrapers-fliff-docs-2026-09-10.txt` | JWT-shaped | **1** |
+> | | **total** | 🔴 **18** |
+>
+> ⇒ ***Committing the transcripts as instructed would publish 18 credential-shaped strings, including
+> three database connection URLs, to a public repo.*** *The instruction was written without that
+> check.* 🔑 **The corpus already suspected it** — `T21` SEG 1251: *"the value has been copied forward
+> through at least two sessions; rotating the key is the stronger move regardless of what happens to
+> the files."*
+>
+> ## 🔴 THE DECISION — *one line settles it*
+> | | option | cost | unlocks |
+> |---|---|---|---|
+> | **(a)** | redact the `18`, then commit | transcripts stop being byte-exact evidence | the format, fully |
+> | **(b)** | commit to a **PRIVATE** repo, point there | a second repo + access for other sessions | the format, evidence intact |
+> | **(c)** | commit the **clean `20` only** *(`20` of `23` have `0` matches)* | three stay unreachable | most pointers resolve |
+> | **(d)** | abandon the format; trim superseded rows for size instead | ⚠ collides with **rule 40** | size only |
+> | ⚠ **regardless** | 🔴 **ROTATE the credentials in those three files** | — | closes an exposure that predates this sweep |
+>
+> ⚠ **NOT CHOSEN, DELIBERATELY.** *Every branch is irreversible or contradicts a standing rule —
+> (a) publishes, (b) creates a repo, (d) destroys record — which is the shape the standing
+> instruction says to hand over rather than decide.* **Nothing was committed and nothing was
+> changed.** ▶ **Full evidence and the other `T21` owner directives: `§T21.3`.**
+
 > # 🔴🔴🔴 **READ THIS FIRST — THE OPENING-DAY BRIEF IS ~~`910,821`~~ **`950,947`** CHARACTERS BELOW THIS LINE**
 > *(figure re-derived and dated `2026-09-22`, T20 pass 101, §T20.106 — the file has grown since it was
 > written. **And the block you are reading is `16,230` characters, about `4,000` tokens: bounded, and
