@@ -1856,9 +1856,14 @@ owner figures are `owneraudit.py` + the phrase test at `§F3.2`; `hb` is the hig
    sequential reads from a FRESH CONTEXT, and `T20` cannot close in this session at all.** *Nothing
    in this campaign discharges that: `§F4.1` is a MEASUREMENT of `T19`/`T20`, and a measurement is
    not a read.*
-2. 🔴 **Direction (b) is not closed and cannot be by one pass** — `~12,686` substantive uncovered
-   segments remain. *`§F2.16` answered the part a machine can answer (which identifiers are absent:
-   `4` workflow filenames, and **`0` environment variables**); the rest is reading.*
+2. 🔴 **Direction (b) is not closed and cannot be by one pass** — ~~`~12,686`~~ → **`11,075`**
+   substantive uncovered segments remain *(corrected at `§F5.7`: `12.7%` of the band is API
+   receipts; `§F5.2`: a further `1,194` are empty summary labels; `§F2.6`: `24%` of the tail is the
+   documents' own authoring)*. *Every machine-answerable question has now been asked of it —
+   identifiers (`§F2.16`: `4` workflow filenames absent, **`0` env vars**) · files (`§F5.5`: `7`
+   workers, `27` scripts) · live tables (`§F5.6`: `1` in-scope, and verifying it verified `T24`) ·
+   owner turns (`§F3.2`: all `440`) · the reasoning stratum (`§F5.3`: all `63` absent blocks).*
+   **What is left is reading, and it is `11,075` segments of it.**
 3. ⚠ **Every instrument here is a REGEX or a COSINE.** *`§F1.2` published its own broken first run;
    `§F2.11`'s extractor invented `128` claims from `P3 cron` and `pass-53 rule`; `§F2.12`'s transient
    filter demonstrably under-filters; `§F3.2`'s judge was wrong about `212` of `284` owner turns.*
