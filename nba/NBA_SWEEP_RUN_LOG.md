@@ -3067,6 +3067,51 @@ an independent source** — if that census was wrong, this verification inherits
 `+27` delta is arithmetic on two of my own measurements, and its value is that it is NON-NEGATIVE
 everywhere, which is the claim that matters.***
 
+## ✅✅ **T21 IS CLOSED — `14` passes, CLEAN `3/3`, `2026-09-23`**
+
+*`8` passes this session (`7`–`14`) on top of `6` prior. **The transcript that created this sweep is
+now swept by it.***
+
+### 1 · The band, measured before reading *(`RULE 55`)*
+
+| | n |
+|---|---|
+| segments | `1,327` |
+| substantive *(`substance()` filter)* | `1,080` |
+| uncovered-substantive at `0.40` | `376` |
+| out-of-scope *(the concurrent session's PP work)* | **`0` — `T21` predates it entirely** |
+| **PROSE band** *(`human/text` + `assistant/text`, `<0.40`)* | **`213`** |
+| …of those, **≥`400` characters** *(the readable substance)* | **`70`** |
+| …**<`400` characters** *(transitions)* | `143` — **all scanned, pass `14`** |
+
+### 2 · The five findings *(passes `7`–`11`)*
+
+| § | finding |
+|---|---|
+| **`§T21.7`** | 🔑 **The write-path cost, MEASURED**: `journal.txt` `11.6 kB` = `1` call · `T1` `2.4 MB` = `207×` · all `20` = **`4,700×`**. ***"There is no chunk size that fixes that — chunking changes the NUMBER OF CALLS, not the total bytes."*** **That sentence is the whole reason standing constraint `4` exists**, and it was nowhere in the twelve. → `NBA_OPEN_ITEMS.md` as `T21-4`. |
+| **`§T21.7`** *(same pass, `MASTER_SUMMARY`)* | 🔴🔴 **The stale-header defect was diagnosed in `T21` on `2026-09-21`, BY LINE NUMBER** — *"line `71` still reads `29 passes` while the body is at pass `32`… a header that is stale relative to the content under it."* **`§F7.5` measured the same class across all twelve two days later and found `bytes 1/11`, `lines 0/6`.** ⇒ ***The warning was written, the principle was written, and the drift happened anyway — which is why `§F7.5`'s remedy is "stop publishing the figures that cannot stay true," not "try harder."*** |
+| **`§T21.8`** | ⚙ **`[skip ci]` has a SECOND, measured reason** — *"each commit currently fires TWO workflows that cancel each other"*, `hundreds of cancelled runs → roughly twenty clean ones`. **Two independent justifications for one rule.** Plus the two durability rules *(never `>10` passes unpushed; `git pull --rebase` before every push)*, and ⚠ **`T21`'s own retraction of its blocked-path conclusion** — *"`raw.githubusercontent.com` resolved… I had the repo name wrong… **that was available the whole time and I didn't find it. My error.**"* ⇒ **`T21-4` corrected in place: the READ path was never blocked, only the WRITE path.** |
+| **`§T21.9`** | 🔬 **The coverage instrument's own origin defect**: backtest first ran `73%`; root cause ***"segmentation, not ranking — tool-use inputs were JSON-stringified, so paragraph structure was hidden."*** 🔑🔑 **The identical failure mode as all five of `§F7.7`'s resolver versions — every one a SEGMENTATION error, none a scoring error, every one pessimistic.** Also: **the `96,266`-character ledger row was named in `T21` as it was being written** — *"the ledger row is now unreadable — line `98` is a single table cell."* |
+| **`§T21.10`** | 🔴🔴🔴 **THE THREE FALSE-TAIL MECHANISMS, recorded together for the first time** — `T21` explicitly instructed that they be recorded together *("anyone reading the number later needs all three at once")* and they were not. **(1)** content that can never prose-match; **(2)** ***pointer-style writing structurally defeats the matcher*** — a short pointer has almost no n-gram overlap with the passage it points at, ***so the owner's `T21-1` "reference, not a copy" directive RAISES `uncovered12` BY DESIGN***; **(3)** self-authorship matching at `1.00`. Plus: **`doc_paragraphs` reads only the twelve — `99.0%` against twelve vs `92.8%` against thirty**, so the figure means *"not yet in the twelve"*, never *"undocumented"*. Plus the **high-band judgment measurement: `97` sampled, `95` correct, `2` defects (`2.1%`)** — and it caught a live credential that `88` prior passes had missed. |
+| **`§T21.11`** | 🔁 **Three process fixes were ordered together; only one survived.** Restored: *read to the END OF A STRATUM before writing from it* · *mark SPLIT-PASS entries provisional*. And the violation count the third one lost: ***"four errors across passes `75`, `79`, `86` and `T3.5` — it is your MOST REPEATED FAILURE MODE."*** ⇒ 🔑 *A rule recorded without its violation count reads like advice.* |
+
+### 3 · The three clean passes
+
+| pass | angle | result |
+|---|---|---|
+| **`12`** | 🔑 **the HIGH-similarity band** — *the angle `§T21.10` itself says nothing else checks* | ✅ **`9` segments ≥`300` ch at score ≥`0.60`, `9` covered, `0` defects** |
+| **`13`** | **the live stratum** — all `12` `run_sql_postgres` / `check_bindings` / `github_list_workflow_runs` calls | ✅ **clean** — the `nba_calendar.games` prefix breakdown (`002` `1,230` vs `1,200`), the static-layer freeze timestamps and the `year_founded` column error all already recorded |
+| **`14`** | **artifacts produced + every short prose segment** | ✅ **clean** — `6` `create_file`/`present_files`, `5` `github_list_dir`, and **all `143` short prose segments read; every one a transition or process narration** |
+
+⚠ **`RULE 54`.** *`WINDOW`: `T21` at `2026-09-23`, scored against the twelve at that day's `HEAD`,
+threshold `0.40`. **`T21` is a DOCUMENTATION transcript — only `8` of its `1,327` segments are
+`run_sql_postgres` and `552` are `github_patch_file` payloads writing the twelve.** ⇒ ***False-tail
+mechanism `3` applies to it maximally: much of what scores "covered" is covered because `T21` WROTE
+it.*** **That is why pass `12` read the high band rather than trusting it.** **`NOT DONE`: the `552`
+patch payloads were excluded from the machine-stratum pass by design** *(they are the twelve's own
+text, and reading them is reading the documents)* — **a finding hidden inside a patch payload's
+prose, rather than in the surrounding message, would not have been caught.**
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
