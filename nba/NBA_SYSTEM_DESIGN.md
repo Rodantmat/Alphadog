@@ -3,6 +3,103 @@
 **Purpose.** Exactly what each pipeline does, in what order, why each step sits where it does, and the
 constraints that shaped it. This is the operational spec.
 
+---
+
+> # 📑 **INDEX — `NBA_SYSTEM_DESIGN.md`**
+> **`148` sections · `178,053` bytes · `2,429` lines · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> rotted within a day)*. **Search for the quoted `§` label.**
+> 🔴 **THE `0z-*` AND `0a.*` BLOCKS RUN BACKWARDS.** *`0z-7` → `0z-5` → `0z-6` → `0z-3` → `0z-4` →
+> `0z-2` → `0z`, and `0a` → `0a.1` → `0a.5` → `0a.6` → `0a.4` → `0a.3` → `0a.2`.* **Navigate by this
+> index, not by number.**
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | 🔴🔴 **what the system is FOR, and the acceptance criterion it must meet** | **`§0z`** |
+> | 🔴 **the build-order lock — what will NOT be built, and in what order the rest comes** | **`§0z-3`** |
+> | **what `P1` / `P2` / `P3` each do** | **`§2`** · **`§3`** · **`§4`** |
+> | 🔑 **why the cutoff is `1:15 PM PT`** | **`§1`** |
+> | 🔴🔴 **the two-pipeline decision, made in real time** *(COMPASS fact 107's reasoning)* | **`§0z-7`** |
+> | ⚠ **what NO pipeline does — `final_hp` is rebuilt by nothing** | **`§4b`** |
+> | 🔴🔴 **where a pipeline can do LESS than it claims and still certify green** | **`THE SWALLOWED-FAILURE CENSUS`** *(h1)* |
+> | 🔴🔴 **what certifies GREEN while broken — the twelve checks read adversarially** | **`WHAT CERTIFIES GREEN WHILE BROKEN`** *(h1)* — findings 1–4 |
+> | 🔴 **the paper-trading strategy, specified end to end** | **`standards_3pick_v1`** *(h1)* |
+> | 🔑 **the outcome grader — design vs what the code does** | **`§0a`** · **`§0a.1`** |
+> | 🔑🔑 **baseline and enrichment are ONE system** *(the result that invalidates a whole class of work)* | **`§0a.5`** |
+> | 🔑 **the two-phase clock, its two leakage traps, and the premise under it** | **`§0a.3`** |
+> | 🔑 **market consensus — the owner's weighting directive and the build that FAILED** | **`§0a.2`** |
+> | **the calculation chain** · **failure policy** | **`§5`** · **`§6`** |
+> | ⚠ **the three explicit NON-GOALS** | **`§0.75`** |
+>
+> ## 📋 EVERY SECTION, IN LOGICAL ORDER
+>
+> ### 🎯 **A · WHAT IT IS FOR, AND WHAT IS AND IS NOT BEING BUILT**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0z`** | 🔴🔴 **THE OWNER'S STATEMENT OF WHAT THE SYSTEM IS FOR — and the ACCEPTANCE CRITERION it must meet** *(read before anything else)* | 🔴🔴 |
+> | **`0z-3`** | 🔴🔴 **THE BUILD-ORDER LOCK — what will NOT be built, and in what order the rest comes** *(`T17`)* | 🔴🔴 |
+> | **`0.75`** | **The three explicit NON-GOALS — what NBA was told NOT to build** | ⚠ |
+> | **`0z-7`** | 🔴 **The two-pipeline decision, made in real time** — COMPASS fact 107's reasoning | 🔴 |
+> | **`0z-2`** | 🔴 **Why ENUMERATION beats PREDICTION, measured — and it is the argument AGAINST the decision** | 🔴 |
+> | **`0z-5`** | 🔴 **"Enrichment is thin BY DESIGN, not by failure"** — and the corpus's "ten rejected factors" | 🔴 |
+>
+> ### 🏗 **B · LINEAGE AND THE ORIGINAL PATTERN (`T1` → `T9`)**
+> | § | what it covers |
+> |---|---|
+> | **`0`** | **LINEAGE — the owner's three-run model** *(`T1`)*, refined through `T4`–`T9` |
+> | **`0.6`** | **The original wording** |
+> | **`0.7`** | **The four-layer ordered full-run pattern** *(`T1`, the blueprint)* |
+> | **`0.8`** | **CHAIN INDEPENDENCE — don't build one monolithic run** |
+> | **`0.9`** | **Trigger / scheduling reality** — *"build this correctly from day one"* |
+> | **`0.95`** | **The cadence as originally locked — three elements never recorded** |
+>
+> ### ⚙️ **C · THE THREE PIPELINES AS THEY STAND**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`1`** | 🔑 **THE CUTOFF — why `1:15 PM PT`** | 🔑 |
+> | **`2`** · **`3`** · **`4`** | **`P1` — WEEKLY STATIC** · **`P2` — OVERNIGHT HEAVY** · **`P3` — AFTERNOON LIGHT** | |
+> | **`4b`** | ⚠ **WHAT NO PIPELINE DOES — `final_hp` is rebuilt by NOTHING** | ⚠ |
+> | **`5`** | **THE CALCULATION CHAIN** | |
+> | **`6`** | **FAILURE POLICY** — *incl.* **`6b`** the pipeline-scrutiny methodology | |
+> | **`7`** | **VERIFICATION STATUS** *(`2026-09-20`)* | |
+>
+> ### 🔴 **D · WHERE IT LIES TO YOU — the two adversarial audits**
+> | section *(both are `h1`)* | what it covers | 🚩 |
+> |---|---|---|
+> | **`THE SWALLOWED-FAILURE CENSUS`** | 🔴 **Where a pipeline can do LESS than it claims and still certify green.** **Class A — `5` scripts where a partial failure is INVISIBLE** · ⚠ and it breaks a discipline this corpus already states · ✅ **Class B — correctly NOT defects, named so they are not re-found** · ✅✅ **the shell half, and it is CLEAN** | 🔴🔴 |
+> | **`WHAT CERTIFIES GREEN WHILE BROKEN`** | 🔴 **The twelve checks, read adversarially.** **F1 — five of the twelve have NO DATE PREDICATE AT ALL** · 🔴🔴 **F2 — `> 0` means ONE ROW OUT OF SIXTY THOUSAND** · 🔴 **F3 — what is not checked at all** · ⚠ **F4 — the certifier's own clock is DST-naive, and the pipelines bypass it** | 🔴🔴 |
+>
+> ### 🔑 **E · THE DESIGN DECISIONS BEHIND THE ENGINE (`0a.*`)**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0a`** | 🔑 **THE OUTCOME GRADER — the design as the owner was given it, and what the code actually does** | 🔑 |
+> | **`0a.1`** | 🔑 **The grader's build — what it caught, the storage decision, and a LIVE re-take of every figure** | 🔑 |
+> | **`0a.2`** | 🔑 **MARKET CONSENSUS — the owner's WEIGHTING directive, the build that FAILED, and the design that replaced it** | 🔑 |
+> | **`0a.3`** | 🔑 **THE TWO-PHASE CLOCK — where it was designed, the TWO LEAKAGE TRAPS, and the PREMISE under it** | 🔑 |
+> | **`0a.4`** | 🔑 **The leakage test, the defect rule, and the scenario sizing** *(`T14`'s answers)* | 🔑 |
+> | **`0a.5`** | 🔑🔑 **BASELINE AND ENRICHMENT ARE ONE SYSTEM — the measured result that invalidates a whole class of work** | 🔑🔑 |
+> | **`0a.6`** | 🔑 **THE THREE-STAGE FUNNEL — where each link sits, and why** | 🔑 |
+> | **`0z-4`** | 🔴 **The scenario calibration design, and the `17%`-vs-`90%` tension the corpus leaves UNRESOLVED** | 🔴 |
+> | **`0z-6`** | ✅ **The availability model — how "`80%` confident-band accuracy" was actually reached** | ✅ |
+>
+> ### 📈 **F · THE PAPER-TRADING STRATEGY**
+> | section | what it covers | 🚩 |
+> |---|---|---|
+> | **`standards_3pick_v1`** *(h1)* | 🔴 **Specified end to end**: selection *(`paper_pick_candidates`)* · packing *(`paper_pick_slips`)* · logging *(`log_paper_picks`)* · grading *(`grade_paper_picks`, called by `P2` step 3b)* · 🔴🔴 **the defect it exposes — the twelve-prop map is DUPLICATED** · ⚠ **`NOT RECORDED`: is the 3-leg slip a Power Play or a Flex?** | 🔴 |
+>
+> ### ⚠ **G · A RETRACTION, KEPT**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0z-8-T18-RETRACTION`** | ⚠⚠⚠ **This sweep OVERCLAIMED, and the retraction is recorded, not edited away** — **read this BEFORE `§0z-8-T18`** | ⚠⚠⚠ |
+> | **`0z-8-T18`** | ⚠ **Superseded in part by the retraction above** — the `2:30 PM PT` trace | ⚠ |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`A` is the mandate, `B` the lineage, `C` what runs, `D` how far to
+> trust a green build, `E` why the engine is shaped as it is, `F` the strategy, `G` a correction kept
+> in place.*** **If you are about to trust a passing certifier, read `D` first.**
+
 **Update log**
 | Date | What changed |
 |---|---|
