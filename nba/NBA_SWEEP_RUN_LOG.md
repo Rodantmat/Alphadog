@@ -2734,6 +2734,44 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 >    `130` commits of careful `[skip ci]` discipline would have revealed this; only reading the run
 >    list did.**
 
+> ### ✅ **§F7.20 — THE `STEPS 8+` WARNING IS RETIRED, AND THE `STEP 0c` INDEX ROWS NO LONGER CONTRADICT THE MOVE TWO ROWS BELOW THEM**
+>
+> *`2026-09-23`. **Both were stale statements that the sweep's own repairs made false — the exact class
+> the owner named: "a stale index is worse than no index."***
+>
+> #### 1 · `STEP 0c` — three statements, all contradicting the row that recorded the fix
+>
+> | where | said | truth |
+> |---|---|---|
+> | the order line | *"`STEP 0c` sits between `STEP 7` and `STEP 8`"* | 🔴 **false since `§F7.3`** |
+> | the `FIND IT FAST` row | *"`STEP 0c` (misplaced — sits after `STEP 7`)"* | 🔴 **false, and TWO ROWS ABOVE the row recording the move** |
+> | the section-list row | struck text plus *"MOVED INTO ORDER"* | ⚠ *true but carrying its own contradiction inline* |
+>
+> ✅ **All three now state the position. Order RE-DERIVED before writing:**
+> `` grep -nE '^#{1,2} (⬆ )?\**STEPS? ' nba/NBA_RECIPE.md `` ⇒ **`0 · 0a · 0b · 0c · 0d · 0-T16 · 1–7 ·
+> 8+ · 8 · 9 · 10 · 11 · 12 · 13`.** ⚠ *The `⬆ STEP 0c` forwarding stub after `STEP 7` stays — it is a
+> signpost for old pointers, and the index now says so rather than mistaking it for the step.*
+>
+> 🔑 **`RULE 58` on my own query, again**: *my first order derivation used* `` ^## STEP `` *and reported
+> `STEP 8`–`13` MISSING.* ***They exist as `#` (h1) headings, not `##`.*** **Had I trusted that probe I
+> would have "corrected" a true index into a false one.**
+>
+> #### 2 · `STEPS 8+` — a warning that was true when written and became the opposite
+>
+> > 🔴 *It said:* ***"the operating spine of the system appears in this document exactly once — four
+> > words in row `21`"*** *and* ***"someone rebuilding from this document alone would not know the
+> > pipelines exist."***
+>
+> ⚠ **Written `2026-09-22` at `§T20.86`, and TRUE then.** *`STEP 8`–`STEP 13` were written later the
+> same day and the next — `§T20.88`, `§T20.89`, `§T20.93`, `§T20.134` — and **nobody went back to the
+> warning.*** ⇒ ✅ **Rewritten `2026-09-23` to what the block now is**: the journal's summary table,
+> superseded as a recipe by six real steps that are named in it. **The old text is here, not deleted.**
+>
+> 🔑 ***Both defects share one shape: a correct note about a gap, left standing after the gap closed.
+> The sweep is good at recording problems and poor at un-recording them.*** **The check that catches
+> it is cheap — re-read every index row that mentions a thing you just changed — and it is now part of
+> the closing pass.**
+
 > ### ✅✅ **§F7.19 — THE ENTRY BLOCKS ARE CAPPED, THE CENSUS STAMP NO LONGER REFUTES ITSELF, AND THE GLOSSARY GAINS A CONCEPT INDEX**
 >
 > *`2026-09-23`, on the owner's four named defects. **All history removed from the twelve lives here
