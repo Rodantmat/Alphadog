@@ -14140,6 +14140,34 @@ for a credential**, and the table applied one test to both.*
 
 ### 🔴 OWNER DECISION — what only the owner can do
 
+> 🔴🔴🔴 **SCOPE EXTENDED 2026-09-23, `§F3.3` — A SECOND, MORE SERIOUS CREDENTIAL, IN A DIFFERENT
+> PLACE.**
+>
+> **`T13` carries a LIVE PRODUCTION POSTGRES PASSWORD in plaintext**, pasted by the owner as
+> DigitalOcean connection details — **`username`, `password`, `host`, `port`, `database`,
+> `sslmode`** — **together with `3` `postgres://` URLs and `5` Bearer JWTs.** *No value is
+> reproduced here or anywhere in the corpus.*
+>
+> | | `balldontlie` key *(original `F2-1`)* | 🔴🔴 **the Postgres password** |
+> |---|---|---|
+> | where | `NBA_MASTER_SUMMARY.md` | **transcript `T13` only** |
+> | in the repo? | 🔴 **YES — and still in `2` commits** | ✅ **NO — `0` sites, `0` commits, verified across the full history** |
+> | blast radius | one third-party read API | 🔴🔴 **the production database** |
+> | urgency | rotate | 🔴 **rotate, and it outranks the first** |
+>
+> ⇒ **① `ROTATE THE DIGITALOCEAN POSTGRES PASSWORD` is now the first action of this item.** *It has
+> never been committed, so this is precaution rather than remediation — but the file it sits in is
+> the kind that gets copied between machines, attached to chats and handed to tools, and a database
+> password is not a thing to leave in one.* **Rotating it also invalidates the `3` `postgres://`
+> URLs and the `user:pass@` forms in the same file at no extra cost.**
+>
+> ⚠ **The `5` Bearer JWTs in `T13` and `T12` are short-lived by design** *(`T20-14` already tracks
+> Betr's token expiry, `2026-10-10`)* — **listed for completeness, not for action.**
+>
+> 📌 **Read with `T21-1`'s census (`§F3.3`)**: `4` of `25` transcript files carry anything at all,
+> and **`T13` holds `28` of the `50` hits** — so sanitising `T13` alone removes most of the exposure
+> and unblocks most of `T21-1`.
+
 1. 🔴🔴 **ROTATE the `balldontlie.io` key.** *Assume it is compromised: treat the disclosure window
    as beginning at the commit that introduced it.*
 2. **Update `nba_config.external_credentials`** with the new value *(that table is the documented
