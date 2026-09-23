@@ -247,4 +247,7 @@ vs 658) LOST out of sample on both segments (0.0445 / 0.2418). Granularity has a
 injury JSON, not Postgres, so the fallback must be called there); add the daily load to P2/P3 beside the scrape step;
 `nba_ref.referee_assignments` is EMPTY (0 rows) while P2 runs its scraper nightly — D1's primary has never produced data
 and its documented fallback (zero + confidence penalty) would be silently active every game day.
- Remaining small builds: coach-change dates 2024-25/2023-24, All-Star/All-NBA lists, national-TV flag, daily referee-assignments scraper, the NBA game-id join for `game_lines_closing`/`board_snapshots`, the two 2023-24 starter-status game timeouts. BigDataBall is no longer needed (The Odds API history covers the sportsbook props and both DFS boards).
+
+**Status as of 2026-09-10 05:30Z** (config `enrichment_backfill_status_2026_09_10`), restored here after a 2026-09-23
+patch of mine accidentally consumed the sentence: every factor has its two-season backfill except the pick'em/prop
+history (built, waiting only on the owner's Odds API upgrade). Remaining small builds: coach-change dates 2024-25/2023-24, All-Star/All-NBA lists, national-TV flag, ~~daily referee-assignments scraper~~ *(BUILT — `scrape_referee_assignments.py` runs in P2, but `nba_ref.referee_assignments` is still EMPTY, see above)*, the NBA game-id join for `game_lines_closing`/`board_snapshots`, the two 2023-24 starter-status game timeouts. BigDataBall is no longer needed (The Odds API history covers the sportsbook props and both DFS boards).
