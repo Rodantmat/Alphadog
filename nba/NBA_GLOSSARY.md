@@ -1676,6 +1676,32 @@ A product would kill good legs.
 **scenario precompute** · T16, LIVE · Enumerate availability branches, store only the realised one.
 **Dropped as a daily job** — with one window there is nothing to select with.
 
+---
+
+### P–S *(continued — research-standard structure)*
+
+*Moved here `2026-09-23`, `§F7.4`, from its former position **after `T–W`**, where an alphabetical
+reader had already passed it. Demoted `##` → `###` so it reads as a continuation of `P–S` rather
+than a second top-level bucket with the same name. **Method: the copy was inserted and verified
+byte-identical against the original before the original was deleted** — `RULE 40`, and the owner's
+standing instruction that a move is a delete plus an insert, which is how content gets lost.*
+
+**Part G** · `NBA_LESSONS_LEARNED_FROM_MLB.md` · *"Lessons earned by the NBA baseline work itself
+(2026-09-09), now part of the standard."* **10 numbered lessons** — the first NBA-earned content in
+the research standard, as opposed to MLB-inherited. **Postdates T1; swept with T7–T11.**
+**Not yet in the twelve documents** — `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 30*.
+
+**Part H** · `NBA_LESSONS_LEARNED_FROM_MLB.md` · *"Lessons from the enrichment backfill, market and
+board-sourcing phase (2026-09-10)."* **12 numbered lessons.** **Postdates T1; swept with T7–T11.**
+**Not yet in the twelve documents.**
+
+**the 27 lessons** · T1, `NBA_LESSONS_LEARNED_FROM_MLB.md` Part A · The research standard applied to
+every strategy candidate. **27, not 26** — **VERIFIED by grep 2026-09-20**; the documents said 26
+until then and **#27 was missing entirely**. Full list: `NBA_FINAL_SCORING_CALIBRATION.md` §14.
+**With Parts G and H the standard is 49 numbered items.**
+
+---
+
 ## T–W
 
 **whole-universe comparison** · T1 (blueprint §9) · Scrutiny technique 1: diff the **live config**
