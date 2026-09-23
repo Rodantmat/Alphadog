@@ -273,7 +273,9 @@ jobs:
       - name: Refit the confidence deduction model
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          C3_SEASONS: ${{ github.event.inputs.season || '2025-26' }}
+          # BLANK = build_confidence_v3.py uses stats_seasons(2) - the two most recent seasons with
+          # real game data, which rolls by itself (T23-2).
+          C3_SEASONS: ${{ github.event.inputs.season }}
         run: python nba/build_confidence_v3.py
 
       # 6) CERTIFY: today's baseline exists, >= 25 props, zero invalid probabilities
