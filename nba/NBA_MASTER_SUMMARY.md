@@ -39647,7 +39647,14 @@ it carries **`"Luka Doncic"`**, not `"Luka Dončić"` — **so the ACCENT half o
 on today's archive source.** ⇒ ***The `6.01%` measured above is the SUFFIX half alone*** *(plus two
 short-form names, `Moe`/`Moritz` and `Ron`/`Ronald`, which are a separate and smaller problem)*.
 🔴🔴 **The accent half is LATENT and arms the moment a source sends the real spelling — and the DFS
-apps, which are what `BS_SOURCE=live` reads, are exactly such a source.** ⚠ **`§T20.123` measured that
+apps ~~, which are what `BS_SOURCE=live` reads,~~ are exactly such a source.**
+> 🔴 **CORRECTED 2026-09-23, T20 pass 125 (`§T20.130`): `BS_SOURCE=live` READS NOTHING.** *`score_board_legs.py:108`
+> assigns it and `:134` prints it in a log line; **the variable is never used again and the query reads
+> `board_snapshots` unconditionally** — `NBA_OPEN_ITEMS.md:12856` (`T18-5`) already called it **dead
+> code**, and I cited it as a live selector anyway.* ⚠ **The finding above is unaffected**: the DFS
+> apps reach the scorer **through `archive_live_boards.py` writing their legs into
+> `board_snapshots`**, which `P3` runs before scoring — *the path is real; the switch is not.*
+⚠ **`§T20.123` measured that
 those apps have delivered `0` NBA player props ever, so their spelling is `NOT RECORDED` — but
 `Dončić` and `Jokić` are the two highest-volume prop players in the league, and they sit on the wrong
 side of this join.**
