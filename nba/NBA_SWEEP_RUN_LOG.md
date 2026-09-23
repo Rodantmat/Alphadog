@@ -2198,6 +2198,44 @@ later.***
 `1` site, in this log; `0` across all twelve. CLASSIFIED as this pass's own write from today. `1`
 of `1` corrected, `0` outstanding.**
 
+🔑🔑🔑 **COUNT AMENDED AGAIN 2026-09-23, `§F6.10`: `54` → `55`. `RULE 56` NUMBERED.**
+
+> ## 📜 **RULE 56 — RECORD `n`. THE DROPPED COLUMN IS ALMOST ALWAYS THE SAMPLE SIZE.**
+> ***When a measured quantity is written into the twelve, the population it was measured on is
+> written with it. A rate, a gain, a multiplier or a probability without its `n` cannot be assessed
+> for precision, cannot be replicated, and cannot be compared against another figure in this corpus
+> — and `n` is the column this corpus drops.***
+>
+> **`RULE 55` says a conclusion needs its table. `RULE 56` says WHICH COLUMN of that table goes
+> missing, and it is not a guess — it is the tally from one day's work:**
+>
+> | table recovered | what was on file | 🔴 what was dropped |
+> |---|---|---|
+> | confidence tiers, pass 3 *(`§F2.8`)* | four percentages | **3 of 4 leg counts** |
+> | confidence tiers, pass 2 *(`§F6.1`)* | four percentages | **all 4 leg counts**, + avg confidence, + distinct values |
+> | `A2` by absent-player tier *(`§F6.5`)* | the multipliers `1.177` / `1.149` / `1.091` | **all 4 sample sizes** (`5,506` · `9,259` · `26,816` · `5,761`) |
+> | `A2` per-prop gate *(`§F6.5`)* | the gains | **the `MAE ignore` baseline column** |
+> | phase decay *(`§F6.9`)* | all three gaps | **all three leg counts** — *and the largest gap rests on `8×` fewer legs* |
+> | `hp` by kind × tier *(`§F6.9`)* | 2 of 7 `hp` values | **all 7 leg counts** |
+> | model ablation *(`§F6.9`)* | log-loss, accuracies | **the entire `AUC` column — the evidence for its own conclusion** |
+> | enhancing score *(`§F2.9`)* | the scores | **2 of 4 comparators, 3 of 4 edges** |
+> | book calibration *(`§F6.7`)* | — | **the whole table, `776,000` legs** |
+>
+> 🔑 ***Nine tables. In six of them the missing column is `n`.*** **And in two more it is the
+> comparator or the baseline — the other thing an estimate is meaningless without.**
+>
+> **Why it happens is visible in the source**: *the transcripts state the conclusion in prose and
+> put the numbers in a table; **a pass reading for findings copies the sentence and leaves the
+> grid**. The prose survives, the denominator does not.*
+>
+> **The obligation, in one line:** *every measured figure entering the twelve carries the population
+> it was measured on — and when the source gives a table, the table goes in whole or the omission is
+> marked.*
+>
+> ⚠ **`RULE 56` does not ask for every number.** *`§F6` killed `T8`'s implementation constants,
+> `T12`'s User-Agent fragments and `T13`'s already-covered tables without recording a single figure
+> from them.* **It applies to the population behind a MEASURED CLAIM, nothing wider.**
+
 🔑🔑🔑 **`RULE 55` NUMBERED, and it is numbered on FOUR INDEPENDENT INSTANCES FOUND IN ONE DAY
 rather than on one.**
 
