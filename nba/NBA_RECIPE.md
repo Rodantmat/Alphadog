@@ -15,9 +15,11 @@ that is the useful part.
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `STEP` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
-> 🔴 **THE STEPS ARE NOT IN ORDER IN THE FILE.** *Physical order is:* `STEP 0-T16` → `0` → `0a` →
-> `0b` → `0d` → `1`–`7` → **`0c`** → `8+` → `8` → `9` → `10` → `11` → `12` → `13`. ***`STEP 0c` sits
-> between `STEP 7` and `STEP 8`.*** **This index is in the order the build actually happened.**
+> ✅ **THE STEPS ARE IN ORDER** *(since `2026-09-23`, `§F7.3`)*. *Physical order, re-derived
+> `2026-09-23`:* **`0` · `0a` · `0b` · `0c` · `0d` · `0-T16` · `1`–`7` · `8+` · `8` · `9` · `10` ·
+> `11` · `12` · `13`.* ⚠ *One forwarding stub — `⬆ STEP 0c` — still sits after `STEP 7`, marking where
+> the block used to be so an old pointer lands somewhere that explains itself. **It is a signpost, not
+> the step.*** *Re-derive:* `` grep -nE '^#{1,2} (⬆ )?\**STEPS? ' nba/NBA_RECIPE.md ``
 >
 > ## ▶ FIND IT FAST
 >
