@@ -825,6 +825,62 @@ where you would look if you assumed pointer-style writing were the cause.
 *Confound stated rather than buried: the document corpus grew 3,941 → 5,453 paragraphs over the same
 period, and a bigger corpus lifts max-similarity for everything. The signal is the **spread**
 (−0.005 to +0.548), not the mean, since growth alone would lift all fifteen equally. And n=15,
+> # 📉 **§T21.10 — THE THREE FALSE-TAIL MECHANISMS, RECORDED TOGETHER FOR THE FIRST TIME**
+> ### *(`T21` pass `10`, recorded `2026-09-23`. **This is why `uncovered12` is a FLOOR and not a debt — and the cause has a name that was never carried forward.**)*
+>
+> *`T21` watched the coverage instrument in use and, across three separate reports, identified three
+> distinct reasons a segment scores "uncovered" while being perfectly well documented. **It also said
+> they must be recorded TOGETHER, in the tool's own docstring, because "anyone reading the number
+> later needs all three at once."** They were not. Here they are.*
+>
+> | # | mechanism | why it inflates the tail |
+> |---|---|---|
+> | **1** | **Content that can never prose-match** | web-search dumps, code diffs, `sleep 90` calls — `≈143` segments on the transcript measured. *There is no prose to match.* |
+> | **2** | 🔴🔴 **POINTER-STYLE WRITING STRUCTURALLY DEFEATS THE MATCHER** | ***"A short pointer has almost no n-gram overlap with the long passage it points at, so a properly documented segment stays permanently 'uncovered.'"*** |
+> | **3** | **Self-authorship matching at `1.00`** | a transcript that WROTE documentation carries a permanently **deflated** tail from its own `github_put_file` payloads — **`32` of `309` `T1` segments at similarity `1.00`, zero defects, structurally guaranteed.** ⚠ *"The one most likely to mislead on `T19`–`T21`."* |
+>
+> ## 🔴🔴🔴 **MECHANISM 2 IS A CONTRADICTION BETWEEN TWO STANDING INSTRUCTIONS, AND IT WAS NAMED AS ONE**
+>
+> > ***"Two of my instructions are fighting each other, and it gets worse the more pointer-format work
+> > is done. The consequence: 'tail exhausted' now means 'I read it' — self-attested, which is the
+> > exact thing the three-clean-pass rule existed to replace. **The judgment pass is what's actually
+> > holding the line, not the coverage number.**"***
+>
+> ⇒ 🔑🔑🔑 ***The owner's `T21-1` directive — "each file should be a guide… a reference, not a full
+> detailed copy" — MAKES THE COVERAGE NUMBER WORSE BY DESIGN.*** **Every pointer-format entry this
+> sweep writes correctly raises `uncovered12`.** *The two are not in tension by accident; they are
+> measuring different things, and only one of them is the owner's requirement.*
+>
+> ## ⚠ **AND THE DENOMINATOR MEANS SOMETHING NARROWER THAN IT READS**
+> *`doc_paragraphs` reads **only the twelve**. The same transcript measured **`99.0%` uncovered
+> against twelve** and **`92.8%` against thirty.*** ⇒ ***The figure means "NOT YET IN THE TWELVE." It
+> has never meant "undocumented."*** *`T21`'s instruction — put that in the docstring before quoting
+> the figure — is recorded here because the docstring still does not say it.*
+>
+> ## ✅ **WHAT ACTUALLY HOLDS THE LINE: THE HIGH-BAND JUDGMENT PASS, AND ITS MEASURED DEFECT RATE**
+>
+> | | |
+> |---|---|
+> | segments sampled in the **high-similarity** band *(what the tool calls "done")* | **`97`** |
+> | correct | **`95`** |
+> | 🔴 defects | **`2` — a `2.1%` defect rate in the band the instrument calls covered** |
+> | shape of both defects | **identical: something the documents mentioned and got INCOMPLETE** |
+>
+> 🔑🔑 ***THE STRONGEST SINGLE DATA POINT IN THIS PROJECT'S METHODOLOGY***: *the high-band pass caught
+> **a live credential quoted verbatim at `NBA_MASTER_SUMMARY.md` line `1034`, put there by pass `19`
+> — the careful, one-angle-per-pass method — which quoted the key VALUE instead of referring to it.***
+> **Eighty-eight passes never noticed. The batched judgment pass found it in one.**
+> ⇒ ***Batched verification is not weaker verification.*** *`69` candidate facts checked against `30`
+> documents in `3` greps rather than `69` is the same check with fewer calls, and nothing was skipped
+> to get the speed.*
+>
+> 📌 **THE CONSEQUENCE FOR ANY FUTURE SWEEP, STATED PLAINLY**: ***read the HIGH band, not only the
+> low one.*** *A low score means "I have not written this down in words that overlap." A high score
+> means "I believe I have already covered this" — **and that belief is what nothing else checks.**
+> `§F7.12` applies this to `T21`–`T24` rather than leaving it as advice.*
+
+---
+
 selected as distinctive strings — "about a third" is the supportable claim; a precise false-tail rate
 is not.*
 
