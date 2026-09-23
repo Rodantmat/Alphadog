@@ -14529,6 +14529,22 @@ written (rule 1).**
 > `nba/data/nba_player_game_log_2026_27.json` lands, the ladder flips to `2026-27` — and the YAML
 > literal cannot flip — so from that day `score_board_legs.py:145` raises
 > `SystemExit(1)`: `"ABORT: no baseline ladder for <date> - P2 must run before P3."`**
+> 🔴🔴 **(3) AND THE OTHER OBVIOUS LEVER — `NBA_SEASON` — DOES NOT REACH FOUR SCRIPTS.**
+> *Added T20 pass 124 (`§T20.129`), 2026-09-23.* **`nba_season.py`'s `current_season()` and
+> `active_stats_season()` both open with an `NBA_SEASON` override, and `NBA_MASTER_SUMMARY.md:11764`
+> says *"so any run can be pinned for replay."*** ⚠ **"Any run" is false.** **The library has `19`
+> importers, and FOUR scripts compute the season themselves and honour nothing**:
+> **`grade_board_outcomes.py:70`** and **`_season_of()` in all three ladder builders**
+> *(`baseline/build_baseline_ladder.py:43` · `build_combos_ladder.py:14` ·
+> `build_periods_ladder.py:15`)* — **`grep -c NBA_SEASON` = `0` and `grep -c nba_season` = `0` in
+> every one.** ⇒ ***Setting `NBA_SEASON` moves the nineteen importers and leaves the grader and all
+> three ladder builders on their own answer — a split-brain season produced by the fix itself, and
+> two of the four BUILD the ladder the third then GRADES.*** ✅ *Their rollover semantics ARE correct
+> — `§T20.129` tested it date by date and killed that candidate: the copies reproduce
+> `active_stats_season()` exactly, which is the right function for a ladder builder.* 🔑 **So this is
+> a CONTROLS gap, not a logic gap: the duplicates inherited the semantics and not the override, and
+> they stay right exactly until someone tries to change them.**
+>
 > ⚠⚠ ***The system will look fine through the rollover and break on a later, unrelated-looking day,
 > with an error that blames `P2`, which is not the cause.*** 📌 *Corroborated live 2026-09-22:
 > `nba_score.baseline_history` holds `2024-25` (**9,537,535** rows) and `2025-26` (**9,805,813**,
