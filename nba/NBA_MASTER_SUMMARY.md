@@ -1433,7 +1433,7 @@ A sweep for every hex string, numeric ID and UUID returned only already-document
 | Found | Already in |
 |---|---|
 | `00b8dbe` (the redeploy run SHA) | T1.21 |
-| `dcb12926-916e-4b28-a64e-d7bdd3f13d6d` (balldontlie key) | T1.5 |
+| 🔴 ~~*(the balldontlie key, **quoted in full**)*~~ → **REDACTED 2026-09-23, `§F2.12`** — *the live value is in `nba_config.external_credentials`; it is not reproduced here or anywhere in the corpus* | T1.5 |
 | `1610612xxx` team IDs | T1.14 |
 | `cceeded` | false positive — substring of "succeeded" |
 
