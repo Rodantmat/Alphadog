@@ -28,9 +28,11 @@ four-way rule because a demon-Less is BELOW the anchor. v2 signs by POSITION: ne
 positive above it. So a tier tells you where the rung sits, and (tier sign, side) tells you the label -
 which is exactly the rule above, made queryable.
 
-Env: DATABASE_URL, BT2_APPS (default prizepicks), BT2_REBUILD (1 = drop and rebuild)
+Env: DATABASE_URL, BT2_APPS (default prizepicks), BT2_DATE (default: today PT - ONE slate),
+     BT2_ALL (1 = full truncate-and-rebuild across the whole archive, for backfills)
 """
 import os
+from datetime import datetime, timedelta, timezone
 
 import psycopg
 
