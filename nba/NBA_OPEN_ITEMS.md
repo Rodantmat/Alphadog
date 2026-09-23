@@ -14384,6 +14384,54 @@ credential; this instance survived that catch, in the very pass named `IDs, hash
 
 ---
 
+## F6-3 · **NEW · ⚠ MEDIUM** · the one penalty in the reliability audit that does not derive from the rule, and it is on the highest-volume prop
+
+*Filed 2026-09-23, `§F6.21`. **Read-only**: two `SELECT`s against
+`nba_config.classification_config` and arithmetic. Nothing was changed.*
+
+**The audit's whole claim about its own penalties is that they are computed, not chosen:**
+
+> ***"`penalty_pp` = the prop's n-weighted ECE minus the median ECE of the certified set
+> (`0.20 pp`). **Derived, never declared.**"*** — `prop_reliability_audit_2026_09_13.penalty_rule`
+> *(`prop_confidence_policy` states the median independently: `certified_median_ECE_pp: 0.20`)*
+
+**Run against all three penalised props** *(`RULE 57`, numbered from this)*:
+
+| prop | `n` | ECE pp | `ECE − 0.20` | **published `penalty_pp`** | derives? |
+|---|---|---|---|---|---|
+| `oreb` | `556,277` | `0.28` | `0.08` | `0.1` | ✅ |
+| `double_double` | `47,912` | `0.57` | `0.37` | `0.4` | ✅ |
+| 🔴 **`fantasy_score`** | **`994,879`** | `0.41` | `0.21` | 🔴 **`0.3`** | 🔴 **NO** |
+
+⇒ ***No rounding convention takes `0.21` to `0.3`, and `fantasy_score` is the system's
+highest-volume prop — nearly a million rows.*** **The alternative medians do not rescue it**: a true
+median near `0.11` would make it fit but would push `oreb` to `0.2` and `double_double` to `0.5`,
+neither of which is published.
+
+**Three readings, and the row settles none:**
+
+| | reading | what it would mean |
+|---|---|---|
+| **(a)** | the stated `0.20 pp` median is rounded | ❌ ruled out above — it breaks the other two |
+| **(b)** | `fantasy_score` carries an unstated extra term | *plausibly its `5.2%` lift, the lowest in the system — but then the rule as written is incomplete* |
+| **(c)** | the `0.3` predates the rule and was never re-derived | *then the one prop that matters commercially carries a DECLARED penalty inside a derived scheme* |
+
+🔴 **`OWNER DECISION`, and it is small but it is the principle**: *(b) and (c) both mean the rule's
+own name is false for one row. **Re-running `nba/score_prop_reliability.py` settles it in one
+command** — this sweep does not run it.*
+
+⚠ **`RULE 54`.** *`WINDOW`: the two config rows as of `2026-09-13`, read `2026-09-23`. **`NOT
+MEASURED`: the current ECE values** — the scorer has not been re-run by this pass, and if the
+certified set has changed since, all three penalties are stale rather than one being wrong.
+**`NOT RECORDED`: the rounding convention** — `0.08 → 0.1` and `0.37 → 0.4` are consistent with
+one-decimal rounding, which is inferred here, not read.*
+
+📌 ***Filed `MEDIUM`: the practical effect is `0.1 pp` of stated confidence on one prop. The reason
+it is filed at all is that "derived, never declared" is the standard this corpus applies to every
+constant it holds, and this is the one place the standard does not hold.***
+
+---
+
 ## F6-2 · **NEW · OWNER DECISION · MEDIUM** · the one absence slice the baseline structurally cannot see has no control to test it against
 
 *Filed 2026-09-23, `§F6.13`. **Read-only**: a `SELECT` against
