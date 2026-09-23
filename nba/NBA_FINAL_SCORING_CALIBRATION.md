@@ -6,7 +6,7 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 ---
 
 > # 📑 **INDEX — `NBA_FINAL_SCORING_CALIBRATION.md`**
-> **~~`211`~~ → `249` sections · `343,562` bytes *(at parent commit; see the byte-count note in `NBA_OPEN_ITEMS.md`'s index — `§F6.19`)* · built `2026-09-23`; census corrected same day (`§F2.14`) and **re-derived after every subsequent pass** — `224 → 234 → 236 → 247 → 249`.**
+> **~~`211`~~ → `253` sections · `347,306` bytes *(at parent commit; see the byte-count note in `NBA_OPEN_ITEMS.md`'s index — `§F6.19`)* · built `2026-09-23`; census corrected same day (`§F2.14`) and **re-derived after every subsequent pass** — `224 → 234 → 236 → 247 → 249`.**
 > ⚠ *The original `211` came from a heading detector anchored at line start, which is blind to the **blockquoted** headings this corpus uses heavily — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
