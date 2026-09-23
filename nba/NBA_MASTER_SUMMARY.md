@@ -41652,3 +41652,93 @@ scored then.***
 > that `SEG 704` and `T21` `SEG 1233` conflict, and that the later governs. 🔴 **OWNER DECISION** —
 > whether they conflict at all, or whether "self-sufficient for findings, pointer for evidence" is
 > the intended position. ⚖️ **Nothing changed, probed or triggered.**
+
+---
+
+# §T23.2 — 🔴🔴🔴🔴 **THE MODEL DOES NOT BEAT PRIZEPICKS — `1.08 MILLION` LEGS, TWO SEASONS, AND THE CORPUS DOES NOT CONTAIN THIS RESULT**
+
+*T23 pass 2, 2026-09-23. **This is the most consequential finding in the new material and arguably in
+the sweep.** It scores `0` in the working tree and `0` in the baseline on every one of its seven
+components. **It is the bottom line of the product, and the twelve do not carry it.***
+
+## 1. 🔴🔴🔴 THE RESULT, IN THE TRANSCRIPT'S OWN WORDS *(`T23` SEG `394`)*
+
+> *"item 1 is done, and **the honest answer is: the model doesn't beat PrizePicks yet.** All **`325`
+> dates** are scored, and **`1.08 million` PrizePicks legs across both seasons** now sit side by side
+> with a model score, a price and a real outcome. **A leg's value here is its share of a slip's
+> payout: `1.0` is fair, and a 2-pick needs `1.155` per leg to profit.**"*
+
+| | **2024-25** | **2025-26** |
+|---|---|---|
+| model's top picks: **claimed → actually paid** | 🔴 **`1.73 → 1.16`** | 🔴 **`1.80 → 1.13`** |
+| **best strategy** *(model `≥ 1.40`, one leg per player-prop-day)* | **`1.15`** | **`1.11`** |
+| **2-pick breakeven** | **`1.155`** | **`1.155`** |
+
+> ⇒ 🔴🔴🔴 ***THE BEST STRATEGY FOUND, IN THE BETTER SEASON, LANDS AT `1.15` AGAINST A `1.155`
+> BREAKEVEN. IT DOES NOT CLEAR IT IN EITHER SEASON.***
+
+## 2. 📋 **THE SEVEN FINDINGS, AS STATED** *(SEG `391`)*
+
+| # | finding |
+|---|---|
+| **1** | 🔴 **"PrizePicks' pricing is the better forecast on every kind, both seasons. *On standards the model is worse than a flat `50%`.*"** |
+| **2** | ✅ **"But the model RANKS."** Realized value climbs with its claim in both seasons: **`0.89 → 1.155`** *(24-25)*, **`0.86 → 1.13`** *(25-26)*. |
+| **3** | 🔴 **"It is heavily overconfident."** Only **`~21%`** *(24-25)* and **`~17%`** *(25-26)* of the top bucket's claimed edge materialized. |
+| **4** | 🔴 **"No threshold clears the 2-pick breakeven in either season."** The **3-pick** breakeven *(`1.1006`)* clears only at **`≥ 1.40`** — *clearly in 24-25, **not significantly** in 25-26* — **and those picks are `58%` / `80%` DEMONS, whose leg-level value slip compression will cut.** |
+| **5** | 🔴 **Tail bias by kind — "the ladder's tails are too wide."** Goblins **under**-predicted *(`0.644` vs `0.685` actual; `0.626` vs `0.659`)*; demons **over**-predicted *(`0.263` vs `0.246`; `0.296` vs `0.257`)*. |
+| **6** | 🔴 **"Demons underpay as a class"** — actual `0.246` vs implied `0.267`; `0.257` vs `0.286` ⇒ **`−8%` to `−10%` value.** ✅ *"Standards are fair (`0.500` vs `0.500`)."* |
+| **7** | ✅ **"Calibration helps out of sample in both seasons, and the LARGER the shift, the more it helps."** |
+
+## 3. 🔑🔑 **WHAT SURVIVES, AND IT IS NOT NOTHING**
+
+> ***The model ranks. It is the CONFIDENCE that is wrong, not the ORDER.***
+> *Findings 2 and 7 together say the signal is real and the calibration layer is doing its job —
+> and finding 3 says the magnitude is inflated by roughly `5×`.* ⇒ **That is a fixable shape: an
+> over-confident ranker is a shrinkage problem, not a dead model.** ⚠ **Finding 7 is directly at odds
+> with a standing guard**: *the ladder recipe **discards Platt shifts above `0.15`**, while this
+> measures that **the larger the shift the more it helps*** *(SEG `265` names this as open decision
+> 1, with average shifts of `0.09–0.15` and a max of `0.72` ≈ `17` points at even odds)*.
+> ⇒ 🔴 **A guard that throws away the corrections that help most.** *Recorded; it is an owner
+> decision, and `SEG 265` says so.*
+
+## 4. ✅ **THE METHOD, AND ITS STATED LIMITS** *(SEG `318`)*
+
+**Base table**: per-leg — model score + latest-snapshot price + outcome — over **five questions**:
+coverage · model vs PrizePicks as predictors *(Brier, by kind)* · does calibration help, and do the
+large shifts help · is the claimed edge real *(value buckets)* · **a selection backtest at
+`1.1006` / `1.1547` / `1.25` / `1.40`, one leg per player-prop-day.**
+
+**Definitions**: `leg value = 2 × factor × hit`; **breakeven per leg `1.1547` (2-pick power)**,
+**`1.1006` (3-pick)**.
+
+> ⚠⚠ **THE CAVEATS ARE THE AUTHOR'S OWN AND THEY CUT AGAINST THE RESULT'S OPTIMISTIC SIDE:**
+> *"**leg-level value IGNORES compression above `9.1×` and rounding, so it OVERSTATES big demons**;
+> **extrapolated prices are EXCLUDED from every verdict**."*
+> ⇒ 🔑 ***The one strategy that cleared the 3-pick breakeven is `58%`/`80%` demons — exactly the
+> population the method says it overstates.*** **So finding 4's single positive result is the one
+> most likely to shrink under a correct slip-level calculation.**
+
+## 5. 🔴🔴 **WHY THIS IS SEASON-CRITICAL AND NOT MERELY INTERESTING**
+
+**Every item on the opening-day brief is about whether the pipeline RUNS.** *`T20-6` (P3 aborts),
+`T20-13` (P2 certifies red), `T20-4` (season constants), `T20-5` (the grader's window) — all of them
+ask "will it produce output on `2026-10-20`."*
+
+> ⇒ 🔴🔴🔴 ***This finding asks whether the output is worth acting on, and on `1.08 million` legs of
+> evidence the answer is "not yet, at the slip sizes the product is built around."***
+> ⚠ **It does not displace the brief** — *a system that does not run produces nothing to evaluate* —
+> **but it belongs beside it**, because an owner who fixes every brief item and then plays 2-picks at
+> `1.15` against a `1.155` breakeven has fixed the plumbing on a loss.
+> ✅ **And it is dated and re-runnable**: `nba/sql/item1_model_vs_price.sql`, `325` dates, both
+> seasons — **the same query answers it again after any model change.**
+
+▶ **Filed as `T23-1`, SEASON-CRITICAL, at the top of `NBA_OPEN_ITEMS.md`.**
+▶ **Written into `NBA_FINAL_SCORING_CALIBRATION.md` as `§0.14-T23`.**
+
+---
+
+> 📌 **TIERS**: ⚠ **AS STATED IN `T23`** — every figure; quotations verbatim. **This sweep did not
+> re-run the backtest** *(it is a large query over `1.08 M` legs and the standing constraint is
+> `SELECT`-only reads, not re-derivations of another session's analysis)*. 🔴 **`NOT RECORDED`** —
+> finding 5's remaining text beyond "tail b…" *(the segment is cut)*; whether the `≥1.40` strategy
+> survives slip-level compression. ⚖️ **`pp_*` objects not queried.**
