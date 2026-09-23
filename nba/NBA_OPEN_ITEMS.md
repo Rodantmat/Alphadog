@@ -15037,6 +15037,35 @@ re-counted — this is a DIFFERENT family: date and month WINDOWS.**
 *(`GRADE_START`, `GRADE_END`, `RUNG_FROM`, `RUNG_TO`, `MS_SEASONS`, `BM_SEASONS` appear in **none** of
 `nba-p1/p2/p3`.)*
 
+> 🔴🔴🔴 **SECOND SITE FOUND 2026-09-23, `§F2.16` — AND IT BREAKS THE OBVIOUS FIX.**
+> **The stale end date is not only in the script. `.github/workflows/nba-grader.yml` —
+> `name: NBA Outcome Grader` — hardcodes it AGAIN, as a `workflow_dispatch` input default:**
+>
+> ```yaml
+>       end:
+>         description: "End game date YYYY-MM-DD"
+>         default: "2026-04-12"
+> ...
+>           GRADE_START: ${{ github.event.inputs.start || '2024-10-22' }}
+>           GRADE_END:   ${{ github.event.inputs.end   || '2026-04-12' }}
+> ```
+>
+> ⇒ 🔑 ***Correcting `grade_board_outcomes.py:167–168` would NOT fix the dispatch path.*** **The
+> workflow passes `GRADE_END` EXPLICITLY**, so a fixed script receives `2026-04-12` from the
+> workflow and behaves exactly as before. *The default appears **twice** in the workflow — once as
+> the input's `default:` and once as the `||` fallback in the `env:` block — so both must change,
+> and so must the script.* **Three sites, not one.**
+>
+> ⚠ **This changes the REMEDY, not the severity.** *The item's analysis is unaffected and correct;
+> what was incomplete is the list of places a fix has to land.* 📌 ***`RULE 55`'s shape in a new
+> costume: the conclusion was right and the full evidence — here, the full site list — was not on
+> file.***
+>
+> ✅ **Also recorded from the same file** *(`rule 21`, read off the repo)*: `nba-grader.yml` carries
+> **`workflow_dispatch:` only — no `schedule:`** *(consistent with `T20-3` ④)*,
+> **`timeout-minutes: 330`**, and runs `python nba/grade_board_outcomes.py`. **It is one of four
+> workflow files named NOWHERE in the twelve before today** — see `NBA_WORKERS.md` `§F2.16`.
+
 🔴🔴🔴 **WHY THE GRADER IS THE WORST BLOCKER ON THE BOARD**
 ```python
 start = os.environ.get("GRADE_START", "2024-10-22")
