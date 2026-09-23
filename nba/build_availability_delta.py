@@ -57,8 +57,12 @@ def main():
         cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.availability_delta (
             game_date date, player_id text, prop text, line numeric, side text,
             old_hp numeric, new_hp numeric, reason text, built_at timestamptz DEFAULT now())""")
-        cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS availability_delta_uidx
-            ON nba_score.availability_delta (game_date, player_id, prop, line, side)""")
+        # DEADLOCK (§T23.5, fixed 2026-09-23). This is the incident's exact recipe: `IF NOT EXISTS`
+        # takes a full table lock before finding the index, and the per-date DELETE below runs in the
+        # same transaction - so two parallel runs each hold the lock and wait on the other's delete.
+        if cur.execute("SELECT to_regclass('nba_score.availability_delta_uidx')").fetchone()[0] is None:
+            cur.execute("""CREATE UNIQUE INDEX availability_delta_uidx
+                ON nba_score.availability_delta (game_date, player_id, prop, line, side)""")
         cur.execute("DELETE FROM nba_score.availability_delta WHERE game_date = %s", (asof,))
     conn.commit()
 
