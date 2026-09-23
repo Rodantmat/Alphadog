@@ -1945,6 +1945,26 @@ population is re-stated, and re-stating this population is the reconciliation th
 **`F6-1` is likewise NOT inserted into the ranked string** — by the stated rule it is SILENT ·
 DEGRADES · UNCAUGHT, the `T20-17` group, and it is placed in words, not in the sequence.
 
+## 📐 §F6.19 — **A BYTE COUNT WRITTEN INTO THE FILE IT COUNTS CAN NEVER BE EXACT, AND ONE SECTION COUNT HAD DRIFTED**
+
+*The end-of-pass re-derivation across all twelve, at pinned `HEAD`:*
+
+| | |
+|---|---|
+| ✅ **section counts, eleven of twelve** | **exact** against their stated index figures |
+| 🔴 **`NBA_BASELINE_CALIBRATION.md`** | index said `115`; **actual `119`**. *Traced: commit `43ca3790` — **my own `§F6.11`** — added four sections and did not re-derive the index, which is precisely what `§F2.14` mandates. Corrected to `119`.* |
+| 📐 **byte counts, all twelve** | **every one is short by the length of its own last index edit** — *`NBA_FINAL_SCORING_CALIBRATION.md` showed an `8`-byte gap that turned out to BE the `8` bytes of writing `~~236~~ → 247`* |
+
+🔑 ***A byte count written into the file it counts is self-referential: writing it changes it. A
+section count is not — an index edit adds no heading.*** ⇒ **Recorded as a standing note in the
+`OPEN_ITEMS` index, applying to all twelve: re-derive SECTIONS after every pass; read BYTES as
+"about this size, at the parent commit", and never check them for equality.** 📌 *Four earlier
+passes' apparent byte "drift" is explained by this and needs no investigation.*
+
+⚠ **`RULE 54`.** *This note does not license stale byte figures — it says the residual is bounded by
+one edit, roughly tens to hundreds of bytes. **A gap of kilobytes still means a pass did not
+re-derive**, which is exactly how the `BASELINE_CALIBRATION` miss was caught.*
+
 ⚠ **RULE 54 on `§F6.13`.** *`n`, the sample, the stat and the seasons behind the `-0.024` are all
 `NOT RECORDED`, and `-0.024` is approximately zero in absolute terms — **the load-bearing reading is
 "the prior carries no usable signal"**, and the directional reading is weaker and recorded as such.
