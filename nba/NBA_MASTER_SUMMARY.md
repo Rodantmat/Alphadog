@@ -40865,3 +40865,133 @@ gone: there are `~1,495` undocumented substantive segments sitting in two files 
 mandated documents.** ⇒ **The next passes are chronological content sweeps of `T21`, then `T22`, then
 `T23`, then `T24` — and the pace should be coverage-driven, not novelty-driven, because for the first
 time in this sweep the material is genuinely unread.**
+
+---
+
+# §T21.3 — 🔴🔴🔴 **THE OWNER SPECIFIED WHAT THE TWELVE SHOULD *BE*, IT WAS ACCEPTED IN FULL, AND IT HAS BEEN BLOCKED FOR TWO DAYS BY A PRECONDITION THAT CANNOT SAFELY BE MET**
+
+*T21 pass 3, 2026-09-23. Population pinned `2026-09-23T02:08:13Z`: `T21`'s `343` uncovered,
+substantive, non-tool-output segments — **`32` of them the owner's own messages.** This pass takes
+the owner strata first, because a directive is worth more than a tool output.*
+
+## 1. 🔑🔑🔑 THE DIRECTIVE — **`T21` SEG `1233`, the owner, verbatim**
+
+> *"the files should be a **reference, not a full detailed copy of the transcript**… **i don't want
+> so heavy of files again**… the information is always going to be on the transcripts so i just need
+> **each file should be a guide of that specific kind of data to where it is on the transcript**,
+> with assertive information and the instructions on how to get it on the transcript. would that make
+> faster or even slower? or is it exactly what's being done?"*
+
+✅ **RULE 51 / RULES 26-28 — NOVEL.** *`reference, not a full`, `each file should be a guide`, `so
+heavy of files` and their variants score **`0` in the working tree and `0` in the baseline**, pinned
+`2026-09-23T02:08:46Z`, window `±300`.* ⇒ ***The single most consequential instruction about what
+these documents ARE has never been written into them.***
+
+## 2. ✅ IT WAS NOT IGNORED — **it was accepted and fully specified** *(SEG `1234`–`1239`)*
+
+*The answer at the time was direct — **"no, that's not what's being done"*** — and it produced a
+complete specification, which is reproduced here because it is the design contract:
+
+| the pointer format, as specified | |
+|---|---|
+| **the unit** | an **assertive one-to-three-line statement of what is true**, then **exactly where the full detail lives** — `T`-number plus section ref or `grep -n` line number *("the transcripts never change")* |
+| **verbatim quoting** | **only when the exact wording carries the meaning** — a rule, a threshold, a constraint the owner stated |
+| 🔑 **FIVE EXEMPTIONS that stay full content** | **(1)** anything verified by **live SQL or a code grep** — *"those facts exist in no transcript, so a pointer points at nothing"* · **(2)** **`NBA_OPEN_ITEMS.md` IN ITS ENTIRETY** — *"acted on directly and must be readable without fetching anything"* · **(3)** the **pass ledger and drift notice** in `NBA_MASTER_SUMMARY.md` · **(4)** **measured numbers** — *"the number is the finding"* · **(5)** **flagged contradictions, both sides stated** |
+| **retro-conversion** | 🔴 **FORBIDDEN** — *"do not retro-convert… rewriting what is already written costs more than it saves. apply this to new work only."* |
+| ⚠ **THE STATED BLOCKER** | ***"the transcripts are not in the repo… pointer-style documents are worthless if the files they point to are unreachable. commit all 20 `.txt` transcripts to `nba/transcripts/` before or alongside your next push — otherwise you are building an index to files no other session can open."*** |
+
+## 3. 🔴🔴 THE BLOCKER NEVER CLEARED — **and the documents went the other way, by `5.2×`**
+
+**`nba/transcripts/` today** *(live, `2026-09-23`)*:
+
+```
+README.md    5,079 bytes
+journal.txt 11,478 bytes        ← and STALE: the owner's current journal is 14,284
+```
+
+⇒ 🔴 ***Two days on, the directory holds exactly what it held when the blocker was written. Not one
+transcript was ever committed.***
+
+**And the size the directive was reacting to, against the size today:**
+
+| | then *(`2026-09-21`, the assistant's own figure)* | **now** *(measured `2026-09-23`)* |
+|---|---|---|
+| the twelve, total | **`1.1 MB`** — *"the documents are becoming too heavy"* | 🔴🔴 **`5,672,870` bytes ≈ `5.67 MB`** |
+| `NBA_MASTER_SUMMARY.md` | — | **`3,099,657`** |
+| `NBA_OPEN_ITEMS.md` | — | **`1,178,210`** |
+| *those two as a share of the twelve* | — | 🔴 **`75.4%`** |
+
+> ⇒ 🔴🔴🔴 ***The owner said "too heavy" at `1.1 MB` and asked for pointers. The files are now `5.2×`
+> that size, and the pointer format was never adopted, because the one step it depended on was never
+> taken.*** ⚠ **This is not a drift I can blame on ambiguity: the instruction was explicit, the
+> acceptance was explicit, and the specification is complete enough to implement from.**
+
+🔑 **A SECOND-ORDER CONSEQUENCE, MEASURED EARLIER AND NEVER CONNECTED**: `§T20.22` audited
+**`187` `file:line` pointers across the twelve** and found the `.py`/`.yml` ones resolve `19 of 19`.
+***But every `T`-number and `SEG` pointer this sweep has written — and it has written many — points
+into a file that is not in the repo.*** **For any session but this one, they are unresolvable.**
+
+## 4. 🔴🔴🔴 **AND THE BLOCKER CANNOT BE CLEARED AS SPECIFIED — THE REPO IS PUBLIC**
+
+*Scanned all `23` transcripts for credential-shaped strings. **COUNTS ONLY — no value was printed,
+stored, or written anywhere, per the standing rule.***
+
+| file | what matched | n |
+|---|---|---|
+| `2026-09-13-01-03-48-nba-boards-grader-market-2026-09-10.txt` | 🔴🔴 **Postgres connection URLs `3`** · JWT-shaped `5` · Bearer `2` | **10** |
+| `2026-09-10-04-53-47-nba-enrichment-backfill-dfs-boards-2026-09-10.txt` | `api_key=` assignments | **7** |
+| `2026-09-11-21-01-23-nba-board-scrapers-fliff-docs-2026-09-10.txt` | JWT-shaped | **1** |
+| **total across the corpus** | | 🔴🔴 **`18`** |
+
+> ⇒ 🔴🔴🔴 ***Executing the directive's precondition as written — "commit all 20 `.txt` transcripts to
+> `nba/transcripts/`" — would publish `18` credential-shaped strings, including THREE database
+> connection URLs, to a PUBLIC repository.***
+> ⚠⚠ **The instruction was written without that check, which is why it reads as a one-step chore.
+> It is not one.** 🔑 **And the corpus already suspected it**: `T21` SEG `1251` carries
+> ***"given the value has been copied forward through at least two sessions, rotating the key is the
+> stronger move regardless of what happens to the files."***
+
+**🔴 NOTHING WAS COMMITTED, NOTHING WAS SCANNED INTO A FILE, AND NO VALUE APPEARS ANYWHERE IN THIS
+CORPUS.** *The three files are named so the owner can act; the matches are counted, never shown.*
+
+## 5. 🔴 **OWNER DECISION — `T21-1`, and it is a fork, not a chore**
+
+*Filed in full at `NBA_OPEN_ITEMS.md` as `T21-1`. The options, stated so one can be chosen in a line:*
+
+| | option | cost | what it unlocks |
+|---|---|---|---|
+| **(a)** | **Redact, then commit** — scrub the `18` strings, commit the redacted transcripts | one careful pass; the transcripts stop being byte-exact, which weakens them as evidence | the pointer format, fully |
+| **(b)** | **Private mirror** — commit transcripts to a PRIVATE repo, point at that | a second repo; other sessions need access | the pointer format, and the transcripts stay byte-exact |
+| **(c)** | **Commit the clean `20` only**, handle the `3` separately | simplest; **`20` of `23` have `0` matches** | most pointers resolve; three transcripts stay unreachable |
+| **(d)** | **Abandon the pointer format**, attack size by trimming superseded rows instead | collides with **rule 40** *(never destroy the original)* | nothing new; size only |
+| ⚠ **and regardless of (a)–(d)** | 🔴 **ROTATE the credentials that appear in those three files** | — | *the values have sat in chat transcripts across sessions, which is the point SEG `1251` already made* |
+
+⚠ **I have not chosen.** *Every branch is either irreversible (a publishes, b creates a repo,
+d destroys record) or contradicts a standing rule — which is exactly the shape the standing
+instruction says to hand over rather than decide.*
+
+## 6. 📋 THE OTHER OWNER DIRECTIVES IN `T21`, RECORDED WITH THEIR SUPERSESSIONS
+
+| SEG | directive, in the owner's words | status today |
+|---|---|---|
+| **1283** | *"there is an order in the project. there is a sequence of creation. transcript one did something, transcript two did the continuation and fixes… if you start doing different transcripts, i don't think it's gonna work properly"* | ✅ **IN FORCE — and this is the ORIGIN of the chronological rule, in his own words, which scores `0` in both trees.** *The rule was on file; its reason was not.* |
+| **1244** | the `git push` refusal — *"rodantmat/alphadog is not in this session's authorized repository set"* | ✅ **IN FORCE — the origin of "`git push` is Cowork's own access control, not something to route around."** |
+| **626** · **850** | *"10 passes minimum per session"* → *"20 passes… continuous"* | ⚠ **SUPERSEDED** by *"non-stop… for at least 10 hours, or as long as you possibly can"* |
+| **1240** | *"after each one of the transcripts i have a report… it stops, gives a report, and then i give the message to continue"* | ⚠ **SUPERSEDED** — *the later instruction is explicitly "don't stop to report between passes."* **Both dated, per the supersession rule.** |
+| **86 · 237 · 441 · 1304** | *"work for hours straight"* · *"i don't want it to stop mid transcripts, unless there is an issue or is done"* | ✅ **IN FORCE** |
+
+## 7. 📋 CLAUSE SCORING
+
+| clause | result |
+|---|---|
+| population pinned from source before reading | ✅ `343` uncovered-substantive-non-tool, of which `32` human — **pinned `2026-09-23T02:08:13Z`** |
+| ≥ 1 finding not on file | ✅ **HIT — the directive itself, `0/0` in both trees** |
+| read the RESPONSE before claiming a directive was ignored | ✅ **HIT, and it changed the finding**: it was **accepted and specified**, not ignored — *a materially fairer and more useful verdict* |
+| verify the stated blocker's current state, live | ✅ **HIT — `nba/transcripts/` listed live; two files, no transcripts** |
+| no credential value reproduced | ✅ **HIT — counts only, three files named, `0` values anywhere** |
+| `RULE 52` vs `bands_p132.json` | ✅ `entered=[] left=[]` ×3 — twenty-fourth consecutive |
+
+📌 ***The lesson, and it is uncomfortable:*** **this sweep has spent `131` passes auditing the CONTENT
+of its documents and none auditing whether their FORM is what was asked for.** *The instruction that
+defines the deliverable was sitting in an unswept transcript, `0%` covered, while the files it
+governs grew `5.2×` past the size that prompted it.*
