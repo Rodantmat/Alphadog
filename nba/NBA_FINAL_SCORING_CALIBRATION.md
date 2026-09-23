@@ -2,6 +2,107 @@
 
 **Scope.** Everything governing the **final** numbers — final hit probability, confidence, score and
 edge — i.e. the enrichment layer and the scoring engine that sits on top of the baseline.
+
+---
+
+> # 📑 **INDEX — `NBA_FINAL_SCORING_CALIBRATION.md`**
+> **`211` sections · `266,043` bytes · `3,797` lines · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> rotted within a day)*. **Search for the quoted `§` label.**
+> 🔴🔴🔴 **THIS FILE'S NUMBERING IS THE MOST BROKEN OF THE TWELVE — `§T20.6` recorded it and it is
+> unrepaired** *(renumbering would break every inbound pointer; rule 1)*. **Measured `2026-09-23`:**
+> | defect | detail |
+> |---|---|
+> | **`§14` appears TWICE** | *"THE STATISTICAL STANDARD, CONSOLIDATED"* **and** *"THE RESEARCH STANDARD — all 27 lessons"* |
+> | **`§12` is MISSING** | the sequence runs `11` → `13` |
+> | **`§20` precedes `§19`** | `18` → **`20`** → `19` |
+> | **`§15.0c` is an ORPHAN** | it sits after `§19`, and there is no `§15` |
+> | **FOUR STRAY `h1`s** | `# config`, `# minutes_threshold …`, `# target_player_position_filter …`, `# assist_rate_bonus_multiplier …` — **a config block that escaped its fence inside `§7b`** *(same class as `NBA_WORKERS.md` `§0.38`)* |
+> ⇒ ***Navigate by this index. The numbers will mislead you.***
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | 🔴🔴🔴 **whether the model actually beats the book** *(`1.08 M` legs)* | **`§0.14-T23`** ⚠ *newest; read first* |
+> | 🔴 **the penalising half of the score formula has NEVER FIRED** | **`§0a-T18-D`** |
+> | 🔴 **the score's THREE formulas, and which two the live column holds** | **`§0a-T18-B`** |
+> | 🔑 **"the score must ENHANCE the hit probability — no kill good legs"** | **`§0a-T18`** |
+> | ✅✅ **open item O6 resolved, and the v3 confidence model proven in production** | **`§0a-T17-C`** |
+> | 🔴 **the confidence build — SIX versions, each killed by a measurement** | **`§0a-T17-B`** |
+> | 🔑 **the confidence specification in the owner's own words** | **`§0a-T17`** |
+> | 🔴 **the score / confidence contract — and the live table contradicting it** | **`§0a-T16-C`** |
+> | 🔴🔴 **the certified baseline BEATS every enrichment** | **`§0a-T15-SUPERSESSION-2`** ⚠ *read the two supersessions BEFORE `§0a-T15`* |
+> | **what confidence IS** *(a data thermometer, not a probability)* | **`§5`** |
+> | **the score, `0–100`, enhancing, never taxing** | **`§6`** |
+> | 🔴 **the ten enrichment factors — none survived** | **`§7`** |
+> | ✅ **the two non-negotiable factors that DID land** | **`§8`** |
+> | 🔑 **pre-register the deciding test** | **`§7f`** |
+> | ⚠ **the `2025-26` partition of `final_hp` is ONE DAY DEEP** | **`§0z`** |
+> | 🔑 **where edge is now expected to come from** | **`§19`** |
+> | **the research standard — all 27 lessons** | **`§14`② *(the SECOND `14`)*** |
+>
+> ## 📋 EVERY SECTION, IN LOGICAL ORDER
+>
+> ### 🔴 **A · THE NEWEST AND MOST CONSEQUENTIAL — read first**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.14-T23`** | 🔴🔴 **The tails hypothesis TESTED on `1.08 M` legs — and it failed in the worst direction.** Our tails are mis-priced, not theirs *(§1)* · the book beats the model everywhere *(§2)* · 🔑 **what it does NOT overturn — the model RANKS** *(§3)* · 🔴 **it indicts the `0.15` Platt guard, which lives in this layer's recipe** *(§4)* | 🔴🔴 |
+> | **`0z`** | ⚠⚠ **DATA-STATE WARNING — the `2025-26` partition of `final_hp` is ONE DAY DEEP** | ⚠⚠ |
+>
+> ### 🎯 **B · THE SCORE AND THE CONFIDENCE — what they are and what went wrong**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0a-T18`** | 🔴 **"The score must ENHANCE the hit probability — no kill good legs"** — COMPASS fact 103's source | 🔴 |
+> | **`0a-T18-B`** | 🔴 **The score's THREE formulas — and `[LIVE-AUDIT]` proves the live column holds two of them** | 🔴 |
+> | **`0a-T18-D`** | 🔴 **THE PENALISING HALF OF THE SCORE FORMULA HAS NEVER FIRED** | 🔴 |
+> | **`0a-T16-C`** | 🔴 **The score / confidence contract — and `[LIVE-AUDIT]` finds the live table contradicting it** | 🔴 |
+> | **`0a-T17`** | 🔴 **The confidence specification, in the owner's own words** | 🔴 |
+> | **`0a-T17-B`** | 🔴 **The confidence build — SIX versions, each killed by a measurement, and the last one** | 🔴 |
+> | **`0a-T17-C`** | ✅✅ **`[LIVE-AUDIT]` — open item O6 RESOLVED, and the v3 confidence model proven in production** | ✅ |
+> | **`5`** · **`6`** | **CONFIDENCE — a data thermometer, not a probability** · **THE SCORE — `0–100`, enhancing, never taxing** | |
+>
+> ### 🧪 **C · THE ENRICHMENT LAYER — and why it did not land**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0a-T15-SUPERSESSION`** | 🔴 **READ THIS BEFORE `§0a-T15`** — A2 was closed the day after it shipped | 🔴 |
+> | **`0a-T15-SUPERSESSION-2`** | 🔴 **AND IT IS WIDER THAN A2 — the certified baseline BEATS EVERY ENRICHMENT** | 🔴🔴 |
+> | **`0a-T15`** | 🔑 **The first factor results in the corpus that state each layer's information set** ⚠ *superseded above* | 🔑 |
+> | **`7`** | 🔴 **THE ENRICHMENT FACTORS — ten tested, NONE survived** | 🔴 |
+> | **`7b`** | **The enrichment multipliers as originally designed** *(`T4`)* ⚠ *contains the four stray `h1`s* | ⚠ |
+> | **`7c`** | **The enrichment application record — how a factor's contribution is audited** | |
+> | **`7j`** | ⚠ **The enrichment-displacement diagnostic — cheap, and NEVER RUN on NBA** | ⚠ |
+> | **`7k`** | **Five concrete enrichment-factor bug patterns** | |
+> | **`8`** | ✅ **THE TWO NON-NEGOTIABLE FACTORS THAT DID LAND** | ✅ |
+>
+> ### 🏗 **D · ARCHITECTURE AND THE CHAIN**
+> | § | what it covers |
+> |---|---|
+> | **`0b`** | **The founding scope decision — reuse vs rebuild** |
+> | **`0c`** | **The two-layer architecture — never collapsed into one** |
+> | **`0d`** · **`0e`** · **`0f`** | Per-factor grids and how to combine them · the one-time architectural opportunity · **the "preset dictionary" principle — precompute once, runtime is a LOOKUP** |
+> | **`1`** · **`2`** | **THE CHAIN** · **THE TWO-LAYER CONTRACT** |
+> | **`3`** · **`4`** · **`4b`** | **The availability delta** · **AS-OF CALIBRATION** · **Tri-state data-quality tagging** |
+> | **`9`** · **`10`** · **`11`** | Scenario precompute *(measured, then dropped)* · data freshness *(dropped, with a reason)* · **board scoring — what actually gets scored** |
+>
+> ### 📏 **E · THE RESEARCH AND STATISTICAL STANDARDS** *(`T1`, inherited from MLB)*
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`7d`**–**`7i`** | Two cheap guards MLB never applied · **the two-test paradox — why a factor can be real and still worthless** · 🔑 **`7f` PRE-REGISTER THE DECIDING TEST** · same-game correlation *(smaller than folklore)* · the MLB→NBA factor mapping · the "phase file" architecture | 🔑 |
+> | **`7l`**–**`7q`** | Two operational disciplines · two diagnostic-only safeguards specified for day one · ⚠ **`7m2` an honest out-of-sample pass is NECESSARY BUT NOT SUFFICIENT — never auto-apply** · the outcome-grading engine's isolation design · benchmark the factor list against a real system · two build-discipline principles · three standing search/evaluation disciplines | ⚠ |
+> | **`13`** | **THE VALIDATION GATE FOR ANY STRATEGY** | |
+> | **`14`①** | **THE STATISTICAL STANDARD, CONSOLIDATED** ⚠ *first of two `14`s* | ⚠ |
+> | **`14`②** | **THE RESEARCH STANDARD — all 27 lessons** ⚠ *second `14`* | ⚠ |
+> | **`16`** · **`17`** · **`18`** | Part E — the consecutive-clean-pass standard · **the single most valuable standing habit** · Part D — selection methodology, rules B0–B0c | |
+> | **`20`** | **Part F — LOOKAHEAD BIAS in a baseline measurement** ⚠ *appears BEFORE `§19`* | ⚠ |
+> | **`19`** | 🔑 **WHERE EDGE IS NOW EXPECTED TO COME FROM** ⚠ *appears AFTER `§20`* — **and `§0.14-T23` tests it** | 🔑 |
+> | **`15.0c`** | **External confirmation that the opportunity exists** ⚠ *ORPHAN — there is no `§15`* | ⚠ |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`A` is the newest evidence and it constrains everything else; `B`
+> is the score/confidence layer; `C` is why enrichment did not land; `D` is the architecture; `E` is
+> the standard the work is held to.*** ⚠ **Where a `SUPERSESSION` section exists, read it BEFORE the
+> section it supersedes — the file's physical order puts them first for that reason.**
 The baseline's own calibration is a separate document: `NBA_BASELINE_CALIBRATION.md`.
 
 **Update log**
