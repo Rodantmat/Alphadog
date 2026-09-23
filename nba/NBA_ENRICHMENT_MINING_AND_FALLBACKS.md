@@ -243,6 +243,22 @@ Signal: role_tier spans 0.30 (FRINGE / no recent games) → 0.62 (IRON_MAN); `gl
 vs 658) LOST out of sample on both segments (0.0445 / 0.2418). Granularity has a limit and the held-out season decides it.
 ⚠ A TEAM back-to-back barely moves Questionables (0.499 vs 0.466) — the player's own days-since-last is the real feature.
 
+🔴 **D1 STAGE CORRECTION (2026-09-23) — a 6-7 AM fact cannot be a 1 AM baseline factor.** The parity doc's
+stage table (§7) puts `D1 referee crew` at the **baseline** stage, available **~6–7 AM PT**. The baseline is
+built by **P2, whose target cron is 09:00 UTC = 01:00 PT** — five to six hours BEFORE assignments publish. The
+two statements cannot both hold, and the evidence of which one lost is `nba_ref.referee_assignments`: **0 rows**,
+while P2 ran `scrape_referee_assignments.py` in its mining step every night. It was scraping an empty page.
+**Resolved:** the scrape is REMOVED from P2 and runs in **P3** (13:15 PT, six hours after posting), with the
+dedicated daily job `nba-referees.yml` (08:30 PT) as the primary capture and P3 as the idempotent safety net
+(the upsert key is `game_date, matchup, slot`). This stays inside the parity doc's own rule — *"Stage is where
+the factor is COMPUTED; phase 2 may still READ a phase-1 value."* ⚠ **No predictor is needed**: the crew is
+KNOWN by 08:30 PT, long before the 13:15 decision, and the historical crew comes from box scores (post-hoc
+truth, faithful per COMPASS fact 58). A predictor would only serve the 01:00–07:00 window, which no decision
+depends on. Measured worth of the factor if it is missing anyway: spread `0.7` fouls on a `37-40` base
+(under 2%), year-over-year persistence `0.264` — and the confidence model prices its absence at `0.88` of `44`
+deduction points, so the fallback does NOT over-penalize. Shrunk tendencies for when the crew IS known:
+`nba_ref.official_tendency` (78 officials, k=112 from the measured reliability).
+
 **Still open here:** wire the prior into the consumers (the baseline builder and `build_availability_delta.py` read the
 injury JSON, not Postgres, so the fallback must be called there); add the daily load to P2/P3 beside the scrape step;
 `nba_ref.referee_assignments` is EMPTY (0 rows) while P2 runs its scraper nightly — D1's primary has never produced data
