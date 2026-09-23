@@ -4577,9 +4577,36 @@ at the new `1.843×` minimum.
 
 ⚠ **`RULE 54`.** *`WINDOW`: `T24`'s own reported figures, `2026-09-22`; **not independently
 re-derived here** — `T24` is a session record and its queries are not reproducible from the file.
-**`NOT DONE`: test `2`'s outcome-MAE table** *(FGA `2.971`, FGM `2.022`, FTA/FTM `1.882`/`1.620`,
-3PA `1.689`, OREB/DREB `0.991`/`1.667`)* **is already carried in `NBA_MASTER_SUMMARY.md` and is not
-repeated here.***
+🔴🔴 **CORRECTION, ONE PASS LATER (`§T24.6`).** *This note first read:* ~~*"test `2`'s outcome-MAE
+table is already carried in `NBA_MASTER_SUMMARY.md` and is not repeated here."*~~ **I asserted that
+without checking it. `grep` for `2.971`, `2.022`, `1.689` across `NBA_MASTER_SUMMARY.md` returns
+`0`.** ⇒ ***The table was not anywhere. Here it is.***
+
+### **Test 2 — best estimator against NBA OUTCOMES** *(a proxy for a sharp line, for props the books do not quote)*
+*Benchmark: **the book POINTS line has outcome MAE `5.14` with `50.5%` Over.** The proxy ranks threes
+the same way test `1` does, so it is trustworthy where no line exists.*
+
+| prop | best estimator | outcome MAE | Over rate |
+|---|---|---|---|
+| **FGA** | points-scaled | **`2.971`** *(identity `2.986`; best centred `50.2%`)* | `51.5%` |
+| **FGM** | points-scaled | **`2.022`** | `50.6%` |
+| **FTA** / **FTM** | points-scaled | **`1.882`** / **`1.620`** | `44.0%` / `42.8%` |
+| **3PA** | points-scaled | **`1.689`** | `44.6%` |
+| **OREB** / **DREB** | 🔑 **rebounds line × the player's own share** | **`0.991`** / **`1.667`** | `42.9%` / `46.0%` |
+| ⚠ *and the estimator that LOSES* | **threes-line-scaled for 3PA is the WORST at `2.073`** | — | — |
+
+🔑🔑 ***The intuitive estimator for `3PA` — scale the threes line — is the worst one tested.*** *Points
+carries minutes and role; the threes line carries only the threes projection. **A reader reaching for
+the obvious proxy would pick the losing one**, which is why the loser is recorded next to the
+winners.*
+
+📌 *Lesson recorded about my own pass, not about the system:* **"already recorded elsewhere" is a
+claim, and it needs the same grep as any other claim.** *This is the second such slip today
+(`§T23.7`'s same-game retraction was the first) and both were caught by re-probing my own writes —
+which is now a standing step, not a courtesy.*
+
+⚠ *`RULE 54` continues:* ***`NOT DONE`: `T24`'s figures are not independently re-derivable*** — it is
+a session record, and its queries are not stored.*
 
 ---
 
