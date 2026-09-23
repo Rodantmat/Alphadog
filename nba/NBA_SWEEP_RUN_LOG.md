@@ -349,9 +349,12 @@ coverage.***
 ▶ **NEXT: the judgment passes the census points at — `T22`, `T23` (least
 covered), and `T10`'s tail of 100 (transfer, not discovery).**
 
-▶ **RULE 46 UNCHANGED: `T19` and `T20` each still owe two INDEPENDENT complete
+~~▶ **RULE 46 UNCHANGED: `T19` and `T20` each still owe two INDEPENDENT complete
 sequential reads from a fresh context, and `T20` cannot close in this session.
-The census above is a MEASUREMENT, not a read, and discharges neither.**
+The census above is a MEASUREMENT, not a read, and discharges neither.**~~
+✅✅ **SUPERSEDED `2026-09-23` — `RULE 46` IS CLOSED (`§F7.1` + `§F7.13`). DO NOT RE-OPEN.**
+*The sentence struck above stays legible under `RULE 40`; its census-vs-read distinction was right
+and is upheld — `§F7.1`'s reads were reads, and `§F7.13`'s blind re-derivations were reads.*
 
 ---
 
