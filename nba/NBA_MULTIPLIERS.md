@@ -1496,6 +1496,6 @@ re-render that drops one destroys data that **cost a logged-in browser session t
 3. **Underdog/Sleeper/Fliff/Betr multipliers are available and ARE being scraped** — but whether they
    are being **used in scoring** is not established in the transcripts reviewed so far.
 4. **`nba_market.board_snapshots` HAS a `multiplier` column** — populated for the apps that expose one.
-   **Coverage per app is unverified.**
+   ~~**Coverage per app is unverified.**~~ ✅ **VERIFIED 2026-09-23 (T22 pass 1, `§T22.1`) — see `§0.9-T22` §4 below.**
 5. **The fantasy-score scale conflict** (+2 vs +3 on blocks/steals) changes payout arithmetic for
    `fantasy_score` legs — see `NBA_OPEN_ITEMS.md`.
