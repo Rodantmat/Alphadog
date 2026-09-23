@@ -14367,6 +14367,31 @@ something, and states that the system as built cannot test it.*** The two facts 
 | 🔴 **Why it cannot be tested** | *"it requires the **day-before-baseline configuration** to test at all"* — production has one cutoff, so a factor reading the afternoon report shares an input with the baseline grading it |
 | **What the test would be** | *"rebuild the baseline with a day-before injury cutoff, then apply `A2` ONLY to players whose status changed between that cutoff and the `2:30 PM` report"* |
 
+#### ✅ **VERIFIED 2026-09-23 — the claim "requires a new configuration" is mechanically true, and the change is ONE FUNCTION**
+
+*The config row asserts that the control cannot be built with what exists. **Checked against the
+source rather than taken on the row's word**, and it holds — for a sharper reason than the row
+gives:*
+
+| Read | What it says |
+|---|---|
+| `nba/baseline/build_baseline_ladder.py:73` | *"cutoff (game day `09:00 ET`, `nba/nba_asof.py`)"* — ✅ the `09:00 ET` figure is confirmed at source |
+| `build_baseline_ladder.py:83-84` | `BT_CUTOFF` env var already selects among **three** configurations: `baseline` · `phase1` · `phase2` |
+| `nba/nba_asof.py:28,33,34` | `BASELINE_CUTOFF_LOCAL = "09:00"` · `PHASE1_CUTOFF_LOCAL = "16:00"` · `PHASE2_CUTOFF_LOCAL = "17:45"` |
+| 🔑🔑 `nba/nba_asof.py:39-40` | `def cutoff_ts(game_date, hhmm): return f"{game_date}T{hhmm}:00{ET_OFFSET}"` |
+
+🔑🔑 ***`cutoff_ts()` composes the cutoff from the GAME DATE itself and an `hh:mm`. It is
+structurally incapable of expressing any cutoff that is not on the game day — so all three existing
+`BT_CUTOFF` configurations are same-day by construction, and a day-before cutoff cannot be
+expressed at all, not merely "is not configured".*** ⇒ **The row's "requires the day-before-baseline
+configuration" is therefore exactly right, and this pass can say something the row does not: the
+blocking change is `nba_asof.py:39-40`, a two-line function, plus whatever calls it.**
+
+📌 *This is recorded because it changes the shape of the owner's decision: the obstacle is not a
+missing dataset or a re-scrape, it is a signature that takes `(game_date, hhmm)` where the test
+needs `(game_date − 1, hhmm)`. **Whether the rest of the ladder build tolerates that is NOT
+TRACED** — `RULE 54`; this pass read the cutoff plumbing, not the builder.*
+
 🔑 **And the general rule the row states while saying so, which appears nowhere else in the
 corpus:** ***"Any test that reads the same report for both layers measures double-counting, not
 value."*** 📌 *Same failure shape as `never duplicate a baseline internal`, but for a factor's DATA
