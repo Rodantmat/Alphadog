@@ -8,6 +8,12 @@ what you read when this block sends you there. **No row here is a pointer alone:
 breaks and what closes it.** The proof for every row is in this file under its own ID; search the
 quoted ID, never a line number.*
 
+⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+rotted within a day; `§T20.67`: `83.7%` of testable `FILE:LINE` citations are dead)*. **Search for
+the quoted item ID or the quoted text.** *Added as a stated rule `2026-09-23`, `§F7.8` — **this file
+and `NBA_MASTER_SUMMARY.md` were the only two of the twelve whose index never said it.** The prose
+above already implied it; a rule that is implied is a rule a hurried reader skips.*
+
 🗂 **WHICH FILE AM I IN, AND WHICH ARE THE TWELVE?** *(`§F7.6`, `2026-09-23`)* — **`nba/` holds `32`
 markdown files; `12` are the mandated set and nothing used to say which.** **The authoritative
 register is `NBA_MASTER_SUMMARY.md` → `🗂 THE FOLDER REGISTER`**: `12` mandated · `6` live-and-standing
