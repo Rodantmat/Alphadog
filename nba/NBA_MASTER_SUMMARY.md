@@ -38674,7 +38674,22 @@ owner WHEN to expect the break.**
 | 🔑 **the composition** *(**NOT** on file)* | **While both say `2025-26`, they AGREE, and P3 runs.** **The moment the first `2026-27` game-log file lands, the ladder flips to `2026-27` and the YAML literal does not** — *a literal cannot flip* — **and from that day `score_board_legs.py:145` raises `SystemExit(1)`: `"ABORT: no baseline ladder for <date> - P2 must run before P3."`** |
 
 ⇒ ⚠⚠ ***The system will look fine through the rollover and break on a later, unrelated-looking day —
-and the error message will blame `P2`, which is not the cause.*** 📌 *Corroborated live:
+and the error message will blame `P2`, which is not the cause.***
+
+> 🔴🔴🔴 **CORRECTED 2026-09-23 (T20 pass 129, §T20.134). THE SENTENCE ABOVE IS FALSE, AND SO IS THE
+> `the composition` ROW IT CONCLUDES.** *Written 2026-09-22; superseded by §T20.134 and by
+> `NBA_RECIPE.md` `STEP 13`. Kept in full — it was published and must stay readable.*
+> **The error arrives on the FIRST GAME OF THE SEASON, not "a later, unrelated-looking day."**
+> 🔑 *This entry reasoned entirely about the SEASON predicate and never looked at the `game_date`
+> predicate beside it.* **`score_board_legs.py:139-146` matches on BOTH**, and
+> `nba_score.baseline_history` ends at **`2026-04-12`** because **no pipeline step writes it at all**
+> — `§T20.37` / `T20-6` / `NBA_WORKERS.md` §B, **on file since pass 32, which this entry failed to
+> compose with its own material.** ⇒ ***`game_date = '2026-10-20'` matches nothing on night one
+> whatever the season literal says, so "they AGREE, and P3 runs" is wrong: P3 aborts at step 9 of 11
+> on `2026-10-20` itself, and would still abort with `BS_SEASON` corrected to `2026-27`.***
+> 📌 **Measured control (§T20.134, live `2026-09-23T01:19:44Z`): `nba_score.board_scored` and
+> `nba_score.baseline_history` cover the SAME `325` dates — `0` scored-without-history, `0`
+> history-without-scored.** 📌 *Corroborated live:
 `nba_score.baseline_history` holds **`2024-25` (9,537,535 rows)** and **`2025-26` (9,805,813 rows,
 last date `2026-04-12`)** and nothing else.* *Probes: `P3 will abort` · `starts aborting` ·
 `flips to 2026-27` → **0/0/0** each.*
