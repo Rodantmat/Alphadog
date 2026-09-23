@@ -31737,6 +31737,18 @@ strong reading.**
 
 ## 3. 🔴🔴🔴 THE CONSEQUENCE — TWELVE RED NIGHTS, STARTING ON OPENING NIGHT
 
+> 🔴🔴🔴 **CORRECTED 2026-09-23 (T20 pass 131, §T20.136) — THE DURATION IS WRONG. IT IS EVERY NIGHT OF
+> THE SEASON, NOT TWELVE.** *Written 2026-09-22 at §T20.52; kept in full.* **The FACT below — `22`
+> October props against a `>= 25` gate with `CERT_STRICT=1` — is VERIFIED and unchanged.** What is
+> wrong is that **the `>= 25` prop gate is `certify_pipeline.py`'s SECOND `p2` check**; the FIRST is
+> **`baseline_history has today > 0`**, and it fails on **every** date because **no pipeline step
+> writes `nba_score.baseline_history`** *(`T20-6`, `§T20.134`, `NBA_RECIPE.md` `STEP 13`; the table
+> ends at `2026-04-12`)*. ⇒ ***`P2` is red from opening night onward and does not turn green on
+> `2026-11-01`; the prop gate this section is about is never the binding check.*** 🔑 **`T20-13` is
+> therefore CONDITIONAL on `T20-6`** — *the same prerequisite shape the brief already applies to item
+> `A`.* ⚠ **Severity `7 of 7` is NOT lowered**, and every sentence below about red-signal trust
+> stands in full — *it stands for more nights, not fewer.*
+
 **The 2026-27 regular season opens `2026-10-20` (Tuesday). The cutover is `2026-11-01`. That is
 TWELVE nights.**
 **P2's certifier asserts `count(DISTINCT prop) >= 25`, with `CERT_STRICT=1`, and its own docstring
