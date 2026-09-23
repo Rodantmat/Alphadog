@@ -33174,7 +33174,7 @@ twelve — in `NBA_MASTER_SUMMARY.md`, `NBA_WORKERS.md`, `NBA_SYSTEM_ARCHITECTUR
 **Zero hits, in three vocabularies each, across all 31 baseline files**: the `[skip ci]` commit census
 · the `nba-daily-delta` `|| echo` violation · P1's inverted PDT/PST · the zero-DST-aware-Python
 census and `p3_cut` · the certifier tolerances and the `21 of 325` prop-gate failures · the November
-`22 → 30` step and the twelve red nights · the stale as-of-calibration gate · the `26 of 26`
+`22 → 30` step and the twelve red nights 🔴 *(duration corrected §T20.136 — every night)* · the stale as-of-calibration gate · the `26 of 26`
 live-state result · the `26 of 27` corrections result · the brief's five missing items · the whole
 T18-1 diagnosis *(anchor `+0.12`, the span÷anchor ratio, the asymmetric market, the per-prop reach
 table)* · the `55.29% / 28.43% / 26.86%` split and the DFS bookmakers' standard-only vocabulary · the
