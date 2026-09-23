@@ -40661,3 +40661,114 @@ files and bot commits, and the Postgres objects `nba_market.pp_price_key` · `pp
 📌 ***The intake claims nothing about the contents of the four files. It establishes what they are,
 in what order, how strong each one is as evidence, and which of the twelve they will touch — so the
 first content pass starts from a pinned population rather than an impression.***
+
+---
+
+# §T21.1 — ✅ **THE STOPPING CONDITION FIRED: `T24` CORRECTS NOTHING THIS CORPUS PUBLISHES — AND MY FLAG THAT IT DID WAS THE PASS'S ONLY DEFECT**
+
+*T21 pass 1, 2026-09-23. Pre-registered to adjudicate `T24`'s claim that the `2.08×` goblin floor —
+which `§T21.0` called **"a number this corpus recorded as VERIFIED"** — is wrong. **Clause (vi) said:
+if `T24`'s corrections list contains no claim against a published corpus number, STOP and say so,
+and do not mine `T24` for a substitute. It contains none. This is that stop.***
+
+## 1. 📋 THE POPULATION, PINNED FROM SOURCE — *`2026-09-23T02:01:05Z`, window `±260` chars (`RULE 53`)*
+
+**`T24 §11 "Corrections made during this session"` holds SIX items** *(counted from the file, not
+from the abstract, which gave no number)*. **Each was grepped against all twelve:**
+
+| # | `T24`'s correction | presence in the twelve | verdict |
+|---|---|---|---|
+| **1** | the goblin floor `2.08×` → `1.9×` | `2.08` ×**14** *(`GOBLIN_DEMON` 9 · `MASTER_SUMMARY` 5)*, `goblin_floor` ×**7** | ✅ **see §2 — the corpus ALREADY HOLDS THE CORRECTION** |
+| **2** | ungraded nights are play-in/playoff **+ 2 NBA Cup finals**, not "postseason" | the phrase-class appears, but **the claim is about the concurrent session's own universe** | 📌 **nothing published to correct** |
+| **3** | an audit rule flagged `115,150` goblins below a floor that does not exist | **`115,150` → ZERO hits** | 📌 **not in the twelve** |
+| **4** | Pritchard `28.5` suspected label error — verified genuine | **`Pritchard` → ZERO hits** | 📌 **not in the twelve** |
+| **5** | price table keyed without `kind`; finalizer rewrote every row | `pp_price_key` ×3, **all as the concurrent session's OUT-OF-SCOPE object** | 📌 **already scoped out** |
+| **6** | PL/pgSQL variable substitution broke the first Fantasy builder | **`PL/pgSQL` → ZERO hits** | 📌 **not in the twelve** |
+
+⇒ ✅ **`0` of `6` correct a claim the twelve publish.**
+
+## 2. ✅✅ CLAUSE (ii) — **VERDICT: `CORPUS IS RIGHT`, AND IT WAS RIGHT A DAY EARLY**
+
+**`NBA_GOBLIN_DEMON.md` `§0g` already carries the correction in full**, recorded **`2026-09-22`
+(T12 pass 5, `§T12.6f`)**, with the live rule pinned at **`2026-09-22T07:01:38Z`**:
+
+```json
+{"factor": 0.6933, "two_pick": 2.08,
+ "superseded_by": {"factor": 0.6333, "two_pick": 1.9,
+                   "evidence": "lowest More-goblin payout seen: 1.9x (WNBA, 36 quotes)"}}
+```
+
+**and the pricing model confirmed at `07:02:02Z`: `pp-leg-v2-sqrt-cap-conservative-floor190`,
+`goblin_floor_factor` `0.6333`.** 🔑 **`§0g` also already records the very thing `§T21.0` feared**:
+***"WHAT NEEDED RETRACTING IN THIS CORPUS — nothing, and that is the finding… the `2.08×` floor is
+stated as fact in exactly ONE file, `nba/PP_PAYOUT_FINDINGS.md`, which is the concurrent build
+session's own document and is out of this sweep's scope."***
+
+⇒ **`T24` adds NO fact here.** *Everything in its `§6` — the SGA/Tatum/Cunningham legs, the WNBA
+`1.9×`/`2.0×` counts, the `0.6933 → 0.6333` change, the `floor190` version — is already on file,
+sourced to the live database rather than to a session record.*
+
+## 3. ✅ CLAUSE (iv) — **THE `T23` VERBATIM SEARCH, AND IT RETURNED SOMETHING WORTH KEEPING**
+
+*Searched `T23` (`3,843,075` bytes) for four strings:*
+
+| string | hits in `T23` |
+|---|---|
+| `goblin_floor` | **40** — first at `start_timestamp 2026-09-21T06:21:07Z` |
+| `2.08` | **22** |
+| 🔴 **`floor190`** | **`0`** |
+| 🔴 **`0.6333`** | **`0`** |
+
+⇒ 🔑🔑 ***`T23` contains the OLD floor and NOT its correction.*** **`T23`'s last block is
+`2026-09-21T19:57:04Z`; `pp_slip_rules.goblin_floor.updated_at` is `2026-09-21T21:47:40Z` — the
+correction was made `1h 50m` AFTER the verbatim record ends**, inside the ~24-hour window `§T21.0`
+named as `NOT RECORDED`.
+
+> ✅ **AN OBSERVATION, AND DELIBERATELY NOT LABELLED THIS PASS'S FINDING** *(clause (vi) fired; a
+> stopped pass does not get to promote a by-product)*: ***the corpus captured this correction from
+> the LIVE DATABASE before any transcript of it existed, and the verbatim transcript still does not
+> contain it.*** **`§T12.6f`'s method — verify the owner's message against the live system rather
+> than trust it — recorded a fact that the transcript record cannot supply.** *Recorded because it
+> is measured and checkable, not because the pass needed a result.*
+
+## 4. 🔴🔴🔴 THE PASS'S ONE DEFECT IS MINE, AND IT IS THE SECOND INSTANCE OF ONE SHAPE IN TWO PASSES
+
+**`§T21.0` `§3` set the rule**: *"`T24` is a SECONDARY source… nothing sourced only to `T24` may be
+marked `VERIFIED`… this is the same rule that governs COMPASS, **applied on arrival rather than
+retrofitted after something has been over-claimed**."*
+
+**`§T21.0` `§4`, four paragraphs later, used `T24`'s ABSTRACT — not even its body — to declare that
+"a number this corpus recorded as VERIFIED is said to be WRONG", and ranked it "highest-priority
+item in the new material."** *It then went onto the run log in that form.*
+
+🔑 **The error was a word.** `T24`'s abstract says *"the old **'verified'** floor"*. **That `verified`
+is `pp_slip_rules`' own `status` column** — the database's word for its own row. **I read it as this
+corpus's evidence marking.** *One token, two meanings, and the stronger reading was the one I
+published.*
+
+> ⚠⚠ **AND THE SHAPE IS NOW TWICE IN TWO PASSES:**
+> **`§T20.136`** — introduced `RULE 53` *(never claim a sweep you have not grepped)* **and violated it
+> in the introducing paragraph.**
+> **`§T21.0`** — introduced the `T24` secondary-source rule **and violated it in the same section.**
+> 🔑🔑🔑 ***Stating a rule is doing something OTHER than following it, and in both cases the statement
+> made me feel the requirement was met.*** 📌 **Mitigation, and the only one that has actually worked
+> so far: both errors were caught by a PRE-REGISTERED CLAUSE forcing an output** — `RULE 53`'s grep
+> and this pass's clause (vi). ***The pre-registration caught what the resolution did not.***
+
+## 5. 📋 CLAUSE SCORING
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `RULE 52` set difference vs `bands_p131.json` | ✅ **`entered=[] left=[]` ×3 — twenty-second consecutive.** ⚠ *Pre-registered as uninformative here: the instrument scores against `T20`'s text only.* |
+| **(ii)** | the `2.08×`→`1.9×` claim adjudicated to one of three verdicts | ✅ **HIT — ✅ `CORPUS IS RIGHT`.** ❌ *The `CORPUS IS WRONG` branch is NOT available, and the `UNRESOLVED` branch is not either.* |
+| **(iii)** | a `T24`-only correction may not flip a `VERIFIED` corpus number | ✅ **HONOURED — and it is the clause that caught my own `§T21.0` over-read.** |
+| **(iv)** | ≥ 1 confirmation attempt against `T23` verbatim, strings named | ✅ **HIT — four strings, counts published; `floor190` and `0.6333` both `0`.** |
+| **(v)** | `prop_universe` figures not recorded as final | ✅ **HONOURED — no `prop_universe` count was written this pass.** |
+| **(vi)** | 🔑 **STOP if no corpus number is wrong** | ✅✅ **FIRED. `0` of `6`. Stopping, and going to `T21` segment 1.** ❌ ***No substitute finding was taken from `T24`, and the `T23` observation in §3 is explicitly not offered as one.*** |
+| **(vii)** | `RULE 51` last, vs the BASELINE tree | ✅ **`floor190` and `0.6333` score `0` in the baseline; `§0g` is working-tree-only — consistent with the correction post-dating the baseline.** |
+
+📌 ***The result of this pass is a NEGATIVE, and it is worth the pass.*** **Four new sources arrived
+with an abstract that looked like it overturned a published number. It did not. The corpus was ahead
+of it by a day, by a method — live verification over message-trust — that the transcripts themselves
+could not have supplied.** ⚠ *What the pass cost was one over-read of one word, made by me, in the
+section that forbade it.*
