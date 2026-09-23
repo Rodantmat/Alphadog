@@ -6,7 +6,11 @@ writes. Grouped by role.
 ---
 
 > # 📑 **INDEX — `NBA_WORKERS.md`**
-> **~~`109`~~ → `122` sections · ~~`159,199`~~ → `167,171` bytes · ~~`2,223`~~ → `2,327` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> **~~`109`~~ → `122` → `123` sections · ~~`159,199`~~ → `~172,000` bytes · built `2026-09-23`, census corrected same day (`§F2.14`), `§F2.16` added after.**
+> | 🔴 **the FOUR workflow files that were named nowhere in the twelve** *(`nba-backtest`, `nba-grader`, `nba-measure-types`, `nba-score-history`)* | **`§F2.16`** |
+> | 🔴🔴🔴 **the grader workflow — and `T20-5`'s stale `2026-04-12` window, a SECOND and THIRD time** | **`§F2.16` §1** |
+> | ✅ **`nba-score-history.yml`'s two-job pipeline** *(`AC_K=400`, 8-way score matrix, "refuses to write an empty build")* | **`§F2.16` §2** |
+> | 📊 **`continue-on-error` across all 40 workflows** — `11` files, `48` occurrences | **`§F2.16` §3** |
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
