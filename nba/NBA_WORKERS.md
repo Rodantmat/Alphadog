@@ -41,6 +41,7 @@ writes. Grouped by role.
 > | ⚠⚠ **before assuming anything is "live"** | **`§0d` — SYSTEM SELF-KNOWLEDGE** |
 > | **the four-step wiring pattern, and its blast radii** | **`§0`** · **`§0.2`** · **`§0.37`** |
 > | ⚠ **the design rule the scrapers DISAGREE on** *(keep every column vs hand-pick)* | **`§0.35`** |
+> | 🔁 **DO NOT QUOTE THE WORKFLOW COUNTS — RE-DERIVE THEM.** *The owner's standing rule made operational: three one-line commands that regenerate the totals and every ACTIVE cron, so the figure cannot go stale.* | **`§0.0`** *(recipe)* · **`§T22.29`** *(why)* |
 >
 > ## 📋 EVERY SECTION, IN LOGICAL ORDER
 >
