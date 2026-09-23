@@ -145,6 +145,88 @@ that is the useful part.
 > ⇒ 📌 ***Those three are the real floor of this document: everything else on the checklist above can
 > be done from what is written or what it points at.***
 
+## 🔧 MAINTENANCE — **the six things any chat must be able to do** *(`§F7.21`, `2026-09-23`)*
+
+> *Each was walked as a reader. **Every table, column, file and figure below was re-derived live or
+> read from the repo on `2026-09-23`**, read-only.*
+>
+> ### 1 · ➕ **ADD A NEW PROP, END TO END**
+>
+> **A prop is not a stat.** *There are **`30` props** live in `nba_score.baseline_history` and
+> **`13` stat keys** in `nba_config.stat_decay_config` — props are what a DFS app lists
+> (`pra`, `pts_reb`, `points_q1`); stat keys are the underlying rates the baseline decays.*
+> *Re-derive both:* `` SELECT prop, count(*) FROM nba_score.baseline_history GROUP BY 1 `` and
+> `` SELECT stat_key, ewma_alpha FROM nba_config.stat_decay_config ``
+>
+> | | do | note |
+> |---|---|---|
+> | **a** | **If it needs a NEW underlying rate**, insert a `nba_config.stat_decay_config` row — `stat_key`, `display_name`, `ewma_alpha`, `min_lookback_games`, `shrinkage_stabilization_games`, `memory_class`, `rationale`, `active` | 🔑 **`rationale` is not optional** — every one of the `13` carries one. *Range today: `ewma_alpha` `0.03` (`fg3_pct`) → `0.20` (`minutes`); stabilization `10` → `300` games.* |
+> | **b** | **If it is a COMBINATION of existing rates** *(`pra`, `pts_reb`, `stocks`)*, no new stat key — it composes | *most new props are this* |
+> | **c** | **Add it to the baseline ladder builder** so `baseline_history` produces rows for it | `nba/load_baseline_ladder.py` · `STEP 11` stage `4` |
+> | **d** | **Calibrate it** — it will have no `ladder_calibration_asof` rows until run | `STEP 11` stage `5` |
+> | **e** | **Make the board layer recognise it** — the DFS apps' own name for it must map to yours | `NBA_GOBLIN_DEMON.md` *(taxonomy)*; `nba_market.prop_universe` ⚠ **mid-rebuild — never use its counts as a denominator** |
+> | **f** | **Verify**: the prop appears in `baseline_history`, then `final_hp` | `` SELECT count(*) FROM nba_score.final_hp WHERE prop='<new>' `` |
+>
+> 🔴 **KNOWN TRAP — `T20-13`, ranked FIRST on the opening-day brief**: *`baseline_history` carries
+> **`22`** distinct props in October and **`30`** from November.* **A prop added now may be invisible
+> for the first weeks of a season.**
+>
+> ### 2 · 🕷 **ADD A SCRAPER AND WIRE IT**
+>
+> **The four-step wiring — `STEP 7`.** ⚠ **Three of the four files are at the REPO ROOT:**
+> `worker_manifest_nba.json` *(in `nba/`)* → `generate_wrangler_configs.py` *(root)* →
+> `alphadog-v2-admin-sql.js` *(root — bindingMap **+** dispatch branch **+** tool enum)* →
+> a `nba_config.worker_definitions` row.
+> **Then**: add the workflow under `.github/workflows/nba-<thing>.yml`, following an existing one.
+> ✅ **Gate before pushing** *(`STEP 3` — there is NO staging environment)*:
+> `` node --check <file>.js && echo SYNTAX_OK `` · `` python3 -m py_compile <file>.py && echo SYNTAX_OK ``
+> 🔑 **The fleet deploys alphabetically, so `admin-sql` must deploy LAST** *(`STEP 7`)*.
+> ⚠ **Use `active_stats_season()` from `nba/nba_season.py`, never a literal season string** — *`41` of
+> the `43` files carrying `"2025-26"` do not use it, which is `T20-4`.*
+>
+> ### 3 · 🔁 **RE-RUN ONE FAILED SLATE DAY**
+>
+> 🔴🔴🔴 **READ THIS FIRST: DO NOT RUN THE CATCH-UP IN PARALLEL.** *`CREATE UNIQUE INDEX IF NOT EXISTS`
+> runs inside the write transaction, so concurrent date-runs **deadlock** — **`181` of `325` dates
+> failed** on the measured run, and **`17` files carry the pattern, `7` of them in `P2`/`P3`.*
+> ▶ **`NBA_SYSTEM_DESIGN.md` → `§T23.5`.** ⇒ ***Run dates ONE AT A TIME until that is fixed.***
+> **Mechanism**: `P2` accepts an `asof` input; `P3` is re-run for the date. *`STEP 9` / `STEP 10` give
+> each pipeline's steps.* ⚠ **`P3` will abort on any `2026-27` date until `T23-2` is fixed.**
+>
+> ### 4 · ⏰ **ADD THE `P2` CRON FOR THE NEW SEASON**
+>
+> **`P2` and `P3` have NO CRON — deliberately.** *The file says so in its own header comment:*
+> ***"NO CRON YET — deliberately… a scheduled job failing nightly against an empty schedule trains
+> everyone to ignore red builds. The cron goes in when the season starts."***
+> ▶ **Target, from that same comment: `daily 09:00 UTC = 01:00 PT`** — *after the last West-Coast game
+> finalises, eight hours before `P3`'s `1:15 PM PT` cutoff.*
+> **Edit `.github/workflows/nba-p2-overnight-heavy.yml`**, adding under `on:`
+> `` schedule: [{cron: '0 9 * * *'}] ``. ⚠ **`P1` is the only NBA workflow with a live cron today** —
+> *re-derive:* `` grep -l "^ *- *cron:" .github/workflows/nba-*.yml ``
+> 🔴🔴 **DO NOT DO THIS BEFORE FIXING `T23-2`** — *a `P2` cron on a season `P3` aborts on schedules a
+> nightly failure, which is the exact thing the comment above exists to prevent.*
+>
+> ### 5 · 🚨 **DIAGNOSE A RED CERTIFIER**
+>
+> **The certifier is `nba/certify_pipeline.py`**, run as `P3` step `5` with `CERT_DATE` set to the
+> as-of date *(`.github/workflows/nba-p3-afternoon-light.yml`)*. *It checks: today's legs scored ·
+> confidence non-null · score in `0`–`100` · board captured.*
+> ▶ **Read the twelve checks adversarially before trusting a GREEN**: `NBA_SYSTEM_DESIGN.md` →
+> **`WHAT CERTIFIES GREEN WHILE BROKEN`** and **`THE SWALLOWED-FAILURE CENSUS`**.
+> 🔴 **Known**: **`T20-6`** — *the certifier asserts tables no pipeline writes* · **five of the twelve
+> checks have NO DATE PREDICATE**, so they pass on yesterday's data.
+> ⇒ ***A RED certifier is information; a GREEN one is not, until you have read those two sections.***
+>
+> ### 6 · 🧹 **REFRESH A STALE TABLE**
+>
+> **Find what is stale, and what writes it:**
+> `NBA_DATABASE.md` → **`THE TRIGGER MAP`** *(first section)* — what writes to this database, and when.
+> **Then re-run that workflow** for the window you need *(one date at a time — see `3` above)*.
+> 🔴 **Live example, `2026-09-23`**: *`nba_ref.defender_ratings` is `166` days stale
+> (`max(as_of_date) = 2026-04-09`), so **`P1`'s first check is RED right now***.
+> ⚠ **`final_hp` is the exception: NOTHING rebuilds it** *(`NBA_SYSTEM_DESIGN.md` § `4b`)* — *refreshing
+> it is not a re-run, it is an open design question.*
+
 ---
 
 ## STEP 0 — The founding constraints *(T1)*
