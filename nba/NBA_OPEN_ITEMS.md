@@ -7,6 +7,15 @@
 > ⚠ **ANCHORS ARE ITEM IDs AND HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16`
 > line-number pointers rotted within a day)*. **Search for the quoted `T`*n*`-`*m* label.**
 >
+> 📐 **THE BYTE-COUNT NOTE — `§F6.19`, and it applies to all twelve indexes.** *A byte count written
+> INTO the file it counts is self-referential: **writing it changes it.** Every index in this corpus
+> carries a figure that was true of the commit before the figure was written, and is short by the
+> length of its own edit. **The section count has no such problem** — an index edit adds no heading,
+> so `931` is exact and stable; ***the byte figure is exact as of the PARENT commit and should be
+> read as "about this size", never checked for equality.*** 📌 *Verified as the cause of an apparent
+> `8`-byte discrepancy in `NBA_FINAL_SCORING_CALIBRATION.md` on 2026-09-23 — the `8` bytes were the
+> index edit itself. **Re-derive sections; do not chase bytes.***
+>
 > 🔴🔴 **THE ONE THING TO KNOW BEFORE SEARCHING THIS FILE.** *Re-derived `2026-09-23`, `§F2.13`:*
 > | how an item is stored | count | how to find it |
 > |---|---|---|
