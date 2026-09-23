@@ -2450,3 +2450,52 @@ interpolation tax cannot account for it either — 3,243 of 58,395 is **5.55%**,
 of legs is ~0.0022, not the ~0.014 observed.* **A `GROUP BY` on the same table would settle it; this
 sweep does not run one, because these are the transcript's numbers and the table has been rewritten
 since.** *Open item T18-13.*
+
+---
+
+# §F3.5 — 🔴 **TWO UNDERDOG LADDER TABLES EXIST, CARRY MULTIPLIER COLUMNS, AND ARE EMPTY OF BOTH MULTIPLIERS AND NBA**
+
+*Added 2026-09-23. **Found by answering an owner question that had been asked twice and answered
+nowhere.*** *`T12`: *"for sleeper and underdog … can we capture the full ladder? all variations"*;
+`T13`: *"focus on try to get the additional ladders for sleeper and ud, the extra variations per
+legs."* **Both turns are among the `72` owner turns no test could find in the twelve (`§F3.2`), and
+the tables that answer them are named in `0` of the twelve.**
+
+## The two tables, `[LIVE-AUDIT]` 2026-09-23
+
+| table | rows | distinct `slate_date` | range | 🔴 NBA-shaped `canonical_prop_key` | 🔴 rows with `higher_multiplier` |
+|---|---|---|---|---|---|
+| `market.underdog_ladder_current` | **1,971** | **1** | `2026-09-21` | **`0`** | **`0`** |
+| `archive.underdog_ladder_history` | **19,215** | **3** | `2026-09-10` → `2026-09-21` | **`0`** | **`0`** |
+
+**Both carry the full Underdog ladder shape** — `is_main`, `line_value`, **`higher_multiplier`**,
+**`lower_multiplier`**, `higher_american` / `lower_american`, `higher_prob_fantasy` /
+`lower_prob_fantasy`, `higher_prob_sportsbook` / `lower_prob_sportsbook`, `higher_status` /
+`lower_status`, **`higher_payout_mult`** / **`lower_payout_mult`**.
+
+🔑🔑 **THE ANSWER TO THE OWNER'S QUESTION IS: THE SCHEMA IS ALREADY THERE, AND NOTHING IS FILLING
+IT.** *`21,186` rows across both tables and **not one** carries a multiplier; **not one** is an NBA
+prop.* **What is in them is September, off-season, other-sport data.**
+
+⚠⚠ **AND THIS IS WORTH READING BESIDE `T22`/`T23`.** *Those sessions are an extended effort to
+recover **PrizePicks** multipliers, which are not published. **Underdog's are** — `higher_multiplier`
+and `lower_multiplier` are a documented part of its ladder response, and this database has had
+columns for them all along.* 🔴 **Whether the Underdog scraper ever populated them, and why it
+stopped or never started, is `NOT RECORDED`.** *This sweep did not run the scraper, trigger
+anything, or write.*
+
+⚠ **A naming hazard, recorded not repaired**: both tables carry **`resolved_mlb_player_id`** — an
+MLB-era column name — as their resolved-player key. *For an NBA row the column name says the wrong
+sport. **No NBA row exists yet, so nothing is currently wrong**; it becomes a mapping trap the first
+time one does.*
+
+📌 **`market.sleeper_board_current` is the other half of the owner's question and it is different in
+kind**: it has **no ladder table**, but its board rows carry **`payout_variant`**, **`price`** and
+**`decimal_price`** — *variant-level pricing on the board itself rather than a separate ladder.*
+**So "the full ladder, all variations" is a DIFFERENT job for the two books, and the corpus had not
+said so.**
+
+⚠ **RULE 54:** this is a schema-and-count audit. *It establishes that the columns exist and are
+empty; it does **not** establish that the Underdog API still returns multipliers, nor that
+populating them would be permitted or useful.* ***"The columns are there and unfilled", never "the
+data is available."***
