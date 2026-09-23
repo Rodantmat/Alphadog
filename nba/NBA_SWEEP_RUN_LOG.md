@@ -1154,6 +1154,39 @@ because each would be DISPROVED if a hidden heading filled the gap it alleges:
 miss a setext heading or an item titled only in bold.* **`72 · 54 · 18` is what one corrected
 pattern sees, and the pattern is published above so the next pass can beat it.**
 
+### ✅ **ALL TWELVE INDEX CENSUSES RE-DERIVED AND CORRECTED — `§F2.14` cont.**
+
+**The broken detector produced the section count in EVERY index, so every index was re-derived and
+every one was patched.** *Nine matched the broken detector exactly; two (`OPEN_ITEMS`, `FSC`) matched
+neither because the files had grown since; `MASTER_SUMMARY`'s heading count was low on both counts.*
+
+| file | was | **is** | hidden by the old detector |
+|---|---|---|---|
+| `MASTER_SUMMARY` | 2,715 | **2,797** | 76 |
+| `OPEN_ITEMS` | 797 | **901** | 🔴 **99 — the largest absolute miss** |
+| `FINAL_SCORING_CALIBRATION` | 211 | **224** | 8 |
+| `SYSTEM_DESIGN` | 148 | **166** | 18 |
+| `DATABASE` | 117 | **134** | 17 |
+| `WORKERS` | 109 | **122** | 13 |
+| `SYSTEM_ARCHITECTURE` | 113 | **125** | 12 |
+| `MULTIPLIERS` | 122 | **137** | 15 |
+| `BASELINE_CALIBRATION` | 106 | **115** | 9 |
+| `GOBLIN_DEMON` | 82 | **92** | 10 |
+| `GLOSSARY` | 39 | **44** | 5 |
+| `RECIPE` | 47 | **59** | 🔴 **12 — `20%`, the largest PROPORTIONAL miss** |
+
+**Byte and line counts were re-taken in the same pass** *(`RECIPE`'s was an approximation, `~92,000`,
+and is now exact at `85,896` — approximate where exact was available)*, **and every correction
+carries the working pattern** `^(?:>\s*)*#{1,6}\s` **so the next reader re-derives instead of
+trusting.**
+
+🔑 **`MASTER_SUMMARY` also got its POPULATION DEFINITIONS published, which is the part that
+matters.** *Its `§`-section count admits three defensible readings — **headings naming a `T`n`.`m
+section `1,703`** · distinct `§T`n`.`m labels anywhere `739` · distinct `§`-labels of every form
+`1,096` — **a 2.3× spread**. The index now states which one it means.* 📌 ***`§F2.11` said the
+population definition is the expensive half; this is that lesson paid forward into the deliverable
+instead of only into the log.***
+
 ### ▶ STILL OWED, unchanged and stated at full strength
 
 - 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
