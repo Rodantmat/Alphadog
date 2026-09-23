@@ -42188,3 +42188,82 @@ other.*
 and the most useful artefact is a table saying which of eight segments actually pays.** *Both arrived
 in a SECONDARY source, which is exactly why `§T21.0` fixed its evidence tier on arrival rather than
 after something had been over-claimed.*
+
+---
+
+# §F1.1 — 📑 **EVERY FILE NOW OPENS WITH AN INDEX — AND BUILDING THEM AUDITED ALL TWELVE, WHICH HAD NEVER BEEN DONE**
+
+*File-sweep pass 1, 2026-09-23. **Owner instruction**: "create an index on the beginning of each
+file, so it is easier to find what is needed inside — very precise and well created, for all 12+
+documentation files." **New `§` namespace: `§F`*n*`.`*m* for FILE-sweep passes**, since `§T`*n*`.`*m*
+is reserved for transcript passes.*
+
+## 1. ✅ **DELIVERED — `12` of `12`, verified**
+
+**Every one of the twelve now opens with a `📑 INDEX` block inside the first `1%` of the file**
+*(verified `2026-09-23`: present in all twelve, all within the first `12 KB`, code fences balanced in
+all twelve)*. **Each index carries:**
+
+| element | what it does |
+|---|---|
+| **a size/section census** | sections · bytes · lines, so a reader knows what they are entering |
+| ⚠ **an anchor rule** | 🔑 ***anchors are HEADING TEXT, never line numbers*** — *grounded in `§T20.22`, which measured `6` of `16` line-number pointers rotting within a day* |
+| **a structural warning** | where the file's physical order is NOT its logical order, stated per file |
+| **`▶ FIND IT FAST`** | the questions a reader actually arrives with → the exact `§` |
+| **a full section register** | every section, **regrouped into logical blocks** with a one-line description and a severity flag |
+| **`📌 HOW TO READ THIS FILE`** | which block to start from, and which wins when two disagree |
+
+## 2. 🔴🔴 **AND EVERY SINGLE FILE HAD A STRUCTURAL DEFECT. `12` OF `12`.**
+
+*None of these was found by reading the content — they were found by enumerating the headings, which
+this sweep had never done in `140+` passes.*
+
+| file | what the index build found | 🚩 |
+|---|---|---|
+| **`NBA_MULTIPLIERS.md`** | 🔴🔴 **THE FILE'S OWN HEADLINE WAS FALSE.** *"PrizePicks per-leg multipliers are NOT on any public surface… Underdog, Sleeper, Fliff and Betr do expose them."* **Both sentences wrong** — solved `2026-09-20`, and **Fliff and Betr are at `0.00%`** *(measured)*. ✅ **Corrected in place.** | 🔴🔴 |
+| **`NBA_GOBLIN_DEMON.md`** | 🔴 **`§4` appears TWICE · `§6` appears TWICE · "OPEN ITEMS SPECIFIC TO THIS LAYER" appears TWICE (`§9` AND `§12`) · the `§5` block runs `5.0d`→`5.0c`→`5.0b`→`5`, backwards** | 🔴 |
+| **`NBA_FINAL_SCORING_CALIBRATION.md`** | 🔴🔴 **`§14` TWICE · `§12` MISSING · `§20` BEFORE `§19` · `§15.0c` an ORPHAN with no `§15` · FOUR stray `h1`s from a config block that escaped its fence** *(`§T20.6` recorded the numbering; **the four stray `h1`s are new**)* | 🔴🔴 |
+| **`NBA_BASELINE_CALIBRATION.md`** | 🔴 **`§0y` appears TWICE** *(the `oreb` rebuild / where the constants live)* **· a stray `h1`** — `# turnovers/fouls tested at 0.5…` — **splitting `§3.7` from `§3.9b`** | 🔴 |
+| **`NBA_OPEN_ITEMS.md`** | 🔴🔴 **`31` of `70` items exist ONLY as table rows, with no heading — including `T20-25`, which is SEASON-CRITICAL.** *Anyone scanning headings misses them.* **· THREE stray `h1`s from a pasted code comment · the brief's title says "FOURTEEN" while its body says "SEVENTEEN"** | 🔴🔴 |
+| **`NBA_WORKERS.md`** | 🔴 **the `§0.3x` and `§0.4x` blocks run BACKWARDS** *(`0.42`→`0.41`→`0.39`→`0.36`→`0.37`→`0.38`→`0.35`→`0.34`→`0.33`→`0.32`→`0.3`)* | 🔴 |
+| **`NBA_SYSTEM_DESIGN.md`** | 🔴 **the `0z-*` and `0a.*` blocks run BACKWARDS** *(`0z-7`→`0z-5`→`0z-6`→`0z-3`→`0z-4`→`0z-2`→`0z`)* | 🔴 |
+| **`NBA_SYSTEM_ARCHITECTURE.md`** | ⚠ **`§8b` sits between `§1b` and `§2c`; `§8b-i` comes AFTER `§8b-ii`** | ⚠ |
+| **`NBA_DATABASE.md`** | ⚠ **the `0*` audit blocks run `0y-T17-B`→`0y-T17-C`→`0y-T17`→`0x-T16`→`0w`→`0`→`0u`→`0v`→`0z`** — neither alphabetical nor chronological | ⚠ |
+| **`NBA_RECIPE.md`** | ⚠ **`STEP 0c` sits between `STEP 7` and `STEP 8`**; the file opens with a `T16`-era correction *(`STEP 0-T16`)* before `STEP 0` | ⚠ |
+| **`NBA_GLOSSARY.md`** | 🔴 **TWO separate A–Z structures, never distinguished** *(`§Z`'s `27`-letter index vs the body's `9` uneven ranges)* **· no `J`/`K`/`O`/`X`/`Y`/`Z` block in the body · `P–S` appears TWICE** 🔴 **and its `grep` recipe points at `/mnt/transcripts/`, which does not exist in the repo** *(`T21-1`)* | 🔴 |
+| **`NBA_MASTER_SUMMARY.md`** | 🔴 **`T16` and `T17` have ZERO `§`-sections in this file** *(their material went to the topical documents)* **· `§T18.1`–`§T18.3` are in `NBA_OPEN_ITEMS.md`, not here** — *neither fact was stated anywhere before* | 🔴 |
+>
+> ⇒ 🔑🔑🔑 ***A corpus can be audited for `140` passes on its CONTENT and never once on its SHAPE.***
+> **Every finding above came from enumerating headings — a single command per file — and every one
+> of the twelve had at least one.**
+
+## 3. ✅ **ONE CORRECTION CAUGHT DURING THE BUILD, AND IT WAS MINE**
+
+**The `NBA_GLOSSARY.md` index first asserted** that six `T17`/`T18` terms scored **`0`** occurrences,
+from memory of an earlier pass. **Re-counted live before publishing**: `board_tiers_v2` `3`,
+`confidence_model` `3`, `certify_pipeline` `2`, `measure_report_cutoff` `2`, `f_phase` `2`,
+`CONF_NEUTRAL` `1`. ⇒ 🔴 **The claim was false and the older finding is stale.** ✅ **The index now
+carries the live counts and says the first draft was wrong.**
+⚠ ***Fourth instance this session of the same shape*** *(`§T20.136`, `§T21.0`, `§T22.4`, now this)* —
+**a figure recalled rather than measured. Caught, again, by measuring before publishing.**
+
+## 4. 📊 **COST**
+
+**`+86,424` bytes across the twelve** *(`5,841,028` → `5,927,452`)* — **`1.5%`**.
+⚠ **Against the owner's standing "the files are too heavy" directive** *(`T21-1`)*: ***an index is
+the one addition that makes a heavy file cheaper to use rather than dearer*** — **it is read instead
+of the file, not in addition to it.** *Stated because `T21-1` is open and this adds to the byte count
+it is about.*
+
+## 5. 📋 WHAT THIS PASS DID **NOT** DO
+
+- 🔴 **It did not renumber anything.** *Every duplicate `§`, every backwards block, every orphan is
+  **documented in the index and left in place** — renumbering would break every inbound pointer, and
+  rule 1 holds.*
+- 🔴 **It did not repair the stray `h1`s** *(`4` in `FINAL_SCORING`, `3` in `OPEN_ITEMS`, `1` in
+  `BASELINE_CALIBRATION`)* — *they carry real content; they are named in their file's index.*
+- ⚠ **It is an index of SECTIONS, not of TERMS.** *Term lookup is `NBA_GLOSSARY.md`'s job.*
+
+📌 ***The lesson:*** **the owner asked for an index and the index turned out to be an audit.**
+*Enumerating a file's headings is the cheapest structural test there is, it had never been run, and
+it returned a defect on every file in the set.*
