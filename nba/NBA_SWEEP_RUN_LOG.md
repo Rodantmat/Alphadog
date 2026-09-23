@@ -2314,9 +2314,20 @@ fresh context; `T20` cannot close in this session.**
 
 ### 📜 ~~THE FORTY-EIGHT STANDING RULES~~ ~~THE FIFTY-ONE STANDING RULES~~ ~~THE FIFTY-TWO STANDING RULES~~ ~~THE FIFTY-FOUR STANDING RULES~~ **THE FIFTY-FIVE STANDING RULES** — *the index; each is written in full where it was born*
 
-> **`1`–`48` · `49` RETIRED, not reused · `50` · `51` · `52` · `53` · `54` · `55` · `56` ⇒ `55` numbered.**
+> **`1`–`48` · `49` RETIRED, not reused · `50` · `51` · `52` · `53` · `54` · `55` · `56` · `57` ⇒ `56` numbered.**
 > *Re-derived from this log's own numbering statements 2026-09-23 (`§F2.10`), not carried forward
 > from any earlier count — the previous header said `51` and was two amendments stale.*
+>
+> 📜 **`RULE 57` NUMBERED `2026-09-23`, `§F6.21` — *a derivation is not recorded until it has been
+> RUN on every row it claims.*** *`RULE 55` says a conclusion is not recorded until the table under
+> it is. This is its companion for FORMULAE: **a stated rule plus its outputs is not a record — the
+> rule must be executed against each output and the misses named.*** 🔴 **Earned by a live case in
+> the same section**: `prop_reliability_audit_2026_09_13`'s *"`penalty_pp` = ECE − the certified
+> median (`0.20 pp`); **derived, never declared**"* reproduces `oreb` (`0.08` → `0.1`) and
+> `double_double` (`0.37` → `0.4`) **and does NOT reproduce `fantasy_score`** (`0.21` ↛ `0.3`).
+> *The rule and all three outputs were on file, in the corpus AND in the live config, for ten days;
+> **nobody had run one against the other, including me — I published the table showing it
+> reproducing before I checked the middle row.***
 
 ## §F2.10 — the rule count was mine and it was wrong
 
