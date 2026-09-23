@@ -1500,6 +1500,93 @@ each.***
 
 ---
 
+---
+
+# §F5 — THE STRATA CENSUS: **the brief's second-ranked stratum exists in only 3 of 24 transcripts**
+
+## §F5.1 — coverage by the brief's own five strata, measured for the first time
+
+**The brief ranks the reading order `owner → reasoning → output → commands → results`, and
+`sweep_coverage.py` encodes exactly that as `STRATA`. No pass had ever measured coverage BY
+STRATUM.** *No tunable parameter: same vectoriser, same fixed `0.40` threshold, fitted per
+transcript, exactly as `§F2.1`. A census, not a test.*
+
+| the brief's rank | stratum | segments | covered | | substantive uncovered |
+|---|---|---|---|---|---|
+| **1** | **OWNER SAID** | 440 | 155 | 35.2% | 285 |
+| **2** | 🔴 **ASSISTANT REASONING** | 1,320 | **41** | 🔴 **3.1%** | 1,279 |
+| **3** | ASSISTANT OUTPUT | 2,989 | 892 | 29.8% | 2,097 |
+| **4** | COMMANDS RUN | 8,328 | 2,613 | 31.4% | 5,705 |
+| **5** | RESULTS RETURNED | 7,663 | 551 | 7.2% | 3,319 |
+| | **ALL** | **20,740** | **4,252** | **20.5%** | **12,685** |
+
+🔴 **The brief's SECOND-ranked stratum is the least covered, by a factor of `10` against its
+neighbours.** *Which looks like the largest documentation gap the sweep has ever found.*
+
+## §F5.2 — 🔪 **AND IT IS NOT A GAP. THE REASONING WAS NEVER IN THE FILES.**
+
+**Before writing that headline, the blocks themselves were read. They are not reasoning.**
+
+> *`T13`, four consecutive blocks, in full:* **"compiling full project documentation across config
+> and memory files. …"** · **"compiling a detailed update log for recent enrichment work. …"** ·
+> **"confirming counts across the completed injury and officials data pulls"** · **"investigating an
+> api endpoint's request structure and headers. …"**
+
+**Measured across all 1,320 blocks: median length `69` characters; `944` of `1,320` (`71.5%`) end
+in a literal ellipsis.** ⇒ **These are machine-generated SUMMARY LABELS. The deliberation they
+label was never exported.**
+
+### 🔑 And the format changed at an exact point — `T3 → T4`
+
+*Tested for first-person deliberation markers (`i'll`, `i'm`, `i want`, `let me`, `i realiz…`) —
+present in genuine reasoning, absent from a label:*
+
+| | blocks | median chars | first-person | verdict |
+|---|---|---|---|---|
+| **`T1`** | 52 | **393** | **80.8%** | ✅ **GENUINE** |
+| **`T2`** | 41 | **285** | **56.1%** | ✅ **GENUINE** |
+| **`T3`** | 33 | **303** | **54.5%** | ✅ **GENUINE** |
+| 🔴 **`T4` … `T23`** *(twenty consecutive)* | **1,194** | 64–111 | 🔴 **`0.0%` — every single one** | **LABELS ONLY** |
+
+***Zero. Not low — zero, across twenty consecutive transcripts and 1,194 blocks. That is not a
+gradient, it is a format change between `T3` and `T4`.***
+
+### ⇒ The headline dissolves, and what is left is bounded and real
+
+| | blocks | covered | |
+|---|---|---|---|
+| **`T1`–`T3`, genuine reasoning** | 126 | **28** | **22.2%** — *in line with `ASSISTANT OUTPUT` (29.8%) and `COMMANDS RUN` (31.4%)* |
+| `T4`–`T23`, labels | 1,194 | 13 | 1.1% — **uncoverable, because there is nothing there to cover** |
+
+🔪 ***The `3.1%` was driven entirely by the labels. The genuine reasoning is covered at a normal
+rate.*** **What survives is `98` uncovered genuine-reasoning blocks in `T1`–`T3` — and those are the
+ONLY surviving record of the assistant's actual deliberation anywhere in this project.**
+
+### 🔴 THE FINDING THAT DOES SURVIVE, and it is about the source material
+
+> ***The brief's reading loop cannot be executed as written on 21 of the 24 transcripts.*** *It
+> instructs reading `owner → reasoning → output → commands → results`; **from `T4` onward, stratum 2
+> is not present.***
+>
+> 🔑 **So every "why" recorded in the twelve for `T4`–`T23` was necessarily recovered from
+> ASSISTANT OUTPUT (stratum 3), not from reasoning.** *That is the right fallback and the sweep has
+> been doing it — **but it was doing it by accident, and no pass recorded that it had to.*** **A
+> future reader comparing the corpus against the brief would find a stratum apparently skipped and
+> conclude the sweep was careless. It was not; the material is absent.**
+>
+> 📌 ***This is the fourth time in this campaign that a number which looked like a catastrophic
+> finding turned out to be a property of an instrument or an input*** — after `reltuples`
+> (`§F1.2`), the self-quotation ceiling (`§F2.1`), and the judge-vs-phrase test on owner turns
+> (`§F3.2`). **In all four the catch came from looking at the underlying material before writing the
+> headline.**
+
+⚠ **RULE 54:** the first-person test is a proxy for "genuine prose", and a genuine reasoning block
+written without first-person pronouns would score as a label. *The `0.0%` across `1,194` blocks and
+the `64`-character median are two independent signals pointing the same way, and the blocks were
+read directly — but the classification is a heuristic and is published as one.*
+
+---
+
 # 📜 §F4 — THE CERTIFICATION REGISTER
 
 *Issued **2026-09-23**. **This certifies what was DONE and what its evidence is. It does not certify
