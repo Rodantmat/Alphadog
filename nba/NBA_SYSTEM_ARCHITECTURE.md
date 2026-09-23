@@ -6,7 +6,8 @@ infrastructure, and how each is used. Built from the transcripts, not from memor
 ---
 
 > # 📑 **INDEX — `NBA_SYSTEM_ARCHITECTURE.md`**
-> **~~`113`~~ → `125` sections · ~~`164,239`~~ → `169,471` bytes · ~~`2,283`~~ → `2,362` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> **~~`113`~~ → ~~`125`~~ → `130` sections · ~~`164,239`~~ → `~176,000` bytes · built `2026-09-23`, census corrected same day (`§F2.14`), re-taken after `§F5.3` (`125 → 130`).**
+> | 🔑🔑 **WHY four load-bearing decisions were made** *(GitHub Actions · the trigger-file pattern · full isolation · where credentials live)* | **`§F5.3`** — *recovered from the only three transcripts where the reasoning stratum survives* |
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
