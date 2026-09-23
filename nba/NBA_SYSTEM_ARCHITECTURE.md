@@ -2414,6 +2414,46 @@ and it is a deliberate guard against **accidental frequent runs**, which is a li
 repo where every documentation commit touches `nba/`. 🔑 ***That reason is also why every commit in
 this sweep carries `[skip ci]`.***
 
+> ### ⚙ **§T21.8 — `[skip ci]` HAS A SECOND, MEASURED REASON, AND IT IS THE ONE THAT WAS ACTUALLY OBSERVED** *(`T21` pass `8`, recorded `2026-09-23`)*
+>
+> *The paragraph above gives the DESIGN reason — the `TRIGGER_*.txt` marker guards against accidental
+> runs. `T21` watched the sweep in flight and recorded the OBSERVED one:*
+>
+> 🔴 ***"Each commit currently fires TWO workflows that cancel each other — pure waste."***
+> ⇒ **`[skip ci]` in the commit message stops GitHub Actions firing at all.** *"Documentation commits
+> touch no worker code, so CI has nothing to do."* 📊 ***"This takes you from hundreds of commits and
+> hundreds of cancelled workflow runs to roughly twenty clean ones."***
+>
+> ⚠ **Two independent reasons for one rule, and they are not the same reason.** *The design reason
+> says a path filter on `nba/` would be dangerous. The observed reason says the runs that DO fire are
+> self-cancelling noise. **A rule with two independent justifications is one that survives losing
+> either — worth knowing before anyone "simplifies" it.***
+>
+> ### 🔒 **THE TWO DURABILITY RULES THE SAME PASS SET, AND WHY THEY SURVIVED INTO THIS SESSION**
+>
+> | rule | reason, verbatim |
+> |---|---|
+> | **Never let more than `10` passes sit unpushed** | *"If the session dies, everything since the last push is gone. **Durability beats tidiness.**"* |
+> | **`git pull --rebase` before every push** | *"In case anything else touched the repo"* — ⚠ **and something else DOES: a concurrent build session commits to `nba/` in parallel.** |
+>
+> 🔑 ***These are why this sweep commits per pass rather than per transcript, against its own
+> efficiency advice.*** *`T21` recommended pushing "once per transcript completed, or every `10`
+> passes, whichever comes first." **The owner's standing instruction — "after each pass: update the
+> resume note, commit, continue; a cut-off should cost at most one pass" — is strictly stricter, and
+> it wins.*** ⇒ **Recorded because the cheaper cadence is written down in `T21` and a future reader
+> might adopt it without seeing the instruction that supersedes it.**
+>
+> ⚠ **AND `T21` RETRACTED ITS OWN BLOCKED-PATH CONCLUSION, WHICH QUALIFIES `T21-4` IN
+> `NBA_OPEN_ITEMS.md`.** *Having tested three write routes and declared them closed, it then found a
+> fourth by accident:* ***"`raw.githubusercontent.com` resolved for `rodantmat/alphadog`, and
+> `codeload` served the whole repo as a `115 MB` archive. I had the repo name wrong earlier — I was
+> guessing `rodolfoaamattos/` from the worker subdomain. Once the real name was in hand it was one
+> download, straight to disk, never through my context. **That was available the whole time and I
+> didn't find it. My error.**"*
+> ⇒ 🔑🔑 ***The READ path was never blocked; only the WRITE path was.*** **A negative result was
+> produced by guessing an identifier instead of looking it up** — *the same failure `RULE 58` names,
+> two days before `RULE 58` was numbered, and committed by the session that later numbered it.*
+
 ## 3 · 🔑 WHY NBA IS A SEPARATE UNIVERSE DOWN TO THE CONTROL PLANE — *a self-correction*
 
 > ***"i need to correct my earlier decision — the user actually wants full isolation, so nba needs
