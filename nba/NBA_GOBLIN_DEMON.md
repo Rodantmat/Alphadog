@@ -770,6 +770,53 @@ sample.**
 > its own `dist` and `standard` before publication and all seven reproduce to `0.1` point.*** ⇒ ***That is the same effect `§T22.10` names as the `±10%` accuracy ceiling,
 > visible here in a single pair.*** **No formula keyed on `(stat, line, center)` can separate them.**
 >
+> ### ⚖ **§T22.22 — WHEN A LEG SITS BETWEEN TWO STANDARD LINES, THE BUILDER ALWAYS PICKS THE HIGHER ONE — `5,704` TIMES OUT OF `5,704`**
+> *(`T22` pass `22`, live query `2026-09-21`, recorded `2026-09-23`.* ***The `18.3%` intraday standard
+> movement in `NBA_DATABASE.md` `§T22.14` creates this situation; this is what the builder does
+> with it.****)*
+>
+> | kind | alt legs inside TWO standard ladders | builder chose the **higher** | chose the **lower** | line sat **between** the two |
+> |---|---|---|---|---|
+> | **demon** | `3,183` | ✅ **`3,183`** | **`0`** | `0` |
+> | **goblin** | `2,521` | ✅ **`2,521`** | **`0`** | 🔴 **`251`** |
+> | **total** | **`5,704`** | **`5,704` — `100%`** | **`0`** | `251` |
+>
+> 🔑 ***The rule is not written down anywhere and it is perfectly consistent: the anchor is always the
+> HIGHER of the day's two standard lines.*** **A deterministic, undocumented tie-break that decides
+> the tier label on `5,704` legs.**
+>
+> ### 🔴 **AND FOR THE `251` LEGS THAT SIT BETWEEN THE TWO STANDARDS, THE CHOICE DECIDES THE KIND**
+> *A line below the higher standard but above the lower one is a **goblin against one anchor and a
+> demon against the other**. The builder labelled all `251` `goblin`. Checked against PrizePicks' own
+> price flag:*
+>
+> | | legs | PrizePicks' flag | verdict |
+> |---|---|---|---|
+> | between the two standards, labelled `goblin` | **`247`** | `-137` | ✅ **agrees** |
+> | between the two standards, labelled `goblin` | 🔴 **`4`** | `100` | 🔴 **DISAGREES — PrizePicks prices these as the other side** |
+> | outside both standards, labelled `demon` | `3,180` | `100` | ✅ agrees |
+> | outside both, labelled `demon` | `3` | `-137` | ⚠ disagrees |
+>
+> ⇒ 🔑🔑 ***The higher-anchor rule is right `247` times out of `251` on the ambiguous cases — a
+> `98.4%` hit rate on the hardest legs in the table, and a `7`-leg total disagreement across
+> `5,704`.*** **That is a strong validation of an undocumented rule, and it is recorded here so the
+> rule stops being undocumented.** ⚠ **`RULE 55`: the `7` disagreements are reported, not explained —
+> whether they are builder errors or PrizePicks re-posts was not determined.**
+>
+> ### 📉 **AND SPORTSBOOK LINES AGREE WITH PRIZEPICKS LESS OFTEN WHEN MORE BOOKS ARE AVERAGED**
+> | book depth | ladders | exact | within `0.5` | within `1.0` | mean (book − pp) |
+> |---|---|---|---|---|---|
+> | `1`–`2` books | `18,818` | **`69.5%`** | `93.5%` | `99.0%` | `+0.011` |
+> | `3`+ books | `128,120` | ⚠ **`65.1%`** | ✅ **`96.6%`** | ✅ **`99.7%`** | `−0.015` |
+>
+> ⚠⚠ **The two columns move in OPPOSITE directions, and that is the interesting part.** *More books
+> means **fewer exact matches** but **more near matches** — because a consensus of several books lands
+> on a median that can sit off PrizePicks' half-point grid *(`§T22`: "a books' median can land between
+> PrizePicks' usual half-point grid — a centre of `4.75`, say")*, while being closer on average.* ⇒
+> 🔑 ***"Exact agreement" is the wrong metric for a consensus line; `within 0.5` is the right one, and
+> on that measure depth helps exactly as expected.*** **A rescue tier judged on exact agreement would
+> have rejected the better source.**
+>
 > 📌 ***This table is the evidence for the heading above it.*** *It was in `T22`'s bash output and in
 > none of the twelve — `RULE 55`: the conclusion was recorded at `§T22.9` before its table existed,
 > and the table is filed here rather than the conclusion being softened.*
