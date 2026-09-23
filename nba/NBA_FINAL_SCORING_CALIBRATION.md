@@ -4443,7 +4443,7 @@ the 3-pick breakeven in both seasons". **The grid is what makes the verdict oper
 threshold, at which pick count, with what SE and what sample. **A verdict without its grid cannot be
 acted on and cannot be falsified**, and 93.8% uncovered is what that looked like from outside.*
 
-## 4 · 🔑 **THE ONLY EXTERNAL BENCHMARK IN THE CORPUS — and our numbers sit inside it**
+## §F6.3 — 🔑 **THE ONLY EXTERNAL BENCHMARK IN THE CORPUS — and our numbers sit inside it**
 
 *Added 2026-09-23, `§F6.3`. Recovered from `T17`'s research stratum; **in `0` of the twelve** —
 `35.81`, `57.19` and "bootstrap confidence interval" each returned `0` hits.*
