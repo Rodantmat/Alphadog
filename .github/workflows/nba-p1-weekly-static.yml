@@ -105,7 +105,14 @@ jobs:
           PROXY_URL: ${{ secrets.PROXY_URL }}
         run: python nba/build_static_context.py
 
+      # RUN EVEN AFTER A FAILURE (2026-09-23). Every step above is a SCRAPE that already succeeded by the
+      # time a later build step can fail. With the default `success()` condition, one broken build (the
+      # scipy import, which failed every Monday for weeks) skipped this commit and threw the whole week's
+      # scraping away - the loaders read these files from the repo, so nothing reached Postgres either.
+      # Committing on always() preserves the data; the job still goes red because the failed step failed,
+      # so nothing is hidden. This is not `|| echo failed` - no failure is swallowed, only data is saved.
       - name: Commit weekly data files
+        if: always()
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
