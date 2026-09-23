@@ -1499,3 +1499,125 @@ re-render that drops one destroys data that **cost a logged-in browser session t
    ~~**Coverage per app is unverified.**~~ ✅ **VERIFIED 2026-09-23 (T22 pass 1, `§T22.1`) — see `§0.9-T22` §4 below.**
 5. **The fantasy-score scale conflict** (+2 vs +3 on blocks/steals) changes payout arithmetic for
    `fantasy_score` legs — see `NBA_OPEN_ITEMS.md`.
+
+---
+
+# 0.9-T22. 🟢🟢🟢 **THE HUNT WAS SOLVED — `§0.2g` AND `§0.7-T18` ARE BOTH OVERTAKEN BY EVENTS** *(T22 pass 1, §T22.1, 2026-09-23)*
+
+> ⚠⚠ **READ THIS BEFORE `§0.2g` AND `§0.7-T18`.** *Those sections are correct for what was known when
+> they were written (`2026-09-19`, T18). **This document did not know the problem was solved on
+> `2026-09-20`, because the transcript that solved it — `T22` — did not reach this sweep until
+> `2026-09-23`.*** **Nothing below is retracted; it is superseded, with both dates.**
+
+## 1. 🔑🔑🔑 **THE EXIT CONDITION `§0.7-T18` WROTE DOWN WAS MET, EXACTLY AS WRITTEN**
+
+**`§0.7-T18` item 7 said**: *"Every route that does not require an authenticated session is closed.
+**The remaining one is the owner's own browser**… Open `app.prizepicks.com` logged in → DevTools →
+Network → filter **Fetch/XHR** → add the FIRST leg → **CLEAR the list** → add the SECOND leg.
+Whatever fires in that final step is the answer."*
+
+⇒ ✅ ***That is precisely what happened.*** **`T22` SEG `25`**: *"when the second leg went in,
+**exactly one non-analytics call fired — `game_types`, 2.1 kB**. everything else there is `track`,
+which is analytics."* 🔑 **A deferral that carried its exit condition was discharged by that exit
+condition, one day later.** *Recorded because the corpus's habit of writing exit conditions is what
+made this cheap.*
+
+## 2. ✅ **THE ENDPOINT — `POST https://api.prizepicks.com/game_types`** *(AS STATED IN `T22`; not re-probed by this sweep)*
+
+**It is a `POST`, and the body carries the specific legs:**
+```json
+{"new_wager": {"amount_bet_cents": 2000,
+               "picks": [{"wager_type":"over","projection_id":"13975905"},
+                         {"wager_type":"over","projection_id":"13976089"}],
+               "pick_protection": false},
+ "lat": …, "lng": …, "game_mode": "prizepools"}
+```
+**Response** — `data[].attributes.name` ∈ {`power play`, `flex play`}, and
+`data[].attributes.payouts` = `{"<n_picks>": {"<n_correct>": multiplier}, "is_adjusted": bool}`,
+alongside **`payouts_srp`** *(`{"power": […], "flex": […]}` — a second, separate schedule; `0` prior
+mentions anywhere in the twelve)*.
+
+> 🔑🔑🔑 **AND THE DECISIVE PROPERTY, WHICH CHANGES WHAT KIND OF ARTEFACT THIS IS:**
+> ***"the server prices the specific combination you send. **NOT a lookup table — a quote** for these
+> two projection ids, these sides, this stake."*** *(`T22` SEG `29`)*
+> ⇒ ⚠ **`§0.2g`'s conclusion — "the deliverable is not a scrape; it is a maintained observation
+> matrix" — is HALF right and its half matters.** *There IS a machine-readable surface, so the
+> manual matrix is no longer the only route. **But because it quotes rather than publishes, a
+> complete table still has to be ASSEMBLED by enumerating combinations — it cannot be downloaded.***
+> 📌 ***The permanent-study framing survives; the "no API" premise does not.***
+
+## 3. 🔑 **WHY THREE EARLIER PROBES MISSED IT — and it is one sentence**
+
+> *"they **guessed GET endpoints anonymously from a runner**, and **this is a POST**."* *(SEG `29`)*
+
+**Plus the wall, named**: **DataDome (`ct.captcha-delivery.com`) and Cloudflare
+(`cdn-cgi/challenge-platform`) are both present** *(SEG `26`)* — *"that's why the earlier
+unauthenticated probes from a GitHub runner got nothing."* ⚠ **`§0.7-T18` §2 recorded the wall as
+PER-ENDPOINT; `T22` names the two products enforcing it.**
+
+**Two more facts from the same probe, neither previously on file**: **`league_id=7` is live and is
+NBA** · 🔴 **`milestones` returns `404` — not enabled for this account**, and it is *"likely their
+version of Sleeper's 20+/25+/30+ markets"* ⇒ **relevant to the ladder work, and recorded as
+`NOT AVAILABLE` rather than `NOT EXPLORED`.**
+
+## 4. 🔴🔴 **THE `multiplier` COLUMN — MEASURED, AND `§0.2g`'s LIST IS WRONG IN BOTH DIRECTIONS**
+
+*`nba_market.board_snapshots`, live `SELECT`, pinned **`2026-09-23T02:22:06Z`**. **This closes the
+"Coverage per app is unverified" note this document has carried since it was written.***
+
+| bookmaker | rows | with `multiplier` | **%** | distinct values | range |
+|---|---|---|---|---|---|
+| **sleeper** | `1,276` | `1,276` | ✅ **`100.00%`** | `204` | `1.15 – 3.52` |
+| 🟢 **pick6** | `534,188` | `506,896` | ✅ **`94.89%`** | **`415`** | `0.50 – 46.60` |
+| **underdog** | `939,719` | `413,731` | ⚠ **`44.03%`** | `167` | `0.60 – 7.89` |
+| 🔴 **fliff** | `1,394` | **`0`** | 🔴 **`0.00%`** | — | — |
+| 🔴 **betr_us_dfs** | `780,765` | **`0`** | 🔴 **`0.00%`** | — | — |
+| 🔴 **prizepicks** | `2,199,354` | **`0`** | 🔴 **`0.00%`** | — | — |
+| the nine sportsbooks *(fanduel `6,697,790` · draftkings `3,652,647` · betonlineag · bovada · betmgm · williamhill_us · fanatics · betrivers)* | — | **`0`** | `0.00%` | — | — |
+
+> 🔴 **`§0.2g` states: *"Underdog, Sleeper, Fliff and Betr **do** expose theirs… read the value."***
+> ⇒ **MEASURED: of those four, only Sleeper is complete. Underdog is under half. *Fliff and Betr are
+> at ZERO — `0` of `1,394` and `0` of `780,765`.*** ⚠ *Whether that is the app not exposing it or the
+> scraper not capturing it is **`NOT RECORDED`** — the column is the same either way, and the
+> distinction is a scraper question this sweep does not answer.*
+> 🟢 **AND THE LIST OMITS ITS BEST MEMBER: `pick6` is `94.89%` populated with `415` distinct values —
+> the richest multiplier source in the database, and it appears in `§0.2g` not at all.**
+> 📌 ***`prizepicks` at `0.00%` of `2,199,354` rows is EXPECTED and is the whole reason `§0.7-T18`
+> existed*** — *the Odds-API feed carries its lines and not its payouts. It is stated here so the
+> zero is not later mistaken for a scraper fault.*
+
+## 5. 🔑🔑 **THE OWNER'S OWN DESIGN DECISIONS, IN HIS WORDS** *(all `0` prior mentions in the twelve)*
+
+| | the decision | why it matters |
+|---|---|---|
+| 🔑🔑 **PRICE BY ID, NOT PER LEG** *(SEG `468`)* | *"instead of pricing each leg, cant we **'price id' them**? … if multipliers change, **we just change them on the database** instead of changing all multipliers on 2 seasons of data, and for each leg we add an id, pertinent to the formula you figured out, **so the price is centralized in the db and the price ids are tagged on each leg**, with the proper granularity to cover all we know and **also leave space for possible mistakes**."* | ***This is the owner's architecture, not the assistant's.*** It is the rationale behind the price-key indirection, and the last clause — *"leave space for possible mistakes"* — is a design allowance for exactly the kind of correction the goblin floor later needed. |
+| **CURRENT multipliers over HISTORICAL, and it is not optional** *(SEG `434`)* | *"we will need to have multipliers for the 2 seasons backdata, **that is not an option**, and it is **much better we calculate with fresh, current multipliers than old multipliers that will not represent what we will have now**."* | A stated constraint with a stated reason. ⚠ *It sits in tension with lesson #24's "the exact numeric ratios genuinely decayed and changed over time" — **the owner's answer to decay is to reprice with today's values rather than preserve yesterday's**, which is a choice, not an oversight.* |
+| **UNPRICED, NEVER GUESSED** *(SEG `493`)* | *"what do you mean by **the 43,370 legs with no center are explicitly unpriced, never guessed**"* | ✅ *The principle is already on file (`8` hits); **the owner's interrogation of it is not** — he stopped the build to ask what it meant before accepting it.* |
+| **PRIORITY ORDER** *(SEG `12`)* | *"the apps deep scraping factors that we have open: **the multiplier on prizepicks**, the chalkboard, the ladder for sleeper or underdog… **the multiplier on pp is priority 1**"* — and *"i also want to find **the keep my million board in underdog**"* | 🔴 **`keep my million` appears `0` times in the twelve.** *An open owner request with no item and no record.* ▶ **Filed below.** |
+
+## 6. ✅✅ **A SECURITY DECISION WORTH PRESERVING** *(SEG `30`, SEG `49`)*
+
+*The obvious implementation — lift the owner's cookies into a server-side scraper — was considered
+and **refused**, with the reason stated:*
+
+> *"rather than extracting your cookies into a script — **DataDome and Cloudflare tie them to your
+> browser fingerprint, so they'd die on a server anyway** — i'll write you a snippet you paste into
+> the DevTools console **on the PrizePicks page itself**. it runs as you, in your real browser…
+> **no tokens ever leave your machine**."*
+> *"a different IP and fingerprint plus a location that doesn't match is **exactly what gets a
+> real-money account flagged**."*
+
+🔑 ***Two independent reasons — it would not work, and it would risk the account — and the second is
+the one that would still apply if the first stopped being true.*** **Recorded as the standing
+pattern for any future authenticated capture.**
+
+---
+
+> 📌 **EVIDENCE TIERS ON THIS SECTION** *(clause (iii), pre-registered)*: ✅ **VERIFIED by live
+> `SELECT` this pass** — everything in `§4`. ⚠ **AS STATED IN `T22`** — the endpoint, its body and
+> response shape, the DataDome/Cloudflare identification, `league_id=7`, the `milestones` `404`, and
+> every quoted owner decision *(quotations are verbatim from the transcript; **the endpoint was NOT
+> re-probed by this sweep, and must not be** — that would be a live write against a real-money
+> account)*. 🔴 **`NOT RECORDED`** — whether Fliff/Betr's `0%` is the app or the scraper.
+> ⚖️ **SCOPE**: *the `pp_*` Postgres objects and the concurrent session's files were **not queried and
+> not touched** (`§T21.0 §5`).*
