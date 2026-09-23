@@ -40,44 +40,10 @@ context, and which document section. Any material term appearing more than once 
 > ⇒ ***The recipe works only in a session that already has the transcript files locally. For anyone
 > else, the pointer does not resolve.*** **This is the open blocker `T21-1` carries.**
 >
-> ## 📋 THE FILE'S TWO HALVES
->
-> ### ✅ **A · `§Z` — THE COMPLETE TERM INDEX** *(the lookup layer)*
-> **`27` letter headings, `A` through `Z`.** *Each entry names the term and points at where it lives.*
-> ⇒ **This is the fastest route to anything in the file, and it is the only structure covering the
-> whole alphabet.**
->
-> ### 📘 **B · THE BODY — THE DEFINITIONS** *(`11` ranges + `PENDING`, covering `A … Z` with no gap)*
-> | block | covers |
-> |---|---|
-> | **`A`** · **`B`** · **`C`** · **`D`** | one letter each |
-> | **`E–F`** · **`G–I`** · **`L–N`** · **`T–W`** | merged ranges |
-> | ✅ **`J–K`** · **`O`** · **`X–Z`** | **added `2026-09-23`, `§F7.4`** — *these three letters-ranges had `§Z` entries and no definitions* |
-> | **`P–S`** | *with **`P–S (continued — research-standard structure)`** nested beneath it as `###` — moved `§F7.4` from its old position after `T–W`* |
-> | **`PENDING`** | ⚠ **terms identified but not yet defined — and the sweep status table** |
->
-> 📌 **HOW TO READ THIS FILE**: ***`§Z` is the lookup, the body is the definition, `PENDING` is the
-> state of the sweep that feeds both.*** **`§Z` wins on *where a term lives*; the body wins on *what
-> it means*; and where the two disagree the body is newer, because terms are defined into the body
-> after `§Z` lists them.** ⚠ **A term in `§Z` with no body entry is not an error — it is the sweep
-> not having reached it.** 🔑 *The single most consequential entry in the file is **`ot_rule`** in
-> `O`: a primary-key column that a loader's merge key omits, costing `1,421` rows per run.*
->
-> 📌 **COVERAGE OF `T12`–`T18` TERMS — RE-MEASURED LIVE `2026-09-23`, AND THE OLDER FINDING NO LONGER HOLDS**
-> *An earlier pass recorded that central `T17`/`T18` terms were absent from this file. **Re-counted
-> today, they are present** — so that finding is stale and is NOT repeated here:*
->
-> | term | occurrences |
-> |---|---|
-> | `board_tiers_v2` · `confidence_model` | **`3`** each |
-> | `certify_pipeline` · `measure_report_cutoff` · `f_phase` | **`2`** each |
-> | `CONF_NEUTRAL` | **`1`** |
->
-> ⚠ **`1`–`3` occurrences is presence, not depth** — *a term mentioned once inside another entry is
-> not the same as a term with its own definition.* ⇒ **Treat a thin count as "check whether it has
-> its OWN entry", and an absence as "not yet written", never as "not a term".**
-> 🔑 ***This block was itself corrected before publication***: the first draft asserted `0` for all
-> six from memory of an earlier pass. **The live count is above; the assertion was wrong.**
+> 📌 **HOW TO READ THIS FILE.** ***`§Z` is the lookup, a body block is the definition, `PENDING` is
+> what the sweep has not reached.*** *A term in `§Z` with no body entry means "not yet written", not
+> "not a term".* 🔑 *The most consequential entry here is **`ot_rule`** (`O`) — a primary-key column
+> a loader's merge key omits, costing `1,421` rows per run (`F6-1`).*
 
 **How to use it.** Find the term, note the transcript ID, then:
 `grep -o "<term>[^\"]\{0,300\}" /mnt/transcripts/<file>.txt`
