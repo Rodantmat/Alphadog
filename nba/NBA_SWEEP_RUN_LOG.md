@@ -2775,6 +2775,29 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 >   kept, because that half is not a rate.**
 > - ⚠ **`[skip ci]` verified PER COMMIT this pass, not assumed** *(`§F7.17` is why)* — **every commit
 >   checked against `git log` after the fact: `0` breaches.**
+>
+> #### 5 · 🔴 THE READER TEST — *and the three defects it found that nothing else would have*
+>
+> *The owner's method: **take real questions, start at the top of the right file, and count the steps.
+> Over two is a defect.** Run as a reader, not as the author.*
+>
+> | question | before | after |
+> |---|---|---|
+> | **what must be done before opening night** | ✅ `1` step | ✅ `1` |
+> | **why will `P3` abort on the new season** | ✅ `1` step *(`ACT ON THIS` row `1c`)* | ✅ `1` |
+> | 🔴 **where is the deadlock** | **FAIL — `§T23.5` was NOWHERE on the decision surface.** *`grep "deadlock"` in `NBA_OPEN_ITEMS.md`'s `ACT ON THIS`: `0`. `§T23.5` referenced from that file: `0`.* ***The thing that breaks your recovery from `1c` was invisible to anyone reading the decisions.*** | ✅ `1` — **new row `1d`, placed beside `1c` because they are one problem** |
+> | 🔴 **which table holds final hit probability** | **FAIL — no routing row in `NBA_DATABASE.md`.** *The system's headline output, reachable only by grep.* | ✅ `1` — **two rows added: `nba_score.final_hp`, and the graded-outcome table** |
+> | 🔴 **what does a game day look like** | **FAIL — `§2` · `§3` · `§4` · `§1`, four sections, no end-to-end view anywhere in the corpus.** | ✅ `1` — **the `🗓 GAME DAY` block, every fact re-derived from the workflow files** |
+>
+> 🔑 **`RULE 57` caught me mid-repair**: *the graded-outcome row first said* `` `nba_score.board_legs_scored` `` — **a table that does not exist**; the corpus writes `nba_score.board_scored` *(`52` occurrences against `1`, which was my own line)*. **Corrected before it shipped, by grepping the name I was about to publish.**
+>
+> 🔴🔴🔴 **AND THE GAME-DAY BLOCK SURFACED THE WORST THING ON THIS PAGE, by forcing the day into one
+> table:** ***`P2` and `P3` have NO CRON*** *(comments in both files: **"NO CRON YET — deliberately…
+> the cron goes in when the season starts"**)* · ***`P3` aborts on every `2026-27` date*** *(`T23-2`)*
+> · ***the catch-up tool deadlocks*** *(`§T23.5`)* · ***and `final_hp` is rebuilt by nothing*** *(`§4b`)*.
+> **Each was documented separately and true separately. Nothing had ever put them in one sequence.**
+> ⇒ ***Writing the day end to end is what made the gap legible — the reader test did not just check
+> findability, it produced a finding.***
 
 > ### 🔴🔴🔴 **§F7.18 — THE SWEEP'S OWN COVERAGE INSTRUMENT WRITES CREDENTIAL-BEARING OUTPUT INTO A PUBLIC REPO'S WORKING TREE, BY DEFAULT, UNGITIGNORED**
 >
