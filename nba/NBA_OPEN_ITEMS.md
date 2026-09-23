@@ -175,7 +175,15 @@
 > > | **underdog** | `2026-09-21T19:52:37Z` | 🔴 **`2026-09-12`** |
 > >
 > > ⚠ **And each pull OVERWRITES the last** — `archive_live_boards.py`'s own docstring — so
-> > **`3` apps × `12` pulls/day × `~10` days ≈ `360` board pulls scraped, committed and destroyed.**
+> > ~~**`3` apps × `12` pulls/day × `~10` days ≈ `360` board pulls scraped, committed and destroyed.**~~
+> > 🔴 **CORRECTED `2026-09-23`, T20 pass 118 (`§T20.123`): THOSE PULLS WERE EMPTY.** Measured across
+> > **every commit in each file's whole history**: `sleeper` **`max legs EVER = 0`** *(331 bytes)* ·
+> > `fliff` **`max legs EVER = 0`** *(757 bytes)* · `underdog` **`max legs EVER = 3`**.
+> > ⇒ ***It is the off-season and the empty boards are EXPECTED; nothing of value was destroyed.***
+> > ⚠ **`T20-22`'s severity is unchanged** — the loader still has no trigger. 🔑🔑 ***And the three
+> > commit timestamps below prove the SCRAPER RAN, not that a BOARD EXISTS. On `2026-10-03` the
+> > Sleeper and Fliff `legs` arrays go from `0` to hundreds for the first time ever, through
+> > per-app normalisers that have never processed a non-empty NBA payload.***
 > > ✅ **NOT a scoring failure**: `P3` runs the loader as one of its own steps, so a triggered `P3`
 > > archives the board it is about to score. 🔑 **What is lost is everything BETWEEN runs.**
 > > ▶ **`T20-22` (`HIGH, STRUCTURAL`) — with an OWNER DECISION that is one cron line either way.**
