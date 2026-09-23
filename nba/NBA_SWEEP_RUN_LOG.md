@@ -2600,6 +2600,85 @@ concepts** — the `x_*` family is `7` rows and one idea, and is written as one 
 the `§Z` index itself has not been audited for terms that exist in the corpus and are missing from
 it** — this pass audited the body against `§Z`, not `§Z` against the corpus.
 
+## ✅✅ §F7.5 — **THE MASTHEAD SWEEP: TWELVE CENSUSES MEASURED AGAINST THE LIVE FILES, AND ONLY ONE OF THE THREE FIGURES SURVIVES**
+
+*`2026-09-23`. Owner defect `4` of `5` — **"stale mastheads and status lines across the twelve; sweep
+all twelve and date every one."***
+
+### 1 · The measurement, before the conclusion *(`RULE 55`)*
+
+*Every one of the twelve publishes a census in its own index. Each claim was extracted and compared
+against the live file at the same `HEAD`.*
+
+| file | sections | bytes | lines |
+|---|---|---|---|
+| `NBA_MASTER_SUMMARY.md` | `2,798`/`2,798` **Δ 0** | `3,212,494`/`3,215,288` `+2,794` | `42,327`/`42,343` `+16` |
+| `NBA_OPEN_ITEMS.md` | `937`/`937` **Δ 0** | — | — |
+| `NBA_FINAL_SCORING_CALIBRATION.md` | `253`/`253` **Δ 0** | `347,306`/`347,306` ✅ **0** | — |
+| `NBA_SYSTEM_DESIGN.md` | `169`/`169` **Δ 0** | `193,223`/`193,237` `+14` | `2,526`/`2,627` 🔴 `+101` |
+| `NBA_DATABASE.md` | `136`/`136` **Δ 0** | `183,339`/`183,361` `+22` | — |
+| `NBA_WORKERS.md` | `130`/`130` **Δ 0** | `~180,000`/`179,904` `−96` *(written with a tilde)* | — |
+| `NBA_SYSTEM_ARCHITECTURE.md` | `134`/`134` **Δ 0** | `180,101`/`180,100` `−1` | — |
+| `NBA_MULTIPLIERS.md` | `137`/`137` **Δ 0** | `150,999`/`151,288` `+289` | `2,125`/`2,126` `+1` |
+| `NBA_BASELINE_CALIBRATION.md` | `136`/`136` **Δ 0** | `157,697`/`157,711` `+14` | `1,936`/`2,333` 🔴🔴 **`+397`** |
+| `NBA_GOBLIN_DEMON.md` | `99`/`99` **Δ 0** | `97,608`/`97,783` `+175` | — |
+| `NBA_GLOSSARY.md` | `47`/`47` **Δ 0** | `105,868`/`106,420` `+552` | `1,914`/`1,920` `+6` |
+| `NBA_RECIPE.md` | `63`/`63` **Δ 0** | `87,777`/`88,942` 🔴🔴 **`+1,165`** | `963`/`957` ⚠ **`−6`** |
+
+> ## ✅ **SECTIONS EXACT `12` of `12` · 🔴 BYTES EXACT `1` of `11` · 🔴🔴 LINES EXACT `0` of `6`**
+
+### 2 · What the numbers mean, and the two that change the diagnosis
+
+🔑🔑 ***The section count is not "more accurate." It is the only one of the three that anybody
+re-derives.*** *Sections are load-bearing — they route the index — so every pass recomputes them.
+Bytes and lines are decoration, so no pass ever did.*
+
+⚠ **The single exact byte figure is the least reassuring result in the table.** *`FINAL_SCORING`'s
+`347,306` is exact because **nothing has been patched into that file since the figure was written**.
+Not accuracy — stillness. **A census is exact exactly as long as the document is dead.***
+
+🔑 **`RECIPE`'s line drift is NEGATIVE (`−6`) while its byte drift is the largest positive
+(`+1,165`).** ⇒ ***These are not "the file grew" errors that a monotonic correction would fix. They
+are simply unmaintained values, and a sign change is the proof.***
+
+✅ **`WORKERS` is the only file that wrote its byte count as an approximation — `~180,000` — and it
+is `96` off.** ⇒ ***The tilde is the entire repair the other ten needed.*** *A figure that states its
+own precision cannot mislead about it.*
+
+### 3 · What was done — and why a stamp rather than a correction
+
+🔴 **Correcting the figures would have been the wrong repair, and it is worth saying why**: the
+patch that writes a corrected byte count **changes the byte count**, in the same commit
+*(`§F6.19`'s self-reference; `§F6.26`'s heading twin; and `§F7.4` reproduced it live — its census
+drifted `+552` bytes *within its own pass*)*. **A value that invalidates itself on write cannot be
+maintained by writing it more carefully.**
+
+✅ **Instead: one identical `📏 CENSUS STAMP` block was added under the census line of all twelve**,
+naming `sections` authoritative and `bytes`/`lines` approximate-and-dated, carrying the `12`/`12` ·
+`1`/`11` · `0`/`6` result, and giving the re-derivation regex. **Verified `12` of `12` by grepping
+the stamp's own string** *(`RULE 53`)*. *Each file's stamp also names its own worst figure, so the
+reader meets the drift where they meet the number.*
+
+### 4 · The status lines, the other half of the defect
+
+✅ **`NBA_MASTER_SUMMARY.md`'s sweep ledger** — `T19` and `T20` still read *"owes two INDEPENDENT
+fresh-context reads"* and *"CANNOT close in this session"* **a day after `§F7.1` discharged both**.
+Struck in place, replaced with the discharge and its counts, **and a third row added for what the
+two reads cost and bought.** ⚠ **The replacement makes a distinction the old row blurred: `RULE 46`
+and the CLEAN COUNT are different obligations. `T20` is discharged on the first and still `0/3` on
+the second.** *Discharging one does not close a transcript, and a row that said only "owes two
+reads" would have read as closed once they were done.*
+
+✅ **`NBA_GLOSSARY.md`'s closing status line** — handled at `§F7.4`; it was wrong by ten transcripts.
+
+⚠ **`RULE 54`.** *`WINDOW`: the twelve at `2026-09-23` `HEAD`, census claims extracted from the first
+`1%` of each file. **`n` for bytes is `11` and for lines is `6` because not every index publishes
+all three** — `OPEN_ITEMS` publishes neither, and five publish no line count. **Absence of a figure
+is not a pass; it is a smaller surface.** **`NOT DONE`: prose status claims deeper than the index
+were not exhaustively swept** — `RULE 46`'s stale assertions were hunted by string across all twelve
+and the survivors are all inside superseded rows kept under `RULE 40`, **but a claim phrased in words
+this pass did not grep for would not have been found.**
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
