@@ -959,8 +959,31 @@ fresh context; `T20` cannot close in this session.**
 
 ### 📜 ~~THE FORTY-EIGHT STANDING RULES~~ ~~THE FORTY-NINE STANDING RULES~~ ~~THE FIFTY STANDING RULES~~ **THE FIFTY-ONE STANDING RULES** — *the index; each is written in full where it was born*
 
-🔑🔑🔑 **COUNT AMENDED 2026-09-23, `§F2.9`: `54` → `55`. `RULE 55` NUMBERED, and it is numbered on
-FOUR INDEPENDENT INSTANCES FOUND IN ONE DAY rather than on one.**
+🔴🔴 **THE LINE BELOW WAS WRONG WITHIN THE HOUR AND IS CORRECTED IN PLACE, STRUCK, NOT DELETED —
+`§F2.10`.** ~~*"COUNT AMENDED 2026-09-23, `§F2.9`: `54` → `55`."*~~ **`RULE 54` had been PROPOSED at
+`§T22.5` and NEVER NUMBERED, so there was no `54` to amend from.** *Re-derived from this log, the
+authority: the numbering statements are **`RULE 50` numbered** (§T20.72, **`49` RETIRED, not
+reused**) · **`RULE 51` numbered** (§T20.81) · **`RULE 52` numbered** (§T20.91) · **`RULE 53`
+ADOPTED** · **`RULE 54` PROPOSED** ⇒ **`1`–`48` plus `50`, `51`, `52`, `53` = `52` numbered.**
+
+🔑🔑🔑 **COUNT AMENDED 2026-09-23, `§F2.10`: `52` → `54`, BY NUMBERING BOTH.**
+**`RULE 54` is numbered now, on the record it has already built:** ***"A caveat about an instrument
+is a CONSTRAINT ON THE SAME PASS'S CONCLUSIONS, not a disclaimer attached to them."*** *Proposed at
+`§T22.5`; since then it has been the operative clause in `§F1.2` (the `reltuples` reversal), `§F2.1`
+(the self-quotation ceiling), `§F2.4` (the under-counting scope filter), `§F2.6` (the marker grep's
+floor), `§F2.7` (pre-registered in advance) and `§F2.8`/`§F2.9` (the `96.3%` floor).* **A rule
+applied without interruption across seven consecutive passes is a standing rule whatever the
+register says.** 📌 ***And this correction is itself RULE 54 and RULE 55 working: I asserted a count
+from memory, the authority disagreed, and the enumeration was wrong for the FOURTH time in two days
+— the failure `§F2.3` had already named as a working rule and that I committed again three sections
+later.***
+
+**RULE 53 DISCHARGED** — corrected string re-grepped, whole-file window: **`` `54` → `55` `` = RAW
+`1` site, in this log; `0` across all twelve. CLASSIFIED as this pass's own write from today. `1`
+of `1` corrected, `0` outstanding.**
+
+🔑🔑🔑 **`RULE 55` NUMBERED, and it is numbered on FOUR INDEPENDENT INSTANCES FOUND IN ONE DAY
+rather than on one.**
 
 > ## 📜 **RULE 55 — A CONCLUSION IS NOT RECORDED UNTIL THE TABLE UNDER IT IS.**
 > ***When a document states a verdict, a ranking, a universal claim or a strategic finding that was
