@@ -41365,3 +41365,81 @@ owns a subject was confidently wrong about it, and had been for four days, becau
 lived in a transcript nobody had.** *`§T21.2` measured `T22` at `97.0%` uncovered. **The first pass
 into it overturned two sections and corrected a table.** That ratio will not hold — but it says what
 the remaining `95%` is worth reading for.*
+
+---
+
+# §T22.4 — 📊 **THE COVERAGE RATE, MEASURED — `T22` IS MOVING `~44×` FASTER THAN `T20` DID, AND IT STILL IS NOT FAST ENOUGH**
+
+*T22 pass 4, 2026-09-23. **Three passes have been run against `T22`. The instrument can now say what
+a pass is worth**, which no pass in this sweep has ever measured directly.*
+
+## 1. 📊 THE MEASUREMENT — *`judge21.py`, same thresholds, working tree re-read*
+
+| `T22` | high band | uncovered12 | % |
+|---|---|---|---|
+| **BASELINE tree** | `10` | `882` | `98.3%` |
+| **working, before my passes** *(`§T21.2`, `2026-09-23T~02:05Z`)* | `13` | `870` | `97.0%` |
+| **working, after `§T22.1`–`§T22.3`** | ✅ **`26`** | ✅ **`855`** | **`95.3%`** |
+
+> ⇒ **Three passes: high band `13 → 26` (doubled), uncovered `870 → 855` — `−15` segments,
+> `5.0` per pass.**
+
+## 2. 🔑🔑🔑 THE COMPARISON THAT MAKES THE NUMBER MEAN SOMETHING
+
+| transcript | uncovered12, baseline → working | Δ | passes | **segments per pass** |
+|---|---|---|---|---|
+| **`T20`** | `484 → 469` | `−15` | **`131`** | 🔴 **`0.11`** |
+| **`T22`** | `870 → 855` *(this session)* | `−15` | **`3`** | 🟢 **`5.0`** |
+
+> 🔑 ***The same `−15` segments cost `131` passes on `T20` and `3` on `T22`. The rate differs by
+> `~44×`.***
+> ✅ **This is `§T21.2`'s "the material is genuinely unread" turned into a number**, and it is the
+> first time this sweep has measured the PRODUCTIVITY of a pass rather than its findings.
+
+## 3. 🔴🔴 **AND THE SAME NUMBER SAYS THE CURRENT METHOD CANNOT FINISH**
+
+| | |
+|---|---|
+| `T22` uncovered remaining | **`855`** |
+| `T23` uncovered *(not yet worked)* | **`893`** |
+| **together** | 🔴 **`1,748` segments** |
+| at the measured `5.0` / pass | 🔴🔴 **`~350` passes** |
+
+> ⚠⚠ ***Three passes produced four document sections, two supersessions, a corrected table and two
+> new open items — and moved the needle `1.7` percentage points.*** **The prose entries this sweep
+> writes are dense, well-evidenced, and cover about five transcript segments each.**
+
+## 4. 🔑🔑🔑 **WHICH IS EVIDENCE FOR `T21-1`, AND CONVERTS IT FROM A PREFERENCE INTO AN ARITHMETIC ARGUMENT**
+
+**`T21-1`** records the owner's directive: *"the files should be a **reference, not a full detailed
+copy**… each file should be **a guide of that specific kind of data to where it is on the
+transcript**."* **Until now the case for it was stated in terms of FILE SIZE** *(`1.1 MB → 5.67 MB`,
+`5.2×`)*.
+
+> ⇒ ***The case is also a THROUGHPUT case, and that is the stronger one.*** **A pointer entry — an
+> assertive claim plus `T`-number and `grep -n` line — can account for many segments in the space a
+> prose entry spends on one.** *The prose format is why a pass covers `5` segments; it is not a
+> property of the material.*
+> 🔑 **So the directive was not only about the files being heavy to READ. On this measurement it is
+> also about them being slow to WRITE — and at `~350` passes for `T22`+`T23` alone, that is the
+> binding constraint on ever finishing.**
+> 🔴 **OWNER DECISION, and `T21-1` now carries a number**: *the format change is blocked on the
+> transcripts being reachable, which is blocked on `18` credential-shaped strings in three files.*
+> ⚠ **I have not changed format unilaterally** — *the directive's own instruction is "do not
+> retro-convert… apply it to new work only", and its precondition is not met. **Recorded so the
+> decision is made on arithmetic rather than on taste.***
+
+## 5. ⚠ **THREE HONEST CAVEATS ON THE RATE**
+
+1. **The first passes into a transcript are the richest.** *`§T22.1` overturned two document sections
+   because they were the two most-wrong things in the file. **`5.0`/pass is an EARLY rate and should
+   be expected to fall**, which makes `~350` optimistic, not pessimistic.*
+2. **The instrument rewards text similarity, not understanding.** *A pointer entry might cover more
+   segments per pass by this metric while carrying less meaning. **The metric is a proxy and is
+   named as one.***
+3. **`−15` is small enough to be noisy.** *`3` passes is a short series. **The `44×` ratio is robust
+   to that noise; the absolute `5.0` is not**, and a re-measure after `T23` will say more.*
+
+📌 ***The lesson:*** **this sweep has measured its findings obsessively and never once measured its
+own rate.** *Doing it took one re-run of an instrument that already existed, and it turned the
+owner's format directive from a stylistic preference into the difference between finishing and not.*
