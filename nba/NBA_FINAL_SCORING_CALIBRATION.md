@@ -3738,3 +3738,60 @@ T9 predicted two sources. **One delivered, one did not.**
 **That third item is now a hypothesis by elimination, not just by design**, and it is testable the
 moment real goblin/demon board data is in hand. **It should determine what the slip-building phase
 optimises for.**
+
+---
+
+# 0.14-T23. 🔴🔴🔴🔴 **THE HYPOTHESIS ABOVE WAS TESTED ON `1.08 MILLION` LEGS — AND IT FAILED IN THE WORST DIRECTION** *(T23 pass 2, §T23.2, 2026-09-23)*
+
+> ⚠⚠ **READ THIS DIRECTLY AFTER THE PARAGRAPH ABOVE.** *That paragraph says the tails are
+> **"the #1 area where a sharp baseline earns the most, because naive book models mis-price tails"**,
+> and calls it **"testable the moment real goblin/demon board data is in hand."*** **The data came in
+> on `2026-09-21`. The test was run. `325` dates, both seasons, `1.08 M` PrizePicks legs.**
+
+## 1. 🔴🔴🔴 **IT IS OUR TAILS THAT ARE MIS-PRICED, NOT THEIRS** *(`T23` SEG `391`, finding 5)*
+
+| kind | ladder's implied | **actual** | direction |
+|---|---|---|---|
+| **goblins** *(24-25 / 25-26)* | `0.644` / `0.626` | **`0.685` / `0.659`** | 🔴 **UNDER-predicted** |
+| **demons** *(24-25 / 25-26)* | `0.263` / `0.296` | **`0.246` / `0.257`** | 🔴 **OVER-predicted** |
+
+> ⇒ 🔴🔴🔴 ***"The ladder's tails are too wide."*** **Both tails err outward, in both seasons, in the
+> same direction.** ⚠ **This is the exact opposite of the hypothesis**: the premise was that the
+> book's tails would be naive and ours sharp. **Measured, the book's standards are fair
+> (`0.500` vs `0.500`) and OUR tails are the ones that miss.**
+
+## 2. 🔴 **AND THE BOOK BEATS THE MODEL EVERYWHERE, NOT ONLY ON TAILS**
+
+> *"**PrizePicks' pricing is the better forecast on every kind, both seasons. On standards the model
+> is worse than a flat `50%`.**"* ⇒ ⚠ **"Worse than a coin flip on standards" is the sentence that
+> should govern how this document's confidence layer is read** — *the layer is well-built and
+> well-calibrated in its own terms (`§0.12-T22` and the sections above), and it is scoring a
+> probability that is, on standards, beaten by `0.5`.*
+
+## 3. 🔑🔑 **WHAT IT DOES *NOT* OVERTURN — and this matters for what to fix**
+
+| ✅ survives | evidence |
+|---|---|
+| **the model RANKS** | realized value climbs monotonically with its claim in **both** seasons — `0.89 → 1.155` and `0.86 → 1.13` |
+| **the calibration layer works** | *"calibration helps out of sample in both seasons, **and the larger the shift, the more it helps**"* |
+| **demons underpay as a CLASS** | actual `0.246` vs implied `0.267`; `0.257` vs `0.286` ⇒ **`−8%` to `−10%`** — *a genuine, exploitable asymmetry, just not the one the hypothesis predicted* |
+
+> ⇒ 🔑 ***The defect is CONFIDENCE, not ORDER.*** **Only `~21%` / `~17%` of the top bucket's claimed
+> edge materialized — an over-statement of roughly `5×`.** *That is a shrinkage problem with a known
+> sign, and this document's final-scoring layer is where it would be applied.*
+
+## 4. 🔴🔴 **AND IT INDICTS THE `0.15` PLATT GUARD, WHICH LIVES IN THIS LAYER'S RECIPE**
+
+> **The recipe discards Platt shifts above `0.15`.** **The measurement says the larger the shift, the
+> more it helps** — with average shifts of `0.09–0.15` and **a max of `0.72`, ≈ `17` points at even
+> odds** *(`T23` SEG `265`, open decision 1)*.
+> ⇒ 🔴 ***A guard that discards exactly the corrections that help most, on a layer already measured as
+> `5×` over-confident.*** ⚠ **`SEG 265` records this as an OWNER DECISION and says the deciding
+> measurement is already prepared** — *it is not an oversight, it is a live, queued question.*
+
+---
+
+> 📌 **TIERS**: ⚠ **AS STATED IN `T23`** — all figures; quotations verbatim; **not re-run by this
+> sweep**. 🔴 **`NOT RECORDED`** — whether the `≥1.40` strategy survives slip-level compression *(the
+> author's own caveat says leg-level value **overstates big demons**, and those picks are
+> `58%`/`80%` demons)*. ▶ **Full record and the other four findings: `§T23.2`; item `T23-1`.**
