@@ -2199,7 +2199,7 @@ shift, the season-consistency rule, the `finest_level_only` shift fix. Their `n`
 
 | `decided_by` | decisions | `sample_size` | in the twelve |
 |---|---|---|---|
-| `backtest_classification_v9` · `backtest_v15_v17` · `backtest_v14_holdout` · `backtest_v17` | **`5` of the `8`** | 🔴 **`272,909`** | **`0` of `12`** ✅ *re-checked: the prefix `272,9` returns `0`* |
+| `backtest_classification_v9` · `backtest_v15_v17` · `backtest_v14_holdout` · `backtest_v17` | ~~`5`~~ → **`6` of the `8`** ⚠ | 🔴 **`272,909`** | **`0` of `12`** ✅ *re-checked: the prefix `272,9` returns `0`* |
 | `backtest_minutes_model_v1` *(blowout states)* | `1` | 🔴 **`54,000`** | **`0` of `12`** ✅ *the two `54,0` hits are inside `1,454,044`* |
 | `backtest_minutes_model_v1` *(B2B)* | `1` | **`8,000`** | ⚠ **`0` for THIS meaning** — *every `8,000` in the twelve is `nba_team.lineup_profile`'s row count; a collision, not coverage* |
 
