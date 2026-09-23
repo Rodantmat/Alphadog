@@ -1834,6 +1834,45 @@ OPEN_ITEMS). Set by `ARCHIVE_LABEL`, which **defaults to `routine`**.
 
 ---
 
+## X–Z
+
+*Added `2026-09-23`, `§F7.4`, **as a correction to this same pass's own index note**, which had
+just written that `X`/`Y`/`Z` "still have no body block" and put the count at `5`. **`§Z` carries
+`10`** *(`RULE 56` — record `n`; `RULE 53` — a correction is not complete until the corrected value
+is grepped)*. ⚠ *Documenting a gap I could have closed in ten minutes is not documentation, it is
+deferral wearing documentation's clothes. **The body range is now `A … Z`, complete.***
+
+**the `x_*` expected-rate family** · T3 *(`x_ft_pct` also T10)* · OPEN,SUM,WRK · `x_minutes` ·
+`x_pace` · `x_pts_100` · `x_ast_100` · `x_fg_pct` · `x_fg3_pct` · `x_ft_pct` — **seven columns of
+expected per-100/per-game rates**, the projection layer's own priors. 🔑 **`x_minutes` is the
+corpus's most-cited kill**: *the DARKO discard — `9 of 24` columns, `10` hits — is one of the **five
+kills logged before writing** under `RULES 26`/`28`.* ⇒ *a killed candidate is recorded with its
+hit count, not silently dropped; that is what makes a later reader able to tell "we tried it" from
+"we never thought of it."*
+
+**`year_founded`** · T2, T6, T10 · DB,OPEN,SUM,WRK · 🔑 **The two-line worked example of a
+repair that looks obvious and fails.** *`scrape_nba_stats_arenas.py:60-61` collects `owner` and
+`year_founded`; `alphadog-v2-nba-static-arenas.js:71` writes **five** source-derived columns and the
+table has no column for either. The obvious fix — add the columns, backfill from `raw_json` — dies
+on measurement: **across all `30` rows `raw_json ? 'owner'` matches `0` and `raw_json ?
+'year_founded'` matches `0`**; the stored payload holds four keys (`team_id, arena_name,
+arena_capacity, city`) and is **double-encoded** besides.* ⇒ ⚠ **the payload predates the scraper
+that would have filled it — a backfill source must be dated, not assumed.** *(Verified `2026-09-21`,
+`T2` re-read pass 11.)*
+
+**`years_pro`** · T2 · DB,SUM · Seasons of NBA experience on the player record. *Listed here for
+completeness; it is a straight source column with no recorded dispute.*
+
+**`zero_officials_parsed_v3`** · T11 · OPEN,SUM · The alert code raised when the referee parse
+returns nothing. 🔑 **It fires `×3` alongside `games_recovered: 0` in a `patch_applied` block, and
+the three games are `known_empty_games` — the source itself is empty.** *Root cause recorded: the
+main loop checked `'rows is not None'` instead of truthiness, so an empty list read as success.*
+⚠ *`§T6.19a` resolves the three to specific dates. **All of this is already in five of the twelve** —
+noted because it is a standing example of the same fact being answered in several documents with no
+pointer between them, which `§F7.9` treats.*
+
+---
+
 *⤴ **`P–S (continued — research-standard structure)` used to sit here**, after `T–W`. Moved
 `2026-09-23` (`§F7.4`) to directly below `P–S`, where an alphabetical reader will actually reach it.
 This stub is the pointer, not a copy — `RULE 40`: a supersession records where the thing went.*
