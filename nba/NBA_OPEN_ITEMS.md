@@ -8,6 +8,13 @@ what you read when this block sends you there. **No row here is a pointer alone:
 breaks and what closes it.** The proof for every row is in this file under its own ID; search the
 quoted ID, never a line number.*
 
+🗂 **WHICH FILE AM I IN, AND WHICH ARE THE TWELVE?** *(`§F7.6`, `2026-09-23`)* — **`nba/` holds `32`
+markdown files; `12` are the mandated set and nothing used to say which.** **The authoritative
+register is `NBA_MASTER_SUMMARY.md` → `🗂 THE FOLDER REGISTER`**: `12` mandated · `6` live-and-standing
+· `8` source-of-record *(including the `22` lessons of `NBA_LESSONS_LEARNED_FROM_MLB.md` Parts G and
+H that **are not in the twelve** — an open item on this page)* · `5` historical · `1` out of scope
+*(`PP_PAYOUT_FINDINGS.md`, the concurrent session's)*.
+
 ⚠ **Re-derive before acting.** *Counts and dates here were true at the commit that wrote them. The
 items themselves are stable; the tallies are not. `§F6.19`: re-derive sections, never chase bytes.*
 >
