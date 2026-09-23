@@ -4,18 +4,14 @@
 proven unavailable and how, the formulas and conversion logic, the tests run, slip examples, and what
 the calibration of a multiplier would require.
 
-~~**The headline**: **PrizePicks per-leg multipliers are NOT on any public surface.** This was
-established exhaustively, not assumed. Underdog, Sleeper, Fliff and Betr do expose them.~~
+**The headline.** 🟢 **PrizePicks per-leg multipliers ARE obtainable** — `POST
+https://api.prizepicks.com/game_types` returns a payout quote for a specific leg combination
+*(`§0.9-T22`)*. **The pricing law is known**: multiplicative, partner-independent, compressed above
+`9.1×` *(`§0.10-T22`)*, **house edge a flat `25%` on both slip types** *(`§0.12-T22`)*.
 
-🟢🟢🟢 **THE HEADLINE, CORRECTED `2026-09-23` (`§T22.1`) — BOTH SENTENCES ABOVE ARE NOW FALSE.**
-**PrizePicks per-leg multipliers ARE obtainable: `POST https://api.prizepicks.com/game_types`**
-returns a payout quote for a specific leg combination *(found `2026-09-20`; `§0.9-T22`)*. **The
-pricing law is known** — multiplicative, partner-independent, compressed above `9.1×` *(`§0.10-T22`)*
-— **and the house edge is a flat `25%` on both slip types** *(`§0.12-T22`)*.
-🔴 **And the second sentence is wrong too, measured**: of *"Underdog, Sleeper, Fliff and Betr"*, only
-**Sleeper** is complete *(`100%`)*; **Underdog is `44.03%`**; 🔴 **Fliff and Betr are at `0.00%`**
-*(`0` of `1,394` and `0` of `780,765`)* — while **`pick6`, named here not at all, is `94.89%`**
-*(live, `2026-09-23T02:22:06Z`; `§0.9-T22` §4)*.
+**Per-app coverage, live `2026-09-23`:** **Sleeper `100%`** · **`pick6` `94.89%`** · **Underdog
+`44.03%`** · 🔴 **Fliff `0.00%`** *(`0` of `1,394`)* · 🔴 **Betr `0.00%`** *(`0` of `780,765`)*.
+*(`§0.9-T22` §4. **Re-derive before quoting** — these move.)*
 
 ---
 
