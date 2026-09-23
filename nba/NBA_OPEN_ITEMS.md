@@ -13659,7 +13659,10 @@ neither is visible from the other.***
 
 ✅ **THE FIX IS A CHOICE, NOT AN INVESTIGATION — all four are one edit:** lower the October gate ·
 make the threshold month-aware · derive it from the slate · **or accept twelve red nights knowingly
-and tell whoever watches the builds.** ***What must not happen is meeting it unprepared on
+and tell whoever watches the builds.** 🔴 *(**CORRECTED 2026-09-23, §T20.136** — not twelve:
+**every night of the season**, because `baseline_history has today` fails before this gate on every
+date (`T20-6`). All four fixes remain right and remain one edit; none turns the build green until
+`T20-6` is resolved.)* ***What must not happen is meeting it unprepared on
 2026-10-20.***
 
 ✅ **AND A DERIVED GATE IS AVAILABLE, MEASURED** (§T20.52 clause (iii)): over the **152** post-cutover
