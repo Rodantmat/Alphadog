@@ -20,7 +20,8 @@ pricing law is known** — multiplicative, partner-independent, compressed above
 ---
 
 > # 📑 **INDEX — `NBA_MULTIPLIERS.md`**
-> **`122` sections · `141,719` bytes · `2,045` lines · built `2026-09-23`.**
+> **~~`122`~~ → `137` sections · ~~`141,719`~~ → `150,999` bytes · ~~`2,045`~~ → `2,125` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS.** *`§T20.22` measured `6` of `16` line-number
 > pointers in these files rotting within a day of being written; heading text survives every append.*
