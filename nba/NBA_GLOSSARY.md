@@ -9,6 +9,11 @@ context, and which document section. Any material term appearing more than once 
 > **~~`39`~~ → ~~`44`~~ → `46` sections · ~~`85,359`~~ → ~~`89,948`~~ → `101,134` bytes · ~~`1,639`~~ → ~~`1,709`~~ → `1,858` lines · built `2026-09-23`, census corrected same day (`§F2.14`), **re-derived `2026-09-23` after `§F7.4` repaired the body.**
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> rotted within a day)*. **Search for the quoted letter-block heading or the term in bold.**
+> *Added `2026-09-23`, `§F7.4` — this file was one of two of the twelve whose index carried no
+> anchor rule, and it is the file whose line numbers move most, because every new term shifts them.*
+>
 > ⚠⚠ **THIS FILE CONTAINS *TWO* A–Z STRUCTURES AND THEY ARE NOT THE SAME THING.** *That is the one
 > fact you need before using it, and nothing in the file said so:*
 >
