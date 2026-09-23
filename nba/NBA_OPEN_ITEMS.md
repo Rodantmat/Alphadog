@@ -14017,6 +14017,43 @@ dates *(worst observed 5,699 — a 12% margin, which is thin and is said to be t
 
 ---
 
+## T10-F1 · **NEW · MEDIUM** · three commissioned enrichment factors appear NOWHERE in the twelve, and nothing records whether they were dropped
+
+*Filed 2026-09-23 by the full transcript re-sweep (`§F2.2`). **This is a TRANSFER gap, not a
+discovery** — the material is in `nba/NBA_ENRICHMENT_FACTOR_LOCK.md`, which is not one of the twelve.*
+
+**`T10` pass 1 locked an owner-directed factor taxonomy — *"find every factor that gives any edge at
+the enrichment level"*. Re-derived from that file 2026-09-23: **26 codes** (`A1`–`A9`, `B1`–`B5`,
+`C1`–`C4`, `D1`–`D4`, `E1`–`E4`). `NBA_FINAL_SCORING_CALIBRATION.md`'s verdict table carries **8**.
+
+🔴 **Absent from all twelve, by code AND by description:**
+
+| | | the lock's own note on feasibility |
+|---|---|---|
+| **`A7` `trade_new_arrival_window`** | games 1–5 after a trade or signing | grouped with work the lock calls **"measurable now"**; data path *"game logs team changes (have) + transaction wire (dates)"* |
+| **`E2` `team_flux_penalty`** | trade window, new coach, ≥2 rotation players out → **variance up** | — |
+| **`E3` `sample_thinness`** | rookies / new arrivals with **no carryover baseline** | — |
+
+🟡 **Present in substance, missing only the code — these need a CROSS-REFERENCE, not prose:**
+`C2` `line_movement` *(“line movement” in 6 of the twelve)* · `D3` `altitude_venue` *(“altitude” in
+7)* · `D4` `national_tv_marquee` *(“national-TV” / “marquee” in `MASTER_SUMMARY` / `OPEN_ITEMS`)`.
+
+⚠ **THE ITEM IS THE SILENCE, NOT THE OMISSION.** A candidate list is *supposed* to shed candidates,
+and `A5` in the same taxonomy was tested and rejected on the record. **What is `NOT RECORDED` is
+whether `A7`, `E2` and `E3` were ever considered and dropped, or simply lost between the lock and
+the twelve.** *This sweep found no record either way.*
+
+⚠⚠ **RULE 54 carried from `§F2.2`:** the finding came from a **bare code-token count**, which is
+weak evidence — a factor documented under its name and never its code scores zero and looks absent.
+**Each of the six was re-checked by description before this item was filed, and that re-check
+reclassified three of them.** 📌 *The code count alone would have published three false absences.*
+
+**▶ What would close it:** for each of `A7`/`E2`/`E3`, a line in the twelve saying **tested and
+rejected**, **deferred with a reason**, or **still open** — and for `C2`/`D3`/`D4`, the code beside
+the words already there. ⚠ **This sweep changed nothing and tested nothing; read-only.**
+
+---
+
 ## T20-12 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, LIVE IN ELEVEN DAYS · THE PIPELINE'S PYTHON LAYER HARDCODES PST — `p3_cut` IS AN HOUR LATE FOR EVERY DAY OF DAYLIGHT SAVING TIME**
 
 **Severity 6 of 7.** **Found T20 pass 45 (§T20.50), 2026-09-22.** **Evidence: VERIFIED** — file text
