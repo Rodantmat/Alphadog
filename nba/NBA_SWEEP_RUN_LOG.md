@@ -3173,6 +3173,39 @@ classes.** *An out-of-scope segment phrased without any of those tokens was read
 **`NOT DONE`: the `59` `github_put_file` payloads were not read** *(self-authorship, `§T21.10`
 mechanism `3`)*.
 
+## ✅✅ **T23 IS CLOSED — `23` passes, CLEAN `3/3`, `2026-09-23`**
+
+*`19` passes this session (`5`–`23`) on top of `4` prior. **`938` segments · `722`
+uncovered-substantive · `187` out of scope (`25.9%`) · `535` in scope.***
+
+### The ten findings
+
+| § | finding |
+|---|---|
+| 🔴🔴🔴 **`T23-2`** | **`P2` AND `P3` HARDCODE `2025-26` AS THEIR DEFAULT SEASON.** *`P3` will find no model ladder on a `2026-27` date and **abort** — no scores, and therefore no paper-trading picks, from opening night.* ✅ **Re-verified against the live workflow files `2026-09-23`**: `p2` lines `31`, `128`, `274`; `p3` lines `38`, `205`; **`P1` clean.** ⚠ **Neither pipeline has a cron yet, so the first scheduled run IS the first failure.** ⇒ `ACT ON THIS`, row `1c` |
+| **`§T23.5`** | 🔴🔴 **`CREATE UNIQUE INDEX IF NOT EXISTS` inside a write transaction takes a full table lock.** `144` of `325` dates scored, `181` deadlocked under `8` parallel jobs. 🔑 ***"`P3` scores one date alone, so this never showed."*** **And the audit it prescribed was RUN: `17` files carry the pattern, `7` of them in `P2`/`P3`.** ⇒ *the production schedule is a narrower test than the recovery path that depends on it* |
+| **`§T23.6`** | 📊 **Five slip-level laws**: the **`18.5×` payout cap** *(implied `p ≈ 0.072`, found only because WNBA's tail reached it; our pricing allowed `306×`)* · the slip exponent `a: 1.008 → 1.069` · **`5`- and `6`-pick all-standard tables verified**, which the standards backtest had assumed · `Less` as the exact complement with its own **`1.7×`** floor · **`fantasy_score` prices FIXED and lines MOVING — the exact inverse of `§T22.9`** |
+| **`§T23.7`** | 🔴 **PrizePicks' standard line IS the sportsbook consensus** *(threes, blocks, steals, turnovers match EXACTLY)* — *and that independence is what keeps a back-simulated backtest honest* · **every line built from ONE projection per player** · the fixed-rung spacing schedules *(`gap = line × 0.07 + 3.2` reproduces all `32` WNBA ladders)* · the fantasy reconstruction validated on `1,315` player-nights at `51.9%` · 🔴 **fantasy goblins hit `73.5%` against the `~65%` their price implies** |
+| **`§T23.10`** | 📊 **The calibration shift table** — `8` props × `1,254` cells × `24` as-of dates, max `0.703` log-odds ≈ **`16.9` pp**. 🔴 ***The ladder recipe discards shifts above `0.15`; the as-of builder has no such guard*** ⇒ owner decision. Plus the claimed-vs-realised table and **the shrinkage blend that improves calibration and changes not one pick** |
+| **`§T23.11`** | 💾 **`final_hp` written `13.4×` more times than it holds rows** · `baseline_history` carrying **`1,199,494` dead tuples**, unvacuumed `9` days · **`RULE 30` demonstrated inside the table itself** — `n_live_tup` and `count(*)` disagree by `19,739` on `board_scored` |
+| **`§T23.13`** | 📏 The scorer's docstring quantifies the internal-ladder exclusion at **`~140k` rows/day** |
+| **`§T23.16`** | 🔴🔴 **Two silent calibration bugs**: **five of eight props were NEVER calibrated** *(a naive name-strip; `3,639 → 9,904` cells)*, and **`60` of `348` days got the WRONG PHASE's corrections** *(`17.2%`)*. 🔑 *Two pieces of CODE described one concept differently — neither wrong alone, which is why nothing failed* |
+| **`§T23.18`** | 📢 ***The builder printed `wrote 0 as-of cells` as it wiped the table, the certifier turned the job red, and nobody followed up.*** **This corpus's "alarm that fires unread" case, dated, with the log line.** Plus `market_to_prop`'s measured cost: **`pra` alone is `15,156` legs on one date** |
+| **`§T23.20`** | 🔑 **`board_outcomes`' empty `bookmaker` is a DESIGN PROPERTY** — *outcomes are graded once per player, line and side for every app* — **and a PrizePicks filter on it silently excluded every result** |
+
+### 🔑 What `T23` changes about the project's shape
+
+***Two of the ten are season-critical and neither was known this morning.*** *`T23-2` stops scoring on
+opening night; `§T23.5` stops any catch-up run that would recover from it.* 🔴 **Together they are a
+single failure mode with no manual escape**: *the pipeline cannot run on the new season, and the tool
+for re-running it deadlocks.*
+
+⚠ **`RULE 54`.** *`WINDOW`: `T23` at `2026-09-23` against the twelve at that day's `HEAD`, threshold
+`0.40`, same `oos.py` filter as `T22` **with the same shape-list limitation** *(`§T22.12`)*.
+**`NOT DONE`: the `39` `github_put_file` payloads and the `102` `github_patch_file` payloads were not
+read** — they write `PP_PAYOUT_FINDINGS.md`, which is out of scope by standing rule. **`NOT DONE`:
+`§T23.16`'s two bug durations** — the evidence was deleted by the wipe they were found alongside.*
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
