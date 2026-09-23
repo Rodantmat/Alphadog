@@ -1908,6 +1908,44 @@ is genuinely forecastable from role"*:
 🔑 ***"weighting slips toward VOLUME would be weighting toward the LEAST EDGE."*** ⚠ **This is a slip-
 construction constraint, and it points the opposite way from board depth.**
 
+> ### 🔑 **§F6.21 — THE RULE THAT PRODUCED THE THREE PENALTIES, which the twelve did not carry**
+>
+> *Added `2026-09-23`. Source: **LIVE** `nba_config.classification_config`,
+> `config_key = 'prop_reliability_audit_2026_09_13'`. **The three penalty values above — `oreb −0.1`,
+> `fantasy_score −0.3`, `double_double −0.4` — are recorded in this document. The formula that
+> yields them is in `0` of the twelve.** `RULE 55`.*
+>
+> > ***"`penalty_pp` = the prop's n-weighted ECE minus the median ECE of the certified set
+> > (`0.20 pp`). **Derived, never declared.**"*** — `penalty_rule`, `VERBATIM`
+>
+> | prop | `n` | ECE pp | − median `0.20` | ⇒ `penalty_pp` |
+> |---|---|---|---|---|
+> | `oreb` | `556,277` | `0.28` | `0.08` | **`0.1`** |
+> | `fantasy_score` | `994,879` | `0.41` | `0.21` | **`0.3`** |
+> | `double_double` | `47,912` | `0.57` | `0.37` | **`0.4`** |
+>
+> 🔑 ***"Derived, never declared" is the load-bearing half*** — **the penalty is a measured distance
+> from the certified set's own median, so it re-derives whenever the set is re-scored and no one ever
+> chooses a number.** 📌 *The same discipline as the `variation_bands` rule and the `prior_strength`
+> constants: the corpus's recurring standard is that a constant which cannot be re-derived from
+> stored data is not allowed to exist.* ⚠ **`RULE 54`: the three rows above reproduce the published
+> penalties to the stated precision, but **the rounding rule is `NOT RECORDED`** — `0.21` → `0.3` and
+> `0.08` → `0.1` are consistent with rounding up to one decimal, which this pass infers rather than
+> reads.
+>
+> ⚠ **AND THE PRINCIPLE BEHIND THE AUDIT, also in `0` of the twelve:** *before it ran, **TEN props —
+> `5.4M` rows, a third of the table — had NO verdict at all**, because the scorer silently skipped
+> anything without a matching box-score column (the `7` period props, `fantasy_score`,
+> `double_double`, `stocks`).* ⇒ 🔑 ***"Unverified is not the same as fine. Extending it caught TWO
+> props that would have shipped as certified."*** 📌 *Another instance of this corpus's central
+> failure shape — **a skip that logs nothing reads as a pass** — and the same remedy as `§F6.20`'s
+> `|| echo failed`: make the absence detectable rather than fix the thing that was absent.*
+>
+> ✅ **One figure completes the lift table above**: `threes_made` **`23.9%`** *(`0` of `12`)*, and
+> `rebounds_q1` **`25.1%`**. *And the period props were graded by wiring the quarter box scores
+> (`nba_player_game_log_q{1..4}_{season}.json`) into the scorer: **`6` certified outright,
+> `assists_q1` at a rounding-level `−0.0 pp`.***
+
 ---
 
 ## 0b. THE FOUNDING SCOPE DECISION — reuse vs rebuild
