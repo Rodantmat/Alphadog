@@ -29444,6 +29444,19 @@ P2 run. An operator would run P2, watch it succeed, re-run P3, and abort identic
 guard that fails correctly and explains incorrectly costs a full debug cycle at 1:15 PM on the first
 game day.**
 
+> 🔴🔴 **CORRECTED 2026-09-23 (T20 pass 129, §T20.134) — THE HEADLINE HOLDS, BOTH OF ITS CLAUSES DO
+> NOT.** *Written 2026-09-22; kept in full.* ✅ **"The diagnostic names the wrong cause" is RIGHT, and
+> the debug-cycle cost is RIGHT.** 🔴 **But `"the true cause is the season constant"` is WRONG** — the
+> true cause is that **`nba_score.baseline_history` is written by no pipeline** (`§T20.37` / `T20-6`),
+> so the `game_date` predicate matches nothing on `2026-10-20` **whatever `BS_SEASON` says**.
+> ***Correcting the constant to `2026-27` produces an identical abort*** — *this entry's own proposed
+> remedy would have cost the SECOND debug cycle it warns about.* 🔴 **And `"run P2, watch it
+> succeed"` is WRONG** — `P2` cannot succeed: its certifier gates on `baseline_history has today`
+> with `CERT_STRICT` defaulting to `1`, so **`P2` goes RED at step 19 of 19 on that same night**, and
+> the operator never reaches the re-run this sentence describes. 📌 **Full step-by-step:
+> `NBA_RECIPE.md` `STEP 13`. Measured control: `board_scored` and `baseline_history` cover the same
+> `325` dates, `0` in each direction (live `2026-09-23T01:19:44Z`).**
+
 ## 4. 📋 THE READINESS TABLE — *new vs already on file (rules 26/28)*
 
 | # | blocker | status |
