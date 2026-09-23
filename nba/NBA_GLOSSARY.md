@@ -3,6 +3,66 @@
 **Purpose.** When a term comes up and you need the source, this tells you which transcript, which
 context, and which document section. Any material term appearing more than once belongs here.
 
+---
+
+> # 📑 **INDEX — `NBA_GLOSSARY.md`**
+> **`39` sections · `85,359` bytes · `1,639` lines · built `2026-09-23`.**
+>
+> ⚠⚠ **THIS FILE CONTAINS *TWO* A–Z STRUCTURES AND THEY ARE NOT THE SAME THING.** *That is the one
+> fact you need before using it, and nothing in the file said so:*
+>
+> | | structure | what it is | when to use it |
+> |---|---|---|---|
+> | **1** | **`§Z — THE COMPLETE TERM INDEX`** *(added `2026-09-22`, `T19` pass 1)* — headings `A` … `Z`, **`27` letter blocks** | **A flat lookup: term → where it is defined** | ✅ **START HERE.** You have a term and want to find it. |
+> | **2** | **The main body** — headings `A`, `B`, `C`, `D`, `E–F`, `G–I`, `L–N`, `P–S`, `T–W`, plus **`P–S (continued — research-standard structure)`** and **`PENDING`** | **The definitions themselves**, grouped into `9` uneven letter ranges | You have found the term and want the full entry. |
+>
+> 🔴 **NOTE THE GAPS IN STRUCTURE 2**: *the body's ranges are `A`, `B`, `C`, `D`, `E–F`, `G–I`,
+> `L–N`, `P–S`, `T–W`.* ⇒ ***There is no `J`, `K`, `O`, `X`, `Y` or `Z` block in the body*** — **a
+> term starting with one of those is in `§Z`'s index and, if defined, inside another range's block.**
+> ⚠ **And `P–S` appears TWICE** — the second is subtitled *"continued — research-standard
+> structure"*, so **searching for a `P`–`S` term must check both.**
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | ✅ **to look up any term** | **`§Z — THE COMPLETE TERM INDEX`**, then the matching body block |
+> | **a definition for a term starting `A`–`D`** | body **`A`** / **`B`** / **`C`** / **`D`** |
+> | **`E`–`F`, `G`–`I`, `L`–`N`, `T`–`W`** | body **`E–F`** / **`G–I`** / **`L–N`** / **`T–W`** |
+> | ⚠ **`P`–`S`** | body **`P–S`** ***and* `P–S (continued)`** — *two blocks, check both* |
+> | 🔴 **`J`, `K`, `O`, `X`, `Y`, `Z`** | 🔴 **no body block exists** — use **`§Z`** to locate it |
+> | ⚠ **terms known to be missing** | **`PENDING`** |
+> | **the transcript IDs referenced throughout** | the **Transcript IDs** table, immediately below |
+> | **how to pull a term's source text from a transcript** | **How to use it**, below — *the `grep -o` recipe* ⚠ *see the caveat next* |
+>
+> 🔴🔴 **CAVEAT ON THE `grep` RECIPE BELOW, MEASURED `2026-09-23`:** *it points at
+> `/mnt/transcripts/<file>.txt`.* **`nba/transcripts/` in the repo holds only `README.md` and
+> `journal.txt` — no transcript has ever been committed** *(`T21-1` in `NBA_OPEN_ITEMS.md`)*.
+> ⇒ ***The recipe works only in a session that already has the transcript files locally. For anyone
+> else, the pointer does not resolve.*** **This is the open blocker `T21-1` carries.**
+>
+> ## 📋 THE FILE'S TWO HALVES
+>
+> ### ✅ **A · `§Z` — THE COMPLETE TERM INDEX** *(the lookup layer)*
+> **`27` letter headings, `A` through `Z`.** *Each entry names the term and points at where it lives.*
+> ⇒ **This is the fastest route to anything in the file, and it is the only structure covering the
+> whole alphabet.**
+>
+> ### 📘 **B · THE BODY — THE DEFINITIONS** *(`9` ranges + `2` extras)*
+> | block | covers |
+> |---|---|
+> | **`A`** · **`B`** · **`C`** · **`D`** | one letter each |
+> | **`E–F`** · **`G–I`** · **`L–N`** · **`T–W`** | merged ranges |
+> | **`P–S`** | ⚠ **first of two** |
+> | **`P–S (continued — research-standard structure)`** | ⚠ **second `P–S`** — *the research-standard vocabulary* |
+> | **`PENDING`** | ⚠ **terms identified but not yet defined** |
+>
+> 📌 **WHAT THIS FILE IS MEASURED TO BE MISSING** *(recorded at `§T20.?` and re-checked `2026-09-23`)*:
+> ***the glossary has no content commit covering the sweep of `T12` through `T18`*** — *central terms
+> from those transcripts (`board_tiers_v2`, `confidence_model`, `certify_pipeline`, `CONF_NEUTRAL`,
+> `measure_report_cutoff`, `f_phase`) scored **`0` occurrences** when last audited.* ⚠ **Treat an
+> absence here as "not yet written", not as "not a term".**
+
 **How to use it.** Find the term, note the transcript ID, then:
 `grep -o "<term>[^\"]\{0,300\}" /mnt/transcripts/<file>.txt`
 
