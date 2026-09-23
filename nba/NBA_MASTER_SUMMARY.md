@@ -41292,3 +41292,76 @@ remain in the committed file and would land the moment a column is added.** ▶ 
 the sweep talking about itself.** *That is not a defect in the transcript — it is what a
 documentation session IS. But it means the coverage percentage massively overstates the work left,
 and the only honest way to hand over is to decompose it and say so.*
+
+---
+
+# §T22.1 — 🟢🟢🟢 **THE MULTIPLIER HUNT WAS SOLVED ON `2026-09-20`, AND THE DOCUMENT THAT OWNS THE SUBJECT STILL SAID IT WAS IMPOSSIBLE**
+
+*T22 pass 1, 2026-09-23. **The deliverable went into `NBA_MULTIPLIERS.md`, not here** — clause (ii),
+pre-registered, because `§T21.3` measured that `MASTER_SUMMARY` + `OPEN_ITEMS` are `75.4%` of the
+twelve and the sweep's reflex is what made them so. **This section is the pass record; the content
+is at `NBA_MULTIPLIERS.md` `§0.9-T22`.***
+
+## 1. 📋 POPULATION — *pinned `2026-09-23T02:20:53Z`*
+
+**`T22`: `897` segments · `500` uncovered-AND-substantive-non-tool · `17` of them the OWNER's.**
+*The owner stratum was read first, as `§T21.3` established.*
+
+## 2. 🔑🔑🔑 THE RESULT — **a deferral discharged by its own exit condition, and a document that never heard**
+
+| | |
+|---|---|
+| **`NBA_MULTIPLIERS.md` `§0.2g` said** | *"DFS platforms generally do **NOT** publish their own per-leg multiplier via API — expect to build a **MANUAL, ONGOING** multiplier-observation study… **Budget for this as ONGOING WORK, not a one-time task.**"* |
+| **`§0.7-T18` item 7 said** | *"Every route that does not require an authenticated session is closed. **The remaining one is the owner's own browser**… add the FIRST leg → CLEAR the list → add the SECOND leg. **Whatever fires in that final step is the answer.**"* |
+| 🟢🟢 **`T22` SEG `25`, `2026-09-20`** | *"when the second leg went in, **exactly one non-analytics call fired — `game_types`, 2.1 kB**."* |
+
+⇒ ✅ ***The exit condition was written on `2026-09-19` and met on `2026-09-20`.*** 🔑 **The habit of
+writing a deferral's exit condition is what made this cost one day instead of a permanent study.**
+⚠ **And the document did not know**, for the ordinary reason that `T22` did not reach this sweep
+until today — **which is the general hazard of a corpus built from transcripts: it is exactly as
+current as its newest source.**
+
+## 3. ✅ WHAT WAS WRITTEN, AND WHERE *(clause (ii): `≥3` into the subject-matter documents — `5` delivered)*
+
+**All into `NBA_MULTIPLIERS.md`:**
+1. **`§0.9-T22`** — the endpoint *(`POST /game_types`, its body, its response shape, `payouts_srp`)*, **why it quotes rather than publishes**, why three prior probes missed it *(they guessed anonymous `GET`s; it is a `POST`, behind DataDome + Cloudflare)*, `league_id=7` = NBA, `milestones` `404`.
+2. **`§0.9-T22` §4** — 🔴 **the `multiplier`-column census**, which closes this document's own *"Coverage per app is unverified"* note.
+3. **`§0.9-T22` §5** — **the owner's four design decisions in his own words**, all `0/0`.
+4. **`§0.9-T22` §6** — the security decision *(refuse to server-side the owner's cookies)*, with both of its reasons.
+5. **`§0.2g` and `§0.7-T18` item 7 marked at source** — struck through, superseded with both dates, originals kept whole *(rule 40; `§T21.5`'s additive anchoring)*.
+
+## 4. 🔴🔴 CLAUSE (iv) — **THE LIVE CHECK, AND IT CORRECTS THE DOCUMENT IN BOTH DIRECTIONS**
+
+*`nba_market.board_snapshots`, `2026-09-23T02:22:06Z`.* **`§0.2g` names *"Underdog, Sleeper, Fliff and
+Betr"* as exposing their multipliers.** Measured:
+
+| ✅ **sleeper `100.00%`** | ⚠ **underdog `44.03%`** | 🔴 **fliff `0.00%`** *(`0`/`1,394`)* | 🔴 **betr `0.00%`** *(`0`/`780,765`)* |
+|---|---|---|---|
+
+> ⇒ **Of the four named, one is complete, one is under half, and two are at zero.**
+> 🟢 **And the list omits its best member: `pick6` is `94.89%` populated with `415` distinct values —
+> the richest multiplier source in the database, named in `§0.2g` not at all.**
+> ⚠ *Whether Fliff/Betr's zero is the app or the scraper is **`NOT RECORDED`** — the same column
+> either way, and the distinction is a scraper question this pass does not answer.*
+
+## 5. 📋 CLAUSE SCORING
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `RULE 52` vs `bands_p132.json`, **pre-declared uninformative** | ✅ as predicted — *`judge20.py` scores `T20`; `judge21.py` is the instrument that reads `T22`* |
+| **(ii)** | **≥ 3** findings written into `MULTIPLIERS`/`GOBLIN_DEMON`, **not the summary** | ✅ **HIT — five, and this section carries none of the content** |
+| **(iii)** | every `T22` figure tiered, none written bare | ✅ **HIT — ✅ VERIFIED for the census · ⚠ AS STATED IN `T22` for the endpoint and quotations · 🔴 NOT RECORDED for the Fliff/Betr cause** |
+| **(iv)** | **≥ 2** confirmed live | ✅ **HIT — the census is `14` bookmakers in one `SELECT`, and it falsified part of the document** |
+| **(v)** | `pp_*` objects and the other chat's files untouched | ✅ **HIT — not queried, not read, not referenced as sources** |
+| **(vi)** | stop if the owner stratum yields nothing on file | ✅ **did not fire — four owner decisions, all `0/0`** |
+| **(vii)** | `RULE 51` last | ✅ **`0/0`: the price-id design · the owner's power/flex pairs · `payouts_srp` · `keep my million` · *"do not automatically flag"*** |
+
+▶ **`T22-1` filed** — *"the keep my million board in underdog"*, an owner request with **`0` mentions
+anywhere in the twelve**. *Low severity, filed because an unrecorded request cannot be declined or
+deferred, only forgotten.*
+
+📌 ***The lesson, and it is the strongest argument yet for the new material:*** **the document that
+owns a subject was confidently wrong about it, and had been for four days, because the evidence
+lived in a transcript nobody had.** *`§T21.2` measured `T22` at `97.0%` uncovered. **The first pass
+into it overturned two sections and corrected a table.** That ratio will not hold — but it says what
+the remaining `95%` is worth reading for.*
