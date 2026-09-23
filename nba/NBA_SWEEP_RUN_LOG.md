@@ -1761,7 +1761,10 @@ owner figures are `owneraudit.py` + the phrase test at `§F3.2`; `hb` is the hig
 | enumeration audit | ✅ **8 / 8 populations MATCH** | `§F2.11` — `nba/*.md` `32` · docs-read `30` · mandated `12` · workflows `40` · NBA schemas `14` · base tables `368` · props `30` · `worker_definitions` `21` |
 | 🔒 **credential-shape scan, the twelve** | 🔴 **`1` live key found, REDACTED** | `§F2.12` — and the repo-wide scan (`969` files, `632 MB`) found **nothing else** |
 | 🔒 credential census, the transcripts | ✅ measured | `§F3.3` — `16` distinct values in `4` of `25` files; **none ever committed** |
-| total size | **`5,988,026` bytes** | `§F2.15` |
+| **coverage BY STRATUM, the brief's own reading order** | ✅ **measured for the first time** | `§F5.1` — and 🔪 **stratum 2 does not exist from `T4` onward** (`§F5.2`) |
+| the surviving reasoning blocks | ✅ **all `63` absent ones adjudicated** | `§F5.3` — **4 architectural ORIGIN reasons recovered**; `§F5.4` — one changes what `§T8.33b` implies |
+| **file census — workers and scripts** | 🔴 **`7` of `21` workers · `27` scripts named in `0` of the twelve** | `§F5.5`; `F5-1` filed, and its factual half **closed by live audit** |
+| total size | **re-taken at the end of `§F5`** | see `§F4.3c` |
 
 ## §F4.3 — 🔴 **NOT CERTIFIED, and why — this is part of the certificate**
 
