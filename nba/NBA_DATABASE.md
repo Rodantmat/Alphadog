@@ -24,6 +24,8 @@ transcript. Where a table was altered later, the change is noted with its transc
 > | if you need… | go to |
 > |---|---|
 > | 🔴🔴 **what actually WRITES to this database, and when** | **`THE TRIGGER MAP`** *(first section)* |
+> | 🔴 **can we capture the full Underdog / Sleeper ladder, all variations?** *(asked by the owner in `T12` and `T13`, answered nowhere until 2026-09-23)* | **`§F3.5`** — *the tables exist, carry multiplier columns, and hold `0` multipliers and `0` NBA rows* |
+> | 🔴 **the fourth live 2-hour board cron — MLB-only, and still running** | **`§F1.2` correction block** *(in the `routine`-label section)* |
 > | **the schema for a layer** | `nba_ref` **`§1`** · `nba_stats`/`nba_team` **`§1b`** · weekly differential **`§1c`** · `nba_config` **`§2`** · tiering config **`§2b`** · `nba_control` **`§3`** · `nba_score` **`§4`** · `nba_market` **`§5`** · other `nba_stats` **`§6`** |
 > | 🔑 **the two universes** *(the split everything else assumes)* | **`§0`** |
 > | 🔴 **the storage incident and the shrink that fixed it** *(since consumed six times over)* | **`§0v`** |
