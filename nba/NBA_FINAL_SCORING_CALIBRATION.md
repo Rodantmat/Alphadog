@@ -4534,6 +4534,74 @@ optimises for.**
 
 ---
 
+# 0.17-T23. 📊 **§T23.10 — THE CALIBRATION SHIFT TABLE, AND THE GUARD THAT DOES NOT EXIST ON THIS BUILDER**
+*`T23` pass `10`, live queries `2026-09-21`, recorded `2026-09-23`.*
+
+**`nba_score.ladder_calibration_asof` after the rebuild: `8` props × `1,254` cells × `24` as-of dates.**
+
+| prop | cells | avg abs shift | 🔴 **max abs shift** | evidence legs (own) |
+|---|---|---|---|---|
+| **`points`** | `1,254` | **`0.1495`** | **`0.660`** | `5,934,872` |
+| **`pra`** | `1,254` | `0.1351` | `0.544` | `4,753,832` |
+| **`reb_ast`** | `1,254` | `0.1311` | 🔴 **`0.703`** | `2,687,849` |
+| *(the other five props)* | `1,254` each | `0.09`–`0.15` | — | — |
+
+🔴🔴 **A shift of `0.703` log-odds is roughly `17` percentage points at even odds.**
+
+### ⚠⚠ **THE FINDING IS NOT THE SIZE — IT IS THAT TWO PARTS OF THIS SYSTEM DISAGREE ABOUT WHETHER THAT SIZE IS ALLOWED**
+
+| | |
+|---|---|
+| **the ladder recipe** | 🔑 **discards shifts above `0.15`** |
+| **the documented MLB lessons** | 🔑 *reject implausibly large corrections* |
+| 🔴🔴 **the as-of calibration builder** | **has NO such guard** |
+
+⇒ ***The average shift on `points` — `0.1495` — sits a thousandth below the threshold the recipe uses
+to throw a shift away. The maximum is `4.4×` it.*** **Every one of those cells is applied.**
+
+📌 **RECORDED AS AN OWNER DECISION, not a fix** *(it is a code change to a live builder)*: **should the
+as-of builder carry the recipe's `0.15` guard?** ⚠ *`T23` put the question and did not answer it.
+**The two defensible answers point opposite ways** — the recipe's guard exists because a large shift
+usually means a bad fit, and the as-of builder's shifts are fitted on `2.7 M`–`5.9 M` legs per prop,
+which is exactly the case where a large shift might be real.*
+
+### 🔴 **AND THE SECOND HALF OF THE SAME PROBLEM: `2025-26` IS CALIBRATED ONLY FROM `2024-25`**
+*The final engine ran on **just one `2025-26` date**, so the second season **has no calibration
+evidence of its own**. Running the engine across `2025-26` fixes it — a heavier job.* 🔑 ***A
+calibration APPLIED to a season is not a calibration FITTED on it, and this document should not be
+read as claiming the latter for `2025-26`.***
+
+### 📉 **THE CLAIMED-vs-REALISED TABLE THE THRESHOLD SWEEP RESTS ON** *(threshold `1.25`)*
+| season | segment | legs | claimed | 🔴 **realised** | s.e. |
+|---|---|---|---|---|---|
+| `2024-25` | **demon** | `14,498` | `1.589` | **`1.1220`** | `0.0164` |
+| `2025-26` | **demon** | `42,212` | `1.674` | 🔴 **`1.0498`** | `0.0102` |
+| `2024-25` | **standard over** | `3,922` | `1.375` | **`1.1316`** | `0.0158` |
+
+⇒ ***Demons claim the most and realise the least, and the gap WIDENS in the season with `3×` the
+volume*** *(`1.589 → 1.122` becomes `1.674 → 1.050`)*. **Standard overs claim less and keep more.**
+🔑 ***That single contrast is why `T23-1`'s answer is "standards-only" rather than "no".***
+
+### 🔬 **THE SHRINKAGE TEST THAT SETTLED THE NEXT STEP — and why it changed no pick**
+| kind | `k` fit on `2024-25` | `k` if fit on `2025-26` | Brier: **price** | **model** | **blend, out of sample** | blend gain |
+|---|---|---|---|---|---|---|
+| **demon** | `0.315` | `0.279` | **`0.18411`** | `0.18972` | **`0.18314`** | `+0.00097` |
+| **goblin** | `0.212` | `0.277` | **`0.22016`** | `0.22767` | **`0.21894`** | `+0.00122` |
+
+✅ **The blend beats the price out of sample on every leg kind — the model carries REAL SIGNAL.**
+🔴 **And it cannot change a single pick**: *"the blended value is just a rescaled copy of the model's
+own, so **every leg keeps its rank**."* ⇒ ***A measurable improvement in CALIBRATION that is exactly
+zero improvement in SELECTION.*** **`RULE 55` in its purest form: the number is real and the
+conclusion it looks like it supports does not follow from it.**
+
+⚠ **`RULE 54`.** *`WINDOW`: `ladder_calibration_asof` and the `1.08 M`-leg comparison table at
+`2026-09-21`, both seasons, threshold `1.25`. **`claimed` is the model's own value estimate and
+`realised` is the outcome-weighted payout** — not a hit rate. **`NOT DONE`: five of the eight props
+were returned by the query and only their RANGE is recorded here**, because the three shown bracket
+it.*
+
+---
+
 # 0.16-F2. 🔴🔴🔴 **THE THRESHOLD SWEEP AND ITS LEAKAGE CONTROL — `T23` RAN BOTH, AND THE TWELVE RECORD NEITHER**
 
 *Recovered 2026-09-23 by the full transcript re-sweep, `§F2.4`. `§F2.1` ranked `T23` the
