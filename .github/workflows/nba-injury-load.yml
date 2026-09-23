@@ -1,0 +1,54 @@
+name: NBA Injury Report Load
+
+# Loads the injury-report archive (and the daily file) into Postgres.
+#
+# WHY IT EXISTS. NBA_ENRICHMENT_MINING_AND_FALLBACKS.md build item 1 specifies a loader into
+# nba_daily.injury_report_snapshots. The scraper existed, the loader did not, so the binding
+# availability input (A1 / N1 / N2 / A6 / A9, and the day-before report the baseline reads) was
+# queryable nowhere - it lived only as JSON shards in the repo. This is the run path for it.
+#
+# Modes:
+#   archive - INJURY_LOAD_SLUG (e.g. 2025_26): every monthly shard for that season
+#   current - nba/data/nba_injury_report_current.json, what P2/P3 just scraped
+#
+# The daily load belongs in P2/P3 next to the scrape step; this workflow is the backfill and the
+# manual path. Read-only against the repo: it writes to Postgres only, and commits nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "archive | current"
+        default: "archive"
+        required: false
+      slug:
+        description: "season slug for archive mode (2025_26, 2024_25)"
+        default: "2025_26"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-injury-load
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+
+      - name: Load injury report snapshots
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          INJURY_LOAD_MODE: ${{ github.event.inputs.mode }}
+          INJURY_LOAD_SLUG: ${{ github.event.inputs.slug }}
+        run: python nba/load_injury_report.py
