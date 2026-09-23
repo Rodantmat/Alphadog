@@ -2621,6 +2621,55 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 > owner's one instruction —* **"when a repair risks losing a finding, build the resolver instead"** *—
 > arriving at the same place from two directions.*
 
+> ### ✅✅✅ **§F7.16 — THE FINAL VERIFICATION SWEEP. `84` OF `84` CHECKS PASS, AND THE LAST DEFECT WAS A LEDGER DISAGREEING WITH ITSELF.**
+>
+> *`2026-09-23`. **The owner's closing instruction:** "Then re-verify findability across all twelve,
+> because `T21`–`T24` will land new content inside the structures you just repaired." **They did, and
+> it found four things.***
+>
+> #### 1 · The seven structures × the twelve
+>
+> | structure | result |
+> |---|---|
+> | per-file `📑 INDEX` | ✅ `12`/`12` |
+> | `📌 HOW TO READ THIS FILE` | ✅ `12`/`12` |
+> | `▶ FIND IT FAST` | ✅ `12`/`12` |
+> | the ANCHOR RULE | ✅ `12`/`12` |
+> | 🆕 the `§` RESOLVER (`RULE 60`) | ✅ `12`/`12` *(added this pass)* |
+> | 🆕 the CENSUS RECIPE (`RULE 59`) | ✅ `12`/`12` *(added this pass)* |
+> | no live `RULE 46` debt assertion | ✅ `12`/`12` |
+>
+> ⇒ ✅ **`84` of `84`.** *Folder register (`§F7.6`): `32` files, still exact. Canonical figure table
+> (`§F7.12`): re-derived **`88` of `88`**, still complete after ~`130` commits.*
+>
+> #### 2 · What it caught — four defects, in ascending order of how bad they were
+>
+> | | defect | why it mattered |
+> |---|---|---|
+> | **1** | **`NBA_MULTIPLIERS.md` spells the anchor rule with a period and no closing bold** | *a `12`-file sweep found it in `11`.* **`RULE 58` on my own instrument, again.** |
+> | **2** | **Three files carried `T21`–`T24` content their `FIND IT FAST` did not route to** | 🔴 *one of them was **`§T23.5`, the `CREATE UNIQUE INDEX` deadlock** — **season-critical, and the tool a reader would reach for to recover from `T23-2` is the tool that breaks.** Unreachable from its own file's index.* |
+> | **3** | **`T24-2` was in no decision surface** | *the NEWEST transcript's own to-do list, holding the only dated near-term non-blocker (**preseason, from `~2026-10-03`**) and **three items missing from the twelve, ALL THREE EXCLUSIONS** — Mixed Flex unverified, Fantasy Score out of strategies, per-prop edge cells.* 🔑 ***An exclusion is harder to notice missing than a measurement: nothing fails, no query returns wrong.*** |
+> | **4** | 🔴🔴🔴 **`NBA_MASTER_SUMMARY.md` CONTAINS TWO LEDGERS AND THEY DISAGREED** | *the blockquote summary table (~line `92`) read **`T21`–`T24` CLOSED**; the main per-transcript ledger (~line `1334`) read **`OPEN — 0 passes`** for all four. **Both were written by me, in this file, during this sweep.*** |
+>
+> #### 3 · 🔑 On defect `4`
+>
+> ***`§T1`'s warning has now landed four times, and this is the worst instance because it is the first
+> where the two contradictory rows sit in the SAME FILE:***
+>
+> > 🔴 ***"A stale ledger is the single most likely way this effort ends early against a wrong picture
+> > of what remains."***
+>
+> ⚠ **The passes that closed `T21`–`T24` updated the summary table and not the register.** *Nothing in
+> any pass's method says "there are two ledgers" — so every closing pass updated the one it happened
+> to be looking at.* ⇒ **It was caught by a check that reads the file rather than the notes** *(a
+> `24`-row regex over the register, run because the owner asked for re-verification, not because any
+> pass predicted it)*. 📌 ***The register rows now carry the disagreement in their own text rather
+> than a silent fix, because the next reader's useful question is not "is this row right" but "how
+> long was it wrong, and what else has two copies."***
+>
+> ⚠ **RECORDED AS A STANDING HAZARD, NOT A RULE** *(it is an instance of `RULE 44`, not a new law)*:
+> **`NBA_MASTER_SUMMARY.md` holds `2` transcript ledgers. Updating one is a `50%` update.**
+
 ### 2 · The method — every segment accounted for, none skipped unmeasured
 
 **Two complete reads of each transcript, in two DIFFERENT ORDERS**, because order is what a single
