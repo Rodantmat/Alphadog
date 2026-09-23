@@ -46,6 +46,8 @@
 > ### 🔴 **A · SEASON-CRITICAL** *(these decide whether opening night works)*
 > | item | subject | where |
 > |---|---|---|
+> | 🔴🔴🔴 **`F2-1`** | **SECURITY — a live `balldontlie` API key was PUBLISHED in this public repo by the UUID-sweep pass.** Redacted `2026-09-23`; **still in `2` commits.** ⇒ **ROTATE** | heading |
+> | **`T10-F1`** | `3`→**`5`** commissioned enrichment factors (`A7`·`E2`·`E3`·`M2`·`M3`) appear **nowhere in the twelve**, and nothing records whether they were dropped | heading |
 > | **`T23-1`** | 🔴🔴 **The model does not beat PrizePicks** — with the standards-only exception | heading |
 > | **`T20-6`** | 🔴🔴 **`7` of `12` certifier checks assert tables NO PIPELINE WRITES** — *"the largest structural finding of the sweep"* | heading |
 > | **`T20-4`** | 🔴🔴 **`P3` is hardcoded to LAST season, in two scripts** | heading |
