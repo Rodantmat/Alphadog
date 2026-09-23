@@ -48,6 +48,37 @@
 > then **UNCAUGHT by a certifier before CAUGHT**. A silent failure costs a season before anyone
 > looks; a loud one costs an evening.*
 >
+> ## 🔴🔴🔴 **THE RULE HAS NO TERM FOR *HOW LONG*, AND IT HAS COST THE TOP OF THIS LIST** *(T20 pass 130, §T20.135, 2026-09-23)*
+> **`T20-13` is ranked `2nd`. `T20-6` is ranked `13th`. Applied to the facts `§T20.134` measured,
+> the order should be the other way round, and the brief's own logic already says why.**
+>
+> | | `T20-13` — the `>= 25` October prop gate | `T20-6` — the certifier asserts a table no pipeline writes |
+> |---|---|---|
+> | SILENT or LOUD | LOUD | LOUD |
+> | stops the slate | ✅ | ✅ |
+> | caught by a certifier | ✅ *(it IS the certifier)* | ✅ *(`P2`'s)* — ⚠ **but `P3` dies at step 9 of 11, so `P3`'s certifier never runs** |
+> | 🔑 **how long it costs** | **12 nights** *(`10-20` → `10-31`)* | 🔴🔴 **EVERY NIGHT OF THE SEASON** |
+> | 🔑 **does fixing it alone change anything** | 🔴 **NO** | ✅ **yes** |
+>
+> ⇒ ***The three stated criteria TIE. The two that separate these items — DURATION and DEPENDENCY —
+> are not in the rule*** *(probe: a duration term appears `0` times in the twelve and `0` in the
+> baseline tree)*.
+>
+> 🔑🔑 **AND THE DEPENDENCY ARGUMENT IS ALREADY ON THIS PAGE, MADE ONCE AND NOT TWICE.** The brief
+> ranks **`A` first** on exactly this reasoning — ***"ADDING P2's CRON IS A PREREQUISITE FOR EVERY
+> OTHER P2 ITEM ON THIS BRIEF. `T20-13`'s twelve red nights cannot fire if nothing fires."***
+> **`T20-6` is a SECOND prerequisite of the same kind**: `certify_pipeline.py`'s first `p2` check is
+> `baseline_history has today > 0`, and it fails before the `>= 25` prop gate is ever reached, on
+> every date, because **no pipeline writes that table**. ⇒ ***`T20-13`'s twelve-night window is a
+> CONDITIONAL prediction whose condition is an item ranked eleven places below it.***
+>
+> ⚠ **STATED AS A RECOMMENDATION, NOT AN EDIT** *(rule 2 and the standing NOT RECONCILED flag — the
+> ranked string is `§T20.103`'s and is not re-ordered here)*: **whoever next touches the string
+> should add a DURATION term to the rule and place `T20-6` above `T20-13`**, reconciling the count in
+> the same edit as `T20-25` already requires. 🔴 **OWNER DECISION** — *the ranking rule is a
+> judgment about what a season costs, and changing it is yours, not this sweep's.*
+> ▶ **Corrected at source in `NBA_RECIPE.md` and `NBA_WORKERS.md` (×2) the same day.**
+>
 > **`A` · `13` · 🔴 `17` · `B` · `C` · `5` · `7` · `12` · `14` · `D` · `9` · `4` · `6` · `3` · `10` · `2` · `E` · `11` · `1` · `15`**
 > ⚠ **`T20-15` ADDED 2026-09-22, T20 pass 89 (`§T20.94`) — *both pipelines certify RED on every
 > zero-game day; 2025-26 had `7` of them.*** **It ranks LAST, and the rule is what puts it there**:
