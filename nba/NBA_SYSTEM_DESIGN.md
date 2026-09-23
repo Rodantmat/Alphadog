@@ -1020,8 +1020,31 @@ combinatorial objection §T14.1e records the owner raising, answered by choosing
 >
 > ⚠ **`RULE 54`.** *`WINDOW`: one historical run, `2026-09-21`, `8` parallel jobs, `325` dates.
 > **`144`/`181` is one observation, not a rate** — the split depends on job count and scheduling.
-> **`NOT DONE`: no other writer in the system was audited for the same pattern**, and the search is
-> one grep: `CREATE UNIQUE INDEX IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS` inside a transaction.*
+> **`NOT DONE` → ✅ DONE, same pass**: the audit below.*
+>
+> ### 📋 **THE AUDIT THIS FINDING PRESCRIBED, RUN `2026-09-23` RATHER THAN LEFT AS A SUGGESTION**
+> *`grep -rl "CREATE UNIQUE INDEX IF NOT EXISTS\|CREATE INDEX IF NOT EXISTS" nba/*.py nba/*.js`*
+>
+> 🔴 **`17` FILES CARRY THE SAME PATTERN.** *Not one — seventeen.*
+>
+> | | files |
+> |---|---|
+> | 🔴🔴 **run by `P2`** | **`build_asof_calibration.py`** · **`build_confidence_v3.py`** · **`grade_board_outcomes.py`** · **`scrape_referee_assignments.py`** |
+> | 🔴🔴 **run by `P3`** | **`build_availability_delta.py`** · **`build_rung_market.py`** · **`score_board_legs.py`** *(the file the incident happened in)* |
+> | run by neither *(backfills, panels, one-offs)* | `backfill_game_line_snapshots` · `build_absence_panel` `_v2` `_v3` · `build_defender_ratings` · `build_final_hp` · `build_redistribution_factors` · `build_redistribution_panel` · `build_scenario_calibration` · `load_baseline_history` |
+>
+> 🔑🔑🔑 ***SEVEN OF THE SEVENTEEN ARE IN THE NIGHTLY PIPELINES, AND THE ONLY REASON NONE OF THEM HAS
+> DEADLOCKED IS THAT `P2` AND `P3` RUN THEIR STEPS ONE AT A TIME.***
+> ⚠ **The exposure is not theoretical and it has a date**: *the regular season opens `2026-10-20`.
+> **Any catch-up, replay or backfill run — exactly what a missed night requires — is a parallel run
+> over the same tables**, and `§T23.5` is the measured outcome of one: `181` of `325` dates failed.*
+>
+> ⚠ **STATED AT EVIDENCE STRENGTH** *(`RULE 1.6`)*: **the grep is a file-level match, verified.**
+> *Whether each occurrence sits INSIDE a write transaction — which is what makes it a deadlock rather
+> than a harmless startup statement — **was checked in `score_board_legs.py` only**, by `T23`, and is
+> **NOT** verified for the other sixteen. **`17` is the population to audit, not the count of
+> defects.*** 📌 *Recorded this way because the useful artefact is the LIST — a later reader can check
+> sixteen files without re-deriving which sixteen.*
 
 > process ids from the deadlock incident. **Several apparent gaps were demoted on inspection**: `65.8`
 > is the fringe-accuracy `0.658` already in `2` documents; the whole `N1` role table (`254`/`429`/`639`,
