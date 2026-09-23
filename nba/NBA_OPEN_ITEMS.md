@@ -9,10 +9,8 @@ breaks and what closes it.** The proof for every row is in this file under its o
 quoted ID, never a line number.*
 
 ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* *(`§T20.22`: `6` of `16` line-number pointers
-rotted within a day; `§T20.67`: `83.7%` of testable `FILE:LINE` citations are dead)*. **Search for
-the quoted item ID or the quoted text.** *Added as a stated rule `2026-09-23`, `§F7.8` — **this file
-and `NBA_MASTER_SUMMARY.md` were the only two of the twelve whose index never said it.** The prose
-above already implied it; a rule that is implied is a rule a hurried reader skips.*
+**Search for the quoted item ID or the quoted text.**
+📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
 
 🗂 **WHICH FILE AM I IN, AND WHICH ARE THE TWELVE?** *(`§F7.6`, `2026-09-23`)* — **`nba/` holds `32`
 markdown files; `12` are the mandated set and nothing used to say which.** **The authoritative
