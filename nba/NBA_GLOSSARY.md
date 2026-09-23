@@ -22,9 +22,13 @@ context, and which document section. Any material term appearing more than once 
 > `§Z`'s index and, if defined, inside another range's block"*, ***and* `P–S` appeared TWICE**, the
 > second copy **after `T–W`**, so an alphabetical reader had already walked past it. `§Z` carried `7`
 > `J`/`K` terms and `29` `O` terms with nowhere to go — including **`ot_rule`, whose omission from a
-> merge key is the `F6-1` season-critical data loss.** ⚠ **`X`, `Y`, `Z` still have no body block**:
-> `§Z` lists `5` such terms and each is defined inside another range. *That is a real remaining gap,
-> stated rather than smoothed over.*
+> merge key is the `F6-1` season-critical data loss.**
+>
+> ⚠ **CORRECTION, same pass.** *This note first read:* ~~*"`X`, `Y`, `Z` still have no body block:
+> `§Z` lists `5` such terms… a real remaining gap, stated rather than smoothed over."*~~ **Both
+> halves were wrong. The count is `10`, not `5`** *(`RULE 56`)* — and a ten-term gap I was already
+> inside the file to fix is not a finding, it is deferral. **`X–Z` was written.** ⇒ **the body range
+> is `A … Z`, complete, with no letter lacking a block.**
 >
 > ## ▶ FIND IT FAST
 >
