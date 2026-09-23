@@ -2734,6 +2734,61 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 >    `130` commits of careful `[skip ci]` discipline would have revealed this; only reading the run
 >    list did.**
 
+> ### ✅✅✅ **§F7.21 — THE RECIPE NOW REBUILDS THE SYSTEM, AND ANY CHAT CAN OPERATE IT**
+>
+> *`2026-09-23`. **The owner's test: walk `NBA_RECIPE.md` from `STEP 0` with an empty repo, an empty
+> database and no memory, and at each step ask only — could I actually do this from what is written
+> here or what it points at?***
+>
+> #### 1 · What the walk found
+>
+> | blocker | fixed by |
+> |---|---|
+> | 🔴 **The `14` schemas are never listed as a set, anywhere.** *`STEP 2` says "`14` schemas in one statement" and names none. `NBA_DATABASE.md` uses `9` schema prefixes. **A rebuilder cannot create the database.*** | ✅ **Derived live and published**: the `8` that hold anything, **plus the `6` that were created and NEVER USED** — `nba_archive` · `nba_backtest` · `nba_classification` · `nba_context` · `nba_daily` · `nba_scoring`, all `0` tables. ⇒ ***Build the `8`; the other `6` are history, not a plan.*** |
+> | 🔴 **`STEP 7` cites `generate_wrangler_configs.py` bare, and there is no such file in `nba/`.** *It is at the **REPO ROOT** — as are `alphadog-v2-admin-sql.js` and every deploy script.* ***Three of the four wiring steps point outside the folder the reader is in.*** | ✅ **Paths verified and marked in `STEP 7`**, with the root deploy scripts listed. |
+> | 🔴 **ENRICHMENT, the MULTIPLIER ENGINE and PAPER TRADING are not reachable from the recipe at all** *(`1`, `1` and `3` mentions)*. ⚠ **And the four enrichment documents are NOT among the twelve.** | ✅ **Routed explicitly**, each marked `NOT IN THIS FILE` with the document that holds it. |
+>
+> #### 2 · `🏗 REBUILD FROM ZERO` — `19` steps, and `3` honest floors
+>
+> **Covers, in order**: constraints → recon → **schemas** → **worker wiring and deployment** →
+> **scrapers** → static layer → game-log backfill → weekly as-of layer → **enrichment** → **the
+> baseline ladder** → **calibration** → **boards and the DFS layer** → the grader → **`final_hp`** →
+> **the multiplier engine** → **the certifier** → **paper trading** → the three pipelines and the day
+> → the opening-night dry run.
+>
+> 🔴 ***Three things the corpus genuinely cannot give a rebuilder, each named with the file that
+> holds the answer rather than guessed:*** **the ordered `CREATE SCHEMA`/`CREATE TABLE` DDL**
+> *(no file contains it; `apply_schema_all.py` at the root is the applier)* · **Cloudflare account,
+> Hyperdrive binding and secret provisioning** *(the values are secrets and the repo is PUBLIC)* ·
+> **which of the `34` `nba-*.yml` workflows a fresh build needs** *(only `4` are classified).*
+>
+> #### 3 · `🔧 MAINTENANCE` — the six tasks, each walked as a reader
+>
+> 🔑 ***"Add a new prop" returned `0` hits in every one of the twelve.*** *The most ordinary operation
+> on the system was written nowhere.* ✅ **Now written from live structure**: **a prop is not a stat** —
+> `30` props in `nba_score.baseline_history` against `13` stat keys in `nba_config.stat_decay_config`,
+> both re-derivable in one query; most new props are combinations and need no new stat key; a new
+> stat key needs all seven columns **including `rationale`, which every one of the `13` carries.**
+> ⚠ *And the trap: `baseline_history` holds `22` props in October, `30` from November (`T20-13`).*
+>
+> *The other five are written with their known traps attached — **never run the catch-up in parallel**
+> (`§T23.5`), **do not add the `P2` cron before fixing `T23-2`**, **a GREEN certifier means nothing
+> until you have read `THE SWALLOWED-FAILURE CENSUS`**, and **`final_hp` cannot be "refreshed" because
+> nothing rebuilds it**.*
+>
+> #### 4 · The other three tests
+>
+> | test | result |
+> |---|---|
+> | **`NBA_MASTER_SUMMARY.md`'s first screen** | 🔴 **It answered none of the four questions** — it opened with a section count and a population-definition essay. ✅ **Replaced by a `🧭 START HERE` table**: what the system is · what state it is in · what blocks it · where to go next. |
+> | **The glossary's concept index, mechanically** | ✅ **`131` of `131` rows resolve to the block they name, and `131` of `131` body entries are indexed — both directions, not a sample.** 🔑 *One row, `` `x_*` ``, was breaking its own bold markup with an unescaped `*`; found because the parser and the renderer disagreed.* |
+> | **Index rows contradicting their file** | ✅ **None left.** *See `§F7.20`.* |
+>
+> ⚠ **`RULE 58`, twice more this pass, both on my own instruments**: *`^## STEP` reported `STEP 8`–`13`
+> MISSING — they are `#` headings, and trusting that probe would have turned a true index false.* And
+> *the concept-index verifier reported `130` of `131` twice, from a regex that could not cross a
+> backtick.* ***The corpus was right both times; the tool was wrong.***
+
 > ### ✅ **§F7.20 — THE `STEPS 8+` WARNING IS RETIRED, AND THE `STEP 0c` INDEX ROWS NO LONGER CONTRADICT THE MOVE TWO ROWS BELOW THEM**
 >
 > *`2026-09-23`. **Both were stale statements that the sweep's own repairs made false — the exact class
