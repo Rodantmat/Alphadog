@@ -2734,6 +2734,48 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 >    `130` commits of careful `[skip ci]` discipline would have revealed this; only reading the run
 >    list did.**
 
+> ### ✅✅ **§F7.19 — THE ENTRY BLOCKS ARE CAPPED, THE CENSUS STAMP NO LONGER REFUTES ITSELF, AND THE GLOSSARY GAINS A CONCEPT INDEX**
+>
+> *`2026-09-23`, on the owner's four named defects. **All history removed from the twelve lives here
+> now — nothing was deleted, it was relocated.***
+>
+> | # | defect, as the owner stated it | what was done |
+> |---|---|---|
+> | **1** | 🔴 ***"The census stamp refutes itself in one paragraph, in all twelve"*** — it said `sections` went stale `4` of `11` **and then** `sections exact 12 of 12` | ✅ **Replaced in all twelve by ONE line:** `` 📏 `N` sections · `2026-09-23`. Re-derive, never quote: grep -cE '^(> *)*#{1,6} ' nba/<FILE>.md ``. **No strikethrough chain, no retraction history, no competing figure.** *The retraction reasoning stays at `§F7.14`.* |
+> | **2** | 🔴 ***"OPEN_ITEMS still says the brief is `950,947` characters below. It is above."*** | ✅ **The `READ THIS FIRST` banner is gone** — the block is retitled **`OPENING-DAY BRIEF — AMENDMENT HISTORY AND PER-ITEM EVIDENCE`** and points ⬆ to `ACT ON THIS` § `B`. *Swept the twelve: the only other old-layout figure is `§T20.70`'s `87.0%`, which is dated in place and now names the current layout.* |
+> | **3** | 🔴 ***"Cap the entry block… the twelve are reference documents, not the sweep's diary"*** | ✅ **Every entry block is now: title → one or two lines on what the file is → how to find things → content.** *Removed from all twelve: the strikethrough census chains, the `294`-blockquoted-headings detector note, the pointer-rot provenance, and the "added as a stated rule" notes. **Each now carries a single `📚` line pointing here.*** ⚠ *Kept: the `SECTION ORDER IS NOT NUMERIC` / `NOT IN ORDER` warnings — those are navigation, not diary.* |
+> | **4** | 🔴 ***"operating model, the owner's is still the first entry under P–S"*** | ✅ **Moved into `O`.** ⇒ 🔑 **And the sweep for others found the real defect underneath it — see below.** |
+>
+> #### 🔑 What defect `4` turned out to be
+>
+> **`36` of the `131` body entries are filed under a letter that is not their own** *(articles
+> stripped: `the three-generation trap` under `B`, `the fourth store` under `T–W`, `role_tier` under
+> `L–N`)*. **But moving `36` entries is `72` delete-plus-insert operations on correct content**, and
+> the first such move in this pass silently consumed the `## P–S` heading and its divider — *caught
+> and repaired, and exactly the failure mode the owner's standing instruction anticipates.*
+>
+> 🔴 **So the sweep asked what a reader actually hits, and found worse:** ***`§Z`, advertised in
+> `FIND IT FAST` as "the fastest route to anything in the file" and "the only structure covering the
+> whole alphabet", covers `35` of `131` body entries — `73.3%` are absent.*** **`§Z` is an
+> IDENTIFIER index** *(`o_dpm`, `alias_key`, `ot_rule`)*; **the missing `96` are all CONCEPTS**, which
+> it was never built to hold. *So a reader following the file's own first instruction failed for three
+> entries in four, then had to browse buckets — where `36` are misfiled.*
+>
+> ⇒ ✅ **BUILT THE RESOLVER, NOT THE `72` MOVES** *(the owner's standing rule)*: **a `🧠 CONCEPT INDEX`
+> listing all `131` concept entries `A`–`Z`, each naming the body block that actually holds it.**
+> ***The block letter is where it IS, not where it alphabetically belongs*** — so a misfiled entry
+> costs nothing, and the addition is purely additive: **no entry was moved, deleted or rewritten
+> except the one the owner named.** *The `FIND IT FAST` overclaim is corrected in the same edit.*
+>
+> #### ⚠ Also corrected this pass
+>
+> - 🔴 **The retired `98.79%` pointer rate was still live in `NBA_GLOSSARY.md`'s routing table** —
+>   *published as fact three sections above the `RULE 60` line retiring it.* **Removed; the structural
+>   half (bare numeric pointers cross files; `§4`–`§9` belong to `NBA_ARCHITECTURE_BLUEPRINT.md`) is
+>   kept, because that half is not a rate.**
+> - ⚠ **`[skip ci]` verified PER COMMIT this pass, not assumed** *(`§F7.17` is why)* — **every commit
+>   checked against `git log` after the fact: `0` breaches.**
+
 > ### 🔴🔴🔴 **§F7.18 — THE SWEEP'S OWN COVERAGE INSTRUMENT WRITES CREDENTIAL-BEARING OUTPUT INTO A PUBLIC REPO'S WORKING TREE, BY DEFAULT, UNGITIGNORED**
 >
 > *`2026-09-23`, caught by a working-tree check at the very end of the sweep — **not by any pass**.*
