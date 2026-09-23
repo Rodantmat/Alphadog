@@ -5484,6 +5484,32 @@ does not protect against the delete above it.**
 
 ---
 
+## 📋 **`T24-2` — THE LAST TRANSCRIPT'S OWN FORWARD AGENDA, RECORDED AS A SET**
+### *(`T24` pass `4`, recorded `2026-09-23`. **`T24` is the newest transcript in the corpus; its section `12` is the closest thing this project has to a current to-do list written by the work itself.**)*
+
+⚠ **`T24` IS A SECONDARY SOURCE** — *a session record, not a verbatim transcript; its own header says
+the raw text "is not stored on disk."* **Everything below is as `T24` reported it.**
+
+| # | item | state in the twelve |
+|---|---|---|
+| **1** | 🔑 **PER-PROP EDGE CELLS** — *break `leg_edge_map` down by prop × kind × side, keep only cells that hold in BOTH seasons, and build strategies from those.* **The owner's stated next phase, verbatim: *"build slips, which leg has edge, which leg has not".*** | 🔴 **not recorded** — *the readout is in `NBA_GOBLIN_DEMON.md`; the per-prop breakdown it asks for does not exist yet* |
+| **2** | 🔴 **MIXED FLEX IS UNVERIFIED** — *the slip simulator supports Flex for **all-standard slips only**.* | 🔴 **not recorded** — ⚠ *and it bounds every Flex figure in `NBA_MULTIPLIERS.md`: the verified Flex tables are all-standard, and a Flex slip containing an alternate is outside them* |
+| **3** | ⚠ **MULTI-ALTERNATE COMPRESSION IS PARTIAL** — *the `5`-legs-left reversion matches only `57.5%`.* | ✅ recorded *(`§0j-T24`)* |
+| **4** | 📅 **PRESEASON, FROM `~2026-10-03`** — *validate against real NBA lines: Fantasy Score spacing and goblin placement (**the reconstruction puts goblins at `73.5%` against a `~65%` price target**), the derived proxy lines (**free throws especially**), and **the goblin floor on NBA**.* | ⚠ **partly** — *`§T23.7` and `§T23.7`'s floor supersession carry the individual questions; **the dated validation LIST does not exist as one place**, which is what makes it useful* |
+| **5** | 🔴🔴🔴 **BEFORE `2026-10-20`: `P2` and `P3` default to `'2025-26'` and will abort on `2026-27` dates.** | ✅ **`T23-2`, directly below — and `T24` independently reaching the same conclusion is corroboration, not duplication** |
+| **6** | 🔴 **`2025-26` CALIBRATION STILL INHERITED FROM `2024-25`** — *rebuild from own-season evidence.* | ✅ `§T23.10`, `§T23.18` |
+| **7** | ⚠ **FANTASY SCORE STAYS OUT OF STRATEGIES** *until real lines show whether the one-point conservative shift is too harsh.* | 🔴 **the DECISION is not recorded** — *`NBA_FINAL_SCORING_CALIBRATION.md` records that it does not clear the `1.10` breakeven; **that it is therefore EXCLUDED from strategy selection is a separate fact**, and the one an implementer needs* |
+
+🔑🔑 ***Four of the seven were already in the twelve and three were not — and the three that were not
+are all EXCLUSIONS.*** *What the system will NOT do is harder to notice missing than what it will:
+nothing fails, no query returns wrong, and the only symptom is a later reader building a Flex strategy
+with an alternate in it, or putting Fantasy Score in a slip.* ⇒ **`§F7.9`'s lesson in its negative
+form: a corpus that records every measurement can still omit every decision.**
+
+📌 ***Recorded as a SET rather than filed item by item, deliberately.*** *Their value is that they are
+the newest transcript's own answer to "what is left", and splitting them across six documents would
+destroy exactly that.* **Each is cross-pointed to where its detail lives.**
+
 ## 🔴🔴🔴 SEASON-CRITICAL · `[LIVE-AUDIT]` · **`T23-2` — `P2` AND `P3` BOTH HARDCODE `2025-26` AS THE DEFAULT SEASON, AND THE REGULAR SEASON IS `2026-27`**
 ### *(`T23` pass `8`, flagged `2026-09-21`; **re-verified against the live workflow files `2026-09-23`**)*
 
