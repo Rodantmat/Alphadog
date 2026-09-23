@@ -13300,6 +13300,22 @@ scripts the three pipelines call. **Read from source; nothing was run.***
 
 ---
 
+## T20-25 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, RUNNING NOW · THE PLAYER BRIDGE IS BUILT WITH ONE NORMALISER AND READ WITH ANOTHER — `6.01%` OF A REAL SLATE'S BOARD ROWS WERE SILENTLY DROPPED**
+*Added **T20 pass 122 (§T20.127), 2026-09-23**, measuring the yield `T20-24` asserted without
+measuring. **Read from source plus five `SELECT`s; nothing was run or changed.***
+
+| | |
+|---|---|
+| 🔴🔴🔴 **THE DEFECT** | **The key is WRITTEN one way and LOOKED UP another.** **WRITER** — `check_baseline_board_coverage.py:40–43`: NFKD→ASCII *(folds accents)*, lowercase, **`re.sub(r"\m(jr\|sr\|ii\|iii\|iv\|v)\M","")`** *(strips suffixes)*, then `[^a-z]` removal. **READER** — `score_board_legs.py:112–113`: **`ON m.norm_name = lower(regexp_replace(b.player,'[^A-Za-z]','','g'))`** — **no accent folding, no suffix strip.** ⇒ *"Jaren Jackson Jr." → writer `jarenjackson`, reader `jarenjacksonjr`. "Nikola Jokić" → writer `nikolajokic`, reader `nikolajoki` — **the `ć` is DELETED, not folded.*** |
+| 🔴 **Roster-wide magnitude** | `nba_ref.players` **582**, all **582** present in the map *(`§T20.126`)*, and **`54` — `9.28%` — have `reader key ≠ writer key`**: **35 suffix** *(Jaren Jackson Jr. · Michael Porter Jr. · Jabari Smith Jr. · Gary Trent Jr. · Tim Hardaway Jr. · Kelly Oubre Jr. · Trey Murphy III · Jimmy Butler III · Dereck Lively II · Gary Payton II · Wendell Carter Jr. · Larry Nance Jr. · Scotty Pippen Jr. …)* and **19 non-ASCII** *(🔴 **Luka Dončić** · 🔴 **Nikola Jokić** · Kristaps Porziņģis · Nikola Vučević · Jusuf Nurkić · Dennis Schröder · Bogdan Bogdanović …)*. |
+| 🔴🔴🔴 **MEASURED ON A REAL ARCHIVED SLATE — not hypothetical** | `board_snapshots`, `game_date = 2026-01-15`, joined **exactly as the scorer joins it**: **162** distinct board players → **151** matched, **`11` UNMATCHED (`6.79%`)**; **107,888** board rows → **`6,479` DROPPED (`6.01%`)**. **The eleven**: *Gary Payton II · Gary Trent Jr · Isaiah Stewart II · Jabari Smith Jr · Jaime Jaquez Jr · **Jaren Jackson Jr** · Kevin Porter Jr. · Vincent Williams Jr · Wendell Carter Jr · **Moe Wagner** · **Ron Holland***. ⚠ ***`Jaren Jackson Jr` alone carried `1,057` rows that day.*** |
+| 🔑 **Which half is live, and which is armed** | **The Odds-API board sends ASCII** — it carries **`"Luka Doncic"`**, not `"Luka Dončić"` — **so the `6.01%` above is the SUFFIX half alone** *(plus two short-form names: `Moe`/`Moritz Wagner`, `Ron`/`Ronald Holland II`)*. 🔴🔴 **The ACCENT half is LATENT and arms the moment a source sends the real spelling — and the DFS apps that `BS_SOURCE=live` reads are exactly such a source.** ⚠ *Their spelling is **NOT RECORDED** because `§T20.123` measured `0` NBA player props from them, ever — **but Dončić and Jokić are the two highest-volume prop players in the league.*** |
+| **Why SEASON-CRITICAL** | ⚠ **It is not a future risk — it is running now**, on the only NBA board source that has ever been populated. `score_board_legs.py:132–133` **counts the misses and drops them**: *the count is printed, so it is not invisible — but a run that scores `94%` of a board reports success.* ⇒ **The brief moves from SIXTEEN to SEVENTEEN.** |
+| ✅ **THE FIX IS TWO LINES, IN ONE PLACE** | **Make the reader do what the writer does** — fold accents and strip suffixes inside the `ON` clause, or precompute the reader's key with the same Python `norm_name`. *Either way the change is confined to `score_board_legs.py:112–113`.* ⚠ **Documented, not fixed (rule 1).** |
+| **Full finding** | `NBA_MASTER_SUMMARY.md` — **`§T20.127`**. |
+
+---
+
 ## T20-24 · **NEW · ⚠⚠ MEDIUM, STRUCTURAL · THE BRIDGE EVERY SCORED LEG PASSES THROUGH IS REBUILT BY A SCRIPT NO PIPELINE RUNS, FROM A FILE LAST COMMITTED `2026-09-10`**
 *Added **T20 pass 121 (§T20.126), 2026-09-23**, during the cross-sport contamination sweep. **Read
 from source plus five `SELECT`s; nothing was run or changed.***
