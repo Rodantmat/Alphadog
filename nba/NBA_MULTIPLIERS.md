@@ -25,8 +25,8 @@ pricing law is known** — multiplicative, partner-independent, compressed above
 > 📏 **`150` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MULTIPLIERS.md ``
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS.** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.** ⚠ **This file wrote the anchor rule with a period and no closing bold, which is why a `12`-file sweep found it in `11` — `RULE 58`, yet again.**)* *`§T20.22` measured `6` of `16` line-number
-> pointers in these files rotting within a day of being written; heading text survives every append.*
 > **Search the file for the quoted `§` label.**
+> 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
 > ⚠⚠ **THE FILE'S PHYSICAL ORDER IS NOT ITS LOGICAL ORDER** — *`§0.2d` sits before `§0.2c`, and every
 > `T22`/`T23` section is appended at the end.* **This index is in LOGICAL order. The file is not.**
 >
