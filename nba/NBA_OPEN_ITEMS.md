@@ -14693,6 +14693,28 @@ seven-column key exists, in `alphadog-v2-nba-baseline-ladder.js`, which P2 does 
    `keep the last`), and on the `2026-03-15` slate alone there are **`194` keys where they would
    write `p_more` values more than `0.02` apart**.*
 
+> ### 🔴🔴 **CORROBORATED INDEPENDENTLY, AND IT IS OLDER THAN TODAY — `§F6.28` §3**
+>
+> *`T14`, `2026-09-11`, reports in consecutive status messages: **`45,965` rows in the artifact**,
+> then **`44,544` loaded to Postgres**. **`45,965 − 44,544 = 1,421`.*** ✅ **Same slate** — `T14`'s
+> build is `18` props / `161` players, and `nba_baseline_ladder_2026-03-15.json` is the only
+> committed artifact with those exact counts *(the other three are `22` props)*.
+>
+> | revision | artifact | loaded / live | dropped |
+> |---|---|---|---|
+> | `T14`, `2026-09-11` | `45,965` | `44,544` | 🔴 **`1,421`** |
+> | committed, measured `2026-09-23` | `52,018` | `50,597` | 🔴 **`1,421`** |
+>
+> ⇒ ***The artifact grew by `6,053` rows across twelve days and the loss did not move by one*** —
+> **because the loss is the count of keys carrying both `ot_rule` values, a property of the slate's
+> PERIOD structure, not of its rung depth.** 🔑 ***This defect has been dropping these rows on every
+> build of this slate since at least `2026-09-11`. It stayed invisible because the artifact count and
+> the table count were never put beside each other — and `T14` printed both, one message apart.***
+>
+> ⚠ *The `T14`-era artifact is not in the repository, so its `1,421` cannot be DECOMPOSED into
+> `ot_rule` pairs. **The identity of the two differences is verified arithmetic from two independent
+> sources; the shared cause is a strong inference, not a measurement.***
+
 ⚠ **`RULE 54` — the bound.** *`WINDOW`: the three dated artifacts committed under `nba/data/` and
 the live table, `2026-09-23`. **`NOT TRACED`: whether any consumer reads `ot_rule` at all** — if
 every reader filters to `include`, the practical loss is the `1,368 exclude` rows rather than all
