@@ -134,16 +134,89 @@ that is the useful part.
 > | **18** | **Assemble the three pipelines and the day** | **`STEP 8`** `P1` · **`STEP 9`** `P2` · **`STEP 10`** `P3` · **`STEP 12`** the game-day timeline and the four clocks | 🔴 **`P2` and `P3` have NO CRON** |
 > | **19** | **Dry-run opening night before it happens** | **`STEP 13`** | 🔴🔴🔴 **`T23-2`: `P3` aborts on every `2026-27` date · `§T23.5`: parallel catch-up deadlocks** |
 >
-> #### ⚠⚠ **`NOT RECORDED` — what a rebuilder cannot get from this corpus**
+> ### 🗄 **THE DATABASE, IN CREATION ORDER** *(derived live `2026-09-23`, `§F7.23` — read-only)*
 >
-> | question | the corpus does not answer it; **this does** |
+> #### The shape, measured
+>
+> | | |
 > |---|---|
-> | **The exact `CREATE SCHEMA` / `CREATE TABLE` DDL, in dependency order** | 🔴 **NOT RECORDED as a script.** *The live database is the source of truth: `apply_schema_all.py` at the repo root is the applier, and per-table definitions are in `NBA_DATABASE.md`. **No file in the corpus contains the ordered DDL for a from-empty build.*** |
-> | **Cloudflare account, Hyperdrive binding and secret provisioning** | 🔴 **NOT RECORDED.** ▶ `generate_wrangler_configs.py` and `github_write_worker_secrets_file.py`, **both at the repo root** — the values themselves are secrets and are never in the corpus *(`F2-1`, `T22-1b`: **the repo is public**)*. |
-> | **Which of the `34` `nba-*.yml` workflows a fresh build needs, versus which are one-time or historical** | ⚠ **PARTIAL.** *`STEP 8`–`STEP 10` cover the three pipelines; `STEP 11` names `nba-backfill.yml` as the one-time stage 2. **The remaining ~`30` are not classified anywhere.*** *Re-derive the list:* `` ls .github/workflows/nba-*.yml `` |
+> | **schemas** | **`14`** — but only **`8`** hold anything. ***Create these `8`:*** `nba_calendar` · `nba_config` · `nba_control` · `nba_market` · `nba_ref` · `nba_score` · `nba_stats` · `nba_team`. **The other `6` have `0` tables and always have** *(`nba_archive`, `nba_backtest`, `nba_classification`, `nba_context`, `nba_daily`, `nba_scoring`)*. |
+> | **objects** | **`112`** *(tables + views)* |
+> | **primary keys** | **`79`** ⇒ 🔴 **`27` tables have NO primary key** |
+> | 🔴🔴🔴 **foreign keys** | ***`1`. In the entire database.*** *(and it is on an out-of-scope PrizePicks object)* |
 >
-> ⇒ 📌 ***Those three are the real floor of this document: everything else on the checklist above can
-> be done from what is written or what it points at.***
+> 🔑🔑 ***THIS IS THE FACT THAT MAKES A REBUILD TRACTABLE: there is no foreign-key graph, so there is
+> no topological ordering to discover. Creation order is LOGICAL, not enforced — nothing in the
+> database will stop you creating a table before the thing it conceptually depends on.*** ⚠ *The cost
+> of that freedom is that nothing catches an orphan either.*
+>
+> 🔴🔴 **AND THE FIVE LARGEST TABLES — `~34 GB` between them — HAVE NO PRIMARY KEY**:
+> `nba_score.baseline_history` *(13 GB)* · `nba_score.final_hp` *(9.4 GB)* ·
+> `nba_market.board_snapshots` *(6.6 GB)* · `nba_score.board_scored` *(2.9 GB)* ·
+> `nba_market.board_outcomes` *(2.2 GB)*. **Uniqueness on them is carried by a `UNIQUE INDEX`, not a
+> constraint** — so a rebuild that creates the table and forgets the index gets silent duplicates.
+> ***The two that matter most:***
+> ```
+> CREATE UNIQUE INDEX baseline_history_uidx ON nba_score.baseline_history
+>        (game_date, player_id, game_id, prop, period, line);
+> CREATE UNIQUE INDEX final_hp_uidx ON nba_score.final_hp
+>        (game_date, player_id, prop, line, side);
+> ```
+> ⚠⚠ **NOTE WHAT IS ABSENT FROM THE FIRST ONE: `ot_rule`.** *`nba_score.baseline_ladder`'s PRIMARY KEY
+> **is** `(asof, player_id, game_id, prop, period, ot_rule, line)`.* ⇒ ***The two baseline tables key
+> on different column sets, and that difference is `F6-1` — the loader's merge key omitting `ot_rule`
+> and dropping `1,421` rows a run.*** **A rebuilder who copies one key onto the other reproduces the
+> bug.**
+>
+> #### Creation order — **eight groups, dependencies first**
+>
+> | # | create | why here |
+> |---|---|---|
+> | **1** | **the `8` schemas** | everything else is qualified by them |
+> | **2** | **`nba_config`** *(`14` tables)* — `system_settings`, `worker_definitions`, `external_credentials`, `stat_decay_config`, `role_tiers`, `variation_bands`, `factor_registry`, `factor_relevance`, `factor_profile_cells`, `classification_config`, `calibration_log` … | **every tunable lives here** *(`STEP 0` constraint `4`)*; workers read it at startup |
+> | **3** | **`nba_control`** *(`2`)* — `job_runs`, `worker_run_log` | run bookkeeping; written from the first worker onward |
+> | **4** | **`nba_ref`** *(`14`)* — `teams`, `players`, `arenas`, `officials`, the alias and name-map tables, `prop_taxonomy` | the identity layer everything joins to |
+> | **5** | **`nba_calendar`** *(`1`)* — `games` | game ids; `nba_stats`/`nba_team` key on them |
+> | **6** | **`nba_stats`** *(`19`)* and **`nba_team`** *(`9`)* — the game logs and profiles | need `players`/`teams`/`games` to be meaningful |
+> | **7** | **`nba_market`** *(`25` + `4` views)* — boards, tiers, lines, the prop universe | independent of `1`–`5` in structure; needs them to be joinable |
+> | **8** | **`nba_score`** *(`22` + `2` views)* — the ladder, calibration, `final_hp`, paper trading | reads everything above |
+>
+> #### ✅ **EMIT THE EXACT DDL** — *run these; do not transcribe them into a document that will go stale*
+>
+> ```sql
+> -- 1. the schemas that hold anything
+> SELECT 'CREATE SCHEMA IF NOT EXISTS '||n.nspname||';'
+> FROM pg_namespace n JOIN pg_class c ON c.relnamespace=n.oid
+> WHERE n.nspname LIKE 'nba%' GROUP BY n.nspname ORDER BY 1;
+>
+> -- 2. every column, type, nullability and default, in creation-group order
+> SELECT table_schema, table_name, ordinal_position, column_name,
+>        data_type, is_nullable, column_default
+> FROM information_schema.columns
+> WHERE table_schema IN ('nba_config','nba_control','nba_ref','nba_calendar',
+>                        'nba_stats','nba_team','nba_market','nba_score')
+> ORDER BY array_position(ARRAY['nba_config','nba_control','nba_ref','nba_calendar',
+>          'nba_stats','nba_team','nba_market','nba_score']::text[], table_schema),
+>          table_name, ordinal_position;
+>
+> -- 3. primary and foreign keys
+> SELECT n.nspname||'.'||c.relname, k.contype, pg_get_constraintdef(k.oid)
+> FROM pg_constraint k JOIN pg_class c ON c.oid=k.conrelid
+> JOIN pg_namespace n ON n.oid=c.relnamespace
+> WHERE n.nspname LIKE 'nba%' AND k.contype IN ('p','f') ORDER BY 2 DESC, 1;
+>
+> -- 4. every index, verbatim and runnable  ⚠ THE UNIQUE ONES ARE LOad-BEARING
+> SELECT indexdef||';' FROM pg_indexes
+> WHERE schemaname LIKE 'nba%' ORDER BY schemaname, tablename, indexname;
+> ```
+> 📌 **`apply_schema_all.py`** *(repo root)* is the applier. **`NBA_DATABASE.md`** carries the prose
+> for each table — what the columns mean, which are load-bearing, and the gotchas.
+>
+> #### ⚠⚠ **THE ONE THING STILL NOT DERIVABLE**
+>
+> | | |
+> |---|---|
+> | **The original `CREATE TABLE` statements as written, with their comments and intent** | 🔴 **NOT RECORDED, and not recoverable from the catalog** — *the catalog gives the shape, not the reasoning.* ▶ **`NBA_DATABASE.md` is where the intent lives**; the queries above give the exact current shape. ***Together they are sufficient; neither alone is.*** |
 
 ## 🔧 MAINTENANCE — **the six things any chat must be able to do** *(`§F7.21`, `2026-09-23`)*
 
