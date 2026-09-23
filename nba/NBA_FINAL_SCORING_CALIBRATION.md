@@ -52,6 +52,7 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 > | § | what it covers | 🚩 |
 > |---|---|---|
 > | **`0.14-T23`** | 🔴🔴 **The tails hypothesis TESTED on `1.08 M` legs — and it failed in the worst direction.** Our tails are mis-priced, not theirs *(§1)* · the book beats the model everywhere *(§2)* · 🔑 **what it does NOT overturn — the model RANKS** *(§3)* · 🔴 **it indicts the `0.15` Platt guard, which lives in this layer's recipe** *(§4)* | 🔴🔴 |
+> | **`0.16-F2`** | 🔴🔴🔴 **THE THRESHOLD SWEEP `§0.14-T23`'s VERDICT CAME FROM, recovered 2026-09-23.** The design read off the SQL — one leg per player-day, greedy slip packing, void re-pricing, payout base `2→3.0 … 6→37.5` *(§1)* · **the `3 × 5 × 2` `ROI` grid, `29` of `30` cells** *(§2)* · ✅✅ **the line-movement LEAKAGE CONTROL — `4` of `8` cells go UP when moved lines are removed, so the edge is not a stale-line artifact** *(§3)* | 🔴🔴🔴 |
 > | **`0z`** | ⚠⚠ **DATA-STATE WARNING — the `2025-26` partition of `final_hp` is ONE DAY DEEP** | ⚠⚠ |
 >
 > ### 🎯 **B · THE SCORE AND THE CONFIDENCE — what they are and what went wrong**
