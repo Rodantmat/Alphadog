@@ -732,6 +732,37 @@ later.***
 | `nba_market.board_snapshots` | 6,604 MB | 27,059,920 |
 | `nba_score.board_scored` | 2,948 MB | 11,956,460 |
 
+> ### 💾 **§T23.11 — WRITE CHURN: `final_hp` HAS BEEN WRITTEN `13.4×` MORE TIMES THAN IT HOLDS ROWS**
+> **`[LIVE-AUDIT]` `2026-09-23`** *(`pg_stat_user_tables`; `T23` found it `2026-09-21`, re-derived here)*
+>
+> | table | inserted | deleted | live | dead | **ins ÷ live** | last autovacuum |
+> |---|---|---|---|---|---|---|
+> | 🔴 **`final_hp`** | **`258,561,141`** | `239,723,346` | `19,320,938` | `0` | 🔴 **`13.4×`** | `2026-09-19T22:53Z` |
+> | **`baseline_history`** | `54,543,540` | `42,385,543` | `19,266,865` | 🔴 **`1,199,494`** | `2.83×` | ⚠ **`2026-09-14T10:43Z`** |
+> | `board_scored` | `12,982,230` | `163,515` | `12,798,976` | `0` | `1.01×` | `2026-09-21T17:07Z` |
+> | `ladder_calibration_asof` | `23,120` | `13,216` | **`9,904`** | `0` | `2.33×` | `2026-09-21T07:22Z` |
+>
+> 🔑🔑 **`final_hp` is a `13 GB` table that has had a quarter of a billion rows written into it and
+> `240` million deleted back out.** ⇒ ***It is rebuilt wholesale, repeatedly — delete-all-then-insert,
+> not upsert.*** *That is the same write shape as `load_baseline_ladder.py`'s
+> `DELETE … WHERE asof = %s` + plain `INSERT` **(`F6-1`)**, at `13×` the scale.*
+>
+> ⚠ **`baseline_history` carries `1,199,494` DEAD TUPLES and has not been autovacuumed since
+> `2026-09-14`** — *nine days at the time of measurement.* **`6.2%` of the table is dead space that
+> has not been reclaimed**, on the largest table in the database. 📌 *This is a concrete, dated input
+> to `T20-2`, the storage-diet item that was written against a system that has since moved.*
+>
+> ✅ **`ladder_calibration_asof`'s row history corroborates the calibration wipe independently**:
+> `23,120` inserted against `13,216` deleted leaves exactly the **`9,904`** cells the rebuild
+> produced *(`§T23.10`)*, and the `3,639 → 9,904` prop-mapping fix is visible in the gap.
+>
+> ⚠⚠ **`RULE 30` APPLIES AND IS VISIBLE IN THIS VERY TABLE.** *`n_live_tup` reports `board_scored` at
+> `12,798,976`. **An exact `count(*)` the same day returned `12,818,715`** *(`§T22.23`)* — **a
+> `19,739`-row disagreement, `0.15%`.*** 🔑 ***Both numbers are correct; only one of them is a count.***
+> **Never quote a `pg_stat_user_tables` figure as a row count.**
+
+
+
 > ### ✅✅ **§T22.23 — `board_scored` NOW COVERS BOTH FULL SEASONS, AND THAT UNBLOCKS THE BIGGEST DOWNSTREAM ITEM IN THE PROJECT**
 > **`[LIVE-AUDIT]` `2026-09-23`** *(re-derived here; `T22` pass `23`)*
 >
