@@ -7,6 +7,7 @@ constraints that shaped it. This is the operational spec.
 
 > # 📑 **INDEX — `NBA_SYSTEM_DESIGN.md`**
 > **~~`148`~~ → ~~`166`~~ → ~~`167`~~ → `169` sections · ~~`178,053`~~ → ~~`185,565`~~ → `193,223` bytes *(at parent commit; `§F6.19`)* · ~~`2,429`~~ → `2,526` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> 📏 **CENSUS STAMP — `2026-09-23`, `§F7.5`. THE SAME SWEEP RAN ON ALL TWELVE AND ONLY ONE OF THE THREE FIGURES SURVIVED IT.** ***`sections` is authoritative and was re-derived at this date. `bytes` and `lines` are NOT — read them as approximate and dated, and never quote them as evidence.*** *Measured against the live files the same day: **sections exact `12` of `12`** · **bytes exact `1` of `11`** · **lines exact `0` of `6`**. ⚠ **This file's line figure is one of the two worst: `2,526` published against `2,627` live, `+101`.** ⚠ **The cause is structural, not carelessness: a census lives inside the index it measures, so the patch that publishes a figure invalidates it in the same commit** *(`§F6.19`)*. ⇒ **Re-derive sections with `^(?:>\s*)*#{1,6}\s` — never `^#`, which is blind to the `294` blockquoted headings across the twelve.**
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
