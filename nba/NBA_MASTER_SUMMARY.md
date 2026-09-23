@@ -39859,3 +39859,90 @@ were **opened** — `SUM:9837` and `:11764` establish the override and claim any
 proved it — the four copies were not a rollover bug, they were an uncredited re-derivation of the
 right function.** ⚠⚠ ***A duplicate that computes the correct answer is not harmless: it inherits the
 semantics and not the CONTROLS, so it stays right exactly until someone tries to change it.***
+
+---
+
+# §T20.130 — T20 PASS 125: ✅🔴 **THE LEVER CENSUS — `69` KNOBS, `17` WITH NO SETTER ANYWHERE — AND THE INSTRUMENT HAD TO BE CORRECTED MID-PASS BEFORE ANY OF IT WAS TRUE**
+
+*Pass 125, 2026-09-23. Pre-registered as **"THE LEVER CENSUS — THREE TIMES NOW THE REMEDY HAS NOT
+REACHED WHAT IT LOOKED LIKE IT REACHED. FOR EVERY OPERATOR KNOB THE CORPUS NAMES: WHAT ACTUALLY MOVES
+WHEN YOU TURN IT?"***
+
+## ① THE POPULATION *(clause ii, `2026-09-23T00:54:41Z`)*
+
+`os.environ.get("…")` across the **`40`** called scripts plus `nba_names.py`, `nba_season.py`,
+`nba_asof.py` ⇒ **`71` distinct names**, of which **`69` are levers** *(`DATABASE_URL` and `PROXY_URL`
+are credentials and are excluded; **no value of anything is reproduced here — the repo is PUBLIC**)*.
+**Most-read: `BT_ASOF` (`5` scripts). Sixty-one are read by exactly one.**
+
+## ② 🔑🔑 THE INSTRUMENT WAS WRONG, AND CATCHING IT CHANGED FOUR VERDICTS
+
+**My first setter probe was `grep -lE "^\s+VAR:"` — YAML `env:` syntax only.** It reported these as
+having no setter anywhere:
+
+| lever | YAML `env:` | **inline shell `VAR=`** |
+|---|---|---|
+| 🔴 **`BT_PROPS`** | `0` | **`6` workflows** |
+| `INJURY_MAX_DAYS` | `0` | `1` |
+| `MATCHUPS_MODE` | `0` | `1` |
+| `SEASON` | `0` | `1` |
+
+⚠⚠ **`BT_PROPS` is how `P2` drives the per-pair ladder build** — `BT_PROPS="$PAIR" python
+nba/baseline/build_baseline_ladder.py` inside a `for` loop. ***A YAML-only census would have published
+that the single most important ladder lever in the system has no setter.*** ✅ **`§T20.115`'s standing
+warning — *"an instrument aimed at one spelling of a thing reports the absence of the thing"* — applied
+BEFORE publishing rather than after.**
+
+## ③ THE RESULT: `17` LEVERS HAVE NO SETTER ANYWHERE *(both spellings checked)*
+
+| group | levers | note |
+|---|---|---|
+| **already filed** | `NBA_SEASON` · `RUNG_FROM` · `RUNG_TO` | ✂ `§T20.129`/`T20-4` and `T20-5` — **listed for completeness, killed as findings** |
+| **season/diagnostic defaults that always win** | `NBA_DELTA_SEASON` · `MAX_GAMES` · `GAP_FROM` · `GAP_TO` · `INJURY_SELFTEST` · `INJURY_PROBE_URL` | *`NBA_DELTA_SEASON` unset ⇒ `scrape_nba_daily_delta.py:79`'s `detect_current_season()` always wins — which is the **correct** behaviour and is on file* |
+| ⚠ **scraper identity parameters** | **`6` `UNDERDOG_*`** and **`2` `FLIFF_*`** device/client/version identifiers | **Named, never valued.** *Unset ⇒ each scraper always uses its built-in default identity. **This is the class that breaks when an app updates its client**, and nothing in the repo can change them without an edit.* |
+
+## ④ ✂ THE PASS'S BIGGEST CANDIDATE WAS ALREADY ON FILE — AND FINDING THAT CAUGHT *MY OWN* ERROR
+
+**I traced `BS_SOURCE` and found it is a DEAD LEVER**: `score_board_legs.py:108` reads it, `:134`
+prints it inside a log line, **and the variable is never used again** — *three occurrences of `source`
+in the whole file: a comment, the assignment, the log.* **The query at `:109–116` reads
+`nba_market.board_snapshots` unconditionally.** *Set by exactly one workflow — `nba-engine-test.yml:89`,
+to `"archive"` — and **never by `P3`**.* **Its own comment says *"`board_snapshots` … is NOT the live
+board. **BS_SOURCE selects**"* — it selects nothing.
+
+✂ **KILLED — `NBA_OPEN_ITEMS.md:12856`, `T18-5`, says it already**: *"the `BS_SOURCE` switch was never
+needed… **The switch built into the scorer is dead code.** Severity: LOW (dead code, not a defect)."*
+
+🔴🔴 **BUT FINDING `T18-5` EXPOSED A FALSE SENTENCE OF MY OWN, TWO PASSES OLD.** `§T20.127` wrote:
+*"the DFS apps, **which are what `BS_SOURCE=live` reads**, are exactly such a source."* **`BS_SOURCE=live`
+reads nothing. There is no branch.** ⚠ *I wrote it while `T18-5` sat on file saying so — **`§T20.118`'s
+failure, committed by me, for the second time.*** ✅ **Corrected in place at `§T20.127`.**
+
+## ⑤ 🔴 AND `T18-5`'s OWN RATIONALE NO LONGER HOLDS — AN UPDATE, NOT A RESTATEMENT
+
+`T18-5` rates the dead switch **LOW** because *"live and archive are **one table**… **the same path by
+construction**."* ⚠⚠ **Two later findings falsify that**: **`§T20.124`** — the live path writes
+`home_team`/`away_team` **always NULL** while the Odds-API path fills them `100%`; **`§T20.125`** —
+the live path has written **`7,951` baseball rows** into the same table. ⇒ ***They are not the same
+path, and a switch that cannot distinguish them is no longer merely unnecessary.***
+
+🔑 **AND A SWITCH IS NOW BARELY WRITABLE.** *Today the two are separable by `snapshot_label` —
+live-path rows are `routine`, the Odds-API archive is `close`/`window`.* 🔴 **But
+`nba-p3-afternoon-light.yml:132–136` sets `ARCHIVE_LABEL: "window"`, with a comment that it *"MUST
+be"*** ⇒ ***in production the live rows carry the SAME label as the archive.*** **Same table, same
+`game_date`, same `snapshot_label`, no source column, and — per `§T20.125` — no sport column.**
+⇒ **Nothing would distinguish them.** ▶ **`T18-5` updated from `CLOSED-BY-DISCOVERY / LOW` with this
+evidence.**
+
+✅ **THE PIPELINE STILL WORKS — BY ORDERING, NOT BY THE MECHANISM ITS COMMENT DESCRIBES**: `P3` runs
+`archive_live_boards.py` before `score_board_legs.py`, so today's board is in the table when the
+scorer reads it. ⚠ ***Correct by accident of step order.***
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `dead lever` **0/0/0**; `BS_SOURCE` scores
+**3 of 12** and the mentions were **opened** — one is `T18-5` *(the kill)*, one is **my own false
+sentence**, one is a run-log row. ✅ **The census, the instrument correction and the `T18-5` update are
+NOVEL.**
+
+📌 ***The lesson:*** **the pass's headline was already filed, and looking for the file is what found
+the error I had made citing it.** ⚠⚠ ***`RULE 51` is usually described as preventing duplicate work.
+Its larger value is the opposite: reading the prior entry tells you what you got wrong about it.***
