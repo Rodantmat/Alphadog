@@ -278,6 +278,21 @@ jobs:
           C3_SEASONS: ${{ github.event.inputs.season }}
         run: python nba/build_confidence_v3.py
 
+      # 6b) FINAL_HP — THE SYSTEM'S HEADLINE OUTPUT, AND UNTIL NOW NO PIPELINE OWNED IT.
+      # Recorded as "final_hp is rebuilt by NOTHING" (NBA_SYSTEM_DESIGN §4b). The cause was mechanical:
+      # build_final_hp.py deleted season+prop while FE_DATE scoped the SELECT to one slate, so a daily
+      # run would have wiped the season's history. That write scope is fixed (2026-09-23), so P2 can
+      # own it. ORDER MATTERS: it reads ladder_calibration_asof and the confidence model, so it runs
+      # AFTER both refits above - today's slate is built on cells refit from everything graded up to
+      # last night. FE_DATE = this slate (seconds, not the ~90 minutes a full rebuild takes);
+      # FE_SEASONS blank so the script resolves the live season itself; FE_WRITE=1 or it only reports.
+      - name: Build final_hp for the slate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_DATE: ${{ steps.d.outputs.asof }}
+          FE_WRITE: "1"
+        run: python nba/build_final_hp.py
+
       # 6) CERTIFY: today's baseline exists, >= 25 props, zero invalid probabilities
       - name: Certify P2
         env:
