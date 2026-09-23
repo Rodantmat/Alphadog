@@ -1943,3 +1943,69 @@ observable that records which one.**
 > keys, the `3×` alternate-volume ratio, the state constraint. 🔴 **`NOT RECORDED`** — how the `63`
 > were resolved; whether `c` was re-fitted after the goblin-floor correction. ⚖️ **`pp_*` objects not
 > queried; nothing probed or changed.**
+
+---
+
+# 0.15-T23. 🔑🔑 **THE WNBA FIT TABLE IN FULL — WITH THE MATCH RATE, AND CONSTANTS FOR THREE STATS NBA DOES NOT PRICE** *(T23 pass 4, §T23.4, 2026-09-23)*
+
+*`T23` SEG `493`, the fuller version of `§T23.3` §3. **First WNBA map: `2026-09-21`, `10:41–10:55 AM
+PT` — `400` quotes, `337` per-leg prices; `250` anchored by a same-board standard, `87` excluded for
+having none.** NBA's **v2** constants against a fresh WNBA grid fit of `c` **under the same v2
+formula**. All four blocks below score `0` in both trees.*
+
+| stat | legs | **NBA `c`** | **WNBA `c`** | 🔑 **NBA `c` within 1 step** |
+|---|---|---|---|---|
+| points | `53` | `1.87` | `1.88` | **`62%`** |
+| pts+rebs | `27` | `1.87` | `1.86` | **`67%`** |
+| pts+rebs+asts | `32` | `1.87` | `1.94` | **`56%`** |
+| pts+asts | `26` | `1.87` | `1.78` | ⚠ **`42%`** |
+| 🔴 **rebounds** | `32` | `1.08` | **`1.32`** | 🔴 **`28%`** |
+| 🔴 **assists** | `17` | `1.08` | **`1.28`** | 🔴 **`35%`** |
+| **rebs+asts** | `24` | `1.34` | `1.46` | `50%` |
+| 🟢 **`fg_attempted`** | `14` | 🔴 **— none** | 🟢 **`1.22`** | — |
+| 🟢 **`fantasy_score`** | `14` | 🔴 **— none** | 🟢 **`2.08`** | — |
+| 🟢 **`3pt_attempted`** | `8` | 🔴 **— none** | 🟢 **`1.16`** | — |
+
+## 1. 🟢🟢 **THE OWNER'S PURPOSE WAS SERVED — THREE CONSTANTS FOR STATS NBA HAS NONE FOR**
+
+*The instruction* (`§T23.1` §4) *was: "use the ones that are available for women NBA and are **not
+available for men NBA** and **complete the gaps**."* ⇒ ✅ **`fg_attempted` `1.22`, `fantasy_score`
+`2.08`, `3pt_attempted` `1.16` are exactly that** — **`36` legs of evidence across three stats the
+NBA board does not currently price.**
+
+🔑 **And `fantasy_score` at `2.08` is the highest constant in the table**, above the points family's
+`1.87` — *consistent with a composite having wider dispersion than any of its parts, which is what
+the `c × √(line)` form would predict.* ⚠ **`14` legs is a small fit and is stated as one.**
+
+## 2. 🔴🔴 **THE MATCH RATE IS THE COLUMN THAT MATTERS, AND IT IS SOBERING EVEN WHERE IT "TRANSFERS"**
+
+> **`62%` is the BEST single-stat agreement**, on points, where the constants match to `0.01`.
+
+⇒ ⚠⚠ ***Even where the constant transfers exactly, NBA's `c` predicts the WNBA payout within one
+display step only about two times in three.*** **That is a precision ceiling on the whole per-leg
+pricing approach, and it is measured here for the first time.** 🔑 *It reframes "the points family
+transfers": the FAMILY transfers, the individual PRICE is right `~⅔` of the time.*
+🔴 **And where it fails it fails hard — `28%` on rebounds** *(a coin flip would do better on a
+3-outcome question)*.
+
+## 3. ✅ **REFITTING PER LEAGUE CUTS THE ERROR BY `4–5×`**
+
+> *"rebounds and assists do not [transfer] — **refit error `~17–20%` → `~4%`**; league-specific."*
+
+⇒ **A per-league refit is worth `~4–5×` on the families that don't transfer**, which is the
+quantitative case for *"league-specific"* rather than a shared constant. ⚠ **`NOT RECORDED`**:
+whether the NBA constants were themselves refit at the same precision, or whether `~4%` is the floor.
+
+## 4. ⚠ **AND THE PARAMETERISATION IS NAMED: "NBA's `v2` constants… the same `v2` formula"**
+
+🔑 *This is the first place in the corpus where the constant set is version-labelled.* ⇒ **It
+supports the refit reading of the `T22`/`T23` discrepancy flagged above** *(`§0.13-T22`)* — **but
+"v2" is not tied to a date or a model version here**, so 🔴 **`NOT RECORDED`: what `v2` is, and
+whether `T22`'s `≈2.0/1.25/1.4` is `v1`.**
+
+---
+
+> 📌 **TIERS**: ⚠ **AS STATED IN `T23`** — every figure; **not re-run by this sweep**, and the WNBA
+> table was not read *(it is the other session's object)*. 🔴 **`NOT RECORDED`** — what `v2` denotes;
+> whether NBA was refit at the same precision; the WNBA playoff end date that bounds any further
+> mining *(`§T23.3` §5)*. ⚖️ **`pp_*` objects not queried.**
