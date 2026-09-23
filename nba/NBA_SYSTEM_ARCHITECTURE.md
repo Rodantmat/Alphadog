@@ -2451,3 +2451,56 @@ was in `0` of the twelve until today, so no later pass could check itself agains
 they are evidence of **what was intended**, not proof that the system was built that way. Each
 mechanism's CURRENT state is documented elsewhere in this corpus and verified there; this section
 supplies the missing WHY and nothing more.*
+
+---
+
+# §F6.6 — 🔴 **THE BOARDS WE ARCHIVE ARE THE *CALIFORNIA* BOARDS, AND THAT WAS NOWHERE ON FILE**
+
+*Added 2026-09-23. Surfaced by the uncovered-band probe on `T12`, then **re-derived from the repo,
+which is the authority (rule 21)** — not from the transcript.*
+
+**DFS product availability is STATE-SCOPED. Two of the five board scrapers pin a state, by two
+different mechanisms, and the corpus documented neither.**
+
+## 1 · Underdog — pinned EXPLICITLY, by coordinate *and* by rule set
+
+**`nba/scrape_underdog_board.py`**, live today:
+
+| line | what it sends | in the twelve? |
+|---|---|---|
+| `:24` | `UNDERDOG_STATE_CONFIG` — *"state rule set; **CA** captured"* | ✅ named in **3** documents |
+| `:33` | `product_experience_id` + `state_config_id` on **every call** | ✅ named |
+| 🔴 **`:31`** | **`user-latitude` / `user-longitude` headers**, from **`UNDERDOG_LAT` / `UNDERDOG_LON`**, defaulting to a **hardcoded coordinate in San Diego County, California** | 🔴 **`UNDERDOG_LAT`, `UNDERDOG_LON`, `user-latitude` each `0` of `12`** |
+
+🔑🔑 **THE CONSEQUENCE, which is the part that matters and which nothing in the corpus states:**
+***every Underdog board this system has ever archived is the CALIFORNIA board*** — its props, its
+ladders, its alternate lines and its availability are whatever Underdog serves a California user.
+**`archive.underdog_ladder_history` and `market.underdog_board_current` inherit that scoping**, and
+so does anything fitted on them.
+
+⚠ **Two live risks, recorded not repaired:**
+- **The coordinate and the proxy IP can disagree.** *`PROXY_URL` is a separate egress; if it exits
+  in another state the geo headers say California and the IP says otherwise.* **Which one Underdog
+  trusts is `NOT RECORDED`.**
+- **`state_config_id` is a hardcoded UUID captured from the web app.** *Underdog can rotate it. The
+  failure mode would be a board that silently changes shape or empties, not an error.*
+
+## 2 · Fliff — pinned IMPLICITLY, by IP, which is the opposite exposure
+
+**`nba/scrape_fliff_board.py:37`** sends **`"usa_state_code": ""` — empty** — with
+`usa_state_code_source` carrying an **`ipOrigin=…|regionCode=`** string. ⇒ ***Fliff derives the
+state from the EGRESS IP.*** **So the Fliff board follows the proxy, and the Underdog board follows
+a hardcoded coordinate. The two can be scoped to different states at the same moment, and nothing
+reconciles them.** 🔴 *`usa_state_code` returns **`0` of `12`**.*
+
+## 🔑 Why this was invisible
+
+*`§F2.16` reported **`0` environment variables absent from the twelve** — and `UNDERDOG_LAT` proves
+that finding was a floor, exactly as its `RULE 54` note said: the scan only saw identifiers that
+appeared in **uncovered** segments it had already classed substantive, and a header line inside a
+scraper's source listing did not qualify.* 📌 ***The correction is published here rather than left
+to stand: `§F2.16`'s "`0` env vars absent" is now known to be wrong by at least two.***
+
+⚠ **RULE 54.** *This is a code read, not a behavioural test. **It establishes what the scrapers
+SEND**, not what the books do with it, nor that a differently-scoped board would differ in content.*
+***"The requests are California-scoped", never "the data is wrong."***
