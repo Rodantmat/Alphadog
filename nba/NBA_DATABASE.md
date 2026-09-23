@@ -7,6 +7,61 @@ statements and `information_schema` reads, not from memory.
 **Source discipline.** Every entry here came from a real DDL statement or a real schema query in a
 transcript. Where a table was altered later, the change is noted with its transcript.
 
+---
+
+## 🔴🔴🔴 **THE TRIGGER MAP — WHAT ACTUALLY WRITES TO THIS DATABASE, AND WHEN** *(T20 pass 116, `§T20.121`, 2026-09-23)*
+
+> ⚠⚠ **READ THIS BEFORE ANY TABLE ENTRY BELOW.** *The dictionary says what each table HOLDS. This says
+> **what puts anything in it** — and for fifty of the fifty-two objects, the answer is "a person."*
+>
+> **Populations re-derived from source, `2026-09-23T00:05:16Z`**: `40` called scripts · `21` Workers ⇒
+> **`41`** Worker write-targets + **`13`** Python write-targets *(from `11` writer scripts)*,
+> intersection **`2`** ⇒ **`52` distinct objects.**
+>
+> | what fires it | paths | live freshness |
+> |---|---|---|
+> | 🔴 **NOTHING IN THE REPO** — the 21 Workers, reachable only by `POST /run` *(`NBA_WORKERS.md:1662`, the no-orchestrator rule)* | **41** | **every measurable table `15`–`23` days stale** — newest `2026-09-08`, oldest `2026-08-31` |
+> | 🔴 **A PIPELINE STEP, in a pipeline with NO cron** — `P2`, `P3` | **10** | `2`–`12` days |
+> | ✅ **CRON** — `P1`, Mondays `0 19 * * 1` | **1** · `nba_ref.defender_ratings` | 🔴 `built_at` **`2026-09-13`** |
+> | ✅ **CRON** — `nba-referees.yml`, daily `30 15 * * *` | **1** · `nba_ref.referee_assignments` | 🔴 **`0` rows** |
+>
+> ⇒ 🔴🔴🔴 ***TWO of FIFTY-TWO write paths have an automatic trigger, and both are empty or stale.***
+>
+> **Writer → pipeline** *(read from the workflow files, not from memory)*: `archive_live_boards` **P3**
+> · `build_asof_calibration` **P2** · `build_availability_delta` **P3** · `build_blowout_model` **P2** ·
+> `build_confidence_v3` **P2** · `build_defender_ratings` **P1** · `build_rung_market` **P3** ·
+> `grade_board_outcomes` **P2** · `load_baseline_ladder` **P2** · `score_board_legs` **P3** ·
+> `scrape_referee_assignments` **P2 *and* `nba-referees.yml`**. **`P1` cron `1` · `P2` cron `0` ·
+> `P3` cron `0`.**
+>
+> 🔴 **AND THE ONE PIPELINE WITH A CRON HAS PRODUCED NO WRITE IN ITS LAST TWO WINDOWS.**
+> `nba-p1-weekly-static.yml:92–95` runs `build_defender_ratings.py` **unconditionally, no `if:` gate**,
+> and that script stamps `built_at`. **Live `max(built_at)` = `2026-09-13T17:01:08Z`, while the Monday
+> crons of `2026-09-14` and `2026-09-21` have both passed.** ⚠ **CAUSE NOT ESTABLISHED** — either the
+> workflow is not completing, or the step runs and does not write *(the script has a `> 10k` row floor
+> at `:64–67`)*. *Named rather than chosen; the run log for that workflow could not be filtered here.*
+>
+> 🔑 **WHY THIS IS NOT BRIEF ITEM `B` RESTATED**: `B` says the static tables are frozen. **This says
+> what would unfreeze them — and that for all thirty the answer is a Worker, and for all twenty-one
+> Workers the answer to "what fires it" is NOTHING IN THE REPO.** ⇒ ***The staleness is not a stalled
+> job. There is no job.***
+>
+> 📌 **Freshness, oldest first** *(Worker tables, `max(updated_at)`)*: `nba_ref.teams` · `team_aliases`
+> **`08-31`** · `player_aliases` · `arenas` · `officials` · `player_tracking_profile` ·
+> `nba_team.season_profile` · `player_onoff_profile` **`09-01`** · `player_impact_rating` ·
+> `nba_calendar.games` · `player_playtype_profile` · `nba_team.playtype_profile` ·
+> `player_tracking_detail` **`09-02`** · `player_shot_quality` · `player_shot_zone_profile` ·
+> `player_season_profile` · `nba_ref.players` · `player_game_starter_status` **`09-03`** ·
+> `nba_team.lineup_profile` **`09-04`** · then the **`09-08`** group: `player_game_log_usage`,
+> `_scoring`, `player_career_season_totals`, `player_splits`, `team_splits`, `player_game_log`,
+> `team_game_log`, `player_game_log_advanced`, `team_game_log_advanced`, `defense_vs_position`,
+> `game_officials`.
+>
+> ▶ **Full derivation and the two logged kills: `NBA_MASTER_SUMMARY.md` `§T20.121`.**
+> ▶ **The board half of this map is `T20-22` (`§T20.120`).** ⚠ *Documented, not fixed (rule 1).*
+
+---
+
 **Update log**
 | Date | What changed |
 |---|---|
