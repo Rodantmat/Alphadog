@@ -41420,6 +41420,18 @@ transcript**."* **Until now the case for it was stated in terms of FILE SIZE** *
 > assertive claim plus `T`-number and `grep -n` line — can account for many segments in the space a
 > prose entry spends on one.** *The prose format is why a pass covers `5` segments; it is not a
 > property of the material.*
+>
+> > 🔴🔴🔴 **FALSIFIED BY DIRECT EXPERIMENT ONE PASS LATER — `§T22.5`, same day.** *The sentence above
+> > is wrong, and it was wrong in a way I had already named and then ignored.* **`§T22.5` wrote seven
+> > findings in exactly that pointer form and re-measured: `855 → 855` uncovered, high band
+> > `26 → 25`. **The dense pass covered ZERO segments — one fewer than nothing.**
+> > 🔑 **Why**: *the instrument is a **char-n-gram text-similarity matcher**. It moves a segment when
+> > the documents REPRODUCE that segment's wording. **A pointer summarises instead of reproducing, so
+> > it creates no overlap.*** ⇒ ***Under this instrument a pointer entry accounts for FEWER segments
+> > per pass, not more.*** ⚠⚠ **And caveat 2 below says this explicitly — *"the instrument rewards
+> > text similarity, not understanding… the metric is a proxy and is named as one"* — **and I built
+> > the throughput argument on it anyway, in the same section.*** 📌 **The `~44×` ratio and the
+> > `5.0`/pass measurement stand; only the INFERENCE from them to the format is retracted.**
 > 🔑 **So the directive was not only about the files being heavy to READ. On this measurement it is
 > also about them being slow to WRITE — and at `~350` passes for `T22`+`T23` alone, that is the
 > binding constraint on ever finishing.**
