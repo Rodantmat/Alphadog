@@ -2761,6 +2761,88 @@ discriminator.* **`NOT DONE`: the `12` non-`.md` artefacts in `nba/` — `.py`, 
 scripts are described inside `NBA_WORKERS.md` and `NBA_RECIPE.md` by function rather than by a
 folder listing, and whether that is sufficient has not been tested.*
 
+## ✅✅ §F7.7 — **THE POINTER AUDIT: `98.79%` RESOLVE, AND THE DEFECT IS SOMEWHERE ELSE ENTIRELY**
+
+*`2026-09-23`. Owner research question: **"whether every index entry resolves."***
+
+### 1 · 🔴🔴🔴 THE INSTRUMENT IS THE FINDING — FIVE VERSIONS, FIVE ANSWERS, ONE UNCHANGED CORPUS
+
+*Before any result: **this measurement was wrong four times**, and each wrong version was plausible
+enough to publish.*
+
+| version | what it got wrong | measured dangling rate |
+|---|---|---|
+| **1** | matched labels **with** the `§` | **`70.3%`** |
+| **2** | matched **bare numeric** labels | **`57.0%`** |
+| **3** | matched `T`/`F`-prefixed labels | **`3.1%`** — *this is the `26` the owner was told about* |
+| **4** | **non-greedy** label extraction — `T1.119` truncated to `T1` | `55` dangling |
+| **5** | decoration class missing `🔍` and `❌` — **headings that begin with an unlisted emoji were invisible** | `80` |
+| ✅ **5 + full corpus** | resolve against all `32` files, not the twelve | **`80` of `6,601` — `1.21%`** |
+
+🔑🔑 ***Every published dangling rate in this corpus's history has been an artifact of the detector,
+and every one of them was more pessimistic than the truth.*** ⚠ **`RULE 58` applies to your own
+tools, and this is its fourth demonstration.** *The `26` figure carried into this session's resume
+note was version `3`. **It is hereby superseded: the real count is `80` occurrences across `13`
+distinct labels, and `12` of the `13` resolve to a parent heading.***
+
+### 2 · The result
+
+| resolution corpus | resolve | dangling | distinct |
+|---|---|---|---|
+| the twelve alone | `6,366` — `96.44%` | `235` | `40` |
+| + `NBA_SWEEP_RUN_LOG.md` | `6,468` — `97.99%` | `133` | `21` |
+| ✅ **+ all `32` `nba/*.md`** | **`6,521` — `98.79%`** | **`80`** | **`13`** |
+
+🔑 **The step from `96.44%` to `98.79%` is itself a finding**: *`155` pointer occurrences in the
+twelve resolve **only** outside the twelve. **The mandated set is not closed under its own
+citations.***
+
+🔴 **The one label with no parent anywhere is `§F7.9`** — *written by me, earlier today, in
+`NBA_GLOSSARY.md`'s `X–Z` bucket, as a forward reference to a pass that did not yet exist.* **The
+audit caught its own author in the same run that exonerated everyone else.** *Resolved by `§F7.9`
+below; recorded rather than quietly fixed, because a forward reference is exactly the failure this
+pass exists to measure and I should not get an exemption from my own instrument.*
+
+### 3 · 🔴🔴 What the audit found instead: bare section numbers
+
+| | n | share |
+|---|---|---|
+| bare numeric-leading `§` pointers in the twelve | **`2,473`** | `37.5%` of all pointers |
+| ✅ resolve inside the file they are written in | `1,518` | `61.38%` |
+| 🔴 point ACROSS files, with no filename | **`955`** | **`38.62%`** |
+
+⚠ **`RULE 53` — both admissible definitions published.** *LOOSE (any `§` label in a heading counts as
+defining it there): `955` non-local, `38.62%`. **STRICT** (only the heading's leading label):
+**`1,187`, `48.00%`**. *The flattering number was not chosen; the range is stated.*
+
+🔴 **`§4` is a heading in `29` of `32` files. `§3` in `31`.** **`88` numeric-leading labels are
+defined in more than one file; `1,411` pointer occurrences in the twelve name one of them.**
+
+🔑🔑 ***THE FINDING THAT NO DANGLING-LINK COUNT COULD EVER HAVE PRODUCED: the `§4`–`§9` family — `§4b`
+`§4c` `§4d` `§4k` `§4n` `§4o` `§5b` `§6b` `§7e` `§7f` `§7g` `§9`, roughly `250` citations — belongs
+to `NBA_ARCHITECTURE_BLUEPRINT.md`, a group-4 HISTORICAL SIBLING.*** *A reader who meets `§7f` inside
+`NBA_FINAL_SCORING_CALIBRATION.md` and greps the twelve finds the quotation and never the source.
+**Those pointers all "resolve." They resolve to a file the reader has no reason to know exists —
+which is why `§F7.6`'s folder register had to come first.***
+
+### 4 · The repair, and the one that was refused
+
+✅ **A `🧭 POINTER RESOLUTION` block in `NBA_MASTER_SUMMARY.md`**: the label-shape rule *(`§Tn.m` →
+summary · `§Fn.m` → run log · `§0x-Tn` → a topical file, grep it · bare `§n` → **file-local first**)*
+plus a disambiguation table for the most-cited cross-file labels. **`NBA_GLOSSARY.md` routes to it.**
+
+🔴 **REFUSED: rewriting the pointers to carry filenames.** *`955`–`1,187` occurrences. **`RULE 1`:
+re-labelling breaks every inbound pointer**, and the owner's standing rule is that a move is a delete
+plus an insert. **A thousand-citation edit to fix an ambiguity is the most content-destructive
+operation available here.*** ⇒ ***A lookup table resolves them all and edits none.***
+
+⚠ **`RULE 54`.** *`WINDOW`: all `§` occurrences in the twelve at `2026-09-23` `HEAD`; headings
+enumerated across all `32` `.md` files with `^(?:>\s*)*#{1,6}\s`. **Templates (`§T`*n*`.`*m*,
+`§0.x`, `§All`, `§Because`) were excluded by an explicit list of `22`** — a template I failed to list
+would count as dangling and inflate the `80`. **`NOT DONE`: pointers to `FILE:LINE` were not
+re-measured here** — `§T20.67`'s `83.7%` dead rate stands unretested, and **`NOT DONE`: the `§` labels
+inside the `20` sibling files were not audited**, only the twelve's.
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
