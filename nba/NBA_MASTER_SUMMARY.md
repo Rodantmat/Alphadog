@@ -214,6 +214,87 @@
 
 ---
 
+> # 🧭 **POINTER RESOLUTION — HOW TO FOLLOW A `§` LABEL, AND WHY `§4` IS NOT A POINTER**
+> ### *(added `2026-09-23`, `§F7.7`. **Authoritative**; `NBA_GLOSSARY.md` routes here.)*
+>
+> 🔑🔑 **THE HEADLINE, AND IT IS THE OPPOSITE OF WHAT WAS EXPECTED.** *The question asked was "do the
+> index pointers dangle?" **They do not — `98.79%` resolve.** The defect is not that pointers point
+> at nothing. **It is that a large minority point at nothing IN PARTICULAR**, because they carry a
+> section number and no document.*
+>
+> ## 1 · Resolution, measured *(`6,601` real `§` pointers in the twelve, `2026-09-23`)*
+>
+> | resolution corpus | resolve | dangling | distinct |
+> |---|---|---|---|
+> | **the twelve alone** | `6,366` — `96.44%` | `235` | `40` |
+> | **+ `NBA_SWEEP_RUN_LOG.md`** | `6,468` — `97.99%` | `133` | `21` |
+> | ✅ **+ all `32` `nba/*.md`** | **`6,521` — `98.79%`** | **`80`** | **`13`** |
+>
+> ✅ **And `12` of those last `13` resolve to a PARENT heading** — `§4c.4` → `§4c`, `§T15.4b` → `§T15`,
+> `§8a` → `§8` — *because the corpus writes sub-parts inline under a numbered heading rather than as
+> headings of their own.* 🔴 **The one that resolves to nothing at all is `§F7.9`** — *a forward
+> reference written earlier in this same session to a pass that did not exist yet. **The instrument
+> caught its own author.*** *(It resolves as of `§F7.9` below.)*
+>
+> ## 2 · 🔴🔴 The real defect: bare section numbers
+>
+> | | n | share |
+> |---|---|---|
+> | **bare numeric-leading `§` pointers in the twelve** *(`§4`, `§0f`, `§7f`, `§4c.4` …)* | **`2,473`** | `37.5%` of all pointers |
+> | ✅ resolve inside the file they are written in *(the intended file-local reading)* | `1,518` | **`61.38%`** |
+> | 🔴 **do NOT — they point across files, with no filename** | **`955`** | **`38.62%`** |
+>
+> ⚠ **`RULE 53` — the classification and the window.** *Two admissible definitions of "defined here",
+> and both are published rather than the flattering one: **LOOSE** (any `§` label anywhere in a
+> heading) gives `1,518` local / `955` non-local; **STRICT** (only the heading's leading label) gives
+> `1,286` / **`1,187`**. **The non-local share is therefore `38.6%`–`48.0%`, and it is not below a
+> third under any reading.***
+>
+> 🔴 **`§4` is a heading in `29` of the `32` files. `§3` in `31`. `§1`, `§2` in `31`.**
+> **`88` numeric-leading labels are defined in more than one file, and `1,411` pointer occurrences in
+> the twelve name one of them.** ⇒ ***A bare `§n` is not an address. It is a section number that
+> happens to be preceded by a section sign.***
+>
+> ## 3 · ✅ THE RESOLUTION RULE — *read this instead of guessing*
+>
+> | label shape | where it lives | certainty |
+> |---|---|---|
+> | **`§T`*n*`.`*m*** *(`§T20.121`)* | **`NBA_MASTER_SUMMARY.md`** — the transcript pass records | ✅ **unambiguous, global** |
+> | **`§F`*n*`.`*m*** *(`§F7.5`)* | **`NBA_SWEEP_RUN_LOG.md`** — the file-sweep pass records | ✅ **unambiguous, global** |
+> | **`§0`*x*`-T`*n*** *(`§0z-T16`, `§0y-T17`)* | a **topical** file — the `-T`*n* names the transcript, not the file | ⚠ **grep the label across the twelve** |
+> | **bare `§`*n* or `§`*n**letter*** *(`§4`, `§0f`, `§8a`)* | ⚠ **FILE-LOCAL FIRST** — the file you are reading. Only if it is not there is it a cross-file pointer | 🔴 **ambiguous by construction** |
+>
+> ### 🗂 **DISAMBIGUATION — the most-cited cross-file bare labels and where they actually are**
+> *(cited from inside the twelve, resolving nowhere in the citing file)*
+>
+> | label | cited | actually defined in |
+> |---|---|---|
+> | **`§9`** | `54` | 🔴 `NBA_ARCHITECTURE_BLUEPRINT.md` · also `BCAL`, `DB`, and `3` siblings — **the worst label in the corpus** |
+> | **`§7f`** · **`§7g`** · **`§7e`** | `44` · `25` · `12` | 🔑 **`NBA_ARCHITECTURE_BLUEPRINT.md`** *(and `FCAL`, which quotes them)* — the `malformed array literal` mechanism, whole-universe comparison, leg-by-leg tracing |
+> | **`§4b` `§4c` `§4d` `§4k` `§4n` `§4o` `§5b` `§6b`** | `28`·`10`·`12`·`16`·`11`·`10`·`13`·`15` | 🔑 **`NBA_ARCHITECTURE_BLUEPRINT.md`** — *the whole `§4`–`§7` scheme is the BLUEPRINT's, a **group-4 historical sibling**, cited ~`250` times from inside the twelve with no filename* |
+> | **`§0z-3`** · **`§0z-5`** | `23` · `15` | `NBA_SYSTEM_DESIGN.md` |
+> | **`§0v.4`** · **`§0v`** · **`§0w`** · **`§5.6`** | `23` · `16` · `10` · `11` | `NBA_BASELINE_CALIBRATION.md` *(`§0v`, `§0w` also `NBA_DATABASE.md`)* |
+> | **`§0.9c`** · **`§0.9d.1`** · **`§0.3`** | `17` · `12` · `11` | `NBA_MULTIPLIERS.md` |
+> | **`§0.31`** | `13` | `NBA_WORKERS.md` |
+> | **`§0f`** | `15` | `FCAL` · `GOBLIN_DEMON` · `ARCHITECTURE` — **three files, one label** |
+> | **`§14`** | `14` | `FCAL` *(the `27` lessons)* · `NBA_LESSONS_LEARNED_FROM_MLB.md` |
+> | **`§0z`** · **`§0a`** | `13` · `12` | `DB`/`FCAL`/`DSN` · `DSN`/`WRK` |
+>
+> 🔑🔑 ***The single most useful fact on this page: the `§4`–`§9` family belongs to
+> `NBA_ARCHITECTURE_BLUEPRINT.md`, which is not one of the twelve.*** *A reader who meets `§7f` inside
+> `NBA_FINAL_SCORING_CALIBRATION.md` and searches the twelve for it will find the quotation and never
+> the source. **That is the pointer failure this corpus actually has, and no count of dangling links
+> would ever have surfaced it — they all resolved.***
+>
+> ## 4 · ⚠ Why the pointers were NOT rewritten
+> *`955`–`1,187` occurrences would have to be edited to carry filenames. **`RULE 1`: renumbering or
+> re-labelling breaks every inbound pointer**, and the owner's standing rule is that a move is a
+> delete plus an insert. **A mass edit of a thousand citations to fix an ambiguity is the single most
+> content-destructive operation available in this corpus.*** ⇒ ***A lookup table resolves them all and
+> edits none. The table is the repair.***
+
+---
+
 > # 🟢 **START HERE — FOUR QUESTIONS, ONE SCREEN** *(added 2026-09-22, T20 pass 102, §T20.107)*
 >
 > ⚠⚠ **THIS DOCUMENT IS ~~`2,789,201`~~ `2,954,675` CHARACTERS — about `739,000` tokens. DO NOT LOAD
