@@ -121,10 +121,15 @@ def main():
     for tbl, idx in (("nba_market.board_outcomes", "board_outcomes_nm_idx"),
                      ("nba_market.rung_market", "rung_market_nm_idx"),
                      ("nba_market.board_tiers", "board_tiers_nm_idx")):
+        schema = tbl.split(".")[0]
         try:
             with conn.cursor() as cur:
-                cur.execute(f"""CREATE INDEX IF NOT EXISTS {idx} ON {tbl}
-                    (lower(regexp_replace(player,'[^A-Za-z]','','g')), game_date, line)""")
+                # DEADLOCK (§T23.5, guarded 2026-09-23). `IF NOT EXISTS` still takes a full table lock
+                # before it discovers the index exists. Each DDL here already commits on its own, which
+                # keeps the blast radius small, but checking first means no lock at all after run one.
+                if cur.execute(f"SELECT to_regclass('{schema}.{idx}')").fetchone()[0] is None:
+                    cur.execute(f"""CREATE INDEX {idx} ON {tbl}
+                        (lower(regexp_replace(player,'[^A-Za-z]','','g')), game_date, line)""")
             conn.commit()
             print(f"  {idx} ready", flush=True)
         except Exception as exc:  # noqa: BLE001
