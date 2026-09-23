@@ -72,10 +72,20 @@ def main():
         with conn.cursor() as cur:
             cur.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (today,))
             slate_games = int(cur.fetchone()[0] or 0)
+            # PLAYED, NOT SCHEDULED (fixed 2026-09-23). This window used to be +/-30 days, so during the
+            # preseason ramp - the 2026-27 schedule opens 2026-10-03, ten days out - it reported "in
+            # season" and demanded fresh defender ratings. Those are built FROM PLAYED GAMES, so the
+            # check asked for data that cannot exist yet and P1 went red for a reason no one could fix.
+            # Freshness of a product derived from results is due only after there are results.
+            cur.execute("""SELECT count(*) FROM nba_calendar.games
+                           WHERE game_date < %s AND game_date >= %s::date - 30""", (today, today))
+            played_recently = int(cur.fetchone()[0] or 0)
+            # The schedule-missing guard still looks BOTH ways: a schedule with nothing around today at
+            # all is a real failure, distinct from a quiet off-season.
             cur.execute("""SELECT count(*) FROM nba_calendar.games
                            WHERE game_date BETWEEN %s::date - 30 AND %s::date + 30""", (today, today))
             nearby_games = int(cur.fetchone()[0] or 0)
-        out_of_season = nearby_games == 0
+        out_of_season = played_recently == 0
         if out_of_season and pipe == "p1":
             # P1 is the WEEKLY layer and its cron runs all year. Out of season there is nothing to
             # refresh, so judging freshness would paint every Monday red - which is precisely how a team
