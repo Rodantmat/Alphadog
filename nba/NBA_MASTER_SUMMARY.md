@@ -38490,7 +38490,10 @@ than as the top of the record.*** **That is exactly what `§T20.105` did for the
 ago** — *so the owner-facing side has been running the proven version of that repair since `§T20.56`,
 and the successor-facing side only acquired it yesterday.*
 ⚠ **One stale figure, dated in place**: the block claimed the brief sat **`910,821`** characters below
-it; **re-derived, `950,947`.** *A `4.4%` drift — against the note's `5.9×`.*
+it; **re-derived, `950,947`.** *A `4.4%` drift — against the note's `5.9×`.* ⚠ **BOTH FIGURES ARE THE
+`2026-09-22` LAYOUT AND ARE NOT NAVIGATION.** ***The brief is now at the TOP of `NBA_OPEN_ITEMS.md`
+(`ACT ON THIS` § `B`); only its amendment history sits further down.*** *Kept as the drift measurement
+that made the case for moving it.*
 
 ## 5. ✅ CLAUSE (i) — `RULE 52`
 
