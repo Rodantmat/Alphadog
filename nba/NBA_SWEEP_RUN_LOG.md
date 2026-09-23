@@ -1927,7 +1927,26 @@ from a live re-derivation each time rather than incremented — `OPEN_ITEMS` `90
 | **2** | 🔴🔴🔴 **`T20-5` — the grader's window.** Now **three** sites, not one: the script plus **two in `nba-grader.yml`**, which passes `GRADE_END` explicitly | *a code change, which this sweep is forbidden to make* |
 | **3** | 🔴🔴 **`T23-1` — the model does not beat PrizePicks** on `1.08 M` legs, **with the standards-only exception that clears the 3-pick breakeven in both seasons**; the full grid and its leakage control are now at `§0.16-F2` | *a strategy decision* |
 | **4** | 🔴 **`T20-3`(e) — the MLB work is still running.** Four `market.*` tables written **2026-09-23**, and `scrape.yml`'s `0 */2 * * *` backstop **is not the scheduler this item's remedy points at** | *disabling a cron is a deploy action* |
-| **5** | ⚠ **`T21-1` + `T10-F1`** — the document-form directive *(now a census: `16` values in `4` files, `T13` holding `28` of `50` hits)*; and `5` commissioned enrichment factors with no record of being dropped | *both need the owner's intent, not more measurement* |
+| **5** | ⚠ **`T21-1` + `T10-F1` + `F5-1`** — the document-form directive *(now a census: `16` values in `4` files, `T13` holding `28` of `50` hits)* · `5` commissioned enrichment factors with no record of being dropped · and **`B4 v3` / `M1`, confirmed never gated — are they still wanted before the opener?** | *all three need the owner's intent, not more measurement* |
+
+## §F4.6 — 🔴 **THE ONE THING THIS SESSION CANNOT DO, stated without excuse**
+
+> **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
+> FRESH CONTEXT, and states that `T20` cannot close in this session.**
+>
+> ***That is not a question of effort and no amount of further work in this session discharges it.***
+> **The rule's content is INDEPENDENCE — a second reader who has not already formed the conclusions
+> of the first.** *This session has now read `T19` and `T20` many times: they were measured at
+> `§F2.1`, tail-attributed at `§F2.5`, high-band probed at `§F2.7`, owner-audited at `§F3.2`,
+> strata-censused at `§F5.1` and receipt-analysed at `§F5.7`.* **Every one of those is the SAME
+> reader. That is exactly what `RULE 46` exists to exclude.**
+>
+> 📌 ***The rule was written by this sweep, about this sweep, because a re-read by the author who
+> wrote the entry finds what the author already believes.*** **`§F2.3`, `§F2.10`, `§F2.11` and
+> `§F2.13` are four self-corrections from today that all needed an instrument rather than a re-read
+> to surface — and each one is evidence for `RULE 46`, not against it.**
+>
+> ⇒ **`T19` and `T20` remain OPEN. The next session opens with them, and opens with them FIRST.**
 
 ⚠ **Nothing in this campaign changed code, triggered a job, deployed, or wrote to the live system.
 `SELECT` and repo reads only.**
