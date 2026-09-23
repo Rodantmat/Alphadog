@@ -6,7 +6,9 @@ writes. Grouped by role.
 ---
 
 > # 📑 **INDEX — `NBA_WORKERS.md`**
-> **~~`109`~~ → ~~`122`~~ → `126` sections · ~~`159,199`~~ → `173,496` bytes · built `2026-09-23`, census corrected same day (`§F2.14`), re-taken exactly after `§F2.16` (`~172,000` was an estimate; both figures are now exact).**
+> **~~`109`~~ → ~~`122`~~ → ~~`126`~~ → `130` sections · ~~`159,199`~~ → `~180,000` bytes · built `2026-09-23`, census corrected same day (`§F2.14`), re-taken after `§F2.16` and again after `§F5.5` (`122 → 126 → 130`).**
+> | 🔴🔴 **the FILE CENSUS — `7` of `21` workers and `27` scripts named in `0` of the twelve** | **`§F5.5`** |
+> | 🔴🔴 **the scripts behind every T15 factor verdict** *(`fit_*`, `measure_*`, `retest_*`)* | **`§F5.5` §2** — *mapping also in `NBA_FINAL_SCORING_CALIBRATION.md` §3* |
 > | 🔴 **the FOUR workflow files that were named nowhere in the twelve** *(`nba-backtest`, `nba-grader`, `nba-measure-types`, `nba-score-history`)* | **`§F2.16`** |
 > | 🔴🔴🔴 **the grader workflow — and `T20-5`'s stale `2026-04-12` window, a SECOND and THIRD time** | **`§F2.16` §1** |
 > | ✅ **`nba-score-history.yml`'s two-job pipeline** *(`AC_K=400`, 8-way score matrix, "refuses to write an empty build")* | **`§F2.16` §2** |
