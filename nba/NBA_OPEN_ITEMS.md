@@ -14037,7 +14037,20 @@ which (`M1`, `N1`) sit in the verdict table it was being compared against.*
 | **`E2` `team_flux_penalty`** | trade window, new coach, ≥2 rotation players out → **variance up** | — |
 | **`E3` `sample_thinness`** | rookies / new arrivals with **no carryover baseline** | — |
 
-🟡 **Present in substance, missing only the code — these need a CROSS-REFERENCE, not prose:**
+> 🔴 **CORRECTED same day, `§F2.3` — TWO MORE BELONG IN THE TABLE ABOVE, AND THE TWO BELOW ARE
+> STRONGER THAN "IN SUBSTANCE".** *Re-run over all `33` factors against the **pre-write** tree
+> (commit `670854ff` — the first re-run read my own `§F2.2` and `T10-F1` text back as corpus
+> coverage and had to be thrown out):*
+>
+> | | codes | evidence, whole-file window, all twelve |
+> |---|---|---|
+> | 🔴 **ABSENT** *(add to the table above)* | **`M2`** `defensive_scheme_proxy` · **`M3`** `hustle_and_deflection_profile` | code `0`, slug `0`. **`M2`**: *"scheme proxy"* survives in `OPEN_ITEMS` **only** — *"defensive scheme"*, *"scheme_proxy"* `0`. **`M3`**: *"hustle"* in 7 files but *"deflection"* in **`0`** — so what is on file is not this factor |
+> | 🟡 **CODE-ONLY** *(stronger than stated below)* | **`D3`** `altitude_venue` · **`D4`** `national_tv_marquee` | **the exact SLUG is already in `NBA_MASTER_SUMMARY.md` — `12×` and `10×` respectively.** Only the code is missing |
+> | 🟡 **CONCEPT-ONLY** | **`C2`** `line_movement` | code `0`, slug `0`; *"line movement"* spaced: **19** |
+>
+> ⇒ **The item's absent set is `A7` · `E2` · `E3` · `M2` · `M3` — five, not three.**
+
+🟡 ~~**Present in substance, missing only the code — these need a CROSS-REFERENCE, not prose:**~~ *(superseded by the block immediately above; original text kept)*
 `C2` `line_movement` *(“line movement” in 6 of the twelve)* · `D3` `altitude_venue` *(“altitude” in
 7)* · `D4` `national_tv_marquee` *(“national-TV” / “marquee” in `MASTER_SUMMARY` / `OPEN_ITEMS`)`.
 
