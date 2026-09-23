@@ -709,7 +709,51 @@ sample.**
 **Two questions, tracked separately:**
 | Question | Status |
 |---|---|
-| **Is the mechanism real?** | **Yes** — measured: ~15% multiplier change for a ~2.6× probability gap; step-function pricing keyed on tier index |
+| **Is the mechanism real?** | **Yes** — measured: ~15% multiplier change for a ~2.6× probability gap; ~~step-function pricing keyed on tier index~~ 🔴 **SUPERSEDED — see `§T22.9` directly below: it is keyed on the LINE, not the tier index** |
+
+> ## 🔴🔴 **§T22.9 — IT IS PRICED BY THE LINE, NOT BY THE RUNG — AND ANY EV KEYED ON RUNG NUMBER IS WRONG**
+> ### *(`T22` pass `9`, recorded `2026-09-23`, from `52` live quotes on `2026-09-21`)*
+>
+> *The documented model — **"discrete step-function per tier, goblin pays flat"** — predicts that the
+> same rung pays the same factor. **It does not.***
+>
+> | rung | observed range across players and stats |
+> |---|---|
+> | **Demon `+2`** | 🔴 **`5.25×` → `7.5×`** |
+> | **Goblin `−1`** | 🔴 **`2.2×` → `2.8×`** |
+>
+> ⇒ ***"The further the line sits from standard, the bigger the adjustment."*** **The price is a
+> function of the DISTANCE OF THE LINE FROM THE STANDARD LINE, in the stat's own units — not of the
+> ordinal rung index.** *Two legs on rung `+2` differ because `+2` rebounds and `+2` points are not
+> the same distance in probability space.*
+>
+> 🔑🔑 **THE CONSEQUENCE, STATED AT FULL STRENGTH**: ***any expected-value calculation that keys a
+> multiplier off a rung number is wrong, and it is wrong by up to `43%` on demons*** *(`5.25` vs
+> `7.5`)* ***and `27%` on goblins*** *(`2.2` vs `2.8`)*. **A tier-indexed lookup table cannot
+> represent this.**
+>
+> ⚠ **What this does NOT overturn**: *the step-function description of the TIER TAXONOMY — which rung
+> is a goblin, which a demon, where the anchor sits — is unaffected. **The taxonomy is ordinal; the
+> PRICE is continuous.** Those were conflated, and `§5.0d` and `NBA_MULTIPLIERS.md` `§3` both describe
+> the taxonomy correctly while implying the pricing follows it.*
+>
+> ### 📐 **THE ROUNDING GRID, MEASURED IN THE SAME RUN — and it is why every prediction carries a range**
+> | payout band | displayed step |
+> |---|---|
+> | **below `3×`** | **`0.1`** |
+> | **at or above `3×`** | **`0.25`** |
+>
+> 🔑 ***A price is never observed exactly — it is observed rounded, and the grid coarsens as the
+> payout rises.*** *This is the mechanical reason `§T22.8`'s `2.086` "true value" reads as `2.1` on
+> screen, and the reason a model validated "within one rounding step" is validated to different
+> tolerances at different payouts.* ⚠ **`RULE 54`: every multiplier figure in these documents is a
+> ROUNDED observation unless it says otherwise.**
+>
+> ### 📋 **The `2`-pick base, same run, `prizepools` mode**
+> `2`-pick **`3.0×`** · `3`-pick **`6.0×`** · `4`-pick **`10.0×`** · flex `2`-pick **`2.0× / 0.5×`**.
+> ***Multiplicative, and independent of the partner*** — *goblin-alone × demon-alone predicted
+> `2.167`, rounded to `2.2`, exactly the measured pair; and a `11.5` REB demon quoted `3.25×` against
+> two different partners.* ⚠ **`prizepools` mode only** *(`§T22.8`)*.
 | **Can it be exploited?** | **Unsolved.** Three walk-forward methods regressed to the pool average |
 
 **Confirming the first says nothing about the second.** And the source is explicit that **both were
