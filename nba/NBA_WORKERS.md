@@ -2410,3 +2410,88 @@ than filed as an item.**
 discussed only by its `name:` (`"NBA Outcome Grader"`) rather than its filename, and it discards
 anything the segmenter's normalisation mangles.* ***"`4` of `40` filenames are absent", never "these
 are the only undocumented workflows."***
+
+---
+
+# §F5.5 — 🔴🔴 **THE FILE CENSUS: `7` of `21` WORKERS and `27` SCRIPTS ARE NAMED IN ZERO OF THE TWELVE**
+
+*Added 2026-09-23. **Found from the other side**: every `path:` written by `github_put_file` /
+`github_patch_file` / `github_append` / `create_file` across all 24 transcripts was extracted —
+**`306` distinct paths, `2,047` write calls** — then re-derived directly from the repo, which is the
+authority, and it is that re-derivation which is published here.*
+
+## 1 · 🔴 SEVEN STATIC WORKERS, UNDOCUMENTED — `7` of the `21` that exist
+
+*`nba/alphadog-v2-nba-*.js` → **21 files**; `nba_config.worker_definitions` → **21 rows**
+(`[LIVE-AUDIT]` 2026-09-23). **The register is complete; the documentation is not.***
+
+| worker | writes to |
+|---|---|
+| 🔴 **`alphadog-v2-nba-static-schedule.js`** | **`nba_calendar.games`** |
+| 🔴 **`alphadog-v2-nba-static-measure-types.js`** | `nba_stats.player_game_log_scoring` · `player_game_log_usage` · `nba_team.team_game_log_four_factors` |
+| 🔴 **`alphadog-v2-nba-static-shotquality.js`** | `nba_stats.player_shot_quality` · `player_shot_quality_delta` · `player_shot_zone_profile` |
+| 🔴 **`alphadog-v2-nba-static-playtypes.js`** | `nba_stats.player_playtype_profile` · `nba_team.playtype_profile` |
+| 🔴 **`alphadog-v2-nba-static-tracking-detail.js`** | `nba_stats.player_tracking_detail` |
+| 🔴 **`alphadog-v2-nba-static-lineups.js`** | `nba_team.lineup_profile` |
+| 🔴 **`alphadog-v2-nba-static-team-stats.js`** | `nba_team.season_profile` |
+
+🔑 **Several write tables the corpus documents in detail** — *`player_playtype_profile` has its own
+`[LIVE-AUDIT]` block (`3,282` rows, all `Offensive`); `player_shot_quality` and
+`player_tracking_detail` sit in the table registers; **`nba_calendar.games` is the `2,666`-row
+schedule table cited across six documents.*** ⇒ ***the corpus knows what is IN these tables and,
+for these seven, not what PUTS it there.***
+
+## 2 · 🔴 TWENTY-SEVEN SCRIPTS — *and they are the apparatus behind the factor verdicts*
+
+*`nba/*.py` → **123 files**; **30** named in `0` of the twelve; **3** are `probe_pp_*.py`,
+**excluded by standing rule** as the concurrent session's ⇒ **`27` in scope.***
+
+**🔴 The factor-fitting set — every one produced a verdict the twelve record in full:**
+
+| script | its own header |
+|---|---|
+| **`fit_b4_opponent.py`** | *"FACTOR B4 — OPPONENT AVAILABILITY, fitted and gated exactly like A2"* |
+| **`fit_b4_defender_quality.py`** | *"FACTOR B4 v2 — OPPONENT AVAILABILITY VIA EXPECTED DEFENDER QUALITY"* |
+| **`fit_b4_rim_protection.py`** | *"B4 SUB-CASE — BLOCKS-AGAINST VULNERABILITY (rim protection specifically)"* |
+| **`fit_m1_defender_level.py`** | *"FACTOR M1 — PRIMARY DEFENDER QUALITY as a BASELINE-STAGE factor"* |
+| **`fit_n1_granular.py`** | *"N1 v2 — GRANULAR P(plays \| Questionable) … per-player assertiveness, not a flat 55%"* |
+| **`measure_n1_status_resolution.py`** | *"FACTOR N1 — P(plays \| status) MEASURED FROM OUR OWN ARCHIVE, at the 2:30 PM PT decision cutoff"* |
+| **`fit_usage_allocation.py`** | *"A2 USAGE ALLOCATION — FITTED, replacing the assumption"* |
+| **`fit_rate_response.py`** | *"RATE RESPONSE — the second half of factor A2, and the end-to-end test that it helps"* |
+| **`retest_defender_factors.py`** | *"M1 / B4 RE-TEST with PROPER defender ratings, and WITH INTERACTIONS"* |
+
+🔴🔴 ***`NBA_FINAL_SCORING_CALIBRATION.md` carries the T15 verdict table — `A2` SHIPPED · `A2 rate
+response` REJECTED · `B4 v1`/`v2` REJECTED · `B4 v3` COMMISSIONED · `M1` NOT TESTED · `N1` MEASURED
+· `A5` REJECTED — with populations and figures. It names none of the nine scripts that produced
+them.*** **A reader who wants to re-run or check a verdict cannot reach the code from the
+documentation.** 📌 ***`RULE 55` at its largest scale yet: not a table missing under a conclusion,
+but the entire APPARATUS missing under a table.***
+
+**🔴 The test suite** — `test_a2_novelty.py` *("A2 SHARPENED — NOVELTY-WEIGHTED absence
+redistribution")* · `test_a2_per_prop.py` · `test_a2_window_information.py` *("the factor's TRUE
+value, not its upper bound")* · `test_component_application.py` *("re-derive the mean, do not
+re-scale it")* · `test_factors_on_baseline.py` *("INTEGRATION TEST — factors on top of the CERTIFIED
+BASELINE, not beside it")* · `test_funnel_leg_level.py` *("the funnel, and LEG-LEVEL scoring instead
+of MAE")* · `test_oreb_basis_mean.py` · `test_oreb_rate_estimator.py` *("the RATE ESTIMATOR, which
+the band-bias table says is the real defect")* · `test_oreb_opportunity_model.py`.
+
+**🔴 The rest** — `build_matchup_model.py` *("TEAM MATCHUP v2 — the market total as the
+game-environment input. **NON-NEGOTIABLE FACTOR**")* · `build_market_derived.py` ·
+`backtest_edge_vs_board.py` *("where the certified baseline disagrees with the PrizePicks board")* ·
+`validate_blowout_upgrade.py` *("SAMPLE VALIDATION before any full rebuild")* ·
+`scrape_nba_backfill_2025_26.py` · `scrape_nba_lineups.py` *("multi-player lineup synergy data")* ·
+`scrape_nba_tracking_detail.py` · `load_pp_mined_legs.py` · `load_pp_quotes.py`.
+
+## 3 · ✅ What the census CLEARS
+
+**`161` of the `250` repo paths ever written are both present in the repo and named in the twelve.**
+*And the apparent "`44` written then deleted and never documented" is a **case-normalisation
+artifact** — the segmenter lowercases, so `nba/nba_master_summary.md` is `NBA_MASTER_SUMMARY.md` and
+`nba/trigger_nba_scrape.txt` is `TRIGGER_NBA_SCRAPE.txt`.* **Checked, not assumed: `0` real
+deletions were hiding there.**
+
+⚠ **RULE 54.** *Presence is tested by FILENAME. A worker described only by its job key, or a script
+described only by what it does, would score as absent; one named inside a code fence would score as
+present without being explained.* ***"`7` and `27` FILENAMES are absent", never "these are
+undocumented in substance" — and the converse is weaker still: **being named is not being
+documented**.***
