@@ -4557,7 +4557,11 @@ optimises for.**
 | 🔴🔴 **the as-of calibration builder** | **has NO such guard** |
 
 ⇒ ***The average shift on `points` — `0.1495` — sits a thousandth below the threshold the recipe uses
-to throw a shift away. The maximum is `4.4×` it.*** **Every one of those cells is applied.**
+to throw a shift away.*** **And the maxima are `4.4×` it (`points`, `0.660`) and `4.7×` it
+(`reb_ast`, `0.703`).** **Every one of those cells is applied.**
+*(Arithmetic re-derived `2026-09-23`: `0.660/0.15 = 4.4`, `0.703/0.15 = 4.7`; and at `p = 0.5` a
+`0.703` log-odds shift gives `0.6689`, i.e. **`16.9` percentage points**, which is what "roughly `17`"
+above means.)*
 
 📌 **RECORDED AS AN OWNER DECISION, not a fix** *(it is a code change to a live builder)*: **should the
 as-of builder carry the recipe's `0.15` guard?** ⚠ *`T23` put the question and did not answer it.
