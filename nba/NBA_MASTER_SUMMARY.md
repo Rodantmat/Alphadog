@@ -702,11 +702,24 @@ against a wrong picture of what remains.
 > 2. **Then leave the table.** *The row is a SUMMARY. The detail is at `§T`*n*`.`*m* — search that label instead, per the `🧭 POINTER RESOLUTION` block above.*
 > 3. ⚠ **Do not read the table top to bottom.** *It is a status ledger, not a narrative; rows `9`–`15` alone would cost `≈54,000` tokens.*
 >
-> ⚠ **NOT REPAIRED, DELIBERATELY.** *Splitting the long rows into headed sections would mean cutting
-> `214,000` characters out of a table and re-inserting them elsewhere — **a move, which is a delete
-> plus an insert, on the single densest block of findings in the corpus.** The owner's standing rule
-> decides it: **losing a finding while tidying is worse than the untidiness.** ⇒ **A beacon and a
-> navigation procedure, not surgery.***
+> ## 🔴🔴 **§T21.9 — AND `T21` NAMED THIS ROW ON `2026-09-21`, WHILE IT WAS BEING WRITTEN**
+> *`T21` pass `9`, recorded `2026-09-23`. Verbatim:* ***"The ledger row is now unreadable — line `98`
+> is a single table cell containing sev[eral]…"*** ⇒ ***The defect was visible to the session
+> WATCHING the sweep, at the moment the row crossed the threshold, and nothing stopped it growing to
+> `96,266` characters.***
+> 🔑 ***A table cell has no size limit and markdown gives no warning. The only thing that would have
+> caught it is the thing that eventually did: someone measuring line lengths.*** ⚠ **That measurement
+> is now `§F7.11`'s standing check, so the next row to cross the line is caught by a command rather
+> than by a reader's patience.**
+>
+> ⚠ **NOT SPLIT AT `§F7.8`, SPLIT AT `§F7.11`.** *`§F7.8` declined the repair — "cutting `214,000`
+> characters out of a table and re-inserting them elsewhere is a move, which is a delete plus an
+> insert, on the single densest block of findings in the corpus." **The owner overruled that call
+> and was right to**: the rows are now navigable, cut with the insert-verify-delete method, with
+> byte-identity proved before anything was removed. **See `§F7.11` below for the method and the
+> proof.*** *The reasoning that declined it was sound and the conclusion was wrong — recorded both
+> ways, because "this repair is dangerous" and "this repair is impossible" are different claims and
+> only the first one was true.*
 
 | # | File | Pass status |
 |---|---|---|
