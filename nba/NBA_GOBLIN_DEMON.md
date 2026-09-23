@@ -1125,10 +1125,15 @@ it remains **built but unverified**.
 4. **Goblin/demon certification was deliberately deferred** by the owner: *"Goblins and demons should
    NOT be handled now — **it is board dependent** and will only have this information later."*
    The ±6 ladder was certified; **the tails beyond it were never separately certified.**
-5. ~~**Per-leg multipliers are unavailable**~~ 🟢 **SUPERSEDED `2026-09-20` — they ARE obtainable via
-   `POST /game_types`; see `NBA_MULTIPLIERS.md` `§0.9-T22` and `§0.10-T22`** *(recorded 2026-09-23,
-   `§T22.1`/`§T22.2`)*. — see `NBA_MULTIPLIERS.md`. Without them the −EV/+EV
-   conclusions rest on *observed* payout factors, not per-leg truth.
+5. ~~**Per-leg multipliers are unavailable** — see `NBA_MULTIPLIERS.md`. Without them the −EV/+EV
+   conclusions rest on *observed* payout factors, not per-leg truth.~~
+   > 🟢🟢 **SUPERSEDED `2026-09-20`, recorded 2026-09-23 (`§T22.1`/`§T22.2`).** *Correct when
+   > written; kept whole.* **Per-leg multipliers ARE obtainable — `POST /game_types` returns a quote
+   > for a specific combination** *(`NBA_MULTIPLIERS.md` `§0.9-T22`)*, **and the per-leg factor is
+   > recoverable because the pricing is multiplicative and partner-independent with a known
+   > compression above `9.1×`** *(`§0.10-T22`)*. ⇒ ***The −EV/+EV conclusions no longer have to rest
+   > on observed payout factors alone.*** ⚠ **What still holds**: it QUOTES rather than publishes, so
+   > a complete table must be assembled by enumeration.
 
 ---
 
