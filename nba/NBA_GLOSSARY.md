@@ -57,11 +57,21 @@ context, and which document section. Any material term appearing more than once 
 > | **`P–S (continued — research-standard structure)`** | ⚠ **second `P–S`** — *the research-standard vocabulary* |
 > | **`PENDING`** | ⚠ **terms identified but not yet defined** |
 >
-> 📌 **WHAT THIS FILE IS MEASURED TO BE MISSING** *(recorded at `§T20.?` and re-checked `2026-09-23`)*:
-> ***the glossary has no content commit covering the sweep of `T12` through `T18`*** — *central terms
-> from those transcripts (`board_tiers_v2`, `confidence_model`, `certify_pipeline`, `CONF_NEUTRAL`,
-> `measure_report_cutoff`, `f_phase`) scored **`0` occurrences** when last audited.* ⚠ **Treat an
-> absence here as "not yet written", not as "not a term".**
+> 📌 **COVERAGE OF `T12`–`T18` TERMS — RE-MEASURED LIVE `2026-09-23`, AND THE OLDER FINDING NO LONGER HOLDS**
+> *An earlier pass recorded that central `T17`/`T18` terms were absent from this file. **Re-counted
+> today, they are present** — so that finding is stale and is NOT repeated here:*
+>
+> | term | occurrences |
+> |---|---|
+> | `board_tiers_v2` · `confidence_model` | **`3`** each |
+> | `certify_pipeline` · `measure_report_cutoff` · `f_phase` | **`2`** each |
+> | `CONF_NEUTRAL` | **`1`** |
+>
+> ⚠ **`1`–`3` occurrences is presence, not depth** — *a term mentioned once inside another entry is
+> not the same as a term with its own definition.* ⇒ **Treat a thin count as "check whether it has
+> its OWN entry", and an absence as "not yet written", never as "not a term".**
+> 🔑 ***This block was itself corrected before publication***: the first draft asserted `0` for all
+> six from memory of an earlier pass. **The live count is above; the assertion was wrong.**
 
 **How to use it.** Find the term, note the transcript ID, then:
 `grep -o "<term>[^\"]\{0,300\}" /mnt/transcripts/<file>.txt`
