@@ -30,6 +30,8 @@ that is the useful part.
 > | 🔴 **why the blowout mixture changed, and the two beliefs it corrected** | **`STEP 0-T16`** |
 > | **the founding constraints and who this was built for** | **`STEP 0`** · **`STEP 0a`** |
 > | ⚠ **the rules that were never written down — and the one not holding** | **`STEP 0d`** |
+> | 🏗🏗 **TO REBUILD THE WHOLE SYSTEM FROM AN EMPTY REPO AND AN EMPTY DATABASE** | **`🏗 REBUILD FROM ZERO`** — *`19` steps in order, every pointer verified, and the `3` things the corpus genuinely cannot give you* |
+> | 🔧 **TO OPERATE OR MAINTAIN IT** *(add a prop · add a scraper · re-run a failed day · add the `P2` cron · diagnose a red certifier · refresh a stale table)* | **`🔧 MAINTENANCE`**, directly under it |
 > | ⚠ **the verification discipline that was supposed to run alongside every step** | **`STEP 0c`** *(between `STEP 0b` and `STEP 0d`, where the build order puts it)* |
 > | **why scraping moved to GitHub Actions** | **`STEP 4`** |
 > | 🔴 **what is NOT recorded** *(stated as gaps, never inferred)* | **`STEP 11`'s two `NOT RECORDED` blocks** · **`STEP 12`'s** |
