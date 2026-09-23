@@ -8,9 +8,8 @@ what you read when this block sends you there. **No row here is a pointer alone:
 breaks and what closes it.** The proof for every row is in this file under its own ID; search the
 quoted ID, never a line number.*
 
-⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* *(`§T20.22`: `6` of `16` line-number pointers
-**Search for the quoted item ID or the quoted text.**
-📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
+⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* **Search the quoted item ID.**
+📚 *Navigation, the file register and the sweep's history: the `📑 INDEX` below, and `NBA_SWEEP_RUN_LOG.md`.*
 
 ⚠ **Re-derive before acting.** *The items are stable; the tallies are not.*
 
