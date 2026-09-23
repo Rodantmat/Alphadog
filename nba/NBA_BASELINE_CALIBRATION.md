@@ -2203,11 +2203,19 @@ shift, the season-consistency rule, the `finest_level_only` shift fix. Their `n`
 | `backtest_minutes_model_v1` *(blowout states)* | `1` | 🔴 **`54,000`** | **`0` of `12`** ✅ *the two `54,0` hits are inside `1,454,044`* |
 | `backtest_minutes_model_v1` *(B2B)* | `1` | **`8,000`** | ⚠ **`0` for THIS meaning** — *every `8,000` in the twelve is `nba_team.lineup_profile`'s row count; a collision, not coverage* |
 
-🔑🔑 ***`272,909` is the evidential base of five separate applied changes to the classification
-ladder — the tier prior, the empirical tables, the guards, the logit shift, the hierarchy fix — and
-the corpus states every one of those changes without it.*** 📌 **`RULE 56` again, and the first
-instance found in a DECISION LOG rather than a results table.** ⚠ *The `sample_size` column is right
-there in the schema; nothing had ever read it.*
+🔑🔑 ***`272,909` is the evidential base of SIX separate applied changes to the classification
+ladder — the tier prior, the empirical tables, the guards, the `threes_made` logit shift, the
+season-consistency rule and the `finest_level_only` hierarchy fix — and the corpus states every one
+of those changes without it.*** 📌 **`RULE 56` again, and the first instance found in a DECISION LOG
+rather than a results table.** ⚠ *The `sample_size` column is right there in the schema; nothing had
+ever read it.*
+
+> ⚠ **CORRECTED SAME PASS — `§F6.26`'s verification caught it.** *This section first said **five**.
+> `SELECT count(*) FROM nba_config.calibration_log WHERE sample_size = 272909` returns **`6`**
+> *(`log_id` `3`–`8`)*. **I had counted the four distinct `decided_by` values and written a row
+> count.** 🔑 ***`RULE 57` is about running a derivation on every row; this is its arithmetic twin —
+> a count is not checked until it has been COUNTED, and `SELECT count(*)` was one query away the
+> whole time.***
 
 ### 🔑 And two substantive lines the census surfaced with it
 
