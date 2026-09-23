@@ -1826,6 +1826,15 @@ than a post-hoc explanation, and the corpus was carrying the weaker version.**
 | **`T8` `16`** | 🔪 **implementation constants** from `classification_ladder_v1.py` — band mean-ratio cells, IoD shrinkage `k=3`. **The MECHANISM is documented in 8 documents** *(`mean-ratio` in 3, `dispersion` in 8, `overdispersion` in 3, `negative binomial` in 3)*; the v1 cell values are not load-bearing. |
 | **`T13` `13`** | 🔪 **already covered** — `359,147` / `274,632` / `402,127` standard-goblin-demon hit rates, `1,401` rungs across `385` ladders, the `+6.28` demon offset — **all in `NBA_GOBLIN_DEMON.md`**, ***including `1,035,906`, meaning a prior pass had already caught that the parts do not sum to the stated `856,000`.*** |
 
+## §F6.7 – §F6.10 — the rest of the `172`, and the rule they produced
+
+| § | finding | where |
+|---|---|---|
+| 🔑🔑 **`§F6.7`** | **THE BOOKS ARE RIGHT TO WITHIN A POINT ON `776,000` LEGS.** *De-vigged sportsbook consensus vs realised, by tier: goblin −3 `+0.24` … standard `−0.93` … demon +3 `−2.47`.* ⇒ ***the mechanism behind `T23-1`***: the model was never going to beat PrizePicks by out-predicting the consensus. **What survives is the one avenue the table leaves open — *"PrizePicks' pricing being worse than the books', a `5–9` point break-even gap"* — which is exactly where `§0.16-F2`'s standards-only result lives.** ✅ *And it validates the market pipeline as a side effect: **"three independent systems agree; if any were broken these columns wouldn't track."*** 🔴 *And it condemns deep demons independently of `T24`, via the favourite–longshot bias.* | `GOBLIN_DEMON` · `T23-1` |
+| 🔴 **`§F6.8`** | **the baseline-ladder FILES still carry duplicates** — `[LIVE-AUDIT]`: **`14,435` extra rows across three committed files, `1,414` keys with DIFFERING `p_more`.** ✅ **The live TABLE is clean — `206,237` rows, `0` duplicate keys — *and that is the symptom, not the refutation*: the loader's PK silently keeps the last arrival, exactly as `T14` predicted.** ⇒ **`F6-1` filed** | `F6-1` |
+| **`§F6.9`** | **four more tables**: `hp` by kind × tier *(monotone `0.6996 → 0.2167`; standard at `0.5014` — "a coin flip by construction, and the model says so")* · the phase decay's populations · the ablation's `AUC` column · **the USAGE allocator's fitted coefficients** *(the minutes half was on file; usage is the larger effect)* | `FSC` |
+| 📜 **`§F6.10`** | **`RULE 56` NUMBERED — *record `n`*.** **Nine tables recovered today; in SIX the dropped column is the sample size**, in two more the comparator or baseline | rules index |
+
 ⚠ **RULE 54.** *The probe requires **four** absent figures in one segment — a single important number
 sitting alone is invisible to it, and so is any finding carrying no numbers at all.* ***"`172`
 number-dense segments were found and worked", never "the uncovered band is now read."***
