@@ -1089,6 +1089,71 @@ the `~12,686` substantive uncovered segments, which no single pass can close.**
 > the only thing that has reliably caught me is a PRE-REGISTERED OUTPUT I could not quietly
 > revise.***
 
+---
+
+## §F2.13 — 🔴🔴 **I AUDITED MY OWN INDEX DELIVERABLE AND ITS HEADING DETECTOR WAS BROKEN**
+
+**Adding `F2-1` and `T10-F1` meant updating `NBA_OPEN_ITEMS.md`'s index, which asserts *"`70` items ·
+`39` with their own heading · `31` table-only."* Rather than increment `70`, I re-derived it — and
+all three numbers were wrong.**
+
+| | `§F1.1` said | **re-derived `2026-09-23`** |
+|---|---|---|
+| items | `70` | **`72`** *(`F2-1`, `T10-F1` added today)* |
+| with their own heading | `39` | 🔴 **`54`** |
+| table-only | `31` | 🔴 **`18`** |
+
+🔑 **THE CAUSE IS MY DETECTOR, NOT THE FILE.** *`§F1.1` matched headings with a pattern anchored at
+line start. **Most of this file's item headings sit inside blockquotes** — `> # **T20-6 · …**` — so
+it scored them as table-only.* **`T20-7`, `T20-8`, `T20-12`, `T20-17`…`T20-25` and `T18-1` were all
+published as table-only and every one of them HAS a heading.** ⚠ ***The index warned that `T20-25`
+was "SEASON-CRITICAL and table-only". It is season-critical. It is not table-only.***
+
+📌 ***It took three attempts to get the count right, and the middle one was worse than the first***
+— *(1) line-anchored, reproducing the original bug; (2) blockquote-aware but length-capped, which
+truncated long headings and returned **`8`**; (3) match the heading LINE, then scan the whole line —
+**`72 · 54 · 18`**.* **Recorded with the working pattern so the next reader re-derives rather than
+trusts:** `^(?:>\s*)*#{1,6}\s`.
+
+## §F2.14 — the question that forced: **does `§F1.1`'s headline survive a corrected detector?**
+
+**If the detector was blind to blockquoted headings in one file, it was blind in all twelve — and
+`§F1.1`'s headline is *"12 of 12 files had a structural defect."* That is my own deliverable and it
+had to be re-tested before it could stand.**
+
+**Measured — headings visible to each detector:**
+
+| | strict | blockquote-aware | 🔴 **invisible to `§F1.1`** |
+|---|---|---|---|
+| `MASTER_SUMMARY` | 2,721 | 2,797 | **76** |
+| `OPEN_ITEMS` | 802 | 901 | **99** |
+| the other ten | 1,099 | 1,218 | **119** |
+| **TOTAL** | **4,622** | **4,916** | 🔴 **294 · `6.0%`** |
+
+**Then the three most FALSIFIABLE `§F1.1` claims re-run against the corrected detector** — chosen
+because each would be DISPROVED if a hidden heading filled the gap it alleges:
+
+| `§F1.1` claim | re-test | verdict |
+|---|---|---|
+| `FINAL_SCORING_CALIBRATION` — ***"§12 is missing"*** | top-level ids present: `0`–`11`, `13`–`20` | ✅ **SURVIVES — `12` is absent to the corrected detector too** |
+| `MASTER_SUMMARY` — ***"`T16` and `T17` have ZERO §-sections"*** | `§T16.n` **13** mentions / **0** headings · `§T17.n` **18** / **0** — against a control: `T15` **7** headings, `T18` **5** | ✅ **SURVIVES, and is now better evidenced than when published** |
+| `GLOSSARY` — ***"two undistinguished A–Z structures, no `J`/`K`/`O` body block"*** | index runs `A`…`Z` complete; **body runs `A`, `B`, `C`, `D`, `E–F`, `G–I`, `L–N`…** | ✅ **SURVIVES — `J`, `K`, `O` skipped, and the two structures are confirmed** |
+
+### ⇒ The verdict on my own headline
+
+> **`1` of `§F1.1`'s findings was an artifact of its instrument — `OPEN_ITEMS`' table-only count.
+> The others survive re-derivation with a corrected one.** *"12 of 12 files had a structural
+> defect" still stands; one of the twelve descriptions was wrong about WHICH defect.*
+>
+> 📌 ***And the correction only happened because adding an item forced me to touch a number I had
+> published. Had `F2-1` not been filed, `31 of 70` would still be standing, and the next reader
+> would have searched `T20-25` expecting a table row.*** **A wrong index is worse than no index: it
+> spends the reader's trust before it spends their time.**
+
+⚠ **RULE 54:** the corrected detector is still a regex. *It counts markdown ATX headings and would
+miss a setext heading or an item titled only in bold.* **`72 · 54 · 18` is what one corrected
+pattern sees, and the pattern is published above so the next pass can beat it.**
+
 ### ▶ STILL OWED, unchanged and stated at full strength
 
 - 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
