@@ -1149,7 +1149,27 @@ below score `0` in the working tree and `0` in the baseline.*
 |---|---|---|
 | **under `2.5×`** | **`0.25`** | **`37` of `38`** |
 | **`2.5×` – `5×`** | **`0.5`** | ✅ **`69` of `69`** |
-| 🔴 **above `5×`** | **mixed — `0.5` / `0.75` / `1.0` / `1.25`** | 🔴 ***rule not yet known*** |
+| 🔴 **above `5×`** | **mixed — `0.5` / `0.75` / `1.0` / `1.25`** | 🔴 ***rule not yet known*** — ✅ **ANSWERED LATER IN THE SAME TRANSCRIPT, see the box below** |
+
+> ## ✅✅ **RESOLVED — BY RUN 2, LATER IN `T22` ITSELF** *(SEG `357`; recorded `§T22.6`, 2026-09-23)*
+> **The table above is run 1. Run 2 ran `160` stratified `alt×alt` pairs — exactly the experiment
+> §4 below says is needed — and the rule is RISK, not payout:**
+>
+> | candidate driver | how well it sorts the tiers |
+> |---|---|
+> | `p(both hit)` · `p(both miss)` · the Power payout | **`~75–77%` each — *one underlying quantity*** |
+> | 🔴 `p(exactly one)` *(the failed hypothesis)* | 🔴 **`15.6%` — excluded** |
+>
+> **And the ladder is longer than run 1 saw**: consolation steps by `0.25` across
+> **`0.25 · 0.5 · 0.75 · 1.0 · 1.25 · 1.5`.** ⚠ 🔴 **`NOT RECORDED`: what the single risk quantity is
+> in CLOSED FORM** — three proxies sort it equally well and the transcript does not name the
+> underlying variable. ▶ **Full entry, with the house-edge measurement that came with it:
+> `NBA_MULTIPLIERS.md` `§0.12-T22`.**
+>
+> 📌 ***Recorded as run 1 stood, then resolved, with both readings kept*** — *the supersession rule
+> applied WITHIN a single transcript, which is a case `T21` SEG 1303's formulation ("document Tn's
+> version as it stood… record the supersession with both dates") did not anticipate but plainly
+> covers.*
 
 ## 2. 🔑 **THE GIVEBACK — the consolation is PAID FOR out of the full payout**
 
