@@ -176,6 +176,21 @@
 > > the slip-weighted figure it reports. Both defensible; the reader should have both.*
 > > ⚠ **The item's caveats are UNCHANGED** — replay not traded record, `paper_picks` `0` rows — **but
 > > "AS STATED, not re-run" no longer applies to these numbers.**
+> >
+> > 🔑🔑 **AND THE MECHANISM BEHIND THIS ITEM IS NOW ON FILE — `§F6.7`, 2026-09-23.** *`T14`
+> > measured de-vigged **sportsbook consensus** against realised outcomes on **`776,000` legs**:
+> > the books are right **to within a point at every tier** — goblin −3 `+0.24`, standard `−0.93`,
+> > demon +3 `−2.47`.* ⇒ ***the model was never going to beat PrizePicks by out-predicting the
+> > consensus, because the consensus is already right.*** **What remains is the one avenue that
+> > table leaves open: *"prizepicks' pricing being worse than the books' — which we measured
+> > earlier as a `5–9` point break-even gap."*** 📌 ***That is precisely where `§0.16-F2`'s
+> > standards-only result lives, and it is why the standards-only exception survives while the
+> > general claim does not.***
+> >
+> > 🔴 **The same table condemns deep demons independently of `T24`**: the books' error grows
+> > monotonically with demon depth (`−1.5 → −2.5`), **so demons hit even less than the books
+> > imply** — the classic favourite–longshot bias, reaching the same verdict as `§0i-T24`'s
+> > payout-derived edge map **from a different market entirely**.
 >
 > | | **2024-25** | **2025-26** |
 > |---|---|---|
