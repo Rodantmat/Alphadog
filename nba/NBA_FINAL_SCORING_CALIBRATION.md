@@ -11,7 +11,7 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 > 📏 **`274` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_FINAL_SCORING_CALIBRATION.md ``
 > ⚠ *The original `211` came from a heading detector anchored at line start, which is blind to the **blockquoted** headings this corpus uses heavily — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
-> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* **Search for the quoted `§` label.**
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
 > 🔴🔴🔴 **THIS FILE'S NUMBERING IS THE MOST BROKEN OF THE TWELVE — `§T20.6` recorded it and it is
 > unrepaired** *(renumbering would break every inbound pointer; rule 1)*. **Measured `2026-09-23`:**
