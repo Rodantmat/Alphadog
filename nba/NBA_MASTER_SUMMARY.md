@@ -39243,8 +39243,27 @@ sweep merged them for two passes.***
 a live slate; **this measures it at the board level**: on `2026-10-03` the Sleeper and Fliff NBA
 `legs` arrays go from **`0` to hundreds for the first time in their history**, through
 `archive_live_boards.py`'s per-app normalisers *(`rows_sleeper`, `rows_fliff`)* which **have never
-processed a non-empty NBA payload.** ⚠ *Whether those normalisers are correct is **NOT ESTABLISHED** —
-they were written from MLB shapes and one September sample, and no test in the repo covers them.*
+processed a non-empty NBA payload.** ~~⚠ *Whether those normalisers are correct is **NOT ESTABLISHED** —
+they were written from MLB shapes and one September sample, and no test in the repo covers them.*~~
+
+> ✅✅ **ANSWERED 2026-09-23, T20 pass 119 (`§T20.124`) — AND IT DID NOT HAVE TO WAIT FOR OCTOBER.**
+> **The MLB boards are a non-empty specimen of each app's shape, written by the SAME scrapers**, and a
+> dry run *(AST-lifted `rows_*` functions against copies, **no database connection opened**)* gives:
+> **`rows_sleeper` `1,903 → 3,806` ✅ · `rows_fliff` `8,986 → 5,046` ✅ *(3,940 team markets skipped,
+> and the function PRINTS the count)* · `rows_underdog` `951 → 4,564` ✅ and **`423 → 2,817` on NFL, a
+> third sport** ✅ · `rows_generic` on `betr` `1,684 → 1,684` ✅.** ⇒ ***NONE FAILS.***
+> ⚠ **`rows_prizepicks` has no specimen under `boards/` — `NOT TESTABLE`.**
+> 🔴 **But `home_team` and `away_team` come back NULL for EVERY app, and `commence_time` for three of
+> four — confirmed live: `sleeper` `1,276/1,276` null on both, `fliff` `1,394/1,394` on `home_team`,
+> while the Odds-API backfill rows are `0` null.** ⇒ ***two write paths, one table, different
+> completeness.*** ▶ **Full result and its one real consumer: `§T20.124`.**
+> ⚠⚠ **THE BOUNDARY**: **MLB proves the ENVELOPE — keys, nesting, types — not the sport-specific
+> VALUES** *(stat types, the `MARKET KEY -> OUR PROP` map at `score_board_legs.py:45`)*. **A `PARSES`
+> verdict bounds the risk; it does not eliminate it.**
+>
+> 🔑 **AND ONE WORD ABOVE IS NOW SHARPER**: `underdog`'s `max legs EVER = 3` — **those three are
+> `Moneyline` rows with `line=None`**, correctly dropped by the normaliser. ⇒ ***All three apps have
+> produced ZERO NBA PLAYER PROPS, ever.***
 
 ▶ **`RULE 51`, last step, against the BASELINE tree**: `legs=0` **0/0/0** · `max legs` **0/0/0** ·
 `331 bytes` **0/0/0**; `demonstrably alive` scores **2 in the twelve and 0 in the baseline** — *this
