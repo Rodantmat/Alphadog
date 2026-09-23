@@ -38976,3 +38976,93 @@ operational fact, which is what a corrected fact is FOR.** ⚠⚠ ***A system wh
 are collectors looks alive from the outside — commits land, files update, the repo moves — and is
 inert where it matters. The freshest possible evidence of liveness (a board committed two hours ago)
 sat next to a database that had not changed in ten days, and nothing in the corpus connected them.***
+
+---
+
+# §T20.121 — T20 PASS 116: 🔴🔴🔴 **THE TRIGGER MAP — OF `52` WRITE PATHS INTO THIS DATABASE, EXACTLY `2` HAVE AN AUTOMATIC TRIGGER, AND NEITHER OF THEM HAS WRITTEN ANYTHING IN TEN DAYS**
+
+*Pass 116, 2026-09-23. Pre-registered as **"THE TRIGGER MAP — FOR EVERY WRITE PATH INTO THE DATABASE:
+WHAT FIRES IT, AND HOW STALE IS ITS TABLE RIGHT NOW?"** `§T20.116` mapped **who writes**; `§T20.120`
+asked **what fires** for one path and found ten days of nothing. **This pass asks it of all of them.***
+
+## ① BOTH HALVES RE-DERIVED *(clause ii — `§T20.116`'s `41`/`13`/`2` NOT inherited)*
+
+**`2026-09-23T00:05:16Z`, against `main`**: `40` called scripts · `21` Workers ⇒ **`41`** distinct
+Worker write-targets, **`13`** Python write-targets *(from `11` writer scripts)*, **intersection `2`**
+⇒ **`52` distinct objects.** ✅ *All three figures reproduce `§T20.116` exactly.*
+
+## ② THE MAP — THREE COLUMNS, AND THE HEADLINE IS ONE NUMBER
+
+| what fires it | write paths | live freshness |
+|---|---|---|
+| 🔴 **`NOTHING IN THE REPO`** — the 21 Workers, reachable only by `POST /run` *(`NBA_WORKERS.md:1662`, the no-orchestrator rule)* | **`41`** | **every measurable table `15`–`23` days stale**; newest `2026-09-08`, oldest `2026-08-31` |
+| 🔴 **`PIPELINE STEP`, and the pipeline has NO cron** — `P2` and `P3` | **`10`** | `2`–`12` days |
+| ✅ **`CRON`** — `P1`, Mondays `0 19 * * 1` | **`1`** *(`nba_ref.defender_ratings`)* | 🔴 **`built_at` = `2026-09-13`, ten days** |
+| ✅ **`CRON`** — `nba-referees.yml`, daily `30 15 * * *` | **`1`** *(`nba_ref.referee_assignments`)* | 🔴 **`0` rows** |
+
+⇒ 🔴🔴🔴 ***TWO OF FIFTY-TWO. And both of the two are empty or stale.***
+
+**Writer → pipeline, read from source** *(every Python writer and the workflow that runs it)*:
+`archive_live_boards` **P3** · `build_asof_calibration` **P2** · `build_availability_delta` **P3** ·
+`build_blowout_model` **P2** · `build_confidence_v3` **P2** · `build_defender_ratings` **P1** ·
+`build_rung_market` **P3** · `grade_board_outcomes` **P2** · `load_baseline_ladder` **P2** ·
+`score_board_legs` **P3** · `scrape_referee_assignments` **P2 *and* `nba-referees.yml`**.
+🔑 **`P1` cron `1` · `P2` cron `0` · `P3` cron `0`** ⇒ **ten of the eleven writers sit in a pipeline
+nothing fires.**
+
+## ③ 🔴 THE ONE PIPELINE WITH A CRON HAS PRODUCED NO WRITE IN ITS LAST TWO WINDOWS
+
+**`nba-p1-weekly-static.yml:92–95`** runs `build_defender_ratings.py` **unconditionally — no `if:`
+gate** — and that script writes `nba_ref.defender_ratings` with a `built_at`.
+
+**Live: `max(built_at)` = `2026-09-13T17:01:08Z`.** *P1's cron is Mondays; **`2026-09-14` and
+`2026-09-21` have both passed**, and today is Wednesday `2026-09-23`.*
+
+⇒ 🔴 **Either `P1` has not completed since `2026-09-13`, or that step ran and did not write.**
+⚠ **THE CAUSE IS NOT ESTABLISHED, and the two candidates are named rather than chosen**: *(a)* the
+workflow is not running or is failing; *(b)* `build_defender_ratings.py` exits before its write —
+the corpus records a **`> 10k` row floor** at `:64–67`. 📌 *Distinguishing them needs the run log for
+that workflow, which the available listing tool cannot filter to; **stated as a gap, not guessed**.*
+
+## ④ THE FRESHNESS TABLE, IN FULL — `30` WORKER TABLES, NONE NEWER THAN `2026-09-08`
+
+**Oldest first**: `nba_ref.teams` **`08-31`** *(30 rows)* · `team_aliases` **`08-31`** · `player_aliases`
+**`09-01`** · `arenas` **`09-01`** · `officials` **`09-01`** · `player_tracking_profile` **`09-01`** ·
+`nba_team.season_profile` **`09-01`** · `player_onoff_profile` **`09-01`** · `player_impact_rating`
+**`09-02`** *(DARKO, 530)* · `nba_calendar.games` **`09-02`** *(2,666)* · `player_playtype_profile` ·
+`nba_team.playtype_profile` · `player_tracking_detail` **all `09-02`** · `player_shot_quality` ·
+`player_shot_zone_profile` **`09-03`** · `player_season_profile` · `nba_ref.players` **`09-03`** *(582)* ·
+`player_game_starter_status` **`09-03`** · `nba_team.lineup_profile` **`09-04`** · and the
+**`09-08`** group — `player_game_log_usage`, `_scoring`, `player_career_season_totals`,
+`player_splits`, `team_splits`, `player_game_log` *(79,358)*, `team_game_log`,
+`player_game_log_advanced`, `team_game_log_advanced`, `defense_vs_position`, `game_officials`.
+
+⚠ **Brief item `B` already says the static layer is frozen; this is not that.** 🔑 **The new column is
+WHAT WOULD REFRESH IT: for all thirty the answer is a Worker, and for all twenty-one Workers the
+answer to "what fires it" is `NOTHING IN THE REPO`.** ⇒ ***The staleness is not a stalled job. There
+is no job.***
+
+## ⑤ TWO KILLS, LOGGED
+
+✂ **`nba_ref.referee_assignments` is empty — ALREADY ON FILE.** **`NBA_DATABASE.md:204`**: *"🔴
+`nba_ref.referee_assignments` | 7 | **0** | **0** | ⚠ **STILL ZERO NINE DAYS LATER**"*, and
+`NBA_COMPASS.md:153` carries it as *"BUILT, SCHEDULED, UNVERIFIED."* **Killed.** 🔑 *What is added is
+only its place in this map — and a fair reading the corpus did not state: **in the off-season an empty
+capture is CORRECT.*** `scrape_referee_assignments.py:90–105` reads `rows = parse(doc) if doc else []`
+then `if rows:` — **no games, no rows, exit 0.** ⚠ **And nothing consumes the table**: `referee_assignments`
+appears in no Python or JS reader, only in its own workflow and `P2`'s. ⇒ ***The system's single
+automatic daily event writes a table nothing reads, and on opening night it will populate for the
+first time with no consumer to check it.***
+
+✂ **Brief item `B`'s static staleness — read before writing, as clause (iv) required.** *It states the
+tables are stale; it does not state that no scheduled job exists to refresh them.*
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `trigger map` **0/0/0** · `2 of 52` **0/0/0** ·
+`days_stale` **0/0/0** · `automatic trigger` **0 in the twelve**. ⚠ *`referee_assignments` scores
+**5 of 12** and produced the kill above — **the mentions were opened, not counted**.* ✅ **NOVEL.**
+
+📌 ***The lesson:*** **three passes have now asked the same question at widening scope — `§T20.119`
+"what fires on a game day", `§T20.120` "what fires this one loader", `§T20.121` "what fires anything"
+— and the answers narrowed to a single number.** ⚠⚠ ***`2` of `52`. A documentation sweep can spend a
+hundred passes describing what code DOES and never once ask what RUNS it, because every document is
+organised by component and the trigger is the one property that lives outside the component.***
