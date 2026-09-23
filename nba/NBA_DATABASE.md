@@ -41,6 +41,29 @@ transcript. Where a table was altered later, the change is noted with its transc
 > workflow is not completing, or the step runs and does not write *(the script has a `> 10k` row floor
 > at `:64–67`)*. *Named rather than chosen; the run log for that workflow could not be filtered here.*
 >
+> > ✅✅ **RESOLVED AS FAR AS THE EVIDENCE ALLOWS — T20 pass 117 (`§T20.122`), 2026-09-23, using
+> > `git log` as a second, independent run log.** *(`git log --since=2026-08-24 --author="github-actions"`
+> > ⇒ `1,413` bot commits over 30 days — **every workflow that commits leaves a dated record of a run
+> > that actually happened**.)*
+> >
+> > 1. ✅ **A POSITIVE CONTROL ELIMINATES "crons do not fire in this repository."** **`nba-scrape.yml`**
+> > *(cron `0 9 * * 1`, Mondays)* committed `Update NBA teams JSON` on **`2026-09-21` (Monday)** and
+> > **`2026-09-14` (Monday)** — **both of the last two.** ⚠ *Both at ~`16:35`–`16:38` UTC against a
+> > `09:00` schedule — a consistent `7.5`-hour offset, **recorded and not explained** (rule 6).*
+> > 2. 🔴 **`P1` LEAVES NO TRACE ON THE COMMIT INSTRUMENT EITHER**: its `NBA season tables (…)` commits
+> > stop at **`2026-09-10`, a Thursday**, in a three-commit backfill burst. **Nothing on either Monday.**
+> > 3. 🔑🔑 **AND THE ONE DATABASE WRITE IT DID PRODUCE — `2026-09-13` — WAS A SUNDAY.** **`P1`'s cron
+> > is Monday**, so **that write cannot have come from the schedule; it was a dispatch.**
+> >
+> > ⇒ 🔴🔴🔴 ***There is no evidence, on EITHER instrument, that `P1`'s Monday cron has produced
+> > anything in the last thirty days — while a sibling Monday cron in the same repository produced a
+> > commit on both of the last two Mondays.***
+> > ⚠ **Still open and named**: whether `P1` is *not starting*, *starting and failing before its first
+> > write*, or *running and committing nothing because nothing changed*. 🔑 **That last reading is now
+> > the weaker one** — it explains the commit silence but not the database silence, since
+> > `build_defender_ratings.py` runs unconditionally at `:92–95`. ▶ **What would close it: that one
+> > workflow's own run list.**
+>
 > 🔑 **WHY THIS IS NOT BRIEF ITEM `B` RESTATED**: `B` says the static tables are frozen. **This says
 > what would unfreeze them — and that for all thirty the answer is a Worker, and for all twenty-one
 > Workers the answer to "what fires it" is NOTHING IN THE REPO.** ⇒ ***The staleness is not a stalled
