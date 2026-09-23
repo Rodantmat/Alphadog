@@ -27,8 +27,8 @@ on:
         default: "false"
         required: false
       season:
-        description: "season for the gap audit"
-        default: "2025-26"
+        description: "season override for the gap audit and the confidence refit (blank = resolve from the date)"
+        default: ""
         required: false
 
 permissions:
