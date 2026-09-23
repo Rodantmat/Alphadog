@@ -159,13 +159,25 @@ def main():
             graded_at timestamptz DEFAULT now())""")
         # distinct-leg key: the outcome does not depend on bookmaker/snapshot.
         # game_date stays a plain column (date->text is only STABLE, not IMMUTABLE, so it cannot go inside md5).
-        cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS board_outcomes_leg_uidx ON nba_market.board_outcomes
-            (game_date, (md5(coalesce(market_key,'')||'|'||coalesce(player,'')||'|'||coalesce(side,'')||'|'||
-                             coalesce(line::text,''))))""")
-        cur.execute("CREATE INDEX IF NOT EXISTS board_outcomes_date_idx ON nba_market.board_outcomes (game_date, leg_result)")
+        # DEADLOCK (§T23.5, fixed 2026-09-23). `CREATE UNIQUE INDEX IF NOT EXISTS` is NOT a cheap no-op
+        # under concurrency: Postgres takes a FULL TABLE LOCK before it discovers the index already
+        # exists, and holds it until commit - so two parallel catch-up runs deadlock each other (181 of
+        # 325 dates failed that way). Checking first means the lock is only ever paid on the first run.
+        if cur.execute("SELECT to_regclass('nba_market.board_outcomes_leg_uidx')").fetchone()[0] is None:
+            cur.execute("""CREATE UNIQUE INDEX board_outcomes_leg_uidx ON nba_market.board_outcomes
+                (game_date, (md5(coalesce(market_key,'')||'|'||coalesce(player,'')||'|'||coalesce(side,'')||'|'||
+                                 coalesce(line::text,''))))""")
+        if cur.execute("SELECT to_regclass('nba_market.board_outcomes_date_idx')").fetchone()[0] is None:
+            cur.execute("CREATE INDEX board_outcomes_date_idx ON nba_market.board_outcomes (game_date, leg_result)")
 
+        # SEASON ROLLOVER (fixed 2026-09-23, same class as T23-2 but not in its audit). GRADE_END used
+        # to default to a hardcoded "2026-04-12" - last season's final date. P2 passes no range, so from
+        # the first 2026-27 night this would have selected ZERO dates, printed "grading 0 dates" and
+        # exited GREEN, with the as-of calibration and the confidence refit quietly learning from
+        # nothing new. The floor stays 2024-10-22 (the first archived board date - a fact, not a season
+        # assumption); the ceiling is now today. UTC is never behind PT, so today's slate is covered.
         start = os.environ.get("GRADE_START", "2024-10-22")
-        end = os.environ.get("GRADE_END", "2026-04-12")
+        end = os.environ.get("GRADE_END") or datetime.utcnow().date().isoformat()
         cur.execute("""SELECT DISTINCT game_date FROM nba_market.board_snapshots
                        WHERE game_date BETWEEN %s AND %s ORDER BY 1""", (start, end))
         dates = [r[0] for r in cur.fetchall()]
