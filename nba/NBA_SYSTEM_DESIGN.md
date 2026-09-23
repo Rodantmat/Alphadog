@@ -10,8 +10,8 @@ constraints that shaped it. This is the operational spec.
 > PT` cutoff, the calculation chain, the failure policy, and the explicit non-goals.
 > 📏 **`171` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_SYSTEM_DESIGN.md ``
 >
-> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* *(`§T20.22`: `6` of `16` line-number pointers
-> rotted within a day)*. **Search for the quoted `§` label.**
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* **Search for the quoted `§` label.**
+> 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
 > 🔴 **THE `0z-*` AND `0a.*` BLOCKS RUN BACKWARDS.** *`0z-7` → `0z-5` → `0z-6` → `0z-3` → `0z-4` →
 > `0z-2` → `0z`, and `0a` → `0a.1` → `0a.5` → `0a.6` → `0a.4` → `0a.3` → `0a.2`.* **Navigate by this
 > index, not by number.**
