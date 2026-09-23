@@ -1344,6 +1344,89 @@ by roughly 6×.** *Recorded because the corpus quotes the +0.347 figure without 
 |---|---|---|---|
 | **A2** teammate redistribution *(minutes multiplier)* | ✅ **SHIPPED** | allocator fitted on roster state; **validated three ways** | conservation **0.9930**; allocator MAE **4.609** vs recent-5 **4.875**; OOS `p0` 4.830 / `p1` 4.733 / `p2` 4.753; **15 of 19 props improve**, gains scaling with minutes-dominance — pra **+0.347**, pts+reb +0.281, pts+ast +0.253, points +0.097 |
 | **A2 rate response** | ❌ **REJECTED** | held-out | *"double-counts what minutes already carry"* |
+
+> ## 🔑 §F6.5 — **THE THREE TABLES UNDER THESE VERDICTS, recovered 2026-09-23**
+>
+> *Each conclusion below is already on file; each TABLE was not. Verified before writing — `5,506`,
+> `9,259`, `26,816`, `5,761`, `6.395`, `936,764`, `k=8` each returned **`0` of `12`**.*
+>
+> ### 1 · WHY `A2` SHIPS — the effect by WHO is absent, and it is monotone
+>
+> | absent player | side | **n** | minutes × | **usage ×** | rate × |
+> |---|---|---|---|---|---|
+> | **alpha (≥20 poss)** | teammate | 🔴 **5,506** | 1.080 | **1.177** | 1.110 |
+> | secondary | teammate | 🔴 **9,259** | 1.081 | 1.149 | 1.082 |
+> | role | teammate | 🔴 **26,816** | 1.059 | 1.091 | 1.059 |
+> | ⚠ **alpha** | **OPPONENT** | 🔴 **5,761** | **1.019** | **1.051** | **1.057** |
+>
+> 🔑 ***"usage rises more than minutes, and it scales with who's out. an alpha absence gives
+> teammates `+8%` minutes but `+17.7%` usage — against `+9.1%` usage when a mere role player sits.
+> That's the Wally Pipp effect measured on our own data, and it confirms the design decision to
+> treat minutes and usage as separate flows: **the shot attempts move nearly twice as far as the
+> clock does**."***
+>
+> ⚠⚠ **AND THE OPPONENT ROW IS A FLAGGED WARNING, not a result** — *"opponents of a team missing
+> someone show `+2%` minutes and `+5%` usage … **a chunk is almost certainly selection bias:
+> absences cluster in blowouts, and blowouts inflate everyone's rate through garbage time.** Right
+> now the panel carries `null` in `proj_spread`, `margin` and `blowout`, so I can't yet separate the
+> two."* ⇒ ***"if the opponent effect survives that conditioning it's a real `B4` factor; if it
+> collapses, it was garbage time."*** 🔑 **`B4` v1 was later REJECTED (`0` of `19` props) and
+> `§3`'s table records the reason as *"the earlier `+6.5%` opponent signal was BLOWOUT
+> CONTAMINATION."* — this block is the moment that hypothesis was WRITTEN DOWN, before the test.**
+> 📌 *A pre-registered prediction that came true, and the corpus carried the outcome without the
+> prediction.*
+>
+> ### 2 · WHY `A2` IS WIRED TO 15 PROPS AND NOT 19 — the per-prop gate
+>
+> | prop | MAE ignore | MAE with `A2` | gain |
+> |---|---|---|---|
+> | **pra** | 🔴 **6.395** | 6.048 | **+0.347** |
+> | pts+reb | 🔴 **5.857** | 5.576 | +0.281 |
+> | pts+ast | 🔴 **5.394** | 5.141 | +0.253 |
+> | reb+ast | 🔴 **2.745** | 2.657 | +0.088 |
+> | dreb | 🔴 **1.630** | 1.603 | +0.027 |
+> | stocks | 🔴 **1.000** | 0.999 | +0.001 |
+>
+> **`15` of `19` props improve out of sample** — *assists, dreb, fg3a, fga, fgm, fta, ftm, points,
+> pra, pts+ast, pts+reb, reb+ast, rebounds, threes_made, turnovers.*
+>
+> 🔑 ***"the gains scale exactly as the mechanism predicts — combos benefit `3–4×` more than points
+> alone (`0.347` on `pra` vs `0.097` on points), because a combo accumulates the minutes effect
+> across three counting stats while efficiency noise partially cancels. And the props that don't
+> benefit are precisely the low-count, variance-dominated ones (stocks, blocks, steals, fouls),
+> where a minutes change is swamped by whether a single block happened."***
+>
+> 💰 **And the commercial note, in `0` of the twelve:** *"`pra`, `pts+reb` and `pts+ast` are among
+> the highest-volume markets on the PrizePicks board — **`450`, `431` and `357` legs on a single
+> slate** — **so the factor lands hardest where the board is deepest**."*
+>
+> ### 3 · THE `oreb` FIX — the one prop `§7`'s audit leaves uncertified
+>
+> **Estimator (i): EWMA + shrinkage toward a `dreb`-defined archetype, `k=8`.** *Band bias against
+> actual:*
+>
+> | anchor band | actual | (a) expanding | (e) EWMA | (h) arch `k=20` | 🟢 **(i) EWMA+arch `k=8`** |
+> |---|---|---|---|---|---|
+> | <0.5 | 0.433 | −0.108 | −0.105 | +0.093 | **+0.016** |
+> | 0.5–1 | 0.782 | −0.037 | −0.035 | +0.087 | **+0.037** |
+> | 1–1.5 | 1.168 | +0.045 | +0.031 | +0.075 | **+0.048** |
+> | 1.5–2.5 | 1.825 | +0.100 | +0.087 | −0.082 | **−0.023** |
+> | **2.5+** | 3.024 | **+0.241** | +0.208 | −0.356 | 🟢 **−0.141** |
+>
+> ✅ **Worst-band bias `0.241 → 0.141`; the low end essentially fixed (`−0.108 → +0.016`) — a `41%`
+> improvement.** 🔑 ***"grouping by minutes was the flaw, grouping by rebounding ARCHETYPE is the
+> fix, and using `dreb` rate as the grouping variable keeps it NON-CIRCULAR."***
+>
+> **Four hypotheses tested and their verdicts, in `0` of the twelve:** *`lambda` **rejected** ·
+> opportunity basis **rejected** · minutes-tier shrinkage **rejected — made it worse** · archetype
+> shrinkage **works**.* ⇒ ***"`oreb` went from a dropped prop to one with a measured fix and one
+> tuning parameter left"*** — **the remaining `−0.141` is under-prediction of elite offensive
+> rebounders, a `k`-tuning question between `8` and `20`.**
+>
+> 🔴 **`NOT RECORDED`: whether the recipe change was ever made.** *`§7`'s all-props audit still lists
+> `oreb` at **`−0.1 pp`, penalised** — so as of that audit **the fix had not landed**.*
+>
+> ⚠ **`AS STATED IN T15`, not re-run by this sweep.**
 | **N1** status resolution | ✅ **MEASURED** *(not a ship/reject — a measured input A2 now consumes)* | full report population, **both seasons** | see §4 below |
 | **B4** opponent availability **v1** *(vacated minutes)* | ❌ **REJECTED** | **post-game truth**, 19 props | **0 of 19**; the earlier **+6.5% opponent signal was BLOWOUT CONTAMINATION** |
 | **B4 v2** *(expected defender-quality change)* | ❌ **REJECTED** *(after the test itself was found broken — §T15.2f)* | **post-game truth**, **4,526** test rows, 11 props | **0 of 11**; betas collapsed to **−0.056…+0.029** once correct, *versus the spurious **+0.14…+0.22** from the broken version* |
