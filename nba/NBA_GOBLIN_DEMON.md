@@ -1125,5 +1125,97 @@ it remains **built but unverified**.
 4. **Goblin/demon certification was deliberately deferred** by the owner: *"Goblins and demons should
    NOT be handled now — **it is board dependent** and will only have this information later."*
    The ±6 ladder was certified; **the tails beyond it were never separately certified.**
-5. **Per-leg multipliers are unavailable** — see `NBA_MULTIPLIERS.md`. Without them the −EV/+EV
+5. ~~**Per-leg multipliers are unavailable**~~ 🟢 **SUPERSEDED `2026-09-20` — they ARE obtainable via
+   `POST /game_types`; see `NBA_MULTIPLIERS.md` `§0.9-T22` and `§0.10-T22`** *(recorded 2026-09-23,
+   `§T22.1`/`§T22.2`)*. — see `NBA_MULTIPLIERS.md`. Without them the −EV/+EV
    conclusions rest on *observed* payout factors, not per-leg truth.
+
+---
+
+# 0h-T22. 🔑🔑🔑 **THE FLEX CONSOLATION TIER — TWO BANDS SOLVED, THE THIRD OPEN, AND A FAILED HYPOTHESIS WORTH KEEPING** *(T22 pass 3, §T22.3, 2026-09-23)*
+
+*From `T22` SEG `302` (`2026-09-21`). **All figures AS STATED IN `T22`** — measured from live
+`/game_types` quotes against the owner's session, **not re-probed by this sweep.** All five blocks
+below score `0` in the working tree and `0` in the baseline.*
+
+## 1. ✅ **THE TWO BANDS THAT ARE SOLVED — 2-pick Power**
+
+| full payout | consolation | observed |
+|---|---|---|
+| **under `2.5×`** | **`0.25`** | **`37` of `38`** |
+| **`2.5×` – `5×`** | **`0.5`** | ✅ **`69` of `69`** |
+| 🔴 **above `5×`** | **mixed — `0.5` / `0.75` / `1.0` / `1.25`** | 🔴 ***rule not yet known*** |
+
+## 2. 🔑 **THE GIVEBACK — the consolation is PAID FOR out of the full payout**
+
+| consolation | `flex_full ÷ power` |
+|---|---|
+| `0.25` | **`0.83`** |
+| `0.5` | **`0.69`** |
+| `0.75` | **`0.57`** |
+| `1.0` | **`0.46`** |
+
+⇒ **A `1.0` consolation costs `54%` of the Power payout.** 🔑 ***This is the quantity `§0.2d.2`
+("Flex can flip an EV-negative Power pool positive — in principle") needs to stop being "in
+principle": the trade is now priced.*** ⚠ **And it is steep** — *the giveback is not linear; going
+from `0.5` to `1.0` consolation costs a further `23` points of full payout.*
+
+## 3. 🔴🔴 **THE TIER IS NOT A FUNCTION OF THE PAYOUT — stated with its counter-examples**
+
+> *"a **`15.5×` slip got `0.5`** while a **`13.5×` slip got `1.0`**; **two slips with an IDENTICAL
+> `11×` full payout got `0.5` and `1.25`**."*
+
+⇒ ***Two slips, same payout, different consolation. Whatever selects the tier, it is not the
+number this table is indexed by.*** ⚠ **`NOT RECORDED`: what it IS a function of.**
+
+## 4. ✅✅ **A HYPOTHESIS THAT FAILED — AND THE REASON IT COULD NOT HAVE SUCCEEDED**
+
+> *"a hypothesis that failed: **that the tier tracks `p(exactly 1 of 2)`**. **The test was
+> structurally weak** — whenever one leg is a standard at `50%`, `p(exactly one)` is `0.50`
+> regardless of the other leg, and **nearly every slip measured had a standard leg**. Cracking the
+> rule needs **alt×alt slips**."*
+
+> 🔑🔑🔑 **THIS IS THE ENTRY MOST WORTH HAVING, AND IT IS THE ONE A CORPUS USUALLY LOSES.** *A
+> rejected hypothesis is normally recorded as "tested, failed" — or not recorded at all. **Here the
+> diagnosis is that the DESIGN could not have discriminated**: the predictor was pinned at `0.50` by
+> the sampling, so the test had no power whatever the truth was.* ⇒ ***"Failed" and "could not have
+> succeeded" are different findings, and only the second tells the next person what to build:
+> `alt×alt` slips.*** ✅ **Recorded at full strength — this is `T1`'s research standard operating
+> exactly as designed.**
+
+## 5. ⚠⚠ **THE TIER-B SELECTION BIAS — read before relying on the rescue population** *(SEG `744`)*
+
+> *"**the validation population — ladders WITH a PrizePicks standard — is NOT the rescue population —
+> ladders WITHOUT one.** PrizePicks may **skip the standard precisely because its projection
+> disagrees with the market**. **Evidence: `5,652` tier-B candidates sit EXACTLY on the books' line
+> yet carry a demon/goblin flag** — PrizePicks' center was elsewhere. The flag check removes flagrant
+> cases; **half-point center errors that don't flip a leg's kind can still pass.** Treat tier B as
+> lower confidence; **filter it out by anchor type when precision matters.**"*
+
+🔑 **A validation set chosen by the counterparty is not a random sample of the thing you want to
+predict** — *and the `5,652` is the measurement that turns that from a worry into a bias with a
+size.* ⚠ **`NOT RECORDED`: the magnitude of the half-point residual that survives the flag check.**
+
+## 6. ✅ **AND FLEX WAS ALSO CONFIRMED OUT OF SAMPLE** *(SEG `383`, owner's screen, `2026-09-21`)*
+
+| slip | Power pred → actual | Flex pred → actual |
+|---|---|---|
+| LeBron `pra 34.5` D + SGA `p+r 29.5` G | `3.25` → **`3.25`** | `2.2/0.5` → **`2.2/0.5`** |
+| Tatum `p+r 39.5` D + Wemby `points 29.5` D | `5.75` → **`5.5`** | `4.0/0.5` → **`3.8/0.5`** |
+| Tatum `points 24.5` G + Brunson `3pm 1.5` G | `1.9` → **`1.9`** | `1.6/0.25` → **`1.6/0.25`** |
+
+⚠ **AND A METHOD ERROR CAUGHT ON THE WAY, kept because the catch is the lesson** *(the cancellation
+technique itself is already on file — `5` hits — **this failure of it is not**)*: *a shortcut
+dividing the `1G`, `1D` and `GD` slips to cancel the base **assumed they shared the same goblin and
+demon. They did not** — `GD` must avoid the goblin's game, so it substituted a different demon. **The
+result — a goblin factor of `2.96` against a 3-pick base of `1.52` — was impossible, and that is what
+exposed it.*** ⇒ 🔑 **"Verify shared legs before any cancellation."** *An arithmetic identity is only
+an identity if the terms are the same terms.*
+
+---
+
+> 📌 **EVIDENCE TIERS**: ⚠ **AS STATED IN `T22`** — every figure above. *Quotations are verbatim;
+> **this sweep did not re-probe `/game_types`**, which would be a live call against a real-money
+> account.* 🔴 **`NOT RECORDED`** — the above-`5×` consolation rule · what the tier IS a function of ·
+> the surviving half-point residual in tier B. ⚖️ **`pp_*` objects not queried; nothing changed or
+> triggered.**
