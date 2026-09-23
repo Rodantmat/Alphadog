@@ -4,6 +4,78 @@
 audited. Where a step exists because an earlier attempt failed, the failure is part of the recipe —
 that is the useful part.
 
+---
+
+> # 📑 **INDEX — `NBA_RECIPE.md`**
+> **`47` sections · `~92,000` bytes · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> rotted within a day)*. **Search for the quoted `STEP` label.**
+> 🔴 **THE STEPS ARE NOT IN ORDER IN THE FILE.** *Physical order is:* `STEP 0-T16` → `0` → `0a` →
+> `0b` → `0d` → `1`–`7` → **`0c`** → `8+` → `8` → `9` → `10` → `11` → `12` → `13`. ***`STEP 0c` sits
+> between `STEP 7` and `STEP 8`.*** **This index is in the order the build actually happened.**
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | 🔴🔴 **what happens if you press the buttons on opening night** | **`STEP 13`** |
+> | ⏱ **the game-day clock** — what runs when, and the four clocks side by side | **`STEP 12`** |
+> | **what `P1` / `P2` / `P3` each do**, step by step | **`STEP 8`** · **`STEP 9`** · **`STEP 10`** |
+> | 🔑 **the build order — what must exist before what** | **`STEP 11`** |
+> | 🔴 **why the blowout mixture changed, and the two beliefs it corrected** | **`STEP 0-T16`** |
+> | **the founding constraints and who this was built for** | **`STEP 0`** · **`STEP 0a`** |
+> | ⚠ **the rules that were never written down — and the one not holding** | **`STEP 0d`** |
+> | ⚠ **the verification discipline that was supposed to run alongside every step** | **`STEP 0c`** *(misplaced — sits after `STEP 7`)* |
+> | **why scraping moved to GitHub Actions** | **`STEP 4`** |
+> | 🔴 **what is NOT recorded** *(stated as gaps, never inferred)* | **`STEP 11`'s two `NOT RECORDED` blocks** · **`STEP 12`'s** |
+>
+> ## 📋 EVERY STEP, IN BUILD ORDER
+>
+> ### 🏗 **A · FOUNDATIONS (`T1`)**
+> | step | what it covers | 🚩 |
+> |---|---|---|
+> | **`STEP 0`** | **The founding constraints** | |
+> | **`STEP 0a`** | **Who the recipe is being cooked for** — *incl. the three non-goals, stated at the same time* | |
+> | **`STEP 0b`** | **The prioritized startup plan, as originally written** — *incl. ⚠ the one ordering deviation and what it cost* | ⚠ |
+> | **`STEP 0c`** | ⚠ **The verification discipline that was supposed to run alongside every step** 🔴 *PHYSICALLY MISPLACED — it sits between `STEP 7` and `STEP 8`* | ⚠ |
+> | **`STEP 0d`** | ⚠ **Three founding rules never written down, and one that is NOT HOLDING** — ① the tunables rule *(verified not holding)* · ② the per-worker improvement mandate · ③ the MLB no-touch rule in the owner's words · ④ the source mandate *(why the Cloudflare block was fatal, not inconvenient)* | ⚠ |
+>
+> ### 🔨 **B · THE BUILD, STEP BY STEP (`T1` → `T2`)**
+> | step | what it covers |
+> |---|---|
+> | **`STEP 1`** | **Recon before building** |
+> | **`STEP 2`** | **Lock the namespace** |
+> | **`STEP 3`** | **Build the first worker — and discover the blocking constraint** |
+> | **`STEP 4`** | **Move scraping to GitHub Actions** |
+> | **`STEP 5`** | **Make it self-triggering** |
+> | **`STEP 6`** | **Close the loop, and verify it properly** |
+> | **`STEP 7`** | **Repeat the pattern for every static entity** |
+> | **`STEPS 8+`** | *The journal outline, superseded by the real `STEP 8`–`13` below* |
+>
+> ### ⚙️ **C · THE THREE PIPELINES (`T20`, read from the workflow files)**
+> | step | what it covers | 🚩 |
+> |---|---|---|
+> | **`STEP 8`** | **`P1` · THE WEEKLY STATIC LAYER** — `nba-p1-weekly-static.yml`, `9` steps, **the only pipeline with a cron** | |
+> | **`STEP 9`** | **`P2` · THE OVERNIGHT HEAVY PASS** — `19` steps, **no cron** | |
+> | **`STEP 10`** | **`P3` · THE AFTERNOON LIGHT PASS** — `11` steps, **no cron**, `1:15 PM PT` cutoff | |
+> | **`STEP 11`** | 🔑 **THE BUILD ORDER — what must exist before what**; *incl.* 🔴 **the gate that sits on top of all of it, in the owner's words (`§0z-3`)** *and* ⚠⚠ **two `NOT RECORDED` blocks** | 🔑 |
+>
+> ### ⏱ **D · OPERATING THE SYSTEM (the two sections written for game day)**
+> | step | what it covers | 🚩 |
+> |---|---|---|
+> | **`STEP 12`** | 🔴 **THE GAME-DAY TIMELINE.** The fact the timeline exists to state · **the day in order, and what starts each row** · 🔑 **the four clocks laid side by side for the first time** · ⚠⚠ what the twelve do not say | 🔴 |
+> | **`STEP 13`** | 🔴🔴 **THE OPENING-NIGHT DRY RUN.** **The one-line answer** · the cause, stated once *(a composition of two facts already on file)* · ✅✅ **the positive control, measured over `325` opportunities** · 📋 **`P2`'s nineteen steps on `2026-10-20`** · 📋 **`P3`'s eleven** · 🔴 **what an operator actually sees, and why it misleads** | 🔴🔴 |
+>
+> ### 🧪 **E · A LATER CORRECTION FOLDED INTO THE RECIPE**
+> | step | what it covers | 🚩 |
+> |---|---|---|
+> | **`STEP 0-T16`** | 🔴 **The blowout mixture now runs on the REAL market spread — and it corrects two beliefs the corpus held.** The gap measured · 🔴🔴 **the `100:1` asymmetry the proxy could not see** · two corrections to held beliefs *(`23,591` player-games)* · the research definition adopted · the full pipeline, each stage gated · ✅ verified in the final table · 🔑 the fact-63 trap, checked rather than assumed. ⚠ *Physically FIRST in the file despite being a `T16`-era correction.* | 🔴 |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`A`–`B` is how it was built, `C` is what exists now, `D` is how to
+> run it, `E` is a correction folded back in.*** **If you are here because it is game day, go straight
+> to `STEP 12` and `STEP 13`.**
+
 **Update log**
 | Date | What changed |
 |---|---|
