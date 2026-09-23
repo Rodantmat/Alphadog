@@ -40167,3 +40167,100 @@ list-identity check appear in neither tree; `paper_picks` scores **7 of 12** and
 It now says: the two lists were compared on `2026-09-23` and matched, the tables were empty, and the
 hole cannot open until the first pick is logged. That is a different document from one that only
 warns.***
+
+---
+
+# §T20.134 — 🔴🔴🔴 **THE OPENING-NIGHT DRY RUN — AND IT FALSIFIES TWO OF MY OWN PUBLISHED ENTRIES**
+
+*T20 pass 129, 2026-09-23. Pre-registered: "step by step through `P2` then `P3` with the
+configuration as it stands today. What does each step actually produce on `2026-10-20`?"
+**The deliverable is `NBA_RECIPE.md` `STEP 13`** — a four-column table, one row per step, 19 + 11.
+This section records the pass: what the walk KILLED, what survived, and the two corrections.*
+
+## 1. 🔴🔴 RULES 26/28 — **THE KILL, AND IT TOOK MOST OF THE DRAFT**
+
+*I drafted a headline reading **"`P3` aborts on opening night because `baseline_history` has no
+writer in any pipeline."** **The novelty check killed it.** Every clause was already on file, at
+full strength:*
+
+| drafted clause | already on file |
+|---|---|
+| `P2`'s certifier asserts `baseline_history`; its only writer `load_baseline_history.py` is in the three `*-history.yml` workflows, NOT `P2`; `P2` writes `baseline_ladder` | 🔴 **`§T20.37` · `T20-6` · `NBA_WORKERS.md` §B · run-log pass 32/33** |
+| `CERT_STRICT` defaults to `1`; both pipelines go RED at certify | 🔴 **on file, verbatim** |
+| `BS_SEASON` / `DELTA_SEASON` pinned to `"2025-26"`; the loud-vs-silent exit contrast; "the diagnostic names the wrong cause" | 🔴 **`T20-4` · `§T20.117` · `§T20.127`** |
+| the `>= 25` prop gate stops the slate on opening night | 🔴 **`T20-13`** |
+
+📌 ***Logged as a kill, not smuggled in as a finding.*** 🔑 **And the kill is the pass's real
+service**: it forced the question *"if all of it is on file, why does the corpus still predict the
+wrong day?"* — **which is where the finding actually was.**
+
+## 2. 🔑🔑🔑 THE SURVIVOR — **THE CORPUS HELD BOTH FACTS AND COMPOSED THEM WRONG, IN TWO PLACES**
+
+> **Fact A** *(on file since pass 32)*: no pipeline writes `nba_score.baseline_history`.
+> **Fact B** *(on file at `T20-4`)*: `score_board_legs.py` reads it with `game_date = %s AND season = %s`.
+> **The composition neither entry performed: `game_date` matches nothing on night one, so the season
+> predicate is NOT the binding constraint and never was.**
+
+| entry | what it published | the correction |
+|---|---|---|
+| 🔴 **`§T20.117`** | *"While both say `2025-26`, they AGREE, and P3 runs."* · *"The system will look fine through the rollover and break on a later, unrelated-looking day."* | 🔴 **FALSE. P3 aborts on `2026-10-20` itself** — step 9 of 11. The entry reasoned about the season predicate and never looked at the `game_date` predicate beside it. |
+| 🔴 **`§T20.127`** | *"On opening day the true cause is the season constant, not a missing P2 run. An operator would run P2, watch it succeed, re-run P3, and abort identically."* | 🔴 **BOTH CLAUSES FALSE.** The cause is the absent writer — **correcting `BS_SEASON` to `2026-27` produces an identical abort**, so this entry's implied remedy costs the second debug cycle it warns about. And **`P2` cannot "succeed"**: it goes RED at step 19 of 19 on the same night. ✅ *Its headline — "the diagnostic names the wrong cause" — was right.* |
+
+**Both corrected at source, in place, with both dates and a pointer** *(commits `72fdbe4c`,
+`aafd353`)*. ⚠ **This is a RULE 6 failure at the level of COMPOSITION**: each entry swept its own
+siblings and neither swept the corpus for the fact that disarmed it. *The sweep's two halves were
+fifty passes and four sections apart, and nothing in the method brought them together until a pass
+was forced to walk the steps in order.*
+
+## 3. ✅✅ THE POSITIVE CONTROL — **the dependency is visible in the OUTPUT, not just the source**
+
+```sql
+WITH s AS (SELECT DISTINCT game_date FROM nba_score.board_scored),
+     h AS (SELECT DISTINCT game_date FROM nba_score.baseline_history)
+SELECT (SELECT count(*) FROM s), (SELECT count(*) FROM h),
+       (SELECT count(*) FROM s WHERE NOT EXISTS (SELECT 1 FROM h WHERE h.game_date=s.game_date)),
+       (SELECT count(*) FROM h WHERE NOT EXISTS (SELECT 1 FROM s WHERE s.game_date=h.game_date));
+-- 325 · 325 · 0 · 0        (live, 2026-09-23T01:19:44Z)
+```
+
+> **The two date sets are IDENTICAL.** `board_scored` spans `2024-10-22 → 2026-04-12`;
+> `baseline_history` spans `2024-10-22 → 2026-04-12`. **In `325` opportunities across two seasons the
+> scorer has never produced a date the hand-backfilled table did not already hold, and never failed
+> to produce one it did.** 🔑 ***That turns "the code says so" into "the system has behaved this way
+> 325 times out of 325."*** ⇒ **Every date of 2026-27 is currently outside the scorable set — this is
+> not a season-rollover condition, it is a permanent one until a human runs
+> `nba-baseline-history.yml` for `2026-27`.**
+
+📌 **Supporting reads, all `2026-09-23T01:13Z`**: `load_baseline_ladder.py:73-84` *(writes
+`baseline_ladder` + `_runs`, never `baseline_history`)* · `certify_pipeline.py:77-83` and `:32` ·
+`build_availability_delta.py:52` and `:146-150` · `nba-p3:36-38` *(the `season` input's
+`default: "2025-26"`, so the `|| '2025-26'` fallback is belt-and-braces — **the literal binds either
+way**)* · `nba-p2:128` `GAP_SEASON` and `:274` `C3_SEASONS`.
+
+## 4. ⚠ WHAT THE WALK ALSO PRODUCED — *recorded, NOT counted as new*
+
+- ⚠ **`P3` step 8 (availability delta) is a SILENT no-op before step 9 dies loudly** — `DELTA_SEASON`
+  is not set by `P3` at all, so the script's own `"2025-26"` default binds. *The exit contrast is on
+  file; **which step reaches it first was not**.*
+- 🔴 **`P3` dies at step 9 of 11, not step 7** — *correcting my own working note mid-pass; the named
+  step count is `11` and `Score the board` is the ninth.*
+- ⚠ **`P2` step 19's failure and `T20-13`'s `>= 25` prop gate are TWO INDEPENDENT `P2` certify
+  failures on the same night**, and only one of them is about a missing table.
+
+## 5. 📋 CLAUSE SCORING *(pre-registered before the pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | every prediction cites a measurement or is marked `NOT ESTABLISHED` | ✅ **HIT — `30` rows: `18` cited, `12` marked `NOT ESTABLISHED`.** *No uncited consequence was published.* |
+| **(ii)** | the output goes on the OWNER's surface, not into a `§` | ✅ **HIT — `NBA_RECIPE.md` `STEP 13`**, beside `STEP 12`, with a pointer from each corrected entry. |
+| **(iii)** | ≥ 1 result not already on file | ✅ **HIT — exactly one, and it is a CORRECTION to two published entries.** ❌ *The "P3 aborts because no pipeline writes `baseline_history`" branch is NOT available — killed by rules 26/28.* |
+| **(vi)** | stop if `STEP 12` already carries the per-step outputs | ✅ **did not fire** — `STEP 12` describes the CLOCK. *It did carry the uncorrected one-workflow sentence, repaired this pass as the **third** surface.* |
+| **(vii)** | repair any falsified entry at its source | ✅ **HIT — two, both repaired in place.** |
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `"P2 must run before P3"` scores **0** in the
+baseline and the `325 = 325` control appears in neither tree. ✅ **NOVEL.**
+
+📌 ***The lesson, and it is about method rather than about the system:*** **a corpus can hold every
+fact a conclusion needs and still publish the wrong conclusion twice.** *What caught it was not a new
+query — it was being made to walk thirty steps in order, where two sections that never cite each
+other land four rows apart.*
