@@ -3112,6 +3112,67 @@ patch payloads were excluded from the machine-stratum pass by design** *(they ar
 text, and reading them is reading the documents)* — **a finding hidden inside a patch payload's
 prose, rather than in the surrounding message, would not have been caught.**
 
+## ✅✅ **T22 IS CLOSED — `29` passes, CLEAN `3/3`, `2026-09-23`**
+
+*`22` passes this session (`8`–`29`) on top of `7` prior. **The richest transcript this sweep has
+closed since `T11`, and the only one where a third of the material is out of scope by standing
+rule.***
+
+### 1 · The band
+
+| | n |
+|---|---|
+| segments | `897` |
+| uncovered-substantive at `0.40` | `730` |
+| 🔴 **OUT OF SCOPE** *(the concurrent session's `pp_*` objects, `PP_PAYOUT_FINDINGS.md`, the mapper)* | **`231` — `31.6%`** |
+| ✅ **in scope** | **`499`** |
+| in-scope PROSE ≥`400` ch | `42` — **all read** |
+| in-scope prose <`400` ch | `82` — **all scanned** |
+| in-scope `run_sql_postgres` calls | `37` — **all read** |
+| `assistant/thinking` | `185` — **read at pass `27`; stored CONDENSED in this transcript, no new facts** |
+
+### 2 · The thirteen findings
+
+| § | finding |
+|---|---|
+| **`§T22.8`** | 🔴 Live board shows **More-only** against the documented four-way rule · the `game_types` payload's `is_cashout_eligible` / `is_max_payout_alert` · ⚠ **every multiplier figure is implicitly scoped to a GAME MODE and a STATE and none say which** · `reversion` still undefined |
+| **`§T22.9`** | 🔴🔴 ***PRICED BY THE LINE, NOT THE RUNG.*** Demon `+2` ranges `5.25×`–`7.5×`; goblin `−1` `2.2×`–`2.8×`. **Any EV keyed on rung number is wrong by up to `43%`.** Plus the rounding grid (`0.1` below `3×`, `0.25` above) |
+| **`§T22.10`** | 🔴 **The same line priced differently per player, by up to `10%`** — the hard accuracy ceiling; mined prices must be stored PER PLAYER |
+| **`§T22.12`** | 🔴🔴🔴 **A SECOND LIVE CREDENTIAL** — a real-money account session. **The credential census missed it because its shape list had six patterns and a session cookie is none of them.** `RULE 58` applied to a security audit. Re-scanned all `24` transcripts: `23` hits, `T22` and `T23`. ⇒ `T22-1b` |
+| **`§T22.13`** | 📊 The full prop-mix composition of `board_tiers_v2`'s `2,199,354` legs · `83.1%` over · **`2,475` standards sitting below their own anchor** |
+| **`§T22.14`** | 📐 Ladder shape: `425,054` ladders, **`44.3%` single-line**, **max `13` rungs** *(independently confirming that `±6` certification covers a ladder reaching `13`)* · **`18.3%` of day-ladders have their standard line MOVE intraday** |
+| **`§T22.16`** | 🔴 **The goblin factor drifts NON-MONOTONICALLY with slip size** — `0.667` → `0.583` → `0.650`. **The `n`-th-root derivation in `§5` cannot cross slip sizes** |
+| **`§T22.17`** | 📊 The seven-leg `demon +1` table — **same rung, `23%` price spread**, ordered almost perfectly by RELATIVE distance, with the per-player gap visible on one matched pair (`6.7%`) |
+| **`§T22.20`** | ⚠ **Self-correction by live query**: the empty `multiplier` / `2`-distinct-`price` columns are on `board_snapshots`; **`board_tiers_v2` has no `multiplier` column at all** |
+| **`§T22.22`** | ⚖ **The undocumented higher-anchor tie-break: `5,704` of `5,704`.** For the `251` legs between two standards it decides goblin-vs-demon, and agrees with PrizePicks' own flag `247` times. Plus the **book-depth inversion** — more books gives fewer exact matches and more near ones |
+| **`§T22.23`** | ✅ **`board_scored` now covers `325` dates / `12.8 M` legs**, against the `2` dates / `11,279` legs `T22` measured. **Half of `T22`'s blocker is gone; the static-layer freeze half is not** |
+| **`§T22.24`** | 🎯 **Exactly one table in the board/score/tier family carries a probability column** — the structural reason the edge list is a join |
+| **`§T22.26`** | ⚖ **The unifying parent was proposed and withdrawn on purpose.** ***"A grouping is a causal claim wearing organisational clothes."*** The candidate frame — *scrapers are scheduled, loaders are manual* — is recorded as a candidate, not a conclusion |
+
+### 3 · 🔑 What `T22` cost, and the scope rule that made it affordable
+
+***`31.6%` of this transcript's substantive material belongs to another session.*** *`oos.py` — the
+standing out-of-scope filter — removed `231` segments before reading began.* **Without it this
+transcript would have produced a hundred entries about `pp_price_key`, `pp_mined_leg` and the
+pricing-model registry, all of which `PP_PAYOUT_FINDINGS.md` already holds and none of which this
+sweep may touch.** 🔑 ***A scope rule is a reading instrument, not just a permission boundary.***
+
+⚠ **AND THE BOUNDARY WAS DRAWN AT OBJECTS, NOT AT SUBJECTS** — *deliberately, and it is what made
+`§T22.9`, `§T22.16`, `§T22.17` and `§T22.22` filable.* **Constraint `6` names the concurrent session's
+TABLES, FILES and WORKFLOWS. It does not name "multipliers"** — and `NBA_MULTIPLIERS.md` and
+`NBA_GOBLIN_DEMON.md` are two of the twelve whose entire charter is that subject. ***Had the boundary
+been read as a subject ban, the four most consequential pricing findings in this transcript would
+have been discarded as somebody else's.***
+
+⚠ **`RULE 54`.** *`WINDOW`: `T22` at `2026-09-23` against the twelve at that day's `HEAD`, threshold
+`0.40`; out-of-scope filter = the `oos.py` regex family over `pp_payout|probe_pp_|nba_market.pp_|
+pp_price|pp_leg_price|pp_pricing_model|pp_slip_rules|nba-pp-payout-map|data/pp_payouts`.
+🔴 **That filter is a shape list, and `§T22.12` is this very pass's proof that shape lists miss
+classes.** *An out-of-scope segment phrased without any of those tokens was read and possibly filed —
+**the error direction is over-inclusion, which is the safe one here**, but it is not zero.*
+**`NOT DONE`: the `59` `github_put_file` payloads were not read** *(self-authorship, `§T21.10`
+mechanism `3`)*.
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
