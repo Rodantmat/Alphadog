@@ -2118,6 +2118,34 @@ accuracy `0.658` already in `2` documents; the whole `N1` role table (`254`/`429
 (`switch_point` `375,835` legs → `355,324` priced, `94.5%`) is deliberately NOT written up** — *it
 is PrizePicks payout-mapping work, the concurrent session's. **A scope decision, recorded as one.***
 
+## 🔬 §F6.28 — **PRE-REGISTRATION: direction (b) at scale, with `§F6.27`'s two lessons built in**
+
+***Written BEFORE the instrument exists.** `§F6.27` showed `§F2.7`'s high-band probe failed in two
+specific ways. Both are designed out here, and the design is fixed before any output is seen.*
+
+| `§F2.7`'s failure | the fix, pre-registered |
+|---|---|
+| 🔴 `variants()` did comma-grouping only ⇒ over-reported absence by `36%` on its own stored sample | **WIDE variant set**: literal · comma-grouped · trailing-zero-stripped · percent at `1` and `2` dp · roundings at `1`–`3` dp |
+| 🔴 the `TRANSIENT` filter looked for `run_id`/`bytes`/`.py` in a `±40`-char window, and `"total_lines": 5075` or `process 907042 waits for RowExclusiveLock` carries none of those words nearby — **`90.1%` of its survivors were identifiers and tool noise** | **filter by STRATUM, not by window.** Keep only `('human','text')` — **OWNER SAID** — and `('assistant','text')` — **ASSISTANT OUTPUT**. ***Drop `tool_use` and `tool_result` entirely***, which is where every JSON dump, line count, process id and chunk offset lives |
+
+**The rest is unchanged from `§F2.1`, deliberately**: same vectoriser, same fixed `0.40` threshold,
+fitted per transcript, `substance()` unchanged. **Band: `b12 < 0.40` AND `substance()` true** — the
+UNCOVERED-SUBSTANTIVE band, *not* the high band `§F2.7` worked.
+
+⚠ **PRE-REGISTERED CAVEATS, stated now so they cannot be added after the result:**
+1. **Dropping two strata drops real content.** *Owner instructions pasted as tool input, and figures
+   that exist only in a command's output, become invisible. **This probe measures the PROSE strata
+   only** and its result must be stated that way.*
+2. **The wide variant set can FALSE-MATCH** — a rounding of `0.5712` to `0.57` may meet an unrelated
+   `0.57`. ⇒ **the count it produces is a FLOOR on absence, and the narrow count is the ceiling.
+   Both will be published, as `§F6.23` published both.**
+3. **A number absent from the twelve is a CANDIDATE, not a gap.** *`§F6.23` found six absences that
+   belong to a RETRACTED config row. **Every survivor is read in its segment before anything is
+   written.***
+4. **This is a NUMERIC probe.** *It cannot see a finding that carries no numbers, and `§F5.2`
+   established the reasoning stratum barely exists from `T4` on. **"`n` number-dense segments were
+   worked", never "the uncovered band is read."***
+
 📜 **`RULE 57` NUMBERED from `§F6.21`** — *a derivation is not recorded until it has been RUN on every
 row it claims* — **and `RULE 53` DISCHARGED for the count change**: corrected string
 ``55 numbered`` → ``56 numbered``, whole-file window ⇒ **RAW `1` site in the twelve, CLASSIFIED a
