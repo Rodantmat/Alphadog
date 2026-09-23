@@ -4567,6 +4567,41 @@ config can describe the design while the code does something else, in its sharpe
 pieces of CODE described the same concept differently**, and the disagreement was only visible by
 computing both and diffing them.*
 
+### 📢 **§T23.18 — THE BUILDER PRINTED `wrote 0 as-of cells` AS IT WIPED THE TABLE, AND NOBODY READ IT**
+*Both log lines recovered from the workflow run logs, to the second.*
+
+| | **the wipe** | **the rebuild** |
+|---|---|---|
+| timestamp | 🔴 **`2026-09-20T03:24:06`** | ✅ `2026-09-21T07:22:33` |
+| graded legs seen | `8,589` | `21,968` |
+| dates · as-of refits | `1` · `1` | `1` · `1` |
+| 🔴 **cells written** | **`wrote 0 as-of cells`** *(`0` from current-season evidence, `0` inherited)* | **`computed 696 as-of cells`** *(`0` current, **`696` inherited from the prior season**)* |
+| carried forward as next season's opening prior | `47` | `128` |
+
+🔑🔑🔑 ***THE FAILURE WAS NOT SILENT. IT PRINTED `wrote 0 as-of cells` IN PLAIN ENGLISH, THE
+CERTIFIER CAUGHT IT AND TURNED THE JOB RED, AND NOBODY FOLLOWED UP.***
+⇒ ⚠⚠ **This corpus already names the worse case — `§T22`'s certifier trilemma: *"an alarm that fires
+unread is a stronger false assurance than no alarm at all."*** **Here is that case, dated, with the
+log line it printed.** *The system did everything it was built to do except be read.*
+
+📌 **AND THE REBUILD'S LOG CARRIES ITS OWN CAVEAT IN THE SAME BREATH**: **`696` of `696` cells are
+*inherited from the prior season*, `0` from current-season evidence** — *which is `§T23.10`'s
+"`2025-26` is calibrated only from `2024-25`", visible in the builder's own output rather than
+inferred.*
+
+### 🔍 **§T23.18b — AND BUG `1`'s MECHANISM, WITH ITS COST ON ONE DAY**
+*From `score_board_legs.py`'s own comment, which is a warning written by the author of the trap:*
+> ***"This mapping is not optional string-stripping: a naive `replace(market_key,'player ','')`
+> yields `"points rebounds assists"`, which matches nothing in our baseline — we call it `"pra"` —
+> and would have silently dropped the six largest combo groups. **`pra` alone is `15,156` legs on
+> that date.**"***
+
+⇒ 🔑 ***The board's vocabulary and the baseline's vocabulary are different languages, and the
+translation table is load-bearing.*** **`market_to_prop` is not a convenience — it is the only thing
+standing between the scorer and silently dropping the six largest prop groups.** *Every board key is
+recorded there with a verified home; `threes` ↔ `threes made` is the one that reads like a typo and
+is not.*
+
 ### ✅ **THE THIRD FIX — THE WIPE CANNOT RECUR**
 *`P2` no longer passes a single season, and **the builder now computes BEFORE deleting and refuses to
 write an empty build.*** 🔑 ***The original defect was ordering: delete-then-compute, with no guard on
