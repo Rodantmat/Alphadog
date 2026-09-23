@@ -1,8 +1,32 @@
 {
   "seasons": [
-    "2025-26",
-    "2024-25",
-    "2023-24"
+    "2025-26"
   ],
-  "summary": {}
+  "summary": {
+    "matchups_2025-26": {
+      "rows": 147805,
+      "mb": 59.77,
+      "missing": []
+    },
+    "pt_defend_2025-26": {
+      "rows": 580,
+      "mb": 0.14,
+      "missing": []
+    },
+    "hustle_2025-26": {
+      "rows": 581,
+      "mb": 0.23,
+      "missing": []
+    },
+    "clutch_2025-26": {
+      "rows": 492,
+      "mb": 0.13,
+      "missing": []
+    },
+    "preseason_logs_2025-26": {
+      "rows": 2021,
+      "mb": 0.62,
+      "missing": []
+    }
+  }
 }
