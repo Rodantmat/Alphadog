@@ -124,9 +124,11 @@ table's.***
 > > the next reader should be told how to re-derive:* `^(?:>\s*)*#{1,4}\s` **for the heading, then
 > > the ID pattern over the entire line.**
 >
-> ## ▶ START HERE — ~~*the three live OWNER DECISIONS*~~ **the FOUR live OWNER DECISIONS, newest first**
+> ## ▶ OWNER DECISIONS — *a partial, older list*
 >
-> *Count amended `2026-09-23`, `§F2.12`: `3` → `4`. **`F2-1` added at the top — it is the only one that is a SECURITY item and the only one where the damage is already done.***
+> 🔴 ***The COMPLETE and current list is `ACT ON THIS` § `A`, at the TOP of this file — `11` decisions,
+> not the `4` below.*** *The four here are kept because their wording is cited elsewhere; **decide from
+> the top of the file, never from this table.***
 >
 > | item | what it asks you to decide | 🚩 |
 > |---|---|---|
