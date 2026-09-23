@@ -2262,6 +2262,24 @@ owner figures are `owneraudit.py` + the phrase test at `§F3.2`; `hb` is the hig
 | working tree vs `origin/main` | ✅ **clean, fully synced** |
 | **total** | **`6,026,991` bytes · `4,939` sections across the twelve · `299` commits today** |
 
+### ✅✅ **RE-RUN IN FULL AFTER `§F6.11`–`§F6.27` — `2026-09-23`**
+
+| check | result |
+|---|---|
+| **index section counts vs a live re-derivation** | ✅ **`12` of `12` EXACT** — `2,798` · `932` · `249` · `169` · `136` · `130` · `134` · `137` · `132` · `99` · `44` · `59` |
+| `NBA_MASTER_SUMMARY.md`'s three published definitions | ✅ **all three reproduce to the unit** — `2,798` headings · `1,703` `§`-sections · `739` distinct `§T`*n*`.`*m* labels |
+| index present in the first `1%` of the file | ✅ **`12` of `12`** *(worst: `NBA_MULTIPLIERS.md` at `0.99%`)* |
+| code fences balanced | ✅ **`12` of `12`** — `206 · 126 · 8 · 6 · 0 · 32 · 6 · 6 · 12 · 6 · 0 · 2` |
+| `§F`*n*`.`*m* cross-references resolving | ✅ **`62` of `62`** *(`§F6.26` was found DANGLING mid-pass and given a heading)* |
+| 🔒 credential-shape scan | ✅ **`30` raw hits · `30` classified SAFE · `0` live** — *`29` verified real `git` objects via `cat-file -t`; the `30th` is the literal format string `http://username:password@hostname:port`* |
+| working tree vs `origin/main` | ✅ **identical — clean, fully synced** |
+| **total** | **`6,146,385` bytes · `5,019` sections across the twelve · `409` commits today** |
+
+🔴 **THREE DRIFTS WERE FOUND AND FIXED BY THIS RE-RUN, ALL MINE:** *`NBA_BASELINE_CALIBRATION.md`
+`115`→`119` (`§F6.11` did not re-derive) · `§F6.26`'s own heading count, stale the moment the
+section acquired a heading · `NBA_SYSTEM_DESIGN.md` `167`→`169`.* 📌 ***A verification pass that
+finds nothing has usually not run.***
+
 **Re-run a final time after `§F5` completed, 2026-09-23:** ✅ **structural problems `NONE` · index
 drift `NONE` across all twelve · `§F` cross-references `35 / 35` resolving · the redacted credential
 `0` occurrences · working tree clean and fully synced with `origin/main`.**
