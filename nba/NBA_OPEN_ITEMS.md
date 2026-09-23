@@ -14282,7 +14282,7 @@ the committed files were parsed, nothing was written.*
 is exactly what `T14` predicted the primary key would do.*** **A clean table is the SYMPTOM of this
 defect, not evidence against it** — which is why it survived a year of table audits.
 
-### 🔴 The files, parsed today — the defect is still there and it has grown
+### §F6.8 — the files, parsed today: the defect is still there and it has grown
 
 | committed file | rows | 🔴 duplicate keys | extra rows | 🔴🔴 dup keys with **DIFFERING `p_more`** |
 |---|---|---|---|---|
