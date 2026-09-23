@@ -594,6 +594,35 @@ nothing because **THERE IS NOTHING TO SHOW** — the factor only exists once the
 | 2 | 1 goblin + 1 demon-less | 2.4x | 3x | 0.800 |
 | 4 | **2 demons + 2 goblins** | 15.5x | 10x | **1.550** |
 
+> ### 🔴🔴 **§T22.16 — AND THE SAME GOBLIN'S FACTOR CHANGES WITH SLIP SIZE — NON-MONOTONICALLY**
+> *(`T22` pass `16`, `2026-09-21` NBA quotes, recorded `2026-09-23`. **A different measurement from
+> the table above, and it undercuts the assumption that table rests on.**)*
+>
+> | slip size | the SAME goblin's implied factor |
+> |---|---|
+> | `2` picks | **`0.667`** |
+> | `3` picks | **`0.583`** |
+> | `4` picks | 🔴 **`0.650`** |
+>
+> ⚠⚠ **`T22`'s own words:** ***"The goblin factor drifts with slip size… I can predict `2`-pick
+> slips; I can't yet predict larger ones honestly."***
+>
+> 🔑🔑 **WHY THIS MATTERS TO THE TABLE DIRECTLY ABOVE.** *That table derives a per-leg goblin factor
+> by taking the **`n`-th root** of `displayed ÷ base` — which assumes **the per-leg factor is the same
+> at every slip size.** **It is not.** `0.667 → 0.583 → 0.650` is not a trend that a root can absorb;
+> **it goes down and then back up.*** ⇒ ***The `≈0.677` and `≈0.669` per-leg figures are valid AT
+> THEIR OWN SLIP SIZES and must not be carried across sizes.***
+>
+> ⚠ **What this does NOT overturn**: *the table's headline conclusion — **goblins are far more
+> punitive than the stored `0.75`–`0.90` estimate** — survives at every observed slip size, since
+> `0.667`, `0.583` and `0.650` are all well below `0.75`.* **The direction of the correction holds;
+> only its precision was overstated.**
+>
+> 📌 **AND IT EXPLAINS A BOUNDARY THE BUILD KEPT RUNNING INTO**: *`§T22.9`'s validated model is a
+> `2`-pick model, and multi-pick stayed *"usable to about `±6%`; exact rule open."* **Non-monotonic
+> drift is why — there is no single factor to solve for.** `RULE 55`: the mechanism is not recorded
+> because the three points above are not enough to state one.*
+
 🔴🔴 **(a) GOBLINS ARE FAR MORE PUNITIVE THAN THE STORED ESTIMATE.** *Four goblins → 0.210 → **≈0.677
 per leg** if equal; three rebounds goblins → 0.300 → **0.669 each**.* ⚠⚠ **The config says *"goblin
 ~0.75–0.90× typical"*. **The real number is nearer 0.67** — a 10–25% overstatement of what a goblin
