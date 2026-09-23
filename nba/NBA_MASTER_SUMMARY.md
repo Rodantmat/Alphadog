@@ -41548,3 +41548,107 @@ the direction WRONG*** *(it worried a pointer might score too HIGH; it scores at
 📌 ***The lesson:*** **the sweep built an instrument, then let the instrument define what "done"
 means, and never asked whether its definition matched the owner's.** *One re-run of an existing tool
 showed they are opposites. **That question was available on day one and cost nothing to ask.***
+
+---
+
+# §T23.1 — 🔑🔑🔑 **THE OWNER SAID WHY THIS DOCUMENTATION EXISTS AND WHAT "DONE" MEANS — AND IT RESOLVES `T21-1`**
+
+*T23 pass 1, 2026-09-23. Population pinned `2026-09-23T02:40:56Z`: `T23`'s `476` uncovered
+substantive non-tool segments, **`9` of them the owner's**. Owner stratum first, as at `§T21.3` and
+`§T22.1`. **Four of the five directives below score `0` in both trees.***
+
+## 1. 🔑🔑🔑 **THE PURPOSE STATEMENT — why "document, don't fix" exists, in the owner's words** *(SEG `704`)*
+
+> *"we're gonna fix **the pipeline two and the pipeline three ONCE THE DOCUMENTATION IS COMPLETE**.
+> So we know all the gaps, all the leftovers, all the errors, all the issues, all the caveats. We can
+> see if there's anything to be fixed. So **we're gonna finish the pipelines and everything else when
+> we have a complete documentation. So you can see the WHOLE PICTURE.** **You have reference for
+> everything. YOU DO NOT HAVE TO BE LOOKING INTO THE CHAT TRANSCRIPTS ANYMORE.** So the completion of
+> the system, we're going to do once we have the documentation done. **But the multipliers do not
+> depend on it** — you can continue sharpening the multipliers for NBA."*
+
+> ⇒ 🔑🔑🔑 ***"DOCUMENT, DON'T FIX" IS NOT CAUTION. IT IS SEQUENCING.*** **The repairs are
+> deliberately deferred so that they can be done ONCE, with the whole picture, rather than
+> piecemeal against a partial one.** *The sweep has followed this rule for `130`+ passes and has
+> never recorded its reason. **It is a better rule than the one I had been following**: I understood
+> it as "don't touch the live system"; the owner's version is "the fix list is a DELIVERABLE of the
+> documentation, and it is worth more complete than early."*
+>
+> ⇒ 🔑🔑🔑 **AND THE SECOND SENTENCE IS THE ACCEPTANCE CRITERION, WHICH THE TWELVE HAVE NEVER
+> CARRIED**: ***"you do not have to be looking into the chat transcripts anymore."*** **That is what
+> "complete" MEANS.** *Not a coverage percentage — **a standard of self-sufficiency**: a reader with
+> the twelve and no transcripts can see the whole picture.*
+> ⚠ **`P2`/`P3` are named specifically, which matches the brief**: `T20-6`, `T20-13`, `T20-4`,
+> `T20-5` are all `P2`/`P3` items. **The opening-day brief IS the deliverable this sentence
+> describes.**
+
+## 2. 🔴🔴🔴 **AND IT CONTRADICTS `T21-1` — SAME OWNER, TWO DAYS APART, OPPOSITE ANSWERS**
+
+| | | |
+|---|---|---|
+| **`T21` SEG `1233`** *(earlier: `T21` spans `2026-09-20T18:31 → 09-21T02:20`)* | *"the files should be **a reference, not a full detailed copy**… **the information is always going to be on the transcripts** so each file should be **a guide of that specific kind of data to where it is on the transcript**"* | ⇒ **the transcripts REMAIN the source; the documents INDEX them** |
+| 🔑 **`T23` SEG `704`** *(later: `T23` spans `2026-09-21T06:16 → 19:57`)* | *"you have reference for everything. **you do not have to be looking into the chat transcripts anymore**"* | ⇒ **the documents REPLACE the transcripts** |
+
+> ⇒ 🔴🔴🔴 ***These cannot both hold. A pointer-style document REQUIRES looking into the transcripts;
+> that is its entire mechanism.***
+> ✅ **AND THE CHRONOLOGICAL RULE SETTLES IT**: **`SEG 704` is LATER — by roughly four hours to a
+> day**, and the owner's own ordering rule *(`T21` SEG `1283`: "there is an order… transcript two did
+> the continuation and fixes")* means **the later statement governs.**
+> ⇒ ⚠ **`T21-1`'s four options are re-weighted by this**: *the format change is not merely blocked by
+> the credential problem — **it is in tension with a later and more fundamental statement of what the
+> documents are for.*** 🔴 **Recorded on `T21-1`. Still an OWNER DECISION** — *I am reading two
+> messages against each other and the owner may mean both (self-sufficient for FINDINGS, pointer for
+> EVIDENCE), which is a coherent position neither message states.*
+> 🔑 **And note what this does to `§T22.5`**: *the instrument's bias toward reproduction, which
+> `§T22.5` framed as opposed to the owner's directive, **is ALIGNED with `SEG 704`.** The conflict is
+> not instrument-vs-owner; it is **owner-vs-owner**, and the instrument happens to implement the
+> later one.*
+
+## 3. 🔑🔑 **"CONSERVATIVE", DEFINED BY THE OWNER — and it is a DIRECTION, not a margin** *(SEG `895`)*
+
+> *"be conservative on the spacing and also on the multipliers. **When I say conservative is AIM FOR
+> LESS EARNINGS, THE LINES HARDER.** So **the demons put a point LESS and goblins put a point MORE**,
+> for example, to make it harder if there is doubt. So we play safe. And for the multipliers also
+> **find the decimals and make it SAFER** — so let's say if it's `1.5`, then we find like `1.4`,
+> `1.3`… **give a wiggle room and make it safer**. And the same for any other one that we backtest,
+> that we create, we derive. **We have to play safer because WE DON'T KNOW WHERE THE NUMBER REALLY IS
+> GOING TO LAND.**"*
+
+✅ **This is the rule the goblin-floor correction later invoked** — *"the old 'verified' floor made
+conservative prices OPTIMISTIC, **against the owner rule**"* *(`§T21.1`)*. ⇒ 🔑 ***The correction at
+`§0g` was not just a numerical fix; it was a breach of THIS directive, and the directive was
+nowhere in the twelve until now.*** ⚠ **Note the asymmetry it demands**: *uncertainty must always be
+spent in ONE direction. **A symmetric "best estimate" violates it** even when it is the better
+estimate.*
+
+## 4. ⚠ **THE WNBA DIRECTIVE, WITH ITS SCOPE LIMIT STATED TWICE** *(SEG `398`, `556`, `609`)*
+
+| | |
+|---|---|
+| **the use** | *"women NBA is live as well, and there are **more prop lines, possibly more variations**… you can mine **the REAL multipliers for all the prop lines on women NBA**, and **if it MATCHES what we have**, you can use the ones available for women NBA and not available for men NBA and **complete the gaps**."* |
+| 🔴 **the limit, stated unprompted a second time** | *"**you are NOT mapping women NBA. You are just USING the data**… **do not overwork the women NBA. We just need it IF IT HELPS on the NBA.** That's all that we need about it."* |
+| 🔑 **and a forward prediction** | *"the **LESS options and multipliers for going less on demons and goblins** — that's something we **do not have on NBA for now**, and **it's very likely that we're going to have when you get close to the beginning of the season**."* |
+
+⇒ ✅ **The conditional is the important word: *"if it matches what we have"*.** *WNBA is a donor
+population **only where it has been shown equivalent** — which is exactly the check `§0g`'s evidence
+performed and the reason its NBA/WNBA split was stated separately.* ⚠ 🔴 **AND THE PREDICTION IS
+TESTABLE ON `2026-10-20`**: **`board_snapshots` currently holds `zero` `Under` rows on alternates
+across both seasons** *(on file)*; **the owner expects `Less` variants to appear as the season
+nears.** ⇒ ***A dated, falsifiable forecast about board composition, recorded now so it can be
+scored then.***
+
+## 5. ✅ **TWO SHORTER ONES**
+
+- **SEG `4`** — *"price the season with what we have now… **if prices change we can just change in
+  the database, easy fix**"* ⇒ **the owner restating the price-id design's purpose the day after
+  proposing it** *(`§0.9-T22` §5)*, and using it to authorise shipping on current prices.
+- **SEG `396`** — *"**always research, debug, understand, and be sure of the steps that you're
+  taking.**"* ⇒ **a standing method directive**, and the one this sweep's pre-registration discipline
+  implements.
+
+---
+
+> 📌 **TIERS**: ✅ **VERBATIM** — all quotations. ⚠ **INTERPRETATION, FLAGGED AS MINE** — the reading
+> that `SEG 704` and `T21` `SEG 1233` conflict, and that the later governs. 🔴 **OWNER DECISION** —
+> whether they conflict at all, or whether "self-sufficient for findings, pointer for evidence" is
+> the intended position. ⚖️ **Nothing changed, probed or triggered.**
