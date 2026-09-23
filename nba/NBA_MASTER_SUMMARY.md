@@ -118,6 +118,32 @@
 > what was killed and why.*** **The subject matter itself lives in the eleven topical documents.**
 > *Later passes deliberately write findings into the owning document and leave only a record here —
 > see the five-pass-record section for why, and `§T21.3` for the owner directive behind it.*
+>
+> ## 📌 **HOW TO READ THIS FILE**
+> ### *(added `2026-09-23`, `§F7.8` — **this file was the only one of the twelve whose index had no closer**, measured in the `12`-file index audit. `NBA_GLOSSARY.md` was missing one too and got its own at `§F7.4`.)*
+>
+> ***This is the PASS RECORD, not the subject matter.*** **It answers "what was examined, what was
+> found, what was killed, and why" — and for "how does the system work", it sends you to one of the
+> eleven topical documents.**
+>
+> | you want | read |
+> |---|---|
+> | **what state the sweep is in** | the **sweep ledger** and the **`📍 TRANSCRIPT INDEX`** — *both above; the index is `~236,000` characters, so read its beacon first* |
+> | **a specific finding** | its **`§T`*n*`.`*m*** label — **never a line number** *(`§T20.22`: `6` of `16` rotted within a day)* |
+> | **how the system actually works** | 🔴 **not here.** The topical document — `DATABASE`, `WORKERS`, `SYSTEM_DESIGN`, `FINAL_SCORING_CALIBRATION` … |
+> | **what to act on** | 🔴 **not here.** **`NBA_OPEN_ITEMS.md` → `🔴🔴🔴 ACT ON THIS`**, which is the top of that file |
+> | **which file anything is in** | **`🗂 THE FOLDER REGISTER`** and **`🧭 POINTER RESOLUTION`**, both below |
+>
+> ⚠ **WHICH WINS WHEN TWO BLOCKS DISAGREE**: ***the later `§` label wins, and a `RULE 40` supersession
+> note beats both.*** *This file keeps superseded rows rather than deleting them — `81.4%` of one
+> section was superseded content when last measured — so **a row you are reading may already have been
+> overturned by a higher-numbered pass.** **Before quoting anything from this file, search its label
+> for the word `SUPERSEDED` or `RETRACTED`.***
+>
+> 🔑 **THE ONE THING MOST LIKELY TO MISLEAD YOU**: *`T16` and `T17` have **ZERO `§` sections in this
+> file.** Their material is in the topical documents as `§0a-T16` / `§0e-T16` / `§0z-T16` / `§0y-T17`
+> / `§0a-T17*`. **A reader who searches here and finds nothing will conclude they were never swept.
+> They were.***
 
 ---
 
