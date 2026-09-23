@@ -38940,6 +38940,18 @@ scraped, committed, and overwritten**, of which **three files survive** — the 
 ⚠ *Git retains the superseded blobs; **nothing reads boards out of git history**, and
 `archive_live_boards.py` reads only the current file.*
 
+> 🔴 **CORRECTED 2026-09-23, T20 pass 118 (`§T20.123`) — THE ARITHMETIC IS RIGHT AND THE IMPLICATION
+> IS WRONG.** **Those pulls were EMPTY.** Measured across **every commit in each file's entire
+> history**: `sleeper_nba_current.json` **`max legs EVER = 0`** *(331 bytes, unchanged)* ·
+> `fliff_nba_current.json` **`max legs EVER = 0`** *(757 bytes)* · `underdog_nba_current.json`
+> **`max legs EVER = 3`**. ⇒ ***For two of the three apps nothing of value was destroyed, because
+> nothing of value was ever in them*** — **it is the off-season, and `NBA_MASTER_SUMMARY.md:15795`
+> already says the empty NBA boards are EXPECTED.** ✅ **`T20-22`'s severity is UNCHANGED**: the loader
+> still has no trigger; what it would have loaded was simply empty. ⚠⚠ 🔑 ***And the same correction
+> reaches `§T20.119`, which cited these commit timestamps as proof the scrapers are "demonstrably
+> alive": a commit proves the SCRAPER RAN — it does not prove a BOARD EXISTS, and this sweep merged
+> those two claims for two passes before opening a single file.***
+
 ## ④ WHAT THIS COMPLETES, AND WHY IT IS NOT THE ALARM IT FIRST LOOKS LIKE
 
 **`§T20.119`** corrected *"exactly one NBA workflow fires on a game day"* to **four**. **This pass
