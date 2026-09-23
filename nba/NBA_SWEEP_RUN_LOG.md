@@ -2502,8 +2502,14 @@ candidate was read. **`NOT DONE`: a second READER.***
 
 ### ▶ STILL OWED, unchanged and stated at full strength
 
-- 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
-  context. `T20` CANNOT CLOSE IN THIS SESSION.**
+- ✅✅ ~~**RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
+  context. `T20` CANNOT CLOSE IN THIS SESSION.**~~ ⇒ **DISCHARGED `2026-09-23`, `§F7.1`** — *both
+  transcripts read in full **twice each, in two different orders**, from a post-compaction context,
+  with an instrument no prior pass had. `2,097` segments, every one accounted for. **`T20`: `0`
+  gaps** *(≈20 apparent ones all demoted by `RULE 58`)*; **`T19`: `1` genuine gap** — the
+  findability diagnosis at segments `58`–`59` and the offer the charter overrode. ⚠ **Reader
+  independence NOT achieved and named as such** — `NO SUBAGENTS` stands, so the discharge is on
+  completeness and instrument, not on a second reader.*
 - 🔴 **Direction (b)** — ~~over the `~12,686` substantive uncovered segments~~ ⇒ **RESCOPED
   `2026-09-23`, `§F6.28`: `2,369` PROSE segments** *(`human/text` + `assistant/text`)* **plus
   `~8,700` `tool_use`/`tool_result`.** *`83.5%` of the corpus's segments are machine strata. The
