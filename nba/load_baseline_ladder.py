@@ -34,7 +34,11 @@ def fetch(name):
 
 
 def main():
-    asof = os.environ.get("LOAD_ASOF", "2026-03-15")
+    # SLATE DEFAULT (fixed 2026-09-23). Was a hardcoded "2026-03-15": a hand run without LOAD_ASOF
+    # loaded a March-2026 ladder as if it were today's. P2 always passes LOAD_ASOF, so this guards
+    # manual runs and replays only - but a wrong ladder loaded silently is the expensive kind of wrong.
+    from datetime import datetime, timedelta, timezone
+    asof = os.environ.get("LOAD_ASOF") or datetime.now(timezone(timedelta(hours=-8))).date().isoformat()
     docs = []
     for name in (f"nba_baseline_ladder_{asof}.json", "nba_baseline_ladder_latest.json",
                  f"nba_baseline_ladder_{asof}_combos.json", f"nba_baseline_ladder_{asof}_periods.json"):
