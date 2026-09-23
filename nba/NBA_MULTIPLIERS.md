@@ -1640,3 +1640,96 @@ pattern for any future authenticated capture.**
 > account)*. 🔴 **`NOT RECORDED`** — whether Fliff/Betr's `0%` is the app or the scraper.
 > ⚖️ **SCOPE**: *the `pp_*` Postgres objects and the concurrent session's files were **not queried and
 > not touched** (`§T21.0 §5`).*
+
+---
+
+# 0.10-T22. 🔑🔑🔑 **THE PRICING LAW ITSELF — MULTIPLICATIVE, PARTNER-INDEPENDENT, AND COMPRESSED ABOVE `9.1×`** *(T22 pass 2, §T22.2, 2026-09-23)*
+
+> ⚠ **THIS IS THE LAW THIS DOCUMENT EXISTS FOR, AND IT WAS NOT IN THIS DOCUMENT.** *The compression
+> parameters appear **`7` times in `NBA_MASTER_SUMMARY.md` and `NBA_OPEN_ITEMS.md` and `0` times
+> here** *(pinned `2026-09-23T02:27:36Z`)* — **a placement defect of exactly the kind `§T21.3`
+> diagnosed**: the finding was recorded, in the file the sweep writes to by reflex rather than the
+> one that owns the subject. **The structural property, the validation and the consequence were on
+> file nowhere at all.**
+
+## 1. ✅ **THE STRUCTURE — multiplicative and PARTNER-INDEPENDENT** *(AS STATED IN `T22` SEG `301`)*
+
+> *"**multiplicative and partner-independent.** Wembanyama `11.5 REB` demon quoted **`3.25×` against
+> two different standard partners**."*
+
+🔑 **This is the property that makes a price-per-leg model possible at all.** *If a leg's factor
+depended on its partner, there would be no such thing as "the price of a leg" — only the price of a
+slip — and the owner's price-id design (`§0.9-T22` §5) could not work.* ⇒ ***The architecture rests
+on this observation, and the observation rests on one controlled comparison: same leg, two different
+partners, same quote.*** ⚠ **`n = 1` player-stat for the partner-independence claim as stated here;
+its strength is the control, not the sample.**
+
+## 2. 🔑🔑 **THE COMPRESSION — the longshot cap, with both parameters**
+
+```
+payout = product                                    for product ≤ 9.1
+payout = 9.1 × (product / 9.1) ^ 0.857              for product > 9.1
+```
+
+⚠ *Parameters `t = 9.1`, `k = 0.857`.* **Fitted on `20` alt×alt pairs.**
+
+## 3. ✅✅ **AND IT WAS CONFIRMED OUT OF SAMPLE — *on pairs never quoted together***
+
+| pair | raw product | **predicted** | **actual** |
+|---|---|---|---|
+| SGA `double_double 0.5` D + Brunson `points 29.5` D | `14.25×` | `13.25×` | **`13.5×`** |
+| Wembanyama `blocks 4.5` D + LeBron `rebounds 9.5` D | `17.25×` | `15.75×` | **`15.5×`** |
+| Cunningham `pra 49.5` D + Wembanyama `assists 5.5` D | `26.0×` | `22.5×` | **`22.5×`** |
+
+> 🔑🔑🔑 **THIS IS THE METHODOLOGY `T1`'s LESSONS DEMAND, ACTUALLY EXECUTED.** *`§0.3`'s house-edge
+> sanity test and `T1`'s research standard both exist because MLB's costliest errors were models
+> that "looked real at first and were later found to be artifacts."* ***A curve fitted on 20 pairs
+> and then held to three combinations it had never seen — one exact, two within `0.25×` — is the
+> difference between a fitted shape and a law.*** ✅ **Recorded at full strength, because the corpus
+> is quick to record defects and slow to record the discipline working.**
+
+## 4. 🔴 **THE CONSEQUENCE, QUANTIFIED — and it runs against the house**
+
+> *"a **naive multiplicative model overstates demon-stack payouts — by ~`13%` at `20×`**."*
+
+⇒ ⚠⚠ ***Any EV computed by multiplying demon factors without the cap is optimistic, and the error
+GROWS with the stack.*** **That is the dangerous direction**: it makes the longest-odds slips — the
+ones a naive optimiser will reach for first — look better than they pay. 🔑 *`§0.3a`'s "MLB's
+costliest single error" was mismatched cells; this is the same class, one layer up.*
+
+## 5. ⚠ **THE GOBLIN FLOOR AS IT STOOD IN `T22`, AND ITS SUPERSESSION**
+
+**As stated in `T22`** *(`2026-09-21`)*: *"**every deepest goblin priced at `2.1×` regardless of
+depth**, `17%`–`24%` below standard."*
+
+> 🔴 **SUPERSEDED `2026-09-21T21:47:40Z` — AFTER `T22` AND AFTER `T23`.** *The `2.08×` (`2.1×`
+> displayed) floor **does not hold**: More-goblin two-pick quotes with a standard partner from a
+> different game paid **`2.0×` on NBA** and **`1.9×`/`2.0×` on WNBA**. Pricing now floors at `1.9×`
+> (`pp-leg-v2-sqrt-cap-conservative-floor190`, `goblin_floor_factor` `0.6333`).*
+> ▶ **Full record and live verification: `§0g` above, and `§T12.6f`.**
+> 📌 ***Recorded here as it stood, with both dates and a pointer — not silently overwritten.*** *The
+> rule is `T21` SEG `1303`'s: "document `T3`'s version as it stood, dated, with no hindsight… do not
+> let the later knowledge leak backward."* **`T22` believed `2.1×`; the correction came `~26` hours
+> after `T22` ended.**
+
+## 6. ⚠ **THE PROBABILITY MODEL WAS A CONTEST, NOT AN ASSUMPTION** *(SEG `647`, `0` prior mentions)*
+
+*Four estimators were coded and compared, not chosen*: **`normal_v1`** · **gamma with the median on
+the line** · **gamma with the mean on the line** · **gamma via the Wilson–Hilferty normal
+approximation** *(`Φ((x/kθ)^⅓ − 1 + 1/9k) / √(1/9k)`, with `k` solved by `brentq` so the median
+matches `μ`)*.
+
+🔑 **Recorded because the corpus documents WHICH model is used and almost never WHICH ALTERNATIVES
+LOST.** ⚠ **`NOT RECORDED`: the comparison's outcome and its metric** — *the segment carries the
+implementations, not the scoreboard. That is a `T23` question, and it is named here rather than
+guessed.*
+
+---
+
+> 📌 **EVIDENCE TIERS** *(clause (iii))*: ⚠ **AS STATED IN `T22`** — every figure in `§1`–`§4` and
+> `§6`; *the quotes and the out-of-sample table are verbatim from the transcript, and **this sweep
+> did not re-run the fit or re-probe the endpoint***. ✅ **VERIFIED** — the `§5` supersession, against
+> the live `pp_slip_rules` row and pricing model at `§T12.6f` *(pinned `2026-09-22T07:01:38Z`/`07:02:02Z`)*.
+> 🔴 **`NOT RECORDED`** — the estimator contest's winner and metric; the partner-independence sample
+> beyond the single controlled pair. ⚖️ **`pp_*` objects not queried; nothing probed, changed or
+> triggered.**
