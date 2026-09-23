@@ -1587,6 +1587,56 @@ read directly — but the classification is a heuristic and is published as one.
 
 ---
 
+## §F5.3 / §F5.4 — the `95` surviving reasoning blocks, worked to the end
+
+**`§F5.2` left `95` uncovered genuine-reasoning blocks in `T1`–`T3` — the only place the assistant's
+actual deliberation survives anywhere in this project.** *Phrase-tested: `13` QUOTED · `19` PARTIAL
+· **`63` ABSENT**. All `63` adjudicated — `~20` by hand, then **all `63` mechanically**, by pulling
+each block's eight rarest tokens and asking whether the twelve contain them.*
+
+| all 8 rarest tokens present in the twelve | **13** |
+|---|---|
+| some present | **45** |
+| none present | **5** |
+
+🔪 **And the tokens that ARE missing are overwhelmingly not facts.** *They are **deliberation
+vocabulary** — `realizing`, `wondering`, `deliberating`, `iterate`, `approach.` — and **extraction
+artifacts** where the export ate a space: `instead-gainbridge`, `built-teams`, `workers-player`,
+`pace/ratings-then`.* ⇒ ***the substantive content of the reasoning stratum had already been
+recovered from ASSISTANT OUTPUT, which is exactly what `§F5.2` predicted the sweep must have been
+doing.*** **Two spot-checks confirmed it at full strength: the EPM/ToS rejection is `§T2.9f`
+*"EPM vs DARKO, and why DARKO won"*; the garbage-time contamination is *"every season-aggregate
+figure we mine is contaminated"* in `OPEN_ITEMS`. Both killed.**
+
+### ✅ What was genuinely missing — and it is the WHY, every time
+
+**`§F5.3`, written into `NBA_SYSTEM_ARCHITECTURE.md`: four load-bearing decisions whose MECHANISM is
+documented everywhere and whose REASON was in `0` of the twelve.**
+
+| # | the mechanism, already documented | 🔴 the reason, recovered today |
+|---|---|---|
+| 1 | GitHub Actions is the scraping layer *(Workers are IP-blocked — on file at full strength)* | **the assistant's OWN sandbox could not reach those hosts either** — *"bash tool's network is restricted to a specific allowlist that doesn't include stats.nba.com"*. **Two independent constraints; one on file** |
+| 2 | `TRIGGER_*.txt` marker files + `paths:` filters *(`6` documents)* | **why a DEDICATED EMPTY MARKER rather than a filter on `nba/`**: *"rather than triggering on every push to the nba folder — which risks accidental frequent runs"*. 🔑 **the same reason every commit in this sweep carries `[skip ci]`** |
+| 3 | NBA is a separate universe down to the control plane | **it was a CORRECTION**: *"i need to correct my earlier decision … nba needs its own separate job queue and worker definitions tables too, not shared control-plane ones."* ⇒ **the direct ancestor of `T20-3`'s "ten MLB jobs, zero NBA" — the NBA side was built NOT to use that table** |
+| 4 | 🔒 credentials live in `nba_config.external_credentials` *(`8` documents)* | *"i shouldn't put credentials into claude's persistent memory file since that's meant for **personal facts, not infrastructure secrets**"* — 🔴🔴 **the rule was reasoned out correctly at `T1` and violated by the documentation OF `T1` (`F2-1`)**, and the sentence stating it was in `0` of the twelve, so no later pass could check itself against it |
+
+### 🔴 `§F5.4` — and one block changes what an existing finding implies
+
+**`§T8.33b` proves the differential worker has not completed a run since `2026-09-02` and concludes
+the detection path *"has never been put to the test."*** 🔴 **`T3`'s reasoning shows it HAS been,
+once — and it returned `0` events on a real team change.** *Two hypotheses are visible and neither
+is settled: an ordering fault (the worker's refresh step overwrote the old value before
+`diffPlayers` read it, invalidating the test) or a genuine `diffPlayers` logic fault.* ⚠ **The block
+is TRUNCATED mid-sentence, so the conclusion is not in the file and is `NOT RECORDED` anywhere.**
+⇒ ***restoring the worker's schedule may not by itself produce a first true positive*** — **written
+into `§T8.33b` where the reader of that finding will meet it.**
+
+📌 ***`diffPlayers` — a named function with a failed test — returned `0` hits across all twelve
+before today. It was invisible because its only record was a reasoning block, in the stratum that
+stops existing after `T3`.***
+
+---
+
 # 📜 §F4 — THE CERTIFICATION REGISTER
 
 *Issued **2026-09-23**. **This certifies what was DONE and what its evidence is. It does not certify
