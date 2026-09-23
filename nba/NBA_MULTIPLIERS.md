@@ -246,6 +246,19 @@ seeds. **The multiplier work has no equivalent tag and needs one.**
 
 ## 0.2f **PRIZEPICKS DISCOUNTS SAME-GAME CORRELATION — build CROSS-GAME by default**
 
+> ✅⚠ **DIRECTION CONFIRMED ON NBA, MAGNITUDE NOT — 2026-09-23 (`§T22.5` ⑤, `§T24.1` §2).**
+> 🔴 **The `35–40%` figure below is an MLB number**, and `T22` recorded it as **"NOT OBSERVED for
+> opponent pairs; teammates untested"** on NBA.
+> ✅ **`T24` supplies the first NBA observation**: *"same-game slips pay less — **a 2-pick of
+> opponents paid `2.9×` instead of `3.0×`**, same-game Flex partials are cut — so slips must span
+> different games."* ⇒ **`−3.3%` on that pair.**
+> ⇒ 🔑 ***Build cross-game by default: the DIRECTION is confirmed. But do not quote `35–40%` for
+> NBA*** — the only NBA measurement is an order of magnitude smaller, and it is one pair.
+> ✅ **And the rule is now IMPLEMENTED, not just advised**: `nba_score.paper_pick_slips()` packs
+> greedily with no two legs from one game *(test night `2026-01-15`: `45` picks → `15` slips,
+> **`0` same-game**)*, and the resulting replay returns **`+14.5% ± 4.2%`** over `3,921` slips
+> *(`§T24.1` §1 — **`AS STATED IN T24`**, and a REPLAY, not a traded record)*.
+
 > *"**PrizePicks discounts same-game correlation MEANINGFULLY** (**confirmed via a real, direct
 > same-game-vs-cross-game live slip comparison**) — **ALWAYS BUILD CROSS-GAME unless a same-game
 > correlation strategy has been specifically, directly tested and found to SURVIVE this discount.**"*
