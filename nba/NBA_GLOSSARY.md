@@ -6,7 +6,7 @@ context, and which document section. Any material term appearing more than once 
 ---
 
 > # 📑 **INDEX — `NBA_GLOSSARY.md`**
-> **~~`39`~~ → `44` sections · ~~`85,359`~~ → `89,948` bytes · ~~`1,639`~~ → `1,709` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> **~~`39`~~ → ~~`44`~~ → `46` sections · ~~`85,359`~~ → ~~`89,948`~~ → `101,134` bytes · ~~`1,639`~~ → ~~`1,709`~~ → `1,858` lines · built `2026-09-23`, census corrected same day (`§F2.14`), **re-derived `2026-09-23` after `§F7.4` repaired the body.**
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠⚠ **THIS FILE CONTAINS *TWO* A–Z STRUCTURES AND THEY ARE NOT THE SAME THING.** *That is the one
@@ -15,24 +15,26 @@ context, and which document section. Any material term appearing more than once 
 > | | structure | what it is | when to use it |
 > |---|---|---|---|
 > | **1** | **`§Z — THE COMPLETE TERM INDEX`** *(added `2026-09-22`, `T19` pass 1)* — headings `A` … `Z`, **`27` letter blocks** | **A flat lookup: term → where it is defined** | ✅ **START HERE.** You have a term and want to find it. |
-> | **2** | **The main body** — headings `A`, `B`, `C`, `D`, `E–F`, `G–I`, `L–N`, `P–S`, `T–W`, plus **`P–S (continued — research-standard structure)`** and **`PENDING`** | **The definitions themselves**, grouped into `9` uneven letter ranges | You have found the term and want the full entry. |
+> | **2** | **The main body** — `A` · `B` · `C` · `D` · `E–F` · `G–I` · **`J–K`** · `L–N` · **`O`** · `P–S` *(with `P–S (continued)` nested under it as `###`)* · `T–W` · `PENDING` | **The definitions themselves** | You have found the term and want the full entry. |
 >
-> 🔴 **NOTE THE GAPS IN STRUCTURE 2**: *the body's ranges are `A`, `B`, `C`, `D`, `E–F`, `G–I`,
-> `L–N`, `P–S`, `T–W`.* ⇒ ***There is no `J`, `K`, `O`, `X`, `Y` or `Z` block in the body*** — **a
-> term starting with one of those is in `§Z`'s index and, if defined, inside another range's block.**
-> ⚠ **And `P–S` appears TWICE** — the second is subtitled *"continued — research-standard
-> structure"*, so **searching for a `P`–`S` term must check both.**
+> ✅ **REPAIRED `2026-09-23` (`§F7.4`) — the body range is now contiguous `A … W`.** *It previously
+> read:* 🔴 *"there is no `J`, `K` or `O` block in the body — a term starting with one of those is in
+> `§Z`'s index and, if defined, inside another range's block"*, ***and* `P–S` appeared TWICE**, the
+> second copy **after `T–W`**, so an alphabetical reader had already walked past it. `§Z` carried `7`
+> `J`/`K` terms and `29` `O` terms with nowhere to go — including **`ot_rule`, whose omission from a
+> merge key is the `F6-1` season-critical data loss.** ⚠ **`X`, `Y`, `Z` still have no body block**:
+> `§Z` lists `5` such terms and each is defined inside another range. *That is a real remaining gap,
+> stated rather than smoothed over.*
 >
 > ## ▶ FIND IT FAST
 >
 > | if you need… | go to |
 > |---|---|
 > | ✅ **to look up any term** | **`§Z — THE COMPLETE TERM INDEX`**, then the matching body block |
-> | **a definition for a term starting `A`–`D`** | body **`A`** / **`B`** / **`C`** / **`D`** |
-> | **`E`–`F`, `G`–`I`, `L`–`N`, `T`–`W`** | body **`E–F`** / **`G–I`** / **`L–N`** / **`T–W`** |
-> | ⚠ **`P`–`S`** | body **`P–S`** ***and* `P–S (continued)`** — *two blocks, check both* |
-> | 🔴 **`J`, `K`, `O`, `X`, `Y`, `Z`** | 🔴 **no body block exists** — use **`§Z`** to locate it |
-> | ⚠ **terms known to be missing** | **`PENDING`** |
+> | **a definition for a term starting `A`–`W`** | the matching body block — **`A` `B` `C` `D` `E–F` `G–I` `J–K` `L–N` `O` `P–S` `T–W`**, contiguous since `§F7.4` |
+> | **`P`–`S`** | body **`P–S`** — *its `(continued — research-standard structure)` half is now nested directly beneath it, not after `T–W`* |
+> | 🔴 **`X`, `Y`, `Z`** | 🔴 **no body block exists** — use **`§Z`** to locate the definition |
+> | ⚠ **terms known to be missing** | **`PENDING`** — *and read its status table: it is the line most likely to be stale* |
 > | **the transcript IDs referenced throughout** | the **Transcript IDs** table, immediately below |
 > | **how to pull a term's source text from a transcript** | **How to use it**, below — *the `grep -o` recipe* ⚠ *see the caveat next* |
 >
