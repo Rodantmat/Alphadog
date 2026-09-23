@@ -85,6 +85,25 @@
 > | `NBA_OPEN_ITEMS.md` | `204 K` | `473 K` | `+132%` | 🔴 **`1,178,210` — `5.8×`** |
 > | `NBA_WORKERS.md` | `36 K` | `64 K` | `+77%` | `159,199` |
 >
+> ## 🔑🔑🔑 **③ AND IT IS NOW AN ARITHMETIC ARGUMENT, NOT A PREFERENCE** *(T22 pass 4, `§T22.4`, 2026-09-23)*
+> **The case for this directive was stated in FILE SIZE. It is also a THROUGHPUT case, and that one
+> is decisive.** *Measured with the same instrument, same thresholds:*
+>
+> | transcript | uncovered12 moved | passes | **segments per pass** |
+> |---|---|---|---|
+> | `T20` | `484 → 469` = `−15` | **`131`** | 🔴 `0.11` |
+> | `T22` | `870 → 855` = `−15` | **`3`** | 🟢 **`5.0`** |
+>
+> ⇒ **The prose entries this sweep writes cover about `5` transcript segments per pass.**
+> **`T22` has `855` uncovered and `T23` has `893` — `1,748` together — which is `~350` passes at the
+> measured rate**, and the rate should be expected to FALL *(the first passes into a transcript are
+> the richest)*. ⇒ 🔴🔴 ***The current format cannot finish the material that already exists.***
+> 🔑 **A pointer entry — an assertive claim plus `T`-number and `grep -n` line — accounts for many
+> segments in the space a prose entry spends on one. *The `5.0` is a property of the FORMAT, not of
+> the material.*** ▶ **Full measurement and its three caveats: `§T22.4`.**
+> ⚠ **Format NOT changed unilaterally** — *the directive's own rule is "do not retro-convert, apply
+> to new work only", and its precondition (reachable transcripts) is still unmet.*
+>
 > **② THE BLOCKER DISABLES TWO ARTEFACTS, NOT ONE** *(`T21` SEG 1280)*. **`nba/tools/sweep_coverage.py`
 > — the coverage matcher the sweep's own COMPLETION RULE depends on — is committed but cannot run
 > from a clean checkout**, for exactly the same reason: `nba/transcripts/` holds no transcripts.
