@@ -10,6 +10,8 @@ quoted ID, never a line number.*
 
 ⚠ **Re-derive before acting.** *Counts and dates here were true at the commit that wrote them. The
 items themselves are stable; the tallies are not. `§F6.19`: re-derive sections, never chase bytes.*
+>
+> 📏 **CENSUS STAMP — `2026-09-23`, `§F7.5`. THIS FILE'S WARNING WAS RIGHT, AND THE SWEEP THAT TESTED IT ACROSS ALL TWELVE PROVED IT.** ***`sections` is authoritative and was re-derived at this date. `bytes` and `lines` are NOT — read them as approximate and dated, and never quote them as evidence.*** *Measured against the live files the same day: **sections exact `12` of `12`** · **bytes exact `1` of `11`** · **lines exact `0` of `6`**; the one exact byte figure belongs to the one file nothing had been patched into since it was written. **Worst drift `+397` lines and `+1,165` bytes; one drift is NEGATIVE, so these are not "the file grew" errors but simply unmaintained values.*** 🔑 ***`§F6.19` wrote "re-derive sections, never chase bytes" as advice in one file. `§F7.5` measured it in twelve and it held in twelve — and then stamped the same sentence into all of them, because a rule that lives in one index protects one reader.*** ⇒ **Re-derive with `^(?:>\s*)*#{1,6}\s` — never `^#`, which is blind to the `294` blockquoted headings across the twelve.**
 
 ## 🔴 A · OWNER DECISIONS — *nothing below moves without you*
 
