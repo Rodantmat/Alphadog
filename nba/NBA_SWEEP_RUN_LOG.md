@@ -1637,6 +1637,59 @@ stops existing after `T3`.***
 
 ---
 
+## §F5.5 — the FILE CENSUS, taken from the command stratum: **`7` of `21` workers and `27` scripts named in `0` of the twelve**
+
+**The two largest strata are `COMMANDS RUN` (8,328) and `RESULTS RETURNED` (7,663), and reading them
+segment by segment is not tractable. So the question was inverted: *what did those commands
+WRITE?*** *Every `path:` from `github_put_file` / `github_patch_file` / `github_append` /
+`create_file` across all 24 transcripts — **`306` distinct paths, `2,047` write calls** — then
+re-derived from the repo, which is the authority.*
+
+| | |
+|---|---|
+| repo paths ever written | **250** |
+| ✅ exist **and** named in the twelve | **161** |
+| 🔴 **exist and named in `0` of the twelve** | **42** |
+| apparent "deleted and undocumented" | 44 → 🔪 **case-normalisation artifact** *(the segmenter lowercases: `nba/nba_master_summary.md` is `NBA_MASTER_SUMMARY.md`)*. **Checked: `0` real deletions hidden there** |
+
+**Re-derived directly from the repo:** 🔴 **`7` of `21` NBA workers** *(every one a `static-*`:
+schedule, measure-types, shotquality, playtypes, tracking-detail, lineups, team-stats)* and
+🔴 **`27` of `123` `nba/*.py`** *(`30` minus the `3` `probe_pp_*.py` excluded as the concurrent
+session's)*.
+
+🔴🔴 ***The undocumented script set is the APPARATUS BEHIND THE FACTOR VERDICTS.*** *`FSC`'s T15
+table records `A2` SHIPPED, `A2 rate response` REJECTED, `B4 v1`/`v2` REJECTED, `B4 v3`
+COMMISSIONED, `M1` NOT TESTED, `N1` MEASURED — with populations and figures — and **named none of
+the nine `fit_*` / `measure_*` / `retest_*` scripts that produced them**.* **A reader could not
+reach the code from the verdict.** 📌 ***`RULE 55` at its largest scale: not a table missing under a
+conclusion, but the whole apparatus missing under a table.*** ⇒ **the verdict→script mapping is now
+written into `FSC` §3; the full census into `NBA_WORKERS.md` `§F5.5`.**
+
+### ✅✅ `F5-1` — and the live audit VINDICATED the corpus
+
+**Two rows of that table say `B4 v3` and `M1` were "NOT TESTED" — and both have a fitting script
+sitting in the repo** *(`fit_b4_rim_protection.py`, `fit_m1_defender_level.py`, plus
+`retest_defender_factors.py`)*. **A script existing is not a script having run, so rather than file
+the doubt, the question was settled:**
+
+> **`nba_score.factor_gate_results`, `[LIVE-AUDIT]` 2026-09-23: `104` rows, `19` models, last run
+> `2026-09-17`. Rows matching `B4`/`rim`/`opponent`/`block`: `0`. Matching `M1`/`defender`/`matchup`:
+> `0`.**
+
+⇒ ✅✅ ***Never gated. The corpus's "NOT TESTED" is CORRECT, now on live evidence instead of
+silence.*** **`F5-1` keeps only its documentation question and the owner's *"are they still wanted
+before the opener?"***
+
+⚠ **`RULE 30`, fifth instance today**: *`reltuples` says that table holds `94`; `count(*)` says
+`104`. **The corpus's `104` — in three documents — is right and the estimator is wrong.*** **Every
+row-count disagreement re-checked today has gone the same way.**
+
+🔪 **And the gate table's other 19 models are on file** — `flat_A2` / `novelty_A2` /
+`shrunk_novelty_A2` / `anchor`, and **`A3 return ramp` · `A4 rest / b2b / 3-in-4` · `K1 coach
+change`, all at `gain_vs_anchor = 0.0000`** — **all in `NBA_SYSTEM_DESIGN.md`. KILLED.**
+
+---
+
 # 📜 §F4 — THE CERTIFICATION REGISTER
 
 *Issued **2026-09-23**. **This certifies what was DONE and what its evidence is. It does not certify
