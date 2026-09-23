@@ -1935,3 +1935,78 @@ for ~1.5 bpg players, persists at any lambda**; blocks less 75–80 −2.6; stea
 > **slip EV computable and Goblin/Demon pricing comparable**.
 > **It does NOT mean any single leg is near-certain — a calibrated 75% still loses one time in four.**
 > **Calibration is the foundation; EDGE comes from the factor layer and the enrichment deltas on top.**"*
+
+---
+
+# §F6.11 — 🔴 **THREE MEASURED TABLES WHOSE PARAMETERS ARE NAMED EVERYWHERE AND WHOSE VALUES ARE NOWHERE**
+
+*Added 2026-09-23 by the uncovered-band probe (`§F6`). **`RULE 56` in three more instances** — each
+parameter is documented by NAME across multiple files and its measured table is in none.*
+
+## 1 · `min_ratio` — named in **6** documents, valued in **`0`**
+
+*`nba/backtest/classification_ladder_v12.py`. The blowout minutes floor, by role tier — **a
+`[low, high]` pair per tier**:*
+
+| role tier | `min_ratio` |
+|---|---|
+| **iron man** | 🔴 `0.832` – `0.841` |
+| high-usage starter | 🔴 `0.837` – `0.855` |
+| starter | `0.867` – 🔴 `0.908` |
+| rotation | `0.960` – 🔴 `1.003` |
+| bench | 🔴 `1.015` – `1.074` |
+| 🔴 **fringe** | 🔴 **`1.180` – `1.430`** |
+
+🔑 **The shape is the finding and it inverts across the roster**: *an iron man LOSES ~17% of his
+minutes in a blowout; **a fringe player GAINS up to 43%**.* **`min_ratio` crosses `1.0` between
+`rotation` and `bench`** — ⇒ ***a blowout is not a uniform minutes haircut, it is a REDISTRIBUTION
+down the depth chart***, which is exactly why the factor cannot be applied as a single team-level
+multiplier. *`P_BLOWOUT_BINS = [0,2,4,6,8,10,12,15,99]` is on file; the table it multiplies was not.*
+
+## 2 · The ABSENCE PRIOR — measured on **3 seasons, `n = 59,785`**, and it reverses a piece of folklore
+
+*`nba_config.classification_config` → `'absence prior measured'` (2026-09-09).*
+**Definition:** *expected rotation player = played ≥2 of the team's last 3 games, ≥15 min average,
+missing this game.* **Base rate `0.1043`.**
+
+| split | | |
+|---|---|---|
+| **rest** | non-B2B `0.097` · **B2B road 🔴 `0.1379`** · B2B home 🔴 `0.1348` | |
+| **three-in-four** | no 🔴 `0.0756` · yes 🔴 `0.0985` | |
+| 🔑 **prior night ≥38 min on a B2B** | no `0.120` · **yes `0.092`** | 🔑🔑 ***"folklore reversed — heavy load the night before LOWERS absence (healthy stars play)"*** |
+| **stars (role ≥32), non-B2B by age** | ≤25 `0.058` · 26–29 `0.078` · 30–32 `0.102` · 33+ `0.078` | |
+| **stars, B2B ROAD by age** | ≤25 `0.074` · 26–29 `0.129` · **30–32 `0.140`** · **33+ `0.176`** | *age and B2B-road compound* |
+| stars, B2B home by age | ≤25 `0.076` · 26–29 `0.113` · 30–32 `0.102` · 33+ `0.119` | |
+| 🔴 **by month** | **Oct `0.034`** · Nov `0.067` · Dec `0.066` · Jan `0.072` · Feb `0.089` · Mar `0.088` · **Apr `0.148`** | 🔴 **April is `4.4×` October** |
+
+🔴🔴 **THE OCTOBER ROW IS THE ONE THAT MATTERS ON OPENING NIGHT — `0.034`, the lowest of the season
+by half.** *Any absence model carrying a season-average `0.1043` into opening week over-predicts
+absences by `3×`.* ⚠ **Its stated use:** *"derived fallback for `p_plays` when no report snapshot
+exists at the cutoff … and the baseline version of rest-DNP probability."* 🔴 **Status, verbatim:
+*"measured 2026-09-09; **not yet a cell**"*** — *and whether it ever became one is `NOT RECORDED`.*
+
+## 3 · The RETURN RAMP and the TEAM-CHANGE DISCOUNT — measured over 3 seasons
+
+*`'baseline v30 ramp teamchange'`. **Minutes-only multiplier**, by games missed × game-back index
+`1..4`; rate-per-minute unchanged at `~1.0`:*
+
+| games missed | back-1 | back-2 | back-3 | back-4 |
+|---|---|---|---|---|
+| **3–7** | `0.865` | `0.970` | 🔴 `1.010` | 🔴 `1.011` |
+| **8–15** | 🔴 `0.789` | 🔴 `0.922` | 🔴 `0.957` | 🔴 `0.995` |
+| **16+** | `0.721` | 🔴 `0.836` | 🔴 `0.917` | 🔴 `0.997` |
+
+🔑 **Monotone in both directions, and it closes by the 4th game back in every band** — *"multiplier
+fit on train by tier × index (role ≥12 min), clip `0.5`–`1.05`."*
+
+**TEAM-CHANGE DISCOUNT** — *"carried minutes-role MAE **`5.97` vs `4.75`** in the first 8 games after
+a move"* ⇒ **implementation: *"once ≥5 competitive games with the new team exist, the minutes role
+uses only those games."*** 📌 *A `25%` MAE penalty for using pre-trade minutes, measured — and the
+rule derived from it is on file while the measurement was not.*
+
+✅ **Certification result carried with it**: *2025-26 **points `0.8` / rebounds `0.6`, `0` of `37`
+bands**; holdout 2024-25 **points `0.9` / rebounds `0.7`, 1 thin band***. 🔑 *"first two factors
+moved from the enrichment lock into the BASELINE, measured then re-certified — **owner rule: never
+lose calibration**."*
+
+⚠ **`AS STATED` in `T9`/`T10`, not re-run by this sweep.**
