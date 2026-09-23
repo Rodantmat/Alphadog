@@ -517,11 +517,16 @@ check was run before the rebuild counted, not after — which is what kept the f
 
 ## STEP 7 — Repeat the pattern for every static entity *(T2)*
 
-**The four-step wiring, established here and used for every worker since:**
-1. `nba/worker_manifest_nba.json`
-2. `generate_wrangler_configs.py`
-3. `alphadog-v2-admin-sql.js` — bindingMap **+** dispatch branch **+** tool enum
-4. `nba_config.worker_definitions` row
+**The four-step wiring, established here and used for every worker since.** ⚠ **PATHS VERIFIED
+`2026-09-23` — three of the four are at the REPO ROOT, not in `nba/`:**
+1. **`nba/worker_manifest_nba.json`** — *in `nba/`*
+2. **`generate_wrangler_configs.py`** — 🔴 **REPO ROOT.** *Earlier revisions of this step wrote it
+   bare and a rebuilder reasonably looked in `nba/`, where it does not exist.*
+3. **`alphadog-v2-admin-sql.js`** — 🔴 **REPO ROOT.** bindingMap **+** dispatch branch **+** tool enum
+4. **`nba_config.worker_definitions`** row *(in Postgres, not a file)*
+
+> 📌 **Deploy scripts, also repo root**: `deploy_all_workers.py` · `deploy_workers_resume.py` ·
+> `verify_all_workers.py` · `apply_schema_all.py`. *Re-derive:* `` ls *.py `` *at the repo root.*
 
 **Entities, in order, each with its own lesson:**
 - **Players** (`commonallplayers`) → 582/525 active, 1,822 aliases.
