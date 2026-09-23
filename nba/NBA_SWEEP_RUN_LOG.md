@@ -2084,6 +2084,40 @@ gone from the working tree but still in `2` commits of a PUBLIC repo, and a prod
 password sits in `T13`. **Rotation is the remedy and it is the owner's.** This scan says only that
 the sweep has not ADDED one.*
 
+## 🔬 §F6.27 — **`RULE 58` APPLIED BACKWARDS, TO `§F2.7`'s OWN PROBE**
+
+*`§F2.7` was this sweep's direction-(a) instrument: `3,331` high-band segments, `8,708` numeric
+tokens, `1,255` transient-skipped, **`309` missing tokens** across `122` candidate segments. **Its
+`variants()` does comma-grouping and nothing else** — the narrow set `§F6.23` had just shown
+over-reports by `72%`.*
+
+| on the `202` tokens the instrument stored | |
+|---|---|
+| narrow variants *(as computed)* | **`173` absent** |
+| wide variants | ✅ **`111` absent** |
+| **demoted by `RULE 58`** | **`62` — `36%`** |
+
+✅✅ ***AND `§F2.7`'s CONCLUSION SURVIVES ITS ARITHMETIC BEING WRONG.*** *Classified, the `111`
+survivors are **`53.2%` plain integers** (line numbers, file sizes, chunk offsets, PostgreSQL
+process ids), **`18.0%` epoch-ms/run ids**, **`9.9%` NBA team ids**, `6.3%` player ids, `2.7%`
+timings — ***`90.1%` identifiers and tool noise***.* 🔑 **But not for the reason `§F2.7` gave: its
+`TRANSIENT` filter looks for `run_id`/`bytes`/`.py` in a `±40`-char window, and `process 907042
+waits for RowExclusiveLock` or `"total_lines": 5075` carries none of those words nearby.** ***The
+filter assumes the noise announces itself; it mostly does not.***
+
+✅ **The residue read by hand yielded exactly one table** — the board-size per-app rows, now in
+`NBA_SYSTEM_DESIGN.md`: **Underdog `1,276 → ~3,500` live, max `2,574`, `106` players**; **Sleeper ·
+Fliff · Betr `~1,000–2,500` each**. *The twelve carried the PrizePicks row (`4,503` / `8,700` /
+`107`) and both aggregates (`~10–15k`, `~20k`, `110–130` players) and none of the rest.* 📌 **These
+are the sizing inputs for `§F6.22`'s `10-15 min` target: the aggregate says how big a night is, the
+per-app rows say which scraper dominates it.**
+
+⚠ **AND SEVERAL APPARENT GAPS WERE DEMOTED ON INSPECTION, NOT ON THE GREP** — *`65.8` is the fringe
+accuracy `0.658` already in `2` documents; the whole `N1` role table (`254`/`429`/`639`, `0.343`,
+`86.7%`, `11.8%`) is already carried.* ⛔ **And `T22`'s `anchor_type × pct_priced` table
+(`switch_point` `375,835` legs → `355,324` priced, `94.5%`) is deliberately NOT written up** — *it
+is PrizePicks payout-mapping work, the concurrent session's. **A scope decision, recorded as one.***
+
 📜 **`RULE 57` NUMBERED from `§F6.21`** — *a derivation is not recorded until it has been RUN on every
 row it claims* — **and `RULE 53` DISCHARGED for the count change**: corrected string
 ``55 numbered`` → ``56 numbered``, whole-file window ⇒ **RAW `1` site in the twelve, CLASSIFIED a
