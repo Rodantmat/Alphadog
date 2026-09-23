@@ -2843,6 +2843,136 @@ would count as dangling and inflate the `80`. **`NOT DONE`: pointers to `FILE:LI
 re-measured here** — `§T20.67`'s `83.7%` dead rate stands unretested, and **`NOT DONE`: the `§` labels
 inside the `20` sibling files were not audited**, only the twelve's.
 
+## ✅✅ §F7.8 — **MID-FILE ORIENTATION: A `244,260`-CHARACTER RUN WITH NO HEADING, AND ONE LINE OF `96,266`**
+
+*`2026-09-23`. Owner research question: **"whether a reader landing mid-2MB file can tell where they
+are"** — plus the two index defects the `12`-file audit left owed.*
+
+### 1 · Orientation density, measured across the twelve
+
+*For each file: the character distance a reader who lands at a random point must scroll UP to reach
+any heading.*
+
+| file | headings | median gap | p95 | 🔴 max |
+|---|---|---|---|---|
+| `NBA_MASTER_SUMMARY.md` | `2,806` | `865` | `2,341` | 🔴🔴 **`244,260`** |
+| `NBA_OPEN_ITEMS.md` | `937` | `1,023` | `3,612` | `20,028` |
+| `NBA_GLOSSARY.md` | `47` | `1,514` | `7,969` | `9,812` |
+| `NBA_FINAL_SCORING_CALIBRATION.md` | `253` | `1,095` | `3,340` | `8,907` |
+| `NBA_SYSTEM_ARCHITECTURE.md` · `NBA_RECIPE.md` · `NBA_DATABASE.md` | `134` · `63` · `136` | `1,114` · `1,112` · `907` | `2,960` · `3,300` · `4,562` | `7,405` · `7,037` · `6,670` |
+| the remaining five | `99`–`169` | `805`–`1,226` | `2,375`–`2,893` | `3,356`–`5,697` |
+
+✅ **The general answer is reassuring: median gap `~1 kB` in every one of the twelve.** *A reader who
+lands at random is normally less than a screen from a heading that names where they are.*
+
+🔴🔴 **And then there is the exception, which is `7.6%` of the largest file.** *From the
+`⚠ DRIFT NOTICE — 2026-09-20` heading to the next heading of any level is **`244,260` characters —
+`≈61,000` tokens — containing `73` lines and no heading at all.*** *A reader inside it who scrolls up
+to orient themselves arrives at a notice about documentation drift and learns nothing about where
+they are.*
+
+### 2 · 🔴🔴 Why: the rows are not lines you can skim
+
+| the longest lines in `NBA_MASTER_SUMMARY.md` | chars |
+|---|---|
+| **line `676`** — transcript index row `11` | 🔴🔴 **`96,266`** — *`≈24,000` tokens **on a single line*** |
+| **line `500`** — row `9` | `36,577` |
+| lines `677` · `679` · `678` · `668` — rows `12` · `14` · `13` · `10` | `31,944` · `18,727` · `15,731` · `14,864` |
+
+🔑 ***Six table rows carry `214,000` characters between them. Inside one of them there is not even a
+line break to orient by.*** ⚠ *This is also why `§T20.22`'s line-number rot matters more here than
+anywhere: a "line number" in this file can denote a region the size of a small book.*
+
+### 3 · What was done
+
+✅ **A `📍 THE TRANSCRIPT INDEX` heading with an orientation beacon** inserted immediately before the
+table — it names the `244,260`-character span, lists the long rows, and gives a three-step *find your
+place* procedure *(search backwards for `\n| ` → the row number is the transcript → then leave the
+table and go to `§T`n`.`m for the detail)*.
+
+🔴 **NOT REPAIRED, DELIBERATELY**: *splitting those rows into headed sections means cutting `214,000`
+characters out of a table and re-inserting them — **a move, which is a delete plus an insert, on the
+densest block of findings in the corpus.** The owner's rule decides it: **losing a finding while
+tidying is worse than the untidiness.***
+
+✅ **The two owed index defects, closed**: `📌 HOW TO READ THIS FILE` added to
+`NBA_MASTER_SUMMARY.md` *(the last of the twelve without one)* — **verified `12` of `12`** — and the
+**anchor rule** added to `NBA_MASTER_SUMMARY.md` and `NBA_OPEN_ITEMS.md`, the only two that lacked
+it — **verified `12` of `12`** *(`RULE 53`)*.
+
+⚠ **A METRIC I DISCARDED RATHER THAN PUBLISH.** *The same run measured "percentage of headings
+carrying a section label", and returned **`0.0%` for `NBA_GLOSSARY.md`**. **The glossary's headings
+are letters — `A`, `J–K`, `X–Z` — which contain no digit, and my test required one.** *The file it
+scored worst is the file whose headings ARE its labels.* ⇒ **`RULE 58` again: the metric measured my
+regex, not the corpus, and it is recorded here as discarded rather than quietly dropped.**
+
+⚠ **`RULE 54`.** *`WINDOW`: the twelve at `2026-09-23` `HEAD`; gaps measured between successive
+`^(?:>\s*)*#{1,6}\s` matches in raw characters. **Character distance is a proxy for scroll distance,
+not scroll distance** — rendered height depends on the viewer, and a `96,266`-character table row
+wraps differently everywhere. **`NOT DONE`: the `20` sibling files were not measured.**
+
+---
+
+## ✅✅ §F7.9 — **THE SAME FIGURE IN FOUR DOCUMENTS: `84` OF THEM, AND `65.1%` CARRY NO POINTER HOME**
+
+*`2026-09-23`. Owner research question: **"whether the same question is answered in four documents
+with no pointer between them."*** **Answer: yes — `84` times, and the interesting number is not the
+`84`.**
+
+### 1 · The measurement
+
+| | n |
+|---|---|
+| distinct comma-grouped figures across the twelve | `1,185` |
+| 🔴 appearing in `4` or more of the twelve | **`84`** |
+| their occurrences | **`1,825`** |
+| ✅ carrying a `§` pointer within `±300` chars | `637` — **`34.9%`** |
+| 🔴🔴 bare restatements | **`1,188` — `65.1%`** |
+
+| attribution by file | |
+|---|---|
+| 🔴 **worst** | **`NBA_RECIPE.md` `15.0%`** · **`NBA_SYSTEM_ARCHITECTURE.md` `16.7%`** |
+| ✅ best | `NBA_GLOSSARY.md` `62.5%` · `NBA_MULTIPLIERS.md` `60.0%` |
+
+🔑🔑 ***The two worst-attributed documents are the two a person opens in order to BUILD something.***
+*A figure quoted in `NBA_RECIPE.md` is, five times in six, quoted with no route back to where it was
+derived — and `RECIPE`'s whole charter is that someone follows it.*
+
+### 2 · Why this is a findability defect and not a style complaint
+
+***Most of the `84` agree with themselves.*** **The failure is not contradiction. It is false
+corroboration**: *a reader who meets `140,130` in eight documents has **eight sightings of one
+measurement** and experiences them as eight confirmations. **If that measurement is later retracted
+in one place, the other seven keep asserting it**, and nothing in them points at the place where the
+retraction lives.*
+
+🔴 **This is not hypothetical and I am the evidence.** *`§F6.13` retracted a finding that was already
+recorded `200` lines above it in the same file. `§F6.21` published a `0`-of-`12` claim about a rule
+documented four paragraphs from where I put the section. **Both are this defect, experienced from the
+inside.***
+
+### 3 · What was done
+
+✅ **A `🔢 CANONICAL FIGURES` block in `NBA_MASTER_SUMMARY.md`** — the `8` most-repeated figures, what
+each actually is, and its single source of truth. **Two entries earn their place beyond bookkeeping:**
+
+- 🔴🔴 **`140,130`** *(`8` files, `×42`)* — `final_hp` `2025-26`, **on ONE date**, against `2024-25`'s `19,075,070` across `162`. **Together `49.7%` of the certified "both seasons."** *Eight documents carry the number; the "one date" is what makes it mean something.*
+- ⚠⚠ **`2,460`** *(`6` files, `×68`)* — **one figure, two unrelated live meanings**: `schedule_norm`'s row count *(`= 1,230 × 2`)*, and `team_game_log_*` **per season** *(`× 3 = 7,380`)*. ***Sixty-eight occurrences, and context is what disambiguates them.***
+
+🔴 **NOT REPAIRED, DELIBERATELY**: *`1,188` pointer insertions into prose that is currently correct.*
+**`RULE 1` and the move rule both bite** *(the identical reasoning as `§F7.7`'s refusal to rewrite
+`955`–`1,187` bare labels)*. ⇒ **A table resolves the figures most likely to be quoted and edits
+nothing.** 🔴 **`76` of the `84` are not in it. Stated, not hidden.**
+
+⚠ **`RULE 54`.** *`WINDOW`: comma-grouped integers only — `\b\d{1,3}(?:,\d{3})+\b` — in the twelve at
+`2026-09-23` `HEAD`. 🔴 **`RULE 58` bounds this hard: numbers have spellings, and this probe sees
+only ONE.** **Percentages, decimals, four-digit ungrouped integers, spelled-out numbers and
+`~`-prefixed approximations are all invisible to it**, so `84` is a FLOOR on the shared-figure
+population, not a count of it. **`±300` characters is an arbitrary proximity window**, chosen before
+the measurement and not tuned after. **`NOT DONE`: whether the repeated figures AGREE was not tested
+— only whether they are attributed.** *Two documents quoting `140,130` with different meanings would
+score as attributed-or-not exactly like two that agree.*
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
