@@ -51,6 +51,7 @@ context, and which document section. Any material term appearing more than once 
 > | **`P`–`S`** | body **`P–S`** — *its `(continued — research-standard structure)` half is now nested directly beneath it, not after `T–W`* |
 > | ⚠ **terms known to be missing** | **`PENDING`** — *and read its status table: it is the line most likely to be stale* |
 > | 🗂 **to know whether an `nba/*.md` file you found is one of the twelve** | **`NBA_MASTER_SUMMARY.md` → `🗂 THE FOLDER REGISTER`** *(`§F7.6`)* — **all `32` markdown files in `nba/` classified: `12` mandated · `6` live-and-standing · `8` source-of-record · `5` historical · `1` out of scope.** ⚠ *Quick test: a mandated document opens with a `📑 INDEX` in its first `1%` — `31` of `32`, the one exception being `NBA_SWEEP_RUN_LOG.md`.* |
+> | 🧭 **to follow a `§` pointer you cannot find** | **`NBA_MASTER_SUMMARY.md` → `🧭 POINTER RESOLUTION`** *(`§F7.7`)*. ⚠ **`98.79%` of the corpus's `6,601` pointers resolve — but `38.6%`–`48.0%` of the bare numeric ones (`§4`, `§0f`, `§7f`) point ACROSS files with no filename.** 🔑 *The `§4`–`§9` family belongs to **`NBA_ARCHITECTURE_BLUEPRINT.md`**, which is not one of the twelve — that block carries the disambiguation table.* |
 > | **the transcript IDs referenced throughout** | the **Transcript IDs** table, immediately below |
 > | **how to pull a term's source text from a transcript** | **How to use it**, below — *the `grep -o` recipe* ⚠ *see the caveat next* |
 >
