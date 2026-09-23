@@ -39953,3 +39953,54 @@ NOVEL.**
 📌 ***The lesson:*** **the pass's headline was already filed, and looking for the file is what found
 the error I had made citing it.** ⚠⚠ ***`RULE 51` is usually described as preventing duplicate work.
 Its larger value is the opposite: reading the prior entry tells you what you got wrong about it.***
+
+---
+
+# §T20.131 — T20 PASS 126: ✅ **THE EFFECT COLUMN IS CLEAN — EXACTLY ONE DEAD READ IN `69` LEVERS, AND IT WAS ALREADY ON FILE. THE STOPPING CONDITION FIRES**
+
+*Pass 126, 2026-09-23. Pre-registered as **"THE EFFECT COLUMN — `§T20.130` MEASURED WHICH LEVERS ARE
+SET AND WHICH ARE READ. IT NEVER ASKED WHETHER THE READ CHANGES ANYTHING. `BS_SOURCE` DID NOT."**
+Clause (vi): **"if every other read is `EFFECTIVE`, the pass SAYS SO AND STOPS."** *It does.*
+
+## ① THE METHOD — AST, NOT GREP *(clause iii: "the occurrence list is the evidence")*
+
+**`2026-09-23T01:00:18Z`.** Parsed the **`40`** called scripts plus the three shared libraries, found
+every `Assign` whose value contains `os.environ.get("LEVER")`, then for each bound name collected
+**every `ast.Name` load** and separated the loads that sit **inside a `print(...)` call** from the
+rest. ⇒ **`34` levers bound to a variable · `47` used inline in an expression** *(inline use is
+effective by construction)*. *Credentials excluded; no value of anything reproduced.*
+
+## ② THE RESULT
+
+| verdict | count | members |
+|---|---|---|
+| ✅ **`EFFECTIVE`** | **the rest** | *every bound variable with at least one non-`print` load, plus all `47` inline uses* |
+| 🔴 **`DEAD READ`** | **`1`** | **`BS_SOURCE`** — `score_board_legs.py:108`, **`loads = 1`, and that one load is inside a `print()`** ✂ *already `T18-5`/`§T20.130`* |
+| 🔴 **`OVERWRITTEN`** | **`2`** | **`BT_TRAIN` · `BT_TEST`** ✂ *already `§T20.101`, and re-confirmed at source: `build_baseline_ladder.py:40` is `rep(s, '''TRAIN = os.environ.get("BT_TRAIN", …); TEST = [os.environ.get("BT_TEST", …)]''', <season auto-detection>)` — **the anchor containing them is the string being REPLACED**, so in the patched module those two levers do not exist* |
+| ⚠ **`EFFECT NOT TRACEABLE BY AST`** | **`8`** | every `BT_*` lever that appears inside `build_baseline_ladder.py`'s `rep()` patch strings — **string literals compiled by `exec()`, invisible to static analysis.** *Six survive into the patched module and are effective; two are the replaced anchor above.* |
+
+⇒ ✅✅ ***No new dead lever exists. Two out of sixty-nine, both already filed.*** **Clause (vi)'s stop
+fires, and the question retires: an operator turning any other knob in the next eleven days gets an
+effect.**
+
+## ③ ONE SMALL THING SURVIVED, AND IT IS A THIRD ENTRY-POINT DISTINCTION
+
+**`nba/backtest/classification_ladder_v12.py:37`** — the certified recipe's own module docstring —
+still advertises its environment interface as *"**Env: `BT_TRAIN`, `BT_TEST`, `BT_BAND_CELLS` …**"*.
+
+⚠ **That is TRUE for a direct backtest run and FALSE for a production run**, because
+`build_baseline_ladder.py` patches the anchor away before `exec()`. ⇒ ***The same file advertises a
+lever that works through one entry point and not the other, and the docstring cannot say which.***
+🔑 *`§T20.101` corrected the GLOSSARY's claim about these flags; **the source's own docstring was never
+touched**, and the source is what a person reads when they run the recipe by hand.* ▶ *Recorded here;
+**not fixed (rule 1)**, and not raised as an item — it misleads a hand-run, not the pipeline.*
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `classification_ladder_v12.py:37` **0/0/0**;
+`BT_TRAIN` scores **5 of 12** and the mentions were **opened** — `NBA_GLOSSARY.md:1186` already
+carries *"CORRECTED 2026-09-22, T20 pass 96 (§T20.101): `BT_TRAIN`/`BT_TEST` are…"*, which is the
+kill. ✅ **The AST census and the docstring note are NOVEL; the two dead levers are not.**
+
+📌 ***The lesson:*** **a clean census is worth the pass that produces it.** ⚠⚠ ***`§T20.130` found a
+dead lever by accident and left the obvious question open — "how many more are there?" — and an
+unanswered question of that shape gets re-asked, at cost, forever. The answer is two, both known, and
+now nobody has to look again.***
