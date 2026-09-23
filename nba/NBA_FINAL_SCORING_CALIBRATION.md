@@ -1418,7 +1418,7 @@ by roughly 6×.** *Recorded because the corpus quotes the +0.347 figure without 
 
 | Factor | Verdict in T15 | Population / information set | Figures |
 |---|---|---|---|
-| **A2** teammate redistribution *(minutes multiplier)* | ✅ **SHIPPED** | allocator fitted on roster state; **validated three ways** | conservation **0.9930**; allocator MAE **4.609** vs recent-5 **4.875**; OOS `p0` 4.830 / `p1` 4.733 / `p2` 4.753; **15 of 19 props improve**, gains scaling with minutes-dominance — pra **+0.347**, pts+reb +0.281, pts+ast +0.253, points +0.097 |
+| 🔴 ~~**A2** teammate redistribution — ✅ SHIPPED~~ → **SUPERSEDED `2026-09-13`: CLOSED, "DOES NOT SHIP in any of four forms"** *(`§F6.12`; the ✅ below is `T15`'s `09-12` verdict, kept for history)* | ~~✅ SHIPPED~~ 🔴 **CLOSED** | allocator fitted on roster state; **validated three ways** | conservation **0.9930**; allocator MAE **4.609** vs recent-5 **4.875**; OOS `p0` 4.830 / `p1` 4.733 / `p2` 4.753; **15 of 19 props improve**, gains scaling with minutes-dominance — pra **+0.347**, pts+reb +0.281, pts+ast +0.253, points +0.097 |
 | **A2 rate response** | ❌ **REJECTED** | held-out | *"double-counts what minutes already carry"* |
 
 > ## 🔑 §F6.5 — **THE THREE TABLES UNDER THESE VERDICTS, recovered 2026-09-23**
