@@ -4534,6 +4534,54 @@ optimises for.**
 
 ---
 
+# 0.17b-T23. 🔴🔴 **§T23.16 — THE TWO SILENT BUGS THAT SURFACED DURING THE CALIBRATION REBUILD**
+*`T23`, `2026-09-21`, recorded `2026-09-23`. **Neither produced an error. Both produced wrong
+numbers, for months, in a table the scoring engine reads on every run.***
+
+### 🔴 **BUG 1 — CALIBRATION ONLY EVER COVERED THREE PROPS OUT OF EIGHT**
+> ***"Calibration only ever covered POINTS, REBOUNDS and ASSISTS. A naive name mapping meant THREES
+> and ALL FOUR COMBOS never matched — the exact trap the scorer's own header warns about."***
+
+| | |
+|---|---|
+| cells before the fix | **`3,639`** *(`3` props)* |
+| cells after | ✅ **`9,904`** *(all `8` props)* |
+| what was uncalibrated the whole time | 🔴 **`threes`, `pra`, `pts_reb`, `pts_ast`, `reb_ast`** |
+
+🔑🔑 ***Five of the eight props — including `pra`, the combo markets, and the ones `§T22.13` measures
+at `14.3%`, `13.2%`, `11.2%` and `10.9%` of the board — were scored with NO as-of calibration
+applied, and nothing reported a failure.*** ⚠ **The scorer's own header warned about exactly this
+class of name mismatch.** ⇒ ***A warning written into the code that the code then walked into.***
+
+### 🔴 **BUG 2 — THE SCORER AND THE BUILDER DISAGREED ABOUT WHAT SEASON PHASE A DAY IS IN**
+> ***"The scorer and builder defined season phases differently, so on `60` of `348` days the WRONG
+> PHASE's corrections were applied."***
+
+**`17.2%` of days received calibration cells fitted for a different phase.** *(`phase` is
+`1_oct_nov` / `2_dec_asb` / `3_post_asb` / `4_push`.)* ✅ **Fixed: `60` disagreeing days → `0`,
+proved locally across both seasons before any compute was spent.**
+
+🔑 ***Two components each had a correct phase rule and they were not the same rule.*** **Neither side
+was wrong in isolation — which is precisely why nothing failed.** ⇒ *`§T20`'s standing lesson that
+config can describe the design while the code does something else, in its sharpest form: **here two
+pieces of CODE described the same concept differently**, and the disagreement was only visible by
+computing both and diffing them.*
+
+### ✅ **THE THIRD FIX — THE WIPE CANNOT RECUR**
+*`P2` no longer passes a single season, and **the builder now computes BEFORE deleting and refuses to
+write an empty build.*** 🔑 ***The original defect was ordering: delete-then-compute, with no guard on
+an empty result.*** *That is the same shape as `F6-1`'s loader and `§T23.11`'s `final_hp` churn —
+**this system rebuilds by deleting first, in at least three places, and only one of them now has a
+guard.***
+
+⚠ **`RULE 54`.** *`WINDOW`: the rebuild of `2026-09-21`, both seasons, `348` days. **`60 of 348` and
+`3,639 → 9,904` are reported by the session that made the fixes**; the resulting `9,904` is
+independently confirmed live in `NBA_DATABASE.md` `§T23.11`. **`NOT DONE`: how long bugs `1` and `2`
+had been live was not established** — *the cells they produced were deleted by the wipe, so the
+evidence of their duration went with it.*
+
+---
+
 # 0.17-T23. 📊 **§T23.10 — THE CALIBRATION SHIFT TABLE, AND THE GUARD THAT DOES NOT EXIST ON THIS BUILDER**
 *`T23` pass `10`, live queries `2026-09-21`, recorded `2026-09-23`.*
 
