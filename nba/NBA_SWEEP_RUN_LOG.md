@@ -2023,9 +2023,9 @@ the twelve. **Its contents had never been censused.***
 | | |
 |---|---|
 | ✅ **the decisions** | all documented — rank-within-role-tier prior · empirical `rate_tier × role_tier × rung` tables · the symmetric-floor ceiling bug · the `threes_made` logit shift · the season-consistency rule · the `finest_level_only` shift fix |
-| 🔴 **their `n`** | **`272,909`** *(five of the eight decisions)* · **`54,000`** · **`8,000`** — ***`0` of `12`, all three*** |
+| 🔴 **their `n`** | **`272,909`** *(~~five~~ **six** of the eight decisions — corrected by `§F6.26`'s verification; I had counted the four distinct `decided_by` values and written a row count, and `SELECT count(*)` was one query away)* · **`54,000`** · **`8,000`** — ***`0` of `12`, all three*** |
 
-🔑🔑 ***`272,909` is the evidential base of five separate applied changes to the classification
+🔑🔑 ***`272,909` is the evidential base of six separate applied changes to the classification
 ladder, and the corpus states every one of those changes without it.*** *`RULE 56`, first instance
 found in a **decision log** rather than a results table — **the `sample_size` column is in the
 schema and nothing had read it.***
