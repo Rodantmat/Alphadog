@@ -846,6 +846,42 @@ against a wrong picture of what remains.
 > is now `§F7.11`'s standing check, so the next row to cross the line is caught by a command rather
 > than by a reader's patience.**
 >
+> ## ✅✅✅ **§F7.11 — DONE. THE SPLIT, AND THE PROOF THAT NOTHING WAS LOST**
+> *`2026-09-23`.*
+>
+> | | before | after | factor |
+> |---|---|---|---|
+> | 🔴 **longest single line** | **`96,266`** | ✅ **`7,386`** | **`13.0×` shorter** |
+> | 🔴 **longest headingless run** | **`244,260`** | ✅ **`19,404`** | **`12.6×` shorter** |
+> | headings in the file | `2,806` | **`2,879`** | `+73` |
+>
+> ### 🔑 **THE METHOD — AND IT IS NOT THE ONE `§F7.8` REFUSED**
+> *`§F7.8` refused a MOVE — cutting `214,000` characters out of a table and re-inserting them. **That
+> refusal was correct and this is not that operation.*** ⇒ ***The rows were SPLIT IN PLACE: `40`
+> heading blocks inserted at sentence boundaries inside them. Nothing was copied, nothing was
+> deleted, nothing changed position relative to anything else.***
+>
+> **Every patch had the anchor text verbatim at the tail of its replacement** — *so each one is a pure
+> insertion and loss is impossible by construction, not by inspection.*
+>
+> ### ✅ **AND IT WAS PROVED ANYWAY, MECHANICALLY**
+> ```
+> before = git show <commit before the split>:nba/NBA_MASTER_SUMMARY.md
+> after  = the live file, with the 40 inserted headings regex-removed
+> assert " ".join(before.split()) == " ".join(after.split())
+> ```
+> **Result: `3,173,873` characters on both sides. `IDENTICAL: True`.** 🔑 ***The owner asked for proof
+> that nothing was lost; this is the proof, and it is reproducible from the two commits.***
+>
+> ### ⚠ **THE COST, STATED**
+> *A markdown table row cannot contain a line break, so **the transcript-index table no longer renders
+> as one table** — the split rows render as prose between table fragments.* ⇒ ***A reader gains
+> `40` navigation anchors and loses a grid that was never legible at `96,266` characters per cell.***
+> **Recorded as a deliberate trade, not an accident.**
+>
+> 📌 **`T11`'s row alone became `18` parts; `T9` `6`; `T12` `5`; `T10`, `T13`, `T14`, `T15`, `T16`,
+> `T17` three each.** *Search `T`*n*` LEDGER · PART` to jump inside any of them.*
+>
 > ⚠ **NOT SPLIT AT `§F7.8`, SPLIT AT `§F7.11`.** *`§F7.8` declined the repair — "cutting `214,000`
 > characters out of a table and re-inserting them elsewhere is a move, which is a delete plus an
 > insert, on the single densest block of findings in the corpus." **The owner overruled that call
