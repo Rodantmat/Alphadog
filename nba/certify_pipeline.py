@@ -86,18 +86,19 @@ def main():
                            WHERE game_date BETWEEN %s::date - 30 AND %s::date + 30""", (today, today))
             nearby_games = int(cur.fetchone()[0] or 0)
         out_of_season = played_recently == 0
-        if out_of_season and pipe == "p1":
-            # P1 is the WEEKLY layer and its cron runs all year. Out of season there is nothing to
-            # refresh, so judging freshness would paint every Monday red - which is precisely how a team
-            # is trained to ignore red builds (this file's own docstring). Row-count checks still run.
-            print("  NOTE  no games within +/-30 days - out of season, freshness not due\n", flush=True)
-        elif out_of_season:
+        schedule_missing = nearby_games == 0
+        if schedule_missing and pipe != "p1":
             print("  FAIL  schedule empty around this date          nba_calendar.games has 0 games +/-30d",
                   flush=True)
             print("\nNOT treating this as a no-game day: the schedule is missing or stale, which is a"
                   "\nreal failure. Load the schedule (P1 / scrape_nba_schedule.py) and re-run.", flush=True)
             sys.exit(1)
-        elif slate_games == 0:
+        if out_of_season and pipe == "p1":
+            # P1's cron runs all year. Nothing has been PLAYED in 30 days, so the weekly products derived
+            # from results cannot be fresh and judging them would paint every Monday red - which is how a
+            # team is trained to ignore red builds (this file's own docstring). Row counts still run.
+            print("  NOTE  no games played in the last 30 days - out of season, freshness not due\n", flush=True)
+        elif slate_games == 0 and pipe in ("p2", "p3"):
             no_games_today = True
             print(f"  NOTE  no games scheduled on {today} - slate checks skipped, nothing was due\n", flush=True)
 
