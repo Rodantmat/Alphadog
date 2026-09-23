@@ -67,6 +67,7 @@
 > | **`T10-F1`** | `3`→**`5`** commissioned enrichment factors (`A7`·`E2`·`E3`·`M2`·`M3`) appear **nowhere in the twelve**, and nothing records whether they were dropped | heading |
 > | **`F5-1`** | ⚠ **`B4 v3` and `M1` have fitting scripts in the repo** — ✅ *live audit confirms they were **never gated***; and **`7` of `21` workers + `27` scripts are named in `0` of the twelve** | heading |
 > | **`F6-1`** | ⚠ **the baseline-ladder FILES still carry `14,435` duplicate rows, `1,414` with DIFFERING probabilities** — *flagged in `T14`, still present; **the clean table is the symptom, not the refutation*** | heading |
+> | **`F6-2`** | **OWNER DECISION** — *the one absence slice the baseline structurally cannot see (a scratch after the `09:00 ET` freeze) **has no control to test it against**; `cutoff_ts()` is same-day by construction* | heading |
 > | **`T23-1`** | 🔴🔴 **The model does not beat PrizePicks** — with the standards-only exception | heading |
 > | **`T20-6`** | 🔴🔴 **`7` of `12` certifier checks assert tables NO PIPELINE WRITES** — *"the largest structural finding of the sweep"* | heading |
 > | **`T20-4`** | 🔴🔴 **`P3` is hardcoded to LAST season, in two scripts** | heading |
