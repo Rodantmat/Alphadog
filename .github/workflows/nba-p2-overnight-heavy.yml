@@ -125,7 +125,9 @@ jobs:
       # 2) AUDIT THE DELTA. The one check that catches a silent hole - against the SCHEDULE, not itself.
       - name: Delta gap audit (no missing dates, games, teams or rosters)
         env:
-          GAP_SEASON: ${{ github.event.inputs.season || '2025-26' }}
+          # BLANK = let check_delta_gaps.py resolve it with active_stats_season() (T23-2). A literal
+          # here would override the script's fix and reintroduce the stale-season audit.
+          GAP_SEASON: ${{ github.event.inputs.season }}
         run: python nba/check_delta_gaps.py
 
       # 3) GRADE last night's board. This must happen BEFORE the calibration refit, because the
