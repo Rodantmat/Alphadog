@@ -3206,6 +3206,55 @@ for re-running it deadlocks.*
 read** — they write `PP_PAYOUT_FINDINGS.md`, which is out of scope by standing rule. **`NOT DONE`:
 `§T23.16`'s two bug durations** — the evidence was deleted by the wipe they were found alongside.*
 
+## ✅✅✅ **T24 IS CLOSED — `11` passes, CLEAN `3/3`, `2026-09-23`. THE LEDGER IS NOW COMPLETE: `T1`–`T24`, ALL TWENTY-FOUR CLOSED.**
+
+*`9` passes this session (`3`–`11`) on top of `2` prior.*
+
+### 1 · A different instrument, because `T24` is a different kind of file
+
+⚠ **`T24` is a `.md` SESSION RECORD, not a transcript** — *`segments()` returns `0` for it, so the
+coverage instrument, the strata, the prose band and the out-of-scope filter all fail on it.* **Its own
+header says the raw text "is not stored on disk."**
+⇒ ***The sweep method had to change: read all `12` sections end to end, then verify by EXHAUSTIVE
+FIGURE ENUMERATION rather than by band.***
+
+| the closing verification | result |
+|---|---|
+| distinct comma-grouped figures in `T24` | **`40`** — ✅ **`39` resolve in the twelve** |
+| the one that does not | `9,036` price keys — ⛔ **a `nba_market.pp_*` object, correctly out of scope** |
+| distinct decimals | **`133`** — ✅ **all resolve** |
+| the `12` sections, traced by object name | ✅ **all `12`** |
+| the `6` self-corrections in section `11` | ✅ **all recorded** |
+
+🔑 ***For a secondary source, "every number in it appears somewhere in the twelve" is a stronger
+closure test than three clean sampling passes*** — *there is no stratum to sample, and the file is
+small enough to enumerate completely.* **Recorded as a method, because `T25`+ may arrive in the same
+form.**
+
+### 2 · The four findings
+
+| § | finding |
+|---|---|
+| **`§T24.3`** | 🗂 **The `prop_universe` object set** — `8` tables, `2` views, `13` functions, none of them `pp_*` — including 🔑 **`nba_market.leg_edge_map`, the view this corpus quotes throughout and had never named.** Plus **the `12` integrity checks, all `0`** *(four of them are this corpus's own findings turned into build-time assertions)*, and **three "do not repeat" engineering failures** — *the planner misestimate, the missing `kind` in a key (**flags moved `153` → `158` with no input change** — `F6-1`'s shape exactly), and the double-write bloat to `938 MB`* |
+| **`T24-2`** | 📋 **The last transcript's own forward agenda, as a set.** *`4` of `7` were in the twelve; **the `3` that were not are all EXCLUSIONS*** — per-prop edge cells not built, **Mixed Flex unverified (the simulator does all-standard only)**, and **Fantasy Score held out of strategies**. ⇒ 🔑 ***A corpus that records every measurement can still omit every decision, and an omitted exclusion has no symptom until someone builds the thing it forbade.*** |
+| **`§T24.5`** | 📐 **The derived-line estimator table with its `n`s** *(`RULE 56`)* — and 🔑 **the mean-vs-median resolution**: *Fantasy centres target the outcome MEDIAN (medians win); derived lines target the BOOK LINE (means win). **Two correct answers to one question because it is two questions.*** Plus: **books quote BLOCKS widely**, so the Fantasy fallback covers steals and turnovers, not blocks |
+| **`§T24.8`** | 📉 **The per-prop result tables** — *which is precisely what `T24-2` item `1` asks for as the next phase.* **`FTM Over` at `1.293`/`1.322` on `364` legs, `65%` hit, is the only derived cell clearing `1.10` in both seasons**; `OREB Over` fails at `0.757`. And on **REAL** lines, **steals/turnovers/blocks carry edge on BOTH sides** — *the signature of mispricing rather than directional bias* |
+
+### 3 · ⚠ And one correction to my own pass, caught by re-probing my own writes
+
+*`§T24.5` first said test `2`'s outcome-MAE table was "already carried in `NBA_MASTER_SUMMARY.md`."*
+**A `grep` for `2.971`, `2.022`, `1.689` returned `0`.** ⇒ ***The table was nowhere, and I had asserted
+its presence without checking.*** **Corrected and the table filed** *(`§T24.6`)*.
+🔑 ***"Already recorded elsewhere" is a claim and needs the same grep as any other claim.*** **Second
+such slip today** *(`§T23.7`'s same-game retraction was the first)*, **both caught by the same new
+step — re-probe your own writes — which is now standing, not courtesy.**
+
+⚠ **`RULE 54`.** *`WINDOW`: the whole file, `355` lines, `2026-09-23`. **Figure enumeration proves a
+number APPEARS somewhere in the twelve; it does not prove it appears with the right meaning.**
+Section-level reading was done first for exactly that reason. **`NOT DONE`: `T24`'s figures are not
+independently re-derivable** — it is a session record and its queries are not stored, so every figure
+here inherits `T24`'s own accuracy.*
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
