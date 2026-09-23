@@ -1733,3 +1733,30 @@ guessed.*
 > 🔴 **`NOT RECORDED`** — the estimator contest's winner and metric; the partner-independence sample
 > beyond the single controlled pair. ⚖️ **`pp_*` objects not queried; nothing probed, changed or
 > triggered.**
+
+---
+
+# 0.11-T22. 📋 **`T22` — SEVEN MORE, IN POINTER FORM** *(T22 pass 5, §T22.5, 2026-09-23)*
+
+> ⚠⚠ **FORMAT NOTE, AND IT IS THE POINT OF THIS SECTION.** *`§T22.4` measured that prose entries
+> cover `~5` transcript segments per pass, and that `T22`+`T23` need `~350` passes at that rate.
+> **This section is written in the shape the owner's `T21-1` directive asks for — an assertive claim,
+> then exactly where it lives — to test whether the format is the constraint.*** ⚠ **It is NOT the
+> full conversion**: the directive says *"do not retro-convert, apply to new work only"*, and its
+> precondition *(transcripts reachable)* is still unmet, **so each claim below is stated completely
+> enough to act on WITHOUT fetching anything** — the hybrid, not the bare pointer. 🔴 **The full
+> change remains `T21-1`, the owner's call.**
+
+| # | the claim — assertive, standalone | where it lives | tier |
+|---|---|---|---|
+| **①** | 🔑🔑 **THE PROBES FAILED ON A TLS/UA MISMATCH, NOT ON THE ENDPOINT.** *"probe 3 sent a **Chrome 139 user-agent on a Chrome 124 TLS handshake** — the mismatch is a **primary DataDome bot signal**. The working board scraper is consistent: **TLS 124 + UA 124**. No session, so **no DataDome cookie was ever carried**. No warm-up."* ⇒ ***The corpus recorded the wall as "per-endpoint" (`§0.7-T18` §2); it was at least partly self-inflicted, and the fix is a one-line consistency rule that the board scrapers already follow.*** | `T22` SEG `300` | ⚠ AS STATED |
+| **②** | ✅ **THE COMPRESSION'S ERROR IS QUANTIFIED, NOT JUST ITS FIT.** Raw product → compressed prediction → actual, with both misses: **`14.25 → 13.25 → 13.5`** *(raw off by `0.75`, compressed by `0.25`)* · **`17.25 → 15.75 → 15.5`** *(`1.75` vs `0.25`)* · **`26.0 → 22.5 → 22.5`** *(`3.5` vs **exact**)*. ⇒ **The naive model's error GROWS with the product — `0.75 → 1.75 → 3.5` — while the compressed model's stays at one display step or better.** | `T22` SEG `262` *(fuller than SEG `301`'s version, which omits the error columns)* | ⚠ AS STATED |
+| **③** | 🔴🔴 **A SILENT OFF-BY-ONE COLLAPSED THE EXPERIMENT'S CONDITIONS INTO EACH OTHER.** *"multi-pick compositions mislabeled: **`pick_distinct(pool, 0)` returned ONE leg instead of NONE** — it appended before checking the count. So **'1 goblin, 0 demons' silently became 1 goblin + 1 demon**, collapsing **`1g = 1d = gd`, `2g = ggd`, `2d = gdd`**."* ⇒ ***Runs 1 and 2's multi-pick data were invalid — not noisy, but measuring a different thing than they were labelled.*** 🔑 **This is `T1`'s "looked real at first, later found to be an artifact" class, caught by the experimenter**, and the tell was that distinct conditions returned identical numbers. | `T22` SEG `359`; fix noted at SEG `345` *("run 3… first run with the `pick_distinct` fix")* | ⚠ AS STATED |
+| **④** | ⚠ **LEG PROBABILITIES MUST BE DE-COMPRESSED BEFORE USE.** *"leg probabilities come from each leg's 2-pick price vs a standard, **de-compressed first — prices above `9.1×` are themselves compressed and would bias the big demons**."* ⇒ **Applying the inverse of `§0.10-T22`'s cap is a REQUIRED step in deriving a per-leg probability, and skipping it biases exactly the legs where the money is.** | `T22` SEG `358` | ⚠ AS STATED |
+| **⑤** | 🔴 **THREE OF THIS CORPUS'S OWN CLAIMS WERE AUDITED AGAINST MEASUREMENT AND TWO DID NOT SURVIVE.** *"document says" vs "measured":* **(a)** *"pricing is a discrete step function per tier; goblin pays flat"* → 🔴 **only the DEEPEST goblins are flat** *(at the then-believed `2.1×` floor)*; the rest are **priced per line**. **(b)** *"PrizePicks discounts same-game `35-40%`"* → ⚠ **NOT OBSERVED for opponent pairs** — *it is an **MLB figure**, and **teammates were untested***. **(c)** *"season opens `2026-10-03`"* → 🔴 **the preseason date** *(the error `§T10.18b` corrected; see `NBA_OPEN_ITEMS.md`)*. ⇒ **`§0.2f` ("PrizePicks discounts same-game correlation — build CROSS-GAME by default") rests on an MLB number that NBA opponent pairs did not reproduce.** ⚠ *This does not overturn `§0.2f` — cross-game remains the safe default — **but its stated magnitude is not an NBA measurement and should not be quoted as one.*** | `T22` SEG `303` | ⚠ AS STATED |
+| **⑥** | ⚠ **THE FLEX GRID IS COARSE AND ITS COARSENESS IS THE MEASUREMENT FLOOR.** Full-payout grid: **`0.1` steps `1.2×→2.0×` · `0.2` to `4.0×` · then `4.5`, `5.0` · whole numbers `5–12` · then `14, 16, 22`.** ⇒ **Above `5×` the display quantises to whole numbers, so "predicted vs actual" agreement there is worth at most ±0.5 — which is why `§0.10-T22`'s out-of-sample table calls `15.75 → 15.5` a hit.** | `T22` SEG `358` | ⚠ AS STATED |
+| **⑦** | ⚖️ **THE OTHER CHAT ASKED FOR ITS FINDINGS TO BE FOLDED INTO THESE TWO DOCUMENTS.** *"these findings live only in this conversation. the documentation sweep won't reach this session for a long time. I'd write them to a new file — `nba/pp_payout_findings.md` — **separate from the twelve documents cowork is editing, so there's no collision**"*, and that file's own header: *"separate from the 12 mandated documents; **fold into `nba_multipliers.md` and `nba_goblin_demon.md` when the documentation sweep reaches this session**."* ⇒ 🔑 **The sweep HAS now reached this session — and it folded in the TRANSCRIPT, not the file.** *See `§T22.5` for why that distinction is the correct one and why the file stays untouched.* | `T22` SEG `259`, `299` | ✅ VERBATIM |
+
+> 📌 **TIERS**: ⚠ **AS STATED IN `T22`** throughout; ✅ **VERBATIM** where quoted. **Nothing here was
+> re-probed** — `/game_types` is a live call against a real-money account. ⚖️ **`pp_*` objects not
+> queried; `PP_PAYOUT_FINDINGS.md` not read, not edited, not used as a source.**
