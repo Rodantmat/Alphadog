@@ -1424,6 +1424,62 @@ a grading default, not as a shading.**
 
 ---
 
+# §F6.7 — 🔑🔑 **THE BOOKS ARE RIGHT TO WITHIN A POINT ON `776,000` LEGS — and this is the mechanism behind `T23-1`**
+
+*Added 2026-09-23 from `T14`. **In `0` of the twelve**: `776,000`, `192,966`, `238,393`, `168,378`
+and the phrase "extraordinarily well calibrated" each returned `0` hits.* ***The corpus's central
+finding is that the model does not beat PrizePicks. This is WHY, measured, and it was missing.***
+
+## De-vigged sportsbook consensus vs realised outcomes, by tier
+
+| tier | legs | book implied | **actual hit** | error |
+|---|---|---|---|---|
+| goblin −3 | 22,830 | 73.84% | **74.08%** | **+0.24** |
+| goblin −2 | 72,342 | 68.17% | **67.99%** | −0.18 |
+| goblin −1 | **192,966** | 61.58% | **60.89%** | −0.69 |
+| **standard** | **238,393** | 49.88% | **48.95%** | −0.93 |
+| demon +1 | **168,378** | 36.35% | **34.86%** | −1.49 |
+| demon +2 | 61,855 | 26.53% | **24.64%** | −1.89 |
+| 🔴 **demon +3** | 19,424 | 20.55% | **18.08%** | 🔴 **−2.47** |
+| | **776,000** | | | |
+
+## The three conclusions, quoted
+
+**1 · ✅✅ IT VALIDATES THE WHOLE MARKET PIPELINE, and that is the part easiest to miss.**
+> ***"the books are right, to within a point, on 776,000 legs. de-vigged consensus predicts outcomes
+> almost exactly. **that validates the entire market pipeline — de-vig method, rung matching,
+> grading — because three independent systems agree. if any of them were broken, these columns
+> wouldn't track.**"***
+🔑 *A calibration check used as an integrity check on the pipeline that produced it. **The corpus
+documents the de-vig method, the rung matching and the grader separately, and nowhere records that
+their agreement is itself the evidence they work.***
+
+**2 · 🔴 IT BOUNDS WHERE EDGE CAN COME FROM — and it is `T23-1`'s mechanism.**
+> ***"our edge cannot come from disagreeing with the consensus on average. it has to come from the
+> specific legs where our model and the market differ, and from **prizepicks' pricing being worse
+> than the books'** — which we measured earlier as a **5–9 point break-even gap**."***
+⇒ ***`T23-1` finds the model does not beat PrizePicks on average. This says it never could have by
+out-predicting the consensus — because the consensus is right to within a point.*** **The
+surviving edge is PrizePicks' pricing gap against the books, not superior prediction.**
+
+**3 · 🔴🔴 THE FAVOURITE-LONGSHOT BIAS, MEASURED — and it condemns deep demons.**
+> ***"the error grows with demon depth (−1.5 → −2.5 points). books are slightly optimistic on
+> long-shot overs, the classic favourite-longshot bias. **that's a real, exploitable pattern: deep
+> demons hit even less than the books imply, so they're worse than they look** — reinforcing that
+> only demon t1 is ever worth considering."***
+
+✅✅ **AND IT CORROBORATES `§0i-T24`'s EDGE MAP FROM A COMPLETELY DIFFERENT DIRECTION.** *That map,
+built from PrizePicks payouts, kills demons: **real demon Over `1.060`/`1.018` on `73,495` legs at
+`25.7%` hit**. This table, built from SPORTSBOOK consensus on `776,000` legs, reaches the same
+verdict by showing demons underperform even the BOOKS' implied probability — **and the miss widens
+monotonically with depth.*** 📌 ***Two independent measurements, two different markets, one
+conclusion. That is much stronger than either alone, and the corpus was carrying only one.***
+
+⚠ **`AS STATED IN T14`, not re-run by this sweep.** *`NOT RECORDED`: the date range, the book set
+behind "consensus", and the de-vig method used for this particular table.*
+
+---
+
 # §F5.6 — ✅✅ **`T24`'s REPLAY FIGURES VERIFIED AGAINST THE LIVE DATABASE — the first time any `T24` number has been**
 
 *Added 2026-09-23. **`T24` is the corpus's only SECONDARY source** — a hand-written session record,
