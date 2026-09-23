@@ -35,6 +35,8 @@ constraints that shaped it. This is the operational spec.
 > | 🔑 **market consensus — the owner's weighting directive and the build that FAILED** | **`§0a.2`** |
 > | **the calculation chain** · **failure policy** | **`§5`** · **`§6`** |
 > | ⚠ **the three explicit NON-GOALS** | **`§0.75`** |
+> | 🔴🔴🔴 **THE SECOND DEADLOCK — `CREATE UNIQUE INDEX IF NOT EXISTS` INSIDE THE WRITE TRANSACTION.** *Any PARALLEL catch-up run deadlocks; `181` of `325` dates failed. **`17` files carry the pattern, `7` of them in `P2`/`P3`.*** ⚠ **SEASON-CRITICAL — this is the tool you would reach for to recover from `T23-2`, and it is the tool that breaks.** | **`§T23.5`** |
+> | 📏 **what the leg scorer SKIPS, in its own docstring's numbers** | **`§T23.13`** |
 >
 > ## 📋 EVERY SECTION, IN LOGICAL ORDER
 >
