@@ -4625,8 +4625,8 @@ seasons, and whether it is Pearson or Spearman are all `NOT RECORDED`.*** **A co
 usable signal", and "points the wrong way" is the SIGN of an estimate whose confidence interval is
 `NOT RECORDED` and very probably spans zero.** ⇒ ***So the load-bearing finding is "the prior was
 UNINFORMATIVE", which is fatal to `A2` on its own; the directional reading is a weaker claim and is
-recorded here as such.*** 🔴 **Marked for the owner as part of `T20-3`(e): the underlying fit is
-not identified in any transcript or config row reachable from this session.**
+recorded here as such.*** 🔴 **Marked for the owner under `F6-2`: the underlying fit is not
+identified in any transcript or config row reachable from this session.**
 
 ### 2 · 🔑🔑 **THE REMAINING OPPORTUNITY — the one slice the baseline structurally cannot see**
 
