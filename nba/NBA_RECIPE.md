@@ -85,7 +85,16 @@ that is the useful part.
 
 ---
 
-## STEP 0-T16 — 🔴🔴🔴 **THE BLOWOUT MIXTURE NOW RUNS ON THE REAL MARKET SPREAD, AND IT CORRECTS TWO BELIEFS THE CORPUS HELD** *(T16 pass 1, §T16.2, 2026-09-13 — the FIRST of the owner's three non-negotiables, taken end to end)*
+## ⬇ STEP 0-T16 — **MOVED `2026-09-23`, `§F7.3` — it now sits after `STEP 0d`, where the build order puts it**
+
+> 🔴 **It was HERE, above `STEP 0`.** *A T16 amendment standing in front of the founding constraints
+> contradicts this document's charter — **"a cake recipe on how the system was built, each step in
+> the order it happened."*** **The block was moved whole; the section count was taken before and
+> after and nothing was lost.** ⬇ *Continue to `STEP 0`; the amendment follows `STEP 0d`.*
+
+---
+
+### *(the T16 blowout-mixture amendment that was here now follows `STEP 0d`, immediately before `STEP 1`)*
 
 ⚠⚠ **The recipe change is at `classification_ladder_v12.py` lines 158–161**, where `P(blowout)` was
 derived. **It now PREFERS the market spread, with the derived proxy as a printed-coverage fallback.**
