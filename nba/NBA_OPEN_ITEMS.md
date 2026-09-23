@@ -14237,6 +14237,41 @@ credential; this instance survived that catch, in the very pass named `IDs, hash
 
 ---
 
+## F5-1 · **NEW · ⚠ HIGH** · two factors the corpus calls "NOT TESTED" have fitting scripts sitting in the repo, and the results are NOT RECORDED
+
+*Filed 2026-09-23, `§F5.5`. **Read-only: the scripts were read, never run.***
+
+**`NBA_FINAL_SCORING_CALIBRATION.md`'s T15 verdict table marks two rows as unfinished:**
+
+| row | the table says | 🔴 the repo has |
+|---|---|---|
+| **`B4` v3 — RIM PROTECTION** | *"⚠⚠ NOT TESTED IN T15 — COMMISSIONED BY IT"* | **`nba/fit_b4_rim_protection.py`** — *"B4 SUB-CASE — BLOCKS-AGAINST VULNERABILITY (rim protection specifically)"* |
+| **`M1` — defender-quality LEVEL** | *"⚠⚠ NOT TESTED IN T15"*, appears only as a pending build item | **`nba/fit_m1_defender_level.py`** — *"FACTOR M1 — PRIMARY DEFENDER QUALITY as a BASELINE-STAGE factor"* — **and `nba/retest_defender_factors.py`**, *"M1 / B4 RE-TEST with PROPER defender ratings, and WITH INTERACTIONS"* |
+
+⚠⚠ **STATED AT EVIDENCE STRENGTH — a script existing is not a script having been run.** *The
+corpus's *"not tested"* may be exactly right.* 🔑 ***What is certain is that it was written without
+knowing the code existed: all three scripts were named in `0` of the twelve until today.***
+
+### 🔴 The wider gap this sits in
+
+**`7` of `21` NBA workers and `27` of `123` `nba/*.py` scripts are named in `0` of the twelve**
+*(`§F5.5`; `probe_pp_*.py` excluded as the concurrent session's)*. **The undocumented set includes
+EVERY script that produced the T15 factor verdicts** — `fit_usage_allocation.py`,
+`fit_rate_response.py`, `measure_n1_status_resolution.py`, `fit_n1_granular.py`,
+`fit_b4_opponent.py`, `fit_b4_defender_quality.py` — *and the seven `static-*` workers that write
+`nba_calendar.games`, `player_shot_quality`, `player_playtype_profile` and four other documented
+tables.*
+
+**▶ What would close it:** for `B4 v3` and `M1`, **a line saying whether the script was ever run and
+what it returned**; and a pointer from each factor verdict to its script *(the pointer half is done
+— `NBA_FINAL_SCORING_CALIBRATION.md` §3 now carries the mapping)*.
+
+⚠ **`NOT RECORDED`: whether any of the three scripts has ever executed.** *`nba_score.factor_gate_results`
+holds `94` rows and is the obvious place to look — **this sweep did not query it for these two
+factors**, and says so rather than implying it did.*
+
+---
+
 ## T10-F1 · **NEW · MEDIUM** · three commissioned enrichment factors appear NOWHERE in the twelve, and nothing records whether they were dropped
 
 *Filed 2026-09-23 by the full transcript re-sweep (`§F2.2`). **This is a TRANSFER gap, not a
