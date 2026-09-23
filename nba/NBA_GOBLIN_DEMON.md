@@ -30,6 +30,8 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 > | 🔴🔴 **which tiers ACTUALLY PAY** — realized value per segment, both seasons | **`§0i-T24` §2** |
 > | 🔑 **the breakeven bars** — *a standard needs `1.10`, an alternate needs `~1.14`* | **`§0i-T24` §1** |
 > | ✅ **what happens to a slip when a leg VOIDS** *(`"a void is never a refund"`)* | **`§0j-T24`** |
+> | ✅✅ **is `T24` actually right? — its replay figures RE-RUN from the live database** | **`§F5.6`** — *`4,379` slips, `+15.78%`, `312` voids, all exact; the SE is **night-clustered**, `t = 3.85` reproduces* |
+> | ⚠ **the number `T24` does NOT report** — the mean of nightly means, **`+13.84%`** vs the slip-weighted `+15.78%` | **`§F5.6`** |
 > | 🔴 **the More-goblin payout floor** *(`1.9×`, not `2.08×` — verified live)* | **`§0g`** |
 > | 🔑 **how the four-way taxonomy works** — the rule, the anchor, the tier sign | **`§1`** · **`§2`** · **`§3`** |
 > | 🔴 **why `board_tiers` v1 is wrong** | **`§4` (the FIRST one — "the taxonomy change")** |
