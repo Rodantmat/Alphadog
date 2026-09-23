@@ -47,7 +47,7 @@
 >
 > | if you need… | go to |
 > |---|---|
-> | 🔴 **the ranked list of everything that blocks opening night** | **`OPENING-DAY BRIEF`** *(top block)* — **`17` season-critical items in a stated order** |
+> | 🔴 **the ranked list of everything that blocks opening night** | **`OPENING-DAY BRIEF`** *(top block)* — ~~`17`~~ **`18` season-critical items in a stated order** *(`F6-1` re-rated `§F6.16`; ⚠ the roster's stated count method returns `19`/`23` and reconciles to neither — see the note at the roster head)* |
 > | 🔑 **the ranking rule** *(and its measured gap)* | the brief's *"Ranking rule, re-derivable"* + **`THE RULE HAS NO TERM FOR *HOW LONG*`** |
 > | 🔴 **what fails SILENTLY** *(costs a season before anyone looks)* | **`T20-5`** *(the grader's window — the brief's only silent blocker)* · **`T20-17`** |
 > | 🔴 **what stops the slate on night one** | **`T20-6`** *(the certifier asserts tables no pipeline writes)* · **`T20-13`** *(the `>= 25` prop gate)* |
