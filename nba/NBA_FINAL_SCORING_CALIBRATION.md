@@ -3988,3 +3988,107 @@ optimises for.**
 > sweep**. 🔴 **`NOT RECORDED`** — whether the `≥1.40` strategy survives slip-level compression *(the
 > author's own caveat says leg-level value **overstates big demons**, and those picks are
 > `58%`/`80%` demons)*. ▶ **Full record and the other four findings: `§T23.2`; item `T23-1`.**
+
+---
+
+# 0.16-F2. 🔴🔴🔴 **THE THRESHOLD SWEEP AND ITS LEAKAGE CONTROL — `T23` RAN BOTH, AND THE TWELVE RECORD NEITHER**
+
+*Recovered 2026-09-23 by the full transcript re-sweep, `§F2.4`. `§F2.1` ranked `T23` the
+**second-least-covered** transcript of twenty-four — **93.8% uncovered, high band `40`** — and this
+is what was in the gap. **In scope**: `nba_market.pp_model_vs_price` is **not** on the concurrent
+session's exclusion list, and nothing here touches `pp_payout_map.py`, `pp_price`, `pp_price_key`,
+`pp_leg_price`, `pp_pricing_model` or `pp_slip_rules`.*
+
+**Before this section, the twelve carried the HEADLINE of `T23`'s backtest (`T23-1`, `§0.14-T23`) but
+none of the grid that produced it.** Verified: `pp_model_vs_price` appeared in **`0` of the twelve**;
+so did every figure below.
+
+## 1 · The design, read off the SQL rather than described
+
+**Population** `nba_market.pp_model_vs_price`, `kind = 'standard'`, `leg_result IS NOT NULL`.
+**One leg per player-day** — `DISTINCT ON (game_date, player)` ordered by model value `mv = 2 ×
+final_hp` descending, so a player can contribute at most once a day and it is his best leg.
+**Slips packed greedily** by `mv` rank within a day. **Voids** (`push`/`dnp`) shrink the slip and
+re-price it at the smaller base; **a slip that shrinks below 2 legs pays `1.0`** *(stake returned,
+`roi` contribution `0`)*. **Payout base**: `2 → 3.0` · `3 → 6.0` · `4 → 10.0` · `5 → 20.0` ·
+`6 → 37.5`.
+
+## 2 · 🔴 THE GRID — `3` thresholds × `5` pick counts × `2` seasons
+
+**`ROI` per slip (`avg(payout) − 1`), `SE`, and leg hit rate.** *`29` of the `30` returned rows are
+recovered; the thirtieth (`1.40` / `6` picks / `2025-26`) is cut off by the transcript segment
+boundary and is **`NOT RECORDED`** rather than estimated.*
+
+| threshold | picks | **2024-25** `ROI` (SE) · leg hit | **2025-26** `ROI` (SE) · leg hit |
+|---|---|---|---|
+| **1.20** | 2 | 🔴 **−0.0406** (0.0191) · 0.5673 · *5,073* | +0.0230 (0.0176) · 0.5787 · *6,291* |
+| | 3 | +0.0662 (0.0388) · 0.5674 · *3,353* | **+0.1852** (0.0365) · 0.5785 · *4,169* |
+| | 4 | +0.0669 (0.0604) · 0.5677 · *2,497* | +0.2032 (0.0575) · 0.5794 · *3,105* |
+| | 5 | +0.1863 (0.1034) · 0.5680 · *1,981* | +0.4385 (0.1019) · 0.5789 · *2,472* |
+| | 6 | +0.4637 (0.1747) · 0.5684 · *1,638* | +0.7110 (0.1701) · 0.5789 · *2,047* |
+| **1.30** | 2 | 🔴 **−0.0065** (0.0242) · 0.5754 · *3,225* | +0.0483 (0.0220) · 0.5869 · *4,058* |
+| | 3 | **+0.1026** (0.0495) · 0.5750 · *2,125* | **+0.2350** (0.0462) · 0.5878 · *2,681* |
+| | 4 | +0.0871 (0.0766) · 0.5755 · *1,573* | +0.2455 (0.0730) · 0.5873 · *1,988* |
+| | 5 | +0.2219 (0.1315) · 0.5757 · *1,244* | +0.4778 (0.1293) · 0.5878 · *1,574* |
+| | 6 | +0.6024 (0.2306) · 0.5762 · *1,025* | +0.8101 (0.2187) · 0.5877 · *1,301* |
+| **1.40** | 2 | +0.0228 (0.0330) · 0.5861 · *1,757* | +0.0965 (0.0294) · 0.6012 · *2,343* |
+| | 3 | +0.1761 (0.0689) · 0.5860 · *1,147* | +0.3211 (0.0627) · 0.6021 · *1,532* |
+| | 4 | +0.1812 (0.1086) · 0.5856 · *839* | +0.2813 (0.0978) · 0.6003 · *1,134* |
+| | 5 | +0.4821 (0.2005) · 0.5865 · *641* | +0.6742 (0.1827) · 0.6039 · *890* |
+| | 6 | +0.9766 (0.3523) · 0.5864 · *535* | ⚠ **`NOT RECORDED`** *(segment truncated)* |
+
+🔑 **Three structural readings, and all three are visible only because the grid exists:**
+
+1. 🔴 **THE 2-PICK IS THE ONLY LOSING CELL, AND IT LOSES IN THE OLDER SEASON AT BOTH LOW
+   THRESHOLDS** — `−0.0406` at `1.20`, `−0.0065` at `1.30`. **At `1.40` it turns positive
+   (`+0.0228`).** *Every one of the other `25` recovered cells is positive.*
+2. **`ROI` RISES MONOTONICALLY WITH PICK COUNT** in every threshold × season block — **and so does
+   the SE**, from `0.019` at 2 picks to `0.35` at 6. ⚠ ***The 6-pick cells are the biggest numbers
+   and the weakest evidence: `+0.9766 ± 0.3523` on `535` slips is under 3 SE from zero, and the
+   slip counts fall by 10× from the 2-pick row.*** **Read the 3- and 4-pick rows, not the 6.**
+3. **LEG HIT RATE RISES WITH THRESHOLD AND IS FLAT IN PICK COUNT** — `0.567 → 0.575 → 0.586`
+   (2024-25) and `0.579 → 0.587 → 0.602` (2025-26) across `1.20/1.30/1.40`. 🔑 ***That is the
+   threshold doing what a threshold is supposed to do, and it is the cleanest evidence in the block
+   that the model's ordering carries information — it is measured per LEG, so it is untouched by the
+   slip-packing, the void rule and the payout table.***
+4. **2025-26 beats 2024-25 in every single cell.** *Whether that is a better model, an easier
+   season, or the season the model was developed against is **`NOT RECORDED`**.*
+
+## 3 · ✅✅ THE LEAKAGE CONTROL — **the author flagged the objection and then ran it**
+
+**The hindsight risk, in the session's own words: *"spotting a hindsight bias from selecting stale,
+pre-move lines."*** **The control: split every leg by whether its `(game_date, player, prop)` had
+`COUNT(DISTINCT line) = 1` — the line NEVER MOVED — and re-run.** *A stale-line advantage, if real,
+lives entirely in the legs whose line moved, so it must vanish in the never-moved subset.*
+
+| threshold · picks | season | **all lines** | **line never moved** | share of moved legs, all-lines |
+|---|---|---|---|---|
+| 1.30 · 3 | 2024-25 | +0.1026 | 🟢 **+0.1419** | 0.214 |
+| 1.30 · 3 | 2025-26 | +0.2350 | +0.1867 | 0.260 |
+| 1.30 · 4 | 2024-25 | +0.0871 | 🟢 **+0.0969** | 0.214 |
+| 1.30 · 4 | 2025-26 | +0.2455 | +0.2422 | 0.261 |
+| 1.40 · 3 | 2024-25 | +0.1761 | +0.1032 | 0.226 |
+| 1.40 · 3 | 2025-26 | +0.3211 | 🟢 **+0.2897** | 0.271 |
+| 1.40 · 4 | 2024-25 | +0.1812 | +0.1103 | 0.228 |
+| 1.40 · 4 | 2025-26 | +0.2813 | 🟢 **+0.3602** | 0.271 |
+
+✅✅ **THE CONTROL DOES NOT COLLAPSE THE EDGE, AND IT MOVES IN BOTH DIRECTIONS — `4` of `8` cells go
+UP when moved lines are removed.** 🔑 ***A stale-line artifact has a sign. This does not: the
+never-moved subset is higher in half the cells and lower in the other half, and every gap is inside
+the SEs in §2.*** **⇒ the `T23` backtest's edge is not explained by selecting pre-move lines** —
+which is the strongest objection available to it, raised by the author and answered by the author.
+
+⚠⚠ **RULE 54 — what this control does and does not license.**
+**It rules out ONE leakage channel: line movement.** It says nothing about the others, and the
+`T23-1` caveats stand **unchanged and in full**: this is a **replay, not a traded record**;
+`nba_score.paper_picks` holds **`0` rows**; the figures are `T23`-sourced and **were not re-run by
+this sweep**; and `§0.14-T23`'s own open caveat — whether a `≥1.40` strategy survives slip-level
+compression — **is untouched by this block**. *Note also that `1.40` is exactly the threshold whose
+demon-heavy composition that caveat is about, and the 3-/4-pick `1.40` cells here are the ones a
+reader is most likely to act on.* **`NOT RECORDED`: the slip-level compression check for any cell in
+this grid.**
+
+📌 ***Why this was missing.*** *`T23-1` and `§0.14-T23` recorded the VERDICT — "standards-only clears
+the 3-pick breakeven in both seasons". **The grid is what makes the verdict operational**: which
+threshold, at which pick count, with what SE and what sample. **A verdict without its grid cannot be
+acted on and cannot be falsified**, and 93.8% uncovered is what that looked like from outside.*
