@@ -948,6 +948,8 @@ combinatorial objection §T14.1e records the owner raising, answered by choosing
 | **joint scenarios per GAME** | **≤ 64 worst case, usually 8–16** |
 | board legs/day, PrizePicks with the ladder | **avg 4,503 · max 8,700 · 107 players** |
 | board legs/day across five apps | **~10–15k normal, ~20k a big Saturday** — ⚠ **but only ~110–130 DISTINCT PLAYERS** |
+| 🆕 **Underdog** *(`§F6.27`)* | **avg `1,276` → `~3,500` live · max `2,574` · `106` players** — *"archive = main lines only; live ladder `~2–3×`"* |
+| 🆕 **Sleeper · Fliff · Betr** *(`§F6.27`)* | **`~1,000–2,500` legs/day each**, live only |
 | **full matrix per day** | singles at ±10 **22,400 rows** · + combos and fantasy **~36,000** · **× both sides ≈ 72,000 leg-probabilities** |
 | scenario rows | **~30–60k per game ≈ 0.5–1M per day ≈ 50–100 MB/day**, **kept only until selection, then all but the chosen one deleted → ~7 MB/day, ~1.2 GB/season** |
 
