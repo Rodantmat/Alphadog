@@ -7,7 +7,9 @@ that is the useful part.
 ---
 
 > # 📑 **INDEX — `NBA_RECIPE.md`**
-> **~~`47`~~ → `59` sections · ~~`~92,000`~~ → `85,896` bytes · `927` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> **~~`47`~~ → ~~`59`~~ → `63` sections · ~~`~92,000`~~ → `87,777` bytes · `963` lines · built `2026-09-23`, census corrected same day (`§F2.14`); ✅ **BUILD ORDER REPAIRED `2026-09-23`, `§F7.3`.****
+> ✅✅ **THE TWO ORDER DEFECTS THIS FILE CARRIED ARE FIXED, AND NOTHING WAS LOST DOING IT.** *`STEP 0c` sat after `STEP 7`; `STEP 0-T16` sat ABOVE `STEP 0`. **Both blocks were moved whole** — the copy was inserted first, verified **byte-identical** *(`STEP 0-T16` body `md5 f9ae08cbe51c`)*, and only then was the original removed, so the content was never absent from the file. **Sections `59` → `63`: `+4`, all of them the two forwarding stubs left at the old positions** so an inbound pointer to *"`STEP 0c`, after `STEP 7`"* still lands somewhere that explains itself. ***The order is now `0 · 0a · 0b · 0c · 0d · 0-T16 · 1 … 13`.***
+> +`4` sections and `+1,881` bytes are the entire cost of the repair; the item and step counts are otherwise unchanged.
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**; this file had the largest proportional miss, **`12` of `59` (`20%`)**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`. ⚠ *The byte figure was also approximate (`~92,000`) and is now exact.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
