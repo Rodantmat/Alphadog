@@ -4555,3 +4555,176 @@ paper: **its source, method, sport-season coverage, bet type (game lines vs play
 whether "ROI" is per-bet or per-unit-staked are all `NOT RECORDED`.*** **A game-line ROI interval is
 not automatically comparable to a player-prop slip ROI.** ***So this is recorded as ORIENTATION, not
 as a test `T23-1` passes*** — and a reader who wants to lean on it must find the paper first.
+
+---
+
+## §F6.13 — 🔑🔑 **WHAT SURVIVED THE `A2` RETRACTION, AND THE ONE SLICE THAT IS STILL OPEN**
+
+*Added `2026-09-23`, `§F6.13`. Source: **LIVE** `nba_config.classification_config`,
+`config_key = 'enrichment_reality_check_2026_09_13'`, `updated_at 2026-09-13T19:25:18.669Z`,
+`notes: "Reality check: the certified baseline beats every enrichment factor at leg level. A2
+shipped-claim retracted."` This is the same row that produced `§F6.12`. `§F6.12` recorded the
+RETRACTION; this section records the three parts of the row that the retraction did **not**
+cover — what the session kept, what it says to test next, and the deltas behind the verdict.*
+
+### 0 · 🔬 **The absence test that selected this section — stated before the section was written**
+
+*Every string below was grepped across all twelve at pinned commit `07b5b303`, per `RULE 53`.
+**WINDOW: the twelve mandated documents only** — `NBA_COMPASS.md` and the other `nba/*.md` are
+outside it and are not counted.*
+
+| String from the live row | In the twelve, before this section |
+|---|---|
+| `-0.024` | **`0` of `12`** |
+| `scratch announced` | **`0` of `12`** |
+| `day-before-baseline` | **`0` of `12`** |
+| `Everything else about an absence is already in recent form` | **`0` of `12`** |
+| `narrow, well-defined slice` | **`0` of `12`** |
+| `day-before injury cutoff` | **`0` of `12`** |
+| `-0.051` | **`0` of `12`** |
+| `-0.013` | **`0` of `12`** |
+| `magnitude refit` | **`0` of `12`** |
+| `baseline minutes residual` | **`0` of `12`** |
+| `flat multiplier` | **`0` of `12`** |
+| `measures double-counting` | **`0` of `12`** |
+| `LEAST predictable` | **`0` of `12`** |
+| `absorbs shots` | **`0` of `12`** |
+
+⚠ **AND ONE STRING THAT WAS NOT A GAP — `RULE 53` and the `§F2.3` lesson, applied to myself.**
+*`graded blind` returned **`1` of `12`** on this pass and I nearly recorded it as already covered.
+It is in `NBA_FINAL_SCORING_CALIBRATION.md:1532` — **which is my own `§F6.12` text, committed
+`32a4ad35` forty minutes earlier.** Checked against the pre-write commit: `git show
+971f3cbe~1:nba/NBA_FINAL_SCORING_CALIBRATION.md | grep -c 'graded blind'` → **`0`**. **So it WAS a
+gap, and `§F6.12` closed it — the verification did not find it pre-existing, it found my own
+writing.** 🔑 ***This is `§T20.136`'s failure and `§F2.3`'s repeat of it, caught on the third
+occurrence by the habit those two forced: when a verification count moves in the direction that
+flatters the verifier, check which commit put it there before believing it.***
+
+### 1 · 🔑 **WHAT SURVIVES — the four things the session kept, `VERBATIM` from `what_survives_and_is_real`**
+
+| # | What survived | The claim, as the row states it |
+|---|---|---|
+| **1** | `nba_ref.defender_ratings` | *"two-way ridge, offence-adjusted, `5` channels, reliability-shrunk, `111,768` rows, weekly as-of. **The only factor that measured neutral rather than harmful.**"* |
+| **2** | **the fitted usage allocation** | *"the prior assumption was **NEGATIVELY correlated, `-0.024`**, with who actually absorbs shots"* |
+| **3** | `proj_min` and `rate36` emitted into `baseline_history` | *"the component interface the engine design always required"* |
+| **4** | **the leg-level gate itself** | *"log-loss / Brier on real board lines — **the correct way to judge every future factor**"* |
+
+🔑🔑 ***Row 2 is the sharpest single number in the whole enrichment programme and the twelve did
+not carry it.*** **The hand-reasoned prior for WHO absorbs a missing player's shots was not merely
+weak — at `-0.024` it pointed the WRONG WAY relative to who actually absorbed them.** ⇒ *That is
+why `A2` could not be rescued by refitting its magnitude: **the allocation it was distributing was
+anti-correlated with reality, so a better multiplier on a wrong assignment is still a wrong
+assignment.*** 📌 **It also explains, mechanically, the `§F6.12` finding that `A2` did WORST where
+it should have done BEST: high novelty is precisely where the baseline cannot supply the allocation
+and the prior has to, and the prior is the part that is backwards.**
+
+⚠ **`RULE 54` / `RULE 56` — `n` IS `NOT RECORDED` FOR THE `-0.024`.** *The row states the
+correlation and nothing else: **the sample it was measured on, the stat it was measured for, the
+seasons, and whether it is Pearson or Spearman are all `NOT RECORDED`.*** **A correlation of
+`-0.024` is, in absolute terms, approximately zero — the honest reading is "the prior carries no
+usable signal", and "points the wrong way" is the SIGN of an estimate whose confidence interval is
+`NOT RECORDED` and very probably spans zero.** ⇒ ***So the load-bearing finding is "the prior was
+UNINFORMATIVE", which is fatal to `A2` on its own; the directional reading is a weaker claim and is
+recorded here as such.*** 🔴 **Marked for the owner as part of `T20-3`(e): the underlying fit is
+not identified in any transcript or config row reachable from this session.**
+
+### 2 · 🔑🔑 **THE REMAINING OPPORTUNITY — the one slice the baseline structurally cannot see**
+
+> ***"the one thing the baseline structurally CANNOT see is a scratch announced AFTER its cutoff
+> (production: `09:00 ET` in `build_baseline_ladder.py`). That is a narrow, well-defined slice and
+> it requires the day-before-baseline configuration to test at all. Everything else about an
+> absence is already in recent form."***
+> — `THE_REMAINING_OPPORTUNITY`, `VERBATIM`
+
+**This is the constructive half of the retraction and it is the part most worth keeping.** *The
+`A2` programme did not fail because absence information is worthless; it failed because **the
+production baseline already reads the same injury report `A2` reads.** The baseline's `proj_min` is
+built from the as-of roster state at `09:00 ET`, so by the time `A2` fires, the elevated minutes of
+the remaining players are already in the projection — `A2` was re-pricing information the baseline
+had priced from the same source.* ⇒ ***The residual value therefore lives in exactly one place: the
+window between the baseline's `09:00 ET` cutoff and tip-off, where a scratch lands that the
+baseline could not have seen.***
+
+| The slice | Why it is the only one left |
+|---|---|
+| **Scratch announced AFTER `09:00 ET`** | The baseline's roster state is frozen at the cutoff; this is information it *cannot* hold |
+| **Everything earlier** | *"already in recent form"* — the `4,699`-leg low-novelty slice measured exactly this and `A2` lost there too |
+
+🔴 **AND IT IS NOT TESTABLE AS THE SYSTEM IS BUILT.** *"**it requires the day-before-baseline
+configuration to test at all**" — the production ladder has no day-before variant, so **there is no
+clean control**: with a single `09:00 ET` baseline, any `A2`-style layer reading the afternoon
+report is reading a report the baseline partly already had.* ⇒ **The test named in `next_test` is
+the construction of that control, not a factor test:**
+
+> ***"rebuild the baseline with a day-before injury cutoff, then apply `A2` ONLY to players whose
+> status changed between that cutoff and the `2:30 PM` report. **Any test that reads the same
+> report for both layers measures double-counting, not value.**"*** — `next_test`, `VERBATIM`
+
+🔑 ***That last sentence is a general methodological rule and it is stated nowhere else in the
+corpus: a factor and the baseline it is grading against must not share an input, or the gate
+measures overlap rather than contribution.*** 📌 **It is the same failure shape as `RULE 3` of the
+four-rules table at `§1282` above — "never duplicate a baseline internal" — but stated for a
+factor's DATA SOURCE rather than for its FORM, which is the case the four rules do not cover.**
+
+🔴 **`OWNER DECISION` — folded into `T20-3`(e), not opened as a new item.** *Building a
+day-before-cutoff baseline is a production change. This session **documents** it and does not
+propose it: the prior work is closed, the slice is named, and whether it is worth a second ladder
+configuration is the owner's call. **`NOT RECORDED`: any estimate of how many legs per night fall
+in the post-`09:00 ET` scratch window** — which is the number that would decide it, and which no
+transcript computes.*
+
+### 3 · 🔴 **THE DECISIVE FINDING'S DELTAS — the numbers under `§F6.12`'s verdict**
+
+*The four `anchor_wins_every_slice` log-loss pairs are already recorded in `2` of the twelve. **The
+DELTAS are not, and the deltas are what carry the argument** — `§F6.12` states that `A2` does worst
+where it should do best, and these are the two numbers that say so.*
+
+| Slice | Anchor | Best `A2` | **Delta** | `n` |
+|---|---|---|---|---|
+| all | `0.7231` | `0.7540` | **`-0.031`** | `15,024` |
+| fires | `0.7206` | `0.7546` | **`-0.034`** | `13,319` |
+| **low novelty** | `0.7147` | `0.7273` | **`-0.013`** | `4,695` |
+| 🔴 **high novelty** | `0.7436` | `0.7946` | **🔴 `-0.051`** | **`866`** |
+
+⇒ ***`A2` is four times worse on the slice its own mechanism predicted it would win.*** **That is
+not a null result, it is a REVERSED one, and a reversed result on the mechanism's own best case is
+what closes a hypothesis rather than merely failing to support it.**
+
+⚠⚠ **`RULE 54` / `RULE 56` — `n = 866` IS THE CONSTRAINT ON THIS CONCLUSION.** *The decisive slice
+is **`5.8%` of the legs** (`866 / 15,024`). **A `0.051` log-loss gap on `866` legs is a materially
+noisier estimate than the `-0.013` on `4,695`**, and the row publishes **no confidence interval, no
+standard error and no bootstrap** — all `NOT RECORDED`.* ⇒ ***So the strong form — "four times
+worse" — is a point-estimate ratio between two noisy quantities and should not be quoted as a
+magnitude.*** **What survives the caveat is the SIGN and the ORDERING: `A2` loses in every slice,
+and it does not win in the high-novelty slice, which is the only outcome the hypothesis could have
+been rescued by.** 📌 ***The verdict is sound on the ordering alone; the `4×` is decoration and is
+recorded here as decoration.***
+
+### 4 · **THE FOURTH FORM, AND THE `why`**
+
+*`§F6.12` recorded that `A2` was tested in four forms. **`flat multiplier` and `magnitude refit
+against the baseline minutes residual` appear in `0` of the twelve**; `component-level` and
+`novelty-weighted` appear in `1` each. The list, `VERBATIM`:*
+
+| # | Form tested |
+|---|---|
+| 1 | *"flat multiplier on the mean"* |
+| 2 | *"component-level (adjust `proj_min`, re-derive the mean)"* |
+| 3 | *"novelty-weighted (apply only to the share of the absence not already in recent form)"* |
+| 4 | *"magnitude refit against the baseline minutes residual"* |
+
+🔑 **Form `4` is the one that matters for closure.** *Forms `1`–`3` vary WHERE the adjustment is
+applied; form `4` refits HOW BIG it is, against the baseline's own residual — i.e. it gives the
+factor the best magnitude the data allow. **`A2` still loses.** That is why the status is `CLOSED`
+and not `NEEDS TUNING`: the tuning was run.*
+
+> ***"a star's first game out is exactly when a coach improvises. The baseline's conservative
+> projection handles that uncertainty better than a confident multiplier. **Being MORE aggressive
+> when the situation is LEAST predictable is backwards.**"*** — `A2_FINAL_VERDICT_2026_09_13.why`,
+> `VERBATIM`
+
+📌 **`§F6.7`'s finding is the same shape from the opposite market: de-vigged consensus is right to
+within a point on `776,000` legs, so confident departures from it lose.** ⇒ ***Two independent
+lines — an internal factor gate and an external price comparison — converge on one instruction:
+the system's edge is not in being more confident than the baseline, it is in the break-even gap
+`PrizePicks` leaves open.***
