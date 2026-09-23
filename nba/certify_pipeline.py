@@ -67,6 +67,7 @@ def main():
     # schedule itself is missing or stale, every day would look like a no-game day and the certifier
     # would skip its whole job in silence - so that case fails loudly instead.
     no_games_today = False
+    out_of_season = False
     if pipe in ("p1", "p2", "p3"):
         with conn.cursor() as cur:
             cur.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (today,))
@@ -74,22 +75,29 @@ def main():
             cur.execute("""SELECT count(*) FROM nba_calendar.games
                            WHERE game_date BETWEEN %s::date - 30 AND %s::date + 30""", (today, today))
             nearby_games = int(cur.fetchone()[0] or 0)
-        if slate_games == 0 and nearby_games == 0:
+        out_of_season = nearby_games == 0
+        if out_of_season and pipe == "p1":
+            # P1 is the WEEKLY layer and its cron runs all year. Out of season there is nothing to
+            # refresh, so judging freshness would paint every Monday red - which is precisely how a team
+            # is trained to ignore red builds (this file's own docstring). Row-count checks still run.
+            print("  NOTE  no games within +/-30 days - out of season, freshness not due\n", flush=True)
+        elif out_of_season:
             print("  FAIL  schedule empty around this date          nba_calendar.games has 0 games +/-30d",
                   flush=True)
             print("\nNOT treating this as a no-game day: the schedule is missing or stale, which is a"
                   "\nreal failure. Load the schedule (P1 / scrape_nba_schedule.py) and re-run.", flush=True)
             sys.exit(1)
-        if slate_games == 0:
+        elif slate_games == 0:
             no_games_today = True
             print(f"  NOTE  no games scheduled on {today} - slate checks skipped, nothing was due\n", flush=True)
 
     if pipe == "p1":
         # the weekly layer must have refreshed within the last 8 days - a 7-day cadence plus slack
-        check("defender_ratings refreshed",
-              "SELECT max(as_of_date) FROM nba_ref.defender_ratings", (),
-              lambda v: v is not None and (datetime.fromisoformat(today).date() - v).days <= 8,
-              "<= 8 days old")
+        if not out_of_season:
+            check("defender_ratings refreshed",
+                  "SELECT max(as_of_date) FROM nba_ref.defender_ratings", (),
+                  lambda v: v is not None and (datetime.fromisoformat(today).date() - v).days <= 8,
+                  "<= 8 days old")
         check("defender_ratings rows",
               "SELECT count(*) FROM nba_ref.defender_ratings", (),
               lambda v: v and int(v) > 10000, "> 10k")
