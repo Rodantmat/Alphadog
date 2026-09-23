@@ -1,5 +1,121 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+> # 📑 **INDEX — `NBA_OPEN_ITEMS.md`**
+> **`797` sections · `~1.20 MB` · `16,000+` lines · `70` items · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE ITEM IDs AND HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16`
+> line-number pointers rotted within a day)*. **Search for the quoted `T`*n*`-`*m* label.**
+>
+> 🔴🔴 **THE ONE THING TO KNOW BEFORE SEARCHING THIS FILE.** *Measured `2026-09-23`:*
+> | how an item is stored | count | how to find it |
+> |---|---|---|
+> | **has its OWN heading** | **`39`** | ✅ search the ID — it is a heading |
+> | 🔴 **exists ONLY as a row inside a table** | **`31`** | ⚠ **search the ID — it will land mid-table, not on a heading.** *Scanning headings alone will MISS these.* |
+> ⇒ ***`T15-1`…`T15-7`, `T16-1`…`T16-6`, `T16-8`, `T17-1`, `T17-3`…`T17-5`, `T18-1`, `T20-7`,
+> `T20-8`, `T20-12`, `T20-17`…`T20-25` are all table-only.*** **`T20-25` is SEASON-CRITICAL and is
+> one of them.**
+>
+> ## ▶ START HERE — *the three live OWNER DECISIONS, newest first*
+>
+> | item | what it asks you to decide | 🚩 |
+> |---|---|---|
+> | **`T23-1`** | 🔴🔴 **The model does not beat PrizePicks** *(`1.08 M` legs)* — **but standards-only clears the 3-pick breakeven in both seasons and the game-aware replay returns `+14.5%`.** *Four options: shrink toward market · use as RANKER only · revisit the `0.15` Platt guard *(nearly free)* · build 3-pick+ standards only.* | 🔴🔴 |
+> | **`T21-1`** | 🔴 **The document-form directive is blocked** — its precondition *(transcripts in the repo)* **would publish `18` credential-shaped strings incl. `3` Postgres URLs to a PUBLIC repo.** *Four options + **rotate regardless**. And a LATER owner message may already answer it the other way.* | 🔴 |
+> | **`T22-1`** | ⚠ **"the keep my million board in underdog"** — an owner request with **`0` record anywhere**. *Still wanted, or dropped?* | ⚠ |
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | 🔴 **the ranked list of everything that blocks opening night** | **`OPENING-DAY BRIEF`** *(top block)* — **`17` season-critical items in a stated order** |
+> | 🔑 **the ranking rule** *(and its measured gap)* | the brief's *"Ranking rule, re-derivable"* + **`THE RULE HAS NO TERM FOR *HOW LONG*`** |
+> | 🔴 **what fails SILENTLY** *(costs a season before anyone looks)* | **`T20-5`** *(the grader's window — the brief's only silent blocker)* · **`T20-17`** |
+> | 🔴 **what stops the slate on night one** | **`T20-6`** *(the certifier asserts tables no pipeline writes)* · **`T20-13`** *(the `>= 25` prop gate)* |
+> | 🔴 **the season constants hardcoded to LAST season** | **`T20-4`** |
+> | 🔴 **a dated expiry** | **`T20-14`** *(Betr token, `2026-10-10`)* |
+> | 🔴 **the player-name bridge dropping legs today** | **`T20-25`** ⚠ *table-only* |
+> | ⚠ **nothing has a cron** | **`T20-3`** · the brief's **PREREQUISITE** block |
+> | 🔑 **items the owner already answered** | **`T16-7`** · **`T16-9`** · **`T17-2`** · **`T19-1`** |
+> | ⚠ **method findings about the sweep itself** | **`T19-3`** · **`T18-15`** · **`§T20.4`**–**`§T20.7`** |
+>
+> ## 📋 THE COMPLETE ITEM REGISTER
+>
+> ### 🔴 **A · SEASON-CRITICAL** *(these decide whether opening night works)*
+> | item | subject | where |
+> |---|---|---|
+> | **`T23-1`** | 🔴🔴 **The model does not beat PrizePicks** — with the standards-only exception | heading |
+> | **`T20-6`** | 🔴🔴 **`7` of `12` certifier checks assert tables NO PIPELINE WRITES** — *"the largest structural finding of the sweep"* | heading |
+> | **`T20-4`** | 🔴🔴 **`P3` is hardcoded to LAST season, in two scripts** | heading |
+> | **`T20-5`** | 🔴🔴 **The grader's default window ends `2026-04-12` — and nothing catches it.** *The brief's ONLY silent blocker* | heading |
+> | **`T20-13`** | 🔴🔴 **`baseline_history` carries `22` October props against a `>= 25` gate** ⚠ *duration corrected `2026-09-23`* | heading |
+> | **`T20-14`** | 🔴 **Betr's access token expires `2026-10-10`** — ten days before opening night | heading |
+> | **`T20-15`** | 🔴 **Both `P2` and `P3` certify RED on every zero-game day** | heading |
+> | **`T20-25`** | 🔴 **The player-name bridge: writer and reader use different normalisers** — *losing legs now* | ⚠ **table-only** |
+> | **`T20-2`** · **`T20-3`** | 🔴 The storage-diet plan aims at a database that no longer exists · the scheduler holds ten MLB jobs and **zero NBA** | heading |
+>
+> ### ⚠ **B · HIGH / STRUCTURAL**
+> | item | subject | where |
+> |---|---|---|
+> | **`T20-9`** · **`T20-10`** | 🔴 Three workflows push to `main` with no retry, and the deploy workflow swallows the failure · `nba-daily-delta.yml` swallows every failure twice | heading |
+> | **`T20-11`** | 🔴 `P1`'s cron comment and header both invert PDT/PST — **nine surfaces repeat the wrong hour** | heading |
+> | **`T20-12`** | ⚠ the Python DST hardcode | ⚠ table-only |
+> | **`T20-16`** | ⚠⚠ **the paper-trading prop map is hardcoded TWICE** | heading |
+> | **`T20-17`** | 🔴 `except Exception: pass` — the only handler of `69` that leaves no trace | ⚠ table-only |
+> | **`T20-18`** · **`T20-19`**–**`T20-24`** | the certification-vs-completeness gap · the confidence layer twice · `factor_fits` · the ladder's two writers · **the board loader has no trigger** · `7,951` baseball rows in `nba_market` · the name bridge is static | ⚠ table-only |
+> | **`T18-14`** | 🔴 **The certifier has no magnitude check on `P3` and certifies on a single row** | heading |
+> | **`T18-11`** | 🔴 The cutoff was decided on policy; the measurement built to check it never returned | heading |
+> | **`T18-17`** | 🔴 **OWNER DECISION — the score formula's penalising half has never fired** | heading |
+>
+> ### 📋 **C · OPEN, MEDIUM AND LOW**
+> | item | subject | where |
+> |---|---|---|
+> | **`T18-4`** · **`T18-6`** · **`T18-7`** · **`T18-8`** | "load fit, don't refit" specified not shipped · the gap audit's denominator · off-ladder rungs interpolated and taxed · the `P2` end-to-end run resolves to `NOT RECORDED` | heading |
+> | **`T18-10`** | The league publishes **THREE** bulletins; the sweep had recorded one | heading |
+> | **`T18-12`** · **`T18-13`** · **`T18-16`** | the gap-audit fallback never re-verified · the board scorer's aggregate confidence · `2` `§`-references resolve nowhere | heading |
+> | **`T19-2`** · **`T19-4`** | the glossary index carries document + transcript, not line · psycopg rejects multi-command SQL once parameterised | heading |
+> | **`T20-1`** · **`T20-7`** · **`T20-8`** | five 🔴 findings nothing in the corpus points at · `P3` step 6 runs the wrong script · *(see the coverage table)* | `T20-1` heading; `7`/`8` table-only |
+> | **`T22-1`** | ⚠ the "keep my million" request with no record | heading |
+> | **`T15-1`**–**`T15-7`** | 🔴 OREB per-cell dispersion, and six more from `T15` | ⚠ **table-only, one row each** |
+> | **`T16-1`**–**`T16-6`**, **`T16-8`** | 🔴 the verification harness the session concluded it should have built first, and six more | ⚠ **table-only** |
+> | **`T17-1`**, **`T17-3`**–**`T17-5`** | `T17`'s residue | ⚠ **table-only** |
+> | **`T18-1`** | 🔴 *"Our system should be covering the APP LADDER"* — the owner's words | ⚠ table-only *(in the brief)* |
+>
+> ### ✅ **D · CLOSED, RESOLVED OR CORRECTED** *(kept under rule 40 — never deleted)*
+> | item | outcome |
+> |---|---|
+> | **`T16-7`** | ✅✅ **scope question answered by the owner directly** |
+> | **`T16-9`** | 🔴 **answered — and the author's own conditional has FIRED, unchecked** |
+> | **`T17-2`** | ✅ **closed — the `17%`-vs-`90%` tension is answered in the transcript** |
+> | **`T18-5`** | **closed by discovery** — the `BS_SOURCE` switch was never needed ⚠ *reopened LOW → MEDIUM at `§T20.128`* |
+> | **`T18-9`** | ⚠⚠⚠ **corrected — this entry was framed BACKWARDS, and an existing entry already said so** |
+> | **`T18-2`** | ⚠ **reversed by the owner, on backtest grounds** |
+> | **`T18-3`** | ⚠ the end-to-end parity test the owner specifies |
+> | **`T19-1`** | 🔴 **resolved in the same pass** — the glossary had not been updated through seven transcripts |
+> | **`T19-3`** | 🔴 **METHOD, HIGH — `T15`–`T18` were closed on a standard this sweep had already superseded** |
+> | **`T18-15`** | **METHOD** — were `T2`'s and `T3`'s thinking strata read at `T1`'s depth? |
+>
+> ### 📊 **E · THE ANALYSIS SECTIONS** *(not items — findings about the corpus and the sweep)*
+> | § | what it covers |
+> |---|---|
+> | **`§T18.2`** · **`§T18.3`** | ⚠⚠ **the kill log: `T18` arrived pre-swept** · the four residue items, settled from executed evidence |
+> | **`§T19.5`**–**`§T19.10`** | the `T19` kill log · 🔴 **the closure record for `T1`–`T6` certifies LESS than it states** · 🔴 **the sweep's own work order sat unread in the repo** · four repo documents the twelve name and do not describe · the handoff sizes are dated, not wrong · 🔴 **the progress ledger is denominated in SIXTEEN; the corpus is TWENTY** |
+> | **`§T20.1`**–**`§T20.7`** | 🔴 the owner's reset rule is wider than the sweep's · 🔴 the owner ordered a re-sweep with explicit bounds, unrecorded · the remaining `T20` owner instructions · a standing self-instruction adopted then dropped · ✅ rule 38 measured · 🔴 **`NBA_FINAL_SCORING_CALIBRATION.md`'s numbering is broken** · ⚠ `T20`'s sixteen failed writes |
+>
+> ⚠ **NOTE ON THE `h1` HEADINGS**: *three of this file's `h1`s are **stray lines from a pasted code
+> comment*** *(`"a game with genuinely zero officials returns…"`)* — **a fragment that escaped its
+> fence and now renders as three top-level headings.** *Same class as `NBA_WORKERS.md` `§0.38`.
+> **Documented, not repaired — the text is real content and rule 1 holds.***
+>
+> ⚠ **NOTE ON THE BRIEF'S TITLE**: *it reads* **"THE SEVEN BLOCKERS ~~ALL THIRTEEN~~ ALL FOURTEEN
+> SEASON-CRITICAL ITEMS"** *while the block beneath it says **SEVENTEEN**.* 🔴 **The heading's count
+> has lagged its content three times.** *The **`17`** in the body is the current figure.*
+>
+> 📌 **HOW TO READ THIS FILE**: ***the brief at the top is the ranked list; `A` is what stops opening
+> night; `B`/`C` is everything else; `D` is what is already answered; `E` is what the sweep learned
+> about itself.*** ⚠ **If you scan only headings you will miss `31` items — including `T20-25`.**
+
+---
+
 > # 🔴🔴🔴🔴 **T23-1 · SEASON-CRITICAL · THE MODEL DOES NOT BEAT PRIZEPICKS — `1.08 MILLION` LEGS, TWO SEASONS**
 > *Filed 2026-09-23, T23 pass 2, `§T23.2`. **Placed FIRST because every other item on this page asks
 > whether the pipeline RUNS. This one asks whether its output is worth acting on.***
