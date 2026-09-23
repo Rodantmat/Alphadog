@@ -1014,7 +1014,40 @@ distinctive shape *(a short alphanumeric key, a password that looks like a word)
 `nba/*.md` only — **not the whole repo, not the workflow files, not the Python or JS** — and its
 known-safe filter is a context regex that can over-filter. ***So: "one credential found and
 redacted", never "the corpus is clean."*** **A floor, and a narrow one.**
-▶ **A repo-wide shape scan is owed and is NOT done.** *Recorded as owed rather than implied clean.*
+### ⑤ ✅ **THE OWED REPO-WIDE SCAN — RUN THE SAME DAY, AND IT CLEARS THE REST OF THE REPO**
+
+*Run 2026-09-23 immediately after the line above was written. **`969` files, `632.1 MB`**, `.git` /
+`node_modules` / `__pycache__` / binaries excluded. Same shape set, same known-safe context filter,
+same redaction discipline — no value printed, here or in tool output.*
+
+| shape | hits | adjudication |
+|---|---|---|
+| `uuid` | **41,622** | 🔪 **DATA PAYLOADS.** `boards/underdog_mlb_current.json` **25,350** · `underdog_nfl_current.json` **14,383** · `underdog_nba_current.json` 118 — **one UUID per board row**. ⚠ *Plus `12` per `wrangler.*.jsonc` and `cloudflare_d1_bindings.json`: **D1 database IDs — resource identifiers, not auth tokens.** Noted, not filed.* |
+| `url_creds` | **10** | 🔪 **ALL PLACEHOLDERS OR MASKED — and this is the system doing it RIGHT** |
+| `postgres://` · `gh[pours]_` · `AKIA` · JWT · assigned-secret | **`0`** | ✅ **none, anywhere in the repo** |
+
+✅✅ **THE `10` ARE A CLEAN BILL FOR THE SCRAPERS' CREDENTIAL HYGIENE, verified rather than
+assumed:**
+
+- **`main.py:144`** — a **comment** documenting the format, `http://username:password@hostname:port`
+  *(the scanner read the words `username` and `password` as values)*;
+- **`main.py:174`** — the **f-string template** that BUILDS the URL from variables at runtime;
+- **`main.py:446`** — a `fix_hint` message naming the env vars **`PROXY_URL`,
+  `PROXYSCRAPE_USERNAME`, `PROXYSCRAPE_PASSWORD`** — *secret NAMES, no values*;
+- **`prizepicks_mlb_current_meta.json`** ×7 — the field is literally **`"proxy_masked"`**, and the
+  scan measures its secret component at **`3` characters** *(i.e. `***`)*.
+
+🔑 ***The committed artifact masks the proxy credential before writing it, and the real values live
+in GitHub secrets. That is the exact discipline `§T1.31` failed at — and the MLB scraper has been
+doing it correctly the whole time.*** 📌 *Worth stating plainly: the leak was not a systemic
+failure of the codebase. **It was a failure of the DOCUMENTATION pass**, in the one place where a
+human was transcribing values by hand instead of a program interpolating them.*
+
+⇒ **Repo-wide result: `1` genuine credential in `969` files, and it was in the twelve.**
+
+⚠ **RULE 54 still binds the wider claim.** *A shape scan cannot see a secret with no distinctive
+shape, the `SAFE` context filter can over-filter, and files over `25 MB` and all binaries were
+skipped.* ***"One credential found across the repo", never "the repo is clean."***
 
 ▶ **STILL OWED: direction (a) is now run once over the whole band; direction (b) remains open on
 the `~12,686` substantive uncovered segments, which no single pass can close; and the repo-wide
