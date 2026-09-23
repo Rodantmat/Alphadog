@@ -2479,7 +2479,7 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 > the question — but it cannot remove authorship. **I wrote the twelve. A claim I derive "blind" is
 > still derived by the mind that chose what to write down in the first place**, and a finding that
 > mind is constitutionally unable to see will not appear in any window, in any order, from any entry
-> point.* ⚠ **`§F4.6`'s reasoning was right and stays on the record; only its conclusion — that this
+> point.* ⚠ **`§F4.6`'s reasoning was RIGHT and stays on the record; only its conclusion — that this
 > makes closure impossible — is superseded, by the owner's ruling that the closest achievable thing
 > is what is owed.**
 >
