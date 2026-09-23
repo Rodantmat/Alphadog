@@ -13300,6 +13300,23 @@ scripts the three pipelines call. **Read from source; nothing was run.***
 
 ---
 
+## T20-24 · **NEW · ⚠⚠ MEDIUM, STRUCTURAL · THE BRIDGE EVERY SCORED LEG PASSES THROUGH IS REBUILT BY A SCRIPT NO PIPELINE RUNS, FROM A FILE LAST COMMITTED `2026-09-10`**
+*Added **T20 pass 121 (§T20.126), 2026-09-23**, during the cross-sport contamination sweep. **Read
+from source plus five `SELECT`s; nothing was run or changed.***
+
+| | |
+|---|---|
+| **What it is** | **`nba_ref.player_name_map`** — the map from a board player NAME to a `player_id`. **`score_board_legs.py:111–113` `LEFT JOIN`s it for every leg on the board**; `:132–133` counts the misses as `unmapped` and drops them. ✅ *The drop is COUNTED and PRINTED, not silent.* |
+| 🔴 **Its only writer is outside every enumerated surface** | **`check_baseline_board_coverage.py:53–60`**, which is **NOT one of the `40` scripts `P1`/`P2`/`P3` call** *(`grep -c` = `0`)*. It runs only in **`nba-board-maintenance.yml`** and **`nba-overnight-queue.yml`** — **both with `cron = 0`.** |
+| 🔴 **And it REPLACES rather than updates** | `DROP TABLE IF EXISTS nba_ref.player_name_map; CREATE TABLE …` then a bulk insert from **`nba/data/nba_all_players.json`** *(`commonallplayers`, `5,212` records)* — **whose last commit is `2026-09-10`**, by the `P1` season-tables step that `§T20.122` showed has produced nothing since. |
+| ✅ **COMPLETE FOR TODAY — which is why this is MEDIUM** | Joining the current roster to the map across the id-prefix boundary: **`582` of `582` present, `0` missing.** ⇒ ***The bridge covers the entire current roster.*** |
+| ⚠ **The risk is FORWARD-ONLY** | Anyone entering the league after `2026-09-10` — late signings, two-way conversions, international arrivals — **is absent from the map, and nothing scheduled will add them.** Their board legs become `unmapped` and are dropped. *It degrades slowly through the season rather than failing on opening night.* |
+| 🔑 **And it sits on the wrong side of a line this pass discovered** | **This database runs TWO player-id conventions, split exactly along the Worker/script boundary**: `nba_ref.*`, `nba_stats.*`, `nba_team.*`, `nba_calendar.*` use **`nba_101108`**; `nba_score.*` uses **bare `101108`**. **`player_name_map` lives in a Worker schema and carries the Python convention** *(`5,212` rows, `0` prefixed)* — correct for its consumer, and invisible to anyone reading the schema it sits in. |
+| **OWNER DECISION** | ▶ **Give the rebuild a trigger, or make it incremental?** *A `DROP`+rebuild needs a fresh `nba_all_players.json`, so the real fix is upstream: whatever refreshes that file must run, and then this must run after it.* ⚠ **Cheapest check before opening night: re-run the two steps by hand once the 2026-27 rosters are final, and confirm `582`-of-`582` again against the new roster.** |
+| **Full finding** | `NBA_MASTER_SUMMARY.md` — **`§T20.126`**, which also records the clean contamination sweep *(14 tables, `0` foreign rows)* and the `NBA_RECIPE.md` stage-1 correction. **Not fixed (rule 1).** |
+
+---
+
 ## T20-23 · **NEW · ⚠⚠ MEDIUM, STRUCTURAL, LATENT · `nba_market.board_snapshots` HOLDS `7,951` BASEBALL ROWS, AND THE `P3` CERTIFIER COUNTS THEM AS AN NBA BOARD**
 *Added **T20 pass 120 (§T20.125), 2026-09-23**, while testing whether `score_board_legs.py:45`'s
 market-key map covers the real vocabulary. **Read from source plus four `SELECT`s; nothing was run or
