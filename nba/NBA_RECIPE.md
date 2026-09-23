@@ -737,3 +737,119 @@ of four documents.*
 > them · **`§0z-3`** for the owner's build-order lock · **`T20-12`** for the Python DST hardcode ·
 > **`T20-5`** for `grade_board_outcomes.py`'s hardcoded date window, which is the same class of defect
 > one layer down.
+
+---
+
+# 🔴🔴🔴 **STEP 13 — THE OPENING-NIGHT DRY RUN** *(written 2026-09-23, T20 pass 129, §T20.134)*
+
+*Every step of `P2` then `P3`, walked with the configuration **as it stands today**, against the
+slate date `2026-10-20`. Sources read this pass: `nba-p2-overnight-heavy.yml` (19 named steps),
+`nba-p3-afternoon-light.yml` (11 named steps), `certify_pipeline.py`, `score_board_legs.py`,
+`build_availability_delta.py`, `load_baseline_ladder.py` — all at `2026-09-23T01:13Z`.*
+
+> ⚠⚠ **READ THE THIRD COLUMN AS A PREDICTION, NOT A REPORT.** The system has never run against a
+> live slate (`STEP 12` ④b). **Every row is either backed by a measurement — cited — or marked
+> `NOT ESTABLISHED`.** *A consequence without a citation is a guess, and there are none here.*
+
+## 🔴 THE ONE-LINE ANSWER
+
+> **`P2` runs all nineteen steps and then FAILS its own certifier at step 19 of 19.**
+> **`P3` runs eight steps, no-ops silently at step 8, and DIES at step 9 of 11 — before it scores a
+> single leg, before paper trading, before its own certifier.**
+> **Neither failure is caused by the season constant, and neither is cleared by re-running `P2`.**
+
+## 🔑🔑🔑 THE CAUSE, STATED ONCE — *and it is a COMPOSITION of two facts already on file*
+
+| fact | where it was established |
+|---|---|
+| **`P3`'s scorer reads its ladder from `nba_score.baseline_history`** — `score_board_legs.py:139-146`, `WHERE game_date = %s AND season = %s`, and on empty `raise SystemExit(1)` | `T20-4` |
+| **No pipeline writes `nba_score.baseline_history`.** Its only writer `load_baseline_history.py` is invoked by `nba-baseline-history.yml` · `nba-combos-history.yml` · `nba-periods-history.yml` — **all three `workflow_dispatch:`-only, each requiring a human to type a `season`.** `P2`'s step 15 writes `nba_score.baseline_ladder`, a **different table** | `§T20.37`, `T20-6`, `NBA_WORKERS.md` §B |
+
+⇒ 🔴🔴🔴 ***`P3` can only score a date that a human has already backfilled by hand. `baseline_history`
+ends at `2026-04-12`. Therefore `P3` cannot score ANY date of the 2026-27 season — not opening night,
+not any night after it — until one of those three manual workflows is run for `2026-27`.***
+
+### ✅✅ THE POSITIVE CONTROL — *the law, measured over 325 opportunities*
+
+```sql
+WITH s AS (SELECT DISTINCT game_date FROM nba_score.board_scored),
+     h AS (SELECT DISTINCT game_date FROM nba_score.baseline_history)
+-- scored_dates 325 · history_dates 325 · scored_without_history 0 · history_without_scored 0
+```
+*(live, `2026-09-23T01:19:44Z`)*
+
+> **The two date sets are IDENTICAL — `325 = 325`, `0` in each direction.** `board_scored` spans
+> `2024-10-22 → 2026-04-12`; `baseline_history` spans `2024-10-22 → 2026-04-12`. **In two seasons of
+> history the scorer has never once produced a date the hand-backfilled table did not already hold.**
+> 🔑 *This is what makes the prediction a measurement rather than a reading of the source: the
+> dependency is not merely written in the code, it is visible in the output set.*
+
+---
+
+## 📋 `P2` — NINETEEN STEPS ON `2026-10-20`
+
+| # | step | what it reads | 🔴 what it produces on `2026-10-20` | backing |
+|---|---|---|---|---|
+| 1 | Resolve slate date | `TZ=America/Los_Angeles date +%F` | ✅ `asof=2026-10-20` | read `:56-61` this pass |
+| 2 | Daily delta ingestion | NBA Stats; `NBA_DELTA_SEASON` unset ⇒ `detect_current_season()` | `NOT ESTABLISHED` — needs a live scrape | `§T20.34` RULE 22 |
+| 3 | Injury report (day-before) | `INJURY_MODE` default `"daily"` | `NOT ESTABLISHED` | `§T20.34` |
+| 4 | Referees + per-game matchups | NBA Stats | `NOT ESTABLISHED` | — |
+| 5 | Baseline inputs — season files, quarters, schedule | delta artefacts | `NOT ESTABLISHED` | — |
+| 6 | Commit mined data | `nba/data/` | `NOT ESTABLISHED` | — |
+| 7 | Delta gap audit | 🔴 **`GAP_SEASON: '2025-26'`** | 🔴 **audits LAST season and passes**; `2026-27` is never examined | read `:128` this pass; `T20-4` |
+| 8 | Grade last night's board outcomes | 🔴 window hardcoded `2024-10-22 … 2026-04-12` | 🔴 **grades nothing, all season** | `T20-5` |
+| 9 | Grade paper-trading picks | `nba_score.paper_results` | `NOT ESTABLISHED` | — |
+| 10 | Market spreads and totals | Odds API | `NOT ESTABLISHED` | — |
+| 11 | Build baseline ladder (8 pairs) | no `BT_SEASON`; builder takes `_all[-1]` over the game-log files | ⚠ resolves to **`2025-26`** — `nba_player_game_log_2026_27.json` does not exist | `§T20.117` half-one |
+| 12 | Components, combos, periods | same | ⚠ same | `§T20.117` |
+| 13 | Merge per-pair ladders | 8 per-pair JSONs; `meta = meta or d["meta"]` | ⚠ **first file's meta wins** | on file |
+| 14 | Commit the merged ladder | `nba/data/` | `NOT ESTABLISHED` | — |
+| 15 | **Load baseline into Postgres** | merged JSON | ✅ writes **`nba_score.baseline_ladder`** + `baseline_ladder_runs`, `DELETE … WHERE asof = %s` — 🔴 **and NOT `baseline_history`** | read `load_baseline_ladder.py:73-84` this pass |
+| 16 | As-of ladder calibration | `final_hp` | ⚠ deletes unconditionally before refitting | `§T20.53` |
+| 17 | Refit the blowout model | graded outcomes | `NOT ESTABLISHED` | — |
+| 18 | Refit the confidence deduction model | 🔴 **`C3_SEASONS: '2025-26'`** | 🔴 **refits on LAST season** | read `:274` this pass |
+| 19 | 🔴🔴🔴 **Certify `P2`** | `baseline_history has today > 0` · `baseline props for today >= 25` · `no invalid probabilities` · `as-of calibration available` | 🔴🔴🔴 **FAILS. `baseline_history` has no `2026-10-20` row and step 15 did not write one. `CERT_STRICT` defaults to `1` ⇒ `sys.exit(1)` — `P2` GOES RED after doing all its work** | `certify_pipeline.py:77-83`, `:32`, read this pass; `baseline_history` max `2026-04-12`, live `2026-09-23T01:13:58Z` |
+
+---
+
+## 📋 `P3` — ELEVEN STEPS ON `2026-10-20`
+
+| # | step | what it reads | 🔴 what it produces on `2026-10-20` | backing |
+|---|---|---|---|---|
+| 1 | Resolve slate date + assert cutoff | wall clock PT | ⚠ guard refuses only before **`13:00` PT**, not `13:15` | `§T20.31` |
+| 2 | Day-of injury report | NBA injury PDF | `NOT ESTABLISHED` | — |
+| 3 | Other board scrapers | Sleeper · Underdog · Fliff | 🔴 **PrizePicks NOT scraped** — `main.py` is the MLB producer, `league_id=2` a literal | the YAML's own comment `:96-107`; `T20-4` |
+| 4 | Archive boards into Postgres | `boards/`, `ARCHIVE_LABEL "window"` | ⚠ `ARCHIVE_APPS` lists **5** apps, **3** were scraped | `§T20.127` |
+| 5 | Board tiers (goblin/standard/demon) | `board_snapshots` | `NOT ESTABLISHED` | — |
+| 6 | Market snapshot + rung market | Odds API | `NOT ESTABLISHED` | — |
+| 7 | Commit day-of data | `boards/`, `nba/data/` | `NOT ESTABLISHED` | — |
+| 8 | ⚠⚠ **Availability delta** | 🔴 **`DELTA_SEASON` is NOT SET by `P3` ⇒ the script's own default `"2025-26"` binds**; reads `baseline_history WHERE game_date = '2026-10-20' AND season = '2025-26'` | ⚠⚠ **EMPTY ⇒ `print(…); return` — a SILENT step-level no-op, exit 0. The step is green and did nothing** | `build_availability_delta.py:52`, `:146-150`, read this pass |
+| 9 | 🔴🔴🔴 **Score the board** | `BS_ASOF=2026-10-20`, `BS_SEASON` from an input whose **`default: "2025-26"`**; reads `baseline_history WHERE game_date = %s AND season = %s` | 🔴🔴🔴 **EMPTY ⇒ `ABORT: no baseline ladder for 2026-10-20 - P2 must run before P3.` + `SystemExit(1)`. THE PIPELINE DIES HERE, at step 9 of 11, having scored ZERO legs** | `score_board_legs.py:139-146`, `nba-p3:205` `:36-38`, read this pass; the `325 = 325` control above |
+| 10 | Log paper-trading picks | `nba_score.log_paper_picks()` | 🔴 **NEVER REACHED** | step 9 exits non-zero |
+| 11 | Certify `P3` | `final_hp has today` … | 🔴 **NEVER REACHED — the certifier that would have made this legible never runs** | step 9 exits non-zero |
+
+---
+
+## 🔴🔴 WHAT AN OPERATOR ACTUALLY SEES, AND WHY IT MISLEADS
+
+1. **`P2` goes red at the last step** with `baseline_history has today` failing.
+2. **`P3` goes red at step 9** with **`"P2 must run before P3."`**
+3. ⇒ ***Both messages point at `P2`. The operator re-runs `P2`. It goes red again at step 19, for the
+   same reason. `P3` aborts identically.*** 🔑 **There is no sequence of re-runs of the three
+   pipelines that clears this**, because the table both complaints are about **is written by none of
+   them**.
+4. 🔑🔑 **The fix is not on the game-day path at all** — it is either running
+   `nba-baseline-history.yml` for `2026-27` by hand, or `T20-6`'s decision: make `P2` invoke
+   `load_baseline_history.py`, or re-point the assertion and the scorer at `baseline_ladder`, **which
+   is what `P2` does build.** *Those two answers are not equivalent and only the owner can choose.*
+
+> ⚠ **AND THE SEASON CONSTANTS ARE A SEPARATE, REAL DEFECT THAT IS NOT THE BINDING ONE HERE.**
+> `BS_SEASON` and `DELTA_SEASON` resolving to `"2025-26"` on `2026-10-20` is wrong and stays on
+> `T20-4`. **But correcting them to `2026-27` does not move this**: the `game_date` predicate
+> already matches nothing. *Fixing the visible constant would produce an identical abort and cost a
+> second debug cycle.* **This corrects `§T20.117` and `§T20.127`, which both named the constant as
+> the opening-night cause — see `§T20.134` for the full correction.**
+
+> 📌 **POINTERS OUT**: **`STEP 12`** for the clock this sits inside · **`T20-6`** for the certifier
+> decision · **`T20-4`** for the season-constant family · **`T20-5`** for the grading window ·
+> **`T20-13`** for the `>= 25` prop gate, a SECOND independent `P2` certify failure on the same night.
