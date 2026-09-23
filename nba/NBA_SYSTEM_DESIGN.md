@@ -2186,6 +2186,9 @@ earliest 4 PM PT tip).
 **It refuses to run for TODAY before 13:00 PT** — Pacific clubs may not have filed.
 
 **P3 IS BOARD-SCOPED.** It scores every leg the apps actually OFFER — all prop lines, every rung the
+> 📏 **§T23.13 — AND THE SCORER'S OWN DOCSTRING PUTS A NUMBER ON WHAT IT SKIPS** *(`T23` pass `13`, read from `nba/score_board_legs.py` line `5`ff, recorded `2026-09-23`)*: *the internal ladder it does NOT score is* ***"`+/-10` for every player × `30` props — `~140k` rows"***, *and the stated reason is* ***"scaling as the board grows with new goblins/demons and deeper ladders across four apps."***
+> 🔑 *The exclusion was already documented in three places; **what it costs was not.** `~140k` rows per day is the size of the decision, and it is the difference between `board_scored` and `final_hp` being the live surface.*
+
 app exposes, both directions, goblins/standards/demons — **not** the internal ±10 ladder for rungs
 nobody offers.
 
