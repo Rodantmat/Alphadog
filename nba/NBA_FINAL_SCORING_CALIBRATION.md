@@ -1465,7 +1465,72 @@ by roughly 6×.** *Recorded because the corpus quotes the +0.347 figure without 
 > 📌 *A pre-registered prediction that came true, and the corpus carried the outcome without the
 > prediction.*
 >
+> ## §F6.12 — 🔑🔑 **THE RETRACTION'S REASONING, and it is the best methodology in this corpus**
+>
+> *`[LIVE-AUDIT]` 2026-09-23, `nba_config.classification_config`. **The corpus records THAT `A2` was
+> retracted — `"RETRACTED"` appears in 11 of the twelve — and records almost NONE of WHY the
+> measurement was wrong.** Verified: `two_season_test_competitive_only`, "ratio averaging",
+> "absent-vs-absent", "arithmetically impossible", "replication does not protect" each return
+> **`0` of `12`**.*
+>
+> ### The lesson, in one line
+> > 🔑🔑🔑 ***"two-season agreement proves STABILITY, not CORRECTNESS. A biased estimator reproduces
+> > its bias."***
+>
+> **`§F6.5`'s own struck table boasted `0.3–0.7%` agreement across two independent seasons. That
+> agreement was the reassurance — and it was worthless.**
+>
+> ### Error 1 — ratio averaging, caught by an ARITHMETIC IMPOSSIBILITY
+> > ***"`avg(ratio)` across players with very different baselines is dominated by low-minute players
+> > (`5 → 10` min is ratio `2.0` regardless of how few possessions that is). **The DELTA view of the
+> > same rows shows every minutes band NEGATIVE — starter `−0.25`, rotation `−0.47`, bench `−1.02`,
+> > fringe `−0.22` — while `~25` minutes and `~12` possessions were vacated: arithmetically
+> > impossible, so the absorbers are outside the measured sample**."***
+>
+> 🔑 ***The same rows, viewed as DELTAS instead of RATIOS, produced a conservation violation. That
+> is a check any table of ratios can be given and this corpus gives none of them.***
+>
+> ### Error 2 — the contaminated baseline, and why replication hid it
+> > ***"`base_min` / `base_poss` / `base_rate36` are TRAILING 10-GAME MEANS that already include
+> > earlier games in which the same teammate was absent. For a player out for a stretch, the
+> > baseline is already the with-him-out level, so the comparison is **absent-vs-absent instead of
+> > absent-vs-present**. This is the root cause and **it reproduces perfectly in BOTH seasons —
+> > replication does not protect against a systematic baseline error**."***
+>
+> ✅ **The structural fix, also unrecorded**: *"the per-player baseline must be the WITH-the-absent-
+> player-available level: computed only from games in which that specific teammate PLAYED (the
+> with/without split the literature describes), not a blind trailing mean."*
+> ✅ **And a second bug named in the same row**: *"`absorbed_min`/`absorbed_poss` in
+> `absence_panel_teams` use `clip(lower=0)` on deviations, which is **upward-biased by
+> construction** — sum signed deltas instead."*
+>
+> ### ✅✅ What SURVIVED the retraction — and one of it is the blowout confound, PROVEN
+> > **`blowout_confound_PROVEN`**: ***"unconditioned, opponents showed `+5–6%` usage. Conditioned: in
+> > projected blowouts opponent MINUTES stop rising (`1.006`) while RATE jumps (`1.092`) = **garbage-
+> > time signature, not a matchup effect**. In competitive games the pattern inverts (minutes `+3%`,
+> > rate `+4.8%`). **Fitting `B4` unconditioned would have baked garbage-time inflation into every
+> > opponent-side adjustment**."***
+>
+> 🔑 ***That is `§F6.5`'s pre-registered prediction being CONFIRMED, with the numbers, and it is the
+> reason `B4 v1` was later rejected. The corpus has the rejection; it did not have this.***
+>
+> ✅ **Also surviving, quoted**: *the `flip_last_first()` name trap — **"the injury report writes
+> `Last, First`; normalizing without flipping gives `doncicluka` vs `lukadoncic` and NOTHING matches
+> (first run returned `0` rows)"*** · *the fitting rule **"`B4`: fit on COMPETITIVE games only
+> (`|proj_spread| ≤ 6.5`)"*** · *and the standing caveat that **`proj_spread` is the MORNING line,
+> itself affected by the absence — partial control, not a clean one**.*
+>
+> 📌 ***A retraction this good is a finding in its own right. The corpus kept the verdict and threw
+> away the reasoning — which is `RULE 55` applied to a NEGATIVE result, and negatives are exactly
+> where the reasoning is the whole value.***
+>
 > ### 2 · WHY `A2` IS WIRED TO 15 PROPS AND NOT 19 — the per-prop gate
+>
+> > ⚠⚠ **READ THIS SECTION UNDER THE RETRACTION ABOVE.** *The per-prop MAE table below is the
+> > `09-12` measurement. **`09-13`'s reality check found `MAE ON THE MEAN was the wrong metric` —
+> > "the product is `P(stat > line)` and a factor can reshape the distribution without moving the
+> > mean; every factor verdict before the leg-level gate was graded blind."*** **So these gains are
+> > recorded as what was measured, NOT as evidence `A2` works — it does not.**
 >
 > | prop | MAE ignore | MAE with `A2` | gain |
 > |---|---|---|---|
