@@ -94,6 +94,19 @@
 > | `T20` | `484 → 469` = `−15` | **`131`** | 🔴 `0.11` |
 > | `T22` | `870 → 855` = `−15` | **`3`** | 🟢 **`5.0`** |
 >
+> ## 🔴🔴🔴 **④ AND THE DIRECTIVE IS STRUCTURALLY OPPOSED TO THE SWEEP'S OWN COMPLETION RULE** *(T22 pass 5, `§T22.5`, 2026-09-23 — **tested, not reasoned**)*
+> **Seven findings were written in the directive's shape and the instrument re-run: `855 → 855`
+> uncovered, high band `26 → 25`. *The dense pointer pass covered ZERO segments.*** 🔑 **Why:
+> `judge21.py` is a char-`n`-gram similarity matcher — a segment moves out of `uncovered` when the
+> documents **reproduce its wording**. A pointer summarises instead, so it creates no overlap.**
+> ⇒ 🔴🔴🔴 ***The instrument measures how much of the transcript has been COPIED into the documents —
+> which is exactly what this directive forbids.*** **Adopting the format would make the completion
+> rule permanently unsatisfiable**, and the completion rule is what `nba/tools/` exists for (② below).
+> ⚠ **So the four options cost more than they appeared to**: **(d)** now also means *"keep a
+> completion rule that works"*; **(a)/(b)/(c)** all imply **replacing the completion test as well as
+> the file format** — *e.g. "every FINDING is claimed by an entry", which counts findings rather than
+> characters and which no instrument here measures.* ▶ **`§T22.5`.**
+>
 > ⇒ **The prose entries this sweep writes cover about `5` transcript segments per pass.**
 > **`T22` has `855` uncovered and `T23` has `893` — `1,748` together — which is `~350` passes at the
 > measured rate**, and the rate should be expected to FALL *(the first passes into a transcript are
