@@ -2734,6 +2734,64 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 >    `130` commits of careful `[skip ci]` discipline would have revealed this; only reading the run
 >    list did.**
 
+> ### ✅✅✅ **§F7.22/§F7.23 — THE THREE "FLOOR" GAPS WERE ALL DERIVABLE. DERIVED.**
+>
+> *`2026-09-23`. **The owner: "All three are derivable read-only — derive them, don't declare them
+> missing." That was right, and each derivation produced a finding the corpus did not have.***
+>
+> #### 1 · Two entry points → one *(`§F7.22`)*
+>
+> **`NBA_MASTER_SUMMARY.md` had `🧭 START HERE` at line `3` and `🟢 START HERE — FOUR QUESTIONS, ONE
+> SCREEN` at line `515`.** ✅ *The second is demoted to **`📋 THE FOUR QUESTIONS, ANSWERED WITH
+> SOURCES`**, pointing up — its content is the evidence layer and is kept in full.*
+> 🔴 **It also published `2,954,675` characters against `3,274,534` live — `9.8%` low.** ✅ *Replaced by*
+> `` wc -c `` *, not re-stamped.* **Swept the twelve for every other size/count/offset: the only other
+> live-and-wrong figure was the twelve's total, `5,672,870` published against `6,363,357` — in TWO
+> files.** *The rest are dated measurements of transcripts or of an external page, correctly framed.*
+>
+> #### 2 · The ordered DDL *(`§F7.23`)* — **derived, and it changes the rebuild**
+>
+> | measured live | |
+> |---|---|
+> | schemas holding anything | **`8` of `14`** |
+> | objects | **`112`** |
+> | primary keys | **`79`** ⇒ **`27` tables have none** |
+> | 🔴🔴🔴 **foreign keys** | ***`1`, in the entire database*** *(and on an out-of-scope object)* |
+>
+> 🔑🔑 ***There is no foreign-key graph, so there is no dependency order to discover — creation order
+> is LOGICAL, not enforced.*** **That is what makes the rebuild tractable, and it is a fact no
+> document held.** ⇒ *Published as `8` ordered creation groups plus four `SELECT`s that EMIT the exact
+> DDL, so the artefact regenerates instead of going stale (`RULE 59`).*
+>
+> 🔴🔴 **AND: the five largest tables — `~34 GB` — have NO primary key.** *Uniqueness is carried by
+> `UNIQUE INDEX`, so a rebuild that creates the table and forgets the index gets silent duplicates.*
+> 🔑 ***`baseline_history_uidx` is `(game_date, player_id, game_id, prop, period, line)` — **no
+> `ot_rule`** — while `baseline_ladder`'s PK **has** it. That divergence IS `F6-1`, and a rebuilder
+> copying one key onto the other reproduces the bug.***
+>
+> #### 3 · The `34` workflows, classified — **and a claim of mine was false**
+>
+> ✅ **Every file read**: `13` required to rebuild · `11` required to operate · `10` historical,
+> diagnostic or out of scope.
+> 🔴 ***I had written "`P1` is the only NBA workflow with a live cron". There are `4`***:
+> `nba-p1-weekly-static` `0 19 * * 1` · `nba-scrape` `0 9 * * 1` · **`nba-referees` `30 15 * * *`,
+> DAILY** · `nba-pp-payout-map` *(the build chat's)*. **Corrected in both places it appeared.**
+> ⚠ *Two workflows are easy to mis-read: `nba-board-maintenance` sounds optional and shrinks a `6.6 GB`
+> index; `nba-engine-test` sounds like the engine and is a test harness.*
+>
+> #### 4 · Secrets — **names only, and the list was wrong before it was measured**
+>
+> ✅ **Exactly TWO repository secrets**: **`DATABASE_URL`** *(`96` refs)* and **`PROXY_URL`** *(`57`,
+> in `20` of the `34` workflows)*.
+> 🔴 ***My first draft listed `GITHUB_TOKEN`. It is referenced `0` times*** — the runner's built-in
+> token needs no provisioning. **Caught by running the `grep` before publishing (`RULE 57`), which is
+> the third time this session that rule has caught an invented fact.**
+> 🔑 **`PROXY_URL` is the one nobody would guess**: *without it every `stats.nba.com` and DFS-board
+> scrape fails, and **it fails looking like a network error, not a missing secret**.*
+> ⚠ **Recorded alongside: `nba_config.external_credentials.credential_value_encrypted` is a MISNOMER —
+> the column is NOT encrypted.** ***No value, and no fragment of a value, appears anywhere in this
+> work; the block was leak-scanned before publication (`F7-1` is why).***
+
 > ### ✅✅✅ **§F7.21 — THE RECIPE NOW REBUILDS THE SYSTEM, AND ANY CHAT CAN OPERATE IT**
 >
 > *`2026-09-23`. **The owner's test: walk `NBA_RECIPE.md` from `STEP 0` with an empty repo, an empty
