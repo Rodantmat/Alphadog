@@ -2478,6 +2478,14 @@ ladders, its alternate lines and its availability are whatever Underdog serves a
 **`archive.underdog_ladder_history` and `market.underdog_board_current` inherit that scoping**, and
 so does anything fitted on them.
 
+✅✅ **AND THE SCOPING IS CORRECT — which is why this is a fact to record, not an alarm to raise.**
+*The owner states his own location in `T13`: **"i am in california and i have and use fliff."*** ⇒
+***the archived Underdog board is the board he actually plays, and a model fitted on it is fitted on
+the market he actually faces.*** 🔑 **That is the right design. What was missing is that it was a
+DESIGN AT ALL** — *nothing in the twelve said the boards were state-scoped, so nothing said the
+scoping had been chosen rather than defaulted, and **a future reader relocating the scraper or
+changing the proxy would have had no way to know they were changing the market.***
+
 ⚠ **Two live risks, recorded not repaired:**
 - **The coordinate and the proxy IP can disagree.** *`PROXY_URL` is a separate egress; if it exits
   in another state the geo headers say California and the IP says otherwise.* **Which one Underdog
