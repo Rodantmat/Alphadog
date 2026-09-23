@@ -14419,10 +14419,14 @@ built. It is a foregone-opportunity question, and the opportunity is explicitly 
 
 ---
 
-## F6-1 · **NEW · ⚠ HIGH** · the baseline-ladder FILES still carry duplicate keys, `1,414` of them with DIFFERENT probabilities — and the table cannot show it
+## F6-1 · **NEW · 🔴🔴 SEASON-CRITICAL** · ~~the baseline-ladder FILES still carry duplicate keys~~ → **THE PRODUCTION LOADER'S MERGE KEY OMITS `ot_rule` AND SILENTLY DROPS `1,421` ROWS**
 
-*Filed 2026-09-23, `§F6.8`. **`T14` flagged this on 2026-09-11 and it is still present.** Read-only:
-the committed files were parsed, nothing was written.*
+*Filed 2026-09-23, `§F6.8`, as a file-duplication item. 🔴🔴 **RE-DIAGNOSED AND RE-RATED THE SAME
+DAY, `§F6.16` — the duplication reading was WRONG, it was MINE, and the real defect underneath it is
+worse.** Read-only throughout: files parsed, source read, three `SELECT`s run; nothing was written.*
+
+> 🔑 **READ `§F6.16` AT THE END OF THIS ITEM FIRST.** *Everything between here and there is the
+> original `§F6.8` filing, kept verbatim because the correction is only legible beside it.*
 
 ### What `T14` said, and why the obvious check does not work
 
