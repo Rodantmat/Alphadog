@@ -4818,9 +4818,10 @@ and a capital letter.**
 *`§F6.21` (the penalty rule, documented four paragraphs from where I put the section), `§F6.22`
 (the delta rule's "a few HUNDRED legs instead of a few THOUSAND", which I probed as "hundreds of
 legs instead"), the `defect_rule` (present in two documents, probed with the config row's snake_case
-key), and this one.* ⇒ **`RULE 58`, proposed: *a `0`-of-`12` result is a claim about MY QUERY until
-the concept has been probed in at least two spellings — hyphenation, case, and the corpus's own
-English rather than the source's identifier.*** *The corpus writes prose; config rows write keys;
+key), and this one.* ⇒ **`RULE 58`, NUMBERED the same day in `NBA_SWEEP_RUN_LOG.md` on five instances: *a `0`-of-`12`
+result is a claim about YOUR QUERY, not about the corpus, until the concept has been probed in at
+least two spellings — hyphenation, case, and the corpus's own English rather than the source's
+identifier.*** *The corpus writes prose; config rows write keys;
 `grep -F` matches neither across the gap.*
 
 *The list is retained below because it is `VERBATIM` from the live row and `§(a)` paraphrases it,
