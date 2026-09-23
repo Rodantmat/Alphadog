@@ -1273,10 +1273,29 @@ on the document does the wrong thing.***
   is new and it is recorded, not filed: `11` of `40` workflows, `48` occurrences** — `nba-scrape.yml`
   **15**, `nba-backtest.yml` **12**, the documented `nba-daily-delta.yml` **3**.
 
+### ✅✅ AND THE STRONGEST RESULT OF THE SCAN IS A NEGATIVE ONE: **the configuration surface is fully documented**
+
+**Of the `121` identifiers absent from the twelve, broken down by shape:**
+
+| shape | absent | adjudication |
+|---|---|---|
+| `script.py` | **76** | 🔪 **overwhelmingly site-packages traceback frames** — `base.py`, `cursor.py`, `request.py`, `frame.py`, `decoder.py`, `path.py`, `runner.py`, `detail.py` |
+| dotted / other | **39** | 🔪 **prose mis-parsed** — `archive.org` *(a website)*, `config.json` *(a filename)*, `score.hp` / `market.dfs` / `config.shrinkage` *(sentence fragments the regex joined across a full stop)*, plus `stats.norm` / `nbinom` / `poisson` / `binom` — **scipy** |
+| `nba-*.yml` | **6** | ✅ **the real finding above** — `4` confirmed against the directory listing; the other two *(`nba-workers.yml`, `nba-deploy.yml`)* **do not exist in the repo at all**, i.e. transcript-era names since renamed |
+| 🟢 **`ENV_VAR`** | **`0`** | ✅✅ |
+
+🔑🔑 ***ZERO environment variables are missing.*** **Every `SCREAMING_SNAKE` configuration name that
+appears anywhere in the `~12,686` uncovered-substantive segments is already in the twelve** — and
+the configuration surface is precisely what `T20-4`, `T20-5`, `T20-11` and `T20-12` are all about,
+so it is the surface where a gap would cost the most. ***That is a genuine positive, arrived at by
+an instrument that was looking for the opposite, and it is worth as much as a defect would have
+been.***
+
 ⚠ **RULE 54.** *The scan ranks by filename mentions; a workflow discussed only by its `name:`
-("NBA Outcome Grader") is invisible to it, and the segmenter's normalisation mangles some
-identifiers before they are ever counted.* ***"`4` of `40` FILENAMES are absent", never "these are
-the only undocumented workflows."***
+("NBA Outcome Grader") is invisible to it, the segmenter's normalisation mangles some identifiers
+before they are counted, and `ENV_VAR` coverage is tested by NAME only — **a variable named in the
+twelve with the WRONG DEFAULT would score as covered***, which is exactly the defect `T20-4` and
+`T20-5` are. ***"`0` env vars are ABSENT", never "the configuration is correct."***
 
 ### ▶ STILL OWED, unchanged and stated at full strength
 
