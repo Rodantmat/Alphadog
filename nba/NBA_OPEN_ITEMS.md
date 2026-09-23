@@ -630,20 +630,11 @@ table's.***
 > disabled by the same uncommitted-transcripts blocker as the pointer format.*** **Option (b) — the
 > private mirror — is the only one of the four that fixes both without publishing anything.**
 
-> # 🔴🔴🔴 **READ THIS FIRST — THE OPENING-DAY BRIEF IS ~~`910,821`~~ **`950,947`** CHARACTERS BELOW THIS LINE**
-> *(figure re-derived and dated `2026-09-22`, T20 pass 101, §T20.106 — the file has grown since it was
-> written. **And the block you are reading is `16,230` characters, about `4,000` tokens: bounded, and
-> deliberately so.** `§T20.105` found the run log's resume note had grown to `≈491,000` tokens by
-> appending; **this block did not, because it was built as a separate first-read surface rather than
-> as the top of the record** — which is the design that worked and the one now applied to the run log
-> too.)*
-> ### ⏱ **REGULAR SEASON OPENS `2026-10-20` — 28 DAYS. PRESEASON `2026-10-03` — 11 DAYS.**
+> # 📜 **OPENING-DAY BRIEF — AMENDMENT HISTORY AND PER-ITEM EVIDENCE**
 >
-> *Placed at the top **T20 pass 69 (§T20.74), 2026-09-22**. §T20.70 measured that the brief sits at
-> **`87.0%`** of a **`1.05 MB`** file and recorded it as "flagged for a later pass"; this is that pass.*
-> ⚠ **The brief itself is NOT moved — rule 40 forbids destroying the original, and its amendment
-> history is part of the record. This is a POINTER plus the ranked order.** ▶ **Full brief:
-> search this file for `OPENING-DAY BRIEF`.**
+> ⬆ **The brief itself is at the TOP of this file — `ACT ON THIS` § `B`. Go there to act.** *This
+> section is the history under it: how each item was ranked, what was re-rated, and what is still
+> `NOT RECONCILED`. **Read it when you need the reasoning, not when you need the list.***
 >
 > ## ▶ **ALL ~~FOURTEEN~~ ~~FIFTEEN~~ ~~SIXTEEN~~ ~~SEVENTEEN~~ EIGHTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
 >
