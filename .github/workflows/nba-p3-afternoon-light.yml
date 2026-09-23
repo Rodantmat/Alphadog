@@ -167,9 +167,25 @@ jobs:
           SLEEPER_OUT_DIR: "boards"
           UNDERDOG_OUT_DIR: "boards"
         run: |
-          python nba/scrape_sleeper_board.py
-          python nba/scrape_underdog_board.py
-          python nba/scrape_fliff_board.py
+          set -uo pipefail
+          # PARALLEL (2026-09-23). These are three independent network jobs; run sequentially their wall
+          # time is the SUM of the boards, and the board count is growing (four today, five or six soon)
+          # on a pipeline that runs against a clock. Each writes its own output, so there is no shared
+          # state to race. Failures are collected and reported per board rather than silently swallowed:
+          # a board that fails here still fails the step, but the others have already run.
+          pids=""; names=""
+          for s in scrape_sleeper_board scrape_underdog_board scrape_fliff_board; do
+            python nba/$s.py > /tmp/$s.log 2>&1 &
+            pids="$pids $!"; names="$names $s"
+          done
+          rc=0; i=1
+          for p in $pids; do
+            n=$(echo $names | cut -d' ' -f$i)
+            if wait $p; then echo "=== $n: ok"; else echo "=== $n: FAILED"; rc=1; fi
+            tail -n 25 /tmp/$n.log
+            i=$((i+1))
+          done
+          exit $rc
 
       - name: Archive boards into Postgres
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
