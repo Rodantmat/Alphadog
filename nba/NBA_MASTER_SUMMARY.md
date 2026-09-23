@@ -11761,7 +11761,17 @@ POSITION_URL = f"…playerindex?LeagueID=00&Season={SEASON}&Historical=0"
 | `prior_seasons(n)` | the n seasons before a base | |
 | `stats_seasons(n)` | **anchored on `active_stats_season`, NOT `current_season`** | |
 
-**Both honour an `NBA_SEASON` environment override** — so any run can be pinned for replay.
+**Both honour an `NBA_SEASON` environment override** — ~~so any run can be pinned for replay.~~
+🔴🔴 **CORRECTED 2026-09-23, T20 pass 124 (`§T20.129`): NOT ANY RUN.** **`nba_season.py` is imported by
+`19` scripts, and FOUR compute the season themselves and honour nothing** —
+**`grade_board_outcomes.py:70` `season_of(d)`** and **`_season_of(d_)` in all three ladder builders**
+*(`baseline/build_baseline_ladder.py:43` · `build_combos_ladder.py:14` · `build_periods_ladder.py:15`)*.
+**`grep -c NBA_SEASON` = `0` and `grep -c nba_season` = `0` in every one of the four.**
+⇒ ***Setting `NBA_SEASON` moves the nineteen importers and leaves the grader and all three ladder
+builders computing their own answer — a split-brain season in the middle of the one operator lever
+the corpus points at.*** ⚠ **This is `T20-4`'s trap one layer down**, and it is the same shape as
+`§T20.117`'s `BOUNDS[season]` `KeyError`: *the natural remedy does not reach everything it looks like
+it reaches.* ✅ *Their ROLLOVER is correct — see `§T20.129`, where that candidate was killed.*
 
 **`stats_seasons` documents a real bug it fixes (2026-09-08)**: *"building the [3-season list] back
 from `current_season` (2026-27) while the anchor was `active_stats_season` (2025-26)"* — **an
