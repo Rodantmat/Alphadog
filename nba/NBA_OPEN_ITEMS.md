@@ -10,9 +10,9 @@
 > 🔴🔴 **THE ONE THING TO KNOW BEFORE SEARCHING THIS FILE.** *Re-derived `2026-09-23`, `§F2.13`:*
 > | how an item is stored | count | how to find it |
 > |---|---|---|
-> | **has its OWN heading** | ~~`39`~~ → **`54`** | ✅ search the ID — it is a heading |
+> | **has its OWN heading** | ~~`39`~~ → ~~`54`~~ → **`55`** | ✅ search the ID — it is a heading |
 > | 🔴 **exists ONLY as a row inside a table** | ~~`31`~~ → **`18`** | ⚠ **search the ID — it will land mid-table, not on a heading.** *Scanning headings alone will MISS these.* |
-> | **total items** | ~~`70`~~ → **`72`** | *(`F2-1` and `T10-F1` added today)* |
+> | **total items** | ~~`70`~~ → ~~`72`~~ → **`73`** | *(`F2-1`, `T10-F1`, `F5-1` added 2026-09-23; re-derived after each, never incremented)* |
 >
 > ⇒ ***The `18` table-only items are `T15-1`…`T15-7`, `T16-1`…`T16-6`, `T16-8`, `T17-1`,
 > `T17-3`…`T17-5` — ALL of them from `T15`–`T17`, and nothing later.***
