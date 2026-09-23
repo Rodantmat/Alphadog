@@ -9,6 +9,82 @@ transcript. Where a table was altered later, the change is noted with its transc
 
 ---
 
+> # 📑 **INDEX — `NBA_DATABASE.md`**
+> **`117` sections · `171,747` bytes · `2,343` lines · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> rotted within a day)*. **Search for the quoted `§` label.**
+> 🔴 **SECTION ORDER IS NOT NUMERIC.** *The file opens with the trigger map, then the audit blocks in
+> the order `0y-T17-B`, `0y-T17-C`, `0y-T17`, `0x-T16`, `0w`, then `0`, `0u`, `0v`, `0z`, then the
+> schema walk `1` → `11`.* **This index is in logical order.**
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | 🔴🔴 **what actually WRITES to this database, and when** | **`THE TRIGGER MAP`** *(first section)* |
+> | **the schema for a layer** | `nba_ref` **`§1`** · `nba_stats`/`nba_team` **`§1b`** · weekly differential **`§1c`** · `nba_config` **`§2`** · tiering config **`§2b`** · `nba_control` **`§3`** · `nba_score` **`§4`** · `nba_market` **`§5`** · other `nba_stats` **`§6`** |
+> | 🔑 **the two universes** *(the split everything else assumes)* | **`§0`** |
+> | 🔴 **the storage incident and the shrink that fixed it** *(since consumed six times over)* | **`§0v`** |
+> | 🔑 **the owner's storage directive — and why it is CONDITIONAL** | **`§0y-T17`** |
+> | 🔴 **the storage diet plan as recorded** | **`§0y-T17-B`** |
+> | 🔴 **four indexes, three wrong diagnoses, and one `EXPLAIN`** | **`§0y-T17-C`** |
+> | 🔴 **the index audit that found `303 MB` never scanned** | **`§0x-T16`** |
+> | 🔑 **the measured infrastructure limits** *(where the `43 GB` resolves)* | **`§0u`** |
+> | 📐 **every population this sweep's bound claims are drawn over** | **`§0z` — THE CLASS REGISTER** |
+> | ✅ **the certified baseline result** *(carried in the live code header)* | **`§9`** |
+> | **MLB tables referenced as models** *(never written by NBA)* | **`§11`** |
+> | ✅ **a live numeric re-verification of everything `T18` published** | **`§0z2-T18`** |
+>
+> ## 📋 EVERY SECTION, IN LOGICAL ORDER
+>
+> ### 🔴 **A · WHAT WRITES HERE — read first if anything looks stale**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`THE TRIGGER MAP`** | 🔴🔴 **What actually writes to this database, and when** *(`T20` pass 116, `§T20.121`)* — **the wiring the corpus documented tables and scripts for, but never the EDGE between them** | 🔴🔴 |
+>
+> ### 🗄 **B · THE SCHEMA WALK — the data dictionary proper**
+> | § | schema / layer |
+> |---|---|
+> | **`0`** | 🔑 **THE TWO UNIVERSES** — *the split every other section assumes* |
+> | **`1`** | **`nba_ref`** — reference / dictionary layer *(`T1`)* |
+> | **`1b`** | **`nba_stats` / `nba_team`** — the weekly profile layer *(`T2`)* |
+> | **`1c`** | **The WEEKLY DIFFERENTIAL layer** *(`T3`)* |
+> | **`2`** | **`nba_config`** — NBA control configuration *(`T1`)* |
+> | **`2b`** | **The TIERING CONFIG layer** *(`T8`, materialised from the five-dimension design)* |
+> | **`3`** | **`nba_control`** — run bookkeeping *(`T1`)* |
+> | **`4`** | **`nba_score`** — the engine's output layer |
+> | **`5`** | **`nba_market`** — boards, market and grading |
+> | **`6`** | **`nba_stats` / other** |
+> | **`11`** | **MLB tables referenced as models** *(never written by NBA)* |
+>
+> ### 💾 **C · STORAGE, PERFORMANCE AND THE INCIDENTS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0u`** | 🔑 **The infrastructure limits, MEASURED — and the `43 GB` finally resolves** `[LIVE-AUDIT]` | 🔑 |
+> | **`0v`** | 🔴 **The storage incident, the shrink that fixed it — and the shrink has since been consumed six times over** | 🔴 |
+> | **`0y-T17`** | 🔑 **"WE NEED A DIET" — the owner's standing storage directive, and it is CONDITIONAL** | 🔑 |
+> | **`0y-T17-B`** | 🔴 **The storage diet plan as recorded** — `storage_diet_plan_2026_09_17` | 🔴 |
+> | **`0y-T17-C`** | 🔴 **Four indexes, three wrong diagnoses, and one `EXPLAIN`** — origin of COMPASS fact 104 | 🔴 |
+> | **`0x-T16`** | 🔴 **The four performance lessons, and a live index audit finding `303 MB` never scanned** `[LIVE-AUDIT]` | 🔴 |
+> | **`10b`** | **Two operational patterns for the live system** | |
+>
+> ### ✅ **D · VERIFICATION AND THE CLASS REGISTER**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0w`** | 🔑 **The `2026-09-13` session's tables, re-taken live — five reproduce exactly, ONE DOES NOT** `[LIVE-AUDIT]` | 🔑 |
+> | **`0z`** | 📐 **THE CLASS REGISTER** — every population this sweep's bound claims are drawn over. ⚠ **Read this before trusting any "all `N` tables" statement in any of the twelve.** | 📐 |
+> | **`0z-T18`** | **The two measurement tables the prose reported only in part** | |
+> | **`0z2-T18`** | ✅ **Live numeric re-verification of everything `T18` published** | ✅ |
+> | **`9`** | ✅ **THE CERTIFIED BASELINE RESULT** *(`T8`, carried in the live code header)* | ✅ |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`A` tells you whether a table is being written at all; `B` what is
+> in it; `C` what it costs; `D` how far to trust the numbers.*** ⚠ **`§0z` is the single most
+> important section for anyone quoting a count out of this file** — it names the population every
+> bound was drawn over.
+
+---
+
 ## 🔴🔴🔴 **THE TRIGGER MAP — WHAT ACTUALLY WRITES TO THIS DATABASE, AND WHEN** *(T20 pass 116, `§T20.121`, 2026-09-23)*
 
 > ⚠⚠ **READ THIS BEFORE ANY TABLE ENTRY BELOW.** *The dictionary says what each table HOLDS. This says
