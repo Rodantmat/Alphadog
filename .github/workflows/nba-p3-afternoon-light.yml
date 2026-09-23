@@ -202,7 +202,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BS_ASOF: ${{ steps.d.outputs.asof }}
-          BS_SEASON: ${{ github.event.inputs.season || '2025-26' }}
+          BS_SEASON: ${{ github.event.inputs.season }}
         run: python nba/score_board_legs.py
 
       # 4b) PAPER TRADING (2026-09-21): record tonight's standards_3pick_v1 picks with a pre-game timestamp. First log
