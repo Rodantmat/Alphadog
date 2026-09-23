@@ -342,6 +342,13 @@ factor** — and that quote is free.
 **The ordering this implies**: calibration first (done), selection second (the open question),
 **quote confirmation third — free, and not optional.**
 
+> ✅✅ **QUOTE CONFIRMATION WAS PERFORMED `2026-09-21` — recorded 2026-09-23, `§T22.6`.**
+> *`160` stratified `alt×alt` pairs quoted through `POST /game_types`.* **Result: the house edge is a
+> flat `25%` and it is IDENTICAL on both slip types — Power `EV 0.748`, Flex `EV 0.747`.**
+> ⇒ ***The EV/ROI claims this section suspended can now rest on quoted factors rather than inferred
+> ones.*** ⚠ **Scope of that confirmation**: it is measured **on `alt×alt` pairs**; whether the flat
+> `25%` holds on standard-containing slips is **`NOT RECORDED`.** ▶ **`§0.12-T22`.**
+
 ## 0.3 **THE HOUSE-EDGE SANITY TEST** — a named guard against believing a bad number
 
 ### 0.3a **MLB's COSTLIEST SINGLE ERROR — mismatched cells**
