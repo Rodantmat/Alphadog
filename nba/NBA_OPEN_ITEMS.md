@@ -14622,6 +14622,19 @@ written (rule 1).**
 > 🔑 ***One file guards the lookup and its sibling does not; that asymmetry is the evidence it is an
 > oversight, and it supplies the two-line fix.***
 >
+> 🔴🔴🔴 **CORRECTED 2026-09-23 (T20 pass 131, §T20.136) — THE HEADING BELOW IS FALSE, AND IT IS THE
+> MIRROR OF `§T20.117`, WHICH `§T20.134` CORRECTED IN `NBA_MASTER_SUMMARY.md` ONLY.**
+> ***The break DOES happen on opening night.*** *The reasoning below turns entirely on the SEASON
+> predicate and never looks at the `game_date` predicate beside it.* **`score_board_legs.py:139-146`
+> matches on BOTH**, `nba_score.baseline_history` ends at **`2026-04-12`**, and **no pipeline step
+> writes it** *(`T20-6`, `§T20.134`)* ⇒ **`game_date = '2026-10-20'` matches nothing on night one
+> whatever the literals say.** 🔑 **And this item's OWN entry two paragraphs down already says so** —
+> *"On `2026-10-20`, a P3 dispatched without a `season` input queries `baseline_history WHERE
+> game_date = '2026-10-20' AND season = '2025-26'` and gets nothing"* — ***so `T20-4` contradicts
+> itself internally, holding the right account and the wrong one in the same item.***
+> ⚠ **Recorded as a sibling-sweep miss**: `§T20.134`'s clause (vii) was scored HIT on a repair that
+> covered the summary and not this mirror. *See `§T20.136` §4.*
+>
 > 🔴🔴 **(2) THE BREAK DOES NOT HAPPEN ON OPENING NIGHT — AND NOTHING SAID SO.** *Both halves were
 > already filed; their composition was not.* **While the ladder's `_all[-1]` fallback and `BS_SEASON`
 > BOTH say `2025-26`, they AGREE and `P3` runs.** 🔴 **The moment the first
