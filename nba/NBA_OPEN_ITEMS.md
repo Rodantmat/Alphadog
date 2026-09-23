@@ -13300,6 +13300,25 @@ scripts the three pipelines call. **Read from source; nothing was run.***
 
 ---
 
+## T20-23 · **NEW · ⚠⚠ MEDIUM, STRUCTURAL, LATENT · `nba_market.board_snapshots` HOLDS `7,951` BASEBALL ROWS, AND THE `P3` CERTIFIER COUNTS THEM AS AN NBA BOARD**
+*Added **T20 pass 120 (§T20.125), 2026-09-23**, while testing whether `score_board_legs.py:45`'s
+market-key map covers the real vocabulary. **Read from source plus four `SELECT`s; nothing was run or
+changed.***
+
+| | |
+|---|---|
+| **The contamination, measured** | `game_date 2026-09-12`: **`underdog` `5,281` rows / `46` keys** and **`sleeper` `1,276` / `14`** · `2026-09-13`: **`fliff` `1,394` / `16`** ⇒ **`7,951` rows, `76` distinct `market_key` values, and NOT ONE is an NBA prop**: `player_batter_hits` · `player_pitcher_strikeouts` · `player_hits_+_runs_+_rbis` · `player_1st_inn._pitch_count` · `player_batter_stolen_bases` … |
+| **The mechanism** | `archive_live_boards.py:206` — **`sport = os.environ.get("ARCHIVE_SPORT", "nba")`**, and `load(app, sport)` reads `boards/<app>_<sport>_current.json`. **The default is `nba`; these rows came from runs with `ARCHIVE_SPORT=mlb`** during the September burst the commit history shows at `§T20.122`. |
+| 🔴 **And the table cannot tell** | `NBA_OPEN_ITEMS.md:10512` records the decision: *"**Decided: fully separate `nba_market`.** The MLB tables' `sport`/`league` columns remain unused."* ⇒ ***There is no sport column to filter on. These rows are identifiable only by recognising their market keys.*** |
+| ✅ **Inert at SCORING** | `score_board_legs.py:121–126` maps `market_key → prop`, **collects `unmapped_keys` for reporting**, then `board = board[board["prop"] != ""]`. **The MLB rows are dropped and not swallowed.** |
+| 🔴🔴 **NOT inert at CERTIFICATION — this is the item** | `certify_pipeline.py:108`: **`SELECT count(*) FROM nba_market.board_snapshots WHERE game_date = %s`** — **no bookmaker filter, no market-key filter, and no sport filter is possible.** ⇒ ***On `2026-09-12` that check returned `6,557` and PASSED — on baseball, while the NBA board was empty. On `2026-09-13`, `1,394`, likewise.*** |
+| **Why it matters more than its severity** | 🔑 **A sharper instance of a class already on file**: `§T20.103` found *"`board archived today` is satisfied by PrizePicks alone"* — one book. **This is the same check satisfied by a different SPORT, and two real dates in the archive prove it rather than predicting it.** |
+| **Why MEDIUM and not on the brief** | ⚠ **LATENT** — it needs another `ARCHIVE_SPORT=mlb` run to recur, and it corrupts an **audit signal**, not a score. **The brief stays at SIXTEEN.** |
+| **OWNER DECISION** | ▶ **Add a sport discriminator, or filter the check?** *Cheapest: give the check a `market_key LIKE` guard against the eleven NBA base keys, or add the `sport` column the separation decision deliberately left out.* ⚠ **And decide whether the `7,951` existing rows should be deleted** — *they are inert at scoring but they will keep satisfying the certifier for their two dates.* |
+| **Full finding** | `NBA_MASTER_SUMMARY.md` — **`§T20.125`**, which also records the map's clean result: **`11` of `11` NBA base keys MAPPED, `0` unmapped**, and `10` of `21` map entries never observed. **Not fixed (rule 1).** |
+
+---
+
 ## T20-22 · **NEW · 🔴 HIGH, STRUCTURAL · THE BOARD LOADER IS COMPLETE AND HAS NO TRIGGER — THREE SCRAPERS HAVE COMMITTED FRESH NBA BOARDS EVERY TWO HOURS FOR TEN DAYS AND THE DATABASE HAS NOT SEEN ONE**
 *Added **T20 pass 115 (§T20.120), 2026-09-23**, completing `§T20.119`'s cron correction. **Chain
 traced from source, verdict taken from live `SELECT`s; nothing was run or changed.***
