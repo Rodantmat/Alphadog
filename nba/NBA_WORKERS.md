@@ -6,7 +6,8 @@ writes. Grouped by role.
 ---
 
 > # 📑 **INDEX — `NBA_WORKERS.md`**
-> **`109` sections · `159,199` bytes · `2,223` lines · built `2026-09-23`.**
+> **~~`109`~~ → `122` sections · ~~`159,199`~~ → `167,171` bytes · ~~`2,223`~~ → `2,327` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
 > rotted within a day)*. **Search for the quoted `§` label.**
