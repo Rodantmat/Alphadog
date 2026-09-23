@@ -13273,6 +13273,25 @@ scripts the three pipelines call. **Read from source; nothing was run.***
 
 ---
 
+## T20-22 · **NEW · 🔴 HIGH, STRUCTURAL · THE BOARD LOADER IS COMPLETE AND HAS NO TRIGGER — THREE SCRAPERS HAVE COMMITTED FRESH NBA BOARDS EVERY TWO HOURS FOR TEN DAYS AND THE DATABASE HAS NOT SEEN ONE**
+*Added **T20 pass 115 (§T20.120), 2026-09-23**, completing `§T20.119`'s cron correction. **Chain
+traced from source, verdict taken from live `SELECT`s; nothing was run or changed.***
+
+| | |
+|---|---|
+| **The chain** | `sleeper-board.yml` `15 */2 * * *` · `underdog-board.yml` `25 */2` · `fliff-board.yml` `35 */2`, each with `nba` in its DEFAULT `sports` input ⇒ `scrape_{sleeper,underdog,fliff}_board.py` ⇒ `boards/<app>_nba_current.json`. 🔑 **None of the three scripts contains `psycopg`, `DATABASE_URL` or `INSERT INTO` — they are FILE producers.** |
+| **The second hop exists and is complete** | **`nba/archive_live_boards.py`** — *"reads whichever board files exist (prizepicks, underdog, sleeper, fliff, betr), normalizes each app's shape to the `board_snapshots` columns, and writes them with a `snapshot_label`."* **All five apps handled.** |
+| 🔴🔴🔴 **And it has NO trigger** | It is run by **exactly three workflows — `nba-board-archive.yml`, `nba-boards-market.yml`, `nba-p3-afternoon-light.yml` — and ALL THREE carry ZERO `cron` lines.** |
+| 🔴 **The gap, measured live** *(2026-09-23)* | **`sleeper`**: file committed **`2026-09-22T21:18:06Z`**, last DB row **`2026-09-12`**, `1,276` rows · **`fliff`**: file **`2026-09-22T21:38:26Z`**, DB **`2026-09-13`**, `1,394` rows · **`underdog`**: file **`2026-09-21T19:52:37Z`**, DB **`2026-09-12`**, `939,719` rows. ⇒ ***All three `FILE ONLY`. Ten to eleven days.*** *(The ten book sources in the same table all stop at `2026-04-12`, last fetched `2026-09-10`.)* |
+| 🔴 **And each pull destroys the last** | `archive_live_boards.py:5–7`, its own words: *"**every board scraper writes `boards/<app>_<sport>_current.json` and OVERWRITES it on the next**."* **Arithmetic, stated as such: `3` apps × `12` pulls/day × `~10` days ≈ `360` NBA board pulls scraped, committed and overwritten; three files survive.** ⚠ *Git keeps the superseded blobs; **nothing reads boards out of git history.*** |
+| 🔑🔑 **What it completes** | `§T20.119` corrected *"exactly one NBA workflow fires on a game day"* to **four**. ⇒ ***The four are three scrapers and a referee capture: every scheduled job in this system is an INPUT, and not one is a LOADER.*** |
+| **Why HIGH and NOT on the season-critical brief** | ⚠ **`P3` runs `archive_live_boards.py` as one of its own steps**, so the moment `P3` is triggered it archives the board it is about to score — **the board is not missing at scoring time.** **What is lost is everything BETWEEN runs**: with `P3` daily, eleven of twelve pulls are discarded; with `P3` untriggered — today — all twelve are. 🔑 *The `snapshot_label` design makes the `window` pull the decision moment that "everything keys off", so the discarded pulls are supplementary rather than load-bearing.* **The brief stays at SIXTEEN.** |
+| **Not the pass-36 class** *(kill checked, not fired)* | That audit covered scrapers whose **Postgres-writer Worker was never built** and concluded *"the load gap is NOT systemic."* 🔑 **This is the opposite shape — the loader exists, is complete, and has no trigger** — a verdict that audit had no category for. |
+| **OWNER DECISION** | ▶ **Does board history between `P3` runs matter?** *If yes, `nba-board-archive.yml` needs a cron offset a few minutes after the scrapers (`:20`/`:30`/`:40`), and it is a one-line change. If no, the scrapers' 2-hourly cadence is eleven-twelfths waste and could drop to the decision window.* ⚠ **Either answer is cheap; the current state is the only one that is both expensive and useless.** |
+| **Full finding** | `NBA_MASTER_SUMMARY.md` — **`§T20.120`**. **Not fixed (rule 1).** |
+
+---
+
 ## T20-21 · **NEW · ⚠⚠ MEDIUM, STRUCTURAL, LATENT · THE LADDER HAS TWO WRITERS AND THEY DISAGREE IN SIX WAYS — ONE OF THEM NEVER REMOVES STALE RUNGS AND ONE OF THEM HAS NO CORRUPT-ARTEFACT GUARD**
 *Added **T20 pass 111 (§T20.116), 2026-09-22**, by enumerating the Worker layer. **Read from source
 on both sides plus three `SELECT`s; nothing was run or changed.***
