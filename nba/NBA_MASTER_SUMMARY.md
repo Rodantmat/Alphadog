@@ -193,8 +193,24 @@
 > ## 📌 **HOW TO USE THIS REGISTER**
 > ***Group `1` is what this sweep maintains. Group `2` is current and owned elsewhere. Group `3` you
 > must still read — it holds `22` lessons the twelve do not. Group `4` tells you what was believed on
-> a date. Group `5` is another session's.*** 🔑 **The one test that needs no register: a mandated
-> document opens with a `📑 INDEX` block in its first `1%`. A sibling does not.**
+> a date. Group `5` is another session's.***
+>
+> 🔑 **THE ONE TEST THAT NEEDS NO REGISTER — and it was RUN on all `32` files before being written
+> here** *(`RULE 57`: a derivation is not recorded until it has been run on every row it claims)*:
+> ***a mandated document opens with a `📑 INDEX` block inside its first `1%`.***
+>
+> | | result |
+> |---|---|
+> | **the twelve, index present** | ✅ **`12` of `12`** |
+> | **siblings, index absent** | ✅ **`19` of `20`** |
+> | 🔴 **false positive** | **`1` — `NBA_SWEEP_RUN_LOG.md`** |
+>
+> ⚠ **The test is `31` of `32`, not perfect, and the exception is named rather than smoothed away.**
+> *`NBA_SWEEP_RUN_LOG.md` carries a `📑`-marked block near its top because it is **written by this
+> sweep to the same standard as the twelve** — it is the one sibling that is a first-class output of
+> this work rather than an input to it. **So the rule in practice is: index present ⇒ either one of
+> the twelve or the run log; index absent ⇒ certainly not one of the twelve.*** 🔑 ***The false
+> positive is not noise. It is the register telling you which sibling was built by the same hands.***
 
 ---
 
