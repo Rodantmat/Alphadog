@@ -1990,7 +1990,31 @@ alternative medians do not rescue it: at `0.11` the other two would read `0.2` a
 I published that table once with `fantasy_score` shown as reproducing** — `0.21 → 0.3` written down
 and not checked against `0.08 → 0.1` in the row above it. **The arithmetic was inside the claim.**
 
-📜 **`RULE 57` NUMBERED from this** — *a derivation is not recorded until it has been RUN on every
+## 🔬 §F6.23 — **THE NUMERIC SWEEP OF ALL `66` LIVE CONFIG ROWS**
+
+| | |
+|---|---|
+| population | **`304` distinct numbers** *(`4+` digits or `3`–`6` decimals)* across all `66` rows of `nba_config.classification_config` |
+| 🔴 narrow variants | **`57` absent from all twelve** |
+| ✅ wide variants *(percent forms, roundings)* | **`16` absent** — *`72%` of the narrow result was the instrument, not the corpus; see the `RULE 58` amendment above* |
+
+🔑 **The best of the `16` is a four-cell table — the blowout rebuild's PROOF:** ***"starter projected
+minutes by market spread band: pickem `31.548` / `4-8` `31.356` / `8-11` `31.321` / `11+` `30.639` —
+a monotone `0.91`-minute decline."*** *Everything else in that row is documented — `19,344,143` rows,
+the sign trap, both deadlocks, the `100:1` asymmetry. **The numbers showing the new input actually
+moved the output are not.** `RULE 55` at its purest.*
+
+🔴 **And two of the `16` are SAMPLE SIZES** — `n_per_rung = 20,993` under the ladder's headline
+out-of-sample result, and `n = 11,187` under the `fgm` certification's worst cell. ⇒ **`RULE 56`'s
+tenth and eleventh instances, found by a different instrument than the one that earned it.**
+
+⚠⚠ **AND THE SWEEP DELIBERATELY LEFT SIX OF THE `57` UNWRITTEN.** *`1.031 · 1.042 · 1.047 · 1.065 ·
+1.068 · 1.076` come from `absence_panel_measured_2026_09_12` — **the row `§F6.12` established is
+RETRACTED as contaminated.*** 🔑 ***An absence probe finds retracted numbers exactly as readily as
+live ones. A sweep that recovers everything it finds absent will faithfully restore the corpus's
+worst material — the row's own `notes` field is the only thing standing between the two.***
+
+📜 **`RULE 57` NUMBERED from `§F6.21`** — *a derivation is not recorded until it has been RUN on every
 row it claims* — **and `RULE 53` DISCHARGED for the count change**: corrected string
 ``55 numbered`` → ``56 numbered``, whole-file window ⇒ **RAW `1` site in the twelve, CLASSIFIED a
 false positive** *(`NBA_MASTER_SUMMARY.md:566`, "56 numbered **sub-findings**", unrelated)*;
