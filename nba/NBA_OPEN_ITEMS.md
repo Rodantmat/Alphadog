@@ -77,6 +77,7 @@
 > | **`F5-1`** | ⚠ **`B4 v3` and `M1` have fitting scripts in the repo** — ✅ *live audit confirms they were **never gated***; and **`7` of `21` workers + `27` scripts are named in `0` of the twelve** | heading |
 > | 🔴🔴 **`F6-1`** | ~~the baseline-ladder FILES carry duplicate rows~~ → **RE-DIAGNOSED `§F6.16`: the production loader's merge key OMITS `ot_rule`, a PK column, and silently drops `1,421` rows** — ✅ *confirmed live: `52,018` in the artifact, `50,597` in the table* | heading |
 > | **`F6-2`** | **OWNER DECISION** — *the one absence slice the baseline structurally cannot see (a scratch after the `09:00 ET` freeze) **has no control to test it against**; `cutoff_ts()` is same-day by construction* | heading |
+> | **`F6-3`** | ⚠ *the reliability audit's penalties are **"derived, never declared"** — and **`fantasy_score`'s `0.3` does not derive** (`0.41 − 0.20 = 0.21`), on the system's highest-volume prop* | heading |
 > | **`T23-1`** | 🔴🔴 **The model does not beat PrizePicks** — with the standards-only exception | heading |
 > | **`T20-6`** | 🔴🔴 **`7` of `12` certifier checks assert tables NO PIPELINE WRITES** — *"the largest structural finding of the sweep"* | heading |
 > | **`T20-4`** | 🔴🔴 **`P3` is hardcoded to LAST season, in two scripts** | heading |
