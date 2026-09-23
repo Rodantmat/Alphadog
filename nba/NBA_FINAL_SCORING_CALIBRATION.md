@@ -1235,7 +1235,54 @@ by roughly 6×.** *Recorded because the corpus quotes the +0.347 figure without 
 | **M1** defender-quality LEVEL | ⚠⚠ **NOT TESTED IN T15** | — | appears only as a **pending build item** (*"M1 wiring"*, *"M1 defender-quality integration into the harness"*). **Verified 2026-09-22**: `0 of 7`, `5,116`, `12,738`, `63.8%`, `0 of 5 props` — **zero hits in the transcript.** *COMPASS fact 84's M1 rejection and fact 86's v3 closure therefore belong to a LATER transcript, which `NBA_GLOSSARY.md` already attributes to **T16**.* |
 | **A5** projected lineups | ❌ **REJECTED — REDUNDANT** | held-out, per prop | **negative on every prop**: points **−0.032**, rebounds −0.008, assists −0.008, pra **−0.035** |
 
-### 🔴 §F2.2 — **THE TABLE ABOVE IS THE TESTED SET. THE COMMISSIONED SET IS 26, AND SIX CODES APPEAR NOWHERE IN THE TWELVE.**
+### 🔴 §F2.2 — ~~**THE COMMISSIONED SET IS 26, AND SIX CODES APPEAR NOWHERE IN THE TWELVE**~~ → **CORRECTED: THE COMMISSIONED SET IS `33`, AND `8` CODES APPEAR NOWHERE**
+
+> 🔴🔴 **CORRECTED IN PLACE, 2026-09-23, `§F2.3` — AND THE FALSE LINE IS KEPT ABOVE, STRUCK, PER THE
+> STANDING RULE.** ***This section's own enumeration was incomplete — the third incomplete
+> enumeration this sweep has published in two days, and the second one that was MINE.***
+>
+> **What went wrong:** I read the families `A`–`E` off the lock and stopped. **The authority also
+> defines `K1`, `M1`–`M4`, `N1` and `N2`** — and `M1` and `N1` are *in the verdict table directly
+> above this block*, which is how the miss should have been visible without any probe at all.
+> **Re-derived from the authority by its own definition pattern** *(`**<CODE> `<slug>`**`, the form
+> the lock uses to DEFINE a factor rather than to mention one)*: **`33` factors.**
+>
+> | | was | **is** |
+> |---|---|---|
+> | commissioned set | ~~26~~ | **33** |
+> | families | ~~`A`–`E`~~ | `A1`–`A9` · `B1`–`B5` · `C1`–`C4` · `D1`–`D4` · `E1`–`E4` · **`K1`** · **`M1`–`M4`** · **`N1`–`N2`** |
+> | codes absent from the twelve | ~~6~~ | **8** — `M2` and `M3` added |
+> | absent by code **and** slug | ~~3~~ | **5** — **`M2`**, **`M3`** added to `A7`/`E2`/`E3` |
+>
+> 🔴🔴 **AND A SECOND DEFECT, WORSE THAN THE FIRST: I RE-MEASURED AGAINST A TREE I HAD ALREADY
+> WRITTEN TO.** The re-count returned `A7`=4, `E2`=3, `E3`=3 — *"not absent after all"* — and every
+> one of those hits was **this block and `T10-F1`, which I had just committed.** ***The measurement
+> was reading my own correction and reporting it as the corpus's coverage.*** **Re-run against the
+> pre-write tree (commit `670854ff`, before both writes) — which is the count that stands below.**
+> 📌 ***This is §T20.136's failure exactly, in a new vocabulary: a window wide enough to include my
+> own edits. The rule that catches it is RULE 53, and the reason it was caught is that RULE 53 makes
+> the grep MANDATORY rather than optional.***
+>
+> **RULE 53 DISCHARGE** — corrected string re-grepped across **all twelve**, whole-file window (no
+> truncation): **RAW `2` sites** carrying the `26` claim — `NBA_FINAL_SCORING_CALIBRATION.md:1249`
+> *(this block)* and `NBA_OPEN_ITEMS.md:14026` *(`T10-F1`)*. **CLASSIFICATION: both are this pass's
+> own writes from today; `2` of `2` corrected; `0` outstanding.** *(`**26**` returns 12 raw hits
+> across the twelve — the other 10 are unrelated quantities, which is why the classification step
+> exists and the raw count alone is not the answer.)*
+>
+> **THE CORRECTED FINDING, at four strengths** *(pre-write tree, whole-file window)*:
+>
+> | strength | codes | evidence |
+> |---|---|---|
+> | 🔴 **ABSENT** — code, slug and every paraphrase tried | **`A7`** `trade_new_arrival_window` · **`E2`** `team_flux_penalty` · **`E3`** `sample_thinness` | code `0`, slug `0`; *"first-5-games"* / *"after a trade"* / *"transaction wire"* / *"team flux"* / *"rotation players out"* / *"sample thinness"* / *"no carryover"* all `0` |
+> | 🟠 **NEAR-ABSENT** — a fragment survives | **`M2`** `defensive_scheme_proxy` · **`M3`** `hustle_and_deflection_profile` | code `0`, slug `0`; *"scheme proxy"* in `OPEN_ITEMS` **only**; *"hustle"* in 7 files but *"deflection"* in **`0`** |
+> | 🟡 **CODE-ONLY GAP** — the slug is on file | **`D3`** `altitude_venue` *(slug **12×**, `MASTER_SUMMARY`)* · **`D4`** `national_tv_marquee` *(slug **10×**, `MASTER_SUMMARY`)* | only the CODE is missing — a cross-reference, nothing more |
+> | 🟡 **CONCEPT-ONLY** | **`C2`** `line_movement` | code `0`, slug `0`, but *"line movement"* spaced: **19** hits |
+>
+> ⇒ **`T10-F1` updated to match.** **The table below is the ORIGINAL, uncorrected text of this
+> section, kept because the sweep does not delete its own errors.**
+
+**THE TABLE ABOVE IS THE TESTED SET. THE COMMISSIONED SET IS ~~26~~ `33`, AND ~~SIX~~ `8` CODES APPEAR NOWHERE IN THE TWELVE.**
 
 *Added 2026-09-23 by the full transcript re-sweep (§F2). **Transfer, not discovery** — every fact
 below already exists in `nba/NBA_ENRICHMENT_FACTOR_LOCK.md`, which is **not one of the twelve**.
