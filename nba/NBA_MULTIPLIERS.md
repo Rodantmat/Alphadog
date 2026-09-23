@@ -4,8 +4,88 @@
 proven unavailable and how, the formulas and conversion logic, the tests run, slip examples, and what
 the calibration of a multiplier would require.
 
-**The headline**: **PrizePicks per-leg multipliers are NOT on any public surface.** This was
-established exhaustively, not assumed. Underdog, Sleeper, Fliff and Betr do expose them.
+~~**The headline**: **PrizePicks per-leg multipliers are NOT on any public surface.** This was
+established exhaustively, not assumed. Underdog, Sleeper, Fliff and Betr do expose them.~~
+
+🟢🟢🟢 **THE HEADLINE, CORRECTED `2026-09-23` (`§T22.1`) — BOTH SENTENCES ABOVE ARE NOW FALSE.**
+**PrizePicks per-leg multipliers ARE obtainable: `POST https://api.prizepicks.com/game_types`**
+returns a payout quote for a specific leg combination *(found `2026-09-20`; `§0.9-T22`)*. **The
+pricing law is known** — multiplicative, partner-independent, compressed above `9.1×` *(`§0.10-T22`)*
+— **and the house edge is a flat `25%` on both slip types** *(`§0.12-T22`)*.
+🔴 **And the second sentence is wrong too, measured**: of *"Underdog, Sleeper, Fliff and Betr"*, only
+**Sleeper** is complete *(`100%`)*; **Underdog is `44.03%`**; 🔴 **Fliff and Betr are at `0.00%`**
+*(`0` of `1,394` and `0` of `780,765`)* — while **`pick6`, named here not at all, is `94.89%`**
+*(live, `2026-09-23T02:22:06Z`; `§0.9-T22` §4)*.
+
+---
+
+> # 📑 **INDEX — `NBA_MULTIPLIERS.md`**
+> **`122` sections · `141,719` bytes · `2,045` lines · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS.** *`§T20.22` measured `6` of `16` line-number
+> pointers in these files rotting within a day of being written; heading text survives every append.*
+> **Search the file for the quoted `§` label.**
+> ⚠⚠ **THE FILE'S PHYSICAL ORDER IS NOT ITS LOGICAL ORDER** — *`§0.2d` sits before `§0.2c`, and every
+> `T22`/`T23` section is appended at the end.* **This index is in LOGICAL order. The file is not.**
+>
+> ## ▶ FIND IT FAST — *by the question you arrived with*
+>
+> | if you need… | go to |
+> |---|---|
+> | 🟢 **the live payout endpoint**, its request body and response shape | **`§0.9-T22` §2** |
+> | 🔑 **the pricing law** — multiplicative · partner-independent · the `9.1×` longshot cap | **`§0.10-T22` §§1–2** |
+> | ✅ **proof the law holds** — out-of-sample on pairs never quoted together | **`§0.10-T22` §3** |
+> | 🔑 **the house edge** *(flat `25%`, identical Power and Flex)* | **`§0.12-T22` §2** |
+> | 🔑 **the per-leg price model** and its fitted constants `c` | **`§0.13-T22` §1** · ⚠ two constant sets, see `§0.15-T23` §4 |
+> | 🔑 **why the price key is built from raw facts, not model parameters** | **`§0.13-T22` §2** |
+> | ✅ **which apps actually expose a multiplier** *(measured, not assumed)* | **`§0.9-T22` §4** |
+> | 🔑 **WNBA constants, and which families transfer to NBA** | **`§0.15-T23`** |
+> | 🟢 **constants for `fantasy_score` / `fg_attempted` / `3pt_attempted`** *(NBA prices none of them)* | **`§0.15-T23` §1** |
+> | ⚠ **the fantasy-score `+2` vs `+3` scale question** | **`§9. OPEN ITEMS` item 5** |
+> | 🔴 **why three earlier scraping probes failed** *(TLS/UA mismatch, DataDome)* | **`§0.9-T22` §3** · **`§0.11-T22` ①** |
+> | ⚠ **the same-game discount** — direction vs magnitude | **`§0.2f`** |
+> | 🔑 **the house-edge sanity test** *(the named guard against a bad number)* | **`§0.3`** · **`§0.3a`** |
+> | ⚠ **Flex vs Power — the probability structure** | **`§0.2d`** · **`§0.2d.1`** · **`§0.2d.2`** |
+> | 🔴 **what is still open** | **`§9. OPEN ITEMS`** |
+>
+> ## 📋 EVERY SECTION, IN LOGICAL ORDER
+>
+> ### 🟢 **A · CURRENT STATE — the `T22`/`T23` layer. Read these first; they supersede parts of B.**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.9-T22`** | **The hunt was solved.** The exit condition `§0.7-T18` wrote down was met exactly *(§1)* · **`POST /game_types`**, its body and response, `payouts_srp` *(§2)* · why three probes missed it — **it is a `POST`, behind DataDome + Cloudflare** *(§3)* · 🔴 **the `multiplier`-column census, measured live — `§0.2g`'s app list is wrong in both directions** *(§4)* · **the owner's four design decisions in his own words** *(§5)* · **the security decision: refuse to server-side the owner's cookies** *(§6)* | 🟢 |
+> | **`0.10-T22`** | **The pricing law.** Multiplicative and partner-independent *(§1)* · **the compression `payout = 9.1 × (product/9.1)^0.857`** *(§2)* · ✅ **confirmed out of sample on three pairs never quoted together** *(§3)* · 🔴 **a naive model overstates demon stacks `~13%` at `20×`** *(§4)* · the goblin floor as it stood, with its supersession *(§5)* · the probability model was a contest, not an assumption *(§6)* | 🔑 |
+> | **`0.11-T22`** | **Seven more, in pointer form.** ① the TLS/UA mismatch that killed the probes · ② the compression's error quantified · ③ 🔴 **a silent off-by-one that collapsed the experiment's conditions** · ④ leg probabilities must be de-compressed first · ⑤ 🔴 **three of this corpus's own claims audited — two did not survive** · ⑥ the Flex grid's coarseness is the measurement floor · ⑦ the other chat asked for its findings to be folded in here | 📋 |
+> | **`0.12-T22`** | **`is_adjusted`** — the first DIRECT server-side evidence of a mechanic this file only ever inferred, plus the 2-pick base rates *(§1)* · 🔑 **the house edge: Power `EV 0.748`, Flex `0.747` — a flat `25%`, identical** *(§2)* · ✅ **the consolation tier is driven by RISK; `p(exactly one)` excluded at `15.6%`** *(§3)* | 🔑 |
+> | **`0.13-T22`** | **The per-leg model and the key.** `c × √(standard line)` with its constants *(§1)* · 🔑 **the key-granularity principle — raw facts, not model parameters** *(§2)* · ✅ **`2,199,354` legs → `8,573` price ids, `256×`, cross-confirmed against a live `SELECT`** *(§3)* · ✅ **`63` inconsistent keys — caught, then resolved by putting `kind` in the primary key** *(§4)* · population facts that shape any backfill *(§5)* · **the state-resolution constraint on any collector** *(§6)* | 🔑 |
+> | **`0.15-T23`** | **The WNBA fit table in full.** 🟢 **constants for three stats NBA does not price** *(§1)* · 🔴 **the match-rate column — `62%` at best, `28%` on rebounds: a precision ceiling on per-leg pricing** *(§2)* · a per-league refit cuts error `4–5×` *(§3)* · ⚠ **the `v2` parameterisation is named but not dated** *(§4)* | 🔑 |
+>
+> ### 📘 **B · THE INHERITED MLB PROGRAMME AND THE PER-APP SURVEY (`T1`, `T12`–`T18`)**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0.`** | The inherited MLB programme — the handoff memory and lessons document | |
+> | **`0.1`** | **Four measured mechanics** of the PrizePicks multiplier | |
+> | **`0.2`** | Real Flex partial-tier observations — *the one thing that DID look constant* | |
+> | **`0.2b`** | **POWER vs FLEX** — the two slip types | |
+> | **`0.2c`** | ⚠ **The confidence tier on `§0.2`'s finding — do not let it harden** | ⚠ |
+> | **`0.2d`** | **Flex vs Power — a genuinely different probability structure**; `0.2d.1` the single-tier non-arbitrage check; `0.2d.2` *"Flex can flip an EV-negative pool positive — in principle"* ⚠ **closed by `§0.12-T22` §2: it cannot, by construction** | ⚠ |
+> | **`0.2e`** | **Underdog and Sleeper price per-leg DYNAMICALLY, and EFFICIENTLY**; `0.2e.1` the measured result at scale | |
+> | **`0.2f`** | **PrizePicks discounts same-game correlation — build CROSS-GAME by default** ⚠ *direction confirmed on NBA `2026-09-23`; the `35–40%` magnitude is an MLB number* | ⚠ |
+> | **`0.2g`** | ~~No DFS platform publishes per-leg multipliers via API~~ 🟢 **SUPERSEDED IN PART — see `§0.9-T22`** | 🟢 |
+> | **`0.2h`** | ⚠ **Lesson #27 — partial-credit structure is platform-specific: FLAT vs PROPORTIONAL** | ⚠ |
+> | **`0.3`** | **The house-edge sanity test** — a named guard against believing a bad number; `0.3a` **MLB's costliest single error (mismatched cells)**; `0.3a2` Lesson #16; `0.3b` the `p × m` test ✅ *quote confirmation discharged `2026-09-21` — see the note in `§0.3`* | 🔑 |
+> | **`0.4`–`0.6`** | MLB's own multiplier documents · what transfers and what does not · two UI rules carried from MLB | |
+> | **`0.7-T18`** | 🔴 **The multiplier hunt's result — exhaustive and definitive** *(item 7's exit condition ✅ **DISCHARGED `2026-09-20`**)* | 🔴 |
+> | **`0.8-T18`** | 🔴 The hunt — what the owner OBSERVED, what he ordered, why it was DEFERRED | 🔴 |
+> | **`0.9`** | 🔑 **The `T13` multiplier research arc** — what the research learned and where it stopped | 🔑 |
+> | **`1.`–`4b.`** | What each app exposes · **PrizePicks ruled out exhaustively** · the owner's correction *(the factor is not a constant)* · the capture that would work · **the capture protocol** | |
+> | **`5.`–`7.`** | **Why it matters — the EV arithmetic**; `5b` the conversion is a correction, so blueprint `§7f` applies · conversion logic *(payouts → probabilities)* · the market side *(de-vigged book probability)* | |
+> | **`8.`–`8c.`** | Slip-level observations · ⚠ the required report layout and its normalization rule · standing UI rules that bind the multiplier surface | |
+> | **`9.`** | 🔴 **OPEN ITEMS** — *incl. item 5, the fantasy-score scale, **narrowed `2026-09-23`*** | 🔴 |
+>
+> 📌 **HOW TO READ THIS FILE**: ***section `A` is current; section `B` is the record it was built on,
+> and parts of `B` are superseded IN PLACE with both dates (rule 40 — originals are never deleted).***
+> **If `A` and `B` disagree, `A` wins and the `B` section will say so.**
 
 **Update log**
 | Date | What |
