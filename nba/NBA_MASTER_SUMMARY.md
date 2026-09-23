@@ -1,5 +1,18 @@
 # NBA MASTER SUMMARY — every transcript, message by message
 
+## 🧭 START HERE — *what this is, where it stands, what blocks it, where to go*
+
+| | |
+|---|---|
+| 🏀 **WHAT THE SYSTEM IS** | **AlphaDog NBA** predicts **hit probability for NBA player props** — *will this player go over or under this line* — and turns those into paper-trading slips for DFS apps *(PrizePicks, Underdog, Sleeper, Fliff, Betr, pick6)*. **`30` props · Cloudflare Workers + Hyperdrive → DigitalOcean Postgres · GitHub Actions as the scraping network · three pipelines `P1`/`P2`/`P3` · no orchestrator, by decision.** |
+| 📚 **WHAT THIS FILE IS** | **The sweep's record** — what each of the `24` transcripts contained, finding by finding *(`§T`*n*`.`*m*)*. ⚠ ***It is not the system's manual.*** *For the system itself: **`NBA_RECIPE.md`** (how it was built, and `🏗 REBUILD FROM ZERO` / `🔧 MAINTENANCE`) · **`NBA_SYSTEM_DESIGN.md`** (what runs, and the game day) · **`NBA_DATABASE.md`** (every table).* |
+| ✅ **STATE OF THE DOCUMENTATION — `2026-09-23`** | **COMPLETE.** *All `24` transcripts closed at three consecutive clean passes. `RULE 46` closed. The twelve documents are swept, indexed and reader-tested.* |
+| 🔴🔴🔴 **STATE OF THE SYSTEM — `2026-09-23`** | ***IT WILL NOT RUN ON THE NEW SEASON AS CONFIGURED.*** **`10` days to preseason (`2026-10-03`), `27` to the opener (`2026-10-20`).** Three facts compose: ① **`P2` and `P3` have NO CRON** *(deliberately — the comment says the cron goes in when the season starts)* · ② **`P3` defaults to season `2025-26` and aborts on every `2026-27` date** *(`T23-2`)* · ③ **the parallel catch-up you would use to recover DEADLOCKS** *(`§T23.5`)*. ⇒ **Nothing starts it, it would abort if it did, and it cannot be caught up.** |
+| 🔑 **ALSO OPEN** | 🔴 **`F2-1`** — a live API key was published in this **PUBLIC** repo and is still in `2` commits ⇒ **ROTATE** · 🔴 **`T22-1b`** — a second live credential *(a real-money account session)* sits in the transcripts · ⚠ **`F7-1`** — the coverage instrument writes credential-bearing output into the repo tree, ungitignored. |
+| ▶ **WHERE TO GO NEXT** | **`NBA_OPEN_ITEMS.md` → `ACT ON THIS`, the first block of that file.** *`14` owner decisions in § `A`, the ranked opening-day brief in § `B`. **Nothing in the list moves without you.*** |
+
+---
+
 > # 📑 **INDEX — `NBA_MASTER_SUMMARY.md`**
 > **The record of what every transcript contained** — the sweep ledger, the per-transcript findings
 > (`§T`*n*`.`*m*), the canonical figure table, and the corrections made to each.
