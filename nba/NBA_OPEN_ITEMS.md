@@ -482,7 +482,32 @@
 > history is part of the record. This is a POINTER plus the ranked order.** ▶ **Full brief:
 > search this file for `OPENING-DAY BRIEF`.**
 >
-> ## ▶ **ALL ~~FOURTEEN~~ ~~FIFTEEN~~ ~~SIXTEEN~~ SEVENTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
+> ## ▶ **ALL ~~FOURTEEN~~ ~~FIFTEEN~~ ~~SIXTEEN~~ ~~SEVENTEEN~~ EIGHTEEN SEASON-CRITICAL ITEMS, IN THE ORDER THE BRIEF RANKS THEM**
+>
+> > 🔴🔴 **`F6-1` ADDED 2026-09-23, `§F6.16` — RE-RATED, NOT NEWLY FOUND.** *It was filed hours
+> > earlier today as `⚠ HIGH` on a diagnosis that turned out to be mine and wrong. **The defect
+> > underneath it is that `load_baseline_ladder.py:51`'s merge key omits `ot_rule`, a column of the
+> > destination table's PRIMARY KEY, so the production loader silently drops `1,421` rows** —
+> > confirmed live to the row (`52,018` in the artifact, `50,597` in the table). 🔴 **`P2` runs that
+> > loader** (`nba-p2-overnight-heavy.yml:254`); **the loader with the correct seven-column key is
+> > the worker, which `P2` does not call.**
+> >
+> > ⚠ **RANKING NOT DERIVED, and the denominator note above already says why.** *By the stated rule
+> > it is **SILENT** (nothing reports the dropped rows), it **DEGRADES rather than stops** the
+> > slate, and it is **UNCAUGHT** — which places it in the same group as `T20-17`. **It is not
+> > inserted into the ranked string**, whose order is `§T20.103`'s and whose arithmetic was already
+> > flagged `NOT RECONCILED`; whoever reconciles that string places this one with it.*
+> >
+> > ⚠⚠ **AND THE ROSTER'S OWN COUNT DOES NOT REPRODUCE FROM ITS STATED METHOD.** *The brief at
+> > `§15139` says to count with `grep -E "^#{2,4} .*SEASON-CRITICAL"` ⇒ it recorded `14`; run today
+> > that pattern returns **`19`**, and the blockquote-aware pattern returns **`23`**. **Neither
+> > equals the heading's `SEVENTEEN`, before or after this addition** — the raw patterns also catch
+> > three section headers and one sub-heading that are not items. ***Filtered to actual item
+> > headings the count is `19`, of which `F6-1` is one.*** 🔴 **The heading is set to `EIGHTEEN`
+> > because that is `SEVENTEEN + F6-1` and the `SEVENTEEN` is the figure the brief has been
+> > maintaining; the `19`/`23` discrepancy is recorded, NOT silently adopted** — `RULE 53`: a count
+> > is corrected when its population is re-stated, and this roster's population is exactly what is
+> > `NOT RECONCILED`.*
 > 🔴🔴🔴 **`T20-25` ADDED 2026-09-23, T20 pass 122 (`§T20.127`), AND THE RANKING RULE PUTS IT AT OR NEAR
 > THE TOP — IT IS THE ONLY ITEM ON THIS BRIEF THAT IS *ALREADY LOSING LEGS ON EVERY SLATE*.**
 > **The player bridge is built with one normaliser and read with another**: the writer
