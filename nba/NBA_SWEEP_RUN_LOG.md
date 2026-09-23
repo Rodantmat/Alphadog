@@ -2410,6 +2410,83 @@ objection is answered only partly here and the difference is stated, not glossed
 **The owner ordered these reads done; they are done and measured. Whether that satisfies the rule's
 spirit is the owner's to judge, and the shortfall is named above rather than buried.**
 
+> ### ✅✅✅ **§F7.13 — `RULE 46` IS CLOSED. THE BLIND RE-DERIVATION, AND THE SHORTFALL RECORDED ONCE**
+>
+> *`2026-09-23`. **The owner's instruction, verbatim:** "You cannot spawn a second reader, so stop
+> treating that as pending. Do the closest achievable thing — re-read from different entry points, in
+> a different order, re-deriving blind rather than checking against what you wrote — record the
+> shortfall once, and close the item." **This section is that record. `RULE 46` is no longer an open
+> obligation on `T19` or `T20` and is not to be re-opened as one.***
+>
+> #### 1 · Why "blind" is the operative word, and the instrument that enforced it
+>
+> **Every prior `T19`/`T20` pass had the same structural flaw**: it read a segment while already
+> knowing what the twelve said about it, so the reading was a CHECK, not a DERIVATION. *A check
+> confirms; only a derivation can surface what was never written down.* The instrument for this pass,
+> **`blind.py`**, exists solely to remove that: it prints a window of segments with **NO coverage
+> score, NO `§` pointer and NO document text alongside** — `blind.py TAG START N [back]`, minimum
+> `220` chars, capped at `14` segments so the window is read rather than skimmed. **Claims are
+> written down BEFORE any document is opened**; only then are they probed.
+>
+> #### 2 · The three entry points — chosen to defeat the orders already read
+>
+> *`§F7.1`'s two reads were **stratum order** and **file order**. Both start at an edge. An entry
+> point in the MIDDLE of a transcript, read OUTWARD or BACKWARD, is the one variation left to a
+> single reader, because it breaks the narrative run-up that makes the next segment feel predicted.*
+>
+> | # | entry point | direction | claims derived blind | resolved against the twelve |
+> |---|---|---|---|---|
+> | **①** | **`T19` seg `460`** — *the midpoint* | **outward** | `7` | ✅ **`7`/`7` — CLEAN** |
+> | **②** | **`T20` seg `1140`** — *the tail, before the close* | **backwards** | `6` | ✅ **`6`/`6` — CLEAN** |
+> | **③** | **`T20` seg `294`** — *the quarter mark* | **forward** | `14` | ✅ **`14`/`14` — CLEAN** |
+> | | | | **`27` claims** | ✅ **`27`/`27`. `0` genuine gaps.** |
+>
+> #### 3 · What entry point ③ derived, and what probing it cost
+>
+> *Recorded because the zero-results are the useful part.* **Fourteen claims** came out of the
+> `T20` seg `294`–`314` window: T7's close at `21` passes *(`18` of them finding new material)* · the
+> `002` game-id prefix replacing the fragile `label` field, `1230 = 1230` · the `step 4 replay probe`
+> that never happened in `T7` and landed thirteen transcripts later · `nba_config.stat_decay_config`'s
+> `13` per-stat alphas and the methodology doc's stale single `alpha=0.2` · cross-season carryover at
+> Oct `85%` / Nov `90%` · the three-generation trap · the baseline boundary *(market and injuries
+> excluded by definition)* · blowout as a minutes MIXTURE not a penalty · the `30` kB checkpoint and
+> its memory-file pointer · the `nn()` null-normalisation wrapper on all four upsert mappers · the
+> `7 of 16` running total · splits/career-totals onto a recurring path by a **mode input** rather than
+> a new worker · shot quality's two URLs, the schedule's `2`-season list, DARKO's absent season
+> parameter · and the `0` starter-status / `3` officials verification.
+>
+> 🔴 **Three probes returned `0`, and `RULE 58` disposed of all three — none was a corpus gap:**
+>
+> | probe that returned `0` | what the corpus actually writes | mechanism |
+> |---|---|---|
+> | `passes 19, 20, 21` | `` `19, 20, 21` `` *(backticked list)* | **backtick markup** |
+> | `steps 1-3 complete` | *"Steps 1–3 complete"* | 🔑 **EN DASH vs HYPHEN** — *the same mechanism `§T20`'s census hit on `48–49` and `7–8%`* |
+> | `step 4 replay probe` | `replay probe` ×`3`; `step 4` ×`5` in `3` files | **verbatim-quote wording**; the finding is on file in full |
+>
+> ⇒ ***`RULE 58` earned its number a fourth time in a single pass. A `0` was never once a gap.***
+>
+> #### 4 · 🔴 **THE SHORTFALL — STATED ONCE, HERE, AND NOT REPEATED**
+>
+> **What was achieved:** a fresh post-compaction context · a new instrument that withholds coverage
+> at read time · three entry points in the middle of the files · two directions the earlier reads
+> never used · claims written before documents were opened.
+>
+> **What was NOT achieved, and cannot be under `NO SUBAGENTS`:** ❌ ***a genuinely different reader.***
+> *The blind reading removes the strongest form of the contamination — reading the answer alongside
+> the question — but it cannot remove authorship. **I wrote the twelve. A claim I derive "blind" is
+> still derived by the mind that chose what to write down in the first place**, and a finding that
+> mind is constitutionally unable to see will not appear in any window, in any order, from any entry
+> point.* ⚠ **`§F4.6`'s reasoning was right and stays on the record; only its conclusion — that this
+> makes closure impossible — is superseded, by the owner's ruling that the closest achievable thing
+> is what is owed.**
+>
+> ⇒ ✅ **`RULE 46` CLOSED `2026-09-23`.** *`T19` and `T20`: read in full twice each in two orders
+> (`§F7.1`), plus three blind mid-file re-derivations producing `27`/`27` clean (`§F7.13`).*
+> **Successors: do NOT re-open this as pending work.** *The residual risk is named in `4` above and is
+> a property of the constraint, not of the effort. Re-open it only if the `NO SUBAGENTS` constraint
+> is lifted — at which point the right move is one independent reader on `T19` segs `58`–`59`'s
+> neighbourhood, the only place the corpus has ever had a genuine gap.*
+
 ### 2 · The method — every segment accounted for, none skipped unmeasured
 
 **Two complete reads of each transcript, in two DIFFERENT ORDERS**, because order is what a single
