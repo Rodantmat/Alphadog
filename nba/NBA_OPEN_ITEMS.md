@@ -3487,6 +3487,16 @@ worse than the defect. **Downgrading the item's severity is the owner's call, no
 what changes is the reason: it is no longer "an hour of information is being lost", it is "the data
 is not portable and cannot be joined to any tz-correct series".*
 
+> 🔑🔑 **AND THIS ITEM AND `T20-12` ARE ONE DEFECT SEEN FROM TWO ENDS — see `§F6.17`, filed on
+> `T20-12` the same day.** *`T20-12` is `🔴🔴🔴 SEASON-CRITICAL, severity 6`: **"the pipeline's
+> Python layer hardcodes PST — `p3_cut` is an hour late for every day of daylight saving time."***
+> **Both statements are true about their own constant, and the two errors are the same hour in
+> opposite directions, so they cancel**: `build_availability_delta.py` compares `p3_cut` against the
+> injury archive's `-05:00` timestamps **and nothing else**, and the window it selects is
+> `1:15 PM` PT wall-clock, year-round. ✅ **Measured on `2025-10-28`, a PDT date: last admitted
+> snapshot `12:30` PT, first excluded `13:30` PT.** ⇒ ***Neither item can be fixed on its own — and
+> `T20-12`'s remedy, applied alone, would break a window that is currently correct.***
+
 ⚠ **`RULE 54` — the bound on this trace.** *`WINDOW`: Python consumers under `nba/` that read the
 injury month-shards, found by `grep -rln 'snapshot_ts' --include=*.py`. **`NOT TRACED`: worker
 JavaScript, SQL, anything outside `nba/*.py`, and any consumer written after 2026-09-23.*** **And
