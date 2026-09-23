@@ -305,6 +305,45 @@ plan's stated reason for step 3 is precisely what those three items lacked.**
 
 ---
 
+## STEP 0c — The verification discipline that was supposed to run alongside every step *(T1)*
+*Source: `NBA_ARCHITECTURE_BLUEPRINT.md` §8 and §9. Recorded 2026-09-20 (T1 pass 29).* ⬆ **MOVED
+here `2026-09-23`, `§F7.3` — it had been sitting after `STEP 7`, out of build order.**
+
+This is not a step that happens once — **the blueprint specifies it as a standing discipline applied
+to every step above and below.** It is placed here because it was specified *before* any NBA code
+existed, and belongs in the recipe at the point where the ingredients were chosen.
+
+**From §8 — two rules, both stated as build-in-from-the-start:**
+1. **Corrupt-and-fix testing** — *"MLB's single most reliable verification pattern, worth adopting
+   immediately."* Deliberately change or delete a real row (flip a value, simulate a trade or roster
+   change, delete a row) and **confirm the pipeline detects and repairs it on the next run** —
+   *"rather than only ever testing the happy path."* → `NBA_SYSTEM_ARCHITECTURE.md` §8b.
+2. **Never declare a bug fixed without verifying against real data.** MLB's *"explicit, repeated
+   lesson, from direct user feedback"*: presenting a plausible-sounding root cause as a confirmed fix
+   without checking **led to the same failure recurring immediately after being "fixed," multiple
+   times in the same session.**
+
+**From §9 — the scrutiny philosophy that governs how a step is declared complete:**
+> *"**A pipeline's own 'PASS'/'COMPLETE' self-report is the STARTING POINT FOR SCRUTINY, NEVER THE
+> CONCLUSION.**"*
+
+Every real bug MLB found was caught by **independently re-deriving a claim against live data** — SQL
+against real tables, deployed code read directly — **never by re-reading the status field the run
+already reported.** Full methodology, the three techniques and the six named failure modes:
+`NBA_SYSTEM_DESIGN.md` §6b. Build status of each check: `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 29*.
+
+**⚠ How well the recipe actually followed this.** Mixed, and the record is specific:
+- **✅ Step 6 is this discipline working.** The first scrape's empty abbreviations were *"caught by
+  reading the committed file, **not the scraper's own meta claim**"* — exactly §9's rule.
+- **✅ The failure policy** (`NBA_SYSTEM_DESIGN.md` §6, *no `|| echo failed` anywhere*) exists because
+  a green self-report once hid **44% of a slate missing.**
+- **⚠ Corrupt-and-fix testing is NOT RECORDED as ever having been run on any NBA worker.**
+- **⚠ None of §9's six named failure-mode checks is recorded as built** — and **failure mode #6
+  (silent config/formula drift across a whole universe) is already live**, as the `minutes_mixture`
+  drift.
+
+---
+
 ## STEP 0d — Three founding rules that were never written down, and one that is not holding *(T1)*
 *Source: the owner's founding specification message, extracted in full 2026-09-20 (T1 pass 36).
 Earlier passes swept the owner's messages in excerpt; these four clauses had no entry anywhere.*
