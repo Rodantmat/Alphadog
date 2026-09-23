@@ -1629,6 +1629,8 @@ TOLD to mean; what matters is what actually happens"** — so it measured them o
 | Out | 10,150 | **0.001** | 0.00 | ✅ |
 | Questionable | 1,456 | **0.503** | 0.50 | ✅ **a true coin flip** |
 
+> ### §F6.2 — the Questionable BAND model, and why the scenario layer exists
+>
 > 🔑🔑 **AND `T17` WENT ONE LEVEL DEEPER — THE BAND MODEL, AND IT IS WHY THE SCENARIO LAYER EXISTS.**
 > *Added 2026-09-23, `§F6.2`. **`0` of the twelve carried this table**: `leaning out`, `leaning
 > play`, `0.696`, `72.9%`, `47.1%` each returned **`0` hits**.*
