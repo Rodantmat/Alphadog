@@ -8,7 +8,7 @@ what you read when this block sends you there. **No row here is a pointer alone:
 breaks and what closes it.** The proof for every row is in this file under its own ID; search the
 quoted ID, never a line number.*
 
-⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* *(`§T20.22`: `6` of `16` line-number pointers
 rotted within a day; `§T20.67`: `83.7%` of testable `FILE:LINE` citations are dead)*. **Search for
 the quoted item ID or the quoted text.** *Added as a stated rule `2026-09-23`, `§F7.8` — **this file
 and `NBA_MASTER_SUMMARY.md` were the only two of the twelve whose index never said it.** The prose
