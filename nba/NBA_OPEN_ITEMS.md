@@ -133,7 +133,7 @@ table's.***
 >
 > | if you need… | go to |
 > |---|---|
-> | 🔴 **the ranked list of everything that blocks opening night** | **`OPENING-DAY BRIEF`** *(top block)* — ~~`17`~~ **`18` season-critical items in a stated order** *(`F6-1` re-rated `§F6.16`; ⚠ the roster's stated count method returns `19`/`23` and reconciles to neither — see the note at the roster head)* |
+> | 🔴 **the ranked list of everything that blocks opening night** | ⬆ **`ACT ON THIS` §`B`, the FIRST BLOCK OF THIS FILE** — *the brief's ranked `1`–`7` verbatim, plus the eleven unranked `SEASON-CRITICAL` items.* ⚠ ~~*(top block)*~~ **that pointer was FALSE until `2026-09-23` — it said "top block" while the brief sat at `87.7%` of the file (`§F7.2`)**; the brief's amendment history and per-item evidence remain below under `OPENING-DAY BRIEF` |
 > | 🔑 **the ranking rule** *(and its measured gap)* | the brief's *"Ranking rule, re-derivable"* + **`THE RULE HAS NO TERM FOR *HOW LONG*`** |
 > | 🔴 **what fails SILENTLY** *(costs a season before anyone looks)* | **`T20-5`** *(the grader's window — the brief's only silent blocker)* · **`T20-17`** |
 > | 🔴 **what stops the slate on night one** | **`T20-6`** *(the certifier asserts tables no pipeline writes)* · **`T20-13`** *(the `>= 25` prop gate)* |
