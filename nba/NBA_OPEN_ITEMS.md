@@ -13638,7 +13638,12 @@ new season there is no completed in-season `ym`, and on November 1 October becom
 as CONSISTENT WITH, not proven: that line is read from a patch script (`rep(s, …)`), not from the
 executed source. The observation is verified; the cause is a strong reading.**
 
-🔴🔴🔴 **THE CONSEQUENCE.** **The 2026-27 season opens `2026-10-20`. The cutover is `2026-11-01`.
+🔴🔴🔴 **THE CONSEQUENCE.** *(🔴🔴 **CORRECTED 2026-09-23, §T20.136 — the duration below is wrong: it
+is EVERY night of the season, not twelve.** `certify_pipeline.py`'s FIRST `p2` check —
+`baseline_history has today > 0` — **fails before this gate is ever reached, on every date, because
+no pipeline step writes that table** *(`T20-6`, `§T20.134`)*. **The FACT (`22` vs `30` props) is
+VERIFIED and unchanged; severity `7 of 7` is NOT lowered — the red streak is longer, not shorter.**
+See this item's heading.)* **The 2026-27 season opens `2026-10-20`. The cutover is `2026-11-01`.
 TWELVE nights.** **P2 certifies with `count(DISTINCT prop) >= 25`, `CERT_STRICT=1`, and a docstring
 that says it *"never warns."*** ⇒ ***P2 fails certification on opening night and every night for
 eleven more — and on two seasons of evidence that red is CORRECT-BY-DESIGN, not a defect.***
