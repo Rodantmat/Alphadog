@@ -420,7 +420,16 @@ def main():
                         for r in d.itertuples(index=False)]
                 with conn.cursor() as cur:
                     cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.final_hp'))")
-                    cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s", (season, prop))
+                    # WRITE SCOPE (fixed 2026-09-23). This DELETE was season+prop only, while FE_DATE
+                    # scopes the SELECT above to ONE slate - so a date-scoped run deleted the WHOLE
+                    # season for that prop and rewrote only today, destroying every earlier date the
+                    # as-of calibration learns from. That is why no pipeline could own this script and
+                    # final_hp ended up rebuilt by nothing. The delete now matches the slice computed.
+                    if FE_DATE:
+                        cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s AND game_date=%s",
+                                    (season, prop, FE_DATE))
+                    else:
+                        cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s", (season, prop))
                     cur.executemany("""INSERT INTO nba_score.final_hp
                         (season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor,
                          baseline_hp, final_hp, cal_shift, score, edge, confidence, conf_tier,
