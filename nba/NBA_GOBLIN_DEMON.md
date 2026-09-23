@@ -761,6 +761,24 @@ sample.**
 > tolerances at different payouts.* ⚠ **`RULE 54`: every multiplier figure in these documents is a
 > ROUNDED observation unless it says otherwise.**
 >
+> ### 🔴🔴 **AND THE SAME LINE IS PRICED DIFFERENTLY FOR DIFFERENT PLAYERS — BY UP TO `10%`**
+> *`T22` pass `10`, measured on the mined set.* ***"PrizePicks prices the same line differently for
+> different players, by up to `10%` — most likely off its unrounded projection."***
+>
+> ⇒ 🔑🔑 ***THAT IS THE ACCURACY CEILING FOR ANY RECONSTRUCTED HISTORICAL PRICE, AND IT IS A HARD
+> ONE.*** *No formula keyed on `(stat, line, center)` can do better than `±10%`, because the
+> remaining variation lives in a projection PrizePicks does not publish.*
+>
+> | consequence | |
+> |---|---|
+> | **for mined prices** | 🔴 **they must be stored PER PLAYER** — a price keyed on the line alone is wrong for every other player sharing that line |
+> | **for modelled prices** | ⚠ **`±10%` is the FLOOR on error, not a target to beat** — a model reporting better than that on held-out players is fitting the rounding grid, not the pricing |
+> | **for EV** | *with `§T22.9`'s line-not-rung finding: a rung-indexed table is wrong by up to `43%`, and even a perfect line-indexed one is still wrong by `10%`* |
+>
+> 📌 ***Recorded here rather than left to the build session's own file because it is a fact about how
+> PrizePicks PRICES, not about the tables that store it*** — *standing constraint `6` scopes out the
+> `pp_*` objects, not the pricing mechanics this document exists to hold.*
+>
 > ### 📋 **The `2`-pick base, same run, `prizepools` mode**
 > `2`-pick **`3.0×`** · `3`-pick **`6.0×`** · `4`-pick **`10.0×`** · flex `2`-pick **`2.0× / 0.5×`**.
 > ***Multiplicative, and independent of the partner*** — *goblin-alone × demon-alone predicted
