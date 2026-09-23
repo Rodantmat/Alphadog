@@ -62,18 +62,54 @@ jobs:
 
       - name: Resolve slate date and assert the cutoff has passed
         id: d
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          set -euo pipefail
           A="${{ github.event.inputs.asof }}"
           if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi
-          H=$(TZ=America/Los_Angeles date +%H%M)
           echo "asof=$A" >> $GITHUB_OUTPUT
-          echo "Slate $A, local time $H PT"
-          # A manual replay of a PAST date is always fine. A run for TODAY before 13:00 PT would be
-          # scoring an incomplete slate - Pacific clubs may not have filed yet - so refuse it.
-          if [ "$A" = "$(TZ=America/Los_Angeles date +%F)" ] && [ "$H" -lt "1300" ]; then
-            echo "::error::Refusing to run for TODAY before 13:00 PT - Pacific clubs file until 1:00 PM PT."
-            exit 1
-          fi
+          echo "Slate $A"
+          # THE CUTOFF IS NOT A FIXED CLOCK (fixed 2026-09-23). 1:15 PM PT is the LATEST useful moment -
+          # it lets the day-of injury reports land (Pacific clubs file until 1:00 PM PT). But roughly 38
+          # dates a season tip BEFORE that, and on those days a 13:15 run scored a slate that had already
+          # started and still certified green: picks recorded after the fact, silently.
+          # The real rule is "as late as possible, but before the first tip". The schedule is the
+          # authority, so the effective cutoff is min(13:15 PT, first tip - 30 min).
+          python - "$A" <<'EOF'
+          import os, sys
+          from datetime import datetime, timedelta, timezone
+          import psycopg
+          slate = sys.argv[1]
+          now = datetime.now(timezone.utc)
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              first_tip, games = c.execute(
+                  "SELECT min(game_datetime_utc), count(*) FROM nba_calendar.games WHERE game_date = %s",
+                  (slate,)).fetchone()
+          today_pt = datetime.now(timezone(timedelta(hours=-8))).date().isoformat()
+          out = open(os.environ["GITHUB_OUTPUT"], "a")
+          print(f"games scheduled: {games}; first tip (UTC): {first_tip}")
+          if games == 0:
+              print("::notice::No games scheduled for this slate - nothing is due.")
+              out.write("late=0\n"); raise SystemExit(0)
+          if slate != today_pt:
+              print("Replay of a past/other date - cutoff checks do not apply.")
+              out.write("late=0\n"); raise SystemExit(0)
+          latest = datetime.fromisoformat(f"{slate}T21:15:00+00:00")   # 13:15 PT during DST
+          effective = min(latest, first_tip - timedelta(minutes=30))
+          print(f"effective cutoff (UTC): {effective}  |  now: {now}")
+          if now < effective:
+              print(f"::error::Too early. This slate's effective cutoff is {effective} UTC "
+                    f"(first tip {first_tip}). Injury reports are still landing.")
+              raise SystemExit(1)
+          if now > first_tip:
+              print(f"::warning::LATE RUN - the first game tipped at {first_tip} UTC, before this run. "
+                    f"Legs for games already underway are stale; picks from them are post-tip.")
+              out.write("late=1\n")
+          else:
+              out.write("late=0\n")
+          out.close()
+          EOF
 
       # 1) THE BINDING INPUT: the day-of injury report
       - name: Day-of injury report
