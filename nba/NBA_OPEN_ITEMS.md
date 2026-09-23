@@ -165,6 +165,17 @@
 > >
 > > ▶ **The full `3 × 5 × 2` threshold grid the verdict was drawn from — and the one LOSING cell
 > > (2-pick, 2024-25) — are now in `NBA_FINAL_SCORING_CALIBRATION.md` `§0.16-F2`.**
+> >
+> > ✅✅ **AND THE `T24` REPLAY HALF OF THIS ITEM IS NOW LIVE-VERIFIED — `§F5.6`, 2026-09-23.**
+> > *`nba_score.sim_slip` — the table holding the replay's slips, named in `0` of the twelve until
+> > today — reproduces **every** reported figure: **`4,379` slips / `310` nights**, **`+10.20%`**
+> > (24-25), **`+20.35%`** (25-26), **`+15.78%`** combined, **`312`** void legs.* 🔑 **And the
+> > standard error reproduces only when clustered by NIGHT (`0.0410`, `t = 3.85`) — so `T24` used
+> > the CONSERVATIVE error, which nothing in the record had said.**
+> > ⚠ *One number `T24` does not give: the **mean of nightly means is `+13.84%`**, two points below
+> > the slip-weighted figure it reports. Both defensible; the reader should have both.*
+> > ⚠ **The item's caveats are UNCHANGED** — replay not traded record, `paper_picks` `0` rows — **but
+> > "AS STATED, not re-run" no longer applies to these numbers.**
 >
 > | | **2024-25** | **2025-26** |
 > |---|---|---|
