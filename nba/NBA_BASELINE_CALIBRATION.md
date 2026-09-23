@@ -2184,3 +2184,52 @@ row is the one `§F6.12` established is `RETRACTED`** — *"the two-season ratio
 and must not be used to fit anything"*. ⇒ 🔑 ***An absence probe finds retracted numbers exactly as
 readily as live ones, and a sweep that recovers everything it finds absent will faithfully restore
 the corpus's worst material.*** **Checked against the row's own `notes` before writing, not after.**
+
+---
+
+## 🔴 §F6.24 — **`nba_config.calibration_log`: EIGHT APPLIED DECISIONS, AND NOT ONE OF THEIR SAMPLE SIZES IS IN THE TWELVE**
+
+*Added `2026-09-23`. Source: **LIVE** `SELECT * FROM nba_config.calibration_log`. **Read-only.**
+The table is named in `5` of the twelve; **its contents had never been censused.***
+
+*Eight rows, all `status = applied`, each carrying `cell_id`, `evidence_json`, `sample_size` and
+`decided_by`. **The DECISIONS are documented — the rank-within-role-tier prior, the empirical
+`rate_tier × role_tier × rung` tables, the symmetric-floor ceiling bug, the `threes_made` logit
+shift, the season-consistency rule, the `finest_level_only` shift fix. Their `n` is not.***
+
+| `decided_by` | decisions | `sample_size` | in the twelve |
+|---|---|---|---|
+| `backtest_classification_v9` · `backtest_v15_v17` · `backtest_v14_holdout` · `backtest_v17` | **`5` of the `8`** | 🔴 **`272,909`** | **`0` of `12`** ✅ *re-checked: the prefix `272,9` returns `0`* |
+| `backtest_minutes_model_v1` *(blowout states)* | `1` | 🔴 **`54,000`** | **`0` of `12`** ✅ *the two `54,0` hits are inside `1,454,044`* |
+| `backtest_minutes_model_v1` *(B2B)* | `1` | **`8,000`** | ⚠ **`0` for THIS meaning** — *every `8,000` in the twelve is `nba_team.lineup_profile`'s row count; a collision, not coverage* |
+
+🔑🔑 ***`272,909` is the evidential base of five separate applied changes to the classification
+ladder — the tier prior, the empirical tables, the guards, the logit shift, the hierarchy fix — and
+the corpus states every one of those changes without it.*** 📌 **`RULE 56` again, and the first
+instance found in a DECISION LOG rather than a results table.** ⚠ *The `sample_size` column is right
+there in the schema; nothing had ever read it.*
+
+### 🔑 And two substantive lines the census surfaced with it
+
+| | `VERBATIM` from `evidence_json` | in the twelve |
+|---|---|---|
+| **competitive over-rate** | `"competitive_over_rate": 0.491` — *beside `won_blowout 0.519` and `lost_blowout 0.369`, both of which ARE documented* | 🔴 **`0` of `12`** *(as `0.491` and as `49.1%`)* |
+| 🔑 **the B2B mechanism** | *"published star B2B minute deltas (`−1.5..−3.0`) **do not reproduce conditional on playing**; stars `~0` to `−0.4`, bench `+1.2..+2.5`, rotation `+0.6..+1.2` … **DNP-Rest removes stars from the log; the effect belongs in `P(available)`**"* | ⚠ the deltas and `DNP-Rest` are in `2`; ***"belongs in `P(available)`" — the STRUCTURAL conclusion — is in `0`*** |
+
+⇒ 🔑 ***The B2B row is a whole published effect relocated to a different layer: it is not a minutes
+factor at all, it is an availability factor, and the log says so in one clause that no document
+carries.*** **Same family as the "factor measured on the wrong layer" finding that closed `A2`,
+reached independently and four days earlier.**
+
+📌 **`0.491` matters for the same reason `§F6.20`'s table did**: the two blowout states are recorded
+*relative to each other*, and `0.491` is the baseline they are relative TO. *Without it, `0.519` vs
+`0.369` is just a gap; with it, `0.519` is **`+2.8 pp` above competitive** and `0.369` is **`−12.2 pp`
+below** — **an asymmetry, not a symmetric split**, and the asymmetry is the finding.*
+
+⚠ **`RULE 54`.** *`WINDOW`: the `8` rows as they stand `2026-09-23`, `status = applied`, against the
+twelve. **`NOT VERIFIED`: whether `272,909` is the same population across all five decisions** — it
+is the same integer in all five `sample_size` cells and they share three `created_at` timestamps, but
+the log records no population definition. **`NOT RE-DERIVED`: no figure here was recomputed from the
+underlying tables by this pass.** ✅ *And `RULE 58` was applied throughout: every number was re-probed
+in percent and comma-grouped forms, which is what demoted `0.519`, `0.369`, `0.477` and `0.394` from
+"absent" to "present in `3` documents" before anything was written.*
