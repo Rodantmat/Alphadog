@@ -76,7 +76,16 @@ def sigmoid(z):
 
 
 def main():
-    seasons = [s.strip() for s in os.environ.get("FE_SEASONS", "2025-26").split(",")]
+    # SEASONS (fixed 2026-09-23, same class as T23-2). Was a hardcoded "2025-26" default: once this
+    # script is owned by P2 that would have rebuilt last season's final_hp every night and never the
+    # live one. active_stats_season() is the shared helper and honours an NBA_SEASON override.
+    env_seasons = os.environ.get("FE_SEASONS", "").strip()
+    if env_seasons:
+        seasons = [s.strip() for s in env_seasons.split(",")]
+    else:
+        sys.path.insert(0, "nba")
+        from nba_season import active_stats_season
+        seasons = [active_stats_season()]
     props = [p.strip() for p in os.environ.get("FE_PROPS", "").split(",")
              if p.strip() and p.strip().upper() != "ALL"]
     write = os.environ.get("FE_WRITE", "0") == "1"
