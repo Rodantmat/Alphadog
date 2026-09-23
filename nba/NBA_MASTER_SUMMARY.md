@@ -40359,3 +40359,109 @@ re-published as a finding.** *Units 2, 5, 22 and 33 restate them and are scored 
 when the worst known item cost twelve nights. It has been outlived by its own list and was never
 re-derived — so the sweep's most consequential finding sits eleven places below a finding that
 cannot fire without it.*
+
+---
+
+# §T20.136 — 🔴🔴🔴 **THE SIBLING SWEEP WAS NEVER COMPLETE — ONE CLAIM, EIGHT SURFACES, AND I SCORED IT `HIT` TWICE**
+
+*T20 pass 131, 2026-09-23. The deferred half of the forward-claim audit: `NBA_OPEN_ITEMS.md`, the
+file the owner reads first and the file the brief lives in.*
+
+## 1. 📋 THE POPULATION — **pinned `2026-09-23T01:33:13Z`, before any reading**
+
+**`87` dated forward-looking units in `NBA_OPEN_ITEMS.md`, of which `65` are MECHANICAL** *(they name
+a `\w+\.py`, an `nba_<schema>.<table>`, or an `ENV_VAR`)* — **the `65` are the population**, with
+pass 130's own brief amendment excluded under rules 26/28. **Extraction returned exactly `65`.**
+
+## 2. 📊 ALL `65` SCORED — *four verdicts, summing to `65`*
+
+| verdict | n |
+|---|---|
+| 🔴 **FALSIFIED** | **7** — units **4 · 32 · 42 · 44 · 47 · 49 · 59** |
+| ✅ **UPHELD** | **40** |
+| ⚠ **UNFALSIFIABLE UNTIL `2026-10-20`** | **3** — units 30 · 34 · 39, *all three already self-labelled* |
+| 📌 **NOT A PREDICTION** | **15** |
+
+## 3. 🔴🔴🔴 THE RESULT — **`T20-13`'s "TWELVE NIGHTS" HAS FIVE MORE SURFACES IN THIS FILE ALONE**
+
+Pass 130 corrected the claim in `NBA_RECIPE.md` ×1 and `NBA_WORKERS.md` ×2 and **scored clause (v)
+— *"siblings swept"* — `HIT`.** It was not swept. `NBA_OPEN_ITEMS.md` carries five more:
+
+| unit | surface | what it says |
+|---|---|---|
+| **42** | 🔴🔴 **`T20-13`'s OWN ITEM HEADING** | *"P2's CERTIFIER WILL GO RED EVERY NIGHT FOR THE FIRST TWELVE NIGHTS OF THE SEASON"* |
+| **44** | the item's CONSEQUENCE block | *"fails certification on opening night and every night for eleven more"* |
+| **4** | the `§T20.74` re-derivation row | *"**HELD EXACTLY** — twelve nights"* |
+| **47** | the THIRD AMENDMENT ranking table | *"LOUD — twelve times"* · *"on opening night and eleven nights after"* |
+| **49** | the displacement argument | *"arrives at 22:00 PT on opening night, twelve times"* |
+
+⇒ 🔴 **EIGHT SURFACES FOR ONE CLAIM** *(3 corrected at pass 130 + 5 here)*, **including the item's own
+heading — the highest-visibility text the claim has.** ***A reader who opened `T20-13` directly would
+have met the wrong consequence in the title.*** **All five corrected in place, with both dates and a
+pointer; the item's FACT (`22` vs `30` props) is VERIFIED and untouched — only the DURATION and WHICH
+CHECK TRIPS are corrected, and severity `7 of 7` is NOT lowered.**
+
+## 4. 🔴🔴 AND THE MISS IS TWO PASSES DEEP, NOT ONE — **`§T20.134`'s CLAUSE (vii) TOO**
+
+**Unit 59 is `§T20.117`'s claim, mirrored into `T20-4`**: *"THE BREAK DOES NOT HAPPEN ON OPENING
+NIGHT — AND NOTHING SAID SO… they AGREE and `P3` runs… from that day."* **`§T20.134` corrected that
+sentence in `NBA_MASTER_SUMMARY.md` and scored clause (vii) `HIT`. The mirror stood.**
+
+🔑🔑 **AND `T20-4` CONTRADICTS ITSELF INTERNALLY.** Two paragraphs below unit 59, **unit 60** states
+the correct account: *"On `2026-10-20`, a P3 dispatched without a `season` input queries
+`baseline_history WHERE game_date = '2026-10-20' AND season = '2025-26'` **and gets nothing**."*
+⇒ ***The same item holds the right answer and the wrong one, and the wrong one is in the bold
+heading.*** 📌 *This is the §T20.134 composition failure INSIDE a single item — the shortest possible
+distance between two facts that were never composed.*
+
+> 🔴🔴🔴 **THE CORRECTION TO MY OWN SCORING, STATED PLAINLY:**
+> **`§T20.134` clause (vii) — scored `HIT`, should have been `PARTIAL` *(1 of 2 surfaces)*.**
+> **`§T20.135` clause (v) — scored `HIT`, should have been `PARTIAL` *(3 of 8 surfaces)*.**
+> ⚠ **The cause is mechanical and now named**: ***both passes swept siblings only within their own
+> pinned AUDIT POPULATION.*** *Pass 130's population was the nine non-summary documents, so it could
+> not see the five instances in `NBA_OPEN_ITEMS`; pass 129's was `NBA_MASTER_SUMMARY`, so it could
+> not see the mirror in `T20-4`.* 🔑 ***A sibling sweep scoped to the pass's own population is not a
+> sibling sweep — it is the same blind spot the pass was created to close, one level up.***
+
+## 5. ✅ **RULE 53, PROPOSED AND IN FORCE FROM THIS PASS** *(the fix to the sweep's own method)*
+
+> **A correction is not complete until the corrected STRING has been grepped across all twelve
+> documents and every instance repaired or explicitly exempted. The sweep clause is scored by that
+> grep's output, not by the pass's audit population.** *Clause (v)/(vii) hereafter requires the grep
+> count to be published with the pass.*
+
+📌 **Applied retroactively this pass**: `grep "twelve nights|twelve times|eleven more|eleven nights"`
+across the twelve now returns **`8` sites, `8` corrected, `0` outstanding.**
+
+## 6. ✅✅ CLAUSE (iv) — **FOUR LIVE `SELECT` CHECKS, AND A POSITIVE CONTROL ON THE CORPUS'S OWN TAXONOMY**
+
+| unit | claim as published | live, `2026-09-23T01:35Z` |
+|---|---|---|
+| **2 · 5 · 50** | `defender_ratings` `max(as_of_date)` `2026-04-09`, `111,768` rows, *"166 days stale"* | ✅ **`2026-04-09` · `111,768` exact**; the age now reads **`167`** |
+| **35 · 55** | `ladder_calibration_asof` `9,904` rows · `24` distinct `as_of_date` · `2024-10-29 → 2026-01-15` · one `built_at` | ✅ **all five byte-exact, `distinct_built = 1`** |
+| **39** | `paper_picks` `0` · `paper_results` `0` | ✅ **`0` · `0`** |
+| — | *(`board_snapshots` after `2026-04-12`)* | **`7,951`** — `T20-23`'s baseball rows, on file |
+
+🔑🔑 **AND UNIT 65 PREDICTED EXACTLY THIS.** The corpus's own four-class rot taxonomy
+*(`A` fixed-to-fixed · `B` quoted run-time · `C` anchored now-offsets, **repairable daily** ·
+`D` unanchored now-references)* **called which figures would drift.** ⇒ ***Every class-`C` figure
+drifted by exactly one day (`166→167`, `20→21`) and every class-`A`/`B` figure held byte-exact.***
+✅ ***The taxonomy is CORRECT, and this is the first time it has been tested against the live system
+rather than asserted. Recorded at full strength — this is the corpus working.***
+
+## 7. 📋 CLAUSE SCORING *(pre-registered — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `RULE 52` set difference vs `bands_p130.json` | ✅ **`entered=[] left=[]` ×3 — twenty-first consecutive** |
+| **(ii)** | **≥ 2** of the `65` falsified | ✅ **HIT — seven.** ⚠ *One of the seven (unit 32, `"opening night on the 3rd"`) is an INSTANCE of a class unit 12 already records as "FIFTEEN places" — **corrected, but NOT counted as new** (rules 26/28).* |
+| **(iii)** | all `65` scored, counts summing to `65` | ✅ **HIT — `7 + 40 + 3 + 15 = 65`** |
+| **(iv)** | **≥ 3** live checks | ✅ **HIT — four, all byte-exact, plus the taxonomy control** |
+| **(v)** | falsified repaired at source, **siblings swept across all twelve** | ✅ **HIT, and this time by grep, not by population — `8` of `8`.** 🔑 *The clause that failed twice is the clause this pass was scored against, which is why `RULE 53` exists.* |
+| **(vi)** | STOP if first `25` clean | ✅ **did not fire — unit 4 falsified** |
+| **(vii)** | `RULE 51` last, vs the BASELINE tree | ✅ **NOVEL — "eight surfaces", the internal `T20-4` contradiction, and the taxonomy control all score `0` in the baseline** |
+
+📌 ***The lesson:*** **the sweep's failure mode is not missing facts — it is bounded searching.**
+*Three passes running, the defect was that a check was scoped to the thing being checked. Rule 53
+replaces a judgment ("did I sweep the siblings?") with an output ("here is the grep count"), which is
+the only kind of answer that cannot be scored `HIT` by an optimistic reader of my own work.*
