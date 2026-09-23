@@ -2022,7 +2022,18 @@ lose calibration**."*
 🔑 ***The twelve record the CAUSE of the combos gap in five documents — `|| echo failed`,
 `BT_SAVE_COMPONENTS`, the freshness gate, the loader's singles-only refusal — and record the
 MEASUREMENT that found it in NONE.*** *`RULE 55` again: the conclusion is filed, the table under it
-is not. Every figure below returned **`0` of `12`** before this section.*
+is not.*
+
+> ✅ **`RULE 58` RE-VERIFICATION, run after this section was written.** *The absence claims were
+> re-probed case-insensitively with variant spellings. **They hold, and narrowly**: `1,660` / `1660`,
+> `12,579` / `12579`, `PRA 450`, `matrix width` / `matrix is wide`, `per-player coverage`,
+> `rung-step` / `rung step` all return **`0`**. ⚠ **But `44% of` returns `7`** — the `44%` figure
+> itself is thoroughly documented *(`MASTER_SUMMARY:12454`, `SYSTEM_DESIGN:2125`, `WORKERS:2269`,
+> `GLOSSARY:1294`, `RECIPE:513`)*. ***It is the TABLE behind the `44%` that is missing, not the
+> `44%`.*** 🔑 **AND THERE ARE TWO DIFFERENT `44%`-OF-THE-BOARD DEFECTS IN THIS CORPUS** — this
+> combos gap, and `norm_market()`'s naive `replace('player_','')` that would have scored **`23,286`
+> legs** nothing *(`OPEN_ITEMS:11078`, `FSC:3660`, `RECIPE:298`)*. **A coincidence of proportion,
+> not a shared cause, and a reader greping `44%` will meet both.***
 
 ### 1 · What the test was, and why it had to be per-player
 
