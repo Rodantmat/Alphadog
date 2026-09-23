@@ -40071,3 +40071,71 @@ clause that made it stop** — *classify the drops, and the class that came back
 the one another pass had measured full.* ⚠⚠ ***Two components read the same column of the same table
 on the same day; one loses nine players and the other loses none. That comparison existed for months
 and nobody had reason to make it until a pass was required to count what the grader threw away.***
+
+---
+
+# §T20.133 — T20 PASS 128: ✅ **`T20-16`'s PREDICTED HOLE IS TESTED AND HAS NOT FIRED — THE TWO PROP LISTS ARE IDENTICAL, AND THE CHAIN IS FOUR FUNCTIONS, NOT TWO**
+
+*Pass 128, 2026-09-23. Pre-registered as **"THE PAPER-TRADING YIELD — `paper_picks` → `paper_results`.
+`T20-16` PREDICTED A SILENT HOLE IN THE RECORD THE OWNER WILL JUDGE THE SYSTEM BY. DOES IT EXIST?"**
+Clause (vi): **"if every pick is graded or legitimately pending, the pass SAYS SO AND STOPS, and
+`T20-16` should be marked as tested-and-not-yet-fired."***
+
+## ① THE TWO LISTS, RE-DERIVED FROM `pg_get_functiondef` *(clause ii — not inherited)*
+
+| function | role | `(prop, market_key)` pairs |
+|---|---|---|
+| **`nba_score.paper_pick_candidates`** | **selection** | **`12`** — `assists · blocks · points · pra · pts_ast · pts_reb · reb_ast · rebounds · steals · stocks · threes_made · turnovers` |
+| **`nba_score.grade_paper_picks`** | **grading** | **`12`** — *the same twelve, same members* |
+
+⇒ ✅ ***IDENTICAL. `T20-16`'s hole has NOT fired.*** *Nothing has been logged that cannot be graded.*
+
+## ② 🔑 THE CHAIN IS FOUR FUNCTIONS, AND ONLY TWO CARRY THE LIST
+
+**`paper_pick_candidates`** *(selector — **carries the list**, `2,645` chars)* →
+**`paper_pick_slips`** *(packer — **no list**, `1,698`; it packs candidates so every slip spans three
+different games)* → **`log_paper_picks`** *(logger — **no list**, `1,092`; it is a thin `INSERT …
+SELECT … FROM nba_score.paper_pick_slips(p_date, p_threshold)` with a **FIRST LOG WINS** guard:
+`IF EXISTS (… WHERE strategy='standards_3pick_v1' AND game_date=p_date) THEN RAISE NOTICE 'already
+logged - first log wins'; RETURN 0`)* → **`grade_paper_picks`** *(grader — **carries its own list**,
+`1,879`)*.
+
+✅ **AND `T20-16` NAMED THE PAIR CORRECTLY** — *"hardcoded **inside `nba_score.paper_pick_candidates`**
+(selection) **and again inside `nba_score.grade_paper_picks`** (grading), with no shared source."*
+⚠ *I had a truncated read of that row — `nba_score.pa…` — and checked the full text **before**
+publishing a correction. **None was owed.*** 🔑 *`§T20.130`'s lesson applied in the other direction:
+reading the prior entry stopped me inventing a defect in it.*
+
+## ③ THE YIELD — AND WHY IT CANNOT YET BE MEASURED
+
+**`nba_score.paper_picks` = `0` rows, `0` dates. `nba_score.paper_results` = `0` rows, `0` dates.**
+
+✂ **KILLED — on file**: `NBA_DATABASE.md:1316` *("`nba_score.paper_picks` — empty")* and
+`NBA_MASTER_SUMMARY.md:16616` *("**`paper_picks` holds 0 rows exactly**")*. **Measured again here,
+matching, and not restated as a finding.**
+
+🔑 **WHAT IS NEW IS WHAT IT DOES TO `T20-16`'s SEVERITY ARGUMENT.** The item reasons that the hole
+*"is LATENT — **it cannot fire unless someone edits one list and not the other**."* ⇒ ***Measured, it
+is DOUBLY latent: it also cannot fire until a single pick is ever logged, and none ever has.*** ⚠ *And
+that is consistent rather than alarming — `log_paper_picks` is called by `P3`, which has no cron
+(`§T20.121`), and there is no season, no board and no scored leg to select from.*
+
+⇒ ***The first thing that will test `T20-16` is opening night*** — **and the test is now written down
+with its date and its counts, which is the difference between a prediction and a checked prediction.**
+
+## ④ WHAT THIS PASS COULD NOT DO, SAID PLAINLY
+
+**No yield fraction exists to report.** *The pre-registered classes — `PROP NOT IN THE GRADER'S MAP`,
+`GAME NOT YET GRADED`, `NO MATCHING OUTCOME ROW` — are all **`0` of `0`.*** ⚠ **A yield on an empty
+table is not a yield, and the honest verdict is "the measurement is not yet possible", not "the
+measurement passed."** 📌 *Recorded so a later reader does not mistake `0 / 0` for a clean bill.*
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: the four-function decomposition and the
+list-identity check appear in neither tree; `paper_picks` scores **7 of 12** and the mentions were
+**opened** — two of them are the emptiness, which is the kill. ✅ **NOVEL.**
+
+📌 ***The lesson:*** **a filed prediction is worth testing even when the test comes back "not yet."**
+⚠⚠ ***`T20-16` will be read on opening night by someone deciding whether to trust the paper record.
+It now says: the two lists were compared on `2026-09-23` and matched, the tables were empty, and the
+hole cannot open until the first pick is logged. That is a different document from one that only
+warns.***
