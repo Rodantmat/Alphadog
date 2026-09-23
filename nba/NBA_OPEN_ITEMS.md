@@ -1,7 +1,7 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
 > # 📑 **INDEX — `NBA_OPEN_ITEMS.md`**
-> **~~`797`~~ → ~~`909`~~ → ~~`919`~~ → `931` sections · `1,269,770` bytes *(at parent commit — see the byte-count note below)* · ~~`70`~~ → ~~`74`~~ → `75` items · built `2026-09-23`; census corrected same day (`§F2.13`/`§F2.14`) and **re-derived after every subsequent pass** — `901 → 902 → 905 → 909`.**
+> **~~`797`~~ → ~~`909`~~ → ~~`919`~~ → ~~`931`~~ → `932` sections · `1,273,505` bytes *(at parent commit — see the byte-count note below)* · ~~`70`~~ → ~~`74`~~ → ~~`75`~~ → `76` items · built `2026-09-23`; census corrected same day (`§F2.13`/`§F2.14`) and **re-derived after every subsequent pass** — `901 → 902 → 905 → 909`.**
 > ⚠ *The original `797` came from a heading detector anchored at line start, blind to **blockquoted** headings. **This file had the largest absolute miss of the twelve — `99` hidden headings** — which is also why its `39`/`31` heading-vs-table split was wrong. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE ITEM IDs AND HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16`
