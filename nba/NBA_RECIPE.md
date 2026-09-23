@@ -487,36 +487,7 @@ owner-stated origin of blueprint §4i** (*"exhaustively check the sport's own of
 > step in the order it happened."** Nothing was lost: the block was removed and re-inserted whole,
 > and the section count was taken before and after.*
 
-### *(the block that was here is now above — this stub is kept so an inbound pointer to "`STEP 0c`, after `STEP 7`" still lands somewhere that explains itself)*
-
-**From §8 — two rules, both stated as build-in-from-the-start:**
-1. **Corrupt-and-fix testing** — *"MLB's single most reliable verification pattern, worth adopting
-   immediately."* Deliberately change or delete a real row (flip a value, simulate a trade or roster
-   change, delete a row) and **confirm the pipeline detects and repairs it on the next run** —
-   *"rather than only ever testing the happy path."* → `NBA_SYSTEM_ARCHITECTURE.md` §8b.
-2. **Never declare a bug fixed without verifying against real data.** MLB's *"explicit, repeated
-   lesson, from direct user feedback"*: presenting a plausible-sounding root cause as a confirmed fix
-   without checking **led to the same failure recurring immediately after being "fixed," multiple
-   times in the same session.**
-
-**From §9 — the scrutiny philosophy that governs how a step is declared complete:**
-> *"**A pipeline's own 'PASS'/'COMPLETE' self-report is the STARTING POINT FOR SCRUTINY, NEVER THE
-> CONCLUSION.**"*
-
-Every real bug MLB found was caught by **independently re-deriving a claim against live data** — SQL
-against real tables, deployed code read directly — **never by re-reading the status field the run
-already reported.** Full methodology, the three techniques and the six named failure modes:
-`NBA_SYSTEM_DESIGN.md` §6b. Build status of each check: `NBA_OPEN_ITEMS.md` → *FROM T1 PASS 29*.
-
-**⚠ How well the recipe actually followed this.** Mixed, and the record is specific:
-- **✅ Step 6 is this discipline working.** The first scrape's empty abbreviations were *"caught by
-  reading the committed file, **not the scraper's own meta claim**"* — exactly §9's rule.
-- **✅ The failure policy** (`NBA_SYSTEM_DESIGN.md` §6, *no `|| echo failed` anywhere*) exists because
-  a green self-report once hid **44% of a slate missing.**
-- **⚠ Corrupt-and-fix testing is NOT RECORDED as ever having been run on any NBA worker.**
-- **⚠ None of §9's six named failure-mode checks is recorded as built** — and **failure mode #6
-  (silent config/formula drift across a whole universe) is already live**, as the `minutes_mixture`
-  drift.
+### *(the block that was here now sits between `STEP 0b` and `STEP 0d` — this stub is kept so an inbound pointer to "`STEP 0c`, after `STEP 7`" still lands somewhere that explains itself)*
 
 ---
 
