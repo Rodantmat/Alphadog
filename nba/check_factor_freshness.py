@@ -128,7 +128,11 @@ def main():
             conn.close()
             sys.exit(1)
     if not fails and not warns:
-        print("Every factor stored and fresh.", flush=True)
+        # Out of season most factors ARE stale and nothing is due; saying "everything is fresh" would be
+        # false comfort, and the whole point of this check is that silence must not read as health.
+        print("Every factor stored and fresh." if in_season
+              else "OUT OF SEASON: nothing was judged. Staleness above is expected until games resume "
+                   "- re-run once the schedule has games in the last 7 days.", flush=True)
     conn.close()
 
 
