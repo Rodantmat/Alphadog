@@ -6,14 +6,30 @@
 > ⚠ **ANCHORS ARE ITEM IDs AND HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16`
 > line-number pointers rotted within a day)*. **Search for the quoted `T`*n*`-`*m* label.**
 >
-> 🔴🔴 **THE ONE THING TO KNOW BEFORE SEARCHING THIS FILE.** *Measured `2026-09-23`:*
+> 🔴🔴 **THE ONE THING TO KNOW BEFORE SEARCHING THIS FILE.** *Re-derived `2026-09-23`, `§F2.13`:*
 > | how an item is stored | count | how to find it |
 > |---|---|---|
-> | **has its OWN heading** | **`39`** | ✅ search the ID — it is a heading |
-> | 🔴 **exists ONLY as a row inside a table** | **`31`** | ⚠ **search the ID — it will land mid-table, not on a heading.** *Scanning headings alone will MISS these.* |
-> ⇒ ***`T15-1`…`T15-7`, `T16-1`…`T16-6`, `T16-8`, `T17-1`, `T17-3`…`T17-5`, `T18-1`, `T20-7`,
-> `T20-8`, `T20-12`, `T20-17`…`T20-25` are all table-only.*** **`T20-25` is SEASON-CRITICAL and is
-> one of them.**
+> | **has its OWN heading** | ~~`39`~~ → **`54`** | ✅ search the ID — it is a heading |
+> | 🔴 **exists ONLY as a row inside a table** | ~~`31`~~ → **`18`** | ⚠ **search the ID — it will land mid-table, not on a heading.** *Scanning headings alone will MISS these.* |
+> | **total items** | ~~`70`~~ → **`72`** | *(`F2-1` and `T10-F1` added today)* |
+>
+> ⇒ ***The `18` table-only items are `T15-1`…`T15-7`, `T16-1`…`T16-6`, `T16-8`, `T17-1`,
+> `T17-3`…`T17-5` — ALL of them from `T15`–`T17`, and nothing later.***
+>
+> > 🔴🔴 **CORRECTED IN PLACE, `§F2.13` — THE THREE FIGURES ABOVE WERE WRONG WHEN THIS INDEX WAS
+> > BUILT, AND THE CAUSE WAS MY DETECTOR, NOT THE FILE.** *`§F1.1` counted headings with a pattern
+> > anchored at line start. **Most of this file's item headings are inside blockquotes** (`> #
+> > **T20-6 · …**`), so the detector scored them as table-only. **`T20-7`, `T20-8`, `T20-12`,
+> > `T20-17`…`T20-25` and `T18-1` were all listed above as table-only and ALL of them have
+> > headings.*** ⚠ *`T20-25` was flagged in this index as "SEASON-CRITICAL and table-only" — **it
+> > is season-critical and it is NOT table-only.***
+> >
+> > 📌 ***And it took three attempts today to get the count right:*** *(1) line-anchored — the
+> > original bug, reproduced; (2) blockquote-aware but length-capped, which truncated long headings
+> > and returned **`8`**; (3) correct — match the heading LINE, then search the whole line.*
+> > **`72 · 54 · 18` is attempt three.** *Recorded because a count that took three tries is a count
+> > the next reader should be told how to re-derive:* `^(?:>\s*)*#{1,4}\s` **for the heading, then
+> > the ID pattern over the entire line.**
 >
 > ## ▶ START HERE — ~~*the three live OWNER DECISIONS*~~ **the FOUR live OWNER DECISIONS, newest first**
 >
