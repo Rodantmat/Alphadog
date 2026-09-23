@@ -54,6 +54,25 @@
 > (a) publishes, (b) creates a repo, (d) destroys record — which is the shape the standing
 > instruction says to hand over rather than decide.* **Nothing was committed and nothing was
 > changed.** ▶ **Full evidence and the other `T21` owner directives: `§T21.3`.**
+>
+> ## ⚠⚠ STRENGTHENED 2026-09-23, T21 pass 6 (`§T21.6`) — **TWO ADDITIONS, NEITHER A NEW ITEM**
+>
+> **① THE GROWTH WAS ALREADY TABULATED WHEN THE DIRECTIVE WAS ISSUED** *(`T21` SEG 1279)*. *The
+> directive was not a reaction to a surprise — it was a reaction to a trend someone had measured:*
+>
+> | file | at handoff | at `T21` | growth then | **today** |
+> |---|---|---|---|---|
+> | `NBA_MASTER_SUMMARY.md` | `396 K` | `574 K` | `+45%` | 🔴 **`3,099,657` — `7.8×` the handoff** |
+> | `NBA_OPEN_ITEMS.md` | `204 K` | `473 K` | `+132%` | 🔴 **`1,178,210` — `5.8×`** |
+> | `NBA_WORKERS.md` | `36 K` | `64 K` | `+77%` | `159,199` |
+>
+> **② THE BLOCKER DISABLES TWO ARTEFACTS, NOT ONE** *(`T21` SEG 1280)*. **`nba/tools/sweep_coverage.py`
+> — the coverage matcher the sweep's own COMPLETION RULE depends on — is committed but cannot run
+> from a clean checkout**, for exactly the same reason: `nba/transcripts/` holds no transcripts.
+> 🔑 *"that's a genuinely new artifact, **not one of your 12**, and it's **load-bearing now**…
+> protect it like the documents."* ⇒ ***A thirteenth load-bearing artefact that no mandate covers,
+> disabled by the same uncommitted-transcripts blocker as the pointer format.*** **Option (b) — the
+> private mirror — is the only one of the four that fixes both without publishing anything.**
 
 > # 🔴🔴🔴 **READ THIS FIRST — THE OPENING-DAY BRIEF IS ~~`910,821`~~ **`950,947`** CHARACTERS BELOW THIS LINE**
 > *(figure re-derived and dated `2026-09-22`, T20 pass 101, §T20.106 — the file has grown since it was
