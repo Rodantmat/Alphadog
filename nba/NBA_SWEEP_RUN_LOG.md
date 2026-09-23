@@ -1889,6 +1889,37 @@ incomplete, the gap was in a direction none of us had looked.*** 🔑 **`T14`'s 
 by the config row's `only_caveat`, is the one figure that does need correcting: measured across the
 `1,421` groups, **median `0.0061`, max `0.2128`**, `91.7%` above `0.001`.**
 
+## 🔑🔑 §F6.17 — **TWO SEPARATELY-FILED ITEMS TURN OUT TO BE ONE DEFECT, AND NEITHER CAN BE FIXED ALONE**
+
+*`§F6.14` cleared the injury archive's hardcoded `-05:00` of its predicted consequence. **Checking
+the SEASON-CRITICAL roster afterwards surfaced `T20-12` — `🔴🔴🔴`, severity `6` of `7`, "LIVE IN
+ELEVEN DAYS" — which asserts the OPPOSITE half of the same clock:** "the pipeline's Python layer
+hardcodes PST — `p3_cut` is an hour late for every day of daylight saving time."*
+
+| | the constant | the item's claim | ✅ |
+|---|---|---|---|
+| scraper | `-05:00` on every injury timestamp | *"a cutoff `snapshot_ts <= cutoff` excludes snapshots genuinely before it"* | **true of the constant** |
+| consumer | `PT = timezone(timedelta(hours=-8))` | *"`p3_cut` runs ONE HOUR PAST the cutoff"* | **true of the constant** |
+
+🔑🔑 ***Both constants are wrong by the same hour in opposite directions, and `-05:00` and `-08:00`
+are three hours apart — the true ET↔PT gap in BOTH standard and daylight time. They cancel. The
+window `build_availability_delta.py` actually selects is `1:15 PM` PT WALL-CLOCK, year-round.***
+
+✅✅ **MEASURED, not derived — `2025-10-28`, a PDT date, `48` snapshots**: last admitted
+`15:30-05:00` = **`12:30` PT**; first excluded `16:30-05:00` = **`13:30` PT**. *The boundary
+straddles the intended `13:15`. Had `T20-12`'s prediction held, the window would have reached
+`14:15` PT.*
+
+🔴🔴 **AND THE DANGER IS NOW THE REMEDY, NOT THE DEFECT.** *`T20-12` instructs that "whoever fixes
+the constant must fix SIX sites". **Three of those six are compared against injury timestamps and
+are CORRECT TODAY** — fixing them alone moves the window an hour EARLY and loses the last hour of
+pre-cutoff reports, which is precisely the failure the `-05:00` item predicted, arriving through the
+fix.* ⇒ **Recorded on BOTH items, cross-linked: one atomic change across the scraper and its
+consumers, or none.**
+
+📌 ***Found only because a `SEASON-CRITICAL` grep was run to re-rate `F6-1`. Two items filed days
+apart, in the same document, describing one clock — and the corpus had no line connecting them.***
+
 ⚠ **RULE 54 on `§F6.13`.** *`n`, the sample, the stat and the seasons behind the `-0.024` are all
 `NOT RECORDED`, and `-0.024` is approximately zero in absolute terms — **the load-bearing reading is
 "the prior carries no usable signal"**, and the directional reading is weaker and recorded as such.
