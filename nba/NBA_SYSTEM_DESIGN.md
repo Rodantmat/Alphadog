@@ -39,6 +39,25 @@ constraints that shaped it. This is the operational spec.
 > | 🔴🔴🔴 **THE SECOND DEADLOCK — `CREATE UNIQUE INDEX IF NOT EXISTS` INSIDE THE WRITE TRANSACTION.** *Any PARALLEL catch-up run deadlocks; `181` of `325` dates failed. **`17` files carry the pattern, `7` of them in `P2`/`P3`.*** ⚠ **SEASON-CRITICAL — this is the tool you would reach for to recover from `T23-2`, and it is the tool that breaks.** | **`§T23.5`** |
 > | 📏 **what the leg scorer SKIPS, in its own docstring's numbers** | **`§T23.13`** |
 >
+> ## 🗓 GAME DAY, END TO END
+>
+> *All times **Pacific** — the owner's standing convention. **Everything below is re-derivable from
+> the workflow files**; nothing here is a stored figure.*
+>
+> | when | what runs | detail | 🚩 state `2026-09-23` |
+> |---|---|---|---|
+> | **Mondays, `19:00 UTC`** | **`P1` — weekly static** *(`nba-p1-weekly-static.yml`)* | **`§2`** | ✅ **the ONLY live cron in the NBA set.** `` grep -l "^ *- *cron:" .github/workflows/*.yml `` |
+> | **overnight, target `01:00 PT`** *(`09:00 UTC`)* | **`P2` — overnight heavy**: mines the finished slate, rebuilds the ladders | **`§3`** | 🔴 **NO CRON.** *The file says so in a comment — **"NO CRON YET — deliberately… the cron goes in when the season starts"**. **Nothing will start it on opening night unless someone adds it.*** |
+> | **morning** | **the game-day injury report lands `11am–1pm LOCAL TO THE GAME`** — *the last input to move, and the reason the cutoff sits where it does* | **`§1`** · `§0a.3` | ⚠ *for a `5pm`-or-earlier tip the report is `8–10am` local* |
+> | **`1:15 PM PT` — THE CUTOFF** | **`P3` — afternoon light**: pulls the decision-snapshot board *(label `window`, never `routine`)*, scores legs, writes the paper picks | **`§4`** · **`§1`** | 🔴 **NO CRON.** 🔴🔴 **AND `P3` ABORTS ON EVERY `2026-27` DATE** — *it defaults to season `2025-26`;* **`T23-2`** *in `NBA_OPEN_ITEMS.md`* |
+> | **after** | ⚠ **`final_hp` is rebuilt by NOTHING** — no pipeline owns it | **`§4b`** | ⚠ *the system's headline output has no refresher* |
+> | **recovery, any time** | re-running a range in PARALLEL | **`§T23.5`** | 🔴🔴 **DEADLOCKS** — *`CREATE UNIQUE INDEX IF NOT EXISTS` inside the write transaction; `181` of `325` dates failed; `17` files carry the pattern, `7` in `P2`/`P3`* |
+>
+> 🔴🔴🔴 **READ THE LAST THREE ROWS TOGETHER.** ***Two of the three pipelines have no schedule, the one
+> that produces picks aborts on every date of the new season, and the tool you would reach for to
+> catch up deadlocks.*** ▶ **All three are on the decision surface: `NBA_OPEN_ITEMS.md` → `ACT ON
+> THIS` rows `1c`, `1d` and `4` (`T20-3`).**
+>
 > ## 📋 EVERY SECTION, IN LOGICAL ORDER
 >
 > ### 🎯 **A · WHAT IT IS FOR, AND WHAT IS AND IS NOT BEING BUILT**
