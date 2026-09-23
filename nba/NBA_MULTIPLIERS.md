@@ -439,6 +439,80 @@ CENTRE LINE was never archived for NBA.*** *The plan is to rebuild it from the d
 board loader now captures fantasy and its components side by side, so the first full NBA map answers
 it. **A dated, falsifiable open item with a known resolution date — recorded as such.***
 
+### 🔴🔴 **7 · `§T23.7` — PRIZEPICKS' STANDARD LINE *IS* THE SPORTSBOOK CONSENSUS, AND EVERY LINE COMES FROM ONE PROJECTION**
+*Measured across both seasons.*
+
+| prop | PrizePicks vs the books' median |
+|---|---|
+| **points** | within `0.5` **`93%`** of the time · within `1.0` **`99.9%`** |
+| **rebounds, assists** | within `0.5` **`99.7%`–`100%`** |
+| 🔑 **threes, blocks, steals, turnovers** | ✅ **MATCHED EXACTLY** |
+
+⇒ 🔑🔑 ***Book lines are an accurate stand-in for any prop the books quote — and they are INDEPENDENT
+OF OUR MODEL, which is what keeps a back-simulated backtest honest.*** **That independence is the
+whole value: a reconstructed line built from our own projection would manufacture edge or hide it.**
+
+**AND EVERY PRIZEPICKS LINE IS BUILT FROM ONE PROJECTION PER PLAYER** *(verified on the WNBA board)*:
+*two-player combos are **the SUM of the two component lines, within `0.3`**; offensive + defensive
+rebounds **add up to** rebounds; `fantasy_score` is the **weighted sum of its components within about
+one point**.* ⇒ ***The board is internally consistent by construction, so any prop missing from the
+archive can be rebuilt from the props that are present.***
+
+### 📐 **8 · THE FIXED-RUNG SPACING SCHEDULES — exact, symmetric, and reproduced on every ladder tested**
+| prop | gap schedule |
+|---|---|
+| **`fantasy_score`** | **`gap = line × 0.07 + 3.2`**, rounded to the half point — ✅ ***reproduces every one of the `32` WNBA ladders*** |
+| **FG attempted** | flat **`2.0`** |
+| **`3`-PT attempted** | **`1.0`** *(`2.0` on higher lines)* |
+
+### 🔴 **9 · THE FANTASY RECONSTRUCTION IS VALIDATED ON OUTCOMES — AND ITS GOBLINS ARE MISPRICED**
+*No historical PrizePicks fantasy line exists, so the reconstruction was tested against REAL OUTCOMES
+instead of against a line.*
+
+| | |
+|---|---|
+| over the rebuilt centre, `1,315` player-nights | **hit `51.9%`** — *a true PrizePicks line should hit `50%`* |
+| ⚠ the first version | hit only **`43%`**; *a fix to how missing stats are filled in corrected it* |
+| fantasy **demons** on real NBA outcomes | ✅ **`31.9%`, against the `~32%` their price implies — exact** |
+| 🔴🔴 fantasy **goblins** | **`73.5%`, against the `~65%` their price implies** |
+
+🔑🔑 ***An `8.5`-point gap in the player's favour on fantasy goblins, on the system's highest-volume
+prop.*** ⚠ **Not claimed as edge**: *the conservative mode's safety shift and lower payout cover it
+until the preseason board settles whether it is real or an artefact of the reconstructed centre.*
+📌 *This is the same prop `F6-3` flags for an underived `0.3 pp` penalty — **two independent findings
+now point at `fantasy_score`, from opposite ends of the pipeline.***
+
+### 🔴 **10 · `§T23.6`'s OWN FLOOR NUMBER IS SUPERSEDED BY `T23` ITSELF**
+> ***"Correction: the `2.08×` goblin floor isn't universal. It varies BY STAT and BY LEAGUE, so I'll
+> set NBA's from preseason data."***
+
+⚠⚠ **This supersedes the floor as a CONSTANT in `NBA_GOBLIN_DEMON.md` `§5`** *(where it already went
+`2.08` → `1.9` once)*. ⇒ ***The floor is not one number that was measured wrong twice. It is a
+per-stat, per-league parameter that was being modelled as a scalar*** — **which is why each new
+measurement moved it.** 🔑 *A parameter that keeps needing correction is usually a parameter with a
+missing index.*
+
+### ✅ **11 · CONSERVATIVE MODE — the margins, and the measurement that justifies them**
+*Every safety number lives in **one table**, so changing one later is a single edit.* **Sized so the
+real price sits at or above ours about `90%` of the time:**
+
+| lever | margin |
+|---|---|
+| goblin leg payouts | **`−3%`** |
+| demon leg payouts | **`−7%`** |
+| 🔴 demons **beyond our evidence** | **`−17%`** |
+| fantasy goblins / demons | **`2.3×` → `2.2×`** · **`4.5×` → `4.0×`** |
+| simulated lines move **against** the pick | `fantasy_score` by a full point · combos by half a point |
+
+📊 **THE RESULT, against `452` real quotes**: *conservative payouts sit at or below PrizePicks' real
+payout **`96%`–`97%`** of the time, against **`55%`–`67%`** for the best estimate.* ✅ **The best
+estimate is kept and can be switched back in one step.**
+
+⚠ **AND AN OWNER-INTENT AMBIGUITY WAS FLAGGED RATHER THAN RESOLVED SILENTLY** — *the owner said demons
+"a point less" and also "make it harder"; **for an over, harder means a HIGHER line**, so both goblins
+and demons were moved UP, and the divergence was stated: **"If you meant something else for demons,
+it's one number to change."*** 🔑 *`RULE 55` applied to an instruction rather than a measurement.*
+
 ⚠ **`RULE 54`.** *`WINDOW`: `T23`, `2026-09-21`, targeted WNBA runs plus NBA mined quotes. **The cap,
 the `Less` complement and the `Less` floor are measured on WNBA and TRANSFERRED to NBA on the
 engine-level argument** — that argument is stated above and is the claim to attack if any of the
