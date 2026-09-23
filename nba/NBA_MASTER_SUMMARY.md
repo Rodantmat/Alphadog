@@ -39458,3 +39458,96 @@ something, because the question "does the map cover the keys?" made me LIST the 
 the wrong sport.** ⚠⚠ ***A schema separated by NAME rather than by a COLUMN cannot detect its own
 contamination: `nba_market` holds baseball because nothing in it is able to say otherwise, and the
 check that guards it counts rows without asking what they are.***
+
+---
+
+# §T20.126 — T20 PASS 121: ✅🔴 **THE CONTAMINATION IS CONFINED TO ONE TABLE — AND THE SWEEP FOUND THAT THIS DATABASE RUNS *TWO PLAYER-ID CONVENTIONS*, SPLIT EXACTLY ALONG THE WORKER/SCRIPT LINE, WITH ONE LOAD-BEARING EXCEPTION**
+
+*Pass 121, 2026-09-23. Pre-registered as **"THE CROSS-SPORT CONTAMINATION SWEEP — `nba_*` HAS NO SPORT
+COLUMN BY DECISION. `board_snapshots` WAS FOUND BY ACCIDENT. WHICH OTHER `nba_*` TABLES HOLD FOREIGN
+ROWS?"***
+
+## ① ✅ THE SWEEP IS CLEAN — AND THAT SCOPES `T20-23`
+
+**Authority read first, not assumed**: `nba_ref.teams` = **30 rows**, ids `nba_1610612737`–
+`nba_1610612766`, **one prefix: `nba_`.**
+
+**Discriminator (c), id prefix, across fourteen tables** *(`0` is a result and is stated)*:
+
+| tested | rows | **foreign** |
+|---|---|---|
+| `nba_ref.players` · `player_aliases`-adjacent · `arenas` | 582 · — · 30 | **0** |
+| `nba_stats.player_game_log` · `player_impact_rating` · `player_season_profile` · `player_onoff_profile` · `player_tracking_profile` · `game_officials` | 79,358 · 530 · 582 · 582 · 582 · 3,681 | **0** |
+| `nba_team.team_game_log` · `season_profile` · `lineup_profile` · `defense_vs_position` · `playtype_profile` | 7,380 · 30 · 8,000 · 630 · 630 | **0** |
+| `nba_calendar.games` *(both team columns)* | 2,666 | **0** |
+
+⇒ ✅✅ ***Not one foreign row outside `board_snapshots`.*** ▶ **`T20-23` is therefore CONFINED to that
+one table, which is what the item needed and could not say for itself.**
+
+## ② 🔑🔑 BUT THE PREFIX TEST DID SOMETHING ELSE: IT SPLIT THE DATABASE IN TWO
+
+**`nba_score` came back `100%` "foreign" — `206,237` of `206,237`, `4,368,143` of `4,368,143`.**
+**That is not contamination. It is a second convention.**
+
+| layer | example | convention |
+|---|---|---|
+| **Workers** — `nba_ref.*`, `nba_stats.*`, `nba_team.*`, `nba_calendar.*` | `nba_ref.players` → **`nba_101108`** | 🔵 **prefixed** |
+| **Python scripts** — `nba_score.*` | `nba_score.baseline_ladder` → **`101108`** | 🟡 **bare** |
+
+⇒ ***The id split follows the LAYER split exactly.*** 🔑 **And it explains `§T20.116`'s cleanest
+result**: that census found the 21 Workers and the 40 scripts share only **2** of **52** write
+targets and called it a genuine separation of concerns. **It is stronger than that — the two layers
+could not join each other's rows if they tried, because their primary keys are in different
+namespaces.** *(The `replace(p.player_id, 'nba_', '')` this pass had to write to compare them is the
+demonstration.)*
+
+## ③ 🔴 ONE TABLE SITS ON THE WRONG SIDE OF THAT LINE — AND EVERY SCORED LEG PASSES THROUGH IT
+
+**`nba_ref.player_name_map`** — a **Worker schema** carrying the **Python convention**:
+**`5,212` rows, `0` prefixed, `5,212` bare.**
+
+**It is the bridge from a board player NAME to a `player_id`**, and `score_board_legs.py:111–113`
+`LEFT JOIN`s it for **every leg on the board**; `:132–133` then counts and drops whatever failed to
+map. ✅ *Internally consistent — bare map joins bare `baseline_history` — and the drop is COUNTED and
+PRINTED, not silent.*
+
+🔴🔴 **BUT ITS ONLY WRITER IS OUTSIDE EVERY ENUMERATED SURFACE.**
+**`check_baseline_board_coverage.py:53–60`** — *and it is **not one of the `40` called scripts***
+*(`grep -c` = `0`)*. It is run by **`nba-board-maintenance.yml`** and **`nba-overnight-queue.yml`**,
+**both with `cron = 0`.** **And it does not update — it replaces**:
+
+```sql
+DROP TABLE IF EXISTS nba_ref.player_name_map;
+CREATE TABLE nba_ref.player_name_map (player_id text primary key, norm_name text, display_name text)
+```
+
+**…rebuilt from `nba/data/nba_all_players.json`** *(`commonallplayers`, `5,212` records)*, **whose last
+commit is `2026-09-10`** — *by the `P1` season-tables step that `§T20.122` showed has not produced
+anything since.*
+
+✅ **AND IT IS COMPLETE FOR TODAY, WHICH IS WHY THIS IS `MEDIUM` AND NOT SEASON-CRITICAL**: joining
+`nba_ref.players` to the map across the prefix boundary gives **`582` of `582` present, `0` missing.**
+⇒ ***The bridge covers the entire current roster. The risk is forward-only — anyone entering the
+league after `2026-09-10` (late signings, two-way conversions, international arrivals) is absent, and
+nothing scheduled will add them.*** ▶ **`T20-24`.**
+
+## ④ 🔴 AND A DOCUMENT THE OWNER READS FOR "HOW IT WAS BUILT" ATTRIBUTES IT TO THE WRONG PIPELINE
+
+**`NBA_RECIPE.md:540`, stage 1, quoted**: *"**Namespace + static layer** **(P1)** | requires *nothing*
+| produces `nba_ref.teams` **30** · `arenas` **30** · `officials` **80** · `player_name_map` **5,212**"*
+
+🔴 **`P1` writes none of those four.** `teams`, `arenas` and `officials` are **Worker**-written
+*(`alphadog-v2-nba-static-teams` / `-arenas` / `-officials`, per `§T20.116`'s map)*, and
+`player_name_map` is written by a maintenance script **`P1` does not run.** ⚠ **The certifier line
+beside it is correct** *(`P1: player name map populated (> 400)`)* — **`P1` CHECKS the table; it does
+not FILL it**, and the row reads as if it did. ✅ **Corrected in place.**
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `nba_101108` **0/0/0** — *the convention split
+appears nowhere*; `two id convention` scores `1/1/1` and was **opened**: `NBA_MASTER_SUMMARY.md:10827`
+is about `calibration_log`, a different table. ⚠ *`player_name_map` scores **7 of 12** — **high
+name-coverage again** — and the mentions were opened: they give its **row count** and its **certifier
+check**, and **not one names its writer or says nothing schedules it.*** ✅ **NOVEL.**
+
+📌 ***The lesson:*** **the clean result and the finding came from the same query.** ⚠⚠ ***A test for
+foreign rows is a test of what the ids MEAN, and running it across every table in a database will
+tell you, whether you asked or not, that half of them are speaking a different language.***
