@@ -1839,6 +1839,34 @@ than a post-hoc explanation, and the corpus was carrying the weaker version.**
 sitting alone is invisible to it, and so is any finding carrying no numbers at all.* ***"`172`
 number-dense segments were found and worked", never "the uncovered band is now read."***
 
+## §F6.11 – §F6.14 — the `A2` retraction, its remainder, and a `NOT RECORDED` discharged
+
+| § | finding | where |
+|---|---|---|
+| 🔴🔴 **`§F6.11` / `§F6.12`** | **MY OWN DEFECT, CORRECTED WITHIN THE HOUR.** *`§F6.5` §1 published a table under the heading `WHY A2 SHIPS`. **`A2` is `CLOSED` — "does not ship in any of four forms" — and that table is EXPLICITLY RETRACTED as contaminated** (`nba_config.classification_config.absence_panel_measured_2026_09_12`: "two-season agreement proves stability, NOT correctness. A biased estimator reproduces its bias"). Heading struck, retraction notice added, the verdict table's `✅ SHIPPED` row marked **SUPERSEDED**, and the retraction's full reasoning written up — **it is the best methodology in this corpus.*** | `FSC` |
+| 🔑🔑 **`§F6.13`** | **WHAT SURVIVED THE RETRACTION.** *`14` strings from `enrichment_reality_check_2026_09_13` were in **`0` of the twelve**. Chief among them: **the fitted usage allocation's `-0.024`** — the hand-reasoned prior for who absorbs a missing player's shots was **uninformative, and signed the wrong way**, which is mechanically why refitting `A2`'s magnitude could not rescue it; **the decisive slice deltas** `-0.051` (high novelty, `n=866`) vs `-0.013` (low novelty, `n=4,695`) — *`A2` does worst where its own mechanism predicted it would do best*; and **the fourth form tested**, `magnitude refit against the baseline minutes residual`, which is why the status is `CLOSED` and not `NEEDS TUNING`. | `FSC` · **new item `F6-2`** |
+| ✅✅ **`§F6.14`** | **A `NOT RECORDED` DISCHARGED, AND THE CONCLUSION REVERSED.** *`§T11.4c` found the injury archive's hardcoded `-05:00` on **`1,338,020` of `1,338,020`** rows and predicted it "loses the most recent hour" at a cutoff — but left **"whether any live consumer filters that way is NOT RECORDED"**. **Traced: `15` scripts touch the field, `10` parse it, `6` compare it to a boundary — and EVERY boundary is ALSO a fixed offset, `-05:00` and `-08:00`, exactly `3` hours apart, which is the true ET↔PT gap in BOTH standard and daylight time. The offsets cancel; every comparison implements wall-clock time and is correct in EST and EDT alike.*** ✅ *And the field **never reaches a `timestamptz` column** — verified against live `information_schema`.* | `OPEN_ITEMS` |
+
+🔴🔴 **AND THE PART THAT MATTERS MORE THAN THE ALL-CLEAR — `§F6.14` §4.** ***The system is correct
+because it is wrong twice, symmetrically.*** **Fixing the scraper's `-05:00` to a real
+`America/New_York` zone — the obvious repair — would BREAK all six boundary consumers, because
+their `-08:00` and `+22:30 UTC` literals would no longer track it.** ⇒ *`OWNER DECISION`: **one
+atomic change across seven files, or none.** A partial fix is strictly worse than the defect. **The
+item stays OPEN** — the cancellation is a property of the current readers, not of the data.*
+
+⚠ **AND ONE MORE OF MINE, CAUGHT BEFORE IT SHIPPED (`§F6.13` §0).** *`graded blind` returned **`1`
+of `12`** on the verification pass and I nearly scored it "already covered". It is **my own `§F6.12`
+text from forty minutes earlier** — `git show 971f3cbe~1` gives **`0`**. 🔑 ***Third occurrence of
+`§T20.136`'s failure (verification reading its own writes); caught by the habit the first two
+forced. When a count moves in the direction that flatters the verifier, check which commit put it
+there.***
+
+⚠ **RULE 54 on `§F6.13`.** *`n`, the sample, the stat and the seasons behind the `-0.024` are all
+`NOT RECORDED`, and `-0.024` is approximately zero in absolute terms — **the load-bearing reading is
+"the prior carries no usable signal"**, and the directional reading is weaker and recorded as such.
+*`n = 866` is `5.8%` of the legs with **no interval published**, so the verdict is sound on the
+ORDERING and the `4×` is decoration.*
+
 ---
 
 # 📜 §F4 — THE CERTIFICATION REGISTER
