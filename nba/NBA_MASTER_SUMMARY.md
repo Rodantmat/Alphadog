@@ -325,6 +325,58 @@
 
 ---
 
+> # 🔢 **CANONICAL FIGURES — WHERE A NUMBER YOU FOUND IN FOUR DOCUMENTS ACTUALLY COMES FROM**
+> ### *(added `2026-09-23`, `§F7.9`. **Authoritative.** The owner's last research question: "whether the same question is answered in four documents with no pointer between them.")*
+>
+> ## 1 · 🔴🔴 Measured, `2026-09-23`
+>
+> | | n |
+> |---|---|
+> | distinct comma-grouped figures across the twelve | `1,185` |
+> | 🔴 **figures appearing in `4` or more of the twelve** | **`84`** |
+> | their total occurrences | **`1,825`** |
+> | ✅ occurrences carrying a `§` pointer within `±300` characters | `637` — **`34.9%`** |
+> | 🔴🔴 **bare restatements, no pointer anywhere near them** | **`1,188` — `65.1%`** |
+>
+> 🔴 **Worst attributed, and it is the worst possible pair to be worst**:
+> **`NBA_RECIPE.md` `15.0%`** and **`NBA_SYSTEM_ARCHITECTURE.md` `16.7%`** — ***the two documents a
+> person opens in order to BUILD something.*** *Best: `NBA_GLOSSARY.md` `62.5%` and
+> `NBA_MULTIPLIERS.md` `60.0%`.*
+>
+> 🔑🔑 ***The answer to the owner's question is yes, `84` times over, and the number that matters is
+> `65.1%`: two out of three times a figure is repeated across this corpus, it is repeated without
+> saying where it came from.*** ⚠ **The danger is not disagreement — most of them agree.** *It is
+> that **a reader who finds a figure in four places has four apparent confirmations of something that
+> was derived once**, and no route back to the derivation to check whether it has since been
+> retracted. **`§F6.13` and `§F6.21` are both cases where exactly that happened to me.***
+>
+> ## 2 · ✅ THE CANONICAL TABLE — *the most-repeated figures and their single source of truth*
+>
+> | figure | what it is | ⚠ the fact you need with it |
+> |---|---|---|
+> | **`140,130`** *(`8` files, ×`42`)* | `final_hp` rows for **`2025-26`** | 🔴🔴 **ON ONE DATE.** *The table the engine READS covers **one season plus a single day**: `2024-25` `19,075,070` rows / `162` dates; `2025-26` `140,130` / **ONE**. **Together `49.7%` of the certified "both seasons, ~38.7M legs".** And it is **unchanged** across the whole span the sweep measured it — **not a transient mid-write state**.* → `NBA_DATABASE.md` |
+> | **`19,075,070`** *(`6`, ×`27`)* · **`19,215,200`** *(`6`, ×`58`)* | `final_hp` `2024-25` rows · `final_hp` total | ⚠ *Do not confuse with `baseline_history` `19,343,348`. **Three nine-digit figures within `1.4%` of each other, appearing in the same sentences.*** → `NBA_DATABASE.md` |
+> | **`2,199,354`** *(`6`, ×`63`)* | rows in **both** `board_tiers` **and** `board_tiers_v2` | 🔴 *"the SAME `2,199,354` rows and DIFFERENT value sets" — **v2 carries a third `anchor_type` (`none`) and a wider tier range.** ⇒ **equal row counts are not equal tables**, and this figure is the reason that sentence had to be written.* → `NBA_DATABASE.md` |
+> | **`111,768`** *(`6`, ×`27`)* | `defender_ratings` rows | *Fixed-effects ridge, offence-adjusted, reliability-shrunk, five channels. **Re-taken live `2026-09-22`: exact.*** → `NBA_FINAL_SCORING_CALIBRATION.md` |
+> | **`79,358`** *(`6`, ×`46`)* | `player_game_log` and its three siblings, **each** | *`= 26,401 + 26,306 + 26,651` — **four tables agreeing to the row. The agreement is the finding**, not the total.* → `NBA_DATABASE.md` |
+> | **`2,460`** *(`6`, ×`68`)* | `schedule_norm` rows · **and** `team_game_log_*` per season | ⚠⚠ **ONE FIGURE, TWO UNRELATED MEANINGS, BOTH LIVE.** *`schedule_norm` `2,460` with **zero** non-`002` games, `= 1,230 × 2`, against `event_game_map` `2,454`; separately the three `team_game_log_*` hold `2,460` **per season**, `× 3 = 7,380`. **Context decides which is meant, and the corpus rarely supplies it.*** → `NBA_DATABASE.md` |
+> | **`2,666`** *(`6`, ×`48`)* | `nba_calendar.games` rows | 🔴 ***`2025-26` (`1,400`) + `2026-27` (`1,266`) ONLY — no `2024-25`, no `2023-24`.*** *A figure that reads like a total and is actually a gap.* → `NBA_DATABASE.md` |
+> | **`1,230`** *(`7`, ×`197`)* | games in a full NBA regular season | ✅ *The one genuinely constant figure here — `30 × 82 ÷ 2`. **It is repeated `197` times because it is the only one that is safe to repeat.*** |
+>
+> ## 3 · 📌 THE RULE THIS PRODUCES
+> ***A figure repeated in four documents is one measurement seen four times, not four measurements.***
+> **Before quoting any number out of the twelve: (i) find its `§` label; (ii) if none is near it, look
+> it up here; (iii) if it is not here either, grep the figure across all twelve and read the
+> occurrence that DOES carry a `§` label — that one is the derivation and the rest are echoes.**
+>
+> ⚠ **NOT REPAIRED, DELIBERATELY** *(the same reasoning as `§F7.7`)*: *adding `1,188` pointers means
+> `1,188` edits to prose that is currently correct. **`RULE 1` and the owner's move rule both bite.**
+> The table resolves the `8` figures most likely to be quoted and edits nothing.* 🔴 **`76` of the
+> `84` shared figures are NOT in this table. That is the honest remaining gap, and it is stated
+> rather than left for a reader to discover.**
+
+---
+
 > # 🟢 **START HERE — FOUR QUESTIONS, ONE SCREEN** *(added 2026-09-22, T20 pass 102, §T20.107)*
 >
 > ⚠⚠ **THIS DOCUMENT IS ~~`2,789,201`~~ `2,954,675` CHARACTERS — about `739,000` tokens. DO NOT LOAD
