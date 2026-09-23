@@ -731,6 +731,41 @@ later.***
 | 🔴 **`nba_score.final_hp`** | **9,391 MB** | 19,320,938 |
 | `nba_market.board_snapshots` | 6,604 MB | 27,059,920 |
 | `nba_score.board_scored` | 2,948 MB | 11,956,460 |
+
+> ### ✅✅ **§T22.23 — `board_scored` NOW COVERS BOTH FULL SEASONS, AND THAT UNBLOCKS THE BIGGEST DOWNSTREAM ITEM IN THE PROJECT**
+> **`[LIVE-AUDIT]` `2026-09-23`** *(re-derived here; `T22` pass `23`)*
+>
+> | season | dates | span | legs | apps |
+> |---|---|---|---|---|
+> | **`2024-25`** | **`162`** | `2024-10-22` → `2025-04-13` | **`5,231,208`** | `10` |
+> | **`2025-26`** | **`163`** | `2025-10-21` → `2026-04-12` | **`7,587,507`** | `12` |
+> | **TOTAL** | **`325`** | — | **`12,818,715`** | — |
+>
+> 🔴🔴 **WHAT `T22` MEASURED ON `2026-09-21`, AND WHY THE CONTRAST IS THE FINDING:**
+> *Two days earlier the same table held* ***`2` dates — `2025-11-29` and `2026-01-15` — `11,279`
+> legs.*** *`T22` recorded the consequence in the strongest terms available to it:*
+>
+> > ***"`1` can't run yet… we don't have YOUR probability, for two reasons: the model has never
+> > scored a `2026-27` board — `board_scored` holds only `2025-26` replays, nothing after
+> > `2026-01-15`."***
+>
+> ⇒ ✅ ***That blocker is gone for the two historical seasons.*** **`2` dates → `325`. `11,279` legs →
+> `12.8 M`.** *The leg-by-leg comparison of the model's probability against PrizePicks' implied
+> probability — the payoff `T22` called item `1` — is now computable over both full seasons.*
+>
+> ⚠⚠ **TWO THINGS THIS DOES NOT SAY, AND BOTH MATTER:**
+> **1 ·** *The rebuild that produced it belongs to **the concurrent session** and is out of this
+> sweep's scope* *(it is recorded at `§T9` above as "`board_scored` is `50×` its recorded size…
+> rebuilt between `07:23` and `08:05` on `2026-09-21`")*. **What is recorded here is the STATE of the
+> table, which `NBA_DATABASE.md` is the document for — not the work that produced it.**
+> **2 ·** 🔴 ***The OTHER half of `T22`'s blocker is untouched***: *"even if it ran today, the inputs
+> are wrong. **Rosters are frozen at September `3` — LeBron on `LAL` while PrizePicks has him on
+> `PHI`.**"* **`325` scored dates of history do not fix a static layer frozen `21` days ago**, and the
+> forward-looking comparison still waits on it.
+>
+> 🔑 ***Recorded because a reader meeting `T22`'s blocker in the transcript would reasonably conclude
+> the payoff is still blocked. Half of it is not — and the half that is, is the static-layer freeze
+> that already sits in the opening-day brief.***
 | `nba_market.board_outcomes` | 2,151 MB | 6,905,452 |
 | `score.final_board_history` | 1,342 MB | 249,648 |
 | `archive.board_leg_history` | 1,137 MB | 756,768 |
