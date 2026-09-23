@@ -2299,8 +2299,35 @@ rung-depth setting, not a design flaw**". **`±6 → ±10` IS that setting being
 result is `0` out-of-range on all four singles props. ⇒ **`§F6.20`'s diagnosis was right and the fix
 is on file; neither half was in the twelve.***
 
-⚠ **`RULE 54` / `RULE 30`.** *`44,544` loaded vs `45,965` in the artifact is a **`1,421`-row
-difference** — ⚠ **and that is the same integer as `§F6-1`'s `ot_rule` loss.** ***COINCIDENCE NOT
-RULED OUT AND NOT ASSERTED AS CAUSE:*** the `T14` build is `2026-09-11`-era and a different slate
-from the `2026-03-15` partition `§F6.16` measured, and this pass did not re-run either. **Recorded
-as a number to check, not as a finding.***
+### 3 · 🔴🔴 **AND THE ARITHMETIC IN THIS SEGMENT INDEPENDENTLY CORROBORATES `F6-1`, TWELVE DAYS EARLIER**
+
+*`T14` reports **`45,965` rows in the artifact** and, in the next message, **`44,544` loaded to
+Postgres**. **`45,965 − 44,544 = 1,421`.***
+
+🔴🔴 ***That is the same integer `§F6.16` measured on the live table — `52,018` in the committed
+artifact against `50,597` in `nba_score.baseline_ladder`, a loss of `1,421`.***
+
+**And it is the same slate.** ✅ *`T14`'s build is described as **`18` props, `161` players**;
+`nba_baseline_ladder_2026-03-15.json` — the only committed artifact with those exact counts — is
+**`18` props, `161` players**. The other three artifacts are `22` props / `184` and `227` players.*
+
+| | artifact rows | loaded / live | dropped |
+|---|---|---|---|
+| **`T14`, `2026-09-11`-era revision** | `45,965` | **`44,544`** | 🔴 **`1,421`** |
+| **committed revision, measured `2026-09-23`** | `52,018` | **`50,597`** | 🔴 **`1,421`** |
+
+⇒ ***Two revisions of the same slate, twelve days apart, and the loader drops exactly the same
+`1,421` rows from both.*** 🔑 **That is what a STRUCTURAL key defect looks like from the outside:
+the artifact grows by `6,053` rows, and the loss does not move — because the loss is the count of
+`(player, game, prop, period, line)` keys carrying BOTH `ot_rule` values, which is a property of the
+slate's period structure and not of its rung depth.** ⇒ 📌 ***`F6-1` is not a defect discovered
+today. It has been dropping these rows on every build of this slate since at least `2026-09-11`,
+and it stayed invisible because the artifact's row count and the table's row count were never put
+beside each other — `T14` printed both, one message apart.***
+
+⚠ **`RULE 54` — what is NOT proven.** *The `T14`-era `45,965`-row artifact **is not in the
+repository** (only the later `52,018`-row revision is committed), so **its `1,421` cannot be
+DECOMPOSED into `ot_rule` pairs the way `§F6.16` decomposed the current one.** **The identity of the
+two differences is VERIFIED arithmetic on figures from two independent sources; the shared CAUSE is
+a strong inference, not a measurement.** *And `T14` itself drew no conclusion from the gap — the two
+numbers are in consecutive status reports and nothing in the corpus subtracts them.*
