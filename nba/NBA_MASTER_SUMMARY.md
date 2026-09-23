@@ -40264,3 +40264,98 @@ baseline and the `325 = 325` control appears in neither tree. ✅ **NOVEL.**
 fact a conclusion needs and still publish the wrong conclusion twice.** *What caught it was not a new
 query — it was being made to walk thirty steps in order, where two sections that never cite each
 other land four rows apart.*
+
+---
+
+# §T20.135 — 🔴🔴🔴 **THE FORWARD-CLAIM AUDIT — `3` OF `34` FALSIFIED, AND THEY ARE THE TOP OF THE BRIEF**
+
+*T20 pass 130, 2026-09-23. Pre-registered as the deliberate version of what pass 129 found by
+accident: **§T20.117 and §T20.127 each predicted the wrong opening-night behaviour while the corpus
+held the fact that disarmed them. Are there more?***
+
+## 1. 📋 THE POPULATION — **pinned from source BEFORE any reading, `2026-09-23T01:26:35Z`**
+
+**`45` dated forward-looking units across the nine non-summary documents**, matcher pinned verbatim
+`(2026-10-20|opening night|opening day|the opener|night one|first game of the season)`. 🔴 **`11` of
+`NBA_RECIPE`'s `17` are `STEP 13` — pass 129's OWN OUTPUT — and were excluded** *(rules 26/28: a pass
+may not audit its own work as if inherited)*, **leaving `34` inherited units under test.** ⚠ *The
+recount corrected my own estimate of `40` to `45` — which is the whole reason the rule exists.*
+⚠ **`NBA_MASTER_SUMMARY` `125` and `NBA_OPEN_ITEMS` `87` match the same matcher and are DEFERRED TO
+PASS 131 — named, not dropped**; *both entries pass 129 falsified lived there, so the deferral is a
+debt.* **The deferral is of the AUDIT, not of REPAIRS: `T20-13` and the brief were amended this pass.**
+
+## 2. 📊 ALL `34` SCORED — *and the four counts sum to `34`, as clause (iii) required*
+
+| verdict | n | units |
+|---|---|---|
+| 🔴 **FALSIFIED** | **3** | **1** `NBA_RECIPE` · **17**, **18** `NBA_WORKERS` |
+| ✅ **UPHELD** | **20** | 2·4·5·9·10·13·16·21·22·23·24·25·26·27·28·29·30·31·32·33 |
+| ⚠ **UNFALSIFIABLE UNTIL `2026-10-20`** | **2** | **6** *(ingestion latency)* · **12** *(the referee parser)* — **both already self-labelled as such, which is the discipline working** |
+| 📌 **NOT A PREDICTION** | **9** | 3·7·8·11·14·15·19·20·34 — *advice, bare dates, or quoted history* |
+
+## 3. 🔴🔴🔴 THE THREE FALSIFIED UNITS ARE ONE CLAIM, IN TWO DOCUMENTS — **`T20-13`'s "TWELVE RED NIGHTS"**
+
+> **As published**: *"from opening night `2026-10-20` through `2026-10-31` the gate cannot be met —
+> **twelve consecutive red nights**"* — `baseline_history` carrying `22` October props against a
+> `>= 25` gate with `CERT_STRICT=1`.
+
+🔴 **FALSE AS STATED.** The `>= 25` prop gate is `certify_pipeline.py`'s **SECOND** `p2` check. The
+**FIRST** is `baseline_history has today > 0` — and **it fails first, and fails every night**,
+because **no pipeline step writes `nba_score.baseline_history`** *(`T20-6`, `§T20.134`, `STEP 13`)*.
+⇒ ***The nights are red from `2026-10-20` for an earlier reason, and they do NOT turn green on
+`2026-11-01`. They stay red all season.*** 🔑 **`T20-13`'s twelve-night window is a CONDITIONAL
+prediction: it becomes the live behaviour only once `T20-6` is resolved.**
+
+## 4. 🔑🔑🔑 THE FINDING UNDERNEATH — **THE BRIEF'S RANKING RULE HAS NO TERM FOR *HOW LONG***
+
+**`T20-13` is ranked `2nd` on the opening-day brief. `T20-6` is ranked `13th`.**
+
+| | `T20-13` | `T20-6` |
+|---|---|---|
+| SILENT / LOUD · stops the slate · caught | LOUD · ✅ · ✅ | LOUD · ✅ · ✅ *(`P2`'s; `P3`'s never runs — it dies at step 9 of 11)* |
+| 🔑 **duration** | **12 nights** | 🔴🔴 **every night of the season** |
+| 🔑 **fixing it alone changes anything?** | 🔴 **no** | ✅ **yes** |
+
+⇒ ***The three stated criteria — SILENT before LOUD, STOPS before DEGRADES, UNCAUGHT before CAUGHT —
+TIE. The two that actually separate these items, DURATION and DEPENDENCY, are not in the rule.***
+
+🔑🔑 **AND THE DEPENDENCY ARGUMENT IS ALREADY ON THE BRIEF, MADE ONCE AND NOT TWICE.** Item `A` is
+ranked first on exactly this reasoning — ***"ADDING P2's CRON IS A PREREQUISITE FOR EVERY OTHER P2
+ITEM ON THIS BRIEF. `T20-13`'s twelve red nights cannot fire if nothing fires."*** **`T20-6` is a
+second prerequisite of identical shape and was never named as one.** ⚠ *So this is not a missing
+principle — it is a principle the corpus HOLDS, APPLIED ONCE, and never swept for its other
+instance.* 📌 ***The same failure mode §T20.134 found, one level up: pass 129 was a composition the
+sweep never performed; pass 130 is a principle the sweep never re-applied.***
+
+## 5. ✅✅ CLAUSE (iv) — **THREE LIVE CHECKS, `SELECT` ONLY, AND THE TWELVE REPRODUCE EXACTLY**
+
+| unit | the claim, as published | live, `2026-09-23T01:29Z` |
+|---|---|---|
+| **13** | `nba_calendar.games` frozen at `2026-09-02 20:25Z`, `2,666` rows, `1,200` regular + `66` preseason | ✅ **`2026-09-02T20:25:35Z` · `2,666` · `1,200` · `66` — byte-exact** ⚠ *the derived age "`20` days" now reads `21`; it carries its date, so this is drift, not error* |
+| **32** | *"only 32% of its rows carry an `edge` — `6,226,642` of `19,215,200`"* | ✅ **`19,215,200` · `6,226,642` · `32.40%` — byte-exact** |
+| **16** | the most recent Worker write "fourteen days old" | ✅ **UPHELD with the same dated-figure drift** — *the measurement holds; the derived age does not, by design* |
+
+🔑 ***A corpus-vs-corpus audit could not have produced these rows. Twenty-one days on, the twelve's
+numbers still reproduce against the live database — which is the counterweight to §3 and is stated
+at the same strength.***
+
+## 6. 📋 CLAUSE SCORING *(pre-registered before the pass ran — rule 34)*
+
+| clause | pre-registration | result |
+|---|---|---|
+| **(i)** | `RULE 52` by set difference vs `bands_p129.json` | ✅ **`entered=[] left=[]` on all three bands — TWENTIETH consecutive empty-set pass** |
+| **(ii)** | ≥ 1 of the `34` falsified | ✅ **HIT — three, and they are one claim at the top of the brief.** ❌ *The "`§T20.117`/`§T20.127` were isolated" branch is NOT available.* |
+| **(iii)** | all `34` scored, four verdicts, counts summing to `34` | ✅ **HIT — `3 + 20 + 2 + 9 = 34`.** |
+| **(iv)** | ≥ 2 units checked against the LIVE system | ✅ **HIT — three, all byte-exact.** |
+| **(v)** | falsified units repaired at source with both dates and a pointer, siblings swept | ✅ **HIT — `NBA_RECIPE` ×1, `NBA_WORKERS` ×2, plus the brief amended.** 🔑 *Rule 6 swept deliberately this time — the rule §T20.134 found broken.* |
+| **(vi)** | STOP if the first `10` are clean | ✅ **did not fire — unit 1 falsified.** |
+| **(vii)** | `RULE 51` last, against the BASELINE tree | ✅ **NOVEL — a duration term in the ranking rule scores `0` in the working tree and `0` in the baseline; `T20-13`-downstream-of-`T20-6` scores `0` in the baseline.** |
+
+🔴 **PRE-KILLED AND HONOURED** *(logged before the reading)*: `T20-13`'s gate · `T20-5`'s window ·
+`§T20.31`'s cron · PrizePicks · `T20-4`'s constants · `T20-6` itself · every `STEP 13` row. **None was
+re-published as a finding.** *Units 2, 5, 22 and 33 restate them and are scored `UPHELD`, not `NEW`.*
+
+📌 ***The lesson:*** **a ranking is an argument, and an argument ages.** *The brief's rule was written
+when the worst known item cost twelve nights. It has been outlived by its own list and was never
+re-derived — so the sweep's most consequential finding sits eleven places below a finding that
+cannot fire without it.*
