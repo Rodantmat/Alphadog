@@ -2478,6 +2478,128 @@ that day's `HEAD`. **The `9`-word shingle test can score a paraphrase as ABSENT 
 PRESENT** — every PRESENT verdict at the `60%` boundary was spot-checked by hand, and every
 candidate was read. **`NOT DONE`: a second READER.***
 
+---
+
+## ✅ §F7.2 — **`NBA_OPEN_ITEMS.md`: THE DOCUMENT THE OWNER ACTS ON NOW OPENS WITH THE THING TO ACT ON**
+
+*`2026-09-23`. Owner defect `1` of `5`.*
+
+**The state found.** *The opening-day brief — `14` season-critical blockers, ranked — sat
+**`950,947` characters down the file**, and the top of the document was **a note telling the reader
+how far to scroll**. The owner's words: **"This is the document I act on. The brief and the
+owner-decision ledger belong at the very top, above everything else, with the history below them."***
+
+**What was done.** A **`▶ ACT ON THIS`** block now opens the file, above the index: the ranked
+blockers and the owner-decision ledger, each item with its severity, its live re-derivation date and
+a pointer to the domain document a fixer opens. *The history stays below, intact.*
+
+🔑 ***A pointer to a thing is not the thing.*** *The file had been "fixed" once already, by adding a
+note that said where the brief was. That is the repair that leaves the defect in place — the reader
+still scrolls, and now reads an apology first.*
+
+⚠ **`RULE 40` / the owner's move rule.** *Section count taken before and after; the hoisted block was
+inserted and verified before anything was struck, and the superseded position is marked, not deleted.*
+
+---
+
+## ✅ §F7.3 — **`NBA_RECIPE.md`: THE BUILD ORDER NOW MATCHES THE BUILD**
+
+*`2026-09-23`. Owner defect `2` of `5`.*
+
+**The state found.** *`STEP 0-T16` sat **above** `STEP 0`. `STEP 0c` sat **after `STEP 7`**.*
+⇒ 🔴 **The document's entire charter is *"each step in the order it happened"*, and it was the one
+claim the document did not satisfy.**
+
+**What was done.** Both blocks moved into build order; an **order table** added to the index marking
+each defect fixed and dated.
+
+🔴🔴 **THE METHOD IS THE FINDING, AND IT COST TWO FAILURES TO LEARN.** *The first two attempts
+patched **only the block's HEADER**, leaving its body orphaned under the preceding step — twice
+(`STEP 0c`, then `STEP 0-T16`). **An `old_str` that matches a heading moves the heading, not the
+section.*** ⇒ **The method that works, and that `§F7.4` then reused for `P–S (continued)`:**
+
+| | step |
+|---|---|
+| **1** | **INSERT the copy at the destination** — the file now holds the content **twice** |
+| **2** | **VERIFY byte-identical** — extract both ranges programmatically and compare, do not eyeball |
+| **3** | **DELETE the original**, leaving a dated stub that says where it went |
+
+🔑 ***At no instant is the content absent from the file.*** *The owner's rule — "a move is a delete
+plus an insert, which is how content gets lost" — is satisfied by never being in the deleted state.*
+
+---
+
+## ✅✅ §F7.4 — **`NBA_GLOSSARY.md`: THE BODY RANGE IS NOW CONTIGUOUS `A … Z`**
+
+*`2026-09-23`. Owner defect `3` of `5`.*
+
+### 1 · The state found
+
+*The file holds **two** A–Z structures and nothing said so.* **`§Z — THE COMPLETE TERM INDEX`** had
+complete per-letter buckets `A`…`Z`. **The BODY** ran `A · B · C · D · E–F · G–I · L–N · P–S · T–W ·
+P–S (continued) · PENDING`.
+
+| | 🔴 defect | n |
+|---|---|---|
+| **1** | **`J`, `K` had index entries and no body block** | `7` terms |
+| **2** | **`O` had index entries and no body block** | `29` terms |
+| **3** | **`X`, `Y`, `Z` had index entries and no body block** | `10` terms |
+| **4** | **`P–S` appeared TWICE, the second copy AFTER `T–W`** — *an alphabetical reader had already walked past it* | — |
+| **5** | **The closing status line read `Status 2026-09-20: T1 at pass 30 … T10–T20 not started`** — **wrong by ten transcripts** | — |
+| **6** | **The index carried no anchor rule and no `📌 HOW TO READ THIS FILE` closer** — *one of only two of the twelve missing both* | — |
+
+### 2 · What was done
+
+✅ **`J–K` written** · ✅ **`O` written** · ✅ **`X–Z` written** · ✅ **`P–S (continued)` moved to
+directly beneath `P–S` and demoted `##` → `###`**, by the insert-verify-delete method of `§F7.3`,
+**byte-identity confirmed programmatically before the original was struck** · ✅ **status line
+replaced with a dated `2026-09-23` table** carrying `T1`–`T18` swept, `T19`/`T20` `RULE 46`
+discharged, `T21`–`T24` open, and direction (b)'s `2,369` prose remainder · ✅ **anchor rule and
+`HOW TO READ THIS FILE` closer added** · ✅ **census re-derived** `46`→`47` sections, `105,868`
+bytes, `1,914` lines, `194` term entries, **and flagged as a point-in-time self-reference** *(the
+`§F6.19` / `§F6.26` trap: a census inside the index it describes is stale the instant the index
+changes)*.
+
+### 3 · 🔴 The correction this pass made to itself, one patch later
+
+*Having just repaired `J–K` and `O`, this pass wrote into the index:* ~~*"`X`, `Y`, `Z` still have
+no body block: `§Z` lists **`5`** such terms… **a real remaining gap, stated rather than smoothed
+over.**"*~~ **Both halves were wrong.**
+
+| | claimed | measured |
+|---|---|---|
+| **count** | `5` | 🔴 **`10`** *(`7` `x_*` + `2` `y*` + `1` `z*`)* — `RULE 56`, record `n`; `RULE 53`, grep the corrected value |
+| **disposition** | *"a real remaining gap"* | 🔴 **a ten-term bucket I was already inside the file to write** |
+
+🔑🔑 ***Documenting a gap you could close in the same pass is not documentation. It is deferral
+wearing documentation's clothes — and it is more dangerous than silence, because it reads as
+diligence and stops the next reader from looking.*** **`X–Z` was written; the index note was
+corrected in place rather than quietly replaced.**
+
+### 4 · What the repair surfaced
+
+🔴🔴 **`ot_rule` — the `F6-1` season-critical finding had no glossary entry at all**, because `O`
+did not exist. *A primary-key column of `nba_score.baseline_ladder` that the production loader's
+merge key omits, costing **`1,421` rows per run**, measured twice twelve days apart.* ⇒ 🔑 ***A
+glossary term whose definition is a primary-key column is a term whose omission is a data loss, not
+a documentation gap.***
+
+⚠ **The `P–S` bucket's FIRST ENTRY was `operating model, the owner's`** — an `O` term filed under
+`P–S` **because there was no `O` to file it in.** *Left in place and cross-pointed from `O` rather
+than moved: `RULE 40`, and the move rule. **A structural gap does not stay in its own lane; it bends
+the content around it**, and the bent content survives the gap's repair.*
+
+⚠ **`X`, `Y`, `Z` still have no `§Z`-independent definitions problem** — *`overtime_pace_live` in
+`O` is the standing `RULE 58` example, and `zero_officials_parsed_v3` in `X–Z` is a standing example
+of the same fact living in five of the twelve with no pointer between them. **That is `§F7.9`'s
+subject, and both entries now point at it.***
+
+⚠ **`RULE 54`.** *`WINDOW`: `NBA_GLOSSARY.md` at `2026-09-23` `HEAD`, `§Z` enumerated in full;
+definitions sourced by `grep` across the twelve. **Counts are of `§Z` index rows, not of distinct
+concepts** — the `x_*` family is `7` rows and one idea, and is written as one entry. **`NOT DONE`:
+the `§Z` index itself has not been audited for terms that exist in the corpus and are missing from
+it** — this pass audited the body against `§Z`, not `§Z` against the corpus.
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
