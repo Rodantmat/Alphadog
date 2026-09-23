@@ -6,7 +6,8 @@ constraints that shaped it. This is the operational spec.
 ---
 
 > # 📑 **INDEX — `NBA_SYSTEM_DESIGN.md`**
-> **~~`148`~~ → ~~`166`~~ → ~~`167`~~ → `169` sections · ~~`178,053`~~ → ~~`185,565`~~ → `193,223` bytes *(at parent commit; `§F6.19`)* · ~~`2,429`~~ → `2,526` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> **What the system is for, and how the three pipelines deliver it** — `P1`, `P2`, `P3`, the `1:15 PM
+> PT` cutoff, the calculation chain, the failure policy, and the explicit non-goals.
 > 📏 **`171` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_SYSTEM_DESIGN.md ``
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
