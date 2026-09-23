@@ -2679,6 +2679,88 @@ were not exhaustively swept** — `RULE 46`'s stale assertions were hunted by st
 and the survivors are all inside superseded rows kept under `RULE 40`, **but a claim phrased in words
 this pass did not grep for would not have been found.**
 
+## ✅✅ §F7.6 — **THE FOLDER REGISTER: ALL `32` `nba/*.md` FILES CLASSIFIED, AND ONE GROUP TURNS OUT NOT TO BE HISTORICAL AT ALL**
+
+*`2026-09-23`. Owner defect `5` of `5` — **"~20 other `NBA_*.md` files sit in the same folder as the
+twelve; record inside the twelve which files are the twelve, which historical, which superseded."***
+
+### 1 · The count *(`RULE 56`)*
+
+**`32` markdown files in `nba/`. `12` mandated. `20` other** — the owner's "~20" is exact.
+
+| group | n | what it means |
+|---|---|---|
+| **1 · the twelve** | `12` | the mandated set; the only files this sweep may patch |
+| **2 · live and standing** | `6` | `COMPASS` · `SWEEP_RUN_LOG` · `PROJECT_LOG` · `DOCUMENTATION_PROMPT` · `DAILY_PARITY_AND_BACKFILL` · `AVAILABLE_TOOLS` |
+| **3 · source of record** | `8` | the enrichment/baseline/lessons inputs the twelve cite |
+| **4 · historical** | `5` | two dated checkpoints + the three MLB-transfer documents |
+| **5 · out of scope** | `1` | `PP_PAYOUT_FINDINGS.md` |
+
+### 2 · 🔑🔑 The finding the classification produced, which the classification was not looking for
+
+*The owner's three buckets were **the twelve · historical · superseded**. **The files do not fall
+into three buckets, and forcing them would have destroyed information.*** Group `3` is the reason:
+
+🔴 **`NBA_LESSONS_LEARNED_FROM_MLB.md` Parts G and H — `22` numbered lessons — ARE NOT IN THE
+TWELVE.** *Part A's `27` are; Parts G (`10`, NBA-earned, `2026-09-09`) and H (`12`, the backfill and
+board-sourcing phase) postdate `T1` and were swept with `T7`–`T11` without being folded in. It is an
+open item, `FROM T1 PASS 30`.*
+
+⇒ ***A file that sits outside the mandated twelve is not therefore redundant. This one holds `22`
+lessons that exist nowhere else, and classifying it "historical" would have licensed a future reader
+to skip it.*** 🔑 **"Superseded" is a claim about CONTENT, and it has to be checked, not inferred
+from a date or a filename.** *`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` is the oldest file in the
+folder — `2026-08-30` — and its `§7` is quoted in the glossary as the owner's operating model. **Age
+predicts nothing.***
+
+⚠ **`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md` still instructs *"read this first in any new
+NBA session."*** ***That instruction is now false, and the file cannot know it.*** **A superseded
+document's own front matter keeps issuing orders until something outside it says otherwise — which
+is precisely what a register is for.**
+
+⚠ **`NBA_SYSTEM_DRAFT.md` sits alphabetically adjacent to `NBA_SYSTEM_DESIGN.md`**, a mandated
+document. *A Phase-2 sketch from `2026-09-02` and a document rewritten today, one line apart in
+`ls`. **That collision is the defect in its most concrete form.***
+
+⚠ **`PP_PAYOUT_FINDINGS.md`'s own header asks to be folded into `NBA_MULTIPLIERS.md` and
+`NBA_GOBLIN_DEMON.md`.** *This sweep does not touch it (constraint `6`). **Leaving a live request
+unactioned is a decision, and it is now recorded as one so that it cannot be mistaken for an
+oversight later.***
+
+### 3 · The discriminator, run before it was published *(`RULE 57`)*
+
+*A register goes stale. A test does not.* ***Claim: a mandated document opens with a `📑 INDEX` block
+inside its first `1%`.*** **Run on all `32`:**
+
+| | result |
+|---|---|
+| the twelve, index present | ✅ **`12`/`12`** |
+| siblings, index absent | ✅ **`19`/`20`** |
+| 🔴 false positive | **`1` — `NBA_SWEEP_RUN_LOG.md`** |
+
+**`31` of `32`.** ⚠ **Published with the exception named, not rounded to "all".** *And the exception
+is informative: the run log has an index because it is **written by this sweep to the same standard
+as the twelve** — the one sibling that is an OUTPUT of this work rather than an INPUT to it.*
+
+### 4 · Where it lives, and the decision behind that
+
+**Authoritative copy: `NBA_MASTER_SUMMARY.md`**, directly under `HOW TO SEARCH THIS FILE
+EFFICIENTLY`. **Pointers only** from `NBA_GLOSSARY.md`'s `▶ FIND IT FAST` *(the find-it surface)* and
+`NBA_OPEN_ITEMS.md`'s `ACT ON THIS` block *(the act-on-it surface)*.
+
+🔑 ***Three surfaces, one authority — the `§F7.9` problem solved forwards instead of discovered
+backwards.*** *Copying the register into all twelve would have produced twelve registers drifting
+apart, which is the exact failure mode `§F7.9` exists to measure. **The register is the first thing
+in this corpus written with that rule applied in advance.***
+
+⚠ **`RULE 54`.** *`WINDOW`: `nba/` at `2026-09-23` `HEAD`, `32` `.md` files, sizes and last-commit
+dates from `git log -1` per file. **Classification is a JUDGEMENT on each file's header and its
+citation pattern in the twelve — it is not measured.** *The one measured claim is the `📑 INDEX`
+discriminator.* **`NOT DONE`: the `12` non-`.md` artefacts in `nba/` — `.py`, `.js`, `.json`, the
+`tools/` and `data/` trees — are not registered here.** *The owner's defect named `.md` files; the
+scripts are described inside `NBA_WORKERS.md` and `NBA_RECIPE.md` by function rather than by a
+folder listing, and whether that is sufficient has not been tested.*
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
