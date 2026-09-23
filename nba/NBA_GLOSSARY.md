@@ -1610,6 +1610,10 @@ capital deployed**; a smaller sample is acceptable for materially higher ROI, **
 not pre-filter**; *"every check"* means every check; **believe an owner-reported anomaly and
 investigate it.** → `NBA_MASTER_SUMMARY.md` §T1.61 · `NBA_SYSTEM_ARCHITECTURE.md` §1a.
 
+---
+
+## P–S
+
 **per-subgroup validation** · T1 (blueprint §7f) · The rule that **an aggregate out-of-sample pass is
 necessary but not sufficient**: a proposed calibration correction must be checked against **every
 meaningfully distinct subgroup it will be applied to** — both sides of a market, every tier — not the
