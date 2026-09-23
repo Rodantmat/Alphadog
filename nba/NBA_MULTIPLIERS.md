@@ -326,6 +326,107 @@ the identical figure being the **cautionary example** in #26 means it should be 
 **`BACKTEST-LOCKED`** tag on `nba_config.classification_config`, which separates earned values from
 seeds. **The multiplier work has no equivalent tag and needs one.**
 
+## 🆕 0.2f-T23 **§T23.6 — FIVE SLIP-LEVEL LAWS MEASURED ON `2026-09-21`, NONE OF WHICH WERE IN THESE DOCUMENTS**
+*Recorded `2026-09-23`, `T23` pass `6`. **Read this before `§0.2f` below — three of the five change
+what that section's cross-game rule costs.***
+
+### 🔴🔴 **1 · THERE IS A HARD PAYOUT CAP, AND OUR PRICING RAN `16×` PAST IT**
+***PrizePicks never prices a single leg longer than an implied probability of about `0.072`. Paired
+with a standard, that is a maximum `2`-pick of `18.5×`.***
+
+| | |
+|---|---|
+| the evidence | **WNBA demons in THREE different stat families all stop at exactly `0.0720` and `18.5×`** |
+| why that proves it is engine-level | 🔑 ***a cap that ignores each stat's own spread cannot come from the stat — it comes from the pricing engine, so it applies to NBA too*** |
+| why NBA could never have shown it | ⚠ **NBA's own data never went far enough out the tail to reach the cap** |
+| 🔴 **what it caught** | **our NBA pricing allowed extrapolated `2`-picks up to `306×`** — *a price PrizePicks does not offer and never has* |
+| the correction | **`4,748` NBA legs repriced; maximum falls to `18.51×`; coverage unchanged; reversible in one step** |
+
+🔑🔑 ***A neighbouring league was the only place a ceiling on THIS league's prices could be
+observed.*** **That is the strongest argument in this corpus for the WNBA data being worth
+collecting at all** — *and it arrived under an explicit owner constraint that WNBA is **only** a data
+source for sharpening NBA, with no WNBA models, constants or WNBA-only stats. **The cap transfers;
+WNBA's rebound and assist constants were tested, found to differ, and dropped.***
+
+### 🔴 **2 · THE SLIP LAW FOR A SINGLE ALTERNATE: `payout = base × factor^a`, WITH `a` RISING BY SLIP SIZE**
+| picks | `a` |
+|---|---|
+| `3` | **`1.008`** |
+| `6` | **`1.069`** |
+
+⇒ ***That exponent is why goblins pay BELOW the all-standard base in big slips and demons ABOVE it.***
+**Fits to `1`–`2%` — PrizePicks' own rounding level — where the same slips were previously known only
+to `±6%`.** ⚠ **Still partial**: *with two or more alternates at `4`–`6` picks, real payouts come in
+about `7%` BELOW the law.* **Marked partial rather than guessed, because it was tested before being
+registered.**
+
+### ✅ **3 · THE ALL-STANDARD TABLES ARE NOW VERIFIED AT EVERY SIZE — INCLUDING THE TWO THE BACKTEST DEPENDED ON**
+| picks | power | flex |
+|---|---|---|
+| `2` | `3×` | `2×` / `0.5×` |
+| `3` | `6×` | `3×` / `1×` |
+| `4` | `10×` | — |
+| 🔴 **`5`** | **`20×`** | **`10×` / `2×` / `0.4×`** |
+| 🔴 **`6`** | **`37.5×`** | **`25×` / `2×` / `0.4×`** |
+
+⚠⚠ ***`5`- and `6`-pick power were UNVERIFIED until this run, and the standards backtest's larger
+slips rested on them.*** **They are right.** 🔑 *A backtest result that depended on two published-but-
+unmeasured constants is now a backtest that depends on two measured ones — **the result did not
+change, and its evidential status did.***
+
+### 🔴 **4 · SAME-GAME PICKS CUT **FLEX**, NOT POWER**
+*A `3`-pick with two players from one game **kept its `6×` power** and had its **flex consolation cut
+from `1.0×` to `0.75×`**.*
+⚠⚠ **This QUALIFIES `§0.2f` directly.** *That section's rule — build cross-game by default because
+PrizePicks discounts same-game correlation — is **right for Flex and, on this observation, not
+applicable to Power at `3` picks**. **The discount is real; where it lands is narrower than the
+section implies.*** 📌 *`RULE 55`: one observation, so the rule is not rewritten — the observation is
+filed against it.*
+
+### 🔴 **5 · `LESS` IS THE EXACT COMPLEMENT OF `MORE`, AND IT HAS ITS OWN FLOOR**
+| | |
+|---|---|
+| the pricing relation | **`Less` is priced as the exact complement of `More`, from the same formula** — *for the same line the two probabilities sum to about `0.98`* |
+| does NBA's formula already predict it? | ✅ **yes** — using NBA's own points-family constant, WNBA `Less` prices land **within `4.7%` on average, `91%` within `10%`** |
+| 🔴 **the floor is DIFFERENT on `Less`** | **favourites on `Less` floor at `1.7×`, not the `2.08×` goblin floor** — **`28` of `36` demons whose price would have gone lower sat exactly at `1.7×`**; goblins on `Less` paid `3.25×`–`8.0×` |
+| the trap that was caught first | ⚠ **the database would have silently discarded every `Less` price as a duplicate of its `More` price** |
+
+⇒ **Pricing floors are now SIDE-AWARE.** *No existing NBA price changed, because NBA does not offer
+`Less` on alternates yet — **so this is a rule installed before the board that needs it exists**,
+which is the right order and worth noting as such.*
+
+### 🔴🔴 **6 · `fantasy_score` IS PRICED BY A COMPLETELY DIFFERENT MECHANISM**
+*The system's highest-volume prop, and the one `F6-3` already flags for its underived penalty.*
+
+| | |
+|---|---|
+| rung structure | **exactly ONE goblin and ONE demon, placed SYMMETRICALLY around the standard** |
+| the gap grows with the line | **`4.5` points on a `15.5` line · `6` on a `41`** |
+| 🔑🔑 **prices are FIXED; the LINES move** | **every goblin pays `2.3×` in a `2`-pick and every demon `4.5×`–`4.75×`, FOR EVERY PLAYER** |
+| the implied rungs | PrizePicks sets them at roughly **`65%`** and **`32%`** probability |
+| `Less` mirrors it | *a demon taken `Less` pays the goblin's `2.3×`* |
+| its own spread constant | **`≈2.26`** — *wider than points alone, as a weighted sum of several stats should be* |
+| the scoring formula | ✅ **checks out**: `pts + 1.2·reb + 1.5·ast + 3·stl + 3·blk …` |
+
+🔑🔑🔑 ***EVERY OTHER PROP HOLDS THE LINE AND MOVES THE PRICE. `fantasy_score` HOLDS THE PRICE AND
+MOVES THE LINE.*** ⇒ ***`§T22.9`'s "priced by the line, not the rung" is exactly inverted here***, and
+**any model that infers a probability from a `fantasy_score` multiplier will read the same number for
+every player at every line.**
+
+🔴 **AND THE PIECE THAT IS MISSING IS ARCHIVAL, NOT ANALYTICAL**: ***PrizePicks' `fantasy_score`
+CENTRE LINE was never archived for NBA.*** *The plan is to rebuild it from the day's component lines
+— **untestable until the preseason board of `2026-10-03` provides real NBA fantasy lines.*** ⚠ *The
+board loader now captures fantasy and its components side by side, so the first full NBA map answers
+it. **A dated, falsifiable open item with a known resolution date — recorded as such.***
+
+⚠ **`RULE 54`.** *`WINDOW`: `T23`, `2026-09-21`, targeted WNBA runs plus NBA mined quotes. **The cap,
+the `Less` complement and the `Less` floor are measured on WNBA and TRANSFERRED to NBA on the
+engine-level argument** — that argument is stated above and is the claim to attack if any of the
+three fails on the NBA preseason board. **`NOT DONE`: the flex CONSOLATION-TIER rule was pooled across
+both leagues and remains unsolved** — *"it depends on something we can't observe"* — **and was dropped
+deliberately because standard flex payouts are fixed and verified, so it does not block the standards
+strategy.**
+
 ## 0.2f **PRIZEPICKS DISCOUNTS SAME-GAME CORRELATION — build CROSS-GAME by default**
 
 > ✅⚠ **DIRECTION CONFIRMED ON NBA, MAGNITUDE NOT — 2026-09-23 (`§T22.5` ⑤, `§T24.1` §2).**
