@@ -39,7 +39,14 @@ def fetch(name, timeout=180):
 
 
 def main():
-    season = os.environ.get("GAP_SEASON", "2025-26")
+    # SEASON (T23-2, fixed 2026-09-23). Was a hardcoded "2025-26" default: from the first 2026-27
+    # date the gap audit would have audited last season and passed while today's delta went unchecked
+    # - the silent hole this script exists to catch. active_stats_season() is the shared source of
+    # truth and honours an NBA_SEASON override.
+    import sys
+    sys.path.insert(0, "nba")
+    from nba_season import active_stats_season
+    season = os.environ.get("GAP_SEASON") or active_stats_season()
     slug = season.replace("-", "_")
     d_from = os.environ.get("GAP_FROM") or ""
     d_to = os.environ.get("GAP_TO") or ""
