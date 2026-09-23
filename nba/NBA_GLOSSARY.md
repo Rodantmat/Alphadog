@@ -6,7 +6,13 @@ context, and which document section. Any material term appearing more than once 
 ---
 
 > # 📑 **INDEX — `NBA_GLOSSARY.md`**
-> **~~`39`~~ → ~~`44`~~ → `46` sections · ~~`85,359`~~ → ~~`89,948`~~ → `101,134` bytes · ~~`1,639`~~ → ~~`1,709`~~ → `1,858` lines · built `2026-09-23`, census corrected same day (`§F2.14`), **re-derived `2026-09-23` after `§F7.4` repaired the body.**
+> **~~`39`~~ → ~~`44`~~ → `47` sections · ~~`85,359`~~ → ~~`89,948`~~ → `105,868` bytes · ~~`1,639`~~ → ~~`1,709`~~ → `1,914` lines · `194` bold term entries · built `2026-09-23`, census corrected same day (`§F2.14`), **re-derived `2026-09-23` after `§F7.4` repaired the body.**
+> ⚠ **A census in a file's own index is a self-reference that goes stale the instant the index
+> changes** *(`§F6.19`'s byte self-reference, `§F6.26`'s heading twin)*. **These figures are the
+> file as it stood at the close of `§F7.4`, not a live value.** *`+3` sections, `+15,920` bytes,
+> `+275` lines over the pre-`§F7.4` state — all of it the `J–K`, `O` and `X–Z` buckets plus this
+> index's own repairs; **nothing was deleted except one block that was verified byte-identical in
+> its new position first.***
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
