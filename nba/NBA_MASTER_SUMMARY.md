@@ -38887,3 +38887,92 @@ elsewhere"* — was true of every line and still produced a false headline, beca
 impeccable source and lose the qualifier that made the source true.** ⚠⚠ ***A summary is not a
 quotation. The failure mode of a router is not invention; it is COMPRESSION — and compression is
 exactly what a first-read surface is for.***
+
+---
+
+# §T20.120 — T20 PASS 115: 🔴🔴🔴 **EVERYTHING THAT FIRES ON A SCHEDULE IS AN INPUT. NOTHING THAT FIRES ON A SCHEDULE IS A LOADER — THE THREE BOARD SCRAPERS HAVE COMMITTED FRESH NBA BOARDS EVERY TWO HOURS FOR TEN DAYS AND THE DATABASE HAS NOT SEEN ONE**
+
+*Pass 115, 2026-09-23. Pre-registered as **"THE LIVE INGESTION CHECK — THREE BOARD SCRAPERS FIRE
+EVERY TWO HOURS. DOES ANYTHING REACH THE DATABASE? TRACE FILE → LOADER → TABLE FOR ALL THREE, AGAINST
+LIVE ROWS."** Clause (vi) offered a clean stop if all three landed. **None did.***
+
+## ① THE CHAIN, RE-DERIVED FROM SOURCE *(clause ii, `2026-09-22T23:59:34Z`)*
+
+| | `sleeper-board.yml` | `underdog-board.yml` | `fliff-board.yml` |
+|---|---|---|---|
+| **cron** | `15 */2 * * *` | `25 */2 * * *` | `35 */2 * * *` |
+| **`sports` default** | `"mlb,nba"` | `"MLB,NBA"` | `"mlb,nba"` |
+| **runs** | `scrape_sleeper_board.py` | `scrape_underdog_board.py` | `scrape_fliff_board.py` |
+| **writes** | `boards/sleeper_nba_current.json` | `boards/underdog_nba_current.json` | `boards/fliff_nba_current.json` |
+| **touches Postgres?** | 🔴 **NO** | 🔴 **NO** | 🔴 **NO** |
+
+**Verified**: none of the three scripts contains `psycopg`, `DATABASE_URL` or `INSERT INTO`. **They
+are file producers.** ⇒ **The second hop is `nba/archive_live_boards.py`**, which *"reads whichever
+board files exist (prizepicks, underdog, sleeper, fliff, betr), normalizes each app's shape to the
+`board_snapshots` columns, and writes them with a `snapshot_label`."*
+
+🔴🔴🔴 **AND THAT LOADER IS RUN BY EXACTLY THREE WORKFLOWS — `nba-board-archive.yml`,
+`nba-boards-market.yml`, `nba-p3-afternoon-light.yml` — AND ALL THREE CARRY ZERO `cron` LINES.**
+
+## ② THE VERDICT — ALL THREE `FILE ONLY`, WITH THE GAP MEASURED
+
+| app | its JSON's last commit | **last row in `nba_market.board_snapshots`** | rows | verdict |
+|---|---|---|---|---|
+| **sleeper** | **`2026-09-22T21:18:06Z`** *(~2.5 h ago)* | 🔴 **`2026-09-12`** | `1,276` | 🔴 **FILE ONLY** |
+| **fliff** | **`2026-09-22T21:38:26Z`** *(~2.3 h ago)* | 🔴 **`2026-09-13`** | `1,394` | 🔴 **FILE ONLY** |
+| **underdog** | **`2026-09-21T19:52:37Z`** | 🔴 **`2026-09-12`** | `939,719` | 🔴 **FILE ONLY** |
+
+*(`SELECT bookmaker, count(*), max(game_date), max(snapshot_ts), max(fetched_at) FROM
+nba_market.board_snapshots GROUP BY 1` — 14 bookmakers; the ten book sources all stop at
+`2026-04-12`, last fetched `2026-09-10`.)*
+
+⇒ 🔴🔴🔴 **THE SCRAPERS HAVE BEEN ALIVE THE WHOLE TIME AND THE DATABASE HAS SEEN NOTHING FROM THEM
+FOR TEN TO ELEVEN DAYS.**
+
+## ③ 🔴 AND EACH PULL DESTROYS THE LAST — THE LOADER'S OWN DOCSTRING SAYS SO
+
+**`archive_live_boards.py:5–7`, quoted**: *"**THE PROBLEM: every board scraper writes
+`boards/<app>_<sport>_current.json` and OVERWRITES it on the next** … from opening day the LIVE
+boards must land in the same table."*
+
+**Arithmetic, stated as such**: `3` apps × `12` pulls a day × `~10` days ≈ **`360` NBA board pulls
+scraped, committed, and overwritten**, of which **three files survive** — the newest of each.
+⚠ *Git retains the superseded blobs; **nothing reads boards out of git history**, and
+`archive_live_boards.py` reads only the current file.*
+
+## ④ WHAT THIS COMPLETES, AND WHY IT IS NOT THE ALARM IT FIRST LOOKS LIKE
+
+**`§T20.119`** corrected *"exactly one NBA workflow fires on a game day"* to **four**. **This pass
+completes that sentence**: 🔑🔑 ***the four that fire are three board scrapers and a referee capture —
+every scheduled job in this system is an INPUT, and not one is a LOADER.***
+
+⚠ **RANKED HONESTLY, AND IT IS NOT SEASON-CRITICAL**: **`P3` runs `archive_live_boards.py` as one of
+its own steps**, so the moment `P3` is triggered on a game day it archives the board it is about to
+score. **The board is not missing at scoring time.** 🔴 **What is lost is everything BETWEEN runs**:
+with `P3` run once a day, **eleven of the day's twelve pulls are discarded**, and with `P3` not
+triggered at all — today's state — **all twelve are.** 🔑 *The `snapshot_label` design says the
+`window` pull is the decision moment and "everything keys off it", so the discarded pulls are
+supplementary rather than load-bearing — **which is exactly why this is `HIGH/STRUCTURAL` and not a
+brief item.*** ▶ **`T20-22`. The brief stays at SIXTEEN.**
+
+## ⑤ THE KILL CONDITION WAS CHECKED FIRST, AND IT DID NOT FIRE
+
+**Pass 36's scrape-vs-load audit** — *"the two-hop architecture's second hop was never built for a
+whole family, and **the load gap is NOT systemic**"* — covers scrapers whose **Postgres-writer Worker
+does not exist**: `scrape_nba_season_tables.py`, `scrape_nba_matchups_pergame.py`,
+`scrape_nba_periods.py`, `scrape_nba_injury_report.py`, against `nba_config.worker_definitions`'s 21
+writers. 🔑 **This is the opposite shape: the loader EXISTS, is complete, handles all five apps — and
+has no trigger.** ⇒ **A verdict that audit had no category for, and its "not systemic" conclusion
+does not reach it.** ✅ **Read before writing, as clause (iv) required; logged, not fired.**
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `OVERWRITES it on the next` → **0/0/0** ·
+`no trigger` → **3 in the twelve, 0 in the baseline**. ⚠ *`archive_live_boards` scores **6 of 12** —
+high name-coverage again — **and the mentions were opened**: they discuss its season resolution
+(`§T20.117`-era) and its place in the script census. **Not one says it has no trigger, and none
+records the live gap.*** ✅ **NOVEL.**
+
+📌 ***The lesson:*** **`§T20.119` corrected a cron count and this pass turned that correction into an
+operational fact, which is what a corrected fact is FOR.** ⚠⚠ ***A system whose only automatic jobs
+are collectors looks alive from the outside — commits land, files update, the repo moves — and is
+inert where it matters. The freshest possible evidence of liveness (a board committed two hours ago)
+sat next to a database that had not changed in ten days, and nothing in the corpus connected them.***
