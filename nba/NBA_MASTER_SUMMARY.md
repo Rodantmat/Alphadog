@@ -41205,3 +41205,90 @@ check is the diff, not the intention.**
 problem, and this corpus already has a name for that class** *(`§T21.4`'s kill list: the DARKO debug
 artifact, "a failed scrape committing the first 20 kB")*. **The sweep found that pattern in the
 system three times before finding it in its own hands.**
+
+---
+
+# §T21.6 — ✅ **`T21`'s REMAINING YIELD IS BOUNDED AT `~15` SEGMENTS — AND THREE OF THEM LAND**
+
+*T21 pass 6, 2026-09-23. **Five passes in, the question is no longer "what else is in `T21`" but
+"how much is left".** This pass answers that with a decomposition, takes the three items worth
+taking, and hands over to `T22` — which `§T21.2` measured at `97.0%` uncovered.*
+
+## 1. 📊 THE DECOMPOSITION — **`T21`'s `311` uncovered assistant segments, classified**
+
+| class | n | share | documentable? |
+|---|---|---|---|
+| **tool-call PARAMETER echoes** — `context lines:` / `path:` / `pattern:` / `sql:` / `old str:` | **55** | `18%` | 🔴 **no — these are invocation arguments, not content** |
+| **pure sweep-process narration** — this sweep describing its own passes, clauses and probes | **241** | `77%` | ⚠ **rules 26/28 territory: it restates the sweep's own earlier work** |
+| ✅ **segments naming a system object** *(`nba_*.table`, `*.py`, `*.yml`, `cron`, `SELECT`)* | **15** | `5%` | ✅ **the real remainder — and it was read, all fifteen** |
+
+> ⇒ ✅ **`T21`'s remaining documentable yield is `~15` segments, and `§T21.4` had already killed the
+> five largest of them as on-file** *(the DARKO discard · the DARKO debug artifact · play-type
+> offensive-only · balldontlie rotation · "absence isn't evidence")*. **The `32` owner messages —
+> the highest-value stratum — were taken in full at `§T21.3`.**
+>
+> 📌 ***This is a measured bound, not an impression, and it is the basis for moving to `T22` while
+> `T21` stays formally OPEN*** *(it cannot close without three consecutive clean passes, and
+> `RULE 46`'s two independent fresh-context reads are owed on `T19`/`T20` regardless)*.
+
+## 2. ✅ THE THREE THAT LAND — *all `0/0` in both trees, checked before writing*
+
+### ① 🔴🔴 **THE GROWTH TIME-SERIES — `§T21.3`'s finding, with a middle data point** *(SEG `1279`)*
+
+*The handoff-to-then comparison, in the transcript's own table:*
+
+| file | at handoff | at `T21` | growth | **today, measured** |
+|---|---|---|---|---|
+| `NBA_MASTER_SUMMARY.md` | `396 K` | `574 K` | `+45%` | 🔴 **`3,099,657` — `7.8×` the handoff** |
+| `NBA_OPEN_ITEMS.md` | `204 K` | `473 K` | `+132%` | 🔴 **`1,178,210` — `5.8×`** |
+| `NBA_WORKERS.md` | `36 K` | `64 K` | `+77%` | `159,199` |
+| `NBA_GLOSSARY.md` · `NBA_RECIPE.md` · `NBA_DATABASE.md` | `28/20/44 K` | `40/27/63 K` | `+43/37/44%` | `85,359` · `80,325` · `171,747` |
+
+🔑 ***`§T21.3` had two points — `1.1 MB` and `5.67 MB`. This is the middle of the curve, and it shows
+the growth was already visible and already remarked on when the owner issued the
+reference-not-copy directive.*** **The directive was not a reaction to a surprise; it was a reaction
+to a trend someone had tabulated.** ▶ **Added to `T21-1`.**
+
+### ② ⚠ **`nba/tools/` IS A THIRTEENTH LOAD-BEARING ARTEFACT, AND IT IS NOT ONE OF THE TWELVE** *(SEG `1280`)*
+
+> *"`nba/tools/` now exists, holding `sweep_coverage.py` — the coverage matcher, index and backtest.
+> **that's a genuinely new artifact, not one of your 12, and it's load-bearing now: the completion
+> rule depends on it. protect it like the documents.**"*
+
+⇒ 🔑 ***The sweep's own completion criterion depends on a file that no mandate covers and no document
+lists.*** ⚠ **And it is unrunnable from a clean checkout** *(already on file, `5` hits — killed as a
+finding)* **for the same reason as `T21-1`: `nba/transcripts/` holds no transcripts.** ⇒ **The
+uncommitted-transcripts blocker disables TWO things, not one.** ▶ **Added to `T21-1`.**
+
+### ③ ✅ **`year_founded` IS NOT A COLUMN IN `nba_ref.arenas` — VERIFIED LIVE** *(SEG `1302`)*
+
+*The transcript's claim: the bad arena data — "atlanta 1949, dallas 1980, boston 1946, bill chisholm
+as owner" — **"sits only in the committed json, never loaded"**, because `year_founded` does not
+exist as a column and a `SELECT` on it errors.*
+
+**Verified independently, `2026-09-23T02:18:43Z`** — `information_schema.columns`, `nba_ref.arenas`,
+**`13` columns**:
+```
+arena_id, arena_name, team_id, city, state, capacity, altitude_ft, timezone,
+source_key, raw_json, data_quality, created_at, updated_at
+```
+⇒ ✅ **`year_founded` is absent. The claim holds exactly.** 🔑 ***And the mechanism is the
+interesting half: bad data in a committed JSON is INVISIBLE to every live check when the loader has
+no column for it — so "nothing has surfaced it" is not luck, it is structural.*** ⚠ **The bad values
+remain in the committed file and would land the moment a column is added.** ▶ **Recorded; not fixed
+(rule 1).**
+
+## 3. 📋 CLAUSE SCORING
+
+| clause | result |
+|---|---|
+| bound `T21`'s remainder by measurement, not impression | ✅ **HIT — `55/241/15`, decomposed and published** |
+| read ALL of the residual system-object segments | ✅ **HIT — all `15`** |
+| `RULE 51` on every item before writing | ✅ **HIT — `0/0` on all three; `sweep_coverage` unrunnable KILLED at `5` hits** |
+| verify anything live-checkable rather than quoting it | ✅ **HIT — `nba_ref.arenas`' full column list pinned** |
+| hand over with the next target measured | ✅ **`T22` at `97.0%` uncovered, `751` uncovered-substantive segments** |
+
+📌 ***The lesson:*** **`T21` is the sweep's own transcript, and `95%` of what is uncovered in it is
+the sweep talking about itself.** *That is not a defect in the transcript — it is what a
+documentation session IS. But it means the coverage percentage massively overstates the work left,
+and the only honest way to hand over is to decompose it and say so.*
