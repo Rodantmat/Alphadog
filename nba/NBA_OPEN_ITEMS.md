@@ -5483,6 +5483,34 @@ does not protect against the delete above it.**
 
 ---
 
+> ### ⚖ **§T22.26 — THE UNIFYING PARENT FOR THIS ITEM WAS PROPOSED, THEN WITHDRAWN ON PURPOSE. THE WITHDRAWAL IS THE RECORD.**
+> *(`T22` pass `26`, recorded `2026-09-23`. **A documentation decision, filed with its reasoning
+> because the reasoning is more reusable than the decision.**)*
+>
+> **What was proposed**, in `T22`'s own words: *"Record the unifying frame explicitly in
+> `NBA_OPEN_ITEMS.md`: the stale calendar, the `1,200`-game slate, the darko discard and this freeze
+> are **four observations of ONE ROOT CAUSE — scrapers are scheduled, loaders are manual.** Keep the
+> four entries, but add a parent."*
+>
+> **What was decided, minutes later, by the same session**: *"**Also hold the unifying parent entry.
+> Grouping the calendar, the `1,200`-game slate, the darko discard and the freeze under one root
+> cause IS ITSELF AN EXPLANATION, and it pre-empts `T18`.** Record the four as observed. **Group them
+> when the transcripts justify the grouping.**"*
+>
+> 🔑🔑 ***A grouping is a causal claim wearing organisational clothes.*** *Four separate observations
+> filed under one parent asserts that one thing causes all four — and here that assertion would have
+> been imported from `T18`, sixteen transcripts ahead of where the record stood.* ⇒ **The general
+> rule it belongs to, also from `T22`:** ***"A live-audit finding records what the system IS NOW. It
+> never explains WHY unless the explanation comes from a transcript already swept. If the why is
+> unknown at the current transcript, say so, and let the sequence deliver it."***
+>
+> ⚠ **THE FRAME ITSELF IS RECORDED HERE AS A CANDIDATE, NOT AS A CONCLUSION** — *"scrapers are
+> scheduled, loaders are manual"* — **so that the transcript which earns it can be matched against it
+> rather than re-deriving it from nothing.** 📌 *`§T20.51` has since extended the freeze to a tenth
+> table, and `§T14`'s Betr entry calls it "the same root cause… third instance" — **so the grouping is
+> accumulating evidence on its own, in the right order, which is exactly what the withdrawal was
+> waiting for.***
+
 ## 🔴🔴 SEASON-CRITICAL · `[LIVE-AUDIT]` · THE ENTIRE NBA STATIC LAYER IS FROZEN AT ITS BUILD DATE *(added 2026-09-21)*
 
 > ⚠⚠ **AMENDED 2026-09-22 (§T20.51, T20 pass 46) — A TENTH TABLE, AND THE SYSTEM'S OWN CERTIFIER
