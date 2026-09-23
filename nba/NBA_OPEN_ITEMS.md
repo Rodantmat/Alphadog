@@ -27,26 +27,44 @@ items themselves are stable; the tallies are not. `§F6.19`: re-derive sections,
 | **10** | **`T18-17`** | **The score formula's penalising half has never fired.** | intent, not measurement |
 | **11** | **`T22-1`** | *"the keep my million board in underdog"* — an owner request with **`0` record anywhere.** *Still wanted, or dropped?* | only you know |
 
-## 🔴 B · SEASON-CRITICAL — *what breaks when the pipelines run* · opener **`2026-10-20`**, preseason **`2026-10-03`**
+## 🔴 B · THE OPENING-DAY BRIEF, RANKED — *what breaks when the pipelines run* · opener **`2026-10-20`** · preseason **`2026-10-03`**
 
-**`19` items carry a `SEASON-CRITICAL` heading.** *⚠ The ranked ordering below `7` is `NOT RECONCILED` — the roster's own `DENOMINATOR NOTE` says so, and `§F6.18` measured three disagreeing counts on one page (`14` · `17` · `19`). **The ranking is the brief's; the completeness is this table's.***
+***This IS the brief, not a pointer to it.*** *The ranked rows `1`–`7` are the brief's own table,
+lifted here verbatim in its order. **Its amendment history, the per-item evidence and the
+ranking-rule argument stay below** under `OPENING-DAY BRIEF` — that is history, and history belongs
+under the decision, not above it.*
+
+**Ranking rule, re-derivable: SILENT before LOUD · STOPS THE SLATE before DEGRADES IT · UNCAUGHT by
+a certifier before CAUGHT.** *A silent failure costs a season before anyone looks; a loud one costs
+an evening.*
+
+| # | item | fails | effect | certifier catches it? | fix size |
+|---|---|---|---|---|---|
+| **1** | 🔴🔴 **`T20-5`** — the grader's window ends `2026-04-12` | 🔴🔴 **SILENT** *(prints "grading 0 dates", exits 0)* | **DEGRADES, cumulatively** — the as-of calibration and the confidence model learn from nothing, all season | 🔴 **NO** | **`3` sites, not `1`** |
+| **2** | 🔴🔴🔴 **`T20-7`** — P3's "Board tiers" step runs `maintenance_shrink_board_index.py`; `board_tiers` has no writer | 🔴🔴 **SILENT** *(the step succeeds; it classifies nothing)* | **DEGRADES** — P2 and P3 read a frozen tier table | 🔴 **NO** | **one step** |
+| **3** | 🔴🔴 **`T20-4`** — P3/P2 hardcoded to `"2025-26"`, **`14` locations** | ⚠ **MIXED** — `score_board_legs` aborts LOUD; `build_availability_delta` returns `0` **SILENT** | 🔴 **STOPS THE SLATE** | ✅ yes *(`PIPE=p3`)* | **`14` lines** |
+| **4** | 🔴🔴🔴 **`T20-6`** — **`7` of `12` certifier checks assert tables their pipeline never writes** | ✅ **LOUD** *(`CERT_STRICT=1`)* | 🔴 **STOPS THE SLATE** — both go red at certify, after all the work | *n/a — it IS the certifier* | **the check list** |
+| **5** | 🔴 **`T20-3`** — two MLB schedules still `enabled`, zero NBA rows | ✅ loud-ish | **DEGRADES** — unwanted work on a `42.95 GB` disk; `SELECT`-only observability cannot answer *"did P3 run today?"* | n/a | **a toggle** |
+| **6** | 🔴 **`T20-2`** — the storage-diet plan targets a database that has moved | n/a *(a plan)* | **DEGRADES THE DECISION** — a reader double-counts `action_2`'s `~174 MB` | n/a | **a rewrite** |
+| **7** | ⚠ **`T20-1`** — five 🔴 findings nothing points at | n/a *(navigation)* | **DEGRADES COMPREHENSION** | n/a | **pointers** |
+
+⚠⚠ **AND ELEVEN MORE CARRY A `SEASON-CRITICAL` HEADING WITHOUT A RANK.** *The roster's own
+`DENOMINATOR NOTE` flags its arithmetic `NOT RECONCILED`, and `§F6.18` measured **three disagreeing
+counts on one page** — the brief header said `FOURTEEN`, the roster said `SEVENTEEN`, the stated
+grep returns `19`. **The ranking is the brief's and is incomplete; the COMPLETENESS is this
+table's.***
 
 | item | what breaks | loud or silent |
 |---|---|---|
-| 🔴🔴 **`T20-4`** | **P3 and P2 are hardcoded to `"2025-26"` in `14` locations** — last season, on opening night | ⚠ mixed |
-| 🔴🔴 **`T20-5`** | **the grader's default window ends `2026-04-12`** and **nothing catches it** — *three sites, not one* | 🔴 **SILENT** — *the brief's only silent blocker* |
-| 🔴🔴🔴 **`T20-6`** | **`7` of `12` certifier checks assert tables NO PIPELINE WRITES** — *the largest structural finding of the sweep* | ✅ loud · **stops the slate** |
-| 🔴🔴🔴 **`T20-7`** | **P3's "Board tiers" step runs an index-maintenance script**, and `board_tiers` has no writer at all | 🔴 **SILENT** |
-| 🔴🔴🔴 **`T20-12`** | the Python layer hardcodes PST — ⚠ **but see OWNER DECISION `6`: `§F6.17` shows the predicted consequence DOES NOT OCCUR**, and the remedy is now the risk | — |
-| 🔴🔴🔴 **`T20-13`** | **P2's certifier goes RED every night for the first twelve nights** — *and it is CORRECT to* | ✅ loud |
-| 🔴🔴 **`T20-14`** | **Betr's access token expires `2026-10-10`** — ten days before opening night | 🔴 dated |
-| 🔴🔴 **`T20-15`** | **P2 and P3 certify RED on every zero-game day** — `7` of them last season | ✅ loud |
+| 🔴🔴🔴 **`T20-25`** | **the player bridge is WRITTEN with one normaliser and READ with another** — **`6.01%` of a real slate's board rows silently dropped, and it is RUNNING NOW** | 🔴 **SILENT** |
 | 🔴🔴🔴 **`T20-17`** | **a dropped injury-archive shard silently truncates the availability delta** — and that feeds the scored board | 🔴 **SILENT** |
-| 🔴🔴🔴 **`T20-25`** | **the player bridge is written with one normaliser and read with another** — `6.01%` of a real slate's board rows silently dropped, **running now** | 🔴 **SILENT** |
-| 🆕 🔴🔴 **`F6-1`** | **the production loader's merge key omits `ot_rule`, a PK column, and drops `1,421` rows** — *confirmed live, and `§F6.28` §3 shows it firing on `2026-09-11` too* | 🔴 **SILENT** |
+| 🆕 🔴🔴 **`F6-1`** | **the production loader's merge key omits `ot_rule`, a PRIMARY-KEY column, and drops `1,421` rows** — confirmed live, and `§F6.28` §3 shows the same `1,421` on `2026-09-11` | 🔴 **SILENT** |
+| 🔴🔴🔴 **`T20-13`** | **P2's certifier goes RED every night for the first twelve nights of the season — and it is CORRECT to** | ✅ loud |
+| 🔴🔴 **`T20-15`** | **P2 and P3 certify RED on every zero-game day** — `7` of them last season | ✅ loud |
+| 🔴🔴 **`T20-14`** | **Betr's access token expires `2026-10-10`** — ten days before opening night | 🔴 **dated** |
+| 🔴🔴🔴 **`T20-12`** | the Python layer hardcodes PST — ⚠⚠ **READ `A6` FIRST: `§F6.17` shows the predicted consequence DOES NOT OCCUR, and the remedy is now the risk** | — |
 | 🔴🔴 **`T23-1`** | **the model does not beat PrizePicks** | — *see `A2`* |
-| 🔴 **`T20-2`** · 🔴 **`T20-3`** | *both also OWNER DECISIONS — see `A4`, `A5`* | — |
-| 🔴 *(heading-only, no ID)* | **the entire NBA static layer is FROZEN at its build date** · **the schedule has not been refreshed since the day it was built** · **the DARKO scraper's failure evidence is the wrong `20 KB` of the page** · **`T18 PASS 0`'s coverage defect** · **`T16 PASS 2`'s three `[LIVE-AUDIT]` decisions** | search the heading text |
+| 🔴 *(heading-only, no item ID — search the heading text)* | **the entire NBA static layer is FROZEN at its build date** · **the schedule has not been refreshed since the day it was built** · **the DARKO scraper's failure evidence is the wrong `20 KB` of the page** | ⚠ |
 
 ## ✅ C · WHERE THE REST OF THIS FILE IS
 
