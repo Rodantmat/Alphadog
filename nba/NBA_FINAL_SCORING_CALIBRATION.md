@@ -1469,6 +1469,45 @@ TOLD to mean; what matters is what actually happens"** — so it measured them o
 |---|---|---|---|---|
 | Out | 10,150 | **0.001** | 0.00 | ✅ |
 | Questionable | 1,456 | **0.503** | 0.50 | ✅ **a true coin flip** |
+
+> 🔑🔑 **AND `T17` WENT ONE LEVEL DEEPER — THE BAND MODEL, AND IT IS WHY THE SCENARIO LAYER EXISTS.**
+> *Added 2026-09-23, `§F6.2`. **`0` of the twelve carried this table**: `leaning out`, `leaning
+> play`, `0.696`, `72.9%`, `47.1%` each returned **`0` hits**.*
+>
+> **The owner asked whether Questionable could be pushed to 90%. `1,322` questionables were scored
+> at the `2:30 PM PT` decision cutoff:**
+>
+> | band | n | share | measured play rate | **call correct** |
+> |---|---|---|---|---|
+> | leaning OUT | 144 | 10.9% | **0.271** | **72.9%** |
+> | leaning PLAY | 102 | 7.7% | **0.696** | **69.6%** |
+> | 🔴 **genuinely uncertain** | **1,064** | 🔴 **80.5%** | **0.529 — a coin flip** | **47.1%** |
+> | confident *(`p ≤ 0.20` or `≥ 0.80`)* | ~40 | 3.0% | — | 65.0% |
+>
+> ⇒ ***"80.5% of questionables are genuinely uncertain at 2:30 pm … only 18.6% can be pushed to a
+> lean, and those leans run 70–73% correct. **That is not a model failure. It's the structure of the
+> problem**."***
+>
+> 🔑🔑 **THE ARCHITECTURAL CONSEQUENCE, in the author's own words — and it is the justification for
+> the scenario layer that the corpus documents everywhere and never justifies:**
+>
+> > ***"teams use questionable specifically to conceal intent … the resolving information arrives in
+> > the mandatory update 60 minutes before tip, AFTER our window. which is precisely why the
+> > scenario layer is the right architecture. **if 80% of questionables are unresolvable at 2:30,
+> > prediction can't get you to 90% — enumeration and selection can.** the engine holds every branch
+> > and picks the real one when the final report lands, rather than betting on a coin flip."***
+>
+> 🔴 **AND A LEAKAGE BUG WORTH KEEPING, also in `0` of the twelve:**
+>
+> > ***"i was filtering on the FINAL STATUS, which is the answer, not the feature. only `7` players
+> > stay questionable to the last snapshot because the rest resolve — so the model must read the
+> > status AT THE DECISION CUTOFF, which is what it does now."***
+>
+> 📌 ***The same defect class as `A5` in §3 above — training on post-decision truth — caught here by
+> the author and fixed. `7` of `1,456` is the size of the trap: filter on final status and the
+> population collapses by `99.5%` while looking clean.***
+>
+> ⚠ **`AS STATED IN T17`, not re-run by this sweep.**
 | Available | 1,220 | **0.828** | 1.00 | ❌ |
 | Probable | 582 | **0.923** | 0.75 | ❌ |
 | **Doubtful** | 312 | **0.006** | 0.25 | ❌🔴 **DOUBTFUL MEANS OUT** |
