@@ -50,6 +50,20 @@
 > | **(d)** | abandon the format; trim superseded rows for size instead | ⚠ collides with **rule 40** | size only |
 > | ⚠ **regardless** | 🔴 **ROTATE the credentials in those three files** | — | closes an exposure that predates this sweep |
 >
+> # ⚠⚠ **T22-1 · AN OWNER REQUEST WITH NO RECORD — "the keep my million board in underdog"**
+> *Filed 2026-09-23, T22 pass 1, `§T22.1`.* **`T22` SEG `12`, the owner, setting the work order:**
+> *"the apps deep scraping factors that we have open: the multiplier on prizepicks, the chalkboard,
+> the ladder for sleeper or underdog… **the multiplier on pp is priority 1**"* — and, in the same
+> message, ***"i also want to find **the keep my million board in underdog** for another chat."***
+> 🔴 **`keep my million` appears `0` times across the twelve** *(pinned `2026-09-23T02:21:21Z`)*.
+> ⇒ **Priority 1 was delivered** *(`NBA_MULTIPLIERS.md` `§0.9-T22`)*; **the chalkboard and the
+> sleeper/underdog ladder are on file**; ***this one has no item, no entry and no answer anywhere.***
+> ⚠ **Severity: LOW-MEDIUM and NOT season-critical** — it is a research request for a separate chat,
+> not a pipeline defect. **It is filed because an owner request that was never recorded cannot be
+> declined, deferred or done — it can only be forgotten**, and that is the failure mode this list
+> exists to prevent. 🔴 **OWNER: still wanted, or dropped?** *One line closes it either way.*
+> ⚖️ **Nothing was scraped, probed or changed.**
+>
 > ⚠ **NOT CHOSEN, DELIBERATELY.** *Every branch is irreversible or contradicts a standing rule —
 > (a) publishes, (b) creates a repo, (d) destroys record — which is the shape the standing
 > instruction says to hand over rather than decide.* **Nothing was committed and nothing was
