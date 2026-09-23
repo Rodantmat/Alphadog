@@ -1920,6 +1920,31 @@ consumers, or none.**
 📌 ***Found only because a `SEASON-CRITICAL` grep was run to re-rate `F6-1`. Two items filed days
 apart, in the same document, describing one clock — and the corpus had no line connecting them.***
 
+## ⚠ §F6.18 — **THE SEASON-CRITICAL COUNT DOES NOT REPRODUCE FROM ITS OWN STATED METHOD**
+
+*The same grep that surfaced `§F6.17` surfaced this. **Three figures for one population, in one
+document, none of them agreeing:***
+
+| where | says | re-derived `2026-09-23` |
+|---|---|---|
+| the roster heading | **`SEVENTEEN`** | — |
+| the OPENING-DAY BRIEF heading, `~15164` | **`FOURTEEN`** | — |
+| the brief's own stated method, `grep -E "^#{2,4} .*SEASON-CRITICAL"` | it recorded **`14`** | 🔴 **returns `19`** |
+| the blockquote-aware pattern `^(?:>\s*)*#{1,6}\s` *(`§F2.13`'s correction)* | — | **`23`** |
+| **filtered to actual ITEM headings** *(dropping `3` section headers and `1` sub-heading)* | — | ✅ **`19`, including `F6-1`** |
+
+🔑 **The line-anchored method is the same detector `§F1.1` was already caught by** — it misses the
+blockquoted headings and catches non-item headings, in both directions at once. **But the drift is
+not only the detector: `FOURTEEN` and `SEVENTEEN` disagree with each other on the same page.**
+
+⇒ **Recorded, NOT silently adopted.** *Both headings set to `EIGHTEEN` — `SEVENTEEN` plus `F6-1`,
+`SEVENTEEN` being the figure the brief has actually been maintaining — **with the `19`/`23`
+discrepancy written at the roster head rather than resolved.*** 🔴 ***The roster's own DENOMINATOR
+NOTE already flags its arithmetic `NOT RECONCILED`; `RULE 53` says a count is corrected when its
+population is re-stated, and re-stating this population is the reconciliation the brief defers.***
+**`F6-1` is likewise NOT inserted into the ranked string** — by the stated rule it is SILENT ·
+DEGRADES · UNCAUGHT, the `T20-17` group, and it is placed in words, not in the sequence.
+
 ⚠ **RULE 54 on `§F6.13`.** *`n`, the sample, the stat and the seasons behind the `-0.024` are all
 `NOT RECORDED`, and `-0.024` is approximately zero in absolute terms — **the load-bearing reading is
 "the prior carries no usable signal"**, and the directional reading is weaker and recorded as such.
