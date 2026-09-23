@@ -1,5 +1,24 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+> # ⚠⚠ **T22-1 · AN OWNER REQUEST WITH NO RECORD ANYWHERE — "the keep my million board in underdog"**
+> *Filed 2026-09-23, T22 pass 1, `§T22.1`. **Severity LOW-MEDIUM, NOT season-critical** — placed here
+> only because it sits beside `T21-1`, which is the other item about the record rather than the
+> system.*
+>
+> **`T22` SEG `12`, the owner, setting the work order:** *"the apps deep scraping factors that we have
+> open: the multiplier on prizepicks, the chalkboard, the ladder for sleeper or underdog… **the
+> multiplier on pp is priority 1**"* — and, in the same message,
+> ***"i also want to find **the keep my million board in underdog** for another chat."***
+>
+> 🔴 **`keep my million` appears `0` times across the twelve** *(pinned `2026-09-23T02:21:21Z`)*.
+> ⇒ **Priority 1 was delivered** — `NBA_MULTIPLIERS.md` **`§0.9-T22`**. **The chalkboard and the
+> sleeper/underdog ladder are on file.** ***This one has no item, no entry and no answer anywhere.***
+>
+> 🔑 **Why a low-severity item is filed at all**: *an owner request that was never recorded cannot be
+> declined, deferred or done — **it can only be forgotten**, and that is precisely the failure this
+> list exists to prevent.* 🔴 **OWNER — still wanted, or dropped? One line closes it either way.**
+> ⚖️ **Nothing was scraped, probed or changed.**
+
 > # 🔴🔴🔴 **T21-1 · OWNER DECISION · THE DOCUMENT-FORM DIRECTIVE IS BLOCKED, AND ITS PRECONDITION WOULD PUBLISH CREDENTIALS**
 > *Filed 2026-09-23, T21 pass 3, `§T21.3`. **Placed at the very top because it is the only item on
 > this page about what these documents ARE, rather than about the system they describe.***
