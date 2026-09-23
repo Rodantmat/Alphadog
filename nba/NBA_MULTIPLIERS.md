@@ -20,7 +20,8 @@ pricing law is known** — multiplicative, partner-independent, compressed above
 ---
 
 > # 📑 **INDEX — `NBA_MULTIPLIERS.md`**
-> **~~`122`~~ → `137` sections · ~~`141,719`~~ → `150,999` bytes · ~~`2,045`~~ → `2,125` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> **Payout multipliers across every app** — what each exposes, the pricing law, the conversion logic,
+> the tests run, and what calibrating a multiplier would require.
 > 📏 **`150` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MULTIPLIERS.md ``
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
