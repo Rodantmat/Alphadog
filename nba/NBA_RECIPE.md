@@ -268,10 +268,16 @@ that is the useful part.
 > *Re-derive the full set:*
 > `` grep -rhoE '\$\{\{ *secrets\.[A-Z_0-9]+' .github/workflows/nba-*.yml | sort -u ``
 >
+> ✅ **MEASURED, NOT ASSUMED — there are exactly TWO repository secrets in the NBA workflows:**
+> **`DATABASE_URL`** *(`96` references)* and **`PROXY_URL`** *(`57`)*. ⚠ *An earlier draft of this
+> table listed `GITHUB_TOKEN`; **it is referenced `0` times** — the commit-back steps use the runner's
+> built-in token, which needs no provisioning. Corrected before publication by running the `grep`
+> above (`RULE 57`).*
+>
 > | name | consumed by | breaks |
 > |---|---|---|
-> | **`DATABASE_URL`** | **every workflow that writes** — the Postgres connection | ***everything.*** *Nothing loads, nothing scores.* |
-> | **`GITHUB_TOKEN`** | the commit-back steps in the scrapers | *scrapes run and their output is never committed, so the Workers never see it* |
+> | **`DATABASE_URL`** | **every workflow that writes** — the Postgres connection, `96` refs | ***everything.*** *Nothing loads, nothing scores.* |
+> | 🔑 **`PROXY_URL`** | **`20` of the `34` workflows** — every `stats.nba.com` and DFS-board scraper | 🔴 ***Every scrape fails.*** *`stats.nba.com` is the anti-bot surface this system exists to get through — `DataDome`, `curl_cffi`, the TLS/UA work. **Without the proxy the static layer, the game logs and the boards all stop**, and the failure looks like a network error rather than a missing secret.* |
 > | ⚠ **worker/bridge secrets** | `generate_wrangler_configs.py` and `github_write_worker_secrets_file.py`, **both at the REPO ROOT** — they emit the per-worker `wrangler` config and the secrets file | *workers deploy without bindings and fail at first query* |
 > | **`nba_config.external_credentials`** *(a TABLE, not a secret store)* | scrapers that need a third-party key read it from Postgres | 🔴 ⚠ **`credential_value_encrypted` IS A MISNOMER — the column is NOT encrypted** *(`NBA_GLOSSARY.md`, `T–W`)*. **Anyone with read access to the database has the keys.** |
 >
