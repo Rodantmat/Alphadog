@@ -121,6 +121,83 @@
 
 ---
 
+> # 🗂 **THE FOLDER REGISTER — WHICH `nba/*.md` FILES ARE THE TWELVE, AND WHAT THE OTHER TWENTY ARE**
+> ### *(added `2026-09-23`, `§F7.6`. **This is the authoritative copy**; `NBA_GLOSSARY.md` and `NBA_OPEN_ITEMS.md` point here rather than repeating it.)*
+>
+> 🔴 **THE DEFECT THIS CLOSES, IN THE OWNER'S WORDS**: *"~20 other `NBA_*.md` files sit in the same
+> folder as the twelve."* ⇒ **`32` markdown files share `nba/`. `12` are the mandated set. Nothing in
+> any of them said which.** *A successor opening the folder sees `NBA_SYSTEM_DRAFT.md` and
+> `NBA_SYSTEM_DESIGN.md` adjacent, alphabetically, with no signal that one is a superseded Phase-2
+> sketch from `2026-09-02` and the other is a mandated document rewritten today.*
+>
+> 📊 **MEASURED `2026-09-23` at `HEAD`**: `32` `.md` files · `12` mandated · `20` other.
+> *Sizes and last-commit dates below are from `git log -1` per file the same day; **they are
+> approximate and dated, like every other such figure — see the `📏 CENSUS STAMP` above.***
+>
+> ## ✅ **1 · THE TWELVE MANDATED DOCUMENTS** *(`12`)*
+> **`NBA_MASTER_SUMMARY.md`** · **`NBA_OPEN_ITEMS.md`** · **`NBA_FINAL_SCORING_CALIBRATION.md`** ·
+> **`NBA_SYSTEM_DESIGN.md`** · **`NBA_DATABASE.md`** · **`NBA_WORKERS.md`** ·
+> **`NBA_SYSTEM_ARCHITECTURE.md`** · **`NBA_MULTIPLIERS.md`** · **`NBA_BASELINE_CALIBRATION.md`** ·
+> **`NBA_GOBLIN_DEMON.md`** · **`NBA_GLOSSARY.md`** · **`NBA_RECIPE.md`**
+> ⇒ **These are the only files this sweep may patch** *(standing constraint `4`)*, and **the only
+> twelve that carry a `📑 INDEX` block in their first `1%`** — *which is itself the fastest way to
+> tell a mandated file from a sibling: **open it and look for the index.***
+>
+> ## 🟢 **2 · LIVE AND STANDING — NOT MANDATED, NOT SUPERSEDED, STILL AUTHORITATIVE FOR THEIR OWN JOB** *(`6`)*
+>
+> | file | what it is | ⚠ |
+> |---|---|---|
+> | **`NBA_COMPASS.md`** | the realignment map — *"read this first, always"*; question → document+section | 🔴 **READ BUT NEVER WRITTEN TO** by this sweep *(constraint `5`)*. ⚠ **`§T19.1`: it records CONCLUSIONS, NOT IMPLEMENTATIONS** — a COMPASS defect is filed in `NBA_OPEN_ITEMS.md`, never fixed in place. |
+> | **`NBA_SWEEP_RUN_LOG.md`** | 🔑 **this sweep's own run log, resume note and decision record** | **The `🟢 START HERE` block at its top is what a fresh session reads first** — verified `2026-09-23` to still be within the first `13` lines. **Written by the sweep; not one of the twelve.** |
+> | **`NBA_PROJECT_LOG.md`** | the standing project log — *every session must add an entry* | Last entry `2026-09-19`. ⚠ **This sweep has added none** — *it writes to the run log instead. Recorded as a deliberate divergence from the log's own rule, not an oversight.* |
+> | **`NBA_DOCUMENTATION_PROMPT.md`** | 🔑 **the work order this entire sweep runs under** *(`2026-09-20`)* | **The charter. Read it before questioning why a constraint exists.** |
+> | **`NBA_DAILY_PARITY_AND_BACKFILL.md`** | owner directive `2026-09-11`, *"binding on every factor, the baseline, the enrichment layer and the scoring engine"* | **A standing constraint, not a design note.** |
+> | **`NBA_AVAILABLE_TOOLS.md`** | the tool and bridge inventory | ⚠ *Self-dating: **"if a future session's tool list differs from this, trust the live list over this document."** The one sibling that tells you when to stop believing it.* |
+>
+> ## 📚 **3 · SOURCE OF RECORD — THE SWEEP'S INPUTS, SUPERSEDED IN PART BUT NOT REPLACED** *(`8`)*
+> *⚠ **These are not historical.** The twelve cite them and, in at least one measured case, do **not**
+> contain what they hold. **Deleting or ignoring them loses content.***
+>
+> | file | what it holds | ⚠ status |
+> |---|---|---|
+> | **`NBA_LESSONS_LEARNED_FROM_MLB.md`** | 🔑 **the research standard** — Part A's **`27` lessons** *(`27`, not `26` — verified by grep `2026-09-20`; `#27` was missing entirely until then)*, plus **Part G** *(`10` NBA-earned lessons, `2026-09-09`)* and **Part H** *(`12`, the backfill/board phase)* | 🔴 **PARTS G AND H ARE NOT IN THE TWELVE** — open item, *FROM T1 PASS 30*, in `NBA_OPEN_ITEMS.md`. **`22` numbered lessons live only here.** ⇒ ***the standing proof that "sibling" does not mean "redundant."*** |
+> | **`NBA_ENRICHMENT_FACTOR_LOCK.md`** | the factor registry, passes `1`–`5` — what every factor and sub-factor IS | 🔑 **`§F7.4`/`RULE 58`'s source of truth**: it is the registry's own annotations *("`overtime_pace_live` mostly absorbed by `market_spread_delta` / `market_total_delta`")* that retracted a `🔴` finding. |
+> | **`NBA_ENRICHMENT_ENGINE_DESIGN.md`** | `2026-09-12` — **HOW a factor becomes a number**, as against the lock's WHAT | |
+> | **`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`** | `2026-09-09` — per-factor primary source **and mandated fallback** | *Owner rule: every daily factor needs a second source of equal reliability **or** a derived version trained on two seasons.* |
+> | **`NBA_ENRICHMENT_FACTORS_RESEARCH.md`** | `2026-09-01` research pass — the weekly/semi-static layer | |
+> | **`NBA_CLASSIFICATION_BASELINE_DESIGN.md`** | `2026-09-09` **LOCKED DESIGN SKELETON (v1)** | ⚠ *Its own header: **"every number in it is a researched starting point, not a final value"** — the backtest is what settles them. **Do not quote its constants as live config.*** |
+> | **`NBA_BASELINE_METHODOLOGY.md`** | `2026-09-03` — *"the heart of the system"*; revised same day to separate baseline (historical-only) from enrichment | |
+> | **`NBA_HISTORICAL_BACKFILL_PLAN.md`** | `2026-09-03` — Phase 3b design against confirmed `stats.nba.com` endpoints | |
+>
+> ## 🗄 **4 · HISTORICAL — DATED CHECKPOINTS AND THE MLB TRANSFER PACKAGE** *(`5`)*
+> *⚠ **Superseded by the twelve as a description of the system**, and kept because the twelve quote
+> them by name. **Read them as evidence of what was believed on their date, never as current state.***
+>
+> | file | date | ⚠ |
+> |---|---|---|
+> | **`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-04.md`** | `2026-09-04` | *"a deep-detail reference checkpoint, not a handoff"* — **superseded by the `09-09` checkpoint, which is itself superseded by the twelve.** |
+> | **`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md`** | `2026-09-09` | *"the deepest record of the baseline phase… read this first in any new NBA session."* 🔴 **That instruction is now wrong** — the twelve and `NBA_SWEEP_RUN_LOG.md` are read first. **The file cannot know it was superseded; this register is where that is recorded.** |
+> | **`NBA_ARCHITECTURE_BLUEPRINT.md`** | `2026-08-31` | 🔑 **`T1`'s blueprint** — its **`§7f`, `§7g`, `§9`** are cited throughout the twelve *(the `malformed array literal` mechanism, whole-universe comparison, leg-by-leg manual tracing)*. **Transferred from MLB; carries a `2026-08-31` live-verification banner.** |
+> | **`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md`** | `2026-08-30` | 🔑 **`§7` is the owner's operating model** — *"owns and operates the system alone from a phone, no terminal"* — quoted in `NBA_GLOSSARY.md`. **The oldest file in the folder and one of the most-cited.** |
+> | **`NBA_SYSTEM_DRAFT.md`** | `2026-09-02` | Phase-2 design sketch, *"no implementation here."* ⚠ **Adjacent alphabetically to `NBA_SYSTEM_DESIGN.md`, a mandated document — the collision this register exists to prevent.** |
+>
+> ## ⛔ **5 · OUT OF SCOPE — THE CONCURRENT SESSION'S** *(`1`)*
+> **`PP_PAYOUT_FINDINGS.md`** — *"Recorded `2026-09-21`. Separate from the 12 mandated documents; fold
+> into `NBA_MULTIPLIERS.md` and `NBA_GOBLIN_DEMON.md` when the documentation sweep reaches this
+> session."* 🔴 **This sweep does NOT touch it** *(standing constraint `6`)*, together with
+> `nba/pp_payout_map.py`, `nba/probe_pp_*.py`, `.github/workflows/nba-pp-payout-map.yml`,
+> `nba/data/pp_payouts/` and the `nba_market.pp_*` / `nba_config.pp_*` objects. ⚠ ***Its own header
+> asks to be folded in. That is a live instruction to a different session, and leaving it unactioned
+> is a decision, not an omission — recorded here so it is not mistaken for one.***
+>
+> ## 📌 **HOW TO USE THIS REGISTER**
+> ***Group `1` is what this sweep maintains. Group `2` is current and owned elsewhere. Group `3` you
+> must still read — it holds `22` lessons the twelve do not. Group `4` tells you what was believed on
+> a date. Group `5` is another session's.*** 🔑 **The one test that needs no register: a mandated
+> document opens with a `📑 INDEX` block in its first `1%`. A sibling does not.**
+
+---
+
 > # 🟢 **START HERE — FOUR QUESTIONS, ONE SCREEN** *(added 2026-09-22, T20 pass 102, §T20.107)*
 >
 > ⚠⚠ **THIS DOCUMENT IS ~~`2,789,201`~~ `2,954,675` CHARACTERS — about `739,000` tokens. DO NOT LOAD
