@@ -41867,7 +41867,7 @@ transcript was ever committed.***
 
 | | then *(`2026-09-21`, the assistant's own figure)* | **now** *(measured `2026-09-23`)* |
 |---|---|---|
-| the twelve, total | **`1.1 MB`** — *"the documents are becoming too heavy"* | 🔴🔴 **`6,363,357` bytes ≈ `6.36 MB` on `2026-09-23`** — *and `5,672,870` when this row was first written the same day.* 🔁 **`RULE 59` — re-derive, never quote:** `` cat nba/NBA_{MASTER_SUMMARY,GLOSSARY,RECIPE,SYSTEM_ARCHITECTURE,DATABASE,WORKERS,SYSTEM_DESIGN,OPEN_ITEMS,BASELINE_CALIBRATION,FINAL_SCORING_CALIBRATION,MULTIPLIERS,GOBLIN_DEMON}.md \| wc -c `` |
+| the twelve, total | **`1.1 MB`** — *"the documents are becoming too heavy"* | 🔴🔴 **`~6.4 MB` and climbing** — ***no exact figure is published here, deliberately***: this row read `5,672,870` and then `6,363,357` **on the same day**, each invalidated by the commit that wrote it. 🔁 **`RULE 59` — re-derive:** `` cat nba/NBA_{MASTER_SUMMARY,GLOSSARY,RECIPE,SYSTEM_ARCHITECTURE,DATABASE,WORKERS,SYSTEM_DESIGN,OPEN_ITEMS,BASELINE_CALIBRATION,FINAL_SCORING_CALIBRATION,MULTIPLIERS,GOBLIN_DEMON}.md \| wc -c `` |
 | `NBA_MASTER_SUMMARY.md` | — | **`3,099,657`** |
 | `NBA_OPEN_ITEMS.md` | — | **`1,178,210`** |
 | *those two as a share of the twelve* | — | 🔴 **`75.4%`** |
