@@ -41,7 +41,8 @@ that is the useful part.
 > | **`STEP 0`** | **The founding constraints** | |
 > | **`STEP 0a`** | **Who the recipe is being cooked for** — *incl. the three non-goals, stated at the same time* | |
 > | **`STEP 0b`** | **The prioritized startup plan, as originally written** — *incl. ⚠ the one ordering deviation and what it cost* | ⚠ |
-> | **`STEP 0c`** | ⚠ **The verification discipline that was supposed to run alongside every step** 🔴 *PHYSICALLY MISPLACED — it sits between `STEP 7` and `STEP 8`* | ⚠ |
+> | **`STEP 0c`** | **The verification discipline that was supposed to run alongside every step** ✅ ~~🔴 *PHYSICALLY MISPLACED — it sits between `STEP 7` and `STEP 8`*~~ → **MOVED INTO ORDER `2026-09-23`, `§F7.3`** | ✅ |
+> | **`STEP 0-T16`** | **The blowout mixture on the real market spread** — *the `100:1` asymmetry, the two corrected beliefs, the sample gate, the `19,344,143`-row rebuild.* ✅ ~~🔴 *sat ABOVE `STEP 0`*~~ → **MOVED to the end of the `STEP 0` family, `§F7.3`** | ✅ |
 > | **`STEP 0d`** | ⚠ **Three founding rules never written down, and one that is NOT HOLDING** — ① the tunables rule *(verified not holding)* · ② the per-worker improvement mandate · ③ the MLB no-touch rule in the owner's words · ④ the source mandate *(why the Cloudflare block was fatal, not inconvenient)* | ⚠ |
 >
 > ### 🔨 **B · THE BUILD, STEP BY STEP (`T1` → `T2`)**
