@@ -1429,6 +1429,34 @@ board/daily-context/market until the season starts.
 
 ### T1.31 — PASS 19 (IDs, hashes, commit SHAs) — **CLEAN 1/3**
 
+> 🔴🔴🔴 **SECURITY — CORRECTED 2026-09-23, `§F2.12`. THE PASS THAT SWEPT FOR UUIDs FOUND A LIVE API
+> KEY, WROTE THE KEY ITSELF INTO THE TABLE BELOW AS EVIDENCE THAT IT WAS "ALREADY DOCUMENTED", AND
+> DECLARED ITSELF CLEAN.**
+>
+> *The standing rule is explicit and predates this pass: **credential VALUES are never reproduced in
+> any document; only the location and the safe surrounding facts are recorded — THE REPO IS
+> PUBLIC.*** **`§T1.31` quoted one in full, in a row whose "Already in" column reads `T1.5`.**
+>
+> 🔑 ***The reasoning error is visible in the table's own columns.*** **"Already in `T1.5`" treats
+> *the value appearing elsewhere in our own documents* as REASSURANCE.** *For a hex string or a
+> commit SHA that is the right test and the rest of the table is sound. **For a credential it is
+> the leak itself** — "we have published this before" is the finding, not the clearance.* **And on
+> the strength of that row the pass was marked `CLEAN 1 of 3`, starting the clean-pass counter.**
+>
+> ✅ **Redacted in place 2026-09-23.** *Verified after: **`0` sites of that value remain in the
+> working tree** (fingerprint search across every file, `.git` excluded).*
+> ✅ **Verified the leak was CONFINED**: `T1.5`, the row's own "Already in" target, does **not**
+> carry the value — **this was the only site in the repo.**
+> 🔴🔴 **BUT REDACTION IS NOT CONTAINMENT: `git log -S` finds the value in `2` commits, and the
+> repository is PUBLIC. A value that has been pushed is disclosed permanently.** ⇒ **the key must be
+> ROTATED, which is the owner's action, not this sweep's** — **filed as `F2-1`.**
+>
+> 📌 ***This is the exact defect class `nba/tools/sweep_coverage.py` names in its own docstring***
+> — *"the HIGH band … found 2 defects in 97 segments … **including a live credential the
+> documentation had quoted instead of referenced**"* — **so it was identified once, and this
+> instance survived anyway.** *It was found again today only because `§F2.12` scanned for credential
+> SHAPES rather than for known strings.*
+
 A sweep for every hex string, numeric ID and UUID returned only already-documented values:
 | Found | Already in |
 |---|---|
