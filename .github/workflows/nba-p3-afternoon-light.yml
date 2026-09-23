@@ -34,8 +34,8 @@ on:
         default: "false"
         required: false
       season:
-        description: "season"
-        default: "2025-26"
+        description: "season override (blank = resolve from the date)"
+        default: ""
         required: false
 
 permissions:
