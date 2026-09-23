@@ -1506,6 +1506,59 @@ delta and an aggregate.**
 
 ---
 
+> ### 📊 **§T22.13 — THE FULL COMPOSITION OF `board_tiers_v2`'s `2,199,354` LEGS** *(`T22` pass `13`, live query `2026-09-21`, recorded `2026-09-23`)*
+>
+> *The row count was already here. **What those rows ARE was not** — and a backtest weighted by prop
+> mix cannot be read without it.*
+>
+> | `base_market` | legs | share |
+> |---|---|---|
+> | `player_points` | **`384,408`** | `17.5%` |
+> | `player_points_rebounds_assists` | `314,278` | `14.3%` |
+> | `player_rebounds` | `298,176` | `13.6%` |
+> | `player_points_rebounds` | `289,736` | `13.2%` |
+> | `player_points_assists` | `246,609` | `11.2%` |
+> | `player_rebounds_assists` | `240,821` | `10.9%` |
+> | `player_assists` | `221,176` | `10.1%` |
+> | `player_threes` | `153,762` | `7.0%` |
+> | `player_turnovers` | `15,164` | `0.7%` |
+> | `player_blocks_steals` | `14,682` | `0.7%` |
+> | `player_steals` | `13,064` | `0.6%` |
+> | `player_blocks` | `7,478` | `0.3%` |
+> | **TOTAL** | **`2,199,354`** | ✅ **sums exactly** |
+>
+> | other field | value | n |
+> |---|---|---|
+> | `side` | **`over`** | **`1,826,785`** *(`83.1%`)* |
+> | `side` | `under` | `372,569` *(`16.9%`)* |
+> | `anchor_line` type | `numeric` | `2,199,354` — **all of them** |
+> | 🔴 **`standard` but `line < anchor_line`** | `explicit` | **`2,475`** |
+>
+> 🔑🔑 **THREE THINGS THIS TABLE SAYS THAT NOTHING ELSE IN THE CORPUS DOES:**
+>
+> **1 · The tail is thinner than it looks.** *The four small markets — turnovers, blocks+steals,
+> steals, blocks — are **`50,388` legs, `2.3%` of the board**. **Any per-prop calibration on those
+> four is fitted on a fiftieth of the data**, and a result that holds "across all props" is carrying
+> them at negligible weight.*
+>
+> **2 · `83.1%` of the board is `over`.** *With `§T11`'s finding that **alternates are `100%` More**
+> — `0` under rows on `1.45 M` alternate legs across both seasons *(`2024-25` `370,017` over / `0`
+> under; `2025-26` `1,084,027` / `0`)* — **the entire `372,569` under population sits on standard
+> lines.*** ⇒ *An "over/under balanced" assumption is wrong at the board level and impossible at the
+> alternate level.*
+>
+> **3 · `2,475` rows are labelled `standard` while sitting BELOW their own anchor.** ⚠ ***These would
+> be charged as goblins by any rule that infers kind from position*** — `T22` recorded the
+> consequence directly: *"`kind` had to join the key — `2,475` standards sit off-centre and would
+> otherwise have been charged as goblins or demons."* 🔑 **The taxonomy label and the line's position
+> are independent facts, and `2,475` rows prove they disagree.**
+>
+> ⚠ **`RULE 54`.** *`WINDOW`: `nba_market.board_tiers_v2` at `2026-09-21`, `bookmaker='prizepicks'`,
+> both seasons. **Shares are computed here, not queried** — they are arithmetic on the published
+> counts, and the counts sum to the stated total exactly. **`NOT DONE`: this is `board_tiers_v2`;
+> `board_tiers` holds the same `2,199,354` rows with DIFFERENT value sets (below) and was not
+> broken down the same way.***
+
 🔴 **AND `board_tiers` vs `board_tiers_v2`: SAME ROW COUNT, DIFFERENT VALUE SETS** *(§T11.20a)*
 
 | column | `board_tiers` | **`board_tiers_v2`** |
