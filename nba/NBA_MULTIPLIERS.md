@@ -540,7 +540,15 @@ with slips.**"* 🔑 **And his second argument is the stronger one: *"if the app
 RECEIVED it. The client cannot invent a number it wasn't given"*** — **which is what redirected the
 hunt from inference to the client, and to the DataDome wall.**
 
-### 🔴 **7 · WHAT REMAINS — and it is a five-minute job on the owner's side**
+### ~~🔴 **7 · WHAT REMAINS — and it is a five-minute job on the owner's side**~~ ✅ **DISCHARGED `2026-09-20` — SEE `§0.9-T22`**
+
+> ✅✅ **DISCHARGED (T22 pass 1, `§T22.1`, recorded 2026-09-23).** ***The owner ran exactly the recipe
+> below, on `2026-09-20`, and it worked on the first attempt***: adding the second leg fired
+> **exactly one non-analytics call — `game_types`, `2.1 kB`** — everything else being `track`
+> analytics *(`T22` SEG `25`)*. **It is a `POST` whose body carries the `projection_id`s**, which is
+> why three prior anonymous `GET` probes from a GitHub runner found nothing *(SEG `29`)*.
+> 🔑 **The deferral carried its exit condition, and the exit condition is what discharged it in one
+> day. Kept in full as the worked example of why that habit is cheap.** ▶ **`§0.9-T22`.**
 
 *Every route that does not require an authenticated session is closed. **The remaining one is the
 owner's own browser**, and it has a precedent: **COMPASS facts 49 and 50 record Underdog and Fliff
