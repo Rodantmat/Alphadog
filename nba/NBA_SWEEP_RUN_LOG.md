@@ -2363,7 +2363,17 @@ fresh context; `T20` cannot close in this session.**
 >
 > 🔑 ***The failure has one shape: config rows and source files carry snake_case identifiers; the
 > twelve carry prose. `grep -F` on the identifier crosses that gap for numbers and for nothing
-> else.*** ⇒ **Operationally: probe a FIGURE first (spelling-invariant), and only then the wording —
+> else.***
+>
+> 😐 **AND IT CAUGHT THE DISCHARGE GREP FOR ITS OWN NUMBERING, WITHIN THE MINUTE.** *`RULE 53`
+> required re-grepping the corrected string ``56 numbered`` → ``57 numbered``. The first run returned
+> **`0` sites for the correction I had just written** — because this log writes it as
+> `` `57` numbered ``, **with backticks**, and I had grepped it without. ⇒ **Re-run in both forms:
+> `` `57` numbered `` = `1` site, the new header; ``56 numbered`` = `2` sites in this log, both
+> inside the PREVIOUS discharge record where they are quoted deliberately, and `1` in the twelve,
+> the known `NBA_MASTER_SUMMARY.md:566` "sub-findings" false positive. `0` live stale sites.
+> `RULE 53` DISCHARGED.** 📌 *A rule that fires on the grep verifying the rule is as well-earned as
+> a rule gets.* ⇒ **Operationally: probe a FIGURE first (spelling-invariant), and only then the wording —
 > and when a wording probe returns `0`, try it case-insensitively and with the hyphen flipped before
 > writing the word "absent".** 📌 *`§F6.13` is what this rule cost: a full section recovering
 > material that sat `200` lines above it in the same file.*
