@@ -808,6 +808,63 @@ dropped sentence, a reversed sign, a misattributed quote and a wrong cross-refer
 invisible to it, and its transient filter is demonstrably imperfect in both directions.* **Floor,
 not ceiling.**
 
+---
+
+## §F2.11 — PRE-REGISTRATION: the ENUMERATION AUDIT of the twelve
+
+*Registered **2026-09-23** before the instrument was written.*
+
+**The case for it is this sweep's own error log, not a hunch.** *Counting incomplete or wrong
+enumerations found in two days:*
+
+| # | the enumeration | whose | how found |
+|---|---|---|---|
+| 1 | **12 of 12 files had a structural defect** — headings never once enumerated in 140+ passes | the corpus's | `§F1.1`, by listing headings |
+| 2 | *"the live 2-hour board crons"* named three; **a fourth exists** (`scrape.yml`, MLB-only, `0 */2 * * *`) | the corpus's | `§F1.2`, by re-listing `.github/workflows/` |
+| 3 | *"the commissioned set is **26**"* — **it is `33`**; `K1`, `M1`–`M4`, `N1`, `N2` missed, two of them sitting in the table I was comparing against | 🔴 **mine** | `§F2.3`, by re-deriving from the lock's definition pattern |
+| 4 | *"count amended `54` → `55`"* — **there was no `54`**; `RULE 54` was proposed and never numbered, and the header was two amendments stale at `51` | 🔴 **mine** | `§F2.10`, by re-deriving from the log's numbering statements |
+
+🔑 ***Two of the four are mine, both committed AFTER I had written the working rule that an
+enumeration is wrong until re-derived from its authority. Stating a rule is not obeying it — which
+is `§T22.5`'s lesson in its fourth costume.*** **So the audit below is aimed at my own most
+reliable failure as much as at the corpus's.**
+
+### The pre-registered instrument — `enumaudit.py`
+
+1. Extract every COUNT CLAIM from the twelve: `N of M` · `all N` · `the N <noun>` · `N <noun>`,
+   where the noun is one of a fixed list of **re-derivable populations** — `files`, `documents`,
+   `workflows`, `tables`, `schemas`, `workers`, `scripts`, `props`, `columns`, `steps`, `rules`,
+   `factors`, `crons`, `seasons`, `props`.
+2. Keep only claims whose population can be **RE-DERIVED FROM AN AUTHORITY THIS SESSION CAN REACH**:
+   a repo directory listing, a `SELECT` over `pg_class` / `information_schema`, a file's own
+   headings, or a named source document's definition pattern. **A claim about anything else is
+   logged as UNVERIFIABLE-HERE and not adjudicated** — an honest third outcome, not a pass.
+3. Re-derive each population **from its authority, at a pinned timestamp**, and compare.
+4. Adjudicate every mismatch by hand before anything is written.
+
+### Pre-registered outputs, published whatever they say
+
+- count claims extracted · verifiable here · **UNVERIFIABLE-HERE** ·
+- re-derived and **MATCHING** · re-derived and **MISMATCHED** ·
+- of the mismatches: **STALE** *(true when written, dated, superseded)* vs **WRONG** *(never true, or
+  true of a different population)* — **and the second class is the only one that is a defect.**
+
+### Pre-registered failure modes, fixed now
+
+- 🔴 **The corpus is CHRONOLOGICAL: most mismatches will be STALE, not WRONG**, and a stale dated
+  count is the corpus working as designed. *The rule, fixed here: a mismatch is STALE if the claim
+  carries a date or a `§` pointer to when it was taken, and WRONG otherwise.*
+- 🔴 **Populations drift under the sweep** — `.github/workflows/` went `39 → 40` during it.
+  **Every re-derivation records its own timestamp, and a claim is compared against the population as
+  of the claim's date where the claim has one.**
+- ⚠⚠ **The measurement must not read this session's own writes** — the failure of `§F2.3`, repeated
+  at `§F2.10`. **The twelve are read at a commit pinned and printed in the result.**
+- ⚠⚠ **RULE 54 in advance:** a regex over prose will miss enumerations written in words
+  (*"both"*, *"the pair"*, *"a handful"*) and will mis-parse counts inside quotations of the
+  transcripts. ***So this pass may never conclude that the twelve's enumerations are correct. Its
+  strongest available conclusion is "these N re-derivable count claims were re-derived, and M
+  disagreed."*** **A floor.**
+
 ▶ **STILL OWED: direction (a) is now run once over the whole band; direction (b) remains open on
 the `~12,686` substantive uncovered segments, which no single pass can close.**
 ▶ **RULE 46 UNCHANGED: `T19` and `T20` each owe two INDEPENDENT complete sequential reads from a
