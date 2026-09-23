@@ -63,7 +63,7 @@ that is the useful part.
 > ### ⚙️ **C · THE THREE PIPELINES (`T20`, read from the workflow files)**
 > | step | what it covers | 🚩 |
 > |---|---|---|
-> | **`STEP 8`** | **`P1` · THE WEEKLY STATIC LAYER** — `nba-p1-weekly-static.yml`, `9` steps, **the only pipeline with a cron** | |
+> | **`STEP 8`** | **`P1` · THE WEEKLY STATIC LAYER** — `nba-p1-weekly-static.yml`, `9` steps, **the only PIPELINE with a cron** *(other NBA workflows do have one — see `🗂 THE 34 WORKFLOWS`)* | |
 > | **`STEP 9`** | **`P2` · THE OVERNIGHT HEAVY PASS** — `19` steps, **no cron** | |
 > | **`STEP 10`** | **`P3` · THE AFTERNOON LIGHT PASS** — `11` steps, **no cron**, `1:15 PM PT` cutoff | |
 > | **`STEP 11`** | 🔑 **THE BUILD ORDER — what must exist before what**; *incl.* 🔴 **the gate that sits on top of all of it, in the owner's words (`§0z-3`)** *and* ⚠⚠ **two `NOT RECORDED` blocks** | 🔑 |
