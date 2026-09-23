@@ -1760,3 +1760,81 @@ guessed.*
 > 📌 **TIERS**: ⚠ **AS STATED IN `T22`** throughout; ✅ **VERBATIM** where quoted. **Nothing here was
 > re-probed** — `/game_types` is a live call against a real-money account. ⚖️ **`pp_*` objects not
 > queried; `PP_PAYOUT_FINDINGS.md` not read, not edited, not used as a source.**
+
+---
+
+# 0.12-T22. 🔑🔑🔑 **THE HOUSE EDGE IS A FLAT `25%` ON BOTH SLIP TYPES — AND `§0.3`'s "QUOTE CONFIRMATION, NOT OPTIONAL" IS DISCHARGED** *(T22 pass 6, §T22.6, 2026-09-23)*
+
+> ⚠ **READ WITH `§0.3` AND `§0h-T22`.** *`§0.3` set the ordering — **"calibration first (done),
+> selection second, quote confirmation third — free, and not optional"** — and said *"no EV or ROI
+> claim can be believed until a real slip-builder quote confirms the factor."* ***`T22` is that quote
+> confirmation. It was performed on `2026-09-21` against `160` stratified `alt×alt` pairs.***
+
+## 1. ✅✅ **`is_adjusted` — THE FIRST DIRECT SERVER-SIDE EVIDENCE OF A MECHANIC THIS DOCUMENT ONLY EVER INFERRED** *(SEG `33`)*
+
+**The payload, structure first**: `payouts: {"<n_picks>": {"<n_correct>": multiplier}, "is_adjusted": bool}`
+
+| slip type | 2-pick base rate |
+|---|---|
+| **Power Play** | `2/2` correct → **`2.2×`** |
+| **Flex Play** | `2/2` → **`1.8×`** · `1/2` → **`0.25×`** |
+| both | **`is_adjusted: true`** |
+
+> 🔑🔑🔑 ***"`is_adjusted` is the switch we'll learn from. **The server is explicitly telling you this
+> combination's payout was MODIFIED FROM BASE.** That flag is the **first direct evidence of the
+> goblin/demon adjustment that everything in `nba_multipliers.md` has only ever INFERRED**."***
+> ⇒ **Everything in `§0.1`, `§0.2` and `§0.2c` about goblin/demon payout adjustment was read off
+> observed slips and reasoned backwards. The server states it as a boolean.** ✅ *And `§0.2b`'s Flex
+> mechanic at 2 picks — documented as observed — is now confirmed in the server's own response.*
+
+## 2. 🔑🔑🔑 **THE HOUSE EDGE, MEASURED — AND IT IS THE SAME ON BOTH** *(SEG `357`, run 2, `160` stratified `alt×alt` pairs)*
+
+| | EV |
+|---|---|
+| **Power** | **`0.748`** |
+| **Flex** | **`0.747`** |
+
+> ⇒ ✅✅ ***A FLAT `25%` EDGE, IDENTICAL ACROSS SLIP TYPES.***
+> 🔑 ***"Flex does not make or lose value versus Power — **it REDISTRIBUTES the same expected value
+> into a consolation**."***
+> ⚠ **AND IT COMPRESSES AT THE TOP LIKE POWER DOES**: *"tiers `1.25` and `1.5` sit at **EV
+> `0.66–0.68`**"* ⇒ **the deepest consolations are worse than the flat edge, by `7–9` points.**
+
+> 🔴🔴 **WHAT THIS SETTLES, AND IT IS `§0.2d.2`'s CENTRAL QUESTION.** *`§0.2d.2` is titled **"Flex can
+> flip an EV-negative Power pool positive — IN PRINCIPLE."*** ⇒ ***Measured: it cannot, by
+> construction. The two run on one edge. Flex changes the SHAPE of the return, never its
+> expectation*** — *so any strategy that reaches for Flex expecting free EV is reaching for a
+> redistribution.* ⚠ **`§0.2d.2`'s arithmetic is not wrong — its premise (that the two pools could
+> carry different edges) is what the measurement removes.**
+
+## 3. ✅✅ **AND THE OPEN QUESTION FROM `§0h-T22` IS ANSWERED — BY EXACTLY THE EXPERIMENT IT CALLED FOR**
+
+**`§0h-T22` §4** recorded a failed hypothesis *and* the reason it could not have succeeded, closing:
+***"cracking the rule needs `alt×alt` slips."*** **Run 2 ran `160` of them.**
+
+| candidate driver | how well it sorts the tiers |
+|---|---|
+| `p(both hit)` | **`~75–77%`** |
+| `p(both miss)` | **`~75–77%`** |
+| the Power payout | **`~75–77%`** |
+| 🔴 `p(exactly one)` — *the failed hypothesis* | 🔴 **`15.6%`** |
+
+> ⇒ 🔑🔑🔑 ***THE TIER IS DRIVEN BY RISK.*** *"`p(both hit)`, `p(both miss)` and the power payout
+> **each sort the tiers at ~75–77% — they are ONE UNDERLYING QUANTITY**."*
+> ⇒ **`p(exactly one)` is excluded at `15.6%`, definitively** — *"run 1 could not test this: whenever
+> one leg is a standard at `50%`, `p(exactly one)` is `0.50` regardless. **Run 2's `alt×alt` pairs,
+> where it varies, settled it.**"*
+> ✅✅ ***This is the cleanest worked example of the research standard in the corpus: a hypothesis
+> rejected, the rejection diagnosed as under-powered, the discriminating experiment SPECIFIED, then
+> RUN, and the answer carried a quantitative separation of `77%` against `15.6%`.***
+
+**And the tier ladder is longer than `§0h-T22` recorded**: consolation steps by `0.25` across
+**`0.25 · 0.5 · 0.75 · 1.0 · 1.25 · 1.5`** — *two rungs beyond the four seen in run 1.*
+
+---
+
+> 📌 **TIERS**: ⚠ **AS STATED IN `T22`** — all figures; quotations verbatim. **Not re-probed by this
+> sweep.** 🔴 **`NOT RECORDED`** — what the single risk quantity IS, in closed form *(three proxies
+> sort it equally well; the transcript does not name the underlying variable)*; and the `alt×alt`
+> `EV = 0.747/0.748` is measured **on `alt×alt` pairs specifically**, so whether the flat `25%` holds
+> on standard-containing slips is **not** established here. ⚖️ **`pp_*` objects not queried.**
