@@ -259,6 +259,59 @@
 > ⚖️ **Nothing was scraped, probed or changed.**
 
 > # 🔴🔴🔴 **T21-1 · OWNER DECISION · THE DOCUMENT-FORM DIRECTIVE IS BLOCKED, AND ITS PRECONDITION WOULD PUBLISH CREDENTIALS**
+>
+> > ## ✅✅ **MEASURED 2026-09-23, `§F3.3` — THIS ITEM'S ESTIMATE IS NOW A CENSUS, AND IT HOLDS**
+> >
+> > *Read-only shape scan over **all 24 transcripts + the journal, `64.8 MB`**. **Counts and shapes
+> > only — no value is reproduced here, in the twelve, or anywhere in the corpus.** Known-safe
+> > contexts (`secrets.`, `${{ }}`, `os.environ`, `***`, placeholders) filtered out.*
+> >
+> > | shape | hits | distinct |
+> > |---|---|---|
+> > | `api_key` / `token` / `secret` / `bearer` **assignments** | 26 | 6 |
+> > | `api key = <uuid>` | 7 | 1 |
+> > | **JWT** (`eyJ…`) | 6 | 2 |
+> > | 🔴 **`postgres://` URL** | **3** | **2** |
+> > | URL carrying `user:pass@` | 3 | 2 |
+> > | **DigitalOcean DB host** | 3 | 1 |
+> > | 🔴 **`password = …` assignment** | **2** | **2** |
+> > | **TOTAL** | **50** | 🔴 **16 distinct credential-shaped values** |
+> >
+> > ✅✅ **THIS ITEM SAID *"`3` Postgres URLs."* THE CENSUS FINDS EXACTLY `3`.** ⚠ *It said `18`
+> > credential-shaped strings; the census finds **`16` DISTINCT values across `50` hits**. **The
+> > two are not the same quantity** — `18` counted strings, this counts distinct values under a
+> > fixed shape list — **so the earlier figure is not corrected, it is superseded by a stated
+> > method.*** 📌 *`§F2.11`'s lesson: the population definition is the expensive half.*
+> >
+> > 🔑🔑 **AND THE EXPOSURE IS FAR MORE CONCENTRATED THAN "spread across the transcripts" — WHICH
+> > CHANGES WHAT THIS ITEM COSTS TO RESOLVE.** *Only **`4` of `25` files carry anything at all**:*
+> >
+> > | file | what it holds |
+> > |---|---|
+> > | 🔴🔴 **`T13`** *(`…boards-grader-market-2026-09-10`)* | **`28` of the `50` hits** — **both `password =` assignments, all `3` `postgres://` URLs, all `3` DO-host references, `5` JWTs and `12` key assignments** |
+> > | `T12` *(`…board-scrapers-fliff-docs`)* | `8` key assignments · `1` JWT |
+> > | `T11` *(`…enrichment-backfill-dfs-boards`)* | `7` `api key = <uuid>` |
+> > | `T1` *(`…expansion-phase1-static`)* | `6` key assignments |
+> > | **the other `21` files** | ✅ **nothing** |
+> >
+> > ⇒ ***The blocked precondition is not "sanitise 64.8 MB". It is "sanitise four files, of which
+> > one holds more than half."*** **That is a tractable job, and this item could not say so before
+> > because it had an estimate instead of a census.**
+> >
+> > ✅ **CONTAINMENT VERIFIED, and it is good news**: the `password`, the DO host and the Bearer JWT
+> > were each searched across the **repo working tree AND its entire git history** — **`0` sites,
+> > `0` commits.** ***None of this has ever been committed.*** *(Contrast `F2-1`, where a key
+> > HAD been.)*
+> >
+> > 🔴 **BUT ROTATION IS STILL REQUIRED, AND THE REASON IS SHARPER THAN BEFORE.** *`T13` carries a
+> > **live production Postgres password** and its **host** in plaintext. It is not in the repo — but
+> > it is in a file that is copied between machines, attached to chats and handed to tools.* **See
+> > `F2-1` ①, which now covers it.**
+> >
+> > ⚠ **RULE 54:** a shape scan cannot see a secret with no distinctive shape, and `SAFE` context
+> > filtering can over-filter. ***"`16` distinct values under these shapes", never "the transcripts
+> > contain exactly 16 secrets."*** **A floor — and for a sanitisation job, a floor is the wrong
+> > side to be on, so the four files need a human read, not just this scan.**
 > *Filed 2026-09-23, T21 pass 3, `§T21.3`. **Placed at the very top because it is the only item on
 > this page about what these documents ARE, rather than about the system they describe.***
 >
