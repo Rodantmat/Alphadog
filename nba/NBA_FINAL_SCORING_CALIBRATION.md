@@ -4534,6 +4534,55 @@ optimises for.**
 
 ---
 
+# 0.18-T24. 📐 **§T24.5 — THE DERIVED-LINE ESTIMATOR TABLE, WITH ITS SAMPLE SIZES** *(`RULE 56`)*
+*`T24` pass `5`, recorded `2026-09-23`. **The twelve referenced "`§4.4`'s points-scaled estimators"
+without ever carrying the table that chose them.** ⚠ `T24` is a secondary source.*
+
+### **Test 1 — mean absolute miss against REAL BOOK LINES** *(pretend-unknown, `12` nights)*
+| stat | **n** | median | mean | points-scaled | **winner** |
+|---|---|---|---|---|---|
+| **threes** | **`1,179`** | `0.535` | `0.396` | ✅ **`0.326`** | **points-scaled** *(`79%` within `0.5`)* |
+| **rebounds** | **`1,305`** | `0.876` | `0.703` | `0.720` | blend `0.678` / mean |
+| **assists** | **`1,245`** | `0.671` | ✅ **`0.516`** | `0.529` | **mean** |
+| **blocks** | **`1,032`** | `0.477` | ✅ **`0.279`** | `0.285` | **mean** *(`92%` within `0.5`)* |
+| steals / turnovers | — | `0.48`–`0.51` | ✅ **`0.32`–`0.37`** | `0.34`–`0.40` | **mean** |
+
+🔑 **The `30`-day MEAN beats the median everywhere** *(the median runs `0.1`–`0.25` low)*, **and
+scoring-volume stats want tonight's POINTS line** — *it carries minutes and role.*
+
+### ⚠⚠ **THE APPARENT CONFLICT, AND ITS RESOLUTION — worth more than either result**
+*The Fantasy fallback uses **MEDIANS** and was validated that way. This table says **MEANS** win.*
+> ***"The targets differ. Fantasy centres are calibrated against the OUTCOME MEDIAN (medians win);
+> here the target is the BOOK LINE (means win). Both hold."***
+
+🔑🔑 ***Two correct answers to "mean or median?" because they are answers to two different
+questions.*** **Any future reader who finds one of these and applies it to the other target will be
+wrong, and nothing will tell them** — *which is why the resolution is recorded with the tables rather
+than left to be re-derived.*
+
+### 🔴 **What the books actually quote** *(NBA archive, `6` sample nights)*
+*points, rebounds, assists, threes and the four combos `~110`–`118` players/night · **blocks `~94`** ·
+double-double `~90` (books only) · steals `~58` · blocks+steals `~45` · turnovers `~25` (DraftKings
+only).* **NO BOOK MARKET AT ALL** *for FG attempted/made, free throws, `3`-PT attempted,
+offensive/defensive rebounds, quarter props.*
+⚠ ***Surprise, and it redirects the work: books quote BLOCKS widely — so the Fantasy fallback mostly
+covers steals and turnovers, NOT blocks.***
+
+### 📊 **The per-season splits the totals were hiding** *(dated `2026-09-22`; `prop_universe` is mid-rebuild)*
+`fs_backsim` **`32,170`** = `15,916` *(`2024-25`)* + `16,254` *(`2025-26`)* ·
+derived standards **`179,712`** = `88,886` + `90,826` ·
+the floor fix changed **`1,024`** goblin keys, all cheaper ·
+in the universe, **`80,756`** real goblins fell below the old conservative floor and **`20,738`** sit
+at the new `1.843×` minimum.
+
+⚠ **`RULE 54`.** *`WINDOW`: `T24`'s own reported figures, `2026-09-22`; **not independently
+re-derived here** — `T24` is a session record and its queries are not reproducible from the file.
+**`NOT DONE`: test `2`'s outcome-MAE table** *(FGA `2.971`, FGM `2.022`, FTA/FTM `1.882`/`1.620`,
+3PA `1.689`, OREB/DREB `0.991`/`1.667`)* **is already carried in `NBA_MASTER_SUMMARY.md` and is not
+repeated here.***
+
+---
+
 # 0.17b-T23. 🔴🔴 **§T23.16 — THE TWO SILENT BUGS THAT SURFACED DURING THE CALIBRATION REBUILD**
 *`T23`, `2026-09-21`, recorded `2026-09-23`. **Neither produced an error. Both produced wrong
 numbers, for months, in a table the scoring engine reads on every run.***
