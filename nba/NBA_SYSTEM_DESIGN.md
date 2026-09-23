@@ -22,6 +22,7 @@ constraints that shaped it. This is the operational spec.
 > |---|---|
 > | 🔴🔴 **what the system is FOR, and the acceptance criterion it must meet** | **`§0z`** |
 > | 🔴 **the build-order lock — what will NOT be built, and in what order the rest comes** | **`§0z-3`** |
+> | 🔑🔑 **WHAT A GAME DAY LOOKS LIKE, END TO END** | **the `🗓 GAME DAY` block directly below** — *the whole sequence in order, with the section for each step* |
 > | **what `P1` / `P2` / `P3` each do** | **`§2`** · **`§3`** · **`§4`** |
 > | 🔑 **why the cutoff is `1:15 PM PT`** | **`§1`** |
 > | 🔴🔴 **the two-pipeline decision, made in real time** *(COMPASS fact 107's reasoning)* | **`§0z-7`** |
