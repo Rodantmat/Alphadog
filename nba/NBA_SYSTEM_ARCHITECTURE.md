@@ -3,6 +3,85 @@
 **Purpose.** What the system actually runs on: every external service, every source, every piece of
 infrastructure, and how each is used. Built from the transcripts, not from memory.
 
+---
+
+> # 📑 **INDEX — `NBA_SYSTEM_ARCHITECTURE.md`**
+> **`113` sections · `164,239` bytes · `2,283` lines · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> rotted within a day)*. **Search for the quoted `§` label.**
+> 🔴 **SECTION ORDER IS NOT NUMERIC.** *The file opens with the `0f-*` board-source block, then runs
+> `1`, `1a0`, `1a`, `1b`, **`8b`**, `2c`, `2d`, `3`, `3b`, `4`, `4c`, `6`, `7`, `8`, `8d`, `8b-ii`,
+> `8b-i`, `8c`, `9`.* ***`§8b` sits between `§1b` and `§2c`; `§8b-i` comes AFTER `§8b-ii`.***
+> **This index is in logical order.**
+>
+> ## ▶ FIND IT FAST
+>
+> | if you need… | go to |
+> |---|---|
+> | 🔑 **why the architecture looks the way it does** *(the one constraint that explains it)* | **`§1a`** |
+> | **the founding constraint** and the naming/isolation convention | **`§1`** · **`§1b`** |
+> | 🔴 **the live board sources — how many, and how each was chosen** | **`§0f`** · 🔴 **`§0f-1` — there are FIVE, not four** |
+> | 🔑 **what the MCP admin bridge can and cannot do** *(measured from its own failures)* | **`§0f-3`** |
+> | ⚠ **`run_job`'s `14` job modes** *(`13` undocumented)* | **`§3b`** |
+> | **the admin bridge itself** — `alphadog-v2-admin-sql.js` | **`§3`** |
+> | **Postgres / Hyperdrive deploy gotchas confirmed in THIS stack** | **`§2c`** · **`§2d`** *(two named code-level bugs)* |
+> | **how anything gets triggered** | **`§7`** · ⚠ **`§8b-ii` — trigger files are AUDIT LOGS, not markers** |
+> | **the deploy pipeline** *(shared with MLB, extended additively)* | **`§4`** |
+> | ⚠ **anti-bot reality** | **`§6`** |
+> | ✅ **the worker universe, diffed three ways** *(`21/21/21`, no drift)* | **`§8b-i`** |
+> | **repo layout** · ⚠ **the FOURTH store** *(a memory file outside GitHub and Postgres)* | **`§8`** · **`§8d`** |
+> | ⚠ **corrupt-and-fix testing** *("the single most reliable verification pattern")* | **`§8b`** |
+> | 🔴 **the Fliff scraper fix — three stacked bugs** | **`§0f-4`** |
+> | ⚠⚠ **`P3`'s shape was wrong, and only running it showed that** | **`§0f-5-T18`** |
+>
+> ## 📋 EVERY SECTION, IN LOGICAL ORDER
+>
+> ### 🧭 **A · THE CONSTRAINTS THAT EXPLAIN EVERYTHING ELSE**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`1`** | **THE FOUNDING CONSTRAINT** | |
+> | **`1a`** | ⚠⚠ **THE OPERATING CONSTRAINT THAT EXPLAINS THE WHOLE ARCHITECTURE** — *read this before anything else in the file* | ⚠⚠ |
+> | **`1a0`** | **The shared-queue question the blueprint posed** — answered `2026-09-20` by live query | |
+> | **`1b`** | **The naming and isolation convention** | |
+>
+> ### 📡 **B · SOURCES AND BOARDS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0f`** | 🔴 **THE FOUR LIVE BOARD SOURCES** — each chosen by a same-moment diff; **three of the four had no evidence** | 🔴 |
+> | **`0f-1`** | 🔴 **CORRECTION — THERE ARE FIVE BOARD SOURCES, NOT FOUR** *(`T13` pass 3, `§T13.4a`)* | 🔴 |
+> | **`0f-2`** | 🔑 **The ParlayAPI downgrade's REASONING**, and a correction from the same decision block | 🔑 |
+> | **`0f-4`** | 🔴 **The Fliff scraper fix — three stacked bugs, with an owner screenshot as the test oracle** | 🔴 |
+> | **`0f-5-T18`** | ⚠⚠ **`P3`'s shape was wrong, and only RUNNING it showed that** | ⚠⚠ |
+> | **`6`** | **ANTI-BOT REALITY** | |
+> | **`4c`** | **Base-layer data-mining lessons** | |
+>
+> ### 🔧 **C · INFRASTRUCTURE, TOOLING AND DEPLOY**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`3`** | **THE MCP ADMIN BRIDGE** — `alphadog-v2-admin-sql.js` | |
+> | **`3b`** | ⚠ **`run_job` IS A DIAGNOSTIC AND INGESTION ENGINE — `14` job modes, `13` of them undocumented** | ⚠ |
+> | **`0f-3`** | 🔑🔑 **The admin bridge's CAPABILITY BOUNDARIES — measured from its own failures, and all are `0` of the thirty** | 🔑 |
+> | **`2c`** | **Postgres / Hyperdrive and deploy gotchas — confirmed real in THIS stack** | |
+> | **`2d`** | **Two named code-level bugs in this exact stack** | |
+> | **`4`** | **The deploy pipeline** *(shared with MLB, extended additively)* | |
+> | **`7`** | **THE TRIGGER MECHANISM** | |
+> | **`8b-ii`** | ⚠ **Trigger files are AUDIT LOGS, not markers — and there are TWO conventions** | ⚠ |
+>
+> ### 🗂 **D · LAYOUT, STORES AND VERIFICATION**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`8`** | **REPO LAYOUT** | |
+> | **`8b-i`** | ✅ **The worker universe, diffed three ways — `21`/`21`/`21`, NO DRIFT** | ✅ |
+> | **`8c`** | **The MLB source library — where the transferred claims come from** | |
+> | **`8d`** | ⚠ **THE FOURTH STORE — an assistant memory file outside GitHub and Postgres** | ⚠ |
+> | **`8b`** | ⚠ **CORRUPT-AND-FIX TESTING** — *"the single most reliable verification pattern"* ⚠ *physically sits between `§1b` and `§2c`* | ⚠ |
+> | **`9`** | **DOCUMENTATION SYSTEM** | |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`A` is why, `B` is what it reads from, `C` is what it runs on, `D`
+> is where things live and how they are checked.*** **If you are debugging a scrape, start at `B`; if
+> you are debugging a deploy or a trigger, start at `C`.**
+
 **Update log**
 | Date | What changed |
 |---|---|
