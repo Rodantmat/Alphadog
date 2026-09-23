@@ -39314,6 +39314,16 @@ leg HOLDS at the envelope level, and it did not have to wait for October.***
 types. It does NOT prove the sport-specific VALUES** *(stat types, and the `MARKET KEY -> OUR PROP`
 map at `score_board_legs.py:45`)*. **A `PARSES` verdict bounds the risk; it does not eliminate it.**
 
+> ✅✅ **THE BOUNDARY WAS CLOSED ONE PASS LATER — `§T20.125`, 2026-09-23.** **`MARKET_TO_PROP` carries
+> `21` keys; the NBA board archive has ever carried `11` distinct base keys; and ALL ELEVEN ARE
+> MAPPED.** ⇒ ***`OBSERVED, UNMAPPED` is EMPTY — the map does not drop a single NBA leg it has ever
+> seen.*** ⚠ **`10` of the `21` have NEVER been observed** *(`player_fantasy_points` and the nine
+> period props)*, **which the map's own comment predicts and `§T20.123` explains** — forward-looking
+> by design, unverified by construction. 🔴 **And listing the keys found something else: every one of
+> the `76` live-path `market_key` values in `nba_market.board_snapshots` is BASEBALL** — `7,951` rows
+> across three bookmakers on two dates, from runs with `ARCHIVE_SPORT=mlb`, **which the `P3`
+> certifier's bare `count(*)` counts as an NBA board.** ▶ **`T20-23`.**
+
 ## ③ 🔴 BUT THE FIELD LOSS IS REAL, AND THE LIVE DATA CONFIRMS IT EXACTLY
 
 **`SELECT` on `nba_market.board_snapshots`, `2026-09-23`, null counts by bookmaker:**
