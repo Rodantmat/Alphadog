@@ -2241,3 +2241,66 @@ the log records no population definition. **`NOT RE-DERIVED`: no figure here was
 underlying tables by this pass.** ✅ *And `RULE 58` was applied throughout: every number was re-probed
 in percent and comma-grouped forms, which is what demoted `0.519`, `0.369`, `0.477` and `0.394` from
 "absent" to "present in `3` documents" before anything was written.*
+
+---
+
+## 🔑 §F6.28 — **THE SEASON-WIDE BOARD-COVERAGE RESULT, AND THE `±6 → ±10` LADDER REBUILD**
+
+*Added `2026-09-23`. **Recovered by the direction-(b) numeric probe pre-registered at `§F6.28`** —
+the uncovered-substantive band of the PROSE strata only. Source: `T14`. **Every figure below
+returned `0` of `12` under the WIDE variant set.***
+
+### 1 · 🔑🔑 **The coverage number that matters is the SEASON one, and the twelve carried only the slate**
+
+*`§F6.20` above records the single-slate coverage test (`2026-03-15`). **`T14` ran the same question
+across an entire season**, and that result is in none of the twelve:*
+
+> ***"Across the entire `2025-26` season, the day-by-day baseline covers **`85%` of PrizePicks points
+> legs** and **`82%` of rebounds legs** — **`103,532`** and **`85,391`** board legs respectively,
+> matched exactly on player, date and line. That's consistent with the single-slate result
+> (`77–86%`), so the whole-season build is behaving the same as the certified per-day recipe."***
+
+🔑 ***The load-bearing clause is the last one.*** **A per-day recipe certified on one slate and a
+season-long build are different artifacts, and this is the only measurement in the corpus that shows
+they agree.** *Matched on `player × date × line` — an exact join, not a fuzzy one.*
+
+**And the residual is split, not waved away:**
+
+| bucket | size | cause |
+|---|---|---|
+| **name resolution** | **`~6.5%`** — `6,751` / `5,577` unresolved | *"this query used plain normalization **without the alias logic**"* ⇒ **an artifact of the measuring query, not of the baseline** |
+
+⚠ **`RULE 54`.** *The second bucket is cut off in the recovered segment; **`NOT RECORDED` here what
+it is.** The `~6.5%` name-resolution figure is `T14`'s own and was not re-derived by this pass.*
+📌 *The alias logic it names is the same `nba_ref.player_name_map` (`5,212` players) that `§F6.20`'s
+single-slate test credits with closing "most" of its `65` unresolved legs — **and `T20-25` is the
+open item saying the writer and the reader still normalise differently.***
+
+### 2 · ✅ **The ladder was rebuilt from `±6` to `±10` — and the twelve carry neither span nor size**
+
+| | `VERBATIM` from `T14` |
+|---|---|
+| the change | *"offsets now span **`-10` to `+10`** (was `-6` to `+6`)"* |
+| artifact size | **`36,895` → `45,965` rows**, `18` props, `161` players |
+| loaded to Postgres | **`44,544` rows**, `18` props, `161` players, offsets `-10` to `+10` |
+| per-prop singles | **points `9,283` · rebounds `3,451` · assists `3,160`** |
+| injury integration | **`161` of `173` players** |
+| ✅ the point of it | *"singles coverage is essentially complete: points, rebounds, assists, threes all show **`0` out-of-range**"* |
+
+✅✅ **AND THE PER-PROP FIGURES RECONCILE TO THE LIVE TABLE EXACTLY.** *`§F6.16`'s `SELECT` over
+`nba_score.baseline_ladder WHERE asof = '2026-03-15'` returns **points `9,283` · rebounds `3,451` ·
+assists `3,160`** — the same three numbers, from the database, a fortnight later.* 🔑 ***That is an
+independent corroboration of a transcript figure by the live system, and it is the strongest form of
+verification this sweep can produce: the number was READ in one place and MEASURED in another.***
+
+🔑 **Why the span matters, and it closes a loop with `§F6.20`:** *the single-slate test found
+**`60` points legs OUT OF RANGE** — "demon rungs on high scorers past the player ladder ceiling; **a
+rung-depth setting, not a design flaw**". **`±6 → ±10` IS that setting being changed**, and the
+result is `0` out-of-range on all four singles props. ⇒ **`§F6.20`'s diagnosis was right and the fix
+is on file; neither half was in the twelve.***
+
+⚠ **`RULE 54` / `RULE 30`.** *`44,544` loaded vs `45,965` in the artifact is a **`1,421`-row
+difference** — ⚠ **and that is the same integer as `§F6-1`'s `ot_rule` loss.** ***COINCIDENCE NOT
+RULED OUT AND NOT ASSERTED AS CAUSE:*** the `T14` build is `2026-09-11`-era and a different slate
+from the `2026-03-15` partition `§F6.16` measured, and this pass did not re-run either. **Recorded
+as a number to check, not as a finding.***
