@@ -1967,9 +1967,11 @@ owner figures are `owneraudit.py` + the phrase test at `§F3.2`; `hb` is the hig
    documents contain text like the source. It cannot show the source was understood, that an owner
    instruction was obeyed, or that a recorded number is right.* ***Nothing in `§F4` certifies that
    AlphaDog works, or that the corpus describes it correctly.***
-5. 🔴 **Five items are open for the owner and none is this sweep's to close**: **`F2-1`**
+5. 🔴 **~~Five~~ SEVEN items are open for the owner and none is this sweep's to close**: **`F2-1`**
    *(rotate — a production Postgres password and a published API key)* · **`T21-1`** · **`T23-1`** ·
-   **`T20-3`(e)** · **`T10-F1`**.
+   **`T20-3`(e)** · **`T10-F1`** · 🆕 **`F6-2`** *(the post-`09:00 ET` scratch slice has no control;
+   `§F6.13`)* · 🆕 **the `-05:00` atomic-fix decision** *(`§F6.14` §4 — one change across seven
+   files, or none; recorded on the existing `🔴🔴` item, not filed as a new one)*.
 
 ## §F4.3b — the OWNER-TURN certification, added after `§F3`
 
