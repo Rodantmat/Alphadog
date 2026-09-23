@@ -53,6 +53,7 @@ WITH pp AS (
          (market_key LIKE '%%\\_alternate') AS is_alt
   FROM nba_market.board_snapshots
   WHERE bookmaker = ANY(%(apps)s) AND line IS NOT NULL
+    AND (%(gd)s::date IS NULL OR game_date = %(gd)s::date)
 ),
 -- the anchor per ladder. A ladder is (date, snapshot, book, player, market) - the same grouping the
 -- PrizePicks payload calls group_key, which is what makes this derivation free rather than fuzzy.
