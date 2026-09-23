@@ -9,25 +9,12 @@
 > `T`*n*`.`*m* section · **`§`-labels** = distinct labels appearing anywhere in the text. *The `📏`
 > figure above counts headings. Say which you mean before quoting any of them.*
 >
-> #### ✅✅ §F6.26 — **THE DEFINITIONS ARE WHY THIS INDEX VERIFIES AND THE OTHERS DO NOT**
->
-> *Re-derived
-> `2026-09-23` against the file: **`2,798` headings · `1,703` `§`-sections · `739` distinct
-> `§T`*n*`.`*m* labels — all three reproduce EXACTLY.*** ⚠ *`2,797` at the moment of derivation;
-> **`2,798` once this section's own heading existed.** `§F6.19`'s byte self-reference has a heading
-> twin, and it bites whenever the census text is itself a section.* 🔑 ***And the
-> re-derivation's first attempt got `358` for the `§`-section count*** — because I probed "headings
-> containing a `§`" instead of the definition written right here, ***"headings that name a
-> `T`*n*`.`*m* section"***, which also catches `### T11.10 — PASS 9` with no `§` at all. **Four more
-> guesses were tried before the published definition was used, and none came within `2×`.**
-> ⇒ ***An index that publishes its population definitions can be checked by anyone; one that
-> publishes only a number can be checked by no one — including its author an hour later.*** 📌 *Set
-> against `§F6.18`, where the `SEASON-CRITICAL` roster's count could NOT be reproduced from its
-> stated method, this is the same lesson from the opposite end.*
 > **This is the largest file in the set. Do not read it linearly — route through this index.**
 >
-> ⚠ **ANCHORS ARE `§` LABELS AND HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16`
-> line-number pointers rotted within a day)*. **Search the file for the quoted `§T`*n*`.`*m* label.**
+> ⚠ **ANCHORS ARE `§` LABELS AND HEADING TEXT, NEVER LINE NUMBERS.** **Search the file for the quoted
+> `§T`*n*`.`*m* label.**
+> 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**
+> (`§F6.26` for why this index's definitions verify and a bare number cannot).*
 >
 > ## 🧭 **HOW THIS FILE IS ORGANISED — the one thing to understand first**
 >
