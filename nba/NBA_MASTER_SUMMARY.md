@@ -163,7 +163,7 @@
 >
 > 📊 **MEASURED `2026-09-23` at `HEAD`**: `32` `.md` files · `12` mandated · `20` other.
 > *Sizes and last-commit dates below are from `git log -1` per file the same day; **they are
-> approximate and dated, like every other such figure — see the `📏 CENSUS STAMP` above.***
+> approximate and dated, like every other such figure — re-derive it rather than quoting it.***
 >
 > ## ✅ **1 · THE TWELVE MANDATED DOCUMENTS** *(`12`)*
 > **`NBA_MASTER_SUMMARY.md`** · **`NBA_OPEN_ITEMS.md`** · **`NBA_FINAL_SCORING_CALIBRATION.md`** ·
