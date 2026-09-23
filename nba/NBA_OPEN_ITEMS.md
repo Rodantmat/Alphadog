@@ -14436,8 +14436,20 @@ constant it holds, and this is the one place the standard does not hold.***
 ## F6-2 · **NEW · OWNER DECISION · MEDIUM** · the one absence slice the baseline structurally cannot see has no control to test it against
 
 *Filed 2026-09-23, `§F6.13`. **Read-only**: a `SELECT` against
-`nba_config.classification_config` and greps of the twelve. Nothing was changed, and this item
-**proposes nothing** — it records a decision the closed `A2` programme leaves on the owner's desk.*
+`nba_config.classification_config`, a source read, and greps of the twelve. Nothing was changed, and
+this item **proposes nothing** — it records a decision the closed `A2` programme leaves on the
+owner's desk.*
+
+> ⚠⚠ **SCOPE CORRECTED THE SAME DAY — `§F6.13`'s retraction.** *`§F6.13` was written believing the
+> `next_test` field was undocumented. **It is not**: `NBA_FINAL_SCORING_CALIBRATION.md` carries it
+> verbatim under **"A2 IS NOT CLOSED AS 'NO SIGNAL' — IT IS CLOSED AS 'NOT YET MEASURED WHERE SIGNAL
+> COULD BE'"**, along with the double-counting rule and the slice table, all better-sourced than my
+> version. 🔑 ***What makes this an ITEM rather than a duplicate is the SOURCE-LEVEL finding in the
+> `✅ VERIFIED` block below, which nothing in the corpus had reached:*** **`nba_asof.py:39-40`'s
+> `cutoff_ts(game_date, hhmm)` is structurally incapable of expressing a cutoff that is not on the
+> game day**, so the control is blocked by a two-line function, not by a missing dataset — ***and
+> the `09:00 ET` roster freeze is what makes the remaining slice narrow and definable.*** *Read the
+> `VERIFIED` block first; the quoted framing above it is context the corpus already had.*
 
 ### The finding, `VERBATIM` from the live row
 
