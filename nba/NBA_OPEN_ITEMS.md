@@ -14083,7 +14083,7 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 >
 > | # | item | fails | effect | caught by a certifier? | fix size |
 > |---|---|---|---|---|---|
-> | **→ 1st** | 🔴🔴🔴 **T20-13** — `baseline_history` carries **22** distinct props in October and **30** from November 1, in **both** prior seasons; P2 gates on `>= 25` with `CERT_STRICT=1` | ✅ **LOUD — twelve times** | 🔴 **STOPS THE SLATE, on opening night and eleven nights after** | *n/a — it IS the certifier, and it is RIGHT* | **one edit, four ways** |
+> | **→ 1st** | 🔴🔴🔴 **T20-13** — `baseline_history` carries **22** distinct props in October and **30** from November 1, in **both** prior seasons; P2 gates on `>= 25` with `CERT_STRICT=1` | ✅ **LOUD — twelve times** 🔴 *(CORRECTED §T20.136: **every night of the season**, see the item heading)* | 🔴 **STOPS THE SLATE, on opening night and eleven nights after** 🔴 *(CORRECTED §T20.136: **and every night after that** — `baseline_history has today` fails first, `T20-6`)* | *n/a — it IS the certifier, and it is RIGHT* | **one edit, four ways** |
 >
 > ⚠⚠ **WHY IT DISPLACES T20-5 DESPITE FAILING LOUD.** *The brief's rule puts SILENT before LOUD
 > because a silent failure costs a season and a loud one costs an evening. **T20-13 breaks the tie
