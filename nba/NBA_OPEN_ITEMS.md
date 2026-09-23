@@ -14266,9 +14266,43 @@ tables.*
 what it returned**; and a pointer from each factor verdict to its script *(the pointer half is done
 — `NBA_FINAL_SCORING_CALIBRATION.md` §3 now carries the mapping)*.
 
-⚠ **`NOT RECORDED`: whether any of the three scripts has ever executed.** *`nba_score.factor_gate_results`
-holds `94` rows and is the obvious place to look — **this sweep did not query it for these two
-factors**, and says so rather than implying it did.*
+### ✅✅ **ANSWERED THE SAME HOUR — `[LIVE-AUDIT]` 2026-09-23, AND IT VINDICATES THE CORPUS**
+
+*The line above originally read "`NOT RECORDED`: whether any of the three scripts has ever
+executed … this sweep did not query it." **It is a `SELECT` away, so it was run rather than left
+open.***
+
+**`nba_score.factor_gate_results`, `count(*)`:**
+
+| | |
+|---|---|
+| total rows | **104** · **19** distinct models · last run **2026-09-17 03:41:39Z** |
+| rows whose `model` or `slice` matches `B4` / `rim` / `opponent` / `block` | 🔴 **`0`** |
+| rows whose `model` or `slice` matches `M1` / `defender` / `matchup` | 🔴 **`0`** |
+
+⇒ ✅✅ ***`B4 v3` and `M1` WERE NEVER GATED. The corpus's "NOT TESTED" is CORRECT, and is now
+confirmed by live evidence rather than by silence.*** **The scripts exist and have produced no gate
+row. This item therefore closes its factual question and keeps only its documentation one.**
+
+🔑 **What remains of `F5-1` after the audit:**
+1. ✅ *"Were they tested?"* — **ANSWERED: no.**
+2. 🔴 *"Why not, and are they still wanted before the opener?"* — **`NOT RECORDED`. Owner's call.**
+3. 🔴 *"Why is the apparatus undocumented?"* — `7` workers and `27` scripts named in `0` of the
+   twelve *(`§F5.5`)*; the verdict-to-script mapping is now written into
+   `NBA_FINAL_SCORING_CALIBRATION.md` §3.
+
+⚠ **And a `RULE 30` footnote, recorded because it is the fifth instance today**: *`reltuples` says
+this table holds **`94`** rows; `count(*)` says **`104`**. **The corpus's "104 rows" — which appears
+in `3` documents — is the correct figure, and the planner estimate is the wrong one.*** **Every
+row-count disagreement between this corpus and `reltuples` that has been re-checked today has gone
+the same way.**
+
+✅ **What the `19` models DO contain, checked against the twelve**: `flat_A2` · `novelty_A2` ·
+`shrunk_novelty_A2` · `anchor` *(2026-09-13)* · **`A3 return ramp` · `A4 rest / b2b / 3-in-4` ·
+`K1 coach change` · `A3 + A4 + K1 combined`, all at `gain_vs_anchor = 0.0000`** *(2026-09-17)* ·
+the `pooled` / `per-tier` / `+ player history` / `+ MARKET MOVE` family *(2026-09-15)*.
+🔪 **All on file in `NBA_SYSTEM_DESIGN.md` — KILLED, not a gap.** *(Only the combined
+`"A3 + A4 + K1"` label itself returns `0` of `12`, which is a label, not a finding.)*
 
 ---
 
