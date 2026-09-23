@@ -938,8 +938,87 @@ and **`8` populations is a small sample of the `803` claims** — the other `795
 ***So the conclusion is "`8` re-derivable populations were re-derived and `8` agreed", never "the
 twelve's enumerations are correct."*** **A floor.**
 
+---
+
+## §F2.12 — 🔴🔴🔴 **SECURITY: the pass that swept for UUIDs published the key it found**
+
+**Found 2026-09-23 while reading `T11`'s uncovered band** *(`§F2.1` ranked `T11` third-least-covered,
+`91.9%`, **and it is the only transcript that is both near the bottom and has a tail of ZERO**)*.
+**A `T11` segment carries a live third-party API key in plaintext.** *That value is not reproduced
+here, in the twelve, or anywhere in the corpus.*
+
+### ① The immediate check — and it came back clean
+
+**`T11`'s key: `0` hits in the working tree, `0` commits in the entire history. Never committed.** ✅
+
+### ② The audit that question prompted — and it did not come back clean
+
+**`credscan.py`: scan the twelve, and the other twenty `nba/*.md`, for credential SHAPES rather than
+for known strings** *(UUID · `postgres://` · URL-with-credentials · `gh[pours]_` · `AKIA` · JWT ·
+hex≥32 · base64≥40 · `key|secret|token|password =`)*. **It reports `(shape, length, sha256[:8])` and
+never a value — applied to my own tool output too, so nothing can leak by accident.**
+
+| | the twelve | the other 20 |
+|---|---|---|
+| raw hits | 59 | 17 |
+| after known-safe context filter | **53** | 17 |
+| distinct values | 19 | 12 |
+| `postgres://` · `gh*_` · `AKIA` · JWT · assigned-secret | **`0`** | **`0`** |
+
+✅ **`50` of the twelve's `53` are one artifact: a 40-character hex string is a git SHA-1 AND is 40
+characters of the base64 alphabet, so every commit SHA is counted twice.** **`25` distinct SHAs.**
+⇒ **`3` real candidates, adjudicated by hand.**
+
+### ③ 🔴🔴🔴 One was real
+
+**`NBA_MASTER_SUMMARY.md:1436` carried a live `balldontlie.io` API key IN FULL, in a PUBLIC repo,
+labelled *"(balldontlie key)"*.** **It sits inside `§T1.31 — PASS 19 (IDs, hashes, commit SHAs)`,
+whose own opening line is *"A sweep for every hex string, numeric ID and UUID returned only
+already-documented values"*, in a row marked *"Already in `T1.5`"* — and on that row's strength the
+pass was declared `CLEAN 1 of 3`.**
+
+🔑 ***The error is visible in the table's own columns. "Already documented" is the right clearance
+for a commit SHA and is the LEAK ITSELF for a credential*** — *"we have published this before" is
+the finding, not the all-clear — **and one test was applied to both kinds of string.***
+
+✅ **Redacted; `0` sites remain in the working tree** *(fingerprint search over every file, `.git`
+excluded)*. ✅ **Confined: `T1.5`, the row's own "already in" target, never carried the value —
+this was the only site.** 🔴🔴 **NOT contained: `git log -S` finds it in `2` commits of a PUBLIC
+repository. A pushed secret is disclosed permanently.** ⇒ **`F2-1` filed — OWNER DECISION, ROTATE.**
+
+### ④ 🔪 The other two, and the non-mandated files
+
+🔪 **The two remaining candidates in the twelve are prose** — runs of 42 and 53 characters from the
+base64 alphabet inside ordinary English *(slash-joined phrases such as `static/weekly/foundational`
+have no spaces to break the match)*. **Not credentials.**
+🔪 **`NBA_COMPASS.md:112`'s two UUIDs are Underdog's `product_experience_id` and `state_config_id`
+— PUBLIC client configuration**, present in every browser request to `api.underdogfantasy.com`.
+**Not secrets**, and `COMPASS` is never written to by standing rule in any case.
+⇒ ***One genuine credential in the entire `nba/` tree, and it was in the twelve.***
+
+### 🔑 Why it survived 140+ passes, stated plainly
+
+> **`nba/tools/sweep_coverage.py`'s own docstring records that the `T1` high-band judgment found
+> *"a live credential the documentation had quoted instead of referenced."*** **So this defect class
+> was identified, named, and written into the instrument's documentation — and THIS INSTANCE
+> survived anyway**, in the pass whose title is *"IDs, hashes, commit SHAs"*.
+>
+> 📌 ***Every previous search was for STRINGS ALREADY KNOWN TO BE SECRETS. This one searched for the
+> SHAPE of a secret. The difference is the whole finding: you cannot grep for a credential you have
+> not yet seen, and the corpus had been grepping for the ones it had.*** *Same lesson as `§F1.1`
+> (enumerate the headings, not the prose) and `§F2.7` (probe the covered band, not the tail): **the
+> defects that survive are the ones no instrument was pointed at.***
+
+⚠ **RULE 54 — the limits of this scan.** It is a **shape** scan: it cannot see a secret with no
+distinctive shape *(a short alphanumeric key, a password that looks like a word)*, it was run over
+`nba/*.md` only — **not the whole repo, not the workflow files, not the Python or JS** — and its
+known-safe filter is a context regex that can over-filter. ***So: "one credential found and
+redacted", never "the corpus is clean."*** **A floor, and a narrow one.**
+▶ **A repo-wide shape scan is owed and is NOT done.** *Recorded as owed rather than implied clean.*
+
 ▶ **STILL OWED: direction (a) is now run once over the whole band; direction (b) remains open on
-the `~12,686` substantive uncovered segments, which no single pass can close.**
+the `~12,686` substantive uncovered segments, which no single pass can close; and the repo-wide
+credential-shape scan above.**
 ▶ **RULE 46 UNCHANGED: `T19` and `T20` each owe two INDEPENDENT complete sequential reads from a
 fresh context; `T20` cannot close in this session.**
 
