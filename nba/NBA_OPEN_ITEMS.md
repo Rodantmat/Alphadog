@@ -5159,9 +5159,20 @@ only useful if the sources are reachable.** They are not:
 > session is not a capability; recorded because the cheaper-looking option was the wrong one and the
 > reasoning should outlive the decision.***
 >
+> 🔴🔴 **CORRECTION, ONE PASS LATER (`§T21.8`) — THE ROUTE TABLE ABOVE IS ABOUT WRITING, AND `T21`
+> ITSELF FOUND THAT THE *READ* PATH WAS NEVER BLOCKED.** *Verbatim:* ***"`raw.githubusercontent.com`
+> resolved for `rodantmat/alphadog`, and `codeload` served the whole repo as a `115 MB` archive. I
+> had the repo name wrong earlier — I was guessing `rodolfoaamattos/` from the worker subdomain. Once
+> the real name was in hand it was one download, straight to disk, never through my context. **That
+> was available the whole time and I didn't find it. My error.**"***
+> ⇒ 🔑 ***A negative result produced by GUESSING AN IDENTIFIER rather than looking it up*** — the
+> failure `RULE 58` names, committed two days before `RULE 58` was numbered, by the same effort that
+> later numbered it. **The `4,700×` write cost stands; "the routes are closed" applied only to
+> writing, and is corrected here rather than left to read as general.**
+>
 > 📌 **WHY THIS IS FILED HERE AND NOT AS A NEW ITEM**: *it does not open anything. It CLOSES the
-> question of whether the constraint above could be engineered around — **it cannot, and now the file
-> says so with a number instead of an adjective.***
+> question of whether the WRITE constraint above could be engineered around — **it cannot, and the
+> file now says so with a number instead of an adjective.***
 
 **What the owner needs to do**: commit the 20 `.txt` files to `nba/transcripts/` from a machine with
 repo access (drag-and-drop into the GitHub web UI works, or `git add nba/transcripts/ && git push`),
