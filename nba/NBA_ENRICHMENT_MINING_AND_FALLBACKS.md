@@ -203,4 +203,48 @@ Status legend: ✓ have · ⏳ running · 🔧 built, run pending · ⛔ blocked
 | M3 hustle, M4 clutch | ✓ 25 weekly as-of snapshots | ✓ 25 | ✓ 25 | season-tables asof_weekly | complete |
 | E1–E4 confidence | — | — | — | run metadata | — |
 
-Status as of 2026-09-10 05:30Z (config `enrichment_backfill_status_2026_09_10`): every factor has its two-season backfill except the pick'em/prop history (built, waiting only on the owner's Odds API upgrade). Remaining small builds: coach-change dates 2024-25/2023-24, All-Star/All-NBA lists, national-TV flag, daily referee-assignments scraper, the NBA game-id join for `game_lines_closing`/`board_snapshots`, the two 2023-24 starter-status game timeouts. BigDataBall is no longer needed (The Odds API history covers the sportsbook props and both DFS boards).
+---
+
+## 10. BUILT 2026-09-23 — the injury report is IN POSTGRES, and the derived P(plays) fallback is measured
+
+**Storage (build item 1's loader, which never existed).** The scraper was built in 2026-09; the loader was not, so
+the binding availability input lived only as repo JSON and `nba_daily` held zero tables — nothing could query the factor
+that gates availability. Built: **`nba/load_injury_report.py`** → **`nba_daily.injury_report_snapshots`**, plus
+`.github/workflows/nba-injury-load.yml` (modes: `archive` per season slug, `current` for the daily file).
+**Loaded: 919,949 rows (2025-26) + 2024-25, 330 game dates, 7,989 distinct snapshots.** One row per
+`(game_date, snapshot_ts, team, player)` — snapshot semantics preserved per the PARITY RULE above, so "known at
+12:30 PM" stays distinguishable from "known at 7:45 PM". `NOT_YET_SUBMITTED` rows are kept (a team that has not filed
+is a fact, not a gap): Out 65.7% · Questionable 10.9% · not-submitted 9.4% · Available 8.0% · Probable 3.3% · Doubtful 2.7%.
+
+**P(plays | status) AS KNOWN AT THE CUTOFF** (16:15 ET = P3's 1:15 PM PT decision moment; both seasons, 330 dates):
+
+| status at cutoff | player-games | P(plays) | minutes when they play |
+|---|---|---|---|
+| Out | 19,677 | 0.002 | 8.8 |
+| Doubtful | 671 | 0.010 | 13.5 |
+| **Questionable** | **3,823** | **0.469** | 24.0 |
+| Available | 1,628 | 0.801 | 23.2 |
+| Probable | 1,466 | 0.878 | 26.5 |
+
+⚠ Measured at the FINAL snapshot instead, only 24 Questionables survive — the league resolves them before tip. The
+cutoff is the only honest measuring point for a decision pipeline. ⚠ `Available` (0.80) sits BELOW `Probable` (0.88) on
+1,628 player-games: unexplained, recorded rather than smoothed away.
+
+**The derived fallback.** `nba_score.availability_training` — leakage-free training set (status as known at 16:15 ET;
+features only from games strictly before the slate; name join uses `nba_names.norm_name`'s suffix rule, 553/559 = 98.9%).
+`nba_score.availability_prior` — hierarchical empirical cells with shrinkage 15/10/5: cell (status × role_tier ×
+reason_class × games-played-30 bucket) → status_role → status → global, **fit on 2024-25 ONLY**.
+`nba_score.availability_p_plays(status, role_tier, reason_class, games_played_30)` is the interface.
+**Out-of-sample on 2025-26** (never touched in fitting): Brier **0.0441** vs **0.0498** status-only (**11.3% better**);
+Questionables alone **0.2398** vs **0.2505** (**4.3% better**); mean prediction 0.160 vs actual 0.166 (calibrated).
+Signal: role_tier spans 0.30 (FRINGE / no recent games) → 0.62 (IRON_MAN); `gleague_two_way` 0.21; player's own rest
+0.42 on 1–2 days vs 0.55 on 3–4.
+🔴 **A richer variant was built and REJECTED**: adding the player's rest bucket and a fourth hierarchy level (1,493 cells
+vs 658) LOST out of sample on both segments (0.0445 / 0.2418). Granularity has a limit and the held-out season decides it.
+⚠ A TEAM back-to-back barely moves Questionables (0.499 vs 0.466) — the player's own days-since-last is the real feature.
+
+**Still open here:** wire the prior into the consumers (the baseline builder and `build_availability_delta.py` read the
+injury JSON, not Postgres, so the fallback must be called there); add the daily load to P2/P3 beside the scrape step;
+`nba_ref.referee_assignments` is EMPTY (0 rows) while P2 runs its scraper nightly — D1's primary has never produced data
+and its documented fallback (zero + confidence penalty) would be silently active every game day.
+ Remaining small builds: coach-change dates 2024-25/2023-24, All-Star/All-NBA lists, national-TV flag, daily referee-assignments scraper, the NBA game-id join for `game_lines_closing`/`board_snapshots`, the two 2023-24 starter-status game timeouts. BigDataBall is no longer needed (The Odds API history covers the sportsbook props and both DFS boards).
