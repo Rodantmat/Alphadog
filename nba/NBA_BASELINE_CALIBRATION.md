@@ -2010,3 +2010,90 @@ moved from the enrichment lock into the BASELINE, measured then re-certified —
 lose calibration**."*
 
 ⚠ **`AS STATED` in `T9`/`T10`, not re-run by this sweep.**
+
+---
+
+## ✅ §F6.20 — **THE PER-PLAYER BOARD-COVERAGE MEASUREMENT, AND THE `44%` DEFECT VERIFIED CLOSED**
+
+*Added `2026-09-23`, `§F6.20`. Source: **LIVE** `nba_config.classification_config`,
+`config_key = 'baseline_board_coverage_2026_09_11'`, plus one `SELECT` against
+`nba_score.baseline_ladder`. **Read-only.***
+
+🔑 ***The twelve record the CAUSE of the combos gap in five documents — `|| echo failed`,
+`BT_SAVE_COMPONENTS`, the freshness gate, the loader's singles-only refusal — and record the
+MEASUREMENT that found it in NONE.*** *`RULE 55` again: the conclusion is filed, the table under it
+is not. Every figure below returned **`0` of `12`** before this section.*
+
+### 1 · What the test was, and why it had to be per-player
+
+> ***"the ladder is anchored per player, so comparing a prop-level union of lines against the board
+> is misleading — only a per-player match answers whether the matrix is wide enough"***
+> — `why_per_player`, **owner point `2026-09-11`**, `VERBATIM`
+
+*Script: `nba/check_baseline_board_coverage.py`, `task=coverage`, against the `2026-03-15`
+PrizePicks window board.*
+
+### 2 · 🔑 THE SINGLES TABLE — **in `0` of the twelve**
+
+| prop | board legs | matched | | out of range | line gaps | no baseline | name unresolved |
+|---|---|---|---|---|---|---|---|
+| points | **541** | 419 | **77%** | 🔴 **60** | 18 | 25 | 19 |
+| rebounds | **441** | 378 | **86%** | `0` | 32 | | |
+| assists | **344** | 305 | **89%** | `0` | 16 | | |
+| threes_made | **236** | 228 | **97%** | | | | |
+| turnovers | **24** | 23 | | | | | |
+| steals | **14** | 12 | | | | | |
+
+✅ ***"anchoring works — essentially zero out-of-range except points; matrix width is correct, no
+expansion needed for singles."*** *The two residuals are both diagnosed and neither is a design
+fault:*
+
+| residual | `n` | the diagnosis, `VERBATIM` |
+|---|---|---|
+| **points out of range** | `60` | *"demon rungs on high scorers past the player ladder ceiling; **a rung-depth setting, not a design flaw**"* |
+| **line gaps** | `66` *(reb 32, pts 18, ast 16)* | *"line inside the player range but that exact rung not emitted; **check the rung-step rule**"* |
+| **name unresolved** | `65` | *board naming vs the NBA register — **`nba_ref.player_name_map`, `5,212` players**, plus grader alias logic, "closes most"* |
+
+### 3 · 🔴 THE COMBOS HALF — the `44%`, and the sentence that explains every silent failure in this corpus
+
+> ***"`PRA 450`, `PR 431`, `RA 407`, `PA 357`, `stocks 15` = **`1,660` board legs (`44%` of the
+> slate) with ZERO baseline rows**"*** — `combos_result`, `VERBATIM`
+
+🔑🔑 ***"NOT a matrix-width problem."*** *The combos builder existed, was certified, and had been
+validated **on this very slate two days earlier — `12,579` rows, `7` props, `175` players.** The
+workflow already chained singles → combos → periods.* ⇒ ***"but every step ends in `|| echo failed`,
+so a failure is SILENT and the loaded artifact ended up singles-only."***
+
+📌 **That is the whole mechanism of this corpus's most repeated failure shape, stated in one line by
+the person who hit it:** *a step that cannot fail loudly will eventually fail silently, and the
+evidence of the failure is an artifact that looks complete.* **The remedy chosen was not to fix the
+builder — there was nothing wrong with it — but to make the ABSENCE detectable:** *"add a freshness
+gate that refuses to publish a slate missing combos."*
+
+### 4 · ✅✅ **VERIFIED CLOSED — `[LIVE-AUDIT]` 2026-09-23**
+
+*`nba_score.baseline_ladder WHERE asof = '2026-03-15'`, by prop:*
+
+| combo prop | live rows |
+|---|---|
+| `pra` | **`3,227`** |
+| `fantasy_score` | **`3,280`** |
+| `pts_reb` | **`3,159`** |
+| `pts_ast` | **`3,092`** |
+| `reb_ast` | **`2,672`** |
+| `stocks` | **`1,859`** |
+| `double_double` | **`158`** |
+
+✅ ***All seven combo props are present. The `1,660` legs that had ZERO baseline rows have them.***
+✅ **And the gate was built as promised** — `nba/load_baseline_ladder.py:66-68`:
+`if not (combo_props & set(props)): raise SystemExit("ABORT: artifact has no combo props - refusing
+to load a singles-only slate")`. 🔑 ***A `raise SystemExit` where the workflow had `|| echo failed`
+— the fix is the inverse of the defect, and it is in the loader rather than the workflow, so it
+holds however the artifact is produced.***
+
+⚠ **`RULE 54` — what this does NOT verify.** *The partition carries **`18` props**; the reliability
+audit's population is **`30`**. **Whether the missing twelve are absent by design for this slate or
+are a second gap is `NOT MEASURED`** — the `2026-03-15` board is a window board, not a full slate,
+and this pass did not re-run `check_baseline_board_coverage.py`. **The `60` out-of-range points legs
+and the `66` line gaps are recorded as of `2026-09-11` and were NOT re-measured**; neither the
+rung-depth setting nor the rung-step rule was checked against today's builder.*
