@@ -1235,6 +1235,51 @@ by roughly 6×.** *Recorded because the corpus quotes the +0.347 figure without 
 | **M1** defender-quality LEVEL | ⚠⚠ **NOT TESTED IN T15** | — | appears only as a **pending build item** (*"M1 wiring"*, *"M1 defender-quality integration into the harness"*). **Verified 2026-09-22**: `0 of 7`, `5,116`, `12,738`, `63.8%`, `0 of 5 props` — **zero hits in the transcript.** *COMPASS fact 84's M1 rejection and fact 86's v3 closure therefore belong to a LATER transcript, which `NBA_GLOSSARY.md` already attributes to **T16**.* |
 | **A5** projected lineups | ❌ **REJECTED — REDUNDANT** | held-out, per prop | **negative on every prop**: points **−0.032**, rebounds −0.008, assists −0.008, pra **−0.035** |
 
+### 🔴 §F2.2 — **THE TABLE ABOVE IS THE TESTED SET. THE COMMISSIONED SET IS 26, AND SIX CODES APPEAR NOWHERE IN THE TWELVE.**
+
+*Added 2026-09-23 by the full transcript re-sweep (§F2). **Transfer, not discovery** — every fact
+below already exists in `nba/NBA_ENRICHMENT_FACTOR_LOCK.md`, which is **not one of the twelve**.
+`§F2.1` predicted exactly this: `T10`'s tail of **100** segments — three times any other
+transcript's — attributed **49** to `NBA_ENRICHMENT_FACTOR_LOCK.md` and **24** to
+`NBA_DEEP_DOCUMENTATION_CHECKPOINT_2026-09-09.md`.*
+
+**`T10` pass 1 locked an owner-directed factor taxonomy: *"find every factor that gives any edge at
+the enrichment level, per prop line, per direction, per line variation, with sub-factors and
+tiers."*** **Re-derived from the authority 2026-09-23** *(`NBA_ENRICHMENT_FACTOR_LOCK.md`, code
+tokens counted, not recalled)*: **26 factor codes — `A1`–`A9`, `B1`–`B5`, `C1`–`C4`, `D1`–`D4`,
+`E1`–`E4`.`** **The verdict table above carries eight.**
+
+| code | name in the lock | in the twelve? |
+|---|---|---|
+| 🔴 **`A7`** | **`trade_new_arrival_window`** — *"games 1–5 after a trade or signing, for the new player and the affected"* rotation | ❌ **ABSENT** — code **0 hits**; *"first-5-games"*, *"first five games"*, *"after a trade"*, *"transaction wire"* all **0** |
+| 🔴 **`E2`** | **`team_flux_penalty`** — *"trade window, new coach, ≥2 rotation players out → variance up"* | ❌ **ABSENT** — code **0**; *"team flux"* **0**; *"rotation players out"* **0** |
+| 🔴 **`E3`** | **`sample_thinness`** — *"rookies/new arrivals with no carryover baseline"* | ❌ **ABSENT** — code **0**; *"sample thinness"* **0**; *"no carryover"* **0**, *"carryover baseline"* **0** |
+| 🟡 `C2` | `line_movement` — *"direction, size and speed of prop-line movement through the day; steam across books"* | ⚠ **CODE absent (0)**, concept present — *"line movement"* in **6** of the twelve; *"steam"* **0** |
+| 🟡 `D3` | `altitude_venue` — *"Denver/Utah for visiting teams, especially on B2B"* | ⚠ **CODE absent (0)**, concept present — *"altitude"* in **7** of the twelve |
+| 🟡 `D4` | `national_tv_marquee` — *"national-TV games **protect** star availability"* under the participation policy | ⚠ **CODE absent (0)**, concept present — *"national-TV"* / *"marquee"* in `MASTER_SUMMARY` / `OPEN_ITEMS` |
+
+🔑 **THE TWO CLASSES NEED DIFFERENT WORK, AND THAT IS THE POINT OF SPLITTING THEM.**
+**`A7`/`E2`/`E3` are ABSENT** — a reader of the twelve cannot learn these factors were ever
+commissioned. **`C2`/`D3`/`D4` need a CROSS-REFERENCE, not prose** — the material is here under
+other words, and only the code is missing, which is what made them invisible to a code-based probe
+and would have made them invisible to a reader looking for the lock's vocabulary.
+
+⚠⚠ **RULE 54 — the probe that found this, and its limits.** The first pass was a **bare code-token
+count**, and a bare two-letter token is weak evidence: a factor documented under its NAME and never
+its code scores zero and looks absent. **So every one of the six was re-checked by DESCRIPTION
+before anything was written** — and that second check **reclassified three of the six** from ABSENT
+to CROSS-REFERENCE. 📌 ***The code count alone would have published three false absences. It is the
+same failure §F1.2 caught with `reltuples`, in a different vocabulary: a cheap proxy, believed one
+step too far.***
+
+⚠ **What this block does NOT claim.** It does not say `A7`, `E2` or `E3` are unbuilt, untested or
+wrong to omit — **the lock is a CANDIDATE list, and a candidate may have been dropped for good
+reason.** *`NBA_ENRICHMENT_FACTOR_LOCK.md:250` itself groups `A7` with work it calls **"measurable
+now"**, and `:241` records its data path as **"game logs team changes (have) + transaction wire
+(dates)"**.* **Whether they were considered and dropped is `NOT RECORDED` — in the twelve or, for
+these three, anywhere this pass found.** ⇒ **Filed as `T10-F1` in `NBA_OPEN_ITEMS.md`, not as a
+defect.**
+
 🔑🔑 **THE A5 REJECTION DISSOLVES A LEAK RISK RATHER THAN MITIGATING IT** — *and this is the part the
 parity document needs:* **A5 was leak risk #1** *(box-score `starter_status` is post-tip truth)*.
 The mechanism of the null is structural, not a failure of the proxy:
