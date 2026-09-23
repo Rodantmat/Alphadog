@@ -764,8 +764,10 @@ sample.**
 > `11.3%`→`4.0`.* 🔑 ***`+3` rebounds is a long way; `+3` points+rebounds+assists is not.***
 >
 > **3 · The one row that breaks monotonicity is the per-player variance, measured.** ⚠ **Tatum and
-> SGA sit at the SAME `+8.2%` and pay `4.0` and `3.75`** — *a `6.3%` gap between two legs identical on
-> every observable.* ⇒ ***That is the same effect `§T22.10` names as the `±10%` accuracy ceiling,
+> SGA sit at the SAME `+8.2%` and pay `4.0` and `3.75`** — *a **`6.7%`** gap between two legs
+> identical on every observable.* ⚠ *Corrected from `6.3%` in the same pass — `4.0 ÷ 3.75 − 1 =
+> 6.67%`, re-derived rather than recalled (`RULE 56`). **Every `pct` column above was recomputed from
+> its own `dist` and `standard` before publication and all seven reproduce to `0.1` point.*** ⇒ ***That is the same effect `§T22.10` names as the `±10%` accuracy ceiling,
 > visible here in a single pair.*** **No formula keyed on `(stat, line, center)` can separate them.**
 >
 > 📌 ***This table is the evidence for the heading above it.*** *It was in `T22`'s bash output and in
