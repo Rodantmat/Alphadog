@@ -432,7 +432,20 @@ scraper fetched for an empty `2026-27` and **upsert it over last season's real r
 *`[LIVE-AUDIT]` 2026-09-21 (T7 pass 24). Enumerated from the workflows directory — the authority —
 not from the `nba-` filename prefix, which is what produced the wrong count in the first place.*
 
-**39 workflows exist; 33 are `nba-`-prefixed; seven scheduled ones touch `nba/`:**
+**~~39~~ → `40` workflows exist; ~~33~~ → `34` are `nba-`-prefixed; seven scheduled ones touch `nba/`:**
+
+> 🔁 **RE-DERIVE, DO NOT QUOTE** *(added `2026-09-23`, `§T22.29` — the owner's standing rule: publish
+> only figures that stay true, or that carry their own date and a one-line recipe)*:
+> ```bash
+> ls .github/workflows/*.yml | wc -l                 # total
+> ls .github/workflows/nba-*.yml | wc -l             # nba-prefixed
+> grep -l "^ *- *cron:" .github/workflows/*.yml      # every ACTIVE cron, by file
+> ```
+> 📊 **Last re-derived `2026-09-23`: `40` total · `34` `nba-`-prefixed · `9` files carry an active
+> `cron:` line** *(the seven below plus `gbdt-training.yml` and `scrape.yml`, neither of which touches
+> `nba/`)*. ✅ **The seven-row table below reproduced exactly, cron for cron.** ⚠ *The totals moved
+> `+1` each in two days; **the table did not move at all.** 🔑 **The composition is stable and the
+> COUNT is not — which is why the count now carries a command and the table does not need one.***
 
 | Workflow | Cron (UTC) | Cadence |
 |---|---|---|
