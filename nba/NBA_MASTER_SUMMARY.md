@@ -371,9 +371,136 @@
 >
 > ⚠ **NOT REPAIRED, DELIBERATELY** *(the same reasoning as `§F7.7`)*: *adding `1,188` pointers means
 > `1,188` edits to prose that is currently correct. **`RULE 1` and the owner's move rule both bite.**
-> The table resolves the `8` figures most likely to be quoted and edits nothing.* 🔴 **`76` of the
-> `84` shared figures are NOT in this table. That is the honest remaining gap, and it is stated
-> rather than left for a reader to discover.**
+> ~~The table resolves the `8` figures most likely to be quoted and edits nothing.~~ ~~🔴 **`76` of
+> the `84` shared figures are NOT in this table.**~~ ✅✅ **SUPERSEDED `2026-09-23` BY `§F7.12`: THE
+> TABLE IS NOW COMPLETE — ALL `86`, BELOW.** *`86`, not `84`, because this session's own writes added
+> two; the population is re-derived, not carried.*
+
+## 4 · ✅✅ **THE COMPLETE TABLE — ALL `86`, `§F7.12`, `2026-09-23`**
+
+> 🔁 **RE-DERIVE THE POPULATION; DO NOT QUOTE THE COUNT.** *`86` is today's value, not a constant.*
+> ```bash
+> python3 - <<'EOF'
+> import re, collections
+> DOCS = [ ...the twelve... ]
+> w = collections.defaultdict(set)
+> for d in DOCS:
+>     for m in re.finditer(r'\b\d{1,3}(?:,\d{3})+\b', open(d).read()): w[m.group()].add(d)
+> print(sorted(k for k, v in w.items() if len(v) >= 4))
+> EOF
+> ```
+
+### 🅐 **THE NINE-DIGIT FAMILY — four figures within `1.4%` of each other, in the same sentences**
+| figure | what it is |
+|---|---|
+| **`19,215,200`** | 🔑 **`nba_score.final_hp` LIVE rows** *(exact)*, `9,391 MB` — against a document claiming *"11 GB … 38.1M rows"* |
+| **`19,075,070`** | `final_hp` **`2024-25`**, across `162` dates |
+| **`140,130`** | 🔴🔴 `final_hp` **`2025-26`** — **ON ONE DATE.** With the row above, `49.7%` of the certified "both seasons" |
+| **`19,611,626`** | what `2025-26` **would** hold at `163` dates — *a counterfactual, not a live value* |
+| **`38,686,696`** | the **certified** "both seasons, ~`38.7M` legs" — ~~struck~~ against `19,215,200` live |
+| **`19,343,348`** | **`baseline_history`** rows / `325` dates — ✅ *stable* |
+| **`9,537,535`** · **`9,805,813`** | its `2024-25` · `2025-26` split |
+| **`1,248,826`** | graded PrizePicks legs behind the `0.5643` log-loss |
+| **`6,924,101`** | 🔴 `final_hp.score` rows that are **NEGATIVE** — `36.0%` *(`T16-8`)* |
+| **`27,067,871`** | `board_snapshots.fetched_at` rows across `3` days |
+| **`12,818,715`** | **`board_scored`** today |
+| **`5,524,359`** · **`110,955`** | ⚠⚠ **the same table on `09-21` and `09-20`** — *quote one without its date and you are wrong by `100×`* |
+| **`6,905,452`** | **`board_outcomes`** rows — *`bookmaker` populated on ZERO* |
+
+### 🅑 **BOARD AND LADDER**
+| figure | what it is |
+|---|---|
+| **`2,199,354`** | 🔑 rows in **BOTH** `board_tiers` and `board_tiers_v2` — *same count, different value sets* |
+| **`1,826,785`** / **`372,569`** | its **Over** / **Under** split — `83.1%` / `16.9%` |
+| **`1,454,044`** | alternate rows *(`1,040,543` match a standard in the same snapshot)* |
+| **`419,205`** | legs carrying a **switch-point anchor** |
+| **`42,600`** | pure goblin→demon ladders the anchor rule was **validated** on |
+| **`43,370`** | 🔴 `unknown / none / unknown` residue, `2.0%` — *recorded and NOT explained* |
+| **`375,835`** | `switch_point` legs *(`355,324` priced, `94.5%`)* |
+| **`1,057,765`** | **`rung_market`** rows / `378` dates |
+| **`206,237`** | **`baseline_ladder`** live rows |
+| **`50,597`** | 🔴🔴 rows **actually loaded** vs `52,018` in the artifact — **`F6-1`, `1,421` lost** |
+| **`30,989`** | rungs beyond their prop's measured `LADDER_DEPTH`, all `used_emp = true` |
+| **`1,600`** | goblin `T−4` legs — *after `T−3`'s `62,542`, a `39×` collapse* |
+| **`23,286`** | 🔴 legs — `44%` — that would have scored **NOTHING, silently**, under a naive `market_key` strip |
+
+### 🅒 **SCHEDULE AND CALENDAR** — *the most repeated, and the most misread*
+| figure | what it is |
+|---|---|
+| **`1,230`** | ✅ **games in a full NBA regular season** *(`30 × 82 ÷ 2`)* — **the one genuinely constant figure here, and why it is safe to repeat `199` times** |
+| **`1,200`** | 🔴 the stored **`2026-27`** slate — **`30` short of `1,230`, exactly one game per team** |
+| **`1,266`** | `nba_calendar.games` for `2026-27` = `1,200` regular + `66` preseason |
+| **`1,400`** | `nba_calendar.games` for `2025-26` |
+| **`2,666`** | 🔴 its TOTAL — *`1,400` + `1,266` only. **A figure that reads like a total and is a gap.*** |
+| **`2,460`** | ⚠⚠ **TWO LIVE MEANINGS**: `schedule_norm` rows *(`= 1,230 × 2`)* **and** `team_game_log_*` per season *(`× 3 = 7,380`)* |
+| **`2,454`** | games with a real market spread — `99.76%` of `2,460` |
+| **`307,604`** | rows behind that upgrade *(`2,454` games, `100%` coverage)* |
+| **`1,238`** | `2025-26` games in the tip-time census *(earliest tip `09:00` PT)* |
+| **`12,300`** | starters rows — `1,230 × 10`, **`2025-26` ONLY** |
+
+### 🅓 **REFERENCE, STATS AND SCORING TABLES**
+| figure | what it is |
+|---|---|
+| **`79,358`** | 🔑 `player_game_log` **and its three siblings, EACH** — `= 26,401 + 26,306 + 26,651`; *four tables agreeing to the row* |
+| **`26,651`** | the `2025-26` component of that sum |
+| **`111,768`** | `defender_ratings` — *re-taken live `2026-09-22`: exact* |
+| **`5,212`** | `player_name_map` players |
+| **`3,681`** | `game_officials` rows |
+| **`32,179`** | `player_game_starter_status` rows |
+| **`3,644`** | career-total season rows across `582` players |
+| **`4,652`** | `player_tracking_detail` rows *(8 families)* |
+| **`8,000`** | `lineup_profile` rows |
+| **`51,806`** | `redistribution_factors` rows |
+| **`1,942`** | `scenario_realised` rows — ✅ *exact both times measured* |
+| **`4,274`** | `availability_delta` live rows 🔴 *(season default; returns `0` silently — `T20-4`)* |
+| **`4,498`** | rows from the `2026-03-15` replay *(`7` games, `173` projected players)* |
+| **`58,395`** | legs scored end-to-end in the `A2`/`N1` validation |
+| **`1,322`** | questionables scored at the `2:30 PM PT` cutoff |
+| **`9,904`** | ✅ `ladder_calibration_asof` cells after the rebuild *(was `3,639`)* |
+| **`2,762`** | one component of the `9,577` counter — ⚠ ***`9,577` was a CUMULATIVE COUNTER, never a table size*** |
+
+### 🅔 **PER-BOOK ARCHIVE COVERAGE** — *one table, and the easiest place in the corpus to misread a number*
+| figure | what it is |
+|---|---|
+| **`939,719`** | `underdog` rows *(`934,627` NBA-shaped = `99.46%`; `413,731` carry multipliers)* |
+| **`780,765`** | `betr_us_dfs` — `100%` |
+| **`534,188`** | `pick6` — `100%` |
+| **`274,010`** | rows archived for **nine other books**, `2024-10-22 → 2026-04-12` |
+| **`5,281`** · **`1,394`** · **`1,276`** | ⚠⚠ **`routine`-label rows for `underdog` / `fliff` / `sleeper`; their NBA-shaped counts are `189` (`3.6%`) / `0` / `0`.** *The same three numbers appear elsewhere as board volumes — **check which column you are in.*** |
+
+### 🅕 **CONSTANTS, LIMITS, AND FIGURES THAT ARE NOT WHAT THEY LOOK LIKE**
+| figure | what it is |
+|---|---|
+| **`2,000`** | `leaguedashlineups` **API row cap** — *a limit, not a measurement* |
+| **`5,000`** | from the MLB lesson: *"`60%` over `50` observations is numerically identical to `60%` over `5,000` and vastly less reliable"* |
+| **`1,000`** | the `~1,000–2,500` legs/day each for Sleeper · Fliff · Betr |
+| **`30,000`** | rows **expected** where `1,228` games yielded `799` |
+| **`1,228`** | those games — **HTTP `200` with zero player rows** |
+| **`3,300`** | ParlayAPI `age_seconds` lag |
+| **`65,503`** | 🔑 **`github_get_file` display cut-off — `64 KiB`** |
+| **`49,152`** | **memory write cap, bytes per file** |
+| **`18,034`** · **`95,803`** · **`57,066`** | file sizes: `DOMAIN_MAPPING` · `ARCHITECTURE_BLUEPRINT` · `LESSONS_LEARNED_FROM_MLB` |
+| **`6,140`** · **`4,471`** | memory-file sizes: `/areas/alphadog.md` · `/areas/alphadog-nba.md` |
+| **`2,151`** · **`2,948`** · **`6,604`** | ⚠ **MEGABYTES, not rows**: `board_outcomes` · `board_scored` · the board table |
+| **`1,306`** | ⚠ **a SUPERSEDED measurement** — *"`1,306` rows / `6` tables" checked only the static layer; the real figure is `17,902` rows across `14` tables* |
+| **`1,165`** | ⚠ **not a system figure at all** — the `RECIPE` byte-drift from `§F7.5` |
+| **`1,300`** | ⚠ **a PERCENTAGE** — *"a swing of over `1,300` percentage points from LANE ALONE"* |
+| **`1,597`** · **`3,001`** · **`2,672`** · **`12,966`** · **`3,243`** · **`1,165`** | ⚠⚠ **TABLE CELLS inside the blowout-band and prop-coverage grids — `n` per band.** ***They have no meaning outside their row and must never be quoted alone.*** |
+
+### 📌 **HOW TO USE THIS**
+***A figure repeated in four documents is one measurement seen four times.*** **Find its `§` label;
+if none is near it, look here; if it is not here either, grep it across all twelve and read the
+occurrence that DOES carry a `§` label — that one is the derivation, the rest are echoes.**
+
+⚠ **STILL NOT REPAIRED, AND STILL DELIBERATELY** *(`§F7.7`'s reasoning)*: *adding `~1,190` pointers
+means that many edits to prose that is currently correct;* **`RULE 1` and the owner's move rule both
+bite.** ✅ ***What changed is that the lookup never fails any more — so the edit is never needed.***
+
+⚠ **`RULE 54`.** *`WINDOW`: comma-grouped integers only. **`RULE 58` bounds it hard** — percentages,
+decimals, four-digit ungrouped integers, spelled-out numbers and `~`-approximations are invisible to
+the probe, **so `86` is a FLOOR.** **`NOT DONE`: whether the repeated figures AGREE was not tested,
+only whether they now RESOLVE** — *and `2,460`, the `5,281`/`1,394`/`1,276` trio, and `1,306` are the
+three cases where they demonstrably do not mean the same thing everywhere they appear.*
 
 ---
 
