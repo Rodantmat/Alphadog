@@ -1187,6 +1187,36 @@ section `1,703`** · distinct `§T`n`.`m labels anywhere `739` · distinct `§`-
 population definition is the expensive half; this is that lesson paid forward into the deliverable
 instead of only into the log.***
 
+## §F2.15 — the verification pass, and a near-miss worth recording
+
+**Ran after every write above, against the tree fast-forwarded from `origin/main`.**
+
+| check | result |
+|---|---|
+| code fences balanced in all twelve | ✅ **12 of 12** |
+| `📑 INDEX` present within the first `1%` of the file | ✅ **12 of 12** *(worst: `MULTIPLIERS` at `0.87%`)* |
+| markdown tables intact | ✅ 12 of 12 |
+| the redacted credential | ✅ **`0` occurrences across the twelve** |
+| `§F`*n*`.`*m* cross-references resolving | 🔴 **`1` dangling — `§F2.10`** *(written inside the `RULE 55` block with no heading of its own)* ⇒ ✅ **heading added, `16` of `16` now resolve** |
+| **total size** | **`5,980,296` bytes** |
+
+### ⚠ THE NEAR-MISS — **I nearly reported 72 KB of data loss that had not happened**
+
+**The verification's first size reading was `5,850,228` and `MASTER_SUMMARY` looked `72,570` bytes
+SMALLER than at `§F1.1`.** *That is the shape of a truncating patch, and it was checked before it
+was reported.*
+
+✅ **It was `len(text)` vs `os.path.getsize` — CHARACTERS vs BYTES.** *This corpus is dense with
+`§`, `—`, `🔴` and other multi-byte UTF-8: **`75,634` bytes of `MASTER_SUMMARY` are multi-byte
+overhead alone**, and `129,868` across the twelve.* **Confirmed against git: `git cat-file -s` at
+every commit of that file shows monotonic growth — `3,177,530 → 3,210,338`. Nothing was lost.**
+
+🔑 ***The index byte figures published at `§F2.14` used `os.path.getsize` and are correct.*** 📌
+*Recorded because it is the day's fifth measurement error and the only one caught BEFORE it was
+written down — and the thing that caught it was refusing to report a number that implied damage
+without checking the authority (`git cat-file -s`) first.* **Which is the whole method, stated once
+more: the authority, not the convenient reading.**
+
 ### ▶ STILL OWED, unchanged and stated at full strength
 
 - 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
