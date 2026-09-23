@@ -12857,9 +12857,29 @@ ladder it did not fit.* ⚠ **NOT RECORDED: whether any later session built it.*
 `archive_live_boards.py` normalises **every** scraper into `board_snapshots` in one shape, so live and
 archive are one table. **The switch built into the scorer is dead code.** *(Zero occurrences of
 `bs_source` across the twelve before this entry — so this is the first record of it.)*
-**Severity: LOW** *(dead code, not a defect)*. 🔑 **Recorded because of its cause, not its effect:
+~~**Severity: LOW** *(dead code, not a defect)*. 🔑 **Recorded because of its cause, not its effect:
 this is the parity rule ELIMINATING work — the live and historical paths are the same path by
-construction.**
+construction.**~~
+
+> 🔴🔴 **REOPENED 2026-09-23, T20 pass 125 (`§T20.130`) — THE RATIONALE NO LONGER HOLDS.**
+> **The "dead code" finding stands and is confirmed**: `score_board_legs.py:108` reads `BS_SOURCE`,
+> `:134` prints it in a log line, **the variable is never used again**, the query at `:109–116` reads
+> `board_snapshots` unconditionally, and **only `nba-engine-test.yml:89` sets it — never `P3`.**
+> ⚠⚠ **But "the same path by construction" is now FALSE, on two measurements**: **`§T20.124`** — the
+> live path writes `home_team`/`away_team` **always NULL** *(`sleeper` `1,276`/`1,276`, `fliff`
+> `1,394`/`1,394`)* while every Odds-API bookmaker is `0` null; **`§T20.125`** — the live path has
+> written **`7,951` BASEBALL rows** into the same table. ⇒ ***They are two paths with different
+> completeness and different contents, and the switch that would separate them does not exist.***
+> 🔑 **AND IT IS NOW BARELY WRITABLE.** *Today they happen to be separable by `snapshot_label` —
+> live-path rows are `routine`, the archive is `close`/`window`.* 🔴 **But
+> `nba-p3-afternoon-light.yml:132–136` sets `ARCHIVE_LABEL: "window"` with a comment that it "MUST
+> be"** ⇒ **in production the live rows carry the same label as the archive: same table, same
+> `game_date`, same `snapshot_label`, no source column, and no sport column.** **Nothing would
+> distinguish them.**
+> ✅ **The pipeline still works — by ORDERING**: `P3` runs `archive_live_boards.py` before
+> `score_board_legs.py`, so today's board is in the table when the scorer reads it. ⚠ ***Correct by
+> accident of step order, not by the mechanism the scorer's own comment describes.***
+> ▶ **Severity raised LOW → `MEDIUM, STRUCTURAL`.** ⚠ *Documented, not fixed (rule 1).*
 
 ### T18-6 · **OPEN** · the gap audit's 2025-26 denominator is NOT RECORDED
 The threshold was recalibrated from *"any truncated team-game"* to *"rate > 0.5%"*, measured against
