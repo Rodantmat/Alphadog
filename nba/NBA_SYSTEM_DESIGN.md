@@ -1014,6 +1014,36 @@ are already on file** *(`phase1_cutoff` in 5 of the twelve, `freshness gate` in 
 🔑 **That is the answer to the owner's latency requirement** *(§T13.1d: "MLB runs ~30 min, leaving me
 only 15 minutes")* — **and it is an architectural answer, not an optimisation one.**
 
+> ### 📐 §F6.22 — **THE NUMERIC TARGET THAT REQUIREMENT WAS TURNED INTO, AND THE MEASUREMENT NOBODY RAN**
+>
+> *Added `2026-09-23`. Source: **LIVE** `nba_config.classification_config.pipeline_architecture_decision`.
+> **The requirement, the complaint behind it and the delta answer are all above and in two other
+> documents. The TARGET is in `0` of the twelve, and so is the step that was supposed to precede the
+> build.***
+>
+> | | `VERBATIM` |
+> |---|---|
+> | 🎯 **the target** | *"full `2:45 PM` window pipeline **under `10-15 min` end to end** (owner needs time to place slips)"* |
+> | 🔴 **the step before building** | *"**Before building the NBA engine, PROFILE the MLB pipeline stage by stage to find where its `~30 min` goes**; the same bottleneck will likely dominate NBA."* |
+> | ⚠ **and a retracted rationale, recorded by its author** | *"MLB also runs on Postgres (not D1) — **my earlier speed rationale was wrong**."* |
+>
+> 🔑 ***The complaint is documented, the architectural answer is documented, the number the answer
+> has to hit is not.*** **`10-15 min` is a testable acceptance criterion; "faster than MLB" is not.**
+> 📌 *`RULE 55`'s shape once more — the conclusion without the figure under it.*
+>
+> 🔴 **AND THE PROFILING WAS A PREREQUISITE, NOT A SUGGESTION.** *"Before building the NBA engine" —
+> the reasoning is that MLB and NBA run the same stack on the same Postgres, so **whatever consumes
+> MLB's `~30` minutes is likely to consume NBA's too, and it has never been located.*** ⚠
+> **`NOT RECORDED` anywhere reachable from this session: whether that profiling was ever run.** *No
+> transcript, config row or report in the repo carries an MLB stage-by-stage timing breakdown.*
+> ⇒ **The `10-15 min` target is therefore held against an engine whose dominant cost is unmeasured,
+> and the retracted "D1 is faster" line is the record of one wrong guess about it already.**
+>
+> ⚠ **`RULE 54`.** *`WINDOW`: the twelve, plus a repo search for an MLB timing report. **This pass
+> did not run the profiling and does not propose it** — MLB is out of scope for this sweep, and the
+> point recorded here is that the NBA target depends on a number from a system this sweep does not
+> document.*
+
 ### ✅ WHAT CAN MOVE TO THE EARLY PHASE, AND THE ONE THING THAT CANNOT
 | moves early | why |
 |---|---|
