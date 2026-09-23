@@ -159,8 +159,27 @@
 > > GitHub-Actions scrapers are demonstrably alive — Sleeper `2026-09-22T16:57:05Z`, Fliff
 > > `2026-09-22T17:14:27Z`, Underdog `2026-09-21T19:52:37Z`."* 🔑🔑 **WHAT SURVIVES IS SHARPER THAN
 > > WHAT WAS CLAIMED: `P1` is the only PIPELINE with a cron; `P2` and `P3` have none.**
-> > ⇒ ***The inputs arrive on a schedule. Nothing on a schedule consumes them.*** *(The prerequisite
-> > below is unchanged and is if anything strengthened: the boards pile up unused.)*
+> > ⇒ ***The inputs arrive on a schedule. Nothing on a schedule consumes them.***
+> >
+> > 🔴🔴🔴 **AND THAT SENTENCE WAS THEN MEASURED — T20 pass 115 (`§T20.120`), 2026-09-23. IT IS
+> > LITERALLY TRUE, AND THE GAP IS TEN DAYS.** **The three scrapers write files only** *(no
+> > `psycopg`, no `DATABASE_URL`, no `INSERT INTO` in any of the three scripts)*. **The second hop is
+> > `nba/archive_live_boards.py`, it is COMPLETE — all five apps — and it is run by exactly three
+> > workflows (`nba-board-archive.yml`, `nba-boards-market.yml`, `nba-p3-afternoon-light.yml`), ALL
+> > THREE WITH ZERO CRONS.**
+> >
+> > | app | its JSON's last commit | **last row in `nba_market.board_snapshots`** |
+> > |---|---|---|
+> > | **sleeper** | `2026-09-22T21:18:06Z` | 🔴 **`2026-09-12`** |
+> > | **fliff** | `2026-09-22T21:38:26Z` | 🔴 **`2026-09-13`** |
+> > | **underdog** | `2026-09-21T19:52:37Z` | 🔴 **`2026-09-12`** |
+> >
+> > ⚠ **And each pull OVERWRITES the last** — `archive_live_boards.py`'s own docstring — so
+> > **`3` apps × `12` pulls/day × `~10` days ≈ `360` board pulls scraped, committed and destroyed.**
+> > ✅ **NOT a scoring failure**: `P3` runs the loader as one of its own steps, so a triggered `P3`
+> > archives the board it is about to score. 🔑 **What is lost is everything BETWEEN runs.**
+> > ▶ **`T20-22` (`HIGH, STRUCTURAL`) — with an OWNER DECISION that is one cron line either way.**
+> > *(The prerequisite below is unchanged and is if anything strengthened: the boards pile up unused.)*
 >
 > ***The board archive, the day-of injury report, the grader, the daily delta, the absence panel,
 > starter status, game lines, the market snapshot, `P2` and `P3` all wait to be pressed.***
