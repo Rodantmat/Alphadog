@@ -1525,6 +1525,13 @@ re-render that drops one destroys data that **cost a logged-in browser session t
    ~~**Coverage per app is unverified.**~~ ✅ **VERIFIED 2026-09-23 (T22 pass 1, `§T22.1`) — see `§0.9-T22` §4 below.**
 5. **The fantasy-score scale conflict** (+2 vs +3 on blocks/steals) changes payout arithmetic for
    `fantasy_score` legs — see `NBA_OPEN_ITEMS.md`.
+   > ✅ **NARROWED 2026-09-23 (`§T24.1` §3).** **`T24` reconstructed `32,170` player-nights using**
+   > **`center = PTS + 1.2·REB + 1.5·AST + 3·STL + 3·BLK − TOV`** — ***`+3` for BOTH steals and
+   > blocks*** — and **that model reproduced all `15` distinct WNBA lines** via
+   > `gap = round_half(3.2 + 0.07 × center)`. ⇒ 🔑 **Corroboration BY CONSTRUCTION, not assertion.**
+   > ⚠ **What it does NOT establish**: *that PrizePicks uses `+3`. It establishes that a model using
+   > `+3` reproduces the observed line grid* — **a weaker and more useful claim.** 🔴 **Still
+   > `AS STATED IN T24` (a SECONDARY source) and still open on NBA lines.** ▶ **`§T24.1` §3.**
 
 ---
 
