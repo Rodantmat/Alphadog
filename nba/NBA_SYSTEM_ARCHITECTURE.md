@@ -11,7 +11,7 @@ infrastructure, and how each is used. Built from the transcripts, not from memor
 > | 🔑🔑 **WHY four load-bearing decisions were made** *(GitHub Actions · the trigger-file pattern · full isolation · where credentials live)* | **`§F5.3`** — *recovered from the only three transcripts where the reasoning stratum survives* |
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
-> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* *(`§T20.22`: `6` of `16` line-number pointers
 > rotted within a day)*. **Search for the quoted `§` label.**
 > 🔴 **SECTION ORDER IS NOT NUMERIC.** *The file opens with the `0f-*` board-source block, then runs
 > `1`, `1a0`, `1a`, `1b`, **`8b`**, `2c`, `2d`, `3`, `3b`, `4`, `4c`, `6`, `7`, `8`, `8d`, `8b-ii`,
