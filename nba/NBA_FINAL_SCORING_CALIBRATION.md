@@ -209,6 +209,80 @@ implements a two-sided rule and the data only ever exercises one side.** *Open i
 > comparator*** — *the row that most supports "confidence is LIFTING" was the row whose evidence
 > had been dropped.*
 
+## §F6.9 — 🔴 **FOUR MORE TABLES, AND IN EVERY ONE THE MISSING COLUMN IS `n`**
+
+*Added 2026-09-23 by the uncovered-band probe. Each conclusion below is on file; each table was
+partly or wholly not — **and the part that was dropped is the sample size, four times out of four.***
+
+### 1 · `hp` by kind and tier — the cleanest sanity check in the system
+
+| kind · tier | 🔴 **legs** | avg `hp` |
+|---|---|---|
+| goblin −3 *(easiest)* | 🔴 **8,085** | 0.6996 ✅ *on file* |
+| goblin −2 | 🔴 **13,199** | 🔴 **0.6401** |
+| goblin −1 | 🔴 **14,849** | 🔴 **0.5767** |
+| **standard 0** | 🔴 **24,869** | **0.5014** ✅ *on file* |
+| demon +1 | 🔴 **15,073** | 🔴 **0.3696** |
+| demon +2 | 🔴 **14,113** | 🔴 **0.2918** |
+| demon +3 *(hardest)* | 🔴 **10,158** | 🔴 **0.2167** |
+
+🔑 ***"perfectly monotone: easy goblins 70%, standard legs 50.1%, hard demons 21.7% … the standard
+tier landing at `0.5014` is as clean a sanity check as exists — **the board's main line is a coin
+flip by construction, and the model says so**. So `hp` is right. **Confidence is what I built
+wrong.**"*** 📌 *The corpus records `0.5014` and `0.6996` and **not** that they are the endpoints of
+a monotone seven-tier ladder, nor how many legs each rests on.*
+
+### 2 · The PHASE decay — the gaps are on file, the populations are not
+
+| phase | 🔴 **legs** | model says | actually hits | gap |
+|---|---|---|---|---|
+| early *(games 1–15)* | 🔴 **7,751** | 0.368 | 0.419 | **+5.05 pp** ✅ |
+| mid *(16–60)* | 🔴 **25,675** | 0.433 | 0.461 | **+2.76 pp** ✅ |
+| late *(61+)* | 🔴 **62,864** | 0.460 | 0.472 | **+1.15 pp** ✅ |
+
+⚠⚠ **AND THE `n` COLUMN IS WHAT MAKES THE FINDING READABLE**: *the `+5.05` early-season gap — the
+largest and the one that matters on opening night — **rests on `7,751` legs against `62,864` late**.
+`8×` fewer.* 🔑 ***"a single season-wide correction is wrong — it would over-correct late-season
+legs and under-correct early ones. the correction has to be phase-conditional, which is now stored
+per cell in `tier_band_calibration`."*** ✅ *And the reason it transfers:* ***"the model can't know
+2026-27 rotations, but it can know that the first fifteen games behave like the first fifteen games
+— that's what makes the system ready for opening night rather than needing a month to warm up."***
+
+### 3 · The ablation that chose the final model — `AUC` column absent
+
+| configuration | log-loss | 🔴 **AUC** | confident share | confident accuracy |
+|---|---|---|---|---|
+| **pooled, base features** | 0.6727 | 🔴 **0.6237** | 2.8% | 70.3% ✅ |
+| 🟢 **pooled + player history** *(chosen)* | 0.6780 ✅ | 🔴 **0.6216** | **4.1%** | **79.6%** ✅ |
+| per-tier, base | 0.6963 | 🔴 **0.5894** | 4.8% | 67.2% |
+| per-tier + player history | 0.6997 | 🔴 **0.5892** | 6.7% | 70.5% |
+
+🔑 ***"per-tier splitting is clearly harmful — log-loss worse in both variants, AUC dropping `0.62 →
+0.59`."*** **The AUC column is the evidence for that sentence and it was the column dropped.**
+⇒ *The selection rule, also absent:* ***"log-loss is not the objective here … we don't need a sharp
+average probability on coin-flip players — we need more calls we can act on, and it delivers `46%`
+more of them at nearly `10` points higher accuracy."*** ✅ **And the instrumentation note that makes
+it checkable: *"every ablation row now lands in `nba_score.factor_gate_results`, so this verdict is
+a SQL query rather than a log I have to grep"* — confirmed live at `F5-1`: those rows are there.**
+
+### 4 · The USAGE allocator's fitted coefficients — the minutes half is on file, the usage half is not
+
+**`nba/build_redistribution_factors.py`**, fitted by `fit_usage_allocation.py`, **ridge `0.05` on the
+standardised design**; features *`log baseline usage`, `log baseline minutes`, `is_creator (≥14
+poss)`, `log minutes lift`*:
+
+| array | values | in the twelve |
+|---|---|---|
+| `beta_min` *(minutes)* | `0.2214, 0.3953, 0.5160, 0.0043` | ✅ **on file, 2 documents** |
+| 🔴 **`usage_beta`** | **`−0.0081, −0.0049, −0.0047, 0.0262`** | 🔴 **absent** |
+| 🔴 **`usage_mu`** | **`2.1981, 3.0373, 0.2480, 0.0565`** | 🔴 **absent** |
+| 🔴 **`usage_sd`** | **`0.6087, 0.4296, 0.4319, 0.1919`** | 🔴 **absent** |
+
+📌 ***"measured by the fit, not assumed"* — and `§F6.5` §1 shows usage is the LARGER effect (`×1.177`
+against minutes `×1.080`). The corpus documented the coefficients of the smaller half.**
+
+⚠ **`AS STATED IN T16`/`T17`, not re-run by this sweep.**
+
 ### 🔴🔴🔴 **BUT THE LIVE COLUMN HOLDS FORMULA 1 *AND* FORMULA 3 — AND THE `built_at` WINDOWS PROVE IT** `[LIVE-AUDIT]` *(`SELECT` 2026-09-22)*
 
 | | rows | **`built_at` window** | seasons | `final_hp` range |
