@@ -11,7 +11,7 @@ is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not 
 ---
 
 > # 📑 **INDEX — `NBA_GOBLIN_DEMON.md`**
-> **~~`82`~~ → `92` sections · ~~`83,003`~~ → `89,813` bytes · ~~`1,344`~~ → `1,420` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> **~~`82`~~ → ~~`92`~~ → `96` sections · ~~`83,003`~~ → `~95,000` bytes · built `2026-09-23`, census corrected same day (`§F2.14`), re-taken after `§F5.6` (`92 → 96`).**
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
