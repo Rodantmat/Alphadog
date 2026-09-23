@@ -25,6 +25,8 @@ transcript. Where a table was altered later, the change is noted with its transc
 > | if you need… | go to |
 > |---|---|
 > | 🔴🔴 **what actually WRITES to this database, and when** | **`THE TRIGGER MAP`** *(first section)* |
+> | 🔑🔑 **which table holds the FINAL HIT PROBABILITY** *(the system's output)* | **`nba_score.final_hp`** — *search the heading* `` `nba_score.final_hp` ``. ⚠ **Nothing in `P1`/`P2`/`P3` rebuilds it** *(`NBA_SYSTEM_DESIGN.md` `§4b`)*, and it carries the corpus's heaviest write churn *(`§T23.11`)*. |
+> | 🔑 **which table holds a graded leg OUTCOME** *(what actually happened)* | **`nba_score.board_legs_scored`** — *written by `score_board_legs.py`; see* **`§T23.13`** *(`NBA_SYSTEM_DESIGN.md`) for what that scorer SKIPS* |
 > | 🔴 **can we capture the full Underdog / Sleeper ladder, all variations?** *(asked by the owner in `T12` and `T13`, answered nowhere until 2026-09-23)* | **`§F3.5`** — *the tables exist, carry multiplier columns, and hold `0` multipliers and `0` NBA rows* |
 > | 🔴 **the fourth live 2-hour board cron — MLB-only, and still running** | **`§F1.2` correction block** *(in the `routine`-label section)* |
 > | **the schema for a layer** | `nba_ref` **`§1`** · `nba_stats`/`nba_team` **`§1b`** · weekly differential **`§1c`** · `nba_config` **`§2`** · tiering config **`§2b`** · `nba_control` **`§3`** · `nba_score` **`§4`** · `nba_market` **`§5`** · other `nba_stats` **`§6`** |
