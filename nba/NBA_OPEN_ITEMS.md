@@ -160,6 +160,7 @@ table's.***
 > | ⚠ **nothing has a cron** | **`T20-3`** · the brief's **PREREQUISITE** block |
 > | 🔑 **items the owner already answered** | **`T16-7`** · **`T16-9`** · **`T17-2`** · **`T19-1`** |
 > | ⚠ **method findings about the sweep itself** | **`T19-3`** · **`T18-15`** · **`§T20.4`**–**`§T20.7`** |
+> | 🆕🔑 **what the NEWEST transcript says is left — the work's own to-do list** | **`T24-2`** *(`T24` §`12`, the `7`-item forward agenda)*. ⚠ **It carries the only DATED near-term item that is not a blocker — `PRESEASON, FROM ~2026-10-03`, validate spacing, goblin placement and the derived proxy lines against real NBA lines** *(sooner than opening night)* — **and the `3` items it found MISSING from the twelve are all EXCLUSIONS**: 🔴 *Mixed Flex is UNVERIFIED (the simulator supports Flex for all-standard slips only, which bounds every Flex figure in `NBA_MULTIPLIERS.md`)* · 🔴 *Fantasy Score stays OUT of strategies until real lines show whether the one-point conservative shift is too harsh* · 🔑 *per-prop edge cells, the owner's stated next phase.* 🔑 ***An exclusion is harder to notice missing than a measurement: nothing fails and no query returns wrong — the only symptom is a later reader building a Flex strategy with an alternate in it.*** |
 >
 > ## 📋 THE COMPLETE ITEM REGISTER
 >
