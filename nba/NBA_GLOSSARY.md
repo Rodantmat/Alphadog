@@ -25,7 +25,52 @@ context, and which document section. Any material term appearing more than once 
 >
 > | if you need… | go to |
 > |---|---|
-> | ✅ **to look up any term** | **`§Z — THE COMPLETE TERM INDEX`**, then the matching body block |
+> | ✅ **to look up a CONCEPT** *(baseline boundary, dud games, the fourth store…)* | **`🧠 CONCEPT INDEX`, directly below** — *every concept entry → the body block that holds it* |
+> | ✅ **to look up an IDENTIFIER** *(a column, env var, table, field)* | **`§Z — THE COMPLETE TERM INDEX`**, then the matching body block |
+>
+> ⚠ **`§Z` INDEXES IDENTIFIERS, NOT CONCEPTS.** *It was described as "the fastest route to anything in
+> the file" — **it is not**: `96` of the `131` concept entries were absent from it, because it was
+> built from code tokens. **The `🧠 CONCEPT INDEX` below is the concept half**, and it names the body
+> block for each one, so a concept filed under an unexpected letter is still one hop away.*
+>
+> ## 🧠 CONCEPT INDEX
+>
+> *Every concept entry in this file → the body block holding it. **The block letter is where it IS,
+> not where it alphabetically belongs** — the two differ for `36` entries and this table is why that
+> no longer costs you anything.*
+>
+> | | concepts |
+> |---|---|
+> | **A** | **A2 — teammate redistribution** `A` · **A3 — return ramp** `A` · **A5 — lineup change** `A` · **anchor** `A` · **as-of** `A` · **availability delta** `A` |
+> | **B** | **B4 — opponent availability / rim protection** `B` · **band cell** `B` · **BASE_HITTER_GAME_LOGS_WORKER** `C` · **baseline** `B` · **BASELINE BOUNDARY** `B` · **baseline vs enrichment — WHY they are separate** `B` · **baseline_history** `B` · **Betr** `B` · **blowout** `B` · **blowout as a minutes MIXTURE** `B` · **BLOWOUT_MARGIN / COMPETITIVE_MARGIN** `L–N` · **board_snapshots** `B` · **board_tiers / board_tiers_ud** `B` · **bridge** `B` · **BT_ vars** `B` |
+> | **C** | **calibration vs edge** `B` · **case collision** `T–W` · **certification center** `C` · **certification ladder** `B` · **Claude Coworker** `C` · **Cloudflare-to-Cloudflare** `C` · **combos** `C` · **composition check** `C` · **confidence** `C` · **confidence_verification** `C` · **corrupt-and-fix testing** `C` · **coverage-gap check** `C` · **credential_value_encrypted** `T–W` · **cross-season carryover** `L–N` · **curl_cffi** `C` |
+> | **D** | **DARKO** `D` · **data_quality** `D` · **DataDome** `D` · **day-by-day table** `D` · **delta** `D` · **demon** `D` · **dud games** `L–N` |
+> | **E** | **edge** `E–F` · **enrichment** `E–F` |
+> | **F** | **factor_gate_results** `E–F` · **FALLBACK_AFTER_FETCH_ERROR** `C` · **FE_DATE** `E–F` · **file trigger** `E–F` · **flat vs proportional partial credit** `E–F` · **Fliff** `E–F` · **four-way taxonomy** `E–F` · **fourth store** `T–W` · **FRINGE anomaly** `L–N` |
+> | **G** | **goblin** `G–I` · **grader** `G–I` |
+> | **H** | **hierarchical empirical fallback** `L–N` · **Hyperdrive** `G–I` |
+> | **I** | **invisible anchor / switch point** `G–I` |
+> | **J** | **jersey_num** `J–K` · **job_key** `J–K` · **job_queue** `J–K` · **journal.txt** `J–K` |
+> | **K** | **64 KiB display cap** `T–W` · **k_stab** `J–K` · **known_empty_games** `J–K` · **known_limitation** `J–K` |
+> | **L** | **27 lessons** `P–S` · **leg-by-leg manual tracing** `L–N` · **leg-level standard** `L–N` · **lifts / penalties / caps** `L–N` |
+> | **M** | **_meta.json sidecar** `T–W` · **M1 — defender quality** `L–N` · **malformed array literal** `L–N` · **minutes projection** `B` · **mlb calls referees Umpire** `C` · **MLB source library** `T–W` |
+> | **N** | **N1 — availability model** `L–N` · **nba_api (swar/nba_api)** `C` · **NBA_BASELINE_METHODOLOGY.md** `B` · **nba_control** `T–W` · **non-goals, the three** `L–N` |
+> | **O** | **odds_api_board_backfill** `O` · **official_differential_log** `O` · **officials** `O` · **offset** `O` · **old_str** `O` · **operating model, the owner's** `O` · **operational singletons** `O` · **opponent-driven props** `B` · **ot_rule** `O` · **over_win / under_win** `O` · **overtime_pace_live** `O` |
+> | **P** | **Pacific time (the owner's standing instruction)** `T–W` · **parity** `P–S` · **Part G** `P–S` · **Part H** `P–S` · **patcher pattern** `P–S` · **per-subgroup validation** `P–S` · **phase** `P–S` · **pipeline scrutiny discipline** `P–S` · **probe-sources** `T–W` |
+> | **R** | **role_tier** `L–N` |
+> | **S** | **scenario precompute** `P–S` · **schema_manifest.json** `T–W` · **score** `P–S` · **second master run, the optional** `P–S` · **shift vs replacement mode** `B` · **startswith("alphadog-v2-nba-")** `C` · **stat-key families** `O` · **structure vs regime** `B` · **symmetric-floor bug** `L–N` |
+> | **T** | **tarpit** `T–W` · **TEAM_ID = 0** `B` · **teams.arena_id** `T–W` · **three-generation trap** `B` · **tier** `T–W` · **tiering constants** `L–N` · **two ID conventions** `T–W` · **two registries** `T–W` |
+> | **U** | **unread config tables** `T–W` |
+> | **V** | **variation** `L–N` |
+> | **W** | **what does NOT transfer from MLB** `L–N` · **whole-universe comparison** `T–W` · **window** `T–W` · **worker_invocation_logs** `T–W` · **write-path filter bug** `T–W` |
+> | **X** | **x_* expected-rate family** `X–Z` |
+> | **Y** | **year_founded** `X–Z` · **years_pro** `X–Z` |
+> | **Z** | **zero_officials_parsed_v3** `X–Z` |
+>
+> ## ▶ FIND IT FAST *(continued)*
+>
+> | if you need… | go to |
+> |---|---|
 > | ✅ **a definition for a term starting with ANY letter** | the matching body block — **`A` `B` `C` `D` `E–F` `G–I` `J–K` `L–N` `O` `P–S` `T–W` `X–Z`**. **Complete `A … Z` since `§F7.4`**; before that pass, `J` `K` `O` `X` `Y` `Z` had index entries and no definition section. |
 > | **`P`–`S`** | body **`P–S`** — *its `(continued — research-standard structure)` half is now nested directly beneath it, not after `T–W`* |
 > | ⚠ **terms known to be missing** | **`PENDING`** — *and read its status table: it is the line most likely to be stale* |
