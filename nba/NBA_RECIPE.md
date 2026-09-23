@@ -602,7 +602,19 @@ already reported.** Full methodology, the three techniques and the six named fai
 
 ## 🔴🔴🔴 THE FACT THE TIMELINE EXISTS TO STATE
 
-> ## **EXACTLY ONE NBA WORKFLOW FIRES ON A GAME DAY, AND IT IS THE REFEREE CAPTURE.**
+> ## ~~**EXACTLY ONE NBA WORKFLOW FIRES ON A GAME DAY, AND IT IS THE REFEREE CAPTURE.**~~
+> ## 🔴🔴🔴 **CORRECTED `2026-09-23`, T20 pass 129 — THIS IS THE THIRD SURFACE CARRYING A SENTENCE `§T20.119` ALREADY FIXED ON THE OTHER TWO.**
+> **EXACTLY ONE `nba-*.yml` WORKFLOW FIRES ON A GAME DAY — BUT FOUR NBA JOBS DO.** *The table below is
+> correct for the population it states (`nba-*.yml`, 33 in scope). **Three NBA board scrapers live
+> outside that naming convention and fire every two hours**: **`sleeper-board.yml` `15 */2 * * *`** ·
+> **`underdog-board.yml` `25 */2`** · **`fliff-board.yml` `35 */2`**, **each with `nba` in its DEFAULT
+> `sports` input**, so every scheduled run pulls the NBA board. ✅ *Verified alive in the commit
+> history — `§T20.122` measured `63`/`69`/`27` commits over thirty days.*
+> 🔑🔑 **WHAT SURVIVES IS SHARPER THAN WHAT WAS CLAIMED, AND IT IS THE POINT OF THIS STEP:
+> `P1` is the only PIPELINE with a cron; `P2` and `P3` have none** ⇒ ***the inputs arrive on a
+> schedule and nothing on a schedule consumes them*** *(`§T20.119`, `§T20.120`, `§T20.121`)*.
+> ⚠ *`§T20.119` corrected this sentence on the `🟢 START HERE` router and on the opening-day brief and
+> **did not reach this page** — the exact failure `§T20.118` names. Fixed here `2026-09-23`.*
 
 ▶ **Re-derived from the repo, `2026-09-22T21:17:56Z`, tree `90c347439d98e93a9bb3941ef0d5f5af15f13068`**
 *(`ls .github/workflows/` = **40** files; `nba-*.yml` = **34**, of which `nba-pp-payout-map.yml`
