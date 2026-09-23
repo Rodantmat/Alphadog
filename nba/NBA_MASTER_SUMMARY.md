@@ -39353,3 +39353,98 @@ baseline** *(named in `§T20.123`'s own closing sentence, which is what this pas
 same directory the whole time, written by the same scrapers, in another sport.** ⚠⚠ ***A pipeline that
 serves two sports gives every sport-blind component a free live rehearsal — and this one had been
 rehearsing for months while the corpus recorded it as untested.***
+
+---
+
+# §T20.125 — T20 PASS 120: ✅🔴 **THE MAP COVERS THE ENTIRE NBA VOCABULARY — `11` OF `11` — BUT EVERY LIVE-PATH ROW IN THE NBA BOARD TABLE IS BASEBALL, AND THE `P3` CERTIFIER COUNTS IT AS AN NBA BOARD**
+
+*Pass 120, 2026-09-23. Pre-registered to close `§T20.124`'s explicit boundary: **"MLB proves the
+ENVELOPE — it does NOT prove the sport-specific VALUES (the `MARKET KEY -> OUR PROP` map at
+`score_board_legs.py:45`)."***
+
+## ① BOTH VOCABULARIES FROM SOURCE *(clause ii, `2026-09-23T00:26:34Z`)*
+
+**THE MAP** — `MARKET_TO_PROP`, read from the file by AST: **`21` keys → `21` distinct props**, and
+`norm_market()` at `:80–83` strips `_alternate` then returns **`MARKET_TO_PROP.get(base, "")`** —
+***an unmapped key becomes an empty prop string.***
+
+**THE OBSERVED KEYS**, reported per write path as clause (ii) required:
+
+| path | vocabulary |
+|---|---|
+| **Odds-API backfill** *(`fanduel`, `2026-01-15`)* | **19 keys**, collapsing to **11 distinct base keys**: `points` · `rebounds` · `assists` · `threes` · `blocks` · `steals` · `double_double` · `points_rebounds` · `points_assists` · `rebounds_assists` · `points_rebounds_assists` |
+| **live path** *(`sleeper`, `fliff`, `underdog`'s NULL-`home_team` rows)* | 🔴 **76 keys — see ③** |
+
+## ② ✅ THE MAP'S VERDICT ON THE REAL NBA VOCABULARY: `11` OF `11` MAPPED
+
+**Every one of the eleven base keys the NBA board archive has ever carried is in `MARKET_TO_PROP`.**
+⇒ ***`OBSERVED, UNMAPPED` is EMPTY for NBA. The map does not drop a single NBA leg it has ever seen.***
+
+⚠ **`MAPPED, NEVER OBSERVED` = `10` of `21`** — `player_fantasy_points` and the nine period props
+*(`_q1`, `_h1`, `_h2`, `_q4`)*. **The map's own comment says why**: *"These do NOT appear in the NBA
+board archive… they reach us only through the PrizePicks/Underdog/Sleeper scrapers, which is what the
+LIVE pipeline reads. **Mapped here so they score correctly the moment they arrive**."* 🔑 **And
+`§T20.123` measured that those scrapers have delivered `0` NBA player props, ever** ⇒ ***just under
+half the map is written against a vocabulary nothing has ever emitted. Forward-looking by design, and
+unverified by construction — a bound on the confidence, not a defect.***
+
+## ③ 🔴🔴🔴 BUT EVERY LIVE-PATH ROW IN `nba_market.board_snapshots` IS BASEBALL
+
+**All `76` live-path `market_key` values are MLB**: `player_batter_hits` · `player_pitcher_strikeouts`
+· `player_hits_+_runs_+_rbis` · `player_1st_inn._pitch_count` · `player_batter_stolen_bases` …
+**Not one is an NBA prop.**
+
+| `game_date` | bookmaker | rows | distinct keys |
+|---|---|---|---|
+| `2026-09-12` | `underdog` | **5,281** | 46 |
+| `2026-09-12` | `sleeper` | **1,276** | 14 |
+| `2026-09-13` | `fliff` | **1,394** | 16 |
+| | **total** | **`7,951`** | **`76`** |
+
+**THE MECHANISM**: `archive_live_boards.py:206` — **`sport = os.environ.get("ARCHIVE_SPORT", "nba")`**
+— and `load(app, sport)` reads `boards/<app>_<sport>_current.json`. ⇒ **The default is `nba`; these
+rows came from runs with `ARCHIVE_SPORT=mlb`**, during the September burst `§T20.122` found in the
+commit history. ⚠ **And `nba_market` was made NBA-only by an explicit decision** —
+`NBA_OPEN_ITEMS.md:10512`: *"**Decided: fully separate `nba_market`.** The MLB tables' `sport`/`league`
+columns remain unused"* — ***so there is no `sport` column to filter on, and no way to tell these rows
+apart except by recognising their market keys.***
+
+✅ **THEY ARE INERT AT SCORING**: `score_board_legs.py:121–126` maps, collects `unmapped_keys` for
+reporting, then **`board = board[board["prop"] != ""]`** — the MLB rows are dropped, and not swallowed.
+
+## ④ 🔴🔴 BUT THEY ARE *NOT* INERT AT CERTIFICATION — AND THIS IS THE FINDING
+
+**`certify_pipeline.py:108`, quoted in full:**
+
+```sql
+SELECT count(*) FROM nba_market.board_snapshots WHERE game_date = %s
+```
+
+⚠⚠ **No bookmaker filter. No market-key filter. And no sport CAN be filtered, because the table has
+no sport column by design.** ⇒ ***On `2026-09-12` that check returned `6,557` and PASSED — on
+baseball, while the NBA board was empty. On `2026-09-13`, `1,394`, likewise.***
+
+🔑 **A sharper instance of a class the corpus already tracks**: `§T20.103` found *"`board archived
+today` is satisfied by PrizePicks alone"* — **one book**. ⇒ ***This is the same check satisfied by a
+different SPORT, and it is not hypothetical: two real dates in the archive would have certified green
+on MLB rows.*** ▶ **Raised as `T20-23` (`MEDIUM, STRUCTURAL, LATENT`).**
+
+## ⑤ KILLS, LOGGED
+
+✂ **The EXISTENCE of MLB keys in the NBA board archive is noticed** — `NBA_OPEN_ITEMS.md:12794`:
+*"`fantasy_score` has never appeared in the NBA board archive — the one date carrying
+`player_fantasy_points` also carries `player_first_inning_runs`, so it is MLB"* — **and the map's own
+comment says the same.** ✅ **What is new is the EXTENT (`7,951` rows, `76` keys, three bookmakers, two
+dates), the MECHANISM (`ARCHIVE_SPORT`), and the CONSEQUENCE (the certifier counts them).**
+✂ `§T20.124`'s null columns and `§T20.123`'s empty-board measurement are **inputs**, not restated.
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `unmapped_keys` **0/0/0** · `ARCHIVE_SPORT`
+**0/0/0**; `MARKET_TO_PROP` scores **1/1/1** *(named once, never enumerated)*; `board archived today`
+scores **5 in the twelve and 1 in the baseline** — *opened, and `§T20.103`'s version is a different
+claim.* ✅ **NOVEL.**
+
+📌 ***The lesson:*** **the map passed its test completely — `11` of `11` — and the pass still found
+something, because the question "does the map cover the keys?" made me LIST the keys, and the list was
+the wrong sport.** ⚠⚠ ***A schema separated by NAME rather than by a COLUMN cannot detect its own
+contamination: `nba_market` holds baseball because nothing in it is able to say otherwise, and the
+check that guards it counts rows without asking what they are.***
