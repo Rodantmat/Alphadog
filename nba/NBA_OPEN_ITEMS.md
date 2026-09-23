@@ -3415,8 +3415,82 @@ noted; the data was never checked.***
 📌 **The arithmetic, and no further** (rule 6): a report truly published at **14:30 EDT = 18:30 UTC**
 is stored as **14:30−05:00 = 19:30 UTC**, so a cutoff of the form `snapshot_ts <= cutoff`
 **excludes snapshots that were genuinely before it** — losing the most recent hour of pre-cutoff
-information in the October and April windows. ⚠ **Whether any live consumer filters that way is NOT
-RECORDED**; this pass did not trace it.
+information in the October and April windows. ⚠ ~~**Whether any live consumer filters that way is
+NOT RECORDED**; this pass did not trace it.~~
+
+---
+
+### ✅✅ **`§F6.14` — THE CONSUMER TRACE, RUN 2026-09-23. IT DISCHARGES THE `NOT RECORDED` ABOVE, AND IT REVERSES THE CONCLUSION**
+
+*The item asked one question it could not answer: **does any consumer actually filter that way?**
+This pass traced every consumer of the field in `nba/*.py`. **Read-only** — grep and source reading
+only, plus a `SELECT` against `information_schema`. **The answer is no, and the reason is worth
+more than the answer.***
+
+#### 1 · The field never reaches a `timestamptz` column
+
+**VERIFIED** (`information_schema.columns`, live): the only `snapshot_ts` columns in the database
+are `nba_market.board_snapshots` (`timestamptz`), `nba_market.board_backfill_log` (`timestamptz`)
+and `nba_market.game_lines_snapshots` (`text`) — **all three are the ODDS-API board field, a
+different producer with real ISO instants.** 🔑 ***The injury report's `-05:00` string lives only in
+the JSON month-shards and is read only by Python.*** *`nba_score.availability_delta` — the table
+built from those shards — carries `game_date date` and `built_at timestamptz` and **no snapshot
+timestamp at all**.* ⇒ **So there is no ingestion path that bakes the wrong instant into a
+tz-aware column, which is the failure mode that would have been unrecoverable.**
+
+#### 2 · Fifteen scripts touch the field; ten parse it; six compare it to a boundary
+
+| Class | Scripts | How the boundary is built | Cancels? |
+|---|---|---|---|
+| **string compare** | `nba_asof.py` `status_asof()` | `cutoff_ts()` → `f"{game_date}T{hh:mm}:00-05:00"` — **the same literal `-05:00`**, compared as a STRING | ✅ **exactly** |
+| **UTC arithmetic** | `fit_n1_model.py` · `measure_n1_status_resolution.py` · `test_a2_window_information.py` | `game_date` midnight UTC `+ 22:30` | ✅ |
+| **fixed-PT arithmetic** | `build_availability_delta.py` · `find_delta_test_date.py` | `PT = timezone(timedelta(hours=-8))`, `+13:15` | ✅ |
+| **fixed-PT convert** | `measure_report_cutoff.py` | `.dt.tz_convert(PT)`, `PT = -08:00` | ✅ |
+| **sort only** | `build_absence_panel.py` · `build_absence_panel_v2.py` · `fit_n1_granular.py` | no boundary — `sort_values("snapshot_ts")` | ✅ *(a uniform shift cannot reorder)* |
+
+#### 3 · 🔑🔑 **WHY IT CANCELS — the arithmetic, and no further**
+
+*Let `W` be the true wall-clock **ET** time of a report on date `D`. The scraper stores it as
+`D T W -05:00`, i.e. the instant `W + 5h` UTC — **one hour late during EDT, exactly as the item
+says.** Now run each boundary:*
+
+| Consumer | Condition | Reduces to | Effective cutoff |
+|---|---|---|---|
+| `status_asof` | string `≤` on identical shapes | compare `W` to `hh:mm` | **wall-clock ET `hh:mm`** |
+| `+22:30 UTC` | `W + 5 ≤ 22:30` | `W ≤ 17:30` | **wall-clock ET `17:30`** — *the documented 5:30 PM ET report* |
+| `PT −08:00, +13:15` | `W + 5 ≤ 21:15` | `W ≤ 16:15` | **wall-clock ET `16:15` = `13:15` PT** — *the documented P3 1:15 PM PT cutoff* |
+| `tz_convert(−08:00)` | `W + 5 − 8` | `W − 3` | **wall-clock PT `W−3`** |
+
+🔑🔑 ***Every boundary in the system is ALSO a fixed offset, and `−05:00` and `−08:00` are exactly
+three hours apart — which is the true ET↔PT gap in BOTH standard and daylight time. The two fixed
+offsets cancel, and what every comparison actually implements is WALL-CLOCK time, correct in EST
+and EDT alike.*** ⇒ ***The predicted "losing the most recent hour in the October and April windows"
+DOES NOT OCCUR in any consumer that exists.***
+
+#### 4 · 🔴🔴 **BUT THE TWO DEFECTS ARE LOAD-BEARING AGAINST EACH OTHER — and this is the part to hand the owner**
+
+⚠⚠ ***The system is correct because it is wrong twice, symmetrically.*** **Fixing the injury
+scraper's `-05:00` to a real `America/New_York` zone — the obvious, correct-looking repair — WOULD
+BREAK every consumer in classes 2, 3 and 4, because their `-08:00` and `+22:30 UTC` boundaries
+would no longer track it.** *During EDT the rows would move one hour earlier while the cutoffs
+stayed put, and the filters would then admit an hour of snapshots they are currently designed to
+exclude — the mirror image of the failure the item predicted.*
+
+| If you fix | Without also fixing | Result |
+|---|---|---|
+| `scrape_nba_injury_report.py`'s `-05:00` | `PT = timezone(timedelta(hours=-8))` in `build_availability_delta.py`, `find_delta_test_date.py`, `measure_report_cutoff.py` **and** the `+22:30 UTC` literal in `fit_n1_model.py`, `measure_n1_status_resolution.py`, `test_a2_window_information.py` | 🔴 **every cutoff shifts by an hour during EDT — including opening night** |
+
+⇒ 🔴 **`OWNER DECISION`: this is a SINGLE atomic change across seven files, or no change at all.**
+*The current state is **self-consistent and correct in wall-clock terms**; a partial fix is strictly
+worse than the defect. **Downgrading the item's severity is the owner's call, not this sweep's** —
+what changes is the reason: it is no longer "an hour of information is being lost", it is "the data
+is not portable and cannot be joined to any tz-correct series".*
+
+⚠ **`RULE 54` — the bound on this trace.** *`WINDOW`: Python consumers under `nba/` that read the
+injury month-shards, found by `grep -rln 'snapshot_ts' --include=*.py`. **`NOT TRACED`: worker
+JavaScript, SQL, anything outside `nba/*.py`, and any consumer written after 2026-09-23.*** **And
+the raw stored values remain genuinely wrong as INSTANTS** — the cancellation is a property of the
+current readers, not of the data, so the item stays OPEN and is not closed by this trace.
 
 🔑 **And the magnitude is set by a second finding**: **the league republishes the report 10–27 times a
 day** (§T11.3d) — **an hour is several snapshots, not a rounding error.**
