@@ -37,6 +37,7 @@ infrastructure, and how each is used. Built from the transcripts, not from memor
 > | ⚠ **corrupt-and-fix testing** *("the single most reliable verification pattern")* | **`§8b`** |
 > | 🔴 **the Fliff scraper fix — three stacked bugs** | **`§0f-4`** |
 > | ⚠⚠ **`P3`'s shape was wrong, and only running it showed that** | **`§0f-5-T18`** |
+> | 🔑 **`[skip ci]`'s SECOND reason — the one actually MEASURED, not the one assumed** *(plus the durability rules, and `T21`'s blocked-path retraction)* | **`§T21.8`** |
 >
 > ## 📋 EVERY SECTION, IN LOGICAL ORDER
 >
