@@ -147,19 +147,25 @@ def main():
               lambda v: v and int(v) > 0, "cells exist")
 
     elif pipe == "p3":
-        # the afternoon pipeline must have scored TODAY's legs after the 1:15 PM PT cutoff
+        # the afternoon pipeline must have scored TODAY's legs after the cutoff
+        # 🔴 ONE TABLE OFF (fixed 2026-09-23, NBA_WORKERS.md §B). P3 writes nba_score.board_scored via
+        # score_board_legs.py (step 10). It does NOT write final_hp - P2 does, overnight. So final_hp is
+        # P3's INPUT and is checked as such; board_scored is P3's OUTPUT and is what proves P3 ran.
         if not no_games_today:
-            check("final_hp has today",
-                  "SELECT count(*) FROM nba_score.final_hp WHERE game_date = %s", (today,),
-                  lambda v: v and int(v) > 0, "scored legs for today")
-            check("confidence populated",
-                  """SELECT count(*) FROM nba_score.final_hp
+            check("board scored today (P3's own output)",
+                  "SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s", (today,),
+                  lambda v: v and int(v) > 0, "legs scored by score_board_legs")
+            check("scored legs have confidence",
+                  """SELECT count(*) FROM nba_score.board_scored
                      WHERE game_date = %s AND confidence IS NULL""", (today,),
                   lambda v: int(v or 0) == 0, "no NULL confidence")
-            check("score in range 0-100",
-                  """SELECT count(*) FROM nba_score.final_hp
-                     WHERE game_date = %s AND (score < 0 OR score > 100)""", (today,),
+            check("scored probabilities in range",
+                  """SELECT count(*) FROM nba_score.board_scored
+                     WHERE game_date = %s AND (final_hp IS NULL OR final_hp < 0 OR final_hp > 1)""", (today,),
                   lambda v: int(v or 0) == 0, "must be 0")
+            check("INPUT: final_hp for today (from P2)",
+                  "SELECT count(*) FROM nba_score.final_hp WHERE game_date = %s", (today,),
+                  lambda v: v and int(v) > 0, "P2 owes this overnight")
             check("board archived today",
                   "SELECT count(*) FROM nba_market.board_snapshots WHERE game_date = %s", (today,),
                   lambda v: v and int(v) > 0, "board legs captured")
