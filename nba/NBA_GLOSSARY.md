@@ -7,12 +7,9 @@ context, and which document section. Any material term appearing more than once 
 
 > # 📑 **INDEX — `NBA_GLOSSARY.md`**
 > **~~`39`~~ → ~~`44`~~ → `47` sections · ~~`85,359`~~ → ~~`89,948`~~ → `105,868` bytes · ~~`1,639`~~ → ~~`1,709`~~ → `1,914` lines · `194` bold term entries · built `2026-09-23`, census corrected same day (`§F2.14`), **re-derived `2026-09-23` after `§F7.4` repaired the body.**
-> ⚠ **A census in a file's own index is a self-reference that goes stale the instant the index
-> changes** *(`§F6.19`'s byte self-reference, `§F6.26`'s heading twin)*. **These figures are the
-> file as it stood at the close of `§F7.4`, not a live value.** *`+3` sections, `+15,920` bytes,
-> `+275` lines over the pre-`§F7.4` state — all of it the `J–K`, `O` and `X–Z` buckets plus this
-> index's own repairs; **nothing was deleted except one block that was verified byte-identical in
-> its new position first.***
+> **Every term used across the NBA system — what it means, and where it came from.** *Two structures:
+> **`§Z`** is the flat lookup (term → location, covers `A`–`Z`); the **body blocks** hold the
+> definitions. Where they disagree, the body is newer.*
 > 📏 **CENSUS STAMP — `2026-09-23`, `§F7.5`. THE SAME SWEEP RAN ON ALL TWELVE AND ONLY ONE OF THE THREE FIGURES SURVIVED IT.** ~~***`sections` is authoritative and was re-derived at this date.***~~ 🔴🔴 **RETRACTED `2026-09-23`, `§F7.14` — `sections` WENT STALE TOO: exact `4` of `11` across the twelve, NOT `12` of `12`.** *(This file's own count happens to still hold — **that is luck, not authority**, and it is not a reason to trust the stamp.)* ***No figure below is authoritative.*** ⇒ 🔁 **`RULE 59` — RE-DERIVE, NEVER QUOTE:** `` grep -cE '^(> *)*#{1,6} ' nba/<FILE>.md `` *(the `` (> *)* `` prefix is mandatory — a `^#` detector is blind to blockquoted headings, `294` across the twelve, `6.0%`, `§F2.14`).* *Measured against the live files the same day: **sections exact `12` of `12`** · **bytes exact `1` of `11`** · **lines exact `0` of `6`**. ⚠ **This file's own figures above drifted `+552` bytes and `+6` lines *within `§F7.4` itself* — the patch that published them was the patch that invalidated them.** *That is not a lapse in that pass; it is the mechanism, caught in the act.* ⇒ **Re-derive sections with `^(?:>\s*)*#{1,6}\s` — never `^#`, which is blind to the `294` blockquoted headings across the twelve.**
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
