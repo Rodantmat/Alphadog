@@ -1,5 +1,106 @@
 # NBA MASTER SUMMARY — every transcript, message by message
 
+> # 📑 **INDEX — `NBA_MASTER_SUMMARY.md`**
+> **`2,715` headings · `1,650` `§`-sections · `~3.19 MB` · `42,000+` lines · built `2026-09-23`.**
+> **This is the largest file in the set. Do not read it linearly — route through this index.**
+>
+> ⚠ **ANCHORS ARE `§` LABELS AND HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16`
+> line-number pointers rotted within a day)*. **Search the file for the quoted `§T`*n*`.`*m* label.**
+>
+> ## 🧭 **HOW THIS FILE IS ORGANISED — the one thing to understand first**
+>
+> **Sections are `§T`*n*`.`*m* — transcript `n`, pass `m`** *(sub-letters `a`, `b`, `c` for findings
+> within a pass)*. ***Within a transcript the numbers are sequential, so once you know the transcript
+> you can jump straight to a number.***
+>
+> | layer | heading level | which transcripts |
+> |---|---|---|
+> | **the older sweep** | `###` / `####` | **`T1`–`T15`** |
+> | **the newer sweep** | `#` *(top level)* | **`T18`–`T24`** |
+>
+> 🔴🔴 **`T16` AND `T17` HAVE *ZERO* `§`-SECTIONS IN THIS FILE.** *Their material was written straight
+> into the topical documents instead* — **look for `§0a-T16`, `§0e-T16`, `§0z-T16` in
+> `NBA_FINAL_SCORING_CALIBRATION.md` / `NBA_GOBLIN_DEMON.md` / `NBA_BASELINE_CALIBRATION.md`, and
+> `§0y-T17`, `§0z-T17` in `NBA_DATABASE.md` / `NBA_BASELINE_CALIBRATION.md`.**
+> ⚠ **And `§T18.1`–`§T18.3` are in `NBA_OPEN_ITEMS.md`, not here** — this file starts at `§T18.4`.
+>
+> ## ▶ FIND IT FAST — *by the question you arrived with*
+>
+> | if you need… | go to |
+> |---|---|
+> | 🔴🔴 **what happens if you run the pipelines on opening night** | **`§T20.134`** *(and `NBA_RECIPE.md` `STEP 13`)* |
+> | 🔴🔴 **whether the model is worth acting on** *(`1.08 M` legs)* | **`§T23.2`**, then ✅ **`§T23.3`** *(the half that clears)* |
+> | ✅✅ **the slip-level backtest result** *(`+14.5%`, cross-validated)* | **`§T24.1`** · **`§T24.2`** |
+> | 🟢 **how the PrizePicks multiplier problem was solved** | **`§T22.1`** *(content in `NBA_MULTIPLIERS.md` `§0.9-T22`)* |
+> | 🔑 **the pricing law and the house edge** | **`§T22.2`** · **`§T22.6`** *(via the five-pass-record section)* |
+> | 🔑 **why "document, don't fix" exists** *(the owner's own words)* | **`§T23.1`** |
+> | 🔴 **the owner's document-FORM directive, and why it is blocked** | **`§T21.3`** *(item `T21-1`)* |
+> | 🔴 **`P1` has never committed** *(and the three-way question it dissolves)* | **`§T21.4`** |
+> | ✅ **whether this sweep's own `patch_file` edits destroyed record** | **`§T21.5`** *(`106` deletions audited, `0` lost)* |
+> | 📊 **what the new transcripts contain, and how much is uncovered** | **`§T21.0`** *(intake)* · **`§T21.2`** *(coverage)* · **`§T22.4`** *(the rate)* |
+> | 🔴 **the conflict between the coverage instrument and the owner's format** | **`§T22.5`** |
+> | 🔑 **the ranking rule's missing duration term** | **`§T20.135`** |
+> | 🔴 **the sibling-sweep failure, and `RULE 53`** | **`§T20.136`** |
+> | 🔑 **whether a transcript is CLOSED, and on what evidence** | the **closure records** — `✅ Tn IS DONE` / `✅✅ Tn IS CLOSED` *(`h1`s near the top)* |
+> | ⚠ **the scope and ledger rules the sweep runs under** | **`⚠ SCOPE AND LEDGER RULES`** *(second `h1`)* |
+> | ⚠ **the drift notice** | **`⚠ DRIFT NOTICE`** *(third `h1`)* |
+> | 📋 **the transcript inventory** *(what each file is, its size, its status)* | the **transcript index table** — search *"`Corpus note`"* |
+>
+> ## 🗂 **THE TRANSCRIPT MAP — where every `§` lives**
+>
+> | transcript | what it is | `§` range | sections | status |
+> |---|---|---|---|---|
+> | **`T1`** | 🔑 **the founding transcript** — orientation, owner directives, the separate-universe decision, the first worker. *"`T1` explains every other transcript."* | `§T1.1`–`§T1.119` | **`111`** | ✅ closed |
+> | **`T2`** | static layer, the four-step wiring pattern | `§T2.1`–`§T2.20` | `81` | ✅ closed |
+> | **`T3`** | DARKO scraper, weekly differential worker, schedule layer | `§T3.1`–`§T3.18` | `56` | ✅ closed |
+> | **`T4`** · **`T5`** · **`T6`** | enrichment phases 3a–3d, starter status, delta | `§T4.1`–`§T4.30` · `§T5.1`–`§T5.25` · `§T6.1`–`§T6.25` | `90` · `55` · `58` | ✅ closed |
+> | **`T7`** | 🔑 **classification / baseline design research** — *the densest early transcript* | `§T7.1`–`§T7.65` | **`226`** | ✅ closed |
+> | **`T8`** | baseline backtest and calibration; the five-dimension tiering | `§T8.1`–`§T8.36` | `107` | ✅ closed |
+> | **`T9`** | 🔴 **the baseline production pipeline** — *"the densest of any transcript swept", `117` sub-entries* | `§T9.1`–`§T9.52` | **`171`** | ✅ closed |
+> | **`T10`** | enrichment backfill pipeline | `§T10.1`–`§T10.28` | `100` | ✅ closed |
+> | **`T11`** | 🔑 **enrichment backfill / DFS boards** — *the most-swept transcript, `58` passes* | `§T11.1`–`§T11.59` | **`271`** | ✅ closed |
+> | **`T12`** | board scrapers, Fliff, docs | `§T12.1`–`§T12.11` | `67` | ✅ closed |
+> | **`T13`** | boards, grader, market | `§T13.1`–`§T13.6` | `52` | ✅ closed |
+> | **`T14`** | grader / market / `baseline_history` | `§T14.1`–`§T14.4` | `37` | ✅ closed |
+> | **`T15`** | enrichment factors, A2/N1, reliability audit | `§T15.1` | `7` | ✅ closed |
+> | 🔴 **`T16`** | blowout / matchup enrichment | 🔴 **NONE HERE** | **`0`** | ⚠ **material is in the TOPICAL files as `§0a-T16` / `§0e-T16` / `§0z-T16`** |
+> | 🔴 **`T17`** | confidence calibration, final engine | 🔴 **NONE HERE** | **`0`** | ⚠ **material is in `NBA_DATABASE.md` `§0y-T17` and `NBA_FINAL_SCORING_CALIBRATION.md` `§0a-T17*`** |
+> | **`T18`** | pipelines, confidence, board tiers | `§T18.4`–`§T18.7` | `4` | ⚠ `§T18.1`–`§T18.3` are in **`NBA_OPEN_ITEMS.md`** |
+> | **`T19`** | 🔑 **the documentation pass** — *incl. the closure-record and progress-ledger findings* | `§T19.1`–`§T19.11` | `8` | 🔴 **owes two INDEPENDENT fresh-context reads** *(rule 46)* |
+> | **`T20`** | 🔑🔑 **the deep documentation pass — by far the most worked** | `§T20.1`–`§T20.136` | **`133`** | 🔴 **OPEN · `131` passes · owes two fresh-context reads · CANNOT close in this session** |
+> | 🟢 **`T21`** | **the documentation-sweep transcript** *(this sweep's own origin)* | `§T21.0`–`§T21.6` | `7` | 🟢 OPEN · `6` passes · remainder bounded at `~15` segments |
+> | 🟢 **`T22`** | **PrizePicks multiplier build** — the endpoint, the pricing law | `§T22.1`–`§T22.7` | `7` | 🟢 OPEN · `7` passes |
+> | 🟢 **`T23`** | **multiplier backtest, WNBA, conservative mode** | `§T23.1`–`§T23.4` | `4` | 🟢 OPEN · `4` passes |
+> | 🟢 **`T24`** | **prop universe, goblin floor, slip simulator** ⚠ **SECONDARY SOURCE — a session record, not a verbatim transcript** | `§T24.1`–`§T24.2` | `2` | 🟢 OPEN · `2` passes |
+>
+> ## 📋 **THE NON-`§` STRUCTURAL BLOCKS** *(`h1`s that are not pass records)*
+>
+> | block | what it is |
+> |---|---|
+> | **`⚠ SCOPE AND LEDGER RULES`** | the owner instruction the whole sweep runs under *(`2026-09-20`)* |
+> | **`⚠ DRIFT NOTICE`** | what drifted and why *(`2026-09-20`)* |
+> | **`✅ Tn IS DONE` / `✅✅ Tn IS CLOSED`** | **the closure records, one per transcript.** ⚠ *`§T19.6` found these **certify less than they state** — read it before trusting one.* |
+> | **`⚠ SUPERSEDED … T1 IS NOT DONE`** | the supersession of `T1`'s first closure |
+> | **the transcript index table** | every transcript file, its size, its status and its caveats *(search "`Corpus note`")* |
+> | **`§T22.2 · §T22.3 · §T22.6 · §T22.7 · §T23.4`** | 📋 **the five pass records whose CONTENT went to the subject documents** — *a repair; see its own header* |
+>
+> ## 🔎 **HOW TO SEARCH THIS FILE EFFICIENTLY**
+>
+> 1. **Know the transcript first.** *Use the map above. A finding about pricing is `T22`/`T23`; about
+>    the pipelines, `T20`; about the baseline, `T7`–`T9`.*
+> 2. **Then search the `§` label**, e.g. `§T20.134`. *Numbers are sequential within a transcript.*
+> 3. **For a finding you cannot place**, search the **subject word** — headings are written as full
+>    sentences and are unusually descriptive.
+> 4. ⚠ **Do not search by line number**, and do not trust a line number quoted anywhere in the twelve
+>    *(`§T20.22` measured the rot rate)*.
+>
+> 📌 **WHAT THIS FILE IS, AND IS NOT**: ***it is the PASS RECORD — what was examined, what was found,
+> what was killed and why.*** **The subject matter itself lives in the eleven topical documents.**
+> *Later passes deliberately write findings into the owning document and leave only a record here —
+> see the five-pass-record section for why, and `§T21.3` for the owner directive behind it.*
+
+---
+
 > # 🟢 **START HERE — FOUR QUESTIONS, ONE SCREEN** *(added 2026-09-22, T20 pass 102, §T20.107)*
 >
 > ⚠⚠ **THIS DOCUMENT IS ~~`2,789,201`~~ `2,954,675` CHARACTERS — about `739,000` tokens. DO NOT LOAD
