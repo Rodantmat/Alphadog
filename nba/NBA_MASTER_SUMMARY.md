@@ -41877,3 +41877,143 @@ summary". **Five passes of good work became five broken references** — and the
 was a `fences`/`§`-consistency check that took one command and had never been run before.*
 ✅ **Added to the standing close procedure: after writing a pass, verify its `§` resolves in the file
 the run log cites.**
+
+---
+
+# §T24.1 — ✅✅✅ **THE SLIP-LEVEL BACKTEST `§T23.3` FLAGGED AS `NOT RECORDED` WAS RUN: `+14.5% ± 4.2%` OVER `3,921` SLIPS**
+
+*T24 pass 1, 2026-09-23. **`T24` is a SECONDARY source** — a session record written by Claude, not a
+verbatim transcript *(`§T21.0` §3)* — **so nothing here is marked `VERIFIED` on its authority alone**,
+and the distinction is load-bearing for the headline below.*
+
+## 1. ✅✅ **THE RESULT, AND IT CLOSES A `NOT RECORDED` FILED ONE PASS AGO**
+
+**`§T23.3` §2 recorded**: *"The transcript's own next step, **`NOT RECORDED` as run**: 'an exact
+slip-level backtest of a **standards-only** strategy (pushes/DNPs revert the slip size)' — a `T24`
+question."* ⇒ **`T24` §3 ran it.**
+
+*Game-aware replay — **window lines, exact standard payouts**, greedy packing with no two legs from
+one game, slips close at `3`:*
+
+| season | nights | slips | **ROI** | leg hit rate |
+|---|---|---|---|---|
+| 2024-25 | `154` | `1,755` | **`+10.1% ± 6.1%`** | `57.4%` |
+| 2025-26 | `155` | `2,166` | **`+18.0% ± 5.6%`** | `58.4%` |
+| 🟢 **both** | **`309`** | **`3,921`** | 🟢 **`+14.5% ± 4.2%`** *(`3.5` SE)* | **`58.0%`** |
+
+> ⇒ ✅✅ ***This is the strongest positive result in the corpus, and it is the one path `§T23.3`
+> predicted would survive*** — **standards, factor `1`, no compression, no rounding**, so the
+> leg-level overstatement that discounted the demon strategy does not apply.
+> ✅ **And the packing works as specified**: test night `2026-01-15`, **`45` picks → `15` full slips,
+> `0` same-game** *(rank-order packing had `1`)*; **`14` nights with fewer than three games produced
+> no full slip and were correctly sat out.**
+
+> ⚠⚠ **THREE THINGS THIS IS NOT, STATED BECAUSE THE NUMBER IS ATTRACTIVE:**
+> **(a)** **It is a REPLAY, not a traded record.** *`nba_score.paper_picks` and `paper_results` are
+> **`0` rows**, verified live at `§T21.1` — **nothing has ever been logged or graded in production.***
+> **(b)** **It is `T24`-sourced** — a session record, not a verbatim transcript. **`AS STATED`.**
+> **(c)** **`309` nights of HISTORY, not of live operation.** *`§T20.134` established that `P3` will
+> abort on opening night and `§T21.4` that `P1` has never committed — **the pipeline that would
+> generate these picks live does not currently run.***
+> 🔑 ***So: the STRATEGY measures well and the SYSTEM that would execute it does not yet start. Those
+> are different problems and the brief already carries the second.***
+
+## 2. ✅ **AND IT CLOSES `§T22.5` ⑤'s GAP — THE SAME-GAME DISCOUNT NOW HAS AN NBA MEASUREMENT**
+
+**`§T22.5` ⑤ recorded**: *"`§0.2f`'s 'PrizePicks discounts same-game `35-40%`' → **NOT OBSERVED for
+opponent pairs — it is an MLB figure, and teammates were untested**."*
+
+⇒ **`T24` §3, first line**: *"**Same-game slips pay less — a 2-pick of opponents paid `2.9×` instead
+of `3.0×`**, same-game Flex partials are cut — so slips must span different games."*
+
+> ✅ **The cross-game directive now rests on an NBA observation**, not an MLB one. ⚠ **But the
+> MAGNITUDE is nothing like `35–40%`**: `2.9` vs `3.0` is **`−3.3%` on this pair.** ⇒ 🔑 ***`§0.2f`'s
+> DIRECTION is confirmed and its NUMBER is not — and the `35–40%` figure should not be quoted for
+> NBA.*** ▶ **Marked at `§0.2f`.**
+
+## 3. 🔑🔑 **THE FANTASY-SCORE SCALE IS RESOLVED — AND THE CORPUS CARRIES IT AS AN OPEN CONFLICT**
+
+**`NBA_MULTIPLIERS.md`'s closing item 5** states: *"The fantasy-score scale conflict (**`+2` vs `+3`
+on blocks/steals**) changes payout arithmetic for `fantasy_score` legs."*
+
+⇒ **`T24` §2 states the scale used to reconstruct `32,170` player-nights**:
+
+```
+center = PTS + 1.2·REB + 1.5·AST + 3·STL + 3·BLK − TOV
+```
+
+> ⇒ ✅ **`+3` for BOTH steals and blocks.** ⚠ **`AS STATED IN T24`, and it is a USED value, not a
+> quoted one** — *the scale was applied to build `nba_market.fs_backsim` and the build reproduced
+> **all `15` distinct WNBA lines** via `gap = round_half(3.2 + 0.07 × center)`, which is corroboration
+> by construction rather than assertion.* 🔴 **It does not by itself prove PrizePicks uses `+3`** —
+> *it proves a model using `+3` reproduces the observed line grid.* ▶ **Recorded at item 5 with that
+> distinction.**
+
+## 4. 🔑🔑🔑 **THE STRUCTURAL DISCOVERY — PRIZEPICKS CUTS EVERY LINE FROM ONE BOX-SCORE PROJECTION** *(`T24` §4.3, `0/0`)*
+
+> *"**PrizePicks cuts every line from ONE box-score projection.** Line ratios are real shooting
+> percentages: **`FGM/FGA 0.45`, `FTM/FTA 0.776`, `3PM/3PA 0.338`, `PTS/FGA 1.28`**. The scoring
+> identity holds **on the lines themselves**: **`PTS − (2·FGM + 3PM + FTM) = −0.11 ± 0.38`**."*
+
+> ⇒ 🔑🔑🔑 ***Every stat's line for a player is a projection of the same underlying box score, not
+> an independent market per stat.*** **The identity holding to `−0.11 ± 0.38` ON THE LINES is the
+> proof**, and it has two consequences the corpus has never stated:
+> **(a)** **legs from one player are NOT independent, at the line level** — *a slip stacking a
+> player's points and threes is closer to one bet than two*;
+> **(b)** **a missing line is DERIVABLE** — *which is exactly what `§4.4`'s "points-scaled" estimators
+> exploit, and why they beat per-stat means on scoring-volume props.*
+> ✅ **Measured on WNBA, where the full board is posted.** 🔴 **`NOT RECORDED`: whether the identity
+> holds as tightly on NBA lines.**
+
+## 5. ✅✅ **A SECOND ARTIFACT CAUGHT BY ITS AUTHOR — AND IT HAD ALREADY PRODUCED A "RESULT"** *(`T24` §4.6)*
+
+> **First build, `197,416` legs**: best-center Over rates ran **`35.7%`–`47.2%`** across seven derived
+> props — *centers systematically **above** the outcome median on low counts.* **The model's top picks
+> came out `~80%` UNDERS and looked like `1.130` / `1.156` at `≥1.30`.**
+> **The reality check that killed it**: *real PrizePicks low-count lines hit Over **`47.5–49.2%`***.
+> **Fix**: policy `derived_center_offset`, one offset per prop, chosen so each prop's best-center Over
+> rate lands near `48.5%` — *`FGA 0`, `FGM/3PA/DREB 0.25`, `FTA/OREB 0.5`, `FTM 0.75`*. **Rebuild:
+> `179,712` legs.**
+> **After the fix**: `≥1.30` → **`1.063 ± 0.017` / `1.093 ± 0.016`** ⇒ 🔴 ***below the `1.10` 3-pick
+> breakeven — "most of the first build's edge was the artifact."***
+
+> 🔑🔑 ***A `1.156` result became a `1.093` one because the author checked his simulated lines against
+> real ones and found his centers biased.*** **This is `T1`'s "looked real at first and was later
+> found to be an artifact" class, caught in-session, for the third time in the new material**
+> *(after `T22`'s `pick_distinct` off-by-one and the `1G/1D/GD` cancellation error)*. ✅ **Recorded at
+> full strength — the corpus is quick to record defects and slow to record the discipline working.**
+> ⚠ **And one family survives**: **`FTM Over 1.293 / 1.322`** *(`364` legs, `65%` hit)* — *"free
+> throws are the candidate family, **after preseason validates the proxy lines**."*
+
+## 6. ✅ **THE INTEGRITY AUDIT, AND IT IS THE KIND THIS CORPUS ASKS FOR** *(`T24` §5, `0/0`)*
+
+**`12` integrity checks, all returning `0`** — *standards exactly `1.0`; demons above `1.0` unless
+flagged; goblins below `1.0` and **never under `1.843×`** (the `floor190` minimum, `§0g`);
+demons never over `18.5×`; `two_pick = 3 × factor`; no null factor or phase; **no graded leg on a
+no-boxscore night**; no ungraded leg on a regular night; simulated pushes only on Fantasy; **no
+alternate Unders** (the `zero`-Under invariant, on file).*
+
+⇒ ✅ **An audit whose checks are the corpus's own recorded invariants, run against a new table.**
+⚠ 🔴 **`flag: demon_priced_below_standard` = `148`** — *"the `7%` longshot haircut took a
+near-standard demon under `1.0`"* — **a known, counted, flagged population rather than a silent one.**
+✅ **`kind_price_mismatch` = `0` after the kind fix** *(the `63` from `§0.13-T22` — **resolved**, which
+that section recorded as `NOT RECORDED`).*
+
+## 7. ⚠ **`prop_universe` — RECORDED UNDER THE STANDING RESTRICTION**
+
+**`T24` §5 states `nba_market.prop_universe` at `1,667,024` legs · `20` props · `327` nights**
+*(`1,088,192` real archived + `128,680` simulated Fantasy + `337,748` derived standards + `112,404`
+derived alternates; **usable `1,606,151`**)*.
+
+> 🔴 ***NOT CONFIRMED, AND DELIBERATELY NOT QUERIED.*** **The standing instruction is that
+> `prop_universe` is mid-rebuild and its counts are not to be documented as final.** *Recorded as
+> **"as stated in the session record, `2026-09-22`"** and nothing more. **The table was not read.***
+
+---
+
+> 📌 **TIERS**: ⚠ **AS STATED IN THE SESSION RECORD (`T24`, SECONDARY)** — everything above except
+> where noted. ✅ **VERIFIED independently** — only that `paper_picks`/`paper_results` are `0` rows
+> *(`§T21.1`, live)*, which is what makes §1(a)'s caveat a fact rather than a hedge.
+> 🔴 **`NOT RECORDED`** — whether the scoring identity holds as tightly on NBA lines; whether
+> PrizePicks' true Fantasy scale is `+3`, as distinct from `+3` reproducing the grid.
+> ⚖️ **`pp_*` objects and `prop_universe` not queried; nothing changed or triggered.**
