@@ -1282,7 +1282,16 @@ on the document does the wrong thing.***
 | `script.py` | **76** | 🔪 **overwhelmingly site-packages traceback frames** — `base.py`, `cursor.py`, `request.py`, `frame.py`, `decoder.py`, `path.py`, `runner.py`, `detail.py` |
 | dotted / other | **39** | 🔪 **prose mis-parsed** — `archive.org` *(a website)*, `config.json` *(a filename)*, `score.hp` / `market.dfs` / `config.shrinkage` *(sentence fragments the regex joined across a full stop)*, plus `stats.norm` / `nbinom` / `poisson` / `binom` — **scipy** |
 | `nba-*.yml` | **6** | ✅ **the real finding above** — `4` confirmed against the directory listing; the other two *(`nba-workers.yml`, `nba-deploy.yml`)* **do not exist in the repo at all**, i.e. transcript-era names since renamed |
-| 🟢 **`ENV_VAR`** | **`0`** | ✅✅ |
+| 🟢 **`ENV_VAR`** | ~~**`0`**~~ → 🔴 **AT LEAST `2`** | 🔴 **CORRECTED `§F6.6`, same day — see below** |
+
+> 🔴🔴 **CORRECTED 2026-09-23, `§F6.6`. THE "`0` ENV VARS ABSENT" RESULT WAS WRONG, AND ITS OWN
+> `RULE 54` NOTE SAID WHY.** *That note read: "`ENV_VAR` coverage is tested by NAME only … a
+> variable named in the twelve with the WRONG DEFAULT would score as covered."* **The real hole was
+> narrower and worse: the scan only saw identifiers inside segments it had already classed
+> UNCOVERED and SUBSTANTIVE, so **`UNDERDOG_LAT` and `UNDERDOG_LON` — sitting in a header line of a
+> scraper's source listing — were never candidates at all.*** **Both are `0` of `12`, and they pin
+> every archived Underdog board to CALIFORNIA.** 📌 ***A negative result is only as strong as the
+> population it searched, and this one's population was smaller than its wording implied.***
 
 🔑🔑 ***ZERO environment variables are missing.*** **Every `SCREAMING_SNAKE` configuration name that
 appears anywhere in the `~12,686` uncovered-substantive segments is already in the twelve** — and
