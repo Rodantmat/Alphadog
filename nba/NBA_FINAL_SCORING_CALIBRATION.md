@@ -4281,3 +4281,38 @@ this grid.**
 the 3-pick breakeven in both seasons". **The grid is what makes the verdict operational**: which
 threshold, at which pick count, with what SE and what sample. **A verdict without its grid cannot be
 acted on and cannot be falsified**, and 93.8% uncovered is what that looked like from outside.*
+
+## 4 · 🔑 **THE ONLY EXTERNAL BENCHMARK IN THE CORPUS — and our numbers sit inside it**
+
+*Added 2026-09-23, `§F6.3`. Recovered from `T17`'s research stratum; **in `0` of the twelve** —
+`35.81`, `57.19` and "bootstrap confidence interval" each returned `0` hits.*
+
+**A published study's two-sided 95% bootstrap confidence intervals for sports-betting ROI, by
+sport** *(the transcript's "Table 5", panel D, weighted percentile intervals)*:
+
+| sport | **ROI %** | EV threshold | epsilon | % of games bet |
+|---|---|---|---|---|
+| NFL | 5.92 – 41.32 | 0.00 – 0.05 | 0.08 – 0.34 | 0.30 – 0.85 |
+| 🔑 **NBA** | **1.66 – 25.58** | 0.00 – 0.04 | 0.12 – 0.49 | **0.11 – 0.60** |
+| NCAAB | 2.51 – 19.49 | 0.00 – 0.03 | 0.14 – 0.38 | 0.23 – 0.58 |
+| NCAAF | 2.03 – 19.68 | 0.00 – 0.05 | 0.01 – 0.41 | 0.36 – 0.73 |
+| WNBA | 6.43 – 43.06 | 0.01 – 0.15 | 0.13 – 0.32 | 0.38 – 0.93 |
+
+*Panel A (simple high-density intervals) gives NFL `7.04 – 35.81`, NCAAB `1.36 – 16.08`, NCAAF
+`1.10 – 16.00`, WNBA `8.72 – 57.19` — **and no NBA row**, which is itself worth noting.*
+
+🔑🔑 **WHY THIS MATTERS FOR `T23-1`.** *This corpus's central open question is whether the model beats
+the book. Its best numbers — **`+15.8%` replay, `+14.5%` simulator, `§2`'s `1.30`/3-pick cells at
+`+10.3%` / `+23.5%`** — have had **nothing external to be measured against**.* **They sit inside
+this published NBA interval (`1.66 – 25.58%`), comfortably and unremarkably.**
+
+⇒ ***That is the right reading and it cuts both ways: the result is NOT implausible — it is squarely
+within what the literature reports achievable — and it is NOT exceptional either.*** 📌 **A number
+with no benchmark invites both over- and under-belief; this is the first thing in the corpus that
+bounds it.**
+
+⚠⚠ **RULE 54 — and the caveats here are serious.** *The transcript records the TABLE, not the
+paper: **its source, method, sport-season coverage, bet type (game lines vs player props) and
+whether "ROI" is per-bet or per-unit-staked are all `NOT RECORDED`.*** **A game-line ROI interval is
+not automatically comparable to a player-prop slip ROI.** ***So this is recorded as ORIENTATION, not
+as a test `T23-1` passes*** — and a reader who wants to lean on it must find the paper first.
