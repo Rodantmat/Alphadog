@@ -1442,6 +1442,111 @@ REPRESENTED. It cannot show the instruction was OBEYED, or recorded with its mea
 **So `§F3.2` certifies representation, never compliance** — and the register above exists precisely
 because representation had not been achieved for the stratum the brief ranks first.
 
+---
+
+# 📜 §F4 — THE CERTIFICATION REGISTER
+
+*Issued **2026-09-23**. **This certifies what was DONE and what its evidence is. It does not certify
+that the corpus is complete or correct, and the two sections that say so are part of the
+certificate, not a disclaimer attached to it.***
+
+## §F4.1 — CERTIFIED: the twenty-four transcripts
+
+**Every figure below was re-derived in this campaign; none is carried forward.** *Coverage figures
+are `judge_all.py` at `§F2.1` (scoring unchanged from `judge20`/`judge21`); tails are `tailall.py`;
+owner figures are `owneraudit.py` + the phrase test at `§F3.2`; `hb` is the high-band probe at
+`§F2.7`.*
+
+| T | segs | high band | uncovered | tail | owner turns | owner covered | owner ABSENT | hb candidates |
+|---|---|---|---|---|---|---|---|---|
+| T1 | 557 | 101 | 74.7% | 17 | 14 | 9 | 1 | 4 |
+| T2 | 814 | 97 | 81.8% | 24 | 4 | 3 | 0 | 4 |
+| T3 | 675 | 97 | 81.0% | 23 | 3 | 2 | 0 | 4 |
+| T4 | 607 | 92 | 77.9% | 31 | 9 | 4 | 0 | 2 |
+| T5 | 438 | 56 | 81.3% | 5 | 1 | 1 | 0 | 2 |
+| T6 | 595 | 65 | 85.2% | **0** | 2 | 2 | 0 | 1 |
+| T7 | 1,081 | 126 | 83.8% | 32 | 13 | 9 | 0 | 1 |
+| T8 | 615 | 66 | 85.2% | 14 | 6 | 4 | 0 | 2 |
+| T9 | 769 | 61 | 88.6% | 1 | 5 | 3 | 0 | 2 |
+| T10 | 872 | 48 | 90.7% | 🔴 **99** | 14 | 1 | 1 | 4 |
+| T11 | 712 | 48 | 91.9% | **0** | 15 | 2 | 4 | 5 |
+| T12 | 640 | **30** | 89.5% | 11 | 11 | 4 | 5 | 2 |
+| T13 | 1,323 | 99 | 88.0% | 14 | 🔴 **65** | 5 | 🔴 **22** | 5 |
+| T14 | 1,004 | 76 | 89.1% | 11 | 33 | 12 | 4 | 6 |
+| T15 | 1,098 | 69 | 90.6% | 15 | 21 | 7 | 3 | 11 |
+| T16 | 1,064 | 107 | 85.4% | 6 | 32 | 14 | 3 | 8 |
+| T17 | 1,412 | 114 | 87.8% | 2 | 41 | 15 | 10 | 🔴 **18** |
+| T18 | 1,205 | 138 | 80.3% | 7 | 57 | 30 | 2 | 11 |
+| ⬛ T19 | 920 | 446 | 46.2% | **0** | 12 | 4 | 1 | 6 |
+| ⬛ T20 | 1,177 | 652 | 39.8% | 1 | 22 | 12 | **0** | 4 |
+| ⬛ T21 | 1,327 | 676 | 45.4% | 17 | 34 | 4 | 10 | 10 |
+| T22 | 897 | **28** | 94.6% | **0** | 17 | 4 | 6 | 5 |
+| T23 | 938 | 40 | 93.8% | **0** | 9 | 5 | 0 | 5 |
+| ⚠ T24 | 66 | 22 | 57.6% | — | **0** | — | — | — |
+| **ALL** | **20,806** | **3,354** | — | **330** | **440** | **156** | **72** | **122** |
+
+**⇒ WHAT IS CERTIFIED FOR ALL 24:**
+
+1. ✅ **Every transcript was re-measured against the corpus as it stands**, with the scoring
+   unchanged from the established instrument, per transcript, so the figures are comparable to
+   every earlier pass.
+2. ✅ **Every transcript's TAIL was extracted and attributed** to the document already holding it —
+   `330` segments, `16` source documents. **All four concentrations were tested; one earned a
+   transfer and three were killed as false tails.**
+3. ✅ **Every transcript's HIGH BAND was probed for missing figures** — `3,331` segments, `8,708`
+   numeric tokens. **First time direction (a) has been run at scale; previously `97` of `3,331`.**
+4. ✅ **Every OWNER TURN in all 24 was scored, and all `72` that no test could find were
+   adjudicated by hand — none sampled.**
+5. ✅ **`T24` is explicitly NOT comparable** — it is a hand-written session record, has **no
+   `Human:` turns**, and its `66` paragraphs were scored with a different segmenter. **Recorded as
+   an instrument boundary, not as a coverage figure.**
+
+## §F4.2 — CERTIFIED: the twelve files
+
+| check | result | evidence |
+|---|---|---|
+| index at the head of every file | ✅ **12 / 12** | `§F1.1`; verified within the first `1%` of each file |
+| index CENSUS re-derived and corrected | ✅ **12 / 12** | `§F2.14` — **the original detector missed `294` blockquoted headings (`6.0%`)**; every file patched, with the working pattern published |
+| structural findings re-tested against the corrected detector | ✅ | `§F2.14` — **`1` of `§F1.1`'s findings was its artifact; the rest survive** |
+| code fences balanced | ✅ 12 / 12 | `§F2.15` |
+| cross-references resolving | ✅ **16 / 16** | `§F2.15` — one dangling (`§F2.10`) found and repaired |
+| corpus-vs-LIVE row counts | ✅ | `§F1.2` — **`121` exact matches**; `6` apparent defects reversed by `count(*)` because `reltuples` is an estimate |
+| cross-file contradiction scan | ✅ | `§F1.2` — `386` candidates, `0` genuine contradictions |
+| enumeration audit | ✅ **8 / 8 populations MATCH** | `§F2.11` — `nba/*.md` `32` · docs-read `30` · mandated `12` · workflows `40` · NBA schemas `14` · base tables `368` · props `30` · `worker_definitions` `21` |
+| 🔒 **credential-shape scan, the twelve** | 🔴 **`1` live key found, REDACTED** | `§F2.12` — and the repo-wide scan (`969` files, `632 MB`) found **nothing else** |
+| 🔒 credential census, the transcripts | ✅ measured | `§F3.3` — `16` distinct values in `4` of `25` files; **none ever committed** |
+| total size | **`5,988,026` bytes** | `§F2.15` |
+
+## §F4.3 — 🔴 **NOT CERTIFIED, and why — this is part of the certificate**
+
+1. 🔴🔴 **`T19` and `T20` are NOT CLOSED. `RULE 46` requires each to have TWO INDEPENDENT complete
+   sequential reads from a FRESH CONTEXT, and `T20` cannot close in this session at all.** *Nothing
+   in this campaign discharges that: `§F4.1` is a MEASUREMENT of `T19`/`T20`, and a measurement is
+   not a read.*
+2. 🔴 **Direction (b) is not closed and cannot be by one pass** — `~12,686` substantive uncovered
+   segments remain. *`§F2.16` answered the part a machine can answer (which identifiers are absent:
+   `4` workflow filenames, and **`0` environment variables**); the rest is reading.*
+3. ⚠ **Every instrument here is a REGEX or a COSINE.** *`§F1.2` published its own broken first run;
+   `§F2.11`'s extractor invented `128` claims from `P3 cron` and `pass-53 rule`; `§F2.12`'s transient
+   filter demonstrably under-filters; `§F3.2`'s judge was wrong about `212` of `284` owner turns.*
+   **Every headline figure in `§F4.1`/`§F4.2` is a FLOOR.**
+4. ⚠⚠ **Coverage is REPRESENTATION, never COMPLIANCE or CORRECTNESS.** *A lexical test shows the
+   documents contain text like the source. It cannot show the source was understood, that an owner
+   instruction was obeyed, or that a recorded number is right.* ***Nothing in `§F4` certifies that
+   AlphaDog works, or that the corpus describes it correctly.***
+5. 🔴 **Five items are open for the owner and none is this sweep's to close**: **`F2-1`**
+   *(rotate — a production Postgres password and a published API key)* · **`T21-1`** · **`T23-1`** ·
+   **`T20-3`(e)** · **`T10-F1`**.
+
+## §F4.4 — the one-line certificate
+
+> ***Twenty-four transcripts and twelve documents were swept with seven purpose-built instruments,
+> every instrument pre-registered or published with its own failure modes, every number re-derived
+> from its authority, and every correction — including the eight that were mine — applied at source
+> and logged. What that produces is a measured, auditable floor, not a guarantee. `T19` and `T20`
+> remain open by the owner's own `RULE 46`, and they are the reason this certificate says CERTIFIED
+> IN PART.***
+
 ### ▶ STILL OWED, unchanged and stated at full strength
 
 - 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
