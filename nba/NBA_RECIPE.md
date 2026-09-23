@@ -13,7 +13,7 @@ that is the useful part.
 > ✅✅ **THE TWO ORDER DEFECTS THIS FILE CARRIED ARE FIXED, AND NOTHING WAS LOST DOING IT.** *`STEP 0c` sat after `STEP 7`; `STEP 0-T16` sat ABOVE `STEP 0`. **Both blocks were moved whole** — the copy was inserted first, verified **byte-identical** *(`STEP 0-T16` body `md5 f9ae08cbe51c`)*, and only then was the original removed, so the content was never absent from the file. **Sections `59` → `63`: `+4`, all of them the two forwarding stubs left at the old positions** so an inbound pointer to *"`STEP 0c`, after `STEP 7`"* still lands somewhere that explains itself. ***The order is now `0 · 0a · 0b · 0c · 0d · 0-T16 · 1 … 13`.***
 > +`4` sections and `+1,881` bytes are the entire cost of the repair; the item and step counts are otherwise unchanged.
 >
-> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* **Search for the quoted `STEP` label.**
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `STEP` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
 > 🔴 **THE STEPS ARE NOT IN ORDER IN THE FILE.** *Physical order is:* `STEP 0-T16` → `0` → `0a` →
 > `0b` → `0d` → `1`–`7` → **`0c`** → `8+` → `8` → `9` → `10` → `11` → `12` → `13`. ***`STEP 0c` sits
