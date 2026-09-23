@@ -202,6 +202,23 @@ transcript. Where a table was altered later, the change is noted with its transc
 > |---|---|
 > | `final_hp` **"11 GB … 38.1M rows"** | 🔴 **`9,391 MB` · `19,215,200` rows** *(exact count)* |
 > | `board_outcomes` `1,366 MB` | 🔴 **`2,151 MB`** — grown `57%` |
+>
+> > ### 🔑 **§T23.20 — `board_outcomes`' EMPTY `bookmaker` COLUMN IS A DESIGN PROPERTY, NOT A BUG** *(`T23`, `2026-09-21`, recorded `2026-09-23`)*
+> > *The corpus records the symptom — **`6,905,452` rows, `bookmaker` populated on ZERO, `snapshot_label` at zero distinct values.** `T23` supplies the reason:*
+> > > ***"`board_outcomes` records no bookmaker, because outcomes are GRADED ONCE PER PLAYER, LINE
+> > > AND SIDE FOR EVERY APP."***
+> > ⇒ 🔑 ***An outcome is a fact about the world, not about the app that offered it.*** *Grading
+> > "LeBron over `24.5` points" once and reusing it across PrizePicks, Underdog, Sleeper and Fliff is
+> > correct and cheaper; **populating `bookmaker` would mean grading the same event four times.***
+> >
+> > 🔴 **AND IT COST A REAL BUG, CAUGHT ONLY BY A LIVE RUN**: *a PrizePicks filter on
+> > `board_outcomes.bookmaker` **excluded every result** — the join returned nothing, silently.* **With
+> > the filter removed, all `5,619` legs that day joined their outcome** *(`5,599` carried a price; the
+> > `20` that did not are legs whose `kind` is unknown)*.
+> > ⇒ ⚠⚠ ***The right way to read a NULL column is to ask whether it was ever meant to be filled.***
+> > **Recorded here so the next reader treats it as a join rule rather than a backfill task** — *and
+> > the open defect stands unchanged: the graded surface still cannot name the app, which matters
+> > wherever apps disagree on a line.*
 > | `board_tiers` `362 MB` | **`459 MB`** · `2,199,354` rows |
 > | `rung_market` `206 MB` | **`253 MB`** · `1,057,765` rows |
 > | `board_snapshots` `6,604 MB` | ✅ **`6,604 MB`** — unchanged *(no NBA board row since `2026-04-12`)* |
