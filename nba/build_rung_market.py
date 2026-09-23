@@ -85,13 +85,17 @@ def main():
         if cur.execute(f"SELECT to_regclass('{INDEX_NAME}')").fetchone()[0] is None:
             cur.execute(INDEX_DDL)
     total = 0
-    # SEASON ROLLOVER (fixed 2026-09-23, same class as T23-2 and found the same way). RUNG_TO used to
-    # default to "2026-04" - last season's final month - and P3 passes NO range, so from the first
-    # 2026-27 slate this loop would have covered only past months and built no rung market for today's
-    # board at all: silently, with nothing red, on the decision path. The floor stays 2024-10 (the
-    # archive's first month); the ceiling is now the current month. months() is end-inclusive.
-    rung_to = os.environ.get("RUNG_TO") or date.today().strftime("%Y-%m")
-    for d0, d1 in months(os.environ.get("RUNG_FROM", "2024-10"), rung_to):
+    # SCOPE (2026-09-23). This loop used to run from 2024-10 to the end of the range on EVERY run,
+    # deleting and re-inserting each month - ~24 months of rung market rebuilt at the 1:15 PM cutoff,
+    # on P3's critical path, to add one day's rows. Default is now the CURRENT MONTH only, which is the
+    # only month a slate can land in. Backfills pass RUNG_FROM / RUNG_TO explicitly and are unchanged.
+    # (The ceiling also used to be a hardcoded "2026-04", so from 2026-27 it covered only past months
+    # and built nothing for today - same class as T23-2.) months() is end-inclusive.
+    this_month = date.today().strftime("%Y-%m")
+    rung_from = os.environ.get("RUNG_FROM") or this_month
+    rung_to = os.environ.get("RUNG_TO") or this_month
+    print(f"rung market months: {rung_from} .. {rung_to}", flush=True)
+    for d0, d1 in months(rung_from, rung_to):
         with conn.cursor() as cur:
             cur.execute(DELETE_BLOCK, {"d0": d0, "d1": d1})
             cur.execute(BLOCK, {"d0": d0, "d1": d1})
