@@ -15222,6 +15222,59 @@ crons where crons exist.* ✅✅ **The corpus already said so in five places and
 their drift.** ✅ **Corrected in-pass.** 📌 ***A negation is easy to search for; a presupposition is
 not — which is why five documents agreeing did not protect the sixth.***
 
+### 🔴🔴🔴 EVIDENCE UPGRADE — **2026-09-23, §F1.2** — *sub-question (b) is answered on the WRITE side, and the answer redirects remedy (a)*
+
+**This block asked, above:** *"Whether anything still ticks this table is **NOT RECORDED** —
+`nba_control.job_runs` is empty, so the database cannot answer it."* **It can be answered from the
+other end: not by asking what fired, but by asking what was written.**
+
+🔴 **`[LIVE-AUDIT]` 2026-09-23 — the four MLB-era `market.*` board tables all carry a write from
+TODAY, inside a seven-minute window:**
+
+| table | `count(*)` | `max(updated_at)` |
+|---|---|---|
+| `market.underdog_board_current` | 869 | **2026-09-23 00:04:21Z** |
+| `market.sleeper_board_current` | 1,903 | **2026-09-23 00:04:11Z** |
+| 🔴 **`market.prizepicks_board_current`** | **5,756**, **100% `league='mlb'`** | **2026-09-23 00:07:59Z** |
+| `market.parsing_tally_current` | 1,379 | **2026-09-23 00:10:59Z** |
+
+***The MLB board pipeline is not dormant. It executed last night and it wrote to the production
+database 28 days after the sport was decommissioned.*** **This is the write-side confirmation that
+`T20-3` ③ could only presume** — ③ called the unwanted-work direction *"recoverable"*; it is now
+**observed**, not inferred.
+
+🔴🔴 **AND IT IS NOT ON THE SCHEDULER THIS ITEM NAMES — WHICH BREAKS REMEDY (a).**
+*The two enabled `config.scheduled_jobs` rows are `postgres-full-run` **daily 06:00 PT** (13:00/14:00
+UTC) and `static-full-run` **Mon 02:00 PT**. 2026-09-22 was a **Tuesday**. Neither can produce a
+00:04–00:11 UTC write.* **The live MLB cadence comes from GitHub Actions instead** — `.github/`
+`workflows/scrape.yml`, **`name: MLB Automatic Scraper`**, **`- cron: '0 */2 * * *'`**, **12
+runs/day, unconditional**, its own comment dating it *"PREVENTION FIX 2026-08-06"* — **added six days
+before the 2026-08-12 MLB decommission and never removed** *(full cron table and criterion analysis:
+`NBA_DATABASE.md`, §F1.2 correction block)*.
+
+⇒ 🔑 ***Disabling or deleting the two `config.scheduled_jobs` rows would not stop the MLB work.***
+**Remedy (a) as written is aimed at the wrong scheduler.** *(a) remains worth doing — two enabled
+rows for a dead sport are a hazard either way — but it is **not** the fix for the unwanted work, and
+the item previously implied it was.*
+
+⚠⚠ **RULE 54 — stated as a constraint, not a footnote.** The writes are VERIFIED and the cron is
+VERIFIED, but **the link between them is NOT RECORDED.** `scrape.yml` commits board JSON to `main`;
+the database write may come from a separate ingestion path. All three board workflows also carry
+`workflow_dispatch:`, and `scrape.yml` carries `repository_dispatch: [alphadog_prizepicks_board]`.
+The observed minutes (`:04`, `:04`, `:07`, `:10`) do **not** line up cleanly with the crons' minutes
+(`:00`, `:15`, `:25`), which is consistent with Actions queue lag **and equally consistent with a
+dispatch**. **So this pass proves the MLB pipeline RAN; it does not prove WHAT RAN IT.** ***The
+conclusions above are written to survive either answer*** — under both, remedy (a) is aimed at a
+scheduler that the observed times exclude.
+
+▶ **(e) ADDED by this pass:** decide whether `scrape.yml`'s unconditional `0 */2 * * *` backstop
+should be disabled, and whether `SLEEPER_SPORTS` / `UNDERDOG_SPORTS` should drop `mlb`/`MLB` from
+their defaults — **before the opener, when the same 2-hour cadence becomes load the NBA pipeline
+competes with.** ⚠ **This sweep changed nothing and triggered nothing; read-only `SELECT` and repo
+reads only.**
+
+---
+
 🔴 **OWNER DECISION — 28 days to the opener:** **(a)** disable or delete the two enabled MLB
 schedules · **(b)** confirm whether anything still ticks `config.scheduled_jobs` at all, which
 decides whether (a) is urgent or cosmetic · **(c)** decide whether P3 gets a `schedule:` block before
