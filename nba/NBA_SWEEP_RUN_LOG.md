@@ -2490,6 +2490,72 @@ spirit is the owner's to judge, and the shortfall is named above rather than bur
 > is lifted — at which point the right move is one independent reader on `T19` segs `58`–`59`'s
 > neighbourhood, the only place the corpus has ever had a genuine gap.*
 
+> ### 🔴🔴🔴 **§F7.14 — THE CENSUS STAMP FAILED AGAIN, EXACTLY AS THE OWNER SAID IT WOULD. THE NUMBER IS REPLACED BY THE RECIPE.**
+>
+> *`2026-09-23`, the findability re-verification. **This is the owner's correction landing a second
+> time, and the second time is the one that settles it.***
+>
+> #### 1 · The correction, and what it predicted
+>
+> > 🔑 ***"Your census stamp publishes figures that were already wrong when you wrote them — bytes
+> > matched in `1` of `11` files, lines in `0` of `6`. Sections were exact `12` of `12`. **Publish only
+> > figures that stay true, or that carry their own date and a one-line recipe to re-derive them.
+> > Never publish a number the next commit invalidates.**"***
+>
+> **`§F7.5` answered that halfway.** *It demoted `bytes` and `lines` to "approximate and dated, never
+> quote them as evidence" — correct — and then **promoted the survivor**: `` ***`sections` is
+> authoritative and was re-derived at this date*** ``, stamped **`sections exact 12 of 12`**.
+>
+> 🔴 ***That was a number the next commit invalidated, and the next ninety commits did.***
+>
+> #### 2 · Measured, `2026-09-23`, after `T21`–`T24` and the `§F7.11` split
+>
+> | file | live | stamped | drift |
+> |---|---|---|---|
+> | `NBA_MASTER_SUMMARY.md` | `2,883` | `1,703` | 🔴 **`+1,180`** |
+> | `NBA_FINAL_SCORING_CALIBRATION.md` | `274` | `253` | **`+21`** |
+> | `NBA_GOBLIN_DEMON.md` | `113` | `99` | **`+14`** |
+> | `NBA_MULTIPLIERS.md` | `150` | `137` | **`+13`** |
+> | `NBA_DATABASE.md` | `148` | `136` | **`+12`** |
+> | `NBA_SYSTEM_DESIGN.md` · `NBA_SYSTEM_ARCHITECTURE.md` | `171` · `136` | `169` · `134` | **`+2`** each |
+> | `NBA_GLOSSARY.md` · `NBA_RECIPE.md` · `NBA_WORKERS.md` · `NBA_BASELINE_CALIBRATION.md` | — | — | ✅ **`0`** |
+> | `NBA_OPEN_ITEMS.md` | `945` | **unparseable** — *carries no `` `N` sections `` chain at all* | — |
+>
+> ⇒ 🔴 ***`sections` exact `4` of `11`, not `12` of `12`. Total absolute drift `1,244` sections.***
+> **The stamp's own headline claim is the staleest figure on the page.**
+>
+> #### 3 · The repair — the resolver, not the re-stamp
+>
+> **Re-stamping twelve numbers was the obvious move and it is the WRONG one**, because it reproduces
+> the exact defect the owner named: *the thirteenth commit invalidates it again, and the stamp goes on
+> asserting `12 of 12` to every reader in between.* **A number that must be maintained by hand is a
+> number that will be wrong.** ⇒ ***The published count is replaced by a command that regenerates it.***
+> *This is `§T22.29`'s `RE-DERIVE, DO NOT QUOTE` applied to the structure that taught the lesson, and
+> it is the owner's second standing instruction —* **"when a repair risks losing a finding, build the
+> resolver instead"** *— in its cheapest form: one line, no content touched.*
+>
+> ```bash
+> # the section count of any of the twelve, at any commit, forever:
+> grep -cE '^(> *)*#{1,6} ' nba/<FILE>.md
+> ```
+>
+> 🔑 **The `(> *)*` prefix is not optional and is the whole reason the original census was wrong**:
+> a detector anchored at `^#` is **blind to blockquoted headings**, which is `294` headings across the
+> twelve, **`6.0%`**, *(`§F2.14`)*. **The recipe above was verified to reproduce the Python
+> derivation exactly on `NBA_GLOSSARY.md` (`47`), `NBA_SYSTEM_DESIGN.md` (`171`) and
+> `NBA_MASTER_SUMMARY.md` (`2,883`) before it was published.** *(`RULE 57` — a derivation is not
+> recorded until it has been RUN on every row it claims.)*
+>
+> #### 4 · 🔑 **THE RULE THIS EARNS — `RULE 59`**
+>
+> > 🔴🔴🔴 ***A SELF-DESCRIBING FIGURE — a file's count of its own sections, bytes or lines — IS
+> > NEVER PUBLISHED AS A VALUE. IT IS PUBLISHED AS THE COMMAND THAT DERIVES IT. If a number must be
+> > shown, it carries its date AND the command, and the command is RUN before it ships.***
+>
+> *Why it needs its own number rather than living inside `§F7.5`: **`§F7.5` is where the mistake was
+> made, and a reader who trusts `§F7.5` is exactly the reader who needs this.** `RULE 40` keeps the
+> old stamp legible; `RULE 59` stops it being believed.*
+
 ### 2 · The method — every segment accounted for, none skipped unmeasured
 
 **Two complete reads of each transcript, in two DIFFERENT ORDERS**, because order is what a single
