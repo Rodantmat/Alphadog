@@ -1280,6 +1280,31 @@ by roughly 6×.** *Recorded because the corpus quotes the +0.347 figure without 
 
 ### ✅ 3 · THE FACTOR VERDICT TABLE AS T15 LEAVES IT *(the 09-12/13 round — see §T15.2h on the date)*
 
+> 🔑 **THE CODE BEHIND THIS TABLE — added 2026-09-23, `§F5.5`.** *Every script below exists in the
+> repo today and was named in **`0` of the twelve** before this line. **A reader could not reach the
+> apparatus from the verdict.***
+>
+> | verdict in the table below | the script that produced it |
+> |---|---|
+> | **`A2`** teammate redistribution — SHIPPED | **`nba/fit_usage_allocation.py`** *("A2 USAGE ALLOCATION — FITTED, replacing the assumption")* |
+> | **`A2` rate response** — REJECTED | **`nba/fit_rate_response.py`** *("the second half of factor A2, and the end-to-end test that it helps")* |
+> | **`N1`** status resolution — MEASURED | **`nba/measure_n1_status_resolution.py`** *("MEASURED FROM OUR OWN ARCHIVE, at the 2:30 PM PT decision cutoff")* · **`nba/fit_n1_granular.py`** *("N1 v2 — GRANULAR P(plays \| Questionable) … not a flat 55%")* |
+> | **`B4` v1** vacated minutes — REJECTED | **`nba/fit_b4_opponent.py`** *("fitted and gated exactly like A2")* |
+> | **`B4` v2** defender-quality change — REJECTED | **`nba/fit_b4_defender_quality.py`** |
+> | **`B4` v3** RIM PROTECTION — COMMISSIONED, not tested in T15 | 🔑 **`nba/fit_b4_rim_protection.py` EXISTS** *("B4 SUB-CASE — BLOCKS-AGAINST VULNERABILITY")* — ⚠ **whether it was ever RUN is `NOT RECORDED`** |
+> | **`M1`** defender-quality LEVEL — NOT TESTED in T15 | 🔑 **`nba/fit_m1_defender_level.py` EXISTS** *("as a BASELINE-STAGE factor")*, and **`nba/retest_defender_factors.py`** *("M1 / B4 RE-TEST with PROPER defender ratings, and WITH INTERACTIONS")* — ⚠ **results `NOT RECORDED`** |
+>
+> 🔴🔴 ***The two rows this table marks "NOT TESTED" / "COMMISSIONED" both have a fitting script
+> sitting in the repo.*** **That does not mean they were tested** — a script can exist unrun — **but
+> it does mean the corpus's "not tested" was written without knowing the code was there.**
+> ⇒ **filed as `F5-1`.**
+>
+> *Nine further scripts in the same undocumented set test these factors end to end —
+> `test_a2_novelty.py`, `test_a2_window_information.py` ("the factor's TRUE value, not its upper
+> bound"), `test_factors_on_baseline.py` ("factors on top of the CERTIFIED BASELINE, not beside
+> it"), `test_funnel_leg_level.py`, the three `test_oreb_*` steps. **Full list and headers:
+> `NBA_WORKERS.md` `§F5.5`.***
+
 | Factor | Verdict in T15 | Population / information set | Figures |
 |---|---|---|---|
 | **A2** teammate redistribution *(minutes multiplier)* | ✅ **SHIPPED** | allocator fitted on roster state; **validated three ways** | conservation **0.9930**; allocator MAE **4.609** vs recent-5 **4.875**; OOS `p0` 4.830 / `p1` 4.733 / `p2` 4.753; **15 of 19 props improve**, gains scaling with minutes-dominance — pra **+0.347**, pts+reb +0.281, pts+ast +0.253, points +0.097 |
