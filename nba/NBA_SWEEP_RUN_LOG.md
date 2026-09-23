@@ -865,6 +865,79 @@ reliable failure as much as at the corpus's.**
   strongest available conclusion is "these N re-derivable count claims were re-derived, and M
   disagreed."*** **A floor.**
 
+---
+
+## §F2.11 — RESULT: **`8` of `8` re-derivable populations MATCH, and the only two errors this pass found were mine**
+
+**Run 2026-09-23T04:22Z, twelve pinned at commit `1513ea9e`** *(pinned before the run, per the
+pre-registered guard)*.
+
+### The pre-registered outputs
+
+| | |
+|---|---|
+| count claims extracted | **931** |
+| 🔴 **removed as EXTRACTOR false positives** | **128 · 13.8%** *(see below)* |
+| claims after the guard | **803** — dated `206` · undated `597` |
+| populations re-derivable from an authority this session can reach | **8** |
+| 🔴 **re-derived and MISMATCHED** | **`0`** |
+| ✅ **re-derived and MATCHING** | **`8`** |
+
+### ✅ The eight, each re-derived from its authority at a pinned moment
+
+| population | authority | live 2026-09-23 | corpus says | |
+|---|---|---|---|---|
+| `nba/*.md` files | repo listing | **32** | **32** ×22 | ✅ |
+| documents the coverage tool reads | `32` − the 2 excluded *(`NBA_SWEEP_RUN_LOG.md`, `PP_PAYOUT_FINDINGS.md`)* | **30** | **30** ×6 | ✅ |
+| mandated documents | the brief | **12** | **12** ×20 | ✅ |
+| `.github/workflows/*.yml` | repo listing | **40** | **40** ×14 | ✅ |
+| NBA schemas | `information_schema.schemata`, `nba_*` prefix | **14** *(of `31` non-system)* | **14** ×11 | ✅ |
+| base tables, all schemas | `pg_class` ⋈ `pg_namespace` | **368** | **368** | ✅ |
+| distinct props | `nba_score.baseline_history` **and** `nba_score.final_hp`, independently | **30** each | **30** ×46 | ✅ |
+| `nba_config.worker_definitions` | live `count(*)` | **21**, all enabled | **21** ×41 | ✅ |
+
+✅ **And the two DATED disagreements are the corpus behaving exactly as designed**: *"**39**
+workflows"* ×2 *(§T7.53b, 2026-09-21 — the directory has since gained `nba-pp-payout-map.yml`)* and
+*"**19** `worker_definitions`"* *(the 2026-09-04 checkpoint — the table has since grown to 21)*.
+**Both carry their date. Both are STALE-CORRECT, which is what a chronological corpus is FOR.**
+🔪 **Neither is a defect.**
+
+### 🔴🔴 The two errors this pass actually found, and both are mine
+
+**① THE EXTRACTOR INVENTED `128` CLAIMS — `13.8%` of its own output — by reading a digit out of a
+name.**
+*`P3 cron` parsed as **"3 crons"** — **all 17** "cron" claims, every one of them.* *`pass-53 rule`
+parsed as **"53 rules"** — **13 of 14**.* 🔑 ***The irony is exact: the `P3 cron` lines it
+misparsed are the corpus's own section CORRECTING the "P3 cron" error*** *(`T20-3` ④: P2 and P3
+have no `schedule:` block).* **Fixed with a `(?<![A-Za-z0-9_-])` guard and re-run; `931 → 803`.**
+📌 *Both counts published, because the pre-registration promised the raw one.*
+
+**② I CALLED *"all 30 documents"* STALE AGAINST A POPULATION OF `32`, AND `30` WAS RIGHT.**
+*The tree holds **32** `nba/*.md`; the coverage instrument excludes **two**; `32 − 2 = 30`.*
+**Confirmed independently: `judge_all.py`'s own `docs_in_30` returns `30`.** 🔑 ***My re-derivation
+used the wrong population definition — which is the same error as `§F2.3`'s `26`, in the opposite
+direction: there I under-counted the authority, here I over-counted it.***
+
+### 🔑 What this pass establishes, stated against its own expectation
+
+> **The pre-registration was aimed at the corpus. It hit me instead.** *Four enumeration failures
+> were on the board going in — two the corpus's, two mine. The audit adds **two more, both mine**,
+> and **zero** from the corpus. ⇒ **on re-derivable populations the twelve are `8` for `8`, and the
+> unreliable enumerator in this effort is the sweep, not the documents.***
+>
+> 📌 ***That is worth more than a defect would have been.*** *`§F2.3` named a working rule — "an
+> enumeration is wrong until re-derived from its authority." **This pass shows the expensive half of
+> it: the re-derivation is wrong too, unless its POPULATION DEFINITION is derived with the same
+> care as its count.*** *"30 documents" and "32 files" are both correct and differ by two, and
+> nothing but the exclusion list decides which is meant.*
+
+⚠⚠ **RULE 54, as pre-registered:** this is a regex over prose. **It cannot see enumerations written
+in words** *("both", "the pair", "a handful")*, it mis-parses counts inside quoted transcript text,
+and **`8` populations is a small sample of the `803` claims** — the other `795` are
+**UNVERIFIABLE-HERE**, which the pre-registration named as an honest third outcome and not a pass.
+***So the conclusion is "`8` re-derivable populations were re-derived and `8` agreed", never "the
+twelve's enumerations are correct."*** **A floor.**
+
 ▶ **STILL OWED: direction (a) is now run once over the whole band; direction (b) remains open on
 the `~12,686` substantive uncovered segments, which no single pass can close.**
 ▶ **RULE 46 UNCHANGED: `T19` and `T20` each owe two INDEPENDENT complete sequential reads from a
