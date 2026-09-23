@@ -41592,9 +41592,12 @@ files and bot commits, and the Postgres objects `nba_market.pp_price_key` · `pp
 - ✅ **`journal.txt` grew `11,596` → `14,284` bytes**: exactly **four new entries**, one per new file,
   each an authored abstract. *The pre-existing `133` lines are byte-identical — nothing was rewritten.*
   **The old copy is preserved before overwrite** so the delta stays checkable.
-- ✅ **`RULE 46` still binds**: `T19` and `T20` each still owe **two INDEPENDENT complete sequential
+- ~~✅ **`RULE 46` still binds**: `T19` and `T20` each still owe **two INDEPENDENT complete sequential
   reads from a fresh context**, and **T20 cannot close in this session.** *Four new transcripts do not
-  discharge that debt — they add to it.*
+  discharge that debt — they add to it.*~~ ✅✅ **SUPERSEDED `2026-09-23` — `RULE 46` IS CLOSED**
+  *(`§F7.1` discharged the reads; **`§F7.13`** closed the item on the owner's ruling, with three BLIND
+  mid-file re-derivations, `27`/`27` clean).* ⚠ *Struck, not deleted — this line was TRUE when written
+  and `RULE 40` keeps it legible. **Do not re-open `RULE 46` from this row.***
 - ✅ **The coverage instrument is unchanged and its baseline is unchanged** *(`636 · 2 · 484 · 481`)*.
   ⚠ **But `judge20.py` scores against `T20`'s text only.** *Extending it to T21–T24 is a tooling
   change, pre-registered for the next pass rather than made silently mid-intake.*
