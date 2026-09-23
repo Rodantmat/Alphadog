@@ -82,8 +82,16 @@ def main():
     conn.execute("SET statement_timeout = 0")
     with conn.cursor() as cur:
         cur.execute(DDL)
+        if cur.execute(f"SELECT to_regclass('{INDEX_NAME}')").fetchone()[0] is None:
+            cur.execute(INDEX_DDL)
     total = 0
-    for d0, d1 in months(os.environ.get("RUNG_FROM", "2024-10"), os.environ.get("RUNG_TO", "2026-04")):
+    # SEASON ROLLOVER (fixed 2026-09-23, same class as T23-2 and found the same way). RUNG_TO used to
+    # default to "2026-04" - last season's final month - and P3 passes NO range, so from the first
+    # 2026-27 slate this loop would have covered only past months and built no rung market for today's
+    # board at all: silently, with nothing red, on the decision path. The floor stays 2024-10 (the
+    # archive's first month); the ceiling is now the current month. months() is end-inclusive.
+    rung_to = os.environ.get("RUNG_TO") or date.today().strftime("%Y-%m")
+    for d0, d1 in months(os.environ.get("RUNG_FROM", "2024-10"), rung_to):
         with conn.cursor() as cur:
             cur.execute(DELETE_BLOCK, {"d0": d0, "d1": d1})
             cur.execute(BLOCK, {"d0": d0, "d1": d1})
