@@ -14246,6 +14246,37 @@ and triggered nothing.**
 
 ## T20-6 · **NEW · 🔴🔴🔴 SEASON-CRITICAL · THE LARGEST STRUCTURAL FINDING OF THE SWEEP** · 7 of 12 certifier checks assert tables no pipeline writes
 
+> ## 🔴🔴🔴 AMENDMENT — **THE CONSEQUENCE, WALKED STEP BY STEP** *(T20 pass 129, §T20.134, 2026-09-23)*
+> *No new item: the structure is this item's. **What is added is what it DOES on `2026-10-20`, and a
+> measured control** — plus a correction to two entries that predicted the wrong day.*
+>
+> | | |
+> |---|---|
+> | 🔴 **`P2`** | runs all **19** steps, then **FAILS at step 19 of 19** — `baseline_history has today` on a table **step 15 did not write** *(step 15 writes `nba_score.baseline_ladder`)*. `CERT_STRICT` defaults to `1` ⇒ `sys.exit(1)`. |
+> | 🔴🔴🔴 **`P3`** | **no-ops silently at step 8** *(availability delta — `DELTA_SEASON` unset, script default `"2025-26"`, empty result, `return`, exit 0)* and **DIES at step 9 of 11**: `ABORT: no baseline ladder for 2026-10-20 - P2 must run before P3.` ⇒ **`SystemExit(1)`. ZERO legs scored. Steps 10–11 never run**, so `P3`'s own certifier — the thing that would make this legible — is never reached. |
+> | 🔑🔑 **and there is NO sequence of pipeline re-runs that clears it** | both messages blame `P2`; `P2` fails for the same reason; **the table both complaints name is written by none of the three pipelines.** |
+>
+> ### ✅✅ THE CONTROL — *`325 = 325`, `0` and `0`* *(live, `2026-09-23T01:19:44Z`)*
+> `nba_score.board_scored` and `nba_score.baseline_history` cover **the same 325 dates**, with **`0`
+> scored-without-history and `0` history-without-scored**, both spanning `2024-10-22 → 2026-04-12`.
+> ⇒ ***The scorer's output set has never differed from the hand-backfilled table's date set in 325
+> opportunities.*** **So every date of 2026-27 is outside the scorable set today — a permanent
+> condition, not a rollover one.**
+>
+> 🔴 **AND THE SEASON CONSTANTS ARE NOT THE FIX.** `BS_SEASON` / `DELTA_SEASON` resolving to
+> `"2025-26"` is a real defect and stays on **`T20-4`** — **but correcting them to `2026-27` leaves
+> this abort exactly where it is**, because the `game_date` predicate already matches nothing.
+> *`§T20.117` and `§T20.127` both named the constant as the opening-night cause; both corrected at
+> source by §T20.134.*
+>
+> 🔴 **OWNER DECISION, unchanged in shape and now dated:** either **(a)** run
+> `nba-baseline-history.yml` for `2026-27` by hand before opening night *(it is `workflow_dispatch:`
+> only and takes `season` as a typed input)*, or **(b)** decide this item's standing question — make
+> `P2` invoke `load_baseline_history.py`, **or** re-point the scorer and the assertion at
+> `baseline_ladder`, which is what `P2` actually builds. ***The two are not equivalent and only you
+> know which was intended.*** 📌 **Full table: `NBA_RECIPE.md` `STEP 13`.**
+> ⚠ **This sweep changed nothing and triggered nothing.**
+
 > ## ⚠⚠ AMENDMENT — **THE THRESHOLDS, MEASURED (T20 pass 46, §T20.51, 2026-09-22)**
 > *No new item was opened: the STRUCTURE was already on file here and at `NBA_WORKERS.md:2065`
 > (**"A P3 run that scores ONE leg passes all five checks"**). **What was never measured is what the
