@@ -1308,6 +1308,38 @@ the ancestor of the A/B/D/M/N factor codes used in T15–T16 and of
 🔴 **Source**: the **`routine`** label is the **live 2-hour board crons** (`sleeper-board.yml`,
 `underdog-board.yml`, `fliff-board.yml`), which ran in **mid-September — not NBA season**:
 
+> 🔴 **CORRECTED 2026-09-23, §F1.2 — THE ENUMERATION ABOVE IS INCOMPLETE. THERE IS A FOURTH LIVE
+> 2-HOUR BOARD CRON AND IT IS MLB-ONLY.**
+> *Re-derived from the authority (rule 21, repo read 2026-09-23): `.github/workflows/` holds **40**
+> files. Four carry a two-hour board cron, staggered:*
+>
+> | workflow | `name:` | cron | sport default |
+> |---|---|---|---|
+> | 🔴 **`scrape.yml`** | **`MLB Automatic Scraper`** | **`0 */2 * * *`** | **MLB only** — step *"Produce PrizePicks MLB JSON"* |
+> | `sleeper-board.yml` | `Sleeper Board Scraper` | `15 */2 * * *` | `SLEEPER_SPORTS` default **`mlb,nba`** |
+> | `underdog-board.yml` | `Underdog Board Scraper` | `25 */2 * * *` | `UNDERDOG_SPORTS` default **`MLB,NBA`** |
+> | `fliff-board.yml` | *(per §T7.53b)* | `35 */2 * * *` | *(not re-read this pass)* |
+>
+> **The sentence above, and `NBA_MASTER_SUMMARY.md` §T7.53b's scheduled-workflow table, both omit
+> `scrape.yml`.** ✅ **§T7.53b's omission is CORRECT BY ITS OWN STATED CRITERION** — that table
+> enumerates *"seven scheduled ones **touch `nba/`**"*, and `scrape.yml` runs `python main.py` at the
+> repo root. 🔴 **The sentence above carries no criterion**: it names *"the live 2-hour board crons"*
+> unqualified, and a fourth one exists. 📌 ***An enumeration with a criterion survived; the same
+> enumeration with the criterion dropped did not. The defect is the dropped qualifier, not the
+> original count.***
+>
+> ⚠ **`scrape.yml`'s cron is deliberate and dated.** Its own comment: *"PREVENTION FIX 2026-08-06:
+> added after a real incident where the board went stale … Runs every 2 hours regardless of whether
+> anything else in the pipeline is calling it."* **It was added six days BEFORE the 2026-08-12 MLB
+> decommission this corpus records, and it survived it.** **12 runs/day, unconditional.**
+>
+> ⚠⚠ **RULE 54 — the limit of this evidence.** The cron is VERIFIED off the repo. What is **NOT
+> RECORDED** is whether `scrape.yml` is what wrote any particular row: it commits board JSON to
+> `main`, and the database write may come from a separate ingestion path. All three workflows also
+> carry `workflow_dispatch:` and `scrape.yml` carries `repository_dispatch:`, so a write cannot be
+> attributed to the cron from the table alone — and `nba_control.job_runs` is empty (`T20-3` ②), so
+> the database cannot attribute it either. **The cadence is proven; the attribution is not.**
+
 | bookmaker | `routine` rows | **NBA-shaped `market_key`s** |
 |---|---|---|
 | `underdog` | 5,281 | **189 (3.6%)** |
