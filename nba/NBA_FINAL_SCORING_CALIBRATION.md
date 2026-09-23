@@ -1908,15 +1908,26 @@ is genuinely forecastable from role"*:
 🔑 ***"weighting slips toward VOLUME would be weighting toward the LEAST EDGE."*** ⚠ **This is a slip-
 construction constraint, and it points the opposite way from board depth.**
 
-> ### 🔑 **§F6.21 — THE RULE THAT PRODUCED THE THREE PENALTIES, which the twelve did not carry**
+> ### 🔴 **§F6.21 — A DERIVED PENALTY THAT DOES NOT DERIVE — and `§F2.3`'s lesson, repeated by me and caught**
 >
-> *Added `2026-09-23`. Source: **LIVE** `nba_config.classification_config`,
-> `config_key = 'prop_reliability_audit_2026_09_13'`. **The three penalty values above — `oreb −0.1`,
-> `fantasy_score −0.3`, `double_double −0.4` — are recorded in this document. The formula that
-> yields them is in `0` of the twelve.** `RULE 55`.*
+> *Added `2026-09-23`. Source: **LIVE** `nba_config.classification_config`, rows
+> `prop_reliability_audit_2026_09_13` and `prop_confidence_policy`.*
+>
+> ⚠⚠ **THIS SECTION AS FIRST WRITTEN CLAIMED THE PENALTY RULE WAS "in `0` of the twelve". IT IS NOT
+> — IT IS FOUR PARAGRAPHS ABOVE THIS ONE.** *`§6` already states it: "**the penalty is the amount
+> the prop's volume-weighted ECE trails the certified median (`0.20 pp`)**", records **both** the
+> harsh and the revised oreb rules in a two-row table, and `§7` already carries "ten props, a third
+> of the table, had NO verdict at all". 🔑 ***I probed with the config row's own wording —
+> `penalty_pp`, `n-weighted ECE`, `median ECE`, `revised_engine_rules` — all of which return `0`,
+> because the corpus writes the same facts in English.*** **That is `§F2.3`'s failure exactly: test
+> the CONCEPT, not your chosen spelling.** *Corrected in place within the hour; what follows is what
+> actually survives the correction.*
 >
 > > ***"`penalty_pp` = the prop's n-weighted ECE minus the median ECE of the certified set
 > > (`0.20 pp`). **Derived, never declared.**"*** — `penalty_rule`, `VERBATIM`
+> > *(and `prop_confidence_policy` states the median independently: `certified_median_ECE_pp: 0.20`)*
+>
+> 🔑 **RUN IT ON ALL THREE ROWS — which is the thing neither the config row nor `§6` above does:**
 >
 > | prop | `n` | ECE pp | `ECE − 0.20` | published `penalty_pp` | reproduces? |
 > |---|---|---|---|---|---|
