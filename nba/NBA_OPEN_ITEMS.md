@@ -14040,6 +14040,53 @@ dates *(worst observed 5,699 — a 12% margin, which is thin and is said to be t
 
 ---
 
+## F2-1 · **NEW · 🔴🔴🔴 SECURITY · OWNER DECISION · ROTATE THE `balldontlie` API KEY**
+
+*Filed 2026-09-23, `§F2.12`. **Read-only throughout: no key was used, tested or called.** The value
+is not reproduced in this item, in any of the twelve, or anywhere in the corpus.*
+
+🔴🔴🔴 **A live `balldontlie.io` API key was published in `NBA_MASTER_SUMMARY.md` in a PUBLIC
+repository, in full, labelled *"(balldontlie key)"*.**
+
+**How it got there is the part that matters.** *`§T1.31` — the pass whose whole job was **"a sweep
+for every hex string, numeric ID and UUID"** — found the key, **wrote the key itself into its
+evidence table**, marked it *"Already in `T1.5`"*, and declared **`CLEAN 1 of 3`**.
+🔑 ***"We have documented this before" is the correct clearance for a commit SHA and the leak itself
+for a credential**, and the table applied one test to both.*
+
+### What this sweep did, and what it cannot do
+
+| | |
+|---|---|
+| ✅ **Redacted** | the single site, `NBA_MASTER_SUMMARY.md:1436`, 2026-09-23 |
+| ✅ **Verified confined** | fingerprint search over **every file in the working tree** (`.git` excluded): **`0` remaining sites**; and `T1.5`, the row's own "already in" target, never carried the value |
+| ✅ **Verified scope** | a second live key seen in `T11` *(a different provider)* was checked against the repo and its **entire history**: **`0` hits, never committed** |
+| 🔴 **CANNOT undo** | **`git log -S` finds the value in `2` commits. The repository is PUBLIC. A pushed secret is disclosed permanently, and deleting it from `HEAD` does not retract it.** |
+
+### 🔴 OWNER DECISION — what only the owner can do
+
+1. 🔴🔴 **ROTATE the `balldontlie.io` key.** *Assume it is compromised: treat the disclosure window
+   as beginning at the commit that introduced it.*
+2. **Update `nba_config.external_credentials`** with the new value *(that table is the documented
+   home for it, and the corpus records its location — correctly — without its value)*.
+3. **Decide whether to purge history** *(`filter-repo` / BFG and a force-push)*. ⚠ *Rewriting
+   history breaks every existing clone and every commit SHA this corpus cites — and this corpus
+   cites many. **Rotation makes the leaked value worthless and costs nothing; purging is optional
+   cleanup after rotation, never a substitute for it.***
+4. **Read beside `T21-1`**, which already recommends **rotating regardless** as the precondition for
+   its reference-not-copy directive. **`F2-1` is the concrete instance that directive was about, and
+   it turns `T21-1`'s "rotate regardless" from prudent into required.**
+
+⚠ **`NOT RECORDED`: whether the key was ever rotated after the original commit, and whether the
+`balldontlie` integration is still in use at all.** *If the integration is dead, disabling the key
+is simpler than rotating it — but that is the owner's call and this sweep did not test the key.*
+
+📌 ***Found only because `§F2.12` scanned for credential SHAPES rather than for known strings.***
+*`sweep_coverage.py`'s own docstring records that the `T1` judgment pass caught **a** quoted
+credential; this instance survived that catch, in the very pass named `IDs, hashes, commit SHAs`.*
+
+---
+
 ## T10-F1 · **NEW · MEDIUM** · three commissioned enrichment factors appear NOWHERE in the twelve, and nothing records whether they were dropped
 
 *Filed 2026-09-23 by the full transcript re-sweep (`§F2.2`). **This is a TRANSFER gap, not a
