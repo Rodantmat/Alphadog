@@ -8,6 +8,82 @@ ladders, tier signs, and the taxonomy change that made v1 obsolete.
 `nba_market.board_tiers` (v1, 2.2M legs) uses a **two-way** taxonomy that was correct when built and
 is now wrong. `nba/build_board_tiers_v2.py` implements the four-way rule; **not yet verified**.
 
+---
+
+> # 📑 **INDEX — `NBA_GOBLIN_DEMON.md`**
+> **`82` sections · `83,003` bytes · `1,344` lines · built `2026-09-23`.**
+>
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> rotted within a day)*. **Search for the quoted `§` label.**
+> 🔴🔴 **THIS FILE'S SECTION NUMBERING IS BROKEN — USE THIS INDEX, NOT THE NUMBERS.** *Measured
+> `2026-09-23`: **`§4` appears TWICE*** *("why v1 is now wrong" and "the ladder config")*, ***`§6`
+> appears TWICE*** *("ingestion" and "the research standard")*, and ***"OPEN ITEMS SPECIFIC TO THIS
+> LAYER" appears TWICE, as `§12` and as `§9`***. **The `§5` block runs `5.0d`, `5.0c`, `5.0b`, `5` —
+> backwards.** ⚠ *Same defect class as `§T20.6`'s finding on `NBA_FINAL_SCORING_CALIBRATION.md`.
+> **Documented, not renumbered — renumbering would break every inbound pointer** *(rule 1)*.
+>
+> ## ▶ FIND IT FAST — *by the question you arrived with*
+>
+> | if you need… | go to |
+> |---|---|
+> | 🔴🔴 **which tiers ACTUALLY PAY** — realized value per segment, both seasons | **`§0i-T24` §2** |
+> | 🔑 **the breakeven bars** — *a standard needs `1.10`, an alternate needs `~1.14`* | **`§0i-T24` §1** |
+> | ✅ **what happens to a slip when a leg VOIDS** *(`"a void is never a refund"`)* | **`§0j-T24`** |
+> | 🔴 **the More-goblin payout floor** *(`1.9×`, not `2.08×` — verified live)* | **`§0g`** |
+> | 🔑 **how the four-way taxonomy works** — the rule, the anchor, the tier sign | **`§1`** · **`§2`** · **`§3`** |
+> | 🔴 **why `board_tiers` v1 is wrong** | **`§4` (the FIRST one — "the taxonomy change")** |
+> | 🔑 **the Flex consolation tier** and what drives it | **`§0h-T22`** |
+> | ⚠ **the tier-B selection bias** *(read before trusting the rescue population)* | **`§0h-T22` §5** |
+> | 🔑 **the labels are encoded in the price** *(measured on `191,690` rows)* | **`§0h`** |
+> | 🔑 **the owner's own statement of the rule** | **`§0f`** |
+> | 🔴 **the ladder must not elect a variation** | **`§0e-T16`** |
+> | ⚠ **the structural mispricing — real, measured, never exploited** | **`§5.0b`** |
+> | ⚠ **the grader dedup key** *(highest-risk item for this layer)* | **`§13`** |
+> | 🔴 **what is still open** | **`§9` AND `§12` — *both are "open items"*** |
+>
+> ## 📋 EVERY SECTION, IN LOGICAL ORDER
+>
+> ### 🟢 **A · CURRENT STATE — the `T22`/`T24` layer**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0i-T24`** | 🔴🔴 **THE LEG EDGE MAP.** The bars *(`1.10` standard vs **`~1.14` alternate`** — a distinction this corpus had never drawn)* *(§1)* · 🔴 **the table: real standards carry edge; `73,495` real demon legs return `1.060`/`1.018` and FAIL** *(§2)* · 🔴 the model claims `1.36–1.63` everywhere *(§3)* · slip-level overconfidence, claimed `2.334` vs realized `1.158` *(§4)* | 🔴 |
+> | **`0j-T24`** | ✅✅ **VOID / PUSH REVERSION, verified `79` of `79`.** 🔑 ***"A void is never a refund"*** · mixed slips settle on the `r` **LOWEST**-factor legs *(`99.5%`/`96.6%`/`91.3%` within one step; keep-highest matches `0–20%`)* · **grading by keep-lowest is conservative by construction** | ✅ |
+> | **`0h-T22`** | 🔑 **THE FLEX CONSOLATION TIER.** Two bands solved *(`<2.5×`→`0.25` at `37/38`; `2.5–5×`→`0.5` at `69/69`)*, the third **resolved later in the same transcript** *(§1 + the box)* · the giveback `0.83/0.69/0.57/0.46` *(§2)* · 🔴 **the tier is not a function of the payout** *(§3)* · ✅✅ **a hypothesis that failed AND could not have succeeded** *(§4)* · ⚠⚠ **tier-B selection bias, `5,652` candidates** *(§5)* · Flex confirmed out of sample *(§6)* | 🔑 |
+> | **`0g`** | 🔴 **The More-goblin floor is `1.9×`, not `2.08×`** — owner-supplied, **verified live**, with the `pp_slip_rules` row and the pricing model pinned. *Includes: **what needed retracting in this corpus — nothing**.* | 🔴 |
+> | **`0h`** | 🔑🔑 **The labels are ENCODED IN THE PRICE** — measured on `183,777` rows, re-taken live on `191,690` | 🔑 |
+>
+> ### 📕 **B · THE TAXONOMY AND ITS CORRECTION (`T13`, `T7`, `T16`)**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`0e-T16`** | 🔴 **The ladder must not elect a variation** — every leg, every variation, every direction gets a full ladder | 🔴 |
+> | **`0e-T16-B`** | 🔴 **The goblin ladder's slope error**, and the first measured sign the alternate board is wider than believed | 🔴 |
+> | **`0e-T16-C`** | ✅✅ **The cleanest sanity check in the system** — the final engine's tier behaviour is MONOTONE across all seven tiers | ✅ |
+> | **`0f`** | 🔑 **The owner's own statement of the rule** — and the four parts the twelve did not carry | 🔑 |
+> | **`1`** · **`2`** · **`3`** | **THE RULE** · **THE ANCHOR — two cases** *(incl. the invisible anchor / switch point)* · **THE TIER SIGN** | |
+> | **`4`** ① | 🔴 **WHY v1 IS NOW WRONG — the taxonomy change** ⚠ *first of two sections numbered `4`* | 🔴 |
+> | **`4`** ② | **THE LADDER CONFIG** — `nba_config.classification_config.ladder` ⚠ *second `4`* | |
+> | **`7`** | **LADDER DEPTH — measured against the real board** | |
+> | **`10`** | **What `T1` PREDICTED about goblin/demon — and it was right** | ✅ |
+>
+> ### 📗 **C · ECONOMICS, INGESTION AND STANDARDS**
+> | § | what it covers | 🚩 |
+> |---|---|---|
+> | **`5.0d`** | **The pricing function's SHAPE** *(Part B of the lessons document — platform mechanics)* | |
+> | **`5.0c`** | **The durable pricing mechanics** *(lesson #24 — held across MLB's entire history)* | |
+> | **`5.0b`** | ⚠ **The structural mispricing — real, measured, and never exploited** | ⚠ |
+> | **`5`** | **THE ECONOMICS — measured** ⚠ *the `5.x` block runs `d`, `c`, `b`, then `5` — backwards* | |
+> | **`6`** ① | **INGESTION — where the data comes from** ⚠ *first of two `6`s* | |
+> | **`6`** ② | **THE RESEARCH STANDARD APPLIED TO THIS LAYER** ⚠ *second `6`* | |
+> | **`8`** | **TABLES** | |
+> | **`11`** | **The MLB reference document** | |
+> | **`12b`** | ⚠ **This taxonomy creates the subgroups blueprint `§7f` says a correction must be checked against** | ⚠ |
+> | **`13`** | ⚠ **THE GRADER DEDUP KEY — the highest-risk item for this layer** | ⚠ |
+> | **`9`** · **`12`** | 🔴 **OPEN ITEMS SPECIFIC TO THIS LAYER** ⚠⚠ ***two separate sections with the same title — read BOTH***; `§9` adds *"and why v2 is a CORRECTNESS issue"* | 🔴 |
+>
+> 📌 **HOW TO READ THIS FILE**: ***`A` is current, `B` is the taxonomy it rests on, `C` is the
+> supporting economics.*** **Where `A` and `B`/`C` disagree, `A` wins and the older section carries a
+> dated supersession in place** *(rule 40 — originals are never deleted)*.
+
 **Update log**
 | Date | What |
 |---|---|
