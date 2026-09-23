@@ -1549,6 +1549,89 @@ condition is now testable**. → `NBA_SYSTEM_DESIGN.md` §0.75.
 **N1 — availability model** · T15, T16 · Status resolution. **79% of Questionables are coin flips at
 the cutoff** because the Active List locks 60 minutes before tip.
 
+## O
+
+*Added `2026-09-23`, `§F7.4`. ⚠ **This bucket did not exist either.** `§Z` carried `29` `O` terms
+and the body ran `L–N` straight to `P–S`. Worse than J–K: the `P–S` bucket's **first entry was
+`operating model, the owner's`** — an `O` term filed under `P–S` because there was no `O` to file
+it in. It has been left where a reader's eye now finds it (directly below), and cross-pointed from
+here rather than moved: **`RULE 40` — a move is a delete plus an insert.***
+
+**`ot_rule`** · T1, T8, T9 · DB,GD,OPEN,SUM · The overtime convention a line is priced under — and
+the **seventh column of `nba_score.baseline_ladder`'s primary key** *(`asof, player_id, game_id,
+prop, period, ot_rule, line`)*. 🔴🔴 **SEASON-CRITICAL.** *The worker
+`alphadog-v2-nba-baseline-ladder.js:52` keys on all seven and upserts `ON CONFLICT … DO UPDATE`
+("dedupe on the PK, keep the last"). The loader `load_baseline_ladder.py` that `P2` actually runs
+builds its merge key from **six** — `ot_rule` omitted — and has no `ON CONFLICT` at all, so rungs
+that differ only in `ot_rule` collapse into one and the rest are never inserted.* **Measured:
+artifact `52,018` → table `50,597` = `1,421` rows lost; and `T14`'s own slate twelve days earlier
+lost the identical `1,421` while the artifact grew `6,053`.** ⇒ `F6-1`, `NBA_OPEN_ITEMS.md`.
+🔑 ***A glossary term whose definition is a primary-key column is a term whose omission is a data
+loss, not a documentation gap.***
+
+**`officials`** · T2, T11 · ARC,DB,OPEN,SUM,WRK · `nba_ref.officials` — the referee roster, built
+by **scraping Wikipedia** *(74 staff + 7 non-staff, each with `jersey_num`, `official_id`)*, because
+**the stats API has no referee endpoint at all.** ⚠ *The by-analogy trap lives here: the corpus
+records `nba_stats.official_roster_snapshot` as a name written from MLB habit — **the real one is
+`nba_ref.`***
+
+**`official_differential_log`** · T3, T8, T9 · SUM,WRK · The referee leg of the weekly differential
+worker *(with `nba_stats.player_differential_log` and `nba_ref.team_differential_log`)*. 🔴
+**`[LIVE-AUDIT]` `2026-09-21`, `T8` pass 12 — CONFIRMED AND DATED: no completed run since
+`2026-09-02`. All three logs empty.**
+
+**`odds_api_board_backfill`** · T1, T11 · ARC,OPEN,SUM · The historical board puller →
+`nba_market.board_snapshots`. **Built and tested** *(T11 seg 709, three from the end)*: resumable
+log, window `14:45 PT` (DST-aware) + close at tip−30, `us_dfs,us` in **one** call *(The Odds API
+bills per REGION, not per book)*, 21 markets including 8 alternates; test slate `ORL-BKN
+2024-10-25`. 🔑 **It is the only history that exists for PrizePicks and Underdog — and Sleeper has
+no history anywhere**, which is why derived-Sleeper is trained on PP/UD snapshots.
+
+**`overtime_pace_live`** · T10 · OPEN,SUM · A live-only pace factor. ⚠⚠ **The standing example of
+`RULE 58` before `RULE 58` was numbered.** *A pass recorded 🔴 "`lineups_confirmed` and
+`overtime_pace_live` appear in NO document at all" — **retracted on two grounds**: the probe used
+the KEYS when the corpus writes the SUBJECT in English, and the factor registry itself annotates
+this one **"mostly absorbed by `market_spread_delta` / `market_total_delta`"**.* ⇒ **the live-only
+stage is the residue of two folded-in factors, not an unmet obligation.** ✅ *What does survive:
+**which** factors are in that stage is recorded nowhere.*
+
+**`over_win` / `under_win`** · T11–T13 · DB,DSN,FCAL,GD,OPEN,SUM · Two of the eight closed outcome
+values `grade_board_outcomes.py:9` defines *(with `push`, `dnp`, `no_stat`, `unmatched_player`,
+`game_not_found`, and `unmatched_not_in_season` at `:217`)*. ✂ **The over/under-skew hypothesis was
+killed on them**: `2026-01-15` reads `under_win 55.20%` · `over_win 39.76%` · `dnp 4.93%` · `push
+0.12%`, matching the corpus-wide `56.16%`/`40.26%` already recorded at `SUM:16082`. 🔑 *A skew that
+reproduces the population is not a skew.*
+
+**`offset`** · — · BCAL,FCAL · The signed distance of a ladder rung from its anchor line. *The
+loader keeps the rung **nearest the anchor** deterministically — `off = abs(float(r.get("offset")
+or 0))`, smallest wins — "rather than whichever row happened to arrive last."* ⚠ *That docstring is
+true of the tie-break and false of the result, because the key it ties on is short a column: see
+`ot_rule` above.*
+
+**`old_str`** · T1, T3, T4 · OPEN,SUM · The exact-match anchor a server-side patch replaces. 🔑🔑
+**The corpus's most expensive two-word term.** *`RULE 47` exists because of it — an `old_str`
+anchors on heading TEXT, so editing a heading orphans its body; and a commit that was `8`
+insertions / `1` deletion destroyed a fact because **the `old_str` was that fact's own line**.
+⚠ The same failure struck twice in one session and only one was caught — the other was visible only
+as a dangling body.*
+
+**the stat-key families** · T2, T3, T5, T7 · DB,SUM · `o_dpm` and `on_off_dpm` *(DARKO on/off
+plus-minus, `T2`–`T3`)*; `off_rating`, `oreb_pct` *(team rates)*; the opponent-profile block
+`opp_forced_to_rate` · `opp_miss_rate` · `opp_rim_attempt_rate` · `opp_shot_diet` ·
+`opp_turnover_rate` *(`T7`, and `opp_shot_diet` is one of the named **factor keys**)*;
+`opponent_position` *(`T5`)*. *Grouped rather than listed one-per-entry: they are columns of a
+single opponent/rating surface, and the index in `§Z` already resolves each name individually.*
+
+**operational singletons** · various · `object` *(the corpus's own word for a Postgres relation of
+any kind — table, view, function — used wherever a claim is about existence rather than contents)*
+· `odds_type` *(a PrizePicks board field, `GD,MUL`)* · `oddspapi_api_key` *(a secret NAME;
+**the value is never reproduced — the repo is public**)* · `official_id`, `official_roster_snapshot`
+*(see `officials`)* · `old_team_id` / `old_value` *(the change-log pair on the roster differ)* ·
+`operation` *(`T12`, the archive worker's verb column)* · `owns_db_binding` *(`T1`, which worker
+holds the D1 binding — a control-plane fact from the pre-Postgres era)*.
+
+---
+
 ## P–S
 
 **operating model, the owner's** · T1 (`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §7) · The stated
