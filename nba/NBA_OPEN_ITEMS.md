@@ -14089,7 +14089,7 @@ copy from P3 and it is the only unprotected committer found* · **(b)** decide w
 > because a silent failure costs a season and a loud one costs an evening. **T20-13 breaks the tie
 > from outside the rule: it is the only item in the set with a KNOWN FIRING DATE, and that date is
 > `2026-10-20`.*** **T20-5 and T20-7 degrade quietly from opening night onward and can be fixed in
-> November with the season's data intact. T20-13 arrives at 22:00 PT on opening night, twelve times,
+> November with the season's data intact. T20-13 arrives at 22:00 PT on opening night, twelve times, 🔴 *(CORRECTED §T20.136 — **every night of the season**, once `T20-6` clears; see the item heading)*
 > and what it costs is not an evening — it is the owner's trust in the red signal for the rest of the
 > season**, which the corpus names in its own words: *"a scheduled job failing nightly … teaches
 > everyone to ignore red builds."*
