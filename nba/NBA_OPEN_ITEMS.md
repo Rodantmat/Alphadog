@@ -103,7 +103,7 @@ table's.***
 > | how an item is stored | count | how to find it |
 > |---|---|---|
 > | **has its OWN heading** | **`58`** | ✅ search the ID — it is a heading |
-> | 🔴 **exists ONLY as a row inside a table** | ~~`31`~~ → **`18`** | ⚠ **search the ID — it will land mid-table, not on a heading.** *Scanning headings alone will MISS these.* |
+> | 🔴 **exists ONLY as a row inside a table** | **`18`** | ⚠ **search the ID — it will land mid-table, not on a heading.** *Scanning headings alone will MISS these.* |
 > | **total items** | ~~`70`~~ → ~~`72`~~ → ~~`73`~~ → ~~`74`~~ → ~~`75`~~ → **`76`** | *(`F2-1`, `T10-F1`, `F5-1`, `F6-1`, `F6-2`, `F6-3` added 2026-09-23; **re-derived after each, never incremented**)* |
 >
 > ⇒ ***The `18` table-only items are `T15-1`…`T15-7`, `T16-1`…`T16-6`, `T16-8`, `T17-1`,
