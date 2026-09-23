@@ -1690,6 +1690,44 @@ change`, all at `gain_vs_anchor = 0.0000`** — **all in `NBA_SYSTEM_DESIGN.md`.
 
 ---
 
+## §F5.6 — ✅✅ **`T24` VERIFIED LIVE — the corpus's only secondary source, re-run from the database**
+
+**The last systematic question the strata census left: which LIVE tables are named in `0` of the
+twelve?** *All `109` pinned tables tested. **`30` absent — and `26` of those are legacy MLB-schema
+tables (`score.`, `market.`, `daily.`, `archive.`), outside this corpus's remit by design.*** 🔪
+**Killed.** *Of the `4` in `nba_*`, three are the concurrent session's PP build; the fourth is the
+finding.*
+
+🔴 **`nba_score.sim_slip` — `4,379` rows, `19` columns — held the slips behind `T24`'s headline and
+was named NOWHERE.** *Its companion `nba_score.sim_strategy` **is** on file in two documents:
+**the parameters were documented and the results were not.***
+
+### And re-running it verified `T24` completely
+
+| `T24` stated | live | |
+|---|---|---|
+| `4,379` slips / `310` nights | **exact** | ✅ |
+| `+10.2%` (24-25) · `+20.4%` (25-26) · `+15.8%` both | **`+10.20%` · `+20.35%` · `+15.78%`** | ✅ |
+| *"`312` void legs graded by reversion"* | **`312`** | ✅ |
+| `± 4.1%`, **`t = 3.85`** | naive slip-level SE is **`0.0352`** (`t = 4.49`) — 🔑 **night-clustered is `0.0410`, `t = 3.85`** | ✅ **only one method gives it** |
+
+✅✅ ***`T24` paired a slip-weighted mean with a NIGHT-CLUSTERED standard error — the conservative,
+correct choice for slips sharing a slate — and every figure reproduces to four decimals.*** 📌
+***This is the first live verification of any `T24` number.*** *The corpus has carried them under an
+explicit "SECONDARY SOURCE, AS STATED, not re-run" flag since they were recorded; that flag no
+longer applies to the replay's headline.*
+
+⚠ **One number `T24` does not report, found in the same query**: the **mean of nightly means is
+`+13.84%`**, two points below the slip-weighted `+15.78%`. **Both defensible; the reader should have
+both, and now does.**
+
+⚠ **RULE 54:** *this verifies the ARITHMETIC of the replay against the table the replay wrote — not
+that the inputs were right, nor that the strategy is implementable.* ***"The figures reproduce",
+never "the strategy works."*** **Every other `T24` caveat stands: replay not traded record,
+`nba_score.paper_picks` still `0` rows.**
+
+---
+
 # 📜 §F4 — THE CERTIFICATION REGISTER
 
 *Issued **2026-09-23**. **This certifies what was DONE and what its evidence is. It does not certify
