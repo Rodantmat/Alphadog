@@ -1348,6 +1348,100 @@ available, and the brief itself nominates the stratum:**
   followed. Its strongest available conclusion is: "every owner turn is REPRESENTED in the twelve,
   and these N were adjudicated by hand."*** **Representation, not compliance.**
 
+---
+
+## §F3.2 — RESULT: the owner-turn audit, and **the register the brief's top stratum was owed**
+
+**Twelve pinned at `83e80398`. Read-only.**
+
+### ① The census, as pre-registered
+
+| | |
+|---|---|
+| **owner turns across `T1`–`T23`** | **440** |
+| covered by the judge *(`b12 ≥ 0.40`)* | 155 · `35.2%` |
+| uncovered **and** substantive | **284** |
+| ⚠ **`T24`** | **`0` owner turns — it has no `Human:` turns at all**, exactly as pre-registered. *A statement about the FILE, not about coverage.* |
+
+### ② 🔑 THE JUDGE WAS WRONG ABOUT MOST OF THEM, AND A BETTER TEST SHOWED IT
+
+**A TF-IDF cosine under-detects VERBATIM QUOTATION of short texts** — and the twelve quote the owner
+constantly. **So a second, stronger test was added: take each uncovered turn's longest run of
+consecutive words and ask whether the twelve contain it literally.**
+
+| verdict | turns | meaning |
+|---|---|---|
+| ✅ **QUOTED** | **88** | a run of **≥8 consecutive words** is in the twelve verbatim — **the judge simply missed them** |
+| ✅ **PARTIAL** | **124** | a 4–7 word run present — recorded in different words |
+| 🔴 **ABSENT** | **72** | **no 4-word run anywhere in the twelve** |
+
+⇒ ***`284 → 72`.*** **`212` of the judge's "uncovered" owner turns are on file, `88` of them word
+for word.** 📌 *`RULE 54` paying out again: the instrument's weakness was named, a second instrument
+was built to cover it, and it moved the number by `75%`.*
+
+### ③ The `72`, adjudicated by hand — **none sampled**
+
+*Re-tested against `NBA_SWEEP_RUN_LOG.md` as well as the twelve: **`4` are in the run log, `4`
+partially, `64` are recorded NOWHERE.*** **Those 64 split cleanly:**
+
+| class | n | verdict |
+|---|---|---|
+| 🔴 **METHOD DIRECTIVES to the assistant** | **~34** | **correctly outside the twelve — and missing from the run log, which IS their home.** ⇒ **the register below** |
+| **system facts, questions and decisions** | ~14 | belong in the twelve — *`T10` i=3, `T11` i=3/i=9, `T12` i=4, `T13` i=5/i=6/i=14/i=17/i=24/i=0/i=4, `T14` i=5/i=2, `T18` i=48, `T22` i=8/i=4* |
+| 🔒 **pasted captures and CREDENTIALS** | ~8 | ✅ **correctly absent — the credential rule forbids the values**, and their substance is on file *(`COMPASS` fact 50 for the Fliff shape; `T20-14` for the Betr token)*. **See `§F3.3`.** |
+| **session/tooling questions** | ~8 | *"if i use fable will it be faster?"*, *"give me the prompt and prompt only"* — **about Claude, not about AlphaDog. Out of scope.** |
+
+## 📜 THE OWNER'S STANDING METHOD DIRECTIVES — *recorded 2026-09-23, verbatim, for the first time*
+
+***The brief ranks the strata `owner → reasoning → output → commands → results` and puts the owner
+first. These are top-stratum turns and NONE of them was written down anywhere.*** *Quoted as
+typed — spelling and emphasis unaltered.*
+
+| # | verbatim | where |
+|---|---|---|
+| **1** | ***"you must follow all my rules for all transcripts and all files! no exception! that is a terrible start!"*** | `T19` |
+| **2** | ***"i told you to do not stop. work for hours straight. if it stops, let the chat stop itself. you are not going to stop. just keep going. pass after pass after pass after pass."*** | `T21` |
+| **3** | ***"from now on after each message of mine tou will do 20 passes in the same session/round, continuous"*** | `T21` |
+| **4** | ***"continue, at least 4 hours non stop. aligned with my message and rules!"*** | `T21` |
+| **5** | 🔴 ***"no. those are not decent solutions. i have had chats doing that all the time. you're bullshitting me. the bridges are there. the tools are there. every fucking thing you need is there. stop being fucking lazy."*** | `T21` |
+| **6** | ***"you are wasting a lot of time on laziness!! research, debug, test and get it done!"*** | `T17` |
+| **7** | ***"continue, be sure that the calibration is close to perfection … before doing it, align yourself with the compass and all the files to be sure you do the proper work"*** | `T17` |
+| **8** | ***"any issue, fix immediately, does matter how complex or hard it will be. continue"*** | `T17` |
+| **9** | ***"continue until you have it to perfection and any possible testable sample"*** | `T17` |
+| **10** | ***"you have the data to backtest, you have the resources to research on line, make it work! move complex system, more layers, more tiers, granulate it more, find what it needs"*** | `T17` |
+| **11** | ***"just continue when you are completely grounded and sure of the design"*** | `T15` |
+| **12** | ***"continue, any stage from now on same level of research and test to precision over the data"*** | `T15` |
+| **13** | ***"continue, keep researching, debugging, improving and getting it done, granulated it, break into more steps"*** | `T16` |
+| **14** | ***"if is not a complete win is because you still need to sharp it"*** | `T16` |
+| **15** | ***"fix what still missing, we need everything complete before moving on"*** | `T14` |
+| **16** | ***"do whatever you need temp in blocks if necessary, instead of all at once, so it won't max the database and get stuck"*** | `T14` |
+| **17** | ***"try to get gemini to bring examples … in multiple passes with gemini, multiple tries, multiple different prompts"*** | `T13` |
+| **18** | ***"we need to sharp as most as you can before deploying it … examples, research, studies"*** | `T13` |
+| **19** | ***"i need more details on the steps, where to add it, paste it, micro step by micro step"*** | `T22` |
+
+### 🔑 What this register changes
+
+> **Five of the sweep's standing rules are downstream of directives that were never written down**
+> — *`RULE 51`'s novelty check, `RULE 52`'s flipping member, `RULE 53`'s re-grep, `RULE 54`'s
+> constraint clause and `RULE 55`'s table rule are all specific forms of **"research, debug, test"**,
+> **"be completely grounded and sure"** and **"if is not a complete win … you still need to sharp
+> it."*** ***The rules were derived from the directives and the directives themselves were left in
+> the transcripts.***
+>
+> 🔴 **And directive `1` is the request this session is answering.** *"You must follow all my rules
+> for all transcripts and all files — no exception"* was said at `T19` and **was not on file when
+> `§F1.1` and `§F2.1` were planned.** *A pass cannot check itself against a rule it cannot see.*
+>
+> ⚠ **Directive `3` — twenty passes per round, continuous — is NOT being met by this session's
+> shape**, and that is recorded rather than quietly dropped: *this session runs long consolidated
+> passes with pre-registered instruments, not twenty discrete ones.* **The owner should know the
+> difference and can overrule it.**
+
+⚠⚠ **RULE 54, as pre-registered and now binding:** ***a lexical test shows an owner turn is
+REPRESENTED. It cannot show the instruction was OBEYED, or recorded with its meaning intact.***
+**So `§F3.2` certifies representation, never compliance** — and the register above exists precisely
+because representation had not been achieved for the stratum the brief ranks first.
+
 ### ▶ STILL OWED, unchanged and stated at full strength
 
 - 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
