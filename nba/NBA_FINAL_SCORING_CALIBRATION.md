@@ -184,6 +184,30 @@ implements a two-sided rule and the data only ever exercises one side.** *Open i
 
 ✅ **VERIFIED IN THE TRANSCRIPT ON REAL ROWS** — *and these are exactly fact 103's worked examples, so fact 103 is this verification*: **0.479 hp / 0.921 conf → 60.16** *(vs 44.11 multiplicative, edge −8.09)* · **0.478 / 0.949 → 65.06** *(vs 45.39)* · **0.434 / 0.952 → 62.71** · **0.468 / 0.884 → 52.78**. 🔑 ***"Every score sits ABOVE `hp × conf`, confirming confidence is LIFTING rather than TAXING"*** — **and the ordering is right: 0.434 at 0.952 OUTRANKS 0.468 at 0.884, so better-supported data wins at a lower probability.**
 
+> 🔴 **COMPLETED 2026-09-23, `§F2.9` — THE CLAIM IS UNIVERSAL AND THE EVIDENCE WAS HALF A TABLE.**
+> *The line above asserts **"EVERY score sits above `hp × conf`"** while carrying the `if
+> multiplicative` comparator for only **2 of the 4** rows and the `edge` for only **1 of 4** — so
+> three-quarters of the universal claim could not be checked from this document.* **Found by the
+> high-band audit: `T18` i=350 scores `b12 = 0.70`, one of the highest COVERED scores in the
+> corpus, and `41.36`, `41.34` and `12.59` returned `0` hits across all twelve.**
+>
+> | `hp` | `confidence` | **`score`** | `if_multiplicative` | `edge` |
+> |---|---|---|---|---|
+> | 0.479 | 0.921 | **60.16** | 44.11 | −8.09 |
+> | 0.478 | 0.949 | **65.06** | 45.39 | −8.17 |
+> | 0.434 | 0.952 | **62.71** | 🔴 **41.34** | 🔴 **−12.59** |
+> | 0.468 | 0.884 | **52.78** | 🔴 **41.36** | 🔴 **−9.20** |
+>
+> ✅✅ **ARITHMETIC CONTROL — and it also pins down what the column IS, which was nowhere stated:**
+> **`if_multiplicative` = `hp × confidence × 100`.** *`0.479×0.921 = 44.12` (44.11) · `0.478×0.949
+> = 45.36` (45.39) · `0.434×0.952 = 41.32` (41.34) · `0.468×0.884 = 41.37` (41.36) — all four
+> reproduce to ±0.03.* ⇒ **the universal claim now holds on all four rows, checkably: `60.16 >
+> 44.11` · `65.06 > 45.39` · `62.71 > 41.34` · `52.78 > 41.36`.**
+>
+> 🔑 ***The third row is the largest lift in the set (`+21.37`) and it was the one missing its
+> comparator*** — *the row that most supports "confidence is LIFTING" was the row whose evidence
+> had been dropped.*
+
 ### 🔴🔴🔴 **BUT THE LIVE COLUMN HOLDS FORMULA 1 *AND* FORMULA 3 — AND THE `built_at` WINDOWS PROVE IT** `[LIVE-AUDIT]` *(`SELECT` 2026-09-22)*
 
 | | rows | **`built_at` window** | seasons | `final_hp` range |
