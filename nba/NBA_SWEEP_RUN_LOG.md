@@ -2014,6 +2014,30 @@ RETRACTED as contaminated.*** 🔑 ***An absence probe finds retracted numbers e
 live ones. A sweep that recovers everything it finds absent will faithfully restore the corpus's
 worst material — the row's own `notes` field is the only thing standing between the two.***
 
+## 🔴 §F6.24 — **AN AUTHORITY TABLE NAMED IN FIVE DOCUMENTS AND READ BY NONE**
+
+*`nba_config.calibration_log` — **`8` rows, all `status = applied`**, each a calibration decision with
+its `evidence_json`, its `decided_by` and its **`sample_size`**. The table is cited by name in `5` of
+the twelve. **Its contents had never been censused.***
+
+| | |
+|---|---|
+| ✅ **the decisions** | all documented — rank-within-role-tier prior · empirical `rate_tier × role_tier × rung` tables · the symmetric-floor ceiling bug · the `threes_made` logit shift · the season-consistency rule · the `finest_level_only` shift fix |
+| 🔴 **their `n`** | **`272,909`** *(five of the eight decisions)* · **`54,000`** · **`8,000`** — ***`0` of `12`, all three*** |
+
+🔑🔑 ***`272,909` is the evidential base of five separate applied changes to the classification
+ladder, and the corpus states every one of those changes without it.*** *`RULE 56`, first instance
+found in a **decision log** rather than a results table — **the `sample_size` column is in the
+schema and nothing had read it.***
+
+🔑 **And one clause worth more than the numbers**, from the B2B row's `evidence_json`: *"published
+star B2B minute deltas (`−1.5..−3.0`) do not reproduce conditional on playing … **DNP-Rest removes
+stars from the log; the effect belongs in `P(available)`**."* ⚠ *The deltas and `DNP-Rest` are in `2`
+documents; **the structural conclusion is in `0`.*** ⇒ ***A published effect relocated to a different
+layer — it is not a minutes factor, it is an availability factor — which is the same "measured on
+the wrong layer" reasoning that closed `A2`, reached independently and FOUR DAYS EARLIER
+(`2026-09-09` vs `2026-09-13`).***
+
 📜 **`RULE 57` NUMBERED from `§F6.21`** — *a derivation is not recorded until it has been RUN on every
 row it claims* — **and `RULE 53` DISCHARGED for the count change**: corrected string
 ``55 numbered`` → ``56 numbered``, whole-file window ⇒ **RAW `1` site in the twelve, CLASSIFIED a
