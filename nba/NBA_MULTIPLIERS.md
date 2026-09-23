@@ -1855,11 +1855,18 @@ guessed.*
 > *"per leg: **PrizePicks prices each line as the probability of beating it under a count
 > distribution centered on the STANDARD line, with spread `c × √(standard line)`**"*
 
-| family | `c` |
-|---|---|
-| **points family** | **`2.0`** |
-| **rebounds · assists · threes** | **`1.25`** |
-| **rebounds + assists** | **`1.4`** |
+| family | `c` *(`T22`, `≈`)* | 🔴 **`T23` SEG `487`, fitted, LATER THE SAME DAY** |
+|---|---|---|
+| **points family** | **`2.0`** | **`1.87`** |
+| **rebounds · assists · threes** | **`1.25`** | **`1.08`** |
+| **rebounds + assists** | **`1.4`** | **`1.34`** |
+
+> ⚠⚠ **TWO CONSTANT SETS, BOTH RECORDED, NEITHER ASSERTED AS CURRENT** *(added T23 pass 3, `§T23.3`
+> §4, 2026-09-23)*. *`T22`'s are prefixed **"`c ≈`"** and `T23`'s are **fitted values** from the
+> WNBA comparison run, so a REFIT is the obvious reading — **but the sweep does not assert it.***
+> 🔴 **`NOT RECORDED`: whether `T23`'s constants supersede `T22`'s or parameterise something
+> different.** ⇒ ***Both are kept with their dates and sources; the twelve must not carry two
+> constant sets as if both were current.*** 🔴 **OWNER/BUILD: which set is live?** ▶ **`§T23.3` §4.**
 
 ⇒ 🔑 ***The model is not fitted to the payouts — it is fitted to a DISTRIBUTION, and the payout falls
 out of it.*** **That is why `§0.10-T22`'s compression is a separate, higher-level correction: the
