@@ -45,7 +45,17 @@ def fetch(name, timeout=300):
 
 
 def main():
-    seasons = [s.strip() for s in os.environ.get("BM_SEASONS", "2024-25,2025-26").split(",")]
+    # SEASONS (fixed 2026-09-23, same class as T23-2). Was a hardcoded "2024-25,2025-26", and P2 passes
+    # no BM_SEASONS - so from 2026-27 the blowout model would have refit on two stale seasons every
+    # night and never learned from the live one. stats_seasons(2) rolls by itself.
+    env = os.environ.get("BM_SEASONS", "").strip()
+    if env:
+        seasons = [s.strip() for s in env.split(",")]
+    else:
+        import sys
+        sys.path.insert(0, "nba")
+        from nba_season import stats_seasons
+        seasons = stats_seasons(2)
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
 
