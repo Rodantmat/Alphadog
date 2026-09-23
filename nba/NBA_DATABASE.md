@@ -82,6 +82,28 @@ transcript. Where a table was altered later, the change is noted with its transc
 >
 > ▶ **Full derivation and the two logged kills: `NBA_MASTER_SUMMARY.md` `§T20.121`.**
 > ▶ **The board half of this map is `T20-22` (`§T20.120`).** ⚠ *Documented, not fixed (rule 1).*
+>
+> ## 🔑🔑 **AND THIS DATABASE RUNS TWO PLAYER-ID CONVENTIONS, SPLIT ALONG THE SAME LINE** *(`§T20.126`, 2026-09-23)*
+>
+> | layer | schemas | convention | example |
+> |---|---|---|---|
+> | **the 21 Workers** | `nba_ref` · `nba_stats` · `nba_team` · `nba_calendar` | 🔵 **prefixed** | `nba_ref.players` → **`nba_101108`** |
+> | **the 40 called scripts** | `nba_score` | 🟡 **bare** | `nba_score.baseline_ladder` → **`101108`** |
+>
+> ⇒ ***The id split follows the WRITER split exactly, and it is stronger than a separation of
+> concerns: the two layers could not join each other's rows if they tried.*** *(Comparing them needs
+> `replace(player_id, 'nba_', '')`, which is how this was found.)*
+>
+> 🔴 **ONE TABLE SITS ON THE WRONG SIDE**: **`nba_ref.player_name_map`** — a Worker schema carrying
+> the **Python** convention *(`5,212` rows, `0` prefixed)* — **and `score_board_legs.py:111–113`
+> `LEFT JOIN`s it for every leg on the board.** ✅ *Correct for its consumer; invisible to anyone
+> reading the schema it sits in.* ⚠ **Its only writer is `check_baseline_board_coverage.py:53–60`,
+> which no pipeline runs** ⇒ **`T20-24`.**
+>
+> ✅ **CROSS-SPORT SWEEP, CLEAN**: the same prefix test across **fourteen** tables in `nba_ref`,
+> `nba_stats`, `nba_team` and `nba_calendar` returns **`0` foreign rows everywhere** *(authority:
+> `nba_ref.teams`, 30 rows, `nba_1610612737`–`nba_1610612766`)*. ⇒ **`§T20.125`'s `7,951` baseball
+> rows are confined to `nba_market.board_snapshots` alone — `T20-23` is scoped.**
 
 ---
 
