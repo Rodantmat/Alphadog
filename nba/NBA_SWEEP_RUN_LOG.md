@@ -1217,6 +1217,67 @@ written down — and the thing that caught it was refusing to report a number th
 without checking the authority (`git cat-file -s`) first.* **Which is the whole method, stated once
 more: the authority, not the convenient reading.**
 
+---
+
+## §F2.16 — direction (b) at scale: **`4` of `40` workflow files were named nowhere in the twelve**
+
+**`§F2.1` left `~12,686` substantive uncovered segments and said no single pass could close them.
+That is still true — so this pass asked a question the whole band can answer at once instead of
+sampling it.**
+
+**`gapids.py`:** *extract every IDENTIFIER (`nba_schema.table`, `script.py`, `nba-*.yml`, `ENV_VAR`)
+from every uncovered-substantive segment across `T1`–`T23`; rank by mentions × how many transcripts;
+keep the ones absent from all twelve.* **`285` identifiers seen · `121` absent.**
+
+🔪 **Most of the `121` are NOISE, and naming the class matters**: `stats.norm`, `stats.nbinom`,
+`stats.poisson`, `stats.binom` are **scipy**; `base.py`, `cursor.py`, `detail.py`, `request.py`,
+`frame.py`, `decoder.py`, `path.py`, `runner.py` are **site-packages frames from tracebacks**;
+`stats.endpoints` is `nba_api`. ***A transcript records the libraries a crash passed through, and
+the twelve have no business naming them.***
+
+✅ **What survived the noise was a single coherent class: WORKFLOW FILENAMES.**
+
+| workflow | mentions | transcripts | in the twelve |
+|---|---|---|---|
+| **`nba-backtest.yml`** | 17 | 5 | ❌ **`0`** |
+| **`nba-grader.yml`** | 11 | 3 | ❌ **`0`** |
+| **`nba-measure-types.yml`** | 6 | 5 | ❌ **`0`** |
+| **`nba-score-history.yml`** | 9 | 1 | ❌ **`0`** |
+
+*Verified by re-deriving the population: all `40` filenames from `.github/workflows/`, each grepped
+across all twelve. **The other `36` are each named at least once.*** ⇒ **`4` of `40`, and three of
+them appear in five separate transcripts each — not obscure.**
+
+### 🔴🔴🔴 And one of the four holds a SEASON-CRITICAL defect the corpus had half of
+
+**`T20-5` — "the grader's default window ends `2026-04-12`, and nothing catches it" — locates the
+defect in `grade_board_outcomes.py:167–168`. `.github/workflows/nba-grader.yml` hardcodes it TWICE
+MORE**, as the `end` input's `default:` and as the `||` fallback in `GRADE_END`.
+
+⇒ 🔑 ***The workflow passes `GRADE_END` EXPLICITLY, so fixing the script alone leaves the dispatch
+path behaving exactly as before.*** **Three sites, not one. `T20-5`'s severity is unchanged; its
+REMEDY was incomplete.** 📌 ***`RULE 55` again, one costume further out: not a conclusion missing
+its table, but a DEFECT missing its full site list — and the effect is the same, a reader who acts
+on the document does the wrong thing.***
+
+### The rest, recorded at their true weight
+
+- ✅ **`nba-score-history.yml`** — a two-job pipeline (`build_asof_calibration.py`, `AC_K=400`,
+  `AC_CADENCE_DAYS=7` → an **8-way** `score_history.py` matrix) with **no record in the twelve**.
+  🔑 *Its guards are a POSITIVE control: **"refuses to write an empty build"**, "oldest first",
+  "manual only", "re-running is safe: a date is replaced whole" — the opposite of the silent-failure
+  class this corpus tracks.* ⚠ *Its header cites `PP_PAYOUT_FINDINGS.md`, but **the workflow itself
+  is not on the exclusion list** — only `nba-pp-payout-map.yml` is — so it is in scope.*
+- 🔪 **`continue-on-error: true` — KILLED (rules 26/28).** The idiom, its rationale and its risks are
+  thoroughly on file *(`§T2.10a`, *"15 of 16 scrape steps"*, `T20-10`)*. **Only the corpus-wide count
+  is new and it is recorded, not filed: `11` of `40` workflows, `48` occurrences** — `nba-scrape.yml`
+  **15**, `nba-backtest.yml` **12**, the documented `nba-daily-delta.yml` **3**.
+
+⚠ **RULE 54.** *The scan ranks by filename mentions; a workflow discussed only by its `name:`
+("NBA Outcome Grader") is invisible to it, and the segmenter's normalisation mangles some
+identifiers before they are ever counted.* ***"`4` of `40` FILENAMES are absent", never "these are
+the only undocumented workflows."***
+
 ### ▶ STILL OWED, unchanged and stated at full strength
 
 - 🔴 **RULE 46: `T19` and `T20` each owe TWO INDEPENDENT complete sequential reads from a fresh
