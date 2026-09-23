@@ -1,5 +1,53 @@
 # NBA OPEN ITEMS — deferred, dropped, partial, bugs, caveats
 
+> # 🔴🔴🔴🔴 **T23-1 · SEASON-CRITICAL · THE MODEL DOES NOT BEAT PRIZEPICKS — `1.08 MILLION` LEGS, TWO SEASONS**
+> *Filed 2026-09-23, T23 pass 2, `§T23.2`. **Placed FIRST because every other item on this page asks
+> whether the pipeline RUNS. This one asks whether its output is worth acting on.***
+>
+> | | **2024-25** | **2025-26** |
+> |---|---|---|
+> | model's top picks: **claimed → actually paid** | 🔴 **`1.73 → 1.16`** | 🔴 **`1.80 → 1.13`** |
+> | **best strategy** *(model `≥ 1.40`, one leg per player-prop-day)* | **`1.15`** | **`1.11`** |
+> | **2-pick breakeven** *(`1.0` = fair)* | **`1.155`** | **`1.155`** |
+>
+> ⇒ 🔴🔴🔴 ***The best strategy found, in the better season, lands at `1.15` against a `1.155`
+> breakeven. NO THRESHOLD CLEARS THE 2-PICK BREAKEVEN IN EITHER SEASON.***
+>
+> **THE SEVEN FINDINGS** *(`T23` SEG `391`, all `0/0` in both trees)*:
+> 🔴 **(1)** PrizePicks' pricing is the better forecast **on every kind, both seasons** — *on
+> standards the model is **worse than a flat `50%`***. ✅ **(2)** **But the model RANKS** — realized
+> value climbs with its claim *(`0.89→1.155`; `0.86→1.13`)*. 🔴 **(3)** **Heavily overconfident** —
+> only **`~21%`/`~17%`** of the top bucket's claimed edge materialized. 🔴 **(4)** **No threshold
+> clears the 2-pick breakeven**; the 3-pick *(`1.1006`)* clears only at `≥1.40`, *clearly in 24-25,
+> **not significantly** in 25-26* — **and those picks are `58%`/`80%` DEMONS, which slip compression
+> will cut.** 🔴 **(5)** **The ladder's tails are too wide** — goblins under-predicted *(`0.644` vs
+> `0.685`)*, demons over-predicted *(`0.263` vs `0.246`)*. 🔴 **(6)** **Demons underpay as a class,
+> `−8%` to `−10%`**; ✅ standards are fair *(`0.500` vs `0.500`)*. ✅ **(7)** **Calibration helps out
+> of sample, and the LARGER the shift the more it helps.**
+>
+> ## 🔑🔑 WHAT SURVIVES — *this is a shrinkage problem, not a dead model*
+> **The ORDER is right; the CONFIDENCE is wrong, by roughly `5×`.** *(2) and (7) say the signal and
+> the calibration layer both work.* ⇒ **An over-confident ranker is fixable.**
+> 🔴 **AND (7) INDICTS A STANDING GUARD**: *the ladder recipe **discards Platt shifts above `0.15`**
+> while this measures that **the larger the shift the more it helps*** *(SEG `265`: average shift
+> `0.09–0.15`, **max `0.72` ≈ `17` points at even odds**)* ⇒ **a guard that throws away the
+> corrections that help most.**
+>
+> ## ⚠⚠ THE AUTHOR'S OWN CAVEAT CUTS AGAINST THE ONE POSITIVE RESULT
+> *"**leg-level value ignores compression above `9.1×` and rounding, so it OVERSTATES big demons**;
+> extrapolated prices are excluded from every verdict."* ⇒ 🔑 ***The single strategy that cleared the
+> 3-pick breakeven is `58%`/`80%` demons — exactly the population the method says it overstates.***
+>
+> ## 🔴 OWNER DECISION
+> **(a)** **Shrink the model's edge toward the market** *(SEG `379` records this as the step under
+> consideration)* — **or** **(b)** treat the model as a RANKER only and select on rank rather than on
+> claimed edge — **or** **(c)** revisit the `0.15` Platt guard, which (7) says is costing accuracy —
+> **or** **(d)** accept that 2-picks are out and build only 3-pick+ slips, where the breakeven is
+> `1.1006`. ⚠ ***These are not exclusive and (c) is nearly free.***
+> ✅ **RE-RUNNABLE**: `nba/sql/item1_model_vs_price.sql`, `325` dates, both seasons — **the same query
+> scores any future model change.**
+> ⚖️ **Nothing re-run, changed or triggered by this sweep.** ▶ **Full record: `§T23.2`.**
+
 > # ⚠⚠ **T22-1 · AN OWNER REQUEST WITH NO RECORD ANYWHERE — "the keep my million board in underdog"**
 > *Filed 2026-09-23, T22 pass 1, `§T22.1`. **Severity LOW-MEDIUM, NOT season-critical** — placed here
 > only because it sits beside `T21-1`, which is the other item about the record rather than the
