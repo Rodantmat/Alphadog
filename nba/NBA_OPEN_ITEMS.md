@@ -13595,6 +13595,21 @@ same decision as the frozen static layer's loaders).*
 
 ## T20-13 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, FIRES ON OPENING NIGHT · P2's CERTIFIER WILL GO RED EVERY NIGHT FOR THE FIRST TWELVE NIGHTS OF THE SEASON — CORRECTLY**
 
+> 🔴🔴🔴 **HEADING CORRECTED 2026-09-23 (T20 pass 131, §T20.136) — "THE FIRST TWELVE NIGHTS" IS WRONG, AND THIS IS THE FIFTH OF EIGHT SURFACES CARRYING IT.**
+> *The item's FACT — `22` October props vs `30` from November 1, against a `>= 25` gate with
+> `CERT_STRICT=1` — is **VERIFIED and unchanged**. What is wrong is the CONSEQUENCE.*
+> **`certify_pipeline.py`'s `p2` branch checks `baseline_history has today > 0` FIRST and the `>= 25`
+> prop gate SECOND.** *The first check fails on **every** date, because **no pipeline step writes
+> `nba_score.baseline_history`*** *(`T20-6`, `§T20.134`, `NBA_RECIPE.md` `STEP 13`; the table's last
+> date is `2026-04-12`)*. ⇒ ***`P2` goes red on opening night and EVERY night of the season, not
+> twelve — and the prop gate this item is about is never the binding check.***
+> 🔑 **So `T20-13` is a CONDITIONAL item**: its twelve-night window becomes the live behaviour **only
+> once `T20-6` is resolved**. *The brief already makes this argument for item `A` — "`T20-13`'s
+> twelve red nights cannot fire if nothing fires" — and `T20-6` is a second prerequisite of the same
+> shape, ranked eleven places below it (see the duration/dependency table at the top of this file).*
+> ⚠ **The severity `7 of 7` is NOT lowered by this**: the item still fires on a known date once its
+> prerequisite clears, and the reasoning about red-signal trust stands in full.
+
 **Severity 7 of 7 — the only item in this set that fires on a KNOWN DATE, and that date is opening
 night.** **Found T20 pass 47 (§T20.52), 2026-09-22.** **Evidence: VERIFIED by live SQL across two
 complete seasons.**
