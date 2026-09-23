@@ -274,7 +274,18 @@ per-leg factors (§4), the tier step ratio (`NBA_GOBLIN_DEMON.md` §5.0d), **and
   construction**.
 **Correlation is priced at the SLIP level, not the LEG level.**
 
-## 0.2g **NO DFS PLATFORM PUBLISHES PER-LEG MULTIPLIERS VIA API — budget for a permanent study**
+## 0.2g ~~**NO DFS PLATFORM PUBLISHES PER-LEG MULTIPLIERS VIA API — budget for a permanent study**~~ 🟢 **SUPERSEDED IN PART 2026-09-23 — SEE `§0.9-T22`**
+
+> 🟢🟢 **SUPERSEDED IN PART (T22 pass 1, `§T22.1`, 2026-09-23). Correct when written (`2026-09-19`);
+> the premise was overtaken on `2026-09-20`.** **PrizePicks DOES expose a machine-readable payout
+> surface — `POST /game_types` — found by the owner's browser capture**, i.e. by the exact exit
+> condition `§0.7-T18` item 7 had written down. ⚠ **What survives**: it **QUOTES a specific
+> combination rather than publishing a table**, so a complete matrix must still be assembled by
+> enumeration — *the permanent-study framing holds; the "no API" premise does not.*
+> 🔴 **And the app list below is WRONG IN BOTH DIRECTIONS, measured live `2026-09-23T02:22:06Z`**:
+> of the four it names, **only Sleeper is complete (`100%`)** — Underdog is `44.03%` and **Fliff and
+> Betr are at `0.00%`** *(`0` of `1,394` and `0` of `780,765`)* — while **`pick6`, which it does not
+> name, is `94.89%` populated with `415` distinct values.** ▶ **Full table: `§0.9-T22` §4.**
 
 > *"**DFS platforms generally do NOT publish their own per-leg multiplier via API** — **expect to build
 > a MANUAL, ONGOING multiplier-observation study (real placed slips, recorded and tabulated) as a
