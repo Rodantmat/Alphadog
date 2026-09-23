@@ -1900,7 +1900,15 @@ owner figures are `owneraudit.py` + the phrase test at `§F3.2`; `hb` is the hig
 | `§F`*n*`.`*m* cross-references resolving | ✅ **27 / 27** |
 | the redacted credential | ✅ **`0` occurrences** |
 | working tree vs `origin/main` | ✅ **clean, fully synced** |
-| **total** | **`5,998,753` bytes across the twelve · `274` commits today** |
+| **total** | **`6,026,991` bytes · `4,939` sections across the twelve · `299` commits today** |
+
+**Re-run a final time after `§F5` completed, 2026-09-23:** ✅ **structural problems `NONE` · index
+drift `NONE` across all twelve · `§F` cross-references `35 / 35` resolving · the redacted credential
+`0` occurrences · working tree clean and fully synced with `origin/main`.**
+📌 *Index counts drifted **four** times during `§F3`–`§F5` as sections were added, and were re-taken
+from a live re-derivation each time rather than incremented — `OPEN_ITEMS` `901→902→905`, `WORKERS`
+`122→126→130`, `SYSTEM_ARCHITECTURE` `125→130`, `GOBLIN_DEMON` `92→96`. **The rule written at
+`§F2.14` was applied to the passes that came after it.***
 
 ## §F4.4 — the one-line certificate
 
