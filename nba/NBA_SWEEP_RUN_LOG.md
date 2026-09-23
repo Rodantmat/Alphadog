@@ -1594,6 +1594,32 @@ owner figures are `owneraudit.py` + the phrase test at `§F3.2`; `hb` is the hig
    *(rotate — a production Postgres password and a published API key)* · **`T21-1`** · **`T23-1`** ·
    **`T20-3`(e)** · **`T10-F1`**.
 
+## §F4.3b — the OWNER-TURN certification, added after `§F3`
+
+| | |
+|---|---|
+| owner turns across all 24 | **440** *(`T24` contributes `0` — it has no `Human:` turns)* |
+| scored, every one | ✅ **440 / 440** |
+| found on file by judge **or** verbatim-phrase test | **368** — *of which `88` are quoted **word for word** in the twelve* |
+| 🔴 found by neither, **adjudicated BY HAND, none sampled** | **72 / 72** |
+| ⇒ genuine gaps, written at source | **2** — the credit CEILING (`§F3.4`) · the Underdog ladder tables (`§F3.5`) |
+| ⇒ the owner's standing METHOD DIRECTIVES, recorded verbatim for the first time | **19** (`§F3.2`) |
+| ⇒ killed with a stated reason each | the rest |
+
+## §F4.3c — FINAL VERIFICATION, re-run after every write
+
+**2026-09-23, against the tree fast-forwarded from `origin/main`:**
+
+| check | result |
+|---|---|
+| index present in the first `1%` of every file | ✅ **12 / 12** |
+| code fences balanced | ✅ **12 / 12** |
+| **index section counts exactly match a live re-derivation** | ✅ **12 / 12, zero drift** *(three had drifted from this session's own later additions and were re-taken)* |
+| `§F`*n*`.`*m* cross-references resolving | ✅ **27 / 27** |
+| the redacted credential | ✅ **`0` occurrences** |
+| working tree vs `origin/main` | ✅ **clean, fully synced** |
+| **total** | **`5,998,753` bytes across the twelve · `274` commits today** |
+
 ## §F4.4 — the one-line certificate
 
 > ***Twenty-four transcripts and twelve documents were swept with seven purpose-built instruments,
