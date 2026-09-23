@@ -1426,7 +1426,20 @@ by roughly 6×.** *Recorded because the corpus quotes the +0.347 figure without 
 > *Each conclusion below is already on file; each TABLE was not. Verified before writing — `5,506`,
 > `9,259`, `26,816`, `5,761`, `6.395`, `936,764`, `k=8` each returned **`0` of `12`**.*
 >
-> ### 1 · WHY `A2` SHIPS — the effect by WHO is absent, and it is monotone
+> ### 1 · ~~WHY `A2` SHIPS~~ 🔴🔴 **THE RETRACTED TABLE — corrected within the hour, `§F6.12`**
+>
+> > 🔴🔴🔴 **I WROTE THIS HEADING AS *"WHY `A2` SHIPS"* AND IT IS WRONG TWICE OVER.** *`A2` does
+> > **NOT** ship — it is **CLOSED, "DOES NOT SHIP in any of four forms"** — **and the table below is
+> > EXPLICITLY RETRACTED by the system itself.*** *Found `[LIVE-AUDIT]` minutes after writing it, in
+> > `nba_config.classification_config` → `absence_panel_measured_2026_09_12`:*
+> >
+> > > ***"`RETRACTED_2026_09_12`: the two-season ratio table … (teammate alpha out: minutes
+> > > 1.098/1.082, usage 1.178/1.175, etc.) is **CONTAMINATED and must not be used to fit
+> > > anything**."***
+> >
+> > 🔑 **The table is kept below, struck, because the sweep does not delete its own errors — and
+> > because the RETRACTION'S REASONING is worth more than the table ever was.** *See `§F6.12`
+> > directly beneath it.*
 >
 > | absent player | side | **n** | minutes × | **usage ×** | rate × |
 > |---|---|---|---|---|---|
