@@ -1048,6 +1048,16 @@ only 15 minutes")* — **and it is an architectural answer, not an optimisation 
 > did not run the profiling and does not propose it** — MLB is out of scope for this sweep, and the
 > point recorded here is that the NBA target depends on a number from a system this sweep does not
 > document.*
+>
+> ✅ **`RULE 58` RE-VERIFICATION — and it found a near-collision worth naming.** *The absence claim
+> was re-probed case-insensitively and in variant spellings. **`10-15` (hyphen) returns `0`;
+> `10–15` (EN DASH) returns `3` documents** — but none is this target: they are stats.nba.com's
+> `10–15 min` finalisation lag, a `10–15 game` rolling window, `~10–15k` board legs/day, and, closest
+> of all, **`NBA_OPEN_ITEMS.md`'s *"whether any run exceeds its `10–15 minute` gap"* — which is the
+> spacing between the four `*/2` commit-back scrapers, a different quantity entirely.*** ⇒
+> ***The pipeline's end-to-end target is absent; a reader who greps `10–15` will land on four things
+> that are not it.*** 📌 *`RULE 58` cost `§F6.13` an entire retracted section an hour earlier; here
+> it confirmed a claim instead of overturning one, which is the outcome the rule is for.*
 
 ### ✅ WHAT CAN MOVE TO THE EARLY PHASE, AND THE ONE THING THAT CANNOT
 | moves early | why |
