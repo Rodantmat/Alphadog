@@ -454,6 +454,31 @@ with cutpoints sampled from the **live leg distribution** rather than the group 
 | 2 | 54.2% | 32.2% | 13.3% | 0.3% |
 | **3** | **40.2%** | 18.4% | 20.6% | **20.9%** |
 
+> 🔴 **COMPLETED 2026-09-23, `§F2.8` — THE PASS-3 ROW HELD PERCENTAGES AND ONE ABSOLUTE COUNT.
+> `T17` GAVE ALL FOUR.** *This block quoted `845,039` because the author's sentence quoted it, and
+> the other three leg counts were dropped — so the board size could not be recovered from this
+> document and none of the four counts could be checked.* **Found by the high-band audit
+> (`§F2.7`): this is a segment the coverage judge scores `0.48` — **COVERED** — carrying three
+> figures that appear nowhere in the twelve.
+>
+> | pass 3 | legs | share |
+> |---|---|---|
+> | low | 🔴 **1,624,686** | 40.15% |
+> | medium | 🔴 **744,002** | 18.39% |
+> | high | 🔴 **832,793** | 20.58% |
+> | elite | 845,039 *(already on file)* | 20.88% |
+> | **total** | **4,046,520** | 100% |
+>
+> ✅ **ARITHMETIC CONTROL — the four counts reproduce the four percentages already in the table to
+> two decimals** *(40.15/18.39/20.58/20.88 vs 40.2/18.4/20.6/20.9)*, **which is what establishes
+> that these are the same table and not a different measurement.**
+>
+> ⚠ **`NOT RECORDED`: which population the `4,046,520` is.** *This section also names **"1.7M
+> legs"** (the confidence-value distribution) and **"19M rows"** (`final_hp`). **Three different
+> populations appear within twelve lines and only the first is labelled** — so `4,046,520` is
+> recorded here as the tier table's own total and is **not** asserted to be the board, the leg
+> universe, or a subset of either.*
+
 ⚠ *"Elite went from ZERO legs to 845,039 — a fifth of the board."* 🔑 **And the author names the
 general lesson: *"I have 19M rows with real confidence values sitting in the database and I've been
 INFERRING the distribution from a 341-row group table instead of MEASURING it."***
