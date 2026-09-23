@@ -14264,6 +14264,60 @@ credential; this instance survived that catch, in the very pass named `IDs, hash
 
 ---
 
+## F6-1 · **NEW · ⚠ HIGH** · the baseline-ladder FILES still carry duplicate keys, `1,414` of them with DIFFERENT probabilities — and the table cannot show it
+
+*Filed 2026-09-23, `§F6.8`. **`T14` flagged this on 2026-09-11 and it is still present.** Read-only:
+the committed files were parsed, nothing was written.*
+
+### What `T14` said, and why the obvious check does not work
+
+> ***"the baseline ladder FILE contains `7,363` duplicate rows — `1,588` keys appear more than once,
+> and the duplicates aren't identical: the same player/prop/line carries `p_more` of `0.8703` and
+> `0.8698`. **the loader's primary key silently keeps whichever arrives last**, so the table has
+> `17,376` correct-looking rows and nobody would notice."***
+
+✅ **`[LIVE-AUDIT]` 2026-09-23 — `nba_score.baseline_ladder`: `206,237` rows, `206,237` distinct
+`(asof, player_id, prop, period, line)` keys, `0` duplicates.** 🔑 ***And that proves nothing. It
+is exactly what `T14` predicted the primary key would do.*** **A clean table is the SYMPTOM of this
+defect, not evidence against it** — which is why it survived a year of table audits.
+
+### 🔴 The files, parsed today — the defect is still there and it has grown
+
+| committed file | rows | 🔴 duplicate keys | extra rows | 🔴🔴 dup keys with **DIFFERING `p_more`** |
+|---|---|---|---|---|
+| `nba_baseline_ladder_2025-11-29.json` | 68,217 | **3,438** | 3,438 | 0 |
+| `nba_baseline_ladder_2026-01-15.json` | 100,437 | **9,576** | 9,576 | 0 |
+| 🔴 **`nba_baseline_ladder_2026-03-15.json`** | 52,018 | **1,421** | 1,421 | 🔴 **1,414** |
+| **total** | 220,672 | **14,435** | **14,435** | **1,414** |
+
+*Every duplicated key appears **exactly twice** (`extra rows == duplicate keys`) — consistent with
+`T14`'s diagnosis: **"the virtual-slate construction uses each team's last-3-games roster, so a
+player can be generated twice, with the probability recomputed slightly differently each time."***
+
+⚠ **The `2026-01-15` file matters more than its row count suggests** — *`§F1.2` established that
+`nba_score.final_hp`'s entire `2025-26` partition is **that one date**.*
+
+### 🔴 Why it is filed rather than noted
+
+> ***`T14`'s own words: "it's exactly the kind of thing that makes a backtest IRREPRODUCIBLE: run it
+> twice, get a different row, get a different pick."***
+
+**`1,414` keys where the same player/prop/line carries two different probabilities, and which one
+wins depends on arrival order.** *The differences are small — `T14` measured `~0.0005` — and this is
+**not data loss**. It is a determinism defect, and every backtest in the corpus that reads a ladder
+file rather than the deduplicated table inherits it.*
+
+**▶ What would close it:** **(a)** de-duplicate in the builder rather than relying on the loader's
+PK · **(b)** confirm no consumer reads the files directly — *`T14`'s second conclusion was **"the
+engine must never read the file directly — only the deduplicated table"**, and whether that holds
+today is `NOT RECORDED`* · **(c)** decide whether the `1,414` differing-probability keys need
+re-generating or whether last-write-wins is acceptable.
+
+⚠ **`NOT RECORDED`: which of the two rows the loader actually kept for those `1,414` keys**, and
+therefore whether the live table's probabilities are the ones any given backtest used.
+
+---
+
 ## F5-1 · **NEW · ⚠ HIGH** · two factors the corpus calls "NOT TESTED" have fitting scripts sitting in the repo, and the results are NOT RECORDED
 
 *Filed 2026-09-23, `§F5.5`. **Read-only: the scripts were read, never run.***
