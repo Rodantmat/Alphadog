@@ -103,6 +103,48 @@ that is the useful part.
 
 ---
 
+## 🏗 REBUILD FROM ZERO — **the whole system, in order** *(`§F7.21`, `2026-09-23`)*
+
+> ***Empty repo, empty database, no memory of this system. Do these in this order.*** *Every row was
+> walked as a rebuilder and every path and anchor below was verified against the live repo or a
+> read-only query on `2026-09-23`. **Where the corpus cannot settle something it says `NOT RECORDED`
+> and names the file that holds the answer** — never a guess.*
+>
+> | # | do this | where it is written | 🚩 |
+> |---|---|---|---|
+> | **1** | **Read the founding constraints and the operating model** *(no MLB edits · separate universe · every tunable in the DB · no orchestrator)* | **`STEP 0`**, **`STEP 0a`** | |
+> | **2** | **Recon the host system** — the eleven queries in order | **`STEP 1`** | |
+> | **3** | **Create the schemas.** 🔴 **`14` exist, live-verified `2026-09-23`**: `nba_calendar` · `nba_config` · `nba_control` · `nba_market` · `nba_ref` · `nba_score` · `nba_stats` · `nba_team` — **plus `6` that were created and NEVER USED**: `nba_archive` · `nba_backtest` · `nba_classification` · `nba_context` · `nba_daily` · `nba_scoring` *(all `0` tables)*. ⇒ ***Build the `8`; the other `6` are history, not a plan.*** | **`STEP 2`** · table-by-table DDL in **`NBA_DATABASE.md`** · *re-derive:* `` SELECT nspname FROM pg_namespace WHERE nspname LIKE 'nba%' `` | 🔑 |
+> | **4** | **Wire and deploy one worker**, then repeat. **The four-step wiring** — ⚠ **three of the four files are at the REPO ROOT, not `nba/`** | **`STEP 3`**, **`STEP 7`** · `NBA_WORKERS.md` § `0`/`0.2`/`0.37` | 🔑 |
+> | **5** | **Move scraping to GitHub Actions** and make it self-triggering *(`on: push: paths:` watching `nba/TRIGGER_NBA_SCRAPE.txt` — `workflow_dispatch` cannot be fired by a push)* | **`STEP 4`**, **`STEP 5`**, **`STEP 6`** | |
+> | **6** | **Build the static layer** — teams, arenas, players, officials, calendar | **`STEP 7`** · `STEP 11` stage `1` | |
+> | **7** | **Game-log backfill** *(one-time, NOT a pipeline — workflow `nba-backfill.yml`)* | **`STEP 11`** stage `2` | ⚠ *`STEP 11`'s `NOT RECORDED` block covers where this is triggered from* |
+> | **8** | **Weekly as-of layer** — defender ratings, season tables, playtypes, tracking, DARKO | **`STEP 8`** *(`P1`)* · `STEP 11` stage `3` | |
+> | **9** | **ENRICHMENT** — the factors, their lock, their mining and fallbacks | 🔴 **NOT IN THIS FILE.** ▶ **`NBA_ENRICHMENT_FACTOR_LOCK.md`** *(which factors are in, and frozen)* · **`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`** *(how each is sourced, and its fallback)* · **`NBA_ENRICHMENT_ENGINE_DESIGN.md`** · calibration in **`NBA_FINAL_SCORING_CALIBRATION.md`**. ⚠ **None of these four is one of the twelve** *(see the folder register)* | 🔴 |
+> | **10** | **THE BASELINE LADDER** — *"the heart of the system"* | **`STEP 11`** stage `4` · methodology in **`NBA_BASELINE_CALIBRATION.md`** · loader `nba/load_baseline_ladder.py` | 🔴 **`F6-1`: the loader's merge key omits `ot_rule` and silently drops `1,421` rows** |
+> | **11** | **As-of calibration** | **`STEP 11`** stage `5` · **`NBA_BASELINE_CALIBRATION.md`** | ⚠ **`§T23.10`/`§T23.18`: `2025-26` is still inherited from `2024-25`** |
+> | **12** | **BOARDS AND THE DFS LAYER** — board archive, the twelve sources, goblin/demon taxonomy, tiering | **`STEP 11`** stage `6` · **`NBA_GOBLIN_DEMON.md`** *(taxonomy; v1 is WRONG, v2 unverified)* · `NBA_DATABASE.md` → `THE TRIGGER MAP` | 🔴 |
+> | **13** | **The grader** *(next morning)* | **`STEP 11`** stage `7` · workflow `nba-grader.yml` | 🔴 **`T20-5`: `GRADE_END` default** |
+> | **14** | **THE SCORING ENGINE → `final_hp`** | **`STEP 11`** stage `8` · **`NBA_FINAL_SCORING_CALIBRATION.md`** · table in `NBA_DATABASE.md` | 🔴 **`NBA_SYSTEM_DESIGN.md` § `4b`: `final_hp` is rebuilt by NOTHING** |
+> | **15** | **THE MULTIPLIER ENGINE** — per-leg payout pricing | 🔴 **NOT IN THIS FILE.** ▶ **`NBA_MULTIPLIERS.md`**: the endpoint `§0.9-T22` · the pricing law `§0.10-T22` · the flat `25%` house edge `§0.12-T22` | |
+> | **16** | **THE CERTIFIER** — the twelve checks, and what they miss | **`NBA_SYSTEM_DESIGN.md`** → `WHAT CERTIFIES GREEN WHILE BROKEN` and `THE SWALLOWED-FAILURE CENSUS` | 🔴 **`T20-6`: it asserts tables no pipeline writes** |
+> | **17** | **PAPER TRADING** | 🔴 **NOT IN THIS FILE.** ▶ **`NBA_SYSTEM_DESIGN.md`** → **`standards_3pick_v1`**, specified end to end *(selection → packing → settlement)* | |
+> | **18** | **Assemble the three pipelines and the day** | **`STEP 8`** `P1` · **`STEP 9`** `P2` · **`STEP 10`** `P3` · **`STEP 12`** the game-day timeline and the four clocks | 🔴 **`P2` and `P3` have NO CRON** |
+> | **19** | **Dry-run opening night before it happens** | **`STEP 13`** | 🔴🔴🔴 **`T23-2`: `P3` aborts on every `2026-27` date · `§T23.5`: parallel catch-up deadlocks** |
+>
+> #### ⚠⚠ **`NOT RECORDED` — what a rebuilder cannot get from this corpus**
+>
+> | question | the corpus does not answer it; **this does** |
+> |---|---|
+> | **The exact `CREATE SCHEMA` / `CREATE TABLE` DDL, in dependency order** | 🔴 **NOT RECORDED as a script.** *The live database is the source of truth: `apply_schema_all.py` at the repo root is the applier, and per-table definitions are in `NBA_DATABASE.md`. **No file in the corpus contains the ordered DDL for a from-empty build.*** |
+> | **Cloudflare account, Hyperdrive binding and secret provisioning** | 🔴 **NOT RECORDED.** ▶ `generate_wrangler_configs.py` and `github_write_worker_secrets_file.py`, **both at the repo root** — the values themselves are secrets and are never in the corpus *(`F2-1`, `T22-1b`: **the repo is public**)*. |
+> | **Which of the `34` `nba-*.yml` workflows a fresh build needs, versus which are one-time or historical** | ⚠ **PARTIAL.** *`STEP 8`–`STEP 10` cover the three pipelines; `STEP 11` names `nba-backfill.yml` as the one-time stage 2. **The remaining ~`30` are not classified anywhere.*** *Re-derive the list:* `` ls .github/workflows/nba-*.yml `` |
+>
+> ⇒ 📌 ***Those three are the real floor of this document: everything else on the checklist above can
+> be done from what is written or what it points at.***
+
+---
+
 ## STEP 0 — The founding constraints *(T1)*
 Before any code:
 1. **This is an EXPANSION**, joining a live, Postgres-native MLB system. Not a migration, not a
