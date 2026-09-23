@@ -7,7 +7,7 @@ and the evidence behind each.
 ---
 
 > # 📑 **INDEX — `NBA_BASELINE_CALIBRATION.md`**
-> **~~`106`~~ → ~~`115`~~ → ~~`119`~~ → ~~`124`~~ → `130` sections · ~~`124,558`~~ → ~~`130,763`~~ → `147,078` bytes *(at parent commit; `§F6.19`)* · ~~`1,847`~~ → `1,936` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
+> **~~`106`~~ → ~~`115`~~ → ~~`119`~~ → ~~`124`~~ → ~~`130`~~ → `132` sections · ~~`124,558`~~ → ~~`130,763`~~ → `151,041` bytes *(at parent commit; `§F6.19`)* · ~~`1,847`~~ → `1,936` lines · built `2026-09-23`, census corrected same day (`§F2.14`).**
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
