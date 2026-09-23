@@ -1762,6 +1762,17 @@ transcripts with the receipt shapes `"ok"`, `"status"`, `"commit sha"`, `"file s
 | substantive uncovered *(the `§F5.1` headline)* | **12,680** |
 | 🔪 **receipt-shaped** | **1,605 · `12.7%`** |
 | **remainder** | **11,075** |
+| 🔑🔑 **of which PROSE — `§F6.28`, `2026-09-23`** | **`2,369`** *(`human/text` + `assistant/text` only)* |
+| 🔪 **`tool_use` + `tool_result`** | ***the other `~8,700` — `83.5%` of all segments are machine strata*** |
+
+🔑🔑🔑 **`§F6.28` IS THE LARGEST SINGLE REFRAMING OF THE REMAINING WORK.** *`11,075` has been this
+sweep's standing figure for what direction (b) still owes. **Scoped to the two strata the brief
+ranks FIRST — what the owner said and what the assistant concluded — it is `2,369`.*** *The rest is
+command lines and their output: the strata the brief ranks fourth and fifth, and the strata `§F5.7`
+was already carving receipts out of.* ⚠ **This does not make the machine strata worthless** — `§F5`
+recovered real findings from tool results — *but it means the phrase "`11,075` segments remain
+unread" measures a population that is `83.5%` command traffic, and it should be stated as **`2,369`
+prose + `~8,700` machine** from here on.*
 
 *Worst offenders are the META transcripts — `T19` **37.3%**, `T20` **21.1%** — which is exactly
 right: those sessions are almost entirely tool calls against the repo.*
