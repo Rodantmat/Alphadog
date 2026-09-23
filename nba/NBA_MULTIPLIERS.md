@@ -374,14 +374,34 @@ slips rested on them.*** **They are right.** 🔑 *A backtest result that depend
 unmeasured constants is now a backtest that depends on two measured ones — **the result did not
 change, and its evidential status did.***
 
-### 🔴 **4 · SAME-GAME PICKS CUT **FLEX**, NOT POWER**
-*A `3`-pick with two players from one game **kept its `6×` power** and had its **flex consolation cut
-from `1.0×` to `0.75×`**.*
-⚠⚠ **This QUALIFIES `§0.2f` directly.** *That section's rule — build cross-game by default because
-PrizePicks discounts same-game correlation — is **right for Flex and, on this observation, not
-applicable to Power at `3` picks**. **The discount is real; where it lands is narrower than the
-section implies.*** 📌 *`RULE 55`: one observation, so the rule is not rewritten — the observation is
-filed against it.*
+### 🔴 **4 · SAME-GAME PICKS CUT FLEX *AND* POWER — and this entry is a worked example of getting that wrong**
+
+🔴🔴 **RETRACTED AND REPLACED WITHIN THE SAME PASS.** *This item was first published as:*
+~~*"**Same-game picks cut FLEX, not POWER.** A `3`-pick with two players from one game kept its `6×`
+power and had its flex consolation cut from `1.0×` to `0.75×`. This qualifies `§0.2f`: the rule is
+right for Flex and, on this observation, not applicable to Power."*~~
+
+⚠ **BOTH HALVES OF THE EVIDENCE WERE AVAILABLE AND ONLY ONE WAS READ:**
+
+| source | says |
+|---|---|
+| the `T23` segment I read | *a `3`-pick, two players from one game, **kept `6×` power**, flex consolation `1.0×` → `0.75×`* |
+| 🔴 **`T23`, four segments later** | ***"slips with two players from the same game pay less, for example `2.9×` instead of `3.0×`. The standards backtest never prevented that."*** |
+| 🔴🔴 **this very document, `§0.2f`, line ~`436`** | ***"opponents paid `2.9×` instead of `3.0×`"*** — **already recorded, with the Flex-partial cut alongside it** |
+
+⇒ ✅ **THE CORRECT STATEMENT: same-game slips are discounted on POWER *and* on FLEX partials.** *The
+`6×`-retained observation is a real data point about ONE `3`-pick and does not generalise; the `3.0 →
+2.9` power cut is recorded independently in two places.*
+
+🔑🔑 ***I wrote a conclusion into the very section that already refuted it, four hundred lines below
+the refutation.*** **That is `§F7.9`'s defect experienced from the inside for the third time this
+session** *(after `§F6.13` and `§F6.21`)*: **a figure repeated across a corpus with no pointer home
+lets a writer contradict it without ever meeting it.** 📌 ***The check that would have caught it costs
+one grep of the file being written to, and it is now part of the pass procedure rather than a
+lesson.***
+
+✅ **`§0.2f`'s cross-game default therefore stands UNQUALIFIED**, and `T23`'s own conclusion is the
+operational form of it: ***"the next build will use legs from different games in every slip."***
 
 ### 🔴 **5 · `LESS` IS THE EXACT COMPLEMENT OF `MORE`, AND IT HAS ITS OWN FLOOR**
 | | |
