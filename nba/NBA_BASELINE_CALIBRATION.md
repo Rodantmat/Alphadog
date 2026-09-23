@@ -2210,7 +2210,7 @@ of those changes without it.*** 📌 **`RULE 56` again, and the first instance f
 rather than a results table.** ⚠ *The `sample_size` column is right there in the schema; nothing had
 ever read it.*
 
-> ⚠ **PLACEHOLDER-ANCHOR-DO-NOT-MATCH** ⚠ **CORRECTED SAME PASS — `§F6.26`'s verification caught it.** *This section first said **five**.
+> ⚠ **CORRECTED SAME PASS — `§F6.26`'s verification caught it.** *This section first said **five**.
 > `SELECT count(*) FROM nba_config.calibration_log WHERE sample_size = 272909` returns **`6`**
 > *(`log_id` `3`–`8`)*. **I had counted the four distinct `decided_by` values and written a row
 > count.** 🔑 ***`RULE 57` is about running a derivation on every row; this is its arithmetic twin —
