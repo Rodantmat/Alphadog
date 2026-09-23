@@ -51,7 +51,9 @@
 > *(The count above reads SIXTEEN; the brief is now **SEVENTEEN** — see its heading.)*
 >
 > 🔴 **The two numbered items previously at the head**: **`T20-13`** — *"P2's certifier will go red every
-> night for the first twelve nights of the season — **correctly**"* — and **`T20-17`** — *a dropped
+> night for the first twelve nights of the season — **correctly**"* 🔴 *(**quoted as it then read; the
+> duration was CORRECTED 2026-09-23, §T20.136 — every night of the season, not twelve, because
+> `baseline_history has today` fails first (`T20-6`)**)* — and **`T20-17`** — *a dropped
 > injury-archive shard silently truncates `nba_score.availability_delta`, **which `score_board_legs.py`
 > reads***.
 > ⚠ **Nothing on that list is fixed. The owner's standing instruction is *document, don't fix*.**
