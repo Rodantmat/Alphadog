@@ -2973,6 +2973,100 @@ the measurement and not tuned after. **`NOT DONE`: whether the repeated figures 
 — only whether they are attributed.** *Two documents quoting `140,130` with different meanings would
 score as attributed-or-not exactly like two that agree.*
 
+## ✅✅✅ §F7.10 — **THE FINDABILITY CAMPAIGN CLOSES — FINAL VERIFICATION, AND WHAT THE NINE PASSES ADD UP TO**
+
+*`2026-09-23`. **The last pass. Everything below was re-derived at `HEAD` after the final write.***
+
+### 1 · ✅ Nothing was lost *(the owner's standing rule, verified rather than asserted)*
+
+> *"A move is a delete plus an insert, which is how content gets lost. Before and after every
+> reorganisation, count the sections and verify nothing vanished."*
+
+| file | sections at session start | now | Δ |
+|---|---|---|---|
+| `NBA_MASTER_SUMMARY.md` | `2,798` | `2,822` | `+24` |
+| `NBA_GLOSSARY.md` | `44` | `47` | `+3` |
+| **the other ten** | — | — | **`+0` each, exactly** |
+| **TOTAL** | **`5,036`** | **`5,063`** | **`+27`** |
+
+✅ **NO FILE HAS A NEGATIVE DELTA.** *Two reorganisations moved content — `P–S (continued)` in the
+glossary, and `RECIPE`'s two build-order blocks at `§F7.3` — **and both were done insert-first,
+verified byte-identical programmatically, then deleted.*** ✅ **`**Part G**` occurs exactly `1` time
+in the glossary**, confirming the moved block exists once, not zero times and not twice.
+
+### 2 · ✅ Every uniform repair grepped across all twelve *(`RULE 53`)*
+
+| | result |
+|---|---|
+| `📏 CENSUS STAMP — 2026-09-23, §F7.5` | ✅ **`12` of `12`** |
+| `📌 HOW TO READ THIS FILE` | ✅ **`12` of `12`** *(was `11`; `MASTER_SUMMARY` was the gap)* |
+| `ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS` | ✅ **`12` of `12`** *(was `10`; `MASTER_SUMMARY` and `OPEN_ITEMS` were the gaps)* |
+| `📑 INDEX` in the first `1%` | ✅ **`12` of `12`** |
+
+### 3 · ✅ The pointer audit re-run after all writes
+
+**`6,666` real pointers · `6,582` resolve · `98.74%` · `84` dangling in `12` distinct labels**, every
+one of which resolves to a parent heading. ✅ **`§F7.7`, `§F7.8` and `§F7.9` all resolve** — *including
+`§F7.9`, which this campaign's own audit caught as a forward reference to a pass that did not yet
+exist. **It exists.***
+
+### 4 · 🔑🔑🔑 What the nine passes actually found
+
+***The owner's diagnosis was right and its cause was not what anyone was looking for.***
+
+🔑 **Four of the five named defects were RAGGEDNESS — things out of order, missing, or stale.** *Those
+were repairable and are repaired.* 🔑🔑 **But every research question returned the same shape of
+answer, and it was not raggedness:**
+
+| the question asked | the answer found |
+|---|---|
+| *do index pointers dangle?* | **No — `98.79%` resolve.** 🔴 **They point at nothing IN PARTICULAR**: `§4` is a heading in `29` of `32` files |
+| *do offsets and line numbers stay true?* | **No — and neither do byte or line counts**: `bytes 1`/`11`, `lines 0`/`6`, while `sections 12`/`12` |
+| *can a reader landing mid-file tell where they are?* | **Usually yes — median gap `~1 kB`.** 🔴 **Except for one `244,260`-character run and one `96,266`-character line** |
+| *is the same question answered in four documents with no pointer between them?* | **Yes — `84` figures, `65.1%` unattributed.** 🔴 **Worst in the two documents you BUILD from** |
+| *which files in the folder are the twelve?* | 🔴 **Nothing said.** And a "sibling" turned out to hold **`22` lessons that exist nowhere in the twelve** |
+
+⇒ 🔑🔑🔑 ***THE UNIFYING DIAGNOSIS: this corpus records ITS FINDINGS exhaustively and its ADDRESSES
+not at all.*** *Every finding has a `§` label, a date, a window and a retraction history. **Almost
+nothing says which FILE anything is in** — not the pointers, not the repeated figures, not the folder
+itself. **A corpus whose every claim is traceable and whose every location is implicit is exactly a
+corpus that is "good content, hard to get at."***
+
+📌 ***And that is the same failure `§F7.1` found at the bottom of `T19`***: *"the journal exists and I
+ignored it… my first move on any 'have we done this?' question should be to read that."* **The one
+genuine gap in `2,097` re-read segments was a diagnosis about not being able to find things. It is
+now the charter of the nine passes above.**
+
+### 5 · ⚠ What this campaign DECLINED to do, and why
+
+***Three mass edits were available and all three were refused, on the owner's own rule.***
+
+| refused | size | why |
+|---|---|---|
+| rewrite bare `§` labels to carry filenames | `955`–`1,187` occurrences | `RULE 1` — re-labelling breaks every inbound pointer |
+| add a `§` pointer beside every repeated figure | `1,188` insertions | edits to prose that is currently correct |
+| split the long transcript-index rows into headed sections | `214,000` chars moved | **a move on the densest block of findings in the corpus** |
+
+🔑 ***In each case a LOOKUP TABLE resolves the ambiguity and edits nothing.*** **"Losing a finding
+while tidying is worse than the untidiness" is not a caution about carelessness — it is a design
+principle, and it chose the repair three times.**
+
+### 6 · 🔴 Honestly remaining
+
+- **`76` of the `84` shared figures** are not in the canonical table.
+- **`955`–`1,187` bare cross-file pointers** remain bare; the disambiguation table covers the top `~25` labels.
+- **The `96,266`-character line** is still one line.
+- **`T21`–`T24` remain OPEN** in the sweep ledger; **direction (b)** still holds `2,369` uncovered substantive prose segments.
+- **Reader independence for `RULE 46` was never achieved** — no subagents are permitted — and `§F7.1` says so rather than claiming otherwise.
+- **`12` distinct pointer labels still dangle** at leaf level; all `12` resolve to a parent.
+- **The `20` sibling files** were registered but not swept, and their own `§` labels were not audited.
+
+⚠ **`RULE 54`.** *`WINDOW`: all figures in this pass re-derived at `2026-09-23` `HEAD` after the final
+write. **The `5,036` session-start baseline is taken from this session's own opening census, not from
+an independent source** — if that census was wrong, this verification inherits the error. **The
+`+27` delta is arithmetic on two of my own measurements, and its value is that it is NON-NEGATIVE
+everywhere, which is the claim that matters.***
+
 ## §F4.6 — 🔴 ~~**THE ONE THING THIS SESSION CANNOT DO**~~ **SUPERSEDED ON ITS CONCLUSION BY `§F7.1`, UPHELD ON ITS REASONING**
 
 > **`RULE 46` requires `T19` and `T20` to each have TWO INDEPENDENT COMPLETE SEQUENTIAL READS FROM A
