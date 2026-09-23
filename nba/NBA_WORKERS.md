@@ -6,7 +6,8 @@ writes. Grouped by role.
 ---
 
 > # 📑 **INDEX — `NBA_WORKERS.md`**
-> **~~`109`~~ → ~~`122`~~ → ~~`126`~~ → `130` sections · ~~`159,199`~~ → `~180,000` bytes · built `2026-09-23`, census corrected same day (`§F2.14`), re-taken after `§F2.16` and again after `§F5.5` (`122 → 126 → 130`).**
+> **Every worker and workflow** — what each does, how it is wired, what triggers it, and where it
+> fails. *Counts of workflows and crons are never quoted here; `§0.0` carries the commands.*
 > 📏 **`130` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_WORKERS.md ``
 > | 🔴🔴 **the FILE CENSUS — `7` of `21` workers and `27` scripts named in `0` of the twelve** | **`§F5.5`** |
 > | 🔴🔴 **the scripts behind every T15 factor verdict** *(`fit_*`, `measure_*`, `retest_*`)* | **`§F5.5` §2** — *mapping also in `NBA_FINAL_SCORING_CALIBRATION.md` §3* |
