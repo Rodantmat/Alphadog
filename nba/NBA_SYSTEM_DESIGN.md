@@ -1034,8 +1034,13 @@ only 15 minutes")* — **and it is an architectural answer, not an optimisation 
 > 🔴 **AND THE PROFILING WAS A PREREQUISITE, NOT A SUGGESTION.** *"Before building the NBA engine" —
 > the reasoning is that MLB and NBA run the same stack on the same Postgres, so **whatever consumes
 > MLB's `~30` minutes is likely to consume NBA's too, and it has never been located.*** ⚠
-> **`NOT RECORDED` anywhere reachable from this session: whether that profiling was ever run.** *No
-> transcript, config row or report in the repo carries an MLB stage-by-stage timing breakdown.*
+> **`NOT RECORDED` anywhere reachable from this session: whether that profiling was ever run.**
+> ✅ *Checked, and the check needs stating precisely because a naive grep is misleading:
+> **`ALPHADOG_SYSTEM_MAP.md:487` does claim "all `9` full-run orchestration chains, stage-by-stage"**
+> — **but that is a STRUCTURAL chain mapping, not a timing one.** A scan of that document for
+> durations, elapsed times or per-stage figures returns **none**. ⇒ ***MLB's chains are mapped; MLB's
+> `~30` minutes are not attributed to any stage in any document, config row or transcript this
+> session can reach.****
 > ⇒ **The `10-15 min` target is therefore held against an engine whose dominant cost is unmeasured,
 > and the retracted "D1 is faster" line is the record of one wrong guess about it already.**
 >
