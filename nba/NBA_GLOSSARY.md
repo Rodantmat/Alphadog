@@ -1601,10 +1601,6 @@ any kind — table, view, function — used wherever a claim is about existence 
 `operation` *(`T12`, the archive worker's verb column)* · `owns_db_binding` *(`T1`, which worker
 holds the D1 binding — a control-plane fact from the pre-Postgres era)*.
 
----
-
-## P–S
-
 **operating model, the owner's** · T1 (`NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` §7) · The stated
 working constraints, *"apply from the very first NBA interaction."* **Owns and operates the system
 alone from a phone, no terminal — the assistant is the only interface to database, repo and deploy.**
