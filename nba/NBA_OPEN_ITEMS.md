@@ -10,7 +10,7 @@
 > 🔴🔴 **THE ONE THING TO KNOW BEFORE SEARCHING THIS FILE.** *Re-derived `2026-09-23`, `§F2.13`:*
 > | how an item is stored | count | how to find it |
 > |---|---|---|
-> | **has its OWN heading** | ~~`39`~~ → ~~`54`~~ → **`56`** | ✅ search the ID — it is a heading |
+> | **has its OWN heading** | ~~`39`~~ → ~~`54`~~ → ~~`56`~~ → **`57`** | ✅ search the ID — it is a heading |
 > | 🔴 **exists ONLY as a row inside a table** | ~~`31`~~ → **`18`** | ⚠ **search the ID — it will land mid-table, not on a heading.** *Scanning headings alone will MISS these.* |
 > | **total items** | ~~`70`~~ → ~~`72`~~ → ~~`73`~~ → **`74`** | *(`F2-1`, `T10-F1`, `F5-1`, `F6-1` added 2026-09-23; **re-derived after each, never incremented**)* |
 >
