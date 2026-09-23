@@ -505,6 +505,41 @@ with cutpoints sampled from the **live leg distribution** rather than the group 
 > populations appear within twelve lines and only the first is labelled** — so `4,046,520` is
 > recorded here as the tier table's own total and is **not** asserted to be the board, the leg
 > universe, or a subset of either.*
+>
+> ---
+>
+> 🔴 **AND PASS 2 WAS MISSING THE SAME WAY — ADDED 2026-09-23, `§F6.1`.** *The `§F2.8` correction
+> above restored pass 3's leg counts. **Pass 2's were absent too**, along with two columns the table
+> never had: `1,250,042` · `741,922` · `307,908` · `7,250` each returned **`0` of `12`**.*
+>
+> | pass 2 | legs | share | **avg confidence** | **distinct values** |
+> |---|---|---|---|---|
+> | low | 🔴 **1,250,042** | 54.2% | **0.5733** | 186 |
+> | medium | 🔴 **741,922** | 32.2% | **0.6202** | 72 |
+> | high | 🔴 **307,908** | 13.3% | **0.6615** | 125 |
+> | elite | 🔴 **7,250** | 0.3% | **0.7743** | 29 |
+> | **total** | **2,307,122** | 100% | monotone ↑ | **412** *(from `95`)* |
+>
+> ✅ **ARITHMETIC CONTROL, the same test as `§F2.8`**: `1,250,042 / 2,307,122 = 54.18%` ·
+> `32.16%` · `13.35%` · `0.31%` — **reproducing `54.2 / 32.2 / 13.3 / 0.3` to one decimal.**
+>
+> 🔑🔑 **AND THE TABLE'S OWN ANOMALY IS EXPLAINED — by a sentence that was also in `0` of the
+> twelve.** *A reader of the pass-3 row (`40.2 / 18.4 / 20.6 / 20.9`) would reasonably ask why
+> equal-mass binning did not produce `25/25/25/25`. `T17` answers it:*
+>
+> > ***"it's not yet the 25/25/25/25 that equal-mass binning should produce, and the reason is
+> > visible: the cutpoints were sampled from `final_hp` BEFORE this run rewrote it, so they came
+> > from the old low-resolution distribution. the next run will sample the new distribution and land
+> > much closer to quartiles — **it's a one-iteration lag, not a design flaw**."***
+>
+> ⚠ **`NOT RECORDED`: whether that next convergence run ever happened.** *If it did not, the live
+> tier labels are still one iteration behind — **and `§0.16-F2`'s threshold grid and `T23-1`'s
+> standards-only result are both computed on tiered legs.*** 🔴 **Worth settling before the opener.**
+>
+> 📌 *Two further figures from the same block, also absent: the tier value's **held-out
+> discrimination `0.627 → 0.996`**, and **`final_hp` at `0.5643` log-loss over `1.25M` graded
+> PrizePicks legs**. Both recorded here.* ⚠ *That block also states "38.7m legs", the figure
+> `§F1.2` showed is `19,215,200` live — **quoted as `T17` said it, not endorsed**.*
 
 ⚠ *"Elite went from ZERO legs to 845,039 — a fifth of the board."* 🔑 **And the author names the
 general lesson: *"I have 19M rows with real confidence values sitting in the database and I've been
