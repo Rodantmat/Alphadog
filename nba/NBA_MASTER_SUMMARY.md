@@ -13309,6 +13309,34 @@ invoked it**, on the adjacent line of the same table.*
 > **It has not completed a run since 2026-09-02.** So *"detection starts on the second run"* has never
 > been put to the test: **there has been no second run.**
 
+> 🔴🔴 **AND THERE WAS ONE EARLIER TEST — IT RAN, AND IT ALSO PRODUCED `0` EVENTS, FOR A DIFFERENT
+> REASON.** *Added 2026-09-23, `§F5.4`, from `T3`'s reasoning stratum — one of only three
+> transcripts where that stratum survives (`§F5.2`).* **The assistant's own words while testing the
+> differ by hand-editing a player's team:**
+>
+> > ***"team snap correctly shows 30 again, and lebron's team id reverted to his real team since
+> > the worker's refresh step overwrote my manual edit after reading it for diffing. but the diff
+> > found 0 events, meaning diffplayers failed to catch the team change even though the old value
+> > should have triggered a difference. tracing the diffplayers logic, the condition checking
+> > whether old.team id and the new teamid differ while the player is active should have fired since
+> > my manually-set value and the fresh scraped value were clearly different."***
+>
+> 🔑 **This matters because it changes what `§T8.33b` implies.** *`§T8.33b` establishes that the
+> differ has not RUN since 2026-09-02 and concludes the detection path *"has never been put to the
+> test."* **It has been — once, in `T3` — and it returned `0` events on a change that should have
+> fired.*** ⇒ ***restoring the worker's schedule may not by itself produce a first true positive.***
+>
+> ⚠⚠ **STATED AT EVIDENCE STRENGTH, AND THE LIMIT IS REAL.** *The block is **TRUNCATED** — it ends
+> mid-sentence at "considering wh…", so **the assistant's CONCLUSION is not in the file** and this
+> corpus does not know whether the cause was found.* **Two hypotheses are visible in the block and
+> neither is settled: (a) an ordering problem — the worker's refresh step overwrote the old value
+> before `diffPlayers` read it, in which case the TEST was invalid and the differ may be fine; (b) a
+> genuine `diffPlayers` logic fault.** 🔴 **Which one is `NOT RECORDED`, here or anywhere.**
+>
+> 📌 ***`diffPlayers` — the function name itself — returned `0` hits across all twelve before today.
+> A named function with a failed test, invisible to the corpus because the only record of it was a
+> reasoning block.***
+
 ⚠ **Novelty, grepped before writing (rule 12) — and it changed what this entry claims.** *"The
 weekly differential worker has not run"* **is already documented, with its cause**:
 `NBA_WORKERS.md` line 1230 tags it **"⚠ NEVER SCHEDULED"**, and §6415 records *"the weekly
