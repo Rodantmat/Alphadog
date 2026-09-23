@@ -111,8 +111,12 @@
 > 2. **Then search the `§` label**, e.g. `§T20.134`. *Numbers are sequential within a transcript.*
 > 3. **For a finding you cannot place**, search the **subject word** — headings are written as full
 >    sentences and are unusually descriptive.
-> 4. ⚠ **Do not search by line number**, and do not trust a line number quoted anywhere in the twelve
->    *(`§T20.22` measured the rot rate)*.
+> 4. ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+>    rotted within a day; `§T20.67`: `83.7%` of testable `FILE:LINE` citations are dead)*. **Search
+>    for the quoted `§` label or the quoted text.** *Added as a stated rule `2026-09-23`, `§F7.8` —
+>    **this file and `NBA_OPEN_ITEMS.md` were the only two of the twelve whose index never said it**,
+>    which is notable because this is the file whose line numbers move most: it grew `2,794` bytes
+>    during the single day that measured them.*
 >
 > 📌 **WHAT THIS FILE IS, AND IS NOT**: ***it is the PASS RECORD — what was examined, what was found,
 > what was killed and why.*** **The subject matter itself lives in the eleven topical documents.**
