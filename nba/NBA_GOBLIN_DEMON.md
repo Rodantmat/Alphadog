@@ -642,6 +642,18 @@ sport-specific pricing model. The same company applies the same structure across
 > specific to `prizepools` or to the state, so it isn't a contradiction yet — **but it's an
 > observation that doesn't match what's written, and it matters for how the tiers get labelled.**"*
 >
+> ## ✅✅ **RESOLVED LATER IN THE SAME TRANSCRIPT — AND THE ANSWER IS BETTER THAN EITHER OPTION**
+> *`T22`'s own closing status table settles it in five words:* ***"four-way less side — priced by the
+> engine, HIDDEN BY THE APP."***
+> ⇒ 🔑🔑 ***The Less side EXISTS and IS PRICED. The app simply does not render a Less button on
+> goblin and demon cards.*** **Both records were right: the four-way rule is real (the engine), and
+> the board really shows More-only (the app).**
+> 📌 ***The restraint was what made the resolution possible.*** *Had the observation been filed as a
+> contradiction, the four-way rule would have been marked doubtful and the engine-side pricing —
+> which is the part an EV model actually consumes — would have been thrown out with the UI.* ⚠ **`The
+> app is not the engine` is now a standing distinction for every board observation in this
+> document.**
+>
 > 🔑🔑 ***PrizePicks serves a DIFFERENT GAME MODEL in some states, and a prize-pool model may not pay
 > fixed multipliers the way Power Play does.*** ⇒ ***Every multiplier figure in these documents is
 > implicitly scoped to a game mode and a state, and none of them say which.*** **That is the finding,
