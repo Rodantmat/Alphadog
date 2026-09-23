@@ -2345,7 +2345,28 @@ fresh context; `T20` cannot close in this session.**
 
 ### 📜 ~~THE FORTY-EIGHT STANDING RULES~~ ~~THE FIFTY-ONE STANDING RULES~~ ~~THE FIFTY-TWO STANDING RULES~~ ~~THE FIFTY-FOUR STANDING RULES~~ **THE FIFTY-FIVE STANDING RULES** — *the index; each is written in full where it was born*
 
-> **`1`–`48` · `49` RETIRED, not reused · `50` · `51` · `52` · `53` · `54` · `55` · `56` · `57` ⇒ `56` numbered.**
+> **`1`–`48` · `49` RETIRED, not reused · `50` · `51` · `52` · `53` · `54` · `55` · `56` · `57` · `58` ⇒ `57` numbered.**
+>
+> 📜 **`RULE 58` NUMBERED `2026-09-23`, `§F6.13`'s retraction — *a `0`-of-`12` result is a claim
+> about YOUR QUERY, not about the corpus, until the concept has been probed in at least two
+> spellings: hyphenation, case, and the corpus's own English rather than the source's
+> identifier.*** 🔴 **Numbered rather than proposed because it was earned FIVE times in one pass,
+> each time by me:**
+>
+> | § | probed as | the corpus writes |
+> |---|---|---|
+> | `§F6.13` `§3`/`§4` | `magnitude refit`, `flat multiplier` | `magnitude-refit`, `flat on the mean` — *`3` and `1` hits, present all along* |
+> | `§F6.13` `§2` | `day-before-baseline`, `scratch announced` | *the whole `next_test` quote, under its own heading* |
+> | `§F6.21` | `penalty_pp`, `n-weighted ECE`, `median ECE` | *"the amount the prop's volume-weighted ECE trails the certified median (`0.20 pp`)"* |
+> | `§F6.22` | `hundreds of legs instead` | *"a few HUNDRED legs instead of a few THOUSAND"* |
+> | `§F6.22` | `defect_rule` | *"any factor whose source PUBLISHES BEFORE the window…"* — **`2` documents** |
+>
+> 🔑 ***The failure has one shape: config rows and source files carry snake_case identifiers; the
+> twelve carry prose. `grep -F` on the identifier crosses that gap for numbers and for nothing
+> else.*** ⇒ **Operationally: probe a FIGURE first (spelling-invariant), and only then the wording —
+> and when a wording probe returns `0`, try it case-insensitively and with the hyphen flipped before
+> writing the word "absent".** 📌 *`§F6.13` is what this rule cost: a full section recovering
+> material that sat `200` lines above it in the same file.*
 > *Re-derived from this log's own numbering statements 2026-09-23 (`§F2.10`), not carried forward
 > from any earlier count — the previous header said `51` and was two amendments stale.*
 >
