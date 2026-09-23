@@ -39066,3 +39066,89 @@ tables are stale; it does not state that no scheduled job exists to refresh them
 — and the answers narrowed to a single number.** ⚠⚠ ***`2` of `52`. A documentation sweep can spend a
 hundred passes describing what code DOES and never once ask what RUNS it, because every document is
 organised by component and the trigger is the one property that lives outside the component.***
+
+---
+
+# §T20.122 — T20 PASS 117: 🔴🔴🔴 **THE COMMIT HISTORY IS A RUN LOG, AND IT SETTLES `§T20.121` WITH A POSITIVE CONTROL — A SIBLING MONDAY CRON FIRED ON BOTH OF THE LAST TWO MONDAYS AND `P1` LEFT NO TRACE ON EITHER INSTRUMENT**
+
+*Pass 117, 2026-09-23. Pre-registered as **"THE COMMIT HISTORY IS A RUN LOG — EVERY BOT COMMIT IS A
+WORKFLOW THAT ACTUALLY FIRED. RECONSTRUCT WHAT HAS REALLY BEEN RUNNING, AND RESOLVE `§T20.121`'s NOT
+ESTABLISHED."** **A configuration says what SHOULD run. A commit says what DID.***
+
+## ① THE INSTRUMENT, AND ITS BLIND SPOT NAMED FIRST *(clause iii)*
+
+**`git log --since=2026-08-24 --author="github-actions" --pretty='%cI|%s'` ⇒ `1,413` bot commits over
+`30` days**, first `2026-08-24`, last **`2026-09-23T00:08:41Z`**, grouped by normalised subject.
+
+⚠⚠ **THE BLIND SPOT, STATED BEFORE ANY CONCLUSION** *(`§T20.115`: "an instrument aimed at one spelling
+of a thing reports the absence of the thing")*: **a workflow that writes only to Postgres commits
+nothing and is invisible here.** *That covers most of `P2` and `P3` — which is moot, since neither has
+a cron — and, critically, `build_defender_ratings.py` inside `P1`.* ⇒ **This instrument can only be
+used together with the database one, and below it is.**
+
+📌 **AND MY OWN FOOTPRINT, DISCLOSED**: *this session's `[skip ci]` commits do not suppress GitHub's
+built-in `pages build and deployment`, which now fills the workflow-run listing — **`892` of the
+`1,413` bot commits are `"Auto: record last successful deploy marker"`**, the deploy workflow reacting
+to pushes, mine included. **The sweep is altering the evidence it reads, and that is why this pass uses
+`git log` rather than the run listing.***
+
+## ② WHAT IS ACTUALLY RUNNING — THE VERDICTS
+
+| workflow | evidence | verdict |
+|---|---|---|
+| `sleeper-board.yml` *(`15 */2`)* | **`63`** commits, last **`2026-09-22T21:18:06Z`** | ✅ **FIRING AS CONFIGURED** |
+| `fliff-board.yml` *(`35 */2`)* | **`69`**, last **`2026-09-22T21:38:26Z`** | ✅ **FIRING AS CONFIGURED** |
+| `underdog-board.yml` *(`25 */2`)* | **`27`**, last **`2026-09-21T19:52:37Z`** | ⚠ **FIRING, BUT AT `27` AGAINST ITS SIBLINGS' `63`/`69` ON THE SAME `*/2` SCHEDULE** — *recorded, not explained (rule 6)* |
+| `scrape.yml` *(MLB, `0 */2`)* | **`243`**, last **`2026-09-23T00:08:41Z`** | ✅ **FIRING** *(out of scope, kept as the cadence control)* |
+| **`nba-scrape.yml`** *(`0 9 * * 1`, **Mondays**)* | **`Update NBA teams JSON`** — **`2026-09-21T16:35:26Z` (Monday)** and **`2026-09-14T16:38:33Z` (Monday)** | ✅✅ **FIRING AS CONFIGURED — AND THIS IS THE POSITIVE CONTROL** |
+| 🔴 **`nba-p1-weekly-static.yml`** *(`0 19 * * 1`, **Mondays**)* | **`NBA season tables (...)` last `2026-09-10T01:21:49Z` — a THURSDAY, in a three-commit backfill burst.** **Nothing on Monday `09-14`. Nothing on Monday `09-21`.** | 🔴🔴🔴 **NO EVIDENCE OF A SCHEDULED RUN** |
+
+## ③ 🔴🔴🔴 **`§T20.121`'S NOT ESTABLISHED, RESOLVED AS FAR AS THE EVIDENCE ALLOWS**
+
+`§T20.121` found `nba_ref.defender_ratings` unwritten since `2026-09-13` although two Monday crons had
+passed, and named two candidates without choosing: *(a)* the workflow is not completing; *(b)* the step
+runs and its `> 10k` floor stops the write.
+
+**Three facts now bear on it:**
+
+1. ✅ **THE CONTROL ELIMINATES "CRONS DO NOT FIRE IN THIS REPOSITORY."** `nba-scrape.yml` carries a
+   Monday cron and committed on **both** of the last two Mondays. *(⚠ Both at ~`16:35`–`16:38` UTC
+   against a `09:00` schedule — a consistent `7.5`-hour offset, **recorded and not explained**; the
+   consistency argues for a schedule rather than hand dispatch, but the workflow's own run list would
+   be needed to settle it.)*
+2. 🔴 **THE COMMIT INSTRUMENT SHOWS NOTHING FOR `P1` SINCE `2026-09-10`** — before both Mondays.
+3. 🔑🔑 **AND THE ONE DATABASE WRITE IT DID PRODUCE, `2026-09-13`, WAS A SUNDAY.** **`P1`'s cron is
+   Monday.** ⇒ ***That write cannot have come from the schedule; it was a dispatch.*** ⇒ ***There is no
+   evidence, on either instrument, that `P1`'s Monday cron has produced anything in this thirty-day
+   window.***
+
+⚠ **WHAT IS STILL NOT ESTABLISHED, AND NAMED**: whether `P1` is *not starting*, *starting and failing
+before its first write*, or *running and committing nothing because nothing changed*. 🔑 **Candidate
+(b) is now weaker than it was**: the "nothing changed, so nothing committed" reading explains the
+commit silence but **not** the database silence, since `build_defender_ratings.py` runs unconditionally
+at `nba-p1-weekly-static.yml:92–95`. ▶ **What would close it: that one workflow's own run list.**
+
+## ④ WHAT ELSE THE RUN LOG SHOWS, AND ONE THING IT KILLS
+
+✅ **The scraping network is genuinely alive** — `435` board-scraper commits in thirty days across four
+apps. ⚠ **And everything else NBA is a burst, not a cadence**: `NBA injury report data` last
+**`09-10`** · `NBA daily delta ingestion data` last **`09-08`** · `NBA game officials backfill`
+**`09-04`** · `NBA starter status backfill` **`09-03`** · the twenty-one `per-game matchups shard`
+commits all inside **`09-10`** · `NBA market spreads export` **`09-13`** · `NBA P2 baseline ladder`
+**one** commit, `09-20` · `NBA P3 day-of ladder` **one**, `09-19`. ⇒ ***The September backfill is
+visible in the history as exactly what `§T20.95` called it — a five-day burst — and nothing has
+replaced it with a rhythm.***
+
+✂ **KILL, LOGGED**: `§T20.120`'s three board-file timestamps are on file and are **inputs** here, not
+the finding; `§T20.121`'s trigger map and cron configuration likewise. **The finding of this pass is
+about what RAN, which neither established.**
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: no document in either tree states that `P1` has
+not run, and `git log`-as-run-log appears nowhere as a method. ✅ **NOVEL.**
+
+📌 ***The lesson:*** **the answer to a question this sweep had marked NOT ESTABLISHED was in the
+repository the whole time, in a place no pass had thought to look — `git log` is a dated, authored,
+path-tagged record of every run that actually happened.** ⚠⚠ ***And it came with its own positive
+control for free: two workflows, one repository, the same weekday schedule — one leaves a trace on both
+Mondays and the other leaves none anywhere. That is the comparison RULE 22 asks for, and the history
+supplied it without being asked.***
