@@ -41742,3 +41742,108 @@ ask "will it produce output on `2026-10-20`."*
 > `SELECT`-only reads, not re-derivations of another session's analysis)*. 🔴 **`NOT RECORDED`** —
 > finding 5's remaining text beyond "tail b…" *(the segment is cut)*; whether the `≥1.40` strategy
 > survives slip-level compression. ⚖️ **`pp_*` objects not queried.**
+
+---
+
+# §T23.3 — ✅✅ **THE OTHER HALF: STANDARDS-ONLY CLEARS THE BREAKEVEN IN BOTH SEASONS — AND THE WNBA ANSWER IS "SAME ENGINE, NOT THE SAME CONSTANTS"**
+
+*T23 pass 3, 2026-09-23. **`§T23.2` published a negative headline. The same transcript carries the
+segment breakdown that qualifies it, and the qualification is the actionable part.** All five
+components below score `0` in both trees.*
+
+## 1. ✅✅✅ **WHERE IT PAYS — STANDARDS, NOT DEMONS** *(SEG `492`)*
+
+*Model value `≥ 1.40`, one leg per player-prop-day, realized value ± SE:*
+
+| segment | **2024-25** | **2025-26** |
+|---|---|---|
+| 🟢 **standard OVER** | **`1.195 ± 0.027`** *(n = `1,324`)* | **`1.211 ± 0.035`** *(n = `773`)* |
+| 🟢 **standard UNDER** | **`1.116 ± 0.013`** *(n = `5,622`)* | **`1.148 ± 0.012`** *(n = `6,880`)* |
+| 🔴 **demon** | `1.164 ± 0.021` *(n = `9,667`)* | `1.095 ± 0.013` *(n = `30,494`)* |
+| 🟢 **standards combined** | **`1.131`** | **`1.155`** — *hit rate `~57–58%`* |
+| **3-pick breakeven** | `1.1006` | `1.1006` |
+
+> ⇒ ✅✅ ***Standards clear the 3-pick breakeven in BOTH seasons, and `standard OVER` clears it by
+> roughly `3.5σ` and `3σ`.***
+
+## 2. 🔑🔑🔑 **AND THIS SEGMENT IS EXEMPT FROM THE CAVEAT THAT DISCOUNTED THE OTHER ONE**
+
+> *"**standards have factor `1` — no compression, no rounding — so leg value IS exact slip value.**
+> Demons are inconsistent and underpay as a class."*
+
+**`§T23.2` §4 recorded the author's own caveat**: *"leg-level value ignores compression above `9.1×`
+and rounding, **so it overstates big demons**"* — **and noted that the one strategy clearing the
+3-pick breakeven was `58%`/`80%` demons, i.e. exactly the overstated population.**
+
+> ⇒ 🔑 ***The standards result has no such discount. `factor = 1` means the compression correction is
+> the identity.*** **So of the two positive results in `T23`, the one that survives its own method is
+> the standards one** — *and `§T23.2`'s framing, which treated the demon strategy as the candidate,
+> had it backwards.*
+> ⚠ **`§T23.2` is therefore TRUE AND INCOMPLETE**, and `T23-1` has been amended rather than
+> restated. *"The model doesn't beat PrizePicks" holds **overall** and **on 2-picks**; it does not
+> hold for **standards at 3-picks**, on `~14,600` legs across two seasons.*
+> 📌 **The transcript's own next step, `NOT RECORDED` as run**: *"an exact slip-level backtest of a
+> **standards-only** strategy (pushes/DNPs revert the slip size)."* — **a `T24` question.**
+
+## 3. ✅ **THE WNBA CROSS-CHECK — the owner's conditional, answered** *(SEG `487`)*
+
+**The owner's instruction** *(`§T23.1` §4)*: *"if it MATCHES what we have, you can use the ones
+available for women NBA and not available for men NBA and complete the gaps."*
+
+> **The answer, verbatim**: *"**WNBA is mined, and the answer is SPLIT: it's the SAME PRICING ENGINE,
+> but NOT the same constants for every stat.**"*
+
+*Run finished `10:55 AM PT`, **`400` quotes, `337` per-leg prices**, `250` anchored by a same-board
+standard, **`87` excluded for having none**:*
+
+| stat | legs | **NBA `c`** | **fitted on WNBA** | transfers? |
+|---|---|---|---|---|
+| points | `53` | `1.87` | **`1.88`** | ✅ |
+| pts+rebs | `27` | `1.87` | **`1.86`** | ✅ |
+| pts+rebs+asts | `32` | `1.87` | **`1.94`** | ✅ |
+| pts+asts | `26` | `1.87` | **`1.78`** | ✅ |
+| 🔴 **rebounds** | `32` | `1.08` | 🔴 **`1.32`** | 🔴 **no — `+22%`** |
+| 🔴 **assists** | `17` | `1.08` | 🔴 **`1.28`** | 🔴 **no — `+19%`** |
+| 🔴 **rebs+asts** | `24` | `1.34` | 🔴 **`1.46`** | 🔴 **no — `+9%`** |
+
+> ⇒ ✅ ***"The points family transfers."*** **The rebound/assist family does not.**
+> 🔑 **So the owner's conditional resolves to a PARTIAL yes**: *WNBA may fill NBA gaps **in the points
+> family only**, and using it for rebounds or assists would import a constant that is `19–22%`
+> wrong.* ⚠ ***The value of the check is that it was RUN before the data was used*** — the owner
+> wrote the conditional, and the conditional failed for three of seven families.
+> ✅ **AND THE CONTAMINATION RISK WAS ANTICIPATED**: *"stored in **their own table so NBA's data is
+> untouched**"*, and beforehand, *"**first I need to know exactly how the mapper chooses its league —
+> a wrong assumption there would pour WNBA prices into the NBA tables**"* *(SEG `400`)*. ⇒ 🔑 **The
+> same defect class as `T20-23`'s `7,951` baseball rows in `nba_market` — anticipated this time
+> rather than discovered afterwards.**
+
+## 4. ⚠ **A CONSTANT-SET DISCREPANCY BETWEEN `T22` AND `T23`, RECORDED NOT RESOLVED**
+
+| family | **`T22` SEG `466`** *(`2026-09-21`, `§0.13-T22`)* | **`T23` SEG `487`** *(later same day)* |
+|---|---|---|
+| points | *"`c ≈ 2.0`"* | **`1.87`** |
+| rebounds / assists / threes | *"`1.25`"* | **`1.08`** |
+| rebs+asts | *"`1.4`"* | **`1.34`** |
+
+⇒ ⚠ **Consistent with a REFIT — `T22`'s figures are prefixed "`≈`" and `T23`'s are fitted values —
+but the sweep does not assert that.** 🔴 **`NOT RECORDED`: whether `T23`'s constants supersede
+`T22`'s or parameterise something different.** *Both recorded with their dates and their sources, per
+the supersession rule; **the twelve must not carry two constant sets as if both were current.***
+▶ **Flagged on `§0.13-T22`.**
+
+## 5. 🔴 **THE WNBA WINDOW IS DATED AND CLOSING** *(SEG `400`)*
+
+> *"**WNBA is time-sensitive** — the WNBA playoffs run into October, and **once they end there's no
+> live board until MAY.**"*
+
+⇒ ⚠⚠ ***The donor population the owner asked for expires within weeks of the NBA opener, and does
+not return for seven months.*** **Whatever WNBA is to be mined for must be mined before the playoffs
+end** — *and the `87` excluded legs, plus the four families that did transfer, are the measure of
+what one `400`-quote run buys.* 🔴 **`NOT RECORDED`: the WNBA playoff end date**, and therefore the
+deadline itself.
+
+---
+
+> 📌 **TIERS**: ⚠ **AS STATED IN `T23`** — all figures; quotations verbatim; **not re-run by this
+> sweep**. 🔴 **`NOT RECORDED`** — the standards-only slip-level backtest; which constant set is
+> current; the WNBA deadline date. ⚖️ **`pp_*` objects not queried; the WNBA table not read.**
