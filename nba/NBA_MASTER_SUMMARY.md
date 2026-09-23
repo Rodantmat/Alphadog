@@ -39255,3 +39255,82 @@ measurement is what turns "expected" into a number that bounds the risk.** ⚠�
 measures it is the one that catches the sweep quoting its own evidence past what the evidence says:
 "demonstrably alive" was true of the scraper and false of the board, and I wrote it twice before
 opening a single file.***
+
+---
+
+# §T20.124 — T20 PASS 119: ✅🔴 **THE LAST UNTESTED LINK HOLDS — ALL FIVE NORMALISERS PARSE A NON-EMPTY BOARD — BUT `home_team` AND `away_team` COME BACK NULL ON EVERY APP, AND THE LIVE PATH AND THE BACKFILL PATH FILL THE SAME TABLE DIFFERENTLY**
+
+*Pass 119, 2026-09-23. Pre-registered as **"THE NORMALISER DRY-RUN — THE MLB BOARDS ARE A NON-EMPTY
+SPECIMEN OF EACH APP'S SHAPE, FROM THE SAME SCRAPER. DO `archive_live_boards.py`'s PER-APP NORMALISERS
+HANDLE THEM?"** — to settle `§T20.123`'s closing NOT ESTABLISHED **without waiting for October**.*
+
+⚠⚠ **THE DRY RUN OPENED NO DATABASE CONNECTION.** *The five `rows_*` functions were lifted out of
+`archive_live_boards.py` by AST and executed against **copies** of the board files in the scratchpad;
+`main()` was never invoked and `psycopg` was never imported.*
+
+## ① SPECIMENS AND NORMALISERS, PINNED *(clause ii, `2026-09-23T00:21:10Z`)*
+
+**Normalisers**: `rows_prizepicks:67` · `rows_underdog:89` · `rows_sleeper:107` · `rows_fliff:122` ·
+`rows_generic:175`. **Non-empty specimens in `boards/`**: `fliff_mlb` **8,986 legs** *(15.3 MB)* ·
+`sleeper_mlb` **1,903** · `betr_mlb` **1,684** · `underdog_mlb` **951** · **`underdog_nfl` 423** *(a
+third sport, unlooked-for)* · `underdog_nba` **3**. ⚠ **`prizepicks` has NO specimen under `boards/`
+— `NOT TESTABLE`, and that is a result, not an omission.**
+
+## ② THE VERDICTS — **NONE FAILS**
+
+| normaliser | specimen | legs → rows | **always-NULL columns** |
+|---|---|---|---|
+| `rows_sleeper` | `sleeper_mlb` | **1,903 → 3,806** ✅ **PARSES** | `price` *(by design — Sleeper is multipliers)* · 🔴 **`home_team` · `away_team` · `commence_time`** |
+| `rows_fliff` | `fliff_mlb` | **8,986 → 5,046** ✅ **PARSES** *(3,940 skipped as team markets with no numeric line — **and the function PRINTS that count**, which is the opposite of a silent drop)* | `multiplier` *(by design)* · 🔴 **`home_team` · `away_team`** |
+| `rows_underdog` | `underdog_mlb` | **951 → 4,564** ✅ **PARSES** | `multiplier` *(by design)* · 🔴 **`home_team` · `away_team` · `commence_time`** |
+| `rows_underdog` | **`underdog_nfl`** | **423 → 2,817** ✅ **PARSES A THIRD SPORT** | same |
+| `rows_generic` | `betr_mlb` | **1,684 → 1,684** ✅ **PARSES** | `price` · `multiplier` · 🔴 **`home_team` · `away_team` · `commence_time`** |
+| `rows_underdog` | `underdog_nba` | **3 → 0** ✅ **CORRECT** — see ④ | — |
+| `rows_prizepicks` | — | **NOT TESTABLE** | — |
+
+⇒ ✅✅ ***THE STOPPING CONDITION HALF-FIRED: the last untested link between a live board and a scored
+leg HOLDS at the envelope level, and it did not have to wait for October.***
+
+⚠⚠ **THE BOUNDARY, STATED AS CLAUSE (iii) REQUIRED**: **MLB proves the ENVELOPE — keys, nesting,
+types. It does NOT prove the sport-specific VALUES** *(stat types, and the `MARKET KEY -> OUR PROP`
+map at `score_board_legs.py:45`)*. **A `PARSES` verdict bounds the risk; it does not eliminate it.**
+
+## ③ 🔴 BUT THE FIELD LOSS IS REAL, AND THE LIVE DATA CONFIRMS IT EXACTLY
+
+**`SELECT` on `nba_market.board_snapshots`, `2026-09-23`, null counts by bookmaker:**
+
+| bookmaker | rows | `home_team` NULL | `commence_time` NULL | source path |
+|---|---|---|---|---|
+| **`sleeper`** | `1,276` | 🔴 **`1,276` — 100%** | 🔴 **`1,276` — 100%** | **live** |
+| **`fliff`** | `1,394` | 🔴 **`1,394` — 100%** | `0` | **live** |
+| `underdog` | `939,719` | `5,281` — **0.56%** | `5,281` | *mostly Odds-API backfill; the 5,281 are the live rows* |
+| `fanduel` · `prizepicks` · `betr_us_dfs` | `6.7 M` · `2.2 M` · `0.78 M` | **`0`** | **`0`** | **Odds-API backfill** |
+
+🔑🔑 ***TWO WRITE PATHS FILL ONE TABLE TO DIFFERENT COMPLETENESS, AND THE DIFFERENCE IS INVISIBLE
+UNLESS YOU GROUP BY BOOKMAKER AND COUNT NULLS.*** **The dry run predicted every one of these columns
+before the query was run.**
+
+🔴 **AND THERE IS A REAL CONSUMER**: **`backfill_game_line_snapshots.py:84–88`** —
+`SELECT min(commence_time) FROM nba_market.board_snapshots WHERE game_date=%s`, then
+**`if not first: d += timedelta(days=1); continue`.** ⇒ ***On a date whose only rows came from a
+NULL-`commence_time` source, the script silently skips the day.*** ⚠ *It needs a day where no
+`commence_time`-setting source landed, and it is a manual tool — **not** one of the `40` called
+scripts — so: **MEDIUM, latent, silent**.*
+
+## ④ 🔑 AND IT SHARPENS `§T20.123` BY ONE WORD
+
+`§T20.123` measured `underdog_nba_current.json` at **`max legs EVER = 3`**. **Those three legs are
+`Moneyline`** — `stat='Moneyline'`, `line=None`, `player='BOS @ DET Moneyline'` — **and
+`rows_underdog` drops them correctly** *(`if line is None … continue`)*. ⇒ ***All three apps have
+produced ZERO NBA PLAYER PROPS, ever — not "zero, zero and three".*** ✅ *`§T20.123`'s figure is right
+and its meaning is one notch stronger; corrected there.*
+
+▶ **`RULE 51`, last step, against the BASELINE tree**: `home_team IS NULL` **0/0/0** · `always NULL`
+**0/0/0** · `Moneyline` **0/0/0**; `rows_sleeper`/`rows_fliff` score **1 in the twelve and 0 in the
+baseline** *(named in `§T20.123`'s own closing sentence, which is what this pass was sent to answer)*.
+✅ **NOVEL.**
+
+📌 ***The lesson:*** **the specimen for a test that "has to wait for the season" was sitting in the
+same directory the whole time, written by the same scrapers, in another sport.** ⚠⚠ ***A pipeline that
+serves two sports gives every sport-blind component a free live rehearsal — and this one had been
+rehearsing for months while the corpus recorded it as untested.***
