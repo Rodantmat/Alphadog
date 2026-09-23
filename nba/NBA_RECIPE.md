@@ -480,12 +480,14 @@ owner-stated origin of blueprint §4i** (*"exhaustively check the sport's own of
 
 ---
 
-## STEP 0c — The verification discipline that was supposed to run alongside every step *(T1)*
-*Source: `NBA_ARCHITECTURE_BLUEPRINT.md` §8 and §9. Recorded 2026-09-20 (T1 pass 29).*
+## ⬆ STEP 0c — **MOVED `2026-09-23`, `§F7.3`**
 
-This is not a step that happens once — **the blueprint specifies it as a standing discipline applied
-to every step above and below.** It is placed here because it was specified *before* any NBA code
-existed, and belongs in the recipe at the point where the ingredients were chosen.
+> **`STEP 0c` now sits between `STEP 0b` and `STEP 0d`, where the build order puts it.** *It was
+> here, after `STEP 7`, which contradicted this document's entire charter — **"a cake recipe… each
+> step in the order it happened."** Nothing was lost: the block was removed and re-inserted whole,
+> and the section count was taken before and after.*
+
+### *(the block that was here is now above — this stub is kept so an inbound pointer to "`STEP 0c`, after `STEP 7`" still lands somewhere that explains itself)*
 
 **From §8 — two rules, both stated as build-in-from-the-start:**
 1. **Corrupt-and-fix testing** — *"MLB's single most reliable verification pattern, worth adopting
