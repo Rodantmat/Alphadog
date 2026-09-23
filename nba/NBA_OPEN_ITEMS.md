@@ -120,6 +120,29 @@
 > *Filed 2026-09-23, T23 pass 2, `§T23.2`. **Placed FIRST because every other item on this page asks
 > whether the pipeline RUNS. This one asks whether its output is worth acting on.***
 >
+> > ✅✅ **EVIDENCE ADDED 2026-09-23, `§F2.4` — THE BIGGEST OBJECTION TO THIS ITEM'S POSITIVE HALF WAS
+> > RAISED BY `T23` ITSELF AND ANSWERED BY IT, AND NEITHER WAS IN THE TWELVE.**
+> > *`§F2.1` ranked `T23` the second-least-covered of twenty-four transcripts (**93.8% uncovered,
+> > high band `40`**); this was in the gap. **In scope** — `nba_market.pp_model_vs_price` is not on
+> > the concurrent session's exclusion list.*
+> >
+> > **The objection, in the session's own words: *"spotting a hindsight bias from selecting stale,
+> > pre-move lines."*** **The control: re-run the whole sweep on legs whose line NEVER MOVED**
+> > (`COUNT(DISTINCT line) = 1` per `game_date` × `player` × `prop`), where a stale-line advantage
+> > would have to vanish.
+> >
+> > ✅✅ **IT DOES NOT VANISH, AND IT HAS NO SIGN — `4` of `8` cells go UP when the moved lines are
+> > removed** *(1.30/3-pick 24-25 `+0.1026 → +0.1419`; 1.40/4-pick 25-26 `+0.2813 → +0.3602`; the
+> > other four go down; every gap is inside the SEs)*. 🔑 ***A stale-line artifact has a direction.
+> > This does not.*** ⇒ **this item's edge is not explained by pre-move line selection.**
+> >
+> > ⚠⚠ **RULE 54 — it rules out ONE channel, not leakage in general.** **Every caveat in this item
+> > stands unchanged**: replay not traded record · `nba_score.paper_picks` `0` rows · `T23`-sourced
+> > and not re-run by this sweep · and the slip-level-compression caveat on `≥1.40` is **untouched**.
+> >
+> > ▶ **The full `3 × 5 × 2` threshold grid the verdict was drawn from — and the one LOSING cell
+> > (2-pick, 2024-25) — are now in `NBA_FINAL_SCORING_CALIBRATION.md` `§0.16-F2`.**
+>
 > | | **2024-25** | **2025-26** |
 > |---|---|---|
 > | model's top picks: **claimed → actually paid** | 🔴 **`1.73 → 1.16`** | 🔴 **`1.80 → 1.13`** |
