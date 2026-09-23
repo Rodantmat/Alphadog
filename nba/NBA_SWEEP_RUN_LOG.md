@@ -1444,6 +1444,62 @@ because representation had not been achieved for the stratum the brief ranks fir
 
 ---
 
+## §F3.4 / §F3.5 — the `72` closed out: **two genuine gaps, and both came from questions the owner asked twice**
+
+**`§F3.2` left `64` owner turns recorded nowhere. The method directives became the register. The
+remaining classes were each checked by SUBSTANCE, not phrase — the `§F2.3` lesson — and the result
+is two real gaps and a long list of kills.**
+
+### 🔴 GAP 1 — `§F3.4`: **the credit CEILING was missing while every cost that must fit in it was on file**
+
+*Owner, `T13`, verbatim: **"179,673 used of 5,000,000 credits · monthly · plans reset on the 1st of
+each month at 12am UTC · so far and it going 420 credits per tick."*** **The twelve carried `420
+credits/snapshot` in `3` documents and the backfill's actual `2,054,220` spend — and neither the
+`5,000,000` ceiling nor the reset rule appeared in any of them.** *The ceiling was reconstructable
+only by adding `2.07M + ~2.95M`.*
+
+🔑 ***The reset date is the load-bearing half.*** *The same `2.05M`-credit backfill is `41%` of the
+budget starting on the 2nd and can be unaffordable starting on the 28th.* **"~2.95M left" is only
+true within a calendar month, and nothing said so.** ⇒ **written into `NBA_OPEN_ITEMS.md` beside
+the spend.** 📌 **`RULE 55`, fifth instance: a cost without its budget is not actionable.**
+
+### 🔴 GAP 2 — `§F3.5`: **the Underdog ladder tables are in `0` of the twelve, and they are empty**
+
+*The owner asked twice — `T12`: "for sleeper and underdog … can we capture the full ladder? all
+variations"; `T13`: "focus on try to get the additional ladders for sleeper and ud." **Both turns
+are in the `72`. The tables that answer them are named in `0` of the twelve.***
+
+**`[LIVE-AUDIT]` 2026-09-23:** `market.underdog_ladder_current` **1,971** rows, `1` date ·
+`archive.underdog_ladder_history` **19,215** rows, `3` dates. **Both carry `higher_multiplier`,
+`lower_multiplier`, `higher_payout_mult`, `lower_payout_mult`.** 🔴 **Of `21,186` rows: `0` carry a
+multiplier and `0` are NBA.**
+
+⚠⚠ ***Read beside `T22`/`T23`, which are an extended effort to recover PrizePicks multipliers.
+Underdog publishes its own, and this database has had columns for them all along, unfilled.***
+**Why is `NOT RECORDED`.** ⇒ **written into `NBA_DATABASE.md` `§F3.5`, with the Sleeper half
+(`payout_variant` / `price` / `decimal_price` on the board rows, no ladder table) — so the owner's
+one question is actually two different jobs.**
+
+### 🔪 The kills, each checked by substance
+
+| owner turn | verdict |
+|---|---|
+| `T13` — *"each time it scrapes it will be using my token, that attaches it to me?"* | 🔪 **ANSWERED IN FULL** — `NBA_SYSTEM_ARCHITECTURE.md` §*"WHY BETR IS DIFFERENT IN KIND"*: *"the only one that uses the owner's own account … the realistic worst case isn't legal trouble; it's account limits or closure."* |
+| `T13` — *"what about books? like draftkings and others?"* | 🔪 `DraftKings` in **7** documents |
+| `T13` — *"i am in california … check chalkboard and after that betr"* | 🔪 `California` in **5**, `Chalkboard` in **4** |
+| `T12` — *"we should use our own scraper for nba as well"* | 🔪 *"our scrapers"* in **5** |
+| `T14` — *"our edge comes from baseline + enrichment"* | 🔪 *"edge comes from"* in **3**, *"baseline and enrichment"* in **2** |
+| `T11` — *"probe the boards … historical data from parlay api"* | 🔪 the ParlayAPI historical work is `T11`'s own documented subject |
+| `T18` — *"do it for all the backfill as well, both seasons, both pipelines"* | 🔪 *"both pipelines"* in **3** |
+| ~8 session/tooling turns *(fable vs opus, zip handoffs, "give me the prompt only")* | 🔪 **about Claude, not AlphaDog — out of scope** |
+| ~8 status and assent turns | 🔪 **MECHANICAL** by the pre-registered definition: no instruction, decision, correction, constraint or fact |
+| ~8 pasted cURL captures and credentials | 🔪 **correctly absent — the credential rule forbids the values**; the API shapes are on file *(`COMPASS` fact 50, `T20-14`)*; the census is `§F3.3` |
+
+⇒ ***All `72` adjudicated. `2` genuine gaps, both written at source; the rest killed with a reason
+each.***
+
+---
+
 # 📜 §F4 — THE CERTIFICATION REGISTER
 
 *Issued **2026-09-23**. **This certifies what was DONE and what its evidence is. It does not certify
