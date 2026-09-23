@@ -2108,3 +2108,79 @@ are a second gap is `NOT MEASURED`** — the `2026-03-15` board is a window boar
 and this pass did not re-run `check_baseline_board_coverage.py`. **The `60` out-of-range points legs
 and the `66` line gaps are recorded as of `2026-09-11` and were NOT re-measured**; neither the
 rung-depth setting nor the rung-step rule was checked against today's builder.*
+
+---
+
+## 🔬 §F6.23 — **A NUMERIC SWEEP OF ALL `66` LIVE CONFIG ROWS, AND THE INSTRUMENT CORRECTING ITSELF BY `72%`**
+
+*Added `2026-09-23`. **The method, stated first because its own result is the main finding.***
+
+### 1 · The instrument, and why it was built this way
+
+*`RULE 58` had just been numbered: a `0`-of-`12` wording probe is a claim about the query. **Numbers
+looked like the escape** — a figure is a figure however the sentence around it is phrased. So: every
+distinct numeric token of `4+` digits or `3-6` decimal places across all `66` rows of
+`nba_config.classification_config` — **`304` numbers** — tested against all twelve.*
+
+| variant set | numbers reported ABSENT from all twelve |
+|---|---|
+| 🔴 **narrow** *(literal, plus comma-grouping and trailing-zero stripping)* | **`57`** |
+| ✅ **wide** *(also percentage forms `0.5712 → 57.1%`, and roundings to `1`–`3` dp)* | **`16`** |
+
+🔴🔴 ***The same instrument, on the same numbers, on the same corpus, reported `57` absences and
+then `16`. `41` of the `57` — `72%` — were present as percentages or roundings.*** **`0.5712` is
+written `57.1%`; `0.6614` is `66.1%`; `0.6237` is `0.62`.** ⇒ ***`RULE 58` is not a rule about
+words. A number has spellings too, and "spelling-invariant" was exactly the assumption that made me
+trust the narrow run.***
+
+📌 **BOTH COUNTS ARE PUBLISHED, per `RULE 53`** *(the pre-registered figure and the classified one)*.
+⚠ **`RULE 54`: `16` is a LOWER bound and `57` an UPPER one.** *The wide set can also produce FALSE
+MATCHES — a rounding of `0.5712` to `0.57` may meet an unrelated `0.57` somewhere in `6 MB` of
+prose. **The true count is between, and this pass does not claim to have pinned it.***
+
+### 2 · 🔑 What the `16` survivors are — **and the best of them is a four-cell table**
+
+> ***"starter projected minutes by market spread band: pickem `31.548` / `4-8` `31.356` / `8-11`
+> `31.321` / `11+` `30.639` — a monotone `0.91`-minute decline that the `r=0.46` derived proxy could
+> not resolve"***
+> — `blowout_model_market_spread_2026_09_13.FULL_REPLICATION_COMPLETE_2026_09_14.effect_verified_in_the_final_table`
+
+🔑🔑 ***This is the blowout rebuild's PROOF, and it is the one part of that row the twelve do not
+carry.*** *Everything else in it is documented — the `19,344,143` rows, the sign trap, the two
+deadlocks, the `r=0.46` proxy, the `100:1` asymmetry at `13+`. **The table that shows the new input
+actually moved the output is not.*** ⇒ **A monotone decline across four bands is a much stronger
+claim than "MAE improved", because a fit that got lucky does not come out monotone in the ordering
+it was supposed to predict.** 📌 *`RULE 55` in its purest form: the conclusion recorded everywhere,
+the four numbers under it nowhere.*
+
+### 3 · 🔑 **AND TWO OF THE `16` ARE SAMPLE SIZES — `RULE 56`, again**
+
+| figure | what it is `n` for | in the twelve |
+|---|---|---|
+| 🔴 **`n_per_rung = 20,993`** | `ladder_calibration_result_2025_26` — *"the out-of-sample result the design was built to achieve"*, `walk_forward_monthly_out_of_sample`, max gap `0.6`–`1.0 pp` across all `13` rungs | **`0` of `12`** |
+| 🔴 **`n = 11,187`** | the `fgm` certification's worst cell *(`LOW/more 70-75`, `+3.1 pp`)* | **`0` of `12`** |
+
+⇒ ***The headline calibration result of the whole ladder is quoted in this corpus without the number
+of legs per rung it rests on.*** **`RULE 56` was numbered at `§F6.10` after nine tables were found
+missing their sample size; this is the tenth and eleventh, found by a different instrument.**
+
+### 4 · The remaining survivors, recorded without ceremony
+
+| figure | row | what |
+|---|---|---|
+| **`151,661`** | `prizepicks_goblin_demon_tier_spec` | `ladders_with_explicit_anchor` — ⚠ *its sibling `ladders_switch_point_only` **`42,600`** IS in `6` of the twelve; **the larger half of the same pair is in none*** |
+| **`1013 · 509 · 981 · 1944 · 2102 · 2072`** | `period_layer` | `histogram_2min_bins` — the blowout sit-out distribution *(`mean 3.5`, `sd 3.3`, sit-out rate `0.40–0.47`)*; **`2,102` and `2,072` absent, the rest collide with other figures** |
+| **`43007 · 4950 · 4951`** *(and `452`, `753`)* | `board_sources_decision` | **Fliff channel ids seen `2026-09-10`**, with `452` carrying `118` team-name conflicts — the operational detail behind `FLIFF_CHANNELS_NBA` |
+| **`1881`** | `board_sources_decision` | a Betr `group_tag` example, `1881_<player>#1.5` — the shape, not a datum |
+| **`2702`** | `board_sources_decision` | the Fliff `ipOrigin=2702` geo token — ⚠ *`§T` already records the EMPTY `usa_state_code` this sits beside; the code itself is absent* |
+| **`5602`** | `storage_diet_plan_2026_09_17` | `board_snapshots` **heap** `5,602 MB` inside `6,604 MB` total — the bloat figure under `T20-2`'s plan |
+| **`10361785`** | `fantasy_score_formulas` | an Underdog help-article URL id. **Recorded as noise, not as a gap.** |
+
+### 5 · ⚠ **WHAT THE SWEEP DELIBERATELY DID NOT RECOVER**
+
+🔴 **`absence_panel_measured_2026_09_12` contributed SIX of the narrow run's `57`** — `1.031`,
+`1.042`, `1.047`, `1.065`, `1.068`, `1.076`. ***They are not written up and must not be.*** **That
+row is the one `§F6.12` established is `RETRACTED`** — *"the two-season ratio table … is CONTAMINATED
+and must not be used to fit anything"*. ⇒ 🔑 ***An absence probe finds retracted numbers exactly as
+readily as live ones, and a sweep that recovers everything it finds absent will faithfully restore
+the corpus's worst material.*** **Checked against the row's own `notes` before writing, not after.**
