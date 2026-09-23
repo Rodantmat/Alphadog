@@ -1399,6 +1399,46 @@ Less.** Hit 74.1/68.7/61.9% at T−3/−2/−1 but observed factors take 40–53
 where goblins flip to demons. *"10.5 goblin, 11.5 goblin, 12.5 demon → 12 is the anchor."*
 **Validated on 42,600 ladders.** 419,205 legs carry one.
 
+## J–K
+
+*Added `2026-09-23`, `§F7.4`. ⚠ **This bucket did not exist.** `§Z` carried `7` `J`/`K` terms with
+no body range to define them in — the body ran `G–I` straight to `L–N`, so a reader who found a `J`
+or `K` term in the index had nowhere to go. **The range is now contiguous `A … W`.***
+
+**`jersey_num`** · T6 · DB,OPEN,SUM · The referee jersey number carried on `nba_ref.officials` —
+part of the Wikipedia roster scrape *(74 staff + 7 non-staff)*, because the stats API has no
+referee endpoint at all.
+
+**`job_key`** · T1, T4 · DB,OPEN,SUM,WRK · The control-plane key for a worker, `nba-<domain>-<thing>`.
+**Unique** on `nba_config.worker_definitions`. *It is the naming half of the four-edit registration
+rule; the other three are the manifest, the generator and admin-sql.*
+
+**`job_queue`** · T1 · OPEN,REC,SUM · The MLB control-plane table the NBA base handoff wired but
+**does not use** — ⚠ *NBA workers use DIRECT DISPATCH, bypassing the queue. Recorded as a caveat,
+not a defect: the no-orchestrator rule makes the queue redundant.*
+
+**`journal.txt`** · — · OPEN,SUM · 🔑 **The index to every transcript.** *`T19` seg `58`: "the
+journal exists and I ignored it… my first move on any 'have we done this?' question should be to
+read that, then grep the named transcript."* ⇒ **`§F7.1`: that diagnosis is the reason this corpus
+exists, and it was itself unrecorded until `2026-09-23`.**
+
+**`k_stab`** · T7–T10, T15 · BCAL,DB,FCAL,OPEN,REC,SUM · The Efron–Morris shrinkage constant — how
+many observations before a cell trusts itself. *Tier-blend `k = 5` came verbatim from MLB;
+`oreb`'s was moved `60 → 4` and the band bias fell `0.241 → 0.045`.* 🔑 **A tunable that lives in
+config, never in code.**
+
+**`known_empty_games`** · T3, T7, T9, T11 · ARC,DSN,OPEN,SUM,WRK · A persisted skip list for games
+the SOURCE itself returns empty for. 🔑 *"Without it the `3` games the source returns empty would be
+re-fetched every single day forever."* ⇒ **a permanent source gap needs a permanent record, not a
+retry loop.** ⚠ *And it is exactly the empty-array shape that produces `NOT IN` / "malformed array
+literal" failures on day one.*
+
+**`known_limitation`** · T2, T3, T6 · OPEN,SUM · The corpus's own tag for a bounded, accepted gap —
+as distinct from a bug. *Used where the constraint is structural (the `player_splits` PK omitting
+`season`) rather than an error.*
+
+---
+
 ## L–N
 
 **leg-by-leg manual tracing** · T1 (blueprint §9) · Scrutiny technique 2: take real **high-confidence**
