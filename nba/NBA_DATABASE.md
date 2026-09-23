@@ -14,7 +14,7 @@ transcript. Where a table was altered later, the change is noted with its transc
 > statements and `information_schema` reads, never from memory.
 > 📏 **`148` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_DATABASE.md ``
 >
-> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* **Search for the quoted `§` label.**
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
 > 🔴 **SECTION ORDER IS NOT NUMERIC.** *The file opens with the trigger map, then the audit blocks in
 > the order `0y-T17-B`, `0y-T17-C`, `0y-T17`, `0x-T16`, `0w`, then `0`, `0u`, `0v`, `0z`, then the
