@@ -13,7 +13,7 @@ that is the useful part.
 > +`4` sections and `+1,881` bytes are the entire cost of the repair; the item and step counts are otherwise unchanged.
 > ⚠ *The original count came from a heading detector anchored at line start, blind to **blockquoted** headings — **294 across the twelve, `6.0%`**; this file had the largest proportional miss, **`12` of `59` (`20%`)**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`. ⚠ *The byte figure was also approximate (`~92,000`) and is now exact.*
 >
-> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16` line-number pointers
+> ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **AND TO RESOLVE ONE, RUN THIS — DO NOT TRUST ANY PUBLISHED "DANGLING RATE":** `` grep -rn "§T9.40b" nba/*.md `` *(catches every spelling — `§X`, `` `§X` ``, `**§X**` — across all `32` files, because the twelve are **not closed under their own citations**. **Nine detectors, nine rates, one unchanged corpus — the rate is retired: `§F7.15`, `RULE 60`.**)* *(`§T20.22`: `6` of `16` line-number pointers
 > rotted within a day)*. **Search for the quoted `STEP` label.**
 > 🔴 **THE STEPS ARE NOT IN ORDER IN THE FILE.** *Physical order is:* `STEP 0-T16` → `0` → `0a` →
 > `0b` → `0d` → `1`–`7` → **`0c`** → `8+` → `8` → `9` → `10` → `11` → `12` → `13`. ***`STEP 0c` sits
