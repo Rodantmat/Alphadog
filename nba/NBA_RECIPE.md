@@ -85,6 +85,7 @@ that is the useful part.
 | Date | What changed |
 |---|---|
 | 2026-09-20 | Created. Steps 0–7 from T1 (6 passes) and T2 (1 pass). Later steps outlined from the journal, pending their own transcript passes. |
+| **2026-09-23** | ✅ **`STEP 8`–`STEP 13` written as real steps** *(`P1` · `P2` · `P3` · the build order · the game-day timeline · the opening-night dry run)*, each from the workflow file it describes — **so the `2026-09-20` row's "pending" no longer applies to them.** ✅ **`STEP 0c` and `STEP 0-T16` moved into build order** *(`§F7.3`)*, and the index rows that still called `0c` misplaced were corrected *(`§F7.20`)*. ✅ **`REBUILD FROM ZERO` added** *(`§F7.21`)*. |
 | **2026-09-22** | ⚠ **BACKFILLED 2026-09-22, T20 pass 65 (§T20.70) — this row covers the `1` commit this log never recorded: T16 pass 1 (§T16.2), the blowout mixture on the real market spread.** 🔑 ***AND THE LOW COUNT IS ITSELF THE FINDING FOR THIS FILE.** `NBA_RECIPE.md` took **one** content commit across the sweep of T3–T20, against `NBA_DATABASE`'s 28 and `NBA_SYSTEM_DESIGN`'s 21 over the same window — the same shape as **RULE 41 / open item T19-1**, where `NBA_GLOSSARY.md` was found to have NO content commit for the sweep of T12 through T18. **This is recorded here as an observation, not as a closed finding: whether the recipe genuinely needed nothing, or was simply never measured against its charter, has not been tested.*** |
 
 ---
