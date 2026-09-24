@@ -74,16 +74,34 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])   # NOT autocommit: delete+insert must be atomic.
     conn.execute("SET statement_timeout = 0")            # A failed insert after a committed delete once
     with conn.cursor() as cur:                            # emptied the table - never again.
-        cur.execute("DELETE FROM nba_score.baseline_ladder WHERE asof = %s", (asof,))
-        cur.executemany("""INSERT INTO nba_score.baseline_ladder
-            (asof, player_id, team_id, game_id, game_date, prop, period, ot_rule, line, anchor,
-             ladder_offset, p_more, p_less, p_raw, role_tier, var_band, used_emp, recipe_version, loaded_at)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now())""",
-            [(asof, str(r.get("player_id")), str(r.get("team_id") or ""), str(r.get("game_id")),
-              r.get("game_date"), r.get("prop"), r.get("period") or "FULL", r.get("ot_rule") or "include",
-              r.get("line"), r.get("anchor"), r.get("offset"), r.get("p_more"), r.get("p_less"),
-              r.get("p_raw"), r.get("role_tier"), r.get("var_band"), r.get("used_emp"),
-              (meta.get("recipe") or "")[:200]) for r in rows])
+        # 🔴 ONE BASELINE STORE (owner decision 2026-09-24: one set per day, the last run overwrites).
+        # This used to write nba_score.baseline_ladder - a SECOND table for the same concept, while the
+        # season backfill wrote nba_score.baseline_history, and the two diverged: the same slate held
+        # 118,759 rows in one and 113,357 in the other, built from different inputs three days apart.
+        # Everything downstream that matters reads baseline_history (build_final_hp, the calibration
+        # chain, the prop universe, the backsims) - so P2 writing elsewhere meant that on opening night
+        # final_hp would have found NO baseline for the slate and P2 would have certified red after a
+        # successful build. The slate is DELETED BY DATE and rewritten: a rerun replaces, never stacks.
+        # PERIOD CONVENTION: the table's 15M existing full-game rows carry period NULL (an older loader);
+        # the current backfill loader writes 'FULL', which the unique index treats as a DIFFERENT key
+        # from NULL, so mixing them would duplicate every rung. NULL is the convention here, and
+        # load_baseline_history.py is aligned to it in the same commit.
+        import sys
+        sys.path.insert(0, "nba")
+        from nba_season import current_season
+        from datetime import date as _date
+        season = current_season(_date.fromisoformat(asof))
+        cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.baseline_history'))")
+        cur.execute("DELETE FROM nba_score.baseline_history WHERE game_date = %s", (asof,))
+        cur.executemany("""INSERT INTO nba_score.baseline_history
+            (season, game_date, player_id, game_id, prop, period, line, anchor, ladder_offset, p_more, p_less, p_raw,
+             role_tier, var_band, used_emp, ladder_steps, recipe, proj_min, rate36, loaded_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now())""",
+            [(season, r.get("game_date") or asof, str(r.get("player_id")), str(r.get("game_id")),
+              r.get("prop"), (r.get("period") or None), r.get("line"), r.get("anchor"), r.get("offset"),
+              r.get("p_more"), r.get("p_less"), r.get("p_raw"), r.get("role_tier"), r.get("var_band"),
+              r.get("used_emp"), meta.get("ladder_steps"), (meta.get("recipe") or "")[:120],
+              r.get("proj_min"), r.get("rate36")) for r in rows])
         cur.execute("DELETE FROM nba_score.baseline_ladder_runs WHERE asof = %s", (asof,))
         cur.execute("""INSERT INTO nba_score.baseline_ladder_runs
             (asof, slate_games, players, rows, props, history_seasons, current_season,
