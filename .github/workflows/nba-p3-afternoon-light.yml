@@ -371,7 +371,9 @@ jobs:
           import os, psycopg
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
               n = c.execute("SELECT nba_score.log_paper_picks(%s)", (os.environ["PAPER_DATE"],)).fetchone()[0]
-          print(f"PAPER_LOGGED|{os.environ['PAPER_DATE']}|{n} picks (0 = already logged, or nothing qualified)")
+          print(f"PAPER_LOGGED|{os.environ['PAPER_DATE']}|{n} picks "
+                f"(0 = already logged, or a REPLAY of a past date which is refused by design, "
+                f"or nothing cleared the value threshold)")
           EOF
 
       # 5) CERTIFY: today's legs scored, confidence non-null, score in 0-100, board captured
