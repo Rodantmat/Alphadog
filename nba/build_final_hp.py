@@ -292,7 +292,7 @@ def main():
             h = pd.read_sql("""SELECT game_date, game_id, player_id, prop, line, anchor, ladder_offset,
                                       p_more, p_less, role_tier, used_emp
                                FROM nba_score.baseline_history
-                               WHERE season=%s AND prop=%s AND period IS NULL
+                               WHERE season=%s AND prop=%s AND period = 'FULL'
                                  AND (%s = '' OR game_date = NULLIF(%s,'')::date)""",
                             conn, params=(season, prop, FE_DATE, FE_DATE))
             # PERIOD FILTER (fixed 2026-09-24). This read had no period filter and final_hp has no period
