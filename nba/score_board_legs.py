@@ -94,6 +94,23 @@ def sigmoid(z):
 
 def main():
     asof = os.environ.get("BS_ASOF") or datetime.now(PT).date().isoformat()
+    # PRUNED SLATES ARE FINAL (2026-09-24). After a slate is graded, P2 prunes its baseline to the rungs
+    # the boards offered. Re-scoring it afterwards would re-interpolate the off-ladder legs (~11% on a
+    # sample slate) from far-apart board rungs and OVERWRITE their day-of values in board_scored with
+    # worse ones. Day-of scoring always precedes the prune, so this guard only ever stops a replay.
+    conn0 = psycopg.connect(os.environ["DATABASE_URL"])
+    with conn0.cursor() as cur0:
+        cur0.execute("SELECT to_regclass('nba_score.baseline_prune_log')")
+        if cur0.fetchone()[0] is not None:
+            cur0.execute("SELECT pruned_at FROM nba_score.baseline_prune_log WHERE game_date = %s", (asof,))
+            row0 = cur0.fetchone()
+            if row0 and os.environ.get("BS_FORCE_RESCORE", "0") != "1":
+                print(f"REFUSED: {asof} was pruned to the board on {row0[0]}. Its board_scored rows are the day-of "
+                      f"record and a re-score would degrade the interpolated legs. Set BS_FORCE_RESCORE=1 to override.",
+                      flush=True)
+                conn0.close()
+                return
+    conn0.close()
     # SEASON (T23-2, fixed 2026-09-23). This used to default to a hardcoded "2025-26", so from the
     # first 2026-27 date the scorer would run against a season with no data - and P3 has no cron yet,
     # so the first scheduled run would have been the first failure. The shared helper is the one
