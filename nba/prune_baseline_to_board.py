@@ -79,6 +79,12 @@ def main():
     with conn.cursor() as cur:
         cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.baseline_history'))")
         cur.execute("DROP TABLE IF EXISTS _prune_keys")
+        # THE BOARD = the REAL boards (every app, every snapshot label) UNION the DERIVED boards (owner
+        # 2026-09-24: "either the real boards or derived, no matter"). The derived boards are the
+        # simulated fantasy-score and derived-prop legs in nba_market.prop_universe (line_source =
+        # 'simulated'): fantasy_score, fga, fgm, fta, ftm, 3pa, oreb, dreb, and the simulated alternates.
+        # Historically the Odds API feed never carried those props, so without this union their entire
+        # historical baseline would be deleted - the exact data the derived backsims were built from.
         cur.execute(f"""
             CREATE TEMP TABLE _prune_keys AS
             SELECT DISTINCT b.game_date, m.player_id::text AS player_id, v.prop, v.period, b.line
@@ -86,7 +92,12 @@ def main():
             JOIN (VALUES {pairs}) AS v(mk, prop, period) ON replace(b.market_key, '_alternate', '') = v.mk
             JOIN nba_ref.player_name_map m
               ON m.norm_name = lower(regexp_replace(b.player, '[^A-Za-z]', '', 'g'))
-            WHERE b.line IS NOT NULL AND {scope_sql}""", flat + scope_params)
+            WHERE b.line IS NOT NULL AND {scope_sql}
+            UNION
+            SELECT DISTINCT u.game_date, u.player_id::text, u.prop, 'FULL', u.line
+            FROM nba_market.prop_universe u
+            WHERE u.line_source = 'simulated' AND u.line IS NOT NULL
+              AND {scope_sql.replace('b.game_date', 'u.game_date')}""", flat + scope_params + scope_params)
         cur.execute("CREATE INDEX ON _prune_keys (game_date, player_id, prop, period, line)")
         cur.execute("SELECT count(*), count(DISTINCT game_date) FROM _prune_keys")
         nk, nd = cur.fetchone()
