@@ -5,7 +5,6 @@
 ---
 
 ## 0. 💾 STANDING TASK — DISK, MEASURED 2026-09-24
-
 **State: 46 GB used, ~9 GB free. Owner decision 2026-09-24: leave as is for now, revisit as a priority.**
 
 **Already reclaimed (651 MB, no data loss, all verified before and after):**
