@@ -53,6 +53,20 @@ jobs:
 
       - name: Factor freshness
         if: ${{ github.event.inputs.task == 'freshness' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FF_STRICT: "0"
+        run: python nba/check_factor_freshness.py
+
+      # Standalone as-of calibration. Needed after a final_hp restore: the calibration READS final_hp
+      # (baseline_hp joined to graded outcomes) and enumerates its seasons from that table, so while
+      # 2025-26 held one date it could only inherit 2024-25's cells (696 cells, source 'prior_season',
+      # a single as-of date). With 163 dates restored it can fit own-season cells.
+      - name: Rebuild the as-of calibration
+        if: ${{ github.event.inputs.task == 'calibration' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/build_asof_calibration.py
 
       - name: Load today's injury report
         if: ${{ github.event.inputs.task == 'injury' }}
