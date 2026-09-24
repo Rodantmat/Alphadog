@@ -149,37 +149,39 @@ jobs:
           # whole loop and the remaining nine never ran (measured 2026-09-24: teams loaded, players
           # timed out, eight skipped). Each worker is independent - one being slow must not cost the
           # others. Failures are still collected and the step still fails, nothing is swallowed.
+          #
+          # AN ACKNOWLEDGEMENT IS NOT A ROW (measured 2026-09-24). The shot-quality worker completed and
+          # wrote its rows twice while BOTH curl attempts timed out with 0 bytes received: the worker
+          # finishes, the edge never returns the reply. So the HTTP result is a hint, not the verdict -
+          # every unacknowledged worker is checked against Postgres by nba/verify_static_loads.py, which
+          # asks whether its table was written after this step started. A single 150s wait is enough:
+          # the fastest workers answer in seconds and the slow ones land the data whether or not we wait.
           set +e
+          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           failed=""
           for w in nba-static-teams nba-static-players nba-static-player-bio nba-static-team-stats \
                    nba-static-onoff nba-static-playtypes nba-static-tracking-detail \
                    nba-static-darko nba-static-shotquality nba-static-lineups; do
             url="https://alphadog-v2-$w.$WORKER_HOST/run"
-            ok="false"
-            code="000"
-            for attempt in 1 2; do
-              code=$(curl -sS --max-time 300 -o "/tmp/$w.json" -w '%{http_code}' -X POST "$url" -H 'content-type: application/json' -d '{}')
-              ok=$(python -c "import json,sys; print(str(json.load(open(sys.argv[1])).get('ok')).lower())" "/tmp/$w.json" 2>/dev/null)
-              if [ "$code" = "200" ] && [ "$ok" = "true" ]; then break; fi
-              echo "    $w attempt $attempt: HTTP $code ok=$ok - retrying"
-              sleep 10
-            done
+            code=$(curl -sS --max-time 150 -o "/tmp/$w.json" -w '%{http_code}' -X POST "$url" -H 'content-type: application/json' -d '{}')
+            ok=$(python -c "import json,sys; print(str(json.load(open(sys.argv[1])).get('ok')).lower())" "/tmp/$w.json" 2>/dev/null)
             if [ "$code" = "200" ] && [ "$ok" = "true" ]; then
               echo "=== $w OK"
-              head -c 220 "/tmp/$w.json" 2>/dev/null
-              echo
             else
-              echo "=== $w FAILED HTTP $code ok=$ok"
-              head -c 300 "/tmp/$w.json" 2>/dev/null
-              echo
+              echo "=== $w NOT ACKNOWLEDGED (HTTP $code ok=$ok) - will verify by data"
               failed="$failed $w"
             fi
           done
-          if [ -n "$failed" ]; then
-            echo "::error::Static loads FAILED:$failed - Postgres is out of step with the committed JSON for those tables."
-            exit 1
-          fi
-          echo "All static writer workers loaded."
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+          echo "Unacknowledged:${failed:- none}"
+
+      - name: Verify unacknowledged loads by data
+        if: always()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LOAD_STARTED_AT: ${{ steps.load.outputs.started_at }}
+          FAILED_WORKERS: ${{ steps.load.outputs.failed }}
+        run: python nba/verify_static_loads.py
 
       - name: Certify the weekly layer
         env:
