@@ -22,26 +22,17 @@ name: NBA P3 Afternoon Light
 # NO FRESHNESS GATE. At a single cutoff every leg carries the same report generation - a freshness term
 # would penalise uniformly and discriminate nothing.
 
-# SCHEDULE — ONE cron, at the run the owner actually uses (`NBA_SYSTEM_DESIGN.md` §0z-7, owner
-# 2026-09-19, COMPASS fact 107): *"after 2:30 we run the last piece of pipeline… I'm going to put my
-# slips around 3, 3:30… that's probably the only run of the day that matters for my slips."*
-#
-#   22:45 UTC = 2:45 PM PST  (Nov 1 - Mar 8: most of the season, and exactly the owner's window)
-#             = 3:45 PM PDT  (Oct 20-31, and Mar 8 onward)
-#
-# ⚠ TWO CUTOFFS ARE DOCUMENTED AND THEY ARE NOT THE SAME THING. §1 derives a 1:15 PM PT cutoff from the
-# game-day injury report ("due 11am-1pm LOCAL to each market, Pacific clubs last at 1:00 PM PT") - that
-# is the EARLIEST the slate is fully known. §0z-7 is the owner's own operating pattern and is LATER
-# (2026-09-19): the 2:30 PM report, then slips at 3-3:30. The cron serves the run that produces slips;
-# the gate below still computes the slate's own cutoff, so a manual earlier run is still possible.
-# Why not 21:45 UTC (2:45 PM PDT): it is 1:45 PM PST for most of the season - BEFORE the 2:30 PM report,
-# which would score stale availability. Running later costs convenience; running early costs correctness.
-# ⚠ KNOWN AND NOT SILENT: ~38 dates a season tip before this hour. The gate computes the slate's first
-# tip and prints a LATE RUN warning rather than pretending the board is fresh.
+# SCHEDULE — ONE cron, exactly as specified in `NBA_SYSTEM_DESIGN.md` §4 (P3 — AFTERNOON LIGHT):
+#   "Target cron at season start: 15 21 * * * = 1:15 PM PST (2:15 PDT, still 105 min before the
+#    earliest 4 PM PT tip)."
+# The spec states the time, the timezone drift and the tip margin, so none of that is re-derived here.
+# §1 gives the reason for the hour: the game-day injury report is due 11am-1pm LOCAL to each market and
+# Pacific clubs are last at 1:00 PM PT, which is the binding input. The gate below enforces the same
+# thing at run time - it refuses TODAY before the slate's own cutoff - and warns loudly on a late run.
 # Measured runtime once the scrapers were scoped to NBA: ~2 minutes (22 while they were pulling MLB too).
 on:
   schedule:
-    - cron: '45 22 * * *'
+    - cron: '15 21 * * *'
   workflow_dispatch:
     inputs:
       asof:
