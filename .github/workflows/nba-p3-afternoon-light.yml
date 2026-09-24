@@ -275,6 +275,7 @@ jobs:
         run: python nba/build_availability_delta.py
 
       - name: Score the board (all apps, all rungs, both directions)
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BS_ASOF: ${{ steps.d.outputs.asof }}
