@@ -207,6 +207,7 @@ jobs:
       # a finished game when replaying), BT_CUTOFF (which as-of cutoff from nba_asof.py to read the
       # injury report at). The overnight run uses "baseline" = 09:00 ET.
       - name: Build baseline ladder (all prop pairs)
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PROXY_URL: ${{ secrets.PROXY_URL }}
