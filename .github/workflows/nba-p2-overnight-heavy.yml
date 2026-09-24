@@ -306,7 +306,12 @@ jobs:
 
       # 6) REFIT the learned layers on everything graded up to LAST NIGHT - strictly before today,
       # so today's scoring never sees its own outcome.
+      # SKIPPED ON A NO-GAME DAY (2026-09-23). These learn from graded outcomes; on an off day the grader
+      # found no new dates, so a refit reproduces the cells it already wrote - measured at ~16 minutes
+      # (calibration 3m50s + blowout 2s + confidence 12m27s) for an identical result. Off days are common
+      # in season, so this is pure waste, not caution. The next game day refits as normal.
       - name: As-of ladder calibration
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           # NO AC_SEASONS HERE (removed 2026-09-21). Passing one season made the builder delete EVERY season and
