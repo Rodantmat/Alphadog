@@ -36,6 +36,35 @@
 
 ---
 
+## 0b. ⏰ SCHEDULE — TWO LIVE DECISIONS THAT SUPERSEDE `NBA_SYSTEM_DESIGN.md` §3 / §4 (2026-09-24)
+
+*The spec is the authority; these are owner decisions taken after it was written, recorded here so the
+next reader sees the divergence instead of "fixing" the code back to a stale target.*
+
+**1. P2 runs in the MORNING, not at 01:00 PT.** §3 targets `daily 09:00 UTC = 01:00 PT`. That target is
+what produced the empty `nba_ref.referee_assignments`: D1 assignments publish **~6–7 AM PT** and P2
+scrapes them as a baseline-stage factor, so a 01:00 PT run reached the page five to six hours early,
+every night, and wrote nothing. **Owner decision 2026-09-24: move the RUN TIME, not the logic.**
+Live cron: **`45 15 * * *`** = 08:45 PT (PDT) / 07:45 PT (PST) — after the posting, finishing ~10:40 /
+09:40 PT against P3's cutoff, ~3h of retry slack. Measured full-slate runtime 2h10m, ~1h55m after the
+grader's rolling-window fix.
+
+**2. P3 keeps the SPEC's cron.** §4: *"Target cron at season start: `15 21 * * *` = 1:15 PM PST (2:15
+PDT, still 105 min before the earliest 4 PM PT tip)."* Live cron is exactly that.
+⚠ I changed this twice before reading §4 — first to three crons (chasing the DST drift and ~38 early-tip
+slates), then to `45 22 * * *` on §0z-7's *"after 2:30… slips around 3, 3:30"*. Both were wrong: §0z-7 is
+the owner's operating pattern, §4 is the operational spec, and **the spec names the cron**. Reverted.
+
+**3. Both crons are LIVE NOW, which §3/§4's "no cron yet" deliberately avoided.** Their stated reason was
+*"a job failing nightly against an empty schedule trains everyone to ignore red builds."* That hazard is
+closed rather than ignored: both pipelines are season-aware — P2 skips its slate steps and the three
+refits when `nba_calendar.games` has no game, P3 skips scoring but still captures the board, and the
+certifier judges nothing out of season. **Verified by real runs on 2026-09-23/24: green, "Pipeline
+certified", not red.** Before the fix P2 died on a no-game day with `KeyError: 'GAME_DATE'`.
+
+
+---
+
 Every claim is tagged **VERIFIED** (measured against PrizePicks directly) or **PARTIAL** (pattern seen,
 rule not yet pinned down). Raw data: `nba/data/pp_payouts/*.json`.
 
