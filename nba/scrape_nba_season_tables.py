@@ -143,10 +143,21 @@ def main():
             print(f"coaches {season}: {len(recs)} rows, head coaches: {sum(1 for x in recs if str(x.get('COACH_TYPE', '')).lower().startswith('head'))}")
         tables = [t for t in tables if t != "coaches"]
     if os.environ.get("MODE", "season") == "asof_weekly":
+        # SEASON WINDOWS. The table holds the exact first/last regular-season dates for seasons already
+        # played. 🔴 ROLLOVER (fixed 2026-09-23, same class as T23-2): an unknown season used to print
+        # "no window" and CONTINUE - so from 2026-27 this mode would have written ZERO weekly snapshots
+        # for pt_defend / hustle / clutch, silently, while P1 certified green. Those snapshots are what
+        # the baseline reads as-of, so the loss would surface as stale factors, not as an error.
+        # Anything newer than the table now gets a derived window (Oct 1 -> Jun 30); it is only used as
+        # DateFrom/DateTo bounds for weekly snapshots, so a generous window costs nothing.
         WINDOWS = {"2023-24": ("2023-10-24", "2024-04-14"), "2024-25": ("2024-10-22", "2025-04-13"), "2025-26": ("2025-10-21", "2026-04-12")}
         for season in seasons:
-            slug = season.replace("-", "_"); w = WINDOWS.get(season)
-            if not w: print("no window for", season); continue
+            slug = season.replace("-", "_")
+            w = WINDOWS.get(season)
+            if not w:
+                _y = int(season.split("-")[0])
+                w = (f"{_y}-10-01", f"{_y + 1}-06-30")
+                print(f"derived as-of window for {season}: {w[0]} -> {w[1]} (not in the played-seasons table)")
             for table in tables:
                 if "DateTo=" not in TABLES[table]["qs"]: print(f"skip {table} (no DateTo; per-game scraper covers it)"); continue
                 snaps = asof_weekly(session, table, season, w[0], w[1])
