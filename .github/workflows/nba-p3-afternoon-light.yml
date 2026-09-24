@@ -198,6 +198,23 @@ jobs:
       # standard markets but NOT the DFS-only ones (fantasy_score, period props) or the goblin/demon
       # multipliers.
       # TODO before opening day: parameterise main.py for league_id/output, or add an NBA producer.
+      # 🔴 THE PRIMARY APP, AND IT WAS NEVER CAPTURED (fixed 2026-09-24). Every P3 run logged
+      # "prizepicks: no board file" and nba_market.board_snapshots holds ZERO PrizePicks rows, because the
+      # producer at repo root was hardcoded to league_id=2 (MLB) writing prizepicks_mlb_current.json.
+      # PrizePicks is the app the whole strategy prices against and the ONLY source of goblin/demon
+      # multipliers and the DFS-only markets (fantasy score, period props) - the Odds API feed carries the
+      # standard markets alone. The producer is now parameterised with MLB-identical defaults, so this
+      # step is purely additive: league 7, sport nba, written where the archiver already looks.
+      # Its parser handles odds_type (standard/goblin/demon) already - only the file was missing.
+      - name: PrizePicks NBA board
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PRIZEPICKS_LEAGUE_ID: "7"
+          PRIZEPICKS_SPORT: "nba"
+          PRIZEPICKS_OUT_DIR: "boards"
+        run: timeout --signal=TERM --kill-after=30s 420 python main.py
+
       - name: Other board scrapers
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         env:
