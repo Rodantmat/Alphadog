@@ -141,6 +141,7 @@ jobs:
       # so this needs no secret - the earlier claim that it did was wrong.
       # Runs on always() for the same reason the commit does: a late failure must not discard the load.
       - name: Load static data into Postgres (writer workers)
+        id: load
         if: always()
         env:
           WORKER_HOST: ${{ vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev' }}
