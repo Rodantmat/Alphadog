@@ -261,6 +261,16 @@ and treated that as a result. Predictability is not usefulness — the question 
 improves a PROP projection, which §0u.1 had already answered. `NBA_BASELINE_CALIBRATION.md` §5.6 states
 the rule I broke: *"out-of-sample is necessary but NOT sufficient."* Check the verdict before building.
 
+🔶 **BUT THE REJECTION IS NOT FINAL EITHER — it is OWED A RE-TEST.** Config key
+`defender_factor_rebuilt_2026_09_13` records the governing lesson: *"a null result is only as strong as
+the feature that produced it. **Every factor rejected on a crude feature or a main-effect-only fit must
+be re-tested before the rejection is believed**"* — the M1/B4 rejections were themselves overturned that
+way. A5's rejected proxy was **binary** (starter / not) and tested as a **main effect**; the model here is
+a **probability** with measured interactions (role tier × recent start rate × starters-out). That is
+exactly the shape the lesson says deserves a re-test. **The bar is unchanged and is NOT Brier:** Δ MAE on
+points / rebounds / assists / pra, held out, beating §0u.1's −0.032 / −0.008 / −0.008 / −0.035.
+**Until that test is run, nothing is wired.** Status: OPEN, feature built, test owed.
+
 **What exists, and what it is good for.** The artifacts stay because the DATA behind them was missing and
 is now loaded (officials and starter status were mined weeks ago and never landed in Postgres):
 `nba_score._starter_hist` (79,358 player-games, 3 seasons), `nba_score.starter_training`,
