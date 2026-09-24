@@ -56,11 +56,8 @@ s = rep(s, '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID",
 # day, and on every replay after the first sync (reproduced 2026-09-24 on 2026-04-10, twice). The merge
 # supplies GAME_DATE from `teams` either way, so dropping the column first changes NO number.
 teams_adv = teams_adv.drop(columns=["GAME_DATE"], errors="ignore")
-teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")''')
-s = rep(s, '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")
-players["PLAYER_ID"] = players["PLAYER_ID"].astype(str)''',
-'''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")
-players["PLAYER_ID"] = players["PLAYER_ID"].astype(str)''')
+teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")
+players["PLAYER_ID"] = players["PLAYER_ID"].astype(str)
 _sched = json.loads((DATA / "nba_schedule_current.json").read_text()).get("games", [])
 _replay = os.environ.get("BT_REPLAY", "0") == "1"
 _slate = [g_ for g_ in _sched if str(g_.get("game_date", ""))[:10] == str(ASOF) and (_replay or int(g_.get("game_status") or 1) != 3)]
