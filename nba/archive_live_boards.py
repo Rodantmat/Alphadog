@@ -234,6 +234,34 @@ def main():
         if not rows:
             print(f"{app}: 0 rows parsed", flush=True)
             continue
+        # 🔴 DATE THE LEG BY ITS GAME, NOT BY THE CLOCK (fixed 2026-09-24). Every row was stamped with
+        # `gd` = the capture date. In season that usually coincides, so it hid - but PrizePicks posts
+        # opening-night lines WEEKS early: captured 2026-09-24, the first PP NBA board we ever stored
+        # carried commence_time 2026-10-20T19:10Z and was filed under 2026-09-24. Everything downstream
+        # keys on game_date (the scorer, the tier build, the grader, the paper log), so those legs would
+        # have been invisible on the day they matter and would have polluted a slate that has no games.
+        # THE CONVENTION IS EASTERN, verified against nba_calendar.games: opening night 2026-10-20 holds
+        # a game at 2026-10-21T01:30Z whose game_date is still 2026-10-20 - the ET date, not the UTC one.
+        # Legs with no tip time (rare, app-dependent) keep the capture date rather than being dropped.
+        fixed = []
+        for r in rows:
+            r = list(r)
+            ct = r[13]
+            if ct:
+                try:
+                    dt = ct if isinstance(ct, datetime) else datetime.fromisoformat(str(ct).replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    r[0] = dt.astimezone(ZoneInfo("America/New_York")).date()
+                except Exception:  # noqa: BLE001
+                    pass
+            fixed.append(tuple(r))
+        moved = sum(1 for a_, b_ in zip(rows, fixed) if a_[0] != b_[0])
+        if moved:
+            dates = sorted({r[0].isoformat() for r in fixed})
+            print(f"  {app}: {moved} legs dated by tip time instead of capture date -> {', '.join(dates[:6])}",
+                  flush=True)
+        rows = fixed
         with conn.cursor() as cur:
             cur.executemany("""INSERT INTO nba_market.board_snapshots
                 (game_date, event_id, snapshot_label, snapshot_ts, bookmaker, market_key, player, side,
