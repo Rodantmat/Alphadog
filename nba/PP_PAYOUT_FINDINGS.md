@@ -90,6 +90,9 @@ patched recipes locally (every anchor found) and by the replay building all sing
 the patcher's module level; caught by reading the file back before any run used it. Read back what you
 write.
 
+---
+
+## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
 
 **The rule, in the owner's words:** *"One set of data per day. It cannot grow on the day. If it needs to
 be rerun, we overwrite it. Whatever shows on the board, the full ladder, all variations, all directions,
