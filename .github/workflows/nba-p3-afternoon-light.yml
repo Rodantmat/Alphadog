@@ -90,8 +90,13 @@ jobs:
           out = open(os.environ["GITHUB_OUTPUT"], "a")
           print(f"games scheduled: {games}; first tip (UTC): {first_tip}")
           if games == 0:
-              print("::notice::No games scheduled for this slate - nothing is due.")
-              out.write("late=0\n"); raise SystemExit(0)
+              # NO GAMES. The board scrapes and the archive still run below - a no-game day is when the
+              # apps post tomorrow's board, and that history is what the multiplier and tier work reads,
+              # with no risk to player data. What is skipped is everything that SCORES a slate:
+              # availability delta, the leg scorer and the paper log have nothing to price.
+              print("::notice::No games scheduled for this slate - capture runs, scoring is skipped.")
+              out.write("late=0\nhas_games=0\n"); raise SystemExit(0)
+          out.write("has_games=1\n")
           if slate != today_pt:
               print("Replay of a past/other date - cutoff checks do not apply.")
               out.write("late=0\n"); raise SystemExit(0)
