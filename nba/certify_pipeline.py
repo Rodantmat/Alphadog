@@ -126,10 +126,10 @@ def main():
         # P2 writes. baseline_history keeps its own check as an INPUT (final_hp and the calibration read it).
         if not no_games_today:
             check("baseline built for this slate",
-                  "SELECT count(*) FROM nba_score.baseline_history WHERE game_date = %s AND period IS NULL", (today,),
+                  "SELECT count(*) FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL'", (today,),
                   lambda v: v and int(v) > 0, "full-game rungs written by THIS run (load_baseline_ladder)")
             check("baseline props for this slate",
-                  "SELECT count(DISTINCT prop) FROM nba_score.baseline_history WHERE game_date = %s AND period IS NULL", (today,),
+                  "SELECT count(DISTINCT prop) FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL'", (today,),
                   lambda v: v and int(v) >= 20, ">= 20 props")
             check("combos present (not a singles-only slate)",
                   """SELECT count(*) FROM nba_score.baseline_history
