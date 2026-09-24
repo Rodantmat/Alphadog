@@ -15,7 +15,29 @@ name: NBA P2 Overnight Heavy
 # CERTIFIES its output (step 6), and both fail the job loudly. No `|| echo failed` anywhere — that
 # pattern is how a missing 44% of the board went unnoticed for two days.
 
+# SCHEDULE (owner decision 2026-09-23): P2 runs in the MORNING, not overnight.
+#
+# WHY THE MORNING. Two inputs decide it. (1) D1 referee assignments publish ~6-7 AM PT and are never
+# archived, and this pipeline scrapes them as a baseline-stage factor - the old target of 09:00 UTC
+# = 01:00 PT was five to six hours too early, which is exactly why nba_ref.referee_assignments held 0
+# rows while the step ran nightly. (2) Last night's box scores must be final for the grading and delta
+# steps, which they are by early morning. Nothing else pins this pipeline to the small hours.
+#
+# THE CRON AND DST. GitHub cron is UTC and does not shift with daylight time, and the season crosses the
+# change (PDT -> PST on 2026-11-01), so the local hour drifts by one:
+#     15:45 UTC = 08:45 PT during PDT (Oct)   = 07:45 PT during PST (Nov-Mar)
+# Both land AFTER the 6-7 AM PT posting with wiggle room, and both leave the pipeline finishing around
+# 10:40 / 09:40 PT against P3's 13:15 PT cutoff - roughly three hours of slack for a retry.
+# The dedicated capture job (nba-referees.yml, 15:30 UTC) runs 15 minutes earlier, so the crew is
+# usually already stored and P2's own scrape is an idempotent upsert on (game_date, matchup, slot).
+#
+# MEASURED RUNTIME (replay 2026-09-23, slate 2026-04-10, 5/5 certified): 2h10m total - grading 34 min,
+# baseline singles ~18 min, periods ~43 min, combos and components ~15 min, as-of calibration 3m50s,
+# confidence refit 12m27s, final_hp 2m03s. The grading window is now a rolling 7 days instead of every
+# date since 2024-10, which removes ~32 min, so a full run with mining is ~1h55m.
 on:
+  schedule:
+    - cron: '45 15 * * *'
   workflow_dispatch:
     inputs:
       asof:
