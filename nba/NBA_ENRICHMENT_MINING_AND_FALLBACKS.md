@@ -322,7 +322,48 @@ and payout structure with zero contamination risk. `game_label = 'Preseason'` in
 
 ---
 
-## 12. D1 REFEREE — THE HOUR WAS WRONG, NOT THE PIPELINE (owner decision 2026-09-23)
+## 13. 🔴 THE AVAILABILITY DELTA PRICED A LATE `Out` AS A CERTAINTY — FOUND AND FIXED 2026-09-24
+
+**The defect.** `build_availability_delta.py` rewrote **every leg of a newly-Out player to 0.001 / 0.999**
+("he is OUT: every one of his legs goes to ~0") and `score_board_legs.py` applied it silently as step 3 of
+its chain. P3 runs this daily, so it was live on the decision path.
+
+**Why it is structurally guaranteed to lose, not merely risky:**
+1. **When the player is genuinely out, his legs VOID.** A DNP is a void (verified reversion rules), so
+   those legs are never graded and the override earns **nothing**.
+2. **The only way those legs reach grading is if the listing REVERSED** — precisely when the override is
+   maximally wrong. Zero upside, unbounded downside.
+
+**The measurement** (the one date the delta has ever run, 2025-11-29, split by mechanism):
+
+| reason | graded legs | log-loss before | log-loss with delta |
+|---|---|---|---|
+| `reallocated` (teammates) | 341 | 0.6119 | **0.6076 — better** |
+| `now_out` (the player himself) | 93 | 0.8326 | **5.7938 — 7x worse** |
+
+**The case that proves it:** the injury archive shows **Klay Thompson listed `Out` (Management) at 14:30
+and 15:30 ET, UPGRADED to `Available` at 16:30**, then **25.9 minutes and 23 points**. His 828 legs were
+priced at 0.001/0.999. "Management" is the most reversal-prone reason class there is.
+
+**The fix — two gates, both measured rather than chosen:**
+- **Producer:** a late `Out` no longer overrides. The row is still written (it is the record that he was
+  ruled out) with `new_hp = old_hp` and reason `now_out_flag_only`.
+- **Scorer:** rejects any override that **MOVES** a probability by more than `0.15`. The legitimate
+  teammate reallocation moves by mean `0.0131`, p99 `0.0428`, **max `0.0496`** — the cap is 3x its
+  observed maximum, so nothing legitimate is touched.
+- ⚠ **A LEVEL-based guard would have been WRONG**: 1,556 legitimate reallocated rows sit at extreme levels
+  (≤0.02 / ≥0.98) because they are far-out alternate rungs where an extreme probability is CORRECT. They
+  move by hundredths. **The pathology is the move, not the level.**
+
+**Verified after the fix** by re-scoring the same slate (P3 certified 7/7, 58,395 legs): Klay's 47 graded
+legs now score log-loss **0.6756** with mean prediction 0.4474, against **5.7938** before — and the rest of
+the slate is unchanged at 0.6080 (mean 0.4703 vs actual 0.4556).
+
+**Related fix, same day:** `nba_score.log_paper_picks` now **REFUSES a past date** unless `p_force`.
+Replays were writing picks stamped with today's time into a log whose entire value is that a pick was
+recorded BEFORE the game (39 rows for 2025-11-29, 72 for 2026-04-10, both removed). A backfilled pick is
+not a weaker record - it is a false one, and it silently inflates any ROI read from the table.
+
 
 The parity doc's stage table (§7) puts `D1 referee crew` at the **baseline** stage, available **~6–7 AM PT**
 (9–10 AM ET). The baseline is built by P2, whose target cron was **09:00 UTC = 01:00 PT** — five to six hours
