@@ -98,6 +98,39 @@ def main():
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
 
+    # 🔴 BOARD-SCOPED (owner decision 2026-09-24, and the documented design: NBA_SYSTEM_DESIGN.md §4
+    # "P3 IS BOARD-SCOPED... not the internal +/-10 ladder for rungs nobody offers"). This builder used
+    # to write the FULL ladder - every rung for every player x 30 props, ~226k rows a slate - under the
+    # scoring engine's name. Measured on 2026-04-10: 226,714 rows, of which 14,572 (6.4%) were ever on
+    # a board. The other 93.6% can never be graded (board_outcomes holds board legs only), so the as-of
+    # calibration and the confidence refit - the only two readers - never touched them, and the daily
+    # scorer reads baseline_history, not this table. They were stored, never used, and cost ~10 GB.
+    # The baseline stays full-spectrum on purpose: it is the lookup range for lines not yet posted.
+    # This table is what the engine SAID about lines that EXISTED, and only those.
+    # Keys come from board_snapshots (every app, every label) mapped through the scorer's own
+    # MARKET_TO_PROP so there is one market-key vocabulary, and through nba_ref.player_name_map the
+    # same way score_board_legs and build_asof_calibration resolve names.
+    sys.path.insert(0, "nba")
+    from score_board_legs import MARKET_TO_PROP
+    _pairs = ",".join("(%s,%s)" for _ in MARKET_TO_PROP)
+    _flat = [x for mk, pr in MARKET_TO_PROP.items() for x in (mk, pr)]
+    _date_clause = "AND b.game_date = %s" if FE_DATE else ""
+    _params = _flat + ([FE_DATE] if FE_DATE else [])
+    with conn.cursor() as cur:
+        cur.execute("DROP TABLE IF EXISTS _fe_board_keys")
+        cur.execute(f"""
+            CREATE TEMP TABLE _fe_board_keys AS
+            SELECT DISTINCT b.game_date, m.player_id::text AS player_id, v.prop, b.line
+            FROM nba_market.board_snapshots b
+            JOIN (VALUES {_pairs}) AS v(mk, prop) ON replace(b.market_key, '_alternate', '') = v.mk
+            JOIN nba_ref.player_name_map m
+              ON m.norm_name = lower(regexp_replace(b.player, '[^A-Za-z]', '', 'g'))
+            WHERE b.line IS NOT NULL {_date_clause}""", _params)
+        cur.execute("CREATE INDEX ON _fe_board_keys (game_date, player_id, prop, line)")
+        cur.execute("SELECT count(*), count(DISTINCT game_date) FROM _fe_board_keys")
+        _nk, _nd = cur.fetchone()
+    print(f"board scope: {_nk:,} distinct board rungs across {_nd} dates", flush=True)
+
     # AS-OF CALIBRATION. The engine reads nba_score.ladder_calibration_asof, whose cells are refit from
     # legs STRICTLY BEFORE each as-of date (weekly cadence), with the prior season's same-phase cell
     # inherited until current-season evidence exists. The earlier pasted table (fitted on one season,
