@@ -156,22 +156,22 @@ jobs:
                    nba-static-darko nba-static-shotquality nba-static-lineups; do
             url="https://alphadog-v2-$w.$WORKER_HOST/run"
             ok="false"
+            code="000"
             for attempt in 1 2; do
-              code=$(curl -sS --max-time 300 -o "/tmp/$w.json" -w '%{http_code}' \
-                     -X POST "$url" -H 'content-type: application/json' -d '{}')
-              ok=$(python -c "import json;print(str(json.load(open('/tmp/$w.json')).get('ok')).lower())" 2>/dev/null || echo false)
+              code=$(curl -sS --max-time 300 -o "/tmp/$w.json" -w '%{http_code}' -X POST "$url" -H 'content-type: application/json' -d '{}')
+              ok=$(python -c "import json,sys; print(str(json.load(open(sys.argv[1])).get('ok')).lower())" "/tmp/$w.json" 2>/dev/null)
               if [ "$code" = "200" ] && [ "$ok" = "true" ]; then break; fi
-              echo "    $w attempt $attempt: HTTP ${code:-000} ok=$ok - retrying"
+              echo "    $w attempt $attempt: HTTP $code ok=$ok - retrying"
               sleep 10
             done
             if [ "$code" = "200" ] && [ "$ok" = "true" ]; then
-              echo "=== $w  OK  $(python -c "
-import json
-d=json.load(open('/tmp/$w.json'))
-print(', '.join(f'{k}={v}' for k,v in d.items() if isinstance(v,(int,float)) and 'ms' not in k))" 2>/dev/null)"
+              echo "=== $w OK"
+              head -c 220 "/tmp/$w.json" 2>/dev/null
+              echo
             else
-              echo "=== $w  FAILED  HTTP ${code:-000} ok=$ok"
-              head -c 300 "/tmp/$w.json" 2>/dev/null; echo
+              echo "=== $w FAILED HTTP $code ok=$ok"
+              head -c 300 "/tmp/$w.json" 2>/dev/null
+              echo
               failed="$failed $w"
             fi
           done
