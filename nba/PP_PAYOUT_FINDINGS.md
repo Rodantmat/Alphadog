@@ -2,6 +2,41 @@
 *Recorded 2026-09-21. Separate from the 12 mandated documents; fold into `NBA_MULTIPLIERS.md` and
 `NBA_GOBLIN_DEMON.md` when the documentation sweep reaches this session.*
 
+---
+
+## 0. 💾 STANDING TASK — DISK, MEASURED 2026-09-24
+
+**State: 46 GB used, ~9 GB free. Owner decision 2026-09-24: leave as is for now, revisit as a priority.**
+
+**Already reclaimed (651 MB, no data loss, all verified before and after):**
+- `nba_score.baseline_history_lookup` **415 MB** — a strict PREFIX of `baseline_history_lookup_idx`
+  `(game_date, player_id, prop, line) INCLUDE (...)`, so every query it served the wider index serves.
+  Dropped, and `load_baseline_history.py` no longer recreates it (it would have silently returned).
+- `market.prizepicks_board_stage` **206 MB → 32 kB** — a bloated primary key on a table verified EMPTY
+  by direct count before and after; REINDEX touches no rows.
+- `_avail_logs`, `_starter_hist`, `_calib_sample` **28 MB** — derived working tables; the rebuild recipe
+  is stored as a comment on `nba_score.starter_training`.
+
+**Where the 46 GB actually is:** NBA **38.7 GB** (`nba_score` 26 GB — `baseline_history` 13 GB +
+`final_hp` 11 GB; `nba_market` 12 GB — `board_snapshots` 6.6 GB) · MLB/legacy **7.5 GB** (`score` 2.2 GB,
+`archive` 2.0 GB, `classification` 602 MB, `daily` 511 MB).
+
+**The remaining levers, each needing an owner decision — NOT safe for a cleanup pass:**
+1. **`board_snapshots` `close` label: 3.4 GB** (51.4% of the table; `window` is the other 48.6%). `window`
+   is the decision moment and must stay. `close` is the closing-line record — deleting it costs CLV
+   analysis permanently. Real tradeoff.
+2. **MLB/legacy 7.5 GB** — every candidate checked holds real rows (`score.final_board_history` 272,549;
+   `daily.game_status_stage` 169,260; both `metric_stage` tables ~215k each). MLB is live; not a
+   unilateral call. ⚠ `T20-2` records that the existing storage-diet plan targets a database that has
+   since MOVED, so that plan cannot be used as-is.
+3. 🔴 **`VACUUM FULL` is the WRONG tool here and must not be run on low disk** — it rewrites the table, so
+   it needs free space equal to the table itself (11–13 GB for `final_hp` / `baseline_history`) and takes
+   an exclusive lock. Autovacuum is keeping dead tuples at 2.5–11%, which is healthy.
+4. **Growth rate to watch:** `final_hp` is `2 × baseline_history` rows by construction (Over + Under on
+   every rung), so anything that widens the ladder multiplies both. A third season adds ~12 GB.
+
+---
+
 Every claim is tagged **VERIFIED** (measured against PrizePicks directly) or **PARTIAL** (pattern seen,
 rule not yet pinned down). Raw data: `nba/data/pp_payouts/*.json`.
 
