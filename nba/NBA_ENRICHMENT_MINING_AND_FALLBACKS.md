@@ -267,9 +267,27 @@ the feature that produced it. **Every factor rejected on a crude feature or a ma
 be re-tested before the rejection is believed**"* — the M1/B4 rejections were themselves overturned that
 way. A5's rejected proxy was **binary** (starter / not) and tested as a **main effect**; the model here is
 a **probability** with measured interactions (role tier × recent start rate × starters-out). That is
-exactly the shape the lesson says deserves a re-test. **The bar is unchanged and is NOT Brier:** Δ MAE on
-points / rebounds / assists / pra, held out, beating §0u.1's −0.032 / −0.008 / −0.008 / −0.035.
-**Until that test is run, nothing is wired.** Status: OPEN, feature built, test owed.
+exactly the shape the lesson says deserves a re-test.
+
+🔴 **THE GATE IS LEG-LEVEL, NOT MAE — corrected 2026-09-24 after reading
+`enrichment_reality_check_2026_09_13`.** An earlier version of this section named "Δ MAE on props" as the
+bar. That is the metric the reality check RETIRED: *"MAE ON THE MEAN was the wrong metric — the product is
+P(stat > line) and a factor can reshape the distribution without moving the mean; **every factor verdict
+before the leg-level gate was graded blind**."* **The bar is log-loss / Brier at the LEG LEVEL on real
+PrizePicks lines, against the certified anchor: log-loss `0.7150`, Brier `0.2594` (2025-26).** Evidence
+goes to `nba_score.factor_gate_results`. Until A5 clears THAT, nothing is wired.
+
+⚠ **AND THE SAME DOCUMENT SETTLES M1 — do NOT integrate it.** `nba_ref.defender_ratings` is real and well
+built (two-way ridge, offence-adjusted, 5 channels, reliability-shrunk, weekly as-of) and the doc keeps it
+as *"the only factor that measured NEUTRAL rather than harmful"* — but at the leg-level gate
+`anchor × defender` scores **0.7309 against the anchor's 0.7150**, i.e. slightly WORSE. Its celebrated
+"+0.050 MAE on PRA" was measured on the mean, the retired metric. A `not yet integrated` note in the
+parity doc reads like unrealised value; it is not. **It is a factor that did not clear the gate.**
+🔑 **The one opportunity the reality check says is REAL and untested:** *"the one thing the baseline
+structurally CANNOT see is a scratch announced AFTER its cutoff (production: 09:00 ET)"* — a narrow,
+well-defined slice needing the day-before-baseline configuration to test at all (owner item `F6-2`).
+Everything else about an absence is already in recent form: when every refinement of A2 moved it closer to
+doing nothing, *"the limit of the sequence IS the baseline."*
 
 **What exists, and what it is good for.** The artifacts stay because the DATA behind them was missing and
 is now loaded (officials and starter status were mined weeks ago and never landed in Postgres):
