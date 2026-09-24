@@ -77,11 +77,30 @@ jobs:
 
       - name: Resolve slate date
         id: d
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          set -euo pipefail
           A="${{ github.event.inputs.asof }}"
           if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi
           echo "asof=$A" >> $GITHUB_OUTPUT
           echo "Building slate for $A"
+          # EMPTY SLATE GUARD (2026-09-23). On a date with no games the ladder builder dies with
+          # KeyError: 'GAME_DATE' - the virtual-slate frame is empty, so the column never exists. The NBA
+          # has off days all season (and every day before opening night), so an unattended P2 would go RED
+          # on each one for a reason that is not a fault. The schedule decides: no games -> skip the
+          # slate-dependent steps and let the certifier pass, which it already does season-aware.
+          # Mining, the gap audit and grading still run: late box-score corrections land on off days.
+          python - "$A" <<'EOF'
+          import os, sys, psycopg
+          slate = sys.argv[1]
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              n = c.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (slate,)).fetchone()[0]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"has_games={'1' if n else '0'}\n")
+          print(f"{n} games scheduled on {slate}"
+                + ("" if n else " - slate steps will be skipped, nothing is due"))
+          EOF
 
       # 1) MINE last night. Bulk current-season refresh + per-game starters/officials for new games.
       - name: Daily delta ingestion
