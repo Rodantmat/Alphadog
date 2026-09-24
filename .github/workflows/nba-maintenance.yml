@@ -19,8 +19,12 @@ on:
         default: "freshness"
         required: true
       season:
-        description: "season for final_hp (e.g. 2025-26)"
+        description: "season for final_hp / prune (e.g. 2025-26)"
         default: "2025-26"
+        required: false
+      prune_execute:
+        description: "prune task only: 'yes' to actually delete; anything else is a dry run"
+        default: "no"
         required: false
 
 permissions:
