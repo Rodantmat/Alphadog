@@ -320,11 +320,13 @@ jobs:
         run: python nba/build_asof_calibration.py
 
       - name: Refit the blowout model
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/build_blowout_model.py
 
       - name: Refit the confidence deduction model
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           # BLANK = build_confidence_v3.py uses stats_seasons(2) - the two most recent seasons with
