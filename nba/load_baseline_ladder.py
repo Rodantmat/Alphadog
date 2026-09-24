@@ -82,10 +82,10 @@ def main():
         # chain, the prop universe, the backsims) - so P2 writing elsewhere meant that on opening night
         # final_hp would have found NO baseline for the slate and P2 would have certified red after a
         # successful build. The slate is DELETED BY DATE and rewritten: a rerun replaces, never stacks.
-        # PERIOD CONVENTION: the table's 15M existing full-game rows carry period NULL (an older loader);
-        # the current backfill loader writes 'FULL', which the unique index treats as a DIFFERENT key
-        # from NULL, so mixing them would duplicate every rung. NULL is the convention here, and
-        # load_baseline_history.py is aligned to it in the same commit.
+        # PERIOD CONVENTION: full-game rungs carry period 'FULL' - verified 2026-09-24 on dates across
+        # both seasons (2024-10-22, 2025-01-15, 2025-04-13, 2025-10-21, 2026-04-10: 'FULL', never NULL).
+        # An earlier version of this comment asserted NULL and was WRONG; the unique index treats NULL
+        # as a distinct key from 'FULL', so writing NULL here would have duplicated every rung.
         import sys
         sys.path.insert(0, "nba")
         from nba_season import current_season
@@ -98,7 +98,7 @@ def main():
              role_tier, var_band, used_emp, ladder_steps, recipe, proj_min, rate36, loaded_at)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now())""",
             [(season, r.get("game_date") or asof, str(r.get("player_id")), str(r.get("game_id")),
-              r.get("prop"), (r.get("period") or None), r.get("line"), r.get("anchor"), r.get("offset"),
+              r.get("prop"), (r.get("period") or "FULL"), r.get("line"), r.get("anchor"), r.get("offset"),
               r.get("p_more"), r.get("p_less"), r.get("p_raw"), r.get("role_tier"), r.get("var_band"),
               r.get("used_emp"), meta.get("ladder_steps"), (meta.get("recipe") or "")[:120],
               r.get("proj_min"), r.get("rate36")) for r in rows])
