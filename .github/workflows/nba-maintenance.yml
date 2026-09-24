@@ -26,6 +26,10 @@ on:
         description: "prune task only: 'yes' to actually delete; anything else is a dry run"
         default: "no"
         required: false
+      prune_date:
+        description: "prune task only: one slate YYYY-MM-DD (blank = whole season)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
