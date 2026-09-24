@@ -266,6 +266,7 @@ jobs:
       # the fitting cost, which is fixed and belongs overnight. This is also the only shape that scales
       # as the board grows with new goblins/demons and full ladders across four apps.
       - name: Availability delta (which teams changed since the day-before report)
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DELTA_ASOF: ${{ steps.d.outputs.asof }}
