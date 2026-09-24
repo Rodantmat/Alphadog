@@ -29,6 +29,13 @@ def rep(s, old, new):
 
 
 s = SRC
+# SHAPE PARITY (fixed 2026-09-24, same defect as build_baseline_ladder.py): the delta-synced current-season
+# advanced team log carries GAME_DATE, the backfilled seasons do not; concatenated, the merge below yields
+# GAME_DATE_x / GAME_DATE_y and the sort_values / groupby on GAME_DATE dies. The merge supplies GAME_DATE
+# from `teams` either way, so dropping the column first changes no number.
+s = rep(s, '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner").sort_values(["season", "TEAM_ID", "GAME_DATE"])''',
+'''teams_adv = teams_adv.drop(columns=["GAME_DATE"], errors="ignore")
+teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner").sort_values(["season", "TEAM_ID", "GAME_DATE"])''')
 s = rep(s, '''full["PLAYER_ID"] = full["PLAYER_ID"].astype(str)''',
 '''full["PLAYER_ID"] = full["PLAYER_ID"].astype(str)
 ASOF_D = pd.Timestamp(os.environ["BT_ASOF"]).date() if os.environ.get("BT_ASOF") else pd.Timestamp.today().date()
