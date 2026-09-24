@@ -48,8 +48,19 @@ _all = sorted({p.name.split("nba_player_game_log_")[1][:7].replace("_", "-") for
 TEST = [_cur if _cur in _all else _all[-1]]; TRAIN = [x for x in _all if x < TEST[0]][-2:]; SEASONS = TRAIN + TEST
 print("ASOF", ASOF, "| history seasons", TRAIN, "| current", TEST)''')
 s = rep(s, '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")''',
+'''# SHAPE PARITY (fixed 2026-09-24). The season backfill wrote the advanced team log in a SLIM shape
+# without GAME_DATE, and the recipe merges GAME_DATE in from `teams`. The daily delta sync writes the
+# FULL stats.nba.com shape, WITH GAME_DATE. Once the current season's file is delta-synced, the
+# concatenated teams_adv carries its own GAME_DATE, the merge yields GAME_DATE_x / GAME_DATE_y, and
+# line "teams_adv[teams_adv['GAME_DATE'] < ASOF]" dies with KeyError: 'GAME_DATE' - every in-season
+# day, and on every replay after the first sync (reproduced 2026-09-24 on 2026-04-10, twice). The merge
+# supplies GAME_DATE from `teams` either way, so dropping the column first changes NO number.
+teams_adv = teams_adv.drop(columns=["GAME_DATE"], errors="ignore")
+teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")''')
+s = rep(s, '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")
+players["PLAYER_ID"] = players["PLAYER_ID"].astype(str)''',
 '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")
-players["PLAYER_ID"] = players["PLAYER_ID"].astype(str)
+players["PLAYER_ID"] = players["PLAYER_ID"].astype(str)''')
 _sched = json.loads((DATA / "nba_schedule_current.json").read_text()).get("games", [])
 _replay = os.environ.get("BT_REPLAY", "0") == "1"
 _slate = [g_ for g_ in _sched if str(g_.get("game_date", ""))[:10] == str(ASOF) and (_replay or int(g_.get("game_status") or 1) != 3)]
