@@ -15,18 +15,19 @@ board_scored. Measured 2026-04-10: 49,816 rungs for the 12 standard props on Pri
 board - 9.8%.
 
 WHAT IS KEPT for a slate: every (player, prop, period, line) that appeared on ANY app's board, ANY
-snapshot label, that day. Everything else for that date is deleted. Board keys are resolved exactly as
-build_final_hp and score_board_legs resolve them - the scorer's MARKET_TO_PROP and
-nba_ref.player_name_map - so there is one vocabulary.
+snapshot label, that day - the REAL boards - UNION the DERIVED boards (the simulated fantasy-score and
+derived-prop legs in nba_market.prop_universe). Board keys are resolved exactly as build_final_hp and
+score_board_legs resolve them - the scorer's MARKET_TO_PROP and nba_ref.player_name_map - so there is
+one vocabulary.
 
-A prop that had NO board line that day for a player loses that player's rungs for that prop. That is
-the rule, stated by the owner, and it is applied identically to history. Historically the Odds API feed
-never carried fantasy score, the derived props or the period props, so for those the historical
-baseline is removed by this rule; going forward the live PrizePicks board carries them.
+SCOPE (owner correction 2026-09-24: "the derived we keep; if they're not derived, we need to redo it
+anyway"): a (date, prop, period) is pruned ONLY IF some board - real or derived - carried that prop
+that day. A prop with no board of any kind (historically the PERIOD props) keeps its full ladder: it is
+the raw material the derivation will run on.
 
 Modes:
   PRUNE_DATE=YYYY-MM-DD   one slate (P2 runs this for YESTERDAY after grading)
-  PRUNE_SEASON=2025-26    every date of a season (historical clean-up; owner-approved)
+  PRUNE_SEASON=2025-26    every date of a season, ONE DATE PER TRANSACTION (historical clean-up)
   PRUNE_DRY_RUN=1         report counts, delete nothing
 
 Env: DATABASE_URL, PRUNE_DATE | PRUNE_SEASON, PRUNE_DRY_RUN
@@ -79,12 +80,6 @@ def main():
     with conn.cursor() as cur:
         cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.baseline_history'))")
         cur.execute("DROP TABLE IF EXISTS _prune_keys")
-        # THE BOARD = the REAL boards (every app, every snapshot label) UNION the DERIVED boards (owner
-        # 2026-09-24: "either the real boards or derived, no matter"). The derived boards are the
-        # simulated fantasy-score and derived-prop legs in nba_market.prop_universe (line_source =
-        # 'simulated'): fantasy_score, fga, fgm, fta, ftm, 3pa, oreb, dreb, and the simulated alternates.
-        # Historically the Odds API feed never carried those props, so without this union their entire
-        # historical baseline would be deleted - the exact data the derived backsims were built from.
         cur.execute(f"""
             CREATE TEMP TABLE _prune_keys AS
             SELECT DISTINCT b.game_date, m.player_id::text AS player_id, v.prop, v.period, b.line
@@ -99,12 +94,6 @@ def main():
             WHERE u.line_source = 'simulated' AND u.line IS NOT NULL
               AND {scope_sql.replace('b.game_date', 'u.game_date')}""", flat + scope_params + scope_params)
         cur.execute("CREATE INDEX ON _prune_keys (game_date, player_id, prop, period, line)")
-        # 🔑 SCOPE OF THE PRUNE (owner correction 2026-09-24): "the derived we keep. If they were derived,
-        # we keep; if they're not derived, then we need to redo it anyway." So the prune touches a
-        # (date, prop, period) ONLY IF some board - real or derived - carried that prop that day. A prop
-        # with no board of any kind (historically the PERIOD props: no Odds-API lines and no simulated
-        # legs in prop_universe) keeps its FULL ladder: it is the raw material the derivation will run
-        # on, and deleting it would force a rebuild before the derivation could even start.
         cur.execute("""CREATE TEMP TABLE _prune_scope AS
                        SELECT DISTINCT game_date, prop, period FROM _prune_keys""")
         cur.execute("CREATE INDEX ON _prune_scope (game_date, prop, period)")
@@ -130,7 +119,23 @@ def main():
             print("DRY RUN - nothing deleted.", flush=True)
             conn.rollback()
             return
-        if nk > 0 and keep == 0:
+        if nk == 0:
+            # Distinguish an off day from a missing archive. No games -> nothing to prune, exit green
+            # (P2 runs every morning and must not go red for a day the league did not play). Games but
+            # no board keys -> the archive is missing for a real slate; refuse to delete and fail loud.
+            games = 0
+            if one_date:
+                cur.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (one_date,))
+                games = cur.fetchone()[0]
+            if games == 0:
+                print(f"No games on {label} - nothing to prune.", flush=True)
+                conn.rollback()
+                return
+            print(f"{games} games on {label} but NO board keys - the archive is missing; refusing to delete "
+                  f"(a missing board is not an empty board).", flush=True)
+            conn.rollback()
+            sys.exit(1)
+        if keep == 0:
             # Board keys exist but NONE matched a baseline row. A real board always overlaps the ladder
             # (measured: 12-23% of rungs). Zero overlap means a vocabulary or convention mismatch - a
             # period marker, a name map, a player_id format - and deleting on it would wipe the slate.
@@ -138,17 +143,20 @@ def main():
                   f"that is a convention mismatch, not an empty board. Nothing deleted.", flush=True)
             conn.rollback()
             sys.exit(1)
-        # PER-DATE BATCHES (2026-09-24). The first season execution ran as ONE transaction: a 5.35M-row
-        # DELETE with correlated EXISTS / NOT EXISTS checks against 9.7M rows, I/O-bound for over an hour
-        # with no visible progress and everything riding on a single commit. Same rule, same keys - but
-        # one date per transaction: ~30k rows each, progress printed as it goes, and a stop or timeout
-        # loses at most one date's work instead of all of it. A rerun simply finds nothing left to do
-        # on the dates already pruned.
         cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.baseline_prune_log (
             game_date date PRIMARY KEY, rows_kept bigint, rows_deleted bigint, pruned_at timestamptz DEFAULT now())""")
         cur.execute("SELECT DISTINCT game_date FROM _prune_keys ORDER BY 1")
         dates = [r[0] for r in cur.fetchall()]
     conn.commit()   # releases the advisory lock taken for the key build; each date below takes its own
+
+    # PER-DATE BATCHES (2026-09-24). The first season execution ran as ONE transaction: a 5.35M-row
+    # DELETE with correlated EXISTS / NOT EXISTS checks against 9.7M rows, I/O-bound for over an hour
+    # with no visible progress and everything riding on a single commit. Same rule, same keys - but
+    # one date per transaction: ~30k rows each, progress printed as it goes, and a stop or timeout
+    # loses at most one date's work instead of all of it. A rerun finds nothing left to do on dates
+    # already pruned. A PRUNED SLATE MUST NEVER BE RE-SCORED: score_board_legs reads
+    # baseline_prune_log and refuses a pruned date, because re-interpolating off-ladder legs from
+    # far-apart board rungs would overwrite board_scored's day-of values with degraded ones.
     total_deleted = 0
     for i, d in enumerate(dates, 1):
         with conn.cursor() as cur:
@@ -173,48 +181,6 @@ def main():
         print(f"  [{i}/{len(dates)}] {d}: deleted {n_del:,}, {n_left:,} left", flush=True)
     print(f"PRUNED|{label}|deleted {total_deleted:,} off-board rungs across {len(dates)} dates, "
           f"kept {keep:,} board rungs + {unboarded:,} never-derived", flush=True)
-    conn.close()
-    return
-
-        # (unreachable legacy single-transaction path kept out of the way)
-        if nk == 0:
-            # Distinguish an off day from a missing archive. No games -> nothing to prune, exit green
-            # (P2 runs every morning and must not go red for a day the league did not play). Games but
-            # no board keys -> the archive is missing for a real slate; refuse to delete and fail loud.
-            games = 0
-            if one_date:
-                cur.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (one_date,))
-                games = cur.fetchone()[0]
-            if games == 0:
-                print(f"No games on {label} - nothing to prune.", flush=True)
-                conn.rollback()
-                return
-            print(f"{games} games on {label} but NO board keys - the archive is missing; refusing to delete "
-                  f"(a missing board is not an empty board).", flush=True)
-            conn.rollback()
-            sys.exit(1)
-        cur.execute(f"""DELETE FROM nba_score.baseline_history h
-                        WHERE {hist_scope_sql}
-                          AND EXISTS (SELECT 1 FROM _prune_scope s
-                                      WHERE s.game_date = h.game_date AND s.prop = h.prop AND s.period = h.period)
-                          AND NOT EXISTS (
-                          SELECT 1 FROM _prune_keys k WHERE k.game_date = h.game_date AND k.player_id = h.player_id
-                            AND k.prop = h.prop AND k.period = h.period AND k.line = h.line)""", hist_params)
-        deleted = cur.rowcount
-        # RECORD IT. A pruned slate must never be RE-SCORED: the scorer interpolates off-ladder lines from
-        # the two nearest rungs, and after pruning the nearest rungs are other board lines, so a replay
-        # would overwrite board_scored's day-of values with degraded ones. score_board_legs reads this
-        # log and refuses a pruned date unless BS_FORCE_RESCORE=1.
-        cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.baseline_prune_log (
-            game_date date PRIMARY KEY, rows_kept bigint, rows_deleted bigint, pruned_at timestamptz DEFAULT now())""")
-        cur.execute(f"""INSERT INTO nba_score.baseline_prune_log (game_date, rows_kept, rows_deleted)
-                        SELECT d, 0, 0 FROM (SELECT DISTINCT game_date AS d FROM _prune_keys) x
-                        ON CONFLICT (game_date) DO UPDATE SET pruned_at = now()""")
-        if one_date:
-            cur.execute("""UPDATE nba_score.baseline_prune_log SET rows_kept = %s, rows_deleted = %s, pruned_at = now()
-                           WHERE game_date = %s""", (keep, deleted, one_date))
-    conn.commit()
-    print(f"PRUNED|{label}|deleted {deleted:,} off-board rungs, kept {keep:,}", flush=True)
     conn.close()
 
 
