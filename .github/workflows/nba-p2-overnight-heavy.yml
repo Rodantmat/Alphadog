@@ -298,6 +298,7 @@ jobs:
           exit 1
 
       - name: Load baseline into Postgres
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           LOAD_ASOF: ${{ steps.d.outputs.asof }}
