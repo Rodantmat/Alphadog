@@ -48,7 +48,14 @@ concurrency:
 jobs:
   afternoon:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    # ⏱ DEADLINE, NOT A CEILING (2026-09-24). This was 120 minutes, which is meaningless for a pipeline
+    # whose whole purpose is to be finished BEFORE the first tip: a hung scraper could burn two hours and
+    # sail past every game while the job still counted as "running". Measured shape of a real run: setup
+    # and pip ~90s, the entire compute path (availability delta + scoring 91,405 legs + paper log +
+    # certify) under 20 seconds, the rest network. 25 minutes is generous for five or six boards and
+    # still leaves the 13:15 PT cutoff with room; if it is not done by then something is wrong and a
+    # visible failure beats a late slate.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
