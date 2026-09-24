@@ -272,6 +272,7 @@ def main():
                               coalesce(market_key,'')||'|'||coalesce(player,'')||'|'||coalesce(side,'')||'|'||
                               coalesce(line::text,''))::uuid))
                 DO UPDATE SET price=EXCLUDED.price, multiplier=EXCLUDED.multiplier,
+                              game_date=EXCLUDED.game_date, commence_time=EXCLUDED.commence_time,
                               snapshot_ts=EXCLUDED.snapshot_ts, fetched_at=now()""", rows)
         conn.commit()
         total += len(rows)
