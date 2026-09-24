@@ -364,6 +364,9 @@ Replays were writing picks stamped with today's time into a log whose entire val
 recorded BEFORE the game (39 rows for 2025-11-29, 72 for 2026-04-10, both removed). A backfilled pick is
 not a weaker record - it is a false one, and it silently inflates any ROI read from the table.
 
+---
+
+## 12. D1 REFEREE — THE HOUR WAS WRONG, NOT THE PIPELINE (owner decision 2026-09-23)
 
 The parity doc's stage table (§7) puts `D1 referee crew` at the **baseline** stage, available **~6–7 AM PT**
 (9–10 AM ET). The baseline is built by P2, whose target cron was **09:00 UTC = 01:00 PT** — five to six hours
