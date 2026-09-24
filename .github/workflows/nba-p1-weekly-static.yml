@@ -126,6 +126,43 @@ jobs:
           done
           exit 1
 
+      # 🔴 LOAD WHAT WE JUST SCRAPED (2026-09-24). THE TOP PRE-SEASON VERIFICATION IN
+      # NBA_SYSTEM_DESIGN.md §2, answered - badly. P1 scrapes and commits JSON, and only
+      # build_defender_ratings.py and build_static_context.py touch DATABASE_URL. Everything else -
+      # teams, players, bio, team stats, on/off, play types, tracking, DARKO, shot quality, lineups -
+      # was committed and then NEVER LOADED, because the writer Workers that read that JSON from GitHub
+      # are only invoked by hand. §2 called it: "either those Workers are triggered separately (the
+      # Coworker model), or P1 refreshes committed JSON that Postgres never sees."
+      # MEASURED 2026-09-24: P1 ran green and committed, yet every static table still read 08-31 to
+      # 09-08. Loading them by hand that day wrote 255 CHANGED PLAYERS and 1,858 aliases - a month of
+      # roster movement (signings, team changes, rookies) the system did not have. Same failure family
+      # as the officials, starter-status and injury backfills: mining works, landing does not.
+      # The workers expose POST /run with NO auth (only their own outbound GitHub fetch is authenticated),
+      # so this needs no secret - the earlier claim that it did was wrong.
+      # Runs on always() for the same reason the commit does: a late failure must not discard the load.
+      - name: Load static data into Postgres (writer workers)
+        if: always()
+        env:
+          WORKER_HOST: ${{ vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev' }}
+        run: |
+          set -uo pipefail
+          rc=0
+          for w in nba-static-teams nba-static-players nba-static-player-bio nba-static-team-stats \
+                   nba-static-onoff nba-static-playtypes nba-static-tracking-detail \
+                   nba-static-darko nba-static-shotquality nba-static-lineups; do
+            url="https://alphadog-v2-$w.$WORKER_HOST/run"
+            code=$(curl -sS --max-time 180 -o "/tmp/$w.json" -w '%{http_code}' \
+                   -X POST "$url" -H 'content-type: application/json' -d '{}' || echo 000)
+            ok=$(python -c "import json;print(json.load(open('/tmp/$w.json')).get('ok'))" 2>/dev/null || echo parse_error)
+            echo "=== $w  HTTP $code  ok=$ok"
+            head -c 400 "/tmp/$w.json" 2>/dev/null; echo
+            if [ "$code" != "200" ] || [ "$ok" != "True" ]; then rc=1; fi
+          done
+          if [ $rc -ne 0 ]; then
+            echo "::error::One or more static loads FAILED - Postgres is now out of step with the committed JSON."
+          fi
+          exit $rc
+
       - name: Certify the weekly layer
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
