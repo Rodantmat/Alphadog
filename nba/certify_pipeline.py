@@ -125,20 +125,23 @@ def main():
         # already there: P2 could produce nothing at all and still certify green. Now it asks about what
         # P2 writes. baseline_history keeps its own check as an INPUT (final_hp and the calibration read it).
         if not no_games_today:
-            check("baseline_ladder built for this slate",
-                  "SELECT count(*) FROM nba_score.baseline_ladder WHERE asof = %s", (today,),
-                  lambda v: v and int(v) > 0, "rows written by THIS run (load_baseline_ladder)")
+            check("baseline built for this slate",
+                  "SELECT count(*) FROM nba_score.baseline_history WHERE game_date = %s AND period IS NULL", (today,),
+                  lambda v: v and int(v) > 0, "full-game rungs written by THIS run (load_baseline_ladder)")
             check("baseline props for this slate",
-                  "SELECT count(DISTINCT prop) FROM nba_score.baseline_ladder WHERE asof = %s", (today,),
+                  "SELECT count(DISTINCT prop) FROM nba_score.baseline_history WHERE game_date = %s AND period IS NULL", (today,),
                   lambda v: v and int(v) >= 20, ">= 20 props")
             check("combos present (not a singles-only slate)",
-                  """SELECT count(*) FROM nba_score.baseline_ladder
-                     WHERE asof = %s AND prop IN ('pra','pts_reb','pts_ast','reb_ast')""", (today,),
+                  """SELECT count(*) FROM nba_score.baseline_history
+                     WHERE game_date = %s AND prop IN ('pra','pts_reb','pts_ast','reb_ast')""", (today,),
                   lambda v: v and int(v) > 0, "combos are 44% of the board")
             check("no invalid probabilities in the slate",
-                  """SELECT count(*) FROM nba_score.baseline_ladder
-                     WHERE asof = %s AND (p_more IS NULL OR p_more < 0 OR p_more > 1)""", (today,),
+                  """SELECT count(*) FROM nba_score.baseline_history
+                     WHERE game_date = %s AND (p_more IS NULL OR p_more < 0 OR p_more > 1)""", (today,),
                   lambda v: int(v or 0) == 0, "must be 0")
+            check("one baseline set for the slate (no stacked loads)",
+                  """SELECT count(DISTINCT loaded_at::date) FROM nba_score.baseline_history WHERE game_date = %s""", (today,),
+                  lambda v: int(v or 0) == 1, "exactly one load day - a rerun replaces, never stacks")
             check("final_hp built for today",
                   "SELECT count(*) FROM nba_score.final_hp WHERE game_date = %s", (today,),
                   lambda v: v and int(v) > 0, "P2 owns final_hp since 2026-09-23")
