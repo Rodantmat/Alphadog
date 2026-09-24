@@ -104,8 +104,19 @@ def main():
             conn.rollback()
             return
         if nk == 0:
-            print("No board keys for this scope - refusing to delete anything (a missing board is not an empty board).",
-                  flush=True)
+            # Distinguish an off day from a missing archive. No games -> nothing to prune, exit green
+            # (P2 runs every morning and must not go red for a day the league did not play). Games but
+            # no board keys -> the archive is missing for a real slate; refuse to delete and fail loud.
+            games = 0
+            if one_date:
+                cur.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (one_date,))
+                games = cur.fetchone()[0]
+            if games == 0:
+                print(f"No games on {label} - nothing to prune.", flush=True)
+                conn.rollback()
+                return
+            print(f"{games} games on {label} but NO board keys - the archive is missing; refusing to delete "
+                  f"(a missing board is not an empty board).", flush=True)
             conn.rollback()
             sys.exit(1)
         cur.execute(f"""DELETE FROM nba_score.baseline_history h
