@@ -145,23 +145,41 @@ jobs:
         env:
           WORKER_HOST: ${{ vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev' }}
         run: |
-          set -uo pipefail
-          rc=0
+          # set +e DELIBERATELY: GitHub runs this shell with -e, so the first slow worker aborted the
+          # whole loop and the remaining nine never ran (measured 2026-09-24: teams loaded, players
+          # timed out, eight skipped). Each worker is independent - one being slow must not cost the
+          # others. Failures are still collected and the step still fails, nothing is swallowed.
+          set +e
+          failed=""
           for w in nba-static-teams nba-static-players nba-static-player-bio nba-static-team-stats \
                    nba-static-onoff nba-static-playtypes nba-static-tracking-detail \
                    nba-static-darko nba-static-shotquality nba-static-lineups; do
             url="https://alphadog-v2-$w.$WORKER_HOST/run"
-            code=$(curl -sS --max-time 180 -o "/tmp/$w.json" -w '%{http_code}' \
-                   -X POST "$url" -H 'content-type: application/json' -d '{}' || echo 000)
-            ok=$(python -c "import json;print(json.load(open('/tmp/$w.json')).get('ok'))" 2>/dev/null || echo parse_error)
-            echo "=== $w  HTTP $code  ok=$ok"
-            head -c 400 "/tmp/$w.json" 2>/dev/null; echo
-            if [ "$code" != "200" ] || [ "$ok" != "True" ]; then rc=1; fi
+            ok="false"
+            for attempt in 1 2; do
+              code=$(curl -sS --max-time 300 -o "/tmp/$w.json" -w '%{http_code}' \
+                     -X POST "$url" -H 'content-type: application/json' -d '{}')
+              ok=$(python -c "import json;print(str(json.load(open('/tmp/$w.json')).get('ok')).lower())" 2>/dev/null || echo false)
+              if [ "$code" = "200" ] && [ "$ok" = "true" ]; then break; fi
+              echo "    $w attempt $attempt: HTTP ${code:-000} ok=$ok - retrying"
+              sleep 10
+            done
+            if [ "$code" = "200" ] && [ "$ok" = "true" ]; then
+              echo "=== $w  OK  $(python -c "
+import json
+d=json.load(open('/tmp/$w.json'))
+print(', '.join(f'{k}={v}' for k,v in d.items() if isinstance(v,(int,float)) and 'ms' not in k))" 2>/dev/null)"
+            else
+              echo "=== $w  FAILED  HTTP ${code:-000} ok=$ok"
+              head -c 300 "/tmp/$w.json" 2>/dev/null; echo
+              failed="$failed $w"
+            fi
           done
-          if [ $rc -ne 0 ]; then
-            echo "::error::One or more static loads FAILED - Postgres is now out of step with the committed JSON."
+          if [ -n "$failed" ]; then
+            echo "::error::Static loads FAILED:$failed - Postgres is out of step with the committed JSON for those tables."
+            exit 1
           fi
-          exit $rc
+          echo "All static writer workers loaded."
 
       - name: Certify the weekly layer
         env:
