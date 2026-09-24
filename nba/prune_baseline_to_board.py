@@ -114,6 +114,14 @@ def main():
             print("DRY RUN - nothing deleted.", flush=True)
             conn.rollback()
             return
+        if nk > 0 and keep == 0:
+            # Board keys exist but NONE matched a baseline row. A real board always overlaps the ladder
+            # (measured: 12-23% of rungs). Zero overlap means a vocabulary or convention mismatch - a
+            # period marker, a name map, a player_id format - and deleting on it would wipe the slate.
+            print(f"REFUSED: {nk:,} board keys matched 0 of {before:,} baseline rows for {label} - "
+                  f"that is a convention mismatch, not an empty board. Nothing deleted.", flush=True)
+            conn.rollback()
+            sys.exit(1)
         if nk == 0:
             # Distinguish an off day from a missing archive. No games -> nothing to prune, exit green
             # (P2 runs every morning and must not go red for a day the league did not play). Games but
