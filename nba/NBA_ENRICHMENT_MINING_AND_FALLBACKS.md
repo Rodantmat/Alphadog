@@ -243,7 +243,44 @@ Signal: role_tier spans 0.30 (FRINGE / no recent games) → 0.62 (IRON_MAN); `gl
 vs 658) LOST out of sample on both segments (0.0445 / 0.2418). Granularity has a limit and the held-out season decides it.
 ⚠ A TEAM back-to-back barely moves Questionables (0.499 vs 0.466) — the player's own days-since-last is the real feature.
 
-🔴 **D1 STAGE CORRECTION (2026-09-23) — a 6-7 AM fact cannot be a 1 AM baseline factor.** The parity doc's
+---
+
+## 11. A5 STARTER FALLBACK, AND TWO THINGS THE DATA KILLED (2026-09-23)
+
+**A5 — P(player starts tonight).** Official lineups land ~30 min before tip, long after P3's cutoff, so at
+decision time the lineup is normally unknown and this is the working answer, not a backup.
+`nba_score.starter_training` (78,556 player-games, 3 seasons — the officials and starter-status backfills
+were mined weeks ago and had never been LOADED; both are now in Postgres) →
+`nba_score.starter_prior_v2` → **`nba_score.p_start(started_last, start_rate_10, avg_min_10, starters_out)`**.
+Fit on 2024-25 ONLY, validated on 2025-26 (26,543 unseen player-games): **Brier 0.07034** vs 0.07211 without
+the starters-out term (**2.46% better**; **2.91%** on bench players), vs **0.0834** for the naive
+"started last game" rule and **0.2487** for the base rate. Accuracy 91.0%; mean prediction 0.4643 vs actual
+0.4631.
+**The mechanism, measured:** a bench player starts 3.3% of the time with no regular starters out, 6.5% with
+one, 9.2% with two, **15.9% with three** — while an established starter sits at ~90% regardless. The
+asymmetry is why the term sits in a fourth level under `started_last` rather than as a global shift.
+
+🔴 **REJECTED — an evidence-depth confidence factor.** Single dates suggested players with no prior-season
+history were badly mis-scored (calibration gaps of −10, +10, −17 points while confidence stayed at 0.94).
+Across **307,035 confident standard legs over both seasons** the group realises **1.5506 / 1.5402** against
+known players' **1.5408 / 1.5480** — better in one season, worse in the other, gaps under a point, sign
+flipping. It is variance, not an edge leak, and a filter would have COST money in 2024-25. Dropped.
+This matches `NBA_FINAL_SCORING_CALIBRATION.md`: the factor layer is worth Brier +0.1–0.3%, "real but small…
+not where the big gains are", and seven of ten factors already separate nothing.
+⚠ Separately: `f_depth` is MISLABELLED. The docstring calls it "evidence depth"; the code is
+`clip(1 - |ladder_offset| / 14)` — distance from the anchor rung. Nothing in the confidence model measures
+how much history backs a player. Left as-is (the measurement above says it would not pay), but the name lies.
+
+🔴 **REJECTED — ingesting preseason into the projection pipeline.** External work is consistent: preseason
+box scores are deceptive because rotations are experimental (stars rest, rookies play heavy minutes), and
+only RATE stats (3PA rate) carry into the season while volume and minutes do not — which is exactly what the
+baseline needs. Internally the case collapses too: preseason has never been in `player_game_log` (no rows
+before opening night, so it never contaminated anything), and the one problem it could solve — pricing
+unknown players — does not exist per the measurement above. **Preseason stays out of player projections.**
+Its real use is board and multiplier learning: the apps post preseason lines, and that history teaches tier
+and payout structure with zero contamination risk. `game_label = 'Preseason'` in `nba_calendar.games`
+(66 games, 2026-10-03 → 10-16) is the clean separator if a slate ever needs excluding.
+ The parity doc's
 stage table (§7) puts `D1 referee crew` at the **baseline** stage, available **~6–7 AM PT**. The baseline is
 built by **P2, whose target cron is 09:00 UTC = 01:00 PT** — five to six hours BEFORE assignments publish. The
 two statements cannot both hold, and the evidence of which one lost is `nba_ref.referee_assignments`: **0 rows**,
