@@ -227,6 +227,7 @@ jobs:
       # does - so the order here is: components -> combos -> periods. Getting this order wrong produces
       # a slate with no combos, which is 44% of the board.
       - name: Components, combos and periods for today's slate
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PROXY_URL: ${{ secrets.PROXY_URL }}
