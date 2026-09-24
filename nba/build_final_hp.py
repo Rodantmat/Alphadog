@@ -322,11 +322,14 @@ def main():
             (season,)).fetchall()]
         total = 0
         for prop in plist:
-            h = pd.read_sql("""SELECT game_date, game_id, player_id, prop, line, anchor, ladder_offset,
-                                      p_more, p_less, role_tier, used_emp
-                               FROM nba_score.baseline_history
-                               WHERE season=%s AND prop=%s AND period = 'FULL'
-                                 AND (%s = '' OR game_date = NULLIF(%s,'')::date)""",
+            h = pd.read_sql("""SELECT h.game_date, h.game_id, h.player_id, h.prop, h.line, h.anchor, h.ladder_offset,
+                                      h.p_more, h.p_less, h.role_tier, h.used_emp
+                               FROM nba_score.baseline_history h
+                               WHERE h.season=%s AND h.prop=%s AND h.period = 'FULL'
+                                 AND (%s = '' OR h.game_date = NULLIF(%s,'')::date)
+                                 AND EXISTS (SELECT 1 FROM _fe_board_keys k
+                                             WHERE k.game_date = h.game_date AND k.player_id = h.player_id
+                                               AND k.prop = h.prop AND k.line = h.line)""",
                             conn, params=(season, prop, FE_DATE, FE_DATE))
             # PERIOD FILTER (fixed 2026-09-24). This read had no period filter and final_hp has no period
             # column, so Q1/Q4/H1/H2 rungs were written under the FULL-GAME key: prop 'points' line 5.5
