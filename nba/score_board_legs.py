@@ -193,27 +193,29 @@ def main():
 
     # 3) AVAILABILITY DELTA - teams whose status changed since the day-before report
     try:
-        adj = pd.read_sql("""SELECT player_id, prop, line, side, new_hp, reason
+        adj = pd.read_sql("""SELECT player_id, prop, line, side, old_hp, new_hp, reason
                              FROM nba_score.availability_delta WHERE game_date = %s""",
                           conn, params=(asof,))
         if not adj.empty:
             adj["player_id"] = adj["player_id"].astype(str); adj["line"] = adj["line"].astype(float)
-            # 🔴 REFUSE CERTAINTY (2026-09-24). The producer used to price a late Out at 0.001/0.999 on
-            # every one of that player's legs. Measured on the one date it ran, those legs scored
-            # log-loss 5.7938 against 0.8326 for leaving them alone - because a genuine DNP VOIDS (so the
-            # override never pays) and the only legs that reach grading are the ones where the listing
-            # REVERSED (2025-11-29: Klay Thompson, Out at 15:30 ET, Available at 16:30, 25.9 min, 23 pts).
-            # build_availability_delta.py no longer emits those overrides, and this is the second gate:
-            # a status is evidence, never a certainty, so an override outside [0.02, 0.98] is dropped
-            # rather than applied. Teammate reallocation - the part that MEASURED BETTER (0.6119 ->
-            # 0.6076) - moves probabilities by ~0.013 and passes untouched.
+            # 🔴 BOUND THE MOVE, NOT THE LEVEL (2026-09-24, measured). The producer used to price a late
+            # Out at 0.001/0.999 on every one of that player's legs: log-loss 5.7938 vs 0.8326 for leaving
+            # them alone, because a genuine DNP VOIDS (the override never pays) and the only legs that
+            # reach grading are ones where the listing REVERSED (2025-11-29: Klay Thompson, Out at 15:30
+            # ET, Available at 16:30, 25.9 min, 23 pts).
+            # The threshold is measured, not chosen: the teammate reallocation - the part that scored
+            # BETTER (0.6119 -> 0.6076) - moves a probability by mean 0.013, p99 0.043, MAX 0.0496. A cap
+            # at 0.15 is 3x its observed maximum, so nothing legitimate is touched.
+            # ⚠ A LEVEL-based filter would be WRONG here: 1,556 legitimate reallocated rows sit at
+            # extreme levels (<=0.02 / >=0.98) because they are far-out alternate rungs where an extreme
+            # probability is correct - they move by hundredths. The pathology is the MOVE, not the level.
             n_in = len(adj)
-            adj = adj[(adj["new_hp"] >= 0.02) & (adj["new_hp"] <= 0.98)
-                      & (~adj["reason"].astype(str).str.startswith("now_out"))]
+            move = (adj["new_hp"].astype(float) - adj["old_hp"].astype(float)).abs()
+            adj = adj[(move <= 0.15) & (~adj["reason"].astype(str).str.startswith("now_out"))]
             if len(adj) < n_in:
-                print(f"  availability overrides REJECTED as over-confident or now_out: {n_in - len(adj):,}",
+                print(f"  availability overrides REJECTED (move > 0.15 or now_out): {n_in - len(adj):,}",
                       flush=True)
-            adj = adj.drop(columns=["reason"])
+            adj = adj.drop(columns=["reason", "old_hp"])
             d = d.merge(adj, on=["player_id", "prop", "line", "side"], how="left")
             n_adj = int(d["new_hp"].notna().sum())
             d["baseline_hp"] = d["new_hp"].fillna(d["baseline_hp"]).astype(float)
