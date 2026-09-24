@@ -173,20 +173,29 @@ jobs:
           UNDERDOG_OUT_DIR: "boards"
         run: |
           set -uo pipefail
-          # PARALLEL (2026-09-23). These are three independent network jobs; run sequentially their wall
-          # time is the SUM of the boards, and the board count is growing (four today, five or six soon)
-          # on a pipeline that runs against a clock. Each writes its own output, so there is no shared
-          # state to race. Failures are collected and reported per board rather than silently swallowed:
-          # a board that fails here still fails the step, but the others have already run.
+          # PARALLEL, AND BOUNDED (2026-09-23/24). These are three independent network jobs; run
+          # sequentially their wall time is the SUM of the boards, and the board count is growing (four
+          # today, five or six soon) on a pipeline that runs against a clock.
+          # ⏱ EACH BOARD IS CAPPED AT 5 MINUTES. Measured 2026-09-24: an off-season run sat for 22+
+          # minutes on an empty slate whose compute path takes under 20 seconds - a scraper hanging on
+          # retries against pages with nothing on them. Unbounded, one dead app blocks the slate and the
+          # job's own 120-minute ceiling lets it run past every tip. A board that cannot answer in five
+          # minutes has nothing we can act on anyway: it is marked FAILED, the others still land, and the
+          # step fails afterwards so the miss is visible rather than silent.
           pids=""; names=""
           for s in scrape_sleeper_board scrape_underdog_board scrape_fliff_board; do
-            python nba/$s.py > /tmp/$s.log 2>&1 &
+            timeout --signal=TERM --kill-after=30s 300 python nba/$s.py > /tmp/$s.log 2>&1 &
             pids="$pids $!"; names="$names $s"
           done
           rc=0; i=1
           for p in $pids; do
             n=$(echo $names | cut -d' ' -f$i)
-            if wait $p; then echo "=== $n: ok"; else echo "=== $n: FAILED"; rc=1; fi
+            if wait $p; then echo "=== $n: ok"; else
+              code=$?
+              if [ $code -eq 124 ] || [ $code -eq 137 ]; then echo "=== $n: TIMED OUT after 5 min";
+              else echo "=== $n: FAILED (exit $code)"; fi
+              rc=1
+            fi
             tail -n 25 /tmp/$n.log
             i=$((i+1))
           done
