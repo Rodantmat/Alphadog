@@ -145,13 +145,36 @@ def main():
     print(f"  by prop: {board.groupby('prop').size().sort_values(ascending=False).head(12).to_dict()}", flush=True)
 
     # 2) HP FROM P2's LADDER at the exact rung
+    # 🔴 RIGHT TABLE (fixed 2026-09-24). This read `nba_score.baseline_history ... AND season = %s`.
+    # P2 does NOT write that table: its loader (step 15, load_baseline_ladder.py) writes
+    # `nba_score.baseline_ladder`, keyed by `asof`. baseline_history is written by
+    # load_baseline_history.py - the SEASON BACKFILL loader, which P2 never invokes (NBA_WORKERS.md §B).
+    # Proof from today's own run: P2 wrote 118,759 rows to baseline_ladder for 2026-04-10 at 22:31, while
+    # that slate's baseline_history rows are dated 2026-09-20 and number 113,357 - different objects.
+    # ⚠ WHY IT NEVER SHOWED: every replay uses a date the two-season backfill already covers, so the
+    # wrong table happened to be populated. On 2026-10-20 it is not, and P3 would have died with
+    # "ABORT: no baseline ladder ... P2 must run before P3" AFTER P2 ran successfully. Stops the slate.
+    # PERIOD CONVENTIONS DIFFER between the two tables and neither was filtered: baseline_ladder marks
+    # full-game rows 'FULL', baseline_history leaves them NULL. Unfiltered, a Q1 row at the same
+    # (player, prop, line) duplicates the full-game row and multiplies legs on the merge.
     lad = pd.read_sql("""
         SELECT player_id, prop, line, p_more, p_less, anchor, ladder_offset, role_tier, used_emp
-        FROM nba_score.baseline_history WHERE game_date = %s AND season = %s
-    """, conn, params=(asof, season))
+        FROM nba_score.baseline_ladder WHERE asof = %s AND period = 'FULL'
+    """, conn, params=(asof,))
+    src = "baseline_ladder (P2's own output for this slate)"
     if lad.empty:
-        print(f"ABORT: no baseline ladder for {asof} - P2 must run before P3.")
+        # REPLAY PATH: historical slates exist only in the season backfill, which P2 never rebuilds.
+        lad = pd.read_sql("""
+            SELECT player_id, prop, line, p_more, p_less, anchor, ladder_offset, role_tier, used_emp
+            FROM nba_score.baseline_history
+            WHERE game_date = %s AND season = %s AND period IS NULL
+        """, conn, params=(asof, season))
+        src = "baseline_history (season backfill - replay path)"
+    if lad.empty:
+        print(f"ABORT: no baseline ladder for {asof} in baseline_ladder OR baseline_history "
+              f"- P2 must run before P3.")
         raise SystemExit(1)
+    print(f"  baseline source: {src} - {len(lad):,} rows", flush=True)
     lad["player_id"] = lad["player_id"].astype(str)
     lad["line"] = lad["line"].astype(float)
     board["player_id"] = board["player_id"].astype(str)
