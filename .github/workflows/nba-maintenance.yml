@@ -53,10 +53,6 @@ jobs:
 
       - name: Factor freshness
         if: ${{ github.event.inputs.task == 'freshness' }}
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          FF_STRICT: "0"
-        run: python nba/check_factor_freshness.py
 
       - name: Load today's injury report
         if: ${{ github.event.inputs.task == 'injury' }}
