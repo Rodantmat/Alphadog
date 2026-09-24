@@ -155,7 +155,10 @@ def main():
             conn.rollback()
             sys.exit(1)
         cur.execute(f"""DELETE FROM nba_score.baseline_history h
-                        WHERE {hist_scope_sql} AND NOT EXISTS (
+                        WHERE {hist_scope_sql}
+                          AND EXISTS (SELECT 1 FROM _prune_scope s
+                                      WHERE s.game_date = h.game_date AND s.prop = h.prop AND s.period = h.period)
+                          AND NOT EXISTS (
                           SELECT 1 FROM _prune_keys k WHERE k.game_date = h.game_date AND k.player_id = h.player_id
                             AND k.prop = h.prop AND k.period = h.period AND k.line = h.line)""", hist_params)
         deleted = cur.rowcount
