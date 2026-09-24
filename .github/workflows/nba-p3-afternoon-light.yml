@@ -86,34 +86,55 @@ jobs:
           python - "$A" <<'EOF'
           import os, sys
           from datetime import datetime, timedelta, timezone
+          from zoneinfo import ZoneInfo
           import psycopg
+          PT = ZoneInfo("America/Los_Angeles")
           slate = sys.argv[1]
           now = datetime.now(timezone.utc)
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
               first_tip, games = c.execute(
                   "SELECT min(game_datetime_utc), count(*) FROM nba_calendar.games WHERE game_date = %s",
                   (slate,)).fetchone()
-          today_pt = datetime.now(timezone(timedelta(hours=-8))).date().isoformat()
+              scored = c.execute(
+                  "SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s", (slate,)).fetchone()[0]
+          today_pt = datetime.now(PT).date().isoformat()
+          scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
           out = open(os.environ["GITHUB_OUTPUT"], "a")
-          print(f"games scheduled: {games}; first tip (UTC): {first_tip}")
+          print(f"games scheduled: {games}; first tip (UTC): {first_tip}; legs already scored: {scored}")
           if games == 0:
               # NO GAMES. The board scrapes and the archive still run below - a no-game day is when the
               # apps post tomorrow's board, and that history is what the multiplier and tier work reads,
-              # with no risk to player data. What is skipped is everything that SCORES a slate:
-              # availability delta, the leg scorer and the paper log have nothing to price.
+              # with no risk to player data. What is skipped is everything that SCORES a slate.
               print("::notice::No games scheduled for this slate - capture runs, scoring is skipped.")
               out.write("late=0\nhas_games=0\n"); raise SystemExit(0)
           out.write("has_games=1\n")
           if slate != today_pt:
               print("Replay of a past/other date - cutoff checks do not apply.")
               out.write("late=0\n"); raise SystemExit(0)
-          latest = datetime.fromisoformat(f"{slate}T21:15:00+00:00")   # 13:15 PT during DST
+          # 13:15 PT IS A LOCAL TIME, NOT A UTC ONE (fixed 2026-09-24). This was hardcoded to 21:15 UTC
+          # with a comment claiming "13:15 PT during DST" - wrong by an hour: 21:15 UTC is 14:15 PDT.
+          # Under PDT that let the pipeline run a full hour later than the intended cutoff. zoneinfo
+          # resolves the real offset for the date, so the rule holds across the 2026-11-01 change.
+          latest = datetime.fromisoformat(f"{slate}T13:15:00").replace(tzinfo=PT).astimezone(timezone.utc)
           effective = min(latest, first_tip - timedelta(minutes=30))
           print(f"effective cutoff (UTC): {effective}  |  now: {now}")
           if now < effective:
-              print(f"::error::Too early. This slate's effective cutoff is {effective} UTC "
-                    f"(first tip {first_tip}). Injury reports are still landing.")
+              # Three crons cover the slate (early tips, PDT, PST) and only ONE of them is the right run
+              # for any given day; the others are early by design. An early SCHEDULED run is therefore a
+              # no-op, not a failure - failing it would paint the board red daily and teach everyone to
+              # ignore it. A human dispatch still gets a hard error, because they asked for this slate.
+              msg = f"Too early: this slate's effective cutoff is {effective} UTC (first tip {first_tip})."
+              if scheduled:
+                  print(f"::notice::{msg} A later scheduled run will do the work.")
+                  out.write("late=0\nhas_games=0\n"); raise SystemExit(0)
+              print(f"::error::{msg} Injury reports are still landing.")
               raise SystemExit(1)
+          if scored > 0 and scheduled:
+              # An earlier cron already scored this slate at the cutoff. Re-scoring later would overwrite
+              # the decision-moment snapshot with a staler-but-newer board, which is exactly the thing the
+              # window label exists to prevent.
+              print(f"::notice::Slate already scored ({scored} legs) - this later run is a no-op.")
+              out.write("late=0\nhas_games=0\n"); raise SystemExit(0)
           if now > first_tip:
               print(f"::warning::LATE RUN - the first game tipped at {first_tip} UTC, before this run. "
                     f"Legs for games already underway are stale; picks from them are post-tip.")
