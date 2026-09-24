@@ -172,6 +172,16 @@ jobs:
           # nothing. Sleeper's default is multi-sport ("mlb,nba"), so leaving it unset silently scrapes
           # MLB too and doubles the runtime of a pipeline that must finish in minutes.
           SLEEPER_SPORTS: "nba"
+          # 🏀 UNDERDOG AND FLIFF WERE MISSING THEIR FILTER (fixed 2026-09-24, measured). A full P3 run
+          # took 22 minutes and ~20 of them were these two pulling BASEBALL: one run logged
+          # "MLB: 1,707 legs / 30 categories" beside "NBA: 3 legs", and Fliff logged
+          # "mlb: events=18 markets=604 legs=4451". The archive filters to NBA afterwards
+          # (ARCHIVE_SPORT: nba), so every MLB call was paid for and discarded - on the pipeline that
+          # runs against a tip-off clock, and it gets worse in season when NFL and NHL boards are live.
+          # Casing differs per scraper and both were read from source: Underdog upper-cases its sport ids
+          # (default "MLB,NBA"), Fliff lower-cases them (default "mlb,nba"). MLB has its own pipeline.
+          UNDERDOG_SPORTS: "NBA"
+          FLIFF_SPORTS: "nba"
           # OUTPUT DIRS ARE ALSO NOT UNIFORM: Sleeper defaults to "." (the repo ROOT) while Underdog
           # defaults to "boards". The commit step below only adds boards/ and nba/data/, so an unset
           # SLEEPER_OUT_DIR drops the file at the root where it is never committed - and the archiver,
