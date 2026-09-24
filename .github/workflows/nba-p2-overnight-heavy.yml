@@ -254,6 +254,7 @@ jobs:
       # (It also has its own guard - "ABORT: artifact has no combo props" - which is why combos must
       # be built before the merge, not after.)
       - name: Merge per-pair ladders
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           BT_ASOF: ${{ steps.d.outputs.asof }}
         run: |
