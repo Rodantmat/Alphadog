@@ -99,17 +99,33 @@ def main():
             WHERE u.line_source = 'simulated' AND u.line IS NOT NULL
               AND {scope_sql.replace('b.game_date', 'u.game_date')}""", flat + scope_params + scope_params)
         cur.execute("CREATE INDEX ON _prune_keys (game_date, player_id, prop, period, line)")
+        # 🔑 SCOPE OF THE PRUNE (owner correction 2026-09-24): "the derived we keep. If they were derived,
+        # we keep; if they're not derived, then we need to redo it anyway." So the prune touches a
+        # (date, prop, period) ONLY IF some board - real or derived - carried that prop that day. A prop
+        # with no board of any kind (historically the PERIOD props: no Odds-API lines and no simulated
+        # legs in prop_universe) keeps its FULL ladder: it is the raw material the derivation will run
+        # on, and deleting it would force a rebuild before the derivation could even start.
+        cur.execute("""CREATE TEMP TABLE _prune_scope AS
+                       SELECT DISTINCT game_date, prop, period FROM _prune_keys""")
+        cur.execute("CREATE INDEX ON _prune_scope (game_date, prop, period)")
         cur.execute("SELECT count(*), count(DISTINCT game_date) FROM _prune_keys")
         nk, nd = cur.fetchone()
         cur.execute(f"SELECT count(*) FROM nba_score.baseline_history h WHERE {hist_scope_sql}", hist_params)
         before = cur.fetchone()[0]
         cur.execute(f"""SELECT count(*) FROM nba_score.baseline_history h
+                        WHERE {hist_scope_sql} AND NOT EXISTS (
+                          SELECT 1 FROM _prune_scope s WHERE s.game_date = h.game_date AND s.prop = h.prop AND s.period = h.period)""",
+                    hist_params)
+        unboarded = cur.fetchone()[0]
+        cur.execute(f"""SELECT count(*) FROM nba_score.baseline_history h
                         WHERE {hist_scope_sql} AND EXISTS (
                           SELECT 1 FROM _prune_keys k WHERE k.game_date = h.game_date AND k.player_id = h.player_id
                             AND k.prop = h.prop AND k.period = h.period AND k.line = h.line)""", hist_params)
         keep = cur.fetchone()[0]
-        print(f"[{label}] board keys: {nk:,} across {nd} dates | baseline rows: {before:,} | on a board: {keep:,} "
-              f"({100.0 * keep / max(before, 1):.1f}%) | to delete: {before - keep:,}", flush=True)
+        to_delete = before - keep - unboarded
+        print(f"[{label}] board keys: {nk:,} across {nd} dates | baseline rows: {before:,} | on a board: {keep:,} | "
+              f"kept as NEVER-DERIVED (no board of any kind for that prop/day): {unboarded:,} | "
+              f"to delete: {to_delete:,} ({100.0 * to_delete / max(before, 1):.1f}%)", flush=True)
         if dry:
             print("DRY RUN - nothing deleted.", flush=True)
             conn.rollback()
