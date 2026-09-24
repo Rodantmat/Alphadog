@@ -43,7 +43,14 @@ def main():
             loaded_at timestamptz DEFAULT now())""")
         cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS baseline_history_uidx ON nba_score.baseline_history
             (game_date, player_id, game_id, prop, period, line)""")
-        cur.execute("CREATE INDEX IF NOT EXISTS baseline_history_lookup ON nba_score.baseline_history (game_date, player_id, prop)")
+        # 💾 REDUNDANT INDEX REMOVED (2026-09-24, disk hygiene). This used to create
+        # `baseline_history_lookup (game_date, player_id, prop)` - 415 MB - which is a strict PREFIX of
+        # `baseline_history_lookup_idx (game_date, player_id, prop, line) INCLUDE (proj_min, rate36,
+        # used_emp, role_tier)`, built by build_confidence_v3.py and used 29.6M times. Postgres serves
+        # every query the narrow one could serve from the wider one, so the 415 MB bought nothing.
+        # Recreating it here would silently undo the reclaim on the next backfill, so the statement is
+        # gone rather than commented out. The two indexes that matter are created above and by the
+        # confidence refit: baseline_history_uidx (uniqueness, 54.5M scans) and the wide lookup.
         prop_set = sorted({r["prop"] for r in rows})
         cur.execute("DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)", (season, prop_set))
         cur.executemany("""INSERT INTO nba_score.baseline_history
