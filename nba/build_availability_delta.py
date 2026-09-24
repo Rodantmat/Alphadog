@@ -188,11 +188,26 @@ def main():
         wsum = sum(mins(p) for p in stay) or 1.0
         for r in g.itertuples(index=False):
             if r.player_id in now_out:
-                # he is OUT: every one of his legs goes to ~0
+                # 🔴 DO NOT REWRITE HIS OWN LEGS (fixed 2026-09-24, measured). This used to set every one
+                # of his legs to 0.001 / 0.999 - "he is OUT" priced as a certainty. Two things make that
+                # strictly negative, and the one date this script has ever run proves both:
+                #   1. WHEN HE IS GENUINELY OUT, HIS LEGS VOID. A DNP is a void on PrizePicks (verified
+                #      reversion rules), so those legs are never graded and the override earns NOTHING.
+                #   2. THE ONLY WAY THOSE LEGS GET GRADED IS IF THE LISTING REVERSED - i.e. exactly when
+                #      the override is maximally wrong. 2025-11-29: Klay Thompson was listed Out
+                #      (Management) at 14:30 and 15:30 ET, UPGRADED to Available at 16:30, and played
+                #      25.9 minutes for 23 points. His 828 legs were priced at 0.001/0.999.
+                # Measured on that date, split by reason: teammate `reallocated` legs IMPROVED
+                # (log-loss 0.6119 -> 0.6076, n=341), his own `now_out` legs went 0.8326 -> 5.7938
+                # (n=93, SEVEN TIMES worse). Zero upside, unbounded downside.
+                # The row is still written - it is the record that he was ruled out - but new_hp equals
+                # old_hp, so no consumer is misled. A status is not a certainty: measured P(plays) at the
+                # cutoff is Out 0.002, Doubtful 0.010, Questionable 0.469 (nba_score.availability_p_plays),
+                # and "Management" listings like this one are the most reversal-prone class of all.
                 out_rows.append((asof, r.player_id, r.prop, float(r.line), "Over",
-                                 float(r.p_more), 0.001, "now_out"))
+                                 float(r.p_more), float(r.p_more), "now_out_flag_only"))
                 out_rows.append((asof, r.player_id, r.prop, float(r.line), "Under",
-                                 float(r.p_less), 0.999, "now_out"))
+                                 float(r.p_less), float(r.p_less), "now_out_flag_only"))
                 continue
             share = mins(r.player_id) / wsum
             gain = net * share
