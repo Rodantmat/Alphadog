@@ -150,11 +150,11 @@ def main():
     # scorer read history - a table P2 never touched - so on opening night it would have aborted with
     # "P2 must run before P3" AFTER P2 ran. The loader now writes baseline_history for the slate
     # (delete-by-date, rewrite), so history and the live day are the same table and this reads it alone.
-    # Full-game rungs carry period NULL; the Q1/Q4/H1/H2 rungs are excluded here because an unfiltered
-    # read duplicated a full-game row wherever a period rung shared its line.
+    # Full-game rungs carry period 'FULL' (verified across both seasons); the Q1/Q4/H1/H2 rungs are
+    # excluded because an unfiltered read duplicated a full-game row wherever a period rung shared its line.
     lad = pd.read_sql("""
         SELECT player_id, prop, line, p_more, p_less, anchor, ladder_offset, role_tier, used_emp
-        FROM nba_score.baseline_history WHERE game_date = %s AND period IS NULL
+        FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL'
     """, conn, params=(asof,))
     if lad.empty:
         print(f"ABORT: no baseline for {asof} in nba_score.baseline_history - P2 must run before P3.")
