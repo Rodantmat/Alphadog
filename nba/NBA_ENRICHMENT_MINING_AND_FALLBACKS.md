@@ -280,12 +280,34 @@ unknown players — does not exist per the measurement above. **Preseason stays 
 Its real use is board and multiplier learning: the apps post preseason lines, and that history teaches tier
 and payout structure with zero contamination risk. `game_label = 'Preseason'` in `nba_calendar.games`
 (66 games, 2026-10-03 → 10-16) is the clean separator if a slate ever needs excluding.
- The parity doc's
-stage table (§7) puts `D1 referee crew` at the **baseline** stage, available **~6–7 AM PT**. The baseline is
-built by **P2, whose target cron is 09:00 UTC = 01:00 PT** — five to six hours BEFORE assignments publish. The
-two statements cannot both hold, and the evidence of which one lost is `nba_ref.referee_assignments`: **0 rows**,
-while P2 ran `scrape_referee_assignments.py` in its mining step every night. It was scraping an empty page.
-**Resolved:** the scrape is REMOVED from P2 and runs in **P3** (13:15 PT, six hours after posting), with the
+
+---
+
+## 12. D1 REFEREE — THE HOUR WAS WRONG, NOT THE PIPELINE (owner decision 2026-09-23)
+
+The parity doc's stage table (§7) puts `D1 referee crew` at the **baseline** stage, available **~6–7 AM PT**
+(9–10 AM ET). The baseline is built by P2, whose target cron was **09:00 UTC = 01:00 PT** — five to six hours
+BEFORE assignments publish. The evidence of which statement lost: **`nba_ref.referee_assignments` held 0 rows**
+while P2 ran `scrape_referee_assignments.py` nightly. It was scraping a page that did not exist yet.
+**Resolved by moving the SCHEDULE, not the logic.** The scrape stays exactly where it was in P2; P2's cron is
+now `45 15 * * *` — **08:45 PT under PDT, 07:45 PT under PST** — after the posting, and still finishing around
+10:40 / 09:40 PT against P3's 13:15 cutoff (~3h of retry slack). The dedicated job `nba-referees.yml` (08:30 PT)
+remains the primary capture; P2's scrape is an idempotent upsert on `(game_date, matchup, slot)`.
+⚠ **No rebuild was triggered by this** — verified before assuming: `classification_ladder_v12.py` (the certified
+recipe) contains **zero** references to referees, officials or crew, and the assignments table was empty, so no
+historical number was ever computed from D1. Nothing to recompute.
+⚠ **No predictor is warranted.** Crews are unpredictable by construction — **3,414 distinct trios across 3,687
+games, 3,172 used exactly once, max 4 repeats** — but they do not need predicting: the crew is KNOWN by 08:30 PT,
+hours before any decision. Historical crews come from box scores (post-hoc truth, `nba_stats.game_officials`,
+11,062 rows across 3 seasons, all now loaded). A predictor would serve only the 01:00–07:00 window, in which
+nothing is decided.
+**Worth of the factor when it IS missing:** official foul-rate spread is 0.9–1.4 per game against a game-level
+SD of 6.7, with year-over-year persistence **0.264** — true persistent spread ~**0.7 fouls on a 37–40 base,
+under 2%**. The confidence model prices its absence at **0.88 of 44** deduction points, so the documented
+fallback (factor zero + penalty) does NOT over-penalise. For when the crew IS known:
+`nba_ref.official_tendency` — 78 officials, shrunk with **k=112** derived from that measured reliability, which
+halves the raw spread (1.015 → 0.513) because raw means overstate the effect at ~40 games a season.
+
 dedicated daily job `nba-referees.yml` (08:30 PT) as the primary capture and P3 as the idempotent safety net
 (the upsert key is `game_date, matchup, slot`). This stays inside the parity doc's own rule — *"Stage is where
 the factor is COMPUTED; phase 2 may still READ a phase-1 value."* ⚠ **No predictor is needed**: the crew is
