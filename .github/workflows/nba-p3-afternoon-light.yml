@@ -22,7 +22,20 @@ name: NBA P3 Afternoon Light
 # NO FRESHNESS GATE. At a single cutoff every leg carries the same report generation - a freshness term
 # would penalise uniformly and discriminate nothing.
 
+# SCHEDULE (2026-09-24). THREE crons, because one fixed UTC time cannot express "13:15 Pacific":
+#   17:30 UTC = 10:30 PDT / 09:30 PST  - early-tip slates (~38 dates a season tip before the usual cutoff)
+#   20:15 UTC = 13:15 PDT / 12:15 PST  - the cutoff under daylight time
+#   21:15 UTC = 14:15 PDT / 13:15 PST  - the cutoff once PST starts (2026-11-01)
+# Exactly ONE of these is the right run on any given day and the others are early by design, so the gate
+# decides rather than the clock: an early SCHEDULED run exits 0 with a notice, and a run that finds the
+# slate already scored no-ops instead of overwriting the decision-moment snapshot with a later board.
+# That keeps the board green daily - a pipeline that cries wolf gets ignored, and this one picks the legs.
+# Measured runtime once the scrapers were scoped to NBA: ~2 minutes (was 22 while they pulled MLB too).
 on:
+  schedule:
+    - cron: '30 17 * * *'
+    - cron: '15 20 * * *'
+    - cron: '15 21 * * *'
   workflow_dispatch:
     inputs:
       asof:
