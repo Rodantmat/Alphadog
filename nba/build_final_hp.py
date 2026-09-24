@@ -115,9 +115,13 @@ def main():
     _pairs = ",".join("(%s,%s)" for _ in MARKET_TO_PROP)
     _flat = [x for mk, pr in MARKET_TO_PROP.items() for x in (mk, pr)]
     _date_clause = "AND b.game_date = %s" if FE_DATE else ""
-    _params = _flat + ([FE_DATE] if FE_DATE else [])
+    _date_clause_u = "AND u.game_date = %s" if FE_DATE else ""
+    _params = _flat + ([FE_DATE] if FE_DATE else []) + ([FE_DATE] if FE_DATE else [])
     with conn.cursor() as cur:
         cur.execute("DROP TABLE IF EXISTS _fe_board_keys")
+        # REAL boards UNION DERIVED boards (owner 2026-09-24: "either the real boards or derived"). The
+        # derived boards are the simulated fantasy-score / derived-prop legs in prop_universe, the only
+        # board those props ever had historically.
         cur.execute(f"""
             CREATE TEMP TABLE _fe_board_keys AS
             SELECT DISTINCT b.game_date, m.player_id::text AS player_id, v.prop, b.line
@@ -125,7 +129,11 @@ def main():
             JOIN (VALUES {_pairs}) AS v(mk, prop) ON replace(b.market_key, '_alternate', '') = v.mk
             JOIN nba_ref.player_name_map m
               ON m.norm_name = lower(regexp_replace(b.player, '[^A-Za-z]', '', 'g'))
-            WHERE b.line IS NOT NULL {_date_clause}""", _params)
+            WHERE b.line IS NOT NULL {_date_clause}
+            UNION
+            SELECT DISTINCT u.game_date, u.player_id::text, u.prop, u.line
+            FROM nba_market.prop_universe u
+            WHERE u.line_source = 'simulated' AND u.line IS NOT NULL {_date_clause_u}""", _params)
         cur.execute("CREATE INDEX ON _fe_board_keys (game_date, player_id, prop, line)")
         cur.execute("SELECT count(*), count(DISTINCT game_date) FROM _fe_board_keys")
         _nk, _nd = cur.fetchone()
