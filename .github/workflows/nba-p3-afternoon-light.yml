@@ -285,6 +285,7 @@ jobs:
       # 4b) PAPER TRADING (2026-09-21): record tonight's standards_3pick_v1 picks with a pre-game timestamp. First log
       #     wins - a night already logged is never overwritten. Graded by P2 next morning; see nba_score.paper_results.
       - name: Log paper-trading picks
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PAPER_DATE: ${{ steps.d.outputs.asof }}
