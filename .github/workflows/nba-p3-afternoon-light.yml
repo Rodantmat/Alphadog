@@ -116,17 +116,6 @@ jobs:
       # this is the only pipeline that can. The dedicated daily job (nba-referees.yml, 08:30 PT) is the
       # primary capture and this is the safety net: the scraper upserts on (game_date, matchup, slot), so
       # running it twice is a no-op. Crews rarely change after posting, so a 1:15 PM read is faithful.
-      # If it still finds nothing, D1's documented fallback applies - factor zero plus a confidence
-      # penalty, which the measured model prices at 0.88 of 44 points because crew tendency is worth
-      # under 2% (spread 0.7 fouls on a 37-40 base, year-over-year persistence 0.26).
-      - name: Referee assignments (D1, published this morning)
-        if: ${{ github.event.inputs.skip_scrape != 'true' }}
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PROXY_URL: ${{ secrets.PROXY_URL }}
-          REF_DATE: ${{ steps.d.outputs.asof }}
-        run: python nba/scrape_referee_assignments.py
-
       # 1) THE BINDING INPUT: the day-of injury report
       - name: Day-of injury report
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
