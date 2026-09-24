@@ -336,6 +336,7 @@ jobs:
       # last night. FE_DATE = this slate (seconds, not the ~90 minutes a full rebuild takes);
       # FE_SEASONS blank so the script resolves the live season itself; FE_WRITE=1 or it only reports.
       - name: Build final_hp for the slate
+        if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FE_DATE: ${{ steps.d.outputs.asof }}
