@@ -3,11 +3,11 @@ name: NBA P2 Overnight Heavy
 # PIPELINE 2 OF 3 (COMPASS fact 107). The heavy overnight run: mine last night's games, then rebuild
 # the baseline for today's slate.
 #
-# NO CRON YET — deliberately. The NBA season opens in October; until real games exist there is nothing
-# for this to mine, and a scheduled job failing nightly against an empty schedule trains everyone to
-# ignore red builds. The cron goes in when the season starts (target: daily 09:00 UTC = 01:00 PT,
-# which is after the last West-Coast game finalises and leaves eight hours before P3's 1:15 PM cutoff).
-# Until then: workflow_dispatch, and REPLAY any past date to prove the path end to end.
+# CRON IS LIVE (2026-09-23): '45 15 * * *' - see the SCHEDULE block below for why the morning slot, the
+# DST drift, and the measured runtime. The file name still says "overnight" for continuity with every
+# document that references it; the pipeline itself now runs in the morning, after the referee posting.
+# Until the season opens there are no games to mine, so runs will certify with "no games scheduled" and
+# stay green rather than red - the certifier is season-aware.
 #
 # THIS IS A DELTA. It adds last night to a cumulative store, which has exactly one dangerous failure
 # mode: a missed night is SILENT. Row counts still rise, nothing errors, and every as-of value computed
