@@ -68,6 +68,17 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/build_asof_calibration.py
 
+      # Prune a whole season's baseline to the rungs the boards offered (owner retention rule
+      # 2026-09-24). DRY RUN unless prune_execute is 'yes' - the delete is irreversible, so the counts
+      # are printed first and the owner confirms.
+      - name: Prune a season's baseline to the board
+        if: ${{ github.event.inputs.task == 'prune' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PRUNE_SEASON: ${{ github.event.inputs.season }}
+          PRUNE_DRY_RUN: ${{ github.event.inputs.prune_execute == 'yes' && '0' || '1' }}
+        run: python nba/prune_baseline_to_board.py
+
       - name: Load today's injury report
         if: ${{ github.event.inputs.task == 'injury' }}
         env:
