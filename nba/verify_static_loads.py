@@ -33,8 +33,14 @@ TABLE_FOR = {
     "nba-static-darko": "nba_stats.player_impact_rating",
     "nba-static-shotquality": "nba_stats.player_shot_quality",
     "nba-static-lineups": "nba_team.lineup_profile",
+    # The two dictionary workers skip UNCHANGED rows in their main table, so players.updated_at and
+    # teams.updated_at are silent on a quiet week - but both REWRITE THEIR ALIASES EVERY RUN (measured
+    # 2026-09-24: aliases_written=1868 on a run with 3 changed players; team aliases 155 with 0 changed
+    # teams). The alias table is therefore the truthful freshness signal for these two.
+    "nba-static-players": "nba_ref.player_aliases",
+    "nba-static-teams": "nba_ref.team_aliases",
 }
-DICTIONARY_WORKERS = {"nba-static-teams", "nba-static-players"}  # write only changed rows
+DICTIONARY_WORKERS = set()  # every worker now has a freshness signal; kept for the reporting branch below
 
 
 def main():
