@@ -138,6 +138,45 @@ def main():
                   f"that is a convention mismatch, not an empty board. Nothing deleted.", flush=True)
             conn.rollback()
             sys.exit(1)
+        # PER-DATE BATCHES (2026-09-24). The first season execution ran as ONE transaction: a 5.35M-row
+        # DELETE with correlated EXISTS / NOT EXISTS checks against 9.7M rows, I/O-bound for over an hour
+        # with no visible progress and everything riding on a single commit. Same rule, same keys - but
+        # one date per transaction: ~30k rows each, progress printed as it goes, and a stop or timeout
+        # loses at most one date's work instead of all of it. A rerun simply finds nothing left to do
+        # on the dates already pruned.
+        cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.baseline_prune_log (
+            game_date date PRIMARY KEY, rows_kept bigint, rows_deleted bigint, pruned_at timestamptz DEFAULT now())""")
+        cur.execute("SELECT DISTINCT game_date FROM _prune_keys ORDER BY 1")
+        dates = [r[0] for r in cur.fetchall()]
+    conn.commit()   # releases the advisory lock taken for the key build; each date below takes its own
+    total_deleted = 0
+    for i, d in enumerate(dates, 1):
+        with conn.cursor() as cur:
+            cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.baseline_history'))")
+            cur.execute("""DELETE FROM nba_score.baseline_history h
+                           WHERE h.game_date = %s
+                             AND EXISTS (SELECT 1 FROM _prune_scope s
+                                         WHERE s.game_date = h.game_date AND s.prop = h.prop AND s.period = h.period)
+                             AND NOT EXISTS (SELECT 1 FROM _prune_keys k
+                                             WHERE k.game_date = h.game_date AND k.player_id = h.player_id
+                                               AND k.prop = h.prop AND k.period = h.period AND k.line = h.line)""", (d,))
+            n_del = cur.rowcount
+            cur.execute("SELECT count(*) FROM nba_score.baseline_history WHERE game_date = %s", (d,))
+            n_left = cur.fetchone()[0]
+            cur.execute("""INSERT INTO nba_score.baseline_prune_log (game_date, rows_kept, rows_deleted)
+                           VALUES (%s, %s, %s)
+                           ON CONFLICT (game_date) DO UPDATE SET rows_kept = EXCLUDED.rows_kept,
+                             rows_deleted = nba_score.baseline_prune_log.rows_deleted + EXCLUDED.rows_deleted,
+                             pruned_at = now()""", (d, n_left, n_del))
+        conn.commit()
+        total_deleted += n_del
+        print(f"  [{i}/{len(dates)}] {d}: deleted {n_del:,}, {n_left:,} left", flush=True)
+    print(f"PRUNED|{label}|deleted {total_deleted:,} off-board rungs across {len(dates)} dates, "
+          f"kept {keep:,} board rungs + {unboarded:,} never-derived", flush=True)
+    conn.close()
+    return
+
+        # (unreachable legacy single-transaction path kept out of the way)
         if nk == 0:
             # Distinguish an off day from a missing archive. No games -> nothing to prune, exit green
             # (P2 runs every morning and must not go red for a day the league did not play). Games but
