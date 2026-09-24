@@ -245,20 +245,31 @@ vs 658) LOST out of sample on both segments (0.0445 / 0.2418). Granularity has a
 
 ---
 
-## 11. A5 STARTER FALLBACK, AND TWO THINGS THE DATA KILLED (2026-09-23)
+## 11. A5 STARTER MODEL — BUILT, THEN FOUND REDUNDANT AGAINST AN EXISTING TEST (2026-09-23/24)
 
-**A5 — P(player starts tonight).** Official lineups land ~30 min before tip, long after P3's cutoff, so at
-decision time the lineup is normally unknown and this is the working answer, not a backup.
-`nba_score.starter_training` (78,556 player-games, 3 seasons — the officials and starter-status backfills
-were mined weeks ago and had never been LOADED; both are now in Postgres) →
-`nba_score.starter_prior_v2` → **`nba_score.p_start(started_last, start_rate_10, avg_min_10, starters_out)`**.
-Fit on 2024-25 ONLY, validated on 2025-26 (26,543 unseen player-games): **Brier 0.07034** vs 0.07211 without
-the starters-out term (**2.46% better**; **2.91%** on bench players), vs **0.0834** for the naive
-"started last game" rule and **0.2487** for the base rate. Accuracy 91.0%; mean prediction 0.4643 vs actual
-0.4631.
-**The mechanism, measured:** a bench player starts 3.3% of the time with no regular starters out, 6.5% with
-one, 9.2% with two, **15.9% with three** — while an established starter sits at ~90% regardless. The
-asymmetry is why the term sits in a fourth level under `started_last` rather than as a global shift.
+🔴 **VERDICT FIRST: this model is NOT wired into anything, and should not be.** `A5 lineup change` is
+already **CLOSED — REJECTED** (`NBA_DAILY_PARITY_AND_BACKFILL.md` §4; the measurement is in
+`NBA_BASELINE_CALIBRATION.md` §0u.1). That test built the same mechanism — *"last game's starters, minus
+those ruled out, plus the highest as-of-minutes replacement"* — and measured it HELD OUT against prop
+error: **points Δ MAE −0.032, rebounds −0.008, assists −0.008, pra −0.035 — negative on every prop.**
+The reason generalises: *"the allocator already uses RECENT-5 MINUTES, which encodes starting status
+CONTINUOUSLY AND WITH MAGNITUDE; a binary starter [flag adds nothing]"* — and that rejected proxy already
+included the next-man-up replacement logic.
+⚠ **MY ERROR, recorded because it is the reusable lesson:** I validated the wrong target. I measured
+whether STARTS ARE PREDICTABLE (Brier 0.07034 vs 0.07211, out-of-sample on 26,543 unseen player-games)
+and treated that as a result. Predictability is not usefulness — the question was always whether it
+improves a PROP projection, which §0u.1 had already answered. `NBA_BASELINE_CALIBRATION.md` §5.6 states
+the rule I broke: *"out-of-sample is necessary but NOT sufficient."* Check the verdict before building.
+
+**What exists, and what it is good for.** The artifacts stay because the DATA behind them was missing and
+is now loaded (officials and starter status were mined weeks ago and never landed in Postgres):
+`nba_score._starter_hist` (79,358 player-games, 3 seasons), `nba_score.starter_training`,
+`nba_score.starter_prior_v2`, `nba_score.p_start(...)`. Nothing calls them. If a future use appears it
+must clear the §0u.1 bar — Δ MAE on props, not Brier on starts.
+**The one measurement worth keeping** (it is about availability, not lineups): a bench player's chance of
+starting runs **3.3% with no regular starters out → 6.5% → 9.2% → 15.9% with three**, while an
+established starter sits at ~90% regardless of how many teammates sit.
+
 
 🔴 **REJECTED — an evidence-depth confidence factor.** Single dates suggested players with no prior-season
 history were badly mis-scored (calibration gaps of −10, +10, −17 points while confidence stayed at 0.94).
