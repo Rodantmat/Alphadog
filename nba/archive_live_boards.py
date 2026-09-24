@@ -65,6 +65,32 @@ def load(app, sport):
         return None
 
 
+# 🔴 PRIZEPICKS STAT NAMES ARE NOT THE CANONICAL ONES (fixed 2026-09-24).
+# The builder below used PrizePicks' own labels verbatim - "player_" + stat_type.lower() - so the first
+# live NBA board we ever captured wrote `player_3-pt_made`, `player_pts+rebs`, `player_pts+rebs+asts`,
+# `player_blocked_shots`. Every consumer joins on the ODDS API convention that the two-season history is
+# written in: `player_threes`, `player_points_rebounds`, `player_points_rebounds_assists`,
+# `player_blocks` (nba_score.paper_prop_map, the scorer, the grader, the slip engine).
+# Only points, rebounds and assists happened to match. Combos are ~44% of the board, so on opening night
+# those legs would have joined to NOTHING - no error, no empty-result warning, just a board that
+# quietly lost half itself. Verified by diffing the live 2026-10-20 keys against historical 2026-04-12.
+# Anything unmapped falls through to the old behaviour and is printed once, so a new PrizePicks stat
+# shows up as a visible unknown rather than silently vanishing.
+PP_STAT_MAP = {
+    "points": "player_points", "rebounds": "player_rebounds", "assists": "player_assists",
+    "3-pt_made": "player_threes", "3-pt_attempted": "player_threes_attempted",
+    "pts+rebs": "player_points_rebounds", "pts+asts": "player_points_assists",
+    "rebs+asts": "player_rebounds_assists", "pts+rebs+asts": "player_points_rebounds_assists",
+    "blocked_shots": "player_blocks", "steals": "player_steals",
+    "blks+stls": "player_blocks_steals", "turnovers": "player_turnovers",
+    "fantasy_score": "player_fantasy_score", "double-double": "player_double_double",
+    "triple-double": "player_triple_double", "free_throws_made": "player_ftm",
+    "offensive_rebounds": "player_oreb", "defensive_rebounds": "player_dreb",
+    "fg_made": "player_fgm", "fg_attempted": "player_fga",
+}
+_pp_unmapped = set()
+
+
 def rows_prizepicks(doc, gd, label):
     out = []
     inc = {i["id"]: i for i in doc.get("included", []) if i.get("type") == "new_player"}
@@ -75,7 +101,14 @@ def rows_prizepicks(doc, gd, label):
         if not who or a.get("line_score") is None:
             continue
         odds_type = (a.get("odds_type") or "standard").lower()
-        mk = "player_" + str(a.get("stat_type", "")).lower().replace(" ", "_")
+        raw = str(a.get("stat_type", "")).lower().replace(" ", "_")
+        mk = PP_STAT_MAP.get(raw)
+        if mk is None:
+            mk = "player_" + raw
+            if raw not in _pp_unmapped:
+                _pp_unmapped.add(raw)
+                print(f"  prizepicks: UNMAPPED stat_type '{a.get('stat_type')}' -> {mk} "
+                      f"(add it to PP_STAT_MAP or it will not join the history)", flush=True)
         if odds_type in ("goblin", "demon"):
             mk += "_alternate"
         for side, price in (("Over", -137 if odds_type != "demon" else 100),
