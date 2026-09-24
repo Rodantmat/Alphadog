@@ -83,22 +83,22 @@ jobs:
         run: python nba/scrape_nba_injury_report.py
 
       # Per the parity doc's stage table these are BASELINE-stage factors, not day-of:
+      #   D1 referee crew      - assignments post ~6-7 AM PT (9-10 AM ET), "crews rarely change after posting"
       #   M1 defender quality  - matchup shards from last night; a scratch only shifts it as a phase-2
       #                          DELTA, not a recompute
-      # 🔴 D1 REFEREE CREW REMOVED FROM P2 (2026-09-23). Assignments are published ~6-7 AM PT and are
-      # never archived (NBA_DAILY_PARITY_AND_BACKFILL.md §3 class (b), §7 stage table). P2's target cron
-      # is 09:00 UTC = 01:00 PT - FIVE TO SIX HOURS BEFORE the page has anything on it - so this step
-      # could only ever scrape an empty page and write zero rows, which is exactly what
-      # nba_ref.referee_assignments shows. The capture belongs after the posting: the dedicated daily job
-      # nba-referees.yml runs at 15:30 UTC (08:30 PT), and P3 re-captures at the cutoff as a safety net.
-      # The parity doc's own rule allows this: "Stage is where the factor is COMPUTED; phase 2 may still
-      # READ a phase-1 value." A morning fact cannot be a 1 AM fact.
-      - name: Per-game matchups (baseline-stage factor)
+      # ⏰ TIMING IS WHAT MAKES THIS WORK (owner decision 2026-09-23). This step is correct HERE, but only
+      # if P2 runs AFTER the morning posting. The old target cron (09:00 UTC = 01:00 PT) was five to six
+      # hours too early, which is why nba_ref.referee_assignments held 0 rows while this ran nightly.
+      # The cron below now starts P2 after the posting, with wiggle room. The logic is unchanged.
+      - name: Referee assignments and per-game matchups (baseline-stage factors)
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python nba/scrape_nba_matchups_pergame.py
+          REF_DATE: ${{ steps.d.outputs.asof }}
+        run: |
+          python nba/scrape_referee_assignments.py
+          python nba/scrape_nba_matchups_pergame.py
 
       - name: Baseline inputs - season files, quarters, schedule
         if: ${{ github.event.inputs.skip_mining != 'true' }}
