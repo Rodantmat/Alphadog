@@ -62,6 +62,48 @@ refits when `nba_calendar.games` has no game, P3 skips scoring but still capture
 certifier judges nothing out of season. **Verified by real runs on 2026-09-23/24: green, "Pipeline
 certified", not red.** Before the fix P2 died on a no-game day with `KeyError: 'GAME_DATE'`.
 
+---
+
+## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
+
+**The rule, in the owner's words:** *"One set of data per day. It cannot grow on the day. If it needs to
+be rerun, we overwrite it. Whatever shows on the board, the full ladder, all variations, all directions,
+all prop lines, everything, we save. If a player shows one single leg, we save one single leg. Factors,
+boards and markets we save every day; a rerun is an update, not a second set."*
+
+**What is true after this session, verified in the data:**
+
+| Store | Rule | Enforced by |
+|---|---|---|
+| `nba_score.baseline_history` — **the ONE baseline store** | day-of: **full spectrum** (the board is not known when it is built; its width is the lookup range — 89% exact rung hits). After grading: **pruned to exactly the rungs a board offered** — real boards (every app, every label) OR derived boards (the simulated fantasy / derived legs in `prop_universe`). Nothing extra. | `load_baseline_ladder.py` deletes the slate by date and rewrites (a rerun replaces); P2 step "Prune yesterday's baseline to the board" → `prune_baseline_to_board.py` |
+| `nba_score.final_hp` | **board-scoped**, same key set as the prune (the scoring engine is board-scoped by design, §4). It was rebuilt full-spectrum on 2026-09-24 by mistake — 226,714 rows a slate, 6.4% on a PrizePicks board — and rebuilt again board-scoped. | `build_final_hp.py` `_fe_board_keys` |
+| `nba_score.board_scored` | one build per slate; a rerun overwrites (unique index). Carries `baseline_hp`, `cal_shift`, `final_hp`, `confidence`, `score`, `edge` per board leg — the "final scoring engine set". | upsert; and the scorer **refuses to re-score a pruned slate** (`baseline_prune_log`) because re-interpolation from far-apart board rungs would degrade ~11% of legs |
+| `nba_market.board_snapshots` | every day, `window` + `close` labels — the variations model, same as MLB | by design |
+| factors (injury, referees, market lines, lineups, static profiles) | every day; reruns update | existing loaders |
+
+**Why pruning is safe — checked, not assumed:** the certified recipe and the production patcher hold
+**zero** references to `baseline_history`, `baseline_ladder` or `final_hp` and open **no database
+connection**; each day's ladder is built from logs, splits and factor files. The as-of calibration and
+the confidence refit join from **graded board legs** only. Interpolation happens day-of and is recorded
+in `board_scored`. So after a slate is graded, an off-board rung has no reader.
+
+**What the historical prune deletes, stated plainly (probe on 2026-04-10):** 113,357 rows → 13,625 kept
+(12.0%). Standard props 49,816 → 11,390 (real boards, twelve books); fantasy + derived 35,946 → 2,235
+(derived boards); **period props 27,595 → 0** — no board of any kind ever carried period lines
+historically, so under the rule they go. The daily periods build continues; going forward the live
+PrizePicks board carries fantasy, alternates and any period lines it posts, so the asymmetry is
+historical only. **The full-spectrum `final_hp` was a mistake, not a design.**
+
+**Guards in the prune:** dry run by default; refuses when board keys match ZERO baseline rows (a
+convention mismatch, never an empty board — deleting on it would wipe the slate); exits green on a
+no-game day; fails loud when games were played but no board was archived.
+
+**The two baseline tables are gone as a concept.** `baseline_ladder` (4 slates) is no longer written;
+`baseline_history` is history and live in one table with one convention: full-game rungs carry
+`period = 'FULL'` (verified across both seasons - an earlier claim of NULL in this session was wrong and
+was reverted before any row was written).
+
+
 
 ---
 
