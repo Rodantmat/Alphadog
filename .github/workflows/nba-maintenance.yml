@@ -79,7 +79,8 @@ jobs:
         if: ${{ github.event.inputs.task == 'prune' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PRUNE_SEASON: ${{ github.event.inputs.season }}
+          PRUNE_SEASON: ${{ github.event.inputs.prune_date == '' && github.event.inputs.season || '' }}
+          PRUNE_DATE: ${{ github.event.inputs.prune_date }}
           PRUNE_DRY_RUN: ${{ github.event.inputs.prune_execute == 'yes' && '0' || '1' }}
         run: python nba/prune_baseline_to_board.py
 
