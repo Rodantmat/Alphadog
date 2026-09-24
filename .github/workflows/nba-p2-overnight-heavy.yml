@@ -281,6 +281,7 @@ jobs:
       # (raw.githubusercontent), NOT from the runner's local disk - so a ladder built but not committed
       # is invisible to it and the load 404s. This step is what makes the merged file reachable.
       - name: Commit the merged ladder
+        if: ${{ steps.d.outputs.has_games == '1' }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
