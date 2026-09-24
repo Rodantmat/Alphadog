@@ -292,9 +292,14 @@ def main():
             h = pd.read_sql("""SELECT game_date, game_id, player_id, prop, line, anchor, ladder_offset,
                                       p_more, p_less, role_tier, used_emp
                                FROM nba_score.baseline_history
-                               WHERE season=%s AND prop=%s
+                               WHERE season=%s AND prop=%s AND period IS NULL
                                  AND (%s = '' OR game_date = NULLIF(%s,'')::date)""",
                             conn, params=(season, prop, FE_DATE, FE_DATE))
+            # PERIOD FILTER (fixed 2026-09-24). This read had no period filter and final_hp has no period
+            # column, so Q1/Q4/H1/H2 rungs were written under the FULL-GAME key: prop 'points' line 5.5
+            # for Q1 landed as if it were a full-game 5.5, and where a period line coincided with a
+            # full-game line the upsert let the last one win. ~31% of baseline_history rows are period
+            # rungs, so roughly that share of final_hp was period probabilities wearing full-game keys.
             if h.empty:
                 continue
             h["game_date"] = pd.to_datetime(h["game_date"]).dt.date
