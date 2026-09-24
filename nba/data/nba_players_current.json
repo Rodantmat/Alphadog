@@ -2770,6 +2770,19 @@
       "team_abbreviation": "DET"
     },
     {
+      "id": 1642640,
+      "full_name": "Justin Harmon",
+      "last_comma_first": "Harmon, Justin",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "justin_harmon",
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
+    },
+    {
       "id": 1642844,
       "full_name": "Dylan Harper",
       "last_comma_first": "Harper, Dylan",
@@ -3925,6 +3938,19 @@
       "team_city": "Los Angeles",
       "team_name": "Lakers",
       "team_abbreviation": "LAL"
+    },
+    {
+      "id": 1628995,
+      "full_name": "Kevin Knox II",
+      "last_comma_first": "Knox II, Kevin",
+      "roster_status": 1,
+      "from_year": "2018",
+      "to_year": "2026",
+      "player_code": "kevin_knox",
+      "team_id": 1610612753,
+      "team_city": "Orlando",
+      "team_name": "Magic",
+      "team_abbreviation": "ORL"
     },
     {
       "id": 1642851,
@@ -5849,6 +5875,19 @@
       "team_city": "San Antonio",
       "team_name": "Spurs",
       "team_abbreviation": "SAS"
+    },
+    {
+      "id": 1642882,
+      "full_name": "Julian Reese",
+      "last_comma_first": "Reese, Julian",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "julian_reese",
+      "team_id": 1610612740,
+      "team_city": "New Orleans",
+      "team_name": "Pelicans",
+      "team_abbreviation": "NOP"
     },
     {
       "id": 1629675,

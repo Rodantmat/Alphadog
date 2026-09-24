@@ -3949,20 +3949,6 @@
       "total_fga": 10
     },
     {
-      "player_id": 1641815,
-      "actual_efg_pct": 0.5,
-      "expected_efg_pct": 0.5427,
-      "shot_quality_delta": -0.0427,
-      "total_fga": 6
-    },
-    {
-      "player_id": 1630846,
-      "actual_efg_pct": 0.8573,
-      "expected_efg_pct": 0.5549,
-      "shot_quality_delta": 0.3024,
-      "total_fga": 7
-    },
-    {
       "player_id": 1642951,
       "actual_efg_pct": 0.4334,
       "expected_efg_pct": 0.5617,
@@ -3977,18 +3963,25 @@
       "total_fga": 6
     },
     {
+      "player_id": 1641815,
+      "actual_efg_pct": 0.5,
+      "expected_efg_pct": 0.5427,
+      "shot_quality_delta": -0.0427,
+      "total_fga": 6
+    },
+    {
+      "player_id": 1630846,
+      "actual_efg_pct": 0.8573,
+      "expected_efg_pct": 0.5549,
+      "shot_quality_delta": 0.3024,
+      "total_fga": 7
+    },
+    {
       "player_id": 1631211,
       "actual_efg_pct": 0.3635,
       "expected_efg_pct": 0.5559,
       "shot_quality_delta": -0.1924,
       "total_fga": 11
-    },
-    {
-      "player_id": 1641794,
-      "actual_efg_pct": 0.2778,
-      "expected_efg_pct": 0.5499,
-      "shot_quality_delta": -0.2721,
-      "total_fga": 9
     },
     {
       "player_id": 1643024,
@@ -4005,11 +3998,25 @@
       "total_fga": 13
     },
     {
+      "player_id": 1641794,
+      "actual_efg_pct": 0.2778,
+      "expected_efg_pct": 0.5499,
+      "shot_quality_delta": -0.2721,
+      "total_fga": 9
+    },
+    {
       "player_id": 1642280,
       "actual_efg_pct": 0.6667,
       "expected_efg_pct": 0.5577,
       "shot_quality_delta": 0.1089,
       "total_fga": 3
+    },
+    {
+      "player_id": 1642935,
+      "actual_efg_pct": 0.0,
+      "expected_efg_pct": 0.5594,
+      "shot_quality_delta": -0.5594,
+      "total_fga": 6
     },
     {
       "player_id": 200768,
@@ -4031,13 +4038,6 @@
       "expected_efg_pct": 0.5378,
       "shot_quality_delta": -0.5378,
       "total_fga": 1
-    },
-    {
-      "player_id": 1642935,
-      "actual_efg_pct": 0.0,
-      "expected_efg_pct": 0.5594,
-      "shot_quality_delta": -0.5594,
-      "total_fga": 6
     },
     {
       "player_id": 1631205,
