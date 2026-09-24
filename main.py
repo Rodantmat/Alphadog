@@ -28,15 +28,26 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from curl_cffi import requests
 
-SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.5-proxy-url-import-fix"
+SCRIPT_VERSION = "alphadog-v2-prizepicks-producer-v0.1.6-league-parameterised"
+# LEAGUE AND OUTPUT ARE PARAMETERISED (2026-09-24). This producer was hardcoded to league_id=2 (MLB) and
+# prizepicks_mlb_current.json, which is why `nba/archive_live_boards.py` logged "prizepicks: no board
+# file" on every P3 run and why nba_market.board_snapshots holds ZERO PrizePicks rows: nothing has ever
+# written boards/prizepicks_nba_current.json. PrizePicks is the primary app and the only source of the
+# goblin/demon multipliers and the DFS-only markets, so without this the NBA board does not exist for us.
+# ⚠ THE DEFAULTS ARE THE OLD BEHAVIOUR, EXACTLY. With no env set this is league_id=2 writing
+# prizepicks_mlb_current.json to the repo root - the live MLB path is untouched, same URLs, same order,
+# same filenames. NBA is opt-in via PRIZEPICKS_LEAGUE_ID=7 PRIZEPICKS_SPORT=nba PRIZEPICKS_OUT_DIR=boards.
+PRIZEPICKS_LEAGUE_ID = os.getenv("PRIZEPICKS_LEAGUE_ID", "2")
+PRIZEPICKS_SPORT = os.getenv("PRIZEPICKS_SPORT", "mlb").lower()
+_OUT_DIR = Path(os.getenv("PRIZEPICKS_OUT_DIR", "."))
 PRIZEPICKS_MLB_PROJECTIONS_URLS = [
-    "https://api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
-    "https://api.prizepicks.com/projections?league_id=2&per_page=5000",
-    "https://partner-api.prizepicks.com/projections?league_id=2&per_page=1000&single_stat=true",
-    "https://partner-api.prizepicks.com/projections?league_id=2&per_page=5000",
+    f"https://api.prizepicks.com/projections?league_id={PRIZEPICKS_LEAGUE_ID}&per_page=1000&single_stat=true",
+    f"https://api.prizepicks.com/projections?league_id={PRIZEPICKS_LEAGUE_ID}&per_page=5000",
+    f"https://partner-api.prizepicks.com/projections?league_id={PRIZEPICKS_LEAGUE_ID}&per_page=1000&single_stat=true",
+    f"https://partner-api.prizepicks.com/projections?league_id={PRIZEPICKS_LEAGUE_ID}&per_page=5000",
 ]
-OUTPUT_JSON = Path("prizepicks_mlb_current.json")
-OUTPUT_META = Path("prizepicks_mlb_current_meta.json")
+OUTPUT_JSON = _OUT_DIR / f"prizepicks_{PRIZEPICKS_SPORT}_current.json"
+OUTPUT_META = _OUT_DIR / f"prizepicks_{PRIZEPICKS_SPORT}_current_meta.json"
 
 
 def utc_now() -> str:
