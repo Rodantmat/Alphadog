@@ -345,6 +345,18 @@ def main():
             # full-game line the upsert let the last one win. ~31% of baseline_history rows are period
             # rungs, so roughly that share of final_hp was period probabilities wearing full-game keys.
             if h.empty:
+                # BOARD-SCOPED: an empty result means NO board (real or derived) carried this prop in
+                # this scope - so the correct content of final_hp for it is NOTHING. The old behaviour
+                # (skip) left the previous full-spectrum rows in place: after the first board-scoped
+                # rebuild the season still held 13.79M rows because 18 props with no real-board keys
+                # were never cleared. Clear the slice so the store is exactly the board and only the board.
+                if write:
+                    with conn.cursor() as cur:
+                        cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s"
+                                    + (" AND game_date=%s" if FE_DATE else ""),
+                                    (season, prop) + ((FE_DATE,) if FE_DATE else ()))
+                        print(f"  {prop:<18} no board rung in scope - cleared {cur.rowcount:,} stale rows", flush=True)
+                    conn.commit()
                 continue
             h["game_date"] = pd.to_datetime(h["game_date"]).dt.date
             h["phase"] = h["game_date"].map(phase_of)
