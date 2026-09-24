@@ -55,6 +55,11 @@ def utc_now() -> str:
 
 
 def atomic_write_text(path: Path, text: str) -> None:
+    # The output directory is now configurable (PRIZEPICKS_OUT_DIR), and the NBA board writes into
+    # boards/ where the archiver looks. On a fresh runner that directory does not exist yet, so create
+    # it here rather than at one call site - every write goes through this function. For the MLB default
+    # ("." = repo root) this is a no-op.
+    path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = path.with_suffix(path.suffix + ".tmp")
     temp_path.write_text(text, encoding="utf-8")
     temp_path.replace(path)
