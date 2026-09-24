@@ -135,6 +135,18 @@ def main():
                           SELECT 1 FROM _prune_keys k WHERE k.game_date = h.game_date AND k.player_id = h.player_id
                             AND k.prop = h.prop AND k.period = h.period AND k.line = h.line)""", hist_params)
         deleted = cur.rowcount
+        # RECORD IT. A pruned slate must never be RE-SCORED: the scorer interpolates off-ladder lines from
+        # the two nearest rungs, and after pruning the nearest rungs are other board lines, so a replay
+        # would overwrite board_scored's day-of values with degraded ones. score_board_legs reads this
+        # log and refuses a pruned date unless BS_FORCE_RESCORE=1.
+        cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.baseline_prune_log (
+            game_date date PRIMARY KEY, rows_kept bigint, rows_deleted bigint, pruned_at timestamptz DEFAULT now())""")
+        cur.execute(f"""INSERT INTO nba_score.baseline_prune_log (game_date, rows_kept, rows_deleted)
+                        SELECT d, 0, 0 FROM (SELECT DISTINCT game_date AS d FROM _prune_keys) x
+                        ON CONFLICT (game_date) DO UPDATE SET pruned_at = now()""")
+        if one_date:
+            cur.execute("""UPDATE nba_score.baseline_prune_log SET rows_kept = %s, rows_deleted = %s, pruned_at = now()
+                           WHERE game_date = %s""", (keep, deleted, one_date))
     conn.commit()
     print(f"PRUNED|{label}|deleted {deleted:,} off-board rungs, kept {keep:,}", flush=True)
     conn.close()
