@@ -308,20 +308,12 @@ fallback (factor zero + penalty) does NOT over-penalise. For when the crew IS kn
 `nba_ref.official_tendency` — 78 officials, shrunk with **k=112** derived from that measured reliability, which
 halves the raw spread (1.015 → 0.513) because raw means overstate the effect at ~40 games a season.
 
-dedicated daily job `nba-referees.yml` (08:30 PT) as the primary capture and P3 as the idempotent safety net
-(the upsert key is `game_date, matchup, slot`). This stays inside the parity doc's own rule — *"Stage is where
-the factor is COMPUTED; phase 2 may still READ a phase-1 value."* ⚠ **No predictor is needed**: the crew is
-KNOWN by 08:30 PT, long before the 13:15 decision, and the historical crew comes from box scores (post-hoc
-truth, faithful per COMPASS fact 58). A predictor would only serve the 01:00–07:00 window, which no decision
-depends on. Measured worth of the factor if it is missing anyway: spread `0.7` fouls on a `37-40` base
-(under 2%), year-over-year persistence `0.264` — and the confidence model prices its absence at `0.88` of `44`
-deduction points, so the fallback does NOT over-penalize. Shrunk tendencies for when the crew IS known:
-`nba_ref.official_tendency` (78 officials, k=112 from the measured reliability).
-
-**Still open here:** wire the prior into the consumers (the baseline builder and `build_availability_delta.py` read the
-injury JSON, not Postgres, so the fallback must be called there); add the daily load to P2/P3 beside the scrape step;
-`nba_ref.referee_assignments` is EMPTY (0 rows) while P2 runs its scraper nightly — D1's primary has never produced data
-and its documented fallback (zero + confidence penalty) would be silently active every game day.
+**Still open here:** wire the availability prior into the consumers (the baseline builder and
+`build_availability_delta.py` read the injury JSON, not Postgres, so the fallback must be called there).
+✅ CLOSED 2026-09-23: the daily injury load now runs in P3 beside the scrape; the officials, starter-status and
+injury backfills are loaded; `nba_ref.referee_assignments` being empty is EXPECTED out of season (assignments
+publish on game morning and are never archived) and `nba/check_factor_freshness.py` now reports any factor
+whose fallback is silently carrying it, season-aware so it does not cry wolf before opening night.
 
 **Status as of 2026-09-10 05:30Z** (config `enrichment_backfill_status_2026_09_10`), restored here after a 2026-09-23
 patch of mine accidentally consumed the sentence: every factor has its two-season backfill except the pick'em/prop
