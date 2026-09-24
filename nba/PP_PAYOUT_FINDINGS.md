@@ -64,7 +64,32 @@ certified", not red.** Before the fix P2 died on a no-game day with `KeyError: '
 
 ---
 
-## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
+## 0d. 🔴 THE SHAPE-PARITY BREAK — P2 WOULD HAVE FAILED EVERY IN-SEASON NIGHT (found 2026-09-24)
+
+**Symptom:** the 2026-04-10 replay, green on 2026-09-23, died twice on 2026-09-24 with
+`KeyError: 'GAME_DATE'` at the certified recipe's first filter line — and then, once that was fixed, again
+in the periods builder at its equivalent line.
+
+**Cause (traced by reproducing the patcher's compiled source locally, not by guessing):** the season
+backfill wrote `nba_team_game_log_advanced_<season>.json` in a SLIM shape without `GAME_DATE`; the recipe
+merges `GAME_DATE` in from the team log. The daily delta sync (`nba_delta_team_game_log_advanced.json` →
+season file, `synced_from_delta: true`) writes the FULL stats.nba.com shape, WITH `GAME_DATE`. The first
+delta sync of the advanced file landed on 2026-09-24. From then on the concatenated `teams_adv` carried
+its own `GAME_DATE`, the merge produced `GAME_DATE_x` / `GAME_DATE_y`, and every read of `GAME_DATE`
+failed. **Verified by the file heads: 2023_24 and 2024_25 have no `GAME_DATE`; 2025_26 does.**
+
+**This is §8's parity rule, violated at the shape level** — the daily object was not the same object as
+the backfill. In season the delta syncs nightly, so P2 would have failed **every night from opening night**
+and the certifier would have gone red after the mining succeeded.
+
+**Fix:** normalise at the one point the shape matters — `teams_adv.drop(columns=["GAME_DATE"], errors="ignore")`
+immediately before the merge, in both patchers (`build_baseline_ladder.py`, `build_periods_ladder.py`).
+The merge supplies `GAME_DATE` from `teams` either way, so no number changes. Proven by compiling the
+patched recipes locally (every anchor found) and by the replay building all singles pairs and combos.
+⚠ My first attempt at the singles patch split one `rep()` into two and left the slate block dangling at
+the patcher's module level; caught by reading the file back before any run used it. Read back what you
+write.
+
 
 **The rule, in the owner's words:** *"One set of data per day. It cannot grow on the day. If it needs to
 be rerun, we overwrite it. Whatever shows on the board, the full ladder, all variations, all directions,
