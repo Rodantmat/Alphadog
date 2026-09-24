@@ -182,6 +182,19 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/grade_board_outcomes.py
 
+      # 3a) RETENTION (owner rule 2026-09-24): "whatever shows on the board, we save; if a player shows
+      # one leg, we save one leg." Yesterday's baseline was the full spectrum because the board was not
+      # known when it was built. Now it is graded and the board is archived, so the off-board rungs have
+      # no consumer - the build never reads a previous baseline (verified: zero references in the recipe
+      # or the patcher), final_hp is built board-scoped, the refits join from graded board legs, and
+      # interpolation was recorded day-of in board_scored. Measured 2026-04-10: 4,863 of 49,816 standard
+      # rungs were on the PrizePicks board - 9.8%. Off days: the script refuses to delete when a slate has
+      # no board keys, so a missing archive can never be mistaken for an empty board.
+      - name: Prune yesterday's baseline to the board
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/prune_baseline_to_board.py
+
       # 3b) PAPER TRADING (2026-09-21): fill hit / miss / void for logged picks from the freshly graded board.
       - name: Grade paper-trading picks
         env:
