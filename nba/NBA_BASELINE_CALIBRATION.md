@@ -9,7 +9,7 @@ and the evidence behind each.
 > # 📑 **INDEX — `NBA_BASELINE_CALIBRATION.md`**
 > **How the baseline is built and checked** — the projection chain, the empirical cells, the
 > certification ladder, and what each calibration decision was measured against.
-> 📏 **`136` sections · `2026-09-23`** *(re-derive, never quote — `4` sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_BASELINE_CALIBRATION.md ``
+> 📏 **`155` sections · re-derived `2026-09-25`** *(was `136` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_BASELINE_CALIBRATION.md ``
 >
 > 🆕🆕 **SECTIONS ADDED `2026-09-25` — `4` NEW, AND ONE IS THE MOST-REPEATED DEFECT IN THIS SYSTEM.** *Anchors are heading text; search the label.*
 > | § | what it is |
