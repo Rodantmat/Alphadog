@@ -1932,9 +1932,35 @@ findability campaign (`§F7`) optimised the INSIDE of twelve documents and left 
 ```bash
 ls nba/*.md | wc -l          # 32
 ```
-▶ **`32` files · `12` swept · `20` not.** *Of the `20`, three have a known standing status —
-`NBA_SWEEP_RUN_LOG.md` (patched with the twelve), `NBA_COMPASS.md` (read, never written),
-`nba/PP_PAYOUT_FINDINGS.md` (the build chat's, current). **`17` are simply history.***
+▶ **`32` files · `12` swept · `20` not.**
+
+### 🔴🔴🔴 **CORRECTED `2026-09-25` (`§T26.37`) — THE HAZARD IS NOT "UNSWEPT MEANS STALE". IT IS WORSE.**
+
+⚠⚠ ***My first version of this section said `17` of the unswept files "are simply history". THAT IS
+FALSE, and the counter-example is the most important document outside the twelve.***
+
+| unswept file | last commit | what it actually is |
+|---|---|---|
+| ✅ `NBA_SWEEP_RUN_LOG.md` | `2026-09-25` | *the sweep's own record — patched WITH the twelve* |
+| ✅ `NBA_COMPASS.md` | `2026-09-19` | *read, never written — a standing constraint* |
+| ✅ `nba/PP_PAYOUT_FINDINGS.md` | `2026-09-25` | *the build chat's — CURRENT, out of scope by constraint* |
+| 🔑🔑🔑 **`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`** | **`2026-09-24`** | 🔴 **CURRENT AND AUTHORITATIVE — the per-factor fallback record** *(`A1`/`N1`/`N2`/`A6` · `A2`/`B4` · `A3` · `A4` · `A5` · `A7`–`A9` · `B1`/`B2`/`C3` · `B5` · `C1`/`C2`/`C4` · `D1` …)*, **referenced by `5` of the twelve**, and the ONLY place a live scoring-path defect was written down *(`§T26.37`)* |
+| 🔴 **`NBA_SYSTEM_ARCHITECTURE.md`** | **`2026-09-23`** | 🔴 **STALE AND FALSIFIED** — *`"NO CRON"` ×`3`, `"2025-26"` ×`4`, `baseline_ladder` ×`8` for a dropped table* |
+| ⚠ `NBA_GOBLIN_DEMON.md` | `2026-09-23` | *PrizePicks payout material — the build chat's domain* |
+| — | `2026-08-30` → `2026-09-21` | *the remaining ~`14`: blueprints, checkpoints, drafts, plans — genuinely history* |
+
+⇒ 🔑🔑🔑 ***`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` and `NBA_SYSTEM_ARCHITECTURE.md` were last touched
+ONE DAY APART. One is the authoritative record of every enrichment fallback. The other tells you the
+pipelines have no cron and to query a table that no longer exists. **Nothing in the folder
+distinguishes them** — same location, same naming convention, same `📑 INDEX` styling, neither
+carrying a staleness marker.***
+
+⚠⚠ **SO THE ADVICE "ONLY THE TWELVE ARE CURRENT" IS ALSO WRONG, AND WOULD HAVE COST THIS SWEEP
+`§T26.37`** — *a live defect on P3's daily decision path, its structural argument, its measurement and
+its fix, recorded **only** outside the twelve.* 🔑 **The correct instruction is the one in `🧭 START
+HERE`: the twelve are maintained; `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` and
+`nba/PP_PAYOUT_FINDINGS.md` are current but owned elsewhere; `NBA_SYSTEM_ARCHITECTURE.md` is the trap;
+the rest is history.**
 
 | oldest unswept files | last commit |
 |---|---|
