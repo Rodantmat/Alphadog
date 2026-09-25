@@ -5,6 +5,9 @@ name: NBA Baseline History (day-by-day, whole season)
 # harness already scores every game-day from history strictly before it); output goes straight to
 # Postgres (nba_score.baseline_history) because a season of one prop pair is ~500k rows.
 # Fails loudly: no "|| echo failed".
+# TIMING (2026-09-25): the build is ~3 min per pair (the recipe is the season-wide backtest, one pass);
+# the load was ~1 hour per pair through row-by-row inserts and is now a COPY bulk load. Loads still
+# serialise on the baseline_history advisory lock by design.
 
 on:
   workflow_dispatch:
