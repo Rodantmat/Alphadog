@@ -132,7 +132,7 @@ that is the useful part.
 > | **16** | **THE CERTIFIER** — the twelve checks, and what they miss | **`NBA_SYSTEM_DESIGN.md`** → `WHAT CERTIFIES GREEN WHILE BROKEN` and `THE SWALLOWED-FAILURE CENSUS` | 🔴 **`T20-6`: it asserts tables no pipeline writes** |
 > | **17** | **PAPER TRADING** | 🔴 **NOT IN THIS FILE.** ▶ **`NBA_SYSTEM_DESIGN.md`** → **`standards_3pick_v1`**, specified end to end *(selection → packing → settlement)* | |
 > | **18** | **Assemble the three pipelines and the day** | **`STEP 8`** `P1` · **`STEP 9`** `P2` · **`STEP 10`** `P3` · **`STEP 12`** the game-day timeline and the four clocks | ✅ **`P1`/`P2`/`P3` all have live crons** *(`2026-09-24`)* |
-> | **19** | **Dry-run opening night before it happens** | **`STEP 13`** | ✅ **`T23-2` FIXED `2026-09-24`** — *the season resolves from the date.* 🔴 **STILL OPEN: `§T23.5` — parallel catch-up deadlocks. Run recovery dates ONE AT A TIME.** |
+> | **19** | **Dry-run opening night before it happens** | **`STEP 13`** | ✅ **`T23-2` FIXED `2026-09-24`** — *the season resolves from the date.* ✅✅ **`§T23.5` FIXED ON THE P2/P3 PATHS `2026-09-23`, verified `2026-09-25` (`§T26.32`)** — *all four index-creating P2/P3 scripts guard with `to_regclass` first.* ⚠ **KEEP RUNNING RECOVERY DATES ONE AT A TIME ANYWAY UNTIL A PARALLEL CATCH-UP HAS ACTUALLY BEEN OBSERVED TO SUCCEED** — *the fix is sound and unexercised, and the failure it prevents cost **`181` of `325` dates** last time.* 🔴 *`build_defender_ratings.py` (P1) is still unguarded.* |
 >
 > ### 🗄 **THE DATABASE, IN CREATION ORDER** *(derived live `2026-09-23`, `§F7.23` — read-only)*
 >
