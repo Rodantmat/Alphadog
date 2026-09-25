@@ -2433,3 +2433,78 @@ was a claim about the SAMPLE, not about the population, until it was run at `307
 remaining justification was removed, so the feature has none.* ⚠ **Read alongside `§T26.21`, which
 reaches the same conclusion from the opposite direction and carries the author's correction of his own
 earlier figure.**
+
+---
+
+## 🔴🔴🔴 **§T25.3 — `§0v.4`'s UNCLOSABLE GAP WAS CLOSED BY CONSTRUCTION, NOT BY ARCHIVE: `34.7%` OF THE PROP UNIVERSE IS OUR OWN RECONSTRUCTED LINES, AND `final_hp` PRICES AGAINST THEM** *(T25 seg110/seg182 + `SELECT` 2026-09-25; `0` of the twelve before this entry)*
+
+### 🔑 **THE SETUP — WHAT `§0v.4` OF THIS DOCUMENT ESTABLISHED, AND VERIFIED**
+
+*`§0v.4` records that the archived board covers `12` PrizePicks stat types, and that a specific list of
+props — **`fg made` · `fg attempted` · `ft made` · `ft attempted` · `3pt attempted` · `offensive
+rebounds` · `defensive rebounds` · `fantasy score`**, plus personal fouls, dunks and the PERIOD props —
+***"do not exist in the two-season board history — **there is no archive of them anywhere**, which we
+established when we exhausted the sources."*** ✅ **That absence was re-tested at `T20` pass 19 against
+`89` distinct non-PrizePicks `market_key` values and SURVIVED.**
+
+### ✅✅ **T25 CHECKED THE ASSUMPTION FIRST — AND THEN BUILT WHAT WASN'T THERE**
+
+> ***"the remaining derived props are the ones books were **assumed** not to quote: shot attempts,
+> free throws, rebound splits, and quarter/half props. **before building a player-rate method, i
+> should check that assumption against the archive itself.** if any of these props appear there,
+> their center comes straight from **book consensus, which is validated and model-independent**."***
+
+🔑 **That is `RULE 20`'s discipline applied before construction rather than after** — *the archive was
+interrogated for a cheaper, model-independent source before a reconstruction was written.* ⚠ **It
+wasn't there, so the lines were CONSTRUCTED.**
+
+### 🔴🔴 **THE LIVE COMPOSITION — RUN, NOT ASSERTED**
+
+```sql
+SELECT line_source, count(*) legs, count(DISTINCT prop) props, count(DISTINCT game_date) dates
+  FROM nba_market.prop_universe GROUP BY line_source;
+```
+
+| `line_source` | legs | props | dates | share |
+|---|---|---|---|---|
+| ✅ **`real`** | **`1,088,192`** | **`12`** | `324` | **`65.28%`** |
+| 🔴 **`simulated`** | **`578,832`** | **`8`** | **`353`** | 🔴 **`34.72%`** |
+
+**And the two sets map EXACTLY onto `§0v.4`'s two lists:**
+
+| | props |
+|---|---|
+| ✅ **`real` — `§0v.4`'s archived twelve** | `points` · `pra` · `pts_reb` · `rebounds` · `pts_ast` · `reb_ast` · `assists` · `threes_made` · `turnovers` · `stocks` · `steals` · `blocks` |
+| 🔴 **`simulated` — `§0v.4`'s "no archive anywhere" list** | `fantasy_score` `128,680` · `fga` `117,533` · `fg3a` `106,648` · `fgm` `58,414` · `dreb` `56,987` · `fta` `44,275` · `ftm` `37,872` · `oreb` `28,423` |
+
+✅ **`8` of the `11` props `§0v.4` called unarchivable now exist as constructed lines.** ⚠ **`personal
+fouls` and `dunks` were NOT built** *(the PERIOD props took a different route — `§T26.19`)*.
+
+### 🔴🔴🔴 **AND THE CONSEQUENCE THE TWELVE DO NOT STATE ANYWHERE**
+
+⚠ **The simulated legs are GRADED**: *`fantasy_score` `118,984` of `128,680` · `fga` `109,635` of
+`117,533` — **roughly `92%` of every simulated prop carries a `hit`.*** ⇒ **they enter backtests.**
+
+🔑🔑🔑 **AND `build_final_hp.py` SCOPES THE SCORING STORE TO `real ∪ derived`** — *its own comment:
+`board_rung_keys` is **"real boards UNION derived boards… the simulated fantasy-score and derived-prop
+legs in `nba_market.prop_universe`"***. ⇒ ***So "`final_hp` is exactly the board" (`§T26.15`) is true,
+and "the board" is about one-third LINES WE SET OURSELVES.***
+
+⚠⚠ **STATE THE DISTINCTION PRECISELY, BECAUSE IT IS NOT A DEFECT**: *the **outcome** on a simulated leg
+is real — it is graded against the actual box score. What is ours is **WHERE THE LINE SITS.*** 🔴 **So a
+hit-rate or realized-value figure measured over simulated props is a joint measurement of the model AND
+of our own line placement, while the same figure over the twelve real props is not.** 🔑 **Any backtest
+result quoted across "the prop universe" mixes the two, and no document currently says so.**
+
+⚠ **`simulated` spans `353` dates against `real`'s `324`** — *the reconstruction covers MORE of the
+calendar than the archive does, because it is generated per game rather than harvested per posting.*
+
+📌 **THE TEST THE WORK ITSELF NOMINATES, AND IT IS DATED**: ***"the nba preseason board around
+october 3 will carry REAL lines for these props. that's the test for these proxies."*** ⇒ ✅ **The
+first real `fga`/`ftm`/`oreb` lines in the system's history arrive at PRESEASON, `2026-10-03`, and
+comparing them to the reconstruction is a one-off validation opportunity that does not recur.**
+🔑 **`§T26.21` independently rules preseason IN for exactly this purpose** — *"the board side…
+teaches us multiplier structure, tier behaviour and line-setting, with zero contamination risk"* —
+**so the two findings agree without having been derived together.**
+
+📌 **Read at `§0v.4` above**, *where the gap this closes is stated.*
