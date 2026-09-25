@@ -2,6 +2,7 @@ name: NBA Combos History (day-by-day, whole season)
 
 # Components first (the singles harness with BT_SAVE_COMPONENTS=1 pickles the FULL test season), then the
 # combos recipe in all-dates mode, then load. Fails loudly.
+# The load is a COPY bulk load (2026-09-25); it serialises on the baseline_history advisory lock by design.
 
 on:
   workflow_dispatch:
