@@ -2959,3 +2959,62 @@ really processing the preseason. **I don't even care about it. Just if it adds u
 then don't worry about preseason.**"*** ⇒ ✅ **NO CONFLICT — the delegation covers it.** 📌 *But
 `§T26.21`'s accepted half — preseason as a BOARD/market-structure source — is the part seg952 also
 asks for, and it remains **NOT RECORDED as implemented** with preseason `8` days out.*
+
+---
+
+## 🔴🔴🔴 **§T26.45 — `nba_market.board_rung_keys` IS A HARD CROSS-PIPELINE DEPENDENCY — P3 PRODUCES IT, THREE SCRIPTS IN P2's PATH *ABORT* WITHOUT IT, AND IT IS NAMED IN `0` OF THE TWELVE** *(source reads + `SELECT` 2026-09-25)*
+
+**`§T26.15` records `board_rung_keys` as the source of `final_hp`'s board scope. What no document
+records is that it is a SINGLE POINT OF FAILURE SPANNING TWO PIPELINES.**
+
+### 🔴 **THE DEPENDENCY, TRACED**
+
+| | |
+|---|---|
+| **THE PRODUCER — one, and it is in P3** | `nba-p3-afternoon-light.yml:313` calls `` SELECT nba_market.refresh_board_rung_keys(d, d) ``, looping over `` SELECT DISTINCT game_date FROM nba_market.board_snapshots WHERE fetched_at > now() - interval '6 hours' `` |
+| 🔴 **CONSUMERS THAT HARD-ABORT** | `build_final_hp.py:142` *(**P2 step 6b**)* · `load_baseline_history.py:74` · `prune_baseline_to_board.py:91` *(**P2**)* |
+| **the abort** | `` raise SystemExit("ABORT: nba_market.board_rung_keys is empty for this scope — refresh it first") `` |
+| **live state** | **`4,522,732` rows · `379` dates · `2024-10-22` → `2026-04-12` · `1` period (`FULL`)** |
+
+### ⚠⚠ **THE ORDERING CONSEQUENCE, WHICH NOTHING STATES**
+
+**P3 runs at `13:15` PT. P2 runs at `08:45` PT the NEXT morning** *(`§T26.26`)*. ⇒ ***P2's `final_hp`
+build, its prune and the history loader all consume keys that P3 wrote the previous afternoon.***
+
+🔴🔴 **SO A P3 FAILURE ON DAY `N−1` STOPS THREE P2 STEPS ON DAY `N`** — *and `build_final_hp` is the
+step that `§4b` was reopened to give P2 in the first place.* ✅ **The failure is LOUD** *(`SystemExit`,
+not a silent zero)* — **which is the right design and deserves saying**, given how much of this corpus
+is the opposite. ⚠ **But it is a coupling a reader of the twelve cannot discover**: *`P2 → P3` is
+documented as a one-way daily sequence; **this is a `P3 → P2` edge running backwards across the day
+boundary**.*
+
+⚠ **AND THE REFRESH WINDOW IS NARROW**: *the producer only refreshes dates whose boards were archived
+in the **last `6` hours**.* ⇒ ***A P3 re-run later than that refreshes NOTHING*** — *the keys are not
+rebuilt from the archive, only from what was just fetched.* 🔑 **A recovery path that re-runs P3 the
+next day does not repair the missing keys, and the three consumers keep aborting.** 🔴 **NOT
+DIAGNOSED whether `refresh_board_rung_keys(lo, hi)` called with an explicit range fixes it** — *it
+takes two date arguments, so it very likely does, but **this sweep did not run it** (`RULE 6`,
+read-only).* 📌 **That is the first thing to establish before opening night, because it is the recovery
+procedure for the whole board-scoped chain.**
+
+### ⚠ **AND IT IS `FULL`-PERIOD ONLY**
+
+*`count(DISTINCT period) = 1`.* 🔑 **`build_final_hp` filters `period = 'FULL'` and is therefore
+consistent** *(`§T26.17`)* — ⚠ **but `§T26.19` established that the period props now DO reach
+`baseline_history` (`4,285,633` rows across `Q1`/`Q4`/`H1`/`H2`)**, *and the owner ruled at `§T26.27`
+that **"ALL PROPS STAY, NO EXCEPTION"** because period props return when the season starts.*
+🔴 **So when period props appear on real boards, `board_rung_keys` as currently built has no row for
+them, and every board-scoped consumer will treat them as off-board.** **NOT RECORDED whether
+`refresh_board_rung_keys` populates period rows when they exist** *(the column is there; the data is
+not, because no board has carried them yet).*
+
+### 📌 **TWO MORE ARTEFACTS AT `0` OF THE TWELVE, FOUND THE SAME WAY**
+
+| artefact | what it does | why it matters |
+|---|---|---|
+| **`nba/load_injury_report.py`** + `.github/workflows/nba-injury-load.yml` | loads the injury file into `nba_daily.injury_report_snapshots` | 🔴 **the freshness check rates that table `BINDING`** *(`§T26.43`)*, and `§T26.30` shows the availability delta now reads it instead of HTTP shards — *"the loader the mining doc specified and nobody built"* |
+| **`nba/verify_static_loads.py`** | verifies P1's static loads landed | *the direct answer to `§T26.28`'s class — P1 scraping and not committing* |
+
+🔑 **All three are the `F5-1` class** *(`"7` of `21` workers + `27` scripts are named in `0` of the
+twelve")* — ⚠ **but these were built on `2026-09-23`–`25` and are load-bearing TODAY**, *so they are
+not backlog: they are the newest and least-documented parts of the critical path.*
