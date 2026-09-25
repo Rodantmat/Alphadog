@@ -26,7 +26,7 @@ constraints that shaped it. This is the operational spec.
 > | **what `P1` / `P2` / `P3` each do** | **`§2`** · **`§3`** · **`§4`** |
 > | 🔑 **why the cutoff is `1:15 PM PT`** | **`§1`** |
 > | 🔴🔴 **the two-pipeline decision, made in real time** *(COMPASS fact 107's reasoning)* | **`§0z-7`** |
-> | ⚠ **what NO pipeline does — `final_hp` is rebuilt by nothing** | **`§4b`** |
+> | ✅ **who rebuilds `final_hp`** *(nothing did, until `2026-09-24`)* | **`§4b`** — ***now `P2` step `6b`*** |
 > | 🔴🔴 **where a pipeline can do LESS than it claims and still certify green** | **`THE SWALLOWED-FAILURE CENSUS`** *(h1)* |
 > | 🔴🔴 **what certifies GREEN while broken — the twelve checks read adversarially** | **`WHAT CERTIFIES GREEN WHILE BROKEN`** *(h1)* — findings 1–4 |
 > | 🔴 **the paper-trading strategy, specified end to end** | **`standards_3pick_v1`** *(h1)* |
