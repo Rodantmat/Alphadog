@@ -5773,3 +5773,28 @@ sit.* 🔑 **That is a usable prior for the availability family; the starter MOD
 
 🔴 **STANDING RULE FOR ANY FUTURE USE, from the enrichment doc**: ***"If a future use appears it must
 clear the §0u.1 bar — Δ MAE on props, not Brier on starts."***
+
+### ⚠⚠ **SCOPE OF THIS RETRACTION — IT DOES *NOT* REACH `§T26.5`, AND THE REASON IS THE POINT**
+
+*The obvious next move is to apply this to every fallback validated on `Brier`. **`§T26.5`'s
+availability / `P(plays)` model was validated exactly that way** — `Brier` **`0.0441`** vs **`0.0498`**
+status-only, **`11.3%` better**, out of sample on `2025-26`.* 🔑 **But the critique does NOT transfer,
+and it is worth being precise about why:**
+
+| | `A5` starter *(retracted)* | `N1` availability *(stands)* |
+|---|---|---|
+| what it predicts | **who STARTS** | **whether the player PLAYS AT ALL** |
+| is that already encoded downstream? | 🔴 **YES** — *"the allocator already uses RECENT-5 MINUTES, which encodes starting status **continuously and with magnitude**"* | ✅ **NO** — *a `Questionable` player has full recent minutes and may not appear; nothing in the minutes history carries that* |
+| so a better prediction… | ⚠ **refines a coarse proxy for something the pipeline already holds in finer form** | ✅ **supplies information the pipeline does not otherwise have** |
+| **wired in?** | 🔴 **`0` callers** | ✅ **`p_plays` is called by `build_availability_delta.py`** *(the live P3 producer)* **and `check_factor_freshness.py`** |
+
+⇒ 🔑🔑 ***The defect was never "Brier is the wrong metric." It was that `A5` predicted a PROXY for a
+quantity the system already measures directly.*** ⚠ **`Brier` is a perfectly good objective for a
+factor that supplies NEW information; it is a misleading one for a factor that re-describes existing
+information more coarsely.** ✅ **`§T26.5` stands, and it stands on an argument rather than on luck.**
+
+📌 **THE GENERAL TEST THIS LEAVES BEHIND, worth applying to every future factor**:
+> 🔑 ***Before measuring how well a factor predicts its own target, ask what the DOWNSTREAM consumer
+> already has. If the factor is a coarser encoding of something already in the pipeline, no amount of
+> accuracy on its own target will move the product's error — and the only honest objective is the
+> product's error itself.***
