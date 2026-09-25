@@ -241,8 +241,8 @@ that is the useful part.
 > | workflow | cadence |
 > |---|---|
 > | **`nba-p1-weekly-static`** | ✅ **cron `0 19 * * 1`** — the weekly as-of layer |
-> | **`nba-p2-overnight-heavy`** | 🔴 **NO CRON** — overnight; the ladder and the grader |
-> | **`nba-p3-afternoon-light`** | 🔴 **NO CRON** — the `1:15 PM PT` run that produces the picks |
+> | **`nba-p2-overnight-heavy`** | ✅ **cron `45 15 * * *`** — ⚠ **MORNING, despite the filename**; the ladder, the grader, `final_hp` |
+> | **`nba-p3-afternoon-light`** | ✅ **cron `15 21 * * *`** — the cutoff run that produces the picks |
 > | **`nba-referees`** | ✅ **cron `30 15 * * *`** — daily referee assignments |
 > | **`nba-injury-report`** | the cutoff's input *(also a `P3` step)* |
 > | **`nba-boards-market`** · **`nba-board-archive`** | board capture *(also `P3` steps)* |
