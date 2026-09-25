@@ -95,7 +95,42 @@ write.
 
 ---
 
-## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
+## 0e. 🔴 TWO NAME NORMALISERS — 47 PLAYERS WERE NEVER SCORED, AND THE PRUNE DELETED THEIR LADDERS (2026-09-25)
+
+**Found by the calibration diff that was meant to prove the prune lossless.** Post-prune rebuild vs the
+`_calib_before_prune` snapshot: 2025-26 identical at every cell; **2024-25 down 4% of graded legs at
+every as-of date**, spread evenly across bands and props (mean cell shift 0.006 log-odds, max 0.07).
+Traced to the join: on 2025-01-15, 32 of 77 unmatched graded pairs were players who **do not resolve in
+`nba_ref.player_name_map` at all** — Jaren Jackson Jr, Michael Porter Jr, Kelly Oubre Jr, Jaime Jaquez Jr…
+
+**The defect, pre-existing:** `nba/nba_names.py::norm_name` STRIPS suffixes (`jarenjackson`) and its
+docstring says every component "MUST import from here so the mapping cannot drift." The SQL-side joins in
+`score_board_legs.py`, `build_final_hp.py`, `prune_baseline_to_board.py` and the delta's private
+normaliser used an inline `regexp_replace` that KEPT the suffix (`jarenjacksonjr`). The map was built with
+one, the joins used the other. **Result: 47 suffixed players (Jr, Sr, II, III) had zero scored legs in
+either season** — invisible to scoring, tiers, `final_hp`, the availability delta and the paper log.
+`board_scored` holds 0 rows for Jaren Jackson Jr on 2025-01-15 and 0 for Michael Porter Jr on 2026-04-10.
+
+**Consequence of the prune:** its keys came from the SQL normaliser, so those players produced no keys,
+and their full-game ladders for boarded props were deleted in BOTH seasons. Scoring lost nothing (they
+were never scored); the calibration lost their legs (it matched them via the Python normaliser).
+
+**Fixed forward, 2026-09-25:**
+- `nba_ref.norm_name(text)` — a SQL function mirroring the Python one exactly (unaccent, lowercase, drop
+  jr/sr/ii/iii/iv/v, letters only). Scorer, `final_hp`, prune and delta now use it. On the 2026-04-10
+  PrizePicks board: 177 → **184 of 185 players resolve** (the last, "Carlton Carrington", is a nickname
+  case for `NAME_OVERRIDES`).
+- **The map itself was ambiguous**: 51 stripped names mapped to more than one id (father/son, historical
+  namesakes; 9 on current boards) — a SQL join fanned out and a dict picked whichever came last. Fixed:
+  one player per name, preferring the current roster, else the most recent career — 53 namesakes removed,
+  0 ambiguous left; Jaren Jackson → the son, Jabari Smith → the son, Gary Payton → Payton II. The builder
+  (`check_baseline_board_coverage.py`) now applies the same rule.
+
+**The open decision — restoring the deleted ladders.** They can only come back from a full baseline
+backfill of both seasons (per prop pair, hours each); the calibration would then be re-diffed. Cost:
+roughly a day of compute. Value: ~4% more calibration evidence in 2024-25, cells moving by ~0.006
+log-odds. From opening night these players are scored like everyone else regardless.
+
 
 **The rule, in the owner's words:** *"One set of data per day. It cannot grow on the day. If it needs to
 be rerun, we overwrite it. Whatever shows on the board, the full ladder, all variations, all directions,
