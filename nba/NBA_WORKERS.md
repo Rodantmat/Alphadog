@@ -168,7 +168,7 @@ the repo, and a separate loader must pick it up — the two-hop architecture.** 
 shape of T11's headline finding (2): *the second hop is missing for a whole family.* The map makes
 the exposure countable rather than anecdotal.**
 
-**P2 — `nba-p2-overnight-heavy.yml` · 19 invocations · 🔴 NO CRON (`workflow_dispatch:` only)**
+**P2 — `nba-p2-overnight-heavy.yml` · 19 invocations · ✅ CRON `45 15 * * *` LIVE (added 2026-09-23)** ⚠ ***IT RUNS IN THE MORNING, NOT OVERNIGHT*** — *`08:45 PT` (PDT) / `07:45` (PST), moved there because D1 referee assignments publish `~6–7 AM PT` and are never archived. **The filename is historical.*** *(`§T26.1`)*
 
 | step | script | writes |
 |---|---|---|
