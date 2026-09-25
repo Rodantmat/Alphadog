@@ -4,7 +4,7 @@
 > **The enrichment factor REGISTRY** — every factor that could give an edge above the baseline, its
 > mechanism, its per-prop behaviour, its mining source and its backfill plan. *Pass 1 is the registry;
 > Pass 2 is the per-prop signal sets.*
-> 📏 **`57` sections · `2026-09-25`.** *Re-derive, never quote* (`RULE 59`):
+> 📏 **`59` sections · re-derived `2026-09-25`.** *Re-derive, never quote* (`RULE 59`):
 > `` grep -cE '^(> *)*#{1,6} ' nba/NBA_ENRICHMENT_FACTOR_LOCK.md ``
 > ⚠ **STAMP AND INDEX ADDED `2026-09-25`** *(`§T26.25` for the stamp)* — ***this document and
 > `NBA_PROJECT_LOG.md` were the only two of the twelve carrying NEITHER a dated census stamp NOR an
