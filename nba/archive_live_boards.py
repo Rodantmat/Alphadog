@@ -129,14 +129,7 @@ def rows_prizepicks(doc, gd, label):
         if not who or a.get("line_score") is None:
             continue
         odds_type = (a.get("odds_type") or "standard").lower()
-        raw = str(a.get("stat_type", "")).lower().replace(" ", "_")
-        mk = PP_STAT_MAP.get(raw)
-        if mk is None:
-            mk = "player_" + raw
-            if raw not in _pp_unmapped:
-                _pp_unmapped.add(raw)
-                print(f"  prizepicks: UNMAPPED stat_type '{a.get('stat_type')}' -> {mk} "
-                      f"(add it to PP_STAT_MAP or it will not join the history)", flush=True)
+        mk = pp_market_key(a.get("stat_type"))
         if odds_type in ("goblin", "demon"):
             mk += "_alternate"
         for side, price in (("Over", -137 if odds_type != "demon" else 100),
