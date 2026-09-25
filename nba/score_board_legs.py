@@ -118,8 +118,13 @@ def main():
     # HAS game data, which differs from the calendar season in the Jul-Sep off-season).
     import sys
     sys.path.insert(0, "nba")
-    from nba_season import active_stats_season
-    season = os.environ.get("BS_SEASON") or active_stats_season()
+    from nba_season import current_season
+    from datetime import date as _date
+    # LABEL BY THE SLATE'S SEASON (2026-09-25). `season` is only written as board_scored.season, and the
+    # as-of calibration groups by it. active_stats_season() answers "which season has game data" - on
+    # opening morning that is still last season, so October 20 legs would have been labelled 2025-26
+    # and pooled into last season's cells. The slate's own season is a function of its date.
+    season = os.environ.get("BS_SEASON") or current_season(_date.fromisoformat(asof))
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
 
