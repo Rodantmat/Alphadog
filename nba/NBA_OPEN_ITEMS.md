@@ -94,7 +94,16 @@ table's.***
 > # 📑 **INDEX — `NBA_OPEN_ITEMS.md`**
 > **Everything unresolved, and everything only the owner can decide.** *`ACT ON THIS` at the top of
 > this file is the whole decision surface; the rest is the evidence under it.*
-> 📏 **`944` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_OPEN_ITEMS.md ``
+> 📏 **`944` sections · `2026-09-23`** *(re-derive, never quote — `2` sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_OPEN_ITEMS.md ``
+>
+> 🆕🆕 **`2026-09-25` — `8` ITEMS CLOSED, `4` NEW ITEMS OPENED, AND THE RANKED BRIEF CHANGED SHAPE. READ THIS BEFORE THE BRIEF.**
+> | | |
+> |---|---|
+> | ✅✅✅ **CLOSED, ALL RE-DERIVED** | **`T16-7`** *(both halves)* · **`T16-8`** · **`T20-4`** · **`T20-5`** · **`T20-6`** · **`T20-7`** · **`T20-13`** · **`T20-17`** · **`§T23.5`** *(P2/P3 paths)* ⇒ 🔑 **THE OPENING-DAY BRIEF NO LONGER HAS A BLOCKER THAT STOPS OR SILENTLY DEGRADES THE SLATE** |
+> | 🔴 **STILL HELD** | **`T20-12`** *(fixed `-8` offset in `5` scripts; `PDT→PST` is `2026-11-01`, **twelve days after the opener**)* · **`T20-14`** *(Betr board still ONE commit `2026-09-09`; token expires `2026-10-10`)* · `T20-2` · `T20-3` · `T20-9` · `T20-10` · `T20-11` |
+> | 🆕 **NEW ITEMS** | **`T25-1`** *(the folder hazard — `§T25.4`)* · **`T26-1`** *(board tiers are PrizePicks-only; **linked to `T16-2`**, the same problem on the props axis)* · **`T26-2`** *(the silent-fallback detector has no cron — `§T26.43`)* · **`T26-3`** *(`board_rung_keys` is a P3→P2 hard dependency with an unverified recovery path — `§T26.45`)* |
+> | 🆕 **SECTIONS DEFINED HERE** | ✅✅✅ **`§T26.30`** — *the live-state reconciliation that closed `T20-4/5/6/13/17`, **triggered by noticing the build chat had pushed ~`20` commits WHILE this sweep was writing***; **`§T26.3`** — *the owner delegates the open decisions, keeping only the credential actions* |
+> | ⚠⚠ **A TRAP INSIDE THIS FILE** | **the `2026-09-22` re-derivation table is a DATED MEASUREMENT, not a current state** *(kept unstruck under `RULE 40`'s second half)*. **It now carries a forward banner naming which of its rows closed.** 📜 ***`RULE 61`: a re-derivation table is a STORE, and it is as old as its last write*** |
 > ⚠ *The original `797` came from a heading detector anchored at line start, blind to **blockquoted** headings. **This file had the largest absolute miss of the twelve — `99` hidden headings** — which is also why its `39`/`31` heading-vs-table split was wrong. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE ITEM IDs AND HEADING TEXT, NEVER LINE NUMBERS** *(`§T20.22`: `6` of `16`
