@@ -126,7 +126,44 @@ were never scored); the calibration lost their legs (it matched them via the Pyt
   0 ambiguous left; Jaren Jackson → the son, Jabari Smith → the son, Gary Payton → Payton II. The builder
   (`check_baseline_board_coverage.py`) now applies the same rule.
 
-**RECONSTRUCTION IN FLIGHT (2026-09-25, owner decision: "all boards need coverage").**
+**RECONSTRUCTION COMPLETE AND PROVEN (2026-09-25).** Owner decision: "all boards need coverage; the
+products can be reconstructed at any time; the ingredients — the factors, and above all the boards and
+market data — can never be lost." And, on the first attempt: "why rebuild everything just to clean it
+again? Do it already scoped." Both governed what follows.
+
+- **The board, materialised once:** `nba_market.board_rung_keys` — every (date, player_id, prop, period,
+  line) a REAL board (any app, any label) or a DERIVED board carried, resolved through the one normaliser
+  by `nba_market.refresh_board_rung_keys(d1, d2)`. **4,522,732 rungs across 379 dates.** The history
+  loader, the prune and `build_final_hp` read it; P3 refreshes the day's keys after archiving.
+- **The history loader loads BOARD-SCOPED directly** (`HISTORY_SCOPE=board`, the default) — the
+  retention rule at load time, no full spectrum written to be deleted — and bulk-loads via COPY: a prop
+  pair went from ~1 hour (row-by-row) to minutes. Two GitHub facts learned: editing a workflow does NOT
+  cancel a running job; a concurrency group holds ONE pending run, a third dispatch cancels it.
+- **Name coverage: 561 of 561 board names across both seasons resolve** (old normaliser: 516).
+- **Baseline rebuilt:** 21 of 21 full-game props per season, **8,696,305 rows, 325 dates, 0 duplicate
+  keys**; period ladders kept (never derived). Deleted players verified back by name: Jaren Jackson Jr.
+  1,406 points rungs / 73 dates, Michael Porter Jr. 1,468 / 77, Oubre, Jabari Smith, Carrington.
+  `VACUUM FULL` → **2.85 GB**.
+- **`final_hp` rebuilt from the key table:** 2024-25 **3,399,146** rows (was 3,220,682), 2025-26
+  **3,811,766** (was 3,557,150) — the increases are the recovered players' legs. `VACUUM FULL` →
+  **1.77 GB**, 7,210,912 rows.
+- **Database: 27 GB** (46 GB two days ago) — holding MORE coverage than it did at 46.
+- **Ingredients verified untouched** at every step: boards, market lines, injury, officials, starter
+  status, defender ratings, `prop_universe`.
+
+**THE PROOF — calibration rebuilt on the reconstructed stores, diffed against `_calib_before_prune`:**
+
+| Season | Cells | New / dropped | Graded legs before → after | Identical shifts |
+|---|---|---|---|---|
+| 2024-25 | 9,208 | 0 / 0 | 29,249,875 → **29,249,875 (0.00%)** | **9,208 / 9,208** |
+| 2025-26 | 16,754 | 0 / 0 | 58,644,310 → **60,510,300 (+3.18%)** | 7,658 |
+
+**2024-25 is restored bit-for-bit** — every cell carries exactly its pre-prune shift on exactly the same
+legs: the deleted ladders came back and the calibration cannot tell anything happened. **2025-26 came
+back better**: its "before" was already missing the suffixed and nicknamed players (fit on the first
+board-scoped `final_hp`, built with the broken normaliser); they are in now — 3.18% more graded legs than
+the calibration ever had. The name-map defect is repaired in the calibration itself, not only forward.
+`baseline_ladder` is dropped; `baseline_history` is the one store.
 The owner's principle, which governs every retention decision from here: **the final products —
 baseline/classification, `final_hp`, score, confidence — can be reconstructed at any time from the
 recipe; the INGREDIENTS — the factors, and above all the boards and the market data — cannot and must
