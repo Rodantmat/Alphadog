@@ -5691,3 +5691,85 @@ were recorded ONLY in `nba/NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` — a file OU
 📌 **See `§T25.4`'s correction**: *that document is not stale history — it is **current, authoritative,
 actively maintained**, and already referenced by `5` of the twelve.* ⇒ **The folder hazard is not
 "unswept means stale"; it is that unswept files are a MIX, and nothing tells a reader which is which.**
+
+---
+
+## 🔴🔴🔴 **§T26.39 — THE `A5` STARTER MODEL AND "NEXT MAN UP" WERE VALIDATED ON THE WRONG OBJECTIVE, AND NOTHING CALLS THEM. THIS RETRACTS `§T26.12` AND `§T26.22`.** *(`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` §11 + `grep` + Postgres, 2026-09-25)*
+
+⚠⚠⚠ **I WROTE BOTH OF THOSE SECTIONS EARLIER TODAY, FROM `T26`'s PROSE, AND BOTH ARE WRONG IN THE SAME
+WAY.** *`T26` measured the model honestly and reported it honestly. **The author then went back, in a
+document outside the twelve, and recorded that he had measured the wrong thing.** I read the first half
+and not the second.*
+
+### 🔴 **THE AUTHOR'S OWN VERDICT, VERBATIM**
+
+> 🔑🔑🔑 ***"VERDICT FIRST: this model is NOT wired into anything, and should not be."***
+> *`A5 lineup change` is already **CLOSED — REJECTED**. That earlier test built **the same mechanism** —
+> "last game's starters, minus those ruled out, plus the highest as-of-minutes replacement" — and
+> measured it **HELD OUT against PROP ERROR**:*
+
+| prop | Δ MAE |
+|---|---|
+| points | **`−0.032`** |
+| rebounds | **`−0.008`** |
+| assists | **`−0.008`** |
+| pra | **`−0.035`** |
+
+> 🔴 ***"negative on every prop."***
+> *and the reason generalises:* ***"the allocator already uses RECENT-5 MINUTES, which encodes starting
+> status CONTINUOUSLY AND WITH MAGNITUDE; a binary starter [flag adds nothing]"*** *— and **that
+> rejected proxy already included the next-man-up replacement logic.***
+> ⚠⚠ ***"MY ERROR, recorded because it is the reusable lesson: I validated the wrong target."***
+
+### 🔑🔑🔑 **THE LESSON, AND IT IS THE DEEPEST ONE THIS SWEEP HAS RECORDED**
+
+**`§T26.12` measured `Brier` on STARTS: `0.0834` → `0.0722`, `13.5%` better. `§T26.22` measured a
+further `2.46%` / `2.91%`. Every one of those numbers is CORRECT.**
+
+⇒ 🔑 ***A model can predict WHO STARTS substantially better and move PROP ERROR by nothing — or
+backwards — because the quantity downstream actually consumes is MINUTES, which already encodes
+starting status continuously and with magnitude. A binary flag adds a coarse version of information
+the pipeline already has in a finer form.***
+
+⚠⚠ **`§T26.22`'s own stated test was *"does the effect appear where the mechanism says it must, on data
+the fit never saw?"* — and it PASSED that test.** 🔴 ***The missing question was one level up: IS THIS
+THE METRIC THE PRODUCT IS JUDGED ON?*** 📌 **The bar is stated in `NBA_BASELINE_CALIBRATION.md` §0u.1
+and the enrichment doc restates it**: ***"it must clear the §0u.1 bar — Δ MAE on props, not Brier on
+starts."***
+
+📌 **AND IT IS `§T26.26`'s LESSON AGAIN, ONE TURN FURTHER ON.** *There, the author dismissed a predictor
+on EFFECT SIZE when the question was PENALTY SIZING — **"different questions."** Here he accepted one on
+`Brier` when the question was Δ MAE.* ⇒ 🔑 **Both failures are the same shape: a competent measurement
+of a quantity nobody asked about.**
+
+### ✅ **VERIFIED LIVE — THE ARTIFACTS EXIST, THE CALLERS DO NOT**
+
+```bash
+grep -rl "starter_prior_v2\|p_start\|starter_training\|_starter_hist" nba/*.py .github/workflows/*.yml
+```
+▶ **NOTHING.** `0` callers in every script and every workflow.
+
+| object | state `2026-09-25` |
+|---|---|
+| `nba_score.starter_training` | ✅ exists |
+| `nba_score.starter_prior_v2` | ✅ exists |
+| `nba_score.p_start(...)` | ✅ exists *(`1` function)* |
+| `nba_score._starter_hist` | 🔴 **does NOT exist** — *the enrichment doc cites it at `79,358` player-games; `to_regclass` returns `NULL`* |
+
+⚠⚠ **`T26` said *"shipping it with a callable interface"* and I recorded that as SHIPPED.**
+🔑🔑 ***A CALLABLE INTERFACE IS NOT A CALLER.*** *`p_start()` is callable by anyone. Nothing calls it.*
+📜 **`RULE 57` in a form the sweep had not met: *a derivation is not recorded until it has been RUN on
+every row it claims* — and "it ships" is a claim about the SYSTEM, which must be run against the system,
+not read from the sentence that announces it.**
+
+### ✅ **WHAT SURVIVES, AND IT IS NOT NOTHING**
+
+✅ **The DATA loads stand** — *officials and starter status "mined weeks ago and never landed in
+Postgres" are now loaded, and that was a genuine gap* **(`§T26.12`'s second half is unaffected).**
+✅ **AND ONE MEASUREMENT IS WORTH KEEPING, because it is about AVAILABILITY rather than lineups** —
+*a bench player's chance of starting runs* **`3.3%` with no regular starters out → `6.5%` → `9.2%` →
+`15.9%` with three**, *while an established starter sits at* **`~90%` regardless of how many teammates
+sit.* 🔑 **That is a usable prior for the availability family; the starter MODEL is not.**
+
+🔴 **STANDING RULE FOR ANY FUTURE USE, from the enrichment doc**: ***"If a future use appears it must
+clear the §0u.1 bar — Δ MAE on props, not Brier on starts."***
