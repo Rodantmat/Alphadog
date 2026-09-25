@@ -199,6 +199,16 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 **PERIOD PROPS — researched, then wired (2026-09-25).** PrizePicks posts NBA period lines: "First Quarter Points" (rotoballer, Nov 2023), "1H PRA" (Feb–Mar 2023); its API spells the stat with a prefix — `"1H Points"`, `"1H 3-Pointers Made"` — and calls fantasy `"Fantasy Points"` and free throws `"FT Made"` (published projections sample); third-party market maps list PrizePicks 1Q points and 1Q assists. Before this pass a period leg could not score: the archiver had no mapping, the scorer's vocabulary pointed at prop names (`points_q1`) that don't exist in the store, and the scorer joined `period = 'FULL'` only. Now: `pp_market_key()` handles the prefixes and the API's spellings; `MARKET_TO_PROP` (and the SQL key function, kept in step by hand) carry the full period set for the four period props plus the DERIVED props (FTM, FGA, FGM, FTA, 3PA, OREB, DREB, personal fouls) — **every prop the baseline carries now has a board key**; the scorer splits `points_q1` → (`points`, `Q1`) and joins on base prop + period, interpolating within the period ladder. Unit-tested end to end: 12 of 13 PrizePicks stat forms resolve; **period COMBOS ("1H Pts+Rebs+Asts") have no ladder and stay loudly unmapped** — the one known limit.
 ⚠ My first PrizePicks map sent fantasy to `player_fantasy_score`; the scorer expects `player_fantasy_points`. Corrected.
 
+**A5 — CLOSED AT THE LEG-LEVEL GATE (2026-09-25), the re-test the 2026-09-13 lesson owed it.** Variant E
+added to `test_factors_on_baseline.py`: the fitted P(start) (`nba_score.p_start`, Brier 0.0703 OOS)
+applied through the only channel a lineup acts on — minutes, `E[min] = p·(own as-of minutes when
+starting) + (1−p)·(when not)`, relative to the allocator's recent-10 — on the same yardstick as every
+other variant, held out in time. **7,128 real PrizePicks legs: anchor 0.7260 · anchor × A5 0.7441
+(−0.0180, worse) · anchor × A2 0.9704.** The documented reasoning holds: recent minutes already encode
+starting. Rows written to `nba_score.factor_gate_results` (`anchor_x_A5_pstart_minutes`). Feature table
+`nba_score.a5_feature` (26,543 player-games, P(start) 0.4695 vs actual 0.4631) kept for the record.
+Nothing is wired; nothing should be.
+
 ---
 
 ## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
