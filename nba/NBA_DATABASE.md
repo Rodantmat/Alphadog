@@ -3013,7 +3013,13 @@ SELECT count(*) FROM nba_score.final_hp      WHERE game_date > '2026-04-12';
 | ✅ **`nba_calendar.games`** | **`47` nights · `91` games**, `2026-04-14` → **`2026-06-13`** *(the Finals)* |
 | 🔴 **`nba_market.board_outcomes`** | **`0` legs** — *every `leg_result` series stops dead at **`2026-04-12`*** |
 | 🔴 **`nba_score.final_hp`** | **`0` rows** |
-| 🔴 **`nba_score.baseline_history`** | *`max(game_date)` = **`2026-04-12`*** |
+| 🔴 **`nba_score.baseline_history`** | *`max(game_date)` = **`2026-04-12`** — ✅ **RUN, not asserted** (`RULE 57`)* |
+
+✅✅ **AND THE BOUNDARY IS STRUCTURAL, NOT A ONE-SEASON GAP — BOTH SEASONS STOP AT THEIR REGULAR-SEASON
+LAST DAY**: *`baseline_history` 2024-25 runs `2024-10-22` → **`2025-04-13`** (`162` dates) and 2025-26
+runs `2025-10-21` → **`2026-04-12`** (`163` dates); `final_hp` carries the identical two endpoints.*
+⚠ **`nba_calendar.games` does not hold 2024-25 at all** *(its earliest season is 2025-26)*, **so for
+that season not even the schedule records that a postseason happened.**
 
 ⚠⚠ **AND THERE IS NO `"no box score"` LABEL AND NO `"void"` LABEL IN THE TABLE AT ALL.**
 *`board_outcomes.leg_result` carries exactly **five** values —* `under_win` `3,877,761` · `over_win`
