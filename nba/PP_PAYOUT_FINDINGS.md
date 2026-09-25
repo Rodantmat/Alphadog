@@ -164,28 +164,6 @@ back better**: its "before" was already missing the suffixed and nicknamed playe
 board-scoped `final_hp`, built with the broken normaliser); they are in now — 3.18% more graded legs than
 the calibration ever had. The name-map defect is repaired in the calibration itself, not only forward.
 `baseline_ladder` is dropped; `baseline_history` is the one store.
-The owner's principle, which governs every retention decision from here: **the final products —
-baseline/classification, `final_hp`, score, confidence — can be reconstructed at any time from the
-recipe; the INGREDIENTS — the factors, and above all the boards and the market data — cannot and must
-never be lost.** Verified before starting: every ingredient table matches its earlier count
-(`board_snapshots` 27.07M and growing, market lines 307,604 + 12,165, injury 1,338,020, officials,
-starter status, defender ratings, `prop_universe`); nothing today touched them.
-
-Name coverage first, because the ladders must be keyed to it: with `nba_ref.norm_name` plus the alias
-rows, **561 of 561 board names across both seasons resolve** (old normaliser: 516). `baseline_ladder`
-is dropped — `baseline_history` is the one store, its four slates already there.
-
-The rebuild runs the certified recipe over the logs (the only source), season by season:
-1. Singles, both seasons in parallel, two runs each: `points,rebounds;assists,steals;blocks,turnovers;threes_made,fg3a`
-   then `fga,ftm;personal_fouls;oreb,dreb;fgm,fta` (`nba-baseline-history.yml`).
-2. Combos, both seasons (`nba-combos-history.yml`, self-contained).
-3. Then re-prune both seasons with the fixed name map (the 45 recovered players' board rungs are now
-   keys and are KEPT), rebuild `final_hp` both seasons, `VACUUM FULL` both, rebuild the calibration and
-   diff against `_calib_before_prune`: 2024-25 legs should return to (at least) the "before" counts.
-⚠ The certified recipe itself now carries the shape guard (one drop line before the advanced-log merge)
-because the history patcher and the combos backfill would otherwise have died on the delta-synced file
-exactly as P2 did. Both patchers were re-validated against the modified recipe.
-⚠ Period props were never pruned and are not rebuilt here.
 
 ---
 
