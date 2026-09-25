@@ -182,6 +182,9 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 | *(new)* the daily object was poorer than the backfill | ✅ fixed | `build_baseline_history.py` emitted `proj_min` / `rate36` (0% NULL in the store); `build_baseline_ladder.py` did not, so every in-season row would have loaded NULL — the delta's reallocation NaN-dropped on every leg and the confidence refit's components went silent. The production patcher now carries both, same `rep()` as the history patcher; validated by compiling the patched recipe. |
 | **T20-13/T20-6 corollary** — `DROPPED N rows with NaN probabilities` in the delta | ⚠ explained | combos have no `proj_min` by construction (100% NULL), so their reallocation cannot be re-derived and they keep the baseline. Correct fallback; the "should be 0" message is over-strict for combos. |
 
+---
+
+## 0c. 📐 RETENTION
  — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
 
 
