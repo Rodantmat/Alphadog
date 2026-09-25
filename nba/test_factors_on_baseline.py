@@ -171,35 +171,64 @@ def main():
     te["B"] = te["anchor"] * te["min_mult"]
     te["C"] = te["anchor"] * np.exp(bd * te["def_pts"].fillna(0.0))
     te["D"] = te["B"] * np.exp(bd * te["def_pts"].fillna(0.0))
+    # VARIANT E - A5 START PROBABILITY (added 2026-09-25, the re-test the 2026-09-13 lesson owes it).
+    # The rejected A5 was a BINARY proxy tested on MAE; this is the fitted probability
+    # (nba_score.p_start: Brier 0.0703 out of sample) applied through the only channel a lineup can
+    # act on - MINUTES: E[min] = p * (own as-of minutes when starting) + (1-p) * (own as-of minutes
+    # when not), relative to the allocator's recent-10 minutes. Same yardstick as every other variant:
+    # leg-level log-loss on real PrizePicks lines against the anchor.
+    a5 = pd.read_sql("""SELECT player_id, game_date, p_start, avg_min_10, m_start_prior, m_bench_prior
+                        FROM nba_score.a5_feature WHERE season = %s""", conn, params=(season,))
+    a5["game_date"] = pd.to_datetime(a5["game_date"]).dt.date
+    a5["player_id"] = a5["player_id"].astype(str)
+    te = te.merge(a5, left_on=["PLAYER_ID", "GAME_DATE"], right_on=["player_id", "game_date"], how="left")
+    _emin = (te["p_start"] * te["m_start_prior"].fillna(te["avg_min_10"])
+             + (1 - te["p_start"]) * te["m_bench_prior"].fillna(te["avg_min_10"]))
+    te["a5_mult"] = (_emin / te["avg_min_10"].replace(0, np.nan)).clip(0.5, 1.5).fillna(1.0)
+    te["E"] = te["anchor"] * te["a5_mult"]
+    print(f"A5 feature on {te['p_start'].notna().mean():.1%} of test rows; mean multiplier {te['a5_mult'].mean():.4f}", flush=True)
 
+    VARIANTS = (("A", "anchor alone (certified baseline)"), ("B", "anchor x A2"),
+                ("C", "anchor x defender"), ("D", "anchor x A2 x defender"),
+                ("E", "anchor x A5 start-probability minutes"))
     print(f"\ntest rows {len(te):,}")
-    for tag, name in (("A", "anchor alone (certified baseline)"), ("B", "anchor x A2"),
-                      ("C", "anchor x defender"), ("D", "anchor x A2 x defender")):
-        print(f"  MEAN MAE  {name:<36} {np.abs(te[tag]-te['PTS']).mean():.3f}", flush=True)
+    for tag, name in VARIANTS:
+        print(f"  MEAN MAE  {name:<42} {np.abs(te[tag]-te['PTS']).mean():.3f}", flush=True)
 
     board = pd.read_sql("""SELECT game_date, player, line FROM nba_market.board_snapshots
                            WHERE bookmaker='prizepicks' AND snapshot_label='window'
                              AND market_key='player_points' AND side='Over'""", conn)
-    conn.close()
     board["game_date"] = pd.to_datetime(board["game_date"]).dt.date
     pid_map = {norm_name(x.get("DISPLAY_FIRST_LAST")): str(x.get("PERSON_ID"))
                for x in fetch("nba_all_players.json").get("records") or []}
     board["player_id"] = board["player"].map(norm_name).map(pid_map)
     b = board[board["player_id"].notna()].merge(
-        te[["GAME_DATE", "PLAYER_ID", "PTS", "A", "B", "C", "D"]],
+        te[["GAME_DATE", "PLAYER_ID", "PTS", "A", "B", "C", "D", "E"]],
         left_on=["game_date", "player_id"], right_on=["GAME_DATE", "PLAYER_ID"], how="inner")
     if len(b) < 500:
         print(f"only {len(b)} legs matched - leg gate skipped", flush=True)
+        conn.close()
         return
     print(f"\nLEG-LEVEL on {len(b):,} real PrizePicks legs")
     sd = float(np.std(te["PTS"] - te["A"]))
     hit = (b["PTS"] > b["line"].astype(float)).astype(int)
-    for tag, name in (("A", "anchor alone (certified baseline)"), ("B", "anchor x A2"),
-                      ("C", "anchor x defender"), ("D", "anchor x A2 x defender")):
+    results = {}
+    for tag, name in VARIANTS:
         p = np.clip(1 - sps.norm.cdf((b["line"].astype(float) - b[tag]) / max(sd, 1e-6)), 1e-4, 1 - 1e-4)
         ll = float(-np.mean(hit * np.log(p) + (1 - hit) * np.log(1 - p)))
         br = float(np.mean((p - hit) ** 2))
-        print(f"  {name:<36} log-loss {ll:.4f}  Brier {br:.4f}", flush=True)
+        results[tag] = (name, ll, br)
+        print(f"  {name:<42} log-loss {ll:.4f}  Brier {br:.4f}", flush=True)
+    # RESULTS GO IN THE DATABASE, NOT THE CI LOG (NBA_DATABASE.md). One row per variant, this run.
+    with conn.cursor() as cur:
+        for tag, (name, ll, br) in results.items():
+            cur.execute("""INSERT INTO nba_score.factor_gate_results (season, slice, model, n, log_loss, brier, gain_vs_anchor, shrink_beta, run_at)
+                           VALUES (%s, 'all', %s, %s, %s, %s, %s, NULL, now())""",
+                        (season, {"A": "anchor", "B": "anchor_x_A2", "C": "anchor_x_defender",
+                                  "D": "anchor_x_A2_x_defender", "E": "anchor_x_A5_pstart_minutes"}[tag],
+                         int(len(b)), ll, br, results["A"][1] - ll))
+    conn.commit()
+    conn.close()
 
 
 if __name__ == "__main__":
