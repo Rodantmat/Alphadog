@@ -2987,3 +2987,65 @@ been on file the whole time.**
 defect (`§T26.16`). `T16-9` was a real statistic read against the wrong index — **by this sweep, this
 week, while correcting the first one.*** ⇒ 🔑 **The instrument that finds stale claims produces them
 at the same rate, and only re-running against the named object separates the two.**
+
+---
+
+## 🔴🔴🔴 **§T25.1 — THE ENTIRE POSTSEASON IS ABSENT FROM EVERY GRADING AND SCORING STORE, AND THE CALENDAR IS THE ONLY TABLE THAT KNOWS IT EXISTS** *(T25 seg279 + `SELECT` 2026-09-25; **`0` of the twelve before this entry**)*
+
+**T25's own words, as an OPEN item it handed forward:**
+> ***"the **30 postseason nights, 14,271 legs** have no box scores, so they're being relabeled **"no
+> box score" and ungraded, instead of "void"**. the finalizer reported the right count, but my check
+> in the same call read the table from before the change. **it needs one fresh query to confirm.**"***
+
+✅ **THIS SWEEP RAN THAT FRESH QUERY.**
+
+### 🔴 **THE RESULT — THE BOUNDARY IS EXACT AND IT IS TOTAL**
+
+```sql
+SELECT count(DISTINCT game_date) nights, count(*) games FROM nba_calendar.games
+ WHERE season='2025-26' AND game_date > '2026-04-12';
+SELECT count(*) FROM nba_market.board_outcomes WHERE game_date > '2026-04-12';
+SELECT count(*) FROM nba_score.final_hp      WHERE game_date > '2026-04-12';
+```
+
+| store | postseason content |
+|---|---|
+| ✅ **`nba_calendar.games`** | **`47` nights · `91` games**, `2026-04-14` → **`2026-06-13`** *(the Finals)* |
+| 🔴 **`nba_market.board_outcomes`** | **`0` legs** — *every `leg_result` series stops dead at **`2026-04-12`*** |
+| 🔴 **`nba_score.final_hp`** | **`0` rows** |
+| 🔴 **`nba_score.baseline_history`** | *`max(game_date)` = **`2026-04-12`*** |
+
+⚠⚠ **AND THERE IS NO `"no box score"` LABEL AND NO `"void"` LABEL IN THE TABLE AT ALL.**
+*`board_outcomes.leg_result` carries exactly **five** values —* `under_win` `3,877,761` · `over_win`
+`2,780,348` · `dnp` `205,425` · `unmatched_player` `31,687` · `push` `10,231`. 🔑 **So the disposition
+T25 describes — *"relabeled 'no box score' and ungraded"* — did NOT land as a label. The rows are
+simply NOT THERE.** ⚠ *Whether they were deleted or never written is **NOT RECORDED** (`RULE 6`).*
+
+⚠ **T25 counted `30` nights; the calendar holds `47`.** *The gap is consistent with boards having been
+posted on only some playoff nights, but **the reconciliation is NOT RECORDED** — both figures are
+reported with their source rather than one being chosen.*
+
+### 🔑🔑 **WHY THIS MATTERS MORE THAN A COVERAGE GAP — IT SILENTLY NARROWS EVERY FIT IN THE SYSTEM**
+
+**`build_final_hp.py` states who reads the graded set**: *"the as-of calibration and the confidence
+refit — **the only two readers**"* — and both ***"join from graded board legs."*** ⇒ 🔴 ***Every
+calibration cell, every confidence factor and every backtest described as covering "both seasons" is
+fitted on REGULAR-SEASON BASKETBALL ONLY.***
+
+⚠⚠ **That is the regime where the model's inputs are LEAST like the postseason**: *rotations shorten,
+minutes concentrate, usage shifts to stars, and the `A5`/"next man up" fallbacks that `§T26.12` and
+`§T26.22` certify were fit and tested entirely outside it.* 🔑 **The `307,000`-leg decision in
+`§T26.20` and the `26,543`-player-game hold-out in `§T26.22` are both regular-season populations —
+their conclusions are sound and their SCOPE is narrower than their wording.**
+
+### ⚠ **AND THE SAME BOUNDARY IS ALREADY BUILT INTO NEXT SEASON**
+
+*`nba_calendar.games` for **2026-27** runs `2026-10-03` → **`2027-04-11`** — `1,266` games, `170`
+dates, **and NOT ONE postseason date.*** 🔑 **The loaded schedule is the regular season plus preseason
+and nothing else**, ⇒ ***the hole is not a backfill gap that will close on its own; it is the shape of
+what gets loaded.***
+
+🔴 **NOT REMEDIATED, AND IT NEEDS A DECISION** *(`RULE 6` — no transcript records one)*: **is the
+postseason in scope for grading and scoring at all?** *T25 handed the question forward and the session
+that would have answered it has no transcript.* ⚠ **The opener is `2026-10-20`; the question does not
+become urgent until April, which is exactly why it will be forgotten.**
