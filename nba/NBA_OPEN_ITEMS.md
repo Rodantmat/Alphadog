@@ -17545,6 +17545,57 @@ FROM nba_daily.injury_report_snapshots WHERE game_date = %s
 sweep has now catalogued** *(with `§T26.19`, `§T26.26`, `§T26.28`)*, **and the remedy is the same one
 each time: remove the step where work can be lost between producing it and reading it back.**
 
+### ✅ **`T20-5` — THE GRADER'S WINDOW: CLOSED, AND A SECOND DEFECT WENT WITH IT**
+
+⚠⚠ **I ALMOST SHIPPED THIS ONE WRONG.** *Having closed `T20-17`, I wrote that `T20-5` was "now the
+brief's ONLY silent blocker" — **inheriting its state instead of re-deriving it.** `RULE 61` caught it
+within the minute.*
+
+▶ **BOTH HARDCODED CEILINGS ARE GONE** *(`2026-09-23`)*:
+
+| site | was | now |
+|---|---|---|
+| `grade_board_outcomes.py:182-183` | `GRADE_END` **`"2026-04-12"`** | ✅ **rolling `7`-day window ending today** |
+| `build_rung_market.py:95-96` | `RUNG_TO` **`"2026-04"`** | ✅ **the CURRENT MONTH** |
+
+> *the grader's own comment:* ***"the old ceiling was also dead from 2026-27 on — **it would have
+> graded ZERO dates and exited green, starving the calibration.** Same class as `T23-2`."***
+
+🔑🔑 **AND THE SAME EDIT KILLED A PERFORMANCE DEFECT THE BRIEF NEVER KNEW ABOUT**: *the old default
+re-graded the WHOLE archive nightly — ***"`2.48M` legs and `132` dates in the first 13 minutes of a
+replay, to add one night"*** — and `build_rung_market` rebuilt ***"~24 months of rung market at the
+`1:15 PM` cutoff, on P3's critical path, to add one day's rows."*** ⇒ **A correctness fix and a
+critical-path fix in one change.**
+
+### ✅ **`T20-6` — THE CERTIFIER ASSERTING A TABLE NO PIPELINE WRITES: CLOSED TWICE OVER**
+
+① **The check was re-pointed** *(`certify_pipeline.py:132-137`)* — it now asks
+`nba_score.baseline_history … WHERE game_date = %s AND period = 'FULL'`, **scoped to the slate**, so
+*"P2 could produce nothing at all and still certify green"* no longer holds. ② **And `F6-1`'s
+consolidation dissolved the premise**: `nba_score.baseline_ladder` was **DROPPED**, and
+`load_baseline_ladder.py` now writes `baseline_history` — ⇒ ***the two-store split the item was about
+does not exist any more.***
+
+⚠⚠ **BUT THE CODE COMMENT ABOVE THAT CHECK STILL DESCRIBES THE TWO-STORE WORLD** — *"P2's loader…
+writes `nba_score.baseline_ladder`, keyed by `asof`"* — **naming a table `to_regclass` returns `NULL`
+for.** 🔑 **A reader auditing the certifier would conclude the check is still mis-pointed.** 🔴 **NOT
+FIXED HERE — a source comment is outside these twelve documents; recorded for the build chat.**
+
+### 🔴 **`T20-12` — DST: STILL OPEN, AND IT IS NOW THE OLDEST UNFIXED ITEM IN THE BRIEF**
+
+```bash
+grep -rn "timezone(timedelta(hours=-8))" nba/*.py
+```
+▶ **STILL PRESENT in at least `5` scripts** — `build_availability_delta.py:39` · `certify_pipeline.py:27`
+· `check_factor_freshness.py:28` · `find_delta_test_date.py:30` · `build_board_tiers_v2.py:118`.
+**Exactly `1` NBA script uses `ZoneInfo`.** 🔴 **`HELD` — fixed PST, and `PDT → PST` falls on
+`2026-11-01`, twelve days after the opener.**
+
+🔑 **`§T26.26` shows the crons were made DST-safe by CHOOSING A SLOT correct in both offsets rather
+than by making the code DST-aware.** ⚠ ***That protects the schedule. It does not protect a Python
+script that computes "today" from a fixed `-8` offset — between March and November that is one hour
+wrong, and the failure mode is a slate keyed to the wrong date near midnight.***
+
 ### 🔑🔑🔑 **THE METHOD CONSEQUENCE — AND IT IS THE SHARPEST VERSION OF `RULE 61`**
 
 ⚠⚠ ***This pass began by closing `T16-7` and `T16-8` as stale corpus claims. It ends having gone stale
