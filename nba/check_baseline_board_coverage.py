@@ -48,8 +48,21 @@ def main():
     conn.execute("SET statement_timeout = 0")
     with urllib.request.urlopen(urllib.request.Request(RAW + "nba_all_players.json", headers={"User-Agent": "alphadog"}), timeout=120) as r:
         doc = json.load(r)
-    rows = [(str(x["PERSON_ID"]), norm_name(x.get("DISPLAY_FIRST_LAST")), x.get("DISPLAY_FIRST_LAST"))
+    rows = [(str(x["PERSON_ID"]), norm_name(x.get("DISPLAY_FIRST_LAST")), x.get("DISPLAY_FIRST_LAST"),
+             int(x.get("ROSTERSTATUS") or 0), int(x.get("TO_YEAR") or 0))
             for x in doc.get("records") or [] if x.get("PERSON_ID") and norm_name(x.get("DISPLAY_FIRST_LAST"))]
+    # ONE PLAYER PER NAME (2026-09-25). norm_name strips suffixes, so "Jaren Jackson Jr" and the 1990s
+    # Jaren Jackson both become jarenjackson, and 51 names in the register collided that way - every SQL
+    # join on the map fanned out, and a dict built from it picked whichever came last. Keep, per name,
+    # the player on a current roster (ROSTERSTATUS=1); failing that the most recent career (TO_YEAR),
+    # then the highest id. Verified on the live table 2026-09-25: 53 namesakes removed, 0 ambiguous left,
+    # Jaren Jackson -> 1628991, Jabari Smith -> 1631095, Gary Payton -> 1627780 (Payton II).
+    best = {}
+    for pid, nm, disp, roster, to_year in rows:
+        key = (roster, to_year, int(pid))
+        if nm not in best or key > best[nm][0]:
+            best[nm] = (key, (pid, nm, disp))
+    rows = [v[1] for v in best.values()]
     with conn.cursor() as cur:
         cur.execute("""CREATE SCHEMA IF NOT EXISTS nba_ref;
                        DROP TABLE IF EXISTS nba_ref.player_name_map;
