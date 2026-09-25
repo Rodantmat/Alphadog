@@ -68,7 +68,9 @@ def active_stats_season(today=None):
             games = json.loads(Path("nba/data/nba_schedule_current.json").read_text()).get("games", [])
             first = min((g["game_date"][:10] for g in games
                          if g.get("season") == season and (g.get("game_label") or "") != "Preseason"), default=None)
-            if first and today.isoformat() < first:
+            # <= not <: on opening MORNING no game of the new season has been played yet (P2 runs at
+            # 08:45 PT), so the season with real data is still the prior one until the day after.
+            if first and today.isoformat() <= first:
                 return f"{start_year - 1}-{str(start_year)[2:]}"
         except Exception:  # noqa: BLE001 - no file, no change in behaviour
             pass
