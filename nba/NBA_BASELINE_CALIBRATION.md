@@ -34,6 +34,7 @@ and the evidence behind each.
 > | ⚠ **two validation traps, and a granularity result that cuts against the owner's own instinct** | **`§0z-T16-C`** |
 > | 🔑 **why "CERTIFIED" never meant "STORED"** *(the distinction that produced `baseline_history`)* | **`§0v`** |
 > | 🔑 **the parity rule as the governing document states it** | **`§0u`** |
+> | 🆕🔴🔴🔴 **THE PARITY RULE BROKEN AT THE *SHAPE* LEVEL — `P2` WOULD HAVE FAILED EVERY NIGHT FROM OPENING NIGHT** | **`§T26.8`** *(found `2026-09-24`, fixed same day)* |
 > | ⚠ **where the baseline's constants ACTUALLY live** *(in Python, not in config)* | **`§0y`② — the SECOND `0y`** |
 > | 🔴 **the `oreb` rebuild — five hypotheses, four wrong** | **`§0y`① — the FIRST `0y`** |
 > | 🔴 **the third selection-filter failure, and the sanity gate that catches the family** | **`§0y-2`** |
