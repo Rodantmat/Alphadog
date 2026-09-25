@@ -18,7 +18,7 @@
 > # 📑 **INDEX — `NBA_MASTER_SUMMARY.md`**
 > **The record of what every transcript contained** — the sweep ledger, the per-transcript findings
 > (`§T`*n*`.`*m*), the canonical figure table, and the corrections made to each.
-> 📏 **`2,883` sections · `2026-09-23`** *(re-derive, never quote — sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY.md ``
+> 📏 **`2,901` sections · re-derived `2026-09-25`** *(was `2,883` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY.md ``
 >
 > 🆕🆕🆕 **`2026-09-25` — `T25` AND `T26` ARE OPEN, AND THE SWEEP WROTE `29` SECTIONS ACROSS THE TWELVE IN ONE DAY. WHERE EACH LIVES:**
 > | file | sections defined there `2026-09-25` |
