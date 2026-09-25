@@ -1814,7 +1814,7 @@ path, and **5,564,467 characters are absent**. **All six are `github_get_file` c
 `teams.arena_id` returns 30 NULLs and looks like a scrape failure. → `NBA_DATABASE.md`
 `nba_ref.teams` · `NBA_OPEN_ITEMS.md` *FROM T1 PASS 65*.
 
-**`credential_value_encrypted`** · LIVE, VERIFIED · **A MISNOMER.** The column in
+**`credential_value_encrypted`** · LIVE, VERIFIED · **A MISNOMER** — ✅ **AND THE OWNER HAS RULED ON IT, `2026-09-24` (`T26` seg `29`):** ***"the encrypted data, it doesn't really matter. Just — I have access to it. Nobody else accesses this database. So that's not really an issue."*** ⇒ 📌 **ACCEPTED RISK, not an open defect.** *The name still misleads a reader, so the entry stands; the remediation does not.* ⚠ **This ruling covers the COLUMN NAME only — it does not touch `F2-1` (a key published in the PUBLIC repo) or `T22-1b`, which remain owner-only actions.** · The column in
 `nba_config.external_credentials` that holds API keys. **Nothing encrypts and nothing decrypts** —
 the two readers use `.strip()` on the raw value, and no encrypt/decrypt step exists in the 190 code
 files. **Two of the six stored values are bare 36-character UUIDs.** ⚠ **The same values sit in
