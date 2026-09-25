@@ -2770,3 +2770,58 @@ only in a validation row written by another session.**
 `STEP 12` row 5 *(where 4b sits in the day)* · `NBA_MULTIPLIERS.md` §0.9b *(the payout table)* and
 §0.2f *(the same-game discount this packing rule implements)* · `NBA_BASELINE_CALIBRATION.md` §0v.4
 *(the twelve-stat-type scope limit)*.
+
+---
+
+## ✅✅ **§T26.21 — THE PRESEASON DECISION IS MEASURED, NOT ASSUMED — AND THE AUTHOR CORRECTS HIS OWN FIGURE BY A FACTOR OF `23` IN THE COURSE OF TAKING IT** *(T26 seg1008, ASSISTANT OUTPUT; the evidence behind `§T26.10`)*
+
+**`§T26.10` records the RULING — *"preseason is not a slate"*. This is the EVIDENCE under it, and it
+is one measured night.**
+
+### 🔑 **THE MEASUREMENT — `2025-10-22`, THE SEASON OPENER**
+
+| group | players | legs | predicted | actual | gap |
+|---|---|---|---|---|---|
+| **with prior-season history** | **`158`** | — | `0.4451` | `0.4499` | ✅ **`−0.5` points** |
+| **without** | **`1`** | **`155`** | `0.5076` | `0.6323` | 🔴 **`12.5` points** |
+
+> ***"the shape is exactly what you suspected, **in both directions**: the no-history group **is
+> genuinely mis-scored** — a 12-point calibration gap versus 0.5 points for everyone else. the model
+> has nothing to anchor them to. **but the group is tiny**: one player out of 159 on that night, 155
+> legs out of 29,395 — **about 0.5% of legs**."***
+
+### ⚠⚠⚠ **AND THE SELF-CORRECTION, WHICH IS THE ENTRY'S REAL VALUE**
+
+> 🔑🔑🔑 ***"my earlier two-week figure of **11.5%** was **inflated by the broken id join**."***
+
+**`11.5%` → `0.5%` — the earlier figure was `23×` too large, and the cause was a JOIN DEFECT, not a
+sampling difference.** ⚠ **A `11.5%` mis-scored share is a season-critical gap that justifies building
+a preseason pipeline. A `0.5%` share is a rounding error that cannot.** ⇒ ***The broken join was, on
+its own, nearly enough to commission an entire data pipeline the system does not need.***
+🔑 **`RULE 61`'s neighbour: a figure derived over a broken join is a claim about the JOIN.**
+
+### ✅ **THE DECISION, AND ITS COST/BENEFIT STATED EXPLICITLY**
+
+> ***"don't process preseason into the projection pipeline. it would add a volatile input to fix
+> roughly half a percent of legs, **using exactly the statistics (minutes, volume) that the research
+> says don't transfer**. **the cost is contamination risk across 99.5% of the board to maybe improve
+> 0.5%.**"***
+
+*External evidence cited in support:* ***"preseason volume and minutes don't persist, rotations are
+chaotic, stars rest — only rate stats like three-point attempt rate carry into the season."***
+
+### 🔑🔑 **BUT THE DECISION IS SPLIT, NOT BLANKET — AND THE SPLIT IS THE DESIGN**
+
+> ***"what preseason is genuinely worth using for — and this matches your instinct — is **the board
+> side**: prizepicks posts preseason lines, and those teach us **multiplier structure, tier behaviour
+> and line-setting**, with **zero contamination risk, because none of it touches player
+> statistics**."***
+
+⇒ ✅ **PRESEASON IS REJECTED AS A PLAYER-STATISTICS SOURCE AND ACCEPTED AS A MARKET-STRUCTURE
+SOURCE.** ⚠ **`§T26.10`'s gating implements the first half.** 🔴 **Whether anything implements the
+second half — preseason board capture for multiplier/tier learning — is NOT RECORDED** *(`RULE 6`)*,
+**and preseason opens `2026-10-03`, eight days from this entry.**
+
+📌 **Read with `§T26.20`**, *which closes the same thread from the opposite side: the one plausible
+reason to want preseason player data was pricing unknown players better, and at `307,000` legs unknown
+players price out correctly already.*
