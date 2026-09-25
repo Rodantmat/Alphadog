@@ -12,7 +12,7 @@ transcript. Where a table was altered later, the change is noted with its transc
 > # 📑 **INDEX — `NBA_DATABASE.md`**
 > **The complete data dictionary** — every schema, table and column, built from real `CREATE TABLE`
 > statements and `information_schema` reads, never from memory.
-> 📏 **`148` sections · `2026-09-23`** *(re-derive, never quote — `5` sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_DATABASE.md ``
+> 📏 **`173` sections · re-derived `2026-09-25`** *(was `148` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_DATABASE.md ``
 >
 > 🆕🆕 **SECTIONS ADDED `2026-09-25` — `5` NEW.** *Anchors are heading text; search the label.*
 > | § | what it is |
