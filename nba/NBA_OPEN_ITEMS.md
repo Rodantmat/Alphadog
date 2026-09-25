@@ -773,6 +773,18 @@ table's.***
 > | **frozen static layer** | `nba_ref.defender_ratings`: `max(as_of_date)` = **`2026-04-09`**, ⚠ ~~**`166` days stale**~~ → **`169` as of `2026-09-25`; the ANCHOR is the fact, the day-count is DERIVED and grows daily (`§T26.25`)**, `111,768` rows. P1's certifier check `defender_ratings refreshed (<= 8 days)` is **RED**. | 🔴 **HELD EXACTLY** |
 >
 > ## ✅ **THE REMAINING NINE, RE-DERIVED — 2026-09-22T19:25Z (§T20.75). ALL HELD.**
+>
+> 🔴🔴🔴 **STOP — THIS TABLE IS A DATED MEASUREMENT FROM `2026-09-22`, NOT A CURRENT STATE.**
+> *Its rows are kept unstruck under `RULE 40`'s second half: **a dated `[LIVE-AUDIT]` is DATED, not
+> struck** (the `§0v.4` precedent). **But six of the items below were CLOSED on `2026-09-25`**, so
+> reading this table as current will mislead you badly.*
+> ▶ **RE-DERIVED `2026-09-25` — see `§T26.30`, `§T26.32`, `§T26.35`:**
+> ✅ **CLOSED**: `T20-4` · `T20-5` · `T20-6` · `T20-7` · `T20-13` · `T20-17` · `§T23.5` *(P2/P3 paths)*
+> 🔴 **STILL HELD**: `T20-12` *(fixed `-8` offset in `5` scripts; DST falls `2026-11-01`)* · `T20-14`
+> *(Betr board still ONE commit, `2026-09-09`; token expires `2026-10-10`)* · `T20-2` · `T20-3` ·
+> `T20-9` · `T20-10` · `T20-11`
+> 📜 ***`RULE 61`: this table is a STORE, and it is as old as its last write. Re-derive before acting on
+> any row of it.***
 > | item | re-derivation | state | **fixable & provable TODAY?** |
 > |---|---|---|---|
 > | **T20-11** | `nba-p1-weekly-static.yml:28` — `# Mondays 19:00 UTC = 12:00 PT (11:00 PT during PDT)`, still inverted | 🔴 HELD | ✅ **YES** — comment text |
