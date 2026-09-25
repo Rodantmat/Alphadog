@@ -2962,13 +2962,25 @@ CREATE INDEX board_outcomes_nm_idx ON nba_market.board_outcomes USING btree
 🔑 ***The leading key is a FUNCTION ON A JOIN COLUMN*** — *fact 104 exactly: **"a function on a join
 column means no index can ever be used."*** ⇒ **`T16-9` still needs a `DROP`, not a decision.**
 
-### 📜 **THIS IS `RULE 61` TURNED ON THE SWEEP ITSELF, AND IT EARNS A COROLLARY**
+### 📜 **WHAT THIS SECTION'S OWN ERROR TEACHES — AND IT IS NOT `RULE 61`**
 
-> 🔑🔑🔑 ***A STATISTICS COUNTER IS AS OLD AS ITS OBJECT, NOT AS OLD AS ITS DATABASE. `stats_reset`
-> BEING `NULL` LICENSES NO CLAIM ABOUT ANY PER-OBJECT COUNTER, BECAUSE DROPPING THE OBJECT RESETS IT
-> WITHOUT TOUCHING `stats_reset`. IF A COUNTER CAN ONLY RISE AND YOU MEASURE IT LOWER, THE OBJECT
-> CHANGED — TREAT BOTH READINGS AS UNCOMPARABLE.***
+⚠ ***I reached for `RULE 61` and it did not apply.*** *`RULE 61` is about a store being older than its
+writer. **Here nothing was stale: the counters were sound and my QUERY was wrong**, because I assumed
+four indexes named as "siblings" lived on one table when `§0x-T16`'s own table column says they live
+on four.*
 
-⚠ **`T16-8` was a stale STORE read as a live defect.** ⚠ **`T16-9` is a stale STATISTIC read as a
-complete history.** ⇒ 🔑 **Same class, two surfaces: *the sweep dated the measurement and did not date
-the thing measured.***
+> 🔑🔑🔑 **`RULE 57` IS THE ONE THAT FIRED, AND IT FIRED ON A RE-DERIVATION RATHER THAN A DERIVATION:**
+> ***when you re-take a figure to check a corpus claim, re-take THE SAME OBJECT. A value that merely
+> sits in the same table, or wears a similar name, is a DIFFERENT measurement — and comparing it to
+> the corpus manufactures a change that never happened.***
+
+⚠⚠ **THE FAILURE WAS SELF-CONFIRMING, WHICH IS WHY IT NEARLY SHIPPED**: *two "falls" and one "absent"
+all pointed the same way, and a coherent mechanism — "the indexes were rebuilt" — was available to
+explain them.* 🔑 ***Three wrong numbers agreeing with each other read exactly like evidence.*** ✅ **The
+corpus's own `§0x-T16` table, which names the table for every index, is what broke it — and it had
+been on file the whole time.**
+
+📌 **SO THE `T16` BATCH ENDS WITH A SYMMETRY WORTH KEEPING**: *`T16-8` was a real store read as a live
+defect (`§T26.16`). `T16-9` was a real statistic read against the wrong index — **by this sweep, this
+week, while correcting the first one.*** ⇒ 🔑 **The instrument that finds stale claims produces them
+at the same rate, and only re-running against the named object separates the two.**
