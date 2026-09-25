@@ -49,7 +49,13 @@ def fetch(name, timeout=180):
 
 def main():
     asof = os.environ.get("DELTA_ASOF") or datetime.now(PT).date().isoformat()
-    season = os.environ.get("DELTA_SEASON", "2025-26")
+    # SEASON (fixed 2026-09-25): this was `os.environ.get("DELTA_SEASON", "2025-26")` and P3 never sets
+    # DELTA_SEASON - the one hardcoded default the T20-4 / T23-2 rollover fix did not reach. It is only
+    # used for the baseline read below, where the date already identifies the slate.
+    import sys as _sys0
+    _sys0.path.insert(0, "nba")
+    from nba_season import active_stats_season
+    season = os.environ.get("DELTA_SEASON") or active_stats_season()
     slug = season.replace("-", "_")
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
