@@ -67,21 +67,26 @@ def main():
     conn.commit()
 
     # --- the two report snapshots ---------------------------------------------------------------
-    idx = fetch(f"nba_injury_report_{slug}_index.json", timeout=120)
-    rows = []
-    for sh in idx.get("shards", []):
-        try:
-            rows.extend(fetch(f"nba_injury_report_{slug}_{sh}.json").get("rows") or [])
-        except Exception:  # noqa: BLE001
-            pass
-    inj = pd.DataFrame(rows)
-    if inj.empty:
-        print("no injury rows at all - nothing to diff"); return
-    inj["game_date"] = pd.to_datetime(inj["game_date"], errors="coerce").dt.date
-    inj["snapshot_ts"] = pd.to_datetime(inj["snapshot_ts"], errors="coerce", utc=True)
-    day = inj[inj["game_date"] == datetime.fromisoformat(asof).date()].copy()
+    # 🔴 FROM POSTGRES, NOT FROM RAW SHARDS (fixed 2026-09-25; closes T20-17). This used to fetch EVERY
+    # shard of the season's injury archive from raw.githubusercontent.com on every run, with
+    # `except Exception: pass` around each fetch - the only trace-free handler in the whole pipeline.
+    # A lost shard produced a smaller-but-normal-looking delta that then decided which legs P3 scores
+    # (§T20.102). Two more defects in the same block: the raw CDN caches, so the day-of report P3 had
+    # committed minutes earlier could be served STALE; and the season slug defaulted to "2025-26" with
+    # P3 never passing DELTA_SEASON - on opening night the delta would have read last season's index,
+    # found no rows for the date, printed "no delta" and exited 0, silently, every day of the season.
+    # P3 loads the day-of report into nba_daily.injury_report_snapshots BEFORE this step (workflow line
+    # ~179, INJURY_LOAD_MODE=current), so the table IS the report: same rows, no network, no shards,
+    # no season key. A missing day is now visible as "no injury rows" rather than a silent shrink.
+    day = pd.read_sql("""SELECT game_date, snapshot_ts, player_name, status
+                         FROM nba_daily.injury_report_snapshots WHERE game_date = %s""",
+                      conn, params=(asof,))
     if day.empty:
-        print(f"no injury rows for {asof} - no delta"); return
+        print(f"no injury rows for {asof} in nba_daily.injury_report_snapshots - no delta "
+              f"(P3's 'Load injury report' step runs before this one; if today's report exists, check that load)")
+        return
+    day["game_date"] = pd.to_datetime(day["game_date"]).dt.date
+    day["snapshot_ts"] = pd.to_datetime(day["snapshot_ts"], utc=True)
     day["status_u"] = day["status"].astype(str).str.upper().str.strip()
 
     # ABSOLUTE TIMESTAMPS, NOT HOUR-OF-DAY. The first version computed h = hour(snapshot_ts) and took
