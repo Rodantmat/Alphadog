@@ -4,7 +4,7 @@
 > **The standing chronological log** — one dated entry per important step, decision, issue found and
 > issue fixed, in the order it happened. *This is the only NARRATIVE, time-ordered record of the build;
 > the other eleven are organised by subject.*
-> 📏 **`71` sections · `2026-09-25`.** *Re-derive, never quote* (`RULE 59`):
+> 📏 **`73` sections · re-derived `2026-09-25`.** *Re-derive, never quote* (`RULE 59`):
 > `` grep -cE '^(> *)*#{1,6} ' nba/NBA_PROJECT_LOG.md ``
 > ⚠ **STAMP AND INDEX ADDED `2026-09-25`** *(`§T26.25` for the stamp)* — ***this document and
 > `NBA_ENRICHMENT_FACTOR_LOCK.md` were the only two of the twelve carrying NEITHER a dated census stamp
