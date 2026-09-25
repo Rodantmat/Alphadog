@@ -2909,7 +2909,15 @@ change-log of the session. **Four of them name defects that appear in `0` of the
 commit message is a stratum of its own: it states what was wrong in the author's words at the moment
 he fixed it, and it survives even when no prose segment ever explains it.*
 
-### ① 🔴🔴🔴 **P3's "BOARD TIERS" STEP NEVER BUILT BOARD TIERS — IT RAN A ONE-OFF INDEX-MAINTENANCE JOB**
+### ① ✅✅✅ **P3's "BOARD TIERS" STEP NEVER BUILT BOARD TIERS — THIS IS `T20-7`, RANKED `2nd` IN THE BRIEF, AND IT IS NOW FIXED**
+
+> ⚠⚠ **NOVELTY CORRECTION (`RULE 28`), same day.** *I first wrote this as `0` of the twelve. **It is
+> not new — it is open item `T20-7`**, ranked **2nd** on the opening-day brief and marked 🔴🔴 **SILENT**
+> *("the step succeeds; it classifies nothing")*, re-derived `2026-09-22`: **"P3 `:143–147` 'Board tiers
+> (goblin / standard / demon)' runs `maintenance_shrink_board_index.py`; `build_board_tiers_v2.py` only
+> in `nba-engine-test.yml:66`."*** 🔑 **What IS new is that it has been FIXED, and that the workflow now
+> carries its own post-mortem.** *The sweep found this defect; `T26` repaired it; neither knew about the
+> other until now.*
 
 *Commit `NBA P3: the board tiers step ran a one-off index-maintenance script and never built tiers`.
 The workflow now carries the post-mortem in place* **(`nba-p3-afternoon-light.yml:290-294`)**:
