@@ -80,8 +80,19 @@ def main():
     # script is owned by P2 that would have rebuilt last season's final_hp every night and never the
     # live one. active_stats_season() is the shared helper and honours an NBA_SEASON override.
     env_seasons = os.environ.get("FE_SEASONS", "").strip()
+    _fe_date = os.environ.get("FE_DATE", "").strip()
     if env_seasons:
         seasons = [s.strip() for s in env_seasons.split(",")]
+    elif _fe_date:
+        # A SLATE BUILD USES THE SLATE'S SEASON (2026-09-25). The daily loader labels the slate with the
+        # season its DATE belongs to (current_season). active_stats_season() answers "which season has
+        # game data", which on opening morning (P2 at 08:45 PT, no 2026-27 game played yet) is still
+        # 2025-26 - so this read would have asked for season 2025-26 on game_date 2026-10-20, found
+        # nothing, and the certifier's "final_hp built for today" would have gone red on night one.
+        sys.path.insert(0, "nba")
+        from nba_season import current_season
+        from datetime import date as _date
+        seasons = [current_season(_date.fromisoformat(_fe_date))]
     else:
         sys.path.insert(0, "nba")
         from nba_season import active_stats_season
