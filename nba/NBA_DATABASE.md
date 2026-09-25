@@ -2948,8 +2948,11 @@ unique constraint carried by the consolidated table; **NOT RECORDED** which migr
 
 ### ✅✅ **BUT THE CONCLUSION IS UNCHANGED, AND IT IS NOW BETTER SUPPORTED**
 
-**`14` scans against a sibling's `20,716,356` ON THE SAME TABLE** — *the index serves about
-`0.00007%` of that sibling's traffic while costing `303 MB` plus a write on every insert.*
+**`14` scans while `baseline_history_lookup_idx` — built in the same batch, for the same
+normalised-name join — took `+40,909,121`** *(`23,364,453` → `64,273,574`)*. 🔑 **The index serves
+about `0.00003%` of what its own batch-mate served in the same window, while costing `303 MB` plus a
+write on every insert.** ✅ **The zero was never a short-window artifact and the `14` does not rescue
+it** — *`14` scans in three days is not use, it is noise.*
 ✅✅ **AND COMPASS FACT 104's CAUSE IS VISIBLE IN THE DEFINITION ITSELF:**
 
 ```sql
