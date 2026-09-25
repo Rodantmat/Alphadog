@@ -1911,3 +1911,68 @@ Terms are added as each transcript completes its passes.
 once and never re-derived while the ledger it described moved underneath it. Before that it read
 `T1 is at pass 10; T2 at pass 1`.* ⇒ **`§F7.6` treats every masthead and status line in the twelve
 as a derived value that must be re-dated or deleted, never left to rot.**
+
+---
+
+## 🔴🔴🔴 **§T25.4 — THE FOLDER IS THE FINDABILITY HAZARD THE SWEEP NEVER ADDRESSED: `12` OF `32` FILES ARE SWEPT, AND THE UNSWEPT ONES LOOK IDENTICAL** *(T25 seg558 + `SELECT`/`ls` 2026-09-25; `0` of the twelve before this entry)*
+
+**T25 raised it and dismissed it as not-a-defect. It is the largest one left.**
+
+> ***"one thing worth knowing that **isn't a defect**: about twenty other nba .md files sit in the same
+> folder as the twelve — the blueprint, the compass, checkpoints, enrichment research, the project
+> log. **they're outside the sweep's scope by design**, so they don't get corrected. **anyone opening
+> the folder cold can easily pick up a stale one thinking it's current.**"***
+
+⚠⚠ **THE LAST SENTENCE IS THE DEFECT, AND IT IS NOT DISPOSED OF BY THE FIRST TWO.** *"Outside scope by
+design" explains why they are not corrected. **It does not stop a reader opening one.*** 🔑 **The whole
+findability campaign (`§F7`) optimised the INSIDE of twelve documents and left the DOOR unlabelled.**
+
+### 🔴 **THE MEASUREMENT**
+
+```bash
+ls nba/*.md | wc -l          # 32
+```
+▶ **`32` files · `12` swept · `20` not.** *Of the `20`, three have a known standing status —
+`NBA_SWEEP_RUN_LOG.md` (patched with the twelve), `NBA_COMPASS.md` (read, never written),
+`nba/PP_PAYOUT_FINDINGS.md` (the build chat's, current). **`17` are simply history.***
+
+| oldest unswept files | last commit |
+|---|---|
+| `NBA_DOMAIN_MAPPING_AND_STARTUP_PLAN.md` | **`2026-08-30`** |
+| `NBA_AVAILABLE_TOOLS.md` · `NBA_ARCHITECTURE_BLUEPRINT.md` *(`96 KB`)* | **`2026-08-31`** |
+| `NBA_SYSTEM_DRAFT.md` · `NBA_HISTORICAL_BACKFILL_PLAN.md` · `NBA_ENRICHMENT_FACTORS_RESEARCH.md` | `2026-09-02` |
+
+### 🔴🔴🔴 **AND THE SHARPEST CASE IS A NEAR-TWIN OF A SWEPT DOCUMENT**
+
+**`NBA_SYSTEM_ARCHITECTURE.md`** — **`179 KB`**, unswept — **sits alphabetically adjacent to the swept
+`NBA_SYSTEM_DESIGN.md`**, and it is *camouflaged*:
+
+| it has | so a cold reader concludes |
+|---|---|
+| its own **`📑 INDEX — NBA_SYSTEM_ARCHITECTURE.md`** block | *"indexed like the swept files"* |
+| the line ***"Built from the transcripts, not from memory"*** | *"same provenance as the twelve"* |
+| **no staleness marker of any kind** | *"current"* |
+
+🔴🔴 **AND IT CARRIES CLAIMS THIS SWEEP HAS ESTABLISHED ARE FALSE — measured, not asserted:**
+
+| string | count | falsified by |
+|---|---|---|
+| `"NO CRON"` / `"no cron"` | **`3`** | **`§T26.1`** — *`P2` `45 15 * * *` and `P3` `15 21 * * *` are both LIVE* |
+| `"2025-26"` | **`4`** | **`T23-2`** — *the season resolves from the date; `grep -c` on both workflows returns `0`* |
+| **`baseline_ladder`** | **`8`** | 🔴 **THE TABLE DOES NOT EXIST** — *`SELECT to_regclass('nba_score.baseline_ladder')` ⇒ **`NULL`***, dropped by `F6-1`'s consolidation |
+
+⇒ ***A reader who opens the wrong one of two adjacently-named files is told the pipelines have no
+schedule, that the season is hardcoded, and to query a dropped table.*** ⚠ **Every one of those was a
+season-critical open item that cost this sweep multiple passes to close.**
+
+### ✅ **WHAT WAS DONE, AND WHAT WAS NOT**
+
+✅ **A `WHICH FILES ARE CURRENT` row now sits in `NBA_MASTER_SUMMARY.md`'s `🧭 START HERE` block**,
+naming the twelve explicitly and naming `NBA_SYSTEM_ARCHITECTURE.md` as the trap. 🔑 **That protects
+the reader who starts at the entry point.**
+
+🔴 **IT DOES NOT PROTECT THE READER WHO STARTS AT THE FOLDER** — *and `§T25.4`'s whole point is that
+such a reader exists.* ⚠ **The fix that would work is a staleness banner in each unswept file, or
+moving them to an `archive/` subfolder** — ***and BOTH are writes to files outside the twelve, which
+the standing constraints forbid this sweep from making.*** ⇒ 🔑 **RECORDED AS AN OWNER/BUILD-CHAT
+ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it is tracked.*
