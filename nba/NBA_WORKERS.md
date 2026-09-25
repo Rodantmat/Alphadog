@@ -2558,3 +2558,50 @@ described only by what it does, would score as absent; one named inside a code f
 present without being explained.* ***"`7` and `27` FILENAMES are absent", never "these are
 undocumented in substance" — and the converse is weaker still: **being named is not being
 documented**.***
+
+---
+
+## 🔴🔴🔴 **§T26.19 — P2 SPENT A THIRD OF EVERY NIGHT BUILDING ROWS THAT NEVER REACHED THE DATABASE, FOR THE WHOLE LIFE OF THE PIPELINE** *(T26 seg736, ASSISTANT OUTPUT; `0` of the twelve before this entry)*
+
+> 🔑🔑🔑 ***"confirmed: **zero period rows have ever reached the database**. not for this slate, not
+> for any date. **p2 spends ~43 minutes a night — a third of the pipeline — building 41,174 period
+> rows that are then dropped on the floor**, because the merge step doesn't pick them up and the
+> loader 404s looking for them. **that single finding is worth more than any speed tuning: either
+> those props matter, in which case they've been missing from scoring entirely, or they don't, in
+> which case p2 has been paying 43 minutes a night for nothing.**"***
+
+### ⚠ **THE FORK IS THE POINT, AND BOTH BRANCHES ARE SEVERE**
+
+| if the period props MATTER | if they DO NOT |
+|---|---|
+| 🔴 **they have been missing from scoring ENTIRELY** — every Q1/Q4/H1/H2 leg the apps posted was priced against nothing | 🔴 **P2 has burned `~43` minutes a night, `~33%` of the pipeline, for nothing** |
+
+🔑 **Two failure points, not one**: *the **merge step** does not pick the rows up, **and** the
+**loader `404`s** looking for them. **Either alone would have hidden the other.***
+
+### ✅✅ **CLOSED — RE-DERIVED LIVE `2026-09-25T18:17Z`**
+
+```sql
+SELECT period, count(*), count(DISTINCT game_date), count(DISTINCT season)
+  FROM nba_score.baseline_history GROUP BY period ORDER BY 2 DESC;
+```
+▶ | `FULL` **`4,410,672`** / `325` dates | `Q1` **`1,854,284`** / `303` | `Q4` **`1,086,807`** / `303`
+| `H1` **`673,860`** / `303` | `H2` **`670,682`** / `303` | — **all four period props present across
+BOTH seasons.** ✅ ***"zero period rows have ever reached the database" is now FALSE, and it was fixed
+AND BACKFILLED*** — `4,285,633` period rows, **`49.28%`** of the table.
+
+⚠ **`FULL` covers `325` dates against the periods' `303` — a `22`-date gap.** *NOT diagnosed; recorded
+under `RULE 6` as an observation, not a defect.*
+
+### 🔴🔴 **AND FIXING IT IS WHAT CREATED THE `final_hp` PERIOD-KEY COLLISION — THE TWO FINDINGS ARE ONE CHAIN**
+
+🔑🔑 ***The moment period rows started reaching the database, they started reaching `final_hp` too —
+and `final_hp` has no `period` column.*** *(`§T26.17`)* ⇒ **The period rungs landed wearing FULL-GAME
+keys, and where a period line coincided with a full-game line the upsert let the last one win.**
+⚠⚠ **The timeline is mechanical**: *seg736 sits inside T26's window (`2026-09-23T19:07` →
+`2026-09-24T04:37`); the period filter that stops the collision is commit **`0cba9a19`,
+`2026-09-24T11:18-07:00`** — **seven hours after the transcript ends.*** ⇒ ***A repair on one worker
+opened a silent corruption in the next one downstream, and the second fix followed the first by
+hours.*** 🔑 **This is the sweep's standing lesson in its strongest form: `41,174` rows a night that
+had never arrived were not inert — they were load-bearing on a key the destination could not
+represent.**
