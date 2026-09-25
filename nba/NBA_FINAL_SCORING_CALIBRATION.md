@@ -5586,3 +5586,88 @@ improvement is not a uniform lift that a re-fit of anything would have produced.
 **ships** because the out-of-sample gain concentrates in the predicted subgroup.* ⇒ ***The same
 session accepted one subgroup claim and killed another, by the same standard: does the effect appear
 where the mechanism says it must, on data the fit never saw?***
+
+---
+
+## 🔴🔴🔴 **§T26.37 — THE AVAILABILITY DELTA PRICED A LATE `Out` AS A CERTAINTY, LIVE ON P3's DECISION PATH — A BET WITH ZERO UPSIDE AND UNBOUNDED DOWNSIDE** *(source: `nba/NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` §13, an UNSWEPT sibling; verified in code and Postgres 2026-09-25; **`0` of the twelve before this entry**)*
+
+### 🔴 **THE DEFECT**
+
+*`build_availability_delta.py` rewrote **every leg of a newly-`Out` player to `0.001` / `0.999`**
+— "he is OUT: every one of his legs goes to ~0" — and `score_board_legs.py` applied it **silently, as
+step 3 of its chain**. **P3 runs this daily, so it was live on the decision path.**
+
+### 🔑🔑🔑 **WHY IT IS STRUCTURALLY GUARANTEED TO LOSE — NOT MERELY RISKY. THIS IS THE ENTRY'S REAL CONTENT.**
+
+> ① ***"When the player is genuinely out, his legs VOID."*** *A DNP is a void under the verified
+> reversion rules, so those legs are **never graded** and the override **earns nothing**.*
+> ② ***"The only way those legs reach grading is if the listing REVERSED"*** — **precisely the case
+> where the override is maximally wrong.**
+
+⇒ 🔑 ***ZERO UPSIDE, UNBOUNDED DOWNSIDE.*** ⚠⚠ **A confident override on an outcome that only settles
+when the confidence is misplaced.** *The argument needs no measurement at all — and that is what makes
+it worth recording as a REASONING PATTERN, not just a bug: **before pricing any event aggressively,
+ask whether the cases that actually settle are the cases you were right about.***
+
+### 📊 **AND THE MEASUREMENT AGREES, ON THE ONE DATE THE DELTA HAD EVER RUN** *(`2025-11-29`, split by mechanism)*
+
+| reason | graded legs | log-loss **before** | log-loss **with delta** | |
+|---|---|---|---|---|
+| `reallocated` *(teammates absorbing the minutes)* | `341` | `0.6119` | **`0.6076`** | ✅ **better** |
+| 🔴 **`now_out`** *(the player himself)* | `93` | `0.8326` | **`5.7938`** | 🔴 **`7×` WORSE** |
+
+🔑 **The two halves of one feature pointed in opposite directions** — *the teammate redistribution is a
+genuine small gain; the self-override is catastrophic* — **and only splitting by `reason` revealed it.**
+⚠ ***An aggregate log-loss over both would have shown a loss and hidden which half caused it.***
+
+### ⚠⚠ **THE CASE THAT PROVES IT, FROM THE INJURY ARCHIVE**
+
+> ***Klay Thompson listed `Out` (Management) at `14:30` and `15:30` ET, **UPGRADED to `Available` at
+> `16:30`**, then played **`25.9` minutes for `23` points**. **His `828` legs were priced at
+> `0.001`/`0.999`.**"*** 🔑 ***"'Management' is the most reversal-prone reason class there is."***
+
+### ✅✅ **THE FIX IS DEFENCE IN DEPTH — THREE INDEPENDENT GATES, ALL VERIFIED LIVE**
+
+| | where | gate |
+|---|---|---|
+| **① producer** | `build_availability_delta.py` | *a late `Out` no longer overrides; the row is still written as the RECORD that he was ruled out, with `new_hp = old_hp` and reason **`now_out_flag_only`*** |
+| **② consumer, by reason** | `score_board_legs.py:249` | `` ~adj["reason"].str.startswith("now_out") `` |
+| **③ consumer, by magnitude** | `score_board_legs.py:249` | `` move <= 0.15 `` — 🔑 **catches ANY future large override whatever its reason**, and line `251` PRINTS the rejected count |
+
+✅ **Keeping the row as a flag rather than deleting it is the right call**: *the fact that he was ruled
+out is real information; only the PRICE was wrong.*
+
+### 🔴🔴 **AND A LIVE ANOMALY THIS SWEEP FOUND ON TOP — ROWS WEARING A LABEL THEY DO NOT SATISFY**
+
+```sql
+SELECT game_date, reason, count(*), round(max(abs(new_hp-old_hp)),4) max_move, max(built_at)
+  FROM nba_score.availability_delta GROUP BY 1,2;
+```
+▶ **`2026-09-25T22:0xZ`:**
+
+| game_date | reason | rows | **max_move** | built_at |
+|---|---|---|---|---|
+| 🔴 **`2026-04-10`** | `now_out_flag_only` | `2,122` | 🔴 **`0.7086`** | **`2026-09-25T00:07:04Z`** |
+| ✅ `2025-11-29` | `now_out_flag_only` | `148` | ✅ **`0.0000`** | **`2026-09-25T20:15:32Z`** |
+| ✅ `2025-11-29` | `reallocated` | `652` | `0.0466` | `2026-09-25T20:15:32Z` |
+
+⚠⚠ ***`now_out_flag_only` asserts `new_hp = old_hp`. On `2026-04-10` those rows move by up to
+`0.7086`.*** ✅ **The `built_at` column settles it**: *the April rows were written at **`00:07`**, the
+November rows at **`20:15`** the same day — **the behaviour landed between them**, and the later run
+shows `max_move` of **exactly `0.0000`** across `148` rows. ⇒ **The April rows are PRE-FIX residue
+carrying the POST-FIX label** — the label was applied before the behaviour was.* 📜 **`RULE 61`
+exactly, with a twist: the stale rows assert a property they do not have, so their own `reason` column
+is the misleading evidence.**
+
+✅✅ **CONTAINED, NOT DANGEROUS**: *gate ② rejects them on the reason prefix and gate ③ rejects them on
+magnitude — **either alone suffices** — so no `2026-04-10` override can reach a score.*
+🔴 **Recorded, not remediated: cleaning or rebuilding that slate's delta rows is a WRITE, outside this
+sweep.**
+
+### ⚠⚠⚠ **AND NOTE WHERE THIS FINDING LIVED — IT IS `§T25.4`'s HAZARD, MADE CONCRETE**
+
+🔑🔑 ***A live defect on the daily scoring path, its structural argument, its measurement and its fix
+were recorded ONLY in `nba/NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` — a file OUTSIDE the twelve.***
+📌 **See `§T25.4`'s correction**: *that document is not stale history — it is **current, authoritative,
+actively maintained**, and already referenced by `5` of the twelve.* ⇒ **The folder hazard is not
+"unswept means stale"; it is that unswept files are a MIX, and nothing tells a reader which is which.**
