@@ -179,31 +179,45 @@ def main():
     # (delete-by-date, rewrite), so history and the live day are the same table and this reads it alone.
     # Full-game rungs carry period 'FULL' (verified across both seasons); the Q1/Q4/H1/H2 rungs are
     # excluded because an unfiltered read duplicated a full-game row wherever a period rung shared its line.
+    # PERIOD-AWARE (2026-09-25). Period legs ("1Q Points", "1H Points" - PrizePicks posts them, verified
+    # against its API shape and third-party market maps) map to props like points_q1, but the store keeps
+    # them as prop='points', period='Q1'. Until now those legs never found a rung. The board leg carries
+    # its period, the read returns every period, and the merge keys on the base prop + period. Full-game
+    # legs are period 'FULL' and behave exactly as before.
+    _PER = {"_q1": "Q1", "_q2": "Q2", "_q3": "Q3", "_q4": "Q4", "_h1": "H1", "_h2": "H2"}
+    def _split(p):
+        for suf, per in _PER.items():
+            if p.endswith(suf):
+                return p[:-len(suf)], per
+        return p, "FULL"
+    board["prop_base"], board["period"] = zip(*board["prop"].map(_split))
     lad = pd.read_sql("""
-        SELECT player_id, prop, line, p_more, p_less, anchor, ladder_offset, role_tier, used_emp
-        FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL'
+        SELECT player_id, prop AS prop_base, coalesce(period, 'FULL') AS period, line, p_more, p_less,
+               anchor, ladder_offset, role_tier, used_emp
+        FROM nba_score.baseline_history WHERE game_date = %s
     """, conn, params=(asof,))
     if lad.empty:
         print(f"ABORT: no baseline for {asof} in nba_score.baseline_history - P2 must run before P3.")
         raise SystemExit(1)
-    print(f"  baseline: nba_score.baseline_history - {len(lad):,} full-game rungs", flush=True)
+    print(f"  baseline: nba_score.baseline_history - {len(lad):,} rungs "
+          f"({int((lad['period'] == 'FULL').sum()):,} full-game, {int((lad['period'] != 'FULL').sum()):,} period)", flush=True)
     lad["player_id"] = lad["player_id"].astype(str)
     lad["line"] = lad["line"].astype(float)
     board["player_id"] = board["player_id"].astype(str)
     board["line"] = board["line"].astype(float)
 
-    d = board.merge(lad, on=["player_id", "prop", "line"], how="left")
+    d = board.merge(lad, on=["player_id", "prop_base", "period", "line"], how="left")
     exact = int(d["p_more"].notna().sum())
     print(f"  exact ladder hits: {exact:,} / {len(d):,} ({exact/len(d):.1%})", flush=True)
 
     # 2b) rungs the app offers OUTSIDE our built ladder - interpolate in log-odds from the two nearest
-    # rungs for that player+prop. Flagged so a deep alternate is never mistaken for a fitted rung.
+    # rungs for that player+prop+period. Flagged so a deep alternate is never mistaken for a fitted rung.
     miss = d[d["p_more"].isna()]
     if len(miss):
-        by = {(p, pr): g.sort_values("line") for (p, pr), g in lad.groupby(["player_id", "prop"])}
+        by = {k: g.sort_values("line") for k, g in lad.groupby(["player_id", "prop_base", "period"])}
         fills = []
         for r in miss.itertuples(index=False):
-            g = by.get((r.player_id, r.prop))
+            g = by.get((r.player_id, r.prop_base, r.period))
             if g is None or len(g) < 2:
                 fills.append((np.nan, np.nan)); continue
             lo = g[g["line"] <= r.line].tail(1)
