@@ -13,6 +13,7 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
+> 🆕 **`§T26.5` — THE AVAILABILITY FALLBACK IS BUILT, FITTED AND BACKTESTED** *(added `2026-09-25`)*. *Search that label.*
 > 🔴🔴🔴 **THIS FILE'S NUMBERING IS THE MOST BROKEN OF THE TWELVE — `§T20.6` recorded it and it is
 > unrepaired** *(renumbering would break every inbound pointer; rule 1)*. **Measured `2026-09-23`:**
 > | defect | detail |
