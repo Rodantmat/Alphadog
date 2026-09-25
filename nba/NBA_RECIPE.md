@@ -140,10 +140,10 @@ that is the useful part.
 >
 > | | |
 > |---|---|
-> | **schemas** | **`14`** — but only **`8`** hold anything. ***Create these `8`:*** `nba_calendar` · `nba_config` · `nba_control` · `nba_market` · `nba_ref` · `nba_score` · `nba_stats` · `nba_team`. **The other `6` have `0` tables and always have** *(`nba_archive`, `nba_backtest`, `nba_classification`, `nba_context`, `nba_daily`, `nba_scoring`)*. |
-> | **objects** | **`112`** *(tables + views)* |
-> | **primary keys** | **`79`** ⇒ 🔴 **`27` tables have NO primary key** |
-> | 🔴🔴🔴 **foreign keys** | ***`1`. In the entire database.*** *(and it is on an out-of-scope PrizePicks object)* |
+> | **schemas** | **`14` exist; `9` hold objects** *(`2026-09-25`)*. ***Create the ones with objects:*** `nba_calendar` · `nba_config` · `nba_control` · **`nba_daily`** · `nba_market` · `nba_ref` · `nba_score` · `nba_stats` · `nba_team`. ⚠⚠ **`nba_daily` WAS EMPTY ON `2026-09-23` and now holds `nba_daily.injury_report_snapshots`** — *the binding availability input, which had never been in Postgres at all* **(`§T26.5`)**. *Still empty: `nba_archive`, `nba_backtest`, `nba_classification`, `nba_context`, `nba_scoring`.* |
+> | **objects** | **`122`** *(tables + views), `2026-09-25`* ⚠ **was `112` two days earlier — `RULE 59`, re-derive before quoting:** `` SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname LIKE 'nba%' AND c.relkind IN ('r','v'); `` |
+> | **primary keys** | **`79`** ⇒ 🔴 **a table without one is the NORM at the top end** — *`5` of the `6` largest have none* |
+> | 🔴🔴🔴 **foreign keys** | ***`1`. In the entire database.*** *(and it is on an out-of-scope PrizePicks object)* ✅ **UNCHANGED across both derivations — and the owner has since confirmed it is DELIBERATE**: *"we intentionally did not make a join because we're going to do a lot of back testing soon"* **(`T26` seg `29`)** ⇒ ***not an oversight to repair; a design choice to preserve.*** |
 >
 > 🔑🔑 ***THIS IS THE FACT THAT MAKES A REBUILD TRACTABLE: there is no foreign-key graph, so there is
 > no topological ordering to discover. Creation order is LOGICAL, not enforced — nothing in the
