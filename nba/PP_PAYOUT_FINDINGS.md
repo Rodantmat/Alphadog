@@ -131,6 +131,10 @@ backfill of both seasons (per prop pair, hours each); the calibration would then
 roughly a day of compute. Value: ~4% more calibration evidence in 2024-25, cells moving by ~0.006
 log-odds. From opening night these players are scored like everyone else regardless.
 
+---
+
+## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
+
 
 **The rule, in the owner's words:** *"One set of data per day. It cannot grow on the day. If it needs to
 be rerun, we overwrite it. Whatever shows on the board, the full ladder, all variations, all directions,
