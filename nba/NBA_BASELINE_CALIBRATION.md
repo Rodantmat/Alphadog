@@ -2382,3 +2382,54 @@ not evidence the pipeline is green tomorrow, **if an input's shape changes on a 
 BOTH patchers.* 🔑 ***Normalise at the one point where the shape matters, rather than at every
 producer*** — *because the producers are a backfill written once and a delta written nightly, and
 only the consumer knows which columns it needs.*
+
+---
+
+## ✅✅✅ **§T26.20 — A DECISION *NOT* TO BUILD, TAKEN ON `307,000` LEGS, THAT KILLS ITS OWN AUTHOR'S HYPOTHESIS — AND CLOSES THE PRESEASON THREAD** *(T26 seg1079, ASSISTANT OUTPUT)*
+
+> 🔑🔑🔑 ***"the data says don't build it."***
+
+*The hypothesis under test: that legs for players with **no prior-season history** are mis-priced, and
+deserve an **evidence-depth filter** or a **new confidence factor**.*
+
+| season | prior-season history | legs | hit rate | realized value |
+|---|---|---|---|---|
+| **2024-25** | **yes** | `123,779` | `0.5136` | `1.5408` |
+| **2024-25** | **no** | `8,331` | `0.5169` | **`1.5506`** |
+| **2025-26** | **yes** | `161,914` | `0.5160` | `1.5480` |
+| **2025-26** | **no** | `13,011` | `0.5134` | **`1.5402`** |
+
+> ***"no-history legs realize `1.5506` and `1.5402` against known players' `1.5408` and `1.5480` —
+> **better in one season, worse in the other, differences of under a point, and the sign flips. that's
+> noise, not an edge leak.** filtering them would have cost money in 2024-25 and saved a rounding
+> error in 2025-26."***
+
+### 🔑🔑 **THE SIGN FLIP IS THE WHOLE ARGUMENT, AND IT IS THE RIGHT TEST**
+
+⚠ **A single-season read of either row would have "confirmed" the hypothesis** — *2024-25 alone says
+no-history legs OUTPERFORM; 2025-26 alone says they UNDERPERFORM.* 🔑 ***Two seasons disagree in
+direction on a `21,342`-leg subgroup, which is what noise looks like and what an edge never does.***
+
+### ✅ **THE DECISION, IN THE AUTHOR'S OWN WORDS — AND THE RETRACTION INSIDE IT**
+
+> ***"decision, on the evidence: **no evidence-depth filter, no new confidence factor.** … **so the
+> calibration swings i found on single dates were exactly what they looked like at that sample size:
+> variance.** … **i'm dropping it rather than shipping something that felt sharp on five dates.**"***
+
+⚠⚠ **A prior finding of this same session is RETRACTED here by its own author**, *and the corpus's
+existing line is cited as having been right all along:* ***"the documentation was right that this
+layer isn't where gains are — **'real but small… not where the big gains are'** — and my subgroup
+hypothesis doesn't survive a proper sample."***
+
+🔑🔑 **THIS IS `RULE 58`'s SHAPE ON A MEASUREMENT RATHER THAN A QUERY**: *a result on **five dates**
+was a claim about the SAMPLE, not about the population, until it was run at `307,000` legs.*
+
+### ✅ **AND IT CLOSES THE PRESEASON THREAD BY ELIMINATION**
+
+> ***"that also closes the preseason thread for good: **the one plausible reason to want preseason
+> data was pricing unknown players better, and unknown players are already priced correctly.**"***
+
+🔑 **An argument by elimination, not by measurement of preseason itself** — *the feature's only
+remaining justification was removed, so the feature has none.* ⚠ **Read alongside `§T26.21`, which
+reaches the same conclusion from the opposite direction and carries the author's correction of his own
+earlier figure.**
