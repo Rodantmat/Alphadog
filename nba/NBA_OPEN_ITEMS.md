@@ -13,7 +13,16 @@ quoted ID, never a line number.*
 
 ⚠ **Re-derive before acting.** *The items are stable; the tallies are not.*
 
-## 🔴 A · OWNER DECISIONS — *nothing below moves without you*
+## 🔴 A · THE OPEN DECISIONS — ~~*nothing below moves without you*~~ ⇒ 🆕 **DELEGATED `2026-09-24` (`§T26.3`)**
+
+> 🔑🔑 **THE OWNER NO LONGER MAKES THESE.** *Verbatim, `T26`:* ***"I don't make those decisions. You can
+> make those decisions, but with strong research, debug, documentation study, analyzing the data."***
+> ⚠ **THE CONDITION IS NOT OPTIONAL** *(stated four ways — segs `44`, `773`, `1029`, `1081`)*:
+> **online research · deep system debug · study of this documentation · analysis of the live data.**
+> **Escalate only when research cannot settle it** — *"if still not resolvable, then you can ask me."*
+>
+> 🔴🔴🔴 **THE TWO EXCEPTIONS, WHICH REMAIN OWNER-ONLY: `F2-1` and `T22-1b`.** ***They are not
+> decisions — they are credential actions. No amount of research rotates a key.***
 
 | # | item | the decision | why it cannot be taken here |
 |---|---|---|---|
