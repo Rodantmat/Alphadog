@@ -337,7 +337,7 @@ that is the useful part.
 > failed** on the measured run, and **`17` files carry the pattern, `7` of them in `P2`/`P3`.*
 > ▶ **`NBA_SYSTEM_DESIGN.md` → `§T23.5`.** ⇒ ***Run dates ONE AT A TIME until that is fixed.***
 > **Mechanism**: `P2` accepts an `asof` input; `P3` is re-run for the date. *`STEP 9` / `STEP 10` give
-> each pipeline's steps.* ⚠ **`P3` will abort on any `2026-27` date until `T23-2` is fixed.**
+> each pipeline's steps.* ~~⚠ **`P3` will abort on any `2026-27` date until `T23-2` is fixed.**~~ ✅ **`T23-2` FIXED `2026-09-24` — the season resolves from the date, so a replay of any date works.** ⚠ **`P2` also DELETES the slate by date and rewrites it, so a rerun REPLACES rather than stacks** *(`§T26.4`)*.
 >
 > ### 4 · ⏰ **CHANGE A PIPELINE'S SCHEDULE** ~~*(add the `P2` cron)*~~
 >
