@@ -51,7 +51,28 @@ def active_stats_season(today=None):
         start_year = today.year - 1
     else:
         start_year = today.year if today.month >= 10 else today.year - 1
-    return f"{start_year}-{str(start_year + 1)[2:]}"
+    season = f"{start_year}-{str(start_year + 1)[2:]}"
+    # 🔴 ROLL OVER ON THE FIRST REGULAR-SEASON GAME, NOT ON OCTOBER 1 (fixed 2026-09-25). The rule above
+    # returned the new season from October 1, but the docstring's intent - "only once it starts" - was
+    # never implemented: in 2026 the first regular-season game is October 20, and P1 runs on Mondays
+    # October 5, 12 and 19. Three weekly runs would have queried stats.nba.com for a season with ZERO
+    # regular-season games and, exactly as the docstring warns, could have overwritten last season's
+    # profiles with empties. The schedule file P2 refreshes carries every game with its label; if the
+    # new season's first non-preseason game is still ahead, the season with real data is the prior one.
+    # Preseason games do not count: they are rejected for the projection pipeline. Missing or unreadable
+    # file -> the old rule, unchanged.
+    if today.month == 10:
+        try:
+            import json
+            from pathlib import Path
+            games = json.loads(Path("nba/data/nba_schedule_current.json").read_text()).get("games", [])
+            first = min((g["game_date"][:10] for g in games
+                         if g.get("season") == season and (g.get("game_label") or "") != "Preseason"), default=None)
+            if first and today.isoformat() < first:
+                return f"{start_year - 1}-{str(start_year)[2:]}"
+        except Exception:  # noqa: BLE001 - no file, no change in behaviour
+            pass
+    return season
 
 
 def prior_seasons(n, today=None, base=None):
