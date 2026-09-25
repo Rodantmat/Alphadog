@@ -39,6 +39,35 @@ constraints that shaped it. This is the operational spec.
 > | 🔴🔴🔴 **THE SECOND DEADLOCK — `CREATE UNIQUE INDEX IF NOT EXISTS` INSIDE THE WRITE TRANSACTION.** *Any PARALLEL catch-up run deadlocks; `181` of `325` dates failed. **`17` files carry the pattern, `7` of them in `P2`/`P3`.*** ⚠ **SEASON-CRITICAL — this is the tool you would reach for to recover from `T23-2`, and it is the tool that breaks.** | **`§T23.5`** |
 > | 📏 **what the leg scorer SKIPS, in its own docstring's numbers** | **`§T23.13`** |
 >
+> ### 🆕 §T26.13 — 🔑🔑 **`P2` DOES THE SAME WORK ELEVEN TIMES — AND THE HONEST LIMIT ON A DELTA**
+>
+> *`T26`, `2026-09-24`. **Read from the code, not from timings.***
+>
+> 🔴 **THE STRUCTURE.** *The baseline builder is invoked **once per prop pair** — **`8` pairs, plus `3`
+> more for components = `11` invocations**. **Every invocation re-parses three seasons of player and
+> team logs, then rebuilds all the league-wide fits** — minutes ratios, blowout bins, role tiers,
+> four-factors — **before touching its own two props.*** ⇒ ***That prefix is prop-INDEPENDENT, so it is
+> eleven identical rebuilds a night.***
+>
+> ✅ **The safe fix, and its test.** *Running all props in ONE process is **equivalent by
+> construction** — same code, same inputs, same per-prop math; only the shared prefix stops repeating.*
+> **The test is stated and is the right one:** ***"build one slate both ways and diff the merged ladder
+> row for row. Identical or it doesn't ship."***
+>
+> ## ⚠⚠ **THE LIMIT ON A TRUE DELTA — and this is the part to carry**
+>
+> *Daily change comes from two places: **last night's games**, and **roster/status moves**.*
+> ✅ **Sums and counts are ADDITIVE, so those update cleanly.**
+> 🔴 ***THE PROBLEM IS THE TIER BOUNDARIES.*** **The empirical cells bin players by minutes and role,
+> and adding a night can SHIFT A BOUNDARY — which reassigns players and changes probabilities.**
+>
+> ⇒ 🔑 ***"A delta is only 'exactly the same' if the BINNING IS RECOMPUTED from the updated
+> aggregates, not carried forward."*** **That is the owner's own acceptance condition** *(seg `324`:
+> "if it runs a delta mode, it needs to represent exactly the same as if it was running one by one")*
+> **made precise: the incremental part is the aggregates; the binning must still be global.**
+> ⚠ *Gated behind a byte-for-byte diff on several dates before shipping.* ***`NOT RECORDED`: whether
+> that diff has been run.***
+>
 > ### 🆕 §T26.10 — 🔑 **PRESEASON IS NOT A SLATE** *(owner decision `2026-09-24`, live in the code)*
 >
 > ***Preseason is REJECTED for the projection pipeline and used for BOARD AND MULTIPLIER LEARNING
