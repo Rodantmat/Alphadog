@@ -43262,3 +43262,45 @@ necessary; the owner's rule is that guessing is therefore never permitted.** �
 bar this sweep is measured against: every time a reader has to guess, the failure is the
 documentation's.*** ▶ *That is the same standard as `§F7.16`'s reader test, stated by the owner
 independently.*
+
+# §T26.4 — ✅✅✅ **`F6-1` IS RESOLVED — BUT NOT THE WAY THE ITEM PROPOSED. THE TABLE WITH `ot_rule` IN ITS KEY WAS DELETED.**
+
+*`T26` pass `1`, `2026-09-25`. **Verified live and against `nba/load_baseline_ladder.py`.**
+⚠ **Read this before acting on `F6-1`: the item is closed, and a fixer following its stated remedy
+would now be editing a table that no longer exists.***
+
+## 1 · What `F6-1` said, and what is true now
+
+| | |
+|---|---|
+| **The item** | *`load_baseline_ladder.py`'s merge key omits `ot_rule`, a column of the destination `nba_score.baseline_ladder`'s **PRIMARY KEY**, so the loader silently drops `1,421` rows a run.* |
+| ✅ **Live `2026-09-25`** | 🔴 ***`nba_score.baseline_ladder` DOES NOT EXIST.*** **`nba_score.baseline_history` — the destination now — has NO `ot_rule` COLUMN AT ALL**, and its unique index is `` (game_date, player_id, game_id, prop, period, line) ``. ⇒ ***The loader's in-memory merge key `(player_id, game_id, prop, period, line)` MATCHES the destination exactly. There is no longer a mismatch to lose rows through.*** |
+
+⇒ 📌 ***The defect was real and is gone. It was cured by removing the second table, not by adding the
+column — so `F6-1`'s own remedy is now unfollowable.***
+
+## 2 · 🔑🔑 Why there were two tables, and what it would have cost on opening night
+
+> **`nba/load_baseline_ladder.py`, verbatim:**
+> ***"This used to write `nba_score.baseline_ladder` — a SECOND table for the same concept, while the
+> season backfill wrote `nba_score.baseline_history`, and the two diverged: the same slate held
+> `118,759` rows in one and `113,357` in the other, built from different inputs three days apart.
+> Everything downstream that matters reads `baseline_history` (`build_final_hp`, the calibration
+> chain, the prop universe, the backsims) — so P2 writing elsewhere meant that **on opening night
+> `final_hp` would have found NO baseline for the slate and P2 would have certified RED after a
+> successful build**."***
+
+🔑 ***Two stores for one concept, `5,402` rows apart, with the pipeline writing the one nothing reads.***
+⚠ **That is a `T20-6`-class defect — a certifier asserting against a table the pipeline does not fill —
+and it would have fired on the first night of the season.** ✅ **Owner decision `2026-09-24`: ONE
+BASELINE STORE, one set per day, the last run overwrites.**
+
+## 3 · ✅ Two further mechanisms recorded in the same fix, both worth carrying
+
+| | |
+|---|---|
+| **The write is now DELETE-BY-DATE + INSERT, in ONE transaction** | *not autocommit, with `pg_advisory_xact_lock`.* ***"A failed insert after a committed delete once emptied the table — never again."*** ⇒ **a rerun REPLACES a slate, never stacks it** |
+| 🔑 **The `period` convention, and a correction inside the fix itself** | **Full-game rungs carry `period = 'FULL'`, never `NULL`** — *verified on `5` dates across both seasons (`2024-10-22`, `2025-01-15`, `2025-04-13`, `2025-10-21`, `2026-04-10`)*. ⚠ ***"An earlier version of this comment asserted NULL and was WRONG; the unique index treats NULL as a distinct key from 'FULL', so writing NULL here would have duplicated every rung."*** |
+
+📌 ***The second row is `RULE 58` in someone else's hands: a `NULL`-vs-`'FULL'` spelling difference that
+a unique index treats as two different rows, caught by checking five dates instead of assuming one.***
