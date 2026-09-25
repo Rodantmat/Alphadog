@@ -53,6 +53,51 @@ def main():
         # confidence refit: baseline_history_uidx (uniqueness, 54.5M scans) and the wide lookup.
         prop_set = sorted({r["prop"] for r in rows})
         cur.execute("DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)", (season, prop_set))
+        # 🔑 LOAD BOARD-SCOPED (owner, 2026-09-25: "why rebuild everything just to clean it again?").
+        # The recipe computes every rung regardless, but writing the full spectrum only to prune it
+        # afterwards is waste: on 2026-09-24 that meant 19M rows written, 10.8M deleted, and a rewrite
+        # to get the disk back. The retention rule (§0c) is applied HERE instead: keep a rung only if it
+        # is on a board that day - REAL boards (every app, every label) or DERIVED boards (the simulated
+        # legs in prop_universe) - and keep EVERY rung of a prop that no board carried that day (the
+        # raw material for deriving it). Same keys, same vocabulary (nba_ref.norm_name, the scorer's
+        # MARKET_TO_PROP) as prune_baseline_to_board.py and build_final_hp.py. HISTORY_SCOPE=full loads
+        # the full spectrum if ever needed. Day-of P2 loads still write the full ladder (load_baseline_ladder).
+        scope_mode = (os.environ.get("HISTORY_SCOPE") or "board").lower()
+        if scope_mode != "full":
+            import sys as _sys
+            _sys.path.insert(0, "nba")
+            from score_board_legs import MARKET_TO_PROP
+            _per = {"_q1": "Q1", "_q4": "Q4", "_h1": "H1", "_h2": "H2"}
+            def _split(p):
+                for suf, per in _per.items():
+                    if p.endswith(suf):
+                        return p[:-len(suf)], per
+                return p, "FULL"
+            pairs = ",".join("(%s,%s,%s)" for _ in MARKET_TO_PROP)
+            flat = []
+            for mk, pr in MARKET_TO_PROP.items():
+                b, per = _split(pr); flat += [mk, b, per]
+            cur.execute(f"""CREATE TEMP TABLE _bh_keys ON COMMIT DROP AS
+                SELECT DISTINCT b.game_date, m.player_id::text AS player_id, v.prop, v.period, b.line
+                FROM nba_market.board_snapshots b
+                JOIN (VALUES {pairs}) AS v(mk, prop, period) ON replace(b.market_key, '_alternate', '') = v.mk
+                JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(b.player)
+                WHERE b.line IS NOT NULL AND v.prop = ANY(%s)
+                  AND b.game_date BETWEEN (SELECT min(game_date) FROM _bh_stage) AND (SELECT max(game_date) FROM _bh_stage)
+                UNION
+                SELECT DISTINCT u.game_date, u.player_id::text, u.prop, 'FULL', u.line
+                FROM nba_market.prop_universe u
+                WHERE u.line_source = 'simulated' AND u.line IS NOT NULL AND u.prop = ANY(%s)
+                  AND u.game_date BETWEEN (SELECT min(game_date) FROM _bh_stage) AND (SELECT max(game_date) FROM _bh_stage)""",
+                flat + [prop_set, prop_set])
+            cur.execute("CREATE INDEX ON _bh_keys (game_date, player_id, prop, period, line)")
+            cur.execute("CREATE TEMP TABLE _bh_scope ON COMMIT DROP AS SELECT DISTINCT game_date, prop, period FROM _bh_keys")
+            cur.execute("CREATE INDEX ON _bh_scope (game_date, prop, period)")
+            cur.execute("SELECT count(*) FROM _bh_keys")
+            print(f"  board keys for {season} {prop_set}: {cur.fetchone()[0]:,}", flush=True)
+        else:
+            cur.execute("CREATE TEMP TABLE _bh_keys (game_date date, player_id text, prop text, period text, line numeric) ON COMMIT DROP")
+            cur.execute("CREATE TEMP TABLE _bh_scope (game_date date, prop text, period text) ON COMMIT DROP")
         # BULK LOAD (2026-09-25). The previous executemany inserted a season of one prop pair (~700k
         # rows) one row at a time through the unique index: measured ~1 hour per pair, with every other
         # loader waiting on the advisory lock behind it. COPY into a temp staging table, then one
