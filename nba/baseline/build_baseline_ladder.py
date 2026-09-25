@@ -138,6 +138,10 @@ s = rep(s, '''for c in ["PTS", "REB", "AST", "FG3M", "FG3A", "PF", "BLK", "STL",
 s = rep(s, '''        hist = d[(d["season"].isin(TRAIN) | (d["ym_dt"] < month)) & d["tier"].notna()]''',
 '''        _t0 = test["GAME_DATE"].min()
         hist = d[(d["GAME_DATE"] < _t0) & d[col].notna() & d["tier"].notna()]''')
+# The same replacement build_baseline_history.py makes: put the two components on every reliability row so
+# the emission above can carry them. The recipe's rel frame does not have them by default.
+s = rep(s, '''            rel = pd.DataFrame({"prop": prop, "offset": off, "p_over": p_over, "p_param": p_param, "actual": actual_over, "anchor": test["anchor"].values, "line": line.values, "PLAYER_ID": test["PLAYER_ID"].values, "GAME_ID": test["GAME_ID"].values, "season": test["season"].values, "role_tier": test["role_tier"].values, "var_band": test["var_band"].values, "used_emp": ~np.isnan(p_emp), "month": str(month)})''',
+        '''            rel = pd.DataFrame({"prop": prop, "offset": off, "p_over": p_over, "p_param": p_param, "actual": actual_over, "anchor": test["anchor"].values, "line": line.values, "PLAYER_ID": test["PLAYER_ID"].values, "GAME_ID": test["GAME_ID"].values, "season": test["season"].values, "role_tier": test["role_tier"].values, "var_band": test["var_band"].values, "used_emp": ~np.isnan(p_emp), "month": str(month), "proj_min": test["proj_min"].values, "rate36": test["rate36"].values})''')
 s = rep(s, '''def brier(p, y): return float(np.mean((p - y) ** 2))''',
 '''_ladder = rel[rel["month"] == str(pd.Period(ASOF, freq="M"))].copy()
 _vp = pd.DataFrame(v_players)[["PLAYER_ID", "GAME_ID", "TEAM_ID"]].drop_duplicates() if v_players else pd.DataFrame(columns=["PLAYER_ID", "GAME_ID", "TEAM_ID"])
