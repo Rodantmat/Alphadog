@@ -144,8 +144,15 @@ _vp = pd.DataFrame(v_players)[["PLAYER_ID", "GAME_ID", "TEAM_ID"]].drop_duplicat
 _ladder = _ladder.merge(_vp, on=["PLAYER_ID", "GAME_ID"], how="inner")
 # rungs below the natural floor collapse onto the same 0.5 line -> keep one row per distinct (player, game, prop, line)
 _ladder = _ladder.sort_values("offset").drop_duplicates(subset=["PLAYER_ID", "GAME_ID", "prop", "line"], keep="last")
+# COMPONENTS EMITTED (2026-09-25, parity with build_baseline_history.py): proj_min and rate36 are what the
+# availability delta re-derives rungs from and what the confidence refit reads through the covering
+# index. The backfill carried them (0% NULL); the daily artifact did not, so every in-season row would
+# have loaded NULL - the delta's reallocation NaN-dropped on every leg and the confidence features went
+# silent. Same rows, same fields, both paths.
 out_rows = [{"player_id": r.PLAYER_ID, "team_id": r.TEAM_ID, "game_id": r.GAME_ID, "game_date": str(ASOF), "prop": r.prop, "period": "FULL", "line": float(r.line), "anchor": float(r.anchor), "offset": int(r.offset),
-             "p_more": round(float(r.p_over), 4), "p_less": round(float(1 - r.p_over), 4), "p_raw": round(float(r.p_raw), 4), "role_tier": r.role_tier, "var_band": r.var_band, "used_emp": bool(r.used_emp)} for r in _ladder.itertuples(index=False)]
+             "p_more": round(float(r.p_over), 4), "p_less": round(float(1 - r.p_over), 4), "p_raw": round(float(r.p_raw), 4), "role_tier": r.role_tier, "var_band": r.var_band, "used_emp": bool(r.used_emp),
+             "proj_min": round(float(getattr(r, "proj_min", np.nan)), 3) if np.isfinite(getattr(r, "proj_min", np.nan)) else None,
+             "rate36": round(float(getattr(r, "rate36", np.nan)), 4) if np.isfinite(getattr(r, "rate36", np.nan)) else None} for r in _ladder.itertuples(index=False)]
 _meta = {"asof": str(ASOF), "history_seasons": TRAIN, "current_season": TEST[0], "slate_games": len(_slate), "players": int(_ladder["PLAYER_ID"].nunique()), "rows": len(out_rows), "props": sorted(_ladder["prop"].unique().tolist()),
          "recipe": "classification_ladder_v12 (certified two-season recipe) + production patches", "factor_fits": FACTOR_FITS, "role_minutes_multiplier": {k: round(float(v), 4) for k, v in ROLE_MIN_MULT.items()}}
 _tag = ("_" + os.environ["BT_PROPS"].replace(",", "-")) if os.environ.get("BT_PROPS") else ""
