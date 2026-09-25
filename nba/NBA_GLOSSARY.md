@@ -9,7 +9,14 @@ context, and which document section. Any material term appearing more than once 
 > **Every term used across the NBA system — what it means, and where it came from.** *Two structures:
 > **`§Z`** is the flat lookup (term → location, covers `A`–`Z`); the **body blocks** hold the
 > definitions. Where they disagree, the body is newer.*
-> 📏 **`47` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_GLOSSARY.md ``
+> 📏 **`47` sections · `2026-09-23`** *(re-derive, never quote — `1` section added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_GLOSSARY.md ``
+>
+> 🆕🔴🔴🔴 **SECTION ADDED `2026-09-25` — AND IT IS A ROUTING FACT, WHICH IS WHY IT LIVES HERE.**
+> | § | what it is |
+> |---|---|
+> | 🔴🔴🔴 **`§T25.4`** | **THE FOLDER IS THE FINDABILITY HAZARD THE CAMPAIGN NEVER ADDRESSED — `12` of `32` `.md` files in `nba/` are swept, and NOTHING marks the rest.** ⚠⚠ **The unswept files are a MIX, not history**: **`NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`** *(`2026-09-24`)* is **CURRENT AND AUTHORITATIVE** — the per-factor fallback record, cited by `5` of the twelve, and the only place a live scoring-path defect was written down *(`§T26.37`)* — while **`NBA_SYSTEM_ARCHITECTURE.md`** *(`2026-09-23`, **one day apart**)* carries `"NO CRON"` ×`3`, `"2025-26"` ×`4` and **`baseline_ladder` ×`8` for a table that no longer exists**. 🔑 ***Same folder, same naming convention, same `📑 INDEX` styling, no staleness marker on either*** ⇒ item **`T25-1`** |
+>
+> ⚠⚠ **SO "ONLY THE TWELVE ARE CURRENT" IS ALSO WRONG** — *believing it would have cost this sweep `§T26.37` entirely.* ▶ **`🧭 START HERE` in `NBA_MASTER_SUMMARY.md` names all four categories: maintained · current-but-owned-elsewhere · the trap · history.**
 >
 > 🔗 **Anchors are heading text, never line numbers.** *To resolve a `§` pointer:* `` grep -rn "§T9.40b" nba/*.md ``
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
