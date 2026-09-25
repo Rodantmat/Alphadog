@@ -182,7 +182,7 @@ table's.***
 > | **`T23-1`** | 🔴🔴 **The model does not beat PrizePicks** — with the standards-only exception | heading |
 > | **`T20-6`** | 🔴🔴 **`7` of `12` certifier checks assert tables NO PIPELINE WRITES** — *"the largest structural finding of the sweep"* | heading |
 > | **`T20-4`** | 🔴🔴 **`P3` is hardcoded to LAST season, in two scripts** | heading |
-> | **`T20-5`** | 🔴🔴 **The grader's default window ends `2026-04-12` — and nothing catches it.** *The brief's ONLY silent blocker* | heading |
+> | ✅ ~~**`T20-5`**~~ | ✅✅✅ **CLOSED `2026-09-25`, `§T26.30`** — *both hardcoded ceilings gone: the grader defaults to a **rolling `7`-day window ending today**, `build_rung_market` to **the current month**.* 🔑 **THE BRIEF NOW HAS NO SILENT BLOCKER.** ⚠ ~~*The grader's default window ends `2026-04-12` — and nothing catches it. The brief's ONLY silent blocker*~~ | heading |
 > | **`T20-13`** | 🔴🔴 **`baseline_history` carries `22` October props against a `>= 25` gate** ⚠ *duration corrected `2026-09-23`* | heading |
 > | **`T20-14`** | 🔴 **Betr's access token expires `2026-10-10`** — ten days before opening night | heading |
 > | **`T20-15`** | 🔴 **Both `P2` and `P3` certify RED on every zero-game day** | heading |
