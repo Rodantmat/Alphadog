@@ -2887,7 +2887,7 @@ session that wrote the rule.** *The guard that catches it is the board-key scope
 
 ---
 
-## ⚠⚠⚠ **§T26.24 — `T16-9`'s EVIDENCE IS NO LONGER DERIVABLE, AND AN INDEX SCAN COUNTER THAT *FELL* IS WHY** *(`SELECT` 2026-09-25T18:36Z; `RULE 61` applied to this corpus's OWN standing claim)*
+## ⚠⚠⚠ **§T26.24 — `T16-9` RE-DERIVED: THE INDEX IS STILL DEAD, TWO OF ITS "EARNING" SIBLINGS HAVE GONE QUIET, AND THIS SECTION'S FIRST VERSION WAS WRONG** *(`SELECT` 2026-09-25T18:36Z)*
 
 **The corpus's claim, in three places**: *`board_outcomes_nm_idx` — **`303 MB`, `idx_scan` = `0`**,
 while **"its three siblings, built in the same batch on the same normalised-name join, show `23.4M` /
