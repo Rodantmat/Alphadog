@@ -64,8 +64,8 @@ that is the useful part.
 > | step | what it covers | 🚩 |
 > |---|---|---|
 > | **`STEP 8`** | **`P1` · THE WEEKLY STATIC LAYER** — `nba-p1-weekly-static.yml`, `9` steps, **the only PIPELINE with a cron** *(other NBA workflows do have one — see `🗂 THE 34 WORKFLOWS`)* | |
-> | **`STEP 9`** | **`P2` · THE OVERNIGHT HEAVY PASS** — `19` steps, **no cron** | |
-> | **`STEP 10`** | **`P3` · THE AFTERNOON LIGHT PASS** — `11` steps, **no cron**, `1:15 PM PT` cutoff | |
+> | **`STEP 9`** | **`P2` · THE HEAVY PASS** — ✅ **cron `45 15 * * *` LIVE** ⚠ **it runs in the MORNING now, not overnight** *(owner decision `2026-09-23`; the filename is unchanged)* | |
+> | **`STEP 10`** | **`P3` · THE AFTERNOON LIGHT PASS** — ✅ **cron `15 21 * * *` LIVE**, `1:15 PM PST` / `2:15 PDT` cutoff | |
 > | **`STEP 11`** | 🔑 **THE BUILD ORDER — what must exist before what**; *incl.* 🔴 **the gate that sits on top of all of it, in the owner's words (`§0z-3`)** *and* ⚠⚠ **two `NOT RECORDED` blocks** | 🔑 |
 >
 > ### ⏱ **D · OPERATING THE SYSTEM (the two sections written for game day)**
