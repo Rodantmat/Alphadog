@@ -5544,3 +5544,45 @@ them.*** ⚠ **The first board-scoped rebuild would have passed any row-count-fe
 `13.79M` is a `21%` drop, entirely plausible* — **and it was `3.6×` wrong.** 🔑 **Only a test that
 asserts the store CONTAINS NOTHING OFF THE BOARD catches it, which is the `0`-off-board query
 `§T26.15` now records as the standing check.**
+
+---
+
+## ✅✅ **§T26.22 — "NEXT MAN UP" SHIPS, AND ITS GAIN LANDS EXACTLY WHERE THE MECHANISM PREDICTS** *(T26 seg1121, ASSISTANT OUTPUT)*
+
+> ***"the **"next man up"** feature **earns its place, out of sample**."***
+
+| segment | n | Brier **without** | Brier **with** | improvement |
+|---|---|---|---|---|
+| **all 2025-26** | `26,543` | `0.07211` | `0.07034` | **`2.46%`** |
+| ✅ **bench players only** | `14,263` | `0.07516` | `0.07297` | ✅ **`2.91%`** |
+
+> ***"fit on 2024-25, tested on the season it never saw, and **the gain concentrates exactly where the
+> mechanism predicts — players who didn't start last game.** shipping it with a callable
+> interface."***
+
+### 🔑🔑 **THIS IS A THIRD LAYER ON `§T26.12`'s MEASUREMENT, NOT A SEPARATE ONE — THE NUMBERS INTERLOCK**
+
+⚠ **`0.07211` on `26,543` is `§T26.12`'s full `A5` model** *(recorded there as `0.0722` on the same
+`26,543` player-games)*. ⇒ **"next man up" is scored as an INCREMENT ON TOP of the fallback `§T26.12`
+already certified**, giving one continuous ladder:
+
+| layer | Brier | source |
+|---|---|---|
+| base rate only | `0.2487` | `§T26.12` |
+| "started last game" *(the obvious rule)* | `0.0834` | `§T26.12` |
+| **`A5` full model** *(+ recent-start rate, minutes band)* | **`0.0722`** | `§T26.12` — **`13.5%`** |
+| ✅ **+ "next man up"** | ✅ **`0.07034`** | **here — a further `2.46%`** |
+
+🔑 **Read the two increments together and the shape is diminishing but real**: *`13.5%`, then `2.46%`.*
+
+### ✅✅ **THE ACCEPTANCE TEST IS THE MECHANISM, NOT THE MARGIN — AND THAT IS THE ENTRY'S VALUE**
+
+⚠ **`2.46%` overall is small enough to be argued either way.** 🔑🔑 ***What decides it is that the gain
+is LARGER on the subgroup the mechanism names*** — *bench players, `2.91%` against `2.46%`* — **so the
+improvement is not a uniform lift that a re-fit of anything would have produced.**
+
+📌 **CONTRAST WITH `§T26.20`, AND THE PAIR IS THE LESSON.** *There, a subgroup hypothesis was
+**dropped** because two seasons disagreed in SIGN on `307,000` legs. Here a subgroup hypothesis
+**ships** because the out-of-sample gain concentrates in the predicted subgroup.* ⇒ ***The same
+session accepted one subgroup claim and killed another, by the same standard: does the effect appear
+where the mechanism says it must, on data the fit never saw?***
