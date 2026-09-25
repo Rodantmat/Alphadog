@@ -131,7 +131,7 @@ that is the useful part.
 > | **15** | **THE MULTIPLIER ENGINE** — per-leg payout pricing | 🔴 **NOT IN THIS FILE.** ▶ **`NBA_MULTIPLIERS.md`**: the endpoint `§0.9-T22` · the pricing law `§0.10-T22` · the flat `25%` house edge `§0.12-T22` | |
 > | **16** | **THE CERTIFIER** — the twelve checks, and what they miss | **`NBA_SYSTEM_DESIGN.md`** → `WHAT CERTIFIES GREEN WHILE BROKEN` and `THE SWALLOWED-FAILURE CENSUS` | 🔴 **`T20-6`: it asserts tables no pipeline writes** |
 > | **17** | **PAPER TRADING** | 🔴 **NOT IN THIS FILE.** ▶ **`NBA_SYSTEM_DESIGN.md`** → **`standards_3pick_v1`**, specified end to end *(selection → packing → settlement)* | |
-> | **18** | **Assemble the three pipelines and the day** | **`STEP 8`** `P1` · **`STEP 9`** `P2` · **`STEP 10`** `P3` · **`STEP 12`** the game-day timeline and the four clocks | 🔴 **`P2` and `P3` have NO CRON** |
+> | **18** | **Assemble the three pipelines and the day** | **`STEP 8`** `P1` · **`STEP 9`** `P2` · **`STEP 10`** `P3` · **`STEP 12`** the game-day timeline and the four clocks | ✅ **`P1`/`P2`/`P3` all have live crons** *(`2026-09-24`)* |
 > | **19** | **Dry-run opening night before it happens** | **`STEP 13`** | 🔴🔴🔴 **`T23-2`: `P3` aborts on every `2026-27` date · `§T23.5`: parallel catch-up deadlocks** |
 >
 > ### 🗄 **THE DATABASE, IN CREATION ORDER** *(derived live `2026-09-23`, `§F7.23` — read-only)*
