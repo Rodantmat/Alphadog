@@ -105,8 +105,14 @@ constraints that shaped it. This is the operational spec.
 > ✅✅ **RE-VERIFIED LIVE `2026-09-25`.** ~~*Two of the three pipelines have no schedule, the one that
 > produces picks aborts on every date of the new season, and the tool you would reach for to catch up
 > deadlocks.*~~ ⇒ ***The first two are FIXED. The pipeline starts itself and runs the new season.***
-> 🔴 **ONE REMAINS: the parallel catch-up still DEADLOCKS** *(`§T23.5`)* — **`13` files carry
-> `CREATE … INDEX IF NOT EXISTS`, `4` in `P2`/`P3`.** ***Run recovery dates ONE AT A TIME.***
+> ✅✅ **`§T23.5` IS FIXED ON THE P2/P3 PATHS** *(`2026-09-23`; verified `2026-09-25`, `§T26.32`)* —
+> **all `4` index-creating P2/P3 scripts check `to_regclass(...) IS NULL` before creating.**
+> ⚠ ***KEEP RUNNING RECOVERY DATES ONE AT A TIME UNTIL A PARALLEL CATCH-UP HAS ACTUALLY SUCCEEDED*** —
+> *the fix is sound and has never been exercised, and the failure it prevents cost `181` of `325`
+> dates.* 🔴 **Residual: `build_defender_ratings.py` (P1) is the one unguarded script in any pipeline.**
+> ⚠⚠ ~~*ONE REMAINS: the parallel catch-up still DEADLOCKS — `13` files carry
+> `CREATE … INDEX IF NOT EXISTS`, `4` in `P2`/`P3`*~~ — **that count was the STRING, which the guard
+> leaves in place; `RULE 62` was born from this reading** *(kept under `RULE 40`)*.
 > ▶ **On the decision surface: `NBA_OPEN_ITEMS.md` → `ACT ON
 > THIS` rows `1c`, `1d` and `4` (`T20-3`).**
 >
