@@ -72,7 +72,7 @@ table's.***
 |---|---|---|
 | 🔴🔴🔴 **`T20-25`** | **the player bridge is WRITTEN with one normaliser and READ with another** — **`6.01%` of a real slate's board rows silently dropped, and it is RUNNING NOW** | 🔴 **SILENT** |
 | 🔴🔴🔴 **`T20-17`** | **a dropped injury-archive shard silently truncates the availability delta** — and that feeds the scored board | 🔴 **SILENT** |
-| 🆕 🔴🔴 **`F6-1`** | **the production loader's merge key omits `ot_rule`, a PRIMARY-KEY column, and drops `1,421` rows** — confirmed live, and `§F6.28` §3 shows the same `1,421` on `2026-09-11` | 🔴 **SILENT** |
+| ✅✅ ~~🔴🔴 **`F6-1`**~~ **CLOSED `2026-09-25`** | ~~*the production loader's merge key omits `ot_rule`, a PRIMARY-KEY column, and drops `1,421` rows*~~ ⇒ ✅ **RESOLVED — BUT NOT BY THE REMEDY THIS ITEM PROPOSED.** 🔴 ***`nba_score.baseline_ladder` NO LONGER EXISTS.*** *The loader now writes `nba_score.baseline_history`, which **has no `ot_rule` column at all** and whose unique index — `` (game_date, player_id, game_id, prop, period, line) `` — **matches the loader's merge key exactly.*** ⚠ **A fixer following this item's original wording would be editing a dropped table.** *Cause and the `118,759`-vs-`113,357` divergence: **`§T26.4`**.* | ✅ |
 | 🔴🔴🔴 **`T20-13`** | **P2's certifier goes RED every night for the first twelve nights of the season — and it is CORRECT to** | ✅ loud |
 | 🔴🔴 **`T20-15`** | **P2 and P3 certify RED on every zero-game day** — `7` of them last season | ✅ loud |
 | 🔴🔴 **`T20-14`** | **Betr's access token expires `2026-10-10`** — ten days before opening night | 🔴 **dated** |
