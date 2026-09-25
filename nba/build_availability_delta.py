@@ -151,11 +151,19 @@ def main():
         print("  changes did not resolve to known player_ids - no delta written"); return
 
     # --- affected teams, from today's slate ------------------------------------------------------
-    logs = pd.DataFrame(fetch(f"nba_player_game_log_{slug}.json")["records"])
-    logs["PLAYER_ID"] = logs["PLAYER_ID"].astype(str)
+    # FROM POSTGRES, ACROSS SEASONS (fixed 2026-09-25). This fetched nba_player_game_log_<season>.json
+    # from the raw CDN: stale-cache risk, and on opening night the new season's file does not exist yet
+    # (no games played) - a 404 and a crash. Worse, a player's LAST TEAM before the first games is in
+    # LAST season's log, which a single-season file cannot see. nba_stats.player_game_log holds every
+    # season; a 400-day window back from the slate spans any off-season.
+    logs = pd.read_sql("""SELECT nba_player_id::text AS "PLAYER_ID", game_date AS "GAME_DATE",
+                                 split_part(matchup, ' ', 1) AS "TEAM", min AS "MIN"
+                          FROM nba_stats.player_game_log
+                          WHERE game_date < %s AND game_date >= %s::date - 400""",
+                       conn, params=(asof, asof))
     logs["GAME_DATE"] = pd.to_datetime(logs["GAME_DATE"]).dt.date
-    logs["TEAM"] = logs["MATCHUP"].str.split(" ").str[0]
-    recent = logs[logs["GAME_DATE"] < datetime.fromisoformat(asof).date()]
+    logs["MIN"] = pd.to_numeric(logs["MIN"], errors="coerce")
+    recent = logs
     last_team = (recent.sort_values("GAME_DATE").drop_duplicates("PLAYER_ID", keep="last")
                  .set_index("PLAYER_ID")["TEAM"].to_dict())
     teams = {last_team.get(p) for p in (now_out | now_in)} - {None}
