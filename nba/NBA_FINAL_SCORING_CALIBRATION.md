@@ -5330,3 +5330,217 @@ hypothesis that has to be scored per factor, and one of the first two scored it 
 needed*** — **the data had been mined and simply never loaded.** ⚠ *That is the same failure class as
 the injury archive in `§T26.5`: **the pipeline produced it, nothing put it where a query could reach
 it.***
+
+---
+
+## ✅✅✅ **§T26.15 — T16-7's DATA-LOSS HALF IS CLOSED, AND THE POPULATION QUESTION IS SETTLED AGAINST THE CORPUS'S OWN ANSWER** *(T26 seg1128 + the repo's commit history + `SELECT` 2026-09-25T18:17Z)*
+
+**`T16-7` was always TWO questions wearing one ID, and the corpus closed only one of them.**
+
+| half | question | state |
+|---|---|---|
+| **scope** | *is the expected population the full ladder or the board?* | ✅ **closed twice already** — `§T18.1` *(owner)* and `§T16.3` *(author's caveat)*, **and they closed it DIFFERENTLY** |
+| **data loss** | *"**Is 2025-26 mid-rebuild, or did it lose its history?**"* — `NBA_OPEN_ITEMS.md:1419` | ⚠ **NOT RECORDED — this is the half that stayed open** |
+
+### 🔑 **THE DATA-LOSS HALF: IT WAS LOST, AND IT WAS RESTORED**
+
+*T26's own prose, verbatim:* ***"the restore worked: final_hp for 2025-26 is back to 163 dates and
+17,487,112 rows — from 2 dates and 367k. That closes the data loss in T16-7."***
+
+⚠ **Note the audit and the transcript disagree on the depth of the hole** — the `2026-09-22`
+`[LIVE-AUDIT]` measured **`140,130` rows on ONE date**; T26 says **`2` dates and `367k`**. *Both are
+`SELECT`s taken two days apart on a table a concurrent session was writing. **Neither is re-derivable
+— the rows are overwritten** (`RULE 6`).* 🔑 **The direction is what matters and both agree on it.**
+
+### 🔴🔴 **AND THEN THE POPULATION WAS INVERTED — TWO DAYS AFTER THE RESTORE, AND THE CORPUS SAYS THE OPPOSITE**
+
+> **`§T16.3`'s heading**: *"`T16-7` IS ANSWERED — `final_hp` WAS 38.7M LEGS, AND ITS EXPECTED
+> population IS **THE FULL LADDER, NOT THE BOARD-SCOPED SET**"*
+> **`§T18.1`, the OWNER**: *"I mean the ladder ON THE BOARD, yes — **but NOT the full ladder on the
+> baseline if unneeded, not on the board.**"*
+
+✅✅ **THE OWNER WON, AND THE CODE NOW IMPLEMENTS HIM.** *`build_final_hp.py`, in the builder's own
+words:* ***"🔴 BOARD-SCOPED (owner decision 2026-09-24…). This builder used to write the FULL ladder —
+every rung for every player × 30 props, ~226k rows a slate — under the scoring engine's name."***
+
+🔑🔑 **AND THE CODE CARRIES ITS OWN MEASUREMENT OF THE WASTE, WHICH THIS SWEEP THEN VERIFIED ON THE
+SAME SLATE IT NAMES:**
+
+| `2026-04-10`, the slate the code measures | rows |
+|---|---|
+| what the builder used to write | **`226,714`** |
+| of those, ever on a board | **`14,572`** *(`6.4%`)* |
+| ▶ **`final_hp` on that date, live now** | **`28,164`** = **`14,082` rungs × 2 sides** |
+| ▶ **board rungs on that date, live now** | **`18,408`** *(all periods)* |
+
+✅✅ **`14,082` against the code's predicted `14,572` — the prediction verifies against the live table
+on its own measured slate**, the small gap being board rungs with no baseline row to price.
+
+### ✅ **AND THE STORE IS NOW EXACTLY THE BOARD — MEASURED, NOT ASSERTED**
+
+```sql
+-- off-board rows in final_hp, sampled on the slate the code measured:
+SELECT count(*) FROM nba_score.final_hp f WHERE f.game_date='2026-04-10'
+  AND NOT EXISTS (SELECT 1 FROM nba_market.board_rung_keys k WHERE k.period='FULL'
+    AND k.game_date=f.game_date AND k.player_id=f.player_id AND k.prop=f.prop AND k.line=f.line);
+```
+▶ **`0`.** ▶ *And `21` distinct props in `final_hp` against `21` on the board — **the same 21**, down
+from the `30` the full-ladder builder wrote.*
+
+### 🔴 **THE FIGURES — PUBLISHED AS THE COMMAND THAT DERIVES THEM (`RULE 59`)**
+
+```sql
+SELECT season, count(*) rows, count(DISTINCT game_date) dates, max(built_at) last_built
+  FROM nba_score.final_hp GROUP BY season ORDER BY season;
+```
+▶ **`2026-09-25T18:17Z`: 2024-25 `3,399,146` / **`162` dates** · 2025-26 `3,811,766` / **`163`
+dates** · total `7,210,912`, `1,768 MB`.** ✅ **BOTH SEASONS COMPLETE ON DATES** — *`162` is exactly
+`T16-7`'s own recorded figure for 2024-25.* ⚠ **`7,115,570` of `7,210,912` rows — `98.7%` — carry
+`built_at` of `2026-09-25`**, *the session that has no transcript yet.*
+
+⚠⚠ **DO NOT READ THE ROW DROP AS A SECOND LOSS.** `19,215,200` → `7,210,912` is **`−62.5%`**, and
+every row of that fall is the full ladder the owner called *"unneeded"* being removed on purpose.
+🔑 **The DATE coverage is the loss test, and it is whole.**
+
+---
+
+## 🔴🔴🔴 **§T26.16 — T16-8 IS CLOSED, AND IT WAS NEVER A LIVE DEFECT: THE STORE WAS STALE, AND THE ROW HELD THE DISPROOF OF ITS OWN CONCLUSION** *(the repo's commit history + `SELECT` 2026-09-25T18:17Z)*
+
+**`T16-8` asked**: *"Either the contract's wording is wrong or the formula is."* ⇒ ✅ **NEITHER.**
+
+### ✅ **THE LIVE STATE**
+
+```sql
+SELECT count(*) FILTER (WHERE score<0) neg, count(*) total, min(score), max(score) FROM nba_score.final_hp;
+```
+▶ **`0` negative of `7,210,912`** · **`score` `8.610` → `99.990`** · **`0` of the props carry a
+negative**, against the audit's **`6,924,101` of `19,215,200` (`36.0%`)** reaching **`−52.488`**
+across **20 of 30** props. ✅ **COMPASS fact 103's *"SCORE IS 0–100"* contract HOLDS LIVE.**
+
+### 🔑🔑 **AND THE CAUSE IS NOT THE REBUILD'S SCOPING — THE LOW DECILES ARE STILL FULLY POPULATED**
+
+*The audit located the negatives precisely: **"confined to `final_hp` below ~0.6 (deciles 1–6)"**, with
+**"Decile 1 spans −52.49 to +46.00 — a ~98-point swing at essentially constant probability."*** ⚠ **If
+board-scoping had simply deleted the low-probability rungs, the closure would be an artifact.** ▶ **It
+did not:**
+
+| `final_hp` decile | rows now | `score` range now |
+|---|---|---|
+| **1** *(`0.000`–`0.100`)* | **`515,486`** | **`8.61` → `47.53`** |
+| 2 | `657,092` | `14.51` → `54.66` |
+| 5 | `960,790` | `43.08` → `72.31` |
+| **10** *(`0.900`–`1.000`)* | **`447,789`** | **`90.50` → `99.99`** |
+
+🔑 **Decile 1 still holds half a million rows and every one is positive and ordered.** *The `~98-point
+swing at constant probability` is gone: decile 1 now spans `38.9` points, monotone with the
+probability.* ⇒ **The population did not change. The FUNCTION did.**
+
+### 🔴🔴 **AND THE FUNCTION CHANGED FOUR DAYS BEFORE THE AUDIT RAN**
+
+*`build_final_hp.py`'s score line, traced through `git log -L`:*
+
+| commit | when | `score` = | range it produced |
+|---|---|---|---|
+| *(pre-`2d09c0d3`)* | ≤ `2026-09-16` | **`edge × confidence`** | 🔴 **`−53` → `+42`** |
+| **`2d09c0d3`** | `2026-09-18T22:06-07:00` | `final_hp × confidence × 100` | `0` → `100` |
+| **`71ef1d35`** | **`2026-09-18T22:22-07:00`** | **the confidence-neutral form, live now** | **`0` → `100`** |
+| — | **`2026-09-22`** | ⚠ **the `[LIVE-AUDIT]` that raised `T16-8` runs HERE** | *measures `−52.488`* |
+
+🔑🔑🔑 **AND `2d09c0d3`'S OWN COMMENT NAMES THE DEFECT THE AUDIT WOULD LATER MEASURE, FOUR DAYS EARLY**:
+> ***"A previous version scored EDGE × confidence, which ran **−53 to +42** — an edge metric, not the
+> 0-100 scale."***
+
+⚠⚠ **`−53 to +42` versus the audit's `−52.488` and `+46.00`. That is the same table.** ⇒ **The negative
+rows were written by a formula THE REPO NO LONGER CONTAINED.** 🔑 **The live formula cannot produce a
+negative at all** — *`lift` and `drop` are never both non-zero, so the result is either
+`hp100 + (100−hp100)·lift ≥ hp100 ≥ 0` or `hp100·(1−drop) ≥ 0.65·hp100 ≥ 0`, and
+`np.clip(…,0,100)` bounds it a second time.* ✅ **Confirmed on the surviving pre-rebuild rows: the
+`47,164` rows still carrying `built_at 2026-09-19` run `10.800` → `99.990`, `0` negative.**
+
+### ⚠⚠⚠ **THE ROW CONTAINED ITS OWN DISPROOF, AND THE SWEEP READ IT AS CORROBORATION**
+
+> **`T16-8`, its own next sentence**: *"They **cannot come from the confidence pull-down**: live
+> confidence runs `0.8540`–`0.9841`, so virtually every leg sits above fact 103's **`0.85` neutral
+> pivot** and the **"pulled down up to 35%"** branch is nearly unexercised."*
+
+🔑🔑 ***`0.85` is `CONF_NEUTRAL`. `35%` is `drop`'s ceiling. Both are constants of the NEW formula.***
+**The sweep checked the stored rows against the CURRENT code, found the current code could not have
+produced them, and concluded THE CODE WAS WRONG — when the only reading its own evidence supports is
+that THE ROWS PREDATE THE CODE.** ⚠ **One observation, two readings, and the sweep took the one that
+kept the item open.**
+
+### 📜 **RULE 61 IS BORN HERE**
+
+> 🔑🔑🔑 ***WHEN STORED ROWS CANNOT BE PRODUCED BY THE CURRENT CODE, THE ROWS ARE STALE — NOT THE CODE.
+> A `[LIVE-AUDIT]` MEASURES A STORE, AND A STORE IS AS OLD AS ITS LAST WRITE, NOT AS OLD AS ITS
+> WRITER. DATE THE ROWS (`built_at`) AND DATE THE WRITER (`git log -L` ON THE LINE THAT WRITES THEM)
+> BEFORE CONCLUDING ANYTHING ABOUT EITHER.***
+
+⚠ **This is `RULE 37`'s *silent* category inverted.** *`RULE 37` warns that a clean census can hide a
+real loss. **`RULE 61` warns that a dirty store can manufacture a defect that no longer exists** — and
+the remedy is not a fix, it is a REBUILD.* 🔑 **`T16-8` cost the corpus three passes as a standing
+season-critical owner decision. The fix had shipped before it was ever raised.**
+
+---
+
+## 🔴🔴 **§T26.17 — `final_hp` HAS NO `period` COLUMN, AND FOR ITS WHOLE LIFE PERIOD RUNGS WERE STORED WEARING FULL-GAME KEYS** *(`0cba9a19` + `f340b400`, 2026-09-24; `0` of the twelve before this entry)*
+
+*`build_final_hp.py`'s own account of the bug it fixed:*
+> ***"PERIOD FILTER (fixed 2026-09-24). This read had no period filter and **final_hp has no period
+> column**, so Q1/Q4/H1/H2 rungs were written under the FULL-GAME key: prop `points` line `5.5` for Q1
+> landed as if it were a full-game `5.5`, and where a period line coincided with a full-game line **the
+> upsert let the last one win**."***
+
+✅ **VERIFIED STRUCTURALLY** — *`information_schema.columns` on `nba_score.final_hp` returns **`24`
+columns** and **none of them is `period`***. 🔑 **So the table could not have represented the
+distinction even if the read had made it.** ⇒ **This is not a filter that was forgotten; it is a
+filter that had nowhere to write its answer.**
+
+### 🔴 **HOW MUCH OF THE TABLE WAS AFFECTED — AND WHY THE CODE'S OWN FIGURE IS ALREADY STALE**
+
+*The code says* ***"~31% of baseline_history rows are period rungs, so roughly that share of final_hp
+was period probabilities wearing full-game keys."*** ▶ **Live `2026-09-25`:**
+
+```sql
+SELECT count(*) total, count(*) FILTER (WHERE period<>'FULL') period_rungs,
+       round(100.0*count(*) FILTER (WHERE period<>'FULL')/count(*),2) pct FROM nba_score.baseline_history;
+```
+▶ **`4,285,633` of `8,696,305` = `49.28%`**, across **`5`** distinct periods — **not `31%`.**
+
+🔑🔑 **AND THE GAP IS NOT AN ERROR — IT IS THE PRUNE'S OWN DESIGN, WRITTEN THE SAME DAY.**
+*`prune_baseline_to_board.py`'s scope rule:* ***"a `(date, prop, period)` is pruned ONLY IF some board
+— real or derived — carried that prop that day. **A prop with no board of any kind (historically the
+PERIOD props) keeps its full ladder**."*** ⇒ **The prune removes off-board FULL rungs and KEEPS the
+period ladders, so it mechanically RAISES the period share.** ⚠ **`31%` was true before the prune ran
+and false after it — a `RULE 59` figure that went stale inside twenty-four hours, in the same file as
+the rule that staled it.**
+
+🔴 **CONSEQUENCE FOR EVERY `final_hp` FIGURE THE CORPUS RECORDS BEFORE `2026-09-24`** — *including
+fact 99's certified **`38,686,696`** and `T17`'s **`19,611,626`*** — **a material share of those rows
+were period probabilities indexed as full-game legs.** ⚠ **They were not merely extra rows; where a
+period line coincided with a full-game line, the upsert DESTROYED the full-game value.** 🔑 **This is
+recorded, not remediated: the rebuild has already replaced every affected row.**
+
+---
+
+## ⚠⚠ **§T26.18 — THE DESCENT WAS TWO-STAGE, AND THE MIDDLE STAGE IS A BUG THE CODE DOCUMENTS ON ITSELF** *(`a3711f58`, 2026-09-24T13:10-07:00)*
+
+*`build_final_hp.py`, on the empty-scope branch:*
+> ***"BOARD-SCOPED: an empty result means NO board (real or derived) carried this prop in this scope —
+> so the correct content of `final_hp` for it is NOTHING. **The old behaviour (skip) left the previous
+> full-spectrum rows in place: after the first board-scoped rebuild the season still held `13.79M` rows
+> because 18 props with no real-board keys were never cleared.** Clear the slice so the store is exactly
+> the board and only the board."***
+
+| stage | rows | what moved |
+|---|---|---|
+| after the restore *(T26, 2026-09-24)* | **`17,487,112`** *(2025-26)* | the loss is repaired, full ladder |
+| ⚠ **after the FIRST board-scoped rebuild** | **`13.79M`** | 🔴 **`18` props never cleared — `skip` is not `delete`** |
+| after `a3711f58` + the final rebuild | **`3,811,766`** *(2025-26)* | ✅ exactly the board |
+
+🔑🔑 **THE LESSON IS THE SWEEP'S OWN**: *a rebuild that **writes** the right answer does not **remove**
+the wrong one. **An empty result and an absent result are different facts, and `continue` conflates
+them.*** ⚠ **The first board-scoped rebuild would have passed any row-count-fell check** — *`17.49M` →
+`13.79M` is a `21%` drop, entirely plausible* — **and it was `3.6×` wrong.** 🔑 **Only a test that
+asserts the store CONTAINS NOTHING OFF THE BOARD catches it, which is the `0`-off-board query
+`§T26.15` now records as the standing check.**
