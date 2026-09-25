@@ -3055,3 +3055,73 @@ what gets loaded.***
 postseason in scope for grading and scoring at all?** *T25 handed the question forward and the session
 that would have answered it has no transcript.* ⚠ **The opener is `2026-10-20`; the question does not
 become urgent until April, which is exactly why it will be forgotten.**
+
+---
+
+## ✅✅✅ **§T26.32 — `§T23.5`'s DEADLOCK IS FIXED ON EVERY P2/P3 PATH, AND MY OWN RE-DERIVATION SAID OTHERWISE BECAUSE IT COUNTED A STRING INSTEAD OF A RISK** *(T26 mechanism stratum, segs 97–137 + source reads 2026-09-25)*
+
+### ⚠⚠⚠ **THE INSTRUMENT FAILURE FIRST, BECAUSE IT IS THE POINT**
+
+*Four hours into this day I re-derived `§T23.5` as **`HELD`** and published it in `🧭 START HERE`:*
+> ~~*"`13` files carry `CREATE … INDEX IF NOT EXISTS`, `4` of them in `P2`/`P3`."*~~
+
+✅ **THE COUNT WAS CORRECT. THE CONCLUSION WAS BACKWARDS.** 🔑🔑 ***The fix does not REMOVE
+`CREATE INDEX IF NOT EXISTS` — it WRAPS it in a `to_regclass` check. So the string survives the repair,
+and a grep for the string finds a fixed file and calls it broken.*** 📜 **`RULE 58`, applied to my own
+instrument for the second time in one day** *(the first: `§T26.24`'s wrong-table siblings)*.
+
+> 🔑🔑🔑 **THE GENERAL FORM, AND IT IS WORTH MORE THAN THE FINDING**: ***a defect defined by a PATTERN
+> must be re-derived as the RISK, never as the pattern. Fixes that add a guard leave the dangerous
+> token in place; fixes that change behaviour leave the dangerous shape in place. Grep finds text.
+> Only reading the control flow around it finds the defect.***
+
+### ✅ **THE ACTUAL STATE — RE-DERIVED ON CONTROL FLOW**
+
+**All four index-creating scripts on the P2/P3 nightly paths now check FIRST:**
+
+| script | pipeline | guard |
+|---|---|---|
+| `build_asof_calibration.py:145` | **P2** | ✅ `if cur.execute("SELECT to_regclass('nba_score.ladder_cal_asof_uidx')").fetchone()[0] is None:` |
+| `grade_board_outcomes.py:166,170` | **P2** | ✅ **two** guards |
+| `build_rung_market.py:85` | **P3** | ✅ *index separated from the DDL so it CAN be guarded* |
+| `score_board_legs.py:333` | **P3** | ✅ |
+
+> *the reason, in `grade_board_outcomes.py`'s own words:* ***"`CREATE UNIQUE INDEX IF NOT EXISTS` is NOT
+> a cheap no-op — it takes a FULL TABLE LOCK before it discovers the index already exists, and holds it
+> until commit, so two parallel catch-up runs deadlock each other."***
+
+🔴🔴 **AND THE INCIDENT'S MAGNITUDE IS IN THE SOURCE, AND WAS NOT IN THE TWELVE**:
+***"a deadlock that failed `181` of `325` replay dates"*** *(`score_board_legs.py:332`)* — **`55.7%` of a
+full replay.**
+
+### 🔑 **THE COMMITS SHOW IT WAS A CAMPAIGN, NOT ONE EDIT** *(T26 `tool_use` stratum)*
+
+*Seven scripts were repaired in sequence on `2026-09-23`, and two of the commit messages classify the
+severity themselves:*
+
+| script | the author's own words |
+|---|---|
+| `scrape_referee_assignments.py` | ⚠ ***"this is the DANGEROUS SHAPE: the index DDL sits in the same transaction as the insert below, so `IF NOT EXISTS` holds a full table lock for the whole write"*** |
+| `build_availability_delta.py` | 🔴 ***"this is the INCIDENT'S EXACT RECIPE: `IF NOT EXISTS` takes a full table lock before finding the index, and the per-date delete below runs in the same transaction"*** |
+| `build_confidence_v3.py` | *guarded — "and here it also saves a pointless lock on a very large table: this index takes minutes to build on the first run and exists on every run after"* |
+| `build_asof_calibration.py` · `build_rung_market.py` · `grade_board_outcomes.py` · `score_board_legs.py` | ✅ guarded |
+
+### 🔴 **THE RESIDUAL, STATED EXACTLY**
+
+▶ **`13` files still contain the pattern · `4` are guarded · `9` are not** — **and of those `9`, exactly
+ONE runs inside a pipeline: `build_defender_ratings.py`, in P1.**
+*The other eight — `backfill_game_line_snapshots` · `build_absence_panel` v1/v2/v3 ·
+`build_redistribution_factors` · `build_redistribution_panel` · `build_scenario_calibration` ·
+`load_baseline_history` — are backfills and panels invoked by **no** pipeline.*
+
+⚠ **P1 is WEEKLY**, so two of its runs overlapping is far less likely than the nightly catch-up that
+caused the incident. 🔑 **Recorded as a residual with its exposure stated, not as a blocker** — *and
+`§T26.28` is the reason to care: **P1 has a history of failing mid-pipeline and discarding its work
+silently**, which is precisely the state a lock timeout would produce.*
+
+📌 **THE ONE-LINE CHECK, for any future pass** *(`RULE 59`)*:
+```bash
+for f in $(grep -rl "CREATE .*INDEX IF NOT EXISTS" nba/*.py); do
+  printf "%s guards=%s\n" "$f" "$(grep -c to_regclass "$f")"; done
+```
+⚠ **`guards=0` is a candidate, not a verdict — open the file and read the control flow.**
