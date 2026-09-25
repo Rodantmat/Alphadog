@@ -9,7 +9,7 @@ that is the useful part.
 > # 📑 **INDEX — `NBA_RECIPE.md`**
 > **Every build step in the order it happened.** *Where a step exists because an earlier attempt
 > failed, the failure is part of the recipe.*
-> 📏 **`63` sections · `2026-09-23`** *(re-derive, never quote — `1` section added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_RECIPE.md ``
+> 📏 **`86` sections · re-derived `2026-09-25`** *(was `63` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_RECIPE.md ``
 >
 > 🆕 **SECTION ADDED `2026-09-25`.** *Anchors are heading text; search the label.*
 > | § | what it is |
