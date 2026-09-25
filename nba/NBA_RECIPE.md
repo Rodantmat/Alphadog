@@ -1276,9 +1276,16 @@ gates.**
 would fail today, and the `118,759` figure is the LAST reading of a dropped table.** *Recorded, not
 remediated: whether the check was re-pointed is **NOT RECORDED** (`RULE 6`).*
 
-### ✅✅ **DECISION 1 — REFEREE CREW (`D1`): KEEP THE PENALTY, DO NOT BUILD A PREDICTOR**
+### ⚠⚠⚠ **DECISION 1 — REFEREE CREW (`D1`): TAKEN, THEN REJECTED BY THE OWNER TWO TURNS LATER, AND THE QUESTION TURNED OUT TO BE MALFORMED**
 
-> ***"decided: keep **"factor zero plus confidence penalty"**, don't build a predictor."***
+> 🔴🔴🔴 **READ `§T26.26` BEFORE ACTING ON THIS BLOCK.** *The decision below was announced, **the owner
+> rejected its reasoning in the next owner turn**, the author conceded the logical error, and the
+> documentation then showed the predictor was never needed at all — **in production the crew is KNOWN,
+> not predicted.** What the exchange actually uncovered was a **scheduling bug that had left
+> `nba_ref.referee_assignments` at `0` rows**. The decision as stated below is superseded; the shrunk
+> tendencies it shipped are real and live.*
+
+> *(kept under `RULE 40`)* ***"decided: keep **"factor zero plus confidence penalty"**, don't build a predictor."***
 
 | the evidence | figure |
 |---|---|
