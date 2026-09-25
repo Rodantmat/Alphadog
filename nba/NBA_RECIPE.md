@@ -339,13 +339,22 @@ that is the useful part.
 > **Mechanism**: `P2` accepts an `asof` input; `P3` is re-run for the date. *`STEP 9` / `STEP 10` give
 > each pipeline's steps.* ⚠ **`P3` will abort on any `2026-27` date until `T23-2` is fixed.**
 >
-> ### 4 · ⏰ **ADD THE `P2` CRON FOR THE NEW SEASON**
+> ### 4 · ⏰ **CHANGE A PIPELINE'S SCHEDULE** ~~*(add the `P2` cron)*~~
 >
-> **`P2` and `P3` have NO CRON — deliberately.** *The file says so in its own header comment:*
-> ***"NO CRON YET — deliberately… a scheduled job failing nightly against an empty schedule trains
-> everyone to ignore red builds. The cron goes in when the season starts."***
-> ▶ **Target, from that same comment: `daily 09:00 UTC = 01:00 PT`** — *after the last West-Coast game
-> finalises, eight hours before `P3`'s `1:15 PM PT` cutoff.*
+> ✅✅ **THE CRONS ARE IN — `2026-09-23`/`24`. This task is no longer "add one"; it is "change one safely".**
+> **`P2` `45 15 * * *`** · **`P3` `15 21 * * *`** · **`P1` `0 19 * * 1`** · **`nba-referees` `30 15 * * *`**.
+>
+> 🔑🔑 **READ THIS BEFORE MOVING `P2`.** ***It runs in the MORNING, not overnight, and the reason is a
+> data deadline, not convenience:*** **D1 referee assignments publish `~6–7 AM PT` and are NEVER
+> ARCHIVED.** *The original `01:00 PT` target was five to six hours too early —* ***which is exactly
+> why `nba_ref.referee_assignments` held `0` rows while the step ran nightly.*** **Move `P2` earlier
+> than `~08:00 PT` and you silently reintroduce that.** ⚠ **The filename still says `overnight`;
+> the schedule is the truth, the filename is history.**
+>
+> ⚠ **DST: GitHub cron is UTC and does not shift.** `15:45 UTC` = **`08:45 PT` (PDT)** → **`07:45` (PST)**
+> after `2026-11-01`. *Both clear the posting; both leave `P2` finishing ~`10:40`/`09:40` PT against
+> `P3`'s cutoff — about three hours of retry slack.* **Measured full run: `2h10m`** *(`~1h55m` with the
+> rolling `7`-day grading window)*.
 > **Edit `.github/workflows/nba-p2-overnight-heavy.yml`**, adding under `on:`
 > `` schedule: [{cron: '0 9 * * *'}] ``. ⚠ **`P1` is the only PIPELINE with a live cron — but NOT the only NBA workflow.** ***Measured `2026-09-23`: `4` active crons — `nba-p1-weekly-static` (`0 19 * * 1`), `nba-scrape` (`0 9 * * 1`), `nba-referees` (`30 15 * * *`, daily) and `nba-pp-payout-map` (`15 */6 * * *`, the build chat's, out of scope).*** 🔴 **An earlier line here said "`P1` is the only NBA workflow with a live cron" — that was wrong, corrected `§F7.23`.** —
 > *re-derive:* `` grep -l "^ *- *cron:" .github/workflows/nba-*.yml ``
