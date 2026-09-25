@@ -2955,6 +2955,31 @@ wall clock** — *which is exactly what `§T26.6` found when P3 went `22` min �
 scrapers to NBA.* ✅ **`timeout-minutes: 25`, plus per-board caps**: *"if it is not done by then
 something is wrong, and **a visible failure beats a late slate**."*
 
+#### ✅ **AND THE SAME `20` SECONDS RETIRES A DESIGN THE PARITY DOC STILL PRESCRIBES — RECORDED SO IT IS NOT READ AS A DIVERGENCE**
+
+*`nba/NBA_DAILY_PARITY_AND_BACKFILL.md` §8 specifies a two-phase day:* ***"Phase 2 (final, 2:30 → first
+tip) does exactly four things: pull the board, apply the 2:30 report and projected-lineup delta, read
+the 2:45 market, **rescore ONLY the legs touched by those deltas**. Everything else carries its phase-1
+value forward."***
+
+▶ **THE CODE DOES SOMETHING ELSE**: `score_board_legs.py:184` reads the **whole slate** —
+`` FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL' `` — and applies the
+availability delta as **step 3 of its chain** *(line `232`)*, rather than restricting the rescore to
+delta-touched legs.
+
+✅✅ **THIS IS NOT A DEFECT, AND THE REASON IS THE `20` SECONDS ABOVE.** *"Rescore only the touched
+legs" is a PERFORMANCE optimisation, written when the phase-2 window was the binding constraint.*
+⇒ 🔑 **Scoring the entire board costs a fraction of `20` seconds, so the optimisation now saves nothing
+and costs a class of bug** — *a leg that should have been rescored but was not classified as "touched"
+silently carries a stale value forward.* ⚠ **Scoring everything is strictly safer at no measurable
+price.**
+
+📌 **RECORDED BECAUSE A READER COMPARING THE PARITY DOC TO THE CODE WILL FIND THIS AND FLAG IT.** *The
+parity doc is an unswept sibling that `6` of the twelve cite (`§T25.4`), its §8 is dated `2026-09-13`,
+and the architecture moved underneath it: **P2 now runs in the MORNING (`§T26.26`) and P3 scores once at
+the cutoff, so there is no "phase 1 at ~1 PM / phase 2 at 2:30" split left to optimise.*** 🔑 **The
+divergence is the doc being superseded, not the code being wrong.**
+
 ### ③ 🔴 **P1's 2026-27 ROLLOVER WOULD HAVE PRODUCED *ZERO* WEEKLY SNAPSHOTS, SILENTLY**
 
 *Commit `e95164b4`: **"NBA P1 rollover: derive the as-of window for unplayed seasons — 2026-27 would
