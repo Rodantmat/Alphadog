@@ -39,6 +39,26 @@ constraints that shaped it. This is the operational spec.
 > | 🔴🔴🔴 **THE SECOND DEADLOCK — `CREATE UNIQUE INDEX IF NOT EXISTS` INSIDE THE WRITE TRANSACTION.** *Any PARALLEL catch-up run deadlocks; `181` of `325` dates failed. **`17` files carry the pattern, `7` of them in `P2`/`P3`.*** ⚠ **SEASON-CRITICAL — this is the tool you would reach for to recover from `T23-2`, and it is the tool that breaks.** | **`§T23.5`** |
 > | 📏 **what the leg scorer SKIPS, in its own docstring's numbers** | **`§T23.13`** |
 >
+> ### 🆕 §T26.10 — 🔑 **PRESEASON IS NOT A SLATE** *(owner decision `2026-09-24`, live in the code)*
+>
+> ***Preseason is REJECTED for the projection pipeline and used for BOARD AND MULTIPLIER LEARNING
+> ONLY.*** **No preseason pick ever reaches the paper log.**
+>
+> ✅ **Enforced, not merely stated** — `nba-p3-afternoon-light.yml` counts only regular-season games:
+> ```sql
+> SELECT min(game_datetime_utc), count(*) FROM nba_calendar.games
+>  WHERE game_date = %s AND coalesce(game_label,'') <> 'Preseason'
+> ```
+> ⇒ **A preseason day takes the no-games path: the board is still CAPTURED and ARCHIVED, and scoring
+> and paper picks are SKIPPED.** *The same gating is applied in `P2`, the prune and the certifier.*
+>
+> 🔑 **The owner's reasoning, `T26` segs `952`/`960`:** ***"the preseason should not really mix with the
+> full season… it's very, very volatile. Some of the main stars are not even gonna play. If they play,
+> they play very little. The rookies are gonna play a lot. So that may mess with the data instead of
+> helping… What we can really use is for multipliers and for board learning."***
+> ⚠ **PRESEASON OPENS `2026-10-03` — `8` days from this entry.** *The first live exercise of this path
+> is a preseason day, and by design it will produce a board and no picks.*
+>
 > ## 🗓 GAME DAY, END TO END
 >
 > *All times **Pacific** — the owner's standing convention. **Everything below is re-derivable from
