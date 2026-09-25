@@ -38971,7 +38971,7 @@ predicts about one and a half, and rounding a prediction up is how a test stops 
 > **`T16-9`'s own heading**: *"`T16-9 IS ANSWERED — AND THE AUTHOR'S OWN CONDITIONAL HAS FIRED,
 > UNCHECKED`"*. **The author wrote the test** — *"IF IT STAYS AT ZERO once the query completes, the
 > planner isn't using them… WHICH I'D NEED TO FIX"* — **and it has fired**: `board_outcomes_nm_idx`
-> still at `0` scans, siblings at `1,080,188` and `594,932`, with the `EXPLAIN` giving the cause —
+> at `0` scans *(⚠ **`14` as of `2026-09-25`, `§T26.24`**)*, siblings at `1,080,188` and `594,932`, with the `EXPLAIN` giving the cause —
 > *"functions on the join columns… so ALL FOUR INDEXES I BUILT WERE IRRELEVANT TO THIS QUERY."*
 > ⇒ ***It needs a `DROP` of `303 MB` of dead index, not a decision. `T16-7` and `T16-8` stand.***
 
