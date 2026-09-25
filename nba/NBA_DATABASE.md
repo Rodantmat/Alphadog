@@ -2884,3 +2884,62 @@ was verified by grep and by connection audit rather than asserted.***
 📌 **Recorded because it is the exact failure mode the rule exists to prevent, committed by the
 session that wrote the rule.** *The guard that catches it is the board-key scope in
 `build_final_hp.py`, not vigilance.*
+
+---
+
+## ⚠⚠⚠ **§T26.24 — `T16-9`'s EVIDENCE IS NO LONGER DERIVABLE, AND AN INDEX SCAN COUNTER THAT *FELL* IS WHY** *(`SELECT` 2026-09-25T18:36Z; `RULE 61` applied to this corpus's OWN standing claim)*
+
+**The corpus's claim, in three places**: *`board_outcomes_nm_idx` — **`303 MB`, `idx_scan` = `0`**,
+while **"its three siblings, built in the same batch on the same normalised-name join, show `23.4M` /
+`1.08M` / `595k` scans over that same window, so the zero is not a short-window artifact."***
+
+### 🔴 **RE-DERIVED LIVE — AND EVERY FIGURE IN THAT SENTENCE HAS MOVED**
+
+```sql
+SELECT indexrelname, idx_scan, pg_size_pretty(pg_relation_size(indexrelid))
+  FROM pg_stat_user_indexes WHERE relname='board_outcomes' ORDER BY idx_scan DESC;
+```
+
+| index | corpus | **live `2026-09-25T18:36Z`** | |
+|---|---|---|---|
+| `board_outcomes_leg_uidx` | `23.4M` | **`20,716,356`** · `389 MB` | 🔴 **FELL** |
+| `board_outcomes_date_idx` | `595k` | **`12,768`** · `47 MB` | 🔴 **FELL `47×`** |
+| **`board_outcomes_nm_idx`** | **`0`** | **`14`** · **`303 MB`** | ⚠ **ROSE OFF ZERO** |
+| *the fourth sibling* | `1.08M` | 🔴 **ABSENT — only `3` indexes exist** | 🔴 **GONE** |
+
+### 🔑🔑 **A BTREE SCAN COUNTER CANNOT FALL. SO THE OBJECTS WERE REPLACED.**
+
+⚠ **`pg_stat_database.stats_reset` is `NULL`** — *exactly as the corpus recorded, and it is still
+`NULL` now*, **so a database-wide statistics reset is EXCLUDED.** 🔑 **But a per-index row in
+`pg_stat_user_indexes` is created with the index and dies with it**, ⇒ ***two counters falling and one
+index vanishing, under an unbroken `stats_reset`, means the INDEXES were dropped and rebuilt — and a
+rebuilt index starts at `0` regardless of how long the database has been up.***
+
+⚠⚠⚠ **CONSEQUENCE: the corpus's `0` and today's `14` ARE NOT COMPARABLE, AND NEITHER IS AN "ALL-TIME"
+FIGURE.** 🔴 ***The premise that made `T16-9` conclusive — "over that same window" — was never true of
+the per-index counters, only of the DATABASE counter. `stats_reset` being `NULL` was read as
+warranting a claim it does not warrant.***
+
+### ✅✅ **BUT THE CONCLUSION IS UNCHANGED, AND IT IS NOW BETTER SUPPORTED**
+
+**`14` scans against a sibling's `20,716,356` ON THE SAME TABLE** — *the index serves about
+`0.00007%` of that sibling's traffic while costing `303 MB` plus a write on every insert.*
+✅✅ **AND COMPASS FACT 104's CAUSE IS VISIBLE IN THE DEFINITION ITSELF:**
+
+```sql
+CREATE INDEX board_outcomes_nm_idx ON nba_market.board_outcomes USING btree
+  (lower(regexp_replace(player, '[^A-Za-z]', '', 'g')), game_date, line)
+```
+🔑 ***The leading key is a FUNCTION ON A JOIN COLUMN*** — *fact 104 exactly: **"a function on a join
+column means no index can ever be used."*** ⇒ **`T16-9` still needs a `DROP`, not a decision.**
+
+### 📜 **THIS IS `RULE 61` TURNED ON THE SWEEP ITSELF, AND IT EARNS A COROLLARY**
+
+> 🔑🔑🔑 ***A STATISTICS COUNTER IS AS OLD AS ITS OBJECT, NOT AS OLD AS ITS DATABASE. `stats_reset`
+> BEING `NULL` LICENSES NO CLAIM ABOUT ANY PER-OBJECT COUNTER, BECAUSE DROPPING THE OBJECT RESETS IT
+> WITHOUT TOUCHING `stats_reset`. IF A COUNTER CAN ONLY RISE AND YOU MEASURE IT LOWER, THE OBJECT
+> CHANGED — TREAT BOTH READINGS AS UNCOMPARABLE.***
+
+⚠ **`T16-8` was a stale STORE read as a live defect.** ⚠ **`T16-9` is a stale STATISTIC read as a
+complete history.** ⇒ 🔑 **Same class, two surfaces: *the sweep dated the measurement and did not date
+the thing measured.***
