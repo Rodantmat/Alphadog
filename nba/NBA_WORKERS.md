@@ -8,7 +8,8 @@ writes. Grouped by role.
 > # 📑 **INDEX — `NBA_WORKERS.md`**
 > **Every worker and workflow** — what each does, how it is wired, what triggers it, and where it
 > fails. *Counts of workflows and crons are never quoted here; `§0.0` carries the commands.*
-> 📏 **`167` sections · re-derived `2026-09-25`** *(was `130` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_WORKERS.md ``
+> 📏 **`168` sections · re-derived `2026-09-25`** *(was `130` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_WORKERS.md ``
+> ⚠ *This stamp read `167` for four minutes — **the heading that restored a table header in the block below moved it.** `RULE 59` demonstrating itself: **a self-describing figure goes stale on the edit that publishes it.***
 >
 > 🆕🆕 **SECTIONS ADDED `2026-09-25` — `6` NEW, AND FIVE OF THEM ARE ONE FAILURE CLASS.** *Anchors are heading text; search the label.*
 > | § | what it is |
