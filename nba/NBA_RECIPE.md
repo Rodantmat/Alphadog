@@ -355,11 +355,15 @@ that is the useful part.
 > after `2026-11-01`. *Both clear the posting; both leave `P2` finishing ~`10:40`/`09:40` PT against
 > `P3`'s cutoff — about three hours of retry slack.* **Measured full run: `2h10m`** *(`~1h55m` with the
 > rolling `7`-day grading window)*.
-> **Edit `.github/workflows/nba-p2-overnight-heavy.yml`**, adding under `on:`
-> `` schedule: [{cron: '0 9 * * *'}] ``. ⚠ **`P1` is the only PIPELINE with a live cron — but NOT the only NBA workflow.** ***Measured `2026-09-23`: `4` active crons — `nba-p1-weekly-static` (`0 19 * * 1`), `nba-scrape` (`0 9 * * 1`), `nba-referees` (`30 15 * * *`, daily) and `nba-pp-payout-map` (`15 */6 * * *`, the build chat's, out of scope).*** 🔴 **An earlier line here said "`P1` is the only NBA workflow with a live cron" — that was wrong, corrected `§F7.23`.** —
-> *re-derive:* `` grep -l "^ *- *cron:" .github/workflows/nba-*.yml ``
-> 🔴🔴 **DO NOT DO THIS BEFORE FIXING `T23-2`** — *a `P2` cron on a season `P3` aborts on schedules a
-> nightly failure, which is the exact thing the comment above exists to prevent.*
+> **Edit the `on: schedule:` block of the workflow.** 🔁 **ALWAYS RE-DERIVE THE LIVE SET FIRST — a
+> workflow's header COMMENT and its `on:` block are two different claims, and only the `on:` block
+> runs** *(`P3` currently carries a live cron AND a "NO CRON YET" comment, `§T26.1` §4)*:
+> `` for f in .github/workflows/nba-*.yml; do awk '/^on:/,/^jobs:/' $f | grep -E '^ *- *cron:'; done ``
+> ✅ **`6` active crons `2026-09-25`**: `P1` `0 19 * * 1` · **`P2` `45 15 * * *`** · **`P3` `15 21 * * *`** ·
+> `nba-scrape` `0 9 * * 1` · `nba-referees` `30 15 * * *` · `nba-pp-payout-map` `15 */6 * * *` *(the
+> build chat's — **out of scope**)*.
+> ~~🔴🔴 **DO NOT DO THIS BEFORE FIXING `T23-2`**~~ ✅ **`T23-2` was fixed `2026-09-24`; that precondition
+> is discharged.**
 >
 > ### 5 · 🚨 **DIAGNOSE A RED CERTIFIER**
 >
