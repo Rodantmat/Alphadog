@@ -18,7 +18,24 @@
 > # 📑 **INDEX — `NBA_MASTER_SUMMARY.md`**
 > **The record of what every transcript contained** — the sweep ledger, the per-transcript findings
 > (`§T`*n*`.`*m*), the canonical figure table, and the corrections made to each.
-> 📏 **`2,883` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY.md ``
+> 📏 **`2,883` sections · `2026-09-23`** *(re-derive, never quote — sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY.md ``
+>
+> 🆕🆕🆕 **`2026-09-25` — `T25` AND `T26` ARE OPEN, AND THE SWEEP WROTE `29` SECTIONS ACROSS THE TWELVE IN ONE DAY. WHERE EACH LIVES:**
+> | file | sections defined there `2026-09-25` |
+> |---|---|
+> | **`NBA_FINAL_SCORING_CALIBRATION.md`** | `§T26.5` · `§T26.11` · `§T26.12`⚠ · `§T26.15` · `§T26.16` · `§T26.17` · `§T26.18` · `§T26.22`⚠ · `§T26.37` · **`§T26.39`** *(⚠ = RETRACTED by `§T26.39`)* |
+> | **`NBA_WORKERS.md`** | `§T26.19` · `§T26.26` · `§T26.28` · `§T26.34` · `§T26.35` · `§T26.43` |
+> | **`NBA_DATABASE.md`** | `§T25.1` · `§T26.7` · `§T26.9` · `§T26.24` · `§T26.32` |
+> | **`NBA_SYSTEM_DESIGN.md`** | `§T25.2` · `§T26.10` · `§T26.21` · `§T26.27` · `§T26.45` |
+> | **`NBA_BASELINE_CALIBRATION.md`** | `§T25.3` · `§T26.8` · `§T26.20` · `§T26.41` |
+> | **`NBA_OPEN_ITEMS.md`** | `§T26.3` · `§T26.30` |
+> | **`NBA_GLOSSARY.md`** | `§T25.4` |
+> | **`NBA_RECIPE.md`** | `§T26.23` |
+> | **this file** | `§T26.1` · `§T26.2` · `§T26.4` |
+> | **`NBA_SWEEP_RUN_LOG.md`** *(pass records)* | `§T25.5` · `§T26.25` · `§T26.29` · `§T26.31` · `§T26.33` · `§T26.36` · `§T26.38` · `§T26.40` · `§T26.42` · `§T26.44` · `§T26.46` · `§T26.47` |
+>
+> 🔑 **THE FIVE THAT CHANGE WHAT YOU DO**: **`§T26.39`** *(the `A5` model was validated on the wrong objective and nothing calls it — **retracts two sections of this sweep**)* · **`§T26.37`** *(a live scoring-path defect: a late `Out` priced as a certainty, **zero upside, unbounded downside**)* · **`§T26.28`** *(P1 discarded its own week before COMMIT — **ranked item `B`'s root cause**)* · **`§T26.27`** *(the owner's architectural charter, quoted)* · **`§T26.45`** *(`board_rung_keys` — a P3→P2 dependency that halts three P2 steps)*.
+> 📜 **TWO RULES BORN `2026-09-25`**: **`RULE 61`** *(stored rows that the current code cannot produce are STALE, not evidence of a defect)* · **`RULE 62`** *(re-derive the RISK, never the PATTERN — a guard leaves the grepped string in place)*. ⇒ **`61` numbered standing rules: `1`–`48`, `50`–`62`.**
 > 🔑 **THE COUNT IS MEANINGLESS WITHOUT ITS POPULATION.** *Three defensible readings, a `2.3×` spread:*
 > **`headings`** = any ATX heading, blockquoted or not · **`§-sections`** = headings that NAME a
 > `T`*n*`.`*m* section · **`§`-labels** = distinct labels appearing anywhere in the text. *The `📏`
