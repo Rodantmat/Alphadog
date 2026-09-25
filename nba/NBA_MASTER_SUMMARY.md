@@ -43121,3 +43121,68 @@ it is about.*
 📌 ***The lesson:*** **the owner asked for an index and the index turned out to be an audit.**
 *Enumerating a file's headings is the cheapest structural test there is, it had never been run, and
 it returned a defect on every file in the set.*
+
+# §T26.1 — 🔴🔴🔴🔴 **THE SYSTEM STATE CHANGED. THIS CORPUS'S HEADLINE CLAIM IS NOW FALSE, AND THE BUILD CHAT FIXED IT *USING THIS CORPUS*.**
+
+*`T26` pass `1`, recorded `2026-09-25`. **Every row below re-verified against the live repo and a
+read-only query the same day.** ⚠ **This is the most consequential entry in the sweep's history: the
+twelve have asserted, on every entry surface, that the system cannot run. Two of the three reasons are
+gone.***
+
+## 1 · What this corpus says, against what is true
+
+| this corpus's claim | status `2026-09-25` | evidence |
+|---|---|---|
+| 🔴 ***"`P2` and `P3` have NO CRON"*** | ✅✅ **FALSE NOW — BOTH ARE LIVE** | **`P2`: `45 15 * * *`** · **`P3`: `15 21 * * *`**, in the `on:` blocks |
+| 🔴 ***"`P3` defaults to season `2025-26` and aborts on every `2026-27` date" (`T23-2`)*** | ✅✅ **FIXED** | ***`grep -c "2025-26"` on both workflow files returns `0`.*** The season now **resolves from the date**; `P2` line `179` reads *"BLANK = let `check_delta_gaps.py` resolve it with `active_stats_season()` **(T23-2)**"* |
+| 🔴 ***"`final_hp` is rebuilt by NOTHING" (`NBA_SYSTEM_DESIGN` §`4b`)*** | ✅✅ **FIXED — `P2` OWNS IT** | **step `6b`, `build_final_hp.py`**, placed AFTER the calibration and confidence refits because it reads both |
+| 🔴 ***"the parallel catch-up deadlocks" (`§T23.5`)*** | ⚠ **STILL TRUE, and still unmitigated** | **`13` files carry `CREATE … INDEX IF NOT EXISTS`** *(was `17`)*; **`4` are in `P2`/`P3`**: `build_asof_calibration.py`, `grade_board_outcomes.py`, `build_rung_market.py`, `score_board_legs.py` |
+
+⇒ 🔑🔑🔑 ***THE PIPELINE NOW STARTS ITSELF AND NO LONGER ABORTS ON THE NEW SEASON. The third leg —
+the deadlock — is the one that remains.***
+
+## 2 · 🔑🔑 The loop closed: **the fix cites this documentation by item ID**
+
+> **`nba-p2-overnight-heavy.yml`, step `6b`, verbatim:**
+> ***"FINAL_HP — THE SYSTEM'S HEADLINE OUTPUT, AND UNTIL NOW NO PIPELINE OWNED IT. Recorded as
+> 'final_hp is rebuilt by NOTHING' (NBA_SYSTEM_DESIGN §4b)."***
+
+**The build chat read the section, named it, and fixed it — and `T23-2` is cited the same way at
+line `179`.** ⇒ ***This is the first measured evidence that the twelve are being consumed as a work
+order rather than read as a record.*** 📌 *`§F7.16` argued the documents are for a reader who will
+act; this is that reader, acting, with the `§` label in the commit.*
+
+## 3 · ✅ **AND IT SUPPLIES THE CAUSE THIS CORPUS NEVER HAD**
+
+*`§4b` recorded that nothing rebuilt `final_hp`. **It never said why.** The workflow does:*
+
+> ***"The cause was mechanical: `build_final_hp.py` deleted season+prop while `FE_DATE` scoped the
+> SELECT to one slate, so a daily run would have wiped the season's history. That write scope is
+> fixed (2026-09-23), so P2 can own it."***
+
+🔑 ***An unowned output was not an oversight — it was a table that could not be safely written daily,
+and the fix was to the WRITE SCOPE, not the schedule.*** ⚠ **`RULE 55` in its inverse: this corpus
+recorded a conclusion (`nothing rebuilds it`) for two days without the mechanism under it, and the
+mechanism is the part a fixer needs.**
+
+## 4 · ⚠ THE NEW DEFECT THE FIX INTRODUCED — *a file that contradicts itself*
+
+🔴 **`nba-p3-afternoon-light.yml` carries a LIVE cron in its `on:` block and, at line `13`, the
+comment *"NO CRON YET — the NBA season opens in October."*** *Both are in the same file, `33` lines
+apart.*
+
+⇒ 📌 ***This corpus copied the comment.*** **Every "`P3` has no cron" statement in the twelve traces
+to a source comment that the source itself had already superseded.** ⚠ **The lesson is not "the
+comment was wrong" — it is that *a workflow's prose and its `on:` block are two different claims, and
+only the `on:` block runs*.** ▶ **Standing check, added to the closing pass**: *derive schedules from
+the `on:` block, never from the header comment* —
+`` for f in .github/workflows/nba-*.yml; do awk '/^on:/,/^jobs:/' $f | grep -E '^ *- *cron:'; done ``
+
+## 5 · 📊 The live numbers this changes
+
+| table | this corpus says | live `2026-09-25` | why |
+|---|---|---|---|
+| `nba_score.final_hp` | **`19,215,200`** | 🔴 **`7,210,912`** *(`−62.5%`)* | **the retention rule** — *one set per day, board-scoped* |
+| `nba_score.baseline_history` | `9,537,535` *(2024-25 alone)* | **`8,696,305`** *(all)* | same |
+| `nba_market.board_snapshots` | `12` sources | **`27,068,327` rows, max `game_date` `2026-10-20`** | 🔑 **boards for OPENING NIGHT already exist** |
+| `nba_ref.referee_assignments` | *(a P2 stage factor)* | 🔴 **`0` rows** | ⚠ **still empty — see `§T26.2`** |
