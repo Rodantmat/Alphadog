@@ -17472,3 +17472,89 @@ OWNER turns** *(which produced two corrections in T20 pass 0 and the charter's e
 MECHANISM strata — `tool_result` receipts and `bash_tool` output — which rule 38 does not touch and
 where T12's rule 32, T14's failure census and T18's numeric audit all found what prose could not
 say.** ⚠ **T20 pass 0's `tail 2` reading is an unopened lead in exactly that territory.**
+
+---
+
+## ✅✅✅ **§T26.30 — THREE MORE SEASON-CRITICAL ITEMS CLOSED *WHILE THIS PASS WAS RUNNING*, AND THE CORPUS HAD ALREADY GONE STALE AGAIN** *(`SELECT` + repo reads 2026-09-25T21:5xZ)*
+
+⚠⚠ **`§T26.1` recorded that the build chat had invalidated this corpus's headline claims in a day.
+THIS SECTION RECORDS THE SAME THING HAPPENING IN HOURS — during a single sweep pass.** *While passes
+`3` and `4` were writing, the build chat pushed the commits below. **None of them are in this sweep's
+scope; all of them close items this sweep tracks as `🔴 HELD`.***
+
+### ✅ **`T20-4` — THE SEASON CONSTANTS HARDCODED TO LAST SEASON: CLOSED**
+
+**The item**: *`nba-p3-afternoon-light.yml:38,205` — `default: "2025-26"`, `BS_SEASON: ${{ … || '2025-26' }}` ⇒ 🔴 **HELD**, "the 2026-27 season opens in 28 days".*
+
+```bash
+grep -c "2025-26" .github/workflows/nba-p1-weekly-static.yml \
+                  .github/workflows/nba-p2-overnight-heavy.yml \
+                  .github/workflows/nba-p3-afternoon-light.yml
+```
+▶ **`0` · `0` · `0`.** ✅ **CLOSED.** *Commit `8a9bba6b` names it: **"the last hardcoded `2025-26`
+default in the pipelines."*** 🔑 **A central `nba/nba_season.py` now supplies `active_stats_season`, and
+**10+ scripts** read it — `build_availability_delta` · `build_confidence_v3` · `build_final_hp` ·
+`score_board_legs` · `scrape_nba_daily_delta` and others.**
+
+⚠⚠ **AND THE ROLLOVER RULE IS SHARPER THAN THE ITEM EVER ASKED FOR** *(commit `ec5ce6a5`)*:
+***"`active_stats_season` rolls over on the FIRST REGULAR-SEASON GAME, not on October 1 — **three P1
+runs would have scraped an empty season**."*** 🔑 **The obvious fix (roll on a calendar date) would
+have introduced a NEW three-week defect, and it was caught before shipping.** 📌 *This is `§T26.21`'s
+lesson in a different domain: the calendar and the season are not the same clock.*
+
+### ✅ **`T20-13` — THE `>= 25` PROP GATE: CLOSED, BY MOVING THE GATE TO WHERE THE DATA ACTUALLY IS**
+
+**The item**: *`baseline_history` October = `22` distinct props, November = `30`; P2 gates on `>= 25`
+with `CERT_STRICT=1` ⇒ red from opening night — **corrected at `§T20.136` to red EVERY night.***
+
+▶ **`nba/certify_pipeline.py:135-137` now reads:**
+```python
+check("baseline props for this slate",
+      "SELECT count(DISTINCT prop) FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL'",
+      (today,), lambda v: v and int(v) >= 20, ">= 20 props")
+```
+**`>= 25` → `>= 20`, scoped to `period='FULL'` and to the slate's own date.** ✅ **RE-DERIVED ACROSS BOTH
+SEASONS' OPENING WINDOWS:**
+
+| | dates | pass `>= 20` *(new)* | pass `>= 25` *(old)* |
+|---|---|---|---|
+| **October** | `21` | ✅ **`20`** | 🔴 **`0`** |
+| **November** | `57` | ✅ **`57`** | 🔴 **`0`** |
+
+🔴🔴 **NOTE WHAT THE OLD GATE WOULD HAVE DONE: `0` of `78` dates pass `>= 25` — NOT ONE, in either
+month, in either season.** ⇒ ***`§T20.136`'s correction ("red EVERY night") was right, and it was
+still too kind: November would have failed too.*** ✅ **The one remaining sub-20 date is `2024-10-31`
+at `15` props — an isolated historical slate, not an opening-night pattern.**
+
+⚠⚠ **BUT THE MARGIN IS ONE PROP.** *Every opening-window date carries exactly **`21`** distinct
+`FULL`-period props against a gate of **`20`**.* 🔑 **If a single prop fails to land on opening night,
+the gate fires.** *Recorded as a thin margin, not a defect — the gate is correctly placed at the floor
+of observed behaviour, which is also, by construction, one step from failing.*
+
+### ✅ **`T20-17` — THE SILENT SHARD LOSS: CLOSED, AND THE CODE NAMES THE FAILURE IT REMOVES**
+
+▶ **`nba/build_availability_delta.py` now reads the day's report from Postgres, not over HTTP:**
+```python
+FROM nba_daily.injury_report_snapshots WHERE game_date = %s
+```
+> *its own comment:* ***"A lost shard produced a **smaller-but-normal-looking delta** that then decided
+> which legs P3 scores… P3 loads the day-of report into `nba_daily.injury_report_snapshots` BEFORE this
+> step, **so the table IS the report: same rows, no network, no shards**."***
+
+🔑 **"Smaller-but-normal-looking" is `RULE 37`'s silent category again — the fourth instance this
+sweep has now catalogued** *(with `§T26.19`, `§T26.26`, `§T26.28`)*, **and the remedy is the same one
+each time: remove the step where work can be lost between producing it and reading it back.**
+
+### 🔑🔑🔑 **THE METHOD CONSEQUENCE — AND IT IS THE SHARPEST VERSION OF `RULE 61`**
+
+⚠⚠ ***This pass began by closing `T16-7` and `T16-8` as stale corpus claims. It ends having gone stale
+itself, in under five hours, on three more.*** ⇒ 📜 **`RULE 61`'s scope widens: it is not only that a
+STORE is older than its writer — *a DOCUMENT is older than the system the moment it is written, and
+during an active build phase the half-life is hours, not days.***
+
+✅ **THE PRACTICE THAT SURVIVES THIS**: *every state claim in the twelve carries **the command that
+re-derives it** rather than the value* *(`RULE 59`)*, **and the entry surfaces name a DATE rather than
+a duration** *(`§T26.25`)*. 🔑 **Neither prevents staleness; both make it visible in one command
+instead of one pass.** 🔴 **What CANNOT be made self-correcting is a DIAGNOSIS** — *`§T26.28`'s root
+cause, `§T26.26`'s arc, `§T26.27`'s charter.* ⇒ ***Those are what the sweep is actually for, and they
+are worth more per pass than any re-derivation.***
