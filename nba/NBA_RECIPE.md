@@ -1252,3 +1252,77 @@ WITH s AS (SELECT DISTINCT game_date FROM nba_score.board_scored),
 > 📌 **POINTERS OUT**: **`STEP 12`** for the clock this sits inside · **`T20-6`** for the certifier
 > decision · **`T20-4`** for the season-constant family · **`T20-5`** for the grading window ·
 > **`T20-13`** for the `>= 25` prop gate, a SECOND independent `P2` certify failure on the same night.
+
+---
+
+## ✅✅ **§T26.23 — THE CERTIFIER NOW ASKS EACH PIPELINE ABOUT ITS *OWN* OUTPUT — AND THREE OPEN DECISIONS ARE TAKEN, WITH ONE EXPLICITLY REFUSED** *(T26 seg786, ASSISTANT OUTPUT)*
+
+### ✅ **THE CERTIFIER CHANGE, AND THE DEFECT IT RETIRES**
+
+> ***"all five new checks resolve against real data: `board_scored` has the columns i used, **`48,800`
+> scored legs for the slate with zero null confidences and zero out-of-range probabilities**, and
+> `baseline_ladder` holds **`118,759` rows including `24,621` combo rows**. **so the certifier now asks
+> each pipeline about its own output, and the checks pass on genuine production data rather than on a
+> sibling table's backfill.**"***
+
+🔑🔑 ***"a sibling table's backfill" names the defect exactly.*** ⚠ **A check that reads a table the
+pipeline does not write is green whenever the SIBLING is healthy** — *which is the same vacuity
+`NBA_WORKERS.md:2059` already flags on P3's date-scoped range check, reached by a different route.*
+⇒ 📌 **Two independent instances of ONE failure class: a gate whose subject is not the thing it
+gates.**
+
+⚠⚠ **`baseline_ladder` IS NAMED HERE AND IT NO LONGER EXISTS** — *`F6-1`'s consolidation DROPPED it;
+`load_baseline_ladder.py` now writes `nba_score.baseline_history`.* 🔑 **So this check as described
+would fail today, and the `118,759` figure is the LAST reading of a dropped table.** *Recorded, not
+remediated: whether the check was re-pointed is **NOT RECORDED** (`RULE 6`).*
+
+### ✅✅ **DECISION 1 — REFEREE CREW (`D1`): KEEP THE PENALTY, DO NOT BUILD A PREDICTOR**
+
+> ***"decided: keep **"factor zero plus confidence penalty"**, don't build a predictor."***
+
+| the evidence | figure |
+|---|---|
+| crews never repeat | **`3,414` trios in `3,687` games**, **`3,172` used ONCE** |
+| official foul-rate spread | `0.9`–`1.4` per game |
+| against game-level deviation | **`6.7`** |
+| year-over-year persistence | **`0.26`** |
+| ⇒ true persistent effect | **`~0.7` fouls on a `37`–`40` baseline — under `2%`** |
+
+> 🔑 ***"a predictor for an **unpredictable assignment** worth **under 2%** isn't worth the failure
+> surface."***
+
+✅ **What shipped instead**: ***"shrunk tendencies, `k=112`, from the measured reliability, for when
+the crew is known."*** 🔑 **The signal is not denied — it is SHRUNK in proportion to its measured
+reliability, and the unpredictability of the ASSIGNMENT is what kills the predictor, not the absence
+of an effect.**
+
+### ✅ **DECISION 2 — AVAILABILITY GRANULARITY: THREE LEVELS, NOT FOUR** · **DECISION 3 — `A5` GRANULARITY: THE OTHER WAY**
+
+> ***"availability granularity — **decided by the held-out season**. the four-level model **lost** to
+> the three-level one out of sample, so **three levels ship**. a5 granularity — **decided the other
+> way, for the same reason**: recent-start rate and minutes band beat the simple "started last game"
+> rule by **13.5%**, so they ship."***
+
+📌 **Both are already recorded in full — availability at `§T26.5`, `A5` at `§T26.12`.** 🔑 **What this
+segment adds is that they were taken TOGETHER, as one decision about granularity, and resolved in
+OPPOSITE directions by a single shared standard: *the held-out season judges.***
+
+### 🔴🔴 **AND THE REFUSAL — THE LINE BETWEEN A DECISION AND AN ACTION**
+
+> 🔑🔑🔑 ***"what i won't decide for you: **rotating the published api key and the postgres password,
+> and logging out of prizepicks**. those are **credential actions on live accounts — not judgement
+> calls, just things only you can execute**."***
+
+✅✅ **THIS IS THE EXACT BOUNDARY `§T26.3` RECORDS FROM THE OWNER'S SIDE**, *where he delegated the
+open decisions —* ***"I don't make those decisions. You can make those decisions, but with strong
+research, debug, documentation study, analyzing the data"*** *— **while `F2-1` and `T22-1b` stay
+owner-only.*** 🔑🔑 **Both sides drew the same line independently, and they drew it in the same place:
+a DECISION is delegable; an ACTION ON A LIVE CREDENTIAL is not.**
+
+⚠ **`F7-1` is why this entry names no value, no fragment and no location beyond the account:
+THE REPOSITORY IS PUBLIC.**
+
+> 📌 **POINTERS OUT**: **`§T26.3`** *(the owner's delegation, and the two he kept)* · **`§T26.5`**
+> *(availability, three levels)* · **`§T26.12`** *(`A5`, and why granularity earned its keep there)* ·
+> **`F6-1`** *(why `baseline_ladder` is gone)* · **`F2-1`** / **`T22-1b`** *(the credential actions
+> still standing)*.
