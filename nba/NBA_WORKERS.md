@@ -3000,3 +3000,87 @@ whether a preseason date counts as a slate)* — **this is what happened on any 
 and until the opener EVERY date is one.** ✅ *Now: a slate is detected up front, and the ladder,
 components, combos, periods, merge, commit, load, refits and `final_hp` all skip — with `§T26.14`'s
 season-aware certifier keeping the run GREEN rather than red.*
+
+---
+
+## 🔑🔑🔑 **§T26.43 — `check_factor_freshness.py`: THE INSTRUMENT BUILT TO CLOSE THE SILENT-FALLBACK CLASS — AND IT HAS NO CRON** *(source read + `SELECT` 2026-09-25; `0` of the twelve before this entry)*
+
+**This sweep has now catalogued the same failure class six times** — *`§T26.19` (P2's `41,174` period
+rows a night), `§T26.26` (P2's referee step scraping an empty page), `§T26.28` (P1 discarding its week
+before COMMIT), `§T26.30`/`T20-17` (the lost injury shard), `§T26.35` ① (board tiers never built).*
+✅✅ **`nba/check_factor_freshness.py` is the instrument built to make that class impossible to miss, and
+its docstring names the class better than the corpus does:**
+
+> 🔑🔑🔑 ***"WHY THIS EXISTS. Two owner rules meet here: **everything mined must be stored** (so nothing
+> needs backfilling later), and **every factor needs a working fallback**. Both were true on paper and
+> **neither was checked at runtime**. **The failure mode is not a crash — it is SILENCE**:
+> `nba_ref.referee_assignments` sat EMPTY while P2 ran its scraper nightly, so D1's documented fallback
+> would have **carried every game day with nothing saying so**."***
+
+📌 **Those two owner rules are `§T26.27` ③ verbatim** — *"everything that's mined… needs to be stored"*
+and *"each one of the individual factors needs to have a fallback"* — ⇒ ***this script is the owner's
+directive turned into a runtime assertion, and it is the first artefact in the corpus that tests
+whether a FALLBACK is silently load-bearing.***
+
+### ✅ **THE DESIGN — THREE SEVERITIES, AND THE MIDDLE ONE IS THE NEW IDEA**
+
+| severity | meaning | behaviour |
+|---|---|---|
+| **BINDING** | *the slate cannot be scored honestly without it* | 🔴 **exit non-zero, job goes RED** |
+| 🔑 **FALLBACK** | *a MEASURED fallback exists and takes over* | ⚠ **reported LOUDLY, job stays GREEN** |
+| **WEEKLY** | *refreshed by P1, not per slate* | judged on an `8`-day age |
+
+🔑🔑 ***"Reported loudly, job stays green" is the category the system lacked.*** *A missing factor with a
+working fallback is neither a failure nor a non-event — and treating it as either is how
+`referee_assignments` sat empty for months.*
+
+### 📋 **THE `14` CHECKS, AND WHAT EACH ONE GATES**
+
+| factor | severity | fallback named in the check |
+|---|---|---|
+| injury report snapshots | **BINDING** | *`A1`/`N1`/`N2`/`A6`/`A9`. Fallback: `nba_score.availability_p_plays` (derived, Brier `0.0441` OOS)* |
+| board snapshots (any app) · rung market · baseline history · **`final_hp`** · board scored | **BINDING** | — *`final_hp` noted as "the headline output; **P2 owns it since 2026-09-23**"* |
+| **board tiers v2** | **BINDING** | *"goblin/standard/demon — **the pricing and slip engines read it**"* |
+| market game lines | **BINDING** | *`B1`/`B2`. Fallback: our derived spread (`r=0.46`), factor delta → `0` + penalty* |
+| **referee assignments** | ⚠ **FALLBACK** | *"published only on game morning and never archived → **empty out of season is EXPECTED**. Fallback: factor zero + confidence penalty (crew is tertiary by design)"* |
+| starter status · game officials (truth) | ⚠ **FALLBACK** | — |
+| defender ratings · as-of calibration · availability prior | **WEEKLY** | *the last one checks the derived `P(plays)` model **EXISTS at all** — "or the fallback has nothing to fall back to"* |
+
+✅ **AND IT IS SEASON-AWARE, for `§T26.14`'s reason, stated in its own words**: ***"Out of season there
+are no games, no boards and no assignments, and that is not a defect… **judging it would train everyone
+to ignore red builds**."***
+
+✅ **THE `board_tiers_v2` CHECK IS THE GUARD THAT WOULD HAVE CAUGHT `§T26.35` ①** — *the step that ran
+an index job instead of building tiers.* ▶ **Live: `2,199,354` rows across `378` dates**, and
+`availability_prior` holds **`699`** non-null `p_plays` cells.
+
+### 🔴🔴 **AND HERE IS THE DEFECT: THE DETECTOR OF SILENCE IS ITSELF SILENT**
+
+▶ **`check_factor_freshness.py` is wired into exactly one place — `.github/workflows/nba-maintenance.yml:67` — and that workflow has NO CRON.**
+
+```yaml
+on:
+  workflow_dispatch:          # ← the entire trigger block
+    inputs:
+      task:  { default: "freshness" }
+```
+
+⚠⚠⚠ ***An instrument whose stated purpose is to surface a failure mode nobody notices runs ONLY when
+somebody remembers to run it.*** 🔑 **The class it detects is precisely the class of thing you do not
+think to go looking for** — *that is the definition in its own docstring* — ⇒ ***a manual trigger is
+the one delivery mechanism guaranteed not to fire for it.***
+
+📌 **This is not an argument for scheduling it blindly**: *out of season it correctly reports nothing,
+and a daily green report is its own kind of noise.* 🔑 **But it should run on the days it can say
+something — i.e. in season, after P3 — and nothing currently makes that happen.**
+🔴 **RECORDED AS AN OWNER / BUILD-CHAT ACTION** *(adding a cron is a write to a live workflow, outside
+this sweep)*, **and it is cheap: one `schedule:` block.**
+
+### ⚠ **TWO SMALLER DEFECTS IN THE SAME WORKFLOW**
+
+① **Its header carries a PRE-RESTORE premise that is now false**: ***"`final_hp` covers 2024-25
+completely (162 dates) but **only 1 of 163 dates in 2025-26***" — *`§T26.15` restored it; live it holds
+`163` dates.* ② **`season` input defaults to a hardcoded `"2025-26"`** — *the `T20-4` class, surviving in
+a maintenance workflow after `§T26.30` cleared it from all three pipelines.* 🔑 **Neither is a blocker;
+both are the kind of stale scaffolding `RULE 59` exists to catch, and both are source edits outside
+these twelve.**
