@@ -9,7 +9,17 @@ and the evidence behind each.
 > # 📑 **INDEX — `NBA_BASELINE_CALIBRATION.md`**
 > **How the baseline is built and checked** — the projection chain, the empirical cells, the
 > certification ladder, and what each calibration decision was measured against.
-> 📏 **`136` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_BASELINE_CALIBRATION.md ``
+> 📏 **`136` sections · `2026-09-23`** *(re-derive, never quote — `4` sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_BASELINE_CALIBRATION.md ``
+>
+> 🆕🆕 **SECTIONS ADDED `2026-09-25` — `4` NEW, AND ONE IS THE MOST-REPEATED DEFECT IN THIS SYSTEM.** *Anchors are heading text; search the label.*
+> | § | what it is |
+> |---|---|
+> | 🔴🔴🔴 **`§T26.41`** | ***"DO NOT REBUILD A WORSE COPY OF A COMPONENT THE SYSTEM ALREADY HAS"* — THREE INSTANCES, AND THE THIRD CAME ELEVEN DAYS AFTER ITS OWN POST-MORTEM WAS FILED.** *the crude defender metric · the spread shrink over rolling-mean minutes (**made results WORSE**) · the `A5` starter model (**Δ MAE negative on every prop**).* ⚠ **The post-mortem sits OUTSIDE the twelve, in a file `6` of them cite but none quotes — so a reader working from the twelve never meets it** |
+> | 🔴🔴🔴 **`§T25.3`** | **`§0v.4`'s "no archive anywhere" GAP WAS CLOSED BY CONSTRUCTION** — ***`34.72%` of `nba_market.prop_universe` is our own RECONSTRUCTED lines*** *(`578,832` legs, `8` props, ~`92%` graded)*, **and `final_hp` prices them.** 🔑 *The OUTCOME is real; the LINE PLACEMENT is ours — so any figure quoted across the prop universe mixes two measurements* ▶ **first real lines arrive at preseason `2026-10-03`; the validation does not recur** |
+> | ✅✅✅ **`§T26.20`** | **A DECISION *NOT* TO BUILD, TAKEN ON `307,000` LEGS** — *the sign FLIPS between seasons on a `21,342`-leg subgroup ⇒ noise, not an edge leak; the author drops his own hypothesis* |
+> | ⚠ **`§T26.8`** | the shape-parity break that would have failed P2 every in-season night |
+>
+> 📌 **`§0v.4` below now carries a forward pointer to `§T25.3`** — *read them together; the gap and its closure.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
