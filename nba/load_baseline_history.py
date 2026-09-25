@@ -77,19 +77,19 @@ def main():
             flat = []
             for mk, pr in MARKET_TO_PROP.items():
                 b, per = _split(pr); flat += [mk, b, per]
+            dmin = min(r["game_date"] for r in rows); dmax = max(r["game_date"] for r in rows)
             cur.execute(f"""CREATE TEMP TABLE _bh_keys ON COMMIT DROP AS
                 SELECT DISTINCT b.game_date, m.player_id::text AS player_id, v.prop, v.period, b.line
                 FROM nba_market.board_snapshots b
                 JOIN (VALUES {pairs}) AS v(mk, prop, period) ON replace(b.market_key, '_alternate', '') = v.mk
                 JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(b.player)
-                WHERE b.line IS NOT NULL AND v.prop = ANY(%s)
-                  AND b.game_date BETWEEN (SELECT min(game_date) FROM _bh_stage) AND (SELECT max(game_date) FROM _bh_stage)
+                WHERE b.line IS NOT NULL AND v.prop = ANY(%s) AND b.game_date BETWEEN %s AND %s
                 UNION
                 SELECT DISTINCT u.game_date, u.player_id::text, u.prop, 'FULL', u.line
                 FROM nba_market.prop_universe u
                 WHERE u.line_source = 'simulated' AND u.line IS NOT NULL AND u.prop = ANY(%s)
-                  AND u.game_date BETWEEN (SELECT min(game_date) FROM _bh_stage) AND (SELECT max(game_date) FROM _bh_stage)""",
-                flat + [prop_set, prop_set])
+                  AND u.game_date BETWEEN %s AND %s""",
+                flat + [prop_set, dmin, dmax, prop_set, dmin, dmax])
             cur.execute("CREATE INDEX ON _bh_keys (game_date, player_id, prop, period, line)")
             cur.execute("CREATE TEMP TABLE _bh_scope ON COMMIT DROP AS SELECT DISTINCT game_date, prop, period FROM _bh_keys")
             cur.execute("CREATE INDEX ON _bh_scope (game_date, prop, period)")
