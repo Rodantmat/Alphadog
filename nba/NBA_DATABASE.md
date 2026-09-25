@@ -2791,6 +2791,61 @@ empty; it does **not** establish that the Underdog API still returns multipliers
 populating them would be permitted or useful.* ***"The columns are there and unfilled", never "the
 data is available."***
 
+# 🆕 §T26.9 — 🔴🔴🔴 **TWO NAME NORMALISERS: `47` PLAYERS WERE NEVER SCORED IN EITHER SEASON — AND THIS IS `T20-25`, FOUND AND NOW FIXED**
+
+*Found `2026-09-25`, **by a diff that was meant to prove something else**. Verified live the same day.*
+
+## 1 · How it surfaced — *the check that was supposed to pass*
+
+**The calibration diff existed to prove the prune was LOSSLESS.** *Post-prune rebuild against the
+`nba_score._calib_before_prune` snapshot:* ✅ **`2025-26` identical at every cell** · 🔴 **`2024-25`
+down `4%` of graded legs at EVERY as-of date**, *spread evenly across bands and props (mean cell shift
+`0.006` log-odds, max `0.07`)*.
+
+⇒ **Traced to the join: on `2025-01-15`, `32` of `77` unmatched graded pairs were players who do not
+resolve in `nba_ref.player_name_map` AT ALL** — ***Jaren Jackson Jr, Michael Porter Jr, Kelly Oubre Jr,
+Jaime Jaquez Jr…***
+
+## 2 · The defect — **pre-existing, and exactly two functions disagreeing**
+
+| side | normaliser | result for *Jaren Jackson Jr* |
+|---|---|---|
+| **Python** — `nba/nba_names.py::norm_name` *(builds the map)* | **STRIPS the suffix** | `jarenjackson` |
+| **SQL** — inline `regexp_replace` in `score_board_legs.py`, `build_final_hp.py`, `prune_baseline_to_board.py` and the delta's private normaliser | **KEEPS the suffix** | `jarenjacksonjr` |
+
+⚠⚠ ***The map was built with one and the joins used the other.*** 🔑 **And `nba_names.py`'s own
+docstring says every component *"MUST import from here so the mapping cannot drift"* — the rule was
+written, and the SQL side could not obey it because it is not Python.**
+
+🔴🔴🔴 **RESULT: `47` suffixed players (`Jr`, `Sr`, `II`, `III`) had ZERO scored legs in BOTH seasons** —
+***invisible to scoring, to tiers, to `final_hp`, to the availability delta and to the paper log.***
+*`board_scored` holds `0` rows for Jaren Jackson Jr on `2025-01-15` and `0` for Michael Porter Jr on
+`2026-04-10`.*
+
+⚠ **AND THE PRUNE COMPOUNDED IT**: *its keys came from the SQL normaliser, so those players produced no
+keys and **their full-game ladders for boarded props were deleted in both seasons**.* 📌 *Scoring lost
+nothing — they were never scored. **The calibration lost their legs**, because it matched them via the
+Python normaliser. That asymmetry is why the lossless check caught it.*
+
+## 3 · ✅ Fixed forward — **verified live `2026-09-25`**
+
+| | |
+|---|---|
+| ✅ **`nba_ref.norm_name(text)`** | **a SQL function mirroring the Python one exactly** *(unaccent → lowercase → drop `jr/sr/ii/iii/iv/v` → letters only)*. **Scorer, `final_hp`, prune and delta all use it.** ✅ **Confirmed live: the function exists and `` nba_ref.norm_name('Jaren Jackson Jr.') `` returns `jarenjackson`.** |
+| ✅ **Board resolution** | on the `2026-04-10` PrizePicks board: **`177` → `184` of `185` players resolve.** *The last — "Carlton Carrington" — is a nickname case for `NAME_OVERRIDES`.* |
+| 🔑 **The map itself was AMBIGUOUS** | **`51` stripped names mapped to more than one `player_id`** *(father/son, historical namesakes; **`9` on current boards**)* — *a SQL join fanned out and a dict picked whichever came last.* ✅ **Fixed: one player per name, preferring the current roster, else the most recent career. `53` namesakes removed.** ✅ **Verified live: `5,169` map rows, `0` ambiguous `norm_name` values.** |
+
+## 4 · 📌 This closes `T20-25`, and the two measurements agree
+
+***`T20-25` (this sweep, `2026-09-23`) found the same defect from the WRITER side***: `54` of `582`
+roster players (`9.28%`) with a reader key that cannot equal their writer key, costing `11` of `162`
+players and `6,479` of `107,888` board rows on one archived slate — *"including every one of Jaren
+Jackson Jr's `1,057` legs."*
+
+⇒ ✅ **Same players, same cause, two independent routes: a roster-key audit and a calibration diff.**
+🔑 ***The sweep found it and could not see how much it had already cost; the calibration diff found the
+cost and not the population. Together they are the whole picture.***
+
 # 🆕 §T26.7 — 📐 **THE RETENTION RULE: ONE SET PER DAY, BOARD-SCOPED AFTER THE DAY**
 
 *Owner decision `2026-09-24`. **Recorded here `2026-09-25` and verified live.** ⚠ **This is what
