@@ -208,7 +208,8 @@ table's.***
 > | **`T20-1`** · **`T20-7`** · **`T20-8`** | five 🔴 findings nothing in the corpus points at · `P3` step 6 runs the wrong script · *(see the coverage table)* | `T20-1` heading; `7`/`8` table-only |
 > | **`T22-1`** | ⚠ the "keep my million" request with no record | heading |
 > | **`T15-1`**–**`T15-7`** | 🔴 OREB per-cell dispersion, and six more from `T15` | ⚠ **table-only, one row each** |
-> | **`T16-1`**–**`T16-6`**, **`T16-8`** | 🔴 the verification harness the session concluded it should have built first, and six more | ⚠ **table-only** |
+> | **`T16-1`**–**`T16-6`** | 🔴 the verification harness the session concluded it should have built first, and five more | ⚠ **table-only** |
+> | ✅✅ ~~**`T16-8`**~~ | ✅ **CLOSED `2026-09-25`, `§T26.16`** — *the negatives were a STALE STORE; the formula had been corrected four days before the audit measured them* | **moved to § `D`** |
 > | **`T17-1`**, **`T17-3`**–**`T17-5`** | `T17`'s residue | ⚠ **table-only** |
 > | **`T18-1`** | 🔴 *"Our system should be covering the APP LADDER"* — the owner's words | ⚠ table-only *(in the brief)* |
 >
