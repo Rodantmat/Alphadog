@@ -1,10 +1,27 @@
 # NBA Project — Standing Log
 
+> # 📑 **INDEX — `NBA_PROJECT_LOG.md`**
+> **The standing chronological log** — one dated entry per important step, decision, issue found and
+> issue fixed, in the order it happened. *This is the only NARRATIVE, time-ordered record of the build;
+> the other eleven are organised by subject.*
 > 📏 **`71` sections · `2026-09-25`.** *Re-derive, never quote* (`RULE 59`):
 > `` grep -cE '^(> *)*#{1,6} ' nba/NBA_PROJECT_LOG.md ``
-> ⚠ **STAMP ADDED `2026-09-25`, `§T26.25`** — *this document and `NBA_ENRICHMENT_FACTOR_LOCK.md` were
-> the only two of the twelve carrying NO dated census stamp; a gate that had reported `12`/`12` was
-> counting a looser pattern.*
+> ⚠ **STAMP AND INDEX ADDED `2026-09-25`** *(`§T26.25` for the stamp)* — ***this document and
+> `NBA_ENRICHMENT_FACTOR_LOCK.md` were the only two of the twelve carrying NEITHER a dated census stamp
+> NOR an index***, *while a gate reported `12`/`12` on both counts.*
+>
+> ## ▶ HOW TO USE IT
+> | | |
+> |---|---|
+> | 🔑 **the entries are DATED HEADINGS** | `` grep -nE '^## 20' nba/NBA_PROJECT_LOG.md `` — *that is the table of contents, always current* |
+> | ▶ **the arc, in five stages** | **`2026-08-30`–`09-01`** the static layer and the Cloudflare→GitHub-Actions pivot · **`09-02`–`09-09`** enrichment research, the classification baseline, the two-season backfill · **`09-10`–`09-12`** the day-by-day baseline, game lines, stage assignment, the first factor verdicts *(A2 shipped, N1 measured, **B4 rejected**, five panels retracted)* · **`09-11`–`09-13`** the grader, tiers, the market layer, the **parity directive** · **`09-13`→`09-19`** the three non-negotiables, the final calculation engine, confidence |
+> | ⚠ **THE LOG STOPS BEFORE THE SWEEP DOES** | *its newest entry is `2026-09-19`.* 🔴 **Everything after that — the `P1`/`P2`/`P3` fixes, the `final_hp` restore, the retention rule, the board scoping — is in `NBA_MASTER_SUMMARY.md`'s `§T25.*`/`§T26.*` sections and `NBA_SWEEP_RUN_LOG.md`, NOT here.** 🔑 *Do not read a gap in this log as a gap in the work* |
+> | 🔑 **the realignment rule at the top is the OWNER's** | *`2026-09-09`: open `nba/NBA_COMPASS.md` before answering anything about what has been built* |
+>
+> 📌 **WHERE THE SUBJECT-ORGANISED RECORD IS**: `NBA_MASTER_SUMMARY.md` *(what every transcript
+> contained)* · `NBA_OPEN_ITEMS.md` *(everything unresolved)* · `NBA_RECIPE.md` *(every build step in
+> order, and `🏗 REBUILD FROM ZERO`)* · `NBA_SWEEP_RUN_LOG.md` *(the sweep's own method and pass
+> records)*.
 
 *Realignment rule (owner, 2026-09-09): before answering anything about what has been built, open `nba/NBA_COMPASS.md` — the map from every question to the document/section that answers it. This log is chronological; the checkpoints are the reference.*
 
