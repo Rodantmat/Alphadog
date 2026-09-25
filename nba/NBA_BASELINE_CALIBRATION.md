@@ -791,6 +791,13 @@ demons on high scorers past ±10 — exactly the tail we chose to stop at. That'
 defect, and it's only on the combos."***
 
 ### 🔴🔴 0v.4 **THE BACKTEST'S REAL SCOPE LIMIT — the archived board is 13 of ~25 PrizePicks stat types**
+
+> ✅✅✅ **RESOLVED `2026-09-25` — READ `§T25.3` AT THE END OF THIS DOCUMENT BEFORE ACTING ON THIS
+> BLOCK.** *The gap below is real and was never closed by finding an archive. **It was closed by
+> CONSTRUCTION**: `8` of the `11` props called unarchivable now exist as **`578,832` simulated legs —
+> `34.72%` of `nba_market.prop_universe`** — they are graded, they enter backtests, and
+> `build_final_hp.py` scopes `final_hp` to `real ∪ derived`. 🔑 **The outcomes are real; the LINE
+> PLACEMENT is ours.** ▶ **First real lines for these props arrive at preseason, `2026-10-03`.***
 > *"**The historical board is NOT the full PrizePicks menu.** The Odds API archived only **13 stat
 > types** for PrizePicks *(points, rebounds, assists, threes, blocks, steals, turnovers, PRA, PR,
 > PA, RA, stocks, double-double)*. PrizePicks' actual NBA board **also runs fg made, fg attempted,
