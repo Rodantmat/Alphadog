@@ -13,7 +13,19 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
-> 🆕 **`§T26.5` — THE AVAILABILITY FALLBACK IS BUILT, FITTED AND BACKTESTED** *(added `2026-09-25`)*. *Search that label.*
+> 🆕🆕 **SECTIONS ADDED `2026-09-25` — `10` NEW, AND TWO OF THEM RETRACT EARLIER ONES IN THIS FILE.** *Anchors are heading text; search the label.*
+> | § | what it is |
+> |---|---|
+> | 🔴🔴🔴 **`§T26.39`** | **THE `A5` STARTER MODEL AND "NEXT MAN UP" WERE VALIDATED ON THE WRONG OBJECTIVE, AND NOTHING CALLS THEM** — ⚠⚠ ***RETRACTS `§T26.12` AND `§T26.22` BELOW. READ IT BEFORE EITHER.*** *`Brier` on STARTS vs the `§0u.1` bar of Δ MAE on PROPS; `grep` finds `0` callers of `p_start()`* |
+> | 🔴🔴🔴 **`§T26.37`** | **THE AVAILABILITY DELTA PRICED A LATE `Out` AS A CERTAINTY** — *live on P3's decision path; `7×` worse log-loss; **zero upside, unbounded downside**; now triple-gated* |
+> | ✅✅✅ **`§T26.16`** | **`T16-8` CLOSED — THE NEGATIVES WERE A STALE STORE, NOT A FORMULA DEFECT** *(`0` of `7,210,912` rows negative; the fix predated the audit by four days)* 📜 **`RULE 61` born here** |
+> | ✅✅✅ **`§T26.15`** | **`T16-7`'s DATA-LOSS HALF CLOSED, AND THE POPULATION QUESTION SETTLED** *(board-scoped; `0` off-board rows)* |
+> | 🔴🔴 **`§T26.17`** | **`final_hp` HAS NO `period` COLUMN — period rungs wore FULL-GAME KEYS** |
+> | ⚠⚠ **`§T26.18`** | **THE TWO-STAGE DESCENT — `skip` is not `delete`; `18` props were never cleared** |
+> | ⚠⚠ **`§T26.22`** | *"next man up"* — 🔴 **SUPERSEDED BY `§T26.39`** |
+> | ⚠⚠ **`§T26.12`** | the `A5` starter fallback — 🔴 **SUPERSEDED BY `§T26.39`** |
+> | ✅ **`§T26.11`** | why `2025-26`'s calibration was inherited: `final_hp` held `1` of `163` dates; it now holds all `163` |
+> | ✅ **`§T26.5`** | **THE AVAILABILITY FALLBACK IS BUILT, FITTED AND BACKTESTED** — ✅ *and `§T26.39` explicitly does NOT retract it; see its scope note* |
 > 🔴🔴🔴 **THIS FILE'S NUMBERING IS THE MOST BROKEN OF THE TWELVE — `§T20.6` recorded it and it is
 > unrepaired** *(renumbering would break every inbound pointer; rule 1)*. **Measured `2026-09-23`:**
 > | defect | detail |
