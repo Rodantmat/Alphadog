@@ -184,8 +184,7 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
-## 0c. 📐 RETENTION
- — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
+## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
 
 
 **The rule, in the owner's words:** *"One set of data per day. It cannot grow on the day. If it needs to
