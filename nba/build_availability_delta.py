@@ -121,7 +121,15 @@ def main():
     # must import from it for exactly this reason.
     import sys as _sys
     _sys.path.insert(0, "nba")
-    from nba_names import norm_name as norm
+    from nba_names import norm_name as _shared_norm
+    def norm(s):
+        # The injury report writes "Jackson Jr., Jaren"; the map is keyed on "Jaren Jackson" -> reorder
+        # first, THEN apply the one shared normaliser (accents, suffixes, punctuation).
+        s = str(s or "")
+        if "," in s:
+            last, _, first = s.partition(",")
+            s = f"{first.strip()} {last.strip()}"
+        return _shared_norm(s)
     name_to_id = dict(zip(nm["norm_name"], nm["player_id"].astype(str)))
     now_out = {name_to_id[norm(p)] for p, (a, b) in material.items()
                if b in OUT_LIKE and norm(p) in name_to_id}
