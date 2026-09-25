@@ -8,8 +8,21 @@ writes. Grouped by role.
 > # 📑 **INDEX — `NBA_WORKERS.md`**
 > **Every worker and workflow** — what each does, how it is wired, what triggers it, and where it
 > fails. *Counts of workflows and crons are never quoted here; `§0.0` carries the commands.*
-> 📏 **`130` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_WORKERS.md ``
-> | 🔴🔴 **the FILE CENSUS — `7` of `21` workers and `27` scripts named in `0` of the twelve** | **`§F5.5`** |
+> 📏 **`130` sections · `2026-09-23`** *(re-derive, never quote — `6` sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_WORKERS.md ``
+>
+> 🆕🆕 **SECTIONS ADDED `2026-09-25` — `6` NEW, AND FIVE OF THEM ARE ONE FAILURE CLASS.** *Anchors are heading text; search the label.*
+> | § | what it is |
+> |---|---|
+> | 🔴🔴🔴 **`§T26.28`** | **THE FROZEN STATIC LAYER'S ROOT CAUSE — P1 died on `ModuleNotFoundError: scipy` EVERY MONDAY, before its COMMIT step**, *"so the whole week's scraping was thrown away uncommitted… **while the cron ran fine every week**"*. ⇒ **ranked item `B` diagnosed and half-closed** |
+> | 🔴🔴🔴 **`§T26.26`** | **THE REFEREE ARC** — *a decision taken, **rejected by the owner in the next turn**, conceded as a logical error, then dissolved by the documentation (**in production the crew is KNOWN, not predicted**) — uncovering the cron bug that left `referee_assignments` at `0` rows and moved P2 to the morning* |
+> | 🔴🔴🔴 **`§T26.35`** | **FOUR MORE DEFECTS FROM THE COMMIT STREAM** — *P3's "board tiers" step ran a one-off index job on `25.7M` rows and **NEVER BUILT TIERS** (= **`T20-7`, now CLOSED**) · the `120`-minute deadline · P1's silent-zero rollover · P2's `KeyError` on a no-game day.* 🔑 *Also: **the entire compute path scores `91,405` legs in under `20` SECONDS*** |
+> | 🔴🔴🔴 **`§T26.19`** | **P2 BUILT `41,174` PERIOD ROWS A NIGHT THAT NEVER REACHED THE DATABASE** — *`~43` min, a third of the pipeline; closed, **and fixing it is what created `§T26.17`'s key collision*** |
+> | 🔑🔑🔑 **`§T26.43`** | **`check_factor_freshness.py` — THE INSTRUMENT THAT CLOSES THE SILENT-FALLBACK CLASS, AND IT HAS NO CRON** ⇒ item **`T26-2`** |
+> | ✅✅✅ **`§T26.34`** | **THE CERTIFIER CAUGHT THE `final_hp` LOSS, LOUDLY** *(run `35917049251`)* — **the corpus's only recorded instance of it working** |
+>
+> ⚠⚠ **READ `§T26.19`, `§T26.26`, `§T26.28`, `§T26.35`① AND `T20-17` TOGETHER: they are FIVE instances of ONE class — *work performed, work not persisted, every liveness signal green.*** 🔑 **`RULE 37`'s silent category finally has its mechanism: the gap is always between DOING and COMMITTING.**
+>
+> | 🔴🔴 **the FILE CENSUS — `7` of `21` workers and `27` scripts named in `0` of the twelve** | **`§F5.5`** ⚠ *`§T26.45` adds `3` MORE, built `2026-09-23`–`25` and load-bearing TODAY* |
 > | 🔴🔴 **the scripts behind every T15 factor verdict** *(`fit_*`, `measure_*`, `retest_*`)* | **`§F5.5` §2** — *mapping also in `NBA_FINAL_SCORING_CALIBRATION.md` §3* |
 > | 🔴 **the FOUR workflow files that were named nowhere in the twelve** *(`nba-backtest`, `nba-grader`, `nba-measure-types`, `nba-score-history`)* | **`§F2.16`** |
 > | 🔴🔴🔴 **the grader workflow — and `T20-5`'s stale `2026-04-12` window, a SECOND and THIRD time** | **`§F2.16` §1** |
