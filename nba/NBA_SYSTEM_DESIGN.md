@@ -2262,7 +2262,18 @@ step-by-step against their workflow files.**
 
 ---
 
-## 4b. ⚠ WHAT NO PIPELINE DOES — `final_hp` is rebuilt by nothing
+## 4b. ✅ **`final_hp` — NOW REBUILT BY `P2` (step `6b`)** · ~~⚠ WHAT NO PIPELINE DOES — rebuilt by nothing~~
+
+> ✅✅ **CLOSED `2026-09-24`, recorded `§T26.4`/`§T26.1`.** ***`P2` runs `build_final_hp.py` at step `6b`,
+> AFTER the as-of calibration and the confidence refit, because it reads both.*** **`FE_DATE` = the
+> slate (seconds, not the ~`90` minutes a full rebuild takes); `FE_SEASONS` blank so the script
+> resolves the live season; `FE_WRITE=1` or it only reports.**
+>
+> 🔑 **THE CAUSE THIS SECTION NEVER HAD.** *Why no pipeline owned it:* ***"`build_final_hp.py` deleted
+> season+prop while `FE_DATE` scoped the SELECT to one slate, so a daily run would have wiped the
+> season's history."*** ⇒ **The write scope was the defect, not the schedule** — *fixed `2026-09-23`,
+> which is what made ownership possible.* ⚠ **The analysis below is retained as the record of the gap
+> and its reasoning; read it as history, not as current state.**
 *Recorded 2026-09-20 (T1 pass 34). **VERIFIED** by reading all three P-pipeline workflow files.*
 
 The calculation chain in §5 below runs `baseline HP → availability delta → as-of calibration →
