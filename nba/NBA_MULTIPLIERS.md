@@ -20,6 +20,15 @@ https://api.prizepicks.com/game_types` returns a payout quote for a specific leg
 > the tests run, and what calibrating a multiplier would require.
 > 📏 **`150` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MULTIPLIERS.md ``
 >
+> 🆕🔴🔴 **`2026-09-25` — NO SECTION WAS ADDED HERE, BUT THREE FINDINGS ELSEWHERE CHANGE WHAT THIS FILE RESTS ON. READ THEM FIRST.**
+> | finding | why it matters to multipliers |
+> |---|---|
+> | 🔴🔴🔴 **`§T26.35`①** *(`NBA_WORKERS.md`)* | **P3's "board tiers" step ran a one-off index job and NEVER BUILT TIERS** *(= `T20-7`, now CLOSED)*. ⇒ ***the goblin/standard/demon classification this file's pricing law depends on was not being produced for the decision-moment board at all.*** 🔴 **Residual → `T26-1`: `BT2_APPS` is PrizePicks-ONLY, so no other app's board is classified** |
+> | 🔴🔴 **`T16-2`** *(`NBA_OPEN_ITEMS.md`)* | **`18` of `30` props have NO tier rows** — *`board_tiers` covers only `12` markets because **PrizePicks offers goblin/demon tiers on those alone***. 🔑 *They need a SECOND path keyed on the standard board line, with no tier dimension* |
+> | 🔴🔴🔴 **`§T25.3`** *(`NBA_BASELINE_CALIBRATION.md`)* | ***`34.72%` of `nba_market.prop_universe` is our own RECONSTRUCTED lines*** *(`8` props, `578,832` legs, ~`92%` graded)* — **and they are essentially `T16-2`'s no-tier list.** ⇒ ***a third of the priced universe has no tier classification and no real posted line*** ▶ **the first REAL lines for those props arrive at preseason `2026-10-03`, and that validation does not recur** |
+>
+> ⚠ **SCOPE, UNCHANGED**: *PrizePicks payout construction — goblin/demon floors, alternate-line spacing, void reversion, the slip simulator — belongs to **`nba/PP_PAYOUT_FINDINGS.md`** and the PrizePicks database objects, which are outside these twelve by standing constraint.* 🔑 **What is recorded here is the multiplier LOGIC and what the sweep can verify of it.**
+>
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS.** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).*
 > **Search the file for the quoted `§` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
