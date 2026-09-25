@@ -2766,8 +2766,49 @@ a mechanism, and this is it — the gap is always between DOING and COMMITTING.*
 
 | layer | live state `2026-09-25` | verdict |
 |---|---|---|
-| ✅ **IDENTITY** — `nba_ref.players` *(rosters, trades, two-way call-ups)* | **`713` rows, written `2026-09-24T19:47Z`** | ✅ **NO LONGER FROZEN** — *the `ModuleNotFoundError` fix reached Postgres* |
-| 🔴 **AS-OF** — `nba_ref.defender_ratings` | **`111,768` rows, `max(as_of_date) = 2026-04-09`** | ✅ **CORRECTLY FROZEN — NOT A DEFECT** *(it is computed FROM GAMES, and there have been none since April)* |
+| ✅ **IDENTITY** — `nba_ref.players` *(rosters, trades, two-way call-ups)* | **`713` rows, written `2026-09-24T19:47Z`** | ✅ **NO LONGER FROZEN** — *the fix reached Postgres* |
+| ⚠ **AS-OF** — `nba_ref.defender_ratings` | **`111,768` rows, `max(as_of_date) = 2026-04-09`** | ⚠⚠ **CORRECTED BELOW — I FIRST WROTE "correctly frozen, NOT a defect". THAT WAS WRONG.** |
+
+### 🔴🔴🔴 **CORRECTION, SAME DAY — THE MISSING MODULE WAS `scipy`, AND THE SCRIPT IT KILLED WAS `build_defender_ratings.py` ITSELF**
+
+*`T26`'s `tool_use` stratum names it exactly* — **seg703**:
+> ***"nba p1: **install scipy — `build_defender_ratings` imports it, so the step has been failing every
+> week**."***
+
+✅ **VERIFIED IN SOURCE**: `build_defender_ratings.py:46-47` — `` from scipy import sparse `` and
+`` from scipy.sparse.linalg import lsqr `` — **and it is the ONLY one of P1's `15` scripts that
+imports scipy.** ▶ P1's install line now reads `` pip install … numpy scipy curl_cffi … ``.
+
+⚠⚠ ***So the as-of layer was not merely waiting for games. The builder that produces it was CRASHING
+ON A MISSING DEPENDENCY, every Monday, for months.*** 🔑 **I attributed the freeze to the out-of-season
+condition because `§T26.14` had made that explanation available and it FIT. It fits both ways — and
+the `2026-04-09` stamp cannot discriminate between them, because a builder that ran would also have
+produced nothing without games.** ⇒ ***What discriminates is the IDENTITY layer, and it is
+unambiguous: `nba_ref.players` was stuck at `2026-09-03` while the cron ran green weekly. No absence of
+games explains that.***
+
+📜 **`RULE 62` again, one level up**: *I re-derived the SYMPTOM (`max(as_of_date)`) and reasoned about
+the cause. **The cause was a `pip install` line, and only the commit stream said so.***
+
+### ✅✅ **AND THE REPAIR WAS TWO COMMITS, NOT ONE — THE SECOND IS THE STRUCTURAL ONE**
+
+| | commit | what it does |
+|---|---|---|
+| **①** | **seg703** | `pip install … scipy` ⇒ *the step stops crashing* |
+| **②** | **seg708** | ***"commit and certify run even when a build step fails — a mid-pipeline error no longer discards the week's scrape"*** |
+
+✅ **VERIFIED**: P1's commit, load and certify steps now carry **`if: always()`**, with the workflow's
+own reasoning — ***"Committing on `always()` preserves the data; the job still goes red because the
+failed step failed"*** and ***"a late failure must not discard the load."***
+
+🔑🔑🔑 **① FIXES THIS BUG. ② FIXES THE CLASS.** *Without ②, the next unrelated mid-pipeline error would
+have silently discarded another week — and nobody would have known, because **the cron would still run
+fine every week**.* ⚠ **`§T26.19`, `§T26.26`, `§T26.28`, `T20-17`: four instances of work performed and
+not persisted, and ② is the first fix that addresses the SHAPE rather than one instance of it.**
+
+⚠⚠ **A CONVERGENCE WORTH NOTING**: ***`build_defender_ratings.py` is ALSO the single unguarded
+`CREATE INDEX IF NOT EXISTS` script left in any pipeline*** *(`§T26.32`)*. 🔑 **One script carries both
+of P1's remaining known hazards.**
 | ⚠ **SCHEDULE** — `nba_calendar.games` | `2,666` rows, `updated_at` still **`2026-09-02T20:25`** | ⚠ *unchanged, but it holds **`1,266` games for `2026-27`** — loaded once, and correct until games move* |
 | — | `nba_ref.officials` `80` rows, `2026-09-01` | ✅ static roster |
 
