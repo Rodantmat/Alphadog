@@ -2862,3 +2862,94 @@ alternate-line spacing, void reversion and the slip simulator's payout schedules
 `nba/PP_PAYOUT_FINDINGS.md` and the PrizePicks objects, which are outside these twelve documents by
 standing constraint.*** 🔑 **Recorded here is the DIRECTIVE and its consequence for how the twelve rank
 their own open items — not the payout content.**
+
+---
+
+## 🔑🔑🔑 **§T26.27 — THE ARCHITECTURAL CHARTER IN THE OWNER'S OWN WORDS: WHAT P2 AND P3 EACH SCOPE, WHY *ALL PROPS STAY*, AND THE ONE PRINCIPLE THAT RESOLVES "STORE EVERYTHING" AGAINST "ONE SET PER DAY"** *(T26 seg340 · seg870 · seg952, OWNER SAID; the code comments cite these decisions, the twelve never quoted them)*
+
+*`§T26.15` attributes board-scoping to an **"owner decision 2026-09-24"** and `build_final_hp.py` cites
+it by date. **Here is the decision itself**, and it is more precise than the comment that cites it.*
+
+### ① 🔑 **THE SCOPING RULE — P2 IS FULL SPECTRUM, P3 IS THE BOARD** *(seg952)*
+
+> ***"one thing that you need to look on the p3 logic is that **board scope** — so **only legs that are
+> on the board**. we don't calculate everything differently than p2. **p2 is NOT a board scope. it's
+> the FULL SPECTRUM of the baseline**, and of course it is mining logs and splits and more factors. so
+> **the recalculation on p2 should reflect just the players that have NEW DATA — not all the players,
+> because if it's doing all the players is wrong, that's wasting time.** and for p3, board scope.
+> **for now the only board that we're gonna have is probably prizepicks.**"***
+
+| | scope | axis |
+|---|---|---|
+| **P2** | ✅ **full spectrum of the baseline** | 🔑 **narrowed by PLAYER — only those with new data** |
+| **P3** | ✅ **the board only** | 🔑 **narrowed by LEG — only lines an app offered** |
+
+🔑🔑 ***TWO DIFFERENT NARROWINGS ON TWO DIFFERENT AXES, AND CONFLATING THEM IS THE ERROR THE OWNER IS
+HEADING OFF.*** ✅ *This is exactly what `prune_baseline_to_board.py` and `build_final_hp.py`
+implement — the baseline stays wide, the scoring store is the board — and `§T26.15` measures the
+result.*
+
+### ② 🔴🔴 **"ALL PROPS STAY, NO EXCEPTION" — AND IT IS A RULING ABOUT THE FUTURE, NOT THE PRESENT** *(seg870)*
+
+> 🔑🔑🔑 ***"the period props are not gonna show up right now, **but they will show up when the season
+> starts**. so yes, it's needed. it IS needed. **same for fantasy score.** there are many prop lines
+> that are not gonna be showing right now, but once the season really starts, they are gonna start
+> showing up. **SO ALL PROPS STAY, NO EXCEPTION.**"***
+
+⚠⚠ **THIS ANSWERS A QUESTION THE CODE WOULD OTHERWISE DECIDE BY ACCIDENT.** *Off-season there is no
+board, so a board-scoped rule applied naively would delete the period props and `fantasy_score`
+permanently — **and they are precisely the props that reappear when the season starts.***
+
+✅✅ **AND THE CODE HONOURS IT, IN THE RIGHT PLACE:**
+
+| store | behaviour with no board | correct? |
+|---|---|---|
+| `baseline_history` *(the ingredient)* | 🔑 ***"a prop with no board of any kind (historically the PERIOD props) **keeps its full ladder**: it is the raw material the derivation will run on"*** | ✅ **KEEPS** |
+| `final_hp` *(the product)* | ***"an empty result means NO board carried this prop… so the correct content of `final_hp` for it is NOTHING"*** ⇒ `DELETE`s the slice | ✅ **CLEARS** |
+
+⇒ ***"All props stay" is satisfied by keeping them in the INGREDIENT while clearing them from the
+PRODUCT.*** 🔑 **A reader who sees `final_hp` drop from `30` props to `21` (`§T26.15`) and concludes
+props were abandoned has read the product for the pantry.** 📌 *`§T25.3` measures the same boundary
+from the prop-universe side: `8` simulated props, `578,832` legs, all retained.*
+
+### ③ 🔑🔑 **"EVERYTHING MINED MUST BE STORED" — AND WHY THAT IS NOT A CONTRADICTION OF THE RETENTION RULE** *(seg340)*
+
+> ***"everything that's mined, **every single factor needs to be saved, needs to be stored**. so all the
+> app boards, all market, all the individual factors must be stored. **so we don't need to be
+> backfilling it, because we will have it every day.** one more thing is **each one of the individual
+> factors needs to have a FALLBACK**… research online, look at the documentation, debug the system,
+> look at the data, **no guessing**."***
+
+⚠⚠ **READ FLAT, THIS CONTRADICTS `§T26.7`** — *"one set of data per day, board-scoped after the day",
+the rule under which `final_hp` fell `62.5%` and `baseline_history` was pruned.* 🔴 **One directive says
+KEEP EVERYTHING; the other DELETES most of it.**
+
+✅✅ **THE RESOLUTION IS A DISTINCTION BETWEEN WHAT CAN BE REBUILT AND WHAT CANNOT:**
+
+| | can it be re-obtained? | rule |
+|---|---|---|
+| 🔴 **INGREDIENTS** — *app boards, market prices, mined factors, the day's observations* | ❌ **NO** — *a board that was posted and not captured is gone forever; `D1` crew assignments are explicitly **"never archived"*** | 🔑 **seg340: store every one, every day** |
+| ✅ **PRODUCTS** — *baselines, ladders, `final_hp`, scores* | ✅ **YES** — *recomputable from the ingredients whenever wanted* | 🔑 **`§T26.7`: one set per day, overwrite, board-scope after** |
+
+⇒ ***The two directives do not conflict: they apply to opposite sides of the same pipeline.*** 🔑 **And
+it explains the retention rule's shape — the rule prunes PRODUCTS and never touches a captured board.**
+⚠⚠ **THIS PRINCIPLE IS NOT STATED IN ANY OF THE TWELVE** *(it is written down only in
+`nba/PP_PAYOUT_FINDINGS.md`, which is outside this sweep's scope)* — **so it is recorded here, in the
+owner's own terms, because every retention question in the corpus turns on it.**
+
+### ④ ⚠ **AND A PRESEASON INSTRUCTION THAT IS NARROWER THAN THE DECISION TAKEN** *(seg952)*
+
+> ***"the preseason should NOT really mix with the full season, so the preseason games **should be
+> SEPARATE**, and **should affect and be usable only for the BEGINNING of the season, to give it some
+> backing, some more information**."***
+
+⚠⚠ **NOTE WHAT THIS DOES AND DOES NOT SAY.** *The owner asks for **separation**, not exclusion — and
+for limited early-season use.* 🔑 **`§T26.10` gates preseason OUT of the slate and `§T26.21` rules it
+out of the projection pipeline entirely, on measured evidence** *(`0.5%` of legs, and the statistics
+that would carry — minutes, volume — are the ones research says don't transfer)*. ✅ **That is a
+STRONGER conclusion than the owner asked for, reached by measurement**, *and the owner authorised
+exactly that at seg982:* ***"keep researching online, understanding if there is any useful point on
+really processing the preseason. **I don't even care about it. Just if it adds up. If it doesn't add,
+then don't worry about preseason.**"*** ⇒ ✅ **NO CONFLICT — the delegation covers it.** 📌 *But
+`§T26.21`'s accepted half — preseason as a BOARD/market-structure source — is the part seg952 also
+asks for, and it remains **NOT RECORDED as implemented** with preseason `8` days out.*
