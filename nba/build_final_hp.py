@@ -119,21 +119,17 @@ def main():
     _params = _flat + ([FE_DATE] if FE_DATE else []) + ([FE_DATE] if FE_DATE else [])
     with conn.cursor() as cur:
         cur.execute("DROP TABLE IF EXISTS _fe_board_keys")
-        # REAL boards UNION DERIVED boards (owner 2026-09-24: "either the real boards or derived"). The
-        # derived boards are the simulated fantasy-score / derived-prop legs in prop_universe, the only
-        # board those props ever had historically.
+        # THE BOARD, from nba_market.board_rung_keys (2026-09-25): real boards UNION derived boards, resolved
+        # once per date through the one normaliser by nba_market.refresh_board_rung_keys(). Reading the
+        # table replaces a per-run normalising scan of board_snapshots; P3 keeps it current daily.
         cur.execute(f"""
             CREATE TEMP TABLE _fe_board_keys AS
-            SELECT DISTINCT b.game_date, m.player_id::text AS player_id, v.prop, b.line
-            FROM nba_market.board_snapshots b
-            JOIN (VALUES {_pairs}) AS v(mk, prop) ON replace(b.market_key, '_alternate', '') = v.mk
-            JOIN nba_ref.player_name_map m
-              ON m.norm_name = nba_ref.norm_name(b.player)
-            WHERE b.line IS NOT NULL {_date_clause}
-            UNION
-            SELECT DISTINCT u.game_date, u.player_id::text, u.prop, u.line
-            FROM nba_market.prop_universe u
-            WHERE u.line_source = 'simulated' AND u.line IS NOT NULL {_date_clause_u}""", _params)
+            SELECT game_date, player_id, prop, line FROM nba_market.board_rung_keys
+            WHERE period = 'FULL' {_date_clause.replace('b.game_date', 'game_date')}""", ([FE_DATE] if FE_DATE else []))
+        cur.execute("SELECT count(*) FROM _fe_board_keys")
+        if cur.fetchone()[0] == 0:
+            raise SystemExit("ABORT: nba_market.board_rung_keys is empty for this scope - refresh it first "
+                             "(a missing key table is not an empty board).")
         cur.execute("CREATE INDEX ON _fe_board_keys (game_date, player_id, prop, line)")
         cur.execute("SELECT count(*), count(DISTINCT game_date) FROM _fe_board_keys")
         _nk, _nd = cur.fetchone()
