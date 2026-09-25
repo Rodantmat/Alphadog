@@ -9,7 +9,7 @@ context, and which document section. Any material term appearing more than once 
 > **Every term used across the NBA system — what it means, and where it came from.** *Two structures:
 > **`§Z`** is the flat lookup (term → location, covers `A`–`Z`); the **body blocks** hold the
 > definitions. Where they disagree, the body is newer.*
-> 📏 **`47` sections · `2026-09-23`** *(re-derive, never quote — `1` section added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_GLOSSARY.md ``
+> 📏 **`51` sections · re-derived `2026-09-25`** *(was `47` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_GLOSSARY.md ``
 >
 > 🆕🔴🔴🔴 **SECTION ADDED `2026-09-25` — AND IT IS A ROUTING FACT, WHICH IS WHY IT LIVES HERE.**
 > | § | what it is |
