@@ -53,19 +53,35 @@ def main():
         # confidence refit: baseline_history_uidx (uniqueness, 54.5M scans) and the wide lookup.
         prop_set = sorted({r["prop"] for r in rows})
         cur.execute("DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)", (season, prop_set))
-        cur.executemany("""INSERT INTO nba_score.baseline_history
+        # BULK LOAD (2026-09-25). The previous executemany inserted a season of one prop pair (~700k
+        # rows) one row at a time through the unique index: measured ~1 hour per pair, with every other
+        # loader waiting on the advisory lock behind it. COPY into a temp staging table, then one
+        # set-based INSERT with the same ON CONFLICT clause - identical rows, identical semantics, same
+        # single transaction (the DELETE above and this INSERT still commit or roll back together).
+        cur.execute("""CREATE TEMP TABLE _bh_stage (
+            season text, game_date date, player_id text, game_id text, prop text, period text,
+            line numeric, anchor numeric, ladder_offset int, p_more numeric, p_less numeric, p_raw numeric,
+            role_tier text, var_band text, used_emp boolean, ladder_steps int, recipe text,
+            proj_min numeric, rate36 numeric) ON COMMIT DROP""")
+        with cur.copy("""COPY _bh_stage (season, game_date, player_id, game_id, prop, period, line, anchor, ladder_offset,
+                         p_more, p_less, p_raw, role_tier, var_band, used_emp, ladder_steps, recipe, proj_min, rate36)
+                         FROM STDIN""") as cp:
+            for r in rows:
+                cp.write_row((season, r["game_date"], r["player_id"], r["game_id"], r["prop"], r.get("period") or "FULL",
+                              r["line"], r.get("anchor"), r.get("offset"), r.get("p_more"), r.get("p_less"), r.get("p_raw"),
+                              r.get("role_tier"), r.get("var_band"), r.get("used_emp"), meta.get("ladder_steps"),
+                              (meta.get("recipe") or "")[:120], r.get("proj_min"), r.get("rate36")))
+        cur.execute("""INSERT INTO nba_score.baseline_history
             (season, game_date, player_id, game_id, prop, period, line, anchor, ladder_offset, p_more, p_less, p_raw,
              role_tier, var_band, used_emp, ladder_steps, recipe, proj_min, rate36)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            SELECT DISTINCT ON (game_date, player_id, game_id, prop, period, line)
+                   season, game_date, player_id, game_id, prop, period, line, anchor, ladder_offset, p_more, p_less, p_raw,
+                   role_tier, var_band, used_emp, ladder_steps, recipe, proj_min, rate36
+            FROM _bh_stage
             ON CONFLICT (game_date, player_id, game_id, prop, period, line) DO UPDATE SET
               p_more=EXCLUDED.p_more, p_less=EXCLUDED.p_less, p_raw=EXCLUDED.p_raw, anchor=EXCLUDED.anchor,
               ladder_offset=EXCLUDED.ladder_offset, role_tier=EXCLUDED.role_tier, var_band=EXCLUDED.var_band,
-              used_emp=EXCLUDED.used_emp, proj_min=EXCLUDED.proj_min, rate36=EXCLUDED.rate36, loaded_at=now()""",
-            [(season, r["game_date"], r["player_id"], r["game_id"], r["prop"], r.get("period") or "FULL",
-              r["line"], r.get("anchor"), r.get("offset"), r.get("p_more"), r.get("p_less"), r.get("p_raw"),
-              r.get("role_tier"), r.get("var_band"), r.get("used_emp"), meta.get("ladder_steps"),
-              (meta.get("recipe") or "")[:120], r.get("proj_min"), r.get("rate36"))
-             for r in rows])
+              used_emp=EXCLUDED.used_emp, proj_min=EXCLUDED.proj_min, rate36=EXCLUDED.rate36, loaded_at=now()""")
     conn.commit()
     with conn.cursor() as cur:
         cur.execute("SELECT prop, count(*), count(DISTINCT game_date), count(DISTINCT player_id) FROM nba_score.baseline_history WHERE season=%s GROUP BY 1 ORDER BY 1", (season,))
