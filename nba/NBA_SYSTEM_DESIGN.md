@@ -53,9 +53,12 @@ constraints that shaped it. This is the operational spec.
 > | **after** | ✅✅ **`final_hp` IS REBUILT — `P2` step `6b`** *(`build_final_hp.py`, after the calibration and confidence refits because it reads both)* | **`§4b`** | ✅ **`§4b` CLOSED `2026-09-24`.** *Cause of the old gap: the script deleted season+prop while `FE_DATE` scoped the SELECT to one slate, so a daily run would have wiped the season's history. **The write scope was the bug, not the schedule.*** |
 > | **recovery, any time** | re-running a range in PARALLEL | **`§T23.5`** | 🔴🔴 **DEADLOCKS** — *`CREATE UNIQUE INDEX IF NOT EXISTS` inside the write transaction; `181` of `325` dates failed; `17` files carry the pattern, `7` in `P2`/`P3`* |
 >
-> 🔴🔴🔴 **READ THE LAST THREE ROWS TOGETHER.** ***Two of the three pipelines have no schedule, the one
-> that produces picks aborts on every date of the new season, and the tool you would reach for to
-> catch up deadlocks.*** ▶ **All three are on the decision surface: `NBA_OPEN_ITEMS.md` → `ACT ON
+> ✅✅ **RE-VERIFIED LIVE `2026-09-25`.** ~~*Two of the three pipelines have no schedule, the one that
+> produces picks aborts on every date of the new season, and the tool you would reach for to catch up
+> deadlocks.*~~ ⇒ ***The first two are FIXED. The pipeline starts itself and runs the new season.***
+> 🔴 **ONE REMAINS: the parallel catch-up still DEADLOCKS** *(`§T23.5`)* — **`13` files carry
+> `CREATE … INDEX IF NOT EXISTS`, `4` in `P2`/`P3`.** ***Run recovery dates ONE AT A TIME.***
+> ▶ **On the decision surface: `NBA_OPEN_ITEMS.md` → `ACT ON
 > THIS` rows `1c`, `1d` and `4` (`T20-3`).**
 >
 > ## 📋 EVERY SECTION, IN LOGICAL ORDER
