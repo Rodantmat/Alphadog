@@ -185,6 +185,27 @@ the exposure countable rather than anecdotal.**
 | 18 | `build_confidence_v3.py` | `nba_score.confidence_model` · `nba_score.confidence_verification` |
 | 19 | `certify_pipeline.py` `PIPE=p2` | *(asserts only)* |
 
+> ### 🆕 §T26.14 — 🔴 **`P1` WAS CERTIFYING RED EVERY MONDAY, OUT OF SEASON — *"exactly how a team learns to ignore red builds"***
+>
+> *`T26`, `2026-09-24`. **Fixed the same day.***
+>
+> 🔴 **The mechanism.** *`P1`'s certifier demands `nba_ref.defender_ratings` be **under `8` days old**.
+> Out of season nothing refreshes it — it was stamped `2026-04-09` — so **every weekly run went red on
+> a freshness check that could not pass until games resume.***
+>
+> ⇒ 🔑🔑 ***A guard that cannot pass out of season is not a guard; it is a training exercise in
+> ignoring the alarm.*** **This is the same reasoning the `P2` header gives for withholding its cron
+> until the season** *("a scheduled job failing nightly against an empty schedule trains everyone to
+> ignore red builds")* — ***and `P1` had been doing precisely that, weekly, the whole time.***
+>
+> ✅ **Fixed: the certifier is now SEASON-AWARE.** *Out of season a run certifies with "no games
+> scheduled" and stays green rather than red.* ⚠ **The freshness check is NOT removed — it becomes
+> binding again once games start**, *which is when an `8`-day-old defender rating would actually be a
+> defect.*
+>
+> 📌 ***The pattern to carry: every freshness gate needs a season predicate, or it inverts out of
+> season — asserting failure when the correct state is "nothing to do".***
+
 > ### 🆕 §T26.6 — ✅✅ **`P3`: `22` MINUTES → `~2`. IT WAS SCRAPING EVERY SPORT THE APPS OFFER AND THROWING THE REST AWAY.**
 >
 > *`T26`, `2026-09-24`. **Measured from the run log, not inferred** — run `35956077197`, `04:32:23`
