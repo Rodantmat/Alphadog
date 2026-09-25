@@ -182,6 +182,23 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 | *(new)* the daily object was poorer than the backfill | ✅ fixed | `build_baseline_history.py` emitted `proj_min` / `rate36` (0% NULL in the store); `build_baseline_ladder.py` did not, so every in-season row would have loaded NULL — the delta's reallocation NaN-dropped on every leg and the confidence refit's components went silent. The production patcher now carries both, same `rep()` as the history patcher; validated by compiling the patched recipe. |
 | **T20-13/T20-6 corollary** — `DROPPED N rows with NaN probabilities` in the delta | ⚠ explained | combos have no `proj_min` by construction (100% NULL), so their reallocation cannot be re-derived and they keep the baseline. Correct fallback; the "should be 0" message is over-strict for combos. |
 
+**THE COMBINED REHEARSAL (mining ON + a real slate, first ever, 2026-09-25) — failed once, fixed, then green through `final_hp`:**
+
+| Found | Fixed |
+|---|---|
+| `load_baseline_ladder.py` still ran a post-load diagnostic against the dropped `baseline_ladder` — crash after the commit | diagnostic reads the one store |
+| the loader fetched the merged artifact **over the raw CDN seconds after committing it** (the workflow comment says so by design) and 404'd on its own file | reads the runner's disk first; the legacy `_combos`/`_periods` fetches that only produced 404 noise are gone |
+| second run: mining → build (with components) → local load → calibration → confidence → `final_hp` **29,966** board-scoped rows. Daily singles now carry `proj_min`/`rate36` (28,088 rungs, 0 NULL), combos NULL by construction — **exact parity with the backfill** | slate then pruned to board scope (79,437 → 43,824, periods kept) |
+
+**OPENING-MORNING SEASON LOGIC, followed through every consumer (2026-09-25):**
+- `active_stats_season()` rolled over by **calendar month** (from Oct 1). First game is Oct 20; P1 runs Mondays Oct 5/12/19 → three scrapes of an EMPTY season, and the function's own docstring warns that could overwrite last season's profiles. Now rolls over on the **day after the first regular-season game** from the schedule file (`<=`, because on opening MORNING no game has been played and P2 runs at 08:45 PT). Tested: Oct 1–19 → 2025-26, Oct 20 → 2025-26, Oct 21 → 2026-27; no-file fallback unchanged.
+- **Scorer** labels `board_scored.season` by the slate's date (`current_season(date)`), not by "which season has data" — otherwise Oct 20 legs pooled into 2025-26's calibration cells.
+- **`final_hp`** with a slate date uses the slate's season — otherwise it read `season='2025-26' AND game_date=2026-10-20`, found nothing, and the certifier went red on night one.
+- Verified: the certified recipe reads only per-season files (player/team/advanced logs, market spreads, four factors, team scoring); the four-factors and scoring files ARE delta-synced, so the new season's appear when the delta rolls over. The profile tables (#9) are a research-parity item, not production.
+
+**PERIOD PROPS — researched, then wired (2026-09-25).** PrizePicks posts NBA period lines: "First Quarter Points" (rotoballer, Nov 2023), "1H PRA" (Feb–Mar 2023); its API spells the stat with a prefix — `"1H Points"`, `"1H 3-Pointers Made"` — and calls fantasy `"Fantasy Points"` and free throws `"FT Made"` (published projections sample); third-party market maps list PrizePicks 1Q points and 1Q assists. Before this pass a period leg could not score: the archiver had no mapping, the scorer's vocabulary pointed at prop names (`points_q1`) that don't exist in the store, and the scorer joined `period = 'FULL'` only. Now: `pp_market_key()` handles the prefixes and the API's spellings; `MARKET_TO_PROP` (and the SQL key function, kept in step by hand) carry the full period set for the four period props plus the DERIVED props (FTM, FGA, FGM, FTA, 3PA, OREB, DREB, personal fouls) — **every prop the baseline carries now has a board key**; the scorer splits `points_q1` → (`points`, `Q1`) and joins on base prop + period, interpolating within the period ladder. Unit-tested end to end: 12 of 13 PrizePicks stat forms resolve; **period COMBOS ("1H Pts+Rebs+Asts") have no ladder and stay loudly unmapped** — the one known limit.
+⚠ My first PrizePicks map sent fantasy to `player_fantasy_score`; the scorer expects `player_fantasy_points`. Corrected.
+
 ---
 
 ## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
