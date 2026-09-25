@@ -43220,3 +43220,45 @@ predictor… i do think that we can, and i would prefer that")*: **`1,227` games
 distinct, one full season** — *enough to model crew assignment; not enough to claim an accuracy figure
 before it is fitted.* ⚠ ***`NOT RECORDED`: no predictor exists yet, and no accuracy has been measured.
 This section names the data, not a result.***
+
+# §T26.3 — 🔴🔴🔴🔴 **THE OWNER DELEGATED THE OPEN DECISIONS. `ACT ON THIS` § `A` NO LONGER DESCRIBES HOW THEY ARE MADE.**
+
+*`T26` pass `1`, `2026-09-25`. **This changes the single most-read surface in the corpus.***
+
+## 1 · The two statements, verbatim
+
+> **`T26` seg `44`:** *"all the pending decisions should be grounded on online research, deep debug and
+> understanding of the system. **if still not resolvable, then you can ask me** — but all these
+> decisions should be grounded on the system, the debug, the data and especially research. and yes you
+> can start and continue with the open items."*
+>
+> **`T26` seg `773`:** *"the open decisions that the documentation chat found, those decisions need to
+> be grounded on research, debug, and understanding of the system as a whole. **and so I don't make
+> those decisions. You can make those decisions**, but with strong research, debug, documentation
+> study, analyzing the data, and so on."*
+
+## 2 · What changes, and what does not
+
+| | |
+|---|---|
+| 🔴 **What `NBA_OPEN_ITEMS.md` said** | `ACT ON THIS` § `A` — ***"OWNER DECISIONS — nothing below moves without you"***, `14` rows |
+| ✅ **What is true from `2026-09-24`** | ***The owner does not make them. They are delegated, conditionally.*** **The condition is not optional and the owner states it four separate ways** *(segs `44`, `773`, `1029`, `1081`)*: **online research · deep system debug · study of this documentation · analysis of the live data.** *Escalation survives for one case only:* ***"if still not resolvable, then you can ask me."*** |
+| ⚠ **What does NOT change** | 🔴 **`F2-1` (ROTATE the published key) and `T22-1b` (the live account session) are NOT decisions — they are ACTIONS ONLY THE OWNER CAN TAKE.** *No amount of research rotates a credential.* **They stay owner-only.** |
+
+⇒ 📌 ***The `ACT ON THIS` heading was a true description of the regime that produced it and is a false
+description of the regime now.*** **Corrected in place; the old wording is struck, not deleted.**
+
+## 3 · 🔑 The standing rule this creates — and it is aimed at the corpus, not the reader
+
+> **`T26` seg `743`, after a wrong assertion about which pipeline does what:**
+> ***"you cannot fucking guess anymore. I spent three fucking days working documentation for you to
+> not do this anymore. So any minimal doubt, any minimal question, you need to look deep into
+> documentation. That's a hard rule. That's a religious rule from now on. No guessing. Look at the
+> damn documentation."***
+
+⚠⚠ ***This is the strongest statement in the corpus about what the twelve are FOR, and it is stated
+as a consequence of their existing.*** **The documents were built so that guessing is never
+necessary; the owner's rule is that guessing is therefore never permitted.** 🔑 ***It also sets the
+bar this sweep is measured against: every time a reader has to guess, the failure is the
+documentation's.*** ▶ *That is the same standard as `§F7.16`'s reader test, stated by the owner
+independently.*
