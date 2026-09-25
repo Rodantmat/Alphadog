@@ -185,7 +185,7 @@ the exposure countable rather than anecdotal.**
 | 18 | `build_confidence_v3.py` | `nba_score.confidence_model` · `nba_score.confidence_verification` |
 | 19 | `certify_pipeline.py` `PIPE=p2` | *(asserts only)* |
 
-**P3 — `nba-p3-afternoon-light.yml` · 11 invocations · 🔴 NO CRON (`workflow_dispatch:` only)**
+**P3 — `nba-p3-afternoon-light.yml` · 11 invocations · ✅ CRON `15 21 * * *` LIVE** *(`1:15 PM PST` / `2:15 PDT`)* ⚠ **the file's line `13` still reads "NO CRON YET" — its own `on:` block contradicts it; trust the `on:` block** *(`§T26.1` §4)*
 
 | step | script | writes |
 |---|---|---|
