@@ -74,6 +74,17 @@ MARKET_TO_PROP = {
     "player_points_h1": "points_h1",
     "player_points_h2": "points_h2",
     "player_points_q4": "points_q4",
+    # PERIOD SET COMPLETED + DERIVED PROPS (2026-09-25). The baseline carries Q1/Q4/H1/H2 ladders for
+    # points, rebounds, assists and threes, and full-game ladders for FTM, FGA, FGM, FTA, 3PA, OREB,
+    # DREB and personal fouls - but none of these had a board key here, so the legs could never score.
+    # PrizePicks posts them (its API shape: "1H Points", "1H 3-Pointers Made", "FT Made"; third-party
+    # market maps list 1Q points and 1Q assists). Every prop the baseline carries now has a key.
+    "player_rebounds_h1": "rebounds_h1", "player_assists_h1": "assists_h1", "player_threes_h1": "threes_made_h1",
+    "player_rebounds_h2": "rebounds_h2", "player_assists_h2": "assists_h2", "player_threes_h2": "threes_made_h2",
+    "player_rebounds_q4": "rebounds_q4", "player_assists_q4": "assists_q4", "player_threes_q4": "threes_made_q4",
+    "player_ftm": "ftm", "player_fga": "fga", "player_fgm": "fgm", "player_fta": "fta",
+    "player_threes_attempted": "fg3a", "player_oreb": "oreb", "player_dreb": "dreb",
+    "player_personal_fouls": "personal_fouls",
 }
 
 
