@@ -5191,6 +5191,39 @@ lines — an internal factor gate and an external price comparison — converge 
 the system's edge is not in being more confident than the baseline, it is in the break-even gap
 `PrizePicks` leaves open.***
 
+# 🆕 §T26.11 — ✅✅ **WHY `2025-26`'s CALIBRATION WAS INHERITED: `final_hp` HELD `1` OF `163` DATES. IT NOW HOLDS ALL `163`.**
+
+*`T26`, `2026-09-24/25`. **The mechanical cause of `§T23.10`/`§T23.18`, and its repair.***
+
+## 1 · The cause — *one sentence the corpus was missing*
+
+> **`T26`, verbatim:** *"`final_hp` has only **`1` of `163` dates** for `2025-26` while baselines cover
+> all of them. **That's the mechanical reason the as-of calibration has been inheriting `2024-25`
+> cells — it learns from `final_hp`, and the live season had nothing of its own.**"*
+
+🔑 ***The corpus recorded the SYMPTOM (`2025-26` calibration inherited from `2024-25`) for two days
+without the MECHANISM. The mechanism is a one-line join fact: the calibration reads `final_hp`, and
+`final_hp` was empty for that season.*** ⚠ **And it could not have been otherwise — `final_hp` had no
+pipeline owner until `2026-09-24** (`§4b`), so nothing was writing it.** *Two open items with one root.*
+
+## 2 · ✅ Live `2026-09-25`, after the backfill
+
+| | `2024-25` | `2025-26` |
+|---|---|---|
+| **`final_hp` dates** | `162` | ✅ **`163`** *(was `1`)* |
+| **`final_hp` rows** | `3,399,146` | `3,811,766` |
+| **calibration cells** | `9,208` | `16,754` |
+| **as-of dates** | `23` | `24` |
+| 🔑 **cell source** | **`own` `100%`** | ✅ **`own` `9,231` (`55.1%`)** · ⚠ **`prior_season` `7,523` (`44.9%`)** |
+
+⇒ ✅ ***`2025-26` is no longer calibrated ONLY on the prior season — a majority of its cells are now
+its own evidence.*** ⚠ **But `44.9%` still inherit**, *which is expected for a season with `24` as-of
+dates and thin early coverage, and is the honest state to record.* **`§T23.10`/`§T23.18` are
+PARTIALLY closed: the blocker is gone, the inheritance is not.**
+
+📌 ***`NOT RECORDED`: the threshold at which a cell prefers own-season over prior-season evidence, and
+whether `44.9%` falls as the season fills. Both are measurable and neither is measured.***
+
 # 🆕 §T26.5 — ✅✅✅ **THE AVAILABILITY FALLBACK: BUILT, FITTED OUT OF SAMPLE, AND CALIBRATED — AND THE INPUT IT NEEDED HAD NEVER BEEN IN THE DATABASE**
 
 *`T26`, recorded `2026-09-25`. **Every row re-derived against live Postgres the same day.**
