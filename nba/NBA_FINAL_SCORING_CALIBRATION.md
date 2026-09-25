@@ -5190,3 +5190,77 @@ within a point on `776,000` legs, so confident departures from it lose.** ⇒ **
 lines — an internal factor gate and an external price comparison — converge on one instruction:
 the system's edge is not in being more confident than the baseline, it is in the break-even gap
 `PrizePicks` leaves open.***
+
+# 🆕 §T26.5 — ✅✅✅ **THE AVAILABILITY FALLBACK: BUILT, FITTED OUT OF SAMPLE, AND CALIBRATED — AND THE INPUT IT NEEDED HAD NEVER BEEN IN THE DATABASE**
+
+*`T26`, recorded `2026-09-25`. **Every row re-derived against live Postgres the same day.**
+⚠ **`NOT RECORDED` is used below wherever the transcript stops short; nothing here is inferred.**
+
+## 1 · 🔴🔴 The hole underneath it: the binding availability input was not queryable
+
+> **`T26`, verbatim:** *"the injury report is nowhere in postgres. **no table matching `%injur%`
+> exists**, and `nba_daily` — where the doc says the loader should write injury-report snapshots —
+> **has zero tables**. The binding availability input lives only as repo files."*
+
+🔑 ***The document specified that loader. It was never built.*** *Everything else was already
+persisted — boards, market lines, tiers, outcomes, scored legs, baselines, `final_hp`, defender
+ratings, officials, starter status, tracking, playtypes, on/off, lineups.* **Injury was the one hole,
+and it gates availability.**
+
+✅ **NOW LOADED — live `2026-09-25`:** **`nba_daily.injury_report_snapshots`, `1,338,020` rows ·
+`330` game dates · `12,066` distinct snapshots · `2024-10-22 → 2026-04-14`.**
+🔑🔑 ***It stores EVERY SNAPSHOT, not a daily summary*** — *so "what was known at `12:30`" stays
+separable from "what was known at `19:45`".* **That separability is what makes the fallback
+backtestable at all: the archive is `as-known`, the box scores are truth.**
+⚠ **Rows saying a team had not filed yet are PRESERVED, not dropped** — *`9.4%` of the set* —
+***because "no row" and "not filed" are different facts.***
+
+## 2 · What the report is worth at the cutoff — **`330` dates, both seasons**
+
+| status at the `16:15 ET` cutoff | player-games | `P(plays)` | minutes when they play |
+|---|---|---|---|
+| **out** | `19,677` | **`0.2%`** | `8.8` |
+| **doubtful** | `671` | **`1.0%`** | `13.5` |
+| 🔑 **questionable** | `3,823` | **`46.9%`** | `24.0` |
+| ⚠ **available** | `1,628` | **`80.1%`** | `23.2` |
+| **probable** | `1,466` | **`87.8%`** | `26.5` |
+
+🔑 ***"Questionable" at the decision moment is a coin flip — `46.9%` over `3,823` player-games and
+`541` players.*** **This CONFIRMS the corpus's existing *"79% of questionables are coin flips at the
+cutoff"* finding from the opposite direction**, and it is the reason the fallback exists.
+
+⚠⚠ **AND ONE ROW LOOKS BACKWARDS: `available` (`80.1%`) sits BELOW `probable` (`87.8%`).** *At
+`1,628` player-games that is unlikely to be noise.* ▶ **The transcript's reading — recorded as a
+reading, not a result**: *"`available` appears on the report for players who were listed earlier and
+then cleared, and some still get rested or DNP-CD."* ⚠ ***`NOT RECORDED`: this has not been tested.
+It is flagged as a real signal to explain, not an anomaly to wave off.***
+
+## 3 · ✅ The fit — **trained on `2024-25`, scored on `2025-26`, never touched during fitting**
+
+| model | Brier *(lower better)* | vs status-only |
+|---|---|---|
+| global rate only | `0.1382` | — |
+| **status only** *(the report itself)* | `0.0498` | **baseline** |
+| ✅ **full: status × role × reason × availability** | **`0.0441`** | **`11.3%` better** |
+| 🔑 **questionables only** | **`0.2398`** *(vs `0.2505`)* | **`4.3%` better** |
+
+✅ **CALIBRATED, not merely sharper: mean prediction `0.160` against an actual `0.166`.**
+
+🔑 **Two honest readings, both the transcript's own:** ***"the status label carries most of the
+information — the jump from `0.138` to `0.050` is the report itself."*** *The granularity adds a real
+`11%` on top; on questionables — **the only genuinely uncertain group** — it adds `4.3%`, **"a modest
+but real edge on a coin flip."***
+
+## 4 · Where it lives — **verified live, row for row**
+
+| object | rows | what it is |
+|---|---|---|
+| `nba_score.availability_training` | **`27,265`** | ✅ **the leakage-free training set** — *status as known at `16:15 ET`, features strictly from PRIOR games* |
+| `nba_score.availability_prior` | **`699`** | **the fitted cells — `4` hierarchy levels, shrinkage `15/10/5`** |
+| `nba_score.starter_training` · `starter_prior_v2` | `78,556` · `125` | *the same pattern applied to starter status* |
+| `nba_ref.official_tendency` | `78` | *the referee-tendency table (see `§T26.2` for the data behind a crew predictor)* |
+
+⚠ ***`NOT RECORDED`: whether the prior is yet WIRED into the enrichment path.*** *The transcript
+names it as the immediate next step —* *"wire this prior into the enrichment path so a missing or
+stale report falls back to it instead of to nothing"* — **and does not report doing it.** ⇒ **Until
+that is confirmed, treat the fallback as FITTED but not necessarily IN USE.**
