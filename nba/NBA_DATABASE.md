@@ -12,7 +12,16 @@ transcript. Where a table was altered later, the change is noted with its transc
 > # 📑 **INDEX — `NBA_DATABASE.md`**
 > **The complete data dictionary** — every schema, table and column, built from real `CREATE TABLE`
 > statements and `information_schema` reads, never from memory.
-> 📏 **`148` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_DATABASE.md ``
+> 📏 **`148` sections · `2026-09-23`** *(re-derive, never quote — `5` sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_DATABASE.md ``
+>
+> 🆕🆕 **SECTIONS ADDED `2026-09-25` — `5` NEW.** *Anchors are heading text; search the label.*
+> | § | what it is |
+> |---|---|
+> | 🔴🔴🔴 **`§T25.1`** | **THE ENTIRE POSTSEASON IS ABSENT FROM EVERY GRADING AND SCORING STORE** — *`47` nights / `91` games in `nba_calendar.games`; **`0` legs in `board_outcomes`, `0` rows in `final_hp`**; both seasons stop at their regular-season last day, and **2026-27's loaded schedule has no postseason date either*** ⇒ *every calibration and confidence fit is regular-season only* |
+> | ✅✅ **`§T26.32`** | **`§T23.5`'s DEADLOCK IS FIXED ON EVERY P2/P3 PATH** — *and my own re-derivation said otherwise because it **counted a STRING instead of a RISK**.* 📜 **`RULE 62` born here.** *Incident magnitude, from the source: **`181` of `325` replay dates failed*** |
+> | ⚠⚠⚠ **`§T26.24`** | **`T16-9` RE-DERIVED — `14` scans, not `0`** *(all four batch counters ROSE; nothing was rebuilt)*. 🔴 **AND TWO SIBLINGS THE CORPUS CERTIFIES AS "EARNING THEIR KEEP" ADDED `22` AND `20` SCANS** against a batch-mate's `+40,909,121`. ⚠ *This section's FIRST version was wrong and is retracted inside it* |
+> | 📐 **`§T26.7`** | **THE RETENTION RULE — one set per day, board-scoped after the day** |
+> | ✅ **`§T26.9`** | **the two name normalisers** |
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
