@@ -78,17 +78,45 @@ def load(app, sport):
 # shows up as a visible unknown rather than silently vanishing.
 PP_STAT_MAP = {
     "points": "player_points", "rebounds": "player_rebounds", "assists": "player_assists",
-    "3-pt_made": "player_threes", "3-pt_attempted": "player_threes_attempted",
+    "3-pt_made": "player_threes", "3-pointers_made": "player_threes", "3-pt_attempted": "player_threes_attempted",
+    "3-pointers_attempted": "player_threes_attempted",
     "pts+rebs": "player_points_rebounds", "pts+asts": "player_points_assists",
     "rebs+asts": "player_rebounds_assists", "pts+rebs+asts": "player_points_rebounds_assists",
     "blocked_shots": "player_blocks", "steals": "player_steals",
     "blks+stls": "player_blocks_steals", "turnovers": "player_turnovers",
-    "fantasy_score": "player_fantasy_score", "double-double": "player_double_double",
-    "triple-double": "player_triple_double", "free_throws_made": "player_ftm",
+    # PrizePicks' API spells these "Fantasy Points" and "FT Made" (verified 2026-09-25 against a
+    # published sample of its projections payload); the earlier guesses are kept as aliases.
+    "fantasy_points": "player_fantasy_points", "fantasy_score": "player_fantasy_points",
+    "double-double": "player_double_double", "triple-double": "player_triple_double",
+    "ft_made": "player_ftm", "free_throws_made": "player_ftm", "ft_attempted": "player_fta",
+    "free_throws_attempted": "player_fta",
     "offensive_rebounds": "player_oreb", "defensive_rebounds": "player_dreb",
-    "fg_made": "player_fgm", "fg_attempted": "player_fga",
+    "fg_made": "player_fgm", "fg_attempted": "player_fga", "personal_fouls": "player_personal_fouls",
 }
+# PERIOD PREFIXES (2026-09-25). PrizePicks posts period props with a prefix on the stat name - "1H Points",
+# "1H 3-Pointers Made", "1Q Points" (verified against its API shape and third-party market maps). The
+# suffix here matches the scorer's MARKET_TO_PROP keys (player_points_q1, player_points_h1, ...).
+PP_PERIOD_PREFIX = {"1q_": "_q1", "2q_": "_q2", "3q_": "_q3", "4q_": "_q4", "1h_": "_h1", "2h_": "_h2",
+                    "1st_quarter_": "_q1", "1st_half_": "_h1", "2nd_half_": "_h2", "4th_quarter_": "_q4"}
 _pp_unmapped = set()
+
+
+def pp_market_key(stat_type):
+    """PrizePicks stat_type -> the scorer's market key, or None if unknown (printed once)."""
+    raw = str(stat_type or "").lower().replace(" ", "_")
+    suffix = ""
+    for pre, suf in PP_PERIOD_PREFIX.items():
+        if raw.startswith(pre):
+            raw, suffix = raw[len(pre):], suf
+            break
+    base = PP_STAT_MAP.get(raw)
+    if base is None:
+        if raw not in _pp_unmapped:
+            _pp_unmapped.add(raw)
+            print(f"  prizepicks: UNMAPPED stat_type '{stat_type}' -> player_{raw}{suffix} "
+                  f"(add it to PP_STAT_MAP or it will not join the history)", flush=True)
+        base = "player_" + raw
+    return base + suffix
 
 
 def rows_prizepicks(doc, gd, label):
