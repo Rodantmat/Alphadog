@@ -102,8 +102,14 @@ jobs:
           slate = sys.argv[1]
           now = datetime.now(timezone.utc)
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              # PRESEASON IS NOT A SLATE (2026-09-24): preseason is rejected for the projection pipeline
+              # (documented decision) and used for board and multiplier learning only. Counting regular-
+              # season games here means a preseason day takes the no-games path below - the board is
+              # still captured and archived, and scoring / paper picks are skipped. No preseason pick
+              # ever reaches the paper log.
               first_tip, games = c.execute(
-                  "SELECT min(game_datetime_utc), count(*) FROM nba_calendar.games WHERE game_date = %s",
+                  """SELECT min(game_datetime_utc), count(*) FROM nba_calendar.games
+                     WHERE game_date = %s AND coalesce(game_label, '') <> 'Preseason'""",
                   (slate,)).fetchone()
               scored = c.execute(
                   "SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s", (slate,)).fetchone()[0]
