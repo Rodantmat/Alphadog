@@ -375,7 +375,10 @@ behind every 45-minute write."*
 ⚠ **The three expression indexes sum to 447 MB against fact 104's stated 487 MB** — *a 40 MB
 difference; **NOT RECORDED** whether that is a different measurement basis or reclaimed bloat.*
 
-🔴🔴 **`board_outcomes_nm_idx` carries 303 MB and `idx_scan = 0`.** ⚠⚠ **STATED PRECISELY**:
+🔴🔴 **`board_outcomes_nm_idx` carries 303 MB and `idx_scan = 0`.** ⚠ **RE-DERIVED `2026-09-25`,
+`§T26.24`: `14` scans, still 303 MB. ALL FOUR counters ROSE and `stats_reset` is STILL `NULL`, so the
+restart caveat below is now EXCLUDED and the window claim is CONFIRMED — the batch-mate took
+`+40,909,121` in the same window.** ⚠⚠ **STATED PRECISELY**:
 `pg_stat_database.stats_reset` is **NULL** for this database, so **no explicit statistics reset is
 recorded** — but the sweep **cannot rule out a counter reset on a server restart**, so the claim is
 **"zero scans across the whole window these statistics cover"**, not "never used since creation". 🔑
