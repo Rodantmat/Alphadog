@@ -5297,3 +5297,36 @@ but real edge on a coin flip."***
 names it as the immediate next step —* *"wire this prior into the enrichment path so a missing or
 stale report falls back to it instead of to nothing"* — **and does not report doing it.** ⇒ **Until
 that is confirmed, treat the fallback as FITTED but not necessarily IN USE.**
+
+# 🆕 §T26.12 — ✅✅ **THE `A5` STARTER FALLBACK — AND THE ONE PLACE EXTRA GRANULARITY *EARNED* ITS KEEP**
+
+*`T26`, `2026-09-24`. **Fit on `2023-24` + `2024-25`, scored on `26,543` player-games in `2025-26` it
+never saw.***
+
+| model | Brier *(lower better)* | vs the obvious rule |
+|---|---|---|
+| base rate only | `0.2487` | — |
+| **"started last game"** *(the obvious baseline)* | `0.0834` | **baseline** |
+| ✅ **full model** *(+ rate-of-recent-starts, minutes band)* | **`0.0722`** | ✅ **`13.5%` better** |
+
+✅ **Accuracy `91.0%` · mean prediction `0.4643` against an actual `0.4631` — calibrated.**
+
+🔑🔑 ***THE CONTRAST THAT MAKES THIS WORTH RECORDING.*** **Both fallbacks have the identical shape** —
+*a leakage-free training table, a hierarchical prior with shrinkage, a held-out season as judge* —
+**but they disagree about granularity:**
+
+| | availability *(`§T26.5`)* | starter *(`A5`, here)* |
+|---|---|---|
+| gain from extra levels | **`11.3%` overall, `4.3%` on the uncertain group** | ✅ **`13.5%` on top of the simple rule** |
+| verdict | *"the status label carries most of the information"* — **the fourth level LOST** | ✅ ***"here the extra granularity EARNED its place"*** |
+
+⇒ 📌 ***Same method, opposite answer. Granularity is not a virtue to be applied uniformly — it is a
+hypothesis that has to be scored per factor, and one of the first two scored it negative.***
+
+## ✅ Two load gaps closed in the same pass — *"mined weeks ago, never loaded"*
+
+**officials `11,062` rows across three seasons** · **starter status `~96,000` rows** *(`32,385` +
+`32,515` + `32,179`)*. 🔑 ***The existing workers already took a season argument, so no new code was
+needed*** — **the data had been mined and simply never loaded.** ⚠ *That is the same failure class as
+the injury archive in `§T26.5`: **the pipeline produced it, nothing put it where a query could reach
+it.***
