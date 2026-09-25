@@ -1303,7 +1303,10 @@ wrote the check the sweep later ran:***
 
 🔴🔴 **`[LIVE-AUDIT]`, three days later: `board_outcomes_nm_idx` is STILL AT ZERO SCANS**, while its two
 siblings on the same batch show **1,080,188** and **594,932**. ⚠⚠ **The conditional has fired and there
-is no record of anyone checking it.**
+is no record of anyone checking it.** ⚠ **RE-DERIVED `2026-09-25`, `§T26.24`: the index reads **`14`**
+now; the two siblings read **`1,080,210`** and **`594,952`** — *`+22` and `+20`.* 🔑 **The conditional
+is still fired, and the siblings that were cited as proof it should have been used have themselves
+gone nearly idle.**
 
 ✅ **AND THE TRANSCRIPT ALSO SUPPLIES WHY, in the `EXPLAIN` that finally diagnosed the stall**: *"Postgres
 refused any index because the join condition contained `replace(replace(o.market_key,…))` and
