@@ -120,9 +120,11 @@ def main():
              ", ".join(n for n, _ in docs)))
     conn.commit()
     with conn.cursor() as cur:
-        cur.execute("SELECT prop, count(*) FROM nba_score.baseline_ladder WHERE asof=%s GROUP BY 1 ORDER BY 2 DESC", (asof,))
-        for p, n in cur.fetchall():
-            print(f"  {p:<16} {n}")
+        cur.execute("""SELECT coalesce(period,'FULL') AS period, count(*), count(DISTINCT prop),
+                              count(*) FILTER (WHERE proj_min IS NULL)
+                       FROM nba_score.baseline_history WHERE game_date = %s GROUP BY 1 ORDER BY 2 DESC""", (asof,))
+        for per, n, np_, nnull in cur.fetchall():
+            print(f"  {per:<6} {n:>8} rows  {np_:>3} props  proj_min NULL: {nnull}")
     conn.close()
     print("DONE")
 
