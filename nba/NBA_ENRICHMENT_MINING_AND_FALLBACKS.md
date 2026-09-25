@@ -276,6 +276,11 @@ P(stat > line) and a factor can reshape the distribution without moving the mean
 before the leg-level gate was graded blind**."* **The bar is log-loss / Brier at the LEG LEVEL on real
 PrizePicks lines, against the certified anchor: log-loss `0.7150`, Brier `0.2594` (2025-26).** Evidence
 goes to `nba_score.factor_gate_results`. Until A5 clears THAT, nothing is wired.
+✅ **TESTED 2026-09-25 AT THAT GATE — CLOSED.** Variant E in `test_factors_on_baseline.py`: P(start)
+through the minutes channel (own as-of starting/bench minutes, relative to the allocator's recent-10),
+same yardstick, held out in time. **7,128 real PrizePicks legs: anchor 0.7260, anchor × A5 0.7441 —
+worse by 0.018** (`anchor_x_A5_pstart_minutes` in `factor_gate_results`). The documented reasoning
+stands: recent minutes already encode starting. Closed by measurement.
 
 ⚠ **AND THE SAME DOCUMENT SETTLES M1 — do NOT integrate it.** `nba_ref.defender_ratings` is real and well
 built (two-way ridge, offence-adjusted, 5 channels, reliability-shrunk, weekly as-of) and the doc keeps it
