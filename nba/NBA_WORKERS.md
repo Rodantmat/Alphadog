@@ -2732,3 +2732,75 @@ is SUPERSEDED, not outstanding.***
 MADE.** *A future reader finding seg807/seg822 without seg844 would re-open a rebuild the owner
 himself called off three turns later.* 🔑 **This is `RULE 40`'s reason stated as a live hazard: the
 cancellation is worthless if it is not stored beside the order.**
+
+---
+
+## 🔴🔴🔴 **§T26.28 — THE FROZEN STATIC LAYER HAS A ROOT CAUSE, IT IS WRITTEN IN P1's OWN WORKFLOW, AND THE CORPUS RECORDS ONLY THE SYMPTOM** *(workflow read + `SELECT` 2026-09-25; the diagnosis is `0` of the twelve)*
+
+**Ranked item `B` of the opening-day brief — *"the frozen static layer"* — has been carried through
+this entire sweep as a MEASUREMENT with no explanation**: *`nba_ref.defender_ratings`
+`max(as_of_date) = 2026-04-09`, `111,768` rows, P1's certifier check RED.* ⚠ **`§T20.56` states the
+symptom, `§T20.83` calls the table dead, the brief re-derives it every pass — and no entry says WHY.**
+
+### ✅✅ **THE CAUSE IS A CODE COMMENT IN `.github/workflows/nba-p1-weekly-static.yml`, LINES 52–55**
+
+> 🔑🔑🔑 ***"step died with `ModuleNotFoundError` EVERY Monday — and because it dies mid-pipeline, the
+> three steps after it (static context, COMMIT, certify) were skipped, **so the whole week's scraping
+> was thrown away uncommitted and never reached Postgres**. That is why the static layer's timestamps
+> sat at `2026-09-03` and `defender_ratings` at `2026-04-09` **while the cron ran fine every week**."***
+
+⚠⚠ **READ THE LAST CLAUSE TWICE.** ***The cron ran fine every week.*** 🔑 **So every check that asks
+*"is P1 scheduled?"* or *"did P1 run?"* answered YES, correctly, for the entire period in which P1
+produced nothing.** ⇒ ***A green schedule and a green run, with a mid-pipeline death between the
+scraping and the COMMIT, is indistinguishable from success at every level the sweep was measuring.***
+
+📌 **AND IT IS THE SAME SHAPE AS `§T26.19`** *(P2 built `41,174` period rows a night that the merge
+never picked up)* **and `§T26.26`** *(P2's referee step scraped an empty page for months)*. ⇒ 🔑🔑 **THREE
+INDEPENDENT INSTANCES OF ONE FAILURE CLASS IN ONE TRANSCRIPT'S WORTH OF WORK: *work performed,
+work not persisted, and every liveness signal green throughout.*** ⚠ **`RULE 37`'s silent category has
+a mechanism, and this is it — the gap is always between DOING and COMMITTING.**
+
+### 🔑🔑 **AND IT SPLITS RANKED ITEM `B` INTO TWO ITEMS WITH DIFFERENT ANSWERS**
+
+*The corpus treats "the frozen static layer" as one fact. **It is two, and only one was ever a bug.***
+
+| layer | live state `2026-09-25` | verdict |
+|---|---|---|
+| ✅ **IDENTITY** — `nba_ref.players` *(rosters, trades, two-way call-ups)* | **`713` rows, written `2026-09-24T19:47Z`** | ✅ **NO LONGER FROZEN** — *the `ModuleNotFoundError` fix reached Postgres* |
+| 🔴 **AS-OF** — `nba_ref.defender_ratings` | **`111,768` rows, `max(as_of_date) = 2026-04-09`** | ✅ **CORRECTLY FROZEN — NOT A DEFECT** *(it is computed FROM GAMES, and there have been none since April)* |
+| ⚠ **SCHEDULE** — `nba_calendar.games` | `2,666` rows, `updated_at` still **`2026-09-02T20:25`** | ⚠ *unchanged, but it holds **`1,266` games for `2026-27`** — loaded once, and correct until games move* |
+| — | `nba_ref.officials` `80` rows, `2026-09-01` | ✅ static roster |
+
+⇒ ✅✅ ***The half of item `B` that was a real defect is FIXED. The half that remains red is the
+out-of-season condition `§T26.14` already explains, and it clears itself when games resume.***
+🔑 **What the brief should carry is not "the static layer is frozen" but "P1 discarded its own work
+for weeks; that is fixed, and `defender_ratings` stays stale until opening night by design."**
+
+### ⚠⚠ **BUT THE FIX IS NOT YET PROVEN ON THE PATH THAT MATTERS**
+
+🔴 **`2026-09-24` WAS A THURSDAY. P1's cron is `'0 19 * * 1'` — MONDAYS.** ⇒ ***The `players` write
+that demonstrates the fix came from the `T26` session's own manual P1 work, NOT from a scheduled
+run.*** ⚠ **The last scheduled Monday was `2026-09-21`; nothing in the static layer carries that
+date.**
+
+📌 **THE TEST IS DATED AND CHEAP** — **Monday `2026-09-28`**:
+```sql
+SELECT max(updated_at) FROM nba_ref.players;   -- must advance to 2026-09-28
+```
+🔑 **A value that advances proves the scheduled path commits. A value still reading `2026-09-24` means
+the fix works only when a human runs it — which is the same failure, one level up**, *and there are
+`3` scheduled Mondays before the opener.*
+
+### ⚠ **A SMALLER CORRECTION IN THE SAME FILE — THE OWNER'S BELIEF ABOUT P1's SLOT IS WRONG, AND HE FLAGGED IT HIMSELF**
+
+> **T26 seg617, owner**: ***"the P1 is weekly. **if I'm not wrong, it's running every Monday at 12:15,
+> early morning. I'm not totally sure**, but it should be working every week… one week is not stale,
+> because it is weekly."***
+
+▶ **LIVE**: `cron: '0 19 * * 1'` — ***Mondays `19:00` UTC = `12:00` NOON PT (`11:00` PT during PDT)***,
+**not `12:15` AM.** *The workflow gives the reason: **"deliberately far from the overnight pipeline
+(P2, daily 01:00 PT) so the two can never contend for the database or the repo."*** ⚠ **That rationale
+is itself now stale — P2 moved to the morning (`08:45` PT, `§T26.26`), so the separation is `3¼` hours,
+not `11`.** ✅ *Still comfortably clear, and P1 is not cutoff-sensitive by its own charter.*
+🔑 **The owner's substantive point — *a weekly job one week old is not stale* — is CORRECT and is the
+reasoning `§T26.14`'s season-aware certifier implements.**
