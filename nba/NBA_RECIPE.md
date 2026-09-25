@@ -127,7 +127,7 @@ that is the useful part.
 > | **11** | **As-of calibration** | **`STEP 11`** stage `5` · **`NBA_BASELINE_CALIBRATION.md`** | ⚠ **`§T23.10`/`§T23.18`: `2025-26` is still inherited from `2024-25`** |
 > | **12** | **BOARDS AND THE DFS LAYER** — board archive, the twelve sources, goblin/demon taxonomy, tiering | **`STEP 11`** stage `6` · **`NBA_GOBLIN_DEMON.md`** *(taxonomy; v1 is WRONG, v2 unverified)* · `NBA_DATABASE.md` → `THE TRIGGER MAP` | 🔴 |
 > | **13** | **The grader** *(next morning)* | **`STEP 11`** stage `7` · workflow `nba-grader.yml` | 🔴 **`T20-5`: `GRADE_END` default** |
-> | **14** | **THE SCORING ENGINE → `final_hp`** | **`STEP 11`** stage `8` · **`NBA_FINAL_SCORING_CALIBRATION.md`** · table in `NBA_DATABASE.md` | 🔴 **`NBA_SYSTEM_DESIGN.md` § `4b`: `final_hp` is rebuilt by NOTHING** |
+> | **14** | **THE SCORING ENGINE → `final_hp`** | **`STEP 11`** stage `8` · **`NBA_FINAL_SCORING_CALIBRATION.md`** · table in `NBA_DATABASE.md` | ✅ **`P2` step `6b` rebuilds it** *(`§4b` closed `2026-09-24`)* — *it reads the as-of calibration and the confidence model, so it must run AFTER both* |
 > | **15** | **THE MULTIPLIER ENGINE** — per-leg payout pricing | 🔴 **NOT IN THIS FILE.** ▶ **`NBA_MULTIPLIERS.md`**: the endpoint `§0.9-T22` · the pricing law `§0.10-T22` · the flat `25%` house edge `§0.12-T22` | |
 > | **16** | **THE CERTIFIER** — the twelve checks, and what they miss | **`NBA_SYSTEM_DESIGN.md`** → `WHAT CERTIFIES GREEN WHILE BROKEN` and `THE SWALLOWED-FAILURE CENSUS` | 🔴 **`T20-6`: it asserts tables no pipeline writes** |
 > | **17** | **PAPER TRADING** | 🔴 **NOT IN THIS FILE.** ▶ **`NBA_SYSTEM_DESIGN.md`** → **`standards_3pick_v1`**, specified end to end *(selection → packing → settlement)* | |
