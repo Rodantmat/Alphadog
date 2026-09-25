@@ -77,11 +77,19 @@ def main():
             SELECT DISTINCT ON (game_date, player_id, game_id, prop, period, line)
                    season, game_date, player_id, game_id, prop, period, line, anchor, ladder_offset, p_more, p_less, p_raw,
                    role_tier, var_band, used_emp, ladder_steps, recipe, proj_min, rate36
-            FROM _bh_stage
+            FROM _bh_stage s
+            WHERE %s = 'full'
+               OR NOT EXISTS (SELECT 1 FROM _bh_scope sc WHERE sc.game_date = s.game_date AND sc.prop = s.prop AND sc.period = s.period)
+               OR EXISTS (SELECT 1 FROM _bh_keys k WHERE k.game_date = s.game_date AND k.player_id = s.player_id
+                            AND k.prop = s.prop AND k.period = s.period AND k.line = s.line)
             ON CONFLICT (game_date, player_id, game_id, prop, period, line) DO UPDATE SET
               p_more=EXCLUDED.p_more, p_less=EXCLUDED.p_less, p_raw=EXCLUDED.p_raw, anchor=EXCLUDED.anchor,
               ladder_offset=EXCLUDED.ladder_offset, role_tier=EXCLUDED.role_tier, var_band=EXCLUDED.var_band,
-              used_emp=EXCLUDED.used_emp, proj_min=EXCLUDED.proj_min, rate36=EXCLUDED.rate36, loaded_at=now()""")
+              used_emp=EXCLUDED.used_emp, proj_min=EXCLUDED.proj_min, rate36=EXCLUDED.rate36, loaded_at=now()""",
+            (scope_mode,))
+        cur.execute("SELECT count(*) FROM _bh_stage")
+        n_stage = cur.fetchone()[0]
+        print(f"  staged {n_stage:,} rows, scope={scope_mode}", flush=True)
     conn.commit()
     with conn.cursor() as cur:
         cur.execute("SELECT prop, count(*), count(DISTINCT game_date), count(DISTINCT player_id) FROM nba_score.baseline_history WHERE season=%s GROUP BY 1 ORDER BY 1", (season,))
