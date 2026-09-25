@@ -216,8 +216,9 @@ table's.***
 > ### ✅ **D · CLOSED, RESOLVED OR CORRECTED** *(kept under rule 40 — never deleted)*
 > | item | outcome |
 > |---|---|
-> | **`T16-7`** | ✅✅ **scope question answered by the owner directly** |
-> | **`T16-9`** | 🔴 **answered — and the author's own conditional has FIRED, unchecked** |
+> | **`T16-7`** | ✅✅✅ **BOTH HALVES CLOSED.** *scope question answered by the owner directly; **DATA-LOSS half closed `2026-09-25`, `§T26.15`** — restored `2026-09-24`, then board-scoped. Both seasons complete on dates (`162` / `163`).* |
+> | 🆕 **`T16-8`** | ✅✅✅ **CLOSED `2026-09-25`, `§T26.16`** — *NEITHER the contract nor the formula was wrong: **the ROWS were stale.** The formula was corrected `2026-09-18T22:22-07:00`, four days BEFORE the audit, and is algebraically incapable of a negative. **`0` of `7,210,912` rows negative today.** 📜 **`RULE 61` born here.*** |
+> | **`T16-9`** | 🔴 **answered — and the author's own conditional has FIRED, unchecked** ⚠ **counters re-derived `2026-09-25`, `§T26.24`: `14` scans, not `0`; restart caveat now EXCLUDED; `DROP` recommendation unchanged** |
 > | **`T17-2`** | ✅ **closed — the `17%`-vs-`90%` tension is answered in the transcript** |
 > | **`T18-5`** | **closed by discovery** — the `BS_SOURCE` switch was never needed ⚠ *reopened LOW → MEDIUM at `§T20.128`* |
 > | **`T18-9`** | ⚠⚠⚠ **corrected — this entry was framed BACKWARDS, and an existing entry already said so** |
