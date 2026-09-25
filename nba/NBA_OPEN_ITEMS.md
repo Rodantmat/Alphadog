@@ -766,7 +766,7 @@ table's.***
 > | **T20-12** | `PT = timezone(timedelta(hours=-8))` still at `build_availability_delta.py:39`; **zero DST-aware Python** in the NBA scripts. | 🔴 **HELD** |
 > | **T20-4** | `nba-p3-afternoon-light.yml:38,205` — `default: "2025-26"`, `BS_SEASON: ${{ … \|\| '2025-26' }}`. | 🔴 **HELD** — *the 2026-27 season opens in 28 days.* |
 > | **T20-14** | Betr board: still **ONE commit, `2026-09-09`**; `token_expires_at` **`2026-10-10T06:10:56Z`** — **18 days out, 10 days before opening night.** *(Value never reproduced; the repo is PUBLIC.)* | 🔴 **HELD** |
-> | **frozen static layer** | `nba_ref.defender_ratings`: `max(as_of_date)` = **`2026-04-09`**, **`166` days stale**, `111,768` rows. P1's certifier check `defender_ratings refreshed (<= 8 days)` is **RED**. | 🔴 **HELD EXACTLY** |
+> | **frozen static layer** | `nba_ref.defender_ratings`: `max(as_of_date)` = **`2026-04-09`**, ⚠ ~~**`166` days stale**~~ → **`169` as of `2026-09-25`; the ANCHOR is the fact, the day-count is DERIVED and grows daily (`§T26.25`)**, `111,768` rows. P1's certifier check `defender_ratings refreshed (<= 8 days)` is **RED**. | 🔴 **HELD EXACTLY** |
 >
 > ## ✅ **THE REMAINING NINE, RE-DERIVED — 2026-09-22T19:25Z (§T20.75). ALL HELD.**
 > | item | re-derivation | state | **fixable & provable TODAY?** |
