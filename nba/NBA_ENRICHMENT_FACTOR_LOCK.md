@@ -1,5 +1,11 @@
 # NBA Enrichment Factor Lock — Pass 1 (2026-09-09)
 
+> 📏 **`57` sections · `2026-09-25`.** *Re-derive, never quote* (`RULE 59`):
+> `` grep -cE '^(> *)*#{1,6} ' nba/NBA_ENRICHMENT_FACTOR_LOCK.md ``
+> ⚠ **STAMP ADDED `2026-09-25`, `§T26.25`** — *this document and `NBA_PROJECT_LOG.md` were the only
+> two of the twelve carrying NO dated census stamp; a gate that had reported `12`/`12` was counting a
+> looser pattern.*
+
 *Owner directive: find every factor that gives any edge at the enrichment level, per prop line, per direction, per line
 variation, with sub-factors and tiers; find how to mine each daily; find how to backfill two seasons so the enrichment
 layer can be backtested like the baseline. Multiple passes until nothing is left. This is pass 1: the factor registry,
