@@ -2605,3 +2605,99 @@ opened a silent corruption in the next one downstream, and the second fix follow
 hours.*** 🔑 **This is the sweep's standing lesson in its strongest form: `41,174` rows a night that
 had never arrived were not inert — they were load-bearing on a key the destination could not
 represent.**
+
+---
+
+## 🔴🔴🔴 **§T26.26 — THE REFEREE ARC: A DECISION TAKEN, REJECTED BY THE OWNER, CONCEDED AS A LOGICAL ERROR, AND THEN DISSOLVED — REVEALING THE SCHEDULING BUG THAT MOVED P2's CRON** *(T26 seg786→seg798 + `SELECT`/workflow reads 2026-09-25)*
+
+**This is the single most instructive exchange in the corpus, and the sweep recorded only its first
+move.** *`§T26.23`'s `D1` entry is corrected by this section.*
+
+### ① **THE DECISION** *(seg786)*
+> ***"referee crew `D1` — decided: keep 'factor zero plus confidence penalty', **don't build a
+> predictor**… a predictor for an unpredictable assignment worth under 2% isn't worth the failure
+> surface."***
+
+### ② 🔴 **THE OWNER REJECTS IT — IN THE VERY NEXT OWNER TURN** *(seg788)*
+> ***"on the predictor — it's okay IF there is no way to make a predictor that's reliable, **which I do
+> think that we can and I would prefer that**. then **you need to be careful with the penalties — we
+> don't want to over-penalize a leg because there is no data**. you should research and I'm sure you
+> find a way to make a decent predictor. **you're being lazy again.**"***
+
+### ③ ✅✅ **THE AUTHOR CONCEDES A LOGICAL ERROR, NOT A PREFERENCE** *(seg789)*
+> 🔑🔑🔑 ***"fair — **I measured the effect size and used it to dismiss the predictor, which are
+> different questions.** and the penalty point is sharper: **if a missing factor costs more confidence
+> than the factor is worth, we lose twice.**"***
+
+⚠⚠ **THAT IS THE LESSON, AND IT GENERALISES TO EVERY "NOT WORTH BUILDING" DECISION IN THIS CORPUS**:
+***a small effect size argues that the FACTOR is cheap to lose. It says nothing about whether the
+PENALTY for lacking it is correctly sized.*** 🔑 **`§T26.20`'s `307,000`-leg "don't build it" survives
+this test** *(it measured the outcome, not the effect size)*; **decisions that dismissed a feature on
+effect size ALONE should be re-read against it.**
+
+### ④ 🔑🔑 **AND THEN THE DOCUMENTATION DISSOLVES THE QUESTION ENTIRELY** *(seg792, seg795)*
+> ***"the documentation reframes this: **crew assignments post at ~9 AM ET, before both cutoffs — so in
+> production the crew is KNOWN, not predicted.**"***
+> *The parity doc's rule:* ***"`D1` is class B live-only: not archived, so the live capture must
+> accumulate it, and box-score officials are **post-hoc truth — usable as the TARGET of a prediction,
+> never as an INPUT to a past day**."***
+
+⇒ ✅ **NEITHER SIDE WAS RIGHT: there was no predictor to build, because there is nothing to predict.**
+🔑 **The owner was right that the decision was premature; the author was right that a predictor wasn't
+worth it — and the documentation the owner had insisted on settled it in one read.** ⚠ ***That is the
+owner's "religious rule" (seg743 — "no guessing, look at the damn documentation") paying out on the
+same page it was demanded.***
+
+### ⑤ 🔴🔴🔴 **WHAT THE EXCHANGE ACTUALLY UNCOVERED — A LIVE BUG WITH A MEASURED CASUALTY** *(seg795, seg798)*
+
+> ***"p2's target cron is `01:00 PT` — hours before assignments post. **so p2's referee step would
+> scrape nothing**… the dedicated job already exists and is correctly timed: `cron: '30 15 *'` —
+> `08:30 PT`, after the morning posting… **p2's referee step at `01:00 PT` runs 7½ hours too early —
+> it can only ever scrape an empty page. That's redundant work masquerading as coverage.**"***
+
+✅✅ **VERIFIED LIVE `2026-09-25` — AND THE WORKFLOW NOW DOCUMENTS ITS OWN FIX:**
+
+| | |
+|---|---|
+| `.github/workflows/nba-referees.yml` | **`cron: '30 15 * * *'`** — *"`08:30` PT, after the morning posting"* |
+| `.github/workflows/nba-p2-overnight-heavy.yml` | **`cron: '45 15 * * *'`** — **`15` minutes later** |
+| **the casualty, in the workflow's own words** | ***"the old target of `09:00 UTC` = `01:00 PT` was five to six hours too early, **which is exactly why `nba_ref.referee_assignments` held `0` rows while the step ran nightly**"*** |
+
+🔑🔑 **SO THE CRON `§T26.1` VERIFIED AS "LIVE" HAS ITS *WHY* HERE**, *and it is the owner's — seg844:*
+***"we do not redo it… we just run it, give it a wiggle room. if it's like 9 a.m., it started at 9:30…
+we keep the same logic, we keep things as it was. **we just change the running times.**"***
+⇒ ⚠⚠ **A TIMING FIX CHOSEN OVER A REBUILD, EXPLICITLY** — *and the owner reached it after catching an
+arithmetic error in the author's own account (seg802).*
+
+### ✅ **AND THE WORKFLOW HANDLES THE DST CROSSING THE CORPUS FLAGS AS UNHANDLED**
+
+> ***"GitHub cron is UTC and does not shift with daylight time, and the season crosses the change
+> (PDT → PST on `2026-11-01`), so the local hour drifts by one: `15:45 UTC` = **`08:45 PT` during PDT**
+> = **`07:45 PT` during PST**. **Both land AFTER the 6-7 AM PT posting with wiggle room**, and both
+> leave the pipeline finishing around `10:40` / `09:40` PT against **P3's `13:15` PT cutoff — roughly
+> three hours of slack for a retry.**"***
+
+🔑 **`T20-12` records *"zero DST-aware Python in the NBA scripts"* — TRUE, and this shows the drift was
+handled by choosing a slot that is correct in BOTH offsets rather than by making the code DST-aware.**
+⚠ *A different solution to the same problem; `T20-12` stands for the Python, not for this cron.*
+
+### 🔴🔴 **THE STATE TODAY — THE FIX IS IN PLACE AND HAS NEVER BEEN EXERCISED**
+
+| table | rows | what it is |
+|---|---|---|
+| `nba_stats.game_officials` | **`11,062`** | ✅ historical crews — *post-hoc truth, `§T26.12`'s closed load gap* |
+| `nba_ref.officials` / `official_roster_snapshot` | `80` / `80` | ✅ the roster |
+| `nba_ref.official_tendency` | **`78`** | ✅ **the shrunk tendencies (`k=112`) `§T26.23` records SHIPPED — `78` of `80` officials** |
+| 🔴 **`nba_ref.referee_assignments`** | **`0`** | 🔴 **STILL EMPTY, `2026-09-25`** |
+| `nba_ref.official_differential_log` | `0` | — |
+
+⚠⚠ **THE EMPTINESS IS NOW EXPECTED — THERE ARE NO GAMES — BUT IT MEANS THE REMEDY IS UNPROVEN.**
+*The table whose `0` rows diagnosed the bug is the same table that must fill to demonstrate the fix,
+and it cannot fill until **preseason, `2026-10-03`**.* 🔑🔑 ***And because box-score officials are
+"never an input to a past day", `game_officials`' `11,062` rows CANNOT substitute*** — ⇒ **the `D1`
+factor has never once fired with a known crew in production; what has actually run, every time, is the
+confidence penalty for its absence.** 🔴 **Which is precisely the over-penalisation the owner warned
+about at ② — and it has been the live behaviour all along.**
+
+📌 **FIRST THING TO CHECK ON `2026-10-03`**: `` SELECT count(*) FROM nba_ref.referee_assignments; ``
+**A non-zero result is the first evidence the arc above produced a working factor.**
