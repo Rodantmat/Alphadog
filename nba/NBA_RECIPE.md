@@ -9,7 +9,14 @@ that is the useful part.
 > # 📑 **INDEX — `NBA_RECIPE.md`**
 > **Every build step in the order it happened.** *Where a step exists because an earlier attempt
 > failed, the failure is part of the recipe.*
-> 📏 **`63` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_RECIPE.md ``
+> 📏 **`63` sections · `2026-09-23`** *(re-derive, never quote — `1` section added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_RECIPE.md ``
+>
+> 🆕 **SECTION ADDED `2026-09-25`.** *Anchors are heading text; search the label.*
+> | § | what it is |
+> |---|---|
+> | ✅✅ **`§T26.23`** | **THE CERTIFIER NOW ASKS EACH PIPELINE ABOUT ITS *OWN* OUTPUT — and three open decisions are taken, with ONE EXPLICITLY REFUSED.** 🔑 *"a sibling table's backfill" names the defect exactly — **a check that reads a table the pipeline does not write is green whenever the SIBLING is healthy***. ⚠⚠ **Its `D1` referee decision was REJECTED by the owner two turns later — `§T26.26` supersedes it** · 🔴 **the refusal is the boundary**: *"rotating the published api key and the postgres password… are credential ACTIONS on live accounts — not judgement calls"*, **which is `§T26.3`'s delegation drawn from the other side** |
+>
+> ⚠ **STEP `19` (rebuild walk) and the `🔧 MAINTENANCE` tasks were both amended `2026-09-25`** — *`§T23.5` is FIXED on the P2/P3 paths (`§T26.32`), and `T23-2` is fixed; **recovery still runs SERIAL until a parallel catch-up is observed to succeed***.
 
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `STEP` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
