@@ -2701,3 +2701,34 @@ about at ② — and it has been the live behaviour all along.**
 
 📌 **FIRST THING TO CHECK ON `2026-10-03`**: `` SELECT count(*) FROM nba_ref.referee_assignments; ``
 **A non-zero result is the first evidence the arc above produced a working factor.**
+
+### ⑥ ✅✅ **AND AN OWNER-ORDERED FULL BACKFILL WAS AVOIDED BY THE TIMING FIX — RECORDED BECAUSE IT IS STILL ON HIS LIST** *(seg807 → seg822 → seg844)*
+
+**Before the timing fix was found, the owner ordered the structural alternative — twice.**
+
+> **seg807**: ***"of course, if that information only comes at that time, **we need to move that shit to
+> P3, not P2**."***
+> **seg822**: ***"you have to put on your list that **we have to redo the whole fucking back data**,
+> because now we're moving the referee from the BASELINE to the FINAL pipeline. so that needs to be
+> done. **but first, finish everything**, because you may come up with some more shit."***
+
+⚠ **That is a stage reassignment plus a full historical rebuild** — *`D1` out of P2's baseline stage
+and into P3, and every stored baseline recomputed behind it.*
+
+✅✅ **NEITHER HAPPENED, AND THE REASON IS SOUND**: *seg833 — **"before you change anything, what time
+does the referee data come up for pacific time?"*** — the owner asked for the arithmetic **before**
+authorising the rebuild, and when it showed the data posts at `6-7 AM PT` against a pipeline that
+could simply start later, he cancelled the structural change himself at seg844: ***"so yes, fine, **we
+do not redo it**… we keep the same logic, we keep things as it was. **we just change the running
+times.**"***
+
+🔑🔑 ***A STAGE REASSIGNMENT AND A TWO-SEASON BACKFILL WERE REPLACED BY A FIFTEEN-MINUTE CRON OFFSET,
+AND THE THING THAT DECIDED IT WAS ONE CLOCK CALCULATION.*** ⚠⚠ **`D1` REMAINS A BASELINE-STAGE FACTOR
+IN P2** *(workflow line `141`, "Referee assignments and per-game matchups (baseline-stage factors)")*,
+**which is what the parity doc's stage table says it should be** — ⇒ ***the instruction at seg807/822
+is SUPERSEDED, not outstanding.***
+
+🔴 **RECORDED EXPLICITLY BECAUSE THE OWNER SAID *"put it on your list"* AND NO LIST ENTRY WAS EVER
+MADE.** *A future reader finding seg807/seg822 without seg844 would re-open a rebuild the owner
+himself called off three turns later.* 🔑 **This is `RULE 40`'s reason stated as a live hazard: the
+cancellation is worthless if it is not stored beside the order.**
