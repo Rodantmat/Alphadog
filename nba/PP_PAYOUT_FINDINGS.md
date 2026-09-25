@@ -32,9 +32,10 @@ in §0c, which is what actually freed the space.**
    `daily.game_status_stage` 169,260; both `metric_stage` tables ~215k each). MLB is live; not a
    unilateral call. ⚠ `T20-2` records that the existing storage-diet plan targets a database that has
    since MOVED, so that plan cannot be used as-is.
-3. 🔴 **`VACUUM FULL` is the WRONG tool here and must not be run on low disk** — it rewrites the table, so
-   it needs free space equal to the table itself (11–13 GB for `final_hp` / `baseline_history`) and takes
-   an exclusive lock. Autovacuum is keeping dead tuples at 2.5–11%, which is healthy.
+3. **`VACUUM FULL` needs headroom** — it rewrites the table, so it needs free space equal to the COMPACTED
+   table and takes an exclusive lock. At 9 GB free on 2026-09-24 it was the wrong first move; once the
+   prune had cut the tables it was the ONLY thing that returned space to the OS (a `DELETE` returns
+   nothing). Run it against a table nothing is reading at that moment.
 4. **Growth rate to watch:** `final_hp` is `2 × baseline_history` rows by construction (Over + Under on
    every rung), so anything that widens the ladder multiplies both. A third season adds ~12 GB.
 
