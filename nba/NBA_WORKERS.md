@@ -8,7 +8,7 @@ writes. Grouped by role.
 > # 📑 **INDEX — `NBA_WORKERS.md`**
 > **Every worker and workflow** — what each does, how it is wired, what triggers it, and where it
 > fails. *Counts of workflows and crons are never quoted here; `§0.0` carries the commands.*
-> 📏 **`130` sections · `2026-09-23`** *(re-derive, never quote — `6` sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_WORKERS.md ``
+> 📏 **`167` sections · re-derived `2026-09-25`** *(was `130` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_WORKERS.md ``
 >
 > 🆕🆕 **SECTIONS ADDED `2026-09-25` — `6` NEW, AND FIVE OF THEM ARE ONE FAILURE CLASS.** *Anchors are heading text; search the label.*
 > | § | what it is |
