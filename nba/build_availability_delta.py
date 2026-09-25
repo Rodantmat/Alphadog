@@ -115,13 +115,13 @@ def main():
 
     # --- map to player_id and find their teams ---------------------------------------------------
     nm = pd.read_sql("SELECT norm_name, player_id FROM nba_ref.player_name_map", conn)
-    import re
-    def norm(s):
-        s = str(s or "")
-        if "," in s:
-            last, _, first = s.partition(",")
-            s = f"{first.strip()} {last.strip()}"
-        return re.sub(r"[^A-Za-z]", "", s).lower()
+    # ONE NORMALISER (2026-09-25). This had a private norm() that kept name suffixes, while
+    # player_name_map is built by nba_names.norm_name, which strips them - so a late Out on any
+    # Jr/Sr/II/III player never resolved and never produced a delta. nba_names.py says every component
+    # must import from it for exactly this reason.
+    import sys as _sys
+    _sys.path.insert(0, "nba")
+    from nba_names import norm_name as norm
     name_to_id = dict(zip(nm["norm_name"], nm["player_id"].astype(str)))
     now_out = {name_to_id[norm(p)] for p, (a, b) in material.items()
                if b in OUT_LIKE and norm(p) in name_to_id}
