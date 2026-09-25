@@ -156,7 +156,7 @@ def main():
            .groupby("PLAYER_ID")["MIN"].mean().to_dict())
     lad = pd.read_sql("""SELECT player_id, prop, line, ladder_offset, p_more, p_less, proj_min, anchor
                          FROM nba_score.baseline_history
-                         WHERE game_date = %s AND season = %s""", conn, params=(asof, season))
+                         WHERE game_date = %s AND season = %s AND period = 'FULL'""", conn, params=(asof, season))
     if lad.empty:
         print(f"  no baseline for {asof} - P2 must run first"); return
     lad["player_id"] = lad["player_id"].astype(str)
