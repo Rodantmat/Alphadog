@@ -70,7 +70,11 @@ def main():
     out_of_season = False
     if pipe in ("p1", "p2", "p3"):
         with conn.cursor() as cur:
-            cur.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (today,))
+            # PRESEASON IS NOT A SLATE (2026-09-24): P2 and P3 gate on regular-season games only, so the
+            # certifier must judge the same way - on a preseason day the board is captured and nothing is
+            # built or scored, and that is correct, not a failure.
+            cur.execute("""SELECT count(*) FROM nba_calendar.games
+                           WHERE game_date = %s AND coalesce(game_label, '') <> 'Preseason'""", (today,))
             slate_games = int(cur.fetchone()[0] or 0)
             # PLAYED, NOT SCHEDULED (fixed 2026-09-23). This window used to be +/-30 days, so during the
             # preseason ramp - the 2026-27 schedule opens 2026-10-03, ten days out - it reported "in
