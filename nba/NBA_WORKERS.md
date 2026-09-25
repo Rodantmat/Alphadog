@@ -22,7 +22,10 @@ writes. Grouped by role.
 >
 > ⚠⚠ **READ `§T26.19`, `§T26.26`, `§T26.28`, `§T26.35`① AND `T20-17` TOGETHER: they are FIVE instances of ONE class — *work performed, work not persisted, every liveness signal green.*** 🔑 **`RULE 37`'s silent category finally has its mechanism: the gap is always between DOING and COMMITTING.**
 >
-> | 🔴🔴 **the FILE CENSUS — `7` of `21` workers and `27` scripts named in `0` of the twelve** | **`§F5.5`** ⚠ *`§T26.45` adds `3` MORE, built `2026-09-23`–`25` and load-bearing TODAY* |
+> ## ▶ FIND IT FAST
+> | if you need… | go to |
+> |---|---|
+> | 🔴🔴 **the FILE CENSUS — `7` of `21` workers and `27` scripts named in `0` of the twelve** | **`§F5.5`** ⚠ *`§T26.45` adds `3` MORE, built `2026-09-23`–`25` and load-bearing TODAY: **`load_injury_report.py`** (the freshness check rates its table `BINDING`) · **`verify_static_loads.py`** (the direct answer to `§T26.28`'s class) · **`refresh_board_rung_keys()`** (the P3→P2 dependency)* |
 > | 🔴🔴 **the scripts behind every T15 factor verdict** *(`fit_*`, `measure_*`, `retest_*`)* | **`§F5.5` §2** — *mapping also in `NBA_FINAL_SCORING_CALIBRATION.md` §3* |
 > | 🔴 **the FOUR workflow files that were named nowhere in the twelve** *(`nba-backtest`, `nba-grader`, `nba-measure-types`, `nba-score-history`)* | **`§F2.16`** |
 > | 🔴🔴🔴 **the grader workflow — and `T20-5`'s stale `2026-04-12` window, a SECOND and THIRD time** | **`§F2.16` §1** |
