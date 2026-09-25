@@ -124,7 +124,39 @@ historical only. **The full-spectrum `final_hp` was a mistake, not a design.**
 
 **Guards in the prune:** dry run by default; refuses when board keys match ZERO baseline rows (a
 convention mismatch, never an empty board — deleting on it would wipe the slate); exits green on a
-no-game day; fails loud when games were played but no board was archived.
+no-game day or a day with no baseline (preseason); fails loud when regular-season games were played but
+no board was archived. Season mode runs ONE DATE PER TRANSACTION with a commit and a log line each —
+the first attempt ran as one 5.35M-row transaction, I/O-bound for over an hour with nothing to show,
+and was cancelled (clean rollback) in favour of this.
+
+**EXECUTED 2026-09-24/25 — the numbers, verified by data at each step:**
+
+| Step | Result |
+|---|---|
+| Single-slate test, 2026-04-10 | full-game props with a board 77,585 → 16,253; period props 41,174 → 41,174 untouched; `board_scored` unchanged (51,003); replay re-score REFUSED, P3 still 7/7 |
+| Dry run 2025-26 | 9,706,081 rows → keep 1,777,677 on a board + 2,577,674 never-derived; delete 5,350,730 (55.1%) |
+| Dry run 2024-25 | 9,537,535 rows → keep 1,586,759 + 2,557,443; delete 5,393,333 (56.5%) |
+| **Executed, both seasons** | **325 of 325 slates, 10,805,395 rows deleted** — the dry runs plus the single-slate test, to the row. 2,187,222 period rungs kept in 2025-26 alone. |
+| `baseline_history` after `VACUUM FULL` | **12 GB → 2.8 GB**, 8,543,355 rows |
+| `board_outcomes` after `VACUUM FULL` | 2.5 GB → 1.55 GB, 6,905,452 rows (index bloat) |
+| **Database** | **46 GB → 36 GB** |
+
+⚠ **A `DELETE` returns nothing to disk.** PostgreSQL marks rows dead; autovacuum makes the space
+reusable inside the table; only a rewrite (`VACUUM FULL`) hands it back to the OS. After the prune the
+database still read 46 GB until the rewrites ran. A rewrite needs free space equal to the COMPACTED
+table, takes an exclusive lock for its duration, and must not run against a table another job is
+reading at that moment.
+
+**Still to do (2026-09-25):** `final_hp` is being rebuilt board-scoped WITH the derived boards for both
+seasons (2025-26 in progress, 2024-25 queued); then one `VACUUM FULL nba_score.final_hp` (11 GB →
+~2–3 GB expected, database to ~27–28 GB); then rebuild the as-of calibration and diff it against
+`nba_score._calib_before_prune` (25,962 cells snapshotted 2026-09-25 01:16 UTC) — the direct proof that
+nothing the engine learns from was lost.
+
+**One mistake on record:** the first single-slate execution ran with the PRE-correction rule (period
+props deleted) because the earlier dispatch was not replaced as I assumed — it deleted 2026-04-10's
+27,595 period rungs. The P2 replay rewrote that slate in full and the corrected prune then kept every
+one of them. Never assume a queued run was replaced; read the run log.
 
 **The two baseline tables are gone as a concept.** `baseline_ladder` (4 slates) is no longer written;
 `baseline_history` is history and live in one table with one convention: full-game rungs carry
