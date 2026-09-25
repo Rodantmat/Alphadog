@@ -2790,3 +2790,42 @@ said so.**
 empty; it does **not** establish that the Underdog API still returns multipliers, nor that
 populating them would be permitted or useful.* ***"The columns are there and unfilled", never "the
 data is available."***
+
+# 🆕 §T26.7 — 📐 **THE RETENTION RULE: ONE SET PER DAY, BOARD-SCOPED AFTER THE DAY**
+
+*Owner decision `2026-09-24`. **Recorded here `2026-09-25` and verified live.** ⚠ **This is what
+shrank the database — it is the rule executing, not data loss.***
+
+## 1 · The rule, in the owner's words
+
+> ***"One set of data per day. It cannot grow on the day. If it needs to be rerun, we overwrite it.
+> Whatever shows on the board — the full ladder, all variations, all directions, all prop lines,
+> everything — we save. If a player shows one single leg, we save one single leg. Factors, boards and
+> markets we save every day; a rerun is an UPDATE, not a second set."***
+
+## 2 · How each store enforces it
+
+| store | rule | enforced by |
+|---|---|---|
+| **`nba_score.baseline_history`** *(the ONE baseline store)* | **day-of: FULL SPECTRUM** — *the board is not known when it is built, so its width is the lookup range (`89%` exact rung hits)*. **After grading: PRUNED to exactly the rungs a board offered** — real boards *(every app, every label)* or derived boards *(the simulated legs in `prop_universe`)*. **Nothing extra.** | `load_baseline_ladder.py` **deletes the slate by date and rewrites** · `P2` step *"Prune yesterday's baseline to the board"* → `prune_baseline_to_board.py` |
+| **`nba_score.final_hp`** | **BOARD-SCOPED** — *the scoring engine is board-scoped by design (§4)* | `build_final_hp.py` `_fe_board_keys` |
+| **`nba_score.board_scored`** | one build per slate; a rerun overwrites *(unique index)* | upsert — ⚠ **AND THE SCORER REFUSES TO RE-SCORE A PRUNED SLATE** *(`nba_score.baseline_prune_log`, **`325` rows live**)*, **because re-interpolating from far-apart board rungs would degrade `~11%` of legs** |
+| **`nba_market.board_snapshots`** | every day, `window` + `close` labels | by design |
+| **factors** *(injury, referees, market lines, lineups, static profiles)* | every day; reruns update | existing loaders |
+
+## 3 · ✅ Why pruning is safe — **checked, not assumed**
+
+***The certified recipe and the production patcher hold ZERO references to `baseline_history`,
+`baseline_ladder` or `final_hp`, and open NO database connection*** — *each day's ladder is built from
+logs, splits and factor files.* **The as-of calibration and the confidence refit join from GRADED
+BOARD LEGS only.** *Interpolation happens day-of and is recorded in `board_scored`.*
+⇒ 🔑 ***After a slate is graded, an off-board rung has no reader. That is the whole argument, and it
+was verified by grep and by connection audit rather than asserted.***
+
+## 4 · ⚠ **ONE MISTAKE, ON RECORD**
+
+🔴 ***`final_hp` was rebuilt FULL-SPECTRUM on `2026-09-24` by mistake — `226,714` rows a slate,
+`6.4%` of which were on a PrizePicks board — and had to be rebuilt board-scoped.***
+📌 **Recorded because it is the exact failure mode the rule exists to prevent, committed by the
+session that wrote the rule.** *The guard that catches it is the board-key scope in
+`build_final_hp.py`, not vigilance.*
