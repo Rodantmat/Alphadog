@@ -43186,3 +43186,37 @@ the `on:` block, never from the header comment* —
 | `nba_score.baseline_history` | `9,537,535` *(2024-25 alone)* | **`8,696,305`** *(all)* | same |
 | `nba_market.board_snapshots` | `12` sources | **`27,068,327` rows, max `game_date` `2026-10-20`** | 🔑 **boards for OPENING NIGHT already exist** |
 | `nba_ref.referee_assignments` | *(a P2 stage factor)* | 🔴 **`0` rows** | ⚠ **still empty — see `§T26.2`** |
+
+# §T26.2 — ✅ **THE EMPTY REFEREE TABLE IS NOT A BUG, AND THE OWNER WAS RIGHT THAT THE DATA EXISTS — IT IS IN A DIFFERENT TABLE**
+
+*`T26` pass `1`, `2026-09-25`. **Derived read-only; the owner challenged the assistant's reading of
+this twice in `T26` and was correct both times.***
+
+## 1 · The exchange
+
+> **Owner, `T26` seg `577`:** *"the referee table, we should have it mined somewhere because we mined
+> and backfill it. so it should be there as well."*
+>
+> **Owner, `T26` seg `802`, on the timing argument:** *"you're saying that the referee data is
+> available at 6, 7 a.m. pacific time. and the p2 runs at 1 p.m. so how the fuck is the p2 not gonna
+> have the information…?"*
+
+## 2 · ✅ Both challenges resolve in the owner's favour, measured
+
+| | |
+|---|---|
+| 🔑 **Why `nba_ref.referee_assignments` is `0`** | ***There are no games to assign.*** **Games in the `7` days to `2026-09-24`: `0`. Next game on the calendar: `2026-10-03`** *(preseason opener)*. **The table is FORWARD-LOOKING** — it holds crews for upcoming games — **so an empty table before the season is the correct state, not a failure.** |
+| ✅ **Where the mined history actually is** | **`nba_stats.game_officials`** — ***`3,681` crew rows across `1,227` games, `2025-10-21 → 2026-04-12`, `83` distinct officials***, plus **`80` rows in `nba_ref.officials`**. ⇒ **The owner's "we mined and backfill it" is exactly right; it is simply not in the table whose name says `referee`.** |
+| ⚠ **The timing argument was also wrong** | *It claimed `P2` could not see a 6–7 AM posting. `P2` had already been moved to `15:45 UTC` = **`08:45 PT`**, and `nba-referees.yml` runs `15:30 UTC` = `08:30 PT`. **Both are after the posting.** The premise was stale by a day.* |
+
+## 3 · 📌 What this corpus should carry, and did not
+
+***Two tables hold referee data and only one is named for it.*** **A reader asking "do we have
+referee data?" greps `referee`, finds `nba_ref.referee_assignments` empty, and concludes no.**
+⇒ ✅ **Recorded in `NBA_DATABASE.md`'s routing table** so the question resolves in one hop.
+
+🔑 **AND IT IS THE TRAINING SET FOR THE PREDICTOR THE OWNER ASKED FOR** *(seg `788`: "on the
+predictor… i do think that we can, and i would prefer that")*: **`1,227` games × `3` officials, `83`
+distinct, one full season** — *enough to model crew assignment; not enough to claim an accuracy figure
+before it is fitted.* ⚠ ***`NOT RECORDED`: no predictor exists yet, and no accuracy has been measured.
+This section names the data, not a result.***
