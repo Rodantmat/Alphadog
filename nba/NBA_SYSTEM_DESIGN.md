@@ -36,7 +36,7 @@ constraints that shaped it. This is the operational spec.
 > | 🔑 **market consensus — the owner's weighting directive and the build that FAILED** | **`§0a.2`** |
 > | **the calculation chain** · **failure policy** | **`§5`** · **`§6`** |
 > | ⚠ **the three explicit NON-GOALS** | **`§0.75`** |
-> | 🔴🔴🔴 **THE SECOND DEADLOCK — `CREATE UNIQUE INDEX IF NOT EXISTS` INSIDE THE WRITE TRANSACTION.** *Any PARALLEL catch-up run deadlocks; `181` of `325` dates failed. **`17` files carry the pattern, `7` of them in `P2`/`P3`.*** ⚠ **SEASON-CRITICAL — this is the tool you would reach for to recover from `T23-2`, and it is the tool that breaks.** | **`§T23.5`** |
+> | ✅✅ ~~🔴🔴🔴~~ **THE SECOND DEADLOCK — FIXED `2026-09-23`, VERIFIED `2026-09-25` (`§T26.32`).** *The shape was `CREATE UNIQUE INDEX IF NOT EXISTS` **inside the write transaction**, which takes a FULL TABLE LOCK before discovering the index exists and holds it to commit — **`181` of `325` dates failed**.* ✅ **All `4` index-creating P2/P3 scripts now check `to_regclass(...) IS NULL` first; `7` were repaired in one campaign.** ⚠ **UNEXERCISED — recovery stays SERIAL until a parallel catch-up succeeds.** 🔴 *`build_defender_ratings.py` (P1) is the one unguarded script left in a pipeline.* ⚠ ~~*`17` files carry the pattern, `7` of them in `P2`/`P3`*~~ — **a STRING count; the guard leaves the string in place (`RULE 62`).*** ⚠ **SEASON-CRITICAL — this is the tool you would reach for to recover from `T23-2`, and it is the tool that breaks.** | **`§T23.5`** |
 > | 📏 **what the leg scorer SKIPS, in its own docstring's numbers** | **`§T23.13`** |
 >
 > ### 🆕 §T26.13 — 🔑🔑 **`P2` DOES THE SAME WORK ELEVEN TIMES — AND THE HONEST LIMIT ON A DELTA**
