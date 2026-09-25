@@ -185,6 +185,31 @@ the exposure countable rather than anecdotal.**
 | 18 | `build_confidence_v3.py` | `nba_score.confidence_model` · `nba_score.confidence_verification` |
 | 19 | `certify_pipeline.py` `PIPE=p2` | *(asserts only)* |
 
+> ### 🆕 §T26.6 — ✅✅ **`P3`: `22` MINUTES → `~2`. IT WAS SCRAPING EVERY SPORT THE APPS OFFER AND THROWING THE REST AWAY.**
+>
+> *`T26`, `2026-09-24`. **Measured from the run log, not inferred** — run `35956077197`, `04:32:23`
+> start, next job queued by `04:34:52`.*
+>
+> 🔴 **THE CAUSE.** *One run logged* **`mlb: 1,707 legs across 30 categories`** *beside* **`nba: 3 legs`**;
+> *Fliff logged* **`mlb: events=18, markets=604, legs=4451`**. **The archive step filters to NBA
+> AFTERWARDS (`ARCHIVE_SPORT: nba`), so every one of those calls was paid for and discarded —
+> roughly `20` of the `22` minutes.**
+>
+> 🔑🔑 **WHY IT SURVIVED: THE FILTER VARIABLES ARE NOT UNIFORM, AND NEITHER IS THEIR CASING.**
+> *Sleeper was already scoped; Underdog and Fliff were not.* **Verified in the live file:**
+> `PRIZEPICKS_SPORT: "nba"` · `SLEEPER_SPORTS: "nba"` · **`UNDERDOG_SPORTS: "NBA"` (UPPER)** ·
+> **`FLIFF_SPORTS: "nba"` (lower)** · `ARCHIVE_SPORT: "nba"`.
+> ⚠ ***Five variables, four different names, two different cases. A generic `SPORT` does nothing.***
+> **Both were read from source before being set** — *the only safe way to set them.*
+>
+> ✅ **AND THE REST OF THE PIPELINE WAS NEVER THE PROBLEM**: *archive `2s` · board tiers `23s` ·
+> market + rung market `9s` · commit `8s` · certify `1s`.* 🔑 **On a real slate the compute path
+> scored `91,405` legs in under `20` seconds.** ⇒ ***The "heavy" pipeline was `91%` waste fetch.***
+>
+> ✅ **TWO GUARDS ADDED FOR UNATTENDED RUNNING** *(live in the file)*: **each board capped —
+> `timeout --signal=TERM --kill-after=30s 300`** *(`420` for the PrizePicks step)* — **and
+> `timeout-minutes: 25` on the job.**
+
 **P3 — `nba-p3-afternoon-light.yml` · 11 invocations · ✅ CRON `15 21 * * *` LIVE** *(`1:15 PM PST` / `2:15 PDT`)* ⚠ **the file's line `13` still reads "NO CRON YET" — its own `on:` block contradicts it; trust the `on:` block** *(`§T26.1` §4)*
 
 | step | script | writes |
