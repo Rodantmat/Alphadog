@@ -8,7 +8,7 @@ constraints that shaped it. This is the operational spec.
 > # 📑 **INDEX — `NBA_SYSTEM_DESIGN.md`**
 > **What the system is for, and how the three pipelines deliver it** — `P1`, `P2`, `P3`, the `1:15 PM
 > PT` cutoff, the calculation chain, the failure policy, and the explicit non-goals.
-> 📏 **`171` sections · `2026-09-23`** *(re-derive, never quote — `5` sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_SYSTEM_DESIGN.md ``
+> 📏 **`193` sections · re-derived `2026-09-25`** *(was `171` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_SYSTEM_DESIGN.md ``
 >
 > 🆕🆕 **SECTIONS ADDED `2026-09-25` — `5` NEW, AND TWO ARE THE OWNER'S OWN WORDS ON HOW THE SYSTEM IS SUPPOSED TO WORK.** *Anchors are heading text; search the label.*
 > | § | what it is |
