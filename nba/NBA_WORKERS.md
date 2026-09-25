@@ -2899,3 +2899,79 @@ read.**
 retract `T20-6`** *(`§T26.30` closes that on the source, separately)* — *one check firing correctly
 says nothing about the other seventeen.* 🔑 **Recorded as the corpus's single positive control on the
 certifier**, *and as the reason `§T26.30`'s re-pointing is believable rather than merely asserted.*
+
+---
+
+## 🔴🔴🔴 **§T26.35 — FOUR MORE DEFECTS FROM T26's COMMIT STREAM, INCLUDING A P3 STEP THAT RAN THE WRONG SCRIPT FOR ITS ENTIRE LIFE** *(T26 `tool_use` stratum, `81` distinct commit messages; all four confirmed in repo history and verified in source)*
+
+**METHOD NOTE.** *`T26`'s `446` `tool_use` segments carry **`81` distinct commit messages** — a complete
+change-log of the session. **Four of them name defects that appear in `0` of the twelve.*** 🔑 *The
+commit message is a stratum of its own: it states what was wrong in the author's words at the moment
+he fixed it, and it survives even when no prose segment ever explains it.*
+
+### ① 🔴🔴🔴 **P3's "BOARD TIERS" STEP NEVER BUILT BOARD TIERS — IT RAN A ONE-OFF INDEX-MAINTENANCE JOB**
+
+*Commit `NBA P3: the board tiers step ran a one-off index-maintenance script and never built tiers`.
+The workflow now carries the post-mortem in place* **(`nba-p3-afternoon-light.yml:290-294`)**:
+
+> 🔑🔑🔑 ***"🔴 FIXED 2026-09-23: this step ran `nba/maintenance_shrink_board_index.py` — a ONE-OFF
+> maintenance job (it replaces `board_snapshots`' 7-column primary key with a compact expression index
+> on **25.7M rows**). **So tiers were NEVER built for the decision-moment board**, and **a heavy index
+> rebuild ran on the critical path at the cutoff, against the table the scorer reads next.**"***
+
+⚠⚠ **TWO SEPARATE HARMS FROM ONE MIS-WIRED STEP**: ***(a)* the classification the scorer depends on was
+never produced** — *and the comment states why it matters: **"the score and the slip engine both need
+this — a rung's break-even depends on which variation it is"*** — ***(b)* a `25.7M`-row index rebuild
+ran at the decision cutoff, on the table read next.** 🔑 **The step's NAME was right, so every audit
+that checked "does P3 build board tiers?" answered yes.** 📌 ***Fifth instance of the day's dominant
+class*** *(`§T26.19`, `§T26.26`, `§T26.28`, `T20-17`, this)* — **and the first where the work was not
+merely lost but REPLACED by unrelated work under the same label.**
+
+✅ **FIXED**: the step now runs `python nba/build_board_tiers_v2.py` *(line `323`)* — *"the real builder
+(four-way taxonomy, signed by position vs anchor)."*
+🔴 **RESIDUAL, STATED IN THE WORKFLOW ITSELF**: ***"`BT2_APPS` is prizepicks only — that is the
+script's own default and the only app whose goblin/demon rungs this taxonomy describes. **Tiers for the
+other archived apps are NOT built here.**"*** ⚠ *Read against `§T18.1`, the owner's own coverage
+complaint — **"our system should be covering the APP LADDER"** — and `§T26.27`'s* ***"all apps, all
+ladder variations."*** 🔑 **Board tiers are PrizePicks-only, by default, today.**
+
+### ② ⏱ **P3's JOB DEADLINE WAS `120` MINUTES FOR A PIPELINE THAT MUST FINISH BEFORE FIRST TIP — NOW `25`**
+
+> ***"⏱ DEADLINE, NOT A CEILING (2026-09-24). This was 120 minutes, which is **meaningless for a
+> pipeline whose whole purpose is to be finished BEFORE the first tip**: **a hung scraper could burn
+> two hours and sail past every game while the job still counted as "running"**."***
+
+🔑🔑 **AND THE MEASURED SHAPE OF A REAL RUN IS THE ENTRY'S REAL VALUE:**
+
+| phase | time |
+|---|---|
+| setup + pip | `~90s` |
+| 🔑 **the ENTIRE compute path** — *availability delta + scoring **`91,405` legs** + paper log + certify* | ✅ **under `20` SECONDS** |
+| everything else | **network** |
+
+⇒ ***P3 is not a compute pipeline with a network step. It is a network pipeline with a `20`-second
+compute step.*** ⚠ **Every optimisation instinct aimed at the scoring maths is aimed at `<1%` of the
+wall clock** — *which is exactly what `§T26.6` found when P3 went `22` min → `2` min by scoping the
+scrapers to NBA.* ✅ **`timeout-minutes: 25`, plus per-board caps**: *"if it is not done by then
+something is wrong, and **a visible failure beats a late slate**."*
+
+### ③ 🔴 **P1's 2026-27 ROLLOVER WOULD HAVE PRODUCED *ZERO* WEEKLY SNAPSHOTS, SILENTLY**
+
+*Commit `e95164b4`: **"NBA P1 rollover: derive the as-of window for unplayed seasons — 2026-27 would
+have silently produced zero weekly snapshots."*** 🔑 **Same class as `T23-2` and as `§T26.30`'s grader
+ceiling**: *a window derived from seasons already played has no row for the season about to start, so
+it computes an empty range and succeeds.* ⚠ ***Third instance of "a date-bounded default that returns
+NOTHING and exits green" found in this corpus*** *(grader `GRADE_END`, `build_rung_market` `RUNG_TO`,
+and this)* — 📌 **the pattern is worth a standing check: every default derived from HISTORICAL data is
+a silent-zero risk at a season boundary.**
+
+### ④ ⚠ **P2's BASELINE BUILDER CRASHED WITH `KeyError: GAME_DATE` ON A NO-GAME DAY**
+
+*Commit `fd477228`: **"NBA P2: detect an empty slate up front — the baseline builder crashes with
+KeyError GAME_DATE on a no-game day."*** 🔑 **This is the concrete failure behind the
+empty-slate campaign**: *`~15` commits in `T26` add no-game-day skips across P2 and P3 (`seg900`–`912`,
+`947`–`949`, `1094`–`1100`).* ⚠ **It is NOT the same as `§T26.10`'s preseason gating** *(which decides
+whether a preseason date counts as a slate)* — **this is what happened on any zero-game date at all,
+and until the opener EVERY date is one.** ✅ *Now: a slate is detected up front, and the ladder,
+components, combos, periods, merge, commit, load, refits and `final_hp` all skip — with `§T26.14`'s
+season-aware certifier keeping the run GREEN rather than red.*
