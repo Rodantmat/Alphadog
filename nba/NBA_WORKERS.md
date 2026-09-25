@@ -2804,3 +2804,57 @@ is itself now stale — P2 moved to the morning (`08:45` PT, `§T26.26`), so the
 not `11`.** ✅ *Still comfortably clear, and P1 is not cutoff-sensitive by its own charter.*
 🔑 **The owner's substantive point — *a weekly job one week old is not stale* — is CORRECT and is the
 reasoning `§T26.14`'s season-aware certifier implements.**
+
+---
+
+## ✅✅✅ **§T26.34 — THE CERTIFIER CAUGHT THE `final_hp` LOSS, LOUDLY, WITH THE RIGHT CHECK NAME — THE CORPUS HAS NO OTHER INSTANCE OF IT WORKING** *(T26 seg249, a `RESULTS RETURNED` receipt: GitHub run `35917049251`, `2026-09-23T20:38Z`)*
+
+**The corpus catalogues the certifier's failures at length** — *`T20-6`'s "`7` of `12` checks assert
+tables their pipeline never writes", `NBA_WORKERS.md:2059`'s "❌ vacuous" date-scoped range check,
+`§T26.14`'s P1 going red every Monday on a check that could not pass, `§T26.23`'s checks reading a
+sibling table's backfill.* ⚠⚠ **What it does NOT contain is a single recorded instance of the certifier
+CORRECTLY STOPPING A REAL DEFECT.** ✅ **Here is one, and it is executed evidence, not prose.**
+
+### 🔑 **THE RECEIPT**
+
+| | |
+|---|---|
+| run | **`35917049251`**, job `afternoon` *(P3)*, `2026-09-23T20:38:05Z` |
+| slate | **`2026-04-10`** *(a replay)* |
+| conclusion | 🔴 **`failure`** |
+| the failing step | **`certify p3`** — *every other step `success` or `skipped`* |
+| the failing check | 🔑 **`fail  final_hp has today  0 scored legs for today`** |
+| tally | **`5/6 checks passed` · `failed checks: final_hp has today`** |
+| exit | ***"produce what it promised. Failing the job so it is visible."*** ⇒ **`Process completed with exit code 1`** |
+
+✅ **AND THE STEPS AROUND IT BEHAVED CORRECTLY TOO**: *`availability delta` ✅ · `score the board (all
+apps, all rungs, both directions)` ✅ · `log paper-trading picks` ✅ **`72` picks** — while the six
+day-of steps (`day-of injury report`, `other board scrapers`, `archive boards into postgres`,
+`board tiers`, `market snapshot and rung market`, `commit day-of data`) correctly **SKIPPED**, because
+a replay of a past date has no live board to capture.* 🔑 **A pipeline that knows which of its own
+steps do not apply to a replay is a well-built pipeline, and that is worth recording as much as the
+catch.**
+
+### 🔑🔑 **WHY THIS MATTERS TO `T16-7` AND `T20-6` SPECIFICALLY**
+
+⚠⚠ ***The check that fired is precisely the KIND of check `T20-6` said the certifier lacked*** — **it
+asks the pipeline about ITS OWN output on THIS slate**, not about a sibling table's backfill. ⇒ **`0`
+scored legs for the slate is exactly the `final_hp` hole `T16-7` records**, *and on `2026-09-23` the
+system was detecting it, failing loudly and refusing to report success* — **one day before `T26`'s
+restore (`§T26.15`) filled it.**
+
+🔑🔑🔑 **SO THE TIMELINE READS DIFFERENTLY THAN THE CORPUS IMPLIES.** *`T16-7` was raised
+`2026-09-22` as an OWNER DECISION on the grounds that **"the sweep cannot tell 'in flight' from
+'lost'."*** ⚠ ***The system could. It was saying so, in a failing build, the next day.***
+⇒ 📌 **A READ-ONLY SWEEP THAT NEVER LOOKS AT RUN LOGS IS BLIND TO THE ONE SOURCE THAT DISTINGUISHES
+THE TWO** — *a table `SELECT` shows a hole; only the run log says whether something is complaining
+about it.* 🔑 **`RULE 32` sends a pass to the mechanism strata for what prose cannot say. This entry is
+the argument for extending that to the LIVE workflow logs, which are a stratum the sweep has barely
+read.**
+
+### ✅ **WHAT THIS DOES AND DOES NOT CLOSE**
+
+✅ **It closes the question of whether the certifier can work: it can, and did.** ⚠ **It does NOT
+retract `T20-6`** *(`§T26.30` closes that on the source, separately)* — *one check firing correctly
+says nothing about the other seventeen.* 🔑 **Recorded as the corpus's single positive control on the
+certifier**, *and as the reason `§T26.30`'s re-pointing is believable rather than merely asserted.*
