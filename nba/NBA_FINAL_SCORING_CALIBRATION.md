@@ -5298,7 +5298,19 @@ names it as the immediate next step —* *"wire this prior into the enrichment p
 stale report falls back to it instead of to nothing"* — **and does not report doing it.** ⇒ **Until
 that is confirmed, treat the fallback as FITTED but not necessarily IN USE.**
 
-# 🆕 §T26.12 — ✅✅ **THE `A5` STARTER FALLBACK — AND THE ONE PLACE EXTRA GRANULARITY *EARNED* ITS KEEP**
+# 🆕 §T26.12 — ⚠⚠⚠ **THE `A5` STARTER FALLBACK — VALIDATED ON THE WRONG TARGET, AND WIRED INTO NOTHING**
+
+> 🔴🔴🔴 **READ `§T26.39` BEFORE ACTING ON THIS SECTION.** *Everything measured below is correct **as a
+> measurement of `Brier` on STARTS**. The author's own later verdict, in `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`
+> §11: **"VERDICT FIRST: this model is NOT wired into anything, and should not be… MY ERROR… I
+> validated the wrong target."*** ▶ **VERIFIED `2026-09-25`: `starter_prior_v2`, `starter_training` and
+> the function `nba_score.p_start(...)` all EXIST — and `grep` finds **`0` callers** in every `nba/*.py`
+> and every workflow.** ⚠ *`A5 lineup change` was already **CLOSED — REJECTED** on Δ MAE against prop
+> error: **points `−0.032`, rebounds `−0.008`, assists `−0.008`, pra `−0.035` — negative on every
+> prop.*** 🔑 **The heading below is kept under `RULE 40`; its claim of "earning its keep" is
+> WITHDRAWN.**
+
+## ~~✅✅ **THE `A5` STARTER FALLBACK — AND THE ONE PLACE EXTRA GRANULARITY *EARNED* ITS KEEP**~~
 
 *`T26`, `2026-09-24`. **Fit on `2023-24` + `2024-25`, scored on `26,543` player-games in `2025-26` it
 never saw.***
