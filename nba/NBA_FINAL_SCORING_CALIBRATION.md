@@ -5559,7 +5559,15 @@ asserts the store CONTAINS NOTHING OFF THE BOARD catches it, which is the `0`-of
 
 ---
 
-## ✅✅ **§T26.22 — "NEXT MAN UP" SHIPS, AND ITS GAIN LANDS EXACTLY WHERE THE MECHANISM PREDICTS** *(T26 seg1121, ASSISTANT OUTPUT)*
+## ⚠⚠⚠ **§T26.22 — "NEXT MAN UP": THE GAIN IS REAL, THE OBJECTIVE IS WRONG, AND IT SHIPPED INTO NOTHING** *(T26 seg1121, ASSISTANT OUTPUT)*
+
+> 🔴🔴🔴 **READ `§T26.39` BEFORE ACTING ON THIS SECTION.** *T26 said **"shipping it with a callable
+> interface"** and I recorded that as shipped. **A callable interface is not a caller**: `grep` finds
+> `0` callers of `nba_score.p_start(...)` in every script and workflow, `2026-09-25`.* ⚠⚠ **And the
+> gain below is `Brier` on STARTS — the same objective `§T26.39` shows was the wrong one.** *The
+> earlier, rejected proxy **already contained the next-man-up replacement logic** and measured
+> NEGATIVE on every prop's Δ MAE.* 🔑 **The subgroup reasoning below still stands as reasoning. What it
+> validated does not.**
 
 > ***"the **"next man up"** feature **earns its place, out of sample**."***
 
