@@ -1,10 +1,36 @@
 # NBA Enrichment Factor Lock — Pass 1 (2026-09-09)
 
+> # 📑 **INDEX — `NBA_ENRICHMENT_FACTOR_LOCK.md`**
+> **The enrichment factor REGISTRY** — every factor that could give an edge above the baseline, its
+> mechanism, its per-prop behaviour, its mining source and its backfill plan. *Pass 1 is the registry;
+> Pass 2 is the per-prop signal sets.*
 > 📏 **`57` sections · `2026-09-25`.** *Re-derive, never quote* (`RULE 59`):
 > `` grep -cE '^(> *)*#{1,6} ' nba/NBA_ENRICHMENT_FACTOR_LOCK.md ``
-> ⚠ **STAMP ADDED `2026-09-25`, `§T26.25`** — *this document and `NBA_PROJECT_LOG.md` were the only
-> two of the twelve carrying NO dated census stamp; a gate that had reported `12`/`12` was counting a
-> looser pattern.*
+> ⚠ **STAMP AND INDEX ADDED `2026-09-25`** *(`§T26.25` for the stamp)* — ***this document and
+> `NBA_PROJECT_LOG.md` were the only two of the twelve carrying NEITHER a dated census stamp NOR an
+> index***, *while a gate reported `12`/`12` on both counts. Both gates were matching a looser pattern.*
+>
+> ## ▶ FIND IT FAST
+> | if you need… | go to |
+> |---|---|
+> | **what each factor IS, and its mechanism** | **`§1` Factor registry** *(`A`* availability *· `B`* game-state/market *· `C`* line movement *· `D`* officials *· `E`* confidence *· `M`* matchup*)* |
+> | **which factors matter for a GIVEN PROP, and the direction asymmetry** | **`§2` Per-prop matrix**, then **`§P2.1`–`§P2.11`** *(points · rebounds · assists · 3PM/3PA · FGA · FTM · blocks/steals/stocks · turnovers · combos · double-double · period props)* |
+> | **slip-level factors** *(for the slip engine)* | **`§P2.12`** |
+> | **variation-band and role modulation** | **`§3`** |
+> | **the two-season backfill plan** | **`§4`** |
+> | **where this layer sits, and the DELTA PRINCIPLE** | **`§0`** |
+>
+> 🔴🔴🔴 **THIS FILE IS THE REGISTRY, NOT THE CURRENT STATE OF ANY FACTOR.** *It is dated `2026-09-09`
+> and records what each factor was DESIGNED to do.* ⚠⚠ **For what is BUILT, FITTED, MEASURED or
+> REJECTED, the authority is `nba/NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` — which is NOT one of the
+> twelve but IS current and authoritative** *(`§T25.4`, `§T26.37`)*: **`A5` is `CLOSED — REJECTED` there
+> on Δ MAE, `D1`'s stage was corrected there, and the late-`Out` scoring defect was recorded ONLY
+> there.** 🔑 ***Read that file before acting on any factor verdict in this one.***
+>
+> 📌 **Cross-refs**: `§T26.5` *(the availability fallback, built and backtested)* · `§T26.39`
+> *(why the `A5` starter model does not count as built)* · `§T26.41` *(**do not rebuild a worse copy of
+> a component the system already has** — the defect this registry's factors are most prone to)* ·
+> `NBA_DAILY_PARITY_AND_BACKFILL.md` §7 *(stage assignment by publish time)*.
 
 *Owner directive: find every factor that gives any edge at the enrichment level, per prop line, per direction, per line
 variation, with sub-factors and tiers; find how to mine each daily; find how to backfill two seasons so the enrichment
