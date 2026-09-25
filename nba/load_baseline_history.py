@@ -64,32 +64,19 @@ def main():
         # the full spectrum if ever needed. Day-of P2 loads still write the full ladder (load_baseline_ladder).
         scope_mode = (os.environ.get("HISTORY_SCOPE") or "board").lower()
         if scope_mode != "full":
-            import sys as _sys
-            _sys.path.insert(0, "nba")
-            from score_board_legs import MARKET_TO_PROP
-            _per = {"_q1": "Q1", "_q4": "Q4", "_h1": "H1", "_h2": "H2"}
-            def _split(p):
-                for suf, per in _per.items():
-                    if p.endswith(suf):
-                        return p[:-len(suf)], per
-                return p, "FULL"
-            pairs = ",".join("(%s,%s,%s)" for _ in MARKET_TO_PROP)
-            flat = []
-            for mk, pr in MARKET_TO_PROP.items():
-                b, per = _split(pr); flat += [mk, b, per]
+            # The keys come from nba_market.board_rung_keys - computed ONCE per date by
+            # nba_market.refresh_board_rung_keys() (P3 appends the day's keys after archiving; history was
+            # built in one pass). Rebuilding them here per prop pair was a full normalising scan of a
+            # season's 13M snapshot rows, ~5-10 minutes, ten times per season, under the lock.
             dmin = min(r["game_date"] for r in rows); dmax = max(r["game_date"] for r in rows)
-            cur.execute(f"""CREATE TEMP TABLE _bh_keys ON COMMIT DROP AS
-                SELECT DISTINCT b.game_date, m.player_id::text AS player_id, v.prop, v.period, b.line
-                FROM nba_market.board_snapshots b
-                JOIN (VALUES {pairs}) AS v(mk, prop, period) ON replace(b.market_key, '_alternate', '') = v.mk
-                JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(b.player)
-                WHERE b.line IS NOT NULL AND v.prop = ANY(%s) AND b.game_date BETWEEN %s AND %s
-                UNION
-                SELECT DISTINCT u.game_date, u.player_id::text, u.prop, 'FULL', u.line
-                FROM nba_market.prop_universe u
-                WHERE u.line_source = 'simulated' AND u.line IS NOT NULL AND u.prop = ANY(%s)
-                  AND u.game_date BETWEEN %s AND %s""",
-                flat + [prop_set, dmin, dmax, prop_set, dmin, dmax])
+            cur.execute("SELECT count(*) FROM nba_market.board_rung_keys WHERE game_date BETWEEN %s AND %s", (dmin, dmax))
+            if cur.fetchone()[0] == 0:
+                raise SystemExit(f"ABORT: nba_market.board_rung_keys has no keys for {dmin}..{dmax} - run "
+                                 f"nba_market.refresh_board_rung_keys('{dmin}','{dmax}') first (a missing key table "
+                                 f"is not an empty board).")
+            cur.execute("""CREATE TEMP TABLE _bh_keys ON COMMIT DROP AS
+                           SELECT game_date, player_id, prop, period, line FROM nba_market.board_rung_keys
+                           WHERE game_date BETWEEN %s AND %s AND prop = ANY(%s)""", (dmin, dmax, prop_set))
             cur.execute("CREATE INDEX ON _bh_keys (game_date, player_id, prop, period, line)")
             cur.execute("CREATE TEMP TABLE _bh_scope ON COMMIT DROP AS SELECT DISTINCT game_date, prop, period FROM _bh_keys")
             cur.execute("CREATE INDEX ON _bh_scope (game_date, prop, period)")
