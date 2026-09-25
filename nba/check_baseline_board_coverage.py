@@ -76,8 +76,7 @@ def main():
         cur.executemany("INSERT INTO nba_ref.player_name_map VALUES (%s,%s,%s) ON CONFLICT DO NOTHING", rows)
         from nba_names import NAME_OVERRIDES
         by_norm = {nm: pid for pid, nm, _ in rows}
-        extra = [("carltoncarrington", "bubcarrington"), ("ronholland", "ronaldholland")]
-        for board_nm, reg_nm in list(NAME_OVERRIDES.items()) + extra:
+        for board_nm, reg_nm in NAME_OVERRIDES.items():
             pid = by_norm.get(norm_name(reg_nm))
             if pid:
                 cur.execute("INSERT INTO nba_ref.player_name_map VALUES (%s,%s,%s) ON CONFLICT DO NOTHING",
