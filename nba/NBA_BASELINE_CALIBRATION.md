@@ -2515,3 +2515,55 @@ teaches us multiplier structure, tier behaviour and line-setting, with zero cont
 **so the two findings agree without having been derived together.**
 
 📌 **Read at `§0v.4` above**, *where the gap this closes is stated.*
+
+---
+
+## 🔴🔴🔴 **§T26.41 — "DO NOT REBUILD A WORSE COPY OF A COMPONENT THE SYSTEM ALREADY HAS" IS THE MOST-REPEATED DEFECT IN THIS SYSTEM. IT WAS WRITTEN DOWN ON `2026-09-13` AND REPEATED ON `2026-09-24`.** *(source: `nba/NBA_DAILY_PARITY_AND_BACKFILL.md` §8, an unswept sibling cited by `6` of the twelve; `0` of the twelve before this entry)*
+
+### 🔑 **THE LESSON, AS RECORDED ELEVEN DAYS BEFORE IT RECURRED**
+
+> ***"Blowout risk is ALREADY in the baseline, and better than any patch: the recipe derives a
+> `P(blowout | spread)` lookup (`P_BLOWOUT_BINS` at `0/2/4/6/8/10/12/15`) and role-specific blowout
+> minutes ratios from TRAIN, in-run, with no pasted constants. **A funnel test that built its own crude
+> deterministic spread shrink on top of a ROLLING-MEAN minutes estimate made results WORSE — it was
+> DOUBLE-COUNTING A CRUDER DUPLICATE of a component the baseline already models as a proper mixture.**
+> **The funnel's minutes link must consume the recipe's `proj_min`, not reconstruct one.**
+> Same lesson as the crude defender metric: **use the system's best component, do not rebuild a worse
+> one beside it.**"***
+
+### 🔴🔴🔴 **THREE INDEPENDENT INSTANCES, AND THE THIRD CAME AFTER THE LESSON WAS FILED**
+
+| # | the rebuild | what it duplicated | measured result |
+|---|---|---|---|
+| **1** | **the crude defender metric** | the system's proper defender component | ⚠ *cited as the precedent; worse* |
+| **2** | **a deterministic spread shrink on a rolling-mean minutes estimate** *(`2026-09-13`)* | `P(blowout \| spread)` + role-specific blowout minutes ratios, **already modelled as a proper mixture** | 🔴 **made results WORSE** |
+| **3** | **the `A5` starter model + "next man up"** *(`2026-09-24`, `§T26.39`)* | **`proj_min` / recent-5 minutes**, which *"encodes starting status **continuously and with magnitude**"* | 🔴 **Δ MAE `−0.032` / `−0.008` / `−0.008` / `−0.035` — negative on every prop** |
+
+⇒ 🔑🔑🔑 ***THE SAME DEFECT, THREE TIMES, AND THE THIRD OCCURRED ELEVEN DAYS AFTER ITS OWN POST-MORTEM
+WAS WRITTEN.*** ⚠⚠ **Instance 3 even reproduces instance 2's shape exactly**: *a BINARY or coarse
+reconstruction placed on top of a CONTINUOUS estimate the system already computes properly.*
+
+### ⚠⚠ **AND THE REASON IT RECURRED IS THIS SWEEP'S OWN SUBJECT MATTER**
+
+🔴 ***The post-mortem was filed in `NBA_DAILY_PARITY_AND_BACKFILL.md` — a document OUTSIDE the twelve,
+which `6` of the twelve cite but none of them QUOTES on this point.*** 🔑 **So a reader working from
+the twelve — which is what the findability campaign optimised for — would not meet it.**
+📌 ***`§T25.4` says the folder is the hazard. This is what the hazard COSTS: a lesson written, filed,
+and then repeated by its own author, at the price of a model that was built, measured, documented and
+wired into nothing.***
+
+### ✅ **THE TEST THIS LEAVES, AND IT SUBSUMES `§T26.39`'s**
+
+> 🔑🔑🔑 ***BEFORE BUILDING ANY FACTOR, ASK WHAT THE PIPELINE ALREADY COMPUTES FOR THE SAME QUANTITY.
+> IF THE ANSWER IS "SOMETHING CONTINUOUS AND PROPERLY FITTED", A COARSER REBUILD CANNOT HELP AND WILL
+> USUALLY HURT — NOT BECAUSE IT IS INACCURATE, BUT BECAUSE IT DOUBLE-COUNTS. CONSUME THE COMPONENT;
+> DO NOT RECONSTRUCT IT.***
+
+⚠ **The corollary the parity doc states and `§T26.39` rediscovered independently**: *measuring the
+rebuild against its OWN target will look fine — instance 3 scored `13.5%` better on `Brier` — because
+that target is not the one the double-counting shows up in.* ⇒ **Only the product's own error
+(`Δ MAE` on props, `§0u.1`) can see it.**
+
+📌 **Cross-refs**: `§T26.39` *(instance 3, retracting `§T26.12`/`§T26.22`)* · `§T26.26` *(the same
+"different questions" failure on effect size vs penalty sizing)* · `§T25.4` *(why the lesson was not
+where the reader would find it)*.
