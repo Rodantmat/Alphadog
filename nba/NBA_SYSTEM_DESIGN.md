@@ -2825,3 +2825,40 @@ second half — preseason board capture for multiplier/tier learning — is NOT 
 📌 **Read with `§T26.20`**, *which closes the same thread from the opposite side: the one plausible
 reason to want preseason player data was pricing unknown players better, and at `307,000` legs unknown
 players price out correctly already.*
+
+---
+
+## 🔑🔑🔑 **§T25.2 — THE OWNER SETS THE BUILD ORDER: COVERAGE FIRST, SELECTION SECOND — AND EXPLICITLY DEFERS PROFITABILITY** *(T25 seg183, OWNER SAID, 2026-09-22; `0` of the twelve before this entry)*
+
+> 🔑🔑🔑 ***"yeah, you don't even need to worry about **break even and profit and these kind of things
+> yet**. it's just **create the structure so we can work with the most prop lines**. and after that,
+> we're going to work on **which leg has edge, which leg has not**. so it's just **to have the most
+> possible prop lines workable**, with a **simulation for all the two months of data that you have,
+> and multipliers.**"***
+
+### ✅ **THIS IS A SEQUENCING DECISION, AND IT RESOLVES AN AMBIGUITY THE CORPUS CARRIES THROUGHOUT**
+
+| phase | the owner's words | state |
+|---|---|---|
+| **1 · COVERAGE** | *"create the structure so we can work with the most prop lines"* | 🔑 **THE CURRENT PHASE** |
+| **2 · SELECTION** | *"which leg has edge, which leg has not"* | ⏳ **explicitly AFTER** |
+| **3 · PROFITABILITY** | *"break even and profit… **not yet**"* | ⏳ **explicitly DEFERRED** |
+
+⚠⚠ **READ EVERY OPEN ITEM AGAINST THIS ORDER.** *The corpus contains numerous findings phrased as
+edge-quality or profitability concerns. **By the owner's own sequencing they are not yet due** — and an
+item deferred by the owner is not an item the sweep should escalate as season-critical.*
+
+### 🔑 **AND IT IS THE SAME PRINCIPLE THAT DECIDED THE BASELINE'S WIDTH, ONE LEVEL UP**
+
+📌 **`prune_baseline_to_board.py` states the coverage-first rule for the BASELINE**: ***"DAY-OF the
+baseline is the full spectrum — it is built before anyone knows which lines the apps will post, and
+**its width is what lets the scorer hit the exact rung**."*** ⇒ ***Widest possible coverage while the
+answer is unknown, narrowed to what was actually offered once it is known*** *(`§T26.15`'s
+board-scoping, and the retention rule).* 🔑 **The owner's instruction is that same shape applied to the
+PRODUCT: get every line workable first; judge which ones are worth taking second.**
+
+⚠ **SCOPE NOTE.** *The prop-universe pricing work this directive launched — goblin/demon floors,
+alternate-line spacing, void reversion and the slip simulator's payout schedules — **belongs to
+`nba/PP_PAYOUT_FINDINGS.md` and the PrizePicks objects, which are outside these twelve documents by
+standing constraint.*** 🔑 **Recorded here is the DIRECTIVE and its consequence for how the twelve rank
+their own open items — not the payout content.**
