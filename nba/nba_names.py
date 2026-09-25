@@ -34,6 +34,11 @@ NAME_OVERRIDES = {
     # Confirmed 2026-09-25 from six weeks of PrizePicks boards (1,961 and 1,009 legs respectively).
     "carltoncarrington": "bubcarrington",
     "ronholland": "ronaldholland",
+    # Confirmed 2026-09-25 against every board name of 2024-25 and 2025-26: with these, 561 of 561 resolve.
+    "bjboston": "brandonboston",
+    "jameshuff": "jayhuff",
+    "mohamedbamba": "mobamba",
+    "vincentwilliams": "vincewilliams",
 }
 
 
