@@ -38906,7 +38906,7 @@ opened and quoted.**
 
 **`T16-9` in full**: *the author wrote the test himself —* ***"IF IT STAYS AT ZERO once the query
 completes, the planner isn't using them and the expression doesn't match exactly, WHICH I'D NEED TO
-FIX"*** *— and `board_outcomes_nm_idx` is **still at `0` scans while its two siblings show `1,080,188`
+FIX"*** ⚠ **RE-DERIVED `2026-09-25`, `§T26.24`: the index reads **`14`** scans now, not `0` — `14` against a batch-mate's **`+40,909,121`** over the same window. The conclusion is unchanged and better supported; ALL FOUR counters rose and nothing was rebuilt.** *— and `board_outcomes_nm_idx` was **at `0` scans while its two siblings show `1,080,188`
 and `594,932`**, with the `EXPLAIN` supplying the cause:* ***"functions on the join columns… so ALL
 FOUR INDEXES I BUILT WERE IRRELEVANT TO THIS QUERY."***
 ⇒ ***The brief's `D` row calls it one of "three `[LIVE-AUDIT]` OWNER DECISIONS". It is not a decision
