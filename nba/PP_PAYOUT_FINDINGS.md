@@ -169,7 +169,20 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
-## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
+## 0f. ✅ LEDGER CLOSURES, 2026-09-25 — each verified, none by reading alone
+
+| Item | Verdict | Evidence |
+|---|---|---|
+| **F6-1** loader key omits `ot_rule` | ✅ closed, **verified with data** | the 2026-04-10 artifact has 124,942 rows, the loader wrote 118,759: the 6,183 difference is **6,183 groups of identical duplicates** (rungs clamped onto the same 0.5–4.5 line; `p_more`, `p_less`, `anchor` equal in every group). Nothing is lost by the collapse. |
+| **T20-17** silent injury-shard loss in the delta | ✅ **fixed** | `build_availability_delta.py` no longer fetches shards from the raw CDN with `except: pass`; it reads `nba_daily.injury_report_snapshots` for the date — the same table P3 loads before the step (`INJURY_LOAD_MODE=current`). A missing day is now "no injury rows", never a silent shrink. Verified by a P3 replay: `wrote 800 overrides (0 now-OUT, 800 reallocated teammates)`. |
+| *(found with T20-17)* stale CDN | ✅ fixed | the raw CDN caches; the day-of report P3 had committed minutes earlier could be served stale. Postgres is the source now. |
+| *(found with T20-17)* `DELTA_SEASON` defaulted to `"2025-26"` and P3 never sets it | ✅ fixed | **the one hardcoded season the rollover fix did not reach**: on opening night the delta would have read last season's index, found no rows, printed "no delta" and exited 0 — silently, every day. Now `active_stats_season()`; the baseline read is keyed by date alone. |
+| *(found with T20-17)* player logs fetched from the raw CDN by season file | ✅ fixed | `nba_player_game_log_2026_27.json` does not exist before the first game — a 404 and a crash on opening night; and a player's last team before the first games is in LAST season's log. Now `nba_stats.player_game_log`, all seasons, a 400-day window back from the slate. |
+| **T20-13** certifier red for the first twelve nights | ✅ closed, **by measurement** | its "22 October props vs 30" counted period rows as props. With `period = 'FULL'` separated the count is **21 on every date including opening night 2025-10-21**; the rewritten certifier gates at `>= 20` FULL props. |
+| *(new)* the daily object was poorer than the backfill | ✅ fixed | `build_baseline_history.py` emitted `proj_min` / `rate36` (0% NULL in the store); `build_baseline_ladder.py` did not, so every in-season row would have loaded NULL — the delta's reallocation NaN-dropped on every leg and the confidence refit's components went silent. The production patcher now carries both, same `rep()` as the history patcher; validated by compiling the patched recipe. |
+| **T20-13/T20-6 corollary** — `DROPPED N rows with NaN probabilities` in the delta | ⚠ explained | combos have no `proj_min` by construction (100% NULL), so their reallocation cannot be re-derived and they keep the baseline. Correct fallback; the "should be 0" message is over-strict for combos. |
+
+ — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
 
 
 **The rule, in the owner's words:** *"One set of data per day. It cannot grow on the day. If it needs to
