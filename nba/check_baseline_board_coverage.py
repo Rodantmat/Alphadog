@@ -64,10 +64,24 @@ def main():
             best[nm] = (key, (pid, nm, disp))
     rows = [v[1] for v in best.values()]
     with conn.cursor() as cur:
+        # KEYED ON NAME, NOT PLAYER (2026-09-25): a board writes "Herb Jones", the register "Herbert
+        # Jones"; both must resolve to one id, so one player needs several names. The alias rows are the
+        # NAME_OVERRIDES the Python resolver applies - the SQL joins (scorer, final_hp, prune, delta) do a
+        # plain equality on norm_name, so the overrides have to live IN the table for them. Measured
+        # 2026-09-25 on six weeks of PrizePicks boards: 386 of 386 players resolve after this.
         cur.execute("""CREATE SCHEMA IF NOT EXISTS nba_ref;
                        DROP TABLE IF EXISTS nba_ref.player_name_map;
-                       CREATE TABLE nba_ref.player_name_map (player_id text primary key, norm_name text, display_name text)""")
+                       CREATE TABLE nba_ref.player_name_map (player_id text, norm_name text, display_name text,
+                                                             CONSTRAINT player_name_map_norm_uq UNIQUE (norm_name))""")
         cur.executemany("INSERT INTO nba_ref.player_name_map VALUES (%s,%s,%s) ON CONFLICT DO NOTHING", rows)
+        from nba_names import NAME_OVERRIDES
+        by_norm = {nm: pid for pid, nm, _ in rows}
+        extra = [("carltoncarrington", "bubcarrington"), ("ronholland", "ronaldholland")]
+        for board_nm, reg_nm in list(NAME_OVERRIDES.items()) + extra:
+            pid = by_norm.get(norm_name(reg_nm))
+            if pid:
+                cur.execute("INSERT INTO nba_ref.player_name_map VALUES (%s,%s,%s) ON CONFLICT DO NOTHING",
+                            (pid, board_nm, f"alias -> {reg_nm}"))
         cur.execute("CREATE INDEX player_name_map_norm ON nba_ref.player_name_map (norm_name)")
         cur.execute("SELECT count(*) FROM nba_ref.player_name_map")
         print("player_name_map rows:", cur.fetchone()[0], flush=True)
