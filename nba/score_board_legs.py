@@ -136,7 +136,12 @@ def main():
                m.player_id
         FROM nba_market.board_snapshots b
         LEFT JOIN nba_ref.player_name_map m
-               ON m.norm_name = lower(regexp_replace(b.player,'[^A-Za-z]','','g'))
+               ON m.norm_name = nba_ref.norm_name(b.player)
+        -- ONE NORMALISER (2026-09-25). This join used an inline lower(regexp_replace(...,'[^A-Za-z]',''))
+        -- that KEPT name suffixes, while player_name_map was built by nba_names.norm_name, which STRIPS
+        -- them. "Jaren Jackson Jr" -> jarenjacksonjr vs map jarenjackson: no match. Measured: 47 suffixed
+        -- players (Jr, Sr, II, III) had ZERO scored legs in either season - invisible to scoring, tiers,
+        -- final_hp, the delta and the paper log. nba_ref.norm_name mirrors the Python function exactly.
         WHERE b.game_date = %s
     """, conn, params=(asof,))
     if board.empty:
