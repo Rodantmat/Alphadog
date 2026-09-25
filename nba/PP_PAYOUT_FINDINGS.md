@@ -5,10 +5,11 @@
 ---
 
 ## 0. 💾 STANDING TASK — DISK, MEASURED 2026-09-24
-**State 2026-09-25: 36 GB used (was 46 GB on 2026-09-24). Retention prune + `VACUUM FULL` on
-`baseline_history` and `board_outcomes` returned 10 GB; `final_hp` rewrite still to come (see §0c).**
-**Earlier owner decision 2026-09-24: leave as is for now, revisit as a priority — superseded the same day
-by the retention rule in §0c, which is what actually freed the space.**
+**State 2026-09-25 (end): 27 GB used (46 GB on 2026-09-24) — 19 GB returned, while holding MORE coverage
+than at 46 (see §0e: reconstruction complete). Retention prune + board-scoped rebuild + `VACUUM FULL` on
+`baseline_history` (2.85 GB), `final_hp` (1.77 GB) and `board_outcomes` (1.55 GB).**
+**Earlier owner decision 2026-09-24: leave as is for now — superseded the same day by the retention rule
+in §0c, which is what actually freed the space.**
 
 **Already reclaimed (651 MB, no data loss, all verified before and after):**
 - `nba_score.baseline_history_lookup` **415 MB** — a strict PREFIX of `baseline_history_lookup_idx`
