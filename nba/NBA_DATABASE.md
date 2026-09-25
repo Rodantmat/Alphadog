@@ -2893,32 +2893,58 @@ session that wrote the rule.** *The guard that catches it is the board-key scope
 while **"its three siblings, built in the same batch on the same normalised-name join, show `23.4M` /
 `1.08M` / `595k` scans over that same window, so the zero is not a short-window artifact."***
 
-### 🔴 **RE-DERIVED LIVE — AND EVERY FIGURE IN THAT SENTENCE HAS MOVED**
+### 🔴🔴🔴 **FIRST PUBLISHED VERSION OF THIS SECTION WAS WRONG AND IS RETRACTED HERE — `RULE 40`, STRUCK NOT DELETED**
+
+> ~~*"`board_outcomes_leg_uidx` `23.4M` → `20,716,356` **FELL** · `board_outcomes_date_idx` `595k` →
+> `12,768` **FELL 47×** · the fourth sibling **ABSENT**. A btree scan counter cannot fall, so the
+> objects were replaced."*~~
+
+🔴🔴 **THE DEFECT: I SCOPED THE QUERY TO ONE TABLE AND THE FOUR SIBLINGS LIVE ON FOUR TABLES.**
+*`WHERE relname='board_outcomes'` returned that table's OWN three indexes — `leg_uidx` and `date_idx`
+are **not** the siblings at all — and I compared each to a corpus figure belonging to a different
+index on a different table.* ⚠ **Nothing fell. Nothing vanished.** 📜 ***`RULE 57` caught it before it
+stood for an hour: a derivation is not recorded until it has been RUN on every row it claims — and I
+had not run it on the rows I was claiming about.*** 🔑 **The corrected reading is below, and it is
+SHARPER than the retracted one.**
+
+### ✅ **RE-DERIVED LIVE, ON THE RIGHT FOUR INDEXES** *(`§0x-T16`'s own table names)*
 
 ```sql
-SELECT indexrelname, idx_scan, pg_size_pretty(pg_relation_size(indexrelid))
-  FROM pg_stat_user_indexes WHERE relname='board_outcomes' ORDER BY idx_scan DESC;
+SELECT relname, indexrelname, idx_scan, pg_size_pretty(pg_relation_size(indexrelid))
+  FROM pg_stat_user_indexes
+ WHERE indexrelname IN ('baseline_history_lookup_idx','board_outcomes_nm_idx',
+                        'board_tiers_nm_idx','rung_market_nm_idx');
 ```
 
-| index | corpus | **live `2026-09-25T18:36Z`** | |
-|---|---|---|---|
-| `board_outcomes_leg_uidx` | `23.4M` | **`20,716,356`** · `389 MB` | 🔴 **FELL** |
-| `board_outcomes_date_idx` | `595k` | **`12,768`** · `47 MB` | 🔴 **FELL `47×`** |
-| **`board_outcomes_nm_idx`** | **`0`** | **`14`** · **`303 MB`** | ⚠ **ROSE OFF ZERO** |
-| *the fourth sibling* | `1.08M` | 🔴 **ABSENT — only `3` indexes exist** | 🔴 **GONE** |
+| index | table | corpus | **live `2026-09-25T18:36Z`** | Δ |
+|---|---|---|---|---|
+| `baseline_history_lookup_idx` | `baseline_history` | `23,364,453` | **`64,273,574`** | ✅ **`+40,909,121`** |
+| `board_tiers_nm_idx` | `board_tiers` | `1,080,188` | **`1,080,210`** | ⚠ **`+22`** |
+| `rung_market_nm_idx` | `rung_market` | `594,932` | **`594,952`** | ⚠ **`+20`** |
+| 🔴 **`board_outcomes_nm_idx`** | `board_outcomes` | **`0`** | **`14`** · still **`303 MB`** | ⚠ **`+14`** |
 
-### 🔑🔑 **A BTREE SCAN COUNTER CANNOT FALL. SO THE OBJECTS WERE REPLACED.**
+✅✅ **ALL FOUR COUNTERS ROSE. NOTHING WAS REBUILT, AND `stats_reset` IS STILL `NULL`** — *so the
+corpus's window claim was sound and the figures ARE comparable.* ⚠ *`baseline_history_lookup_idx`'s
+SIZE fell `1,541 MB` → **`610 MB`**, which is the board-scoped prune removing rows, not a rebuild.*
 
-⚠ **`pg_stat_database.stats_reset` is `NULL`** — *exactly as the corpus recorded, and it is still
-`NULL` now*, **so a database-wide statistics reset is EXCLUDED.** 🔑 **But a per-index row in
-`pg_stat_user_indexes` is created with the index and dies with it**, ⇒ ***two counters falling and one
-index vanishing, under an unbroken `stats_reset`, means the INDEXES were dropped and rebuilt — and a
-rebuilt index starts at `0` regardless of how long the database has been up.***
+### 🔑🔑 **AND THE CORRECTED READING CARRIES A FINDING THE CORPUS DOES NOT HOLD**
 
-⚠⚠⚠ **CONSEQUENCE: the corpus's `0` and today's `14` ARE NOT COMPARABLE, AND NEITHER IS AN "ALL-TIME"
-FIGURE.** 🔴 ***The premise that made `T16-9` conclusive — "over that same window" — was never true of
-the per-index counters, only of the DATABASE counter. `stats_reset` being `NULL` was read as
-warranting a claim it does not warrant.***
+**`§0x-T16` concludes: *"Three of the four earn their keep; the fourth is open item `T16-9`."*** ⚠⚠
+**OVER THE LAST WINDOW, ONLY ONE DID.** *Against `baseline_history_lookup_idx`'s **`+40.9 million`**
+scans, `board_tiers_nm_idx` added **`22`** and `rung_market_nm_idx` added **`20`**.*
+
+⇒ 🔴 ***Two indexes the corpus certifies as earning their keep are, in the current workload, within an
+order of magnitude of the one it calls dead.*** 🔑 **Their lifetime totals are real and were earned —
+but they were earned by a workload that is no longer running.** ⚠ **`144 MB` of the storage budget
+`§0v` records as consumed several times over now sits behind `42` scans in three days.**
+⚠ **NOT a recommendation to drop them** *(`RULE 6`)* — *a backtest workload the owner has stated is
+coming (`T18-2`: **"days of backtesting, multiple logics, all the time"**) is exactly the consumer
+that would use a normalised-name join again.* 🔑 **Recorded so the next audit compares DELTAS, not
+lifetime totals.**
+
+📌 **AND A THIRD INDEX ON `baseline_history` IS NEW AND EMPTY**:
+`baseline_history_player_id_canonical_prop_key_line_value_se_key` — **`0` scans, `8,192` bytes**. *A
+unique constraint carried by the consolidated table; **NOT RECORDED** which migration added it.*
 
 ### ✅✅ **BUT THE CONCLUSION IS UNCHANGED, AND IT IS NOW BETTER SUPPORTED**
 
