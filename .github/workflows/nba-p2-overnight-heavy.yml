@@ -95,7 +95,14 @@ jobs:
           import os, sys, psycopg
           slate = sys.argv[1]
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
-              n = c.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (slate,)).fetchone()[0]
+              # PRESEASON IS NOT A SLATE (2026-09-24). The documented decision: preseason is rejected for the
+              # projection pipeline - never in player_game_log, rotations chaotic, stars rest - and is used
+              # only for board and multiplier learning. nba_calendar.games labels those games 'Preseason', so
+              # the gate counts REGULAR-SEASON games only: on a preseason day P2 does its mining and grading
+              # and skips the build, exactly like an off day. Preseason starts 2026-10-03; opening night is
+              # 2026-10-20, which is when the first baseline is built.
+              n = c.execute("""SELECT count(*) FROM nba_calendar.games
+                               WHERE game_date = %s AND coalesce(game_label, '') <> 'Preseason'""", (slate,)).fetchone()[0]
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"has_games={'1' if n else '0'}\n")
           print(f"{n} games scheduled on {slate}"
