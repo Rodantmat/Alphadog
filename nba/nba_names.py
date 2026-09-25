@@ -31,6 +31,9 @@ NAME_OVERRIDES = {
     "gregjackson": "gregoryjacksoniii",
     "jimmybutleriii": "jimmybutler",
     "kellyoubre": "kellyoubrejr",
+    # Confirmed 2026-09-25 from six weeks of PrizePicks boards (1,961 and 1,009 legs respectively).
+    "carltoncarrington": "bubcarrington",
+    "ronholland": "ronaldholland",
 }
 
 
