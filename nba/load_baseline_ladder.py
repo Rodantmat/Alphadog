@@ -40,12 +40,19 @@ def main():
     from datetime import datetime, timedelta, timezone
     asof = os.environ.get("LOAD_ASOF") or datetime.now(timezone(timedelta(hours=-8))).date().isoformat()
     docs = []
-    for name in (f"nba_baseline_ladder_{asof}.json", "nba_baseline_ladder_latest.json",
-                 f"nba_baseline_ladder_{asof}_combos.json", f"nba_baseline_ladder_{asof}_periods.json"):
-        d = fetch(name)
+    # LOCAL FIRST (2026-09-25). The merge step writes nba/data/nba_baseline_ladder_<asof>.json on this
+    # runner seconds before this step; fetching it back over raw.githubusercontent.com went through a
+    # CDN that caches for minutes - the rehearsal of 2026-01-15 got a 404 on the file it had just
+    # committed and only found the 'latest' copy. The legacy _combos / _periods names are gone: the
+    # merge folds them into the one file, so those fetches only ever produced 404 noise.
+    from pathlib import Path
+    for name in (f"nba_baseline_ladder_{asof}.json", "nba_baseline_ladder_latest.json"):
+        local = Path("nba/data") / name
+        d = json.loads(local.read_text()) if local.exists() else fetch(name)
         if d and (d.get("meta") or {}).get("asof") == asof:
             docs.append((name, d))
-            print(f"  loaded {name}: {len(d.get('ladder') or [])} rows")
+            print(f"  loaded {name} ({'local' if local.exists() else 'http'}): {len(d.get('ladder') or [])} rows")
+            break   # the two names carry the same content; one is enough
     if not docs:
         raise SystemExit(f"ABORT: no baseline artifact found for {asof}")
 
