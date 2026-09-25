@@ -119,13 +119,21 @@ def main():
             print("DRY RUN - nothing deleted.", flush=True)
             conn.rollback()
             return
+        if before == 0:
+            # No baseline was built for this scope - a preseason day, an off day, or a date P2 skipped.
+            # Nothing to prune is not a failure. (Preseason is rejected for the projection pipeline;
+            # only its boards are captured, so a preseason board with no baseline is the normal case.)
+            print(f"No baseline rows for {label} - nothing to prune.", flush=True)
+            conn.rollback()
+            return
         if nk == 0:
-            # Distinguish an off day from a missing archive. No games -> nothing to prune, exit green
-            # (P2 runs every morning and must not go red for a day the league did not play). Games but
-            # no board keys -> the archive is missing for a real slate; refuse to delete and fail loud.
+            # Distinguish an off day from a missing archive. No regular-season games -> nothing to prune,
+            # exit green (P2 runs every morning and must not go red for a day the league did not play).
+            # Games but no board keys -> the archive is missing for a real slate; refuse and fail loud.
             games = 0
             if one_date:
-                cur.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (one_date,))
+                cur.execute("""SELECT count(*) FROM nba_calendar.games
+                               WHERE game_date = %s AND coalesce(game_label, '') <> 'Preseason'""", (one_date,))
                 games = cur.fetchone()[0]
             if games == 0:
                 print(f"No games on {label} - nothing to prune.", flush=True)
