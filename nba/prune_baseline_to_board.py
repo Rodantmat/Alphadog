@@ -86,7 +86,7 @@ def main():
             FROM nba_market.board_snapshots b
             JOIN (VALUES {pairs}) AS v(mk, prop, period) ON replace(b.market_key, '_alternate', '') = v.mk
             JOIN nba_ref.player_name_map m
-              ON m.norm_name = lower(regexp_replace(b.player, '[^A-Za-z]', '', 'g'))
+              ON m.norm_name = nba_ref.norm_name(b.player)
             WHERE b.line IS NOT NULL AND {scope_sql}
             UNION
             SELECT DISTINCT u.game_date, u.player_id::text, u.prop, 'FULL', u.line
