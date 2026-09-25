@@ -157,6 +157,12 @@ players = pd.concat(P, ignore_index=True); teams = pd.concat(T, ignore_index=Tru
 for df in (players, teams): df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"]).dt.date
 for df in (players, teams, teams_adv):
     df["GAME_ID"] = df["GAME_ID"].astype(str); df["TEAM_ID"] = df["TEAM_ID"].astype(str)
+# SHAPE PARITY GUARD (2026-09-25): the delta-synced current-season advanced log carries GAME_DATE, the
+# backfilled seasons do not; the merge below supplies GAME_DATE from `teams` either way. Dropping a
+# pre-existing column first prevents GAME_DATE_x / GAME_DATE_y and changes no number. Placed in the
+# recipe so every caller - the production patcher, the history patcher and the combos backfill that
+# runs this file directly - is covered by one line. The patchers' own anchor (the merge line) is unchanged.
+teams_adv = teams_adv.drop(columns=["GAME_DATE"], errors="ignore")
 teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")
 players["MINF"] = players["MIN"].apply(to_min)
 for c in ["PTS", "REB", "AST", "FG3M", "FG3A", "PF", "BLK", "STL", "TOV", "FGA", "FTM", "FTA"]: players[c] = pd.to_numeric(players[c], errors="coerce").fillna(0)
