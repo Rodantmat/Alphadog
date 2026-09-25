@@ -80,19 +80,16 @@ def main():
     with conn.cursor() as cur:
         cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.baseline_history'))")
         cur.execute("DROP TABLE IF EXISTS _prune_keys")
+        # THE BOARD, from nba_market.board_rung_keys (2026-09-25): real boards UNION derived boards, resolved
+        # once per date through the one normaliser. Same table the history loader and build_final_hp read.
         cur.execute(f"""
             CREATE TEMP TABLE _prune_keys AS
-            SELECT DISTINCT b.game_date, m.player_id::text AS player_id, v.prop, v.period, b.line
-            FROM nba_market.board_snapshots b
-            JOIN (VALUES {pairs}) AS v(mk, prop, period) ON replace(b.market_key, '_alternate', '') = v.mk
-            JOIN nba_ref.player_name_map m
-              ON m.norm_name = nba_ref.norm_name(b.player)
-            WHERE b.line IS NOT NULL AND {scope_sql}
-            UNION
-            SELECT DISTINCT u.game_date, u.player_id::text, u.prop, 'FULL', u.line
-            FROM nba_market.prop_universe u
-            WHERE u.line_source = 'simulated' AND u.line IS NOT NULL
-              AND {scope_sql.replace('b.game_date', 'u.game_date')}""", flat + scope_params + scope_params)
+            SELECT game_date, player_id, prop, period, line FROM nba_market.board_rung_keys b
+            WHERE {scope_sql}""", scope_params)
+        cur.execute("SELECT count(*) FROM _prune_keys")
+        if cur.fetchone()[0] == 0 and season:
+            raise SystemExit(f"ABORT: nba_market.board_rung_keys has no keys for season {season} - refresh it first "
+                             f"(a missing key table is not an empty board).")
         cur.execute("CREATE INDEX ON _prune_keys (game_date, player_id, prop, period, line)")
         cur.execute("""CREATE TEMP TABLE _prune_scope AS
                        SELECT DISTINCT game_date, prop, period FROM _prune_keys""")
