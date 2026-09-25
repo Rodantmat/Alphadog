@@ -2333,3 +2333,52 @@ DECOMPOSED into `ot_rule` pairs the way `§F6.16` decomposed the current one.** 
 two differences is VERIFIED arithmetic on figures from two independent sources; the shared CAUSE is
 a strong inference, not a measurement.** *And `T14` itself drew no conclusion from the gap — the two
 numbers are in consecutive status reports and nothing in the corpus subtracts them.*
+
+# 🆕 §T26.8 — 🔴🔴🔴 **THE PARITY RULE BROKEN AT THE *SHAPE* LEVEL: `P2` WOULD HAVE FAILED EVERY IN-SEASON NIGHT**
+
+*Found and fixed `2026-09-24`; recorded here `2026-09-25`. **The file evidence below was
+re-verified against the live repo.***
+
+## 1 · The symptom that made it visible only two days before it would have mattered
+
+**The `2026-04-10` replay was GREEN on `2026-09-23`. On `2026-09-24` it died twice** — first with
+`` KeyError: 'GAME_DATE' `` **at the certified recipe's first filter line**, and then, once that was
+patched, **again in the periods builder at its equivalent line.**
+
+## 2 · The cause — *traced by reproducing the patcher's compiled source locally, not by guessing*
+
+| source | shape | carries `GAME_DATE`? |
+|---|---|---|
+| **the season BACKFILL** → `nba_team_game_log_advanced_<season>.json` | **SLIM** | 🔴 **NO** — *the recipe merges `GAME_DATE` in from the team log* |
+| **the daily DELTA sync** → `nba_delta_team_game_log_advanced.json` → season file *(`synced_from_delta: true`)* | **FULL `stats.nba.com` shape** | ✅ **YES** |
+
+🔑 ***The first delta sync of the advanced file landed on `2026-09-24`.*** **From that moment the
+concatenated `teams_adv` carried its OWN `GAME_DATE`, the merge produced `GAME_DATE_x` /
+`GAME_DATE_y`, and every read of `GAME_DATE` failed.**
+
+✅ **VERIFIED IN THE LIVE REPO `2026-09-25`** *(file heads, `RULE 57`)*:
+
+| file | `GAME_DATE` | `synced_from_delta` |
+|---|---|---|
+| `nba_team_game_log_advanced_2023_24.json` | **absent** | — |
+| `nba_team_game_log_advanced_2024_25.json` | **absent** | — |
+| 🔴 `nba_team_game_log_advanced_2025_26.json` | **PRESENT** | **`true`** |
+
+## 3 · ⚠⚠ Why this is the parity rule, and why it would have been catastrophic
+
+***`§0u`'s parity rule says the daily object must be the SAME OBJECT as the backfill. It was not —
+not in content, but in SHAPE.*** **A schema difference passes every content check.**
+
+🔴🔴🔴 ***IN SEASON THE DELTA SYNCS NIGHTLY. `P2` WOULD HAVE FAILED EVERY NIGHT FROM OPENING NIGHT,
+AND THE CERTIFIER WOULD HAVE GONE RED **AFTER** THE MINING SUCCEEDED*** — *the most expensive failure
+shape there is: all the work done, then thrown away.*
+
+⚠ 📌 **It was invisible until the day the first delta landed.** *A replay that was green yesterday is
+not evidence the pipeline is green tomorrow, **if an input's shape changes on a schedule**.*
+
+## 4 · ✅ The fix, and the principle
+
+**`` teams_adv.drop(columns=["GAME_DATE"], errors="ignore") ``** *immediately before the merge, in
+BOTH patchers.* 🔑 ***Normalise at the one point where the shape matters, rather than at every
+producer*** — *because the producers are a backfill written once and a delta written nightly, and
+only the consumer knows which columns it needs.*
