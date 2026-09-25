@@ -8,7 +8,16 @@ constraints that shaped it. This is the operational spec.
 > # 📑 **INDEX — `NBA_SYSTEM_DESIGN.md`**
 > **What the system is for, and how the three pipelines deliver it** — `P1`, `P2`, `P3`, the `1:15 PM
 > PT` cutoff, the calculation chain, the failure policy, and the explicit non-goals.
-> 📏 **`171` sections · `2026-09-23`.** *Re-derive, never quote:* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_SYSTEM_DESIGN.md ``
+> 📏 **`171` sections · `2026-09-23`** *(re-derive, never quote — `5` sections added `2026-09-25`):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_SYSTEM_DESIGN.md ``
+>
+> 🆕🆕 **SECTIONS ADDED `2026-09-25` — `5` NEW, AND TWO ARE THE OWNER'S OWN WORDS ON HOW THE SYSTEM IS SUPPOSED TO WORK.** *Anchors are heading text; search the label.*
+> | § | what it is |
+> |---|---|
+> | 🔑🔑🔑 **`§T26.27`** | **THE ARCHITECTURAL CHARTER, QUOTED** — ***P2 narrows by PLAYER, P3 by LEG*** *(two axes; conflating them is the error the owner heads off)* · 🔴 ***"the period props… WILL show up when the season starts… SO ALL PROPS STAY, NO EXCEPTION"*** · **and the INGREDIENTS-vs-PRODUCTS principle that resolves *"everything mined must be stored"* against the retention rule — stated in NO other file of the twelve** |
+> | 🔑🔑 **`§T25.2`** | **THE OWNER SETS THE BUILD ORDER** — ***coverage → selection → profitability***, *with profitability **explicitly deferred***. ⚠ **Read every open item against this: an item the owner has deferred is not season-critical** |
+> | 🔴🔴🔴 **`§T26.45`** | **`nba_market.board_rung_keys` IS A P3→P2 HARD DEPENDENCY** — *one producer (inside **P3**), **three consumers that `SystemExit`** (`build_final_hp` = **P2 step 6b**, the history loader, the prune). **A P3 failure on day `N−1` stops three P2 steps on day `N`**, and the recovery path is UNVERIFIED* ⇒ item **`T26-3`** |
+> | ✅✅ **`§T26.21`** | **THE PRESEASON DECISION IS MEASURED, NOT ASSUMED** — *and the author corrects his own figure by a factor of `23`: **`11.5%` was inflated by a broken id join; the real share is `0.5%`***. 🔑 *Preseason is REJECTED as a player-statistics source and ACCEPTED as a market-structure source* |
+> | 🔑 **`§T26.10`** | **PRESEASON IS NOT A SLATE** *(the ruling `§T26.21` supplies the evidence for)* |
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
