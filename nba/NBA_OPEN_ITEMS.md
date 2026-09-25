@@ -159,7 +159,7 @@ table's.***
 > | 🔴 **a dated expiry** | **`T20-14`** *(Betr token, `2026-10-10`)* |
 > | 🔴 **the player-name bridge dropping legs today** | **`T20-25`** ⚠ *table-only* |
 > | ⚠ **nothing has a cron** | **`T20-3`** · the brief's **PREREQUISITE** block |
-> | 🔑 **items the owner already answered** | **`T16-7`** · **`T16-9`** · **`T17-2`** · **`T19-1`** |
+> | 🔑 **items the owner already answered** | **`T16-7`** · **`T16-9`** · **`T17-2`** · **`T19-1`** ⚠ **and `2026-09-25` closed the rest of the `T16` `[LIVE-AUDIT]` batch: `T16-7`'s data-loss half (`§T26.15`) and `T16-8` entirely (`§T26.16`) — `0` of the three now stand as decisions** |
 > | ⚠ **method findings about the sweep itself** | **`T19-3`** · **`T18-15`** · **`§T20.4`**–**`§T20.7`** |
 > | 🆕🔑 **what the NEWEST transcript says is left — the work's own to-do list** | **`T24-2`** *(`T24` §`12`, the `7`-item forward agenda)*. ⚠ **It carries the only DATED near-term item that is not a blocker — `PRESEASON, FROM ~2026-10-03`, validate spacing, goblin placement and the derived proxy lines against real NBA lines** *(sooner than opening night)* — **and the `3` items it found MISSING from the twelve are all EXCLUSIONS**: 🔴 *Mixed Flex is UNVERIFIED (the simulator supports Flex for all-standard slips only, which bounds every Flex figure in `NBA_MULTIPLIERS.md`)* · 🔴 *Fantasy Score stays OUT of strategies until real lines show whether the one-point conservative shift is too harsh* · 🔑 *per-prop edge cells, the owner's stated next phase.* 🔑 ***An exclusion is harder to notice missing than a measurement: nothing fails and no query returns wrong — the only symptom is a later reader building a Flex strategy with an alternate in it.*** |
 >
