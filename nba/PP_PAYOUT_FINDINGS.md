@@ -251,6 +251,11 @@ product's own population, and the reliability audit — book-agnostic by design,
 blended — understates PrizePicks' miscalibration (1.13 pp store-wide vs 3.46 on PrizePicks). When the
 slip policy resumes, the audit should be run PrizePicks-scoped. ⚠ `tier`/`kind` are NULL on the 2025-26
 replay records, so the goblin/demon split is not measurable from `board_scored` yet.
+📌 Checked before building anything on it: `nba_score.tier_band_calibration` (149 rows) is a research
+table from the 2026-09-13 work; `NBA_BASELINE_CALIBRATION.md` §T16.3 measured per-tier splitting as
+**harmful**, and the applied layer is phase × band (`ladder_calibration_asof`), which the scorer reads.
+Nothing to wire. Also verified in code: the certifier treats a preseason day as "nothing was due"
+(implemented 2026-09-24), so October 3 — board captured, nothing built or scored — certifies green.
 
 **PROFILE TABLES — INGREDIENTS THAT WERE BEING OVERWRITTEN WEEKLY (closed 2026-09-26, ledger #9).**
 Six profile tables are single-snapshot, no season, no as-of: `player_impact_rating` (DARKO),
