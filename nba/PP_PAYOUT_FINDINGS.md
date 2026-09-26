@@ -219,10 +219,19 @@ the season log from the raw CDN by season file, the same defect as the delta (st
 21 minutes after the delta created the new season's file). Tested offline on the real logs: Jaren
 Jackson Jr 2026-01-15 = 30 PTS, H1 23 + H2 7, Q1 8, fantasy 43.1, FTM 3. **Every market the scorer can
 score, the grader can grade.**
-⚠ **The one period boundary left:** `final_hp` and the as-of calibration remain full-game (the key
-table read is `period = 'FULL'`; `final_hp` has no period column). Period legs therefore score with
-their period ladder and a **zero calibration shift** until `final_hp` carries a period dimension.
-Correct and visible, not silent; a schema step for when period legs have graded volume.
+⚠ ~~**The one period boundary left:**~~ ✅ **CLOSED 2026-09-26, no schema change.** `build_final_hp.py`
+reads the key table for every period and writes period rungs under the SUFFIXED prop label
+(`points_q1`, `rebounds_h1` …) — the same label the scorer writes to `board_scored` and the calibration
+groups by; the unique index keeps them apart from full-game rungs, and every downstream lookup
+(calibration cell, confidence group) is a `.get` with a fallback. Period legs get calibration cells the
+moment they have graded volume. Historical boards carry no period keys, so nothing changes in the store
+until the first live slate with period lines.
+🔑 **Found while tracing it — the calibration was learning from a PARTIAL board.** P2 builds today's
+`final_hp` at 08:45 PT from the boards known then; everything posted later (the day-of board P3 captures
+at 13:15, late lines) never entered that date's `final_hp`, and the as-of calibration and confidence
+refits learn ONLY from `final_hp`. P2 now rebuilds YESTERDAY's `final_hp` from the complete board — after
+the prune step has refreshed yesterday's keys and kept every board rung, before the refits (seconds for
+one slate; off days exit cleanly). From now on the refits see the whole graded board.
 ⚠ Reliability audit re-run: ~~dispatched twice...~~ **DONE 2026-09-26, and the failure explained without a
 log:** the original script closed its connection right after the grading loop (it only printed
 afterwards); my write ran on a closed connection — two hours of grading, then a crash on the last line.
