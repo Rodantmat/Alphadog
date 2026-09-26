@@ -147,6 +147,12 @@ def header_ts(text):
     m = _HDR_TS.search(text or "")
     if not m: return None
     mo, dd, yy, hh, mm, ap = m.groups(); hh = int(hh) % 12 + (12 if ap == "PM" else 0)
+    # 🔑 STAMPING CONVENTION (T20-12, closed 2026-09-25): ET WALL TIME with a FIXED -05:00 label all
+    # year. In daylight time the UTC instant is an hour late. This is PAIRED with the cutoffs in
+    # build_availability_delta.py, which are written in the same convention (16:15 ET wall = 13:15 PT),
+    # so every before/after decision is correct year-round. Changing this to a real zone WITHOUT
+    # changing the delta's cutoffs (and re-stamping the historical rows in
+    # nba_daily.injury_report_snapshots) would break the window in daylight time. Do both or neither.
     return f"20{yy}-{mo}-{dd}T{hh:02d}:{mm}:00{'-05:00'}"
 
 
