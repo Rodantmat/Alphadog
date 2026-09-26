@@ -140,6 +140,33 @@ jobs:
       # The workers expose POST /run with NO auth (only their own outbound GitHub fetch is authenticated),
       # so this needs no secret - the earlier claim that it did was wrong.
       # Runs on always() for the same reason the commit does: a late failure must not discard the load.
+      # PROFILE SNAPSHOTS (2026-09-26). Six profile tables are single-snapshot - no season, no as-of -
+      # and every run of the writer workers below REWRITES them: last week's DARKO, playtypes, shot
+      # quality, shot zones and tracking were gone each Monday, and the first run after opening night
+      # would replace a full season's profiles with a week of samples. Under the owner's retention
+      # rule these are INGREDIENTS. So before the loads: copy each table into <table>_asof with today's
+      # date (idempotent per date). The workers are untouched; the research layer can read as-of.
+      - name: Snapshot the profile tables as-of today (before the loads overwrite them)
+        if: always()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python -m pip install -q "psycopg[binary]"
+          python - <<'EOF'
+          import os, psycopg
+          TABLES = ["nba_stats.player_impact_rating", "nba_stats.player_playtype_profile", "nba_stats.player_shot_quality",
+                    "nba_stats.player_shot_quality_delta", "nba_stats.player_shot_zone_profile", "nba_stats.player_tracking_detail"]
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              for t in TABLES:
+                  hist = t + "_asof"
+                  c.execute(f"CREATE TABLE IF NOT EXISTS {hist} (LIKE {t} INCLUDING DEFAULTS)")
+                  c.execute(f"ALTER TABLE {hist} ADD COLUMN IF NOT EXISTS as_of_date date NOT NULL DEFAULT current_date")
+                  c.execute(f"DELETE FROM {hist} WHERE as_of_date = current_date")
+                  n = c.execute(f"INSERT INTO {hist} SELECT *, current_date FROM {t}").rowcount
+                  print(f"  {hist}: {n:,} rows snapshotted as of {c.execute('SELECT current_date').fetchone()[0]}", flush=True)
+              c.commit()
+          EOF
+
       - name: Load static data into Postgres (writer workers)
         id: load
         if: always()
