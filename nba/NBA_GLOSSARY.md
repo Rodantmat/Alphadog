@@ -1157,6 +1157,24 @@ report and P3's 1:15 PM view. Only material availability moves matter.
 
 ## B
 
+**`board_rung_keys`** 🆕 · T26 · LIVE · `nba_market.board_rung_keys` — ***THE BOARD, as `(game_date,
+player_id, prop, period, line)`***: every real board rung resolved through the one normaliser, **UNION
+the DERIVED boards** *(the simulated legs in `nba_market.prop_universe`)*. ▶ **`4,522,732` keys · `379`
+dates · period `FULL` only** *(`2026-09-26`)*.
+🔴🔴 **IT IS A CROSS-PIPELINE SINGLE POINT OF FAILURE.** *ONE producer — `nba_market.refresh_board_rung_keys(lo, hi)`,
+called only inside **P3** — and **THREE consumers that hard-`SystemExit` without it**:
+`build_final_hp.py` *(**P2 step `6b`**)*, `load_baseline_history.py`, `prune_baseline_to_board.py`.*
+⇒ ***A P3 failure on day `N−1` stops three P2 steps on day `N`.*** ⚠ **P3's call only refreshes dates
+archived in the last `6` hours, so re-running P3 for an old date does NOT rebuild its keys.**
+▶ **`§T26.45`**, item **`T26-3`** · `NBA_RECIPE.md` `🔧 MAINTENANCE` task `3`.
+
+**`board_tiers_v2`** 🆕 · T26 · LIVE · `nba_market.board_tiers_v2` — the goblin / standard / demon
+classification *(four-way taxonomy, signed by position vs anchor)*; **the pricing and slip engines read
+it**. ▶ **`2,199,354` rows · `378` dates.** 🔴 **P3's "board tiers" step ran a ONE-OFF index-maintenance
+script instead of the builder until `2026-09-23`, so tiers were NEVER built for the decision-moment
+board** *(= `T20-7`, closed at `§T26.35`①)*. 🔴 **`BT2_APPS` defaults to PrizePicks ONLY** ⇒ item
+**`T26-1`**; read with **`T16-2`** *(`18` of `30` props have no tier rows at all)*.
+
 **B4 — opponent availability / rim protection** · T15, T16 · Closed in three formulations, 0 of 5 props.
 
 **band cell** · T8 · A calibration correction fitted per variation band. **THE PERMANENT RULE:
