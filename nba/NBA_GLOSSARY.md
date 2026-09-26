@@ -1815,6 +1815,24 @@ until then and **#27 was missing entirely**. Full list: `NBA_FINAL_SCORING_CALIB
 
 ## T–W
 
+**`verify_static_loads.py`** 🆕 · T26 · LIVE · **P1's own check that its static loads actually LANDED.**
+🔑 **It exists because of the exact failure `§T26.28` diagnosed**: *`build_defender_ratings.py` imports
+`scipy`, P1 never installed it, the step died with `ModuleNotFoundError` **every Monday**, and because it
+died mid-pipeline **the three steps after it — static context, COMMIT, certify — were skipped, so the whole
+week's scraping was thrown away uncommitted… while the cron ran fine every week**.* ✅ *Fixed two ways:
+`pip install … scipy`, **and** P1's commit/load/certify now run `if: always()` — the second is the one that
+fixes the CLASS.* 🔴 *Named in `0` of the twelve before `2026-09-26` — the `F5-1` class, but built
+`2026-09-23`–`25` and load-bearing today.* ▶ `§T26.28`, `§T26.45`.
+
+**`load_injury_report.py`** 🆕 · T26 · LIVE · **The loader the mining doc specified and nobody built** —
+writes the official injury report into **`nba_daily.injury_report_snapshots`** *(one row per
+`(game_date, snapshot_ts, team, player)`, snapshot semantics preserved per the PARITY RULE)*.
+🔑 **Before it, the binding availability input lived only as repo JSON and `nba_daily` held ZERO tables —
+nothing could query the factor that gates availability.** ✅ **The freshness check rates that table
+`BINDING`**, and `§T26.30` records the payoff: *`build_availability_delta.py` now reads it from Postgres
+instead of fetching shards over HTTP, which is what closed **`T20-17`** — **"a lost shard produced a
+smaller-but-normal-looking delta that then decided which legs P3 scores."*** ▶ `§T26.30`, `§T26.43`.
+
 **whole-universe comparison** · T1 (blueprint §9) · Scrutiny technique 1: diff the **live config**
 against the **real formula/logic** for **every entry in a universe at once** — every prop, every
 source, every combo — not just the one currently suspected. The technique that catches **silent
