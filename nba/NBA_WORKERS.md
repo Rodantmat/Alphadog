@@ -141,6 +141,83 @@ writes. Grouped by role.
 
 ---
 
+## 🔴🔴🔴🔴 **§T26.61 — THE DISPATCH CENSUS, CLOSED AND COMPLETE: `11` OF `21` NBA WRITER WORKERS ARE REACHABLE FROM NO SCHEDULE, AND `26` OF THE `41` TABLES THEY WRITE HAVE NO SCHEDULED WRITER AT ALL** *(source census + `SELECT`, 2026-09-26; the closed list is `0` of the twelve)*
+
+> 📌 **WHY THIS PASS EXISTS.** *`§T26.52` found ONE orphaned table. `§T26.57` found ONE orphaned worker. `§T26.54` reported `21`/`21` workers **documented** and read that as reassurance.* ⚠⚠ ***Three findings, one shape, and nobody had asked the question closed-form: WHICH workers are invoked by something that runs on its own?*** 🔑 **`§T20.34`'s lesson applies exactly — an owner handed a FLOOR cannot plan; an owner handed a CLOSED LIST can fix it in an afternoon.** *This is the closed list.*
+
+### ⚠⚠ **FIRST, THE VOCABULARY — AND THE FIRST ANSWER WAS `0` OF `21`, WHICH WAS A CLAIM ABOUT MY QUERY** *(`RULE 58`)*
+
+> ① **FILENAME** — `grep -rl "alphadog-v2-nba-static-schedule" .github/workflows/` → **`0` of `21` workers matched.** 🔴 *Published as-is this would have said "no worker is dispatched at all", which is false: the static layer demonstrably refreshes.* ⇒ **wrong vocabulary.**
+> ② **SHORT NAME** — P1 dispatches over HTTP by the worker's name minus the `alphadog-v2-` prefix, in a literal shell loop at `nba-p1-weekly-static.yml:190-192` against `WORKER_HOST` *(`vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev'`)*. **This is the real dispatch surface.**
+> ③ **MANIFEST AND WRANGLER** — `nba/worker_manifest_nba.json` lists all `21` and **carries no schedule of any kind**: it is a DEPLOY manifest, consumed by `generate_wrangler_configs.py`. ⚠ *And **no NBA wrangler config is committed at all** — `wrangler.alphadog-v2-nba-static-teams.jsonc` is absent exactly like the orphans', though that worker demonstrably works — so **the Cloudflare-cron surface does not discriminate** and cannot be used either way.* ✅ *`RULE 20` satisfied on three vocabularies before any absence below is asserted.*
+
+### 🔴 **THE CLOSED LIST — `10` WORKERS DISPATCHED, `11` NOT**
+
+> ✅ **DISPATCHED — the ten in P1's loop** *(Mondays `19:00Z`)*: `nba-static-teams` · `nba-static-players` · `nba-static-player-bio` · `nba-static-team-stats` · `nba-static-onoff` · `nba-static-playtypes` · `nba-static-tracking-detail` · `nba-static-darko` · `nba-static-shotquality` · `nba-static-lineups`.
+>
+> | worker | referenced by | schedule-reachable? |
+> |---|---|---|
+> | `nba-daily-delta` | `nba-daily-delta.yml` | 🔴 **NO — that workflow has no `cron`** |
+> | `nba-static-schedule` | — | 🔴 **NO** *(`§T26.57`; drift already measured)* |
+> | `nba-static-player-tracking` | — | 🔴 **NO** *(`§T26.52`'s orphaned table — **root cause named here**)* |
+> | `nba-weekly-differential` | — | 🔴 **NO** *(**this is why `T8` found it idle since `2026-09-02`**)* |
+> | `nba-static-starter-status` | — | 🔴 **NO** |
+> | `nba-static-backfill` | — | 🔴 **NO** |
+> | `nba-static-measure-types` | — | 🔴 **NO** |
+> | `nba-static-game-officials` | — | 🔴 **NO** |
+> | `nba-static-officials` | — | 🔴 **NO** |
+> | `nba-static-arenas` | — | 🔴 **NO** |
+> | `nba-baseline-ladder` | — | 🔴 **NO — and SUPERSEDED, see below** |
+>
+> ⇒ 🔴🔴 **`11` OF `21` — `52.4%` — ARE NOT REACHABLE FROM ANY SCHEDULE IN THIS REPO.**
+
+### 🔴🔴 **AND THE CONSEQUENCE AT TABLE LEVEL, WHICH IS THE PART AN OWNER CAN ACT ON: `26` OF `41`**
+
+> *Every `INSERT`/`UPDATE`/`DELETE` target across all `21` workers, classified by whether **any** of that table's writers is dispatched:*
+>
+> | | count |
+> |---|---|
+> | tables written by the `21` workers | **`41`** |
+> | ✅ have at least one DISPATCHED writer | **`15`** |
+> | 🔴 **every writer undispatched — no scheduled writer at all** | 🔴🔴 **`26`** |
+>
+> ⚠ **`RULE 57` CAUGHT AN ERROR IN THIS TABLE BEFORE PUBLICATION.** *A first pass attributed `nba_ref.players` to `nba-weekly-differential` and called it orphaned. **It is not**: `nba-static-players` and `nba-static-player-bio` also write it and both are in P1's loop — which is exactly why `§T26.52` measured it refreshed `2026-09-24` at `713` rows. **A table with two writers is orphaned only if ALL of them are**, and the census was rebuilt on that rule before anything was written here.*
+>
+> 🔑 **THE `26`, GROUPED BY WHAT THEY FEED** *(so the owner can triage rather than read a list)*:
+> | group | tables | why it matters before the opener |
+> |---|---|---|
+> | 🔴🔴🔴 **THE SLATE** | `nba_calendar.games` | **`§T26.57` — drift already real: `0012600067` UTA @ DEN, `2026-10-04`.** ⇒ `T26-5` |
+> | 🔴🔴🔴 **THE `A5` STARTER MODEL'S OWN INPUT** | `nba_stats.player_game_starter_status` *(`97,079` rows live)* | *`§T26.39` retracted two sections over this model's validation. **Its input table has no scheduled writer**, and the only Python file that names it — `check_factor_freshness.py` — READS it.* |
+> | 🔴🔴 **THE OFFICIALS LAYER, BOTH HALVES** | `nba_ref.officials` *(`80`)* · `nba_ref.arenas` · `nba_stats.game_officials` *(`11,062`)* | ⚠⚠ ***The scrape is unscheduled too**: `scrape_nba_game_officials.py` is dispatched only by `nba-pergame-backfill.yml` and `nba-game-officials.yml`, **and neither has a `cron`**. Scraper AND loader are both manual.* ✅ *The cron'd `nba-referees.yml` (`15:30Z`) writes only `nba_ref.referee_assignments` — a DIFFERENT table; it does not cover these.* |
+> | 🔴🔴 **THE WEEKLY DIFFERENTIAL SET** | `nba_ref.official_differential_log` · `nba_ref.official_roster_snapshot` · `nba_ref.team_differential_log` · `nba_ref.team_roster_snapshot` · `nba_stats.player_differential_log` · `nba_stats.player_roster_snapshot` | *`T8` proved this worker had not run since `2026-09-02` and recorded it as a fact without a cause. **The cause is that nothing dispatches it.*** |
+> | 🔴 **THE GAME-LOG AND MEASURE-TYPE BACKFILL** | `nba_stats.player_game_log` · `_advanced` · `_scoring` · `_usage` · `nba_stats.player_career_season_totals` · `nba_stats.player_splits` · `nba_team.team_game_log` · `_advanced` · `_four_factors` · `_scoring` · `nba_team.team_splits` · `nba_team.defense_vs_position` | *Historical stores — **correctly** manual for a backfill. Listed for completeness, not as a defect.* |
+> | 🔴 **TRACKING** | `nba_stats.player_tracking_profile` *(`582`)* | *`§T26.52`, root cause now named.* |
+> | ⚠ **SUPERSEDED, NOT MERELY ORPHANED** | `nba_score.baseline_ladder` · `nba_score.baseline_ladder_runs` | **see below** |
+
+### ⚠⚠ **ONE OF THE ELEVEN IS DEAD CODE POINTING AT A TABLE THAT NO LONGER EXISTS — AND PROVING IT ALSO PROVES THE CENSUS IS READING THE RIGHT THING**
+
+> 🔑 **`nba-baseline-ladder` is not an oversight; it was REPLACED, and P2's own steps say so.** *The live ladder path is entirely Python:* `nba/baseline/build_baseline_ladder.py` *(per-pair, `BT_SAVE_COMPONENTS=1 BT_PROPS=$pair`)* → *a merge step writing* `nba_baseline_ladder_<asof>.json` *and* `_latest.json` → *`git commit` (**the loader fetches the artefact over HTTP from the repo, so the commit must precede the load**)* → `nba/load_baseline_ladder.py` *at `nba-p2-overnight-heavy.yml:325`.* **The JS worker appears nowhere in it.**
+>
+> 🔴🔴 **AND ITS TARGET IS GONE**: `SELECT to_regclass('nba_score.baseline_ladder')` → **`NULL`** — *the table does not exist*, while `to_regclass('nba_score.baseline_ladder_runs')` resolves. ⇒ **the worker's very first statement would fail.** ✅ *`baseline_ladder_runs` therefore still HAS a scheduled writer — `load_baseline_ladder.py`, which writes it and `nba_score.baseline_history` — so of the two tables in this group only `baseline_ladder` is truly writerless, and it is writerless because it was deliberately retired.* 🔑 **THE CLASSIFICATION LESSON: "undispatched" and "needed" are independent axes. `10` of the `11` are undispatched writers of live stores; this one is a retired writer of a dropped store. A census that could not tell them apart would be worthless to an owner.**
+
+### ⚠ **WHAT IS *NOT* ESTABLISHED, STATED PLAINLY** *(`RULE 6`)*
+
+> 🔴 **NOT RECORDED: how `nba_stats.game_officials` and `nba_stats.player_game_starter_status` received writes on `2026-09-23`.** *Both are in the `26` — every writer undispatched — yet `pg_stat_all_tables` shows `last_autoanalyze 2026-09-23` with `7,381` and `64,900` inserts since the stats reset, so **they were written after that reset**, not before it.* ⇒ *Two readings and this pass cannot separate them: **(a)** someone ran the manual workflows or hit the workers by hand around `2026-09-23`; **(b)** a writer outside this repo. ⚠ **The run history could settle it and currently cannot be read**: `github_list_workflow_runs` at `30` deep returns nothing but `pages build and deployment`.* 🔑 *If they are manual, the finding is `T26-2`'s shape at scale — **a needed job that only runs when a person remembers** — and that is the reading to test first.*
+>
+> ⚠ **AND AN OPERATIONAL COST THIS SWEEP IMPOSES ON ITSELF, WORTH ONE LINE**: *`[skip ci]` suppresses this repo's own workflows but **not GitHub Pages**, which is a built-in. `~30` `pages build and deployment` runs fired from this session's documentation commits, each cancelled by the next — **which is what made the run history unreadable above.** Not a defect; a diagnostic cost of a long documentation pass, and the reason to read run history BEFORE writing, not after.*
+
+> 🔁 **RE-DERIVE, NEVER QUOTE** *(`RULE 59` — each figure below came from running the line beside it)*:
+> ```bash
+> ls nba/alphadog-v2-nba-*.js | wc -l                                    # 21
+> sed -n '190,192p' .github/workflows/nba-p1-weekly-static.yml           # the 10-worker dispatch loop
+> for f in nba/alphadog-v2-nba-*.js; do b=$(basename $f .js | sed 's/^alphadog-v2-//'); \
+>   printf "%-40s %s\n" "$b" "$(grep -rlw "$b" .github/workflows/ | xargs -n1 basename | tr '\n' ' ')"; done
+> ```
+> ```sql
+> SELECT to_regclass('nba_score.baseline_ladder');   -- NULL: the table does not exist
+> ```
+> *The `41`/`15`/`26` table split is the same worker scan, grouping each worker's `INSERT INTO|UPDATE|DELETE FROM <schema>.<table>` targets and marking a table dispatched if **any** writer is in P1's ten.*
+
 ## 0.00000 🗺️🗺️ **THE WIRING MAP — WORKFLOW → SCRIPT → TABLE** *(published 2026-09-22, T20 pass 34, §T20.39)*
 
 > 🔑🔑 **WHY THIS SECTION EXISTS.** *This document has described every SCRIPT and
