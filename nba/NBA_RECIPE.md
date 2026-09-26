@@ -340,10 +340,27 @@ that is the useful part.
 >
 > ### 3 · 🔁 **RE-RUN ONE FAILED SLATE DAY**
 >
-> 🔴🔴🔴 **READ THIS FIRST: DO NOT RUN THE CATCH-UP IN PARALLEL.** *`CREATE UNIQUE INDEX IF NOT EXISTS`
-> runs inside the write transaction, so concurrent date-runs **deadlock** — **`181` of `325` dates
-> failed** on the measured run, and **`17` files carry the pattern, `7` of them in `P2`/`P3`.*
-> ▶ **`NBA_SYSTEM_DESIGN.md` → `§T23.5`.** ⇒ ***Run dates ONE AT A TIME until that is fixed.***
+> ✅✅ **`§T23.5` IS FIXED ON THE P2/P3 PATHS** *(`2026-09-23`; verified `2026-09-25`, `§T26.32`)* — *all
+> `4` index-creating P2/P3 scripts now check `to_regclass(...) IS NULL` before creating; `7` scripts were
+> repaired in one campaign.* ⚠⚠ ***STILL RUN DATES ONE AT A TIME until a parallel catch-up has actually
+> been observed to succeed*** — *the fix is sound and has never been exercised, and the failure it
+> prevents cost **`181` of `325` dates**.* 🔴 *Residual: `build_defender_ratings.py` (P1) is the one
+> unguarded script left in any pipeline.*
+> ⚠ ~~*`17` files carry the pattern, `7` of them in `P2`/`P3`*~~ — 📜 **DO NOT RE-DERIVE THIS BY GREPPING
+> `CREATE … INDEX IF NOT EXISTS`: the guard leaves that string exactly where it was, so a string count
+> cannot tell a FIXED file from a BROKEN one. `RULE 62` exists because this sweep made that mistake and
+> published it.**
+>
+> 🔴🔴🔴 **AND READ THIS SECOND — THE RECOVERY PATH HAS A HOLE THAT IS NOT THE DEADLOCK** *(`§T26.45`,
+> item `T26-3`)*: **`nba_market.board_rung_keys` has ONE producer — `refresh_board_rung_keys()`, called
+> only inside P3 — and THREE consumers that hard-`SystemExit` without it**: `build_final_hp.py`
+> *(**P2 step 6b**)*, `load_baseline_history.py`, `prune_baseline_to_board.py`.
+> ⚠⚠ ***P3's call only refreshes dates whose boards were archived in the LAST `6` HOURS.*** ⇒ 🔴 **Re-running
+> P3 for an old date does NOT rebuild that date's keys, and those three scripts keep aborting.**
+> ▶ **The function takes `(lo, hi)`, so an explicit range is almost certainly the repair** —
+> `` SELECT nba_market.refresh_board_rung_keys('<lo>','<hi>'); `` — ⚠ **but this sweep is read-only and
+> HAS NOT RUN IT.** 🔑 ***Establish this before opening night: it is the single call that unblocks
+> `final_hp`, the prune and the history loader together.***
 > **Mechanism**: `P2` accepts an `asof` input; `P3` is re-run for the date. *`STEP 9` / `STEP 10` give
 > each pipeline's steps.* ~~⚠ **`P3` will abort on any `2026-27` date until `T23-2` is fixed.**~~ ✅ **`T23-2` FIXED `2026-09-24` — the season resolves from the date, so a replay of any date works.** ⚠ **`P2` also DELETES the slate by date and rewrites it, so a rerun REPLACES rather than stacks** *(`§T26.4`)*.
 >
