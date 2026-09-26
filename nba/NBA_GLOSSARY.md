@@ -536,7 +536,9 @@ unknown.** *Up to five transcripts are shown per term.*
 
 | Term | Documents | Transcript(s) |
 |---|---|---|
-| `ladder_calibration` | ARC,BCAL,DB,OPEN,SUM | T1 T4 T7 T11 T15 |
+| `ladder_calibration` | ARC,BCAL,DB,OPEN,SUM | T1 T4 T7 T11 T15 ⚠ **`ladder_calibration_asof` re-derived `2026-09-26`: `25,962` rows / `47` as-of dates — was `9,904`/`24`; it `2.6×`'d on the restored `final_hp` (`§T26.49`)** |
+| `line_source` 🆕 | **BCAL,MUL,OPEN,GLO** | **T25** 🔴 ***the column that says REAL vs RECONSTRUCTED — `34.72%` of `prop_universe` is our own lines, and `final_hp` prices them — `§T25.3`*** |
+| `load_injury_report` 🆕 | **WRK,GLO** | **T26** *(the loader the mining doc specified and nobody built; closed `T20-17`'s shard risk — `§T26.30`)* |
 | `ladder_calibration_asof` | BCAL,DB,FCAL,OPEN,SUM,WRK | T1 T4 T11 |
 | `ladder_offset` | DB,SUM | T9 |
 | `ladder_step` | DB,SUM | T8 |
