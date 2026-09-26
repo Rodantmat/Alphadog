@@ -10,3 +10,4 @@ __pycache__/
 scored.json
 nba/tools/*.json
 nba/transcripts/*.txt
+!nba/transcripts/journal.txt
