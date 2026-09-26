@@ -109,8 +109,12 @@ def main():
             if col not in logs.columns:
                 print(f"  {season} {prop}: no box-score basis ({col}) - UNVERIFIED", flush=True)
                 continue
+            # FULL-GAME RUNGS ONLY (fixed 2026-09-25). Period rungs (Q1/H1/...) share these prop names in
+            # the store; unfiltered, a 5.5 first-quarter points rung was graded against the full-game box
+            # score inside points' ECE. Same defect class as the scorer and final_hp had.
             h = pd.read_sql("""SELECT game_date, player_id, line, p_more FROM nba_score.baseline_history
-                               WHERE season=%s AND prop=%s""", conn, params=(season, prop))
+                               WHERE season=%s AND prop=%s AND coalesce(period,'FULL') = 'FULL'""",
+                            conn, params=(season, prop))
             if h.empty:
                 continue
             h["game_date"] = pd.to_datetime(h["game_date"]).dt.date
