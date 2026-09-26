@@ -189,7 +189,8 @@ jobs:
           failed=""
           for w in nba-static-teams nba-static-players nba-static-player-bio nba-static-team-stats \
                    nba-static-onoff nba-static-playtypes nba-static-tracking-detail \
-                   nba-static-darko nba-static-shotquality nba-static-lineups; do
+                   nba-static-darko nba-static-shotquality nba-static-lineups \
+                   nba-static-player-tracking nba-weekly-differential nba-static-officials nba-static-arenas; do
             url="https://alphadog-v2-$w.$WORKER_HOST/run"
             code=$(curl -sS --max-time 150 -o "/tmp/$w.json" -w '%{http_code}' -X POST "$url" -H 'content-type: application/json' -d '{}')
             ok=$(python -c "import json,sys; print(str(json.load(open(sys.argv[1])).get('ok')).lower())" "/tmp/$w.json" 2>/dev/null)
