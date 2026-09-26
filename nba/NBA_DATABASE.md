@@ -3134,3 +3134,57 @@ for f in $(grep -rl "CREATE .*INDEX IF NOT EXISTS" nba/*.py); do
   printf "%s guards=%s\n" "$f" "$(grep -c to_regclass "$f")"; done
 ```
 ⚠ **`guards=0` is a candidate, not a verdict — open the file and read the control flow.**
+
+---
+
+## 🔴🔴 **§T26.52 — THE STATIC LAYER, ALL FIVE PARTS RE-DERIVED: FOUR REFRESHED, ONE IS ORPHANED — NOT DISPATCHED, NOT VERIFIED, NOT READ** *(`SELECT` + source reads 2026-09-26; `0` of the twelve before this entry)*
+
+**Ranked item `B` names five things — *"a roster, schedule, impact-rating, play-type and tracking layer
+built weeks earlier."*** ⚠⚠ ***This sweep had only ever checked TWO of them*** *(`players` and
+`defender_ratings`, `§T26.28`)*. **Here are all of them.**
+
+| layer | table | rows | newest | verdict |
+|---|---|---|---|---|
+| **roster** | `nba_ref.players` | `713` | **`2026-09-24`** | ✅ **REFRESHED** |
+| **on/off** | `nba_stats.player_onoff_profile` | `582` | **`2026-09-24`** | ✅ **REFRESHED** |
+| **play type** | `nba_stats.player_playtype_profile` | `3,282` | **`2026-09-24`** | ✅ **REFRESHED** |
+| **tracking** *(detail)* | `nba_stats.player_tracking_detail` | `4,652` | **`2026-09-24`** | ✅ **REFRESHED** |
+| 🔴 **tracking** *(profile)* | **`nba_stats.player_tracking_profile`** | `582` | 🔴 **`2026-09-01`** | 🔴 **ORPHANED — see below** |
+| schedule | `nba_calendar.games` | `2,666` | `2026-09-02` | ⚠ *loaded once; it DOES hold `1,266` games for 2026-27* |
+| teams · arenas | `nba_ref.teams` · `arenas` | `30` · `30` | `2026-08-31` · `2026-09-01` | ✅ *correctly static — there are `30` of each* |
+| as-of | `nba_ref.defender_ratings` | `111,768` | `2026-04-09` | *needs GAMES; `§T26.28` for its real story* |
+
+✅✅ **SO THE "FROZEN STATIC LAYER" IS MOSTLY THAWED** — *four of the five living layers carry
+`2026-09-24`, the day P1's `scipy` fix let it commit again (`§T26.28`).*
+
+### 🔴🔴 **BUT `player_tracking_profile` IS ORPHANED THREE WAYS, AND EACH ONE ALONE WOULD HIDE IT**
+
+| | finding |
+|---|---|
+| **① NOT DISPATCHED** | *P1 dispatches **`10`** static workers* — `nba-static-{players, teams, player-bio, team-stats, onoff, playtypes, **tracking-detail**, darko, shotquality, lineups}` — **and `nba-static-player-tracking`, the worker that writes `player_tracking_profile`, is NOT among them.** |
+| **② NOT VERIFIED** | *`verify_static_loads.py`'s `TABLE_FOR` map — **the instrument built precisely to catch "P1 scraped and did not commit"** — watches `nba-static-tracking-detail → player_tracking_detail` and **has no entry for the profile table at all**.* |
+| **③ NOT READ** | *`grep -rl "player_tracking_profile"` across every `nba/*.py`, `nba/*.js` and workflow returns **exactly one file: the worker that writes it**. **Zero consumers.*** |
+
+### 🔑🔑 **WHAT IT ACTUALLY IS — AND WHY THE HONEST VERDICT IS *NOT* "SEASON-CRITICAL"**
+
+*`alphadog-v2-nba-static-player-tracking.js` writes speed and distance —
+`avg_speed`, `avg_speed_off/def`, `dist_miles`, `dist_miles_off/def` — into `582` rows.*
+**`player_tracking_detail` holds `4,652` rows and IS dispatched, IS verified and refreshed
+`2026-09-24`.** ⇒ ***The profile table reads as a SUPERSEDED v1: detail replaced it, the dispatch list
+moved on, and the table was left behind.*** ✅ **Nothing depends on it, so nothing is broken.**
+
+### ⚠⚠ **IT MATTERS ANYWAY, FOR THREE REASONS**
+
+① 🔑 **IT WILL BE MIS-READ.** *Ranked item `B` names "tracking". A reader checking whether the tracking
+layer is fresh, who lands on `player_tracking_profile`, sees **`2026-09-01`** and concludes the static
+layer is still frozen — **when the live tracking table refreshed two days ago.*** ⇒ **This entry exists
+mainly so that reader stops.**
+② **It is storage and noise on a database `§0v` records as already over budget several times over.**
+③ 🔑🔑 ***IT IS THE MIRROR OF `§T26.28`, AND WORTH NAMING AS ITS OWN CLASS.*** *This sweep has
+catalogued six instances of **work performed and not persisted**. This is the inverse: **a table
+persisted and no longer produced** — an output with a writer nobody calls, watched by a verifier that
+does not know it exists.* ⇒ ***The freshness question "is this table current?" is meaningless until you
+have asked "is anything still WRITING it, and is anything still READING it?"***
+
+🔴 **NOT REMEDIATED** *(dropping a table or editing a dispatch list is a write outside the twelve)*.
+📌 **DECIDE**: *re-dispatch it, or drop it and remove the worker.* **Recorded for the owner / build chat.**
