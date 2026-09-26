@@ -5810,3 +5810,74 @@ information more coarsely.** ✅ **`§T26.5` stands, and it stands on an argumen
 > already has. If the factor is a coarser encoding of something already in the pipeline, no amount of
 > accuracy on its own target will move the product's error — and the only honest objective is the
 > product's error itself.***
+
+---
+
+## 🔴🔴🔴 **§T26.55 — `F5-1`'s MISSING RESULTS WERE NEVER MISSING: THEY ARE IN `nba_score.factor_gate_results`, DATED, AND EVERY VARIANT FAILED — INCLUDING THE INTERACTIONS THAT WERE SUPPOSED TO BE THE ANSWER** *(`SELECT` 2026-09-26; `0` of the twelve before this entry)*
+
+**`F5-1` has stood since `2026-09-23` on the claim that *"`B4 v3` and `M1` have fitting scripts in the
+repo and the results are NOT RECORDED."*** ⚠⚠ ***They were recorded. In a table. `RULE 20`'s discipline —
+look for the result in a THIRD place before calling it absent — and this sweep had looked in two.***
+
+### ✅ **THE VERDICTS — `nba_score.factor_gate_results`, all written `2026-09-25 22:42:57Z`, `n = 7,128` legs, season `2025-26`**
+
+| model | log-loss | Brier | gain vs anchor |
+|---|---|---|---|
+| **`anchor`** | **`0.72604`** | `0.26359` | — |
+| 🔴 **`anchor_x_defender`** | **`0.72604`** | **`0.26359`** | **`0.00000`** |
+| 🔴 **`anchor_x_A5_pstart_minutes`** | `0.74408` | `0.27042` | **`−0.01804`** |
+| 🔴 **`anchor_x_A2`** | `0.97044` | `0.32440` | **`−0.24441`** |
+| 🔴 **`anchor_x_A2_x_defender`** | **`0.97044`** | **`0.32440`** | **`−0.24441`** |
+
+### 🔑🔑🔑 **READ THE IDENTICAL ROWS — THEY ARE THE FINDING, AND THEY ARE STRONGER THAN A SMALL GAIN WOULD BE**
+
+⚠ **`anchor_x_defender` matches `anchor` to FIVE DECIMAL PLACES on both metrics.** ⇒ ***The defender term
+contributes LITERALLY NOTHING — not "a small amount", nothing*** — *and it was given every advantage
+`retest_defender_factors.py` promised: the proper two-way ridge `nba_ref.defender_ratings` instead of
+"points allowed per possession", **channel matching** (`def_pts`/`def_fg` → points/fga/fgm · `def_3p` →
+threes · `def_tov` → turnovers · `def_foul` → fta), and **exposure weighting over TONIGHT'S available
+opposing defenders only** — the scoping bug that invalidated `B4 v2`'s first run.*
+
+⚠⚠ **AND `anchor_x_A2_x_defender` MATCHES `anchor_x_A2` TO FIVE DECIMALS TOO.** 🔑 *The re-test's whole
+premise was that **interactions were "the gap in EVERY factor test so far"** — practitioner sources say
+books misprice when factors move together.* ⇒ ***The interaction was built, run, and the defender term
+adds zero INSIDE it as well. The hypothesis is dead in both forms.***
+
+### 🔴🔴 **AND A FOURTH INDEPENDENT LINE OF EVIDENCE AGAINST THE `A5` STARTER MODEL**
+
+**`anchor_x_A5_pstart_minutes` = `−0.01804`** ⇒ *`A5` as an interaction makes the anchor **WORSE**.*
+📌 **That is now FOUR separate rejections of the same model**: *① `§0u.1`'s Δ MAE — negative on every
+prop · ② the enrichment doc's **"I validated the wrong target"** · ③ `grep` finds **`0` callers** of
+`p_start()` · ④ **this gate, run independently on `7,128` legs**.* ✅ ***`§T26.39`'s retraction of
+`§T26.12`/`§T26.22` is confirmed by a measurement taken after it was written and without reference to
+it.***
+
+### ⚠⚠⚠ **ONE FIGURE IN THIS TABLE NEEDS ITS OWN LINE, AND IT IS NOT ABOUT THE FACTORS**
+
+🔴🔴 **THE `anchor` ITSELF SCORES WORSE THAN A COIN FLIP ON THIS SLICE.**
+*`ln(2) = 0.69315` is the log-loss of always predicting `0.5`; a Brier of `0.25` is its counterpart.*
+▶ **The anchor reads `0.72604` and `0.26359` — worse by `0.0329` and `0.0136`.**
+
+⚠ **STATE THE CAVEAT BEFORE THE ALARM**: *`slice = 'all'` here means all legs **ELIGIBLE FOR THE
+INTERACTION TEST**, not the board. `n = 7,128` against a nightly board of `~91,405` legs, so this is a
+small, deliberately hard subpopulation — **plausibly legs carrying an `A2` absence event**, which are
+exactly the cases the model finds hardest.* ⇒ 🔑 **It is NOT evidence that the product is worse than
+chance.** 🔴 **But it IS an unexplained figure in the system's own gate table**, and the sweep cannot
+resolve it read-only: ***what defines this slice, and is a below-chance anchor expected on it?***
+⚠ **NOT RECORDED** *(`RULE 6`)* ⇒ **tracked as item `T26-4`.**
+
+📌 **ALSO NOT RECORDED**: *`shrink_beta` is **NULL on all five rows**, so no shrinkage was applied or
+stored for this run, while the scripts' stated discipline is reliability shrinkage (`k=150` for `M1`,
+`k=112` for `D1`'s tendencies).*
+
+### ✅ **WHAT THIS CLOSES, AND THE METHOD LESSON**
+
+✅✅ **`F5-1`'s FACTOR HALF IS CLOSED**: *the results exist, are dated `2026-09-25`, and are reproducible
+from* `` SELECT model, log_loss, brier, gain_vs_anchor FROM nba_score.factor_gate_results WHERE run_at::date='2026-09-25' `` *— **they were simply never written into the twelve.*** *(Its file half closed
+at `§T26.54`.)* ⇒ **`F5-1` is fully closed.**
+
+🔑🔑 ***THE LESSON: "NOT RECORDED" IS A CLAIM ABOUT WHERE YOU LOOKED.*** *This sweep searched the twelve
+and the repo, found fitting scripts with no written verdicts, and concluded the results did not exist.
+**They were in a database table the whole time — `109` rows spanning `2026-09-13` → `2026-09-25`,
+covering `23` models.*** 📜 **`RULE 58`'s shape on an ABSENCE rather than a query: a "not recorded" verdict
+must name the places searched, and a results TABLE is a place.**
