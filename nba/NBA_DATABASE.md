@@ -3246,9 +3246,35 @@ is loaded by a worker nothing calls.***
 🔴 **WHAT IS NOT COVERED IS EVERY SCHEDULE CHANGE SINCE `2026-09-02`** — *postponements, tip-time moves,
 added or relocated games.* 🔑 **The NBA does change schedules, and the system cannot see a change it never
 loads.** ⚠ *The JSON on disk may already disagree with Postgres: the data file moved on `2026-09-14`,
-twelve days after the last load.* 🔴 **NOT MEASURED** *(`RULE 6` — comparing `1,266` JSON games to the
-table row-by-row is derivable but was not run this pass).* 📌 **THAT DIFF IS THE CHEAPEST NEXT STEP and it
-answers the whole item.**
+twelve days after the last load.* ### ✅✅✅ **THE DIFF WAS RUN — AND THE SCHEDULE HAS ALREADY DRIFTED BY EXACTLY ONE GAME, IN PRESEASON WEEK**
+
+| | scraped JSON *(`nba_schedule_current.json`, data file `2026-09-14`)* | `nba_calendar.games` *(loaded `2026-09-02`)* |
+|---|---|---|
+| total | **`2,667`** | **`2,666`** |
+| 2025-26 | `1,400` | `1,400` ✅ |
+| 🔴 **2026-27** | **`1,267`** | **`1,266`** |
+
+▶ **Aggregating by date located it on the first try — `2026-10-04`: JSON `2` games, Postgres `1`.**
+
+| | game_id | matchup | tip (UTC) | arena |
+|---|---|---|---|---|
+| ✅ in both | `0012600066` | **GSW @ LAC** | `2026-10-04T23:00:00Z` | Stan Sheriff Center |
+| 🔴 **JSON ONLY — MISSING FROM POSTGRES** | **`0012600067`** | **UTA @ DEN** | `2026-10-04T23:00:00Z` | **CU Events Center** |
+
+⇒ 🔴🔴🔴 ***A real NBA game, added to the league's schedule after `2026-09-02`, sits in this repo's own
+scraped JSON and is NOT in the table the system reads to decide what to do each day.***
+⚠⚠ **AND ITS DATE IS `2026-10-04` — the SECOND DAY OF PRESEASON, which opens `2026-10-03`.**
+🔑 **So the first week of live operation already contains a slate the schedule table under-counts by one
+game.** *(Both are neutral-site preseason games — Stan Sheriff Center, Honolulu; CU Events Center,
+Boulder — which is exactly the kind of late-added exhibition the league announces after the main
+schedule drop.)*
+
+✅ **THE EXPOSURE IS NOW MEASURED, NOT ESTIMATED**: *one game, `2026-10-04`, `UTA @ DEN`.* 🔑 **Small
+today — and it is the mechanism, not the magnitude, that matters: the drift will keep growing for every
+schedule change the league makes, because nothing loads any of them.** 📌 **Re-run this diff to size it
+again at any time**: *compare `nba/data/nba_schedule_current.json`'s `games[]` to
+`SELECT count(*) FROM nba_calendar.games GROUP BY season`, then aggregate by `game_date` to find the
+offending dates.*
 
 🔴 **NOT REMEDIATED** — *adding the worker to P1's dispatch list is a write to a live workflow.*
 ⇒ **Tracked as item `T26-5`.** 🔑 **And it is cheap: one entry in P1's dispatch line, beside the ten
