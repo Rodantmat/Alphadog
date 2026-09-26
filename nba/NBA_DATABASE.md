@@ -12,7 +12,7 @@ transcript. Where a table was altered later, the change is noted with its transc
 > # 📑 **INDEX — `NBA_DATABASE.md`**
 > **The complete data dictionary** — every schema, table and column, built from real `CREATE TABLE`
 > statements and `information_schema` reads, never from memory.
-> 📏 **`177` sections · re-derived `2026-09-26`** *(was `148` on `2026-09-23`, `173` on `2026-09-25`; **`RULE 59` — re-derive AND RUN, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_DATABASE.md ``
+> 📏 **`182` sections · re-derived `2026-09-26` (pass 20)** *(was `148` on `2026-09-23`, `173` and `177` on `2026-09-25`–`26`; **`RULE 59` — re-derive AND RUN, never quote**; the `+5` is §T26.52/§T26.57's own headings — **the stamp drifted a third time from my own additions, which is why it is re-RUN at the end of every pass and never carried forward**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_DATABASE.md ``
 >
 > 🆕 **`§T26.52` ADDED `2026-09-26`** — **THE STATIC LAYER, ALL FIVE PARTS**: *four of five REFRESHED (`2026-09-24`); **`nba_stats.player_tracking_profile` is ORPHANED — not dispatched by P1, not watched by `verify_static_loads.py`, and read by nothing but its own writer**.* 🔑 *The mirror of `§T26.28`: a table **persisted and no longer produced**.*
 >
