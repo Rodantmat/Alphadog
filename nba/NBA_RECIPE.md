@@ -397,9 +397,24 @@ that is the useful part.
 > confidence non-null · score in `0`–`100` · board captured.*
 > ▶ **Read the twelve checks adversarially before trusting a GREEN**: `NBA_SYSTEM_DESIGN.md` →
 > **`WHAT CERTIFIES GREEN WHILE BROKEN`** and **`THE SWALLOWED-FAILURE CENSUS`**.
-> 🔴 **Known**: **`T20-6`** — *the certifier asserts tables no pipeline writes* · **five of the twelve
-> checks have NO DATE PREDICATE**, so they pass on yesterday's data.
-> ⇒ ***A RED certifier is information; a GREEN one is not, until you have read those two sections.***
+> ✅✅✅ ~~🔴 **Known**: **`T20-6`** — *the certifier asserts tables no pipeline writes*~~ **CLOSED
+> `2026-09-25`, `§T26.30` — TWICE OVER**: *① the checks are **re-pointed and slate-scoped*** —
+> `` … FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL' `` — *so "P2 could
+> produce nothing at all and still certify green" no longer holds; **② `F6-1`'s consolidation DROPPED
+> `nba_score.baseline_ladder`**, so the two-store split the item was about does not exist.*
+> ▶ **The certifier now carries `18` checks, not `12`** *(re-derived `2026-09-26`)*, **and is
+> SEASON-AWARE** — *out of season a run certifies "no games scheduled" and stays GREEN rather than red
+> (`§T26.14`), because a guard that cannot pass out of season is a training exercise in ignoring the
+> alarm.*
+> ⚠ **RESIDUAL, NOT A BLOCKER**: *the code comment above that check still describes the old two-store
+> world and names the dropped table — a certifier audit will mis-read it. **Source comment, outside the
+> twelve.***
+> ✅✅ **AND THE CORPUS NOW HAS ONE RECORDED CASE OF THE CERTIFIER WORKING** *(`§T26.34`)*: *run
+> `35917049251`, `2026-09-23T20:38Z` — **`certify p3` FAILED with `fail  final_hp has today  0 scored
+> legs for today`**, `5/6` checks passed, `exit code 1`, every other step green or correctly skipped.*
+> ⇒ ***It caught the `T16-7` hole and refused to report success, one day before the restore.***
+> ⇒ ***A RED certifier is information. A GREEN one is better evidence than it was — but still read those
+> two sections before trusting it.***
 >
 > ### 6 · 🧹 **REFRESH A STALE TABLE**
 >
