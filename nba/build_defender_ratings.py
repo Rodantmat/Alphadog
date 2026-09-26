@@ -123,9 +123,14 @@ def main():
                 season text, as_of_date date, player_id text, channel text,
                 rating numeric, n_poss numeric, reliability numeric, shrunk_rating numeric,
                 switch_rate numeric, help_block_rate numeric, built_at timestamptz DEFAULT now())""")
-        cur.execute("""CREATE UNIQUE INDEX IF NOT EXISTS defender_ratings_uidx
-            ON nba_ref.defender_ratings (as_of_date, player_id, channel)""")
-        cur.execute("CREATE INDEX IF NOT EXISTS defender_ratings_lookup ON nba_ref.defender_ratings (season, as_of_date)")
+        # DEADLOCK GUARD (§T23.5; this was the one unguarded script left in any pipeline, 2026-09-26).
+        # CREATE INDEX IF NOT EXISTS still takes a lock even when the index exists; two overlapping runs
+        # take it in opposite order against the write transaction and Postgres kills one. Check first.
+        if cur.execute("SELECT to_regclass('nba_ref.defender_ratings_uidx')").fetchone()[0] is None:
+            cur.execute("""CREATE UNIQUE INDEX defender_ratings_uidx
+                ON nba_ref.defender_ratings (as_of_date, player_id, channel)""")
+        if cur.execute("SELECT to_regclass('nba_ref.defender_ratings_lookup')").fetchone()[0] is None:
+            cur.execute("CREATE INDEX defender_ratings_lookup ON nba_ref.defender_ratings (season, as_of_date)")
 
     for season in seasons:
         slug = season.replace("-", "_")
