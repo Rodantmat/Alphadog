@@ -8,7 +8,7 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 > # 📑 **INDEX — `NBA_FINAL_SCORING_CALIBRATION.md`**
 > **How a raw projection becomes a final hit probability** — the confidence model, the scoring chain,
 > the calibration evidence, and the backtests behind each constant.
-> 📏 **`322` sections · re-derived `2026-09-26` (pass 20)** *(was `274` on `2026-09-23`, `316` on `2026-09-25`; **`RULE 59` — re-derive AND RUN, never quote**; the `+6` is §T26.55's headings):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_FINAL_SCORING_CALIBRATION.md ``
+> 📏 **`327` sections · re-derived `2026-09-26` (pass 25, RUN)** *(was `274` on `2026-09-23`, `316` on `2026-09-25`, `322` after §T26.55; the last `+5` is §T26.66's; **`RULE 59` — re-derive AND RUN, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_FINAL_SCORING_CALIBRATION.md ``
 > ⚠ *The original `211` came from a heading detector anchored at line start, which is blind to the **blockquoted** headings this corpus uses heavily — **294 across the twelve, `6.0%`**. Re-derive with `^(?:>\s*)*#{1,6}\s`, never `^#`.*
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
