@@ -6015,7 +6015,7 @@ defeats it.
 header of the file the entire final-scoring layer runs through** — the other being *"P3 sets it"* for
 `FE_DATE`.
 
-**FINDING 4 — nothing rebuilds `final_hp`, so pass 33's loss is PERSISTENT.** **VERIFIED**:
+**FINDING 4 — ~~nothing rebuilds `final_hp`, so pass 33's loss is PERSISTENT~~ — ✅✅ SUPERSEDED `2026-09-23`, RECORDED HERE `2026-09-26`.** 🔑 **`P2` OWNS `final_hp` AT STEP `6b`** *(`build_final_hp.py`, after both refits, scoped to the slate — and the workflow cites `NBA_SYSTEM_DESIGN §4b` by name when it does it)*, **and the loss was not persistent: it was RESTORED (`§T26.15`) and the store then board-scoped.** ⚠ *Kept under `RULE 40` because the REASONING below was sound on its evidence — a store nothing rebuilds does make a loss permanent. **What changed is the system, not the logic.*** **VERIFIED at the time**:
 `build_final_hp.py` is invoked only by `nba-absence-panel.yml` (`FE_WRITE` defaults `'0'`) and
 `nba-engine-test.yml` (`FE_WRITE: '0'`) — **by no P-pipeline at all.** **No scheduled job will notice
 or repair the missing 2025-26 partition**, and **no certifier checks `final_hp`'s date coverage**:
