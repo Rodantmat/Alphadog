@@ -182,6 +182,42 @@ def main():
         check("confidence model loaded",
               "SELECT count(*) FROM nba_score.confidence_model WHERE deduction > 0", (),
               lambda v: v and int(v) > 0, "measured deductions exist")
+        # PER-APP BOARD LIVENESS (2026-09-26, T26-9). The only board gate above is an aggregate count,
+        # which PrizePicks alone satisfies, and archive_live_boards.py exits green on "0 rows parsed".
+        # So a dead scraper and an app with no NBA lines looked identical. Each scraper writes
+        # boards/<app>_nba_current_meta.json with ok / fetched_at / legs (Betr also token_expires_at);
+        # a scraper that RAN and found nothing has a fresh fetched_at with legs 0, a BROKEN one has a
+        # stale fetched_at. PrizePicks is the live product: stale or not-ok is RED. The other apps
+        # warn loudly per app (a known owner decision - Betr - must not train anyone to ignore red).
+        import json as _json
+        from pathlib import Path as _Path
+        from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+        _apps = [a.strip() for a in os.environ.get("ARCHIVE_APPS", "prizepicks,underdog,sleeper,fliff,betr").split(",") if a.strip()]
+        _now = _dt.now(_tz.utc)
+        for _app in _apps:
+            _p = _Path("boards") / f"{_app}_nba_current_meta.json"
+            _label = f"board scraper alive: {_app}"
+            if not _p.exists():
+                _msg = "no meta file - scraper never ran on this checkout"
+                _verdict = False
+            else:
+                try:
+                    _m = _json.loads(_p.read_text())
+                    _fa = _dt.fromisoformat(str(_m.get("fetched_at", "")).replace("Z", "+00:00"))
+                    _age_h = (_now - _fa).total_seconds() / 3600
+                    _exp = _m.get("token_expires_at")
+                    _exp_note = ""
+                    if _exp:
+                        _left = (_dt.fromisoformat(str(_exp).replace("Z", "+00:00")) - _now).days
+                        _exp_note = f", token expires in {_left}d" if _left >= 0 else f", TOKEN EXPIRED {-_left}d ago"
+                    _msg = f"ok={_m.get('ok')} fetched {_age_h:.1f}h ago, legs={_m.get('legs', 'n/a')}{_exp_note}"
+                    _verdict = bool(_m.get("ok")) and _age_h <= 6
+                except Exception as exc:  # noqa: BLE001
+                    _msg, _verdict = f"unreadable meta ({str(exc)[:60]})", False
+            if _app == "prizepicks":
+                check(_label, "SELECT 1", (), lambda v, ok=_verdict: ok, _msg)
+            else:
+                print(f"  {'ok  ' if _verdict else 'WARN'}  {_label}: {_msg}", flush=True)
 
     else:
         print(f"unknown PIPE '{pipe}'", flush=True)
