@@ -122,12 +122,11 @@ def main():
 
     elif pipe == "p2":
         # the overnight pipeline must have produced TODAY's baseline for the slate
-        # 🔴 ONE TABLE OFF (fixed 2026-09-23, NBA_WORKERS.md §B). These checks read
-        # nba_score.baseline_history, which is written by load_baseline_history.py - the SEASON BACKFILL
-        # loader, which P2 never invokes. P2's loader (step 15, load_baseline_ladder.py) writes
-        # nba_score.baseline_ladder, keyed by `asof`. So the check passed on backfill rows that were
-        # already there: P2 could produce nothing at all and still certify green. Now it asks about what
-        # P2 writes. baseline_history keeps its own check as an INPUT (final_hp and the calibration read it).
+        # ONE STORE (2026-09-24/25). P2's loader (load_baseline_ladder.py) and the season backfill loader
+        # (load_baseline_history.py) BOTH write nba_score.baseline_history; the second table this comment
+        # once described, nba_score.baseline_ladder, was dropped 2026-09-25. So these checks are scoped to
+        # the slate's own date and the loaded_at day: rows for TODAY, written ONCE, are what prove P2 ran -
+        # backfill rows from other dates cannot satisfy them.
         if not no_games_today:
             check("baseline built for this slate",
                   "SELECT count(*) FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL'", (today,),
