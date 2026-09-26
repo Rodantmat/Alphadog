@@ -282,6 +282,7 @@ unknown.** *Up to five transcripts are shown per term.*
 
 | Term | Documents | Transcript(s) |
 |---|---|---|
+| `check_factor_freshness` 🆕 | **WRK,RCP,OPEN,GLO** | **T26** 🔑 *(`14` checks; the `FALLBACK`→loud-but-green severity; **NO CRON** ⇒ item `T26-2` — `§T26.43`)* |
 | `c5798146` | ARC,BCAL,OPEN,SUM | T12 |
 | `c_exist` | BCAL,FCAL,OPEN,SUM | T9 |
 | `c_quality` | BCAL,FCAL,OPEN,SUM | T9 |
