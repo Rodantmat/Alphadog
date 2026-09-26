@@ -227,6 +227,18 @@ Correct and visible, not silent; a schema step for when period legs have graded 
 flood); the second was live and grading at the period-filtered read when this session ended — its row
 lands in `classification_config['prop_reliability_audit_latest']`.
 
+**PROFILE TABLES — INGREDIENTS THAT WERE BEING OVERWRITTEN WEEKLY (closed 2026-09-26, ledger #9).**
+Six profile tables are single-snapshot, no season, no as-of: `player_impact_rating` (DARKO),
+`player_playtype_profile`, `player_shot_quality`, `player_shot_quality_delta`, `player_shot_zone_profile`,
+`player_tracking_detail`. Every Monday's writer workers REWROTE them — last week's profiles were gone,
+and the first run after opening night would have replaced a full season's profiles with a week of
+samples. Under the retention rule these are ingredients. Fix without touching the six workers: P1 now
+copies each into `<table>_asof` stamped with the date BEFORE the loads (idempotent per date). Seeded
+today with the complete 2025-26 profiles: 530 / 3,282 / 2,285 / 582 / 4,656 / 4,652 rows. The certified
+recipe reads none of these (verified: per-season files only), so this is research parity, now kept.
+Also: `BS_APPS`, documented in the scorer's header since its first version and never read, now
+filters (blank = every app, the production default).
+
 **THE THREE DECISION ITEMS, WITH DATA (2026-09-25):**
 - **T18-17 — the score's penalising half.** Re-measured on the rebuilt, board-scoped `final_hp`: both
   seasons, **minimum confidence 0.8600, zero legs ≤ 0.85**, p25 ≈ 0.94, median ≈ 0.95. The `drop` term
