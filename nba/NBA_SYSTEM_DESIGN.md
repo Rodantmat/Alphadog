@@ -205,6 +205,56 @@ constraints that shaped it. This is the operational spec.
 
 ---
 
+## 🔴🔴🔴 **§T26.70 — THE FIRST `T26` PASS TO READ THE OWNER STRATUM WITH THE INSTRUMENT: THREE UNRECORDED OWNER RULINGS, ONE OF THEM A STANDING DECISION RULE THAT GOVERNS EVERY OPTIMISATION IN THE SYSTEM — AND IT RE-RATES `T26-5`** *(`sweep_coverage.py tails --th 0.40`, `T26` OWNER stratum, 2026-09-26)*
+
+> 📌 **`T26`'s twenty-six passes were all ITEM-driven. None had run the coverage instrument over the transcript itself.** *`score` puts `T26` at **`779` of `958` substantive segments uncovered (`81.3%`)**, and `tails` isolates **`16` uncovered `OWNER SAID` segments** — the stratum `RULE 32` says to read first and the one this transcript's passes had never opened.* ⚠ **Two of the sixteen turned out to be FALSE TAIL and are named below, because `RULE 20`'s novelty check catching a duplicate is a result, not a non-event.**
+
+### 🔴🔴🔴 **RULING 1 — NO ACCURACY MAY BE TRADED FOR SPEED. A STANDING DECISION RULE, AND IT WAS IN NO DOCUMENT.**
+
+> 📜 **OWNER, `T26`, `2026-09-24`** *(`sim 0.16` — the single least-covered owner segment in the transcript)*:
+> > *"one more thing is that the timing is not bad. we need to sharp logic if possible, but the timing is not bad. so if it's possible to **optimize it without losing anything, we do. but if there is any loss, it's not worth the trade**."*
+>
+> ⚠⚠ **SEVEN VOCABULARIES, ZERO HITS ACROSS ALL TWELVE**: *`"not worth the trade"` · `"worth the trade"` · `"timing is not bad"` · `"without losing anything"` · `"any loss"` · `speed.{0,20}accuracy` · `optimi[sz]e.{0,25}loss`.* ⇒ **`RULE 20` satisfied: this is genuinely unrecorded.**
+>
+> 🔑🔑 **AND IT IS NOT AN ISOLATED REMARK — THE OWNER APPLIED THE SAME RULE TO A SPECIFIC PROPOSAL IN THE SAME TRANSCRIPT**, *asking for `P3` to be made lighter:*
+> > *"if there is a way to run a **delta mode** or something like that. **But if it runs a delta mode, it needs to represent exactly the same if it was running one by one. For classification, for baseline, for everything.**"*
+>
+> ⇒ ***TWO STATEMENTS, ONE RULE: an optimisation is permitted only when it is EXACTLY equivalent. "Faster" is never on its own a reason.*** 🔑 **This belongs beside `§T26.27`'s "ALL PROPS STAY, NO EXCEPTION" as a governing constraint, and it has immediate teeth**: *any future proposal to scope, sample, delta or short-circuit `P2`/`P3` is answerable from this rule without asking again — and a proposal that loses anything is refused **even if it is much faster**, because the owner has already priced that trade at zero.*
+
+### 🔴🔴 **RULING 2 — THE OWNER STATES, IN HIS OWN WORDS, THAT THE PIPELINES RUN UNMONITORED. THAT IS THE JUSTIFICATION FOR `A1` AND `A2`'s SEVERITY, AND IT IS HIS, NOT THE SWEEP'S.**
+
+> 📜 **OWNER, `T26`, `2026-09-24`** *(`sim 0.21`)*:
+> > *"all right, so fix p1, optimize p2, and also p1 if you need it, and get them both need to work. **they run um, not monitored, so get them to work**."*
+>
+> ⚠ *`"not monitored"` and `"unmonitored"`: **`0` hits in the twelve.** The CONCEPT "unattended" appears in seven of them — so the substance is not new — **but it appears as the sweep's own inference, never as the owner's stated operating condition.*** ⇒ 🔑🔑 ***That distinction is the whole value of this ruling: the ranked brief's `A1` (`T26-8`) and `A2` (`T26-9`) are rated `SILENT` and `UNCAUGHT` at the top of the list on the strength of "a silent failure costs a season before anyone looks". **The owner said the looking does not happen.** The rating is no longer the sweep's editorial judgement — it is the operating condition the owner specified, and `A1`/`A2` should be read that way.***
+
+### 🔴 **RULING 3 — THE AT-REST CREDENTIAL FINDING IS ACCEPTED RISK. THE BOUNDARY MATTERS MORE THAN THE RULING.**
+
+> 📜 **OWNER, `T26`, `2026-09-24`** *(`sim 0.34`)*:
+> > *"so first about the two finds. **the encrypted data, it doesn't really matter. just i have access to it. nobody else accesses this database. so that's not really an issue.**"*
+>
+> ✅ *`"nobody else accesses"`: **`0` hits in the twelve** — the finding is recorded in three of them, **the owner's ruling on it in none.*** ⇒ **RECORDED AS AN ACCEPTED RISK**: *the `6` credentials stored in Postgres with no encrypt/decrypt step anywhere in the `190` files — two of them bare `36`-character values — are a risk the owner has seen, priced and accepted, on the stated ground that he is the only party with database access.*
+>
+> ⚠⚠⚠ **AND HERE IS THE PART A FUTURE READER MUST NOT GET WRONG — THE RULING IS SCOPED TO THE DATABASE AND DOES NOT REACH `F2-1` OR `T22-1b`.** *Those are a live credential **published in a PUBLIC GitHub repository**, still present in `2` commits. **"Nobody else accesses this database" is true of a private database and false of a public repo** — different exposure, different audience, different remedy (rotation, not acceptance). 🔴 ***`F2-1` and `T22-1b` remain OPEN and are not covered by Ruling 3.*** *This paragraph exists because the two findings were presented to the owner together, in one turn, as "the two finds" — and a reader skimming the ruling could easily extend it to both.*
+
+### ✅✅ **AND THE RE-RATING THIS PASS OWES `§T26.57` / `T26-5`: THE CORPUS ALREADY ANSWERED THE QUESTION I RANKED ON**
+
+> 🔑 **The owner's preseason segment scored `0.26` — apparently uncovered:**
+> > *"pre-season, maybe not even be part of the data that's tracked. because it's **very, very volatile**. some of the main stars are not even gonna play. if they play, they play very little. um, the **rookies are gonna play a lot**. so that may **mess with the data** instead of helping. … because maybe that's not very, very useful. not reliable."*
+>
+> ✅ **FALSE TAIL — the novelty check found it recorded, in different words, in THIS FILE**: ***"PRESEASON IS REJECTED AS A PLAYER-STATISTICS SOURCE AND ACCEPTED AS A MARKET-STRUCTURE SOURCE"*** *and* ***"PRESEASON IS NOT A SLATE" (owner decision `2026-09-24`, live in the code)*** — *`prune_baseline_to_board.py` even carries it as a comment: "Preseason is rejected for the projection pipeline; only its boards are captured, so a preseason board with no baseline is the normal case."*
+>
+> ⚠⚠ ***BUT I DID NOT APPLY IT WHEN I RANKED `§T26.57`.*** *That section called the missing game — `0012600067 | UTA @ DEN | 2026-10-04` — a hit on "**the second day of preseason**" and `START HERE` carried it as "the one that changes what you do today". **Read against "preseason is not a slate", the cost is one game's MARKET-STRUCTURE capture, not a slate**: no baseline is expected for it, no projection is owed for it, and the `1,400` regular-season games are all loaded.* ⇒ ✅ **`T26-5` RE-RATED: the fix is still one dispatch-list entry and still worth doing before `2026-10-03`, but it is NOT an opening-night risk and should not outrank `A1`/`A2`.** 🔑 **`T26-8` remains the reason to make the fix — the loader is `1` of `10` undispatched workers — and the schedule drift is now its EVIDENCE rather than its own headline.**
+>
+> ⚠ *A second false tail in the same stratum, recorded for the same reason: the owner's* **"we intentionally did not make a join because we're going to do a lot of back testing soon"** *is already in `NBA_RECIPE.md`, quoted and attributed, beside the `1`-foreign-key finding.* ⇒ 🔑 **`2` of the `16` owner segments were duplicates the instrument could not see. `RULE 20`'s novelty check is what kept them out, and catching them is the reason the check exists.**
+
+> 🔁 **RE-DERIVE** *(`RULE 59`)*:
+> ```bash
+> python3 nba/tools/sweep_coverage.py score --transcripts <local>   # T26: 779/958 uncovered, 81.3%
+> python3 nba/tools/sweep_coverage.py tails --th 0.40 --outdir <dir>
+> sed -n '/## OWNER SAID/,/## ASSISTANT/p' <dir>/2026-09-24-*-final-hp-restore.tail.md   # the 16
+> ```
+
 ## 0z-7. 🔴🔴🔴 **THE TWO-PIPELINE DECISION, MADE IN REAL TIME — COMPASS FACT 107's REASONING, AND IT RESOLVES THE TENSION §0z-2 RECORDED** *(T18 pass 0, §T18.1, owner, 2026-09-19; **the largest owner stratum in the corpus — 57 turns, 26,633 chars, mean 467**)*
 
 *§0z-2 records that fact 107 DROPPED the scenario precompute six days after the owner called it
