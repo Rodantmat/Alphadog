@@ -303,7 +303,12 @@ def main():
                     out.append((d, event_id, label, book, mk, player, side, line, None, None, "no_stat", is_alt, True))
                     tot["no_stat"] += 1
                     continue
-                actual = float(fn(rec))
+                try:
+                    actual = float(fn(rec))
+                except (KeyError, TypeError):   # period stat absent for this player-date (no quarter row)
+                    out.append((d, event_id, label, book, mk, player, side, line, None, None, "no_stat", is_alt, True))
+                    tot["no_stat"] += 1
+                    continue
                 lv = round(float(line), 3)
                 if round(actual, 3) == lv:
                     res = "push"
