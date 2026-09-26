@@ -3199,6 +3199,40 @@ have asked "is anything still WRITING it, and is anything still READING it?"***
 
 ---
 
+## ⚠⚠⚠ **§T26.72 — `RULE 63` FIRES A SECOND TIME, NINE HOURS AFTER IT WAS WRITTEN: `P2` MOVED AGAIN AND `§T26.68`'s TABLE IS NOW HALF-SUPERSEDED — `build_final_hp` RUNS TWICE, AND THE FIRST RUN *IS* COVERED** *(source, 2026-09-26; `0` of the twelve)*
+
+> 📌 **`RULE 63` was numbered in `§T26.69` because `§T26.59` went stale in `24` minutes. Its first application, at the end of pass `27`, caught `nba-p2-overnight-heavy.yml` moving AGAIN — `976173a3` at `09:13` PT, after pass `26`'s check saw `04edc1b1` at `00:05`.** ⚠⚠ ***Two `P2` changes in nine hours, both inside the exact mechanism `§T26.59`–`§T26.68` describe. The rule has now paid for itself twice on the same file.***
+
+### ✅ **WHAT SHIPPED — AND IT CLOSES HALF OF WHAT `§T26.68` LEFT OPEN**
+
+> *`976173a3` inserts step **`3a`** at line `224`, immediately after the key refresh (`213`) and the prune (`217`):*
+> ```bash
+> export FE_DATE="$(TZ=America/Los_Angeles date -d yesterday +%F)"
+> # skip if nba_score.baseline_history has 0 rows for FE_DATE (an off day)
+> python nba/build_final_hp.py      # line 236
+> ```
+> *with the reasoning in its own comment:* **"Yesterday's `final_hp` was built yesterday at 08:45 PT from the boards known THEN; everything posted later — the day-of board P3 captured at 13:15, late lines, period props — never entered it, and the calibration and confidence refits below learn ONLY from `final_hp`. Now that yesterday's keys are refreshed and the prune has kept every board rung, rebuild that one slate."**
+>
+> ⇒ 🔑🔑 **`build_final_hp.py` NOW RUNS TWICE IN `P2`** — *line `236` (yesterday, after the refresh) and line `404` (the slate, unchanged)* — **and `§T26.68`'s row for it must be split:**
+>
+> | `build_final_hp.py` invocation | line | scope | covered by the `213` key refresh? |
+> |---|---|---|---|
+> | 🆕 **step `3a`, yesterday's rebuild** | `236` | `FE_DATE` = **yesterday (PT)** | ✅✅ **YES — the refresh at `213` is for exactly that date** |
+> | the slate build *(step 6b)* | `404` | `FE_DATE` = **today's slate** | 🔴 **STILL NO** |
+>
+> ⇒ ⚠ ***`§T26.68`'s "`build_final_hp.py` is NOT covered" is HALF-SUPERSEDED, not wrong: it was true of the only invocation that existed when it was written, and one of the two invocations that exist now.*** *`RULE 40` — recorded, not struck.* 🔑 **`T26-3`'s residual is unchanged in substance and smaller in scope: the SLATE build still depends on `P3` having refreshed the day before, and its `SystemExit` at `build_final_hp.py:142` is still the one abort a `P3` failure can trigger unattended.**
+
+### 🔑🔑 **AND THE BUILD CHAT REACHED `§T26.59`'s CONCLUSION INDEPENDENTLY, FOR A THIRD REASON**
+
+> *Three triggers, one mechanism, all within a day:* ① **`§T26.59` (the sweep)** — *a `(date, prop, period)` triple absent from `_prune_scope` is kept, and stops being kept when period markets appear*; ② **`3667076e` (the build chat, `00:05`)** — *a rung captured after `13:15` is absent from the keys and **would be pruned away***; ③ **`976173a3` (the build chat, `09:13`)** — ***a board rung that arrived late never entered `final_hp` at all, so the refits learned from an incomplete board***. ⇒ 🔑 ***All three are "the key table's view of the board is a SNAPSHOT, and everything downstream treats it as the board." That is now confirmed from three directions and is the single most corroborated mechanism in this sweep.*** ✅ *And note what ③ implies for `§T26.59`'s period finding: **the refits learn only from `final_hp`, and `final_hp` asks for `period = 'FULL'` only** — so the `4,296,237` period rows in `baseline_history` reach the calibration path through **no** route today. `T26-6`'s stakes are about preserving data for a future that has not arrived, not about today's fit.*
+
+> 🔁 **RE-DERIVE** *(`RULE 59`)*:
+> ```bash
+> git log --since="2026-09-26 06:00" --pretty='%h %ad %s' --date=format:'%H:%M' -- .github/workflows/nba-p2-overnight-heavy.yml
+> grep -n "build_final_hp.py" .github/workflows/nba-p2-overnight-heavy.yml     # 236 and 404 — TWO invocations
+> grep -nE "refresh_board_rung_keys|prune_baseline_to_board\.py|Rebuild yesterday" .github/workflows/nba-p2-overnight-heavy.yml
+> ```
+
 ## ⚠⚠⚠ **§T26.68 — `§T26.59` WAS ACTED ON WITHIN TWENTY-FOUR MINUTES OF BEING WRITTEN, AND RE-DERIVING IT CORRECTS BOTH `§T26.59` AND `§T26.45`: THE `P3 → P2` EDGE IS NOW BROKEN FOR THE PRUNE, STILL INTACT FOR `final_hp`, AND NEVER EXISTED FOR THE HISTORY LOADER** *(source, 2026-09-26; `0` of the twelve)*
 
 > 📌 **`§T26.59` published `T26-3`'s recovery procedure at `23:41` PT. At `00:05` PT the build chat shipped `3667076e` — *"NBA P2: refresh yesterday's board rung keys right before the prune"* — followed by `04edc1b1`.** ⚠⚠ ***A section that describes a hazard the system fixes twenty-four minutes later is exactly the stale record this sweep exists to prevent, so it is re-derived here rather than left standing.***
