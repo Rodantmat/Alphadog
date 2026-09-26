@@ -6,6 +6,8 @@
 > Pass 2 is the per-prop signal sets.*
 > 📏 **`64` sections · re-derived `2026-09-26` (pass 20)** *(was `59` on `2026-09-25`; the `+5` is §T26.56's headings).* *Re-derive AND RUN, never quote* (`RULE 59`):
 > `` grep -cE '^(> *)*#{1,6} ' nba/NBA_ENRICHMENT_FACTOR_LOCK.md ``
+> 🆕🆕 **`§T26.56` ADDED `2026-09-26`** — ✅✅✅ **`T10-F1` CLOSED: THE FIVE "MISSING" COMMISSIONED FACTORS ARE ALL IN `nba_config.factor_registry`, LIVE AND ACTIVE — AND THE FIFTH IS NOT A FACTOR AT ALL** — *`A7` = `trade_new_arrival_window`, `E2` = `team_flux_penalty`, `M2` = `defensive_scheme_proxy`, `M3` = `hustle_deflection_profile`, each present and enabled; **`E3 sample_thinness` is correctly ABSENT because this file itself says the baseline already flags it** — it was never commissioned as a factor. ⇒ the item was a **bookkeeping gap, not a build gap**.* 🔑🔑 *Same method lesson as `§T26.55`: **an item reads as open because nobody re-queried the store, not because the work was not done** — the seventh instance of that failure class.*
+>
 > ⚠ **STAMP AND INDEX ADDED `2026-09-25`** *(`§T26.25` for the stamp)* — ***this document and
 > `NBA_PROJECT_LOG.md` were the only two of the twelve carrying NEITHER a dated census stamp NOR an
 > index***, *while a gate reported `12`/`12` on both counts. Both gates were matching a looser pattern.*
