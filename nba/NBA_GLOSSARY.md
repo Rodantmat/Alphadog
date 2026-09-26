@@ -1725,6 +1725,35 @@ investigate it.** → `NBA_MASTER_SUMMARY.md` §T1.61 · `NBA_SYSTEM_ARCHITECTUR
 
 ## P–S
 
+**`prune_baseline_to_board.py`** 🆕 · T26 · LIVE · **The script that enforces the retention rule** — *owner,
+`2026-09-24`:* ***"Whatever shows on the board, the full ladder for all players, all prop lines, everything,
+we save. If a player shows one single leg, we save one single leg."***
+🔑🔑 **ITS SCOPE RULE IS THE SUBTLE PART, AND IT IS THE OWNER'S "ALL PROPS STAY, NO EXCEPTION" IN CODE**:
+*a `(date, prop, period)` is pruned **ONLY IF** some board — real or derived — carried that prop that day;
+**a prop with no board of any kind (historically the PERIOD props) KEEPS ITS FULL LADDER**, because it is
+the raw material the derivation will run on.* ⇒ ***This is why `49.28%` of `baseline_history` rows are
+period rungs, and why a board-scoped rule does not delete the props that reappear in-season.***
+⚠ *Measured `2026-04-10`: `49,816` rungs for the `12` standard props, `4,863` on the board — `9.8%`.*
+▶ `§T26.7` *(the retention rule)* · `§T26.27` ② *(the owner's ruling, and the ingredient-vs-product split
+that makes it coherent)*.
+
+**`check_factor_freshness.py`** 🆕 · T26 · LIVE · **The instrument that makes a silently-active fallback
+visible** — *its own words:* ***"Both were true on paper and NEITHER WAS CHECKED AT RUNTIME. The failure
+mode is not a crash — it is SILENCE: `nba_ref.referee_assignments` sat EMPTY while P2 ran its scraper
+nightly, so D1's documented fallback would have carried every game day with nothing saying so."***
+🔑 **`14` checks across three severities, and the middle one is the new idea**: **`BINDING`** → exit
+non-zero, red · ⚠ **`FALLBACK`** → **reported LOUDLY, job stays GREEN** · **`WEEKLY`** → judged on an
+`8`-day age. *Season-aware, for `§T26.14`'s reason.*
+🔴🔴 **AND IT HAS NO CRON** — *wired only into `nba-maintenance.yml`, whose entire trigger is
+`workflow_dispatch`.* ⇒ ***The detector of silence runs only when somebody remembers, and the class it
+detects is by definition the one you do not think to look for.*** ⇒ item **`T26-2`**, `§T26.43`.
+
+**`refresh_board_rung_keys(lo, hi)`** 🆕 · T26 · LIVE · `nba_market` function — **the ONE producer of
+`board_rung_keys`** *(see the `B` block)*. *P3 calls it scoped to boards archived in the last `6` hours.*
+🔴 **So it is also the RECOVERY call**: *re-running P3 for an old date does not rebuild that date's keys;
+an explicit `(lo, hi)` range almost certainly does, **but this sweep is read-only and has not run it***
+⇒ **establish it before opening night — item `T26-3`.**
+
 **per-subgroup validation** · T1 (blueprint §7f) · The rule that **an aggregate out-of-sample pass is
 necessary but not sufficient**: a proposed calibration correction must be checked against **every
 meaningfully distinct subgroup it will be applied to** — both sides of a market, every tier — not the
