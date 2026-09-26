@@ -141,11 +141,19 @@ def resolve(nm, day, players_seen, alias_idx):
     return None, "none"
 
 
+def _read_json(name, timeout=300):
+    """Repo file on this runner first (P2 mines and commits it in the same job), raw CDN only as fallback -
+    the CDN caches for minutes and 404s on a season file created moments earlier."""
+    local = Path("nba/data") / name
+    if local.exists():
+        return json.loads(local.read_text())
+    with urllib.request.urlopen(urllib.request.Request(RAW + name, headers={"User-Agent": "alphadog"}), timeout=timeout) as r:
+        return json.load(r)
+
+
 def load_logs(slug, pid_to_name):
     """Game logs are columnar-ish records keyed by PLAYER_ID (no name), MIN is a float."""
-    url = RAW + f"nba_player_game_log_{slug}.json"
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "alphadog"}), timeout=300) as r:
-        doc = json.load(r)
+    doc = _read_json(f"nba_player_game_log_{slug}.json")
     rows = doc.get("records") or []
     by_date = defaultdict(dict)
     players_seen = set()
@@ -158,11 +166,33 @@ def load_logs(slug, pid_to_name):
             played = float(x.get("MIN") or 0) > 0
         except (TypeError, ValueError):
             played = False
-        rec = {k: (x.get(k) or 0) for k in ("PTS", "REB", "AST", "FG3M", "BLK", "STL", "TOV")}
+        rec = {k: (x.get(k) or 0) for k in STAT_COLS}
+        rec["NBA_FANTASY_PTS"] = x.get("NBA_FANTASY_PTS")
         rec["played"] = played
         rec["team"] = (str(x.get("MATCHUP") or "").split(" ")[0] or None)
         by_date[d][nm] = rec
         players_seen.add(nm)
+    # PERIOD BOX SCORES (2026-09-25): the quarter logs P2 mines daily. H1 = Q1+Q2, H2 = Q3+Q4, set only
+    # when both quarters are present; a player-date with no quarter row simply lacks the keys.
+    q = {}
+    for qq in (1, 2, 3, 4):
+        try:
+            qd = _read_json(f"nba_player_game_log_q{qq}_{slug}.json").get("records") or []
+        except Exception as exc:  # noqa: BLE001 - visible, and the period legs grade as no_stat
+            print(f"  quarter {qq} logs unavailable for {slug} ({str(exc)[:60]}) - period legs will be no_stat", flush=True)
+            qd = []
+        q[qq] = {(str(x.get("GAME_DATE") or "")[:10], pid_to_name.get(str(x.get("PLAYER_ID")))): x for x in qd}
+    for d, day in by_date.items():
+        for nm, rec in day.items():
+            rows_q = {qq: q[qq].get((d, nm)) for qq in (1, 2, 3, 4)}
+            for col in ("PTS", "REB", "AST", "FG3M"):
+                for qq in (1, 4):
+                    if rows_q[qq] is not None:
+                        rec[f"{col}_Q{qq}"] = rows_q[qq].get(col) or 0
+                if rows_q[1] is not None and rows_q[2] is not None:
+                    rec[f"{col}_H1"] = (rows_q[1].get(col) or 0) + (rows_q[2].get(col) or 0)
+                if rows_q[3] is not None and rows_q[4] is not None:
+                    rec[f"{col}_H2"] = (rows_q[3].get(col) or 0) + (rows_q[4].get(col) or 0)
     return by_date, players_seen
 
 
