@@ -168,7 +168,7 @@ def main():
     # every app, which is the production default; a comma list restricts a replay or a test.
     _apps = [a.strip().lower() for a in os.environ.get("BS_APPS", "").split(",") if a.strip()]
     if _apps:
-        board = board[board["bookmaker"].str.lower().isin(_apps)].copy()
+        board = board[board["app"].str.lower().isin(_apps)].copy()
         print(f"  BS_APPS={_apps}: {len(board):,} of {raw:,} legs kept", flush=True)
         if board.empty:
             print("No board legs for those apps. Nothing to score.")
