@@ -76,7 +76,7 @@ def main():
             still_failed.append(w)
             continue
         with conn.cursor() as cur:
-            cur.execute(f"SELECT max(updated_at) FROM {tbl}")
+            cur.execute(f"SELECT max({STAMP_COL.get(tbl, 'updated_at')}) FROM {tbl}")
             last = cur.fetchone()[0]
         if last is not None and last.tzinfo is None:
             last = last.replace(tzinfo=timezone.utc)
