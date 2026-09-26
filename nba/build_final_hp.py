@@ -356,6 +356,15 @@ def main():
                                              WHERE k.game_date = h.game_date AND k.player_id = h.player_id
                                                AND k.prop = h.prop AND k.period = %s AND k.line = h.line)""",
                             conn, params=(prop, season, _base, _per, FE_DATE, FE_DATE, _per))
+            # INVARIANT (2026-09-26, answers the sweep's T26-11/A0): every row this build writes carries
+            # prop = the LABEL (`points_q1` for a Q1 rung, `points` only for a FULL rung), so the upsert
+            # key (game_date, player_id, prop, line, side) can never collide across periods - a Q1 5.5
+            # and a FULL 5.5 are different keys. The read above pins base props to period 'FULL' and
+            # period labels to their own period; this assertion makes a future edit that breaks either
+            # side fail loudly instead of overwriting.
+            if len(h):
+                assert (h["prop"] == prop).all(), f"final_hp: rows for {prop} carry a different prop label"
+                assert (_per == "FULL") == (prop not in _PERIOD_LABELS), f"final_hp: period/label mismatch for {prop}"
             # PERIOD FILTER (fixed 2026-09-24). This read had no period filter and final_hp has no period
             # column, so Q1/Q4/H1/H2 rungs were written under the FULL-GAME key: prop 'points' line 5.5
             # for Q1 landed as if it were a full-game 5.5, and where a period line coincided with a
