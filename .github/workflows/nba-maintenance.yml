@@ -76,6 +76,16 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/build_asof_calibration.py
 
+      # Prop reliability audit (2026-09-25): scores every prop leg-level against the box scores on the
+      # one baseline store (full-game rungs only) and WRITES the derived penalties to
+      # nba_config.classification_config['prop_reliability_audit_latest'] - never transcribed by hand.
+      - name: Prop reliability audit
+        if: ${{ github.event.inputs.task == 'reliability' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REL_SEASONS: "2024-25,2025-26"
+        run: python nba/score_prop_reliability.py
+
       # Prune a whole season's baseline to the rungs the boards offered (owner retention rule
       # 2026-09-24). DRY RUN unless prune_execute is 'yes' - the delete is irreversible, so the counts
       # are printed first and the owner confirms.
