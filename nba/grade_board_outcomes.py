@@ -44,6 +44,18 @@ RAW = "https://raw.githubusercontent.com/{}/{}/main/nba/data/".format(
     os.environ.get("GH_OWNER", "Rodantmat"), os.environ.get("GH_REPO", "Alphadog"))
 
 # market_key (with _alternate stripped) -> function over a box-score row
+# COMPLETED 2026-09-25: the derived props, fantasy and the period markets were `no_stat` - scored by P3
+# but never graded, so never in the calibration or the paper log. Fantasy uses the official NBA fantasy
+# scoring (PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TOV -1 - the NBA's 2017 standard, which PrizePicks
+# uses) as stats.nba.com already computes it into NBA_FANTASY_PTS; the formula is the fallback only.
+# Period stats come from the quarter logs P2 mines daily (H1 = Q1+Q2, H2 = Q3+Q4); a missing period row
+# raises KeyError, which the grade loop turns into `no_stat` - visible, never silent.
+def _fantasy(r):
+    v = r.get("NBA_FANTASY_PTS")
+    if v is None:
+        v = r["PTS"] + 1.2 * r["REB"] + 1.5 * r["AST"] + 3 * r["STL"] + 3 * r["BLK"] - r["TOV"]
+    return v
+
 BASE = {
     "player_points": lambda r: r["PTS"],
     "player_rebounds": lambda r: r["REB"],
@@ -57,7 +69,17 @@ BASE = {
     "player_points_assists": lambda r: r["PTS"] + r["AST"],
     "player_rebounds_assists": lambda r: r["REB"] + r["AST"],
     "player_blocks_steals": lambda r: r["BLK"] + r["STL"],
+    "player_fantasy_points": _fantasy,
+    "player_ftm": lambda r: r["FTM"], "player_fta": lambda r: r["FTA"],
+    "player_fgm": lambda r: r["FGM"], "player_fga": lambda r: r["FGA"],
+    "player_threes_attempted": lambda r: r["FG3A"],
+    "player_oreb": lambda r: r["OREB"], "player_dreb": lambda r: r["DREB"],
+    "player_personal_fouls": lambda r: r["PF"],
 }
+for _stat, _col in (("points", "PTS"), ("rebounds", "REB"), ("assists", "AST"), ("threes", "FG3M")):
+    for _per in ("q1", "q4", "h1", "h2"):
+        BASE[f"player_{_stat}_{_per}"] = (lambda c, p: (lambda r: r[f"{c}_{p.upper()}"]))(_col, _per)
+STAT_COLS = ("PTS", "REB", "AST", "FG3M", "BLK", "STL", "TOV", "FTM", "FTA", "FGM", "FGA", "FG3A", "OREB", "DREB", "PF")
 YES_NO = {"player_double_double"}
 
 
