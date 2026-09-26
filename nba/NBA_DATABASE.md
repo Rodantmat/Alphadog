@@ -3195,6 +3195,173 @@ have asked "is anything still WRITING it, and is anything still READING it?"***
 
 ---
 
+## ✅✅✅ **§T26.59 — `T26-3` CLOSED, BOTH HALVES, FROM THE FUNCTION DEFINITION AND THE STORE — AND THE PERIOD HALF TURNS OUT TO BE LOAD-BEARING** *(`pg_get_functiondef` + `SELECT`, 2026-09-26; `0` of the twelve before this entry)*
+
+> 📌 **`T26-3` asked two things and this sweep had answered neither: (1) what the RECOVERY procedure is when a `P3` failure leaves `nba_market.board_rung_keys` empty and three `P2` steps `SystemExit`, and (2) whether the refresh populates PERIOD rows when real boards carry them.** *Both are settled below WITHOUT running anything: half (1) from the function's own body, half (2) from the archive's own vocabulary.*
+
+### ✅ **HALF 1 — THE RECOVERY PATH IS NOT "VERY LIKELY", IT IS WHAT THE FUNCTION SAYS. THE `6`-HOUR WINDOW IS IN THE WORKFLOW, NOT IN THE FUNCTION.**
+
+> ⚠⚠ **THE ITEM'S DOUBT WAS MISPLACED BY ONE LEVEL.** *`T26-3` reads: "the producer refreshes only dates archived in the last `6` hours, so re-running P3 the next day refreshes nothing."* 🔑 **True of the STEP. Not true of the FUNCTION.** *The `interval '6 hours'` predicate lives in `nba-p3-afternoon-light.yml`'s `Refresh board rung keys for the dates archived today` step, which merely CHOOSES which dates to pass:*
+>
+> ```sql
+> SELECT DISTINCT game_date FROM nba_market.board_snapshots
+> WHERE fetched_at > now() - interval '6 hours'
+> ```
+>
+> 📜 **THE FUNCTION BODY, read with `pg_get_functiondef` — `nba_market.refresh_board_rung_keys(d1 date, d2 date) RETURNS bigint`, `plpgsql`:**
+>
+> ```sql
+> DELETE FROM nba_market.board_rung_keys WHERE game_date BETWEEN d1 AND d2;
+> INSERT INTO nba_market.board_rung_keys (game_date, player_id, prop, period, line, src)
+> SELECT game_date, player_id, prop, period, line, min(src) FROM ( … ) k
+> GROUP BY game_date, player_id, prop, period, line;
+> ```
+>
+> 🔑🔑 **THE `SELECT` IT FILLS FROM CARRIES NO `fetched_at` PREDICATE AT ALL** — *the real half filters on `b.line IS NOT NULL AND b.game_date BETWEEN d1 AND d2`, the derived half on `u.line_source = 'simulated' AND u.line IS NOT NULL AND u.game_date BETWEEN d1 AND d2`. **Nothing in the function cares when a row was fetched.*** ⇒ ✅✅ **THE RECOVERY PROCEDURE, DERIVED AND EXACT:**
+>
+> ```sql
+> SELECT nba_market.refresh_board_rung_keys('<lo>','<hi>');   -- any range, any later date
+> ```
+>
+> ✅ **It is `DELETE`-then-`INSERT` over the range, so it is idempotent per range and repairs a partial rebuild as readily as an empty one.** ✅ **It rebuilds from the ARCHIVE, which is permanent, so a `P3` failure on day `N−1` is recoverable on day `N`, `N+7` or `N+70` — the keys are derived, never captured.** 🔑 **AND THE SYSTEM ALREADY TOLD US**: *`load_baseline_history.py:75` and `prune_baseline_to_board.py:91` print this exact call in their abort text.* ⚠ *`RULE 57` boundary stated honestly: this is DERIVED FROM THE DEFINITION, not run — the sweep is read-only. But "very likely repairs it" was an inference; **this is the code.***
+
+### 🔴 **HALF 2 — THE FUNCTION *DOES* CARRY PERIOD MAPPINGS. `24` OF ITS `38` MAP ROWS MATCH NOTHING IN THE ARCHIVE, AND ALL `16` PERIOD ROWS ARE AMONG THEM.**
+
+> ✅ **The map is a `VALUES` list of `(market_key, prop, period)` — `38` rows: `22` `FULL` and `16` PERIOD** *(`points`, `rebounds`, `assists`, `threes_made` × `Q1` / `H1` / `H2` / `Q4`)*. **So the function is CAPABLE of period rows; it does not drop them.** ▶ **Scored against every market key ever archived:**
+>
+> | period | map rows | matched in archive | **dead map rows** | the dead keys |
+> |---|---|---|---|---|
+> | `FULL` | `22` | `14` | 🔴 **`8`** | `player_dreb` · `player_fga` · `player_fgm` · `player_fta` · `player_ftm` · `player_oreb` · `player_personal_fouls` · `player_threes_attempted` |
+> | `Q1` | `4` | `0` | 🔴 **`4`** | `player_assists_q1` · `player_points_q1` · `player_rebounds_q1` · `player_threes_q1` |
+> | `Q4` | `4` | `0` | 🔴 **`4`** | `player_assists_q4` · `player_points_q4` · `player_rebounds_q4` · `player_threes_q4` |
+> | `H1` | `4` | `0` | 🔴 **`4`** | `player_assists_h1` · `player_points_h1` · `player_rebounds_h1` · `player_threes_h1` |
+> | `H2` | `4` | `0` | 🔴 **`4`** | `player_assists_h2` · `player_points_h2` · `player_rebounds_h2` · `player_threes_h2` |
+> | **total** | **`38`** | **`14`** | 🔴🔴 **`24` — `63.2%`** | |
+>
+> ⚠⚠ **`RULE 20` — THREE VOCABULARIES BEFORE AN ABSENCE, AND ALL THREE AGREE:** ① *regex `market_key ~ '_(q1\|q4\|h1\|h2)(_alternate)?PATCHED BY NOTHING** *(source + `SELECT` 2026-09-26; the diagnosis is `0` of the twelve)*
+
+**Ranked item `C` has stood since `§T20.56` as a bare measurement**: *"THE SCHEDULE HAS NOT BEEN REFRESHED
+SINCE THE DAY IT WAS BUILT" — `nba_calendar.games`, **oldest and newest write both `2026-09-02T20:24`***.
+⚠⚠ ***No entry has ever said WHY. Here is the chain, traced end to end.***
+
+### ✅ **STEP 1 — THE SCRAPER RUNS, DAILY, AND IT IS CORRECTLY CONFIGURED**
+
+*`scrape_nba_schedule.py` is invoked by **three** workflows — `nba-daily-delta.yml` (no cron),
+**`nba-p2-overnight-heavy.yml`** (`45 15 * * *`, **daily**) and **`nba-scrape.yml`** (`0 9 * * 1`,
+**weekly**).*
+▶ **P2's step is gated ONLY on `if: github.event.inputs.skip_mining != 'true'` — NOT on the empty slate**,
+*so it runs in season and out.* ⚠ **Its env block passes `PROXY_URL` and no `DATABASE_URL` — and that is
+CORRECT, not a defect**: ***the scraper writes JSON FILES, not Postgres*** —
+`OUTPUT_PATH.write_text(json.dumps({"games": all_games}))`.
+✅ **And it is working**: *`nba/data/nba_schedule_current_meta.json` was last committed **`2026-09-25`***
+*(the data file `2026-09-14`, because meta carries a per-run timestamp and the data only changes when
+games do).*
+
+### 🔴🔴🔴 **STEP 2 — THE LOADER THAT PUTS THAT JSON INTO POSTGRES IS DISPATCHED BY NOTHING**
+
+*`nba/alphadog-v2-nba-static-schedule.js` is the worker that writes the table —*
+`` INSERT INTO nba_calendar.games (…) ON CONFLICT (game_id) DO UPDATE SET … ``
+▶ `` grep -rc "static-schedule" .github/workflows/*.yml `` ⇒ **ZERO.**
+▶ *P1 dispatches `10` static workers* — `players · teams · player-bio · team-stats · onoff · playtypes ·
+tracking-detail · darko · shotquality · lineups` — **and the schedule worker is not among them.**
+
+⇒ 🔑🔑🔑 ***THE SCRAPER REFRESHES THE JSON EVERY DAY AND NOTHING LOADS IT. `nba_calendar.games.updated_at`
+is frozen at `2026-09-02` because that is the last time the LOADER ran — not because the schedule was
+never re-scraped.*** ⚠ ***Item `C`'s wording — "has not been REFRESHED" — describes the table correctly and
+the CAUSE backwards: the refresh happens daily and never arrives.***
+
+### 🔑🔑 **THIS IS THE THIRD INSTANCE OF `§T26.52`'s ORPHAN CLASS, AND THE FIRST THAT MATTERS**
+
+| orphaned worker | table | consumers | severity |
+|---|---|---|---|
+| `alphadog-v2-nba-static-player-tracking.js` | `player_tracking_profile` | **`0`** | ✅ *harmless — a superseded v1 (`§T26.52`)* |
+| 🔴 **`alphadog-v2-nba-static-schedule.js`** | **`nba_calendar.games`** | 🔴 **`5` scripts read it** | 🔴 **MATTERS** |
+
+**The five readers**: `certify_pipeline.py` · `check_factor_freshness.py` · `prune_baseline_to_board.py` ·
+`archive_live_boards.py` · `scrape_nba_daily_delta.py`.
+⚠⚠ **AND THE SEASON GATE ITSELF IS ONE OF THEM** — *`check_factor_freshness.py`'s gate is
+`SELECT count(*) FROM nba_calendar.games …`, and `§T26.14`'s season-aware certifier decides
+"no games scheduled" from this table.* ⇒ ***The table that decides whether the system thinks games exist
+is loaded by a worker nothing calls.***
+
+### ⚠ **WHAT IS AND IS NOT AT RISK FOR OPENING NIGHT — STATED PRECISELY**
+
+✅ **THE OPENER IS COVERED**: *the `2026-09-02` load put **`1,266` games for 2026-27** in the table
+(`2026-10-03` → `2027-04-11`), so the slate exists and the season gate will fire.*
+🔴 **WHAT IS NOT COVERED IS EVERY SCHEDULE CHANGE SINCE `2026-09-02`** — *postponements, tip-time moves,
+added or relocated games.* 🔑 **The NBA does change schedules, and the system cannot see a change it never
+loads.** ⚠ *The JSON on disk may already disagree with Postgres: the data file moved on `2026-09-14`,
+twelve days after the last load.* ### ✅✅✅ **THE DIFF WAS RUN — AND THE SCHEDULE HAS ALREADY DRIFTED BY EXACTLY ONE GAME, IN PRESEASON WEEK**
+
+| | scraped JSON *(`nba_schedule_current.json`, data file `2026-09-14`)* | `nba_calendar.games` *(loaded `2026-09-02`)* |
+|---|---|---|
+| total | **`2,667`** | **`2,666`** |
+| 2025-26 | `1,400` | `1,400` ✅ |
+| 🔴 **2026-27** | **`1,267`** | **`1,266`** |
+
+▶ **Aggregating by date located it on the first try — `2026-10-04`: JSON `2` games, Postgres `1`.**
+
+| | game_id | matchup | tip (UTC) | arena |
+|---|---|---|---|---|
+| ✅ in both | `0012600066` | **GSW @ LAC** | `2026-10-04T23:00:00Z` | Stan Sheriff Center |
+| 🔴 **JSON ONLY — MISSING FROM POSTGRES** | **`0012600067`** | **UTA @ DEN** | `2026-10-04T23:00:00Z` | **CU Events Center** |
+
+⇒ 🔴🔴🔴 ***A real NBA game, added to the league's schedule after `2026-09-02`, sits in this repo's own
+scraped JSON and is NOT in the table the system reads to decide what to do each day.***
+⚠⚠ **AND ITS DATE IS `2026-10-04` — the SECOND DAY OF PRESEASON, which opens `2026-10-03`.**
+🔑 **So the first week of live operation already contains a slate the schedule table under-counts by one
+game.** *(Both are neutral-site preseason games — Stan Sheriff Center, Honolulu; CU Events Center,
+Boulder — which is exactly the kind of late-added exhibition the league announces after the main
+schedule drop.)*
+
+✅ **THE EXPOSURE IS NOW MEASURED, NOT ESTIMATED**: *one game, `2026-10-04`, `UTA @ DEN`.* 🔑 **Small
+today — and it is the mechanism, not the magnitude, that matters: the drift will keep growing for every
+schedule change the league makes, because nothing loads any of them.** 📌 **Re-run this diff to size it
+again at any time**: *compare `nba/data/nba_schedule_current.json`'s `games[]` to
+`SELECT count(*) FROM nba_calendar.games GROUP BY season`, then aggregate by `game_date` to find the
+offending dates.*
+
+🔴 **NOT REMEDIATED** — *adding the worker to P1's dispatch list is a write to a live workflow.*
+⇒ **Tracked as item `T26-5`.** 🔑 **And it is cheap: one entry in P1's dispatch line, beside the ten
+already there.**` over the whole archive → **`0` rows, `0` distinct keys***; ② *the FULL enumeration — `91` distinct `market_key` values ever archived — contains **no NBA period market in any spelling**; the only sub-game markets present are baseball innings (`player_1st_inn._strikeouts`, `player_1st_5_innings_total_runs`)*; ③ *`board_rung_keys` itself: **`4,522,924` rows, `100%` `FULL`***. ⇒ 📜 **`RULE 61` APPLIES, AND IT POINTS PAST BOTH USUAL SUSPECTS: the store is not stale and the code is not broken — THE INPUT IS `FULL`-ONLY.** *`board_rung_keys` holds one period because the boards post one period.* ⚠ *The `8` dead `FULL` rows are the same shape: the map was written for shooting-volume and rebound-split props **no archived app has ever posted**.*
+
+### 🔴🔴🔴 **AND HERE IS WHAT NOBODY RECORDED: `4,296,237` PERIOD ROWS IN `baseline_history` SURVIVE THE PRUNE BY AN ESCAPE HATCH, NOT BY DESIGN**
+
+> ▶ **The two stores, live:**
+>
+> | table | `FULL` | `Q1` | `Q4` | `H1` | `H2` | period total |
+> |---|---|---|---|---|---|---|
+> | `nba_market.board_rung_keys` | **`4,522,924`** | `0` | `0` | `0` | `0` | 🔴 **`0`** |
+> | `nba_score.baseline_history` | `4,412,096` | `1,853,095` | `1,088,922` | `678,715` | `675,505` | ✅ **`4,296,237`** |
+>
+> 🔑 **`prune_baseline_to_board.py` prunes `baseline_history` TO `board_rung_keys`. A `FULL`-only board and a history that is `49.3%` period is a deletion waiting to happen — and it has not happened, for one reason.** *The script builds `_prune_scope` as `SELECT DISTINCT game_date, prop, period FROM _prune_keys` and keeps any history row whose triple is **absent** from it:*
+>
+> ```sql
+> AND NOT EXISTS (SELECT 1 FROM _prune_scope s
+>                 WHERE s.game_date = h.game_date AND s.prop = h.prop AND s.period = h.period)
+> ```
+>
+> *counted and printed as* `kept as NEVER-DERIVED (no board of any kind for that prop/day)`. ✅ **A period triple can never be in `_prune_scope`, so every period row falls into that branch and is kept. `§T26.19`'s restored period rungs are safe TODAY.**
+>
+> 🔴🔴 **BUT THE PROTECTION IS ALL-OR-NOTHING PER `(game_date, prop, period)`, AND IT INVERTS THE MOMENT THE INPUT IMPROVES.** ⚠ ***The day one app starts posting `player_points_q1`, that date acquires `Q1` keys, `_prune_scope` acquires `(that_date, points, Q1)` — and every `Q1` baseline row for that date whose LINE does not match a posted rung stops being "never-derived" and becomes deletable in the same run.*** 🔑 **The safety of `4.3M` rows currently rests on a market the boards do not yet offer.** *That is not a defect today and it is not a hypothetical either: `§T26.27` records the owner's **"ALL PROPS STAY, NO EXCEPTION"**, and the first period board ever posted would quietly contradict it.* ⇒ **`T26-6`.**
+
+### 🔴🔴 **A SEPARATE FINDING FROM THE SAME ENUMERATION: `7,951` BASEBALL ROWS ARE SITTING IN `nba_market.board_snapshots`, AND THE SPORT FILTER IS A NAME JOIN**
+
+> ▶ **`68` of the `91` distinct `market_key` values ever archived are not basketball** — `player_total_bases`, `player_hits_+_runs_+_rbis`, `player_1st_inn._pitch_count`, `player_pitcher_outs_recorded`, … — **`7,951` rows in total**, on dates before `2026-09-20`. ⚠⚠ **AND THERE IS NO SPORT OR LEAGUE COLUMN ON THE TABLE**: *`information_schema.columns` gives `15` — `game_date`, `event_id`, `snapshot_label`, `snapshot_ts`, `bookmaker`, `market_key`, `player`, `side`, `line`, `price`, `multiplier`, `home_team`, `away_team`, `commence_time`, `fetched_at`. **Nothing says which sport a row is.***
+>
+> 🔑 **`189` of those rows HIT an NBA map key** — `player_fantasy_points` (`120`) and `player_fantasy_points_alternate` (`69`), bookmaker `underdog`, every one on `2026-09-12` — *because `fantasy_points` is a market both sports post under the same name.* ✅✅ **AND `0` REACH `board_rung_keys`**: *the function's `JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(b.player)` is an INNER join, and `0` of the `189` resolve to an NBA `player_id`.* ⚠⚠ **BUT THAT GUARD IS ROSTER-NAME DISJOINTNESS, NOT A FILTER.** *Nothing in the query expresses "basketball only"; the rows are excluded because no baseball player in that capture happens to share a normalised name with an NBA player. **A collision would be admitted silently, as a `fantasy_score` rung on a real NBA `player_id`.*** ✅ *Exposure is bounded and shrinking — MLB is dropped, so no new rows arrive — but the `7,951` stay, and the map row `('player_fantasy_points','fantasy_score','FULL')` stays pointed at a shared market name.* ⇒ **`T26-7`.**
+
+> 📅 **AND A DATED STATE CHANGE WORTH THE LINE**: `nba_score.baseline_history` now holds **`8,708,333`** rows against this file's ledger figure of `19,343,348` *(`2026-09-23`)*. **The prune has run.** ~~`19,343,348`~~ is superseded, not struck from the ledger — `RULE 40`. *The `49.3%` period share above is of the CURRENT `8.7M`.*
+
+> 🔁 **RE-DERIVE, NEVER QUOTE** *(`RULE 59` — each of these was RUN to produce the figure beside it)*:
+> ```sql
+> SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+>   WHERE n.nspname='nba_market' AND p.proname='refresh_board_rung_keys';
+> SELECT market_key, count(*) FROM nba_market.board_snapshots GROUP BY 1 ORDER BY 2 DESC;   -- 91 keys
+> SELECT 'board_rung_keys', period, count(*) FROM nba_market.board_rung_keys GROUP BY 2
+>   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
+> ```
+
 ## 🔴🔴🔴🔴 **§T26.57 — RANKED ITEM `C` DIAGNOSED: THE SCHEDULE SCRAPER RUNS DAILY AND ITS LOADER IS DISPATCHED BY NOTHING** *(source + `SELECT` 2026-09-26; the diagnosis is `0` of the twelve)*
 
 **Ranked item `C` has stood since `§T20.56` as a bare measurement**: *"THE SCHEDULE HAS NOT BEEN REFRESHED
