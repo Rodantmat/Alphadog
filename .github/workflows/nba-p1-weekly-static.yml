@@ -62,6 +62,9 @@ jobs:
         run: |
           python nba/scrape_nba_stats_teams.py
           python nba/scrape_nba_stats_arenas.py
+          # officials register (2026-09-26, T26-8): scraper and loader were both unscheduled; the
+          # differential worker reads this file too.
+          python nba/scrape_nba_officials.py
 
       - name: Players and bio
         env:
