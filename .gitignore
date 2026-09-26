@@ -5,3 +5,8 @@ secrets.production.json
 .wrangler/
 node_modules/
 __pycache__/
+# F7-1 (2026-09-26): nba/tools/sweep_coverage.py writes its scored corpus (credential-shaped strings
+# verbatim) to a relative default inside the working tree. Never commit it, or any tool output there.
+scored.json
+nba/tools/*.json
+nba/transcripts/*.txt
