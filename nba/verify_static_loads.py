@@ -52,6 +52,8 @@ TABLE_FOR = {
     "nba-static-officials": "nba_ref.officials",
     "nba-static-arenas": "nba_ref.arenas",
 }
+# Tables whose freshness column is not updated_at.
+STAMP_COL = {"nba_stats.player_roster_snapshot": "snapshot_taken_at"}
 DICTIONARY_WORKERS = set()  # every worker now has a freshness signal; kept for the reporting branch below
 
 
