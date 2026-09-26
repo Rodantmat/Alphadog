@@ -5815,6 +5815,65 @@ information more coarsely.** ✅ **`§T26.5` stands, and it stands on an argumen
 
 ---
 
+## ✅✅✅ **§T26.66 — `T26-4` ANSWERED, AND THE ANSWER RETRACTS THE ALARM: THE BELOW-CHANCE ANCHOR IS CONFINED TO ONE EXPERIMENT FAMILY OF `21` ROWS, WHILE THE PRODUCTION EVALUATION SCORES `0.56431` ON `1,248,826` LEGS — AND `§T26.55`'s "THE SLICE IS UNDEFINED" WAS MY OWN ERROR** *(`SELECT` over all `109` rows + source, 2026-09-26; the census is `0` of the twelve)*
+
+> 📌 **`T26-4` asked whether the scoring system is worse than a coin flip. `§T26.55` reported `anchor` log-loss `0.72604` against `ln 2 = 0.69315` and Brier `0.26359` against `0.25`, said *"the slice is undefined"*, and stopped there.** ⚠⚠ ***It stopped one query too early. `§T26.55` read the `5` newest rows of a `109`-row table; the table answers the question by itself.***
+
+### ⚠⚠ **FIRST, THE CORRECTION I OWE: THE SLICE IS NOT UNDEFINED. IT IS DEFINED BY ITS OWN SIBLINGS IN THE SAME TABLE.**
+
+> 🔴 **`§T26.55` — my own section, written `2026-09-26` — asserted "the slice is undefined".** ✅ **It is defined.** *`nba_score.factor_gate_results` holds `slice = 'all'` beside `slice = 'fires'` (`n = 13,319`), `slice = 'low_novelty'` (`n = 4,695`) and `slice = 'high_novelty'` (`n = 866`), **all four written by the same script, `nba/test_a2_novelty.py`, in the same run at `2026-09-13 19:32:07Z`**. The nesting fixes the meaning exactly: `all` is that experiment's full graded sample and `fires` is the subset where `A2` fired.* ⇒ **the definition was one `GROUP BY slice` away, and `§T26.55` is corrected in place rather than struck** *(`RULE 40`)*. 📜 **AND THE LESSON IS `RULE 58`'s, turned on myself: "the slice is undefined" was a claim about MY QUERY, not about the store — the fourth time in three days that a `0`/absence I published was an artefact of the scope I chose.**
+
+### ✅✅ **THE CENSUS — `45` SLICES, `109` ROWS, AND THE BELOW-CHANCE RESULT OCCUPIES FOUR SLICES AND NOTHING ELSE**
+
+> | family | slices | rows | `n` | best log-loss | **every row above `ln 2`?** | last run |
+> |---|---|---|---|---|---|---|
+> | 🔴 **`all` · `fires` · `low_novelty` · `high_novelty`** *(the `A2`-novelty gate)* | **`4`** | **`21`** | `866` – `15,024` | `0.7147` | 🔴🔴 **YES — ALL `21`** | `2026-09-25` (`all` only) |
+> | ✅ `remaining_factors` | `1` | `5` | **`1,248,826`** | ✅ **`0.56431`** | ✅ NO — *not one* | `2026-09-17` |
+> | ✅ `allprop:*` *(per-prop calibration)* | `25` | `50` | `437,264` – `1,011,076` | ✅ **`0.0761`** | ✅ NO — *not one* | `2026-09-13` |
+> | ✅ `prop:*` · `ladder_all` *(the ladder)* | `9` | `18` | `46,910` – `105,663` | ✅ `0.5623` | ✅ NO — *not one* | `2026-09-13` |
+> | ⚠ `n1_ablation` | `1` | `5` | `1,322` | `0.67266` | ⚠ *mixed — **and its columns do not mean what they are named**, see below* | `2026-09-15` |
+>
+> ⇒ 🔑🔑 **`21` OF `109` ROWS ARE ABOVE CHANCE, AND ALL `21` BELONG TO ONE EXPERIMENT. `40` OF THE `45` SLICES DO NOT CONTAIN A SINGLE ABOVE-CHANCE ROW.** ✅✅ ***THE PRODUCTION EVALUATION IS `0.56431` LOG-LOSS ON `1,248,826` GRADED LEGS — which is the `0.5643` this corpus already carries for the graded PrizePicks history, matched to four decimals from an independent slice.***
+>
+> ⇒ ✅✅✅ **`T26-4` ANSWERED, AND THE HEADLINE INVERTS**: ***the scoring system is not below chance. A local anchor inside one novelty experiment is — on a sample between `866` and `15,024` legs, three orders of magnitude smaller than the production evaluation.*** 🔴 **WHAT REMAINS TRUE AND STILL MATTERS**: *that family's anchor has been above `ln 2` **since `2026-09-13`, across all four of its slices, in two independent runs** — so **every `gain_vs_anchor` inside it is measured against a floor that does not hold**, and *none* of `§T26.55`'s five verdicts (`anchor_x_defender` `0.00000`, `anchor_x_A2` `−0.24441`, …) is evidence about the production model. ⇒ **the verdicts are not wrong, they are UNINTERPRETABLE — which is a different repair: fix the anchor, then re-run the gate.**
+
+### 🔴🔴 **AND THE RERUN MADE IT WORSE, QUIETLY: `n` FELL BY HALF AND THE SHRINKAGE PARAMETER WENT `NULL`**
+
+> | run | slice | `n` | `anchor` log-loss | `shrink_beta` | siblings rewritten? |
+> |---|---|---|---|---|---|
+> | `2026-09-13 19:32:07Z` | `all` | **`15,024`** | `0.7231` | `0.9285` | ✅ *`fires`, `low_novelty`, `high_novelty` all written* |
+> | `2026-09-25 22:42:57Z` | `all` | 🔴 **`7,128`** *(**`−52.6%`**)* | `0.72604` | 🔴 **`NULL`** | 🔴 **NO — only `all`** |
+>
+> ⚠⚠ ***So the `2026-09-25` rerun evaluated on half the sample with the shrinkage parameter unset, and did NOT rewrite the three sibling slices that give `all` its meaning — leaving the definition `12` days staler than the thing it defines.*** 🔑 *This is a harness regression, not a model regression, and it is exactly the kind of thing that makes a result look like a finding.*
+
+### 🔴🔴🔴 **A SEPARATE AND LIVE TRAP IN THE SAME TABLE: SIX WRITERS, ONE SCHEMA, THREE DIFFERENT MEANINGS PER COLUMN — AND THE KEY EXISTS ONLY IN A `print()`**
+
+> ▶ **`grep` finds SIX scripts inserting into `nba_score.factor_gate_results`**: `test_a2_novelty.py` *(`all`/`fires`/`low_novelty`/`high_novelty`)* · `gate_remaining_factors.py` *(`remaining_factors`)* · `fit_n1_model.py` *(`n1_ablation`)* · `calibrate_all_props.py` · `apply_ladder_calibration.py` · `test_factors_on_baseline.py`.
+>
+> 🔴🔴 **AND `fit_n1_model.py` REPURPOSES THREE COLUMNS, ANNOUNCING IT IN A LINE THAT ONLY EVER REACHED A CI LOG:**
+> ```python
+> print("  wrote the ablation to nba_score.factor_gate_results "
+>       "(brier col = AUC, gain col = confident-band accuracy, shrink col = confident share)")
+> ```
+> ⇒ *for `slice = 'n1_ablation'`: **`brier` is AUC** (`0.6237`, `0.6216`, `0.6191`, `0.5894`, `0.5892`), **`gain_vs_anchor` is confident-band ACCURACY** (`0.7027`, `0.7963`, `0.7347`, `0.6719`, `0.7045`), **`shrink_beta` is the confident SHARE** (`0.028`–`0.0666`).*
+>
+> ⚠⚠⚠ **THE TRAP IS NOT THE REPURPOSING, IT IS THE SORT ORDER.** ***`SELECT … ORDER BY gain_vs_anchor DESC` over this table puts `n1_ablation` on top with apparent gains of `0.70`–`0.80` — the best results in the entire factor programme by a wide margin — and they are accuracies.*** *The next-best real gain in the table is `ladder_all`'s `+0.0068`.* 🔑 **A reader — or a future pass of this sweep — ranking factor work by the column whose NAME asserts a comparison would conclude the `n1` ablation is the system's biggest win. It is `n = 1,322`, and the number is not a gain.**
+>
+> ⚠ *And a smaller instance of the same class: `remaining_factors` carries `brier = 0` and `shrink_beta = 0` on all five rows — **placeholders, not measurements** — while `A3 return ramp` (`0.56431`) is recorded with `gain_vs_anchor = 0` against `final_hp baseline` (`0.56432`), i.e. a real `+0.00001`. **On `1,248,826` legs that is nothing, and saying "nothing" is the correct verdict — but the `0` in the column is not the reason.***
+>
+> ⇒ 📜 **THE SCRIPT'S OWN COMMENT DIAGNOSED HALF OF THIS AND CREATED THE OTHER HALF**: *it says `factor_gate_results` exists "precisely so a result is not trapped in a CI log … A verdict that only exists in stdout is not a verdict." **It then put the UNITS in stdout.*** ⇒ **`T26-10`** — *the fix is a `metric` or `units` column, or slice-prefixed column names; until then the table needs a documented key, and this section is it.*
+
+> 🔁 **RE-DERIVE, NEVER QUOTE** *(`RULE 59` — every figure was RUN)*:
+> ```sql
+> SELECT slice, count(*), count(DISTINCT model), min(n), max(n), min(log_loss),
+>        bool_and(log_loss > ln(2)) AS every_row_above_chance, max(run_at)::date
+> FROM nba_score.factor_gate_results GROUP BY slice ORDER BY max(run_at) DESC, slice;   -- 45 slices, 109 rows
+> ```
+> ```bash
+> grep -c 'INSERT INTO nba_score.factor_gate_results' nba/*.py   # six writers
+> sed -n '395,400p' nba/fit_n1_model.py                          # the print() that holds the column key
+> ```
+
 ## 🔴🔴🔴 **§T26.55 — `F5-1`'s MISSING RESULTS WERE NEVER MISSING: THEY ARE IN `nba_score.factor_gate_results`, DATED, AND EVERY VARIANT FAILED — INCLUDING THE INTERACTIONS THAT WERE SUPPOSED TO BE THE ANSWER** *(`SELECT` 2026-09-26; `0` of the twelve before this entry)*
 
 **`F5-1` has stood since `2026-09-23` on the claim that *"`B4 v3` and `M1` have fitting scripts in the
