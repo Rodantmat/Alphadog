@@ -20,6 +20,18 @@
 > (`§T`*n*`.`*m*), the canonical figure table, and the corrections made to each.
 > 📏 **`2,901` sections · re-derived `2026-09-25`** *(was `2,883` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_MASTER_SUMMARY.md ``
 >
+> 🆕🆕🆕 **`2026-09-26` — WHERE THE DAY'S SECTIONS LIVE** *(`T25` CLOSED; `T26` still open at `20` passes; the map below it is the `2026-09-25` map and is kept, not replaced — **`RULE 40`**)*
+> | file | sections defined there `2026-09-26` |
+> |---|---|
+> | **`NBA_DATABASE.md`** | **`§T26.52`** *(the static layer — `nba_stats.player_tracking_profile` ORPHANED)* · **`§T26.57`** *(🔴🔴🔴🔴 ranked item `C` diagnosed — the schedule loader is dispatched by nothing, and the drift is already real: `2,667` JSON vs `2,666` table, missing `0012600067` UTA @ DEN `2026-10-04`)* |
+> | **`NBA_FINAL_SCORING_CALIBRATION.md`** | **`§T26.55`** *(🔴🔴🔴 `F5-1` closed — the factor-gate verdicts were in the store all along and **every variant failed**; the anchor is itself below chance on that slice)* |
+> | **`NBA_ENRICHMENT_FACTOR_LOCK.md`** | **`§T26.56`** *(✅✅✅ `T10-F1` closed — all five commissioned factors accounted for; `E3` was never a factor)* |
+> | **`NBA_WORKERS.md`** | *no new section — pointer block only* |
+> | **`NBA_SWEEP_RUN_LOG.md`** *(pass records)* | `§T26.48` · `§T26.49` · `§T26.50` · `§T26.51` · `§T26.53` · `§T26.54` · **`§T26.58`** *(pass `20`)* |
+>
+> 🔑 **THE ONE THAT CHANGES WHAT YOU DO TODAY**: **`§T26.57`** — *`7` days to preseason, and the schedule table is already one game behind the file that feeds it. The fix is ONE entry in `nba-p1-weekly-static.yml`'s dispatch list (`T26-5`).*
+> 🔑🔑 **AND THE DAY'S METHOD FINDING**: **`§T26.55` and `§T26.56` closed two items that were never open** — the results existed, dated, in the live store; nobody had re-queried it. ⇒ **the seventh and eighth instances of the sweep's single most common failure class: *work performed, work not persisted into the record, every liveness signal green*.** *`RULE 20`'s three-vocabulary requirement exists for exactly this.*
+>
 > 🆕🆕🆕 **`2026-09-25` — `T25` AND `T26` ARE OPEN, AND THE SWEEP WROTE `29` SECTIONS ACROSS THE TWELVE IN ONE DAY. WHERE EACH LIVES:**
 > | file | sections defined there `2026-09-25` |
 > |---|---|
