@@ -158,11 +158,29 @@ def main():
     med = float(certified["ECE_pp"].median()) if not certified.empty else float(agg["ECE_pp"].median())
     print(f"certified set: {len(certified)} props | median ECE {med:.2f} pp\n")
     print(f"{'prop':<15}{'n':>10}{'ECE pp':>9}{'worst pp':>10}{'brier':>8}{'lift %':>8}   penalty")
+    out = {"penalty_rule": "penalty_pp = the prop's n-weighted ECE minus the median ECE of the certified set; "
+                           "derived by this script, never declared",
+           "certified_median_ECE_pp": round(med, 4), "seasons": seasons, "props": {}}
     for prop, r in agg.iterrows():
         pen = max(0.0, r["ECE_pp"] - med)
-        tag = "certified" if (r["worst_pp"] <= 2.5 and r["seasons"] == len(seasons)) else f"-{pen:.1f} pp"
+        cert = bool(r["worst_pp"] <= 2.5 and r["seasons"] == len(seasons))
+        tag = "certified" if cert else f"-{pen:.1f} pp"
         print(f"{prop:<15}{int(r['n']):>10,}{r['ECE_pp']:>9.2f}{r['worst_pp']:>10.2f}"
               f"{r['brier']:>8.4f}{r['lift']:>8.1f}   {tag}")
+        out["props"][prop] = {"n": int(r["n"]), "ECE_pp": round(float(r["ECE_pp"]), 4),
+                              "worst_band_pp": round(float(r["worst_pp"]), 4), "brier": round(float(r["brier"]), 4),
+                              "lift_pct": round(float(r["lift"]), 2), "status": "certified" if cert else "penalized",
+                              "penalty_pp": 0.0 if cert else round(pen, 4)}
+    # WRITTEN BY THE SCRIPT (2026-09-25; closes F6-3). The 2026-09-13 audit's numbers were copied into
+    # nba_config by hand and fantasy_score arrived as 0.3 pp where the rule gives 0.21. A derived
+    # penalty that is transcribed is declared. This key is the machine record; readers use it.
+    with conn.cursor() as cur:
+        cur.execute("""INSERT INTO nba_config.classification_config (config_key, config_json, notes, updated_at)
+                       VALUES ('prop_reliability_audit_latest', %s, 'written by nba/score_prop_reliability.py', now())
+                       ON CONFLICT (config_key) DO UPDATE SET config_json = EXCLUDED.config_json,
+                         notes = EXCLUDED.notes, updated_at = now()""", (json.dumps(out),))
+    conn.commit()
+    print("\nwritten: nba_config.classification_config['prop_reliability_audit_latest']", flush=True)
 
 
 if __name__ == "__main__":
