@@ -323,7 +323,7 @@ def main():
         # in another sport's vocabulary is not an NBA board and is refused here, loudly, before the insert.
         _other_sport = re.compile(r"(hits|runs|rbis|total_bases|batter|pitch|strikeout|earned_run|outs_recorded|home_run|stolen_base|"
                                   r"walks|singles|doubles|triples|passing|rushing|receiving|touchdown|reception|completion|"
-                                  r"interception|tackle|sack|goals|saves|shots_on_goal|kills|birdie|eagle)", re.I)
+                                  r"interception|tackle|sack|goalie|shots_on_goal|power_play|kills|birdie|eagle)", re.I)
         _rej = [r for r in rows if _other_sport.search(str(r[5] or ""))]
         if _rej:
             _keys = sorted({str(r[5]) for r in _rej})
