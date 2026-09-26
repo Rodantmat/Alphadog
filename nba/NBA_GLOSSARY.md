@@ -619,6 +619,8 @@ unknown.** *Up to five transcripts are shown per term.*
 
 | Term | Documents | Transcript(s) |
 |---|---|---|
+| `now_out_flag_only` 🆕 | **FCAL,GLO** | **T26** 🔴🔴 ***the reason code that records a player was ruled out WITHOUT repricing his legs — the delta used to price them at `0.001`, live on P3's path, `7×` worse log-loss — `§T26.37`*** |
+| `nba_season` 🆕 | **DSN,OPEN,RCP,GLO** | **T26** *(`nba/nba_season.py` — supplies `active_stats_season`; rolls over on the FIRST REGULAR-SEASON GAME, not October 1)* |
 | `n_uncertain` | DB,OPEN | T17 |
 | `natural_floor` | DB,SUM | T8 |
 | `nba_0` | DB,SUM | T4 T5 |
