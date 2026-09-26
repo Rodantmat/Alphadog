@@ -760,3 +760,57 @@ same day.
 Discovery is closed: 34 factors, ~90 sub-factors, a minutes tree, thin factors, retirements, and a baseline/enrichment
 split that puts everything derivable or day-before-published into the baseline. No further passes are expected to find a
 new mechanism; the remaining risk is measurement, which is exactly what the certification harness exists for.
+
+---
+
+## ✅✅✅ **§T26.56 — `T10-F1` CLOSED: THE FIVE "MISSING" COMMISSIONED FACTORS ARE IN `nba_config.factor_registry`, LIVE AND ACTIVE — AND THE FIFTH IS NOT A FACTOR AT ALL** *(`SELECT` 2026-09-26; `0` of the twelve before this entry)*
+
+**`T10-F1` has stood since `2026-09-23`**: *"`3`→**`5`** commissioned enrichment factors (`A7`·`E2`·`E3`·`M2`·`M3`)
+appear **nowhere in the twelve**, and nothing records whether they were dropped."*
+⚠⚠ ***They were never dropped. The registry has them — it just keys them by DESCRIPTIVE NAME, not by
+code, so a search for `A7` or `M3` finds nothing while the row sits there.***
+
+### ✅ **THE MAPPING, RESOLVED FROM THIS FILE'S OWN `§1`/`§6` NUMBERING AND CHECKED AGAINST THE LIVE TABLE**
+
+| code | this file's name | `factor_registry.factor_key` | `active` | `derivable_now` | `compute_stage` |
+|---|---|---|---|---|---|
+| **`A7`** | trade window | **`trade_new_arrival_window`** | ✅ **`1`** | ✅ **`1`** | `phase1_baseline` |
+| **`E2`** | `team_flux_penalty` | **`team_flux_penalty`** | ✅ **`1`** | ✅ **`1`** | **`phase2_window`** |
+| **`M2`** | scheme proxy | **`defensive_scheme_proxy`** | ✅ **`1`** | ✅ **`1`** | `phase1_baseline` |
+| **`M3`** | hustle | **`hustle_deflection_profile`** | ✅ **`1`** | ⚠ **`0`** | `phase1_baseline` |
+| 🔑 **`E3`** | sample thinness | 🔴 **NO ROW — AND CORRECTLY SO** | — | — | — |
+
+### 🔑🔑 **`E3` IS THE INTERESTING ONE: IT IS NOT MISSING, IT IS SUBSUMED — AND THIS FILE SAYS SO**
+
+> *`§6`, verbatim:* **`E3 sample_thinness`** — *"rookies/new arrivals with no carryover* ***(baseline
+> already flags)***.*"
+
+⇒ ***`E3` was never a separate factor to build. The baseline carries it.*** 📌 *The same is stated in the
+coverage matrix — `"E1–E4 confidence | baseline carries sample thinness and freshness of its own inputs"`.*
+🔑 **So `T10-F1`'s count of FIVE was `4` live registry rows plus one item that is correctly absent.**
+
+### ⚠ **AND THE REGISTRY CARRIES *WHY* EACH IS OR IS NOT DAY-OF DERIVABLE — WHICH IS THE PART WORTH KEEPING**
+
+| factor | `data_source`, as the registry states it |
+|---|---|
+| **`M2`** | *"Synergy play-type DEFENSE (built), shot-location allowed (built); **switch/blitz rates are PAID (Second Spectrum)**"* ⇒ **derivable now only in its free form** |
+| ⚠ **`M3`** | *"leaguehustlestatsplayer / team hustle dashboards (free, per season)"* ⇒ 🔑 **`derivable_now = 0` because the source is PER SEASON, not per date** — *the same shape as `M2`'s backfill note in `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`* `§9`: **"Synergy play types have no date filter → use the previous season's table (parity-safe)"** |
+| **`E2`** | *"derived from `A2`/`A7`"* — 🔑 **the only one of the five at `phase2_window`**, i.e. it is a day-of confidence modifier, not a baseline input |
+| **`A7`** | *"transaction wire; backfill: team changes in game logs"* |
+
+✅ **`M3`/`M4` backfill status, from the same matrix**: ***"✓ `25` weekly as-of snapshots · ✓ `25` · ✓ `25`
+— complete."*** ⇒ **the two-season backfill the owner commissioned for these factors EXISTS.**
+
+### 🔑🔑🔑 **THE METHOD LESSON, AND IT IS THE SAME ONE `§T26.55` JUST TAUGHT**
+
+⚠ ***Two open items closed on `2026-09-26` for the same reason: the record existed in a CONFIG or RESULTS
+TABLE and the sweep had only searched the twelve and the repo.***
+📜 **`RULE 58`'s shape on an absence, now with a second instance and a spelling rule attached**:
+> 🔑 ***A "NOT RECORDED" verdict must name the places searched — and a DATABASE TABLE is a place.
+> Further: search by the corpus's OWN VOCABULARY AND the system's, because a factor the documents call
+> `A7` is keyed `trade_new_arrival_window` in the table that governs it, and neither name finds the
+> other.***
+
+📌 **`T10-F1` CLOSED.** *Its remaining substance — whether each factor is WIRED and MEASURED, as distinct
+from registered — is `F5-1`'s question, and `§T26.55` answers it for the defender family: **`M1`/`B4`
+contribute exactly `0.00000`.***
