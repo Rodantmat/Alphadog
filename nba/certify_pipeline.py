@@ -203,14 +203,16 @@ def main():
             else:
                 try:
                     _m = _json.loads(_p.read_text())
-                    _fa = _dt.fromisoformat(str(_m.get("fetched_at", "")).replace("Z", "+00:00"))
+                    # PrizePicks' producer spells these finished_at / row_count; the DFS scrapers fetched_at / legs.
+                    _fa = _dt.fromisoformat(str(_m.get("fetched_at") or _m.get("finished_at") or "").replace("Z", "+00:00"))
                     _age_h = (_now - _fa).total_seconds() / 3600
+                    _legs = _m.get("legs", _m.get("row_count", "n/a"))
                     _exp = _m.get("token_expires_at")
                     _exp_note = ""
                     if _exp:
                         _left = (_dt.fromisoformat(str(_exp).replace("Z", "+00:00")) - _now).days
                         _exp_note = f", token expires in {_left}d" if _left >= 0 else f", TOKEN EXPIRED {-_left}d ago"
-                    _msg = f"ok={_m.get('ok')} fetched {_age_h:.1f}h ago, legs={_m.get('legs', 'n/a')}{_exp_note}"
+                    _msg = f"ok={_m.get('ok')} fetched {_age_h:.1f}h ago, legs={_legs}{_exp_note}"
                     _verdict = bool(_m.get("ok")) and _age_h <= 6
                 except Exception as exc:  # noqa: BLE001
                     _msg, _verdict = f"unreadable meta ({str(exc)[:60]})", False
