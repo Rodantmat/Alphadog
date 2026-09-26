@@ -1498,6 +1498,31 @@ as distinct from a bug. *Used where the constraint is structural (the `player_sp
 
 ## L–N
 
+**`line_source`** 🆕 · T25 · LIVE · `nba_market.prop_universe.line_source` — ***the column that says
+whether a prop line was POSTED BY AN APP or RECONSTRUCTED BY US.*** ▶ **`real` `1,088,192` legs / `12`
+props · `simulated` `578,832` legs / `8` props / `353` dates ⇒ `34.72%` SIMULATED** *(`2026-09-26`)*.
+🔴🔴 **AND `build_final_hp` SCOPES THE SCORING STORE TO `real ∪ derived`**, so *"`final_hp` is exactly the
+board"* is true **and the board is about one-third lines we set ourselves**.
+🔑 **STATE THE DISTINCTION PRECISELY — IT IS NOT A DEFECT**: *the **outcome** on a simulated leg is real
+(graded against the actual box score); what is ours is **WHERE THE LINE SITS**.* ⇒ ***A hit-rate or
+realized-value figure over simulated props measures the model AND our own line placement; the same figure
+over the `12` real props does not — and any figure quoted across "the prop universe" mixes the two.***
+⚠ *The `8` simulated props are essentially `T16-2`'s no-tier list.* ▶ **first REAL lines for them arrive at
+preseason `2026-10-03`, and that validation does not recur** — `§T25.3`.
+
+**`now_out_flag_only`** 🆕 · T26 · LIVE · `nba_score.availability_delta.reason` — **the reason code that
+records a player was ruled out WITHOUT repricing his legs** *(`new_hp = old_hp`)*.
+🔴🔴🔴 **WHY IT EXISTS**: *the delta used to rewrite **every leg of a newly-`Out` player to `0.001`/`0.999`**,
+applied silently by `score_board_legs.py` as step `3`, **live on P3's decision path**.* 🔑 **The argument
+against it needs no measurement**: *when the player IS out his legs **VOID**, so the override earns
+NOTHING; the only way they reach grading is if the listing **REVERSED** — exactly when it is maximally
+wrong.* ⇒ ***ZERO UPSIDE, UNBOUNDED DOWNSIDE.*** 📊 *Measured: `reallocated` `0.6119`→`0.6076` **better**;
+`now_out` `0.8326`→**`5.7938`, `7×` worse**.* ⚠ **Keeping the row as a FLAG is deliberate — the fact that he
+was ruled out is real information; only the PRICE was wrong.**
+⚠⚠ **TRAP**: *`2026-04-10` holds `2,122` rows with this label whose `max_move` is **`0.7086`** — **pre-fix
+residue wearing the post-fix label** (`built_at` `00:07Z` vs the fixed run's `20:15Z`). ✅ Contained: the
+consumer rejects on the reason prefix AND on `move > 0.15`, either alone sufficing.* ▶ `§T26.37`.
+
 **leg-by-leg manual tracing** · T1 (blueprint §9) · Scrutiny technique 2: take real **high-confidence**
 outputs, pull raw source data **by hand**, compute the expected value independently, and explain any
 gap through a **documented mechanism** (shrinkage, calibration) rather than accepting *"looks close
