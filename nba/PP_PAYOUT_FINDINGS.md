@@ -184,6 +184,10 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 | §T26.43 residual | `nba-maintenance.yml`'s `season` input defaulted to `"2025-26"` — the last literal in any workflow. | Blank; resolves from the date. |
 | T20-6 residual | The certifier's P2 comment described the two-store world and named the dropped table. | Rewritten for the one store. |
 
+---
+
+## 0f. ✅ LEDGER CLOSURES, 2026-09-25 — each verified, none by reading alone
+
 | Item | Verdict | Evidence |
 |---|---|---|
 | **F6-1** loader key omits `ot_rule` | ✅ closed, **verified with data** | the 2026-04-10 artifact has 124,942 rows, the loader wrote 118,759: the 6,183 difference is **6,183 groups of identical duplicates** (rungs clamped onto the same 0.5–4.5 line; `p_more`, `p_less`, `anchor` equal in every group). Nothing is lost by the collapse. |
