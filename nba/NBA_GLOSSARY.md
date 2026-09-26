@@ -791,6 +791,8 @@ unknown.** *Up to five transcripts are shown per term.*
 
 | Term | Documents | Transcript(s) |
 |---|---|---|
+| `prune_baseline_to_board` 🆕 | **DB,WRK,RCP,GLO** | **T26** 🔑 *(enforces the retention rule; **a prop with NO board of any kind keeps its FULL ladder** — which is the owner's "ALL PROPS STAY" in code — `§T26.7`, `§T26.27`②)* |
+| `p_plays` 🆕 | **DB,FCAL,WRK,GLO** | **T26** *(the derived `P(plays)` fallback; read by `build_availability_delta` and the freshness check — `§T26.5`)* |
 | `p_blowout` | DB,OPEN,REC,SUM | T4 T11 T16 |
 | `p_dud` | OPEN,SUM | T7 |
 | `p_less` | ARC,BCAL,DB,GD,OPEN,SUM | T9 T16 |
