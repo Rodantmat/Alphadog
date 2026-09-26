@@ -13,6 +13,8 @@ edge — i.e. the enrichment layer and the scoring engine that sits on top of th
 >
 > ⚠ **ANCHORS ARE HEADING TEXT, NEVER LINE NUMBERS** 🔁 **To resolve a `§` pointer:** `` grep -rn "§T9.40b" nba/*.md `` *(all `32` files — the twelve are not closed under their own citations).* **Search for the quoted `§` label.**
 > 📚 *Sweep method, census history, detector versions and retractions: **`NBA_SWEEP_RUN_LOG.md`**.*
+> 🆕🆕 **`§T26.55` ADDED `2026-09-26`** — 🔴🔴🔴 **`F5-1`'s "MISSING" FACTOR-GATE RESULTS WERE NEVER MISSING — AND EVERY VARIANT FAILED, THE INTERACTIONS WORST** — *the verdicts are in `nba_score.factor_gate_results`, all written `2026-09-25 22:42:57Z`, `n = 7,128` legs: `anchor` log-loss `0.72604`; `anchor_x_defender` **identical to five decimals** (gain `0.00000`); `anchor_x_A2` and `anchor_x_A2_x_defender` both `0.97044` (gain **`−0.24441`**); `anchor_x_A5_pstart_minutes` `0.74408` (`−0.01804`). **Not one variant beat the anchor, and the two interactions that were supposed to be the answer are catastrophically worse.*** 🔑🔑 *AND THE ANCHOR ITSELF IS **BELOW CHANCE** on this slice — `0.72604` against `ln 2 = 0.69315`, Brier `0.26359` against `0.25` — so the comparison has no valid floor; `shrink_beta` is NULL on all five rows and the slice is undefined.* ⇒ `T26-4`.
+>
 > 🆕🆕 **SECTIONS ADDED `2026-09-25` — `10` NEW, AND TWO OF THEM RETRACT EARLIER ONES IN THIS FILE.** *Anchors are heading text; search the label.*
 > | § | what it is |
 > |---|---|
