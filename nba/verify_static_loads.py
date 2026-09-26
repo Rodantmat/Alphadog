@@ -39,6 +39,18 @@ TABLE_FOR = {
     # teams). The alias table is therefore the truthful freshness signal for these two.
     "nba-static-players": "nba_ref.player_aliases",
     "nba-static-teams": "nba_ref.team_aliases",
+    # DISPATCH CENSUS CLOSED (2026-09-26, T26-8): nine more workers now run on a schedule - five daily
+    # in P2 after the mined data is committed, four weekly in P1. Each is judged by its table's
+    # max(updated_at) exactly like the first ten.
+    "nba-daily-delta": "nba_stats.player_game_log",
+    "nba-static-starter-status": "nba_stats.player_game_starter_status",
+    "nba-static-game-officials": "nba_stats.game_officials",
+    "nba-static-schedule": "nba_calendar.games",
+    "nba-static-measure-types": "nba_team.team_game_log_four_factors",
+    "nba-static-player-tracking": "nba_stats.player_tracking_profile",
+    "nba-weekly-differential": "nba_stats.player_roster_snapshot",
+    "nba-static-officials": "nba_ref.officials",
+    "nba-static-arenas": "nba_ref.arenas",
 }
 DICTIONARY_WORKERS = set()  # every worker now has a freshness signal; kept for the reporting branch below
 
