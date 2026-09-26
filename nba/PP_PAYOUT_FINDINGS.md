@@ -238,6 +238,19 @@ concentrated where calibration is hardest: **five props certify** (personal_foul
 NEGATIVE lift over the base rate (−0.37%)**; stocks' worst band 15.5 pp. This is the raw baseline before
 the as-of calibration shift (as designed); it is the honest population for the slip engine's policy when
 that work resumes, and a pointer for the calibration work: the mid-band is where the model is tested.
+**Reconciled against the day-of record before trusting it (2026-09-26):** `board_scored.baseline_hp`
+equals the store's `p_more` on **1,391 of 1,391** exact legs of a backfill date (to four decimals), and the
+grader's verdict equals the box score on **592 of 592** — probabilities and outcomes are one record. A
+first cross-check that joined day-of legs to outcomes BY NAME through `board_outcomes` gave 5.7 pp; joined
+to the box score directly it gives 1.2–3.5 pp per app, so the name join was pairing rows wrongly — the
+direct join is the authoritative one, and the audit's store reading stands.
+🔑 **The PrizePicks-scoped number is the one the product lives on:** points, 2025-26, 101,049 PrizePicks
+legs — **raw baseline ECE 3.46 pp; after the as-of calibration shift (`final_hp`) 1.85 pp**, signed bias
+−1.4 pp (overs land more often than the baseline says). The calibration layer measurably works on the
+product's own population, and the reliability audit — book-agnostic by design, every book's alternates
+blended — understates PrizePicks' miscalibration (1.13 pp store-wide vs 3.46 on PrizePicks). When the
+slip policy resumes, the audit should be run PrizePicks-scoped. ⚠ `tier`/`kind` are NULL on the 2025-26
+replay records, so the goblin/demon split is not measurable from `board_scored` yet.
 
 **PROFILE TABLES — INGREDIENTS THAT WERE BEING OVERWRITTEN WEEKLY (closed 2026-09-26, ledger #9).**
 Six profile tables are single-snapshot, no season, no as-of: `player_impact_rating` (DARKO),
