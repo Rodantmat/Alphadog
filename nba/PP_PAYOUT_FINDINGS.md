@@ -223,9 +223,21 @@ score, the grader can grade.**
 table read is `period = 'FULL'`; `final_hp` has no period column). Period legs therefore score with
 their period ladder and a **zero calibration shift** until `final_hp` carries a period dimension.
 Correct and visible, not silent; a schema step for when period legs have graded volume.
-⚠ Reliability audit re-run: dispatched twice (the first left no trace under the doc chat's commit
-flood); the second was live and grading at the period-filtered read when this session ended — its row
-lands in `classification_config['prop_reliability_audit_latest']`.
+⚠ Reliability audit re-run: ~~dispatched twice...~~ **DONE 2026-09-26, and the failure explained without a
+log:** the original script closed its connection right after the grading loop (it only printed
+afterwards); my write ran on a closed connection — two hours of grading, then a crash on the last line.
+Fixed; the script now also records a heartbeat (`prop_reliability_audit_progress`) so its position is
+visible from the database. Written: `classification_config['prop_reliability_audit_latest']`, 21 props,
+**penalties derived by the script** (fantasy_score: ECE 3.8916 − certified median 0.8307 = **3.061 pp**;
+the arithmetic is on the row). **F6-3 closed by construction.**
+🔑 **And the numbers moved for a reason worth stating.** The 2026-09-13 audit ran on the FULL ladder,
+where the tails — rungs far from the anchor, "predict 0.98, hit 0.98" — dominate the n-weighted ECE and
+flatter every prop. Measured on the BOARD-SCOPED store, i.e. the rungs the boards actually offer,
+concentrated where calibration is hardest: **five props certify** (personal_fouls 0.18, threes_made
+0.57, rebounds 0.83, points 1.25, reb_ast 1.64 pp); **fantasy_score 3.89 pp, turnovers 4.40 pp with
+NEGATIVE lift over the base rate (−0.37%)**; stocks' worst band 15.5 pp. This is the raw baseline before
+the as-of calibration shift (as designed); it is the honest population for the slip engine's policy when
+that work resumes, and a pointer for the calibration work: the mid-band is where the model is tested.
 
 **PROFILE TABLES — INGREDIENTS THAT WERE BEING OVERWRITTEN WEEKLY (closed 2026-09-26, ledger #9).**
 Six profile tables are single-snapshot, no season, no as-of: `player_impact_rating` (DARKO),
