@@ -230,6 +230,9 @@ unknown.** *Up to five transcripts are shown per term.*
 
 | Term | Documents | Transcript(s) |
 |---|---|---|
+| `board_rung_keys` 🆕 | **DSN,DB,WRK,RCP,OPEN,GLO** | **T26** 🔴 ***P3 produces it; `build_final_hp` (P2 `6b`), the history loader and the prune all `SystemExit` without it — `§T26.45`, item `T26-3`*** |
+| `refresh_board_rung_keys` 🆕 | **DSN,WRK,RCP,GLO** | **T26** *(the one producer — and the RECOVERY call; `6`-hour window — `§T26.45`)* |
+| `board_tiers_v2` 🆕 | **WRK,MUL,OPEN,GLO** | **T26** 🔴 *(P3's step ran an index job and built NO tiers until `2026-09-23` = `T20-7`; `BT2_APPS` PrizePicks-only ⇒ `T26-1` — `§T26.35`①)* |
 | `backtest.baseline_v6_asof` | BCAL,FCAL,OPEN | — |
 | `ball_handling` | DB,OPEN | T1 |
 | `balldontlie_api_key` | DB,OPEN,SUM | T1 |
