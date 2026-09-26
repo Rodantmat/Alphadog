@@ -3190,3 +3190,66 @@ have asked "is anything still WRITING it, and is anything still READING it?"***
 
 🔴 **NOT REMEDIATED** *(dropping a table or editing a dispatch list is a write outside the twelve)*.
 📌 **DECIDE**: *re-dispatch it, or drop it and remove the worker.* **Recorded for the owner / build chat.**
+
+---
+
+## 🔴🔴🔴🔴 **§T26.57 — RANKED ITEM `C` DIAGNOSED: THE SCHEDULE SCRAPER RUNS DAILY AND ITS LOADER IS DISPATCHED BY NOTHING** *(source + `SELECT` 2026-09-26; the diagnosis is `0` of the twelve)*
+
+**Ranked item `C` has stood since `§T20.56` as a bare measurement**: *"THE SCHEDULE HAS NOT BEEN REFRESHED
+SINCE THE DAY IT WAS BUILT" — `nba_calendar.games`, **oldest and newest write both `2026-09-02T20:24`***.
+⚠⚠ ***No entry has ever said WHY. Here is the chain, traced end to end.***
+
+### ✅ **STEP 1 — THE SCRAPER RUNS, DAILY, AND IT IS CORRECTLY CONFIGURED**
+
+*`scrape_nba_schedule.py` is invoked by **three** workflows — `nba-daily-delta.yml` (no cron),
+**`nba-p2-overnight-heavy.yml`** (`45 15 * * *`, **daily**) and **`nba-scrape.yml`** (`0 9 * * 1`,
+**weekly**).*
+▶ **P2's step is gated ONLY on `if: github.event.inputs.skip_mining != 'true'` — NOT on the empty slate**,
+*so it runs in season and out.* ⚠ **Its env block passes `PROXY_URL` and no `DATABASE_URL` — and that is
+CORRECT, not a defect**: ***the scraper writes JSON FILES, not Postgres*** —
+`OUTPUT_PATH.write_text(json.dumps({"games": all_games}))`.
+✅ **And it is working**: *`nba/data/nba_schedule_current_meta.json` was last committed **`2026-09-25`***
+*(the data file `2026-09-14`, because meta carries a per-run timestamp and the data only changes when
+games do).*
+
+### 🔴🔴🔴 **STEP 2 — THE LOADER THAT PUTS THAT JSON INTO POSTGRES IS DISPATCHED BY NOTHING**
+
+*`nba/alphadog-v2-nba-static-schedule.js` is the worker that writes the table —*
+`` INSERT INTO nba_calendar.games (…) ON CONFLICT (game_id) DO UPDATE SET … ``
+▶ `` grep -rc "static-schedule" .github/workflows/*.yml `` ⇒ **ZERO.**
+▶ *P1 dispatches `10` static workers* — `players · teams · player-bio · team-stats · onoff · playtypes ·
+tracking-detail · darko · shotquality · lineups` — **and the schedule worker is not among them.**
+
+⇒ 🔑🔑🔑 ***THE SCRAPER REFRESHES THE JSON EVERY DAY AND NOTHING LOADS IT. `nba_calendar.games.updated_at`
+is frozen at `2026-09-02` because that is the last time the LOADER ran — not because the schedule was
+never re-scraped.*** ⚠ ***Item `C`'s wording — "has not been REFRESHED" — describes the table correctly and
+the CAUSE backwards: the refresh happens daily and never arrives.***
+
+### 🔑🔑 **THIS IS THE THIRD INSTANCE OF `§T26.52`'s ORPHAN CLASS, AND THE FIRST THAT MATTERS**
+
+| orphaned worker | table | consumers | severity |
+|---|---|---|---|
+| `alphadog-v2-nba-static-player-tracking.js` | `player_tracking_profile` | **`0`** | ✅ *harmless — a superseded v1 (`§T26.52`)* |
+| 🔴 **`alphadog-v2-nba-static-schedule.js`** | **`nba_calendar.games`** | 🔴 **`5` scripts read it** | 🔴 **MATTERS** |
+
+**The five readers**: `certify_pipeline.py` · `check_factor_freshness.py` · `prune_baseline_to_board.py` ·
+`archive_live_boards.py` · `scrape_nba_daily_delta.py`.
+⚠⚠ **AND THE SEASON GATE ITSELF IS ONE OF THEM** — *`check_factor_freshness.py`'s gate is
+`SELECT count(*) FROM nba_calendar.games …`, and `§T26.14`'s season-aware certifier decides
+"no games scheduled" from this table.* ⇒ ***The table that decides whether the system thinks games exist
+is loaded by a worker nothing calls.***
+
+### ⚠ **WHAT IS AND IS NOT AT RISK FOR OPENING NIGHT — STATED PRECISELY**
+
+✅ **THE OPENER IS COVERED**: *the `2026-09-02` load put **`1,266` games for 2026-27** in the table
+(`2026-10-03` → `2027-04-11`), so the slate exists and the season gate will fire.*
+🔴 **WHAT IS NOT COVERED IS EVERY SCHEDULE CHANGE SINCE `2026-09-02`** — *postponements, tip-time moves,
+added or relocated games.* 🔑 **The NBA does change schedules, and the system cannot see a change it never
+loads.** ⚠ *The JSON on disk may already disagree with Postgres: the data file moved on `2026-09-14`,
+twelve days after the last load.* 🔴 **NOT MEASURED** *(`RULE 6` — comparing `1,266` JSON games to the
+table row-by-row is derivable but was not run this pass).* 📌 **THAT DIFF IS THE CHEAPEST NEXT STEP and it
+answers the whole item.**
+
+🔴 **NOT REMEDIATED** — *adding the worker to P1's dispatch list is a write to a live workflow.*
+⇒ **Tracked as item `T26-5`.** 🔑 **And it is cheap: one entry in P1's dispatch line, beside the ten
+already there.**
