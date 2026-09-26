@@ -5817,6 +5817,85 @@ information more coarsely.** ✅ **`§T26.5` stands, and it stands on an argumen
 
 ---
 
+## 🔴🔴🔴🔴 **§T26.74 — `build_final_hp.py` WAS CHANGED AT `09:12` TODAY TO ADMIT EVERY PERIOD, AND `nba_score.final_hp` STILL HAS NO `period` COLUMN. `3,801` LIVE SCORED BOARD KEYS ALREADY HAVE PERIOD SIBLINGS AT THE IDENTICAL LINE, AND THE UPSERT KEY CANNOT TELL THEM APART** *(source + `SELECT`, 2026-09-26; `0` of the twelve — the change is nine hours old)*
+
+> 📌 **`RULE 63`, numbered this morning, fired a THIRD time at pass `28`'s gate: `nba/build_final_hp.py` moved at `09:12` PT — `00c71c6b`, *"NBA final_hp: board keys carry every period"*.** ⚠⚠ ***It falsifies a claim `§T26.68` and `§T26.72` each published within the hour, and what it replaces that claim with is worse than the claim was.***
+
+### 🔴 **WHAT CHANGED — THE `FULL`-ONLY GATE WAS REMOVED FROM THE READER**
+
+> | | before `00c71c6b` | **after, live now** |
+> |---|---|---|
+> | `_fe_board_keys` | `SELECT game_date, player_id, prop, line … WHERE period = 'FULL'` | 🔴 `SELECT game_date, player_id, prop, coalesce(period,'FULL') AS period, line … ` **`WHERE true`** |
+> | its index | `(game_date, player_id, prop, line)` | `(game_date, player_id, prop, period, line)` |
+>
+> ⚠⚠ **SO `§T26.68`'s AND `§T26.72`'s "consumer-side confirmation" IS RETRACTED** *(`RULE 40` — struck, not deleted)*: ~~*"`build_final_hp.py` ASKS for `period = 'FULL'`, so the `FULL`-only key table costs nothing today"*~~ and ~~*"the refits learn only from `final_hp`, which asks for `FULL` only, so the `4.3M` period rows reach the calibration path by NO route"*~~. **Both were true when written and both were already false: the file had changed at `09:12` and I cited it at `16:0x` and `16:1x`.** 🔑 *This is exactly why `RULE 63` exists, and it caught its own author twice in one pass.*
+
+### 🔴🔴🔴 **AND THE DESTINATION NEVER GAINED THE COLUMN. `§T26.17`'s DEFECT IS NOT FIXED — IT IS NOW ARMED.**
+
+> ✅ **The code believes it is fixed.** *`build_final_hp.py:339-341` carries a comment dated today:* **"PERIOD ENTRIES (2026-09-26). The store keeps period rungs as `prop='points'`, `period='Q1'` … **final_hp now carries the same label**, so a period leg gets calibration cells"**, *and line `357` joins on `k.period = %s`.*
+>
+> 🔴🔴 **THE TABLE DOES NOT.** *`information_schema.columns` on `nba_score.final_hp` returns **`24` columns and not one of them is `period`***: `season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor, baseline_hp, final_hp, cal_shift, score, confidence, conf_tier, c_exist, c_quality, c_market, prop_tier, band, phase, n_uncertain, built_at, edge`.
+>
+> 🔴🔴🔴 **AND THE WRITE PATH CONFIRMS IT, INCLUDING THE CONFLICT KEY** *(`build_final_hp.py:526-535`)*:
+> ```sql
+> INSERT INTO nba_score.final_hp
+>   (season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor,
+>    baseline_hp, final_hp, cal_shift, score, edge, confidence, conf_tier,
+>    c_exist, c_quality, c_market, prop_tier, band, phase, n_uncertain)     -- 23 columns, NO period
+> ON CONFLICT (game_date, player_id, prop, line, side) DO UPDATE SET …      -- NO period
+> ```
+> ⇒ ***THE READER NOW ADMITS FIVE PERIODS AND THE WRITER HAS ONE SLOT FOR THEM.*** 📜 **`RULE 61` INVERTED, AND THIS IS THE FIRST INSTANCE OF THE INVERSE IN THIS SWEEP: `RULE 61` says stored rows the current code cannot produce are STALE, not a code defect. Here **the CODE now assumes a schema the STORE does not have** — the opposite direction, and it fails the other way: silently, on write, by overwrite.**
+
+### 🔴🔴🔴🔴 **THE COLLISION IS NOT THEORETICAL. IT IS ALREADY IN THE DATA, MEASURED, AND WAITING ON ONE TRIGGER.**
+
+> *Same `(game_date, player_id, prop, line)`, more than one period, in `nba_score.baseline_history` right now:*
+>
+> | | count |
+> |---|---|
+> | colliding key groups | **`7,796`** |
+> | rows involved | **`31,332`** |
+> | of those, groups that CONTAIN a `FULL` rung | **`3,801`** |
+> | 🔴🔴 **…and are on a REAL `board_rung_keys` key today — i.e. SCORED** | 🔴🔴 **`3,801` — every single one** |
+> | rows in those live groups | 🔴 **`17,049`** |
+> | most periods on one key | **`5`** *(`FULL/H1/H2/Q1/Q4`)* |
+>
+> *The shape, by period set — note that **every set containing `FULL` is `100%` on a live board key**: `FULL/H1/H2/Q1/Q4` `2,822`/`2,822` · `FULL/H1/H2` `504`/`504` · `FULL/H1` `141`/`141` · `FULL/H1/H2/Q1` `134`/`134` · `FULL/H1/H2/Q4` `101`/`101` · `FULL/H2` `92`/`92`. Sets WITHOUT `FULL` are mostly NOT on a board key (`H1/H2/Q1/Q4`: `2,724` groups, `37` on a key) — **which is itself the signature of a `FULL`-only key table**.*
+>
+> ⚠⚠⚠ **SO THE ONLY THING PREVENTING THIS TODAY IS THE ONE FACT `§T26.59` MEASURED: `nba_market.board_rung_keys` IS `4,522,924` ROWS AND `100%` `FULL`.** *The reader's `FULL` filter was the guard; it was removed at `09:12`. **The guard is now the emptiness of the input.***
+
+### 🔴🔴🔴 **AND THE TRIGGER FIRES THREE FAILURES AT ONCE — WHICH IS WHY THIS OUTRANKS EVERYTHING ELSE ON THE BRIEF**
+
+> *`refresh_board_rung_keys` carries **`16` period mappings** (`points`/`rebounds`/`assists`/`threes_made` × `Q1`/`H1`/`H2`/`Q4` — `§T26.59`), so the day **one app posts a `player_points_q1` line**, the key table gains period rows and:*
+>
+> ① 🔴 **`final_hp` starts receiving period rungs it cannot label** ⇒ ***period probabilities wearing full-game keys — `§T26.17`/`§T26.18`'s defect, resurrected*** *(and `build_final_hp.py:359-363` describes having FIXED exactly this once: "a period line … landed as if it were a full-game 5.5, and where a period line coincided with a full-game line **the upsert let the last one win**")*;
+> ② 🔴 **the upsert collides on `3,801` live keys / `17,049` rows** ⇒ ***silent overwrite, last-write-wins, no error***;
+> ③ 🔴 **`_prune_scope` acquires period triples** ⇒ ***`T26-6`'s inversion: `4,296,237` baseline period rows stop being "never-derived" and become deletable***.
+>
+> ⇒ 🔑🔑 ***ONE TRIGGER, THREE INDEPENDENT SILENT FAILURES, AND THE TRIGGER IS "A DFS APP POSTS A `Q1` PROP" — WHICH IS ROUTINE IN-SEASON AND `24` DAYS AWAY.*** ⚠ *The owner's recorded operating condition applies at full force here (`§T26.70`): **"they run um, not monitored"**. ⇒ **`T26-11`.**
+>
+> ✅ *And the remedy is not ambiguous: **add `period` to `nba_score.final_hp` and to the conflict key** — `ON CONFLICT (game_date, player_id, prop, period, line, side)` — before the key table can carry a period row. The reader is already period-aware; only the destination is not.* ⚠ *Doing it in the other order — letting a period board arrive first — corrupts `17,049` rows that no gate will flag.*
+
+> ⚠ **ONE SMALLER DISCREPANCY, RECORDED IN PASSING**: *`build_final_hp.py:362` states "~`31%` of `baseline_history` rows are period rungs". `§T26.59` measured **`49.3%`** (`4,296,237` of `8,708,333`) on `2026-09-26`. The comment's figure is consistent with the pre-prune store (`19,343,348` rows) and is now stale — **in code, not in the twelve**, so it is noted rather than corrected here.*
+
+> 🔁 **RE-DERIVE** *(`RULE 59`)*:
+> ```bash
+> git log -1 --pretty='%h %ad %s' --date=format:'%H:%M' -- nba/build_final_hp.py      # 00c71c6b 09:12
+> git show 00c71c6b -- nba/build_final_hp.py
+> sed -n '136,144p;526,535p' nba/build_final_hp.py
+> ```
+> ```sql
+> SELECT column_name FROM information_schema.columns
+>   WHERE table_schema='nba_score' AND table_name='final_hp';          -- 24 cols, no `period`
+> WITH c AS (SELECT game_date, player_id, prop, line,
+>                   count(DISTINCT coalesce(period,'FULL')) AS n, bool_or(coalesce(period,'FULL')='FULL') AS hf,
+>                   count(*) AS r
+>            FROM nba_score.baseline_history GROUP BY 1,2,3,4 HAVING count(DISTINCT coalesce(period,'FULL'))>1)
+> SELECT count(*), sum(r), count(*) FILTER (WHERE hf),
+>        count(*) FILTER (WHERE hf AND EXISTS (SELECT 1 FROM nba_market.board_rung_keys b
+>          WHERE b.game_date=c.game_date AND b.player_id=c.player_id AND b.prop=c.prop AND b.line=c.line))
+> FROM c;                                                              -- 7,796 | 31,332 | 3,801 | 3,801
+> ```
+
 ## ✅✅✅ **§T26.66 — `T26-4` ANSWERED, AND THE ANSWER RETRACTS THE ALARM: THE BELOW-CHANCE ANCHOR IS CONFINED TO ONE EXPERIMENT FAMILY OF `21` ROWS, WHILE THE PRODUCTION EVALUATION SCORES `0.56431` ON `1,248,826` LEGS — AND `§T26.55`'s "THE SLICE IS UNDEFINED" WAS MY OWN ERROR** *(`SELECT` over all `109` rows + source, 2026-09-26; the census is `0` of the twelve)*
 
 > 📌 **`T26-4` asked whether the scoring system is worse than a coin flip. `§T26.55` reported `anchor` log-loss `0.72604` against `ln 2 = 0.69315` and Brier `0.26359` against `0.25`, said *"the slice is undefined"*, and stopped there.** ⚠⚠ ***It stopped one query too early. `§T26.55` read the `5` newest rows of a `109`-row table; the table answers the question by itself.***
