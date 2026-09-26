@@ -209,7 +209,23 @@ starting. Rows written to `nba_score.factor_gate_results` (`anchor_x_A5_pstart_m
 `nba_score.a5_feature` (26,543 player-games, P(start) 0.4695 vs actual 0.4631) kept for the record.
 Nothing is wired; nothing should be.
 
-**THE THREE DECISION ITEMS, WITH DATA (2026-09-25):**
+**GRADER COMPLETED (2026-09-25/26).** `grade_board_outcomes.py` graded 12 markets; everything else —
+fantasy, the derived props, every period market — was `no_stat`: scored by P3, never graded, never in
+the calibration or the paper log. Now: the full stat set; fantasy from the official `NBA_FANTASY_PTS`
+field (the NBA's 2017 standard PrizePicks uses — PTS 1, REB 1.2, AST 1.5, STL 3, BLK 3, TOV −1; formula
+as fallback only); period box scores from the quarter logs P2 mines daily (H1 = Q1+Q2, H2 = Q3+Q4), a
+missing period row grading as `no_stat` visibly; and every file read LOCAL-FIRST — the grader fetched
+the season log from the raw CDN by season file, the same defect as the delta (stale cache; 404 on Oct
+21 minutes after the delta created the new season's file). Tested offline on the real logs: Jaren
+Jackson Jr 2026-01-15 = 30 PTS, H1 23 + H2 7, Q1 8, fantasy 43.1, FTM 3. **Every market the scorer can
+score, the grader can grade.**
+⚠ **The one period boundary left:** `final_hp` and the as-of calibration remain full-game (the key
+table read is `period = 'FULL'`; `final_hp` has no period column). Period legs therefore score with
+their period ladder and a **zero calibration shift** until `final_hp` carries a period dimension.
+Correct and visible, not silent; a schema step for when period legs have graded volume.
+⚠ Reliability audit re-run: dispatched twice (the first left no trace under the doc chat's commit
+flood); the second was live and grading at the period-filtered read when this session ended — its row
+lands in `classification_config['prop_reliability_audit_latest']`.
 - **T18-17 — the score's penalising half.** Re-measured on the rebuilt, board-scoped `final_hp`: both
   seasons, **minimum confidence 0.8600, zero legs ≤ 0.85**, p25 ≈ 0.94, median ≈ 0.95. The `drop` term
   is dead by construction. The owner's directive on file — *"the score must ENHANCE the hit
