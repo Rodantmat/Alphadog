@@ -26,7 +26,7 @@ writes. Grouped by role.
 > ## ▶ FIND IT FAST
 > | if you need… | go to |
 > |---|---|
-> | 🔴🔴 **the FILE CENSUS — `7` of `21` workers and `27` scripts named in `0` of the twelve** | **`§F5.5`** ⚠ *`§T26.45` adds `3` MORE, built `2026-09-23`–`25` and load-bearing TODAY: **`load_injury_report.py`** (the freshness check rates its table `BINDING`) · **`verify_static_loads.py`** (the direct answer to `§T26.28`'s class) · **`refresh_board_rung_keys()`** (the P3→P2 dependency)* |
+> | ✅✅✅ ~~🔴🔴 **the FILE CENSUS — `7` of `21` workers and `27` scripts named in `0` of the twelve**~~ **CLOSED `2026-09-26`, `§T26.54`** | **`§F5.5`** ▶ **RE-DERIVED ACROSS EVERY ARTEFACT TYPE: `36`/`36` NBA workflows · `21`/`21` JS workers · `124`/`127` Python scripts named in ≥`1` of the twelve** — *and **the only `3` absent are `probe_pp_*.py`, OUT OF SCOPE by standing constraint***. 🔑 *`§T26.45` found the last three (`load_injury_report` · `verify_static_loads` · `refresh_board_rung_keys`) and `§T26.50` put them in the glossary, which is what closed it.* ⚠ **`6` of the `36` workflows carry a cron** — *`P1` `0 19 * * 1` · `P2` `45 15 * * *` · `P3` `15 21 * * *` · `nba-referees` `30 15 * * *` · `nba-scrape` `0 9 * * 1` · `nba-pp-payout-map` `15 */6 * * *` (the build chat's)*; **the other `30` are dispatch-only by design.** |
 > | 🔴🔴 **the scripts behind every T15 factor verdict** *(`fit_*`, `measure_*`, `retest_*`)* | **`§F5.5` §2** — *mapping also in `NBA_FINAL_SCORING_CALIBRATION.md` §3* |
 > | 🔴 **the FOUR workflow files that were named nowhere in the twelve** *(`nba-backtest`, `nba-grader`, `nba-measure-types`, `nba-score-history`)* | **`§F2.16`** |
 > | 🔴🔴🔴 **the grader workflow — and `T20-5`'s stale `2026-04-12` window, a SECOND and THIRD time** | **`§F2.16` §1** |
