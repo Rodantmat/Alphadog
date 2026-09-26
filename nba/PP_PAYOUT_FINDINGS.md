@@ -209,6 +209,33 @@ starting. Rows written to `nba_score.factor_gate_results` (`anchor_x_A5_pstart_m
 `nba_score.a5_feature` (26,543 player-games, P(start) 0.4695 vs actual 0.4631) kept for the record.
 Nothing is wired; nothing should be.
 
+**THE THREE DECISION ITEMS, WITH DATA (2026-09-25):**
+- **T18-17 — the score's penalising half.** Re-measured on the rebuilt, board-scoped `final_hp`: both
+  seasons, **minimum confidence 0.8600, zero legs ≤ 0.85**, p25 ≈ 0.94, median ≈ 0.95. The `drop` term
+  is dead by construction. The owner's directive on file — *"the score must ENHANCE the hit
+  probability — no kill good legs"* — is option (b): keep `CONF_NEUTRAL = 0.85`, one-sided enhancer.
+  **Recommendation: (b).** The formula is not changed here; the record is that the code carries a
+  two-sided rule the data never exercises, and that this is the designed outcome.
+- **F6-3 — the fantasy_score penalty (0.3 vs derived 0.21).** Root cause found: `score_prop_reliability.py`
+  only PRINTS; the 2026-09-13 numbers were copied into `nba_config` by hand. A derived penalty that is
+  transcribed is declared. Also found: the audit read `baseline_history` with NO period filter, so Q1/H1
+  rungs of points/rebounds/assists/threes were graded against full-game box scores inside those props'
+  ECE (the same defect class the scorer and `final_hp` had). Both fixed: full-game rungs only, and the
+  script now WRITES its table to `classification_config['prop_reliability_audit_latest']` (maintenance
+  task `reliability`). Consumer check: **neither the confidence model nor the scorer reads a penalty** —
+  the audit's penalties are a SLIP-ENGINE policy (its `engine_rules` are slip rules), on hold. So F6-3
+  changed nothing in production; the machine record is now the source when slips resume.
+- **T20-12 — fixed `-05:00` / `-08:00`.** Verified the ledger's arithmetic: the archive labels ET wall
+  time with a fixed `-05:00`; the delta's cutoffs were a fixed `-08:00`; in daylight time both UTC
+  instants are an hour late BY THE SAME HOUR, so every before/after decision was correct year-round.
+  Fixing one side alone breaks the window (the 3:30 PM ET report falls after a true 1:15 PM PT cutoff);
+  fixing both means re-stamping every historical row of an ingredient table for a defect with no
+  behavioural effect. **Closed by pinning the pairing**: the delta's cutoffs are now written in the
+  archive's convention from one constant (16:15 ET wall = 13:15 PT; 04:00 = 01:00 PT), proven identical
+  in UTC to the old values; both files document the pair and the rule "do both or neither". ⚠ Standing
+  trap recorded: `snapshot_ts` must never be compared with a real clock (board `fetched_at` is true UTC)
+  without converting; nothing does today.
+
 ---
 
 ## 0c. 📐 RETENTION — THE OWNER'S RULE, AND HOW IT IS ENFORCED (2026-09-24)
