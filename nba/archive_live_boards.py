@@ -317,6 +317,22 @@ def main():
             print(f"  {app}: {moved} legs dated by tip time instead of capture date -> {', '.join(dates[:6])}",
                   flush=True)
         rows = fixed
+        # NOT-NBA GUARD (2026-09-26, T26-7). On 2026-09-12/13 the Underdog and Fliff scrapers let MLB
+        # markets through their sport filter and 7,921 baseball rows landed in the NBA archive (moved to
+        # nba_market.board_snapshots_quarantine - nothing deleted). The archive is an ingredient; a row
+        # in another sport's vocabulary is not an NBA board and is refused here, loudly, before the insert.
+        _other_sport = re.compile(r"(hits|runs|rbis|total_bases|batter|pitch|strikeout|earned_run|outs_recorded|home_run|stolen_base|"
+                                  r"walks|singles|doubles|triples|passing|rushing|receiving|touchdown|reception|completion|"
+                                  r"interception|tackle|sack|goals|saves|shots_on_goal|kills|birdie|eagle)", re.I)
+        _rej = [r for r in rows if _other_sport.search(str(r[5] or ""))]
+        if _rej:
+            _keys = sorted({str(r[5]) for r in _rej})
+            print(f"  {app}: REJECTED {len(_rej)} rows in another sport's vocabulary ({', '.join(_keys[:6])}"
+                  f"{'...' if len(_keys) > 6 else ''}) - not NBA, not written", flush=True)
+            rows = [r for r in rows if not _other_sport.search(str(r[5] or ""))]
+            if not rows:
+                print(f"{app}: nothing NBA left to write", flush=True)
+                continue
         with conn.cursor() as cur:
             cur.executemany("""INSERT INTO nba_market.board_snapshots
                 (game_date, event_id, snapshot_label, snapshot_ts, bookmaker, market_key, player, side,
