@@ -53,6 +53,9 @@ a certifier before CAUGHT.** *A silent failure costs a season before anyone look
 an evening.*
 
 > 🆕🆕🆕 **RE-RANKED `2026-09-26` — FOUR ITEMS THAT OUTRANK EVERY ROW BELOW *BY THE BRIEF'S OWN RULE*, ADDED ABOVE ROW `1` WITHOUT RENUMBERING IT** *(`RULE 1`: renumbering breaks pointers, so these carry NEW labels `A1`–`A4` that cannot collide with `1`–`7`).*
+> 📜📜 **AND AS OF `§T26.70` THE TOP OF THIS TABLE RESTS ON THE OWNER'S OWN WORDS, NOT THE SWEEP'S JUDGEMENT.** *The ranking rule's first clause — `SILENT before LOUD` — is justified by "a silent failure costs a season before anyone looks". **The owner stated the operating condition that makes it true**: ▶ *"**they run um, not monitored**, so get them to work"* (`T26`, `2026-09-24`; `0` hits for those words across all twelve before `§T26.70`). ⇒ ***`A1` and `A2` are `SILENT` + `UNCAUGHT` in a system the owner has told us nobody watches. That is why they sit above everything else here.***
+> 📜 **A SECOND OWNER RULING BOUNDS EVERY FIX BELOW**: *"if it's possible to **optimize it without losing anything, we do. but if there is any loss, it's not worth the trade**"* ⇒ **no remedy in this table may trade accuracy for speed**, and a delta/scoped/sampled implementation is acceptable only if it *"represent[s] **exactly the same** if it was running one by one"*.
+>
 > ⚠⚠ **WHY THIS BLOCK EXISTS: rows `1`–`4` below are all CLOSED and rows `5`–`7` all fail `n/a` or `DEGRADES`. Meanwhile passes `20`–`23` produced four items that are `SILENT` *and* `UNCAUGHT` *and* stop or corrupt the slate — the exact top of the stated ordering.** *The brief's rank order had stopped satisfying the brief's own rule, which is a defect in the brief, not in the items.*
 
 | # | item | fails | effect | certifier catches it? | fix size |
