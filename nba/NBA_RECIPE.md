@@ -421,10 +421,26 @@ that is the useful part.
 > **Find what is stale, and what writes it:**
 > `NBA_DATABASE.md` → **`THE TRIGGER MAP`** *(first section)* — what writes to this database, and when.
 > **Then re-run that workflow** for the window you need *(one date at a time — see `3` above)*.
-> 🔴 **Live example, `2026-09-23`**: *`nba_ref.defender_ratings` is `166` days stale
-> (`max(as_of_date) = 2026-04-09`), so **`P1`'s first check is RED right now***.
-> ⚠ **`final_hp` is the exception: NOTHING rebuilds it** *(`NBA_SYSTEM_DESIGN.md` § `4b`)* — *refreshing
-> it is not a re-run, it is an open design question.*
+> 🔴 **Live example**: *`nba_ref.defender_ratings` is stale since **`max(as_of_date) = 2026-04-09`*** —
+> ▶ **`170` days as of `2026-09-26`**, ⚠ **and this figure GROWS BY ONE EVERY DAY, so re-derive it and
+> never quote it** *(it was published as `166`, then `169`, now `170` — `RULE 59`, `§T26.25`)*:
+> `` SELECT CURRENT_DATE - max(as_of_date) FROM nba_ref.defender_ratings; ``
+> ⚠⚠ **BUT THE STALENESS WAS NEVER THE WHOLE STORY** *(`§T26.28`)*: **`build_defender_ratings.py` imports
+> `scipy` and P1 never installed it, so the step died with `ModuleNotFoundError` EVERY MONDAY** —
+> *"and because it dies mid-pipeline, the three steps after it (static context, **COMMIT**, certify) were
+> skipped, **so the whole week's scraping was thrown away uncommitted**… **while the cron ran fine every
+> week**."* ✅ **Fixed two ways**: *`pip install … scipy`, **and** P1's commit/load/certify now run
+> `if: always()` — "a late failure must not discard the load."* 🔴 ***Unproven on the scheduled path: the
+> write that demonstrates it (`2026-09-24`) was a THURSDAY; the cron is MONDAYS.*** ▶ **Check
+> `2026-09-28`**: `` SELECT max(updated_at) FROM nba_ref.players; `` *must advance.*
+>
+> ✅✅✅ ~~⚠ **`final_hp` is the exception: NOTHING rebuilds it** *(`NBA_SYSTEM_DESIGN.md` § `4b`)* —
+> *refreshing it is not a re-run, it is an open design question.*~~ **FALSE SINCE `2026-09-23` —
+> CORRECTED `2026-09-26`.** 🔑 **`P2` OWNS `final_hp`, at step `6b`, after both refits, scoped to the
+> slate** — *which is what closed `§4b`, and the workflow cites `§4b` by name when it does it.*
+> ▶ **TO REFRESH A WHOLE SEASON**: `nba-maintenance.yml`, task `final_hp` *(with `season`)* — ⚠ ***do NOT
+> run it while P2 is running: P2 owns the slate.*** ⚠ **And a full rebuild now requires
+> `nba_market.board_rung_keys` for that scope or it `SystemExit`s** *(`§T26.45`; see task `3`)*.
 
 ---
 
