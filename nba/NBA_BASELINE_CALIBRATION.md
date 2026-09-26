@@ -11,6 +11,8 @@ and the evidence behind each.
 > certification ladder, and what each calibration decision was measured against.
 > 📏 **`155` sections · re-derived `2026-09-25`** *(was `136` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_BASELINE_CALIBRATION.md ``
 >
+> ➡️➡️ **`2026-09-26` — A FINDING THAT LIVES IN `NBA_DATABASE.md` BUT IS THIS FILE'S BUSINESS: `§T26.59`.** ⚠⚠ **`49.3%` OF `nba_score.baseline_history` IS PERIOD ROWS (`4,296,237` of `8,708,333`: `Q1` `1,853,095` · `Q4` `1,088,922` · `H1` `678,715` · `H2` `675,505`), AND `nba_market.board_rung_keys` — THE BOARD THE PRUNE PRUNES TO — IS `4,522,924` ROWS, `100%` `FULL`.** *They survive only because `prune_baseline_to_board.py` keeps a row whose `(game_date, prop, period)` triple is **absent** from `_prune_scope`, the branch it prints as `kept as NEVER-DERIVED`.* 🔴 ***The day one app posts `player_points_q1`, that triple enters the scope and every `Q1` baseline row for that date whose line does not match a posted rung becomes deletable in the same run*** — against `§T26.27`'s recorded **"ALL PROPS STAY, NO EXCEPTION"**. ⇒ **`T26-6`.** ✅ *`RULE 61`: the `FULL`-only board is the INPUT, not a code defect — the refresh function carries `16` period mappings and no archived board has ever posted one (`RULE 20`, three vocabularies).* 📅 *And a dated state change: `baseline_history` is now **`8,708,333`** rows against `19,343,348` on `2026-09-23` — the prune has run.*
+>
 > 🆕🆕 **SECTIONS ADDED `2026-09-25` — `4` NEW, AND ONE IS THE MOST-REPEATED DEFECT IN THIS SYSTEM.** *Anchors are heading text; search the label.*
 > | § | what it is |
 > |---|---|
