@@ -2855,7 +2855,16 @@ the fix works only when a human runs it — which is the same failure, one level
 > early morning. I'm not totally sure**, but it should be working every week… one week is not stale,
 > because it is weekly."***
 
-▶ **LIVE**: `cron: '0 19 * * 1'` — ***Mondays `19:00` UTC = `12:00` NOON PT (`11:00` PT during PDT)***,
+▶ **LIVE**: `cron: '0 19 * * 1'` — ***Mondays `19:00` UTC = `12:00` NOON PT*** 🔴🔴 **AND THE PARENTHESIS
+IN THAT WORKFLOW COMMENT IS INVERTED — WHICH IS OPEN ITEM `T20-11`, AND I QUOTED IT AS FACT HERE ON
+`2026-09-25`** *(corrected `2026-09-26`)*: *the comment reads* `# 19:00 UTC = 12:00 PT (11:00 PT during PDT)`,
+*but* **`19:00` UTC is `12:00` during PDT (UTC−7) and `11:00` during PST (UTC−8)** — ***so `12:00` IS the
+PDT value and `11:00` is the PST value; the label is exactly backwards.*** ⚠ **It matters today**: *late
+September is PDT, so **P1 runs at `12:00` noon PT right now**; a reader trusting the parenthesis would
+expect `11:00`, and would be an hour wrong in both seasons.* ✅ *`NBA_RECIPE.md`'s cron table already
+flagged this correctly — **the recipe had it right and this section had it wrong**, which is `RULE 53` in
+reverse: I propagated a defect the corpus had already caught.*
+⚠ *Original text, kept under `RULE 40`:* ~~*`12:00` NOON PT (`11:00` PT during PDT)*~~,
 **not `12:15` AM.** *The workflow gives the reason: **"deliberately far from the overnight pipeline
 (P2, daily 01:00 PT) so the two can never contend for the database or the repo."*** ⚠ **That rationale
 is itself now stale — P2 moved to the morning (`08:45` PT, `§T26.26`), so the separation is `3¼` hours,
