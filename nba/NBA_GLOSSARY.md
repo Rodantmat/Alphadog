@@ -1133,6 +1133,22 @@ unknown.** *Up to five transcripts are shown per term.*
 
 ## A
 
+**`active_stats_season`** 🆕 · T26 · LIVE · `nba/nba_season.py` — **the ONE source of truth for "which
+season are we in", read by 10+ scripts** *(`build_availability_delta` · `build_confidence_v3` ·
+`build_final_hp` · `score_board_legs` · `scrape_nba_daily_delta` …)*. ✅ **This is what CLOSED `T20-4`**:
+`` grep -c "2025-26" `` on all three pipeline workflows returns **`0`·`0`·`0`**. 🔑🔑 **THE SUBTLE PART —
+IT ROLLS OVER ON THE FIRST REGULAR-SEASON GAME, NOT ON OCTOBER 1**: *the calendar-date version would have
+made **"three P1 runs scrape an empty season"**. **The obvious fix carried a new three-week defect and it
+was caught before shipping**.* ▶ `§T26.30`.
+
+**`availability_prior`** 🆕 · T26 · LIVE · `nba_score.availability_prior` — the derived **`P(plays)`**
+model's stored cells *(**`699`** with non-null `p_plays`)*. **`N1`'s fallback when the injury report is
+missing**, fitted out-of-sample: **Brier `0.0441` vs `0.0498` status-only, `11.3%` better**. ✅ **Wired in
+— `p_plays` is read by `build_availability_delta.py` (the live P3 producer) and `check_factor_freshness.py`.**
+🔑 **`§T26.39` explicitly does NOT retract it**: *`A5` predicted **who starts**, already encoded downstream
+in recent-5 minutes; `N1` predicts **whether the player plays at all**, which minutes history does not
+carry.* ▶ `§T26.5`, `§T26.39`'s scope note.
+
 **A2 — teammate redistribution** · T15, T16 · The enrichment factor that redistributes an absent
 player's production. **Five panels failed, then fully RETRACTED** — the certified anchor wins every
 slice, and worst where the mechanism predicted it should win. COMPASS fact 91.
