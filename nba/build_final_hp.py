@@ -135,8 +135,9 @@ def main():
         # table replaces a per-run normalising scan of board_snapshots; P3 keeps it current daily.
         cur.execute(f"""
             CREATE TEMP TABLE _fe_board_keys AS
-            SELECT game_date, player_id, prop, line FROM nba_market.board_rung_keys
-            WHERE period = 'FULL' {_date_clause.replace('b.game_date', 'game_date')}""", ([FE_DATE] if FE_DATE else []))
+            SELECT game_date, player_id, prop, coalesce(period, 'FULL') AS period, line FROM nba_market.board_rung_keys
+            WHERE true {_date_clause.replace('b.game_date', 'game_date')}""", ([FE_DATE] if FE_DATE else []))
+        cur.execute("CREATE INDEX ON _fe_board_keys (game_date, player_id, prop, period, line)")
         cur.execute("SELECT count(*) FROM _fe_board_keys")
         if cur.fetchone()[0] == 0:
             raise SystemExit("ABORT: nba_market.board_rung_keys is empty for this scope - refresh it first "
