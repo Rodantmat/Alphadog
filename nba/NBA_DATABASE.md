@@ -3197,6 +3197,43 @@ have asked "is anything still WRITING it, and is anything still READING it?"***
 
 ---
 
+## ⚠⚠⚠ **§T26.68 — `§T26.59` WAS ACTED ON WITHIN TWENTY-FOUR MINUTES OF BEING WRITTEN, AND RE-DERIVING IT CORRECTS BOTH `§T26.59` AND `§T26.45`: THE `P3 → P2` EDGE IS NOW BROKEN FOR THE PRUNE, STILL INTACT FOR `final_hp`, AND NEVER EXISTED FOR THE HISTORY LOADER** *(source, 2026-09-26; `0` of the twelve)*
+
+> 📌 **`§T26.59` published `T26-3`'s recovery procedure at `23:41` PT. At `00:05` PT the build chat shipped `3667076e` — *"NBA P2: refresh yesterday's board rung keys right before the prune"* — followed by `04edc1b1`.** ⚠⚠ ***A section that describes a hazard the system fixes twenty-four minutes later is exactly the stale record this sweep exists to prevent, so it is re-derived here rather than left standing.***
+
+### ✅ **WHAT SHIPPED, AND IT IS THE CALL `§T26.59` DERIVED — NOW ON THE CRON'D PATH**
+
+> *`nba-p2-overnight-heavy.yml`, new step at line `213`, immediately before `prune_baseline_to_board.py` at line `217`:*
+> ```python
+> d = (date.today() - timedelta(days=1)).isoformat()
+> n = c.execute("SELECT nba_market.refresh_board_rung_keys(%s, %s)", (d, d)).fetchone()[0]
+> ```
+> *with its own reasoning in the comment:* **"P3 refreshes the day's keys at 13:15 PT; any board captured after that (a late window, a close snapshot) is not in them, and the prune would delete those rungs."**
+>
+> 🔑🔑 **AND THAT IS AN INDEPENDENT CONFIRMATION OF `T26-6`'s MECHANISM FROM A DIFFERENT TRIGGER.** *`§T26.59` found the **period** instance: a `(date, prop, period)` triple absent from `_prune_scope` is kept, and would stop being kept the day a period market appears. The build chat found the **late-board** instance: a rung captured after `13:15` PT is absent from the keys and **would be pruned away**.* ⇒ ***same mechanism — the prune deletes what the key table does not know about — reached from two directions on the same day, which is the strongest kind of corroboration a finding can get.*** ✅ *`T26-6` is unaffected as an item: the boards still post no period market, so the `unboarded` branch still carries the `4,296,237` period rows.*
+
+### ⚠⚠ **THE CORRECTION TO `§T26.59` AND `T26-3`: THE FIX IS SCOPED TO THE PRUNE AND TO YESTERDAY, AND `final_hp` IS UNTOUCHED**
+
+> | consumer | where it runs | what it asks `board_rung_keys` for | does the new step cover it? |
+> |---|---|---|---|
+> | `prune_baseline_to_board.py` | **P2 line `217`**, directly after the new refresh | the season / the scoped dates | ✅✅ **YES — self-healing now; a `P3` failure no longer reaches it** |
+> | `build_final_hp.py` | **P2 line `385`** *(step 6b)* | 🔑 `WHERE period = 'FULL'` **`AND game_date = FE_DATE`** — ***TODAY's slate*** | 🔴 **NO — the new step refreshes YESTERDAY only** |
+> | `load_baseline_history.py` | 🔴🔴 **NOT IN P2 AT ALL** — dispatched by `nba-baseline-history.yml`, `nba-combos-history.yml`, `nba-periods-history.yml`, **and none of the three carries a `cron`** | the `dmin..dmax` range | ⚠ *n/a — it is manual-only* |
+>
+> ⇒ ⚠⚠ **`§T26.45`'s "three consumers that `SystemExit`, two of them P2" OVERSTATED THE BLAST RADIUS, AND `§T26.59` CARRIED THAT FORWARD.** *Corrected: **a `P3` failure on day `N−1` now stops exactly ONE cron'd `P2` step — `build_final_hp.py` — the prune is self-healing, and the history loader was never on a schedule to stop.*** 🔑 *The `SystemExit` at `build_final_hp.py:142` is still the right design and still fires; what changed is that it is now the **only** one a `P3` failure can trigger unattended.* ⇒ ***`T26-3`'s residual is one line: extend the new refresh to cover the slate `build_final_hp` scores, not only yesterday.***
+
+### ✅ **AND A CONSUMER-SIDE CONFIRMATION OF `§T26.59`'s `FULL`-ONLY FINDING**
+
+> *`build_final_hp.py` builds its board as* `SELECT game_date, player_id, prop, line FROM nba_market.board_rung_keys WHERE period = 'FULL'`. ✅ **The scorer ASKS for `FULL` only.** ⇒ *so the `FULL`-only key table (`4,522,924` rows, `0` period — `§T26.59`) is **not a limitation for `final_hp` at all**; it is a limitation only for the prune's scope and for anything that would score a period rung.* 🔑 **That sharpens `§T26.59`: the `24` dead map rows cost nothing today because no consumer asks for what they would produce — and they will matter the moment one does, which is the same date `T26-6` turns on.**
+
+> 🔁 **RE-DERIVE** *(`RULE 59`)*:
+> ```bash
+> git show 3667076e -- .github/workflows/nba-p2-overnight-heavy.yml
+> grep -nE "refresh_board_rung_keys|prune_baseline_to_board\.py|build_final_hp\.py" .github/workflows/nba-p2-overnight-heavy.yml
+> grep -rln "load_baseline_history.py" .github/workflows/*.yml     # three workflows, none with a cron
+> sed -n '136,142p' nba/build_final_hp.py                          # WHERE period = 'FULL' AND game_date = FE_DATE
+> ```
+
 ## ✅✅✅ **§T26.59 — `T26-3` CLOSED, BOTH HALVES, FROM THE FUNCTION DEFINITION AND THE STORE — AND THE PERIOD HALF TURNS OUT TO BE LOAD-BEARING** *(`pg_get_functiondef` + `SELECT`, 2026-09-26; `0` of the twelve before this entry)*
 
 > 📌 **`T26-3` asked two things and this sweep had answered neither: (1) what the RECOVERY procedure is when a `P3` failure leaves `nba_market.board_rung_keys` empty and three `P2` steps `SystemExit`, and (2) whether the refresh populates PERIOD rows when real boards carry them.** *Both are settled below WITHOUT running anything: half (1) from the function's own body, half (2) from the archive's own vocabulary.*
