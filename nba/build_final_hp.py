@@ -335,17 +335,26 @@ def main():
         plist = props or [r[0] for r in conn.execute(
             "SELECT DISTINCT prop FROM nba_score.baseline_history WHERE season=%s ORDER BY 1",
             (season,)).fetchall()]
+        # PERIOD ENTRIES (2026-09-26). The store keeps period rungs as prop='points', period='Q1'; the
+        # scorer labels such a leg's prop 'points_q1' in board_scored, and the as-of calibration groups
+        # by that label. final_hp now carries the same label, so a period leg gets calibration cells the
+        # moment it has graded volume - no schema change, the unique index keeps 'points_q1' apart from
+        # 'points'. Only labels a board could carry (the scorer's MARKET_TO_PROP) are built.
+        _PERIOD_LABELS = [f"{b}_{p}" for b in ("points", "rebounds", "assists", "threes_made") for p in ("q1", "q4", "h1", "h2")]
+        _base_in_store = set(plist)
+        plist = [p for p in plist if p not in _PERIOD_LABELS] + [pl for pl in _PERIOD_LABELS if pl.rsplit("_", 1)[0] in _base_in_store]
         total = 0
         for prop in plist:
-            h = pd.read_sql("""SELECT h.game_date, h.game_id, h.player_id, h.prop, h.line, h.anchor, h.ladder_offset,
+            _base, _per = (prop.rsplit("_", 1)[0], prop.rsplit("_", 1)[1].upper()) if prop in _PERIOD_LABELS else (prop, "FULL")
+            h = pd.read_sql("""SELECT h.game_date, h.game_id, h.player_id, %s AS prop, h.line, h.anchor, h.ladder_offset,
                                       h.p_more, h.p_less, h.role_tier, h.used_emp
                                FROM nba_score.baseline_history h
-                               WHERE h.season=%s AND h.prop=%s AND h.period = 'FULL'
+                               WHERE h.season=%s AND h.prop=%s AND coalesce(h.period, 'FULL') = %s
                                  AND (%s = '' OR h.game_date = NULLIF(%s,'')::date)
                                  AND EXISTS (SELECT 1 FROM _fe_board_keys k
                                              WHERE k.game_date = h.game_date AND k.player_id = h.player_id
-                                               AND k.prop = h.prop AND k.line = h.line)""",
-                            conn, params=(season, prop, FE_DATE, FE_DATE))
+                                               AND k.prop = h.prop AND k.period = %s AND k.line = h.line)""",
+                            conn, params=(prop, season, _base, _per, FE_DATE, FE_DATE, _per))
             # PERIOD FILTER (fixed 2026-09-24). This read had no period filter and final_hp has no period
             # column, so Q1/Q4/H1/H2 rungs were written under the FULL-GAME key: prop 'points' line 5.5
             # for Q1 landed as if it were a full-game 5.5, and where a period line coincided with a
