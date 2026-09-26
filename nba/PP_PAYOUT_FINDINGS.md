@@ -226,6 +226,8 @@ Correct and visible, not silent; a schema step for when period legs have graded 
 ⚠ Reliability audit re-run: dispatched twice (the first left no trace under the doc chat's commit
 flood); the second was live and grading at the period-filtered read when this session ended — its row
 lands in `classification_config['prop_reliability_audit_latest']`.
+
+**THE THREE DECISION ITEMS, WITH DATA (2026-09-25):**
 - **T18-17 — the score's penalising half.** Re-measured on the rebuilt, board-scoped `final_hp`: both
   seasons, **minimum confidence 0.8600, zero legs ≤ 0.85**, p25 ≈ 0.94, median ≈ 0.95. The `drop` term
   is dead by construction. The owner's directive on file — *"the score must ENHANCE the hit
