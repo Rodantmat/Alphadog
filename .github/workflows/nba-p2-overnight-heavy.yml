@@ -216,6 +216,25 @@ jobs:
           EOF
           python nba/prune_baseline_to_board.py
 
+      # 3a) YESTERDAY'S final_hp, COMPLETE (2026-09-26). Yesterday's final_hp was built yesterday at
+      # 08:45 PT from the boards known THEN; everything posted later - the day-of board P3 captured at
+      # 13:15, late lines, period props - never entered it, and the calibration and confidence refits
+      # below learn ONLY from final_hp. Now that yesterday's keys are refreshed and the prune has kept
+      # every board rung, rebuild that one slate (seconds) so the refits see the whole graded board.
+      - name: Rebuild yesterday's final_hp from the complete board
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_WRITE: "1"
+        run: |
+          export FE_DATE="$(TZ=America/Los_Angeles date -d yesterday +%F)"
+          if [ "$(python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              print(c.execute("SELECT count(*) FROM nba_score.baseline_history WHERE game_date = %s", (os.environ["FE_DATE"],)).fetchone()[0])
+          EOF
+          )" = "0" ]; then echo "no baseline for $FE_DATE (off day) - nothing to rebuild"; exit 0; fi
+          python nba/build_final_hp.py
+
       # 3b) PAPER TRADING (2026-09-21): fill hit / miss / void for logged picks from the freshly graded board.
       - name: Grade paper-trading picks
         env:
