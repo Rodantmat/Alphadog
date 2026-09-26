@@ -101,8 +101,22 @@ def main():
     # is exactly what P2 built from. The diff was then "today 9 AM vs today 1:15 PM" instead of
     # "what P2 saw vs what P3 sees", which is why 20 real status changes produced zero reallocations.
     gd = datetime.fromisoformat(asof).date()
-    p2_build = datetime.combine(gd, datetime.min.time(), tzinfo=PT) + timedelta(hours=1)    # P2 ~01:00 PT
-    p3_cut = datetime.combine(gd, datetime.min.time(), tzinfo=PT) + timedelta(hours=13, minutes=15)
+    # 🔑 CUTOFFS IN THE INJURY ARCHIVE'S STAMPING CONVENTION (T20-12, closed 2026-09-25).
+    # scrape_nba_injury_report.py stamps every snapshot as ET WALL TIME with a FIXED -05:00 label all
+    # year (3:30 PM ET -> "15:30-05:00"). In daylight time that UTC instant is an hour late. The
+    # cutoffs below were "13:15 -08:00" - also fixed, also an hour late in daylight time, BY THE SAME
+    # HOUR - so every before/after decision was correct year-round and only the labels lied. Fixing one
+    # side alone (a real America/Los_Angeles zone here) would BREAK the window in daylight time: the
+    # 3:30 PM ET report would fall after a true 1:15 PM PT cutoff. Fixing both sides means re-stamping
+    # every historical row of an ingredient table for a defect with no behavioural effect. So the
+    # pairing is made explicit instead: the cutoffs are written as ET wall clock with the archive's own
+    # label (13:15 PT = 16:15 ET, 01:00 PT = 04:00 ET; ET-PT is three hours in every season), from ONE
+    # constant. ⚠ snapshot_ts must never be compared with a REAL clock (board fetched_at is true UTC)
+    # without converting; nothing in this script does.
+    from datetime import time as _time
+    INJURY_STAMP_TZ = timezone(timedelta(hours=-5))
+    p2_build = datetime.combine(gd, _time(4, 0), tzinfo=INJURY_STAMP_TZ)      # 01:00 PT = 04:00 ET wall
+    p3_cut = datetime.combine(gd, _time(16, 15), tzinfo=INJURY_STAMP_TZ)      # 13:15 PT = 16:15 ET wall
     print(f"  P2 view: snapshots <= {p2_build:%Y-%m-%d %H:%M %Z}   "
           f"P3 view: <= {p3_cut:%Y-%m-%d %H:%M %Z}", flush=True)
 
