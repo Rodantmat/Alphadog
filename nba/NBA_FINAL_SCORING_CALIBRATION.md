@@ -5876,7 +5876,443 @@ information more coarsely.** ✅ **`§T26.5` stands, and it stands on an argumen
 > grep -n '"player_points_q1"' nba/score_board_legs.py   # the convention, pre-existing
 > ```
 > ```sql
-> SELECT count(DISTINCT prop), count(DISTINCT prop) FILTER (WHERE prop ~ '_(q1|q4|h1|h2) `3,801` LIVE SCORED BOARD KEYS ALREADY HAVE PERIOD SIBLINGS AT THE IDENTICAL LINE, AND THE UPSERT KEY CANNOT TELL THEM APART** *(source + `SELECT`, 2026-09-26; `0` of the twelve — the change is nine hours old)*
+> SELECT count(DISTINCT prop), count(DISTINCT prop) FILTER (WHERE prop ~ '_(q1|q4|h1|h2)
+
+> 📌 **`RULE 63`, numbered this morning, fired a THIRD time at pass `28`'s gate: `nba/build_final_hp.py` moved at `09:12` PT — `00c71c6b`, *"NBA final_hp: board keys carry every period"*.** ⚠⚠ ***It falsifies a claim `§T26.68` and `§T26.72` each published within the hour, and what it replaces that claim with is worse than the claim was.***
+
+### 🔴 **WHAT CHANGED — THE `FULL`-ONLY GATE WAS REMOVED FROM THE READER**
+
+> | | before `00c71c6b` | **after, live now** |
+> |---|---|---|
+> | `_fe_board_keys` | `SELECT game_date, player_id, prop, line … WHERE period = 'FULL'` | 🔴 `SELECT game_date, player_id, prop, coalesce(period,'FULL') AS period, line … ` **`WHERE true`** |
+> | its index | `(game_date, player_id, prop, line)` | `(game_date, player_id, prop, period, line)` |
+>
+> ⚠⚠ **SO `§T26.68`'s AND `§T26.72`'s "consumer-side confirmation" IS RETRACTED** *(`RULE 40` — struck, not deleted)*: ~~*"`build_final_hp.py` ASKS for `period = 'FULL'`, so the `FULL`-only key table costs nothing today"*~~ and ~~*"the refits learn only from `final_hp`, which asks for `FULL` only, so the `4.3M` period rows reach the calibration path by NO route"*~~. **Both were true when written and both were already false: the file had changed at `09:12` and I cited it at `16:0x` and `16:1x`.** 🔑 *This is exactly why `RULE 63` exists, and it caught its own author twice in one pass.*
+
+### 🔴🔴🔴 **AND THE DESTINATION NEVER GAINED THE COLUMN. `§T26.17`'s DEFECT IS NOT FIXED — IT IS NOW ARMED.**
+
+> ✅ **The code believes it is fixed.** *`build_final_hp.py:339-341` carries a comment dated today:* **"PERIOD ENTRIES (2026-09-26). The store keeps period rungs as `prop='points'`, `period='Q1'` … **final_hp now carries the same label**, so a period leg gets calibration cells"**, *and line `357` joins on `k.period = %s`.*
+>
+> 🔴🔴 **THE TABLE DOES NOT.** *`information_schema.columns` on `nba_score.final_hp` returns **`24` columns and not one of them is `period`***: `season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor, baseline_hp, final_hp, cal_shift, score, confidence, conf_tier, c_exist, c_quality, c_market, prop_tier, band, phase, n_uncertain, built_at, edge`.
+>
+> 🔴🔴🔴 **AND THE WRITE PATH CONFIRMS IT, INCLUDING THE CONFLICT KEY** *(`build_final_hp.py:526-535`)*:
+> ```sql
+> INSERT INTO nba_score.final_hp
+>   (season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor,
+>    baseline_hp, final_hp, cal_shift, score, edge, confidence, conf_tier,
+>    c_exist, c_quality, c_market, prop_tier, band, phase, n_uncertain)     -- 23 columns, NO period
+> ON CONFLICT (game_date, player_id, prop, line, side) DO UPDATE SET …      -- NO period
+> ```
+> ⇒ ***THE READER NOW ADMITS FIVE PERIODS AND THE WRITER HAS ONE SLOT FOR THEM.*** 📜 **`RULE 61` INVERTED, AND THIS IS THE FIRST INSTANCE OF THE INVERSE IN THIS SWEEP: `RULE 61` says stored rows the current code cannot produce are STALE, not a code defect. Here **the CODE now assumes a schema the STORE does not have** — the opposite direction, and it fails the other way: silently, on write, by overwrite.**
+
+### 🔴🔴🔴🔴 **THE COLLISION IS NOT THEORETICAL. IT IS ALREADY IN THE DATA, MEASURED, AND WAITING ON ONE TRIGGER.**
+
+> *Same `(game_date, player_id, prop, line)`, more than one period, in `nba_score.baseline_history` right now:*
+>
+> | | count |
+> |---|---|
+> | colliding key groups | **`7,796`** |
+> | rows involved | **`31,332`** |
+> | of those, groups that CONTAIN a `FULL` rung | **`3,801`** |
+> | 🔴🔴 **…and are on a REAL `board_rung_keys` key today — i.e. SCORED** | 🔴🔴 **`3,801` — every single one** |
+> | rows in those live groups | 🔴 **`17,049`** |
+> | most periods on one key | **`5`** *(`FULL/H1/H2/Q1/Q4`)* |
+>
+> *The shape, by period set — note that **every set containing `FULL` is `100%` on a live board key**: `FULL/H1/H2/Q1/Q4` `2,822`/`2,822` · `FULL/H1/H2` `504`/`504` · `FULL/H1` `141`/`141` · `FULL/H1/H2/Q1` `134`/`134` · `FULL/H1/H2/Q4` `101`/`101` · `FULL/H2` `92`/`92`. Sets WITHOUT `FULL` are mostly NOT on a board key (`H1/H2/Q1/Q4`: `2,724` groups, `37` on a key) — **which is itself the signature of a `FULL`-only key table**.*
+>
+> ⚠⚠⚠ **SO THE ONLY THING PREVENTING THIS TODAY IS THE ONE FACT `§T26.59` MEASURED: `nba_market.board_rung_keys` IS `4,522,924` ROWS AND `100%` `FULL`.** *The reader's `FULL` filter was the guard; it was removed at `09:12`. **The guard is now the emptiness of the input.***
+
+### 🔴🔴🔴 **AND THE TRIGGER FIRES THREE FAILURES AT ONCE — WHICH IS WHY THIS OUTRANKS EVERYTHING ELSE ON THE BRIEF**
+
+> *`refresh_board_rung_keys` carries **`16` period mappings** (`points`/`rebounds`/`assists`/`threes_made` × `Q1`/`H1`/`H2`/`Q4` — `§T26.59`), so the day **one app posts a `player_points_q1` line**, the key table gains period rows and:*
+>
+> ① 🔴 **`final_hp` starts receiving period rungs it cannot label** ⇒ ***period probabilities wearing full-game keys — `§T26.17`/`§T26.18`'s defect, resurrected*** *(and `build_final_hp.py:359-363` describes having FIXED exactly this once: "a period line … landed as if it were a full-game 5.5, and where a period line coincided with a full-game line **the upsert let the last one win**")*;
+> ② 🔴 **the upsert collides on `3,801` live keys / `17,049` rows** ⇒ ***silent overwrite, last-write-wins, no error***;
+> ③ 🔴 **`_prune_scope` acquires period triples** ⇒ ***`T26-6`'s inversion: `4,296,237` baseline period rows stop being "never-derived" and become deletable***.
+>
+> ⇒ 🔑🔑 ***ONE TRIGGER, THREE INDEPENDENT SILENT FAILURES, AND THE TRIGGER IS "A DFS APP POSTS A `Q1` PROP" — WHICH IS ROUTINE IN-SEASON AND `24` DAYS AWAY.*** ⚠ *The owner's recorded operating condition applies at full force here (`§T26.70`): **"they run um, not monitored"**. ⇒ **`T26-11`.**
+>
+> ✅ *And the remedy is not ambiguous: **add `period` to `nba_score.final_hp` and to the conflict key** — `ON CONFLICT (game_date, player_id, prop, period, line, side)` — before the key table can carry a period row. The reader is already period-aware; only the destination is not.* ⚠ *Doing it in the other order — letting a period board arrive first — corrupts `17,049` rows that no gate will flag.*
+
+> ⚠ **ONE SMALLER DISCREPANCY, RECORDED IN PASSING**: *`build_final_hp.py:362` states "~`31%` of `baseline_history` rows are period rungs". `§T26.59` measured **`49.3%`** (`4,296,237` of `8,708,333`) on `2026-09-26`. The comment's figure is consistent with the pre-prune store (`19,343,348` rows) and is now stale — **in code, not in the twelve**, so it is noted rather than corrected here.*
+
+> 🔁 **RE-DERIVE** *(`RULE 59`)*:
+> ```bash
+> git log -1 --pretty='%h %ad %s' --date=format:'%H:%M' -- nba/build_final_hp.py      # 00c71c6b 09:12
+> git show 00c71c6b -- nba/build_final_hp.py
+> sed -n '136,144p;526,535p' nba/build_final_hp.py
+> ```
+> ```sql
+> SELECT column_name FROM information_schema.columns
+>   WHERE table_schema='nba_score' AND table_name='final_hp';          -- 24 cols, no `period`
+> WITH c AS (SELECT game_date, player_id, prop, line,
+>                   count(DISTINCT coalesce(period,'FULL')) AS n, bool_or(coalesce(period,'FULL')='FULL') AS hf,
+>                   count(*) AS r
+>            FROM nba_score.baseline_history GROUP BY 1,2,3,4 HAVING count(DISTINCT coalesce(period,'FULL'))>1)
+> SELECT count(*), sum(r), count(*) FILTER (WHERE hf),
+>        count(*) FILTER (WHERE hf AND EXISTS (SELECT 1 FROM nba_market.board_rung_keys b
+>          WHERE b.game_date=c.game_date AND b.player_id=c.player_id AND b.prop=c.prop AND b.line=c.line))
+> FROM c;                                                              -- 7,796 | 31,332 | 3,801 | 3,801
+> ```
+
+## ✅✅✅ **§T26.66 — `T26-4` ANSWERED, AND THE ANSWER RETRACTS THE ALARM: THE BELOW-CHANCE ANCHOR IS CONFINED TO ONE EXPERIMENT FAMILY OF `21` ROWS, WHILE THE PRODUCTION EVALUATION SCORES `0.56431` ON `1,248,826` LEGS — AND `§T26.55`'s "THE SLICE IS UNDEFINED" WAS MY OWN ERROR** *(`SELECT` over all `109` rows + source, 2026-09-26; the census is `0` of the twelve)*
+
+> 📌 **`T26-4` asked whether the scoring system is worse than a coin flip. `§T26.55` reported `anchor` log-loss `0.72604` against `ln 2 = 0.69315` and Brier `0.26359` against `0.25`, said *"the slice is undefined"*, and stopped there.** ⚠⚠ ***It stopped one query too early. `§T26.55` read the `5` newest rows of a `109`-row table; the table answers the question by itself.***
+
+### ⚠⚠ **FIRST, THE CORRECTION I OWE: THE SLICE IS NOT UNDEFINED. IT IS DEFINED BY ITS OWN SIBLINGS IN THE SAME TABLE.**
+
+> 🔴 **`§T26.55` — my own section, written `2026-09-26` — asserted "the slice is undefined".** ✅ **It is defined.** *`nba_score.factor_gate_results` holds `slice = 'all'` beside `slice = 'fires'` (`n = 13,319`), `slice = 'low_novelty'` (`n = 4,695`) and `slice = 'high_novelty'` (`n = 866`), **all four written by the same script, `nba/test_a2_novelty.py`, in the same run at `2026-09-13 19:32:07Z`**. The nesting fixes the meaning exactly: `all` is that experiment's full graded sample and `fires` is the subset where `A2` fired.* ⇒ **the definition was one `GROUP BY slice` away, and `§T26.55` is corrected in place rather than struck** *(`RULE 40`)*. 📜 **AND THE LESSON IS `RULE 58`'s, turned on myself: "the slice is undefined" was a claim about MY QUERY, not about the store — the fourth time in three days that a `0`/absence I published was an artefact of the scope I chose.**
+
+### ✅✅ **THE CENSUS — `45` SLICES, `109` ROWS, AND THE BELOW-CHANCE RESULT OCCUPIES FOUR SLICES AND NOTHING ELSE**
+
+> | family | slices | rows | `n` | best log-loss | **every row above `ln 2`?** | last run |
+> |---|---|---|---|---|---|---|
+> | 🔴 **`all` · `fires` · `low_novelty` · `high_novelty`** *(the `A2`-novelty gate)* | **`4`** | **`21`** | `866` – `15,024` | `0.7147` | 🔴🔴 **YES — ALL `21`** | `2026-09-25` (`all` only) |
+> | ✅ `remaining_factors` | `1` | `5` | **`1,248,826`** | ✅ **`0.56431`** | ✅ NO — *not one* | `2026-09-17` |
+> | ✅ `allprop:*` *(per-prop calibration)* | `25` | `50` | `437,264` – `1,011,076` | ✅ **`0.0761`** | ✅ NO — *not one* | `2026-09-13` |
+> | ✅ `prop:*` · `ladder_all` *(the ladder)* | `9` | `18` | `46,910` – `105,663` | ✅ `0.5623` | ✅ NO — *not one* | `2026-09-13` |
+> | ⚠ `n1_ablation` | `1` | `5` | `1,322` | `0.67266` | ⚠ *mixed — **and its columns do not mean what they are named**, see below* | `2026-09-15` |
+>
+> ⇒ 🔑🔑 **`21` OF `109` ROWS ARE ABOVE CHANCE, AND ALL `21` BELONG TO ONE EXPERIMENT. `40` OF THE `45` SLICES DO NOT CONTAIN A SINGLE ABOVE-CHANCE ROW.** ✅✅ ***THE PRODUCTION EVALUATION IS `0.56431` LOG-LOSS ON `1,248,826` GRADED LEGS — which is the `0.5643` this corpus already carries for the graded PrizePicks history, matched to four decimals from an independent slice.***
+>
+> ⇒ ✅✅✅ **`T26-4` ANSWERED, AND THE HEADLINE INVERTS**: ***the scoring system is not below chance. A local anchor inside one novelty experiment is — on a sample between `866` and `15,024` legs, three orders of magnitude smaller than the production evaluation.*** 🔴 **WHAT REMAINS TRUE AND STILL MATTERS**: *that family's anchor has been above `ln 2` **since `2026-09-13`, across all four of its slices, in two independent runs** — so **every `gain_vs_anchor` inside it is measured against a floor that does not hold**, and *none* of `§T26.55`'s five verdicts (`anchor_x_defender` `0.00000`, `anchor_x_A2` `−0.24441`, …) is evidence about the production model. ⇒ **the verdicts are not wrong, they are UNINTERPRETABLE — which is a different repair: fix the anchor, then re-run the gate.**
+
+### 🔴🔴 **AND THE RERUN MADE IT WORSE, QUIETLY: `n` FELL BY HALF AND THE SHRINKAGE PARAMETER WENT `NULL`**
+
+> | run | slice | `n` | `anchor` log-loss | `shrink_beta` | siblings rewritten? |
+> |---|---|---|---|---|---|
+> | `2026-09-13 19:32:07Z` | `all` | **`15,024`** | `0.7231` | `0.9285` | ✅ *`fires`, `low_novelty`, `high_novelty` all written* |
+> | `2026-09-25 22:42:57Z` | `all` | 🔴 **`7,128`** *(**`−52.6%`**)* | `0.72604` | 🔴 **`NULL`** | 🔴 **NO — only `all`** |
+>
+> ⚠⚠ ***So the `2026-09-25` rerun evaluated on half the sample with the shrinkage parameter unset, and did NOT rewrite the three sibling slices that give `all` its meaning — leaving the definition `12` days staler than the thing it defines.*** 🔑 *This is a harness regression, not a model regression, and it is exactly the kind of thing that makes a result look like a finding.*
+
+### 🔴🔴🔴 **A SEPARATE AND LIVE TRAP IN THE SAME TABLE: SIX WRITERS, ONE SCHEMA, THREE DIFFERENT MEANINGS PER COLUMN — AND THE KEY EXISTS ONLY IN A `print()`**
+
+> ▶ **`grep` finds SIX scripts inserting into `nba_score.factor_gate_results`**: `test_a2_novelty.py` *(`all`/`fires`/`low_novelty`/`high_novelty`)* · `gate_remaining_factors.py` *(`remaining_factors`)* · `fit_n1_model.py` *(`n1_ablation`)* · `calibrate_all_props.py` · `apply_ladder_calibration.py` · `test_factors_on_baseline.py`.
+>
+> 🔴🔴 **AND `fit_n1_model.py` REPURPOSES THREE COLUMNS, ANNOUNCING IT IN A LINE THAT ONLY EVER REACHED A CI LOG:**
+> ```python
+> print("  wrote the ablation to nba_score.factor_gate_results "
+>       "(brier col = AUC, gain col = confident-band accuracy, shrink col = confident share)")
+> ```
+> ⇒ *for `slice = 'n1_ablation'`: **`brier` is AUC** (`0.6237`, `0.6216`, `0.6191`, `0.5894`, `0.5892`), **`gain_vs_anchor` is confident-band ACCURACY** (`0.7027`, `0.7963`, `0.7347`, `0.6719`, `0.7045`), **`shrink_beta` is the confident SHARE** (`0.028`–`0.0666`).*
+>
+> ⚠⚠⚠ **THE TRAP IS NOT THE REPURPOSING, IT IS THE SORT ORDER.** ***`SELECT … ORDER BY gain_vs_anchor DESC` over this table puts `n1_ablation` on top with apparent gains of `0.70`–`0.80` — the best results in the entire factor programme by a wide margin — and they are accuracies.*** *The next-best real gain in the table is `ladder_all`'s `+0.0068`.* 🔑 **A reader — or a future pass of this sweep — ranking factor work by the column whose NAME asserts a comparison would conclude the `n1` ablation is the system's biggest win. It is `n = 1,322`, and the number is not a gain.**
+>
+> ⚠ *And a smaller instance of the same class: `remaining_factors` carries `brier = 0` and `shrink_beta = 0` on all five rows — **placeholders, not measurements** — while `A3 return ramp` (`0.56431`) is recorded with `gain_vs_anchor = 0` against `final_hp baseline` (`0.56432`), i.e. a real `+0.00001`. **On `1,248,826` legs that is nothing, and saying "nothing" is the correct verdict — but the `0` in the column is not the reason.***
+>
+> ⇒ 📜 **THE SCRIPT'S OWN COMMENT DIAGNOSED HALF OF THIS AND CREATED THE OTHER HALF**: *it says `factor_gate_results` exists "precisely so a result is not trapped in a CI log … A verdict that only exists in stdout is not a verdict." **It then put the UNITS in stdout.*** ⇒ **`T26-10`** — *the fix is a `metric` or `units` column, or slice-prefixed column names; until then the table needs a documented key, and this section is it.*
+
+> 🔁 **RE-DERIVE, NEVER QUOTE** *(`RULE 59` — every figure was RUN)*:
+> ```sql
+> SELECT slice, count(*), count(DISTINCT model), min(n), max(n), min(log_loss),
+>        bool_and(log_loss > ln(2)) AS every_row_above_chance, max(run_at)::date
+> FROM nba_score.factor_gate_results GROUP BY slice ORDER BY max(run_at) DESC, slice;   -- 45 slices, 109 rows
+> ```
+> ```bash
+> grep -c 'INSERT INTO nba_score.factor_gate_results' nba/*.py   # six writers
+> sed -n '395,400p' nba/fit_n1_model.py                          # the print() that holds the column key
+> ```
+
+## 🔴🔴🔴 **§T26.55 — `F5-1`'s MISSING RESULTS WERE NEVER MISSING: THEY ARE IN `nba_score.factor_gate_results`, DATED, AND EVERY VARIANT FAILED — INCLUDING THE INTERACTIONS THAT WERE SUPPOSED TO BE THE ANSWER** *(`SELECT` 2026-09-26; `0` of the twelve before this entry)*
+
+**`F5-1` has stood since `2026-09-23` on the claim that *"`B4 v3` and `M1` have fitting scripts in the
+repo and the results are NOT RECORDED."*** ⚠⚠ ***They were recorded. In a table. `RULE 20`'s discipline —
+look for the result in a THIRD place before calling it absent — and this sweep had looked in two.***
+
+### ✅ **THE VERDICTS — `nba_score.factor_gate_results`, all written `2026-09-25 22:42:57Z`, `n = 7,128` legs, season `2025-26`**
+
+| model | log-loss | Brier | gain vs anchor |
+|---|---|---|---|
+| **`anchor`** | **`0.72604`** | `0.26359` | — |
+| 🔴 **`anchor_x_defender`** | **`0.72604`** | **`0.26359`** | **`0.00000`** |
+| 🔴 **`anchor_x_A5_pstart_minutes`** | `0.74408` | `0.27042` | **`−0.01804`** |
+| 🔴 **`anchor_x_A2`** | `0.97044` | `0.32440` | **`−0.24441`** |
+| 🔴 **`anchor_x_A2_x_defender`** | **`0.97044`** | **`0.32440`** | **`−0.24441`** |
+
+### 🔑🔑🔑 **READ THE IDENTICAL ROWS — THEY ARE THE FINDING, AND THEY ARE STRONGER THAN A SMALL GAIN WOULD BE**
+
+⚠ **`anchor_x_defender` matches `anchor` to FIVE DECIMAL PLACES on both metrics.** ⇒ ***The defender term
+contributes LITERALLY NOTHING — not "a small amount", nothing*** — *and it was given every advantage
+`retest_defender_factors.py` promised: the proper two-way ridge `nba_ref.defender_ratings` instead of
+"points allowed per possession", **channel matching** (`def_pts`/`def_fg` → points/fga/fgm · `def_3p` →
+threes · `def_tov` → turnovers · `def_foul` → fta), and **exposure weighting over TONIGHT'S available
+opposing defenders only** — the scoping bug that invalidated `B4 v2`'s first run.*
+
+⚠⚠ **AND `anchor_x_A2_x_defender` MATCHES `anchor_x_A2` TO FIVE DECIMALS TOO.** 🔑 *The re-test's whole
+premise was that **interactions were "the gap in EVERY factor test so far"** — practitioner sources say
+books misprice when factors move together.* ⇒ ***The interaction was built, run, and the defender term
+adds zero INSIDE it as well. The hypothesis is dead in both forms.***
+
+### 🔴🔴 **AND A FOURTH INDEPENDENT LINE OF EVIDENCE AGAINST THE `A5` STARTER MODEL**
+
+**`anchor_x_A5_pstart_minutes` = `−0.01804`** ⇒ *`A5` as an interaction makes the anchor **WORSE**.*
+📌 **That is now FOUR separate rejections of the same model**: *① `§0u.1`'s Δ MAE — negative on every
+prop · ② the enrichment doc's **"I validated the wrong target"** · ③ `grep` finds **`0` callers** of
+`p_start()` · ④ **this gate, run independently on `7,128` legs**.* ✅ ***`§T26.39`'s retraction of
+`§T26.12`/`§T26.22` is confirmed by a measurement taken after it was written and without reference to
+it.***
+
+### ⚠⚠⚠ **ONE FIGURE IN THIS TABLE NEEDS ITS OWN LINE, AND IT IS NOT ABOUT THE FACTORS**
+
+🔴🔴 **THE `anchor` ITSELF SCORES WORSE THAN A COIN FLIP ON THIS SLICE.**
+*`ln(2) = 0.69315` is the log-loss of always predicting `0.5`; a Brier of `0.25` is its counterpart.*
+▶ **The anchor reads `0.72604` and `0.26359` — worse by `0.0329` and `0.0136`.**
+
+⚠ **STATE THE CAVEAT BEFORE THE ALARM**: *`slice = 'all'` here means all legs **ELIGIBLE FOR THE
+INTERACTION TEST**, not the board. `n = 7,128` against a nightly board of `~91,405` legs, so this is a
+small, deliberately hard subpopulation — **plausibly legs carrying an `A2` absence event**, which are
+exactly the cases the model finds hardest.* ⇒ 🔑 **It is NOT evidence that the product is worse than
+chance.** 🔴 **But it IS an unexplained figure in the system's own gate table**, and the sweep cannot
+resolve it read-only: ***what defines this slice, and is a below-chance anchor expected on it?***
+⚠ **NOT RECORDED** *(`RULE 6`)* ⇒ **tracked as item `T26-4`.**
+
+📌 **ALSO NOT RECORDED**: *`shrink_beta` is **NULL on all five rows**, so no shrinkage was applied or
+stored for this run, while the scripts' stated discipline is reliability shrinkage (`k=150` for `M1`,
+`k=112` for `D1`'s tendencies).*
+
+### ✅ **WHAT THIS CLOSES, AND THE METHOD LESSON**
+
+✅✅ **`F5-1`'s FACTOR HALF IS CLOSED**: *the results exist, are dated `2026-09-25`, and are reproducible
+from* `` SELECT model, log_loss, brier, gain_vs_anchor FROM nba_score.factor_gate_results WHERE run_at::date='2026-09-25' `` *— **they were simply never written into the twelve.*** *(Its file half closed
+at `§T26.54`.)* ⇒ **`F5-1` is fully closed.**
+
+🔑🔑 ***THE LESSON: "NOT RECORDED" IS A CLAIM ABOUT WHERE YOU LOOKED.*** *This sweep searched the twelve
+and the repo, found fitting scripts with no written verdicts, and concluded the results did not exist.
+**They were in a database table the whole time — `109` rows spanning `2026-09-13` → `2026-09-25`,
+covering `23` models.*** 📜 **`RULE 58`'s shape on an ABSENCE rather than a query: a "not recorded" verdict
+must name the places searched, and a results TABLE is a place.**)
+> FROM nba_score.board_scored;   -- 12 | 0 : never exercised
+> ```
+
+## ~~🔴🔴🔴🔴 **§T26.74**~~ — 🔴 **RETRACTED IN FULL `2026-09-26` BY `§T26.78` ABOVE. READ THAT FIRST; THE CLAIM BELOW IS FALSE AND IS KEPT ONLY BECAUSE `RULE 40` FORBIDS DELETING IT.** *(The `baseline_history` measurements in it are correct; the collision they were used to infer is not.)* ~~`build_final_hp.py` WAS CHANGED AT `09:12` TODAY TO ADMIT EVERY PERIOD, AND `nba_score.final_hp` STILL HAS NO `period` COLUMN.~~ `3,801` LIVE SCORED BOARD KEYS ALREADY HAVE PERIOD SIBLINGS AT THE IDENTICAL LINE, AND THE UPSERT KEY CANNOT TELL THEM APART** *(source + `SELECT`, 2026-09-26; `0` of the twelve — the change is nine hours old)*
+
+> 📌 **`RULE 63`, numbered this morning, fired a THIRD time at pass `28`'s gate: `nba/build_final_hp.py` moved at `09:12` PT — `00c71c6b`, *"NBA final_hp: board keys carry every period"*.** ⚠⚠ ***It falsifies a claim `§T26.68` and `§T26.72` each published within the hour, and what it replaces that claim with is worse than the claim was.***
+
+### 🔴 **WHAT CHANGED — THE `FULL`-ONLY GATE WAS REMOVED FROM THE READER**
+
+> | | before `00c71c6b` | **after, live now** |
+> |---|---|---|
+> | `_fe_board_keys` | `SELECT game_date, player_id, prop, line … WHERE period = 'FULL'` | 🔴 `SELECT game_date, player_id, prop, coalesce(period,'FULL') AS period, line … ` **`WHERE true`** |
+> | its index | `(game_date, player_id, prop, line)` | `(game_date, player_id, prop, period, line)` |
+>
+> ⚠⚠ **SO `§T26.68`'s AND `§T26.72`'s "consumer-side confirmation" IS RETRACTED** *(`RULE 40` — struck, not deleted)*: ~~*"`build_final_hp.py` ASKS for `period = 'FULL'`, so the `FULL`-only key table costs nothing today"*~~ and ~~*"the refits learn only from `final_hp`, which asks for `FULL` only, so the `4.3M` period rows reach the calibration path by NO route"*~~. **Both were true when written and both were already false: the file had changed at `09:12` and I cited it at `16:0x` and `16:1x`.** 🔑 *This is exactly why `RULE 63` exists, and it caught its own author twice in one pass.*
+
+### 🔴🔴🔴 **AND THE DESTINATION NEVER GAINED THE COLUMN. `§T26.17`'s DEFECT IS NOT FIXED — IT IS NOW ARMED.**
+
+> ✅ **The code believes it is fixed.** *`build_final_hp.py:339-341` carries a comment dated today:* **"PERIOD ENTRIES (2026-09-26). The store keeps period rungs as `prop='points'`, `period='Q1'` … **final_hp now carries the same label**, so a period leg gets calibration cells"**, *and line `357` joins on `k.period = %s`.*
+>
+> 🔴🔴 **THE TABLE DOES NOT.** *`information_schema.columns` on `nba_score.final_hp` returns **`24` columns and not one of them is `period`***: `season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor, baseline_hp, final_hp, cal_shift, score, confidence, conf_tier, c_exist, c_quality, c_market, prop_tier, band, phase, n_uncertain, built_at, edge`.
+>
+> 🔴🔴🔴 **AND THE WRITE PATH CONFIRMS IT, INCLUDING THE CONFLICT KEY** *(`build_final_hp.py:526-535`)*:
+> ```sql
+> INSERT INTO nba_score.final_hp
+>   (season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor,
+>    baseline_hp, final_hp, cal_shift, score, edge, confidence, conf_tier,
+>    c_exist, c_quality, c_market, prop_tier, band, phase, n_uncertain)     -- 23 columns, NO period
+> ON CONFLICT (game_date, player_id, prop, line, side) DO UPDATE SET …      -- NO period
+> ```
+> ⇒ ***THE READER NOW ADMITS FIVE PERIODS AND THE WRITER HAS ONE SLOT FOR THEM.*** 📜 **`RULE 61` INVERTED, AND THIS IS THE FIRST INSTANCE OF THE INVERSE IN THIS SWEEP: `RULE 61` says stored rows the current code cannot produce are STALE, not a code defect. Here **the CODE now assumes a schema the STORE does not have** — the opposite direction, and it fails the other way: silently, on write, by overwrite.**
+
+### 🔴🔴🔴🔴 **THE COLLISION IS NOT THEORETICAL. IT IS ALREADY IN THE DATA, MEASURED, AND WAITING ON ONE TRIGGER.**
+
+> *Same `(game_date, player_id, prop, line)`, more than one period, in `nba_score.baseline_history` right now:*
+>
+> | | count |
+> |---|---|
+> | colliding key groups | **`7,796`** |
+> | rows involved | **`31,332`** |
+> | of those, groups that CONTAIN a `FULL` rung | **`3,801`** |
+> | 🔴🔴 **…and are on a REAL `board_rung_keys` key today — i.e. SCORED** | 🔴🔴 **`3,801` — every single one** |
+> | rows in those live groups | 🔴 **`17,049`** |
+> | most periods on one key | **`5`** *(`FULL/H1/H2/Q1/Q4`)* |
+>
+> *The shape, by period set — note that **every set containing `FULL` is `100%` on a live board key**: `FULL/H1/H2/Q1/Q4` `2,822`/`2,822` · `FULL/H1/H2` `504`/`504` · `FULL/H1` `141`/`141` · `FULL/H1/H2/Q1` `134`/`134` · `FULL/H1/H2/Q4` `101`/`101` · `FULL/H2` `92`/`92`. Sets WITHOUT `FULL` are mostly NOT on a board key (`H1/H2/Q1/Q4`: `2,724` groups, `37` on a key) — **which is itself the signature of a `FULL`-only key table**.*
+>
+> ⚠⚠⚠ **SO THE ONLY THING PREVENTING THIS TODAY IS THE ONE FACT `§T26.59` MEASURED: `nba_market.board_rung_keys` IS `4,522,924` ROWS AND `100%` `FULL`.** *The reader's `FULL` filter was the guard; it was removed at `09:12`. **The guard is now the emptiness of the input.***
+
+### 🔴🔴🔴 **AND THE TRIGGER FIRES THREE FAILURES AT ONCE — WHICH IS WHY THIS OUTRANKS EVERYTHING ELSE ON THE BRIEF**
+
+> *`refresh_board_rung_keys` carries **`16` period mappings** (`points`/`rebounds`/`assists`/`threes_made` × `Q1`/`H1`/`H2`/`Q4` — `§T26.59`), so the day **one app posts a `player_points_q1` line**, the key table gains period rows and:*
+>
+> ① 🔴 **`final_hp` starts receiving period rungs it cannot label** ⇒ ***period probabilities wearing full-game keys — `§T26.17`/`§T26.18`'s defect, resurrected*** *(and `build_final_hp.py:359-363` describes having FIXED exactly this once: "a period line … landed as if it were a full-game 5.5, and where a period line coincided with a full-game line **the upsert let the last one win**")*;
+> ② 🔴 **the upsert collides on `3,801` live keys / `17,049` rows** ⇒ ***silent overwrite, last-write-wins, no error***;
+> ③ 🔴 **`_prune_scope` acquires period triples** ⇒ ***`T26-6`'s inversion: `4,296,237` baseline period rows stop being "never-derived" and become deletable***.
+>
+> ⇒ 🔑🔑 ***ONE TRIGGER, THREE INDEPENDENT SILENT FAILURES, AND THE TRIGGER IS "A DFS APP POSTS A `Q1` PROP" — WHICH IS ROUTINE IN-SEASON AND `24` DAYS AWAY.*** ⚠ *The owner's recorded operating condition applies at full force here (`§T26.70`): **"they run um, not monitored"**. ⇒ **`T26-11`.**
+>
+> ✅ *And the remedy is not ambiguous: **add `period` to `nba_score.final_hp` and to the conflict key** — `ON CONFLICT (game_date, player_id, prop, period, line, side)` — before the key table can carry a period row. The reader is already period-aware; only the destination is not.* ⚠ *Doing it in the other order — letting a period board arrive first — corrupts `17,049` rows that no gate will flag.*
+
+> ⚠ **ONE SMALLER DISCREPANCY, RECORDED IN PASSING**: *`build_final_hp.py:362` states "~`31%` of `baseline_history` rows are period rungs". `§T26.59` measured **`49.3%`** (`4,296,237` of `8,708,333`) on `2026-09-26`. The comment's figure is consistent with the pre-prune store (`19,343,348` rows) and is now stale — **in code, not in the twelve**, so it is noted rather than corrected here.*
+
+> 🔁 **RE-DERIVE** *(`RULE 59`)*:
+> ```bash
+> git log -1 --pretty='%h %ad %s' --date=format:'%H:%M' -- nba/build_final_hp.py      # 00c71c6b 09:12
+> git show 00c71c6b -- nba/build_final_hp.py
+> sed -n '136,144p;526,535p' nba/build_final_hp.py
+> ```
+> ```sql
+> SELECT column_name FROM information_schema.columns
+>   WHERE table_schema='nba_score' AND table_name='final_hp';          -- 24 cols, no `period`
+> WITH c AS (SELECT game_date, player_id, prop, line,
+>                   count(DISTINCT coalesce(period,'FULL')) AS n, bool_or(coalesce(period,'FULL')='FULL') AS hf,
+>                   count(*) AS r
+>            FROM nba_score.baseline_history GROUP BY 1,2,3,4 HAVING count(DISTINCT coalesce(period,'FULL'))>1)
+> SELECT count(*), sum(r), count(*) FILTER (WHERE hf),
+>        count(*) FILTER (WHERE hf AND EXISTS (SELECT 1 FROM nba_market.board_rung_keys b
+>          WHERE b.game_date=c.game_date AND b.player_id=c.player_id AND b.prop=c.prop AND b.line=c.line))
+> FROM c;                                                              -- 7,796 | 31,332 | 3,801 | 3,801
+> ```
+
+## ✅✅✅ **§T26.66 — `T26-4` ANSWERED, AND THE ANSWER RETRACTS THE ALARM: THE BELOW-CHANCE ANCHOR IS CONFINED TO ONE EXPERIMENT FAMILY OF `21` ROWS, WHILE THE PRODUCTION EVALUATION SCORES `0.56431` ON `1,248,826` LEGS — AND `§T26.55`'s "THE SLICE IS UNDEFINED" WAS MY OWN ERROR** *(`SELECT` over all `109` rows + source, 2026-09-26; the census is `0` of the twelve)*
+
+> 📌 **`T26-4` asked whether the scoring system is worse than a coin flip. `§T26.55` reported `anchor` log-loss `0.72604` against `ln 2 = 0.69315` and Brier `0.26359` against `0.25`, said *"the slice is undefined"*, and stopped there.** ⚠⚠ ***It stopped one query too early. `§T26.55` read the `5` newest rows of a `109`-row table; the table answers the question by itself.***
+
+### ⚠⚠ **FIRST, THE CORRECTION I OWE: THE SLICE IS NOT UNDEFINED. IT IS DEFINED BY ITS OWN SIBLINGS IN THE SAME TABLE.**
+
+> 🔴 **`§T26.55` — my own section, written `2026-09-26` — asserted "the slice is undefined".** ✅ **It is defined.** *`nba_score.factor_gate_results` holds `slice = 'all'` beside `slice = 'fires'` (`n = 13,319`), `slice = 'low_novelty'` (`n = 4,695`) and `slice = 'high_novelty'` (`n = 866`), **all four written by the same script, `nba/test_a2_novelty.py`, in the same run at `2026-09-13 19:32:07Z`**. The nesting fixes the meaning exactly: `all` is that experiment's full graded sample and `fires` is the subset where `A2` fired.* ⇒ **the definition was one `GROUP BY slice` away, and `§T26.55` is corrected in place rather than struck** *(`RULE 40`)*. 📜 **AND THE LESSON IS `RULE 58`'s, turned on myself: "the slice is undefined" was a claim about MY QUERY, not about the store — the fourth time in three days that a `0`/absence I published was an artefact of the scope I chose.**
+
+### ✅✅ **THE CENSUS — `45` SLICES, `109` ROWS, AND THE BELOW-CHANCE RESULT OCCUPIES FOUR SLICES AND NOTHING ELSE**
+
+> | family | slices | rows | `n` | best log-loss | **every row above `ln 2`?** | last run |
+> |---|---|---|---|---|---|---|
+> | 🔴 **`all` · `fires` · `low_novelty` · `high_novelty`** *(the `A2`-novelty gate)* | **`4`** | **`21`** | `866` – `15,024` | `0.7147` | 🔴🔴 **YES — ALL `21`** | `2026-09-25` (`all` only) |
+> | ✅ `remaining_factors` | `1` | `5` | **`1,248,826`** | ✅ **`0.56431`** | ✅ NO — *not one* | `2026-09-17` |
+> | ✅ `allprop:*` *(per-prop calibration)* | `25` | `50` | `437,264` – `1,011,076` | ✅ **`0.0761`** | ✅ NO — *not one* | `2026-09-13` |
+> | ✅ `prop:*` · `ladder_all` *(the ladder)* | `9` | `18` | `46,910` – `105,663` | ✅ `0.5623` | ✅ NO — *not one* | `2026-09-13` |
+> | ⚠ `n1_ablation` | `1` | `5` | `1,322` | `0.67266` | ⚠ *mixed — **and its columns do not mean what they are named**, see below* | `2026-09-15` |
+>
+> ⇒ 🔑🔑 **`21` OF `109` ROWS ARE ABOVE CHANCE, AND ALL `21` BELONG TO ONE EXPERIMENT. `40` OF THE `45` SLICES DO NOT CONTAIN A SINGLE ABOVE-CHANCE ROW.** ✅✅ ***THE PRODUCTION EVALUATION IS `0.56431` LOG-LOSS ON `1,248,826` GRADED LEGS — which is the `0.5643` this corpus already carries for the graded PrizePicks history, matched to four decimals from an independent slice.***
+>
+> ⇒ ✅✅✅ **`T26-4` ANSWERED, AND THE HEADLINE INVERTS**: ***the scoring system is not below chance. A local anchor inside one novelty experiment is — on a sample between `866` and `15,024` legs, three orders of magnitude smaller than the production evaluation.*** 🔴 **WHAT REMAINS TRUE AND STILL MATTERS**: *that family's anchor has been above `ln 2` **since `2026-09-13`, across all four of its slices, in two independent runs** — so **every `gain_vs_anchor` inside it is measured against a floor that does not hold**, and *none* of `§T26.55`'s five verdicts (`anchor_x_defender` `0.00000`, `anchor_x_A2` `−0.24441`, …) is evidence about the production model. ⇒ **the verdicts are not wrong, they are UNINTERPRETABLE — which is a different repair: fix the anchor, then re-run the gate.**
+
+### 🔴🔴 **AND THE RERUN MADE IT WORSE, QUIETLY: `n` FELL BY HALF AND THE SHRINKAGE PARAMETER WENT `NULL`**
+
+> | run | slice | `n` | `anchor` log-loss | `shrink_beta` | siblings rewritten? |
+> |---|---|---|---|---|---|
+> | `2026-09-13 19:32:07Z` | `all` | **`15,024`** | `0.7231` | `0.9285` | ✅ *`fires`, `low_novelty`, `high_novelty` all written* |
+> | `2026-09-25 22:42:57Z` | `all` | 🔴 **`7,128`** *(**`−52.6%`**)* | `0.72604` | 🔴 **`NULL`** | 🔴 **NO — only `all`** |
+>
+> ⚠⚠ ***So the `2026-09-25` rerun evaluated on half the sample with the shrinkage parameter unset, and did NOT rewrite the three sibling slices that give `all` its meaning — leaving the definition `12` days staler than the thing it defines.*** 🔑 *This is a harness regression, not a model regression, and it is exactly the kind of thing that makes a result look like a finding.*
+
+### 🔴🔴🔴 **A SEPARATE AND LIVE TRAP IN THE SAME TABLE: SIX WRITERS, ONE SCHEMA, THREE DIFFERENT MEANINGS PER COLUMN — AND THE KEY EXISTS ONLY IN A `print()`**
+
+> ▶ **`grep` finds SIX scripts inserting into `nba_score.factor_gate_results`**: `test_a2_novelty.py` *(`all`/`fires`/`low_novelty`/`high_novelty`)* · `gate_remaining_factors.py` *(`remaining_factors`)* · `fit_n1_model.py` *(`n1_ablation`)* · `calibrate_all_props.py` · `apply_ladder_calibration.py` · `test_factors_on_baseline.py`.
+>
+> 🔴🔴 **AND `fit_n1_model.py` REPURPOSES THREE COLUMNS, ANNOUNCING IT IN A LINE THAT ONLY EVER REACHED A CI LOG:**
+> ```python
+> print("  wrote the ablation to nba_score.factor_gate_results "
+>       "(brier col = AUC, gain col = confident-band accuracy, shrink col = confident share)")
+> ```
+> ⇒ *for `slice = 'n1_ablation'`: **`brier` is AUC** (`0.6237`, `0.6216`, `0.6191`, `0.5894`, `0.5892`), **`gain_vs_anchor` is confident-band ACCURACY** (`0.7027`, `0.7963`, `0.7347`, `0.6719`, `0.7045`), **`shrink_beta` is the confident SHARE** (`0.028`–`0.0666`).*
+>
+> ⚠⚠⚠ **THE TRAP IS NOT THE REPURPOSING, IT IS THE SORT ORDER.** ***`SELECT … ORDER BY gain_vs_anchor DESC` over this table puts `n1_ablation` on top with apparent gains of `0.70`–`0.80` — the best results in the entire factor programme by a wide margin — and they are accuracies.*** *The next-best real gain in the table is `ladder_all`'s `+0.0068`.* 🔑 **A reader — or a future pass of this sweep — ranking factor work by the column whose NAME asserts a comparison would conclude the `n1` ablation is the system's biggest win. It is `n = 1,322`, and the number is not a gain.**
+>
+> ⚠ *And a smaller instance of the same class: `remaining_factors` carries `brier = 0` and `shrink_beta = 0` on all five rows — **placeholders, not measurements** — while `A3 return ramp` (`0.56431`) is recorded with `gain_vs_anchor = 0` against `final_hp baseline` (`0.56432`), i.e. a real `+0.00001`. **On `1,248,826` legs that is nothing, and saying "nothing" is the correct verdict — but the `0` in the column is not the reason.***
+>
+> ⇒ 📜 **THE SCRIPT'S OWN COMMENT DIAGNOSED HALF OF THIS AND CREATED THE OTHER HALF**: *it says `factor_gate_results` exists "precisely so a result is not trapped in a CI log … A verdict that only exists in stdout is not a verdict." **It then put the UNITS in stdout.*** ⇒ **`T26-10`** — *the fix is a `metric` or `units` column, or slice-prefixed column names; until then the table needs a documented key, and this section is it.*
+
+> 🔁 **RE-DERIVE, NEVER QUOTE** *(`RULE 59` — every figure was RUN)*:
+> ```sql
+> SELECT slice, count(*), count(DISTINCT model), min(n), max(n), min(log_loss),
+>        bool_and(log_loss > ln(2)) AS every_row_above_chance, max(run_at)::date
+> FROM nba_score.factor_gate_results GROUP BY slice ORDER BY max(run_at) DESC, slice;   -- 45 slices, 109 rows
+> ```
+> ```bash
+> grep -c 'INSERT INTO nba_score.factor_gate_results' nba/*.py   # six writers
+> sed -n '395,400p' nba/fit_n1_model.py                          # the print() that holds the column key
+> ```
+
+## 🔴🔴🔴 **§T26.55 — `F5-1`'s MISSING RESULTS WERE NEVER MISSING: THEY ARE IN `nba_score.factor_gate_results`, DATED, AND EVERY VARIANT FAILED — INCLUDING THE INTERACTIONS THAT WERE SUPPOSED TO BE THE ANSWER** *(`SELECT` 2026-09-26; `0` of the twelve before this entry)*
+
+**`F5-1` has stood since `2026-09-23` on the claim that *"`B4 v3` and `M1` have fitting scripts in the
+repo and the results are NOT RECORDED."*** ⚠⚠ ***They were recorded. In a table. `RULE 20`'s discipline —
+look for the result in a THIRD place before calling it absent — and this sweep had looked in two.***
+
+### ✅ **THE VERDICTS — `nba_score.factor_gate_results`, all written `2026-09-25 22:42:57Z`, `n = 7,128` legs, season `2025-26`**
+
+| model | log-loss | Brier | gain vs anchor |
+|---|---|---|---|
+| **`anchor`** | **`0.72604`** | `0.26359` | — |
+| 🔴 **`anchor_x_defender`** | **`0.72604`** | **`0.26359`** | **`0.00000`** |
+| 🔴 **`anchor_x_A5_pstart_minutes`** | `0.74408` | `0.27042` | **`−0.01804`** |
+| 🔴 **`anchor_x_A2`** | `0.97044` | `0.32440` | **`−0.24441`** |
+| 🔴 **`anchor_x_A2_x_defender`** | **`0.97044`** | **`0.32440`** | **`−0.24441`** |
+
+### 🔑🔑🔑 **READ THE IDENTICAL ROWS — THEY ARE THE FINDING, AND THEY ARE STRONGER THAN A SMALL GAIN WOULD BE**
+
+⚠ **`anchor_x_defender` matches `anchor` to FIVE DECIMAL PLACES on both metrics.** ⇒ ***The defender term
+contributes LITERALLY NOTHING — not "a small amount", nothing*** — *and it was given every advantage
+`retest_defender_factors.py` promised: the proper two-way ridge `nba_ref.defender_ratings` instead of
+"points allowed per possession", **channel matching** (`def_pts`/`def_fg` → points/fga/fgm · `def_3p` →
+threes · `def_tov` → turnovers · `def_foul` → fta), and **exposure weighting over TONIGHT'S available
+opposing defenders only** — the scoping bug that invalidated `B4 v2`'s first run.*
+
+⚠⚠ **AND `anchor_x_A2_x_defender` MATCHES `anchor_x_A2` TO FIVE DECIMALS TOO.** 🔑 *The re-test's whole
+premise was that **interactions were "the gap in EVERY factor test so far"** — practitioner sources say
+books misprice when factors move together.* ⇒ ***The interaction was built, run, and the defender term
+adds zero INSIDE it as well. The hypothesis is dead in both forms.***
+
+### 🔴🔴 **AND A FOURTH INDEPENDENT LINE OF EVIDENCE AGAINST THE `A5` STARTER MODEL**
+
+**`anchor_x_A5_pstart_minutes` = `−0.01804`** ⇒ *`A5` as an interaction makes the anchor **WORSE**.*
+📌 **That is now FOUR separate rejections of the same model**: *① `§0u.1`'s Δ MAE — negative on every
+prop · ② the enrichment doc's **"I validated the wrong target"** · ③ `grep` finds **`0` callers** of
+`p_start()` · ④ **this gate, run independently on `7,128` legs**.* ✅ ***`§T26.39`'s retraction of
+`§T26.12`/`§T26.22` is confirmed by a measurement taken after it was written and without reference to
+it.***
+
+### ⚠⚠⚠ **ONE FIGURE IN THIS TABLE NEEDS ITS OWN LINE, AND IT IS NOT ABOUT THE FACTORS**
+
+🔴🔴 **THE `anchor` ITSELF SCORES WORSE THAN A COIN FLIP ON THIS SLICE.**
+*`ln(2) = 0.69315` is the log-loss of always predicting `0.5`; a Brier of `0.25` is its counterpart.*
+▶ **The anchor reads `0.72604` and `0.26359` — worse by `0.0329` and `0.0136`.**
+
+⚠ **STATE THE CAVEAT BEFORE THE ALARM**: *`slice = 'all'` here means all legs **ELIGIBLE FOR THE
+INTERACTION TEST**, not the board. `n = 7,128` against a nightly board of `~91,405` legs, so this is a
+small, deliberately hard subpopulation — **plausibly legs carrying an `A2` absence event**, which are
+exactly the cases the model finds hardest.* ⇒ 🔑 **It is NOT evidence that the product is worse than
+chance.** 🔴 **But it IS an unexplained figure in the system's own gate table**, and the sweep cannot
+resolve it read-only: ***what defines this slice, and is a below-chance anchor expected on it?***
+⚠ **NOT RECORDED** *(`RULE 6`)* ⇒ **tracked as item `T26-4`.**
+
+📌 **ALSO NOT RECORDED**: *`shrink_beta` is **NULL on all five rows**, so no shrinkage was applied or
+stored for this run, while the scripts' stated discipline is reliability shrinkage (`k=150` for `M1`,
+`k=112` for `D1`'s tendencies).*
+
+### ✅ **WHAT THIS CLOSES, AND THE METHOD LESSON**
+
+✅✅ **`F5-1`'s FACTOR HALF IS CLOSED**: *the results exist, are dated `2026-09-25`, and are reproducible
+from* `` SELECT model, log_loss, brier, gain_vs_anchor FROM nba_score.factor_gate_results WHERE run_at::date='2026-09-25' `` *— **they were simply never written into the twelve.*** *(Its file half closed
+at `§T26.54`.)* ⇒ **`F5-1` is fully closed.**
+
+🔑🔑 ***THE LESSON: "NOT RECORDED" IS A CLAIM ABOUT WHERE YOU LOOKED.*** *This sweep searched the twelve
+and the repo, found fitting scripts with no written verdicts, and concluded the results did not exist.
+**They were in a database table the whole time — `109` rows spanning `2026-09-13` → `2026-09-25`,
+covering `23` models.*** 📜 **`RULE 58`'s shape on an ABSENCE rather than a query: a "not recorded" verdict
+must name the places searched, and a results TABLE is a place.**)
+> FROM nba_score.board_scored;   -- 12 | 0 : never exercised
+> ```
+
+---
+
+# 🛠️🛠️ **EDITING DEFECT — `§T26.78`'s PATCH DAMAGED THIS FILE. READ THIS BEFORE THE NEXT ~`130` LINES.** *(recorded `2026-09-26`, pass 31)*
+
+> 🔴 **WHAT IS WRONG.** *The patch that wrote `§T26.78` above used an `old_str` that was a **PREFIX of `§T26.74`'s heading line rather than the whole line**. The tool replaced the prefix, the remainder of that heading (`` `3,801` LIVE SCORED BOARD KEYS … ``) was left dangling and spliced onto the last line of the new text, and the block that followed was duplicated.*
+>
+> 🔴 **THE CONSEQUENCE, MEASURED**: *heading count `332` → `352` where `+6` was intended. **`§T26.66` and `§T26.55` each now appear TWICE***: the first copy is in the ~`130` lines immediately below this notice; the second, canonical copy follows `§T26.74`'s struck heading further down. *The spliced line itself is repaired above.*
+>
+> ⇒ ⚠⚠ **HOW TO READ THIS FILE UNTIL IT IS RESTORED: *skip from here to the struck `§T26.74` heading.* Everything between is a duplicate of content that appears again below it, and nothing between is unique.** ✅ *No OTHER document is affected — all eleven others were checked for duplicated section headings and are clean (`NBA_SWEEP_RUN_LOG.md`'s three duplicates — `§F1.2`, `§F2.11`, `§F4.3` — are **pre-existing**, present at this morning's baseline `bb3335ba`).*
+>
+> 📜 **THE RULE THIS EARNS, AND IT IS A `RULE 59`-CLASS DISCIPLINE FOR WRITING RATHER THAN MEASURING: *an `old_str` must match a WHOLE line, never a prefix of one.* A prefix match succeeds, reports `ok: true`, and silently leaves the line's tail welded to the replacement.** ⚠ *The census stamp is deliberately **left stale** at `332` rather than updated to `352`, because stamping would bless the corruption. **It is the gate that caught this** — the stamp drifted by `+20` against an intended `+6`, and that discrepancy is the only reason the damage was found at all.*
+>
+> 🔑 **THE CLEAN REPAIR** *(needs one file-level restore, which this sweep's standing constraint does not permit it to perform)*: **restore `nba/NBA_FINAL_SCORING_CALIBRATION.md` to commit `dbc11ffc` and re-apply `§T26.78` with a whole-line `old_str`.** *`§T26.78`'s text is intact above and needs no rewriting; `dbc11ffc` is the last state with `332` headings and no duplication.*
+
+---
+
+> *(Duplicated block begins here — skip to `§T26.74`'s struck heading.)*
+
+> **§T26.74's ORPHANED TAIL** *(the remainder of its heading, preserved per `RULE 40`)*: ~~`3,801` LIVE SCORED BOARD KEYS ALREADY HAVE PERIOD SIBLINGS AT THE IDENTICAL LINE, AND THE UPSERT KEY CANNOT TELL THEM APART~~ *(source + `SELECT`, 2026-09-26)* — 🔴 **the claim is RETRACTED by `§T26.78` above.**
 
 > 📌 **`RULE 63`, numbered this morning, fired a THIRD time at pass `28`'s gate: `nba/build_final_hp.py` moved at `09:12` PT — `00c71c6b`, *"NBA final_hp: board keys carry every period"*.** ⚠⚠ ***It falsifies a claim `§T26.68` and `§T26.72` each published within the hour, and what it replaces that claim with is worse than the claim was.***
 
