@@ -145,7 +145,16 @@ def main():
                                 (1 - hit_side) * np.log(np.clip(1 - p_side, 1e-6, 1))))
             rows.append({"season": season, "prop": prop, "n": len(d), "ECE_pp": ece, "worst_pp": worst,
                          "brier": brier, "lift_%": 100 * (brier_base - brier) / brier_base, "logloss": ll})
-    conn.close()
+            # PROGRESS, visible from the database (2026-09-26): the maintenance run's log is unreachable
+            # under the doc chat's commit flood, so the script records where it is as it goes.
+            with conn.cursor() as _c:
+                _c.execute("""INSERT INTO nba_config.classification_config (config_key, config_json, notes, updated_at)
+                              VALUES ('prop_reliability_audit_progress', %s, 'heartbeat from nba/score_prop_reliability.py', now())
+                              ON CONFLICT (config_key) DO UPDATE SET config_json = EXCLUDED.config_json, updated_at = now()""",
+                           (json.dumps({"season": season, "prop": prop, "done": len(rows), "n": len(d), "ECE_pp": round(ece, 4)}),))
+            conn.commit()
+    # (the connection stays open: the derived table is written below - closing it here was the crash
+    #  that lost the 2026-09-26 run after two hours of grading)
 
     df = pd.DataFrame(rows)
     if df.empty:
