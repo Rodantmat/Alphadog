@@ -173,6 +173,41 @@ jobs:
             done
           fi
 
+      # 1b) LOAD THE MINED DATA INTO POSTGRES (2026-09-26, T26-8). The scrapers above write JSON only;
+      # the workers that load it were reachable from no schedule: nba_stats.player_game_log was last
+      # written 2026-09-08 and nba_calendar.games - the table every gate reads - 2026-09-02. Same
+      # dispatch-then-verify-by-data pattern as P1's loop (an acknowledgement is not a row). The
+      # workers read the files from raw.githubusercontent (minutes of CDN lag, a day-old file at worst
+      # on a file that changes daily). The recipe still reads the files directly; this keeps every
+      # Postgres consumer - the availability delta, the audits, the starter features, the gates - current.
+      - name: Load the mined data into Postgres (writer workers)
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        id: dload
+        env:
+          WORKER_HOST: ${{ vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev' }}
+        run: |
+          set +e
+          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          failed=""
+          for w in nba-daily-delta nba-static-starter-status nba-static-game-officials nba-static-schedule nba-static-measure-types; do
+            url="https://alphadog-v2-$w.$WORKER_HOST/run"
+            code=$(curl -sS --max-time 150 -o "/tmp/$w.json" -w '%{http_code}' -X POST "$url" -H 'content-type: application/json' -d '{}')
+            ok=$(python -c "import json,sys; print(str(json.load(open(sys.argv[1])).get('ok')).lower())" "/tmp/$w.json" 2>/dev/null)
+            if [ "$code" = "200" ] && [ "$ok" = "true" ]; then echo "=== $w OK"; else echo "=== $w NOT ACKNOWLEDGED (HTTP $code ok=$ok) - will verify by data"; failed="$failed $w"; fi
+          done
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+          echo "Unacknowledged:${failed:- none}"
+
+      - name: Verify the daily loads by data
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LOAD_STARTED_AT: ${{ steps.dload.outputs.started_at }}
+          FAILED_WORKERS: ${{ steps.dload.outputs.failed }}
+        run: |
+          sleep 150
+          python nba/verify_static_loads.py
+
       # 2) AUDIT THE DELTA. The one check that catches a silent hole - against the SCHEDULE, not itself.
       - name: Delta gap audit (no missing dates, games, teams or rosters)
         env:
