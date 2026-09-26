@@ -143,6 +143,76 @@ writes. Grouped by role.
 
 ---
 
+## 🔴🔴🔴 **§T26.63 — `T26-1` RE-RATED AND THE BOARD LAYER MEASURED APP BY APP: FOUR OF THE FIVE DFS BOARDS ARE GENUINELY EMPTY AND *NOT* BROKEN — BETR IS BROKEN, PICK6 DOES NOT EXIST, AND NOTHING IN THE SYSTEM CAN TELL THOSE THREE STATES APART** *(source + `SELECT` + the committed meta files, 2026-09-26; the app-by-app split is `0` of the twelve)*
+
+> 📌 **`T26-1` said "board tiers are PrizePicks-only". Measuring it turned up something the item did not ask about: the archive itself stops on `2026-09-12` for every DFS app but PrizePicks, which reads exactly like a breakage — and for three of them it is not one.** ⚠⚠ ***`24` days to the opener, this distinction is the whole ball game: an app that has not opened its NBA market needs nothing, and a scraper that has died needs fixing now. This section separates them.***
+
+### ✅ **`T26-1` RE-MEASURED — THE CLAIM IS TRUE, AND SMALLER THAN IT LOOKS**
+
+> | bookmaker | archive rows | dates | last date | `board_tiers_v2` rows |
+> |---|---|---|---|---|
+> | `prizepicks` | `2,199,810` | `379` | ✅ **`2026-10-20`** *(the opener — advance boards)* | ✅ **`2,199,354`** *(`99.98%`)* |
+> | `fanduel` | `6,697,790` | `379` | `2026-04-12` | 🔴 `0` |
+> | `draftkings` | `3,652,647` | `379` | `2026-04-12` | 🔴 `0` |
+> | `betonlineag` | `3,362,604` | `378` | `2026-04-12` | 🔴 `0` |
+> | `bovada` | `2,416,074` | `377` | `2026-04-12` | 🔴 `0` |
+> | `betmgm` | `1,865,497` | `375` | `2026-04-12` | 🔴 `0` |
+> | `williamhill_us` | `1,857,248` | `371` | `2026-04-12` | 🔴 `0` |
+> | `fanatics` | `1,666,106` | `270` | `2026-04-12` | 🔴 `0` |
+> | `betrivers` | `1,093,209` | `378` | `2026-04-12` | 🔴 `0` |
+> | `underdog` | `939,719` | `380` | `2026-09-12` | 🔴 `0` |
+> | `betr_us_dfs` | `780,765` | `131` | `2026-04-12` | 🔴 `0` |
+> | `pick6` | `534,188` | `176` | `2026-04-12` | 🔴 `0` |
+> | `fliff` | `1,394` | 🔴 **`1`** | `2026-09-13` | 🔴 `0` |
+> | `sleeper` | `1,276` | 🔴 **`1`** | `2026-09-12` | 🔴 `0` |
+>
+> ⇒ **`14` bookmakers, `26,959,927` archive rows. Tiers exist for ONE: `0` rows for the other `13` across `24,760,117` rows — `91.8%` of the archive.** ✅ **The restriction is ONE env value**: `BT2_APPS: "prizepicks"` at `nba-p3-afternoon-light.yml`, matching the script's own default; `build_board_tiers_v2.py` is already app-parameterised — `WHERE bookmaker = ANY(%(apps)s)` — so widening it is a config change, not code. ⚠⚠ **BUT THE RE-RATING MATTERS**: *ten of the thirteen are SPORTSBOOKS frozen at `2026-04-12`, the end of the regular season — **tiering them would tier a dead archive**, and the goblin/demon taxonomy `build_board_tiers_v2.py` implements describes DFS rungs, not book prices. The live question is the DFS apps, and **until they post boards there is nothing to tier.*** ⇒ ***`T26-1`'s fix is one env value and its correct moment is the day the DFS boards open, not today.*** *That moves it off the pre-opener critical path without closing it.*
+
+### ✅✅ **THE FOUR EMPTY DFS BOARDS ARE EMPTY, NOT BROKEN — AND THE PROOF IS ALREADY COMMITTED IN THE REPO**
+
+> 🔑 **Every DFS scraper writes a `*_nba_current_meta.json` beside its board, and all four ran TODAY and reported success:**
+>
+> | app | board file | legs | meta `ok` | meta `fetched_at` | what the meta proves |
+> |---|---|---|---|---|---|
+> | `prizepicks` | `365,552` B | ✅ **`192` props** | `true` | `2026-09-26` | *posting advance boards; archive reaches `2026-10-20`* |
+> | `underdog` | `23,794` B | `3` | `true` | `2026-09-26T05:27:45Z` | 🔑 ***`match_grouped_lines[core]: 3` — MATCHES FOUND, `lines[match=…]: 0` — the app lists NBA games and has posted no lines*** |
+> | `sleeper` | `331` B | `0` | `true` | `2026-09-26T04:57:03Z` | *endpoint answered; `legs: 0`, `unknown_players: 0` — nothing available* |
+> | `fliff` | `757` B | `0` | `true` | `2026-09-26T00:50:28Z` | 🔑 ***`errors: []` and `channels_seen: {452: 129, 753: 70, 43005: 40, …}` — the feed RETURNED CONTENT and `events: 0`, `markets: 0` of it was NBA*** |
+>
+> ✅ **And their scrapers are properly cron'd, every two hours, deliberately staggered**: `sleeper-board.yml` `:15`, `underdog-board.yml` `:25`, `fliff-board.yml` `:35`, plus `scrape.yml` at `:00` — *`12` refreshes a day each, which is why every board file above is hours old.* ⚠ **`RULE 58`, ON MY OWN PASS-22 WORK**: *these three live in workflows with NO `nba-` prefix, so a `.github/workflows/nba-*.yml` glob does not see them. **`11` workflows in this repo carry a `cron`, not the `6` an `nba-`-scoped glob reports.** `§T26.61`'s worker/table census is unaffected — it grepped the whole directory — but the correction is recorded here because the next person to count crons will make the same mistake.*
+>
+> ⇒ 📜 **`RULE 61` AGAIN, AND THIS IS ITS CLEANEST CASE YET: the `2026-09-12` archive cutoff is not a stale store and not a broken scraper — IT IS THE LAST DAY THOSE APPS HAD AN NBA BOARD TO CAPTURE.** *PrizePicks is the exception because PrizePicks posts weeks early, which `nba-p3-afternoon-light.yml` already documents in its own comment.*
+
+### 🔴🔴 **BETR *IS* BROKEN, AND THE REPO CANNOT FIX IT: THERE IS NO BETR SCRAPER**
+
+> 🔴 **`boards/betr_nba_current.json` carries `legs: 0` and its meta reads `fetched_at: 2026-09-10T06:18:28Z` — `16` days stale, while the other four refresh every two hours.** ⚠⚠ **AND `ls nba/scrape_betr*` RETURNS NOTHING.** *`betr` appears in `archive_live_boards.py` (the READER), three builders, and two workflows' `ARCHIVE_APPS` — **and in no scraper.** Whatever produced that file is not in this repo, which is exactly why nothing refreshes it.*
+>
+> 🔴🔴🔴 **AND THE DATE THE META ITSELF CARRIES**: `token_expires_at: 2026-10-10T06:10:56Z` — ***the Betr token expires TEN DAYS BEFORE OPENING NIGHT (`2026-10-20`).*** *`T20-14` flagged the token; this adds the half that makes it actionable: **even a fresh token would not help, because nothing in the repo fetches a Betr board.*** ⇒ **`betr` sits in `ARCHIVE_APPS` on the cron'd P3 path as a permanent no-op.**
+
+### 🔴 **AND `pick6` IS NOT ANYWHERE: NO SCRAPER, NO BOARD FILE, NOT IN `ARCHIVE_APPS`**
+
+> *The owner's target set is six DFS apps — PrizePicks, Underdog, Sleeper, Fliff, Betr, pick6. `ARCHIVE_APPS` lists **five** (`prizepicks,underdog,sleeper,fliff,betr`) on both the cron'd P3 path and `nba-board-archive.yml`.* 🔴 **`pick6` has no `scrape_*` script, no `boards/pick6_nba_current.json`, and no entry in either list — it exists only as `534,188` rows / `176` dates ending `2026-04-12`.** ⇒ ***of the six target apps, ONE is live, THREE are waiting on the apps themselves, and TWO — Betr and pick6 — have no working path into the archive at all.***
+
+### 🔴🔴🔴 **THE DEFECT THAT OUTLIVES ALL OF THE ABOVE: THE SIGNAL THAT TELLS THESE STATES APART EXISTS, IS COMMITTED, AND NOTHING READS IT**
+
+> ① ⚠ **`archive_live_boards.py` treats an empty board as a successful capture**: `if not rows: print(f"{app}: 0 rows parsed"); continue` — *a log line in a job that exits green. Its only hard guard, `if not doc: print(f"{app}: no board file")`, catches a MISSING file, never an EMPTY one.*
+> ② 🔴 **`certify_pipeline.py` has exactly ONE board gate, and it is an aggregate**: `check("board archived today", "SELECT count(*) FROM nba_market.board_snapshots WHERE game_date = %s", …, lambda v: v and int(v) > 0, "board legs captured")`. **No `bookmaker` breakdown, and the threshold is `> 0`.** ⇒ ***PrizePicks alone satisfies it. The day the other apps open their boards, a per-app scraper failure will be invisible to certification exactly as Betr's `16`-day silence is invisible now.***
+> ③ 🔴🔴 **AND THE MISSING PIECE IS ALREADY ON DISK.** *The meta files carry precisely what a gate needs — `ok`, `fetched_at`, `legs`, and for Betr a dated `token_expires_at` — and* `grep -rn "_current_meta|token_expires" nba/certify_pipeline.py nba/check_*.py nba/verify_*.py` *returns* **NOTHING**. ⚠⚠ ***A credential expiry that lands ten days before opening night is sitting in a committed file, in ISO-8601, and no gate, checker or verifier in this repo reads it.***
+> ⇒ ***the cheap fix is not a new scraper: it is a per-app freshness assertion over the five meta files — `ok`, `fetched_at` within N hours, and `token_expires_at` in the future — which turns three indistinguishable states into three distinct ones.*** ⇒ **`T26-9`.**
+
+> 🔁 **RE-DERIVE, NEVER QUOTE** *(`RULE 59` — every figure was RUN)*:
+> ```sql
+> SELECT b.bookmaker, count(*), count(DISTINCT b.game_date), max(b.game_date),
+>        (SELECT count(*) FROM nba_market.board_tiers_v2 t WHERE t.bookmaker=b.bookmaker)
+> FROM nba_market.board_snapshots b GROUP BY 1 ORDER BY 2 DESC;
+> ```
+> ```bash
+> for f in boards/*_nba_current_meta.json; do echo "$f"; python3 -c "import json;print(json.load(open('$f')))"; done
+> grep -l "cron:" .github/workflows/*.yml | wc -l          # 11, NOT the 6 an nba-*.yml glob reports
+> ls nba/scrape_betr*                                      # No such file
+> grep -rn "_current_meta|token_expires" nba/certify_pipeline.py nba/check_*.py nba/verify_*.py   # nothing
+> ```
+
 ## 🔴🔴🔴🔴 **§T26.61 — THE DISPATCH CENSUS, CLOSED AND COMPLETE: `11` OF `21` NBA WRITER WORKERS ARE REACHABLE FROM NO SCHEDULE, AND `26` OF THE `41` TABLES THEY WRITE HAVE NO SCHEDULED WRITER AT ALL** *(source census + `SELECT`, 2026-09-26; the closed list is `0` of the twelve)*
 
 > 📌 **WHY THIS PASS EXISTS.** *`§T26.52` found ONE orphaned table. `§T26.57` found ONE orphaned worker. `§T26.54` reported `21`/`21` workers **documented** and read that as reassurance.* ⚠⚠ ***Three findings, one shape, and nobody had asked the question closed-form: WHICH workers are invoked by something that runs on its own?*** 🔑 **`§T20.34`'s lesson applies exactly — an owner handed a FLOOR cannot plan; an owner handed a CLOSED LIST can fix it in an afternoon.** *This is the closed list.*
