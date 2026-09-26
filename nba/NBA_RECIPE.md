@@ -305,7 +305,8 @@ that is the useful part.
 >
 > ### 1 · ➕ **ADD A NEW PROP, END TO END**
 >
-> **A prop is not a stat.** *There are **`30` props** live in `nba_score.baseline_history` and
+> **A prop is not a stat.** *There are ▶ **`29` props** live in `nba_score.baseline_history`* ⚠ *(~~`30`~~
+> — re-derived `2026-09-26`, `§T26.49`; the board-scoped prune also halved the row count)* *and
 > **`13` stat keys** in `nba_config.stat_decay_config` — props are what a DFS app lists
 > (`pra`, `pts_reb`, `points_q1`); stat keys are the underlying rates the baseline decays.*
 > *Re-derive both:* `` SELECT prop, count(*) FROM nba_score.baseline_history GROUP BY 1 `` and
