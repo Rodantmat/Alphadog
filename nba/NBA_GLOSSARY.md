@@ -1087,6 +1087,7 @@ unknown.** *Up to five transcripts are shown per term.*
 
 | Term | Documents | Transcript(s) |
 |---|---|---|
+| `verify_static_loads` 🆕 | **WRK,GLO** | **T26** *(P1's own check that its static loads LANDED — exists because P1 died on `ModuleNotFoundError: scipy` every Monday BEFORE its COMMIT step, `§T26.28`)* |
 | `validate_blowout_upgrade` | DB,SUM | T4 T11 T16 |
 | `validationerror` | ARC,SUM | T12 |
 | `var_band` | DB,SUM | T9 T10 |
