@@ -183,7 +183,8 @@ unknown.** *Up to five transcripts are shown per term.*
 | `absence_panel_teams` | OPEN,SUM | T4 |
 | `absence_prior_measured` | BCAL,SUM | T12 |
 | `active_nba_teams` | OPEN,SUM | T2 |
-| `active_stats_season` | DSN,OPEN,SUM | T7 T9 |
+| `active_stats_season` | DSN,OPEN,SUM,**RCP**,**GLO** | T7 T9 **T26** 🆕 *(the ONE season source of truth; CLOSED `T20-4` — `§T26.30`)* |
+| `availability_prior` 🆕 | **DB,FCAL,WRK,GLO** | **T26** *(`699` cells; `N1`'s fallback, Brier `0.0441` OOS — `§T26.5`)* |
 | `actual_efg_pct` | DB,OPEN,SUM | T3 T4 |
 | `adjusted_odds` | GD,MUL,OPEN | — |
 | `af540a9` | OPEN,SUM | — |
