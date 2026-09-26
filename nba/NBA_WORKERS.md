@@ -145,6 +145,64 @@ writes. Grouped by role.
 
 ---
 
+## 🔴🔴🔴 **§T26.76 — `§T20.34`'s FLOOR CONVERTED TO A TOTAL AT THE WORKFLOW LAYER: `103` SEASON-LITERAL SITES ACROSS `13` WORKFLOWS, `85` OF THEM HARDCODED, AND ALL `13` ARE MANUAL — WHILE THE THREE CRON'D PIPELINES HAVE ZERO** *(source census, 2026-09-26; `1` of the `103` was recorded in the twelve)*
+
+> 📌 **`§T20.34` counted `7` season literals across `P2` and `P3` and stated its own limit honestly — *"`RULE 17`: a FLOOR, not a total"*. That census was at the SCRIPT layer.** ⚠ **Nobody had ever run it at the WORKFLOW layer**, *and pass `30` reached it from the `T26` `ASSISTANT OUTPUT` stratum, where the transcript records finding "another dead ceiling" and a `SEASON_BOUNDS` dict — two shapes the literal-grep cannot see.*
+
+### ✅✅ **FIRST, THE GOOD NEWS, AND IT CONFIRMS `T20-4`'s CLOSURE FROM A NEW DIRECTION**
+
+> 🔑 **The three cron'd pipelines carry `0` season-literal sites between them.** *`nba-p1-weekly-static.yml`, `nba-p2-overnight-heavy.yml` and `nba-p3-afternoon-light.yml` do not appear in the census below at all* — ***which is `T20-4`'s closure ("`grep -c '2025-26'` on all three returns `0`·`0`·`0`") re-derived independently, `3` days later, by a census that was not looking for it.*** ⇒ **the nightly path is clean. The hazard did not disappear; it MIGRATED to the manual surface, and that is where it has never been counted.**
+
+### 🔴 **THE CLOSED TOTAL — every `nba-*.yml` line containing `2024-25` or `2025-26`**
+
+> | workflow | sites | overridable by an input | 🔴 **HARDCODED** | `cron` |
+> |---|---|---|---|---|
+> | 🔴🔴 **`nba-absence-panel.yml`** | **`47`** | `11` | 🔴🔴 **`36`** | **`0`** |
+> | `nba-backtest.yml` | `16` | `0` | `16` | `0` |
+> | `nba-board-maintenance.yml` | `7` | `2` | `5` | `0` |
+> | `nba-engine-test.yml` | `7` | `0` | `7` | `0` |
+> | `nba-maintenance.yml` | `6` | `0` | `6` | `0` |
+> | `nba-baseline-history.yml` | `5` | `1` | `4` | `0` |
+> | `nba-backfill.yml` | `3` | `0` | `3` | `0` |
+> | `nba-combos-history.yml` | `3` | `1` | `2` | `0` |
+> | `nba-periods-history.yml` | `3` | `1` | `2` | `0` |
+> | `nba-market-spreads.yml` · `nba-pairs.yml` | `2` each | `1` each | `1` each | `0` |
+> | `nba-game-officials.yml` · `nba-starter-status.yml` | `1` each | `0` | `1` each | `0` |
+> | **TOTAL** | **`103`** | `18` | 🔴 **`85`** | 🔴 **`0` — every one manual** |
+>
+> ⇒ ⚠⚠ **`1` of the `103` is cited in the twelve** *(`nba-absence-panel.yml:136`)*. **`RULE 17`'s floor was `7`; the total at this layer is `103`.**
+
+### 🔴🔴🔴 **AND THE CONCENTRATION IS THE FINDING: `nba-absence-panel.yml` EXPOSES A `seasons` INPUT THAT `36` OF ITS `47` SITES IGNORE**
+
+> *That workflow is not peripheral — it is **`28` python steps carrying the model-fitting surface** (`fit_minutes_allocator`, `fit_rate_response`, `fit_b4_*`, `fit_a5_projected_lineups`, `fit_m1_defender_level`, `fit_n1_granular`, `apply_ladder_calibration`, `calibrate_all_props`, `build_blowout_model`, `build_matchup_model`, `build_mondrian_confidence`, `build_asof_calibration`, `gate_remaining_factors`, **`build_final_hp`**), and this corpus already records it as **one of only TWO workflows that write `final_hp` at all**.*
+>
+> 🔑 **It takes an input that looks like it parameterises the run:**
+> ```yaml
+> seasons:
+>   description: "comma-separated (2023-24 has no injury archive)"
+>   default: "2024-25,2025-26"
+> ```
+> ⚠⚠⚠ **AND `36` OF ITS `47` SITES CANNOT SEE IT.** *`11` read `${{ github.event.inputs.seasons || … }}`; the other `36` are literal — `RATE_TRAIN_SEASON: "2024-25"`, `B4_TEST_SEASON: "2025-26"`, `N1_SEASONS: "2024-25,2025-26"`, `EB_SEASONS`, `BM_SEASONS`, `BS_SEASONS`, `TM_SEASONS`, `SC_SEASONS`, `MC_SEASONS`, `CV_SEASONS`, `AC_SEASONS`, `CC_TRAIN`/`CC_TEST`, `LC_TRAIN`/`LC_TEST`, `RF_TRAIN`/`RF_TEST`, `M1_*`, `RIM_*`, `RT_*`, `UA_*`, `FN_*`, `N1_TRAIN`/`N1_TEST` …*
+>
+> ⇒ 🔴🔴🔴 ***RUNNING IT WITH `seasons: 2026-27` DOES NOT REFIT ON `2026-27`. IT PRODUCES A MIXED-SEASON FIT — `11` steps on the season you asked for and `36` on `2024-25`/`2025-26` — AND NOTHING SAYS SO.*** 🔑 **That is strictly worse than either honest alternative**: *a workflow with no input would be refused or edited; a workflow whose input worked would be correct. **One that accepts the input and half-ignores it produces a model fitted across two different season definitions and reports success.*** ⚠ *`2026-27` appears **`0` times** in the file.*
+>
+> ⚠⚠ **AND THE TIMING IS THE WHOLE POINT**: *`cron = 0` means this only runs when a person runs it — **and the occasion to run it is precisely the new season**. The defect is dormant until the exact moment it matters, in a workflow the owner has stated runs **"not monitored"** (`§T26.70`).* ⇒ **`T26-12`.**
+
+### ⚠ **TWO SMALLER SHAPES FROM THE SAME STRATUM, BOTH GENUINELY NEW**
+
+> ① 🔴 **THE SEASON-KEYED BOUNDS DICT IS A THIRD SPECIES, AND `SEASON_BOUNDS` APPEARS `0` TIMES IN THE TWELVE.** *`8` scripts carry a `SEASON_BOUNDS = {` / `BOUNDS = {` keyed by season; **`7` have no `2026-27` entry**.* ✅ ***The one that DOES — `export_market_spreads.py` — is the only one of the eight on a cron'd path (`P2` and `P3`), and its own comment records the fix and the exact failure mode***: *it "had NO `2026-27` row" and "from `2026-27` both pipelines would have re-exported two stale seasons and produced no market [data]".* ⇒ **the live path was fixed deliberately; the other `7` (`build_absence_panel`, `_v2`, `_v3`, `build_redistribution_factors`, `build_redistribution_panel`, `fit_minutes_allocator`, `scrape_nba_pairs`) are all manual.** 🔑 *A missing dict KEY is not a wrong literal — it raises or silently falls through — so `§T20.34`'s literal-grep could never have found it.*
+> ② 🔴 **THREE GENERATIONS OF ONE ORPHAN.** *`build_absence_panel.py` (`14,331` B), `_v2.py` (`11,897` B), `_v3.py` (`11,913` B), dated `2026-09-11`/`09-11`/`09-12* — **and `grep -rlw` across every `.py` and every workflow finds NOTHING referencing any of the three** *(two vocabularies: workflow files and python imports/invocations)*. ⇒ *`§T26.61`'s orphan census found `11` undispatched workers; this is a new shape — **not one orphan but three versions of the same one**, and the newest is not the largest, so it is not obvious which was meant to win.* ⚠ *Bears on `F6-2`, which asks whether to BUILD an absence control — **three unreferenced attempts already exist**.*
+
+> 🔁 **RE-DERIVE** *(`RULE 59` — one definition, run consistently: a "site" is a line containing `2024-25` or `2025-26`)*:
+> ```bash
+> for w in .github/workflows/nba-*.yml; do t=$(grep -cE "2024-25|2025-26" $w); [ "$t" -eq 0 ] && continue
+>   o=$(grep -nE "2024-25|2025-26" $w | grep -c "inputs\.")
+>   printf "%-32s sites=%-3s overridable=%-3s hardcoded=%-3s cron=%s\n" "$(basename $w)" "$t" "$o" "$((t-o))" "$(grep -c cron: $w)"; done
+> # 13 workflows · 103 sites · 85 hardcoded · every cron=0
+> grep -c "2026-27" .github/workflows/nba-absence-panel.yml          # 0
+> grep -rln "SEASON_BOUNDS\s*=\s*{\|^BOUNDS\s*=\s*{" nba/*.py        # 8 scripts
+> ```
+
 ## 🔴🔴🔴 **§T26.63 — `T26-1` RE-RATED AND THE BOARD LAYER MEASURED APP BY APP: FOUR OF THE FIVE DFS BOARDS ARE GENUINELY EMPTY AND *NOT* BROKEN — BETR IS BROKEN, PICK6 DOES NOT EXIST, AND NOTHING IN THE SYSTEM CAN TELL THOSE THREE STATES APART** *(source + `SELECT` + the committed meta files, 2026-09-26; the app-by-app split is `0` of the twelve)*
 
 > 📌 **`T26-1` said "board tiers are PrizePicks-only". Measuring it turned up something the item did not ask about: the archive itself stops on `2026-09-12` for every DFS app but PrizePicks, which reads exactly like a breakage — and for three of them it is not one.** ⚠⚠ ***`24` days to the opener, this distinction is the whole ball game: an app that has not opened its NBA market needs nothing, and a scraper that has died needs fixing now. This section separates them.***
