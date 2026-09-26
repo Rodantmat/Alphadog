@@ -275,6 +275,57 @@ writes. Grouped by role.
 > grep -rn "_current_meta|token_expires" nba/certify_pipeline.py nba/check_*.py nba/verify_*.py   # nothing
 > ```
 
+## ✅✅✅ **§T26.79 — THE DISPATCH CENSUS RE-RUN: `11` UNREACHABLE WORKERS BECAME `2` IN A SINGLE MORNING, AND THE TWO THAT REMAIN ARE THE TWO THAT SHOULD. `T26-8` AND `T26-5` CLOSE** *(source census re-run, 2026-09-26; `§T26.61`'s method, unchanged)*
+
+> 📌 **`§T26.61` handed over a CLOSED LIST of `11` workers reachable from no schedule and said each needed one of three words — cron it, fold it, or delete it.** ⚠⚠ ***Between `09:39` and `09:40` PT the build chat did exactly that, citing `T26-8` by name in three commit messages. Re-running the same census is how the sweep confirms it rather than assuming it.***
+
+### ✅ **THE RE-RUN — SAME COMMAND, SAME DAY, DIFFERENT SYSTEM**
+
+> | | `§T26.61` *(earlier today)* | **now** |
+> |---|---|---|
+> | schedule-reachable | `10` | ✅✅ **`19`** |
+> | 🔴 reachable from no schedule | 🔴 **`11`** | ✅ **`2`** |
+>
+> ▶ **WHAT MOVED, AND WHO MOVED IT:**
+> | commit | time | workers newly dispatched |
+> |---|---|---|
+> | `ae4ac367` *(P1, "…that ran on no schedule … **(T26-8)**")* | `09:39` | `nba-static-player-tracking` · `nba-weekly-differential` · `nba-static-officials` · `nba-static-arenas` |
+> | `816cf447` *(P1, "scrape the officials register weekly — **its scraper and loader were both unscheduled (T26-8)**")* | `09:39` | *the officials SCRAPER half — see below* |
+> | `0556199f` *(P2, "load the day's mined data … **(2026-09-26, T26-8)**")* | `09:40` | `nba-daily-delta` · `nba-static-starter-status` · `nba-static-game-officials` · **`nba-static-schedule`** · `nba-static-measure-types` |
+>
+> *P1's loop went from `10` names to `14`; P2 gained a five-worker loop it did not have.*
+
+### ✅✅ **AND THE TWO THAT REMAIN ARE EXACTLY THE TWO `§T26.61` SAID SHOULD**
+
+> | worker | why it is correctly unreachable |
+> |---|---|
+> | `nba-baseline-ladder` | ✅ **superseded dead code** — *`§T26.61` proved the ladder path is entirely Python and `to_regclass('nba_score.baseline_ladder')` is **`NULL`**; its first statement would fail. The third word, "delete it", is the one it needs.* |
+> | `nba-static-backfill` | ✅ **a historical backfill** — *`§T26.61` listed its `12`-table game-log/measure-type group as **"correctly manual — a backfill should be"**.* |
+>
+> ⇒ 🔑🔑 ***THE CLOSED LIST RESOLVED COMPLETELY: `9` cron'd, `1` dead, `1` correctly manual. `T26-8` CLOSES.***
+
+### ✅✅✅ **AND THREE OTHER ITEMS CLOSE WITH IT**
+
+> ▶ **`T26-5` — THE SCHEDULE LOADER** *(`§T26.57`, ranked as the day's opening headline, later re-rated down by `§T26.70`)*: **`nba-static-schedule` is now dispatched by P2 daily.** *The measured drift — JSON `2,667` vs table `2,666`, the missing `0012600067 UTA @ DEN` on `2026-10-04` — will close on the next P2 run.* ⇒ **CLOSED.**
+> ▶ **`§T26.63`'s OFFICIALS HALF** — *I found that the officials layer had **neither** half scheduled: `scrape_nba_game_officials.py` dispatched only by two cron-less workflows, and the loader worker by nothing.* ✅ **`816cf447` scrapes the officials register weekly in P1 and `0556199f` dispatches `nba-static-game-officials` in P2** — *both halves, and the commit message names the finding: "its scraper and loader were both unscheduled".* ⇒ **CLOSED.**
+> ▶ **`§T26.52`'s ORPHANED `player_tracking_profile`** — *the table `§T26.52` found "persisted and no longer produced". **Its writer is now in P1's loop.*** ⇒ **CLOSED.**
+> ▶ ⚠ **AND `T8`'s DIFFERENTIAL WORKER, IDLE SINCE `2026-09-02`** — *`nba-weekly-differential` is now in P1's loop.* ⇒ **the cause `§T26.61` named is removed.**
+
+### 🔑🔑 **AND THE FIX CARRIES A GUARD THE SWEEP ASKED FOR IN A DIFFERENT ITEM**
+
+> *P2's new step is `Load the mined data into Postgres (writer workers)` **followed by `Verify the daily loads by data`**, and its comment states the principle in the sweep's own terms:* **"Same dispatch-then-verify-by-data pattern as P1's loop (**an acknowledgement is not a row**)."** ⇒ 🔑 ***That is `T26-9`'s shape — "nothing distinguishes a green job from a job that did nothing" — answered for this surface: the workers are checked against Postgres, not against their own HTTP `200`.*** ⚠ *`T26-9` itself stays OPEN: it is about the BOARD scrapers' `*_meta.json`, a different surface with no such verifier.*
+
+> ⚠ **AND THE COMMIT RECORDS TWO MEASURED FACTS THE SWEEP DID NOT HAVE** *(quoted, not derived)*: *`nba_stats.player_game_log` "was last written `2026-09-08`" and `nba_calendar.games` — **"the table every gate reads"** — `2026-09-02`. **Those are `24` and `18` days of drift on the two tables the pipelines depend on most**, and they are the concrete cost of the `11`-worker gap that `§T26.61` measured structurally.*
+
+> 🔁 **RE-DERIVE** *(`RULE 59` — `§T26.61`'s command, unchanged)*:
+> ```bash
+> for f in nba/alphadog-v2-nba-*.js; do b=$(basename $f .js | sed 's/^alphadog-v2-//')
+>   wf=$(grep -rlw "$b" .github/workflows/ | xargs -n1 basename | tr '\n' ' '); crond=""
+>   for w in $wf; do [ "$(grep -c 'cron:' .github/workflows/$w)" -gt 0 ] && crond="$crond$w "; done
+>   printf "%s %-30s %s\n" "$([ -n "$crond" ] && echo ✅ || echo 🔴)" "$b" "${crond:-NONE}"; done
+> # 19 schedule-reachable, 2 not (was 10 / 11)
+> ```
+
 ## 🔴🔴🔴🔴 **§T26.61 — THE DISPATCH CENSUS, CLOSED AND COMPLETE: `11` OF `21` NBA WRITER WORKERS ARE REACHABLE FROM NO SCHEDULE, AND `26` OF THE `41` TABLES THEY WRITE HAVE NO SCHEDULED WRITER AT ALL** *(source census + `SELECT`, 2026-09-26; the closed list is `0` of the twelve)*
 
 > 📌 **WHY THIS PASS EXISTS.** *`§T26.52` found ONE orphaned table. `§T26.57` found ONE orphaned worker. `§T26.54` reported `21`/`21` workers **documented** and read that as reassurance.* ⚠⚠ ***Three findings, one shape, and nobody had asked the question closed-form: WHICH workers are invoked by something that runs on its own?*** 🔑 **`§T20.34`'s lesson applies exactly — an owner handed a FLOOR cannot plan; an owner handed a CLOSED LIST can fix it in an afternoon.** *This is the closed list.*
