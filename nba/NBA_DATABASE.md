@@ -14,6 +14,8 @@ transcript. Where a table was altered later, the change is noted with its transc
 > statements and `information_schema` reads, never from memory.
 > 📏 **`182` sections · re-derived `2026-09-26` (pass 20)** *(was `148` on `2026-09-23`, `173` and `177` on `2026-09-25`–`26`; **`RULE 59` — re-derive AND RUN, never quote**; the `+5` is §T26.52/§T26.57's own headings — **the stamp drifted a third time from my own additions, which is why it is re-RUN at the end of every pass and never carried forward**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_DATABASE.md ``
 >
+> 🆕🆕 **`§T26.57` ADDED `2026-09-26`** — 🔴🔴🔴🔴 **RANKED ITEM `C` DIAGNOSED: THE SCHEDULE SCRAPER RUNS DAILY AND ITS LOADER IS DISPATCHED BY NOTHING** — *`alphadog-v2-nba-static-schedule.js` is referenced by **`0`** workflows, so `nba/data/nba_schedule_current.json` has been refreshed every morning since `2026-09-09` and **`nba_calendar.games` has not moved with it**. The drift is **already real and measured**: JSON `2,667` games vs table `2,666`, localised to `2026-10-04`, and the missing game is `0012600067 | UTA @ DEN | 2026-10-04T23:00:00Z | CU Events Center` — **the second day of preseason**. Opener night is NOT at risk (all `1,400` regular-season games are loaded); **preseason is**. ⇒ `T26-5`, a one-line fix in P1's dispatch list.*
+>
 > 🆕 **`§T26.52` ADDED `2026-09-26`** — **THE STATIC LAYER, ALL FIVE PARTS**: *four of five REFRESHED (`2026-09-24`); **`nba_stats.player_tracking_profile` is ORPHANED — not dispatched by P1, not watched by `verify_static_loads.py`, and read by nothing but its own writer**.* 🔑 *The mirror of `§T26.28`: a table **persisted and no longer produced**.*
 >
 > 🆕🆕 **SECTIONS ADDED `2026-09-25` — `5` NEW.** *Anchors are heading text; search the label.*
