@@ -187,14 +187,30 @@ app's own calls in the proxy; it didn't. So the board endpoint is reachable in p
 missing whatever the app sends. **Probe v2 (`nba/probe_chalkboard2.py`) identified the refuser exactly:**
 unknown paths (`/health`, `/robots.txt`) return **404 `fault filter abort`** — the signature string of an
 **Envoy / Istio gateway** — while **every** `/v2/*` path returns the 9-byte **403 `Forbidden`** of Envoy's
-authorization filter. So the routes exist and the mesh knows them; `/v2/*` simply requires a credential
-the probe does not send. Not pinning, not IP, not the route names: **an auth header**.
-⏳ THE ONE MISSING PIECE: the header set of a working app request (owner has it in mitmproxy). With it the
-route walk becomes decisive in minutes. Corroborated from public sources meanwhile: Chalkboard is
-iPhone-only with no web app, "attaches multipliers to each individual projection" (matches the per-leg
-`odds`/`vigOdds` we captured), advertises **ALT LINES** (matches `isAlternate`/`alternateLineKey`), and
-sells a **"Shield Play"** that lets you miss one or two picks — which is exactly the
-`{"3_picks": 2.26, "2_picks": 1.2}` insured tier the payout endpoint returned.
+authorization filter. So the routes exist and the mesh knows them; `/v2/*` requires a credential.
+
+### 🔒 ANSWERED DEFINITIVELY (2026-09-27): the board CANNOT be scraped server-side, and here is why
+The owner read the header set off a working request. `/v2/*` carries **three** layers:
+1. `authorization: Bearer <Firebase Auth ID token>` — the user's account, **1-hour** life.
+2. **`x-firebase-appcheck` — Firebase App Check with `provider = device_check_app_attest`**, i.e.
+   **Apple App Attest**, also 1-hour.
+3. `signature: <hmac>` — a per-request signature, plus `deviceid`, `buildnumber`, `currentversion`.
+
+Layers 1 and 3 a server can reproduce. **Layer 2 cannot be, by design**: App Attest is minted by Apple's
+DeviceCheck service only after attesting that the caller is an unmodified copy of Chalkboard's binary on
+genuine Apple hardware, bound to a Secure-Enclave key. No datacenter, proxy, UA or TLS fingerprint forges
+one — defeating that is the feature's entire purpose. **So this is not "we haven't found the endpoint":
+the endpoint is reachable and the guard is identified, and it is unforgeable off-device.** The only
+conceivable route is the phone relaying fresh tokens hourly to our server — fragile, and it would put the
+owner's account on every request. **Recommendation: do not pursue. Chalkboard stays research-only.**
+⚠ Credential hygiene, recorded as a lesson: reading those headers meant pasting live tokens into a chat
+that is later exported. Tokens expire in an hour, but the account email and Firebase user id do not —
+the account password was rotated afterwards. **Next time: put the value in a GitHub secret and have the
+probe read it, never in the transcript.**
+Corroborated from public sources: Chalkboard is iPhone-only with no web app, "attaches multipliers to
+each individual projection" (matches the per-leg `odds`/`vigOdds` captured), advertises **ALT LINES**
+(matches `isAlternate`/`alternateLineKey`), and sells a **"Shield Play"** that lets you miss one or two
+picks — exactly the `{"3_picks": 2.26, "2_picks": 1.2}` insured tier the payout endpoint returned.
 
 **But adding picks exposes the pricing, which is the part we actually wanted:**
 - `POST /v2/dfs/bets/pre-validate` returns each leg as
