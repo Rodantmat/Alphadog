@@ -179,6 +179,10 @@ def rows_sleeper(doc, gd, label):
         # Sleeper's goblin-to-demon axis. Filed as _alternate like PrizePicks' goblins and demons.
         if l.get("alt") or str(l.get("line_type", "")).startswith("alt"):
             mk += "_alternate"
+        elif l.get("promo") or l.get("line_type") == "line_promotion":
+            # PROMO (2026-09-27): a boosted payout on an existing line. Its own key so the boosted
+            # multiplier never overwrites the normal row; the scorer strips _promo and scores the same prop.
+            mk += "_promo"
         for side, key in (("Over", "over_multiplier"), ("Under", "under_multiplier")):
             m = l.get(key)
             if m is None:
