@@ -161,10 +161,24 @@ def rows_underdog(doc, gd, label):
 
 def rows_sleeper(doc, gd, label):
     out = []
+    # Sleeper wager_type -> the scorer's market key. Captured 2026-09-27: points, rebounds, assists,
+    # threes_made; the others are Sleeper's known names for the rest of the vocabulary.
+    _wt = {"points": "player_points", "rebounds": "player_rebounds", "assists": "player_assists",
+           "threes_made": "player_threes", "blocks": "player_blocks", "steals": "player_steals",
+           "turnovers": "player_turnovers", "pts_reb_ast": "player_points_rebounds_assists",
+           "pts_reb": "player_points_rebounds", "pts_ast": "player_points_assists", "reb_ast": "player_rebounds_assists",
+           "blocks_steals": "player_blocks_steals", "fantasy_points": "player_fantasy_points",
+           "double_double": "player_double_double", "free_throws_made": "player_ftm",
+           "field_goals_made": "player_fgm", "three_point_attempts": "player_threes_attempted"}
     for l in doc.get("legs") or []:
         if l.get("line") is None or not l.get("player"):
             continue
-        mk = "player_" + str(l.get("wager_type", "")).lower()
+        wt = str(l.get("wager_type", "")).lower()
+        mk = _wt.get(wt, "player_" + wt)
+        # ALT LADDER (2026-09-27): one-sided over rungs at spaced lines, each with its own payout -
+        # Sleeper's goblin-to-demon axis. Filed as _alternate like PrizePicks' goblins and demons.
+        if l.get("alt") or str(l.get("line_type", "")).startswith("alt"):
+            mk += "_alternate"
         for side, key in (("Over", "over_multiplier"), ("Under", "under_multiplier")):
             m = l.get(key)
             if m is None:
