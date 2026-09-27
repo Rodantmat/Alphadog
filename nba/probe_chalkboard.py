@@ -70,12 +70,13 @@ def probe(s, url, method="GET", body=None):
 def main():
     s = requests.Session()
     print("=" * 100)
-    print("KNOWN ENDPOINTS (does the probe reach the API the way the app does?)")
+    print(f"KNOWN ENDPOINTS (proxy configured: {bool(PROXIES)})")
     for p in KNOWN:
-        code, n, note = probe(s, BASE + p)
-        print(f"  {str(code):>5}  {n:>7}b  {p}")
+        code, n, note, route = probe(s, BASE + p)
+        print(f"  {str(code):>5}  {n:>7}b  [{route}]  {p}")
         if p.endswith("ppo-league-blocking-config") and code == 200:
-            full = s.get(BASE + p, headers=UA, impersonate="chrome124").text
+            full = s.get(BASE + p, headers=UA, impersonate="chrome124",
+                         proxies=(PROXIES if route == "proxy" else None)).text
             print("      CONFIG HEAD:", full[:1800])
 
     print("\n" + "=" * 100)
@@ -84,27 +85,27 @@ def main():
     for lg in LEAGUES:
         for suf in SPORTS_SUFFIX:
             p = f"/v2/sports-api/api/{lg}-{suf}"
-            code, n, note = probe(s, BASE + p)
+            code, n, note, route = probe(s, BASE + p)
             if code != 404:
-                hits.append((code, n, p, note))
-                print(f"  {str(code):>5}  {n:>7}b  {p}   {note[:90]}")
+                hits.append((code, n, p, note, route))
+                print(f"  {str(code):>5}  {n:>7}b  [{route}]  {p}   {note[:90]}")
     for p in FLAT:
-        code, n, note = probe(s, BASE + p)
+        code, n, note, route = probe(s, BASE + p)
         if code != 404:
-            hits.append((code, n, p, note))
-            print(f"  {str(code):>5}  {n:>7}b  {p}   {note[:90]}")
+            hits.append((code, n, p, note, route))
+            print(f"  {str(code):>5}  {n:>7}b  [{route}]  {p}   {note[:90]}")
 
     print("\n" + "=" * 100)
     print("CDN (a board served as static JSON would live here)")
     for p in CDN_PATHS:
-        code, n, note = probe(s, CDN + p)
+        code, n, note, route = probe(s, CDN + p)
         if code != 404:
-            print(f"  {str(code):>5}  {n:>7}b  {p}   {note[:90]}")
+            print(f"  {str(code):>5}  {n:>7}b  [{route}]  {p}   {note[:90]}")
 
     print("\n" + "=" * 100)
-    print(f"NON-404 ROUTES FOUND: {len(hits)}")
-    for code, n, p, _ in sorted(hits, key=lambda x: -x[1])[:25]:
-        print(f"  {str(code):>5}  {n:>7}b  {p}")
+    print(f"NON-404 ROUTES FOUND: {len(hits)}  |  200s: {sum(1 for h in hits if h[0] == 200)}")
+    for code, n, p, _, route in sorted(hits, key=lambda x: -x[1])[:25]:
+        print(f"  {str(code):>5}  {n:>7}b  [{route}]  {p}")
 
 
 if __name__ == "__main__":
