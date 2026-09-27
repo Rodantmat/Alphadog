@@ -193,6 +193,10 @@ key function too. **Offline on the captured bodies:** 386 legs (124 + 261 + 1), 
 **Live from Actions (WNBA): 740 legs — 143 normal, 596 rungs across 22 alt levels, 1 promo, 40/40 players.**
 Nothing more is needed from the owner's laptop for Sleeper.
 
+---
+
+## 0g. ✅ THE `T26` SYSTEM ITEMS — CLOSED 2026-09-26 (production and code only; documentation is the doc chat's)
+
 | Item | What it was | What was done — verified |
 |---|---|---|
 | **`T26-8` / `A1`** dispatch census | **11 of 21 writer workers reachable from no schedule.** Two facts made it urgent: `nba_stats.player_game_log` last written **2026-09-08** (P2 mines JSON only; its loader was never dispatched) and `nba_calendar.games` — the table every gate reads — **2026-09-02**. In season every Postgres consumer would have gone stale by a day, then a week. | P2 now dispatches the **five daily loaders** after "Commit mined data" (`nba-daily-delta`, starter status, game officials, schedule, measure types), P1 the **four weekly** (player tracking, the differential set, officials, arenas) — same dispatch-then-verify-by-data loop, `verify_static_loads.py` extended with each table (the differential's stamp is `snapshot_taken_at`). P1 also scrapes the officials register, whose scraper AND loader had no schedule. **All nine run live this session**: schedule **2,667** games (2026-27 now 1,267 — the missing UTA @ DEN preseason game is in); delta loader **26,651** player logs, its own completeness check **1,230 / 1,230**; the differential worker, idle since Sept 2, recorded an entire off-season in one run — **127 new players, 126 team changes, 8 reactivated, 63 departed**. Backfill stays manual by design; `nba-baseline-ladder` is dead code with no table. |
