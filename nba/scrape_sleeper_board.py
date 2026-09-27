@@ -26,6 +26,11 @@ UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit
 # Both bodies also carry pick_stats (public over/under pick counts + popularity per market) - kept on every leg.
 LINES_URL = "https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true"
 ALT_URL = "https://api.sleeper.app/lines/available_alt?include_preseason=true"
+# PROMOS (captured 2026-09-27): boosted payouts on an existing line - the same player/stat/line appears in
+# the main board at x1.82 and here at x2.02 with line_type "line_promotion", metadata.promotion_type
+# "over_boost". Emitted as their own legs (promo=True) and archived under <market>_promo so the boosted
+# multiplier never overwrites the normal row. The body also repeats the normal line; deduped by line_id.
+PROMOS_URL = "https://api.sleeper.app/lines/promos?enable_one_sided_lines=true"
 PLAYERS_URL = "https://api.sleeper.app/v1/players/{sport}"
 OUT = Path(os.environ.get("SLEEPER_OUT_DIR", "."))
 
