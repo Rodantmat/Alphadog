@@ -184,8 +184,17 @@ successfully — returns an identical **9-byte `403 Forbidden`**, and the CDN re
 A blanket 403 before routing, on the same paths that work from the phone, means **the gateway is
 rejecting on headers/credentials, not on IP and not on TLS pinning**. Pinning would have broken the
 app's own calls in the proxy; it didn't. So the board endpoint is reachable in principle — we are
-missing whatever the app sends. ⏳ NEXT: the header set of one working request (owner has it in
-mitmproxy); with it the route walk can discriminate, and this becomes answerable.
+missing whatever the app sends. **Probe v2 (`nba/probe_chalkboard2.py`) identified the refuser exactly:**
+unknown paths (`/health`, `/robots.txt`) return **404 `fault filter abort`** — the signature string of an
+**Envoy / Istio gateway** — while **every** `/v2/*` path returns the 9-byte **403 `Forbidden`** of Envoy's
+authorization filter. So the routes exist and the mesh knows them; `/v2/*` simply requires a credential
+the probe does not send. Not pinning, not IP, not the route names: **an auth header**.
+⏳ THE ONE MISSING PIECE: the header set of a working app request (owner has it in mitmproxy). With it the
+route walk becomes decisive in minutes. Corroborated from public sources meanwhile: Chalkboard is
+iPhone-only with no web app, "attaches multipliers to each individual projection" (matches the per-leg
+`odds`/`vigOdds` we captured), advertises **ALT LINES** (matches `isAlternate`/`alternateLineKey`), and
+sells a **"Shield Play"** that lets you miss one or two picks — which is exactly the
+`{"3_picks": 2.26, "2_picks": 1.2}` insured tier the payout endpoint returned.
 
 **But adding picks exposes the pricing, which is the part we actually wanted:**
 - `POST /v2/dfs/bets/pre-validate` returns each leg as
