@@ -171,14 +171,21 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ## 0i. 🔑 CHALKBOARD — THE BOARD IS UNREACHABLE, THE PRICING IS NOT (owner capture, 2026-09-27)
 
-**The proxy route was tried properly and the board is ruled out.** mitmproxy, iPhone, certificate trusted,
-decryption verified. On a full COLD start Chalkboard's entire HTTP surface is: balances, device/hashing
-checks, promo and XP machinery, `packs`, `recommendation-api/recommendations` (a **popularity feed** —
-player+stat+`popularity`, no lines, no prices), and two stats endpoints (`wnba-player-details/<uuid>`,
-`batch-player-recent-games` — bio, season averages, last-5 logs keyed by Chalkboard's own uuids). The
-only WebSocket is Intercom's support widget. **The priced board never crosses the wire while the app
-renders it** — the signature of a pinned endpoint. Chalkboard stays research-only, as the docs said; what
-is new is that the route has now been eliminated with evidence instead of assumed.
+**The proxy route reached everything the app does EXCEPT the priced board.** mitmproxy, iPhone,
+certificate trusted, decryption verified. On a full COLD start Chalkboard's entire HTTP surface is:
+balances, device/hashing checks, promo and XP machinery, `packs`,
+`recommendation-api/recommendations` (a **popularity feed** — player+stat+`popularity`, no lines, no
+prices), and two stats endpoints (`wnba-player-details/<uuid>`, `batch-player-recent-games`). The only
+WebSocket is Intercom's support widget.
+🔍 **First conclusion was WRONG and is corrected here.** I recorded "pinned"; two probe runs disprove it.
+`nba/probe_chalkboard.py` (run via `nba-probe.yml`) walked 75 candidate routes **direct and through the
+residential proxy**: every single one — including `wnba-player-details`, which the app calls
+successfully — returns an identical **9-byte `403 Forbidden`**, and the CDN returns S3 `AccessDenied`.
+A blanket 403 before routing, on the same paths that work from the phone, means **the gateway is
+rejecting on headers/credentials, not on IP and not on TLS pinning**. Pinning would have broken the
+app's own calls in the proxy; it didn't. So the board endpoint is reachable in principle — we are
+missing whatever the app sends. ⏳ NEXT: the header set of one working request (owner has it in
+mitmproxy); with it the route walk can discriminate, and this becomes answerable.
 
 **But adding picks exposes the pricing, which is the part we actually wanted:**
 - `POST /v2/dfs/bets/pre-validate` returns each leg as
