@@ -1,1 +1,1 @@
-script: probe_pp_single_pick.py
+script: probe_chalkboard.py
