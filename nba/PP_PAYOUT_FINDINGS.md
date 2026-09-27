@@ -184,6 +184,18 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 | §T26.43 residual | `nba-maintenance.yml`'s `season` input defaulted to `"2025-26"` — the last literal in any workflow. | Blank; resolves from the date. |
 | T20-6 residual | The certifier's P2 comment described the two-store world and named the dropped table. | Rewritten for the one store. |
 
+**VERIFIED ON THE DAY'S SCHEDULED RUNS (2026-09-26, all green):** `NBA P2 Overnight Heavy` ran twice —
+18:09 (dispatched) and 18:43 (**the cron's own run, ~3 h late in GitHub's queue: the cron fires**). In the
+cron run every new step did its job: the loader step dispatched the five workers and one HTTP reply was
+lost exactly as P1 taught — *"nba-static-schedule: HTTP reply was lost, but nba_calendar.games was
+written at 18:50:22 (after step start) → LANDED … every unacknowledged load is confirmed by data"*; the
+keys were refreshed before the prune (0 keys — no games yesterday); the off-day guard on yesterday's
+`final_hp` rebuild fired; certified. `NBA P3 Afternoon Light` 23:39: injury load, PrizePicks board, the
+other scrapers, archive, **key refresh**, tiers, market, commit; scoring correctly skipped on a no-game
+day; certified — with the per-app liveness lines in production output, including **`WARN board scraper
+alive: betr: fetched 401.4h ago, token expires in 13d`**. `NBA Referee Assignments (daily capture)` also
+ran on its cron. All five daily tables carry stamps from P2's own load step (18:47–18:52).
+
 ---
 
 ## 0f. ✅ LEDGER CLOSURES, 2026-09-25 — each verified, none by reading alone
