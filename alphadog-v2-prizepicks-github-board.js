@@ -1046,6 +1046,19 @@ async function promoteCertifiedBatch(env, batchId, slateDate, cert, stagedRows, 
   }
 
   if (timing && timing.all_valid_rows_started_or_expired) {
+    // Root-cause fix (2026-09-27, root-caused via direct code+data investigation during the
+    // 1pm Pacific master-run supervisor session after a real incident wiped a verified-good,
+    // full-slate current board to zero rows): a freshly fetched batch whose rows are ALL
+    // started/expired does not necessarily mean the file is genuinely stale (e.g. yesterday's
+    // games) - it can also mean the source producer is stuck/blocked (captcha/anti-bot) and only
+    // returned a narrow, already-passed subset of TODAY's slate. Blindly clearing destroyed a
+    // verified 8803-row current board covering the full day's games. Mirror the sibling
+    // unrefreshed-source path: if there is already verified current inventory, preserve it
+    // instead of wiping it, and only clear when there is truly nothing current to protect.
+    const existingInventoryForStaleCheck = await currentPrizePicksInventorySummary(env);
+    if (existingInventoryForStaleCheck && existingInventoryForStaleCheck.has_current_inventory) {
+      return await preserveActivePrizePicksBoardForUnrefreshedSource(env, batchId, slateDate, cert, timing);
+    }
     return await clearActivePrizePicksBoardForStaleSource(env, batchId, slateDate, cert, timing);
   }
 
