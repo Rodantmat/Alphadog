@@ -89,8 +89,9 @@ MARKET_TO_PROP = {
 
 
 def norm_market(mk: str) -> str:
-    """board key -> our prop. '_alternate' marks a ladder rung, not a different market."""
-    base = str(mk or "").replace("_alternate", "")
+    """board key -> our prop. '_alternate' marks a ladder rung and '_promo' a boosted payout (Sleeper,
+    2026-09-27) - neither is a different market; the hit probability is the prop's."""
+    base = str(mk or "").replace("_alternate", "").replace("_promo", "")
     return MARKET_TO_PROP.get(base, "")
 
 
