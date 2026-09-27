@@ -169,7 +169,29 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
-## 0g. ✅ THE `T26` SYSTEM ITEMS — CLOSED 2026-09-26 (production and code only; documentation is the doc chat's)
+## 0h. ✅ SLEEPER — THE EXPANDED LADDER, CAPTURED AND LIVE (2026-09-27)
+
+**Owner capture (mitmproxy, iPhone, Sleeper Picks app, WNBA finals board — no NBA lines yet).** The web
+site is a landing page ("Get the App"); the ladder lives only in the app. Three endpoints, all public,
+Cloudflare-cached, **no auth**:
+- `lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true` — one line per
+  player+stat, BOTH sides, each side its own multiplier (what we had; the one-sided flag is new).
+- **`lines/available_alt?sports[]=<sport>&include_preseason=true` — THE LADDER.** Over-only rungs at spaced
+  lines, each with its own payout: points 9.5 ×1.03 → 14.5 ×1.31 → 19.5 ×2.00 → 24.5 ×3.36 → 29.5 ×6.94.
+  `line_type = alt_<line>`. PrizePicks' goblin-to-demon axis as explicit lines with explicit prices.
+- `lines/promos?enable_one_sided_lines=true` — boosted payouts on an existing line (`line_promotion`,
+  `promotion_type over_boost`): the same PRA 20.5 over at ×2.02 vs ×1.82 on the main board. **Closes the
+  ledger's "Sleeper boost-promo field."**
+- Every market also carries **`pick_stats`** — public over/under pick counts and popularity — kept on every leg.
+
+**Wired:** `scrape_sleeper_board.py` fetches all three (ladder per sport; failures loud, never a substitute
+for the main board); alt rungs are one leg per rung; promos are their own legs deduped by `line_id`.
+`archive_live_boards.py` files rungs as `<market>_alternate` and promos as `<market>_promo` (the boosted
+multiplier never overwrites the normal row) and maps Sleeper's wager types to the scorer's vocabulary
+(`threes_made` had been filing as an unmapped key). The scorer strips `_promo` like `_alternate`; the SQL
+key function too. **Offline on the captured bodies:** 386 legs (124 + 261 + 1), every key resolves.
+**Live from Actions (WNBA): 740 legs — 143 normal, 596 rungs across 22 alt levels, 1 promo, 40/40 players.**
+Nothing more is needed from the owner's laptop for Sleeper.
 
 | Item | What it was | What was done — verified |
 |---|---|---|
