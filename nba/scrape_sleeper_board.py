@@ -121,9 +121,37 @@ def main():
                 "wager_type": o0.get("wager_type"), "market_type": o0.get("market_type"), "line_type": o0.get("line_type"),
                 "line": o0.get("outcome_value"), "over_multiplier": over.get("payout_multiplier"), "under_multiplier": under.get("payout_multiplier"),
                 "over_status": over.get("status"), "under_status": under.get("status"), "line_status": ln.get("status"), "season": o0.get("season"), "season_type": o0.get("season_type"),
-                "metadata": o0.get("metadata") or {},
+                "metadata": o0.get("metadata") or {}, "alt": False, "pick_stats": ln.get("pick_stats"),
             })
-        meta = {"ok": True, "source": LINES_URL, "started_at": started, "fetched_at": fetched_at, "sport": sport, "legs": len(legs), "unknown_players": unknown,
+        # ALT LADDER LEGS: one leg per rung. Every option is an OVER at its own line with its own payout; the
+        # under side does not exist on the ladder (Sleeper prices the low rungs near 1.0x, the high ones
+        # up to ~7x). The archiver files these as `<market>_alternate`, exactly like PrizePicks goblins/demons.
+        alt_n = 0
+        for ln in (alt_by_sport.get(sport) or []):
+            opts = ln.get("options", [])
+            if not opts or opts[0].get("sport") != sport:
+                continue
+            pid = str(opts[0].get("subject_id"))
+            pinfo = players.get(pid, {})
+            if opts[0].get("subject_type") == "player" and not pinfo:
+                unknown += 1
+            for o in opts:
+                legs.append({
+                    "line_id": o.get("line_id"), "sport": sport, "game_id": o.get("game_id"), "game_status": o.get("game_status"),
+                    "subject_id": pid, "subject_type": o.get("subject_type"), "player": pinfo.get("name") or o.get("subject_name") or "",
+                    "team": o.get("subject_team") or pinfo.get("team"), "position": o.get("subject_position") or pinfo.get("position"),
+                    "wager_type": o.get("wager_type"), "market_type": o.get("market_type"), "line_type": o.get("line_type"),
+                    "line": o.get("outcome_value"),
+                    "over_multiplier": o.get("payout_multiplier") if o.get("outcome") == "over" else None,
+                    "under_multiplier": o.get("payout_multiplier") if o.get("outcome") == "under" else None,
+                    "over_status": o.get("status") if o.get("outcome") == "over" else None,
+                    "under_status": o.get("status") if o.get("outcome") == "under" else None,
+                    "line_status": ln.get("status"), "season": o.get("season"), "season_type": o.get("season_type"),
+                    "metadata": o.get("metadata") or {}, "alt": True, "pick_stats": ln.get("pick_stats"),
+                })
+                alt_n += 1
+        meta = {"ok": True, "source": LINES_URL, "alt_source": ALT_URL, "started_at": started, "fetched_at": fetched_at, "sport": sport,
+                "legs": len(legs), "alt_legs": alt_n, "alt_fetch_ok": alt_by_sport.get(sport) is not None, "unknown_players": unknown,
                 "by_wager_type": dict(Counter(l["wager_type"] for l in legs).most_common(40)), "by_line_type": dict(Counter(l["line_type"] for l in legs)),
                 "by_game_status": dict(Counter(l["game_status"] for l in legs)), "players": len({l["subject_id"] for l in legs}),
                 "multiplier_values": dict(Counter(str(l["over_multiplier"]) for l in legs).most_common(15)), "github_run_id": os.environ.get("GITHUB_RUN_ID", "")}
