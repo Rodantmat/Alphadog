@@ -49,13 +49,22 @@ CDN_PATHS = ["/leagues/wnba/board.json", "/leagues/wnba/markets.json", "/leagues
 
 
 def probe(s, url, method="GET", body=None):
-    try:
-        r = (s.post(url, headers=UA, json=body, timeout=25, impersonate="chrome124") if method == "POST"
-             else s.get(url, headers=UA, timeout=25, impersonate="chrome124"))
-    except Exception as exc:  # noqa: BLE001
-        return None, 0, f"ERROR {str(exc)[:70]}"
-    txt = r.text or ""
-    return r.status_code, len(txt), txt[:160].replace("\n", " ")
+    """Direct first, then through the residential proxy. Returns (code, size, note, route)."""
+    last = (None, 0, "no attempt", "-")
+    for route, px in (("direct", None), ("proxy", PROXIES)):
+        if route == "proxy" and not PROXIES:
+            continue
+        try:
+            r = (s.post(url, headers=UA, json=body, timeout=30, impersonate="chrome124", proxies=px) if method == "POST"
+                 else s.get(url, headers=UA, timeout=30, impersonate="chrome124", proxies=px))
+        except Exception as exc:  # noqa: BLE001
+            last = (None, 0, f"ERROR {str(exc)[:60]}", route)
+            continue
+        txt = r.text or ""
+        last = (r.status_code, len(txt), txt[:160].replace("\n", " "), route)
+        if r.status_code == 200:
+            return last
+    return last
 
 
 def main():
