@@ -162,8 +162,36 @@ def main():
                     "metadata": o.get("metadata") or {}, "alt": True, "pick_stats": ln.get("pick_stats"),
                 })
                 alt_n += 1
-        meta = {"ok": True, "source": LINES_URL, "alt_source": ALT_URL, "started_at": started, "fetched_at": fetched_at, "sport": sport,
-                "legs": len(legs), "alt_legs": alt_n, "alt_fetch_ok": alt_by_sport.get(sport) is not None, "unknown_players": unknown,
+        # PROMO LEGS: only the boosted option(s); the normal duplicates in the promos body are already on
+        # the main board (same line_id).
+        promo_n = 0
+        seen_ids = {l["line_id"] for l in legs}
+        for ln in (promos or []):
+            opts = ln.get("options", [])
+            if not opts or opts[0].get("sport") != sport:
+                continue
+            if str(ln.get("line_type") or opts[0].get("line_type") or "") != "line_promotion":
+                continue
+            pid = str(opts[0].get("subject_id"))
+            pinfo = players.get(pid, {})
+            sides = {o.get("outcome"): o for o in opts}
+            over, under = sides.get("over", {}), sides.get("under", {})
+            o0 = opts[0]
+            if o0.get("line_id") in seen_ids:
+                continue
+            legs.append({
+                "line_id": o0.get("line_id"), "sport": sport, "game_id": o0.get("game_id"), "game_status": o0.get("game_status"),
+                "subject_id": pid, "subject_type": o0.get("subject_type"), "player": pinfo.get("name") or o0.get("subject_name") or "",
+                "team": o0.get("subject_team") or pinfo.get("team"), "position": o0.get("subject_position") or pinfo.get("position"),
+                "wager_type": o0.get("wager_type"), "market_type": o0.get("market_type"), "line_type": o0.get("line_type"),
+                "line": o0.get("outcome_value"), "over_multiplier": over.get("payout_multiplier"), "under_multiplier": under.get("payout_multiplier"),
+                "over_status": over.get("status"), "under_status": under.get("status"), "line_status": ln.get("status"), "season": o0.get("season"), "season_type": o0.get("season_type"),
+                "metadata": o0.get("metadata") or {}, "alt": False, "promo": True, "pick_stats": ln.get("pick_stats"),
+            })
+            promo_n += 1
+        meta = {"ok": True, "source": LINES_URL, "alt_source": ALT_URL, "promos_source": PROMOS_URL, "started_at": started, "fetched_at": fetched_at, "sport": sport,
+                "legs": len(legs), "alt_legs": alt_n, "promo_legs": promo_n, "alt_fetch_ok": alt_by_sport.get(sport) is not None,
+                "promos_fetch_ok": promos is not None, "unknown_players": unknown,
                 "by_wager_type": dict(Counter(l["wager_type"] for l in legs).most_common(40)), "by_line_type": dict(Counter(l["line_type"] for l in legs)),
                 "by_game_status": dict(Counter(l["game_status"] for l in legs)), "players": len({l["subject_id"] for l in legs}),
                 "multiplier_values": dict(Counter(str(l["over_multiplier"]) for l in legs).most_common(15)), "github_run_id": os.environ.get("GITHUB_RUN_ID", "")}
