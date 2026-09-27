@@ -67,8 +67,19 @@ def main():
     fetched_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if not isinstance(lines, list):
         print("unexpected lines payload", file=sys.stderr); sys.exit(1)
+    # THE LADDER. Fetched per sport (the app passes sports[]); a failure here is loud but does not cost the
+    # main board - the alt rungs are additional legs, never a substitute.
+    alt_by_sport = {}
+    for sport in sports:
+        try:
+            alt = fetch(s, f"{ALT_URL}&sports%5B%5D={sport}", proxies).json()
+            alt_by_sport[sport] = alt if isinstance(alt, list) else []
+        except Exception as exc:  # noqa: BLE001
+            print(f"{sport}: ALT LADDER FETCH FAILED ({exc}) - main board only this run", file=sys.stderr)
+            alt_by_sport[sport] = None
     by_sport = Counter(o.get("sport") for ln in lines for o in ln.get("options", [])[:1])
-    print("lines:", len(lines), "by sport:", by_sport.most_common(10))
+    print("lines:", len(lines), "by sport:", by_sport.most_common(10),
+          "| alt markets:", {k: (len(v) if v is not None else "FAILED") for k, v in alt_by_sport.items()})
     for sport in sports:
         pfile = OUT / f"sleeper_players_{sport}.json"
         players = {}
