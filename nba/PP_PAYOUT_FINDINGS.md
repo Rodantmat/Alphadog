@@ -203,6 +203,20 @@ one — defeating that is the feature's entire purpose. **So this is not "we hav
 the endpoint is reachable and the guard is identified, and it is unforgeable off-device.** The only
 conceivable route is the phone relaying fresh tokens hourly to our server — fragile, and it would put the
 owner's account on every request. **Recommendation: do not pursue. Chalkboard stays research-only.**
+🧪 **PROVEN, not argued (2026-09-27, owner's live tokens).** We pushed the strongest possible test:
+replayed `pre-validate` from the owner's laptop with his warm bearer AND warm App Check token attached.
+Result: **`403 {"error":{"message":"Undefined Device"}}`** — the gateway accepted both tokens and rejected
+the request on DEVICE IDENTITY. That is one step past "Forbidden": the App Attest assertion is bound to
+the physical iPhone and validated per request, so even the genuine tokens fail off the genuine device.
+There is no server-side path. Also settled: the board is NOT a hidden endpoint — the cold-launch sequence
+is fully accounted for (states, verification, payments, blocking-config, pool types, promo machinery,
+packs, `recommendations`), and `recommendations` at 14.5 kb is a **popularity feed** (`Top NFL/MLB Picks`,
+each item `matchId_targetId_statistic` + a popularity float, NO line, NO odds). The app builds its visible
+board by pricing those keys through `pre-validate` one at a time — the very call that is device-locked.
+🔑 What we KEEP from Chalkboard, all credential-free and saved: the key format `<matchId>_<targetId>_<statistic>[_<line>_DFS]`,
+the per-leg `odds`/`vigOdds` (11% hold), and the payout function (`nba/chalkboard_payout_model.py`:
+2-pick straight = product of vig'd odds, verified 1.78×1.75=3.12; 3-pick straight 5.64; Shield/insured
+`{"3_picks":2.26,"2_picks":1.2}`).
 ⚠ Credential hygiene, recorded as a lesson: reading those headers meant pasting live tokens into a chat
 that is later exported. Tokens expire in an hour, but the account email and Firebase user id do not —
 the account password was rotated afterwards. **Next time: put the value in a GitHub secret and have the
