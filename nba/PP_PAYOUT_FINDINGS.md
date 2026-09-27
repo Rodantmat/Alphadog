@@ -169,7 +169,33 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
-## 0h. ✅ SLEEPER — THE EXPANDED LADDER, CAPTURED AND LIVE (2026-09-27)
+## 0i. 🔑 CHALKBOARD — THE BOARD IS UNREACHABLE, THE PRICING IS NOT (owner capture, 2026-09-27)
+
+**The proxy route was tried properly and the board is ruled out.** mitmproxy, iPhone, certificate trusted,
+decryption verified. On a full COLD start Chalkboard's entire HTTP surface is: balances, device/hashing
+checks, promo and XP machinery, `packs`, `recommendation-api/recommendations` (a **popularity feed** —
+player+stat+`popularity`, no lines, no prices), and two stats endpoints (`wnba-player-details/<uuid>`,
+`batch-player-recent-games` — bio, season averages, last-5 logs keyed by Chalkboard's own uuids). The
+only WebSocket is Intercom's support widget. **The priced board never crosses the wire while the app
+renders it** — the signature of a pinned endpoint. Chalkboard stays research-only, as the docs said; what
+is new is that the route has now been eliminated with evidence instead of assumed.
+
+**But adding picks exposes the pricing, which is the part we actually wanted:**
+- `POST /v2/dfs/bets/pre-validate` returns each leg as
+  `key = <matchId>_<playerId>_<stat>_<line>_DFS`, `line`, and `market: {odds, vigOdds, type}`,
+  plus **`isAlternate` and `alternateLineKey`** — so Chalkboard HAS a ladder and addresses it by key.
+- **`odds` vs `vigOdds` is the fair price and the priced price, side by side**: 2.0025 → 1.78 and
+  1.9669 → 1.75, an **11.0–11.1% hold**, published by the app itself. No other app hands us its vig.
+- `GET /v2/dfs/bets/bet-slips?multiplier=<m>&probabilities[]=<p1>&probabilities[]=<p2>` returns the
+  payout table. Confirmed arithmetic: the probabilities ARE the `odds` inverted (1/0.5084 = 1.967,
+  1/0.4994 = 2.002) and **2 picks → 3.12 = 1.75 × 1.78 — the product of the vig'd per-leg odds.**
+- A 3-pick slip returns `{"3_picks": 2.26, "2_picks": 1.2}` — far below the product, i.e. an
+  **insured/flex tier** alongside the all-correct tier.
+⚠ Observed in the same capture: a pick whose `key` said `points_19.5` while `line` said `18.5` — the line
+moved between board render and validation. Worth remembering when any app's key is trusted as the line.
+📌 Nothing here changes the pipeline: with no board we cannot price Chalkboard legs. It is kept as a
+**pricing reference** — a second market's explicit vig and an explicit payout function to compare
+PrizePicks against when the slip engine resumes.
 
 **Owner capture (mitmproxy, iPhone, Sleeper Picks app, WNBA finals board — no NBA lines yet).** The web
 site is a landing page ("Get the App"); the ladder lives only in the app. Three endpoints, all public,
