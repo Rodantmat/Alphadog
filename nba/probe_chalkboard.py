@@ -8,6 +8,7 @@ from a real network and reports what answers.
 Read-only. No credentials are sent - if an endpoint needs auth we want to SEE the 401; that is the finding.
 """
 import json
+import os
 
 from curl_cffi import requests
 
@@ -15,6 +16,12 @@ BASE = "https://kube-prod.chalkboard.io"
 CDN = "https://cdn.chalkboard.io"
 UA = {"User-Agent": "Chalkboard/6.18.0 (iPhone; iOS 26.6.2)", "Accept": "application/json",
       "Accept-Language": "en-US,en;q=0.9", "Origin": "https://chalkboard.io"}
+# THE GATEWAY BLOCKS DATACENTER IPs (2026-09-27): the first probe run got 403 with a 9-byte "Forbidden"
+# on EVERY path, including endpoints the app calls successfully - so it is the edge refusing GitHub's
+# runner, not a missing route. Same reason the board scrapers carry PROXY_URL. Each request is tried
+# direct first, then through the proxy.
+PROXY = os.environ.get("PROXY_URL", "").strip()
+PROXIES = {"https": PROXY, "http": PROXY} if PROXY else None
 
 KNOWN = [
     "/v2/sports-api/api/ppo-league-blocking-config",
