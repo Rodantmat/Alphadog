@@ -17,7 +17,15 @@ from pathlib import Path
 from curl_cffi import requests
 
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36", "Accept": "application/json", "Referer": "https://sleeper.com/"}
-LINES_URL = "https://api.sleeper.app/lines/available?dynamic=true"
+# CAPTURED FROM THE APP 2026-09-27 (owner, mitmproxy, WNBA board): the app calls TWO line endpoints.
+#   lines/available      - one line per player+stat, BOTH sides, each side its own multiplier (what we had)
+#                          + enable_one_sided_lines=true, which the app sends (some markets are over- or under-only)
+#   lines/available_alt  - THE LADDER: over-only rungs at spaced lines, each with its own payout, e.g. points
+#                          9.5 x1.03 / 14.5 x1.31 / 19.5 x2.00 / 24.5 x3.36 / 29.5 x6.94 - PrizePicks' goblin-to-demon
+#                          axis as explicit lines. line_type = "alt_<line>". Public, Cloudflare-cached, no auth.
+# Both bodies also carry pick_stats (public over/under pick counts + popularity per market) - kept on every leg.
+LINES_URL = "https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true"
+ALT_URL = "https://api.sleeper.app/lines/available_alt?include_preseason=true"
 PLAYERS_URL = "https://api.sleeper.app/v1/players/{sport}"
 OUT = Path(os.environ.get("SLEEPER_OUT_DIR", "."))
 
