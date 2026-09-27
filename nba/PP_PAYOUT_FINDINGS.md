@@ -197,6 +197,10 @@ moved between board render and validation. Worth remembering when any app's key 
 **pricing reference** — a second market's explicit vig and an explicit payout function to compare
 PrizePicks against when the slip engine resumes.
 
+---
+
+## 0h. ✅ SLEEPER — THE EXPANDED LADDER, CAPTURED AND LIVE (2026-09-27)
+
 **Owner capture (mitmproxy, iPhone, Sleeper Picks app, WNBA finals board — no NBA lines yet).** The web
 site is a landing page ("Get the App"); the ladder lives only in the app. Three endpoints, all public,
 Cloudflare-cached, **no auth**:
