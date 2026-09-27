@@ -83,8 +83,15 @@ def main():
             print(f"{sport}: ALT LADDER FETCH FAILED ({exc}) - main board only this run", file=sys.stderr)
             alt_by_sport[sport] = None
     by_sport = Counter(o.get("sport") for ln in lines for o in ln.get("options", [])[:1])
+    try:
+        promos = fetch(s, PROMOS_URL, proxies).json()
+        promos = promos if isinstance(promos, list) else []
+    except Exception as exc:  # noqa: BLE001
+        print(f"PROMOS FETCH FAILED ({exc}) - no promo legs this run", file=sys.stderr)
+        promos = None
     print("lines:", len(lines), "by sport:", by_sport.most_common(10),
-          "| alt markets:", {k: (len(v) if v is not None else "FAILED") for k, v in alt_by_sport.items()})
+          "| alt markets:", {k: (len(v) if v is not None else "FAILED") for k, v in alt_by_sport.items()},
+          "| promo markets:", (len(promos) if promos is not None else "FAILED"))
     for sport in sports:
         pfile = OUT / f"sleeper_players_{sport}.json"
         players = {}
