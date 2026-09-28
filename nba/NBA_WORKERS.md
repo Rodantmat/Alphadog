@@ -176,7 +176,7 @@ writes. Grouped by role.
 
 ---
 
-## ⚠ **§T27.2 — P3's CUTOFF GATE HAD A DST BUG ITS OWN COMMENT DENIED, SELF-CAUGHT AND FIXED, AND THE SAME TRANSCRIPT CONFIRMS THE GATE IS BACK ON ONE CRON** *(source + live verify, 2026-09-24/28; `0` of the twelve before this entry)*
+## ⚠ **§T27.2 — P3's CUTOFF GATE HAD A DST BUG ITS OWN COMMENT DENIED, SELF-CAUGHT AND FIXED, AND THE SAME TRANSCRIPT CONFIRMS THE GATE IS BACK ON ONE CRON** *(source + live verify, 2026-09-24/28; `0` of the twelve before this entry)*_PLACEHOLDER_T272_ANCHOR_
 
 > 📌 **The gate hardcoded `latest = 21:15 UTC` with a comment claiming that was `"13:15 PT during DST"`. It was not** — `21:15 UTC` is `14:15 PDT`, an hour later than the comment's own claim. Under PDT this let a scheduled P3 run start a full hour past the intended `13:15 PT` cutoff, silently, because the comment and the code agreed with each other while both were wrong about the clock. Found and fixed in the same session (`2026-09-24`) that introduced it.
 >
