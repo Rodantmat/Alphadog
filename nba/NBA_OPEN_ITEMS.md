@@ -838,7 +838,7 @@ table's.***
 > | **T20-7** | P3 `:143–147` *"Board tiers (goblin / standard / demon)"* runs `maintenance_shrink_board_index.py`; `build_board_tiers_v2.py` only in `nba-engine-test.yml:66`. `board_tiers` holds **2,199,354 rows / 459 MB** | 🔴 HELD | ✅ **YES** — wiring + historical rows |
 > | **T20-6** | structure unchanged; thresholds as §T20.51 measured | 🔴 HELD | ✅ **YES** — historical magnitudes |
 > | **T20-5** | `grade_board_outcomes.py:167–168` **`GRADE_END "2026-04-12"`**; `build_rung_market.py:80` **`RUNG_TO "2026-04"`** — all four vars in **ZERO** of P1/P2/P3 | 🔴 HELD | ✅ **YES** — source defaults |
-> | **T20-3** | `config.scheduled_jobs` — **10 rows, 2 enabled** *(`postgres-full-run` 06:00 PT daily · `static-full-run` 02:00 PT weekly)*, **zero NBA** | 🔴 HELD EXACTLY | ✅ **YES** — config rows |
+> | **T20-3** | `config.scheduled_jobs` — **10 rows, 2 enabled** *(`postgres-full-run` 06:00 PT daily · `static-full-run` 02:00 PT weekly)*, **zero NBA** — **re-verified live `2026-09-28` (hourly firing): identical 10 rows, same 2 `job_key`s enabled, same `updated_at` timestamps (`2026-06-09`→`2026-07-23`), zero NBA `job_key`s. `.github/workflows/scrape.yml`'s unconditional `0 */2 * * *` MLB cron also re-confirmed live, unchanged.** | 🔴 HELD EXACTLY | ✅ **YES** — config rows |
 > | **T20-2** | `storage_diet_plan_2026_09_17` *(`PLANNED`)* says `final_hp` **"11 GB, 38.1M rows"**; live **`19,215,200` rows / `9,391 MB`**. `board_outcomes` 1,366 → **2,151 MB** | 🔴 HELD | ✅ **YES** — live table sizes |
 > | **static layer / schedule** | `teams` `2026-08-31` (22 d) · `arenas`/`officials` `2026-09-01` (21 d) · `nba_calendar.games` `2026-09-02` (20 d) | 🔴 HELD *(days `+1` = clock, not change)* | ✅ **YES** — live tables |
 >
