@@ -398,10 +398,21 @@ halves the raw spread (1.015 → 0.513) because raw means overstate the effect a
 
 **Still open here:** wire the availability prior into the consumers (the baseline builder and
 `build_availability_delta.py` read the injury JSON, not Postgres, so the fallback must be called there).
-✅ CLOSED 2026-09-23: the daily injury load now runs in P3 beside the scrape; the officials, starter-status and
+✅ CLOSED 2026-09-23 *(⚠ this closure answers a DIFFERENT, narrower question — see the `2026-09-28` note below)*:
+the daily injury load now runs in P3 beside the scrape; the officials, starter-status and
 injury backfills are loaded; `nba_ref.referee_assignments` being empty is EXPECTED out of season (assignments
 publish on game morning and are never archived) and `nba/check_factor_freshness.py` now reports any factor
 whose fallback is silently carrying it, season-aware so it does not cry wolf before opening night.
+
+📌 **CORRECTION `2026-09-28` — THE "STILL OPEN" LINE ABOVE WAS NEVER ACTUALLY CLOSED, FILED AS `F8-1`.** The
+`✅ CLOSED` note above is about the injury-data LOAD pipeline (JSON → `nba_daily.injury_report_snapshots`,
+already true and unrelated to this point) — it does not address whether `nba_score.availability_p_plays()`
+itself (§10 above) is CALLED anywhere. ▶ **LIVE-VERIFIED**: `grep -rn "availability_p_plays" nba/*.py` —
+`2` hits, both comments/docstrings, zero call sites. `build_availability_delta.py` only fires on a status
+TRANSITION (newly-out, teammate reallocation); a player who is `Questionable` at the baseline's own build
+cutoff and stays `Questionable` through game time triggers nothing. `fit_minutes_allocator.py` has no
+injury/status references either. The measured, validated `11.3%`-better prior built in §10 appears to be
+dead code. Full detail: `NBA_OPEN_ITEMS.md F8-1`.
 
 **Status as of 2026-09-10 05:30Z** (config `enrichment_backfill_status_2026_09_10`), restored here after a 2026-09-23
 patch of mine accidentally consumed the sentence: every factor has its two-season backfill except the pick'em/prop
