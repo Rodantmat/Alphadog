@@ -16374,6 +16374,41 @@ rebuilt.**
 
 ## T20-5 · **NEW · 🔴🔴 SEASON-CRITICAL · THE ONLY SILENT ONE** · the grader's default window ends `2026-04-12`, and nothing catches it
 
+> ## ✅✅✅ CLOSED 2026-09-28 — LIVE-VERIFIED. BOTH HARDCODED CEILINGS ARE GONE FROM THE AUTOMATED PATH.
+> *`OWNER DECISION (b)` — "make both defaults open-ended, which removes the failure permanently" —
+> is exactly what landed, in both scripts, each with its own dated comment naming this item's own
+> failure class.*
+>
+> **`nba/grade_board_outcomes.py` (`:234-236`)**, live: `start = os.environ.get("GRADE_START") or
+> (today_utc - timedelta(days=7)).isoformat()`, `end = os.environ.get("GRADE_END") or
+> today_utc.isoformat()` — a rolling 7-day-to-today window, no fixed ceiling. Its own comment:
+> *"The old ceiling was also dead from 2026-27 on - it would have graded ZERO dates and exited green,
+> starving the calibration. Same class as T23-2."*
+>
+> **`nba/build_rung_market.py` (`:94-96`)**, live: `rung_from = os.environ.get("RUNG_FROM") or
+> this_month`, `rung_to = os.environ.get("RUNG_TO") or this_month`, where `this_month =
+> date.today().strftime("%Y-%m")` — no fixed ceiling. Its own comment: *"The ceiling also used to be
+> a hardcoded '2026-04', so from 2026-27 it covered only past months and built nothing for today -
+> same class as T23-2."*
+>
+> **P2 (`nba-p2-overnight-heavy.yml:222-225`) still passes only `DATABASE_URL`** to
+> `grade_board_outcomes.py` — exactly as this item found — but that is no longer a defect, since the
+> script's own default is now correct and open-ended. ⇒ ***On 2026-10-21, opening night's game date
+> will fall inside both scripts' windows by construction, every night, with no expiry.***
+>
+> ⚠ **One site NOT fixed, lower severity, flagged not closed:** `.github/workflows/nba-grader.yml`
+> — the manual/backfill `workflow_dispatch` tool, not the nightly automated path — still hardcodes
+> `default: "2026-04-12"` on its `end` input and the same literal in its `GRADE_END: ${{
+> github.event.inputs.end || '2026-04-12' }}` fallback (`:12`, `:42`). This only bites an operator
+> manually dispatching this workflow without overriding `end` — the same lower-severity class this
+> item already filed `LOAD_ASOF`/`MAX_GAMES` under. Not the item's headline defect, which is closed.
+>
+> ⚠ **`OWNER DECISION (c)`, the defense-in-depth certifier check, was NOT added** — `certify_pipeline.py`
+> has zero mentions of `board_outcomes` today. Not required now that (b) is done, but means a future
+> regression here would again be silent. Recorded, not treated as blocking this closure.
+>
+> **Read-only, as always: nothing was changed or triggered by this pass.**
+
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.36).** *Surface: **95** `os.environ.get(...)` sites · **71**
 distinct variables · across **36** of the **38** pipeline scripts pinned at §T20.35, every default
 cross-checked against the `env:` blocks of all three pipeline workflows.* ⚠⚠ **READ-ONLY, no code
