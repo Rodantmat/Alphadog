@@ -120,8 +120,13 @@ So the remaining blockers are ORDINARY: a US-geolocated egress that actually loa
      UC+Xvfb on the runner should reach the board unattended.
   2. **Seed the US-state selection** into the runner profile to skip the geo gate (still needs US egress).
   3. **Mini-PC / owner PC (Path C)** — residential, no geo gate; most robust; already built.
-⏳ NEXT CLOUD TEST: rerun betr-cloud-test with a STICKY residential proxy; success = SPA renders + a
-  getUpcomingEventsV2 200. If yes, wire betr_harvest's capture into the cloud workflow. The Cloudflare
+⏳ NEXT CLOUD TEST: the fix for UC Mode + authenticated residential proxy is to remove inline auth from
+  Chromium's view. Run a tiny LOCAL forward-proxy on the runner (e.g. `proxy.py` or `mitmdump --mode
+  upstream:http://user:pass@rp.scrapegw.com:6060`) that injects the Proxy-Authorization, and point
+  SeleniumBase at `127.0.0.1:<port>` (UNauthenticated). Then rerun betr-cloud-test; success = SPA renders
+  (>5k, not AllowLocation) + a getUpcomingEventsV2 200. If it works, fully-cloud Betr is real -> wire
+  betr_harvest's capture into the workflow. Alternatives if that still fails: an IP-allowlisted proxy
+  endpoint (no user:pass), a creds-injecting Chrome extension, or a paid cloud-browser API. The Cloudflare
   **Worker** path stays dead (no real browser); the viable cloud path is the GitHub runner.
 
 ### Earlier analysis (kept for context; partly overturned by the runner test above)
