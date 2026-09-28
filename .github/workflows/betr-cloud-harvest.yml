@@ -1,0 +1,56 @@
+name: Betr Cloud Harvest
+
+on:
+  workflow_dispatch:
+    inputs:
+      league:
+        description: "WNBA now; NBA after 2026-10-20"
+        default: "WNBA"
+  schedule:
+    # Pacific board windows: ~10:45 and ~13:15 PT = 17:45 and 20:15 UTC
+    - cron: '45 17 * * *'
+    - cron: '15 20 * * *'
+
+concurrency:
+  group: betr-cloud-harvest
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: System deps (Chrome fonts + Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
+            libnss3 libxss1 libasound2t64 libgbm1 || \
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
+            libnss3 libxss1 libasound2 libgbm1
+      - name: Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install seleniumbase "proxy.py"
+          sbase get chromedriver || true
+      - name: Harvest Betr board
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          BETR_SESSION_STATE: ${{ secrets.BETR_SESSION_STATE }}
+          BETR_LEAGUE: ${{ github.event.inputs.league || 'WNBA' }}
+        run: |
+          python nba/betr_harvest_cloud.py
+      - name: Commit the board file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          lg="$(echo "${{ github.event.inputs.league || 'WNBA' }}" | tr '[:upper:]' '[:lower:]')"
+          git add boards/betr_${lg}_current.json boards/betr_${lg}_current_meta.json boards/betr_nba_current.json 2>/dev/null || true
+          git commit -m "Betr ${lg} board (cloud harvest) [skip ci]" || echo "no change"
+          git pull --rebase --autostash || true
+          git push || echo "push skipped"
