@@ -14184,6 +14184,8 @@ a higher rate, so the threshold is most permissive exactly when the season is co
 ⚠ **The rest of T18-6 STANDS UNCHANGED**: the season-wide 2025-26 audit still returned *"nothing to
 audit… not a failure"*, and that is T18-12's problem, not this one.
 
+> 📅 **RE-CONFIRMED LIVE `2026-09-28`.** *Independent SQL against `nba_market.schedule_norm` (no `season` column — derived by date range, same bounds as the original resolution): `2024-10-22`–`2025-04-13` = **1,230** rows, `2025-10-21`–`2026-04-12` = **1,230** rows, total **2,460** — exact match to the resolution's denominator, `6` days later. No change to the resolved facts; second of the 3-consecutive-clean-pass bar toward closure.*
+
 ## T18-7 · **CONFIRMED EXACTLY — the `4` is a literal with nothing behind it**
 ✅ **The line itself, read from the executed patch**:
 `lost = lost + np.where(d["interpolated"].values, 4.0, 0.0)`, then
