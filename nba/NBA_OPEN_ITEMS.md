@@ -14062,6 +14062,8 @@ line numbers would be worse than omitting them.**
 > 📅 **RE-CONFIRMED LIVE `2026-09-28`.** *`NBA_GLOSSARY.md` (live-read) still describes `§Z` as "the flat lookup (term → location, covers A–Z)" — document + transcript only, no per-message line/date/time column. Structurally unchanged from the item's own description; no drift.*
 
 > ✅✅ **RE-VERIFIED LIVE A SECOND TIME, `2026-09-28`.** *`NBA_GLOSSARY.md` re-read live a second time: `§Z`'s own description is still "the flat lookup (term → location, covers A–Z)" — document + transcript only, still no per-message line/date/time column. Unchanged since the first confirmation. **2 of 3 consecutive clean passes toward the closure bar.***
+>
+> ✅✅✅ **RE-VERIFIED LIVE A THIRD TIME, `2026-09-28`.** *`NBA_GLOSSARY.md` re-read live a third time: `§Z`'s own description is still "the flat lookup (term → location, covers A–Z)" — document + transcript only, still no per-message line/date/time column. Unchanged since both prior confirmations. **3 of 3 consecutive clean passes — closure bar MET. CLOSED 2026-09-28.***
 
 > ### ⚠ UNRELATED ITEM RECORDED HERE FOR PROXIMITY — **`ladder_calibration_asof` carries no refit history, so its documented weekly cadence cannot be checked from the table**
 > `[LIVE-AUDIT]` **2026-09-22 (§T20.13)**. **`nba_score.ladder_calibration_asof` holds 9,904 rows
