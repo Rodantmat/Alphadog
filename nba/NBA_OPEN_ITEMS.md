@@ -14196,6 +14196,8 @@ outcomes against fitted ones appears in any of the 860 mechanism segments.** ⇒
 constant**, exactly as pass 1 stated, **now verified against the code that ships it rather than the
 prose that describes it.** **Severity: MEDIUM, unchanged.**
 
+> 📅 **RE-CONFIRMED LIVE `2026-09-28`.** *`nba/score_board_legs.py:346` (live-read, current `main`) still reads exactly `lost = lost + np.where(d["interpolated"].values, 4.0, 0.0)` — the literal constant is byte-for-byte unchanged. No fit/measurement search re-run this pass (the original negative search stands); this confirms only that the code fact itself hasn't drifted. Second of the 3-consecutive-clean-pass bar toward closure.*
+
 ## T18-8 · **NEW · the P2 end-to-end run resolves to NOT RECORDED**
 **Pass 1 left P2's final steps (merge → commit → load → certify) unresolved — the prose says the run
 "aged off the recent list" TWICE.** ✅ **The mechanism strata confirm the run reached the load step and
