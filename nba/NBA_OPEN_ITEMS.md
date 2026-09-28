@@ -14241,6 +14241,10 @@ distinctive term — and the distinctive term is the CLAIM's, not the source's.)
 failure, not a missed optimisation)*. **The OWNER DECISION framing is WITHDRAWN: there is nothing to
 decide, only a fix to apply after the sweep ends.**
 
+> ✅✅✅ **CLOSED, LIVE-VERIFIED `2026-09-28`.** *`.github/workflows/nba-p3-afternoon-light.yml:90-95,130-135` (dated comment: "THE CUTOFF IS NOT A FIXED CLOCK (fixed 2026-09-23)") now computes `effective = min(13:15 PT, first_tip − 30min)` live from `nba_calendar.games` every run, exactly the fix this item called for. ⚠ **One precise discrepancy from this item's own proposed remedy, flagged not glossed over**: the item recommended a `2h` buffer (`earliest_tip − 2h`); the shipped fix uses **`30` minutes**, not `2` hours — a smaller safety margin than originally proposed. Not investigated further whether `30min` was itself measured (see `T18-11`, which asks the adjacent question of whether the report-cutoff measurement script ever ran) or chosen on other grounds — flagged as an open sub-question, not a reason to reopen this item, since the core defect (a FIXED clock scoring already-tipped slates) is structurally fixed regardless of the exact buffer chosen.
+
+## T18-11 · **NEW · HIGH** · the cutoff was decided on policy; the measurement built to check it never returned
+
 ### *(original text of T18-9, kept per the §0w precedent)* · the early-tip clause makes 1:15 PM PT conservative on some slates
 **The NBA rule, as quoted by the web source T18 retrieved** *(mechanism stratum SEG 483/484 — one of
 only two `web_search` calls in the whole transcript)*: teams file the game-day report **11 a.m.–1 p.m.
