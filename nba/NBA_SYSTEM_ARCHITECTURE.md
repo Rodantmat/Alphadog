@@ -932,6 +932,13 @@ as a **separate producer** (`league_id=7`, own env namespace `PP_NBA_*`, own out
 **The startup plan had assumed a filter swap would do** (*"reuse the MLB scraper's architecture
 directly, **swap the sport filter**"*); **Phase 1 checked and found otherwise.**
 
+📌 **UPDATE `2026-09-28`, `RULE 40`**: *the "separate producer, not `main.py` with a filter" design
+was itself superseded `2026-09-24` — `main.py` is now opt-in-NBA via env vars
+(`PRIZEPICKS_LEAGUE_ID`/`PRIZEPICKS_SPORT`/`PRIZEPICKS_OUT_DIR`) and is the live NBA producer today,
+live-verified in `nba-p3-afternoon-light.yml`. Phase 1's finding (MLB's hardcoding required a genuinely
+separate script at the time) is preserved as correct history; only the current wiring has moved on.
+Full record: `NBA_WORKERS.md` `§T27.3`.*
+
 ### Cloudflare Workers
 - Where MLB's 116 workers run, and where NBA's writer workers run.
 - Named `alphadog-v2-nba-<domain>-<thing>`, deployed to `<name>.rodolfoaamattos.workers.dev`.
