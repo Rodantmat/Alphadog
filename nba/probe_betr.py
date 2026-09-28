@@ -53,11 +53,16 @@ def main():
     if not tok:
         print("no token"); return
     H = {"authorization": "Bearer " + tok,
-         "accept": "application/graphql-response+json, application/graphql+json, application/json",
+         "accept": "application/graphql-response+json, application/graphql+json, application/json, text/event-stream",
+         "accept-language": "en-US,en;q=0.9",
          "content-type": "application/json", "channel": "MOBILE_WEB",
          "fantasy-api-version": "16.0", "fantasy-application-version": "3.42.9",
          "jurisdiction": "CA", "promotions-api-version": "6.0",
          "origin": "https://picks.betr.app", "referer": "https://picks.betr.app/",
+         "priority": "u=1, i",
+         "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+         "sec-ch-ua-mobile": "?0", "sec-ch-ua-platform": '"Windows"',
+         "sec-fetch-dest": "empty", "sec-fetch-mode": "cors", "sec-fetch-site": "same-site",
          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
     for league in ("WNBA", "NBA"):
         r = requests.post(GQL, headers=H, data=json.dumps({"operationName": "LeagueUpcomingEvents",
