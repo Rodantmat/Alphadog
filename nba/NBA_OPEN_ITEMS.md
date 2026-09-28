@@ -14027,6 +14027,8 @@ because the same shape recurs in every builder that creates-then-fills a table.*
 > 📅 **RE-CONFIRMED LIVE `2026-09-28`.** *`nba/build_board_tiers_v2.py` (live-read) still splits DDL, delete/truncate, and the parameterised `INSERT` into separate `.execute()` calls (`:124` DDL · `:126`/`:128` truncate-or-scoped-delete · `:130` parameterised INSERT) — the fix shape holds. One drift noted, not a regression: `:128` now runs a scoped `DELETE ... WHERE game_date = %s AND bookmaker = ANY(%s)` rather than a bare `TRUNCATE`, evidently to support per-slate/per-bookmaker rebuilds — still its own standalone `execute()` call, so the multi-command-with-params failure mode this item documents remains avoided.*
 
 > ✅✅ **RE-VERIFIED LIVE A SECOND TIME, `2026-09-28`.** *`nba/build_board_tiers_v2.py` re-read live a second time: the same three separate `.execute()` calls at the same lines (`:124` DDL · `:126`/`:128` truncate-or-scoped-delete · `:130` parameterised INSERT), byte-for-byte unchanged since the first confirmation. **2 of 3 consecutive clean passes toward the closure bar.***
+>
+> ✅✅✅ **RE-VERIFIED LIVE A THIRD TIME, `2026-09-28`.** *`nba/build_board_tiers_v2.py` re-read live a third time: the same three separate `.execute()` calls at the same lines (`:124` DDL · `:126`/`:128` truncate-or-scoped-delete · `:130` parameterised INSERT), byte-for-byte unchanged since both prior confirmations. **3 of 3 consecutive clean passes — closure bar MET. CLOSED 2026-09-28.***
 
 ## T19-3 · 🔴🔴 **NEW · METHOD, HIGH** · T15–T18 were closed on a standard this sweep had already superseded
 **`NBA_MASTER_SUMMARY.md` records the sweep's own method** *(lines ~5430–5438, "THE METHOD, now proven
