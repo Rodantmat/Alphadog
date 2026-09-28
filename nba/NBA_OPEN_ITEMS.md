@@ -14792,9 +14792,16 @@ mean)**, range **5,699 → 9,066** across slates of **1 to 15 games**. **As an i
 explicitly not a recommendation**: a floor of **`rows >= 5,000 × games`** sits below all 152 observed
 dates *(worst observed 5,699 — a 12% margin, which is thin and is said to be thin)* **and above a
 44%-loss slate (4,559)** ⇒ ***it would catch the incident in the certifier's own docstring, which
-`> 0` does not.***
+`> 0` does not.*** *(This derived-gate proposal is now moot as a fix — see the closure block at the
+top of this item — but is kept on file as a measured artifact, not a live recommendation.)*
 
-⚠ **NOT FIXED — DOCUMENTED, per the owner's standing instruction.**
+~~⚠ **NOT FIXED — DOCUMENTED, per the owner's standing instruction.**~~ *(superseded — see closure
+block at top)*
+
+✅✅✅ **CLOSED 2026-09-28.** The prop-count gate this item describes no longer exists in
+`certify_pipeline.py`; the live check is `>= 20` `FULL`-period-only props, which is structurally
+immune to the November-1 period-prop cutover. Full evidence in the closure block at the top of this
+item.
 
 ---
 
