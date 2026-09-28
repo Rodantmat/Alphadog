@@ -5796,6 +5796,10 @@ the pipeline would report a 2026-27 slate that stays 30 games short into opening
 2026-10-03. If it is still 1,200 after the Cup bracket would have resolved, explanation 2 is the
 live one.
 
+✅ **RE-VERIFIED LIVE 2026-09-28 (this sweep, no transcript needed) — the table WAS reloaded; the count did not move.** *(`[LIVE-AUDIT]`, `SELECT` only, nothing changed.)* `nba_calendar.games` for `2026-27` now shows a real write — `oldest_write 2026-09-26T16:41:24Z`, `newest_write 2026-09-26T16:41:50Z` (a ~26-second run, distinct from the original single `2026-09-02` write). **The `002` (regular-season) count is still exactly `1,200` — unchanged.** The `001` (preseason) count moved `66 → 67` (one game added); `003`–`006` remain entirely absent for `2026-27`, same as `2026-09-21`.
+
+⚠ **Not adjudicated, flagged not guessed**: this confirms the load step re-ran — contradicting the "written exactly once… not touched" claim above — but does **not** by itself settle explanation 1 vs. 2. Nothing in this corpus establishes when in the season NBA Cup-contingent fixtures are normally published, so the owner-action's own trigger condition ("after the Cup bracket would have resolved") cannot yet be evaluated from this sweep's evidence. Re-check again closer to `2026-10-03`.
+
 ---
 
 ## ⚠ THE DIFFERENTIAL WORKER'S "NOT SCHEDULED" WARNING WAS WRITTEN, AND THEN DELETED IN THE SAME SESSION *(added 2026-09-21, T3 judgment pass)*
