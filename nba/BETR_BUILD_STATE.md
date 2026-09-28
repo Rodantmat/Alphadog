@@ -1,48 +1,43 @@
-# BETR — build state (2026-09-28, after 14 probes)
+# BETR — build state (2026-09-28, after 15 probes + research)
 
-## SOLVED, proven headless
-- Keycloak betr-rn OFFLINE refresh token -> valid access_token (userinfo 200). audience=fantasy refresh 200.
-- Slate: GET api.betr.app/api/v3/events?league_ids=1 -> 200 headless.
-- Board query known: GraphQL POST api.fantasy.betr.app/graphql, op LeagueUpcomingEvents(league) ->
-  players -> projections{ value(LINE), currentValue, nonRegularValue(ALT LINE), nonRegularPercentage,
-  allowedOptions{outcome}, marketStatus }. Full query in probe_betr.py git history. WNBA teaches NBA.
+## DIAGNOSIS (final): the board is ANONYMOUS; the wall is a US-residential-IP / browser-TLS edge gate
+- 15 probes proved the Keycloak token is irrelevant to api.fantasy.betr.app/graphql: captured browser
+  token, refreshed token, claim-identical tokens, no token at all -> ALL 401, direct and via our PROXY_URL,
+  across 10 TLS impersonations, 6 jurisdictions, with/without cookies/session. The 401 is not auth.
+- Confirmed by external research: the commercial Apify "Betr Picks Scraper" (Crawloop DFS Props Suite)
+  advertises it explicitly — **"via public GraphQL. No login, US residential proxy."** And API Evangelist's
+  Betr profile: "Live private backend (Symfony). Anonymous requests return HTTP 500 / 403. No contract."
+  => The gateway serves anonymous requests but ONLY from a genuine US residential IP with a real browser
+     TLS/JA-signature. Our GitHub runner and current PROXY_URL don't present as that to Betr's Envoy edge.
+- So the whole token quest was the wrong problem. No login is needed; a qualifying US residential egress is.
 
-## THE WALL (14 probes) — the Keycloak bearer is NOT what the fantasy gateway accepts
-api.fantasy.betr.app/graphql -> 401 to every server request; 200 only in the live browser. Ruled OUT with
-controlled tests, each: token identity (captured browser token 401s from server), token CLAIMS (captured
-vs refreshed are claim-for-claim IDENTICAL), ACR, datacenter IP, residential proxy, request headers,
-TLS/JA3 (10 impersonations), HttpOnly/Set-Cookie (none set anywhere), and SESSION rotation (all chained
-refreshes reuse the SAME sid 229b485b… — the offline token cannot spawn a new session; a freshly minted
-token used within the same second still 401s). Alt hosts: api.betr.app/graphql 500 "no session",
-picks.betr.app/graphql 405.
+## THE BOARD (known, anonymous)
+POST api.fantasy.betr.app/graphql, op LeagueUpcomingEvents(league: NBA|WNBA) -> players -> projections
+{ value(LINE), currentValue, nonRegularValue(ALT LINE), nonRegularPercentage, allowedOptions{outcome},
+marketStatus }. Full self-contained query in probe_betr.py git history. NO Authorization header required.
 
-=> CONCLUSION: the browser performs an exchange we have NOT captured — almost certainly at app load, BEFORE
-   the GetLobbyContent/LeagueUpcomingEvents calls: the SPA trades the Keycloak token for a FANTASY-NATIVE
-   credential (a second token, or a signed header the JS bundle computes), and that is what /graphql wants.
-   The Keycloak bearer alone is necessary-but-insufficient. This is the ONE thing left and it must be SEEN.
+## THE THREE WAYS TO MAKE IT WORK (pick per cost/control)
+1. **Apify Crawloop Betr scraper (fastest, most reliable, OWNER DECISION on $$):**
+   GET/POST https://api.apify.com/v2/actors/crawloop~betr-picks-scraper/run-sync-get-dataset-items?token=APIFY_TOKEN
+   Returns normalized Betr NBA props JSON from THEIR US residential proxies. Needs only an Apify token
+   (secret APIFY_TOKEN). Zero Betr auth, zero MFA. A tiny fetcher writes boards/betr_nba_current.json.
+   There is also a multi-source actor (PrizePicks+Betr+Pick6+Underdog in one run) if we ever want it.
+2. **Our own US residential proxy** (if PROXY_URL is upgraded to a real US-resident pool): the anonymous
+   GraphQL call in probe_betr.py should then 200 directly — no token, no capture. Cheapest if such a proxy
+   is already available; the current PROXY_URL evidently is not US-resident enough for Betr's edge.
+3. **The mini-PC/home-server** (already planned): run the anonymous GraphQL from the home connection (US
+   residential by nature) on a cron; POST the JSON to Postgres/commit the board file. No third party.
 
-## THE CAPTURE THAT ENDS IT (browser, 2 min, no phone)
-picks.betr.app logged in -> DevTools Network -> clear -> reload the page -> in the filter box type: betr.app
-Capture, in ORDER, EVERY request to *.betr.app from the first second of load until the board renders,
-especially:
-  - the FIRST call(s) to api.fantasy.betr.app (before GetLobbyContent) — look for a login/session/exchange
-    op, or a REST /auth call that RETURNS a token,
-  - any response that returns a NEW token/JWT (Response tab), and
-  - any request header on the graphql call we have not mirrored (x-*, a signature, a device id).
-Right-click the api.fantasy.betr.app graphql row -> Copy -> Copy as cURL (bash); ALSO copy the response of
-any auth/session/exchange call before it. Save as UTF-8 (.js) and upload. That reveals the fantasy
-credential the cold request is missing.
+## HARVESTER (once egress is sorted; scheduled snapshot)
+[US-resident GET] LeagueUpcomingEvents(NBA) -> parse projections (main + nonRegular alt ladder +
+allowedOptions) -> boards/betr_nba_current.json. archive_live_boards routes betr via rows_generic; add a
+rows_betr for the projection/alt shape (like rows_sleeper). Cron 2x/day.
 
-## Harvester (once unblocked; scheduled snapshot design approved)
-refresh -> [fantasy exchange] -> events?league_ids=1 -> LeagueUpcomingEvents(NBA) -> parse projections
-(main + nonRegular alt ladder + allowedOptions) -> boards/betr_nba_current.json. archive_live_boards routes
-betr via rows_generic; add rows_betr (like rows_sleeper). Cron 2x/day. Renews forever from the offline token.
+## SUPERSEDED
+The offline Keycloak refresh token / BETR_ACCESS_TOKEN path is NOT needed (board is anonymous). Keep the
+secrets harmlessly or delete; they do not unlock the fantasy edge. Rotate the Betr password at leisure
+(tokens were pasted in chat) — not load-bearing for this integration.
 
 ## tooling
-nba/probe_betr.py + nba-probe.yml (curl_cffi+ably; passes BETR_REFRESH_TOKEN, BETR_CLIENT_ID,
-BETR_ACCESS_TOKEN, PROXY_URL). Trigger: nba/TRIGGER_NBA_PROBE.txt -> `script: probe_betr.py`.
-
-## RESEARCH (2026-09-28)
-Web sources described the bearer-OR-HttpOnly-cookie fallback; tested and RULED OUT (no cookie). Gemini
-bridge 404 (model name), not consulted. Net after 14 probes: not token, not network, not TLS, not cookie,
-not session — the missing piece is a fantasy-host credential exchange visible only in the app-load capture.
+nba/probe_betr.py (current = anonymous GraphQL tester) + nba-probe.yml. Trigger via
+nba/TRIGGER_NBA_PROBE.txt -> `script: probe_betr.py`.
