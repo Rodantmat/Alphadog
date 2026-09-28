@@ -1,1 +1,1 @@
-script: probe_chalkboard2.py
+script: probe_betr.py
