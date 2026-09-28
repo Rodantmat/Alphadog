@@ -259,6 +259,8 @@ def rows_betr(doc, gd, label):
           "turnovers": "player_turnovers", "points_rebounds_assists": "player_points_rebounds_assists",
           "pts_reb_ast": "player_points_rebounds_assists", "points_rebounds": "player_points_rebounds",
           "points_assists": "player_points_assists", "rebounds_assists": "player_rebounds_assists",
+          "assists_rebounds": "player_rebounds_assists", "assists_points": "player_points_assists",
+          "rebounds_points": "player_points_rebounds",
           "steals_blocks": "player_blocks_steals", "blocks_steals": "player_blocks_steals",
           "fantasy_points": "player_fantasy_points", "fantasy": "player_fantasy_points",
           "double_double": "player_double_double", "free_throws_made": "player_ftm",
