@@ -40,6 +40,16 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 **NEXT**: `T20-16`/`T20-18` still unchecked against live state this window — continuing per owner's `"Continue"`, no interim stop.
 
+✅ **`T20-16` live re-verified**: `nba_score.paper_picks`/`paper_results` still `0`/`0` (matches the 2026-09-23 check) — the doc's own "measurement is not yet possible" verdict is still accurate, no update needed.
+
+🔑 **`T20-18` check turned up a live discovery mid-verification**: grepping `certify_pipeline.py` for its check count found an 18th `check(...)` call site — a per-app board-liveness loop with a `2026-09-26, T26-9` comment, **not present when `T20-18` was written (2026-09-22)**. Before writing anything, checked whether this was already tracked: **it was — `T26-9` is already CLOSED `2026-09-28` (today, evidently by the hourly track or the concurrent build session) and fully documented at `NBA_OPEN_ITEMS.md` lines 66/208, cross-referenced in `NBA_WORKERS.md` and `NBA_SYSTEM_DESIGN.md`.** No new item filed. Instead, made the one precise correction this enables: `T20-18`'s own named scenario ("Sleeper, Underdog and Fliff can all be missing while [the aggregate board gate is] green") is now caught by `T26-9`'s new per-app block — struck through and cross-referenced, while leaving the rest of `T20-18`'s broader critique (the aggregate gate itself is untouched; four other checks remain uncovered) intact, since those are still true.
+
+**Census re-derived after all patches this firing: `952`, unchanged throughout** (every edit landed inside existing rows).
+
+📊 **Batch summary — this firing**: 1 non-novel thread correctly declined + cross-referenced (confidence-side F8-1/T20-19), 1 item fully closed live (`T20-17`), 1 item partially closed with a fresh live magnitude measurement (`T20-25`, `4.83%`/`321,406` legs), 1 item precision-corrected against a same-day closure (`T20-18`/`T26-9`), 1 item re-verified unchanged (`T20-16`). **Every `github_patch_file` call this firing targeted `nba/NBA_OPEN_ITEMS.md` or `nba/NBA_SWEEP_RUN_LOG.md` — both in scope, no repeat of the earlier-window scope violation.**
+
+**NEXT**: continue the broader sustained sweep per the owner's `"Continue"` — no interim stop. Candidates not yet touched this window: `T20-15` (zero-game-day certification), the `T25`/`T26` series beyond `T26-12`, and a fresh live check of `NBA_MASTER_SUMMARY.md`'s own `§T20.113` ten-factor table (the source spec `T20-19` points to) against current `nba_score.confidence_model` deduction values, since those are measured quantities that could have drifted since `2026-09-22`.
+
 ## 🆕 THIS FIRING (`2026-09-28`, tenth hourly run) — TRANSCRIPTS STILL UNAVAILABLE FOR THIS TRACK; `T31` STILL BLOCKED ON ELAPSED TIME; NO NEW DOC DEFECTS, BUT `NBA_FINAL_SCORING_CALIBRATION.MD`'S OWN CORRUPTION IS CONFIRMED WORSE THAN LAST RECORDED
 
 ✅ **Session type confirmed**: scheduled/unattended hourly firing, no chat attachment, no desktop bridge (checked, per standing constraint) — this is the hourly track, picking up from the ninth hourly run's `NEXT` pointer (above, superseded by this entry). The transcript-batch track's own entries sit below this one and remain its own separate continuity — not re-opened or duplicated here.
