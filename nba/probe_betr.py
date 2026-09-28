@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Betr probe v3 (2026-09-27). events?league_ids=1 works (Pistons@Celtics etc). Markets endpoint shape is
-the last unknown - flat /markets 500s. Try the event-scoped and category-scoped shapes, and check whether
-the full board (markets inline) comes from events with an include/expand param.
+Betr probe v4 (2026-09-27). REST gives events but the markets/props arrive over Ably (every /markets REST
+path 500s "no session"; the ws capability is market:* event:* fixture:*). This mints the Ably token the way
+the web app does (ws-token-request) and then uses Ably's SSE endpoint to SUBSCRIBE briefly to candidate
+channels for one event, printing the first messages so we learn the real channel name and the prop shape.
 Read-only. Secrets from env.
 """
 import json
 import os
+import time
 
 from curl_cffi import requests
 
@@ -31,46 +33,38 @@ def main():
          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
 
     ev = requests.get(API + "/api/v3/events?league_ids=1", headers=H, timeout=25, impersonate="chrome124").json()
-    data = ev.get("data") if isinstance(ev, dict) else ev
-    eid = str((data or [{}])[0].get("id"))
-    print("event:", eid)
+    events = ev.get("data") if isinstance(ev, dict) else ev
+    eid = str((events or [{}])[0].get("id"))
+    print("event:", eid, "events on board:", len(events or []))
 
-    cands = [
-        f"/api/v3/events/{eid}/markets",
-        f"/api/v3/events/{eid}/market-categories",
-        f"/api/v3/events/{eid}/markets?category=player-props",
-        f"/api/v3/events/{eid}?include=markets",
-        f"/api/v3/events/{eid}?expand=markets",
-        f"/api/v3/events/{eid}/sgp-markets",
-        f"/api/v3/markets?event_id={eid}",
-        f"/api/v3/market-categories?event_id={eid}",
-        f"/api/v3/events/{eid}/player-props",
-        f"/api/v3/picks/events/{eid}/markets",
-        f"/api/v3/pickem/markets?event_id={eid}",
-        f"/api/v3/pickem/events/{eid}/markets",
-        f"/api/v3/dfs/events/{eid}/markets",
-        f"/api/v3/events/{eid}/props",
-        f"/api/v3/events/{eid}/selections",
-        f"/api/v3/events?league_ids=1&include=markets",
-    ]
-    for p in cands:
+    # Mint the Ably token request payload exactly as the app does.
+    ws = requests.post(API + "/api/v3/auth/user/ws-token-request", headers={**H, "content-length": "0"},
+                       timeout=25, impersonate="chrome124").json()
+    key_name = ws.get("keyName"); client_id = ws.get("clientId")
+    print("ably keyName:", key_name, "clientId:", client_id)
+
+    # Exchange for an Ably token via requestToken (the app hits main.realtime.ably.net/keys/<keyName>/requestToken).
+    tr = requests.post(f"https://main.realtime.ably.net/keys/{key_name}/requestToken",
+                       headers={"content-type": "application/json", "accept": "application/json"},
+                       data=json.dumps({k: ws[k] for k in ("ttl", "capability", "clientId", "timestamp", "keyName", "nonce", "mac") if k in ws}),
+                       timeout=25, impersonate="chrome124")
+    print("requestToken:", tr.status_code, tr.text[:120].replace("\n", " "))
+    if tr.status_code >= 300:
+        return
+    ably_token = tr.json().get("token")
+
+    # Ably REST: read channel history / presence to discover the live channels and the message shape.
+    AH = {"authorization": "Bearer " + ably_token, "accept": "application/json"}
+    for ch in [f"event:{eid}", f"market:{eid}", f"fixture:{eid}",
+               f"event:{eid}:markets", f"public:event:{eid}", f"market:nba", "public:nba"]:
+        # history returns recently published messages on the channel
+        u = f"https://main.realtime.ably.net/channels/{requests.utils.quote(ch, safe='')}/messages?limit=3"
         try:
-            r = requests.get(API + p, headers=H, timeout=25, impersonate="chrome124")
+            r = requests.get(u, headers=AH, timeout=20, impersonate="chrome124")
         except Exception as exc:  # noqa: BLE001
-            print(f"  ERR {p} {str(exc)[:50]}"); continue
-        if r.status_code == 404:
-            continue
-        note = (r.text or "")[:130].replace("\n", " ")
-        print(f"  {r.status_code}  {len(r.text or ''):>8}b  {p}   {note}")
-        if r.status_code == 200 and len(r.text or "") > 500:
-            try:
-                j = r.json()
-                d = j.get("data") if isinstance(j, dict) else j
-                first = d[0] if isinstance(d, list) and d else d
-                print("     KEYS:", list(first.keys()) if isinstance(first, dict) else type(first).__name__)
-                print("     SAMPLE:", json.dumps(first)[:1400])
-            except Exception:  # noqa: BLE001
-                pass
+            print(f"  ERR {ch} {str(exc)[:50]}"); continue
+        note = (r.text or "")[:400].replace("\n", " ")
+        print(f"  {r.status_code}  {len(r.text or ''):>7}b  {ch}   {note}")
 
 
 if __name__ == "__main__":
