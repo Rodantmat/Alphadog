@@ -2584,3 +2584,32 @@ that target is not the one the double-counting shows up in.* ⇒ **Only the prod
 📌 **Cross-refs**: `§T26.39` *(instance 3, retracting `§T26.12`/`§T26.22`)* · `§T26.26` *(the same
 "different questions" failure on effect size vs penalty sizing)* · `§T25.4` *(why the lesson was not
 where the reader would find it)*.
+
+---
+
+## 🔑🔑 **§T27.6 — THE AS-OF CALIBRATION SHIFT, MEASURED ON THE PRODUCT'S OWN POPULATION: `3.46pp` → `1.85pp` ON `101,049` LIVE PRIZEPICKS POINTS LEGS** *(source: `2026-09-28-05-24-16-nba-sleeper-capture-session.txt`, a `2026-09-28` build-chat session; `0` of the twelve before this entry)*
+
+> 📌 **The reliability audit was rebuilt on the board-scoped store (`board_scored`) after `§T26.7`'s
+> reliability-audit fix (`§T27.5`) let a full run finish.** Its store-wide numbers blend every book's
+> alternates together, which understates the product PrizePicks actually sells. This session split
+> the audit by book and measured PrizePicks alone: **on `points` legs, `2025-26` season, `101,049`
+> PrizePicks legs — raw baseline `ECE` is `3.46pp` off; after the as-of calibration shift (`final_hp`)
+> it is `1.85pp` off, signed bias `-1.4pp` (overs land more often than the baseline says).** 🔑 **The
+> calibration layer measurably works on the product's own population** — not just on the book-agnostic
+> store average this document's earlier audits (`§0v.3` and neighbours) were built on.
+>
+> ✅ **Reconciled before being trusted, leg by leg** *(`2026-09-26`)*: `board_scored.baseline_hp`
+> equals the store's `p_more` on `1,391` of `1,391` exact legs of a backfill date (to four decimals),
+> and the grader's verdict equals the box score on `592` of `592` — probabilities and outcomes are one
+> record, not two that happen to agree. *A first cross-check that joined day-of legs to outcomes by
+> NAME through `board_outcomes` gave a divergent `5.7pp`; joined to the box score directly it gives
+> `1.2`–`3.5pp` per app — the name join was pairing rows wrongly, and the direct join is the
+> authoritative one.* ⚠ *Not yet established: `tier` is not populated on the `2025-26` replays, so the
+> goblin/demon split of this same measurement still waits.*
+>
+> 🔑 **Recorded here rather than treated as a duplicate of `§0v.3`/`§0v.4`**: those sections measure the
+> store-wide (book-agnostic) reliability audit; this is the same instrument re-run scoped to the one
+> book the product actually prices against, and the two numbers are not interchangeable — a future
+> reader should not average them.
+
+📌 **Cross-refs**: `§T27.5` *(`NBA_WORKERS.md` — the reliability-audit crash-on-close bug this measurement's re-run depended on)* · `§0v.3`/`§0v.4` *(the store-wide, book-agnostic version of this audit)*.
