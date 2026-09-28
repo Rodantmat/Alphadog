@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-Betr harvester (Path C, STEALTH) — Betr sits behind Cloudflare Turnstile ("Verify you are human"), which
-detects vanilla Playwright and loops the challenge, so the app never boots to the board. Fix: launch a
-patched/stealth Chromium that Cloudflare does not flag, let the human-verification pass (usually auto for a
-real residential IP once the fingerprint is clean), then intercept the page's own getUpcomingEventsV2.
+Betr harvester (Path C, SeleniumBase UC Mode) — Betr is behind Cloudflare Turnstile (interactive checkbox),
+which loops vanilla Playwright. Research (2026): the reliable open-source beaters are SeleniumBase UC Mode
+(has uc_gui_click_captcha) and Camoufox. This uses UC Mode: it launches an undetected Chrome, auto-clicks
+the Turnstile box, waits for the app to boot, drives to the league board, and reads the board GraphQL
+response the page fetched. Runs on a US RESIDENTIAL machine (your PC / the mini-PC).
 
 Setup (one time, PowerShell):
-    python -m pip install --upgrade playwright playwright-stealth
-    python -m playwright install chromium
-Run (VISIBLE so you can click the Turnstile box if it shows):
-    $env:BETR_LEAGUE="WNBA"; python betr4.py
-If the checkbox appears, CLICK IT ONCE; the script waits for the board.
+    python -m pip install --upgrade seleniumbase
+    # SeleniumBase manages its own driver; no separate download needed
+Run (VISIBLE — UC Mode needs a real display to click Turnstile):
+    $env:BETR_LEAGUE="WNBA"; python betr5.py
+Once reliable, schedule it with Windows Task Scheduler.
 
-Notes: keep headless OFF for Cloudflare (headless is far more detectable). Once it works reliably we can
-try headful-in-a-virtual-display on the mini-PC.
+Output: boards/betr_<league>_current.json (+ _meta), and betr_nba_current.json for NBA.
 """
-import asyncio
 import json
 import os
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -26,6 +26,18 @@ LEAGUE = os.environ.get("BETR_LEAGUE", "NBA").upper()
 OUT = Path(os.environ.get("BETR_OUT_DIR", "boards"))
 OUT.mkdir(parents=True, exist_ok=True)
 URL = "https://picks.betr.app/"
+
+# The board query, self-contained, to run from the page once Cloudflare has cleared (same-origin, so CSP allows it).
+QUERY = ("query LeagueUpcomingEvents($league: League!) { getUpcomingEventsV2(league: $league) { "
+         "...EventInfoData ... on TeamVersusEvent { teams { ...T __typename } __typename } "
+         "... on TeamTournamentEvent { teams { ...T __typename } __typename } "
+         "... on IndividualTournamentEvent { players { ...P __typename } __typename } "
+         "... on IndividualVersusEvent { players { ...P __typename } __typename } __typename } } "
+         "fragment EventInfoData on EventV2 { id date status sport league name __typename } "
+         "fragment T on Team { id name league sport fullName players { ...P __typename } __typename } "
+         "fragment P on Player { id firstName lastName position jerseyNumber "
+         "projections { marketId marketStatus type label name value nonRegularValue nonRegularPercentage "
+         "allowedOptions { outcome __typename } currentValue __typename } __typename }")
 
 
 def parse_leg(ev, team, player, proj):
@@ -60,83 +72,59 @@ def flatten(body):
     return legs, len(events)
 
 
-async def apply_stealth(page):
-    """Best-effort: use playwright-stealth if installed; always add the manual patches Cloudflare checks."""
-    try:
-        from playwright_stealth import stealth_async
-        await stealth_async(page)
-        print("  playwright-stealth applied", flush=True)
-    except Exception:  # noqa: BLE001
-        print("  playwright-stealth not available; using manual patches only "
-              "(pip install playwright-stealth for best results)", flush=True)
-    await page.add_init_script(
-        "Object.defineProperty(navigator,'webdriver',{get:()=>undefined});"
-        "window.chrome={runtime:{}};"
-        "Object.defineProperty(navigator,'languages',{get:()=>['en-US','en']});"
-        "Object.defineProperty(navigator,'plugins',{get:()=>[1,2,3,4,5]});"
-    )
-
-
-async def run():
-    from playwright.async_api import async_playwright
+def main():
+    from seleniumbase import SB
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    captured = {}
-
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch(
-            headless=False,
-            args=["--disable-blink-features=AutomationControlled", "--no-sandbox",
-                  "--disable-features=IsolateOrigins,site-per-process"])
-        ctx = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
-            locale="en-US", viewport={"width": 1366, "height": 900})
-        page = await ctx.new_page()
-        await apply_stealth(page)
-
-        async def on_response(resp):
-            if "fantasy.betr.app/graphql" not in resp.url:
-                return
+    board = None
+    with SB(uc=True, headless=False, locale="en-US") as sb:
+        print(f"opening {URL} with UC Mode ...", flush=True)
+        sb.uc_open_with_reconnect(URL, reconnect_time=6)
+        # auto-click the Cloudflare Turnstile checkbox if present
+        try:
+            sb.uc_gui_click_captcha()
+            print("  uc_gui_click_captcha fired", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            print("  uc_gui_click_captcha:", str(exc)[:80], flush=True)
+        time.sleep(6)
+        # once cleared, run the board query from the page (same-origin fetch, allowed by CSP)
+        for attempt in range(3):
             try:
-                body = await resp.json()
-            except Exception:  # noqa: BLE001
-                return
-            d = (body or {}).get("data") or {}
-            if isinstance(d, dict) and d.get("getUpcomingEventsV2"):
-                captured["board"] = body
-                print(f"  captured getUpcomingEventsV2: {len(d['getUpcomingEventsV2'])} events", flush=True)
+                res = sb.execute_script(
+                    "var cb=arguments[arguments.length-1];"
+                    "fetch('https://api.fantasy.betr.app/graphql',{method:'POST',"
+                    "headers:{'content-type':'application/json',"
+                    "'accept':'application/graphql-response+json, application/graphql+json, application/json'},"
+                    "body:JSON.stringify({operationName:'LeagueUpcomingEvents',query:arguments[0],"
+                    "variables:{league:arguments[1]}}),credentials:'include'})"
+                    ".then(r=>r.text()).then(t=>cb(t)).catch(e=>cb('ERR:'+e));",
+                    QUERY, LEAGUE) if False else None
+                # execute_script above can't await; use a synchronous fetch via a promise trick instead:
+                res = sb.execute_async_script(
+                    "var q=arguments[0], lg=arguments[1], cb=arguments[arguments.length-1];"
+                    "fetch('https://api.fantasy.betr.app/graphql',{method:'POST',"
+                    "headers:{'content-type':'application/json'},"
+                    "body:JSON.stringify({operationName:'LeagueUpcomingEvents',query:q,variables:{league:lg}}),"
+                    "credentials:'include'}).then(r=>r.text()).then(t=>cb(t)).catch(e=>cb('ERR:'+e));",
+                    QUERY, LEAGUE)
+                if res and not res.startswith("ERR:"):
+                    board = json.loads(res)
+                    break
+                print(f"  attempt {attempt}: {str(res)[:120]}", flush=True)
+            except Exception as exc:  # noqa: BLE001
+                print(f"  attempt {attempt} error: {str(exc)[:100]}", flush=True)
+            time.sleep(5)
 
-        page.on("response", on_response)
-
-        print(f"opening {URL} — if a Cloudflare 'Verify you are human' box appears, CLICK IT.", flush=True)
-        await page.goto(URL, wait_until="load", timeout=60000)
-
-        # up to 90s: wait for Cloudflare to clear + board to load; nudge toward the league
-        for step in range(45):
-            if "board" in captured:
-                break
-            await page.wait_for_timeout(2000)
-            if step in (5, 15, 25):
-                for sel in (LEAGUE, LEAGUE.title(), "Basketball"):
-                    try:
-                        el = page.get_by_text(sel, exact=True)
-                        if await el.count() > 0:
-                            await el.first.click(timeout=3000)
-                            print(f"  clicked '{sel}'", flush=True)
-                            break
-                    except Exception:  # noqa: BLE001
-                        pass
-        await browser.close()
-
-    if "board" not in captured:
-        print("NO BOARD CAPTURED. If the Cloudflare box kept looping, stealth needs strengthening "
-              "(tell me); if it cleared but no board, tell me what the page showed.", file=sys.stderr)
+    if not board or board.get("errors") or not (((board.get("data") or {}).get("getUpcomingEventsV2"))):
+        print("NO BOARD. If Cloudflare box still showed, tell me; if it cleared, paste any console text.",
+              file=sys.stderr)
+        if board:
+            (OUT / f"betr_{LEAGUE.lower()}_raw.json").write_text(json.dumps(board)[:5000])
         sys.exit(2)
 
-    legs, nevents = flatten(captured["board"])
+    legs, nevents = flatten(board)
     fetched = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    meta = {"ok": True, "source": "playwright-stealth picks.betr.app", "league": LEAGUE,
-            "started_at": started, "fetched_at": fetched, "legs": len(legs),
-            "alt_legs": sum(1 for l in legs if l.get("alt")),
+    meta = {"ok": True, "source": "seleniumbase-uc picks.betr.app", "league": LEAGUE, "started_at": started,
+            "fetched_at": fetched, "legs": len(legs), "alt_legs": sum(1 for l in legs if l.get("alt")),
             "players": len({l["player_id"] for l in legs}), "events": nevents}
     (OUT / f"betr_{LEAGUE.lower()}_current.json").write_text(json.dumps({"meta": meta, "legs": legs}, separators=(",", ":")))
     (OUT / f"betr_{LEAGUE.lower()}_current_meta.json").write_text(json.dumps(meta, indent=2))
@@ -147,4 +135,4 @@ async def run():
 
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    main()
