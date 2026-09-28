@@ -17372,6 +17372,8 @@ re-running the case that FAILED, not by running a different case that was alread
 *(Full evidence and the sweep's own retraction on this point: `NBA_WORKERS.md`
 §0.002-T18-CORRECTION.)*
 
+> 📅 **RE-CHECKED LIVE `2026-09-28` — FIX STILL PRESENT, RE-VERIFICATION-ON-2025-26 STILL NOT CONFIRMED.** *`nba/check_delta_gaps.py`'s team-game-log fallback (`lines 77-90` in the current file, unchanged in mechanism from the original description) is confirmed still live. ⚠ **Not resolved**: whether it has since been dispatched season-wide on `2025-26` specifically — `check_delta_gaps.py` runs daily inside `P2` as "Delta gap audit," but that daily invocation is DATE-scoped to the current slate, not the season-wide audit mode this item is about, so routine daily P2 runs do not by themselves exercise this fallback the way a full-season dispatch would. This sweep does not invoke workflow dispatches to force one. **Left open, unchanged**, rather than assumed closed by the pipeline's general health.
+
 ## T18-11 · **NEW · HIGH** · the cutoff was decided on policy; the measurement built to check it never returned
 **`nba/measure_report_cutoff.py` exists and states its own standard**: *"policy says the last market
 to file is pacific, at 1 pm pt. **but policy is not evidence — measure it**… if not, 2:30 stays — for
