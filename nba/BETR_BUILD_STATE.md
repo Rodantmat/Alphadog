@@ -1,43 +1,46 @@
-# BETR — build state (2026-09-28, after 15 probes + research)
+# BETR — build state (2026-09-28, after 17 probes + research)
 
-## DIAGNOSIS (final): the board is ANONYMOUS; the wall is a US-residential-IP / browser-TLS edge gate
-- 15 probes proved the Keycloak token is irrelevant to api.fantasy.betr.app/graphql: captured browser
-  token, refreshed token, claim-identical tokens, no token at all -> ALL 401, direct and via our PROXY_URL,
-  across 10 TLS impersonations, 6 jurisdictions, with/without cookies/session. The 401 is not auth.
-- Confirmed by external research: the commercial Apify "Betr Picks Scraper" (Crawloop DFS Props Suite)
-  advertises it explicitly — **"via public GraphQL. No login, US residential proxy."** And API Evangelist's
-  Betr profile: "Live private backend (Symfony). Anonymous requests return HTTP 500 / 403. No contract."
-  => The gateway serves anonymous requests but ONLY from a genuine US residential IP with a real browser
-     TLS/JA-signature. Our GitHub runner and current PROXY_URL don't present as that to Betr's Envoy edge.
-- So the whole token quest was the wrong problem. No login is needed; a qualifying US residential egress is.
+## FINAL DIAGNOSIS: board is anonymous, but the edge needs a real BROWSER RUNTIME, not just a US-res IP
+Proven across 17 probes:
+- Board is anonymous (no token needed) — confirmed by external research (Apify Crawloop "No login") and
+  by our own tests (token vs no-token identical 401).
+- PROXY_URL is a genuine US RESIDENTIAL IP: ip-api shows Comcast Cable, California, hosting:false,
+  proxy:false. Exactly what the commercial scraper says it needs.
+- STILL 401 through that residential proxy, across: matched jurisdiction (CA), US, none; minimal headers;
+  full app headers; GET with query params; and 8 guessed extra headers (apollographql-client-name,
+  x-tenant, x-client, betr-platform, x-betr-jurisdiction, graphql-require-preflight, ...).
+=> A plain HTTP request cannot pass the edge even from a residential IP. The commercial Apify actor must
+   run a REAL HEADLESS BROWSER that executes Betr's JS (which computes a per-request signed header / solves
+   an anti-bot / Akamai-Envoy challenge invisible to DevTools and uncapturable as a static value). Our
+   requests/curl_cffi calls reproduce a browser-shaped PACKET but not the browser RUNTIME.
 
-## THE BOARD (known, anonymous)
-POST api.fantasy.betr.app/graphql, op LeagueUpcomingEvents(league: NBA|WNBA) -> players -> projections
-{ value(LINE), currentValue, nonRegularValue(ALT LINE), nonRegularPercentage, allowedOptions{outcome},
-marketStatus }. Full self-contained query in probe_betr.py git history. NO Authorization header required.
+## WHAT ACTUALLY WORKS (ranked, honest)
+1. **Headless browser (Playwright) through the residential proxy** — load picks.betr.app in real Chromium,
+   let its JS run and authenticate, then read the LeagueUpcomingEvents response (or call the GraphQL from
+   the page context so the JS-computed headers are attached). This is the in-house path that matches what
+   the commercial actor does. Heaviest to run (needs Chromium on the runner or the mini-PC) but no third
+   party and no per-result fee. The mini-PC/home-server is the natural host (residential by nature +
+   always-on).
+2. **Apify Crawloop Betr actor** — pay Apify to run exactly that headless+residential stack. Free tier
+   $5/mo credit (no card); actor may add a per-run/result fee (rental model retiring Oct 1 2026 -> pay-per-
+   usage). Fastest, least control, small ongoing cost. Endpoint:
+   api.apify.com/v2/acts/crawloop~betr-picks-scraper/run-sync-get-dataset-items?token=APIFY_TOKEN
+3. **Give up on Betr** — it is one of five DFS apps; PrizePicks (the product target) is fully covered and
+   Sleeper is now live with its ladder. Betr is marginal.
 
-## THE THREE WAYS TO MAKE IT WORK (pick per cost/control)
-1. **Apify Crawloop Betr scraper (fastest, most reliable, OWNER DECISION on $$):**
-   GET/POST https://api.apify.com/v2/actors/crawloop~betr-picks-scraper/run-sync-get-dataset-items?token=APIFY_TOKEN
-   Returns normalized Betr NBA props JSON from THEIR US residential proxies. Needs only an Apify token
-   (secret APIFY_TOKEN). Zero Betr auth, zero MFA. A tiny fetcher writes boards/betr_nba_current.json.
-   There is also a multi-source actor (PrizePicks+Betr+Pick6+Underdog in one run) if we ever want it.
-2. **Our own US residential proxy** (if PROXY_URL is upgraded to a real US-resident pool): the anonymous
-   GraphQL call in probe_betr.py should then 200 directly — no token, no capture. Cheapest if such a proxy
-   is already available; the current PROXY_URL evidently is not US-resident enough for Betr's edge.
-3. **The mini-PC/home-server** (already planned): run the anonymous GraphQL from the home connection (US
-   residential by nature) on a cron; POST the JSON to Postgres/commit the board file. No third party.
+## KNOWN-GOOD PIECES (reuse whichever path)
+- Board query: GraphQL LeagueUpcomingEvents(league: NBA|WNBA) -> players -> projections{ value(LINE),
+  currentValue, nonRegularValue(ALT LINE), nonRegularPercentage, allowedOptions{outcome}, marketStatus }.
+- events?league_ids=1 works headless on api.betr.app (only the fantasy host is edge-gated).
+- Offline refresh token mints access tokens (not needed for the anonymous board, but harmless).
+- archive_live_boards routes betr via rows_generic; add rows_betr for the projection/alt shape.
 
-## HARVESTER (once egress is sorted; scheduled snapshot)
-[US-resident GET] LeagueUpcomingEvents(NBA) -> parse projections (main + nonRegular alt ladder +
-allowedOptions) -> boards/betr_nba_current.json. archive_live_boards routes betr via rows_generic; add a
-rows_betr for the projection/alt shape (like rows_sleeper). Cron 2x/day.
-
-## SUPERSEDED
-The offline Keycloak refresh token / BETR_ACCESS_TOKEN path is NOT needed (board is anonymous). Keep the
-secrets harmlessly or delete; they do not unlock the fantasy edge. Rotate the Betr password at leisure
-(tokens were pasted in chat) — not load-bearing for this integration.
+## RECOMMENDATION
+Do Betr via a Playwright harvester on the mini-PC when it's up (path 1) — free, in-house, and it's the only
+thing that reproduces what the edge demands. Until then, Betr stays a documented no-op in ARCHIVE_APPS; the
+certifier WARNs (harmless). Not worth more raw-HTTP probing — that dimension is exhausted.
 
 ## tooling
-nba/probe_betr.py (current = anonymous GraphQL tester) + nba-probe.yml. Trigger via
-nba/TRIGGER_NBA_PROBE.txt -> `script: probe_betr.py`.
+nba/probe_betr.py (current = residential-proxy header sweep) + nba-probe.yml. If pursuing path 1, next step
+is a Playwright probe (install playwright + chromium in the workflow) that loads picks.betr.app via the
+residential proxy and dumps the LeagueUpcomingEvents response.
