@@ -10,6 +10,18 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ---
 
+## 🆕 T27 STARTED `2026-09-28` — NEW BATCH: 5 TRANSCRIPTS, ~866K WORDS (`2026-09-25-23-31-08`…`2026-09-28-05-58-27`), PLUS TWO REFERENCE-ONLY `.md` COPIES
+
+📌 **Batch boundary, from the delivering `README.txt`**: the prior batch closed at `2026-09-24-19-40-46`; this one is every transcript newer, in order — `T27` `…retention-disk-fixes` (23:31, 09-25) · `T28` `…pipeline-closure-sept-2026` (03:09, 09-28) · `T29` `…sleeper-capture-session` (05:24) · `T30` `…sleeper-wnba-capture-session` (05:57) · `T31` `…betr-chalkboard-sleeper-capture-session` (05:58). **`PP_PAYOUT_FINDINGS.md` and `BETR_BUILD_STATE.md` arrived as current repo copies, not new transcripts** — `PP_PAYOUT_FINDINGS.md` stays out of scope per the standing rule (build-chat file); both are read for cross-reference only.
+
+⚠ **BLOCKER, unresolved, checked live `2026-09-28`**: `NBA_FINAL_SCORING_CALIBRATION.md` still shows the `github_patch_file` prefix-match corruption from the previous session (§T26.55 ×3, §T26.66 ×3, §T26.74/§T26.78 duplicated) — last known-good is commit `dbc11ffc`. **Not touched this pass.** No further edits to that file until it is restored.
+
+✅ **`T27` pass 1**: scored (`sweep_coverage.py`, threshold `0.40`) — `965` substantive segments, `770` uncovered. OWNER-stratum read found this transcript is largely the PRIMARY SOURCE for content already well-recorded (`§T26.7`'s retention rule, quoted verbatim in `NBA_DATABASE.md` — confirms accuracy, is not new). One item checked and REJECTED as out-of-scope: `market.prizepicks_board_stage` (206MB→32kB reclaim) is a legacy/non-`nba_*`-namespace table inside `NBA_OPEN_ITEMS.md`'s dropped-sport disk archaeology — MLB-adjacent, not patched. One item verified and recorded: **`§T27.1`** — the shape-parity break in the baseline patchers (`nba/baseline/build_baseline_ladder.py`, `build_periods_ladder.py`) that would have failed P2 every in-season night from `2026-09-24`, found and fixed same day → `NBA_WORKERS.md` (index + body section), stamp re-derived `186→193` (RUN, not computed; `6` of that gap was pre-existing drift). Not yet a clean pass — hundreds of segments in this transcript alone remain unread, and 4 more transcripts in this batch are unscored.
+
+▶ **NEXT**: continue `T27`'s remaining strata (COMMANDS RUN, RESULTS RETURNED), then score `T28`–`T31`.
+
+---
+
 # 🟢 START HERE — *everything a fresh session needs, in one screen*
 
 > ⚠ **Added 2026-09-22 at §T20.69, which measured that the section below is `330,889` characters —
