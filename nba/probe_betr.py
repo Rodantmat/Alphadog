@@ -1,23 +1,40 @@
 #!/usr/bin/env python3
 """
-Betr probe v7 (2026-09-27): the auth+subscribe chain works but idle channels push nothing in 25s. The
-board state is hydrated on ATTACH via rewind (Ably replays the last message to a new subscriber). This
-attaches each candidate channel with rewind and also reads REST channel state, to capture the current
-board snapshot and its shape (markets + alternate lines).
+Betr probe v8 (2026-09-27): run the REAL board query. The lobby is GraphQL on api.fantasy.betr.app;
+operation LeagueUpcomingEvents(league) returns events -> players -> projections (the props), where a
+Projection carries value (line), currentValue, nonRegularValue (the ALTERNATE line) and allowedOptions
+(over/under). This runs it for WNBA (NBA not posted yet; identical shape) and prints one player's
+projections so we build the parser against real output.
 Read-only. Secrets from env.
 """
-import asyncio
 import json
 import os
 
 from curl_cffi import requests
-from ably import AblyRealtime
 
 KC = "https://account.betr.app/realms/betr/protocol/openid-connect/token"
-API = "https://api.betr.app"
+GQL = "https://api.fantasy.betr.app/graphql"
 RT = os.environ.get("BETR_REFRESH_TOKEN", "")
 CID = os.environ.get("BETR_CLIENT_ID", "betr-rn")
-ACCESS = None
+
+QUERY = (
+    "query LeagueUpcomingEvents($league: League!) {\n"
+    "  getUpcomingEventsV2(league: $league) {\n"
+    "    ...EventInfoData\n"
+    "    ... on TeamVersusEvent { teams { ...TeamInfoWithPlayers __typename } __typename }\n"
+    "    ... on TeamTournamentEvent { teams { ...TeamInfoWithPlayers __typename } __typename }\n"
+    "    ... on IndividualTournamentEvent { players { ...PlayerInfoWithProjections __typename } __typename }\n"
+    "    ... on IndividualVersusEvent { players { ...PlayerInfoWithProjections __typename } __typename }\n"
+    "    __typename\n  }\n}\n"
+    "fragment EventInfoData on EventV2 { id date status sport league competitionType playerStructure name __typename }\n"
+    "fragment TeamInfoWithPlayers on Team { ...TeamInfo players { ...PlayerInfoWithProjections __typename } __typename }\n"
+    "fragment TeamInfo on Team { id name league sport fullName __typename }\n"
+    "fragment PlayerInfoWithProjections on Player { ...PlayerInfo projections { ...PlayerProjection __typename } __typename }\n"
+    "fragment PlayerInfo on Player { id firstName lastName position jerseyNumber record rank __typename }\n"
+    "fragment PlayerProjection on Projection { marketId marketStatus isLive type label name key order value "
+    "nonRegularPercentage nonRegularValue allowedOptions { marketOptionId outcome __typename } currentValue "
+    "liveScoringDisabled __typename }\n"
+)
 
 
 def refresh():
@@ -26,58 +43,53 @@ def refresh():
     return r.json()["access_token"] if r.status_code == 200 else None
 
 
-def ws_token_request(params=None):
-    H = {"authorization": "Bearer " + ACCESS, "accept": "application/json",
-         "origin": "https://picks.betr.app", "referer": "https://picks.betr.app/", "content-length": "0"}
-    ws = requests.post(API + "/api/v3/auth/user/ws-token-request", headers=H, timeout=25, impersonate="chrome124").json()
-    return {k: ws[k] for k in ("ttl", "capability", "clientId", "timestamp", "keyName", "nonce", "mac") if k in ws}
-
-
-async def run():
-    global ACCESS
-    ACCESS = refresh()
-    if not ACCESS:
-        print("no access token"); return
-    ev = requests.get(API + "/api/v3/events?league_ids=1",
-                      headers={"authorization": "Bearer " + ACCESS, "accept": "application/json",
-                               "origin": "https://picks.betr.app", "referer": "https://picks.betr.app/"},
-                      timeout=25, impersonate="chrome124").json()
-    events = ev.get("data") if isinstance(ev, dict) else ev
-    eids = [str(e.get("id")) for e in (events or []) if isinstance(e, dict)]
-    e0 = eids[0]
-    print("events:", len(eids), "using", e0)
-
-    async def auth_cb(params):
-        return ws_token_request()
-
-    rt = AblyRealtime(auth_callback=auth_cb)
-    await rt.connection.once_async("connected")
-    print("connected")
-
-    got = {}
-
-    def make_cb(ch):
-        def _cb(m):
-            got.setdefault(ch, [])
-            if len(got[ch]) < 2:
-                s = m.data if isinstance(m.data, str) else json.dumps(m.data)
-                got[ch].append(s)
-                print(f"\n>>> {ch}  name={m.name}  ({len(s)}b)\n{s[:2000]}", flush=True)
-        return _cb
-
-    # attach WITH REWIND so Ably replays the current state to us
-    for ch in [f"event:{e0}", f"market:{e0}", f"fixture:{e0}", f"event:{e0}:markets", f"public:event:{e0}"]:
+def main():
+    tok = refresh()
+    if not tok:
+        print("no token"); return
+    H = {"authorization": "Bearer " + tok,
+         "accept": "application/graphql-response+json, application/graphql+json, application/json",
+         "content-type": "application/json", "channel": "MOBILE_WEB",
+         "fantasy-api-version": "16.0", "fantasy-application-version": "3.42.9",
+         "jurisdiction": "CA", "promotions-api-version": "6.0",
+         "origin": "https://picks.betr.app", "referer": "https://picks.betr.app/",
+         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+    for league in ("WNBA", "NBA"):
+        r = requests.post(GQL, headers=H, data=json.dumps({"operationName": "LeagueUpcomingEvents",
+                          "query": QUERY, "variables": {"league": league}}), timeout=40, impersonate="chrome124")
+        print(f"\n=== {league}: HTTP {r.status_code}, {len(r.text)}b")
+        if r.status_code != 200:
+            print(r.text[:300]); continue
         try:
-            c = rt.channels.get(ch, {"params": {"rewind": "1"}})
-            await c.subscribe(make_cb(ch))
-            print("subscribed(rewind):", ch)
-        except Exception as exc:  # noqa: BLE001
-            print("sub failed:", ch, str(exc)[:80])
-
-    await asyncio.sleep(20)
-    print("\nGOT:", {k: len(v) for k, v in got.items()})
-    await rt.close()
+            j = r.json()
+        except Exception as e:
+            print("json err", e, r.text[:200]); continue
+        if j.get("errors"):
+            print("GraphQL errors:", json.dumps(j["errors"])[:400])
+        events = (j.get("data") or {}).get("getUpcomingEventsV2") or []
+        print(f"events: {len(events)}")
+        # find first player with projections
+        def players_of(ev):
+            ps = []
+            for t in ev.get("teams", []) or []:
+                ps += t.get("players", []) or []
+            ps += ev.get("players", []) or []
+            return ps
+        shown = 0
+        for ev in events:
+            print(f"  event {ev.get('id')} {ev.get('name')} status={ev.get('status')} players={len(players_of(ev))}")
+            for p in players_of(ev):
+                projs = p.get("projections") or []
+                if projs and shown < 2:
+                    shown += 1
+                    print(f"    PLAYER {p.get('firstName')} {p.get('lastName')} — {len(projs)} projections")
+                    for pr in projs[:6]:
+                        print(f"      {pr.get('type')!r} line={pr.get('value')} cur={pr.get('currentValue')} "
+                              f"altVal={pr.get('nonRegularValue')} altPct={pr.get('nonRegularPercentage')} "
+                              f"opts={[o.get('outcome') for o in pr.get('allowedOptions') or []]} status={pr.get('marketStatus')}")
+            if shown >= 2:
+                break
 
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    main()
