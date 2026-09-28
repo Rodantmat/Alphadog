@@ -21,6 +21,9 @@ jobs:
       - name: "Run the probe script named in the trigger file"
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BETR_REFRESH_TOKEN: ${{ secrets.BETR_REFRESH_TOKEN }}
+          BETR_CLIENT_ID: ${{ secrets.BETR_CLIENT_ID }}
         run: |
           f=nba/TRIGGER_NBA_PROBE.txt
           S=$(grep -E '^script:' $f | head -1 | sed 's/^script:[[:space:]]*//')
