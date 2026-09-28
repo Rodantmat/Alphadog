@@ -74,6 +74,24 @@ All six patched into `NBA_OPEN_ITEMS.md` (both the ranked `A`-table and the full
 
 ---
 
+## 🆕 THIS FIRING (`2026-09-28`, third hourly run) — TRANSCRIPTS STILL UNAVAILABLE; RECONCILED →B/→C IN THE `~15720` RANKED TABLE
+
+✅ **`nba/transcripts/` re-checked live — still only `README.md`/`journal.txt`.** `T28`/`T31` blocker unchanged (scheduled/unattended firing, no chat attachment, no desktop bridge — confirmed at session start).
+
+✅ **Reconciled the two remaining stale rows in the `~15720` ranked-comparison table (`NBA_OPEN_ITEMS.md`, → B and → C) — the item the prior firing named and deliberately left undone.** Both verified independently against live Postgres before publishing (`RULE 57`/`61`), not copied from the prior pass's own live-check table:
+- **→ B** (static layer frozen): confirmed **`8` of `10`** tables reloaded `2026-09-24`–`26` (`arenas`, `officials`, `players`, `player_onoff_profile`, `player_impact_rating`, `player_playtype_profile`, `player_tracking_detail`, `nba_calendar.games`); **`teams`** and **`defender_ratings`** remain frozen — `defender_ratings` now **`172`** days stale (`max(as_of_date)=2026-04-09`, independently re-derived).
+- **→ C** (schedule not refreshed): confirmed `2026-27` **was** rewritten `2026-09-26` — now **`1,267`** games (`Preseason` `66→67`), across two write days, not one. Non-Preseason count unchanged at `1,200` — the 30-games-short gap is **still open**.
+
+Patched both rows `RULE 40`-style (strikethrough, nothing deleted, dated correction appended), 2 commits (`f5d174e`, `4ddea1c`) — both `message` read back character-by-character before sending, confirmed to end in the literal `[skip ci]`, and verified via `github_list_workflow_runs` that neither triggered `AlphaDog v2 Mobile Auto Deploy` (only the uncontrollable native `pages build and deployment` fired, consistent with the prior pass's finding).
+
+✅ **Census re-verified the way the prior firing established as the workaround for `github_grep_file`'s 50-match cap**: both edits add no `#`-heading line (checked directly on both matched lines) — `NBA_OPEN_ITEMS.md`'s `952`-heading stamp is unaffected, left untouched, no false re-stamp. No duplicate headings introduced.
+
+📌 **Still unreconciled, deliberately, for time**: the top-of-file `ACT ON THIS` pointer row (`NBA_OPEN_ITEMS.md` line ~94) and the `002`-count schedule re-check the resume note says to run closer to `2026-10-03` (`5` days out — not yet due). Neither touched this pass.
+
+▶ **NEXT**: transcript-access blocker is still the real next step — `T28` (`2026-09-28-03-09-57-nba-pipeline-closure-sept-2026.txt`, 765 segs, unread) then `T31` (`2026-09-28-05-58-27-betr-chalkboard-sleeper-capture-session.txt`, 644 segs, unread), same condition (batch attachment or `nba/transcripts/*.txt` committed). **If transcripts remain unavailable next firing**: reconcile the top-of-file `ACT ON THIS` pointer row (`NBA_OPEN_ITEMS.md` line ~94), or grep the remaining docs for a new stale-marker family (`"NOT RECONCILED"`, `"STILL OPEN"`) not yet checked this way. **After the whole corpus closes**: 2 more clean passes per file/index (3 consecutive total) for every transcript and document, then 3 additional full sweeps per the owner's standing instruction, before declaring the project finished. `NBA_FINAL_SCORING_CALIBRATION.md` remains untouched (corruption blocker, last known-good `dbc11ffc`) — unaffected by this pass.
+
+---
+
 ## 🆕 THIS FIRING (`2026-09-28`, second hourly run) — TRANSCRIPTS STILL UNAVAILABLE; RAN THE ELEVEN-DOCUMENT GREP SWEEP; ONE HIT, LIVE-RECONCILED
 
 ✅ **`nba/transcripts/` re-checked live — still only `README.md` and `journal.txt`.** `T28`/`T31` still not committed, no attachment arrived with this firing. Blocker from the prior entry is UNCHANGED; not re-described here, see above.
