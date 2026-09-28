@@ -2613,3 +2613,18 @@ where the reader would find it)*.
 > reader should not average them.
 
 📌 **Cross-refs**: `§T27.5` *(`NBA_WORKERS.md` — the reliability-audit crash-on-close bug this measurement's re-run depended on)* · `§0v.3`/`§0v.4` *(the store-wide, book-agnostic version of this audit)*.
+
+📌 **RE-MEASURED `2026-09-28` (T27 pass 2/3, population check only — not a full ECE recomputation)**:
+`nba_score.board_scored WHERE prop='points' AND season='2025-26' AND app='prizepicks'` now returns
+**`125,175`** rows, not this entry's `101,049`. **Not a contradiction**: `board_scored` is a live,
+continuously-rebuilt table, not a frozen historical snapshot — the gap (`~24,126` rows) is consistent
+with ordinary population growth since the `2026-09-26` audit run this entry reports, not a data-loss or
+measurement error. The `3.46pp`→`1.85pp` calibration-shift figures themselves depend on
+`score_prop_reliability.py`'s own ECE computation over that population, not a plain row count, so they
+were **not** re-derived by this spot-check — doing so would mean re-running the audit script itself,
+out of scope for this pass. `nba_config.classification_config`'s stored `prop_reliability_audit_latest`
+(checked live, same pass) is the STORE-WIDE audit (`§0v.3`/`§0v.4`'s figures, e.g. `points` at `n=574,007`,
+`ECE_pp=1.2474`), not this entry's PrizePicks-scoped re-run — that book-scoped result was never persisted
+to a config key, only reported in the source transcript. Original figures kept as correct-when-measured
+history, per `RULE 40`; a book-scoped re-derivation is flagged as a candidate for a future pass, not
+attempted here.
