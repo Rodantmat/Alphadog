@@ -5699,7 +5699,8 @@ rows that have not changed, so a run over an unchanged 30-team list would legiti
 `players_unchanged_skipped` counter, confirmed in T2's source** — and to `officials`.
 *The caveat now has a named mechanism behind it rather than an assumption.*
 
-**Either way the five unconditional writers settle it: the load step has not run since the build.**
+~~**Either way the five unconditional writers settle it: the load step has not run since the build.**~~
+⇒ **RE-VERIFIED LIVE 2026-09-28 — no longer true for 5 of 6. See the dated table below.**
 
 ### Why this matters now
 Season opens **2026-10-03, twelve days out**. On opening night the system would score against a
@@ -5712,6 +5713,25 @@ threshold (`NBA_WORKERS.md` §0.31), and a stale table has exactly the right row
 (the schedule table, the 1,200-game slate, the DARKO table). *Grouping them under a shared cause
 would be the same premature explanation this entry refuses — they are recorded as four observations
 until the transcripts justify treating them as one.*
+
+✅ **RE-VERIFIED LIVE 2026-09-28 (this sweep, no transcript needed) — eight of the ten tables above have since been reloaded; the ninth (`nba_ref.teams`) is unchanged for the reason this entry already gives, and the tenth (`nba_ref.defender_ratings`, `§T20.51`) is still stale.** *(`[LIVE-AUDIT]`, `SELECT` only, nothing changed.)*
+
+| Table | Rows now | Rows `2026-09-21` | `updated_at`/`as_of_date` now | Reloaded since `2026-09-21`? |
+|---|---|---|---|---|
+| `nba_ref.teams` | 30 | 30 | `2026-08-31 23:39` — identical timestamp | 🔴 NO |
+| `nba_ref.arenas` | 30 | 30 | `2026-09-26 16:44` | ✅ YES |
+| `nba_ref.officials` | 80 | 80 | `2026-09-26 16:44` | ✅ YES |
+| `nba_stats.player_onoff_profile` | 582 | 582 | `2026-09-24 19:47` | ✅ YES |
+| `nba_stats.player_impact_rating` | 530 | 530 | `2026-09-24 19:51` | ✅ YES |
+| `nba_calendar.games` | 2,667 | 2,666 | `2026-09-26`–`27` (both seasons) | ✅ YES |
+| `nba_stats.player_playtype_profile` | 3,282 | 3,282 | `2026-09-24 19:48` | ✅ YES |
+| `nba_stats.player_tracking_detail` | 4,652 | 4,652 | `2026-09-24 19:51` | ✅ YES |
+| `nba_ref.players` | **713** | 582 | `2026-09-26 16:43` | ✅ YES — **and the roster grew by 131 players, not just a timestamp bump** |
+| `nba_ref.defender_ratings` (`§T20.51`'s tenth table) | 111,768 | — | `max(as_of_date)` still `2026-04-09` | 🔴 NO — still exactly the figure `§T20.51` measured, now **172** days stale |
+
+⚠ **Still true, unchanged**: `nba_control.job_runs` and `nba_control.worker_run_log` are **still both empty** (re-queried live `2026-09-28`) — so nothing about how or by whom these eight tables were reloaded is logged; only the tables themselves show it.
+
+✅ **Owner-action line above, reconciled**: no longer accurate to describe the whole layer as flagged-and-untouched — eight of ten tables were reloaded between `2026-09-24` and `2026-09-27`, five days before the `2026-10-03` preseason opener. **Not grouped with the schedule/DARKO observations, for the reason `§T22.26` already gives** — this updates one of the four observations; it does not re-open the grouping question. `nba_ref.teams` and `nba_ref.defender_ratings` remain exactly as this entry and `§T20.51` described them.
 
 ---
 
