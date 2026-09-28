@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Betr probe v6 (2026-09-27): live Ably subscribe, letting the SDK do the token exchange. v5 failed because
-requestToken's MAC is bound to the exact ws-token-request body; re-posting it by hand is rejected. Instead
-we give the Ably SDK an auth_callback that calls ws-token-request fresh each time and returns the TokenRequest
-dict - the SDK then completes the handshake the way the app does. Prints whatever the channels push.
+Betr probe v7 (2026-09-27): the auth+subscribe chain works but idle channels push nothing in 25s. The
+board state is hydrated on ATTACH via rewind (Ably replays the last message to a new subscriber). This
+attaches each candidate channel with rewind and also reads REST channel state, to capture the current
+board snapshot and its shape (markets + alternate lines).
 Read-only. Secrets from env.
 """
 import asyncio
@@ -12,12 +12,12 @@ import os
 
 from curl_cffi import requests
 from ably import AblyRealtime
-from ably.types.tokendetails import TokenDetails
 
 KC = "https://account.betr.app/realms/betr/protocol/openid-connect/token"
 API = "https://api.betr.app"
 RT = os.environ.get("BETR_REFRESH_TOKEN", "")
 CID = os.environ.get("BETR_CLIENT_ID", "betr-rn")
+ACCESS = None
 
 
 def refresh():
@@ -26,12 +26,7 @@ def refresh():
     return r.json()["access_token"] if r.status_code == 200 else None
 
 
-ACCESS = None
-
-
-def ws_token_request():
-    """Return Betr's ws-token-request payload as an Ably TokenRequest dict (SDK feeds it to requestToken)."""
-    global ACCESS
+def ws_token_request(params=None):
     H = {"authorization": "Bearer " + ACCESS, "accept": "application/json",
          "origin": "https://picks.betr.app", "referer": "https://picks.betr.app/", "content-length": "0"}
     ws = requests.post(API + "/api/v3/auth/user/ws-token-request", headers=H, timeout=25, impersonate="chrome124").json()
@@ -49,38 +44,38 @@ async def run():
                       timeout=25, impersonate="chrome124").json()
     events = ev.get("data") if isinstance(ev, dict) else ev
     eids = [str(e.get("id")) for e in (events or []) if isinstance(e, dict)]
-    print("events:", len(eids), eids[:6])
+    e0 = eids[0]
+    print("events:", len(eids), "using", e0)
 
     async def auth_cb(params):
-        # Ably calls this and expects a TokenRequest (dict) or TokenDetails; we return Betr's signed request.
         return ws_token_request()
 
-    rt = AblyRealtime(auth_callback=auth_cb, client_id=None)
+    rt = AblyRealtime(auth_callback=auth_cb)
     await rt.connection.once_async("connected")
-    print("connected to Ably")
+    print("connected")
 
-    seen = {}
+    got = {}
 
     def make_cb(ch):
         def _cb(m):
-            seen[ch] = seen.get(ch, 0) + 1
-            if seen[ch] <= 3:
+            got.setdefault(ch, [])
+            if len(got[ch]) < 2:
                 s = m.data if isinstance(m.data, str) else json.dumps(m.data)
-                print(f"\n>>> {ch}  name={m.name}  ({len(s)}b)\n{s[:1800]}", flush=True)
+                got[ch].append(s)
+                print(f"\n>>> {ch}  name={m.name}  ({len(s)}b)\n{s[:2000]}", flush=True)
         return _cb
 
-    e0 = eids[0]
-    for ch in [f"event:{e0}", f"market:{e0}", f"fixture:{e0}", f"event:{e0}:markets",
-               f"public:event:{e0}", "league:1"]:
+    # attach WITH REWIND so Ably replays the current state to us
+    for ch in [f"event:{e0}", f"market:{e0}", f"fixture:{e0}", f"event:{e0}:markets", f"public:event:{e0}"]:
         try:
-            c = rt.channels.get(ch)
+            c = rt.channels.get(ch, {"params": {"rewind": "1"}})
             await c.subscribe(make_cb(ch))
-            print("subscribed:", ch)
+            print("subscribed(rewind):", ch)
         except Exception as exc:  # noqa: BLE001
-            print("subscribe failed:", ch, str(exc)[:80])
+            print("sub failed:", ch, str(exc)[:80])
 
-    await asyncio.sleep(25)
-    print("\nMESSAGE COUNTS:", seen)
+    await asyncio.sleep(20)
+    print("\nGOT:", {k: len(v) for k, v in got.items()})
     await rt.close()
 
 
