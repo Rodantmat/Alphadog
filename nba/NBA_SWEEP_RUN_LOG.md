@@ -10,6 +10,31 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ---
 
+## 🆕 THIS FIRING (`2026-09-28`, fourth hourly run) — TRANSCRIPTS STILL UNAVAILABLE; RECONCILED THE `ACT ON THIS` POINTER ROW; NEW STALE-MARKER SWEEP FOUND NO NEW DEFECTS
+
+✅ **`nba/transcripts/` re-checked live at session start — still only `README.md`/`journal.txt`.** `T28`/`T31` blocker unchanged: this is a scheduled/unattended firing, no chat attachment, no desktop bridge.
+
+✅ **Reconciled the top-of-file `ACT ON THIS` pointer row (`NBA_OPEN_ITEMS.md` line `~94`)** — the item the prior firing named and deliberately left undone. Live-verified against Postgres before publishing, not copied from any prior pass's table:
+- static layer: **`8` of `10` reloaded** `2026-09-24`–`26` (`arenas`, `officials`, `players`, `player_onoff_profile`, `player_impact_rating`, `player_playtype_profile`, `player_tracking_detail`, `nba_calendar.games`, all `updated_at`/`created_at` re-queried live) — `teams` (`updated_at` still `2026-08-31`) and `defender_ratings` (`max(as_of_date)=2026-04-09`, now **`172`** days stale) remain frozen.
+- schedule: `nba_calendar.games` for `2026-27` confirmed **`1,267`** games, **Preseason `67`**, non-Preseason **`1,200`** (unchanged, still `30` short).
+Patched `RULE 40`-style (strikethrough, nothing deleted, dated correction appended), **1 commit** (`2d0156a`) — `message` read back character-by-character before sending, confirmed to end in the literal `[skip ci]`; verified via `github_list_workflow_runs` that only the uncontrollable native `pages build and deployment` fired for this commit, not `AlphaDog v2 Mobile Auto Deploy`.
+
+✅ **Census re-verified the established workaround** (`github_grep_file`'s `max_matches` cap still blocks a full re-count above `50`): re-grepped the inserted text and confirmed the edit adds no `#`-heading line — `NBA_OPEN_ITEMS.md`'s `952`-heading stamp is unaffected, left untouched, no false re-stamp.
+
+✅ **Ran a new stale-marker grep sweep** (`"NOT RECONCILED"`/`"STILL OPEN"`, a family the prior two firings had not yet checked) **across all twelve mandated documents** (`NBA_FINAL_SCORING_CALIBRATION.md` read-only, per the standing corruption blocker):
+- **`0` hits, clean**: `NBA_GLOSSARY.md`, `NBA_SYSTEM_DESIGN.md`, `NBA_DATABASE.md`, `NBA_RECIPE.md`, `NBA_GOBLIN_DEMON.md`, `NBA_BASELINE_CALIBRATION.md`, `NBA_MULTIPLIERS.md`, `NBA_WORKERS.md` — `8` of `12`.
+- **`NBA_SYSTEM_ARCHITECTURE.md`** — `1` hit, narrative prose ("an item still open") describing an already-closed/documented finding — not itself an unreconciled claim, no action needed.
+- **`NBA_MASTER_SUMMARY.md`** — `3` hits, all already-correct self-flagged history (the ranked-string population note, recorded per rule 2).
+- **`NBA_FINAL_SCORING_CALIBRATION.md`** — `3` hits, pre-existing self-flagged discrepancies inside the blocked file — read-only, not touched, unaffected by this pass.
+- **`NBA_OPEN_ITEMS.md`** — `15` hits, every one already correctly self-flagged as open/unreconciled by design (`T20-12`, `T26-1`, `T26-5`, `T26-6`'s pending-owner-confirmation status, and — recurring across `6` separate lines (`~79`, `~700`, `~726`, `~768`, `~15640`, `~15813`) — the ranked-string population gap: the brief's heading says `SIXTEEN`/`FOURTEEN` while the string itself carries `20` entries and a live grep returns yet another count. **None is a new contradiction the corpus doesn't already know about.**
+📌 **Verdict: this sweep family returns `0` new actionable defects** — a real, verified null result, logged per the standing mandate that a null result still be recorded rather than silently skipped.
+
+🔑 **Flagged for the next firing, not attempted here for time**: the recurring `SIXTEEN`/`FOURTEEN`/`20`-entries population mismatch on `NBA_OPEN_ITEMS.md`'s season-critical roster string (first surfaced `§F6.18`, still `NOT RECONCILED` at every one of the six sites just re-confirmed) looks like real, live-derivable work — re-run the roster's own stated grep, get one live count, and reconcile the heading and the string together in one pass (touching every site in the same edit, per `RULE 1` — do not renumber, only correct the count and cite the derivation). Deferred rather than rushed, since a partial reconciliation across six sites would itself become a new inconsistency.
+
+▶ **NEXT**: **transcript-access blocker is still the real next step** — `T28` (`2026-09-28-03-09-57-nba-pipeline-closure-sept-2026.txt`, 765 segs, unread) then `T31` (`2026-09-28-05-58-27-betr-chalkboard-sleeper-capture-session.txt`, 644 segs, unread), same condition (batch attachment or `nba/transcripts/*.txt` committed). **If transcripts remain unavailable next firing**: re-derive and reconcile the `SIXTEEN`/`FOURTEEN`/`20`-entries season-critical roster count across all six flagged sites in `NBA_OPEN_ITEMS.md` (see paragraph above) — live-verifiable, no transcript needed; or try a third stale-marker family not yet checked (`"UNVERIFIED"`, `"TBD"`, `"PLACEHOLDER"`). The `002`-count schedule re-check is **not yet due** (target `~2026-10-03`, `5` days out). **After the whole corpus closes**: 2 more clean passes per file/index (3 consecutive total) for every transcript and document, then 3 additional full sweeps per the owner's standing instruction, before declaring the project finished. `NBA_FINAL_SCORING_CALIBRATION.md` remains untouched (corruption blocker, last known-good `dbc11ffc`) — unaffected by this pass.
+
+---
+
 ## 🆕 T27 STARTED `2026-09-28` — NEW BATCH: 5 TRANSCRIPTS, ~866K WORDS (`2026-09-25-23-31-08`…`2026-09-28-05-58-27`), PLUS TWO REFERENCE-ONLY `.md` COPIES
 
 📌 **Batch boundary, from the delivering `README.txt`**: the prior batch closed at `2026-09-24-19-40-46`; this one is every transcript newer, in order — `T27` `…retention-disk-fixes` (23:31, 09-25) · `T28` `…pipeline-closure-sept-2026` (03:09, 09-28) · `T29` `…sleeper-capture-session` (05:24) · `T30` `…sleeper-wnba-capture-session` (05:57) · `T31` `…betr-chalkboard-sleeper-capture-session` (05:58). **`PP_PAYOUT_FINDINGS.md` and `BETR_BUILD_STATE.md` arrived as current repo copies, not new transcripts** — `PP_PAYOUT_FINDINGS.md` stays out of scope per the standing rule (build-chat file); both are read for cross-reference only.
