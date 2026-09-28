@@ -33,5 +33,6 @@ jobs:
       - name: Run the cloud Turnstile test
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
+          BETR_NOPROXY: ${{ github.event.inputs.noproxy }}
         run: |
           python nba/probe_betr_cloud.py
