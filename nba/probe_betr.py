@@ -56,26 +56,36 @@ def post_token(data):
 
 def main():
     print("PROXY set:", bool(PROXIES))
-    st, r = post_token({"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT,
-                        "scope": "openid profile email offline_access"})
-    rt_tok = r.json()["access_token"] if st == 200 else None
-    if rt_tok:
-        print("refreshed acr/mfa/aud:", acr_of(rt_tok))
-        print("  GQL refreshed DIRECT:", gql(rt_tok))
-        print("  GQL refreshed PROXY :", gql(rt_tok, proxied=True))
-
-    if CAPTURED:
-        print("captured acr/mfa/aud:", acr_of(CAPTURED))
-        print("  GQL captured DIRECT:", gql(CAPTURED))
-        print("  GQL captured PROXY :", gql(CAPTURED, proxied=True))
-
-    # audience=fantasy refresh -> use that token against GQL (direct + proxy)
-    st, r = post_token({"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT, "audience": "fantasy"})
-    if st == 200:
-        fa = r.json()["access_token"]
-        print("audience=fantasy acr/mfa/aud:", acr_of(fa))
-        print("  GQL aud=fantasy DIRECT:", gql(fa))
-        print("  GQL aud=fantasy PROXY :", gql(fa, proxied=True))
+    tok = CAPTURED or None
+    if not tok:
+        st, r = post_token({"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT,
+                            "scope": "openid profile email offline_access"})
+        tok = r.json()["access_token"] if st == 200 else None
+    if not tok:
+        print("no token"); return
+    print("token acr/aud:", acr_of(tok))
+    H = {"authorization": "Bearer " + tok,
+         "accept": "application/graphql-response+json, application/graphql+json, application/json, text/event-stream",
+         "accept-language": "en-US,en;q=0.9", "content-type": "application/json", "channel": "MOBILE_WEB",
+         "fantasy-api-version": "16.0", "fantasy-application-version": "3.42.9", "jurisdiction": "CA",
+         "promotions-api-version": "6.0", "origin": "https://picks.betr.app", "referer": "https://picks.betr.app/",
+         "priority": "u=1, i", "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+         "sec-ch-ua-mobile": "?0", "sec-ch-ua-platform": '"Windows"', "sec-fetch-dest": "empty",
+         "sec-fetch-mode": "cors", "sec-fetch-site": "same-site",
+         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+    body = json.dumps({"operationName": "LeagueUpcomingEvents", "query": MINQ, "variables": {"league": "WNBA"}})
+    for imp in ("chrome124", "chrome120", "chrome116", "chrome110", "chrome131", "chrome133a",
+                "safari17_0", "safari18_0", "edge101", "edge99"):
+        for proxied in (False, True) if PROXIES else (False,):
+            try:
+                r = requests.post(GQL, headers=H, data=body, timeout=30, impersonate=imp,
+                                  proxies=(PROXIES if proxied else None))
+                tag = f"{imp}{'+proxy' if proxied else ''}"
+                print(f"  {tag:<20} {r.status_code}  {(r.text or '')[:70]}")
+                if r.status_code == 200:
+                    print("   *** SUCCESS ***", (r.text or "")[:200])
+            except Exception as exc:  # noqa: BLE001
+                print(f"  {imp}{'+proxy' if proxied else ''}: ERR {str(exc)[:50]}")
 
 
 if __name__ == "__main__":
