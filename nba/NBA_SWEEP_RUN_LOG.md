@@ -8,6 +8,18 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 TRANSCRIPT-BATCH SESSION (`2026-09-28`, continued once more) — FIFTH STALE-MARKER FAMILY RUN, ALL FIVE NOW CLEAN
+
+📌 **Filler work while waiting on genuine elapsed time for `T31`'s pass 3/3** (its cron hasn't fired again yet — see the entry below). Took up the hourly track's own flagged candidate: `TBA`/`DRAFT`/`WIP`/`FILL IN`/`INCOMPLETE`, across all twelve mandated documents (`NBA_FINAL_SCORING_CALIBRATION.md` included, read-only).
+
+✅ **Hit counts**: `NBA_GLOSSARY.md` `0` · `NBA_SYSTEM_DESIGN.md` `2` · `NBA_DATABASE.md` `6` · `NBA_RECIPE.md` `1` · `NBA_GOBLIN_DEMON.md` `0` · `NBA_BASELINE_CALIBRATION.md` `0` · `NBA_SYSTEM_ARCHITECTURE.md` `0` · `NBA_MULTIPLIERS.md` `0` · `NBA_WORKERS.md` `1` · `NBA_MASTER_SUMMARY.md` `55` · `NBA_FINAL_SCORING_CALIBRATION.md` `4` · `NBA_OPEN_ITEMS.md` `23` — **`92` hits, every one hand-checked, `0` new actionable defects.**
+
+✅ **All false positives or legitimate usage, by category**: every `incomplete` hit is the ordinary English word describing an already-documented finding (*"an incomplete night"*, *"an incomplete replication pass"*, *"the same incomplete pass explains T16-7"* — the last is a live `NBA_FINAL_SCORING_CALIBRATION.md` defect already on file, not a new one) — none is a placeholder marker. Every `draft`/`Draft` hit is a historical reference to the project's own **"System Draft"** planning document, the **"draft-then-commit"** documented workflow convention, or, in two cases, the basketball term **"Draft Combine"**/**`"Undrafted"`** (a string-bug fix) — zero are unfinished-section markers. All three `fill in` hits in `NBA_MASTER_SUMMARY.md` are substring false positives (*"back`fill in`to"*, *"back`fill` only"*). `TBA`/`WIP` — zero hits anywhere.
+
+📌 **All five stale-marker families this sweep has tried (`UNVERIFIED`/`TBD`/`PLACEHOLDER` · `TODO`/`FIXME`/`XXX`/`STUB` · `COMING SOON`/`pending`/`???` · scoped `N/A` · `TBA`/`DRAFT`/`WIP`/`FILL IN`/`INCOMPLETE`) are now clean across all twelve documents.** No `github_patch_file` calls needed for this family.
+
+---
+
 ## 🆕 TRANSCRIPT-BATCH SESSION (`2026-09-28`, resumed after an MCP disconnect/reconnect) — `T27`/`T28`/`T29`/`T30` REACH GENUINE PASS 3/3 AND ARE NOW FULLY CLOSED; `T31` REACHES PASS 2/3
 
 📌 **Real time elapsed since the last entry** (this session's connection to the repo/DB bridge dropped and reconnected — a genuine gap, not a same-turn re-check), so this pass has actual value: everything below was re-read live, not assumed carried over.
