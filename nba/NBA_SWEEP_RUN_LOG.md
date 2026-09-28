@@ -18,7 +18,9 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ✅ **`T27` pass 1**: scored (`sweep_coverage.py`, threshold `0.40`) — `965` substantive segments, `770` uncovered. OWNER-stratum read found this transcript is largely the PRIMARY SOURCE for content already well-recorded (`§T26.7`'s retention rule, quoted verbatim in `NBA_DATABASE.md` — confirms accuracy, is not new). One item checked and REJECTED as out-of-scope: `market.prizepicks_board_stage` (206MB→32kB reclaim) is a legacy/non-`nba_*`-namespace table inside `NBA_OPEN_ITEMS.md`'s dropped-sport disk archaeology — MLB-adjacent, not patched. One item verified and recorded: **`§T27.1`** — the shape-parity break in the baseline patchers (`nba/baseline/build_baseline_ladder.py`, `build_periods_ladder.py`) that would have failed P2 every in-season night from `2026-09-24`, found and fixed same day → `NBA_WORKERS.md` (index + body section), stamp re-derived `186→193` (RUN, not computed; `6` of that gap was pre-existing drift). Not yet a clean pass — hundreds of segments in this transcript alone remain unread, and 4 more transcripts in this batch are unscored.
 
-▶ **NEXT**: continue `T27`'s remaining strata (COMMANDS RUN, RESULTS RETURNED), then score `T28`–`T31`.
+✅ **`§T27.2`** added — P3's cutoff-gate DST bug (`21:15 UTC` miscommented as `13:15 PT during DST`, actually `14:15 PDT`), self-caught and fixed `2026-09-24`, live-verified `2026-09-28` against `nba-p3-afternoon-light.yml:130-134` — single `cron: '15 21 * * *'` confirms the same transcript's owner-caught "three crowns" drift reverted to one and held. → `NBA_WORKERS.md`, stamp `193→194` (RUN).
+
+▶ **NEXT**: continue `T27`'s remaining strata (COMMANDS RUN, RESULTS RETURNED — still ~760+ of 770 uncovered segments unread), then score `T28`–`T31`.
 
 ---
 
