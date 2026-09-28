@@ -7086,6 +7086,15 @@ held — 13 of the 14 `nba/TRIGGER_NBA_*.txt` files carry both fields today**, m
 argument rather than logging a reason.** That makes **two trigger-file conventions in one folder**,
 and neither is written down.
 
+⚠⚠ **RECONCILED 2026-09-28, live-verified.** `TRIGGER_NBA_PROBE.txt` no longer holds the content this
+row describes — **live-read today: `32` bytes, `script: probe_chalkboard_web.py`** (was `39` bytes /
+`script: scrape_prizepicks_nba_board.py`). `RULE 40`: the row above is `DATED`, not `RETRACTED` — the
+two-conventions-in-one-folder finding still holds (this file still passes an argument rather than
+logging a `trigger_reason`); only the specific script name and byte count have moved on since. This
+was the last outstanding `scrape_prizepicks_nba_board.py` reference checked in this document — the
+only other hit is the trigger-file convention note itself, already marked `RECONCILED 2026-09-28` at
+`NBA_WORKERS.md` §T27.3.
+
 ### ⚠⚠ THE FIVE `trigger_reason` LINES ARE THE TARPIT INVESTIGATION, WRITTEN AS IT HAPPENED
 Pass 79 reconstructed the escalation ladder from CI logs and noted the measurements were recorded in
 no document. **They were recorded — in this file, one line per attempt, with timestamps, and they
