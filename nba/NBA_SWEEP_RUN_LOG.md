@@ -8,6 +8,26 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 TRANSCRIPT-BATCH SESSION (`2026-09-28`, resumed after an MCP disconnect/reconnect) — `T27`/`T28`/`T29`/`T30` REACH GENUINE PASS 3/3 AND ARE NOW FULLY CLOSED; `T31` REACHES PASS 2/3
+
+📌 **Real time elapsed since the last entry** (this session's connection to the repo/DB bridge dropped and reconnected — a genuine gap, not a same-turn re-check), so this pass has actual value: everything below was re-read live, not assumed carried over.
+
+✅ **`T27`/`T28`/`T29` — all nine previously-verified code fixes re-checked, still live and unchanged**: `§T27.1` (`GAME_DATE` drop in both baseline recipes) · `§T27.2` (single `15 21 * * *` cron) · `§T27.3` (`PRIZEPICKS_LEAGUE_ID: "7"` + `PP_STAT_MAP`) · `§T27.5` (`conn.commit()` per-iteration) · `§T27.7` (game-date-by-`commence_time` fix) · `§T28.1` (`grade_board_outcomes.py`'s `COMPLETED 2026-09-25` comment) · `§1d`/`build_defender_ratings.py`'s `to_regclass` guards · `A0`/`T26-11`'s `build_final_hp.py` per-prop assertion · `T20-4`'s blank `season` default in both `nba-maintenance.yml` inputs.
+
+✅ **Both SQL-derived figures re-run, both stable**: `pg_database_size` → **`27 GB` / `26.8798828125` GB exactly**, third consecutive identical reading (`NBA_DATABASE.md`'s `§T28.1`-adjacent update, unchanged). `nba_score.board_scored` PrizePicks/points/2025-26 count → **`125,175`**, unchanged from the prior pass's reading (`NBA_BASELINE_CALIBRATION.md`'s `§T27.6` addendum stays accurate, no further drift to record).
+
+✅ **`T30` reconfirmed a third time** — still nothing to extract from its 11-segment null-result tail.
+
+📌 **`T27`, `T28`, `T29`, `T30` NOW EACH HAVE 3 CONSECUTIVE CLEAN PASSES — CLOSED PER THE STANDING BAR.** No document edits were needed this pass (everything checked, nothing had drifted); this is itself the point of a verification pass — a clean pass produces no diff.
+
+✅ **`T31` pass 2/3 — the `T20-14` Betr-scraper closure re-verified, stable.** `boards/betr_wnba_current_meta.json` unchanged since the closure commit (`fetched_at: 2026-09-28T05:08:47Z`, `1,281` legs / `514` alt) — the `betr-cloud-harvest.yml` 2x/day cron (`17:45`/`20:15` UTC) simply hasn't fired again yet in the elapsed window; not a regression. `nba/BETR_BUILD_STATE.md` has no commits since `3d03bcea` (the five-app audit already cited in the closure). `T31` now at pass 2/3 — one more clean pass owed.
+
+✅ **Also folded in, from the hourly track's own independent entry (now superseded by this one, kept below per convention)**: the fourth stale-marker family (scoped `N/A`, table-rows-only) ran clean across all twelve documents — `13` hits, all legitimate "not applicable" table cells, `0` new defects. **All four stale-marker families this sweep has tried are now clean.**
+
+▶ **NEXT**: the `T27`–`T31` batch has four of five transcripts fully closed (`3`/`3`); only `T31` needs one more clean pass, whenever next resumed with genuine elapsed time (re-check `boards/betr_wnba_current_meta.json` for a newer `fetched_at` — if the cron has fired again, note the new leg count as a live confirmation the schedule itself works, not just the one-off capture). **Once `T31` reaches `3`/`3`, the entire `T27`–`T31` corpus is closed and the owner's standing instruction calls for 3 additional full sweeps across all twelve documents before the project can be declared finished** — begin those with a fresh `sweep_coverage.py` score against the full corpus rather than assuming nothing changed, since both tracks have written extensively since the last score was taken. Outstanding, unrelated to this batch: the fifth stale-marker family (`TBA`/`DRAFT`/`WIP`/`FILL IN`/`INCOMPLETE`, not yet tried) and `nba_ref.defender_ratings`'s staleness re-measurement, both available as filler if a firing finds nothing else pending. `NBA_FINAL_SCORING_CALIBRATION.md` remains untouched (corruption blocker, last known-good `dbc11ffc`).
+
+---
+
 ## 🆕 THIS FIRING (`2026-09-28`, ninth hourly run) — TRANSCRIPTS STILL UNAVAILABLE FOR THIS TRACK; INDEPENDENTLY CLOSED BOTH `T27`–`T31` SUB-TASKS BEFORE THE BATCH TRACK DID, AND RAN THE FOURTH STALE-MARKER FAMILY — ALL FOUR NOW CLEAN
 
 ✅ **`nba/transcripts/` re-checked live at session start — still only `README.md`/`journal.txt`.** This is the hourly/unattended track; the transcript-batch track (its own scratchpad attachment, entries directly below) is handling `T27`–`T31` itself — not this track's blocker to clear, and not re-touched here.
