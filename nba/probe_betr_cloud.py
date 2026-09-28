@@ -112,16 +112,24 @@ def main():
                 time.sleep(3)
 
             if booted:
-                # click the league tab so the app fetches its board
-                for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//button[contains(.,"{LEAGUE}")]',
-                           f'//a[contains(.,"{LEAGUE}")]', '//*[normalize-space(text())="Basketball"]'):
+                # We're past Cloudflare + geo and the fantasy API answers 200. Drive to the league board
+                # so the app issues getUpcomingEventsV2. Try deep-links and the tab.
+                for target in (f"{URL}lobby/{LEAGUE.lower()}", f"{URL}{LEAGUE.lower()}", URL):
                     try:
-                        if sb.is_element_visible(xp):
-                            sb.click(xp, timeout=4)
-                            print(f"  clicked {xp}", flush=True)
-                            break
+                        sb.uc_open_with_reconnect(target, reconnect_time=4)
+                        time.sleep(4)
                     except Exception:  # noqa: BLE001
-                        continue
+                        pass
+                    for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//button[contains(.,"{LEAGUE}")]',
+                               f'//a[contains(.,"{LEAGUE}")]', '//*[normalize-space(text())="Basketball"]'):
+                        try:
+                            if sb.is_element_visible(xp):
+                                sb.click(xp, timeout=4)
+                                print(f"  clicked {xp}", flush=True)
+                                break
+                        except Exception:  # noqa: BLE001
+                            continue
+                    time.sleep(3)
 
             # watch for the board response
             deadline = time.time() + 60
