@@ -245,6 +245,46 @@ def rows_fliff(doc, gd, label):
     return out
 
 
+def rows_betr(doc, gd, label):
+    """Betr Picks board from the Playwright harvester (betr_harvest.py). Each leg is a projection:
+    player, stat, line, over/under, and alt flag (Betr's nonRegularValue ladder rung). Filed like the
+    others; alt rungs get _alternate. Captured 2026-09-28."""
+    out = []
+    # Betr projection 'type'/stat -> the scorer's market key.
+    _wt = {"points": "player_points", "rebounds": "player_rebounds", "assists": "player_assists",
+           "three_pointers_made": "player_threes", "threes": "player_threes", "3pt_made": "player_threes",
+           "blocks": "player_blocks", "steals": "player_steals", "turnovers": "player_turnovers",
+           "pts_reb_ast": "player_points_rebounds_assists", "pra": "player_points_rebounds_assists",
+           "pts_reb": "player_points_rebounds", "pts_ast": "player_points_assists",
+           "reb_ast": "player_rebounds_assists", "blk_stl": "player_blocks_steals",
+           "fantasy": "player_fantasy_points", "fantasy_points": "player_fantasy_points",
+           "double_double": "player_double_double", "free_throws_made": "player_ftm",
+           "field_goals_made": "player_fgm"}
+    for l in doc.get("legs") or []:
+        if l.get("line") is None or not l.get("player"):
+            continue
+        raw = str(l.get("stat", "")).lower().replace(" ", "_").replace("-", "_")
+        mk = _wt.get(raw, "player_" + raw)
+        if l.get("alt"):
+            mk += "_alternate"
+        # Betr gives sides as flags; a main line usually has both, an alt is over-only.
+        sides = []
+        if l.get("alt"):
+            sides = ["Over"]
+        else:
+            if l.get("over"):
+                sides.append("Over")
+            if l.get("under"):
+                sides.append("Under")
+            if not sides:
+                sides = ["Over", "Under"]
+        for side in sides:
+            out.append((gd, ev("betr", gd, l, "event_id"), label, doc.get("meta", {}).get("fetched_at"),
+                        "betr", mk, l["player"], side, float(l["line"]), None, None, None, None,
+                        l.get("start_time")))
+    return out
+
+
 def rows_generic(doc, app, gd, label):
     out = []
     skipped = 0
