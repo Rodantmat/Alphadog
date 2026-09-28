@@ -5746,8 +5746,9 @@ season    games   oldest_write              newest_write              distinct w
 2026-27   1266    2026-09-02T20:24:55.428Z  2026-09-02T20:25:35.429Z  1
 ```
 
-**`nba_calendar.games` has been written exactly once, on 2026-09-02, and not touched in the 19 days
-since.** `nba-scrape.yml`'s weekly Monday 09:00 UTC cron should have fired at least twice in that
+~~**`nba_calendar.games` has been written exactly once, on 2026-09-02, and not touched in the 19 days
+since.**~~ ⇒ **RE-VERIFIED LIVE 2026-09-28 — no longer true; a real reload happened 2026-09-26 (see below).**
+`nba-scrape.yml`'s weekly Monday 09:00 UTC cron should have fired at least twice in that
 window. **The scraper may well have run; the Cloudflare worker that loads its output is triggered
 manually via `run_job` and evidently has not been.**
 
