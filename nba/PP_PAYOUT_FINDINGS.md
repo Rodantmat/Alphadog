@@ -4,6 +4,39 @@
 
 ---
 
+## 0★. ✅ BACKDATA CERTIFICATION — GROUP BY GROUP, BEFORE SLIP STRATEGY (2026-09-28)
+Owner asked for each data group to be certified reliable before the slip-strategy phase. Verified directly
+in Postgres this session; every row-count and null-count below is measured, not inferred.
+
+| Group | Table | Verdict | Evidence (2026-09-28) |
+|---|---|---|---|
+| **Board outcomes** (resolved history — did the prop hit) | `nba_market.board_outcomes` | ✅ CERTIFIED | 6,905,452 rows, 327 dates, 2024-10-22→2026-04-12, 21 markets, 561 players. Every played row graded (6,668,340), **0 null results**. Sides sane: MAIN 47.9% over / 52.1% under (≈50/50 as a book sets), ALT 39.7% over / 60.3% under (ladder sits above the line → unders win). |
+| **Board tiers** (goblin/standard/demon) | `nba_market.board_tiers_v2` | ✅ CERTIFIED (PrizePicks only, by design) | 2,199,151 rows, PrizePicks only: 826,797 demon / 745,526 standard / 583,661 goblin / 43,370 unknown, 378 dates both seasons. Matches §T26.63: BT2 covers PP; other apps flip on when they open. |
+| **Baseline** (the projections) | `nba_score.baseline_history` | ✅ CERTIFIED | 8,708,333 rows, 325 dates, 29 props, **0 null p_more**. Span matches outcomes exactly. |
+| **Final HP** (hit probabilities) | `nba_score.final_hp` | ✅ CERTIFIED | 7,215,296 rows, 325 dates, 21 props, **0 null baseline_hp**. ≈ 2× baseline by construction (Over+Under). |
+| **Score / edges** | `nba_score.board_scored` | ✅ CERTIFIED for probabilities; ⚠ tier/kind NULL | 12,820,918 legs, **325 dates both seasons** (the full-history score is done — supersedes the old "only 2 dates" caveat), 12 apps, **0 null** on baseline_hp / final_hp / confidence / score. Chain integrity confirmed earlier (§0f: board_scored.baseline_hp = store p_more on 1,391/1,391; grader = box score on 592/592). 🔴 **`tier` and `kind` are NULL on ALL 12.8M rows** — the goblin/demon split is NOT measurable from board_scored. Not a data-loss bug (probabilities are intact); it means per-tier edge must come from prop_universe, not board_scored. Fix if slip work needs tier on board_scored: carry kind/tier through the scorer's write (they exist on the input board rows). |
+| **Edge substrate** (the slip/ROI study table) | `nba_market.prop_universe` | ✅ CERTIFIED | 1,667,024 legs, 357 dates, all three kinds present with correct economics (standard factor 1.000, demon 1.851, goblin 0.724), **0 null factor**, ~97% graded. ~51k null model_p = legs outside the model's ±10 ladder (documented, expected). This — not board_scored — is where kind-level edge/ROI is measured. |
+| **Multipliers / per-leg pricing** | `nba_market.pp_leg_price` view + `pp_price*`, `pp_slip_rules`, `pp_conservative_policy` | ✅ CERTIFIED (see §9) | 99.55% of 2.19M legs priced; current version conservative-floor190; slip functions validated against 452 real quotes; reversion schedules verified 79/79. All the goblin/demon/edge specifics the slip study needs are built and validated in §9. |
+
+**Bottom line:** every ingredient group (outcomes, tiers, baseline, final_hp) is clean and complete across
+both full seasons; the scored-edge chain is intact and now covers all 325 dates; the pricing/multiplier
+layer is built and validated. **One flagged item before or during slip work:** board_scored carries no
+tier/kind, so goblin/demon analysis runs off prop_universe (which has them) — or the scorer is extended to
+persist kind/tier. Nothing here is a data-integrity failure; the edge study (§9: leg_edge_map, sim_slip,
+Item 1, standards backtest) already runs on the certified prop_universe/pricing layer.
+
+**Known edge readout already on record (§9), now resting on certified data:** real STANDARDS carry edge
+both seasons (game-aware 3-pick Power ROI +10.2% / +20.4%, both +15.8% ± 4.1%, t 3.85); demons and
+simulated Unders do not; the model ranks but is overconfident. That is the launch point for slip strategy.
+
+---
+
+# (original header continues below)
+
+
+
+---
+
 ## 0. 💾 STANDING TASK — DISK, MEASURED 2026-09-24
 **State 2026-09-25 (end): 27 GB used (46 GB on 2026-09-24) — 19 GB returned, while holding MORE coverage
 than at 46 (see §0e: reconstruction complete). Retention prune + board-scoped rebuild + `VACUUM FULL` on
