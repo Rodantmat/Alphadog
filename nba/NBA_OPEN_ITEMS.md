@@ -428,7 +428,10 @@ table's.***
 > scores any future model change.**
 > ⚖️ **Nothing re-run, changed or triggered by this sweep.** ▶ **Full record: `§T23.2`.**
 
-> # ⚠⚠ **T22-1 · AN OWNER REQUEST WITH NO RECORD ANYWHERE — "the keep my million board in underdog"**
+> # ✅ **CLOSED `2026-09-28`, VIA THE BUILD CHAT — MARK FINE** · ~~T22-1 · AN OWNER REQUEST WITH NO RECORD ANYWHERE — "the keep my million board in underdog"~~
+>
+> ✅✅✅ **CLOSED `2026-09-28`. Ruling: "owned by the documentation chat, not the build chat — mark fine."** *The owner confirms this needs no build-chat (code/system) attention. This closes the "still wanted, or dropped?" question below as neither — it was never a code request; it is filed and tracked here, in the documentation sweep's own domain, which is where it belongs. No further action.*
+>
 > *Filed 2026-09-23, T22 pass 1, `§T22.1`. **Severity LOW-MEDIUM, NOT season-critical** — placed here
 > only because it sits beside `T21-1`, which is the other item about the record rather than the
 > system.*
