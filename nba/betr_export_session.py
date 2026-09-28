@@ -46,7 +46,21 @@ def main():
                  "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
         OUT.write_text(json.dumps(state))
         print(f"wrote {OUT}  (cookies: {len(cookies)}, localStorage keys: {len(state['localStorage'])})", flush=True)
-        print("Now copy its contents into GH secret BETR_SESSION_STATE.", flush=True)
+
+        # GH secrets cap at 48KB; the full state (esp. localStorage) can exceed that. Write a SLIM file with
+        # cookies + only the auth-relevant localStorage keys (token/auth/session/user), usually a few KB.
+        keep = {k: v for k, v in (state["localStorage"] or {}).items()
+                if any(t in k.lower() for t in ("token", "auth", "session", "user", "keycloak", "oidc", "refresh"))}
+        slim = {"url": url, "cookies": cookies, "localStorage": keep,
+                "exported_at": state["exported_at"]}
+        slim_path = Path(os.environ.get("BETR_OUT_DIR", ".")) / "betr_session_state_slim.json"
+        slim_json = json.dumps(slim)
+        slim_path.write_text(slim_json)
+        print(f"wrote {slim_path}  ({len(slim_json)} bytes, {len(keep)} localStorage keys kept)  "
+              f"<- put THIS in GH secret BETR_SESSION_STATE if it's under ~40KB", flush=True)
+        if len(slim_json) > 40000:
+            print("  NOTE: slim still large; tell Claude and we'll trim localStorage further.", flush=True)
+        print("Now copy the SLIM file's contents into GH secret BETR_SESSION_STATE.", flush=True)
 
 
 if __name__ == "__main__":
