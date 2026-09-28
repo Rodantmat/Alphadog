@@ -197,6 +197,14 @@ writes. Grouped by role.
 
 ---
 
+## ⚠ **§T27.5 — `score_prop_reliability.py` CLOSED ITS DATABASE CONNECTION BEFORE ITS OWN LATE WRITE, LOSING A TWO-HOUR RUN ON THE LAST LINE — FOUND WITHOUT A LOG, FIXED WITH A HEARTBEAT ROW** *(source, 2026-09-26, from the 2026-09-28 build-chat session; `0` of the twelve before this entry)*
+
+> 📌 **The script's original shape closed its Postgres connection right after the per-prop grading loop and only printed its result afterward** — so a two-hour reliability-audit run crashed on its own final write, with no error surfaced until the connection was already gone. The maintenance run's own log was unreachable at the time (buried under this documentation sweep's own commit volume), so the failure was found by checking the database directly for whether the run had written anything at all, rather than from a log.
+>
+> 🔧 **Fix, live-verified `score_prop_reliability.py:148-155`**: the connection now stays open through the write (`conn.commit()` runs immediately after each per-prop insert rather than being deferred to a final close), and each iteration also writes a heartbeat row to `nba_config.classification_config` (`config_key='prop_reliability_audit_progress'`) recording `season`/`prop`/`done`/`n`/`ECE_pp` — so a maintenance run's position is now visible from the database even when its log cannot be read. The re-run this fix enabled produced `§T27.6`'s PrizePicks-scoped calibration measurement, in `NBA_BASELINE_CALIBRATION.md`.
+
+---
+
 ## 🔴🔴🔴 **§T26.76 — `§T20.34`'s FLOOR CONVERTED TO A TOTAL AT THE WORKFLOW LAYER: `103` SEASON-LITERAL SITES ACROSS `13` WORKFLOWS, `85` OF THEM HARDCODED, AND ALL `13` ARE MANUAL — WHILE THE THREE CRON'D PIPELINES HAVE ZERO** *(source census, 2026-09-26; `1` of the `103` was recorded in the twelve)*
 
 > 📌 **`§T20.34` counted `7` season literals across `P2` and `P3` and stated its own limit honestly — *"`RULE 17`: a FLOOR, not a total"*. That census was at the SCRIPT layer.** ⚠ **Nobody had ever run it at the WORKFLOW layer**, *and pass `30` reached it from the `T26` `ASSISTANT OUTPUT` stratum, where the transcript records finding "another dead ceiling" and a `SEASON_BOUNDS` dict — two shapes the literal-grep cannot see.*
