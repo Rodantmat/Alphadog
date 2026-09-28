@@ -17340,6 +17340,8 @@ check, and the system already contains the right shape** (P1's thresholds; the g
 **Severity is on the DESIGN, not on any observed failure — no partial-slate run is recorded.**
 *(Full check-by-check table: `NBA_WORKERS.md` §0.004-T18.)*
 
+> 📅 **RE-VERIFIED LIVE `2026-09-28` — STILL TRUE, UNCHANGED, DESPITE THE FILE GROWING TO `18` CHECKS.** *Live-read `certify_pipeline.py`'s current `pipe == "p3"` block in full (lines `155-183`): all five P3 checks are still bare `count(*) > 0` or `count(bad) == 0` — **no check compares a count against an expected slate size, a prior day's count, or any other magnitude baseline**. The specific critique ("a P3 run that scores ONE leg prints checks passed") is unchanged in shape. ⚠ **Also noted, not previously recorded**: "board scored today" is checked TWICE with an identical query (once as the primary output check, once again lower down against the same table) — a duplicate, not a magnitude check, flagged in passing. The `>= 20` baseline-props gate (`T20-13`'s closure) and the per-app board-liveness block (`T26-9`'s closure) are both real, dated improvements elsewhere in this same file — but neither touches P3's five checks, so this item's core claim survives both of those closures intact.
+
 ## T18-13 · **NEW · LOW** · the board scorer's aggregate confidence sits below every per-prop confidence
 **In the 58,395-leg run: whole-board `avg_conf` **0.9416**, while all twelve per-prop confidences run
 **0.9552 → 0.9677**.** *A mean cannot fall outside the range of its parts over the same population.*
