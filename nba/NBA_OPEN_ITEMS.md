@@ -16005,7 +16005,42 @@ and triggered nothing.**
 
 ## T20-6 · **NEW · 🔴🔴🔴 SEASON-CRITICAL · THE LARGEST STRUCTURAL FINDING OF THE SWEEP** · 7 of 12 certifier checks assert tables no pipeline writes
 
-> ## 🔴🔴🔴 AMENDMENT — **THE CONSEQUENCE, WALKED STEP BY STEP** *(T20 pass 129, §T20.134, 2026-09-23)*
+> ## ✅✅✅ HEADLINE CLOSED — LIVE-VERIFIED THIS PASS, `2026-09-28`, SCOPED CAREFULLY
+> *This closes the TWO specific structural mismatches the "CONSEQUENCE, WALKED STEP BY STEP" block
+> below describes — the ones that would have made `P2` and `P3` both fail on opening night for a
+> table-naming reason. It does **not** claim the rest of this item (multi-writer tables, the test
+> harness writing production tables, `ladder_calibration_asof`'s staleness gate, the `gbdt-training.yml`
+> MLB residue) is re-verified — those sub-findings were NOT re-checked this pass and should be
+> treated as still open until someone does.*
+>
+> **(1) `baseline_history` vs `baseline_ladder` — CONSOLIDATED, one table, not two.**
+> `nba_score.baseline_ladder` no longer exists (`to_regclass('nba_score.baseline_ladder')` → `NULL`,
+> live). `nba/load_baseline_ladder.py` (P2 step 15) now writes directly to `nba_score.baseline_history`
+> — its own comment: *"ONE BASELINE STORE (owner decision 2026-09-24: one set per day, the last run
+> overwrites)... This used to write nba_score.baseline_ladder - a SECOND table for the same concept...
+> Everything downstream that matters reads baseline_history."* `score_board_legs.py`'s abort message
+> was updated to match: `"ABORT: no baseline for {asof} in nba_score.baseline_history - P2 must run
+> before P3."` — no more reference to the dead `baseline_ladder` name anywhere in the failure path.
+>
+> **(2) `final_hp` — P2 now owns it, dated and explained in the workflow itself.**
+> `.github/workflows/nba-p2-overnight-heavy.yml` step 6b runs `build_final_hp.py`, with its own
+> comment: *"FINAL_HP — THE SYSTEM'S HEADLINE OUTPUT, AND UNTIL NOW NO PIPELINE OWNED IT... The cause
+> was mechanical: build_final_hp.py deleted season+prop while FE_DATE scoped the SELECT to one slate,
+> so a daily run would have wiped the season's history. That write scope is fixed (2026-09-23), so P2
+> can own it."* `certify_pipeline.py`'s P2 branch checks it accordingly (`"final_hp built for today...
+> P2 owns final_hp since 2026-09-23"`), and P3 now treats it correctly as an INPUT, not something it
+> must itself produce (`"INPUT: final_hp for today (from P2)"`).
+>
+> ⇒ **The exact chain this item's `AMENDMENT` walks step-by-step below — P2 failing certification on a
+> table it never wrote, P3 dying with "no baseline ladder... P2 must run before P3" — no longer
+> matches the live pipelines.** Both fixes are dated 2026-09-23/24, one to two days after this item's
+> most recent amendment (2026-09-23) — the same pattern found repeatedly this window: a real fix
+> landing just after a finding was written, never reflected back into the doc. **RULE 40**: the
+> superseded step-by-step walkthrough below is left in place, struck where it states the now-wrong
+> mechanism, because it is an accurate historical record of what was true when written and how the
+> reasoning worked — not deleted.
+
+> ## 🔴🔴🔴 ~~AMENDMENT — **THE CONSEQUENCE, WALKED STEP BY STEP**~~ *(T20 pass 129, §T20.134, 2026-09-23 — SUPERSEDED BY THE CLOSURE ABOVE, kept for the record per RULE 40)*
 > *No new item: the structure is this item's. **What is added is what it DOES on `2026-10-20`, and a
 > measured control** — plus a correction to two entries that predicted the wrong day.*
 >
