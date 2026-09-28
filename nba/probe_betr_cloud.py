@@ -28,8 +28,6 @@ def main():
         print(f"using proxy {p.split('@')[-1] if '@' in p else p}", flush=True)
     else:
         print("NO PROXY (direct from the runner's datacenter IP) — isolating the SPA-blank cause", flush=True)
-    else:
-        print("no PROXY_URL — running on the runner's own datacenter IP (expected to be flagged)", flush=True)
 
     with SB(**kw) as sb:
         print("opening lobby via uc_open_with_reconnect ...", flush=True)
