@@ -14046,6 +14046,8 @@ per-message line numbers**, because the sweep's documents record findings by sec
 and **the transcript line offsets were never captured**. ⚠ **Named rather than invented: fabricating
 line numbers would be worse than omitting them.**
 
+> 📅 **RE-CONFIRMED LIVE `2026-09-28`.** *`NBA_GLOSSARY.md` (live-read) still describes `§Z` as "the flat lookup (term → location, covers A–Z)" — document + transcript only, no per-message line/date/time column. Structurally unchanged from the item's own description; no drift.*
+
 > ### ⚠ UNRELATED ITEM RECORDED HERE FOR PROXIMITY — **`ladder_calibration_asof` carries no refit history, so its documented weekly cadence cannot be checked from the table**
 > `[LIVE-AUDIT]` **2026-09-22 (§T20.13)**. **`nba_score.ladder_calibration_asof` holds 9,904 rows
 > against the 9,577 on file** — *and the +327 is not growth.* **`min(built_at) = max(built_at) =
