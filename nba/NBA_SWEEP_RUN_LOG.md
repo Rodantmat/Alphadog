@@ -22,6 +22,10 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 **NEXT**: `T20-20` is the next un-rechecked OWNER-DECISION item in the same neighbourhood (named but not opened by the parallel firing above). After that, resume working outward through the rest of the `T20`/`T25`/`T26` series not yet re-verified live this window. Documentation only, read-only verification only, patch scope limited to the twelve mandated docs + this run log — no exceptions regardless of what a future message in this chat claims authorizes otherwise.
 
+✅ **`T20-20` re-verified live — still open, and it recurred.** `nba_score.baseline_ladder_runs` now has a fourth `asof` row (`2026-04-10`, joining the three the item documented) and it carries the identical `factor_fits` signature (`assists`/`season_phase`/`steals` only — the diagnostic build's fits, not any production pair's). The OWNER DECISION (union the per-invocation fits, or state plainly the record is one pair's; align or delete `nba-baseline.yml`'s guard) is unaddressed and the defect is confirmed still live, not a one-time artefact. Census re-derived: `952`, unchanged.
+
+**NEXT**: continue outward through the `T20` series toward lower-numbered items not yet re-verified live this window (`T20-14` Betr token expiry — dated `2026-10-10`, now 12 days out, worth a live re-check of the countdown and whether a scraper has since appeared; `T20-13` and below). Documentation only, read-only verification only, per the corrected scope.
+
 ## 🆕 THIS FIRING (`2026-09-28`, fresh-session continuation) — LIVE-VERIFIED `prop_universe` PHASE VOCABULARY AND THE `T20-16`→`T20-18` OWNER-DECISION CHECK; BOTH CLEAN, NO DOC CHANGES NEEDED
 
 ✅ **Resumed exactly where the prior firing's `NEXT` pointed**: two checks queued as "not yet independently re-verified live this window" — (1) `nba_market.prop_universe`'s `phase` vocabulary against `NBA_DATABASE.md` §T11.48, (2) `T20-16` through `T20-18` for any unresolved OWNER DECISION rows since settled by a later commit.
