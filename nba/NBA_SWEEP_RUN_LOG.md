@@ -8,6 +8,20 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 TRANSCRIPT-BATCH SESSION (`2026-09-28`, continued again) — `T27` PASS 2/3 COMPLETE, ALL SEVEN SUB-FINDINGS LIVE-RE-VERIFIED
+
+📌 **Same session, continuing per the entry below's own `NEXT` pointer: begin re-passing `T27` for pass 2/3 rather than opening new transcripts** (`nba/transcripts/` still holds nothing new). This was a **re-verification pass, not a re-read** — each of `§T27.1`–`§T27.7`'s published claims was checked against current live repo/workflow/DB state, not re-derived from the transcript text again.
+
+✅ **Six of seven confirmed exactly as published, no drift**: `§T27.1` (`teams_adv.drop(columns=["GAME_DATE"], errors="ignore")` present in both `build_baseline_ladder.py:58` and `build_periods_ladder.py:37`) · `§T27.3` (`nba-p3-afternoon-light.yml`'s PrizePicks-NBA step still carries `PRIZEPICKS_LEAGUE_ID: "7"`/`PRIZEPICKS_SPORT: "nba"`, and `PP_STAT_MAP` is still in `archive_live_boards.py:79-117`) · `§T27.2` (the workflow's single cron is still `15 21 * * *`, `zoneinfo`/`America/Los_Angeles` still drives the cutoff) · `§T27.5` (`score_prop_reliability.py:148-158` still commits per-iteration with the heartbeat write, connection held open through the write) · `§T27.7` (`archive_live_boards.py:384` still carries the game-date-by-`commence_time` fix).
+
+⚠ **One flagged, not contradicted — `§T27.6`'s population has moved.** Live `SELECT count(*) FROM nba_score.board_scored WHERE prop='points' AND season='2025-26' AND app='prizepicks'` now returns `125,175`, not the published `101,049` — `board_scored` is a continuously-rebuilt table, not a frozen snapshot, so this is ordinary growth since the `2026-09-26` audit run, not an error. The `3.46pp`→`1.85pp` ECE figures depend on the audit script's own computation, not a row count, so they were **not** re-derived (would require re-running `score_prop_reliability.py`'s book-scoped logic, out of scope for a verification pass) — flagged as a candidate for a future full pass instead. Patched `NBA_BASELINE_CALIBRATION.md` with a dated addendum, `RULE 40` style, original figures preserved as history. Also checked live: `nba_config.classification_config`'s stored `prop_reliability_audit_latest` is the STORE-WIDE audit (`§0v.3`/`§0v.4`), not this book-scoped re-run — that result was never persisted to a config key, only reported in the source transcript.
+
+📌 **`T27` is now at pass 2/3.** One more clean pass owed before it counts toward the corpus-wide close. `NBA_BASELINE_CALIBRATION.md` census stamp re-verified unchanged at `156` (annotation-only edit, no new heading).
+
+▶ **NEXT**: continue the second-pass sweep through the rest of the batch — `T28` pass 2/3 next (re-verify `§T28.1`'s `grade_board_outcomes.py:48-53,145-183,304-311` fix and the `NBA_DATABASE.md` `27 GB` figure against current live state), then `T29`/`T30`/`T31` pass 2/3 in turn. The two standing sub-tasks remain open: (1) any remaining stale `nba/scrape_prizepicks_nba_board.py` references beyond `§T27.3`'s one fixed instance; (2) the `T26-7` count gap (`7,951` vs `7,921`). **After all five transcripts reach 3/3 and every touched document index reaches 3/3**: 3 additional full sweeps per the owner's standing instruction, before declaring the project finished. `NBA_FINAL_SCORING_CALIBRATION.md` remains untouched (corruption blocker, last known-good `dbc11ffc`).
+
+---
+
 ## 🆕 TRANSCRIPT-BATCH SESSION (`2026-09-28`, continued) — `T31` NOW FULLY READ AND CLOSED, PASS 1/3 — THE LAST TRANSCRIPT IN THE `T27`–`T31` BATCH
 
 📌 **Same session as the `T28` entry directly below; continuing from its `NEXT` pointer.** `T31` (`2026-09-28-05-58-27-betr-chalkboard-sleeper-capture-session.txt`, 644 segments, 651-line tail, largest in the batch) — **READ IN FULL, all four strata.**
