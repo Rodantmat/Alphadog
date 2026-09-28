@@ -340,10 +340,20 @@ jobs:
           git add nba/data/*.json boards/*.json || true
           if git diff --cached --quiet; then echo "No day-of file changes."; else
             git commit -m "NBA P3 day-of data [skip ci]"
-            for i in 1 2 3 4 5; do
-              if git push origin HEAD:main; then break; fi
-              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+            pushed=0
+            for i in 1 2 3 4 5 6; do
+              if git push origin HEAD:main; then pushed=1; break; fi
+              # a concurrent board-scraper/Betr commit landed first. Rebase, auto-resolving any board-file
+              # collision in favour of the remote's fresher capture (board files are regenerated anyway);
+              # our nba/data/* stays ours. If rebase still snags, abort and merge instead so we never hang.
+              git fetch origin main
+              if ! git rebase -X theirs origin/main; then
+                git rebase --abort || true
+                git merge -X theirs --no-edit origin/main || true
+              fi
+              sleep $((RANDOM % 5 + 2))
             done
+            [ "$pushed" = 1 ] || { echo "::warning::P3 commit could not push after retries (concurrent commits); data is safe in Postgres, board files will refresh next run."; }
           fi
 
       # 4) SCORE THE BOARD. P3 IS BOARD-SCOPED: every leg the apps actually offer - all prop lines,
