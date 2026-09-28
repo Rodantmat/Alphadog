@@ -20,7 +20,9 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ✅ **`§T27.2`** added — P3's cutoff-gate DST bug (`21:15 UTC` miscommented as `13:15 PT during DST`, actually `14:15 PDT`), self-caught and fixed `2026-09-24`, live-verified `2026-09-28` against `nba-p3-afternoon-light.yml:130-134` — single `cron: '15 21 * * *'` confirms the same transcript's owner-caught "three crowns" drift reverted to one and held. → `NBA_WORKERS.md`, stamp `193→194` (RUN).
 
-▶ **NEXT**: continue `T27`'s remaining strata (COMMANDS RUN, RESULTS RETURNED — still ~760+ of 770 uncovered segments unread), then score `T28`–`T31`.
+🤖 **OWNER INSTRUCTION `2026-09-28`, RECORDED**: work non-stop, not gated on a human prompting "continue" each time; once the corpus appears fully swept, perform **3 additional complete sweeps** across every transcript and all twelve documents before calling the project done. ✅ **Mechanism**: an hourly scheduled task (`AlphaDog NBA Documentation Sweep — Autonomous Continuation`) now fires every hour, reads this section, and continues from exactly where it left off — each firing is a fresh session with no memory of any other, so **this resume note is its only continuity**; keep it precise and current after every pass, not vague. The 3-consecutive-clean-pass bar (per transcript AND per document index) is unchanged and still governs closure — it is not shortcut by the automation.
+
+▶ **NEXT**: continue `T27`'s remaining strata (COMMANDS RUN, RESULTS RETURNED — still ~760+ of 770 uncovered segments unread), then score `T28`–`T31`. **After the whole corpus closes**: 3 additional full sweeps, per the instruction above, before declaring the project finished.
 
 ---
 
