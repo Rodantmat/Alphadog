@@ -101,8 +101,28 @@ installing.
   freshness check to the certifier's per-app board-liveness (already reads betr meta).
 - **Whether our own infra can do this unattended** — see §9.
 
-## 9. CAN OUR SYSTEM DO IT (GitHub Actions / Cloudflare Worker), UNATTENDED? — analysis 2026-09-28
-Short answer: **not reliably, and not without a persistent residential browser somewhere.** Detail:
+## 9. CAN OUR SYSTEM DO IT (GitHub Actions / Cloudflare Worker), UNATTENDED?
+
+### ✅ TESTED ON THE RUNNER 2026-09-28 (this supersedes the analysis below)
+Built `nba/probe_betr_cloud.py` + `.github/workflows/betr-cloud-test.yml` (Chrome + fonts + Xvfb +
+SeleniumBase UC) and RAN it on the GitHub runner:
+- **UC Mode + Xvfb CLEARS Cloudflare on the runner.** Direct (no proxy) the SPA fully rendered
+  (page_length 84,567, cloudflare markers NONE). The Turnstile wall is NOT the blocker for our infra.
+- **Direct then hits a GEOLOCATION gate** (`/AllowLocation?...onSelectUsState=...`) — datacenter IP has no
+  US state, so the board won't load. Not a bot wall.
+- **Through PROXY_URL (rp.scrapegw.com, rotating residential) the SPA never rendered** (39 bytes for 60s) —
+  the gateway is too slow/unstable to load Betr's JS bundle.
+So the remaining blockers are ORDINARY: a US-geolocated egress that actually loads the app. Paths, by effort:
+  1. A **sticky/faster US residential proxy** (not per-request rotating) + longer bundle-load timeout ->
+     UC+Xvfb on the runner should reach the board unattended.
+  2. **Seed the US-state selection** into the runner profile to skip the geo gate (still needs US egress).
+  3. **Mini-PC / owner PC (Path C)** — residential, no geo gate; most robust; already built.
+⏳ NEXT CLOUD TEST: rerun betr-cloud-test with a STICKY residential proxy; success = SPA renders + a
+  getUpcomingEventsV2 200. If yes, wire betr_harvest's capture into the cloud workflow. The Cloudflare
+  **Worker** path stays dead (no real browser); the viable cloud path is the GitHub runner.
+
+### Earlier analysis (kept for context; partly overturned by the runner test above)
+
 - **GitHub Actions runner**: datacenter IP (Azure) — Turnstile scores it as a bot instantly. Even routing
   the browser through PROXY_URL (residential), the runner would need a full stealth browser (Camoufox /
   SeleniumBase UC) AND to solve the interactive Turnstile with NO human and NO display. Turnstile's
