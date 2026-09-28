@@ -22,10 +22,21 @@ def main():
     seen = []
     kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
     if PROXY and os.environ.get("BETR_NOPROXY", "0") != "1":
-        # SeleniumBase wants user:pass@host:port (no scheme, no trailing slash/path)
-        p = PROXY.split("://", 1)[-1].rstrip("/").split("/", 1)[0]
-        kw["proxy"] = p
-        print(f"using proxy {p.split('@')[-1] if '@' in p else p}", flush=True)
+        # ProxyScrape residential (rp.scrapegw.com): make the session STICKY + US-geolocated by appending
+        # params to the USERNAME. Sticky -> the SPA has time to load on one IP; country-us -> no
+        # AllowLocation geo gate. Syntax: <user>-country-us-session-<id>-lifetime-<min>:<pass>@host:port.
+        raw = PROXY.split("://", 1)[-1].rstrip("/").split("/", 1)[0]
+        if "@" in raw and os.environ.get("BETR_STICKY", "1") == "1":
+            creds, host = raw.rsplit("@", 1)
+            user, _, pw = creds.partition(":")
+            if "-session-" not in user:
+                sid = os.environ.get("BETR_SESSION_ID", "betrnba1")
+                user = f"{user}-country-us-session-{sid}-lifetime-10"
+            raw = f"{user}:{pw}@{host}"
+            print(f"using STICKY US proxy @ {host} (session tag applied)", flush=True)
+        else:
+            print(f"using proxy {raw.split('@')[-1] if '@' in raw else raw}", flush=True)
+        kw["proxy"] = raw
     else:
         print("NO PROXY (direct from the runner's datacenter IP) — isolating the SPA-blank cause", flush=True)
 
