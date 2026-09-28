@@ -15,6 +15,9 @@ concurrency:
   group: betr-cloud-harvest
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   harvest:
     runs-on: ubuntu-latest
