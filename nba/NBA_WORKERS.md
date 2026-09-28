@@ -216,6 +216,14 @@ writes. Grouped by role.
 
 ---
 
+## 🔴🔴 **§T28.1 — THE GRADER SCORED ONLY `12` OF THE MARKETS P3 PRODUCES: FANTASY, EVERY DERIVED PROP, AND EVERY PERIOD MARKET WERE GRADED `no_stat` — NEVER IN THE CALIBRATION, NEVER IN THE PAPER LOG** *(source + live verify, fixed 2026-09-25, from the 2026-09-28-03-09-57 build-chat transcript; a different defect from `NBA_OPEN_ITEMS.md`'s pre-existing "INNER JOIN drops non-participants" grader-risk item — that one is about JOIN semantics, this one is about market COVERAGE; `0` of the twelve before this entry)*
+
+> 📌 **`grade_board_outcomes.py` only ever knew how to grade `12` markets.** Every leg P3 could score but this file could not grade — fantasy, every derived prop, and every period market (`1Q`/`1H`/`2H`/`4Q` variants) — came out the other end marked `no_stat`: never checked against the box score, so never present in the calibration or the paper log. This is a coverage gap, silent in the sense that a `no_stat` leg looks like a legitimately absent stat, not like a missing feature.
+>
+> 🔧 **Fix, live-verified `grade_board_outcomes.py:48-53,145-183,304-311`** (comment dated `COMPLETED 2026-09-25`): the grader now covers the full stat set. **Fantasy** grades from the official `nba_fantasy_pts` field (the NBA's own 2017 standard, which PrizePicks uses) rather than deriving it, with the formula (`pts + 1.2·reb + 1.5·ast + 3·stl + 3·blk − tov`) kept only as a fallback. **Period markets** grade from the quarter logs P2 already mines daily (`H1 = Q1+Q2`, `H2 = Q3+Q4`); a player-date missing a quarter row raises `KeyError`, caught and graded `no_stat` explicitly rather than crashing or silently passing. **File reads are local-first** (`_read_json`, `grade_board_outcomes.py:145-153`): the grader previously fetched season logs from the raw GitHub CDN, the same stale-cache defect as the delta's — a 404 minutes after a same-day file is committed. It now reads the runner's own committed JSON first, HTTP only as fallback.
+
+---
+
 ## 🔴🔴🔴 **§T26.76 — `§T20.34`'s FLOOR CONVERTED TO A TOTAL AT THE WORKFLOW LAYER: `103` SEASON-LITERAL SITES ACROSS `13` WORKFLOWS, `85` OF THEM HARDCODED, AND ALL `13` ARE MANUAL — WHILE THE THREE CRON'D PIPELINES HAVE ZERO** *(source census, 2026-09-26; `1` of the `103` was recorded in the twelve)*
 
 > 📌 **`§T20.34` counted `7` season literals across `P2` and `P3` and stated its own limit honestly — *"`RULE 17`: a FLOOR, not a total"*. That census was at the SCRIPT layer.** ⚠ **Nobody had ever run it at the WORKFLOW layer**, *and pass `30` reached it from the `T26` `ASSISTANT OUTPUT` stratum, where the transcript records finding "another dead ceiling" and a `SEASON_BOUNDS` dict — two shapes the literal-grep cannot see.*
