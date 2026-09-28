@@ -106,20 +106,51 @@ def main():
             print("\n*** LOG IN NOW (phone, password, SMS). 3 minutes. Then navigate to the WNBA board. ***\n", flush=True)
             time.sleep(180)
 
-        print(f"watching the network for the board for up to {WATCH_SECONDS}s — "
-              "in the browser, CLICK into the WNBA board / a game so it loads.", flush=True)
-        # nudge to the league once, then just watch
+        print(f"watching the network for the board for up to {WATCH_SECONDS}s ...", flush=True)
+        # nudge to the league, then try to CLICK the sport tab automatically (so no human tap is needed)
         try:
             sb.uc_open_with_reconnect(f"{URL}lobby/{LEAGUE.lower()}", reconnect_time=4)
         except Exception:  # noqa: BLE001
             pass
+        time.sleep(4)
+
+        def try_click():
+            # Betr's sport nav labels the tab by league name; try text, aria-label, and common patterns
+            cands = [f'//*[normalize-space(text())="{LEAGUE}"]',
+                     f'//*[@aria-label="{LEAGUE}"]',
+                     f'//button[contains(., "{LEAGUE}")]',
+                     f'//a[contains(., "{LEAGUE}")]',
+                     f'//*[contains(@class,"league") and contains(., "{LEAGUE}")]',
+                     '//*[normalize-space(text())="Basketball"]']
+            for xp in cands:
+                try:
+                    if sb.is_element_visible(xp):
+                        sb.click(xp, timeout=4)
+                        print(f"  auto-clicked {xp}", flush=True)
+                        return True
+                except Exception:  # noqa: BLE001
+                    continue
+            return False
+
+        clicked = False
         deadline = time.time() + WATCH_SECONDS
         while time.time() < deadline and not board:
+            if not clicked:
+                clicked = try_click()
             board = pull_board(sb)
             if board:
                 print("  BOARD CAPTURED", flush=True)
                 break
             time.sleep(3)
+        if not board:
+            print("  (auto-click may have missed the tab — if the window is open, CLICK the league yourself now)", flush=True)
+            deadline2 = time.time() + 30
+            while time.time() < deadline2 and not board:
+                board = pull_board(sb)
+                if board:
+                    print("  BOARD CAPTURED", flush=True)
+                    break
+                time.sleep(3)
 
     if not board or ((board.get("data") or {}).get("getUpcomingEventsV2") is None):
         print("NO BOARD. Tell me: did the WNBA board (players + lines) actually show on screen?", file=sys.stderr)
