@@ -17391,6 +17391,8 @@ unverified against the system's own data, by the author's own standard.**
 cutoff up to three hours earlier** *(see T18-9)*. ⚠ **NOT RECORDED: whether it was ever re-run after
 this session.** *(Full evidence: `NBA_SYSTEM_DESIGN.md` §0z-8-T18-RETRACTION.)*
 
+> 📅 **RE-CHECKED LIVE `2026-09-28` — THE BLOCKING BUG IS FIXED, STILL NO EVIDENCE OF A COMPLETED RUN, AND THE ITEM'S URGENCY IS LARGELY MOOT.** *`.github/workflows/nba-engine-test.yml:49` now installs `pandas` (`pip install ... psycopg[binary] pandas numpy scipy`) before its `measure_report_cutoff.py` step (`:110`) — the original `ModuleNotFoundError` is structurally fixed. `github_list_workflow_runs` (last `30` runs, this session) shows no `nba-engine-test` run — no evidence either way of a completed dispatch since. ⚠ **This item's own stated urgency ("the answer could move the cutoff up to three hours earlier, see T18-9") is now largely superseded**: `T18-9`'s closure this pass shows P3's cutoff is no longer a fixed policy-based clock at all — it's `min(13:15 PT, first_tip − 30min)`, schedule-driven regardless of what this measurement would show. The open question (was `30min` the right buffer, and could it be looser on non-early-tip days) survives, but the SEVERITY this item argued for (a fixed clock resting on unverified policy) does not.
+
 ## T18-10 · **NEW** · the league publishes THREE bulletins; the sweep had recorded one
 **1:30 p.m. / 5:30 p.m. / 8:30 p.m. ET = 10:30 AM / 2:30 PM / 5:30 PM PT** *(same source as T18-9)*.
 **`nba_asof.py` encodes the first two as `ENRICH_CUTOFFS_LOCAL = ["13:30", "17:30"]`** *(verified in
