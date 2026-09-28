@@ -21,11 +21,13 @@ PROXY = os.environ.get("PROXY_URL", "").strip()
 def main():
     seen = []
     kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
-    if PROXY:
+    if PROXY and os.environ.get("BETR_NOPROXY", "0") != "1":
         # SeleniumBase wants user:pass@host:port (no scheme, no trailing slash/path)
         p = PROXY.split("://", 1)[-1].rstrip("/").split("/", 1)[0]
         kw["proxy"] = p
         print(f"using proxy {p.split('@')[-1] if '@' in p else p}", flush=True)
+    else:
+        print("NO PROXY (direct from the runner's datacenter IP) — isolating the SPA-blank cause", flush=True)
     else:
         print("no PROXY_URL — running on the runner's own datacenter IP (expected to be flagged)", flush=True)
 
