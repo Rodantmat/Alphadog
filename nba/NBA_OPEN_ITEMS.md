@@ -16005,6 +16005,43 @@ brief is wrong.**
 
 ## T20-7 · **NEW · 🔴🔴🔴 SEASON-CRITICAL · THE DEEPEST MIS-WIRING FOUND** · P3's "Board tiers" step runs an index-maintenance script, and `board_tiers` has no writer at all
 
+> ## 🔴🔴🔴 RE-VERIFIED LIVE 2026-09-28 — STILL OPEN. THE WRONG-SCRIPT DEFECT IS FIXED; THE CONSEQUENCE SURVIVED BY CHANGING SHAPE.
+> *Went in to check whether `OWNER DECISION (a)` below had been acted on. It has — but the fix
+> exposed a second gap this item didn't anticipate, and the net effect on the four readers is
+> unchanged: they are still permanently stuck on the same frozen `2026-04-12` snapshot.*
+>
+> **✅ Part fixed, dated in the workflow's own comment.** `.github/workflows/nba-p3-afternoon-light.yml`
+> step "Board tiers (goblin / standard / demon)" now runs `python nba/build_board_tiers_v2.py`
+> (`BT2_APPS=prizepicks`), not `maintenance_shrink_board_index.py`. Its own comment: *"🔴 FIXED
+> 2026-09-23: this step ran `maintenance_shrink_board_index.py`... The real builder is
+> `build_board_tiers_v2.py`."* This matches `OWNER DECISION (a)` in this item exactly.
+>
+> **🔴 But the fix writes to a table none of the four readers query.** `build_board_tiers_v2.py`'s own
+> DDL and every INSERT/TRUNCATE/DELETE in it target `nba_market.board_tiers_v2` — a **different**
+> table from `nba_market.board_tiers`, the one this item's four readers use. Live-checked all four,
+> confirmed unchanged, still reading the OLD name: `build_rung_market.py:45` (P3 step 8) ·
+> `build_confidence_v3.py:123,254` (P2 step 18) · `apply_ladder_calibration.py:79` ·
+> `backtest_tier_selection_value.py:66` — zero mentions of `board_tiers_v2` in any of the four,
+> confirmed by grep. `score_board_legs.py` was also checked (not one of the original four): zero
+> mentions of either table.
+>
+> **🔴 `board_tiers` (v1) still has zero writer, and now structurally can never get one from this
+> path** — the only script that ever produced this shape of data (`build_board_tiers_v2.py`, invoked
+> by both `nba-p3-afternoon-light.yml` and `nba-engine-test.yml`) writes exclusively to `_v2`.
+> Live-queried both tables: `board_tiers` — `2,199,354` rows, last `2026-04-12`. `board_tiers_v2` —
+> **also** `2,199,354` rows, also last `2026-04-12` (identical figures; not investigated further this
+> pass whether that's coincidence or a shared historical backfill — flagged, not asserted, per RULE 6).
+>
+> ⇒ ***The specific mechanism this item names (the maintenance script running instead of the real
+> builder) is fixed. The consequence it warned about (P2 and P3 feeding on a frozen tier snapshot
+> from before this season) is UNCHANGED — the readers now point at a table that has gone from
+> "nothing writes it" to "nothing will ever write it again," while the table that IS being written
+> sits unread.*** **Item stays OPEN.** `OWNER DECISION (b)` — "decide whether `board_tiers` or
+> `board_tiers_v2` is canonical" — is now the live blocker, not a hypothetical: it must be answered
+> and the four readers repointed before opening night, or every P2/P3 run since 2026-09-23 has been
+> scoring against six-month-old tier data without anyone's four consuming scripts knowing the
+> builder moved. ⚠ **Read-only this pass, as before: nothing repointed, nothing triggered.**
+
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.40).** *Read edge built over the same `116` scripts: **41** distinct
 tables seen — **33** written, **41** read. Script `scratchpad/t20/readedge.py`.* ⚠⚠ **READ-ONLY, no
 code edits (rule 1).**
