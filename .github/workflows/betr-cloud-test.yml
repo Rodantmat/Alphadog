@@ -38,5 +38,6 @@ jobs:
           PROXY_URL: ${{ secrets.PROXY_URL }}
           BETR_NOPROXY: ${{ github.event.inputs.noproxy }}
           BETR_LEAGUE: ${{ github.event.inputs.league }}
+          BETR_SESSION_STATE: ${{ secrets.BETR_SESSION_STATE }}
         run: |
           python nba/probe_betr_cloud.py
