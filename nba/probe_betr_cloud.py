@@ -58,13 +58,16 @@ def main():
 
         # WAIT for the SPA to actually render (page_length 39 = nothing loaded). Poll up to 60s.
         booted = False
-        for i in range(20):
+        for i in range(30):
             try:
                 src = sb.get_page_source() or ""
                 ln = len(src)
                 url = sb.get_current_url()
-                print(f"  t+{i*3}s  url={url}  page_length={ln}", flush=True)
-                if ln > 5000:
+                if i % 2 == 0 or ln > 5000:
+                    print(f"  t+{i*3}s  url={url[:90]}  page_length={ln}", flush=True)
+                if "AllowLocation" in url:
+                    print("  >>> GEO GATE (AllowLocation) — proxy IP has no US state; sticky+country-us should fix", flush=True)
+                if ln > 5000 and "AllowLocation" not in url:
                     booted = True
                     flags = [w for w in ("Verify you are human", "challenge", "turnstile", "Just a moment")
                              if w.lower() in src.lower()]
@@ -74,7 +77,7 @@ def main():
                 print("  read error:", str(exc)[:80], flush=True)
             time.sleep(3)
         if not booted:
-            print("  SPA never rendered (page stayed near-empty) — proxy too slow/unstable, or asset block.", flush=True)
+            print("  SPA not on a board page yet (blank, or stuck on geo gate).", flush=True)
 
         # watch ~40s for any fantasy graphql responses and their statuses
         deadline = time.time() + 40
