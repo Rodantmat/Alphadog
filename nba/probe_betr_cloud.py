@@ -112,12 +112,30 @@ def main():
                 time.sleep(3)
 
             if booted:
-                # We're past Cloudflare + geo and the fantasy API answers 200. Drive to the league board
-                # so the app issues getUpcomingEventsV2. Try deep-links and the tab.
-                for target in (f"{URL}lobby/{LEAGUE.lower()}", f"{URL}{LEAGUE.lower()}", URL):
+                # We're past Cloudflare + geo and the fantasy API answers 200. Investigate the /auth wall:
+                # does the board load as a guest, or is login required? Log what the page offers.
+                time.sleep(3)
+                try:
+                    u = sb.get_current_url()
+                    src = sb.get_page_source() or ""
+                    print(f"  after-geo url={u[:90]} len={len(src)}", flush=True)
+                    # look for guest/skip affordances and for any league nav
+                    for probe_txt in ("Continue", "Skip", "Guest", "Maybe later", "Not now", "Browse",
+                                      "WNBA", "NBA", "Basketball", "Lineups", "Board", "Log in", "Sign up"):
+                        try:
+                            if sb.is_text_visible(probe_txt):
+                                print(f"    visible: '{probe_txt}'", flush=True)
+                        except Exception:  # noqa: BLE001
+                            pass
+                except Exception as exc:  # noqa: BLE001
+                    print("  after-geo read err:", str(exc)[:80], flush=True)
+                # try direct lobby deep-links regardless of /auth (the board may be public)
+                for target in (f"{URL}lobby/{LEAGUE.lower()}", f"{URL}{LEAGUE.lower()}",
+                               f"{URL}lineups/{LEAGUE.lower()}", URL):
                     try:
                         sb.uc_open_with_reconnect(target, reconnect_time=4)
-                        time.sleep(4)
+                        time.sleep(5)
+                        print(f"  -> {target} landed {sb.get_current_url()[:70]}", flush=True)
                     except Exception:  # noqa: BLE001
                         pass
                     for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//button[contains(.,"{LEAGUE}")]',
