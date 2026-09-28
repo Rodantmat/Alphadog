@@ -117,18 +117,19 @@ fully unattended on `ubuntu-latest`:
    selector; clicking a state (e.g. California) clears it. After that: **`fantasy graphql status: 200`** from
    the runner — the exact call that 401'd 17 times over raw HTTP.
 
-**LAST STEP (bounded):** after geo, the app routes to `/auth` — **the board requires a LOGGED-IN session**,
-so `getUpcomingEventsV2` doesn't fire anonymously (RESULT so far: got a 200 handshake, BOARD=no). A GitHub
-runner is ephemeral, so the fix is to **seed the logged-in session**: capture the Betr cookies/localStorage
-from a real login once (the `betr_profile` Path C already creates), store them as a GH secret, and load them
-into the runner's Chrome profile before navigating. Then the cloud run should issue getUpcomingEventsV2 and
-capture the board exactly like Path C. Session refresh cadence unknown (re-seed when it lapses).
-
-Tooling in place: `nba/probe_betr_cloud.py` (local-proxy + geo-click + capture) and
-`.github/workflows/betr-cloud-test.yml` (Chrome+fonts+Xvfb+seleniumbase+proxy.py, inputs: league, noproxy).
-⏳ NEXT: export cookies/localStorage for picks.betr.app from the logged-in Path C profile -> GH secret
-   `BETR_SESSION_STATE` -> load in the cloud probe before nav -> rerun WNBA; success = getUpcomingEventsV2
-   200 + events>0. Then swap capture into a committing workflow and Betr is FULLY CLOUD (no owner machine).
+**LAST STEP (bounded):** after geo, the app routes to `/auth` — **the board requires a LOGGED-IN session**.
+Confirmed 2026-09-28: every board URL (`/lobby/wnba`, `/wnba`, `/lineups/wnba`, `/`) redirects to `/auth`
+with no session; there is NO guest path. A GitHub runner is ephemeral, so seed the session:
+- **Built:** `nba/betr_export_session.py` — run once on the owner's PC (with the logged-in `betr_profile`);
+  it dumps picks.betr.app cookies + localStorage to `betr_session_state.json`.
+- **Built:** `nba/probe_betr_cloud.py` now loads `BETR_SESSION_STATE` (that JSON) — sets localStorage +
+  cookies, reloads, and proceeds; the workflow passes the secret.
+- **OWNER STEP (the only thing left):** on the PC, `python nba/betr_export_session.py`, copy
+  betr_session_state.json contents into GH secret **BETR_SESSION_STATE**, then rerun betr-cloud-test (WNBA).
+  Expected: past /auth -> getUpcomingEventsV2 200 + events>0 -> fully-cloud Betr. Re-export when the session
+  expires (cadence TBD; the certifier's per-app betr freshness will flag it).
+Once green, swap probe_betr_cloud's capture into a committing workflow (write boards/betr_nba_current.json +
+commit) on a cron, and Betr runs entirely in GitHub with zero owner hardware.
 
 ### Earlier analysis (kept for context; the runner test above overturns the "cannot" verdict)
 
