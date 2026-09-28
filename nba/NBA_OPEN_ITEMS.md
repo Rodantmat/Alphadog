@@ -14827,7 +14827,9 @@ item.
 
 ---
 
-## F2-1 · **NEW · 🔴🔴🔴 SECURITY · OWNER DECISION · ROTATE THE `balldontlie` API KEY**
+## F2-1 · ~~**NEW · 🔴🔴🔴 SECURITY · OWNER DECISION · ROTATE THE `balldontlie` API KEY**~~ ✅ **OWNER-CLEARED `2026-09-28`**
+
+> ✅✅✅ **OWNER-CLEARED `2026-09-28`, via the build chat.** *"Owner is the sole user of the account, system, and repo; the leaked `balldontlie` key and the Postgres password (the scope-extension below) hold nothing sensitive; he takes full responsibility and does not want it tracked as a risk."* **This covers BOTH credentials in this item** — the original `balldontlie` key and the Postgres-password scope-extension below — **not just the first**. ⚠ **Not retracted (rule 40): the evidence, the mechanism, and the "how it got there" analysis all stand exactly as recorded** — what changes is the disposition, from OWNER DECISION PENDING to OWNER-CLEARED, ACCEPTED RISK. **Removed from the owner-only decision surface** — see `NBA_MASTER_SUMMARY.md`'s "ALSO OPEN" row and "THE EXCEPTIONS STAY OWNER-ONLY" line, both updated the same pass.
 
 *Filed 2026-09-23, `§F2.12`. **Read-only throughout: no key was used, tested or called.** The value
 is not reproduced in this item, in any of the twelve, or anywhere in the corpus.*
