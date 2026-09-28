@@ -38,9 +38,14 @@ QUERY = (
 
 
 def refresh():
-    r = requests.post(KC, data={"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT},
+    r = requests.post(KC, data={"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT,
+                                "scope": "openid profile email offline_access"},
                       headers={"content-type": "application/x-www-form-urlencoded"}, timeout=30, impersonate="chrome124")
-    return r.json()["access_token"] if r.status_code == 200 else None
+    if r.status_code != 200:
+        print("refresh failed", r.status_code, r.text[:200]); return None
+    j = r.json()
+    print("access_token len:", len(j["access_token"]))  # working browser token was 1513
+    return j["access_token"]
 
 
 def main():
