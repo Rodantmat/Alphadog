@@ -725,6 +725,10 @@ All six patched into `NBA_OPEN_ITEMS.md` (both the ranked `A`-table and the full
 
 ---
 
+## ⚠️ MISPLACED ENTRY, LABEL CORRECTED — ORIGINALLY MISCOMMITTED AS "fourth hourly run" (`2026-09-28`) — SEE THE TWENTY-FIFTH-RUN DISCLOSURE AT THE TOP OF THIS FILE FOR THE FULL CORRECTION
+
+> 🔴 **THIS ENTRY WAS WRITTEN BY A SESSION THAT HAD NOT YET READ THE TOP OF THIS FILE** and mistook this old `second/third hourly run` neighborhood (early in this corpus's 24+-run history) for the current resume point, duplicating the "fourth hourly run" ordinal already used just above. **The substantive work below is real and was live-verified before publishing** (the `NBA_OPEN_ITEMS.md` `T20-25` row-label fix, commit `765e18f`, and the `NBA_SWEEP_RUN_LOG.md` structural edits around it) — nothing here is fabricated — but it duplicates ground the twenty-second run (top of file) had already covered for `T20-25` specifically. **Full disclosure and the corrected resume pointer are in the new entry at the very top of this file, `## 🆕 THIS FIRING (2026-09-28, twenty-fifth run)`.** Left in place rather than deleted, per this file's own no-deletion convention.
+
 ## 🆕 THIS FIRING (`2026-09-28`, fourth hourly run) — TRANSCRIPTS STILL UNAVAILABLE; RAN THE NEW STALE-MARKER GREP ACROSS ALL TWELVE; ONE GENUINE HIT, LIVE-RECONCILED; `ACT ON THIS` POINTER ROW FOUND ALREADY DONE
 
 ✅ **`nba/transcripts/` re-checked live — still only `README.md`/`journal.txt`.** `T28`/`T31` blocker unchanged. Scheduled/unattended cloud-only firing — no chat attachment, no desktop bridge (confirmed at session start).
