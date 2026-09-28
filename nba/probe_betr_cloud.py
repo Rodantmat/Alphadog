@@ -22,8 +22,8 @@ def main():
     seen = []
     kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
     if PROXY:
-        # SeleniumBase proxy format: user:pass@host:port (strip scheme)
-        p = PROXY.split("://", 1)[-1]
+        # SeleniumBase wants user:pass@host:port (no scheme, no trailing slash/path)
+        p = PROXY.split("://", 1)[-1].rstrip("/").split("/", 1)[0]
         kw["proxy"] = p
         print(f"using proxy {p.split('@')[-1] if '@' in p else p}", flush=True)
     else:
