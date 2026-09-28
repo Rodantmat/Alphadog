@@ -78,6 +78,33 @@ def main():
                     print("  uc_gui_click_captcha:", str(exc)[:90], flush=True)
                 time.sleep(5)
 
+            # SEED the logged-in session (board is login-only). BETR_SESSION_STATE = betr_export_session.py output.
+            state_raw = os.environ.get("BETR_SESSION_STATE", "").strip()
+            if state_raw:
+                try:
+                    st = json.loads(state_raw)
+                    # localStorage first (needs the origin loaded, which it is)
+                    for k, v in (st.get("localStorage") or {}).items():
+                        try:
+                            sb.execute_script("localStorage.setItem(arguments[0], arguments[1]);", k, v)
+                        except Exception:  # noqa: BLE001
+                            pass
+                    added = 0
+                    for c in st.get("cookies") or []:
+                        ck = {kk: c[kk] for kk in ("name", "value", "domain", "path", "secure", "expiry")
+                              if kk in c and c[kk] is not None}
+                        try:
+                            sb.driver.add_cookie(ck); added += 1
+                        except Exception:  # noqa: BLE001
+                            pass
+                    print(f"  seeded session: {added} cookies, {len(st.get('localStorage') or {})} localStorage keys", flush=True)
+                    sb.uc_open_with_reconnect(URL, reconnect_time=6)  # reload with the session applied
+                    time.sleep(6)
+                except Exception as exc:  # noqa: BLE001
+                    print("  session seed failed:", str(exc)[:100], flush=True)
+            else:
+                print("  no BETR_SESSION_STATE — board is login-only; expect /auth. Set the secret to go fully cloud.", flush=True)
+
             booted = False
             handled_geo = False
             for i in range(40):  # up to 120s (residential is slow)
