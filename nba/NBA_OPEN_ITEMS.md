@@ -14133,6 +14133,8 @@ is that the code implements a two-sided rule and the data only ever exercises on
 ⚠ **Rule 6: whether 0.85 was chosen before or after the deduction floor was known is NOT RECORDED.**
 *(Full arithmetic: `NBA_FINAL_SCORING_CALIBRATION.md` §0a-T18-D.)*
 
+📌 **RE-MEASURED `2026-09-28`, source a `2026-09-28` build-chat transcript describing `2026-09-25` work — the invariant holds after the board-scoped retention rearchitecture (`NBA_DATABASE.md`'s `2026-09-28` disk-reclaim update), still NOT an owner decision.** On the rebuilt board-scoped `final_hp`: **minimum confidence `0.8600`** (up from the `0.8540`/`0.8722` split recorded above — the board-scoping changed the live distribution, not just its size), **still zero legs at or below `0.85`**, `p25 ≈ 0.94`, `median ≈ 0.95`. The build chat states its own recommendation ("recommendation: B") citing the same owner quote already recorded above under option (b) — **this is the build chat's judgment, not a new owner statement**, and the sweep continues to record the decision as open rather than inheriting a build-chat recommendation as a ruling. The formula was not touched.
+
 ## T18-6 · **CONFIRMED, AND THE REASON IS WORSE THAN "UNRECORDED"** · the gap audit's 2025-26 denominator
 **See `NBA_WORKERS.md` §0.002-T18 for the full evidence.** In short: the threshold comment claims
 calibration on *"2024-25 had 2 of ~2,460 (0.08%) and 2025-26 had 7."* 🔴 **Only the 2024-25 half was
