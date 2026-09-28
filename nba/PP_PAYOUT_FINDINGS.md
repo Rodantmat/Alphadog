@@ -259,6 +259,21 @@ attach to here. Chalkboard stays research-only: the pricing model (0i) is banked
 obtainable without a real phone (owner's device via proxy capture, the original 0i method, remains the only
 route and is not worth automating for the marginal app).
 
+### 🔎 2026-09-28 — deeper research, ONE cloud-viable path identified, HELD by owner
+Applied Betr learnings + fresh Firebase App Check research:
+- Play Integrity bypass (Android app now exists): FAILS on all emulators (DroidGuard won't attest a VM);
+  rooted-device bypass is a Magisk+Zygisk+PlayIntegrityFix+unrevoked-keybox cat-and-mouse Google revokes.
+  Not worth it.
+- Attestation relay from a real device: works but is a dedicated rooted-phone operation. Overkill.
+- ✅ ONE CLOUD-VIABLE LONG SHOT — a shipped Firebase App Check DEBUG TOKEN. App Check's Debug Provider uses
+  a STATIC UUID instead of device attestation; if Chalkboard shipped a debug token in its release binary
+  (a common mistake), that UUID mints valid App Check tokens from anywhere, forever — no phone, drop in a
+  GH secret, kube-prod API opens. TEST: pull the Chalkboard Android APK (com.taild), grep for
+  FIREBASE_APPCHECK_DEBUG_TOKEN / DebugAppCheckProviderFactory / a hardcoded UUID near "appcheck".
+  Blocker: neither this container nor a GitHub runner can fetch the APK (network allowlist).
+  ⏳ HELD by owner. Resume: owner downloads APK, greps, pastes any appcheck-adjacent UUID context. Hit ->
+  fully-cloud Chalkboard; clean -> avenues exhausted, stays research-only (pricing banked in 0i).
+
 ---
 
 ## 0h. ✅ SLEEPER — THE EXPANDED LADDER, CAPTURED AND LIVE (2026-09-27)
