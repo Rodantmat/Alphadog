@@ -160,6 +160,16 @@ writes. Grouped by role.
 
 ---
 
+## ⚠ **§T27.2 — P3's CUTOFF GATE HAD A DST BUG ITS OWN COMMENT DENIED, SELF-CAUGHT AND FIXED, AND THE SAME TRANSCRIPT CONFIRMS THE GATE IS BACK ON ONE CRON** *(source + live verify, 2026-09-24/28; `0` of the twelve before this entry)*
+
+> 📌 **The gate hardcoded `latest = 21:15 UTC` with a comment claiming that was `"13:15 PT during DST"`. It was not** — `21:15 UTC` is `14:15 PDT`, an hour later than the comment's own claim. Under PDT this let a scheduled P3 run start a full hour past the intended `13:15 PT` cutoff, silently, because the comment and the code agreed with each other while both were wrong about the clock. Found and fixed in the same session (`2026-09-24`) that introduced it.
+>
+> 🔧 **Fix**: replaced the hardcoded UTC literal with `zoneinfo`'s `America/Los_Angeles`, computing `latest` from a real `13:15` local time and converting — `datetime.fromisoformat(f"{slate}T13:15:00").replace(tzinfo=PT).astimezone(timezone.utc)`. This holds across the `2026-11-01` DST boundary without another hardcoded literal.
+>
+> ✅ **Live-verified against `main`, `2026-09-28`**: `.github/workflows/nba-p3-afternoon-light.yml:130-134` carries exactly this fix, and the workflow's own trigger is a single `cron: '15 21 * * *'` (line 35) — **one cron, not three.** ⚠ *Earlier in the same transcript the assistant had drifted into describing a three-cron design for P3 to chase DST and early tips; the owner caught it directly — "we're saying three crowns for p3. i never said three crowns. i said just one" — and it was reverted to the single window `§T18.1` specifies. The live file confirms the revert held.*
+
+---
+
 ## 🔴🔴🔴 **§T26.76 — `§T20.34`'s FLOOR CONVERTED TO A TOTAL AT THE WORKFLOW LAYER: `103` SEASON-LITERAL SITES ACROSS `13` WORKFLOWS, `85` OF THEM HARDCODED, AND ALL `13` ARE MANUAL — WHILE THE THREE CRON'D PIPELINES HAVE ZERO** *(source census, 2026-09-26; `1` of the `103` was recorded in the twelve)*
 
 > 📌 **`§T20.34` counted `7` season literals across `P2` and `P3` and stated its own limit honestly — *"`RULE 17`: a FLOOR, not a total"*. That census was at the SCRIPT layer.** ⚠ **Nobody had ever run it at the WORKFLOW layer**, *and pass `30` reached it from the `T26` `ASSISTANT OUTPUT` stratum, where the transcript records finding "another dead ceiling" and a `SEASON_BOUNDS` dict — two shapes the literal-grep cannot see.*
