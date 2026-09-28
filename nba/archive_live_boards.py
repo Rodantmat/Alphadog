@@ -169,12 +169,31 @@ def rows_sleeper(doc, gd, label):
            "pts_reb": "player_points_rebounds", "pts_ast": "player_points_assists", "reb_ast": "player_rebounds_assists",
            "blocks_steals": "player_blocks_steals", "fantasy_points": "player_fantasy_points",
            "double_double": "player_double_double", "free_throws_made": "player_ftm",
-           "field_goals_made": "player_fgm", "three_point_attempts": "player_threes_attempted"}
+           "field_goals_made": "player_fgm", "three_point_attempts": "player_threes_attempted",
+           # combo wager types as Sleeper actually spells them (verified WNBA board 2026-09-28):
+           # "points_and_rebounds_and_assists", "points_and_rebounds", "points_and_assists",
+           # "rebounds_and_assists" — normalized below by dropping "and"/"+" and ordering.
+           "points_rebounds_assists": "player_points_rebounds_assists",
+           "points_rebounds": "player_points_rebounds", "points_assists": "player_points_assists",
+           "rebounds_assists": "player_rebounds_assists", "assists_rebounds": "player_rebounds_assists"}
+
+    def _norm(wt):
+        w = wt.replace("_and_", "_").replace("+", "_").replace("__", "_").strip("_")
+        if w in _wt:
+            return _wt[w]
+        # order-insensitive combo fallback: build from the component set
+        parts = set(w.split("_"))
+        combo = {"points", "rebounds", "assists"}
+        if parts <= combo and len(parts) >= 2:
+            order = [p for p in ("points", "rebounds", "assists") if p in parts]
+            return "player_" + "_".join(order)
+        return _wt.get(w, "player_" + w)
+
     for l in doc.get("legs") or []:
         if l.get("line") is None or not l.get("player"):
             continue
         wt = str(l.get("wager_type", "")).lower()
-        mk = _wt.get(wt, "player_" + wt)
+        mk = _norm(wt)
         # ALT LADDER (2026-09-27): one-sided over rungs at spaced lines, each with its own payout -
         # Sleeper's goblin-to-demon axis. Filed as _alternate like PrizePicks' goblins and demons.
         if l.get("alt") or str(l.get("line_type", "")).startswith("alt"):
