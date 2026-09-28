@@ -1,8 +1,57 @@
 # BETR PICKS — COMPLETE BUILD RECORD (2026-09-28)
 
-Status: **SOLVED via a browser harvester on a US-residential machine (Path C).** The board is captured,
-parsed correctly, and wired into the pipeline. Not yet scheduled (owner's choice, later). A separate
-open question — can our own infra (GitHub / Cloudflare Worker) do it unattended — is analysed at the end.
+Status: ✅ **FULLY CLOUD, LIVE.** Betr's board is harvested and committed entirely by a GitHub Actions
+runner — no owner machine. Verified 2026-09-28: `boards/betr_wnba_current_meta.json` written with
+`source: "github-runner uc+proxy picks.betr.app"`, 1,281 legs / 514 alt / 46 players / 4 events.
+Scheduled 2x/day. Path C (owner PC) remains as a proven fallback.
+
+## THE FULLY-CLOUD PIPELINE (no owner hardware)
+Workflow `.github/workflows/betr-cloud-harvest.yml` (cron 17:45 & 20:15 UTC = 10:45 & 13:15 PT), runs
+`nba/betr_harvest_cloud.py` on ubuntu-latest and commits the board. Proven chain:
+1. **Cloudflare Turnstile** — SeleniumBase UC Mode + **Xvfb** (fonts installed) clears it on the runner.
+2. **Authenticated residential proxy** — UC Mode can't route inline-auth proxies for sub-resources, so a
+   **local unauth forward-proxy** runs on the runner: `python -m proxy --plugins proxy.plugin.ProxyPoolPlugin
+   --proxy-pool <user>-country-us-session-<id>-lifetime-10:<pass>@rp.scrapegw.com:6060`, Chrome -> 127.0.0.1.
+   (ProxyScrape US-sticky username per their docs.)
+3. **Login wall** — the board is login-only (all /lobby -> /auth without a session). Seeded from GH secret
+   **`BETR_SESSION_STATE`** (cookies + auth localStorage, exported once by `nba/betr_export_session.py` slim
+   output, ~10KB). Loaded into the runner's Chrome before nav.
+4. **Geolocation gate** — `/AllowLocation?...onSelectUsState=`; auto-selects a US state (BETR_STATE, default
+   California) in-page.
+5. **Capture** — intercept the app's own `getUpcomingEventsV2` via CDP; parse projections (stat=key,
+   tier=type, MORE/LESS sides, nonRegularValue>0 = alt ladder) -> boards/betr_<league>_current.json.
+6. **Commit** — `permissions: contents: write` lets github-actions[bot] push the board (needs repo Settings
+   -> Actions -> Workflow permissions = Read and write). P3's archiver then ingests it via rows_betr.
+
+Secrets used: `PROXY_URL` (ProxyScrape residential), `BETR_SESSION_STATE` (seeded login).
+
+## NBA SWITCH (when games post 2026-10-20)
+NBA board is identical shape. Change the workflow's default league input to NBA (or dispatch with
+league=NBA). betr_harvest_cloud.py already writes betr_nba_current.json for NBA. Nothing else changes.
+
+## MAINTENANCE
+- **Session expiry**: if a run logs `NO BOARD` and lands on /auth, the seeded session lapsed — re-run
+  `nba/betr_export_session.py` on the PC, update the `BETR_SESSION_STATE` secret. Cadence TBD; the
+  certifier's per-app betr freshness (reads the betr meta) will flag staleness.
+- **alt/boosted MULTIPLIER** still reads 0 (nonRegularPercentage); the payout likely lives on
+  allowedOptions[].marketOption — capture when the multiplier/slip work resumes. Lines + alt ladder are complete.
+
+## FALLBACK: Path C (owner PC) — `nba/betr_harvest.py`
+Same capture on the owner's machine (residential, no proxy/geo needed): UC Mode + persistent betr_profile
+(log in once with BETR_LOGIN=1) + CDP intercept. Proven; use if the cloud proxy/session ever fails.
+
+## FILES
+- `nba/betr_harvest_cloud.py` — cloud harvester (this is the live one).
+- `nba/betr_harvest.py` — Path C (owner PC) harvester.
+- `nba/betr_export_session.py` — one-time session exporter (writes slim file for BETR_SESSION_STATE).
+- `nba/betr_run_and_commit.py` — Path C commit wrapper (if running on the PC instead).
+- `nba/probe_betr_cloud.py` — the diagnostic probe that proved the chain.
+- `.github/workflows/betr-cloud-harvest.yml` — scheduled cloud job (LIVE).
+- `.github/workflows/betr-cloud-test.yml` — the no-commit diagnostic workflow.
+- `archive_live_boards.py::rows_betr` — parses the board file into board_snapshots.
+
+────────────────────────────────────────────────────────────────────────────── (history below)
+
 
 ──────────────────────────────────────────────────────────────────────────────
 ## 1. WHAT BETR IS
