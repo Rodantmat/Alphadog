@@ -8,6 +8,18 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 TRANSCRIPT-BATCH SESSION (`2026-09-28`, continued once more) — `T26-12` OPENED AND CLOSED SAME PASS: A LIVE-AUDIT FINDING, NOT A TRANSCRIPT READ
+
+📌 **Owner feedback mid-window: "your passes are extremely short, keep going."** Response: continued straight into a fresh live-audit thread rather than pausing to report — no transcript to read (`T31` still needs real elapsed time for pass 3/3, its cron hasn't fired again), so the productive move was auditing live Postgres freshness across `nba_stats.*` for undiscovered gaps, in the same RULE 57/61 spirit that produced every real finding this window.
+
+🔑 **FOUND**: `nba_stats.player_career_season_totals` / `nba_stats.player_splits` / `nba_team.team_splits` all frozen at `max(updated_at) = 2026-09-08`, `20` days stale, while their source JSON (`nba/data/nba_player_career_totals.json`, `nba_player_splits.json`, `nba_team_splits.json`) was freshly re-committed `2026-09-14`–`09-21` by the weekly-cron'd `nba-scrape.yml`. Traced the loader: `alphadog-v2-nba-static-backfill.js` gained a purpose-built `mode: "weekly"` path on `2026-09-08` (its own code comment names the exact gap) — cheap, correct, and never wired into any schedule: zero references to `NBA_STATIC_BACKFILL_WORKER` in `alphadog-v2-orchestrator.js`, confirmed against `nba-p1-weekly-static.yml`'s dispatch loop too.
+
+⚠⚠ **RULE 28 novelty check surfaced a genuine internal contradiction, not a duplicate**: `NBA_OPEN_ITEMS.md`'s own "T7 gap table" called this "✅ CLOSED in T7 ... added to the weekly cycle workflow" (never live-verified), while the more recent `NBA_WORKERS.md §T26.79` (2026-09-26) reclassified the whole worker as "a historical backfill, correctly unreachable" — neither is fully right, and live DB state settled it: the worker is a mix (game-log mode is genuinely one-time; weekly mode is not), and nothing currently invokes the weekly mode on any cadence.
+
+✅ **Published as `T26-12`** (next in the `T26-x` sequence, since it directly extends/corrects `T26-8`'s own dispatch-census work, not an independent thread): `NBA_OPEN_ITEMS.md` (new body row + index registration + T7-table correction, 3 patches) and `NBA_WORKERS.md` (`§T26.79` correction addendum, 1 patch) and `NBA_SYSTEM_DESIGN.md` (light pointer addendum on the matching stale claim, 1 patch) — RULE 40 throughout, nothing deleted. Census stamps re-derived, unchanged (`952`/`199`/`198` — all edits landed inside existing rows/paragraphs, no new headings). Fix identified but left to the owner per the sweep's read-only-on-code constraint: one dispatch line, `curl -X POST $NBA_STATIC_BACKFILL_WORKER/run -d '{"mode":"weekly"}'`, matching the pattern already used for the other `9` workers `§T26.79` cron'd.
+
+▶ **NEXT**: keep auditing live state for further undocumented gaps (other `nba_stats.*`/`nba_team.*`/`nba_ref.*` tables not yet freshness-checked this sweep) while waiting on real elapsed time for `T31` pass 3/3.
+
 ## 🆕 TRANSCRIPT-BATCH SESSION (`2026-09-28`, continued once more) — FIFTH STALE-MARKER FAMILY RUN, ALL FIVE NOW CLEAN
 
 📌 **Filler work while waiting on genuine elapsed time for `T31`'s pass 3/3** (its cron hasn't fired again yet — see the entry below). Took up the hourly track's own flagged candidate: `TBA`/`DRAFT`/`WIP`/`FILL IN`/`INCOMPLETE`, across all twelve mandated documents (`NBA_FINAL_SCORING_CALIBRATION.md` included, read-only).
