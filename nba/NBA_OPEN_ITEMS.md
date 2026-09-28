@@ -39,7 +39,7 @@ quoted ID, never a line number.*
 | **8** | 🆕 **`F6-3`** | **`fantasy_score`'s `0.3 pp` penalty does not derive from the rule that says all penalties are derived** *(`0.41 − 0.20 = 0.21`, not `0.3`)*, on the system's highest-volume prop. **Re-run the scorer, or accept?** | ~~re-running the scorer is a write~~ ✅ **CLOSED** — the `0.3 pp` figure was stale; the `2026-09-26` reliability re-run recomputed it correctly (`3.8916 − 0.8307 = 3.061` pp). No longer on this surface. See `F6-3`'s own entry below. |
 | **9** | **`T20-1`** | **Five 🔴 findings nothing in the corpus points at** — a navigation decision. | ~~a convention, not a fact~~ ✅ **CLOSED `2026-09-22`** — all five now carry an inbound route. No longer on this surface. See `T20-1`'s own entry below. |
 | **10** | **`T18-17`** | **The score formula's penalising half has never fired.** | ~~intent, not measurement~~ ✅ **CLOSED `2026-09-28`** — correct-by-design, not a defect: 0 of 7.2M legs fall below the neutral because confidence is an epistemic thermometer on complete data. No longer on this surface. See `T18-17`'s own entry below. |
-| **11** | **`T22-1`** | *"the keep my million board in underdog"* — an owner request with **`0` record anywhere.** *Still wanted, or dropped?* | only you know |
+| **11** | **`T22-1`** | *"the keep my million board in underdog"* — an owner request with **`0` record anywhere.** *Still wanted, or dropped?* | ~~only you know~~ ✅ **CLOSED `2026-09-28`** — owner confirmed this is handled by the documentation chat itself; no build-chat attention needed. No longer on this surface. See `T22-1`'s own entry below. |
 
 ## 🔴 B · THE OPENING-DAY BRIEF, RANKED — *what breaks when the pipelines run* · opener **`2026-10-20`** · preseason **`2026-10-03`**
 
