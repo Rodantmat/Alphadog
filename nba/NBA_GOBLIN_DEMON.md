@@ -1062,6 +1062,15 @@ Standard ≈ median, Demon ≈ 70th–80th, useful range ≈ 15th–85th.**
 **Live-tested (off-season): 200 OK, 192 projections, 192 future-pickable,
 `{demon: 104, standard: 36, goblin: 52}`.**
 
+📌 **UPDATE `2026-09-28` — SUPERSEDED, `RULE 40`.** *This section describes `scrape_prizepicks_nba_board.py`
+as the live NBA producer; as of `2026-09-24` it is not. `main.py` at the repo root (the MLB producer)
+was made opt-in-NBA via three env vars (`PRIZEPICKS_LEAGUE_ID=7`, `PRIZEPICKS_SPORT=nba`,
+`PRIZEPICKS_OUT_DIR=boards`), purely additive, and `nba-p3-afternoon-light.yml` now runs `main.py` with
+those set as the first board scrape — live-verified this pass. The `league_id=7`/`api`-vs-`partner-api`
+facts above remain technically accurate (they describe the underlying PrizePicks API, not the wrapper
+script), only the "which script runs it" claim has moved on. Full record: `NBA_WORKERS.md` `§T27.3`
+(CLOSED). Kept as history per `RULE 40`, not deleted.*
+
 ### 6.2 The raw feed's fields
 A demon row carries **`odds_type`**, **`adjusted_odds` as a BOOLEAN**, and **`line_score`**.
 **It does NOT carry a multiplier** — see `NBA_MULTIPLIERS.md`.
