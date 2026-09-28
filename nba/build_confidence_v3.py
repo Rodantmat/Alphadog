@@ -174,6 +174,33 @@ def main():
     # column, ANALYZE it so the planner has real statistics, then join on plain equality. That lets it
     # nested-loop into final_hp's unique index (game_date, player_id, prop, line, side) instead of
     # hashing the whole table.
+    #
+    # ONE NORMALISER, PLAYER-ID SIDE ONLY (fixed 2026-09-28; closes the third of T20-25's three
+    # consumers - score_board_legs.py and build_availability_delta.py were fixed 2026-09-25, this file
+    # was the one left). The player_name_map JOIN below used to run on the same inline
+    # lower(regexp_replace(player,'[^A-Za-z]','','g')) that KEEPS name suffixes, while the map itself is
+    # keyed by nba_names.norm_name, which STRIPS them - so "Jaren Jackson Jr" -> jarenjacksonjr never
+    # matched the map's jarenjackson, and every suffixed player's graded legs were silently absent from
+    # this file's confidence-model fit. Measured live before this fix: 35 distinct suffixed players,
+    # 321,406 of 6,658,109 graded legs excluded (4.83%) - heaviest Trey Murphy III, Michael Porter Jr,
+    # Jaren Jackson Jr. The `nm` column below is left on the OLD normaliser deliberately: it only joins
+    # against rung_market/board_tiers further down, which are indexed and queried the same old way on
+    # both sides, so changing it here would just move the mismatch rather than fix it. Only the
+    # player_name_map join - the one that decides which legs make it into tmp_graded at all - is fixed.
+    print("ensuring the canonical-normaliser index on board_outcomes (first run builds it; minutes)",
+          flush=True)
+    try:
+        with conn.cursor() as cur:
+            if cur.execute(
+                "SELECT to_regclass('nba_market.board_outcomes_canon_nm_idx')").fetchone()[0] is None:
+                cur.execute("""CREATE INDEX board_outcomes_canon_nm_idx ON nba_market.board_outcomes
+                    (nba_ref.norm_name(player))""")
+        conn.commit()
+        print("  board_outcomes_canon_nm_idx ready", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        conn.rollback()
+        print(f"  board_outcomes_canon_nm_idx skipped ({str(exc)[:60]})", flush=True)
+
     print("materialising the graded side (functions resolved to plain columns)", flush=True)
     with conn.cursor() as cur:
         cur.execute("DROP TABLE IF EXISTS tmp_graded")
@@ -186,7 +213,7 @@ def main():
                         ELSE (o.leg_result='under_win')::int END AS won
             FROM nba_market.board_outcomes o
             JOIN nba_ref.player_name_map m
-              ON m.norm_name = lower(regexp_replace(o.player,'[^A-Za-z]','','g'))
+              ON m.norm_name = nba_ref.norm_name(o.player)
             WHERE o.leg_result IN ('over_win','under_win')""")
         cur.execute("CREATE INDEX ON tmp_graded (game_date, player_id, prop, line, side)")
         cur.execute("ANALYZE tmp_graded")
