@@ -243,6 +243,7 @@ table's.***
 > | **`T20-12`** | ⚠ the Python DST hardcode | ⚠ table-only |
 > | **`T20-16`** | ⚠⚠ **the paper-trading prop map is hardcoded TWICE** | heading |
 > | **`T20-17`** | 🔴 `except Exception: pass` — the only handler of `69` that leaves no trace | ⚠ table-only |
+> | 🆕 **`T25-2`** | 🔴🔴 **THE ENTIRE POSTSEASON IS ABSENT FROM EVERY GRADING AND SCORING STORE.** Live-verified `2026-09-28` (drift from the `2026-09-25` count noted): `48` postseason/play-in/Cup-Final nights, `92` games in `nba_calendar.games` (`substring(game_id,3,1) IN ('4','5','6')`) — `0` legs in `nba_market.board_outcomes` on any of those nights, `0` rows in `nba_score.final_hp` for any postseason `game_id`. `2026-27`'s loaded schedule carries preseason (`67`) and regular-season (`1,200`) rows only — no postseason date exists yet either. Every calibration and confidence fit in the system is regular-season only. Not opening-night-blocking (postseason is months out), so filed structural rather than season-critical. | **`§T25.1`** |
 > | **`T20-18`** · **`T20-19`**–**`T20-24`** | the certification-vs-completeness gap · the confidence layer twice · `factor_fits` · the ladder's two writers · **the board loader has no trigger** · `7,951` baseball rows in `nba_market` · the name bridge is static | ⚠ table-only |
 > | **`T18-14`** | 🔴 **The certifier has no magnitude check on `P3` and certifies on a single row** | heading |
 > | **`T18-11`** | 🔴 The cutoff was decided on policy; the measurement built to check it never returned | heading |
