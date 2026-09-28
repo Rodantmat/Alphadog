@@ -1986,6 +1986,8 @@ legitimacy/ToS question."* **Nothing was built against it.**
 **PrizePicks NBA producer**: `nba/scrape_prizepicks_nba_board.py`, **`league_id=7`**, separate from
 MLB's `main.py` (`league_id=2`). **The `partner-api` host answered while `api` was blocked** — which is
 why multiple candidate URLs are mandatory. **Candidate selection by future-pickable rows, not size.**
+📌 *Superseded `2026-09-24`, `RULE 40` — `main.py` is now the live NBA producer (opt-in via env vars),
+not this separate script. See `§T27.3`, `NBA_WORKERS.md`.*
 
 ### Research sources used
 **Gemini** (`call_gemini` on the bridge) — *"not absolute truth, a tool to bring more information to
