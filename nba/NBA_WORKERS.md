@@ -188,6 +188,14 @@ writes. Grouped by role.
 
 ---
 
+## ⚠ **§T27.4 — THE MANUAL STATIC-TABLE LOAD, MEASURED: `255` PLAYERS CHANGED, `1,858` ALIASES WRITTEN** *(source, 2026-09-24, from the 2026-09-25 transcript; supplements `§T26.61`/`T26-8` and `§T26.79`, `0` of the twelve before this entry)*
+
+> 📌 **Not a new defect.** `§T26.61` already names the root cause (`T26-8`: `11` of `21` NBA writer workers reachable from no schedule) and `§T26.79` already closes most of it by cron. This entry adds the one concrete measurement neither section carries: what a manual load of the neglected static layer actually changed, the same day this transcript's session ran it by hand. *P1 scrapes and commits static JSON for every table, but only `build_defender_ratings.py` and `build_static_context.py` touch `DATABASE_URL` — every other static table (teams, players, bio, team stats, on/off, play types, tracking, DARKO, shot quality, lineups) is committed and never loaded, because the writer workers that read that committed JSON are Cloudflare `POST /run` endpoints with no auth (only their own outbound GitHub fetch is authenticated), invoked by hand rather than by any schedule.*
+>
+> ⚠ **Measured `2026-09-24`: P1 had run green and committed, yet every static table still read `08-31` to `09-08`.** Loading them by hand that day wrote **`255` changed players and `1,858` aliases** — a month of roster movement (signings, team changes, rookies) the system did not have. 🔑 *Same failure family as the officials, starter-status and injury backfills this corpus already documents: mining works, landing does not.* ⚠ *Whether these specific tables are among the ones `§T26.79`'s cron additions now cover is not established by this transcript — flagged, not guessed.*
+
+---
+
 ## 🔴🔴🔴 **§T26.76 — `§T20.34`'s FLOOR CONVERTED TO A TOTAL AT THE WORKFLOW LAYER: `103` SEASON-LITERAL SITES ACROSS `13` WORKFLOWS, `85` OF THEM HARDCODED, AND ALL `13` ARE MANUAL — WHILE THE THREE CRON'D PIPELINES HAVE ZERO** *(source census, 2026-09-26; `1` of the `103` was recorded in the twelve)*
 
 > 📌 **`§T20.34` counted `7` season literals across `P2` and `P3` and stated its own limit honestly — *"`RULE 17`: a FLOOR, not a total"*. That census was at the SCRIPT layer.** ⚠ **Nobody had ever run it at the WORKFLOW layer**, *and pass `30` reached it from the `T26` `ASSISTANT OUTPUT` stratum, where the transcript records finding "another dead ceiling" and a `SEASON_BOUNDS` dict — two shapes the literal-grep cannot see.*
