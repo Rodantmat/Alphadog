@@ -18,12 +18,14 @@ GQL = "https://api.fantasy.betr.app/graphql"
 RT = os.environ.get("BETR_REFRESH_TOKEN", "")
 CID = os.environ.get("BETR_CLIENT_ID", "betr-rn")
 CAPTURED = os.environ.get("BETR_ACCESS_TOKEN", "")
+PROXY = os.environ.get("PROXY_URL", "").strip()
+PROXIES = {"https": PROXY, "http": PROXY} if PROXY else None
 
 MINQ = ('query LeagueUpcomingEvents($league: League!) { getUpcomingEventsV2(league: $league) '
         '{ ...on TeamVersusEvent { id __typename } __typename } }')
 
 
-def gql(tok, league="WNBA"):
+def gql(tok, league="WNBA", proxied=False):
     H = {"authorization": "Bearer " + tok,
          "accept": "application/graphql-response+json, application/graphql+json, application/json, text/event-stream",
          "accept-language": "en-US,en;q=0.9", "content-type": "application/json", "channel": "MOBILE_WEB",
@@ -34,7 +36,8 @@ def gql(tok, league="WNBA"):
          "sec-fetch-mode": "cors", "sec-fetch-site": "same-site",
          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
     r = requests.post(GQL, headers=H, data=json.dumps({"operationName": "LeagueUpcomingEvents",
-                      "query": MINQ, "variables": {"league": league}}), timeout=30, impersonate="chrome124")
+                      "query": MINQ, "variables": {"league": league}}), timeout=40, impersonate="chrome124",
+                      proxies=(PROXIES if proxied else None))
     return r.status_code, (r.text or "")[:150]
 
 
