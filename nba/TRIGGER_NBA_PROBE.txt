@@ -1,1 +1,1 @@
-script: probe_betr.py
+script: probe_chalkboard_web.py
