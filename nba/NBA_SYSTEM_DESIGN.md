@@ -2279,6 +2279,8 @@ cutoff-sensitive**.
 **Splits and career totals are cumulative aggregates** — a 2025-26 snapshot gets steadily more wrong as
 2026-27 runs.
 
+> 📌 **UPDATE `2026-09-28`** — *the `mode: "weekly"` input was built (confirmed live in the worker's own code), but was never wired into any schedule — `nba_stats.player_career_season_totals`/`player_splits`/`nba_team.team_splits` are live-verified `20` days stale today, not on the weekly cycle this section describes. Full detail: `NBA_OPEN_ITEMS.md` T26-12, `NBA_WORKERS.md §T26.79`'s correction.*
+
 ### ⚠ AND THE LARGER QUESTION — does P1 load anything to Postgres?
 **Only `build_defender_ratings.py` and `build_static_context.py` touch `DATABASE_URL`.** There is **no
 loader step or `run_job`** for teams, players, bio, season tables, team stats, on/off, play types,
