@@ -1,7 +1,11 @@
 name: Betr Cloud Test (no commit)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      noproxy:
+        description: "1 = run direct (no proxy) to isolate the SPA-blank cause"
+        default: "0"
 
 jobs:
   betr-cloud:
