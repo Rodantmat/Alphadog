@@ -151,6 +151,14 @@ writes. Grouped by role.
 
 ---
 
+## 🔴🔴 **§T27.1 — THE SHAPE-PARITY BREAK: P2 WOULD HAVE FAILED EVERY IN-SEASON NIGHT FROM THE FIRST DELTA SYNC, CAUGHT AND FIXED THE SAME DAY** *(source, 2026-09-24, from the 2026-09-25 transcript; `0` of the twelve before this entry)*
+
+> 📌 **The season backfill wrote `nba_team_game_log_advanced_<season>.json` in a SLIM shape with no `GAME_DATE`; the certified recipe merges `GAME_DATE` in from the team log. The daily delta sync writes the FULL stats.nba.com shape, WITH `GAME_DATE` already present.** ⚠⚠ ***The first delta sync of the advanced file landed `2026-09-24` — from then on the concatenated `teams_adv` carried its own `GAME_DATE`, the merge produced `GAME_DATE_x`/`GAME_DATE_y`, and every read of `GAME_DATE` failed with `KeyError`.*** This is the parity rule (same object, day-of vs backfill) violated at the SHAPE level, not the value level — and because the delta syncs nightly in season, **P2 would have failed every night from opening night**, with the certifier going red only after the mining had already succeeded.
+>
+> 🔧 **Fix**: `teams_adv.drop(columns=["GAME_DATE"], errors="ignore")` immediately before the merge, in both `nba/baseline/build_baseline_ladder.py` and `nba/baseline/build_periods_ladder.py` — the merge still supplies `GAME_DATE` from `teams` either way, so no number changes. Proven by compiling both patched recipes locally and by the replay building all singles pairs, combos and periods clean. **Full defect record, including a caught mid-fix slip (a `rep()` split that left a dangling module-level block): `PP_PAYOUT_FINDINGS.md` `§0d`** — a build-chat file, cited here for cross-reference only; not duplicated or edited.
+
+---
+
 ## 🔴🔴🔴 **§T26.76 — `§T20.34`'s FLOOR CONVERTED TO A TOTAL AT THE WORKFLOW LAYER: `103` SEASON-LITERAL SITES ACROSS `13` WORKFLOWS, `85` OF THEM HARDCODED, AND ALL `13` ARE MANUAL — WHILE THE THREE CRON'D PIPELINES HAVE ZERO** *(source census, 2026-09-26; `1` of the `103` was recorded in the twelve)*
 
 > 📌 **`§T20.34` counted `7` season literals across `P2` and `P3` and stated its own limit honestly — *"`RULE 17`: a FLOOR, not a total"*. That census was at the SCRIPT layer.** ⚠ **Nobody had ever run it at the WORKFLOW layer**, *and pass `30` reached it from the `T26` `ASSISTANT OUTPUT` stratum, where the transcript records finding "another dead ceiling" and a `SEASON_BOUNDS` dict — two shapes the literal-grep cannot see.*
