@@ -55,33 +55,27 @@ def post_token(data):
 
 
 def main():
-    # baseline: refreshed token
+    print("PROXY set:", bool(PROXIES))
     st, r = post_token({"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT,
                         "scope": "openid profile email offline_access"})
-    if st == 200:
-        rt_tok = r.json()["access_token"]
-        print("refreshed token acr/mfa/aud:", acr_of(rt_tok))
-        print("  GQL with refreshed:", gql(rt_tok))
+    rt_tok = r.json()["access_token"] if st == 200 else None
+    if rt_tok:
+        print("refreshed acr/mfa/aud:", acr_of(rt_tok))
+        print("  GQL refreshed DIRECT:", gql(rt_tok))
+        print("  GQL refreshed PROXY :", gql(rt_tok, proxied=True))
 
-    # A. captured browser token verbatim
     if CAPTURED:
-        print("\ncaptured token acr/mfa/aud:", acr_of(CAPTURED))
-        print("  GQL with CAPTURED:", gql(CAPTURED))
+        print("captured acr/mfa/aud:", acr_of(CAPTURED))
+        print("  GQL captured DIRECT:", gql(CAPTURED))
+        print("  GQL captured PROXY :", gql(CAPTURED, proxied=True))
 
-    # B. token exchange for fantasy audiences
-    print("\ntoken exchange attempts:")
-    for aud in ("fantasy", "betr-fantasy", "fantasy-api", "api-fantasy", "picks"):
-        st, r = post_token({"grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
-                            "client_id": CID, "subject_token": RT if not CAPTURED else CAPTURED,
-                            "subject_token_type": "urn:ietf:params:oauth:token-type:refresh_token" if not CAPTURED else "urn:ietf:params:oauth:token-type:access_token",
-                            "audience": aud, "scope": "openid profile email offline_access"})
-        print(f"  aud={aud}: {st} {r.text[:110]}")
-
-    # C. refresh with explicit audience param
-    print("\nrefresh with audience:")
-    for aud in ("fantasy", "betr-fantasy", "picks"):
-        st, r = post_token({"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT, "audience": aud})
-        print(f"  aud={aud}: {st} {r.text[:90]}")
+    # audience=fantasy refresh -> use that token against GQL (direct + proxy)
+    st, r = post_token({"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT, "audience": "fantasy"})
+    if st == 200:
+        fa = r.json()["access_token"]
+        print("audience=fantasy acr/mfa/aud:", acr_of(fa))
+        print("  GQL aud=fantasy DIRECT:", gql(fa))
+        print("  GQL aud=fantasy PROXY :", gql(fa, proxied=True))
 
 
 if __name__ == "__main__":
