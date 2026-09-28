@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 """
-Betr harvester (Path C, SeleniumBase UC Mode) — Betr is behind Cloudflare Turnstile (interactive checkbox),
-which loops vanilla Playwright. Research (2026): the reliable open-source beaters are SeleniumBase UC Mode
-(has uc_gui_click_captcha) and Camoufox. This uses UC Mode: it launches an undetected Chrome, auto-clicks
-the Turnstile box, waits for the app to boot, drives to the league board, and reads the board GraphQL
-response the page fetched. Runs on a US RESIDENTIAL machine (your PC / the mini-PC).
+Betr harvester (Path C, SeleniumBase UC Mode) — Betr is behind Cloudflare Turnstile. UC Mode launches an
+undetected Chrome and auto-clicks the Turnstile; then we run the board GraphQL from the page (same-origin,
+CSP-allowed). Runs on a US RESIDENTIAL machine (your PC / the mini-PC).
 
 Setup (one time, PowerShell):
     python -m pip install --upgrade seleniumbase
-    # SeleniumBase manages its own driver; no separate download needed
 Run (VISIBLE — UC Mode needs a real display to click Turnstile):
-    $env:BETR_LEAGUE="WNBA"; python betr5.py
-Once reliable, schedule it with Windows Task Scheduler.
+    $env:BETR_LEAGUE="WNBA"; python betr6.py
+Once reliable, schedule with Windows Task Scheduler.
 
 Output: boards/betr_<league>_current.json (+ _meta), and betr_nba_current.json for NBA.
 """
@@ -27,7 +24,6 @@ OUT = Path(os.environ.get("BETR_OUT_DIR", "boards"))
 OUT.mkdir(parents=True, exist_ok=True)
 URL = "https://picks.betr.app/"
 
-# The board query, self-contained, to run from the page once Cloudflare has cleared (same-origin, so CSP allows it).
 QUERY = ("query LeagueUpcomingEvents($league: League!) { getUpcomingEventsV2(league: $league) { "
          "...EventInfoData ... on TeamVersusEvent { teams { ...T __typename } __typename } "
          "... on TeamTournamentEvent { teams { ...T __typename } __typename } "
@@ -76,49 +72,46 @@ def main():
     from seleniumbase import SB
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     board = None
+    # embed the query + league directly into the JS (no script args, which UC Mode's execute_async_script rejects)
+    payload = json.dumps({"operationName": "LeagueUpcomingEvents", "query": QUERY, "variables": {"league": LEAGUE}})
+    js = (
+        "var cb = arguments[arguments.length - 1];"
+        "fetch('https://api.fantasy.betr.app/graphql', {"
+        "  method: 'POST',"
+        "  headers: {'content-type': 'application/json',"
+        "            'accept': 'application/graphql-response+json, application/graphql+json, application/json'},"
+        "  body: " + json.dumps(payload) + ","
+        "  credentials: 'include'"
+        "}).then(function(r){return r.text();}).then(function(t){cb(t);}).catch(function(e){cb('ERR:'+e);});"
+    )
+
     with SB(uc=True, headless=False, locale="en-US") as sb:
         print(f"opening {URL} with UC Mode ...", flush=True)
         sb.uc_open_with_reconnect(URL, reconnect_time=6)
-        # auto-click the Cloudflare Turnstile checkbox if present
         try:
             sb.uc_gui_click_captcha()
             print("  uc_gui_click_captcha fired", flush=True)
         except Exception as exc:  # noqa: BLE001
             print("  uc_gui_click_captcha:", str(exc)[:80], flush=True)
         time.sleep(6)
-        # once cleared, run the board query from the page (same-origin fetch, allowed by CSP)
-        for attempt in range(3):
+        sb.set_script_timeout(30)
+        for attempt in range(4):
             try:
-                res = sb.execute_script(
-                    "var cb=arguments[arguments.length-1];"
-                    "fetch('https://api.fantasy.betr.app/graphql',{method:'POST',"
-                    "headers:{'content-type':'application/json',"
-                    "'accept':'application/graphql-response+json, application/graphql+json, application/json'},"
-                    "body:JSON.stringify({operationName:'LeagueUpcomingEvents',query:arguments[0],"
-                    "variables:{league:arguments[1]}}),credentials:'include'})"
-                    ".then(r=>r.text()).then(t=>cb(t)).catch(e=>cb('ERR:'+e));",
-                    QUERY, LEAGUE) if False else None
-                # execute_script above can't await; use a synchronous fetch via a promise trick instead:
-                res = sb.execute_async_script(
-                    "var q=arguments[0], lg=arguments[1], cb=arguments[arguments.length-1];"
-                    "fetch('https://api.fantasy.betr.app/graphql',{method:'POST',"
-                    "headers:{'content-type':'application/json'},"
-                    "body:JSON.stringify({operationName:'LeagueUpcomingEvents',query:q,variables:{league:lg}}),"
-                    "credentials:'include'}).then(r=>r.text()).then(t=>cb(t)).catch(e=>cb('ERR:'+e));",
-                    QUERY, LEAGUE)
-                if res and not res.startswith("ERR:"):
+                res = sb.execute_async_script(js)
+                if res and not str(res).startswith("ERR:"):
                     board = json.loads(res)
-                    break
-                print(f"  attempt {attempt}: {str(res)[:120]}", flush=True)
+                    if (board.get("data") or {}).get("getUpcomingEventsV2") is not None:
+                        break
+                print(f"  attempt {attempt}: {str(res)[:140]}", flush=True)
             except Exception as exc:  # noqa: BLE001
-                print(f"  attempt {attempt} error: {str(exc)[:100]}", flush=True)
-            time.sleep(5)
+                print(f"  attempt {attempt} error: {str(exc)[:120]}", flush=True)
+            time.sleep(6)
 
-    if not board or board.get("errors") or not (((board.get("data") or {}).get("getUpcomingEventsV2"))):
-        print("NO BOARD. If Cloudflare box still showed, tell me; if it cleared, paste any console text.",
-              file=sys.stderr)
+    if not board or board.get("errors") or ((board.get("data") or {}).get("getUpcomingEventsV2") is None):
+        print("NO BOARD.", file=sys.stderr)
         if board:
             (OUT / f"betr_{LEAGUE.lower()}_raw.json").write_text(json.dumps(board)[:5000])
+            print("saved raw ->", f"betr_{LEAGUE.lower()}_raw.json", file=sys.stderr)
         sys.exit(2)
 
     legs, nevents = flatten(board)
