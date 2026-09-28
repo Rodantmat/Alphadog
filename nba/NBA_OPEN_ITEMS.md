@@ -16505,6 +16505,52 @@ caught this one and will catch the next.*** ⚠ **This sweep changed nothing and
 
 ## T20-4 · **NEW · 🔴🔴 SEASON-CRITICAL · HIGHEST OPEN ITEM** · P3 is hardcoded to LAST season, in two scripts
 
+> ## ✅✅ MOSTLY CLOSED 2026-09-28, LIVE-VERIFIED — SEVEN OF THE CHECKED SITES FIXED, ONE CONFIRMED STILL OPEN, SEVERAL NOT RE-CHECKED
+> *Live-checked the item's headline defect (both `T20.33` P3 sites) plus the `§T20.34` widening (both
+> P2 sites) plus the `§T20.117` "obvious remedy crashes" trap (`export_market_spreads.py`) plus one
+> `§T20.35` census entry (`build_blowout_model.py`) — eight sites total. Every one carries a comment
+> tagging it **"fixed 2026-09-23"** or **"fixed 2026-09-25"**, **"same class as T23-2"** — a shared
+> fix, done under an item number (`T23-2`) this pass did not further investigate.*
+>
+> **✅ FIXED, confirmed live — all now resolve the season from the slate date, no hardcoded literal:**
+> - `score_board_legs.py:139` — `os.environ.get("BS_SEASON") or current_season(_date.fromisoformat(asof))`
+> - `build_availability_delta.py:58` — `os.environ.get("DELTA_SEASON") or active_stats_season()`,
+>   commented *"fixed 2026-09-25... the one hardcoded default the T20-4/T23-2 rollover fix did not
+>   reach"* — i.e. this was the LAST of the P3 sites to close, two days after the others
+> - `.github/workflows/nba-p3-afternoon-light.yml` — `season:` dispatch input now defaults to `""`
+>   ("blank = resolve from the date"), no more hardcoded `"2025-26"`
+> - `check_delta_gaps.py:49` — `os.environ.get("GAP_SEASON") or active_stats_season()`; the
+>   docstring/code contradiction this item flagged is gone, both now agree
+> - `build_confidence_v3.py:104` — `C3_SEASONS` literal fallback removed; unset now resolves
+>   dynamically (`stats_seasons(2)`, per its own comment)
+> - `.github/workflows/nba-p2-overnight-heavy.yml:216,422` — `GAP_SEASON` / `C3_SEASONS` now pass
+>   `github.event.inputs.season` (blank by default) instead of `|| '2025-26'`, each commented
+>   *"BLANK = let [script] resolve it... A literal here would override the script's fix"*
+> - `export_market_spreads.py:37-40` — the predicted `KeyError` trap (`§T20.117`) is fixed: `BOUNDS`
+>   lookup is now guarded (`if season in BOUNDS: return BOUNDS[season]`), with a derived
+>   generous-window fallback for any season not in the table
+> - `build_blowout_model.py:51` — same pattern, `BM_SEASONS` literal fallback removed, resolves
+>   dynamically via `stats_seasons(2)` if unset
+>
+> **🔴 CONFIRMED STILL OPEN — `build_defender_ratings.py:114`** (P1): live code is unchanged,
+> `seasons = [s.strip() for s in os.environ.get("DEF_SEASONS", "2024-25,2025-26").split(",")]` — the
+> exact hardcoded literal this item's census named, no dated fix comment, no dynamic resolution.
+> P1 does not pass `DEF_SEASONS` (per this item's own census), so this one is live-exposed the same
+> way the others were.
+>
+> **⚠ NOT RE-CHECKED this pass, status unknown, do not assume fixed:** `scrape_nba_season_tables.py:146`
+> (the item's own text already noted this one had a guard *before* today — `WINDOWS.get(season)` —
+> so it may already have been safe, not re-verified live here) · `nba-absence-panel.yml:136`, `:231`
+> · `nba-market-spreads.yml:39`.
+>
+> **`nba_score.baseline_history` still holds only `2024-25` (4,233,434 rows) and `2025-26`
+> (4,474,899) — no `2026-27` rows** *(expected, season hasn't started; not a new finding)*.
+>
+> ⇒ **Item kept OPEN, not closed** — one confirmed live defect remains (`build_defender_ratings.py`)
+> and three sites are unverified. But the item's own headline claim ("P3 is hardcoded to LAST
+> season") and its most-cited mechanism (P2's `check_delta_gaps`/`build_confidence_v3`) are both
+> fixed. Read-only throughout; nothing changed or triggered.
+
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.33).** *Dependencies read OFF `.github/workflows/nba-p3-afternoon-light.yml`
 (229 lines, **12** scripts) and off the scripts themselves — rule 21, never from the corpus's
 description of P3.* ⚠⚠ **READ-ONLY: `SELECT` and repo reads only. Nothing triggered, dispatched or
