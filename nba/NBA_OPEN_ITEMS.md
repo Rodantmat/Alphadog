@@ -16894,6 +16894,49 @@ changed nothing and triggered nothing; the measurements above are the input.**
 
 ## T20-2 · **NEW · OWNER DECISION · 🔴 SEASON-CRITICAL** · the live storage-diet plan is aimed at a database that no longer exists
 
+> ## 🔴🔴 RE-VERIFIED LIVE 2026-09-28 — STILL OPEN, AND THE NUMBERS MOVED AGAIN, FURTHER FROM THE PLAN
+> *This item's own point is that a config-stored plan drifts from a live-changing database. Six days
+> after this item's own "live" audit, its own figures are themselves stale — the exact pattern it
+> describes, recurring on itself. Config row untouched throughout: `nba_config.classification_config`
+> `storage_diet_plan_2026_09_17` — `status` still `"PLANNED - execute ONLY after the full system is
+> complete and no job is mid-write"`, `updated_at` still `2026-09-17T06:19:59Z`. None of `OWNER
+> DECISION (a)-(e)` has been acted on.*
+>
+> **Database total: `26.9 GB`**, down from this item's own `42.95 GB` (2026-09-22) and the plan's
+> `~31 GB` — moving further from every figure on record, in the shrinking direction this time.
+>
+> | table | this item's figure (`2026-09-22`) | live now (`2026-09-28`) | change |
+> |---|---|---|---|
+> | `baseline_history` | `12,812` MB | **`2,907` MB** | 🔴 **−77%** |
+> | `final_hp` | `9,391` MB *(already corrected from a stale 11 GB)* | **`1,776` MB** | 🔴 **−81%** |
+> | `board_outcomes` | `2,151` MB | **`1,596` MB** | −26% |
+> | `board_snapshots` | `6,604` MB | **`6,604` MB** | ✅ unchanged, the only stable row again |
+> | `board_scored` *(unnamed by the plan)* | `2,948` MB | **`2,974` MB** | ≈ unchanged |
+> | `board_tiers` | `459` MB | **`458` MB** | ≈ unchanged |
+> *(Not investigated further this pass: whether the `baseline_history`/`final_hp` drops trace to the
+> `T20-6` consolidation — dropping `baseline_ladder`, "one set per day, the last run overwrites" — or
+> a separate cleanup. Flagged, not asserted, per RULE 6.)*
+>
+> 🔴 **Finding ② is now stale in a new way: its named reclaim target is no longer unused.**
+> `nba_market.board_outcomes_nm_idx` — cited at `303 MB, idx_scan = 0, "never scanned"` — is now
+> **`idx_scan = 20`**. Still `303` MB, but no longer an unused-index candidate; something has
+> exercised it since 2026-09-22 (this index is built and used by `build_confidence_v3.py`'s own
+> P2 step, so a pipeline or test run using it would explain this — not confirmed which, this pass).
+>
+> ⚠ **A related, NEW unused index exists, outside this item's original scope**: `board_outcomes_canon_nm_idx`,
+> `47` MB, `idx_scan = 0` — created live against production during this session's earlier scope
+> violation (recorded elsewhere in this run log), not by any pipeline script. Noting its size here
+> since this item is where unused-index bookkeeping on this table lives; its disposition is still the
+> owner's open decision from that earlier incident, not decided by this item.
+>
+> **The `5.98 GB` dropped-sport-tables sub-finding (§T20.41) was NOT re-measured this pass** — those
+> are v2/MLB-namespace tables and out of scope for this track to investigate further.
+>
+> ⇒ **Item stays OPEN.** The plan is exactly as stale as when filed, now more so; none of the owner
+> decisions have been made; the specific dollar-figures a reader would budget from either the plan or
+> this item's own 2026-09-22 audit are both wrong today. Read-only: nothing measured, changed, or
+> written to `nba_config`.
+
 **`[LIVE-AUDIT]` 2026-09-22 (§T20.29).** *Read off the system (rule 21):
 `nba_config.classification_config` → **`storage_diet_plan_2026_09_17`**, `status` **"PLANNED"**.
 Live distribution re-taken 2026-09-22T15:05:22Z over **368 base tables, all schemas, total
