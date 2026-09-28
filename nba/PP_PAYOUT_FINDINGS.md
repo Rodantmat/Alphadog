@@ -243,6 +243,22 @@ moved between board render and validation. Worth remembering when any app's key 
 **pricing reference** — a second market's explicit vig and an explicit payout function to compare
 PrizePicks against when the slip engine resumes.
 
+### 🔁 RE-ATTEMPTED 2026-09-28 with the Betr playbook — still ruled out (definitively)
+After the Betr win (drive the real web app in a browser, let it make its own calls), we retested whether
+that trick could rescue Chalkboard. It cannot, for a structural reason: **Chalkboard has no web app to
+drive.** Runner probe (`nba/probe_chalkboard_web.py`, direct + residential proxy) of every plausible host:
+- `chalkboard.io` / `www` → 200 but it's the **marketing site** (121 KB, no picks/lineup/projection markers).
+- `play.` `app.` `web.` `picks.` `fantasy.` `sportsbook.chalkboard.io` → **do not resolve (NXDOMAIN)** — no
+  web surface exists.
+- `kube-prod.chalkboard.io` (the API) → 404 at root; it's the same App-Attest-locked mobile API from 0i.
+- `cdn.chalkboard.io` → 403 (asset store only).
+Betr worked because `picks.betr.app` is a full browser SPA a headless Chrome can load and operate. Chalkboard
+is **mobile-only (iOS + Android)**; its API requires a Firebase App Check / Apple App Attest token that only
+a genuine phone binary mints — and there is no browser page to run its JS. The Betr approach has nothing to
+attach to here. Chalkboard stays research-only: the pricing model (0i) is banked; the live board is not
+obtainable without a real phone (owner's device via proxy capture, the original 0i method, remains the only
+route and is not worth automating for the marginal app).
+
 ---
 
 ## 0h. ✅ SLEEPER — THE EXPANDED LADDER, CAPTURED AND LIVE (2026-09-27)
