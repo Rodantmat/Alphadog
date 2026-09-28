@@ -205,6 +205,14 @@ writes. Grouped by role.
 
 ---
 
+## ⚠ **§T27.7 — `archive_live_boards.py` DATES EVERY LEG BY ITS OWN GAME, NOT BY THE CAPTURE CLOCK: PRIZEPICKS' OPENING-NIGHT LINES POSTED WEEKS EARLY WOULD HAVE BEEN FILED UNDER THE WRONG SLATE** *(source, fixed 2026-09-24, from the 2026-09-28 build-chat session; `0` of the twelve before this entry)*
+
+> 📌 **Every row was originally stamped with the capture date, not the game's own date.** In season the two usually coincide, so the bug hid — but PrizePicks posts opening-night lines weeks early: captured `2026-09-24`, the first PP NBA board ever stored carried `commence_time` `2026-10-20T19:10Z` and was filed under `2026-09-24`. Everything downstream keys on `game_date` (the scorer, the tier build, the grader, the paper log), so those legs would have been invisible on the day they matter and would have polluted a slate that has no games that day.
+>
+> 🔧 **Fix, live-verified `archive_live_boards.py:386-397`**: after parsing, each row's `game_date` is re-derived from its own `commence_time` (falling back to the capture date only when no tip time is available, which is rare and app-dependent). **The convention is Eastern, not UTC** — verified against `nba_calendar.games`: opening night `2026-10-20` holds a game at `2026-10-21T01:30Z` whose `game_date` is still `2026-10-20`, the ET date. The run also logs how many legs moved and to which dates, so a future re-date is visible in the job's own output rather than silent.
+
+---
+
 ## 🔴🔴🔴 **§T26.76 — `§T20.34`'s FLOOR CONVERTED TO A TOTAL AT THE WORKFLOW LAYER: `103` SEASON-LITERAL SITES ACROSS `13` WORKFLOWS, `85` OF THEM HARDCODED, AND ALL `13` ARE MANUAL — WHILE THE THREE CRON'D PIPELINES HAVE ZERO** *(source census, 2026-09-26; `1` of the `103` was recorded in the twelve)*
 
 > 📌 **`§T20.34` counted `7` season literals across `P2` and `P3` and stated its own limit honestly — *"`RULE 17`: a FLOOR, not a total"*. That census was at the SCRIPT layer.** ⚠ **Nobody had ever run it at the WORKFLOW layer**, *and pass `30` reached it from the `T26` `ASSISTANT OUTPUT` stratum, where the transcript records finding "another dead ceiling" and a `SEASON_BOUNDS` dict — two shapes the literal-grep cannot see.*
