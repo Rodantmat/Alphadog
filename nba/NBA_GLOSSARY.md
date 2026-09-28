@@ -1672,7 +1672,15 @@ records `nba_stats.official_roster_snapshot` as a name written from MLB habit �
 **`official_differential_log`** · T3, T8, T9 · SUM,WRK · The referee leg of the weekly differential
 worker *(with `nba_stats.player_differential_log` and `nba_ref.team_differential_log`)*. 🔴
 **`[LIVE-AUDIT]` `2026-09-21`, `T8` pass 12 — CONFIRMED AND DATED: no completed run since
-`2026-09-02`. All three logs empty.**
+`2026-09-02`. All three logs empty.** ⚠ **RESUMED `2026-09-26` (`NBA_WORKERS.md §T26.79` put it back
+on P1's dispatch) — NOT YET REFLECTED ABOVE.** ▶ **LIVE-VERIFIED `2026-09-28`**: `nba_stats.player_differential_log`
+now `324` rows, `detected_at` up to `2026-09-26T16:43:54Z` — real detection, not empty. `nba_ref.team_differential_log`
+and this table (`official_differential_log`) are still `0` rows each, but **not a bug**: their roster-snapshot
+tables (`nba_ref.team_roster_snapshot`, `nba_ref.official_roster_snapshot`) were themselves empty going into
+the `09-26` run, so the worker's own `is_first_run` logic correctly reported zero events by design (per its
+code comment: *"Real differential detection starts from the SECOND run of this worker onward"*) — team/official
+diffing appears to be new-as-of-`09-26` functionality, not a broken one, and both snapshot tables are now
+populated (`30`/`80` rows) for a real diff on the next weekly run.
 
 **`odds_api_board_backfill`** · T1, T11 · ARC,OPEN,SUM · The historical board puller →
 `nba_market.board_snapshots`. **Built and tested** *(T11 seg 709, three from the end)*: resumable
