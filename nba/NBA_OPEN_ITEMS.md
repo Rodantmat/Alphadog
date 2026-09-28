@@ -14666,6 +14666,56 @@ reopen it.
 
 ## T20-13 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, FIRES ON OPENING NIGHT · P2's CERTIFIER WILL GO RED EVERY NIGHT FOR THE FIRST TWELVE NIGHTS OF THE SEASON — CORRECTLY**
 
+## ✅✅✅ CLOSED 2026-09-28 — LIVE-VERIFIED. THE GATE ITSELF WAS REWRITTEN; NOT MERELY "RE-ARMED" BY T20-6'S CLOSURE.
+
+*This closure was found while re-checking T20-13 as the stated next step after T20-6 closed this
+window. The expectation going in was that T20-6 clearing would simply let this item's original
+"twelve red nights" risk fire again. **Live code shows something stronger: the same 2026-09-24/25
+rewrite that fixed T20-6 also replaced the prop-count check this item is about, so the Nov-1
+period-prop cutover can no longer trigger a red build at all.***
+
+🔑 **`certify_pipeline.py`'s live `p2` branch, current `main`:**
+```
+check("baseline props for this slate",
+      "SELECT count(DISTINCT prop) FROM nba_score.baseline_history WHERE game_date = %s AND period = 'FULL'", (today,),
+      lambda v: v and int(v) >= 20, ">= 20 props")
+```
+Two changes from the gate this item describes, both confirmed by grepping the live file for `25`
+(zero matches anywhere in `certify_pipeline.py` outside the "2026-09-24/25" date comment already
+quoted above):
+1. **The threshold is `>= 20`, not `>= 25`.**
+2. **The count is scoped to `period = 'FULL'` — it never includes the period props (`points_q1`,
+   `points_q4`, `points_q4_otx`, `points_h1`, `points_h2`, `assists_q1`, `rebounds_q1`,
+   `threes_made_q1`) at all.** Those live under `period IN ('Q1','Q4','H1','H2')`, confirmed live:
+   `SELECT period, count(DISTINCT prop) ... WHERE game_date = '2026-04-12' GROUP BY period` returns
+   `FULL → 21` and the eight period props split across `Q1(4) · Q4(2) · H1(1) · H2(1)`.
+
+**And `FULL`-period prop count is verified constant across season phase**, live, both seasons:
+October (`2024-10`, `2025-10`) and April (`2026-04-01` through `2026-04-12`, sampled daily) all
+return **`21`** distinct `FULL`-period props, with no step function around November 1 — because the
+period props that step on November 1 were never counted by this check in the first place.
+
+⇒ ***The Nov-1 cutover this item's "THE FACT" section documents is real (re-confirmed live below),
+but it cannot fail P2's certifier under the current code, on any date, because the check that would
+have to fail was rewritten to ignore period props entirely.*** The twelve-night window (or, per the
+2026-09-23 correction, the every-night window while T20-6 was open) **no longer exists as a live
+risk**, independent of whichever prerequisite closes first.
+
+⚠ **One live discrepancy, flagged not resolved (RULE 6):** this item's "THE FACT" table below states
+**`22`** props through October and **`30`** from November, both seasons. Live re-query this pass
+(all periods, no `period` filter, by month) returns **`21`** for every October and **`29`** for every
+November-onward month, both 2024-25 and 2025-26 — consistently one lower than this item's original
+count, in both the "before" and "after" figures. Same step function, same date, off by exactly one
+prop throughout. Not investigated further this pass — flagged as an open, minor discrepancy only.
+
+⚠ **T20-12 (the `PT = -8` / PDT hardcode) is untouched by this closure and not re-verified here** —
+it is a separate mechanism (a timestamp offset, not a row-count gate) and remains on file as its own
+item.
+
+*(The blockquote immediately below, dated 2026-09-23, correctly identified the `T20-6` dependency at
+the time and is kept per RULE 40 rather than deleted — but its "CONDITIONAL item" framing and its
+`>= 25` figure are both superseded by the block above.)*
+
 > 🔴🔴🔴 **HEADING CORRECTED 2026-09-23 (T20 pass 131, §T20.136) — "THE FIRST TWELVE NIGHTS" IS WRONG, AND THIS IS THE FIFTH OF EIGHT SURFACES CARRYING IT.**
 > *The item's FACT — `22` October props vs `30` from November 1, against a `>= 25` gate with
 > `CERT_STRICT=1` — is **VERIFIED and unchanged**. What is wrong is the CONSEQUENCE.*
