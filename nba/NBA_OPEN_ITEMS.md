@@ -14140,7 +14140,9 @@ glossary as a separate document. ⚠ *One charter field remains unmet and is nam
 invented: per-message line numbers (open item T19-2).*
 *(Full evidence and the charter quoted in full: `NBA_MASTER_SUMMARY.md` §T19.1 and §T19.2.)*
 
-## T18-17 · **NEW · OWNER DECISION** · the score formula's penalising half has never fired
+## T18-17 · ~~**NEW · OWNER DECISION**~~ ✅ **CLOSED `2026-09-28` — CORRECT-BY-DESIGN, NOT A DEFECT** · the score formula's penalising half has never fired
+
+> ✅✅✅ **CLOSED `2026-09-28`, via the build chat.** *Ruling: "correct-by-design — `0` of `7.2M` legs below the `0.85` neutral because confidence is an epistemic thermometer on complete data; floor `0.70` IS reachable for data-starved legs. Not a defect."* **This resolves option (b) below as the answer, on a sharper basis than "the owner asked for a one-sided enhancer": the two-sided rule DOES engage — it has simply never been exercised by a live leg, because every live leg so far has had complete data. The `0.70` floor is reachable, and has been checked as such, for a genuinely data-starved leg** — a distinction this item did not have before. No code change.
 **`[LIVE-AUDIT]` 2026-09-22: of 19,215,200 legs in `nba_score.final_hp`, ZERO have
 `confidence <= 0.85`.** **The live minimum confidence is 0.8540** *(2024-25 0.8540 · 2025-26 0.8722)*,
 **three thousandths above the shipped `CONF_NEUTRAL = 0.85`.** ⇒ **the `drop` term —
