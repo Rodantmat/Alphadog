@@ -21,8 +21,11 @@ quoted ID, never a line number.*
 > **online research · deep system debug · study of this documentation · analysis of the live data.**
 > **Escalate only when research cannot settle it** — *"if still not resolvable, then you can ask me."*
 >
-> 🔴🔴🔴 **THE TWO EXCEPTIONS, WHICH REMAIN OWNER-ONLY: `F2-1` and `T22-1b`.** ***They are not
-> decisions — they are credential actions. No amount of research rotates a key.***
+> ~~🔴🔴🔴 **THE TWO EXCEPTIONS, WHICH REMAIN OWNER-ONLY: `F2-1` and `T22-1b`.** ***They are not
+> decisions — they are credential actions. No amount of research rotates a key.***~~
+> ✅ **CLOSED `2026-09-28` — NO LONGER EXCEPTIONS.** *Both were owner-cleared directly (sole user,
+> low-sensitivity credentials, accepted risk) — see their own entries and the two struck rows above.
+> There are currently no owner-only exceptions on this surface.*
 
 | # | item | the decision | why it cannot be taken here |
 |---|---|---|---|
