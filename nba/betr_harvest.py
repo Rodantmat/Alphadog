@@ -28,19 +28,28 @@ URL = "https://picks.betr.app/"
 
 
 def parse_leg(ev, team, player, proj):
+    """Betr projection -> legs. CORRECTED 2026-09-28 from the raw shape:
+      - stat is proj['key'] (e.g. POINTS, THREE_POINTERS_MADE, 1ST_QUARTER_POINTS) - NOT 'type'.
+      - 'type' is the payout TIER (REGULAR/BOOSTED/SUPER_BOOSTED/EDGE_* /MINI_BOOSTED) - Betr's
+        goblin/demon axis; kept as 'tier'.
+      - sides are MORE/LESS (not OVER/UNDER).
+      - nonRegularValue is 0.0 when there is NO alternate; emit an alt leg only when it's > 0.
+    """
     legs = []
     line = proj.get("value")
     if line is None:
         return legs
     name = f"{player.get('firstName','')} {player.get('lastName','')}".strip()
-    stat = proj.get("type") or proj.get("name") or proj.get("label")
+    stat = proj.get("key") or proj.get("name") or proj.get("label")
+    tier = proj.get("type")
     opts = [str(o.get("outcome")).upper() for o in (proj.get("allowedOptions") or [])]
     base = {"event_id": str(ev.get("id")), "player": name, "player_id": str(player.get("id")),
-            "team": (team or {}).get("name"), "stat": stat, "market_id": proj.get("marketId"),
+            "team": (team or {}).get("name"), "stat": stat, "tier": tier, "market_id": proj.get("marketId"),
             "status": proj.get("marketStatus"), "start_time": ev.get("date")}
-    legs.append({**base, "line": line, "alt": False, "over": "OVER" in opts, "under": "UNDER" in opts})
+    legs.append({**base, "line": line, "alt": False,
+                 "over": "MORE" in opts, "under": "LESS" in opts})
     alt = proj.get("nonRegularValue")
-    if alt is not None and alt != line:
+    if alt is not None and alt > 0 and alt != line:
         legs.append({**base, "line": alt, "alt": True, "alt_percentage": proj.get("nonRegularPercentage")})
     return legs
 
