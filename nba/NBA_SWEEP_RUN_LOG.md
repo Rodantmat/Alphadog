@@ -8,6 +8,27 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 TRANSCRIPT-BATCH SESSION (`2026-09-28`, continued a third time) — `T28`/`T29`/`T30` REACH PASS 2/3; BOTH STANDING SUB-TASKS RESOLVED
+
+📌 **Same session, continuing straight through per the prior entry's `NEXT` pointer** — `T28` pass 2/3, then `T29` pass 2/3 (discovered to share `T27.5`/`§T27.6`/`§T27.7`'s own source file, so already substantially re-verified by the `T27` pass-2 entry below), then `T30` pass 2/3 (trivial — its pass 1 finding was a null result), then the batch's two standing sub-tasks.
+
+✅ **`T28` pass 2/3 — both sub-findings re-verified live, no drift.** `grade_board_outcomes.py:48-53` still carries the `COMPLETED 2026-09-25` fantasy/period-grading fix, unchanged. `NBA_DATABASE.md`'s `27 GB` figure re-run: `SELECT pg_size_pretty(pg_database_size(current_database()))` returns **exactly** `27 GB` / `26.8798828125` GB again — identical to the prior pass's reading, no drift at all.
+
+✅ **`T29` pass 2/3 — all published content re-verified live, no drift.** Its source file
+(`2026-09-28-05-24-16-nba-sleeper-capture-session.txt`) turns out to be the same one cited by `§T27.5`/`§T27.6`/`§T27.7` (already re-checked in the `T27` pass-2 entry below) **plus three more items sourced from it, now also re-checked**: `§1d`'s residual closure (`build_defender_ratings.py:129-133` still has the `to_regclass(...) IS NULL` guard on both indexes) · `A0`/`T26-11`'s closure (`build_final_hp.py:360-367` still writes period rungs under suffixed prop labels with the runtime `assert` in place) · `T20-4`'s residual closure (`nba-maintenance.yml`'s `season` input still defaults blank, resolved from the date). **All six items sourced from this one file are now confirmed clean twice.**
+
+✅ **`T30` pass 2/3 — reconfirmed, still 0 documentable findings.** No new angle found on re-check; its own tail (11 segments, all mitmproxy capture troubleshooting with no successful capture) has nothing left to extract. Recorded rather than silently skipped, per the mandate that a null result still counts as a pass.
+
+✅ **Standing sub-task 1 RESOLVED — remaining stale `scrape_prizepicks_nba_board.py` references.** Beyond `NBA_OPEN_ITEMS.md`/`NBA_WORKERS.md` (already reconciled by earlier passes — confirmed clean on inspection this pass), found **three more present-tense architecture claims** describing that script as the live NBA producer, now superseded by `main.py`'s own `2026-09-24` parameterisation (`§T27.3`): `NBA_GOBLIN_DEMON.md` §6.1 and `NBA_SYSTEM_ARCHITECTURE.md` (two spots). All three patched with dated `RULE 40` addenda, cross-referencing `§T27.3`, original text preserved as history. `NBA_MASTER_SUMMARY.md`'s hits were checked and correctly left untouched — they are explicitly dated historical transcript-ledger entries (e.g. the `T13` ledger), not present-tense claims. Census stamps re-verified unchanged for both edited files (`113` / `136`).
+
+✅ **Standing sub-task 2 RESOLVED, found already done — the `T26-7` count gap.** Live-checked `NBA_OPEN_ITEMS.md`: already reconciled by an earlier pass (`RECONCILED 2026-09-28, live-verified` — `7,951` was this sweep's own earlier pre-migration estimate; `7,921` is the exact live count, confirmed three independent ways: the quarantine table's own `count(*)`, the migration commit's guard comment, and the original migration record). No action needed — confirmed, not re-done.
+
+📌 **Batch status**: `T27`/`T28`/`T29` now at pass 2/3. `T30` at pass 2/3 (trivial, null result). `T31` at pass 1/3 (closed this session, not yet re-verified). Both standing sub-tasks closed. **A genuine pass 3 needs real elapsed time to have value** (re-checking live DB/repo state seconds after the pass-2 check just performed would only re-confirm the same read, not add verification value) — deferred to a later firing/continuation rather than rushed back-to-back in this same turn.
+
+▶ **NEXT**: on the next resume, re-verify `T27`/`T28`/`T29`/`T30` for their genuine pass 3/3 (the DB-size and `board_scored`-count figures are the most likely to have moved given real elapsed time), then give `T31` its pass 2/3 (re-verify the `T20-14` Betr-scraper closure and the `BETR_BUILD_STATE.md` cross-reference are still accurate — that file is the build chat's own, so it may keep changing). **Once all five transcripts reach 3/3 and every touched document index reaches 3/3**: 3 additional full sweeps per the owner's standing instruction, before declaring the project finished. `NBA_FINAL_SCORING_CALIBRATION.md` remains untouched (corruption blocker, last known-good `dbc11ffc`).
+
+---
+
 ## 🆕 TRANSCRIPT-BATCH SESSION (`2026-09-28`, continued again) — `T27` PASS 2/3 COMPLETE, ALL SEVEN SUB-FINDINGS LIVE-RE-VERIFIED
 
 📌 **Same session, continuing per the entry below's own `NEXT` pointer: begin re-passing `T27` for pass 2/3 rather than opening new transcripts** (`nba/transcripts/` still holds nothing new). This was a **re-verification pass, not a re-read** — each of `§T27.1`–`§T27.7`'s published claims was checked against current live repo/workflow/DB state, not re-derived from the transcript text again.
