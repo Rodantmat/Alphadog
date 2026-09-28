@@ -40,11 +40,11 @@ def start_local_proxy():
     if "-session-" not in user:
         sid = os.environ.get("BETR_SESSION_ID", "betrwnba1")
         user = f"{user}-country-us-session-{sid}-lifetime-10"
-    upstream = f"http://{user}:{pw}@{host}"
+    upstream = f"{user}:{pw}@{host}"   # proxy.py --proxy-pool wants no scheme
     cmd = [sys.executable, "-m", "proxy",
            "--hostname", "127.0.0.1", "--port", str(LOCAL_PORT),
-           "--proxy-pool", upstream,
-           "--plugins", "proxy.plugin.ProxyPoolPlugin"]
+           "--plugins", "proxy.plugin.ProxyPoolPlugin",
+           "--proxy-pool", upstream]
     print(f"starting local forward-proxy 127.0.0.1:{LOCAL_PORT} -> {host} (US sticky)", flush=True)
     p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(4)
