@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       league:
-        description: "WNBA now; NBA after 2026-10-20"
-        default: "WNBA"
+        description: "Override league (blank = auto: WNBA until 2026-10-20, then NBA)"
+        default: ""
   schedule:
     # Pacific board windows: ~10:45 and ~13:15 PT = 17:45 and 20:15 UTC
     - cron: '45 17 * * *'
@@ -29,6 +29,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Resolve league (auto-switch to NBA on opening night)
+        id: lg
+        run: |
+          OVERRIDE="${{ github.event.inputs.league }}"
+          if [ -n "$OVERRIDE" ]; then
+            L="$OVERRIDE"
+          else
+            # NBA opening night 2026-10-20; before that WNBA is the live board
+            TODAY="$(date -u +%Y-%m-%d)"
+            if [ "$TODAY" \> "2026-10-19" ]; then L="NBA"; else L="WNBA"; fi
+          fi
+          echo "league=$L" >> "$GITHUB_OUTPUT"
+          echo "Resolved league: $L (today $(date -u +%Y-%m-%d) UTC)"
       - name: System deps (Chrome fonts + Xvfb)
         run: |
           sudo apt-get update
@@ -45,14 +58,14 @@ jobs:
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
           BETR_SESSION_STATE: ${{ secrets.BETR_SESSION_STATE }}
-          BETR_LEAGUE: ${{ github.event.inputs.league || 'WNBA' }}
+          BETR_LEAGUE: ${{ steps.lg.outputs.league }}
         run: |
           python nba/betr_harvest_cloud.py
       - name: Commit the board file
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          lg="$(echo "${{ github.event.inputs.league || 'WNBA' }}" | tr '[:upper:]' '[:lower:]')"
+          lg="$(echo "${{ steps.lg.outputs.league }}" | tr '[:upper:]' '[:lower:]')"
           git add boards/betr_${lg}_current.json boards/betr_${lg}_current_meta.json boards/betr_nba_current.json 2>/dev/null || true
           git commit -m "Betr ${lg} board (cloud harvest) [skip ci]" || echo "no change"
           git pull --rebase --autostash || true
