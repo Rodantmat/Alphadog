@@ -36,6 +36,10 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 **NEXT**: `build_confidence_v3.py:188-189`'s remaining bug is a legitimate standalone follow-up — worth measuring its live magnitude (how many suffixed/accented players' graded legs are excluded from the CURRENT `confidence_model` fit) the way `T20-25`'s original write-up measured the scoring-side miss (`43,969`/`705,852`, `6.23%`), so severity is quantified rather than just flagged. Continuing broader sweep after that — `T20-16`/`T20-18` still unchecked against live state this window.
 
+✅ **Magnitude measured, live, this firing**: `nba_market.board_outcomes` grouped by the old (still-live) normaliser, left-joined to `player_name_map` — **`35` distinct suffixed players, `321,406`/`6,658,109` graded legs excluded, `4.83%`**. Two-step query (aggregate-then-join, not a row-level join) to avoid the 6.9M-row function-on-join-column timeout `build_confidence_v3.py`'s own comments already warned about — first attempt at the naive row-level version timed out at 180s, confirming that warning is still accurate. Zero accent-pattern names among the 35 — matches `T20-25`'s existing "the live source sends ASCII, the accent half stays latent" finding. Filed as an addendum to `T20-25`'s existing "third consumer still open" row. Census re-derived: `952`, unchanged.
+
+**NEXT**: `T20-16`/`T20-18` still unchecked against live state this window — continuing per owner's `"Continue"`, no interim stop.
+
 ## 🆕 THIS FIRING (`2026-09-28`, tenth hourly run) — TRANSCRIPTS STILL UNAVAILABLE FOR THIS TRACK; `T31` STILL BLOCKED ON ELAPSED TIME; NO NEW DOC DEFECTS, BUT `NBA_FINAL_SCORING_CALIBRATION.MD`'S OWN CORRUPTION IS CONFIRMED WORSE THAN LAST RECORDED
 
 ✅ **Session type confirmed**: scheduled/unattended hourly firing, no chat attachment, no desktop bridge (checked, per standing constraint) — this is the hourly track, picking up from the ninth hourly run's `NEXT` pointer (above, superseded by this entry). The transcript-batch track's own entries sit below this one and remain its own separate continuity — not re-opened or duplicated here.
