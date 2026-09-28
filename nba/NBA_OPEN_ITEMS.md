@@ -14976,7 +14976,9 @@ constant it holds, and this is the one place the standard does not hold.***
 
 ---
 
-## F6-2 · **NEW · OWNER DECISION · MEDIUM** · the one absence slice the baseline structurally cannot see has no control to test it against
+## F6-2 · ~~**NEW · OWNER DECISION · MEDIUM**~~ ✅ **CLOSED `2026-09-28`** · the one absence slice the baseline structurally cannot see has no control to test it against
+
+> ✅✅ **CLOSED `2026-09-28`, via the build chat — DELTA-LAYER-OWNED, BY DESIGN.** *Ruling: "a post-cutoff scratch is the enrichment layer's slice by design" — the `09:00 ET` baseline cutoff is deliberately the baseline's boundary; a status change AFTER that cutoff is exactly what `build_availability_delta.py`'s transition-only mechanism exists to catch, not a gap the baseline itself needs a day-before control to measure. No code change; this closes the `OWNER DECISION` this item posed (build a day-before-cutoff configuration purely as a measurement control) as **not needed** — the slice already has an owner in the pipeline, it is simply a different layer than the one this item was looking at. ⚠ Not retracted (rule 40): the mechanical finding stands unchanged — `nba_asof.py:39-40`'s `cutoff_ts()` genuinely cannot express a day-before cutoff — what closes is the question of whether that gap needs filling, not the fact of the gap.
 
 *Filed 2026-09-23, `§F6.13`. **Read-only**: a `SELECT` against
 `nba_config.classification_config`, a source read, and greps of the twelve. Nothing was changed, and
