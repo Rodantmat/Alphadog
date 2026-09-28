@@ -17413,6 +17413,8 @@ cutoff. **Recorded because it is the missing third member of a set the sweep was
 singleton**, and because **`17:30 ET = 2:30 PM PT`** is the likeliest true origin of the drifted
 figure. ⚠ **NOT RECORDED: whether the 8:30 p.m. ET bulletin is ever ingested.**
 
+> 📅 **RE-CONFIRMED LIVE `2026-09-28`.** *`nba/nba_asof.py` (live-read) still has `PHASE2_CUTOFF_LOCAL = "17:45"` and `ENRICH_CUTOFFS_LOCAL = ["13:30", "17:30"]`, byte-for-byte unchanged from the item's own quoted values. No third (8:30 p.m. ET) constant found this pass either — the gap this item names still stands, unchanged `6` days later.*
+
 ---
 
 ## ✅ PRE-REGISTERED CLAUSE (iii) — SCORED HERE, BEFORE THE NEXT PASS
