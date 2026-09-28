@@ -1,46 +1,41 @@
-# BETR — build state (2026-09-28, after 17 probes + research)
+# BETR — SOLVED (2026-09-28). Live board harvested end to end.
 
-## FINAL DIAGNOSIS: board is anonymous, but the edge needs a real BROWSER RUNTIME, not just a US-res IP
-Proven across 17 probes:
-- Board is anonymous (no token needed) — confirmed by external research (Apify Crawloop "No login") and
-  by our own tests (token vs no-token identical 401).
-- PROXY_URL is a genuine US RESIDENTIAL IP: ip-api shows Comcast Cable, California, hosting:false,
-  proxy:false. Exactly what the commercial scraper says it needs.
-- STILL 401 through that residential proxy, across: matched jurisdiction (CA), US, none; minimal headers;
-  full app headers; GET with query params; and 8 guessed extra headers (apollographql-client-name,
-  x-tenant, x-client, betr-platform, x-betr-jurisdiction, graphql-require-preflight, ...).
-=> A plain HTTP request cannot pass the edge even from a residential IP. The commercial Apify actor must
-   run a REAL HEADLESS BROWSER that executes Betr's JS (which computes a per-request signed header / solves
-   an anti-bot / Akamai-Envoy challenge invisible to DevTools and uncapturable as a static value). Our
-   requests/curl_cffi calls reproduce a browser-shaped PACKET but not the browser RUNTIME.
+## HOW IT WORKS (path C, on a US-residential Windows machine)
+Betr's board is anonymous GraphQL behind **Cloudflare Turnstile** (interactive checkbox) — that was the real
+wall (not token, not IP; 17 raw-HTTP probes all 401'd because they weren't a real browser). Beaten with:
+- **SeleniumBase UC Mode** (`pip install seleniumbase`) — undetected Chromium; `uc_gui_click_captcha()`
+  clears Turnstile; auto-clicks the league tab (`//*[normalize-space(text())="WNBA"]`), no human tap.
+- **Persistent Chrome profile** (`./betr_profile`) — log in BY HAND once (phone+password+SMS), session
+  reused forever after; no re-login.
+- **Passive CDP capture** — inject nothing (CSP blocks it; the lobby reloads and kills injected fetches).
+  Enable `Network`, let the app fetch its own `getUpcomingEventsV2`, pull the body from the CDP
+  performance log. That call returns 200 for the logged-in page.
 
-## WHAT ACTUALLY WORKS (ranked, honest)
-1. **Headless browser (Playwright) through the residential proxy** — load picks.betr.app in real Chromium,
-   let its JS run and authenticate, then read the LeagueUpcomingEvents response (or call the GraphQL from
-   the page context so the JS-computed headers are attached). This is the in-house path that matches what
-   the commercial actor does. Heaviest to run (needs Chromium on the runner or the mini-PC) but no third
-   party and no per-result fee. The mini-PC/home-server is the natural host (residential by nature +
-   always-on).
-2. **Apify Crawloop Betr actor** — pay Apify to run exactly that headless+residential stack. Free tier
-   $5/mo credit (no card); actor may add a per-run/result fee (rental model retiring Oct 1 2026 -> pay-per-
-   usage). Fastest, least control, small ongoing cost. Endpoint:
-   api.apify.com/v2/acts/crawloop~betr-picks-scraper/run-sync-get-dataset-items?token=APIFY_TOKEN
-3. **Give up on Betr** — it is one of five DFS apps; PrizePicks (the product target) is fully covered and
-   Sleeper is now live with its ladder. Betr is marginal.
+Script: `nba/betr_harvest.py`. Run:
+    python -m pip install --upgrade seleniumbase
+    $env:BETR_LEAGUE="WNBA"; $env:BETR_LOGIN="1"; python nba/betr_harvest.py   # first time, log in
+    $env:BETR_LEAGUE="WNBA"; python nba/betr_harvest.py                        # after: hands-off
+NBA when it posts: BETR_LEAGUE="NBA" (writes betr_nba_current.json too).
 
-## KNOWN-GOOD PIECES (reuse whichever path)
-- Board query: GraphQL LeagueUpcomingEvents(league: NBA|WNBA) -> players -> projections{ value(LINE),
-  currentValue, nonRegularValue(ALT LINE), nonRegularPercentage, allowedOptions{outcome}, marketStatus }.
-- events?league_ids=1 works headless on api.betr.app (only the fantasy host is edge-gated).
-- Offline refresh token mints access tokens (not needed for the anonymous board, but harmless).
-- archive_live_boards routes betr via rows_generic; add rows_betr for the projection/alt shape.
+## VERIFIED PARSE (WNBA, 2026-09-28)
+~1,000 legs/run, ~600 main + ~400 alt, 32 players, 3 events. Correct field mapping (learned from the raw
+shape, betr_debug_shape):
+- stat = projection **key** (POINTS, REBOUNDS, ASSISTS, THREE_POINTERS_MADE, POINTS_REBOUNDS_ASSISTS,
+  DOUBLE_DOUBLE, **1ST_QUARTER_POINTS** period props, ...). NOT `type`.
+- **`type` is the payout TIER** (REGULAR/BOOSTED/SUPER_BOOSTED/MINI_BOOSTED/EDGE_1..4/BOOSTED_4) — Betr's
+  goblin/demon axis. Kept as leg['tier'].
+- sides are **MORE/LESS** -> over/under flags. 611/611 mains have a side; 136 both-sided.
+- **nonRegularValue>0** is the alt ladder rung; 0.0 means no alt (earlier bug filed 553 junk 0.0 alts).
 
-## RECOMMENDATION
-Do Betr via a Playwright harvester on the mini-PC when it's up (path 1) — free, in-house, and it's the only
-thing that reproduces what the edge demands. Until then, Betr stays a documented no-op in ARCHIVE_APPS; the
-certifier WARNs (harmless). Not worth more raw-HTTP probing — that dimension is exhausted.
+## PIPELINE
+`archive_live_boards.py::rows_betr` maps Betr key -> scorer market key (period 1ST_QUARTER_/1ST_HALF_ ->
+_q1/_h1), files non-REGULAR tiers and alt rungs as `_alternate`. Tuple width 14 = board_snapshots columns.
+`betr` already in ARCHIVE_APPS and routed. So once the board file is committed, P3's archiver ingests it.
 
-## tooling
-nba/probe_betr.py (current = residential-proxy header sweep) + nba-probe.yml. If pursuing path 1, next step
-is a Playwright probe (install playwright + chromium in the workflow) that loads picks.betr.app via the
-residential proxy and dumps the LeagueUpcomingEvents response.
+## OPEN (small)
+- alt_percentage / boosted payout reads 0 in the capture — the multiplier likely lives on
+  allowedOptions.marketOption, not nonRegularPercentage. Not needed for lines; capture when the multiplier
+  work resumes.
+- SCHEDULING (next): Windows Task Scheduler runs betr_harvest.py 2x/day on the owner's PC (or the mini-PC),
+  then commits boards/betr_nba_current.json so P3 picks it up. Session persists via betr_profile; if it
+  ever expires, one BETR_LOGIN=1 run re-establishes it.
