@@ -1,0 +1,33 @@
+name: Betr Cloud Test (no commit)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  betr-cloud:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: System deps (Chrome fonts + Xvfb + X11) — fonts matter for the CF fingerprint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
+            libnss3 libxss1 libasound2t64 libgbm1 || \
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
+            libnss3 libxss1 libasound2 libgbm1
+      - name: Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install seleniumbase
+          sbase get chromedriver || true
+      - name: Run the cloud Turnstile test
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          python nba/probe_betr_cloud.py
