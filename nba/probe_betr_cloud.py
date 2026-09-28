@@ -31,13 +31,13 @@ def main():
 
     with SB(**kw) as sb:
         print("opening lobby via uc_open_with_reconnect ...", flush=True)
-        sb.uc_open_with_reconnect(URL, reconnect_time=6)
+        sb.uc_open_with_reconnect(URL, reconnect_time=8)
         try:
             sb.driver.execute_cdp_cmd("Network.enable", {})
         except Exception:  # noqa: BLE001
             pass
         # attempt the CF click (Xvfb makes pyautogui work headless)
-        for _ in range(2):
+        for _ in range(3):
             try:
                 sb.uc_gui_click_captcha()
                 print("  uc_gui_click_captcha fired", flush=True)
@@ -45,16 +45,25 @@ def main():
                 print("  uc_gui_click_captcha:", str(exc)[:100], flush=True)
             time.sleep(5)
 
-        # report where we ended up
-        try:
-            print("  title:", (sb.get_title() or "")[:80], flush=True)
-            print("  url:", sb.get_current_url(), flush=True)
-            src = sb.get_page_source() or ""
-            flags = [w for w in ("Verify you are human", "challenge", "turnstile", "Just a moment") if w.lower() in src.lower()]
-            print("  cloudflare markers on page:", flags or "NONE (past the wall)", flush=True)
-            print("  page length:", len(src), flush=True)
-        except Exception as exc:  # noqa: BLE001
-            print("  state read error:", str(exc)[:100], flush=True)
+        # WAIT for the SPA to actually render (page_length 39 = nothing loaded). Poll up to 60s.
+        booted = False
+        for i in range(20):
+            try:
+                src = sb.get_page_source() or ""
+                ln = len(src)
+                url = sb.get_current_url()
+                print(f"  t+{i*3}s  url={url}  page_length={ln}", flush=True)
+                if ln > 5000:
+                    booted = True
+                    flags = [w for w in ("Verify you are human", "challenge", "turnstile", "Just a moment")
+                             if w.lower() in src.lower()]
+                    print("  SPA rendered. cloudflare markers:", flags or "NONE", flush=True)
+                    break
+            except Exception as exc:  # noqa: BLE001
+                print("  read error:", str(exc)[:80], flush=True)
+            time.sleep(3)
+        if not booted:
+            print("  SPA never rendered (page stayed near-empty) — proxy too slow/unstable, or asset block.", flush=True)
 
         # watch ~40s for any fantasy graphql responses and their statuses
         deadline = time.time() + 40
