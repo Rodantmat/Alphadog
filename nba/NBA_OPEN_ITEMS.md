@@ -16926,6 +16926,8 @@ changed nothing and triggered nothing; the measurements above are the input.**
 
 ## T20-2 · **NEW · OWNER DECISION · 🔴 SEASON-CRITICAL** · the live storage-diet plan is aimed at a database that no longer exists
 
+> 📌 **INSTANCE SPEC ADDED `2026-09-28`, per the build chat, cross-referenced against `NBA_DATABASE.md`'s own live record (not re-derived — infra specs aren't SQL-queryable from here).** **`alphadog-v2-postgres` is a DigitalOcean Basic instance: shared CPU / `1` vCPU / `2` GB RAM / `47` connection limit / `30` GiB SSD base, autoscale `+10` GiB per node at `80%` (`NBA_DATABASE.md`, the owner's own upgrade record).** The item's own most recent re-verification (below, `2026-09-28`) already puts live usage at **`26.9` GB** — comfortably under the `30` GiB base tier, a real change from the `42.95` GB (2026-09-22) that had twice triggered the autoscale past the owner's stated `30` GiB ceiling. **This is the "database that no longer exists" the heading names**: the plan (`storage_diet_plan_2026_09_17`) was written against the OLD `1` GB RAM / `1` vCPU / `30` GiB-fixed instance, before the upgrade — its per-table GB targets and index-audit priorities are stale against the current instance's own headroom, independent of whether its named tables have also changed size.
+
 > ## 🔴🔴 RE-VERIFIED LIVE 2026-09-28 — STILL OPEN, AND THE NUMBERS MOVED AGAIN, FURTHER FROM THE PLAN
 > *This item's own point is that a config-stored plan drifts from a live-changing database. Six days
 > after this item's own "live" audit, its own figures are themselves stale — the exact pattern it
