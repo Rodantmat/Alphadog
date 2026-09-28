@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install --upgrade pip curl_cffi
+      - run: python -m pip install --upgrade pip curl_cffi ably
       - name: "Run the probe script named in the trigger file"
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
