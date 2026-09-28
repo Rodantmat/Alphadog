@@ -14407,7 +14407,7 @@ scripts the three pipelines call. **Read from source; nothing was run.***
 
 ---
 
-## T20-25 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, RUNNING NOW · THE PLAYER BRIDGE IS BUILT WITH ONE NORMALISER AND READ WITH ANOTHER — `6.01%` OF A REAL SLATE'S BOARD ROWS WERE SILENTLY DROPPED**
+## T20-25 · ~~**NEW · 🔴🔴🔴 SEASON-CRITICAL, RUNNING NOW**~~ ✅ **ALL THREE CONSUMERS CLOSED `2026-09-28`** · THE PLAYER BRIDGE IS BUILT WITH ONE NORMALISER AND READ WITH ANOTHER — `6.01%` OF A REAL SLATE'S BOARD ROWS WERE SILENTLY DROPPED
 *Added **T20 pass 122 (§T20.127), 2026-09-23**, measuring the yield `T20-24` asserted without
 measuring. **Read from source plus five `SELECT`s; nothing was run or changed.***
 
