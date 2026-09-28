@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 """
-Betr harvester (Path C, UC Mode + PERSISTENT PROFILE). The board needs a logged-in session; automating the
-login fights Cloudflare + an SMS code. Instead: use a persistent Chrome profile. FIRST RUN you log in BY HAND
-(and pass the SMS code) once; the session is saved to the profile. EVERY RUN AFTER reuses it — no login, no
-code — and intercepts the page's own getUpcomingEventsV2 board response.
+Betr harvester (Path C, UC Mode + PERSISTENT PROFILE + logged-in in-page fetch).
+Session is saved in ./betr_profile (you logged in once). Now, WHILE LOGGED IN, the page's own credentials
+are present, so an in-page fetch to the board should return 200 (it 401'd earlier only because there was no
+session). We run the board query from the page (same-origin, cookies included) AND fall back to intercepting
+the app's own board response.
 
-Setup (one time):
-    python -m pip install --upgrade seleniumbase
-FIRST run (log in by hand when the window opens; you have 3 minutes):
-    $env:BETR_LEAGUE="WNBA"; $env:BETR_LOGIN="1"; python betr9.py
-LATER runs (session reused, no login):
-    $env:BETR_LEAGUE="WNBA"; python betr9.py
-
-Profile is stored in ./betr_profile (keep it; it holds your logged-in session).
+Runs:
+  First time (log in by hand):  $env:BETR_LEAGUE="WNBA"; $env:BETR_LOGIN="1"; python betrA.py
+  After that (no login):        $env:BETR_LEAGUE="WNBA"; python betrA.py
 Output: boards/betr_<league>_current.json (+ _meta), and betr_nba_current.json for NBA.
 """
 import json
@@ -28,6 +24,17 @@ PROFILE = os.path.abspath(os.environ.get("BETR_PROFILE_DIR", "betr_profile"))
 OUT = Path(os.environ.get("BETR_OUT_DIR", "boards"))
 OUT.mkdir(parents=True, exist_ok=True)
 URL = "https://picks.betr.app/"
+
+QUERY = ("query LeagueUpcomingEvents($league: League!) { getUpcomingEventsV2(league: $league) { "
+         "...E ... on TeamVersusEvent { teams { ...T __typename } __typename } "
+         "... on TeamTournamentEvent { teams { ...T __typename } __typename } "
+         "... on IndividualTournamentEvent { players { ...P __typename } __typename } "
+         "... on IndividualVersusEvent { players { ...P __typename } __typename } __typename } } "
+         "fragment E on EventV2 { id date status sport league name __typename } "
+         "fragment T on Team { id name league sport fullName players { ...P __typename } __typename } "
+         "fragment P on Player { id firstName lastName position jerseyNumber "
+         "projections { marketId marketStatus type label name value nonRegularValue nonRegularPercentage "
+         "allowedOptions { outcome __typename } currentValue __typename } __typename }")
 
 
 def parse_leg(ev, team, player, proj):
@@ -62,78 +69,62 @@ def flatten(body):
     return legs, len(events)
 
 
-def scan_board(sb):
+def try_inpage_fetch(sb):
+    payload = json.dumps({"operationName": "LeagueUpcomingEvents", "query": QUERY, "variables": {"league": LEAGUE}})
+    js = ("var cb=arguments[arguments.length-1];"
+          "fetch('https://api.fantasy.betr.app/graphql',{method:'POST',"
+          "headers:{'content-type':'application/json'},body:" + json.dumps(payload) + ","
+          "credentials:'include'}).then(r=>r.text()).then(t=>cb(t)).catch(e=>cb('ERR:'+e));")
     try:
-        logs = sb.driver.get_log("performance")
+        sb.driver.set_script_timeout(30)
     except Exception:  # noqa: BLE001
-        return None
-    ids = []
-    for e in logs:
-        try:
-            m = json.loads(e["message"])["message"]
-        except Exception:  # noqa: BLE001
-            continue
-        if m.get("method") == "Network.responseReceived" and "fantasy.betr.app/graphql" in m["params"]["response"].get("url", ""):
-            ids.append(m["params"]["requestId"])
-    for rid in reversed(ids):
-        try:
-            b = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid})
-            j = json.loads(b.get("body", ""))
-            if (j.get("data") or {}).get("getUpcomingEventsV2"):
-                return j
-        except Exception:  # noqa: BLE001
-            continue
-    return None
+        pass
+    try:
+        res = sb.execute_async_script(js)
+        if res and not str(res).startswith("ERR:"):
+            j = json.loads(res)
+            if (j.get("data") or {}).get("getUpcomingEventsV2") is not None:
+                return j, None
+            return None, str(res)[:160]
+        return None, str(res)[:160]
+    except Exception as exc:  # noqa: BLE001
+        return None, str(exc)[:160]
 
 
 def main():
     from seleniumbase import SB
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     board = None
-    with SB(uc=True, headless=False, locale="en-US", log_cdp_events=True,
-            user_data_dir=PROFILE) as sb:
+    with SB(uc=True, headless=False, locale="en-US", user_data_dir=PROFILE) as sb:
         print(f"opening {URL} (profile: {PROFILE}) ...", flush=True)
         sb.uc_open_with_reconnect(URL, reconnect_time=6)
         try:
             sb.uc_gui_click_captcha()
         except Exception:  # noqa: BLE001
             pass
-        try:
-            sb.driver.execute_cdp_cmd("Network.enable", {})
-        except Exception:  # noqa: BLE001
-            pass
 
         if LOGIN:
-            print("\n*** LOG IN NOW in the browser window (enter phone, password, and the SMS code). ***", flush=True)
-            print("*** You have 3 minutes. When you can see the picks board, leave it and wait. ***\n", flush=True)
+            print("\n*** LOG IN NOW (phone, password, SMS). 3 minutes. Then leave the board on screen. ***\n", flush=True)
             time.sleep(180)
         else:
+            time.sleep(8)  # let the logged-in app boot
+
+        # try the in-page fetch a few times (session cookies now present)
+        for attempt in range(5):
+            board, note = try_inpage_fetch(sb)
+            if board:
+                print(f"  in-page fetch OK on attempt {attempt}", flush=True)
+                break
+            print(f"  attempt {attempt}: {note}", flush=True)
             time.sleep(6)
 
-        # navigate to the league board and scan a few times
-        for _ in range(6):
-            if board:
-                break
-            for target in (f"{URL}lobby/{LEAGUE.lower()}", f"{URL}{LEAGUE.lower()}", URL):
-                try:
-                    sb.uc_open_with_reconnect(target, reconnect_time=4)
-                    time.sleep(4)
-                except Exception:  # noqa: BLE001
-                    pass
-                board = scan_board(sb)
-                if board:
-                    break
-            if not board:
-                time.sleep(4)
-
     if not board or ((board.get("data") or {}).get("getUpcomingEventsV2") is None):
-        print("NO BOARD. If you were logged in and saw the board, tell me; else rerun with BETR_LOGIN=1.",
-              file=sys.stderr)
+        print("NO BOARD. If you were NOT logged in, run once with BETR_LOGIN=1 and complete login.", file=sys.stderr)
         sys.exit(2)
 
     legs, nevents = flatten(board)
     fetched = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    meta = {"ok": True, "source": "seleniumbase-uc profile picks.betr.app", "league": LEAGUE,
+    meta = {"ok": True, "source": "seleniumbase-uc profile in-page picks.betr.app", "league": LEAGUE,
             "started_at": started, "fetched_at": fetched, "legs": len(legs),
             "alt_legs": sum(1 for l in legs if l.get("alt")),
             "players": len({l["player_id"] for l in legs}), "events": nevents}
