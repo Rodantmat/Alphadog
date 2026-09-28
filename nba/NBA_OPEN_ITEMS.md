@@ -10434,7 +10434,7 @@ that cries wolf in week one is one people stop trusting.**
 ### STILL OPEN from T7's gap table — recurring refresh
 | Gap | Status |
 |---|---|
-| **Splits + career totals** | ✅ **CLOSED in T7** — put on a recurring path via a `mode` input on the existing backfill worker (not a new worker), season read from the scraper meta, both added to the weekly cycle workflow |
+| **Splits + career totals** | ~~✅ **CLOSED in T7** — put on a recurring path via a `mode` input on the existing backfill worker (not a new worker), season read from the scraper meta, both added to the weekly cycle workflow~~ **RECLASSIFIED `2026-09-28` — "CLOSED IN T7" WAS PREMATURE.** ⚠ *T7 built the `mode: "weekly"` capability (confirmed live in `alphadog-v2-nba-static-backfill.js`) and `nba-scrape.yml` does re-scrape the three source JSON files weekly — but nothing ever calls the worker's `/run` on a schedule: `alphadog-v2-orchestrator.js` has zero references to `NBA_STATIC_BACKFILL_WORKER`, and `nba-scrape.yml`'s own commit step only commits JSON, it never POSTs to the worker.* ▶ **LIVE-VERIFIED `2026-09-28`**: `nba_stats.player_career_season_totals` / `nba_stats.player_splits` / `nba_team.team_splits` all frozen at `max(updated_at) = 2026-09-08T08:18` — `20` days stale — while the source JSON was freshly re-committed `2026-09-14`–`09-21`. Full detail: `T26-12`, `NBA_WORKERS.md §T26.79`'s own correction. |
 | **Defence-vs-Position** | ✅ **CLOSED in T7** — the recompute SQL was placed inside the delta worker, before `sql.end()` |
 | **Starter-status + officials for NEW games** | ✅ `scrape_nba_per_game_delta.py` does this |
 
