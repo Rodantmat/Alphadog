@@ -13601,15 +13601,25 @@ backtest an availability-aware pipeline without historical availability.
 ## FROM THE LIVE SESSION 2026-09-19/20 (not yet a transcript file)
 *added 2026-09-20 — these are current and unfixed unless marked*
 
-### BUG-OPEN · PrizePicks is NOT wired for NBA in the live pipeline
-`main.py` at the repo root is the **MLB** producer: `league_id=2` is a literal in all four candidate
-URLs and `OUTPUT_JSON` is fixed to `prizepicks_mlb_current.json`. It honours a
+### ~~BUG-OPEN~~ ✅ BUG-FIXED (2026-09-24, reconciled 2026-09-28) · PrizePicks is NOT wired for NBA in the live pipeline
+`main.py` at the repo root **was** the **MLB**-only producer: `league_id=2` was a literal in all four
+candidate URLs and `OUTPUT_JSON` was fixed to `prizepicks_mlb_current.json`. ~~It honours a
 `PRIZEPICKS_PROJECTIONS_URLS` override, so it CAN be pointed at NBA — but it would then write the NBA
-board into the MLB file and the next MLB run would overwrite it.
-**Mitigation built 2026-09-20:** `nba/scrape_prizepicks_nba_board.py`, a separate producer with its own
+board into the MLB file and the next MLB run would overwrite it.~~
+~~**Mitigation built 2026-09-20:** `nba/scrape_prizepicks_nba_board.py`, a separate producer with its own
 URLs (`league_id=7`), its own output (`boards/prizepicks_nba_current.json`) and its own env namespace
-(`PP_NBA_*`). **Live-tested: 192 projections, 104 demons / 52 goblins / 36 standard.**
-Still open: `main.py` itself is untouched, and ~~COMPASS fact 176 still describes the old plan~~
+(`PP_NBA_*`). **Live-tested: 192 projections, 104 demons / 52 goblins / 36 standard.**~~
+✅✅✅ **RECONCILED 2026-09-28, live-verified — full record `NBA_WORKERS.md` §T27.3.** *The
+side-producer above was itself superseded on 2026-09-24: `main.py` at the repo root is now the live
+mitigation, parameterised in place (`PRIZEPICKS_LEAGUE_ID=7` / `PRIZEPICKS_SPORT=nba` /
+`PRIZEPICKS_OUT_DIR=boards`, MLB defaults unchanged with no env set) and wired as the FIRST board-scrape
+step in `nba-p3-afternoon-light.yml:191-219` — this is what actually runs today, not the separate
+script, which is no longer invoked by any scheduled workflow. A second bug this fix exposed — PrizePicks'
+raw stat labels (`3-pt_made`, `pts+rebs`, …) joining to nothing, ~44% of the board (combos), a different
+defect from `NBA_OPEN_ITEMS.md`'s own pre-existing `market_key`→prop `44%` finding — was fixed the same
+day with an explicit `PP_STAT_MAP` in `archive_live_boards.py:69-87`. Both live-verified `2026-09-28`
+against `main.py:31-50` and `nba-p3-afternoon-light.yml:191-219`.*
+~~Still open: `main.py` itself is untouched, and~~ ~~COMPASS fact 176 still describes the old plan~~
 **THE PLAN IS NOT IN COMPASS AT ALL** *(corrected 2026-09-22, §T20.43)*.
 > 🔴🔴 ***There is no COMPASS fact 176.*** *`NBA_COMPASS.md` is the only compass file in the repo, it
 > numbers **1–107**, and `176` appears in it **zero** times.* ⚠⚠ **This line asserted, in the PRESENT
