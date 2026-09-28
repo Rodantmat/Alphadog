@@ -14933,6 +14933,16 @@ credential; this instance survived that catch, in the very pass named `IDs, hash
 
 ---
 
+## F8-1 · **NEW · HIGH, ENRICHMENT-WIRING · CROSS-REFERENCE ONLY (RULE 28) — full record lives in `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md`** · a measured, better availability prior is computed and never used
+
+📌 **Added here `2026-09-28` for reachability from the primary tracker only — NOT a new finding.** The full evidence, verification and fix design already exist in `NBA_ENRICHMENT_MINING_AND_FALLBACKS.md` (filed there) and `NBA_SWEEP_RUN_LOG.md`; nothing below is re-derived.
+
+**The finding, in brief**: `nba_score.availability_p_plays()` — a measured P(plays) prior, `11.3%` better Brier than status-only (`0.0441` vs `0.0498`) — is **called from nowhere in production**. `build_baseline_ladder.py:105` populates `INJ_STATUS` and never uses it after; `3,863` Questionable + `1,217` Probable + `593` Available player-games sat at the `~9am` cutoff over two seasons kept at FULL projection weight, unadjusted by their own standing status (only a later status CHANGE via the delta detector moves them). **The fix is not a mean multiplier** — it requires blending the play-distribution with a DNP spike at zero, graded at the leg level per fact 90, through the factor gate — real enrichment-wiring work, not a hot patch.
+
+⚠ **Per the build chat, `2026-09-28`: "F8-1 stands" — confirmed as a real, open, HIGH-severity finding, not a pipeline blocker, deserving its own focused session. The build chat owns the eventual fix; this sweep does not implement one (documentation only).**
+
+---
+
 ## F6-3 · **NEW · ⚠ MEDIUM** · the one penalty in the reliability audit that does not derive from the rule, and it is on the highest-volume prop
 
 *Filed 2026-09-23, `§F6.21`. **Read-only**: two `SELECT`s against
