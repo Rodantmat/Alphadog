@@ -14017,6 +14017,8 @@ the parameterised `INSERT` are THREE SEPARATE `execute()` calls.**
 because the same shape recurs in every builder that creates-then-fills a table.**
 **Severity: LOW** *(fixed, and it fails loudly)*. *(T19 pass 2, `NBA_MASTER_SUMMARY.md` §T19.3.)*
 
+> 📅 **RE-CONFIRMED LIVE `2026-09-28`.** *`nba/build_board_tiers_v2.py` (live-read) still splits DDL, delete/truncate, and the parameterised `INSERT` into separate `.execute()` calls (`:124` DDL · `:126`/`:128` truncate-or-scoped-delete · `:130` parameterised INSERT) — the fix shape holds. One drift noted, not a regression: `:128` now runs a scoped `DELETE ... WHERE game_date = %s AND bookmaker = ANY(%s)` rather than a bare `TRUNCATE`, evidently to support per-slate/per-bookmaker rebuilds — still its own standalone `execute()` call, so the multi-command-with-params failure mode this item documents remains avoided.*
+
 ## T19-3 · 🔴🔴 **NEW · METHOD, HIGH** · T15–T18 were closed on a standard this sweep had already superseded
 **`NBA_MASTER_SUMMARY.md` records the sweep's own method** *(lines ~5430–5438, "THE METHOD, now proven
 and fixed for T2–T16")*: **targeted sweeps build the skeleton, then *"full sequential reads — and
