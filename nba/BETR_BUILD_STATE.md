@@ -1,5 +1,40 @@
 # BETR PICKS — COMPLETE BUILD RECORD (2026-09-28)
 
+## ★ FIVE-APP SCRAPER AUDIT (2026-09-28) — all cloud-independent, all wired to NBA
+Requested check: are all five DFS scrapers mining, fully cloud-independent, and wired to NBA? Result:
+
+| App | Cloud-independent? | Live now (open sport) | NBA wiring | Parser verified on live data |
+|-----|--------------------|-----------------------|-----------|------------------------------|
+| PrizePicks | ✅ P3 + `nba-pp-payout-map.yml` cron | ✅ NBA board already posted (2.2M rows, fetched today) | ✅ archiver `rows_prizepicks` | ✅ (live NBA board) |
+| Underdog | ✅ `underdog-board.yml` cron */2h, curl_cffi+PROXY | ✅ MLB 20 legs; NBA 3 (barely open) | ✅ `rows_underdog` | ✅ MLB dry-run clean |
+| Sleeper | ✅ `sleeper-board.yml` cron */2h | ✅ WNBA 740 legs / 596 alt | ✅ `rows_sleeper` | ✅ WNBA dry-run — FIXED combo keys (see below) |
+| Fliff | ✅ `fliff-board.yml` cron */2h | ✅ MLB 4,738 legs | ✅ `rows_fliff` | ✅ MLB dry-run clean (see sport-filter note) |
+| Betr | ✅ `betr-cloud-harvest.yml` cron 2x/day (browser) | ✅ WNBA 1,281 legs / 514 alt, committed by runner | ✅ `rows_betr` | ✅ WNBA dry-run — FIXED assists_rebounds |
+
+Key facts:
+- **All five run entirely in GitHub Actions** (no owner machine). Sleeper/Underdog/Fliff are plain HTTP
+  scrapers (curl_cffi + residential PROXY_URL) — no browser/Cloudflare, the easy case. Betr needs the
+  browser harvester (this doc). PrizePicks runs in P3 + its payout-map workflow.
+- **Archiver wiring is complete:** `nba-p3-afternoon-light.yml` runs `archive_live_boards.py` with
+  `ARCHIVE_APPS="prizepicks,underdog,sleeper,fliff,betr"`, `ARCHIVE_SPORT=nba`, `ARCHIVE_LABEL=window`,
+  once daily. So all five land in `nba_market.board_snapshots` the moment their NBA boards populate.
+- **Why DB rows look thin for four of five:** NBA hasn't opened (Oct 20). Their scrapers are fresh TODAY on
+  their open sports (WNBA/MLB); the NBA files are near-empty by nature, so the archiver correctly stores
+  little. PrizePicks is the exception (its NBA board posts weeks early). This is expected, not breakage.
+- **Bugs caught by dry-running parsers on live boards (pre-NBA), now fixed in archive_live_boards.py:**
+  - `rows_sleeper`: combo wager types were emitting `player_points_and_rebounds` etc.; the scorer keys are
+    `player_points_rebounds` (no "and"). Added a normalizer (drops `_and_`/`+`, orders P>R>A). Now 0 unmapped.
+  - `rows_betr`: `ASSISTS_REBOUNDS` fell through unmapped; added both orderings. Now 0 unmapped.
+- **Fliff sport-filter caveat:** `fliff_mlb_current.json` contained mostly NFL props (anytime_touchdowns,
+  receptions, tackles) — Fliff's scraper sport filter is loose. Harmless for NBA because the archiver's
+  NOT-NBA guard (T26-7) rejects other-sport vocabulary before insert, but worth tightening the Fliff scraper
+  when convenient so the NBA file isn't padded with other sports.
+- **Betr auto-switches WNBA->NBA on 2026-10-20** (date-driven in the workflow); the others already request
+  the `nba` board via their scrapers, so no per-app switch is needed for NBA opening.
+
+──────────────────────────────────────────────────────────────────────────────
+
+
 Status: ✅ **FULLY CLOUD, LIVE.** Betr's board is harvested and committed entirely by a GitHub Actions
 runner — no owner machine. Verified 2026-09-28: `boards/betr_wnba_current_meta.json` written with
 `source: "github-runner uc+proxy picks.betr.app"`, 1,281 legs / 514 alt / 46 players / 4 events.
