@@ -161,6 +161,20 @@ writes. Grouped by role.
 
 ---
 
+## 🔴🔴🔴 **§T27.3 — THE DOCUMENTED "HARD GAP" CLOSES: PRIZEPICKS NBA BOARD NOW CAPTURED, AND A SEPARATE SILENT-JOIN BUG WOULD HAVE DROPPED ~44% OF ITS LEGS** *(source + live verify, 2026-09-24/28; `0` of the twelve before this entry)*
+
+> 📌 **Before this fix**: `nba-p3-afternoon-light.yml`'s own comment documented the gap directly — *"PRIZEPICKS IS NOT WIRED FOR NBA YET — this is a HARD GAP, not a configuration detail. `main.py` at the repo root is the MLB producer and it is HARDCODED: `league_id=2` appears as a literal in all four URLs… There is NO environment variable."* Every P3 run logged `"prizepicks: no board file"` and `nba_market.board_snapshots` held zero PrizePicks rows. PrizePicks legs reached the board only via the Odds API feed, which carries the standard markets but not the DFS-only ones (fantasy score, period props) or the goblin/demon multipliers.
+>
+> 🔧 **Fix 1 — the producer.** `main.py` is now opt-in NBA via three env vars (`PRIZEPICKS_LEAGUE_ID=7`, `PRIZEPICKS_SPORT=nba`, `PRIZEPICKS_OUT_DIR=boards`), with no env set it behaves exactly as before (MLB, `league_id=2`, `prizepicks_mlb_current.json`) — purely additive. **Live-verified `nba-p3-afternoon-light.yml:191-219`**, wired as the first board scrape, ahead of the others.
+>
+> 🔧 **Fix 2 — a second, separate bug the first fix exposed.** `archive_live_boards.py` was joining PrizePicks' own raw stat labels (`3-pt_made`, `pts+rebs`, `pts+rebs+asts`, `blocked_shots`, …) with **no normalisation** — every consumer (`nba_score.paper_prop_map`, the scorer, the grader, the slip engine) expects the Odds-API convention (`player_threes`, `player_points_rebounds`, `player_points_rebounds_assists`, `player_blocks`, …). Only points/rebounds/assists happened to match by coincidence. Combos are ~44% of the board, so on opening night those legs would have joined to nothing — **no error, no empty-result warning, just a board that quietly lost almost half itself.** Fixed with an explicit `PP_STAT_MAP` (unmapped stat types print a visible warning instead of vanishing). **Live-verified `archive_live_boards.py:69-87`.**
+>
+> ⚠ **Not the same bug as the corpus's other "44% of the board" findings.** `NBA_OPEN_ITEMS.md` already documents a `norm_market()`/`market_key→prop` defect at the same `44%` magnitude, but that one is in the historical/Odds-API-sourced pipeline (`naive replace('player_','')`), a different file and a different code path than this live-capture normaliser. The magnitude matches because combos are structurally ~44% of any NBA board — coincidence of proportion, not the same defect. Recorded separately to avoid the two being merged into one.
+>
+> ⚠⚠ **Flagged, not fixed**: `NBA_OPEN_ITEMS.md` still describes the PrizePicks-NBA mitigation as a separate script, `nba/scrape_prizepicks_nba_board.py` — the live fix instead parameterises `main.py` at the repo root. One of the two descriptions is stale; reconciling which needs its own pass, not a guess here.
+
+---
+
 ## ⚠ **§T27.2 — P3's CUTOFF GATE HAD A DST BUG ITS OWN COMMENT DENIED, SELF-CAUGHT AND FIXED, AND THE SAME TRANSCRIPT CONFIRMS THE GATE IS BACK ON ONE CRON** *(source + live verify, 2026-09-24/28; `0` of the twelve before this entry)*
 
 > 📌 **The gate hardcoded `latest = 21:15 UTC` with a comment claiming that was `"13:15 PT during DST"`. It was not** — `21:15 UTC` is `14:15 PDT`, an hour later than the comment's own claim. Under PDT this let a scheduled P3 run start a full hour past the intended `13:15 PT` cutoff, silently, because the comment and the code agreed with each other while both were wrong about the clock. Found and fixed in the same session (`2026-09-24`) that introduced it.
