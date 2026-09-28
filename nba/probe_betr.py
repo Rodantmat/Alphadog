@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Betr probe v9 (2026-09-28): the fantasy GraphQL 401s the refreshed token though api.betr.app accepts it.
-Test WHY, in order of likelihood:
-  A. replay the CAPTURED browser token (acr:1, mfa) verbatim -> if it 200s, the refreshed acr:0 token is the problem
-  B. token exchange for a fantasy audience (grant_type=urn:...:token-exchange) -> the standard way an app
-     gets a service-specific token without redoing MFA
-  C. refresh with audience / different scopes
-Read-only. Secrets: BETR_REFRESH_TOKEN, BETR_CLIENT_ID, BETR_ACCESS_TOKEN (the captured browser token).
+Betr probe v12 (2026-09-28). Research + evidence converge: the fantasy GraphQL gateway almost certainly
+authenticates via an HttpOnly cookie that DevTools "Copy as cURL" OMITS (browser 200 / server 401 with the
+identical bearer; 401 in ~40ms before the query; no visible cookie). This probe:
+  1. refreshes, capturing ANY Set-Cookie from the Keycloak token endpoint,
+  2. GETs picks.betr.app/ and api.fantasy.betr.app root to see if a session cookie is set on page/app load,
+  3. replays the GraphQL with cookies from a shared session jar (so any Set-Cookie is carried),
+  4. prints all response Set-Cookie headers so we see the cookie name the gateway wants.
+Read-only. Secrets from env.
 """
 import json
 import os
@@ -17,75 +18,57 @@ KC = "https://account.betr.app/realms/betr/protocol/openid-connect/token"
 GQL = "https://api.fantasy.betr.app/graphql"
 RT = os.environ.get("BETR_REFRESH_TOKEN", "")
 CID = os.environ.get("BETR_CLIENT_ID", "betr-rn")
-CAPTURED = os.environ.get("BETR_ACCESS_TOKEN", "")
-PROXY = os.environ.get("PROXY_URL", "").strip()
-PROXIES = {"https": PROXY, "http": PROXY} if PROXY else None
-
+CAP = os.environ.get("BETR_ACCESS_TOKEN", "")
 MINQ = ('query LeagueUpcomingEvents($league: League!) { getUpcomingEventsV2(league: $league) '
         '{ ...on TeamVersusEvent { id __typename } __typename } }')
 
 
-def gql(tok, league="WNBA", proxied=False):
-    H = {"authorization": "Bearer " + tok,
-         "accept": "application/graphql-response+json, application/graphql+json, application/json, text/event-stream",
-         "accept-language": "en-US,en;q=0.9", "content-type": "application/json", "channel": "MOBILE_WEB",
-         "fantasy-api-version": "16.0", "fantasy-application-version": "3.42.9", "jurisdiction": "CA",
-         "promotions-api-version": "6.0", "origin": "https://picks.betr.app", "referer": "https://picks.betr.app/",
-         "priority": "u=1, i", "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-         "sec-ch-ua-mobile": "?0", "sec-ch-ua-platform": '"Windows"', "sec-fetch-dest": "empty",
-         "sec-fetch-mode": "cors", "sec-fetch-site": "same-site",
-         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
-    r = requests.post(GQL, headers=H, data=json.dumps({"operationName": "LeagueUpcomingEvents",
-                      "query": MINQ, "variables": {"league": league}}), timeout=40, impersonate="chrome124",
-                      proxies=(PROXIES if proxied else None))
-    return r.status_code, (r.text or "")[:150]
-
-
-def acr_of(tok):
-    import base64
-    p = tok.split(".")[1]; p += "=" * (-len(p) % 4)
-    d = json.loads(base64.urlsafe_b64decode(p))
-    return d.get("acr"), d.get("mfa"), d.get("aud")
-
-
-def post_token(data):
-    r = requests.post(KC, data=data, headers={"content-type": "application/x-www-form-urlencoded"},
-                      timeout=30, impersonate="chrome124")
-    return r.status_code, r
+def show_cookies(r, tag):
+    sc = [v for k, v in r.headers.multi_items()] if hasattr(r.headers, "multi_items") else []
+    setc = r.headers.get("set-cookie")
+    print(f"  [{tag}] status={r.status_code} set-cookie={'YES: ' + setc[:120] if setc else 'none'}")
 
 
 def main():
-    print("PROXY set:", bool(PROXIES))
-    tok = CAPTURED or None
-    if not tok:
-        st, r = post_token({"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT,
-                            "scope": "openid profile email offline_access"})
-        tok = r.json()["access_token"] if st == 200 else None
-    if not tok:
-        print("no token"); return
-    print("token acr/aud:", acr_of(tok))
-    H = {"authorization": "Bearer " + tok,
-         "accept": "application/graphql-response+json, application/graphql+json, application/json, text/event-stream",
-         "accept-language": "en-US,en;q=0.9", "content-type": "application/json", "channel": "MOBILE_WEB",
+    s = requests.Session()  # shared cookie jar
+    # 1. refresh - does Keycloak set a cookie?
+    r = s.post(KC, data={"grant_type": "refresh_token", "client_id": CID, "refresh_token": RT,
+                         "scope": "openid profile email offline_access"},
+               headers={"content-type": "application/x-www-form-urlencoded"}, impersonate="chrome124", timeout=30)
+    show_cookies(r, "kc token")
+    tok = r.json().get("access_token") if r.status_code == 200 else None
+    tok = CAP or tok
+    print("  cookies in jar after token:", list(s.cookies.keys()) if hasattr(s, "cookies") else "n/a")
+
+    base_h = {"origin": "https://picks.betr.app", "referer": "https://picks.betr.app/",
+              "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
+
+    # 2. hit the SPA origin and the fantasy root WITH the bearer - maybe a session cookie is issued here
+    for url in ("https://picks.betr.app/", "https://api.fantasy.betr.app/", "https://api.fantasy.betr.app/health"):
+        try:
+            rr = s.get(url, headers={**base_h, "authorization": "Bearer " + tok} if tok else base_h,
+                       impersonate="chrome124", timeout=25)
+            show_cookies(rr, "GET " + url)
+        except Exception as exc:  # noqa: BLE001
+            print("  GET", url, "ERR", str(exc)[:50])
+
+    # 3. a Keycloak "userinfo" / session hit sometimes mints the app cookie
+    try:
+        ui = s.get("https://account.betr.app/realms/betr/protocol/openid-connect/userinfo",
+                   headers={"authorization": "Bearer " + tok}, impersonate="chrome124", timeout=25)
+        show_cookies(ui, "userinfo")
+    except Exception as exc:  # noqa: BLE001
+        print("  userinfo ERR", str(exc)[:50])
+
+    # 4. now GraphQL with the SAME session (any cookie gathered above is carried)
+    H = {**base_h, "authorization": "Bearer " + tok, "content-type": "application/json", "channel": "MOBILE_WEB",
+         "accept": "application/graphql-response+json, application/graphql+json, application/json",
          "fantasy-api-version": "16.0", "fantasy-application-version": "3.42.9", "jurisdiction": "CA",
-         "promotions-api-version": "6.0", "origin": "https://picks.betr.app", "referer": "https://picks.betr.app/",
-         "priority": "u=1, i", "sec-ch-ua": '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
-         "sec-ch-ua-mobile": "?0", "sec-ch-ua-platform": '"Windows"', "sec-fetch-dest": "empty",
-         "sec-fetch-mode": "cors", "sec-fetch-site": "same-site",
-         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"}
-    body = json.dumps({"operationName": "LeagueUpcomingEvents", "query": MINQ, "variables": {"league": "WNBA"}})
-    for imp in ("chrome124", "chrome120", "chrome116", "chrome110", "chrome131", "chrome133a",
-                "safari17_0", "safari18_0", "edge101", "edge99"):
-        for proxied in (False, True) if PROXIES else (False,):
-            try:
-                r = requests.post(GQL, headers=H, data=body, timeout=30, impersonate=imp,
-                                  proxies=(PROXIES if proxied else None))
-                tag = f"{imp}{'+proxy' if proxied else ''}"
-                print(f"  {tag:<20} {r.status_code}  {(r.text or '')[:70]}")
-                if r.status_code == 200:
-                    print("   *** SUCCESS ***", (r.text or "")[:200])
-            except Exception as exc:  # noqa: BLE001
-                print(f"  {imp}{'+proxy' if proxied else ''}: ERR {str(exc)[:50]}")
+         "promotions-api-version": "6.0"}
+    g = s.post(GQL, headers=H, data=json.dumps({"operationName": "LeagueUpcomingEvents", "query": MINQ,
+               "variables": {"league": "WNBA"}}), impersonate="chrome124", timeout=30)
+    print(f"\n  GraphQL WITH shared-session cookies: {g.status_code}  {(g.text or '')[:160]}")
+    print("  final jar:", list(s.cookies.keys()) if hasattr(s, "cookies") else "n/a")
 
 
 if __name__ == "__main__":
