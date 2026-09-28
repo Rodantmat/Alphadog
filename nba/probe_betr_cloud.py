@@ -1,107 +1,150 @@
 #!/usr/bin/env python3
 """
-Betr CLOUD test (2026-09-28): can a GitHub Actions Linux runner clear Cloudflare Turnstile with
-SeleniumBase UC Mode + Xvfb (per the SB maintainer: "GitHub Actions jobs are correctly bypassing a CF
-Turnstile")? This does NOT need a login — it just checks whether we reach the Betr lobby past Turnstile
-and whether the anonymous config/board graphql calls come back 200 from the runner.
+Betr CLOUD test v2 (2026-09-28): fully-cloud harvest attempt on a GitHub runner.
+Prior tests proved: UC Mode + Xvfb CLEARS Cloudflare on the runner, but an AUTHENTICATED residential proxy
+breaks sub-resource loading (SPA stays at 39 bytes). FIX: run a LOCAL unauthenticated forward-proxy that
+upstreams to ProxyScrape (with creds + US sticky session), and point Chromium at 127.0.0.1 (no auth).
 
-Routes the browser through PROXY_URL (residential) if set. Prints, at each stage, the page title/URL and
-any fantasy.betr.app graphql statuses seen — so we KNOW if the runner passes the edge.
+Target league is WNBA (live now; NBA has no board until 2026-10-20 — identical shape, just the league arg).
+
+Flow: local proxy up -> UC+Xvfb Chrome via 127.0.0.1 -> clear Turnstile -> click WNBA -> intercept the
+page's own getUpcomingEventsV2 -> report 200 + event/leg counts. No login needed (board is anonymous once
+the SPA loads from a US IP).
 """
 import json
 import os
+import subprocess
+import sys
 import time
 
 from seleniumbase import SB
 
 URL = "https://picks.betr.app/"
+LEAGUE = os.environ.get("BETR_LEAGUE", "WNBA").upper()
 PROXY = os.environ.get("PROXY_URL", "").strip()
+LOCAL_PORT = int(os.environ.get("BETR_LOCAL_PROXY_PORT", "8899"))
+
+
+def start_local_proxy():
+    """proxy.py as an unauth local listener that upstreams to the authenticated residential proxy.
+    Returns (Popen, '127.0.0.1:port') or (None, None) if no upstream configured."""
+    if not PROXY:
+        return None, None
+    raw = PROXY.split("://", 1)[-1].rstrip("/").split("/", 1)[0]
+    if "@" not in raw:
+        # already unauth or ip-allowlisted — use directly
+        return None, raw
+    creds, host = raw.rsplit("@", 1)
+    user, _, pw = creds.partition(":")
+    # US-sticky ProxyScrape session so the same US IP serves the whole SPA load
+    if "-session-" not in user:
+        sid = os.environ.get("BETR_SESSION_ID", "betrwnba1")
+        user = f"{user}-country-us-session-{sid}-lifetime-10"
+    upstream = f"http://{user}:{pw}@{host}"
+    cmd = [sys.executable, "-m", "proxy",
+           "--hostname", "127.0.0.1", "--port", str(LOCAL_PORT),
+           "--proxy-pool", upstream,
+           "--plugins", "proxy.plugin.ProxyPoolPlugin"]
+    print(f"starting local forward-proxy 127.0.0.1:{LOCAL_PORT} -> {host} (US sticky)", flush=True)
+    p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(4)
+    return p, f"127.0.0.1:{LOCAL_PORT}"
 
 
 def main():
     seen = []
+    board = None
+    lp, proxy_arg = start_local_proxy()
     kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
-    if PROXY and os.environ.get("BETR_NOPROXY", "0") != "1":
-        # ProxyScrape residential (rp.scrapegw.com): make the session STICKY + US-geolocated by appending
-        # params to the USERNAME. Sticky -> the SPA has time to load on one IP; country-us -> no
-        # AllowLocation geo gate. Syntax: <user>-country-us-session-<id>-lifetime-<min>:<pass>@host:port.
-        raw = PROXY.split("://", 1)[-1].rstrip("/").split("/", 1)[0]
-        if "@" in raw and os.environ.get("BETR_STICKY", "1") == "1":
-            creds, host = raw.rsplit("@", 1)
-            user, _, pw = creds.partition(":")
-            if "-session-" not in user:
-                sid = os.environ.get("BETR_SESSION_ID", "betrnba1")
-                user = f"{user}-country-us-session-{sid}-lifetime-10"
-            raw = f"{user}:{pw}@{host}"
-            print(f"using STICKY US proxy @ {host} (session tag applied)", flush=True)
-        else:
-            print(f"using proxy {raw.split('@')[-1] if '@' in raw else raw}", flush=True)
-        kw["proxy"] = raw
+    if proxy_arg:
+        kw["proxy"] = proxy_arg
+        print(f"Chrome proxy -> {proxy_arg} (unauthenticated to Chrome)", flush=True)
     else:
-        print("NO PROXY (direct from the runner's datacenter IP) — isolating the SPA-blank cause", flush=True)
+        print("NO PROXY (direct)", flush=True)
 
-    with SB(**kw) as sb:
-        print("opening lobby via uc_open_with_reconnect ...", flush=True)
-        sb.uc_open_with_reconnect(URL, reconnect_time=8)
-        try:
-            sb.driver.execute_cdp_cmd("Network.enable", {})
-        except Exception:  # noqa: BLE001
-            pass
-        # attempt the CF click (Xvfb makes pyautogui work headless)
-        for _ in range(3):
+    try:
+        with SB(**kw) as sb:
+            print(f"opening {URL} ...", flush=True)
+            sb.uc_open_with_reconnect(URL, reconnect_time=10)
             try:
-                sb.uc_gui_click_captcha()
-                print("  uc_gui_click_captcha fired", flush=True)
-            except Exception as exc:  # noqa: BLE001
-                print("  uc_gui_click_captcha:", str(exc)[:100], flush=True)
-            time.sleep(5)
-
-        # WAIT for the SPA to actually render (page_length 39 = nothing loaded). Poll up to 60s.
-        booted = False
-        for i in range(30):
-            try:
-                src = sb.get_page_source() or ""
-                ln = len(src)
-                url = sb.get_current_url()
-                if i % 2 == 0 or ln > 5000:
-                    print(f"  t+{i*3}s  url={url[:90]}  page_length={ln}", flush=True)
-                if "AllowLocation" in url:
-                    print("  >>> GEO GATE (AllowLocation) — proxy IP has no US state; sticky+country-us should fix", flush=True)
-                if ln > 5000 and "AllowLocation" not in url:
-                    booted = True
-                    flags = [w for w in ("Verify you are human", "challenge", "turnstile", "Just a moment")
-                             if w.lower() in src.lower()]
-                    print("  SPA rendered. cloudflare markers:", flags or "NONE", flush=True)
-                    break
-            except Exception as exc:  # noqa: BLE001
-                print("  read error:", str(exc)[:80], flush=True)
-            time.sleep(3)
-        if not booted:
-            print("  SPA not on a board page yet (blank, or stuck on geo gate).", flush=True)
-
-        # watch ~40s for any fantasy graphql responses and their statuses
-        deadline = time.time() + 40
-        while time.time() < deadline:
-            try:
-                logs = sb.driver.get_log("performance")
+                sb.driver.execute_cdp_cmd("Network.enable", {})
             except Exception:  # noqa: BLE001
-                logs = []
-            for e in logs:
+                pass
+            for _ in range(3):
                 try:
-                    m = json.loads(e["message"])["message"]
-                except Exception:  # noqa: BLE001
-                    continue
-                if m.get("method") == "Network.responseReceived":
-                    r = m["params"]["response"]
-                    if "fantasy.betr.app/graphql" in r.get("url", ""):
-                        entry = (r.get("status"),)
-                        if entry not in seen:
-                            seen.append(entry)
-                            print(f"  fantasy graphql status: {r.get('status')}", flush=True)
-            time.sleep(3)
+                    sb.uc_gui_click_captcha()
+                    print("  uc_gui_click_captcha fired", flush=True)
+                except Exception as exc:  # noqa: BLE001
+                    print("  uc_gui_click_captcha:", str(exc)[:90], flush=True)
+                time.sleep(5)
 
-    print("\nRESULT: fantasy graphql statuses seen:", seen or "none",
-          "| 200 present:", any(s[0] == 200 for s in seen))
+            booted = False
+            for i in range(40):  # up to 120s (residential is slow)
+                try:
+                    src = sb.get_page_source() or ""
+                    ln = len(src); url = sb.get_current_url()
+                    if i % 3 == 0 or ln > 5000:
+                        print(f"  t+{i*3}s url={url[:80]} len={ln}", flush=True)
+                    if "AllowLocation" in url:
+                        print("  >>> GEO GATE still (proxy IP not US?) ", flush=True)
+                    if ln > 5000 and "AllowLocation" not in url:
+                        booted = True
+                        print("  SPA rendered.", flush=True)
+                        break
+                except Exception as exc:  # noqa: BLE001
+                    print("  read err:", str(exc)[:70], flush=True)
+                time.sleep(3)
+
+            if booted:
+                # click the league tab so the app fetches its board
+                for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//button[contains(.,"{LEAGUE}")]',
+                           f'//a[contains(.,"{LEAGUE}")]', '//*[normalize-space(text())="Basketball"]'):
+                    try:
+                        if sb.is_element_visible(xp):
+                            sb.click(xp, timeout=4)
+                            print(f"  clicked {xp}", flush=True)
+                            break
+                    except Exception:  # noqa: BLE001
+                        continue
+
+            # watch for the board response
+            deadline = time.time() + 60
+            while time.time() < deadline and not board:
+                try:
+                    logs = sb.driver.get_log("performance")
+                except Exception:  # noqa: BLE001
+                    logs = []
+                ids = []
+                for e in logs:
+                    try:
+                        m = json.loads(e["message"])["message"]
+                    except Exception:  # noqa: BLE001
+                        continue
+                    if m.get("method") == "Network.responseReceived":
+                        r = m["params"]["response"]
+                        if "fantasy.betr.app/graphql" in r.get("url", ""):
+                            if r.get("status") not in seen:
+                                seen.append(r.get("status"))
+                                print(f"  fantasy graphql status: {r.get('status')}", flush=True)
+                            ids.append(m["params"]["requestId"])
+                for rid in reversed(ids):
+                    try:
+                        b = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid})
+                        j = json.loads(b.get("body", ""))
+                        if (j.get("data") or {}).get("getUpcomingEventsV2"):
+                            board = j
+                            print(f"  BOARD CAPTURED: {len(j['data']['getUpcomingEventsV2'])} events", flush=True)
+                            break
+                    except Exception:  # noqa: BLE001
+                        continue
+                time.sleep(3)
+    finally:
+        if lp:
+            lp.terminate()
+
+    ok = bool(board and (board.get("data") or {}).get("getUpcomingEventsV2"))
+    print(f"\nRESULT: statuses={seen or 'none'} | 200={200 in seen} | BOARD={'YES' if ok else 'no'}", flush=True)
+    sys.exit(0 if ok else 2)
 
 
 if __name__ == "__main__":
