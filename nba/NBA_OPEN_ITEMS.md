@@ -14003,6 +14003,8 @@ and no patch toward one, anywhere in the session.** ⇒ **The refactor was not m
 it was never begun.** **Severity: HIGH, unchanged.** *Without it P3 either refits (~64 min, past its
 window) or scores against a ladder it did not fit.*
 
+> 📅 **RE-VERIFIED LIVE `2026-09-28`.** *`grep -rl "BT_LOAD_FIT" nba/*.py .github/workflows/*.yml` still returns **zero files** — the refactor still has not been begun, `6` days later. `BT_SAVE_COMPONENTS`'s footprint has GROWN since this item was written: now `4` workflows (`nba-backtest.yml`, `nba-baseline.yml`, `nba-combos-history.yml`, `nba-p2-overnight-heavy.yml`) carry it, not just `nba-combos-history.yml` as originally described — flagged, not chased further this pass, since the item's core claim (no load-fit path exists) is unaffected by where the existing save-path is now wired. Not independently re-verified this pass whether P3 currently refits within its window or scores against a possibly-mismatched ladder — that would need tracing P2's "Build baseline ladder" step's actual runtime and P3's read path, left for a future pass given time.
+
 ## T19-4 · **NEW · CAVEAT** · `psycopg` rejects multi-command SQL the moment a query is parameterised
 **`cannot insert multiple commands into a prepared statement`** — raised by `psycopg` when a single
 `execute()` carries both several statements AND bind parameters. **It killed the first
