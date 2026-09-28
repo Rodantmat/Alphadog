@@ -17132,7 +17132,9 @@ recommends nothing and changed nothing; the measurements above are the input.**
 
 ---
 
-## T20-1 · **NEW · OWNER DECISION · MEDIUM** · five 🔴 findings nothing in the corpus points at
+## T20-1 · ~~**NEW · OWNER DECISION · MEDIUM**~~ ✅ **ALREADY CLOSED `2026-09-22`, NON-NOVEL (RULE 28)** · five 🔴 findings nothing in the corpus points at
+
+> 📌 **NOVELTY CHECK `2026-09-28`**: the build chat's `2026-09-28` list asked for navigation pointers on this item's five orphans. **Already done** — this item's own `✅✅ STATUS 2026-09-22` block below records all five repaired (`§T20.89`/`§T20.90`) with their live inbound routes. Not re-done; cross-referenced per RULE 28 so it isn't duplicated.
 
 **Measured 2026-09-22 (§T20.23, the orphan audit — the INVERSE of T18-16's question, never run
 before).** *Population re-counted from source: **1,739 distinct id-shaped heading ids · 2,082 heading
