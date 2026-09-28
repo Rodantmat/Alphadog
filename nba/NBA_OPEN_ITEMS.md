@@ -15398,7 +15398,9 @@ the words already there. ⚠ **This sweep changed nothing and tested nothing; re
 
 ---
 
-## T20-12 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, LIVE IN FIVE DAYS · THE PIPELINE'S PYTHON LAYER HARDCODES PST — `p3_cut` IS AN HOUR LATE FOR EVERY DAY OF DAYLIGHT SAVING TIME**
+## T20-12 · ~~**NEW · 🔴🔴🔴 SEASON-CRITICAL, LIVE IN FIVE DAYS**~~ ✅ **CLOSED `2026-09-28` — SAME RULING AS THE INJURY-TIMESTAMP ITEM ABOVE** · THE PIPELINE'S PYTHON LAYER HARDCODES PST — `p3_cut` IS AN HOUR LATE FOR EVERY DAY OF DAYLIGHT SAVING TIME
+
+> ✅✅✅ **CLOSED `2026-09-28`, via the build chat — "correct-by-construction: injury archive and delta cutoffs share one ET-wall convention, correct year-round. No fix."** **This item and the injury-timestamp item above (`§F6.17`) are, in this item's own earlier words, "one defect seen from two ends"** — `p3_cut`'s fixed `-08:00`/PST literal is not an isolated bug; it is the OTHER HALF of the same two-fixed-offsets cancellation that makes the injury archive's `-05:00` correct in wall-clock terms year-round. **The owner decision both items were waiting on (a single atomic seven-file change, or none) has been made: none.** No code change. ⚠ Not retracted (rule 40): the raw stored `p3_cut` value remains a fixed `-08:00` offset, not a DST-aware one — what closes is that this is now confirmed intentional/accepted, not an unnoticed bug.
 
 > 📅 **RE-VERIFIED LIVE 2026-09-28 — UNCHANGED, DAY-COUNT UPDATED.** *Checked `nba/build_availability_delta.py:39` (still `PT = timezone(timedelta(hours=-8))`, no `ZoneInfo`) and `.github/workflows/nba-boards-market.yml` (still `workflow_dispatch` only, still carrying its own "NO CRON YET… Cron goes in at season start" comment, unchanged) directly against `main`. Nothing about this item's facts, mechanism or the `§F6.17` cancellation analysis has moved. Only the day-count was stale: preseason (`2026-10-03`) was `11` days out when this item was written (`2026-09-22`); it is **`5` days out today**. Below, "ELEVEN DAYS OUT" is left as the historical figure it was when measured, per RULE 40 — the current count is here instead.*
 
