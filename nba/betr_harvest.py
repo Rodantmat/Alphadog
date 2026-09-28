@@ -94,7 +94,10 @@ def main():
         except Exception as exc:  # noqa: BLE001
             print("  uc_gui_click_captcha:", str(exc)[:80], flush=True)
         time.sleep(6)
-        sb.set_script_timeout(30)
+        try:
+            sb.driver.set_script_timeout(30)
+        except Exception:  # noqa: BLE001
+            pass
         for attempt in range(4):
             try:
                 res = sb.execute_async_script(js)
