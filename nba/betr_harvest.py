@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 """
-Betr harvester (Path C) — loads picks.betr.app in a REAL Chromium so Betr's JS/anti-bot is satisfied, then
-runs the board query FROM INSIDE THE PAGE via the site's own fetch(). Because the call originates in the
-page, every header the edge demands (JS-computed) is attached automatically — which is why the raw-HTTP
-probes 401'd but this 200s (discovery run proved api.fantasy.betr.app returns 200 to the real browser).
+Betr harvester (Path C) — real Chromium, drive the actual UI to the league board, and INTERCEPT the
+getUpcomingEventsV2 GraphQL response the page fetches itself. (In-page injected fetch is blocked by CSP;
+the page's own fetch is not. Discovery proved api.fantasy.betr.app returns 200 to the real browser.)
 
 Setup (one time, PowerShell):
     python -m pip install --upgrade playwright
     python -m playwright install chromium
 Run:
-    $env:BETR_LEAGUE="WNBA"; python betr_harvest.py     # test now
-    $env:BETR_LEAGUE="NBA";  python betr_harvest.py     # once NBA posts
-Set $env:BETR_HEADLESS="1" to run invisibly once it works.
-
-Output: boards/betr_<league>_current.json (+ _meta.json), and betr_nba_current.json for NBA.
+    $env:BETR_LEAGUE="WNBA"; python betr2.py     # test now (games tonight)
+    $env:BETR_LEAGUE="NBA";  python betr2.py     # once NBA posts
+Set $env:BETR_HEADLESS="1" once it works to run invisibly.
 """
 import asyncio
 import json
@@ -27,24 +24,6 @@ OUT = Path(os.environ.get("BETR_OUT_DIR", "boards"))
 OUT.mkdir(parents=True, exist_ok=True)
 URL = "https://picks.betr.app/"
 HEADLESS = os.environ.get("BETR_HEADLESS", "0") == "1"
-
-QUERY = """query LeagueUpcomingEvents($league: League!) {
-  getUpcomingEventsV2(league: $league) {
-    ...EventInfoData
-    ... on TeamVersusEvent { teams { ...TeamInfoWithPlayers __typename } __typename }
-    ... on TeamTournamentEvent { teams { ...TeamInfoWithPlayers __typename } __typename }
-    ... on IndividualTournamentEvent { players { ...PlayerInfoWithProjections __typename } __typename }
-    ... on IndividualVersusEvent { players { ...PlayerInfoWithProjections __typename } __typename }
-    __typename
-  }
-}
-fragment EventInfoData on EventV2 { id date status sport league competitionType playerStructure name __typename }
-fragment TeamInfoWithPlayers on Team { ...TeamInfo players { ...PlayerInfoWithProjections __typename } __typename }
-fragment TeamInfo on Team { id name league sport fullName __typename }
-fragment PlayerInfoWithProjections on Player { ...PlayerInfo projections { ...PlayerProjection __typename } __typename }
-fragment PlayerInfo on Player { id firstName lastName position jerseyNumber record rank __typename }
-fragment PlayerProjection on Projection { marketId marketStatus isLive type label name key order value nonRegularPercentage nonRegularValue allowedOptions { marketOptionId outcome __typename } currentValue liveScoringDisabled __typename }
-"""
 
 
 def parse_leg(ev, team, player, proj):
@@ -82,50 +61,83 @@ def flatten(body):
 async def run():
     from playwright.async_api import async_playwright
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    captured = {}
+
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=HEADLESS)
         ctx = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
             locale="en-US")
         page = await ctx.new_page()
-        print(f"opening {URL} to warm up the session ...", flush=True)
-        await page.goto(URL, wait_until="load", timeout=60000)
-        await page.wait_for_timeout(5000)  # let the app boot and set up its fetch/auth
 
-        # Run the board query FROM the page context — the site's own fetch adds the required headers.
-        print(f"querying board for {LEAGUE} from inside the page ...", flush=True)
-        body = await page.evaluate(
-            """async ({query, league}) => {
-                const r = await fetch("https://api.fantasy.betr.app/graphql", {
-                    method: "POST",
-                    headers: {
-                        "content-type": "application/json",
-                        "accept": "application/graphql-response+json, application/graphql+json, application/json"
-                    },
-                    body: JSON.stringify({operationName: "LeagueUpcomingEvents", query, variables: {league}}),
-                    credentials: "include"
-                });
-                return { status: r.status, text: await r.text() };
-            }""",
-            {"query": QUERY, "league": LEAGUE})
+        async def on_response(resp):
+            if "fantasy.betr.app/graphql" not in resp.url:
+                return
+            try:
+                body = await resp.json()
+            except Exception:  # noqa: BLE001
+                return
+            d = (body or {}).get("data") or {}
+            if isinstance(d, dict) and "getUpcomingEventsV2" in d and d.get("getUpcomingEventsV2"):
+                captured["board"] = body
+                print(f"  captured getUpcomingEventsV2: {len(d['getUpcomingEventsV2'])} events", flush=True)
+
+        page.on("response", on_response)
+
+        print(f"opening {URL} ...", flush=True)
+        await page.goto(URL, wait_until="load", timeout=60000)
+        await page.wait_for_timeout(5000)
+
+        # Drive the UI to the league board. Try direct deep-links first, then nav clicks.
+        deep_links = [f"{URL}lobby/{LEAGUE.lower()}", f"{URL}{LEAGUE.lower()}", f"{URL}sports/{LEAGUE.lower()}",
+                      f"{URL}lobby?league={LEAGUE}"]
+        for link in deep_links:
+            if "board" in captured:
+                break
+            try:
+                print(f"  trying {link}", flush=True)
+                await page.goto(link, wait_until="networkidle", timeout=45000)
+                await page.wait_for_timeout(4000)
+            except Exception:  # noqa: BLE001
+                pass
+
+        # If still nothing, click the league tab/name in the UI
+        if "board" not in captured:
+            for sel in (LEAGUE, LEAGUE.title(), "Basketball", "WNBA", "NBA"):
+                try:
+                    el = page.get_by_text(sel, exact=True)
+                    if await el.count() > 0:
+                        await el.first.click(timeout=4000)
+                        print(f"  clicked '{sel}'", flush=True)
+                        await page.wait_for_timeout(5000)
+                        if "board" in captured:
+                            break
+                except Exception:  # noqa: BLE001
+                    pass
+
+        # let any late board fetch land
+        for _ in range(4):
+            if "board" in captured:
+                break
+            await page.mouse.wheel(0, 3000)
+            await page.wait_for_timeout(2500)
+
+        if "board" not in captured and not HEADLESS:
+            print("  no board yet — browser stays open 40s; CLICK into the WNBA board yourself so it loads.", flush=True)
+            for _ in range(20):
+                if "board" in captured:
+                    break
+                await page.wait_for_timeout(2000)
         await browser.close()
 
-    print("board fetch status:", body.get("status"), flush=True)
-    if body.get("status") != 200:
-        print("NON-200 from in-page fetch:", (body.get("text") or "")[:200], file=sys.stderr)
-        # save raw for inspection
-        (OUT / f"betr_{LEAGUE.lower()}_raw.txt").write_text(body.get("text") or "")
+    if "board" not in captured:
+        print("NO BOARD CAPTURED. The page never fetched getUpcomingEventsV2. Tell me what the browser showed.",
+              file=sys.stderr)
         sys.exit(2)
-    try:
-        parsed = json.loads(body["text"])
-    except Exception as e:  # noqa: BLE001
-        print("could not parse JSON:", e, file=sys.stderr); sys.exit(2)
-    if parsed.get("errors"):
-        print("GraphQL errors:", json.dumps(parsed["errors"])[:300], file=sys.stderr)
 
-    legs, nevents = flatten(parsed)
+    legs, nevents = flatten(captured["board"])
     fetched = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    meta = {"ok": True, "source": "playwright in-page fetch picks.betr.app", "league": LEAGUE,
+    meta = {"ok": True, "source": "playwright intercept picks.betr.app", "league": LEAGUE,
             "started_at": started, "fetched_at": fetched, "legs": len(legs),
             "alt_legs": sum(1 for l in legs if l.get("alt")),
             "players": len({l["player_id"] for l in legs}), "events": nevents}
