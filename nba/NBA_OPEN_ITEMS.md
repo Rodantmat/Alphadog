@@ -14063,6 +14063,8 @@ line numbers would be worse than omitting them.**
 > rule that can only be enforced if the refit is observable.* **The fix is small and additive: a
 > `refit_run` / `run_id` column, or a companion runs table like `baseline_ladder_runs`, so each refit
 > leaves a trace.** **Not actioned — documented, per "document, don't fix."**
+
+> 📅 **RE-CHECKED LIVE `2026-09-28`.** *`nba_score.ladder_calibration_asof` has grown to **25,962** rows (from `9,904`) across **47** distinct `as_of_date` values (from `24`) — but still **one single `built_at`**, now `2026-09-25T22:01:48.843Z` (a NEW generation, `4` days after the `2026-09-21` one this item recorded). Confirms the table is still truncate-and-replace wholesale — it WAS rebuilt once since the original measurement, consistent with an intermittent (not obviously "weekly") refit, but the underlying defect this item names is unchanged: with a single `built_at` per generation, no row-level refit history exists and the documented weekly cadence still cannot be checked from the table itself. No `refit_run`/`run_id` column added.*
 **Severity: LOW** — a reader can find any term from document + transcript. **The fix, if wanted, is to
 re-extract each transcript with segment indices and add a fourth column** *(the sweep already computes
 segment indices in every pass, so the data exists in the harness even though it is not in the
