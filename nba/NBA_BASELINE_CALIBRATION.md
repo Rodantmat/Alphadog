@@ -13,6 +13,11 @@ and the evidence behind each.
 >
 > ➡️➡️ **`2026-09-26` — A FINDING THAT LIVES IN `NBA_DATABASE.md` BUT IS THIS FILE'S BUSINESS: `§T26.59`.** ⚠⚠ **`49.3%` OF `nba_score.baseline_history` IS PERIOD ROWS (`4,296,237` of `8,708,333`: `Q1` `1,853,095` · `Q4` `1,088,922` · `H1` `678,715` · `H2` `675,505`), AND `nba_market.board_rung_keys` — THE BOARD THE PRUNE PRUNES TO — IS `4,522,924` ROWS, `100%` `FULL`.** *They survive only because `prune_baseline_to_board.py` keeps a row whose `(game_date, prop, period)` triple is **absent** from `_prune_scope`, the branch it prints as `kept as NEVER-DERIVED`.* 🔴 ***The day one app posts `player_points_q1`, that triple enters the scope and every `Q1` baseline row for that date whose line does not match a posted rung becomes deletable in the same run*** — against `§T26.27`'s recorded **"ALL PROPS STAY, NO EXCEPTION"**. ⇒ **`T26-6`.** ✅ *`RULE 61`: the `FULL`-only board is the INPUT, not a code defect — the refresh function carries `16` period mappings and no archived board has ever posted one (`RULE 20`, three vocabularies).* 📅 *And a dated state change: `baseline_history` is now **`8,708,333`** rows against `19,343,348` on `2026-09-23` — the prune has run.*
 >
+> 🆕 **SECTIONS ADDED `2026-09-28` — `1` NEW.**
+> | § | what it is |
+> |---|---|
+> | 🔑🔑 **`§T27.6`** | **THE AS-OF CALIBRATION SHIFT MEASURABLY WORKS ON THE PRODUCT'S OWN POPULATION**: on `101,049` live PrizePicks `points` legs (`2025-26`), raw baseline `ECE` is `3.46pp`; `final_hp` after the as-of shift is `1.85pp` — **book-agnostic store-wide audits understate this because they blend every book's alternates; run PrizePicks-scoped when slip work resumes.** *Reconciled leg-by-leg against the day-of record first (`1,391`/`1,391` exact, `592`/`592` grader verdicts) before the number was trusted.* |
+>
 > 🆕🆕 **SECTIONS ADDED `2026-09-25` — `4` NEW, AND ONE IS THE MOST-REPEATED DEFECT IN THIS SYSTEM.** *Anchors are heading text; search the label.*
 > | § | what it is |
 > |---|---|
