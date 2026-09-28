@@ -79,17 +79,33 @@ def main():
                 time.sleep(5)
 
             booted = False
+            handled_geo = False
             for i in range(40):  # up to 120s (residential is slow)
                 try:
                     src = sb.get_page_source() or ""
                     ln = len(src); url = sb.get_current_url()
                     if i % 3 == 0 or ln > 5000:
                         print(f"  t+{i*3}s url={url[:80]} len={ln}", flush=True)
-                    if "AllowLocation" in url:
-                        print("  >>> GEO GATE still (proxy IP not US?) ", flush=True)
+                    if "AllowLocation" in url and not handled_geo:
+                        print("  >>> AllowLocation gate — trying to select a US state in-page", flush=True)
+                        # The page renders a state selector. Try common paths: a dropdown, or a state link.
+                        state = os.environ.get("BETR_STATE", "California")
+                        for xp in (f'//*[normalize-space(text())="{state}"]',
+                                   f'//option[normalize-space(text())="{state}"]',
+                                   f'//li[contains(.,"{state}")]',
+                                   f'//*[contains(@class,"state") and contains(.,"{state}")]',
+                                   '//select'):
+                            try:
+                                if xp == '//select' and sb.is_element_visible(xp):
+                                    sb.select_option_by_text(xp, state); print(f"  selected state via <select>: {state}", flush=True); handled_geo = True; break
+                                if sb.is_element_visible(xp):
+                                    sb.click(xp, timeout=3); print(f"  clicked state {xp}", flush=True); handled_geo = True; break
+                            except Exception:  # noqa: BLE001
+                                continue
+                        time.sleep(4)
                     if ln > 5000 and "AllowLocation" not in url:
                         booted = True
-                        print("  SPA rendered.", flush=True)
+                        print("  SPA rendered (past geo).", flush=True)
                         break
                 except Exception as exc:  # noqa: BLE001
                     print("  read err:", str(exc)[:70], flush=True)
