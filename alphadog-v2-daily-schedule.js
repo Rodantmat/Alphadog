@@ -420,7 +420,7 @@ async function refreshWindow(pg, input) {
   const preparedGamesChecked = new Set(Array.from(relevance.byGame.keys())).size;
   const calendarGamesChecked = sources.calendarWindow.length;
   const noPickableSlate = rowsToWrite.length === 0;
-  if (noPickableSlate) allIssues.push({ row: null, issue: { type: "no_pickable_safe_prepared_games", severity: "warning", reason: "No pickable_safe prepared-board games found for today/tomorrow schedule-spot window." } });
+  if (noPickableSlate) allIssues.push({ row: { official_date: window.start, game_pk: null, team_id: null }, issue: { type: "no_pickable_safe_prepared_games", severity: "warning", reason: "No pickable_safe prepared-board games found for today/tomorrow schedule-spot window." } });
 
   await writeRows(pg, rowsToWrite, allIssues, batchId);
 
