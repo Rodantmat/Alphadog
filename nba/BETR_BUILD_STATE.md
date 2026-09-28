@@ -110,8 +110,11 @@ SeleniumBase UC) and RAN it on the GitHub runner:
   (page_length 84,567, cloudflare markers NONE). The Turnstile wall is NOT the blocker for our infra.
 - **Direct then hits a GEOLOCATION gate** (`/AllowLocation?...onSelectUsState=...`) — datacenter IP has no
   US state, so the board won't load. Not a bot wall.
-- **Through PROXY_URL (rp.scrapegw.com, rotating residential) the SPA never rendered** (39 bytes for 60s) —
-  the gateway is too slow/unstable to load Betr's JS bundle.
+- **Through PROXY_URL (rp.scrapegw.com, BOTH rotating AND sticky+country-us) the SPA never rendered**
+  (stays at 39 bytes = the empty HTML shell, for 84s; direct renders 84k). Narrowed cause: **SeleniumBase
+  UC Mode does not cleanly route an AUTHENTICATED proxy for sub-resources** — first navigation goes through,
+  but the authenticated CONNECT for the many asset/sub-resource hosts fails, so the JS bundle never loads
+  and the SPA can't boot. (Known UC-Mode limitation; not geo — never reached AllowLocation this run.)
 So the remaining blockers are ORDINARY: a US-geolocated egress that actually loads the app. Paths, by effort:
   1. A **sticky/faster US residential proxy** (not per-request rotating) + longer bundle-load timeout ->
      UC+Xvfb on the runner should reach the board unattended.
