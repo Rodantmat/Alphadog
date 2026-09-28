@@ -1,7 +1,7 @@
 {
-  "fetched_at": "2026-09-24T19:45:06Z",
+  "fetched_at": "2026-09-28T17:35:42Z",
   "source_url": "https://www.darko.app/",
   "method_used": "embedded_sveltekit_hydration_json",
-  "player_count": 530,
-  "error": null
+  "player_count": 0,
+  "error": "players_array_not_found_in_page - real page structure may have changed"
 }
