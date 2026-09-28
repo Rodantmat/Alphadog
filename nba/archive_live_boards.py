@@ -246,38 +246,49 @@ def rows_fliff(doc, gd, label):
 
 
 def rows_betr(doc, gd, label):
-    """Betr Picks board from the Playwright harvester (betr_harvest.py). Each leg is a projection:
-    player, stat, line, over/under, and alt flag (Betr's nonRegularValue ladder rung). Filed like the
-    others; alt rungs get _alternate. Captured 2026-09-28."""
+    """Betr Picks board from the Playwright harvester (betr_harvest.py). Corrected 2026-09-28 to Betr's
+    real projection shape: stat = key (POINTS, THREE_POINTERS_MADE, 1ST_QUARTER_POINTS...), sides were
+    MORE/LESS (harvester already set over/under flags), tier (REGULAR/BOOSTED/EDGE_*) is Betr's own
+    goblin/demon axis, and nonRegularValue>0 rungs are the alt ladder. Non-REGULAR tiers and alt rungs
+    file as _alternate so they never overwrite the main line."""
     out = []
-    # Betr projection 'type'/stat -> the scorer's market key.
-    _wt = {"points": "player_points", "rebounds": "player_rebounds", "assists": "player_assists",
-           "three_pointers_made": "player_threes", "threes": "player_threes", "3pt_made": "player_threes",
-           "blocks": "player_blocks", "steals": "player_steals", "turnovers": "player_turnovers",
-           "pts_reb_ast": "player_points_rebounds_assists", "pra": "player_points_rebounds_assists",
-           "pts_reb": "player_points_rebounds", "pts_ast": "player_points_assists",
-           "reb_ast": "player_rebounds_assists", "blk_stl": "player_blocks_steals",
-           "fantasy": "player_fantasy_points", "fantasy_points": "player_fantasy_points",
-           "double_double": "player_double_double", "free_throws_made": "player_ftm",
-           "field_goals_made": "player_fgm"}
+    # Betr key -> scorer market key. Period props carry a 1ST_QUARTER_/1ST_HALF_ prefix.
+    _k = {"points": "player_points", "rebounds": "player_rebounds", "assists": "player_assists",
+          "total_rebounds": "player_rebounds", "three_pointers_made": "player_threes",
+          "blocks": "player_blocks", "blocked_shots": "player_blocks", "steals": "player_steals",
+          "turnovers": "player_turnovers", "points_rebounds_assists": "player_points_rebounds_assists",
+          "pts_reb_ast": "player_points_rebounds_assists", "points_rebounds": "player_points_rebounds",
+          "points_assists": "player_points_assists", "rebounds_assists": "player_rebounds_assists",
+          "steals_blocks": "player_blocks_steals", "blocks_steals": "player_blocks_steals",
+          "fantasy_points": "player_fantasy_points", "fantasy": "player_fantasy_points",
+          "double_double": "player_double_double", "free_throws_made": "player_ftm",
+          "field_goals_made": "player_fgm", "three_pointers_attempted": "player_threes_attempted",
+          "offensive_rebounds": "player_oreb", "defensive_rebounds": "player_dreb",
+          "personal_fouls": "player_personal_fouls"}
+    _period = {"1st_quarter_": "_q1", "2nd_quarter_": "_q2", "3rd_quarter_": "_q3", "4th_quarter_": "_q4",
+               "1st_half_": "_h1", "2nd_half_": "_h2"}
+    _unmapped = set()
     for l in doc.get("legs") or []:
         if l.get("line") is None or not l.get("player"):
             continue
-        raw = str(l.get("stat", "")).lower().replace(" ", "_").replace("-", "_")
-        mk = _wt.get(raw, "player_" + raw)
-        if l.get("alt"):
+        raw = str(l.get("stat", "")).lower()
+        suffix = ""
+        for pre, suf in _period.items():
+            if raw.startswith(pre):
+                raw, suffix = raw[len(pre):], suf
+                break
+        base = _k.get(raw)
+        if base is None:
+            if raw not in _unmapped:
+                _unmapped.add(raw)
+                print(f"  betr: UNMAPPED stat '{l.get('stat')}' -> player_{raw}{suffix}", flush=True)
+            base = "player_" + raw
+        mk = base + suffix
+        # alt ladder rung, OR a non-REGULAR payout tier -> _alternate (never overwrite the main REGULAR line)
+        if l.get("alt") or (l.get("tier") and str(l.get("tier")).upper() != "REGULAR"):
             mk += "_alternate"
-        # Betr gives sides as flags; a main line usually has both, an alt is over-only.
-        sides = []
-        if l.get("alt"):
-            sides = ["Over"]
-        else:
-            if l.get("over"):
-                sides.append("Over")
-            if l.get("under"):
-                sides.append("Under")
-            if not sides:
-                sides = ["Over", "Under"]
+        sides = ["Over"] if l.get("alt") else (
+            [s for s, f in (("Over", l.get("over")), ("Under", l.get("under"))) if f] or ["Over", "Under"])
         for side in sides:
             out.append((gd, ev("betr", gd, l, "event_id"), label, doc.get("meta", {}).get("fetched_at"),
                         "betr", mk, l["player"], side, float(l["line"]), None, None, None, None,
