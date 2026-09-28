@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-Betr harvester (Path C, SeleniumBase UC Mode) — Betr is behind Cloudflare Turnstile. UC Mode launches an
-undetected Chrome and auto-clicks the Turnstile; then we run the board GraphQL from the page (same-origin,
-CSP-allowed). Runs on a US RESIDENTIAL machine (your PC / the mini-PC).
+Betr harvester (Path C, SeleniumBase UC Mode + INTERCEPT). UC Mode clears Cloudflare Turnstile. Our own
+injected fetch 401s (the app attaches auth/session we don't replicate), but the PAGE'S OWN board call
+returns 200. So: clear Cloudflare, drive the UI to the league board, and intercept the page's
+getUpcomingEventsV2 response via Chrome DevTools Protocol (performance/network logs).
 
 Setup (one time, PowerShell):
     python -m pip install --upgrade seleniumbase
-Run (VISIBLE — UC Mode needs a real display to click Turnstile):
-    $env:BETR_LEAGUE="WNBA"; python betr6.py
-Once reliable, schedule with Windows Task Scheduler.
+Run (VISIBLE):
+    $env:BETR_LEAGUE="WNBA"; python betr8.py
+    # if the Cloudflare box shows, click it once.
 
 Output: boards/betr_<league>_current.json (+ _meta), and betr_nba_current.json for NBA.
 """
@@ -23,17 +24,6 @@ LEAGUE = os.environ.get("BETR_LEAGUE", "NBA").upper()
 OUT = Path(os.environ.get("BETR_OUT_DIR", "boards"))
 OUT.mkdir(parents=True, exist_ok=True)
 URL = "https://picks.betr.app/"
-
-QUERY = ("query LeagueUpcomingEvents($league: League!) { getUpcomingEventsV2(league: $league) { "
-         "...EventInfoData ... on TeamVersusEvent { teams { ...T __typename } __typename } "
-         "... on TeamTournamentEvent { teams { ...T __typename } __typename } "
-         "... on IndividualTournamentEvent { players { ...P __typename } __typename } "
-         "... on IndividualVersusEvent { players { ...P __typename } __typename } __typename } } "
-         "fragment EventInfoData on EventV2 { id date status sport league name __typename } "
-         "fragment T on Team { id name league sport fullName players { ...P __typename } __typename } "
-         "fragment P on Player { id firstName lastName position jerseyNumber "
-         "projections { marketId marketStatus type label name value nonRegularValue nonRegularPercentage "
-         "allowedOptions { outcome __typename } currentValue __typename } __typename }")
 
 
 def parse_leg(ev, team, player, proj):
@@ -72,20 +62,8 @@ def main():
     from seleniumbase import SB
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     board = None
-    # embed the query + league directly into the JS (no script args, which UC Mode's execute_async_script rejects)
-    payload = json.dumps({"operationName": "LeagueUpcomingEvents", "query": QUERY, "variables": {"league": LEAGUE}})
-    js = (
-        "var cb = arguments[arguments.length - 1];"
-        "fetch('https://api.fantasy.betr.app/graphql', {"
-        "  method: 'POST',"
-        "  headers: {'content-type': 'application/json',"
-        "            'accept': 'application/graphql-response+json, application/graphql+json, application/json'},"
-        "  body: " + json.dumps(payload) + ","
-        "  credentials: 'include'"
-        "}).then(function(r){return r.text();}).then(function(t){cb(t);}).catch(function(e){cb('ERR:'+e);});"
-    )
 
-    with SB(uc=True, headless=False, locale="en-US") as sb:
+    with SB(uc=True, headless=False, locale="en-US", log_cdp_events=True) as sb:
         print(f"opening {URL} with UC Mode ...", flush=True)
         sb.uc_open_with_reconnect(URL, reconnect_time=6)
         try:
@@ -93,34 +71,75 @@ def main():
             print("  uc_gui_click_captcha fired", flush=True)
         except Exception as exc:  # noqa: BLE001
             print("  uc_gui_click_captcha:", str(exc)[:80], flush=True)
-        time.sleep(6)
+        time.sleep(5)
+
+        # enable Network domain so response bodies are retrievable via CDP
         try:
-            sb.driver.set_script_timeout(30)
+            sb.driver.execute_cdp_cmd("Network.enable", {})
         except Exception:  # noqa: BLE001
             pass
-        for attempt in range(4):
-            try:
-                res = sb.execute_async_script(js)
-                if res and not str(res).startswith("ERR:"):
-                    board = json.loads(res)
-                    if (board.get("data") or {}).get("getUpcomingEventsV2") is not None:
-                        break
-                print(f"  attempt {attempt}: {str(res)[:140]}", flush=True)
-            except Exception as exc:  # noqa: BLE001
-                print(f"  attempt {attempt} error: {str(exc)[:120]}", flush=True)
-            time.sleep(6)
 
-    if not board or board.get("errors") or ((board.get("data") or {}).get("getUpcomingEventsV2") is None):
-        print("NO BOARD.", file=sys.stderr)
-        if board:
-            (OUT / f"betr_{LEAGUE.lower()}_raw.json").write_text(json.dumps(board)[:5000])
-            print("saved raw ->", f"betr_{LEAGUE.lower()}_raw.json", file=sys.stderr)
+        # drive the UI to the league so the app fetches getUpcomingEventsV2 itself
+        for target in (f"{URL}lobby/{LEAGUE.lower()}", f"{URL}{LEAGUE.lower()}", URL):
+            try:
+                sb.uc_open_with_reconnect(target, reconnect_time=4)
+                time.sleep(3)
+            except Exception:  # noqa: BLE001
+                pass
+            # click the sport tab if visible
+            for sel in (LEAGUE, LEAGUE.title(), "Basketball"):
+                try:
+                    if sb.is_text_visible(sel):
+                        sb.click(f'//*[text()="{sel}"]', timeout=4)
+                        time.sleep(3)
+                        break
+                except Exception:  # noqa: BLE001
+                    pass
+            # scroll to load
+            for _ in range(3):
+                try:
+                    sb.execute_script("window.scrollBy(0,3000);")
+                except Exception:  # noqa: BLE001
+                    pass
+                time.sleep(2)
+            # scan CDP performance log for the board response, then fetch its body via CDP
+            try:
+                logs = sb.driver.get_log("performance")
+            except Exception:  # noqa: BLE001
+                logs = []
+            req_ids = []
+            for entry in logs:
+                try:
+                    msg = json.loads(entry["message"])["message"]
+                except Exception:  # noqa: BLE001
+                    continue
+                if msg.get("method") == "Network.responseReceived":
+                    r = msg["params"]["response"]
+                    if "fantasy.betr.app/graphql" in r.get("url", ""):
+                        req_ids.append(msg["params"]["requestId"])
+            for rid in reversed(req_ids):
+                try:
+                    body_obj = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid})
+                    txt = body_obj.get("body", "")
+                    j = json.loads(txt)
+                    if (j.get("data") or {}).get("getUpcomingEventsV2"):
+                        board = j
+                        print(f"  intercepted board: {len(j['data']['getUpcomingEventsV2'])} events", flush=True)
+                        break
+                except Exception:  # noqa: BLE001
+                    continue
+            if board:
+                break
+
+    if not board or ((board.get("data") or {}).get("getUpcomingEventsV2") is None):
+        print("NO BOARD intercepted. Tell me what the browser showed on the WNBA screen.", file=sys.stderr)
         sys.exit(2)
 
     legs, nevents = flatten(board)
     fetched = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    meta = {"ok": True, "source": "seleniumbase-uc picks.betr.app", "league": LEAGUE, "started_at": started,
-            "fetched_at": fetched, "legs": len(legs), "alt_legs": sum(1 for l in legs if l.get("alt")),
+    meta = {"ok": True, "source": "seleniumbase-uc intercept picks.betr.app", "league": LEAGUE,
+            "started_at": started, "fetched_at": fetched, "legs": len(legs),
+            "alt_legs": sum(1 for l in legs if l.get("alt")),
             "players": len({l["player_id"] for l in legs}), "events": nevents}
     (OUT / f"betr_{LEAGUE.lower()}_current.json").write_text(json.dumps({"meta": meta, "legs": legs}, separators=(",", ":")))
     (OUT / f"betr_{LEAGUE.lower()}_current_meta.json").write_text(json.dumps(meta, indent=2))
