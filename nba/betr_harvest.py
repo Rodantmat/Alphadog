@@ -166,33 +166,6 @@ def main():
         sys.exit(2)
 
     legs, nevents = flatten(board)
-    # DEBUG (2026-09-28): 'type' turned out to be the tier (REGULAR/BOOSTED/EDGE_*), not the stat, and the
-    # side flags were empty. Dump one raw player+projection so we can map the true stat + sides.
-    try:
-        evs = ((board.get("data") or {}).get("getUpcomingEventsV2") or [])
-        rp = None
-        for _ev in evs:
-            _bk = [(t, t.get("players", []) or []) for t in (_ev.get("teams") or [])]
-            if _ev.get("players"):
-                _bk.append((None, _ev.get("players")))
-            for _t, _ps in _bk:
-                for _p in _ps:
-                    if _p.get("projections"):
-                        rp = {"player_keys": list(_p.keys()),
-                              "player_sample": {k: _p.get(k) for k in _p if k != "projections"},
-                              "projection_count": len(_p["projections"]),
-                              "projection_0": _p["projections"][0],
-                              "projection_1": _p["projections"][1] if len(_p["projections"]) > 1 else None}
-                        break
-                if rp:
-                    break
-            if rp:
-                break
-        if rp:
-            (OUT / "betr_debug_shape.json").write_text(json.dumps(rp, indent=1))
-            print("  wrote betr_debug_shape.json (raw projection shape) — upload it", flush=True)
-    except Exception as exc:  # noqa: BLE001
-        print("  debug dump failed:", str(exc)[:80], flush=True)
     fetched = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     meta = {"ok": True, "source": "seleniumbase-uc cdp picks.betr.app", "league": LEAGUE,
             "started_at": started, "fetched_at": fetched, "legs": len(legs),
