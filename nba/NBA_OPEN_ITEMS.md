@@ -14602,7 +14602,56 @@ started**.
 **FIX SIZE: refresh one token** *(and, separately, whatever decides that `betr_board_pull` runs — the
 same decision as the frozen static layer's loaders).*
 
-⚠ **NOT FIXED — DOCUMENTED, per the owner's standing instruction.**
+~~⚠ NOT FIXED — DOCUMENTED, per the owner's standing instruction.~~
+
+📌 **UPDATE `2026-09-28` — RESOLVED. A real Betr scraper now exists, entirely in GitHub Actions, and it
+is live and committed.** Source: a same-day build-chat session (this sweep's `T31`,
+`2026-09-28-05-58-27-betr-chalkboard-sleeper-capture-session.txt`) plus the build chat's own tracking
+file `nba/BETR_BUILD_STATE.md` (out of scope for this sweep to edit — same standing as
+`PP_PAYOUT_FINDINGS.md`, cross-referenced here, not duplicated) and the live repo/workflow state, all
+independently checked this pass.
+
+**What changed, live-verified:**
+- **A new workflow, `.github/workflows/betr-cloud-harvest.yml`, runs on a cron (`2x`/day) and commits
+  the board itself** — confirmed present in the repo. It runs `nba/betr_harvest_cloud.py` on a
+  `ubuntu-latest` GitHub runner: no owner machine required.
+- **The chain that makes this work, proven the same day**: (1) SeleniumBase UC Mode + Xvfb clears the
+  Cloudflare Turnstile challenge that blocked every earlier plain-HTTP/headless attempt; (2) an
+  unauthenticated local forward-proxy on the runner relays to an authenticated US-residential proxy,
+  working around a SeleniumBase limitation that broke sub-resource loading through an inline-auth
+  proxy; (3) a GitHub Actions secret (`BETR_SESSION_STATE`) seeds a logged-in session — the board has
+  no guest path, so a session must be seeded rather than minted fresh each run; (4) an in-page US-state
+  selection clears a geolocation gate. **No credential values are recorded here or anywhere in this
+  sweep's docs, per the standing rule — only the mechanism and the secret's name.**
+- **Live output, `boards/betr_wnba_current_meta.json`** (WNBA is the currently-open league; NBA's own
+  board file is still the pre-existing stale `2026-09-10` one, unchanged, since NBA has no games yet):
+  `"source": "github-runner uc+proxy picks.betr.app"`, `"fetched_at": "2026-09-28T05:08:47Z"`,
+  `"legs": 1281`, `"alt_legs": 514`, `"players": 46`, `"events": 4`. A real, current capture — not a
+  projection.
+- **Already wired into the pipeline**: `archive_live_boards.py::rows_betr` (the parser this item's
+  original text found only reading a stale file) now has real data to read; `nba-p3-afternoon-light.yml`'s
+  daily `ARCHIVE_APPS="prizepicks,underdog,sleeper,fliff,betr"` run picks it up. A parser bug
+  (`ASSISTS_REBOUNDS` falling through unmapped) was found dry-running against this live board and fixed
+  the same session — same defect *class* as `T20-13`'s combo-key work elsewhere in the pipeline, a
+  different parser, not a duplicate finding.
+- **Auto-switches to NBA on `2026-10-20`** (date-driven in the workflow); the harvester already writes
+  `betr_nba_current.json` for that league, no separate wiring needed.
+
+**What remains genuinely open, per the build-chat's own file — not closed by this update:**
+- The alt/boosted-line **multiplier** field (`nonRegularPercentage`) still reads `0` in the live
+  capture; the actual multiplier likely lives on a sibling field not yet parsed. Lines and the alt
+  ladder itself are complete; only the multiplier is missing.
+- **The seeded session is a maintenance dependency, not a permanent credential**: if a run lands back
+  on the login wall, the session has lapsed and `BETR_SESSION_STATE` needs re-seeding from the owner's
+  machine. No fixed cadence is established yet; the certifier's existing per-app board-liveness check
+  (`A2`/`T26-9`, closed earlier this window) will surface staleness the same way it does for the other
+  four apps.
+
+⇒ **This item's original claim — "there is no Betr scraper in this repo" — is now false, live-verified.**
+The `2026-10-10` bearer-token expiry this item was originally written about no longer governs Betr's
+liveness; the new pipeline authenticates through a seeded browser session, not that token. **`T20-14`
+is CLOSED**, with the two caveats above carried forward as ordinary maintenance, not as a reason to
+reopen it.
 
 ---
 
