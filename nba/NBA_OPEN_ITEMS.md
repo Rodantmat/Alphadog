@@ -3637,7 +3637,11 @@ Sleeper, is NOT RECORDED** *(probed in the documents' vocabulary, not only the t
 
 ---
 
-## 🔴🔴 EVERY INJURY SNAPSHOT TIMESTAMP CARRIES A HARDCODED `-05:00`
+## ✅ CLOSED `2026-09-28` — CORRECT-BY-CONSTRUCTION, NO FIX · ~~🔴🔴 EVERY INJURY SNAPSHOT TIMESTAMP CARRIES A HARDCODED `-05:00`~~
+
+> ✅✅✅ **CLOSED `2026-09-28`, via the build chat, on the same reasoning this item's own `§F6.14` trace had already reached.** *Ruling: "correct-by-construction — the injury archive and delta cutoffs share one ET-wall convention, correct year-round. No fix."* **This is the owner decision `§F6.14`'s own closing paragraph asked for**: ***"this is a SINGLE atomic change across seven files, or no change at all… downgrading the item's severity is the owner's call, not this sweep's."*** **The call has been made: no change, on the basis this item's own trace already established** — the two fixed offsets (`-05:00` archive, `-08:00`/`+22:30 UTC` consumers) cancel exactly, and every boundary in the system already implements correct wall-clock ET/PT, in both EST/EDT. ⚠ Not retracted (rule 40): the raw stored values remain genuinely wrong AS INSTANTS, and that fact stays on record below — what closes is the question of whether to fix it, not the fact being described.
+
+> 🔗 **See also `T20-12` below, "one defect seen from two ends" per this item's own `§F6.17`** — the same ruling closes it too.
 *Found 2026-09-21, T11 pass 3 (§T11.4c). `[LIVE-AUDIT]`, measured across **all 14 month-shards, both
 seasons**.*
 
