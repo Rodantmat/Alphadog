@@ -104,6 +104,34 @@ installing.
 ## 9. CAN OUR SYSTEM DO IT (GitHub Actions / Cloudflare Worker), UNATTENDED?
 
 ### ✅ TESTED ON THE RUNNER 2026-09-28 (this supersedes the analysis below)
+
+**CLOUD BREAKTHROUGH — the GitHub runner now reaches Betr's board API (fantasy graphql 200).** Chain proven,
+fully unattended on `ubuntu-latest`:
+1. **Cloudflare Turnstile: CLEARED** by SeleniumBase UC Mode + Xvfb (SPA rendered 84k, no CF markers).
+2. **Authenticated residential proxy: SOLVED** — UC Mode can't route an inline-auth proxy for sub-resources
+   (SPA stuck at 39 bytes). FIX that WORKS: run a **local unauthenticated forward-proxy on the runner**
+   (`python -m proxy --plugins proxy.plugin.ProxyPoolPlugin --proxy-pool <user>:<pass>@rp.scrapegw.com:6060`)
+   and point Chromium at `127.0.0.1:8899`. With this, the SPA fully rendered THROUGH the residential proxy.
+   (ProxyScrape sticky+US username `<user>-country-us-session-<id>-lifetime-<min>` is correct per their docs.)
+3. **Geolocation gate (`/AllowLocation?...onSelectUsState=`): SOLVED in-page** — the rendered page has a state
+   selector; clicking a state (e.g. California) clears it. After that: **`fantasy graphql status: 200`** from
+   the runner — the exact call that 401'd 17 times over raw HTTP.
+
+**LAST STEP (bounded):** after geo, the app routes to `/auth` — **the board requires a LOGGED-IN session**,
+so `getUpcomingEventsV2` doesn't fire anonymously (RESULT so far: got a 200 handshake, BOARD=no). A GitHub
+runner is ephemeral, so the fix is to **seed the logged-in session**: capture the Betr cookies/localStorage
+from a real login once (the `betr_profile` Path C already creates), store them as a GH secret, and load them
+into the runner's Chrome profile before navigating. Then the cloud run should issue getUpcomingEventsV2 and
+capture the board exactly like Path C. Session refresh cadence unknown (re-seed when it lapses).
+
+Tooling in place: `nba/probe_betr_cloud.py` (local-proxy + geo-click + capture) and
+`.github/workflows/betr-cloud-test.yml` (Chrome+fonts+Xvfb+seleniumbase+proxy.py, inputs: league, noproxy).
+⏳ NEXT: export cookies/localStorage for picks.betr.app from the logged-in Path C profile -> GH secret
+   `BETR_SESSION_STATE` -> load in the cloud probe before nav -> rerun WNBA; success = getUpcomingEventsV2
+   200 + events>0. Then swap capture into a committing workflow and Betr is FULLY CLOUD (no owner machine).
+
+### Earlier analysis (kept for context; the runner test above overturns the "cannot" verdict)
+
 Built `nba/probe_betr_cloud.py` + `.github/workflows/betr-cloud-test.yml` (Chrome + fonts + Xvfb +
 SeleniumBase UC) and RAN it on the GitHub runner:
 - **UC Mode + Xvfb CLEARS Cloudflare on the runner.** Direct (no proxy) the SPA fully rendered
