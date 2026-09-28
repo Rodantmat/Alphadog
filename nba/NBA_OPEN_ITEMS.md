@@ -15366,7 +15366,9 @@ the words already there. ⚠ **This sweep changed nothing and tested nothing; re
 
 ---
 
-## T20-12 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, LIVE IN ELEVEN DAYS · THE PIPELINE'S PYTHON LAYER HARDCODES PST — `p3_cut` IS AN HOUR LATE FOR EVERY DAY OF DAYLIGHT SAVING TIME**
+## T20-12 · **NEW · 🔴🔴🔴 SEASON-CRITICAL, LIVE IN FIVE DAYS · THE PIPELINE'S PYTHON LAYER HARDCODES PST — `p3_cut` IS AN HOUR LATE FOR EVERY DAY OF DAYLIGHT SAVING TIME**
+
+> 📅 **RE-VERIFIED LIVE 2026-09-28 — UNCHANGED, DAY-COUNT UPDATED.** *Checked `nba/build_availability_delta.py:39` (still `PT = timezone(timedelta(hours=-8))`, no `ZoneInfo`) and `.github/workflows/nba-boards-market.yml` (still `workflow_dispatch` only, still carrying its own "NO CRON YET… Cron goes in at season start" comment, unchanged) directly against `main`. Nothing about this item's facts, mechanism or the `§F6.17` cancellation analysis has moved. Only the day-count was stale: preseason (`2026-10-03`) was `11` days out when this item was written (`2026-09-22`); it is **`5` days out today**. Below, "ELEVEN DAYS OUT" is left as the historical figure it was when measured, per RULE 40 — the current count is here instead.*
 
 **Severity 6 of 7.** **Found T20 pass 45 (§T20.50), 2026-09-22.** **Evidence: VERIFIED** — file text
 on tree `29a4d08a9b5252941e5bde35510ddfe1481ae387`, script population enumerated from the P1/P2/P3
