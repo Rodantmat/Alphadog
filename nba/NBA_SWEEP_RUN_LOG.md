@@ -8,6 +8,31 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 THIS FIRING (`2026-09-29`, forty-first run) — SECOND CONSECUTIVE CLEAN RE-VERIFICATION: THE `A6`/`T26-12` HONOUR/HARDCODE SPLIT INDEPENDENTLY RECOMPUTED FROM RAW WORKFLOW YAML (NOT RE-READ FROM THE PRIOR TALLY), MATCHES EXACTLY; ALL FOUR CONCRETE-SIGNATURE THREADS UNCHANGED
+
+**Scope this run**: continued the fortieth run's cadence on the six open threads, but went one step further on `A6`/`T26-12` — rather than re-reading the file and trusting the recorded `11`/`25` split, pulled `nba-absence-panel.yml` fresh and hand-counted every season-bearing `env:` line myself from scratch.
+
+1. ✅ **`A6`/`T26-12`** (`nba-absence-panel.yml`) — independently counted: **`11` lines honour `github.event.inputs.seasons`** (`PANEL_SEASONS`, `ALLOC_SEASONS` ×2, `RATE_TEST_SEASON`, `A2W_TEST_SEASON`, `A5_SEASONS`, `DEF_SEASONS`, `IT_SEASON`, `CL_SEASON`, `NV_SEASON`, `FE_SEASONS`) against **`25` lines whose variable name contains `SEASON` and hardcode a bare `"2024-25"`/`"2025-26"`/`"2024-25,2025-26"` literal**. Both figures reproduce the recorded finding exactly via a fresh independent count, not a copy of it. **Noted for completeness, not a change**: a further `9` lines (`CC_TRAIN`/`CC_TEST`, `LC_TRAIN`/`LC_TEST`, `N1_TRAIN`/`N1_TEST` ×2, `RF_TRAIN`/`RF_TEST`) also hardcode season-shaped literals but fall outside the `25` figure because their variable names don't contain `SEASON` — recording this naming convention explicitly so a future pass doesn't mistake it for drift if it recounts by a different rule. Still open, still a one-file mechanical fix, still not made.
+2. ✅ **`T26-15`** (`NBA_DATABASE.md`) — the fused-and-duplicated `§T26.57` block is still present verbatim at line `3329`; file unchanged, `278,517` bytes / `3,538` lines.
+3. ✅ **`T26-17`** (`NBA_SYSTEM_DESIGN.md`) — the fused `### ⚠⚠ THE DEEPER ROOT CAUSE` heading is still welded onto the prior sentence at line `2094`; file unchanged, `239,110` bytes / `3,089` lines.
+4. ✅ **`NBA_FINAL_SCORING_CALIBRATION.md` blocker** — its own `EDITING DEFECT` banner (line `6299`) and the `dbc11ffc` clean-repair pointer (line `6309`) read exactly as before. Left untouched, as required.
+
+📌 **`nba/transcripts/` re-confirmed directly**, not assumed: still only `README.md` (`5,079` B) and `journal.txt` (`11,478` B) — no `T*` transcript source file present. `T26` stays blocked on transcript-file availability in this session, not on any documentation gap.
+
+✅ **Also checked**: `github_list_workflow_runs` (last `10`) shows only native `pages build and deployment` runs (`success`, plus a couple of ordinary `cancelled` entries from rapid superseding pushes) — no `AlphaDog v2 Mobile Auto Deploy` entry, so no `[skip ci]`-omission has slipped through since the last check.
+
+⚠ **Not independently re-checked this pass, by design**: `T23-1`, `T21-1`, `T20-3`, `T20-2`, `T26-16` — owner/build-chat action items or already-established structurally-blocked facts with no new concrete signature to recompute this run. Their last-recorded state (thirty-ninth run, below) stands. The two `SAT 2026-10-03` dated checks remain `4` days out, still unanswerable.
+
+✅ **Result: nothing changed, nothing new** — second consecutive clean pass on this open-threads track, this one additionally verifying the `A6`/`T26-12` figures from a from-scratch count rather than re-reading the prior tally.
+
+**No file edits to any of the twelve mandated docs this run** — nothing needed correction. Only this run log changed.
+
+**Census after this firing**: none of the twelve mandated docs touched this pass (byte/line counts for the three re-checked files recorded above, unchanged from their last-stamped state); `NBA_SWEEP_RUN_LOG.md` adds one `##` heading — verified as the only occurrence of its own heading text via `github_grep_file` immediately after publishing, and no existing heading text was touched by this edit (pure prepend, per RULE 40).
+
+**NEXT**: keep re-verifying the six open threads on a cadence — `A6`/`T26-12` still the one most likely to close mechanically, and now has two independent from-scratch counts (this run, and the historical figure it matches) rather than one grep copied forward. Re-check `T20-3`/`T20-2`/`T21-1`/`T23-1`/`T26-16` at least once more soon so all six threads stay on the same cadence rather than four going stale while two get rechecked repeatedly. If a future firing finds `nba/transcripts/` holding more than `README.md`/`journal.txt`, resume `T26` at pass `32`; otherwise continue this live-audit/cross-document-drift cadence. The `SAT 2026-10-03` dated checks become answerable in `4` days.
+
+---
+
 ## 🆕 THIS FIRING (`2026-09-29`, fortieth run) — CLEAN RE-VERIFICATION PASS: THE THIRTY-NINTH RUN'S SIX OPEN THREADS RE-CHECKED LIVE BY DIRECT CONTENT INSPECTION (NOT JUST ID GREP), ALL UNCHANGED; TRANSCRIPT UNAVAILABILITY CONFIRMED BY DIRECTORY LISTING RATHER THAN ASSUMED
 
 **Scope this run**: rather than re-running the full decision-surface audit the thirty-ninth run already completed, this pass independently re-verified the three items with a concrete, checkable live signature, each against the actual file content rather than against `NBA_OPEN_ITEMS.md`'s own citation of itself.
