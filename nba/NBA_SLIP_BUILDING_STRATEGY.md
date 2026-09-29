@@ -381,4 +381,21 @@ On top of the 10-game trailing (§8a), split by outcome variance (consistent = l
 **Owner's 6 — ALL TESTED:** Rank 1 (prop-line hit) ✅ · Rank 2 (baseline HP, conviction) ✅ · Rank 3 (final HP, balanced) ✅ · Rank 4 (score, volume) ✅ · Rank 5 (player hit, prop-gated) ✅ · Rank 6 (line-band, rotation-robust) ✅.
 **NEW validated ranks/techniques:** 10-game hit/miss trailing ✅ (§8a, orthogonal) · consistency-interaction ✅ (§8e, amplifies trailing).
 **Rejected (documented, don't re-chase):** anchor-distance/z-score ✅ (§8d) · raw stat-magnitude form ✅ (§7l).
-**STILL TO BUILD/TEST:** trailing windows 3/5/20/30 (which is best); signal-ranks — minutes/usage trend, pace-adjusted, matchup-by-position, rest/B2B/3-in-4, line-value vs sharp market; interaction stacks (trailing×line-band, trailing×role_tier). These are the next batches. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**STILL TO BUILD/TEST:** trailing windows 3/5/20/30 (which is best); signal-ranks — minutes/usage trend, pace-adjusted, matchup-by-position, rest/B2B/3-in-4, line-value vs sharp market; interaction stacks (trailing×line-band, trailing×role_tier). These are the next batches.
+
+### 8g. VALIDATED — the owner's "LINE VARIATIONS vs GOBLIN/DEMON TIERS" principle (tiers are less volatile)
+Owner stated tier-anchoring is less volatile than raw-line ranks because the tier's anchor is board-set per player. TESTED directly (points/Over): cross-player hit-rate spread —
+| dimension | cross-player sd | mean hit | players |
+|---|---|---|---|
+| **raw line = 15.5** (same line, all players) | **0.143** | 0.479 | 49 |
+| **goblin tier** (board-anchored per player) | **0.089** | 0.667 | 394 |
+**The tier is ~40% LESS volatile across players (0.089 vs 0.143) — owner's claim CONFIRMED.** A fixed raw line means wildly different difficulty per player (star hits 15.5 easily, role player rarely → huge spread); a goblin/demon tier is anchored to each player's own level → same relative difficulty for everyone → tighter, more stable rank. **Engine consequence: PREFER tier-anchored ranks (goblin/demon/standard as the unit) over raw-line-value ranks** for stability; raw line-band (§8c) is usable but more volatile, so use it as a secondary refinement, not the primary key. This is a real rank-construction principle, validated.
+
+### 8h. HONEST GAP-LIST — owner sub-dimensions from the original spec still to test (found by re-reading the original message)
+I tested the six rank NAMES but the original spec named sub-dimensions I still owe (non-negotiable):
+- **Rank 1 "top legs by QUANTITY or PERCENTAGE"** — test top-N-by-count vs top-X% selection (which sizing rule gives better ROI under the 50-cap). NOT yet tested.
+- **Rank 1 "prop-line VARIATION NUMBER"** — the alt-ladder depth (how many rungs from anchor) as a rank dimension. NOT yet tested (needs the alt-line depth field; prop_universe carries kind but ladder-depth per leg must be derived).
+- **Player rank "all prop lines AND VARIATIONS / direction/variation"** — player × prop × side × alt-variation, not just player × prop × side (§7o). Partial.
+- **Goblin/demon tier as an explicit RANK dimension** — §8g validated tier stability; still to test tier as a selection rank end-to-end (per-tier p·m ranking).
+- Confirmed done: the 6 names, trailing, consistency, line-band, tier-volatility.
+**Next batches:** these sub-dimensions + trailing windows (3/5/20/30) + signal-ranks (minutes/usage, pace, matchup-by-position, rest/B2B, line-value). The tier/variation dimensions are HIGH priority (owner emphasized, and §8g shows tiers are the stable unit). NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
