@@ -20,6 +20,10 @@ on:
         description: "lowest cal_p kept in the pool (thresholds sweep 0.56-0.66)"
         default: "0.56"
         required: false
+      real_only:
+        description: "1 = only line_source='real' legs (owner rule: no simulated lines). 0 = include simulated (comparison only)"
+        default: "1"
+        required: false
 
 permissions:
   contents: read
