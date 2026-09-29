@@ -59,4 +59,6 @@ jobs:
           CS_MIN_N: ${{ github.event.inputs.min_n }}
           CS_FLOOR: ${{ github.event.inputs.floor }}
           CS_REAL_ONLY: ${{ github.event.inputs.real_only }}
+          CS_SWAP: ${{ github.event.inputs.swap }}
+          CS_S1_FROM: ${{ github.event.inputs.s1_from }}
         run: python -u nba/build_slip_config_sweep.py
