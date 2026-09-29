@@ -38,7 +38,7 @@ import psycopg
 
 FEATURE_SQL = """
 WITH base AS (
-  SELECT pu.season, pu.game_date, pu.player_id, pu.prop, pu.side, pu.line, pu.kind,
+  SELECT pu.season, pu.game_date, pu.player_id, pu.player, pu.prop, pu.side, pu.line, pu.kind,
          pu.model_p, pu.factor, pu.hit::int AS hit, pu.event_id, pu.team_id
   FROM nba_market.prop_universe pu
   WHERE pu.hit IS NOT NULL AND pu.model_p IS NOT NULL AND pu.kind IN ('standard','goblin','demon')
