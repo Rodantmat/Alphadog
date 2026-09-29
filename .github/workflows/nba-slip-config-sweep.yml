@@ -1,0 +1,49 @@
+name: NBA Slip Config Sweep
+
+# REPORT-ONLY exhaustive REAL-slip backtest (nba/build_slip_config_sweep.py).
+# Reads nba_market.prop_universe, writes nothing. Manual dispatch only - no cron.
+# Holds the full graded-leg stream in memory (this is why it is a workflow and not a live query:
+# the multi-way joins over final_hp / full-history combinatorics drop the interactive Hyperdrive connection).
+
+on:
+  workflow_dispatch:
+    inputs:
+      haircut:
+        description: "payout multiplier applied to every slip payout (real PP slip haircut ~2-8%)"
+        default: "0.95"
+        required: false
+      min_n:
+        description: "min prior-days observations in a (prop,side,bucket) cell before a leg is priced"
+        default: "60"
+        required: false
+      floor:
+        description: "lowest cal_p kept in the pool (thresholds sweep 0.56-0.66)"
+        default: "0.56"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-slip-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Run the config sweep (report only)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CS_HAIRCUT: ${{ github.event.inputs.haircut }}
+          CS_MIN_N: ${{ github.event.inputs.min_n }}
+          CS_FLOOR: ${{ github.event.inputs.floor }}
+        run: python -u nba/build_slip_config_sweep.py
