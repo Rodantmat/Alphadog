@@ -81,7 +81,7 @@ SELECT l.season, l.game_date, l.event_id, l.player_id, l.prop, l.side, l.line, l
        CASE WHEN l.game_date <= b.s0 + 30 THEN 'early' WHEN l.game_date >= b.s1 - 21 THEN 'late' ELSE 'mid' END AS phase
 FROM legs l
 LEFT JOIN mkt m ON m.game_date=l.game_date AND m.pn=l.pn AND m.prop=l.prop AND m.line=l.line
-LEFT JOIN role r ON r.game_date=l.game_date AND r.player_id=l.player_id AND r.prop=l.prop AND r.side=l.side AND r.line=l.line
+LEFT JOIN role r ON r.game_date=l.game_date AND r.player_id=l.player_id AND r.prop=l.prop AND r.line=l.line
 LEFT JOIN rest rs ON rs.pid=l.player_id AND rs.game_date=l.game_date
 JOIN bounds b ON b.season=l.season
 ORDER BY l.game_date
