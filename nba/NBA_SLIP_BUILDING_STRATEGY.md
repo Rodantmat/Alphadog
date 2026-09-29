@@ -334,4 +334,16 @@ Ranking every (prop, side, kind) group with ≥200 top-bucket legs by realized s
 - **Pace-adjusted rank** — game pace projection (team_game_log pace); high-pace inflates all counting stats.
 - **Rest/schedule rank** — rest days, back-to-back, 3-in-4 (research: measurable, especially high-usage vets & centers on B2B).
 - **Line-value rank** — PP/UD line vs de-vigged sharp market line (line-shopping; we have market lines) — "flips negative EV to positive."
-NOTE most of the NEW ones (minutes/usage/matchup/pace/rest/line-value) are SIGNALS in the owner's taxonomy (they shift a leg's true p, orthogonal to cal_p) as much as ranks — the boundary blurs; they multiply candidate QUALITY where the hit-rate ranks (1-6, shared cal_p core) mainly multiply candidate SUPPLY. Build & test each; keep every one that adds real, tie-break-stable, slip-level +EV. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+NOTE most of the NEW ones (minutes/usage/matchup/pace/rest/line-value) are SIGNALS in the owner's taxonomy (they shift a leg's true p, orthogonal to cal_p) as much as ranks — the boundary blurs; they multiply candidate QUALITY where the hit-rate ranks (1-6, shared cal_p core) mainly multiply candidate SUPPLY. Build & test each; keep every one that adds real, tie-break-stable, slip-level +EV.
+
+### 8a. VALIDATED NEW RANK — player hit/miss TRAILING (10-game) is real, monotonic, and ORTHOGONAL to model_p
+The player's own hit rate on the EXACT (prop, side) over their last 10 games, measured WITHIN the model_p≥0.60 filter (so any separation is signal ON TOP of the model):
+| 10-game trailing band | next-game hit | n |
+|---|---|---|
+| 80%+ | **0.5815** | 5,570 |
+| 60-80% | 0.5622 | 17,842 |
+| 40-60% | 0.5357 | 17,387 |
+| 20-40% | 0.5032 | 6,933 |
+| <20% | 0.4844 | 671 |
+**Clean monotonic +9.7pp gradient, large samples, and it separates 0.484→0.582 EVEN AFTER conditioning on model_p≥0.60 → the trailing carries signal the model does NOT already have.** This is a GENUINELY DISTINCT rank (unlike Ranks 2-4 which share the cal_p core). **Holds out-of-sample both seasons** (S1 hot 0.556 vs cold 0.497, +6.0pp; S2 0.585 vs 0.504, +8.2pp) — stable, real, generalizes.
+**RESOLVES the §7l contradiction:** §7l found "recent form" a trap — but it used raw ACTUAL-vs-line (stat magnitude), which is noisy. THIS uses hit/miss history on the exact prop+side, which is clean and monotonic. **Rule: trailing ranks must be built on HIT/MISS history, not stat-magnitude.** This is a real candidate-multiplying rank. TO DO: test the 3/5/20/30 windows (which window is best?), test it as a slip-level selection (does trail-80 + model_p top-tail lift slip EV?), and tie-break test. **Rank catalog now: Rank 1 ✅, Rank 5 ✅ (prop-gated), trailing-10 ✅ NEW — three real distinct ranks so far; the HP/score ranks (2-4) are near-duplicates of the cal_p core (keep but low marginal value); more trailing windows + the signal-ranks (minutes/usage/pace/matchup/rest/line-value) next.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
