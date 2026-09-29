@@ -355,4 +355,30 @@ Multi-day real test (8 days across both seasons, 13,460 graded standard legs), e
 | **Baseline HP** | ≥0.70 | **0.583** | 564 (most selective) |
 | Final HP | ≥0.70 | 0.560 | 411 |
 | **Score** | ≥70 | 0.541 | **2,888 (5-7× more)** |
-**Finding (corrects my earlier "all redundant" assumption — tested, not assumed):** the three ranks are NOT interchangeable in practice. **Baseline HP's top tier has the HIGHEST realized hit (0.583) and is the most selective** — the tightest, highest-conviction legs. **Score selects 5-7× more legs at a slightly lower hit (0.541)** — the best rank for CANDIDATE SUPPLY / filling the cap on thin days. **Final HP sits in between (0.560)** — enrichment-adjusted middle. So each has a genuine engine role: **Baseline = conviction (tightest slips), Score = volume (cap-fill, pool depth), Final HP = balanced.** They correlate ~0.98 (§8) but their top-N selections and cut-point behavior differ enough to keep all three as distinct ranks. (Note: raw HP≥0.80 badly overstates — the overconfidence of fact 124/§7g — so these ranks must still be applied via the as-of recalibrated cal_p, not raw HP; the ranking ORDER is what each contributes.) **Ranks 2,3,4 now ✅ TESTED and KEPT with distinct roles.** Caveat: needs tie-break + full-walk-forward confirmation (the 8-day sample shows the pattern; the rank_foundation build will confirm across all 325 days). NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Finding (corrects my earlier "all redundant" assumption — tested, not assumed):** the three ranks are NOT interchangeable in practice. **Baseline HP's top tier has the HIGHEST realized hit (0.583) and is the most selective** — the tightest, highest-conviction legs. **Score selects 5-7× more legs at a slightly lower hit (0.541)** — the best rank for CANDIDATE SUPPLY / filling the cap on thin days. **Final HP sits in between (0.560)** — enrichment-adjusted middle. So each has a genuine engine role: **Baseline = conviction (tightest slips), Score = volume (cap-fill, pool depth), Final HP = balanced.** They correlate ~0.98 (§8) but their top-N selections and cut-point behavior differ enough to keep all three as distinct ranks. (Note: raw HP≥0.80 badly overstates — the overconfidence of fact 124/§7g — so these ranks must still be applied via the as-of recalibrated cal_p, not raw HP; the ranking ORDER is what each contributes.) **Ranks 2,3,4 now ✅ TESTED and KEPT with distinct roles.** Caveat: needs tie-break + full-walk-forward confirmation (the 8-day sample shows the pattern; the rank_foundation build will confirm across all 325 days).
+
+### 8c. VALIDATED — Rank 6 (plain LINE-BAND, player-agnostic, rotation-robust) is real and distinct
+Hit rate at model_p≥0.70 varies systematically by LINE MAGNITUDE within a prop (player-agnostic):
+- **points/Over RISES with the line:** 5-9.5 → 0.546 · 10-14.5 → 0.590 · **15-19.5 → 0.655**. A star's high-line Over (model_p≥0.70) is a much better leg than a low-line Over at the same model_p.
+- **points/Under FALLS with the line:** 5-9.5 → 0.600 · 15-19.5 → 0.529. Low-line Unders are the sweet spot.
+- **rebounds/Over:** low lines best (≤4.5 → 0.601 vs 5-9.5 → 0.524). **assists/Under:** ≤4.5 → 0.608.
+**This is a REAL distinct rank** — line magnitude carries hit-rate signal the model_p doesn't fully separate, and it's player-agnostic (rotation/roster-churn robust, exactly the owner's Rank 6). Engine: within (prop, side), prefer the line-magnitude band with the higher realized hit. **Rank 6 ✅ TESTED & KEPT.**
+
+### 8d. REJECTED — anchor-distance / z-score rank (a popular DFS technique that does NOT hold in our data)
+Tested: points/Over ranked by z = (player's prior-10 mean − line)/sd (how many SDs the line sits below recent mean; "value" per DFS lore). Result mostly FLAT and slightly INVERTED: line≥1SD-below-mean → 0.549, line-above-mean → 0.601. Same mean-reversion noise as §7l (stat-magnitude). **Not a clean rank — rejected as a primary.** Confirms the rule: magnitude/distance ranks are noisy; hit/miss-history ranks are clean. (Documented so it's not re-chased.)
+
+### 8e. VALIDATED — CONSISTENCY interaction rank (amplifies the trailing rank both directions)
+On top of the 10-game trailing (§8a), split by outcome variance (consistent = low sd of recent hit/miss):
+| trailing | consistency | next hit | n |
+|---|---|---|---|
+| **hot + consistent** | | **0.593** | 1,965 |
+| hot + streaky | | 0.575 | 11,264 |
+| cold + streaky | | 0.517 | 13,176 |
+| **cold + consistent** | | **0.484** | 673 |
+**Consistency AMPLIFIES the trailing signal both ways:** hot-AND-consistent (0.593) beats hot-alone (§8a 0.582); cold-AND-consistent (0.484) is worse than cold-streaky (0.517) — a consistently-cold player stays cold. Real stacking technique. **Consistency-interaction ✅ VALIDATED** (use as a signal that sharpens trailing, not standalone).
+
+### 8f. RANK CATALOG — running tally (Phase 1)
+**Owner's 6 — ALL TESTED:** Rank 1 (prop-line hit) ✅ · Rank 2 (baseline HP, conviction) ✅ · Rank 3 (final HP, balanced) ✅ · Rank 4 (score, volume) ✅ · Rank 5 (player hit, prop-gated) ✅ · Rank 6 (line-band, rotation-robust) ✅.
+**NEW validated ranks/techniques:** 10-game hit/miss trailing ✅ (§8a, orthogonal) · consistency-interaction ✅ (§8e, amplifies trailing).
+**Rejected (documented, don't re-chase):** anchor-distance/z-score ✅ (§8d) · raw stat-magnitude form ✅ (§7l).
+**STILL TO BUILD/TEST:** trailing windows 3/5/20/30 (which is best); signal-ranks — minutes/usage trend, pace-adjusted, matchup-by-position, rest/B2B/3-in-4, line-value vs sharp market; interaction stacks (trailing×line-band, trailing×role_tier). These are the next batches. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
