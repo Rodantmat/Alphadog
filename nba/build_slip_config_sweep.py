@@ -389,6 +389,19 @@ def main():
             tot = sum(v[0] for _, v in pu) or 1
             pw = " ".join(f"{p}:{v[0] / tot:.0%}@{(v[1] / v[0]):.2f}" for p, v in pu)
             line.append(f"    legs by prop (share@hit): {pw}")
+            # CAP-1: the best slip per day - how it is actually placed (owner: real slips, day by day)
+            r1 = run_config(pool, t, c, s, k, st, DRIVERS[d], 'asc', hc, cap=1)
+            if r1:
+                for season in seasons_seen:
+                    items = sorted((day, sd, rd) for day, (se, sd, rd) in r1['days'].items() if se == season)
+                    if not items:
+                        continue
+                    n1, pp1, net1, dd1, ls1 = series_stats(items)
+                    roi1 = sum(rd for _, _, rd in items) / n1 - 1.0
+                    bs1 = bootstrap_roi([(sd, rd) for _, sd, rd in items], draws)
+                    bt = f"P5 {bs1[0]:+.0%} P50 {bs1[1]:+.0%}" if bs1 else "boot n/a"
+                    line.append(f"    CAP-1 {season}: ROI {roi1:+.1%} on {n1} days | {pp1:.0%} days net+ | net {net1:+.1f}u "
+                                f"| max dd {dd1:.1f}u | longest losing streak {ls1} | {bt}")
             print("\n".join(line), flush=True)
 
     # ---- pooled robust leaderboard (context only) ----
