@@ -883,4 +883,45 @@ The four signal findings that fed the harness were measured with the simulated-l
 | **Consistency interaction** (§8e) | amplifies trailing both ways | hot+consistent 0.582 > hot+streaky 0.566; cold+consistent 0.487 < cold+streaky 0.512 | **SURVIVES**, same shape, slightly smaller |
 | **Market-edge** (§8k) | +9.8pp using RAW model_p | using **walk-forward cal_p** (prior-days-only, n≥60) vs window book prob, Over side, 2025-26: book>cal 0.460 → flat 0.484 → +3–8 0.516 → cal≫book **0.567** (**+10.7pp**, monotonic). Top band's cal_p (0.584) now sits close to realized (0.567), where the raw version claimed 0.653 — the calibration fixed the overconfidence. **BUT volume: 323 legs/season in the strong band** | **SURVIVES** as a real, now honestly-calibrated signal — usable as a FILTER, too sparse to be a bulk rank |
 | **Player hit-rate rank** (§7o) | "real on peripheral props (oreb/fga/fgm/fta/dreb/ftm/fg3a)" | per-player residual (actual − cell-expected) sd = **0.004–0.006** on every real prop — BELOW the ~0.04 that binomial noise alone would produce (players with ≥80 legs; peripheral props don't even have enough such players to appear) | **DEAD.** Player identity adds nothing once the model_p cell is known. The §7o result was entirely an artifact of the simulated lines. **Remove the player rank (Rank 5) from the live stack.** |
-**Net for the meta-model / harness feature set:** trailing + consistency + market-edge(filter) stand; player-rank is dropped. The harness's `cal_p` and `blend` drivers are both built only on surviving signals. This closes the doubt raised in §14a for the rank layer.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Net for the meta-model / harness feature set:** trailing + consistency + market-edge(filter) stand; player-rank is dropped. The harness's `cal_p` and `blend` drivers are both built only on surviving signals. This closes the doubt raised in §14a for the rank layer.
+
+---
+
+## 15. REALIGNMENT WITH THE ORIGINAL BRIEF (2026-09-29) — the untested items, tested
+
+The owner's original brief asked for PP **and Underdog**, app restrictions, basketball correlation, and multi-layer gates. After the simulated-line correction (§14a), only PP had been re-tested. This section closes the gaps with real data + research + Gemini.
+
+### 15a. UNDERDOG — tested on our REAL UD board archive (471,711 legs, 379 days)
+**Official payout table** (help.underdogsports.com, updated this week): Standard 2pk 3.5× · 3pk 6.5× · 4pk **12×** · 5pk 20× · 6pk 35× · 7pk 65× · 8pk 120×. Flex all-hit 3pk 3.25× · 4pk 6× · 5pk 10× · 6pk 25×; one miss 3pk 1.09× · 4pk 1.4× · 5pk **2.5×** · 6pk 2.6×; two misses 6pk 0.25×. **UD beats PP on the same legs at every size that matters: 4pk Standard 12× vs PP Power 10× (+20%), 3pk 6.5× vs 6×, 5pk Flex one-miss 2.5× vs 2×.** Rules: picks from ≥2 teams, same player never twice, ties/voids shrink the entry, and **"correlated projections can modify your projected payout"** (a shift shown only in the entry builder — NOT in our archive).
+**Per-leg modifiers on OUR props (real UD board, window snapshot):** every main-line leg for turnovers, steals, blocks, blocks_steals, points, rebounds, assists, threes carries **exactly 1.0×** (0% discounted). The sub-1.0 board average (0.974, P10 0.83) comes entirely from alternate/ladder rungs, which are separate rows. So the surviving family's legs would earn UD's full base table.
+**Coverage — the catch:** UD lists these props on only **~11–20% of the player-days PP does** (turnovers 829 of 4,053; steals 403 of 3,402; blocks_steals 441 of 3,845; blocks 192 of 1,956), and when both list the same player the **line is identical (100%; UD never lower)**. **Verdict: UD is a payout upgrade on the ~15% of legs it shares with PP, not a replacement pool.** Deployment: build the slip from the PP pool; if all its legs are also on UD at the same line, place it on UD for the higher payout (subject to UD's builder-time correlation shift, which must be read at placement). A UD-only backtest is not possible from the archive because the correlation shift isn't recorded.
+(Our stored `board_payout_conversion_rules` "UD = decimal(American) × 0.963" applies to UD's *alternate* rungs, which are priced by odds — consistent with the above; main lines are 1.0×.)
+
+### 15b. APP RESTRICTIONS (research, official pages)
+- **PrizePicks:** no same player twice in an entry; same-game/same-team legs ALLOWED (PP prices nothing extra for them on standard Flex/Power); Flex 3–6 picks, Power 2–6; voided leg shrinks the entry to the next size (`pp_power_after_voids`, §7a).
+- **Underdog:** ≥2 teams per entry; no same player twice; Standard 2–8, Flex 3–8; correlated-projection payout shift at build time; ties/voids shrink the entry.
+- **Harness implication:** the harness already enforces one-leg-per-game (stricter than either app requires), so every backtested slip is placeable on both. **New hard block needed: same-player across props** — `stocks` (blocks+steals) CONTAINS `steals` and `blocks`; a player's steals-Over and stocks-Over can both qualify and must never share a slip (see §15c). The harness's one-per-game rule already prevents this today (one leg per game ⇒ one leg per player), but must be kept if that rule is ever relaxed.
+
+### 15c. BASKETBALL CORRELATION — re-measured on the REAL surviving family (real lines, model_p ≥ 0.58, turnovers/steals/blocks/stocks)
+| pair relation | pairs | joint | independent | covariance |
+|---|---|---|---|---|
+| different game | 59,888 | 0.3699 | 0.3687 | **+0.0012** |
+| same game, opposite teams | 3,741 | 0.3555 | 0.3567 | −0.0012 |
+| same team | 3,373 | 0.3590 | 0.3592 | **−0.0001** |
+| **same player** (steals ⊂ stocks) | 483 | 0.3644 | 0.3325 | **+0.0319** |
+Cross-game, same-game-opponent and even same-team defensive legs are **independent to three decimals** — the harness's independence assumption holds for this family (Gemini's concern about league-wide officiating/pace nights does not show up in the data). The only correlation is **same-player (+0.032), the steals⊂stocks overlap — hard block, never in one slip.** (§125's earlier same-player +0.21 was on points-family combos; for defensive props the overlap is smaller but still the only real one.)
+
+### 15d. WHY defensive props and not points (Gemini + research; the mechanism check the edge needs)
+A held-out edge with no mechanism is suspect. Gemini's mechanism, consistent with the data: (1) **low liquidity / low scrutiny** — sharps and volume concentrate on points/rebounds/assists, so operators face little pressure to sharpen steals/blocks/turnovers; (2) **inherited softness** — pick'em lines are largely copied from sportsbooks that are themselves less sophisticated on these markets; (3) **static pricing of volatile, matchup-driven stats** — operators use season-average-style lines for stats whose true rate is driven by minutes, opponent turnover/drive tendencies and role, which our model captures; (4) **coarse line grid** (0.5/1.5) makes a stale line costlier. Also consistent: core props (points etc.) realize 0.53–0.57 at the same model confidence and do NOT clear break-even (§14b), which is what "the model is only better where the market is weak" should look like. **Verdict: a plausible, specific mechanism exists; the edge is not an unexplained artifact.**
+
+### 15e. OPERATOR-ADAPTATION CHECK (Gemini's "single most likely way it disappears") — measured
+If PrizePicks were tightening these lines, the qualifying pool would shrink and/or realized hit would drift down over time. Real data, qualifying legs (model_p ≥ 0.58) on the defensive props, by month:
+- 2024-25: 7–16 qualifying legs/day, realized hit 0.559–0.659; 2025-26: 20–29/day, realized 0.555–0.630; **no downward drift into 2026** (Jan 0.608, Feb 0.569, Mar 0.620, Apr 0.613). The two 0.555–0.559 months are both season-opening weeks (Oct 2024, Oct 2025, thin calibration). The pool GREW (calibration maturing, §14g). **Realized hit on qualifying legs never sat below 0.555 in any of 14 months.**
+
+### 15f. LIVE GATE (Gemini's proposal, re-based on OUR break-evens)
+Our real break-evens (§7c, identical legs): 4pk Flex 0.56, 5pk Flex 0.55, 3pk Power 0.56 (Gemini's 0.570 is slightly high). Qualifying-leg realized hit has historically run 0.56–0.66 (mean ≈ 0.60), so the edge is the ~0.04 buffer above break-even.
+- **Track:** rolling realized hit of placed qualifying legs (primary) + qualifying legs/day (secondary, detects line tightening even when the survivors still hit).
+- **Yellow (cut volume, re-evaluate):** rolling hit < **0.58** over ≥100 legs, or qualifying legs/day < ~10 for 2+ weeks (historical floor outside opening weeks).
+- **Red (stop):** rolling hit < **0.565** over ≥150 legs.
+- **Opening weeks:** expect ~0.555 and a thin pool for the first 2–3 weeks (both seasons show it); do not trigger red on that window — size small until the pool reaches ~15/day.
+These become Phase-4 Gate 3 (live). Gate 1 (S2 bootstrap P5 > 0) and Gate 2 (positive in both seasons + P5 > 0) already exist in the harness.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
