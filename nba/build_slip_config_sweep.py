@@ -61,6 +61,8 @@ def build_pool(conn, seasons, min_n, floor):
              FROM nba_market.prop_universe pu
              WHERE pu.kind='standard' AND pu.hit IS NOT NULL AND pu.model_p IS NOT NULL"""
     params = []
+    if os.environ.get('CS_REAL_ONLY', '1') == '1':
+        sql += " AND pu.line_source = 'real'"
     if seasons:
         sql += " AND pu.season = ANY(%s)"
         params.append(seasons)
