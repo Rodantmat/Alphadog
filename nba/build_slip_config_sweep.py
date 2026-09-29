@@ -149,6 +149,7 @@ def run_config(pool, thr, cellset, side, depth, structure, drv, order, hc, cap=N
     slips = 0
     win_days = set()
     by_season, by_month, day_pl = {}, {}, {}
+    prop_use = {}     # prop -> [leg-uses, leg-hits]  (which real props the slips are built from)
     for day, legs in pool.items():
         ranked = select_day(legs, thr, cellset, side, depth, drv, order)
         if ranked is None:
@@ -170,6 +171,9 @@ def run_config(pool, thr, cellset, side, depth, structure, drv, order, hc, cap=N
             dst += 1.0; dre += r
             if r > 1.0:
                 win_days.add(day); ss[2].add(day)
+            for L in combo:
+                pu = prop_use.setdefault(L[PROP], [0, 0])
+                pu[0] += 1; pu[1] += L[HIT]
         day_pl[day] = (season, dst, dre)
     if slips == 0:
         return None
@@ -177,6 +181,7 @@ def run_config(pool, thr, cellset, side, depth, structure, drv, order, hc, cap=N
         'roi': ret / stake - 1.0, 'slips': slips, 'wd': len(win_days),
         'season': {k: (v[1] / v[0] - 1.0, int(v[0]), len(v[2])) for k, v in by_season.items()},
         'months_pos': sum(1 for s, r in by_month.values() if r / s - 1.0 > 0), 'months': len(by_month),
+        'by_month': by_month, 'prop_use': prop_use,
         'days': day_pl,
     }
 
