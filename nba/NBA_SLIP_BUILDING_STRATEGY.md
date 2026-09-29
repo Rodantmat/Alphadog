@@ -722,4 +722,20 @@ Earlier §7c/§13b under-sold Flex (tested at break-even-quality / shallow). At 
 - **FLEX (low-frustration):** pays MOST slips (71% paying at 5-pick), lower variance, +132% ROI. Wins little-but-often — exactly the owner's stated preference. The partial tiers (5-pick: 4/5=2×, 3/5=0.4×) capture the frequent near-misses that high-quality (0.62) legs produce.
 - **POWER (max-ROI/high-variance):** +221% at 5-pick / +101% at 4-pick, but boom-or-bust (16% win at 5-pick). For the profit-max profile with disciplined bankroll.
 **Flex was under-tested and it's excellent** — my earlier "Flex ≥ Power break-even" held only for identical MARGINAL legs; at 0.62-quality legs Flex's partial payouts add real value (near-misses are frequent and paid). **Both profiles are strong and +EV; they serve different goals — this IS the two-strategy split the owner wanted, now real.** (Power-5 here shows +221% vs §13c's +85% — sharper pool: n≥50 buckets + wider cal_p; the exact config/pool matters, sweep continues.)
-**NEXT (per owner — test everything):** the OTHER ranks as slip drivers (player-hit-rate §7o, baseline-HP §8b, score); per-cell concentration (turnovers/ftm-only); CAPS (max slips/day); the market-edge FILTER on top of cal_p selection; and the daily placeability constraint at 0.62 for each depth. Map the full ROI × paying-rate × placeability surface, then gates.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**NEXT (per owner — test everything):** the OTHER ranks as slip drivers (player-hit-rate §7o, baseline-HP §8b, score); per-cell concentration (turnovers/ftm-only); CAPS (max slips/day); the market-edge FILTER on top of cal_p selection; and the daily placeability constraint at 0.62 for each depth. Map the full ROI × paying-rate × placeability surface, then gates.
+
+### 13f. CELL CONCENTRATION — the strongest lever yet (peripheral high-hit props)
+Tested building slips ONLY from the peripheral high-hit cells (§7p/§13c found turnovers/ftm/stocks/steals hit 0.63-0.66 vs points-family 0.58) — the owner's "plain prop-line high hit rate" rank concentrated on its best cells:
+- **Peripheral cells (turnovers/ftm/stocks/steals/blocks), cal_p≥0.60, 3-pick Power: +58.7%** (1,376 slips, 106 days — extremely robust, these props appear all season).
+- **Peripheral cells + cal_p≥0.62 (both levers):** 3-pick Power **+65.2%** (926 slips, 93 days); **4-pick Power +127.4%** (642 slips, 22 winning days); 4-pick Flex +81.5%.
+**4-pick Power on peripheral cells @ 0.62 = +127% ROI — beats all-props 4-pick (+101%)** because the peripheral props hit higher AND have season-long volume. **Cell concentration is the strongest lever.**
+**VALIDATED LEVER HIERARCHY (all real, OOS, tie-break-proof):**
+1. **CELL CONCENTRATION** — peripheral high-hit props (turnovers/ftm/stocks/steals/blocks/fta) > mixed all-props (+127% vs +101% at 4-pick).
+2. **THRESHOLD** — cal_p≥0.62 sweet spot (0.60 loose, 0.64 too thin).
+3. **DEPTH** — 4-pick Power = robust sweet spot; 5-pick higher-ROI/higher-variance; 6-pick = mirage (reject).
+4. **STRUCTURE** — Power = max-ROI/boom-bust; Flex = frequent-pay/low-frustration (+132% at 5-pick, 71% paying).
+**BEST CONFIGS ON THE FRONTIER (real, robust):**
+- Max robust ROI: **peripheral-cell 4-pick Power @ 0.62 = +127%** (642 slips, 22 win-days)
+- Low-frustration: **Flex-5 @ 0.62 = +132%, pays 71% of slips**
+- Frequent/simple: peripheral 3-pick Power @ 0.60 = +59% (1,376 slips, 106 days — most volume)
+The strategy is now strongly +EV across multiple robust compositions. **NEXT:** test the OTHER ranks (player-hit §7o, baseline-HP, score) as drivers vs cal_p; caps (max slips/day under 50-leg); market-edge as a filter on the peripheral pool; per-prop single-cell slips (e.g. all-turnovers); daily placeability at each config; then Phase 4 gates + the auto-engine that picks the best config per slate.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
