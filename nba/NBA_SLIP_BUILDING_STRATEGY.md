@@ -924,4 +924,32 @@ Our real break-evens (§7c, identical legs): 4pk Flex 0.56, 5pk Flex 0.55, 3pk P
 - **Yellow (cut volume, re-evaluate):** rolling hit < **0.58** over ≥100 legs, or qualifying legs/day < ~10 for 2+ weeks (historical floor outside opening weeks).
 - **Red (stop):** rolling hit < **0.565** over ≥150 legs.
 - **Opening weeks:** expect ~0.555 and a thin pool for the first 2–3 weeks (both seasons show it); do not trigger red on that window — size small until the pool reaches ~15/day.
-These become Phase-4 Gate 3 (live). Gate 1 (S2 bootstrap P5 > 0) and Gate 2 (positive in both seasons + P5 > 0) already exist in the harness.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+These become Phase-4 Gate 3 (live). Gate 1 (S2 bootstrap P5 > 0) and Gate 2 (positive in both seasons + P5 > 0) already exist in the harness.
+
+---
+
+## 16. THE RANK LAYER, DEEPENED (2026-09-29) — leg-by-leg, trailings, plain-line, player, and the sort-key finding
+
+Owner: not deep or strategic enough in ranks, trailings and high hit rates. Correct — the defensive-prop edge was found with one sort key (cal_p), one window, coarse bands, then I moved to structure. Rebuilt the rank layer on the real defensive pool (turnovers/steals/blocks/stocks, `line_source='real'`), prior-days-only calibration everywhere (no leakage).
+
+### 16a. Leg-by-leg cells (prop × side × line) — the family is NOT one thing
+At model_p ≥ 0.58 (n_q = qualifying legs): **steals Under 0.5 → 0.668 (816 legs)** · **stocks Over 0.5 → 0.690 (84)** · turnovers Over 2.5 → 0.652 (112) · turnovers Over 1.5 → 0.634 (205) · turnovers Under 2.5 → 0.632 (155) · stocks Over 1.5 → 0.627 (351) · blocks Over 0.5 → 0.608 (176) · turnovers Over 0.5 → 0.599 (217) · stocks Under 1.5 → 0.589 (1,058) · turnovers Under 0.5 → 0.586 (304) · turnovers Under 1.5 → 0.575 (687) · stocks Under 0.5 → 0.574 (101) · blocks Under 0.5 → 0.569 (383) · steals Over 0.5 → 0.567 (383) · **stocks Under 2.5 → 0.557 (140)** · **steals Under 1.5 → 0.549 (297)**. The last two sit at/below the 4pk-Flex break-even (0.56) — a cell-agnostic threshold had been mixing 0.67 legs with 0.55 legs. Steals Over 1.5: zero qualifying legs (model never reaches 0.58 there).
+
+### 16b. Trailing windows on this pool — nearly powerless (corrects §8a/§14h for these props)
+Correlation with next hit, legs with ≥15 prior games (n=4,474): **t3 0.042 · t5 0.031 · t10 0.039 · t20 0.020**, vs **model_p 0.151**; trailing vs model corr 0.158 (orthogonal but weak). §14h's "+8.7pp peripheral" was 3 coarse bands with 150 cold legs. On rare-event stats the last 3–20 games barely predict the next; trailing is at most a weak second key here. (It remains a real, larger signal on the core props — §14h core +5.8pp — where it doesn't help because those props don't clear break-even anyway.)
+
+### 16c. Which rank family carries the signal — the plain-line and player ranks are weak on this pool
+Prior-days-only, since 2025-01, n=10,052: **cell rank (prop,side,model-bucket) corr 0.139** · plain player-agnostic LINE rank (prop,side,line) **0.031** · PLAYER rank (player's own history on prop+side) **0.016** · raw model_p **0.152**. The edge is in *where the model places a specific player on a specific night*, not in the line as a fixed thing or the player as a fixed thing. Both "high hit rate" families from the brief (Rank 5 player, Rank 6 plain line) are near-powerless on the props that carry the edge. (They were only ever "real" on the simulated lines, §14h.)
+
+### 16d. THE SORT-KEY FINDING — raw model_p ORDERS better than the calibrated cell (reverses a §7-era assumption)
+Daily top-N realized hit, walk-forward, both seasons:
+| season | top-3 cal / raw | top-5 cal / raw | top-8 cal / raw | raw top-5 CLAIMED |
+|---|---|---|---|---|
+| 2024-25 | 0.415 / **0.539** | 0.467 / **0.554** | 0.503 / **0.552** | 0.609 |
+| 2025-26 | 0.596 / **0.635** | 0.589 / **0.636** | 0.585 / **0.636** | 0.712 |
+**Sorting by raw model_p beats sorting by the calibrated cell by 4–12 points at every depth in both seasons.** A 13-bucket cell collapses the model's within-bucket ordering (26 buckets: 0.592, no better; line-aware cell: 0.618, recovers half). **But raw model_p overstates the LEVEL (claims 0.712, realizes 0.636), so it must never PRICE a leg.** Two roles, two numbers: **SORT by raw model_p; PRICE/ELIGIBILITY by the walk-forward calibrated cell (or better, a per-leg calibration that preserves order — isotonic on model_p within prop×side).** The harness currently sorts by cal_p (`DRIVERS['cal_p']`) and so has been leaving ~4 points of top-N hit on the table; `blend` sorted by cal_p+trailing was likewise handicapped. **Change: add a `raw` driver (sort model_p, threshold on cal_p) and re-run.** Expected: same eligibility pool, better-ordered top-N → higher cap-1 ROI.
+
+### 16e. Side × line-class tiers inside the family (raw-model top-8/day, 2025-11 on)
+**Under, line 0.5 → 0.685** (314 legs; "zero steals/blocks/turnovers tonight") · Over, line 0.5 → 0.632 (182) · Under, line ≥1.5 → 0.624 (460) · **Over, line ≥1.5 → 0.593** (246, claims 0.725 — the most overconfident class). A rank-over-rank: within the raw-model order, prefer Under-0.5 and Over-0.5 legs; the "at-least-N of a rare event" Overs on high lines are the weakest and most overconfident. This is the sub-structure a flat threshold hides.
+
+**What changes in the strategy:** (1) harness gets a `raw`-sorted driver with cal_p eligibility; (2) eligibility becomes per-CELL (drop steals U1.5 / stocks U2.5, keep the ≥0.60 cells) rather than one flat threshold; (3) a side×line-class preference as a tiebreak/rank-over-rank; (4) trailing demoted to a weak tiebreak on this pool; (5) Rank 5 and Rank 6 dropped for this family (near-zero signal on real lines). Next: implement (1)–(3) in the harness and re-run Gate 1/2 — the top-N ordering gain should show directly in the cap-1 series.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
