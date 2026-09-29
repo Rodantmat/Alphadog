@@ -66,7 +66,7 @@ mkt AS (
   FROM nba_market.rung_market WHERE snapshot_label='window' AND p_over_book IS NOT NULL
 ),
 role AS (
-  SELECT DISTINCT ON (game_date, player_id, prop, side, line) game_date, player_id, prop, side, line, role_tier
+  SELECT DISTINCT ON (game_date, player_id, prop, line) game_date, player_id, prop, line, role_tier
   FROM nba_score.baseline_history WHERE role_tier IS NOT NULL
 ),
 rest AS (
