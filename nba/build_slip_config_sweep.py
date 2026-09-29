@@ -120,6 +120,8 @@ def cell_ok(prop, cellset):
         return prop in PERIPHERAL
     if cellset == 'points':
         return prop in POINTS_FAM
+    if cellset == 'other_core':
+        return prop in OTHER_CORE
     return prop == cellset
 
 
