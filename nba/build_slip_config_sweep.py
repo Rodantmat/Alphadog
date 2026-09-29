@@ -242,6 +242,18 @@ def main():
         print("  WARNING: <2 seasons priced - S1->S2 unavailable", flush=True)
         return
     s1, s2 = seasons_seen[0], seasons_seen[-1]
+    if os.environ.get('CS_SWAP', '0') == '1':
+        s1, s2 = s2, s1
+        print(f"  CS_SWAP=1: picking on {s1}, scoring on {s2}", flush=True)
+    s1_from = os.environ.get('CS_S1_FROM', '').strip()  # e.g. 2025-01-01: drop S1 warm-up days from scoring
+    if s1_from:
+        import datetime as _dt
+        cutoff = _dt.date.fromisoformat(s1_from)
+        dropped = 0
+        for day in list(pool.keys()):
+            if day < cutoff and pool[day] and pool[day][0][SEASON] == s1:
+                del pool[day]; dropped += 1
+        print(f"  CS_S1_FROM={s1_from}: dropped {dropped} warm-up slate-days from {s1}", flush=True)
 
     thresholds = [round(0.56 + 0.01 * i, 2) for i in range(11)]
     grid = list(itertools.product(DRIVERS.keys(), thresholds, ['all', 'peripheral', 'points', 'other_core'],
