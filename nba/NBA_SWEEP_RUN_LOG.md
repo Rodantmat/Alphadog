@@ -18,6 +18,8 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 **OWNER DECISION flagged**: please check whether `AlphaDog v2 Mobile Auto Deploy` run `36560027562` completed cleanly against a docs-only commit (it should be a no-op deploy of unchanged app code, but this session cannot see the mobile app side to confirm that, and has no tool to check the run's own conclusion after the fact from here). No further `github_patch_file` call this run will omit `message` — every one from here on is being visually double-checked in its own tool result before the next call is made.
 
+✅ **RESOLVED, forty-eighth run (`2026-09-29T12:10Z`)** — `github_list_workflow_runs` shows run `36560027562` (`AlphaDog v2 Mobile Auto Deploy`, `head_sha 74614ec6...`) as **`completed` / `success`**, confirmed live. No `AlphaDog v2 Mobile Auto Deploy` run has fired since, and no further `[skip ci]`-omission has been found on any of this sweep's own commits. **OWNER DECISION flag closed.** Struck by addition, not deletion, per RULE 40.
+
 ---
 
 ## 🆕 THIS FIRING (`2026-09-29`, forty-seventh run) — NINTH CONSECUTIVE "NOTHING CHANGED" PASS: `A6`/`T26-12`, `T26-15`, `T26-17`, THE CALIBRATION BLOCKER ALL RE-VERIFIED LIVE A FIFTH INDEPENDENT TIME, ALL UNCHANGED; D1 BINDINGS STILL ABSENT — AND ALL SIX RECURRING THREADS NOW HAVE A CONFIRMED, NAMED BLOCKER OUTSIDE THIS SWEEP'S REMIT
