@@ -36,6 +36,12 @@ import psycopg
 PERIPHERAL = {'turnovers', 'stocks', 'steals', 'blocks'}
 POINTS_FAM = {'points', 'pts_reb', 'pts_ast', 'pra'}
 OTHER_CORE = {'rebounds', 'assists', 'reb_ast', 'threes_made'}
+# 16a: leg-by-leg cells (prop, side, line) that realize >= 0.60 at model_p>=0.58 on real lines.
+# Drops steals U1.5 (0.549) and stocks U2.5 (0.557), which sit at/below the 4pk-Flex break-even.
+STRONG_CELLS = {
+    ('steals', 'Under', 0.5), ('stocks', 'Over', 0.5), ('turnovers', 'Over', 2.5), ('turnovers', 'Over', 1.5),
+    ('turnovers', 'Under', 2.5), ('stocks', 'Over', 1.5), ('blocks', 'Over', 0.5), ('turnovers', 'Over', 0.5),
+}
 POWER_TIER = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
 FLEX = {  # matches nba_market.pp_flex_standard_payout (verified section 7b)
     (3, 3): 3.0, (3, 2): 1.0,
