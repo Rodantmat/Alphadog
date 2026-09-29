@@ -1,0 +1,47 @@
+name: NBA Slip Matrix Engine
+
+# Stage 1 writes ONE table (nba_score.slip_leg_features) - every real PrizePicks window-board leg with every
+# walk-forward signal. Stage 2 is report-only: the full strategy matrix over that table.
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "features | matrix | both"
+        default: "both"
+        required: false
+      haircut:
+        description: "payout multiplier (real PP slip haircut)"
+        default: "0.95"
+        required: false
+      top:
+        description: "leaderboard rows"
+        default: "30"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-slip-matrix
+  cancel-in-progress: false
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Run the matrix engine
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ME_STAGE: ${{ github.event.inputs.stage }}
+          ME_HAIRCUT: ${{ github.event.inputs.haircut }}
+          ME_TOP: ${{ github.event.inputs.top }}
+        run: python -u nba/build_slip_matrix.py
