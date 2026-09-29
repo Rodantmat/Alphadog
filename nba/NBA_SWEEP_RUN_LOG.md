@@ -8,6 +8,22 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 THIS FIRING (`2026-09-29`, thirty-eighth run) — `T20-7`'S OWN "COINCIDENCE NOT INVESTIGATED" CAVEAT, RESOLVED LIVE: BOTH TIER TABLES FREEZING AT THE SAME ROW COUNT IS NOT A COINCIDENCE
+
+**Picked the highest-value remaining live-open item** (not corruption-class, which is now checked out per the last two runs): `T20-7`, `OWNER DECISION (b)`, re-verified `2026-09-28` and still carrying its own unresolved observation — `board_tiers` and `board_tiers_v2` both frozen at `2026-04-12`, identical `2,199,354` rows, explicitly flagged as "coincidence not investigated."
+
+✅ **Re-confirmed the base facts unchanged first** (RULE 57/61): all four reader scripts (`build_rung_market.py`, `build_confidence_v3.py`, `apply_ladder_calibration.py`, `backtest_tier_selection_value.py`) still query `nba_market.board_tiers`, zero `_v2` mentions — re-grepped live, unchanged. Both tables' row counts and max dates re-queried live — identical to the last check, unchanged.
+
+🔑 **Then investigated the coincidence itself, which nobody had done**: `build_board_tiers_v2.py` IS still dispatched daily (`nba-p3-afternoon-light.yml:15 21 * * *`), but its own code defaults to `BT2_DATE` = today PT and filters `board_snapshots` to `game_date = today` — a **one-slate-per-run** design, not a backfill (`BT2_ALL=1` is the separate, manually-triggered full-rebuild path). Queried `board_snapshots` directly: it DOES hold rows newer than `2026-04-12` — `1,369` PrizePicks rows already posted for `2026-10-20` (the season opener) and `30` Sleeper rows for `2026-09-12` — but every one is for a game DATE that wasn't "today" on the day it was captured, so the daily job's `game_date = today` filter has correctly found nothing to insert on every single day since the season ended. ⇒ **Not a coincidence: `v1` has no writer at all, and `v2`'s incremental design has had zero eligible input since the last game was actually played "today."**
+
+✅ **Patched `NBA_OPEN_ITEMS.md`'s `T20-7` row** (one commit, `[skip ci]`-verified) with this mechanism, explicitly framed as NOT changing the underlying `OWNER DECISION` (which table the four readers should point at) and NOT closing the item — added a testable prediction instead: `v2` should start populating again once `2026-10-20` itself becomes "today," which is worth a follow-up check once the season starts, not asserted as already observed.
+
+**Census after this firing**: `NBA_OPEN_ITEMS.md` `959` (unchanged, text-only addition inside an existing row).
+
+**NEXT**: no new corruption leads, `T20-7`'s mechanism now understood (still an open `OWNER DECISION`, correctly left open). Candidates: a follow-up check on `2026-10-20` itself (three weeks out) to see whether the prediction above holds; the two `SAT 2026-10-03` dated checks (`4` days out); a slower manual read of the largest untouched files (`NBA_GOBLIN_DEMON.md`, `NBA_MULTIPLIERS.md`) for anything a heuristic sweep wouldn't catch, since only `NBA_MASTER_SUMMARY.md` has had the stronger content-hash check so far.
+
+---
+
 ## 🆕 THIS FIRING (`2026-09-29`, thirty-seventh run) — SESSION RESUMED AFTER A BRIDGE RECONNECT; VERIFIED THE (AUTOMATED) THIRTY-SIXTH RUN'S WORK, CLOSED THE "OFFICIALS-LAYER" NEXT-POINTER AS ALREADY DONE, AND RAN A STRONGER NON-HEURISTIC DUPLICATION SCAN ON `NBA_MASTER_SUMMARY.md`
 
 **Session context**: this firing's own tool bridge disconnected and reconnected between turns; re-synced the local clone (`git fetch` + `reset --hard origin/main`) before trusting anything, per standing practice — RULE 57/61 applies to a session's own state just as much as to the system being documented.
