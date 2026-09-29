@@ -24,6 +24,14 @@ on:
         description: "1 = only line_source='real' legs (owner rule: no simulated lines). 0 = include simulated (comparison only)"
         default: "1"
         required: false
+      swap:
+        description: "1 = pick configs on the LATER season and score on the earlier one (season-effect control)"
+        default: "0"
+        required: false
+      s1_from:
+        description: "YYYY-MM-DD: drop earlier S1 slate-days (calibration warm-up) before scoring; blank = keep all"
+        default: ""
+        required: false
 
 permissions:
   contents: read
