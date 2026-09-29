@@ -449,4 +449,25 @@ Research (Turtle+EV, PropsBot): strong systems use ENSEMBLE weighting (weight si
 - **Why not the alternatives:** simple average / lift-weighting DOUBLE-COUNT correlated signals (they share the cal_p core); pure gating is too restrictive under the 50-cap; a heavy ML model overfits on 2 seasons. Logistic + **L2 (Ridge) regularization** handles multicollinearity (shrinks correlated coefficients together, stable) and resists overfit.
 - **Anti-overfit protocol (non-negotiable):** TIME-SERIES validation — train on Season 1, test on Season 2 (true out-of-sample); metrics = log-loss + CALIBRATION plot + slip-level ROI at threshold cuts. Standardize features. **Negative-CLV hard filter applied BEFORE the model.**
 - **This IS the auto-engine's core (Phase 5):** a regularized meta-model blends all validated ranks/signals into one as-of calibrated p, trained walk-forward, from which the top-N under the 50-cap are selected. Phase 1 ranks are its FEATURES; Phase 2 signals (minutes/usage/pace/matchup/rest) add more FEATURES; the meta-model learns the weights. **Architecture LOCKED.**
-**RANK CATALOG v5:** owner 6 ✅ + trailing-3 ✅ + consistency ✅ + combo/points-anchor ✅ + market-edge ✅ (primary filter) + CLV ✅ (filter+booster) + tier-stability principle ✅; rejected: anchor-distance, stat-magnitude. Combination = regularized logistic meta-model, S1→S2 validated. Next: Phase 2 signal features + the walk-forward meta-model build + slip-level ROI confirmation. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**RANK CATALOG v5:** owner 6 ✅ + trailing-3 ✅ + consistency ✅ + combo/points-anchor ✅ + market-edge ✅ (primary filter) + CLV ✅ (filter+booster) + tier-stability principle ✅; rejected: anchor-distance, stat-magnitude. Combination = regularized logistic meta-model, S1→S2 validated. Next: Phase 2 signal features + the walk-forward meta-model build + slip-level ROI confirmation.
+
+---
+
+## 9. GAME-DAY REPLICABILITY AUDIT (owner caveat 2026-09-28 — MANDATORY GATE for every rank/signal)
+
+**A rank/signal is only usable if it can be REPRODUCED at the P3 decision window (21:15 UTC / 1:15 PM PT, ~105 min before the earliest tip) using ONLY data that exists at that moment.** A signal that's strong in backtest but needs post-tip data is a backtest artifact, not a live edge. Verified against the live P3 pipeline (`nba-p3-afternoon-light.yml` step order: injury → boards → archive(label=window) → rung keys → tiers → **build_rung_market (window)** → availability delta → score → paper-picks → certify).
+
+| Rank / signal | Needs at decision time | Game-day replicable? |
+|---|---|---|
+| **cal_p** (recalibration, §7) | prior-data map (as-of by design) | ✅ YES — fit on strictly-prior data |
+| **market-edge** (cal_p − p_over_book, §8k/m) | **window** book prob | ✅ YES — `build_rung_market.py` runs LIVE at P3 and writes the `window` snapshot with `p_over_book` (507,871 rows carry it); derived from `board_snapshots` archived with `ARCHIVE_LABEL=window` |
+| **CLV** (p_close − p_window, §8o) | **close** book prob | ❌ **NO — BACKTEST-ONLY.** The `close` snapshot is captured AFTER games (a separate post-game archive); it does NOT exist at the P3 window. CLV cannot be computed at placement. **Demoted: CLV is a VALIDATION metric (confirm the model has edge historically), NOT a live selection rank.** (Matches the research: CLV is how you *validate* a model, used post-hoc.) |
+| **trailing-3 / consistency** (§8a/e/i) | player's prior graded games | ✅ YES — all in the past |
+| **line-band** (§8c) | the line value on the board | ✅ YES — on the captured board |
+| **prop-gated player hit** (§7o) | player's prior graded games | ✅ YES |
+| **tier goblin/demon** (§8g) | the board's tier at capture | ✅ YES — on the captured board (build_board_tiers_v2 runs at P3) |
+| **Phase-2 signals** (minutes/usage/pace/matchup/rest) | must each be checked — most derive from PRIOR games + the day's schedule/lineup, so likely ✅, but VERIFY each has a live feed at P3 (e.g. projected minutes needs the projected-lineup feed, which P3 has through the morning; opponent def rating is prior-games ✅; pace is prior-games ✅) |
+
+**RULE (locked): every rank/signal must pass this replicability gate BEFORE it's added to the live meta-model.** A signal that fails (like CLV) can still be used to VALIDATE the model offline but is NEVER a live feature. The meta-model (§8p) is trained ONLY on live-replicable features. **CLV removed from the live rank stack; kept as a backtest validation metric.** For Phase 2, each signal's game-day feed must be confirmed in the P3 step list before use — the injury/lineup/market/board feeds all run at P3; anything needing a feed P3 doesn't run is out.
+
+**Impact on the rank catalog:** the live rank stack is cal_p + market-edge (window) + trailing-3 + consistency + line-band + prop-gated-player + tier — ALL replicable. Only CLV drops to validation-only. The primary selection (§8n) is unaffected (market-edge, not CLV, was the sharp filter). Good: the caveat cost us one signal and confirmed the other seven are live-safe. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
