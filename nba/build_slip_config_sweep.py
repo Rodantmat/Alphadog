@@ -270,7 +270,7 @@ def main():
         print(f"  CS_S1_FROM={s1_from}: dropped {dropped} warm-up slate-days from {s1}", flush=True)
 
     thresholds = [round(0.56 + 0.01 * i, 2) for i in range(11)]
-    grid = list(itertools.product(DRIVERS.keys(), thresholds, ['all', 'peripheral', 'points', 'other_core'],
+    grid = list(itertools.product(DRIVERS.keys(), thresholds, ['all', 'peripheral', 'points', 'other_core', 'cells'],
                                   ['over', 'under', 'both'], [2, 3, 4, 5, 6], ['power', 'flex']))
     results = []
     for drv_name, thr, cellset, side, depth, structure in grid:
