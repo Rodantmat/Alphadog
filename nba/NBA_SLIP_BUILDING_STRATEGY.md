@@ -309,4 +309,29 @@ Ranking every (prop, side, kind) group with ≥200 top-bucket legs by realized s
 - **steals/Under holds out-of-sample:** S1 0.762 (n=42) / S2 0.714 (n=192) — stable ~0.71-0.76, real not noise. BUT ~1.7 top legs/available-day → too thin standalone (confirms §7k); it's a high-value INGREDIENT to combine, not a standalone pool.
 - **Variety's value is SUPPLY, not a higher average.** Mixed high-value pool (steals/Under + turnovers + stocks + scoring-Overs), cross-game 2-pick Power: +7.9% on 106,709 pairs — ≈ the points-only pool (+8.9%). Pooling more props does NOT raise the average leg; it raises the NUMBER of candidate legs → more days placeable + a bigger set to pick the best from under the 50-leg cap. This is exactly why the owner wants max variety: supply, not average.
 - **Top-tail selection LIFTS EV monotonically** (the core ranking mechanism): mixed pool, cross-game 2-pick Power, by cal-p threshold: model_p≥0.70 → +7.9% (avg leg 0.616); **model_p≥0.78 → +17.6%** (avg leg 0.625, joint 0.392, 7,368 pairs). Higher threshold = higher EV, fewer legs. **This IS Rank 1 done right: pool ALL props, sort by as-of cal_p, take the top-N that fit the cap.** The engine's dial is the cal-p threshold (EV vs volume tradeoff), and variety keeps the top-N deep enough to place daily.
-**RANK LANDSCAPE (validated conclusion):** the six ranks are all sorts over the one as-of cal_p / p·m substrate; the primary rank is cal_p-sorted-all-props-top-N (Rank 1 ≈ Ranks 2-4 which are model_p/HP/score variants of the same p). Rank 5 (player) adds signal only on peripheral props (§7o). Rank 6 (plain-prop-line rotating) = Rank 1 with player stripped. The DISTINCT value across ranks is small because they share the cal_p core — so the real candidate-multiplying variety comes from (a) all props/sides/kinds pooled, (b) the cal-p threshold dial, (c) prop-gated player signal, (d) season-phase, and (e) the Phase-2 SIGNALS (injury/minutes/pace) that are ORTHOGONAL to cal_p and can push a leg's true p above its model_p. Signals, not more hit-rate ranks, are where the next real candidate-quality gain is. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**RANK LANDSCAPE (validated conclusion):** the six ranks are all sorts over the one as-of cal_p / p·m substrate; the primary rank is cal_p-sorted-all-props-top-N (Rank 1 ≈ Ranks 2-4 which are model_p/HP/score variants of the same p). Rank 5 (player) adds signal only on peripheral props (§7o). Rank 6 (plain-prop-line rotating) = Rank 1 with player stripped. The DISTINCT value across ranks is small because they share the cal_p core — so the real candidate-multiplying variety comes from (a) all props/sides/kinds pooled, (b) the cal-p threshold dial, (c) prop-gated player signal, (d) season-phase, and (e) the Phase-2 SIGNALS (injury/minutes/pace) that are ORTHOGONAL to cal_p and can push a leg's true p above its model_p. Signals, not more hit-rate ranks, are where the next real candidate-quality gain is.
+
+---
+
+## 8. RANK CATALOG — building & testing EVERY rank granularly (Phase 1, the real first phase)
+
+**Honest status of the owner's six ranks (2026-09-28):**
+| # | Rank | Status | Evidence |
+|---|---|---|---|
+| 1 | Prop-line high hit rate | ✅ TESTED granular | §7p (full prop×side×kind landscape), §7q (top-tail selection +17.6% at model_p≥0.78) |
+| 2 | Baseline hit probability | ⚠️ PARTIAL | corr 0.995 w/ final_hp; top-30 overlaps final 28/30 — distinct at margin, own +EV NOT yet tested |
+| 3 | Final hit probability | ⚠️ PARTIAL | is the cal_p core (§7g-7n); own ranked selection not isolated-tested |
+| 4 | Final score (confidence-adj) | ⚠️ PARTIAL | corr 0.98 w/ final_hp; top-30 overlaps 26-27/30; own +EV not tested |
+| 5 | Player high hit rate | ✅ TESTED prop-gated | §7o (real only on peripheral props oreb/fga/fgm/fta/dreb/ftm/fg3a) |
+| 6 | Plain prop-line (rotating, player-agnostic) | ⚠️ PARTIAL | = Rank 1 w/o player; not explicitly isolated |
+
+**NEW rank / trailing types from research (2026-09-28, industry-standard, to BUILD + test granularly):**
+- **Rolling-window player hit-rate trailings** — the player's own hit rate on this (prop,side) over the last **3 / 5 / 10 / 20 / 30 games** (and vs the current line). Each window is a distinct rank; short windows = hot/recent, long = stable. (Research: DailyPropHub "hit rates", rolling 3/5/10 trends are standard.)
+- **Actual-vs-line trailing** — player's recent actual stat mean/median minus the line, in stat units (§7l tested the crude version: cold→revert; refine as a rank with proper windows + direction).
+- **Consecutive same-line streak** — count of consecutive recent games clearing this exact line/side (a "trend" rank; test if streaks predict or mean-revert).
+- **Minutes / usage trend rank** — rolling minutes & usage_rate (from `player_game_log_usage`); "single most predictive factor for counting stats" (research). Distinct from hit-rate ranks — a leg-quality rank.
+- **Matchup-adjusted rank** — opponent defensive rating vs the player's position/stat (from team_game_log); "defense by position" is a top research factor.
+- **Pace-adjusted rank** — game pace projection (team_game_log pace); high-pace inflates all counting stats.
+- **Rest/schedule rank** — rest days, back-to-back, 3-in-4 (research: measurable, especially high-usage vets & centers on B2B).
+- **Line-value rank** — PP/UD line vs de-vigged sharp market line (line-shopping; we have market lines) — "flips negative EV to positive."
+NOTE most of the NEW ones (minutes/usage/matchup/pace/rest/line-value) are SIGNALS in the owner's taxonomy (they shift a leg's true p, orthogonal to cal_p) as much as ranks — the boundary blurs; they multiply candidate QUALITY where the hit-rate ranks (1-6, shared cal_p core) mainly multiply candidate SUPPLY. Build & test each; keep every one that adds real, tie-break-stable, slip-level +EV. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
