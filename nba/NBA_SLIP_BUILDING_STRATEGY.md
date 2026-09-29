@@ -83,7 +83,14 @@ MLB reference files (root): `SLIP_STRATEGY_V1_SPEC_AND_BLOCKERS.md`, `SLIP_STRAT
 
 ## 5. PROGRESS LOG
 - **2026-09-28** — Phase 0 opened. Doc created. Owner charter + taxonomy + phase plan recorded. Foundation (COMPASS 108-126) carried in: data clean, overconfidence mapped, correlation measured, slip-structure researched.
-- **2026-09-28** — Read MLB `HIGH_HIT_RATE_METHODOLOGY.md` (reference). Extracted the transferable rules into §6 below. These are hard-won MLB scars that protect the NBA build; they reshape Phase 1. Next: read remaining MLB refs (SIGNALS_TECHNIQUES_TRIED, SLIP_STRATEGY_V1_*, alphadog-v2-slip-builder.js), then Phase 1 research preface.
+- **2026-09-28** — Read MLB `HIGH_HIT_RATE_METHODOLOGY.md` + `SIGNALS_TECHNIQUES_TRIED.md` (reference). Extracted transferable rules → §6 (B0/B0a/B0b/B0c, p·m master lesson, context-fails/role-wins, method discipline). Gemini challenge → §6e (Flex EV correction, NBA edges). Validation ledger §7a-7n: every imported claim proven against real NBA data — several REFUTED (Flex not universally easier; hot-hand a trap; p·m Power-only). First real +EV slip found (+8.9% 2-pick, +39% 3-pick). Slip-size theory (Kelly peaks 3-pick). Correlation, void rate, pool depth, season-phase, as-of recalibration all validated. Phase 1 rank_foundation substrate designed (`build_rank_foundation.py`, report mode).
+- **2026-09-28 — FULL SWEEP (owner-requested), all re-verified LIVE:**
+  - Data layer unchanged & intact: prop_universe 1,667,024 (1,618,101 graded, 357 dates, 20 props, 2 seasons); final_hp 7,215,296 (325 dates, 21 props); board_outcomes 6,905,452 (6,668,340 played). Matches all documented figures exactly — zero drift.
+  - Slip infra: 6/6 core functions present & callable (`pp_flex_standard_payout`, `pp_slip_power`, `pp_slip_power_conservative`, `pp_power_after_voids`, `pp_slip_flex2`, `pp_round_step`); both sim functions (`simulate_slips`, `paper_pick_slips`); `availability_p_plays` present. `recalibration_map`/`rank_foundation` NOT built (correct — both builders in report mode, owner-gated).
+  - Headline findings re-reproduce exactly: overconfidence tail raw 0.793 → realized 0.610 (§7g ✓); first +EV slip 3,304 pairs, joint 0.3629, +8.9% (§7g ✓).
+  - Docs consistent: strategy doc §0-7 complete (§6a-6f, §7a-7n all present with real numbers + cross-refs); COMPASS fact 127 pointer intact; both builder scripts committed. Nothing lost, nothing stale.
+  - **SWEEP VERDICT: current + prior work is real, complete, double-checked, and fully documented.** The only unbuilt items are the two owner-gated report-mode tables (recalibration_map, rank_foundation) — by design, awaiting the owner's production-write decision (Phase 1b).
+- **STATUS: Phase 1 substrate DESIGNED & VALIDATED (report mode). Awaiting owner decision on the production-table write (path 1 build now vs path 2 prove-more-read-only-first), then build the 6 ranks as views over rank_foundation.**
 
 ---
 
