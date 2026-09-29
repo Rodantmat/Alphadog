@@ -30,8 +30,12 @@ from collections import defaultdict, deque
 
 import psycopg
 
-PERIPHERAL = {'turnovers', 'ftm', 'stocks', 'steals', 'blocks', 'fta'}
-POINTS_FAM = {'points', 'pts_reb', 'pts_ast', 'pra', 'fantasy_score'}
+# REAL-LINE props only (prop_universe.line_source='real', method='archive').
+# ftm/fta/fga/fgm/fg3a (points-scaled), oreb/dreb (rebounds-share), fantasy_score (fs-reconstruction) are
+# SIMULATED lines - never offered on a board - and are EXCLUDED (owner rule: real legs, no invented lines).
+PERIPHERAL = {'turnovers', 'stocks', 'steals', 'blocks'}
+POINTS_FAM = {'points', 'pts_reb', 'pts_ast', 'pra'}
+OTHER_CORE = {'rebounds', 'assists', 'reb_ast', 'threes_made'}
 POWER_TIER = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
 FLEX = {  # matches nba_market.pp_flex_standard_payout (verified 7b)
     (3, 3): 3.0, (3, 2): 1.0,
