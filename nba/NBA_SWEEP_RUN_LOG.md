@@ -8,6 +8,22 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 THIS FIRING (`2026-09-29`, thirty-fourth run) — CONTINUING THE SAME "LONGER PASSES" INSTRUCTION: A THIRD CORRUPTION INSTANCE FOUND, `T26-17`, LIVE IN `NBA_SYSTEM_DESIGN.md` — AND THIS ONE IS INVISIBLE TO THE CENSUS TOOL ITSELF
+
+**Directly continuing the thirty-third run's own NEXT pointer** (run the content-diff corruption check across the seven files whose duplicate-heading count came back `0`, since a clean dup-count doesn't mean clean content — a fused, non-duplicated heading wouldn't show up in that check at all).
+
+🔴 **Ran it. Found exactly that.** `NBA_SYSTEM_DESIGN.md:2094` reads *"...in the delta worker's calendar-based pre-flight. ### ⚠⚠ THE DEEPER ROOT CAUSE — "correctly coded" is not "actually running""* — a `###` heading fused onto the end of the prior sentence, same line, no line break. Checked for a duplicated block the way `T26-15`/`T26-16` had one: **none here** — the section's distinctive phrases each appear exactly once in the file. So this is a *different* sub-type of the same defect family: fusion without duplication. Filed as `T26-17` in `NBA_OPEN_ITEMS.md` (index line + full detail row, two commits, both `[skip ci]`-verified after landing).
+
+🔑 **Why this one matters more than tidiness**: because the heading marker isn't at the start of its own line, this corpus's own census formula (`grep -cE '^(> *)*#{1,6} '`, the exact command used to derive every stamped heading count across all twelve docs, including this sweep's own census checks) **cannot see it at all**. It's a corruption invisible to the very tool this sweep relies on for structural verification — worth naming explicitly as a blind spot in the methodology itself, not just in the one file.
+
+✅ **Also checked, while there**: whether any of the other eleven docs carry a self-stated "this file has N headings" claim the way `NBA_OPEN_ITEMS.md` (`958` vs live `959`) and `NBA_FINAL_SCORING_CALIBRATION.md` (`332`, pre-corruption baseline) do — **none do**. So there's no further drift-vs-stamp mismatch hiding elsewhere to chase down; that thread is exhausted.
+
+⚠ **Scope note, current and honest**: only three files (`NBA_DATABASE.md`, `NBA_FINAL_SCORING_CALIBRATION.md`, `NBA_SYSTEM_DESIGN.md`) have had this defect class checked via actual content inspection. The other nine are cleared only of the duplication sub-type (their dup-heading counts are `0` or confirmed-benign) — **not** of the fusion sub-type, which a duplicate-count check cannot detect by construction. Recorded as an explicit gap in `T26-17`'s own entry rather than implied closed.
+
+**Census after this firing**: `NBA_OPEN_ITEMS.md` `959` (unchanged, text-only additions inside the table), `NBA_SWEEP_RUN_LOG.md` adds one `##` heading. All three commits this segment (`5030f38a`, `2f17d87e`, and this entry) individually verified `[skip ci]`-compliant after landing, not just drafted that way.
+
+**NEXT**: the fusion-defect content check remains open for the other nine mandated docs (`NBA_GLOSSARY.md`, `NBA_RECIPE.md`, `NBA_GOBLIN_DEMON.md`, `NBA_BASELINE_CALIBRATION.md`, `NBA_SYSTEM_ARCHITECTURE.md`, `NBA_MULTIPLIERS.md`, `NBA_WORKERS.md`, `NBA_MASTER_SUMMARY.md`, and re-scanning `NBA_OPEN_ITEMS.md`/`NBA_SWEEP_RUN_LOG.md` themselves) — a grep heuristic (`[a-z,;:.]\s*#{2,6}\s+[A-Z⚠🔴]` excluding backtick-quoted mentions) is fast but not exhaustive; a slower full read would be more certain. Independently, the two `SAT 2026-10-03` dated checks in `NBA_MASTER_SUMMARY.md` (`D1` referee factor, preseason line-placement validation) are not yet answerable — four days out. `T26` pass `32` remains available as a separate thread.
+
 ## 🆕 THIS FIRING (`2026-09-29`, thirty-third run) — OWNER SAID "GO LONGER, MORE FILES": TRIAGED `NBA_MASTER_SUMMARY.md`'S 26 DUPLICATE HEADINGS (ALL BENIGN), THEN FOUND `NBA_FINAL_SCORING_CALIBRATION.md` ALREADY SELF-DOCUMENTS THE SAME CORRUPTION MECHANISM AS `T26-15` — FILED AS `T26-16`, WITH A SELF-CAUGHT COUNT CORRECTION
 
 **Owner instruction this firing**: *"Continue! Make your passes longer! More files and work done in a single session!"* — read as: widen scope per turn, touch more files, do more before stopping. This firing's shape follows that directly.
