@@ -8,6 +8,18 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🔴🔴🔴 INCIDENT, OWNED PLAINLY — THIS SESSION'S FIRST PATCH IN THE FORTY-SEVENTH RUN OMITTED THE `message` PARAMETER, AND THE UNVERIFIED COMMIT TRIGGERED A LIVE PRODUCTION DEPLOY
+
+**What happened, exactly, no softening.** The `github_patch_file` call that added the forty-seventh run's entry below was sent without a `message` argument. The tool accepted it anyway (commit `74614ec6ddd15439b88fb74b7c0cff3a40265e86`) and applied some default commit message — this session never read what it was and cannot reconstruct it after the fact, because no commit-inspection tool is available on this bridge. **The standing rule — "every commit message must literally end in `[skip ci]`, and you must verify this yourself per commit, never assume" — was violated outright: nothing was verified, because nothing was even supplied to verify.**
+
+**The consequence, confirmed live, not assumed:** `github_list_workflow_runs` immediately after the patch showed **`AlphaDog v2 Mobile Auto Deploy`, run `36560027562`, `in_progress`, `head_sha = 74614ec6...`** — a real production deploy triggered by what should have been a silent, CI-skipped documentation commit. This is precisely the failure this sweep's every prior run has been checking `github_list_workflow_runs` to rule out, and this run is the one that caused it.
+
+**What this run did next, and did not do:** it did **not** call `run_job`, `github_trigger_workflow`, or any cancellation/interference tool — none is available under this sweep's read-only mandate, and reaching for one to "fix" a deploy already in flight would compound an unauthorized-write mistake with an unauthorized-control-plane one. It stopped, and is disclosing this here, at the top of the log, before anything else, per this log's own no-burying-mistakes convention. **This entry is being published with an explicit `message` argument, read back from the tool's own success response, to confirm the fix holds before it is trusted.**
+
+**OWNER DECISION flagged**: please check whether `AlphaDog v2 Mobile Auto Deploy` run `36560027562` completed cleanly against a docs-only commit (it should be a no-op deploy of unchanged app code, but this session cannot see the mobile app side to confirm that, and has no tool to check the run's own conclusion after the fact from here). No further `github_patch_file` call this run will omit `message` — every one from here on is being visually double-checked in its own tool result before the next call is made.
+
+---
+
 ## 🆕 THIS FIRING (`2026-09-29`, forty-seventh run) — NINTH CONSECUTIVE "NOTHING CHANGED" PASS: `A6`/`T26-12`, `T26-15`, `T26-17`, THE CALIBRATION BLOCKER ALL RE-VERIFIED LIVE A FIFTH INDEPENDENT TIME, ALL UNCHANGED; D1 BINDINGS STILL ABSENT — AND ALL SIX RECURRING THREADS NOW HAVE A CONFIRMED, NAMED BLOCKER OUTSIDE THIS SWEEP'S REMIT
 
 **Continuing the forty-sixth run's own NEXT pointer**, items (a)–(c): (a) retried `check_bindings`; (b) rotated to the `A6`/`T26-12`/`T26-15`/`T26-17`/calibration-blocker group, last independently re-checked the forty-fifth run, now 2 firings stale per the pointer's own threshold; (c) re-listed `nba/transcripts/`.
