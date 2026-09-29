@@ -66,7 +66,7 @@ linestat AS (
 SELECT b.*, m.p_over_book, t.trail3, t.trail10, t.trail_sd, t.trail_n,
        ls.mean_line, ls.sd_line
 FROM base b
-LEFT JOIN mkt m ON m.game_date=b.game_date AND m.pn=nba_ref.norm_name((SELECT display_name FROM nba_ref.player_name_map WHERE player_id=b.player_id))
+LEFT JOIN mkt m ON m.game_date=b.game_date AND m.pn=nba_ref.norm_name(b.player)
                 AND m.prop=b.prop AND m.line=b.line
 LEFT JOIN trail t ON t.season=b.season AND t.game_date=b.game_date AND t.player_id=b.player_id AND t.prop=b.prop AND t.side=b.side
 LEFT JOIN linestat ls ON ls.prop=b.prop AND ls.side=b.side
