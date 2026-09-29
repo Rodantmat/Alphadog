@@ -8,6 +8,28 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 THIS FIRING (`2026-09-29`, forty-second run) — LIVE RE-VERIFICATION OF `T20-2`/`T20-3`'S NUMERIC HALVES: BOTH POSTGRES FIGURES REPRODUCE EXACTLY; THE D1-SIDE `config.scheduled_jobs` HALF COULD NOT BE REACHED THIS PASS — ALL TWELVE D1 BINDINGS REPORT ABSENT ON THIS BRIDGE SESSION, FLAGGED RATHER THAN GUESSED
+
+**Continuing the forty-first run's own NEXT pointer**: it re-verified `A6`/`T26-12`, `T26-15`, `T26-17` and the `NBA_FINAL_SCORING_CALIBRATION.md` blocker, and explicitly left `T23-1`/`T21-1`/`T20-3`/`T20-2`/`T26-16` at the thirty-ninth run's state "by design" so all six open threads stay on one cadence. This pass took those five.
+
+1. ✅ **`T20-2`** (storage-diet plan vs. live `final_hp`/`board_outcomes`) — re-queried live, exact counts and sizes, not estimated: `nba_score.final_hp` = **`7,215,296` rows / `1,777 MB`**; `nba_market.board_outcomes` = **`6,905,452` rows / `1,597 MB`**. Both match the last-recorded `2026-09-28` figures exactly. Unchanged; still a rewrite, not a research task.
+2. ⚠ **`T20-3`** (MLB scheduler) — **partially re-verified**: `.github/workflows/scrape.yml`'s unconditional MLB cron (`0 */2 * * *`) re-read live, unchanged. **The D1-side half — `config.scheduled_jobs`'s `10` rows / `2` enabled — could NOT be re-queried this pass**: `check_bindings` shows all twelve D1 bindings (`CONTROL_DB`, `CONFIG_DB`, `REF_DB`, `STATS_HITTER_DB`, `STATS_PITCHER_DB`, `TEAM_DB`, `DAILY_DB`, `MARKET_DB`, `CONTEXT_DB`, `SCORE_DB`, `ARCHIVE_DB`, `SCORING_DB`) as **absent** on this bridge worker session, and `run_sql` against `CONFIG_DB` failed with `"Binding CONFIG_DB is not present on this worker."` **This reads as a bridge-session binding gap, not a database change** — flagged rather than guessed, per standing practice; the table's own last-recorded state (`2026-09-28`: `10` rows, `2` enabled, zero NBA, `updated_at` `2026-06-09`→`2026-07-23`) stands, not re-confirmed this pass. Future firing: if D1 bindings are present again, re-query `config.scheduled_jobs` directly to close this half.
+3. ✅ **`T21-1`** — `nba/transcripts/` re-confirmed directly: still exactly `README.md` (`5,079` B) and `journal.txt` (`11,478` B), byte-identical to every prior check. The credential-shaped-string precondition remains blocked; unchanged.
+4. 📌 **`T23-1`** — owner taste call, no new concrete signature to recompute this run (same as every prior re-check); left at its last-recorded state.
+5. ✅ **`T26-16`** — `NBA_FINAL_SCORING_CALIBRATION.md`'s own `EDITING DEFECT` banner re-read directly at line `6299`: text unchanged (`recorded 2026-09-26, pass 31`; `332`→`352` heading-count drift; `§T26.66`/`§T26.55` duplication both still described). Left untouched, as required.
+
+✅ **Also checked**: `github_list_workflow_runs` (last `10`) — only native `pages build and deployment` entries, no `AlphaDog v2 Mobile Auto Deploy` run, so nothing has slipped an `[skip ci]` omission since the last check.
+
+**Result: nothing changed, nothing new** — five of six open threads now independently re-checked this pass (`T20-3` only partially, on tooling grounds, not a data change), which closes the same-cadence gap the forty-first run's own NEXT pointer named.
+
+**No file edits to any of the twelve mandated docs this run** — nothing needed correction; every re-check reproduced the already-recorded figures. Only this run log changed.
+
+**Census after this firing**: none of the twelve mandated docs touched this pass (all reads this pass were against `NBA_FINAL_SCORING_CALIBRATION.md`, `.github/workflows/scrape.yml`, and two live Postgres queries — no file byte counts to re-stamp). `NBA_SWEEP_RUN_LOG.md` adds one `##` heading — verified as the only occurrence of its own heading text via `github_grep_file` immediately after publishing, and confirmed no existing heading text was touched by this edit (pure prepend, per RULE 40).
+
+**NEXT**: the six-thread cadence continues. `A6`/`T26-12`, `T26-15`, `T26-17`, the `NBA_FINAL_SCORING_CALIBRATION.md` blocker were last independently re-checked the forty-first run (`2026-09-29`); `T20-2`/`T21-1`/`T23-1`/`T26-16` and (partially) `T20-3` were re-checked this run (the forty-second). A future firing should: (a) retry `check_bindings` — if any D1 binding returns present, immediately re-query `config.scheduled_jobs` to close `T20-3`'s outstanding half; (b) otherwise keep rotating through the six threads so none goes more than ~2 firings stale; (c) if `nba/transcripts/` ever holds more than `README.md`/`journal.txt`, resume `T26` at pass `32` instead of this live-audit cadence. The two `SAT 2026-10-03` dated checks are now `4` days out, still unanswerable.
+
+---
+
 ## 🆕 THIS FIRING (`2026-09-29`, forty-first run) — SECOND CONSECUTIVE CLEAN RE-VERIFICATION: THE `A6`/`T26-12` HONOUR/HARDCODE SPLIT INDEPENDENTLY RECOMPUTED FROM RAW WORKFLOW YAML (NOT RE-READ FROM THE PRIOR TALLY), MATCHES EXACTLY; ALL FOUR CONCRETE-SIGNATURE THREADS UNCHANGED
 
 **Scope this run**: continued the fortieth run's cadence on the six open threads, but went one step further on `A6`/`T26-12` — rather than re-reading the file and trusting the recorded `11`/`25` split, pulled `nba-absence-panel.yml` fresh and hand-counted every season-bearing `env:` line myself from scratch.
