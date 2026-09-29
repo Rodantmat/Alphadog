@@ -50,8 +50,8 @@ FLEX = {  # matches nba_market.pp_flex_standard_payout (verified section 7b)
     (6, 6): 25.0, (6, 5): 2.0, (6, 4): 0.4,
 }
 NB = 13
-EID, PID, PROP, SIDE, HIT, CAL, BLEND, SEASON = range(8)
-DRIVERS = {'cal_p': CAL, 'blend': BLEND}
+EID, PID, PROP, SIDE, HIT, CAL, BLEND, SEASON, RAW, LINE = range(10)
+DRIVERS = {'cal_p': CAL, 'blend': BLEND, 'raw': RAW}   # 16d: raw model_p SORTS best; cal_p still gates eligibility
 
 
 def bucket(p):
