@@ -522,4 +522,32 @@ Owner: even longer/more exhaustive than ranks; test EVERY signal on EVERY rank; 
 The signals phase is a MATRIX: ~25+ candidate signals × 8 ranks × (standalone / interaction / rank-over-rank) × as-of × tie-break × slip-level — far beyond live queries (which are already timing out on full-history joins). **The correct tool is the walk-forward evaluator (the `build_rank_foundation.py` line of work extended to signals):** one script that, per as-of day, computes every rank + every signal as a feature, feeds the regularized logistic meta-model (§8p), and reports each signal's marginal lift (coefficient + slip-level ROI) with S1→S2 validation. Every signal must pass the §9 replicability gate first.
 **Method for each signal (locked):** (1) replicability gate (§9) — has a live P3 feed? (2) standalone test — does it separate hit rate monotonically as-of? (3) interaction test — does it add lift ON TOP of cal_p / on specific props/tiers/directions? (4) slip-level — does it push legs to +EV / higher ROI? (5) tie-break stability. Keep only signals passing 1 + (3 or 4) + 5.
 **Priority signal queue (orthogonal-to-model first):** opponent def-by-position, pace (both teams), rest/B2B/3-in-4, p_over_sd (book disagreement), positional volatility (§10), referee tendencies, usage-share/role interactions, shot-profile (3pt-rate for threes props). Plus rank-over-rank layers (e.g. cal_p × trailing × market-edge — the meta-model learns these).
-**STATUS: signal inventory complete; standalone spot-tests done; the exhaustive matrix is the evaluator-script build (fresh context + workflow, given live-query timeouts).**** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**STATUS: signal inventory complete; standalone spot-tests done; the exhaustive matrix is the evaluator-script build (fresh context + workflow, given live-query timeouts).**
+
+### 11d. EXPANDED SIGNAL LIBRARY (deep research + Gemini, 2026-09-28) — the rich set the sharpest systems use
+Guiding principle (The Odds Network's 7-category framework + Gemini): **"correlated data never inflates a rating" — only INDEPENDENT signals add value**, which is exactly why the regularized meta-model (§8p) is the right combiner (it de-weights redundant/correlated features). Signals ranked by orthogonality × slip-level survival × per-stat specificity:
+
+**TOP TIER (orthogonal, most likely to survive slip-level):**
+1. **Book disagreement `p_over_sd`** — WE ALREADY HAVE IT (`rung_market.p_over_sd`). Market-STRUCTURE signal (inter-book spread), distinct from our model-vs-book edge (§8k). High disagreement = mispricing/value spot. All props. Replicable (window snapshot). **HIGHEST-priority, cheapest to test.**
+2. **WOWY / on-off teammate splits** — generalizes the §7d injury edge to ANY active-teammate combination (a player's line WITH vs WITHOUT specific teammates on court). Captures usage/role/efficiency shifts even when everyone's active. All props. Source: game logs + lineup/substitution data (have game logs; lineup combos need play-by-play or lineup_profile). Pre-tip via projected lineups. **Major edge, often unpriced.**
+3. **Referee foul-rate tendencies** — HAVE `referee_assignments` (posts ~6-7am, replicable). Crews vary 24.9-30.7 fouls/game. Strong for **points (FT), pace**; weak for threes/steals/blocks. Need to build a ref foul-rate table from history.
+4. **Defense-vs-Position (DvP)** — opponent pts/reb/ast allowed to the player's SPECIFIC position, not just overall def_rating. Foundational matchup signal. High for points/threes/rebounds, moderate assists. Source: team logs + position mapping (need player position, which player_game_log/rosters have).
+5. **Shot-profile vs opponent perimeter coverage** — threes-specific interaction: HOW a player gets 3s (have `pct_pts_3pt`, `pct_ast_3pm` catch-shoot proxy) × opponent 3pt-allowed. Extremely high for 3PM/3PA, low elsewhere.
+
+**MID TIER:**
+6. **Vegas implied TEAM TOTAL** — from game total + spread (HAVE `game_lines` total/spread) → team's implied points inflates/deflates its props. High points/threes. Partly redundant with market-edge but adds the game-environment dimension.
+7. **Positional volatility** (§10) — more for RISK MGMT / slip construction (pair stable + upside) than direct edge; helps variance/loss-frustration tuning.
+
+**LOWER / TRAP:**
+8. **H2H player-vs-opponent history** — TRAP per Gemini: tiny samples, roster/role changes, easy to overfit. Mostly covered by DvP + form. Use only if same-season + large consistent deviation, else skip.
+
+**MISSING SOPHISTICATED (Gemini-added, to build):**
+- **Pace-adjusted DvP** — per-POSSESSION DvP × expected game pace (from Vegas total). Sharper than raw DvP. Have pace + total. Pre-tip. ✅
+- **Blowout-driven minutes** — Vegas spread → starters sit early / bench extended (deepens minutes projection). Have spread. Pre-tip. ✅ (ties to §7k light-slate note)
+- **Expected fouls drawn (interaction)** — player foul-draw rate (`pfd`) × opponent defensive foul rate × referee foul rate → projected FTA (points) + foul-trouble (minutes). Have pfd + ref. ✅ interaction feature.
+- **Play-type matchup** (P&R/iso/transition vs opponent's defense of those) — needs tracking/Synergy data; likely DON'T have → flag as a possible mining target if proven.
+- **Book-sharpness meta-signal** — learn which books are sharp per prop/tier; fade soft books. Needs multi-book history (we have odds-api multi-book). Advanced, later.
+- **Injury NUANCE** — active-but-limited (minutes restriction / playing hurt) vs fully healthy, from the injury report status/reason (have `injury_report_snapshots.status`/`reason_class`). Questionable-who-plays ≠ healthy. Ties to F8-1. ✅ available.
+- **Rest/travel differential** — rest vs OPPONENT's rest, 3-in-4, cross-country travel (have schedule; travel needs arena geo). B2B ✅, travel partial.
+
+**Per-signal method (unchanged §11c):** replicability gate → standalone → interaction (esp. on the props each matters for) → slip-level → tie-break. Only independent, live, slip-surviving signals enter the meta-model. **This library (≈18 signal families × per-prop specificity × interactions) IS the exhaustive matrix — built/run via the walk-forward evaluator.** Test order: book-disagreement (have it, cheap) → DvP + pace-adj → referee → WOWY → blowout-minutes → expected-fouls → injury-nuance → team-total → volatility → (mining: play-type) → book-sharpness meta.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
