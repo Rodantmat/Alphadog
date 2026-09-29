@@ -188,3 +188,18 @@ Tested Gemini's "Flex wins with heterogeneous legs" concretely: 5-pick slip, 1 a
 
 ### 7f. VALIDATED — real NBA void/push/DNP rates (measured, not assumed; MLB scar: they assumed 7%, it was 0.06%)
 Measured on `nba_market.prop_universe` `result`, both seasons: miss 927,889 (55.7%) · hit 690,212 (41.4%) · **void/DNP 24,995 (1.50%)** · null/ungraded 14,271 (0.86%) · push 9,657 (0.58%). Decisive (hit+miss) = 97.06%. **NBA void rate ~1.50%** — higher than MLB's 0.06% (basketball rests/scratches more) but not catastrophic. **Slip-EV consequence:** in PrizePicks a voided leg DROPS OUT and the slip shrinks to the next size down (5-pick w/ 1 void → priced as 4-pick) — REAL, already handled by `pp_power_after_voids(factors[], live)` (validated §7a). A void is NOT a loss, it's a size reduction, so ~1.5% slightly HELPS vs treating voids as misses. Push (0.58%): PP voids the leg like a DNP. **Engine must apply pp_power_after_voids and grade push per the app rule — never treat void/push as a miss.**
+
+### 7g. VALIDATED — recalibration necessity + the FIRST real +EV slip construction
+**Overconfidence at the p·m level (points/Over/standard, m=1.000):** raw model_p vs realized, by model_p bucket:
+| model_p bucket | n | raw p | realized p | raw overstatement |
+|---|---|---|---|---|
+| 0.55-0.60 | 4,049 | 0.574 | 0.520 | +0.054 |
+| 0.65-0.70 | 1,509 | 0.673 | 0.555 | +0.118 |
+| 0.70-0.75 | 820 | 0.722 | 0.577 | +0.145 |
+| ≥0.75 | 520 | 0.793 | **0.610** | **+0.183** |
+Confirms fact 124 at the EV level: a raw "0.79" points leg realizes 0.61. **The engine's p MUST be the realized-calibrated value (what `build_recalibration_map.py` produces), never raw model_p** — else every p·m is overstated by up to 0.18. Single standard leg m=1.000 so p·m<1 always (max ~0.61) → standard edge exists ONLY in the multi-leg product (confirms fact 126).
+
+**FIRST REAL +EV SLIP (validated, no assumptions):** two top-bucket (model_p≥0.70) points/Over/standard legs from DIFFERENT games (independent per fact 125), real graded outcomes, 3,304 real cross-game pairs:
+- real joint both-hit = **0.3629** (≈ independent product 0.619×0.590=0.365 → cross-game independence CONFIRMED, no correlation penalty)
+- 2-pick Power (3×): **0.3629 × 3 = 1.089 = +8.9% real EV**
+This is the first concrete, real-data, positive slip-level EV in the NBA build — recalibrated high-confidence points/Over legs, different games, 2-pick Power, ~+9%. Moves the edge from "thin and theoretical" to "measured at +8.9% on 3,304 real pairs." NEXT: test 3-pick (does the deeper payout beat the lower joint?), other props, and whether a real daily pool supports enough such pairs under the 50-leg cap.
