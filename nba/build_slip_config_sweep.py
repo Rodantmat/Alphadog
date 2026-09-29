@@ -317,6 +317,48 @@ def main():
         print(f"  all: {n:>3}d {pp:>4.0%}+ net {net:>+6.1f}u dd {dd:>5.1f}u streak {ls:>2} | "
               f"{s2}: {n2:>3}d {pp2:>4.0%}+ net {net2:>+6.1f}u dd {dd2:>5.1f}u streak {ls2:>2} | {fmt(cfg)}", flush=True)
 
+    # ---- PROBE: named configs get the full report regardless of ranking (the "missing cells") ----
+    default_probe = (
+        "blend,0.58,peripheral,both,5,flex;cal_p,0.58,peripheral,both,4,flex;blend,0.58,peripheral,both,4,power;"
+        "cal_p,0.57,peripheral,both,4,flex;blend,0.59,peripheral,both,4,flex;cal_p,0.59,peripheral,under,3,power;"
+        "blend,0.57,peripheral,both,4,flex;blend,0.57,peripheral,both,5,flex;blend,0.60,peripheral,both,3,power;"
+        "cal_p,0.57,peripheral,both,5,flex;blend,0.57,other_core,under,5,flex;"
+        "cal_p,0.58,turnovers,both,4,flex;cal_p,0.58,stocks,both,4,flex;cal_p,0.58,steals,both,4,flex;"
+        "cal_p,0.58,blocks,both,4,flex;cal_p,0.58,turnovers,both,3,power"
+    )
+    probes = []
+    for spec in os.environ.get('CS_PROBE', default_probe).split(';'):
+        p = [x.strip() for x in spec.split(',')]
+        if len(p) == 6:
+            probes.append((p[0], float(p[1]), p[2], p[3], int(p[4]), p[5]))
+    if probes:
+        print(f"\n== PROBE: {len(probes)} named configs - per-season ROI with DAY bootstrap on EACH season, "
+              f"month walk, prop breakdown ==", flush=True)
+        for cfg in probes:
+            d, t, c, s, k, st = cfg
+            rr = run_config(pool, t, c, s, k, st, DRIVERS[d], 'asc', hc)
+            if rr is None:
+                print(f"  (no slips) {fmt(cfg)}", flush=True)
+                continue
+            line = [f"  {fmt(cfg)}"]
+            for season in seasons_seen:
+                sv = rr['season'].get(season)
+                if not sv:
+                    line.append(f"    {season}: no slips")
+                    continue
+                sdays = [(sd, rd) for (se, sd, rd) in rr['days'].values() if se == season]
+                bs = bootstrap_roi(sdays, draws)
+                bst = f"P5 {bs[0]:+.0%} P50 {bs[1]:+.0%} P95 {bs[2]:+.0%}" if bs else "boot n/a"
+                line.append(f"    {season}: ROI {sv[0]:+.1%} ({sv[1]} slips, {sv[2]} win-days, {len(sdays)} days) | {bst}")
+            months = sorted(rr['by_month'].items())
+            mw = " ".join(f"{ym[2:]}:{(r_ / s_ - 1):+.0%}" for ym, (s_, r_) in months)
+            line.append(f"    months: {mw}")
+            pu = sorted(rr['prop_use'].items(), key=lambda x: -x[1][0])
+            tot = sum(v[0] for _, v in pu) or 1
+            pw = " ".join(f"{p}:{v[0] / tot:.0%}@{(v[1] / v[0]):.2f}" for p, v in pu)
+            line.append(f"    legs by prop (share@hit): {pw}")
+            print("\n".join(line), flush=True)
+
     # ---- pooled robust leaderboard (context only) ----
     robust = [(cfg, r) for cfg, r in results if r['wd'] >= 15 and r['slips'] >= 100]
     robust.sort(key=lambda x: -x[1]['roi'])
