@@ -60,7 +60,7 @@ def bucket(p):
 
 
 def build_pool(conn, seasons, min_n, floor):
-    sql = """SELECT pu.season, pu.game_date, pu.event_id, pu.player_id, pu.prop, pu.side, pu.model_p, pu.hit::int
+    sql = """SELECT pu.season, pu.game_date, pu.event_id, pu.player_id, pu.prop, pu.side, pu.model_p, pu.hit::int, pu.line
              FROM nba_market.prop_universe pu
              WHERE pu.kind='standard' AND pu.hit IS NOT NULL AND pu.model_p IS NOT NULL"""
     params = []
