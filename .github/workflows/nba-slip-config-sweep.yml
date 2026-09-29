@@ -50,4 +50,5 @@ jobs:
           CS_HAIRCUT: ${{ github.event.inputs.haircut }}
           CS_MIN_N: ${{ github.event.inputs.min_n }}
           CS_FLOOR: ${{ github.event.inputs.floor }}
+          CS_REAL_ONLY: ${{ github.event.inputs.real_only }}
         run: python -u nba/build_slip_config_sweep.py
