@@ -8,6 +8,29 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
+## 🆕 THIS FIRING (`2026-09-29`, thirty-ninth run) — OWNER ASKED "ALL COVERED, OR ANYTHING MISSING?" — FULL DECISION-SURFACE AUDIT: SIX GENUINE OPEN THREADS, ALL OWNER/BUILD-CHAT ACTION ITEMS, NONE A DOCUMENTATION GAP
+
+**Directly answering the owner's question**, not just continuing on the last NEXT pointer: audited `ACT ON THIS §A` (the open-decisions table) and `§B` (the ranked opening-day brief) end to end, row by row, to separate "still open because undocumented" from "still open because it's genuinely awaiting owner/build action."
+
+✅ **Result: nothing is missing from documentation.** Every row in both tables is either struck/CLOSED with a live-verified citation, or carries an explicit, current, correctly-unresolved status. **Six genuine open threads remain, and all six are things this sweep has already found, verified live, and correctly left for someone else to act on — never a sign the sweep missed something:**
+
+1. **`A6` / `T26-12`** — `nba-absence-panel.yml`'s `seasons` input still ignored by most of its sites. **RE-VERIFIED LIVE A SECOND TIME today** (re-read the whole workflow file, unchanged since `2026-09-28`, no commit has touched it) — a mechanical, one-file fix, not yet made. Patched into `NBA_OPEN_ITEMS.md`, `[skip ci]`-verified.
+2. **`T23-1`** — ship the narrow (standards-only) strategy, or hold? A pure owner taste call; the measurement backing it is complete and unchanged.
+3. **`T21-1`** — the document-form directive's precondition (publishing transcripts) would leak `18` credential-shaped strings; structurally blocked, not a research gap.
+4. **`T20-3`** — two MLB cron jobs still enabled, zero NBA rows; disabling a cron is a deploy action.
+5. **`T20-2`** — the storage-diet plan targets a database that has since moved; a rewrite, not a research task.
+6. **`T26-16`** (this sweep's own finding) — `NBA_FINAL_SCORING_CALIBRATION.md`'s self-documented corruption; its own proposed fix is a git-level restore, outside this sweep's edit scope for that file.
+
+📌 **Separately, two flagged-but-deliberately-unrepaired corruption sites remain exactly as designed** (`T26-15` in `NBA_DATABASE.md`, `T26-17` in `NBA_SYSTEM_DESIGN.md`) — reconstructing either would mean inventing unverifiable content, which this sweep does not do. **And the corpus's own `T26` transcript stays at `31` passes, `CLEAN 0/3`** — the sole transcript not yet closed, which just means three consecutive clean re-verification passes haven't landed yet, not that work is missing.
+
+✅ **Everything else checked and confirmed consistent**: all twelve mandated docs' censuses cross-verified live and unchanged from their own stamps; `nba/transcripts/` still holds only `README.md`/`journal.txt` (`T21-1` unchanged); no new automated-sweep firing landed between this run and the last.
+
+**Census after this firing**: `NBA_OPEN_ITEMS.md` `959` (unchanged, text-only addition), `NBA_SWEEP_RUN_LOG.md` adds one `##` heading.
+
+**NEXT**: keep re-verifying the six open threads on a cadence (especially `A6`/`T26-12`, the one that's mechanically fixable and could close any day), watch for the `SAT 2026-10-03` dated checks (`4` days out), and continue picking up any new corruption-class or cross-document-drift leads as they surface.
+
+---
+
 ## 🆕 THIS FIRING (`2026-09-29`, thirty-eighth run) — `T20-7`'S OWN "COINCIDENCE NOT INVESTIGATED" CAVEAT, RESOLVED LIVE: BOTH TIER TABLES FREEZING AT THE SAME ROW COUNT IS NOT A COINCIDENCE
 
 **Picked the highest-value remaining live-open item** (not corruption-class, which is now checked out per the last two runs): `T20-7`, `OWNER DECISION (b)`, re-verified `2026-09-28` and still carrying its own unresolved observation — `board_tiers` and `board_tiers_v2` both frozen at `2026-04-12`, identical `2,199,354` rows, explicitly flagged as "coincidence not investigated."
