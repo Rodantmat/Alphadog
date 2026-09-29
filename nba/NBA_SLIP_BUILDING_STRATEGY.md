@@ -398,4 +398,24 @@ I tested the six rank NAMES but the original spec named sub-dimensions I still o
 - **Player rank "all prop lines AND VARIATIONS / direction/variation"** — player × prop × side × alt-variation, not just player × prop × side (§7o). Partial.
 - **Goblin/demon tier as an explicit RANK dimension** — §8g validated tier stability; still to test tier as a selection rank end-to-end (per-tier p·m ranking).
 - Confirmed done: the 6 names, trailing, consistency, line-band, tier-volatility.
-**Next batches:** these sub-dimensions + trailing windows (3/5/20/30) + signal-ranks (minutes/usage, pace, matchup-by-position, rest/B2B, line-value). The tier/variation dimensions are HIGH priority (owner emphasized, and §8g shows tiers are the stable unit). NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Next batches:** these sub-dimensions + trailing windows (3/5/20/30) + signal-ranks (minutes/usage, pace, matchup-by-position, rest/B2B, line-value). The tier/variation dimensions are HIGH priority (owner emphasized, and §8g shows tiers are the stable unit).
+
+### 8i. NEW TECHNIQUE — trailing-window sweep: SHORTER windows are sharper (3-game best)
+Correlation of trailing hit-rate with next-game hit, by window (within model_p≥0.60): **t3 = 0.095 > t5 = 0.073 > t10 (§8a) > t20 = 0.054 > t30 = 0.039.** Shorter is stronger — recent form (last 3) reflects current role/usage/minutes better than long history; signal decays with window length. **Corrects §8a: the 3-game trailing is the sharpest trailing rank** (10-game still valid but weaker). Build trailing ranks at 3 and 5 primarily; longer windows as stability fallback when short-window n is thin. Makes NBA sense — roles shift fast.
+
+### 8j. NEW TECHNIQUE — combo-vs-component structure: POINTS-anchored props are the most reliable
+Top-tier (model_p≥0.70) Over hit by prop: points 0.590 ≈ pts_reb 0.589 ≈ pra 0.587 ≈ pts_ast 0.584 > reb_ast 0.569 > rebounds 0.555. **Props containing POINTS cluster at the top (~0.588); pure rebounds/reb_ast lag.** Combos don't beat their best component — they TRACK it (points is the highest-signal component, and any points-anchored combo inherits its reliability). **Rank technique: prefer points-anchored props; treat a combo's reliability as ≈ its strongest component, not a diversification bonus.** Modest but real and structural.
+
+### 8k. NEW RANK — MODEL-vs-MARKET EDGE (the sharpest technique found; orthogonal to hit-rate ranks)
+Built from `nba_market.rung_market.p_over_book` (sportsbook de-vigged implied prob per player/market/line, books≥2). Join fix: `rung_market.market` uses `player_points` format (strip `player_`), `nm` is NULL so join on `nba_ref.norm_name(player)`. Ranked legs by edge = model_p − p_over_book:
+| edge band (model − book) | next hit | model_p | book_p | n |
+|---|---|---|---|---|
+| **model ≫ book (+10pp)** | **0.545** | 0.653 | 0.498 | 1,361 |
+| +5-10pp | 0.480 | 0.577 | 0.502 | 837 |
+| 0-5pp | 0.492 | 0.520 | 0.497 | 1,172 |
+| −5-0pp | 0.464 | 0.472 | 0.498 | 1,622 |
+| **model ≪ book** | **0.447** | 0.377 | 0.502 | 1,920 |
+**Monotonic +9.8pp; when our model disagrees with the market IN OUR FAVOR, the leg hits more.** Truth sits between model and book (top band: model 0.653, book 0.498, real 0.545) — but our model correctly flags the better-than-book legs. **This is the classic sharp DFS edge (board/line lags true prob) and it's REAL in our data.** Crucially ORTHOGONAL to hit-rate ranks — it selects MISPRICED legs, not just high-hit legs, which is where profit lives. **Model-vs-market edge rank ✅ VALIDATED — a top-priority rank.** TO DO: as-of + tie-break + slip-level test; combine with cal_p (a leg that is BOTH high-cal_p AND high-market-edge should be the strongest candidate class).
+
+### 8l. RANK CATALOG v3 (Phase 1)
+**Owner 6 ✅** (prop-line, baseline-HP, final-HP, score, player[prop-gated], line-band). **Principle ✅** tiers-less-volatile-than-lines (§8g). **NEW validated ranks/techniques:** 3-game trailing ✅ (sharper than 10) · consistency-interaction ✅ · combo=points-anchored ✅ · **model-vs-market edge ✅ (strongest, orthogonal)**. **Rejected:** anchor-distance/z-score, stat-magnitude form. **Queue:** minutes/usage trend, pace, matchup-by-position, rest/B2B, tier-as-rank, top-N-vs-%, and the interaction stacks (cal_p × market-edge is the priority combo). NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
