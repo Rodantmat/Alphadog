@@ -114,7 +114,8 @@ def build_pool(conn, seasons, min_n, floor):
     return pool, total, kept
 
 
-def cell_ok(prop, cellset):
+def cell_ok(L, cellset):
+    prop = L[PROP]
     if cellset == 'all':
         return True
     if cellset == 'peripheral':
@@ -123,12 +124,14 @@ def cell_ok(prop, cellset):
         return prop in POINTS_FAM
     if cellset == 'other_core':
         return prop in OTHER_CORE
+    if cellset == 'cells':
+        return (prop, L[SIDE], L[LINE]) in STRONG_CELLS
     return prop == cellset
 
 
 def select_day(legs, thr, cellset, side, depth, drv, order):
     cand = [L for L in legs
-            if L[CAL] >= thr and cell_ok(L[PROP], cellset) and (side == 'both' or L[SIDE].lower() == side)]
+            if L[CAL] >= thr and cell_ok(L, cellset) and (side == 'both' or L[SIDE].lower() == side)]
     if len(cand) < depth:
         return None
     cand.sort(key=lambda L: L[PID], reverse=(order == 'desc'))
