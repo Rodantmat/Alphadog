@@ -139,3 +139,30 @@ Consulted Gemini as a skeptical second opinion before carrying MLB's `p·m` rule
 
 ### 6f. GEMINI BRIDGE NOTE
 The bridge's default model `gemini-2.0-flash` is DEPRECATED (returns 404). **Always pass `model: "gemini-2.5-flash"` explicitly** on `call_gemini`.
+
+---
+
+## 7. VALIDATION LEDGER — every imported claim proven against OUR real data (owner rule 2026-09-28: validate everything)
+
+**Nothing from references/Gemini/web is trusted until checked against our real NBA data or an authoritative source.** The MLB doc itself was wrong twice and produced a fake +1298% finding from a data defect — so every carried claim is verified here.
+
+### 7a. The real slip infrastructure EXISTS and is validated (not assumed)
+Functions in `nba_market` (verified present): `pp_slip_power(factors[])`, `pp_slip_power_conservative`, `pp_power_after_voids(factors[], live)`, `pp_slip_flex2(p1,p2,power2)`, **`pp_flex_standard_payout(legs, hits, original)`** (the real Flex partial-payout table), `pp_round_step`, `pp_refresh_prices`, `pp_price_version`. Plus `nba_score.simulate_slips(strategy, from, to)` and `nba_score.paper_pick_slips(date, threshold, snapshot)` — **a slip simulator already exists** (Phase 3 builds on it, doesn't start from zero). Payout convention (config `board_payout_conversion_rules`, "verified against app screenshots + 19 placed slips 2026-09-10"): slip mult = PRODUCT of leg mults (2-8% real slip-level haircut, modeled as plain product = conservative); Sleeper `1+(dec-1)×0.95`; Underdog `decimal(American)×0.963`.
+
+### 7b. Real PP Flex payout table (queried from `pp_flex_standard_payout`, matches published PrizePicks exactly)
+6-pick: 6/6=25× · 5/6=2× · 4/6=0.4× (else 0). 5-pick: 5/5=10× · 4/5=2× · 3/5=0.4×. 4-pick: 4/4=6× · 3/4=1.5×. 3-pick: 3/3=3× · 2/3=1×. 2-pick: 2/2=2× · 1/2=0.5×. Power tiers: 2=3× · 3=6× · 4=10× · 5=20× · 6=37.5×.
+
+### 7c. VALIDATED break-even per leg (identical legs), computed from OUR real payout functions
+| Size | Power break-even p | Flex break-even p |
+|---|---|---|
+| 2 | 0.58 | 0.62 (2-pick Flex==Power top, but 1/2 pays only 0.5×) |
+| 3 | 0.56 | 0.58 |
+| 4 | 0.57 | 0.56 |
+| 5 | 0.55 | 0.55 |
+| 6 | 0.55 | 0.55 |
+
+**Findings (validated, some CORRECTING imported claims):**
+- ✅ **Web's Power break-evens (~58% 2-pick → ~55% deeper) CONFIRMED** on our real tables. Research was accurate here.
+- ❌ **REFUTED — web/Gemini "Flex has the lowest break-even / is strictly easier" is FALSE for identical legs.** On our real tables Flex break-even ≥ Power at equal per-leg p (2-pick 0.62 vs 0.58; 3-pick 0.58 vs 0.56). Reason: at identical high p the all-hit tier dominates, and Flex's lower top payout (6-pick 25× vs Power 37.5×) costs more than the partial tiers recover. The smartstake "6-Flex break-even 54.2%" figure does NOT reproduce on our verified table for identical legs — do not use it.
+- ✅ **Gemini's core math point STANDS: Flex EV ≠ p·m product; must be full distribution** `EV = Σ_k P(exactly k)·payout_k`. Its real advantage is HETEROGENEOUS legs (strong anchor + weaker satellites) where partial tiers rescue slips the all-hit tier loses — the identical-leg break-even understates this. So: compute Flex EV over the full distribution AND test it specifically on heterogeneous pools; do NOT assume Flex is globally easier.
+- **Net for the engine:** Power decided by p·m (identical-leg) / product-of-factors (real); Flex decided by full-distribution EV. Both break even ~0.55-0.58; our recalibrated best legs realize ~0.55-0.59 (fact 124) → edge is razor-thin and real only in the best-selected cells. `p·m>1` (Power) remains the primary discard filter; Flex candidates get the full-distribution test, never the p·m discard.
