@@ -94,7 +94,7 @@ def build_pool(conn, seasons, min_n, floor):
     with conn.cursor(name='sweep_legs') as cur:
         cur.itersize = 100000
         cur.execute(sql, params)
-        for season, gdate, eid, pid, prop, side, mp, h in cur:
+        for season, gdate, eid, pid, prop, side, mp, h, line in cur:
             if gdate != cur_day:
                 flush()
                 cur_day = gdate
@@ -107,7 +107,7 @@ def build_pool(conn, seasons, min_n, floor):
                 if cal >= floor:
                     d = recent.get(rkey)
                     blend = cal + 0.20 * (sum(d) / len(d) - 0.5) if (d is not None and len(d) >= 5) else cal
-                    pool[gdate].append((eid, pid, prop, side, h, cal, blend, season))
+                    pool[gdate].append((eid, pid, prop, side, h, cal, blend, season, float(mp), float(line)))
                     kept += 1
             day_updates.append((ckey, rkey, h))
         flush()
