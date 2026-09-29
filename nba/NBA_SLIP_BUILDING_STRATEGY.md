@@ -997,4 +997,37 @@ Head-to-head probes on the true board (thr 0.57 unless noted, both sides):
 2. The honest two-season picture: **2025-26 positive with floors around +19…+28%, 2024-25 negative on 37–55 thin days.** Two seasons cannot separate "the map matured" from "2025-26 was favourable"; the live season is the third sample and the §15f gate is the control.
 3. **Stance for Oct 20 (revised down):** the 4pk-Flex peripheral cap-1 is the candidate to paper-track from day one — expected ROI on a mature map ≈ +40–50%, floor ≈ +19%, half the days net-positive, drawdowns ≈ 6–8 units; size stakes to a possible −10…−25% season (the 2024-25 outcome), not to the 2025-26 point. Anything quoted above +100% (5/6-pick pooled, `cells` overlays) rests on jackpot days and a single season.
 4. Unchanged and still valid: the mechanism (§15d), independence (§15c), no operator drift (§15e), the live gate (§15f), UD as a payout upgrade on shared legs (§15a), and the rank-layer findings (§16a–e).
-**Next:** (a) UD-board version of the same pool for the shared legs (v4 makes it a one-line change: `bookmaker='underdog'`); (b) per-cell exclusion inside `peripheral`; (c) paper-pick wiring for Oct 20 with the §15f gate.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Next:** (a) UD-board version of the same pool for the shared legs (v4 makes it a one-line change: `bookmaker='underdog'`); (b) per-cell exclusion inside `peripheral`; (c) paper-pick wiring for Oct 20 with the §15f gate.
+
+---
+
+## 18. THE RANKS, TESTED THE OWNER'S WAY — and the improvement that came out of it (2026-09-29)
+
+The owner said three times that the high-hit-rate ranks, trailings and ranks were not being applied properly. He was right about the *method*: I had tested each rank as a feature that had to add something ON TOP of the model (residuals, correlations). His method is different — the rank IS the selector: a walk-forward table of legs sorted by realized hit rate, take the top. So I ran exactly that, on the real PrizePicks window board, walk-forward, 150 days of 2025-26, each rank picking its own daily top-5:
+
+### 18a. Each rank as a PURE selector (whole board)
+| selector | daily top-5 hit |
+|---|---|
+| **model probability** | **0.619** |
+| plain prop-line hit rate (prop, side, line; player-agnostic, n≥100) | 0.497 |
+| player hit rate on prop+side (n≥15) | 0.513 |
+| player hit rate on the exact line (n≥8) | 0.511 |
+| trailing-10 hit rate | 0.481 |
+**Band-style on the defensive pool** (how the ranks were used in MLB): players with ≥70% historical hit rate on a prop went **0.469** next time; legs ≥80% hot over the last 10 went **0.508**; plain line ≥60% band has 28 legs at 0.464; model ≥0.60 went **0.623**; model ≥0.60 AND player-rate ≥0.60 went 0.625 — the player rank adds nothing.
+**Conclusion, measured three independent ways now (§16b/c residuals, §18a selectors, band-style):** on the PrizePicks NBA board, a player's or a line's past hit rate does not predict the next outcome — every hit-rate rank picks at a coin flip. This is regression to the mean, and I should have run the selector test first instead of the residual test.
+
+### 18b. WHY (Gemini, agreed and mechanistic)
+A hit-rate rank measures the past LINE. After a streak PrizePicks moves the line, so the historical rate says nothing about the NEW line, which is re-centred near 50%. The model works because it estimates the probability of hitting *today's* line. **Why it worked in MLB:** pitcher roles and stat rates are stable, and niche pitcher lines are sticky — a persistent high hit rate on a sticky line is a proxy for a mispriced skill. **Why it fails in NBA:** defensive stats are rare, opportunistic events with high game-to-game variance, roles/minutes are volatile, and lines adjust quickly. No construction (shrinkage, min-n, same-line-only, moving-line) fixes it, because the problem is the target moving, not the estimate. **The hit-rate ranks are retired as selectors for NBA. Rank 1–6 from the brief reduce to one working rank: the model's probability of today's line, sorted raw (§16d).**
+
+### 18c. THE IMPROVEMENT THIS SURFACED — rank-first slips, and 2024-25 turns POSITIVE
+Gemini's top lever: fewer, stronger legs (size the slip to the edge available that day, not a fixed 4/5). Tested it the honest way — the true PP board, one slip per day, top raw-model legs (one per game), NO calibration-cell eligibility (the harness's `n≥60` cell requirement starved 2024-25 of legs and kept the wrong ones), only a floor on the weakest leg's model_p:
+| cap-1 slip | 2024-25 ROI (days) | 2025-26 ROI (days) |
+|---|---|---|
+| 2pk Power, both legs ≥ 0.70 | +13.4% (98) | +26.4% (142) |
+| **3pk Power, all ≥ 0.65** | **+34.4% (106)** | **+49.4% (145)** |
+| 3pk Flex, all ≥ 0.65 | +5.8% | +14.7% |
+| 4pk Flex, all ≥ 0.60 | +27.9% (117) | +33.1% (152) |
+| 5pk Flex, top 5 (any) | +68.3% (126) | +44.4% (135) |
+Leg-level availability: legs ≥0.70 hit **0.648** (3.7/day, ≥2 on 131 of 149 days); ≥0.65 hit 0.624 (5.3/day); ≥0.60 hit 0.618 (6.4/day).
+**Every structure is positive in BOTH seasons.** The 2024-25 "losing season" of §17 was an artifact of the calibrated-cell eligibility rule; ranking on raw model_p with a per-leg floor uses the full season and it is positive. **3pk Power with all legs ≥0.65 is the best risk-adjusted structure in both seasons (+34% / +49%)** — Gemini's "smaller slip of extremely high-edge picks beats a larger diluted one" holds on this board. The 5pk Flex still has the highest 2024-25 number but rests on the jackpot tier.
+**What changes:** eligibility = per-leg raw model_p floor (0.65 for 3pk Power, 0.60 for 4pk Flex), NOT calibrated-cell n≥60; sort = raw model_p; calibration keeps its pricing role only. The harness's `cal_p ≥ thr` gate is replaced by a `raw ≥ floor` gate. Cap-1 3pk Power ≥0.65 becomes the primary paper-track candidate for Oct 20; 4pk Flex ≥0.60 the low-frustration alternative. NEXT: re-run the harness with the raw floor (bootstrap floors + drawdown series for both), then the UD-shared-leg version, then the Gemini levers #2 (model features: minutes/injury nuance, opponent turnover/drive tendencies) and #3 (PP-vs-sharp-book line gaps as a filter).** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
