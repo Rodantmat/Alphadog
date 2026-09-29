@@ -203,3 +203,13 @@ Confirms fact 124 at the EV level: a raw "0.79" points leg realizes 0.61. **The 
 - real joint both-hit = **0.3629** (≈ independent product 0.619×0.590=0.365 → cross-game independence CONFIRMED, no correlation penalty)
 - 2-pick Power (3×): **0.3629 × 3 = 1.089 = +8.9% real EV**
 This is the first concrete, real-data, positive slip-level EV in the NBA build — recalibrated high-confidence points/Over legs, different games, 2-pick Power, ~+9%. Moves the edge from "thin and theoretical" to "measured at +8.9% on 3,304 real pairs." NEXT: test 3-pick (does the deeper payout beat the lower joint?), other props, and whether a real daily pool supports enough such pairs under the 50-leg cap.
+
+### 7h. VALIDATED — size AMPLIFIES a positive sign (3-pick Power beats 2-pick on top legs; contradicts "2-pick is sharpest")
+Same top bucket (points/Over/standard, model_p≥0.70), different games, real outcomes:
+| structure | real hit | payout | EV | sample |
+|---|---|---|---|---|
+| 2-pick Power | joint 0.363 | 3× | **+8.9%** | 3,304 pairs |
+| 3-pick Flex | 2/3 in 66.7% | 3×/1× | +13.1% | 6,281 triples |
+| **3-pick Power** | all-3 0.232 | 6× | **+39.2%** | 6,281 triples |
+**On genuinely +EV legs (realized ~0.61), 3-pick Power (+39%) >> 3-pick Flex (+13%) >> 2-pick Power (+9%).** This CONTRADICTS the web/Gemini "2-pick is the sharpest/lowest-variance" claim — that holds for marginal legs, but when legs are truly +EV the higher 6× payout of 3-pick more than compensates the extra leg (0.61³×6=1.36 > 0.61²×3=1.12). Directly confirms the MLB master lesson "size COMPOUNDS the sign already present" — here the sign is positive, so bigger amplifies it (until variance/placement-cap/pool-depth bite). **This flips the default: don't assume small slips; size up as long as p·m>1 holds and the pool has independent legs.**
+**CAVEATS (MLB scars, must resolve before this is a locked finding):** (1) greedy on ALL top legs, NOT tie-break tested (Rule B0c — re-run ≥2 orders); (2) uses raw model_p≥0.70 filter, not the recalibration map's calibrated p yet; (3) does not yet check daily pool depth (are there enough independent top legs per real slate to build these under the 50-leg cap?); (4) variance rises with size — the loss-frustration preference may favor 2-3 pick even at lower EV. Real day-by-day slip simulation (Phase 3, `simulate_slips`) is what turns this from a pooled-pairs EV into a locked strategy. But the DIRECTION — size helps when the sign is positive — is validated and real.
