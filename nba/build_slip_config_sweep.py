@@ -328,12 +328,13 @@ def main():
 
     # ---- PROBE: named configs get the full report regardless of ranking (the "missing cells") ----
     default_probe = (
-        "blend,0.58,peripheral,both,5,flex;cal_p,0.58,peripheral,both,4,flex;blend,0.58,peripheral,both,4,power;"
-        "cal_p,0.57,peripheral,both,4,flex;blend,0.59,peripheral,both,4,flex;cal_p,0.59,peripheral,under,3,power;"
-        "blend,0.57,peripheral,both,4,flex;blend,0.57,peripheral,both,5,flex;blend,0.60,peripheral,both,3,power;"
-        "cal_p,0.57,peripheral,both,5,flex;blend,0.57,other_core,under,5,flex;"
-        "cal_p,0.58,turnovers,both,4,flex;cal_p,0.58,stocks,both,4,flex;cal_p,0.58,steals,both,4,flex;"
-        "cal_p,0.58,blocks,both,4,flex;cal_p,0.58,turnovers,both,3,power"
+        "cal_p,0.57,peripheral,both,4,flex;raw,0.57,peripheral,both,4,flex;"
+        "cal_p,0.57,peripheral,both,5,flex;raw,0.57,peripheral,both,5,flex;"
+        "cal_p,0.58,peripheral,both,3,power;raw,0.58,peripheral,both,3,power;"
+        "cal_p,0.57,cells,both,4,flex;raw,0.57,cells,both,4,flex;"
+        "cal_p,0.57,cells,both,5,flex;raw,0.57,cells,both,5,flex;"
+        "raw,0.57,cells,both,3,power;raw,0.57,cells,both,4,power;"
+        "raw,0.57,cells,under,4,flex;raw,0.57,peripheral,under,4,flex"
     )
     probes = []
     for spec in os.environ.get('CS_PROBE', default_probe).split(';'):
