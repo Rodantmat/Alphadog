@@ -173,4 +173,15 @@ Test (real `nba_stats.player_game_log`, both seasons): defined "star" = player a
 |---|---|---|---|---|
 | present | 65,667 | 11.07 | 26.18 | 0.413 |
 | **absent** | 9,554 | **12.51** | 27.03 | **0.454** |
-**+1.44 pts (+13%) and +9.9% pts/MINUTE when the star is out** — the per-minute lift proves it's genuine usage redistribution, not just more minutes. Large real sample (9,554 star-absent games). This is the direct, measurable "context that creates role change" Gemini named as the NBA apex edge, distinct from the noisy environmental context that failed in MLB (§6b). **CAVEAT (per §6b master lesson): +1.44 pts is a LEG-LEVEL gradient — necessary but NOT sufficient. It must be tested at the SLIP level (does it push those legs to p·m>1 / +EV Flex?) before it's a real edge.** But it is now proven worth leading Phase 2 with (data infrastructure confirmed: `player_game_log` 36-col box score, `player_game_log_usage` 22-col usage rates, `injury_report_snapshots`, `availability_delta` all present). Available NBA data for Gemini's other edges: usage table (usage-rate signal), team_game_log (pace), market lines (line-shopping) — all present and testable.
+**+1.44 pts (+13%) and +9.9% pts/MINUTE when the star is out** — the per-minute lift proves it's genuine usage redistribution, not just more minutes. Large real sample (9,554 star-absent games). This is the direct, measurable "context that creates role change" Gemini named as the NBA apex edge, distinct from the noisy environmental context that failed in MLB (§6b). **CAVEAT (per §6b master lesson): +1.44 pts is a LEG-LEVEL gradient — necessary but NOT sufficient. It must be tested at the SLIP level (does it push those legs to p·m>1 / +EV Flex?) before it's a real edge.** But it is now proven worth leading Phase 2 with (data infrastructure confirmed: `player_game_log` 36-col box score, `player_game_log_usage` 22-col usage rates, `injury_report_snapshots`, `availability_delta` all present). ### 7e. VALIDATED — the Flex-vs-Power crossover (heterogeneous legs), with a real threshold
+Tested Gemini's "Flex wins with heterogeneous legs" concretely: 5-pick slip, 1 anchor at p=0.72 + 4 satellites at varying p_s, full-distribution EV from the real `pp_flex_standard_payout` vs Power (0.72·p_s⁴·20):
+| satellite p_s | Flex EV | Power EV | winner |
+|---|---|---|---|
+| 0.50 | 0.981 | 0.900 | both −EV, Flex closer |
+| **0.51** | **1.036** | 0.974 | **Flex +EV, Power −EV** ← Flex rescues |
+| 0.52 | 1.094 | 1.053 | Flex |
+| 0.53 | 1.154 | 1.136 | Flex |
+| ~0.535 | — | — | **CROSSOVER** |
+| 0.55 | 1.281 | 1.318 | Power |
+| 0.57 | 1.417 | 1.520 | Power |
+**Validated rule (real threshold, not a vibe):** with a strong anchor, **Flex wins when the marginal legs are weak (~0.50-0.53)** — the partial tiers (5-pick: 4/5=2×, 3/5=0.4×) turn a losing Power slip into a +EV Flex slip (p_s=0.51: Flex +3.6% vs Power −2.6%); **Power wins when all legs are strong (~0.55+)** because its higher top payout dominates. Gemini's heterogeneous-leg point CONFIRMED and quantified. Engine consequence: don't pick Flex-vs-Power globally — pick per slip by comparing the two real EVs; Flex is the tool for "one strong anchor + marginal satellites," Power for "all-strong." (Crossover shifts with anchor strength and size — the engine computes both EVs per candidate slip rather than using a fixed rule.)
