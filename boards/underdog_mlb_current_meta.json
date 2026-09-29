@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-09-29T02:06:32Z",
-  "fetched_at": "2026-09-29T02:12:11Z",
+  "started_at": "2026-09-29T08:45:48Z",
+  "fetched_at": "2026-09-29T08:52:12Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -47,7 +47,7 @@
     ],
     [
       "pills[match=229949]",
-      128
+      137
     ],
     [
       "lines[match=230303]",
@@ -55,7 +55,7 @@
     ],
     [
       "pills[match=230303]",
-      125
+      135
     ],
     [
       "lines[match=229172]",
@@ -63,7 +63,7 @@
     ],
     [
       "pills[match=229172]",
-      135
+      140
     ],
     [
       "lines[match=230175]",
@@ -71,7 +71,7 @@
     ],
     [
       "pills[match=230175]",
-      141
+      148
     ],
     [
       "lines[match=229953]",
@@ -145,7 +145,7 @@
     [
       "alternate_projections",
       446,
-      1567,
+      1568,
       0,
       "deduped 0"
     ],
@@ -158,12 +158,12 @@
       0
     ]
   ],
-  "lines": 633,
-  "legs": 633,
-  "ladder_legs": 1567,
+  "lines": 664,
+  "legs": 664,
+  "ladder_legs": 1568,
   "ladder_lines_with_alternates": 446,
   "players": 83,
-  "pregame_legs": 633,
+  "pregame_legs": 664,
   "live_legs": 0,
   "by_stat": {
     "Home Runs": 75,
@@ -173,7 +173,8 @@
     "Runs": 73,
     "Hits + Runs + RBIs": 72,
     "Batter Walks": 62,
-    "Stolen Bases": 40,
+    "Stolen Bases": 42,
+    "Fantasy Points": 29,
     "Moneyline": 12,
     "Strikeouts": 8,
     "Pitching Outs Recorded": 8,
@@ -189,25 +190,25 @@
     "1st 5 Innings Spread": 4
   },
   "by_line_type": {
-    "balanced": 633
+    "balanced": 664
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 63,
+    "1.0": 83,
     "None": 32,
-    "0.9": 13,
-    "0.86": 11,
-    "0.83": 10,
-    "1.09": 10,
-    "1.32": 10,
-    "0.81": 9,
-    "0.85": 9,
+    "0.9": 12,
+    "0.89": 10,
+    "0.88": 10,
+    "0.81": 10,
+    "0.82": 9,
     "1.47": 9,
+    "1.09": 9,
     "1.14": 8,
-    "1.16": 8,
-    "0.89": 7,
+    "0.83": 8,
+    "0.86": 7,
     "0.78": 7,
-    "0.8": 7
+    "0.79": 7,
+    "1.39": 7
   },
-  "github_run_id": "36510981811"
+  "github_run_id": "36544707083"
 }
