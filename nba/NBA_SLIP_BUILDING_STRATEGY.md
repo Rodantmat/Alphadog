@@ -470,4 +470,26 @@ Research (Turtle+EV, PropsBot): strong systems use ENSEMBLE weighting (weight si
 
 **RULE (locked): every rank/signal must pass this replicability gate BEFORE it's added to the live meta-model.** A signal that fails (like CLV) can still be used to VALIDATE the model offline but is NEVER a live feature. The meta-model (§8p) is trained ONLY on live-replicable features. **CLV removed from the live rank stack; kept as a backtest validation metric.** For Phase 2, each signal's game-day feed must be confirmed in the P3 step list before use — the injury/lineup/market/board feeds all run at P3; anything needing a feed P3 doesn't run is out.
 
-**Impact on the rank catalog:** the live rank stack is cal_p + market-edge (window) + trailing-3 + consistency + line-band + prop-gated-player + tier — ALL replicable. Only CLV drops to validation-only. The primary selection (§8n) is unaffected (market-edge, not CLV, was the sharp filter). Good: the caveat cost us one signal and confirmed the other seven are live-safe. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Impact on the rank catalog:** the live rank stack is cal_p + market-edge (window) + trailing-3 + consistency + line-band + prop-gated-player + tier — ALL replicable. Only CLV drops to validation-only. The primary selection (§8n) is unaffected (market-edge, not CLV, was the sharp filter). Good: the caveat cost us one signal and confirmed the other seven are live-safe.
+
+**CLV future use (owner 2026-09-28):** CLV stays as a VALIDATION tool for later phases — after a strategy is live, compare our capture-time line to close to confirm we're capturing positive CLV (proof the strategy has real edge, the industry gold-standard validation). It is never a live SELECTION feature, but it validates shipped strategies post-hoc.
+
+---
+
+## 10. RESEARCH PASS 2 (2026-09-28) — more methods before moving on
+
+Searched elite DFS pick'em / quant prop methods. Findings + tests:
+- **Per-tier VALUE rank (Stokastic "one ratio": take a modifier only when its payout boost more than covers the win-prob drop) — TESTED & VALIDATED.** For the same prop at model_p≥0.65, which kind has the best p·m (Over):
+  | prop | best-value tier | p·m | vs standard |
+  |---|---|---|---|
+  | points | **DEMON** (0.580) | 0.580 | > std 0.571 ✓ demon wins |
+  | assists | standard (0.519) | — | std > goblin 0.488 > demon |
+  | pra | standard (0.560) | — | std > demon 0.523 > goblin 0.508 |
+  | rebounds | standard (0.558) | — | std > goblin 0.483 |
+  **Best-value tier is STANDARD for most props, but high-confidence POINTS DEMONS are the ONE tier-upgrade that's slightly +value over standard** (m=1.273 more than covers the harder line at high model_p). Real, specific, replicable (tier is on the captured board). Engine: per player+prop, select the tier with the highest as-of p·m — usually standard, points→demon. (All single-leg p·m still <1; edge is in the product, as always.) **Per-tier value rank ✅ VALIDATED & replicable.**
+- **Positional / player VOLATILITY rank (Wolf Sports: operators underprice high-variance players' upside)** — candidate rank: target Overs on players with wider outcome distributions (their spike weeks beat lines the model prices to the mean). NOT yet tested; needs a per-player stat-variance feature (derivable from `player_game_log`, replicable). QUEUED.
+- **Devig → break-even comparison (SmartStake, the top pick'em optimizer)** — CONFIRMS our exact primary method (§8m/n): devig the sharp line, compare to slip break-even. We are aligned with the best commercial tools. No change; validation that the architecture is right.
+- **Correlation stacking / bring-back (universal DFS)** — this is GPP/tournament CEILING logic (maximize correlated upside). For pick'em cash-style +EV the research is explicit: **cash wants UNCORRELATED/independent legs** — exactly our cross-game approach (§7k/g). So stacking is a DELIBERATE high-variance EXCEPTION (a possible sub-strategy for the "swing for a big day" profile), NOT the default. Noted as a known technique; our primary stays independence-seeking. (Ties to fact 125: same-player overlaps are the correlation to AVOID; a controlled same-game stack could be a separate variance sub-strategy later.)
+- **Demon/goblin as label, not value (Stokastic)** — "pick by value, not by the label" — confirms our kind-agnostic p·m approach; never chase demons for the payout alone.
+
+**RANK CATALOG v6 (research-complete):** owner 6 ✅ + trailing-3 ✅ + consistency ✅ + combo/points-anchor ✅ + market-edge ✅ (live filter) + per-tier-value ✅ (points→demon) + tier-stability ✅ + CLV (validation-only) + positional-volatility (queued). Rejected: anchor-distance, stat-magnitude. Combination = regularized logistic meta-model (§8p), all features replicable at P3 (§9). **Rank discovery + research is now thorough; the remaining rank item is positional-volatility (queued to Phase 2 with the other variance/context signals). Ready to move to Phase 2 signals + the walk-forward meta-model build.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
