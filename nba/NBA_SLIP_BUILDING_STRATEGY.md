@@ -213,3 +213,19 @@ Same top bucket (points/Over/standard, model_p≥0.70), different games, real ou
 | **3-pick Power** | all-3 0.232 | 6× | **+39.2%** | 6,281 triples |
 **On genuinely +EV legs (realized ~0.61), 3-pick Power (+39%) >> 3-pick Flex (+13%) >> 2-pick Power (+9%).** This CONTRADICTS the web/Gemini "2-pick is the sharpest/lowest-variance" claim — that holds for marginal legs, but when legs are truly +EV the higher 6× payout of 3-pick more than compensates the extra leg (0.61³×6=1.36 > 0.61²×3=1.12). Directly confirms the MLB master lesson "size COMPOUNDS the sign already present" — here the sign is positive, so bigger amplifies it (until variance/placement-cap/pool-depth bite). **This flips the default: don't assume small slips; size up as long as p·m>1 holds and the pool has independent legs.**
 **CAVEATS (MLB scars, must resolve before this is a locked finding):** (1) greedy on ALL top legs, NOT tie-break tested (Rule B0c — re-run ≥2 orders); (2) uses raw model_p≥0.70 filter, not the recalibration map's calibrated p yet; (3) does not yet check daily pool depth (are there enough independent top legs per real slate to build these under the 50-leg cap?); (4) variance rises with size — the loss-frustration preference may favor 2-3 pick even at lower EV. Real day-by-day slip simulation (Phase 3, `simulate_slips`) is what turns this from a pooled-pairs EV into a locked strategy. But the DIRECTION — size helps when the sign is positive — is validated and real.
+
+### 7i. VALIDATED + GEMINI-RECONCILED — slip-size theory: raw-EV climbs with size, but KELLY (bankroll growth) PEAKS AT 3-PICK
+EV-by-size on OUR real Power ladder (2=3× 3=6× 4=10× 5=20× 6=37.5×), by per-leg realized p:
+| size | EV @p=0.61 | EV @p=0.58 | EV @p=0.55 | Kelly frac @p=0.61 |
+|---|---|---|---|---|
+| 2 | +11.6% | +0.9% | −9.3% | 5.82% |
+| **3** | **+36.2%** | +17.1% | −0.2% | **7.24% ← peak** |
+| 4 | +38.5% | +13.2% | −8.5% | 4.27% |
+| 5 | +68.9% | +31.3% | +0.7% | 3.63% |
+| 6 | +93.2% | +42.8% | +3.8% | 2.55% |
+**Findings (Gemini-challenged, validated on our real ladder):**
+- **Raw EV keeps climbing to 6-pick when legs are +EV** (p=0.61 → +93% at 6-pick) — confirms §7h and the MLB "size compounds the sign" lesson.
+- **BUT optimal bankroll fraction (Kelly f = (p^n·m − 1)/(m − 1)) PEAKS AT 3-PICK (7.24%)** then declines (4:4.27%, 5:3.63%, 6:2.55%). For actual wealth growth, 3-pick is the sharpest size, NOT 6-pick.
+- **Win frequency by size** (p=0.61): 2-pick 37%, 3-pick 23%, 6-pick **5%** (95% losing slips). Loss-frustration preference (owner) → strongly favors 2-3 pick.
+- **Marginal legs (p=0.55) barely clear anywhere** — negative 2-4 pick, +0.7%/+3.8% at 5-6 pick only. THIS is why the web says "2-pick sharpest" — it is, but only for marginal legs, and marginal legs are barely playable at all. The real money is in getting p to ~0.60+ (recalibrated leg selection), then playing 3-pick.
+**UNIFIED ENGINE RULE (data + web + Gemini + owner preference all agree):** for genuinely +EV legs, **3-pick Power is the default sharpest structure** — highest Kelly stake, +36% EV, ~1-in-4 win rate, tolerable drought. Size up toward 4-6 only for a raw-EV/profit-max sub-strategy under strict bankroll control; size stays 2-3 for the frequent-win/low-frustration primary. Gemini corrected its own earlier "2-pick sharpest" to "3-pick sharpest for a real edge." p=0.55 marginal legs → skip or 5-6 pick only.
