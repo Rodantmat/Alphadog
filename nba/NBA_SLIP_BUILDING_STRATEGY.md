@@ -492,4 +492,34 @@ Searched elite DFS pick'em / quant prop methods. Findings + tests:
 - **Correlation stacking / bring-back (universal DFS)** — this is GPP/tournament CEILING logic (maximize correlated upside). For pick'em cash-style +EV the research is explicit: **cash wants UNCORRELATED/independent legs** — exactly our cross-game approach (§7k/g). So stacking is a DELIBERATE high-variance EXCEPTION (a possible sub-strategy for the "swing for a big day" profile), NOT the default. Noted as a known technique; our primary stays independence-seeking. (Ties to fact 125: same-player overlaps are the correlation to AVOID; a controlled same-game stack could be a separate variance sub-strategy later.)
 - **Demon/goblin as label, not value (Stokastic)** — "pick by value, not by the label" — confirms our kind-agnostic p·m approach; never chase demons for the payout alone.
 
-**RANK CATALOG v6 (research-complete):** owner 6 ✅ + trailing-3 ✅ + consistency ✅ + combo/points-anchor ✅ + market-edge ✅ (live filter) + per-tier-value ✅ (points→demon) + tier-stability ✅ + CLV (validation-only) + positional-volatility (queued). Rejected: anchor-distance, stat-magnitude. Combination = regularized logistic meta-model (§8p), all features replicable at P3 (§9). **Rank discovery + research is now thorough; the remaining rank item is positional-volatility (queued to Phase 2 with the other variance/context signals). Ready to move to Phase 2 signals + the walk-forward meta-model build.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**RANK CATALOG v6 (research-complete):** owner 6 ✅ + trailing-3 ✅ + consistency ✅ + combo/points-anchor ✅ + market-edge ✅ (live filter) + per-tier-value ✅ (points→demon) + tier-stability ✅ + CLV (validation-only) + positional-volatility (queued). Rejected: anchor-distance, stat-magnitude. Combination = regularized logistic meta-model (§8p), all features replicable at P3 (§9). **Rank discovery + research is now thorough; the remaining rank item is positional-volatility (queued to Phase 2 with the other variance/context signals). Ready to move to Phase 2 signals + the walk-forward meta-model build.
+
+---
+
+## 11. SIGNALS PHASE (Phase 2) — opened 2026-09-28
+
+Owner: even longer/more exhaustive than ranks; test EVERY signal on EVERY rank; rank-over-rank / layered combinations are themselves signals. We have tons already in the system across levels.
+
+### 11a. FULL SIGNAL INVENTORY (catalogued from real tables — what we HAVE)
+**Player-level:**
+- box: min, fgm/fga/fg3m/fg3a/ftm/fta, oreb/dreb/reb, ast/tov/stl/blk/blka, pf/pfd, pts, plus_minus, nba_fantasy_pts, dd2/td3 (`player_game_log`)
+- advanced: off/def/net_rating, **usg_pct**, pace, ts_pct, efg_pct, ast_pct, oreb/dreb/reb_pct (`player_game_log_advanced`)
+- usage shares: pct_fgm/fga/fg3m/fg3a/ftm/fta/oreb/dreb/reb/ast/tov/stl/blk/pf/pts (`player_game_log_usage`) — share of team production = ROLE signal
+- shot profile: pct_fga_2pt/3pt, pct_pts_2pt/3pt/paint/fb/ft/off_tov, pct_ast/uast (`player_game_log_scoring`)
+- baseline-derived: **proj_min**, rate36, role_tier, var_band, anchor, ladder_offset (`baseline_history`)
+**Team-level:** off/def/net_rating, **pace**, ts/efg, ast/oreb/dreb_pct (`team_game_log_advanced`); full box (`team_game_log`)
+**Opponent-level:** **opp_efg_pct, opp_fta_rate, opp_tov_pct, opp_oreb_pct** (`team_game_log_four_factors`) + opponent def_rating — defense the model may NOT fully price
+**Odds-level:** p_over_book, market-edge (§8k), **p_over_sd** (book disagreement = uncertainty signal), books (count)
+**System-level:** confidence factors (f_role/f_phase/f_books/... `confidence_model`), var_band, availability_prior.p_plays, availability_delta (line moved on news)
+**Schedule-level:** **is_b2b**, days_since_last (rest), season_phase (§7m); rest-differential vs opponent derivable
+**Referee-level:** referee_assignments (official crews — foul/pace tendencies, a known prop signal); game-day only (posts ~6-7am, replicable at P3)
+
+### 11b. TESTED so far
+- **Usage rate (trailing usg5) standalone on points/Over — WEAK/non-monotonic** (usg 20-25% → 0.564 best, 30%+ → 0.528). The model already prices usage into model_p, so raw usage adds little standalone. Consistent with the recurring lesson (a signal the model captures ≠ edge). VALUE, if any, is in INTERACTION or on props the model prices worse — to test in the matrix, not standalone.
+- **Opponent defense** — join needs a team-name→team_id bridge (prop_universe has full team NAMES + own team_id `nba_161...`; must map names→ids like the player id-bridge §7l). QUEUED for the evaluator (opponent-def is a top research factor and orthogonal to model_p, so high priority).
+
+### 11c. THE SCALE PROBLEM → the signal work needs the WALK-FORWARD EVALUATOR SCRIPT
+The signals phase is a MATRIX: ~25+ candidate signals × 8 ranks × (standalone / interaction / rank-over-rank) × as-of × tie-break × slip-level — far beyond live queries (which are already timing out on full-history joins). **The correct tool is the walk-forward evaluator (the `build_rank_foundation.py` line of work extended to signals):** one script that, per as-of day, computes every rank + every signal as a feature, feeds the regularized logistic meta-model (§8p), and reports each signal's marginal lift (coefficient + slip-level ROI) with S1→S2 validation. Every signal must pass the §9 replicability gate first.
+**Method for each signal (locked):** (1) replicability gate (§9) — has a live P3 feed? (2) standalone test — does it separate hit rate monotonically as-of? (3) interaction test — does it add lift ON TOP of cal_p / on specific props/tiers/directions? (4) slip-level — does it push legs to +EV / higher ROI? (5) tie-break stability. Keep only signals passing 1 + (3 or 4) + 5.
+**Priority signal queue (orthogonal-to-model first):** opponent def-by-position, pace (both teams), rest/B2B/3-in-4, p_over_sd (book disagreement), positional volatility (§10), referee tendencies, usage-share/role interactions, shot-profile (3pt-rate for threes props). Plus rank-over-rank layers (e.g. cal_p × trailing × market-edge — the meta-model learns these).
+**STATUS: signal inventory complete; standalone spot-tests done; the exhaustive matrix is the evaluator-script build (fresh context + workflow, given live-query timeouts).**** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
