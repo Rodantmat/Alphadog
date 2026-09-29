@@ -205,7 +205,7 @@ def main():
     s1, s2 = (seasons_seen[0], seasons_seen[-1]) if len(seasons_seen) >= 2 else (None, None)
 
     thresholds = [round(0.56 + 0.01 * i, 2) for i in range(11)]
-    grid = list(itertools.product(DRIVERS.keys(), thresholds, ['all', 'peripheral', 'points'],
+    grid = list(itertools.product(DRIVERS.keys(), thresholds, ['all', 'peripheral', 'points', 'other_core'],
                                   ['over', 'under', 'both'], [2, 3, 4, 5, 6], ['power', 'flex']))
     results = []
     for drv_name, thr, cellset, side, depth, structure in grid:
