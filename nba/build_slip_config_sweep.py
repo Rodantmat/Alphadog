@@ -60,12 +60,34 @@ def bucket(p):
 
 
 def build_pool(conn, seasons, min_n, floor):
-    sql = """SELECT pu.season, pu.game_date, pu.event_id, pu.player_id, pu.prop, pu.side, pu.model_p, pu.hit::int, pu.line
+    # v4 (owner: day by day, real legs, real slips, real board snapshots): the pool IS the PrizePicks WINDOW
+    # board. Every leg is a row PrizePicks actually posted, captured at snapshot_ts BEFORE its commence_time
+    # (verified 26,512/26,512 for the defensive props; window snapshot precedes the first tip on all 378 days).
+    # Outcome + model score are joined from prop_universe; legs with no graded outcome are excluded, never guessed.
+    # Setting CS_BOARD=0 falls back to the prop_universe pool (for comparison only).
+    if os.environ.get('CS_BOARD', '1') == '1':
+        sql = """
+        WITH bs AS (
+          SELECT DISTINCT b.game_date, b.event_id, b.snapshot_ts, b.commence_time, nba_ref.norm_name(b.player) AS pn,
+            CASE replace(b.market_key,'player_','') WHEN 'blocks_steals' THEN 'stocks'
+                 WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' THEN 'pra'
+                 WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast'
+                 WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(b.market_key,'player_','') END AS prop,
+            b.side, b.line
+          FROM nba_market.board_snapshots b
+          WHERE b.bookmaker='prizepicks' AND b.snapshot_label='window' AND b.snapshot_ts < b.commence_time
+        )
+        SELECT pu.season, bs.game_date, bs.event_id, pu.player_id, bs.prop, bs.side, pu.model_p, pu.hit::int, bs.line
+        FROM bs
+        JOIN nba_market.prop_universe pu
+          ON pu.game_date=bs.game_date AND nba_ref.norm_name(pu.player)=bs.pn AND pu.prop=bs.prop
+         AND pu.side=bs.side AND pu.line=bs.line AND pu.kind='standard' AND pu.line_source='real'
+        WHERE pu.hit IS NOT NULL AND pu.model_p IS NOT NULL"""
+    else:
+        sql = """SELECT pu.season, pu.game_date, pu.event_id, pu.player_id, pu.prop, pu.side, pu.model_p, pu.hit::int, pu.line
              FROM nba_market.prop_universe pu
-             WHERE pu.kind='standard' AND pu.hit IS NOT NULL AND pu.model_p IS NOT NULL"""
+             WHERE pu.kind='standard' AND pu.hit IS NOT NULL AND pu.model_p IS NOT NULL AND pu.line_source='real'"""
     params = []
-    if os.environ.get('CS_REAL_ONLY', '1') == '1':
-        sql += " AND pu.line_source = 'real'"
     if seasons:
         sql += " AND pu.season = ANY(%s)"
         params.append(seasons)
