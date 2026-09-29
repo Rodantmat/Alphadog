@@ -287,4 +287,20 @@ Tested whether player identity adds hit-rate signal BEYOND the recalibration (a 
   |---|---|---|---|
   | **peripheral / role-props (REAL player signal)** | oreb, dreb, fga, fgm, fg3a, fta, ftm | **0.031-0.035** | **+7 to +10pp** |
   | core (NO player signal) | points, assists, rebounds, reb_ast, pra, fantasy_score | 0.004-0.017 | +1.4 to +4pp |
-**Conclusion:** the player rank is REAL only on peripheral, role-driven counting stats (offensive/defensive rebounds, FG/FT/3PT attempts & makes) — where the model misses player idiosyncrasy — and REDUNDANT on the core high-volume props (model already captures it). **Rank 5 must be PROP-GATED** (apply player-hit-rate only on the peripheral props); a blanket player rank would be half-noise and would overfit the ~8 chance-deviant players (MLB tie-break scar). This is the owner's "different signals for different props" — validated with numbers. It also tells Phase 2: peripheral props are where player-level and role signals live; core props are where the model + game-context (injury/minutes, §7d) live. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Conclusion:** the player rank is REAL only on peripheral, role-driven counting stats (offensive/defensive rebounds, FG/FT/3PT attempts & makes) — where the model misses player idiosyncrasy — and REDUNDANT on the core high-volume props (model already captures it). **Rank 5 must be PROP-GATED** (apply player-hit-rate only on the peripheral props); a blanket player rank would be half-noise and would overfit the ~8 chance-deviant players (MLB tie-break scar). This is the owner's "different signals for different props" — validated with numbers. It also tells Phase 2: peripheral props are where player-level and role signals live; core props are where the model + game-context (injury/minutes, §7d) live.
+
+### 7p. RANK 1 GRANULAR — the full candidate landscape (prop × side × kind, at model_p≥0.70, realized as-of)
+Ranking every (prop, side, kind) group with ≥200 top-bucket legs by realized single-leg hit — the raw material Rank 1 selects from. Top single-leg realized hit rates (standard, m=1.0 so hit=p·m):
+| rank | prop/side | realized hit | n |
+|---|---|---|---|
+| 1 | **steals/Under** | **0.722** | 234 |
+| 2 | **turnovers/Over** | **0.634** | 322 |
+| 3 | turnovers/Under | 0.619 | 378 |
+| 4 | **stocks/Over** | 0.614 | 264 |
+| 5 | stocks/Under | 0.600 | 210 |
+| 6 | points/Over | 0.590 | 1,340 |
+| 7 | pts_reb/Over | 0.589 | 1,315 |
+| 8 | pra/Over | 0.587 | 1,338 |
+| 9 | fantasy_score/Over | 0.585 | 1,062 |
+| 10 | pts_ast/Over | 0.584 | 1,358 |
+**KEY FINDING (the variety hunt paying off):** the **low-volume DEFENSIVE props — steals/Under (0.722), turnovers (0.62-0.63), stocks (0.61) — are the STRONGEST single legs on the board**, well above the points/Over (0.59) I'd been anchoring on. These surfaced ONLY by going granular across all props/sides. A steals/Under at 0.722 in a 3-pick Power (0.722³×6 = +126% if independent) is enormous IF the daily pool + correlation + tie-break hold (must stress-test: n is smaller, 234). **Goblins** hit 0.71-0.74 realized but m~0.65-0.73 → p·m ~0.48-0.52 (priced tight, confirms they're near-break-even by design; not the edge). **Demons** even lower p·m. **So the standard-lane high-cal-p tail is where the edge concentrates, led by defensive props then scoring-Overs.** Rank 1 = this table, granulated to 1% cal_p bands and gated to p·m>1 candidates; the defensive props are new high-value candidates the single-prop-points focus would have missed. NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
