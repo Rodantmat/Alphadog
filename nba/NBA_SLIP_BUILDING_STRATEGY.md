@@ -120,3 +120,22 @@ From `HIGH_HIT_RATE_METHODOLOGY.md`. These are METHOD rules proven by real MLB s
 - **DNP/void adjustment was a non-issue** (0.06% of hitter legs, not the assumed 7%) — measure, don't assume. (NBA: verify the real DNP rate rather than carrying a guess.)
 - **Coverage matrix**: MLB kept a signal×track matrix where every session had to move ≥2 cells from ❌ to ✅ with a real cited result. Adopt an NBA signal×(prop/lane/tier) coverage matrix so gaps shrink measurably and nothing is silently skipped.
 - **Use the UNION of outcome sources**, deduped, with the label read from the authoritative table — never one writer alone (one missed the locked pool entirely).
+
+### 6e. GEMINI CHALLENGE (2026-09-28, gemini-2.5-flash) — two corrections to the MLB-derived conclusions
+Consulted Gemini as a skeptical second opinion before carrying MLB's `p·m` rule into NBA. It corrected two things; both adopted.
+
+**CORRECTION 1 — `p·m<1 = dead` is POWER-ONLY, NOT Flex.** Power is an all-or-nothing parlay, so p·m governs it (MLB session-10 headline holds for Power). **Flex pays on partial hits, which breaks the simple product rule.** A pool of legs marginally negative on the top tier can still be +EV as a Flex slip if the partial tiers hit often enough. **Correct Flex EV = full outcome distribution:**
+  EV = Σ_{k=0}^{N} P(exactly k of N correct) · Payout_k
+  where (non-identical p_i, the real case) P(exactly k) is summed over all 2^N hit/miss combinations, NOT a plain binomial. Payout_k from OUR verified Flex tables (PP 6-Flex pays 6/6, 5/6, 4/6; UD similar). **Consequence for the engine: compute Power EV via p·m product, but Flex EV via the full distribution — never apply the p·m<1 discard to a Flex candidate.** There exist p·m<1 legs that form +EV Flex slips. (MLB's own doc over-generalized "every payout model reduces to p·m"; Gemini is mathematically right that Flex does not.)
+
+**CORRECTION 2 — the MLB "context fails / role wins" lesson does NOT transfer cleanly to NBA.** In NBA, injury and minutes context DIRECTLY create the role/opportunity change — they are impactful, measurable, direct context, not the noisy environmental context (weather/park) that failed in MLB. **NBA edges to prioritize testing, ranked by likelihood of surviving slip-level EV (Gemini):**
+  1. **Injury-driven usage/opportunity spikes** — a high-usage teammate OUT → quantify who absorbs the vacated minutes/shots/assists/rebounds. Lines are sticky and under-adjust the SECONDARY beneficiaries (they move the star's line, miss the playmaker's assists jump). *This is the apex NBA edge.* Testable: player per-minute/per-game P/R/A/S/B with vs without the key teammate. (Ties to our F8-1 availability wiring and fact 124 role_tier.)
+  2. **Minutes-projection discrepancies** — blowout risk (starters sit / bench extended), foul-trouble history, rotation changes, minutes restrictions on returnees, new-acquisition minutes. Platform uses generic per-minute × static minutes; dynamic minutes are the edge.
+  3. **Lagging / line-shopping vs sharp books** — PP/UD lines lag FanDuel/DK/Caesars; a de-vigged sharp line vs the PP line is a direct arb signal. (We have market lines in the system — testable now.)
+  4. **Extreme pace / matchup outliers** — works in NBA (unlike MLB) when the magnitude is extreme and unpriced; direct on the stat category.
+  5. **Role-specific archetype mispricing** — rebound-only centers (points inflated), high-assist low-scoring guards (assists undervalued), block specialists (stable prop). Generic models price concentrated-role players poorly.
+  **NBA TRAPS (do not chase):** vague "good/bad matchup" without a quantified mechanism; revenge-game/narrative; blind hot/cold streaks (regression unless an underlying role change explains it — which loops back to #1); over-reliance on season averages (NBA too dynamic — early-season, fatigue, trades, coaching); niche high-variance props (1st-basket).
+  **Net:** in NBA the context CREATES the role signal — distinguish impactful direct context (injury/minutes) from noisy indirect context (environment). Phase 2 leads with #1 and #2.
+
+### 6f. GEMINI BRIDGE NOTE
+The bridge's default model `gemini-2.0-flash` is DEPRECATED (returns 404). **Always pass `model: "gemini-2.5-flash"` explicitly** on `call_gemini`.
