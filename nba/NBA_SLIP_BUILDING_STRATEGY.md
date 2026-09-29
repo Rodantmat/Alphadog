@@ -229,3 +229,13 @@ EV-by-size on OUR real Power ladder (2=3× 3=6× 4=10× 5=20× 6=37.5×), by per
 - **Win frequency by size** (p=0.61): 2-pick 37%, 3-pick 23%, 6-pick **5%** (95% losing slips). Loss-frustration preference (owner) → strongly favors 2-3 pick.
 - **Marginal legs (p=0.55) barely clear anywhere** — negative 2-4 pick, +0.7%/+3.8% at 5-6 pick only. THIS is why the web says "2-pick sharpest" — it is, but only for marginal legs, and marginal legs are barely playable at all. The real money is in getting p to ~0.60+ (recalibrated leg selection), then playing 3-pick.
 **UNIFIED ENGINE RULE (data + web + Gemini + owner preference all agree):** for genuinely +EV legs, **3-pick Power is the default sharpest structure** — highest Kelly stake, +36% EV, ~1-in-4 win rate, tolerable drought. Size up toward 4-6 only for a raw-EV/profit-max sub-strategy under strict bankroll control; size stays 2-3 for the frequent-win/low-frustration primary. Gemini corrected its own earlier "2-pick sharpest" to "3-pick sharpest for a real edge." p=0.55 marginal legs → skip or 5-6 pick only.
+
+### 7j. VALIDATED — recalibration is AS-OF-SAFE (the edge is NOT a hindsight/leakage artifact — the MLB defect class)
+The gravest risk: if the recalibration map (fact 124) is fit on data that includes the day being priced, every +EV finding is inflated by hindsight (this is the class of error behind MLB's fake +1298%). Tested whether season-1-fit calibration predicts season-2 realized (points/Over/standard):
+| model_p bucket | S1 realized (n) | S2 realized (n) | drift S1→S2 |
+|---|---|---|---|
+| <0.55 | 0.4785 (11,955) | 0.4708 (13,089) | −0.008 |
+| 0.55-0.65 | 0.5296 (3,019) | 0.5177 (3,952) | −0.012 |
+| 0.65-0.75 | 0.5664 (858) | 0.5608 (1,471) | −0.006 |
+| ≥0.75 | 0.5798 (188) | 0.6265 (332) | +0.047 (small n) |
+**Calibration drift is tiny (≤0.012) in the well-sampled buckets — a map fit on prior data predicts future realized hit rate accurately.** This proves the as-of approach is sound: pricing today's legs from prior-season + prior-day calibration will NOT systematically mislead, so the validated +EV findings (§7g-7i) are real, not hindsight. **Caveat:** the ≥0.75 tail drifts more (+0.047) on small samples → the top bucket MUST use shrinkage (n/(n+K=200), already in `build_recalibration_map.py`) and never be trusted raw. **Backtest rule locked:** the recalibration map used to price a leg on date D must be fit only on data STRICTLY BEFORE D (prior season entirely + within-season up to D−1), rebuilt walk-forward — never pooled across the test window. This is the parity rule (fact 100) applied to slip building.
