@@ -40,24 +40,11 @@ CONFIGS = [
 ]
 
 SQL = """
-WITH bd AS (
-  SELECT DISTINCT game_date, nba_ref.norm_name(player) pn, line, side
-  FROM nba_market.board_snapshots
-  WHERE bookmaker='prizepicks' AND snapshot_label='window' AND snapshot_ts<commence_time
-    AND market_key = %(mkt)s || CASE WHEN %(kind)s='standard' THEN '' ELSE '_alternate' END
-    AND (%(side)s='both' OR side=%(side)s)
-),
-legs AS (
-  SELECT bd.game_date, pu.season, pu.player, bd.side, pu.hit::int h, p.factor::float price,
-    CASE %(rank)s WHEN 'score' THEN f.score WHEN 'baseline_hp' THEN f.baseline_hp ELSE f.final_hp END::float s
-  FROM bd
-  JOIN nba_market.prop_universe pu ON pu.game_date=bd.game_date AND nba_ref.norm_name(pu.player)=bd.pn
-   AND pu.prop=%(prop)s AND pu.side=bd.side AND pu.line=bd.line AND pu.line_source='real' AND pu.kind=%(kind)s
-  JOIN nba_market.pp_leg_price p ON p.snapshot_label='window' AND p.game_date=bd.game_date AND p.nm=bd.pn
-   AND p.base_market=%(mkt)s AND p.side=bd.side AND p.line=bd.line AND p.kind=%(kind)s
-   AND (%(tier)s::int IS NULL OR least(abs(COALESCE(NULLIF(p.tier,0), round(p.line-p.anchor_line)::int)),3)=%(tier)s::int)
-  JOIN nba_score.final_hp f ON f.game_date=pu.game_date AND f.player_id=pu.player_id AND f.prop=pu.prop AND f.side=pu.side AND f.line=pu.line
-  WHERE pu.hit IS NOT NULL AND p.factor IS NOT NULL
+WITH legs AS (
+  SELECT game_date, season, player, side, h, price, kind, tier3,
+    CASE %(rank)s WHEN 'score' THEN s_score WHEN 'baseline_hp' THEN s_base ELSE s_final END AS s
+  FROM _raw WHERE prop=%(prop)s AND kind=%(kind)s AND (%(side)s='both' OR side=%(side)s)
+    AND (%(tier)s::int IS NULL OR tier3=%(tier)s::int)
 ),
 ranked AS (SELECT *, row_number() OVER (PARTITION BY game_date ORDER BY s DESC NULLS LAST, player) rn FROM legs WHERE s IS NOT NULL),
 daily AS (SELECT season, game_date, avg(h*price) pm, avg(h) hit, avg(price) mult, count(*) got FROM ranked WHERE rn<=%(n)s GROUP BY 1,2)
@@ -65,6 +52,30 @@ SELECT season, count(*) days, avg(hit) hit, avg(mult) mult, avg(pm) pm,
   avg(CASE WHEN pm>%(be)s THEN 1.0 ELSE 0 END) above
 FROM daily WHERE got=%(n)s AND (season<>'2025-26' OR game_date>='2025-11-01')
 GROUP BY season ORDER BY season
+"""
+
+RAW = """
+CREATE TEMP TABLE _raw AS
+WITH bd AS (
+  SELECT DISTINCT game_date, nba_ref.norm_name(player) pn, line, side,
+    replace(replace(market_key,'_alternate',''),'player_','') AS mk
+  FROM nba_market.board_snapshots
+  WHERE bookmaker='prizepicks' AND snapshot_label='window' AND snapshot_ts<commence_time
+),
+pr AS (
+  SELECT game_date, nm, side, line, kind, factor::float price, base_market,
+    least(abs(COALESCE(NULLIF(tier,0), round(line-anchor_line)::int)),3) AS tier3
+  FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND factor IS NOT NULL AND NOT coalesce(kind_position_mismatch,false)
+)
+SELECT bd.game_date, pu.season, pu.player, pu.prop, bd.side, bd.line, pu.hit::int h, pr.price, pr.kind, pr.tier3,
+       f.score::float s_score, f.baseline_hp::float s_base, f.final_hp::float s_final
+FROM bd
+JOIN pr ON pr.game_date=bd.game_date AND pr.nm=bd.pn AND pr.side=bd.side AND pr.line=bd.line AND replace(pr.base_market,'player_','')=bd.mk
+JOIN nba_market.prop_universe pu ON pu.game_date=bd.game_date AND nba_ref.norm_name(pu.player)=bd.pn AND pu.side=bd.side AND pu.line=bd.line AND pu.line_source='real' AND pu.kind=pr.kind
+  AND pu.prop=CASE bd.mk WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' THEN 'pra'
+    WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast' WHEN 'rebounds_assists' THEN 'reb_ast' ELSE bd.mk END
+JOIN nba_score.final_hp f ON f.game_date=pu.game_date AND f.player_id=pu.player_id AND f.prop=pu.prop AND f.side=pu.side AND f.line=pu.line
+WHERE pu.hit IS NOT NULL
 """
 
 
