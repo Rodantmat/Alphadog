@@ -18,6 +18,10 @@ on:
         description: "max pct"
         default: "30"
         required: false
+      rebuild:
+        description: "1 = rebuild tier_map_legs from pp_leg_price (system tier + current per-line price) before sweeping"
+        default: "0"
+        required: false
 
 permissions:
   contents: read
