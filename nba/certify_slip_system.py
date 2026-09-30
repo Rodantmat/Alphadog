@@ -266,8 +266,55 @@ def main():
     check(conn, "L10.slip_compression_rule_matches_oos_quotes", err < 0.06, f"max err {err:.3f}", "(product to 9.1x then 9.1*(p/9.1)^0.857; plain product overstates demon stacks ~13% at 20x)")
     check(conn, "L10.regular_only_slips_uncompressed", pp_payout(6.0) == 6.0 and pp_payout(10.0) > 9.1, "ok", "(3/4-pick Regular Power under 9.1x except 5/6-pick, which compress)")
 
-    conn.commit()
-    print(f"\nRESULT: {CHECKS} checks, {FAILS} FAIL  (run {RUN_ID})", flush=True)
+    # ---------------- L11 slip layer ----------------
+    print("L11 slip layer", flush=True)
+    r = one(conn, "SELECT count(*), count(DISTINCT game_date), count(DISTINCT composition) FROM nba_score.slip_engine_slips")
+    check(conn, "L11.slips_exist_all_days", r[0] > 400_000 and r[1] == 323, f"{r[0]} slips / {r[1]} days / {r[2]} compositions")
+    r = one(conn, """WITH s AS (
+        SELECT size, hits, payout, teams, structure,
+          (SELECT count(DISTINCT j->>'player') FROM jsonb_array_elements(legs_json) j) dp,
+          (SELECT sum((j->>'hit')::int) FROM jsonb_array_elements(legs_json) j) lh,
+          (SELECT exp(sum(ln((j->>'factor')::float))) FROM jsonb_array_elements(legs_json) j) fprod,
+          jsonb_array_length(legs_json) nl
+        FROM nba_score.slip_engine_slips)
+        SELECT count(*) FILTER (WHERE dp<nl), count(*) FILTER (WHERE teams<2), count(*) FILTER (WHERE nl<>size), count(*) FILTER (WHERE hits<>lh),
+          count(*) FILTER (WHERE abs(payout - (CASE WHEN raw<=9.1 THEN raw ELSE 9.1*power(raw/9.1,0.857) END))>1e-6)
+        FROM (SELECT *, (CASE WHEN structure='power' THEN (CASE WHEN hits=size THEN (CASE size WHEN 2 THEN 3 WHEN 3 THEN 6 WHEN 4 THEN 10 WHEN 5 THEN 20 ELSE 37.5 END) ELSE 0 END)
+                  ELSE (CASE (size,hits) WHEN (2,2) THEN 2 WHEN (2,1) THEN 0.5 WHEN (3,3) THEN 3 WHEN (3,2) THEN 1 WHEN (4,4) THEN 6 WHEN (4,3) THEN 1.5
+                        WHEN (5,5) THEN 10 WHEN (5,4) THEN 2 WHEN (5,3) THEN 0.4 WHEN (6,6) THEN 25 WHEN (6,5) THEN 2 WHEN (6,4) THEN 0.4 ELSE 0 END) END)*fprod raw FROM s) p""")
+    check(conn, "L11.no_player_twice", r[0] == 0, r[0])
+    check(conn, "L11.two_teams_minimum", r[1] == 0, r[1])
+    check(conn, "L11.size_equals_legs", r[2] == 0, r[2])
+    check(conn, "L11.hits_equals_leg_hits", r[3] == 0, r[3])
+    check(conn, "L11.payout_equals_compression_recompute", r[4] == 0, r[4])
+    r = one(conn, "SELECT min(min_pair_corr), count(*) FILTER (WHERE min_pair_corr <= -0.08) FROM nba_score.slip_engine_slips")
+    check(conn, "L11.no_negative_pair_slips", r[1] == 0, f"min pair corr {r[0]:.3f}" if r[0] is not None else "n/a", "(rule: forbid <= -0.08)")
+    r = one(conn, """WITH b AS (SELECT season, max(game_date) s1 FROM nba_score.slip_engine_slips GROUP BY season)
+                     SELECT count(*) FILTER (WHERE (b.s1-e.game_date)<=7 AND e.phase<>'final7'), count(*) FILTER (WHERE (b.s1-e.game_date)>7 AND e.phase='final7')
+                     FROM nba_score.slip_engine_slips e JOIN b ON b.season=e.season""")
+    check(conn, "L11.final7_flag_matches_season_end", r[0] == 0 and r[1] == 0, f"{r[0]} / {r[1]} mismatches")
+    # every leg in every slip traces to a REAL PP window board row (raw board, not the map) with a graded outcome
+    r = one(conn, """WITH lg AS (SELECT DISTINCT game_date, player, prop, side, line FROM nba_score.slip_engine_legs WHERE game_date IN ('2025-01-15','2026-01-15','2026-03-20')),
+        bd AS (SELECT DISTINCT game_date, nba_ref.norm_name(player) pn, side, line,
+                 replace(replace(market_key,'_alternate',''),'player_','') mk FROM nba_market.board_snapshots
+               WHERE bookmaker='prizepicks' AND snapshot_label='window' AND snapshot_ts<commence_time AND game_date IN ('2025-01-15','2026-01-15','2026-03-20'))
+        SELECT count(*), count(*) FILTER (WHERE bd.pn IS NULL)
+        FROM lg LEFT JOIN bd ON bd.game_date=lg.game_date AND bd.pn=nba_ref.norm_name(lg.player) AND bd.side=lg.side AND bd.line=lg.line
+          AND bd.mk = CASE lg.prop WHEN 'stocks' THEN 'blocks_steals' WHEN 'threes_made' THEN 'threes' WHEN 'pra' THEN 'points_rebounds_assists'
+                        WHEN 'pts_reb' THEN 'points_rebounds' WHEN 'pts_ast' THEN 'points_assists' WHEN 'reb_ast' THEN 'rebounds_assists' ELSE lg.prop END""")
+    check(conn, "L11.every_slip_leg_on_raw_board", r[1] == 0, f"{r[1]} of {r[0]} legs not on the PP window board", "(3 sampled days)")
+    r = one(conn, """WITH lg AS (SELECT DISTINCT game_date, player, prop, side, line, hit FROM nba_score.slip_engine_legs WHERE game_date IN ('2025-01-15','2026-01-15','2026-03-20'))
+        SELECT count(*), count(*) FILTER (WHERE pu.hit IS NULL OR pu.hit::int<>lg.hit)
+        FROM lg LEFT JOIN nba_market.prop_universe pu ON pu.game_date=lg.game_date AND pu.player=lg.player AND pu.prop=lg.prop AND pu.side=lg.side AND pu.line=lg.line AND pu.line_source='real'""")
+    check(conn, "L11.every_slip_leg_hit_matches_graded_outcome", r[1] == 0, f"{r[1]} of {r[0]}", "(3 sampled days)")
+    # engine reconciles to the certified table where the cut matches (2-pick single-cell top-2 vs certified top-2)
+    r = one(conn, """WITH e AS (SELECT avg(pm) epm FROM (SELECT game_date, avg(hit*factor) pm FROM nba_score.slip_engine_legs
+                       WHERE composition='single:steals_R' AND k=1 AND size=2 AND structure='power' AND game_date>='2025-11-01' GROUP BY 1) x),
+                     c AS (SELECT pm cpm FROM nba_score.cand_certified WHERE prop='steals' AND kind='standard' AND side='both' AND n=2 AND season='2025-26')
+                     SELECT abs(e.epm-c.cpm) FROM e, c""")
+    check(conn, "L11.engine_reconciles_to_certified_cell", r[0] is not None and r[0] < 0.01, f"|diff| {r[0]:.4f}" if r[0] is not None else "n/a", "(steals R top-2, 2025-26)")
+    r = one(conn, """SELECT count(*) FROM (SELECT game_date, composition, size, structure, max(k) mk, count(*) c FROM nba_score.slip_engine_slips GROUP BY 1,2,3,4 HAVING max(k)<>count(*)) x""")
+    check(conn, "L11.k_is_contiguous_per_day", r[0] == 0, r[0], "(slip k=1..n with no gaps)")
     conn.close()
     sys.exit(1 if FAILS else 0)
 
