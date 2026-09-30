@@ -1523,4 +1523,54 @@ A fourth run of the same 52 invariants would have passed again and proved nothin
 **2. The slip payout rule for mixed goblin/demon slips.** Every mixed-slip number so far (§23b's 4-Regular+1-goblin Power, the §22c demon stacks) was priced as `base × Π(leg factors) × 0.95`. The repo's own measured rule (fitted on 20 alt×alt quotes, **confirmed out of sample** on three pairs never quoted together: 14.25× → 13.5×, 17.25× → 15.5×, 26.0× → 22.5×) is: **`payout = product` up to 9.1×, then `9.1 × (product/9.1)^0.857`**, and real 4-pick demon-heavy slips paid 15–29% *more* than even that. The flat 0.95 haircut was my number, inside the documented "observed 2–8%" but not the documented rule ("model as the plain product, conservative"). Effect: **the 5-pick Power with a top goblin pays 13.5×, not 14.4× (−6%); a 20× demon stack pays 17.9× (−11%).** §23b's +148% and the §22c stack payouts are overstated by roughly those amounts and are re-priced in the slip phase with this rule. **Regular-only 3- and 4-pick slips are unaffected** (6× and 10× sit at/under the 9.1× knee in product terms only for 3-pick; 4-pick 10× compresses to 9.9×, negligible), so the certified ledger (§24a) stands as published.
 **Two invariants added:** `L10.power_table_matches_live_page` (fetch + compare) and `L10.slip_compression_rule_matches_oos_quotes` (reproduces the three OOS quotes within 1.6%). The list grew from 52 to 54; the count restarted.
 **Result: three consecutive clean passes on the extended list — runs `02a0b845`, `317b4bb5`, `c5be831e`, 54/54 each, no code change between them. CERTIFIED (v2).**
-**What the fourth pass teaches about the method:** internal consistency is necessary and was worth three passes, but the two things it missed were both *external facts the numbers rest on* (a payout table that PP can change; a slip-pricing rule the repo had already measured and I had not used). The certification list now carries one live-world check and one measured-rule check, and any future phase must add its own external-fact checks, not just internal recomputes. Standing rule for the slip phase: **price every slip with the compression rule, never a plain product, and never a flat haircut.**** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**What the fourth pass teaches about the method:** internal consistency is necessary and was worth three passes, but the two things it missed were both *external facts the numbers rest on* (a payout table that PP can change; a slip-pricing rule the repo had already measured and I had not used). The certification list now carries one live-world check and one measured-rule check, and any future phase must add its own external-fact checks, not just internal recomputes. Standing rule for the slip phase: **price every slip with the compression rule, never a plain product, and never a flat haircut.**
+
+---
+
+## 25. THE SLIP ENGINE — real slips, day by day, every size, structure, composition and cap (2026-09-30)
+
+`build_slip_engine.py` (workflow `nba-slip-engine.yml`). Sources: the certified map (`tier_map_legs`, deduped) + universe for team/game. Cells: the certified ledger (§24a), each at its rank and n-band; Under-only cells re-ranked within the side (as the certifier did). **App rules enforced:** 2–6 picks, no player twice, players on ≥ 2 teams (PP live page); **payout = product of base × leg factors, compressed above 9.1× (§24b rule); no flat haircut.** Same-game and same-team pairs measured per slip, not banned (§15c said leg-level covariance ≈ 0). **26 compositions** (single:<cell>, core = the 6 both-season cells, regular, best, weighted:<cell> = 2 legs of one cell + core, core+goblin extender, core+demon, demon-only, mixed_tier) × sizes 2–6 × Power/Flex × slip k = 1..10 per day by summed certified edge. **483,802 real slips over all 323 days (1,838,450 legs), every one graded on a real outcome.** Persisted: `slip_engine_slips` (legs_json, hits, payout, profit, same_game, same_team, teams, phase) and `slip_engine_legs`.
+**Processing check (owner):** on all 483,802 slips — same-player violations 0, single-team violations 0, size mismatches 0, hits ≠ leg-hit count 0, payout ≠ independent recompute of the compression rule 0. Grading unit-tested on synthetic slips (3pk Regular Power 6.0×; 5pk Power + 0.72 goblin 13.49×; 5pk Flex 4/5 2.0×; 4pk Power 9.87× — compressed from 10; 2pk Flex 1/2 0.5×; same-player and single-team rejected).
+
+### 25a. The leaderboard, one slip a day, gate = weaker season (both seasons ≥ 40 days)
+| composition | size / structure | ROI 24-25 | ROI 25-26 | 25-26 full-hit % | paid % | leg hit % |
+|---|---|---|---|---|---|---|
+| demon | 5 Flex | +134% | +74% | **0%** | 27% | 38% |
+| demon | 3 Flex | +70% | +70% | 7% | 37% | 41% |
+| weighted:steals_R | 6 Flex | +69% | +141% | 6% | 25% | 61% |
+| regular | 6 Flex | +67% | +65% | 5% | 27% | 62% |
+| weighted:assists_D1 | 6 Flex / 6 Power | +64% / +60% | +152% / +181% | 9% | 28% / 9% | 62% |
+| core+demon | 6 Flex / 5 Flex | +56% / +55% | +87% / +65% | 4% / 6% | 29% / 35% | 61% / 59% |
+| core | 6 Flex / 5 Flex / 4 Flex / 3 Power / 4 Power | +35% / +28% / — / — / — | +133% / +91% / +55% / +65% / +60% | 8 / 11 / 16 / 27 / 16% | 30 / 46 / 55 / 27 / 16% | 62–63% |
+| weighted:rebounds_R | 4 Flex / 4 Power | +34% / +33% | +69% / +85% | 19% | 56% / 19% | 64% |
+| core+goblin | 5 Power / 4 Power | — | +55% / +51% | 12% / 23% | 12% / 23% | — |
+(Full 40-row table in the run log; every row regenerable from `slip_engine_slips`.)
+
+### 25b. The numbers that decide — concentration, drawdown, phases (2025-26, cap-1)
+| composition | ROI | net units | paid % | full % | max drawdown | **% of profit from the 5 best days** | early / mid / late ROI |
+|---|---|---|---|---|---|---|---|
+| weighted:steals_R 6 Flex | +141% | 227 | 25% | 6% | 13.2 | **64%** | +248 / +143 / **−32** |
+| **core 5 Flex** | **+91%** | **146** | **46%** | 11% | **9.9** | **31%** | +111 / +101 / +7 |
+| demon 5 Flex | +74% | 117 | 27% | 0% | 12.0 | **75%** | +62 / +34 / +294 |
+| demon 3 Flex | +70% | 113 | 37% | 7% | 14.6 | 43% | +81 / +54 / +138 |
+| weighted:rebounds_R 4 Flex | +69% | 111 | 56% | 19% | 11.5 | 24% | +94 / +71 / +21 |
+| **core 3 Power** | +65% | 104 | 27% | 27% | 14.0 | **25%** | **+74 / +61 / +71** |
+| core+demon 5 Flex | +65% | 105 | 35% | 6% | 12.7 | 60% | +109 / +62 / +19 |
+| regular 6 Flex | +65% | 104 | 27% | 5% | 19.6 | **99%** | +109 / +74 / **−50** |
+| core 4 Power | +60% | 97 | 16% | 16% | 16.0 | 47% | +123 / +64 / **−53** |
+| core 4 Flex | +55% | 89 | 55% | 16% | 11.5 | 29% | +94 / +51 / +21 |
+| core+goblin 5 Power | +55% | 88 | 12% | 12% | 18.6 | 71% | +141 / +48 / −41 |
+| core+goblin 4 Power | +51% | 83 | 23% | 23% | 16.3 | 38% | +73 / +43 / +63 |
+**Reading:** (1) **Concentration separates strategies from jackpots.** regular 6-Flex's +65% is 99% five days; weighted:steals 6-Flex's +141% is 64% five days; demon 5-Flex is 75%. **core 5-pick Flex makes +91% with 31% concentration, pays on 46% of days, and has the smallest drawdown (9.9 u)** — the same ROI class as the jackpot rows, earned across the season. **core 3-pick Power is the steadiest: +65%, 25% concentration, positive in EVERY phase including late season (+71%)** where almost everything else collapses. (2) **Late season is negative for most compositions** (core 4-Power −53%, regular 6-Flex −50%, weighted:steals −32%) — §7m's finding at the slip level; the two exceptions are core 3-Power (+71%) and the demon-only slips (+138 / +294%, thin). (3) **The goblin extender at the slip level is +51–55%, not +148%** (§23b): the compression rule and the real day-by-day pool took most of it, and it is 71% concentrated at 5 picks. It survives as a 4-pick Power (+51%, 38% concentration, positive late season +63%). (4) Full-hit rates are low everywhere (5–27%); the money is in the Flex partial tiers on 5–6 picks and in the 3-pick Power's 27% full rate.
+
+### 25c. Daily cap and correlation (2025-26)
+| composition | cap 1 / 2 / 3 / 5 / 10 ROI | net units cap 1 → 3 → 10 | slips w/ same-game legs | ROI same-game / cross-game / same-team |
+|---|---|---|---|---|
+| core 5 Flex | +91 / +85 / +87 / +81 / +78% | 146 → 419 → 1,254 | 81% | **+73 / +100 / +56%** |
+| core 3 Power | +65 / +80 / **+92** / +73 / +58% | 104 → 444 → 926 | 39% | +42 / +67 / +33% |
+| weighted:rebounds_R 4 Flex | +69 / +71 / +68 / +69 / +68% | 111 → 328 → 1,095 | 63% | +59 / +83 / +55% |
+| core 4 Flex | +55 / +66 / +62 / +63 / +65% | 89 → 299 → 1,052 | 62% | +58 / +78 / +54% |
+| demon 3 Flex | +70 / +72 / +59 / +65 / +63% | 113 → 284 → 997 | 44% | +67 / +60 / +68% |
+| core+goblin 4 Power | +51 / +56 / +68 / +51 / +40% | 83 → 330 → 639 | 64% | +41 / +37 / +34% |
+**(1) The daily cap scales.** core 5-Flex holds +78…+91% from 1 to 10 slips a day (net 146 → 1,254 units); core 3-Power peaks at cap 3 (+92%); the edge is not one slip deep. **(2) Correlation costs money at the SLIP level even though leg-level covariance was ≈ 0 (§15c):** on core 5-Flex, slips with two legs from the same game make +73% vs +100% cross-game; same-team +56%. The gap shows in four of six compositions (+20–27 ROI points). A Flex slip is a *count* of hits, and two legs sharing a game move the count together on the days it matters. **Rule: one leg per game (and per team) in every slip; the engine's next pass enforces it.**
+**Qualified strategies (positive both seasons, ≤ 50% concentration, drawdown ≤ 15 u):** core 5-pick Flex, core 3-pick Power, core 4-pick Flex, weighted:rebounds_R 4-pick Flex, demon 3-pick Flex, core+goblin 4-pick Power. Jackpot-profile (real, sized as such): demon 5-pick Flex, weighted:steals/assists 6-pick, core+demon 6-pick. Next: the one-leg-per-game rule, the late-season cutoff, and then the gates and hurdles.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
