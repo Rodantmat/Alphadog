@@ -1445,4 +1445,38 @@ Robust stacks (≥75% of cuts both-positive, avg lift > +0.03 both seasons, ≥6
 | assists D2 | phase late + final top3 | 0.609 | +0.100 / +0.159 | 63 |
 | points D3 | min rising ≥ +4 + no book line | 0.634 | +0.110 / +0.144 | 299 |
 **Every robust stack is a demon cell.** The Regular gold cells (base 0.58–0.66) gain only +0.02–0.03 from rank-over-rank and do not stack further; the demon cells (base 0.45–0.55) lift +0.10–0.17 to 0.60–0.72 in both seasons at every cut. Two mechanisms show in the stacks: (1) **trailing-COLD on demons** (t5 ≤ 0.33 on rebounds D1, assists D1) — the §20 mean-reversion working for us: a player cold on a demon line is priced down and reverts; (2) **rank-over-rank** on demons (top-3 under two ranks) — the confidence-adjusted ranks agreeing on a demon leg. The market-edge sweet band (0.05–0.25) works on demons (threes D1, rebounds D1, assists D2) where it was flat on Regular (§21a) — on a demon the book gap is not the model's overconfidence, it is the line.
-**Ledger change:** the demon family moves from "jackpot, inconstant" to **"conditional gold"** — rebounds D1, assists D1, threes D1 and rebounds D3 are gold WITH their stack (0.69–0.72, both seasons), not without. The Regular gold cells keep their §19p status with a rank-over-rank tie-break (+0.02–0.03). These stacks are one-season-confirmed on 130–870 legs each; the live season is their test.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Ledger change:** the demon family moves from "jackpot, inconstant" to **"conditional gold"** — rebounds D1, assists D1, threes D1 and rebounds D3 are gold WITH their stack (0.69–0.72, both seasons), not without. The Regular gold cells keep their §19p status with a rank-over-rank tie-break (+0.02–0.03). These stacks are one-season-confirmed on 130–870 legs each; the live season is their test.
+
+---
+
+## 23. CERTIFICATION and the GOBLINS re-analyzed (2026-09-30)
+
+### 23a. Certification — recompute from the raw sources, no intermediate table
+Every number since §19 came from a chain of derived tables (tier_map_legs → cand_leg_features → cand_signal_matrix). Owner: certify across real data, real legs, real board snapshots. Built `certify_candidates.py` (workflow `nba-certify-candidates.yml`): for each candidate configuration it joins, per day, `board_snapshots` (PP, window, pre-tip) → `prop_universe` (real outcome) → `pp_leg_price` (current per-line price) → `nba_score.final_hp` (the three ranks), ranks the day's legs, takes the top-n, and reports days / hit / multiplier / p·m / % days above break-even / profit per $100 3-pick Power, per season. Output: `nba_score.cand_certified`.
+**First certified cell — steals R Under, score rank, top 1, 2025-26 from Nov:** raw-board recompute = **149 days, hit 0.691, m 1.000, 69% of days above break-even, +$88 per $100 slip.** The matrix had reported 73% / +$126 on 128 days. **Discrepancy explained:** the candidate-cell table dropped days where the cell's rank window fell short, shrinking the day-set (128 vs 149) and lifting the average; on a top-1 cell "days above BE" is the hit rate itself. The certified number is lower and is the one that stands. **Rule: the certified table is the source of every quoted number from here; the matrix is for finding candidates, not for quoting them.** (Full certified table for all 24 configs in `cand_certified` when the run lands.)
+
+### 23b. GOBLINS — re-analyzed with the full spectrum (owner was right)
+Every goblin test to date asked whether p·m clears 0.55 — the **3-pick Power** break-even. A goblin never clears that, because PP sets its multiplier so that *implied probability × multiplier ≈ 0.50* by construction. That is the wrong test for a 0.80-hit leg. The right questions are (1) does our realized hit beat PP's **own implied probability**, and (2) in which **slip structure** does that edge get paid.
+**(1) vs PP implied (`pp_leg_price.implied_p`), 2025-26 from Nov, final-HP rank:** every one of 88 goblin cells is positive at the top of the rank, most by +0.04 to +0.10:
+| cell | cut | legs | realized | PP implied | edge | mult |
+|---|---|---|---|---|---|---|
+| pts_ast G2 | top1 | 150 | **0.840** | 0.735 | **+0.105** | 0.664 |
+| points G1 | top2-3 | 300 | 0.730 | 0.630 | +0.100 | 0.775 |
+| pra G2 | top1 | 150 | 0.793 | 0.695 | +0.098 | 0.705 |
+| pts_reb G2 | top2-3 | 300 | 0.803 | 0.727 | +0.076 | 0.671 |
+| points G2 | top1 | 150 | 0.800 | 0.728 | +0.072 | 0.672 |
+| pra G3 / pts_ast G3 / points G3 | top1-3 | 150–300 | 0.80–0.84 | 0.74–0.78 | +0.06–0.07 | 0.63–0.66 |
+| reb_ast G1 / points G1 | top4-10 | 1,050 | 0.68–0.69 | 0.62–0.63 | +0.056–0.058 | 0.77–0.78 |
+The model's top goblins beat PP's price on every cell — a real, large, board-wide edge that the Power test could not see.
+**(2) Where it gets paid — real slips, 150 real days, real prices.** Four best Regular legs (score rank; steals/turnovers/stocks/points/pts_ast) + the top goblin (final-HP rank; points/pra/pts_ast/pts_reb G1–G2), seven structures:
+| slip | ROI | days paid |
+|---|---|---|
+| A: 5 Regular, 5-pick Flex | +103% | 39% |
+| **B: 4 Regular + 1 goblin, 5-pick Flex** | +65% | **47%** |
+| C: 3 Regular + 2 goblins, 5-pick Flex | +23% | 24% |
+| **D: 4 Regular + 1 goblin, 5-pick POWER** | **+148%** | 20% |
+| E: 4 Regular, 4-pick Power (no goblin) | +109% | 22% |
+| F: 3 Regular + 1 goblin, 4-pick Power | +62% | 26% |
+| G: 3 Regular, 3-pick Power | +67% | 29% |
+**The goblin's role is specific and real: ONE top goblin as the FIFTH leg of a 4-Regular Power** turns +109% (4-pick) into **+148%** (5-pick) at the same paying-day rate (22% → 20%) — its 0.80 hit costs almost no slip survival, and 20× instead of 10× more than pays its ~0.72× factor. In Flex, the same goblin raises paying days from 39% to 47% at lower ROI (the frustration trade). **Two goblins hurt every structure** (the factor product ~0.5 crushes payout). A goblin never replaces a Regular; it extends a Regular slip by one leg. **Goblins re-enter the ledger as EXTENDERS:** pts_ast G2, points G1, pra G2, pts_reb G2, points G2 at top-1/top-3, one per slip, fifth leg of a Power (or fifth leg of a Flex when paying-days matter more than ROI).
+**What was lost before, and why:** the p·m ≥ 0.55 test priced the goblin as if it had to carry a 3-pick alone. Its edge is +0.05–0.10 over PP's implied, which only converts to money as the extra leg of a slip that is already winning on Regular legs.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
