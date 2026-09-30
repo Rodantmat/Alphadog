@@ -245,7 +245,7 @@ def build_day_slips(pool, comp, size, structure, cap, cmap):
     slips = []
     for combo in itertools.combinations(legs, need):
         s = list(combo) + ([extender] if extender else [])
-        if not valid(s):
+        if not valid(s, cmap):
             continue
         slips.append((sum(l['edge'] for l in s), s))
     slips.sort(key=lambda x: -x[0])
