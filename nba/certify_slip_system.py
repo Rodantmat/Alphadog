@@ -77,13 +77,13 @@ def main():
     # ---------------- L1 outcome ----------------
     print("L1 outcome", flush=True)
     r = one(conn, """SELECT count(*) FILTER (WHERE kind='standard' AND side='Under'), count(*) FILTER (WHERE kind IN ('goblin','demon') AND side='Under'),
-                            count(*) FILTER (WHERE hit IS NOT NULL AND hit NOT IN (0,1))
+                            (SELECT data_type FROM information_schema.columns WHERE table_schema='nba_market' AND table_name='prop_universe' AND column_name='hit')
                      FROM nba_market.prop_universe WHERE line_source='real'""")
     check(conn, "L1.regular_has_unders", r[0] > 100_000, r[0])
     check(conn, "L1.goblin_demon_over_only_in_backdata", r[1] == 0, r[1], "(Under goblins/demons would need their own pricing)")
-    check(conn, "L1.hit_is_binary", r[2] == 0, r[2])
-    r = one(conn, """SELECT count(*) FROM (SELECT game_date, player, prop, line FROM nba_market.prop_universe WHERE line_source='real' AND kind='standard'
-                     GROUP BY 1,2,3,4 HAVING count(*)=2 AND sum(hit)<>1) x""")
+    check(conn, "L1.hit_is_boolean_type", r[2] == 'boolean', r[2])
+    r = one(conn, """SELECT count(*) FROM (SELECT game_date, player, prop, line FROM nba_market.prop_universe WHERE line_source='real' AND kind='standard' AND hit IS NOT NULL
+                     GROUP BY 1,2,3,4 HAVING count(*)=2 AND sum(hit::int)<>1) x""")
     check(conn, "L1.regular_both_sides_exactly_one_hits", r[0] == 0, r[0], "(pushes/voids should be absent from graded rows)")
 
     # ---------------- L2 price ----------------
