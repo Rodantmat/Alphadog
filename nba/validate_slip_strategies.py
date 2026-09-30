@@ -67,10 +67,12 @@ def season_stats(days, season):
 
 
 def select_on_s1(strat):
+    """V1: pure 2024-25 ranking by ROI at cap with >= 40 days. Concentration is reported, NOT used to select (MLB used
+    best-day-share as a post-hoc gate check; using it as a selector on a jackpot-heavy season disqualifies almost everything)."""
     ranked = []
     for key, days in strat.items():
         s = season_stats(days, S1)
-        if not s or s['days'] < 40 or s['roi'] <= 0 or s['conc'] > 0.5:
+        if not s or s['days'] < 40 or s['roi'] <= 0:
             continue
         ranked.append((s['roi'], key))
     ranked.sort(reverse=True)
