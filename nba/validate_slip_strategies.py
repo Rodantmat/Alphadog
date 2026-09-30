@@ -190,12 +190,13 @@ def main():
     conn.commit()
 
     print(f"\n== V1+V2+V5+V6: selected on 2024-25, scored on 2025-26 (OOS). CI = 10k day-blocked bootstrap ==", flush=True)
-    print(f"  {'strategy':<38} {'cap':>3} {'S1 ROI':>7} {'OOS ROI':>8} {'CI lo':>7} {'CI hi':>7} {'noTM ROI':>9} {'top cell (share)':<28} V2 V6", flush=True)
+    print(f"  {'strategy':<38} {'cap':>3} {'S1 ROI':>7} {'OOS ROI':>8} {'CI lo':>7} {'CI hi':>7} {'noTM ROI':>9} {'top cell (share)':<28} V2 V6  V4 bins(low->high edge) inv", flush=True)
     passed = 0
-    for key, s1, s2, lo, med, hi, nt, nts, dec, v2, v6 in sorted(results, key=lambda r: -r[3]):
+    for key, s1, s2, lo, med, hi, nt, nts, dec, v2, v6, mono in sorted(results, key=lambda r: -r[3]):
         tc = f"{dec['top_cell']} ({dec['top_share']:.0%})" if dec else "-"
+        mb = f"{mono['bin_roi']} {mono['inversions']}" if mono else "-"
         print(f"  {key[0]+' '+str(key[1])+' '+key[2]:<38} {cap_for(key[2], key[1]):>3} {s1['roi']:>+7.0%} {s2['roi']:>+8.0%} {lo:>+7.0%} {hi:>+7.0%} "
-              f"{(nt if nt is not None else 0):>+9.0%} {tc:<28} {'Y' if v2 else 'n'}  {'Y' if v6 else 'n'}", flush=True)
+              f"{(nt if nt is not None else 0):>+9.0%} {tc:<28} {'Y' if v2 else 'n'}  {'Y' if v6 else 'n'}  {mb}", flush=True)
         passed += 1 if (v2 and v6) else 0
     print(f"\n  REAL survivors (OOS CI lower bound > 0 AND positive with teammates banned): {passed} of {len(results)}", flush=True)
 
