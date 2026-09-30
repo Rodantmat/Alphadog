@@ -294,18 +294,18 @@ def main():
                      FROM nba_score.slip_engine_slips e JOIN b ON b.season=e.season""")
     check(conn, "L11.final7_flag_matches_season_end", r[0] == 0 and r[1] == 0, f"{r[0]} / {r[1]} mismatches")
     # every leg in every slip traces to a REAL PP window board row (raw board, not the map) with a graded outcome
-    r = one(conn, """WITH lg AS (SELECT DISTINCT game_date, player, prop, side, line FROM nba_score.slip_engine_legs WHERE game_date IN ('2025-01-15','2026-01-15','2026-03-20')),
-        bd AS (SELECT DISTINCT game_date, nba_ref.norm_name(player) pn, side, line,
-                 replace(replace(market_key,'_alternate',''),'player_','') mk FROM nba_market.board_snapshots
-               WHERE bookmaker='prizepicks' AND snapshot_label='window' AND snapshot_ts<commence_time AND game_date IN ('2025-01-15','2026-01-15','2026-03-20'))
-        SELECT count(*), count(*) FILTER (WHERE bd.pn IS NULL)
-        FROM lg LEFT JOIN bd ON bd.game_date=lg.game_date AND bd.pn=nba_ref.norm_name(lg.player) AND bd.side=lg.side AND bd.line=lg.line
+    r = one(conn, """SELECT count(*), count(*) FILTER (WHERE bd.pn IS NULL)
+        FROM (SELECT DISTINCT game_date, player, prop, side, line::numeric line FROM nba_score.slip_engine_legs WHERE game_date IN ('2025-01-15','2026-01-15','2026-03-20')) lg
+        LEFT JOIN (SELECT DISTINCT game_date, nba_ref.norm_name(player) pn, side, line, replace(replace(market_key,'_alternate',''),'player_','') mk
+                   FROM nba_market.board_snapshots WHERE bookmaker='prizepicks' AND snapshot_label='window' AND snapshot_ts<commence_time
+                     AND game_date IN ('2025-01-15','2026-01-15','2026-03-20')) bd
+          ON bd.game_date=lg.game_date AND bd.pn=nba_ref.norm_name(lg.player) AND bd.side=lg.side AND bd.line=lg.line
           AND bd.mk = CASE lg.prop WHEN 'stocks' THEN 'blocks_steals' WHEN 'threes_made' THEN 'threes' WHEN 'pra' THEN 'points_rebounds_assists'
                         WHEN 'pts_reb' THEN 'points_rebounds' WHEN 'pts_ast' THEN 'points_assists' WHEN 'reb_ast' THEN 'rebounds_assists' ELSE lg.prop END""")
     check(conn, "L11.every_slip_leg_on_raw_board", r[1] == 0, f"{r[1]} of {r[0]} legs not on the PP window board", "(3 sampled days)")
-    r = one(conn, """WITH lg AS (SELECT DISTINCT game_date, player, prop, side, line, hit FROM nba_score.slip_engine_legs WHERE game_date IN ('2025-01-15','2026-01-15','2026-03-20'))
-        SELECT count(*), count(*) FILTER (WHERE pu.hit IS NULL OR pu.hit::int<>lg.hit)
-        FROM lg LEFT JOIN nba_market.prop_universe pu ON pu.game_date=lg.game_date AND pu.player=lg.player AND pu.prop=lg.prop AND pu.side=lg.side AND pu.line=lg.line AND pu.line_source='real'""")
+    r = one(conn, """SELECT count(*), count(*) FILTER (WHERE pu.player IS NULL OR pu.hit::int<>lg.hit)
+        FROM (SELECT DISTINCT game_date, player, prop, side, line::numeric line, hit FROM nba_score.slip_engine_legs WHERE game_date IN ('2025-01-15','2026-01-15','2026-03-20')) lg
+        LEFT JOIN nba_market.prop_universe pu ON pu.game_date=lg.game_date AND pu.player=lg.player AND pu.prop=lg.prop AND pu.side=lg.side AND pu.line=lg.line AND pu.line_source='real'""")
     check(conn, "L11.every_slip_leg_hit_matches_graded_outcome", r[1] == 0, f"{r[1]} of {r[0]}", "(3 sampled days)")
     # engine reconciles to the certified table where the cut matches (2-pick single-cell top-2 vs certified top-2)
     r = one(conn, """WITH e AS (SELECT avg(pm) epm FROM (SELECT game_date, avg(hit*factor) pm FROM nba_score.slip_engine_legs
