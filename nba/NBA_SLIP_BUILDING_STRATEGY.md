@@ -1074,4 +1074,48 @@ Top-n hit rate × the REAL mean factor of those same legs = single-leg p·m. 3-p
 | points UA-Gob T3 | 0.807 | 0.635 | 0.512 |
 | every other goblin / demon cell | — | — | 0.41–0.55 |
 **Finding: PrizePicks prices every goblin and demon tier so that hit × multiplier lands near 0.50 regardless of tier.** Gob T3 hits 0.81 and pays 0.635 → 0.512; Dem T3 hits 0.28 and pays 1.98 → 0.542. The high goblin hit rates are real and already charged for. **The only cells whose p·m clears the 3-pick break-even (0.55) are the Regular cells, led by the defensive props and points** — where m = 1.0 and the model's ordering is not offset by a price — plus a handful of demon cells that clear on a jackpot profile (assists Dem T2/T3, points Dem T1) and one goblin (pra T3 at 0.549, marginal). This is the same defensive+points family the earlier work reached, now derived by the owner's method from the map with the multiplier check, and it settles the goblin/demon question with the tier map rather than one flat test.
-**Survivors (final HP rank, PP, 90-day):** steals R (top 3–5), points R (top ≤7), stocks R (top 3–5), turnovers R, pts_reb R, rebounds R, reb_ast R; jackpot-profile: assists Dem T2/T3, points Dem T1. **Next: the same map with baseline HP as the rank, then with final score; then the survivors' intersection is the candidate set.**** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Survivors (final HP rank, PP, 90-day):** steals R (top 3–5), points R (top ≤7), stocks R (top 3–5), turnovers R, pts_reb R, rebounds R, reb_ast R; jackpot-profile: assists Dem T2/T3, points Dem T1. **Next: the same map with baseline HP as the rank, then with final score; then the survivors' intersection is the candidate set.**
+
+### 19e. AUDIT of §19b–d (owner: double-check everything) — two defects found and fixed
+1. **The §19 map was NOT PrizePicks-scoped.** It filtered `line_source='real'`, which includes every book's real lines: 389,437 mapped legs vs 363,725 legs on the PP window board for the same 83 days (107%). §17 had already shown ~14% of those are never on PP's board. The cells were contaminated with non-PP legs.
+2. **The PP join missed the goblin/demon ladders.** PP posts alternates as `player_points_alternate` etc. (43k points-alternate legs, lines 0.5–49.5); the join stripped only `player_`, so alternates never matched → only 85,026 of 363,725 board legs (23%) joined, and ALL of them were `standard`. **Fix:** map `*_alternate` → base prop. Result: **88% of the full board joins (standard 86.7%, alternates 88.4%, kinds goblin/demon/standard), 319,948 usable legs in the 90 days.** The remaining ~12% are board legs with no graded outcome/model (void or unscored) — excluded, never guessed.
+So §19b–d were built on a wrong pool. Everything below supersedes them.
+
+### 19f. The persisted map — `nba_score.tier_map_legs` (rank_key = 'final_hp')
+One row per real PP window-board leg (standard + alternates), both seasons, tier by anchor-rank (R / G1–G3 / D1–D3), factor, final-HP score, outcome, and the leg's rank inside its (day, prop, tier) cell plus the cell size. **911,368 legs · 323 days · 12 props · 374/410 players.** By season: 2024-25 = 266,348 (R 139k · G 50k · D 77k); 2025-26 = 645,020 (R 173k · G 195k · D 278k). This is the leg-by-leg object the owner asked for; baseline and final-score maps are written to the same table under their own `rank_key`, so the survivor intersection is a join.
+**Ladder expansion is a fact of the board:** PP roughly quadrupled its goblin/demon ladders between seasons. Deep tiers barely existed in 2024-25 (G3: 2–23 days; D3: 8–93 days) vs 158–161 days in 2025-26. **2024-25 deep-tier numbers are near-empty cells, not "a weaker season."** Only R and T1 tiers have full two-season history.
+
+### 19g. The two-season cells (top-5 hit and p·m per season, ≥100 days total) — with the near-break-even survivors kept
+| cell | 2024-25 hit / p·m (days) | 2025-26 hit / p·m (days) | status |
+|---|---|---|---|
+| steals R | 0.537 / 0.537 (148) | 0.614 / **0.614** (160) | survive |
+| turnovers R | 0.545 / 0.545 (157) | 0.613 / **0.613** (160) | survive |
+| points R | 0.574 / 0.574 (162) | 0.604 / **0.604** (161) | survive |
+| stocks R | 0.565 / 0.565 (158) | 0.601 / **0.601** (160) | survive |
+| pts_ast R | 0.564 (162) | 0.593 (161) | survive |
+| pts_reb R | 0.542 (162) | 0.590 (161) | survive |
+| pra R | 0.536 (162) | 0.588 (161) | survive |
+| assists R | 0.568 (162) | 0.524 (161) | near — keep for signals |
+| rebounds R | 0.567 (162) | 0.564 (161) | survive (flat) |
+| reb_ast R | 0.547 (162) | 0.566 (161) | near — keep |
+| blocks R | 0.522 (136) | 0.560 (159) | near — keep |
+| threes R | 0.538 (160) | 0.529 (161) | near — keep |
+| rebounds D2 | 0.214 / 0.476 (141) | 0.316 / **0.628** (161) | jackpot-survive (2025-26 only) |
+| rebounds D3 | 0.192 / 0.552 (93) | 0.188 / 0.604 (161) | jackpot-survive |
+| assists D1 / D2 / D3 | 0.581 / 0.507 / 0.441 | 0.539 / 0.598 / 0.579 | jackpot-near/survive |
+| threes D1 / D2 | 0.549 / 0.566 | 0.564 / 0.554 | jackpot-near |
+| points D1 / D2 | 0.509 / 0.543 | 0.539 / 0.512 | near — keep |
+| points G1 / pra G1 / pra G2 | 0.505 / 0.501 / 0.549 | 0.532 / 0.538 / 0.531 | near — keep |
+| every other goblin cell | 0.46–0.52 | 0.48–0.53 | near/below — keep the ≥0.50 ones for signals |
+Break-even reference: 3pk Power needs p·m ≈ 0.55/leg; the owner's rule keeps anything **near** it. **Full-board conclusion unchanged from §19d in direction, softened in level:** PP prices the goblin/demon tiers to p·m ≈ 0.50 (G3 hits 0.79–0.80 and pays 0.61–0.66 → 0.49–0.52); the cells that clear are Regular (defensive props and points/points-combos lead) plus a few demon cells that clear on a jackpot profile. Regular top-5 hit ran 0.54–0.57 in 2024-25 and 0.59–0.61 in 2025-26.
+
+### 19h. DEPTH OF DATES — what to trust (the owner's third question)
+Month-by-month, top-5 Regular hit rate (final HP rank), full board:
+| month | days | defensive R | points R | core-combos R | all R top-10 |
+|---|---|---|---|---|---|
+| 2024-10 | 10 | 0.476 | 0.520 | 0.567 | 0.569 |
+| 2024-11 … 2025-04 | 152 | 0.512–0.597 | 0.535–0.607 | 0.508–0.590 | 0.524–0.551 |
+| 2025-10 | 11 | 0.530 | 0.491 | 0.512 | 0.525 |
+| **2025-11 … 2026-04** | 150 | **0.581–0.611** | **0.573–0.650** | 0.512–0.601 | 0.522–0.587 |
+**Findings:** (1) **The step is BETWEEN the seasons, not within them.** 2025-26 is not a hot start that fades — from November on the defensive top-5 sits 0.58–0.61 every month, points 0.57–0.65. 2024-25 wanders 0.48–0.60. (2) **Both Octobers are weak** (0.48–0.53) — the season-opening weeks, thin board and thin calibration, in both years. Not a signal; do not size on them. (3) **Why the seasons differ: the RANKER changed, not the market.** The `model_p` that orders these legs is the final HP, and the final engine was rebuilt in summer 2026 with two seasons of history behind it; the 2024-25 legs were ranked by a model trained on half the data (and half the board, §19f). That is why "was 2024-25 a bad season?" kept giving contradictory answers — it was a less-trained ranker on a thinner ladder. (4) **What to trust:** 2025-26 from November on is the representative regime for the map's LEVEL (the model and the board as they now exist); 2024-25 is the floor / stress case; October of either year is the warm-up. For the signals phase, use both seasons for direction and 2025-26 (ex-October) for level.
+**Next:** baseline-HP map and final-score map into the same table; survivor intersection across the three ranks; then signals on the near-break-even keepers.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
