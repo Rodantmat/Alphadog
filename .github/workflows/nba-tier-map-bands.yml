@@ -48,4 +48,5 @@ jobs:
           TM_RANK: ${{ github.event.inputs.rank }}
           TM_NMAX: ${{ github.event.inputs.nmax }}
           TM_PCTMAX: ${{ github.event.inputs.pctmax }}
+          TM_REBUILD: ${{ github.event.inputs.rebuild }}
         run: python -u nba/build_tier_map_bands.py
