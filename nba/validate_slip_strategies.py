@@ -202,18 +202,22 @@ def main():
         passed += 1 if (v2 and v6) else 0
     print(f"\n  REAL survivors (OOS CI lower bound > 0 AND positive with teammates banned): {passed} of {len(results)}", flush=True)
 
-    # ---- V3 empirical null: shuffle HITS across the day's legs (outcomes carry no information), regrade every slip, re-run V1+V2
-    # NOTE: a label-permutation null (shuffling PROFITS across strategies within a day) is WRONG here - it keeps every day's
-    # real outcomes and merely relabels them, so it preserves the board's real edge (+46% avg across all strategies in 25-26)
-    # and tests only "does selection beat the average strategy". The question is "is there an edge at all".
-    print(f"\n== V3 empirical null: {NULLS} within-day HIT shuffles with full regrade ==", flush=True)
+    # ---- V3 empirical null: each slip leg's hit is a Bernoulli draw at its TIER's WHOLE-BOARD rate, then full regrade.
+    # Two earlier nulls were wrong in the same way - they kept selection inside the null: (a) shuffling PROFITS across
+    # strategies within a day preserves every day's real outcomes (board avg +46%); (b) shuffling HITS among the legs that
+    # appear in slips preserves the SELECTED legs' 0.575 hit rate. The null must be "selection carries no information":
+    # a Regular leg hits 0.500 (both sides posted), a G1 0.616, a D1 0.333 - the whole-board rates from the certified map.
+    print(f"\n== V3 empirical null: {NULLS} draws at whole-board tier rates, full regrade ==", flush=True)
+    tier_rate = {r[0]: float(r[1]) for r in conn.execute("""SELECT tier, avg(hit) FROM nba_score.tier_map_legs
+        WHERE rank_key='final_hp' AND tier IN ('R','G1','G2','G3','D1','D2','D3') GROUP BY tier""").fetchall()}
+    print(f"    whole-board tier rates: {{{', '.join(f'{k}: {v:.3f}' for k, v in sorted(tier_rate.items()))}}}", flush=True)
     POWER = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
     FLEX = {(2, 2): 2.0, (2, 1): 0.5, (3, 3): 3.0, (3, 2): 1.0, (4, 4): 6.0, (4, 3): 1.5, (5, 5): 10.0, (5, 4): 2.0, (5, 3): 0.4, (6, 6): 25.0, (6, 5): 2.0, (6, 4): 0.4}
     def compress(p):
         return p if p <= 9.1 else 9.1 * (p / 9.1) ** 0.857
-    # per (season, day): the distinct real legs on the board that day (player, prop, side, line) -> hit
+    # per (season, day): distinct legs -> tier ; per (key, day): slip definitions
     day_legs = defaultdict(dict)
-    slip_defs = defaultdict(list)   # (key, (season, day)) -> list of (structure, size, [leg_ids], [factors])
+    slip_defs = defaultdict(list)
     for key, days in strat.items():
         for sd, v in days.items():
             for profit, hits, st, legs in v:
@@ -221,7 +225,7 @@ def main():
                 ids, fs = [], []
                 for l in legs_l:
                     lid = (l['player'], l['prop'], l['side'], float(l['line']))
-                    day_legs[sd][lid] = int(l['hit'])
+                    day_legs[sd][lid] = l.get('tier', 'R')
                     ids.append(lid); fs.append(float(l['factor']))
                 slip_defs[(key, sd)].append((key[2], key[1], ids, fs))
     def regrade(structure, size, ids, fs, hitmap):
@@ -233,18 +237,14 @@ def main():
         return (compress(base * fp) if base > 0 else 0.0) - 1.0
     null_counts = []
     for it in range(NULLS):
-        shuffled = {}
-        for sd, legs in day_legs.items():
-            ids = list(legs.keys()); hs = [legs[i] for i in ids]
-            rng.shuffle(hs)
-            shuffled[sd] = dict(zip(ids, hs))
+        drawn = {sd: {lid: (1 if rng.random() < tier_rate.get(t, 0.5) else 0) for lid, t in legs.items()} for sd, legs in day_legs.items()}
         def sstats(key, season):
             items = []
             for (s, d), v in strat[key].items():
                 if s != season:
                     continue
                 defs = slip_defs[(key, (s, d))]
-                net = sum(regrade(st_, sz, ids, fs, shuffled[(s, d)]) for st_, sz, ids, fs in defs)
+                net = sum(regrade(st_, sz, ids, fs, drawn[(s, d)]) for st_, sz, ids, fs in defs)
                 items.append((net, len(defs)))
             if not items:
                 return None
