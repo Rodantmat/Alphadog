@@ -131,6 +131,8 @@ def pair_corrs(slip, cmap):
 
 def phase_of(season, d, bounds):
     s0, s1 = bounds[season]
+    if (s1 - d).days <= 7:
+        return 'final7'      # measured: last week +9% / -40%; days 8-21 are fine. Built and persisted, excluded from qualification.
     if (d - s0).days <= 30:
         return 'early'
     if (s1 - d).days <= 21:
