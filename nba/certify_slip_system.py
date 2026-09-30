@@ -147,17 +147,22 @@ def main():
     check(conn, "L5.map_goblin_price_below_1", r[1] == 0, r[1])
     check(conn, "L5.map_tier0_residue_bounded", r[2] < 100, r[2])
     check(conn, "L5.map_demons_over_only", r[3] == 0, r[3])
-    # reconciliation: joinable raw legs vs map
-    r = one(conn, """WITH pr AS (
+    # reconciliation: joinable raw legs vs map (precomputed keys; norm_name() inside a join defeats every index)
+    conn.execute("""CREATE TEMP TABLE _c_pr AS
         SELECT p.game_date, p.nm, p.side, p.line, p.kind,
           CASE replace(p.base_market,'player_','') WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' THEN 'pra'
             WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast' WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market,'player_','') END prop
-        FROM nba_market.pp_leg_price p WHERE p.snapshot_label='window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false) AND p.game_date IN ('2025-01-15','2026-01-15','2026-03-20'))
-        SELECT count(DISTINCT (pr.game_date, pr.nm, pr.prop, pr.side, pr.line)),
+        FROM nba_market.pp_leg_price p WHERE p.snapshot_label='window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)
+          AND p.game_date IN ('2025-01-15','2026-01-15','2026-03-20')""")
+    conn.execute("""CREATE TEMP TABLE _c_pu AS
+        SELECT game_date, nba_ref.norm_name(player) pn, player_id, prop, side, line FROM nba_market.prop_universe
+        WHERE line_source='real' AND hit IS NOT NULL AND game_date IN ('2025-01-15','2026-01-15','2026-03-20')""")
+    conn.execute("CREATE INDEX ON _c_pu (game_date, pn, prop, side, line)")
+    r = one(conn, """SELECT count(DISTINCT (pr.game_date, pr.nm, pr.prop, pr.side, pr.line)),
                (SELECT count(*) FROM nba_score.tier_map_legs WHERE rank_key='final_hp' AND game_date IN ('2025-01-15','2026-01-15','2026-03-20'))
-        FROM pr JOIN nba_market.prop_universe pu ON pu.game_date=pr.game_date AND nba_ref.norm_name(pu.player)=pr.nm AND pu.prop=pr.prop AND pu.side=pr.side AND pu.line=pr.line AND pu.line_source='real'
+        FROM _c_pr pr JOIN _c_pu pu ON pu.game_date=pr.game_date AND pu.pn=pr.nm AND pu.prop=pr.prop AND pu.side=pr.side AND pu.line=pr.line
         JOIN nba_score.final_hp f ON f.game_date=pu.game_date AND f.player_id=pu.player_id AND f.prop=pu.prop AND f.side=pu.side AND f.line=pu.line
-        WHERE pu.hit IS NOT NULL AND f.final_hp IS NOT NULL AND f.baseline_hp IS NOT NULL AND f.score IS NOT NULL""")
+        WHERE f.final_hp IS NOT NULL AND f.baseline_hp IS NOT NULL AND f.score IS NOT NULL""")
     check(conn, "L5.map_reconciles_to_raw_join", abs(r[0] - r[1]) <= 3, f"joinable {r[0]} vs map {r[1]}", "(3 sampled days; tolerance = documented duplicate keys)")
 
     # ---------------- L6 bands ----------------
