@@ -1261,4 +1261,46 @@ Break-even per leg from its current price (p_be = 0.55/m, 3-pick Power); margin 
 | pts_reb D1 | +0.151 / −0.007 | +0.151 / **+0.028** | +0.153 / −0.008 | 2025-26 jackpot (+0.15 at n=10); both seasons only under baseline |
 | rebounds D3 · assists D2/D3 · pts_ast D1/D3 · reb_ast D1 · pra D2 · pra G2 · pts_ast G2 · points G1/G2 | above 2025-26 only, 0–1 votes | | | unproven |
 **What the three ranks say:** (1) **They pick nearly the same legs.** On every gold cell the margin, band depth and constancy agree within thousandths across the three ranks (steals 74/75/74% of days) — final HP and baseline HP are ~0.98-correlated at the top of the rank, and the score adds little to the ordering. (2) **Final score is the sharpest at n=1 on the Regular cells** (steals +0.155 vs +0.104; pts_reb +0.103 vs +0.090) — the confidence adjustment concentrates the very top. (3) **Baseline HP is the sharpest on the points-combos** (pts_ast and pra +0.103 vs +0.077) and holds the deepest band on rebounds R (n=13). (4) **Final score is the weakest on demons and goblins** — it turns assists D2, pra G2, pts_ast D2/D3 and reb_ast D1 negative; its confidence term pulls the low-probability tail down, which is right for pricing but wrong for finding jackpot legs. (5) pts_reb R is the one Regular cell negative in 2024-25 under all three (−0.003…−0.010) — the ledger's near-miss.
-**THE INTERSECTION — unanimous GOLD under all three ranks, both seasons, ≥60% of days: 8 cells.** **steals R · stocks R · turnovers R · points R · pts_ast R · blocks R · rebounds R · (pra R under two of three).** Plus the jackpot family that clears both seasons under all three (threes D1, points D2, assists D1) and the two-vote cells (rebounds D1, points D3, pts_ast D2). pts_reb R and reb_ast R are one gate short each (24-25 sign; constancy). **This is the candidate set for the signals phase.** Rank choice for the signals phase: final score for the Regular top-1/2 legs, baseline for the combos and deep bands, never final score for demons/goblins.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**THE INTERSECTION — unanimous GOLD under all three ranks, both seasons, ≥60% of days: 8 cells.** **steals R · stocks R · turnovers R · points R · pts_ast R · blocks R · rebounds R · (pra R under two of three).** Plus the jackpot family that clears both seasons under all three (threes D1, points D2, assists D1) and the two-vote cells (rebounds D1, points D3, pts_ast D2). pts_reb R and reb_ast R are one gate short each (24-25 sign; constancy). **This is the candidate set for the signals phase.** Rank choice for the signals phase: final score for the Regular top-1/2 legs, baseline for the combos and deep bands, never final score for demons/goblins.
+
+---
+
+## 20. PLAYER HIT RATE and HIGH-HIT ROTATION (2026-09-30) — on the corrected map, per side, with appearances
+
+### 20a. A data fact that changes the method: Regular lines carry BOTH sides
+122,335 Regular lines in the map have both Over and Under (PP posts both; exactly one hits). So any player hit rate computed across sides is **0.500 by construction** on Regular — the first pass showed every Regular band at exactly 0.500 and no player above 0.60. **The player trail must be keyed (player, prop, tier, side).** Goblins and demons are Over-only, so their rates were already real. Rebuilt `nba_score.tier_map_player_trail` per side with appearance counts at 7 / 30 / 60 days and all-time (strictly prior legs).
+
+### 20b. Player hit rate — bands × windows × minimum appearances (2025-26 from Nov, 828k legs, 470 players)
+Next-leg outcome for a player whose PRIOR rate on (prop, tier, side) sits in a band:
+| window | min apps | ≥0.85 → next (R) | 0.75–0.85 (R) | 0.65–0.75 (R) | 0.55–0.65 (R) | <0.55 (R) |
+|---|---|---|---|---|---|---|
+| 30-day | 5 | 0.475 (1,588) | 0.516 (5,709) | 0.502 | 0.500 | 0.499 |
+| 30-day | 10 | 0.417 (230) | 0.519 (1,724) | 0.492 | 0.501 | 0.500 |
+| 60-day | 5 / 10 / 20 | 0.490 / 0.514 / — | 0.509 / 0.497 / 0.453 | 0.498 / 0.499 / 0.489 | 0.505 / 0.504 / 0.508 | 0.498 / 0.499 / 0.499 |
+| all-time | 5 / 10 / 20 | 0.545 (514) / 0.563 (87) / 0.250 (4) | 0.521 / 0.524 / 0.542 (166) | 0.504 / 0.513 / 0.509 | 0.503 / 0.503 / 0.499 | 0.498 / 0.498 / 0.500 |
+Goblins: every band, every window, every min-apps → margin over break-even **−0.062 … −0.081**, flat (a player hitting ≥0.85 of his goblins is priced exactly like one hitting 0.60). Demons: **−0.08 … −0.16**, flat.
+**Verdict: a player's past hit rate on a cell does not predict his next leg — on Regular the next hit is 0.49–0.52 in 38 of 40 band/window/apps combinations (the two exceptions are 87- and 4-leg samples); on goblins/demons the trailing rate moves neither the hit nor the price gap.** This is the same conclusion as §18a, now per side, with appearances, on the corrected map. The player layer is retired as a selector; the per-side trail table is kept as a signal-phase input (a player's *side* tendency is real information even if his rate is not).
+
+### 20c. High-hit rotation — whole board, no player/prop identity, bands × rank position (2025-26 from Nov)
+| band (model score × rank position) | legs | hit | p·m | % days > BE |
+|---|---|---|---|---|
+| score 0.70–0.75, rank 1 | 579 | 0.591 | **0.598** | 54 |
+| score 0.65–0.70, rank 2–3 / 4–5 | 1,095 / 1,067 | 0.570 / 0.605 | 0.568 / 0.566 | 51 / 53 |
+| score 0.70–0.75, rank 2–3 | 1,307 | 0.626 | 0.564 | 49 |
+| **score ≥ 0.80, rank 1** | 3,598 | **0.755** | **0.538** | 47 |
+| score ≥ 0.80, rank 2–3 / 4–5 | 4,665 / 2,720 | 0.762 / 0.769 | 0.521 / 0.513 | 31 / 34 |
+| score 0.75–0.80, rank 6–10 | 6,695 | 0.724 | 0.500 | 22 |
+| score < 0.60, rank 11+ | 393,164 | 0.365 | 0.429 | 0 |
+**Hit rate and profit are decoupled by the multiplier.** The highest-hit bands on the board (≥0.80 score, 0.75–0.77 hit) are the deep goblins and they pay 0.51–0.54 — below break-even; the most profitable bands are moderate-hit Regular legs at the top of the rank (0.59–0.63 hit, p·m 0.56–0.60). **A "95% band" does not exist on this board except as deep goblins priced below break-even by construction.** No whole-board band beats break-even on more than 54% of days; the best one is the model's top-ranked cell, which is the daily map already built.
+
+### 20d. Does a hot band stay hot? — rolling windows on the cell's own realized p·m (7-day vs 30-day, by rank position)
+| rank band | window | prior-window band | cell-days | next-day p·m | % next > BE |
+|---|---|---|---|---|---|
+| **top-3** | **30-day** | warm 0.60–0.70 | 1,328 | **0.576** | **55** |
+| top-3 | 30-day | hot ≥ 0.70 | 143 | 0.562 | 52 |
+| top-3 | 30-day | 0.50–0.60 | 3,915 | 0.528 | 47 |
+| top-3 | 30-day | cold < 0.50 | 2,766 | **0.506** | **44** |
+| top-3 | 7-day | hot / warm / mid / cold | 889 / 1,440 / … | 0.544 / 0.543 / 0.53 / 0.51 | 51 / 49 / … |
+| top-10 | 30-day | warm / cold | 352 / 3,132 | 0.533 / 0.490 | 53 / 39 |
+| rest (rank 11+) | any | any | — | 0.40–0.48 | 8–29 |
+**There IS persistence, and it is specific:** at the **cell level** (prop × tier, not player), in the **top-3** band, over a **30-day** window — a cell whose top-3 ran warm (0.60–0.70) pays 0.576 next day vs 0.506 for a cold cell, a 7-point spread, 55% vs 44% of days. The 7-day window is noise (hot 0.544 vs warm 0.543); deeper ranks carry a weaker version (top-10 warm 0.533 vs cold 0.490); the hottest band regresses (≥0.70 → 0.562, below warm). **Rotation rule: re-weight cells monthly by their trailing-30-day top-3 realized p·m; prefer warm cells, drop cold ones; ignore 7-day heat.** This is a cell-selection signal for the signals phase, worth ~+0.05 p·m on the top-3, not a standalone strategy.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
