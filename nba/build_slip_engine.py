@@ -91,6 +91,44 @@ WHERE (l.tier='R' AND l.prop IN ('steals','turnovers','stocks','pts_ast','points
 """
 
 
+CORR_SQL = """
+WITH legs AS (
+  SELECT l.game_date, pu.event_id, pu.team_id, l.player, l.prop, l.side, l.hit
+  FROM nba_score.tier_map_legs l
+  JOIN nba_market.prop_universe pu ON pu.game_date=l.game_date AND pu.player=l.player AND pu.prop=l.prop AND pu.side=l.side AND pu.line=l.line AND pu.line_source='real'
+  WHERE l.rank_key='final_score' AND l.n_rank<=5
+    AND ((l.tier='R' AND l.prop IN ('steals','turnovers','stocks','points','pts_ast','rebounds','blocks','pra','pts_reb'))
+      OR (l.tier='D1' AND l.prop IN ('threes_made','assists')) OR (l.tier='D3' AND l.prop='rebounds'))
+)
+SELECT a.prop||' '||a.side la, b.prop||' '||b.side lb, (a.team_id=b.team_id) same_team,
+  (avg(a.hit*b.hit)-avg(a.hit)*avg(b.hit))/nullif(sqrt(avg(a.hit)*(1-avg(a.hit))*avg(b.hit)*(1-avg(b.hit))),0) corr, count(*) n
+FROM legs a JOIN legs b ON a.game_date=b.game_date AND a.event_id=b.event_id AND a.player<b.player
+GROUP BY 1,2,3 HAVING count(*)>=100
+"""
+NEG_CORR = -0.08   # research + measured: only NEGATIVE pairs cost money; neutral/positive same-game pairs are fine or better
+
+
+def load_corr(conn):
+    m = {}
+    for la, lb, st, corr, n in conn.execute(CORR_SQL).fetchall():
+        if corr is None:
+            continue
+        m[(la, lb, bool(st))] = float(corr); m[(lb, la, bool(st))] = float(corr)
+    return m
+
+
+def pair_corrs(slip, cmap):
+    out = []
+    for a, b in itertools.combinations(slip, 2):
+        if a['event_id'] != b['event_id']:
+            continue
+        key = (f"{a['prop']} {a['side']}", f"{b['prop']} {b['side']}", a['team_id'] == b['team_id'])
+        c = cmap.get(key)
+        if c is not None:
+            out.append(c)
+    return out
+
+
 def phase_of(season, d, bounds):
     s0, s1 = bounds[season]
     if (d - s0).days <= 30:
