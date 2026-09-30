@@ -89,7 +89,13 @@ def rebuild_legs(conn, rank_key):
           CASE replace(p.base_market,'player_','') WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made'
             WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast'
             WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market,'player_','') END AS prop,
-          p.side, p.line, p.kind, p.tier AS sys_tier, p.factor::double precision AS price
+          p.side, p.line, p.kind,
+          -- owner rule B: when no regular line exists the anchor is the switch / rescued consensus line;
+          -- the system leaves tier=0 for those, so derive it from the distance to the anchor.
+          CASE WHEN p.tier IS NOT NULL AND p.tier <> 0 THEN p.tier
+               WHEN p.kind IN ('goblin','demon') AND p.anchor_line IS NOT NULL THEN round(p.line - p.anchor_line)::int
+               ELSE p.tier END AS sys_tier,
+          p.factor::double precision AS price
         FROM nba_market.pp_leg_price p
         WHERE p.snapshot_label='window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)""")
     conn.execute("CREATE INDEX ON _priced (game_date, nm, prop, side, line)")
