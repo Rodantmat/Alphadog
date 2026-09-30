@@ -115,8 +115,9 @@ def eligible_legs(day_rows):
         else:
             legs = [r for r in day_rows if r['prop'] == prop and r['tier'] == tier and r['rank_key'] == rank
                     and (side == 'both' or r['side'] == side)]
-            # rank within the cell under this rank (side-filtered re-rank for Under-only cells)
-            legs.sort(key=lambda r: r['n_rank'])
+            # n_rank was assigned across both sides; a side-only cell must be re-ranked within its side by score,
+            # which is exactly how cand_certified ranked it
+            legs.sort(key=lambda r: (-r['score'], r['player']))
             legs = legs[:nband]
         for r in legs:
             r2 = dict(r); r2['cell'] = name; r2['edge'] = edge
