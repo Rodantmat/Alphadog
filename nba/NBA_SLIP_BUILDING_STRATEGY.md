@@ -1030,4 +1030,48 @@ Gemini's top lever: fewer, stronger legs (size the slip to the edge available th
 | 5pk Flex, top 5 (any) | +68.3% (126) | +44.4% (135) |
 Leg-level availability: legs ≥0.70 hit **0.648** (3.7/day, ≥2 on 131 of 149 days); ≥0.65 hit 0.624 (5.3/day); ≥0.60 hit 0.618 (6.4/day).
 **Every structure is positive in BOTH seasons.** The 2024-25 "losing season" of §17 was an artifact of the calibrated-cell eligibility rule; ranking on raw model_p with a per-leg floor uses the full season and it is positive. **3pk Power with all legs ≥0.65 is the best risk-adjusted structure in both seasons (+34% / +49%)** — Gemini's "smaller slip of extremely high-edge picks beats a larger diluted one" holds on this board. The 5pk Flex still has the highest 2024-25 number but rests on the jackpot tier.
-**What changes:** eligibility = per-leg raw model_p floor (0.65 for 3pk Power, 0.60 for 4pk Flex), NOT calibrated-cell n≥60; sort = raw model_p; calibration keeps its pricing role only. The harness's `cal_p ≥ thr` gate is replaced by a `raw ≥ floor` gate. Cap-1 3pk Power ≥0.65 becomes the primary paper-track candidate for Oct 20; 4pk Flex ≥0.60 the low-frustration alternative. NEXT: re-run the harness with the raw floor (bootstrap floors + drawdown series for both), then the UD-shared-leg version, then the Gemini levers #2 (model features: minutes/injury nuance, opponent turnover/drive tendencies) and #3 (PP-vs-sharp-book line gaps as a filter).** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**What changes:** eligibility = per-leg raw model_p floor (0.65 for 3pk Power, 0.60 for 4pk Flex), NOT calibrated-cell n≥60; sort = raw model_p; calibration keeps its pricing role only. The harness's `cal_p ≥ thr` gate is replaced by a `raw ≥ floor` gate. Cap-1 3pk Power ≥0.65 becomes the primary paper-track candidate for Oct 20; 4pk Flex ≥0.60 the low-frustration alternative. NEXT: re-run the harness with the raw floor (bootstrap floors + drawdown series for both), then the UD-shared-leg version, then the Gemini levers #2 (model features: minutes/injury nuance, opponent turnover/drive tendencies) and #3 (PP-vs-sharp-book line gaps as a filter).
+
+---
+
+## 19. THE MAP, THE OWNER'S WAY — Final HP rank, PrizePicks, 90-day sample (2026-09-30)
+
+Owner stopped the work to align on method. The object is: **day by day, on the real PP board, every prop line broken by anchor-tier (Regular / Under-Anchor Goblin T1-T3 / Over-Anchor Demon T1-T3), rank each cell's legs by final HP, take the top n, cross with real outcomes → the top-n hit rate; sweep n point by point to find where the high hit rate breaks (the gold band); then check the survivors' real multipliers against break-even. No slips yet — candidate mapping only.** Then repeat with baseline HP and final score as the rank. Everything before §19 ranked by a model floor, not by top-n hit-rate tables, and dropped goblins/demons after one mispriced test — not this method.
+
+### 19a. Tier assignment (owner rule B)
+Anchor = the Regular line (Over+Under offered). Goblin lines below it = Under-Anchor Goblin Tier k (k = rungs below); demon lines above = Over-Anchor Demon Tier k. Verified on the real board (Ace Bailey, points, 2026-01-15): anchor 12 O/U; goblins 9.5/8.5/7.5 = UA-Gob T1/T2/T3 at factors 0.74/0.67/0.62; demons 13.5/15.5/17.5 = OA-Dem T1/T2/T3 at 1.13/1.52/2.11. Back data has goblins/demons as Over-only; tiers computed as rank-distance from the anchor within (day, player, prop, kind). Where no Regular line exists the switch point is the anchor (rare on this board).
+
+### 19b. The map — points (83 real PP days, 2026-01-12 → 04-12), top-n hit rate, n granulated
+| tier | top1 | top3 | top5 | top7 | top10 | top15 | top25 | top40 | legs/day |
+|---|---|---|---|---|---|---|---|---|---|
+| UA-Gob T3 | 0.831 | 0.807 | 0.802 | — | 0.798 | 0.786 | 0.777 | 0.765 | 59 |
+| UA-Gob T2 | 0.771 | 0.755 | 0.752 | — | 0.741 | 0.742 | 0.722 | 0.704 | 90 |
+| UA-Gob T1 | 0.651 | 0.743 | 0.701 | 0.701 | 0.692 | 0.670 | 0.662 | 0.637 | 101 |
+| **Regular** | 0.627 | 0.627 | 0.605 | **0.601** | 0.570 | 0.569 | 0.574 | 0.562 | 236 |
+| OA-Dem T1 | 0.518 | 0.478 | 0.472 | — | 0.464 | 0.444 | 0.422 | 0.393 | 102 |
+| OA-Dem T2 | 0.349 | 0.349 | 0.345 | — | 0.357 | 0.347 | 0.326 | 0.303 | 98 |
+| OA-Dem T3 | 0.301 | 0.289 | 0.282 | — | 0.263 | 0.244 | 0.223 | 0.199 | 78 |
+**Gold bands (points):** Regular holds ≥0.60 through **top 7**, breaks to 0.58 at n=8 and settles ~0.57 from n=10; Gob T1 peaks at n=2-3 (0.747) and holds ≥0.70 through n=7; Gob T3 holds ≥0.80 through n=10 and 0.77 at n=25. Degradation inside a tier is gentle, not a cliff.
+
+### 19c. The map — all 12 real PP props × tiers (top-1 / 3 / 5 / 10 / 20 hit rate; ≥60 days)
+Defensive props (**steals, stocks, blocks, turnovers**) have **NO goblin/demon ladders on PP** — Regular only, small cells (14–33 legs/day). Highest Regular top-5: **steals 0.637, points 0.610, stocks 0.602, turnovers 0.585, pts_reb 0.581, rebounds 0.581, reb_ast 0.566, pts_ast 0.552, blocks 0.543, pra 0.528, threes 0.522, assists 0.520.** Goblin tiers run 0.65–0.89 at the top; demon tiers 0.10–0.52. (Full 59-row table in run of 2026-09-30; regenerable from the query in this section.)
+
+### 19d. The multiplier check — the result of the method
+Top-n hit rate × the REAL mean factor of those same legs = single-leg p·m. 3-pick Power break-even needs p·m ≈ 0.55 per leg (0.55³ × 6 ≈ 1).
+| cell (top-5) | hit | m | **p·m** |
+|---|---|---|---|
+| **steals Regular** | 0.637 | 1.000 | **0.637** |
+| **points Regular** | 0.610 | 1.000 | **0.610** |
+| **stocks Regular** | 0.602 | 1.000 | **0.602** |
+| assists OA-Dem T3 | 0.171 | 3.471 | 0.586 (17% hit — a jackpot leg) |
+| turnovers Regular | 0.585 | 1.000 | 0.585 |
+| pts_reb / rebounds Regular | 0.581 | 1.000 | 0.581 |
+| reb_ast Regular | 0.566 | 1.000 | 0.566 |
+| assists OA-Dem T2 | 0.272 | 2.164 | 0.563 |
+| points OA-Dem T1 | 0.467 | 1.204 | 0.561 |
+| pra UA-Gob T3 | 0.834 | 0.660 | 0.549 |
+| points UA-Gob T1 | 0.704 | 0.772 | 0.539 |
+| points UA-Gob T3 | 0.807 | 0.635 | 0.512 |
+| every other goblin / demon cell | — | — | 0.41–0.55 |
+**Finding: PrizePicks prices every goblin and demon tier so that hit × multiplier lands near 0.50 regardless of tier.** Gob T3 hits 0.81 and pays 0.635 → 0.512; Dem T3 hits 0.28 and pays 1.98 → 0.542. The high goblin hit rates are real and already charged for. **The only cells whose p·m clears the 3-pick break-even (0.55) are the Regular cells, led by the defensive props and points** — where m = 1.0 and the model's ordering is not offset by a price — plus a handful of demon cells that clear on a jackpot profile (assists Dem T2/T3, points Dem T1) and one goblin (pra T3 at 0.549, marginal). This is the same defensive+points family the earlier work reached, now derived by the owner's method from the map with the multiplier check, and it settles the goblin/demon question with the tier map rather than one flat test.
+**Survivors (final HP rank, PP, 90-day):** steals R (top 3–5), points R (top ≤7), stocks R (top 3–5), turnovers R, pts_reb R, rebounds R, reb_ast R; jackpot-profile: assists Dem T2/T3, points Dem T1. **Next: the same map with baseline HP as the rank, then with final score; then the survivors' intersection is the candidate set.**** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
