@@ -284,6 +284,8 @@ def main():
         lo, hi = bounds.get(s, (d, d))
         bounds[s] = (min(lo, d), max(hi, d))
 
+    cmap = load_corr(conn)
+    print(f"  correlation map: {len(cmap)//2} pair types (>=100 real pairs each); forbidding corr <= {NEG_CORR}", flush=True)
     comps = (['core', 'regular', 'best', 'demon', 'mixed_tier', 'core+goblin', 'core+demon']
              + [f'single:{c}' for c in CELLS if c != 'goblin'] + [f'weighted:{c}' for c in CORE])
     slip_rows, leg_rows = [], []
@@ -295,16 +297,18 @@ def main():
         for comp in comps:
             for size in SIZES:
                 for structure in ('power', 'flex'):
-                    for k, slip in enumerate(build_day_slips(pool, comp, size, structure, CAP), start=1):
+                    for k, slip in enumerate(build_day_slips(pool, comp, size, structure, CAP, cmap), start=1):
                         hits, payout = grade(slip, structure)
                         games = [l['event_id'] for l in slip]
                         teams = [l['team_id'] for l in slip]
                         sg = len(games) - len(set(games))
                         st = len(teams) - len(set(teams))
+                        cs = pair_corrs(slip, cmap)
                         slip_rows.append((d, season, ph, comp, size, structure, k,
                                           json.dumps([{'cell': l['cell'], 'player': l['player'], 'prop': l['prop'], 'tier': l['tier'],
                                                        'side': l['side'], 'line': float(l['line']), 'factor': l['factor'], 'hit': l['hit']} for l in slip]),
-                                          hits, payout, 1.0, payout - 1.0, sg, st, len(set(teams))))
+                                          hits, payout, 1.0, payout - 1.0, sg, st, len(set(teams)),
+                                          min(cs) if cs else None, max(cs) if cs else None))
                         for l in slip:
                             leg_rows.append((d, comp, size, structure, k, l['cell'], l['player'], l['prop'], l['tier'], l['side'], l['line'], l['factor'], l['hit']))
         if len(slip_rows) >= 200000:
