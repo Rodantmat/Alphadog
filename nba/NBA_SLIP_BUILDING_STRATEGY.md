@@ -1479,4 +1479,40 @@ The model's top goblins beat PP's price on every cell — a real, large, board-w
 | F: 3 Regular + 1 goblin, 4-pick Power | +62% | 26% |
 | G: 3 Regular, 3-pick Power | +67% | 29% |
 **The goblin's role is specific and real: ONE top goblin as the FIFTH leg of a 4-Regular Power** turns +109% (4-pick) into **+148%** (5-pick) at the same paying-day rate (22% → 20%) — its 0.80 hit costs almost no slip survival, and 20× instead of 10× more than pays its ~0.72× factor. In Flex, the same goblin raises paying days from 39% to 47% at lower ROI (the frustration trade). **Two goblins hurt every structure** (the factor product ~0.5 crushes payout). A goblin never replaces a Regular; it extends a Regular slip by one leg. **Goblins re-enter the ledger as EXTENDERS:** pts_ast G2, points G1, pra G2, pts_reb G2, points G2 at top-1/top-3, one per slip, fifth leg of a Power (or fifth leg of a Flex when paying-days matter more than ROI).
-**What was lost before, and why:** the p·m ≥ 0.55 test priced the goblin as if it had to carry a 3-pick alone. Its edge is +0.05–0.10 over PP's implied, which only converts to money as the extra leg of a slip that is already winning on Regular legs.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**What was lost before, and why:** the p·m ≥ 0.55 test priced the goblin as if it had to carry a 3-pick alone. Its edge is +0.05–0.10 over PP's implied, which only converts to money as the extra leg of a slip that is already winning on Regular legs.
+
+---
+
+## 24. CERTIFICATION — three consecutive clean passes (2026-09-30)
+
+Owner: recheck every step until three consecutive clean passes on every micro-step. Nine of the eleven defects found in §19–§23 were one failure class (a join or key silently returning fewer/wrong rows while the downstream number looked plausible), so certification was built as **reconciliation between layers plus explicit assertions**, not inspection: `certify_slip_system.py` (workflow `nba-certify-slip-system.yml`), a **frozen list of 52 invariants** across L0 raw board → L1 outcome → L2 price → L3 tier → L4 ranks → L5 map → L6 bands → L7 features → L8 matrix → L9 certified → L10 slip math. Every check logs PASS/FAIL with its measured value under a run id to `nba_score.certification_log`; any FAIL exits non-zero; a check may be added, never loosened.
+**Result: runs `02478851`, `195b6cb0`, `39105d90` — 52 / 52 PASS each, back to back, no code change between them. CERTIFIED.**
+**What the passes caught before going clean (each a real finding, none visible to inspection):**
+1. `prop_universe.hit` is BOOLEAN — the "binary" check mis-assumed integer; fixed to a type assertion.
+2. `norm_name()` inside a join defeats every index: a one-day EXPLAIN showed a full sequential scan + sort of 451k universe rows per day; the certifier ran 38 min without finishing and the L5 check 22 min. Fixed by precomputing normalized keys into indexed temp tables (certifier now ~4 min). Standing rule for every join in this system.
+3. **Map defect (the real one): `n_rank` and `cell_size` were computed by window functions BEFORE `ON CONFLICT DO NOTHING` dropped the ~123 documented duplicate price keys** → 201 Regular cells (0.8%) carried `cell_size` +2 and `n_rank` holes; pct cuts, 5 of 80 n-bands, 3 of 8 pct-bands and the matrix base inherited it. Fixed at the source (dedupe keep-first BEFORE ranking); map rebuilt (same 828,818 legs per rank, 0 mismatches), bands/features/matrix/certifier rebuilt in dependency order.
+4. `cand_signal_matrix` s1/s2 are WHOLE seasons (no November cutoff) unlike `tier_map_bands` '2526_nov' — the L8 check had assumed the November window; the matrix was exact. Check aligned and the semantic written into it.
+**Invariants that stood on every pass (the facts of the system):** 1,100,043 PP window legs, 723,628 alternates, board multiplier column NULL everywhere, window snapshot before first tip on every day; Regular has both sides and exactly one hits, ladders Over-only; ONE live price model, Regular factor exactly 1.0, goblins < 1, 152 of 426,776 demons at ≤ 1.0 (documented near-anchor tail), implied × factor near 0.5 with zero anomalies, 99.58% priced, 123 duplicate keys; every ladder leg tiered, signs correct, 43 at-anchor residue; 7,215,296 rank rows with zero nulls, map score equals the named column exactly; 828,818 legs per rank, no duplicates, rank order non-increasing, cell_size = count, map reconciles to the raw join exactly (8,765 = 8,765); n- and pct-bands recompute to 1e-6, every cell present, none thin; features: minutes/usage/rest 100%, trailing 96.9% and strictly prior, market edge 71.3%, all three ranks on every leg; matrix base recomputes exactly, band rows are subsets of base, lift = pm − base; certified profit formula exact, Regular mult 1; payout tables and 0.5503 break-even.
+
+### 24a. THE CERTIFIED LEDGER — from `cand_certified` (raw board → outcome → current price → ranks), per season
+Profit = expected $ per $100 3-pick Power from the cell's legs alone (6× × 0.95 haircut, real hit, real multiplier); % days = share of real slate days the cell's picked legs paid above break-even. 2025-26 is from November; 2024-25 is the full regular season (the stress case: less-trained ranker, thinner ladders).
+| cell (rank, cut) | 25-26: hit / % days / $ per 100 | 24-25: hit / % days / $ per 100 | verdict |
+|---|---|---|---|
+| **steals R Under** (score, top1) | 0.691 / 69% / **+$88** | 0.541 / 54% / −$10 | strongest cell; 24-25 negative |
+| **steals R both** (score, top2) | 0.654 / 46% / +$60 | 0.588 / 33% / +$16 | positive both seasons |
+| **turnovers R** (score, top3) | 0.633 / 69% / +$44 | 0.581 / 66% / +$12 | **positive both seasons, most consistent** |
+| **stocks R** (score, top5) | 0.613 / 73% / +$31 | 0.574 / 66% / +$8 | positive both seasons |
+| pts_ast R (baseline, top3) | 0.611 / 71% / +$30 | 0.547 / 58% / −$7 | 24-25 marginal negative |
+| points R (score, top5) | 0.608 / 68% / +$28 | 0.546 / 57% / −$7 | 24-25 marginal negative |
+| pra R Under (baseline, top1) | 0.640 / 64% / +$49 | 0.512 / 51% / −$23 | 2025-26 only |
+| blocks R (score, top1) | 0.595 / 59% / +$20 | 0.559 / 56% / −$1 | at break-even 24-25 |
+| pts_reb R (score, top5) | 0.576 / 69% / +$9 | 0.547 / 58% / −$7 | thin |
+| rebounds R (baseline, top5) | 0.574 / 66% / +$8 | 0.562 / 64% / +$1 | positive both, thin |
+| reb_ast R (baseline, top3) | 0.556 / 61% / −$2 | 0.553 / 60% / −$4 | at break-even; supply only |
+| **threes D1** (score, top2) | 0.473 × 1.33 = 0.631 / 73% / **+$43** | 0.392 × 1.53 = 0.588 / 65% / +$16 | **positive both seasons** |
+| **assists D1 Over** (score, top2) | 0.470 × 1.26 = 0.588 / 73% / +$16 | 0.469 × 1.50 = 0.695 / 73% / **+$91** | positive both; PP cut the multiplier 1.50→1.26 |
+| rebounds D3 (score, top3) | 0.313 × 1.96 = 0.606 / 60% / +$27 | 0.189 × 2.19 = 0.387 / 38% / −$67 | 2025-26 only |
+| assists D3 Over (final, top3) | 0.291 × 2.12 = 0.594 / 55% / +$19 | 0.217 × 2.31 = 0.482 / 51% / −$36 | 2025-26 only |
+| points D3 / D2, rebounds D1 | +$12 / +$6 / +$9 | −$43 / −$17 / −$27 | 2025-26 only |
+| goblins (points G1, pra G2/G3, pts_ast G2, pts_reb G1; top1–2) | 0.69–0.85 hit / 51–85% days / **−$1 … −$22** | −$4 … −$26 | never a standalone leg; **extender only** (§23b: 5th leg of a 4-Regular Power, +109% → +148%) |
+**Certified reading.** Four Regular cells and two demon cells are positive in BOTH seasons: turnovers R, stocks R, steals R (top-2), rebounds R (thin), threes D1, assists D1. The rest of the Regular core is positive in 2025-26 and within ±$10 of break-even in 2024-25 — consistent with the ranker having been retrained on both seasons (§19h): 2024-25 is the floor, not a different regime. Goblins are negative standalone everywhere and confirmed as extenders. **Every number in this table is recomputed from the raw board, outcome, current per-line price and the three rank columns, and is protected by 52 invariants passing three times.** This closes the candidate-mapping phase.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
