@@ -64,7 +64,7 @@ CELLS = {
     'stocks_R':      ('stocks', 'R', 'both', 'final_score', 5, 0.613),
     'pts_ast_R':     ('pts_ast', 'R', 'both', 'baseline_hp', 3, 0.611),
     'points_R':      ('points', 'R', 'both', 'final_score', 5, 0.608),
-    'pra_R_U':       ('pra', 'R', 'Under', 'baseline_hp', 2, 0.640),
+    'pra_R_U':       ('pra', 'R', 'Under', 'baseline_hp', 1, 0.640),
     'blocks_R':      ('blocks', 'R', 'both', 'final_score', 2, 0.595),
     'pts_reb_R':     ('pts_reb', 'R', 'both', 'final_score', 5, 0.576),
     'rebounds_R':    ('rebounds', 'R', 'both', 'baseline_hp', 5, 0.574),
