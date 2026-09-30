@@ -266,7 +266,7 @@ def main():
                 surv += 1
         null_counts.append(surv)
         if (it + 1) % 50 == 0:
-            print(f"    {it+1}/{NULLS} shuffles, null survivors so far: mean {sum(null_counts)/len(null_counts):.2f}, max {max(null_counts)}", flush=True)
+            print(f"    {it+1}/{NULLS} null draws, survivors so far: mean {sum(null_counts)/len(null_counts):.2f}, max {max(null_counts)}", flush=True)
     null_counts.sort()
     p95 = null_counts[int(0.95 * len(null_counts))] if null_counts else None
     print(f"\n  V3 RESULT: under a zero-edge null, expected survivors = {sum(null_counts)/len(null_counts):.2f} (95th pct {p95}); REAL survivors = {passed}", flush=True)
