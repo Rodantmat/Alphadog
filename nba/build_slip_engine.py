@@ -247,8 +247,19 @@ def build_day_slips(pool, comp, size, structure, cap, cmap):
         s = list(combo) + ([extender] if extender else [])
         if not valid(s, cmap):
             continue
-        slips.append((sum(l['edge'] for l in s), s))
-    slips.sort(key=lambda x: -x[0])
+        cs = pair_corrs(s, cmap)
+        games = [l['event_id'] for l in s]
+        same_game = len(games) - len(set(games))
+        # tie-break tier (measured on 13.5k 4/5-pick slips): cross-game only best (+53/+48%), a positive pair next (+56/+50%),
+        # neutral same-game worst (+37/+17%). Order: cross-game > positive-pair > neutral-same-game, then by summed edge.
+        if same_game == 0:
+            tier = 2
+        elif cs and min(cs) >= 0.05:
+            tier = 1
+        else:
+            tier = 0
+        slips.append(((tier, sum(l['edge'] for l in s)), s))
+    slips.sort(key=lambda x: (-x[0][0], -x[0][1]))
     return [s for _, s in slips[:cap]]
 
 
