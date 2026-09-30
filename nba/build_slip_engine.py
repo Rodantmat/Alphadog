@@ -163,12 +163,18 @@ def eligible_legs(day_rows):
     return out
 
 
-def valid(slip):
+def valid(slip, cmap=None):
     players = {l['player'] for l in slip}
     if len(players) < len(slip):
         return False
     teams = {l['team_id'] for l in slip}
-    return len(teams) >= 2
+    if len(teams) < 2:
+        return False
+    if cmap:
+        cs = pair_corrs(slip, cmap)
+        if cs and min(cs) <= NEG_CORR:
+            return False
+    return True
 
 
 def grade(slip, structure):
