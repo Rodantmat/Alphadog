@@ -1192,4 +1192,29 @@ The §19i ledger used fixed n (3/5/10). Re-swept every cell at n = 1…20 with t
 | **pra G2 (n=1)** | **−0.004** | +0.019 / 1 | +0.008 / 1 | **2025-26 only** |
 Ten cells are positive in both seasons and pooled; three of the §19k "constant" bands (pra R, rebounds D2, pra G2) are positive in 2025-26 only and are downgraded to *unproven across seasons*. Every cell is stronger in 2025-26 (retrained ranker + fuller ladders, §19h), so 2024-25 is the floor.
 5. **Multipliers drift between seasons:** PP LOWERED its demon payouts as it expanded the ladders — points D1 1.46 → 1.22, rebounds D2 2.29 → 2.02 (Regular stays 1.00, goblins ~flat). The same tier's break-even therefore moves between seasons; the sweep computes p_be per window, which is why the per-window numbers are the ones to read. **The live-season gate must re-read the tier multipliers, not assume last season's.**
-**Sweep verdict:** the final-HP map is complete for the data that exists; its one hole is upstream (2025 playoffs). Baseline-HP and final-score next, through the same builder.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Sweep verdict:** the final-HP map is complete for the data that exists; its one hole is upstream (2025 playoffs). Baseline-HP and final-score next, through the same builder.
+
+### 19m. PRICING CORRECTION (owner, 2026-09-30): PrizePicks publishes no multipliers — the price is the system's, per line, current
+Owner: "the full 2 seasons should use the current multipliers … PP does not even provide multipliers, it should be on the documentation." Checked the documentation (`PP_PAYOUT_FINDINGS.md` §1, §9): correct on both counts. **The raw PP board carries no multiplier** (column NULL on every row; `price` is a placeholder −137 / +100 identical across rungs); a 1-pick quote returns 422. The per-leg price is **reconstructed** by quoting 2-pick combos against a standard partner and de-compressing (`factor = payout/3`), validated on 452 real quotes, held in `nba_market.pp_leg_price` under ONE live formula (`pp-leg-v2-sqrt-cap-conservative-floor190`, 99.6% of 1.1M window legs priced; a mined quote outranks the model). **PP prices per LINE, not per tier** — only the deepest goblins sit on a flat 2.1× floor.
+**Two errors in §19a–l, both fixed:** (1) my tier was rank-distance within kind; `pp_leg_price` already carries the system's anchor tier (`anchor_line`, signed `tier`, `position_vs_anchor`) and it disagrees on real legs (Bailey points 13.5 vs a 12 anchor is tier +2, not my D1); (2) I averaged per-line prices into a tier mean — the per-line price *is* the current price, so averaging discarded exactly what the pricing model carries. The `factor` I had used was this same model's output (leg-for-leg identical), so the LEVEL was current; the tier key and the averaging were wrong. Rescued-anchor legs (no regular line; system anchors on sportsbook consensus and leaves `tier=0`) are tiered from `line − anchor_line` (~14k demons, 1.9–3.1×) — the owner's "switch line" case.
+**Rebuilt** (`build_tier_map_bands.py` stage 0, materialized view; 4 min): 910,513 legs, 323 days; tiers R 311k · G1 149k · G2 69k · G3 27k · D1 51k · D2 150k · D3 154k. Re-swept: 10,141 band rows.
+**Corrected gold bands (2025-26 from Nov, break-even per leg from its own current price, constancy = % of real days top-5 beat p_be):**
+| cell | m | p_be | peak n / hit | margin | positive to n | % days |
+|---|---|---|---|---|---|---|
+| steals R | 1.00 | 0.550 | 2 / 0.661 | **+0.111** | 17 | **73%** |
+| pts_reb R | 1.00 | 0.550 | 1 / 0.660 | +0.110 | 25 | 69% |
+| turnovers R | 1.00 | 0.550 | 2 / 0.654 | +0.104 | 17 | 68% |
+| pts_ast R | 1.00 | 0.550 | 1 / 0.647 | +0.097 | 23 | 67% |
+| points R | 1.00 | 0.550 | 3 / 0.624 | +0.074 | 25 | 69% |
+| pra R | 1.00 | 0.550 | 2 / 0.620 | +0.070 | 25 | 69% |
+| stocks R | 1.00 | 0.550 | 3 / 0.616 | +0.066 | 14 | 71% |
+| blocks R | 1.00 | 0.550 | 1 / 0.588 | +0.038 | 6 | 66% |
+| rebounds R · reb_ast R | 1.00 | 0.550 | 6 / 0.578 · 4 / 0.577 | +0.028 · +0.027 | 25 | 63% · 61% |
+| pts_reb D1 | 1.33 | 0.415 | 10 / 0.533 | +0.117 | 12 | 41% |
+| threes D1 | 1.34 | 0.410 | 1 / 0.473 | +0.061 | 18 | 45% |
+| points D2 | 1.22 | 0.449 | 1 / 0.513 | +0.057 | 5 | 41% |
+| rebounds D3 | **2.20** | 0.250 | 4 / 0.307 | +0.045 | 25 | **49%** |
+| assists D1 / D3 · rebounds D2 / D1 · pts_ast D2 | 1.3–2.4 | — | — | +0.03–0.04 | 2–22 | 41–49% |
+| pra G2 · pra G3 · points G1 · points G2 | 0.67–0.78 | 0.71–0.82 | 1 / 0.73–0.86 | +0.007–0.020 | 1 | 39–54% |
+**What the correction changed:** the **Regular core is unchanged** (price 1.0 either way) — steals, pts_reb, turnovers, pts_ast, points, pra, stocks R beat their break-even on 67–73% of real days; these are the gold bands. **Every demon cell is now INCONSTANT (41–51% of days):** rebounds D3 was "constant" at 68% only because the rank-distance tier lumped deeper rungs at a 3.3× average; at the system's tier and the per-line 2.20× it is a jackpot cell like the rest. pts_reb D1's large margin (+0.117) comes from few big days (41%). Demons are a jackpot profile, all of them. Goblins unchanged: single-leg bands at n=1, margins ≤ 0.02, 39–54% of days. §19k's demon and goblin rows are superseded by this table.
+**Standing rules from this:** price every leg with `pp_leg_price.factor` at the window snapshot (current model, per line); tier = the system's tier (rescued anchors from line−anchor); break-even per leg; never a tier-average multiplier. The builder now does all of it in stage 0. Baseline-HP and final-score maps next, same pipe.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
