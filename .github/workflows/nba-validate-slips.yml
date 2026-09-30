@@ -1,0 +1,37 @@
+name: NBA Validate Slip Strategies
+
+on:
+  workflow_dispatch:
+    inputs:
+      topk:
+        default: "30"
+        required: false
+      boot:
+        default: "10000"
+        required: false
+      nulls:
+        default: "200"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Validate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SV_TOPK: ${{ github.event.inputs.topk }}
+          SV_BOOT: ${{ github.event.inputs.boot }}
+          SV_NULL: ${{ github.event.inputs.nulls }}
+        run: python -u nba/validate_slip_strategies.py
