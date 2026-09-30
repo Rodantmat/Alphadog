@@ -50,6 +50,52 @@ CREATE TABLE IF NOT EXISTS nba_score.tier_map_summary (
   status text, built_at timestamptz DEFAULT now(),
   PRIMARY KEY (rank_key, win, prop, tier, cut_type))"""
 
+# Stage 0 (owner rule): boards, legs and outcomes are history, but the PRICE must be today's.
+# PrizePicks publishes no per-leg multiplier; the system reconstructs it (pp_leg_price, one live formula,
+# pp-leg-v2-sqrt-cap-conservative-floor190; a mined quote outranks the model). pp_leg_price also carries the
+# system's own anchor tier (signed rungs from the anchor line). Both are used here as-is:
+#   tier  = the system's |tier| capped at 3, keyed by kind  -> R / G1..G3 / D1..D3
+#   factor = the current per-LINE price (never a tier average - PP prices per line, section 9 of
+#            PP_PAYOUT_FINDINGS.md; only the deepest goblins sit on the flat 2.1x floor)
+REBUILD_LEGS = """
+INSERT INTO nba_score.tier_map_legs (rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor, score, hit, n_rank, cell_size)
+WITH priced AS (
+  SELECT p.game_date, p.nm,
+    CASE replace(p.base_market,'player_','') WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made'
+      WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast'
+      WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market,'player_','') END AS prop,
+    p.side, p.line, p.kind, p.tier AS sys_tier, p.factor::double precision AS price
+  FROM nba_market.pp_leg_price p
+  WHERE p.snapshot_label='window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)
+),
+legs AS (
+  SELECT pu.season, pr.game_date, pu.player, pr.prop, pr.side, pr.line, pr.kind, pr.sys_tier, pr.price,
+         pu.model_p::double precision AS score, pu.hit::int AS h
+  FROM priced pr JOIN nba_market.prop_universe pu
+    ON pu.game_date=pr.game_date AND nba_ref.norm_name(pu.player)=pr.nm AND pu.prop=pr.prop
+   AND pu.side=pr.side AND pu.line=pr.line AND pu.line_source='real'
+  WHERE pu.hit IS NOT NULL AND pu.model_p IS NOT NULL
+),
+tiered AS (
+  SELECT *, CASE WHEN kind='standard' THEN 'R'
+                 WHEN kind='goblin'   THEN 'G'||least(abs(sys_tier),3)
+                 WHEN kind='demon'    THEN 'D'||least(abs(sys_tier),3) END AS tier
+  FROM legs
+)
+SELECT %s, season, game_date, player, prop, side, line, kind, tier, sys_tier, price, score, h,
+  row_number() OVER (PARTITION BY game_date, prop, tier ORDER BY score DESC),
+  count(*) OVER (PARTITION BY game_date, prop, tier)
+FROM tiered
+ON CONFLICT DO NOTHING"""
+
+
+def rebuild_legs(conn, rank_key):
+    conn.execute("DELETE FROM nba_score.tier_map_legs WHERE rank_key=%s", (rank_key,))
+    conn.execute(REBUILD_LEGS, (rank_key,))
+    conn.commit()
+    n = conn.execute("SELECT count(*) FROM nba_score.tier_map_legs WHERE rank_key=%s", (rank_key,)).fetchone()[0]
+    print(f"  {rank_key}: tier_map_legs rebuilt from pp_leg_price(window) - {n:,} legs", flush=True)
+
 
 def sweep(conn, rank_key, win, where):
     rows = conn.execute(f"""
