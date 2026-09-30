@@ -2,13 +2,13 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-09-30T05:45:47Z",
-  "fetched_at": "2026-09-30T05:50:40Z",
+  "started_at": "2026-09-30T12:50:11Z",
+  "fetched_at": "2026-09-30T12:57:48Z",
   "categories": [],
   "calls": [
     [
       "match_grouped_lines[core]",
-      11
+      15
     ],
     [
       "lines[match=225716]",
@@ -35,19 +35,19 @@
       0
     ],
     [
-      "lines[match=225720]",
-      0
-    ],
-    [
-      "pills[match=225720]",
-      0
-    ],
-    [
       "lines[match=225721]",
       0
     ],
     [
       "pills[match=225721]",
+      0
+    ],
+    [
+      "lines[match=225720]",
+      0
+    ],
+    [
+      "pills[match=225720]",
       0
     ],
     [
@@ -72,6 +72,38 @@
     ],
     [
       "pills[match=225722]",
+      0
+    ],
+    [
+      "lines[match=225723]",
+      0
+    ],
+    [
+      "pills[match=225723]",
+      0
+    ],
+    [
+      "lines[match=225724]",
+      0
+    ],
+    [
+      "pills[match=225724]",
+      0
+    ],
+    [
+      "lines[match=225725]",
+      0
+    ],
+    [
+      "pills[match=225725]",
+      0
+    ],
+    [
+      "lines[match=225726]",
+      0
+    ],
+    [
+      "pills[match=225726]",
       0
     ],
     [
@@ -119,22 +151,22 @@
       0
     ]
   ],
-  "lines": 11,
-  "legs": 11,
+  "lines": 15,
+  "legs": 15,
   "ladder_legs": 0,
   "ladder_lines_with_alternates": 0,
   "players": 0,
-  "pregame_legs": 11,
+  "pregame_legs": 15,
   "live_legs": 0,
   "by_stat": {
-    "Moneyline": 11
+    "Moneyline": 15
   },
   "by_line_type": {
-    "balanced": 11
+    "balanced": 15
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "None": 11
+    "None": 15
   },
-  "github_run_id": "36674835016"
+  "github_run_id": "36717275758"
 }
