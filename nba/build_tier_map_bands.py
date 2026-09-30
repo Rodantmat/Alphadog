@@ -59,19 +59,10 @@ CREATE TABLE IF NOT EXISTS nba_score.tier_map_summary (
 #            PP_PAYOUT_FINDINGS.md; only the deepest goblins sit on the flat 2.1x floor)
 REBUILD_LEGS = """
 INSERT INTO nba_score.tier_map_legs (rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor, score, hit, n_rank, cell_size)
-WITH priced AS (
-  SELECT p.game_date, p.nm,
-    CASE replace(p.base_market,'player_','') WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made'
-      WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast'
-      WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market,'player_','') END AS prop,
-    p.side, p.line, p.kind, p.tier AS sys_tier, p.factor::double precision AS price
-  FROM nba_market.pp_leg_price p
-  WHERE p.snapshot_label='window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)
-),
-legs AS (
+WITH legs AS (
   SELECT pu.season, pr.game_date, pu.player, pr.prop, pr.side, pr.line, pr.kind, pr.sys_tier, pr.price,
          pu.model_p::double precision AS score, pu.hit::int AS h
-  FROM priced pr JOIN nba_market.prop_universe pu
+  FROM _priced pr JOIN nba_market.prop_universe pu
     ON pu.game_date=pr.game_date AND nba_ref.norm_name(pu.player)=pr.nm AND pu.prop=pr.prop
    AND pu.side=pr.side AND pu.line=pr.line AND pu.line_source='real'
   WHERE pu.hit IS NOT NULL AND pu.model_p IS NOT NULL
