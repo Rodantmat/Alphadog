@@ -110,10 +110,11 @@ def rebuild_legs(conn):
         WHERE p.snapshot_label='window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)""")
     conn.execute("CREATE INDEX ON _priced (game_date, nm, prop, side, line)")
     conn.execute("ANALYZE _priced")
-    conn.execute(REBUILD_LEGS, (rank_key,))
+    conn.execute(REBUILD_LEGS)
     conn.commit()
-    n = conn.execute("SELECT count(*) FROM nba_score.tier_map_legs WHERE rank_key=%s", (rank_key,)).fetchone()[0]
-    print(f"  {rank_key}: tier_map_legs rebuilt from pp_leg_price(window) - {n:,} legs", flush=True)
+    for rk in ('final_hp', 'baseline_hp', 'final_score'):
+        n = conn.execute("SELECT count(*) FROM nba_score.tier_map_legs WHERE rank_key=%s", (rk,)).fetchone()[0]
+        print(f"  {rk}: tier_map_legs rebuilt - {n:,} legs", flush=True)
 
 
 def sweep(conn, rank_key, win, where):
