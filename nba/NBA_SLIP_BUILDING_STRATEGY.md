@@ -1377,4 +1377,72 @@ Trailing minutes from `player_game_log`, last-3 vs last-10 average, strictly pri
 - **Market edge:** no candidate cells, no filter. One calibration input.
 - **Injury:** untestable on this data (pipeline gap: no injury feed).
 - **Minutes trend:** **one candidate negative filter** — exclude Over legs with a ≥4-minute trailing drop (raises the remaining Over top-5 from ~0.59 to ~0.60–0.61 by removing a 0.544 slice). To be confirmed on 2024-25 and at other cuts before it enters the live stack.
-No new cells. The gold ledger (§19p) is unchanged; §21c is the first signal in this entire phase that moves a gold cell's hit rate, and it does so by subtraction.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+No new cells. The gold ledger (§19p) is unchanged; §21c is the first signal in this entire phase that moves a gold cell's hit rate, and it does so by subtraction.
+
+---
+
+## 22. THE CANDIDATE × SIGNAL MATRIX — every candidate, every layer, separately, then stacked (2026-09-30)
+
+Owner: apply every signal and layer over every candidate, one at a time, track the lift, then stack; **no summarizing** — each (prop, tier, side, rank, cut, signal band) is its own test. Built as code (`build_cand_signal_matrix.py`, workflow `nba-cand-signal-matrix.yml`), persisted to `nba_score.cand_signal_matrix`.
+**Scope:** 24 candidate cells (10 Regular, 11 demon, 3 goblin) × side (both/Over/Under) × 3 ranks × 11 cuts (n 1/2/3/5/8/10, pct 5/10/20/33/50) × 21 signals in bands (t3/t5/t10, consistency, cold_all, minutes trend, usage trend, rest, phase, line class, market edge, book count, side, and each of the other two ranks' top-1/3/5/10 as a second layer). 440,679 candidate legs. Lift = band p·m − the cut's own base p·m, per season. **104,748 rows: 1,906 bases, 79,461 single-layer tests, 23,381 stacks (pairs and triples of bands that lifted in both seasons).**
+
+### 22a. Calibrating the noise — what "lifts in both seasons" means across 80k tests
+A signal with no information lifts in both seasons ~25% of the time by chance. Share of tests both-positive (legs ≥100 each season), by signal:
+| signal band | tests | % both-positive | avg lift when it works |
+|---|---|---|---|
+| **line_class = half** (0.5 lines) | 192 | **53%** | +0.026 |
+| **rank_score top3** (as 2nd layer) | 1,641 | **48%** | +0.031 |
+| **rank_final top3** | 1,633 | **47%** | +0.030 |
+| **rank_base top3** | 1,497 | **45%** | +0.028 |
+| rest = 1 day | 1,436 | 42% | +0.020 |
+| rank_* top5 | ~1,660 | 39–41% | +0.021 |
+| t3 = 1.0 | 342 | 39% | +0.028 |
+| everything else (min/usg trend, market edge, cold, phase, consistency, t5/t10, books, side) | — | **22–37%** | — |
+**The broad result:** across all 24 cells, only two layers beat chance clearly — **rank-over-rank** (a leg that is also top-3 under a second rank: 45–48% vs 25%, +0.03) and **the 0.5-line class** (53%). Every researched context signal sits at or near the chance rate when averaged over the cells. This matches §18–§21 and the mechanism (§20h): the model already carries the context; a second rank sharpens the ordering.
+
+### 22b. Per candidate — the best single layer, then the ROBUSTNESS check (is it real for THAT cell, or the max of noise?)
+A cell's best layer is the best of ~3,000 tests, so a +0.06–0.10 lift on 150 legs is what noise's maximum looks like. Robust = the same band lifts in both seasons on ≥60% of ALL its cuts/ranks for that cell (not just the best one).
+| cell | best layer (rank, cut) | base → enhanced (25-26) | lift 25-26 / 24-25 | legs 25-26 | same band across all cuts: % both-pos | verdict |
+|---|---|---|---|---|---|---|
+| assists D1 | t5 ≤ 0.33 (final, pct5) | 0.596 → **0.709** | +0.113 / +0.107 | 153 | **100%** (60 tests) | ROBUST |
+| assists D2 | mkt edge 0.15–0.25 (score, pct50) | 0.486 → 0.578 | +0.092 / +0.106 | 437 | 100% (60) | ROBUST |
+| assists D3 Over | phase = late (base, n8) | 0.552 → 0.643 | +0.091 / +0.161 | 168 | 100% (48) | ROBUST |
+| blocks R | t3 ≤ 0.33 (base, n5) | 0.557 → 0.621 | +0.064 / +0.075 | 274 | 100% (43) | ROBUST |
+| pts_ast D2 Over | line_class mid (base, n8) | 0.513 → 0.560 | +0.046 / +0.086 | 699 | 100% (60) | ROBUST |
+| rebounds D1 | consistent sd ≤ 0.42 (base, pct33) | 0.516 → 0.617 | +0.101 / +0.199 | 127 | 100% (28) | ROBUST |
+| stocks R | min trend +1.5..+4 (final, pct20) | 0.583 → **0.678** | +0.095 / +0.108 | 197 | 96% (49) | ROBUST |
+| points D2 Over | final top1 (score, pct50) | 0.460 → 0.601 | +0.142 / +0.089 | 161 | 94% (66) | ROBUST |
+| steals R | score top1 (base, n10) | 0.587 → **0.700** | +0.113 / +0.082 | 160 | 89% (66) | ROBUST |
+| rebounds D3 | t3 0.34–0.66 (base, pct33) | 0.514 → 0.640 | +0.126 / +0.157 | 795 | 83% (36) | ROBUST |
+| threes D1 Over | base top3 (score, pct50) | 0.499 → 0.597 | +0.097 / +0.079 | 482 | 82% (66) | ROBUST |
+| points G1 Over | line_class mid (base, n3) | 0.536 → 0.591 | +0.055 / +0.038 | 145 | 80% (60) | ROBUST |
+| pra R | cold_all hot ≥ 0.60 (base, pct5) | 0.555 → 0.631 | +0.077 / +0.080 | 192 | 76% (63) | ROBUST |
+| reb_ast R Under | line_class mid (base, n3) | 0.553 → 0.648 | +0.095 / +0.086 | 163 | 74% (81) | ROBUST |
+| turnovers R Over | score top3 (score, pct50) | 0.554 → 0.628 | +0.073 / +0.063 | 148 | 70% (96) | ROBUST |
+| rebounds R Over | base top5 (score, n10) | 0.489 → 0.561 | +0.072 / +0.076 | 157 | 65% (94) | ROBUST |
+| points R Under | score top3 (base, pct50) | 0.537 → 0.596 | +0.059 / +0.075 | 269 | 63% (95) | ROBUST |
+| pts_reb R | t3 = 1.0 (final, pct5) | 0.569 → 0.648 | +0.079 / +0.085 | 192 | 58% | one-off |
+| pra G2 | min stable | 0.533 → 0.551 | +0.019 / +0.038 | 330 | 48% | one-off |
+| pts_ast R Over | mkt edge ≥ 0.25 | 0.519 → 0.588 | +0.069 / +0.098 | 163 | 41% | one-off |
+| points D3 | score beyond10 | 0.540 → 0.618 | +0.078 / +0.097 | 357 | 33% | one-off |
+(pts_ast R, points R both-sides, rebounds D2, points D1, pts_reb D1: no layer positive in both seasons on ≥100 legs.)
+**17 of 21 cells have a robust single layer.** The layers differ by cell, which is why they had to be tested separately: stocks R takes a minutes signal, steals R takes a second rank, blocks R and assists D1 take trailing-COLD, rebounds D1 takes consistency, pra R takes hot-history. Signals that were flat on the whole board (§20–21) are real on specific cells.
+
+### 22c. STACKS — where the layering actually pays: the DEMON cells
+Robust stacks (≥75% of cuts both-positive, avg lift > +0.03 both seasons, ≥60 legs each):
+| cell | stack | best p·m 25-26 | avg lift 25-26 / 24-25 | legs |
+|---|---|---|---|---|
+| **rebounds D1** | t5 ≤ 0.33 + consistent | **0.724** | +0.121 / +0.171 | 196 |
+| rebounds D1 | t5 ≤ 0.33 + min falling ≤ −4 | 0.707 | +0.160 / +0.136 | 163 |
+| rebounds D1 | mkt edge 0.15–0.25 + base top5 + final top5 | 0.609 | +0.108 / +0.169 | 214 |
+| **assists D1** | t5 ≤ 0.33 + base top5 + final top3 | **0.706** | +0.170 / +0.133 | 134 |
+| assists D1 | t5 ≤ 0.33 + final top3 | 0.706 | +0.149 / +0.109 | 136 |
+| assists D1 | t10 ≤ 0.33 + books 2–3 | 0.629 | +0.066 / +0.196 | 467 |
+| **threes D1** | mkt edge 0.05–0.15 + score top3 + final top3 | **0.693** | +0.170 / +0.157 | 184 |
+| threes D1 | mkt edge 0.05–0.15 + base top3 | 0.642 | +0.118 / +0.131 | 244 |
+| **rebounds D3** | t5 0.34–0.66 + t10 0.34–0.66 | **0.723** | +0.110 / +0.149 | 867 |
+| rebounds D3 | t3 + t5 mid + streaky | 0.638 | +0.097 / +0.249 | 1,068 |
+| assists D2 | phase late + final top3 | 0.609 | +0.100 / +0.159 | 63 |
+| points D3 | min rising ≥ +4 + no book line | 0.634 | +0.110 / +0.144 | 299 |
+**Every robust stack is a demon cell.** The Regular gold cells (base 0.58–0.66) gain only +0.02–0.03 from rank-over-rank and do not stack further; the demon cells (base 0.45–0.55) lift +0.10–0.17 to 0.60–0.72 in both seasons at every cut. Two mechanisms show in the stacks: (1) **trailing-COLD on demons** (t5 ≤ 0.33 on rebounds D1, assists D1) — the §20 mean-reversion working for us: a player cold on a demon line is priced down and reverts; (2) **rank-over-rank** on demons (top-3 under two ranks) — the confidence-adjusted ranks agreeing on a demon leg. The market-edge sweet band (0.05–0.25) works on demons (threes D1, rebounds D1, assists D2) where it was flat on Regular (§21a) — on a demon the book gap is not the model's overconfidence, it is the line.
+**Ledger change:** the demon family moves from "jackpot, inconstant" to **"conditional gold"** — rebounds D1, assists D1, threes D1 and rebounds D3 are gold WITH their stack (0.69–0.72, both seasons), not without. The Regular gold cells keep their §19p status with a rank-over-rank tie-break (+0.02–0.03). These stacks are one-season-confirmed on 130–870 legs each; the live season is their test.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
