@@ -211,13 +211,14 @@ def main():
 
     # ---------------- L8 matrix ----------------
     print("L8 matrix", flush=True)
+    # NOTE: cand_signal_matrix s1/s2 are WHOLE seasons (no November cutoff) - unlike tier_map_bands '2526_nov'. Recompute must match that.
     r = one(conn, """WITH rec AS (
         SELECT prop, tier, avg(dpm) pm, count(*) days FROM (
           SELECT game_date, prop, tier, avg(hit*factor) dpm FROM nba_score.cand_leg_features
-          WHERE season='2025-26' AND game_date>='2025-11-01' AND r_score<=5 AND prop IN ('steals','points','turnovers') AND tier='R' GROUP BY 1,2,3) d GROUP BY 1,2)
+          WHERE season='2025-26' AND r_score<=5 AND prop IN ('steals','points','turnovers') AND tier='R' GROUP BY 1,2,3) d GROUP BY 1,2)
         SELECT count(*), count(*) FILTER (WHERE abs(rec.pm-m.pm_s2)>1e-6 OR rec.days<>m.days_s2)
         FROM rec JOIN nba_score.cand_signal_matrix m ON m.depth=0 AND m.side='both' AND m.rank_key='final_score' AND m.cut_type='n' AND m.cut=5 AND m.prop=rec.prop AND m.tier=rec.tier""")
-    check(conn, "L8.matrix_base_recompute_exact", r[1] == 0, f"{r[1]} of {r[0]} mismatched")
+    check(conn, "L8.matrix_base_recompute_exact", r[1] == 0, f"{r[1]} of {r[0]} mismatched", "(full-season window, as the matrix stores)")
     r = one(conn, """SELECT count(*) FROM nba_score.cand_signal_matrix m JOIN nba_score.cand_signal_matrix b
                      ON b.depth=0 AND b.prop=m.prop AND b.tier=m.tier AND b.side=m.side AND b.rank_key=m.rank_key AND b.cut_type=m.cut_type AND b.cut=m.cut
                      WHERE m.depth>=1 AND (m.legs_s2>b.legs_s2 OR m.legs_s1>b.legs_s1 OR m.days_s2>b.days_s2)""")
