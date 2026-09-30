@@ -55,7 +55,7 @@ legs AS (
    AND pu.prop=%(prop)s AND pu.side=bd.side AND pu.line=bd.line AND pu.line_source='real' AND pu.kind=%(kind)s
   JOIN nba_market.pp_leg_price p ON p.snapshot_label='window' AND p.game_date=bd.game_date AND p.nm=bd.pn
    AND p.base_market=%(mkt)s AND p.side=bd.side AND p.line=bd.line AND p.kind=%(kind)s
-   AND (%(tier)s IS NULL OR least(abs(COALESCE(NULLIF(p.tier,0), round(p.line-p.anchor_line)::int)),3)=%(tier)s)
+   AND (%(tier)s::int IS NULL OR least(abs(COALESCE(NULLIF(p.tier,0), round(p.line-p.anchor_line)::int)),3)=%(tier)s::int)
   JOIN nba_score.final_hp f ON f.game_date=pu.game_date AND f.player_id=pu.player_id AND f.prop=pu.prop AND f.side=pu.side AND f.line=pu.line
   WHERE pu.hit IS NOT NULL AND p.factor IS NOT NULL
 ),
