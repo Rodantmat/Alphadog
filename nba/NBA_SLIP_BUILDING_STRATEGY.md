@@ -1645,4 +1645,45 @@ The slip engine had three ad hoc checks; the map had 54 frozen invariants. Added
 ### 26c. What "no improvements can be further done" honestly means here
 It means a **bounded** claim, and this is its boundary. Everything that could be tested on the two seasons of real board data has been: 24 cells × 3 ranks × 11 cuts × 21 signals × stacks to depth 5 (§22); 26 compositions × sizes 2–6 × Power/Flex × cap 1–10 (§25); the correlation sign rule at the pair level (§25d); the season phases and the final-week cutoff (§25e); the cap-by-structure and 2-pick Flex questions (§26b); and every number is protected by 66 invariants passing three times, with every slip leg traced to the raw board and the raw outcome. Within that boundary no further lever has shown a both-seasons improvement that the gates accept.
 What lies **outside** the boundary, and therefore cannot be claimed: (1) **a third season** — every strategy is positive in both seasons, but 2024-25 was ranked by a less-trained model on a thinner ladder, so the 2024-25 floors (+20…+52%) are the stress case, not an independent confirmation; the 2026-27 season is the real test and P3 already wires it; (2) **the 2025 playoffs** (never ingested, §19l) — nothing is validated on a playoff board; (3) **an injury feed** (§21b) — the one context signal that plausibly beats the model cannot be tested; (4) **Underdog** — the certified UD board (§15a) has never been run through the engine; the compression rule and correlation map are PP's; (5) **live line movement between window and lock** — the window snapshot is 2.5–6.7 h before tip and lines move; the paper-track in Oct will measure the slippage. These are data the system does not have, not levers it has not pulled.
-**The system as it stands, certified:** the map (§19), the ledger (§24a), the rank roles (§19p), the correlation sign rule (§25d), the final-week cutoff (§25e), the cap-by-structure rule (§26b), and 52 qualified strategies with the 4-pick Flex family at cap 1 and weighted:rebounds 5-Flex / core 3-Power at cap 3 as the leaders. Gates and hurdles are next.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**The system as it stands, certified:** the map (§19), the ledger (§24a), the rank roles (§19p), the correlation sign rule (§25d), the final-week cutoff (§25e), the cap-by-structure rule (§26b), and 52 qualified strategies with the 4-pick Flex family at cap 1 and weighted:rebounds 5-Flex / core 3-Power at cap 3 as the leaders. Gates and hurdles are next.
+
+---
+
+## 27. GATES AND HURDLES (2026-09-30)
+
+Two different things, kept apart. **Qualification gates** decide, on the backtest, which strategies may be played at all. **Live hurdles** decide, on incoming results, when a running strategy is cut back or stopped. Both are stated in units (1 unit = one slip's stake) from the certified slips, cap applied, `final7` excluded.
+
+### 27a. Qualification gates (backtest; all four must pass)
+G1 **Both seasons positive** at the strategy's cap, excluding the final week of each season. G2 **Concentration ≤ 50%**: no more than half of 2025-26 profit from the five best days. G3 **2025-26 max drawdown ≤ 15 u at cap 1** (the everyday profile); at cap 3 the drawdown gate becomes the sizing gate below. G4 **≥ 40 slate days in each season.** 52 strategies pass G1–G4 (§25e).
+G5 **Sizing gate (new):** a strategy may be played only with a bankroll ≥ **2 × its worst-season max drawdown + 1 u**, and each slip staked at 1 u of that bankroll. The 2× is the survival margin for a drawdown worse than either season's; the worst season is 2024-25 for every strategy.
+
+### 27b. The qualified leaders, with their gate numbers (both seasons; net / ROI / % days positive / max drawdown / longest losing streak / worst-5%-day)
+| strategy | cap | 2024-25 (stress) | 2025-26 | bankroll (G5) |
+|---|---|---|---|---|
+| **weighted:stocks_R 4-Flex** | 1 | +59 u / +38% / 45% / **22.1 u** / 11 d / −1 u | +120 u / +78% / 57% / 8.5 u / 5 d | **45 u** |
+| weighted:rebounds_R 4-Flex | 1 | +60 u / +39% / 46% / 21.6 u / 11 d | +126 u / +82% / 56% / 11.0 u / 7 d | 44 u |
+| weighted:steals_R 4-Flex | 1 | +32 u / +20% / 44% / 19.1 u / 11 d | +148 u / +96% / 57% / 10.9 u / 7 d | 39 u |
+| core 4-Flex | 1 | +43 u / +27% / 45% / 23.4 u / 11 d | +110 u / +72% / 55% / 11.0 u / 7 d | 48 u |
+| core+demon 3-Flex | 1 | +48 u / +31% / **54%** / **11.2 u** / 8 d | +50 u / +33% / **59%** / 11.8 u / 6 d | **24 u** |
+| **weighted:rebounds_R 5-Flex** | 3 | +209 u / +45% / 36% / **59.5 u** / 15 d / −3 u | +353 u / +76% / 42% / 32.2 u / 13 d | **120 u** |
+| core 3-Power | 3 | +131 u / +28% / 33% / **74.6 u** / 15 d / −3 u | +374 u / +81% / 47% / 30.0 u / 6 d | **150 u** |
+| core 5-Flex | 3 | +179 u / +38% / 37% / 61.4 u / 15 d | +345 u / +75% / 42% / 31.4 u / 14 d | 124 u |
+| regular 5-Flex | 3 | +110 u / +24% / 32% / 36.3 u / 13 d | +301 u / +65% / 40% / 27.2 u / 14 d | 74 u |
+| single:steals_R 3-Power | 3 | +29 u / +25% / 21% / 15.0 u / 12 d | +98 u / +66% / 28% / 14.0 u / 14 d | 31 u |
+**The trade the gates make explicit:** the cap-3 strategies earn 2–3× more per season (net 301–374 u vs 110–148 u) but their 2024-25 stress drawdowns are **60–75 u with 15-day losing streaks**, so they need **3–4× the bankroll** (120–150 u vs 39–48 u). Per unit of bankroll at risk the cap-1 4-Flex family is the better return; per absolute profit the cap-3 5-Flex / 3-Power are. core+demon 3-Flex is the low-variance floor: 24 u bankroll, 54–59% of days positive, drawdown ≤ 12 u in both seasons, at a modest +31–33%.
+
+### 27c. Three tiers of play (a portfolio, not one strategy)
+| tier | strategies | cap | bankroll | expected (25-26 / stress 24-25) | role |
+|---|---|---|---|---|---|
+| **T1 everyday** | weighted:stocks / rebounds / steals 4-Flex, core 4-Flex | 1 each | ~45 u each | +72…+96% / +20…+39% | 55–57% of days paid; drawdown ≤ 11 u |
+| **T2 volume** | weighted:rebounds 5-Flex, core 5-Flex, core 3-Power | 3 each | 120–150 u each | +75…+81% / +28…+45% | 2–3× the net; survives 60–75 u |
+| **T3 floor** | core+demon 3-Flex, single:steals 3-Power | 1 / 3 | 24–31 u | +33…+66% / +25…+31% | lowest variance; runs when T1/T2 are throttled |
+Jackpot-profile slips (demon 5/6-Flex, 6-pick weighted) are **not** in any tier: sized separately, ≤ 5% of bankroll, or not at all.
+
+### 27d. Live hurdles (incoming results; per strategy, per tier)
+H1 **Per-leg hit-rate hurdle (§15f, re-based on the certified cells):** rolling realized hit of the strategy's placed legs vs its certified level (0.61–0.69 by cell). **Yellow** if the rolling hit over ≥ 100 legs falls > 0.04 below certified; **red** at > 0.07 below over ≥ 150 legs (the 2024-25 level is ≈ 0.04–0.06 below 2025-26, so red means worse than the stress season).
+H2 **Drawdown hurdle:** **yellow** when the live drawdown reaches **1.0 × the strategy's worst-season max drawdown** (e.g. 22 u for weighted:stocks 4-Flex, 60 u for weighted:rebounds 5-Flex) → cut the cap to 1 (T2) or halve the stake (T1); **red** at **1.5 ×** → stop the strategy and re-qualify it on the live data before resuming. G5's 2× bankroll keeps red short of ruin.
+H3 **Streak hurdle:** **yellow** when the live losing streak exceeds **1.25 × the worst-season longest streak** (14 days for T1, 19 for T2); **red** at 1.5 × (17 / 23) — a streak the backtest never produced.
+H4 **Pool hurdle (§15e):** qualifying legs/day for the strategy's cells below the historical floor (~10 for the defensive cells) for 2+ weeks → yellow (the board is thinning or PP re-priced). H5 **Opening-weeks rule:** no red in the first 3 weeks of a season (both seasons ran thin and ~0.555 there); T3 only, or paper, until the pool reaches ~15/day. H6 **Final-week rule:** all tiers off for the last 7 days (§25e).
+**Escalation:** yellow on any one hurdle → reduce; yellow on two → T3 only; red on any → stop that strategy. A stopped strategy re-enters only after re-passing G1–G3 on a window that includes the live days that stopped it.
+**What the hurdles cannot yet do:** measure window-to-lock slippage (H0, the first thing the October paper-track establishes), or react to injury news (no feed, §21b). Both are recorded as open.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
