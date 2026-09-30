@@ -60,28 +60,38 @@ CREATE TABLE IF NOT EXISTS nba_score.tier_map_summary (
 REBUILD_LEGS = """
 INSERT INTO nba_score.tier_map_legs (rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor, score, hit, n_rank, cell_size)
 WITH legs AS (
+  -- one common pool: priced PP window leg + graded outcome + the three rank scores from nba_score.final_hp
   SELECT pu.season, pr.game_date, pu.player, pr.prop, pr.side, pr.line, pr.kind, pr.sys_tier, pr.price,
-         pu.model_p::double precision AS score, pu.hit::int AS h
-  FROM _priced pr JOIN nba_market.prop_universe pu
+         f.final_hp::double precision AS s_final, f.baseline_hp::double precision AS s_base, f.score::double precision AS s_score,
+         pu.hit::int AS h
+  FROM _priced pr
+  JOIN nba_market.prop_universe pu
     ON pu.game_date=pr.game_date AND nba_ref.norm_name(pu.player)=pr.nm AND pu.prop=pr.prop
    AND pu.side=pr.side AND pu.line=pr.line AND pu.line_source='real'
-  WHERE pu.hit IS NOT NULL AND pu.model_p IS NOT NULL
+  JOIN nba_score.final_hp f
+    ON f.game_date=pu.game_date AND f.player_id=pu.player_id AND f.prop=pu.prop AND f.line=pu.line AND f.side=pu.side
+  WHERE pu.hit IS NOT NULL AND f.final_hp IS NOT NULL AND f.baseline_hp IS NOT NULL AND f.score IS NOT NULL
 ),
 tiered AS (
   SELECT *, CASE WHEN kind='standard' THEN 'R'
                  WHEN kind='goblin'   THEN 'G'||least(abs(sys_tier),3)
                  WHEN kind='demon'    THEN 'D'||least(abs(sys_tier),3) END AS tier
   FROM legs
+),
+ranked AS (
+  SELECT rk.rank_key, t.*,
+    CASE rk.rank_key WHEN 'final_hp' THEN t.s_final WHEN 'baseline_hp' THEN t.s_base ELSE t.s_score END AS score
+  FROM tiered t CROSS JOIN (VALUES ('final_hp'),('baseline_hp'),('final_score')) rk(rank_key)
 )
-SELECT %s, season, game_date, player, prop, side, line, kind, tier, sys_tier, price, score, h,
-  row_number() OVER (PARTITION BY game_date, prop, tier ORDER BY score DESC),
-  count(*) OVER (PARTITION BY game_date, prop, tier)
-FROM tiered
+SELECT rank_key, season, game_date, player, prop, side, line, kind, tier, sys_tier, price, score, h,
+  row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score DESC),
+  count(*) OVER (PARTITION BY rank_key, game_date, prop, tier)
+FROM ranked
 ON CONFLICT DO NOTHING"""
 
 
-def rebuild_legs(conn, rank_key):
-    conn.execute("DELETE FROM nba_score.tier_map_legs WHERE rank_key=%s", (rank_key,))
+def rebuild_legs(conn):
+    conn.execute("DELETE FROM nba_score.tier_map_legs WHERE rank_key IN ('final_hp','baseline_hp','final_score')")
     # pp_leg_price is a 4-table view; materialize its priced window legs once, then join the flat table.
     conn.execute("""
         CREATE TEMP TABLE _priced AS
