@@ -90,39 +90,45 @@ def boot_ci(day_items, draws, rng):
     return out[int(0.025 * draws)], out[int(0.5 * draws)], out[int(0.975 * draws)]
 
 
+CELL_EDGE = {'steals_R_U': 0.691, 'steals_R': 0.654, 'turnovers_R': 0.633, 'stocks_R': 0.613, 'pts_ast_R': 0.611, 'points_R': 0.608,
+             'pra_R_U': 0.640, 'blocks_R': 0.595, 'pts_reb_R': 0.576, 'rebounds_R': 0.574, 'threes_D1': 0.631, 'assists_D1': 0.588,
+             'rebounds_D3': 0.606, 'goblin': 0.560}
+
+
 def monotonicity(days):
-    """OOS slips binned by summed certified edge into 5 equal-volume bins; ROI per bin; Spearman-ish check."""
+    """V4: OOS slips into 5 equal-volume bins by summed certified edge; per-bin ROI; count inversions."""
     slips = []
     for (s, d), v in days.items():
         if s != S2:
             continue
         for profit, hits, st, legs in v:
             legs_l = json.loads(legs) if isinstance(legs, str) else legs
-            edge = sum(float(l.get('factor', 1.0)) * 0 + 1 for l in legs_l)   # placeholder replaced below
-            slips.append((profit, legs_l))
-    if len(slips) < 50:
+            edge = sum(CELL_EDGE.get(l.get('cell'), 0.55) for l in legs_l)
+            slips.append((edge, profit))
+    if len(slips) < 100:
         return None
-    # edge proxy: mean leg hit probability is unknown at slip level; use number of Regular legs + demon presence ordering
-    # -> instead use the engine's own ordering proxy: slips are already ranked k within day; use profit-independent size of 'edge'
-    return None  # monotonicity by edge requires the per-leg certified edge, carried in legs_json only as 'cell'; done in SQL below
+    slips.sort()
+    n = len(slips)
+    bins = [slips[i * n // 5:(i + 1) * n // 5] for i in range(5)]
+    rois = [sum(p for _, p in b) / len(b) for b in bins if b]
+    inversions = sum(1 for i in range(1, len(rois)) if rois[i] < rois[i - 1])
+    return {'bin_roi': [round(r, 3) for r in rois], 'inversions': inversions}
 
 
 def decompose(conn, key):
     comp, size, structure = key
     cap = cap_for(structure, size)
     rows = conn.execute("""
-        SELECT j->>'cell' cell, j->>'side' side, j->>'tier' tier, sum(s.profit)/count(*) OVER () AS _, s.profit
+        SELECT j->>'cell' cell, s.profit
         FROM nba_score.slip_engine_slips s, jsonb_array_elements(s.legs_json) j
         WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.season=%s AND s.phase<>'final7'""",
         (comp, size, structure, cap, S2)).fetchall()
-    # profit attribution: each slip's profit split equally across its legs, then summed by cell
     by_cell = defaultdict(float)
     tot = 0.0
-    seen = set()
-    for cell, side, tier, _, profit in rows:
+    for cell, profit in rows:
         by_cell[cell] += profit / size
         tot += profit / size
-    if tot <= 0:
+    if tot <= 0 or not by_cell:
         return None
     top = max(by_cell.items(), key=lambda x: x[1])
     return {'top_cell': top[0], 'top_share': top[1] / tot, 'cells': {c: round(v, 1) for c, v in by_cell.items()}}
