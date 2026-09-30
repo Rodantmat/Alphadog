@@ -94,7 +94,9 @@ def main():
         profit_per_100 double precision, built_at timestamptz DEFAULT now())""")
     conn.execute("DELETE FROM nba_score.cand_certified")
     conn.commit()
-    conn.execute(RAW)
+    for stmt in RAW.split(';'):
+        if stmt.strip():
+            conn.execute(stmt)
     conn.execute("CREATE INDEX ON _raw (prop, kind, tier3, side, game_date)")
     conn.execute("ANALYZE _raw")
     n_raw = conn.execute("SELECT count(*) FROM _raw").fetchone()[0]
