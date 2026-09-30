@@ -94,7 +94,7 @@ def rebuild_legs(conn, rank_key):
         WHERE p.snapshot_label='window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)""")
     conn.execute("CREATE INDEX ON _priced (game_date, nm, prop, side, line)")
     conn.execute("ANALYZE _priced")
-    conn.execute(REBUILD_LEGS.replace('FROM priced pr', 'FROM _priced pr'), (rank_key,))
+    conn.execute(REBUILD_LEGS, (rank_key,))
     conn.commit()
     n = conn.execute("SELECT count(*) FROM nba_score.tier_map_legs WHERE rank_key=%s", (rank_key,)).fetchone()[0]
     print(f"  {rank_key}: tier_map_legs rebuilt from pp_leg_price(window) - {n:,} legs", flush=True)
