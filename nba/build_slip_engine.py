@@ -322,8 +322,8 @@ def main():
 
 def flush(conn, slip_rows, leg_rows):
     with conn.cursor() as c:
-        c.executemany("""INSERT INTO nba_score.slip_engine_slips (game_date, season, phase, composition, size, structure, k, legs_json, hits, payout, stake, profit, same_game, same_team, teams)
-                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", slip_rows)
+        c.executemany("""INSERT INTO nba_score.slip_engine_slips (game_date, season, phase, composition, size, structure, k, legs_json, hits, payout, stake, profit, same_game, same_team, teams, min_pair_corr, max_pair_corr)
+                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", slip_rows)
         c.executemany("""INSERT INTO nba_score.slip_engine_legs (game_date, composition, size, structure, k, cell, player, prop, tier, side, line, factor, hit)
                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", leg_rows)
     conn.commit()
