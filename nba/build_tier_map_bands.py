@@ -78,10 +78,14 @@ tiered AS (
                  WHEN kind='demon'    THEN 'D'||least(abs(sys_tier),3) END AS tier
   FROM legs
 ),
+dedup AS (
+  -- the pricing view carries ~123 duplicate keys (multi-harvest); keep-first HERE so rank/cell_size are computed on the rows that will actually be stored
+  SELECT * FROM (SELECT *, row_number() OVER (PARTITION BY game_date, player, prop, side, line ORDER BY price) dup FROM tiered) t WHERE dup=1
+),
 ranked AS (
   SELECT rk.rank_key, t.*,
     CASE rk.rank_key WHEN 'final_hp' THEN t.s_final WHEN 'baseline_hp' THEN t.s_base ELSE t.s_score END AS score
-  FROM tiered t CROSS JOIN (VALUES ('final_hp'),('baseline_hp'),('final_score')) rk(rank_key)
+  FROM dedup t CROSS JOIN (VALUES ('final_hp'),('baseline_hp'),('final_score')) rk(rank_key)
 )
 SELECT rank_key, season, game_date, player, prop, side, line, kind, tier, sys_tier, price, score, h,
   row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score DESC),
