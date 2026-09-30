@@ -1338,4 +1338,43 @@ Bar for "improvement": a filter that raises the gold cells' p·m at the same n, 
 | side tendency (Over legs; over_rate − under_rate, ≥20 apps) | over player ≥+0.15: 0.630 · neutral: 0.610 · under player: 0.568 — expected sign, +6 pts, but restates the model's own ordering (an Over player ranks high because the model rates him) — not a filter the map lacks |
 **Double-check 1 — is the model chasing history?** No: model_p is ~0.70–0.73 in every band (0.704 for "beats model", 0.702 for "under model"). The reversion is in the outcomes, not in the score.
 **Double-check 2 — the mechanism.** **66–70% of a player's Regular lines MOVE between one appearance and the next**, and they move in the streak-erasing direction: an Over player who has been beating the model sees his line rise +0.035 on average; an Under player who has been beating it sees +0.087 against him; the middle band moves +0.01. PrizePicks re-prices the line after every streak. This is the confirmation the earlier null results lacked: **regression is not in the player, it is in the price.** Every history-based signal (player rate, residual, rank persistence, cell rotation) is flat or inverted because the thing it measured has already been priced out by the time the next line is posted; the model works because it prices today's line.
-**Improvements from §20, stated plainly: none to the candidate set.** What §20 produced instead is a rule and two facts: (1) **no history-based player or cell signal survives on this board — retired as a class, not one at a time**; (2) the usable fraction of a cell (§20g, ~50% defensive / ~10% points-family) is the supply number for slips; (3) the cold-end over-delivery (§20e, small n) is a mean-reversion hypothesis for the signals phase. The signals that can still improve the map are the ones that measure something PP has NOT priced into today's line: market-edge vs sharp books (§8k/§14h), minutes/injury context, opponent tendencies — none of them history-of-hits.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Improvements from §20, stated plainly: none to the candidate set.** What §20 produced instead is a rule and two facts: (1) **no history-based player or cell signal survives on this board — retired as a class, not one at a time**; (2) the usable fraction of a cell (§20g, ~50% defensive / ~10% points-family) is the supply number for slips; (3) the cold-end over-delivery (§20e, small n) is a mean-reversion hypothesis for the signals phase. The signals that can still improve the map are the ones that measure something PP has NOT priced into today's line: market-edge vs sharp books (§8k/§14h), minutes/injury context, opponent tendencies — none of them history-of-hits.
+
+---
+
+## 21. THE THREE RESEARCH-PROPOSED SIGNALS — logic-checked, then granulated on the gold cells (2026-09-30)
+
+### 21a. Market edge — logic check, then the granular test
+**Logic:** `rung_market.p_over_book` is a consensus of real sportsbooks (FanDuel 3.0M legs, DraftKings 1.8M, BetOnline, Bovada, MGM, Caesars, Fanatics, BetRivers); PP/UD/Sleeper/Betr are excluded, so the edge is model-vs-books, not model-vs-itself. Two caveats found: **56% of market lines rest on a single book** (`books=1`, sd 0) — not a sharp consensus; and `rung_market.nm` is **NULL** (never populated) — any join on it returns nothing; join on `norm_name(player)`.
+**Test, gold-cell top-5, 0.05-wide edge bands, BOTH seasons:**
+| edge band (model − book) | 2024-25 hit / model_p (legs) | 2025-26 hit / model_p (legs) | realized − model |
+|---|---|---|---|
+| 0 … +0.05 | 0.459 / 0.532 (390) | 0.541 / 0.541 (146) | 0.00 |
+| +0.05 … +0.10 | 0.557 / 0.576 (655) | 0.598 / 0.580 (296) | +0.02 |
+| +0.10 … +0.15 | 0.550 / 0.628 (726) | 0.576 / 0.631 (427) | −0.06 |
+| +0.15 … +0.20 | 0.547 / 0.680 (981) | 0.564 / 0.682 (585) | −0.12 |
+| +0.20 … +0.25 | 0.593 / 0.727 (1,020) | 0.551 / 0.731 (816) | −0.18 |
+| +0.25 … +0.30 | 0.591 / 0.773 (797) | 0.578 / 0.774 (874) | −0.20 |
+| +0.30 … +0.40 | 0.538 / 0.818 (316) · 0.479 / 0.864 (96) | 0.580 / 0.820 (452) · 0.640 / 0.866 (114) | −0.24 … −0.39 |
+**Verdict — CORRECTS §14h and the prior turn's "sweet spot":** on the gold cells the realized hit is **flat, 0.55–0.60, across every edge band from +0.05 to +0.40, in both seasons.** What rises with the edge is the model's claim (0.58 → 0.91), not the outcome; realized − model runs from 0 at small edges to −0.32 at large ones. **A large model-vs-book gap measures the model's overconfidence, not a mispriced book.** The +0.05..+0.15 "sweet spot" at 0.65 was 275 legs on one cut; at 0.05 granularity over 5,000+ legs it is 0.55–0.60 like everything else. Market edge is **not a selection filter for the gold cells; it is a calibration input** (the books say how far to shrink the model) — the same conclusion §7's calibration reached from the other side.
+
+### 21b. Injury and starter context — logic check: not available pre-window
+No injury table exists in the schema (`nba_context.injuries` does not exist; nothing in `nba_stats` carries injury status). `player_game_starter_status` is keyed by `game_id` and is a lineup fact known ~30 min before tip — **after** the window snapshot (2.5–6.7 h before tip, §17a) — so using it is lookahead; excluded. **Injury context cannot be tested on this backdata.**
+
+### 21c. Minutes trend — the one clean pre-window version (prior games only)
+Trailing minutes from `player_game_log`, last-3 vs last-10 average, strictly prior games (≥5 in window). Gold-cell top-5, 2025-26 from Nov:
+| side | minutes trend (3g − 10g) | legs | hit | model_p |
+|---|---|---|---|---|
+| Over | rising ≥ +4 | 59 | 0.458 | 0.666 |
+| Over | rising +1.5..+4 | 295 | 0.607 | 0.667 |
+| Over | stable | 651 | 0.602 | 0.685 |
+| Over | falling −1.5..−4 | 477 | 0.597 | 0.698 |
+| **Over** | **falling ≤ −4** | **408** | **0.544** | **0.739** |
+| Under | any band | 220–1,436 | 0.588–0.627 | 0.67–0.74 |
+**One usable pattern:** Over legs on players whose minutes have dropped ≥4 below their 10-game average hit **0.544** while the model claims **0.739** — the model's score is *highest* on exactly the band that under-delivers (it has not absorbed the minutes drop). Every other band is 0.59–0.63. **Candidate negative filter: drop Over top-5 legs on players losing ≥4 minutes** (~20% of Over top-5 legs; one season; 408 legs — a candidate, not proven). Unders are unaffected (a player losing minutes helps an Under, and the model already prices it).
+
+### 21d. Candidates from §21 (owner's question)
+- **Market edge:** no candidate cells, no filter. One calibration input.
+- **Injury:** untestable on this data (pipeline gap: no injury feed).
+- **Minutes trend:** **one candidate negative filter** — exclude Over legs with a ≥4-minute trailing drop (raises the remaining Over top-5 from ~0.59 to ~0.60–0.61 by removing a 0.544 slice). To be confirmed on 2024-25 and at other cuts before it enters the live stack.
+No new cells. The gold ledger (§19p) is unchanged; §21c is the first signal in this entire phase that moves a gold cell's hit rate, and it does so by subtraction.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
