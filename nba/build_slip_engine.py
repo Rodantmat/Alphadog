@@ -258,7 +258,9 @@ def main():
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.slip_engine_slips (
         game_date date, season text, phase text, composition text, size int, structure text, k int,
         legs_json jsonb, hits int, payout double precision, stake double precision, profit double precision,
-        same_game int, same_team int, teams int, built_at timestamptz DEFAULT now())""")
+        same_game int, same_team int, teams int, min_pair_corr double precision, max_pair_corr double precision, built_at timestamptz DEFAULT now())""")
+    conn.execute("ALTER TABLE nba_score.slip_engine_slips ADD COLUMN IF NOT EXISTS min_pair_corr double precision")
+    conn.execute("ALTER TABLE nba_score.slip_engine_slips ADD COLUMN IF NOT EXISTS max_pair_corr double precision")
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.slip_engine_legs (
         game_date date, composition text, size int, structure text, k int, cell text, player text, prop text, tier text,
         side text, line numeric, factor double precision, hit int, built_at timestamptz DEFAULT now())""")
