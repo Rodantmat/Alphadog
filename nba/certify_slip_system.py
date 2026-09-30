@@ -315,6 +315,9 @@ def main():
     check(conn, "L11.engine_reconciles_to_certified_cell", r[0] is not None and r[0] < 0.01, f"|diff| {r[0]:.4f}" if r[0] is not None else "n/a", "(steals R top-2, 2025-26)")
     r = one(conn, """SELECT count(*) FROM (SELECT game_date, composition, size, structure, max(k) mk, count(*) c FROM nba_score.slip_engine_slips GROUP BY 1,2,3,4 HAVING max(k)<>count(*)) x""")
     check(conn, "L11.k_is_contiguous_per_day", r[0] == 0, r[0], "(slip k=1..n with no gaps)")
+
+    conn.commit()
+    print(f"\nRESULT: {CHECKS} checks, {FAILS} FAIL  (run {RUN_ID})", flush=True)
     conn.close()
     sys.exit(1 if FAILS else 0)
 
