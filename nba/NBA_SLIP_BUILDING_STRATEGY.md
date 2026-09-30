@@ -1169,4 +1169,27 @@ The §19i ledger used fixed n (3/5/10). Re-swept every cell at n = 1…20 with t
 | stocks R · pts_ast R · turnovers R | 67% |
 | steady but thinner: rebounds R 63% · assists D3 61% · blocks R 59% · pts_reb G1 59% | |
 | **positive on average, INCONSTANT (≤ 50% of days):** points D1 42%, rebounds D2 49%, pts_ast D2 49%, assists D2 45%, rebounds D1 40%, pts_ast D1 40%, assists D1 33%, threes D1 36%, pra D1 36%, pra G3 36% | jackpot profile: the average margin comes from a few big days |
-**What this changes vs §19j:** the D1/D2 demon cells that looked ABOVE on average are inconstant — real, but a jackpot profile to be sized as such, not gold bands; rebounds D3 is the one demon cell that is both positive and constant; two goblin cells (pra G2 n=1, pts_reb G1 n=1) are genuine single-leg bands; the Regular family (steals, points, pts_reb, pra, stocks, pts_ast, turnovers) is the constant core, positive on ~2 of every 3 real days at top-5. The pct-cut sweep is persisted alongside n (same table, `cut_type='pct'`); its bands are read the same way. **Next: baseline-HP and final-score legs into `tier_map_legs`, the same sweep, then the survivor intersection.**** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**What this changes vs §19j:** the D1/D2 demon cells that looked ABOVE on average are inconstant — real, but a jackpot profile to be sized as such, not gold bands; rebounds D3 is the one demon cell that is both positive and constant; two goblin cells (pra G2 n=1, pts_reb G1 n=1) are genuine single-leg bands; the Regular family (steals, points, pts_reb, pra, stocks, pts_ast, turnovers) is the constant core, positive on ~2 of every 3 real days at top-5. The pct-cut sweep is persisted alongside n (same table, `cut_type='pct'`); its bands are read the same way. **Next: baseline-HP and final-score legs into `tier_map_legs`, the same sweep, then the survivor intersection.**
+
+### 19l. FINAL SWEEP of the final-HP map (owner: all prop lines, full board, all tiers, two seasons)
+1. **Coverage:** all 12 real PP props are in the bands; every tier PP posts for each prop is present (the four defensive props are Regular-only on PP; threes has no G3 cell with ≥60 days); 323 slate-days across both seasons; every cut n=1…25 and pct=1…30 present for every cell in all three windows.
+2. **Full board, day by day:** the map's daily leg count tracks the PP window board at **86–91% in every regular-season month of both seasons** (the steady 9–14% gap is unscored/void legs, excluded); worst regular-season day 68%; only two regular-season days map to zero (2024-12-14, 2024-12-17 — no graded universe rows upstream).
+3. **GAP FOUND — the 2025 playoffs are not in the backdata.** April 13 → June 2025: 50 PP board days, ~97k board legs, but `prop_universe` holds only 21k legs and 7k graded, `final_hp` 21k. The playoff board was never fully ingested or scored upstream. April 2025 maps at 47%, May–June at 0%. **The "two seasons" are two REGULAR seasons (323 of ~373 board days).** Not a map defect — an ingestion gap. Consequence: nothing here is validated on a playoff board (fewer games, deeper ladders, different pool sizes); the 2026 playoffs will be the first playoff test. Flag for the pipeline: playoff ingestion/grading for 2025 is missing and would add 50 days of stress data.
+4. **Two-season check, cell by cell (peak margin over the tier's own break-even; depth = last positive n):**
+| cell | 2024-25 peak / depth | 2025-26 peak / depth | both / depth | verdict |
+|---|---|---|---|---|
+| steals R | +0.058 / 6 | +0.104 / 17 | +0.070 / 15 | **two-season gold** |
+| points R | +0.067 / 12 | +0.090 / 25 | +0.065 / 25 | **two-season gold** |
+| stocks R | +0.051 / 13 | +0.066 / 13 | +0.063 / 13 | **two-season gold** |
+| turnovers R | +0.016 / 9 | +0.098 / 18 | +0.053 / 15 | two-season (weak 24-25) |
+| pts_ast R | +0.025 / 19 | +0.097 / 22 | +0.041 / 19 | two-season |
+| rebounds D3 | +0.031 / 4 | +0.028 / 24 | +0.028 / 24 | **two-season — the demon that holds** |
+| pts_reb R | +0.007 / 14 | +0.103 / 25 | +0.026 / 22 | two-season (marginal 24-25) |
+| rebounds R · reb_ast R | +0.016 / 11 · +0.013 / 14 | +0.027 / 25 · +0.025 / 25 | +0.016 · +0.016 | two-season, thin — supply cells |
+| points D1 | +0.017 / 2 | +0.089 / 8 | +0.049 / 2 | two-season, top-2 only |
+| **pra R** | **−0.005** | +0.060 / 25 | +0.019 / 15 | **2025-26 only** |
+| **rebounds D2** | **−0.003** | +0.064 / 21 | +0.018 / 18 | **2025-26 only** |
+| **pra G2 (n=1)** | **−0.004** | +0.019 / 1 | +0.008 / 1 | **2025-26 only** |
+Ten cells are positive in both seasons and pooled; three of the §19k "constant" bands (pra R, rebounds D2, pra G2) are positive in 2025-26 only and are downgraded to *unproven across seasons*. Every cell is stronger in 2025-26 (retrained ranker + fuller ladders, §19h), so 2024-25 is the floor.
+5. **Multipliers drift between seasons:** PP LOWERED its demon payouts as it expanded the ladders — points D1 1.46 → 1.22, rebounds D2 2.29 → 2.02 (Regular stays 1.00, goblins ~flat). The same tier's break-even therefore moves between seasons; the sweep computes p_be per window, which is why the per-window numbers are the ones to read. **The live-season gate must re-read the tier multipliers, not assume last season's.**
+**Sweep verdict:** the final-HP map is complete for the data that exists; its one hole is upstream (2025 playoffs). Baseline-HP and final-score next, through the same builder.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
