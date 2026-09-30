@@ -1127,4 +1127,28 @@ Break-even 3pk Power p·m ≈ 0.55; NEAR = 0.50–0.55 (kept for signals, owner 
 - **NEAR (25, held for signals):** points D1/D2/D3, points G1/G2/G3, pra D1/D2, pra G1/G2/G3, pts_ast D1/D2, pts_ast G1/G2/G3, pts_reb D1, pts_reb G1/G2, reb_ast D1, reb_ast G1/G2/G3, threes R, assists G1, rebounds G1.
 - **Dropped (14, p·m < 0.50):** the remaining goblin/demon tiers of rebounds, assists, threes, reb_ast, pra, pts_reb, pts_ast.
 **GOBLINS — none survive, and the Flex angle does not rescue them.** Best goblin p·m: points G1 0.547, pra G1/G2 ~0.535 (top-3); the rest 0.47–0.53. Because a 0.80-hit leg pays partial Flex tiers often, I priced the top-5 goblins per cell as REAL 5-pick slips (real factor product × real Flex/Power payouts, 0.95 haircut): **every goblin cell loses — Flex −39% … −76%, Power −15% … −67%** (best: pra G3 Power −15%, points G1 Flex −39%). The all-5 rates are only 0.11–0.36 despite 0.70–0.80 per-leg hits (five different players), and the factor product of five goblins (~0.64⁵ ≈ 0.11) crushes the payout: a 5-of-5 Flex pays 10 × 0.11 ≈ 1.1×. **On PP the goblin discount is set correctly against the actual hit rate, tier by tier — the high hit rate is the reason for the discount, not an edge over it.** The one route left: the three NEAR goblin cells (points G1, pra G1/G2) — if a signal lifts their top-3 hit by ~5–8 pts without moving the price, points G1 clears. Held for signals. Demons are the opposite story: 8 demon cells clear on the jackpot profile because PP appears to under-price deep rebounds/assists demons in 2025-26.
-**Not yet done (honest):** the top-X% cut (vs top-n) is not in the persisted table — cell sizes range 14–250 legs so a percentage cut behaves differently on the small defensive cells; added with the baseline map. Underdog check deferred by agreement (PP first).** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**Not yet done (honest):** the top-X% cut (vs top-n) is not in the persisted table — cell sizes range 14–250 legs so a percentage cut behaves differently on the small defensive cells; added with the baseline map. Underdog check deferred by agreement (PP first).
+
+### 19j. GRANULAR BANDS — n = 1…20, real multiplier at every n (owner: point by point applies to the multiplier check too)
+The §19i ledger used fixed n (3/5/10). Re-swept every cell at n = 1…20 with the real factor at each n; `hold_60` / `hold_55` = the deepest n at which the cell still averages p·m ≥ 0.60 / ≥ 0.55 (the gold band's depth).
+**GOBLINS — verdict CORRECTED.** At top-5 none cleared; at the top of the rank three do: **pra G2 n=1 → hit 0.807, p·m 0.563 · pra G3 n=1 → 0.860, 0.562 · points G1 n=2 → 0.730, 0.555**; four more within 0.01 (pts_reb G1 n=1 0.549, pts_ast G2 n=1 0.547, points G2 n=1 0.547, points G3 n=1 0.544). Same shape everywhere: **the goblin edge lives in the top 1–2 legs of the cell and decays fast** (pra G2: 0.563 → 0.539 → 0.534 at n=1/2/3). A top-5 band averaged the gold leg with four ordinary ones — the fixed-n test hid it. The §19i "no goblins" and the 5-leg Flex test (which built slips from the top 5) were both too coarse. Goblins are one-leg-a-day cells: pra G2/G3 top-1 and points G1 top-2 join the candidate set.
+**Candidates by band depth (2025-26 from Nov, real p·m):**
+| cell | best n / p·m | hold ≥0.60 | hold ≥0.55 | band type |
+|---|---|---|---|---|
+| rebounds D2 | 2 / 0.676 | n≤10 | n≤16 | durable jackpot |
+| rebounds D3 | 2 / 0.635 | n≤13 | n≤20 | durable jackpot (widest) |
+| steals R | 2 / 0.654 | n≤9 | n≤17 | durable |
+| turnovers R | 2 / 0.648 | n≤6 | n≤18 | durable |
+| points R | 4 / 0.640 | n≤6 | n≤20 | durable, widest supply |
+| pts_ast R | 1 / 0.647 | n≤4 | n≤18 | durable |
+| stocks R | 3 / 0.616 | n≤5 | n≤13 | durable |
+| assists D2 | 5 / 0.606 | n≤5 | n≤15 | durable jackpot |
+| threes D1 | 2 / 0.610 | n≤3 | n≤18 | durable |
+| assists D3 | 3 / 0.658 | n≤4 | n≤10 | mid jackpot |
+| pts_reb R / pra R | 1 / 0.653 · 2 / 0.610 | n≤2 | n≤20 | sharp top, wide floor |
+| **points D1** | **1 / 0.654** | n=1 | n≤2 | sharp — one leg a day |
+| pts_ast D1 / points D2 / pra D1 | 1 / 0.585 · 1 / 0.572 · 2 / 0.558 | — | n≤2 | sharp — top 1–2 only |
+| rebounds D1 / assists D1 | 1 / 0.601 · 1 / 0.597 | n=1 | n≤9 | sharp top, mid floor |
+| rebounds R / reb_ast R | 2 / 0.577 · 8 / 0.575 | never | n≤20 | wide-flat (supply, not edge) |
+| assists R / blocks R | 3 / 0.551 · — | never | n≤3 | marginal |
+**What the bands change:** (1) the fixed-n ledger made points D1 (0.654 at n=1, 0.535 at n=3) look like a NEAR cell — it is a one-leg-a-day ABOVE cell; (2) rebounds D3 is the deepest band on the board (≥0.60 to n=13), deeper than any Regular cell; (3) rebounds R and reb_ast R never reach 0.60 but hold 0.55–0.58 to n=20 — supply cells for filling a slip, not edge cells; (4) every cell's usable n is now known, which is what slip construction will read. **The candidate set is now defined per cell as (tier, n-band), not (tier) alone.** Baseline-HP and final-score maps next, same granularity, same table.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
