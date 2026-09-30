@@ -167,6 +167,8 @@ def main():
     conn.execute(DDL_BANDS); conn.execute(DDL_SUMMARY)
     ranks = [r.strip() for r in os.environ.get('TM_RANK', 'final_hp').split(',') if r.strip()]
     for rank_key in ranks:
+        if os.environ.get('TM_REBUILD', '0') == '1' and rank_key == 'final_hp':
+            rebuild_legs(conn, rank_key)
         conn.execute("DELETE FROM nba_score.tier_map_bands WHERE rank_key=%s", (rank_key,))
         conn.execute("DELETE FROM nba_score.tier_map_summary WHERE rank_key=%s", (rank_key,))
         for win, where in WINDOWS.items():
