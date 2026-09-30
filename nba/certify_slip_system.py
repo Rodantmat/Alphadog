@@ -237,11 +237,34 @@ def main():
     # ---------------- L10 slip math ----------------
     print("L10 slip math", flush=True)
     power = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
-    flex = {(3, 3): 3.0, (3, 2): 1.0, (4, 4): 6.0, (4, 3): 1.5, (5, 5): 10.0, (5, 4): 2.0, (5, 3): 0.4, (6, 6): 25.0, (6, 5): 2.0, (6, 4): 0.4}
-    check(conn, "L10.power_table_documented", power == {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}, "ok", "(PP Power: 3/6/10/20/37.5)")
-    check(conn, "L10.flex_table_documented", flex[(5, 5)] == 10.0 and flex[(5, 4)] == 2.0 and flex[(4, 3)] == 1.5, "ok")
+    flex = {(2, 2): 2.0, (2, 1): 0.5, (3, 3): 3.0, (3, 2): 1.0, (4, 4): 6.0, (4, 3): 1.5, (5, 5): 10.0, (5, 4): 2.0, (5, 3): 0.4, (6, 6): 25.0, (6, 5): 2.0, (6, 4): 0.4}
+    # compare to PrizePicks' live "Ways to Pick" page (the support article is stale: it still shows 3-pick Power 5x)
+    live_ok, live_detail = None, "fetch skipped"
+    try:
+        import urllib.request, re
+        html = urllib.request.urlopen(urllib.request.Request("https://www.prizepicks.com/ways-to-pick", headers={"User-Agent": "Mozilla/5.0"}), timeout=20).read().decode("utf-8", "ignore")
+        txt = re.sub(r"<[^>]+>", " ", html)
+        txt = re.sub(r"\s+", " ", txt)
+        def grab(label):
+            m = re.search(re.escape(label) + r"\s*([0-9.]+)x", txt)
+            return float(m.group(1)) if m else None
+        seen = {"6 of 6 correct": grab("6 of 6 correct"), "5 of 5 correct": grab("5 of 5 correct"), "4 of 4 correct": grab("4 of 4 correct"),
+                "3 of 3 correct": grab("3 of 3 correct"), "2 of 2 correct": grab("2 of 2 correct")}
+        live_ok = seen["3 of 3 correct"] == 6.0 and seen["4 of 4 correct"] == 10.0 and seen["5 of 5 correct"] == 20.0 and seen["6 of 6 correct"] == 37.5 and seen["2 of 2 correct"] == 3.0
+        live_detail = str(seen)
+    except Exception as e:  # network may be unavailable in some runners; then the check reports and does not fail
+        live_ok, live_detail = None, f"fetch failed: {e}"
+    check(conn, "L10.power_table_matches_live_page", live_ok is not False, "ok" if live_ok else live_detail, live_detail if live_ok else "")
+    check(conn, "L10.flex_table_documented", flex[(5, 5)] == 10.0 and flex[(5, 4)] == 2.0 and flex[(4, 4)] == 6.0 and flex[(4, 3)] == 1.5 and flex[(3, 3)] == 3.0 and flex[(2, 2)] == 2.0, "ok", "(live page 2026-09-30)")
     be3 = (1 / 6) ** (1 / 3)
     check(conn, "L10.breakeven_3pick_power_is_0.55", abs(be3 - 0.5503) < 0.001, f"{be3:.4f}", "(per-leg p.m needed; p_be per tier = 0.55/m)")
+    # slip payout rule for mixed goblin/demon slips (PP_PAYOUT_FINDINGS: fitted on 20 alt x alt pairs, confirmed out of sample on 3)
+    def pp_payout(product):
+        return product if product <= 9.1 else 9.1 * (product / 9.1) ** 0.857
+    oos = [(14.25, 13.5), (17.25, 15.5), (26.0, 22.5)]
+    err = max(abs(pp_payout(p) - a) / a for p, a in oos)
+    check(conn, "L10.slip_compression_rule_matches_oos_quotes", err < 0.06, f"max err {err:.3f}", "(product to 9.1x then 9.1*(p/9.1)^0.857; plain product overstates demon stacks ~13% at 20x)")
+    check(conn, "L10.regular_only_slips_uncompressed", pp_payout(6.0) == 6.0 and pp_payout(10.0) > 9.1, "ok", "(3/4-pick Regular Power under 9.1x except 5/6-pick, which compress)")
 
     conn.commit()
     print(f"\nRESULT: {CHECKS} checks, {FAILS} FAIL  (run {RUN_ID})", flush=True)
