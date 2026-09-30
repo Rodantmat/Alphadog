@@ -87,7 +87,7 @@ usg AS (
   SELECT g.nba_player_id::text pid, g.game_date,
     avg(a.usg_pct) OVER w3 - avg(a.usg_pct) OVER w10 AS usg_trend
   FROM nba_stats.player_game_log g
-  JOIN nba_stats.player_game_log_advanced a ON a.player_id=g.nba_player_id::text AND a.game_id=g.game_id
+  JOIN nba_stats.player_game_log_advanced a ON a.player_id='nba_'||g.nba_player_id::text AND a.game_id=g.game_id
   WHERE a.usg_pct IS NOT NULL
   WINDOW w3 AS (PARTITION BY g.nba_player_id ORDER BY g.game_date ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING),
          w10 AS (PARTITION BY g.nba_player_id ORDER BY g.game_date ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING)
