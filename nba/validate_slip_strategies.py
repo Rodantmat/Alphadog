@@ -235,7 +235,7 @@ def main():
         ranked = []
         for key in strat:
             s = sstats(key, S1)
-            if s and s['days'] >= 40 and s['roi'] > 0 and s['conc'] <= 0.5:
+            if s and s['days'] >= 40 and s['roi'] > 0:
                 ranked.append((s['roi'], key))
         ranked.sort(reverse=True)
         surv = 0
