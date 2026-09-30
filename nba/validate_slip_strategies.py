@@ -202,36 +202,54 @@ def main():
         passed += 1 if (v2 and v6) else 0
     print(f"\n  REAL survivors (OOS CI lower bound > 0 AND positive with teammates banned): {passed} of {len(results)}", flush=True)
 
-    # ---- V3 empirical null: permute outcomes within day, re-run V1+V2, count survivors
-    print(f"\n== V3 empirical null: {NULLS} within-day outcome permutations ==", flush=True)
-    null_counts = []
-    # build day -> slip profit pools per strategy; permuting WITHIN a day across strategies keeps day totals but breaks strategy identity
-    day_index = defaultdict(list)   # (season, day) -> list of (key, idx)
+    # ---- V3 empirical null: shuffle HITS across the day's legs (outcomes carry no information), regrade every slip, re-run V1+V2
+    # NOTE: a label-permutation null (shuffling PROFITS across strategies within a day) is WRONG here - it keeps every day's
+    # real outcomes and merely relabels them, so it preserves the board's real edge (+46% avg across all strategies in 25-26)
+    # and tests only "does selection beat the average strategy". The question is "is there an edge at all".
+    print(f"\n== V3 empirical null: {NULLS} within-day HIT shuffles with full regrade ==", flush=True)
+    POWER = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
+    FLEX = {(2, 2): 2.0, (2, 1): 0.5, (3, 3): 3.0, (3, 2): 1.0, (4, 4): 6.0, (4, 3): 1.5, (5, 5): 10.0, (5, 4): 2.0, (5, 3): 0.4, (6, 6): 25.0, (6, 5): 2.0, (6, 4): 0.4}
+    def compress(p):
+        return p if p <= 9.1 else 9.1 * (p / 9.1) ** 0.857
+    # per (season, day): the distinct real legs on the board that day (player, prop, side, line) -> hit
+    day_legs = defaultdict(dict)
+    slip_defs = defaultdict(list)   # (key, (season, day)) -> list of (structure, size, [leg_ids], [factors])
     for key, days in strat.items():
         for sd, v in days.items():
-            for i in range(len(v)):
-                day_index[sd].append((key, i))
+            for profit, hits, st, legs in v:
+                legs_l = json.loads(legs) if isinstance(legs, str) else legs
+                ids, fs = [], []
+                for l in legs_l:
+                    lid = (l['player'], l['prop'], l['side'], float(l['line']))
+                    day_legs[sd][lid] = int(l['hit'])
+                    ids.append(lid); fs.append(float(l['factor']))
+                slip_defs[(key, sd)].append((key[2], key[1], ids, fs))
+    def regrade(structure, size, ids, fs, hitmap):
+        h = sum(hitmap[i] for i in ids)
+        fp = 1.0
+        for f in fs:
+            fp *= f
+        base = (POWER[size] if h == size else 0.0) if structure == 'power' else FLEX.get((size, h), 0.0)
+        return (compress(base * fp) if base > 0 else 0.0) - 1.0
+    null_counts = []
     for it in range(NULLS):
-        # shuffled copy: for each day, permute profits across all (strategy, slip) entries of that day
-        perm = {}
-        for sd, entries in day_index.items():
-            profits = [strat[k][sd][i][0] for k, i in entries]
-            rng.shuffle(profits)
-            for (k, i), p in zip(entries, profits):
-                perm[(k, sd, i)] = p
-        # rebuild season stats under the permutation
+        shuffled = {}
+        for sd, legs in day_legs.items():
+            ids = list(legs.keys()); hs = [legs[i] for i in ids]
+            rng.shuffle(hs)
+            shuffled[sd] = dict(zip(ids, hs))
         def sstats(key, season):
             items = []
             for (s, d), v in strat[key].items():
                 if s != season:
                     continue
-                net = sum(perm[(key, (s, d), i)] for i in range(len(v)))
-                items.append((net, len(v)))
+                defs = slip_defs[(key, (s, d))]
+                net = sum(regrade(st_, sz, ids, fs, shuffled[(s, d)]) for st_, sz, ids, fs in defs)
+                items.append((net, len(defs)))
             if not items:
                 return None
             n = sum(c for _, c in items); net = sum(p for p, _ in items)
-            top5 = sum(sorted((p for p, _ in items), reverse=True)[:5])
-            return {'days': len(items), 'roi': net / n, 'conc': (top5 / net if net > 0 else 1.0), 'day_items': items}
+            return {'days': len(items), 'roi': net / n, 'day_items': items}
         ranked = []
         for key in strat:
             s = sstats(key, S1)
@@ -243,12 +261,12 @@ def main():
             s2 = sstats(key, S2)
             if not s2 or s2['days'] < 40:
                 continue
-            lo, _, _ = boot_ci(s2['day_items'], 400, rng)   # cheaper bootstrap inside the null loop
+            lo, _, _ = boot_ci(s2['day_items'], 400, rng)
             if lo > 0:
                 surv += 1
         null_counts.append(surv)
         if (it + 1) % 50 == 0:
-            print(f"    {it+1}/{NULLS} permutations, null survivors so far: mean {sum(null_counts)/len(null_counts):.2f}, max {max(null_counts)}", flush=True)
+            print(f"    {it+1}/{NULLS} shuffles, null survivors so far: mean {sum(null_counts)/len(null_counts):.2f}, max {max(null_counts)}", flush=True)
     null_counts.sort()
     p95 = null_counts[int(0.95 * len(null_counts))] if null_counts else None
     print(f"\n  V3 RESULT: under a zero-edge null, expected survivors = {sum(null_counts)/len(null_counts):.2f} (95th pct {p95}); REAL survivors = {passed}", flush=True)
