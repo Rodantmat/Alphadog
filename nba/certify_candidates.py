@@ -55,27 +55,33 @@ GROUP BY season ORDER BY season
 """
 
 RAW = """
-CREATE TEMP TABLE _raw AS
-WITH bd AS (
+CREATE TEMP TABLE _bd AS
   SELECT DISTINCT game_date, nba_ref.norm_name(player) pn, line, side,
     replace(replace(market_key,'_alternate',''),'player_','') AS mk
   FROM nba_market.board_snapshots
-  WHERE bookmaker='prizepicks' AND snapshot_label='window' AND snapshot_ts<commence_time
-),
-pr AS (
-  SELECT game_date, nm, side, line, kind, factor::float price, base_market,
+  WHERE bookmaker='prizepicks' AND snapshot_label='window' AND snapshot_ts<commence_time;
+CREATE INDEX ON _bd (game_date, pn, side, line, mk);
+
+CREATE TEMP TABLE _pu AS
+  SELECT game_date, nba_ref.norm_name(player) pn, player, player_id, season, prop, side, line, kind, hit::int h
+  FROM nba_market.prop_universe WHERE line_source='real' AND hit IS NOT NULL;
+CREATE INDEX ON _pu (game_date, pn, side, line, prop, kind);
+
+CREATE TEMP TABLE _pr AS
+  SELECT game_date, nm, side, line, kind, factor::float price, replace(base_market,'player_','') mk,
     least(abs(COALESCE(NULLIF(tier,0), round(line-anchor_line)::int)),3) AS tier3
-  FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND factor IS NOT NULL AND NOT coalesce(kind_position_mismatch,false)
-)
-SELECT bd.game_date, pu.season, pu.player, pu.prop, bd.side, bd.line, pu.hit::int h, pr.price, pr.kind, pr.tier3,
+  FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND factor IS NOT NULL AND NOT coalesce(kind_position_mismatch,false);
+CREATE INDEX ON _pr (game_date, nm, side, line, mk);
+
+CREATE TEMP TABLE _raw AS
+SELECT bd.game_date, pu.season, pu.player, pu.prop, bd.side, bd.line, pu.h, pr.price, pr.kind, pr.tier3,
        f.score::float s_score, f.baseline_hp::float s_base, f.final_hp::float s_final
-FROM bd
-JOIN pr ON pr.game_date=bd.game_date AND pr.nm=bd.pn AND pr.side=bd.side AND pr.line=bd.line AND replace(pr.base_market,'player_','')=bd.mk
-JOIN nba_market.prop_universe pu ON pu.game_date=bd.game_date AND nba_ref.norm_name(pu.player)=bd.pn AND pu.side=bd.side AND pu.line=bd.line AND pu.line_source='real' AND pu.kind=pr.kind
+FROM _bd bd
+JOIN _pr pr ON pr.game_date=bd.game_date AND pr.nm=bd.pn AND pr.side=bd.side AND pr.line=bd.line AND pr.mk=bd.mk
+JOIN _pu pu ON pu.game_date=bd.game_date AND pu.pn=bd.pn AND pu.side=bd.side AND pu.line=bd.line AND pu.kind=pr.kind
   AND pu.prop=CASE bd.mk WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' THEN 'pra'
     WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast' WHEN 'rebounds_assists' THEN 'reb_ast' ELSE bd.mk END
 JOIN nba_score.final_hp f ON f.game_date=pu.game_date AND f.player_id=pu.player_id AND f.prop=pu.prop AND f.side=pu.side AND f.line=pu.line
-WHERE pu.hit IS NOT NULL
 """
 
 
