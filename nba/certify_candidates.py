@@ -88,9 +88,14 @@ def main():
         profit_per_100 double precision, built_at timestamptz DEFAULT now())""")
     conn.execute("DELETE FROM nba_score.cand_certified")
     conn.commit()
+    conn.execute(RAW)
+    conn.execute("CREATE INDEX ON _raw (prop, kind, tier3, side, game_date)")
+    conn.execute("ANALYZE _raw")
+    n_raw = conn.execute("SELECT count(*) FROM _raw").fetchone()[0]
+    print(f"  raw priced+graded+ranked board materialized: {n_raw:,} legs", flush=True)
     print(f"{'cell':<26} {'season':<8} {'days':>4} {'hit':>6} {'mult':>6} {'p.m':>6} {'%days>BE':>9} {'$/100':>6}", flush=True)
     for prop, kind, tier, side, n, rank in CONFIGS:
-        rows = conn.execute(SQL, {'mkt': MKT[prop], 'kind': kind, 'tier': tier, 'side': side, 'n': n, 'rank': rank, 'prop': prop, 'be': BE}).fetchall()
+        rows = conn.execute(SQL, {'kind': kind, 'tier': tier, 'side': side, 'n': n, 'rank': rank, 'prop': prop, 'be': BE}).fetchall()
         label = f"{prop} {kind[0].upper()}{tier or ''} {side} top{n} {rank}"
         for season, days, hit, mult, pm, above in rows:
             profit = 100 * (6 * 0.95 * pm ** 3 - 1)
