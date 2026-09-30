@@ -1686,4 +1686,63 @@ H2 **Drawdown hurdle:** **yellow** when the live drawdown reaches **1.0 × the s
 H3 **Streak hurdle:** **yellow** when the live losing streak exceeds **1.25 × the worst-season longest streak** (14 days for T1, 19 for T2); **red** at 1.5 × (17 / 23) — a streak the backtest never produced.
 H4 **Pool hurdle (§15e):** qualifying legs/day for the strategy's cells below the historical floor (~10 for the defensive cells) for 2+ weeks → yellow (the board is thinning or PP re-priced). H5 **Opening-weeks rule:** no red in the first 3 weeks of a season (both seasons ran thin and ~0.555 there); T3 only, or paper, until the pool reaches ~15/day. H6 **Final-week rule:** all tiers off for the last 7 days (§25e).
 **Escalation:** yellow on any one hurdle → reduce; yellow on two → T3 only; red on any → stop that strategy. A stopped strategy re-enters only after re-passing G1–G3 on a window that includes the live days that stopped it.
-**What the hurdles cannot yet do:** measure window-to-lock slippage (H0, the first thing the October paper-track establishes), or react to injury news (no feed, §21b). Both are recorded as open.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
+**What the hurdles cannot yet do:** measure window-to-lock slippage (H0, the first thing the October paper-track establishes), or react to injury news (no feed, §21b). Both are recorded as open.
+
+---
+
+## 28. THE MLB FALSIFICATION BAR — read, researched, translated, and applied to every strategy (2026-09-30)
+
+Owner: the MLB slip documentation's gates and hurdles are what validates a strategy; translate them to NBA with research and Gemini, multiple passes, deep scrutiny to see what survives. This section supersedes §27's qualification gates where they conflict.
+
+### 28a. What MLB's method is (from `SLIP_STRATEGY_V1_SPEC_AND_BLOCKERS.md` and `SESSION_2026-09-01_PP_GATE_CALIBRATION.md`)
+**The spec's gates:** day-block bootstrap (2,000 resamples) 100% positive; 95% CI excluding zero; leave-one-day-out positive on every day; split-sample train/test holds; profitable-day count; best-day share of profit; max drawdown. Rules learned the hard way: **cap widening kills ROI on the first step** (+1 cap: 94.3% → 88.7% leg accuracy, +70.9% → +23.7%); **shrink, never substitute** (backup legs come from beyond the cap, exactly the ranks proven to dilute); Power beat Flex at 94% leg accuracy; 5-pick a real peak, 6-pick worse. **Blocker 4 named NBA's exact weakness before NBA existed:** "config was selected in-sample; gates test robustness to day-resampling, not to configuration selection."
+**The gate-calibration session's pre-registered falsification bar (set adversarially BEFORE results):** (1) n ≥ 1,500 OOS legs across ≥ 25 distinct days, no single-week blocks; (2) strict rank monotonicity across 5 equal-volume OOS bins, Spearman ≥ 0.95, zero inversions; (3) E[p×m] ≥ 1.04 — a 4% margin, not a hair above break-even; (4) lift over the ungated pool ≥ +0.06 in p×m at p < 0.01 via a **10,000-resample day-blocked bootstrap** (resample whole days, never legs); (5) **falsification: if the 95% bootstrap lower bound falls below break-even the gate is rejected, no exceptions.** Plus: **per-cell break-even at 1/m — a global gate accepts negative-EV legs on low-multiplier props and rejects profitable ones on high-multiplier props**; "decompose the aggregate by every plausible confounding dimension before believing it — a single dominant sub-population hiding inside a clean aggregate is the most common failure mode in this program"; five retractions recorded rather than buried. MLB's record: 17 candidates tested, 0 confirmed.
+**One MLB fact that conflicts with NBA and is resolved:** MLB measured PP discounting same-game slips 37% ("always build cross-game"). NBA's own real quotes (`PP_PAYOUT_FINDINGS` §6) show opponent same-game pairs at 3.0/3.0/2.9× — no meaningful discount; **teammate pairs are untested on NBA**. The repo's own conservative rule: "every slip uses legs from different games." Adopted for teammates (V6 below); opponents stay allowed on the measured evidence.
+
+### 28b. Research and the adversarial pass
+The validation literature (walk-forward with selection on a trailing window applied to the next block; stationary/day-blocked bootstrap CIs; drawdown distribution under resampling; "certified when the OOS CI excludes zero") converges with MLB and adds two things MLB lacked: **deflation for the number of strategies tried** (the best of many is biased upward) and CLV. Gemini, asked adversarially with both bars side by side: "positive in both seasons" is NOT out-of-sample when the configuration was chosen with both seasons visible — correct, and it is MLB's Blocker 4; no bootstrap CI on ROI, no leg-level bar, no decomposition — correct; ban teammate pairs until measured — correct, adopted; minimum live paper-track before staking 50 days / 1,000 slips per strategy with a stop at CI-lower-bound < break-even or drawdown > 1.5× — adopted (§28f). Gemini's "500 expected false survivors" arithmetic was wrong (independent coin flips across strategies that share the same legs), so deflation was done empirically.
+
+### 28c. The NBA translation — `validate_slip_strategies.py` (workflow `nba-validate-slips.yml`), on the certified slips
+| MLB item | NBA translation |
+|---|---|
+| config selected in-sample (Blocker 4) | **V1 walk-forward:** rank every strategy on **2024-25 only** (ROI at its cap, ≥ 40 days), take the top 30, score them on **2025-26, never used for selection**. Only the OOS numbers count. |
+| 10k day-blocked bootstrap; lower bound < break-even → reject | **V2:** 10,000 resamples of whole OOS days; **95% lower bound on OOS ROI must be > 0**. |
+| deflation for strategies tried | **V3 empirical null:** re-run V1+V2 under a null where selection carries no information; the survivor count under the null is the expected number of false survivors. |
+| rank monotonicity across 5 bins | **V4:** OOS slips in 5 equal-volume bins by summed certified edge; inversions counted. |
+| decompose the aggregate | **V5:** each survivor's OOS profit attributed by leg cell; dominant-cell share flagged. |
+| same-game payout | **V6:** OOS ROI recomputed with every same-team slip removed; the banned figure stands. |
+| cap widening / shrink-not-substitute | cap fixed by structure BEFORE looking at OOS (cap 3 for 5-Flex and 3-Power, cap 1 otherwise — §26b); shrink rule carried into the live builder. |
+
+### 28d. RESULTS — walk-forward, selected on 2024-25, scored on untouched 2025-26
+**17 of 30 survive V2 and V6** (OOS CI lower bound > 0 AND positive with teammates banned):
+| strategy (cap) | S1 ROI (selection) | OOS ROI | OOS 95% CI | no-teammate OOS | top cell (share) |
+|---|---|---|---|---|---|
+| weighted:steals_R 5-Flex (3) | +45% | **+106%** | **+62% … +152%** | +111% | steals_R 40% |
+| demon 5-Flex (3) | +158% | +112% | +46% … +186% | +136% | threes_D1 38% |
+| weighted:rebounds_R 4-Flex (1) | +39% | +82% | +45% … +120% | +75% | steals_R 63% |
+| weighted:stocks_R 5-Flex (3) | +31% | +84% | +45% … +125% | +88% | steals_R 53% |
+| weighted:rebounds_R 3-Power (3) | +37% | +79% | +45% … +113% | +80% | steals_R 73% |
+| weighted:stocks_R 4-Flex (1) | +38% | +78% | +43% … +114% | +72% | steals_R 65% |
+| weighted:threes_D1 3-Power (3) | +31% | +75% | +41% … +109% | +76% | steals_R 73% |
+| weighted:turnovers_R 3-Power (3) | +31% | +71% | +37% … +106% | +71% | steals_R 72% |
+| weighted:rebounds_R 5-Flex (3) | +45% | +76% | +37% … +117% | +82% | steals_R 49% |
+| core 5-Flex (3) | +38% | +75% | +36% … +115% | +77% | steals_R 54% |
+| weighted:assists_D1 4-Flex (1) · 5-Flex (3) | +34% · +40% | +68% · +65% | +34…+104% · +29…+103% | +66% · +65% | steals_R 65% · 52% |
+| core+demon 5-Flex (3) · 3-Flex (1) | +51% · +31% | +69% · +33% | +29…+115% · +9…+56% | +75% · +34% | steals_R 48% · 71% |
+| weighted:threes_D1 5-Flex (3) | +34% | +63% | +27% … +103% | +67% | steals_R 54% |
+| demon 3-Flex (1) | +68% | +62% | +18% … +109% | +68% | threes_D1 54% |
+| best 6-Flex (1) | +37% | +70% | **+1%** … +152% | +70% | steals_R_U 33% (marginal) |
+**Rejected by V2 (OOS lower bound ≤ 0):** every other 6-pick (weighted:steals 6-Flex −6%, regular 6-Flex −7%, weighted:rebounds 6-Flex −12%, regular 6-Power −60%), demon 4-Flex (−13%), demon 5/6-Power (−100%), single:stocks 5-Flex/Power (−16 / −62%), single:points 5-Power (−42%, and negative with teammates banned), single:assists_D1 2-Flex (OOS +1%). **The jackpot rows are gone; §27's tiers are revised below.**
+
+### 28e. V3 — the empirical null, including the two I got wrong (recorded, MLB-style)
+1. **Label-permutation null (WRONG):** shuffled slip profits across strategies within a day. It preserves every day's real outcomes and merely relabels them, so it preserves the board's real edge — the average slip across ALL 186 strategies in 2025-26 is **+46%**. It answered "does selection beat the average strategy?" (17 real vs 16.1 expected: barely) — not the question.
+2. **Hit-shuffle-among-slip-legs null (WRONG):** shuffled hits among the legs that appear in slips. Those are the SELECTED legs, hitting 0.575 (Regular 0.603), so the null still had a 0.575-hit board and beat break-even easily (21.8 expected survivors). The same mistake in a third form: the null kept selection inside it.
+3. **Whole-board tier-rate null (CORRECT):** each slip leg's hit is a Bernoulli draw at its **tier's whole-board rate** from the certified map — R **0.500** (both sides posted), G1 0.616, G2 0.691, G3 0.743, D1 0.333, D2 0.290, D3 0.192 — then every slip regraded with the compression rule and V1+V2 re-run. Sanity: a Regular 3-Power or 4-Flex under this null returns **−25%**, PrizePicks' built-in house edge. **Result: 0 survivors in 100 draws (max 0) vs 17 real.** The edge is not selection. The selected legs beat their tier's whole-board rate by **+0.10 on Regular (0.603 vs 0.500), +0.08 on D1 (0.410 vs 0.333), +0.12…+0.20 on goblins** — that per-tier gap is the edge, stated the MLB way.
+
+### 28f. V5 — the decomposition, and what it does to "17 strategies"
+Steals_R is the top profit cell in 14 of 17 survivors at 40–73% of profit. The direct test — each survivor's OOS slips split by whether they contain a steals leg — shows why: **15 of the 17 survivors contain a steals leg in 98–100% of their slips.** The engine orders legs by certified edge, steals_R has the highest (0.654–0.691), so it is the first leg of every composition and lands in every slip; the compositions differ only in the fillers. **The 17 are largely ONE strategy — a steals-anchored Regular slip — under 15 labels.** The only survivors independent of it are the two demon-only compositions (demon 5-Flex +112%, demon 3-Flex +62%; 0% steals). This is MLB's dominant-sub-population finding, exactly. **Honest count of distinct validated families: TWO** — (A) the steals-anchored Regular family (best expression: weighted:steals_R 5-Flex at cap 3, OOS +106%, CI +62…+152%; or 4-Flex at cap 1 for the low-frustration profile), and (B) the demon-only family (demon 5-Flex cap 3, OOS +112%, CI +46…+186%; demon 3-Flex cap 1). A third family — Regular WITHOUT steals — has not been tested and is the next validation run (steals is one cell; if PP tightens it, family A has no fallback).
+
+### 28g. The translated gates and hurdles (supersede §27a–c where they conflict; §27d live hurdles stand)
+**Qualification (backtest):** Q1 selected on 2024-25 only, scored on untouched 2025-26 (walk-forward) · Q2 OOS 95% day-blocked bootstrap lower bound > 0 (10,000 resamples) · Q3 positive with teammate same-game slips removed · Q4 survivors exceed the whole-board-null survivor count (currently 0) · Q5 decomposition: no single cell > 60% of OOS profit unless the family is declared as that cell's family · Q6 cap fixed by structure before OOS; shrink, never substitute. **Sizing (§27a G5) stands:** bankroll ≥ 2 × worst-season max drawdown + 1 u.
+**Live (per Gemini, adopted):** no strategy is staked before **50 distinct slate days AND 1,000 paper slips per strategy**; stop if the paper CI lower bound on ROI falls below 0 or live drawdown exceeds 1.5 × the 2025-26 max at the same cap; plus §27d H1–H6.
+**What this changes:** §27's three tiers collapse to two families with a stated single point of failure (steals_R). Next: validate family C (Regular without steals) and the Underdog board through the same V1–V6, then wire the survivors' shrink-not-substitute builder for the October paper-track.** NEXT: run the full walk-forward build (needs a workflow — heavy write; owner-gated per RF_WRITE), then the six ranks as sorts over it.
