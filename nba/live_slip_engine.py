@@ -462,12 +462,13 @@ def calibrate(conn):
     conn.execute("ALTER TABLE nba_score.live_strategy_calib ADD COLUMN IF NOT EXISTS sd_daily_hit double precision")
     rng = random.Random(11)
     for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
-        days = conn.execute("""SELECT game_date, sum(profit) FROM nba_score.slip_engine_slips WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
+        tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith('C_') else 'nba_score.slip_engine_slips'
+        days = conn.execute(f"""SELECT game_date, sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
                                AND phase<>'final7' GROUP BY game_date ORDER BY game_date""", (comp, size, structure, cap)).fetchall()
         nets = [float(r[1]) for r in days]
         # daily leg hit rate per backtest day -> its sd is the day-level noise H1 measures against (29f: leg-level tests
         # treat 22 copies of the same 2-3 players as 22 trials; the day is the independent unit)
-        dh = conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.slip_engine_slips s, jsonb_array_elements(s.legs_json) j
+        dh = conn.execute(f"""SELECT s.game_date, avg((j->>'hit')::int) FROM {tbl} s, jsonb_array_elements(s.legs_json) j
                              WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.phase<>'final7' GROUP BY s.game_date""",
                           (comp, size, structure, cap)).fetchall()
         daily_hits = [float(r[1]) for r in dh]
