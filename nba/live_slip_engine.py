@@ -140,6 +140,7 @@ def pick(conn, day, require_fresh=True):
     states = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT strategy, state, live_cap FROM nba_score.live_strategy_state").fetchall()}
     s0, s1 = regular_season_window(conn, day)
     in_week2 = s0 is not None and 7 <= (day - s0).days <= 13
+    in_week1 = s0 is not None and 0 <= (day - s0).days <= 6   # 29l pass 20: the high-event week; Regular 5-Flex slips need a defensive Over leg
     in_final7 = s1 is not None and (s1 - day).days <= 7
     if in_final7:
         print(f"  {day}: final 7 days of the regular season - nothing staked (29d/25e)", flush=True)
