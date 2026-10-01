@@ -9,6 +9,14 @@ on:
       sizes:
         default: "2,3,4,5,6"
         required: false
+      exclude_cells:
+        description: "comma list of cells to remove from every composition (e.g. steals_R,steals_R_U)"
+        default: ""
+        required: false
+      table_suffix:
+        description: "write to slip_engine_slips<suffix>; blank = the certified tables"
+        default: ""
+        required: false
 
 permissions:
   contents: read
