@@ -445,3 +445,14 @@ jobs:
           PIPE: "p2"
           CERT_DATE: ${{ steps.d.outputs.asof }}
         run: python nba/certify_pipeline.py
+
+      # 7) SLIP GRADE (2026-10-01, section 29): yesterday's paper slips graded against the outcomes this run just
+      #    graded (compression payout rule, voids reverted per PP's rule), the live ledger updated, the hurdles
+      #    H1-H7 evaluated day-blocked, and each strategy's state set (paper / active / yellow / critical / red / off)
+      #    so that this afternoon's pick in P3 places only what the state allows. On a day with nothing placed
+      #    (rest day, preseason) it is a no-op that still refreshes the states.
+      - name: Slip grade (live slip engine, section 29)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LS_MODE: "grade"
+        run: python -u nba/live_slip_engine.py
