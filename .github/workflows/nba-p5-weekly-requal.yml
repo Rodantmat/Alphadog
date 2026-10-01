@@ -95,6 +95,10 @@ jobs:
                   if verdict == 'FAIL':
                       c.execute("""UPDATE nba_score.live_strategy_state SET state='red', live_cap=0,
                                    hurdles = coalesce(hurdles,'{}'::jsonb) || jsonb_build_object('REQUAL','FAIL '||%s::text), updated_at=now() WHERE strategy=%s""", (today.isoformat(), name))
+                  elif verdict == 'PASS':
+                      # the ONLY path out of red: a clean weekly re-validation on a window that includes the live days that stopped it
+                      c.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s,
+                                   hurdles = jsonb_build_object('REQUAL','PASS '||%s::text), updated_at=now() WHERE strategy=%s AND state='red'""", (cap, today.isoformat(), name))
                   print(f"  {name:<20} {verdict:<12} {'' if roi is None else f'OOS {roi:+.0%} CI_lo {lo:+.0%}'}")
               c.commit()
           EOF
