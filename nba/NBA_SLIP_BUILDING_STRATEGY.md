@@ -1891,6 +1891,20 @@ Owner: scoped deep research, multiple passes, find correlations with our issue a
 **A second thing the split shows: steals and turnovers trade places between weeks 1 and 2** — turnovers is random in week 1 (disc 1) while steals is sharp (16); in week 2 the reverse. One mechanism fits both: the prior-season rate for each defensive stat becomes wrong, then right again, on a timing that differs by stat (turnovers settle a week earlier than steals). This is a falsifiable prediction for 2026-27 — week 1 fade turnovers, week 2 fade steals — and it is identifiable at the time, by calendar, which is the owner's condition.
 **What changed in the engine, and what did not.** The week-2 paper record is now built **from the steals-excluded pool** for every family, so the third season tests the thing that might work rather than the thing known to fail. It is **still not staked**: 42 slips per strategy over two seasons is the sample size the certifier distrusts, and ranking by worse-season ROI is itself a selection. The honest claim is the contrast — the no-steals engine's main strategies positive in week 2 twice, the full engine's negative twice — plus a mechanism and a calendar trigger. If 2026-27's steals-excluded week-2 record is positive, that is three for three and "play week 2 without steals" becomes a rule; if it is negative, §29e's conclusion stands.
 
+### 29m. The drought symptom search, board-side (2026-10-01). Owner: finding the symptoms on the board is as important as the alternatives.
+A symptom has to be visible **before tip**: in the lines, the players listed, the model's scores, or the pool's shape. Every such quantity in the system's tables, tested as a day marker (bad day ≤ −10 u vs losing vs small win vs big win ≥ +15 u, 309 days):
+| pre-game candidate | bad days vs big-win days | verdict |
+|---|---|---|
+| model's claimed probability on its picks | 0.670 vs 0.690 | identical on bad vs merely-losing; no marker |
+| model score / edge / confidence | 78.5 / 11.7 / 0.953 vs 79.4 / 13.4 / 0.948 | faint on wins, none on losses |
+| projection-vs-line cushion, projected minutes | −0.021 / 28.7 vs −0.011 / 27.7 | identical |
+| board breadth (deep cell families) | broad on 284 of 303 days | no separation |
+| player concentration of the pool | ≤ 9 players: 9 days in 2024-25, **1** in 2025-26 | not walk-forward; dry |
+| **line movement window → lock, per leg** | **against-moves hit 51% vs 61%** (102 legs, 2%) | **real at the leg; not a day marker** — bad days have the *fewest* (1.6% vs 1.5%) |
+| line pulls by lock | 11.6% vs 14.1% | slightly more on good days |
+| pace, opponent trailing TOV, blowouts, officiating, league base rates, trailing results, regime switches | (§29k, §29f) | flat / dead |
+**Stated plainly: there is no board-side symptom of a drought in this system's data.** A bad day is indistinguishable from a good day in every pre-game quantity PrizePicks or the model exposes; the thing that differs — three or four shared players having a bad night at once — is not knowable before tip from anything recorded here. This is the concept-drift theorem (§29f) in the data, fourteen more times. **The proper logic is therefore structural, not a trigger:** lose less when the unidentifiable thing happens (diversify, dedupe, the demon weight, family C made real), plus the two calendar rules (week 2, final week), plus the one leg-level filter above. **The single pre-game source not in any table is the injury report and starter status as of the pick** — the compass's known pipeline gap, and the last symptom candidate; it is a feed to build, not a query to run.
+
 ### 29g. The detectors, simulated on the real stream — three falsified, the unit of analysis corrected (2026-10-01)
 Before trusting any live detector it was run on both seasons' *actual* daily leg streams (the series the engine will see). **All three cumulative/leg-level designs failed:**
 | detector | result on the real stream |
