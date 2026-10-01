@@ -378,6 +378,28 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
     conn.commit()
 
 
+def simulate_p5(conn, day):
+    """Replay-only stand-in for P5's Monday verdict: a red strategy is cleared to paper if its day-blocked bootstrap
+    lower bound on the certified OOS slips to date (V2, the statistic P5 applies) is > 0. Same window P5 uses:
+    the current season from Nov 1 (the ranker-warmup rule) to the day before."""
+    for name, (comp, size, structure, cap, *_r) in STRATEGIES.items():
+        st = conn.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
+        if not st or st[0] != 'red':
+            continue
+        tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith('C_') else 'nba_score.slip_engine_slips'
+        g = conn.execute(f"""SELECT count(*), sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
+                             AND season='2025-26' AND phase<>'final7' AND game_date >= '2025-11-01' AND game_date < %s GROUP BY game_date""",
+                         (comp, size, structure, cap, day)).fetchall()
+        if len(g) < 40:
+            continue
+        lo = boot_lo([(float(r[0]), float(r[0]) + float(r[1])) for r in g], 2000)
+        if lo is not None and lo > 0:
+            conn.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s, hurdles=jsonb_build_object('REQUAL', 'PASS(sim) '||%s::text),
+                            updated_at=now() WHERE strategy=%s""", (cap, day.isoformat(), name))
+            print(f"  P5(sim) {day}: {name} red -> paper (walk-forward lower bound {lo:+.0%} on {len(g)} days)", flush=True)
+    conn.commit()
+
+
 def replay(conn, d0, d1):
     """Simulate the daily loop over a past range: pick each day on that day's board, grade it, snapshot states.
     Starts from a CLEAN ledger unless LS_RESUME=1, in which case it continues from the day after the last graded day."""
