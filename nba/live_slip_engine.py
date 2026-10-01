@@ -320,6 +320,10 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         if season_end is not None and (season_end - day).days <= 7:
             h['H6'] = 'final7'
         flags = {k: v for k, v in h.items() if k in ('H1', 'H2', 'H3', 'H4', 'H7', 'H8')}
+        # H1 and H7 are ONE measurement on family A (the strategy's daily hit is dominated by the shared anchor):
+        # a soft anchor week must not read as two independent yellows. H7 red (a real anchor failure) still stops the family.
+        if flags.get('H7') == 'yellow' and flags.get('H1') in ('yellow', 'red'):
+            flags.pop('H7')
         reds = sum(1 for v in flags.values() if v == 'red'); yellows = sum(1 for v in flags.values() if v == 'yellow')
         red_only_variance = reds >= 1 and all(flags.get(x) != 'red' for x in ('H1', 'H7', 'H8')) and yellows < 2
         prev = conn.execute("SELECT state, updated_at, hurdles FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
@@ -333,6 +337,8 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             state, live_cap = 'off', 0
         elif 'W2' in h:
             state, live_cap = 'week2', 0   # staking cap 0; pick still builds the week-2 paper record at base cap (tagged, excluded from hurdles)
+        elif prev_state == 'red' and 'REQUAL' not in ph:
+            state, live_cap = 'red', 0   # a red is sticky in EVERY branch until P5's weekly PASS clears it
         elif (reds >= 1 and not red_only_variance) or yellows >= 2:
             state, live_cap = 'red', 0
         elif red_only_variance:
