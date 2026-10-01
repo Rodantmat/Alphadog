@@ -258,10 +258,29 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         if season_end is not None and (season_end - day).days <= 7:
             h['H6'] = 'final7'
         reds = sum(1 for v in h.values() if v == 'red'); yellows = sum(1 for v in h.values() if v == 'yellow')
+        red_only_variance = reds >= 1 and all(h.get(x) != 'red' for x in ('H1',)) and yellows < 2
+        prev = conn.execute("SELECT state, updated_at, hurdles FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
+        prev_state = prev[0] if prev else 'paper'
+        crit_since = None
+        if prev and prev[2] and isinstance(prev[2], dict):
+            crit_since = prev[2].get('CRIT_SINCE')
         # paper gate: 50 slate days AND cap x 50 slips (a cap-1 strategy cannot be asked for 1,000 slips) AND bootstrap lower bound > 0
         paper_ok = days >= PAPER_DAYS and slips >= cap * PAPER_DAYS and ci_lo is not None and ci_lo > 0
-        if 'H6' in h or reds >= 1 or yellows >= 2:
-            state, live_cap = ('off' if 'H6' in h else 'red'), 0
+        if 'H6' in h:
+            state, live_cap = 'off', 0
+        elif reds >= 1 and not red_only_variance or yellows >= 2:
+            state, live_cap = 'red', 0
+        elif red_only_variance:
+            # drawdown/streak alone: 11-15 day losing streaks are normal for these structures; hold at cap 1 for 7 days, flagged
+            last_two = [r[1] for r in g[-2:]]
+            recovered = len(last_two) == 2 and all(x > 0 for x in last_two)
+            since = dt.date.fromisoformat(crit_since) if crit_since else day
+            if recovered:
+                state, live_cap = 'yellow', max(1, cap // 2); h['GRACE'] = 'recovered'
+            elif (day - since).days >= 7:
+                state, live_cap = 'red', 0; h['GRACE'] = 'expired'
+            else:
+                state, live_cap = 'critical', 1; h['CRIT_SINCE'] = since.isoformat()
         elif yellows == 1:
             state, live_cap = 'yellow', max(1, cap // 2)
         elif paper_ok:
