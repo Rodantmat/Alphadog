@@ -88,16 +88,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SV_TOPK: "30"
-          SV_BOOT: ${{ github.event.inputs.precision == 'full' && '10000' || '2000' }}
-          SV_NULL: ${{ github.event.inputs.precision == 'full' && '100' || '30' }}
         run: python -u nba/validate_slip_strategies.py
 
       - name: 5b. Validation, family C (no-steals tables)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SV_TOPK: "30"
-          SV_BOOT: ${{ github.event.inputs.precision == 'full' && '10000' || '2000' }}
-          SV_NULL: ${{ github.event.inputs.precision == 'full' && '100' || '30' }}
           SE_TABLE_SUFFIX: "_nosteals"
           SV_TABLE_SUFFIX: "_nosteals"
         run: python -u nba/validate_slip_strategies.py
