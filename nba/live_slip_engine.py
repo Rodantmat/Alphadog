@@ -220,6 +220,20 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         conn.execute("""UPDATE nba_score.live_strategy_state st SET state='paper', live_cap=v.cap, hurdles='{}', updated_at=now()
                         FROM (VALUES %s) v(strategy, cap) WHERE st.strategy=v.strategy AND st.state='off' AND st.updated_at < %s"""
                      % (",".join("('%s',%d)" % (n, c[3]) for n, c in STRATEGIES.items()), "%s"), (dt.datetime.combine(s0, dt.time.min, tzinfo=dt.timezone.utc),))
+    # H7 anchor (portfolio): the steals cells are shared by every family-A composition - one CUSUM on their pooled live legs
+    anchor_rows = conn.execute("""SELECT (j->>'hit')::int FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
+                                  WHERE s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL AND j->>'cell' IN ('steals_R','steals_R_U')
+                                  ORDER BY s.game_date, s.strategy, s.k""", (season_start,)).fetchall()
+    anchor_state = 'ok'
+    if len(anchor_rows) >= 50:
+        p0, k = 0.654, 0.015   # certified steals R top-2/3 hit (24a); slack
+        cal = conn.execute("SELECT cusum_h_long FROM nba_score.live_strategy_calib WHERE strategy='A_wsteals_5flex'").fetchone()
+        h_long = float(cal[0]) if cal and cal[0] else 4.0
+        c = 0.0
+        for (x,) in anchor_rows:
+            c = max(0.0, c + (p0 - x) - k)
+        anchor_state = 'red' if c > h_long else ('yellow' if c > 0.6 * h_long else 'ok')
+        print(f"  ANCHOR steals: {len(anchor_rows)} live legs, hit {sum(x for (x,) in anchor_rows)/len(anchor_rows):.3f} vs {p0}, CUSUM {c:.2f} (h_long {h_long:.2f}) -> {anchor_state}", flush=True)
     for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
         g = conn.execute("""SELECT game_date, sum(profit), count(*), sum(hits), sum(size) FROM nba_score.live_slips
                             WHERE strategy=%s AND status IN ('graded','graded_void') AND game_date>=%s GROUP BY game_date ORDER BY game_date""",
