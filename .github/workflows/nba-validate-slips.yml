@@ -37,4 +37,5 @@ jobs:
           SV_TOPK: ${{ github.event.inputs.topk }}
           SV_BOOT: ${{ github.event.inputs.boot }}
           SV_NULL: ${{ github.event.inputs.nulls }}
+          SV_TABLE_SUFFIX: ${{ github.event.inputs.table_suffix }}
         run: python -u nba/validate_slip_strategies.py
