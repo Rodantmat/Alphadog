@@ -95,7 +95,18 @@ ON CONFLICT DO NOTHING"""
 
 
 def rebuild_legs(conn):
-    conn.execute("DELETE FROM nba_score.tier_map_legs WHERE rank_key IN ('final_hp','baseline_hp','final_score')")
+    delta = os.environ.get('TM_DELTA') == '1'
+    since = None
+    if delta:
+        hw = conn.execute("SELECT max(game_date) FROM nba_score.tier_map_legs").fetchone()[0]
+        import datetime as _dt
+        since = _dt.date.fromisoformat(os.environ['TM_SINCE']) if os.environ.get('TM_SINCE') else (hw + _dt.timedelta(days=1) if hw else None)
+        delta = since is not None
+    if delta:
+        conn.execute("DELETE FROM nba_score.tier_map_legs WHERE rank_key IN ('final_hp','baseline_hp','final_score') AND game_date >= %s", (since,))
+        print(f"  DELTA: tier map rebuilding days >= {since}", flush=True)
+    else:
+        conn.execute("DELETE FROM nba_score.tier_map_legs WHERE rank_key IN ('final_hp','baseline_hp','final_score')")
     # pp_leg_price is a 4-table view; materialize its priced window legs once, then join the flat table.
     conn.execute("""
         CREATE TEMP TABLE _priced AS
