@@ -21,6 +21,10 @@ on:
         description: "'1' = build only days past the table's high-water mark"
         default: ""
         required: false
+      diversify:
+        description: "'1' = prefer >=4 distinct cells per 5-pick on broad boards (29k, opt-in)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
