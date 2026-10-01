@@ -53,6 +53,15 @@ jobs:
           SE_SIZES: "2,3,4,5,6"
         run: python -u nba/build_slip_engine.py
 
+      - name: 3b. Slip engine, family C (Regular without steals, 28f) into the _nosteals tables
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SE_CAP: "10"
+          SE_SIZES: "2,3,4,5,6"
+          SE_EXCLUDE_CELLS: "steals_R,steals_R_U"
+          SE_TABLE_SUFFIX: "_nosteals"
+        run: python -u nba/build_slip_engine.py
+
       - name: 4. Certification pass (frozen invariant list; any FAIL stops the loop here)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
