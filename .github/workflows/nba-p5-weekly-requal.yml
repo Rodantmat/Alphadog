@@ -32,7 +32,7 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install --upgrade pip "psycopg[binary]"
 
-      - name: 1. Tier map + bands (all three ranks) - DELTA: only days past the high-water mark; bands re-swept in full
+      - name: "1. Tier map + bands (all three ranks) - DELTA, only days past the high-water mark; bands re-swept in full"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           TM_RANK: "final_hp,baseline_hp,final_score"
