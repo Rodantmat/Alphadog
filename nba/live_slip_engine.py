@@ -268,9 +268,10 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
                                 ORDER BY s.game_date, s.k""", (name, season_start)).fetchall()
         if calib and calib[1] and len(chron) >= 30:
             kk, h_long, h_short = float(calib[3]), float(calib[1]), float(calib[2])
+            p0 = float(calib[6]) if calib[6] else cert_hit
             c = 0.0
             for (x,) in chron:
-                c = max(0.0, c + (cert_hit - x) - kk)
+                c = max(0.0, c + (p0 - x) - kk)
             h['H1'] = 'red' if c > h_long else ('yellow' if c > h_short else 'ok')
             h['H1_cusum'] = round(c, 2)
         cur_dd = peak - cum   # the drawdown NOW; a fully recovered strategy is not flagged for a past dip
