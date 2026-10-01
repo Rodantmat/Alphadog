@@ -244,7 +244,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
     # H7 anchor (portfolio): the steals cells are shared by every family-A composition. Day-blocked (29f): a day's steals
     # legs are the same 2-3 players across every slip, so the DAY is the independent unit, not the leg.
     anchor_days = conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
-                                  WHERE s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL AND j->>'cell' IN ('steals_R','steals_R_U')
+                                  WHERE s.status IN ('graded','graded_void','graded_shadow') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL AND j->>'cell' IN ('steals_R','steals_R_U')
                                   GROUP BY s.game_date ORDER BY s.game_date DESC LIMIT 14""", (season_start,)).fetchall()
     anchor_state = 'ok'
     acal = conn.execute("SELECT cert_leg_hit, sd_daily_hit FROM nba_score.live_strategy_calib WHERE strategy='_ANCHOR_steals'").fetchone()
