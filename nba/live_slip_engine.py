@@ -269,6 +269,24 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
     conn.commit()
 
 
+def replay(conn, d0, d1):
+    """Simulate the daily loop over a past range: pick each day on that day's board, grade it, snapshot states."""
+    ensure_tables(conn)
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_state_history (game_date date, strategy text, state text, live_cap int, days int,
+                    slips int, net double precision, roi double precision, ci_lo double precision, leg_hit double precision, drawdown double precision,
+                    streak int, hurdles jsonb, PRIMARY KEY (game_date, strategy))""")
+    days = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND game_date BETWEEN %s AND %s ORDER BY 1""", (d0, d1)).fetchall()]
+    print(f"  REPLAY {d0} .. {d1}: {len(days)} slate days", flush=True)
+    for day in days:
+        pick(conn, day)
+        grade(conn, day)
+        conn.execute("""INSERT INTO nba_score.live_state_history (game_date, strategy, state, live_cap, days, slips, net, roi, ci_lo, leg_hit, drawdown, streak, hurdles)
+                        SELECT %s, strategy, state, live_cap, days, slips, net, roi, ci_lo, leg_hit, drawdown, streak, hurdles FROM nba_score.live_strategy_state
+                        ON CONFLICT (game_date, strategy) DO UPDATE SET state=EXCLUDED.state, live_cap=EXCLUDED.live_cap, days=EXCLUDED.days, slips=EXCLUDED.slips,
+                        net=EXCLUDED.net, roi=EXCLUDED.roi, ci_lo=EXCLUDED.ci_lo, leg_hit=EXCLUDED.leg_hit, drawdown=EXCLUDED.drawdown, streak=EXCLUDED.streak, hurdles=EXCLUDED.hurdles""", (day,))
+        conn.commit()
+
+
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
@@ -276,6 +294,8 @@ def main():
     if MODE == 'pick':
         day = dt.date.fromisoformat(d) if d else pt_today()
         pick(conn, day)
+    elif MODE == 'replay':
+        replay(conn, dt.date.fromisoformat(os.environ['LS_FROM']), dt.date.fromisoformat(os.environ['LS_TO']))
     else:
         day = dt.date.fromisoformat(d) if d else pt_today() - dt.timedelta(days=1)
         grade(conn, day)
