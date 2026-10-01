@@ -220,3 +220,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PIPE: "p1"
         run: python nba/certify_pipeline.py
+
+  # SLIP REQUALIFICATION (2026-10-01, section 29): after the weekly layer is certified, rebuild the certified slip
+  # chain in delta mode, re-run the frozen 66-invariant pass, re-validate every live strategy walk-forward, and write
+  # the week's verdict (PASS clears a red; FAIL sets one; the strategy list is never auto-edited). ~30 min.
+  requalify:
+    needs: weekly
+    uses: ./.github/workflows/nba-p5-weekly-requal.yml
+    secrets:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
