@@ -333,6 +333,8 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         h['H4'] = 'yellow' if (pool_avg is not None and pool_avg < pool_floor and days_into_season > 21) else 'ok'
         if name.startswith('A_') and anchor_state != 'ok':
             h['H7'] = anchor_state   # the shared steals anchor is failing: the whole family moves together
+        if ddm_state != 'ok':
+            h['H8'] = 'red' if ddm_state == 'drift' else 'yellow'   # concept drift in the shared ordering (29f)
         if days_into_season <= 21:
             h = {k: ('yellow' if v == 'red' else v) for k, v in h.items()}; h['H5'] = 'opening-weeks'
         if 7 <= days_into_season <= 13:
