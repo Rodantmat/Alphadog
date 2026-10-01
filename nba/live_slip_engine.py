@@ -214,6 +214,11 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
     season_start = s0 or (conn.execute("SELECT min(game_date) FROM nba_score.live_slips").fetchone()[0] or day)
     days_into_season = (day - season_start).days
     season_end = s1
+    # season rollover: an 'off' (final-week) state from a previous season must not survive into the new one
+    if s0 is not None and day >= s0:
+        conn.execute("""UPDATE nba_score.live_strategy_state st SET state='paper', live_cap=v.cap, hurdles='{}', updated_at=now()
+                        FROM (VALUES %s) v(strategy, cap) WHERE st.strategy=v.strategy AND st.state='off' AND st.updated_at < %s"""
+                     % (",".join("('%s',%d)" % (n, c[3]) for n, c in STRATEGIES.items()), "%s"), (dt.datetime.combine(s0, dt.time.min, tzinfo=dt.timezone.utc),))
     for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
         g = conn.execute("""SELECT game_date, sum(profit), count(*), sum(hits), sum(size) FROM nba_score.live_slips
                             WHERE strategy=%s AND status IN ('graded','graded_void') AND game_date>=%s GROUP BY game_date ORDER BY game_date""",
