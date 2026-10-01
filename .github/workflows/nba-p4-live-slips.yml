@@ -1,0 +1,75 @@
+name: NBA P4 Live Slips
+
+# P4 = the live slip engine on the certified rules. Two scheduled legs:
+#   PICK  21:45 UTC (14:45 PT) - 30 min after P3 (21:15) has scored and archived today's window board
+#   GRADE 16:30 UTC (09:30 PT) - 45 min after P2 (15:45) has graded yesterday's outcomes
+# Both gate on the regular season via nba_calendar.games (preseason is not a slate) - the same rule P3 uses.
+# No real money is staked by this workflow: it writes paper slips and strategy states; the owner reads them.
+
+on:
+  schedule:
+    - cron: '45 21 * * *'
+    - cron: '30 16 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "pick | grade"
+        default: "pick"
+        required: false
+      date:
+        description: "slate date YYYY-MM-DD (blank = today PT for pick, yesterday PT for grade)"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-p4
+  cancel-in-progress: false
+
+jobs:
+  p4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Resolve mode and slate
+        id: res
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          IN_MODE: ${{ github.event.inputs.mode }}
+          IN_DATE: ${{ github.event.inputs.date }}
+        run: |
+          python - <<'EOF'
+          import os, datetime as dt, psycopg
+          from zoneinfo import ZoneInfo
+          PT = ZoneInfo("America/Los_Angeles")
+          now_utc = dt.datetime.now(dt.timezone.utc)
+          mode = os.environ.get("IN_MODE") or ("grade" if now_utc.hour < 19 else "pick")   # 16:30 UTC -> grade ; 21:45 UTC -> pick
+          d = os.environ.get("IN_DATE")
+          today = dt.datetime.now(PT).date()
+          slate = dt.date.fromisoformat(d) if d else (today if mode == "pick" else today - dt.timedelta(days=1))
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              games = c.execute("""SELECT count(*) FROM nba_calendar.games WHERE game_date=%s AND coalesce(game_label,'')<>'Preseason'""", (slate,)).fetchone()[0]
+          run = games > 0
+          out = open(os.environ["GITHUB_OUTPUT"], "a")
+          out.write(f"mode={mode}\nslate={slate.isoformat()}\nrun={'true' if run else 'false'}\n")
+          print(f"mode={mode} slate={slate} regular-season games={games} run={run}")
+          EOF
+      - name: Run P4
+        if: steps.res.outputs.run == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LS_MODE: ${{ steps.res.outputs.mode }}
+          LS_DATE: ${{ steps.res.outputs.slate }}
+        run: python -u nba/live_slip_engine.py
+      - name: No regular-season slate
+        if: steps.res.outputs.run != 'true'
+        run: echo "no regular-season games on ${{ steps.res.outputs.slate }} - nothing to do"
