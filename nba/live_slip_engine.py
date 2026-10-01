@@ -274,7 +274,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         if season_end is not None and (season_end - day).days <= 7:
             h['H6'] = 'final7'
         reds = sum(1 for v in h.values() if v == 'red'); yellows = sum(1 for v in h.values() if v == 'yellow')
-        red_only_variance = reds >= 1 and all(h.get(x) != 'red' for x in ('H1',)) and yellows < 2
+        red_only_variance = reds >= 1 and all(h.get(x) != 'red' for x in ('H1', 'H7')) and yellows < 2
         prev = conn.execute("SELECT state, updated_at, hurdles FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
         prev_state = prev[0] if prev else 'paper'
         crit_since = None
