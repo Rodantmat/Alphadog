@@ -373,15 +373,21 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
 
 def replay(conn, d0, d1):
     """Simulate the daily loop over a past range: pick each day on that day's board, grade it, snapshot states.
-    Starts from a CLEAN ledger: a replay is a fresh simulation and must never inherit rows from an earlier run."""
+    Starts from a CLEAN ledger unless LS_RESUME=1, in which case it continues from the day after the last graded day."""
     ensure_tables(conn)
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_state_history (game_date date, strategy text, state text, live_cap int, days int,
                     slips int, net double precision, roi double precision, ci_lo double precision, leg_hit double precision, drawdown double precision,
                     streak int, hurdles jsonb, PRIMARY KEY (game_date, strategy))""")
-    conn.execute("DELETE FROM nba_score.live_slips"); conn.execute("DELETE FROM nba_score.live_pool"); conn.execute("DELETE FROM nba_score.live_state_history")
-    for name, (comp, size, structure, cap, *_r) in STRATEGIES.items():
-        conn.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s, days=0, slips=0, net=0, roi=0, ci_lo=NULL, leg_hit=NULL,
-                        drawdown=NULL, streak=NULL, pool_avg=NULL, hurdles='{}', updated_at=now() WHERE strategy=%s""", (cap, name))
+    if os.environ.get('LS_RESUME') == '1':
+        last = conn.execute("SELECT max(game_date) FROM nba_score.live_slips WHERE status LIKE 'graded%'").fetchone()[0]
+        if last is not None:
+            d0 = max(d0, last + dt.timedelta(days=1))
+            print(f"  RESUME from {d0} (last graded day {last})", flush=True)
+    else:
+        conn.execute("DELETE FROM nba_score.live_slips"); conn.execute("DELETE FROM nba_score.live_pool"); conn.execute("DELETE FROM nba_score.live_state_history")
+        for name, (comp, size, structure, cap, *_r) in STRATEGIES.items():
+            conn.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s, days=0, slips=0, net=0, roi=0, ci_lo=NULL, leg_hit=NULL,
+                            drawdown=NULL, streak=NULL, pool_avg=NULL, hurdles='{}', updated_at=now() WHERE strategy=%s""", (cap, name))
     conn.commit()
     days = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND game_date BETWEEN %s AND %s ORDER BY 1""", (d0, d1)).fetchall()]
     print(f"  REPLAY {d0} .. {d1}: {len(days)} slate days", flush=True)
