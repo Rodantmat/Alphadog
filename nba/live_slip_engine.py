@@ -287,6 +287,55 @@ def replay(conn, d0, d1):
         conn.commit()
 
 
+def calibrate(conn):
+    """Per strategy, from the certified backtest slips (both seasons, cap applied, final7 excluded):
+       mc95_dd  - 95th percentile of max drawdown over 10k bootstrap resamples of the DAY sequence (historical max is one ordering)
+       cusum_h  - decision interval for the leg-hit CUSUM (k = 0.015) chosen so the backtest's own leg stream alarms at most
+                  once per season on the long horizon; short horizon = 0.6 * long."""
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_strategy_calib (strategy text PRIMARY KEY, hist_max_dd double precision,
+                    mc95_dd double precision, mc99_dd double precision, cusum_k double precision, cusum_h_long double precision, cusum_h_short double precision,
+                    cert_leg_hit double precision, backtest_days int, backtest_legs int, calibrated_at timestamptz DEFAULT now())""")
+    rng = random.Random(11)
+    for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
+        days = conn.execute("""SELECT game_date, sum(profit) FROM nba_score.slip_engine_slips WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
+                               AND phase<>'final7' GROUP BY game_date ORDER BY game_date""", (comp, size, structure, cap)).fetchall()
+        nets = [float(r[1]) for r in days]
+        def maxdd(seq):
+            cum = peak = dd = 0.0
+            for x in seq:
+                cum += x; peak = max(peak, cum); dd = max(dd, peak - cum)
+            return dd
+        hist = maxdd(nets)
+        dds = sorted(maxdd([nets[rng.randrange(len(nets))] for _ in range(len(nets))]) for _ in range(10000))
+        mc95, mc99 = dds[int(0.95 * len(dds))], dds[int(0.99 * len(dds))]
+        # CUSUM calibration on the backtest's own leg stream (chronological), per season
+        legs = conn.execute("""SELECT s.season, s.game_date, (j->>'hit')::int FROM nba_score.slip_engine_slips s, jsonb_array_elements(s.legs_json) j
+                               WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.phase<>'final7' ORDER BY s.game_date, s.k""",
+                            (comp, size, structure, cap)).fetchall()
+        p0 = sum(h for _, _, h in legs) / len(legs)
+        k = 0.015
+        def alarms(h):
+            n = 0; c = 0.0; season = None
+            per = defaultdict(int)
+            for s, d, x in legs:
+                if s != season:
+                    season = s; c = 0.0
+                c = max(0.0, c + (p0 - x) - k)
+                if c > h:
+                    per[s] += 1; c = 0.0
+            return max(per.values()) if per else 0
+        h_long = 1.0
+        while alarms(h_long) > 1 and h_long < 20:
+            h_long += 0.25
+        conn.execute("""INSERT INTO nba_score.live_strategy_calib (strategy, hist_max_dd, mc95_dd, mc99_dd, cusum_k, cusum_h_long, cusum_h_short, cert_leg_hit, backtest_days, backtest_legs)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (strategy) DO UPDATE SET hist_max_dd=EXCLUDED.hist_max_dd, mc95_dd=EXCLUDED.mc95_dd, mc99_dd=EXCLUDED.mc99_dd,
+                        cusum_k=EXCLUDED.cusum_k, cusum_h_long=EXCLUDED.cusum_h_long, cusum_h_short=EXCLUDED.cusum_h_short, cert_leg_hit=EXCLUDED.cert_leg_hit,
+                        backtest_days=EXCLUDED.backtest_days, backtest_legs=EXCLUDED.backtest_legs, calibrated_at=now()""",
+                     (name, hist, mc95, mc99, k, h_long, 0.6 * h_long, p0, len(days), len(legs)))
+        print(f"  {name:<20} days {len(days):>3} legs {len(legs):>5} leg-hit {p0:.3f} | hist max dd {hist:5.1f}  MC95 {mc95:5.1f}  MC99 {mc99:5.1f} | CUSUM k {k} h_long {h_long:.2f} h_short {0.6*h_long:.2f}", flush=True)
+    conn.commit()
+
+
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
