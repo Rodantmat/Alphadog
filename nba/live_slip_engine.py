@@ -345,6 +345,8 @@ def main():
         pick(conn, day)
     elif MODE == 'replay':
         replay(conn, dt.date.fromisoformat(os.environ['LS_FROM']), dt.date.fromisoformat(os.environ['LS_TO']))
+    elif MODE == 'calibrate':
+        calibrate(conn)
     else:
         day = dt.date.fromisoformat(d) if d else pt_today() - dt.timedelta(days=1)
         grade(conn, day)
