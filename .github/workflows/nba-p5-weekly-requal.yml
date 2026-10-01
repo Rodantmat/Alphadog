@@ -75,6 +75,16 @@ jobs:
           SV_NULL: "100"
         run: python -u nba/validate_slip_strategies.py
 
+      - name: 5b. Validation, family C (no-steals tables)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SV_TOPK: "30"
+          SV_BOOT: "10000"
+          SV_NULL: "100"
+          SE_TABLE_SUFFIX: "_nosteals"
+          SV_TABLE_SUFFIX: "_nosteals"
+        run: python -u nba/validate_slip_strategies.py
+
       - name: 6. Verdicts -> live strategy state (fail = red/cap 0, flagged; never auto-replaced)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
