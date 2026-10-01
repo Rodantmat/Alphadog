@@ -230,8 +230,6 @@ def candidates_for(comp, pool):
         return pool.get(c, [])[:2] + [l for l in merged(CORE) if l['cell'] != c]
     if comp == 'demon':
         return merged(DEMONS)
-    if comp == 'demon2':
-        return merged(DEMONS2)
     if comp == 'mixed_tier':
         return merged(DEFENSIVE)[:2] + merged(POINTSFAM)[:2] + merged(DEMONS)[:1] + merged(CORE)
     if comp == 'core+goblin' or comp == 'core+demon':
