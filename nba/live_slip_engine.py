@@ -370,8 +370,16 @@ def calibrate(conn):
                 cum += x; peak = max(peak, cum); dd = max(dd, peak - cum)
             return dd
         hist = maxdd(nets)
-        dds = sorted(maxdd([nets[rng.randrange(len(nets))] for _ in range(len(nets))]) for _ in range(10000))
+        def longest_streak(seq):
+            s = m = 0
+            for x in seq:
+                s = s + 1 if x < 0 else 0; m = max(m, s)
+            return m
+        res = [[nets[rng.randrange(len(nets))] for _ in range(len(nets))] for _ in range(10000)]
+        dds = sorted(maxdd(r) for r in res)
+        sts = sorted(longest_streak(r) for r in res)
         mc95, mc99 = dds[int(0.95 * len(dds))], dds[int(0.99 * len(dds))]
+        st95, st99 = sts[int(0.95 * len(sts))], sts[int(0.99 * len(sts))]
         # CUSUM calibration on the backtest's own leg stream (chronological), per season
         legs = conn.execute("""SELECT s.season, s.game_date, (j->>'hit')::int FROM nba_score.slip_engine_slips s, jsonb_array_elements(s.legs_json) j
                                WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.phase<>'final7' ORDER BY s.game_date, s.k""",
