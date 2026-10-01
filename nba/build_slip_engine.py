@@ -179,6 +179,12 @@ def valid(slip, cmap=None):
     teams = {l['team_id'] for l in slip}
     if len(teams) < 2:
         return False
+    # per-cell share cap: no more than MAX_PER_CELL legs from one cell family (steals_R / steals_R_U are one family)
+    fam = defaultdict(int)
+    for l in slip:
+        fam[l['cell'].replace('_U', '')] += 1
+    if max(fam.values()) > MAX_PER_CELL:
+        return False
     if cmap:
         cs = pair_corrs(slip, cmap)
         if cs and min(cs) <= NEG_CORR:
