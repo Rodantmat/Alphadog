@@ -241,7 +241,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         # H4 pool: qualifying legs/day for this strategy's cells over the last 14 days (recorded by pick into live_pool)
         pool_avg = conn.execute("""SELECT avg(legs) FROM nba_score.live_pool WHERE strategy=%s AND game_date > %s""",
                                 (name, day - dt.timedelta(days=14))).fetchone()[0]
-        ci_lo = boot_lo([(r[2], r[2] + r[1]) for r in g]) if days >= 8 else None
+        ci_lo = boot_lo([(r[2], r[2] + r[1]) for r in g], BOOT_DRAWS) if days >= 8 else None
         h = {}
         if leg_hit is not None:
             h['H1'] = 'red' if (cert_hit - leg_hit > 0.07 and len(leg_hits) >= 150) else ('yellow' if cert_hit - leg_hit > 0.04 else 'ok')
