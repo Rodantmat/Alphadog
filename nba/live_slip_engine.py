@@ -186,25 +186,20 @@ def boot_lo(day_items, draws=10000, seed=7):
     return out[int(0.025 * draws)]
 
 
-def regular_season_window(today):
-    """(first, last) regular-season game dates for the season in progress, from the schedule file P2 refreshes
-    (same source and label logic as nba_season.active_stats_season). None, None if unreadable."""
+def regular_season_window(conn, today):
+    """(first, last) regular-season game dates around today, from nba_calendar.games - the same table and
+    game_label rule P3's slate gate uses (preseason is not a slate)."""
     try:
-        from pathlib import Path
-        games = json.loads(Path("nba/data/nba_schedule_current.json").read_text()).get("games", [])
-        reg = sorted(g["game_date"][:10] for g in games
-                     if (g.get("game_label") or "") not in ("Preseason", "Playoffs", "Play-In", "All-Star")
-                     and g["game_date"][:10] <= (today + dt.timedelta(days=400)).isoformat())
-        reg = [d for d in reg if d >= (today - dt.timedelta(days=300)).isoformat()]
-        if not reg:
-            return None, None
-        return dt.date.fromisoformat(reg[0]), dt.date.fromisoformat(reg[-1])
+        r = conn.execute("""SELECT min(game_date), max(game_date) FROM nba_calendar.games
+                            WHERE coalesce(game_label,'') NOT IN ('Preseason','Playoffs','Play-In','All-Star')
+                              AND game_date BETWEEN %s AND %s""", (today - dt.timedelta(days=300), today + dt.timedelta(days=300))).fetchone()
+        return (r[0], r[1]) if r and r[0] else (None, None)
     except Exception:  # noqa: BLE001
         return None, None
 
 
 def evaluate_hurdles(conn, day, pool_sizes=None):
-    s0, s1 = regular_season_window(day)
+    s0, s1 = regular_season_window(conn, day)
     season_start = s0 or (conn.execute("SELECT min(game_date) FROM nba_score.live_slips").fetchone()[0] or day)
     days_into_season = (day - season_start).days
     season_end = s1
