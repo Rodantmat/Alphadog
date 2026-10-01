@@ -144,6 +144,12 @@ def pick(conn, day, require_fresh=True):
     if in_final7:
         print(f"  {day}: final 7 days of the regular season - nothing staked (29d/25e)", flush=True)
         return
+    # 29n slate-size cap: on a slate of <= 4 games the engine's ~9 players come from two or three games and the within-day
+    # correlation is maximal - the weakest slate size in both seasons (35-36% bad days) - so every strategy builds at cap 1
+    n_games = conn.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date=%s AND coalesce(game_label,'')<>'Preseason'", (day,)).fetchone()[0]
+    small_slate = n_games <= 4
+    if small_slate:
+        print(f"  {day}: small slate ({n_games} games) - every strategy at cap 1 (29n)", flush=True)
     n = 0
     placed_sigs = set()   # (structure, sorted legs) already placed today by an earlier strategy - a duplicate is staked once
     for name, (comp, size, structure, cap, *_rest) in STRATEGIES.items():
