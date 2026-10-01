@@ -156,8 +156,9 @@ def pick(conn, day, require_fresh=True):
         if use_cap == 0:
             continue
         status = 'placed_week2' if week2 else ('placed_shadow' if shadow else 'placed')
-        slips = ENG.build_day_slips(pool, comp, size, structure, use_cap, cmap)
-        pool_n = len({l['player'] for l in ENG.candidates_for(comp, pool)})
+        fam_pool = pools.get(name[0], pool)
+        slips = ENG.build_day_slips(fam_pool, comp, size, structure, use_cap, cmap)
+        pool_n = len({l['player'] for l in ENG.candidates_for(comp, fam_pool)})
         conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
                      (day, name, pool_n))
         for k, slip in enumerate(slips, start=1):
