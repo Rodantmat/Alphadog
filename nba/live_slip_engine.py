@@ -420,7 +420,7 @@ def calibrate(conn):
                     per[s] += 1; c = 0.0
             return max(per.values()) if per else 0
         h_long = 1.0
-        while alarms(h_long) > 1 and h_long < 20:
+        while alarms(h_long) > 1 and h_long < 40:
             h_long += 0.25
         conn.execute("""INSERT INTO nba_score.live_strategy_calib (strategy, hist_max_dd, mc95_dd, mc99_dd, cusum_k, cusum_h_long, cusum_h_short, cert_leg_hit, backtest_days, backtest_legs, streak95, streak99, hist_streak)
                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (strategy) DO UPDATE SET hist_max_dd=EXCLUDED.hist_max_dd, mc95_dd=EXCLUDED.mc95_dd, mc99_dd=EXCLUDED.mc99_dd,
