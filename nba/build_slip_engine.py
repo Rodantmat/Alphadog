@@ -329,6 +329,8 @@ def main():
              + [f'single:{c}' for c in CELLS if c != 'goblin'] + [f'weighted:{c}' for c in CORE])
     slip_rows, leg_rows = [], []
     for d in sorted(days):
+        if delta and d < since:
+            continue   # delta: bounds and the correlation map came from the whole history above; only build the new days
         rows = days[d]
         season = rows[0]['season']
         ph = phase_of(season, d, bounds)
