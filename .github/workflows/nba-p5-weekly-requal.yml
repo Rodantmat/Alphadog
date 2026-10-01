@@ -32,9 +32,9 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install --upgrade pip "psycopg[binary]"
 
-      - name: Resolve precision
+      - name: Resolve precision (set repository variable P5_PRECISION=full for the 10k/100 certification setting)
         run: |
-          if [ "${{ github.event.inputs.precision }}" = "full" ]; then
+          if [ "${{ vars.P5_PRECISION }}" = "full" ]; then
             echo "SV_BOOT=10000" >> "$GITHUB_ENV"; echo "SV_NULL=100" >> "$GITHUB_ENV"
           else
             echo "SV_BOOT=2000" >> "$GITHUB_ENV"; echo "SV_NULL=30" >> "$GITHUB_ENV"
