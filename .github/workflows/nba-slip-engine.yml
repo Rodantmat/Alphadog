@@ -44,4 +44,5 @@ jobs:
           SE_SIZES: ${{ github.event.inputs.sizes }}
           SE_EXCLUDE_CELLS: ${{ github.event.inputs.exclude_cells }}
           SE_TABLE_SUFFIX: ${{ github.event.inputs.table_suffix }}
+          SE_DELTA: ${{ github.event.inputs.delta }}
         run: python -u nba/build_slip_engine.py
