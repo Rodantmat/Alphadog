@@ -311,6 +311,8 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         # the drawdown episode start: the day of the running peak (one-shot grace clock, never reset by a brief recovery)
         if 'H6' in h:
             state, live_cap = 'off', 0
+        elif 'W2' in h:
+            state, live_cap = 'week2', 0   # staking cap 0; pick still builds the week-2 paper record at base cap (tagged, excluded from hurdles)
         elif (reds >= 1 and not red_only_variance) or yellows >= 2:
             state, live_cap = 'red', 0
         elif red_only_variance:
