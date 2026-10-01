@@ -274,8 +274,15 @@ def build_day_slips(pool, comp, size, structure, cap, cmap):
             tier = 1
         else:
             tier = 0
-        slips.append(((tier, sum(l['edge'] for l in s)), s))
-    slips.sort(key=lambda x: (-x[0][0], -x[0][1]))
+        # SE_DIVERSIFY (29k): on a broad board prefer slips spanning >= 4 distinct cell families. Drought damage is
+        # cell-specific and rotates; a 5-pick with 2 legs in a cratering cell dies while its other 3 hit. Same-board
+        # control: short droughts -11% (4+ cells) vs -39% (3 cells); normal broad days +139% vs +123%; on NARROW boards
+        # forcing a 4th cell reaches for a weak leg (+85% vs +152%) - so only when the board is deep.
+        div = 0
+        if DIVERSIFY and size >= 5 and broad_day:
+            div = 1 if len({l['cell'].replace('_U', '') for l in s}) >= 4 else 0
+        slips.append(((tier, div, sum(l['edge'] for l in s)), s))
+    slips.sort(key=lambda x: (-x[0][0], -x[0][1], -x[0][2]))
     return [s for _, s in slips[:cap]]
 
 
