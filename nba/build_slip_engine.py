@@ -235,7 +235,7 @@ def candidates_for(comp, pool):
     return []
 
 
-def build_day_slips(pool, comp, size, structure, cap, cmap):
+def build_day_slips(pool, comp, size, structure, cap, cmap, broad_day=False):
     """Enumerate valid slips of `size` for the composition, ranked by summed edge; return top `cap` distinct slips."""
     base_legs = candidates_for(comp, pool)
     extender = None
