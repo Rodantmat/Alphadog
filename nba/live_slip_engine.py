@@ -203,7 +203,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
     season_start = s0 or (conn.execute("SELECT min(game_date) FROM nba_score.live_slips").fetchone()[0] or day)
     days_into_season = (day - season_start).days
     season_end = s1
-    for name, (comp, size, structure, cap, cert_hit, worst_dd, longest) in STRATEGIES.items():
+    for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
         g = conn.execute("""SELECT game_date, sum(profit), count(*), sum(hits), sum(size) FROM nba_score.live_slips
                             WHERE strategy=%s AND status='graded' GROUP BY game_date ORDER BY game_date""", (name,)).fetchall()
         if not g:
