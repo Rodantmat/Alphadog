@@ -135,17 +135,22 @@ def pick(conn, day, require_fresh=True):
     n = 0
     for name, (comp, size, structure, cap, *_rest) in STRATEGIES.items():
         state, live_cap = states.get(name, ('paper', cap))
-        if state == 'off' or live_cap == 0:
+        if state == 'off':
             continue
-        slips = ENG.build_day_slips(pool, comp, size, structure, live_cap, cmap)
+        week2 = state == 'week2'
+        use_cap = cap if week2 else live_cap
+        if use_cap == 0:
+            continue
+        status = 'placed_week2' if week2 else 'placed'
+        slips = ENG.build_day_slips(pool, comp, size, structure, use_cap, cmap)
         pool_n = len({l['player'] for l in ENG.candidates_for(comp, pool)})
         conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
                      (day, name, pool_n))
         for k, slip in enumerate(slips, start=1):
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
-                            VALUES (%s,%s,%s,%s,%s,%s,'placed') ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                            VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, name, k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'prop': l['prop'], 'tier': l['tier'],
-                                                     'side': l['side'], 'line': float(l['line']), 'factor': l['factor']} for l in slip]), size, structure))
+                                                     'side': l['side'], 'line': float(l['line']), 'factor': l['factor']} for l in slip]), size, structure, status))
             n += 1
     conn.commit()
     print(f"  {day}: {n} paper slips placed across {len(STRATEGIES)} strategies ({len(legs)//3} board legs)", flush=True)
