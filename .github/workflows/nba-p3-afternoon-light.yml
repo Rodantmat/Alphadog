@@ -417,3 +417,15 @@ jobs:
           PIPE: "p3"
           CERT_DATE: ${{ steps.d.outputs.asof }}
         run: python nba/certify_pipeline.py
+
+      # 5) SLIP PICK (2026-10-01, section 29): today's paper slips for every active strategy, built from the slate
+      #    this run just scored and certified, through the certified slip rules. The freshness gate inside the engine
+      #    re-checks that board_scored, final_hp and the priced window legs all exist for the slate before building.
+      #    Regular season only (preseason is not a slate; the engine's own calendar handles week 2 and the final week).
+      - name: Slip pick (live slip engine, section 29)
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LS_MODE: "pick"
+          LS_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/live_slip_engine.py
