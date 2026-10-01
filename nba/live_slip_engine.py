@@ -273,6 +273,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         if not g:
             continue
         days = len(g); slips = sum(r[2] for r in g); net = sum(r[1] for r in g); roi = net / slips
+        built = slips + conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE strategy=%s AND status='dup' AND game_date>=%s", (name, season_start)).fetchone()[0]
         # H1 rolling leg hit over last 100 legs (voided legs excluded)
         legs = conn.execute("""SELECT j->>'hit' FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
                                WHERE s.strategy=%s AND s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
