@@ -193,7 +193,8 @@ def grade(conn, day):
         else:
             graded_legs = [dict(l, hit=h) for l, h in live]
             hits, payout = ENG.grade(graded_legs, structure)
-        new_status = 'graded_week2' if status0 == 'placed_week2' else ('graded' if n_void == 0 else 'graded_void')
+        new_status = ('graded_week2' if status0 == 'placed_week2' else 'graded_shadow' if status0 == 'placed_shadow'
+                      else ('graded' if n_void == 0 else 'graded_void'))
         conn.execute("""UPDATE nba_score.live_slips SET status=%s, hits=%s, payout=%s, profit=%s, legs_json=%s, graded_at=now()
                         WHERE game_date=%s AND strategy=%s AND k=%s""",
                      (new_status, hits, payout, payout - 1.0, json.dumps(legs_l), day, strategy, k))
