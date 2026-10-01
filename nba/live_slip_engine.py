@@ -48,12 +48,12 @@ BOOT_DRAWS = int(os.environ.get('LS_BOOT', '10000'))
 # the validated families (28j), with the backtest stress numbers each hurdle compares against
 STRATEGIES = {
     #  name                         composition           size structure cap  cert_leg_hit  worst_dd  longest_streak  pool_floor
-    'A_wsteals_5flex':   ('weighted:steals_R',    5, 'flex',  3, 0.61, 59.5, 15, 8),
-    'A_core_5flex':      ('core',                 5, 'flex',  3, 0.61, 61.4, 15, 8),
+    'A_wsteals_5flex':   ('weighted:steals_R',    5, 'flex',  6, 0.61, 59.5, 15, 8),   # cap 3->6 (29k pass 17): k4-6 +67%, 'wsteals 6 + core 0' beat every allocation
+    'A_core_5flex':      ('core',                 5, 'flex',  0, 0.61, 61.4, 15, 8),   # RETIRED (29k pass 14/17): 58% identical to wsteals; kept for its shadow record
     'A_regular_5power':  ('regular',              5, 'power', 1, 0.61, 36.3, 13, 8),
     'A_wrebounds_4flex': ('weighted:rebounds_R',  4, 'flex',  1, 0.62, 21.6, 11, 8),
     'A_core_3power':     ('core',                 3, 'power', 3, 0.62, 74.6, 15, 8),
-    'B_demon_5flex':     ('demon',                5, 'flex',  3, 0.38, 40.0, 15, 4),
+    'B_demon_5flex':     ('demon',                5, 'flex',  6, 0.38, 40.0, 15, 4),   # cap 3->6 (29k pass 12): OOS +144% on 675 slips, best net/dd of any cap
     'B_demon_3flex':     ('demon',                3, 'flex',  1, 0.38, 14.6, 12, 4),
     'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  1, 0.60, 22.1, 11, 8),
 }
