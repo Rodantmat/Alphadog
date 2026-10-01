@@ -185,7 +185,7 @@ def main():
         v2 = lo > 0
         v6 = nt_roi is not None and nt_roi > 0
         results.append((key, s1, s2, lo, med, hi, nt_roi, nt_slips, dec, v2, v6, mono))
-        conn.execute("""INSERT INTO nba_score.slip_validation (composition, size, structure, cap, s1_roi, s1_days, s1_conc,
+        conn.execute(f"""INSERT INTO {T_VAL} (composition, size, structure, cap, s1_roi, s1_days, s1_conc,
             oos_roi, oos_days, oos_slips, oos_net, oos_ci_lo, oos_ci_med, oos_ci_hi, oos_roi_no_teammates, oos_slips_no_teammates,
             top_cell, top_cell_share, decomposition, v2_pass, v6_pass)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
