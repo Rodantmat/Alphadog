@@ -32,6 +32,9 @@ import psycopg
 TOPK = int(os.environ.get('SV_TOPK', '30'))
 BOOT = int(os.environ.get('SV_BOOT', '10000'))
 NULLS = int(os.environ.get('SV_NULL', '200'))
+SUFFIX = os.environ.get('SV_TABLE_SUFFIX', '')
+T_SLIPS = f'nba_score.slip_engine_slips{SUFFIX}'
+T_VAL = f'nba_score.slip_validation{SUFFIX}'
 S1, S2 = '2024-25', '2025-26'
 
 CAP_RULE = {  # cap by structure (section 26b) - fixed BEFORE looking at OOS
