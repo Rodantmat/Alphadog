@@ -53,8 +53,8 @@ STRATEGIES = {
     'A_regular_5power':  ('regular',              5, 'power', 1, 0.61, 36.3, 13, 8),
     'A_wrebounds_4flex': ('weighted:rebounds_R',  4, 'flex',  1, 0.62, 21.6, 11, 8),
     'A_core_3power':     ('core',                 3, 'power', 3, 0.62, 74.6, 15, 8),
-    'B_demon_5flex':     ('demon',                5, 'flex',  3, 0.41, 40.0, 15, 4),
-    'B_demon_3flex':     ('demon',                3, 'flex',  1, 0.41, 14.6, 12, 4),
+    'B_demon_5flex':     ('demon',                5, 'flex',  3, 0.38, 40.0, 15, 4),
+    'B_demon_3flex':     ('demon',                3, 'flex',  1, 0.38, 14.6, 12, 4),
     'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  1, 0.60, 22.1, 11, 8),
 }
 
