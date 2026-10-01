@@ -154,20 +154,31 @@ def grade(conn, day):
     for player, prop, side, line, hit in conn.execute("""SELECT player, prop, side, line, hit::int FROM nba_market.prop_universe
                                                           WHERE game_date=%s AND line_source='real' AND hit IS NOT NULL""", (day,)).fetchall():
         outcomes[(player, prop, side, float(line))] = hit
-    graded = 0
+    # has P2 finished grading this slate? if the slate has graded legs at all, an outcome that is still missing is a VOID
+    # (player did not play / line pulled), not a delay. PP's reversion rule (payouts_srp): the slip pays as the smaller
+    # slip of its non-void legs; a slip left with < 2 legs is refunded (profit 0).
+    slate_graded = len(outcomes) > 0
+    graded = voided = 0
     for strategy, k, legs, size, structure in rows:
         legs_l = legs if isinstance(legs, list) else json.loads(legs)
         hs = [outcomes.get((l['player'], l['prop'], l['side'], float(l['line']))) for l in legs_l]
-        if any(h is None for h in hs):
-            continue   # a void or an ungraded leg: stays 'placed' until P2 grades it (PP reverts voids; modelled later)
+        if any(h is None for h in hs) and not slate_graded:
+            continue   # P2 has not graded this slate yet; try again next run
+        live = [(l, h) for l, h in zip(legs_l, hs) if h is not None]
+        n_void = len(legs_l) - len(live)
         for l, h in zip(legs_l, hs):
-            l['hit'] = h
-        hits, payout = ENG.grade(legs_l, structure)
-        conn.execute("""UPDATE nba_score.live_slips SET status='graded', hits=%s, payout=%s, profit=%s, legs_json=%s, graded_at=now()
-                        WHERE game_date=%s AND strategy=%s AND k=%s""", (hits, payout, payout - 1.0, json.dumps(legs_l), day, strategy, k))
-        graded += 1
+            l['hit'] = h; l['void'] = h is None
+        if len(live) < 2:
+            hits, payout = sum(h for _, h in live), 1.0   # refund
+        else:
+            graded_legs = [dict(l, hit=h) for l, h in live]
+            hits, payout = ENG.grade(graded_legs, structure)
+        conn.execute("""UPDATE nba_score.live_slips SET status=%s, hits=%s, payout=%s, profit=%s, legs_json=%s, graded_at=now()
+                        WHERE game_date=%s AND strategy=%s AND k=%s""",
+                     ('graded' if n_void == 0 else 'graded_void', hits, payout, payout - 1.0, json.dumps(legs_l), day, strategy, k))
+        graded += 1; voided += (1 if n_void else 0)
     conn.commit()
-    print(f"  {day}: {graded} slips graded", flush=True)
+    print(f"  {day}: {graded} slips graded ({voided} with voided legs, reverted per PP's rule)", flush=True)
     evaluate_hurdles(conn, day)
 
 
