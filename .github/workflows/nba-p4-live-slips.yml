@@ -80,6 +80,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           LS_MODE: ${{ steps.res.outputs.mode }}
           LS_DATE: ${{ steps.res.outputs.slate }}
+          LS_FROM: ${{ github.event.inputs.from_date }}
+          LS_TO: ${{ github.event.inputs.to_date }}
         run: python -u nba/live_slip_engine.py
       - name: No regular-season slate
         if: steps.res.outputs.run != 'true'
