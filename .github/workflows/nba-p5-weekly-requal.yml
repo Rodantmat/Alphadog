@@ -8,8 +8,10 @@ name: NBA P5 Weekly Requalification
 # live_slip_engine.STRATEGIES. (MLB lesson: a system that rewrites its own strategy list cannot be trusted.)
 
 on:
-  schedule:
-    - cron: '0 20 * * 1'
+  workflow_call:
+    secrets:
+      DATABASE_URL:
+        required: true
   workflow_dispatch:
 
 permissions:
