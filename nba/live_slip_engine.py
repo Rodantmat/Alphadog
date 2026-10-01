@@ -156,7 +156,9 @@ def pick(conn, day, require_fresh=True):
         if use_cap == 0:
             continue
         status = 'placed_week2' if week2 else ('placed_shadow' if shadow else 'placed')
-        fam_pool = pools.get(name[0], pool)
+        # week 2 (29l): the paper record is built from the STEALS-EXCLUDED pool - the week-2 collapse lives in the steals cells;
+        # the no-steals strategies were positive in week 2 of both seasons (small samples). The third season's record decides.
+        fam_pool = pools.get('C', pool) if week2 else pools.get(name[0], pool)
         slips = ENG.build_day_slips(fam_pool, comp, size, structure, use_cap, cmap)
         pool_n = len({l['player'] for l in ENG.candidates_for(comp, fam_pool)})
         conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
