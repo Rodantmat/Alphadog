@@ -70,7 +70,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python -u nba/certify_slip_system.py
 
-      - name: 5. Validation (walk-forward, bootstrap, whole-board null, teammate ban) - weekly precision; monthly: 10000/100
+      - name: "5. Validation (walk-forward, bootstrap, whole-board null, teammate ban) - weekly precision; monthly 10000/100"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SV_TOPK: "30"
