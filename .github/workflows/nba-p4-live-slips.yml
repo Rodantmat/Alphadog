@@ -28,6 +28,10 @@ on:
         description: "replay end (mode=replay)"
         default: ""
         required: false
+      resume:
+        description: "replay: '1' continues from the last graded day instead of wiping"
+        default: ""
+        required: false
 
 permissions:
   contents: read
