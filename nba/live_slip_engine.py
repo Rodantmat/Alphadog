@@ -258,8 +258,18 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         calib = conn.execute("SELECT mc95_dd, cusum_h_long, cusum_h_short, cusum_k FROM nba_score.live_strategy_calib WHERE strategy=%s", (name,)).fetchone()
         ci_lo = boot_lo([(r[2], r[2] + r[1]) for r in g], BOOT_DRAWS) if days >= 8 else None
         h = {}
-        if leg_hit is not None:
-            h['H1'] = 'red' if (cert_hit - leg_hit > 0.07 and len(leg_hits) >= 150) else ('yellow' if cert_hit - leg_hit > 0.04 else 'ok')
+        # H1 as a CUSUM on the chronological leg stream (calibrated h: the backtest's own stream alarms <= once/season).
+        # A plain +-0.04 window on 100 legs fires ~20% of the time by chance (SE 0.049) - it is kept only as a reported metric.
+        chron = conn.execute("""SELECT (j->>'hit')::int FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
+                                WHERE s.strategy=%s AND s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
+                                ORDER BY s.game_date, s.k""", (name, season_start)).fetchall()
+        if calib and calib[1] and len(chron) >= 30:
+            kk, h_long, h_short = float(calib[3]), float(calib[1]), float(calib[2])
+            c = 0.0
+            for (x,) in chron:
+                c = max(0.0, c + (cert_hit - x) - kk)
+            h['H1'] = 'red' if c > h_long else ('yellow' if c > h_short else 'ok')
+            h['H1_cusum'] = round(c, 2)
         if calib and calib[0]:
             mc95 = float(calib[0])   # 95th-pct Monte Carlo drawdown of the backtest day sequence; the historical max is one ordering
             h['H2'] = 'red' if dd >= 1.0 * mc95 else ('yellow' if dd >= 0.8 * mc95 else 'ok')
@@ -273,36 +283,44 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             h = {k: ('yellow' if v == 'red' else v) for k, v in h.items()}; h['H5'] = 'opening-weeks'
         if season_end is not None and (season_end - day).days <= 7:
             h['H6'] = 'final7'
-        reds = sum(1 for v in h.values() if v == 'red'); yellows = sum(1 for v in h.values() if v == 'yellow')
-        red_only_variance = reds >= 1 and all(h.get(x) != 'red' for x in ('H1', 'H7')) and yellows < 2
+        flags = {k: v for k, v in h.items() if k in ('H1', 'H2', 'H3', 'H4', 'H7')}
+        reds = sum(1 for v in flags.values() if v == 'red'); yellows = sum(1 for v in flags.values() if v == 'yellow')
+        red_only_variance = reds >= 1 and all(flags.get(x) != 'red' for x in ('H1', 'H7')) and yellows < 2
         prev = conn.execute("SELECT state, updated_at, hurdles FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
         prev_state = prev[0] if prev else 'paper'
-        crit_since = None
-        if prev and prev[2] and isinstance(prev[2], dict):
-            crit_since = prev[2].get('CRIT_SINCE')
+        ph = prev[2] if (prev and prev[2] and isinstance(prev[2], dict)) else {}
+        crit_since = ph.get('CRIT_SINCE'); clean_days = int(ph.get('CLEAN', 0))
         # paper gate: 50 slate days AND cap x 50 slips (a cap-1 strategy cannot be asked for 1,000 slips) AND bootstrap lower bound > 0
         paper_ok = days >= PAPER_DAYS and slips >= cap * PAPER_DAYS and ci_lo is not None and ci_lo > 0
+        # the drawdown episode start: the day of the running peak (one-shot grace clock, never reset by a brief recovery)
         if 'H6' in h:
             state, live_cap = 'off', 0
-        elif reds >= 1 and not red_only_variance or yellows >= 2:
+        elif (reds >= 1 and not red_only_variance) or yellows >= 2:
             state, live_cap = 'red', 0
         elif red_only_variance:
-            # drawdown/streak alone: 11-15 day losing streaks are normal for these structures; hold at cap 1 for 7 days, flagged
-            last_two = [r[1] for r in g[-2:]]
-            recovered = len(last_two) == 2 and all(x > 0 for x in last_two)
             since = dt.date.fromisoformat(crit_since) if crit_since else day
-            if recovered:
-                state, live_cap = 'yellow', max(1, cap // 2); h['GRACE'] = 'recovered'
-            elif (day - since).days >= 7:
+            if (day - since).days >= 7:
                 state, live_cap = 'red', 0; h['GRACE'] = 'expired'
             else:
                 state, live_cap = 'critical', 1; h['CRIT_SINCE'] = since.isoformat()
         elif yellows == 1:
             state, live_cap = 'yellow', max(1, cap // 2)
-        elif paper_ok:
-            state, live_cap = 'active', cap
         else:
-            state, live_cap = 'paper', cap
+            # clean: step DOWN only after 3 consecutive clean evaluations (hysteresis); a prior red never self-clears
+            clean_days += 1
+            h['CLEAN'] = clean_days
+            if prev_state == 'red':
+                state, live_cap = 'red', 0
+            elif prev_state in ('yellow', 'critical') and clean_days < 3:
+                state, live_cap = prev_state, (max(1, cap // 2) if prev_state == 'yellow' else 1)
+            elif paper_ok:
+                state, live_cap = 'active', cap
+            else:
+                state, live_cap = 'paper', cap
+        if state in ('yellow', 'critical', 'red'):
+            h['CLEAN'] = 0
+        if state != 'critical':
+            h.pop('CRIT_SINCE', None)
         conn.execute("""UPDATE nba_score.live_strategy_state SET state=%s, live_cap=%s, days=%s, slips=%s, net=%s, roi=%s, ci_lo=%s, leg_hit=%s,
                         drawdown=%s, streak=%s, pool_avg=%s, hurdles=%s, updated_at=now() WHERE strategy=%s""",
                      (state, live_cap, days, slips, net, roi, ci_lo, leg_hit, dd, streak, pool_avg, json.dumps(h), name))
