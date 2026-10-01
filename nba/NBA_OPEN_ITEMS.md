@@ -14704,6 +14704,15 @@ independently checked this pass.
   machine. No fixed cadence is established yet; the certifier's existing per-app board-liveness check
   (`A2`/`T26-9`, closed earlier this window) will surface staleness the same way it does for the other
   four apps.
+- 🆕 **`[LIVE-AUDIT] 2026-10-01`**: the lapse scenario above has now been directly observed, not just
+  anticipated. `Betr Cloud Harvest` run `36793047942` (`2026-09-30T23:49:17Z`–`23:54:11Z`, league
+  `WNBA` — the pre-switch league; NBA harvest is unaffected today) completed with `conclusion: failure`;
+  its own log reads literally `NO BOARD (session may have expired — re-run betr_export_session.py and
+  update BETR_SESSION_STATE)`, exit code `2`. **No credential value is recorded here or anywhere in
+  this sweep, per the standing rule.** Still no fixed re-seed cadence established, and re-seeding is an
+  **OWNER DECISION** (it needs the owner's own machine) — this read-only sweep cannot remediate it. Worth
+  the owner's attention before the `2026-10-20` auto-switch to NBA, so the same lapse doesn't carry into
+  the NBA-league harvest once it switches; not an emergency today since the current league is WNBA.
 
 ⇒ **This item's original claim — "there is no Betr scraper in this repo" — is now false, live-verified.**
 The `2026-10-10` bearer-token expiry this item was originally written about no longer governs Betr's
