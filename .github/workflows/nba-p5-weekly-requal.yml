@@ -11,11 +11,6 @@ on:
   schedule:
     - cron: '0 20 * * 1'
   workflow_dispatch:
-    inputs:
-      precision:
-        description: "'weekly' (2k bootstrap, 30 nulls; ~30 min) or 'full' (10k, 100; the certification setting, ~70 min)"
-        default: "weekly"
-        required: false
 
 permissions:
   contents: read
