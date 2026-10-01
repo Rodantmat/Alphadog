@@ -216,13 +216,15 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
     season_end = s1
     for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
         g = conn.execute("""SELECT game_date, sum(profit), count(*), sum(hits), sum(size) FROM nba_score.live_slips
-                            WHERE strategy=%s AND status='graded' GROUP BY game_date ORDER BY game_date""", (name,)).fetchall()
+                            WHERE strategy=%s AND status IN ('graded','graded_void') AND game_date>=%s GROUP BY game_date ORDER BY game_date""",
+                         (name, season_start)).fetchall()
         if not g:
             continue
         days = len(g); slips = sum(r[2] for r in g); net = sum(r[1] for r in g); roi = net / slips
-        # H1 rolling leg hit over last 100 legs
+        # H1 rolling leg hit over last 100 legs (voided legs excluded)
         legs = conn.execute("""SELECT j->>'hit' FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
-                               WHERE s.strategy=%s AND s.status='graded' ORDER BY s.game_date DESC, s.k LIMIT 150""", (name,)).fetchall()
+                               WHERE s.strategy=%s AND s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
+                               ORDER BY s.game_date DESC, s.k LIMIT 150""", (name, season_start)).fetchall()
         leg_hits = [int(x[0]) for x in legs if x[0] is not None]
         leg_hit = sum(leg_hits[:100]) / len(leg_hits[:100]) if len(leg_hits) >= 30 else None
         # H2 drawdown, H3 streak
