@@ -189,6 +189,21 @@ def grade(conn, day):
     for player, prop, side, line, hit in conn.execute("""SELECT player, prop, side, line, hit::int FROM nba_market.prop_universe
                                                           WHERE game_date=%s AND line_source='real' AND hit IS NOT NULL""", (day,)).fetchall():
         outcomes[(player, prop, side, float(line))] = hit
+    # window->close line movement per (player, market), from the close snapshot (29m): a leg PP moved against the pick hits ~51% vs 61%
+    MK = {'steals': 'player_steals', 'turnovers': 'player_turnovers', 'blocks': 'player_blocks', 'stocks': 'player_blocks_steals', 'rebounds': 'player_rebounds',
+          'points': 'player_points', 'pts_ast': 'player_points_assists', 'pra': 'player_points_rebounds_assists', 'pts_reb': 'player_points_rebounds',
+          'assists': 'player_assists', 'threes_made': 'player_threes', 'reb_ast': 'player_rebounds_assists'}
+    close = {}
+    for pn, mkey, cline in conn.execute("""SELECT nba_ref.norm_name(player), market_key, line FROM nba_market.board_snapshots
+                                           WHERE bookmaker='prizepicks' AND snapshot_label='close' AND game_date=%s""", (day,)).fetchall():
+        close[(pn, mkey)] = float(cline)
+    def movement(l):
+        c = close.get((ENG.norm(l['player']) if hasattr(ENG, 'norm') else l['player'].lower(), MK.get(l['prop'], '')))
+        if c is None:
+            return 'pulled'
+        if c == float(l['line']):
+            return 'same'
+        return 'against' if ((l['side'] == 'Under' and c > float(l['line'])) or (l['side'] == 'Over' and c < float(l['line']))) else 'for'
     # has P2 finished grading this slate? if the slate has graded legs at all, an outcome that is still missing is a VOID
     # (player did not play / line pulled), not a delay. PP's reversion rule (payouts_srp): the slip pays as the smaller
     # slip of its non-void legs; a slip left with < 2 legs is refunded (profit 0).
