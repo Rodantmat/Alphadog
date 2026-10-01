@@ -60,7 +60,7 @@ jobs:
           from zoneinfo import ZoneInfo
           PT = ZoneInfo("America/Los_Angeles")
           now_utc = dt.datetime.now(dt.timezone.utc)
-          mode = os.environ.get("IN_MODE") or ("grade" if now_utc.hour < 19 else "pick")   # 16:30 UTC -> grade ; 21:45 UTC -> pick
+          mode = os.environ.get("IN_MODE") or "pick"
           d = os.environ.get("IN_DATE")
           today = dt.datetime.now(PT).date()
           slate = dt.date.fromisoformat(d) if d else (today if mode == "pick" else today - dt.timedelta(days=1))
