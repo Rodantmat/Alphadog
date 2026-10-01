@@ -238,20 +238,19 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         conn.execute("""UPDATE nba_score.live_strategy_state st SET state='paper', live_cap=v.cap, hurdles='{}', updated_at=now()
                         FROM (VALUES %s) v(strategy, cap) WHERE st.strategy=v.strategy AND st.state='off' AND st.updated_at < %s"""
                      % (",".join("('%s',%d)" % (n, c[3]) for n, c in STRATEGIES.items()), "%s"), (dt.datetime.combine(s0, dt.time.min, tzinfo=dt.timezone.utc),))
-    # H7 anchor (portfolio): the steals cells are shared by every family-A composition - one CUSUM on their pooled live legs
-    anchor_rows = conn.execute("""SELECT (j->>'hit')::int FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
+    # H7 anchor (portfolio): the steals cells are shared by every family-A composition. Day-blocked (29f): a day's steals
+    # legs are the same 2-3 players across every slip, so the DAY is the independent unit, not the leg.
+    anchor_days = conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
                                   WHERE s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL AND j->>'cell' IN ('steals_R','steals_R_U')
-                                  ORDER BY s.game_date, s.strategy, s.k""", (season_start,)).fetchall()
+                                  GROUP BY s.game_date ORDER BY s.game_date DESC LIMIT 14""", (season_start,)).fetchall()
     anchor_state = 'ok'
-    if len(anchor_rows) >= 50:
-        p0, k = 0.654, 0.015   # certified steals R top-2/3 hit (24a); slack
-        cal = conn.execute("SELECT cusum_h_long FROM nba_score.live_strategy_calib WHERE strategy='A_wsteals_5flex'").fetchone()
-        h_long = float(cal[0]) if cal and cal[0] else 4.0
-        c = 0.0
-        for (x,) in anchor_rows:
-            c = max(0.0, c + (p0 - x) - k)
-        anchor_state = 'red' if c > h_long else ('yellow' if c > 0.75 * h_long else 'ok')
-        print(f"  ANCHOR steals: {len(anchor_rows)} live legs, hit {sum(x for (x,) in anchor_rows)/len(anchor_rows):.3f} vs {p0}, CUSUM {c:.2f} (h_long {h_long:.2f}) -> {anchor_state}", flush=True)
+    acal = conn.execute("SELECT cert_leg_hit, sd_daily_hit FROM nba_score.live_strategy_calib WHERE strategy='_ANCHOR_steals'").fetchone()
+    if acal and acal[1] and len(anchor_days) >= 7:
+        p0, sd_day = float(acal[0]), float(acal[1])
+        nd = len(anchor_days); mean14 = sum(float(r[1]) for r in anchor_days) / nd
+        z = (p0 - mean14) / (sd_day / nd ** 0.5)
+        anchor_state = 'red' if z > 3.0 else ('yellow' if z > 2.0 else 'ok')
+        print(f"  ANCHOR steals: trailing-{nd}-day hit {mean14:.3f} vs {p0:.3f} (sd_day {sd_day:.3f}) z={z:.2f} -> {anchor_state}", flush=True)
     # H8 (concept-drift detector on the pooled daily miss rate) was built and REMOVED (29f): simulated on both seasons'
     # real daily leg stream, plain DDM sat in 'drift' 146-157 of 161 days (p_min anchored on the anomalously good
     # opening week) and the two-window ADWIN-style variant flagged 7-10 HEALTHY weeks per season at every setting
