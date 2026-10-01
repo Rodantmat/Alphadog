@@ -359,6 +359,9 @@ def calibrate(conn):
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_strategy_calib (strategy text PRIMARY KEY, hist_max_dd double precision,
                     mc95_dd double precision, mc99_dd double precision, cusum_k double precision, cusum_h_long double precision, cusum_h_short double precision,
                     cert_leg_hit double precision, backtest_days int, backtest_legs int, calibrated_at timestamptz DEFAULT now())""")
+    conn.execute("ALTER TABLE nba_score.live_strategy_calib ADD COLUMN IF NOT EXISTS streak95 int")
+    conn.execute("ALTER TABLE nba_score.live_strategy_calib ADD COLUMN IF NOT EXISTS streak99 int")
+    conn.execute("ALTER TABLE nba_score.live_strategy_calib ADD COLUMN IF NOT EXISTS hist_streak int")
     rng = random.Random(11)
     for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
         days = conn.execute("""SELECT game_date, sum(profit) FROM nba_score.slip_engine_slips WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
