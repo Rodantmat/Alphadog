@@ -32,34 +32,37 @@ jobs:
           python-version: '3.11'
       - run: python -m pip install --upgrade pip "psycopg[binary]"
 
-      - name: 1. Tier map + bands (all three ranks) on the data as it stands
+      - name: 1. Tier map + bands (all three ranks) - DELTA: only days past the high-water mark; bands re-swept in full
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           TM_RANK: "final_hp,baseline_hp,final_score"
           TM_REBUILD: "1"
+          TM_DELTA: "1"
           TM_NMAX: "25"
           TM_PCTMAX: "30"
         run: python -u nba/build_tier_map_bands.py
 
-      - name: 2. Candidate certifier (raw board -> outcome -> price -> ranks)
+      - name: 2. Candidate certifier (per-season aggregate; full recompute is the exact form)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python -u nba/certify_candidates.py
 
-      - name: 3. Slip engine (certified rules, capped) - the live days are now in the backtest
+      - name: 3. Slip engine (certified rules, capped) - DELTA: only new days; phase bounds + correlation map from the whole history
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SE_CAP: "10"
           SE_SIZES: "2,3,4,5,6"
+          SE_DELTA: "1"
         run: python -u nba/build_slip_engine.py
 
-      - name: 3b. Slip engine, family C (Regular without steals, 28f) into the _nosteals tables
+      - name: 3b. Slip engine, family C (Regular without steals, 28f) into the _nosteals tables - DELTA
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SE_CAP: "10"
           SE_SIZES: "2,3,4,5,6"
           SE_EXCLUDE_CELLS: "steals_R,steals_R_U"
           SE_TABLE_SUFFIX: "_nosteals"
+          SE_DELTA: "1"
         run: python -u nba/build_slip_engine.py
 
       - name: 4. Certification pass (frozen invariant list; any FAIL stops the loop here)
