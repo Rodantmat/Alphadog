@@ -232,7 +232,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         c = 0.0
         for (x,) in anchor_rows:
             c = max(0.0, c + (p0 - x) - k)
-        anchor_state = 'red' if c > h_long else ('yellow' if c > 0.6 * h_long else 'ok')
+        anchor_state = 'red' if c > h_long else ('yellow' if c > 0.75 * h_long else 'ok')
         print(f"  ANCHOR steals: {len(anchor_rows)} live legs, hit {sum(x for (x,) in anchor_rows)/len(anchor_rows):.3f} vs {p0}, CUSUM {c:.2f} (h_long {h_long:.2f}) -> {anchor_state}", flush=True)
     for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
         g = conn.execute("""SELECT game_date, sum(profit), count(*), sum(hits), sum(size) FROM nba_score.live_slips
