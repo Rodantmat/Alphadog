@@ -167,7 +167,7 @@ def pick(conn, day, require_fresh=True):
 # ------------------------------------------------------------------ GRADE
 def grade(conn, day):
     ensure_tables(conn)
-    rows = conn.execute("SELECT strategy, k, legs_json, size, structure, status FROM nba_score.live_slips WHERE game_date=%s AND status IN ('placed','placed_week2')", (day,)).fetchall()
+    rows = conn.execute("SELECT strategy, k, legs_json, size, structure, status FROM nba_score.live_slips WHERE game_date=%s AND status IN ('placed','placed_week2','placed_shadow')", (day,)).fetchall()
     if not rows:
         print(f"  {day}: nothing placed to grade", flush=True)
     outcomes = {}
