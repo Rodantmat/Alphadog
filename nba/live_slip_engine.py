@@ -43,6 +43,7 @@ import build_slip_engine as ENG   # certified rules: CELLS, eligible_legs, build
 PT = ZoneInfo('America/Los_Angeles')
 MODE = os.environ.get('LS_MODE', 'pick')
 PAPER_DAYS, PAPER_SLIPS = 50, 1000
+BOOT_DRAWS = int(os.environ.get('LS_BOOT', '10000'))
 
 # the validated families (28j), with the backtest stress numbers each hurdle compares against
 STRATEGIES = {
