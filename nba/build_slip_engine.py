@@ -88,6 +88,7 @@ CELLS = {
 CORE = ['turnovers_R', 'stocks_R', 'steals_R', 'rebounds_R', 'threes_D1', 'assists_D1']
 REGULAR = ['steals_R_U', 'steals_R', 'turnovers_R', 'stocks_R', 'pts_ast_R', 'points_R', 'pra_R_U', 'blocks_R', 'pts_reb_R', 'rebounds_R']
 DEMONS = ['threes_D1', 'assists_D1', 'rebounds_D3']
+DEMONS2 = ['threes_D1_r34', 'points_D2', 'rebounds_D2', 'rebounds_D1']   # Tier-2 demons (29k pass 15), their own composition
 DEFENSIVE = ['steals_R_U', 'steals_R', 'turnovers_R', 'stocks_R', 'blocks_R']
 POINTSFAM = ['points_R', 'pts_ast_R', 'pra_R_U', 'pts_reb_R']
 
