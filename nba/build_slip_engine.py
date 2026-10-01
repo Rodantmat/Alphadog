@@ -146,6 +146,8 @@ def eligible_legs(day_rows):
     """day_rows: all rows for one day. Returns {cell_name: [leg dict, ...]} ordered by cell rank."""
     out = defaultdict(list)
     for name, (prop, tier, side, rank, nband, edge) in CELLS.items():
+        if name in EXCLUDE:
+            continue
         if name == 'goblin':
             cand = [r for r in day_rows if r['tier'] in ('G1', 'G2') and r['rank_key'] == 'final_hp']
             # top-1 per prop, then best score overall
