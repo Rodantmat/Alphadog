@@ -47,7 +47,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python -u nba/certify_candidates.py
 
-      - name: 3. Slip engine (certified rules, capped) - DELTA: only new days; phase bounds + correlation map from the whole history
+      - name: "3. Slip engine (certified rules, capped) - DELTA, only new days; phase bounds + correlation map from the whole history"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SE_CAP: "10"
