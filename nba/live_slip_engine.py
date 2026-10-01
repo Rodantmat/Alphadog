@@ -256,10 +256,6 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
     conn.commit()
 
 
-def _has_schedule(conn):
-    return conn.execute("SELECT to_regclass('nba_stats.schedule') IS NOT NULL").fetchone()[0]
-
-
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
