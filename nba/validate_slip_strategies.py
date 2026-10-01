@@ -142,7 +142,7 @@ def decompose(conn, key):
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
-    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.slip_validation (
+    conn.execute(f"""CREATE TABLE IF NOT EXISTS {T_VAL} (
         composition text, size int, structure text, cap int,
         s1_roi double precision, s1_days int, s1_conc double precision,
         oos_roi double precision, oos_days int, oos_slips int, oos_net double precision,
