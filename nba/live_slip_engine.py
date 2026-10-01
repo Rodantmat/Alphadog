@@ -171,7 +171,7 @@ def grade(conn, day):
     # slip of its non-void legs; a slip left with < 2 legs is refunded (profit 0).
     slate_graded = len(outcomes) > 0
     graded = voided = 0
-    for strategy, k, legs, size, structure in rows:
+    for strategy, k, legs, size, structure, status0 in rows:
         legs_l = legs if isinstance(legs, list) else json.loads(legs)
         hs = [outcomes.get((l['player'], l['prop'], l['side'], float(l['line']))) for l in legs_l]
         if any(h is None for h in hs) and not slate_graded:
@@ -185,9 +185,10 @@ def grade(conn, day):
         else:
             graded_legs = [dict(l, hit=h) for l, h in live]
             hits, payout = ENG.grade(graded_legs, structure)
+        new_status = 'graded_week2' if status0 == 'placed_week2' else ('graded' if n_void == 0 else 'graded_void')
         conn.execute("""UPDATE nba_score.live_slips SET status=%s, hits=%s, payout=%s, profit=%s, legs_json=%s, graded_at=now()
                         WHERE game_date=%s AND strategy=%s AND k=%s""",
-                     ('graded' if n_void == 0 else 'graded_void', hits, payout, payout - 1.0, json.dumps(legs_l), day, strategy, k))
+                     (new_status, hits, payout, payout - 1.0, json.dumps(legs_l), day, strategy, k))
         graded += 1; voided += (1 if n_void else 0)
     conn.commit()
     print(f"  {day}: {graded} slips graded ({voided} with voided legs, reverted per PP's rule)", flush=True)
