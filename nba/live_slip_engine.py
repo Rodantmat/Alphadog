@@ -258,7 +258,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         # H4 pool: qualifying legs/day for this strategy's cells over the last 14 days (recorded by pick into live_pool)
         pool_avg = conn.execute("""SELECT avg(legs) FROM nba_score.live_pool WHERE strategy=%s AND game_date > %s""",
                                 (name, day - dt.timedelta(days=14))).fetchone()[0]
-        calib = conn.execute("SELECT mc95_dd, cusum_h_long, cusum_h_short, cusum_k FROM nba_score.live_strategy_calib WHERE strategy=%s", (name,)).fetchone()
+        calib = conn.execute("SELECT mc95_dd, cusum_h_long, cusum_h_short, cusum_k, streak95, streak99 FROM nba_score.live_strategy_calib WHERE strategy=%s", (name,)).fetchone()
         ci_lo = boot_lo([(r[2], r[2] + r[1]) for r in g], BOOT_DRAWS) if days >= 8 else None
         h = {}
         # H1 as a CUSUM on the chronological leg stream (calibrated h: the backtest's own stream alarms <= once/season).
