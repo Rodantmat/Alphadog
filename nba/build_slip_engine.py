@@ -372,7 +372,7 @@ def flush(conn, slip_rows, leg_rows):
 
 def report(conn):
     rows = conn.execute(f"""
-        WITH s AS (SELECT composition, size, structure, season, k<=1 AS cap1, profit, hits=size AS full, hits>0 AND hits<size AS partial, payout>1 AS won
+        WITH s AS (SELECT composition, size, structure, season, k<=1 AS cap1, profit, hits=size AS is_full, hits>0 AND hits<size AS partial, payout>1 AS won
                    FROM {T_SLIPS} WHERE k<=3)
         SELECT composition, size, structure,
           round(avg(profit) FILTER (WHERE season='2024-25' AND cap1)::numeric,3) roi_s1_cap1,
