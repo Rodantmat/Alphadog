@@ -288,7 +288,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         h = {}
         # H1: day-blocked test (below). The CUSUM it replaced is documented in 29f.
         chron_days = conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
-                                     WHERE s.strategy=%s AND s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
+                                     WHERE s.strategy=%s AND s.status IN ('graded','graded_void','graded_shadow') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
                                      GROUP BY s.game_date ORDER BY s.game_date DESC LIMIT 14""", (name, season_start)).fetchall()
         if calib and calib[7] and len(chron_days) >= 7:
             # H1 as a DAY-BLOCKED test: trailing-14-day mean of the daily leg hit vs the certified level, in units of the
