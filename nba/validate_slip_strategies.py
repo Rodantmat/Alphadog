@@ -47,9 +47,9 @@ def cap_for(structure, size):
 
 
 def load(conn):
-    rows = conn.execute("""
+    rows = conn.execute(f"""
         SELECT game_date, season, composition, size, structure, k, profit, hits, same_team, legs_json
-        FROM nba_score.slip_engine_slips WHERE phase <> 'final7'""").fetchall()
+        FROM {T_SLIPS} WHERE phase <> 'final7'""").fetchall()
     strat = defaultdict(lambda: defaultdict(list))   # (comp,size,structure) -> day -> [(profit, hits, same_team, legs)]
     for d, season, comp, size, structure, k, profit, hits, st, legs in rows:
         key = (comp, size, structure)
