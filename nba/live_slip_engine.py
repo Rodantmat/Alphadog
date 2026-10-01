@@ -233,7 +233,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             h['H1'] = 'red' if (cert_hit - leg_hit > 0.07 and len(leg_hits) >= 150) else ('yellow' if cert_hit - leg_hit > 0.04 else 'ok')
         h['H2'] = 'red' if dd >= 1.5 * worst_dd else ('yellow' if dd >= 1.0 * worst_dd else 'ok')
         h['H3'] = 'red' if streak >= 1.5 * longest else ('yellow' if streak >= 1.25 * longest else 'ok')
-        h['H4'] = 'yellow' if (pool_avg is not None and pool_avg < 1 and days_into_season > 21) else 'ok'
+        h['H4'] = 'yellow' if (pool_avg is not None and pool_avg < 10 and days_into_season > 21) else 'ok'
         if days_into_season <= 21:
             h = {k: ('yellow' if v == 'red' else v) for k, v in h.items()}; h['H5'] = 'opening-weeks'
         if season_end is not None and (season_end - day).days <= 7:
