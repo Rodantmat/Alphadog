@@ -302,7 +302,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         elif (reds >= 1 and not red_only_variance) or yellows >= 2:
             state, live_cap = 'red', 0
         elif red_only_variance:
-            since = dt.date.fromisoformat(crit_since) if crit_since else day
+            since = peak_day   # the drawdown episode started at the running peak; 7 days of breach past it -> red
             if (day - since).days >= 7:
                 state, live_cap = 'red', 0; h['GRACE'] = 'expired'
             else:
