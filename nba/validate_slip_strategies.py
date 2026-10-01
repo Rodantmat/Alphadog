@@ -150,7 +150,7 @@ def main():
         oos_roi_no_teammates double precision, oos_slips_no_teammates int,
         top_cell text, top_cell_share double precision, decomposition jsonb,
         v2_pass boolean, v6_pass boolean, built_at timestamptz DEFAULT now())""")
-    conn.execute("DELETE FROM nba_score.slip_validation")
+    conn.execute(f"DELETE FROM {T_VAL}")
     conn.commit()
     rng = random.Random(7)
 
