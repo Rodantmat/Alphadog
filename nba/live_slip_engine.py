@@ -462,6 +462,17 @@ def calibrate(conn):
                         sd_daily_hit=EXCLUDED.sd_daily_hit, calibrated_at=now()""",
                      (name, hist, mc95, mc99, k, h_long, 0.75 * h_long, mean_h, len(days), len(legs), st95, st99, longest_streak(nets), sd_daily))
         print(f"  {name:<20} days {len(days):>3} legs {len(legs):>5} daily-hit mean {mean_h:.3f} sd {sd_daily:.3f} | dd hist {hist:5.1f} MC95 {mc95:5.1f} MC99 {mc99:5.1f} | streak hist {longest_streak(nets)} MC95 {st95} MC99 {st99}", flush=True)
+    # the steals ANCHOR's daily hit across the backtest (family A slips), for H7's day-blocked test
+    ah = conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.slip_engine_slips s, jsonb_array_elements(s.legs_json) j
+                         WHERE s.k <= CASE WHEN (s.structure='power' AND s.size=3) OR (s.structure='flex' AND s.size=5) THEN 3 ELSE 1 END
+                           AND (s.composition,s.size,s.structure) IN (('weighted:steals_R',5,'flex'),('core',5,'flex'),('regular',5,'power'),('weighted:rebounds_R',4,'flex'),('core',3,'power'))
+                           AND s.phase<>'final7' AND j->>'cell' IN ('steals_R','steals_R_U') GROUP BY s.game_date""").fetchall()
+    av = [float(r[1]) for r in ah]
+    a_mean = sum(av) / len(av); a_sd = (sum((x - a_mean) ** 2 for x in av) / len(av)) ** 0.5
+    conn.execute("""INSERT INTO nba_score.live_strategy_calib (strategy, cert_leg_hit, sd_daily_hit, backtest_days)
+                    VALUES ('_ANCHOR_steals', %s, %s, %s) ON CONFLICT (strategy) DO UPDATE SET cert_leg_hit=EXCLUDED.cert_leg_hit, sd_daily_hit=EXCLUDED.sd_daily_hit,
+                    backtest_days=EXCLUDED.backtest_days, calibrated_at=now()""", (a_mean, a_sd, len(av)))
+    print(f"  _ANCHOR_steals        days {len(av):>3} daily-hit mean {a_mean:.3f} sd {a_sd:.3f}", flush=True)
     conn.commit()
 
 
