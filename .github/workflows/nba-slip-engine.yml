@@ -17,6 +17,10 @@ on:
         description: "write to slip_engine_slips<suffix>; blank = the certified tables"
         default: ""
         required: false
+      delta:
+        description: "'1' = build only days past the table's high-water mark"
+        default: ""
+        required: false
 
 permissions:
   contents: read
