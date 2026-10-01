@@ -46,15 +46,15 @@ PAPER_DAYS, PAPER_SLIPS = 50, 1000
 
 # the validated families (28j), with the backtest stress numbers each hurdle compares against
 STRATEGIES = {
-    #  name                         composition           size structure cap  cert_leg_hit  worst_dd  longest_streak
-    'A_wsteals_5flex':   ('weighted:steals_R',    5, 'flex',  3, 0.61, 59.5, 15),
-    'A_core_5flex':      ('core',                 5, 'flex',  3, 0.61, 61.4, 15),
-    'A_regular_5power':  ('regular',              5, 'power', 1, 0.61, 36.3, 13),
-    'A_wrebounds_4flex': ('weighted:rebounds_R',  4, 'flex',  1, 0.62, 21.6, 11),
-    'A_core_3power':     ('core',                 3, 'power', 3, 0.62, 74.6, 15),
-    'B_demon_5flex':     ('demon',                5, 'flex',  3, 0.41, 40.0, 15),
-    'B_demon_3flex':     ('demon',                3, 'flex',  1, 0.41, 14.6, 12),
-    'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  1, 0.60, 22.1, 11),
+    #  name                         composition           size structure cap  cert_leg_hit  worst_dd  longest_streak  pool_floor
+    'A_wsteals_5flex':   ('weighted:steals_R',    5, 'flex',  3, 0.61, 59.5, 15, 8),
+    'A_core_5flex':      ('core',                 5, 'flex',  3, 0.61, 61.4, 15, 8),
+    'A_regular_5power':  ('regular',              5, 'power', 1, 0.61, 36.3, 13, 8),
+    'A_wrebounds_4flex': ('weighted:rebounds_R',  4, 'flex',  1, 0.62, 21.6, 11, 8),
+    'A_core_3power':     ('core',                 3, 'power', 3, 0.62, 74.6, 15, 8),
+    'B_demon_5flex':     ('demon',                5, 'flex',  3, 0.41, 40.0, 15, 4),
+    'B_demon_3flex':     ('demon',                3, 'flex',  1, 0.41, 14.6, 12, 4),
+    'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  1, 0.60, 22.1, 11, 8),
 }
 
 
