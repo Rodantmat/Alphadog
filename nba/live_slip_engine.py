@@ -284,11 +284,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         calib = conn.execute("SELECT mc95_dd, cusum_h_long, cusum_h_short, cusum_k, streak95, streak99, cert_leg_hit, sd_daily_hit FROM nba_score.live_strategy_calib WHERE strategy=%s", (name,)).fetchone()
         ci_lo = boot_lo([(r[2], r[2] + r[1]) for r in g], BOOT_DRAWS) if days >= 8 else None
         h = {}
-        # H1 as a CUSUM on the chronological leg stream (calibrated h: the backtest's own stream alarms <= once/season).
-        # A plain +-0.04 window on 100 legs fires ~20% of the time by chance (SE 0.049) - it is kept only as a reported metric.
-        chron = conn.execute("""SELECT (j->>'hit')::int FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
-                                WHERE s.strategy=%s AND s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
-                                ORDER BY s.game_date, s.k""", (name, season_start)).fetchall()
+        # H1: day-blocked test (below). The CUSUM it replaced is documented in 29f.
         chron_days = conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
                                      WHERE s.strategy=%s AND s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
                                      GROUP BY s.game_date ORDER BY s.game_date DESC LIMIT 14""", (name, season_start)).fetchall()
