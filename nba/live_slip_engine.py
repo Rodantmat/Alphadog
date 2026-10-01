@@ -57,6 +57,8 @@ STRATEGIES = {
     'B_demon_3flex':     ('demon',                3, 'flex',  1, 0.38, 14.6, 12, 4),
     'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  1, 0.60, 22.1, 11, 8),
 }
+# family C is the Regular-without-steals family (28f) and must be BUILT without the steals cells to be what it was validated as
+EXCLUDE_BY_FAMILY = {'C': {'steals_R', 'steals_R_U'}}
 
 
 def pt_today():
