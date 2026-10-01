@@ -64,9 +64,12 @@ jobs:
           d = os.environ.get("IN_DATE")
           today = dt.datetime.now(PT).date()
           slate = dt.date.fromisoformat(d) if d else (today if mode == "pick" else today - dt.timedelta(days=1))
-          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
-              games = c.execute("""SELECT count(*) FROM nba_calendar.games WHERE game_date=%s AND coalesce(game_label,'')<>'Preseason'""", (slate,)).fetchone()[0]
-          run = games > 0
+          if mode == "replay":
+              run = True; games = -1
+          else:
+              with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+                  games = c.execute("""SELECT count(*) FROM nba_calendar.games WHERE game_date=%s AND coalesce(game_label,'')<>'Preseason'""", (slate,)).fetchone()[0]
+              run = games > 0
           out = open(os.environ["GITHUB_OUTPUT"], "a")
           out.write(f"mode={mode}\nslate={slate.isoformat()}\nrun={'true' if run else 'false'}\n")
           print(f"mode={mode} slate={slate} regular-season games={games} run={run}")
