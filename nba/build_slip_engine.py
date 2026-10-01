@@ -274,17 +274,17 @@ def build_day_slips(pool, comp, size, structure, cap, cmap):
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
-    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.slip_engine_slips (
+    conn.execute(f"""CREATE TABLE IF NOT EXISTS {T_SLIPS} (
         game_date date, season text, phase text, composition text, size int, structure text, k int,
         legs_json jsonb, hits int, payout double precision, stake double precision, profit double precision,
         same_game int, same_team int, teams int, min_pair_corr double precision, max_pair_corr double precision, built_at timestamptz DEFAULT now())""")
-    conn.execute("ALTER TABLE nba_score.slip_engine_slips ADD COLUMN IF NOT EXISTS min_pair_corr double precision")
-    conn.execute("ALTER TABLE nba_score.slip_engine_slips ADD COLUMN IF NOT EXISTS max_pair_corr double precision")
-    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.slip_engine_legs (
+    conn.execute(f"ALTER TABLE {T_SLIPS} ADD COLUMN IF NOT EXISTS min_pair_corr double precision")
+    conn.execute(f"ALTER TABLE {T_SLIPS} ADD COLUMN IF NOT EXISTS max_pair_corr double precision")
+    conn.execute(f"""CREATE TABLE IF NOT EXISTS {T_LEGS} (
         game_date date, composition text, size int, structure text, k int, cell text, player text, prop text, tier text,
         side text, line numeric, factor double precision, hit int, built_at timestamptz DEFAULT now())""")
-    conn.execute("DELETE FROM nba_score.slip_engine_slips")
-    conn.execute("DELETE FROM nba_score.slip_engine_legs")
+    conn.execute(f"DELETE FROM {T_SLIPS}")
+    conn.execute(f"DELETE FROM {T_LEGS}")
     conn.commit()
 
     cols = None
