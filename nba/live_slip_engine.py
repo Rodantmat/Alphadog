@@ -252,6 +252,34 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             c = max(0.0, c + (p0 - x) - k)
         anchor_state = 'red' if c > h_long else ('yellow' if c > 0.75 * h_long else 'ok')
         print(f"  ANCHOR steals: {len(anchor_rows)} live legs, hit {sum(x for (x,) in anchor_rows)/len(anchor_rows):.3f} vs {p0}, CUSUM {c:.2f} (h_long {h_long:.2f}) -> {anchor_state}", flush=True)
+    # H8 DDM-style concept-drift detector on the POOLED daily leg miss rate (the model's ordering is shared by every strategy).
+    # Gama's DDM: p = cumulative miss rate from a reset point, s = sqrt(p(1-p)/n); keep (p_min, s_min);
+    # warning when p+s > p_min + 2*s_min, drift when p+s > p_min + 3*s_min. Label-based by necessity (29f): pure
+    # concept drift is invisible to every input-side monitor, so this fires with the label lag, never before.
+    ddm_state = 'ok'
+    dl = conn.execute("""SELECT s.game_date, count(*) FILTER (WHERE (j->>'hit')::int=0) misses, count(*) legs
+                         FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
+                         WHERE s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
+                         GROUP BY s.game_date ORDER BY s.game_date""", (season_start,)).fetchall()
+    if len(dl) >= 7:
+        n = m = 0; p_min = s_min = None; st = 'ok'
+        for _, misses, legs in dl:
+            n += legs; m += misses
+            if n < 60:
+                continue
+            p = m / n; s = (p * (1 - p) / n) ** 0.5
+            if p_min is None or p + s < p_min + s_min:
+                p_min, s_min = p, s
+            if p + s > p_min + 3 * s_min:
+                st = 'drift'
+            elif p + s > p_min + 2 * s_min:
+                st = 'drift' if st == 'drift' else 'warning'
+            else:
+                if st != 'ok':
+                    n = m = 0; p_min = s_min = None   # recovered below the warning line: reset the detector
+                st = 'ok'
+        ddm_state = st
+        print(f"  DDM concept-drift (pooled legs, {len(dl)} days): {ddm_state}", flush=True)
     for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
         g = conn.execute("""SELECT game_date, sum(profit), count(*), sum(hits), sum(size) FROM nba_score.live_slips
                             WHERE strategy=%s AND status IN ('graded','graded_void') AND game_date>=%s GROUP BY game_date ORDER BY game_date""",
