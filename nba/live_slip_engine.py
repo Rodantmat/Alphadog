@@ -295,6 +295,8 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             h['H7'] = anchor_state   # the shared steals anchor is failing: the whole family moves together
         if days_into_season <= 21:
             h = {k: ('yellow' if v == 'red' else v) for k, v in h.items()}; h['H5'] = 'opening-weeks'
+        if 7 <= days_into_season <= 13:
+            h['W2'] = 'week2'   # 29d: skip week 2 by calendar - both seasons, every strategy, every sub-population negative
         if season_end is not None and (season_end - day).days <= 7:
             h['H6'] = 'final7'
         flags = {k: v for k, v in h.items() if k in ('H1', 'H2', 'H3', 'H4', 'H7')}
