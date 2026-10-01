@@ -131,6 +131,9 @@ def pick(conn, day):
         if state == 'off' or live_cap == 0:
             continue
         slips = ENG.build_day_slips(pool, comp, size, structure, live_cap, cmap)
+        pool_n = len({l['player'] for l in ENG.candidates_for(comp, pool)})
+        conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
+                     (day, name, pool_n))
         for k, slip in enumerate(slips, start=1):
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
                             VALUES (%s,%s,%s,%s,%s,%s,'placed') ON CONFLICT (game_date, strategy, k) DO NOTHING""",
