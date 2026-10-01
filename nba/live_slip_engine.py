@@ -312,17 +312,17 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         else:
             # clean: step DOWN only after 3 consecutive clean evaluations (hysteresis); a prior red never self-clears
             clean_days += 1
-            h['CLEAN'] = clean_days
             if prev_state == 'red':
                 state, live_cap = 'red', 0
             elif prev_state in ('yellow', 'critical') and clean_days < 3:
-                state, live_cap = prev_state, (max(1, cap // 2) if prev_state == 'yellow' else 1)
+                state, live_cap = prev_state, (max(1, cap // 2) if prev_state == 'yellow' else 1)   # holding: CLEAN keeps counting
             elif paper_ok:
                 state, live_cap = 'active', cap
             else:
                 state, live_cap = 'paper', cap
-        if state in ('yellow', 'critical', 'red'):
-            h['CLEAN'] = 0
+            h['CLEAN'] = clean_days
+        if any(v in ('yellow', 'red') for k, v in flags.items()):
+            h['CLEAN'] = 0   # only a FRESH hurdle fire resets the counter; a hold does not
         if state != 'critical':
             h.pop('CRIT_SINCE', None)
         conn.execute("""UPDATE nba_score.live_strategy_state SET state=%s, live_cap=%s, days=%s, slips=%s, net=%s, roi=%s, ci_lo=%s, leg_hit=%s,
