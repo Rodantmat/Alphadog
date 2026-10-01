@@ -122,7 +122,8 @@ def rebuild_legs(conn):
                ELSE p.tier END AS sys_tier,
           p.factor::double precision AS price
         FROM nba_market.pp_leg_price p
-        WHERE p.snapshot_label='window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)""")
+        WHERE p.snapshot_label='window' AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)"""
+                 + (f" AND p.game_date >= '{since.isoformat()}'" if delta else ""))
     conn.execute("CREATE INDEX ON _priced (game_date, nm, prop, side, line)")
     conn.execute("ANALYZE _priced")
     conn.execute(REBUILD_LEGS)
