@@ -241,11 +241,16 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         # H4 pool: qualifying legs/day for this strategy's cells over the last 14 days (recorded by pick into live_pool)
         pool_avg = conn.execute("""SELECT avg(legs) FROM nba_score.live_pool WHERE strategy=%s AND game_date > %s""",
                                 (name, day - dt.timedelta(days=14))).fetchone()[0]
+        calib = conn.execute("SELECT mc95_dd, cusum_h_long, cusum_h_short, cusum_k FROM nba_score.live_strategy_calib WHERE strategy=%s", (name,)).fetchone()
         ci_lo = boot_lo([(r[2], r[2] + r[1]) for r in g], BOOT_DRAWS) if days >= 8 else None
         h = {}
         if leg_hit is not None:
             h['H1'] = 'red' if (cert_hit - leg_hit > 0.07 and len(leg_hits) >= 150) else ('yellow' if cert_hit - leg_hit > 0.04 else 'ok')
-        h['H2'] = 'red' if dd >= 1.5 * worst_dd else ('yellow' if dd >= 1.0 * worst_dd else 'ok')
+        if calib and calib[0]:
+            mc95 = float(calib[0])   # 95th-pct Monte Carlo drawdown of the backtest day sequence; the historical max is one ordering
+            h['H2'] = 'red' if dd >= 1.0 * mc95 else ('yellow' if dd >= 0.8 * mc95 else 'ok')
+        else:
+            h['H2'] = 'red' if dd >= 1.5 * worst_dd else ('yellow' if dd >= 1.0 * worst_dd else 'ok')
         h['H3'] = 'red' if streak >= 1.5 * longest else ('yellow' if streak >= 1.25 * longest else 'ok')
         h['H4'] = 'yellow' if (pool_avg is not None and pool_avg < pool_floor and days_into_season > 21) else 'ok'
         if days_into_season <= 21:
@@ -253,7 +258,8 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         if season_end is not None and (season_end - day).days <= 7:
             h['H6'] = 'final7'
         reds = sum(1 for v in h.values() if v == 'red'); yellows = sum(1 for v in h.values() if v == 'yellow')
-        paper_ok = days >= PAPER_DAYS and slips >= PAPER_SLIPS and ci_lo is not None and ci_lo > 0
+        # paper gate: 50 slate days AND cap x 50 slips (a cap-1 strategy cannot be asked for 1,000 slips) AND bootstrap lower bound > 0
+        paper_ok = days >= PAPER_DAYS and slips >= cap * PAPER_DAYS and ci_lo is not None and ci_lo > 0
         if 'H6' in h or reds >= 1 or yellows >= 2:
             state, live_cap = ('off' if 'H6' in h else 'red'), 0
         elif yellows == 1:
