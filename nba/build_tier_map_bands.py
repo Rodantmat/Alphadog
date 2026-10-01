@@ -207,7 +207,19 @@ def main():
     for rank_key in ranks:
         conn.execute("DELETE FROM nba_score.tier_map_bands WHERE rank_key=%s", (rank_key,))
         conn.execute("DELETE FROM nba_score.tier_map_summary WHERE rank_key=%s", (rank_key,))
-        for win, where in WINDOWS.items():
+        # windows are data-driven: every season in the map, plus all seasons together. The two historical names are
+        # kept exactly ('2526_nov' = 2025-26 from Nov 1, the ranker-warmup rule; '2425'); new seasons are whole.
+        seasons = [r[0] for r in conn.execute("SELECT DISTINCT season FROM nba_score.tier_map_legs WHERE rank_key=%s ORDER BY 1", (rank_key,)).fetchall()]
+        windows = {}
+        for s in seasons:
+            if s == '2025-26':
+                windows['2526_nov'] = "season='2025-26' AND game_date >= '2025-11-01'"
+            elif s == '2024-25':
+                windows['2425'] = "season='2024-25'"
+            else:
+                windows[s.replace('-', '')] = f"season='{s}'"
+        windows['both'] = "TRUE"
+        for win, where in windows.items():
             bands = sweep(conn, rank_key, win, where)
             with conn.cursor() as c:
                 c.executemany("""INSERT INTO nba_score.tier_map_bands
