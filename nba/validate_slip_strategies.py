@@ -123,9 +123,9 @@ def monotonicity(days):
 def decompose(conn, key):
     comp, size, structure = key
     cap = cap_for(structure, size)
-    rows = conn.execute("""
+    rows = conn.execute(f"""
         SELECT j->>'cell' cell, s.profit
-        FROM nba_score.slip_engine_slips s, jsonb_array_elements(s.legs_json) j
+        FROM {T_SLIPS} s, jsonb_array_elements(s.legs_json) j
         WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.season=%s AND s.phase<>'final7'""",
         (comp, size, structure, cap, S2)).fetchall()
     by_cell = defaultdict(float)
