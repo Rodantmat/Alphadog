@@ -172,7 +172,7 @@ def eligible_legs(day_rows):
             # n_rank was assigned across both sides; a side-only cell must be re-ranked within its side by score,
             # which is exactly how cand_certified ranked it
             legs.sort(key=lambda r: (-r['score'], r['player']))
-            legs = legs[:nband]
+            legs = legs[2:nband] if name.endswith('_r34') else legs[:nband]   # *_r34: ranks 3-4 only, never the top 2
         for r in legs:
             r2 = dict(r); r2['cell'] = name; r2['edge'] = edge
             out[name].append(r2)
