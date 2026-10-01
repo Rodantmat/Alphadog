@@ -78,6 +78,11 @@ CELLS = {
     'threes_D1':     ('threes_made', 'D1', 'Over', 'final_score', 2, 0.631),
     'assists_D1':    ('assists', 'D1', 'Over', 'final_score', 2, 0.588),
     'rebounds_D3':   ('rebounds', 'D3', 'Over', 'final_score', 3, 0.606),
+    # Tier-2 demons (29k pass 15): the next rungs, each above 0.55 OOS on 300 legs; a separate composition so the pure pool stays pure
+    'threes_D1_r34': ('threes_made', 'D1', 'Over', 'final_score', 4, 0.580),   # ranks 3-4 (band 4 minus the top 2 taken by threes_D1)
+    'points_D2':     ('points', 'D2', 'Over', 'final_score', 2, 0.576),
+    'rebounds_D2':   ('rebounds', 'D2', 'Over', 'final_score', 2, 0.574),
+    'rebounds_D1':   ('rebounds', 'D1', 'Over', 'final_score', 2, 0.571),
     'goblin':        (None, 'G', 'Over', 'final_hp', 1, 0.560),   # extender: points-family G1/G2 top-1
 }
 CORE = ['turnovers_R', 'stocks_R', 'steals_R', 'rebounds_R', 'threes_D1', 'assists_D1']
