@@ -247,10 +247,13 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
                                ORDER BY s.game_date DESC, s.k LIMIT 150""", (name, season_start)).fetchall()
         leg_hits = [int(x[0]) for x in legs if x[0] is not None]
         leg_hit = sum(leg_hits[:100]) / len(leg_hits[:100]) if len(leg_hits) >= 30 else None
-        # H2 drawdown, H3 streak
-        cum = peak = dd = 0.0; streak = longest_live = 0
-        for _, dnet, _, _, _ in g:
-            cum += dnet; peak = max(peak, cum); dd = max(dd, peak - cum)
+        # H2 drawdown, H3 streak - and the date of the running peak (the drawdown episode's start, for the grace clock)
+        cum = peak = dd = 0.0; streak = longest_live = 0; peak_day = g[0][0]
+        for gd, dnet, _, _, _ in g:
+            cum += dnet
+            if cum >= peak:
+                peak, peak_day = cum, gd
+            dd = max(dd, peak - cum)
             streak = streak + 1 if dnet < 0 else 0; longest_live = max(longest_live, streak)
         # H4 pool: qualifying legs/day for this strategy's cells over the last 14 days (recorded by pick into live_pool)
         pool_avg = conn.execute("""SELECT avg(legs) FROM nba_score.live_pool WHERE strategy=%s AND game_date > %s""",
