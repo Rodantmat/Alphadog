@@ -87,6 +87,7 @@ jobs:
           LS_FROM: ${{ github.event.inputs.from_date }}
           LS_TO: ${{ github.event.inputs.to_date }}
           LS_BOOT: ${{ steps.res.outputs.mode == 'replay' && '500' || '10000' }}
+          LS_RESUME: ${{ github.event.inputs.resume }}
         run: python -u nba/live_slip_engine.py
       - name: No regular-season slate
         if: steps.res.outputs.run != 'true'
