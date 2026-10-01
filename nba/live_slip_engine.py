@@ -341,9 +341,9 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             h['W2'] = 'week2'   # 29d: skip week 2 by calendar - both seasons, every strategy, every sub-population negative
         if season_end is not None and (season_end - day).days <= 7:
             h['H6'] = 'final7'
-        flags = {k: v for k, v in h.items() if k in ('H1', 'H2', 'H3', 'H4', 'H7')}
+        flags = {k: v for k, v in h.items() if k in ('H1', 'H2', 'H3', 'H4', 'H7', 'H8')}
         reds = sum(1 for v in flags.values() if v == 'red'); yellows = sum(1 for v in flags.values() if v == 'yellow')
-        red_only_variance = reds >= 1 and all(flags.get(x) != 'red' for x in ('H1', 'H7')) and yellows < 2
+        red_only_variance = reds >= 1 and all(flags.get(x) != 'red' for x in ('H1', 'H7', 'H8')) and yellows < 2
         prev = conn.execute("SELECT state, updated_at, hurdles FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
         prev_state = prev[0] if prev else 'paper'
         ph = prev[2] if (prev and prev[2] and isinstance(prev[2], dict)) else {}
