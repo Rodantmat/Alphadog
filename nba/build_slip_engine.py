@@ -335,8 +335,8 @@ def main():
 
     cmap = load_corr(conn)
     print(f"  correlation map: {len(cmap)//2} pair types (>=100 real pairs each); forbidding corr <= {NEG_CORR}", flush=True)
-    comps = (['core', 'regular', 'best', 'demon', 'demon2', 'mixed_tier', 'core+goblin', 'core+demon']
-             + [f'single:{c}' for c in CELLS if c != 'goblin' and c not in DEMONS2] + [f'weighted:{c}' for c in CORE])
+    comps = (['core', 'regular', 'best', 'demon', 'mixed_tier', 'core+goblin', 'core+demon']
+             + [f'single:{c}' for c in CELLS if c != 'goblin'] + [f'weighted:{c}' for c in CORE])
     slip_rows, leg_rows = [], []
     for d in sorted(days):
         if delta and d < since:
