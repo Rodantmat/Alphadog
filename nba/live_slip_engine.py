@@ -225,6 +225,9 @@ def grade(conn, day):
         n_void = len(legs_l) - len(live)
         for l, h in zip(legs_l, hs):
             l['hit'] = h; l['void'] = h is None
+            mv = movement(l)
+            if mv is not None:
+                l['line_move'] = mv
         if len(live) < 2:
             hits, payout = sum(h for _, h in live), 1.0   # refund
         else:
