@@ -132,12 +132,14 @@ def pick(conn, day, require_fresh=True):
     cmap = ENG.load_corr(conn)
     pool = ENG.eligible_legs(legs)
     states = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT strategy, state, live_cap FROM nba_score.live_strategy_state").fetchall()}
+    s0, _ = regular_season_window(conn, day)
+    in_week2 = s0 is not None and 7 <= (day - s0).days <= 13
     n = 0
     for name, (comp, size, structure, cap, *_rest) in STRATEGIES.items():
         state, live_cap = states.get(name, ('paper', cap))
         if state == 'off':
             continue
-        week2 = state == 'week2'
+        week2 = in_week2 or state == 'week2'
         use_cap = cap if week2 else live_cap
         if use_cap == 0:
             continue
