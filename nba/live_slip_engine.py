@@ -177,6 +177,10 @@ def pick(conn, day, require_fresh=True):
                 st = 'dup'   # identical slip already placed today by an earlier strategy: recorded, never staked or counted
             elif status == 'placed':
                 placed_sigs.add(sig)
+            # 29l pass 20: in week 1 a Regular 5-Flex slip with no defensive Over leg is recorded, not staked (-59% in both seasons)
+            if st == 'placed' and in_week1 and size == 5 and structure == 'flex' and name.startswith(('A_', 'C_')):
+                if not any(l['side'] == 'Over' and l['tier'] == 'R' and l['prop'] in ('steals', 'turnovers', 'stocks', 'blocks') for l in slip):
+                    st = 'placed_week1_skip'
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
                             VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, name, k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'prop': l['prop'], 'tier': l['tier'],
