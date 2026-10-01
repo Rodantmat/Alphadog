@@ -145,7 +145,7 @@ def pick(conn, day, require_fresh=True):
         if state == 'off':
             continue
         week2 = in_week2 or state == 'week2'
-        shadow = (not week2) and (state in ('red', 'critical') or live_cap == 0)
+        shadow = (not week2) and (state == 'red' or live_cap == 0)
         use_cap = cap if (week2 or shadow) else live_cap
         if use_cap == 0:
             continue
