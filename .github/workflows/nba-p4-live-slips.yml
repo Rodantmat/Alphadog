@@ -1,15 +1,11 @@
-name: NBA P4 Live Slips
+name: NBA P4 Live Slips (manual)
 
-# P4 = the live slip engine on the certified rules. Two scheduled legs:
-#   PICK  21:45 UTC (14:45 PT) - 30 min after P3 (21:15) has scored and archived today's window board
-#   GRADE 16:30 UTC (09:30 PT) - 45 min after P2 (15:45) has graded yesterday's outcomes
-# Both gate on the regular season via nba_calendar.games (preseason is not a slate) - the same rule P3 uses.
-# No real money is staked by this workflow: it writes paper slips and strategy states; the owner reads them.
+# The live slip engine's MANUAL entry point. The scheduled daily legs live inside the existing pipelines:
+#   PICK  = the final step of P3 (afternoon), on the slate P3 just scored and certified
+#   GRADE = the final step of P2 (overnight), after yesterday's outcomes are graded
+# Use this workflow for: a pick/grade on a specific date, a season replay, or recalibration.
 
 on:
-  schedule:
-    - cron: '45 21 * * *'
-    - cron: '30 16 * * *'
   workflow_dispatch:
     inputs:
       mode:
