@@ -48,6 +48,8 @@ CAP = int(os.environ.get('SE_CAP', '10'))
 SIZES = [int(x) for x in os.environ.get('SE_SIZES', '2,3,4,5,6').split(',')]
 EXCLUDE = {c.strip() for c in os.environ.get('SE_EXCLUDE_CELLS', '').split(',') if c.strip()}
 SUFFIX = os.environ.get('SE_TABLE_SUFFIX', '')   # e.g. '_nosteals' -> slip_engine_slips_nosteals; '' = the certified tables
+T_SLIPS = f'nba_score.slip_engine_slips{SUFFIX}'
+T_LEGS = f'nba_score.slip_engine_legs{SUFFIX}'
 
 POWER = {2: 3.0, 3: 6.0, 4: 10.0, 5: 20.0, 6: 37.5}
 FLEX = {(2, 2): 2.0, (2, 1): 0.5, (3, 3): 3.0, (3, 2): 1.0, (4, 4): 6.0, (4, 3): 1.5,
