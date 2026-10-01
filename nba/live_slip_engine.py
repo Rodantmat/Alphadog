@@ -134,6 +134,9 @@ def pick(conn, day, require_fresh=True):
         return
     cmap = ENG.load_corr(conn)
     pool = ENG.eligible_legs(legs)
+    pools = {'': pool}
+    for fam, excl in EXCLUDE_BY_FAMILY.items():
+        pools[fam] = {c: v for c, v in pool.items() if c not in excl}
     states = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT strategy, state, live_cap FROM nba_score.live_strategy_state").fetchall()}
     s0, s1 = regular_season_window(conn, day)
     in_week2 = s0 is not None and 7 <= (day - s0).days <= 13
