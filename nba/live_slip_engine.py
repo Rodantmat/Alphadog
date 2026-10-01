@@ -358,7 +358,7 @@ def replay(conn, d0, d1):
     days = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND game_date BETWEEN %s AND %s ORDER BY 1""", (d0, d1)).fetchall()]
     print(f"  REPLAY {d0} .. {d1}: {len(days)} slate days", flush=True)
     for day in days:
-        pick(conn, day)
+        pick(conn, day, require_fresh=False)
         grade(conn, day)
         conn.execute("""INSERT INTO nba_score.live_state_history (game_date, strategy, state, live_cap, days, slips, net, roi, ci_lo, leg_hit, drawdown, streak, hurdles)
                         SELECT %s, strategy, state, live_cap, days, slips, net, roi, ci_lo, leg_hit, drawdown, streak, hurdles FROM nba_score.live_strategy_state
