@@ -290,8 +290,20 @@ def main():
     conn.execute(f"""CREATE TABLE IF NOT EXISTS {T_LEGS} (
         game_date date, composition text, size int, structure text, k int, cell text, player text, prop text, tier text,
         side text, line numeric, factor double precision, hit int, built_at timestamptz DEFAULT now())""")
-    conn.execute(f"DELETE FROM {T_SLIPS}")
-    conn.execute(f"DELETE FROM {T_LEGS}")
+    delta = os.environ.get('SE_DELTA') == '1'
+    since = None
+    if delta:
+        hw = conn.execute(f"SELECT max(game_date) FROM {T_SLIPS}").fetchone()[0]
+        since = dt.date.fromisoformat(os.environ['SE_SINCE']) if os.environ.get('SE_SINCE') else (hw + dt.timedelta(days=1) if hw else None)
+        if since is None:
+            delta = False   # empty table: a delta is a full build
+    if delta:
+        conn.execute(f"DELETE FROM {T_SLIPS} WHERE game_date >= %s", (since,))
+        conn.execute(f"DELETE FROM {T_LEGS} WHERE game_date >= %s", (since,))
+        print(f"  DELTA: rebuilding days >= {since} (high-water mark {hw})", flush=True)
+    else:
+        conn.execute(f"DELETE FROM {T_SLIPS}")
+        conn.execute(f"DELETE FROM {T_LEGS}")
     conn.commit()
 
     cols = None
