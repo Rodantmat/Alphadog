@@ -140,6 +140,7 @@ def pick(conn, day, require_fresh=True):
         print(f"  {day}: final 7 days of the regular season - nothing staked (29d/25e)", flush=True)
         return
     n = 0
+    placed_sigs = set()   # (structure, sorted legs) already placed today by an earlier strategy - a duplicate is staked once
     for name, (comp, size, structure, cap, *_rest) in STRATEGIES.items():
         state, live_cap = states.get(name, ('paper', cap))
         if state == 'off':
