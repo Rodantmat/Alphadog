@@ -289,14 +289,19 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         chron = conn.execute("""SELECT (j->>'hit')::int FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
                                 WHERE s.strategy=%s AND s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
                                 ORDER BY s.game_date, s.k""", (name, season_start)).fetchall()
-        if calib and calib[1] and len(chron) >= 30:
-            kk, h_long, h_short = float(calib[3]), float(calib[1]), float(calib[2])
+        if calib and calib[7] and len(chron_days := conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
+                                WHERE s.strategy=%s AND s.status IN ('graded','graded_void') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL
+                                GROUP BY s.game_date ORDER BY s.game_date DESC LIMIT 14""", (name, season_start)).fetchall()) >= 7:
+            # H1 as a DAY-BLOCKED test: trailing-14-day mean of the daily leg hit vs the certified level, in units of the
+            # day-level standard error measured from the backtest's own day-to-day variance (calib[7] = sd of daily hit).
+            # A cumulative detector (CUSUM/DDM) cannot work on a stream whose daily hit spans 10-95%; this can.
             p0 = float(calib[6]) if calib[6] else cert_hit
-            c = 0.0
-            for (x,) in chron:
-                c = max(0.0, c + (p0 - x) - kk)
-            h['H1'] = 'red' if c > h_long else ('yellow' if c > h_short else 'ok')
-            h['H1_cusum'] = round(c, 2)
+            sd_day = float(calib[7])
+            nd = len(chron_days); mean14 = sum(float(r[1]) for r in chron_days) / nd
+            se = sd_day / (nd ** 0.5)
+            z = (p0 - mean14) / se if se > 0 else 0.0
+            h['H1'] = 'red' if z > 3.0 else ('yellow' if z > 2.0 else 'ok')
+            h['H1_z'] = round(z, 2)
         cur_dd = peak - cum   # the drawdown NOW; a fully recovered strategy is not flagged for a past dip
         if calib and calib[0]:
             mc95 = float(calib[0])   # 95th-pct Monte Carlo drawdown of the backtest day sequence; the historical max is one ordering
