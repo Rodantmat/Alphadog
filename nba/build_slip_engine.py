@@ -343,10 +343,15 @@ def main():
         season = rows[0]['season']
         ph = phase_of(season, d, bounds)
         pool = eligible_legs(rows)
+        fam_depth = defaultdict(set)
+        for c, legs in pool.items():
+            for l in legs:
+                fam_depth[c.replace('_U', '')].add(l['player'])
+        broad_day = sum(1 for v in fam_depth.values() if len(v) >= 2) >= 5
         for comp in comps:
             for size in SIZES:
                 for structure in ('power', 'flex'):
-                    for k, slip in enumerate(build_day_slips(pool, comp, size, structure, CAP, cmap), start=1):
+                    for k, slip in enumerate(build_day_slips(pool, comp, size, structure, CAP, cmap, broad_day), start=1):
                         hits, payout = grade(slip, structure)
                         games = [l['event_id'] for l in slip]
                         teams = [l['team_id'] for l in slip]
