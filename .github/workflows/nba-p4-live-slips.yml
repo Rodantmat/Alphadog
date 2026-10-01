@@ -13,11 +13,19 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "pick | grade"
+        description: "pick | grade | replay"
         default: "pick"
         required: false
       date:
         description: "slate date YYYY-MM-DD (blank = today PT for pick, yesterday PT for grade)"
+        default: ""
+        required: false
+      from_date:
+        description: "replay start (mode=replay)"
+        default: ""
+        required: false
+      to_date:
+        description: "replay end (mode=replay)"
         default: ""
         required: false
 
