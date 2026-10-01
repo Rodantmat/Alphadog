@@ -182,11 +182,28 @@ def boot_lo(day_items, draws=10000, seed=7):
     return out[int(0.025 * draws)]
 
 
-def evaluate_hurdles(conn, day):
-    season_start = conn.execute("SELECT min(game_date) FROM nba_score.live_slips").fetchone()[0] or day
+def regular_season_window(today):
+    """(first, last) regular-season game dates for the season in progress, from the schedule file P2 refreshes
+    (same source and label logic as nba_season.active_stats_season). None, None if unreadable."""
+    try:
+        from pathlib import Path
+        games = json.loads(Path("nba/data/nba_schedule_current.json").read_text()).get("games", [])
+        reg = sorted(g["game_date"][:10] for g in games
+                     if (g.get("game_label") or "") not in ("Preseason", "Playoffs", "Play-In", "All-Star")
+                     and g["game_date"][:10] <= (today + dt.timedelta(days=400)).isoformat())
+        reg = [d for d in reg if d >= (today - dt.timedelta(days=300)).isoformat()]
+        if not reg:
+            return None, None
+        return dt.date.fromisoformat(reg[0]), dt.date.fromisoformat(reg[-1])
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
+def evaluate_hurdles(conn, day, pool_sizes=None):
+    s0, s1 = regular_season_window(day)
+    season_start = s0 or (conn.execute("SELECT min(game_date) FROM nba_score.live_slips").fetchone()[0] or day)
     days_into_season = (day - season_start).days
-    season_end = conn.execute("""SELECT max(game_date) FROM nba_stats.schedule WHERE game_date>=%s AND game_date<%s AND coalesce(season_type,'regular')='regular'""",
-                              (day, day + dt.timedelta(days=200))).fetchone()[0] if _has_schedule(conn) else None
+    season_end = s1
     for name, (comp, size, structure, cap, cert_hit, worst_dd, longest) in STRATEGIES.items():
         g = conn.execute("""SELECT game_date, sum(profit), count(*), sum(hits), sum(size) FROM nba_score.live_slips
                             WHERE strategy=%s AND status='graded' GROUP BY game_date ORDER BY game_date""", (name,)).fetchall()
@@ -203,8 +220,8 @@ def evaluate_hurdles(conn, day):
         for _, dnet, _, _, _ in g:
             cum += dnet; peak = max(peak, cum); dd = max(dd, peak - cum)
             streak = streak + 1 if dnet < 0 else 0; longest_live = max(longest_live, streak)
-        # H4 pool
-        pool_avg = conn.execute("""SELECT avg(c) FROM (SELECT game_date, count(*) c FROM nba_score.live_slips WHERE strategy=%s AND game_date > %s GROUP BY 1) x""",
+        # H4 pool: qualifying legs/day for this strategy's cells over the last 14 days (recorded by pick into live_pool)
+        pool_avg = conn.execute("""SELECT avg(legs) FROM nba_score.live_pool WHERE strategy=%s AND game_date > %s""",
                                 (name, day - dt.timedelta(days=14))).fetchone()[0]
         ci_lo = boot_lo([(r[2], r[2] + r[1]) for r in g]) if days >= 8 else None
         h = {}
