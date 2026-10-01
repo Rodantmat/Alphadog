@@ -342,7 +342,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         ph = prev[2] if (prev and prev[2] and isinstance(prev[2], dict)) else {}
         crit_since = ph.get('CRIT_SINCE'); clean_days = int(ph.get('CLEAN', 0))
         # paper gate: 50 slate days AND cap x 50 slips (a cap-1 strategy cannot be asked for 1,000 slips) AND bootstrap lower bound > 0
-        paper_ok = days >= PAPER_DAYS and slips >= cap * PAPER_DAYS and ci_lo is not None and ci_lo > 0
+        paper_ok = days >= PAPER_DAYS and built >= cap * PAPER_DAYS and ci_lo is not None and ci_lo > 0
         # the drawdown episode start: the day of the running peak (one-shot grace clock, never reset by a brief recovery)
         if 'H6' in h:
             state, live_cap = 'off', 0
