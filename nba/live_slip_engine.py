@@ -71,6 +71,7 @@ def ensure_tables(conn):
         strategy text PRIMARY KEY, state text, live_cap int, days int, slips int, net double precision, roi double precision,
         ci_lo double precision, leg_hit double precision, drawdown double precision, streak int, pool_avg double precision,
         hurdles jsonb, updated_at timestamptz DEFAULT now())""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_pool (game_date date, strategy text, legs int, PRIMARY KEY (game_date, strategy))""")
     for name, (comp, size, structure, cap, *_rest) in STRATEGIES.items():
         conn.execute("""INSERT INTO nba_score.live_strategy_state (strategy, state, live_cap, days, slips, net, roi, hurdles)
                         VALUES (%s,'paper',%s,0,0,0,0,'{}') ON CONFLICT (strategy) DO NOTHING""", (name, cap))
