@@ -197,8 +197,15 @@ def grade(conn, day):
     for pn, mkey, cline in conn.execute("""SELECT nba_ref.norm_name(player), market_key, line FROM nba_market.board_snapshots
                                            WHERE bookmaker='prizepicks' AND snapshot_label='close' AND game_date=%s""", (day,)).fetchall():
         close[(pn, mkey)] = float(cline)
+    norm_cache = {}
+    def norm(p):
+        if p not in norm_cache:
+            norm_cache[p] = conn.execute("SELECT nba_ref.norm_name(%s)", (p,)).fetchone()[0]
+        return norm_cache[p]
     def movement(l):
-        c = close.get((ENG.norm(l['player']) if hasattr(ENG, 'norm') else l['player'].lower(), MK.get(l['prop'], '')))
+        if not close:
+            return None   # no close snapshot for the slate (yet): leave unannotated
+        c = close.get((norm(l['player']), MK.get(l['prop'], '')))
         if c is None:
             return 'pulled'
         if c == float(l['line']):
