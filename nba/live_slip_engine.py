@@ -273,11 +273,12 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
                 c = max(0.0, c + (cert_hit - x) - kk)
             h['H1'] = 'red' if c > h_long else ('yellow' if c > h_short else 'ok')
             h['H1_cusum'] = round(c, 2)
+        cur_dd = peak - cum   # the drawdown NOW; a fully recovered strategy is not flagged for a past dip
         if calib and calib[0]:
             mc95 = float(calib[0])   # 95th-pct Monte Carlo drawdown of the backtest day sequence; the historical max is one ordering
-            h['H2'] = 'red' if dd >= 1.0 * mc95 else ('yellow' if dd >= 0.8 * mc95 else 'ok')
+            h['H2'] = 'red' if cur_dd >= 1.0 * mc95 else ('yellow' if cur_dd >= 0.8 * mc95 else 'ok')
         else:
-            h['H2'] = 'red' if dd >= 1.5 * worst_dd else ('yellow' if dd >= 1.0 * worst_dd else 'ok')
+            h['H2'] = 'red' if cur_dd >= 1.5 * worst_dd else ('yellow' if cur_dd >= 1.0 * worst_dd else 'ok')
         h['H3'] = 'red' if streak >= 1.5 * longest else ('yellow' if streak >= 1.25 * longest else 'ok')
         h['H4'] = 'yellow' if (pool_avg is not None and pool_avg < pool_floor and days_into_season > 21) else 'ok'
         if name.startswith('A_') and anchor_state != 'ok':
