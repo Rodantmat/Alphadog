@@ -121,9 +121,10 @@ def pick(conn, day, require_fresh=True):
     ensure_tables(conn)
     if require_fresh:
         scored = conn.execute("SELECT count(*) FROM nba_score.board_scored WHERE game_date=%s", (day,)).fetchone()[0]
+        fhp = conn.execute("SELECT count(*) FROM nba_score.final_hp WHERE game_date=%s AND final_hp IS NOT NULL", (day,)).fetchone()[0]
         priced = conn.execute("SELECT count(*) FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND game_date=%s AND factor IS NOT NULL", (day,)).fetchone()[0]
-        if scored == 0 or priced == 0:
-            print(f"  {day}: P3 has not finished this slate (board_scored {scored}, priced window legs {priced}) - REFUSING to pick from a stale/empty board", flush=True)
+        if scored == 0 or fhp == 0 or priced == 0:
+            print(f"  {day}: P3 has not finished this slate (board_scored {scored}, final_hp {fhp}, priced window legs {priced}) - REFUSING to pick from a stale/empty board", flush=True)
             sys.exit(2)
     legs = load_board_legs(conn, day)
     if not legs:
