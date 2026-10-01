@@ -333,7 +333,7 @@ def main():
         if len(slip_rows) >= 200000:
             flush(conn, slip_rows, leg_rows); slip_rows, leg_rows = [], []
     flush(conn, slip_rows, leg_rows)
-    n = conn.execute("SELECT count(*) FROM nba_score.slip_engine_slips").fetchone()[0]
+    n = conn.execute(f"SELECT count(*) FROM {T_SLIPS}").fetchone()[0]
     print(f"  {n:,} real slips persisted", flush=True)
     report(conn)
     conn.close()
@@ -341,9 +341,9 @@ def main():
 
 def flush(conn, slip_rows, leg_rows):
     with conn.cursor() as c:
-        c.executemany("""INSERT INTO nba_score.slip_engine_slips (game_date, season, phase, composition, size, structure, k, legs_json, hits, payout, stake, profit, same_game, same_team, teams, min_pair_corr, max_pair_corr)
+        c.executemany(f"""INSERT INTO {T_SLIPS} (game_date, season, phase, composition, size, structure, k, legs_json, hits, payout, stake, profit, same_game, same_team, teams, min_pair_corr, max_pair_corr)
                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", slip_rows)
-        c.executemany("""INSERT INTO nba_score.slip_engine_legs (game_date, composition, size, structure, k, cell, player, prop, tier, side, line, factor, hit)
+        c.executemany(f"""INSERT INTO {T_LEGS} (game_date, composition, size, structure, k, cell, player, prop, tier, side, line, factor, hit)
                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", leg_rows)
     conn.commit()
 
