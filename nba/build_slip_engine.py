@@ -379,7 +379,7 @@ def report(conn):
           round(avg(profit) FILTER (WHERE season='2025-26' AND cap1)::numeric,3) roi_s2_cap1,
           round(avg(profit) FILTER (WHERE season='2025-26')::numeric,3) roi_s2_cap3,
           count(*) FILTER (WHERE season='2025-26' AND cap1) slips_s2,
-          round(100.0*count(*) FILTER (WHERE season='2025-26' AND cap1 AND full)/nullif(count(*) FILTER (WHERE season='2025-26' AND cap1),0),0) full_pct,
+          round(100.0*count(*) FILTER (WHERE season='2025-26' AND cap1 AND is_full)/nullif(count(*) FILTER (WHERE season='2025-26' AND cap1),0),0) full_pct,
           round(100.0*count(*) FILTER (WHERE season='2025-26' AND cap1 AND won)/nullif(count(*) FILTER (WHERE season='2025-26' AND cap1),0),0) won_pct
         FROM s GROUP BY 1,2,3
         HAVING count(*) FILTER (WHERE season='2024-25' AND cap1) >= 40 AND count(*) FILTER (WHERE season='2025-26' AND cap1) >= 40
