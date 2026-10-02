@@ -63,4 +63,5 @@ jobs:
           SE_DELTA: ${{ github.event.inputs.delta }}
           SE_DIVERSIFY: ${{ github.event.inputs.diversify }}
           SE_SAMETEAM: ${{ github.event.inputs.sameteam }}
+          SE_LOWFOUL: ${{ github.event.inputs.lowfoul }}
         run: python -u nba/build_slip_engine.py
