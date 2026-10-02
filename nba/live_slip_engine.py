@@ -277,6 +277,13 @@ def pick(conn, day, require_fresh=True):
     # correlation is maximal - the weakest slate size in both seasons (35-36% bad days) - so every strategy builds at cap 1
     n_games = conn.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date=%s AND coalesce(game_label,'')<>'Preseason'", (day,)).fetchone()[0]
     small_slate = n_games <= 4
+    # pass 59: holiday caution (n = 2 seasons each) - New Year's Eve and MLK Day (3rd Monday of January) lost in both seasons;
+    # odd tip times on showcase slates. Treated like a small slate: cap 1 everywhere. Cheap if noise, right if not.
+    mlk = dt.date(day.year, 1, 1) + dt.timedelta(days=(0 - dt.date(day.year, 1, 1).weekday()) % 7 + 14)   # third Monday of January
+    holiday_caution = (day.month == 12 and day.day == 31) or day == mlk
+    if holiday_caution and not small_slate:
+        print(f"  {day}: holiday caution slate (NYE / MLK Day) - every strategy at cap 1 (pass 59)", flush=True)
+        small_slate = True
     if small_slate:
         print(f"  {day}: small slate ({n_games} games) - every strategy at cap 1 (29n)", flush=True)
     n = 0
