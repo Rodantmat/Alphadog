@@ -367,9 +367,21 @@ def pick(conn, day, require_fresh=True):
         if state == 'week2' and not week2_trough:
             live_cap = min(live_cap, 1) if live_cap else 1
         rotation_only_idle = (name in ROTATION_ONLY) and not rotation
-        allstar_sit = in_allstar_week and name.startswith('D_')   # pass 36/73: with the low-foul key family A is +79% in All-Star week (was -43%); only the points Power still sits
+        # pass 85: the pre-break week plan. B/C: only the plan's strategies stake (at the plan's caps), the rest shadow.
+        # A: the previous rule (points Power sits, family A cap 1). D: no special handling. W_ strategies exist only for B.
+        plan = ALLSTAR_PLANS.get(ALLSTAR_PLAN) if in_allstar_week else None
+        if name in ALLSTAR_ONLY and not (in_allstar_week and plan and name in plan):
+            continue
+        if plan is not None:
+            if name in plan:
+                live_cap = plan[name]
+                if state in ('red', 'paper') and name in ALLSTAR_ONLY:
+                    state = 'active'   # week-only strategies have no season record of their own; the plan is their gate
+            allstar_sit = name not in plan
+        else:
+            allstar_sit = in_allstar_week and ALLSTAR_PLAN == 'A' and name.startswith('D_')
         shadow = (not week2) and (state == 'red' or live_cap == 0 or rotation_only_idle or allstar_sit)
-        cap1_today = small_slate or (in_allstar_week and name.startswith('A_'))   # family A at cap 1 in All-Star week (a caution, not a sit)
+        cap1_today = small_slate or (in_allstar_week and ALLSTAR_PLAN == 'A' and name.startswith('A_'))   # plan A: family A at cap 1
         # week-2 trough play is staked at cap 1 (29l): real stakes on the low-event structure, recorded like any placed slip
         use_cap = (1 if week2 else (max(cap, 1) if shadow else (min(live_cap, 1) if cap1_today else live_cap)))
         if use_cap == 0:
