@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "pick | grade | replay"
+        description: "pick | grade | replay | calibrate | late_pick | reset (opening-day clean ledger)"
         default: "pick"
         required: false
       date:
