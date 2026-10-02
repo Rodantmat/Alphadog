@@ -418,7 +418,7 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         if 'H6' in h:
             state, live_cap = 'off', 0
         elif 'W2' in h:
-            state, live_cap = 'week2', 0   # staking cap 0; pick still builds the week-2 paper record at base cap (tagged, excluded from hurdles)
+            state, live_cap = 'week2', 1   # 29l: week 2 is a signal-gated play at cap 1, resolved in pick (trough -> low-event structure; else normal)
         elif prev_state == 'red' and 'REQUAL' not in ph:
             state, live_cap = 'red', 0   # a red is sticky in EVERY branch until P5's weekly PASS clears it
         elif (reds >= 1 and not red_only_variance) or yellows >= 2:
