@@ -61,6 +61,19 @@ STRATEGIES = {
     'R_stocks_4power':   ('single:stocks_R',      4, 'power', 1, 0.60, 30.0, 14, 4),   # re-measured (pass 79): +27% in long droughts (34/16) / -6% normal - ROTATION-ONLY (staked only in the drought state)
 }
 ROTATION_ONLY = {'R_stocks_4power'}
+# pass 85: the pre-break week (7 days before the All-Star break) is a fixed calendar drought. Week-only strategies (W_ family,
+# steals-excluded pool) stake only in that week under plan B; they are skipped every other day.
+STRATEGIES['W_core_3power'] = ('core', 3, 'power', 3, 0.62, 30.0, 14, 5)          # steals-free core 3-Power: +41/+116% in the week
+STRATEGIES['W_coredemon_3power'] = ('core+demon', 3, 'power', 1, 0.55, 30.0, 14, 5)  # core+demon 3-Power: +73/+53% in the week
+ALLSTAR_ONLY = {'W_core_3power', 'W_coredemon_3power'}
+ALLSTAR_PLAN = os.environ.get('LS_ALLSTAR_PLAN', 'B').upper()
+ALLSTAR_PLANS = {
+    # stake only these strategies at these caps in the pre-break week; every other strategy shadows (observed, never staked)
+    'B': {'W_core_3power': 3, 'B_demon_3flex': 3, 'W_coredemon_3power': 1},   # +80, 72% ROI, +29 / +52 (default)
+    'C': {'B_demon_3flex': 3},                                                 # +32, 75% ROI, +15 / +17 (minimal)
+    # 'A' = the previous rule (family A cap 1, points Power sits, demons stake): +24, 17%, -24 / +48
+    # 'D' = no special handling: +71, 30%, +21 / +51
+}
 # family C is the Regular-without-steals family (28f) and must be BUILT without the steals cells to be what it was validated as.
 # D and R build from the steals-excluded pool too (their compositions are single-cell; the exclusion is a no-op for them).
 EXCLUDE_BY_FAMILY = {'C': {'steals_R', 'steals_R_U'}, 'D': {'steals_R', 'steals_R_U'}, 'R': {'steals_R', 'steals_R_U'}}
