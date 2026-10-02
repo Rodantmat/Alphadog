@@ -715,6 +715,9 @@ def calibrate(conn):
         legs = conn.execute(f"""SELECT s.season, s.game_date, (j->>'hit')::int FROM {tbl} s, jsonb_array_elements(s.legs_json) j
                                WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.phase<>'final7' ORDER BY s.game_date, s.k""",
                             (comp, size, structure, cap)).fetchall()
+        if not legs or not days:
+            print(f"  {name:<20} NO BACKTEST SLIPS in {tbl} for {comp} {size}-{structure} k<={cap} - not calibrated", flush=True)
+            continue
         p0 = sum(h for _, _, h in legs) / len(legs)
         k = 0.015
         def alarms(h):
