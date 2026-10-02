@@ -50,7 +50,8 @@ SIZES = [int(x) for x in os.environ.get('SE_SIZES', '2,3,4,5,6').split(',')]
 EXCLUDE = {c.strip() for c in os.environ.get('SE_EXCLUDE_CELLS', '').split(',') if c.strip()}
 MAX_PER_CELL = int(os.environ.get('SE_MAX_PER_CELL', '2'))   # measured: capped slips >= over-concentrated ones (7/10 season-rows); diversification without an edge tax
 DIVERSIFY = os.environ.get('SE_DIVERSIFY', '1') == '1'        # 29k: prefer >=4 distinct cells on broad boards (validated; default on)
-SE_SAMETEAM = os.environ.get('SE_SAMETEAM', '0') == '1'       # pass 41: same-team pairs rank with cross-game; opposing-team pairs lowest (validating)
+SE_SAMETEAM = os.environ.get('SE_SAMETEAM', '0') == '1'       # pass 41: REJECTED by its side-table rebuild (kept for the record)
+SE_LOWFOUL = os.environ.get('SE_LOWFOUL', '0') == '1'         # pass 64: prefer legs on low-foul players (validating)
 SUFFIX = os.environ.get('SE_TABLE_SUFFIX', '')   # e.g. '_nosteals' -> slip_engine_slips_nosteals; '' = the certified tables
 T_SLIPS = f'nba_score.slip_engine_slips{SUFFIX}'
 T_LEGS = f'nba_score.slip_engine_legs{SUFFIX}'
