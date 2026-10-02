@@ -300,7 +300,7 @@ def build_day_slips(pool, comp, size, structure, cap, cmap, broad_day=False):
         # SE_LOWFOUL (pass 64): foul rate is the one leg-level feature that aggregates to the slip - 5-Flex slips by low-foul
         # legs 0/1/2/3+ earn +47/+72/+74/+123%, monotone in both seasons. A disciplined defender's minutes and role are stable,
         # so the model's rate estimate holds; a slip of such players is a slip of well-predicted legs.
-        lowfoul = sum(1 for l in s if l.get('pf20') is not None and float(l['pf20']) < 1.8) if SE_LOWFOUL else 0
+        lowfoul = sum(1 for l in s if l.get('pf20') is not None and float(l['pf20']) < 1.8) if (SE_LOWFOUL and size >= 4) else 0
         slips.append(((tier, div, lowfoul, sum(l['edge'] for l in s)), s))
     slips.sort(key=lambda x: (-x[0][0], -x[0][1], -x[0][2], -x[0][3]))
     return [s for _, s in slips[:cap]]
