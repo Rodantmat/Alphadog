@@ -67,6 +67,9 @@ EXCLUDE_BY_FAMILY = {'C': {'steals_R', 'steals_R_U'}, 'D': {'steals_R', 'steals_
 # pass 34: per-strategy SIDE filter on the pool - the points-family edge is the Under side (all-Under points Powers +41/+73% vs
 # +23/+35% with an Over leg, both seasons; the published early-season Under bias). Live-only refinement of a certified both-sides cell.
 SIDE_FILTER_BY_STRATEGY = {'D_points_3power': 'Under'}
+# pass 43: a hard aggregate daily stake cap across all strategies. With n=2 seasons any state raise is an estimate; the guard
+# that stops a wrong one from blowing up a season is a ceiling on total daily exposure, scaled down proportionally if hit.
+MAX_DAILY_STAKE = int(os.environ.get('LIVE_MAX_DAILY_STAKE', '36'))
 
 
 def pt_today():
