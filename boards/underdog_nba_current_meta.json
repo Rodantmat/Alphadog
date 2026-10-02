@@ -2,13 +2,13 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-02T19:25:47Z",
-  "fetched_at": "2026-10-02T19:32:23Z",
+  "started_at": "2026-10-02T23:53:26Z",
+  "fetched_at": "2026-10-02T23:59:28Z",
   "categories": [],
   "calls": [
     [
       "match_grouped_lines[core]",
-      26
+      33
     ],
     [
       "lines[match=225716]",
@@ -35,14 +35,6 @@
       0
     ],
     [
-      "lines[match=225721]",
-      0
-    ],
-    [
-      "pills[match=225721]",
-      0
-    ],
-    [
       "lines[match=225720]",
       0
     ],
@@ -56,6 +48,14 @@
     ],
     [
       "pills[match=225719]",
+      0
+    ],
+    [
+      "lines[match=225721]",
+      0
+    ],
+    [
+      "pills[match=225721]",
       0
     ],
     [
@@ -115,14 +115,6 @@
       0
     ],
     [
-      "lines[match=225730]",
-      0
-    ],
-    [
-      "pills[match=225730]",
-      0
-    ],
-    [
       "lines[match=225729]",
       0
     ],
@@ -136,6 +128,14 @@
     ],
     [
       "pills[match=225728]",
+      0
+    ],
+    [
+      "lines[match=225730]",
+      0
+    ],
+    [
+      "pills[match=225730]",
       0
     ],
     [
@@ -155,19 +155,19 @@
       0
     ],
     [
-      "lines[match=225733]",
-      0
-    ],
-    [
-      "pills[match=225733]",
-      0
-    ],
-    [
       "lines[match=225734]",
       0
     ],
     [
       "pills[match=225734]",
+      0
+    ],
+    [
+      "lines[match=225733]",
+      0
+    ],
+    [
+      "pills[match=225733]",
       0
     ],
     [
@@ -192,6 +192,14 @@
     ],
     [
       "pills[match=225737]",
+      0
+    ],
+    [
+      "lines[match=225738]",
+      0
+    ],
+    [
+      "pills[match=225738]",
       0
     ],
     [
@@ -225,8 +233,8 @@
     ],
     [
       "alternate_projections",
-      0,
-      0,
+      6,
+      138,
       0,
       "deduped 0"
     ],
@@ -239,22 +247,26 @@
       0
     ]
   ],
-  "lines": 26,
-  "legs": 26,
-  "ladder_legs": 0,
-  "ladder_lines_with_alternates": 0,
+  "lines": 33,
+  "legs": 33,
+  "ladder_legs": 138,
+  "ladder_lines_with_alternates": 6,
   "players": 0,
-  "pregame_legs": 26,
+  "pregame_legs": 33,
   "live_legs": 0,
   "by_stat": {
-    "Moneyline": 26
+    "Moneyline": 27,
+    "Margin of Victory": 3,
+    "Total Points": 3
   },
   "by_line_type": {
-    "balanced": 26
+    "balanced": 33
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "None": 26
+    "None": 30,
+    "1.0": 2,
+    "0.69": 1
   },
-  "github_run_id": "37053944563"
+  "github_run_id": "37079605605"
 }
