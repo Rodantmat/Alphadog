@@ -112,7 +112,7 @@ jobs:
                   for r in c.execute("SELECT composition, size, structure, v2_pass, v6_pass, oos_roi, oos_ci_lo FROM nba_score.slip_validation_nosteals").fetchall():
                       val_c[(r[0], r[1], r[2])] = r[3:]
               for name, (comp, size, structure, cap, *_r) in STRATEGIES.items():
-                  v = (val_c if name.startswith('C_') else val).get((comp, size, structure))
+                  v = (val_c if name.startswith(('C_', 'D_', 'R_')) else val).get((comp, size, structure))
                   if v is None:
                       verdict, v2, v6, roi, lo = 'NOT_IN_TOP30', None, None, None, None   # not selected on the prior-season window this week
                   else:
