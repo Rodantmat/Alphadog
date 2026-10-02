@@ -227,7 +227,8 @@ def schedule_dates(conn, lo, hi):
     """Regular-season game dates in [lo, hi]: the schedule (nba_calendar.games, future and current) merged with the games
     actually played (nba_team.team_game_log, history). The calendar holds no 2024-25 games; the log holds no future ones."""
     rows = conn.execute("""SELECT game_date::date FROM nba_calendar.games
-                           WHERE coalesce(game_label,'') NOT IN ('Preseason','Playoffs','Play-In','All-Star') AND game_date BETWEEN %s AND %s
+                           WHERE coalesce(game_label,'') !~* '(preseason|play-in|round|semifinal|final|all-star|rising stars)'
+                             AND game_date BETWEEN %s AND %s
                            UNION SELECT game_date::date FROM nba_team.team_game_log WHERE game_date BETWEEN %s AND %s""", (lo, hi, lo, hi)).fetchall()
     return sorted({r[0] for r in rows})
 
