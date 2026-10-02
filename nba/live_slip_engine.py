@@ -185,8 +185,9 @@ def late_pick(conn, day):
         print(f"  {day}: nothing new on the close board - no late pick", flush=True)
         return
     cmap = ENG.load_corr(conn)
-    pool = ENG.eligible_legs(fresh + [l for l in legs if l['event_id'] not in started])   # rank within the live board, build from it
-    t10 = trailing10(conn, day, {l['player'] for v in pool.values() for l in v if l['prop'] == 'steals'})
+    live_legs = attach_pf20(conn, day, fresh + [l for l in legs if l['event_id'] not in started])
+    pool = ENG.eligible_legs(live_legs)   # rank within the live board, build from it
+    t10 = trailing10(conn, day, {l['player_id'] for v in pool.values() for l in v if l['prop'] == 'steals' and l.get('player_id')})
     pool = {c: [l for l in v if leg_allowed(l, t10)] for c, v in pool.items()}
     pools = {'': pool}
     for fam, excl in EXCLUDE_BY_FAMILY.items():
