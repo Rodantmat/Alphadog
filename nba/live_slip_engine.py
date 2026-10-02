@@ -173,6 +173,7 @@ def pick(conn, day, require_fresh=True):
         return
     cmap = ENG.load_corr(conn)
     pool = ENG.eligible_legs(legs)
+    pool = {c: [l for l in v if leg_allowed(l)] for c, v in pool.items()}   # pass 45 leg filter
     pools = {'': pool}
     for fam, excl in EXCLUDE_BY_FAMILY.items():
         pools[fam] = {c: v for c, v in pool.items() if c not in excl}
