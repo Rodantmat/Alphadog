@@ -841,10 +841,34 @@ def calibrate(conn):
     conn.commit()
 
 
+def reset(conn):
+    """Opening-day reset (run once before the season's first pick): a clean ledger, every strategy 'paper' at its cap, and the
+    stored drought-rotation state set to 'normal'. The first live pick runs BEFORE the first grade, so without this it would
+    inherit whatever rotation state the last replay left behind."""
+    ensure_tables(conn)
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_state_history (game_date date, strategy text, state text, live_cap int, days int,
+                    slips int, net double precision, roi double precision, ci_lo double precision, leg_hit double precision, drawdown double precision,
+                    streak int, hurdles jsonb, PRIMARY KEY (game_date, strategy))""")
+    n_slips = conn.execute("SELECT count(*) FROM nba_score.live_slips").fetchone()[0]
+    conn.execute("DELETE FROM nba_score.live_slips"); conn.execute("DELETE FROM nba_score.live_pool"); conn.execute("DELETE FROM nba_score.live_state_history")
+    for name, (comp, size, structure, cap, *_r) in STRATEGIES.items():
+        conn.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s, days=0, slips=0, net=0, roi=0, ci_lo=NULL, leg_hit=NULL,
+                        drawdown=NULL, streak=NULL, pool_avg=NULL, hurdles='{}', updated_at=now() WHERE strategy=%s""", (cap, name))
+    conn.execute("""INSERT INTO nba_score.live_strategy_state (strategy, state, live_cap, hurdles, updated_at) VALUES ('_ROTATION', 'normal', 0, '{}', now())
+                    ON CONFLICT (strategy) DO UPDATE SET state='normal', live_cap=0, hurdles='{}', updated_at=now()""")
+    conn.commit()
+    states = conn.execute("SELECT strategy, state, live_cap FROM nba_score.live_strategy_state ORDER BY strategy").fetchall()
+    print(f"  RESET: {n_slips} ledger slips removed; states: " + ", ".join(f"{s}={st}/{c}" for s, st, c in states), flush=True)
+
+
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
     d = os.environ.get('LS_DATE')
+    if MODE == 'reset':
+        reset(conn)
+        conn.close()
+        return
     if MODE == 'pick':
         day = dt.date.fromisoformat(d) if d else pt_today()
         pick(conn, day)
