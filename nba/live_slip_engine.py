@@ -219,6 +219,8 @@ def pick(conn, day, require_fresh=True):
         state, live_cap = states.get(name, ('paper', cap))
         if state == 'off':
             continue
+        if late_march and state == 'active' and live_cap >= cap and name in LATE_MARCH_RAISE:
+            live_cap = LATE_MARCH_RAISE[name]
         week2 = week2_trough or state == 'week2'
         rotation_only_idle = (name in ROTATION_ONLY) and not rotation
         allstar_sit = in_allstar_week and not name.startswith('B_')   # pass 36: only the demons stake in All-Star week
