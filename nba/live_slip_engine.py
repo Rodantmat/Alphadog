@@ -223,13 +223,43 @@ def week1_event_spike(conn, day, s0):
     return spike
 
 
+def schedule_dates(conn, lo, hi):
+    """Regular-season game dates in [lo, hi]: the schedule (nba_calendar.games, future and current) merged with the games
+    actually played (nba_team.team_game_log, history). The calendar holds no 2024-25 games; the log holds no future ones."""
+    rows = conn.execute("""SELECT game_date::date FROM nba_calendar.games
+                           WHERE coalesce(game_label,'') NOT IN ('Preseason','Playoffs','Play-In','All-Star') AND game_date BETWEEN %s AND %s
+                           UNION SELECT game_date::date FROM nba_team.team_game_log WHERE game_date BETWEEN %s AND %s""", (lo, hi, lo, hi)).fetchall()
+    return sorted({r[0] for r in rows})
+
+
+def season_block(conn, day):
+    """The season's game dates containing `day` (or the next season, if `day` falls before it): contiguous blocks of game
+    dates split at gaps of more than 60 days (the summer)."""
+    dates = schedule_dates(conn, day - dt.timedelta(days=300), day + dt.timedelta(days=300))
+    blocks, cur = [], []
+    for d in dates:
+        if cur and (d - cur[-1]).days > 60:
+            blocks.append(cur); cur = []
+        cur.append(d)
+    if cur:
+        blocks.append(cur)
+    for b in blocks:
+        if b[0] <= day <= b[-1]:
+            return b
+    for b in blocks:
+        if b[0] > day:
+            return b
+    return blocks[-1] if blocks else []
+
+
 def allstar_break(conn, day):
-    """Pass 36: the season's one mid-season gap of 4+ days in the schedule (Feb 13-19 2025, Feb 12-19 2026). Returns the last
-    game date before the break, or None."""
-    row = conn.execute("""SELECT game_date FROM (SELECT game_date, lead(game_date) OVER (ORDER BY game_date) nxt FROM
-                          (SELECT DISTINCT game_date FROM nba_calendar.games WHERE coalesce(game_label,'')<>'Preseason' AND game_date BETWEEN %s AND %s) x) g
-                          WHERE nxt - game_date BETWEEN 4 AND 10 ORDER BY game_date LIMIT 1""", (day - dt.timedelta(days=200), day + dt.timedelta(days=200))).fetchone()
-    return row[0] if row else None
+    """Pass 36: the season's one mid-season gap of 4-10 days (Feb 13-19 2025, Feb 12-19 2026). Returns the last game
+    date before the break, or None. Searched inside the day's own season block."""
+    b = season_block(conn, day)
+    for a, c in zip(b, b[1:]):
+        if 4 <= (c - a).days <= 10:
+            return a
+    return None
 
 
 def pick(conn, day, require_fresh=True):
