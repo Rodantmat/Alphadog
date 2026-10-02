@@ -181,6 +181,12 @@ def pick(conn, day, require_fresh=True):
             if st == 'placed' and in_week1 and size == 5 and structure == 'flex' and name.startswith(('A_', 'C_')):
                 if not any(l['side'] == 'Over' and l['tier'] == 'R' and l['prop'] in ('steals', 'turnovers', 'stocks', 'blocks') for l in slip):
                     st = 'placed_week1_skip'
+            # 29l pass 22: week 2 is the low-event trough across event types; the record's slips are marked by their low-event-Under
+            # content (points-family or turnovers Unders): < 2 of them = week2_skip, so the third season tests the low-event play
+            if st == 'placed_week2':
+                low_ev = sum(1 for l in slip if l['side'] == 'Under' and l['tier'] == 'R' and l['prop'] in ('points', 'pts_ast', 'pra', 'pts_reb', 'rebounds', 'turnovers'))
+                if low_ev < 2:
+                    st = 'placed_week2_skip'
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
                             VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, name, k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'prop': l['prop'], 'tier': l['tier'],
