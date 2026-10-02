@@ -58,4 +58,5 @@ jobs:
           SE_TABLE_SUFFIX: ${{ github.event.inputs.table_suffix }}
           SE_DELTA: ${{ github.event.inputs.delta }}
           SE_DIVERSIFY: ${{ github.event.inputs.diversify }}
+          SE_SAMETEAM: ${{ github.event.inputs.sameteam }}
         run: python -u nba/build_slip_engine.py
