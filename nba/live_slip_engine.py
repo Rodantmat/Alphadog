@@ -56,9 +56,14 @@ STRATEGIES = {
     'B_demon_5flex':     ('demon',                5, 'flex',  6, 0.38, 40.0, 15, 4),   # cap 3->6 (29k pass 12): OOS +144% on 675 slips, best net/dd of any cap
     'B_demon_3flex':     ('demon',                3, 'flex',  1, 0.38, 14.6, 12, 4),
     'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  1, 0.60, 22.1, 11, 8),
+    # 29p the drought menu (validated inside the five long droughts, positive both seasons):
+    'D_points_3power':   ('single:points_R',      3, 'power', 1, 0.62, 30.0, 14, 5),   # +34% in long droughts / +33% normal - all-weather, base portfolio
+    'R_stocks_4power':   ('single:stocks_R',      4, 'power', 1, 0.60, 30.0, 14, 4),   # +48% in long droughts / -7% normal - ROTATION-ONLY (staked only in the drought state)
 }
-# family C is the Regular-without-steals family (28f) and must be BUILT without the steals cells to be what it was validated as
-EXCLUDE_BY_FAMILY = {'C': {'steals_R', 'steals_R_U'}}
+ROTATION_ONLY = {'R_stocks_4power'}
+# family C is the Regular-without-steals family (28f) and must be BUILT without the steals cells to be what it was validated as.
+# D and R build from the steals-excluded pool too (their compositions are single-cell; the exclusion is a no-op for them).
+EXCLUDE_BY_FAMILY = {'C': {'steals_R', 'steals_R_U'}, 'D': {'steals_R', 'steals_R_U'}, 'R': {'steals_R', 'steals_R_U'}}
 
 
 def pt_today():
