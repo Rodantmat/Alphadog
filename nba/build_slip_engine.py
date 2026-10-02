@@ -277,6 +277,16 @@ def build_day_slips(pool, comp, size, structure, cap, cmap, broad_day=False):
             tier = 1
         else:
             tier = 0
+        # SE_SAMETEAM (pass 41): same-team pairs share a game script and hold in droughts (+3% vs -8% cross-game vs -40% for
+        # opposing-team pairs) at equal normal-period income; PrizePicks prices Flex legs as independent. When ON, a slip with
+        # a same-team pair (and no opposing-team pair) ranks with the cross-game slips; opposing-team pairs drop a tier.
+        if SE_SAMETEAM and same_game > 0:
+            teams = [l['team_id'] for l in s]
+            same_team = len(teams) - len(set(teams))
+            if same_team == same_game:      # every shared game is a same-team pair
+                tier = 2
+            else:
+                tier = min(tier, 0)         # an opposing-team pair in the slip: lowest tier
         # SE_DIVERSIFY (29k): on a broad board prefer slips spanning >= 4 distinct cell families. Drought damage is
         # cell-specific and rotates; a 5-pick with 2 legs in a cratering cell dies while its other 3 hit. Same-board
         # control: short droughts -11% (4+ cells) vs -39% (3 cells); normal broad days +139% vs +123%; on NARROW boards
