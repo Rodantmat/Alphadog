@@ -91,9 +91,10 @@ POINTSFAM = ['points_R', 'pts_ast_R', 'pra_R_U', 'pts_reb_R']
 
 LEG_SQL = """
 SELECT l.rank_key, l.season, l.game_date, l.player, l.prop, l.tier, l.side, l.line, l.factor, l.hit, l.n_rank, l.score,
-       pu.team_id, pu.event_id
+       pu.team_id, pu.event_id, pf.pf20
 FROM nba_score.tier_map_legs l
 JOIN nba_market.prop_universe pu ON pu.game_date=l.game_date AND pu.player=l.player AND pu.prop=l.prop AND pu.side=l.side AND pu.line=l.line AND pu.line_source='real'
+LEFT JOIN nba_score.player_pf20 pf ON pf.pid=pu.player_id AND pf.game_date=l.game_date
 WHERE (l.tier='R' AND l.prop IN ('steals','turnovers','stocks','pts_ast','points','pra','blocks','pts_reb','rebounds'))
    OR (l.tier='D1' AND l.prop IN ('threes_made','assists'))
    OR (l.tier='D3' AND l.prop='rebounds')
