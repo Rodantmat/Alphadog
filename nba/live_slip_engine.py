@@ -321,6 +321,22 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
                      % (",".join("('%s',%d)" % (n, c[3]) for n, c in STRATEGIES.items()), "%s"), (dt.datetime.combine(s0, dt.time.min, tzinfo=dt.timezone.utc),))
     # H7 anchor (portfolio): the steals cells are shared by every family-A composition. Day-blocked (29f): a day's steals
     # legs are the same 2-3 players across every slip, so the DAY is the independent unit, not the leg.
+    # 29p: per-cell drought STATES beside H7 - trailing-10 daily hit of the steals cell and of the turnovers cell, 'cool' < 50%.
+    # Either cell cool identified all three 2025-26 long droughts (days 6, 6, 8) with 20 false days on 154; the response is a
+    # ROTATION (family A rebuilt steals-excluded, stocks-only Power added), not a stop, so a false day costs ~nothing.
+    cell_state = {}
+    for cell_name, cells in (('steals', ['steals_R', 'steals_R_U']), ('turnovers', ['turnovers_R'])):
+        rows_c = conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
+                                 WHERE s.status IN ('graded','graded_void','graded_shadow') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL AND j->>'cell' = ANY(%s)
+                                 GROUP BY s.game_date ORDER BY s.game_date DESC LIMIT 10""", (season_start, cells)).fetchall()
+        if len(rows_c) >= 7:
+            m = sum(float(r[1]) for r in rows_c) / len(rows_c)
+            cell_state[cell_name] = {'state': 'cool' if m < 0.50 else 'ok', 'trail10': round(m, 3), 'days': len(rows_c)}
+    rotation = any(v['state'] == 'cool' for v in cell_state.values())
+    conn.execute("""INSERT INTO nba_score.live_strategy_state (strategy, state, live_cap, hurdles, updated_at) VALUES ('_ROTATION', %s, %s, %s, now())
+                    ON CONFLICT (strategy) DO UPDATE SET state=EXCLUDED.state, live_cap=EXCLUDED.live_cap, hurdles=EXCLUDED.hurdles, updated_at=now()""",
+                 ('rotation' if rotation else 'normal', 1 if rotation else 0, json.dumps(cell_state)))
+    print(f"  cell states {cell_state} -> {'DROUGHT ROTATION' if rotation else 'normal'}", flush=True)
     anchor_days = conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
                                   WHERE s.status IN ('graded','graded_void','graded_shadow') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL AND j->>'cell' IN ('steals_R','steals_R_U')
                                   GROUP BY s.game_date ORDER BY s.game_date DESC LIMIT 14""", (season_start,)).fetchall()
