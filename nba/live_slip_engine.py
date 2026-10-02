@@ -177,14 +177,13 @@ def pick(conn, day, require_fresh=True):
         state, live_cap = states.get(name, ('paper', cap))
         if state == 'off':
             continue
-        week2 = in_week2 or state == 'week2'
+        week2 = week2_trough or state == 'week2'
         shadow = (not week2) and (state == 'red' or live_cap == 0)
-        use_cap = (max(cap, 1) if (week2 or shadow) else (min(live_cap, 1) if small_slate else live_cap))
+        # week-2 trough play is staked at cap 1 (29l): real stakes on the low-event structure, recorded like any placed slip
+        use_cap = (1 if week2 else (max(cap, 1) if shadow else (min(live_cap, 1) if small_slate else live_cap)))
         if use_cap == 0:
             continue
-        status = 'placed_week2' if week2 else ('placed_shadow' if shadow else 'placed')
-        # week 2 (29l): the paper record is built from the STEALS-EXCLUDED pool - the week-2 collapse lives in the steals cells;
-        # the no-steals strategies were positive in week 2 of both seasons (small samples). The third season's record decides.
+        status = 'placed_shadow' if shadow else 'placed'
         fam_pool = pools.get('C', pool) if week2 else pools.get(name[0], pool)
         slips = ENG.build_day_slips(fam_pool, comp, size, structure, use_cap, cmap)
         pool_n = len({l['player'] for l in ENG.candidates_for(comp, fam_pool)})
