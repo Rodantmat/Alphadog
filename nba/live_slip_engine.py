@@ -745,6 +745,9 @@ def main():
     if MODE == 'pick':
         day = dt.date.fromisoformat(d) if d else pt_today()
         pick(conn, day)
+    elif MODE == 'late_pick':
+        day = dt.date.fromisoformat(d) if d else pt_today()
+        late_pick(conn, day)
     elif MODE == 'replay':
         replay(conn, dt.date.fromisoformat(os.environ['LS_FROM']), dt.date.fromisoformat(os.environ['LS_TO']))
     elif MODE == 'calibrate':
