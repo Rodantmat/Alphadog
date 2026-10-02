@@ -215,7 +215,8 @@ def pick(conn, day, require_fresh=True):
             continue
         week2 = week2_trough or state == 'week2'
         rotation_only_idle = (name in ROTATION_ONLY) and not rotation
-        shadow = (not week2) and (state == 'red' or live_cap == 0 or rotation_only_idle)
+        allstar_sit = in_allstar_week and not name.startswith('B_')   # pass 36: only the demons stake in All-Star week
+        shadow = (not week2) and (state == 'red' or live_cap == 0 or rotation_only_idle or allstar_sit)
         # week-2 trough play is staked at cap 1 (29l): real stakes on the low-event structure, recorded like any placed slip
         use_cap = (1 if week2 else (max(cap, 1) if shadow else (min(live_cap, 1) if small_slate else live_cap)))
         if use_cap == 0:
