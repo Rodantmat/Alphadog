@@ -330,7 +330,7 @@ def pick(conn, day, require_fresh=True):
     asb = allstar_break(conn, day)
     in_allstar_week = asb is not None and 0 <= (asb - day).days <= 6
     if in_allstar_week:
-        print(f"  {day}: ALL-STAR WEEK (break after {asb}) - family A and the points Power shadow; demons stake", flush=True)
+        print(f"  {day}: PRE-BREAK WEEK (break after {asb}) - plan {ALLSTAR_PLAN}: {ALLSTAR_PLANS.get(ALLSTAR_PLAN, 'previous rule' if ALLSTAR_PLAN == 'A' else 'no special handling')}", flush=True)
     # pass 42: late March (season days 147-167, weeks 22-24) is the strongest stretch in both seasons and the deep slips earn to
     # the bottom of the pool (demon k7-10 +439%, wsteals k7-10 +144%, both seasons): the two cap-6 strategies go to cap 9
     late_march = s0 is not None and 147 <= (day - s0).days <= 167
