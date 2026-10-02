@@ -200,9 +200,9 @@ def pick(conn, day, require_fresh=True):
             if st == 'placed' and in_week1 and size == 5 and structure == 'flex' and name.startswith(('A_', 'C_')):
                 if not any(l['side'] == 'Over' and l['tier'] == 'R' and l['prop'] in ('steals', 'turnovers', 'stocks', 'blocks') for l in slip):
                     st = 'placed_week1_skip'
-            # 29l pass 22: week 2 is the low-event trough across event types; the record's slips are marked by their low-event-Under
-            # content (points-family or turnovers Unders): < 2 of them = week2_skip, so the third season tests the low-event play
-            if st == 'placed_week2':
+            # 29l pass 22: in the week-2 trough play only slips with 2+ low-event Unders (points-family or turnovers) are staked;
+            # the others are recorded as week2_skip so the record shows what the structure excluded
+            if st == 'placed' and week2:
                 low_ev = sum(1 for l in slip if l['side'] == 'Under' and l['tier'] == 'R' and l['prop'] in ('points', 'pts_ast', 'pra', 'pts_reb', 'rebounds', 'turnovers'))
                 if low_ev < 2:
                     st = 'placed_week2_skip'
