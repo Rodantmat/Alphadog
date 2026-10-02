@@ -91,21 +91,20 @@ def trailing10(conn, day, player_ids):
     return {(r[0], 'steals'): float(r[1]) for r in rows}
 
 
-def trailing_pf20(conn, day, players):
-    """Trailing-20-game personal fouls per player name, as of the day (§29r: the low-foul key needs it at pick time; the
+def trailing_pf20(conn, day, player_ids):
+    """Trailing-20-game personal fouls per player_id, as of the day (§29r: the low-foul key needs it at pick time; the
     backtest's nba_score.player_pf20 sits on played-game rows and cannot supply a game that has not happened)."""
-    rows = conn.execute("""SELECT p.full_name, avg(x.pf) FROM (
-                             SELECT g.nba_player_id, g.pf, row_number() OVER (PARTITION BY g.nba_player_id ORDER BY g.game_date DESC) rn
-                             FROM nba_stats.player_game_log g WHERE g.game_date < %s) x
-                           JOIN nba_ref.players p ON p.nba_player_id = x.nba_player_id
-                           WHERE x.rn <= 20 AND p.full_name = ANY(%s) GROUP BY p.full_name""", (day, list(players))).fetchall()
+    rows = conn.execute("""SELECT x.pid, avg(x.pf) FROM (
+                             SELECT g.nba_player_id::text pid, g.pf, row_number() OVER (PARTITION BY g.nba_player_id ORDER BY g.game_date DESC) rn
+                             FROM nba_stats.player_game_log g WHERE g.game_date < %s AND g.nba_player_id::text = ANY(%s)) x
+                           WHERE x.rn <= 20 GROUP BY x.pid""", (day, list(player_ids))).fetchall()
     return {r[0]: float(r[1]) for r in rows}
 
 
 def attach_pf20(conn, day, legs):
-    pf = trailing_pf20(conn, day, {l['player'] for l in legs})
+    pf = trailing_pf20(conn, day, {l['player_id'] for l in legs if l.get('player_id')})
     for l in legs:
-        l['pf20'] = pf.get(l['player'])
+        l['pf20'] = pf.get(l.get('player_id'))
     return legs
 
 
