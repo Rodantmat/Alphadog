@@ -111,8 +111,9 @@ def ensure_tables(conn):
 
 
 # ------------------------------------------------------------------ PICK
-def load_board_legs(conn, day):
-    """Today's PP window board, scored by the LIVE final_hp, priced by pp_leg_price - the same join the certified map uses."""
+def load_board_legs(conn, day, label='window'):
+    """Today's PP window board, scored by the LIVE final_hp, priced by pp_leg_price - the same join the certified map uses.
+    label='close' (pass 53): the close-priced board, for the late pick."""
     rows = conn.execute("""
         WITH pr AS (
           SELECT p.game_date, p.nm, p.side, p.line, p.kind, p.factor::float price,
@@ -121,7 +122,7 @@ def load_board_legs(conn, day):
               WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast'
               WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market,'player_','') END prop
           FROM nba_market.pp_leg_price p
-          WHERE p.snapshot_label='window' AND p.game_date=%s AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)
+          WHERE p.snapshot_label=%s AND p.game_date=%s AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)
         )
         SELECT f.player_id, pu.player, pr.prop, pr.side, pr.line, pr.price, pr.kind, pr.tier3,
                f.final_hp::float, f.baseline_hp::float, f.score::float, pu.team_id, pu.event_id
@@ -129,7 +130,7 @@ def load_board_legs(conn, day):
         JOIN nba_market.prop_universe pu ON pu.game_date=pr.game_date AND nba_ref.norm_name(pu.player)=pr.nm AND pu.prop=pr.prop
           AND pu.side=pr.side AND pu.line=pr.line AND pu.line_source='real' AND pu.kind=pr.kind
         JOIN nba_score.final_hp f ON f.game_date=pu.game_date AND f.player_id=pu.player_id AND f.prop=pu.prop AND f.side=pu.side AND f.line=pu.line
-        WHERE f.final_hp IS NOT NULL AND f.score IS NOT NULL""", (day,)).fetchall()
+        WHERE f.final_hp IS NOT NULL AND f.score IS NOT NULL""", (label, day)).fetchall()
     # shape into the engine's leg rows: one row per (rank_key) like tier_map_legs, with n_rank computed per (prop,tier,rank)
     legs = []
     for pid, player, prop, side, line, price, kind, t3, s_final, s_base, s_score, team, event in rows:
