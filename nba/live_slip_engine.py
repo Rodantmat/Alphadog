@@ -325,7 +325,9 @@ def pick(conn, day, require_fresh=True):
         return
     # 29n slate-size cap: on a slate of <= 4 games the engine's ~9 players come from two or three games and the within-day
     # correlation is maximal - the weakest slate size in both seasons (35-36% bad days) - so every strategy builds at cap 1
-    n_games = conn.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date=%s AND coalesce(game_label,'')<>'Preseason'", (day,)).fetchone()[0]
+    n_games = conn.execute("""SELECT greatest(
+                                (SELECT count(*) FROM nba_calendar.games WHERE game_date=%s AND coalesce(game_label,'')<>'Preseason'),
+                                (SELECT count(*) / 2 FROM nba_team.team_game_log WHERE game_date=%s))""", (day, day)).fetchone()[0]
     small_slate = n_games <= 4
     # pass 59: holiday caution (n = 2 seasons each) - New Year's Eve and MLK Day (3rd Monday of January) lost in both seasons;
     # odd tip times on showcase slates. Treated like a small slate: cap 1 everywhere. Cheap if noise, right if not.
