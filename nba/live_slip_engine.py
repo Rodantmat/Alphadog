@@ -154,6 +154,13 @@ def pick(conn, day, require_fresh=True):
     s0, s1 = regular_season_window(conn, day)
     in_week2 = s0 is not None and 7 <= (day - s0).days <= 13
     in_week1 = s0 is not None and 0 <= (day - s0).days <= 6   # 29l pass 20: the high-event week; Regular 5-Flex slips need a defensive Over leg
+    # 29l: week 2 is a signal-gated PLAY, not a skip. The week-1 event spike preceded the trough in both seasons; if it fired this
+    # season, week 2 is played with the low-event structure (steals-excluded pool, 2+ low-event Unders, cap 1); if not, a normal week.
+    week2_trough = False
+    if in_week2:
+        spike = week1_event_spike(conn, day, s0)
+        week2_trough = spike is not None and spike >= 0.03
+        print(f"  {day}: week 2 - week-1 event spike {('%+.1f%%' % (100*spike)) if spike is not None else 'n/a'} -> {'LOW-EVENT PLAY at cap 1' if week2_trough else 'normal week'}", flush=True)
     in_final7 = s1 is not None and (s1 - day).days <= 7
     if in_final7:
         print(f"  {day}: final 7 days of the regular season - nothing staked (29d/25e)", flush=True)
