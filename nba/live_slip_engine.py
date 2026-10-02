@@ -707,10 +707,12 @@ def simulate_p5(conn, day):
         st = conn.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
         if not st or st[0] != 'red':
             continue
-        tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith(('C_', 'D_', 'R_')) else 'nba_score.slip_engine_slips'
+        tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith(('C_', 'D_', 'R_', 'W_')) else 'nba_score.slip_engine_slips'
+        y0 = day.year if day.month >= 7 else day.year - 1
+        season = f"{y0}-{(y0 + 1) % 100:02d}"
         g = conn.execute(f"""SELECT count(*), sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
-                             AND season='2025-26' AND phase<>'final7' AND game_date >= '2025-11-01' AND game_date < %s GROUP BY game_date""",
-                         (comp, size, structure, cap, day)).fetchall()
+                             AND season=%s AND phase<>'final7' AND game_date >= %s AND game_date < %s GROUP BY game_date""",
+                         (comp, size, structure, cap, season, dt.date(y0, 11, 1), day)).fetchall()
         if len(g) < 40:
             continue
         lo = boot_lo([(float(r[0]), float(r[0]) + float(r[1])) for r in g], 2000)
