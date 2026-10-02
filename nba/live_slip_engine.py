@@ -170,6 +170,14 @@ def pick(conn, day, require_fresh=True):
     if in_week2:
         spike = week1_event_spike(conn, day, s0)
         week2_trough = spike is not None and spike >= 0.03
+        if week2_trough:
+            # guard: after 3 graded week-2 slate days, if the play's own staked legs hit < 50%, stop for the rest of the week
+            g2 = conn.execute("""SELECT count(DISTINCT s.game_date), avg((j->>'hit')::int) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
+                                 WHERE s.status IN ('graded','graded_void') AND s.game_date BETWEEN %s AND %s AND (j->>'hit') IS NOT NULL""",
+                              (s0 + dt.timedelta(days=7), day - dt.timedelta(days=1))).fetchone()
+            if g2 and g2[0] is not None and g2[0] >= 3 and g2[1] is not None and float(g2[1]) < 0.50:
+                print(f"  {day}: week-2 play STOPPED by its guard - {g2[0]} graded days at leg hit {100*float(g2[1]):.0f}%", flush=True)
+                week2_trough = False
         print(f"  {day}: week 2 - week-1 event spike {('%+.1f%%' % (100*spike)) if spike is not None else 'n/a'} -> {'LOW-EVENT PLAY at cap 1' if week2_trough else 'normal week'}", flush=True)
     in_final7 = s1 is not None and (s1 - day).days <= 7
     if in_final7:
