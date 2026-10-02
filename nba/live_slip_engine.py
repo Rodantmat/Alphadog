@@ -72,10 +72,22 @@ SIDE_FILTER_BY_STRATEGY = {'D_points_3power': 'Under'}
 MAX_DAILY_STAKE = int(os.environ.get('LIVE_MAX_DAILY_STAKE', '36'))
 # pass 45: leg filter - steals Unders only at the 0.5 line (65% vs 51% at 1.5, both seasons; the 1.5 line is a coin flip on a
 # ~1.5-steal player, the 0.5 Under is where the model's skill applies). The cushion finding (§29n) from the other side.
-def leg_allowed(l):
+def leg_allowed(l, trail10=None):
     if l['prop'] == 'steals' and l['side'] == 'Under' and float(l['line']) > 0.5:
-        return False
+        # a 1.5 steals Under is 48-49% unless the line is >= 0.25 above the player's trailing-10 (then 67%); unknown trail -> drop
+        t = (trail10 or {}).get((l['player'], 'steals'))
+        return t is not None and float(l['line']) - t >= 0.25
     return True
+
+
+def trailing10(conn, day, players):
+    """Trailing-10-game steals average per player name, as of the day (pass 45; the cushion of §29n at pick time)."""
+    rows = conn.execute("""SELECT p.full_name, avg(x.stl) FROM (
+                             SELECT g.nba_player_id, g.stl, row_number() OVER (PARTITION BY g.nba_player_id ORDER BY g.game_date DESC) rn
+                             FROM nba_stats.player_game_log g WHERE g.game_date < %s) x
+                           JOIN nba_ref.players p ON p.nba_player_id = x.nba_player_id
+                           WHERE x.rn <= 10 AND p.full_name = ANY(%s) GROUP BY p.full_name""", (day, list(players))).fetchall()
+    return {(r[0], 'steals'): float(r[1]) for r in rows}
 
 
 def pt_today():
