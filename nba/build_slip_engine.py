@@ -179,7 +179,7 @@ def eligible_legs(day_rows):
     return out
 
 
-def valid(slip, cmap=None):
+def valid(slip, cmap=None, single_cell=False):
     players = {l['player'] for l in slip}
     if len(players) < len(slip):
         return False
