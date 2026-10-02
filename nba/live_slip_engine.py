@@ -343,7 +343,8 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
                                  GROUP BY s.game_date ORDER BY s.game_date DESC LIMIT 10""", (season_start, cells)).fetchall()
         if len(rows_c) >= 7:
             m = sum(float(r[1]) for r in rows_c) / len(rows_c)
-            cell_state[cell_name] = {'state': 'cool' if m < 0.50 else 'ok', 'trail10': round(m, 3), 'days': len(rows_c)}
+            m3 = sum(float(r[1]) for r in rows_c[:3]) / min(3, len(rows_c))   # the most recent 3 slate days must agree (guard: false days 20 -> 9)
+            cell_state[cell_name] = {'state': 'cool' if (m < 0.50 and m3 < 0.50) else 'ok', 'trail10': round(m, 3), 'trail3': round(m3, 3), 'days': len(rows_c)}
     rotation = any(v['state'] == 'cool' for v in cell_state.values())
     conn.execute("""INSERT INTO nba_score.live_strategy_state (strategy, state, live_cap, hurdles, updated_at) VALUES ('_ROTATION', %s, %s, %s, now())
                     ON CONFLICT (strategy) DO UPDATE SET state=EXCLUDED.state, live_cap=EXCLUDED.live_cap, hurdles=EXCLUDED.hurdles, updated_at=now()""",
