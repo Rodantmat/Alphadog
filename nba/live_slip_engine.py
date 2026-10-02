@@ -192,6 +192,12 @@ def pick(conn, day, require_fresh=True):
                 week2_trough = False
         print(f"  {day}: week 2 - week-1 event spike {('%+.1f%%' % (100*spike)) if spike is not None else 'n/a'} -> {'LOW-EVENT PLAY at cap 1' if week2_trough else 'normal week'}", flush=True)
     in_final7 = s1 is not None and (s1 - day).days <= 7
+    # pass 36: All-Star week = the 7 days before the mid-season break; a defensive-Under trough in both seasons (45/48%) where
+    # family A loses -35% and the points Power -67% while the demons make +58%: family A and the points Power sit, demons stake
+    asb = allstar_break(conn, day)
+    in_allstar_week = asb is not None and 0 <= (asb - day).days <= 6
+    if in_allstar_week:
+        print(f"  {day}: ALL-STAR WEEK (break after {asb}) - family A and the points Power shadow; demons stake", flush=True)
     if in_final7:
         print(f"  {day}: final 7 days of the regular season - nothing staked (29d/25e)", flush=True)
         return
