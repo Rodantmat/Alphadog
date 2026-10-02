@@ -119,6 +119,19 @@ def load_board_legs(conn, day):
     return legs
 
 
+def week1_event_spike(conn, day, s0):
+    """29l: the week-2 trough was preceded in both seasons by a week-1 event spike. Signal = league steals+turnovers per team-game
+    over season days 0-6 vs the prior season's full-season rate. Fires at >= +3% (observed +6.1% / +8.5%). None if not computable."""
+    if s0 is None:
+        return None
+    cur = conn.execute("""SELECT avg(stl+tov), count(*) FROM nba_team.team_game_log WHERE game_date BETWEEN %s AND %s""", (s0, s0 + dt.timedelta(days=6))).fetchone()
+    prior = conn.execute("""SELECT avg(stl+tov) FROM nba_team.team_game_log WHERE game_date < %s AND game_date >= %s""", (s0, s0 - dt.timedelta(days=365))).fetchone()
+    if not cur or cur[1] is None or cur[1] < 60 or not prior or prior[0] is None:
+        return None
+    spike = float(cur[0]) / float(prior[0]) - 1.0
+    return spike
+
+
 def pick(conn, day, require_fresh=True):
     ensure_tables(conn)
     if require_fresh:
