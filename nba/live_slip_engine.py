@@ -156,7 +156,7 @@ def load_board_legs(conn, day, label='window'):
     for pid, player, prop, side, line, price, kind, t3, s_final, s_base, s_score, team, event in rows:
         tier = 'R' if kind == 'standard' else ('G' if kind == 'goblin' else 'D') + str(t3)
         for rk, s in (('final_hp', s_final), ('baseline_hp', s_base), ('final_score', s_score)):
-            legs.append({'rank_key': rk, 'season': None, 'game_date': day, 'player': player, 'prop': prop, 'tier': tier, 'side': side,
+            legs.append({'rank_key': rk, 'season': None, 'game_date': day, 'player': player, 'player_id': pid, 'prop': prop, 'tier': tier, 'side': side,
                          'line': line, 'factor': price, 'hit': None, 'n_rank': None, 'score': s, 'team_id': team, 'event_id': event})
     # n_rank within (rank_key, prop, tier) by score desc, as the certified map does
     groups = defaultdict(list)
