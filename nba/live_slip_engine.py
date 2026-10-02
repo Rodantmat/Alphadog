@@ -291,6 +291,9 @@ def pick(conn, day, require_fresh=True):
         print(f"  {day}: DROUGHT ROTATION - family A builds steals-excluded; rotation-only strategies stake", flush=True)
     states = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT strategy, state, live_cap FROM nba_score.live_strategy_state").fetchall()}
     s0, s1 = regular_season_window(conn, day)
+    if s0 is not None and s1 is not None and not (s0 <= day <= s1):
+        print(f"  {day}: outside the regular season ({s0} .. {s1}) - Play-In, playoffs or off-season: nothing placed", flush=True)
+        return
     in_week2 = s0 is not None and 7 <= (day - s0).days <= 13
     in_week1 = s0 is not None and 0 <= (day - s0).days <= 6   # 29l pass 20: the high-event week; Regular 5-Flex slips need a defensive Over leg
     # 29l: week 2 is a signal-gated PLAY, not a skip. The week-1 event spike preceded the trough in both seasons; if it fired this
