@@ -268,7 +268,7 @@ def build_day_slips(pool, comp, size, structure, cap, cmap, broad_day=False):
     slips = []
     for combo in itertools.combinations(legs, need):
         s = list(combo) + ([extender] if extender else [])
-        if not valid(s, cmap):
+        if not valid(s, cmap, single_cell=comp.startswith('single:')):
             continue
         cs = pair_corrs(s, cmap)
         games = [l['event_id'] for l in s]
