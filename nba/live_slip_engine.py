@@ -296,7 +296,9 @@ def pick(conn, day, require_fresh=True):
             continue
         if late_march and state == 'active' and live_cap >= cap and name in LATE_MARCH_RAISE:
             live_cap = LATE_MARCH_RAISE[name]
-        week2 = week2_trough or state == 'week2'
+        week2 = week2_trough   # the SIGNAL decides the structure (29o); the grade's 'week2' state is only a cap-1 caution for a normal build
+        if state == 'week2' and not week2_trough:
+            live_cap = min(live_cap, 1) if live_cap else 1
         rotation_only_idle = (name in ROTATION_ONLY) and not rotation
         allstar_sit = in_allstar_week and name.startswith('D_')   # pass 36/73: with the low-foul key family A is +79% in All-Star week (was -43%); only the points Power still sits
         shadow = (not week2) and (state == 'red' or live_cap == 0 or rotation_only_idle or allstar_sit)
