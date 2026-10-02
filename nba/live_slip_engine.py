@@ -140,6 +140,15 @@ def week1_event_spike(conn, day, s0):
     return spike
 
 
+def allstar_break(conn, day):
+    """Pass 36: the season's one mid-season gap of 4+ days in the schedule (Feb 13-19 2025, Feb 12-19 2026). Returns the last
+    game date before the break, or None."""
+    row = conn.execute("""SELECT game_date FROM (SELECT game_date, lead(game_date) OVER (ORDER BY game_date) nxt FROM
+                          (SELECT DISTINCT game_date FROM nba_calendar.games WHERE coalesce(game_label,'')<>'Preseason' AND game_date BETWEEN %s AND %s) x) g
+                          WHERE nxt - game_date BETWEEN 4 AND 10 ORDER BY game_date LIMIT 1""", (day - dt.timedelta(days=200), day + dt.timedelta(days=200))).fetchone()
+    return row[0] if row else None
+
+
 def pick(conn, day, require_fresh=True):
     ensure_tables(conn)
     if require_fresh:
