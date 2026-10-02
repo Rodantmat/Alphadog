@@ -77,6 +77,8 @@ def leg_allowed(l, trail10=None):
         # a 1.5 steals Under is 48-49% unless the line is >= 0.25 above the player's trailing-10 (then 67%); unknown trail -> drop
         t = (trail10 or {}).get((l['player'], 'steals'))
         return t is not None and float(l['line']) - t >= 0.25
+    if l['prop'] == 'points' and l['side'] == 'Under' and float(l['line']) >= 23.5:
+        return False   # pass 70: star-level points Unders hit 50% (46/57) vs 59% at mid lines - stars play through everything
     return True
 
 
