@@ -64,7 +64,7 @@ jobs:
           d = os.environ.get("IN_DATE")
           today = dt.datetime.now(PT).date()
           slate = dt.date.fromisoformat(d) if d else (today if mode == "pick" else today - dt.timedelta(days=1))
-          if mode in ("replay", "calibrate"):
+          if mode in ("replay", "calibrate", "reset"):
               run = True; games = -1
           else:
               with psycopg.connect(os.environ["DATABASE_URL"]) as c:
