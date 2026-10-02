@@ -64,6 +64,9 @@ ROTATION_ONLY = {'R_stocks_4power'}
 # family C is the Regular-without-steals family (28f) and must be BUILT without the steals cells to be what it was validated as.
 # D and R build from the steals-excluded pool too (their compositions are single-cell; the exclusion is a no-op for them).
 EXCLUDE_BY_FAMILY = {'C': {'steals_R', 'steals_R_U'}, 'D': {'steals_R', 'steals_R_U'}, 'R': {'steals_R', 'steals_R_U'}}
+# pass 34: per-strategy SIDE filter on the pool - the points-family edge is the Under side (all-Under points Powers +41/+73% vs
+# +23/+35% with an Over leg, both seasons; the published early-season Under bias). Live-only refinement of a certified both-sides cell.
+SIDE_FILTER_BY_STRATEGY = {'D_points_3power': 'Under'}
 
 
 def pt_today():
