@@ -25,6 +25,10 @@ on:
         description: "'1' = prefer >=4 distinct cells per 5-pick on broad boards (29k, opt-in)"
         default: ""
         required: false
+      sameteam:
+        description: "'1' = same-team pairs rank with cross-game, opposing-team pairs lowest (pass 41, validating)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
