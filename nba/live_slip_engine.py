@@ -155,6 +155,11 @@ def pick(conn, day, require_fresh=True):
     pools = {'': pool}
     for fam, excl in EXCLUDE_BY_FAMILY.items():
         pools[fam] = {c: v for c, v in pool.items() if c not in excl}
+    # 29p: the drought rotation state, set by the last grade from the per-cell trailing-10 hit (steals / turnovers cool < 50%)
+    rot_row = conn.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy='_ROTATION'").fetchone()
+    rotation = bool(rot_row and rot_row[0] == 'rotation')
+    if rotation:
+        print(f"  {day}: DROUGHT ROTATION - family A builds steals-excluded; rotation-only strategies stake", flush=True)
     states = {r[0]: (r[1], r[2]) for r in conn.execute("SELECT strategy, state, live_cap FROM nba_score.live_strategy_state").fetchall()}
     s0, s1 = regular_season_window(conn, day)
     in_week2 = s0 is not None and 7 <= (day - s0).days <= 13
