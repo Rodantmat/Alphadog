@@ -259,6 +259,10 @@ def pick(conn, day, require_fresh=True):
                 low_ev = sum(1 for l in slip if l['side'] == 'Under' and l['tier'] == 'R' and l['prop'] in ('points', 'pts_ast', 'pra', 'pts_reb', 'rebounds', 'turnovers'))
                 if low_ev < 2:
                     st = 'placed_week2_skip'
+            if st == 'placed':
+                staked_today = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s AND status='placed'", (day,)).fetchone()[0]
+                if staked_today >= MAX_DAILY_STAKE:
+                    st = 'placed_capped'   # pass 43: the aggregate daily ceiling; recorded, never staked
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
                             VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, name, k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'prop': l['prop'], 'tier': l['tier'],
