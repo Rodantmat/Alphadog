@@ -26,7 +26,11 @@ on:
         default: ""
         required: false
       sameteam:
-        description: "'1' = same-team pairs rank with cross-game, opposing-team pairs lowest (pass 41, validating)"
+        description: "'1' = same-team pairs rank with cross-game, opposing-team pairs lowest (pass 41, rejected)"
+        default: ""
+        required: false
+      lowfoul:
+        description: "'1' = prefer legs on players under 1.8 fouls/game (pass 64, validating)"
         default: ""
         required: false
 
