@@ -188,13 +188,15 @@ def pick(conn, day, require_fresh=True):
         if state == 'off':
             continue
         week2 = week2_trough or state == 'week2'
-        shadow = (not week2) and (state == 'red' or live_cap == 0)
+        rotation_only_idle = (name in ROTATION_ONLY) and not rotation
+        shadow = (not week2) and (state == 'red' or live_cap == 0 or rotation_only_idle)
         # week-2 trough play is staked at cap 1 (29l): real stakes on the low-event structure, recorded like any placed slip
         use_cap = (1 if week2 else (max(cap, 1) if shadow else (min(live_cap, 1) if small_slate else live_cap)))
         if use_cap == 0:
             continue
         status = 'placed_shadow' if shadow else 'placed'
-        fam_pool = pools.get('C', pool) if week2 else pools.get(name[0], pool)
+        # pool: week 2 and the drought rotation build family A from the steals-excluded pool (29l / 29p)
+        fam_pool = pools.get('C', pool) if (week2 or (rotation and name.startswith('A_'))) else pools.get(name[0], pool)
         slips = ENG.build_day_slips(fam_pool, comp, size, structure, use_cap, cmap)
         pool_n = len({l['player'] for l in ENG.candidates_for(comp, fam_pool)})
         conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
