@@ -488,13 +488,11 @@ def boot_lo(day_items, draws=10000, seed=7):
 
 
 def regular_season_window(conn, today):
-    """(first, last) regular-season game dates around today, from nba_calendar.games - the same table and
-    game_label rule P3's slate gate uses (preseason is not a slate)."""
+    """(first, last) regular-season game dates of the season containing today - the schedule merged with the played-games
+    log (season_block), so a historical season the calendar does not hold (2024-25) resolves correctly."""
     try:
-        r = conn.execute("""SELECT min(game_date), max(game_date) FROM nba_calendar.games
-                            WHERE coalesce(game_label,'') NOT IN ('Preseason','Playoffs','Play-In','All-Star')
-                              AND game_date BETWEEN %s AND %s""", (today - dt.timedelta(days=300), today + dt.timedelta(days=300))).fetchone()
-        return (r[0], r[1]) if r and r[0] else (None, None)
+        b = season_block(conn, today)
+        return (b[0], b[-1]) if b else (None, None)
     except Exception:  # noqa: BLE001
         return None, None
 
