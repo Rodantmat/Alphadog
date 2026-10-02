@@ -208,6 +208,9 @@ def pick(conn, day, require_fresh=True):
         status = 'placed_shadow' if shadow else 'placed'
         # pool: week 2 and the drought rotation build family A from the steals-excluded pool (29l / 29p)
         fam_pool = pools.get('C', pool) if (week2 or (rotation and name.startswith('A_'))) else pools.get(name[0], pool)
+        side_only = SIDE_FILTER_BY_STRATEGY.get(name)
+        if side_only:
+            fam_pool = {c: [l for l in v if l['side'] == side_only] for c, v in fam_pool.items()}
         slips = ENG.build_day_slips(fam_pool, comp, size, structure, use_cap, cmap)
         pool_n = len({l['player'] for l in ENG.candidates_for(comp, fam_pool)})
         conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
