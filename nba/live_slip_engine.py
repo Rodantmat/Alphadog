@@ -58,7 +58,7 @@ STRATEGIES = {
     'C_wstocks_4flex':   ('weighted:stocks_R',    4, 'flex',  1, 0.60, 22.1, 11, 8),
     # 29p the drought menu (validated inside the five long droughts, positive both seasons):
     'D_points_3power':   ('single:points_R',      3, 'power', 3, 0.62, 30.0, 14, 5),   # +34% in long droughts / +33% normal / +60% on SINGLE bad days (uncorrelated with the defensive collapse) - all-weather, cap 3
-    'R_stocks_4power':   ('single:stocks_R',      4, 'power', 1, 0.60, 30.0, 14, 4),   # +48% in long droughts / -7% normal - ROTATION-ONLY (staked only in the drought state)
+    'R_stocks_4power':   ('single:stocks_R',      4, 'power', 1, 0.60, 30.0, 14, 4),   # re-measured (pass 79): +27% in long droughts (34/16) / -6% normal - ROTATION-ONLY (staked only in the drought state)
 }
 ROTATION_ONLY = {'R_stocks_4power'}
 # family C is the Regular-without-steals family (28f) and must be BUILT without the steals cells to be what it was validated as.
