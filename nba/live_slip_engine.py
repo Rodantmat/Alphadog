@@ -245,8 +245,9 @@ def pick(conn, day, require_fresh=True):
         print(f"  {day}: no scored window board legs - nothing to pick", flush=True)
         return
     cmap = ENG.load_corr(conn)
+    attach_pf20(conn, day, legs)   # §29r: the low-foul key reads l['pf20']
     pool = ENG.eligible_legs(legs)
-    t10 = trailing10(conn, day, {l['player'] for v in pool.values() for l in v if l['prop'] == 'steals'})
+    t10 = trailing10(conn, day, {l['player_id'] for v in pool.values() for l in v if l['prop'] == 'steals' and l.get('player_id')})
     pool = {c: [l for l in v if leg_allowed(l, t10)] for c, v in pool.items()}   # pass 45 leg filter
     pools = {'': pool}
     for fam, excl in EXCLUDE_BY_FAMILY.items():
