@@ -258,7 +258,7 @@ def allstar_break(conn, day):
     date before the break, or None. Searched inside the day's own season block."""
     b = season_block(conn, day)
     for a, c in zip(b, b[1:]):
-        if 4 <= (c - a).days <= 10:
+        if 4 <= (c - a).days <= 10 and a.month == 2:   # the break is always mid-February; Cup-knockout schedule holes are not it
             return a
     return None
 
