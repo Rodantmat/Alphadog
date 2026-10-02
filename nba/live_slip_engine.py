@@ -712,7 +712,7 @@ def calibrate(conn):
         mc95, mc99 = dds[int(0.95 * len(dds))], dds[int(0.99 * len(dds))]
         st95, st99 = sts[int(0.95 * len(sts))], sts[int(0.99 * len(sts))]
         # CUSUM calibration on the backtest's own leg stream (chronological), per season
-        legs = conn.execute("""SELECT s.season, s.game_date, (j->>'hit')::int FROM nba_score.slip_engine_slips s, jsonb_array_elements(s.legs_json) j
+        legs = conn.execute(f"""SELECT s.season, s.game_date, (j->>'hit')::int FROM {tbl} s, jsonb_array_elements(s.legs_json) j
                                WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.phase<>'final7' ORDER BY s.game_date, s.k""",
                             (comp, size, structure, cap)).fetchall()
         p0 = sum(h for _, _, h in legs) / len(legs)
