@@ -348,11 +348,15 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
     for cell_name, cells in (('steals', ['steals_R', 'steals_R_U']), ('turnovers', ['turnovers_R'])):
         rows_c = conn.execute("""SELECT s.game_date, avg((j->>'hit')::int) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
                                  WHERE s.status IN ('graded','graded_void','graded_shadow') AND s.game_date>=%s AND (j->>'hit') IS NOT NULL AND j->>'cell' = ANY(%s)
-                                 GROUP BY s.game_date ORDER BY s.game_date DESC LIMIT 10""", (season_start, cells)).fetchall()
+                                 GROUP BY s.game_date ORDER BY s.game_date ASC""", (season_start, cells)).fetchall()
         if len(rows_c) >= 7:
-            m = sum(float(r[1]) for r in rows_c) / len(rows_c)
-            m3 = sum(float(r[1]) for r in rows_c[:3]) / min(3, len(rows_c))   # the most recent 3 slate days must agree (guard: false days 20 -> 9)
-            cell_state[cell_name] = {'state': 'cool' if (m < 0.50 and m3 < 0.50) else 'ok', 'trail10': round(m, 3), 'trail3': round(m3, 3), 'days': len(rows_c)}
+            # EWMA (pass 33): lambda 0.15 from the calibrated cell mean; cool below 0.50. Earlier than the trailing means on the
+            # real series (days 6/4/5 vs 6/6/8) at a false-day cost the rotation absorbs.
+            z = 0.63
+            for r in rows_c:
+                z = 0.15 * float(r[1]) + 0.85 * z
+            m10 = sum(float(r[1]) for r in rows_c[-10:]) / min(10, len(rows_c))
+            cell_state[cell_name] = {'state': 'cool' if z < 0.50 else 'ok', 'ewma': round(z, 3), 'trail10': round(m10, 3), 'days': len(rows_c)}
     rotation = any(v['state'] == 'cool' for v in cell_state.values())
     conn.execute("""INSERT INTO nba_score.live_strategy_state (strategy, state, live_cap, hurdles, updated_at) VALUES ('_ROTATION', %s, %s, %s, now())
                     ON CONFLICT (strategy) DO UPDATE SET state=EXCLUDED.state, live_cap=EXCLUDED.live_cap, hurdles=EXCLUDED.hurdles, updated_at=now()""",
