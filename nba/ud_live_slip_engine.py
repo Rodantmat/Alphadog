@@ -243,8 +243,19 @@ def grade(conn, day):
 
 def main():
     mode = (os.environ.get('UDL_MODE') or 'pick').lower()
-    day = dt.date.fromisoformat(os.environ['UDL_DATE'])
     conn = psycopg.connect(os.environ['DATABASE_URL'])
+    if mode == 'grade' and not os.environ.get('UDL_DATE'):
+        conn.execute(DDL); conn.commit()
+        today_pt = dt.datetime.now(dt.timezone(dt.timedelta(hours=-8))).date()
+        days = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_score.ud_live_slips
+                                              WHERE graded_at IS NULL AND game_date < %s ORDER BY 1""", (today_pt,)).fetchall()]
+        if not days:
+            print("  no Underdog slates awaiting grading", flush=True)
+        for d in days:
+            grade(conn, d)
+        conn.close()
+        return
+    day = dt.date.fromisoformat(os.environ['UDL_DATE'])
     (pick if mode == 'pick' else grade)(conn, day)
     conn.close()
 
