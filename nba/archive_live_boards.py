@@ -142,6 +142,17 @@ def rows_prizepicks(doc, gd, label):
 
 
 def rows_underdog(doc, gd, label):
+    # §30f/§30g (2026-10-03): price = the price the app DISPLAYS (fantasy decimal where the option has one, else decimal_price), as
+    # American; multiplier = the PAYOUT modifier the slip is priced on (0.5 / Underdog's probability, never snapped to 1.00).
+    # Older scrapes lack those fields: fall back to american_price and the displayed payout_multiplier.
+    def _am(dec):
+        try:
+            dec = float(dec)
+        except (TypeError, ValueError):
+            return None
+        if dec <= 1.0:
+            return None
+        return round((dec - 1) * 100) if dec >= 2.0 else round(-100 / (dec - 1))
     out = []
     for l in (doc.get("legs") or []) + (doc.get("ladder") or []):
         line = l.get("line")
@@ -150,12 +161,16 @@ def rows_underdog(doc, gd, label):
         mk = "player_" + str(l.get("stat") or l.get("stat_key") or "").lower().replace(" ", "_")
         if l.get("is_main") is False:
             mk += "_alternate"
-        for side, key in (("Over", "higher_american"), ("Under", "lower_american")):
-            price = l.get(key) or l.get("over_american" if side == "Over" else "under_american")
+        for side, pre in (("Over", "higher"), ("Under", "lower")):
+            disp = l.get(f"{pre}_display_decimal")
+            price = _am(disp) if disp not in (None, "") else (l.get(f"{pre}_american") or l.get("over_american" if side == "Over" else "under_american"))
             if price is None:
                 continue
+            mod = l.get(f"{pre}_payout_modifier")
+            if mod is None:
+                mod = l.get(f"{pre}_multiplier") if l.get(f"{pre}_multiplier") is not None else l.get(f"{pre}_multiplier_modifier_only")
             out.append((gd, ev("underdog", gd, l, "game_id", "match_id", "event"), label, doc.get("meta", {}).get("fetched_at"), "underdog", mk,
-                        l["player"], side, float(line), float(price), None, None, None, l.get("event_start_utc")))
+                        l["player"], side, float(line), float(price), (float(mod) if mod not in (None, "") else None), None, None, l.get("event_start_utc")))
     return out
 
 
