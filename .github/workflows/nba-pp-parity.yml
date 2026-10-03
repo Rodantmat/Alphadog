@@ -1,0 +1,31 @@
+name: NBA PP Parity (leg source)
+
+# §31a: PrizePicks live leg source vs the prop_universe path, every historical slate. Read-only.
+on:
+  workflow_dispatch:
+    inputs:
+      max_dates:
+        description: "0 = every slate"
+        default: "0"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Parity
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PAR_MAX_DATES: ${{ github.event.inputs.max_dates }}
+        run: python -u nba/parity_pp_leg_source.py
