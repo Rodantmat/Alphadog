@@ -226,7 +226,7 @@ def grade(conn, day):
             s = stats.get(str(l['player_id']))
             if not s or not s['min']:
                 continue                               # DNP -> void
-            v = eval(STAT[l['prop']], {}, {kk: (vv or 0) for kk, vv in s.items()})   # fixed expressions from STAT only
+            v = STAT[l['prop']]({kk: (vv or 0) for kk, vv in s.items()})
             if v == l['line']:
                 continue                               # push -> void
             remaining.append({**l, 'hit': (v > l['line']) if l['side'] == 'Over' else (v < l['line'])})
