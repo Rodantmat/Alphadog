@@ -78,9 +78,15 @@ CORE = ['points_R_U', 'pts_reb_R_U', 'reb_ast_B1_U', 'rebounds_F2_U', 'rebounds_
 UNDER = [c for c, v in CELLS.items() if v[2] == 'Under']
 POINTS = ['points_R_U', 'pts_reb_R_U', 'pra_R_U', 'pts_ast_R_O']
 REBS = ['rebounds_R', 'rebounds_F2_U', 'rebounds_B1_U', 'reb_ast_R_O', 'reb_ast_B1_U']
+if os.environ.get('UD_CELLS_JSON'):   # §30r: re-certified cells on the repriced build {name: [prop, tier, side, rank, n, edge]}
+    CELLS = {k: tuple(v) for k, v in json.loads(os.environ['UD_CELLS_JSON']).items()}
+    CORE = [c for c in (os.environ.get('UD_CORE') or ','.join(CELLS)).split(',') if c in CELLS]
+    UNDER = [c for c, v in CELLS.items() if v[2] == 'Under']
+    POINTS = [c for c, v in CELLS.items() if v[0] in ('points', 'pts_reb', 'pra', 'pts_ast')]
+    REBS = [c for c, v in CELLS.items() if v[0] in ('rebounds', 'reb_ast')]
 
 LEG_SQL = """
-SELECT l.rank_key, l.season, l.game_date, l.player, l.player_id, l.prop, l.tier, l.side, l.line, l.factor, l.hit, l.n_rank, l.score,
+SELECT l.rank_key, l.season, l.game_date, l.player, l.player_id, l.prop, l.tier, l.side, l.line, l.factor, l.hit, l.n_rank, l.score, l.kind,
        w.event_id, f.min_trend, f.pf20, f.form_gap, f.position
 FROM nba_score.ud_tier_map_legs l
 JOIN (SELECT game_date, pn, prop, side, line, min(event_id) event_id FROM nba_score.ud_window_legs GROUP BY 1,2,3,4,5) w
