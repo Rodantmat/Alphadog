@@ -1,0 +1,55 @@
+name: NBA UD Slip Engine
+
+# Underdog slip engine (strategy doc §30n) -> nba_score.ud_slip_engine_slips{suffix} / _legs{suffix}.
+# Base build: suffix blank, rules off. Candidate rules are tested as side tables (suffix e.g. _minrise).
+
+on:
+  workflow_dispatch:
+    inputs:
+      cap:
+        default: "5"
+        required: false
+      sizes:
+        default: "2,3,4,5,6,7,8"
+        required: false
+      suffix:
+        description: "table suffix ('' = base build)"
+        default: ""
+        required: false
+      minrise_out:
+        description: "1 = drop legs whose minutes rose >= 4"
+        default: "0"
+        required: false
+      minfall_pref:
+        description: "1 = order slips by legs whose minutes fell >= 4"
+        default: "0"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-ud-engine-${{ github.event.inputs.suffix }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UD_CAP: ${{ github.event.inputs.cap }}
+          UD_SIZES: ${{ github.event.inputs.sizes }}
+          UD_TABLE_SUFFIX: ${{ github.event.inputs.suffix }}
+          UD_MINRISE_OUT: ${{ github.event.inputs.minrise_out }}
+          UD_MINFALL_PREF: ${{ github.event.inputs.minfall_pref }}
+        run: python -u nba/build_ud_slip_engine.py
