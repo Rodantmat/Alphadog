@@ -463,3 +463,27 @@ jobs:
           LS_MODE: "pick"
           LS_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/live_slip_engine.py
+
+  # Records this run's outcome on the row it claimed (success / failure / cancelled, per job).
+  finish:
+    needs: [claim, afternoon]
+    if: ${{ always() && needs.claim.outputs.proceed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Record the result
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: finish
+          PIPELINE: P3
+          IN_ASOF: ${{ github.event.inputs.asof }}
+          RUN_ID: ${{ github.run_id }}
+          RESULT: "${{ needs.afternoon.result }}"
+        run: python -u nba/pipeline_claim.py
