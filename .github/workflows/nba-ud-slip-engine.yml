@@ -74,4 +74,11 @@ jobs:
           UD_MINFALL_PREF: ${{ github.event.inputs.minfall_pref }}
           UD_EXCL_HOTFORM: ${{ github.event.inputs.excl_hotform }}
           UD_EXCL_CENTER: ${{ github.event.inputs.excl_center }}
-        run: python -u nba/build_ud_slip_engine.py
+          UD_LEGS_TABLE: ${{ github.event.inputs.legs_table }}
+          UD_CELLS_JSON: ${{ github.event.inputs.cells_json }}
+          UD_HAIRCUT: ${{ github.event.inputs.haircut }}
+        run: |
+          IFS=, read -r UD_HC_MAIN UD_HC_ALT <<< "${UD_HAIRCUT:-0,0}"
+          export UD_HC_MAIN UD_HC_ALT
+          echo "haircut main=${UD_HC_MAIN} alt=${UD_HC_ALT} legs=${UD_LEGS_TABLE}"
+          python -u nba/build_ud_slip_engine.py
