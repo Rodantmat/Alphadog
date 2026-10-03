@@ -136,6 +136,7 @@ def main():
     conn.execute("SET statement_timeout = 0")
     conn.execute(TEAM_TRAVEL); conn.execute("CREATE INDEX ON team_travel (team_id, game_date)")
     conn.execute(TEAM_SPREAD); conn.execute("CREATE INDEX ON team_spread (team_id, game_date)")
+    conn.commit()   # temp tables persist for the session once committed - a later test's rollback cannot drop them
     print(f"team_travel rows {conn.execute('SELECT count(*) FROM team_travel').fetchone()[0]}, team_spread rows {conn.execute('SELECT count(*) FROM team_spread').fetchone()[0]}", flush=True)
     steps = [('T2', lambda: t2(conn))]
     for app in ('UNDERDOG', 'PRIZEPICKS'):
@@ -146,7 +147,6 @@ def main():
         except Exception as exc:  # noqa: BLE001
             conn.rollback()
             print(f"\n!! {name} failed: {exc}", flush=True)
-            conn.execute(TEAM_TRAVEL) if 'team_travel' not in str(exc) and False else None
     conn.close()
     print("DONE", flush=True)
 
