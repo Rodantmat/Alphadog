@@ -39,6 +39,25 @@ MARGIN_CURVE = [(0.10, 0.017), (0.19, 0.017), (0.224, 0.017), (0.274, 0.022), (0
 # thin band make a leg MORE generous than its neighbours)
 MAIN_MARGIN = 0.013
 ERA_MIN_ALT_MARGIN = {'2024-25': 0.004, '2025-26': 0.024}
+# §30s 'delta' scenario: Underdog's NBA margin over the books' no-vig ran in two stable regimes (2024-25 every month;
+# 2025-26 Nov-Apr every month; Oct 2025 the switch). DELTA = margin(Feb-Apr 2026) - margin(2024-25) by no-vig (5-pt bands,
+# 3k-29k legs per populated band); thin extremes held at their neighbours. Added to a 2024-25 priced line's OWN fantasy
+# probability, so Underdog's per-leg reading of the odds is kept and only the formula drift is applied.
+DELTA_CURVE = [(0.10, 0.060), (0.325, 0.060), (0.375, 0.048), (0.425, 0.025), (0.475, 0.008), (0.525, 0.033),
+               (0.575, 0.037), (0.625, 0.034), (0.675, 0.026), (0.95, 0.026)]
+MU_2425 = [(0.10, 0.020), (0.325, 0.020), (0.375, 0.027), (0.425, 0.018), (0.475, 0.002), (0.525, 0.010),
+           (0.575, 0.000), (0.625, 0.001), (0.675, 0.007), (0.95, 0.007)]   # 2024-25 margin, to back out a no-vig when no book posted both sides
+
+
+def interp(curve, x):
+    xs = [p for p, _ in curve]
+    if x <= xs[0]:
+        return curve[0][1]
+    if x >= xs[-1]:
+        return curve[-1][1]
+    i = bisect_left(xs, x)
+    (x0, y0), (x1, y1) = curve[i - 1], curve[i]
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
 
 SQL = """
 WITH b AS (
