@@ -263,3 +263,27 @@ jobs:
     uses: ./.github/workflows/nba-p5-weekly-requal.yml
     secrets:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  # Records this run's outcome on the row it claimed (weekly result / requalification result).
+  finish:
+    needs: [claim, weekly, requalify]
+    if: ${{ always() && needs.claim.outputs.proceed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Record the result
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: finish
+          PIPELINE: P1
+          IN_ASOF: ""
+          RUN_ID: ${{ github.run_id }}
+          RESULT: "${{ needs.weekly.result }}/${{ needs.requalify.result }}"
+        run: python -u nba/pipeline_claim.py
