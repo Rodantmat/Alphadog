@@ -20,8 +20,8 @@ on:
         description: "1 = drop legs whose minutes rose >= 4"
         default: "0"
         required: false
-      minfall_pref:
-        description: "1 = order slips by legs whose minutes fell >= 4"
+      min_nv:
+        description: "drop legs whose books' window no-vig for our side is below this (0 = off; §30x)"
         default: "0"
         required: false
       excl_hotform:
