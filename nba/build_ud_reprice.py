@@ -158,7 +158,16 @@ def main():
             m_cur_narrow = price_main(nv_side, 0.01)
         else:
             m_cur = m_cur_narrow = price_alt(nv_side)
-        if SCENARIO == 'cur':
+        if SCENARIO == 'delta':
+            # Underdog's own historical price stands, except 2024-25 priced (non-1.00) lines: + the regime drift at their no-vig
+            if season == '2024-25' and kind != 'main' and m_hist and m_hist > 0 and abs(m_hist - 1.0) > 1e-9:
+                f_hist = 0.5 / m_hist
+                nv = nv_side if src == 'book' else f_hist - interp(MU_2425, f_hist)
+                f_new = min(max(round((f_hist + interp(DELTA_CURVE, nv)) * 100) / 100.0, 0.01), F_CAP)
+                m = round(0.5 / f_new, 2)
+            else:
+                m = m_hist
+        elif SCENARIO == 'cur':
             m = m_cur
         elif SCENARIO == 'narrow':
             m = min(m_hist, m_cur_narrow)
