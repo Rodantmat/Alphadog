@@ -280,7 +280,7 @@ def late_pick(conn, day):
                 continue   # a late slip must carry at least one leg the window pick could not see
             conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
                             VALUES (%s,%s,%s,%s,%s,%s,'placed_late') ON CONFLICT (game_date, strategy, k) DO NOTHING""",
-                         (day, name, 100 + k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'prop': l['prop'], 'tier': l['tier'],
+                         (day, name, 100 + k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': l['tier'],
                                                            'side': l['side'], 'line': float(l['line']), 'factor': l['factor']} for l in slip]), size, structure))
             n += 1
     conn.commit()
