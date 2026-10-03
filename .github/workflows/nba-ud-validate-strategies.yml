@@ -1,0 +1,49 @@
+name: NBA UD Validate Strategies
+
+# Underdog strategy validation (strategy doc §30q) -> nba_score.ud_slip_validation.
+# V1 forward + V1R reverse walk-forward, V2 day-blocked bootstrap, V3 empirical null, V4 monotonicity, V5 decomposition.
+
+on:
+  workflow_dispatch:
+    inputs:
+      topk:
+        default: "30"
+        required: false
+      boot:
+        default: "10000"
+        required: false
+      nulls:
+        default: "200"
+        required: false
+      source:
+        description: "slip table to validate"
+        default: "nba_score.ud_slip_engine_slips_center"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-ud-validate
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Validate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SV_TOPK: ${{ github.event.inputs.topk }}
+          SV_BOOT: ${{ github.event.inputs.boot }}
+          SV_NULL: ${{ github.event.inputs.nulls }}
+          SV_SOURCE: ${{ github.event.inputs.source }}
+        run: python -u nba/validate_ud_slip_strategies.py
