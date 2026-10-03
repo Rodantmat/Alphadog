@@ -29,6 +29,7 @@ const WORKFLOWS = {
   P2A: "nba-p2a-results.yml",
   P2B: "nba-p2b-slate.yml",
   P3: "nba-p3-afternoon-light.yml",
+  CLOSE: "nba-close-capture.yml",   // §31c: the close board, once per game day at first tip - 25 min (input-free workflow)
 };
 const REGULAR_ONLY = "(preseason|play-in|round|semifinal|final|all-star|rising stars)";
 const MIN = 60000;
