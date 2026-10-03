@@ -35,6 +35,10 @@ on:
     - cron: '15 21 * * *'
   workflow_dispatch:
     inputs:
+      force:
+        description: "'true' = run even if this slate already ran (deliberate recovery only; the run-once guard records it)"
+        default: ""
+        required: false
       asof:
         description: "slate date (blank = today PT). Use a past date to REPLAY/simulate."
         default: ""
