@@ -78,11 +78,11 @@ REBS = ['rebounds_R', 'rebounds_F2_U', 'rebounds_B1_U', 'reb_ast_R_O', 'reb_ast_
 
 LEG_SQL = """
 SELECT l.rank_key, l.season, l.game_date, l.player, l.player_id, l.prop, l.tier, l.side, l.line, l.factor, l.hit, l.n_rank, l.score,
-       w.event_id, f.min_trend, f.pf20
+       w.event_id, f.min_trend, f.pf20, f.form_gap, f.position
 FROM nba_score.ud_tier_map_legs l
 JOIN (SELECT game_date, pn, prop, side, line, min(event_id) event_id FROM nba_score.ud_window_legs GROUP BY 1,2,3,4,5) w
   ON w.game_date=l.game_date AND w.pn=l.player AND w.prop=l.prop AND w.side=l.side AND w.line=l.line
-LEFT JOIN nba_score.ud_cand_leg_features f
+LEFT JOIN nba_score.ud_cand_leg_features_x f
   ON f.game_date=l.game_date AND f.player=l.player AND f.prop=l.prop AND f.side=l.side AND f.line=l.line
 WHERE (l.prop, l.tier, l.rank_key) IN (%s)
 """
