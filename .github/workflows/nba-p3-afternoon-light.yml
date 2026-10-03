@@ -31,8 +31,9 @@ name: NBA P3 Afternoon Light
 # thing at run time - it refuses TODAY before the slate's own cutoff - and warns loudly on a late run.
 # Measured runtime once the scrapers were scoped to NBA: ~2 minutes (22 while they were pulling MLB too).
 on:
-  schedule:
-    - cron: '15 21 * * *'
+  # TRIGGER (2026-10-02): fired by the Cloudflare worker alphadog-v2-nba-scheduler at 21:16 UTC, with watchdogs
+  # at 21:21 and 21:26. GitHub's own schedule was REMOVED: measured on this repo it started P3 2-4 hours late
+  # (median 2h59m), i.e. after tip-off, and a late fallback pick is worse than no pick. Run-once guarded (claim job).
   workflow_dispatch:
     inputs:
       force:
