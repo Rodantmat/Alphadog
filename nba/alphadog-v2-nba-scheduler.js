@@ -150,6 +150,27 @@ async function tick(env, ms, dryRun = false) {
     try { out.push(await handleSlot(env, s, ms, dryRun)); }
     catch (e) { out.push({ slot: s.at, pipeline: s.pipeline, action: "error", error: String(e && e.message || e).slice(0, 300) }); }
   }
+  // heartbeat + one-off test slots (proof of the whole chain without touching a pipeline)
+  if (!dryRun) {
+    const sql = pg(env);
+    try {
+      await ensureSchema(sql);
+      await sql`ALTER TABLE nba_control.scheduler_switch ADD COLUMN IF NOT EXISTS last_tick timestamptz`;
+      await sql`UPDATE nba_control.scheduler_switch SET last_tick=now() WHERE id=1`;
+      await sql`CREATE TABLE IF NOT EXISTS nba_control.scheduler_test (id serial PRIMARY KEY, run_at timestamptz NOT NULL, workflow text NOT NULL,
+                done boolean NOT NULL DEFAULT false, result text)`;
+      const tests = await sql`SELECT id, workflow FROM nba_control.scheduler_test WHERE NOT done AND run_at <= now() ORDER BY id LIMIT 3`;
+      for (const t of tests) {
+        const allowed = ["nba-schedule-audit.yml"];   // test slots may only fire a harmless diagnostic
+        const res = allowed.includes(t.workflow) ? await dispatch(env, t.workflow) : { ok: false, detail: "workflow not allowed for test slots" };
+        await sql`UPDATE nba_control.scheduler_test SET done=true, result=${res.ok ? "dispatched" : res.detail} WHERE id=${t.id}`;
+        await log(sql, "test", "TEST", null, res.ok ? "test_dispatched" : "test_failed", res.ok ? t.workflow : res.detail);
+        out.push({ slot: "test", action: res.ok ? "test_dispatched" : "test_failed" });
+      }
+    } catch (e) {
+      out.push({ slot: "heartbeat", action: "error", error: String(e && e.message || e).slice(0, 300) });
+    } finally { await sql.end({ timeout: 2 }).catch(() => {}); }
+  }
   return { ok: true, at_utc: new Date(ms).toISOString(), due: due.length, results: out };
 }
 
