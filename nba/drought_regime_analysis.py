@@ -122,9 +122,6 @@ def part_bc(conn):
     for app, legs in (('PRIZEPICKS', PP_LEGS), ('UNDERDOG', UD_LEGS)):
         base = f"""
         WITH legs AS ({legs}),
-        bm AS (SELECT game_date, lower(regexp_replace(unaccent(player), '[^A-Za-z]', '', 'g')) pn, market_key mk, percentile_cont(0.5) WITHIN GROUP (ORDER BY line) main_line, count(DISTINCT bookmaker) nbooks
-               FROM nba_market.board_snapshots WHERE snapshot_label='window' AND bookmaker NOT IN ('underdog','prizepicks') AND market_key NOT LIKE '%alternate%' AND side='Over' AND game_date >= '2024-10-01'
-               GROUP BY 1,2,3),
         j AS (SELECT legs.*, (CASE WHEN legs.side='Over' THEN 1 ELSE -1 END) * (c.nv_over_close - c.nv_over_window) dnv,
                      CASE WHEN legs.side='Over' THEN c.nv_over_window ELSE 1 - c.nv_over_window END nvw,
                      (CASE WHEN legs.side='Over' THEN -1 ELSE 1 END) * (legs.line - bm.main_line) stale, bm.nbooks
