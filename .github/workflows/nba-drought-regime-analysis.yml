@@ -31,4 +31,5 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AN_N: ${{ github.event.inputs.n }}
+          AN_ONLY: ${{ github.event.inputs.only }}
         run: python -u nba/drought_regime_analysis.py
