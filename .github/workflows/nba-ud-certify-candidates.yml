@@ -1,0 +1,31 @@
+name: NBA UD Certify Candidates
+
+# Underdog candidate certification from the raw sources (strategy doc §30k) -> nba_score.ud_cand_certified.
+# Mirror of nba-certify-candidates.yml (PrizePicks). Writes only that table.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-ud-certify
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Certify
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/certify_ud_candidates.py
