@@ -149,8 +149,9 @@ def main():
                     except (TypeError, ValueError): return None
                     return round(1 + am / 100.0, 4) if am > 0 else round(1 + 100.0 / (-am), 4)
                 def _payout(am):
-                    # VERIFIED RULE (owner, 2026-09-10): Underdog payout = decimal(American price) x 0.963.
-                    # The higher_multiplier / lower_multiplier fields are MODIFIERS, not payouts - never use them as payouts.
+                    # LEGACY (2026-09-10 'decimal(American) x 0.963'): SUPERSEDED 2026-10-03 by strategy doc §30f/§30g - the slip pays
+                    # base(n) x prod(payout modifier), modifier = 0.5 / Underdog's probability (see higher_/lower_payout_modifier).
+                    # american_price/decimal_price belong to a different product for fantasy-priced options. Kept for field compatibility only.
                     d = _dec(am)
                     return round(d * 0.963, 4) if d is not None else None
                 alt_legs.append({
