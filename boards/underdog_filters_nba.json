@@ -1,4 +1,7 @@
 {
- "pickem_stats": {},
+ "pickem_stats": {
+  "590e7c83-99fc-419f-bdd8-78bb0a691f8b": "Pts + Rebs + Asts",
+  "8d718cf2-1487-401e-88f7-f9f799e85871": "Points"
+ },
  "market_groups": {}
 }
