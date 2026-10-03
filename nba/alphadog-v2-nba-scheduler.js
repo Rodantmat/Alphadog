@@ -1,183 +1,248 @@
 import postgres from "postgres";
 
-// NBA PIPELINE SCHEDULER (2026-10-02). Replaces GitHub's own cron as the trigger for P1 / P2 / P3.
+// NBA PIPELINE SCHEDULER v2 (2026-10-02, strategy doc §29z, §29z-b, §29z-c). The trigger for P1 / P2A / P2B / P3.
 //
-// WHY: measured on this repository, GitHub started every scheduled NBA run late - P2 median 4 h 23 min (max 5 h 38 min),
-// P3 median 2 h 59 min (max 3 h 46 min), P1 3-4.5 h - and dropped some outright. GitHub documents scheduled events as
-// best-effort ("can be delayed during periods of high load ... queued jobs may be dropped"). A late P3 places the pick
-// after the first tip. Cloudflare Cron Triggers fire to the minute (at-least-once), and a workflow_dispatch starts
-// within about a minute, so this worker fires the pipelines through GitHub's dispatch API instead.
+// WHY A WORKER: GitHub's own schedules started every NBA pipeline late on this repository (measured: P2 median
+// 4h23m, P3 median 2h59m, P1 3-4.5h) - P3 would pick after tip-off. Cloudflare cron fires to the minute; a
+// workflow_dispatch starts within about a minute.
 //
-// RULES (owner): no pipeline may run twice for the same slate; the P3 watchdog fires 5 and 10 minutes after its slot.
-//   1. Every pipeline begins with a run-once claim (nba/pipeline_claim.py -> nba_control.pipeline_runs). A second run for
-//      the same slate - however it was started - stops at the claim and runs nothing.
-//   2. This worker never dispatches a pipeline whose slate is already claimed, and records each dispatch it makes in
-//      nba_control.scheduler_dispatches (one row per pipeline + slate + slot), so a duplicate Cloudflare fire of the same
-//      minute cannot dispatch twice either.
-//   3. A watchdog slot re-dispatches only when the slate is NOT claimed AND GitHub shows no queued or running run of that
-//      pipeline started since the slot's own dispatch - i.e. only when the original truly never started.
-//
-// One every-minute cron ("* * * * *"); the schedule table below is matched against the event's scheduledTime in UTC.
-// Times are UTC by design, matching the pipelines' own specification (P3 = 21:15 UTC; 21:16 here gives the one-minute
-// trigger accuracy room against P3's own cutoff gate, which refuses a dispatched run before 13:15 PT in winter).
+// WHY A DAILY PLAN (owner decision 2026-10-02): the start times MOVE WITH EACH DAY'S FIRST TIP. 41 of 156 slates in
+// 2026-27 tip before 13:15 PT (weekends, Christmas, MLK, the 07:30 PT Manchester game); a fixed time silently drops
+// their early games. The rules, all Pacific-anchored (no DST drift):
+//   P3  = min(13:15 PT, first tip - 30 min) + 1 min    (P3's own documented cutoff, COMPASS fact 107 / 2026-09-23)
+//   P2B = min(08:05 PT, P3 - 110 min)                    (08:05 = after the 08:00 PT morning line; ~80-min build + 30 buffer)
+//   P2A = min(03:30 PT, P2B - 60 min)                    (prior-night box scores final ~3 AM PT, fact 107)
+//   P1  = Mondays 19:00 UTC (weekly static; unchanged)
+// DEPENDENCIES (nothing lost, nothing out of order): P2B starts only after P2A has finished (or at the latest start
+// that still beats P3); P3 starts only after P2B has finished (or at its hard deadline = first tip - 30 min), and
+// NEVER after the first tip. A finished-but-failed predecessor does not block (P3 must still capture the board; its
+// own freshness gate refuses a pick without today's scores).
+// RUN-ONCE (owner rule): every pipeline claims its slate first (nba/pipeline_claim.py); this worker never dispatches
+// a claimed slate, records each dispatch (one per pipeline + slate + slot), and its WATCHDOGS (+5 and +10 minutes
+// after the dispatch - owner: 5-10) re-dispatch only if the slate is still unclaimed AND GitHub shows no queued or
+// running run of that pipeline.
 
 const WORKER_NAME = "alphadog-v2-nba-scheduler";
-const VERSION = "alphadog-v2-nba-scheduler-v1.0.0";
-
+const VERSION = "alphadog-v2-nba-scheduler-v2.0.0";
 const WORKFLOWS = {
   P1: "nba-p1-weekly-static.yml",
-  P2: "nba-p2-overnight-heavy.yml",
+  P2A: "nba-p2a-results.yml",
+  P2B: "nba-p2b-slate.yml",
   P3: "nba-p3-afternoon-light.yml",
 };
+const REGULAR_ONLY = "(preseason|play-in|round|semifinal|final|all-star|rising stars)";
+const MIN = 60000;
 
-// UTC "HH:MM"; dow = UTC day of week (1 = Monday) for weekly slots
-const SLOTS = [
-  { at: "15:45", pipeline: "P2", kind: "dispatch" },
-  { at: "15:55", pipeline: "P2", kind: "watchdog" },
-  { at: "16:05", pipeline: "P2", kind: "watchdog" },
-  { at: "21:16", pipeline: "P3", kind: "dispatch" },
-  { at: "21:21", pipeline: "P3", kind: "watchdog" },   // 5 minutes after (owner)
-  { at: "21:26", pipeline: "P3", kind: "watchdog" },   // 10 minutes after (owner)
-  { at: "19:00", pipeline: "P1", kind: "dispatch", dow: 1 },
-  { at: "19:10", pipeline: "P1", kind: "watchdog", dow: 1 },
-];
+// ---------- pure time helpers (Pacific-anchored) ----------
+function ptParts(ms) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit",
+    day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  return { date: `${p.year}-${p.month}-${p.day}`, hh: Number(p.hour), mi: Number(p.minute), dow: new Date(`${p.year}-${p.month}-${p.day}T12:00:00Z`).getUTCDay() };
+}
+function ptDate(ms) { return ptParts(ms).date; }
+// the UTC instant of a Pacific wall-clock time on a Pacific date (handles PDT/PST)
+function ptWall(dateStr, hhmm) {
+  const [y, m, d] = dateStr.split("-").map(Number), [h, mi] = hhmm.split(":").map(Number);
+  for (const off of [7, 8]) {
+    const ms = Date.UTC(y, m - 1, d, h + off, mi);
+    const p = ptParts(ms);
+    if (p.date === dateStr && p.hh === h && p.mi === mi) return ms;
+  }
+  return Date.UTC(y, m - 1, d, h + 8, mi);
+}
+function mondayOf(dateStr) {
+  const x = new Date(dateStr + "T12:00:00Z");
+  x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7));
+  return x.toISOString().slice(0, 10);
+}
+// the key each pipeline claims with (identical to nba/pipeline_claim.py)
+function runKey(pipeline, ms) { const d = ptDate(ms); return pipeline === "P1" ? mondayOf(d) : d; }
 
+// ---------- pure plan ----------
+// firstTipMs: the first REGULAR-SEASON tip on the Pacific date, or null (no games: preseason, off day)
+function computePlan(dateStr, firstTipMs) {
+  const cutoff = ptWall(dateStr, "13:15");
+  const p3cut = firstTipMs ? Math.min(cutoff, firstTipMs - 30 * MIN) : cutoff;
+  const p3 = p3cut + 1 * MIN;
+  const p2b = Math.min(ptWall(dateStr, "08:05"), p3 - 110 * MIN);
+  const p2a = Math.min(ptWall(dateStr, "03:30"), p2b - 60 * MIN);
+  return {
+    date: dateStr, first_tip: firstTipMs, p2a, p2b, p3,
+    p2b_latest: p3 - 110 * MIN,                                   // the latest P2B start that still beats P3
+    p3_deadline: firstTipMs ? firstTipMs - 30 * MIN : p3,           // P3 stops waiting for P2B here
+    p3_never_after: firstTipMs || null,                             // P3 never starts after the first tip
+  };
+}
+const DONE = (s) => !!s && s !== "claimed";   // success / failure / cancelled / "success/success" (P1)
+
+// ---------- pure decision ----------
+// st: { status: claim status or null, dispatches: [{slot, at}], live: number of queued/running GitHub runs or null }
+// deps: { P2A: status, P2B: status }
+// returns { action: "dispatch"|"watchdog"|"wait"|"skip"|"missed", slot, reason }
+function decide(pipeline, plan, now, st, deps) {
+  if (st.status) return { action: "skip", reason: `claimed (${st.status})` };
+  const disp = (st.dispatches || []).slice().sort((a, b) => a.at - b.at);
+  if (disp.length) {
+    const k = disp.length;   // 1 -> first watchdog due at +5, 2 -> second at +10
+    if (k > 2) return { action: "skip", reason: "two watchdogs already fired" };
+    if (now < disp[0].at + 5 * k * MIN) return { action: "wait", reason: `dispatched, watchdog ${k} due at +${5 * k} min` };
+    if (st.live === null) return { action: "wait", reason: "GitHub run status unknown - not re-dispatching blind" };
+    if (st.live > 0) return { action: "wait", reason: `not claimed yet but ${st.live} run(s) queued/running` };
+    if (pipeline === "P3" && plan.p3_never_after && now >= plan.p3_never_after) return { action: "missed", slot: "missed", reason: "first tip passed" };
+    return { action: "watchdog", slot: `watchdog-${k}`, reason: `unclaimed ${5 * k} min after dispatch and nothing running` };
+  }
+  if (pipeline === "P2A") {
+    return now >= plan.p2a ? { action: "dispatch", slot: "primary", reason: "P2A time" } : { action: "wait", reason: "before P2A time" };
+  }
+  if (pipeline === "P2B") {
+    if (now < plan.p2b) return { action: "wait", reason: "before P2B time" };
+    if (DONE(deps.P2A)) return { action: "dispatch", slot: "primary", reason: `P2A finished (${deps.P2A})` };
+    if (now >= plan.p2b_latest) return { action: "dispatch", slot: "primary", reason: "latest P2B start reached - not waiting for P2A any longer" };
+    return { action: "wait", reason: `waiting for P2A (${deps.P2A || "not claimed"})` };
+  }
+  if (pipeline === "P3") {
+    if (now < plan.p3) return { action: "wait", reason: "before P3 time" };
+    if (plan.p3_never_after && now >= plan.p3_never_after) return { action: "missed", slot: "missed", reason: "first tip passed before P3 could start" };
+    if (DONE(deps.P2B)) return { action: "dispatch", slot: "primary", reason: `P2B finished (${deps.P2B})` };
+    if (now >= plan.p3_deadline) return { action: "dispatch", slot: "primary", reason: "P3 deadline reached - not waiting for P2B any longer" };
+    return { action: "wait", reason: `waiting for P2B (${deps.P2B || "not claimed"})` };
+  }
+  return { action: "wait", reason: "unknown pipeline" };
+}
+function p1Due(now) { const d = new Date(now); return d.getUTCDay() === 1 && d.getUTCHours() >= 19; }
+
+// ---------- I/O ----------
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 }
 function pg(env) { return postgres(env.HYPERDRIVE.connectionString, { max: 2, fetch_types: false, prepare: false, connect_timeout: 8 }); }
-
-function ptDate(ms) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ms));
-}
-// the same key the pipelines claim with: the Pacific date (P2/P3), or the Monday of the Pacific week (P1)
-function runKey(pipeline, ms) {
-  const d = ptDate(ms);
-  if (pipeline !== "P1") return d;
-  const x = new Date(d + "T12:00:00Z");
-  x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7));
-  return x.toISOString().slice(0, 10);
-}
-function hhmm(ms) { const d = new Date(ms); return String(d.getUTCHours()).padStart(2, "0") + ":" + String(d.getUTCMinutes()).padStart(2, "0"); }
-function slotsAt(ms) {
-  const t = hhmm(ms), dow = new Date(ms).getUTCDay();
-  return SLOTS.filter((s) => s.at === t && (s.dow === undefined || s.dow === dow));
-}
 
 async function ensureSchema(sql) {
   await sql`CREATE TABLE IF NOT EXISTS nba_control.pipeline_runs (pipeline text NOT NULL, run_key date NOT NULL, claimed_at timestamptz NOT NULL DEFAULT now(),
             source text, github_run_id text, status text NOT NULL DEFAULT 'claimed', finished_at timestamptz, note text, PRIMARY KEY (pipeline, run_key))`;
   await sql`CREATE TABLE IF NOT EXISTS nba_control.scheduler_dispatches (pipeline text NOT NULL, run_key date NOT NULL, slot text NOT NULL,
             dispatched_at timestamptz NOT NULL DEFAULT now(), ok boolean, detail text, PRIMARY KEY (pipeline, run_key, slot))`;
-  await sql`CREATE TABLE IF NOT EXISTS nba_control.scheduler_log (at timestamptz NOT NULL DEFAULT now(), slot text, pipeline text, run_key date,
-            action text, detail text)`;
+  await sql`CREATE TABLE IF NOT EXISTS nba_control.scheduler_log (at timestamptz NOT NULL DEFAULT now(), slot text, pipeline text, run_key date, action text, detail text)`;
   await sql`CREATE TABLE IF NOT EXISTS nba_control.scheduler_switch (id int PRIMARY KEY DEFAULT 1, enabled boolean NOT NULL DEFAULT true, updated_at timestamptz DEFAULT now())`;
+  await sql`ALTER TABLE nba_control.scheduler_switch ADD COLUMN IF NOT EXISTS last_tick timestamptz`;
   await sql`INSERT INTO nba_control.scheduler_switch (id, enabled) VALUES (1, true) ON CONFLICT (id) DO NOTHING`;
+  await sql`CREATE TABLE IF NOT EXISTS nba_control.scheduler_plan (run_key date PRIMARY KEY, first_tip timestamptz, p2a timestamptz, p2b timestamptz,
+            p3 timestamptz, p3_deadline timestamptz, computed_at timestamptz DEFAULT now())`;
+  await sql`CREATE TABLE IF NOT EXISTS nba_control.scheduler_test (id serial PRIMARY KEY, run_at timestamptz NOT NULL, workflow text NOT NULL,
+            done boolean NOT NULL DEFAULT false, result text)`;
 }
-
 async function log(sql, slot, pipeline, key, action, detail) {
   await sql`INSERT INTO nba_control.scheduler_log (slot, pipeline, run_key, action, detail) VALUES (${slot}, ${pipeline}, ${key}, ${action}, ${String(detail || "").slice(0, 900)})`;
 }
-
 async function github(env, method, path, body) {
   if (!env.GITHUB_TOKEN || env.GITHUB_TOKEN === "DISABLED") return { ok: false, status: 0, data: { error: "GITHUB_TOKEN not configured" } };
   const owner = env.GITHUB_OWNER || "Rodantmat", repo = env.GITHUB_REPO || "Alphadog";
   const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}${path}`, {
-    method,
+    method, body: body ? JSON.stringify(body) : undefined,
     headers: { "Authorization": `Bearer ${env.GITHUB_TOKEN}`, "Accept": "application/vnd.github+json", "User-Agent": "AlphaDog-NBA-Scheduler", "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
   });
   let data = null;
   try { data = resp.status === 204 ? null : await resp.json(); } catch (_) { data = null; }
   return { ok: resp.status >= 200 && resp.status < 300, status: resp.status, data };
 }
-
 async function dispatch(env, workflow) {
   const r = await github(env, "POST", `/actions/workflows/${encodeURIComponent(workflow)}/dispatches`, { ref: env.GITHUB_BRANCH || "main" });
   return r.ok ? { ok: true } : { ok: false, detail: `github ${r.status} ${JSON.stringify(r.data || {}).slice(0, 300)}` };
 }
-
-// any run of this workflow created at or after `sinceIso` that is still queued / waiting / in progress
-async function activeRunSince(env, workflow, sinceIso) {
-  const r = await github(env, "GET", `/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=10&created=%3E%3D${encodeURIComponent(sinceIso)}`);
-  if (!r.ok || !r.data || !Array.isArray(r.data.workflow_runs)) return { known: false };
-  const live = r.data.workflow_runs.filter((x) => ["queued", "waiting", "pending", "requested", "in_progress"].includes(x.status));
-  return { known: true, live: live.length, ids: live.map((x) => x.id) };
+async function liveRunsSince(env, workflow, sinceMs) {
+  const r = await github(env, "GET", `/actions/workflows/${encodeURIComponent(workflow)}/runs?per_page=10&created=%3E%3D${encodeURIComponent(new Date(sinceMs - MIN).toISOString())}`);
+  if (!r.ok || !r.data || !Array.isArray(r.data.workflow_runs)) return null;
+  return r.data.workflow_runs.filter((x) => ["queued", "waiting", "pending", "requested", "in_progress"].includes(x.status)).length;
 }
 
-async function handleSlot(env, slot, ms, dryRun = false) {
+async function firstTip(sql, dateStr) {
+  const r = await sql`SELECT min(game_datetime_utc) AS first FROM nba_calendar.games WHERE game_date = ${dateStr}::date
+                      AND coalesce(game_label,'') !~* ${REGULAR_ONLY}`;
+  return r[0] && r[0].first ? new Date(r[0].first).getTime() : null;
+}
+async function pipelineState(sql, env, pipeline, key, needLive) {
+  const s = await sql`SELECT status FROM nba_control.pipeline_runs WHERE pipeline=${pipeline} AND run_key=${key}::date`;
+  const d = await sql`SELECT slot, dispatched_at FROM nba_control.scheduler_dispatches WHERE pipeline=${pipeline} AND run_key=${key}::date AND ok IS DISTINCT FROM false`;
+  const dispatches = d.filter((x) => x.slot !== "missed").map((x) => ({ slot: x.slot, at: new Date(x.dispatched_at).getTime() }));
+  const missed = d.some((x) => x.slot === "missed");
+  let live = 0;
+  if (needLive && !s[0] && dispatches.length) live = await liveRunsSince(env, WORKFLOWS[pipeline], Math.min(...dispatches.map((x) => x.at)));
+  return { status: s[0] ? s[0].status : null, dispatches, live, missed };
+}
+
+async function act(sql, env, pipeline, key, dec, dryRun) {
+  if (dryRun) return { pipeline, run_key: key, ...dec, dry_run: true };
+  if (dec.action === "missed") {
+    const ins = await sql`INSERT INTO nba_control.scheduler_dispatches (pipeline, run_key, slot, ok, detail) VALUES (${pipeline}, ${key}::date, 'missed', false, ${dec.reason})
+                          ON CONFLICT DO NOTHING RETURNING pipeline`;
+    if (ins[0]) await log(sql, "missed", pipeline, key, "missed", dec.reason);
+    return { pipeline, run_key: key, ...dec };
+  }
+  if (dec.action !== "dispatch" && dec.action !== "watchdog") return { pipeline, run_key: key, ...dec };
+  const ins = await sql`INSERT INTO nba_control.scheduler_dispatches (pipeline, run_key, slot) VALUES (${pipeline}, ${key}::date, ${dec.slot})
+                        ON CONFLICT (pipeline, run_key, slot) DO NOTHING RETURNING pipeline`;
+  if (!ins[0]) return { pipeline, run_key: key, action: "skip", reason: "duplicate fire - this slot already dispatched" };
+  const res = await dispatch(env, WORKFLOWS[pipeline]);
+  await sql`UPDATE nba_control.scheduler_dispatches SET ok=${res.ok}, detail=${res.ok ? dec.reason : res.detail} WHERE pipeline=${pipeline} AND run_key=${key}::date AND slot=${dec.slot}`;
+  const action = res.ok ? (dec.action === "dispatch" ? "dispatched" : "watchdog_redispatched") : "dispatch_failed";
+  await log(sql, dec.slot, pipeline, key, action, res.ok ? dec.reason : res.detail);
+  return { pipeline, run_key: key, action, reason: dec.reason, detail: res.ok ? undefined : res.detail };
+}
+
+async function tick(env, now, dryRun = false) {
   const sql = pg(env);
-  const key = runKey(slot.pipeline, ms);
-  const tag = `${slot.at}${slot.dow !== undefined ? "/dow" + slot.dow : ""} ${slot.kind}`;
+  const out = [];
   try {
     await ensureSchema(sql);
+    if (!dryRun) await sql`UPDATE nba_control.scheduler_switch SET last_tick=now() WHERE id=1`;
     const sw = await sql`SELECT enabled FROM nba_control.scheduler_switch WHERE id=1`;
-    if (!sw[0] || !sw[0].enabled) { await log(sql, tag, slot.pipeline, key, "skipped_disabled", "scheduler switch is off"); return { slot: tag, action: "skipped_disabled" }; }
-    const claimed = await sql`SELECT status, github_run_id, claimed_at FROM nba_control.pipeline_runs WHERE pipeline=${slot.pipeline} AND run_key=${key}`;
-    if (claimed[0]) {
-      const action = slot.kind === "dispatch" ? "skip_already_claimed" : "watchdog_ok_claimed";
-      await log(sql, tag, slot.pipeline, key, action, `run ${claimed[0].github_run_id} status ${claimed[0].status} claimed ${claimed[0].claimed_at}`);
-      return { slot: tag, action };
+    if (!sw[0] || !sw[0].enabled) return { ok: true, at_utc: new Date(now).toISOString(), disabled: true };
+    const date = ptDate(now);
+    const plan = computePlan(date, await firstTip(sql, date));
+    if (!dryRun) {
+      await sql`INSERT INTO nba_control.scheduler_plan (run_key, first_tip, p2a, p2b, p3, p3_deadline)
+                VALUES (${date}::date, ${plan.first_tip ? new Date(plan.first_tip) : null}, ${new Date(plan.p2a)}, ${new Date(plan.p2b)}, ${new Date(plan.p3)}, ${new Date(plan.p3_deadline)})
+                ON CONFLICT (run_key) DO UPDATE SET first_tip=EXCLUDED.first_tip, p2a=EXCLUDED.p2a, p2b=EXCLUDED.p2b, p3=EXCLUDED.p3, p3_deadline=EXCLUDED.p3_deadline, computed_at=now()
+                WHERE nba_control.scheduler_plan.p3 IS DISTINCT FROM EXCLUDED.p3 OR nba_control.scheduler_plan.p2b IS DISTINCT FROM EXCLUDED.p2b
+                   OR nba_control.scheduler_plan.p2a IS DISTINCT FROM EXCLUDED.p2a OR nba_control.scheduler_plan.first_tip IS DISTINCT FROM EXCLUDED.first_tip`;
     }
-    if (slot.kind === "watchdog") {
-      const prev = await sql`SELECT min(dispatched_at) AS first FROM nba_control.scheduler_dispatches WHERE pipeline=${slot.pipeline} AND run_key=${key}`;
-      const since = prev[0] && prev[0].first ? new Date(prev[0].first).toISOString() : new Date(ms - 30 * 60000).toISOString();
-      const active = await activeRunSince(env, WORKFLOWS[slot.pipeline], since);
-      if (active.known && active.live > 0) {
-        await log(sql, tag, slot.pipeline, key, "watchdog_run_pending", `not claimed yet but ${active.live} run(s) queued/running: ${active.ids.join(",")}`);
-        return { slot: tag, action: "watchdog_run_pending", runs: active.ids };
+    const states = {};
+    for (const p of ["P2A", "P2B", "P3"]) states[p] = await pipelineState(sql, env, p, date, true);
+    for (const p of ["P2A", "P2B", "P3"]) {
+      if (states[p].missed) continue;
+      const dec = decide(p, plan, now, states[p], { P2A: states.P2A.status, P2B: states.P2B.status });
+      if (dec.action !== "wait" && dec.action !== "skip") out.push(await act(sql, env, p, date, dec, dryRun));
+      else if (dryRun) out.push({ pipeline: p, run_key: date, ...dec });
+    }
+    if (p1Due(now)) {
+      const key = runKey("P1", now);
+      const st = await pipelineState(sql, env, "P1", key, true);
+      const dec = st.status ? { action: "skip", reason: `claimed (${st.status})` }
+        : st.dispatches.length ? decide("P1", plan, now, st, {}) : { action: "dispatch", slot: "primary", reason: "Monday 19:00 UTC" };
+      if (dec.action === "dispatch" || dec.action === "watchdog") out.push(await act(sql, env, "P1", key, dec, dryRun));
+      else if (dryRun) out.push({ pipeline: "P1", run_key: key, ...dec });
+    }
+    if (!dryRun) {   // one-off test slots (may only fire the harmless audit workflow)
+      const tests = await sql`SELECT id, workflow FROM nba_control.scheduler_test WHERE NOT done AND run_at <= now() ORDER BY id LIMIT 3`;
+      for (const t of tests) {
+        const res = t.workflow === "nba-schedule-audit.yml" ? await dispatch(env, t.workflow) : { ok: false, detail: "workflow not allowed for test slots" };
+        await sql`UPDATE nba_control.scheduler_test SET done=true, result=${res.ok ? "dispatched" : res.detail} WHERE id=${t.id}`;
+        await log(sql, "test", "TEST", null, res.ok ? "test_dispatched" : "test_failed", res.ok ? t.workflow : res.detail);
       }
     }
-    if (dryRun) { await log(sql, tag, slot.pipeline, key, "dry_run_would_dispatch", "simulation - nothing dispatched"); return { slot: tag, action: "dry_run_would_dispatch", run_key: key }; }
-    // one dispatch per pipeline + slate + slot, even if Cloudflare fires this minute twice
-    const ins = await sql`INSERT INTO nba_control.scheduler_dispatches (pipeline, run_key, slot) VALUES (${slot.pipeline}, ${key}, ${tag})
-                          ON CONFLICT (pipeline, run_key, slot) DO NOTHING RETURNING pipeline`;
-    if (!ins[0]) { await log(sql, tag, slot.pipeline, key, "skip_duplicate_fire", "this slot already dispatched for this slate"); return { slot: tag, action: "skip_duplicate_fire" }; }
-    const res = await dispatch(env, WORKFLOWS[slot.pipeline]);
-    await sql`UPDATE nba_control.scheduler_dispatches SET ok=${res.ok}, detail=${res.ok ? "accepted" : res.detail} WHERE pipeline=${slot.pipeline} AND run_key=${key} AND slot=${tag}`;
-    const action = res.ok ? (slot.kind === "dispatch" ? "dispatched" : "watchdog_redispatched") : "dispatch_failed";
-    await log(sql, tag, slot.pipeline, key, action, res.ok ? WORKFLOWS[slot.pipeline] : res.detail);
-    return { slot: tag, action, run_key: key, detail: res.ok ? undefined : res.detail };
+    return { ok: true, at_utc: new Date(now).toISOString(), plan: fmtPlan(plan), results: out };
+  } catch (e) {
+    return { ok: false, at_utc: new Date(now).toISOString(), error: String(e && e.message || e).slice(0, 400) };
   } finally {
     await sql.end({ timeout: 2 }).catch(() => {});
   }
 }
+function fmtPt(ms) { if (!ms) return null; const p = ptParts(ms); return `${p.date} ${String(p.hh).padStart(2, "0")}:${String(p.mi).padStart(2, "0")} PT`; }
+function fmtPlan(p) { return { date: p.date, first_tip: fmtPt(p.first_tip), p2a: fmtPt(p.p2a), p2b: fmtPt(p.p2b), p3: fmtPt(p.p3), p3_deadline: fmtPt(p.p3_deadline) }; }
 
-async function tick(env, ms, dryRun = false) {
-  const due = slotsAt(ms);
-  const out = [];
-  for (const s of due) {
-    try { out.push(await handleSlot(env, s, ms, dryRun)); }
-    catch (e) { out.push({ slot: s.at, pipeline: s.pipeline, action: "error", error: String(e && e.message || e).slice(0, 300) }); }
-  }
-  // heartbeat + one-off test slots (proof of the whole chain without touching a pipeline)
-  if (!dryRun) {
-    const sql = pg(env);
-    try {
-      await ensureSchema(sql);
-      await sql`ALTER TABLE nba_control.scheduler_switch ADD COLUMN IF NOT EXISTS last_tick timestamptz`;
-      await sql`UPDATE nba_control.scheduler_switch SET last_tick=now() WHERE id=1`;
-      await sql`CREATE TABLE IF NOT EXISTS nba_control.scheduler_test (id serial PRIMARY KEY, run_at timestamptz NOT NULL, workflow text NOT NULL,
-                done boolean NOT NULL DEFAULT false, result text)`;
-      const tests = await sql`SELECT id, workflow FROM nba_control.scheduler_test WHERE NOT done AND run_at <= now() ORDER BY id LIMIT 3`;
-      for (const t of tests) {
-        const allowed = ["nba-schedule-audit.yml"];   // test slots may only fire a harmless diagnostic
-        const res = allowed.includes(t.workflow) ? await dispatch(env, t.workflow) : { ok: false, detail: "workflow not allowed for test slots" };
-        await sql`UPDATE nba_control.scheduler_test SET done=true, result=${res.ok ? "dispatched" : res.detail} WHERE id=${t.id}`;
-        await log(sql, "test", "TEST", null, res.ok ? "test_dispatched" : "test_failed", res.ok ? t.workflow : res.detail);
-        out.push({ slot: "test", action: res.ok ? "test_dispatched" : "test_failed" });
-      }
-    } catch (e) {
-      out.push({ slot: "heartbeat", action: "error", error: String(e && e.message || e).slice(0, 300) });
-    } finally { await sql.end({ timeout: 2 }).catch(() => {}); }
-  }
-  return { ok: true, at_utc: new Date(ms).toISOString(), due: due.length, results: out };
-}
+function authorized(request, env) { const t = request.headers.get("x-admin-token") || ""; return env.ALPHADOG_ADMIN_TOKEN && t === env.ALPHADOG_ADMIN_TOKEN; }
 
-function authorized(request, env) {
-  const t = request.headers.get("x-admin-token") || "";
-  return env.ALPHADOG_ADMIN_TOKEN && t === env.ALPHADOG_ADMIN_TOKEN;
-}
+export const __test = { ptParts, ptDate, ptWall, mondayOf, runKey, computePlan, decide, p1Due, fmtPlan };
 
 export default {
   async fetch(request, env) {
@@ -187,12 +252,13 @@ export default {
       const sql = pg(env);
       try {
         await ensureSchema(sql);
-        const sw = await sql`SELECT enabled, updated_at FROM nba_control.scheduler_switch WHERE id=1`;
+        const sw = await sql`SELECT enabled, last_tick FROM nba_control.scheduler_switch WHERE id=1`;
+        const now = Date.now(), days = [];
+        for (let i = 0; i < 7; i++) { const d = ptDate(now + i * 86400000); days.push(fmtPlan(computePlan(d, await firstTip(sql, d)))); }
         const recent = await sql`SELECT at, slot, pipeline, run_key, action, left(detail, 160) detail FROM nba_control.scheduler_log ORDER BY at DESC LIMIT 15`;
         const runs = await sql`SELECT pipeline, run_key, status, github_run_id, claimed_at, finished_at FROM nba_control.pipeline_runs ORDER BY claimed_at DESC LIMIT 10`;
-        return jsonResponse({ ok: true, worker: WORKER_NAME, version: VERSION, enabled: sw[0] && sw[0].enabled, now_utc: new Date().toISOString(),
-          schedule_utc: SLOTS, workflows: WORKFLOWS, github_token_present: !!(env.GITHUB_TOKEN && env.GITHUB_TOKEN !== "DISABLED"),
-          recent_actions: recent, recent_claims: runs });
+        return jsonResponse({ ok: true, worker: WORKER_NAME, version: VERSION, enabled: sw[0] && sw[0].enabled, last_tick: sw[0] && sw[0].last_tick,
+          github_token_present: !!(env.GITHUB_TOKEN && env.GITHUB_TOKEN !== "DISABLED"), workflows: WORKFLOWS, next_7_days: days, recent_actions: recent, recent_claims: runs });
       } finally { await sql.end({ timeout: 2 }).catch(() => {}); }
     }
     if (!authorized(request, env)) return jsonResponse({ ok: false, error: "unauthorized" }, 401);
@@ -203,14 +269,11 @@ export default {
       finally { await sql.end({ timeout: 2 }).catch(() => {}); }
     }
     if (request.method === "POST" && path === "/simulate") {
-      // dry run of the decision logic at a given UTC time, e.g. {"at":"2026-10-20T21:16:00Z"} - never dispatches
       const body = await request.json().catch(() => ({}));
-      const ms = Date.parse(body.at || new Date().toISOString());
-      return jsonResponse(await tick(env, ms, true));
+      return jsonResponse(await tick(env, Date.parse(body.at || new Date().toISOString()), true));
     }
     return jsonResponse({ ok: false, error: "not_found", routes: ["GET / (health)", "POST /toggle {enabled} [admin]", "POST /simulate {at} [admin]"] }, 404);
   },
-
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(tick(env, controller.scheduledTime));
   },
