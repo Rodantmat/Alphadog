@@ -1,0 +1,44 @@
+name: NBA UD Live (paper)
+
+# Underdog live paper engine (strategy doc §30z), manual entry point. The scheduled legs run inside P3 (pick) and P2A (grade).
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "pick | grade"
+        default: "pick"
+        required: false
+      date:
+        description: "slate date YYYY-MM-DD"
+        required: true
+      force:
+        description: "1 = rebuild a slate already logged"
+        default: "0"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-ud-live
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Underdog live engine
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UDL_MODE: ${{ github.event.inputs.mode }}
+          UDL_DATE: ${{ github.event.inputs.date }}
+          UDL_FORCE: ${{ github.event.inputs.force }}
+        run: python -u nba/ud_live_slip_engine.py
