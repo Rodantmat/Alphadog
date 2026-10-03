@@ -104,6 +104,27 @@ def main():
                     slip_diff_examples.append((str(day), name, so[name][:1], sn[name][:1]))
         if i % 25 == 0:
             print(f"  {i}/{len(days)} | {dict(tot)} | field mismatches {dict(field_mis)}", flush=True)
+        # GRADING PARITY: the live strategies' backtest slips on this date, graded both ways
+        srows = conn.execute("""SELECT 'bt', k, legs_json FROM nba_score.slip_engine_slips WHERE game_date=%s AND k <= 6
+                                UNION ALL SELECT 'bt', k, legs_json FROM nba_score.slip_engine_slips_nosteals WHERE game_date=%s AND k <= 3""",
+                             (day, day)).fetchall()
+        old_out = {(p, pr, s, float(ln)): h for p, pr, s, ln, h in conn.execute("""SELECT player, prop, side, line, hit::int FROM nba_market.prop_universe
+                     WHERE game_date=%s AND line_source='real' AND hit IS NOT NULL""", (day,)).fetchall()}
+        new_out = L.outcomes_boxscore(conn, day, srows); new_out.pop('__boxscores__', None)
+        seen_legs = set()
+        for _t, _k, legs in srows:
+            for l in (legs if isinstance(legs, list) else __import__('json').loads(legs)):
+                key = (l['player'], l['prop'], l['side'], float(l['line']))
+                if key in seen_legs:
+                    continue
+                seen_legs.add(key)
+                o, n = old_out.get(key), new_out.get(key)
+                cls = ('g_same' if o == n else 'g_old_void_new_graded' if o is None else 'g_old_graded_new_void' if n is None else 'g_OPPOSITE')
+                tot[cls] += 1
+                if cls in ('g_old_graded_new_void', 'g_OPPOSITE') and len(grade_examples) < 20:
+                    grade_examples.append((str(day), cls, key, o, n))
+                if cls == 'g_old_void_new_graded':
+                    tot['g_old_void_new_graded_suffix' if is_suffix(l['player'], canon(l['player'])) else 'g_old_void_new_graded_other'] += 1
     print("\n== RESULT ==", flush=True)
     for k, v in tot.items():
         print(f"  {k:<22} {v:,}", flush=True)
