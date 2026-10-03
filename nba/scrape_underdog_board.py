@@ -207,15 +207,20 @@ def main():
             def _fant(o, k):
                 return (((o.get("odds") or {}).get("fantasy") or {}).get(k))
             def _pay_mod(o):
-                # §30f/§30g (validated on 1,226 live options): the payout modifier is 0.5 / Underdog's probability for that side -
-                # 0.5 / fantasy probability where the option has a fantasy price, else 0.5 x decimal_price. Unlike the displayed
-                # payout_multiplier it is never snapped to 1.00 on balanced lines (the slip pays on this value).
+                # §30f/§30g: the slip is priced on the modifier = 0.5 / Underdog's probability. Underdog's own payout_multiplier IS that
+                # value (2 dp) except where it is snapped to exactly 1.00 on balanced lines; only then is it recomputed - from the
+                # fantasy probability (whole percent) where present, else 0.5 x decimal_price (decimal-priced picks).
                 try:
+                    pm = o.get("payout_multiplier")
+                    if pm not in (None, "") and abs(float(pm) - 1.0) > 1e-9:
+                        return float(pm)
                     fp = _fant(o, "probability")
                     if fp not in (None, ""):
-                        return round(0.5 / (float(fp) / 100.0), 4)
+                        return round(min(1.0, 0.5 / (float(fp) / 100.0)), 4)
                     dp = o.get("decimal_price")
-                    return round(0.5 * float(dp), 4) if dp not in (None, "") else None
+                    if dp not in (None, ""):
+                        return round(min(1.0, 0.5 * float(dp)), 4)
+                    return float(pm) if pm not in (None, "") else None
                 except (TypeError, ValueError, ZeroDivisionError):
                     return None
             legs.append({
