@@ -125,6 +125,8 @@ jobs:
                                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (run_date, strategy) DO UPDATE SET verdict=EXCLUDED.verdict, v2_pass=EXCLUDED.v2_pass,
                                v6_pass=EXCLUDED.v6_pass, oos_roi=EXCLUDED.oos_roi, oos_ci_lo=EXCLUDED.oos_ci_lo""",
                             (today, name, comp, size, structure, v is not None, v2, v6, roi, lo, verdict))
+                  if verdict == 'FAIL' and name in STATE_GATED:
+                      verdict = 'FAIL_STATE_GATED'   # recorded for review; the strategy's own state gates it
                   if verdict == 'FAIL':
                       c.execute("""UPDATE nba_score.live_strategy_state SET state='red', live_cap=0,
                                    hurdles = coalesce(hurdles,'{}'::jsonb) || jsonb_build_object('REQUAL','FAIL '||%s::text), updated_at=now() WHERE strategy=%s""", (today.isoformat(), name))
