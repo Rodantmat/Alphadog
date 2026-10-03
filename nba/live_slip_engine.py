@@ -195,22 +195,20 @@ def load_board_legs_live(conn, day, label='window'):
         LEFT JOIN nba_ref.players pl ON pl.nba_player_id::bigint = pid.pid_n
         WHERE f.final_hp IS NOT NULL AND f.score IS NOT NULL""", (label, day, day, day, label)).fetchall()
     legs = []
+    unresolved = 0
     for pid, player, prop, side, line, price, kind, t3, s_final, s_base, s_score, team, event in rows:
+        if team is None or event is None:
+            # NEVER pass an empty team / event on: the engine's same-game and two-team rules compare them, and None == None
+            # reads as "same game / same team" - the flaw the parity test found in the prop_universe path. Rare live
+            # (a traded player before the weekly roster refresh); counted and printed.
+            unresolved += 1
+            continue
         tier = 'R' if kind == 'standard' else ('G' if kind == 'goblin' else 'D') + str(t3)
         for rk, s in (('final_hp', s_final), ('baseline_hp', s_base), ('final_score', s_score)):
             legs.append({'rank_key': rk, 'season': None, 'game_date': day, 'player': player, 'player_id': pid, 'prop': prop, 'tier': tier, 'side': side,
                          'line': line, 'factor': price, 'hit': None, 'n_rank': None, 'score': s, 'team_id': team, 'event_id': event})
-    groups = defaultdict(list)
-    for l in legs:
-        groups[(l['rank_key'], l['prop'], l['tier'])].append(l)
-    for g in groups.values():
-        g.sort(key=lambda l: (-l['score'], l['player']))
-        for i, l in enumerate(g, start=1):
-            l['n_rank'] = i
-    return legs
-
-
-def load_board_legs(conn, day, label='window'):
+    if unresolved:
+        print(f"  {day}: {unresolved} priced legs dropped - team or event unresolved (never passed on empty)", flush=True)
     if LEG_SOURCE == 'live':
         return load_board_legs_live(conn, day, label)
     return load_board_legs_universe(conn, day, label)
