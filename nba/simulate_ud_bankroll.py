@@ -145,7 +145,7 @@ def sizing(label, all_days, rng):
         res = [run_sizing(rule, s, 100.0, f) for s in seqs]
         fin = sorted(r[0] for r in res); dd = sorted(r[2] for r in res)
         print(f"  {name:<34} median end {pct(fin,.5):>9.1f} | 5th pct end {pct(fin,.05):>8.1f} | P(ever <50) {100.0*sum(1 for r in res if r[1] < 50)/len(res):5.1f}% "
-              f"| P(ever <20) {100.0*sum(1 for r in res if r[1] < 20)/len(res):5.1f}% | median max DD {pct(dd,.5):7.1f}", flush=True)
+              f"| P(ever <20) {100.0*sum(1 for r in res if r[1] < 20)/len(res):5.1f}% | median max DD {100*pct(dd,.5):5.1f}% | 95th max DD {100*pct(dd,.95):5.1f}%", flush=True)
 
 
 def cusum(label, all_days, rng):
