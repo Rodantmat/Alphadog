@@ -764,6 +764,13 @@ def make_config(worker_name, include_services=False):
             "WORKER_SAFE_MODE": VARS.get("WORKER_SAFE_MODE", "false"),
             "DEBUG_MODE": VARS.get("DEBUG_MODE", "false")
         }
+        if worker_name == "alphadog-v2-nba-scheduler":
+            # OWNER-APPROVED EXCEPTION (2026-10-02) to "no NBA cron": GitHub's own schedules started every NBA
+            # pipeline late on this repository (measured: P2 median 4 h 23 min, P3 median 2 h 59 min, P1 3-4.5 h),
+            # which would place the slip pick after the first tip. This worker is the trigger now - one every-minute
+            # cron, matched against an exact UTC schedule table inside nba/alphadog-v2-nba-scheduler.js, firing the
+            # pipelines through GitHub's dispatch API. Every pipeline is run-once guarded (nba/pipeline_claim.py).
+            cfg["triggers"] = {"crons": ["* * * * *"]}
     if include_services and worker_name == "alphadog-v2-orchestrator":
         cfg["services"] = [
             {"binding": service_binding_name(w), "service": w}
