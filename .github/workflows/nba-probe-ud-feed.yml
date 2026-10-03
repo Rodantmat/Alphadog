@@ -1,0 +1,32 @@
+name: NBA Probe UD Feed vs App
+
+# §30s: Odds API Underdog feed vs Underdog's own app fields at the same moment (MLB). Read-only; ~30 credits per event.
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_events:
+        default: "3"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip curl_cffi requests "psycopg[binary]"
+      - name: Probe
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROBE_MAX_EVENTS: ${{ github.event.inputs.max_events }}
+        run: python -u nba/probe_ud_feed_vs_app.py
