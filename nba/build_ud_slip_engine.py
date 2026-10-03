@@ -244,7 +244,8 @@ def main():
         s = rows[0]['season']
         lo, hi = bounds.get(s, (d, d))
         bounds[s] = (min(lo, d), max(hi, d))
-    comps = ['core', 'all', 'under', 'points', 'rebs'] + [f'single:{c}' for c in CELLS] + [f'weighted:{c}' for c in CORE]
+    comps = ['core', 'all', 'under', 'points', 'rebs'] + [f'single:{c}' for c in CELLS] + [f'weighted:{c}' for c in CORE] \
+        + ['mains', 'priced', 'edge59'] + [f'ex:{c}' for c in CORE if CELLS[c][1] != 'R' or CELLS[c][0] == 'points']
     slip_rows, leg_rows = [], []
     for d in sorted(days):
         rows = days[d]
