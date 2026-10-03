@@ -499,6 +499,40 @@ def pick(conn, day, require_fresh=True):
 
 
 # ------------------------------------------------------------------ GRADE
+GRADE_SOURCE = os.environ.get('LS_GRADE_SOURCE', 'boxscore').lower()   # boxscore (default) | universe (backtest table, parity tests)
+_STAT = {'points': lambda s: s[0], 'rebounds': lambda s: s[1], 'assists': lambda s: s[2], 'threes_made': lambda s: s[3],
+         'steals': lambda s: s[4], 'blocks': lambda s: s[5], 'turnovers': lambda s: s[6], 'stocks': lambda s: s[4] + s[5],
+         'pts_reb': lambda s: s[0] + s[1], 'pts_ast': lambda s: s[0] + s[2], 'reb_ast': lambda s: s[1] + s[2],
+         'pra': lambda s: s[0] + s[1] + s[2]}
+
+
+def outcomes_boxscore(conn, day, slip_rows):
+    """(player, prop, side, line) -> 1 / 0 for every leg of the slips to grade, from the box score. A DNP (no row or 0 minutes)
+    or a push gets NO entry - exactly what the prop_universe path produced (hit NULL), so the grader voids it and the slip
+    reverts per PrizePicks' rule. Player from the leg's stored player_id, else nba_ref.norm_name(name) -> player_name_map."""
+    box = {}
+    for pid, pts, reb, ast, fg3m, stl, blk, tov, mins in conn.execute("""SELECT nba_player_id::text, pts, reb, ast, fg3m, stl, blk, tov, min
+                                                                          FROM nba_stats.player_game_log WHERE game_date=%s""", (day,)).fetchall():
+        if mins and float(mins) > 0:
+            box[pid] = tuple(float(x or 0) for x in (pts, reb, ast, fg3m, stl, blk, tov))
+    out = {}
+    for _s, _k, legs, *_r in slip_rows:
+        for l in (legs if isinstance(legs, list) else json.loads(legs)):
+            pid = l.get('player_id')
+            if not pid:
+                r = conn.execute("""SELECT m.player_id FROM nba_ref.player_name_map m WHERE m.norm_name = nba_ref.norm_name(%s)""", (l['player'],)).fetchone()
+                pid = r[0] if r else None
+            s = box.get(str(pid)) if pid else None
+            if s is None or l['prop'] not in _STAT:
+                continue                                   # DNP / unknown prop -> no outcome -> void
+            v, line = _STAT[l['prop']](s), float(l['line'])
+            if v == line:
+                continue                                   # push -> void
+            out[(l['player'], l['prop'], l['side'], line)] = int((v > line) if l['side'] == 'Over' else (v < line))
+    out['__boxscores__'] = len(box)
+    return out
+
+
 def grade(conn, day):
     ensure_tables(conn)
     rows = conn.execute("SELECT strategy, k, legs_json, size, structure, status FROM nba_score.live_slips WHERE game_date=%s AND status IN ('placed','placed_week2','placed_week2_skip','placed_shadow','placed_week1_skip','placed_capped','placed_late')", (day,)).fetchall()
