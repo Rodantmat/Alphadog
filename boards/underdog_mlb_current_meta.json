@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-10-03T05:25:29Z",
-  "fetched_at": "2026-10-03T05:33:01Z",
+  "started_at": "2026-10-03T05:34:28Z",
+  "fetched_at": "2026-10-03T05:40:03Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -147,15 +147,15 @@
     ],
     [
       "lines_with_stats[players]",
-      0,
+      1,
       85
     ],
     [
       "alternate_projections",
-      454,
+      455,
       1546,
       0,
-      "deduped 0"
+      "deduped 2"
     ],
     [
       "lines[mass=true]",
@@ -166,19 +166,19 @@
       0
     ]
   ],
-  "lines": 690,
-  "legs": 690,
+  "lines": 691,
+  "legs": 691,
   "ladder_legs": 1546,
-  "ladder_lines_with_alternates": 454,
+  "ladder_lines_with_alternates": 455,
   "players": 85,
-  "pregame_legs": 690,
+  "pregame_legs": 691,
   "live_legs": 0,
   "by_stat": {
     "RBIs": 76,
     "Total Bases": 75,
     "Hits": 75,
     "Home Runs": 75,
-    "Runs": 74,
+    "Runs": 75,
     "Hits + Runs + RBIs": 73,
     "Batter Walks": 65,
     "Stolen Bases": 53,
@@ -198,11 +198,11 @@
     "1st 5 Innings Spread": 4
   },
   "by_line_type": {
-    "balanced": 690
+    "balanced": 691
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 82,
+    "1.0": 81,
     "None": 37,
     "0.85": 15,
     "0.81": 13,
@@ -216,7 +216,7 @@
     "0.9": 8,
     "1.11": 8,
     "0.84": 8,
-    "0.79": 7
+    "1.05": 7
   },
-  "github_run_id": "37099719643"
+  "github_run_id": "37099990949"
 }
