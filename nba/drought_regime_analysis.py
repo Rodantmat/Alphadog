@@ -204,10 +204,38 @@ def part_e(conn):
         show(f"E. {app}: post-All-Star 14 days, leg hit", rows, "period | n 24-25 | hit 24-25 | n 25-26 | hit 25-26")
 
 
+PP_PORTFOLIO_SQL = """
+WITH a AS (
+  SELECT game_date, profit FROM nba_score.slip_engine_slips WHERE phase<>'final7' AND (
+       (composition='weighted:steals_R' AND size=5 AND structure='flex' AND k<=6) OR (composition='regular' AND size=5 AND structure='power' AND k<=1)
+    OR (composition='weighted:rebounds_R' AND size=4 AND structure='flex' AND k<=1) OR (composition='core' AND size=3 AND structure='power' AND k<=3)
+    OR (composition='demon' AND size=5 AND structure='flex' AND k<=6) OR (composition='demon' AND size=3 AND structure='flex' AND k<=1))
+  UNION ALL
+  SELECT game_date, profit FROM nba_score.slip_engine_slips_nosteals WHERE phase<>'final7' AND (
+       (composition='weighted:stocks_R' AND size=4 AND structure='flex' AND k<=1) OR (composition='single:points_R' AND size=3 AND structure='power' AND k<=3)))
+SELECT game_date, sum(profit) FROM a GROUP BY 1 ORDER BY 1"""
+
+
+def part_p(conn, rng):
+    nets = [float(r[1]) for r in conn.execute(PP_PORTFOLIO_SQL).fetchall()]
+    real_dd, real_st = maxdd(nets), longest(nets)
+    res = {blk: envelope(nets, rng, blk) for blk in (1, 7, 14)}
+    pct = lambda s, v: 100.0 * sum(1 for x in s if x < v) / len(s)
+    print(f"\n== P. PRIZEPICKS LIVE PORTFOLIO (active strategies at live caps, daily combined; one-unit stakes) ==", flush=True)
+    print(f"  days {len(nets)} | net {sum(nets):+.1f} | real max DD {real_dd:.1f} (pct iid {pct(res[1][4], real_dd):.0f} / 7d {pct(res[7][4], real_dd):.0f} / 14d {pct(res[14][4], real_dd):.0f}) | "
+          f"DD95/99 iid {res[1][0]:.1f}/{res[1][1]:.1f}  7d {res[7][0]:.1f}/{res[7][1]:.1f}  14d {res[14][0]:.1f}/{res[14][1]:.1f} | "
+          f"losing-day streak real {real_st} vs 99th iid {res[1][3]} / 7d {res[7][3]} / 14d {res[14][3]}", flush=True)
+
+
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
     rng = random.Random(23)
+    if (os.environ.get('AN_ONLY') or '').upper() == 'P':
+        part_p(conn, rng)
+        conn.close()
+        print("DONE", flush=True)
+        return
     for part, fn in (('B/C', lambda: part_bc(conn)), ('D', lambda: part_d(conn)), ('E', lambda: part_e(conn)), ('A', lambda: part_a(conn, rng))):
         try:
             fn()
