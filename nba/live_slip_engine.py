@@ -142,7 +142,71 @@ def ensure_tables(conn):
 
 
 # ------------------------------------------------------------------ PICK
+LEG_SOURCE = os.environ.get('LS_LEG_SOURCE', 'live').lower()   # live (default) | universe (the backtest-only path, parity tests)
+
+
+def load_board_legs_live(conn, day, label='window'):
+    """Today's PP board WITHOUT nba_market.prop_universe (a backtest table built only by manual SQL functions, and only after
+    the box score exists - it cannot carry today's slate). Same priced legs (pp_leg_price, a live view), same final_hp scores.
+    Player: nba_ref.norm_name(raw player) -> player_name_map, the ONE canonical resolver (score_board_legs 2026-09-25); NOT the
+    tiers table's nm, which keeps suffixes ('craigporterjr' vs canonical 'craigporter') and silently dropped every Jr/Sr/II/III
+    player in the universe path. Event: the PrizePicks window board's own event id. Team: whichever of the event's two teams
+    matches the player - his latest game-log team before today, else his current roster team (correct on a trade day)."""
+    rows = conn.execute("""
+        WITH pr AS (
+          SELECT p.game_date, p.player, nba_ref.norm_name(p.player) cn, p.side, p.line, p.kind, p.factor::float price,
+            least(abs(COALESCE(NULLIF(p.tier,0), round(p.line-p.anchor_line)::int)),3) tier3,
+            CASE replace(p.base_market,'player_','') WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made'
+              WHEN 'points_rebounds_assists' THEN 'pra' WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast'
+              WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market,'player_','') END prop
+          FROM nba_market.pp_leg_price p
+          WHERE p.snapshot_label=%s AND p.game_date=%s AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)),
+        ev AS (
+          SELECT DISTINCT ON (nba_ref.norm_name(player)) nba_ref.norm_name(player) cn, event_id, home_team, away_team
+          FROM nba_market.board_snapshots
+          WHERE bookmaker='prizepicks' AND game_date=%s AND snapshot_label=%s AND event_id IS NOT NULL
+          ORDER BY nba_ref.norm_name(player), snapshot_ts DESC),
+        evt AS (
+          SELECT ev.cn, ev.event_id, h.team_id home_id, a.team_id away_id FROM ev
+          LEFT JOIN nba_ref.teams h ON h.full_name = replace(ev.home_team, 'Los Angeles Clippers', 'LA Clippers')
+          LEFT JOIN nba_ref.teams a ON a.full_name = replace(ev.away_team, 'Los Angeles Clippers', 'LA Clippers'))
+        SELECT f.player_id, pr.player, pr.prop, pr.side, pr.line, pr.price, pr.kind, pr.tier3,
+               f.final_hp::float, f.baseline_hp::float, f.score::float,
+               CASE WHEN gl.team_id IN (evt.home_id, evt.away_id) THEN gl.team_id
+                    WHEN pl.team_id IN (evt.home_id, evt.away_id) THEN pl.team_id END team_id,
+               evt.event_id
+        FROM pr
+        JOIN nba_ref.player_name_map nm ON nm.norm_name = pr.cn
+        JOIN nba_score.final_hp f ON f.game_date=pr.game_date AND f.player_id=nm.player_id AND f.prop=pr.prop AND f.side=pr.side AND f.line=pr.line
+        LEFT JOIN evt ON evt.cn = pr.cn
+        LEFT JOIN LATERAL (SELECT g.team_id FROM nba_stats.player_game_log g
+                           WHERE g.nba_player_id::text = nm.player_id::text AND g.game_date < pr.game_date
+                           ORDER BY g.game_date DESC LIMIT 1) gl ON true
+        LEFT JOIN nba_ref.players pl ON pl.nba_player_id::text = nm.player_id::text
+        WHERE f.final_hp IS NOT NULL AND f.score IS NOT NULL""", (label, day, day, label)).fetchall()
+    legs = []
+    for pid, player, prop, side, line, price, kind, t3, s_final, s_base, s_score, team, event in rows:
+        tier = 'R' if kind == 'standard' else ('G' if kind == 'goblin' else 'D') + str(t3)
+        for rk, s in (('final_hp', s_final), ('baseline_hp', s_base), ('final_score', s_score)):
+            legs.append({'rank_key': rk, 'season': None, 'game_date': day, 'player': player, 'player_id': pid, 'prop': prop, 'tier': tier, 'side': side,
+                         'line': line, 'factor': price, 'hit': None, 'n_rank': None, 'score': s, 'team_id': team, 'event_id': event})
+    groups = defaultdict(list)
+    for l in legs:
+        groups[(l['rank_key'], l['prop'], l['tier'])].append(l)
+    for g in groups.values():
+        g.sort(key=lambda l: (-l['score'], l['player']))
+        for i, l in enumerate(g, start=1):
+            l['n_rank'] = i
+    return legs
+
+
 def load_board_legs(conn, day, label='window'):
+    if LEG_SOURCE == 'live':
+        return load_board_legs_live(conn, day, label)
+    return load_board_legs_universe(conn, day, label)
+
+
+def load_board_legs_universe(conn, day, label='window'):
     """Today's PP window board, scored by the LIVE final_hp, priced by pp_leg_price - the same join the certified map uses.
     label='close' (pass 53): the close-priced board, for the late pick."""
     rows = conn.execute("""
