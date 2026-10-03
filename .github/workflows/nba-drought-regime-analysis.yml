@@ -7,6 +7,10 @@ on:
       n:
         default: "10000"
         required: false
+      only:
+        description: "blank = all parts; P = PrizePicks portfolio envelope only"
+        default: ""
+        required: false
 
 permissions:
   contents: read
