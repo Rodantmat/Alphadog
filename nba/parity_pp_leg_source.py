@@ -90,10 +90,30 @@ def main():
                     same = str(va) == str(vb)
                 if not same:
                     field_mis[f] += 1
-                    if f in ('team_id', 'event_id') and len(other_examples) < 25:
-                        other_examples.append((str(day), f'{f} differs', k, f"old {va} new {vb}"))
+                    if f in ('team_id', 'event_id'):
+                        field_mis[f + (':old_missing' if va is None else ':new_missing' if vb is None else ':BOTH_DIFFER')] += 1
+                    if f in ('team_id', 'event_id') and va is not None and vb is not None and len(other_examples) < 25:
+                        other_examples.append((str(day), f'{f} BOTH_DIFFER', k, f"old {va} new {vb}"))
         so = build_all(conn, day, old, cmap); sn = build_all(conn, day, new, cmap)
+        # REPAIRED-OLD: the old legs, with ONLY their missing team / event filled from the new path's value for the same leg
+        rep = []
+        for l in old:
+            k = (canon(l['player']), l['prop'], l['side'], float(l['line']), l['tier'], l['rank_key'])
+            r = dict(l)
+            if k in kn:
+                if r.get('team_id') is None: r['team_id'] = kn[k]['team_id']
+                if r.get('event_id') is None: r['event_id'] = kn[k]['event_id']
+            rep.append(r)
+        sr = build_all(conn, day, rep, cmap)
         new_only_players = {kn[k]['player'] for k in only_new}
+        for name in so:
+            if sr[name] == sn[name]:
+                tot['repaired_identical'] += 1
+            else:
+                inv = any(p in new_only_players for s in sn[name] for (p, *_r) in s)
+                tot['repaired_differ_suffix' if inv else 'repaired_differ_OTHER'] += 1
+                if not inv and len(slip_diff_examples) < 10:
+                    slip_diff_examples.append((str(day), 'REPAIRED ' + name, sr[name][:1], sn[name][:1]))
         for name in so:
             if so[name] == sn[name]:
                 tot['slips_identical'] += 1
