@@ -71,7 +71,7 @@ jobs:
           UD_SIZES: ${{ github.event.inputs.sizes }}
           UD_TABLE_SUFFIX: ${{ github.event.inputs.suffix }}
           UD_MINRISE_OUT: ${{ github.event.inputs.minrise_out }}
-          UD_MINFALL_PREF: ${{ github.event.inputs.minfall_pref }}
+          UD_MIN_NV: ${{ github.event.inputs.min_nv }}
           UD_EXCL_HOTFORM: ${{ github.event.inputs.excl_hotform }}
           UD_EXCL_CENTER: ${{ github.event.inputs.excl_center }}
           UD_LEGS_TABLE: ${{ github.event.inputs.legs_table }}
