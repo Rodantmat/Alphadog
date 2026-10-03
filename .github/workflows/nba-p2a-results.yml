@@ -1,0 +1,256 @@
+name: NBA P2A Results (last night)
+
+# PIPELINE 2A OF 4 (2026-10-02, owner decision: split P2 into P2A + P2B; strategy doc §29z-b/c).
+# Everything about LAST NIGHT, nothing about today: mine last night's games, load and verify them, audit the delta
+# against the schedule, grade last night's board, prune and rebuild yesterday's final_hp from the complete board,
+# grade the paper picks and the paper slips (which sets each strategy's state for today's pick).
+#
+# WHEN: fired by the scheduler worker (alphadog-v2-nba-scheduler) at min(03:30 PT, P2B - 60 min) - prior-night box
+# scores are final by ~3 AM PT (COMPASS fact 107); on an early slate the whole chain moves earlier. Every step here
+# was taken verbatim from P2 (nba-p2-overnight-heavy.yml, now retired); only the referee crews, the day-before
+# injury report, the morning line and today's baseline moved to P2B, because they are TODAY's inputs.
+#
+# THIS IS A DELTA (from P2): a missed night is SILENT, so the gap audit fails the job loudly. No `|| echo failed`.
+# RUN-ONCE (owner rule): the claim job stops any second run for the same slate date.
+
+on:
+  # GitHub's own schedule is only a LATE LAST-RESORT FALLBACK (measured 3-5 h late on this repo); the scheduler worker
+  # is the trigger, and the run-once claim stops a fallback that arrives after the real run.
+  schedule:
+    - cron: '30 13 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "'true' = run even if this slate already ran (deliberate recovery only; the run-once guard records it)"
+        default: ""
+        required: false
+      asof:
+        description: "slate date (blank = today PT). Last night = the night before this date."
+        default: ""
+        required: false
+      skip_mining:
+        description: "true = skip the scrape (replay on existing data)"
+        default: "false"
+        required: false
+      season:
+        description: "season override for the gap audit (blank = resolve from the date)"
+        default: ""
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-p2a
+  cancel-in-progress: false
+
+jobs:
+  # RUN-ONCE GUARD (owner rule: NO PIPELINE RUNS TWICE). The first run to claim this slate proceeds; any later run for
+  # the same slate stops here and runs nothing. force=true = deliberate recovery.
+  claim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      proceed: ${{ steps.c.outputs.proceed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Run-once claim
+        id: c
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: claim
+          PIPELINE: P2A
+          IN_ASOF: ${{ github.event.inputs.asof }}
+          FORCE: ${{ github.event.inputs.force }}
+          RUN_ID: ${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+        run: python -u nba/pipeline_claim.py
+
+  results:
+    needs: claim
+    if: ${{ needs.claim.outputs.proceed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber
+
+      - name: Resolve slate date
+        id: d
+        run: |
+          set -euo pipefail
+          A="${{ github.event.inputs.asof }}"
+          if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi
+          echo "asof=$A" >> $GITHUB_OUTPUT
+          echo "P2A for slate $A - last night's results"
+
+      # 1) MINE last night. Bulk current-season refresh + per-game starters/officials for new games.
+      - name: Daily delta ingestion
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          python nba/scrape_nba_daily_delta.py
+          python nba/scrape_nba_per_game_delta.py
+
+      # M1 defender quality - matchup shards from last night (a baseline-stage factor built from games already played).
+      - name: Per-game matchups (last night)
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/scrape_nba_matchups_pergame.py
+
+      - name: Baseline inputs - season files, quarters, schedule
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PERIODS_SEASONS: "1"
+        run: |
+          python nba/sync_season_files_from_delta.py
+          python nba/scrape_nba_periods.py
+          python nba/scrape_nba_schedule.py
+
+      - name: Commit mined data
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/data/*.json || true
+          if git diff --cached --quiet; then echo "No data changes."; else
+            git commit -m "NBA P2A mining [skip ci]"
+            for i in 1 2 3 4 5; do
+              if git push origin HEAD:main; then break; fi
+              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+            done
+          fi
+
+      # LOAD THE MINED DATA INTO POSTGRES (from P2, T26-8): dispatch-then-verify-by-data.
+      - name: Load the mined data into Postgres (writer workers)
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        id: dload
+        env:
+          WORKER_HOST: ${{ vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev' }}
+        run: |
+          set +e
+          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          failed=""
+          for w in nba-daily-delta nba-static-starter-status nba-static-game-officials nba-static-schedule nba-static-measure-types; do
+            url="https://alphadog-v2-$w.$WORKER_HOST/run"
+            code=$(curl -sS --max-time 150 -o "/tmp/$w.json" -w '%{http_code}' -X POST "$url" -H 'content-type: application/json' -d '{}')
+            ok=$(python -c "import json,sys; print(str(json.load(open(sys.argv[1])).get('ok')).lower())" "/tmp/$w.json" 2>/dev/null)
+            if [ "$code" = "200" ] && [ "$ok" = "true" ]; then echo "=== $w OK"; else echo "=== $w NOT ACKNOWLEDGED (HTTP $code ok=$ok) - will verify by data"; failed="$failed $w"; fi
+          done
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+          echo "Unacknowledged:${failed:- none}"
+
+      - name: Verify the daily loads by data
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LOAD_STARTED_AT: ${{ steps.dload.outputs.started_at }}
+          FAILED_WORKERS: ${{ steps.dload.outputs.failed }}
+        run: |
+          sleep 150
+          python nba/verify_static_loads.py
+
+      # 2) AUDIT THE DELTA - against the SCHEDULE, not itself.
+      - name: Delta gap audit (no missing dates, games, teams or rosters)
+        env:
+          GAP_SEASON: ${{ github.event.inputs.season }}
+        run: python nba/check_delta_gaps.py
+
+      # 3) GRADE last night's board (before P2B's refits, which learn from graded outcomes).
+      - name: Grade last night's board outcomes
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/grade_board_outcomes.py
+
+      # 3a) RETENTION (owner rule 2026-09-24): prune yesterday's baseline to the board, keys refreshed first.
+      - name: Prune yesterday's baseline to the board
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          export PRUNE_DATE="$(TZ=America/Los_Angeles date -d yesterday +%F)"
+          python - <<'EOF'
+          import os, psycopg
+          d = os.environ["PRUNE_DATE"]
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              n = c.execute("SELECT nba_market.refresh_board_rung_keys(%s, %s)", (d, d)).fetchone()[0]
+              c.commit()
+              print(f"board_rung_keys {d}: {n:,} keys (refreshed before the prune)", flush=True)
+          EOF
+          python nba/prune_baseline_to_board.py
+
+      # 3b) YESTERDAY'S final_hp, COMPLETE (from P2): rebuilt from the complete board so P2B's refits see it all.
+      - name: Rebuild yesterday's final_hp from the complete board
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_WRITE: "1"
+        run: |
+          export FE_DATE="$(TZ=America/Los_Angeles date -d yesterday +%F)"
+          if [ "$(python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              print(c.execute("SELECT count(*) FROM nba_score.baseline_history WHERE game_date = %s", (os.environ["FE_DATE"],)).fetchone()[0])
+          EOF
+          )" = "0" ]; then echo "no baseline for $FE_DATE (off day) - nothing to rebuild"; exit 0; fi
+          python nba/build_final_hp.py
+
+      # 3c) PAPER TRADING: fill hit / miss / void for logged picks from the freshly graded board.
+      - name: Grade paper-trading picks
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              n = c.execute("SELECT nba_score.grade_paper_picks()").fetchone()[0]
+          print(f"PAPER_GRADED|{n} picks")
+          EOF
+
+      # 4) SLIP GRADE (section 29): yesterday's paper slips graded, the ledger updated, the hurdles evaluated and each
+      #    strategy's state set, so that today's P3 pick places only what the state allows.
+      - name: Slip grade (live slip engine, section 29)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LS_MODE: "grade"
+        run: python -u nba/live_slip_engine.py
+
+  # Records this run's outcome on the row it claimed (the scheduler dispatches P2B only after a success here).
+  finish:
+    needs: [claim, results]
+    if: ${{ always() && needs.claim.outputs.proceed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Record the result
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: finish
+          PIPELINE: P2A
+          IN_ASOF: ${{ github.event.inputs.asof }}
+          RUN_ID: ${{ github.run_id }}
+          RESULT: "${{ needs.results.result }}"
+        run: python -u nba/pipeline_claim.py
