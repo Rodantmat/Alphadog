@@ -119,6 +119,13 @@ SELECT DISTINCT game_date, season, player pn, player_id, prop, tier, side, line,
 
 
 def part_bc(conn):
+    conn.execute("""CREATE TEMP TABLE bm AS
+        SELECT game_date, lower(regexp_replace(unaccent(player), '[^A-Za-z]', '', 'g')) pn, market_key mk,
+               percentile_cont(0.5) WITHIN GROUP (ORDER BY line) main_line, count(DISTINCT bookmaker) nbooks
+        FROM nba_market.board_snapshots WHERE snapshot_label='window' AND bookmaker NOT IN ('underdog','prizepicks')
+          AND market_key NOT LIKE '%alternate%' AND side='Over' AND game_date >= '2024-10-01' GROUP BY 1,2,3""")
+    conn.execute("CREATE INDEX ON bm (game_date, pn, mk)")
+    conn.execute("CREATE INDEX IF NOT EXISTS ud_leg_clv_key ON nba_score.ud_leg_clv (game_date, pn, mk, line)")
     for app, legs in (('PRIZEPICKS', PP_LEGS), ('UNDERDOG', UD_LEGS)):
         base = f"""
         WITH legs AS ({legs}),
