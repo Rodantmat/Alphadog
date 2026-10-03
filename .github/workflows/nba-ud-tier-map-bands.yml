@@ -1,0 +1,54 @@
+name: NBA UD Tier Map Bands
+
+# Underdog tier map + granular sweep (strategy doc §30j): nba_score.ud_window_legs (certified §30i) ->
+# ud_tier_map_legs -> ud_tier_map_bands / ud_tier_map_summary. The PrizePicks method (nba-tier-map-bands.yml) with
+# Underdog's own tiers (the side's modifier band), price (the modifier) and break-even (6.5^(-1/3) = 0.536).
+# Writes only the three ud_tier_map_* tables; PrizePicks' tier_map_* are untouched.
+
+on:
+  workflow_dispatch:
+    inputs:
+      rank:
+        description: "comma list of rank keys"
+        default: "final_hp,baseline_hp,final_score"
+        required: false
+      nmax:
+        description: "max n"
+        default: "25"
+        required: false
+      pctmax:
+        description: "max pct"
+        default: "30"
+        required: false
+      rebuild:
+        description: "1 = rebuild ud_tier_map_legs before sweeping"
+        default: "1"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-ud-tier-bands
+  cancel-in-progress: false
+
+jobs:
+  bands:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Build and sweep
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TM_RANK: ${{ github.event.inputs.rank }}
+          TM_NMAX: ${{ github.event.inputs.nmax }}
+          TM_PCTMAX: ${{ github.event.inputs.pctmax }}
+          TM_REBUILD: ${{ github.event.inputs.rebuild }}
+        run: python -u nba/build_ud_tier_map_bands.py
