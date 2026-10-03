@@ -110,6 +110,17 @@ function decide(pipeline, plan, now, st, deps) {
   }
   return { action: "wait", reason: "unknown pipeline" };
 }
+// CLOSE capture (§31c, 2026-10-03): ONE dispatch per game day in [first tip - 25 min, first tip). Single-shot by design:
+// a capture job never claims a slate, so the generic watchdog (re-dispatch when unclaimed) would re-fire it forever.
+// No games -> never; before the window -> wait; inside it -> dispatch once; after the first tip -> 'missed' (logged, no retry).
+function decideClose(plan, now, alreadyDispatched) {
+  if (!plan.first_tip) return { action: "skip", reason: "no regular-season games" };
+  if (alreadyDispatched) return { action: "skip", reason: "close capture already dispatched today" };
+  const start = plan.first_tip - 25 * MIN;
+  if (now < start) return { action: "wait", reason: "before first tip - 25 min" };
+  if (now >= plan.first_tip) return { action: "missed", slot: "missed", reason: "first tip passed before the close capture fired" };
+  return { action: "dispatch", slot: "primary", reason: "first tip - 25 min: close board capture" };
+}
 function p1Due(now) { const d = new Date(now); return d.getUTCDay() === 1 && d.getUTCHours() >= 19; }
 
 // ---------- I/O ----------
