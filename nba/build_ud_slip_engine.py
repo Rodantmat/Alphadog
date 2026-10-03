@@ -122,6 +122,9 @@ def eligible_legs(day_rows):
         legs.sort(key=lambda r: (-r['score'], r['player']))      # re-rank within the side by the cell's rank score, as certified
         for r in legs[:nband]:
             r2 = dict(r); r2['cell'] = name; r2['edge'] = edge
+            hc = HC_MAIN if r.get('kind') == 'main' else HC_ALT
+            if hc:
+                r2['factor'] = float(r['factor']) * (1.0 - hc)   # §30r confidence haircut (payout only; the tier stays as priced)
             out[name].append(r2)
     return out
 
