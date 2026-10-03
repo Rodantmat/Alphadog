@@ -231,6 +231,15 @@ jobs:
           LS_MODE: "grade"
         run: python -u nba/live_slip_engine.py
 
+      # UNDERDOG PAPER GRADE (§30z): every slate before today with ungraded Underdog paper slips, by Underdog's rules (void
+      # shrinks the entry; < 2 picks = refund). Paper only: continue-on-error, never disturbs the PrizePicks grade above.
+      - name: Underdog paper grade
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UDL_MODE: "grade"
+        run: python -u nba/ud_live_slip_engine.py
+
   # Records this run's outcome on the row it claimed (the scheduler dispatches P2B only after a success here).
   finish:
     needs: [claim, results]
