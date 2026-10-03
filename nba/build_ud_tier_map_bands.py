@@ -64,7 +64,7 @@ WITH legs AS (
          f.final_hp::double precision AS s_final, f.baseline_hp::double precision AS s_base, f.score::double precision AS s_score,
          CASE WHEN w.side='Over'  AND s.stat_actual > w.line THEN 1
               WHEN w.side='Under' AND s.stat_actual < w.line THEN 1 ELSE 0 END AS h
-  FROM nba_score.ud_window_legs w
+  FROM {SOURCE} w
   JOIN nba_score.ud_stat_actual s
     ON s.game_date=w.game_date AND s.pn=w.pn AND s.market_key=w.market_key
   JOIN nba_score.final_hp f
