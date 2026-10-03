@@ -15,9 +15,8 @@ name: NBA P2B Slate (today's baseline)
 # RUN-ONCE (owner rule): the claim job stops any second run for the same slate date.
 
 on:
-  # GitHub's own schedule is only a LATE LAST-RESORT FALLBACK; the scheduler worker is the trigger.
-  schedule:
-    - cron: '30 17 * * *'
+  # NO GitHub schedule: P2B depends on P2A, so only the scheduler worker starts it (it waits for P2A to finish).
+  # An independent GitHub fire could claim and start P2B while P2A was still running.
   workflow_dispatch:
     inputs:
       force:
