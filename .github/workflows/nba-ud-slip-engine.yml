@@ -24,8 +24,8 @@ on:
         description: "drop legs whose books' window no-vig for our side is below this (0 = off; §30x)"
         default: "0"
         required: false
-      excl_hotform:
-        description: "1 = drop legs whose recent form is >= +1 SD toward the pick"
+      excl_fresh:
+        description: "1 = drop Under legs whose team has 2+ fresh rotation absences (§30x)"
         default: "0"
         required: false
       excl_center:
