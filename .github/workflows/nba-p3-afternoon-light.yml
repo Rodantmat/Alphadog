@@ -60,7 +60,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # RUN-ONCE GUARD (2026-10-02, owner rule: NO PIPELINE RUNS TWICE). The first run to claim this slate in
+  # nba_control.pipeline_runs proceeds; any later run for the same slate (a duplicate trigger, a late GitHub schedule,
+  # a watchdog re-dispatch that raced the original) stops here and runs nothing. force=true = deliberate recovery.
+  claim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      proceed: ${{ steps.c.outputs.proceed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Run-once claim
+        id: c
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: claim
+          PIPELINE: P3
+          IN_ASOF: ${{ github.event.inputs.asof }}
+          FORCE: ${{ github.event.inputs.force }}
+          RUN_ID: ${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+        run: python -u nba/pipeline_claim.py
+
   afternoon:
+    needs: claim
+    if: ${{ needs.claim.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     # ⏱ DEADLINE, NOT A CEILING (2026-09-24). This was 120 minutes, which is meaningless for a pipeline
     # whose whole purpose is to be finished BEFORE the first tip: a hung scraper could burn two hours and
