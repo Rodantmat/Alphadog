@@ -9,8 +9,9 @@ on:
         default: "pick"
         required: false
       date:
-        description: "slate date YYYY-MM-DD"
-        required: true
+        description: "slate date YYYY-MM-DD (grade: blank = every ungraded slate before today)"
+        default: ""
+        required: false
       force:
         description: "1 = rebuild a slate already logged"
         default: "0"
