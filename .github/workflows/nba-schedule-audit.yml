@@ -1,0 +1,62 @@
+name: NBA Schedule Audit (diagnostic)
+
+# One-off diagnostic (2026-10-02): measures how late GitHub actually starts each scheduled NBA pipeline,
+# and how many scheduled runs never started. Read-only; prints to the log.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Measure scheduled-run delays
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request, datetime as dt, statistics
+          tok = os.environ["GH_TOKEN"]; repo = os.environ["REPO"]
+          def get(u):
+              req = urllib.request.Request(u, headers={"Accept": "application/vnd.github+json", "Authorization": f"Bearer {tok}", "User-Agent": "audit"})
+              return json.load(urllib.request.urlopen(req))
+          # (workflow file, schedule hour, minute, weekday or None)
+          targets = [("nba-p2-overnight-heavy.yml", 15, 45, None), ("nba-p3-afternoon-light.yml", 21, 15, None),
+                     ("nba-p1-weekly-static.yml", 19, 0, 0)]
+          for wf, h, m, wd in targets:
+              runs = []
+              for page in range(1, 6):
+                  d = get(f"https://api.github.com/repos/{repo}/actions/workflows/{wf}/runs?event=schedule&per_page=100&page={page}")
+                  runs += d["workflow_runs"]
+                  if len(d["workflow_runs"]) < 100: break
+              rows = []
+              for r in runs:
+                  c = dt.datetime.fromisoformat(r["created_at"].replace("Z", "+00:00"))
+                  s = c.replace(hour=h, minute=m, second=0, microsecond=0)
+                  if s > c: s -= dt.timedelta(days=1)
+                  if wd is not None:
+                      while s.weekday() != wd: s -= dt.timedelta(days=1)
+                  rows.append((s.date(), (c - s).total_seconds() / 60, r["conclusion"]))
+              print(f"\n== {wf}: {len(rows)} scheduled runs on record")
+              if not rows: continue
+              ds = sorted(x[1] for x in rows)
+              q = lambda p: ds[min(len(ds) - 1, int(p * len(ds)))]
+              print(f"   start delay (min): median {statistics.median(ds):.0f}  p75 {q(.75):.0f}  p90 {q(.9):.0f}  p95 {q(.95):.0f}  max {max(ds):.0f}")
+              for lim in (15, 30, 60, 120):
+                  print(f"   later than {lim:>3} min: {sum(1 for x in ds if x > lim)} of {len(ds)}")
+              first = min(r[0] for r in rows); last = max(r[0] for r in rows)
+              step = 7 if wd is not None else 1
+              expected = (last - first).days // step + 1
+              seen = {r[0] for r in rows}
+              missing = [first + dt.timedelta(days=i * step) for i in range(expected) if first + dt.timedelta(days=i * step) not in seen]
+              print(f"   span {first} .. {last}: expected {expected}, started {len(seen)}, NEVER STARTED {len(missing)}: {[str(x) for x in missing[-15:]]}")
+              by_month = {}
+              for d0, dl, _ in rows: by_month.setdefault(d0.strftime('%Y-%m'), []).append(dl)
+              print("   median delay by month:", {k: round(statistics.median(v)) for k, v in sorted(by_month.items())})
+              print("   last 10:", [(str(a), round(b), c) for a, b, c in rows[:10]])
+          EOF
