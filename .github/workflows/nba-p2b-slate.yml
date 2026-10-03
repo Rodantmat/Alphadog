@@ -176,6 +176,31 @@ jobs:
           python nba/capture_game_lines_morning.py
           python nba/export_market_spreads.py
 
+      # MORNING DFS BOARD SNAPSHOT (§30y, 2026-10-03). Operator line shading - does a line PrizePicks / Underdog RAISES
+      # during the day carry Under value? - needs a DFS board BEFORE the 1:15 PM PT window; only window and close
+      # existed. Research capture only: continue-on-error, each board capped at 5 minutes, never blocks the slate.
+      - name: Morning DFS board snapshot (research capture)
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PRIZEPICKS_LEAGUE_ID: "7"
+          PRIZEPICKS_SPORT: "nba"
+          PRIZEPICKS_OUT_DIR: "boards"
+          UNDERDOG_SPORTS: "NBA"
+          UNDERDOG_OUT_DIR: "boards"
+          ARCHIVE_LABEL: "morning"
+          ARCHIVE_SPORT: "nba"
+          ARCHIVE_APPS: "prizepicks,underdog"
+        run: |
+          set -uo pipefail
+          timeout --signal=TERM --kill-after=30s 300 python main.py > /tmp/pp_morning.log 2>&1 || echo "=== PrizePicks morning pull failed/timed out"
+          tail -n 10 /tmp/pp_morning.log
+          timeout --signal=TERM --kill-after=30s 300 python nba/scrape_underdog_board.py > /tmp/ud_morning.log 2>&1 || echo "=== Underdog morning pull failed/timed out"
+          tail -n 10 /tmp/ud_morning.log
+          python nba/archive_live_boards.py
+
       - name: Commit today's inputs
         run: |
           set -euo pipefail
