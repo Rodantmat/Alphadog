@@ -88,7 +88,7 @@ if os.environ.get('UD_CELLS_JSON'):   # §30r: re-certified cells on the reprice
 LEG_SQL = """
 SELECT l.rank_key, l.season, l.game_date, l.player, l.player_id, l.prop, l.tier, l.side, l.line, l.factor, l.hit, l.n_rank, l.score, l.kind,
        w.event_id, f.min_trend, f.pf20, f.form_gap, f.position
-FROM nba_score.ud_tier_map_legs l
+FROM {LEGS_TABLE} l
 JOIN (SELECT game_date, pn, prop, side, line, min(event_id) event_id FROM nba_score.ud_window_legs GROUP BY 1,2,3,4,5) w
   ON w.game_date=l.game_date AND w.pn=l.player AND w.prop=l.prop AND w.side=l.side AND w.line=l.line
 LEFT JOIN nba_score.ud_cand_leg_features_x f
