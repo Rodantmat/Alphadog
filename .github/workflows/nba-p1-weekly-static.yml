@@ -20,6 +20,10 @@ name: NBA P1 Weekly Static
 on:
   workflow_dispatch:
     inputs:
+      force:
+        description: "'true' = run even if this week already ran (deliberate recovery only; the run-once guard records it)"
+        default: ""
+        required: false
       seasons_n:
         description: "how many seasons of weekly tables to refresh (1 = current only)"
         default: "1"
