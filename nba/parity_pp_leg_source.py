@@ -135,6 +135,9 @@ def main():
     print("  slip differences NOT explained by a suffix leg:", flush=True)
     for e in slip_diff_examples:
         print(f"    {e}", flush=True)
+    print("  grading disagreements (old graded / new void, or OPPOSITE):", flush=True)
+    for e in grade_examples:
+        print(f"    {e}", flush=True)
     conn.close()
     print("DONE", flush=True)
 
