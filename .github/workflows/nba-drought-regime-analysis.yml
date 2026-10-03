@@ -1,0 +1,30 @@
+name: NBA Drought Regime Analysis
+
+# §30x: block-bootstrap recalibration, line movement, window predictors, team micro-regimes, post-ASB - both apps. Read-only.
+on:
+  workflow_dispatch:
+    inputs:
+      n:
+        default: "10000"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Analyse
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AN_N: ${{ github.event.inputs.n }}
+        run: python -u nba/drought_regime_analysis.py
