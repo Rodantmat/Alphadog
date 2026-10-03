@@ -570,7 +570,7 @@ def grade(conn, day):
     # has P2 finished grading this slate? if the slate has graded legs at all, an outcome that is still missing is a VOID
     # (player did not play / line pulled), not a delay. PP's reversion rule (payouts_srp): the slip pays as the smaller
     # slip of its non-void legs; a slip left with < 2 legs is refunded (profit 0).
-    slate_graded = len(outcomes) > 0
+    slate_graded = (outcomes.pop('__boxscores__', 0) > 0) if GRADE_SOURCE == 'boxscore' else len(outcomes) > 0
     graded = voided = 0
     for strategy, k, legs, size, structure, status0 in rows:
         legs_l = legs if isinstance(legs, list) else json.loads(legs)
