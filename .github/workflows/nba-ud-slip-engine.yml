@@ -24,6 +24,14 @@ on:
         description: "1 = order slips by legs whose minutes fell >= 4"
         default: "0"
         required: false
+      excl_hotform:
+        description: "1 = drop legs whose recent form is >= +1 SD toward the pick"
+        default: "0"
+        required: false
+      excl_center:
+        description: "1 = drop legs on centers"
+        default: "0"
+        required: false
 
 permissions:
   contents: read
