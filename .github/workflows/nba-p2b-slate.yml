@@ -120,6 +120,16 @@ jobs:
           EOF
 
       # The DAY-BEFORE injury report (due 5 PM local the day before) as the baseline reads it at its 09:00 ET cutoff.
+      # PLAYER NAME MAP REFRESH (§31b, 2026-10-03 wiring audit): every name join on both apps resolves through
+      # nba_ref.player_name_map; its source register is refreshed only manually and lacked every 2026-27 newcomer
+      # (44 of 629 active players unresolved - their legs silently dropped). Incremental from the P1-maintained roster,
+      # collision-safe, never deletes. Before the baseline / final_hp so today's scores include every active player.
+      - name: Refresh the player name map
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/refresh_player_name_map.py
+
       - name: Injury report (day-before filing)
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         env:
