@@ -160,8 +160,12 @@ def main():
                     "stat": ast.get("display_stat") or ou.get("title"), "stat_key": ast.get("stat"), "line": pr.get("stat_value"),
                     "higher_multiplier_modifier_only": hi.get("payout_multiplier"), "lower_multiplier_modifier_only": lo.get("payout_multiplier"),
                     "higher_payout": _payout(hi.get("american_price")), "lower_payout": _payout(lo.get("american_price")),
-                    "higher_payout_modifier": (round(0.5 / (float(prob(hi, "fantasy")) / 100.0), 4) if prob(hi, "fantasy") not in (None, "") else (round(0.5 * float(hi["decimal_price"]), 4) if hi.get("decimal_price") not in (None, "") else None)),
-                    "lower_payout_modifier": (round(0.5 / (float(prob(lo, "fantasy")) / 100.0), 4) if prob(lo, "fantasy") not in (None, "") else (round(0.5 * float(lo["decimal_price"]), 4) if lo.get("decimal_price") not in (None, "") else None)),
+                    "higher_payout_modifier": (float(hi["payout_multiplier"]) if hi.get("payout_multiplier") not in (None, "") and abs(float(hi["payout_multiplier"]) - 1.0) > 1e-9
+                                               else (round(min(1.0, 0.5 / (float(prob(hi, "fantasy")) / 100.0)), 4) if prob(hi, "fantasy") not in (None, "")
+                                                     else (round(min(1.0, 0.5 * float(hi["decimal_price"])), 4) if hi.get("decimal_price") not in (None, "") else None))),
+                    "lower_payout_modifier": (float(lo["payout_multiplier"]) if lo.get("payout_multiplier") not in (None, "") and abs(float(lo["payout_multiplier"]) - 1.0) > 1e-9
+                                              else (round(min(1.0, 0.5 / (float(prob(lo, "fantasy")) / 100.0)), 4) if prob(lo, "fantasy") not in (None, "")
+                                                    else (round(min(1.0, 0.5 * float(lo["decimal_price"])), 4) if lo.get("decimal_price") not in (None, "") else None))),
                     "higher_display_decimal": (((hi.get("odds") or {}).get("fantasy") or {}).get("decimal")) or hi.get("decimal_price"),
                     "lower_display_decimal": (((lo.get("odds") or {}).get("fantasy") or {}).get("decimal")) or lo.get("decimal_price"),
                     "higher_american": hi.get("american_price"), "lower_american": lo.get("american_price"),
