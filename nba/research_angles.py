@@ -50,7 +50,7 @@ FROM s
 TEAM_SPREAD = """
 CREATE TEMP TABLE team_spread AS
 SELECT gl.game_date, t.team_id, avg(gl.point) spread
-FROM nba_market.game_lines_snapshots gl JOIN nba_ref.teams t ON t.full_name = gl.outcome
+FROM nba_market.game_lines_snapshots gl JOIN nba_ref.teams t ON t.full_name = replace(gl.outcome, 'Los Angeles Clippers', 'LA Clippers')
 WHERE gl.snapshot_label='morning' AND gl.market='spreads' GROUP BY 1,2
 """
 
