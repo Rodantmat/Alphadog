@@ -100,6 +100,7 @@ LEFT JOIN nba_score.ud_cand_leg_features_x f
 LEFT JOIN nba_ref.players pl ON pl.nba_player_id::text = l.player_id
 LEFT JOIN nba_score.ud_leg_nvw nvw
   ON nvw.game_date=l.game_date AND nvw.pn=l.player AND nvw.prop=l.prop AND nvw.side=l.side AND nvw.line=l.line
+LEFT JOIN nba_score.ud_leg_fresh lf ON lf.game_date=l.game_date AND lf.player_id=l.player_id
 WHERE (l.prop, l.tier, l.rank_key) IN (%s)
 """
 
