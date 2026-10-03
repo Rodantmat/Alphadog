@@ -106,13 +106,15 @@ def main():
             rep.append(r)
         sr = build_all(conn, day, rep, cmap)
         new_only_players = {kn[k]['player'] for k in only_new}
+        old_only_players = {ko[k]['player'] for k in only_old}
         for name in so:
             if sr[name] == sn[name]:
                 tot['repaired_identical'] += 1
             else:
                 inv = any(p in new_only_players for s in sn[name] for (p, *_r) in s)
-                tot['repaired_differ_suffix' if inv else 'repaired_differ_OTHER'] += 1
-                if not inv and len(slip_diff_examples) < 10:
+                dropped = any(p in old_only_players for s in sr[name] for (p, *_r) in s)
+                tot['repaired_differ_suffix' if inv else 'repaired_differ_dropped_leg' if dropped else 'repaired_differ_OTHER'] += 1
+                if not inv and not dropped and len(slip_diff_examples) < 10:
                     slip_diff_examples.append((str(day), 'REPAIRED ' + name, sr[name][:1], sn[name][:1]))
         for name in so:
             if so[name] == sn[name]:
