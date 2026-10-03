@@ -232,6 +232,14 @@ async function tick(env, now, dryRun = false) {
       if (dec.action !== "wait" && dec.action !== "skip") out.push(await act(sql, env, p, date, dec, dryRun));
       else if (dryRun) out.push({ pipeline: p, run_key: date, ...dec });
     }
+    {   // CLOSE board capture (§31c) - single-shot, no claim, no watchdog
+      const cst = await pipelineState(sql, env, "CLOSE", date, false);
+      if (!cst.missed) {
+        const dec = decideClose(plan, now, cst.dispatches.length > 0);
+        if (dec.action === "dispatch" || dec.action === "missed") out.push(await act(sql, env, "CLOSE", date, dec, dryRun));
+        else if (dryRun) out.push({ pipeline: "CLOSE", run_key: date, ...dec });
+      }
+    }
     if (p1Due(now)) {
       const key = runKey("P1", now);
       const st = await pipelineState(sql, env, "P1", key, true);
