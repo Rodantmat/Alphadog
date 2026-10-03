@@ -183,10 +183,16 @@ async function act(sql, env, pipeline, key, dec, dryRun) {
                         ON CONFLICT (pipeline, run_key, slot) DO NOTHING RETURNING pipeline`;
   if (!ins[0]) return { pipeline, run_key: key, action: "skip", reason: "duplicate fire - this slot already dispatched" };
   const res = await dispatch(env, WORKFLOWS[pipeline]);
-  await sql`UPDATE nba_control.scheduler_dispatches SET ok=${res.ok}, detail=${res.ok ? dec.reason : res.detail} WHERE pipeline=${pipeline} AND run_key=${key}::date AND slot=${dec.slot}`;
-  const action = res.ok ? (dec.action === "dispatch" ? "dispatched" : "watchdog_redispatched") : "dispatch_failed";
-  await log(sql, dec.slot, pipeline, key, action, res.ok ? dec.reason : res.detail);
-  return { pipeline, run_key: key, action, reason: dec.reason, detail: res.ok ? undefined : res.detail };
+  if (!res.ok) {
+    // remove the slot record so the next tick retries; a kept record would be read as "already dispatched"
+    await sql`DELETE FROM nba_control.scheduler_dispatches WHERE pipeline=${pipeline} AND run_key=${key}::date AND slot=${dec.slot}`;
+    await log(sql, dec.slot, pipeline, key, "dispatch_failed_will_retry", res.detail);
+    return { pipeline, run_key: key, action: "dispatch_failed_will_retry", reason: dec.reason, detail: res.detail };
+  }
+  await sql`UPDATE nba_control.scheduler_dispatches SET ok=true, detail=${dec.reason} WHERE pipeline=${pipeline} AND run_key=${key}::date AND slot=${dec.slot}`;
+  const action = dec.action === "dispatch" ? "dispatched" : "watchdog_redispatched";
+  await log(sql, dec.slot, pipeline, key, action, dec.reason);
+  return { pipeline, run_key: key, action, reason: dec.reason };
 }
 
 async function tick(env, now, dryRun = false) {
