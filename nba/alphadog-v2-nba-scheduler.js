@@ -23,7 +23,7 @@ import postgres from "postgres";
 // running run of that pipeline.
 
 const WORKER_NAME = "alphadog-v2-nba-scheduler";
-const VERSION = "alphadog-v2-nba-scheduler-v2.0.1";
+const VERSION = "alphadog-v2-nba-scheduler-v2.1.0";
 const WORKFLOWS = {
   P1: "nba-p1-weekly-static.yml",
   P2A: "nba-p2a-results.yml",
