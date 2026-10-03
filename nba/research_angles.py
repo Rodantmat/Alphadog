@@ -33,7 +33,8 @@ CREATE TEMP TABLE team_travel AS
 WITH tz(tri, off) AS (VALUES {TZ_VALUES}),
 g AS (SELECT DISTINCT gl.game_date, h.team_id home_team_id, a.team_id away_team_id, h.abbreviation home_team_tricode
       FROM nba_market.game_lines_snapshots gl
-      JOIN nba_ref.teams h ON h.full_name = gl.home_team JOIN nba_ref.teams a ON a.full_name = gl.away_team
+      JOIN nba_ref.teams h ON h.full_name = replace(gl.home_team, 'Los Angeles Clippers', 'LA Clippers')
+      JOIN nba_ref.teams a ON a.full_name = replace(gl.away_team, 'Los Angeles Clippers', 'LA Clippers')
       WHERE gl.game_date >= '2024-10-01'),   -- game lines cover both seasons (nba_calendar.games starts 2025-26)
 tg AS (SELECT home_team_id team_id, game_date, home_team_tricode venue, true is_home FROM g
        UNION ALL SELECT away_team_id, game_date, home_team_tricode, false FROM g),
