@@ -97,7 +97,7 @@ JOIN (SELECT game_date, pn, prop, side, line, min(event_id) event_id FROM nba_sc
 LEFT JOIN nba_score.ud_cand_leg_features_x f
   ON f.game_date=l.game_date AND f.player=l.player AND f.prop=l.prop AND f.side=l.side AND f.line=l.line
 LEFT JOIN nba_ref.players pl ON pl.nba_player_id::text = l.player_id
-LEFT JOIN (SELECT game_date, pn, prop, side, line, avg(nv_side) nv_side FROM nba_score.ud_window_legs_curr GROUP BY 1,2,3,4,5) nvw
+LEFT JOIN nba_score.ud_leg_nvw nvw
   ON nvw.game_date=l.game_date AND nvw.pn=l.player AND nvw.prop=l.prop AND nvw.side=l.side AND nvw.line=l.line
 WHERE (l.prop, l.tier, l.rank_key) IN (%s)
 """
