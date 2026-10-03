@@ -129,9 +129,9 @@ def run_sizing(rule, seq, start=100.0, f=0.0):
                     pause = 5; peak = bank
         elif rule == 'stop_halve':
             bank += net1 * (0.5 if peak - bank >= 25 else 1.0)
-        peak = max(peak, bank); low = min(low, bank); mdd = max(mdd, peak - bank)
+        peak = max(peak, bank); low = min(low, bank); mdd = max(mdd, (peak - bank) / peak if peak > 0 else 1.0)
         if bank <= 0:
-            return 0.0, 0.0, mdd
+            return 0.0, 0.0, 1.0
     return bank, low, mdd
 
 
