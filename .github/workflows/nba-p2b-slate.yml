@@ -1,0 +1,339 @@
+name: NBA P2B Slate (today's baseline)
+
+# PIPELINE 2B OF 4 (2026-10-02, owner decision: split P2 into P2A + P2B; strategy doc §29z-b/c).
+# Everything about TODAY's slate that must exist before P3: the day-before injury report as of 09:00 ET (the
+# baseline cutoff, nba_asof.BASELINE_CUTOFF_LOCAL), the referee crews (a baseline-stage factor, D1), today's
+# MORNING game line (captured live here - it was never captured live before, §29z-c), the market export, the model
+# refits on everything P2A just graded, today's baseline ladder, final_hp, certification.
+#
+# WHEN: fired by the scheduler worker at min(08:05 PT, P3 - 110 min) and only after P2A succeeded. 08:05 PT on a normal
+# day is right after the 08:00 PT morning-line snapshot the baseline is validated on, with the crews posted (~6-7 AM
+# PT, ~9 AM ET). On an early slate it runs earlier, uses the line as it stands then, and waits for the crews only as
+# long as the day allows (below); a crew still missing falls back to the documented D1 fallback model.
+# Every build step was taken verbatim from P2 (nba-p2-overnight-heavy.yml, now retired).
+#
+# RUN-ONCE (owner rule): the claim job stops any second run for the same slate date.
+
+on:
+  # GitHub's own schedule is only a LATE LAST-RESORT FALLBACK; the scheduler worker is the trigger.
+  schedule:
+    - cron: '30 17 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "'true' = run even if this slate already ran (deliberate recovery only; the run-once guard records it)"
+        default: ""
+        required: false
+      asof:
+        description: "slate date to build (blank = today PT). Use a past date to REPLAY/simulate."
+        default: ""
+        required: false
+      skip_mining:
+        description: "true = skip the scrapes and only rebuild the baseline (for replay on existing data)"
+        default: "false"
+        required: false
+      season:
+        description: "season override for the confidence refit (blank = resolve from the date)"
+        default: ""
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-p2b
+  cancel-in-progress: false
+
+jobs:
+  # RUN-ONCE GUARD (owner rule: NO PIPELINE RUNS TWICE).
+  claim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      proceed: ${{ steps.c.outputs.proceed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Run-once claim
+        id: c
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: claim
+          PIPELINE: P2B
+          IN_ASOF: ${{ github.event.inputs.asof }}
+          FORCE: ${{ github.event.inputs.force }}
+          RUN_ID: ${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+        run: python -u nba/pipeline_claim.py
+
+  slate:
+    needs: claim
+    if: ${{ needs.claim.outputs.proceed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber
+
+      - name: Resolve slate date and the day's deadlines
+        id: d
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          A="${{ github.event.inputs.asof }}"
+          if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi
+          echo "asof=$A" >> $GITHUB_OUTPUT
+          python - "$A" <<'EOF'
+          import os, sys, psycopg
+          from datetime import datetime, timedelta, timezone
+          from zoneinfo import ZoneInfo
+          PT = ZoneInfo("America/Los_Angeles")
+          slate = sys.argv[1]
+          # REGULAR-SEASON games only (preseason is not a slate - documented decision 2026-09-24); the same label
+          # pattern as the live engine's season_block() so postseason/All-Star events never count.
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              n, first = c.execute("""SELECT count(*), min(game_datetime_utc) FROM nba_calendar.games WHERE game_date = %s
+                                      AND coalesce(game_label,'') !~* '(preseason|play-in|round|semifinal|final|all-star|rising stars)'""",
+                                   (slate,)).fetchone()
+          d = datetime.fromisoformat(slate).date()
+          cutoff = datetime(d.year, d.month, d.day, 13, 15, tzinfo=PT)
+          p3 = min(cutoff, first.astimezone(PT) - timedelta(minutes=30)) if first else cutoff
+          # the crews may be waited for until the build would no longer finish before P3 (~80 min build + 5 min margin)
+          ref_deadline = p3 - timedelta(minutes=85)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"has_games={'1' if n else '0'}\n")
+              f.write(f"ref_deadline={ref_deadline.astimezone(timezone.utc).isoformat()}\n")
+          print(f"{n} regular-season games on {slate}; first tip {first.astimezone(PT):%H:%M} PT" if first else f"no games on {slate}")
+          print(f"P3 at {p3:%H:%M} PT; crews waited for until {ref_deadline:%H:%M} PT at the latest")
+          EOF
+
+      # The DAY-BEFORE injury report (due 5 PM local the day before) as the baseline reads it at its 09:00 ET cutoff.
+      - name: Injury report (day-before filing)
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          INJURY_MODE: "daily"
+        run: python nba/scrape_nba_injury_report.py
+
+      # D1 REFEREE CREWS - a baseline-stage factor that posts ~6-7 AM PT (~9 AM ET) and is never archived. Poll until
+      # every scheduled game has a crew, or until the day's own deadline (so an early slate is never made late by
+      # waiting); a crew still missing then falls back to the documented D1 fallback model. Never fails the slate.
+      - name: Referee crews (polled until posted or the day's deadline)
+        if: ${{ github.event.inputs.skip_mining != 'true' && steps.d.outputs.has_games == '1' }}
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REF_DATE: ${{ steps.d.outputs.asof }}
+          REF_DEADLINE: ${{ steps.d.outputs.ref_deadline }}
+        run: |
+          set +e
+          python - <<'EOF'
+          import os, subprocess, time, psycopg
+          from datetime import datetime, timezone
+          deadline = datetime.fromisoformat(os.environ["REF_DEADLINE"])
+          slate = os.environ["REF_DATE"]
+          def status():
+              with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+                  games = c.execute("""SELECT count(*) FROM nba_calendar.games WHERE game_date=%s
+                                       AND coalesce(game_label,'') !~* '(preseason|play-in|round|semifinal|final|all-star|rising stars)'""", (slate,)).fetchone()[0]
+                  crews = c.execute("SELECT count(DISTINCT matchup) FROM nba_ref.referee_assignments WHERE game_date=%s", (slate,)).fetchone()[0]
+              return games, crews
+          attempt = 0
+          while True:
+              attempt += 1
+              r = subprocess.run(["python", "nba/scrape_referee_assignments.py"], capture_output=True, text=True)
+              print(r.stdout[-1500:], r.stderr[-800:], flush=True)
+              games, crews = status()
+              print(f"attempt {attempt}: crews for {crews} of {games} games", flush=True)
+              if games and crews >= games:
+                  print("all crews posted"); break
+              if datetime.now(timezone.utc) >= deadline:
+                  print(f"::warning::{slate}: crews for {crews} of {games} games by the deadline - the rest use the D1 fallback model"); break
+              time.sleep(min(300, max(30, (deadline - datetime.now(timezone.utc)).total_seconds())))
+          EOF
+          exit 0
+
+      # TODAY'S MORNING GAME LINE, captured live (§29z-c) - as of min(08:00 PT, now). Then the export the baseline
+      # reads. Both never fail the slate: the baseline has a documented fallback (the derived spread proxy).
+      - name: Morning game line (live capture) and market export
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GL_DATE: ${{ steps.d.outputs.asof }}
+        run: |
+          python nba/capture_game_lines_morning.py
+          python nba/export_market_spreads.py
+
+      - name: Commit today's inputs
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/data/*.json || true
+          if git diff --cached --quiet; then echo "No data changes."; else
+            git commit -m "NBA P2B inputs ${{ steps.d.outputs.asof }} [skip ci]"
+            for i in 1 2 3 4 5; do
+              if git push origin HEAD:main; then break; fi
+              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+            done
+          fi
+
+      # 5) BUILD the baseline ladder for today's slate - PER PROP PAIR (from P2; BT_CUTOFF "baseline" = 09:00 ET).
+      - name: Build baseline ladder (all prop pairs)
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          BT_ASOF: ${{ steps.d.outputs.asof }}
+          BT_CUTOFF: "baseline"
+          BT_REPLAY: ${{ github.event.inputs.asof != '' && '1' || '0' }}
+        run: |
+          set -euo pipefail
+          for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" \
+                      "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
+            echo "=== baseline pair: $PAIR"
+            BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py
+          done
+
+      # Components -> combos -> periods (order matters: no combos = 44% of the board missing).
+      - name: Components, combos and periods for today's slate
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          BT_ASOF: ${{ steps.d.outputs.asof }}
+          BT_CUTOFF: "baseline"
+          BT_INJURY: "1"
+          BT_REPLAY: ${{ github.event.inputs.asof != '' && '1' || '0' }}
+        run: |
+          set -euo pipefail
+          mkdir -p nba/backtest/reports
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            echo "=== components :: $pair"
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py
+          done
+          python nba/baseline/build_combos_ladder.py
+          python nba/baseline/build_periods_ladder.py
+
+      - name: Merge per-pair ladders
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        env:
+          BT_ASOF: ${{ steps.d.outputs.asof }}
+        run: |
+          set -euo pipefail
+          rm -f nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl nba/backtest/reports/_rel_stage1.pkl
+          python - <<'EOF'
+          import json, glob, os
+          asof = os.environ["BT_ASOF"]; rows = []; meta = None
+          for f in sorted(glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json")):
+              d = json.load(open(f)); rows += d["ladder"]; meta = meta or d["meta"]
+          if not meta:
+              raise SystemExit(f"ABORT: no per-pair ladder files for {asof} - the builds produced nothing")
+          meta["rows"] = len(rows)
+          meta["props"] = sorted({r["prop"] for r in rows})
+          meta["players"] = len({r["player_id"] for r in rows})
+          json.dump({"meta": meta, "ladder": rows}, open(f"nba/data/nba_baseline_ladder_{asof}.json", "w"))
+          json.dump({"meta": meta, "ladder": rows}, open("nba/data/nba_baseline_ladder_latest.json", "w"))
+          print("merged ladder:", {k: v for k, v in meta.items() if k not in ("factor_fits",)})
+          for f in glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json"):
+              os.remove(f)
+          EOF
+
+      # COMMIT BEFORE LOADING: the loader fetches the artefact over HTTP from the repo.
+      - name: Commit the merged ladder
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nba/data/nba_baseline_ladder_*.json || true
+          if git diff --cached --quiet; then
+            echo "ABORT: nothing to commit - the merge produced no ladder file"; exit 1
+          fi
+          git commit -m "NBA P2B baseline ladder ${{ steps.d.outputs.asof }} [skip ci]"
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
+          done
+          exit 1
+
+      - name: Load baseline into Postgres
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LOAD_ASOF: ${{ steps.d.outputs.asof }}
+        run: python nba/load_baseline_ladder.py
+
+      # 6) REFIT the learned layers on everything P2A graded up to last night (kept in the morning, as P2 did, so they
+      # see what the backtest saw - including overnight stat corrections). Skipped on a no-game day (identical result).
+      - name: As-of ladder calibration
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/build_asof_calibration.py
+
+      - name: Refit the blowout model
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nba/build_blowout_model.py
+
+      - name: Refit the confidence deduction model
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          C3_SEASONS: ${{ github.event.inputs.season }}
+        run: python nba/build_confidence_v3.py
+
+      # 6b) FINAL_HP for the slate - AFTER both refits (it reads the calibration and the confidence model).
+      - name: Build final_hp for the slate
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_DATE: ${{ steps.d.outputs.asof }}
+          FE_WRITE: "1"
+        run: python nba/build_final_hp.py
+
+      # 7) CERTIFY: today's baseline exists, >= 25 props, zero invalid probabilities (season-aware: off days pass).
+      - name: Certify P2
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PIPE: "p2"
+          CERT_DATE: ${{ steps.d.outputs.asof }}
+        run: python nba/certify_pipeline.py
+
+  # Records this run's outcome (the scheduler dispatches P3 only after a success here, or at P3's own deadline).
+  finish:
+    needs: [claim, slate]
+    if: ${{ always() && needs.claim.outputs.proceed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install "psycopg[binary]"
+      - name: Record the result
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODE: finish
+          PIPELINE: P2B
+          IN_ASOF: ${{ github.event.inputs.asof }}
+          RUN_ID: ${{ github.run_id }}
+          RESULT: "${{ needs.slate.result }}"
+        run: python -u nba/pipeline_claim.py
