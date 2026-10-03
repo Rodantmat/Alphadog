@@ -95,6 +95,7 @@ JOIN (SELECT game_date, pn, prop, side, line, min(event_id) event_id FROM nba_sc
   ON w.game_date=l.game_date AND w.pn=l.player AND w.prop=l.prop AND w.side=l.side AND w.line=l.line
 LEFT JOIN nba_score.ud_cand_leg_features_x f
   ON f.game_date=l.game_date AND f.player=l.player AND f.prop=l.prop AND f.side=l.side AND f.line=l.line
+LEFT JOIN nba_ref.players pl ON pl.nba_player_id::text = l.player_id
 WHERE (l.prop, l.tier, l.rank_key) IN (%s)
 """
 
