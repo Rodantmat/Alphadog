@@ -71,13 +71,14 @@ def main():
     matches = []
     for ev in evs:
         r = requests.get(f"{BASE}/sports/baseball_mlb/events/{ev['id']}/odds?regions=us_dfs&bookmakers=underdog"
-                         f"&markets={','.join(MARKETS)}&oddsFormat=american&includeMultipliers=true&apiKey={key}", timeout=60)
+                         f"&markets={','.join(list(MARKETS) + [m + '_alternate' for m in MARKETS])}&oddsFormat=american&includeMultipliers=true&apiKey={key}", timeout=60)
         print(f"  {ev.get('away_team')} @ {ev.get('home_team')} {ev.get('commence_time')} | credits remaining {r.headers.get('x-requests-remaining')}", flush=True)
         data = r.json()
         for bk in data.get("bookmakers") or []:
             for mk in bk.get("markets") or []:
+                base_key = mk.get("key", "").replace("_alternate", "")
                 for oc in mk.get("outcomes") or []:
-                    k = (norm(oc.get("description")), mk.get("key"), float(oc.get("point")), oc.get("name"))
+                    k = (norm(oc.get("description")), base_key, float(oc.get("point")), oc.get("name"))
                     a = app.get(k)
                     if not a:
                         continue
