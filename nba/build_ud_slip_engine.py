@@ -106,6 +106,10 @@ def eligible_legs(day_rows):
                 and (side == 'both' or r['side'] == side)]
         if MINRISE_OUT:
             legs = [r for r in legs if not (r['min_trend'] is not None and float(r['min_trend']) >= 4)]
+        if EXCL_HOTFORM:
+            legs = [r for r in legs if not (r['form_gap'] is not None and float(r['form_gap']) >= 1)]
+        if EXCL_CENTER:
+            legs = [r for r in legs if r['position'] != 'C']
         legs.sort(key=lambda r: (-r['score'], r['player']))      # re-rank within the side by the cell's rank score, as certified
         for r in legs[:nband]:
             r2 = dict(r); r2['cell'] = name; r2['edge'] = edge
