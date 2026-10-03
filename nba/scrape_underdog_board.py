@@ -199,12 +199,31 @@ def main():
             team = store["teams"].get(str(app.get("team_id") or pl.get("team_id") or ""), {})
             opts = {str(o.get("choice")): o for o in ln.get("options") or []}
             hi, lo = opts.get("higher", {}), opts.get("lower", {})
+            def _fant(o, k):
+                return (((o.get("odds") or {}).get("fantasy") or {}).get(k))
+            def _pay_mod(o):
+                # §30f/§30g (validated on 1,226 live options): the payout modifier is 0.5 / Underdog's probability for that side -
+                # 0.5 / fantasy probability where the option has a fantasy price, else 0.5 x decimal_price. Unlike the displayed
+                # payout_multiplier it is never snapped to 1.00 on balanced lines (the slip pays on this value).
+                try:
+                    fp = _fant(o, "probability")
+                    if fp not in (None, ""):
+                        return round(0.5 / (float(fp) / 100.0), 4)
+                    dp = o.get("decimal_price")
+                    return round(0.5 * float(dp), 4) if dp not in (None, "") else None
+                except (TypeError, ValueError, ZeroDivisionError):
+                    return None
             legs.append({
                 "line_id": lid, "sport": sport, "player": " ".join(x for x in (pl.get("first_name"), pl.get("last_name")) if x) or ou.get("title") or "",
                 "player_id": app.get("player_id"), "appearance_type": app.get("type"), "team": team.get("abbr") or "", "position": pl.get("position") or app.get("position_id"),
                 "stat": ast.get("display_stat") or ast.get("stat") or ou.get("title"), "stat_key": ast.get("stat"), "line": ln.get("stat_value"),
                 "higher_multiplier": hi.get("payout_multiplier"), "lower_multiplier": lo.get("payout_multiplier"), "higher_decimal": hi.get("decimal_price"), "lower_decimal": lo.get("decimal_price"),
                 "higher_american": hi.get("american_price"), "lower_american": lo.get("american_price"), "higher_label": hi.get("choice_display_name_shorter"), "lower_label": lo.get("choice_display_name_shorter"),
+                "higher_fantasy_decimal": _fant(hi, "decimal"), "lower_fantasy_decimal": _fant(lo, "decimal"),
+                "higher_fantasy_american": _fant(hi, "american"), "lower_fantasy_american": _fant(lo, "american"),
+                "higher_fantasy_prob": _fant(hi, "probability"), "lower_fantasy_prob": _fant(lo, "probability"),
+                "higher_display_decimal": _fant(hi, "decimal") or hi.get("decimal_price"), "lower_display_decimal": _fant(lo, "decimal") or lo.get("decimal_price"),
+                "higher_payout_modifier": _pay_mod(hi), "lower_payout_modifier": _pay_mod(lo),
                 "line_type": ln.get("line_type"), "live": ln.get("live_event"), "status": ln.get("status"), "expires_at": ln.get("expires_at"), "rank": ln.get("rank"),
                 "game_id": app.get("match_id"), "game_start": game.get("scheduled_at") or game.get("start_time"), "game_title": game.get("title") or "", "appearance_id": ast.get("appearance_id"),
             })
