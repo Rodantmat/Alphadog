@@ -219,7 +219,7 @@ def main():
     days = defaultdict(list)
     with conn.cursor(name='legs') as cur:
         cur.itersize = 50000
-        cur.execute(LEG_SQL % keys)
+        cur.execute(LEG_SQL.replace('{LEGS_TABLE}', LEGS_TABLE) % keys)
         cols = [d.name for d in cur.description]
         for row in cur:
             r = dict(zip(cols, row))
