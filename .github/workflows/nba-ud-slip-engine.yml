@@ -32,6 +32,18 @@ on:
         description: "1 = drop legs on centers"
         default: "0"
         required: false
+      legs_table:
+        description: "tier-map leg table (§30r: nba_score.ud_tier_map_legs_curr = repriced)"
+        default: "nba_score.ud_tier_map_legs"
+        required: false
+      haircut:
+        description: "confidence haircut 'main,alt' on payout factors (§30r), e.g. 0.01,0.03"
+        default: "0,0"
+        required: false
+      cells_json:
+        description: "re-certified cells JSON {name:[prop,tier,side,rank,n,edge], _core:[...]} (blank = built-in cells)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
