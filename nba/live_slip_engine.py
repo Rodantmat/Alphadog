@@ -152,8 +152,13 @@ def load_board_legs_live(conn, day, label='window'):
     tiers table's nm, which keeps suffixes ('craigporterjr' vs canonical 'craigporter') and silently dropped every Jr/Sr/II/III
     player in the universe path. Event: the PrizePicks window board's own event id. Team: whichever of the event's two teams
     matches the player - his latest game-log team before today, else his current roster team (correct on a trade day)."""
+    # PERFORMANCE (2026-10-03, measured): the first version took > 2 min per slate - the planner mis-estimated row counts and
+    # re-ran the event CTE (norm_name over ~500 board rows) inside a nested loop for each of ~3,600 legs, and the team lookup
+    # compared nba_player_id::text, which disables the (nba_player_id, game_date) index. Fixed: every set MATERIALIZED and
+    # computed once; ids compared as bigint (all map ids are numeric) so the index applies; latest teams in one indexed pass.
+    # Measured after the fix: 3.8 s for a full slate (3,149 scored legs).
     rows = conn.execute("""
-        WITH pr AS (
+        WITH pr AS MATERIALIZED (
           SELECT p.game_date, p.player, nba_ref.norm_name(p.player) cn, p.side, p.line, p.kind, p.factor::float price,
             least(abs(COALESCE(NULLIF(p.tier,0), round(p.line-p.anchor_line)::int)),3) tier3,
             CASE replace(p.base_market,'player_','') WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made'
@@ -161,29 +166,34 @@ def load_board_legs_live(conn, day, label='window'):
               WHEN 'rebounds_assists' THEN 'reb_ast' ELSE replace(p.base_market,'player_','') END prop
           FROM nba_market.pp_leg_price p
           WHERE p.snapshot_label=%s AND p.game_date=%s AND p.factor IS NOT NULL AND NOT coalesce(p.kind_position_mismatch,false)),
-        ev AS (
-          SELECT DISTINCT ON (nba_ref.norm_name(player)) nba_ref.norm_name(player) cn, event_id, home_team, away_team
-          FROM nba_market.board_snapshots
-          WHERE bookmaker='prizepicks' AND game_date=%s AND snapshot_label=%s AND event_id IS NOT NULL
-          ORDER BY nba_ref.norm_name(player), snapshot_ts DESC),
-        evt AS (
+        pid AS MATERIALIZED (
+          SELECT DISTINCT pr.cn, nm.player_id, nm.player_id::bigint pid_n
+          FROM (SELECT DISTINCT cn FROM pr) pr JOIN nba_ref.player_name_map nm ON nm.norm_name = pr.cn),
+        gl AS MATERIALIZED (
+          SELECT DISTINCT ON (g.nba_player_id) g.nba_player_id, g.team_id FROM nba_stats.player_game_log g
+          WHERE g.nba_player_id IN (SELECT pid_n FROM pid) AND g.game_date < %s
+          ORDER BY g.nba_player_id, g.game_date DESC),
+        ev AS MATERIALIZED (
+          SELECT DISTINCT ON (cn) cn, event_id, home_team, away_team
+          FROM (SELECT nba_ref.norm_name(player) cn, event_id, home_team, away_team, snapshot_ts FROM nba_market.board_snapshots
+                WHERE bookmaker='prizepicks' AND game_date=%s AND snapshot_label=%s AND event_id IS NOT NULL) b
+          ORDER BY cn, snapshot_ts DESC),
+        evt AS MATERIALIZED (
           SELECT ev.cn, ev.event_id, h.team_id home_id, a.team_id away_id FROM ev
           LEFT JOIN nba_ref.teams h ON h.full_name = replace(ev.home_team, 'Los Angeles Clippers', 'LA Clippers')
           LEFT JOIN nba_ref.teams a ON a.full_name = replace(ev.away_team, 'Los Angeles Clippers', 'LA Clippers'))
-        SELECT f.player_id, pr.player, pr.prop, pr.side, pr.line, pr.price, pr.kind, pr.tier3,
+        SELECT pid.player_id, pr.player, pr.prop, pr.side, pr.line, pr.price, pr.kind, pr.tier3,
                f.final_hp::float, f.baseline_hp::float, f.score::float,
                CASE WHEN gl.team_id IN (evt.home_id, evt.away_id) THEN gl.team_id
                     WHEN pl.team_id IN (evt.home_id, evt.away_id) THEN pl.team_id END team_id,
                evt.event_id
         FROM pr
-        JOIN nba_ref.player_name_map nm ON nm.norm_name = pr.cn
-        JOIN nba_score.final_hp f ON f.game_date=pr.game_date AND f.player_id=nm.player_id AND f.prop=pr.prop AND f.side=pr.side AND f.line=pr.line
+        JOIN pid ON pid.cn = pr.cn
+        JOIN nba_score.final_hp f ON f.game_date=pr.game_date AND f.player_id=pid.player_id AND f.prop=pr.prop AND f.side=pr.side AND f.line=pr.line
         LEFT JOIN evt ON evt.cn = pr.cn
-        LEFT JOIN LATERAL (SELECT g.team_id FROM nba_stats.player_game_log g
-                           WHERE g.nba_player_id::text = nm.player_id::text AND g.game_date < pr.game_date
-                           ORDER BY g.game_date DESC LIMIT 1) gl ON true
-        LEFT JOIN nba_ref.players pl ON pl.nba_player_id::text = nm.player_id::text
-        WHERE f.final_hp IS NOT NULL AND f.score IS NOT NULL""", (label, day, day, label)).fetchall()
+        LEFT JOIN gl ON gl.nba_player_id = pid.pid_n
+        LEFT JOIN nba_ref.players pl ON pl.nba_player_id::bigint = pid.pid_n
+        WHERE f.final_hp IS NOT NULL AND f.score IS NOT NULL""", (label, day, day, day, label)).fetchall()
     legs = []
     for pid, player, prop, side, line, price, kind, t3, s_final, s_base, s_score, team, event in rows:
         tier = 'R' if kind == 'standard' else ('G' if kind == 'goblin' else 'D') + str(t3)
