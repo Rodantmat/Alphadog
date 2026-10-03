@@ -97,7 +97,10 @@ jobs:
           python - <<'EOF'
           import os, json, psycopg, datetime as dt, sys
           sys.path.insert(0, 'nba')
-          from live_slip_engine import STRATEGIES
+          from live_slip_engine import STRATEGIES, ROTATION_ONLY, ALLSTAR_ONLY
+          # state-gated strategies (drought-only, pre-break-week-only) are judged by their own state, not by a full-season
+          # validation they are designed to fail; their verdict is recorded but never turns them red
+          STATE_GATED = set(ROTATION_ONLY) | set(ALLSTAR_ONLY)
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
               c.execute("""CREATE TABLE IF NOT EXISTS nba_score.weekly_requal (run_date date, strategy text, composition text, size int, structure text,
                            in_validation boolean, v2_pass boolean, v6_pass boolean, oos_roi double precision, oos_ci_lo double precision,
