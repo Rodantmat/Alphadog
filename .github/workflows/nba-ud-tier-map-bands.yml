@@ -24,6 +24,14 @@ on:
         description: "1 = rebuild ud_tier_map_legs before sweeping"
         default: "1"
         required: false
+      source:
+        description: "leg source table (§30r: nba_score.ud_window_legs_curr = repriced to current logic)"
+        default: "nba_score.ud_window_legs"
+        required: false
+      suffix:
+        description: "output table suffix ('' = certified tables; '_curr' = repriced build)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
