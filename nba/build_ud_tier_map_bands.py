@@ -34,7 +34,9 @@ BE = float(os.environ.get('TM_BE') or '0.536')
 N_MAX = int(os.environ.get('TM_NMAX') or '25')
 PCT_MAX = int(os.environ.get('TM_PCTMAX') or '30')
 PLATEAU = 0.02
-LEGS, BANDS, SUMMARY = 'nba_score.ud_tier_map_legs', 'nba_score.ud_tier_map_bands', 'nba_score.ud_tier_map_summary'
+SUFFIX = os.environ.get('TM_SUFFIX') or ''            # §30r: '_curr' = the build on modifiers repriced to Underdog's current logic
+SOURCE = os.environ.get('TM_SOURCE') or 'nba_score.ud_window_legs'   # §30r: 'nba_score.ud_window_legs_curr'
+LEGS, BANDS, SUMMARY = f'nba_score.ud_tier_map_legs{SUFFIX}', f'nba_score.ud_tier_map_bands{SUFFIX}', f'nba_score.ud_tier_map_summary{SUFFIX}'
 
 DDL_LEGS = f"""
 CREATE TABLE IF NOT EXISTS {LEGS} (
