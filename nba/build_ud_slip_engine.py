@@ -125,6 +125,8 @@ def eligible_legs(day_rows):
             legs = [r for r in legs if not (r['form_gap'] is not None and float(r['form_gap']) >= 1)]
         if EXCL_CENTER:
             legs = [r for r in legs if r['position'] != 'C']
+        if MIN_NV > 0:
+            legs = [r for r in legs if r.get('nv_window') is None or float(r['nv_window']) >= MIN_NV]
         legs.sort(key=lambda r: (-r['score'], r['player']))      # re-rank within the side by the cell's rank score, as certified
         for r in legs[:nband]:
             r2 = dict(r); r2['cell'] = name; r2['edge'] = edge
