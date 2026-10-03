@@ -69,14 +69,18 @@ def margin(nv):
     return y0 + (y1 - y0) * (nv - x0) / (x1 - x0)
 
 
+F_CAP = 0.83   # Underdog caps fantasy probabilities at 83% (sportsbook 85-87 -> 83 on the MLB board)
+
+
 def m_from_f(f):
-    f = min(max(round(f * 100) / 100.0, 0.01), 0.99)   # Underdog's fantasy probabilities are whole percents
+    f = min(max(round(f * 100) / 100.0, 0.01), F_CAP)   # Underdog's fantasy probabilities are whole percents
     return round(0.5 / f, 2)
 
 
 def price_main(nv_side, snap):
     gap = abs(nv_side - 0.5)
-    priced = m_from_f(nv_side + MAIN_MARGIN)
+    # near the snap zone mains carry ~+1.0-1.5 pts; further out they carry the full margin curve (+2.3-3.4, MLB mains)
+    priced = m_from_f(nv_side + (MAIN_MARGIN if gap < 0.06 else margin(nv_side)))
     if gap < snap:
         return 1.0
     if gap < snap + 0.005:
