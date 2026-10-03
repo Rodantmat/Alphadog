@@ -798,6 +798,18 @@ def calibrate(conn):
         sts = sorted(longest_streak(r) for r in res)
         mc95, mc99 = dds[int(0.95 * len(dds))], dds[int(0.99 * len(dds))]
         st95, st99 = sts[int(0.95 * len(sts))], sts[int(0.99 * len(sts))]
+        # §30x: outcomes cluster at week scale (block bootstrap tails wider than iid; A_core_3power's real backtest drawdown sat
+        # at the iid 99th percentile). Thresholds = the WIDER of the iid and the 7- and 14-day block-bootstrap envelopes.
+        for blk in (7, 14):
+            bres = []
+            for _ in range(10000):
+                seq = []
+                while len(seq) < len(nets):
+                    i = rng.randrange(len(nets)); seq.extend(nets[i:i + blk])
+                bres.append(seq[:len(nets)])
+            bd = sorted(maxdd(r) for r in bres); bs = sorted(longest_streak(r) for r in bres)
+            mc95 = max(mc95, bd[int(0.95 * len(bd))]); mc99 = max(mc99, bd[int(0.99 * len(bd))])
+            st95 = max(st95, bs[int(0.95 * len(bs))]); st99 = max(st99, bs[int(0.99 * len(bs))])
         # CUSUM calibration on the backtest's own leg stream (chronological), per season
         legs = conn.execute(f"""SELECT s.season, s.game_date, (j->>'hit')::int FROM {tbl} s, jsonb_array_elements(s.legs_json) j
                                WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.phase<>'final7' ORDER BY s.game_date, s.k""",
