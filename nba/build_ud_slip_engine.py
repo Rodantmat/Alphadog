@@ -42,6 +42,8 @@ SIZES = [int(x) for x in (os.environ.get('UD_SIZES') or '2,3,4,5,6,7,8').split('
 MAX_PER_CELL = int(os.environ.get('UD_MAX_PER_CELL') or '2')
 MINRISE_OUT = (os.environ.get('UD_MINRISE_OUT') or '0') == '1'
 MINFALL_PREF = (os.environ.get('UD_MINFALL_PREF') or '0') == '1'
+EXCL_HOTFORM = (os.environ.get('UD_EXCL_HOTFORM') or '0') == '1'   # §30p: recent form >= +1 SD toward the pick: 61% wrong-way
+EXCL_CENTER = (os.environ.get('UD_EXCL_CENTER') or '0') == '1'     # §30p: centers: 60% wrong-way
 SUFFIX = os.environ.get('UD_TABLE_SUFFIX') or ''
 T_SLIPS = f'nba_score.ud_slip_engine_slips{SUFFIX}'
 T_LEGS = f'nba_score.ud_slip_engine_legs{SUFFIX}'
