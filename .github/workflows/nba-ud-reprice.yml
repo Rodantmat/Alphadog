@@ -1,0 +1,37 @@
+name: NBA UD Reprice
+
+# Reprice every Underdog NBA window leg to Underdog's CURRENT payout logic (strategy doc §30r)
+# -> nba_score.ud_window_legs_curr. Writes only that table; the certified ud_window_legs is untouched.
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "min (conservative: min of historical and current) | cur | narrow"
+        default: "min"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-ud-reprice
+  cancel-in-progress: false
+
+jobs:
+  reprice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Reprice
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RP_SCENARIO: ${{ github.event.inputs.scenario }}
+        run: python -u nba/build_ud_reprice.py
