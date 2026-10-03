@@ -465,6 +465,18 @@ jobs:
           LS_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/live_slip_engine.py
 
+      # UNDERDOG PAPER PICK (§30z, 2026-10-03): P5 (primary) + P4 (shadow) from Underdog's window board, built by the certified
+      # Underdog engine (imported - live = backtest; parity verified on two historical slates, selection and settlement exact).
+      # Paper only: continue-on-error, so it can never disturb the PrizePicks pick above. Graded by P2A overnight.
+      - name: Underdog paper pick (P5 + P4 shadow)
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UDL_MODE: "pick"
+          UDL_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/ud_live_slip_engine.py
+
   # Records this run's outcome on the row it claimed (success / failure / cancelled, per job).
   finish:
     needs: [claim, afternoon]
