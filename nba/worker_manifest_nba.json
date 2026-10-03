@@ -20,6 +20,7 @@
     "alphadog-v2-nba-static-lineups",
     "alphadog-v2-nba-daily-delta",
     "alphadog-v2-nba-static-measure-types",
-    "alphadog-v2-nba-baseline-ladder"
+    "alphadog-v2-nba-baseline-ladder",
+    "alphadog-v2-nba-scheduler"
   ]
 }
