@@ -186,6 +186,14 @@ def candidates_for(comp, pool):
     if comp.startswith('weighted:'):
         c = comp[9:]
         return pool.get(c, [])[:2] + [l for l in merged(CORE) if l['cell'] != c]
+    if comp == 'mains':
+        return merged([c for c, v in CELLS.items() if v[1] == 'R'])
+    if comp == 'priced':
+        return merged([c for c, v in CELLS.items() if v[1] != 'R'])
+    if comp.startswith('ex:'):
+        return merged([c for c in CORE if c != comp[3:]])
+    if comp == 'edge59':
+        return merged([c for c, v in CELLS.items() if v[5] >= 0.59])
     return []
 
 
