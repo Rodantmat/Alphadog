@@ -44,6 +44,9 @@ MINRISE_OUT = (os.environ.get('UD_MINRISE_OUT') or '0') == '1'
 MINFALL_PREF = (os.environ.get('UD_MINFALL_PREF') or '0') == '1'
 EXCL_HOTFORM = (os.environ.get('UD_EXCL_HOTFORM') or '0') == '1'   # §30p: recent form >= +1 SD toward the pick: 61% wrong-way
 EXCL_CENTER = (os.environ.get('UD_EXCL_CENTER') or '0') == '1'     # §30p: centers: 60% wrong-way
+LEGS_TABLE = os.environ.get('UD_LEGS_TABLE') or 'nba_score.ud_tier_map_legs'   # §30r: '_curr' = repriced to Underdog's current logic
+HC_MAIN = float(os.environ.get('UD_HC_MAIN') or '0')    # §30r confidence haircut on a main leg's payout factor (0.01 = 1%)
+HC_ALT = float(os.environ.get('UD_HC_ALT') or '0')      # §30r confidence haircut on an alternate leg's payout factor
 SUFFIX = os.environ.get('UD_TABLE_SUFFIX') or ''
 T_SLIPS = f'nba_score.ud_slip_engine_slips{SUFFIX}'
 T_LEGS = f'nba_score.ud_slip_engine_legs{SUFFIX}'
