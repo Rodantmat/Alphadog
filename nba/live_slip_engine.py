@@ -505,9 +505,12 @@ def grade(conn, day):
     if not rows:
         print(f"  {day}: nothing placed to grade", flush=True)
     outcomes = {}
-    for player, prop, side, line, hit in conn.execute("""SELECT player, prop, side, line, hit::int FROM nba_market.prop_universe
-                                                          WHERE game_date=%s AND line_source='real' AND hit IS NOT NULL""", (day,)).fetchall():
-        outcomes[(player, prop, side, float(line))] = hit
+    if GRADE_SOURCE == 'boxscore':
+        outcomes = outcomes_boxscore(conn, day, rows)
+    else:
+        for player, prop, side, line, hit in conn.execute("""SELECT player, prop, side, line, hit::int FROM nba_market.prop_universe
+                                                              WHERE game_date=%s AND line_source='real' AND hit IS NOT NULL""", (day,)).fetchall():
+            outcomes[(player, prop, side, float(line))] = hit
     # window->close line movement per (player, market), from the close snapshot (29m): a leg PP moved against the pick hits ~51% vs 61%
     MK = {'steals': 'player_steals', 'turnovers': 'player_turnovers', 'blocks': 'player_blocks', 'stocks': 'player_blocks_steals', 'rebounds': 'player_rebounds',
           'points': 'player_points', 'pts_ast': 'player_points_assists', 'pra': 'player_points_rebounds_assists', 'pts_reb': 'player_points_rebounds',
