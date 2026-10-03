@@ -42,8 +42,10 @@ PORTFOLIOS = {
     'P5': [('weighted:points_R_U', 4, 'standard', 1), ('weighted:points_R_U', 6, 'flex', 1), ('mains', 2, 'standard', 2)],
     'P4': [('weighted:points_R_U', 4, 'standard', 1), ('weighted:points_R_U', 6, 'flex', 1), ('weighted:points_R_U', 2, 'standard', 2)],
 }
-STAT = {'points': 'pts', 'rebounds': 'reb', 'assists': 'ast', 'threes_made': 'fg3m', 'steals': 'stl', 'blocks': 'blk', 'turnovers': 'tov',
-        'stocks': 'stl+blk', 'pts_reb': 'pts+reb', 'pts_ast': 'pts+ast', 'reb_ast': 'reb+ast', 'pra': 'pts+reb+ast'}
+STAT = {'points': lambda s: s['pts'], 'rebounds': lambda s: s['reb'], 'assists': lambda s: s['ast'], 'threes_made': lambda s: s['fg3m'],
+        'steals': lambda s: s['stl'], 'blocks': lambda s: s['blk'], 'turnovers': lambda s: s['tov'], 'stocks': lambda s: s['stl'] + s['blk'],
+        'pts_reb': lambda s: s['pts'] + s['reb'], 'pts_ast': lambda s: s['pts'] + s['ast'], 'reb_ast': lambda s: s['reb'] + s['ast'],
+        'pra': lambda s: s['pts'] + s['reb'] + s['ast']}
 
 DDL = """CREATE TABLE IF NOT EXISTS nba_score.ud_live_slips (
   game_date date, portfolio text, composition text, size int, structure text, k int, legs_json jsonb,
