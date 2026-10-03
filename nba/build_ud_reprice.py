@@ -92,9 +92,33 @@ def price_alt(nv_side):
     return m_from_f(nv_side + margin(nv_side))
 
 
+SELF_CHECK_SQL = """
+SELECT is_main, higher_prob_sportsbook::float hs, lower_prob_sportsbook::float ls, higher_prob_fantasy::float hf, lower_prob_fantasy::float lf
+FROM archive.underdog_ladder_history
+WHERE higher_prob_fantasy IS NOT NULL AND lower_prob_fantasy IS NOT NULL AND higher_prob_sportsbook IS NOT NULL
+  AND lower_prob_sportsbook IS NOT NULL AND higher_status ILIKE 'active%'
+"""
+
+
+def self_check(conn):
+    """Apply this script's pricing functions to every current MLB row and compare with Underdog's actual modifier."""
+    res = {True: [0, 0, 0, 0.0], False: [0, 0, 0, 0.0]}   # n, exact, within 0.02, sum of (pred - actual)
+    for is_main, hs, ls, hf, lf in conn.execute(SELF_CHECK_SQL).fetchall():
+        nvh = hs / (hs + ls)
+        for nv, f in ((nvh, hf / 100.0), (1 - nvh, lf / 100.0)):
+            actual = round(0.5 / f, 2)
+            pred = price_main(nv, 0.02) if is_main else price_alt(nv)
+            r = res[bool(is_main)]
+            r[0] += 1; r[1] += pred == actual; r[2] += abs(pred - actual) <= 0.02; r[3] += pred - actual
+    for k, (n, ex, near, bias) in res.items():
+        print(f"  SELF-CHECK on the current MLB board ({'mains' if k else 'alternates'}): {n:,} sides | exact {100*ex/n:.1f}% | "
+              f"within 0.02 {100*near/n:.1f}% | mean bias (pred - actual) {bias/n:+.4f}", flush=True)
+
+
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
+    self_check(conn)
     rows = conn.execute(SQL).fetchall()
     print(f"  {len(rows):,} Underdog window legs loaded; scenario = {SCENARIO}", flush=True)
     out = []
