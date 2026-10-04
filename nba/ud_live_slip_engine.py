@@ -254,6 +254,125 @@ def grade(conn, day):
     print(f"  {day}: graded {graded} Underdog paper slips | " + " | ".join(f"{r[0]}: {r[1]} slips, staked {float(r[2] or 0):.1f}, net {float(r[3] or 0):+.2f}" for r in tot), flush=True)
 
 
+# ============================================================================================================================
+# UNDERDOG EDGE MONITOR (§31o). Is the staked P5 portfolio still above break-even? Research and validation: §31o.
+#   reference  - certified hit rate per (cell, tier, side) from the P5 backtest slips (ud_slip_engine_slips_dlt_orig2,
+#                stand-downs out)
+#   break-even - FIXED at -10.84 pp: measured by THINNING the real joint outcomes (each actual hit kept with prob p(s)/p,
+#                slips regraded by the engine's grade()) because Underdog legs co-move inside a slip and an independence
+#                model understates actual ROI by 24 pts; stable across seasons (-10.82 / -10.68), same P5 structure live
+#   statistic  - per graded slate, the mean of (hit - certified p) over the staked P5 slip-legs (voids out)
+#   decision   - looks at 30 / 60 / 90 / 120 graded slates; z = (mean - delta*) / Newey-West SE (7 lags); CONFIRM if
+#                z >= 2.48, ALARM if z <= -2.95 (14-day block bootstrap of the real backtest with the truth AT break-even:
+#                <= ~5-6% false either way). Sticky per season; between looks the running z is information only.
+# ============================================================================================================================
+UD_EDGE_LOOKS = (30, 60, 90, 120)
+UD_EDGE_DELTA = float(os.environ.get('UDL_EDGE_DELTA', '-0.1084'))
+UD_EDGE_CONFIRM_Z = float(os.environ.get('UDL_EDGE_CONFIRM_Z', '2.48'))
+UD_EDGE_ALARM_Z = float(os.environ.get('UDL_EDGE_ALARM_Z', '-2.95'))
+UD_P5 = [('weighted:points_R_U', 4, 'standard', 1), ('weighted:points_R_U', 6, 'flex', 1), ('mains', 2, 'standard', 2)]
+
+
+def ud_nw_se(seq, lags=7):
+    n = len(seq); mu = sum(seq) / n; d = [x - mu for x in seq]
+    var = sum(x * x for x in d) / n + 2 * sum((1 - l / (lags + 1)) * sum(d[i] * d[i - l] for i in range(l, n)) / n
+                                              for l in range(1, min(lags, n - 1) + 1))
+    return math.sqrt(max(var, 1e-12) / n)
+
+
+def ud_evaluate_edge(excess, delta=UD_EDGE_DELTA, prior=None):
+    """PURE core: (rows for looks reached and not yet recorded, running (n, mean, se, z) for information)."""
+    prior = prior or {}
+    sticky = next((d for lk, d in sorted(prior.items()) if d in ('CONFIRMED', 'ALARM')), None)
+    rows = []
+    for look in UD_EDGE_LOOKS:
+        if look > len(excess) or look in prior:
+            continue
+        seq = excess[:look]; mean = sum(seq) / look; se = ud_nw_se(seq); z = (mean - delta) / se
+        if sticky:
+            dec = sticky
+        elif z >= UD_EDGE_CONFIRM_Z:
+            dec = sticky = 'CONFIRMED'
+        elif z <= UD_EDGE_ALARM_Z:
+            dec = sticky = 'ALARM'
+        else:
+            dec = 'UNDECIDED'
+        rows.append((look, mean, se, z, dec))
+    running = None
+    if len(excess) >= 2:
+        n = len(excess); mean = sum(excess) / n; se = ud_nw_se(excess); running = (n, mean, se, (mean - delta) / se)
+    return rows, running
+
+
+def ud_edge_reference(conn, rebuild=False):
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.ud_edge_monitor_ref (cell text, tier text, side text, p double precision, n int,
+                    built_at timestamptz DEFAULT now(), PRIMARY KEY (cell, tier, side))""")
+    if conn.execute("SELECT count(*) FROM nba_score.ud_edge_monitor_ref").fetchone()[0] and not rebuild:
+        return {(c, t, s): p for c, t, s, p in conn.execute("SELECT cell, tier, side, p FROM nba_score.ud_edge_monitor_ref").fetchall()}
+    stand = set()
+    for (season,) in conn.execute("SELECT DISTINCT season FROM nba_score.ud_slip_engine_slips_dlt_orig2").fetchall():
+        ds = [r[0] for r in conn.execute("SELECT DISTINCT game_date FROM nba_score.ud_slip_engine_slips_dlt_orig2 WHERE season=%s ORDER BY 1", (season,)).fetchall()]
+        feb = [(a, b) for a, b in zip(ds, ds[1:]) if a.month == 2]
+        lb = max(feb, key=lambda x: (x[1] - x[0]).days)[0]; s1 = max(ds)
+        stand |= {d for d in ds if 0 <= (lb - d).days < 7 or (s1 - d).days <= 7}
+    agg = defaultdict(lambda: [0, 0])
+    for comp, size, structure, cap in UD_P5:
+        for gd, lj in conn.execute("""SELECT game_date, legs_json FROM nba_score.ud_slip_engine_slips_dlt_orig2
+                                      WHERE composition=%s AND size=%s AND structure=%s AND k<=%s""", (comp, size, structure, cap)).fetchall():
+            if gd in stand:
+                continue
+            for j in lj:
+                a = agg[(j['cell'], j['tier'], j['side'])]; a[0] += int(j['hit']); a[1] += 1
+    conn.execute("DELETE FROM nba_score.ud_edge_monitor_ref")
+    for (c, t, s), (h, n) in agg.items():
+        conn.execute("INSERT INTO nba_score.ud_edge_monitor_ref (cell, tier, side, p, n) VALUES (%s,%s,%s,%s,%s)", (c, t, s, min(max(h / n, 0.02), 0.98), n))
+    conn.commit()
+    return {k: min(max(h / n, 0.02), 0.98) for k, (h, n) in agg.items()}
+
+
+def ud_edge_monitor(conn, day):
+    conn.execute(DDL)
+    p_ref = ud_edge_reference(conn, rebuild=os.environ.get('UDL_EDGE_REBUILD') == '1')
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.ud_edge_monitor (season_start date, look int, slates int, mean_excess double precision,
+                    se double precision, z double precision, delta_star double precision, decision text, decided_at timestamptz DEFAULT now(),
+                    PRIMARY KEY (season_start, look))""")
+    s0 = conn.execute("""SELECT min(game_date) FROM nba_calendar.games WHERE game_id LIKE '002%%' AND game_date <= %s
+                         AND game_date > %s - 250""", (day, day)).fetchone()[0]
+    if s0 is None:
+        print(f"  {day}: Underdog edge monitor - no regular season in progress; nothing to evaluate", flush=True)
+        return
+    by_day = defaultdict(lambda: [0.0, 0]); missing = 0
+    for gd, lj in conn.execute("""SELECT game_date, legs_json FROM nba_score.ud_live_slips WHERE portfolio='P5' AND stake > 0
+                                  AND graded_at IS NOT NULL AND game_date BETWEEN %s AND %s""", (s0, day)).fetchall():
+        for j in (lj if isinstance(lj, list) else json.loads(lj)):
+            if j.get('hit') is None:
+                continue                               # void (DNP / push) or graded before per-leg outcomes were kept
+            key = (j.get('cell'), j.get('tier'), j.get('side'))
+            if key not in p_ref:
+                missing += 1; continue
+            by_day[gd][0] += int(bool(j['hit'])) - p_ref[key]; by_day[gd][1] += 1
+    days = sorted(d for d, (s, n) in by_day.items() if n > 0)
+    excess = [by_day[d][0] / by_day[d][1] for d in days]
+    prior = {lk: d for lk, d in conn.execute("SELECT look, decision FROM nba_score.ud_edge_monitor WHERE season_start=%s AND look > 0", (s0,)).fetchall()}
+    rows, running = ud_evaluate_edge(excess, UD_EDGE_DELTA, prior)
+    for look, mean, se, z, dec in rows:
+        conn.execute("""INSERT INTO nba_score.ud_edge_monitor (season_start, look, slates, mean_excess, se, z, delta_star, decision)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (season_start, look) DO NOTHING""", (s0, look, look, mean, se, z, UD_EDGE_DELTA, dec))
+        print(f"  {day}: UNDERDOG EDGE MONITOR LOOK {look}: mean excess {100*mean:+.2f} pp vs break-even {100*UD_EDGE_DELTA:+.2f} pp, z {z:+.2f} -> {dec}", flush=True)
+    if running:
+        n, mean, se, z = running
+        conn.execute("""INSERT INTO nba_score.ud_edge_monitor (season_start, look, slates, mean_excess, se, z, delta_star, decision)
+                        VALUES (%s,0,%s,%s,%s,%s,%s,'RUNNING (information only)') ON CONFLICT (season_start, look) DO UPDATE SET
+                        slates=EXCLUDED.slates, mean_excess=EXCLUDED.mean_excess, se=EXCLUDED.se, z=EXCLUDED.z, decided_at=now()""",
+                     (s0, n, mean, se, z, UD_EDGE_DELTA))
+        nxt = next((lk for lk in UD_EDGE_LOOKS if lk > n), None)
+        print(f"  {day}: Underdog edge monitor (running, information only) - {n} slates, excess {100*mean:+.2f} pp, break-even "
+              f"{100*UD_EDGE_DELTA:+.2f} pp, z {z:+.2f}; next decision at slate {nxt}" + (f"; {missing} legs without a reference" if missing else ""), flush=True)
+    else:
+        print(f"  {day}: Underdog edge monitor - {len(days)} graded slates with per-leg outcomes; nothing to evaluate yet", flush=True)
+    conn.commit()
+
+
 def main():
     mode = (os.environ.get('UDL_MODE') or 'pick').lower()
     conn = psycopg.connect(os.environ['DATABASE_URL'])
