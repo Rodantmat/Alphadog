@@ -2,8 +2,9 @@ name: NBA Close Capture
 
 # CLOSE BOARD CAPTURE (strategy doc §31c, 2026-10-03 wiring audit). Fired by the scheduler once per game day at
 # first tip - 25 min (it dispatches workflows WITHOUT inputs, so the label is hard-coded here - nba-boards-market.yml's
-# input would default to 'routine'). PrizePicks + Underdog, archived as snapshot_label 'close'. Feeds: PrizePicks' grader
-# line-movement annotation (optional), the record-only late pick, and the line-movement research (§30w). Grading does
+# input would default to 'routine'). PrizePicks + Underdog, archived as snapshot_label 'close' (today's games only - legs
+# for future slates are archived as 'routine', §31g). Feeds: PrizePicks' grader line-movement annotation (optional) and the
+# line-movement research (§30w); the record-only late pick it once fed is retired (§31p). Grading does
 # NOT depend on it. Each board capped at 5 minutes; a failed board never blocks the other.
 on:
   workflow_dispatch:
