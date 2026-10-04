@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-04T08:36:34Z",
-  "fetched_at": "2026-10-04T08:43:46Z",
+  "started_at": "2026-10-04T15:27:10Z",
+  "fetched_at": "2026-10-04T15:33:46Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -316,7 +316,8 @@
   "unresolved_player_names": 0,
   "multiplier_values": {
     "None": 35,
-    "1.0": 2
+    "1.0": 1,
+    "0.91": 1
   },
-  "github_run_id": "37189429689"
+  "github_run_id": "37212976385"
 }
