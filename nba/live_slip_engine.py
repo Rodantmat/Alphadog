@@ -384,6 +384,16 @@ def pick(conn, day, require_fresh=True):
     if not legs:
         print(f"  {day}: no scored window board legs - nothing to pick", flush=True)
         return
+    # OUT-OF-RANGE BOARD GUARD (2026-10-04, §31j). Every cell takes the top-n of the DAY'S board - relative, with no absolute
+    # floor - so on a thin board "top 2" means "best of a few". Two seasons: the thinnest fifth of boards hit ~50% legs (+9.6%)
+    # vs 61-66% on full boards, and the 2026-10-20 spotlight board (126 legs, 6 stars) sat below every validated slate.
+    # Below the smallest board in the validated history (179 scored legs, 2024-12-09; p01 250, median 2,360) the strategies are
+    # out of their domain: nothing is placed. A domain check, not a performance claim.
+    n_board = len(legs) // 3
+    if n_board < MIN_BOARD_LEGS:
+        print(f"  {day}: board of {n_board} scored legs is below the smallest validated board ({MIN_BOARD_LEGS}) - "
+              f"strategies out of domain, NOTHING PLACED (§31j)", flush=True)
+        return
     cmap = ENG.load_corr(conn)
     attach_pf20(conn, day, legs)   # §29r: the low-foul key reads l['pf20']
     pool = ENG.eligible_legs(legs)
