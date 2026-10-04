@@ -1,0 +1,79 @@
+name: NBA Star-Under Test
+
+# §31n: star-line balanced Unders - control rebuilt now vs exclusion at three thresholds (main + steals-free tables), then the
+# comparison (half-stake arm from the control), then the 16 test tables are dropped. Certified tables are never written: the
+# engine REFUSES a filtered build without a suffix, and every build here has one.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-slip-engine
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SE_CAP: "6"
+      SE_SIZES: "3,4,5"
+      SE_DIVERSIFY: "1"
+      SE_SAMETEAM: "0"
+      SE_LOWFOUL: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Build control + exclusion arms
+        run: |
+          set -euo pipefail
+          build () {   # $1 suffix, $2 exclude-cells, $3 star spec ('' = off)
+            echo "=== build $1 (exclude '$2', star '$3') $(date -u +%H:%M:%S)"
+            if [ -n "$3" ]; then IFS=, read -r P R C <<< "$3"; else P=""; R=""; C=""; fi
+            SE_TABLE_SUFFIX="$1" SE_EXCLUDE_CELLS="$2" SE_EXCL_STAR_UNDER="$([ -n "$3" ] && echo 1 || echo 0)" \
+              SE_STAR_POINTS="${P:-24.5}" SE_STAR_PRA="${R:-34.5}" SE_STAR_COMBO="${C:-29.5}" python -u nba/build_slip_engine.py | tail -3
+          }
+          build _su_ctrl          ""                     ""
+          build _su_lo            ""                     "22.5,32.5,27.5"
+          build _su_mid           ""                     "24.5,34.5,29.5"
+          build _su_hi            ""                     "26.5,36.5,31.5"
+          build _nosteals_su_ctrl "steals_R,steals_R_U" ""
+          build _nosteals_su_lo   "steals_R,steals_R_U" "22.5,32.5,27.5"
+          build _nosteals_su_mid  "steals_R,steals_R_U" "24.5,34.5,29.5"
+          build _nosteals_su_hi   "steals_R,steals_R_U" "26.5,36.5,31.5"
+      - name: Control reproducibility vs certified (first slip of each daily strategy)
+        run: |
+          python - <<'EOF'
+          import os, sys, psycopg
+          sys.path.insert(0, 'nba'); import live_slip_engine as L
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              for name in L.edge_daily_strategies():
+                  comp, size, structure, cap = L.STRATEGIES[name][:4]
+                  ns = '_nosteals' if name.startswith(('C_','D_','R_','W_')) else ''
+                  q = f"""SELECT count(*) FILTER (WHERE a.legs_json = b.legs_json), count(*) FROM nba_score.slip_engine_slips{ns} a
+                          JOIN nba_score.slip_engine_slips{ns}_su_ctrl b USING (game_date, composition, size, structure, k)
+                          WHERE a.composition=%s AND a.size=%s AND a.structure=%s AND a.k<=%s"""
+                  same, tot = c.execute(q, (comp, size, structure, cap)).fetchone()
+                  print(f"  {name:<20} control == certified: {same}/{tot}")
+          EOF
+      - name: Compare
+        run: python -u nba/star_under_compare.py
+      - name: Drop the test tables
+        if: always()
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              for base in ("slip_engine_slips", "slip_engine_legs"):
+                  for sfx in ("_su_ctrl","_su_lo","_su_mid","_su_hi","_nosteals_su_ctrl","_nosteals_su_lo","_nosteals_su_mid","_nosteals_su_hi"):
+                      c.execute(f"DROP TABLE IF EXISTS nba_score.{base}{sfx}")
+              print("test tables dropped")
+          EOF
