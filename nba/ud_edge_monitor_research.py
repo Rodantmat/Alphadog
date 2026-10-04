@@ -101,6 +101,38 @@ def main():
               f"break-even delta* {100*dpp(ss, s_star) if s_star is not None else float('nan'):+.2f} pp", flush=True)
         if label == 'BOTH':
             port_d = dpp(ss, s_star)
+    # THINNING (correlation-preserving): the independence model above understates actual ROI because legs in a slip co-move
+    # (measured: 4-Std all-hit 19.5% actual vs 15.9% independent; 6-Flex 10.2% vs 5.9%). Thinning keeps the REAL joint
+    # outcomes: each actual hit survives with probability p(s)/p, so every leg's hit rate falls exactly to p(s) while the
+    # observed co-movement is preserved; slips are regraded with the engine's own grade().
+    R = int(os.environ.get('EM_THIN_REPS', '120'))
+    def roi_thin(ss, shift, reps=R):
+        keep = {k: expit(logit(p) + shift) / p for k, p in p_of.items()}
+        tot = 0.0; trng = random.Random(1234)
+        for _ in range(reps):
+            for gd, sn, st, legs, pr, sk in ss:
+                _, pay = E.grade([{'hit': (1 if (h and trng.random() < keep[k]) else 0), 'factor': f} for k, f, h in legs], st)
+                tot += pay
+        return tot / (reps * len(ss)) - 1
+    def solve_thin(ss):
+        lo, hi = -3.0, 0.0
+        if roi_thin(ss, lo) > 0 or roi_thin(ss, hi) < 0:
+            return None
+        for _ in range(22):
+            mid = (lo + hi) / 2
+            if roi_thin(ss, mid) > 0:
+                hi = mid
+            else:
+                lo = mid
+        return (lo + hi) / 2
+    print("\nTHINNING (correlation-preserving) - ROI at shift 0 must equal the actual ROI exactly:", flush=True)
+    for label, ss in (('2024-25', [s for s in slips if s[1] == '2024-25']), ('2025-26', [s for s in slips if s[1] == '2025-26']), ('BOTH', slips)):
+        r0 = roi_thin(ss, 0.0, reps=1); st_ = solve_thin(ss)
+        d_ = dpp(ss, st_) if st_ is not None else float('nan')
+        print(f"  {label:<8} ROI(shift 0) {100*r0:+6.1f}% | break-even delta* {100*d_:+.2f} pp (independence said "
+              f"{'see above'})", flush=True)
+        if label == 'BOTH':
+            port_d = d_
     day = defaultdict(lambda: [0.0, 0])
     for gd, sn, st, legs, pr, sk in slips:
         for k, f, h in legs:
