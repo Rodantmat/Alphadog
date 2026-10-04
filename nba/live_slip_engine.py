@@ -181,11 +181,23 @@ def load_board_legs_live(conn, day, label='window'):
         evt AS MATERIALIZED (
           SELECT ev.cn, ev.event_id, h.team_id home_id, a.team_id away_id FROM ev
           LEFT JOIN nba_ref.teams h ON h.full_name = replace(ev.home_team, 'Los Angeles Clippers', 'LA Clippers')
-          LEFT JOIN nba_ref.teams a ON a.full_name = replace(ev.away_team, 'Los Angeles Clippers', 'LA Clippers'))
+          LEFT JOIN nba_ref.teams a ON a.full_name = replace(ev.away_team, 'Los Angeles Clippers', 'LA Clippers')),
+        -- LIVE PRIZEPICKS ROWS CARRY NO TEAM NAMES (found 2026-10-03 by the slate simulation): the scraped board has an event id
+        -- but NULL home/away, so the board-name rule resolved every leg's team to NULL and dropped it - opening night would have
+        -- picked nothing. The parity slates came from the Odds API archive, which does name teams. Fallback = the schedule, the
+        -- authority: the teams playing today, from nba_calendar.games.
+        playing AS MATERIALIZED (
+          SELECT home_team_id t FROM nba_calendar.games WHERE game_date = %s
+          UNION SELECT away_team_id FROM nba_calendar.games WHERE game_date = %s)
         SELECT pid.player_id, pr.player, pr.prop, pr.side, pr.line, pr.price, pr.kind, pr.tier3,
                f.final_hp::float, f.baseline_hp::float, f.score::float,
-               CASE WHEN gl.team_id IN (evt.home_id, evt.away_id) THEN gl.team_id
-                    WHEN pl.team_id IN (evt.home_id, evt.away_id) THEN pl.team_id END team_id,
+               CASE WHEN evt.home_id IS NOT NULL OR evt.away_id IS NOT NULL THEN
+                      CASE WHEN gl.team_id IN (evt.home_id, evt.away_id) THEN gl.team_id
+                           WHEN pl.team_id IN (evt.home_id, evt.away_id) THEN pl.team_id END
+                    ELSE
+                      CASE WHEN gl.team_id IN (SELECT t FROM playing) THEN gl.team_id
+                           WHEN pl.team_id IN (SELECT t FROM playing) THEN pl.team_id END
+               END team_id,
                evt.event_id
         FROM pr
         JOIN pid ON pid.cn = pr.cn
