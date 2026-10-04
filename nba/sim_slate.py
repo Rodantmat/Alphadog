@@ -78,7 +78,7 @@ def main():
             if sc is None:
                 unscored += 1; continue
             for rk, s in (('final_hp', sc[0]), ('baseline_hp', sc[1]), ('final_score', sc[2])):
-                legs.append({'rank_key': rk, 'season': None, 'game_date': day, 'player': player, 'player_id': pid, 'prop': prop,
+                legs.append({'rank_key': rk, 'season': None, 'game_date': __import__('datetime').date.fromisoformat(day), 'player': player, 'player_id': pid, 'prop': prop,
                              'tier': tier, 'side': side, 'line': line, 'factor': 1.0, 'hit': None, 'n_rank': None, 'score': s,
                              'team_id': team, 'event_id': ev})
     g = defaultdict(list)
