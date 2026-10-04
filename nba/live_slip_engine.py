@@ -83,6 +83,7 @@ SIDE_FILTER_BY_STRATEGY = {'D_points_3power': 'Under'}
 # pass 43: a hard aggregate daily stake cap across all strategies. With n=2 seasons any state raise is an estimate; the guard
 # that stops a wrong one from blowing up a season is a ceiling on total daily exposure, scaled down proportionally if hit.
 MAX_DAILY_STAKE = int(os.environ.get('LIVE_MAX_DAILY_STAKE', '36'))
+MIN_BOARD_LEGS = int(os.environ.get('LS_MIN_BOARD', '179'))   # §31j: smallest validated board (scored legs), 2024-12-09
 # pass 45: leg filter - steals Unders only at the 0.5 line (65% vs 51% at 1.5, both seasons; the 1.5 line is a coin flip on a
 # ~1.5-steal player, the 0.5 Under is where the model's skill applies). The cushion finding (§29n) from the other side.
 def leg_allowed(l, trail10=None):
