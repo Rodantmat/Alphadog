@@ -76,7 +76,12 @@ def main():
         common = ko.keys() & kn.keys(); only_old = ko.keys() - kn.keys(); only_new = kn.keys() - ko.keys()
         tot['legs_old'] += len(ko); tot['legs_new'] += len(kn); tot['common'] += len(common); tot['only_old'] += len(only_old)
         suffix_new = {k for k in only_new if is_suffix(kn[k]['player'], k[0])}
-        tot['only_new_suffix'] += len(suffix_new); tot['only_new_other'] += len(only_new) - len(suffix_new)
+        tot['only_new_suffix'] += len(suffix_new)
+        for k in only_new - suffix_new:
+            if k[0] not in alias_cache:
+                r = conn.execute("SELECT display_name FROM nba_ref.player_name_map WHERE norm_name=%s", (k[0],)).fetchone()
+                alias_cache[k[0]] = bool(r and r[0] and str(r[0]).startswith('alias'))
+            tot['only_new_alias' if alias_cache[k[0]] else 'only_new_other'] += 1
         for k in list(only_new - suffix_new)[:2] + list(only_old)[:2]:
             if len(other_examples) < 15:
                 other_examples.append((str(day), 'new-only' if k in kn else 'old-only', k, (kn.get(k) or ko.get(k))['player']))
