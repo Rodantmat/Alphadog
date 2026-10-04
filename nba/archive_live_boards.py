@@ -424,6 +424,20 @@ def main():
             print(f"  {app}: {moved} legs dated by tip time instead of capture date -> {', '.join(dates[:6])}",
                   flush=True)
         rows = fixed
+        # GAME-DAY LABELS ARE FOR TODAY'S GAMES ONLY (2026-10-03, wiring audit). 'window' / 'close' / 'morning' mean "a snapshot
+        # taken ON game day" and are what the scorer, the tier build and both pickers read. Every capture scrapes the whole
+        # board, and the apps post future slates early (PrizePicks posted opening night 17 days ahead), so a capture used to
+        # stamp FUTURE legs with its own label. The conflict key includes the line, so an early row for a line that later
+        # moved was never replaced - it stayed inside that day's decision snapshot as a stale, no-longer-offered line.
+        # Future legs are still archived (the line history is the point) but as 'routine', which nothing decision-side reads.
+        # "Today" = the Eastern date (the archive's game_date convention); every game-day capture runs on its slate's ET date.
+        if label in ("window", "close", "morning"):
+            today_et = datetime.now(ZoneInfo("America/New_York")).date()
+            relab = sum(1 for r in rows if r[0] != today_et)
+            if relab:
+                rows = [tuple((r[0], r[1], "routine") + tuple(r[3:])) if r[0] != today_et else r for r in rows]
+                print(f"  {app}: {relab} legs for other dates archived as 'routine' (the '{label}' label is for "
+                      f"{today_et} games only)", flush=True)
         # NOT-NBA GUARD (2026-09-26, T26-7). On 2026-09-12/13 the Underdog and Fliff scrapers let MLB
         # markets through their sport filter and 7,921 baseball rows landed in the NBA archive (moved to
         # nba_market.board_snapshots_quarantine - nothing deleted). The archive is an ingredient; a row
