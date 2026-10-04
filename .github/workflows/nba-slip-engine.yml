@@ -33,6 +33,10 @@ on:
         description: "'1' = prefer legs on players under 1.8 fouls/game (pass 64, validating)"
         default: ""
         required: false
+      star_under:
+        description: "§31n TEST: 'points,pra,combo' star-line thresholds whose balanced Unders are excluded before ranking (blank = off; needs a table_suffix)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
