@@ -250,6 +250,15 @@ jobs:
           UDL_MODE: "grade"
         run: python -u nba/ud_live_slip_engine.py
 
+      # UNDERDOG EDGE MONITOR (§31o): is the staked P5 portfolio still above break-even? Decisions only at 30 / 60 / 90 / 120
+      # graded slates (bootstrap-calibrated); running z in between is information only. Monitoring only: continue-on-error.
+      - name: Underdog edge monitor (break-even, group-sequential)
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UDL_MODE: "edge"
+        run: python -u nba/ud_live_slip_engine.py
+
   # Records this run's outcome on the row it claimed (the scheduler dispatches P2B only after a success here).
   finish:
     needs: [claim, results]
