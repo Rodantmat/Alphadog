@@ -168,6 +168,13 @@ def pick(conn, day):
     if not legs:
         print(f"  {day}: no Underdog window legs joined to final_hp - nothing to build", flush=True)
         return
+    # OUT-OF-RANGE BOARD GUARD (§31j): cells rank relative to the day's board, with no absolute floor. Below the smallest
+    # validated Underdog board (178 unique scored legs, 2024-11-14; p01 234, median 1,284) nothing is built.
+    n_board = len({(l['player_id'], l['prop'], l['side'], l['line']) for l in legs})
+    if n_board < int(os.environ.get('UDL_MIN_BOARD', '178')):
+        print(f"  {day}: board of {n_board} scored legs is below the smallest validated Underdog board "
+              f"({os.environ.get('UDL_MIN_BOARD', '178')}) - out of domain, NOTHING BUILT (§31j)", flush=True)
+        return
     sd = stand_down(conn, day)
     fresh = fresh_absences(conn, day)
     teams = leg_team(conn, day, {l['player_id'] for l in legs})
