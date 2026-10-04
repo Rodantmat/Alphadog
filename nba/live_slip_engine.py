@@ -85,6 +85,19 @@ SIDE_FILTER_BY_STRATEGY = {'D_points_3power': 'Under'}
 # that stops a wrong one from blowing up a season is a ceiling on total daily exposure, scaled down proportionally if hit.
 MAX_DAILY_STAKE = int(os.environ.get('LIVE_MAX_DAILY_STAKE', '36'))
 MIN_BOARD_LEGS = int(os.environ.get('LS_MIN_BOARD', '179'))   # §31j: smallest validated board (scored legs), 2024-12-09
+# §31n VALIDATED SIZING: slips holding a star-line balanced Under are staked at half. Two seasons, three thresholds (22.5/32.5/27.5,
+# 24.5/34.5/29.5, 26.5/36.5/31.5): portfolio ROI +1.4..+3.0 pts and max drawdown lower in every case, profit flat (same winnings,
+# ~3% less staked). EXCLUDING those legs instead (replacements fill) was REJECTED (2024-25 -0.9..-1.7 at every threshold).
+STAR_UNDER_LINES = {'points': 24.5, 'pra': 34.5, 'pts_ast': 29.5, 'pts_reb': 29.5}
+
+
+def star_under_weight(slip):
+    """0.5 if the slip holds a star-line balanced Under (validated default thresholds), else 1.0."""
+    for l in slip:
+        th = STAR_UNDER_LINES.get(l['prop'])
+        if th is not None and l['side'] == 'Under' and l['tier'] == 'R' and float(l['line']) >= th:
+            return 0.5
+    return 1.0
 # pass 45: leg filter - steals Unders only at the 0.5 line (65% vs 51% at 1.5, both seasons; the 1.5 line is a coin flip on a
 # ~1.5-steal player, the 0.5 Under is where the model's skill applies). The cushion finding (§29n) from the other side.
 def leg_allowed(l, trail10=None):
