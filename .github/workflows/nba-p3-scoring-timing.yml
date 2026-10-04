@@ -1,0 +1,54 @@
+name: NBA P3 Scoring Timing (scratch)
+
+# §31f: times score_board_legs.py on a FULL historical board without touching real data - an exact copy whose ONLY change
+# is the output table name (board_scored -> _timing_board_scored; the script writes nowhere else). Scratch table dropped after.
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        default: "2026-01-10"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  time:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber
+      - name: Time the scorer on a full board (scratch output)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BS_ASOF: ${{ github.event.inputs.date }}
+          BS_FORCE_RESCORE: "1"
+        run: |
+          set -euo pipefail
+          sed -e 's/nba_score\.board_scored_uidx/nba_score._timing_board_scored_uidx/g' \
+              -e "s/'nba_score.board_scored_uidx'/'nba_score._timing_board_scored_uidx'/g" \
+              -e 's/board_scored_uidx/_timing_board_scored_uidx/g' \
+              -e 's/nba_score\.board_scored/nba_score._timing_board_scored/g' nba/score_board_legs.py > nba/_timing_score.py
+          echo "remaining references to the real table (must be 0):"; grep -c "nba_score\.board_scored\b" nba/_timing_score.py || true
+          start=$(date +%s)
+          python -u nba/_timing_score.py
+          end=$(date +%s)
+          echo "SCORER_WALL_SECONDS=$((end-start))"
+      - name: Drop the scratch table
+        if: always()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              n = c.execute("SELECT count(*) FROM nba_score._timing_board_scored").fetchone()[0] if c.execute("SELECT to_regclass('nba_score._timing_board_scored')").fetchone()[0] else 0
+              print("scratch rows written:", n)
+              c.execute("DROP TABLE IF EXISTS nba_score._timing_board_scored")
+          EOF
