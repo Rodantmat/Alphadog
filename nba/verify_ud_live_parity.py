@@ -86,6 +86,23 @@ def main():
                         tot['raw_identical'] += 1
                     else:
                         tot['raw_differ_void_in_slip' if any(is_void(x) for x in r_) else 'raw_differ_rank_shift'] += 1
+            als = E.build_day_slips(pool_al, comp, size, cap)
+            for k in range(1, cap + 1):
+                b = bt.get((comp, size, structure, k)); a_ = als[k - 1] if len(als) >= k else None
+                if b is None and a_ is None:
+                    continue
+                bk = tuple(sorted((j['player'], j['prop'], j['side'], float(j['line'])) for j in b[0])) if b else None
+                ak = tuple(sorted((str(x['player_id']), x['prop'], x['side'], float(x['line'])) for x in a_)) if a_ else None
+                bk_id = None
+                if b:
+                    ids = {(j['player'], j['prop'], j['side'], float(j['line'])): j for j in b[0]}
+                    bk_id = tuple(sorted((str(j.get('player_id') or ''), j['prop'], j['side'], float(j['line'])) for j in b[0]))
+                if ak is not None and bk_id is not None and ak == bk_id:
+                    tot['ALIGNED_identical'] += 1
+                else:
+                    tot['ALIGNED_DIFFER'] += 1
+                    if len(ex) < 24:
+                        ex.append(('ALIGNED', str(day), comp, size, structure, k, 'live', ak, 'bt', bk_id))
             live = E.build_day_slips(pool, comp, size, cap)
             for k in range(1, cap + 1):
                 b = bt.get((comp, size, structure, k))
