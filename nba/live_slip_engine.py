@@ -532,10 +532,11 @@ def pick(conn, day, require_fresh=True):
                 staked_today = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s AND status='placed'", (day,)).fetchone()[0]
                 if staked_today >= MAX_DAILY_STAKE:
                     st = 'placed_capped'   # pass 43: the aggregate daily ceiling; recorded, never staked
-            conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
-                            VALUES (%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+            conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                          (day, name, k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': l['tier'],
-                                                     'side': l['side'], 'line': float(l['line']), 'factor': l['factor'], 'pf20': l.get('pf20')} for l in slip]), size, structure, st))
+                                                     'side': l['side'], 'line': float(l['line']), 'factor': l['factor'], 'pf20': l.get('pf20')} for l in slip]), size, structure, st,
+                          star_under_weight(slip)))
             n += 1
     conn.commit()
     print(f"  {day}: {n} paper slips placed across {len(STRATEGIES)} strategies ({len(legs)//3} board legs)", flush=True)
