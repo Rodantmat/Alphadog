@@ -77,7 +77,8 @@ def main():
                         continue
                     rem.append({**leg, 'hit': (v > leg['line']) if leg['side'] == 'Over' else (v < leg['line'])})
                 p_live = U.payout(structure, rem)
-                disc = math.prod((1 - 0.005) if j.get('kind', 'main') == 'main' else (1 - 0.01) for j in l)
+                in_product = rem if (structure == 'standard' or len(rem) == 2) else [r for r in rem if r['hit']]
+                disc = math.prod((1 - 0.005) if j.get('kind', 'main') == 'main' else (1 - 0.01) for j in in_product)
                 p_bt = float(b[2]) / disc if b[2] is not None else None
                 hits_live = sum(1 for r in rem if r['hit'])
                 if p_live is None or len(rem) < len(l):
