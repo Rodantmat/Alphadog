@@ -31,9 +31,7 @@ jobs:
           BS_FORCE_RESCORE: "1"
         run: |
           set -euo pipefail
-          sed -e 's/nba_score\.board_scored_uidx/nba_score._timing_board_scored_uidx/g' \
-              -e "s/'nba_score.board_scored_uidx'/'nba_score._timing_board_scored_uidx'/g" \
-              -e 's/board_scored_uidx/_timing_board_scored_uidx/g' \
+          sed -e 's/board_scored_uidx/_timing_board_scored_uidx/g' \
               -e 's/nba_score\.board_scored/nba_score._timing_board_scored/g' nba/score_board_legs.py > nba/_timing_score.py
           echo "remaining references to the real table (must be 0):"; grep -c "nba_score\.board_scored\b" nba/_timing_score.py || true
           start=$(date +%s)
