@@ -97,8 +97,7 @@ def main():
                 ak = tuple(sorted((str(x['player_id']), x['prop'], x['side'], float(x['line'])) for x in a_)) if a_ else None
                 bk_id = None
                 if b:
-                    ids = {(j['player'], j['prop'], j['side'], float(j['line'])): j for j in b[0]}
-                    bk_id = tuple(sorted((str(j.get('player_id') or ''), j['prop'], j['side'], float(j['line'])) for j in b[0]))
+                    bk_id = tuple(sorted((bt_id.get((j['player'], j['prop'], j['side'], float(j['line'])), 'UNMAPPED:' + j['player']), j['prop'], j['side'], float(j['line'])) for j in b[0]))
                 if ak is not None and bk_id is not None and ak == bk_id:
                     tot['ALIGNED_identical'] += 1
                 else:
