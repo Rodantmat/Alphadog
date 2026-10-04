@@ -40,6 +40,8 @@ def main():
       p AS (SELECT DISTINCT cn, nm.player_id, nm.player_id::bigint pid_n FROM b JOIN nba_ref.player_name_map nm ON nm.norm_name = b.cn),
       gl AS (SELECT DISTINCT ON (g.nba_player_id) g.nba_player_id, g.team_id FROM nba_stats.player_game_log g
              WHERE g.nba_player_id IN (SELECT pid_n FROM p) AND g.game_date < %s ORDER BY g.nba_player_id, g.game_date DESC),
+      playing AS (SELECT home_team_id tt FROM nba_calendar.games WHERE game_date = %s
+                  UNION SELECT away_team_id FROM nba_calendar.games WHERE game_date = %s),
       t AS (SELECT b.*, h.team_id home_id, a.team_id away_id FROM b
             LEFT JOIN nba_ref.teams h ON h.full_name = replace(b.home_team, 'Los Angeles Clippers', 'LA Clippers')
             LEFT JOIN nba_ref.teams a ON a.full_name = replace(b.away_team, 'Los Angeles Clippers', 'LA Clippers'))
