@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-03T21:31:28Z",
-  "fetched_at": "2026-10-03T21:38:35Z",
+  "started_at": "2026-10-04T01:44:27Z",
+  "fetched_at": "2026-10-04T01:51:21Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -11,14 +11,14 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      34
+      31
     ],
     [
-      "lines[match=225716]",
-      14
+      "lines[match=225717]",
+      0
     ],
     [
-      "pills[match=225716]",
+      "pills[match=225717]",
       0
     ],
     [
@@ -27,14 +27,6 @@
     ],
     [
       "pills[match=225718]",
-      0
-    ],
-    [
-      "lines[match=225717]",
-      0
-    ],
-    [
-      "pills[match=225717]",
       0
     ],
     [
@@ -158,19 +150,19 @@
       0
     ],
     [
-      "lines[match=225733]",
-      0
-    ],
-    [
-      "pills[match=225733]",
-      0
-    ],
-    [
       "lines[match=225734]",
       0
     ],
     [
       "pills[match=225734]",
+      0
+    ],
+    [
+      "lines[match=225733]",
+      0
+    ],
+    [
+      "pills[match=225733]",
       0
     ],
     [
@@ -240,12 +232,12 @@
     [
       "lines_with_stats[players]",
       0,
-      7
+      0
     ],
     [
       "alternate_projections",
-      6,
-      138,
+      4,
+      92,
       0,
       "deduped 0"
     ],
@@ -258,27 +250,25 @@
       0
     ]
   ],
-  "lines": 48,
-  "legs": 48,
-  "ladder_legs": 138,
-  "ladder_lines_with_alternates": 6,
-  "players": 7,
-  "pregame_legs": 48,
+  "lines": 31,
+  "legs": 31,
+  "ladder_legs": 92,
+  "ladder_lines_with_alternates": 4,
+  "players": 0,
+  "pregame_legs": 31,
   "live_legs": 0,
   "by_stat": {
-    "Moneyline": 28,
-    "Pts + Rebs + Asts": 7,
-    "Points": 7,
-    "Margin of Victory": 3,
-    "Total Points": 3
+    "Moneyline": 27,
+    "Margin of Victory": 2,
+    "Total Points": 2
   },
   "by_line_type": {
-    "balanced": 48
+    "balanced": 31
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "None": 31,
-    "1.0": 17
+    "None": 29,
+    "1.0": 2
   },
-  "github_run_id": "37155345976"
+  "github_run_id": "37168873853"
 }
