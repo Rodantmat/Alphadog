@@ -1054,6 +1054,10 @@ EDGE_LOOKS = (30, 60, 90, 120, 150)
 EDGE_CONFIRM_Z = float(os.environ.get('LS_EDGE_CONFIRM_Z', '3.28'))
 EDGE_ALARM_Z = float(os.environ.get('LS_EDGE_ALARM_Z', '-3.09'))
 EDGE_NW_LAGS = 7
+# §31p: break-even FIXED at the pooled correlation-preserving THINNING value (real joint outcomes, engine grade()). The per-season
+# independence recompute drifted with slip mix (2024-25 -10.98 vs thinning -8.48; 2025-26 -7.19 vs -9.61); pooled the two
+# methods agree (-9.24 vs -8.99). Fixed = stable, correlation-aware, within 0.25 pp of the value the boundaries were calibrated at.
+EDGE_DELTA = float(os.environ.get('LS_EDGE_DELTA', '-0.0899'))
 
 
 def edge_daily_strategies():
