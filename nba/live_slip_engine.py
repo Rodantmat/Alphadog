@@ -1198,9 +1198,10 @@ def edge_monitor(conn, day):
             slips.append((structure, legs))
     days = sorted(d for d, (s, n) in by_day.items() if n > 0)
     excess = [by_day[d][0] / by_day[d][1] for d in days]
-    delta, _shift = edge_break_even(slips, p_ref)
-    if delta is None:
-        print(f"  {day}: edge monitor - {len(days)} graded slates, {len(slips)} slips: break-even not yet defined (needs >= 5 slips)", flush=True)
+    info_delta, _shift = edge_break_even(slips, p_ref)     # information only (§31p): decisions use the fixed EDGE_DELTA
+    delta = EDGE_DELTA
+    if not excess:
+        print(f"  {day}: edge monitor - no graded slates with leg outcomes yet; nothing to evaluate", flush=True)
         return
     prior = {lk: d for lk, d in conn.execute("SELECT look, decision FROM nba_score.edge_monitor WHERE season_start=%s AND look > 0", (s0,)).fetchall()}
     new_rows, running = evaluate_edge(excess, delta, prior)
