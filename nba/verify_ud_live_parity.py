@@ -62,12 +62,16 @@ def main():
                 SELECT composition, size, structure, k, legs_json, hits, payout FROM nba_score.ud_slip_engine_slips_dlt_orig2
                 WHERE game_date=%s""", (day,)).fetchall():
             bt[(comp, size, structure, k)] = (legs_json, hits, payout)
-        # box-score outcomes for settlement
-        box = {}
-        for pid, pts, reb, ast, fg3m, stl, blk, tov, mins in conn.execute("""SELECT nba_player_id::text, pts, reb, ast, fg3m, stl, blk, tov, min
-                FROM nba_stats.player_game_log WHERE game_date=%s""", (day,)).fetchall():
-            box[pid] = dict(pts=pts or 0, reb=reb or 0, ast=ast or 0, fg3m=fg3m or 0, stl=stl or 0, blk=blk or 0, tov=tov or 0, min=mins)
         for comp, size, structure, cap in SLOTS:
+            raw = E.build_day_slips(raw_pool, comp, size, cap)
+            for k in range(1, cap + 1):
+                b = bt.get((comp, size, structure, k)); r_ = raw[k - 1] if len(raw) >= k else None
+                if b is not None and r_ is not None:
+                    bk = tuple(sorted((j['player'], j['prop'], j['side'], float(j['line'])) for j in b[0]))
+                    if key(r_) == bk:
+                        tot['raw_identical'] += 1
+                    else:
+                        tot['raw_differ_void_in_slip' if any(is_void(x) for x in r_) else 'raw_differ_rank_shift'] += 1
             live = E.build_day_slips(pool, comp, size, cap)
             for k in range(1, cap + 1):
                 b = bt.get((comp, size, structure, k))
