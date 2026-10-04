@@ -143,6 +143,20 @@ def main():
                 tot['slips_differ_suffix' if involves else 'slips_differ_other'] += 1
                 if not involves and len(slip_diff_examples) < 10:
                     slip_diff_examples.append((str(day), name, so[name][:1], sn[name][:1]))
+        # APPLES-TO-APPLES: the SAME leg set on both sides (common keys), the old side with its missing events repaired, players
+        # written canonically on both, ranks recomputed by the same rule. Every intended difference is removed - any
+        # remaining slip difference is a genuine bug.
+        kf = lambda l: (canon(l['player']), l['prop'], l['side'], float(l['line']), l['tier'], l['rank_key'])
+        al_old = rerank([dict(r, player=canon(r['player'])) for r in rep if kf(r) in common])
+        al_new = rerank([dict(l, player=canon(l['player'])) for l in new if kf(l) in common])
+        sa = build_all(conn, day, al_old, cmap); sb = build_all(conn, day, al_new, cmap)
+        for name in sa:
+            if sa[name] == sb[name]:
+                tot['ALIGNED_identical'] += 1
+            else:
+                tot['ALIGNED_DIFFER'] += 1
+                if len(aligned_examples) < 10:
+                    aligned_examples.append((str(day), name, sa[name][:1], sb[name][:1]))
         if i % 25 == 0:
             print(f"  {i}/{len(days)} | {dict(tot)} | field mismatches {dict(field_mis)}", flush=True)
         # GRADING PARITY: the live strategies' backtest slips on this date, graded both ways
