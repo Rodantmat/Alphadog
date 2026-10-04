@@ -96,6 +96,8 @@ def main():
                 r = conn.execute("SELECT display_name FROM nba_ref.player_name_map WHERE norm_name=%s", (k[0],)).fetchone()
                 alias_cache[k[0]] = bool(r and r[0] and str(r[0]).startswith('alias'))
             tot['only_new_alias' if alias_cache[k[0]] else 'only_new_other'] += 1
+            if not alias_cache[k[0]]:
+                print(f"    NEW-ONLY OTHER {day} {k} raw='{kn[k]['player']}' player_id={kn[k].get('player_id')}", flush=True)
         for k in list(only_new - suffix_new)[:2] + list(only_old)[:2]:
             if len(other_examples) < 15:
                 other_examples.append((str(day), 'new-only' if k in kn else 'old-only', k, (kn.get(k) or ko.get(k))['player']))
