@@ -1018,6 +1018,188 @@ def reset(conn):
     print(f"  RESET: {n_slips} ledger slips removed; states: " + ", ".join(f"{s}={st}/{c}" for s, st, c in states), flush=True)
 
 
+# ============================================================================================================================
+# BREAK-EVEN EDGE MONITOR (§31l; research and validation §31k). Answers ONE question: is the daily portfolio still above
+# break-even? H1-H3 catch collapses; this catches a slide to break-even. Design validated on two seasons of backtest:
+#   reference  - certified hit rate per (cell, tier, side) from the 8 daily strategies' own backtest slips
+#   break-even - the uniform log-odds shift of every leg's certified p at which the EXACT expected return of the slips
+#                actually placed is zero (Poisson-binomial over hits x the engine's grade(): POWER / FLEX x prod(factor),
+#                compress()) - reported as delta* in percentage points (backtest portfolio: -9.24 pp)
+#   statistic  - per graded slate, the exposure-weighted mean of (hit - certified p) over the placed slip-legs (voids out)
+#   decision   - group-sequential: looks at 30 / 60 / 90 / 120 / 150 graded slates only; z = (mean - delta*) / Newey-West SE
+#                (Bartlett, 7 lags - the measured week-scale clustering); CONFIRM if z >= 3.28, ALARM if z <= -3.09. The
+#                boundaries were calibrated by 14-day block bootstrap of the real backtest so that with the truth AT break-even
+#                each fires falsely at most ~5% across all looks. Decisions are sticky for the season. Between looks the running
+#                z is information only - acting on it would re-introduce the peeking problem the design exists to avoid.
+# ============================================================================================================================
+EDGE_LOOKS = (30, 60, 90, 120, 150)
+EDGE_CONFIRM_Z = float(os.environ.get('LS_EDGE_CONFIRM_Z', '3.28'))
+EDGE_ALARM_Z = float(os.environ.get('LS_EDGE_ALARM_Z', '-3.09'))
+EDGE_NW_LAGS = 7
+
+
+def edge_daily_strategies():
+    return [n for n, v in STRATEGIES.items() if v[3] > 0 and n not in ROTATION_ONLY and n not in ALLSTAR_ONLY]
+
+
+def _expit(x): return 1.0 / (1.0 + math.exp(-x))
+def _logit(p): return math.log(p / (1.0 - p))
+
+
+def edge_exp_payout(ps, fprod, k, structure):
+    """EXACT E[payout] for independent legs with probabilities ps: Poisson-binomial over hit counts x grade() rules."""
+    dist = [1.0]
+    for p in ps:
+        nd = [0.0] * (len(dist) + 1)
+        for h, q in enumerate(dist):
+            nd[h] += q * (1 - p); nd[h + 1] += q * p
+        dist = nd
+    e = 0.0
+    for h, q in enumerate(dist):
+        base = (ENG.POWER[k] if h == k else 0.0) if structure == 'power' else ENG.FLEX.get((k, h), 0.0)
+        if base > 0:
+            e += q * ENG.compress(base * fprod)
+    return e
+
+
+def edge_break_even(slips, p_ref):
+    """slips: [(structure, [(key, factor)])]. Returns (delta_pp, shift) or (None, None) if undefined."""
+    usable = [(st, [(key, f) for key, f in legs]) for st, legs in slips if legs and all(key in p_ref for key, f in legs)]
+    if len(usable) < 5:
+        return None, None
+    def roi(shift):
+        tot = 0.0
+        for st, legs in usable:
+            ps = [_expit(_logit(p_ref[key]) + shift) for key, f in legs]
+            tot += edge_exp_payout(ps, math.prod(f for key, f in legs), len(legs), st)
+        return tot / len(usable) - 1
+    lo, hi = -3.0, 1.0
+    if roi(lo) > 0 or roi(hi) < 0:
+        return None, None
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        if roi(mid) > 0:
+            hi = mid          # still profitable at mid -> break-even lies below mid
+        else:
+            lo = mid
+    s = (lo + hi) / 2
+    n = tot = 0.0
+    for st, legs in usable:
+        for key, f in legs:
+            p = p_ref[key]; tot += _expit(_logit(p) + s) - p; n += 1
+    return tot / n, s
+
+
+def edge_nw_se(seq, lags=EDGE_NW_LAGS):
+    n = len(seq); mu = sum(seq) / n; d = [x - mu for x in seq]
+    g0 = sum(x * x for x in d) / n
+    var = g0 + 2 * sum((1 - l / (lags + 1)) * sum(d[i] * d[i - l] for i in range(l, n)) / n for l in range(1, min(lags, n - 1) + 1))
+    return math.sqrt(max(var, 1e-12) / n)
+
+
+def evaluate_edge(daily_excess, delta_star, prior=None):
+    """PURE core. daily_excess: per-slate excess in slate order; delta_star: break-even in the same units (fraction);
+    prior: {look: decision} already recorded this season. Returns (rows, running) - rows for looks reached and not yet
+    recorded: (look, mean, se, z, decision); running: (n, mean, se, z) for information only."""
+    prior = prior or {}
+    sticky = next((d for lk, d in sorted(prior.items()) if d in ('CONFIRMED', 'ALARM')), None)
+    rows = []
+    n = len(daily_excess)
+    for look in EDGE_LOOKS:
+        if look > n or look in prior:
+            continue
+        seq = daily_excess[:look]
+        mean = sum(seq) / look; se = edge_nw_se(seq); z = (mean - delta_star) / se
+        if sticky:
+            dec = sticky
+        elif z >= EDGE_CONFIRM_Z:
+            dec = sticky = 'CONFIRMED'
+        elif z <= EDGE_ALARM_Z:
+            dec = sticky = 'ALARM'
+        else:
+            dec = 'UNDECIDED'
+        rows.append((look, mean, se, z, dec))
+    running = None
+    if n >= 2:
+        mean = sum(daily_excess) / n; se = edge_nw_se(daily_excess); running = (n, mean, se, (mean - delta_star) / se)
+    return rows, running
+
+
+def edge_reference(conn, rebuild=False):
+    """Certified p per (cell, tier, side) from the daily strategies' backtest slips (both seasons, caps, final7 out)."""
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.edge_monitor_ref (cell text, tier text, side text, p double precision,
+                    n int, built_at timestamptz DEFAULT now(), PRIMARY KEY (cell, tier, side))""")
+    have = conn.execute("SELECT count(*) FROM nba_score.edge_monitor_ref").fetchone()[0]
+    if have and not rebuild:
+        return {(c, t, s): p for c, t, s, p in conn.execute("SELECT cell, tier, side, p FROM nba_score.edge_monitor_ref").fetchall()}
+    agg = defaultdict(lambda: [0, 0])
+    for name in edge_daily_strategies():
+        comp, size, structure, cap = STRATEGIES[name][:4]
+        tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith(('C_', 'D_', 'R_', 'W_')) else 'nba_score.slip_engine_slips'
+        for (lj,) in conn.execute(f"""SELECT legs_json FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
+                                      AND phase<>'final7'""", (comp, size, structure, cap)).fetchall():
+            for j in lj:
+                a = agg[(j['cell'], j['tier'], j['side'])]; a[0] += int(j['hit']); a[1] += 1
+    conn.execute("DELETE FROM nba_score.edge_monitor_ref")
+    for (c, t, s), (h, n) in agg.items():
+        conn.execute("INSERT INTO nba_score.edge_monitor_ref (cell, tier, side, p, n) VALUES (%s,%s,%s,%s,%s)",
+                     (c, t, s, min(max(h / n, 0.02), 0.98), n))
+    conn.commit()
+    return {k: min(max(h / n, 0.02), 0.98) for k, (h, n) in agg.items()}
+
+
+def edge_monitor(conn, day):
+    """DB wrapper: reads this season's graded live slips of the daily strategies, evaluates, records looks."""
+    p_ref = edge_reference(conn, rebuild=os.environ.get('LS_EDGE_REBUILD') == '1')
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.edge_monitor (season_start date, look int, slates int, mean_excess double precision,
+                    se double precision, z double precision, delta_star double precision, decision text, decided_at timestamptz DEFAULT now(),
+                    PRIMARY KEY (season_start, look))""")
+    s0, _s1 = regular_season_window(conn, day)
+    if s0 is None:
+        print(f"  {day}: edge monitor - no regular-season window; nothing to evaluate", flush=True)
+        return
+    names = edge_daily_strategies()
+    rows = conn.execute("""SELECT game_date, structure, legs_json FROM nba_score.live_slips
+                           WHERE game_date BETWEEN %s AND %s AND strategy = ANY(%s) AND k < 100
+                             AND status IN ('graded','graded_void','graded_shadow') ORDER BY game_date""", (s0, day, names)).fetchall()
+    by_day = defaultdict(lambda: [0.0, 0]); slips = []; missing = 0
+    for gd, structure, lj in rows:
+        legs = []
+        for j in lj:
+            key = (j.get('cell'), j.get('tier'), j.get('side'))
+            if key not in p_ref:
+                missing += 1; continue
+            legs.append((key, float(j.get('factor') or 1.0)))
+            if j.get('hit') is not None:
+                by_day[gd][0] += int(j['hit']) - p_ref[key]; by_day[gd][1] += 1
+        if len(legs) == len(lj):
+            slips.append((structure, legs))
+    days = sorted(d for d, (s, n) in by_day.items() if n > 0)
+    excess = [by_day[d][0] / by_day[d][1] for d in days]
+    delta, _shift = edge_break_even(slips, p_ref)
+    if delta is None:
+        print(f"  {day}: edge monitor - {len(days)} graded slates, {len(slips)} slips: break-even not yet defined (needs >= 5 slips)", flush=True)
+        return
+    prior = {lk: d for lk, d in conn.execute("SELECT look, decision FROM nba_score.edge_monitor WHERE season_start=%s AND look > 0", (s0,)).fetchall()}
+    new_rows, running = evaluate_edge(excess, delta, prior)
+    for look, mean, se, z, dec in new_rows:
+        conn.execute("""INSERT INTO nba_score.edge_monitor (season_start, look, slates, mean_excess, se, z, delta_star, decision)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (season_start, look) DO NOTHING""",
+                     (s0, look, look, mean, se, z, delta, dec))
+        print(f"  {day}: EDGE MONITOR LOOK {look}: mean excess {100*mean:+.2f} pp vs break-even {100*delta:+.2f} pp, "
+              f"z {z:+.2f} -> {dec}", flush=True)
+    if running:
+        n, mean, se, z = running
+        conn.execute("""INSERT INTO nba_score.edge_monitor (season_start, look, slates, mean_excess, se, z, delta_star, decision)
+                        VALUES (%s,0,%s,%s,%s,%s,%s,'RUNNING (information only)') ON CONFLICT (season_start, look) DO UPDATE SET
+                        slates=EXCLUDED.slates, mean_excess=EXCLUDED.mean_excess, se=EXCLUDED.se, z=EXCLUDED.z,
+                        delta_star=EXCLUDED.delta_star, decided_at=now()""", (s0, n, mean, se, z, delta))
+        nxt = next((lk for lk in EDGE_LOOKS if lk > n), None)
+        print(f"  {day}: edge monitor (running, information only) - {n} slates, excess {100*mean:+.2f} pp, break-even "
+              f"{100*delta:+.2f} pp, z {z:+.2f}; next decision at slate {nxt}" + (f"; {missing} legs without a reference" if missing else ""), flush=True)
+    conn.commit()
+
+
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
