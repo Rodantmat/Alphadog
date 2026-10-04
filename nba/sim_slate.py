@@ -44,9 +44,13 @@ def main():
             LEFT JOIN nba_ref.teams h ON h.full_name = replace(b.home_team, 'Los Angeles Clippers', 'LA Clippers')
             LEFT JOIN nba_ref.teams a ON a.full_name = replace(b.away_team, 'Los Angeles Clippers', 'LA Clippers'))
       SELECT t.player, p.player_id, t.market_key, t.side, t.line, t.event_id,
-             CASE WHEN gl.team_id IN (t.home_id, t.away_id) THEN gl.team_id WHEN pl.team_id IN (t.home_id, t.away_id) THEN pl.team_id END team
+             CASE WHEN t.home_id IS NOT NULL OR t.away_id IS NOT NULL THEN
+                    CASE WHEN gl.team_id IN (t.home_id, t.away_id) THEN gl.team_id WHEN pl.team_id IN (t.home_id, t.away_id) THEN pl.team_id END
+                  ELSE
+                    CASE WHEN gl.team_id IN (SELECT tt FROM playing) THEN gl.team_id WHEN pl.team_id IN (SELECT tt FROM playing) THEN pl.team_id END
+             END team
       FROM t JOIN p USING (cn) LEFT JOIN gl ON gl.nba_player_id = p.pid_n
-      LEFT JOIN nba_ref.players pl ON pl.nba_player_id::bigint = p.pid_n""", (day, day)).fetchall()
+      LEFT JOIN nba_ref.players pl ON pl.nba_player_id::bigint = p.pid_n""", (day, day, day, day)).fetchall()
     # ladder position -> tier, per (player, prop)
     by = defaultdict(list)
     for player, pid, mk, side, line, ev, team in rows:
