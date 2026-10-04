@@ -154,6 +154,10 @@ def phase_of(season, d, bounds):
 
 def eligible_legs(day_rows):
     """day_rows: all rows for one day. Returns {cell_name: [leg dict, ...]} ordered by cell rank."""
+    if SE_EXCL_STAR_UNDER:   # §31n test only: drop star-line balanced Unders BEFORE ranking, so the next-best legs replace them
+        day_rows = [r for r in day_rows if not (r['side'] == 'Under' and r['tier'] == 'R' and (
+            (r['prop'] == 'points' and float(r['line']) >= SE_STAR_POINTS) or (r['prop'] == 'pra' and float(r['line']) >= SE_STAR_PRA) or
+            (r['prop'] in ('pts_ast', 'pts_reb') and float(r['line']) >= SE_STAR_COMBO)))]
     out = defaultdict(list)
     for name, (prop, tier, side, rank, nband, edge) in CELLS.items():
         if name in EXCLUDE:
