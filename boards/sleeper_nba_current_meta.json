@@ -3,8 +3,8 @@
   "source": "https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true",
   "alt_source": "https://api.sleeper.app/lines/available_alt?include_preseason=true",
   "promos_source": "https://api.sleeper.app/lines/promos?enable_one_sided_lines=true",
-  "started_at": "2026-10-04T08:26:48Z",
-  "fetched_at": "2026-10-04T08:26:49Z",
+  "started_at": "2026-10-04T15:22:28Z",
+  "fetched_at": "2026-10-04T15:22:31Z",
   "sport": "nba",
   "legs": 0,
   "alt_legs": 0,
@@ -17,5 +17,5 @@
   "by_game_status": {},
   "players": 0,
   "multiplier_values": {},
-  "github_run_id": "37188893302"
+  "github_run_id": "37212669417"
 }
