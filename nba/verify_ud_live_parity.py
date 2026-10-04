@@ -57,6 +57,20 @@ def main():
                 l['n_rank'] = r
         raw_pool = E.eligible_legs(legs)
         pool = E.eligible_legs(kept)
+        # ALIGNED: also restrict to the backtest's own leg universe (by player_id - the suffix / alias players are exactly the
+        # ones whose NAMES differ between the backtest table and the canonical resolver), then re-rank identically
+        uni = {(str(p), pr, s, float(ln)) for p, pr, s, ln in conn.execute("""SELECT DISTINCT player_id, prop, side, line
+                 FROM nba_score.ud_tier_map_legs_curr WHERE game_date=%s""", (day,)).fetchall()}
+        al = [dict(l) for l in kept if (str(l['player_id']), l['prop'], l['side'], float(l['line'])) in uni]
+        tot['legs_outside_bt_universe'] += len(kept) - len(al)
+        g2 = {}
+        for l in al:
+            g2.setdefault((l['rank_key'], l['prop'], l['tier']), []).append(l)
+        for g in g2.values():
+            g.sort(key=lambda l: (-l['score'], l['player']))
+            for r, l in enumerate(g, start=1):
+                l['n_rank'] = r
+        pool_al = E.eligible_legs(al)
         bt = {}
         for comp, size, structure, k, legs_json, hits, payout in conn.execute("""
                 SELECT composition, size, structure, k, legs_json, hits, payout FROM nba_score.ud_slip_engine_slips_dlt_orig2
