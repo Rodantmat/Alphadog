@@ -38,7 +38,25 @@ def main():
     tot = Counter(); ex = []
     for i, day in enumerate(days, 1):
         legs = U.load_legs(conn, day)
-        pool = E.eligible_legs(legs)
+        # box score first: the backtest's tier map kept only legs whose player PLAYED and whose stat != line (a hindsight
+        # filter live cannot apply). Apples-to-apples applies that same filter to the live legs BEFORE ranking.
+        box = {}
+        for pid, pts, reb, ast, fg3m, stl, blk, tov, mins in conn.execute("""SELECT nba_player_id::text, pts, reb, ast, fg3m, stl, blk, tov, min
+                FROM nba_stats.player_game_log WHERE game_date=%s""", (day,)).fetchall():
+            box[pid] = dict(pts=pts or 0, reb=reb or 0, ast=ast or 0, fg3m=fg3m or 0, stl=stl or 0, blk=blk or 0, tov=tov or 0, min=mins)
+        def is_void(l):
+            s = box.get(str(l['player_id']))
+            return (not s) or (not s['min']) or U.STAT[l['prop']](s) == l['line']
+        kept = [dict(l) for l in legs if not is_void(l)]
+        groups = {}
+        for l in kept:
+            groups.setdefault((l['rank_key'], l['prop'], l['tier']), []).append(l)
+        for g in groups.values():
+            g.sort(key=lambda l: (-l['score'], l['player']))
+            for r, l in enumerate(g, start=1):
+                l['n_rank'] = r
+        raw_pool = E.eligible_legs(legs)
+        pool = E.eligible_legs(kept)
         bt = {}
         for comp, size, structure, k, legs_json, hits, payout in conn.execute("""
                 SELECT composition, size, structure, k, legs_json, hits, payout FROM nba_score.ud_slip_engine_slips_dlt_orig2
