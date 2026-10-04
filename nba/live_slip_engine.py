@@ -535,19 +535,21 @@ def outcomes_boxscore(conn, day, slip_rows):
         if mins and float(mins) > 0:
             box[pid] = tuple(float(x or 0) for x in (pts, reb, ast, fg3m, stl, blk, tov))
     out = {}
-    for _s, _k, legs, *_r in slip_rows:
-        for l in (legs if isinstance(legs, list) else json.loads(legs)):
-            pid = l.get('player_id')
-            if not pid:
-                r = conn.execute("""SELECT m.player_id FROM nba_ref.player_name_map m WHERE m.norm_name = nba_ref.norm_name(%s)""", (l['player'],)).fetchone()
-                pid = r[0] if r else None
-            s = box.get(str(pid)) if pid else None
-            if s is None or l['prop'] not in _STAT:
-                continue                                   # DNP / unknown prop -> no outcome -> void
-            v, line = _STAT[l['prop']](s), float(l['line'])
-            if v == line:
-                continue                                   # push -> void
-            out[(l['player'], l['prop'], l['side'], line)] = int((v > line) if l['side'] == 'Over' else (v < line))
+    all_legs = [l for _s, _k, legs, *_r in slip_rows for l in (legs if isinstance(legs, list) else json.loads(legs))]
+    need = sorted({l['player'] for l in all_legs if not l.get('player_id')})
+    by_name = {}
+    if need:   # ONE batched resolution (was one round trip per leg)
+        by_name = {n: pid for n, pid in conn.execute("""SELECT n, m.player_id FROM unnest(%s::text[]) n
+                   LEFT JOIN nba_ref.player_name_map m ON m.norm_name = nba_ref.norm_name(n)""", (need,)).fetchall()}
+    for l in all_legs:
+        pid = l.get('player_id') or by_name.get(l['player'])
+        s = box.get(str(pid)) if pid else None
+        if s is None or l['prop'] not in _STAT:
+            continue                                   # DNP / unknown prop -> no outcome -> void
+        v, line = _STAT[l['prop']](s), float(l['line'])
+        if v == line:
+            continue                                   # push -> void
+        out[(l['player'], l['prop'], l['side'], line)] = int((v > line) if l['side'] == 'Over' else (v < line))
     out['__boxscores__'] = len(box)
     return out
 
