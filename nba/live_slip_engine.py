@@ -1218,8 +1218,9 @@ def edge_monitor(conn, day):
                         slates=EXCLUDED.slates, mean_excess=EXCLUDED.mean_excess, se=EXCLUDED.se, z=EXCLUDED.z,
                         delta_star=EXCLUDED.delta_star, decided_at=now()""", (s0, n, mean, se, z, delta))
         nxt = next((lk for lk in EDGE_LOOKS if lk > n), None)
+        info = f" (independence on the placed slips: {100*info_delta:+.2f} pp, information only)" if info_delta is not None else ""
         print(f"  {day}: edge monitor (running, information only) - {n} slates, excess {100*mean:+.2f} pp, break-even "
-              f"{100*delta:+.2f} pp, z {z:+.2f}; next decision at slate {nxt}" + (f"; {missing} legs without a reference" if missing else ""), flush=True)
+              f"{100*delta:+.2f} pp{info}, z {z:+.2f}; next decision at slate {nxt}" + (f"; {missing} legs without a reference" if missing else ""), flush=True)
     conn.commit()
 
 
