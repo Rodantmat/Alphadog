@@ -36,6 +36,20 @@ def is_suffix(raw, canon):
     return re.sub(r'[^a-z]', '', raw.lower()) != canon
 
 
+def rerank(legs):
+    """n_rank exactly as both loaders assign it: per (rank_key, prop, tier), score desc then player name."""
+    from collections import defaultdict
+    out = [dict(l) for l in legs]
+    groups = defaultdict(list)
+    for l in out:
+        groups[(l['rank_key'], l['prop'], l['tier'])].append(l)
+    for g in groups.values():
+        g.sort(key=lambda l: (-l['score'], l['player']))
+        for i, l in enumerate(g, start=1):
+            l['n_rank'] = i
+    return out
+
+
 def build_all(conn, day, legs, cmap):
     L.attach_pf20(conn, day, legs)
     pool = ENG.eligible_legs(legs)
