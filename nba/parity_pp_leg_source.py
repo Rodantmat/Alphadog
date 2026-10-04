@@ -68,7 +68,7 @@ def main():
         step = max(1, len(days) // mx); days = days[::step][:mx]
     print(f"parity over {len(days)} slates ({days[0]} .. {days[-1]})", flush=True)
     cmap = ENG.load_corr(conn)
-    tot = Counter(); field_mis = Counter(); other_examples = []; slip_diff_examples = []; grade_examples = []
+    tot = Counter(); field_mis = Counter(); other_examples = []; slip_diff_examples = []; grade_examples = []; alias_cache = {}; aligned_examples = []
     for i, day in enumerate(days, 1):
         old = L.load_board_legs_universe(conn, day); new = L.load_board_legs_live(conn, day)
         ko = {(canon(l['player']), l['prop'], l['side'], float(l['line']), l['tier'], l['rank_key']): l for l in old}
