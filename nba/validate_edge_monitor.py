@@ -36,8 +36,10 @@ def main():
                     by_day[gd][0] += int(j['hit']) - p_ref[k]; by_day[gd][1] += 1
         days = sorted(by_day)
         excess = [by_day[d][0] / by_day[d][1] for d in days]
-        delta, shift = L.edge_break_even(slips, p_ref)
-        print(f"\n{season}: {len(days)} slates, {len(slips)} slips, break-even delta* {100*delta:+.2f} pp, mean excess "
+        info_delta, shift = L.edge_break_even(slips, p_ref)
+        delta = L.EDGE_DELTA
+        print(f"\n{season}: {len(days)} slates, {len(slips)} slips, break-even (fixed, production) {100*delta:+.2f} pp "
+              f"[independence on this season's slips {100*info_delta:+.2f} pp, information only], mean excess "
               f"{100*sum(excess)/len(excess):+.2f} pp", flush=True)
         prior = {}
         for n in range(1, len(excess) + 1):
