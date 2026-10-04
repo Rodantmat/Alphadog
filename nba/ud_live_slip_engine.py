@@ -230,19 +230,24 @@ def grade(conn, day):
     for pf, comp, size, structure, k, legs, stake in slips:
         legs = legs if isinstance(legs, list) else json.loads(legs)
         remaining = []
+        legs_out = []                                  # §31o: per-leg outcome kept for the edge monitor (payout unaffected)
         for l in legs:
             s = stats.get(str(l['player_id']))
             if not s or not s['min']:
+                legs_out.append({**l, 'hit': None, 'void': 'dnp'})
                 continue                               # DNP -> void
             v = STAT[l['prop']]({kk: (vv or 0) for kk, vv in s.items()})
             if v == l['line']:
+                legs_out.append({**l, 'hit': None, 'void': 'push'})
                 continue                               # push -> void
-            remaining.append({**l, 'hit': (v > l['line']) if l['side'] == 'Over' else (v < l['line'])})
+            hit = (v > l['line']) if l['side'] == 'Over' else (v < l['line'])
+            remaining.append({**l, 'hit': hit})
+            legs_out.append({**l, 'hit': bool(hit)})
         p = payout(structure, remaining)
         profit = 0.0 if p is None else float(stake) * (p - 1.0)
-        conn.execute("""UPDATE nba_score.ud_live_slips SET graded_at=now(), remaining=%s, hits=%s, payout=%s, profit=%s
+        conn.execute("""UPDATE nba_score.ud_live_slips SET graded_at=now(), remaining=%s, hits=%s, payout=%s, profit=%s, legs_json=%s
                         WHERE game_date=%s AND portfolio=%s AND composition=%s AND size=%s AND structure=%s AND k=%s""",
-                     (len(remaining), sum(1 for l in remaining if l['hit']), p, profit, day, pf, comp, size, structure, k))
+                     (len(remaining), sum(1 for l in remaining if l['hit']), p, profit, json.dumps(legs_out), day, pf, comp, size, structure, k))
         graded += 1
     conn.commit()
     tot = conn.execute("""SELECT portfolio, count(*), sum(stake), sum(profit) FROM nba_score.ud_live_slips WHERE game_date=%s GROUP BY 1""", (day,)).fetchall()
