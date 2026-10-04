@@ -231,6 +231,16 @@ jobs:
           LS_MODE: "grade"
         run: python -u nba/live_slip_engine.py
 
+      # BREAK-EVEN EDGE MONITOR (§31l, research §31k): is the daily PrizePicks portfolio still above break-even? Decisions only at
+      # 30 / 60 / 90 / 120 / 150 graded slates (bootstrap-calibrated boundaries); the running z in between is information only.
+      # Monitoring only: continue-on-error, never disturbs the grade above or the Underdog grade below.
+      - name: Edge monitor (break-even, group-sequential)
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LS_MODE: "edge"
+        run: python -u nba/live_slip_engine.py
+
       # UNDERDOG PAPER GRADE (§30z): every slate before today with ungraded Underdog paper slips, by Underdog's rules (void
       # shrinks the entry; < 2 picks = refund). Paper only: continue-on-error, never disturbs the PrizePicks grade above.
       - name: Underdog paper grade
