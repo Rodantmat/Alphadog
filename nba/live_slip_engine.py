@@ -293,26 +293,8 @@ def load_board_legs_universe(conn, day, label='window'):
     return legs
 
 
-def late_pick(conn, day):
-    """Pass 53 (record-only): a second pick from the close-priced board. PrizePicks adds ~23% of its defensive props after the
-    window; under the model those legs are as good as the window's. Builds every strategy at cap 1 from the legs the window
-    pick could not see, for games that have not tipped, and records them as placed_late (never staked) - the third season's
-    measurement of what the unseen quarter of the board is worth."""
-    ensure_tables(conn)
-    legs = load_board_legs(conn, day, label='close')
-    if not legs:
-        print(f"  {day}: no close-priced board legs - no late pick", flush=True)
-        return
-    seen = {(l['player'], l['prop'], l['side'], float(l['line'])) for l in load_board_legs(conn, day, label='window')}
-    now = dt.datetime.now(dt.timezone.utc)
-    started = {r[0] for r in conn.execute("SELECT event_id FROM nba_market.board_snapshots WHERE game_date=%s AND bookmaker='prizepicks' AND snapshot_label='close' AND commence_time <= %s", (day, now + dt.timedelta(minutes=10))).fetchall()}
-    fresh = [l for l in legs if (l['player'], l['prop'], l['side'], float(l['line'])) not in seen and l['event_id'] not in started]
-    if not fresh:
-        print(f"  {day}: nothing new on the close board - no late pick", flush=True)
-        return
-    cmap = ENG.load_corr(conn)
-    live_legs = attach_pf20(conn, day, fresh + [l for l in legs if l['event_id'] not in started])
-    pool = ENG.eligible_legs(live_legs)   # rank within the live board, build from it
+def _late_pick_retired_part2(conn, day):
+    pool = {}
     t10 = trailing10(conn, day, {l['player_id'] for v in pool.values() for l in v if l['prop'] == 'steals' and l.get('player_id')})
     pool = {c: [l for l in v if leg_allowed(l, t10)] for c, v in pool.items()}
     pools = {'': pool}
