@@ -28,7 +28,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 251,
+        "trending_count": 258,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:08:40.915-04:00"
       },
@@ -749,7 +749,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 661,
+        "trending_count": 697,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:25:23.722-04:00"
       },
@@ -823,7 +823,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 669,
+        "trending_count": 691,
         "tv_channel": null,
         "updated_at": "2026-10-02T17:12:29.198-04:00"
       },
@@ -1688,7 +1688,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 240,
+        "trending_count": 251,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:23.749-04:00"
       },
@@ -1977,7 +1977,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 117,
+        "trending_count": 118,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:18.757-04:00"
       },
@@ -2194,7 +2194,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 199,
+        "trending_count": 204,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:22.199-04:00"
       },
@@ -2412,7 +2412,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 3264,
+        "trending_count": 3346,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:06:17.317-04:00"
       },
@@ -2486,7 +2486,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 2152,
+        "trending_count": 2184,
         "tv_channel": null,
         "updated_at": "2026-09-08T07:25:21.942-04:00"
       },
@@ -2631,7 +2631,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 159,
+        "trending_count": 162,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:22.115-04:00"
       },
@@ -2704,7 +2704,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 352,
+        "trending_count": 358,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:18.667-04:00"
       },
@@ -2849,7 +2849,7 @@
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 113,
+        "trending_count": 115,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:24.886-04:00"
       },
@@ -2994,7 +2994,7 @@
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 114,
+        "trending_count": 125,
         "tv_channel": null,
         "updated_at": "2026-09-08T07:25:22.297-04:00"
       },
@@ -3283,7 +3283,7 @@
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 3551,
+        "trending_count": 3693,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:18.290-04:00"
       },
@@ -3356,7 +3356,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 3709,
+        "trending_count": 3853,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:24.586-04:00"
       },
@@ -3429,7 +3429,7 @@
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 239,
+        "trending_count": 254,
         "tv_channel": null,
         "updated_at": "2026-10-02T11:48:15.248-04:00"
       },
@@ -3790,7 +3790,7 @@
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 107,
+        "trending_count": 110,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:21.733-04:00"
       },
@@ -3863,7 +3863,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 175,
+        "trending_count": 186,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:24.421-04:00"
       },
@@ -4080,6 +4080,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
+        "trending_count": 101,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:20.688-04:00"
       },
@@ -4152,7 +4153,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 340,
+        "trending_count": 353,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:21.366-04:00"
       },
@@ -4225,7 +4226,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 277,
+        "trending_count": 290,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:17.891-04:00"
       },
@@ -4298,7 +4299,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 519,
+        "trending_count": 541,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:10:53.951-04:00"
       },
@@ -4371,7 +4372,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 141,
+        "trending_count": 145,
         "tv_channel": null,
         "updated_at": "2026-09-08T07:25:20.763-04:00"
       },
@@ -4444,7 +4445,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 1303,
+        "trending_count": 1348,
         "tv_channel": null,
         "updated_at": "2026-09-08T07:25:21.142-04:00"
       },
@@ -4805,7 +4806,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 177,
+        "trending_count": 185,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:43.134-04:00"
       },
@@ -4950,7 +4951,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 634,
+        "trending_count": 663,
         "tv_channel": null,
         "updated_at": "2026-10-02T11:48:15.279-04:00"
       },
@@ -5383,7 +5384,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 148,
+        "trending_count": 152,
         "tv_channel": null,
         "updated_at": "2026-10-02T13:05:56.344-04:00"
       },
@@ -5528,7 +5529,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 807,
+        "trending_count": 853,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.962-04:00"
       },
@@ -5601,7 +5602,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 595,
+        "trending_count": 606,
         "tv_channel": null,
         "updated_at": "2026-10-02T13:05:56.467-04:00"
       },
@@ -5818,7 +5819,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 287,
+        "trending_count": 300,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:43.254-04:00"
       },
@@ -6108,7 +6109,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 4573,
+        "trending_count": 4666,
         "tv_channel": null,
         "updated_at": "2026-09-26T17:54:19.089-04:00"
       },
@@ -6181,7 +6182,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 126,
+        "trending_count": 129,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.868-04:00"
       },
@@ -6398,7 +6399,7 @@
         "stat_display_name": "Pts+Asts",
         "stat_type": "Pts+Asts",
         "status": "pre_game",
-        "trending_count": 129,
+        "trending_count": 133,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.712-04:00"
       },
@@ -6471,7 +6472,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 350,
+        "trending_count": 362,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:43.025-04:00"
       },
@@ -6688,7 +6689,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 1039,
+        "trending_count": 1057,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.888-04:00"
       },
@@ -6761,7 +6762,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 1058,
+        "trending_count": 1099,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:43.041-04:00"
       },
@@ -7051,7 +7052,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 25852,
+        "trending_count": 26252,
         "tv_channel": null,
         "updated_at": "2026-10-03T11:35:07.862-04:00"
       },
@@ -7124,7 +7125,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 1484,
+        "trending_count": 1521,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:43.378-04:00"
       },
@@ -7197,7 +7198,7 @@
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 3855,
+        "trending_count": 4028,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:43.012-04:00"
       },
@@ -7342,7 +7343,7 @@
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 183,
+        "trending_count": 192,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.823-04:00"
       },
@@ -7487,7 +7488,7 @@
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 118,
+        "trending_count": 120,
         "tv_channel": null,
         "updated_at": "2026-10-02T13:05:56.427-04:00"
       },
@@ -7776,7 +7777,7 @@
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 422,
+        "trending_count": 443,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.920-04:00"
       },
@@ -7921,7 +7922,7 @@
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 148,
+        "trending_count": 155,
         "tv_channel": null,
         "updated_at": "2026-09-26T17:54:18.950-04:00"
       },
@@ -8211,7 +8212,7 @@
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 246,
+        "trending_count": 256,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.860-04:00"
       },
@@ -8284,7 +8285,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 176,
+        "trending_count": 180,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:43.432-04:00"
       },
@@ -8573,7 +8574,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 149,
+        "trending_count": 150,
         "tv_channel": null,
         "updated_at": "2026-10-02T13:05:56.277-04:00"
       },
@@ -8646,7 +8647,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 264,
+        "trending_count": 282,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:08:00.581-04:00"
       },
@@ -8719,7 +8720,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 4411,
+        "trending_count": 4607,
         "tv_channel": null,
         "updated_at": "2026-09-26T17:54:18.969-04:00"
       },
@@ -8792,7 +8793,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 132,
+        "trending_count": 134,
         "tv_channel": null,
         "updated_at": "2026-09-26T17:54:19.050-04:00"
       },
@@ -8937,7 +8938,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 303,
+        "trending_count": 308,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.616-04:00"
       },
@@ -9010,7 +9011,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 537,
+        "trending_count": 554,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.600-04:00"
       },
@@ -9155,7 +9156,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 1406,
+        "trending_count": 1458,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.823-04:00"
       },
@@ -9228,7 +9229,7 @@
         "stat_display_name": "Double-Double",
         "stat_type": "Double-Double",
         "status": "pre_game",
-        "trending_count": 146,
+        "trending_count": 148,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.724-04:00"
       },
@@ -9302,7 +9303,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 1213,
+        "trending_count": 1253,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.372-04:00"
       },
@@ -9376,7 +9377,7 @@
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 150,
+        "trending_count": 155,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:09:46.043-04:00"
       },
@@ -9450,7 +9451,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 5174,
+        "trending_count": 5411,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.585-04:00"
       },
@@ -10099,7 +10100,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 117,
+        "trending_count": 121,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.332-04:00"
       },
@@ -10147,79 +10148,6 @@
     },
     {
       "type": "projection",
-      "id": "13976018",
-      "attributes": {
-        "adjusted_odds": null,
-        "board_time": "2026-08-20T11:04:34.924-04:00",
-        "custom_image": null,
-        "description": "SAS",
-        "end_time": null,
-        "event_type": "team",
-        "flash_sale_line_score": null,
-        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
-        "group_key": "188011-106-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
-        "in_game": false,
-        "is_live": false,
-        "is_live_scored": true,
-        "is_promo": false,
-        "league_ppid": "NBA",
-        "line_score": 40.5,
-        "odds_type": "standard",
-        "projection_type": "Single Stat",
-        "rank": 141,
-        "refundable": true,
-        "start_time": "2026-10-20T21:40:00.000-04:00",
-        "stat_display_name": "PRA",
-        "stat_type": "Pts+Rebs+Asts",
-        "status": "pre_game",
-        "trending_count": 514,
-        "tv_channel": null,
-        "updated_at": "2026-09-28T22:47:25.318-04:00"
-      },
-      "relationships": {
-        "duration": {
-          "data": {
-            "type": "duration",
-            "id": "11"
-          }
-        },
-        "game": {
-          "data": {
-            "type": "game",
-            "id": "181168"
-          }
-        },
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "new_player": {
-          "data": {
-            "type": "new_player",
-            "id": "188011"
-          }
-        },
-        "projection_type": {
-          "data": {
-            "type": "projection_type",
-            "id": "2"
-          }
-        },
-        "score": {
-          "data": null
-        },
-        "stat_type": {
-          "data": {
-            "type": "stat_type",
-            "id": "106"
-          }
-        }
-      }
-    },
-    {
-      "type": "projection",
       "id": "13976051",
       "attributes": {
         "adjusted_odds": null,
@@ -10239,13 +10167,13 @@
         "line_score": 40.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 142,
+        "rank": 141,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 697,
+        "trending_count": 733,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.526-04:00"
       },
@@ -10312,7 +10240,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 143,
+        "rank": 142,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
@@ -10384,7 +10312,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 144,
+        "rank": 143,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -10456,7 +10384,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 145,
+        "rank": 144,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -10503,6 +10431,79 @@
           "data": {
             "type": "stat_type",
             "id": "243"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
+      "id": "13976018",
+      "attributes": {
+        "adjusted_odds": null,
+        "board_time": "2026-08-20T11:04:34.924-04:00",
+        "custom_image": null,
+        "description": "SAS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "188011-106-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 39.5,
+        "odds_type": "standard",
+        "projection_type": "Single Stat",
+        "rank": 145,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "PRA",
+        "stat_type": "Pts+Rebs+Asts",
+        "status": "pre_game",
+        "trending_count": 531,
+        "tv_channel": null,
+        "updated_at": "2026-10-04T08:56:15.712-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188011"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "106"
           }
         }
       }
@@ -10741,7 +10742,7 @@
         "is_live_scored": true,
         "is_promo": false,
         "league_ppid": "NBA",
-        "line_score": 36.5,
+        "line_score": 35.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
         "rank": 149,
@@ -10751,7 +10752,7 @@
         "stat_type": "Pts+Asts",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-09-28T22:47:25.528-04:00"
+        "updated_at": "2026-10-03T19:36:36.816-04:00"
       },
       "relationships": {
         "duration": {
@@ -10967,7 +10968,7 @@
         "stat_type": "Pts+Rebs",
         "status": "pre_game",
         "tv_channel": null,
-        "updated_at": "2026-09-28T22:47:25.974-04:00"
+        "updated_at": "2026-10-03T19:39:06.610-04:00"
       },
       "relationships": {
         "duration": {
@@ -11038,7 +11039,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 147,
+        "trending_count": 157,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.315-04:00"
       },
@@ -11327,7 +11328,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 396,
+        "trending_count": 412,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.413-04:00"
       },
@@ -11401,7 +11402,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 3184,
+        "trending_count": 3247,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.223-04:00"
       },
@@ -11618,7 +11619,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 169,
+        "trending_count": 173,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.180-04:00"
       },
@@ -11763,7 +11764,7 @@
         "stat_display_name": "Pts+Rebs",
         "stat_type": "Pts+Rebs",
         "status": "pre_game",
-        "trending_count": 114,
+        "trending_count": 117,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.668-04:00"
       },
@@ -11836,7 +11837,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 2734,
+        "trending_count": 2781,
         "tv_channel": null,
         "updated_at": "2026-08-19T17:07:30.269-04:00"
       },
@@ -11909,7 +11910,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 441,
+        "trending_count": 454,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.209-04:00"
       },
@@ -12126,7 +12127,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 628,
+        "trending_count": 645,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.254-04:00"
       },
@@ -12343,6 +12344,7 @@
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
+        "trending_count": 101,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:36.894-04:00"
       },
@@ -12559,7 +12561,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 338,
+        "trending_count": 357,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:08:00.701-04:00"
       },
@@ -12632,7 +12634,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 302,
+        "trending_count": 310,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.314-04:00"
       },
@@ -12777,7 +12779,7 @@
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 425,
+        "trending_count": 436,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.424-04:00"
       },
@@ -12850,7 +12852,7 @@
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 130,
+        "trending_count": 166,
         "tv_channel": null,
         "updated_at": "2026-10-02T11:48:15.421-04:00"
       },
@@ -13211,7 +13213,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 273,
+        "trending_count": 295,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:08:00.641-04:00"
       },
@@ -13500,7 +13502,7 @@
         "stat_display_name": "Blocked Shots",
         "stat_type": "Blocked Shots",
         "status": "pre_game",
-        "trending_count": 4051,
+        "trending_count": 4240,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.237-04:00"
       },
@@ -13789,7 +13791,7 @@
         "stat_display_name": "Blocked Shots",
         "stat_type": "Blocked Shots",
         "status": "pre_game",
-        "trending_count": 382,
+        "trending_count": 396,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.282-04:00"
       },
@@ -13862,7 +13864,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 237,
+        "trending_count": 248,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:10:54.020-04:00"
       },
@@ -14007,6 +14009,7 @@
         "stat_display_name": "Double-Double",
         "stat_type": "Double-Double",
         "status": "pre_game",
+        "trending_count": 101,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.471-04:00"
       },
@@ -14079,7 +14082,7 @@
         "stat_display_name": "Double-Double",
         "stat_type": "Double-Double",
         "status": "pre_game",
-        "trending_count": 380,
+        "trending_count": 387,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.476-04:00"
       },
@@ -14152,7 +14155,7 @@
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 208,
+        "trending_count": 219,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.570-04:00"
       },
@@ -14202,20 +14205,20 @@
   "included": [
     {
       "type": "new_player",
-      "id": "173819",
+      "id": "187999",
       "attributes": {
         "combo": false,
-        "display_name": "Victor Wembanyama",
-        "image_url": "https://static.prizepicks.com/images/players/NBA/Victor_Wembanyama_NBA_player_2EsUEdOt5xmywxPr6qxPdHNs.webp",
-        "jersey_number": "1",
+        "display_name": "Jayson Tatum",
+        "image_url": "https://static.prizepicks.com/images/players/NBA/Jayson_Tatum_NBA_player_m62yMQl0xSxuv8M28c75TQG0.webp",
+        "jersey_number": "0",
         "league": "NBA",
         "league_id": 7,
-        "market": "San Antonio",
-        "name": "Victor Wembanyama",
-        "position": "F-C",
-        "ppid": "NBA_player_2EsUEdOt5xmywxPr6qxPdHNs",
-        "team": "SAS",
-        "team_name": "Spurs"
+        "market": "Boston",
+        "name": "Jayson Tatum",
+        "position": "F-G",
+        "ppid": "NBA_player_m62yMQl0xSxuv8M28c75TQG0",
+        "team": "BOS",
+        "team_name": "Celtics"
       },
       "relationships": {
         "league": {
@@ -14227,25 +14230,129 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "870"
+            "id": "191"
           }
         }
       }
     },
     {
       "type": "stat_type",
-      "id": "245",
+      "id": "31",
       "attributes": {
         "lfg_ignored_leagues": [],
-        "name": "Rebs+Asts",
-        "rank": 13
+        "name": "3-PT Made",
+        "rank": 10
       }
     },
     {
-      "type": "projection_type",
-      "id": "2",
+      "type": "team",
+      "id": "210",
       "attributes": {
-        "name": "Single Stat"
+        "abbreviation": "PHI",
+        "logo": "https://static.prizepicks.com/production/i98xde0x304e8crifzg0go2viixq-P76ers_Global.png",
+        "market": "Philadelphia",
+        "name": "76ers",
+        "ppid": "NBA_team_ekUlxQdKtCHdRbOUV6Z3yhxU",
+        "primary_color": "006cb6",
+        "secondary_color": "ed174d",
+        "tertiary_color": "ED174C"
+      }
+    },
+    {
+      "type": "game",
+      "id": "181167",
+      "attributes": {
+        "created_at": "2026-08-19T17:06:16.222-04:00",
+        "end_time": null,
+        "external_game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "is_live": false,
+        "metadata": {
+          "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+          "game_info": {
+            "teams": {
+              "away": {
+                "abbreviation": "PHI"
+              },
+              "home": {
+                "abbreviation": "NYK"
+              }
+            }
+          },
+          "league_name": "NBA",
+          "status": "scheduled"
+        },
+        "start_time": "2026-10-20T19:00:00.000-04:00",
+        "status": "scheduled",
+        "updated_at": "2026-09-20T00:11:02.939-04:00"
+      },
+      "relationships": {
+        "away_team_data": {
+          "data": {
+            "type": "team",
+            "id": "210"
+          }
+        },
+        "home_team_data": {
+          "data": {
+            "type": "team",
+            "id": "1367"
+          }
+        }
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "188011",
+      "attributes": {
+        "combo": false,
+        "display_name": "Shai Gilgeous-Alexander",
+        "image_url": "https://static.prizepicks.com/images/players/nba/Shai_Gilgeous-Alexander_d9ea4a8f-ff51-408d-b518-980efc2a35a1.webp",
+        "jersey_number": "2",
+        "league": "NBA",
+        "league_id": 7,
+        "market": "Oklahoma City",
+        "name": "Shai Gilgeous-Alexander",
+        "position": "G",
+        "ppid": "NBA_player_Fgv3OHn53kz4MotyRUNiIyPx",
+        "team": "OKC",
+        "team_name": "Thunder"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "220"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "21",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Blocked Shots",
+        "rank": 28
+      }
+    },
+    {
+      "type": "team",
+      "id": "871",
+      "attributes": {
+        "abbreviation": "DET",
+        "logo": "https://static.prizepicks.com/production/3o16mlckog3fwbxl6siwv8r3d8xk-DPistons_Primary_Icon%20%281%29.png",
+        "market": "Detroit",
+        "name": "Pistons",
+        "ppid": "NBA_team_MOWJ0oQFMLj7TlAnjlrjKrCq",
+        "primary_color": "006cb6",
+        "secondary_color": "c80f2e",
+        "tertiary_color": "C8102E"
       }
     },
     {
@@ -14291,53 +14398,44 @@
       }
     },
     {
-      "type": "league",
-      "id": "7",
-      "attributes": {
-        "active": true,
-        "f2p_enabled": true,
-        "full_logo": "https://static.prizepicks.com/production/3peehp8jkljh288s795sbelw2aje-NBA_Logoman_word_onDkBkgd.png",
-        "has_live_projections": false,
-        "icon": "basketball",
-        "image_url": "https://static.prizepicks.com/images/leagues/production/128.svg",
-        "last_five_games_enabled": true,
-        "league_icon_id": 128,
-        "logo": "https://static.prizepicks.com/production/2ws9gunjf9w20587f3a68wwben7x-NBA%20%281%29.png",
-        "name": "NBA",
-        "parent_id": null,
-        "parent_name": null,
-        "player_headshot_fallback": null,
-        "projections_count": 0,
-        "rank": 5,
-        "show_trending": true
-      },
-      "relationships": {
-        "projection_filters": {
-          "data": []
-        }
-      }
-    },
-    {
       "type": "stat_type",
-      "id": "244",
+      "id": "106",
       "attributes": {
         "lfg_ignored_leagues": [],
-        "name": "Pts+Asts",
-        "rank": 17
+        "name": "Pts+Rebs+Asts",
+        "rank": 1
       }
     },
     {
-      "type": "team",
-      "id": "210",
+      "type": "new_player",
+      "id": "188004",
       "attributes": {
-        "abbreviation": "PHI",
-        "logo": "https://static.prizepicks.com/production/i98xde0x304e8crifzg0go2viixq-P76ers_Global.png",
-        "market": "Philadelphia",
-        "name": "76ers",
-        "ppid": "NBA_team_ekUlxQdKtCHdRbOUV6Z3yhxU",
-        "primary_color": "006cb6",
-        "secondary_color": "ed174d",
-        "tertiary_color": "ED174C"
+        "combo": false,
+        "display_name": "Jalen Brunson",
+        "image_url": "https://static.prizepicks.com/images/players/NBA/Jalen_Brunson_NBA_player_yiwlT8GHgktYu1WBoRvjpRr8.webp",
+        "jersey_number": "11",
+        "league": "NBA",
+        "league_id": 7,
+        "market": "New York",
+        "name": "Jalen Brunson",
+        "position": "G",
+        "ppid": "NBA_player_yiwlT8GHgktYu1WBoRvjpRr8",
+        "team": "NYK",
+        "team_name": "Knicks"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "1367"
+          }
+        }
       }
     },
     {
@@ -14355,26 +14453,47 @@
       }
     },
     {
+      "type": "team",
+      "id": "220",
+      "attributes": {
+        "abbreviation": "OKC",
+        "logo": "https://static.prizepicks.com/production/gxnb12ow6ec8xow4x3wj1ma6tfmb-OKCThunder_Primary_Icon.png",
+        "market": "Oklahoma City",
+        "name": "Thunder",
+        "ppid": "NBA_team_EIkOsfHTO5RSZWR1iHGxP2Ho",
+        "primary_color": "007ac1",
+        "secondary_color": "ee3c24",
+        "tertiary_color": "EF3B24"
+      }
+    },
+    {
       "type": "stat_type",
-      "id": "21",
+      "id": "22",
       "attributes": {
         "lfg_ignored_leagues": [],
-        "name": "Blocked Shots",
-        "rank": 28
+        "name": "Rebounds",
+        "rank": 4
+      }
+    },
+    {
+      "type": "projection_type",
+      "id": "2",
+      "attributes": {
+        "name": "Single Stat"
       }
     },
     {
       "type": "team",
-      "id": "871",
+      "id": "191",
       "attributes": {
-        "abbreviation": "DET",
-        "logo": "https://static.prizepicks.com/production/3o16mlckog3fwbxl6siwv8r3d8xk-DPistons_Primary_Icon%20%281%29.png",
-        "market": "Detroit",
-        "name": "Pistons",
-        "ppid": "NBA_team_MOWJ0oQFMLj7TlAnjlrjKrCq",
-        "primary_color": "006cb6",
-        "secondary_color": "c80f2e",
-        "tertiary_color": "C8102E"
+        "abbreviation": "BOS",
+        "logo": "https://static.prizepicks.com/production/qpqh46wc2daajgtaxsrtuzyh5ilh-BCeltics_Primary_Icon%20%281%29.png",
+        "market": "Boston",
+        "name": "Celtics",
+        "ppid": "NBA_team_0RO0gRLntbL2q8e7mHItVYzO",
+        "primary_color": "007A33",
+        "secondary_color": "007A33",
+        "tertiary_color": "FFFFFF"
       }
     },
     {
@@ -14384,6 +14503,138 @@
         "lfg_ignored_leagues": [],
         "name": "Pts+Rebs",
         "rank": 16
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "244",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Pts+Asts",
+        "rank": 17
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "245",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Rebs+Asts",
+        "rank": 13
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "20",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Assists",
+        "rank": 12
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "155",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Double-Double",
+        "rank": 28
+      }
+    },
+    {
+      "type": "duration",
+      "id": "11",
+      "attributes": {
+        "name": "Full"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "59107",
+      "attributes": {
+        "combo": false,
+        "display_name": "Cade Cunningham",
+        "image_url": "https://static.prizepicks.com/images/players/NBA/Cade_Cunningham_NBA_player_mq8YRxGgt7Csv81PJK3QsXJu.webp",
+        "jersey_number": "2",
+        "league": "NBA",
+        "league_id": 7,
+        "market": "Detroit",
+        "name": "Cade Cunningham",
+        "position": "G",
+        "ppid": "NBA_player_mq8YRxGgt7Csv81PJK3QsXJu",
+        "team": "DET",
+        "team_name": "Pistons"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "871"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "19",
+      "attributes": {
+        "lfg_ignored_leagues": [
+          305
+        ],
+        "name": "Points",
+        "rank": 1
+      }
+    },
+    {
+      "type": "team",
+      "id": "1367",
+      "attributes": {
+        "abbreviation": "NYK",
+        "logo": "https://static.prizepicks.com/production/rwno322xja9wsr57r7yhbqby2zuk-NYKnicks_Global.png",
+        "market": "New York",
+        "name": "Knicks",
+        "ppid": "NBA_team_KQwkUC0GL7NbBAZupX5NkWqX",
+        "primary_color": "006cb6",
+        "secondary_color": "f58425",
+        "tertiary_color": "F58426"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "336267",
+      "attributes": {
+        "combo": false,
+        "display_name": "LeBron James",
+        "image_url": "https://static.prizepicks.com/images/manual/Lebron_James.webp",
+        "jersey_number": "23",
+        "league": "NBA",
+        "league_id": 7,
+        "market": "Philadelphia",
+        "name": "LeBron James",
+        "position": "F",
+        "ppid": "NBA_player_LItcyUXdmrL8VccUHVupA0OC",
+        "team": "PHI",
+        "team_name": "76ers"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "210"
+          }
+        }
       }
     },
     {
@@ -14430,20 +14681,20 @@
     },
     {
       "type": "new_player",
-      "id": "188011",
+      "id": "173819",
       "attributes": {
         "combo": false,
-        "display_name": "Shai Gilgeous-Alexander",
-        "image_url": "https://static.prizepicks.com/images/players/nba/Shai_Gilgeous-Alexander_d9ea4a8f-ff51-408d-b518-980efc2a35a1.webp",
-        "jersey_number": "2",
+        "display_name": "Victor Wembanyama",
+        "image_url": "https://static.prizepicks.com/images/players/NBA/Victor_Wembanyama_NBA_player_2EsUEdOt5xmywxPr6qxPdHNs.webp",
+        "jersey_number": "1",
         "league": "NBA",
         "league_id": 7,
-        "market": "Oklahoma City",
-        "name": "Shai Gilgeous-Alexander",
-        "position": "G",
-        "ppid": "NBA_player_Fgv3OHn53kz4MotyRUNiIyPx",
-        "team": "OKC",
-        "team_name": "Thunder"
+        "market": "San Antonio",
+        "name": "Victor Wembanyama",
+        "position": "F-C",
+        "ppid": "NBA_player_2EsUEdOt5xmywxPr6qxPdHNs",
+        "team": "SAS",
+        "team_name": "Spurs"
       },
       "relationships": {
         "league": {
@@ -14455,284 +14706,36 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "220"
+            "id": "870"
           }
         }
       }
     },
     {
-      "type": "stat_type",
-      "id": "19",
+      "type": "league",
+      "id": "7",
       "attributes": {
-        "lfg_ignored_leagues": [
-          305
-        ],
-        "name": "Points",
-        "rank": 1
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "22",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Rebounds",
-        "rank": 4
-      }
-    },
-    {
-      "type": "team",
-      "id": "191",
-      "attributes": {
-        "abbreviation": "BOS",
-        "logo": "https://static.prizepicks.com/production/qpqh46wc2daajgtaxsrtuzyh5ilh-BCeltics_Primary_Icon%20%281%29.png",
-        "market": "Boston",
-        "name": "Celtics",
-        "ppid": "NBA_team_0RO0gRLntbL2q8e7mHItVYzO",
-        "primary_color": "007A33",
-        "secondary_color": "007A33",
-        "tertiary_color": "FFFFFF"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "59107",
-      "attributes": {
-        "combo": false,
-        "display_name": "Cade Cunningham",
-        "image_url": "https://static.prizepicks.com/images/players/NBA/Cade_Cunningham_NBA_player_mq8YRxGgt7Csv81PJK3QsXJu.webp",
-        "jersey_number": "2",
-        "league": "NBA",
-        "league_id": 7,
-        "market": "Detroit",
-        "name": "Cade Cunningham",
-        "position": "G",
-        "ppid": "NBA_player_mq8YRxGgt7Csv81PJK3QsXJu",
-        "team": "DET",
-        "team_name": "Pistons"
+        "active": true,
+        "f2p_enabled": true,
+        "full_logo": "https://static.prizepicks.com/production/3peehp8jkljh288s795sbelw2aje-NBA_Logoman_word_onDkBkgd.png",
+        "has_live_projections": false,
+        "icon": "basketball",
+        "image_url": "https://static.prizepicks.com/images/leagues/production/128.svg",
+        "last_five_games_enabled": true,
+        "league_icon_id": 128,
+        "logo": "https://static.prizepicks.com/production/2ws9gunjf9w20587f3a68wwben7x-NBA%20%281%29.png",
+        "name": "NBA",
+        "parent_id": null,
+        "parent_name": null,
+        "player_headshot_fallback": null,
+        "projections_count": 0,
+        "rank": 5,
+        "show_trending": true
       },
       "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "871"
-          }
+        "projection_filters": {
+          "data": []
         }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "106",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Pts+Rebs+Asts",
-        "rank": 1
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "20",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Assists",
-        "rank": 12
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "31",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "3-PT Made",
-        "rank": 10
-      }
-    },
-    {
-      "type": "game",
-      "id": "181167",
-      "attributes": {
-        "created_at": "2026-08-19T17:06:16.222-04:00",
-        "end_time": null,
-        "external_game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
-        "is_live": false,
-        "metadata": {
-          "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
-          "game_info": {
-            "teams": {
-              "away": {
-                "abbreviation": "PHI"
-              },
-              "home": {
-                "abbreviation": "NYK"
-              }
-            }
-          },
-          "league_name": "NBA",
-          "status": "scheduled"
-        },
-        "start_time": "2026-10-20T19:00:00.000-04:00",
-        "status": "scheduled",
-        "updated_at": "2026-09-20T00:11:02.939-04:00"
-      },
-      "relationships": {
-        "away_team_data": {
-          "data": {
-            "type": "team",
-            "id": "210"
-          }
-        },
-        "home_team_data": {
-          "data": {
-            "type": "team",
-            "id": "1367"
-          }
-        }
-      }
-    },
-    {
-      "type": "duration",
-      "id": "11",
-      "attributes": {
-        "name": "Full"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "187999",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jayson Tatum",
-        "image_url": "https://static.prizepicks.com/images/players/NBA/Jayson_Tatum_NBA_player_m62yMQl0xSxuv8M28c75TQG0.webp",
-        "jersey_number": "0",
-        "league": "NBA",
-        "league_id": 7,
-        "market": "Boston",
-        "name": "Jayson Tatum",
-        "position": "F-G",
-        "ppid": "NBA_player_m62yMQl0xSxuv8M28c75TQG0",
-        "team": "BOS",
-        "team_name": "Celtics"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "191"
-          }
-        }
-      }
-    },
-    {
-      "type": "team",
-      "id": "1367",
-      "attributes": {
-        "abbreviation": "NYK",
-        "logo": "https://static.prizepicks.com/production/rwno322xja9wsr57r7yhbqby2zuk-NYKnicks_Global.png",
-        "market": "New York",
-        "name": "Knicks",
-        "ppid": "NBA_team_KQwkUC0GL7NbBAZupX5NkWqX",
-        "primary_color": "006cb6",
-        "secondary_color": "f58425",
-        "tertiary_color": "F58426"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "188004",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jalen Brunson",
-        "image_url": "https://static.prizepicks.com/images/players/NBA/Jalen_Brunson_NBA_player_yiwlT8GHgktYu1WBoRvjpRr8.webp",
-        "jersey_number": "11",
-        "league": "NBA",
-        "league_id": 7,
-        "market": "New York",
-        "name": "Jalen Brunson",
-        "position": "G",
-        "ppid": "NBA_player_yiwlT8GHgktYu1WBoRvjpRr8",
-        "team": "NYK",
-        "team_name": "Knicks"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "1367"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "336267",
-      "attributes": {
-        "combo": false,
-        "display_name": "LeBron James",
-        "image_url": "https://static.prizepicks.com/images/manual/Lebron_James.webp",
-        "jersey_number": "23",
-        "league": "NBA",
-        "league_id": 7,
-        "market": "Philadelphia",
-        "name": "LeBron James",
-        "position": "F",
-        "ppid": "NBA_player_LItcyUXdmrL8VccUHVupA0OC",
-        "team": "PHI",
-        "team_name": "76ers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "210"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "155",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Double-Double",
-        "rank": 28
-      }
-    },
-    {
-      "type": "team",
-      "id": "220",
-      "attributes": {
-        "abbreviation": "OKC",
-        "logo": "https://static.prizepicks.com/production/gxnb12ow6ec8xow4x3wj1ma6tfmb-OKCThunder_Primary_Icon.png",
-        "market": "Oklahoma City",
-        "name": "Thunder",
-        "ppid": "NBA_team_EIkOsfHTO5RSZWR1iHGxP2Ho",
-        "primary_color": "007ac1",
-        "secondary_color": "ee3c24",
-        "tertiary_color": "EF3B24"
       }
     }
   ],
