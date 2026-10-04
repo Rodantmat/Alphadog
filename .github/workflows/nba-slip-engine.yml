@@ -68,4 +68,12 @@ jobs:
           SE_DIVERSIFY: ${{ github.event.inputs.diversify || '1' }}
           SE_SAMETEAM: ${{ github.event.inputs.sameteam || '0' }}
           SE_LOWFOUL: ${{ github.event.inputs.lowfoul || '1' }}
-        run: python -u nba/build_slip_engine.py
+          STAR_UNDER: ${{ github.event.inputs.star_under }}
+        run: |
+          set -euo pipefail
+          if [ -n "${STAR_UNDER}" ]; then
+            IFS=, read -r P R C <<< "${STAR_UNDER}"
+            export SE_EXCL_STAR_UNDER=1 SE_STAR_POINTS="$P" SE_STAR_PRA="$R" SE_STAR_COMBO="$C"
+            echo "star-Under exclusion ON: points >= $P, pra >= $R, pts_ast/pts_reb >= $C -> table suffix '${SE_TABLE_SUFFIX}'"
+          fi
+          python -u nba/build_slip_engine.py
