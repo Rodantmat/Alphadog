@@ -1,0 +1,134 @@
+name: NBA Slate Simulation (sandbox)
+
+# §31h: "would any leg pass the strategies?" for a slate whose game day has not come. The model is built for the slate in a
+# SANDBOX: the ladder builders write only runner files; the loader and the final_hp builder run as copies whose WRITES go to
+# scratch tables (nba_score._sim_*), with every READ of history left on production. The live pick() then runs on the result
+# with commits suppressed and is rolled back. No claim, no commit to the repo, nothing persists; the last step drops the
+# scratch tables and verifies production holds nothing for the slate.
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        default: "2026-10-20"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PROXY_URL: ${{ secrets.PROXY_URL }}
+      BT_ASOF: ${{ github.event.inputs.date }}
+      SIM_DATE: ${{ github.event.inputs.date }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber
+      - name: Guard - production must hold nothing for the slate, scratch tables fresh
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          d = os.environ["SIM_DATE"]
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              b = c.execute("SELECT count(*) FROM nba_score.baseline_history WHERE game_date=%s", (d,)).fetchone()[0]
+              f = c.execute("SELECT count(*) FROM nba_score.final_hp WHERE game_date=%s", (d,)).fetchone()[0]
+              print("production baseline_history / final_hp rows for", d, ":", b, f)
+              if b or f:
+                  raise SystemExit("ABORT: production already holds this slate - this is a real slate, not a simulation")
+              for t in ("_sim_baseline_history", "_sim_baseline_ladder_runs", "_sim_final_hp"):
+                  c.execute(f"DROP TABLE IF EXISTS nba_score.{t}")
+              c.execute("CREATE TABLE nba_score._sim_baseline_history (LIKE nba_score.baseline_history INCLUDING DEFAULTS)")
+              c.execute("CREATE TABLE nba_score._sim_baseline_ladder_runs (LIKE nba_score.baseline_ladder_runs INCLUDING DEFAULTS)")
+          EOF
+      - name: Baseline ladder (all prop pairs) - runner files only
+        env:
+          BT_CUTOFF: baseline
+          BT_REPLAY: "0"
+        run: |
+          set -euo pipefail
+          for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
+            echo "=== baseline pair: $PAIR"; BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py
+          done
+      - name: Components, combos and periods - runner files only
+        env:
+          BT_CUTOFF: baseline
+          BT_INJURY: "1"
+          BT_REPLAY: "0"
+        run: |
+          set -euo pipefail
+          mkdir -p nba/backtest/reports
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            echo "=== components :: $pair"; BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py
+          done
+          python nba/baseline/build_combos_ladder.py
+          python nba/baseline/build_periods_ladder.py
+      - name: Merge per-pair ladders (P2B's step, verbatim)
+        run: |
+          set -euo pipefail
+          rm -f nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl nba/backtest/reports/_rel_stage1.pkl
+          python - <<'EOF'
+          import json, glob, os
+          asof = os.environ["BT_ASOF"]; rows = []; meta = None
+          for f in sorted(glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json")):
+              d = json.load(open(f)); rows += d["ladder"]; meta = meta or d["meta"]
+          if not meta:
+              raise SystemExit(f"ABORT: no per-pair ladder files for {asof} - the builds produced nothing")
+          meta["rows"] = len(rows); meta["props"] = sorted({r["prop"] for r in rows}); meta["players"] = len({r["player_id"] for r in rows})
+          json.dump({"meta": meta, "ladder": rows}, open(f"nba/data/nba_baseline_ladder_{asof}.json", "w"))
+          json.dump({"meta": meta, "ladder": rows}, open("nba/data/nba_baseline_ladder_latest.json", "w"))
+          print("merged ladder:", {k: v for k, v in meta.items() if k not in ("factor_fits",)})
+          EOF
+      - name: Load the ladder into SCRATCH (sandboxed loader copy)
+        env:
+          LOAD_ASOF: ${{ github.event.inputs.date }}
+        run: |
+          set -euo pipefail
+          sed -e 's/nba_score\.baseline_history/nba_score._sim_baseline_history/g' \
+              -e 's/nba_score\.baseline_ladder_runs/nba_score._sim_baseline_ladder_runs/g' nba/load_baseline_ladder.py > nba/_sim_load.py
+          n=$(grep -cE 'nba_score\.(baseline_history|baseline_ladder_runs)\b' nba/_sim_load.py || true)
+          echo "production references left in the loader copy: $n"; [ "$n" = "0" ]
+          python nba/_sim_load.py
+      - name: final_hp into SCRATCH (sandboxed builder copy - writes redirected, history reads on production)
+        env:
+          FE_DATE: ${{ github.event.inputs.date }}
+          FE_WRITE: "1"
+        run: |
+          set -euo pipefail
+          sed -e 's/nba_score\.baseline_history/nba_score._sim_baseline_history/g' \
+              -e 's/CREATE TABLE IF NOT EXISTS nba_score\.final_hp (/CREATE TABLE IF NOT EXISTS nba_score._sim_final_hp (/' \
+              -e "s/to_regclass('nba_score\.final_hp_uidx')/to_regclass('nba_score._sim_final_hp_uidx')/" \
+              -e 's/CREATE UNIQUE INDEX final_hp_uidx/CREATE UNIQUE INDEX _sim_final_hp_uidx/' \
+              -e 's/ON nba_score\.final_hp (game_date/ON nba_score._sim_final_hp (game_date/' \
+              -e "s/to_regclass('nba_score\.final_hp_lookup')/to_regclass('nba_score._sim_final_hp_lookup')/" \
+              -e 's/CREATE INDEX final_hp_lookup ON nba_score\.final_hp/CREATE INDEX _sim_final_hp_lookup ON nba_score._sim_final_hp/' \
+              -e 's/DELETE FROM nba_score\.final_hp /DELETE FROM nba_score._sim_final_hp /g' \
+              -e 's/INSERT INTO nba_score\.final_hp/INSERT INTO nba_score._sim_final_hp/' nba/build_final_hp.py > nba/_sim_fhp.py
+          if grep -nE "(INSERT INTO|DELETE FROM|CREATE (TABLE|UNIQUE INDEX|INDEX)).*nba_score\.(final_hp|baseline_history)\b" nba/_sim_fhp.py; then
+            echo "ABORT: a production write survived the redirect"; exit 1; fi
+          python nba/_sim_fhp.py
+      - name: Simulate - the live pick() on the sandbox scores (rolled back)
+        run: python -u nba/sim_slate.py
+      - name: Drop scratch tables and verify production is untouched
+        if: always()
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          d = os.environ["SIM_DATE"]
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              for t in ("_sim_baseline_history", "_sim_baseline_ladder_runs", "_sim_final_hp"):
+                  c.execute(f"DROP TABLE IF EXISTS nba_score.{t}")
+              b = c.execute("SELECT count(*) FROM nba_score.baseline_history WHERE game_date=%s", (d,)).fetchone()[0]
+              f = c.execute("SELECT count(*) FROM nba_score.final_hp WHERE game_date=%s", (d,)).fetchone()[0]
+              s = c.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s", (d,)).fetchone()[0]
+              print(f"PRODUCTION AFTER SIMULATION for {d}: baseline_history {b}, final_hp {f}, live_slips {s} (all must be 0)")
+              if b or f or s:
+                  raise SystemExit("PRODUCTION WAS TOUCHED")
+          EOF
