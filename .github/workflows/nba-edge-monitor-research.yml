@@ -1,0 +1,30 @@
+name: NBA Edge Monitor Research
+
+# §31k: read-only research for the break-even edge monitor.
+on:
+  workflow_dispatch:
+    inputs:
+      sims:
+        default: "400"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Research
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EM_SIMS: ${{ github.event.inputs.sims }}
+        run: python -u nba/edge_monitor_research.py
