@@ -205,7 +205,7 @@ def load_board_legs_live(conn, day, label='window'):
         LEFT JOIN evt ON evt.cn = pr.cn
         LEFT JOIN gl ON gl.nba_player_id = pid.pid_n
         LEFT JOIN nba_ref.players pl ON pl.nba_player_id::bigint = pid.pid_n
-        WHERE f.final_hp IS NOT NULL AND f.score IS NOT NULL""", (label, day, day, day, label)).fetchall()
+        WHERE f.final_hp IS NOT NULL AND f.score IS NOT NULL""", (label, day, day, day, label, day, day)).fetchall()
     legs = []
     unresolved = 0
     for pid, player, prop, side, line, price, kind, t3, s_final, s_base, s_score, team, event in rows:
