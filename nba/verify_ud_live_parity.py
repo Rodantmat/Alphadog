@@ -59,8 +59,10 @@ def main():
         pool = E.eligible_legs(kept)
         # ALIGNED: also restrict to the backtest's own leg universe (by player_id - the suffix / alias players are exactly the
         # ones whose NAMES differ between the backtest table and the canonical resolver), then re-rank identically
-        uni = {(str(p), pr, s, float(ln)) for p, pr, s, ln in conn.execute("""SELECT DISTINCT player_id, prop, side, line
-                 FROM nba_score.ud_tier_map_legs_curr WHERE game_date=%s""", (day,)).fetchall()}
+        uni = set(); bt_id = {}
+        for p, pn, pr, s, ln in conn.execute("""SELECT DISTINCT player_id, player, prop, side, line
+                 FROM nba_score.ud_tier_map_legs_curr WHERE game_date=%s""", (day,)).fetchall():
+            uni.add((str(p), pr, s, float(ln))); bt_id[(pn, pr, s, float(ln))] = str(p)
         al = [dict(l) for l in kept if (str(l['player_id']), l['prop'], l['side'], float(l['line'])) in uni]
         tot['legs_outside_bt_universe'] += len(kept) - len(al)
         g2 = {}
