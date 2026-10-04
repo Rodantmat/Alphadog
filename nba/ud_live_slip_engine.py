@@ -376,6 +376,11 @@ def ud_edge_monitor(conn, day):
 def main():
     mode = (os.environ.get('UDL_MODE') or 'pick').lower()
     conn = psycopg.connect(os.environ['DATABASE_URL'])
+    if mode == 'edge':
+        today_pt = dt.datetime.now(dt.timezone(dt.timedelta(hours=-8))).date()
+        ud_edge_monitor(conn, dt.date.fromisoformat(os.environ['UDL_DATE']) if os.environ.get('UDL_DATE') else today_pt - dt.timedelta(days=1))
+        conn.close()
+        return
     if mode == 'grade' and not os.environ.get('UDL_DATE'):
         conn.execute(DDL); conn.commit()
         today_pt = dt.datetime.now(dt.timezone(dt.timedelta(hours=-8))).date()
