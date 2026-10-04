@@ -1193,8 +1193,10 @@ def main():
         day = dt.date.fromisoformat(d) if d else pt_today()
         pick(conn, day)
     elif MODE == 'late_pick':
-        day = dt.date.fromisoformat(d) if d else pt_today()
-        late_pick(conn, day)
+        # RETIRED 2026-10-04 (§31p): legs PrizePicks adds after the window have no final_hp until P2A rebuilds the slate the
+        # NEXT day, when every game has started - a same-day late pick cannot score them. Grading still tolerates the
+        # historical 'placed_late' status (no such rows exist).
+        print("  late_pick is retired (§31p): post-window legs cannot be scored before tip - nothing to do", flush=True)
     elif MODE == 'replay':
         replay(conn, dt.date.fromisoformat(os.environ['LS_FROM']), dt.date.fromisoformat(os.environ['LS_TO']))
     elif MODE == 'calibrate':
