@@ -197,6 +197,36 @@ def main():
                       ('1 pp BELOW break-even', port_d - m - 0.01), ('3 pp BELOW break-even', port_d - m - 0.03)):
         b, tb, c, tc = run(sh)
         print(f"  {label:<34} below-alarm {100*b/SIMS:5.1f}% (median day {tb}) | confirmed-above {100*c/SIMS:5.1f}% (median day {tc})", flush=True)
+    # 6. GROUP-SEQUENTIAL: planned looks, Newey-West SE (Bartlett, 7 lags), boundaries calibrated on the real backtest
+    looks = (30, 60, 90, 120, 150)
+    def nw_se(seq, lags=7):
+        n = len(seq); mu = sum(seq) / n; d = [x - mu for x in seq]
+        g0 = sum(x * x for x in d) / n
+        var = g0 + 2 * sum((1 - l / (lags + 1)) * sum(d[i] * d[i - l] for i in range(l, n)) / n for l in range(1, lags + 1))
+        return math.sqrt(max(var, 1e-12) / n)
+    def zpath(seq):
+        return [((sum(seq[:n]) / n) - port_d) / nw_se(seq[:n]) for n in looks]
+    at_be = port_d - m
+    null = [zpath(season_draw(at_be)) for _ in range(SIMS * 2)]
+    mx = sorted(max(z) for z in null); mn = sorted(min(z) for z in null)
+    c_conf = mx[int(0.95 * len(mx))]; c_alarm = -mn[int(0.05 * len(mn))]
+    print(f"\n6. GROUP-SEQUENTIAL (looks at slates {looks}; Newey-West SE, 7 lags). Boundaries calibrated on {len(null)} "
+          f"bootstrap seasons with the truth AT break-even: confirm if z >= {c_conf:.2f}, alarm if z <= -{c_alarm:.2f} "
+          f"(each <= 5% false at any look)", flush=True)
+    for label, sh in (('edge as certified (backtest)', 0.0), ('realistic: 2 pp below certified', -0.02),
+                      ('realistic: 4 pp below certified', -0.04), ('realistic: 6 pp below certified', -0.06),
+                      ('AT break-even', at_be), ('1 pp BELOW break-even', at_be - 0.01),
+                      ('3 pp BELOW break-even', at_be - 0.03), ('5 pp BELOW break-even', at_be - 0.05)):
+        conf_at = defaultdict(int); alarm_at = defaultdict(int)
+        for _ in range(SIMS):
+            zp = zpath(season_draw(sh))
+            tc = next((looks[i] for i, z in enumerate(zp) if z >= c_conf), None)
+            ta = next((looks[i] for i, z in enumerate(zp) if z <= -c_alarm), None)
+            conf_at[tc] += 1; alarm_at[ta] += 1
+        cum_c = lambda n: sum(v for k, v in conf_at.items() if k is not None and k <= n)
+        cum_a = lambda n: sum(v for k, v in alarm_at.items() if k is not None and k <= n)
+        print(f"  {label:<34} confirmed by slate " + " ".join(f"{n}:{100*cum_c(n)/SIMS:4.0f}%" for n in looks)
+              + " | alarm by slate " + " ".join(f"{n}:{100*cum_a(n)/SIMS:4.0f}%" for n in looks), flush=True)
     conn.close()
     print("DONE", flush=True)
 
