@@ -30,6 +30,7 @@ Env: DATABASE_URL, LS_MODE (pick|grade), LS_DATE (default: today PT for pick, ye
 import os
 import sys
 import json
+import math
 import random
 import datetime as dt
 from collections import defaultdict
