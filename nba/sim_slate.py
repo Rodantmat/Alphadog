@@ -102,19 +102,28 @@ def main():
                   f"(score {l['score']:.3f})", flush=True)
     empty = [c for c in ENG.CELLS if not pool.get(c)]
     print(f"  cells with NO passing leg: {', '.join(empty)}", flush=True)
-    pools = {'': pool}
-    for fam, excl in L.EXCLUDE_BY_FAMILY.items():
-        pools[fam] = {c: v for c, v in pool.items() if c not in excl}
-    print("\n== SLIPS EACH LIVE STRATEGY WOULD BUILD (paper caps) ==", flush=True)
-    for name, (comp, size, structure, cap, *_r) in L.STRATEGIES.items():
-        fam_pool = pools.get(name[0], pool)
-        side_only = L.SIDE_FILTER_BY_STRATEGY.get(name)
-        if side_only:
-            fam_pool = {c: [l for l in v if l['side'] == side_only] for c, v in fam_pool.items()}
-        slips = ENG.build_day_slips(fam_pool, comp, size, structure, max(cap, 1), cmap)
-        print(f"  {name:<20} {comp:<20} {size}-{structure:<6} cap {cap}: {len(slips)} slip(s)", flush=True)
-        for s in slips:
-            print("      " + " + ".join(f"{l['player']} {l['prop']} {l['side']} {l['line']} [{l['tier']}]" for l in s), flush=True)
+    # THE REAL pick(): every live rule (opening week, small slate, drought rotation, stand-downs, caps, state) runs as written.
+    # Two substitutions only - the leg loader returns the sandbox legs, and commit() is a no-op; everything is rolled back.
+    class NoCommit:
+        def __init__(self, c): self._c = c
+        def commit(self): pass
+        def __getattr__(self, n): return getattr(self._c, n)
+    sim_legs = [dict(l) for l in legs]
+    L.load_board_legs = lambda _conn, _day: [dict(l) for l in sim_legs]
+    print("\n== THE LIVE pick() ON THIS BOARD (rolled back afterwards) ==", flush=True)
+    import datetime as _dt
+    try:
+        L.pick(NoCommit(conn), _dt.date.fromisoformat(day), require_fresh=False)
+        placed = conn.execute("""SELECT strategy, k, status, legs_json FROM nba_score.live_slips WHERE game_date=%s
+                                 ORDER BY strategy, k""", (day,)).fetchall()
+        print(f"\n  {len(placed)} slip(s) the live engine would record:", flush=True)
+        for strat, k, status, lj in placed:
+            print(f"    {strat:<20} k{k} {status:<14} " + " + ".join(
+                f"{j['player']} {j['prop']} {j['side']} {j['line']} [{j['tier']}]" for j in lj), flush=True)
+    finally:
+        conn.rollback()
+        left = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s", (day,)).fetchone()[0]
+        print(f"  rolled back - live_slips rows for {day} now: {left} (must be 0)", flush=True)
     print("\nCAVEATS: as-of today, not game-day inputs (no day-before injury report, no referee crews, no morning line); "
           "the early PARTIAL board (spotlight players only); ranks relative to this board, not the full slate.", flush=True)
     conn.close()
