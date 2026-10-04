@@ -293,31 +293,6 @@ def load_board_legs_universe(conn, day, label='window'):
     return legs
 
 
-def _late_pick_retired_part2(conn, day):
-    pool = {}
-    t10 = trailing10(conn, day, {l['player_id'] for v in pool.values() for l in v if l['prop'] == 'steals' and l.get('player_id')})
-    pool = {c: [l for l in v if leg_allowed(l, t10)] for c, v in pool.items()}
-    pools = {'': pool}
-    for fam, excl in EXCLUDE_BY_FAMILY.items():
-        pools[fam] = {c: v for c, v in pool.items() if c not in excl}
-    n = 0
-    for name, (comp, size, structure, cap, *_rest) in STRATEGIES.items():
-        fam_pool = pools.get(name[0], pool)
-        side_only = SIDE_FILTER_BY_STRATEGY.get(name)
-        if side_only:
-            fam_pool = {c: [l for l in v if l['side'] == side_only] for c, v in fam_pool.items()}
-        for k, slip in enumerate(ENG.build_day_slips(fam_pool, comp, size, structure, 1, cmap), start=1):
-            if not any((l['player'], l['prop'], l['side'], float(l['line'])) not in seen for l in slip):
-                continue   # a late slip must carry at least one leg the window pick could not see
-            conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
-                            VALUES (%s,%s,%s,%s,%s,%s,'placed_late') ON CONFLICT (game_date, strategy, k) DO NOTHING""",
-                         (day, name, 100 + k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': l['tier'],
-                                                           'side': l['side'], 'line': float(l['line']), 'factor': l['factor']} for l in slip]), size, structure))
-            n += 1
-    conn.commit()
-    print(f"  {day}: LATE PICK (record-only) - {n} slips from {len(fresh)} legs the window never saw", flush=True)
-
-
 def week1_event_spike(conn, day, s0):
     """29l: the week-2 trough was preceded in both seasons by a week-1 event spike. Signal = league steals+turnovers per team-game
     over season days 0-6 vs the prior season's full-season rate. Fires at >= +3% (observed +6.1% / +8.5%). None if not computable."""
