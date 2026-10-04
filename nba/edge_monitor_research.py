@@ -81,7 +81,10 @@ def solve_shift(slips, p_of):
         return None
     for _ in range(40):
         mid = (lo + hi) / 2
-        (lo, hi) = (mid, hi) if roi_at(slips, p_of, mid) > 0 else (lo, mid)
+        if roi_at(slips, p_of, mid) > 0:
+            hi = mid          # still profitable at mid -> break-even lies below mid
+        else:
+            lo = mid
     return (lo + hi) / 2
 
 
