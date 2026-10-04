@@ -119,7 +119,8 @@ def stand_down(conn, day):
         if lb - dt.timedelta(days=6) <= day <= lb:
             return 'pre_all_star_week'
     season_end = max(d for d in dates if d >= day) if any(d >= day for d in dates) else None
-    if season_end and (season_end - day).days <= 6 and day.month in (3, 4):
+    # == the backtest's phase_of(): 'final7' when (s1 - d).days <= 7 (build_ud_slip_engine.py) - 8 calendar days, not 7
+    if season_end and (season_end - day).days <= 7 and day.month in (3, 4):
         return 'final_week'
     return None
 
