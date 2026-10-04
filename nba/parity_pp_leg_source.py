@@ -193,6 +193,9 @@ def main():
     print("  grading disagreements (old graded / new void, or OPPOSITE):", flush=True)
     for e in grade_examples:
         print(f"    {e}", flush=True)
+    print("  APPLES-TO-APPLES differences (must be none):", flush=True)
+    for e in aligned_examples:
+        print(f"    {e}", flush=True)
     conn.close()
     print("DONE", flush=True)
 
