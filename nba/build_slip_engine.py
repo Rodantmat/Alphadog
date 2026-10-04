@@ -53,6 +53,12 @@ DIVERSIFY = os.environ.get('SE_DIVERSIFY', '1') == '1'        # 29k: prefer >=4 
 SE_SAMETEAM = os.environ.get('SE_SAMETEAM', '0') == '1'       # pass 41: REJECTED by its side-table rebuild (kept for the record)
 SE_LOWFOUL = os.environ.get('SE_LOWFOUL', '1') == '1'         # pass 64, VALIDATED (side table): family A 5-Flex +20-26 pts both seasons; long droughts -7% -> +40-46%; size >= 4 only
 SUFFIX = os.environ.get('SE_TABLE_SUFFIX', '')   # e.g. '_nosteals' -> slip_engine_slips_nosteals; '' = the certified tables
+SE_EXCL_STAR_UNDER = os.environ.get('SE_EXCL_STAR_UNDER', '0') == '1'   # §31n TEST ONLY (off = certified build unchanged)
+SE_STAR_POINTS = float(os.environ.get('SE_STAR_POINTS', '24.5'))
+SE_STAR_PRA = float(os.environ.get('SE_STAR_PRA', '34.5'))
+SE_STAR_COMBO = float(os.environ.get('SE_STAR_COMBO', '29.5'))
+if SE_EXCL_STAR_UNDER and SUFFIX == '':
+    raise SystemExit("REFUSED: the star-Under test must write to a suffixed table, never the certified one (set SE_TABLE_SUFFIX)")
 T_SLIPS = f'nba_score.slip_engine_slips{SUFFIX}'
 T_LEGS = f'nba_score.slip_engine_legs{SUFFIX}'
 
