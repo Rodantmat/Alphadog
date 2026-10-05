@@ -120,6 +120,28 @@ jobs:
           EOF
 
       # The DAY-BEFORE injury report (due 5 PM local the day before) as the baseline reads it at its 09:00 ET cutoff.
+      # DAILY ROSTERS (§31r, 2026-10-05). Rosters were refreshed only by P1 (weekly, Mondays): a Tuesday trade was invisible
+      # until the next Monday, and the ladder builder projected only each team's last-3-games participants (traded, returning
+      # and early-season players unprojectable - 2.6-3% of played board player-days, which the certified backtest DID score).
+      # commonallplayers is ONE request; refreshed here every morning it feeds the builder's current-roster rule (file) and the
+      # live loader's roster fallback (nba_ref.players). A failed scrape restores the committed weekly file (never an empty one).
+      - name: Refresh today's rosters (commonallplayers)
+        continue-on-error: true
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          python nba/scrape_nba_stats_players.py || {
+            echo "::warning::roster scrape failed - restoring the committed weekly roster file (P1)"
+            git checkout -- nba/data/nba_players_current.json nba/data/nba_players_current_meta.json
+            exit 1
+          }
+
+      - name: Apply today's rosters to nba_ref.players
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/sync_current_rosters.py
+
       # PLAYER NAME MAP REFRESH (§31b, 2026-10-03 wiring audit): every name join on both apps resolves through
       # nba_ref.player_name_map; its source register is refreshed only manually and lacked every 2026-27 newcomer
       # (44 of 629 active players unresolved - their legs silently dropped). Incremental from the P1-maintained roster,
