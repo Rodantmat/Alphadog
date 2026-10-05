@@ -59,6 +59,13 @@ SE_STAR_PRA = float(os.environ.get('SE_STAR_PRA', '34.5'))
 SE_STAR_COMBO = float(os.environ.get('SE_STAR_COMBO', '29.5'))
 if SE_EXCL_STAR_UNDER and SUFFIX == '':
     raise SystemExit("REFUSED: the star-Under test must write to a suffixed table, never the certified one (set SE_TABLE_SUFFIX)")
+# §31s: opt-in leg source for gate-2 backtests (whole-number lines, extended ladder). Default = the certified table. A test source
+# must write to a suffixed table - never the certified slips.
+SE_LEGS_TABLE = os.environ.get('SE_LEGS_TABLE', 'nba_score.tier_map_legs')
+if SE_LEGS_TABLE != 'nba_score.tier_map_legs' and SUFFIX == '':
+    raise SystemExit("REFUSED: a test leg source must write to a suffixed table, never the certified one (set SE_TABLE_SUFFIX)")
+if not __import__('re').fullmatch(r'[a-z_]+\.[a-z0-9_]+', SE_LEGS_TABLE):
+    raise SystemExit(f"REFUSED: invalid SE_LEGS_TABLE {SE_LEGS_TABLE!r}")
 T_SLIPS = f'nba_score.slip_engine_slips{SUFFIX}'
 T_LEGS = f'nba_score.slip_engine_legs{SUFFIX}'
 
