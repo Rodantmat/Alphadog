@@ -1,0 +1,64 @@
+name: NBA Ladder Tail Research
+
+# §31s G2: run the REAL builders exactly as P2B does (components -> combos) but with BT_LADDER_STEPS=24, as-of a late-season date,
+# and extract the out-of-sample per-offset reliability for the deep offsets (|offset| >= 9). Runner files only; no DB writes.
+on:
+  workflow_dispatch:
+    inputs:
+      asof:
+        default: "2026-04-10"
+        required: false
+      steps:
+        default: "24"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  tails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BT_ASOF: ${{ github.event.inputs.asof }}
+      BT_REPLAY: "1"
+      BT_CUTOFF: baseline
+      BT_LADDER_STEPS: ${{ github.event.inputs.steps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber
+      - name: Components (as P2B) + points reliability
+        run: |
+          set -o pipefail
+          mkdir -p nba/backtest/reports logs
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            echo "=== components :: $pair"
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py > "logs/comp_${pair//,/_}.log" 2>&1 || { tail -40 "logs/comp_${pair//,/_}.log"; exit 1; }
+          done
+      - name: Combos (as P2B)
+        run: |
+          set -o pipefail
+          python nba/baseline/build_combos_ladder.py > logs/combos.log 2>&1 || { tail -60 logs/combos.log; exit 1; }
+      - name: Deep-offset reliability (|offset| >= 9)
+        if: always()
+        run: |
+          python - <<'EOF'
+          import glob, re
+          for f in sorted(glob.glob("logs/*.log")):
+              prop = None; rows = []
+              for line in open(f, errors="replace"):
+                  m = re.match(r"^## (\S+)", line)
+                  if m: prop = m.group(1)
+                  m = re.match(r"^\|\s*([+-]?\d+)\s*\|\s*(\d+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([+-]?[\d.]+)\s*\|\s*([\d.]+)\s*\|", line)
+                  if m and prop and abs(int(m.group(1))) >= 9:
+                      rows.append((prop, int(m.group(1)), int(m.group(2)), float(m.group(3)), float(m.group(4)), float(m.group(5)), float(m.group(6))))
+              print(f"\n=== {f}: {len(rows)} deep-offset rows")
+              for r in rows:
+                  print(f"  {r[0]:<10} offset {r[1]:+3d}  n {r[2]:>6}  pred {r[3]:.3f}  actual {r[4]:.3f}  gap {r[5]:+5.1f}pp  brier {r[6]:.4f}")
+          EOF
