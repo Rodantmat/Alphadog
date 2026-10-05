@@ -1,0 +1,25 @@
+name: NBA Roster Coverage Audit
+
+# §31r: how many board players who played were outside the ladder builder's last-3-games roster, and why (read-only).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Audit
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/roster_coverage_audit.py
