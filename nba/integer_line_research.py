@@ -74,6 +74,56 @@ def main():
             b = min(int(p * 10), 9)
             c = cal_half[b]; c[0] += int(won); c[1] += 1; c[2] += p
     print("WHOLE-NUMBER LINE PRICING - research gate 1", flush=True)
+    # GATE 1b: OUT-OF-SAMPLE RECALIBRATION. The adjacent rungs are overconfident exactly where PrizePicks sets whole-number lines
+    # (the centre of the distribution), so the derived probability needs its own map. Fit on one season, test on the other.
+    import math
+    data = {'2024-25': [], '2025-26': []}; ties = {'2024-25': defaultdict(lambda: [0.0, 0, 0]), '2025-26': defaultdict(lambda: [0.0, 0, 0])}
+    for (d, pid, prop, side, line, is_int, o_f, u_f, o_b, u_b, h_f, pts, reb, ast, fg3m, stl, blk, tov, mins) in rows:
+        if not is_int or o_f is None or u_f is None or mins is None or float(mins) <= 0:
+            continue
+        sea = '2024-25' if d.month >= 7 and d.year == 2024 or (d.year == 2025 and d.month < 7) else '2025-26'
+        v = float(val(prop, tuple(float(x or 0) for x in (pts, reb, ast, fg3m, stl, blk, tov)))); line = float(line)
+        O, U = min(max(float(o_f), 1e-4), 1 - 1e-4), min(max(float(u_f), 1e-4), 1 - 1e-4)
+        t = ties[sea][prop]; t[0] += max(0.0, 1 - O - U); t[1] += 1; t[2] += int(v == line)
+        if v == line:
+            continue
+        p = O / (O + U) if side == 'Over' else U / (O + U)
+        p = min(max(p, 1e-4), 1 - 1e-4)
+        data[sea].append((math.log(p / (1 - p)), int((v > line) if side == 'Over' else (v < line))))
+    def fit(xy):
+        a, b = 0.0, 1.0
+        for _ in range(50):                                  # Newton-Raphson, logistic regression on one feature
+            ga = gb = haa = hab = hbb = 0.0
+            for x, y in xy:
+                q = 1 / (1 + math.exp(-(a + b * x))); w = q * (1 - q)
+                ga += y - q; gb += (y - q) * x; haa += w; hab += w * x; hbb += w * x * x
+            det = haa * hbb - hab * hab
+            a += (hbb * ga - hab * gb) / det; b += (haa * gb - hab * ga) / det
+        return a, b
+    def report(train, test):
+        a, b = fit(data[train])
+        ll_n = ll_c = 0.0; bins_n = defaultdict(lambda: [0, 0, 0.0]); bins_c = defaultdict(lambda: [0, 0, 0.0])
+        for x, y in data[test]:
+            pn = 1 / (1 + math.exp(-x)); pc = 1 / (1 + math.exp(-(a + b * x)))
+            ll_n -= y * math.log(pn) + (1 - y) * math.log(1 - pn); ll_c -= y * math.log(pc) + (1 - y) * math.log(1 - pc)
+            for p_, bb in ((pn, bins_n), (pc, bins_c)):
+                c = bb[min(int(p_ * 10), 9)]; c[0] += y; c[1] += 1; c[2] += p_
+        n = len(data[test])
+        print(f"\nGATE 1b - fit on {train} (a {a:+.3f}, b {b:.3f}), TESTED on {test} ({n:,} non-tied legs): log-loss naive "
+              f"{ll_n/n:.4f} -> recalibrated {ll_c/n:.4f}", flush=True)
+        for k_ in range(10):
+            cn, cc = bins_n[k_], bins_c[k_]
+            sn = f"naive n {cn[1]:>6} pred {100*cn[2]/cn[1]:5.1f} act {100*cn[0]/cn[1]:5.1f}" if cn[1] else "naive n 0"
+            sc = f"recal n {cc[1]:>6} pred {100*cc[2]/cc[1]:5.1f} act {100*cc[0]/cc[1]:5.1f}" if cc[1] else "recal n 0"
+            print(f"   {10*k_:>2}-{10*k_+10:<3}%  {sn:<40} | {sc}", flush=True)
+        print(f"   tie scaling fitted on {train}, tested on {test} (predicted x scale -> actual):", flush=True)
+        for prop in sorted(ties[test]):
+            tr, te = ties[train].get(prop), ties[test][prop]
+            if not tr or not tr[0] or not te[1]:
+                continue
+            scale = tr[2] / tr[0]
+            print(f"     {prop:<12} scale {scale:4.2f} | {test}: raw {100*te[0]/te[1]:5.1f}% scaled {100*scale*te[0]/te[1]:5.1f}% actual {100*te[2]/te[1]:5.1f}% (n {te[1]})", flush=True)
+    report('2024-25', '2025-26'); report('2025-26', '2024-25')
     # DIAGNOSTICS (gate 1 failed): (a) are the ADJACENT RUNGS themselves calibrated on exactly these player-days?
     marg_o = defaultdict(lambda: [0, 0, 0.0]); marg_u = defaultdict(lambda: [0, 0, 0.0])
     by_kind = defaultdict(lambda: [0, 0, 0.0]); by_prop = defaultdict(lambda: [0, 0, 0.0])
