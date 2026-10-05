@@ -101,6 +101,8 @@ if v_players:
     teams = pd.concat([teams, pd.DataFrame(v_teams)], ignore_index=True)
     teams_adv = pd.concat([teams_adv, pd.DataFrame(v_teams)], ignore_index=True)
 print(f"slate {ASOF}: {len(_slate)} games, {len(v_players)} virtual player rows")
+print(f"current roster (§31r): +{_ros_added} rostered players with history added, -{_ros_dropped} now on another team removed, "
+      f"{_ros_nohist} rostered without game history (not modellable)")
 # DAY-BEFORE INJURY REPORT (baseline version of A1/A2, owner reassignment 2026-09-09): statuses AS KNOWN at the baseline
 # cutoff (game day 09:00 ET, nba/nba_asof.py) from the official report snapshots. Out/Doubtful -> removed from the slate;
 # Questionable/Probable/Available -> kept (P(plays) weighting comes with the measured priors). Teammates of an OUT player
