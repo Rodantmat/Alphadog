@@ -74,6 +74,32 @@ def main():
             b = min(int(p * 10), 9)
             c = cal_half[b]; c[0] += int(won); c[1] += 1; c[2] += p
     print("WHOLE-NUMBER LINE PRICING - research gate 1", flush=True)
+    # DIAGNOSTICS (gate 1 failed): (a) are the ADJACENT RUNGS themselves calibrated on exactly these player-days?
+    marg_o = defaultdict(lambda: [0, 0, 0.0]); marg_u = defaultdict(lambda: [0, 0, 0.0])
+    by_kind = defaultdict(lambda: [0, 0, 0.0]); by_prop = defaultdict(lambda: [0, 0, 0.0])
+    kinds = {}
+    for (d, pid, prop, side, line, is_int, o_f, u_f, o_b, u_b, h_f, pts, reb, ast, fg3m, stl, blk, tov, mins) in rows:
+        if not is_int or o_f is None or u_f is None or mins is None or float(mins) <= 0:
+            continue
+        v = float(val(prop, tuple(float(x or 0) for x in (pts, reb, ast, fg3m, stl, blk, tov)))); line = float(line)
+        O, U = float(o_f), float(u_f)
+        c = marg_o[min(int(O * 10), 9)]; c[0] += int(v >= line + 1); c[1] += 1; c[2] += O
+        c = marg_u[min(int(U * 10), 9)]; c[0] += int(v <= line - 1); c[1] += 1; c[2] += U
+        if v != line:
+            p = O / (O + U) if side == 'Over' else U / (O + U); won = (v > line) if side == 'Over' else (v < line)
+            for key, dd in (((side, 'p>=0.6' if p >= 0.6 else 'p<0.6'), by_kind), ((prop, 'p>=0.6' if p >= 0.6 else 'p<0.6'), by_prop)):
+                c = dd[key]; c[0] += int(won); c[1] += 1; c[2] += p
+    print("\nDIAG (a) MARGINAL calibration of the adjacent rungs on these player-days (predicted -> actual):", flush=True)
+    for b in range(10):
+        co, cu = marg_o[b], marg_u[b]
+        so = f"Over(k+1/2) n {co[1]:>6} pred {100*co[2]/co[1]:5.1f}% act {100*co[0]/co[1]:5.1f}%" if co[1] else "Over n 0"
+        su = f"Under(k-1/2) n {cu[1]:>6} pred {100*cu[2]/cu[1]:5.1f}% act {100*cu[0]/cu[1]:5.1f}%" if cu[1] else "Under n 0"
+        print(f"   {10*b:>2}-{10*b+10:<3}%  {so:<46} | {su}", flush=True)
+    print("\nDIAG (b) conditional calibration by board side and by prop (p>=0.6 = the legs a strategy would want):", flush=True)
+    for dd in (by_kind, by_prop):
+        for k_ in sorted(dd):
+            c = dd[k_]
+            print(f"   {str(k_):<34} n {c[1]:>6} pred {100*c[2]/c[1]:5.1f}% act {100*c[0]/c[1]:5.1f}%", flush=True)
     tot = [sum(v[0] for v in cov.values()), sum(v[1] for v in cov.values())]
     print(f"\nCOVERAGE (played legs at whole-number lines with both adjacent rungs): {tot[0]:,} / {tot[1]:,} ({100*tot[0]/max(tot[1],1):.1f}%)", flush=True)
     for p_ in sorted(cov):
