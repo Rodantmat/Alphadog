@@ -59,6 +59,10 @@ def main():
         print(f"  {k[0]} {k[1]:<9} priced {tot[k]:>7,} | unscored {m:>6,} ({100*m/tot[k]:5.2f}%) | beyond the ladder edge: "
               + ", ".join(f"{b} {miss[k][b]}" for b in ('inside range', '<= 2', '<= 5', '<= 10', '> 10'))
               + f" | in a cell-usable tier (|tier| 1-3): {cell_usable[k]}", flush=True)
+    print("\nPER PROP - unscored cell-usable (|tier| 1-3) legs, both seasons: distance beyond the ladder edge (line units)", flush=True)
+    for (prop, kind), v in sorted(per_prop.items(), key=lambda x: -len(x[1])):
+        v = sorted(v); q = lambda f: v[min(int(f * len(v)), len(v) - 1)]
+        print(f"   {prop:<12} {kind:<7} n {len(v):>6} | p50 {q(0.5):5.1f} p90 {q(0.9):5.1f} p99 {q(0.99):5.1f} max {v[-1]:5.1f}", flush=True)
     conn.close()
     print("DONE", flush=True)
 
