@@ -171,7 +171,11 @@ def rows_underdog(doc, gd, label):
         line = l.get("line")
         if line is None or not l.get("player"):
             continue
-        mk = "player_" + str(l.get("stat") or l.get("stat_key") or "").lower().replace(" ", "_")
+        _disp = str(l.get("stat") or l.get("stat_key") or "")
+        mk = _ud.get(_disp.strip().lower())
+        if mk is None:
+            mk = "player_" + _disp.lower().replace(" ", "_")
+            _unmapped.add(_disp)
         if l.get("is_main") is False:
             mk += "_alternate"
         for side, pre in (("Over", "higher"), ("Under", "lower")):
