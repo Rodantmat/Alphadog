@@ -21026,8 +21026,8 @@
       "away_team_tricode": "GSW",
       "arena_name": "Stan Sheriff Center",
       "arena_city": "Honolulu",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21041,8 +21041,8 @@
       "away_team_tricode": "UTA",
       "arena_name": "CU Events Center",
       "arena_city": "Boulder",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
