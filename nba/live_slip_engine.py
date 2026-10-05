@@ -1138,9 +1138,14 @@ def edge_monitor(conn, day):
         print(f"  {day}: edge monitor - no regular-season window; nothing to evaluate", flush=True)
         return
     names = edge_daily_strategies()
+    # §31q: EVERY slip the daily strategies built and grading settled - the validated design measures the backtest series
+    # (all slips at the caps, regardless of live staking rules), so the built-but-unstaked statuses count too:
+    # graded / graded_void / graded_shadow / graded_week1_skip / graded_week2_skip / graded_capped. k < 100 excludes the
+    # rotation-observation slips (k = 900) and the retired late pick (k >= 101); 'dup' slips are never graded (their legs are
+    # already counted through the identical original).
     rows = conn.execute("""SELECT game_date, structure, legs_json FROM nba_score.live_slips
                            WHERE game_date BETWEEN %s AND %s AND strategy = ANY(%s) AND k < 100
-                             AND status IN ('graded','graded_void','graded_shadow') ORDER BY game_date""", (s0, day, names)).fetchall()
+                             AND status LIKE 'graded%%' ORDER BY game_date""", (s0, day, names)).fetchall()
     by_day = defaultdict(lambda: [0.0, 0]); slips = []; missing = 0
     for gd, structure, lj in rows:
         legs = []
