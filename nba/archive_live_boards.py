@@ -188,6 +188,8 @@ def rows_underdog(doc, gd, label):
                 mod = l.get(f"{pre}_multiplier") if l.get(f"{pre}_multiplier") is not None else l.get(f"{pre}_multiplier_modifier_only")
             out.append((gd, ev("underdog", gd, l, "game_id", "match_id", "event"), label, doc.get("meta", {}).get("fetched_at"), "underdog", mk,
                         l["player"], side, float(line), float(price), (float(mod) if mod not in (None, "") else None), None, None, l.get("event_start_utc")))
+    if _unmapped:
+        print(f"  underdog: stats outside the canonical table (archived under their raw key, read by no engine): {sorted(_unmapped)}", flush=True)
     return out
 
 
