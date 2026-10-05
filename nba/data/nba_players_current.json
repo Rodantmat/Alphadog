@@ -1717,6 +1717,19 @@
       "team_abbreviation": "BOS"
     },
     {
+      "id": 1643091,
+      "full_name": "Tyson Degenhart",
+      "last_comma_first": "Degenhart, Tyson",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "tyson_degengart",
+      "team_id": 1610612761,
+      "team_city": "Toronto",
+      "team_name": "Raptors",
+      "team_abbreviation": "TOR"
+    },
+    {
       "id": 1642484,
       "full_name": "RayJ Dennis",
       "last_comma_first": "Dennis, RayJ",
@@ -6499,6 +6512,19 @@
       "team_city": "Minnesota",
       "team_name": "Timberwolves",
       "team_abbreviation": "MIN"
+    },
+    {
+      "id": 1641814,
+      "full_name": "Mike Sharavjamts",
+      "last_comma_first": "Sharavjamts, Mike",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "mike_sharavjamts",
+      "team_id": 1610612753,
+      "team_city": "Orlando",
+      "team_name": "Magic",
+      "team_abbreviation": "ORL"
     },
     {
       "id": 1643567,
