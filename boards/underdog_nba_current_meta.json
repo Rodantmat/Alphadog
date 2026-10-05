@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-05T05:58:00Z",
-  "fetched_at": "2026-10-05T06:04:19Z",
+  "started_at": "2026-10-05T15:03:09Z",
+  "fetched_at": "2026-10-05T15:10:30Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -11,7 +11,7 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      51
+      52
     ],
     [
       "lines[match=225721]",
@@ -102,19 +102,19 @@
       0
     ],
     [
-      "lines[match=225730]",
-      0
-    ],
-    [
-      "pills[match=225730]",
-      0
-    ],
-    [
       "lines[match=225729]",
       0
     ],
     [
       "pills[match=225729]",
+      0
+    ],
+    [
+      "lines[match=225730]",
+      0
+    ],
+    [
+      "pills[match=225730]",
       0
     ],
     [
@@ -134,19 +134,19 @@
       0
     ],
     [
-      "lines[match=225733]",
-      0
-    ],
-    [
-      "pills[match=225733]",
-      0
-    ],
-    [
       "lines[match=225734]",
       0
     ],
     [
       "pills[match=225734]",
+      0
+    ],
+    [
+      "lines[match=225733]",
+      0
+    ],
+    [
+      "pills[match=225733]",
       0
     ],
     [
@@ -308,8 +308,8 @@
     ],
     [
       "alternate_projections",
-      15,
-      343,
+      16,
+      368,
       0,
       "deduped 0"
     ],
@@ -322,31 +322,26 @@
       0
     ]
   ],
-  "lines": 51,
-  "legs": 51,
-  "ladder_legs": 343,
-  "ladder_lines_with_alternates": 15,
+  "lines": 52,
+  "legs": 52,
+  "ladder_legs": 368,
+  "ladder_lines_with_alternates": 16,
   "players": 0,
-  "pregame_legs": 51,
+  "pregame_legs": 52,
   "live_legs": 0,
   "by_stat": {
     "Moneyline": 36,
-    "Total Points": 8,
-    "Margin of Victory": 7
+    "Margin of Victory": 8,
+    "Total Points": 8
   },
   "by_line_type": {
-    "balanced": 51
+    "balanced": 52
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "None": 43,
-    "1.0": 2,
-    "0.96": 1,
-    "0.86": 1,
-    "0.85": 1,
-    "0.82": 1,
-    "0.67": 1,
-    "0.66": 1
+    "None": 44,
+    "1.0": 7,
+    "0.67": 1
   },
-  "github_run_id": "37270067885"
+  "github_run_id": "37329463758"
 }
