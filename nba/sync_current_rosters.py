@@ -54,8 +54,12 @@ def main():
                          (f"nba_{pid}", pid, name, first, last, team, json.dumps(p)))
             inserted += 1
             print(f"  inserted: {name} ({pid}) -> {team}", flush=True)
-    conn.commit()
-    print(f"roster sync (§31r): {len(rostered)} rostered players in today's scrape; team changes {moved}, inserted {inserted}, "
+    dry = os.environ.get("ROSTER_SYNC_DRY") == "1"
+    if dry:
+        conn.rollback()
+    else:
+        conn.commit()
+    print(f"roster sync (§31r){' DRY RUN - ROLLED BACK' if dry else ''}: {len(rostered)} rostered players in today's scrape; team changes {moved}, inserted {inserted}, "
           f"re-activated {reactivated}; none deactivated (P1's job)", flush=True)
     conn.close()
 
