@@ -48,7 +48,9 @@ def main():
             first, _, last = name.partition(" ")
             conn.execute("""INSERT INTO nba_ref.players (player_id, nba_player_id, full_name, first_name, last_name, team_id, active, source_key,
                                                        raw_json, created_at, updated_at)
-                            VALUES (%s,%s,%s,%s,%s,%s,1,'daily_roster_sync',%s,now(),now())""",
+                            VALUES (%s,%s,%s,%s,%s,%s,1,'daily_roster_sync',%s,now(),now())
+                            ON CONFLICT (player_id) DO UPDATE SET nba_player_id=EXCLUDED.nba_player_id, team_id=EXCLUDED.team_id,
+                                                                  active=1, updated_at=now()""",
                          (f"nba_{pid}", pid, name, first, last, team, json.dumps(p)))
             inserted += 1
             print(f"  inserted: {name} ({pid}) -> {team}", flush=True)
