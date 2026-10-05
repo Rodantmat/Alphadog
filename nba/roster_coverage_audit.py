@@ -40,6 +40,15 @@ def main():
         for d, tid, s, m in rows:
             if m > 0:
                 played[(d, pid)] = (tid, s)
+    diag = Counter()
+    for d, pid in board:
+        diag[('board', d.year if d.month >= 7 else d.year - 1)] += 1
+        if (d, pid) in played:
+            diag[('matched', d.year if d.month >= 7 else d.year - 1)] += 1
+    print(f"DIAGNOSTIC: game-log rows {len(gl):,}; players {len(by_player):,}; played player-days {len(played):,}; "
+          f"board player-days by season-start-year {dict((k[1], v) for k, v in diag.items() if k[0]=='board')}; "
+          f"matched {dict((k[1], v) for k, v in diag.items() if k[0]=='matched')}; sample board key {board[:2]}; "
+          f"sample played key {list(played)[:2]}", flush=True)
     tot = Counter(); cause = Counter(); examples = defaultdict(list)
     for d, pid in board:
         if (d, pid) not in played:
