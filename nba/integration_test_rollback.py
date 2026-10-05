@@ -38,6 +38,10 @@ def main():
               conn.execute("SELECT count(*) FROM nba_score.ud_live_slips").fetchone()[0])
     print(f"INTEGRATION TEST on {day} (one transaction, rolled back). Ledgers before: PP {before[0]}, UD {before[1]}", flush=True)
     try:
+        prev = day - dt.timedelta(days=1)
+        print(f"\n-- prior slate {prev}: PrizePicks + Underdog pick and grade (so each monitor has 2 graded slates)", flush=True)
+        L.pick(nc, prev, require_fresh=False); L.grade(nc, prev)
+        U.pick(nc, prev); U.grade(nc, prev)
         print("\n-- PrizePicks pick", flush=True)
         L.pick(nc, day, require_fresh=False)
         rows = conn.execute("SELECT status, stake_weight, legs_json FROM nba_score.live_slips WHERE game_date=%s AND k < 100", (day,)).fetchall()
