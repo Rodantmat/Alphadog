@@ -44,7 +44,7 @@ def main():
         U.pick(nc, prev); U.grade(nc, prev)
         print("\n-- PrizePicks pick", flush=True)
         L.pick(nc, day, require_fresh=False)
-        rows = conn.execute("SELECT status, stake_weight, legs_json FROM nba_score.live_slips WHERE game_date=%s AND k < 100", (day,)).fetchall()
+        rows = conn.execute("SELECT status, stake_weight, legs_json FROM nba_score.live_slips WHERE game_date=%s AND k < 100 AND k <> 900", (day,)).fetchall()
         check("slips placed", len(rows) > 0, f"({len(rows)})")
         check("every slip has a stake_weight in {1.0, 0.5}", all(r[1] in (1.0, 0.5) for r in rows))
         sw_ok = all(r[1] == L.star_under_weight(r[2]) for r in rows)
