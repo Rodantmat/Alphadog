@@ -41,7 +41,8 @@ def main():
         part = conn.execute(q).fetchall()
         rows.extend(part)
         print(f"  month {a:%Y-%m}: {len(part):,} legs", flush=True)
-    for d, kind, tier, line, lo, hi, scored in rows:
+    per_prop = defaultdict(list)
+    for d, kind, tier, line, lo, hi, scored, prop in rows:
         sea = '2024-25' if d.year == 2024 or (d.year == 2025 and d.month < 7) else '2025-26'
         tot[(sea, kind)] += 1
         if scored:
