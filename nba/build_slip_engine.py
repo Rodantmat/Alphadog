@@ -356,7 +356,7 @@ def main():
     days = defaultdict(list)
     with conn.cursor(name='legs') as cur:
         cur.itersize = 50000
-        cur.execute(LEG_SQL)
+        cur.execute(LEG_SQL.replace("FROM nba_score.tier_map_legs l", f"FROM {SE_LEGS_TABLE} l", 1))
         cols = [d.name for d in cur.description]
         for row in cur:
             r = dict(zip(cols, row))
