@@ -61,7 +61,7 @@ def main():
         print("\n-- PrizePicks edge monitor", flush=True)
         L.edge_monitor(nc, day)
         run_row = conn.execute("SELECT slates, delta_star, decision FROM nba_score.edge_monitor WHERE look = 0").fetchone()
-        check("edge monitor recorded its running row from the graded slips", run_row is not None and run_row[0] >= 1, f"{run_row}")
+        check("edge monitor recorded its running row from BOTH graded slates", run_row is not None and run_row[0] == 2, f"{run_row}")
         check("edge monitor uses the fixed break-even", run_row is not None and abs(run_row[1] - L.EDGE_DELTA) < 1e-12)
         legs_counted = conn.execute("""SELECT count(*) FROM nba_score.live_slips s, jsonb_array_elements(s.legs_json) j
                                        WHERE s.game_date=%s AND s.k < 100 AND s.status LIKE 'graded%%' AND s.strategy = ANY(%s)
