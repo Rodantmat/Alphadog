@@ -1,0 +1,37 @@
+name: NBA Roster Sync
+
+# §31r: scrape today's rosters (commonallplayers, one request) and apply them to nba_ref.players. P2B runs the same two steps
+# every morning; this on-demand workflow exists for review and for deadline-day refreshes. dry = '1' (default) prints every
+# change and rolls back.
+on:
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "'1' = print the changes and roll back (default); '0' = apply"
+        default: "1"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests curl_cffi
+      - name: Scrape today's rosters
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: python nba/scrape_nba_stats_players.py
+      - name: Apply to nba_ref.players
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ROSTER_SYNC_DRY: ${{ github.event.inputs.dry }}
+        run: python -u nba/sync_current_rosters.py
