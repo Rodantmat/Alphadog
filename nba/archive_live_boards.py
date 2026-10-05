@@ -142,6 +142,19 @@ def rows_prizepicks(doc, gd, label):
 
 
 def rows_underdog(doc, gd, label):
+    # §31s G4 (2026-10-05): Underdog display stat -> the canonical key the certified rows use (the 2025-26 Underdog window rows came
+    # from the Odds API: player_threes, player_points_rebounds_assists, ...). The old naive "player_" + display-stat key archived
+    # '3-Pointers Made' as player_3-pointers_made and 'Pts + Rebs + Asts' as player_pts_+_rebs_+_asts - keys no engine reads, so
+    # every live three / combo leg would have vanished. Vocabulary: our own NBA registry ('Points', 'Pts + Rebs + Asts') + the
+    # documented Underdog NBA stat list. Anything not in the table keeps the old key (season-long / period markets nobody reads)
+    # and is logged, so a new Underdog stat name can never disappear silently.
+    _ud = {"points": "player_points", "rebounds": "player_rebounds", "assists": "player_assists",
+           "3-pointers made": "player_threes", "3-pointers": "player_threes", "three pointers made": "player_threes",
+           "steals": "player_steals", "blocks": "player_blocks", "turnovers": "player_turnovers",
+           "pts + rebs + asts": "player_points_rebounds_assists", "pts + rebs": "player_points_rebounds",
+           "pts + asts": "player_points_assists", "rebs + asts": "player_rebounds_assists", "blks + stls": "player_blocks_steals",
+           "fantasy points": "player_fantasy_points", "double-double": "player_double_double", "double doubles": "player_double_double"}
+    _unmapped = set()
     # §30f/§30g (2026-10-03): price = the price the app DISPLAYS (fantasy decimal where the option has one, else decimal_price), as
     # American; multiplier = the PAYOUT modifier the slip is priced on (0.5 / Underdog's probability, never snapped to 1.00).
     # Older scrapes lack those fields: fall back to american_price and the displayed payout_multiplier.
