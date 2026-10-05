@@ -81,7 +81,8 @@ def main():
         print("\n-- Underdog edge monitor", flush=True)
         U.ud_edge_monitor(nc, day)
         urow = conn.execute("SELECT slates, delta_star FROM nba_score.ud_edge_monitor WHERE look = 0").fetchone()
-        check("Underdog edge monitor recorded its running row", urow is not None and urow[0] >= 1, f"{urow}")
+        check("Underdog edge monitor recorded its running row from BOTH graded slates", urow is not None and urow[0] == 2, f"{urow}")
+        check("Underdog edge monitor uses its fixed break-even", urow is not None and abs(urow[1] - U.UD_EDGE_DELTA) < 1e-12)
     finally:
         conn.rollback()
         after = (conn.execute("SELECT count(*) FROM nba_score.live_slips").fetchone()[0],
