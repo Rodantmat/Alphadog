@@ -1183,6 +1183,8 @@ def edge_monitor(conn, day):
         info = f" (independence on the placed slips: {100*info_delta:+.2f} pp, information only)" if info_delta is not None else ""
         print(f"  {day}: edge monitor (running, information only) - {n} slates, excess {100*mean:+.2f} pp, break-even "
               f"{100*delta:+.2f} pp{info}, z {z:+.2f}; next decision at slate {nxt}" + (f"; {missing} legs without a reference" if missing else ""), flush=True)
+    else:
+        print(f"  {day}: edge monitor - {len(days)} graded slate(s); the running z needs 2+ (first decision at slate {EDGE_LOOKS[0]})", flush=True)
     conn.commit()
 
 
