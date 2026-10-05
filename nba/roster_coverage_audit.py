@@ -71,6 +71,30 @@ def main():
         if len(examples[(s, c)]) < 4:
             examples[(s, c)].append((str(d), pid))
     print("ROSTER COVERAGE AUDIT - PrizePicks window board players who PLAYED that day but were not in the ladder roster", flush=True)
+    # ACCURACY: the backtest history DID score these player-days (replay builder) - do their SELECTED legs hit like everyone else's?
+    missed_cause = {}
+    for (s, c), lst in examples.items():
+        pass
+    for d, pid in board:
+        if (d, pid) not in played:
+            continue
+        tid, s = played[(d, pid)]; rn = team_rank[(tid, s)][d]
+        if any(rn - 3 <= r <= rn - 1 for r in apps[(pid, tid, s)]):
+            continue
+        prev = [x for x in by_player[pid] if x[0] < d and x[3] > 0]
+        missed_cause[(d, pid)] = ('team_games_1_3' if rn <= 3 else 'changed_team' if prev and prev[-1][1] != tid
+                                  else 'returning' if any(r < rn - 3 for r in apps[(pid, tid, s)]) else 'other')
+    legs = conn.execute("""WITH l AS MATERIALIZED (SELECT DISTINCT game_date, player, prop, side, line, tier, hit FROM nba_score.slip_engine_legs WHERE hit IS NOT NULL)
+                           SELECT l.game_date, nm.player_id::bigint, l.tier, l.hit FROM l JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(l.player)""").fetchall()
+    acc = defaultdict(lambda: [0, 0])
+    for d, pid, tier, hit in legs:
+        c = missed_cause.get((d, pid), 'projectable')
+        grp = 'R' if tier == 'R' else 'alt'
+        acc[(c, grp)][0] += hit; acc[(c, grp)][1] += 1
+    print("\nACCURACY of the backtest's selected legs (distinct legs, hit rate) - unprojectable causes vs projectable:", flush=True)
+    for c in ('projectable', 'team_games_1_3', 'changed_team', 'returning', 'other'):
+        r_ = acc[(c, 'R')]; a_ = acc[(c, 'alt')]
+        print(f"   {c:<16} balanced: {r_[1]:>6} legs, {100*r_[0]/max(r_[1],1):5.1f}% | demons/goblins: {a_[1]:>6} legs, {100*a_[0]/max(a_[1],1):5.1f}%", flush=True)
     for s in sorted(tot):
         miss = sum(v for (ss, c), v in cause.items() if ss == s)
         print(f"\n{s}: {tot[s]:,} board player-days played; NOT PROJECTABLE {miss:,} ({100*miss/tot[s]:.2f}%)", flush=True)
