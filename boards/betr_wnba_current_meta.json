@@ -2,10 +2,10 @@
   "ok": true,
   "source": "github-runner uc+proxy picks.betr.app",
   "league": "WNBA",
-  "started_at": "2026-10-04T23:11:18Z",
-  "fetched_at": "2026-10-04T23:12:38Z",
-  "legs": 0,
-  "alt_legs": 0,
-  "players": 0,
-  "events": 44
+  "started_at": "2026-10-05T23:23:34Z",
+  "fetched_at": "2026-10-05T23:25:14Z",
+  "legs": 1027,
+  "alt_legs": 441,
+  "players": 18,
+  "events": 2
 }
