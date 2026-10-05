@@ -28,9 +28,20 @@ FROM r JOIN rng g USING (game_date, player_id, prop) LEFT JOIN sc s USING (game_
 
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
-    conn.execute("SET statement_timeout = 0")
     tot = Counter(); miss = defaultdict(Counter); cell_usable = Counter()
-    for d, kind, tier, line, lo, hi, scored in conn.execute(SQL).fetchall():
+    import datetime as _dt
+    months = []
+    d0 = _dt.date(2024, 10, 1)
+    while d0 <= _dt.date(2026, 4, 1):
+        d1 = (d0.replace(day=28) + _dt.timedelta(days=4)).replace(day=1)
+        months.append((d0, d1)); d0 = d1
+    rows = []
+    for a, b in months:
+        q = SQL.replace("'2024-10-22' AND '2026-04-12'", f"'{max(a, _dt.date(2024, 10, 22))}' AND '{min(b - _dt.timedelta(days=1), _dt.date(2026, 4, 12))}'")
+        part = conn.execute(q).fetchall()
+        rows.extend(part)
+        print(f"  month {a:%Y-%m}: {len(part):,} legs", flush=True)
+    for d, kind, tier, line, lo, hi, scored in rows:
         sea = '2024-25' if d.year == 2024 or (d.year == 2025 and d.month < 7) else '2025-26'
         tot[(sea, kind)] += 1
         if scored:
