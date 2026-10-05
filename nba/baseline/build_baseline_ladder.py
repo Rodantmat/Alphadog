@@ -84,7 +84,15 @@ for g_ in _slate:
     for tid, is_h in ((hid, True), (aid, False)):
         recent = players[(players["TEAM_ID"] == tid) & (players["season"] == TEST[0])].sort_values("GAME_DATE")
         last_games = recent["GAME_ID"].drop_duplicates().tail(3).tolist()
-        roster = recent[recent["GAME_ID"].isin(last_games)]["PLAYER_ID"].unique().tolist()
+        _recent_roster = recent[recent["GAME_ID"].isin(last_games)]["PLAYER_ID"].unique().tolist()
+        roster = [p_ for p_ in _recent_roster if _cur_team.get(p_, tid) == tid]      # now on another team -> removed
+        _ros_dropped += len(_recent_roster) - len(roster)
+        for p_, t_ in _cur_team.items():                                              # today's roster: traded-in / returning / new
+            if t_ == tid and p_ not in roster:
+                if p_ in _hist_ids:
+                    roster.append(p_); _ros_added += 1
+                else:
+                    _ros_nohist += 1                                                  # no game history: cannot be modelled
         mu = f"{ht} vs. {at}" if is_h else f"{at} @ {ht}"
         for pid in roster: v_players.append({"season": TEST[0], "PLAYER_ID": pid, "TEAM_ID": tid, "GAME_ID": gid, "GAME_DATE": ASOF, "MATCHUP": mu})
         v_teams.append({"season": TEST[0], "TEAM_ID": tid, "GAME_ID": gid, "GAME_DATE": ASOF, "MATCHUP": mu})
