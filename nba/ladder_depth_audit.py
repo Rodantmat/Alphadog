@@ -21,7 +21,7 @@ r AS MATERIALIZED (SELECT DISTINCT pr.game_date, pr.prop, pr.side, pr.line, pr.k
 rng AS MATERIALIZED (SELECT game_date, player_id, prop, min(line) lo, max(line) hi FROM nba_score.final_hp
                      WHERE game_date BETWEEN '2024-10-22' AND '2026-04-12' GROUP BY 1,2,3),
 sc AS MATERIALIZED (SELECT DISTINCT game_date, player_id, prop, side, line FROM nba_score.final_hp WHERE game_date BETWEEN '2024-10-22' AND '2026-04-12')
-SELECT r.game_date, r.kind, r.sys_tier, r.line, g.lo, g.hi, (s.line IS NOT NULL) scored
+SELECT r.game_date, r.kind, r.sys_tier, r.line, g.lo, g.hi, (s.line IS NOT NULL) scored, r.prop
 FROM r JOIN rng g USING (game_date, player_id, prop) LEFT JOIN sc s USING (game_date, player_id, prop, side, line)
 """
 
