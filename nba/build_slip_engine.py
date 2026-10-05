@@ -218,6 +218,20 @@ def valid(slip, cmap=None, single_cell=False):
 
 
 def grade(slip, structure):
+    # §31s: TIES (hit None - a whole-number line landed exactly on) are removed and the lineup reverts one level, per PrizePicks
+    # ("ties revert the lineup one level, like a DNP"; a 2-pick Power with one correct pick and one tie pays 1.5x). Undocumented
+    # edge cases - every leg tied, or a 3+ pick slip reverting to ONE decided leg - are refunded (conservative, logged in §31s).
+    # With no tied leg this is exactly the original grade.
+    live = [l for l in slip if l['hit'] is not None]
+    if len(live) < len(slip):
+        if not live:
+            return 0, 1.0
+        if len(live) == 1:
+            h = int(live[0]['hit'])
+            return h, ((1.5 if h else 0.0) if len(slip) == 2 else 1.0)
+        if structure == 'flex' and len(live) < 3:
+            structure = 'power'
+        slip = live
     k = len(slip)
     hits = sum(l['hit'] for l in slip)
     fprod = 1.0
