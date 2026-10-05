@@ -52,6 +52,7 @@ def main():
         miss[(sea, kind)][b] += 1
         if kind in ('goblin', 'demon') and 1 <= abs(int(tier or 0)) <= 3:
             cell_usable[(sea, kind)] += 1
+            per_prop[(prop, kind)].append(beyond)
     print("LADDER DEPTH AUDIT - priced half-point window legs the model did not score (player/prop modelled that day)", flush=True)
     for k in sorted(tot):
         m = sum(miss[k].values())
