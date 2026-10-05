@@ -63,6 +63,22 @@ _replay = os.environ.get("BT_REPLAY", "0") == "1"
 _slate = [g_ for g_ in _sched if str(g_.get("game_date", ""))[:10] == str(ASOF) and (_replay or int(g_.get("game_status") or 1) != 3)]
 players = players[players["GAME_DATE"] < ASOF]; teams = teams[teams["GAME_DATE"] < ASOF]; teams_adv = teams_adv[teams_adv["GAME_DATE"] < ASOF]
 v_players, v_teams = [], []
+# CURRENT ROSTER (§31r, 2026-10-05). The roster per game used to be ONLY the team's last-3-games participants: a traded player
+# was not projected for his new team until he had played for it (and could be projected for his old one), a player back from
+# an absence > 3 games was not projected on his return night, and opening week used the PRIOR season's last 3 games (offseason
+# moves ignored). Measured: 2.62% / 2.95% of board player-days that actually played were unprojectable in 2024-25 / 2025-26 -
+# yet the certified backtest history DID score them (replay builder), so including them restores parity. The roster is now the
+# same-morning commonallplayers file (P2B refreshes it daily): recent participants still on the team + every current-roster
+# player with game history; players now on another team are removed. Missing / empty file -> exactly the old behaviour.
+_cur_team = {}
+_cr_path = DATA / "nba_players_current.json"
+if _cr_path.exists():
+    for _p in json.loads(_cr_path.read_text()).get("players", []):
+        if _p.get("team_id") and str(_p.get("roster_status")) in ("1", "1.0", "True", "true"):
+            _cur_team[str(_p["id"])] = str(_p["team_id"])
+print(f"current roster (§31r): {len(_cur_team)} rostered players" + ("" if _cur_team else " - FILE MISSING OR EMPTY: last-3-games rosters only (old behaviour)"))
+_hist_ids = set(players["PLAYER_ID"])
+_ros_added = _ros_dropped = _ros_nohist = 0
 for g_ in _slate:
     gid = str(g_["game_id"]); hid = str(g_["home_team_id"]); aid = str(g_["away_team_id"]); ht = g_.get("home_team_tricode", "HOME"); at = g_.get("away_team_tricode", "AWAY")
     for tid, is_h in ((hid, True), (aid, False)):
