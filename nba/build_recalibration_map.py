@@ -157,7 +157,7 @@ def main():
                 cur.executemany("""INSERT INTO nba_score.recalibration_map (fit_set, prop, kind, side, role_tier, p_bucket, lo, hi, n,
                                    model_p_mean, realized, calibrated_p, use_map) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                                 [(fs, k[0], k[1], k[2], k[3], k[4], BUCKETS[k[4]], BUCKETS[k[4] + 1], *v, use_map.get((k[0], k[1]), False))
-                                 for k, v in m.items() if k != "_parents"])
+                                 for k, v in m.items() if not str(k).startswith("_")])
         conn.commit()
         print("WRITTEN: nba_score.recalibration_map (fit sets 2024-25, 2025-26, POOLED)", flush=True)
     conn.close()
