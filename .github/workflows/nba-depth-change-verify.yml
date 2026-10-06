@@ -1,0 +1,72 @@
+name: NBA Depth Change Verify
+
+# Sample-first verification of a LADDER_DEPTH change (§31s G2): the REAL builder for one replayed slate at two commits, compared
+# row by row. PASS = every row present in both is identical on every field, nothing disappears, and the only new rows are the
+# prop/offsets the change was meant to add. Runner files only.
+on:
+  workflow_dispatch:
+    inputs:
+      ref_before:
+        required: true
+      ref_after:
+        required: true
+      asof:
+        default: "2026-01-10"
+        required: false
+      props:
+        default: "points,rebounds"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BT_ASOF: ${{ github.event.inputs.asof }}
+      BT_REPLAY: "1"
+      BT_CUTOFF: baseline
+      BT_PROPS: ${{ github.event.inputs.props }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ github.event.inputs.ref_before }}", path: before }
+      - uses: actions/checkout@v4
+        with: { ref: "${{ github.event.inputs.ref_after }}", path: after }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber
+      - name: Build before
+        working-directory: before
+        run: python nba/baseline/build_baseline_ladder.py > ../before.log 2>&1 || { tail -40 ../before.log; exit 1; }
+      - name: Build after
+        working-directory: after
+        run: python nba/baseline/build_baseline_ladder.py > ../after.log 2>&1 || { tail -40 ../after.log; exit 1; }
+      - name: Compare
+        run: |
+          python - <<'EOF'
+          import glob, json, os
+          from collections import Counter
+          asof = os.environ["BT_ASOF"]
+          def load(d):
+              rows = {}
+              for f in sorted(glob.glob(f"{d}/nba/data/nba_baseline_ladder_{asof}*.json")):
+                  for r in json.load(open(f))["ladder"]:
+                      k = (str(r.get("player_id")), str(r.get("game_id")), r.get("prop"), r.get("period"), float(r["line"]))
+                      rows[k] = r
+              return rows
+          b, a = load("before"), load("after")
+          common = set(b) & set(a); gone = set(b) - set(a); new = set(a) - set(b)
+          changed = [k for k in common if {x: v for x, v in b[k].items() if x not in ("built_at",)} != {x: v for x, v in a[k].items() if x not in ("built_at",)}]
+          new_props = Counter((a[k]["prop"], abs(int(a[k].get("ladder_offset", 0)))) for k in new)
+          print(f"rows before {len(b):,} | after {len(a):,} | common {len(common):,} | CHANGED {len(changed)} | GONE {len(gone)} | NEW {len(new):,}")
+          print("new rows by (prop, |offset|):", dict(sorted(new_props.items())))
+          for k in changed[:5]:
+              print("  changed example:", k, {x: (b[k].get(x), a[k].get(x)) for x in set(b[k]) | set(a[k]) if b[k].get(x) != a[k].get(x)})
+          ok = not changed and not gone and len(new) > 0
+          print("RESULT:", "PASS" if ok else "FAIL")
+          raise SystemExit(0 if ok else 1)
+          EOF
