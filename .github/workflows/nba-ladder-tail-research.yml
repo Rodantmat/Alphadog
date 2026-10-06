@@ -1,7 +1,9 @@
 name: NBA Ladder Tail Research
 
-# §31s G2: run the REAL builders exactly as P2B does (components -> combos) but with BT_LADDER_STEPS=24, as-of a late-season date,
-# and extract the out-of-sample per-offset reliability for the deep offsets (|offset| >= 9). Runner files only; no DB writes.
+# §31s G2: is the PRODUCTION probability (walk-forward monthly Platt; raw where a cell has < 1,000 samples) calibrated at deep
+# offsets? The production builders exit right after writing the ladder (raise SystemExit(0)), before any report, so this runs
+# RESEARCH COPIES whose single change is to dump the in-memory reliability frame (prop, offset, calibrated p_over, actual, month)
+# just before that exit. Builders run exactly as P2B does (components -> combos) at BT_LADDER_STEPS=24. Runner files only.
 on:
   workflow_dispatch:
     inputs:
@@ -33,42 +35,53 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber
-      - name: Components (as P2B) + points reliability
+      - name: Research copies (dump the reliability frame before the production exit)
+        run: |
+          python - <<'EOF'
+          from pathlib import Path
+          dump = ('rel[["prop","offset","p_over","actual","month"]].to_pickle("nba/backtest/reports/_tailrel_" + '
+                  '(os.environ.get("BT_PROPS") or "combos").replace(",", "-") + ".pkl"); raise SystemExit(0)')
+          for src, dst in (("nba/baseline/build_baseline_ladder.py", "nba/baseline/_tail_main.py"),
+                           ("nba/baseline/build_combos_ladder.py", "nba/baseline/_tail_combos.py")):
+              t = Path(src).read_text()
+              n = t.count("raise SystemExit(0)")
+              assert n == 1, f"{src}: expected exactly one production exit, found {n}"
+              Path(dst).write_text(t.replace("raise SystemExit(0)", dump))
+              print("research copy:", dst)
+          EOF
+      - name: Components (as P2B)
         run: |
           set -o pipefail
           mkdir -p nba/backtest/reports logs
           for pair in points,rebounds assists,steals blocks,turnovers; do
             echo "=== components :: $pair"
-            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py > "logs/comp_${pair//,/_}.log" 2>&1 || { tail -40 "logs/comp_${pair//,/_}.log"; exit 1; }
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/_tail_main.py > "logs/comp_${pair//,/_}.log" 2>&1 || { tail -40 "logs/comp_${pair//,/_}.log"; exit 1; }
           done
       - name: Combos (as P2B)
         run: |
           set -o pipefail
-          python nba/baseline/build_combos_ladder.py > logs/combos.log 2>&1 || { tail -60 logs/combos.log; exit 1; }
-      - name: Deep-offset reliability (|offset| >= 9)
-        if: always()
+          python nba/baseline/_tail_combos.py > logs/combos.log 2>&1 || { tail -60 logs/combos.log; exit 1; }
+      - name: Tail reliability of the production probability
         run: |
           python - <<'EOF'
-          import glob, re
-          for f in sorted(glob.glob("logs/*.log")):
-              prop = None; rows = []
-              for line in open(f, errors="replace"):
-                  m = re.match(r"^## (\S+)", line)
-                  if m: prop = m.group(1)
-                  m = re.match(r"^\|\s*([+-]?\d+)\s*\|\s*(\d+)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|\s*([+-]?[\d.]+)\s*\|\s*([\d.]+)\s*\|", line)
-                  if m and prop and abs(int(m.group(1))) >= 9:
-                      rows.append((prop, int(m.group(1)), int(m.group(2)), float(m.group(3)), float(m.group(4)), float(m.group(5)), float(m.group(6))))
-              print(f"\n=== {f}: {len(rows)} deep-offset rows")
-              for r in rows:
-                  print(f"  {r[0]:<10} offset {r[1]:+3d}  n {r[2]:>6}  pred {r[3]:.3f}  actual {r[4]:.3f}  gap {r[5]:+5.1f}pp  brier {r[6]:.4f}")
-              if not rows:
-                  lines = open(f, errors="replace").read().splitlines()
-                  print(f"  (diagnostic) {len(lines)} lines; '##' headers: {[l for l in lines if l.startswith('##')][:8]}")
-                  print(f"  (diagnostic) first table-like lines: {[l for l in lines if l.startswith('|')][:6]}")
-                  print(f"  (diagnostic) last 12 lines: {lines[-12:]}")
-          import os
-          for root, _, files in os.walk("nba"):
-              for fn in files:
-                  if fn.startswith("classification_") or ("report" in root and fn.endswith((".md", ".json"))):
-                      print("  report file:", os.path.join(root, fn))
+          import glob, numpy as np, pandas as pd
+          fs = sorted(glob.glob("nba/backtest/reports/_tailrel_*.pkl")); print("frames:", fs)
+          rel = pd.concat([pd.read_pickle(f) for f in fs], ignore_index=True)
+          rel = rel[rel["p_over"].notna() & rel["actual"].notna()]
+          def ll(p, y):
+              p = np.clip(p, 1e-6, 1 - 1e-6); return float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
+          print(f"rows {len(rel):,}; props {sorted(rel['prop'].unique())}")
+          for prop, g in rel.groupby("prop"):
+              print(f"\n== {prop}  (offset: n | mean pred | actual | gap pp | log-loss)")
+              for off, h in g.groupby("offset"):
+                  if abs(off) < 6 and off not in (-1, 0, 1):
+                      continue
+                  p, y = h["p_over"].values, h["actual"].values
+                  print(f"   {int(off):+3d}: {len(h):>7,} | {p.mean():.4f} | {y.mean():.4f} | {100*(y.mean()-p.mean()):+5.2f} | {ll(p, y):.4f}")
+          deep = rel[rel["offset"].abs() >= 11]
+          print(f"\nDEEP (|offset| >= 11) pooled by predicted-probability bin:")
+          for lo, hi in ((0, .01), (.01, .03), (.03, .07), (.07, .15), (.15, .5), (.5, .85), (.85, .93), (.93, .97), (.97, .99), (.99, 1.01)):
+              h = deep[(deep["p_over"] >= lo) & (deep["p_over"] < hi)]
+              if len(h):
+                  print(f"   pred {lo:.2f}-{hi:.2f}: n {len(h):>8,} | mean pred {h['p_over'].mean():.4f} | actual {h['actual'].mean():.4f}")
           EOF
