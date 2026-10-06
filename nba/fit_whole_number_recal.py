@@ -35,7 +35,8 @@ def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
     rows = conn.execute(R.SQL).fetchall()
-    data = defaultdict(list); ties = defaultdict(lambda: [0.0, 0])
+    data = defaultdict(list)
+    ties_s = {'2024-25': defaultdict(lambda: [0.0, 0]), '2025-26': defaultdict(lambda: [0.0, 0])}; ties_n = defaultdict(int)
     for (d, pid, prop, side, line, is_int, o_f, u_f, o_b, u_b, h_f, pts, reb, ast, fg3m, stl, blk, tov, mins) in rows:
         if not is_int or o_f is None or u_f is None or mins is None or float(mins) <= 0:
             continue
