@@ -79,7 +79,11 @@ MAX_TIERS = 24; MIN_PER_TIER = 15; TIER_BLEND_K = 5; LADDER_STEPS = 6
 # Net effect on build size is roughly neutral; net effect on BOARD COVERAGE is what matters.
 LADDER_DEPTH = {
     "points": 14, "pra": 16, "pts_reb": 15, "pts_ast": 14, "fantasy_score": 16,
-    "rebounds": 6, "assists": 5, "reb_ast": 7, "fga": 10, "fgm": 6, "fg3a": 6,
+    # rebounds 6 -> 10 (2026-10-06, strategy §31s G2 parity): the p95 rule above covers where books ladder, not the TAIL where
+    # PrizePicks' STANDARD line sits far from our anchor because the model strongly disagrees - the certified slips used 408
+    # rebounds standard legs at |offset| 7-10 (hit ~76% vs 46-50% for the rest) and the certified history carries depth 10;
+    # a depth-6 live ladder could never produce them. Calibration is fitted per offset, so offsets <= 6 are unchanged.
+    "rebounds": 10, "assists": 5, "reb_ast": 7, "fga": 10, "fgm": 6, "fg3a": 6,
     "threes_made": 4, "ftm": 5, "fta": 5, "dreb": 5, "oreb": 3,
     "steals": 2, "blocks": 2, "turnovers": 3, "personal_fouls": 3,
 }
