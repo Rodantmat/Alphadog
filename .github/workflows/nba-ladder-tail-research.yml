@@ -61,4 +61,14 @@ jobs:
               print(f"\n=== {f}: {len(rows)} deep-offset rows")
               for r in rows:
                   print(f"  {r[0]:<10} offset {r[1]:+3d}  n {r[2]:>6}  pred {r[3]:.3f}  actual {r[4]:.3f}  gap {r[5]:+5.1f}pp  brier {r[6]:.4f}")
+              if not rows:
+                  lines = open(f, errors="replace").read().splitlines()
+                  print(f"  (diagnostic) {len(lines)} lines; '##' headers: {[l for l in lines if l.startswith('##')][:8]}")
+                  print(f"  (diagnostic) first table-like lines: {[l for l in lines if l.startswith('|')][:6]}")
+                  print(f"  (diagnostic) last 12 lines: {lines[-12:]}")
+          import os
+          for root, _, files in os.walk("nba"):
+              for fn in files:
+                  if fn.startswith("classification_") or ("report" in root and fn.endswith((".md", ".json"))):
+                      print("  report file:", os.path.join(root, fn))
           EOF
