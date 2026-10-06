@@ -111,6 +111,19 @@ def main():
         print(f"{s}: {len(v):,} graded legs (role UNK {sum(1 for r in v if r[3] == 'UNK'):,})", flush=True)
     maps = {s: build_map(v, K) for s, v in data.items()}
     maps["POOLED"] = build_map(data["2024-25"] + data["2025-26"], K)
+    # PER-CELL VALIDATION: a (prop, kind) is mapped only if the map improves out-of-sample log-loss in BOTH directions; otherwise the
+    # raw probability is served (identity). (2026-10-06: steals standard got WORSE under the map - raw 0.6794 -> 0.6909 - because the
+    # map flattened a genuine signal toward 0.5.)
+    cell_dir = defaultdict(list)
+    for tr, te in (("2024-25", "2025-26"), ("2025-26", "2024-25")):
+        by = defaultdict(lambda: [[], [], []])
+        for r in data[te]:
+            g = by[(r[0], r[1])]; g[0].append(r[4]); g[1].append(apply_map(maps[tr], r[0], r[1], r[2], r[3], r[4])); g[2].append(r[5])
+        for key, (rp, cp, yy) in by.items():
+            cell_dir[key].append(ll(cp, yy) < ll(rp, yy))
+    use_map = {key: (len(v) == 2 and all(v)) for key, v in cell_dir.items()}
+    print("cells served RAW (map not better out-of-sample in both directions):",
+          sorted(k for k, v in use_map.items() if not v) or "none", flush=True)
     ok = True
     for tr, te in (("2024-25", "2025-26"), ("2025-26", "2024-25")):
         rows = data[te]; raw = [r[4] for r in rows]; y = [r[5] for r in rows]
