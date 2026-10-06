@@ -66,7 +66,21 @@ def main():
                 tot += (math.lgamma(k + al) - math.lgamma(al) - math.lgamma(k + 1) + al * math.log(al / (al + mu)) + k * math.log(mu / (al + mu)))
             return tot
         grid = [10 ** (i / 20) for i in range(-20, 81)]          # alpha 0.1 .. 10,000
-        al = max(grid, key=ll)
+        gi = max(range(len(grid)), key=lambda i: ll(grid[i]))
+        lo_, hi_ = math.log(grid[max(gi - 1, 0)]), math.log(grid[min(gi + 1, len(grid) - 1)])
+        g = (math.sqrt(5) - 1) / 2
+        for _ in range(80):                                       # golden-section on log(alpha) between the neighbours
+            c1, c2 = hi_ - g * (hi_ - lo_), lo_ + g * (hi_ - lo_)
+            if ll(math.exp(c1)) >= ll(math.exp(c2)):
+                hi_ = c2
+            else:
+                lo_ = c1
+        al = math.exp((lo_ + hi_) / 2)
+        prof = {round(x, 2): round(ll(x), 3) for x in (al / 4, al / 2, al, al * 2, al * 4)}
+        print(f"  alpha profile (log-lik): {prof}; grid best {grid[gi]:.3f} at index {gi} of {len(grid) - 1} "
+              f"({'INTERIOR' if 0 < gi < len(grid) - 1 else 'BOUNDARY'})", flush=True)
+        for p_, (e_, k_) in sorted(src.items()):
+            print(f"    {p_:<12} expected {e_:8.1f} actual {k_:5d} raw {k_ / e_ if e_ else float('nan'):6.3f} -> posterior {(k_ + al) / (e_ + al / S):6.4f}", flush=True)
         return {p: (v[1] + al) / (v[0] + al / S) for p, v in src.items()}, S, al
     cv = {}
     for tr, te in (('2024-25', '2025-26'), ('2025-26', '2024-25')):
