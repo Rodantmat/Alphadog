@@ -61,8 +61,10 @@ def main():
            "fitted_at": __import__('datetime').date.today().isoformat()}
     print(json.dumps(cfg, indent=1), flush=True)
     if os.environ.get('WN_WRITE') == '1':
-        conn.execute("""INSERT INTO nba_config.classification_config (config_key, config_value) VALUES ('whole_number_recalibration', %s)
-                        ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value""", (json.dumps(cfg),))
+        conn.execute("""INSERT INTO nba_config.classification_config (config_key, config_json, notes, updated_at)
+                        VALUES ('whole_number_recalibration', %s::jsonb, %s, now())
+                        ON CONFLICT (config_key) DO UPDATE SET config_json = EXCLUDED.config_json, notes = EXCLUDED.notes, updated_at = now()""",
+                     (json.dumps(cfg), "§31s G1 / COMPASS 134: whole-number line recalibration (pooled both seasons) + per-prop tie scale"))
         conn.commit(); print("WRITTEN: nba_config.classification_config['whole_number_recalibration']", flush=True)
     else:
         print("DRY RUN (WN_WRITE=1 to store)", flush=True)
