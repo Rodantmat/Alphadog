@@ -78,7 +78,12 @@ def build_map(rows, K):
         fitted = pav(vals, ws)
         for b, f, (n, pm, rr) in zip(bks, fitted, meta):
             out[(prop, kind, side, role, b)] = (n, round(pm, 4), round(rr, 4), round(float(f), 4))
-    # parent fallbacks for unseen cells
+    # parent fallbacks for unseen cells: first the SAME (prop, kind, side, bucket) across roles (n-weighted calibrated value - keeps the
+    # probability information; identical to the SQL function nba_score.calibrated_p), then the coarser parents
+    bk = defaultdict(lambda: [0.0, 0])
+    for k, v in out.items():
+        bk[(k[0], k[1], k[2], k[4])][0] += v[3] * v[0]; bk[(k[0], k[1], k[2], k[4])][1] += v[0]
+    out["_bucket"] = {k: s / n for k, (s, n) in bk.items() if n > 0}
     out["_parents"] = {"PKS": {k[1:]: (agg[k][2] / agg[k][0]) for k in agg if k[0] == "PKS"},
                        "PK": {k[1:]: (agg[k][2] / agg[k][0]) for k in agg if k[0] == "PK"},
                        "K": {k[1:]: (agg[k][2] / agg[k][0]) for k in agg if k[0] == "K"}}
@@ -89,6 +94,9 @@ def apply_map(m, prop, kind, side, role, p):
     c = m.get((prop, kind, side, role, bucket_of(p)))
     if c:
         return c[3]
+    v = m["_bucket"].get((prop, kind, side, bucket_of(p)))
+    if v is not None:
+        return v
     par = m["_parents"]
     for v in (par["PKS"].get((prop, kind, side)), par["PK"].get((prop, kind)), par["K"].get((kind,))):
         if v is not None:
