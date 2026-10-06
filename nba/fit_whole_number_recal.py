@@ -50,26 +50,34 @@ def main():
         data[sea].append((math.log(p / (1 - p)), int((v > line) if side == 'Over' else (v < line))))
     per = {s: fit(xy) for s, xy in data.items()}
     a, b = fit(data['2024-25'] + data['2025-26'])
-    # TIE SCALE - empirical-Bayes shrinkage of each prop's actual/expected tie ratio toward the pooled ratio, prior strength M
-    # (in expected ties). M chosen OUT OF SAMPLE: fit on one season, predict the other's per-prop tie counts, both directions.
-    def scales(src, M):
+    # TIE SCALE - GAMMA-POISSON EMPIRICAL BAYES (Clayton & Kaldor 1987): actual ties_p ~ Poisson(e_p * s_p), s_p ~ Gamma with mean
+    # S (pooled actual/expected) and shape alpha; alpha by MAXIMUM MARGINAL (negative-binomial) LIKELIHOOD across props; posterior
+    # scale_p = (a_p + alpha) / (e_p + alpha / S). A prop with ~no exposure lands on S; a well-sampled prop keeps its own ratio.
+    # (An absolute-error cross-validation was tried first and REJECTED: tiny props are invisible to it - it chose no shrinkage
+    # and left blocks at 0.0.)
+    def eb(src):
         S = sum(v[1] for v in src.values()) / max(sum(v[0] for v in src.values()), 1e-9)
-        return {p: (v[1] + M * S) / (v[0] + M) for p, v in src.items()}, S
+        def ll(al):
+            tot = 0.0
+            for e, k in src.values():
+                mu = e * S
+                if mu <= 0:
+                    continue
+                tot += (math.lgamma(k + al) - math.lgamma(al) - math.lgamma(k + 1) + al * math.log(al / (al + mu)) + k * math.log(mu / (al + mu)))
+            return tot
+        grid = [10 ** (i / 20) for i in range(-20, 81)]          # alpha 0.1 .. 10,000
+        al = max(grid, key=ll)
+        return {p: (v[1] + al) / (v[0] + al / S) for p, v in src.items()}, S, al
     cv = {}
-    for M in (0, 5, 10, 20, 50, 100, 200):
-        err = 0.0
-        for tr, te in (('2024-25', '2025-26'), ('2025-26', '2024-25')):
-            sc, S = scales(ties_s[tr], M)
-            for p, v in ties_s[te].items():
-                err += abs(sc.get(p, S) * v[0] - v[1])
-        cv[M] = round(err, 2)
-    best_M = min(cv, key=cv.get)
+    for tr, te in (('2024-25', '2025-26'), ('2025-26', '2024-25')):
+        sc_tr, S_tr, al_tr = eb(ties_s[tr])
+        cv[f"{tr}->{te}"] = {p: {"pred_ties": round(sc_tr.get(p, S_tr) * v[0], 1), "actual": int(v[1])} for p, v in ties_s[te].items()}
     pooled_src = {p: [ties_s['2024-25'].get(p, [0, 0])[0] + ties_s['2025-26'].get(p, [0, 0])[0],
                       ties_s['2024-25'].get(p, [0, 0])[1] + ties_s['2025-26'].get(p, [0, 0])[1]] for p in set(ties_s['2024-25']) | set(ties_s['2025-26'])}
-    sc, S_pooled = scales(pooled_src, best_M)
+    sc, S_pooled, best_M = eb(pooled_src)
     tie_scale = {p: round(v, 4) for p, v in sc.items()}
     tie_evidence = {p: {"legs": ties_n[p], "expected_ties_raw": round(v[0], 1), "actual_ties": int(v[1])} for p, v in pooled_src.items()}
-    print(f"tie-scale prior strength M by cross-season error: {cv} -> M = {best_M}; pooled ratio {S_pooled:.4f}", flush=True)
+    print(f"tie scale: Gamma-Poisson EB, alpha (MLE) {best_M:.2f}, pooled ratio {S_pooled:.4f}; out-of-sample per-prop tie counts: {cv}", flush=True)
     cfg = {"formula": "logit(p_cal) = a + b*logit(p_derived); p_derived = Over(k+1/2)/(Over(k+1/2)+Under(k-1/2)), mirror for Under; "
                       "P(tie) = tie_scale[prop] * max(0, 1 - Over(k+1/2) - Under(k-1/2))",
            "a": round(a, 5), "b": round(b, 5), "tie_scale": tie_scale,
