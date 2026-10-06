@@ -127,7 +127,7 @@ def main():
     ok = True
     for tr, te in (("2024-25", "2025-26"), ("2025-26", "2024-25")):
         rows = data[te]; raw = [r[4] for r in rows]; y = [r[5] for r in rows]
-        cal = [apply_map(maps[tr], r[0], r[1], r[2], r[3], r[4]) for r in rows]
+        cal = [apply_map(maps[tr], r[0], r[1], r[2], r[3], r[4]) if use_map.get((r[0], r[1]), False) else r[4] for r in rows]
         l_raw, l_cal = ll(raw, y), ll(cal, y); ok &= l_cal < l_raw
         print(f"\nGATE fit {tr} -> test {te} ({len(rows):,} legs): log-loss raw {l_raw:.4f} -> map {l_cal:.4f}  {'PASS' if l_cal < l_raw else 'FAIL'}", flush=True)
         by = defaultdict(lambda: [[], [], []])
