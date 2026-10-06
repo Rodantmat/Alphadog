@@ -74,7 +74,7 @@ def params_for(cfg, d):
 def build_day(conn, cfg, d, write):
     a, b, mode = params_for(cfg, d)
     keys = conn.execute("""SELECT count(*) FROM (SELECT DISTINCT player_id, prop, line FROM nba_market.board_rung_keys
-                           WHERE game_date = %s AND period = 'FULL' AND line = floor(line)) x""", (d,)).fetchone()[0]
+                           WHERE game_date = %s AND period = 'FULL' AND line = floor(line) AND line >= 0) x""", (d,)).fetchone()[0]
     rows = conn.execute(SQL, {"d": d}).fetchall()
     out = []
     now = dt.datetime.now(dt.timezone.utc)
