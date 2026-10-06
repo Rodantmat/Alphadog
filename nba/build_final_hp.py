@@ -514,16 +514,12 @@ def main():
             #     score = hp*100 * (1 - drop)                   when conf < neutral   (toward 0)
             # 0.95 HP / 0.95 conf -> 97.4 (enhanced)   0.95 HP / 0.70 conf -> 81.7 (penalised)
             # 0.50 HP / 0.95 conf -> 63.2              0.22 HP / 0.95 conf -> 42.4
-            CONF_NEUTRAL = 0.85
-            hp100 = d["final_hp"].values * 100.0
-            cdev = (d["confidence"].values - CONF_NEUTRAL) / (1.0 - CONF_NEUTRAL)   # +1 at 1.0, -ve below
-            lift = np.clip(cdev, 0, 1) * 0.50            # up to half the remaining headroom to 100
-            drop = np.clip(-cdev, 0, 1) * 0.35           # up to 35% off when the data is thin
-            d["score"] = np.round(np.clip(hp100 + (100.0 - hp100) * lift - hp100 * drop, 0, 100), 2)
+            # (score / edge arithmetic lives in score_and_edge() at module level so derived prices - e.g. the whole-number
+            #  lines in nba_score.final_hp_derived, §31s G1 - use the IDENTICAL formula; refactor verified identical.)
             # EDGE kept alongside as its own column - how far the HP clears what the board requires.
             # It drives slip SELECTION (a 64% leg where the board needs 57% is an opportunity; a 92% leg
             # everyone prices at 92% is not), while SCORE answers "how good is this leg".
-            d["edge"] = np.round((d["final_hp"].values - BREAKEVEN["standard"]) * 100.0, 2)
+            d["score"], d["edge"] = score_and_edge(d["final_hp"].values, d["confidence"].values)
             d["prop_tier"] = "penalized" if pen > 0 else "certified"
             d["n_uncertain"] = unc.astype(int)
             d["season"] = season
