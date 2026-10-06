@@ -123,7 +123,7 @@ def main():
     else:
         d0, d1 = dt.date.fromisoformat(os.environ["WN_FROM"]), dt.date.fromisoformat(os.environ["WN_TO"])
         days = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_market.board_rung_keys WHERE game_date BETWEEN %s AND %s
-                                               AND period = 'FULL' AND line = floor(line) ORDER BY 1""", (d0, d1)).fetchall()]
+                                               AND period = 'FULL' AND line = floor(line) AND line >= 0 ORDER BY 1""", (d0, d1)).fetchall()]
     tk = tp = 0
     for d in days:
         k, p = build_day(conn, cfg, d, write)
