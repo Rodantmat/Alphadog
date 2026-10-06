@@ -41,7 +41,7 @@ SELECT k.player_id, k.prop, k.line::float, o.season, o.game_id, o.anchor::float,
        o.final_hp::float, u.final_hp::float, o.baseline_hp::float, u.baseline_hp::float, o.confidence::float, u.confidence::float,
        o.conf_tier, u.conf_tier, o.c_exist::float, u.c_exist::float, o.c_quality::float, u.c_quality::float, o.c_market::float, u.c_market::float,
        o.band, u.band, o.n_uncertain, u.n_uncertain, o.prop_tier, o.phase
-FROM (SELECT DISTINCT player_id, prop, line FROM nba_market.board_rung_keys WHERE game_date = %(d)s AND period = 'FULL' AND line = floor(line)) k
+FROM (SELECT DISTINCT player_id, prop, line FROM nba_market.board_rung_keys WHERE game_date = %(d)s AND period = 'FULL' AND line = floor(line) AND line >= 0) k
 JOIN nba_score.final_hp o ON o.game_date = %(d)s AND o.player_id = k.player_id AND o.prop = k.prop AND o.side = 'Over'  AND o.line = k.line + 0.5
 JOIN nba_score.final_hp u ON u.game_date = %(d)s AND u.player_id = k.player_id AND u.prop = k.prop AND u.side = 'Under' AND u.line = k.line - 0.5
 WHERE o.final_hp IS NOT NULL AND u.final_hp IS NOT NULL"""
