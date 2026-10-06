@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-10-05T22:48:13Z",
-  "fetched_at": "2026-10-05T22:53:37Z",
+  "started_at": "2026-10-06T06:36:17Z",
+  "fetched_at": "2026-10-06T06:41:58Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -42,28 +42,12 @@
       19
     ],
     [
-      "lines[match=230178]",
-      20
-    ],
-    [
-      "pills[match=230178]",
-      134
-    ],
-    [
-      "lines[match=229168]",
-      20
-    ],
-    [
-      "pills[match=229168]",
-      169
-    ],
-    [
       "lines[match=262567]",
       20
     ],
     [
       "pills[match=262567]",
-      122
+      129
     ],
     [
       "lines[match=260775]",
@@ -71,15 +55,15 @@
     ],
     [
       "pills[match=260775]",
-      124
+      136
     ],
     [
       "lines[match=260725]",
-      0
+      20
     ],
     [
       "pills[match=260725]",
-      1
+      80
     ],
     [
       "lines[match=262568]",
@@ -91,11 +75,11 @@
     ],
     [
       "lines[match=260749]",
-      0
+      20
     ],
     [
       "pills[match=260749]",
-      1
+      114
     ],
     [
       "lines[match=260776]",
@@ -130,16 +114,32 @@
       0
     ],
     [
+      "lines[match=229950]",
+      0
+    ],
+    [
+      "pills[match=229950]",
+      0
+    ],
+    [
+      "lines[match=230179]",
+      0
+    ],
+    [
+      "pills[match=230179]",
+      0
+    ],
+    [
       "lines_with_stats[players]",
-      14,
-      79
+      1,
+      75
     ],
     [
       "alternate_projections",
-      425,
-      1355,
+      372,
+      1185,
       0,
-      "deduped 39"
+      "deduped 0"
     ],
     [
       "lines[mass=true]",
@@ -150,65 +150,57 @@
       0
     ]
   ],
-  "lines": 665,
-  "legs": 665,
-  "ladder_legs": 1355,
-  "ladder_lines_with_alternates": 425,
-  "players": 79,
-  "pregame_legs": 497,
-  "live_legs": 168,
+  "lines": 560,
+  "legs": 560,
+  "ladder_legs": 1185,
+  "ladder_lines_with_alternates": 372,
+  "players": 75,
+  "pregame_legs": 560,
+  "live_legs": 0,
   "by_stat": {
-    "RBIs": 77,
-    "Total Bases": 74,
-    "Hits": 73,
-    "Home Runs": 72,
+    "Total Bases": 69,
+    "RBIs": 69,
+    "Home Runs": 68,
+    "Hits": 67,
     "Runs": 67,
-    "Stolen Bases": 63,
-    "Batter Walks": 59,
-    "Hits + Runs + RBIs": 52,
+    "Batter Walks": 61,
+    "Stolen Bases": 44,
+    "Hits + Runs + RBIs": 21,
+    "Fantasy Points": 19,
     "Moneyline": 11,
-    "Batter Strikeouts": 9,
-    "Pitcher Hits Allowed": 8,
     "Team Total Runs": 8,
-    "Singles": 8,
-    "Doubles": 8,
-    "Fantasy Points": 8,
-    "Strikeouts": 7,
-    "Pitching Outs Recorded": 7,
-    "Pitcher Walks Allowed": 7,
-    "Pitcher Earned Runs Allowed": 7,
-    "Spread": 6,
-    "Run 1st Inning": 6,
-    "Total Runs": 5,
-    "1st 5 Innings Total Runs": 5,
+    "Pitcher Hits Allowed": 7,
+    "Strikeouts": 6,
+    "Pitching Outs Recorded": 6,
+    "Pitcher Walks Allowed": 6,
+    "Pitcher Earned Runs Allowed": 6,
+    "Run 1st Inning": 5,
+    "Spread": 4,
+    "Total Runs": 4,
     "1st 5 Innings Moneyline": 4,
-    "1st 5 Innings Spread": 4,
-    "1st Inn. Strikeouts": 2,
-    "1st Inn. Runs Allowed": 2,
-    "1st Inn. Pitch Count": 2,
-    "1st Inn. Batters Faced": 2,
-    "1st Inn. Hits Allowed": 2
+    "1st 5 Innings Total Runs": 4,
+    "1st 5 Innings Spread": 4
   },
   "by_line_type": {
-    "balanced": 665
+    "balanced": 560
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 42,
-    "None": 31,
-    "3.13": 14,
-    "1.09": 12,
-    "1.56": 12,
-    "0.78": 11,
-    "1.47": 10,
-    "1.25": 10,
-    "3.57": 10,
-    "1.32": 9,
-    "0.85": 9,
-    "1.11": 7,
-    "0.89": 7,
-    "1.19": 7,
-    "1.14": 7
+    "1.0": 51,
+    "None": 28,
+    "0.88": 10,
+    "1.19": 9,
+    "1.47": 9,
+    "1.51": 8,
+    "0.81": 8,
+    "0.78": 7,
+    "0.87": 7,
+    "1.72": 7,
+    "0.84": 7,
+    "0.75": 7,
+    "1.26": 6,
+    "1.39": 6,
+    "0.89": 6
   },
-  "github_run_id": "37384663740"
+  "github_run_id": "37424571460"
 }
