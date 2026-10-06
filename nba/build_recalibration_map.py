@@ -1,41 +1,34 @@
 #!/usr/bin/env python3
 """
-OVERCONFIDENCE / RECALIBRATION MAP for slip building (2026-09-28).
+RECALIBRATION MAP v2 (COMPASS facts 123-124, 134; strategy doc §31s). Replaces the 2026-09-28 builder, which was never written and
+had three defects found on review (2026-10-06): (1) NOT as-of - each season's map was fit on that season's own legs (in-sample),
+the promised "recalibrated with the map that did NOT see it" / live refit were not implemented; (2) its isotonic step was dead code
+(PAV blocks computed then ignored) replaced by a running MAXIMUM - monotone but biased UPWARD; (3) standard legs only - but alternates
+miscalibrate in OPPOSITE directions (goblins UNDER-confident: 0.644 -> 0.685 / 0.626 -> 0.659; demons OVER-confident: 0.259 -> 0.242 /
+0.285 -> 0.246), and the owner directive is "every leg gets a final HP".
 
-WHY: the pre-slip pass (COMPASS fact 123) proved the model RANKS correctly but is OVERCONFIDENT above
-~0.55, and the overconfidence varies by category (fact 124):
-  - PROP:   fgm/oreb INVERT at the top (model_p>=0.75 -> realized 0.44/0.32); combos hit a ~0.55 ceiling;
-            steals/turnovers/ftm/points hold up (0.59-0.72).
-  - SIDE:   Over holds up better than Under (0.587 vs 0.547 at model_p>=0.75).
-  - ROLE:   STARTER 0.590 ... FRINGE 0.491 at model_p>=0.75 (fringe high-conf legs hit BELOW a coin flip).
-  - LINE MAGNITUDE: minor for points (slightly worse for elite scorers).
-
-Slip EV is a PRODUCT of leg probabilities, so raw model_p must NOT be multiplied. This builds an empirical
-recalibration map: realized hit rate keyed by (prop, side, role_tier, model_p decile), so the slip engine
-reads a CALIBRATED p for every leg before computing any slip payout.
-
-METHOD (respects the standing rules):
-  - AS-OF / PARITY (fact 100/42): the map is fit PER SEASON using only rows from that season's graded
-    history; a leg is recalibrated with the map that did NOT see it. For live use the current season's
-    map is refit from all prior graded days. No leakage.
-  - SHRINKAGE (fact 77 sample gate): each cell's estimate is shrunk toward its parent
-    (prop x side x role -> prop x side -> prop -> global) by n/(n+K); thin cells inherit, never fabricate.
-  - MONOTONE (ranking is trustworthy): after shrinkage the per-decile curve within a (prop,side,role) is
-    made non-decreasing in model_p by pooled-adjacent-violators (isotonic), because a higher model_p must
-    never map to a lower calibrated p.
-  - Writes nba_score.recalibration_map (season, prop, side, role_tier, p_bucket, n, model_p_mean,
-    realized, calibrated_p, built_at). The slip engine looks up (prop, side, role_tier, bucket(model_p)).
-
-Env: DATABASE_URL, RC_SEASONS (blank = all in prop_universe), RC_WRITE (1 = write; else report),
-     RC_SHRINK_K (default 200).
+MAP: calibrated_p keyed by (prop, kind, side, role_tier, p_bucket). Each cell's realized rate is shrunk toward its parent by
+n/(n+K): cell -> (prop,kind,side) -> (prop,kind) -> kind. Within each (prop,kind,side,role) the bucket curve is made non-decreasing in
+model_p by WEIGHTED POOLED-ADJACENT-VIOLATORS (true isotonic regression).
+FIT SETS: '2024-25' and '2025-26' (each fit on its own season, applied to the OTHER season's history - as-of / no leakage) and
+'POOLED' (both seasons - for live dates). VALIDATION GATE (built in): each season's map is scored on the other season - log-loss raw
+vs map, per (prop, kind) and overall; the table is written only if the map improves out-of-sample in BOTH directions.
+Env: DATABASE_URL, RC_WRITE (1 = write if the gate passes; else report), RC_SHRINK_K (default 200).
 """
 import os
-import sys
+from collections import defaultdict
+
 import numpy as np
 import psycopg
 
-
-BUCKETS = [0.0, 0.30, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.85, 1.01]  # model_p edges
+BUCKETS = [0.0, 0.10, 0.20, 0.30, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.85, 0.95, 1.01]  # model_p edges (alternates reach both tails)
+SQL = """
+SELECT pu.season, pu.prop, pu.kind, pu.side, coalesce(b.role_tier, 'UNK'), pu.model_p::float, pu.hit::int
+FROM nba_market.prop_universe pu
+LEFT JOIN nba_score.baseline_history b
+  ON b.game_date = pu.game_date AND b.player_id = pu.player_id AND b.prop = pu.prop AND b.line = pu.line AND b.period = 'FULL'
+WHERE pu.line_source = 'real' AND pu.hit IS NOT NULL AND pu.model_p IS NOT NULL AND pu.season = %s
+"""
 
 
 def bucket_of(p):
@@ -45,134 +38,102 @@ def bucket_of(p):
     return len(BUCKETS) - 2
 
 
-def isotonic(xs, ws):
-    """Pooled-adjacent-violators: make xs non-decreasing, weighted by ws. Returns the fitted values."""
-    x = list(xs); w = list(ws)
-    # each block: (value, weight, count)
-    blocks = [[x[i], w[i]] for i in range(len(x))]
-    i = 0
-    while i < len(blocks) - 1:
-        if blocks[i][0] > blocks[i + 1][0] + 1e-12:
-            # merge i and i+1 (weighted mean), step back
-            v = (blocks[i][0] * blocks[i][1] + blocks[i + 1][0] * blocks[i + 1][1]) / (blocks[i][1] + blocks[i + 1][1])
-            blocks[i] = [v, blocks[i][1] + blocks[i + 1][1]]
-            del blocks[i + 1]
-            if i > 0:
-                i -= 1
-        else:
-            i += 1
-    # expand back
+def pav(values, weights):
+    """Weighted pooled-adjacent-violators: the non-decreasing sequence closest (weighted L2) to values."""
+    blocks = []                                   # [sum_wv, sum_w, count]
+    for v, w in zip(values, weights):
+        blocks.append([v * w, w, 1])
+        while len(blocks) > 1 and blocks[-2][0] / blocks[-2][1] > blocks[-1][0] / blocks[-1][1]:
+            b = blocks.pop(); blocks[-1][0] += b[0]; blocks[-1][1] += b[1]; blocks[-1][2] += b[2]
     out = []
-    for b in blocks:
-        out.append(b)
-    # re-expand to original length by walking
-    res = []
-    bi = 0; remaining = None
-    # simpler: rebuild by repeating each block's value over the members it absorbed
-    # track counts
-    return blocks  # caller re-expands using cumulative weights
+    for s, w, c in blocks:
+        out += [s / w] * c
+    return out
+
+
+def build_map(rows, K):
+    """rows: (prop, kind, side, role, p, hit). Returns {(prop,kind,side,role,bucket): (n, p_mean, realized, calibrated)}."""
+    agg = defaultdict(lambda: [0, 0.0, 0.0])
+    def add(key, p, h):
+        a = agg[key]; a[0] += 1; a[1] += p; a[2] += h
+    for prop, kind, side, role, p, h in rows:
+        b = bucket_of(p)
+        add(("K", kind), p, h); add(("PK", prop, kind), p, h); add(("PKS", prop, kind, side), p, h)
+        add(("C", prop, kind, side, role, b), p, h)
+    def rate(key):
+        a = agg[key]; return a[2] / a[0] if a[0] else None
+    out = {}
+    groups = defaultdict(list)
+    for key in agg:
+        if key[0] == "C":
+            groups[key[1:5]].append(key[5])
+    for (prop, kind, side, role), bks in groups.items():
+        r_k = rate(("K", kind))
+        n_pk = agg[("PK", prop, kind)][0]; r_pk = (n_pk * rate(("PK", prop, kind)) + K * r_k) / (n_pk + K)
+        n_pks = agg[("PKS", prop, kind, side)][0]; r_pks = (n_pks * rate(("PKS", prop, kind, side)) + K * r_pk) / (n_pks + K)
+        bks = sorted(bks); vals, ws, meta = [], [], []
+        for b in bks:
+            n, ps, hs = agg[("C", prop, kind, side, role, b)]
+            vals.append((n * (hs / n) + K * r_pks) / (n + K)); ws.append(n + 1.0); meta.append((n, ps / n, hs / n))
+        fitted = pav(vals, ws)
+        for b, f, (n, pm, rr) in zip(bks, fitted, meta):
+            out[(prop, kind, side, role, b)] = (n, round(pm, 4), round(rr, 4), round(float(f), 4))
+    # parent fallbacks for unseen cells
+    out["_parents"] = {"PKS": {k[1:]: (agg[k][2] / agg[k][0]) for k in agg if k[0] == "PKS"},
+                       "PK": {k[1:]: (agg[k][2] / agg[k][0]) for k in agg if k[0] == "PK"},
+                       "K": {k[1:]: (agg[k][2] / agg[k][0]) for k in agg if k[0] == "K"}}
+    return out
+
+
+def apply_map(m, prop, kind, side, role, p):
+    c = m.get((prop, kind, side, role, bucket_of(p)))
+    if c:
+        return c[3]
+    par = m["_parents"]
+    return par["PKS"].get((prop, kind, side)) or par["PK"].get((prop, kind)) or par["K"].get((kind,)) or p
+
+
+def ll(p, y):
+    p = np.clip(np.asarray(p, float), 1e-6, 1 - 1e-6); y = np.asarray(y, float)
+    return float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
 
 
 def main():
-    seasons_env = os.environ.get("RC_SEASONS", "").strip()
     write = os.environ.get("RC_WRITE", "0") == "1"
     K = float(os.environ.get("RC_SHRINK_K", "200"))
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
-
-    seasons = ([s.strip() for s in seasons_env.split(",")] if seasons_env else
-               [r[0] for r in conn.execute("SELECT DISTINCT season FROM nba_market.prop_universe ORDER BY 1").fetchall()])
-    print(f"seasons: {seasons}  shrink K={K}  write={write}", flush=True)
-
-    if write:
+    data = {s: [(r[1], r[2], r[3], r[4], r[5], r[6]) for r in conn.execute(SQL, (s,)).fetchall()] for s in ("2024-25", "2025-26")}
+    for s, v in data.items():
+        print(f"{s}: {len(v):,} graded legs (role UNK {sum(1 for r in v if r[3] == 'UNK'):,})", flush=True)
+    maps = {s: build_map(v, K) for s, v in data.items()}
+    maps["POOLED"] = build_map(data["2024-25"] + data["2025-26"], K)
+    ok = True
+    for tr, te in (("2024-25", "2025-26"), ("2025-26", "2024-25")):
+        rows = data[te]; raw = [r[4] for r in rows]; y = [r[5] for r in rows]
+        cal = [apply_map(maps[tr], r[0], r[1], r[2], r[3], r[4]) for r in rows]
+        l_raw, l_cal = ll(raw, y), ll(cal, y); ok &= l_cal < l_raw
+        print(f"\nGATE fit {tr} -> test {te} ({len(rows):,} legs): log-loss raw {l_raw:.4f} -> map {l_cal:.4f}  {'PASS' if l_cal < l_raw else 'FAIL'}", flush=True)
+        by = defaultdict(lambda: [[], [], []])
+        for r, c in zip(rows, cal):
+            g = by[(r[0], r[1])]; g[0].append(r[4]); g[1].append(c); g[2].append(r[5])
+        for (prop, kind), (rp, cp, yy) in sorted(by.items()):
+            if len(yy) >= 1500:
+                print(f"   {prop:<14} {kind:<9} n {len(yy):>7,} | raw {ll(rp, yy):.4f} -> map {ll(cp, yy):.4f} | mean raw {np.mean(rp):.3f} map {np.mean(cp):.3f} actual {np.mean(yy):.3f}", flush=True)
+    print(f"\nVALIDATION GATE: {'PASS (both directions)' if ok else 'FAIL - nothing written'}", flush=True)
+    if write and ok:
         with conn.cursor() as cur:
             cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.recalibration_map (
-                season text, prop text, side text, role_tier text, p_bucket int,
-                lo numeric, hi numeric, n int, model_p_mean numeric, realized numeric,
-                calibrated_p numeric, built_at timestamptz DEFAULT now())""")
+                fit_set text, prop text, kind text, side text, role_tier text, p_bucket int, lo numeric, hi numeric,
+                n int, model_p_mean numeric, realized numeric, calibrated_p numeric, built_at timestamptz DEFAULT now(),
+                PRIMARY KEY (fit_set, prop, kind, side, role_tier, p_bucket))""")
+            cur.execute("DELETE FROM nba_score.recalibration_map")
+            for fs, m in maps.items():
+                cur.executemany("""INSERT INTO nba_score.recalibration_map (fit_set, prop, kind, side, role_tier, p_bucket, lo, hi, n,
+                                   model_p_mean, realized, calibrated_p) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                                [(fs, k[0], k[1], k[2], k[3], k[4], BUCKETS[k[4]], BUCKETS[k[4] + 1], *v) for k, v in m.items() if k != "_parents"])
         conn.commit()
-
-    for season in seasons:
-        # pull graded standard legs joined to role_tier, this season only (as-of: no other season leaks)
-        rows = conn.execute("""
-            SELECT pu.prop, pu.side, coalesce(b.role_tier,'UNK') AS role_tier, pu.model_p, pu.hit::int AS h
-            FROM nba_market.prop_universe pu
-            LEFT JOIN nba_score.baseline_history b
-              ON b.game_date=pu.game_date AND b.player_id=pu.player_id AND b.prop=pu.prop AND b.line=pu.line
-            WHERE pu.season=%s AND pu.kind='standard' AND pu.hit IS NOT NULL AND pu.model_p IS NOT NULL
-        """, (season,)).fetchall()
-        if not rows:
-            print(f"  {season}: no rows"); continue
-        prop = np.array([r[0] for r in rows]); side = np.array([r[1] for r in rows])
-        role = np.array([r[2] for r in rows]); mp = np.array([r[3] for r in rows], float)
-        hit = np.array([r[4] for r in rows], float)
-        bkt = np.array([bucket_of(p) for p in mp])
-        glob = hit.mean()
-
-        def cell(mask):
-            n = int(mask.sum())
-            return (n, float(mp[mask].mean()) if n else 0.0, float(hit[mask].mean()) if n else glob)
-
-        out = []
-        for pr in sorted(set(prop)):
-            pm = prop == pr
-            n_p, _, r_p = cell(pm)
-            for sd in sorted(set(side[pm])):
-                sm = pm & (side == sd)
-                n_ps, _, r_ps = cell(sm)
-                r_ps_sh = (n_ps * r_ps + K * r_p) / (n_ps + K)          # prop-side shrunk to prop
-                for rt in sorted(set(role[sm])):
-                    rm = sm & (role == rt)
-                    # per-bucket within this (prop,side,role)
-                    b_ids, b_vals, b_ws, b_mp, b_real = [], [], [], [], []
-                    for bi in sorted(set(bkt[rm])):
-                        bm = rm & (bkt == bi)
-                        n_c, mp_c, r_c = cell(bm)
-                        r_c_sh = (n_c * r_c + K * r_ps_sh) / (n_c + K)   # cell shrunk to prop-side
-                        b_ids.append(bi); b_vals.append(r_c_sh); b_ws.append(n_c); b_mp.append(mp_c); b_real.append(r_c)
-                    if not b_ids:
-                        continue
-                    # isotonic in bucket order
-                    order = np.argsort(b_ids)
-                    v = np.array(b_vals)[order]; w = np.array(b_ws)[order] + 1.0
-                    blocks = isotonic(v.tolist(), w.tolist())
-                    # re-expand blocks back to per-bucket
-                    fitted, bi_ptr = [], 0
-                    for blk in blocks:
-                        # blk absorbed some members; assign its value until weights exhausted
-                        pass
-                    # simple monotone enforcement instead of block re-expansion:
-                    cur_max = 0.0
-                    fitted = []
-                    for val in v:
-                        cur_max = max(cur_max, val)
-                        fitted.append(cur_max)
-                    for k, bi in enumerate([b_ids[i] for i in order]):
-                        out.append((season, pr, sd, rt, int(bi), BUCKETS[bi], BUCKETS[bi + 1],
-                                    int(np.array(b_ws)[order][k]), round(float(np.array(b_mp)[order][k]), 4),
-                                    round(float(np.array(b_real)[order][k]), 4), round(float(fitted[k]), 4)))
-        print(f"  {season}: {len(out)} cells, global realized {glob:.4f}", flush=True)
-        # show the headline overconfidence per prop at the top bucket
-        top = {}
-        for c in out:
-            if c[4] >= 9:  # bucket >= 0.75
-                top.setdefault(c[1], []).append((c[9], c[10], c[7]))
-        for pr in sorted(top):
-            tot_n = sum(x[2] for x in top[pr])
-            if tot_n >= 300:
-                wr = sum(x[0] * x[2] for x in top[pr]) / tot_n
-                wc = sum(x[1] * x[2] for x in top[pr]) / tot_n
-                print(f"    {pr:<16} model_p>=0.75  realized {wr:.3f} -> calibrated {wc:.3f}  (n={tot_n})", flush=True)
-
-        if write and out:
-            with conn.cursor() as cur:
-                cur.execute("DELETE FROM nba_score.recalibration_map WHERE season=%s", (season,))
-                cur.executemany("""INSERT INTO nba_score.recalibration_map
-                    (season, prop, side, role_tier, p_bucket, lo, hi, n, model_p_mean, realized, calibrated_p)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", out)
-            conn.commit()
-            print(f"  wrote {len(out)} cells for {season}", flush=True)
-
+        print("WRITTEN: nba_score.recalibration_map (fit sets 2024-25, 2025-26, POOLED)", flush=True)
     conn.close()
 
 
