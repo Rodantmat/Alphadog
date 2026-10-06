@@ -39,7 +39,7 @@ jobs:
         run: |
           python - <<'EOF'
           from pathlib import Path
-          dump = ('rel[["prop","offset","p_over","actual","month"]].to_pickle("nba/backtest/reports/_tailrel_" + '
+          dump = ('rel[["prop","offset","p_over","actual","month","line","PLAYER_ID","GAME_ID"]].to_pickle("nba/backtest/reports/_tailrel_" + '
                   '(os.environ.get("BT_PROPS") or "combos").replace(",", "-") + ".pkl"); raise SystemExit(0)')
           for src, dst in (("nba/baseline/build_baseline_ladder.py", "nba/baseline/_tail_main.py"),
                            ("nba/baseline/build_combos_ladder.py", "nba/baseline/_tail_combos.py")):
