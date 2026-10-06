@@ -21056,8 +21056,8 @@
       "away_team_tricode": "MEM",
       "arena_name": "State Farm Arena",
       "arena_city": "Atlanta",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21071,8 +21071,8 @@
       "away_team_tricode": "PHX",
       "arena_name": "Little Caesars Arena",
       "arena_city": "Detroit",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21086,8 +21086,8 @@
       "away_team_tricode": "NYK",
       "arena_name": "Xfinity Mobile Arena",
       "arena_city": "Philadelphia",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21101,8 +21101,8 @@
       "away_team_tricode": "MIN",
       "arena_name": "Fiserv Forum",
       "arena_city": "Milwaukee",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21116,8 +21116,8 @@
       "away_team_tricode": "LAL",
       "arena_name": "Golden 1 Center",
       "arena_city": "Sacramento",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
