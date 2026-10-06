@@ -1,9 +1,12 @@
 name: NBA Ladder Tail Research
 
-# §31s G2: is the PRODUCTION probability (walk-forward monthly Platt; raw where a cell has < 1,000 samples) calibrated at deep
-# offsets? The production builders exit right after writing the ladder (raise SystemExit(0)), before any report, so this runs
-# RESEARCH COPIES whose single change is to dump the in-memory reliability frame (prop, offset, calibrated p_over, actual, month)
-# just before that exit. Builders run exactly as P2B does (components -> combos) at BT_LADDER_STEPS=24. Runner files only.
+# §31s G2: is the PRODUCTION probability (walk-forward monthly Platt; raw where a cell has < 1,000 samples) calibrated BEYOND
+# each prop's current production depth? The production builders exit right after writing the ladder (raise SystemExit(0)),
+# before any report, so this runs RESEARCH COPIES whose single change is to dump the in-memory reliability frame just before
+# that exit. Builders run exactly as P2B does (components -> combos) at BT_LADDER_STEPS=24. Analysis de-duplicates rungs per
+# (player, game, prop, line) keeping the last offset EXACTLY as the builder does (floor-collapsed rungs repeat), and reads each
+# prop's current production depth FROM THE CODE (singles: LADDER_DEPTH in the production builder; combos: the BT_LADDER_STEPS
+# default in the combos builder, which P2B leaves unset). Runner files only; no DB writes.
 on:
   workflow_dispatch:
     inputs:
@@ -61,27 +64,37 @@ jobs:
         run: |
           set -o pipefail
           python nba/baseline/_tail_combos.py > logs/combos.log 2>&1 || { tail -60 logs/combos.log; exit 1; }
-      - name: Tail reliability of the production probability
+      - name: Calibration within vs beyond each prop's current production depth
         run: |
           python - <<'EOF'
-          import glob, numpy as np, pandas as pd
-          fs = sorted(glob.glob("nba/backtest/reports/_tailrel_*.pkl")); print("frames:", fs)
-          rel = pd.concat([pd.read_pickle(f) for f in fs], ignore_index=True)
+          import ast, glob, re, numpy as np, pandas as pd
+          from pathlib import Path
+          main_src = Path("nba/baseline/build_baseline_ladder.py").read_text()
+          m = re.search(r"LADDER_DEPTH = (\{.*?\})", main_src, re.S); assert m, "LADDER_DEPTH not found in the production builder"
+          singles_depth = ast.literal_eval(m.group(1))
+          cm = re.search(r'BT_LADDER_STEPS", "(\d+)"', Path("nba/baseline/build_combos_ladder.py").read_text()); assert cm, "combos default depth not found"
+          combos_depth = int(cm.group(1))
+          print("production depth (read from code): singles", singles_depth, "| combos builder default", combos_depth)
+          frames = []
+          for f in sorted(glob.glob("nba/backtest/reports/_tailrel_*.pkl")):
+              d = pd.read_pickle(f); d["src"] = "combos" if f.endswith("_combos.pkl") else "main"; frames.append(d); print("frame", f, len(d))
+          rel = pd.concat(frames, ignore_index=True)
           rel = rel[rel["p_over"].notna() & rel["actual"].notna()]
+          before = len(rel)
+          rel = rel.sort_values("offset").drop_duplicates(subset=["PLAYER_ID", "GAME_ID", "prop", "line"], keep="last")
+          print(f"rungs {before:,} -> {len(rel):,} after production de-duplication")
           def ll(p, y):
               p = np.clip(p, 1e-6, 1 - 1e-6); return float(-np.mean(y * np.log(p) + (1 - y) * np.log(1 - p)))
-          print(f"rows {len(rel):,}; props {sorted(rel['prop'].unique())}")
-          for prop, g in rel.groupby("prop"):
-              print(f"\n== {prop}  (offset: n | mean pred | actual | gap pp | log-loss)")
-              for off, h in g.groupby("offset"):
-                  if abs(off) < 6 and off not in (-1, 0, 1):
-                      continue
-                  p, y = h["p_over"].values, h["actual"].values
-                  print(f"   {int(off):+3d}: {len(h):>7,} | {p.mean():.4f} | {y.mean():.4f} | {100*(y.mean()-p.mean()):+5.2f} | {ll(p, y):.4f}")
-          deep = rel[rel["offset"].abs() >= 11]
-          print(f"\nDEEP (|offset| >= 11) pooled by predicted-probability bin:")
-          for lo, hi in ((0, .01), (.01, .03), (.03, .07), (.07, .15), (.15, .5), (.5, .85), (.85, .93), (.93, .97), (.97, .99), (.99, 1.01)):
-              h = deep[(deep["p_over"] >= lo) & (deep["p_over"] < hi)]
-              if len(h):
-                  print(f"   pred {lo:.2f}-{hi:.2f}: n {len(h):>8,} | mean pred {h['p_over'].mean():.4f} | actual {h['actual'].mean():.4f}")
+          for (src, prop), g in rel.groupby(["src", "prop"]):
+              depth = combos_depth if src == "combos" else singles_depth.get(prop, 10)
+              w = g[g["offset"].abs() <= depth]; b = g[g["offset"].abs() > depth]
+              line = f"\n== {prop} [{src}] production depth {depth}: WITHIN n {len(w):,} pred {w['p_over'].mean():.4f} act {w['actual'].mean():.4f} ll {ll(w['p_over'].values, w['actual'].values):.4f}"
+              if len(b):
+                  line += f" | BEYOND n {len(b):,} pred {b['p_over'].mean():.4f} act {b['actual'].mean():.4f} ll {ll(b['p_over'].values, b['actual'].values):.4f}"
+              print(line)
+              if len(b):
+                  for lo, hi in ((0, .02), (.02, .1), (.1, .3), (.3, .7), (.7, .9), (.9, .98), (.98, 1.01)):
+                      h = b[(b["p_over"] >= lo) & (b["p_over"] < hi)]
+                      if len(h) >= 200:
+                          print(f"     beyond, pred {lo:.2f}-{hi:.2f}: n {len(h):>8,} | pred {h['p_over'].mean():.4f} | actual {h['actual'].mean():.4f} | gap {100*(h['actual'].mean()-h['p_over'].mean()):+.2f} pp")
           EOF
