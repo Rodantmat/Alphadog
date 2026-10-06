@@ -69,8 +69,8 @@ jobs:
           python - <<'EOF'
           import ast, glob, re, numpy as np, pandas as pd
           from pathlib import Path
-          main_src = Path("nba/baseline/build_baseline_ladder.py").read_text()
-          m = re.search(r"LADDER_DEPTH = (\{.*?\})", main_src, re.S); assert m, "LADDER_DEPTH not found in the production builder"
+          main_src = Path("nba/backtest/classification_ladder_v12.py").read_text()
+          m = re.search(r"LADDER_DEPTH = (\{.*?\})", main_src, re.S); assert m, "LADDER_DEPTH not found in the certified recipe"
           singles_depth = ast.literal_eval(m.group(1))
           cm = re.search(r'BT_LADDER_STEPS", "(\d+)"', Path("nba/baseline/build_combos_ladder.py").read_text()); assert cm, "combos default depth not found"
           combos_depth = int(cm.group(1))
