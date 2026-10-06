@@ -350,6 +350,10 @@ Never say "I don't have that" about anything in §2–§6 without opening the po
 | static/weekly factors already sourced (DARKO, tracking, on/off, lineups, DvP, officials) | `NBA_ENRICHMENT_FACTORS_RESEARCH.md`; 09-04 checkpoint |
 | enrichment (daily-mined) factors, mining, backfill | `NBA_ENRICHMENT_FACTOR_LOCK.md` (being written) |
 | chronological "what happened when" | `NBA_PROJECT_LOG.md` |
+| why live boards behave differently from history (PrizePicks team names, Underdog stat keys, game-day labels) | COMPASS facts 128, 129, 133; `NBA_SLIP_BUILDING_STRATEGY.md` §31h / §31g / §31s G4 |
+| rosters, traded / returning / opening-week players, rookies' first games | COMPASS fact 130; strategy §31r |
+| board guards, star-Under half stake, edge monitors, late pick, the integration test | COMPASS facts 131–132; strategy §31j–§31q |
+| whole-number lines, deep goblins / demons, ladder depth, rookie pricing — the gap program | COMPASS fact 134; strategy §31s; `NBA_OPEN_ITEMS.md` O5 / O5b; `NBA_GOBLIN_DEMON.md` §0e-T16 |
 
 ---
 
