@@ -61,7 +61,7 @@ jobs:
           b, a = load("before"), load("after")
           common = set(b) & set(a); gone = set(b) - set(a); new = set(a) - set(b)
           changed = [k for k in common if {x: v for x, v in b[k].items() if x not in ("built_at",)} != {x: v for x, v in a[k].items() if x not in ("built_at",)}]
-          new_props = Counter((a[k]["prop"], abs(int(a[k].get("ladder_offset", 0)))) for k in new)
+          new_props = Counter((a[k]["prop"], abs(int(a[k]["offset"]))) for k in new)
           print(f"rows before {len(b):,} | after {len(a):,} | common {len(common):,} | CHANGED {len(changed)} | GONE {len(gone)} | NEW {len(new):,}")
           print("new rows by (prop, |offset|):", dict(sorted(new_props.items())))
           for k in changed[:5]:
