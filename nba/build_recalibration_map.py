@@ -90,7 +90,10 @@ def apply_map(m, prop, kind, side, role, p):
     if c:
         return c[3]
     par = m["_parents"]
-    return par["PKS"].get((prop, kind, side)) or par["PK"].get((prop, kind)) or par["K"].get((kind,)) or p
+    for v in (par["PKS"].get((prop, kind, side)), par["PK"].get((prop, kind)), par["K"].get((kind,))):
+        if v is not None:
+            return v
+    return p
 
 
 def ll(p, y):
