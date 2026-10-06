@@ -73,6 +73,8 @@ def main():
     cfg = {"formula": "logit(p_cal) = a + b*logit(p_derived); p_derived = Over(k+1/2)/(Over(k+1/2)+Under(k-1/2)), mirror for Under; "
                       "P(tie) = tie_scale[prop] * max(0, 1 - Over(k+1/2) - Under(k-1/2))",
            "a": round(a, 5), "b": round(b, 5), "tie_scale": tie_scale,
+           "tie_scale_method": {"shrinkage": "empirical Bayes toward the pooled actual/expected ratio", "M_expected_ties": best_M,
+                                "cross_season_abs_error_by_M": cv, "pooled_ratio": round(S_pooled, 4), "per_prop": tie_evidence},
            "per_season_fit": {s: {"a": round(x[0], 5), "b": round(x[1], 5), "n": len(data[s])} for s, x in per.items()},
            "n_pooled": len(data['2024-25']) + len(data['2025-26']),
            "evidence": "gate 1 (naive) FAILED: log-loss 0.705 > coin flip 0.693; gate 1b cross-season PASSED: fit 2024-25 -> 2025-26 "
