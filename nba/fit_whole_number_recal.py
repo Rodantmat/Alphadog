@@ -42,7 +42,7 @@ def main():
         sea = '2024-25' if d.year == 2024 or (d.year == 2025 and d.month < 7) else '2025-26'
         v = float(R.val(prop, tuple(float(x or 0) for x in (pts, reb, ast, fg3m, stl, blk, tov)))); line = float(line)
         O = min(max(float(o_f), 1e-4), 1 - 1e-4); U = min(max(float(u_f), 1e-4), 1 - 1e-4)
-        t = ties[prop]; t[0] += max(0.0, 1 - O - U); t[1] += int(v == line)
+        t = ties_s[sea][prop]; t[0] += max(0.0, 1 - O - U); t[1] += int(v == line); ties_n[prop] += 1
         if v == line:
             continue
         p = min(max(O / (O + U) if side == 'Over' else U / (O + U), 1e-4), 1 - 1e-4)
