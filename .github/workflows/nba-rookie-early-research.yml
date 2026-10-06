@@ -1,0 +1,25 @@
+name: NBA Rookie Early Games Research
+
+# §31s G3: read-only - rookie games 2-5 priced from a cross-fitted prior shrunk toward observed NBA games.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" scipy
+      - name: Research
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/rookie_early_games_research.py
