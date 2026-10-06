@@ -363,6 +363,18 @@ jobs:
           FE_WRITE: "1"
         run: python nba/build_final_hp.py
 
+      # WHOLE-NUMBER LINES (§31s G1, COMPASS 134; owner directive "every leg gets a final HP"): priced from the adjacent rungs
+      # + the stored recalibration into nba_score.final_hp_derived - NEVER final_hp (selection excluded: gate 2 not adopted).
+      # Isolated: a failure here never blocks certification or P3.
+      - name: Price whole-number board lines (final_hp_derived)
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          WN_DATE: ${{ steps.d.outputs.asof }}
+          WN_WRITE: "1"
+        run: python -u nba/build_whole_number_hp.py
+
       # 7) CERTIFY: today's baseline exists, >= 25 props, zero invalid probabilities (season-aware: off days pass).
       - name: Certify P2
         env:
