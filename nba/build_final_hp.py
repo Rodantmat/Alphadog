@@ -75,6 +75,23 @@ def sigmoid(z):
     return 1 / (1 + np.exp(-np.clip(z, -20, 20)))
 
 
+# SCORE / EDGE - the production formula (see main(): confidence acts around a NEUTRAL point; above it the score is lifted
+# toward 100, below it pulled down). Module level so every producer of a final HP uses the identical arithmetic.
+CONF_NEUTRAL = 0.85
+SCORE_LIFT = 0.50     # up to half the remaining headroom to 100
+SCORE_DROP = 0.35     # up to 35% off when the data is thin
+
+
+def score_and_edge(final_hp, confidence):
+    hp100 = final_hp * 100.0
+    cdev = (confidence - CONF_NEUTRAL) / (1.0 - CONF_NEUTRAL)   # +1 at 1.0, -ve below
+    lift = np.clip(cdev, 0, 1) * SCORE_LIFT
+    drop = np.clip(-cdev, 0, 1) * SCORE_DROP
+    score = np.round(np.clip(hp100 + (100.0 - hp100) * lift - hp100 * drop, 0, 100), 2)
+    edge = np.round((final_hp - BREAKEVEN["standard"]) * 100.0, 2)
+    return score, edge
+
+
 def main():
     # SEASONS (fixed 2026-09-23, same class as T23-2). Was a hardcoded "2025-26" default: once this
     # script is owned by P2 that would have rebuilt last season's final_hp every night and never the
