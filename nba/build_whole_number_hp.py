@@ -10,6 +10,8 @@ Parameters from nba_config.classification_config['whole_number_recalibration'] (
 (each season priced with the slope fitted on the OTHER season, so historical rows stay out-of-sample); live dates use the pooled fit.
 Score / edge from build_final_hp.score_and_edge (the identical production formula). Confidence and its components from the LOWER-
 confidence adjacent rung (conservative).
+Board line -1 is a SENTINEL (Yes/No markets such as double_double - priced in final_hp as line 0.5 Over/Under = Yes/No), not a
+whole-number line: excluded (line >= 0).
 Writes nba_score.final_hp_derived (derivation 'whole_number') - NEVER nba_score.final_hp: 20 Python consumers and 4 DB functions
 read final_hp, several refit on it, and gate 2 did not adopt these legs for selection (fact 134). One set per date: transactional
 delete-then-insert. View nba_score.final_hp_all = model rows + derived rows (the every-leg picture).
