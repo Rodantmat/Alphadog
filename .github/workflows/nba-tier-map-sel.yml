@@ -33,7 +33,10 @@ jobs:
         if: ${{ github.event.inputs.verify == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        # the gate-2b table is rebuilt here (independent build path: build_tier_map_wi2.main) and dropped after the comparison,
+        # so 372 MB of evidence is not kept between runs
         run: |
+          python -u nba/build_tier_map_wi2.py
           python - <<'PY'
           import os, psycopg
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
