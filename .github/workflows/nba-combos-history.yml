@@ -47,7 +47,9 @@ jobs:
           done
           ls -la nba/backtest/reports/_comp_*_${BT_TEST}.pkl
           echo "=== combos $BT_TEST ==="
-          python nba/baseline/build_combos_history.py
+          # per-prop combo depth exactly as live (strategy §31s G2): BT_LADDER_STEPS above is for the components only; unset here
+          # (set, it overrides every prop - the global depth live no longer uses)
+          env -u BT_LADDER_STEPS python nba/baseline/build_combos_history.py
           f="nba/data/nba_baseline_history_$(echo $BT_TEST | tr '-' '_')_combos.json"
           test -s "$f"
           HISTORY_FILE="$f" python nba/load_baseline_history.py
