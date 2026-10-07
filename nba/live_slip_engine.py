@@ -1196,6 +1196,8 @@ def edge_reference(conn, rebuild=False):
         for (lj,) in conn.execute(f"""SELECT legs_json FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
                                       AND phase<>'final7'""", (comp, size, structure, cap)).fetchall():
             for j in lj:
+                if j.get('hit') is None:
+                    continue   # tied whole-number leg: void, not an outcome
                 a = agg[(j['cell'], j['tier'], j['side'])]; a[0] += int(j['hit']); a[1] += 1
     conn.execute("DELETE FROM nba_score.edge_monitor_ref")
     for (c, t, s), (h, n) in agg.items():
