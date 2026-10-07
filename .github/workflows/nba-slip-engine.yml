@@ -72,6 +72,7 @@ jobs:
           SE_DIVERSIFY: ${{ github.event.inputs.diversify || '1' }}
           SE_SAMETEAM: ${{ github.event.inputs.sameteam || '0' }}
           SE_LOWFOUL: ${{ github.event.inputs.lowfoul || '1' }}
+          SE_LEGS_TABLE: ${{ github.event.inputs.legs_table || 'nba_score.tier_map_legs_sel' }}
           STAR_UNDER: ${{ github.event.inputs.star_under }}
         run: |
           set -euo pipefail
