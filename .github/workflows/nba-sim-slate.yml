@@ -43,10 +43,18 @@ jobs:
               print("production baseline_history / final_hp rows for", d, ":", b, f)
               if b or f:
                   raise SystemExit("ABORT: production already holds this slate - this is a real slate, not a simulation")
-              for t in ("_sim_baseline_history", "_sim_baseline_ladder_runs", "_sim_final_hp"):
+              fd = c.execute("SELECT count(*) FROM nba_score.final_hp_derived WHERE game_date=%s", (d,)).fetchone()[0]
+              print("production final_hp_derived rows for", d, ":", fd)
+              if fd:
+                  raise SystemExit("ABORT: production final_hp_derived already holds this slate")
+              for t in ("_sim_baseline_history", "_sim_baseline_ladder_runs", "_sim_final_hp", "_sim_final_hp_derived"):
                   c.execute(f"DROP TABLE IF EXISTS nba_score.{t}")
               c.execute("CREATE TABLE nba_score._sim_baseline_history (LIKE nba_score.baseline_history INCLUDING DEFAULTS)")
               c.execute("CREATE TABLE nba_score._sim_baseline_ladder_runs (LIKE nba_score.baseline_ladder_runs INCLUDING DEFAULTS)")
+              # §31s: the final_hp builder also routes beyond-depth rungs to final_hp_derived - the sandbox needs its own copy
+              # (found 2026-10-07, certification pass E: the first sim after §31s died on the missing scratch table, and the
+              # redirect missed the DELETE on final_hp_derived - a production write inside the sandbox).
+              c.execute("CREATE TABLE nba_score._sim_final_hp_derived (LIKE nba_score.final_hp_derived INCLUDING DEFAULTS)")
           EOF
       - name: Baseline ladder (all prop pairs) - runner files only
         env:
