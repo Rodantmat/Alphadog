@@ -29,7 +29,19 @@ def rep(s, old, new):
 
 s = SRC
 s = rep(s, '''MAX_TIERS, MIN_PER_TIER, TIER_BLEND_K, LADDER_STEPS, EMP_MIN, K_CELL = 24, 15, 5, 6, 300, 300.0''',
-'''MAX_TIERS, MIN_PER_TIER, TIER_BLEND_K, LADDER_STEPS, EMP_MIN, K_CELL = 24, 15, 5, int(os.environ.get("BT_LADDER_STEPS", "10")), 300, 300.0''')
+'''MAX_TIERS, MIN_PER_TIER, TIER_BLEND_K, LADDER_STEPS, EMP_MIN, K_CELL = 24, 15, 5, int(os.environ.get("BT_LADDER_STEPS", "10")), 300, 300.0
+# PER-PROP COMBO DEPTH (strategy doc §31s G2, 2026-10-06). The singles builder has a measured per-prop depth table; this builder used
+# one global depth, so the deep demons / goblins PrizePicks posts on the big combos were never priced. Depths = the p99 distance of
+# the board's unscored cell-usable combo legs (PRA 24, pts+reb 21, pts+ast 21); calibration beyond 10 measured out of sample as good
+# as within (PRA / pts+reb / pts+ast). reb_ast, stocks, fantasy_score keep the global depth. BT_LADDER_STEPS, when set, still
+# overrides every prop (research runs). Rungs beyond the CERTIFIED depth are routed out of selection by build_final_hp.py /
+# score_board_legs.py until a two-season gate admits them.
+COMBO_DEPTH = {"pra": 24, "pts_reb": 21, "pts_ast": 21}
+def _combo_depth(prop):
+    return LADDER_STEPS if os.environ.get("BT_LADDER_STEPS") else COMBO_DEPTH.get(prop, LADDER_STEPS)''')
+_loop = '''for off in range(-LADDER_STEPS, LADDER_STEPS + 1):'''
+assert s.count(_loop) == 2, f"expected the two combo ladder loops (empirical cells + pricing), found {s.count(_loop)}"
+s = rep(s, _loop, '''for off in range(-_combo_depth(prop), _combo_depth(prop) + 1):''')
 s = rep(s, '''        hist = x[(x["season"].isin(TRAIN) | (x["ym"] < month)) & x["tier"].notna()]''',
 '''        _t0 = test["GAME_DATE"].min()
         hist = x[(x["GAME_DATE"] < _t0) & x["y"].notna() & x["tier"].notna()]''')
