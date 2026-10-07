@@ -344,8 +344,14 @@ def ud_edge_monitor(conn, day):
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.ud_edge_monitor (season_start date, look int, slates int, mean_excess double precision,
                     se double precision, z double precision, delta_star double precision, decision text, decided_at timestamptz DEFAULT now(),
                     PRIMARY KEY (season_start, look))""")
-    s0 = conn.execute("""SELECT min(game_date) FROM nba_calendar.games WHERE game_id LIKE '002%%' AND game_date <= %s
-                         AND game_date > %s - 250""", (day, day)).fetchone()[0]
+    # Season start = the first game date of the contiguous regular-season block containing `day` (blocks split at the summer
+    # gap), the same resolver the PrizePicks engine uses. The previous "min(game_date) within the last 250 days" read the
+    # PREVIOUS season's February games as this season's start until mid-December (verified 2026-10-07 on the calendar:
+    # 2026-10-25 -> 2026-02-19 instead of 2026-10-20), which would have keyed the monitor's looks on a wrong season_start and
+    # re-keyed them (forgetting recorded decisions) the day the window rolled over.
+    s0, _s1 = _season_window(conn, day)
+    if s0 is None or day < s0:
+        s0 = None
     if s0 is None:
         print(f"  {day}: Underdog edge monitor - no regular season in progress; nothing to evaluate", flush=True)
         return
