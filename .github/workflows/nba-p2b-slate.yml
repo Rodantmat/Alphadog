@@ -126,6 +126,7 @@ jobs:
       # commonallplayers is ONE request; refreshed here every morning it feeds the builder's current-roster rule (file) and the
       # live loader's roster fallback (nba_ref.players). A failed scrape restores the committed weekly file (never an empty one).
       - name: Refresh today's rosters (commonallplayers)
+        id: soft_rosters
         continue-on-error: true
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
