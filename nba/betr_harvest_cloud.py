@@ -201,6 +201,16 @@ def main():
             lp.terminate()
 
     if not board or ((board.get("data") or {}).get("getUpcomingEventsV2") is None):
+        if lobby_only is not None:
+            # the app answered (session alive) but never produced a league board with projections: either the league has
+            # no posted props right now (NBA preseason, WNBA off-day) or the league tab was not reached. Never overwrite the
+            # previous board file with an empty one (certification pass G rule); the run is red so it is seen.
+            n_ev = len(((lobby_only.get("data") or {}).get("getUpcomingEventsV2")) or [])
+            leagues = sorted({str((e.get("league") or e.get("sport") or e.get("leagueName") or {})) for e in
+                              (((lobby_only.get("data") or {}).get("getUpcomingEventsV2")) or [])})[:12]
+            print(f"NO {LEAGUE} BOARD WITH PROJECTIONS: the lobby answered with {n_ev} projection-less events "
+                  f"(leagues seen: {leagues}); previous board file left untouched", file=sys.stderr)
+            sys.exit(3)
         print("NO BOARD (session may have expired — re-run betr_export_session.py and update BETR_SESSION_STATE)",
               file=sys.stderr)
         sys.exit(2)
