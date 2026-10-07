@@ -374,6 +374,23 @@ jobs:
           CERT_DATE: ${{ steps.d.outputs.asof }}
         run: python nba/certify_pipeline.py
 
+      # SOFT FAILURES MADE VISIBLE (2026-10-07, certification pass G): the continue-on-error steps above never fail the run,
+      # so a failed roster refresh / name map / whole-number pricing was invisible in nba_control.pipeline_runs. Collected here,
+      # recorded on the run row by the finish job (SOFT_FAILED) as a run warning + note.
+      - name: Collect soft-step failures
+        id: soft
+        if: always()
+        run: |
+          L=""
+          [ "${{ steps.soft_rosters.outcome }}" = "failure" ] && L="$L roster-refresh"
+          [ "${{ steps.soft_rosters_apply.outcome }}" = "failure" ] && L="$L roster-apply"
+          [ "${{ steps.soft_namemap.outcome }}" = "failure" ] && L="$L player-name-map"
+          [ "${{ steps.soft_morning_board.outcome }}" = "failure" ] && L="$L morning-board-snapshot"
+          [ "${{ steps.soft_wn.outcome }}" = "failure" ] && L="$L whole-number-pricing"
+          L="${L# }"
+          echo "list=$L" >> "$GITHUB_OUTPUT"
+          if [ -n "$L" ]; then echo "::warning::soft-failed steps (run stays green): $L"; else echo "no soft-step failures"; fi
+
   # Records this run's outcome (the scheduler dispatches P3 only after a success here, or at P3's own deadline).
   finish:
     needs: [claim, slate]
