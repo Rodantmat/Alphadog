@@ -271,6 +271,11 @@ async function tick(env, now, dryRun = false) {
     const states = {};
     for (const p of ["P2A", "P2B", "P3"]) states[p] = await pipelineState(sql, env, p, date, true);
     for (const p of ["P2A", "P2B", "P3"]) {
+      if (states[p].dead) {                       // a claimed slate whose run already ended: close it, recover once
+        out.push(await closeStaleClaim(sql, env, p, date, plan, now, states[p], dryRun));
+        states[p].status = "failure";              // successors see a FINISHED predecessor (same rule as a recorded failure)
+        continue;
+      }
       if (states[p].missed) continue;
       const dec = decide(p, plan, now, states[p], { P2A: states.P2A.status, P2B: states.P2B.status });
       if (dec.action !== "wait" && dec.action !== "skip") out.push(await act(sql, env, p, date, dec, dryRun));
