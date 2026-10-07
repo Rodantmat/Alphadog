@@ -317,7 +317,7 @@ function fmtPlan(p) { return { date: p.date, first_tip: fmtPt(p.first_tip), p2a:
 
 function authorized(request, env) { const t = request.headers.get("x-admin-token") || ""; return env.ALPHADOG_ADMIN_TOKEN && t === env.ALPHADOG_ADMIN_TOKEN; }
 
-export const __test = { ptParts, ptDate, ptWall, mondayOf, runKey, computePlan, decide, decideClose, p1Due, fmtPlan };
+export const __test = { ptParts, ptDate, ptWall, mondayOf, runKey, computePlan, decide, decideClose, p1Due, fmtPlan, recoveryOpen };
 
 export default {
   async fetch(request, env) {
