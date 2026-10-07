@@ -15,6 +15,8 @@ whole-number line: excluded (line >= 0).
 Writes nba_score.final_hp_derived (derivation 'whole_number') - NEVER nba_score.final_hp: 20 Python consumers and 4 DB functions
 read final_hp, several refit on it, and gate 2 did not adopt these legs for selection (fact 134). One set per date: transactional
 delete-then-insert. View nba_score.final_hp_all = model rows + derived rows (the every-leg picture).
+Adjacent rungs are read from final_hp PLUS the rungs build_final_hp routes beyond the certified depth (§31s G2), so routing
+never removes a whole-number price.
 Env: DATABASE_URL, WN_DATE (YYYY-MM-DD) or WN_FROM + WN_TO (range), WN_WRITE=1 to write (otherwise dry run).
 """
 import datetime as dt
