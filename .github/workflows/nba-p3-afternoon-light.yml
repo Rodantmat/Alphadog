@@ -101,6 +101,8 @@ jobs:
     # still leaves the 13:15 PT cutoff with room; if it is not done by then something is wrong and a
     # visible failure beats a late slate.
     timeout-minutes: 25
+    outputs:
+      soft_failed: ${{ steps.soft.outputs.list }}
     steps:
       - uses: actions/checkout@v4
         with:
