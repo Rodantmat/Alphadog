@@ -143,6 +143,8 @@ def main():
     day_sum = defaultdict(float); day_n = defaultdict(int)
     for name, d, *_r, legs in slips:
         for key, f, h in legs:
+            if h is None:
+                continue   # tie: void
             day_sum[d] += h - p_of[key]; day_n[d] += 1
     days = sorted(day_sum)
     xs = [day_sum[d] / day_n[d] for d in days]
