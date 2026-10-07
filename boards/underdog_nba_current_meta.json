@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-07T01:41:24Z",
-  "fetched_at": "2026-10-07T01:47:22Z",
+  "started_at": "2026-10-07T08:57:50Z",
+  "fetched_at": "2026-10-07T09:04:47Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -11,31 +11,7 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      49
-    ],
-    [
-      "lines[match=225724]",
-      0
-    ],
-    [
-      "pills[match=225724]",
-      0
-    ],
-    [
-      "lines[match=225725]",
-      0
-    ],
-    [
-      "pills[match=225725]",
-      0
-    ],
-    [
-      "lines[match=225726]",
-      9
-    ],
-    [
-      "pills[match=225726]",
-      0
+      46
     ],
     [
       "lines[match=225727]",
@@ -46,11 +22,11 @@
       0
     ],
     [
-      "lines[match=225728]",
+      "lines[match=225729]",
       0
     ],
     [
-      "pills[match=225728]",
+      "pills[match=225729]",
       0
     ],
     [
@@ -62,11 +38,11 @@
       0
     ],
     [
-      "lines[match=225729]",
+      "lines[match=225728]",
       0
     ],
     [
-      "pills[match=225729]",
+      "pills[match=225728]",
       0
     ],
     [
@@ -86,19 +62,19 @@
       0
     ],
     [
-      "lines[match=225734]",
-      0
-    ],
-    [
-      "pills[match=225734]",
-      0
-    ],
-    [
       "lines[match=225735]",
       0
     ],
     [
       "pills[match=225735]",
+      0
+    ],
+    [
+      "lines[match=225734]",
+      0
+    ],
+    [
+      "pills[match=225734]",
       0
     ],
     [
@@ -150,14 +126,6 @@
       0
     ],
     [
-      "lines[match=225741]",
-      0
-    ],
-    [
-      "pills[match=225741]",
-      0
-    ],
-    [
       "lines[match=225742]",
       0
     ],
@@ -166,11 +134,11 @@
       0
     ],
     [
-      "lines[match=225743]",
+      "lines[match=225741]",
       0
     ],
     [
-      "pills[match=225743]",
+      "pills[match=225741]",
       0
     ],
     [
@@ -179,6 +147,14 @@
     ],
     [
       "pills[match=225744]",
+      0
+    ],
+    [
+      "lines[match=225743]",
+      0
+    ],
+    [
+      "pills[match=225743]",
       0
     ],
     [
@@ -230,19 +206,19 @@
       0
     ],
     [
-      "lines[match=225753]",
-      0
-    ],
-    [
-      "pills[match=225753]",
-      0
-    ],
-    [
       "lines[match=225752]",
       0
     ],
     [
       "pills[match=225752]",
+      0
+    ],
+    [
+      "lines[match=225753]",
+      0
+    ],
+    [
+      "pills[match=225753]",
       0
     ],
     [
@@ -286,6 +262,22 @@
       0
     ],
     [
+      "lines[match=225759]",
+      0
+    ],
+    [
+      "pills[match=225759]",
+      0
+    ],
+    [
+      "lines[match=225760]",
+      0
+    ],
+    [
+      "pills[match=225760]",
+      0
+    ],
+    [
       "lines[match=211122]",
       0
     ],
@@ -312,12 +304,12 @@
     [
       "lines_with_stats[players]",
       0,
-      5
+      0
     ],
     [
       "alternate_projections",
-      12,
-      272,
+      10,
+      230,
       0,
       "deduped 0"
     ],
@@ -330,32 +322,25 @@
       0
     ]
   ],
-  "lines": 58,
-  "legs": 58,
-  "ladder_legs": 272,
-  "ladder_lines_with_alternates": 12,
-  "players": 5,
-  "pregame_legs": 52,
-  "live_legs": 6,
+  "lines": 46,
+  "legs": 46,
+  "ladder_legs": 230,
+  "ladder_lines_with_alternates": 10,
+  "players": 0,
+  "pregame_legs": 46,
+  "live_legs": 0,
   "by_stat": {
-    "Moneyline": 37,
-    "Margin of Victory": 6,
-    "Total Points": 6,
-    "Points": 5,
-    "Pts + Rebs + Asts": 4
+    "Moneyline": 36,
+    "Margin of Victory": 5,
+    "Total Points": 5
   },
   "by_line_type": {
-    "balanced": 58
+    "balanced": 46
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "None": 43,
-    "1.0": 10,
-    "0.8": 1,
-    "0.72": 1,
-    "0.84": 1,
-    "0.96": 1,
-    "1.05": 1
+    "None": 41,
+    "1.0": 5
   },
-  "github_run_id": "37558265329"
+  "github_run_id": "37597193583"
 }
