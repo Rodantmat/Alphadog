@@ -119,6 +119,8 @@ def main():
     agg = defaultdict(lambda: [0, 0])
     for *_r, legs in slips:
         for key, f, h in legs:
+            if h is None:
+                continue   # tie: void
             agg[key][0] += h; agg[key][1] += 1
     p_of = {k: min(max(a / n, 0.02), 0.98) for k, (a, n) in agg.items()}
     print(f"\n1. certified (cell, tier, side) probabilities: {len(p_of)} keys", flush=True)
