@@ -258,11 +258,28 @@ jobs:
       # UNDERDOG EDGE MONITOR (§31o): is the staked P5 portfolio still above break-even? Decisions only at 30 / 60 / 90 / 120
       # graded slates (bootstrap-calibrated); running z in between is information only. Monitoring only: continue-on-error.
       - name: Underdog edge monitor (break-even, group-sequential)
+        id: soft_udedge
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           UDL_MODE: "edge"
         run: python -u nba/ud_live_slip_engine.py
+
+      # SOFT FAILURES MADE VISIBLE (2026-10-07, certification pass G): the continue-on-error steps above never fail the run,
+      # so a broken monitor or re-pricing was invisible in nba_control.pipeline_runs. Their outcomes are collected here and
+      # recorded on the run row by the finish job (SOFT_FAILED) as a run warning + note.
+      - name: Collect soft-step failures
+        id: soft
+        if: always()
+        run: |
+          L=""
+          [ "${{ steps.soft_wn.outcome }}" = "failure" ] && L="$L whole-number-reprice"
+          [ "${{ steps.soft_edge.outcome }}" = "failure" ] && L="$L pp-edge-monitor"
+          [ "${{ steps.soft_udgrade.outcome }}" = "failure" ] && L="$L underdog-grade"
+          [ "${{ steps.soft_udedge.outcome }}" = "failure" ] && L="$L underdog-edge-monitor"
+          L="${L# }"
+          echo "list=$L" >> "$GITHUB_OUTPUT"
+          if [ -n "$L" ]; then echo "::warning::soft-failed steps (run stays green): $L"; else echo "no soft-step failures"; fi
 
   # Records this run's outcome on the row it claimed (the scheduler dispatches P2B only after a success here).
   finish:
