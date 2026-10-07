@@ -1,0 +1,86 @@
+name: NBA Combos Depth Verify
+
+# Sample-first verification of the per-prop combo depth (§31s G2): components built ONCE (as P2B), then the REAL combos builder at
+# two commits on the same components, compared row by row. PASS = every row present in both is identical on every field, nothing
+# disappears, and every new row is a PRA / pts_reb / pts_ast rung with |offset| > 10 and within its new depth. Runner files only.
+on:
+  workflow_dispatch:
+    inputs:
+      ref_before:
+        required: true
+      ref_after:
+        required: true
+      asof:
+        default: "2026-01-10"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BT_ASOF: ${{ github.event.inputs.asof }}
+      BT_REPLAY: "1"
+      BT_CUTOFF: baseline
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ github.event.inputs.ref_before }}", path: before }
+      - uses: actions/checkout@v4
+        with: { ref: "${{ github.event.inputs.ref_after }}", path: after }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib pdfplumber
+      - name: Components once (as P2B), shared by both builds
+        working-directory: after
+        run: |
+          set -o pipefail
+          mkdir -p nba/backtest/reports
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/baseline/build_baseline_ladder.py > ../comp_${pair//,/_}.log 2>&1 || { tail -40 ../comp_${pair//,/_}.log; exit 1; }
+          done
+          mkdir -p ../before/nba/backtest/reports
+          cp nba/backtest/reports/_comp_*.pkl nba/backtest/reports/_p10_*.pkl ../before/nba/backtest/reports/ 2>/dev/null || cp nba/backtest/reports/_comp_*.pkl ../before/nba/backtest/reports/
+          ls -la ../before/nba/backtest/reports/
+      - name: Combos before
+        working-directory: before
+        run: /usr/bin/time -v python nba/baseline/build_combos_ladder.py > ../combos_before.log 2>&1 || { tail -40 ../combos_before.log; exit 1; }; grep -E "COMBOS LADDER|Elapsed|Maximum resident" ../combos_before.log
+      - name: Combos after
+        working-directory: after
+        run: /usr/bin/time -v python nba/baseline/build_combos_ladder.py > ../combos_after.log 2>&1 || { tail -40 ../combos_after.log; exit 1; }; grep -E "COMBOS LADDER|Elapsed|Maximum resident" ../combos_after.log
+      - name: Compare
+        run: |
+          python - <<'EOF'
+          import json, os
+          from collections import Counter
+          asof = os.environ["BT_ASOF"]
+          NEW_DEPTH = {"pra": 24, "pts_reb": 21, "pts_ast": 21}
+          def load(d):
+              rows = {}
+              for r in json.load(open(f"{d}/nba/data/nba_baseline_ladder_{asof}_combos.json"))["ladder"]:
+                  k = (str(r.get("player_id")), str(r.get("game_id")), r.get("prop"), r.get("period"), float(r["line"]))
+                  assert k not in rows, f"duplicate key {k}"
+                  rows[k] = r
+              return rows
+          b, a = load("before"), load("after")
+          common = set(b) & set(a); gone = set(b) - set(a); new = set(a) - set(b)
+          changed = [k for k in common if b[k] != a[k]]
+          bad_new = [k for k in new if not (a[k]["prop"] in NEW_DEPTH and 10 < abs(int(a[k]["offset"])) <= NEW_DEPTH[a[k]["prop"]])]
+          print(f"rows before {len(b):,} | after {len(a):,} | common {len(common):,} | CHANGED {len(changed)} | GONE {len(gone)} | NEW {len(new):,} | NEW outside the intended set {len(bad_new)}")
+          print("new rows by prop:", dict(Counter(a[k]["prop"] for k in new)))
+          print("new rows by |offset|:", dict(sorted(Counter(abs(int(a[k]["offset"])) for k in new).items())))
+          print("rows by prop before/after:", {p: (sum(1 for k in b if k[2] == p), sum(1 for k in a if k[2] == p)) for p in sorted({k[2] for k in a})})
+          for k in changed[:5]:
+              print("  changed example:", k, {x: (b[k].get(x), a[k].get(x)) for x in set(b[k]) | set(a[k]) if b[k].get(x) != a[k].get(x)})
+          for k in list(gone)[:5]:
+              print("  gone example:", k, b[k])
+          for k in bad_new[:5]:
+              print("  unexpected new:", k, a[k])
+          ok = not changed and not gone and not bad_new and len(new) > 0
+          print("RESULT:", "PASS" if ok else "FAIL")
+          raise SystemExit(0 if ok else 1)
+          EOF
