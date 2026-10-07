@@ -206,6 +206,7 @@ jobs:
       # 3c) PAPER TRADING: fill hit / miss / void for logged picks from the freshly graded board.
       # WHOLE-NUMBER LINES for yesterday, re-priced from the rebuilt final_hp (§31s G1; final_hp_derived, never final_hp). Isolated.
       - name: Re-price yesterday's whole-number board lines (final_hp_derived)
+        id: soft_wn
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
