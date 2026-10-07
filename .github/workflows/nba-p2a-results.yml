@@ -305,4 +305,5 @@ jobs:
           IN_ASOF: ${{ github.event.inputs.asof }}
           RUN_ID: ${{ github.run_id }}
           RESULT: "${{ needs.results.result }}"
+          SOFT_FAILED: "${{ needs.results.outputs.soft_failed }}"
         run: python -u nba/pipeline_claim.py
