@@ -1,0 +1,35 @@
+name: NBA board routing verify (rolled back - nothing committed)
+
+# Strategy doc §31s G1/G2. Runs the real score_board_legs.py with routing off and on inside rolled-back transactions and checks
+# the difference against an independent re-derivation (nba/verify_board_routing.py).
+
+on:
+  workflow_dispatch:
+    inputs:
+      dates:
+        default: "2026-01-10,2026-01-15,2025-11-15,2025-03-10"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-board-routing-verify
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy scipy
+      - name: Verify
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          VB_DATES: ${{ github.event.inputs.dates }}
+        run: python nba/verify_board_routing.py
