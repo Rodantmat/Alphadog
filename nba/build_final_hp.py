@@ -423,6 +423,9 @@ def main():
                                     + (" AND game_date=%s" if FE_DATE else ""),
                                     (season, prop) + ((FE_DATE,) if FE_DATE else ()))
                         print(f"  {prop:<18} no board rung in scope - cleared {cur.rowcount:,} stale rows", flush=True)
+                        cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation = 'beyond_certified_depth' "
+                                    "AND season=%s AND prop=%s" + (" AND game_date=%s" if FE_DATE else ""),
+                                    (season, prop) + ((FE_DATE,) if FE_DATE else ()))
                     conn.commit()
                 continue
             h["game_date"] = pd.to_datetime(h["game_date"]).dt.date
