@@ -1,11 +1,12 @@
 name: NBA Static Data Scraper
 
 on:
-  schedule:
-    # Weekly differential check, per the person's own instruction (2026-08-31): teams/static
-    # data changes rarely, so a weekly re-check is enough once backfill is done. Runs Monday
-    # 09:00 UTC (matches the general weekly-differential convention already used for MLB).
-    - cron: '0 9 * * 1'
+  # 2026-10-07 (full-system certification pass G): the Monday 09:00 UTC cron is RETIRED. P1 (nba-p1-weekly-static.yml,
+  # Mondays 19:00 UTC, scheduler-dispatched, run-once, loads what it scrapes) is the weekly static pipeline; this legacy
+  # workflow re-scraped 12 of the same stats.nba.com sources through the metered proxy every Monday and committed the same
+  # files with the conflict-prone push loop, and it was the ONLY source of the lineups / tracking-detail files P1 loaded
+  # (now scraped inside P1). Its remaining exclusives (career totals, player/team splits) have no production reader
+  # (COMPASS §5 note). Manual dispatch / trigger-file push are kept for an on-demand refresh of those files.
   workflow_dispatch: {}
   push:
     # Real, working on-demand trigger that needs NO new tool capability and NO connector
