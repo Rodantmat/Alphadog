@@ -62,6 +62,11 @@ def main():
         symdiff(a_in, f"SELECT {COLS} FROM nba_score._g2v_b_main", "routed run: final_hp == unrouted rows within depth (all props)")
         symdiff(a_out, f"SELECT {COLS} FROM nba_score._g2v_b_der", f"routed run: derived == unrouted rows beyond depth {td} ({tp})")
         symdiff(f"SELECT {COLS} FROM nba_score._g2v_a_main", f"SELECT {COLS} FROM nba_score._g2v_c_main", "restored run: final_hp == unrouted")
+        # informational: does a fresh rebuild reproduce the stored slate? (inputs such as as-of calibration may have moved since)
+        ab, ba = conn.execute(f"SELECT (SELECT count(*) FROM (SELECT {COLS} FROM nba_score._g2v_before_main EXCEPT ALL "
+                              f"SELECT {COLS} FROM nba_score._g2v_a_main) x), (SELECT count(*) FROM (SELECT {COLS} FROM "
+                              f"nba_score._g2v_a_main EXCEPT ALL SELECT {COLS} FROM nba_score._g2v_before_main) y)").fetchone()
+        print(f"INFO  fresh rebuild vs stored slate: only-stored {ab} | only-rebuilt {ba}", flush=True)
         n_out = conn.execute(f"SELECT count(*) FROM ({a_out}) x").fetchone()[0]
         n_ac = conn.execute("SELECT count(*) FROM nba_score._g2v_a_der").fetchone()[0]
         n_cc = conn.execute("SELECT count(*) FROM nba_score._g2v_c_der").fetchone()[0]
