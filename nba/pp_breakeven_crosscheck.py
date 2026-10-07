@@ -42,7 +42,8 @@ def main():
         rng = random.Random(99); tot = st = 0.0
         for _ in range(reps):
             for name, d, structure, k, stake, profit, legs in ss:
-                _, pay = ENG.grade([{'hit': 1 if (h and rng.random() < keep[key]) else 0, 'factor': f} for key, f, h in legs], structure)
+                _, pay = ENG.grade([{'hit': None if h is None else (1 if (h and rng.random() < keep[key]) else 0), 'factor': f}
+                                    for key, f, h in legs], structure)   # a tie stays a tie (void, lineup reverts)
                 tot += stake * pay; st += stake
         return tot / st - 1
 
