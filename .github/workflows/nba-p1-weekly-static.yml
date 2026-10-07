@@ -239,6 +239,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           LOAD_STARTED_AT: ${{ steps.load.outputs.started_at }}
           FAILED_WORKERS: ${{ steps.load.outputs.failed }}
+          WORKER_HOST: ${{ vars.ALPHADOG_WORKER_HOST || 'rodolfoaamattos.workers.dev' }}   # for the synchronous re-invocation of a partially-landed worker
         run: python nba/verify_static_loads.py
 
       - name: Certify the weekly layer
