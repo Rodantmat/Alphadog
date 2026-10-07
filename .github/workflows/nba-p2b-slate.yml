@@ -149,6 +149,7 @@ jobs:
       # (44 of 629 active players unresolved - their legs silently dropped). Incremental from the P1-maintained roster,
       # collision-safe, never deletes. Before the baseline / final_hp so today's scores include every active player.
       - name: Refresh the player name map
+        id: soft_namemap
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
