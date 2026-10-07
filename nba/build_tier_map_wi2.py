@@ -159,8 +159,12 @@ def crossfit_maps(conn):
 
 
 def dedup(w):
-    """keep-first by price per leg, exactly as the certified recipe"""
-    return w[w["tier"].notna()].sort_values("price").drop_duplicates(["game_date", "player", "prop", "side", "line"], keep="first")
+    """keep-first by price per leg, as the certified recipe; equal prices broken deterministically by rung (a stable sort - the
+    pricing view holds a few duplicate keys at the SAME price with different rungs, where an unstable sort picked either)"""
+    w = w[w["tier"].notna()].copy()
+    w["_rk"] = w["sys_tier"].fillna(0)
+    w = w.sort_values(["price", "_rk", "kind"], kind="mergesort").drop_duplicates(["game_date", "player", "prop", "side", "line"], keep="first")
+    return w.drop(columns="_rk")
 
 
 def crossfit_rows(w, maps):
