@@ -120,7 +120,7 @@ jobs:
               -e 's/CREATE INDEX final_hp_lookup ON nba_score\.final_hp/CREATE INDEX _sim_final_hp_lookup ON nba_score._sim_final_hp/' \
               -e 's/DELETE FROM nba_score\.final_hp /DELETE FROM nba_score._sim_final_hp /g' \
               -e 's/INSERT INTO nba_score\.final_hp/INSERT INTO nba_score._sim_final_hp/' nba/build_final_hp.py > nba/_sim_fhp.py
-          if grep -nE "(INSERT INTO|DELETE FROM|CREATE (TABLE|UNIQUE INDEX|INDEX)).*nba_score\.(final_hp|baseline_history)\b" nba/_sim_fhp.py; then
+          if grep -nE "(INSERT INTO|DELETE FROM|CREATE (TABLE|UNIQUE INDEX|INDEX)).*nba_score\.(final_hp|final_hp_derived|baseline_history)\b" nba/_sim_fhp.py; then
             echo "ABORT: a production write survived the redirect"; exit 1; fi
           python nba/_sim_fhp.py
       - name: Simulate - the live pick() on the sandbox scores (rolled back)
