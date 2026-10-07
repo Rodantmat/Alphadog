@@ -1,7 +1,7 @@
 {
-  "fetched_at": "2026-10-05T19:04:01Z",
+  "fetched_at": "2026-10-07T17:39:10Z",
   "source_url": "https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season=2026-27&SeasonType=Regular%20Season",
-  "http_status": 200,
-  "team_count": 30,
-  "error": null
+  "http_status": null,
+  "team_count": 0,
+  "error": "Failed to perform, curl: (7) CONNECT tunnel failed, response 407. See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
 }
