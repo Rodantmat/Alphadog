@@ -417,6 +417,23 @@ def main():
               round(float(r.baseline_hp), 5), round(float(r.cal_shift), 5), round(float(r.final_hp), 5),
               round(float(r.confidence), 4), float(r.score), float(r.edge), bool(r.interpolated))
              for r in d.itertuples(index=False)])
+        # the routed slice for this date, same transaction (one set per day). One row per leg: every app's copy of a leg
+        # carries the same price (the books / availability / calibration terms are not app-specific).
+        if cur.execute("SELECT to_regclass('nba_score.final_hp_derived')").fetchone()[0] is None:
+            raise SystemExit("REFUSED: nba_score.final_hp_derived missing - P2B creates it (build_final_hp / build_whole_number_hp)")
+        cur.execute("DELETE FROM nba_score.final_hp_derived WHERE game_date = %s AND derivation = 'board_beyond_certified_depth'",
+                    (asof,))
+        if len(deep):
+            deep = deep.drop_duplicates(subset=["player_id", "prop", "line", "side_n"])
+            cur.executemany("""INSERT INTO nba_score.final_hp_derived
+                (season, game_date, player_id, prop, line, side, ladder_offset, anchor, baseline_hp, final_hp, cal_shift,
+                 score, edge, confidence, band, phase, derivation)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'board_beyond_certified_depth')""",
+                [(season, asof, r.player_id, r.prop, float(r.line), r.side_n, int(round(float(r.offset_r))),
+                  float(r.anchor_r) if r.anchor_r == r.anchor_r else None,
+                  round(float(r.baseline_hp), 5), round(float(r.final_hp), 5), round(float(r.cal_shift), 5),
+                  float(r.score), float(r.edge), round(float(r.confidence), 4), r.band, ph)
+                 for r in deep.itertuples(index=False)])
     conn.commit()
     print(f"\nscored {len(d):,} board legs for {asof}", flush=True)
     print(f"  mean final_hp {d['final_hp'].mean():.4f}  mean confidence {d['confidence'].mean():.4f}  "
