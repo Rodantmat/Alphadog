@@ -10,6 +10,10 @@ on:
       season:
         default: "2025-26"
         required: true
+      combos_steps:
+        description: "blank = per-prop depth (live); 10 = the OLD global depth (control: separates input drift from the depth change)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
