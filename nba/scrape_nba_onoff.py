@@ -122,7 +122,6 @@ def main():
             errors.append({"team_id": team_id, "abbreviation": t.get("abbreviation"), "error": error})
         time.sleep(0.6)
 
-    OUTPUT_PATH.write_text(json.dumps({"players": all_players}, indent=2), encoding="utf-8")
     OUTPUT_META_PATH.write_text(json.dumps({
         "fetched_at": fetched_at,
         "player_count": len(all_players),
@@ -130,9 +129,13 @@ def main():
         "per_team_errors": errors,
     }, indent=2), encoding="utf-8")
 
+    # NEVER REPLACE A GOOD FILE WITH A FAILED ONE (2026-10-07, full-system certification pass G): the data file was written
+    # before the threshold check, so a proxy outage (30 team errors, 0 players) left an EMPTY file that P1 committed and
+    # loaded. Up to 3 team errors remain an accepted partial (written); more than 3 = failure, previous file left untouched.
     if len(errors) > 3:
-        print(f"NBA on/off scrape PARTIAL: {len(errors)} team errors out of {len(teams)}", file=sys.stderr)
+        print(f"NBA on/off scrape PARTIAL: {len(errors)} team errors out of {len(teams)} - previous {OUTPUT_PATH} left untouched", file=sys.stderr)
         sys.exit(1)
+    OUTPUT_PATH.write_text(json.dumps({"players": all_players}, indent=2), encoding="utf-8")
 
     print(f"NBA on/off scrape OK: {len(all_players)} player on/off rows across {len(teams) - len(errors)} teams")
 
