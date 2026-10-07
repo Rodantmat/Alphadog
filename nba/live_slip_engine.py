@@ -163,19 +163,7 @@ def ensure_tables(conn):
 LEG_SOURCE = os.environ.get('LS_LEG_SOURCE', 'live').lower()   # live (default) | universe (the backtest-only path, parity tests)
 
 
-def load_board_legs_live(conn, day, label='window'):
-    """Today's PP board WITHOUT nba_market.prop_universe (a backtest table built only by manual SQL functions, and only after
-    the box score exists - it cannot carry today's slate). Same priced legs (pp_leg_price, a live view), same final_hp scores.
-    Player: nba_ref.norm_name(raw player) -> player_name_map, the ONE canonical resolver (score_board_legs 2026-09-25); NOT the
-    tiers table's nm, which keeps suffixes ('craigporterjr' vs canonical 'craigporter') and silently dropped every Jr/Sr/II/III
-    player in the universe path. Event: the PrizePicks window board's own event id. Team: whichever of the event's two teams
-    matches the player - his latest game-log team before today, else his current roster team (correct on a trade day)."""
-    # PERFORMANCE (2026-10-03, measured): the first version took > 2 min per slate - the planner mis-estimated row counts and
-    # re-ran the event CTE (norm_name over ~500 board rows) inside a nested loop for each of ~3,600 legs, and the team lookup
-    # compared nba_player_id::text, which disables the (nba_player_id, game_date) index. Fixed: every set MATERIALIZED and
-    # computed once; ids compared as bigint (all map ids are numeric) so the index applies; latest teams in one indexed pass.
-    # Measured after the fix: 3.8 s for a full slate (3,149 scored legs).
-    rows = conn.execute("""
+BOARD_SQL = """
         WITH pr AS MATERIALIZED (
           SELECT p.game_date, p.player, nba_ref.norm_name(p.player) cn, p.side, p.line, p.kind, p.factor::float price,
             least(abs(COALESCE(NULLIF(p.tier,0), round(p.line-p.anchor_line)::int)),3) tier3,
