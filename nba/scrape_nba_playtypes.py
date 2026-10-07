@@ -147,7 +147,10 @@ def main():
         except Exception as exc:  # noqa: BLE001
             error = str(exc)
 
-        output_path.write_text(json.dumps({"records": records}, indent=2), encoding="utf-8")
+        # NEVER REPLACE A GOOD FILE WITH A FAILED ONE (2026-10-07, full-system certification pass G): written only when the
+        # level scraped cleanly; on error the meta records it, the exit code is 1 and the previous file stays in place.
+        if not error:
+            output_path.write_text(json.dumps({"records": records}, indent=2), encoding="utf-8")
         meta_path.write_text(json.dumps({
             "fetched_at": fetched_at,
             "level": level_name,
