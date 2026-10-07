@@ -21131,8 +21131,8 @@
       "away_team_tricode": "LAL",
       "arena_name": "Chase Center",
       "arena_city": "San Francisco",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21146,8 +21146,8 @@
       "away_team_tricode": "BKN",
       "arena_name": "Spectrum Center",
       "arena_city": "Charlotte",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21161,8 +21161,8 @@
       "away_team_tricode": "NOP",
       "arena_name": "BOK Center",
       "arena_city": "Tulsa",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21176,8 +21176,8 @@
       "away_team_tricode": "DEN",
       "arena_name": "Delta Center",
       "arena_city": "Salt Lake City",
-      "game_status": 1,
-      "game_status_text": "9:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
