@@ -102,7 +102,12 @@ def main():
     except Exception as exc:  # noqa: BLE001
         officials, error = [], str(exc)
 
-    OUTPUT_PATH.write_text(json.dumps({"officials": officials}, indent=2), encoding="utf-8")
+    # NEVER REPLACE A GOOD FILE WITH AN EMPTY / SUSPECT ONE (2026-10-07, full-system certification pass G). The data file
+    # was written before the error check, so a proxy failure or a changed page left an EMPTY file that P1 (commit and
+    # load run on always()) committed and the writer worker loaded. Now the meta records the error, the exit code is 1,
+    # and the previous data file stays in place.
+    if not error:
+        OUTPUT_PATH.write_text(json.dumps({"officials": officials}, indent=2), encoding="utf-8")
     OUTPUT_META_PATH.write_text(json.dumps({
         "fetched_at": fetched_at,
         "source_url": f"https://en.wikipedia.org/wiki/{PAGE_TITLE}",
