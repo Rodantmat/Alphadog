@@ -679,11 +679,11 @@ def grade(conn, day):
             mv = movement(l)
             if mv is not None:
                 l['line_move'] = mv
-        if len(live) < 2:
-            hits, payout = sum(h for _, h in live), 1.0   # refund
-        else:
-            graded_legs = [dict(l, hit=h) for l, h in live]
-            hits, payout = ENG.grade(graded_legs, structure)
+        # ONE grader for live and backtest (2026-10-07, full-system certification pass F): hand ENG.grade the legs WITH their
+        # voids (hit None) so its reversion rules run - until today the live path pruned the voids first, so a 3-Flex with one
+        # void was graded as a 2-pick FLEX (2.0x / 0.5x) instead of PrizePicks' 3x Power-style, and any slip left with one
+        # survivor was refunded instead of 1.5x on a hit / lost on a miss. The backtest, the certify recompute and this now agree.
+        hits, payout = ENG.grade([dict(l, hit=h) for l, h in zip(legs_l, hs)], structure)
         new_status = ('graded_week2' if status0 == 'placed_week2' else 'graded_week2_skip' if status0 == 'placed_week2_skip'
                       else 'graded_shadow' if status0 == 'placed_shadow'
                       else 'graded_week1_skip' if status0 == 'placed_week1_skip'
