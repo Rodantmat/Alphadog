@@ -62,6 +62,18 @@ def main():
         symdiff(a_in, f"SELECT {COLS} FROM nba_score._g2v_b_main", "routed run: final_hp == unrouted rows within depth (all props)")
         symdiff(a_out, f"SELECT {COLS} FROM nba_score._g2v_b_der", f"routed run: derived == unrouted rows beyond depth {td} ({tp})")
         symdiff(f"SELECT {COLS} FROM nba_score._g2v_a_main", f"SELECT {COLS} FROM nba_score._g2v_c_main", "restored run: final_hp == unrouted")
+        # DIAGNOSTIC: which columns differ between the two unrouted runs A and C (same code, same config)?
+        _vc = [c.strip() for c in COLS.split(",") if c.strip() not in [k.strip() for k in KEY.split(",")]]
+        _sel = ", ".join(f"count(*) FILTER (WHERE a.{c} IS DISTINCT FROM c.{c}) AS {c}" for c in _vc)
+        _row = conn.execute(f"SELECT count(*), {_sel} FROM nba_score._g2v_a_main a JOIN nba_score._g2v_c_main c "
+                            f"USING ({KEY})").fetchone()
+        print(f"DIAG  A vs C joined on key: {_row[0]:,} legs; differing columns: "
+              f"{ {c: v for c, v in zip(_vc, _row[1:]) if v} }", flush=True)
+        _cuts = conn.execute("SELECT conf_tier, min(confidence), max(confidence), count(*) FROM nba_score._g2v_a_main "
+                             "GROUP BY 1 ORDER BY 2").fetchall()
+        _cutc = conn.execute("SELECT conf_tier, min(confidence), max(confidence), count(*) FROM nba_score._g2v_c_main "
+                             "GROUP BY 1 ORDER BY 2").fetchall()
+        print(f"DIAG  tiers A {_cuts}\nDIAG  tiers C {_cutc}", flush=True)
         # informational: does a fresh rebuild reproduce the stored slate? (inputs such as as-of calibration may have moved since)
         ab, ba = conn.execute(f"SELECT (SELECT count(*) FROM (SELECT {COLS} FROM nba_score._g2v_before_main EXCEPT ALL "
                               f"SELECT {COLS} FROM nba_score._g2v_a_main) x), (SELECT count(*) FROM (SELECT {COLS} FROM "
