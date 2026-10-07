@@ -99,7 +99,6 @@ def main():
             per_type_meta[measure_type] = {"count": 0, "error": error}
         time.sleep(0.5)
 
-    OUTPUT_PATH.write_text(json.dumps({"records": all_records}, indent=2), encoding="utf-8")
     failed_types = [k for k, v in per_type_meta.items() if v["error"]]
     OUTPUT_META_PATH.write_text(json.dumps({
         "fetched_at": fetched_at,
@@ -108,9 +107,12 @@ def main():
         "error": f"failed_types: {failed_types}" if failed_types else None,
     }, indent=2), encoding="utf-8")
 
+    # NEVER REPLACE A GOOD FILE WITH A PARTIAL ONE (2026-10-07, certification pass G): a partial scrape used to be written
+    # BEFORE the exit(1), so the writer worker loaded the partial file over the complete one. Partial = nothing written.
     if failed_types:
-        print(f"NBA tracking detail scrape PARTIAL: failed types {failed_types}", file=sys.stderr)
+        print(f"NBA tracking detail scrape PARTIAL: failed types {failed_types} - previous {OUTPUT_PATH} left untouched", file=sys.stderr)
         sys.exit(1)
+    OUTPUT_PATH.write_text(json.dumps({"records": all_records}, indent=2), encoding="utf-8")
     print(f"NBA tracking detail scrape OK: {len(all_records)} records across {len(MEASURE_TYPES)} types")
 
 
