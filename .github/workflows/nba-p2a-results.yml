@@ -238,6 +238,7 @@ jobs:
       # 30 / 60 / 90 / 120 / 150 graded slates (bootstrap-calibrated boundaries); the running z in between is information only.
       # Monitoring only: continue-on-error, never disturbs the grade above or the Underdog grade below.
       - name: Edge monitor (break-even, group-sequential)
+        id: soft_edge
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
