@@ -234,18 +234,8 @@ jobs:
           python nba/archive_live_boards.py
 
       - name: Commit today's inputs
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add nba/data/*.json || true
-          if git diff --cached --quiet; then echo "No data changes."; else
-            git commit -m "NBA P2B inputs ${{ steps.d.outputs.asof }} [skip ci]"
-            for i in 1 2 3 4 5; do
-              if git push origin HEAD:main; then break; fi
-              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
-            done
-          fi
+        # conflict-safe commit (2026-10-07, nba/git_push_retry.sh): P1 and P2B both refresh the roster files
+        run: bash nba/git_push_retry.sh "NBA P2B inputs ${{ steps.d.outputs.asof }} [skip ci]" nba/data/*.json || echo "::warning::P2B input files did not reach the repo (the build below uses the runner's copies)"
 
       # 5) BUILD the baseline ladder for today's slate - PER PROP PAIR (from P2; BT_CUTOFF "baseline" = 09:00 ET).
       - name: Build baseline ladder (all prop pairs)
