@@ -372,7 +372,7 @@ survive verification are recorded as ⚪ with the reason.
   archived only). The 2026-10-20 dress rehearsal (`nba-sim-slate.yml`, dispatched 19:10Z on the fixed engine) is the live
   check of scoring → pick on a real future board. → pending.
 
-### E-2 🟠 The slate simulation broke with §31s, and its sandbox let one production write through
+### E-2 🟢 The slate simulation broke with §31s, and its sandbox let one production write through
 - **Evidence:** run 37672380196 (first sim since §31s): the sandboxed `final_hp` builder copy died on
   `relation "nba_score._sim_final_hp_derived" does not exist` — the builder now also writes `final_hp_derived`
   (beyond-depth routing, §31s), the sed redirect turned the INSERT's table name into a scratch table nobody created, and
