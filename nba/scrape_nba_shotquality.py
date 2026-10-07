@@ -207,11 +207,14 @@ def main():
             bucket_errors[dist_range] = error
         time.sleep(0.5)
 
-    Path("nba/data/nba_shotquality_current.json").write_text(json.dumps({"rows": all_bucket_rows}, indent=2), encoding="utf-8")
     sq_error = None
     failed_buckets = [k for k, v in bucket_errors.items() if v]
     if failed_buckets:
         sq_error = f"failed_buckets: {failed_buckets}"
+    # NEVER REPLACE A GOOD FILE WITH A PARTIAL ONE (2026-10-07, full-system certification pass G): each of the three data
+    # files is written only when its own part scraped cleanly; the metas always record the error; exit code 1 on any issue.
+    if not sq_error:
+        Path("nba/data/nba_shotquality_current.json").write_text(json.dumps({"rows": all_bucket_rows}, indent=2), encoding="utf-8")
     Path("nba/data/nba_shotquality_current_meta.json").write_text(json.dumps({
         "fetched_at": fetched_at, "per_bucket": bucket_errors, "row_count": len(all_bucket_rows), "error": sq_error,
     }, indent=2), encoding="utf-8")
