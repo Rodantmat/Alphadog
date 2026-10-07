@@ -364,6 +364,14 @@ def main():
                     ON nba_score.final_hp (game_date, player_id, prop, line, side)""")
             if cur.execute("SELECT to_regclass('nba_score.final_hp_lookup')").fetchone()[0] is None:
                 cur.execute("CREATE INDEX final_hp_lookup ON nba_score.final_hp (season, game_date, prop)")
+            # the routing target (G2) - created only when absent (same lock-avoidance as the indexes above); its DDL and the
+            # final_hp_all view are owned by build_whole_number_hp.py, imported so there is one definition
+            if cur.execute("SELECT to_regclass('nba_score.final_hp_derived')").fetchone()[0] is None:
+                from build_whole_number_hp import DDL as _WN_DDL, VIEW as _WN_VIEW
+                for _q in _WN_DDL:
+                    cur.execute(_q)
+                cur.execute(_WN_VIEW)
+        conn.commit()
 
     for season in seasons:
         plist = props or [r[0] for r in conn.execute(
