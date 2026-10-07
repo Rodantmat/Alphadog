@@ -246,8 +246,15 @@ jobs:
       # standard markets alone. The producer is now parameterised with MLB-identical defaults, so this
       # step is purely additive: league 7, sport nba, written where the archiver already looks.
       # Its parser handles odds_type (standard/goblin/demon) already - only the file was missing.
+      # ONE DEAD APP NEVER BLOCKS THE SLATE (2026-10-07, certification pass G-7): a failed PrizePicks capture used to skip
+      # EVERY later step (other boards, archive, scoring, the Underdog pick), and a Fliff/Sleeper timeout in the next step
+      # skipped the archive of a PrizePicks board that HAD landed. Both scrape steps are now soft; the archive takes only
+      # the apps whose capture succeeded (a same-day morning file must not be archived as the 'window' decision snapshot);
+      # the slip pick's own freshness gate refuses loudly without today's PrizePicks window board (run red, row note).
       - name: PrizePicks NBA board
+        id: soft_pp
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
           PRIZEPICKS_LEAGUE_ID: "7"
