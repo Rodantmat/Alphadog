@@ -588,11 +588,31 @@ def main():
                           confidence=EXCLUDED.confidence, conf_tier=EXCLUDED.conf_tier,
                           c_exist=EXCLUDED.c_exist, c_quality=EXCLUDED.c_quality,
                           c_market=EXCLUDED.c_market""", rows)
+                    # the routed slice, same transaction (one set per day: the slice is replaced, never appended)
+                    if FE_DATE:
+                        cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation = 'beyond_certified_depth' "
+                                    "AND season=%s AND prop=%s AND game_date=%s", (season, prop, FE_DATE))
+                    else:
+                        cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation = 'beyond_certified_depth' "
+                                    "AND season=%s AND prop=%s", (season, prop))
+                    if deep_rows:
+                        cur.executemany("""INSERT INTO nba_score.final_hp_derived
+                            (season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor,
+                             baseline_hp, final_hp, cal_shift, score, edge, confidence, conf_tier,
+                             c_exist, c_quality, c_market, prop_tier, band, phase, n_uncertain, derivation)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            ON CONFLICT (game_date, player_id, prop, side, line, derivation) DO UPDATE SET
+                              final_hp=EXCLUDED.final_hp, score=EXCLUDED.score, edge=EXCLUDED.edge,
+                              confidence=EXCLUDED.confidence, conf_tier=EXCLUDED.conf_tier,
+                              c_exist=EXCLUDED.c_exist, c_quality=EXCLUDED.c_quality,
+                              c_market=EXCLUDED.c_market""", deep_rows)
                 conn.commit()
             total += len(d)
             moved = float(np.abs(d["final_hp"] - d["baseline_hp"]).mean())
             print(f"  {prop:<16}{len(d):>9,} legs   mean |final-baseline| {moved:.5f}   "
-                  f"mean conf {float(d['confidence'].mean()):.3f}", flush=True)
+                  f"mean conf {float(d['confidence'].mean()):.3f}"
+                  + (f"   routed beyond certified depth {_dep}: {int(deep.sum()):,}" if _dep is not None
+                     else "   (no certified depth - not routed)"), flush=True)
         print(f"{season}: {total:,} final legs\n", flush=True)
     conn.close()
 
