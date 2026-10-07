@@ -270,23 +270,32 @@ def main():
     print("L11 slip layer", flush=True)
     r = one(conn, "SELECT count(*), count(DISTINCT game_date), count(DISTINCT composition) FROM nba_score.slip_engine_slips")
     check(conn, "L11.slips_exist_all_days", r[0] > 400_000 and r[1] == 323, f"{r[0]} slips / {r[1]} days / {r[2]} compositions")
+    # payout recompute follows grade() INCLUDING ties (§31s G1 gate 2b: whole-number legs; a tied leg has hit NULL): tied legs are
+    # removed and the lineup reverts one level; all tied -> refund 1.0; one decided leg left -> 2-pick 1.5x on a win, else refund;
+    # a Flex reverting below 3 picks plays as Power. With no tied leg this is exactly the previous recompute.
     r = one(conn, """WITH s AS (
         SELECT size, hits, payout, teams, structure,
           (SELECT count(DISTINCT j->>'player') FROM jsonb_array_elements(legs_json) j) dp,
           (SELECT sum((j->>'hit')::int) FROM jsonb_array_elements(legs_json) j) lh,
-          (SELECT exp(sum(ln((j->>'factor')::float))) FROM jsonb_array_elements(legs_json) j) fprod,
+          (SELECT count(*) FILTER (WHERE (j->>'hit') IS NOT NULL) FROM jsonb_array_elements(legs_json) j) nlv,
+          (SELECT exp(sum(ln((j->>'factor')::float)) FILTER (WHERE (j->>'hit') IS NOT NULL)) FROM jsonb_array_elements(legs_json) j) fprod,
           jsonb_array_length(legs_json) nl
-        FROM nba_score.slip_engine_slips)
-        SELECT count(*) FILTER (WHERE dp<nl), count(*) FILTER (WHERE teams<2), count(*) FILTER (WHERE nl<>size), count(*) FILTER (WHERE hits<>lh),
-          count(*) FILTER (WHERE abs(payout - (CASE WHEN raw<=9.1 THEN raw ELSE 9.1*power(raw/9.1,0.857) END))>1e-6)
-        FROM (SELECT *, (CASE WHEN structure='power' THEN (CASE WHEN hits=size THEN (CASE size WHEN 2 THEN 3 WHEN 3 THEN 6 WHEN 4 THEN 10 WHEN 5 THEN 20 ELSE 37.5 END) ELSE 0 END)
-                  ELSE (CASE (size,hits) WHEN (2,2) THEN 2 WHEN (2,1) THEN 0.5 WHEN (3,3) THEN 3 WHEN (3,2) THEN 1 WHEN (4,4) THEN 6 WHEN (4,3) THEN 1.5
-                        WHEN (5,5) THEN 10 WHEN (5,4) THEN 2 WHEN (5,3) THEN 0.4 WHEN (6,6) THEN 25 WHEN (6,5) THEN 2 WHEN (6,4) THEN 0.4 ELSE 0 END) END)*fprod raw FROM s) p""")
+        FROM nba_score.slip_engine_slips),
+      e AS (SELECT *, CASE WHEN structure='flex' AND nlv < nl AND nlv < 3 THEN 'power' ELSE structure END est FROM s),
+      p AS (SELECT *, (CASE WHEN est='power' THEN (CASE WHEN hits=nlv THEN (CASE nlv WHEN 2 THEN 3 WHEN 3 THEN 6 WHEN 4 THEN 10 WHEN 5 THEN 20 ELSE 37.5 END) ELSE 0 END)
+                  ELSE (CASE (nlv,hits) WHEN (2,2) THEN 2 WHEN (2,1) THEN 0.5 WHEN (3,3) THEN 3 WHEN (3,2) THEN 1 WHEN (4,4) THEN 6 WHEN (4,3) THEN 1.5
+                        WHEN (5,5) THEN 10 WHEN (5,4) THEN 2 WHEN (5,3) THEN 0.4 WHEN (6,6) THEN 25 WHEN (6,5) THEN 2 WHEN (6,4) THEN 0.4 ELSE 0 END) END)*coalesce(fprod, 1) raw FROM e)
+        SELECT count(*) FILTER (WHERE dp<nl), count(*) FILTER (WHERE teams<2), count(*) FILTER (WHERE nl<>size), count(*) FILTER (WHERE hits<>coalesce(lh, 0)),
+          count(*) FILTER (WHERE abs(payout - (CASE WHEN nlv = 0 THEN 1.0
+                                                    WHEN nlv = 1 AND nl > 1 THEN (CASE WHEN nl = 2 THEN (CASE WHEN lh = 1 THEN 1.5 ELSE 0 END) ELSE 1.0 END)
+                                                    WHEN raw <= 0 THEN 0 WHEN raw<=9.1 THEN raw ELSE 9.1*power(raw/9.1,0.857) END))>1e-6),
+          count(*) FILTER (WHERE nlv < nl)
+        FROM p""")
     check(conn, "L11.no_player_twice", r[0] == 0, r[0])
     check(conn, "L11.two_teams_minimum", r[1] == 0, r[1])
     check(conn, "L11.size_equals_legs", r[2] == 0, r[2])
     check(conn, "L11.hits_equals_leg_hits", r[3] == 0, r[3])
-    check(conn, "L11.payout_equals_compression_recompute", r[4] == 0, r[4])
+    check(conn, "L11.payout_equals_compression_recompute", r[4] == 0, r[4], f"(tie-aware; slips with a tied leg {r[5]})")
     r = one(conn, "SELECT min(min_pair_corr), count(*) FILTER (WHERE min_pair_corr <= -0.08) FROM nba_score.slip_engine_slips")
     check(conn, "L11.no_negative_pair_slips", r[1] == 0, f"min pair corr {r[0]:.3f}" if r[0] is not None else "n/a", "(rule: forbid <= -0.08)")
     r = one(conn, """WITH b AS (SELECT season, max(game_date) s1 FROM nba_score.slip_engine_slips GROUP BY season)
