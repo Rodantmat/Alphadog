@@ -62,7 +62,11 @@ if SE_EXCL_STAR_UNDER and SUFFIX == '':
 # §31s: opt-in leg source for gate-2 backtests (whole-number lines, extended ladder). Default = the certified table. A test source
 # must write to a suffixed table - never the certified slips.
 SE_LEGS_TABLE = os.environ.get('SE_LEGS_TABLE', 'nba_score.tier_map_legs')
-if SE_LEGS_TABLE != 'nba_score.tier_map_legs' and SUFFIX == '':
+# PRODUCTION SOURCES (2026-10-06, §31s G1 gate 2b): tier_map_legs (the certified cell design, half-point legs) and
+# tier_map_legs_sel (the same legs + whole-number legs in the cells' currency, as the live pick selects - build_tier_map_sel.py).
+# Any other source is a test and must write to a suffixed table.
+PRODUCTION_LEG_SOURCES = ('nba_score.tier_map_legs', 'nba_score.tier_map_legs_sel')
+if SE_LEGS_TABLE not in PRODUCTION_LEG_SOURCES and SUFFIX == '':
     raise SystemExit("REFUSED: a test leg source must write to a suffixed table, never the certified one (set SE_TABLE_SUFFIX)")
 if not __import__('re').fullmatch(r'[a-z_]+\.[a-z0-9_]+', SE_LEGS_TABLE):
     raise SystemExit(f"REFUSED: invalid SE_LEGS_TABLE {SE_LEGS_TABLE!r}")
