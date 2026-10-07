@@ -85,6 +85,7 @@ def start_local_proxy():
 def main():
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     board = None
+    lobby_only = None   # a getUpcomingEventsV2 answer without projections (lobby), kept as evidence
     lp, proxy_arg = start_local_proxy()
     kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
     if proxy_arg:
