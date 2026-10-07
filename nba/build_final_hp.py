@@ -292,11 +292,20 @@ def main():
     # distributions differ and the cuts landed inside a tie (low 54% / medium 46% / high 0.1% / elite 0).
     # Sample legs already written and take equal-mass quartiles of THEIR confidence; fall back to the
     # group distribution only on a cold table.
+    # DETERMINISTIC (fixed 2026-10-06, strategy §31s). The sample was `LIMIT 500000` with no ORDER BY - whichever physical rows
+    # came first - so two identical builds of the same slate got different cutpoints (measured on 2026-01-15: 0.9347/0.9484/0.9588
+    # -> 0.9430/0.9507/0.9596 -> 0.9439/0.9521/0.9602 on three consecutive runs; conf_tier was the ONLY column that differed,
+    # 162 of 13,148 legs), breaking "one set per day: a rerun reproduces the slate". Now: EVERY leg OUTSIDE the slice being
+    # rebuilt (FE_DATE -> all other dates; season rebuild -> the other seasons), so a rerun sees exactly the same population and
+    # a live slate's cutpoints come only from legs already on record. (conf_tier feeds diagnostics only - no selection reads it.)
     CUTS = None
     try:
         q = pd.read_sql("""SELECT percentile_cont(ARRAY[0.25,0.50,0.75]) WITHIN GROUP (ORDER BY confidence) AS c
-                           FROM (SELECT confidence FROM nba_score.final_hp
-                                 WHERE confidence IS NOT NULL LIMIT 500000) s""", conn)
+                           FROM nba_score.final_hp
+                           WHERE confidence IS NOT NULL
+                             AND (CASE WHEN %(d)s <> '' THEN game_date <> NULLIF(%(d)s, '')::date
+                                       ELSE NOT (season = ANY(%(s)s)) END)""",
+                        conn, params={"d": FE_DATE, "s": seasons})
         if not q.empty and q.iloc[0, 0] is not None:
             cand = [float(x) for x in q.iloc[0, 0]]
             if len(set(cand)) == 3:
