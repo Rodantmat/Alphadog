@@ -132,12 +132,13 @@ jobs:
           import os, psycopg
           d = os.environ["SIM_DATE"]
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
-              for t in ("_sim_baseline_history", "_sim_baseline_ladder_runs", "_sim_final_hp"):
+              for t in ("_sim_baseline_history", "_sim_baseline_ladder_runs", "_sim_final_hp", "_sim_final_hp_derived"):
                   c.execute(f"DROP TABLE IF EXISTS nba_score.{t}")
               b = c.execute("SELECT count(*) FROM nba_score.baseline_history WHERE game_date=%s", (d,)).fetchone()[0]
               f = c.execute("SELECT count(*) FROM nba_score.final_hp WHERE game_date=%s", (d,)).fetchone()[0]
+              fd = c.execute("SELECT count(*) FROM nba_score.final_hp_derived WHERE game_date=%s", (d,)).fetchone()[0]
               s = c.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s", (d,)).fetchone()[0]
-              print(f"PRODUCTION AFTER SIMULATION for {d}: baseline_history {b}, final_hp {f}, live_slips {s} (all must be 0)")
-              if b or f or s:
+              print(f"PRODUCTION AFTER SIMULATION for {d}: baseline_history {b}, final_hp {f}, final_hp_derived {fd}, live_slips {s} (all must be 0)")
+              if b or f or fd or s:
                   raise SystemExit("PRODUCTION WAS TOUCHED")
           EOF
