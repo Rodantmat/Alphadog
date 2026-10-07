@@ -5,10 +5,13 @@ name: NBA Referee Assignments (daily capture)
 # but the published ASSIGNMENT only exists going forward if we store it. This starts that archive.
 #
 # Phase 1 / baseline stage: a morning fact, not a window fact.
+#
+# 2026-10-07 (full-system certification pass G): the daily capture is OWNED BY P2B (nba-p2b-slate.yml "Referee crews", polled
+# from the slate run until every game has a crew or the day's deadline; the scheduler recovers a dead P2B). This workflow's
+# own 15:30 UTC cron ran the same scrape a second time every day (and at 07:30 PT in winter, not 08:30 - the comment assumed
+# a fixed UTC-7). One capture path per fact: the cron is removed; the workflow stays for MANUAL recapture of a date.
 
 on:
-  schedule:
-    - cron: '30 15 * * *'      # 08:30 UTC-7 = ~08:30 PT, after the morning posting
   workflow_dispatch:
     inputs:
       date:
