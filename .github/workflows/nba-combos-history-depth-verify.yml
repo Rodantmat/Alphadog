@@ -1,0 +1,82 @@
+name: NBA Combos History Depth Verify (no load)
+
+# §31s G2 gate 2, step 1 (sample first, NO database write): rebuild one season's combos history with the per-prop combo depth
+# (PRA 24 / pts_reb 21 / pts_ast 21, same as live) and compare with what nba_score.baseline_history holds today:
+#   - every stored row's key must be rebuilt with IDENTICAL values (p_more, p_less, anchor, offset, role_tier, var_band, used_emp)
+#   - new rows must be PRA / pts_reb / pts_ast with 10 < |offset| <= depth; how many of them sit on a real board (board_rung_keys)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2025-26"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BT_TEST: ${{ github.event.inputs.season }}
+      BT_TRAIN: ${{ github.event.inputs.season == '2024-25' && '2023-24' || '2023-24,2024-25' }}
+      BT_INJURY: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy scipy
+      - name: Components (full season, exactly as nba-combos-history.yml)
+        env:
+          BT_LADDER_STEPS: "10"
+        run: |
+          set -e
+          mkdir -p nba/backtest/reports
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/backtest/classification_ladder_v12.py > /dev/null
+          done
+          ls -la nba/backtest/reports/_comp_*_${BT_TEST}.pkl
+      - name: Combos history at the per-prop depth (BT_LADDER_STEPS unset, as live)
+        run: python nba/baseline/build_combos_history.py 2>&1 | grep -E "DAY-BY-DAY|Error|Traceback" || true
+      - name: Compare with the stored history
+        run: |
+          python - <<'EOF'
+          import json, os, psycopg, pandas as pd, numpy as np
+          s = os.environ["BT_TEST"]; f = f"nba/data/nba_baseline_history_{s.replace('-', '_')}_combos.json"
+          new = pd.DataFrame(json.load(open(f))["rows"])
+          new["line"] = new["line"].astype(float)
+          DEPTH = {"pra": 24, "pts_reb": 21, "pts_ast": 21}
+          conn = psycopg.connect(os.environ["DATABASE_URL"])
+          props = sorted(new["prop"].unique())
+          old = pd.read_sql("""SELECT game_date::text game_date, player_id, game_id, prop, period, line::float line, anchor::float anchor,
+                                      ladder_offset "offset", p_more::float p_more, p_less::float p_less, role_tier, var_band, used_emp
+                               FROM nba_score.baseline_history WHERE season=%s AND prop = ANY(%s)""", conn, params=(s, props))
+          key = ["game_date", "player_id", "game_id", "prop", "period", "line"]
+          for k in ("player_id", "game_id"):
+              new[k] = new[k].astype(str); old[k] = old[k].astype(str)
+          m = old.merge(new, on=key, how="left", suffixes=("_o", "_n"), indicator=True)
+          missing = int((m["_merge"] == "left_only").sum())
+          both = m[m["_merge"] == "both"]
+          diffs = {}
+          for c in ("anchor", "offset", "p_more", "p_less"):
+              diffs[c] = int((~np.isclose(both[f"{c}_o"].astype(float), both[f"{c}_n"].astype(float), atol=5e-5)).sum())
+          for c in ("role_tier", "var_band", "used_emp"):
+              diffs[c] = int((both[f"{c}_o"].astype(str) != both[f"{c}_n"].astype(str)).sum())
+          print(f"stored rows {len(old):,} | rebuilt {len(new):,} | stored keys not rebuilt {missing:,} | value differences {diffs}")
+          deep = new[new["prop"].isin(DEPTH) & (new["offset"].abs() > 10)]
+          bad = new[(new["offset"].abs() > 10) & ~(new["prop"].isin(DEPTH) & (new["offset"].abs() <= new["prop"].map(DEPTH).fillna(10)))]
+          print(f"rows beyond 10: {len(deep):,} (by prop {deep['prop'].value_counts().to_dict()}) | outside the intended set: {len(bad):,}")
+          bk = pd.read_sql("""SELECT DISTINCT game_date::text game_date, player_id::text player_id, prop, line::float line FROM nba_market.board_rung_keys
+                              WHERE period='FULL' AND prop = ANY(%s) AND game_date BETWEEN %s AND %s""", conn,
+                           params=(list(DEPTH), new["game_date"].min(), new["game_date"].max()))
+          on = deep.merge(bk, on=["game_date", "player_id", "prop", "line"])
+          print(f"deep rows on a real board: {len(on):,} (by prop {on['prop'].value_counts().to_dict()}; by |offset| {on['offset'].abs().value_counts().sort_index().to_dict()})")
+          ok = missing == 0 and all(v == 0 for v in diffs.values()) and len(bad) == 0
+          print("RESULT:", "PASS" if ok else "FAIL")
+          raise SystemExit(0 if ok else 1)
+          EOF
