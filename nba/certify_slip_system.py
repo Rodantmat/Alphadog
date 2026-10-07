@@ -277,7 +277,7 @@ def main():
         SELECT size, hits, payout, teams, structure,
           (SELECT count(DISTINCT j->>'player') FROM jsonb_array_elements(legs_json) j) dp,
           (SELECT sum((j->>'hit')::int) FROM jsonb_array_elements(legs_json) j) lh,
-          (SELECT count(*) FILTER (WHERE (j->>'hit') IS NOT NULL) FROM jsonb_array_elements(legs_json) j) nlv,
+          (SELECT count(*) FILTER (WHERE (j->>'hit') IS NOT NULL) FROM jsonb_array_elements(legs_json) j)::int nlv,
           (SELECT exp(sum(ln((j->>'factor')::float)) FILTER (WHERE (j->>'hit') IS NOT NULL)) FROM jsonb_array_elements(legs_json) j) fprod,
           jsonb_array_length(legs_json) nl
         FROM nba_score.slip_engine_slips),
