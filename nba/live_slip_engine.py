@@ -1007,8 +1007,10 @@ def calibrate(conn):
             mc95 = max(mc95, bd[int(0.95 * len(bd))]); mc99 = max(mc99, bd[int(0.99 * len(bd))])
             st95 = max(st95, bs[int(0.95 * len(bs))]); st99 = max(st99, bs[int(0.99 * len(bs))])
         # CUSUM calibration on the backtest's own leg stream (chronological), per season
+        # a tied whole-number leg (hit NULL) is void - not a trial in the leg stream (as in the live monitors)
         legs = conn.execute(f"""SELECT s.season, s.game_date, (j->>'hit')::int FROM {tbl} s, jsonb_array_elements(s.legs_json) j
-                               WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.phase<>'final7' ORDER BY s.game_date, s.k""",
+                               WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.phase<>'final7'
+                                 AND (j->>'hit') IS NOT NULL ORDER BY s.game_date, s.k""",
                             (comp, size, structure, cap)).fetchall()
         if not legs or not days:
             print(f"  {name:<20} NO BACKTEST SLIPS in {tbl} for {comp} {size}-{structure} k<={cap} - not calibrated", flush=True)
