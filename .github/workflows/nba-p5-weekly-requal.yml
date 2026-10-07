@@ -71,6 +71,7 @@ jobs:
           SE_EXCLUDE_CELLS: "steals_R,steals_R_U"
           SE_TABLE_SUFFIX: "_nosteals"
           SE_DELTA: "1"
+          SE_LEGS_TABLE: nba_score.tier_map_legs_sel
         run: python -u nba/build_slip_engine.py
 
       - name: 4. Certification pass (frozen invariant list; any FAIL stops the loop here)
