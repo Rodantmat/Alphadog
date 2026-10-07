@@ -1,0 +1,47 @@
+name: NBA Tier Map SEL (selection leg table)
+
+# §31s G1 gate 2b: nba_score.tier_map_legs_sel = certified tier map + whole-number legs in the cells' currency (cross-fitted for the
+# certified seasons, the live path for live seasons). Also run weekly by P5 (step 1b). verify=1 compares the certified-season part
+# with the gate-2b test table nba_score.tier_map_legs_wi2 row by row.
+on:
+  workflow_dispatch:
+    inputs:
+      verify:
+        default: "1"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+      - name: Build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/build_tier_map_sel.py
+      - name: Verify against the gate-2b table
+        if: ${{ github.event.inputs.verify == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python - <<'PY'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              q = """SELECT rank_key, game_date, player, prop, side, line, kind, tier, rung, factor, score, hit, n_rank, cell_size FROM {} WHERE season IN ('2024-25','2025-26')"""
+              a = c.execute(f"SELECT count(*) FROM (({q.format('nba_score.tier_map_legs_sel')}) EXCEPT ALL ({q.format('nba_score.tier_map_legs_wi2')})) x").fetchone()[0]
+              b = c.execute(f"SELECT count(*) FROM (({q.format('nba_score.tier_map_legs_wi2')}) EXCEPT ALL ({q.format('nba_score.tier_map_legs_sel')})) x").fetchone()[0]
+              n = c.execute("SELECT count(*) FROM nba_score.tier_map_legs_sel WHERE season IN ('2024-25','2025-26')").fetchone()[0]
+              print(f"certified seasons: {n:,} rows | only in sel {a} | only in wi2 {b}")
+              print("RESULT:", "PASS - identical to the gate-2b test table (every column incl. rank and cell size)" if a == 0 and b == 0 else "FAIL")
+              raise SystemExit(0 if a == 0 and b == 0 else 1)
+          PY
