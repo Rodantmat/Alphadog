@@ -34,6 +34,7 @@ import psycopg
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_ud_slip_engine as E   # noqa: E402 - the certified engine (original 14 cells, centers out)
+from live_slip_engine import regular_season_window as _season_window, PT   # noqa: E402 - one season resolver, one clock (cert pass F)
 
 MKT = {'points': 'points', 'rebounds': 'rebounds', 'assists': 'assists', 'threes': 'threes_made', 'steals': 'steals',
        'blocks': 'blocks', 'turnovers': 'turnovers', 'blocks_steals': 'stocks', 'points_rebounds': 'pts_reb',
