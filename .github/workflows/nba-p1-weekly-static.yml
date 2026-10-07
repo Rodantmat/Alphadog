@@ -150,18 +150,10 @@ jobs:
       # so nothing is hidden. This is not `|| echo failed` - no failure is swallowed, only data is saved.
       - name: Commit weekly data files
         if: always()
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add nba/data/*.json || true
-          if git diff --cached --quiet; then echo "No weekly file changes."; exit 0; fi
-          git commit -m "NBA P1 weekly static [skip ci]"
-          for i in 1 2 3 4 5; do
-            if git push origin HEAD:main; then exit 0; fi
-            git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
-          done
-          exit 1
+        # conflict-safe (2026-10-07): a concurrent P2B roster commit made the plain rebase stop on a conflict and lose
+        # the whole week's scrape (run 37656317775); nba/git_push_retry.sh resolves generated-file collisions in this
+        # run's favour and still fails loudly if the push cannot land.
+        run: bash nba/git_push_retry.sh "NBA P1 weekly static [skip ci]" nba/data/*.json
 
       # 🔴 LOAD WHAT WE JUST SCRAPED (2026-09-24). THE TOP PRE-SEASON VERIFICATION IN
       # NBA_SYSTEM_DESIGN.md §2, answered - badly. P1 scrapes and commits JSON, and only
