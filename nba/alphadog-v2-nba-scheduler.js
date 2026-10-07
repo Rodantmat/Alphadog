@@ -157,8 +157,10 @@ async function github(env, method, path, body) {
   try { data = resp.status === 204 ? null : await resp.json(); } catch (_) { data = null; }
   return { ok: resp.status >= 200 && resp.status < 300, status: resp.status, data };
 }
-async function dispatch(env, workflow) {
-  const r = await github(env, "POST", `/actions/workflows/${encodeURIComponent(workflow)}/dispatches`, { ref: env.GITHUB_BRANCH || "main" });
+async function dispatch(env, workflow, inputs) {
+  const body = { ref: env.GITHUB_BRANCH || "main" };
+  if (inputs) body.inputs = inputs;
+  const r = await github(env, "POST", `/actions/workflows/${encodeURIComponent(workflow)}/dispatches`, body);
   return r.ok ? { ok: true } : { ok: false, detail: `github ${r.status} ${JSON.stringify(r.data || {}).slice(0, 300)}` };
 }
 async function liveRunsSince(env, workflow, sinceMs) {
