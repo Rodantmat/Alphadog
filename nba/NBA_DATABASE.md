@@ -428,6 +428,8 @@ quoted** (rule: re-take, never quote).*
 | `nba_score.redistribution_factors` | 14 | *(see §0a-T16)* | 51,806 | — |
 | 🔴 **`nba_ref.referee_assignments`** | 7 | **0** | **0** | ⚠ **STILL ZERO NINE DAYS LATER** |
 
+> 🟢🟢 **`[LIVE-VERIFIED]` `2026-10-07` (NBA sweep RUN 241) — NO LONGER ZERO: THE PARSER VALIDATED, ELEVEN DAYS EARLY.** *`nba_ref.referee_assignments` now holds **`12` rows** — `4` matchups × `3` slots (`LAL @ GSW`, `BKN @ CHA`, `NOP @ OKC`, `DEN @ UTA`), all `game_date = 2026-10-06`, all `captured_at = 2026-10-07T17:48:20.154Z`, sourced from `official.nba.com`'s officials endpoint for that date. First non-zero reading in this sweep's entire history — flat at `0` on every dated check since `2026-09-21` (~18 consecutive passes). The `2026-10-20` unfalsifiability horizon two rows below is now moot: the parser is confirmed working on real data, eleven days ahead of it. Per `RULE 40`, the row and prose below are the historical record and are kept, not rewritten.*
+
 ### ⚠ THE REFEREE TABLE IS STILL EMPTY, AND THAT IS *EXPECTED* — **which is exactly why it is worth recording**
 
 *T16 built and scheduled the D1 capture (`nba/scrape_referee_assignments.py`, `nba-referees.yml`,
