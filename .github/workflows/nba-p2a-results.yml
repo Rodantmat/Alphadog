@@ -248,6 +248,7 @@ jobs:
       # UNDERDOG PAPER GRADE (§30z): every slate before today with ungraded Underdog paper slips, by Underdog's rules (void
       # shrinks the entry; < 2 picks = refund). Paper only: continue-on-error, never disturbs the PrizePicks grade above.
       - name: Underdog paper grade
+        id: soft_udgrade
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
