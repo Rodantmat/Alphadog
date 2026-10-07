@@ -1,0 +1,67 @@
+name: NBA G2 Deep Gate (stage + price one season)
+
+# §31s G2 gate 2: components -> combos history at the per-prop depth -> deep rungs a real board carried -> nba_score._g2_deep_baseline
+# -> research copy of build_final_hp.py prices them into nba_score._g2_deep_der. Scratch tables only; no production write
+# (the copy's substitutions are asserted). Then: nba/build_tier_map_deep.py + nba-gate2-backtest.yml (legs nba_score.tier_map_legs_dp).
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        default: "2025-26"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BT_TEST: ${{ github.event.inputs.season }}
+      BT_TRAIN: ${{ github.event.inputs.season == '2024-25' && '2023-24' || '2023-24,2024-25' }}
+      BT_INJURY: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy scipy
+      - name: Components (full season, as nba-combos-history.yml)
+        env:
+          BT_LADDER_STEPS: "10"
+        run: |
+          set -e
+          mkdir -p nba/backtest/reports
+          for pair in points,rebounds assists,steals blocks,turnovers; do
+            BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/backtest/classification_ladder_v12.py > /dev/null
+          done
+      - name: Combos history at the per-prop depth (as live)
+        run: python nba/baseline/build_combos_history.py 2>&1 | grep -E "DAY-BY-DAY|Error|Traceback" || true
+      - name: Stage deep rungs on a real board
+        env:
+          G2_MODE: stage
+        run: python -u nba/g2_deep_stage.py
+      - name: Research copy of build_final_hp (scratch tables)
+        env:
+          G2_MODE: copy
+        run: python -u nba/g2_deep_stage.py
+      - name: Price the deep rungs (production formula, scratch output)
+        env:
+          FE_SEASONS: ${{ github.event.inputs.season }}
+          FE_PROPS: "pra,pts_reb,pts_ast"
+          FE_WRITE: "1"
+        run: python -u nba/_g2_final_hp.py 2>&1 | grep -vE "UserWarning|pd.read_sql|h = pd" 
+      - name: Summary
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              s = os.environ["BT_TEST"]
+              print("staged:", c.execute("SELECT prop, count(*) FROM nba_score._g2_deep_baseline WHERE season=%s GROUP BY 1 ORDER BY 1", (s,)).fetchall())
+              print("priced (scratch derived):", c.execute("SELECT prop, derivation, count(*) FROM nba_score._g2_deep_der WHERE season=%s GROUP BY 1,2 ORDER BY 1", (s,)).fetchall())
+              print("scratch final_hp rows (must be 0 - every staged rung is beyond the certified depth):", c.execute("SELECT count(*) FROM nba_score._g2_deep_fhp WHERE season=%s", (s,)).fetchone()[0])
+          EOF
