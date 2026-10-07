@@ -287,7 +287,7 @@ def main():
                         WHEN (5,5) THEN 10 WHEN (5,4) THEN 2 WHEN (5,3) THEN 0.4 WHEN (6,6) THEN 25 WHEN (6,5) THEN 2 WHEN (6,4) THEN 0.4 ELSE 0 END) END)*coalesce(fprod, 1) raw FROM e)
         SELECT count(*) FILTER (WHERE dp<nl), count(*) FILTER (WHERE teams<2), count(*) FILTER (WHERE nl<>size), count(*) FILTER (WHERE hits<>coalesce(lh, 0)),
           count(*) FILTER (WHERE abs(payout - (CASE WHEN nlv = 0 THEN 1.0
-                                                    WHEN nlv = 1 AND nl > 1 THEN (CASE WHEN nl = 2 THEN (CASE WHEN lh = 1 THEN 1.5 ELSE 0 END) ELSE 1.0 END)
+                                                    WHEN nlv = 1 AND nl > 1 THEN (CASE WHEN lh = 1 THEN least(1.5*coalesce(fprod,1), 9.1*power(1.5*coalesce(fprod,1)/9.1,0.857)) ELSE 0 END)
                                                     WHEN raw <= 0 THEN 0 WHEN raw<=9.1 THEN raw ELSE 9.1*power(raw/9.1,0.857) END))>1e-6),
           count(*) FILTER (WHERE nlv < nl)
         FROM p""")
