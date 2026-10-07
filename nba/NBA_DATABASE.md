@@ -1252,6 +1252,8 @@ profiles.
 ### `nba_ref.referee_assignments` *(T15)*
 Daily capture at 08:30 PT. **0 rows** — expected until the season opens.
 
+> 🟢 **`[LIVE-VERIFIED]` `2026-10-07`**: now **`12` rows** (`game_date=2026-10-06`, 4 matchups × 3 officials, `captured_at=2026-10-07T17:48:20.154Z`). First non-zero reading ever recorded in this sweep. Full note at this file's live-row-count table above.
+
 ---
 
 > ### ⚠ THIS DOCUMENT IS THE ONLY SCHEMA ARTEFACT NBA HAS — and it is prose
