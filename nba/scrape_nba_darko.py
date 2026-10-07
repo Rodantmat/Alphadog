@@ -15,6 +15,9 @@ syntax (unquoted keys, bare leading-decimal numbers like `.534094`), not strict 
 script extracts the `players:[...]` array and repairs it into valid JSON before parsing.
 
 Writes nba/data/nba_darko_current.json + _meta.json.
+
+REWRITE 2026-10-07 (full-system certification pass A): darko.app's October 2026 redesign removed the embedded players
+literal; the primary source is now SvelteKit's `__data.json` (devalue, columnar) - see the functions below.
 """
 import json
 import os
