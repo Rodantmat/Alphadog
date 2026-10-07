@@ -60,6 +60,7 @@ jobs:
           SE_CAP: "10"
           SE_SIZES: "2,3,4,5,6"
           SE_DELTA: "1"
+          SE_LEGS_TABLE: nba_score.tier_map_legs_sel
         run: python -u nba/build_slip_engine.py
 
       - name: 3b. Slip engine, family C (Regular without steals, 28f) into the _nosteals tables - DELTA
