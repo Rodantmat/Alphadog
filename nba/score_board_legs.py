@@ -353,6 +353,42 @@ def main():
     d["score"] = np.round(np.clip(hp100 + (100.0 - hp100) * lift - hp100 * drop, 0, 100), 2)
     d["edge"] = np.round((d["final_hp"].values - BREAKEVEN) * 100.0, 2)
 
+    # 5b) ROUTING (strategy doc §31s G1 + G2; COMPASS fact 134; 2026-10-06). board_scored feeds SELECTION (P3's paper logger
+    # nba_score.paper_pick_candidates reads it), so two leg classes that their gates did NOT admit to selection leave it here:
+    #   (a) WHOLE-NUMBER lines of certified props. The interpolation above prices a line k from the k-1/2 / k+1/2 rungs as if
+    #       it were a half line - the naive derivation G1 gate 1 REJECTED (log-loss 0.705, worse than a coin flip; ties ignored).
+    #       Their correct price (adjacent rungs, cross-season recalibration, P(tie)) is nba_score.final_hp_derived derivation
+    #       'whole_number', built by P2B (build_whole_number_hp.py). Measured: ~17% of standards_3pick_v1 picks were such legs.
+    #   (b) rungs BEYOND the certified history depth (nba_config.classification_config['selection_certified_depth']): written
+    #       to nba_score.final_hp_derived, derivation 'board_beyond_certified_depth' (P3's own price; a separate derivation
+    #       from build_final_hp's 'beyond_certified_depth' so the two producers never overwrite each other).
+    # Props without a certified depth (period labels such as points_q1) are untouched: no certified alternative exists.
+    _dc = conn.execute("SELECT config_json FROM nba_config.classification_config "
+                       "WHERE config_key = 'selection_certified_depth'").fetchone()
+    if not _dc:
+        raise SystemExit("REFUSED: nba_config.classification_config['selection_certified_depth'] missing (§31s G2 routing)")
+    import json as _json
+    _dcj = _dc[0] if isinstance(_dc[0], dict) else _json.loads(_dc[0])
+    CERT_DEPTH = {str(k): int(v) for k, v in _dcj["depth"].items()}
+    _anchor = lad.groupby(["player_id", "prop_base", "period"])["anchor"].first()
+    _anc = pd.Series([_anchor.get((a, b, c), np.nan) for a, b, c in zip(d["player_id"], d["prop_base"], d["period"])],
+                     index=d.index, dtype=float)
+    d["anchor_r"] = _anc
+    # exact rungs keep the builder's own offset (identical to final_hp); off-ladder legs: distance from the anchor in line units
+    d["offset_r"] = np.where(d["ladder_offset"].notna(), d["ladder_offset"], d["line"].astype(float) - _anc)
+    _dep = d["prop"].map(CERT_DEPTH)
+    _certified = _dep.notna()
+    _wn = _certified & (d["line"].astype(float) == np.floor(d["line"].astype(float))) & (d["line"].astype(float) >= 0)
+    _deep = _certified & ~_wn & d["offset_r"].notna() & (np.abs(d["offset_r"]) > _dep)
+    # an off-ladder leg whose player has no anchor cannot be placed against the depth - kept as before, counted
+    _noanc = int((_certified & ~_wn & d["offset_r"].isna()).sum())
+    deep = d[_deep].copy()
+    n_wn = int(_wn.sum())
+    d = d[~(_wn | _deep)].copy()
+    print(f"  routed out of board_scored: whole-number lines {n_wn:,} (priced in final_hp_derived 'whole_number') | "
+          f"beyond certified depth {len(deep):,} (-> final_hp_derived 'board_beyond_certified_depth')"
+          + (f" | off-ladder legs without an anchor (kept) {_noanc:,}" if _noanc else ""), flush=True)
+
     # 6) WRITE
     with conn.cursor() as cur:
         cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.board_scored (
