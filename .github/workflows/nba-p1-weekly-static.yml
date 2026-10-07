@@ -124,6 +124,19 @@ jobs:
           python nba/scrape_nba_playtypes.py
           python nba/scrape_nba_player_tracking.py
 
+      # LOAD WHAT THIS RUN SCRAPED - ALL OF IT (2026-10-07, full-system certification pass G). P1 invokes the
+      # nba-static-lineups and nba-static-tracking-detail writers below, but until today it never scraped their files:
+      # they came from the legacy weekly nba-scrape.yml (Monday 09:00 UTC, GitHub's own cron - measured hours late,
+      # and absent on 2026-10-05), so P1 2026-10-07 loaded lineups / tracking detail fetched on 09-28 and the
+      # verifier called them LANDED (updated_at moves on every upsert, fresh or not). Scraped here, in the run that
+      # loads them: 4 calls (2/3/4/5-man units) + 8 calls (measure types). nba-scrape.yml's cron is retired.
+      - name: Lineups and tracking detail
+        env:
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: |
+          python nba/scrape_nba_lineups.py
+          python nba/scrape_nba_tracking_detail.py
+
       - name: DARKO and shot quality
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
