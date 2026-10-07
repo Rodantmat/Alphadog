@@ -154,8 +154,14 @@ def main():
                     except Exception:  # noqa: BLE001
                         continue
                 time.sleep(3)
-            # capture
-            deadline = time.time() + 60
+            # capture. DIAGNOSED 2026-10-07 (full-system certification pass G): the app answers getUpcomingEventsV2 more than
+            # once - the LOBBY response lists every upcoming event of every sport (163 "events" on 10-07, 117 on 10-06) with
+            # NO players/projections, and the league board response carries the projections. The old loop took the first
+            # response with the key, so the lobby answer won and the file said ok:true, 163 events, 0 legs. Now a response
+            # only counts as the board when it flattens to legs; a projection-less answer is kept as `lobby_only` evidence
+            # and the loop keeps watching (and re-clicks the league tab) until the deadline.
+            lobby_only = None
+            deadline = time.time() + 120
             while time.time() < deadline and not board:
                 try:
                     logs = sb.driver.get_log("performance")
