@@ -263,7 +263,9 @@ jobs:
         run: timeout --signal=TERM --kill-after=30s 420 python main.py
 
       - name: Other board scrapers
+        id: soft_boards
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
         env:
           PROXY_URL: ${{ secrets.PROXY_URL }}
           # VERIFIED NAMES, and they are NOT uniform - each scraper has its own. A generic SPORT does
