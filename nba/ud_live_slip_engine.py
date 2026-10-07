@@ -392,7 +392,7 @@ def main():
     mode = (os.environ.get('UDL_MODE') or 'pick').lower()
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     if mode == 'edge':
-        today_pt = dt.datetime.now(dt.timezone(dt.timedelta(hours=-8))).date()
+        today_pt = dt.datetime.now(PT).date()   # real Pacific clock (DST-aware); a fixed UTC-8 was an hour off Mar-Nov
         ud_edge_monitor(conn, dt.date.fromisoformat(os.environ['UDL_DATE']) if os.environ.get('UDL_DATE') else today_pt - dt.timedelta(days=1))
         conn.close()
         return
