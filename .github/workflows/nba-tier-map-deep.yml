@@ -1,0 +1,26 @@
+name: NBA Tier Map Deep (G2 gate-2 test legs)
+
+# §31s G2: nba_score.tier_map_legs_dp = certified legs (untouched) + PP window legs on deep combo rungs priced by the production
+# formula (scratch nba_score._g2_deep_der). Read-only on the certified tables.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/build_tier_map_deep.py
