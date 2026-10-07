@@ -95,7 +95,6 @@ def main():
             errors.append({"team_id": team_id, "abbreviation": t.get("abbreviation"), "error": error})
         time.sleep(0.6)  # light pacing across 30 sequential calls
 
-    OUTPUT_PATH.write_text(json.dumps({"arenas": arenas}, indent=2), encoding="utf-8")
     OUTPUT_META_PATH.write_text(json.dumps({
         "fetched_at": fetched_at,
         "arena_count": len(arenas),
@@ -103,9 +102,12 @@ def main():
         "per_team_errors": errors,
     }, indent=2), encoding="utf-8")
 
+    # NEVER REPLACE A GOOD FILE WITH A PARTIAL ONE (2026-10-07, full-system certification pass G): previously written before
+    # the completeness check, so a proxy outage left an empty arenas file that P1 committed and loaded.
     if len(arenas) < len(teams):
-        print(f"NBA arenas scrape PARTIAL: {len(arenas)}/{len(teams)} succeeded, {len(errors)} errors", file=sys.stderr)
+        print(f"NBA arenas scrape PARTIAL: {len(arenas)}/{len(teams)} succeeded, {len(errors)} errors - previous {OUTPUT_PATH} left untouched", file=sys.stderr)
         sys.exit(1)
+    OUTPUT_PATH.write_text(json.dumps({"arenas": arenas}, indent=2), encoding="utf-8")
 
     print(f"NBA arenas scrape OK: {len(arenas)} arenas")
 
