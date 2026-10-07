@@ -330,8 +330,19 @@ jobs:
           # moment (1:15 PM PT, COMPASS fact 107), so it is labelled as such.
           ARCHIVE_LABEL: "window"
           ARCHIVE_SPORT: "nba"
-          ARCHIVE_APPS: "prizepicks,underdog,sleeper,fliff,betr"
-        run: python nba/archive_live_boards.py
+          PP_OUTCOME: ${{ steps.soft_pp.outcome }}
+          BOARDS_OK: ${{ steps.soft_boards.outputs.ok }}
+          SKIP_SCRAPE: ${{ github.event.inputs.skip_scrape }}
+        run: |
+          # only the boards THIS run captured are archived as the decision snapshot (betr's file comes from its own
+          # harvest workflow and is date-relabelled by the archiver); skip_scrape=true archives whatever is on disk.
+          if [ "$SKIP_SCRAPE" = "true" ]; then apps="prizepicks,underdog,sleeper,fliff,betr"; else
+            apps="betr"
+            [ -n "$BOARDS_OK" ] && apps="$BOARDS_OK,$apps"
+            [ "$PP_OUTCOME" = "success" ] && apps="prizepicks,$apps"
+          fi
+          echo "archiving apps: $apps"
+          ARCHIVE_APPS="$apps" python nba/archive_live_boards.py
 
       # Classify every board leg as standard / goblin / demon with its tier and anchor. The score and
       # the slip engine both need this - a rung's break-even depends on which variation it is.
