@@ -330,6 +330,22 @@ survive verification are recorded as ⚪ with the reason.
   from 10-20) must report legs > 0 or a red run naming the reason. Betr token path (MLB file, `token_expires_at` 10-10) is
   MLB code — not touched (owner rule).
 
+### G-7 🟠 One dead app blocked the whole P3 slate (seen live: P3 2026-10-07 13:16 PT, run 37680784330)
+- **Evidence:** the PrizePicks capture failed (proxy 407, main.py refuses by design) and EVERY later step was skipped —
+  other boards, archive, scoring, the pick, the Underdog pick. Symmetrically, "Other board scrapers" exits 1 when ANY of
+  Sleeper/Underdog/Fliff times out, which would have skipped the archive of a PrizePicks board that HAD landed — on a
+  pipeline whose own comment promises "one dead app never blocks the slate". (The soft collector itself worked on this
+  run: "no soft-step failures" — skipped ≠ failure.)
+- **Fix:** both capture steps `continue-on-error` with ids; the other-boards step publishes the list of boards it did
+  capture; the archive step archives as 'window' ONLY the boards this run captured (+ betr, whose file comes from its
+  own harvest and is date-relabelled) — a same-day MORNING file must never become the decision snapshot (the certifier's
+  6 h freshness rule would have accepted a 5 h-old morning board); `skip_scrape=true` keeps the full list; the Underdog
+  pick runs `if: !cancelled()`; both captures join the soft list. The PrizePicks pick's own freshness gate still refuses
+  loudly without today's window board (step red → run failure → row note names `prizepicks-board`). Commits f14348c …
+  eddbb26; YAML parsed, remote blob = local.
+- **Verify:** next P3 on a game day; a proxy-down day should now still archive Underdog/Sleeper/Fliff and run the
+  Underdog pick, with the run red on the PrizePicks pick.
+
 ### G-5 ⚪ `nba_score.ud_slip_engine_*` research tables — 34 tables, 5.3 GB; kept
 - Readers: production reads `_dlt_orig2` (UD edge reference, `ud_live_slip_engine`), research/validation read
   `_dlt_recert2`, `_center` (bankroll sim, drought analysis, `nba-ud-validate-strategies.yml` default). The other 28 are
