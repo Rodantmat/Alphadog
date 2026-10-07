@@ -54,7 +54,8 @@ jobs:
               # §31s: the final_hp builder also routes beyond-depth rungs to final_hp_derived - the sandbox needs its own copy
               # (found 2026-10-07, certification pass E: the first sim after §31s died on the missing scratch table, and the
               # redirect missed the DELETE on final_hp_derived - a production write inside the sandbox).
-              c.execute("CREATE TABLE nba_score._sim_final_hp_derived (LIKE nba_score.final_hp_derived INCLUDING DEFAULTS)")
+              # INCLUDING ALL: the builder upserts with ON CONFLICT, which needs the unique index copied too (run 37679085578)
+              c.execute("CREATE TABLE nba_score._sim_final_hp_derived (LIKE nba_score.final_hp_derived INCLUDING ALL)")
           EOF
       - name: Baseline ladder (all prop pairs) - runner files only
         env:
