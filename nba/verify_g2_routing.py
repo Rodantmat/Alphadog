@@ -77,7 +77,7 @@ def main():
         if fails:
             sys.exit(1)
     elif mode == "cleanup":
-        for lab in ("a", "b", "c"):
+        for lab in ("before", "a", "b", "c"):
             for suf in ("main", "der"):
                 conn.execute(f"DROP TABLE IF EXISTS nba_score._g2v_{lab}_{suf}")
         print("scratch tables dropped", flush=True)
