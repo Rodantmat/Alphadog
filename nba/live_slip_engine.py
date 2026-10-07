@@ -862,15 +862,27 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         crit_since = ph.get('CRIT_SINCE'); clean_days = int(ph.get('CLEAN', 0))
         # paper gate: 50 slate days AND cap x 50 slips (a cap-1 strategy cannot be asked for 1,000 slips) AND bootstrap lower bound > 0
         paper_ok = days >= PAPER_DAYS and built >= cap * PAPER_DAYS and ci_lo is not None and ci_lo > 0
+        # STICKY RED (2026-10-07, full-system certification pass F). A red is sticky until P5's weekly PASS clears it (P5 then
+        # writes state 'paper' and hurdles {'REQUAL': 'PASS ...'}). Until today the stickiness lived only in `prev_state == 'red'
+        # and 'REQUAL' not in ph`, so (a) a red entering the calendar week-2 / final-7 window was overwritten by 'week2' / 'off'
+        # and never re-asserted afterwards, and (b) a red SET BY P5 (hurdles carry 'REQUAL': 'FAIL ...') was not sticky at all -
+        # one yellow day would have moved it to 'yellow' at half cap. Now the flag RED_STICKY rides in the hurdles and only a
+        # REQUAL PASS releases it; the calendar windows still set 'off' / 'week2', but a sticky red stays red.
+        requal_pass = str(ph.get('REQUAL', '')).startswith('PASS')
+        sticky_red = (prev_state == 'red' or ph.get('RED_STICKY') == '1') and not requal_pass
+        if ph.get('REQUAL'):
+            h['REQUAL'] = ph['REQUAL']   # keep P5's verdict text across daily evaluations
         # the drawdown episode start: the day of the running peak (one-shot grace clock, never reset by a brief recovery)
-        if 'H6' in h:
+        if sticky_red:
+            state, live_cap = 'red', 0   # a red is sticky in EVERY branch until P5's weekly PASS clears it
+        elif 'H6' in h:
             state, live_cap = 'off', 0
         elif 'W2' in h:
             state, live_cap = 'week2', 1   # 29l: week 2 is a signal-gated play at cap 1, resolved in pick (trough -> low-event structure; else normal)
-        elif prev_state == 'red' and 'REQUAL' not in ph:
-            state, live_cap = 'red', 0   # a red is sticky in EVERY branch until P5's weekly PASS clears it
-        elif (reds >= 1 and not red_only_variance) or yellows >= 2:
-            state, live_cap = 'red', 0
+        elif (reds >= 1 and not red_only_variance) or (yellows >= 2 and days_into_season > 21):
+            state, live_cap = 'red', 0   # H5: in the opening 3 weeks two yellows cap at yellow (no red), like a single red line
+        elif yellows >= 2:
+            state, live_cap = 'yellow', max(1, cap // 2)
         elif red_only_variance:
             # one-shot grace per drawdown episode: the clock starts at the first red-line crossing and is cleared only by a new peak
             if crit_since and ph.get('CRIT_PEAK') == peak_day.isoformat():
