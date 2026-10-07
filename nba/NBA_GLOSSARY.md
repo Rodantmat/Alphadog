@@ -1,4 +1,4 @@
-# NBA GLOSSARY — every term, and exactly where to find it [r241-deep-test]
+# NBA GLOSSARY — every term, and exactly where to find it
 
 **Purpose.** When a term comes up and you need the source, this tells you which transcript, which
 context, and which document section. Any material term appearing more than once belongs here.
