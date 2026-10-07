@@ -61,7 +61,7 @@ def load(conn):
         side_only = L.SIDE_FILTER_BY_STRATEGY.get(name)
         for d, k, stake, profit, lj in conn.execute(f"""SELECT game_date, size, stake, profit, legs_json FROM {tbl}
                 WHERE composition=%s AND size=%s AND structure=%s AND k<=%s AND phase<>'final7'""", (comp, size, structure, cap)).fetchall():
-            legs = [((j['cell'], j['tier'], j['side']), float(j['factor']), int(j['hit'])) for j in lj]
+            legs = [((j['cell'], j['tier'], j['side']), float(j['factor']), None if j.get('hit') is None else int(j['hit'])) for j in lj]  # None = tie (void)
             slips.append((name, d, structure, k, float(stake), float(profit), legs))
     return slips
 
