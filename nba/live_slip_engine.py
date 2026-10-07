@@ -911,6 +911,10 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             h['CLEAN'] = 0   # only a FRESH hurdle fire resets the counter; a hold does not
         if state != 'critical':
             h.pop('CRIT_SINCE', None)
+        if state == 'red':
+            h['RED_STICKY'] = '1'   # released only by P5's weekly PASS
+            if str(h.get('REQUAL', '')).startswith('PASS'):
+                h.pop('REQUAL')     # an OLD pass verdict must not release a NEW red
         conn.execute("""UPDATE nba_score.live_strategy_state SET state=%s, live_cap=%s, days=%s, slips=%s, net=%s, roi=%s, ci_lo=%s, leg_hit=%s,
                         drawdown=%s, streak=%s, pool_avg=%s, hurdles=%s, updated_at=now() WHERE strategy=%s""",
                      (state, live_cap, days, slips, net, roi, ci_lo, leg_hit, dd, streak, pool_avg, json.dumps(h), name))
