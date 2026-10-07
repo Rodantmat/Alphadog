@@ -222,17 +222,19 @@ def valid(slip, cmap=None, single_cell=False):
 
 
 def grade(slip, structure):
-    # §31s: TIES (hit None - a whole-number line landed exactly on) are removed and the lineup reverts one level, per PrizePicks
-    # ("ties revert the lineup one level, like a DNP"; a 2-pick Power with one correct pick and one tie pays 1.5x). Undocumented
-    # edge cases - every leg tied, or a 3+ pick slip reverting to ONE decided leg - are refunded (conservative, logged in §31s).
-    # With no tied leg this is exactly the original grade.
+    # §31s: TIES / VOIDS (hit None - a whole-number line landed exactly on, or a DNP) are removed and the lineup reverts one level,
+    # per PrizePicks' OWN reversion schedules (PP_PAYOUT_FINDINGS "VOID / PUSH REVERSION", 79/79 entries verified 2026-09-22):
+    # Power r legs left -> the r-pick base; Flex r >= 3 -> the r-pick Flex schedule, r = 2 -> 3x Power-style (never the 2-pick
+    # Flex 2/0.5); ONE survivor -> 1.5x (x its factor) on a hit, a loss on a miss, WHATEVER the original size; none left -> refund.
+    # (Until 2026-10-07 a 3+ pick slip left with one survivor was refunded - 70 certified slips, 35 hits refunded instead of 1.5x
+    # and 35 misses refunded instead of lost; full-system certification pass F.) With no tied/void leg this is the original grade.
     live = [l for l in slip if l['hit'] is not None]
     if len(live) < len(slip):
         if not live:
             return 0, 1.0
         if len(live) == 1:
             h = int(live[0]['hit'])
-            return h, ((1.5 if h else 0.0) if len(slip) == 2 else 1.0)
+            return h, (compress(1.5 * live[0]['factor']) if h else 0.0)
         if structure == 'flex' and len(live) < 3:
             structure = 'power'
         slip = live
