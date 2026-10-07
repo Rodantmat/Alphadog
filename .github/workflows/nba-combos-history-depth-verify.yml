@@ -74,6 +74,12 @@ jobs:
           print(f"control rows {len(c):,} | test rows {len(t):,} | control rows missing from test {gone} | value differences {diff}")
           print(f"extra test rows {len(extra):,} (by prop {extra['prop'].value_counts().to_dict()}) | outside the intended set {len(bad)}")
           for r in bad.head(5).itertuples(index=False): print("  unexpected:", r)
+          for v in vals:
+              dd = both[both[f"{v}_c"].astype(str) != both[f"{v}_t"].astype(str)]
+              if len(dd):
+                  print(f"  DIFF {v}: {len(dd):,} rows; by prop {dd['prop'].value_counts().to_dict()}; |offset| {dd['offset_c'].abs().value_counts().head(8).to_dict()}")
+                  for r in dd.head(4).to_dict("records"):
+                      print("    ", {k: r[k] for k in key + [f'{x}_{s_}' for x in vals for s_ in 'ct']})
           ok = gone == 0 and all(v == 0 for v in diff.values()) and len(bad) == 0 and len(extra) > 0
           # information: drift vs the stored history, and board coverage of the deep rows
           conn = psycopg.connect(os.environ["DATABASE_URL"])
