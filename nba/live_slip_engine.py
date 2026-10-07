@@ -552,6 +552,10 @@ def pick(conn, day, require_fresh=True):
         side_only = SIDE_FILTER_BY_STRATEGY.get(name)
         if side_only:
             fam_pool = {c: [l for l in v if l['side'] == side_only] for c, v in fam_pool.items()}
+        cap_rule = MAX_LINE_BY_STRATEGY.get(name)
+        if cap_rule:
+            cp, cs, cl = cap_rule
+            fam_pool = {c: [l for l in v if not (l['prop'] == cp and l['side'] == cs and float(l['line']) > cl)] for c, v in fam_pool.items()}
         slips = ENG.build_day_slips(fam_pool, comp, size, structure, use_cap, cmap)
         # rotation deadlock fix (acceptance replay, pass 83): in rotation family A builds steals-excluded, so the steals cell
         # would go unobserved and its EWMA could never recover. One shadow slip from the FULL pool keeps it observed.
