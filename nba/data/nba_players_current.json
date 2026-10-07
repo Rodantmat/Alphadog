@@ -846,6 +846,19 @@
       "team_abbreviation": "PHX"
     },
     {
+      "id": 1641780,
+      "full_name": "Johni Broome",
+      "last_comma_first": "Broome, Johni",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "johni_broome",
+      "team_id": 1610612749,
+      "team_city": "Milwaukee",
+      "team_name": "Bucks",
+      "team_abbreviation": "MIL"
+    },
+    {
       "id": 1628971,
       "full_name": "Bruce Brown",
       "last_comma_first": "Brown, Bruce",
@@ -909,19 +922,6 @@
       "team_city": "Brooklyn",
       "team_name": "Nets",
       "team_abbreviation": "BKN"
-    },
-    {
-      "id": 1631474,
-      "full_name": "Terrell Brown Jr.",
-      "last_comma_first": "Brown Jr., Terrell",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "terrell_brown_jr",
-      "team_id": 1610612762,
-      "team_city": "Utah",
-      "team_name": "Jazz",
-      "team_abbreviation": "UTA"
     },
     {
       "id": 1628973,
@@ -1013,19 +1013,6 @@
       "team_city": "Golden State",
       "team_name": "Warriors",
       "team_abbreviation": "GSW"
-    },
-    {
-      "id": 1631219,
-      "full_name": "John Butler Jr.",
-      "last_comma_first": "Butler Jr., John",
-      "roster_status": 1,
-      "from_year": "2022",
-      "to_year": "2026",
-      "player_code": "john_butler_jr",
-      "team_id": 1610612749,
-      "team_city": "Milwaukee",
-      "team_name": "Bucks",
-      "team_abbreviation": "MIL"
     },
     {
       "id": 1641824,
@@ -2926,6 +2913,19 @@
       "team_abbreviation": "DEN"
     },
     {
+      "id": 1641722,
+      "full_name": "Jordan Hawkins",
+      "last_comma_first": "Hawkins, Jordan",
+      "roster_status": 1,
+      "from_year": "2023",
+      "to_year": "2026",
+      "player_code": "jordan_hawkins",
+      "team_id": 1610612741,
+      "team_city": "Chicago",
+      "team_name": "Bulls",
+      "team_abbreviation": "CHI"
+    },
+    {
       "id": 1629637,
       "full_name": "Jaxson Hayes",
       "last_comma_first": "Hayes, Jaxson",
@@ -4356,19 +4356,6 @@
       "team_abbreviation": "PHI"
     },
     {
-      "id": 1643630,
-      "full_name": "Fletcher Loyer",
-      "last_comma_first": "Loyer, Fletcher",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "fletcher_loyer",
-      "team_id": 1610612746,
-      "team_city": "LA",
-      "team_name": "Clippers",
-      "team_abbreviation": "LAC"
-    },
-    {
       "id": 1641754,
       "full_name": "Seth Lundy",
       "last_comma_first": "Lundy, Seth",
@@ -4705,19 +4692,6 @@
       "team_city": "Indiana",
       "team_name": "Pacers",
       "team_abbreviation": "IND"
-    },
-    {
-      "id": 1643597,
-      "full_name": "Robert McCray V",
-      "last_comma_first": "McCray V, Robert",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "robert_mccray_v",
-      "team_id": 1610612760,
-      "team_city": "Oklahoma City",
-      "team_name": "Thunder",
-      "team_abbreviation": "OKC"
     },
     {
       "id": 1641755,
@@ -5914,6 +5888,19 @@
       "team_city": "Detroit",
       "team_name": "Pistons",
       "team_abbreviation": "DET"
+    },
+    {
+      "id": 1643208,
+      "full_name": "Anthony Pritchard",
+      "last_comma_first": "Pritchard, Anthony",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "anthony_pritchard",
+      "team_id": 1610612760,
+      "team_city": "Oklahoma City",
+      "team_name": "Thunder",
+      "team_abbreviation": "OKC"
     },
     {
       "id": 1630202,
