@@ -81,6 +81,12 @@ EXCLUDE_BY_FAMILY = {'C': {'steals_R', 'steals_R_U'}, 'D': {'steals_R', 'steals_
 # pass 34: per-strategy SIDE filter on the pool - the points-family edge is the Under side (all-Under points Powers +41/+73% vs
 # +23/+35% with an Over leg, both seasons; the published early-season Under bias). Live-only refinement of a certified both-sides cell.
 SIDE_FILTER_BY_STRATEGY = {'D_points_3power': 'Under'}
+# pass 70 (strategy doc §29r): "points Unders at star lines (23.5+) hit 50% vs 59% at 11.5-16.5 - the UNDER-ONLY POINTS POWER now
+# takes legs at 22.5 and below". Scoped to that strategy (2026-10-07, full-system certification pass F): until today the rule
+# sat in leg_allowed() and removed every star points Under from EVERY strategy's pool - which §31n had tested through the engine
+# and REJECTED (-0.9..-1.7 pts in 2024-25) in favour of the half-stake (STAR_UNDER_LINES), and which the certified backtest
+# never applied. Composition-level, so the certified pool is restored for the family strategies.
+MAX_LINE_BY_STRATEGY = {'D_points_3power': ('points', 'Under', 22.5)}
 # pass 43: a hard aggregate daily stake cap across all strategies. With n=2 seasons any state raise is an estimate; the guard
 # that stops a wrong one from blowing up a season is a ceiling on total daily exposure, scaled down proportionally if hit.
 MAX_DAILY_STAKE = int(os.environ.get('LIVE_MAX_DAILY_STAKE', '36'))
