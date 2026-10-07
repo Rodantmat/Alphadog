@@ -33,9 +33,9 @@ s = rep(s, '''MAX_TIERS, MIN_PER_TIER, TIER_BLEND_K, LADDER_STEPS, EMP_MIN, K_CE
 COMBO_DEPTH = {"pra": 24, "pts_reb": 21, "pts_ast": 21}
 def _combo_depth(prop):
     return LADDER_STEPS if os.environ.get("BT_LADDER_STEPS") else COMBO_DEPTH.get(prop, LADDER_STEPS)''')
-_loop = \'\'\'for off in range(-LADDER_STEPS, LADDER_STEPS + 1):\'\'\'
+_loop = "for off in range(-LADDER_STEPS, LADDER_STEPS + 1):"
 assert s.count(_loop) == 2, f"expected the two combo ladder loops (empirical cells + pricing), found {s.count(_loop)}"
-s = rep(s, _loop, \'\'\'for off in range(-_combo_depth(prop), _combo_depth(prop) + 1):\'\'\')
+s = rep(s, _loop, "for off in range(-_combo_depth(prop), _combo_depth(prop) + 1):")
 
 # keep identity on every reliability row (same patch the production combos builder applies)
 s = rep(s, '''            reliab.append(pd.DataFrame({"prop": prop, "offset": off, "p_over": p_over, "p_param": p_param, "actual": (test["y"] > line).astype(int).values, "anchor": test["anchor"].values, "line": line.values, "role_tier": test["role_tier"].values, "var_band": test["var_band"].values, "used_emp": used, "month": str(month)}))''',
