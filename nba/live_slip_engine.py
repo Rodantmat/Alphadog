@@ -444,7 +444,10 @@ def pick(conn, day, require_fresh=True):
     # vs 61-66% on full boards, and the 2026-10-20 spotlight board (126 legs, 6 stars) sat below every validated slate.
     # Below the smallest board in the validated history (179 scored legs, 2024-12-09; p01 250, median 2,360) the strategies are
     # out of their domain: nothing is placed. A domain check, not a performance claim.
-    n_board = len(legs) // 3
+    # The floor was measured in UNIQUE half-point scored legs (§31j, live loader joins, 323 slates) BEFORE whole-number legs
+    # joined the board (§31s, 2026-10-06). Count the same unit: unique half-point legs, not rank-key rows / 3 (whole-number legs
+    # can carry fewer than 3 rank-key rows when a currency map is missing, and they were never part of the 179 baseline).
+    n_board = len({(l['player_id'], l['prop'], l['tier'], l['side'], l['line']) for l in legs if not l.get('whole_number')})
     if n_board < MIN_BOARD_LEGS:
         print(f"  {day}: board of {n_board} scored legs is below the smallest validated board ({MIN_BOARD_LEGS}) - "
               f"strategies out of domain, NOTHING PLACED (§31j)", flush=True)
