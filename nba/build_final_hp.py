@@ -329,6 +329,22 @@ def main():
         CUTS.append(min(1.0, CUTS[-1] + 0.01))
     print(f"tier cutpoints derived in-run (equal mass): {[round(c, 4) for c in CUTS]}", flush=True)
 
+    # G2 ROUTING (strategy doc §31s G2 implementation design; COMPASS fact 134; 2026-10-06). A rung deeper than any rung the
+    # certified two-season history ever scored (max |ladder_offset| per prop, stored - never hardcoded - in
+    # nba_config.classification_config['selection_certified_depth']) is priced exactly like every other rung but written to
+    # nba_score.final_hp_derived (derivation 'beyond_certified_depth') instead of final_hp, so every consumer of final_hp - the
+    # live engines, refits, calibration - is untouched and such a rung cannot be selected until a two-season gate lifts it.
+    # nba_score.final_hp_all still prices every leg. Props with no certified history (no entry; e.g. period labels) are NOT
+    # routed: there is no certified depth to route against, and no certified strategy selects them.
+    _dc = conn.execute("SELECT config_json FROM nba_config.classification_config "
+                       "WHERE config_key = 'selection_certified_depth'").fetchone()
+    if not _dc:
+        raise SystemExit("REFUSED: nba_config.classification_config['selection_certified_depth'] missing - "
+                         "the certified-depth routing (§31s G2) cannot run without it")
+    _dcj = _dc[0] if isinstance(_dc[0], dict) else json.loads(_dc[0])
+    CERT_DEPTH = {str(k): int(v) for k, v in _dcj["depth"].items()}
+    print(f"certified depth (routing beyond it to final_hp_derived): {len(CERT_DEPTH)} props", flush=True)
+
     if write:
         with conn.cursor() as cur:
             cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.final_hp (
