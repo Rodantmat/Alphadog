@@ -402,9 +402,19 @@ survive verification are recorded as ⚪ with the reason.
   days; (5) "green runs mask failures" — the monitors were designed never to block the grade (§31l); the row note +
   warning is the visibility that was missing; (7) code constants — owner-level rule reading, recorded in F-9.
 
+### E-4 🟢 Dress rehearsal 2026-10-20 on the fixed engine (run 37683583206, 20:38–21:22Z, SUCCESS)
+- Sandbox model built for the slate; the second attempt (run 37679085578) died on the scratch `final_hp_derived` lacking
+  the unique index the builder's ON CONFLICT needs → `LIKE … INCLUDING ALL` (f9b4cb7); third run clean. E-2 → 🟢.
+- `SIMULATION 2026-10-20: 162 scored PrizePicks legs (51 unscored = beyond-depth rungs routed to final_hp_derived, which
+  selection never reads; 0 team/event unresolved) | 6 players`. Legs passing certified cells: Brunson assists D1,
+  Wembanyama rebounds D3 / threes D1, Cunningham threes D1, … ; no passing leg in steals/turnovers/stocks/blocks/rebounds R.
+- The REAL `pick()`: **"board of 162 scored legs is below the smallest validated board (179) — strategies out of domain,
+  NOTHING PLACED (§31j)"** — the domain guard (now counting unique half-point legs, F-5) does exactly what §31j/§31i
+  concluded about the spotlight board; 0 slips; rolled back; PRODUCTION AFTER: baseline_history 0, final_hp 0,
+  final_hp_derived 0, live_slips 0. On game day the full board (hundreds of legs) is inside the domain.
+
 ### Open in this pass
 - Proxy 407 (A-7) — owner action.
-- Sim-slate 2026-10-20 re-run result (E-2).
 
 ---
 
