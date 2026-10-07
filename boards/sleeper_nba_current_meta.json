@@ -3,45 +3,46 @@
   "source": "https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true",
   "alt_source": "https://api.sleeper.app/lines/available_alt?include_preseason=true",
   "promos_source": "https://api.sleeper.app/lines/promos?enable_one_sided_lines=true",
-  "started_at": "2026-10-07T17:26:19Z",
-  "fetched_at": "2026-10-07T17:26:22Z",
+  "started_at": "2026-10-07T23:05:10Z",
+  "fetched_at": "2026-10-07T23:05:18Z",
   "sport": "nba",
-  "legs": 97,
+  "legs": 91,
   "alt_legs": 0,
-  "promo_legs": 0,
+  "promo_legs": 1,
   "alt_fetch_ok": true,
   "promos_fetch_ok": true,
   "unknown_players": 0,
   "by_wager_type": {
-    "points": 21,
-    "assists": 20,
-    "rebounds": 20,
-    "threes_made": 19,
-    "pts_reb_ast": 17
+    "points": 23,
+    "threes_made": 18,
+    "assists": 17,
+    "pts_reb_ast": 17,
+    "rebounds": 16
   },
   "by_line_type": {
-    "normal": 97
+    "normal": 90,
+    "line_promotion": 1
   },
   "by_game_status": {
-    "pre_game": 97
+    "pre_game": 91
   },
-  "players": 26,
+  "players": 27,
   "multiplier_values": {
-    "1.57": 6,
-    "1.75": 5,
-    "1.59": 4,
-    "1.61": 4,
-    "1.64": 4,
-    "1.72": 4,
-    "1.73": 4,
-    "1.67": 4,
-    "1.78": 4,
-    "1.48": 3,
-    "1.51": 3,
-    "1.71": 3,
-    "1.79": 3,
-    "1.50": 3,
-    "1.77": 3
+    "1.77": 5,
+    "1.67": 5,
+    "1.69": 5,
+    "1.79": 5,
+    "1.83": 4,
+    "1.49": 4,
+    "1.55": 3,
+    "1.65": 3,
+    "1.78": 3,
+    "1.52": 3,
+    "1.80": 3,
+    "1.62": 3,
+    "1.61": 3,
+    "1.57": 2,
+    "2.13": 2
   },
-  "github_run_id": "37658915733"
+  "github_run_id": "37700080369"
 }
