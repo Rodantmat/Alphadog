@@ -219,7 +219,7 @@ def load_board_legs_live(conn, day, label='window'):
                evt.event_id
         FROM pr
         JOIN pid ON pid.cn = pr.cn
-        JOIN nba_score.final_hp f ON f.game_date=pr.game_date AND f.player_id=pid.player_id AND f.prop=pr.prop AND f.side=pr.side AND f.line=pr.line
+        JOIN {price_src} ON f.game_date=pr.game_date AND f.player_id=pid.player_id AND f.prop=pr.prop AND f.side=pr.side AND f.line=pr.line
         LEFT JOIN evt ON evt.cn = pr.cn
         LEFT JOIN gl ON gl.nba_player_id = pid.pid_n
         LEFT JOIN nba_ref.players pl ON pl.nba_player_id::bigint = pid.pid_n
