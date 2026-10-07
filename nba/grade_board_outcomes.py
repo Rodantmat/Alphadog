@@ -98,9 +98,7 @@ def season_of(d):
 
 def load_players():
     """PERSON_ID -> normalized name, and the set of all known normalized names (5,212 players)."""
-    url = RAW + "nba_all_players.json"
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "alphadog"}), timeout=120) as r:
-        doc = json.load(r)
+    doc = _read_json("nba_all_players.json", timeout=120)   # repo file first, CDN fallback (same rule as every other file)
     by_id, names = {}, set()
     for x in doc.get("records") or []:
         nm = norm_name(x.get("DISPLAY_FIRST_LAST"))
