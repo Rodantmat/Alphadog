@@ -71,6 +71,10 @@ def build_all(conn, day, legs, cmap):
 
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
+    # SCOPE (2026-10-06): this test is the HALF-POINT leg-source parity (the universe path has no whole-number legs). The live
+    # loader also adds whole-number legs (strategy §31s G1 gate 2b, switchable) - an intended difference, tested by gate 2b's own
+    # backtest - so they are left out here; everything below compares like with like.
+    L.whole_number_legs = lambda _conn, _day, _label='window': []
     canon = canon_cache(conn)
     days = [r[0] for r in conn.execute("""
         SELECT DISTINCT u.game_date FROM nba_market.prop_universe u
