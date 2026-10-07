@@ -357,6 +357,7 @@ jobs:
       # + the stored recalibration into nba_score.final_hp_derived - NEVER final_hp (selection excluded: gate 2 not adopted).
       # Isolated: a failure here never blocks certification or P3.
       - name: Price whole-number board lines (final_hp_derived)
+        id: soft_wn
         if: ${{ steps.d.outputs.has_games == '1' }}
         continue-on-error: true
         env:
