@@ -108,11 +108,16 @@ def main():
             print(f"GroupQuantity={gq}: FAILED - {error}")
         time.sleep(1)
 
-    OUTPUT_PATH.write_text(json.dumps({"season": SEASON, "rows": all_rows}, indent=2), encoding="utf-8")
     OUTPUT_META_PATH.write_text(json.dumps({
         "fetched_at": fetched_at, "season": SEASON, "row_count": len(all_rows), "errors": errors,
     }, indent=2), encoding="utf-8")
-    print(f"Lineup profile: {len(all_rows)} total rows, {len(errors)} group errors")
+    # NEVER REPLACE A GOOD FILE WITH A PARTIAL ONE (2026-10-07, certification pass G - the DARKO lesson of 10-05): a failed
+    # group used to leave a smaller (or empty) file that the writer worker then loaded over the full one. Partial = failure.
+    if errors:
+        print(f"Lineup profile FAILED: {len(errors)} of 4 groups failed - previous {OUTPUT_PATH} left untouched", file=sys.stderr)
+        sys.exit(1)
+    OUTPUT_PATH.write_text(json.dumps({"season": SEASON, "rows": all_rows}, indent=2), encoding="utf-8")
+    print(f"Lineup profile: {len(all_rows)} total rows, 0 group errors")
 
 
 if __name__ == "__main__":
