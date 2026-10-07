@@ -1,1 +1,1 @@
-script: probe_chalkboard_web.py
+script: probe_proxy_health.py
