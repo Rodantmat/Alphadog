@@ -123,8 +123,10 @@ Status legend: 🔴 defect found · 🟠 fixed, verification pending · 🟢 fix
 - Retired `nba-p2-overnight-heavy.yml` has a single "Refuse" step. ⚪
 
 ### Open in this pass
-- The scheduler comment still says P2B starts "only after P2A succeeded"; the code (correctly) proceeds after any FINISHED
-  P2A. Wording only — fixed in the v2.2.0 header on the next edit of that file.
+- ⚪ The scheduler header already reads "P2B starts only after P2A has FINISHED (or at the latest start that still beats
+  P3)" — the wording matches the code (checked 2026-10-07 21:35Z); nothing to change.
+- Proxy re-probed 21:30Z (run 37689829764): still 407. Everything that waits on it: forced P1 (DARKO / lineups /
+  tracking detail / P5 chain), tomorrow's P2A delta mining, P2B rosters, P3 PrizePicks capture, Betr harvest proof.
 
 ---
 
