@@ -471,6 +471,7 @@ jobs:
       # Underdog engine (imported - live = backtest; parity verified on two historical slates, selection and settlement exact).
       # Paper only: continue-on-error, so it can never disturb the PrizePicks pick above. Graded by P2A overnight.
       - name: Underdog paper pick (P5 + P4 shadow)
+        id: soft_udpick
         if: ${{ steps.d.outputs.has_games == '1' }}
         continue-on-error: true
         env:
@@ -478,6 +479,18 @@ jobs:
           UDL_MODE: "pick"
           UDL_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/ud_live_slip_engine.py
+
+      # SOFT FAILURES MADE VISIBLE (2026-10-07, certification pass G): a failed Underdog pick never fails the run, so it was
+      # invisible in nba_control.pipeline_runs. Recorded on the run row by the finish job (SOFT_FAILED) as a run warning + note.
+      - name: Collect soft-step failures
+        id: soft
+        if: always()
+        run: |
+          L=""
+          [ "${{ steps.soft_udpick.outcome }}" = "failure" ] && L="$L underdog-pick"
+          L="${L# }"
+          echo "list=$L" >> "$GITHUB_OUTPUT"
+          if [ -n "$L" ]; then echo "::warning::soft-failed steps (run stays green): $L"; else echo "no soft-step failures"; fi
 
   # Records this run's outcome on the row it claimed (success / failure / cancelled, per job).
   finish:
