@@ -46,5 +46,7 @@ jobs:
               n = c.execute("SELECT count(*) FROM nba_score.tier_map_legs_sel WHERE season IN ('2024-25','2025-26')").fetchone()[0]
               print(f"certified seasons: {n:,} rows | only in sel {a} | only in wi2 {b}")
               print("RESULT:", "PASS - identical to the gate-2b test table (every column incl. rank and cell size)" if a == 0 and b == 0 else "FAIL")
+              c.execute("DROP TABLE IF EXISTS nba_score.tier_map_legs_wi2"); c.commit()
+              print("gate-2b comparison table dropped")
               raise SystemExit(0 if a == 0 and b == 0 else 1)
           PY
