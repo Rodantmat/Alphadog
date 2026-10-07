@@ -1,16 +1,11 @@
 {
   "ok": true,
-  "http_status": 200,
-  "errors": null,
-  "source": "betr fantasy graphql getUpcomingEventsV2",
-  "sport": "nba",
-  "fetched_at": "2026-09-10T06:18:28.583Z",
-  "token_expires_at": "2026-10-10T06:10:56.000Z",
-  "events": 0,
+  "source": "github-runner uc+proxy picks.betr.app",
+  "league": "NBA",
+  "started_at": "2026-10-07T17:16:45Z",
+  "fetched_at": "2026-10-07T17:17:57Z",
   "legs": 0,
+  "alt_legs": 0,
   "players": 0,
-  "by_tier": {},
-  "by_stat": {},
-  "by_sides": {},
-  "live_legs": 0
+  "events": 163
 }
