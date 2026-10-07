@@ -244,7 +244,8 @@ def main():
         zone_error = f"suspiciously_low_zone_records: {len(zone_records)}"
     if raw_dump is not None:
         Path("nba/data/nba_shotzones_debug_raw.json").write_text(json.dumps(raw_dump)[:50000], encoding="utf-8")
-    Path("nba/data/nba_shotzones_current.json").write_text(json.dumps({"records": zone_records}, indent=2), encoding="utf-8")
+    if not zone_error:
+        Path("nba/data/nba_shotzones_current.json").write_text(json.dumps({"records": zone_records}, indent=2), encoding="utf-8")
     Path("nba/data/nba_shotzones_current_meta.json").write_text(json.dumps({
         "fetched_at": fetched_at, "record_count": len(zone_records), "error": zone_error,
     }, indent=2), encoding="utf-8")
