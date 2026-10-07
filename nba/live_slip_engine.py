@@ -1092,7 +1092,10 @@ EDGE_NW_LAGS = 7
 # §31p: break-even FIXED at the pooled correlation-preserving THINNING value (real joint outcomes, engine grade()). The per-season
 # independence recompute drifted with slip mix (2024-25 -10.98 vs thinning -8.48; 2025-26 -7.19 vs -9.61); pooled the two
 # methods agree (-9.24 vs -8.99). Fixed = stable, correlation-aware, within 0.25 pp of the value the boundaries were calibrated at.
-EDGE_DELTA = float(os.environ.get('LS_EDGE_DELTA', '-0.0899'))
+# §31s recertification (2026-10-07, slips rebuilt on tier_map_legs_sel = certified map + whole-number legs): pooled thinning
+# -9.16 pp (independence -9.37, gap 0.21 < the 1.0 pp switch rule; 2024-25 -8.48, 2025-26 -9.63; 6,196 slips, ROI +86.8%).
+# The constant follows the certified system it monitors: -0.0899 -> -0.0916 (0.08 pp from the -9.24 the boundaries were calibrated at).
+EDGE_DELTA = float(os.environ.get('LS_EDGE_DELTA', '-0.0916'))
 
 
 def edge_daily_strategies():
