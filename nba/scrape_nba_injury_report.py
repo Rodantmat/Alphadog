@@ -172,11 +172,39 @@ def scan_day(session, d, slots=SLOTS):
     return found
 
 
+KNOWN_GOOD_PDF = "https://ak-static.cms.nba.com/referee/injury/Injury-Report_2026-04-08_02_30PM.pdf"
+
+
+def pick_session(requests, proxy_url):
+    """PROXY PREFLIGHT (2026-10-07, full-system certification pass B). Every PDF fetch swallows its exception and returns None,
+    so a dead proxy (the shared residential proxy answered 407 CONNECT for every request from ~17:20Z on 2026-10-07) turned
+    the binding availability input into a silent "0 rows". The archive is an Akamai static host that answers a direct request
+    too (verified from a second egress), so: test the proxy on a PDF known to exist; if it does not return the PDF, test a
+    direct session; use the first that works and SAY which. Neither working is printed loudly (the run still completes)."""
+    candidates = []
+    if proxy_url:
+        candidates.append(("proxy", requests.Session(proxies={"https": proxy_url, "http": proxy_url})))
+    candidates.append(("direct", requests.Session()))
+    for label, sess in candidates:
+        try:
+            r = sess.get(KNOWN_GOOD_PDF, timeout=30, impersonate="chrome124")
+            if r.status_code == 200 and r.content.startswith(b"%PDF"):
+                print(f"injury-report session: {label} (preflight OK)", flush=True)
+                return sess
+            print(f"injury-report preflight via {label}: HTTP {r.status_code}, not a PDF", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            print(f"injury-report preflight via {label}: {str(exc)[:120]}", flush=True)
+    print("::warning::injury-report: NEITHER the proxy NOR a direct session can reach the PDF archive - every snapshot will be "
+          "missed this run", flush=True)
+    return candidates[0][1]
+
+
 def main():
     from curl_cffi import requests
     mode = os.environ.get("INJURY_MODE", "daily")
     proxy_url = os.environ.get("PROXY_URL", "").strip()
-    session = requests.Session(proxies={"https": proxy_url, "http": proxy_url} if proxy_url else None)
+    session = pick_session(requests, proxy_url) if mode != "probe" else \
+        requests.Session(proxies={"https": proxy_url, "http": proxy_url} if proxy_url else None)
     if mode == "probe":
         # DIAGNOSTIC: what does the CDN return to the runner for a URL known to exist (with and without the proxy)?
         url = os.environ.get("INJURY_PROBE_URL", "https://ak-static.cms.nba.com/referee/injury/Injury-Report_2026-04-08_02_30PM.pdf")
