@@ -126,18 +126,9 @@ jobs:
 
       - name: Commit mined data
         if: ${{ github.event.inputs.skip_mining != 'true' }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add nba/data/*.json || true
-          if git diff --cached --quiet; then echo "No data changes."; else
-            git commit -m "NBA P2A mining [skip ci]"
-            for i in 1 2 3 4 5; do
-              if git push origin HEAD:main; then break; fi
-              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
-            done
-          fi
+        # conflict-safe commit (2026-10-07, nba/git_push_retry.sh); a push that cannot land is a visible warning, not a
+        # silent miss - the loaders below read these files from the repo
+        run: bash nba/git_push_retry.sh "NBA P2A mining [skip ci]" nba/data/*.json || echo "::warning::P2A mined files did not reach the repo - the loaders below read the previous copies"
 
       # LOAD THE MINED DATA INTO POSTGRES (from P2, T26-8): dispatch-then-verify-by-data.
       - name: Load the mined data into Postgres (writer workers)
