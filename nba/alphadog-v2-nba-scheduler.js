@@ -192,7 +192,38 @@ async function pipelineState(sql, env, pipeline, key, needLive) {
   const missed = d.some((x) => x.slot === "missed");
   let live = 0;
   if (needLive && !s[0] && dispatches.length) live = await liveRunsSince(env, WORKFLOWS[pipeline], Math.min(...dispatches.map((x) => x.at)));
-  return { status: s[0] ? s[0].status : null, dispatches, live, missed };
+  let dead = null;
+  if (needLive && s[0] && s[0].status === "claimed") {
+    const done = await runCompleted(env, s[0].github_run_id);
+    if (done) dead = { run_id: s[0].github_run_id, conclusion: done };
+  }
+  return { status: s[0] ? s[0].status : null, dispatches, live, missed, dead };
+}
+// window in which a dead claim may still be recovered (one forced re-dispatch)
+function recoveryOpen(pipeline, plan, now) {
+  if (pipeline === "P2A" || pipeline === "P2B") return now < plan.p2b_latest;
+  if (pipeline === "P3") return !plan.p3_never_after || now < plan.p3_never_after;
+  return false;
+}
+async function closeStaleClaim(sql, env, pipeline, key, plan, now, st, dryRun) {
+  const note = ` [stale claim closed by scheduler at ${new Date(now).toISOString()}: run ${st.dead.run_id} ended (${st.dead.conclusion}) without recording its result]`;
+  if (dryRun) return { pipeline, run_key: key, action: "stale_claim_closed", dry_run: true, detail: note };
+  await sql`UPDATE nba_control.pipeline_runs SET status='failure', finished_at=now(), note=coalesce(note,'') || ${note}
+            WHERE pipeline=${pipeline} AND run_key=${key}::date AND status='claimed' AND github_run_id=${st.dead.run_id}`;
+  await log(sql, "stale", pipeline, key, "stale_claim_closed", note);
+  if (!recoveryOpen(pipeline, plan, now)) { await log(sql, "stale", pipeline, key, "recovery_window_closed", "dead claim closed, no re-dispatch"); return { pipeline, run_key: key, action: "stale_claim_closed", recovered: false }; }
+  const ins = await sql`INSERT INTO nba_control.scheduler_dispatches (pipeline, run_key, slot) VALUES (${pipeline}, ${key}::date, 'recovery-1')
+                        ON CONFLICT (pipeline, run_key, slot) DO NOTHING RETURNING pipeline`;
+  if (!ins[0]) return { pipeline, run_key: key, action: "stale_claim_closed", recovered: false, reason: "recovery already used" };
+  const res = await dispatch(env, WORKFLOWS[pipeline], { force: "true" });
+  if (!res.ok) {
+    await sql`DELETE FROM nba_control.scheduler_dispatches WHERE pipeline=${pipeline} AND run_key=${key}::date AND slot='recovery-1'`;
+    await log(sql, "recovery-1", pipeline, key, "dispatch_failed_will_retry", res.detail);
+    return { pipeline, run_key: key, action: "recovery_dispatch_failed", detail: res.detail };
+  }
+  await sql`UPDATE nba_control.scheduler_dispatches SET ok=true, detail='forced recovery of a dead claim' WHERE pipeline=${pipeline} AND run_key=${key}::date AND slot='recovery-1'`;
+  await log(sql, "recovery-1", pipeline, key, "recovery_dispatched", `force=true after run ${st.dead.run_id} (${st.dead.conclusion})`);
+  return { pipeline, run_key: key, action: "recovery_dispatched" };
 }
 
 async function act(sql, env, pipeline, key, dec, dryRun) {
