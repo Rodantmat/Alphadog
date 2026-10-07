@@ -246,6 +246,7 @@ def load_board_legs_live(conn, day, label='window'):
                          'line': line, 'factor': price, 'hit': None, 'n_rank': None, 'score': s, 'team_id': team, 'event_id': event})
     if unresolved:
         print(f"  {day}: {unresolved} priced legs dropped - team or event unresolved (never passed on empty)", flush=True)
+    legs += whole_number_legs(conn, day, label)
     groups = defaultdict(list)
     for l in legs:
         groups[(l['rank_key'], l['prop'], l['tier'])].append(l)
