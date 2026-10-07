@@ -181,9 +181,20 @@ def main():
                         b = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid})
                         j = json.loads(b.get("body", ""))
                         if (j.get("data") or {}).get("getUpcomingEventsV2"):
-                            board = j; break
+                            if flatten(j)[0]:
+                                board = j; break
+                            lobby_only = j   # events without projections - not the board
                     except Exception:  # noqa: BLE001
                         continue
+                if not board and lobby_only is not None:
+                    # the lobby answered but the league board did not: nudge the league tab again
+                    for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//a[contains(.,"{LEAGUE}")]',
+                               f'//button[contains(.,"{LEAGUE}")]'):
+                        try:
+                            if sb.is_element_visible(xp):
+                                sb.click(xp, timeout=4); break
+                        except Exception:  # noqa: BLE001
+                            continue
                 time.sleep(3)
     finally:
         if lp:
