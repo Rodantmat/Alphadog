@@ -44,6 +44,11 @@ jobs:
           TM_PCTMAX: "30"
         run: python -u nba/build_tier_map_bands.py
 
+      - name: "1b. Selection leg table - the certified map + whole-number legs in the cells' currency, as the live pick selects (§31s G1 gate 2b)"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/build_tier_map_sel.py
+
       - name: 2. Candidate certifier (per-season aggregate; full recompute is the exact form)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
