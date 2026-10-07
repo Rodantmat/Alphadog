@@ -356,9 +356,39 @@ survive verification are recorded as ⚪ with the reason.
   archived only). The 2026-10-20 dress rehearsal (`nba-sim-slate.yml`, dispatched 19:10Z on the fixed engine) is the live
   check of scoring → pick on a real future board. → pending.
 
+### E-2 🟠 The slate simulation broke with §31s, and its sandbox let one production write through
+- **Evidence:** run 37672380196 (first sim since §31s): the sandboxed `final_hp` builder copy died on
+  `relation "nba_score._sim_final_hp_derived" does not exist` — the builder now also writes `final_hp_derived`
+  (beyond-depth routing, §31s), the sed redirect turned the INSERT's table name into a scratch table nobody created, and
+  the `DELETE FROM nba_score.final_hp_derived … game_date=<slate>` kept its PRODUCTION name (the DELETE rule needed a
+  trailing space; the production-write grep used `\b` after `final_hp`, which `_derived` defeats). Production rows for
+  2026-10-20 in `final_hp_derived`: 0 before and after — nothing was lost, but the sandbox's "no production write"
+  guarantee had a hole.
+- **Fix:** guard step refuses if production `final_hp_derived` holds the slate and creates `_sim_final_hp_derived`;
+  every `final_hp_derived` reference is redirected first; the write-grep covers `final_hp_derived`; the always-run last
+  step drops the scratch copy and verifies production `final_hp_derived` = 0 too. Offline dry-run of the sed chain: 0
+  production writes left (only the designed confidence-history READ and the advisory-lock name). Commits 2199001 …
+  de65965. Sim re-dispatched 20:06Z.
+- Note: whole-number legs are not part of the simulation (the live loader is replaced by the sandbox legs; `factor` = 1).
+
+### E-3 ⚪ Board archive sanity (10-07 19:22Z manual `nba-board-archive.yml`): PrizePicks 228 legs (34 standard × 2 sides
+  + 54 goblin + 106 demon, all for 2026-10-20), Underdog 298, Sleeper 105, Fliff 0 (team markets only). `snapshot_ts` is
+  the BOARD's own time (`board_time`), `fetched_at` the capture — a reader grouping by `snapshot_ts` sees posting dates,
+  not capture dates (noted so nobody re-derives the "nothing archived since 10-05" false alarm I nearly recorded).
+
+### Gemini insight round (reference only, gemini-2.5-pro, 19:25Z) on the nine decisions of passes F/G
+- Taken: (2) a sticky red needs a documented manual release path → `UPDATE nba_score.live_strategy_state SET hurdles =
+  hurdles - 'RED_STICKY'` + state is the owner's override; recorded in §31t. (9) a one-projection board passes the
+  harvester's check → the meta records `legs`, the P3 certifier judges size; acceptable. (6) stale reload on a failed P1 →
+  the run is red and the data is what was already loaded; acceptable, documented.
+- Rejected with evidence: (3) "179 excludes whole-number legs, mismatch" — the floor was measured on the half-point
+  board, so the unit now matches; (4) "<60-day gaps misidentify seasons" — the NBA summer gap has never been under 90
+  days; (5) "green runs mask failures" — the monitors were designed never to block the grade (§31l); the row note +
+  warning is the visibility that was missing; (7) code constants — owner-level rule reading, recorded in F-9.
+
 ### Open in this pass
 - Proxy 407 (A-7) — owner action.
-- Sim-slate 2026-10-20 result (E-1).
+- Sim-slate 2026-10-20 re-run result (E-2).
 
 ---
 
