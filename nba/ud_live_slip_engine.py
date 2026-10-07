@@ -398,7 +398,7 @@ def main():
         return
     if mode == 'grade' and not os.environ.get('UDL_DATE'):
         conn.execute(DDL); conn.commit()
-        today_pt = dt.datetime.now(dt.timezone(dt.timedelta(hours=-8))).date()
+        today_pt = dt.datetime.now(PT).date()
         days = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_score.ud_live_slips
                                               WHERE graded_at IS NULL AND game_date < %s ORDER BY 1""", (today_pt,)).fetchall()]
         if not days:
