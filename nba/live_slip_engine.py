@@ -211,7 +211,26 @@ BOARD_SQL = """
         LEFT JOIN evt ON evt.cn = pr.cn
         LEFT JOIN gl ON gl.nba_player_id = pid.pid_n
         LEFT JOIN nba_ref.players pl ON pl.nba_player_id::bigint = pid.pid_n
-        WHERE f.final_hp IS NOT NULL AND f.score IS NOT NULL""", (label, day, day, day, label, day, day)).fetchall()
+        WHERE {price_where}"""
+
+
+def load_board_legs_live(conn, day, label='window'):
+    """Today's PP board WITHOUT nba_market.prop_universe (a backtest table built only by manual SQL functions, and only after
+    the box score exists - it cannot carry today's slate). Same priced legs (pp_leg_price, a live view), same final_hp scores.
+    Player: nba_ref.norm_name(raw player) -> player_name_map, the ONE canonical resolver (score_board_legs 2026-09-25); NOT the
+    tiers table's nm, which keeps suffixes ('craigporterjr' vs canonical 'craigporter') and silently dropped every Jr/Sr/II/III
+    player in the universe path. Event: the PrizePicks window board's own event id. Team: whichever of the event's two teams
+    matches the player - his latest game-log team before today, else his current roster team (correct on a trade day)."""
+    # PERFORMANCE (2026-10-03, measured): the first version took > 2 min per slate - the planner mis-estimated row counts and
+    # re-ran the event CTE (norm_name over ~500 board rows) inside a nested loop for each of ~3,600 legs, and the team lookup
+    # compared nba_player_id::text, which disables the (nba_player_id, game_date) index. Fixed: every set MATERIALIZED and
+    # computed once; ids compared as bigint (all map ids are numeric) so the index applies; latest teams in one indexed pass.
+    # Measured after the fix: 3.8 s for a full slate (3,149 scored legs).
+    # BOARD_SQL with the half-point price source below is byte-identical to the query this function ran before 2026-10-06
+    # (verified); the same template prices whole-number legs from final_hp_derived (whole_number_legs).
+    rows = conn.execute(BOARD_SQL.format(price_cols="f.final_hp::float, f.baseline_hp::float, f.score::float",
+                                         price_src="nba_score.final_hp f", price_where="f.final_hp IS NOT NULL AND f.score IS NOT NULL"),
+                        (label, day, day, day, label, day, day)).fetchall()
     legs = []
     unresolved = 0
     for pid, player, prop, side, line, price, kind, t3, s_final, s_base, s_score, team, event in rows:
