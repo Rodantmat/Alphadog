@@ -1,19 +1,16 @@
 name: NBA Combos History Depth Verify (no load)
 
-# §31s G2 gate 2, step 1 (sample first, NO database write): rebuild one season's combos history with the per-prop combo depth
-# (PRA 24 / pts_reb 21 / pts_ast 21, same as live) and compare with what nba_score.baseline_history holds today:
-#   - every stored row's key must be rebuilt with IDENTICAL values (p_more, p_less, anchor, offset, role_tier, var_band, used_emp)
-#   - new rows must be PRA / pts_reb / pts_ast with 10 < |offset| <= depth; how many of them sit on a real board (board_rung_keys)
+# §31s G2 gate 2, step 1 (sample first, NO database write). ONE run, ONE set of components, the combos history built TWICE:
+#   control = the old global depth 10 (BT_LADDER_STEPS=10), test = the per-prop depth (PRA 24 / pts_reb 21 / pts_ast 21, as live).
+# PASS = every control row is present in the test build with IDENTICAL values, and every extra test row is PRA / pts_reb /
+# pts_ast with 10 < |offset| <= depth. Also reported (information): drift of today's rebuild vs the stored history (inputs revised
+# since it was built), and how many deep rows sit on a real board.
 on:
   workflow_dispatch:
     inputs:
       season:
         default: "2025-26"
         required: true
-      combos_steps:
-        description: "blank = per-prop depth (live); 10 = the OLD global depth (control: separates input drift from the depth change)"
-        default: ""
-        required: false
 
 permissions:
   contents: read
@@ -45,53 +42,53 @@ jobs:
             BT_SAVE_COMPONENTS=1 BT_PROPS=$pair python nba/backtest/classification_ladder_v12.py > /dev/null
           done
           ls -la nba/backtest/reports/_comp_*_${BT_TEST}.pkl
-      - name: Combos history (per-prop depth unless combos_steps is set)
-        env:
-          CS: ${{ github.event.inputs.combos_steps }}
+      - name: Combos history - control (global depth 10)
         run: |
-          if [ -n "$CS" ]; then export BT_LADDER_STEPS="$CS"; echo "CONTROL: global depth $CS"; fi
+          f="nba/data/nba_baseline_history_$(echo $BT_TEST | tr '-' '_')_combos.json"
+          BT_LADDER_STEPS=10 python nba/baseline/build_combos_history.py 2>&1 | grep -E "DAY-BY-DAY|Error|Traceback" || true
+          mv "$f" /tmp/control.json
+      - name: Combos history - test (per-prop depth, BT_LADDER_STEPS unset as live)
+        run: |
+          f="nba/data/nba_baseline_history_$(echo $BT_TEST | tr '-' '_')_combos.json"
           python nba/baseline/build_combos_history.py 2>&1 | grep -E "DAY-BY-DAY|Error|Traceback" || true
-          python - <<'EOF'
-          import json, os, pandas as pd
-          s = os.environ["BT_TEST"]
-          d = pd.DataFrame(json.load(open(f"nba/data/nba_baseline_history_{s.replace('-', '_')}_combos.json"))["rows"])
-          d[d["offset"].abs() <= 10].to_pickle("/tmp/within10.pkl")
-          print("saved within-10 rows:", len(d[d["offset"].abs() <= 10]))
-          EOF
-      - name: Compare with the stored history
+          mv "$f" /tmp/test.json
+      - name: Compare
         run: |
           python - <<'EOF'
           import json, os, psycopg, pandas as pd, numpy as np
-          s = os.environ["BT_TEST"]; f = f"nba/data/nba_baseline_history_{s.replace('-', '_')}_combos.json"
-          new = pd.DataFrame(json.load(open(f))["rows"])
-          new["line"] = new["line"].astype(float)
+          s = os.environ["BT_TEST"]
           DEPTH = {"pra": 24, "pts_reb": 21, "pts_ast": 21}
-          conn = psycopg.connect(os.environ["DATABASE_URL"])
-          props = sorted(new["prop"].unique())
-          old = pd.read_sql("""SELECT game_date::text game_date, player_id, game_id, prop, period, line::float line, anchor::float anchor,
-                                      ladder_offset "offset", p_more::float p_more, p_less::float p_less, role_tier, var_band, used_emp
-                               FROM nba_score.baseline_history WHERE season=%s AND prop = ANY(%s)""", conn, params=(s, props))
           key = ["game_date", "player_id", "game_id", "prop", "period", "line"]
-          for k in ("player_id", "game_id"):
-              new[k] = new[k].astype(str); old[k] = old[k].astype(str)
-          m = old.merge(new, on=key, how="left", suffixes=("_o", "_n"), indicator=True)
-          missing = int((m["_merge"] == "left_only").sum())
-          both = m[m["_merge"] == "both"]
-          diffs = {}
-          for c in ("anchor", "offset", "p_more", "p_less"):
-              diffs[c] = int((~np.isclose(both[f"{c}_o"].astype(float), both[f"{c}_n"].astype(float), atol=5e-5)).sum())
-          for c in ("role_tier", "var_band", "used_emp"):
-              diffs[c] = int((both[f"{c}_o"].astype(str) != both[f"{c}_n"].astype(str)).sum())
-          print(f"stored rows {len(old):,} | rebuilt {len(new):,} | stored keys not rebuilt {missing:,} | value differences {diffs}")
-          deep = new[new["prop"].isin(DEPTH) & (new["offset"].abs() > 10)]
-          bad = new[(new["offset"].abs() > 10) & ~(new["prop"].isin(DEPTH) & (new["offset"].abs() <= new["prop"].map(DEPTH).fillna(10)))]
-          print(f"rows beyond 10: {len(deep):,} (by prop {deep['prop'].value_counts().to_dict()}) | outside the intended set: {len(bad):,}")
+          vals = ["anchor", "offset", "p_more", "p_less", "p_raw", "role_tier", "var_band", "used_emp"]
+          def load(p):
+              d = pd.DataFrame(json.load(open(p))["rows"]); d["line"] = d["line"].astype(float)
+              for k in ("player_id", "game_id"): d[k] = d[k].astype(str)
+              assert not d.duplicated(key).any(), f"duplicate keys in {p}"
+              return d
+          c, t = load("/tmp/control.json"), load("/tmp/test.json")
+          m = c.merge(t, on=key, how="left", suffixes=("_c", "_t"), indicator=True)
+          gone = int((m["_merge"] == "left_only").sum()); both = m[m["_merge"] == "both"]
+          diff = {v: int((both[f"{v}_c"].astype(str) != both[f"{v}_t"].astype(str)).sum()) for v in vals}
+          extra = t.merge(c[key], on=key, how="left", indicator=True); extra = extra[extra["_merge"] == "left_only"]
+          bad = extra[~(extra["prop"].isin(DEPTH) & (extra["offset"].abs() > 10) & (extra["offset"].abs() <= extra["prop"].map(DEPTH).fillna(0)))]
+          print(f"control rows {len(c):,} | test rows {len(t):,} | control rows missing from test {gone} | value differences {diff}")
+          print(f"extra test rows {len(extra):,} (by prop {extra['prop'].value_counts().to_dict()}) | outside the intended set {len(bad)}")
+          for r in bad.head(5).itertuples(index=False): print("  unexpected:", r)
+          ok = gone == 0 and all(v == 0 for v in diff.values()) and len(bad) == 0 and len(extra) > 0
+          # information: drift vs the stored history, and board coverage of the deep rows
+          conn = psycopg.connect(os.environ["DATABASE_URL"])
+          old = pd.read_sql("""SELECT game_date::text game_date, player_id, game_id, prop, period, line::float line, p_more::float p_more
+                               FROM nba_score.baseline_history WHERE season=%s AND prop = ANY(%s)""", conn, params=(s, sorted(c["prop"].unique())))
+          for k in ("player_id", "game_id"): old[k] = old[k].astype(str)
+          mm = old.merge(c, on=key, how="left", suffixes=("_s", "_c"), indicator=True)
+          b2 = mm[mm["_merge"] == "both"]
+          print(f"INFO drift, control rebuild vs stored history: stored {len(old):,}, not rebuilt {int((mm['_merge'] == 'left_only').sum()):,}, "
+                f"p_more differs {int((~np.isclose(b2['p_more_s'], b2['p_more_c'].astype(float), atol=5e-5)).sum()):,}")
           bk = pd.read_sql("""SELECT DISTINCT game_date::text game_date, player_id::text player_id, prop, line::float line FROM nba_market.board_rung_keys
                               WHERE period='FULL' AND prop = ANY(%s) AND game_date BETWEEN %s AND %s""", conn,
-                           params=(list(DEPTH), new["game_date"].min(), new["game_date"].max()))
-          on = deep.merge(bk, on=["game_date", "player_id", "prop", "line"])
-          print(f"deep rows on a real board: {len(on):,} (by prop {on['prop'].value_counts().to_dict()}; by |offset| {on['offset'].abs().value_counts().sort_index().to_dict()})")
-          ok = missing == 0 and all(v == 0 for v in diffs.values()) and len(bad) == 0
+                           params=(list(DEPTH), t["game_date"].min(), t["game_date"].max()))
+          on = extra.merge(bk, on=["game_date", "player_id", "prop", "line"])
+          print(f"INFO deep rows on a real board: {len(on):,} (by prop {on['prop'].value_counts().to_dict()})")
           print("RESULT:", "PASS" if ok else "FAIL")
           raise SystemExit(0 if ok else 1)
           EOF
