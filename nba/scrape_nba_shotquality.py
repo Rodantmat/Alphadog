@@ -227,7 +227,8 @@ def main():
             delta_error = f"suspiciously_low: only {len(deltas)} player deltas computed"
     else:
         delta_error = "skipped_due_to_bucket_fetch_failures"
-    Path("nba/data/nba_shotquality_delta_current.json").write_text(json.dumps({"deltas": deltas, "league_avg_by_bucket": league_avg}, indent=2), encoding="utf-8")
+    if not delta_error:
+        Path("nba/data/nba_shotquality_delta_current.json").write_text(json.dumps({"deltas": deltas, "league_avg_by_bucket": league_avg}, indent=2), encoding="utf-8")
     Path("nba/data/nba_shotquality_delta_current_meta.json").write_text(json.dumps({
         "fetched_at": fetched_at, "player_count": len(deltas), "error": delta_error,
     }, indent=2), encoding="utf-8")
