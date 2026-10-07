@@ -174,8 +174,19 @@ async function firstTip(sql, dateStr) {
                       AND coalesce(game_label,'') !~* ${REGULAR_ONLY}`;
   return r[0] && r[0].first ? new Date(r[0].first).getTime() : null;
 }
+// STALE CLAIM (2026-10-07): P2B 2026-10-07 run 37642228109 claimed its slate, then GitHub never started the `slate` job and the
+// `finish` job (if: always()) never ran either - the row stayed 'claimed' for good. A claimed slate is skipped by decide(), so a
+// dead run was never recovered and its successor only moved on at its own deadline. Here: a 'claimed' row whose GitHub run is
+// already `completed` is DEAD -> the claim is closed as 'failure' with a note, and the pipeline gets ONE forced recovery
+// dispatch (slot 'recovery-1', force=true) if its window is still open. Never when the run is queued or in progress.
+async function runCompleted(env, runId) {
+  if (!runId) return null;
+  const r = await github(env, "GET", `/actions/runs/${encodeURIComponent(runId)}`);
+  if (!r.ok || !r.data || !r.data.status) return null;            // unknown -> never treat as dead
+  return r.data.status === "completed" ? (r.data.conclusion || "completed") : false;
+}
 async function pipelineState(sql, env, pipeline, key, needLive) {
-  const s = await sql`SELECT status FROM nba_control.pipeline_runs WHERE pipeline=${pipeline} AND run_key=${key}::date`;
+  const s = await sql`SELECT status, github_run_id FROM nba_control.pipeline_runs WHERE pipeline=${pipeline} AND run_key=${key}::date`;
   const d = await sql`SELECT slot, dispatched_at FROM nba_control.scheduler_dispatches WHERE pipeline=${pipeline} AND run_key=${key}::date AND ok IS DISTINCT FROM false`;
   const dispatches = d.filter((x) => x.slot !== "missed").map((x) => ({ slot: x.slot, at: new Date(x.dispatched_at).getTime() }));
   const missed = d.some((x) => x.slot === "missed");
