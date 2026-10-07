@@ -138,6 +138,7 @@ jobs:
           }
 
       - name: Apply today's rosters to nba_ref.players
+        id: soft_rosters_apply
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
