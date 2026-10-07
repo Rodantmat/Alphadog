@@ -494,7 +494,7 @@ jobs:
       # Paper only: continue-on-error, so it can never disturb the PrizePicks pick above. Graded by P2A overnight.
       - name: Underdog paper pick (P5 + P4 shadow)
         id: soft_udpick
-        if: ${{ steps.d.outputs.has_games == '1' }}
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' }}
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
