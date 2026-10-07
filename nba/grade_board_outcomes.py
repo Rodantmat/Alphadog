@@ -152,8 +152,19 @@ def _read_json(name, timeout=300):
 
 
 def load_logs(slug, pid_to_name):
-    """Game logs are columnar-ish records keyed by PLAYER_ID (no name), MIN is a float."""
-    doc = _read_json(f"nba_player_game_log_{slug}.json")
+    """Game logs are columnar-ish records keyed by PLAYER_ID (no name), MIN is a float.
+    A season whose file does not exist yet (boards are archived from preseason, but the season file is first written by
+    the delta sync the morning after the first regular-season game) is an EXPECTED state, not a failure: every date of
+    that season grades as dates_without_boxscore and the pipeline continues (P2A 2026-10-04..07 crashed here, which
+    skipped the slip grade and both edge monitors every night)."""
+    try:
+        doc = _read_json(f"nba_player_game_log_{slug}.json")
+    except urllib.error.HTTPError as exc:
+        if exc.code != 404:
+            raise
+        print(f"  season file nba_player_game_log_{slug}.json does not exist yet (HTTP 404) - no box scores for {slug}, "
+              f"its dates grade as no boxscore", flush=True)
+        return defaultdict(dict), set()
     rows = doc.get("records") or []
     by_date = defaultdict(dict)
     players_seen = set()
