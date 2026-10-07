@@ -165,6 +165,14 @@ def pick(conn, day):
         print(f"  {day}: Underdog paper slips already logged - first log wins (UDL_FORCE=1 to rebuild)", flush=True)
         return
     legs = load_legs(conn, day)
+    # §31s: Underdog posted whole-number lines only until 2025-02 (2,744 legs, none since - none in 2025-26 or on the 2026-27
+    # boards), so there is no second season to gate them on and the certified Underdog build has none. They cannot join final_hp
+    # (half-point rungs) and are left out - said out loud, never silently: if Underdog brings them back this line is the signal.
+    wn = conn.execute("""SELECT count(*) FROM nba_market.board_snapshots WHERE bookmaker='underdog' AND snapshot_label='window'
+                         AND game_date=%s AND line = floor(line) AND line >= 0""", (day,)).fetchone()[0]
+    if wn:
+        print(f"  {day}: WARNING - {wn} Underdog whole-number window legs on the board, left out (no Underdog gate; §31s) - "
+              f"Underdog has resumed whole-number lines, review", flush=True)
     if not legs:
         print(f"  {day}: no Underdog window legs joined to final_hp - nothing to build", flush=True)
         return
