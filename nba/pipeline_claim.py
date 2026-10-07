@@ -53,10 +53,17 @@ def main():
             status text NOT NULL DEFAULT 'claimed', finished_at timestamptz, note text, PRIMARY KEY (pipeline, run_key))""")
         if mode == "finish":
             result = os.environ.get("RESULT", "unknown")
-            n = c.execute("""UPDATE nba_control.pipeline_runs SET status=%s, finished_at=now()
-                             WHERE pipeline=%s AND run_key=%s AND github_run_id=%s""", (result, pipeline, key, run_id)).rowcount
+            # SOFT FAILURES (2026-10-07, full-system certification pass G): steps marked continue-on-error (monitors, research
+            # captures, isolated re-pricing) never fail the run, so their failures were invisible in nba_control.pipeline_runs.
+            # The workflow lists them in SOFT_FAILED; they are appended to the row's note and surfaced as a run warning.
+            soft = (os.environ.get("SOFT_FAILED") or "").strip()
+            note = f" [soft-failed steps: {soft}]" if soft else ""
+            n = c.execute("""UPDATE nba_control.pipeline_runs SET status=%s, finished_at=now(), note=coalesce(note,'') || %s
+                             WHERE pipeline=%s AND run_key=%s AND github_run_id=%s""", (result, note, pipeline, key, run_id)).rowcount
             c.commit()
-            print(f"{pipeline} {key}: recorded result '{result}' ({n} row)")
+            print(f"{pipeline} {key}: recorded result '{result}' ({n} row){note}")
+            if soft:
+                print(f"::warning::{pipeline} {key}: steps that failed but did not fail the run: {soft}")
             return
         row = c.execute("""INSERT INTO nba_control.pipeline_runs (pipeline, run_key, source, github_run_id)
                            VALUES (%s,%s,%s,%s) ON CONFLICT (pipeline, run_key) DO NOTHING RETURNING pipeline""",
