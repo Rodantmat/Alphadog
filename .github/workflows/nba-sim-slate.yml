@@ -111,6 +111,7 @@ jobs:
         run: |
           set -euo pipefail
           sed -e 's/nba_score\.baseline_history/nba_score._sim_baseline_history/g' \
+              -e 's/nba_score\.final_hp_derived/nba_score._sim_final_hp_derived/g' \
               -e 's/CREATE TABLE IF NOT EXISTS nba_score\.final_hp (/CREATE TABLE IF NOT EXISTS nba_score._sim_final_hp (/' \
               -e "s/to_regclass('nba_score\.final_hp_uidx')/to_regclass('nba_score._sim_final_hp_uidx')/" \
               -e 's/CREATE UNIQUE INDEX final_hp_uidx/CREATE UNIQUE INDEX _sim_final_hp_uidx/' \
