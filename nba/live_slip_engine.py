@@ -540,10 +540,14 @@ def pick(conn, day, require_fresh=True):
             allstar_sit = name not in plan
         else:
             allstar_sit = in_allstar_week and ALLSTAR_PLAN == 'A' and name.startswith('D_')
-        shadow = (not week2) and (state == 'red' or live_cap == 0 or rotation_only_idle or allstar_sit)
+        # §29o: the week-2 trough play is "cap 1 on the five family-A/C strategies" - a red, retired (cap 0), idle rotation-only or
+        # All-Star-sitting strategy stays a SHADOW in week 2 too, and demons / the drought menu are not part of the play (pass 38:
+        # demons are set aside in week 2). Until 2026-10-07 `(not week2) and (...)` staked every strategy at cap 1 when the signal
+        # fired (full-system certification pass F).
+        shadow = (state == 'red' or live_cap == 0 or rotation_only_idle or allstar_sit or (week2 and not name.startswith(('A_', 'C_'))))
         cap1_today = small_slate or (in_allstar_week and ALLSTAR_PLAN == 'A' and name.startswith('A_'))   # plan A: family A at cap 1
         # week-2 trough play is staked at cap 1 (29l): real stakes on the low-event structure, recorded like any placed slip
-        use_cap = (1 if week2 else (max(cap, 1) if shadow else (min(live_cap, 1) if cap1_today else live_cap)))
+        use_cap = (max(cap, 1) if shadow else (1 if week2 else (min(live_cap, 1) if cap1_today else live_cap)))
         if use_cap == 0:
             continue
         status = 'placed_shadow' if shadow else 'placed'
