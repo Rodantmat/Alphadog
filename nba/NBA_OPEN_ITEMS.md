@@ -1983,6 +1983,8 @@ freshness gates.**
 > the others**: **D1 is class (b) — *the value only exists going forward*** — so ***every day the
 > capture does not run is a day of referee data that can never be recovered.***
 >
+> ✅✅ **LIVE-VERIFIED `2026-10-07` (sweep run 241) — THE ZERO-ROW READING ABOVE IS NO LONGER CURRENT.** *`nba_ref.referee_assignments` now holds **`12` rows**, all `game_date = 2026-10-06`, `captured_at = 2026-10-07T17:48:20.154Z` — four preseason matchups (`NOP @ OKC`, `LAL @ GSW`, `DEN @ UTA`, `BKN @ CHA`), three officials each, via `scrape_referee_assignments.py`. This breaks a long run of consecutive flat `0` readings recorded pass after pass in `NBA_SWEEP_RUN_LOG.md`. **Not yet established**: whether this is a one-off backfill or the capture now runs normally for preseason dates — only one non-zero reading observed so far. Per RULE 40 the paragraph above is left in place as the historical record, not rewritten.*
+>
 > ### 🔴🔴 **THE LIVE BOARD ARCHIVER HAS RUN — AND IT WRITES THE WRONG SHAPE**
 > **T14's requirement was explicit**: *"**the WINDOW and CLOSE snapshots must land in
 > `board_snapshots`, THE SAME SHAPE AS THE HISTORICAL PULL**."*
