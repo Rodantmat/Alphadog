@@ -32,6 +32,8 @@ def main():
                 legs = [((j['cell'], j['tier'], j['side']), float(j['factor'])) for j in lj]
                 slips.append((structure, legs))
                 for j in lj:
+                    if j.get('hit') is None:
+                        continue   # tied whole-number leg: void (as the live monitor)
                     k = (j['cell'], j['tier'], j['side'])
                     by_day[gd][0] += int(j['hit']) - p_ref[k]; by_day[gd][1] += 1
         days = sorted(by_day)
