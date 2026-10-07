@@ -208,7 +208,7 @@ def load_board_legs_live(conn, day, label='window'):
           SELECT home_team_id t FROM nba_calendar.games WHERE game_date = %s
           UNION SELECT away_team_id FROM nba_calendar.games WHERE game_date = %s)
         SELECT pid.player_id, pr.player, pr.prop, pr.side, pr.line, pr.price, pr.kind, pr.tier3,
-               f.final_hp::float, f.baseline_hp::float, f.score::float,
+               {price_cols},
                CASE WHEN evt.home_id IS NOT NULL OR evt.away_id IS NOT NULL THEN
                       CASE WHEN gl.team_id IN (evt.home_id, evt.away_id) THEN gl.team_id
                            WHEN pl.team_id IN (evt.home_id, evt.away_id) THEN pl.team_id END
