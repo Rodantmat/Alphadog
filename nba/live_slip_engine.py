@@ -249,6 +249,74 @@ def load_board_legs_live(conn, day, label='window'):
     return legs
 
 
+# ------------------------------------------------------------------ WHOLE-NUMBER LEGS (strategy §31s G1 gate 2b, 2026-10-06)
+# Owner: "if whole-number lines are on the board and properly priced they can and should make slips if they are strong".
+# Price (daily nba_score.final_hp_derived 'whole_number' row): pc = recalibrated P(win | no tie), p_tie. Safety discount: one
+# standard error of pc's calibration bin. Tie worth R = 0.5 of a win (a tie drops a Power lineup one tier: 3/6, 6/10, 10/20).
+# p_eq = (pc - SE) * (1 - p_tie) + R * p_tie is then placed in the cell's OWN currency: the lowest raw half-point score whose
+# certified realized hit rate reaches p_eq (nba_score.wn_currency_map). Gate 2b (cross-fitted, both seasons): price honest,
+# used in 16.4% / 7.8% of slips, portfolio 77.8 -> 78.1% / 94.0 -> 93.9%. Switch: classification_config['whole_number_selection'].
+def wn_selection(conn):
+    """(config, currency maps) when whole-number selection is switched on and fitted; else None (legs simply not added)"""
+    row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='whole_number_selection'").fetchone()
+    if not row or not row[0].get('enabled'):
+        return None
+    if conn.execute("SELECT to_regclass('nba_score.wn_currency_map')").fetchone()[0] is None:
+        return None
+    maps = defaultdict(list)
+    for rk, prop, tier, side, hr, lo, hi in conn.execute("""SELECT rank_key, prop, tier, side, hit_rate, score_lo, score_hi
+                                                             FROM nba_score.wn_currency_map ORDER BY rank_key, prop, tier, side, block"""):
+        maps[(rk, prop, tier, side)].append((float(hr), float(lo), float(hi)))
+    return row[0], maps
+
+
+def wn_price(cfg, pc, pt):
+    """EV-equivalent probability with the safety discount (one SE of pc's calibration bin; unknown bin -> SE 0.5)"""
+    r, n = cfg['se_bins'].get(str(int(math.floor(pc / cfg['bin']))), [None, None])
+    se = math.sqrt(r * (1 - r) / max(n, 1)) if r is not None else 0.5
+    return min(max(pc - se, 0.0), 1.0) * (1 - pt) + cfg['r_tie'] * pt
+
+
+def wn_score(maps, rk, prop, tier, side, p):
+    """lowest raw score of the first block whose certified hit rate >= p; above the map -> its top score; no map -> None"""
+    m = maps.get((rk, prop, tier, side)) or maps.get((rk, prop, tier, '*'))
+    if not m:
+        return None
+    for hr, lo, _hi in m:
+        if hr >= p:
+            return lo
+    return m[-1][2]
+
+
+def whole_number_legs(conn, day, label='window'):
+    sel = wn_selection(conn)
+    if sel is None:
+        return []
+    cfg, maps = sel
+    rows = conn.execute(BOARD_SQL.format(price_cols="f.final_hp::float, f.p_tie::float, NULL::float",
+                                         price_src="(SELECT * FROM nba_score.final_hp_derived WHERE derivation = 'whole_number') f",
+                                         price_where="f.final_hp IS NOT NULL AND f.p_tie IS NOT NULL AND pr.line = floor(pr.line)"),
+                        (label, day, day, day, label, day, day)).fetchall()
+    legs, unresolved, nomap = [], 0, 0
+    for pid, player, prop, side, line, price, kind, t3, pc, pt, _none, team, event in rows:
+        if team is None or event is None:
+            unresolved += 1
+            continue
+        tier = 'R' if kind == 'standard' else ('G' if kind == 'goblin' else 'D') + str(t3)
+        p_eq = wn_price(cfg, pc, pt)
+        for rk in ('final_hp', 'baseline_hp', 'final_score'):
+            s = wn_score(maps, rk, prop, tier, side, p_eq)
+            if s is None:
+                nomap += 1
+                continue
+            legs.append({'rank_key': rk, 'season': None, 'game_date': day, 'player': player, 'player_id': pid, 'prop': prop, 'tier': tier,
+                         'side': side, 'line': line, 'factor': price, 'hit': None, 'n_rank': None, 'score': s, 'team_id': team,
+                         'event_id': event, 'whole_number': True, 'p_eq': round(p_eq, 4)})
+    print(f"  {day}: whole-number legs priced into the cells: {len(rows) - unresolved:,} (rank-key rows {len(legs):,}; "
+          f"team/event unresolved {unresolved}; no currency map {nomap})", flush=True)
+    return legs
+
+
 def load_board_legs(conn, day, label='window'):
     if LEG_SOURCE == 'live':
         return load_board_legs_live(conn, day, label)
