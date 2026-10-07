@@ -35,6 +35,7 @@ import re
 import sys
 from pathlib import Path
 import unicodedata
+import urllib.error
 import urllib.request
 from collections import defaultdict
 from datetime import datetime, timedelta
