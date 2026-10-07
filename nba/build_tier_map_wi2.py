@@ -26,6 +26,8 @@ This build prices every PrizePicks window whole-number leg and converts it into 
                               none -> leg left out (counted)
 Certified legs are copied UNTOUCHED (verified); n_rank / cell_size recomputed over the union. Ties kept (hit NULL -> voided by the
 engine's tie-aware grade()). Writes nba_score.tier_map_legs_wi2 only. Env: DATABASE_URL.
+The steps are functions (load_raw, crossfit_price, crossfit_maps, dedup, crossfit_rows) shared with the production selection table
+(build_tier_map_sel.py), so the certified seasons there are exactly this computation.
 """
 import os
 import sys
@@ -86,12 +88,8 @@ def inverse(fx, fy, p):
     return float(fx[min(idx, len(fx) - 1)])
 
 
-def main():
-    conn = psycopg.connect(os.environ["DATABASE_URL"])
-    conn.execute("SET statement_timeout = 0")
-    cfg = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='whole_number_recalibration'").fetchone()[0]
-    fit = cfg["per_season_fit"]; alpha = float(cfg["tie_scale_method"]["alpha_mle"])
-    # 1) whole-number legs, the certified recipe's own selection (_pi step reused verbatim)
+def load_raw(conn):
+    """every played PrizePicks window whole-number leg with its adjacent-rung model prices (the certified recipe's selection)"""
     for label, sql in WI_STEPS:
         if label in ("priced whole-number window legs", "index"):
             conn.execute(sql)
@@ -106,12 +104,20 @@ def main():
     over = w["side"].eq("Over")
     w["pc0"] = np.where(over, w["o_f"], w["u_f"]) / (w["o_f"] + w["u_f"])
     w["raw_tie"] = np.clip(1 - w["o_f"] - w["u_f"], 0, None)
+    w["tier"] = np.select([w["kind"].eq("standard"), w["kind"].eq("goblin"), w["kind"].eq("demon")],
+                          ["R", "G" + w["sys_tier"].abs().clip(upper=3).fillna(1).astype(int).astype(str),
+                           "D" + w["sys_tier"].abs().clip(upper=3).fillna(1).astype(int).astype(str)], default=None)
     print(f"whole-number legs (played): {len(w):,} | ties {int(w['tie'].sum()):,}", flush=True)
+    return w
 
-    # 2-4) cross-fit recalibration, tie scale, calibration-bin SE
+
+def crossfit_price(w, fit, alpha, verbose=True):
+    """steps 2-5 for the two certified seasons: each priced only with what was fitted on the OTHER season"""
     parts = []
     for s in ("2024-25", "2025-26"):
         o = OTHER[s]; tr = w[w["season"] == o]; te = w[w["season"] == s].copy()
+        if te.empty:
+            continue
         a, b = float(fit[o]["a"]), float(fit[o]["b"])
         te["pc"] = sig(a + b * logit(te["pc0"].values))
         # tie scale on the OTHER season: EB ratio actual/expected per prop toward the pooled ratio (alpha as stored)
@@ -132,22 +138,16 @@ def main():
         te["pc_safe"] = np.clip(te["pc"] - te["se"], 0.0, 1.0)
         te["p_eq"] = te["pc_safe"] * (1 - te["pt"]) + R_TIE * te["pt"]
         parts.append(te)
-        print(f"  {s}: recal from {o} (a {a:+.5f}, b {b:.5f}); tie scale {', '.join(f'{k} {v:.2f}' for k, v in sorted(sc.items()))}", flush=True)
-    w = pd.concat(parts, ignore_index=True)
+        if verbose:
+            print(f"  {s}: recal from {o} (a {a:+.5f}, b {b:.5f}); tie scale {', '.join(f'{k} {v:.2f}' for k, v in sorted(sc.items()))}", flush=True)
+    return pd.concat(parts, ignore_index=True) if parts else w.iloc[0:0].assign(p_eq=[])
 
-    # out-of-sample honesty of the EV-equivalent price: realized EV-equivalent = hit + R*tie
-    w["real_eq"] = np.where(w["tie"] == 1, R_TIE, w["h"].fillna(0))
-    w["pbin"] = (np.floor(w["p_eq"] / BIN) * BIN).round(2)
-    rel = w.groupby(["season", "pbin"]).agg(n=("p_eq", "size"), pred=("p_eq", "mean"), real=("real_eq", "mean")).reset_index()
-    print("\nOUT-OF-SAMPLE reliability of p_eq (predicted vs realized hit + 0.5*tie):", flush=True)
-    for r_ in rel.itertuples(index=False):
-        if r_.n >= 30:
-            print(f"  {r_.season} {r_.pbin:.2f}: n {r_.n:>6,} pred {r_.pred:.3f} real {r_.real:.3f}", flush=True)
 
-    # 6) same currency: isotonic raw score -> realized, on the OTHER season's certified half-point legs
+def crossfit_maps(conn):
+    """step 6 maps per season of fit: isotonic raw score -> realized on each season's certified half-point legs"""
     cert = pd.read_sql("""SELECT rank_key, season, prop, tier, side, score, hit FROM nba_score.tier_map_legs
-                          WHERE hit IS NOT NULL AND line <> floor(line)""", conn)
-    print(f"\ncertified half-point legs for the maps: {len(cert):,}", flush=True)
+                          WHERE hit IS NOT NULL AND line <> floor(line) AND season IN ('2024-25', '2025-26')""", conn)
+    print(f"certified half-point legs for the maps: {len(cert):,}", flush=True)
     maps = {}
     for (rk, s, prop, tier, side), g in cert.groupby(["rank_key", "season", "prop", "tier", "side"]):
         if len(g) >= MIN_N:
@@ -155,11 +155,16 @@ def main():
     for (rk, s, prop, tier), g in cert.groupby(["rank_key", "season", "prop", "tier"]):
         if len(g) >= MIN_N:
             maps[(rk, s, prop, tier, "*")] = pav(g["score"].values, g["hit"].values.astype(float), np.ones(len(g)))
+    return maps
 
-    w["tier"] = np.select([w["kind"].eq("standard"), w["kind"].eq("goblin"), w["kind"].eq("demon")],
-                          ["R", "G" + w["sys_tier"].abs().clip(upper=3).fillna(1).astype(int).astype(str),
-                           "D" + w["sys_tier"].abs().clip(upper=3).fillna(1).astype(int).astype(str)], default=None)
-    w = w[w["tier"].notna()].sort_values("price").drop_duplicates(["game_date", "player", "prop", "side", "line"], keep="first")
+
+def dedup(w):
+    """keep-first by price per leg, exactly as the certified recipe"""
+    return w[w["tier"].notna()].sort_values("price").drop_duplicates(["game_date", "player", "prop", "side", "line"], keep="first")
+
+
+def crossfit_rows(w, maps):
+    """tier-map rows (3 rank keys) in the cells' currency, using the OTHER season's maps"""
     rows, miss = [], 0
     for rk in ("final_hp", "baseline_hp", "final_score"):
         for r_ in w.itertuples(index=False):
@@ -170,6 +175,28 @@ def main():
             rows.append((rk, r_.season, r_.game_date, r_.player, r_.prop, r_.side, float(r_.line), r_.kind, r_.tier,
                          None if pd.isna(r_.sys_tier) else int(r_.sys_tier), float(r_.price), inverse(m[0], m[1], r_.p_eq),
                          None if pd.isna(r_.h) else int(r_.h)))
+    return rows, miss
+
+
+def main():
+    conn = psycopg.connect(os.environ["DATABASE_URL"])
+    conn.execute("SET statement_timeout = 0")
+    cfg = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='whole_number_recalibration'").fetchone()[0]
+    fit = cfg["per_season_fit"]; alpha = float(cfg["tie_scale_method"]["alpha_mle"])
+    w = crossfit_price(load_raw(conn), fit, alpha)
+
+    # out-of-sample honesty of the EV-equivalent price: realized EV-equivalent = hit + R*tie
+    w["real_eq"] = np.where(w["tie"] == 1, R_TIE, w["h"].fillna(0))
+    w["pbin"] = (np.floor(w["p_eq"] / BIN) * BIN).round(2)
+    rel = w.groupby(["season", "pbin"]).agg(n=("p_eq", "size"), pred=("p_eq", "mean"), real=("real_eq", "mean")).reset_index()
+    print("\nOUT-OF-SAMPLE reliability of p_eq (predicted vs realized hit + 0.5*tie):", flush=True)
+    for r_ in rel.itertuples(index=False):
+        if r_.n >= 30:
+            print(f"  {r_.season} {r_.pbin:.2f}: n {r_.n:>6,} pred {r_.pred:.3f} real {r_.real:.3f}", flush=True)
+
+    # 6) same currency
+    maps = crossfit_maps(conn)
+    rows, miss = crossfit_rows(dedup(w), maps)
     print(f"whole-number rows in cell currency: {len(rows):,} (3 rank keys) | left out (no map): {miss:,}", flush=True)
 
     with conn.cursor() as cur:
