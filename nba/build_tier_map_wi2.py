@@ -214,7 +214,7 @@ def main():
         cur.execute("""CREATE TABLE nba_score.tier_map_legs_wi2 AS
             WITH u AS (SELECT rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor, score, hit FROM nba_score.tier_map_legs
                        UNION ALL SELECT rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor, score, hit FROM nba_score._wi2_new)
-            SELECT u.*, row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score DESC)::int AS n_rank,
+            SELECT u.*, row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score DESC, player, side, line)::int AS n_rank,
                    count(*) OVER (PARTITION BY rank_key, game_date, prop, tier)::int AS cell_size FROM u""")
         cur.execute("CREATE INDEX ON nba_score.tier_map_legs_wi2 (rank_key, game_date, prop, tier)")
         cur.execute("DROP TABLE nba_score._wi2_new")
