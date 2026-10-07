@@ -215,6 +215,7 @@ jobs:
       # during the day carry Under value? - needs a DFS board BEFORE the 1:15 PM PT window; only window and close
       # existed. Research capture only: continue-on-error, each board capped at 5 minutes, never blocks the slate.
       - name: Morning DFS board snapshot (research capture)
+        id: soft_morning_board
         if: ${{ steps.d.outputs.has_games == '1' }}
         continue-on-error: true
         env:
