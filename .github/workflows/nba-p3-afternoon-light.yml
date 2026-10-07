@@ -316,6 +316,8 @@ jobs:
             tail -n 25 /tmp/$n.log
             i=$((i+1))
           done
+          echo "ok=${ok#,}" >> "$GITHUB_OUTPUT"
+          echo "boards captured this run: ${ok#,}"
           exit $rc
 
       - name: Archive boards into Postgres
