@@ -271,8 +271,9 @@ def main():
     r = one(conn, "SELECT count(*), count(DISTINCT game_date), count(DISTINCT composition) FROM nba_score.slip_engine_slips")
     check(conn, "L11.slips_exist_all_days", r[0] > 400_000 and r[1] == 323, f"{r[0]} slips / {r[1]} days / {r[2]} compositions")
     # payout recompute follows grade() INCLUDING ties (§31s G1 gate 2b: whole-number legs; a tied leg has hit NULL): tied legs are
-    # removed and the lineup reverts one level; all tied -> refund 1.0; one decided leg left -> 2-pick 1.5x on a win, else refund;
-    # a Flex reverting below 3 picks plays as Power. With no tied leg this is exactly the previous recompute.
+    # removed and the lineup reverts one level; all tied -> refund 1.0; ONE decided leg left -> 1.5x (x its factor) on a win, a
+    # loss on a miss, whatever the original size (PrizePicks' verified schedules, 2026-10-07); a Flex reverting below 3 picks
+    # plays as Power. With no tied leg this is exactly the previous recompute.
     r = one(conn, """WITH s AS (
         SELECT size, hits, payout, teams, structure,
           (SELECT count(DISTINCT j->>'player') FROM jsonb_array_elements(legs_json) j) dp,
