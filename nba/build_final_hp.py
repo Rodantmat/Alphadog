@@ -551,15 +551,21 @@ def main():
             d["n_uncertain"] = unc.astype(int)
             d["season"] = season
 
+            # G2 ROUTING: which rungs lie beyond the certified depth for this prop (none when the prop has no certified depth)
+            _dep = CERT_DEPTH.get(prop)
+            deep = (np.abs(d["ladder_offset"].fillna(0).values) > _dep) if _dep is not None else np.zeros(len(d), dtype=bool)
             if write:
-                rows = [(season, r.game_date, str(r.game_id), str(r.player_id), prop, float(r.line),
-                         r.side, int(r.ladder_offset), float(r.anchor) if r.anchor == r.anchor else None,
-                         round(float(r.baseline_hp), 5), round(float(r.final_hp), 5),
-                         round(float(r.cal_shift), 5), round(float(r.score), 2), round(float(r.edge), 2),
-                         round(float(r.confidence), 4), r.conf_tier,
-                         round(float(r.c_exist), 4), round(float(r.c_quality), 4), round(float(r.c_market), 4),
-                         r.prop_tier, r.band, r.phase, int(r.n_uncertain))
-                        for r in d.itertuples(index=False)]
+                def _rowify(frame):
+                    return [(season, r.game_date, str(r.game_id), str(r.player_id), prop, float(r.line),
+                             r.side, int(r.ladder_offset), float(r.anchor) if r.anchor == r.anchor else None,
+                             round(float(r.baseline_hp), 5), round(float(r.final_hp), 5),
+                             round(float(r.cal_shift), 5), round(float(r.score), 2), round(float(r.edge), 2),
+                             round(float(r.confidence), 4), r.conf_tier,
+                             round(float(r.c_exist), 4), round(float(r.c_quality), 4), round(float(r.c_market), 4),
+                             r.prop_tier, r.band, r.phase, int(r.n_uncertain))
+                            for r in frame.itertuples(index=False)]
+                rows = _rowify(d[~deep])
+                deep_rows = [t + ("beyond_certified_depth",) for t in _rowify(d[deep])]
                 with conn.cursor() as cur:
                     cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.final_hp'))")
                     # WRITE SCOPE (fixed 2026-09-23). This DELETE was season+prop only, while FE_DATE
