@@ -1,1 +1,1 @@
-script: probe_chalkboard_web.py
+script: scrape_nba_injury_report.py
