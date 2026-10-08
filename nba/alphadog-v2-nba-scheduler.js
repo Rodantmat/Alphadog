@@ -169,9 +169,10 @@ async function liveRunsSince(env, workflow, sinceMs) {
 }
 
 async function firstTip(sql, dateStr) {
-  // the ONE slate predicate (round 2 P2A#16, 2026-10-08): nba_calendar.regular_season_games (game-id prefix 002; the label
-  // regex let the NBA Cup Final through - nba/sql/regular_season_games.sql)
-  const r = await sql`SELECT min(game_datetime_utc) AS first FROM nba_calendar.regular_season_games WHERE game_date = ${dateStr}::date`;
+  // the ONE slate predicate: nba_calendar.slate_games (v2.3.0, strategy §31w P-6, 2026-10-08) = game-id prefix 002 + play-in 005
+  // + playoffs 004 (preseason 001, All-Star 003 and the NBA Cup Final 006 stay out - nba/sql/slate_games.sql). Was
+  // regular_season_games (002 only): the postseason now runs P2A / P2B / P3 / close like any other slate.
+  const r = await sql`SELECT min(game_datetime_utc) AS first FROM nba_calendar.slate_games WHERE game_date = ${dateStr}::date`;
   return r[0] && r[0].first ? new Date(r[0].first).getTime() : null;
 }
 // STALE CLAIM (2026-10-07): P2B 2026-10-07 run 37642228109 claimed its slate, then GitHub never started the `slate` job and the
