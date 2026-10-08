@@ -23,7 +23,8 @@ TABLES = [
     "nba_market.board_snapshots|game_date", "nba_market.board_outcomes|game_date", "nba_market.game_lines_closing|game_date",
     "nba_market.game_lines_snapshots|game_date", "nba_daily.injury_report_snapshots|game_date", "nba_score.board_scored|game_date",
     "nba_score.baseline_history|game_date", "nba_score.final_hp|game_date", "nba_market.board_tiers_v2|game_date",
-    "nba_stats.game_officials|game_date", "nba_stats.player_game_starter_status|game_date",
+    # game_officials / player_game_starter_status are keyed by game_id (no date column) and their raw per-game JSON is
+    # committed to the repo by P2A - covered there, not here
 ]
 
 
