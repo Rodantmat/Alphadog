@@ -129,7 +129,12 @@ jobs:
           python nba/scrape_nba_per_game_delta.py
 
       # M1 defender quality - matchup shards from last night (a baseline-stage factor built from games already played).
+      # SOFT (round 2 P2A#13, 2026-10-08): the scrape is incremental (uncovered games are retried next morning), so a night
+      # every per-game fetch fails (exit 2) is recorded as a soft failure and must not stop the grade, the prune, the rebuild
+      # and the slip state below - those need box scores, not matchup shards.
       - name: Per-game matchups (last night)
+        id: soft_matchups
+        continue-on-error: true
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
