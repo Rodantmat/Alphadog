@@ -375,7 +375,7 @@ def load_board_legs_universe(conn, day, label='window'):
     for l in legs:
         groups[(l['rank_key'], l['prop'], l['tier'])].append(l)
     for g in groups.values():
-        g.sort(key=lambda l: (-l['score'], l['player']))
+        g.sort(key=lambda l: (-l['score'], l['player'], l['side'], float(l['line'])))   # certified tie order (§31s)
         for i, l in enumerate(g, start=1):
             l['n_rank'] = i
     return legs
