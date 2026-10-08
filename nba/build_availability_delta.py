@@ -36,7 +36,8 @@ import pandas as pd
 import psycopg
 
 RAW = "https://raw.githubusercontent.com/Rodantmat/Alphadog/main/nba/data/"
-PT = timezone(timedelta(hours=-8))
+from zoneinfo import ZoneInfo
+PT = ZoneInfo("America/Los_Angeles")   # the "today" fallback only (round 2, 2026-10-08: was a fixed UTC-8, an hour off Mar-Nov)
 OUT_LIKE = {"OUT", "DOUBTFUL"}
 IN_LIKE = {"AVAILABLE", "PROBABLE"}
 
