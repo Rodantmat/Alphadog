@@ -76,9 +76,9 @@ def main():
             # ONE PREDICATE WITH THE PIPELINES (2026-10-08, full-system certification round 2): P2B/P3 gate on the
             # REGULAR-SEASON regex (preseason, play-in, playoffs, All-Star excluded); the certifier used `<> 'Preseason'`,
             # so on a play-in / playoff / All-Star day it demanded a slate the pipelines correctly did not build.
-            cur.execute("""SELECT count(*) FROM nba_calendar.games
-                           WHERE game_date = %s
-                             AND coalesce(game_label, '') !~* '(preseason|play-in|round|semifinal|final|all-star|rising stars)'""", (today,))
+            # ... and since round 2 (2026-10-08) that one predicate is the view nba_calendar.regular_season_games
+            # (game-id prefix 002: the label regex let the NBA Cup Final through - nba/sql/regular_season_games.sql).
+            cur.execute("SELECT count(*) FROM nba_calendar.regular_season_games WHERE game_date = %s", (today,))
             slate_games = int(cur.fetchone()[0] or 0)
             # PLAYED, NOT SCHEDULED (fixed 2026-09-23). This window used to be +/-30 days, so during the
             # preseason ramp - the 2026-27 schedule opens 2026-10-03, ten days out - it reported "in
