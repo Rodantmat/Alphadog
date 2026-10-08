@@ -34,7 +34,7 @@ def season_window(season):
 
 def main():
     seasons = [s.strip() for s in os.environ.get("HIST_SEASONS", "2024-25,2025-26").split(",") if s.strip()]
-    tables = [t.strip() for t in os.environ.get("HIST_TABLES", ",".join(TABLES)).split(",") if t.strip()]
+    tables = [t.strip() for t in (os.environ.get("HIST_TABLES") or ",".join(TABLES)).split(",") if t.strip()]   # empty env = default list
     OUT.mkdir(parents=True, exist_ok=True)
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
