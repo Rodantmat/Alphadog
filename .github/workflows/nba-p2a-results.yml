@@ -256,6 +256,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           LS_MODE: "grade"
+          # blank on the schedule (grade mode then catches up every ungraded slate); a replay grades the resolved night only
+          LS_DATE: ${{ github.event.inputs.asof && steps.d.outputs.yday || '' }}
         run: python -u nba/live_slip_engine.py
 
       # BREAK-EVEN EDGE MONITOR (§31l, research §31k): is the daily PrizePicks portfolio still above break-even? Decisions only at
