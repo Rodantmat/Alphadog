@@ -50,6 +50,62 @@ def get(session, url, proxies):
     raise RuntimeError(f"underdog fetch failed {url[:120]}: {last}")
 
 
+# ROUND-2 P3#2 (2026-10-08): the scraper was fully serial with sleeps (per match 1 + #pills calls, up to 250 players, one call per
+# ladder) and wrote its file only at the very end - an in-season slate (10-12 games, ~14 stat pills, Underdog's multi-day match
+# list) needed ~1,000+ calls = 8-10 min against P3's 300 s cap, so the TERM would have killed it before a single byte was
+# written. Now: (1) matches are split into TODAY's (Eastern date of scheduled_at = UNDERDOG_DATE, default today ET) which get
+# the full pill sweep, and OTHER days which get the base lines call only (their legs archive as 'routine' anyway);
+# (2) the pill, per-player and ladder calls run on a small thread pool (UNDERDOG_WORKERS, default 4; one session per thread);
+# (3) a wall-clock budget (UNDERDOG_BUDGET_S, default 240) and a SIGTERM handler stop the sweeps early and the file is
+# written with whatever was gathered (meta.partial = the stage that was cut), so a slow day yields a smaller board, never none.
+import signal
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from zoneinfo import ZoneInfo
+
+ET = ZoneInfo("America/New_York")
+_STOP = {"flag": False, "why": None}
+_TLS = threading.local()
+
+
+def _on_term(signum, frame):   # noqa: ARG001
+    _STOP["flag"] = True; _STOP["why"] = "SIGTERM"
+
+
+signal.signal(signal.SIGTERM, _on_term)
+
+
+def _sess():
+    s = getattr(_TLS, "s", None)
+    if s is None:
+        s = _TLS.s = requests.Session()
+    return s
+
+
+def _et_date(iso):
+    try:
+        return datetime.fromisoformat(str(iso).replace("Z", "+00:00")).astimezone(ET).date().isoformat()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _pmap(fn, items, workers):
+    """Bounded parallel map that stops scheduling once the budget / TERM flag is set; returns [(item, result|None, error|None)]."""
+    out = []
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+        futs = []
+        for it in items:
+            if _STOP["flag"]:
+                break
+            futs.append((it, ex.submit(fn, it)))
+        for it, f in futs:
+            try:
+                out.append((it, f.result(), None))
+            except Exception as exc:  # noqa: BLE001
+                out.append((it, None, str(exc)))
+    return out
+
+
 def as_dict(x, key="id"):
     if isinstance(x, dict):
         return {str(k): v for k, v in x.items()}
