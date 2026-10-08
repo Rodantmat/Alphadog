@@ -38,7 +38,8 @@ import numpy as np
 import pandas as pd
 import psycopg
 
-PT = timezone(timedelta(hours=-8))
+from zoneinfo import ZoneInfo
+PT = ZoneInfo("America/Los_Angeles")   # the "today" fallback only (round 2, 2026-10-08: was a fixed UTC-8)
 BREAKEVEN = 0.560
 CONF_NEUTRAL = 0.85
 
