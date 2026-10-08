@@ -225,14 +225,20 @@ def main():
         # 3c) ALTERNATE LADDERS: for every over_under with has_alternates, /v3/over_unders/<id>/alternate_projections returns every rung
         #     (is_main flag, higher/lower payout multipliers, prices, and Underdog's fantasy + sportsbook implied probabilities per side)
         alt_legs, alt_calls, alt_errors = [], 0, 0
-        for lid, ln in list(store["over_under_lines"].items()):
+        def _ln_today(ln):
+            ast_ = ((ln.get("over_under") or {}).get("appearance_stat") or {})
+            app_ = store["appearances"].get(str(ast_.get("appearance_id") or ""), {})
+            return all_matches or mdate(app_.get("match_id")) == target
+        alt_src = [ln for ln in store["over_under_lines"].values() if (ln.get("over_under") or {}).get("has_alternates") and (ln.get("over_under") or {}).get("id")]
+        alt_src.sort(key=lambda ln: (0 if _ln_today(ln) else 1, str((ln.get("over_under") or {}).get("id"))))
+        alt_res = [] if over("alternate ladders") else _pmap(
+            lambda ln: get(_sess(), f"{API}/v3/over_unders/{(ln.get('over_under') or {})['id']}/alternate_projections?{COMMON}", proxies),
+            alt_src, workers, stop=lambda: over("alternate ladders"))
+        for ln, j, err in alt_res:
             ou = ln.get("over_under") or {}
-            if not ou.get("has_alternates") or not ou.get("id"):
-                continue
-            try:
-                j = get(s, f"{API}/v3/over_unders/{ou['id']}/alternate_projections?{COMMON}", proxies); alt_calls += 1
-            except Exception as exc:  # noqa: BLE001
+            if err:
                 alt_errors += 1; continue
+            alt_calls += 1
             ast = ou.get("appearance_stat") or {}
             app = store["appearances"].get(str(ast.get("appearance_id") or ""), {})
             pl = store["players"].get(str(app.get("player_id") or ""), {})
