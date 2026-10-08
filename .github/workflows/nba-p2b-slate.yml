@@ -344,9 +344,15 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # the merge must have PRODUCED the slate's ladder file; an UNCHANGED file is fine (a forced recovery after a
+          # failure downstream of this commit rebuilds a byte-identical ladder - "one set per day" - and used to die here
+          # with "nothing to commit"; certification round 2, 2026-10-08)
+          if [ ! -s "nba/data/nba_baseline_ladder_${{ steps.d.outputs.asof }}.json" ]; then
+            echo "ABORT: the merge produced no ladder file for ${{ steps.d.outputs.asof }}"; exit 1
+          fi
           git add nba/data/nba_baseline_ladder_*.json || true
           if git diff --cached --quiet; then
-            echo "ABORT: nothing to commit - the merge produced no ladder file"; exit 1
+            echo "ladder for ${{ steps.d.outputs.asof }} is unchanged from the committed copy (rerun) - nothing to commit, continuing"
           fi
           git reset -q   # the helper stages, commits and pushes conflict-safely (2026-10-07)
           bash nba/git_push_retry.sh "NBA P2B baseline ladder ${{ steps.d.outputs.asof }} [skip ci]" nba/data/nba_baseline_ladder_*.json
