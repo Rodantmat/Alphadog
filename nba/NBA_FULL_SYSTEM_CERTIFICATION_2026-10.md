@@ -796,6 +796,44 @@ NBA playoffs into the back data. Credits at start: paid key **4,999,977** (free 
 - Side observation: GitHub delivered P2A's 13:30Z cron backstop at 19:21Z (≈6 h late) — the run-once claim made it a no-op
   ("already claimed … this run does nothing"), exactly as designed.
 
+### POSTSEASON WIRING — owner's step 4 (2026-10-08 13:37 PT: "wire the playoffs in the system … its own specifics … everything the system does for the regular season must cover the postseason … weigh properly against the regular season")
+Design and the as-built table: strategy §31w. Evidence, in order:
+- **MLB first (owner: "be sure MLB is mining to the end of the season"):** ParlayAPI closing game lines 445 dates 2025-03-17 →
+  2026-10-04 (10-05 → 10-07 not yet published by ParlayAPI → the daily keep-up now re-asks the last 4 days, e53c242); first live
+  capture pt1300 verified (PP 564 / UD 252 / Sleeper 571 / Fliff 1,052 / ParlayAPI props 3,119 ok; Betr file stale since 09-10,
+  flagged). Every MLB mirror table joins the monthly off-database archive. `mlb/MLB_ODDS_HISTORY.md` updated. MLB code untouched.
+- **P-1** postseason mining run 37842505544 🟢 (3 seasons × 14 files: 88 / 90 / 91 games = 6 play-in + playoffs; quarters,
+  measure types, starters + officials for every game) → loader run 37845256507 🟢 → twin tables: `player_game_log_postseason`
+  1,805 / 1,934 / 2,047 rows, `team_game_log_postseason` 176 / 180 / 182. Injury reports: 2024-25 postseason 71/71 days,
+  2025-26 62/62 days (`nba-injury-report.yml` backfill loop).
+- **P-2** grader 37844676408 + 37845267594 🟢: `board_outcomes` on **50/50 and 47/47 postseason game days** (245,880 / 316,960 legs).
+- **P-3** postseason spreads export fixed (Postgres has no `count(DISTINCT) OVER`; 4d36d2b) → **90/90, 91/91 games** with morning
+  spread + total + window spread. Sample (points + rebounds) 37847241144 🟢, then full runs: **2024-25 17 props × 50 dates
+  (201,608 board-scoped rows), 2025-26 17 props × 47 dates**. Regular-season baseline rows untouched (loader deletes 004/005 only).
+- **P-4** final_hp postseason (maintenance `final_hp_postseason`; serial runs ~45 min/season, so `nba-final-hp-postseason.yml`
+  runs prop groups in parallel — the board-key table is a session TEMP table and every delete is season + prop + 004/005).
+  **Regular-season final_hp untouched** (2024-25 points / assists / blocks 002 rows still built 2025-09-25). A defect found and
+  fixed on the way: a `5_postseason` cell not yet PUBLISHED by the game date returned 0 shift instead of the `4_push` fallback
+  (f029fd7; identical for regular-season lookups). **As-of calibration rebuilt** (22:50Z): 2024-25 gains 7 postseason as-of dates
+  and 1,186 `5_postseason` cells; 2025-26 inherits them as its same-phase prior (4,152). **Regular-season cells:** 2024-25 identical
+  to the 09-25 build (backup table `nba_score.ladder_calibration_asof_pre_post_20261008`); 2025-26 differs in 2,076 own cells from
+  2026-01-17 on (n +11.7 per cell, mean |Δshift| 0.0048 logit, max 0.031) — attributed to round-2 P2B#4 (the daily roster now
+  resolves mid-season newcomers' graded legs), not to the postseason (postseason legs sit in their own phase; 2024-25 unchanged);
+  P2B rebuilds these cells nightly in season anyway. Model quality on 2024-25 postseason board legs (157,877 graded legs, 7 main
+  props): Brier 0.1956 → **0.1940** baseline → final, log-loss 0.5744 → 0.5686 — on par with the regular season's late push
+  (0.1966 → 0.1956 on 325,411 legs): the postseason is modelled as well as the regular season.
+- **P-5 sample (2024-25 postseason only, before the 2025-26 build):** postseason tier map + cells + slip engine `_post` (58,380
+  slips) + strategy gate. Cells weighed against their certified p.m: eligible steals_R_U (post 0.620 → w 0.657), pra_R_U (0.660),
+  steals_R, pts_ast_R, turnovers_R, threes_D1, points_R, pts_reb_R, rebounds_R; **not eligible** rebounds_D3 and blocks_R
+  (postseason contradicts the prior), goblin and assists_D1 (weighted p.m below break-even), stocks_R (1 postseason day). No
+  strategy PASSES on one postseason (A_wsteals_5flex +47%, B_demon_5flex +67%, B_demon_3flex +41% at k = 1, every lower bound
+  < 0) → all SHADOW. Postseason board floor min 485 / p10 560 / median 982 unique scored legs. Consistency fix: the backtest now
+  excludes the ineligible cells exactly as `pick_postseason` does (db6071d). Full two-season result below once 2025-26 is priced.
+- **P-6 live:** `nba_calendar.slate_games` created (002 + 004 + 005) and read by the scheduler (v2.3.0), P2B, P3, P4, prune,
+  certify_pipeline and the live engine; P2A postseason delta; live ladder appends postseason files; `pick_postseason` (statuses
+  outside the regular ledger); Underdog `stand_down:postseason`; P5 step 7 refreshes the postseason certification weekly in
+  play-in / playoff weeks. Every touched file compiles under 3.11, every workflow parses, every embedded bash / Python block checks.
+
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
 2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
