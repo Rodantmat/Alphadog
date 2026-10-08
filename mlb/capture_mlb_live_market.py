@@ -75,7 +75,7 @@ def capture(conn):
     now_pt = datetime.now(PT)
     label = os.environ.get("MLB_LABEL") or nearest_label(now_pt)
     day = now_pt.date()
-    max_age = float(os.environ.get("MLB_MAX_AGE_H", "3"))
+    max_age = float(os.environ.get("MLB_MAX_AGE_H", "4"))   # scrapers run every 2 h; GitHub queues can add 1-2 h
     rows = []
     for app, path in FILES.items():
         if not path.exists():
