@@ -135,7 +135,7 @@ jobs:
       - name: Baseline inputs - season files, quarters, schedule
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           PERIODS_SEASONS: "1"
         run: |
           python nba/sync_season_files_from_delta.py
