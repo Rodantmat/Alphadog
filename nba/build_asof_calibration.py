@@ -141,6 +141,13 @@ def main():
     print(f"seasons to rebuild (oldest first): {seasons}", flush=True)
     pid_map = {norm_name(x.get("DISPLAY_FIRST_LAST")): str(x.get("PERSON_ID"))
                for x in fetch("nba_all_players.json").get("records") or []}
+    try:   # daily roster tops up the weekly register (round 2 P2B#4, 2026-10-08): newcomers' graded legs would otherwise be dropped
+        for x in (fetch("nba_players_current.json").get("players") or []):
+            k = norm_name(x.get("full_name"))
+            if k and k not in pid_map and x.get("id") is not None:
+                pid_map[k] = str(x["id"])
+    except Exception as exc:  # noqa: BLE001
+        print(f"  daily roster unavailable ({str(exc)[:60]}) - register only", flush=True)
     with conn.cursor() as cur:
         cur.execute("""CREATE TABLE IF NOT EXISTS nba_score.ladder_calibration_asof (
             season text, as_of_date date, prop text, phase text, band text, side text,
