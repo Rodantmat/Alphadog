@@ -34,5 +34,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python -u nba/dump_db_sql.py
+      # LEDGER ARCHIVE (retention audit 2026-10-08): the DB-only ledgers and the parameter history (live slips/states, verdicts,
+      # certification log, price-shopping ledger, referee crews, morning lines, run records, tunables) as CSV.GZ in git - the
+      # provider's backups cover seven days only; everything else mined already has a raw copy in the repo.
+      - name: Archive the database-only ledgers
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/dump_db_ledgers.py
       - name: Commit the record
-        run: bash nba/git_push_retry.sh "NBA DB SQL dump [skip ci]" nba/sql/db_functions.sql nba/sql/db_views.sql
+        run: bash nba/git_push_retry.sh "NBA DB SQL dump + ledger archive [skip ci]" nba/sql/db_functions.sql nba/sql/db_views.sql nba/data/db_archive/*.csv.gz
