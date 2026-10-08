@@ -624,6 +624,13 @@ asserted from the audit alone. Items the audits marked INFO are included when th
   (37748628727) → `edge_monitor_ref` 20 cells at 08:19:17Z. `nba-integration-test` 37748644639 (2026-01-10): **ALL PASS**,
   ledgers rolled back to 0/0/0/0. `nba-pp-parity` 37748663722 (10 slates): ALIGNED_identical 120, grading disagreements
   none, **apples-to-apples differences none**. Sim-slate 2026-10-20 re-dispatched on the final code (TEST label check).
+- **Sim-slate 37749440843 🔴→🟢 (the rerun found a regression of P2B#3's fix):** with the empty 2026-27 placeholder files in
+  place, `pd.concat` of a frame with no columns turned `PLAYER_ID` / `TEAM_ID` into float64 (`"201935.0"`), so no roster id
+  matched, the slate built 0 virtual rows and the recipe died (ZeroDivisionError). Reproduced locally in 4 s; fixed in both
+  builders by dropping empty frames from every season concat (the season label is `TEST`, not the file) (e5c2538, c4f007f);
+  local rebuild: 3 games, 93 virtual rows, 83 players, 2,901 points/rebounds rungs, `current_season 2026-27`. Re-dispatched.
+- P1 certify after the predicate fix: probe 37750173504 → **2/2, "Pipeline certified"** (the 10-08 forced P1 had landed every
+  scrape and load and failed only there). First P5 on the market-free twin dispatched (37750390757).
 
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
