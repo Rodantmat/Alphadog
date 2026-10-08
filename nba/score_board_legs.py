@@ -166,6 +166,20 @@ def main():
         print(f"No board legs for {asof}. Nothing to score.")
         return
     raw = len(board)
+    # LABELS (round-2 P3#12, 2026-10-08). The certified history holds 'window' and 'close' rows only; a live date also
+    # carries 'routine' (captured on earlier days, stale lines) and 'morning' (P2B). Once the window board exists for the
+    # date, the advance captures are dropped so the scored set is the decision board (plus close, as in history) and
+    # board_scored is not padded with lines PrizePicks has since moved. BS_LABELS=a,b overrides (replays, tests).
+    _labels = [x.strip().lower() for x in os.environ.get("BS_LABELS", "").split(",") if x.strip()]
+    _present = set(board["snapshot_label"].dropna().str.lower())
+    if _labels:
+        board = board[board["snapshot_label"].str.lower().isin(_labels)].copy()
+        print(f"  BS_LABELS={_labels}: {len(board):,} of {raw:,} legs kept", flush=True)
+    elif "window" in _present and (_present & {"routine", "morning"}):
+        n0 = len(board)
+        board = board[~board["snapshot_label"].str.lower().isin(["routine", "morning"])].copy()
+        print(f"  window board present: {n0 - len(board):,} routine/morning legs dropped, {len(board):,} kept "
+              f"(labels {sorted(_present)})", flush=True)
     # BS_APPS (documented in the header since the first version, never read until 2026-09-26). Blank =
     # every app, which is the production default; a comma list restricts a replay or a test.
     _apps = [a.strip().lower() for a in os.environ.get("BS_APPS", "").split(",") if a.strip()]
