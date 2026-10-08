@@ -166,6 +166,14 @@ def _read_json(name, timeout=300):
         return json.load(r)
 
 
+def _optional_records(name):
+    """records of a file that may legitimately not exist (the postseason files) - [] when absent, never an error"""
+    try:
+        return list(_read_json(name).get("records") or [])
+    except Exception:  # noqa: BLE001
+        return []
+
+
 TEAM_HIST = {}   # norm_name -> sorted [(date, team)] from the logs, so a missing box-score row can be told apart:
                  # his team played today (a scratch: dnp) vs his team has no box score today (postponed / partial pull:
                  # game_not_found - COMPASS 60, round-2 P2A#15 2026-10-08). Settlement is the same (void); the record is not.
