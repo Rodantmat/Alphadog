@@ -188,6 +188,10 @@ def main():
     def shift_for(prop, phase, band, side, gd):
         """the latest cell published at or before this game date - never a future one"""
         arr = asof_cal.get((prop, phase, band, side))
+        if not arr and phase == "5_postseason":
+            # no postseason cell fitted yet for this (prop, band, side): fall back to the late-season push - the closest
+            # regular-season phase - rather than to no correction at all (strategy §31w principle 3)
+            arr = asof_cal.get((prop, "4_push", band, side))
         if not arr:
             return 0.0
         lo, hi, out = 0, len(arr) - 1, 0.0
