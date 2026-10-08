@@ -1,0 +1,63 @@
+name: MLB Live Market Capture (postseason keep-up)
+
+# mlb/capture_mlb_live_market.py - our own MLB board files + ParlayAPI MLB props archived at 09:00 / 13:00 / 17:00 PT, and
+# yesterday's ParlayAPI closing game lines once a day. Independent of Odds API credits. Crons are UTC for PDT (UTC-7); the
+# postseason ends before the Nov 1 DST change. A late GitHub cron is harmless: the capture records its real time and labels
+# by the nearest board time. Retire after the World Series (or keep for 2027).
+on:
+  schedule:
+    - cron: '5 16 * * *'    # 09:05 PDT
+    - cron: '5 20 * * *'    # 13:05 PDT
+    - cron: '5 0 * * *'     # 17:05 PDT
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "capture | closing"
+        default: "capture"
+        required: false
+      label:
+        description: "capture label override (pt0900 / pt1300 / pt1700)"
+        default: ""
+        required: false
+      close_start:
+        description: "closing mode: start date"
+        default: ""
+        required: false
+      close_end:
+        description: "closing mode: end date"
+        default: ""
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-mlb-live-market
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests
+      - name: Capture
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MLB_MODE: ${{ github.event.inputs.mode || 'capture' }}
+          MLB_LABEL: ${{ github.event.inputs.label }}
+          MLB_CLOSE_START: ${{ github.event.inputs.close_start }}
+          MLB_CLOSE_END: ${{ github.event.inputs.close_end }}
+        run: python -u mlb/capture_mlb_live_market.py
+      - name: Yesterday's closing game lines (first capture of the day only)
+        if: ${{ github.event_name == 'schedule' && github.event.schedule == '5 16 * * *' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MLB_MODE: closing
+        run: python -u mlb/capture_mlb_live_market.py
