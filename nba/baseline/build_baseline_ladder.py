@@ -55,9 +55,27 @@ s = rep(s, '''players = pd.concat(P, ignore_index=True); teams = pd.concat(T, ig
 '''def _cat(frames):
     kept = [f_ for f_ in frames if len(f_)]
     return pd.concat(kept if kept else frames, ignore_index=True)
+# POSTSEASON (strategy §31w P-6, 2026-10-08). On a play-in / playoff morning the current season's play-in + playoff box scores
+# (nba_player_game_log_postseason_<slug>.json etc., kept current by P2A's postseason delta) are appended to the season frames
+# under the season's own label - EXACTLY what the certified postseason history did (build_baseline_history_postseason.py P1),
+# so rolling form, minutes and the last-3-games roster run straight on from the regular season into the playoffs. In the
+# regular season the files do not exist yet -> nothing is appended and nothing changes.
+for _nm, _lst in (("nba_player_game_log", P), ("nba_team_game_log", T), ("nba_team_game_log_advanced", TA)):
+    _pp = DATA / f"{_nm}_postseason_{SLUG[TEST[0]]}.json"
+    if _pp.exists():
+        _x = load(_pp)
+        if len(_x):
+            _x["season"] = TEST[0]; _lst.append(_x)
+            print(f"[postseason] {_pp.name}: {len(_x)} rows appended to {TEST[0]}", flush=True)
 players = _cat(P); teams = _cat(T); teams_adv = _cat(TA)''')
 s = rep(s, '''ff = pd.concat(FF, ignore_index=True); sc = pd.concat(SC, ignore_index=True)''',
-'''ff = _cat(FF); sc = _cat(SC)''')
+'''for _nm, _lst in (("team_four_factors", FF), ("team_scoring", SC)):           # postseason factor logs (history P2)
+    _pp = DATA / f"nba_backfill_{_nm}_postseason_{SLUG[TEST[0]]}.json"
+    if _pp.exists():
+        _x = pd.DataFrame(json.loads(_pp.read_text()).get("records", []))
+        if len(_x):
+            _x["season"] = TEST[0]; _lst.append(_x)
+ff = _cat(FF); sc = _cat(SC)''')
 s = rep(s, '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")''',
 '''# SHAPE PARITY (fixed 2026-09-24). The season backfill wrote the advanced team log in a SLIM shape
 # without GAME_DATE, and the recipe merges GAME_DATE in from `teams`. The daily delta sync writes the
