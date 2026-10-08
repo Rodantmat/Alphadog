@@ -195,7 +195,10 @@ def load_logs(slug, pid_to_name):
         print(f"  season file nba_player_game_log_{slug}.json does not exist yet (HTTP 404) - no box scores for {slug}, "
               f"its dates grade as no boxscore", flush=True)
         return defaultdict(dict), set()
-    rows = doc.get("records") or []
+    rows = list(doc.get("records") or [])
+    # POSTSEASON (strategy §31w P-2, 2026-10-08): play-in / playoff box scores live in their own file; their dates never
+    # overlap the regular season's, so regular-season grades are unchanged (team history is read as-of the leg's date).
+    rows += _optional_records(f"nba_player_game_log_postseason_{slug}.json")
     by_date = defaultdict(dict)
     players_seen = set()
     for x in rows:
