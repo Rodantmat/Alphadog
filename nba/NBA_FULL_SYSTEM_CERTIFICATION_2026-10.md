@@ -637,6 +637,10 @@ asserted from the audit alone. Items the audits marked INFO are included when th
   `pd.concat([])` raised "No objects to concatenate". P2B's components step runs it under `set -e`: **10-20 would have
   died there.** The April-based rehearsal (E-4) never saw it because the real 2025-26 rows filled the test set. Fix: an
   empty period ladder is written and the builder exits 0 (no certified cell uses period props) (843974f). Re-dispatched.
+- **Sim-slate 37758983313 🟢 (opening night on the final code):** `current_season 2026-27`, 3 games, 83 players, 25,939 rungs
+  over 22 props; period ladder empty by design; final_hp built in the sandbox; the real `pick()`: 148 scored PrizePicks legs
+  (65 unscored = beyond-depth / neighbour-priced rungs routed to `final_hp_derived`, 0 unresolved) → board below the 179
+  floor → nothing placed (§31j, the spotlight board); production untouched (0/0/0/0). The opening-night path is green.
 
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
