@@ -457,6 +457,16 @@ def pick(conn, day, require_fresh=True):
     pool = ENG.eligible_legs(legs)
     t10 = trailing10(conn, day, {l['player_id'] for v in pool.values() for l in v if l['prop'] == 'steals' and l.get('player_id')})
     pool = {c: [l for l in v if leg_allowed(l, t10)] for c, v in pool.items()}   # pass 45 leg filter
+    # BROAD BOARD (§29k, certified build_slip_engine.main): >= 5 cell families with >= 2 players -> 5+-pick slips prefer >= 4
+    # distinct families (the `div` tie-break). The live pick never passed this flag (default False), so on every normal slate
+    # the live top-k ranking differed from the certified one for the 5-pick strategies. Found 2026-10-08, certification round 2.
+    _fam_depth = defaultdict(set)
+    for _c, _legs in pool.items():
+        for _l in _legs:
+            _fam_depth[_c.replace('_U', '')].add(_l['player'])
+    broad_day = sum(1 for _v in _fam_depth.values() if len(_v) >= 2) >= 5
+    print(f"  {day}: board breadth - {sum(1 for _v in _fam_depth.values() if len(_v) >= 2)} cell families with 2+ players -> "
+          f"{'BROAD (diversification tie-break on)' if broad_day else 'narrow (no diversification tie-break)'}", flush=True)
     pools = {'': pool}
     for fam, excl in EXCLUDE_BY_FAMILY.items():
         pools[fam] = {c: v for c, v in pool.items() if c not in excl}
