@@ -196,6 +196,17 @@ jobs:
           INJURY_EXPECT: ${{ steps.d.outputs.has_games == '1' && '1' || '0' }}   # a slate day must find the day-before filings (round 2 P3#14)
         run: timeout --signal=TERM --kill-after=30s 600 python nba/scrape_nba_injury_report.py
 
+      # STORE THE DAY-BEFORE SNAPSHOTS TOO (retention audit 2026-10-08): the morning scrape was committed as JSON but only P3
+      # loaded injury snapshots into nba_daily.injury_report_snapshots, so a missed P3 lost the day's filings from the DB.
+      # The loader is idempotent per (game_date, snapshot_ts, team, player); P3's load later adds the day-of filings.
+      - name: Load the day-before injury snapshots into Postgres
+        if: ${{ github.event.inputs.skip_mining != 'true' && steps.soft_injury.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          INJURY_LOAD_MODE: "current"
+        run: python nba/load_injury_report.py
+
       # D1 REFEREE CREWS - a baseline-stage factor that posts ~6-7 AM PT (~9 AM ET) and is never archived. Poll until
       # every scheduled game has a crew, or until the day's own deadline (so an early slate is never made late by
       # waiting); a crew still missing then falls back to the documented D1 fallback model. Never fails the slate.
