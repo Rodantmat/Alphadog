@@ -432,8 +432,21 @@ def allstar_break(conn, day):
     return None
 
 
+def post_tip(conn, day):
+    """True when `day` is today (Pacific) and the slate's first regular-season tip has passed - a pick now would be post-tip.
+    Replays (day < today) are never post-tip. LS_ALLOW_POST_TIP=1 overrides (tests only)."""
+    if day != pt_today() or os.environ.get('LS_ALLOW_POST_TIP') == '1':
+        return False
+    first = conn.execute("SELECT min(game_datetime_utc) FROM nba_calendar.regular_season_games WHERE game_date=%s", (day,)).fetchone()[0]
+    return bool(first) and dt.datetime.now(dt.timezone.utc) >= first
+
+
 def pick(conn, day, require_fresh=True):
     ensure_tables(conn)
+    # round-2 P3#5 (2026-10-08): §29z-d "P3 never after the first tip" - the engine refuses on its own, whatever dispatched it
+    if post_tip(conn, day):
+        print(f"  {day}: the first tip has passed - a post-tip pick is never placed (§29z-d); nothing built", flush=True)
+        return
     if require_fresh:
         scored = conn.execute("SELECT count(*) FROM nba_score.board_scored WHERE game_date=%s", (day,)).fetchone()[0]
         fhp = conn.execute("SELECT count(*) FROM nba_score.final_hp WHERE game_date=%s AND final_hp IS NOT NULL", (day,)).fetchone()[0]
