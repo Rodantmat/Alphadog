@@ -281,7 +281,7 @@ jobs:
         if: ${{ steps.d.outputs.has_games == '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           BT_ASOF: ${{ steps.d.outputs.asof }}
           BT_CUTOFF: "baseline"
           BT_INJURY: "1"
