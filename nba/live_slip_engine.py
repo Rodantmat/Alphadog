@@ -12,18 +12,24 @@ GRADE (after P2, next morning): yesterday's placed slips graded against the real
 THE RULES ARE THE CERTIFIED ONES (strategy doc 25-28), imported from build_slip_engine where they live; nothing
 is re-derived here. What this file adds is the daily loop, the ledger, and the hurdle machine.
 
-Hurdles (27d, 28g), per strategy, evaluated on the live ledger only:
+Hurdles (27d, 28g; thresholds as implemented after 29c/29f/29g - this docstring is kept in step with evaluate_hurdles,
+round-2 P2A#17 2026-10-08), per strategy, evaluated on the live ledger only:
   H0  slippage: window price vs the price at lock when a close snapshot exists (recorded, not gating yet)
-  H1  per-leg hit: rolling over the last 100 legs vs the strategy's certified level; yellow > 0.04 below, red > 0.07 below (>=150 legs)
-  H2  drawdown: live drawdown vs the strategy's worst-season backtest max dd; yellow at 1.0x, red at 1.5x
-  H3  streak: live losing-day streak vs the backtest longest; yellow at 1.25x, red at 1.5x
-  H4  pool: qualifying legs/day for the strategy's cells below the floor (10) for 14+ days -> yellow
-  H5  opening weeks: no red in the first 21 days of a season (yellow caps only)
+  H1  per-leg hit, DAY-BLOCKED: trailing-14-day mean of the daily leg hit vs the certified level, in units of the backtest's
+      day-level sd (sd_daily_hit from calibrate); yellow z > 2, red z > 3. (The rolling-100-leg CUSUM it replaced: 29f.)
+  H2  drawdown: live drawdown vs the Monte-Carlo 95th-percentile drawdown of the backtest day sequence (mc95_dd);
+      yellow at 0.8x, red at 1.0x (fallback without a calibration row: worst backtest dd, 1.0x / 1.5x)
+  H3  streak: live losing-day streak vs the MC95 / MC99 longest streak (streak95 / streak99); fallback 1.25x / 1.5x of the backtest longest
+  H4  pool: qualifying legs/day for the strategy's cells below the floor over the last 14 days, after day 21 -> yellow
+  H5  opening weeks: every red is downgraded to yellow in the first 21 days; two yellows cap at yellow (half cap), never red
   H6  final week: all strategies off for the last 7 days of the regular season
-  CI  paper gate: a strategy is 'paper' (never staked) until >= 50 slate days AND >= 1,000 slips; then 'active' only if
-      the 10k day-blocked bootstrap lower bound on live ROI > 0
-State machine: paper -> active (CI gate) ; active -> yellow (any one hurdle: cap halves) ; yellow -> red (two hurdles, or any red: cap 0,
-  strategy off until re-qualified by the weekly run) ; yellow -> active when all hurdles clear for 7 days.
+  H7  family A anchor (shared steals anchor) z > 2 yellow / > 3 red; merged with H1 (one measurement, never two yellows)
+  CI  paper gate: a strategy is 'paper' (never staked) until >= 50 slate days AND >= cap x 50 slips (a cap-1 strategy cannot be
+      asked for 1,000 slips); then 'active' only if the 10k day-blocked bootstrap lower bound on live ROI > 0
+State machine: paper -> active (CI gate) ; active -> yellow (any one hurdle: cap halves) ; yellow -> red (two hurdles after day 21,
+  or any non-variance red: cap 0) ; a red is STICKY (RED_STICKY) until the weekly P5 PASS releases it (and P5 PASS releases it
+  only when the live season's own walk-forward lower bound > 0) ; yellow -> active when all hurdles clear for 7 days ; a
+  variance-only red (H2/H3 with H1/H7 clean) gets a one-shot 7-day grace per drawdown episode before it stops the strategy.
 
 Env: DATABASE_URL, LS_MODE (pick|grade), LS_DATE (default: today PT for pick, yesterday PT for grade).
 """
