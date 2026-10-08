@@ -205,6 +205,13 @@ def main():
     proxy_url = os.environ.get("PROXY_URL", "").strip()
     session = pick_session(requests, proxy_url) if mode != "probe" else \
         requests.Session(proxies={"https": proxy_url, "http": proxy_url} if proxy_url else None)
+    if session is None:
+        # NEVER REPLACE A GOOD FILE WITH AN EMPTY ONE (certification round 2, 2026-10-08): the daily mode used to write
+        # rows: [] when no session could reach the archive, P2B committed it, and the builder read "nobody is out" - more
+        # lenient than history (fact 58). Now: previous file untouched, exit 1 (the workflow step is soft; the builder's
+        # documented fallback then uses the last committed report).
+        print("injury-report: archive unreachable - previous nba_injury_report_current.json left untouched", file=sys.stderr)
+        sys.exit(1)
     if mode == "probe":
         # DIAGNOSTIC: what does the CDN return to the runner for a URL known to exist (with and without the proxy)?
         url = os.environ.get("INJURY_PROBE_URL", "https://ak-static.cms.nba.com/referee/injury/Injury-Report_2026-04-08_02_30PM.pdf")
