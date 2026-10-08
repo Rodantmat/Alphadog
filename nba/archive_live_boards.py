@@ -184,9 +184,11 @@ def rows_underdog(doc, gd, label):
         if line is None or not l.get("player"):
             continue
         _at = l.get("appearance_type")
+        _stat_l = str(l.get("stat") or "").strip().lower()
         if (_at is not None and str(_at).lower() != "player") or \
-           str(l.get("stat_key") or "").lower() in ("moneyline", "spread", "total", "total_points", "margin_of_victory"):
-            continue   # team markets (moneyline / total / spread ladders) are not player legs; no engine reads them
+           _stat_l in ("moneyline", "margin of victory", "total points") or \
+           (" @ " in str(l.get("player")) and not l.get("player_id")):
+            continue   # team markets (moneyline / margin / total ladders - 'Total Points' shares stat_key 'points' with player points)
         _disp = str(l.get("stat") or l.get("stat_key") or "")
         mk = _ud.get(_disp.strip().lower())
         if mk is None:
