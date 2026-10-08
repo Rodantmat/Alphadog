@@ -321,11 +321,21 @@ def main():
     ph = ("1_oct_nov" if _m in (10, 11) else
           "2_dec_asb" if _m in (12, 1) or (_m == 2 and _day < 15) else
           "3_post_asb" if (_m == 2 and _day >= 15) or (_m == 3 and _day < 16) else "4_push")
-    cal = pd.read_sql("""SELECT DISTINCT ON (prop, band, side) prop, band, side, log_odds_shift
-                         FROM nba_score.ladder_calibration_asof
-                         WHERE as_of_date <= %s AND phase = %s
-                         ORDER BY prop, band, side, as_of_date DESC""", conn, params=(asof, ph))
-    shift = {(r.prop, r.band, r.side): float(r.log_odds_shift) for r in cal.itertuples(index=False)}
+    # POSTSEASON SLATE (strategy §31w P-4): a play-in / playoff night uses the 5_postseason cells, each missing cell falling
+    # back to the late-season push (the build_final_hp rule) - decided by the night's game ids, never the date.
+    _post = conn.execute("""SELECT coalesce(bool_and(game_id LIKE '004%%' OR game_id LIKE '005%%'), false)
+                            FROM nba_calendar.games WHERE game_date = %s
+                              AND (game_id LIKE '002%%' OR game_id LIKE '004%%' OR game_id LIKE '005%%')""", (asof,)).fetchone()[0]
+    if _post:
+        print(f"  {asof} is a postseason slate - calibration phase 5_postseason (fallback 4_push)", flush=True)
+    _phases = ["4_push", "5_postseason"] if _post else [ph]   # later in the list wins
+    shift = {}
+    for _ph in _phases:
+        cal = pd.read_sql("""SELECT DISTINCT ON (prop, band, side) prop, band, side, log_odds_shift
+                             FROM nba_score.ladder_calibration_asof
+                             WHERE as_of_date <= %s AND phase = %s
+                             ORDER BY prop, band, side, as_of_date DESC""", conn, params=(asof, _ph))
+        shift.update({(r.prop, r.band, r.side): float(r.log_odds_shift) for r in cal.itertuples(index=False)})
     BANDS = [0, .40, .45, .50, .55, .60, .65, .70, .75, .80, .85, 1.0]
     d["band"] = pd.cut(d["baseline_hp"], BANDS).astype(str)
     d["side_n"] = np.where(d["side"].str.lower().str.startswith("o"), "Over", "Under")
