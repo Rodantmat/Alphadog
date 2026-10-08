@@ -183,6 +183,10 @@ def load_logs(slug, pid_to_name):
         rec["team"] = (str(x.get("MATCHUP") or "").split(" ")[0] or None)
         by_date[d][nm] = rec
         players_seen.add(nm)
+        if rec["team"]:
+            TEAM_HIST.setdefault(nm, []).append((d, rec["team"]))
+    for v in TEAM_HIST.values():
+        v.sort()
     # PERIOD BOX SCORES (2026-09-25): the quarter logs P2 mines daily. H1 = Q1+Q2, H2 = Q3+Q4, set only
     # when both quarters are present; a player-date with no quarter row simply lacks the keys.
     q = {}
