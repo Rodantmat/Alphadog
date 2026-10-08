@@ -28,12 +28,23 @@ STEPS = [
     "ALTER TABLE nba_score.tier_map_legs_post ADD COLUMN IF NOT EXISTS event_id text",
     "ALTER TABLE nba_score.tier_map_legs_post ADD COLUMN IF NOT EXISTS pf20 double precision",
     "DELETE FROM nba_score.tier_map_legs_post",
+    # final_score is the MARKET-FREE score - exactly how the live pipeline (no sportsbook feed) scores a leg and how the
+    # certified live backtest (*_mf, nba/sql/build_tier_map_legs_sel_mf.sql) rescored the regular season: f_books = 0,
+    # f_agree = 0.55, deductions read from nba_score.confidence_model. final_hp / baseline_hp are probabilities, untouched.
     """CREATE TEMP TABLE _fh AS
-       SELECT season, game_date, game_id, player_id, prop, side, line,
-              final_hp::float s_final, baseline_hp::float s_base, score::float s_score
-       FROM nba_score.final_hp
-       WHERE (game_id LIKE '004%' OR game_id LIKE '005%')
-         AND final_hp IS NOT NULL AND baseline_hp IS NOT NULL AND score IS NOT NULL""",
+       SELECT f.season, f.game_date, f.game_id, f.player_id, f.prop, f.side, f.line,
+              f.final_hp::float s_final, f.baseline_hp::float s_base,
+              CASE WHEN f.c_market IS NULL OR f.confidence IS NULL THEN f.score::float ELSE
+                round(least(100.0, greatest(0.0,
+                  f.final_hp*100.0
+                  + (100.0 - f.final_hp*100.0) * least(1.0, greatest(0.0, ((f.confidence - (k.d_books*f.c_market + CASE WHEN f.c_market > 0 THEN k.d_agree*0.30 ELSE 0 END)/100.0) - 0.85)/0.15)) * 0.5
+                  - f.final_hp*100.0 * least(1.0, greatest(0.0, -(((f.confidence - (k.d_books*f.c_market + CASE WHEN f.c_market > 0 THEN k.d_agree*0.30 ELSE 0 END)/100.0) - 0.85)/0.15))) * 0.35
+                ))::numeric, 2)::float END AS s_score
+       FROM nba_score.final_hp f
+       CROSS JOIN (SELECT max(deduction) FILTER (WHERE factor='f_books') d_books, max(deduction) FILTER (WHERE factor='f_agree') d_agree
+                   FROM nba_score.confidence_model) k
+       WHERE (f.game_id LIKE '004%' OR f.game_id LIKE '005%')
+         AND f.final_hp IS NOT NULL AND f.baseline_hp IS NOT NULL AND f.score IS NOT NULL""",
     "CREATE INDEX ON _fh (game_date, player_id, prop, side, line)",
     """CREATE TEMP TABLE _priced AS
        SELECT p.game_date, p.nm,
