@@ -128,6 +128,9 @@ def graded(season, conn, pid_map, props):
     d["won"] = np.where(d["side"] == "Over", d["leg_result"] == "over_win",
                         d["leg_result"] == "under_win").astype(int)
     d["phase"] = d["game_date"].map(phase_of)
+    # POSTSEASON (strategy §31w P-4): play-in / playoff legs fit their own phase cells (5_postseason), never the
+    # late-season push's - selected by game id, since April holds both kinds of night. Regular-season cells unchanged.
+    d["phase"] = np.where(d["game_id"].astype(str).str[:3].isin(["004", "005"]), "5_postseason", d["phase"])
     d["band"] = pd.cut(d["baseline_hp"].astype(float), BANDS).astype(str)
     return d.sort_values("game_date")
 
