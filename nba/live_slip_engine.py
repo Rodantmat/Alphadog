@@ -783,6 +783,8 @@ def grade(conn, day):
                       else 'graded_week1_skip' if status0 == 'placed_week1_skip'
                       else 'graded_capped' if status0 == 'placed_capped'
                       else 'graded_late' if status0 == 'placed_late'
+                      else 'graded_post_shadow' if status0 == 'placed_post_shadow'
+                      else 'graded_post' if status0 == 'placed_post'
                       else ('graded' if n_void == 0 else 'graded_void'))
         conn.execute("""UPDATE nba_score.live_slips SET status=%s, hits=%s, payout=%s, profit=%s, legs_json=%s, graded_at=now()
                         WHERE game_date=%s AND strategy=%s AND k=%s""",
