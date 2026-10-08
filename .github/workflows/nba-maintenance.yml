@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       task:
-        description: "final_hp | freshness | injury"
+        description: "final_hp | final_hp_postseason | calibration | freshness | injury | prune | reliability"
         default: "freshness"
         required: true
       season:
