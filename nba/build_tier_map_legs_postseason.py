@@ -106,7 +106,7 @@ STEPS = [
          FROM dedup t CROSS JOIN (VALUES ('final_hp'),('baseline_hp'),('final_score')) rk(rank_key)
        )
        SELECT rank_key, season, game_date, player, prop, side, line, kind, tier, sys_tier, price, score, h,
-         row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score DESC),
+         row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score DESC, player, side, line),
          count(*) OVER (PARTITION BY rank_key, game_date, prop, tier),
          game_id, player_id, team_id, event_id, pf20
        FROM ranked""",
