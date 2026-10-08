@@ -112,8 +112,21 @@ jobs:
           d = datetime.fromisoformat(slate).date()
           cutoff = datetime(d.year, d.month, d.day, 13, 15, tzinfo=PT)
           p3 = min(cutoff, first.astimezone(PT) - timedelta(minutes=30)) if first else cutoff
-          # the crews may be waited for until the build would no longer finish before P3 (~80 min build + 5 min margin)
-          ref_deadline = p3 - timedelta(minutes=85)
+          # the crews may be waited for until the build would no longer finish before P3. BUILD BUDGET (round-2 P2B#15,
+          # 2026-10-08): the full-slate build is ~95 min (8 pairs + components + combos + periods) plus loads, refits and
+          # final_hp (~15 min); the old 85-min allowance let a late crew post push the build past P3 on a normal day
+          # (P3 13:15, poll until 11:50, build to 13:25). Tunable: nba_config.classification_config 'p2b_build_budget_min'
+          # ({"minutes": N}); default 125. The job timeout is 300 min for the same reason.
+          budget = 125
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              row = c.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key = 'p2b_build_budget_min'").fetchone()
+          if row:
+              try:
+                  import json as _json
+                  budget = int((row[0] if isinstance(row[0], dict) else _json.loads(row[0]))["minutes"])
+              except Exception as exc:  # noqa: BLE001
+                  print(f"p2b_build_budget_min unreadable ({exc}) - default {budget}")
+          ref_deadline = p3 - timedelta(minutes=budget)
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"has_games={'1' if n else '0'}\n")
               f.write(f"ref_deadline={ref_deadline.astimezone(timezone.utc).isoformat()}\n")
