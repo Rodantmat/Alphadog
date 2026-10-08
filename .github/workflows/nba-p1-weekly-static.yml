@@ -155,7 +155,7 @@ jobs:
 
       - name: DARKO and shot quality
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
         run: |
           python nba/scrape_nba_darko.py
           python nba/scrape_nba_shotquality.py
