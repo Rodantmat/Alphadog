@@ -65,10 +65,21 @@ def american_to_decimal(a):
 def selected_legs(conn, day):
     """distinct legs the two engines selected today: {(src, pid, prop, side, line): {player, tier, strategies}}"""
     out = {}
-    for src, sql in (("pp", "SELECT strategy, legs_json FROM nba_score.live_slips WHERE game_date=%s AND status LIKE 'placed%%'"),
-                     ("ud", "SELECT portfolio||'/'||composition, legs_json FROM nba_score.ud_live_slips WHERE game_date=%s")):
+    srcs = [("pp", "SELECT strategy, legs_json FROM nba_score.live_slips WHERE game_date=%s AND status LIKE 'placed%%'"),
+            ("ud", "SELECT portfolio||'/'||composition, legs_json FROM nba_score.ud_live_slips WHERE game_date=%s")]
+    if os.environ.get('PSL_SOURCE') == 'backtest':
+        # replay / test source: the certified backtest's slips for a past slate (legs carry no player_id - resolved by name
+        # through the ONE normaliser); never used by P3
+        srcs = [("bt", "SELECT composition||'_'||size||structure, legs_json FROM nba_score.slip_engine_slips WHERE game_date=%s")]
+    names = {}
+    for src, sql in srcs:
         for strat, legs in conn.execute(sql, (day,)).fetchall():
             for l in (legs if isinstance(legs, list) else json.loads(legs)):
+                if l.get('player_id') is None and l.get('player'):
+                    if l['player'] not in names:
+                        r = conn.execute("SELECT player_id FROM nba_ref.player_name_map WHERE norm_name = nba_ref.norm_name(%s) LIMIT 1", (l['player'],)).fetchone()
+                        names[l['player']] = r[0] if r else None
+                    l['player_id'] = names[l['player']]
                 if l.get('player_id') is None:
                     continue
                 key = (src, int(l['player_id']), l['prop'], l['side'], float(l['line']))
