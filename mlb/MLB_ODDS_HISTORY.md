@@ -49,8 +49,17 @@ ranges/labels; it only fetches what is missing.
   503 "busy"); and once a day yesterday's ParlayAPI closing game lines into `market.mlb_game_lines_closing`.
 * **`mlb-odds-daily.yml`** (02:30 PT): pulls the last three days into the Odds API mirror while the paid key has credits.
 * **Match odds backfill:** ParlayAPI closing game lines for every date 2025-03-17 → 2026-10-07 (10 credits/date) into
-  `market.mlb_game_lines_closing`.
-* Retire both workflows after the World Series, or keep them for 2027.
+  `market.mlb_game_lines_closing`. **Verified 2026-10-08 21:15 UTC: 445 game dates, 2025-03-17 → 2026-10-04** (ParlayAPI had
+  not yet published 10-05 → 10-07; the archive lags a day or two on late games). The daily keep-up therefore re-asks the
+  **last four days** every morning (upsert, ~40 credits/day), so a late-published date is filled the next day.
+* **First live capture verified 2026-10-08 13:05 PDT (`pt1300`):** PrizePicks 564 items, Underdog 252, Sleeper 571, Fliff 1,052,
+  ParlayAPI props 3,119 (status ok), Betr 1,684 flagged `stale` (file from 09-10, §4).
+* **Runs to the end of the season by construction:** every piece above is date-driven (today PT / yesterday PT), so it keeps
+  capturing every postseason day through the World Series with no further input (a day without games just holds empty boards).
+  Retire both workflows after the World Series, or keep them for 2027.
+* **Retention:** every MLB mirror table (`market.mlb_odds_event_snapshots`, `mlb_odds_game_lines`, `mlb_odds_backfill_log`,
+  `mlb_game_lines_closing`, `mlb_live_market_captures`) is DB-only and paid for, so it joins the monthly off-database archive
+  (`nba/dump_db_history.py` → GitHub Release assets, `nba-db-history-archive.yml`).
 
 ## 4. Known source gaps (recorded, not ours to fix here)
 * Betr MLB board file last refreshed 2026-09-10 (the Betr harvest runs for NBA only) — captured as `stale`.
