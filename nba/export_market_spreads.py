@@ -60,17 +60,39 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for season in seasons:
         lo, hi = season_bounds(season)
+        # EVENT -> GAME (certification round 2, 2026-10-08). nba_market.event_game_map is built by a manual workflow from
+        # the game logs of games ALREADY PLAYED (build_market_derived.py), so a live slate's events - unplayed by definition -
+        # could never map, the export silently dropped today's games and the recipe fell back to the derived spread
+        # (r 0.46) on every live day while the certified history had the real line (COMPASS 14). The map is now
+        # event_game_map first, else the schedule: same date, home/away matched on the team NICKNAME ("Los Angeles Clippers"
+        # vs the register's "LA Clippers" is the one full-name mismatch; nicknames are unique across the 30 teams).
+        # MORNING ONLY for the phase-1 inputs (the docstring always said so; the aggregates blended the window line in).
         rows = conn.execute("""
-            SELECT m.game_id, s.game_date::text,
-                   max(CASE WHEN s.market='spreads' AND s.outcome=s.home_team THEN s.point END) AS home_spread,
-                   avg(CASE WHEN s.market='totals'  AND s.outcome='Over'      THEN s.point END) AS total,
+            WITH ev AS (
+              SELECT DISTINCT s.event_id, s.game_date, s.home_team, s.away_team
+              FROM nba_market.game_lines_snapshots s
+              WHERE s.game_date BETWEEN %s AND %s AND s.snapshot_label IN ('morning','window')),
+            cal AS (
+              SELECT ev.event_id, g.game_id
+              FROM ev
+              JOIN nba_ref.teams th ON lower(ev.home_team) LIKE '%%' || lower(th.nickname)
+              JOIN nba_ref.teams ta ON lower(ev.away_team) LIKE '%%' || lower(ta.nickname)
+              JOIN nba_calendar.games g ON g.game_date = ev.game_date
+                                        AND g.home_team_tricode = th.abbreviation AND g.away_team_tricode = ta.abbreviation),
+            map AS (
+              SELECT ev.event_id, coalesce(m.game_id, cal.game_id) AS game_id
+              FROM ev LEFT JOIN nba_market.event_game_map m ON m.event_id = ev.event_id
+                      LEFT JOIN cal ON cal.event_id = ev.event_id)
+            SELECT map.game_id, s.game_date::text,
+                   max(CASE WHEN s.market='spreads' AND s.outcome=s.home_team AND s.snapshot_label='morning' THEN s.point END) AS home_spread,
+                   avg(CASE WHEN s.market='totals'  AND s.outcome='Over'      AND s.snapshot_label='morning' THEN s.point END) AS total,
                    max(CASE WHEN s.market='spreads' AND s.outcome=s.home_team AND s.snapshot_label='window'
                             THEN s.point END) AS home_spread_window
             FROM nba_market.game_lines_snapshots s
-            JOIN nba_market.event_game_map m ON m.event_id = s.event_id
+            JOIN map ON map.event_id = s.event_id AND map.game_id IS NOT NULL
             WHERE s.game_date BETWEEN %s AND %s
               AND s.snapshot_label IN ('morning','window')
-            GROUP BY 1,2""", (lo, hi)).fetchall()
+            GROUP BY 1,2""", (lo, hi, lo, hi)).fetchall()
         recs = [{"game_id": str(r[0]), "game_date": r[1],
                  "home_spread": float(r[2]) if r[2] is not None else None,
                  "total": float(r[3]) if r[3] is not None else None,
