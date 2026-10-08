@@ -291,6 +291,8 @@ def main():
         cats = sorted(registry["pickem_stats"].values())
         # 3) popular picks incl. mass-option (ladder) markets
         for mass in ("true", "false"):
+            if over("popular picks"):
+                break
             try:
                 j = get(s, f"{API}/v1/lobbies/content/lines?include_live=true&{COMMON}&show_mass_option_markets={mass}&sport_id={sport}", proxies)
                 before = len(store["over_under_lines"]); merge(store, j); calls.append((f"lines[mass={mass}]", len(store["over_under_lines"]) - before))
