@@ -1110,6 +1110,17 @@ def reset(conn):
                     slips int, net double precision, roi double precision, ci_lo double precision, leg_hit double precision, drawdown double precision,
                     streak int, hurdles jsonb, PRIMARY KEY (game_date, strategy))""")
     n_slips = conn.execute("SELECT count(*) FROM nba_score.live_slips").fetchone()[0]
+    # round-2 P2A#11 (2026-10-08): the reset wipes the season's ledger. It requires LS_RESET_CONFIRM=RESET (the P4 form's
+    # 'confirm' input) and refuses once the regular season holds live slips - a mistyped mode must not erase a season.
+    if os.environ.get('LS_RESET_CONFIRM') != 'RESET':
+        raise SystemExit("REFUSED: reset needs LS_RESET_CONFIRM=RESET (P4 input 'confirm' = RESET)")
+    today = pt_today()
+    s0, s1 = regular_season_window(conn, today)
+    if s0 is not None and s0 <= today <= (s1 or today):
+        in_season = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date >= %s", (s0,)).fetchone()[0]
+        if in_season and os.environ.get('LS_RESET_FORCE') != '1':
+            raise SystemExit(f"REFUSED: the regular season started {s0} and the ledger holds {in_season} live slips since then - "
+                             f"a reset now would erase the season (LS_RESET_FORCE=1 overrides, deliberately)")
     conn.execute("DELETE FROM nba_score.live_slips"); conn.execute("DELETE FROM nba_score.live_pool"); conn.execute("DELETE FROM nba_score.live_state_history")
     for name, (comp, size, structure, cap, *_r) in STRATEGIES.items():
         conn.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s, days=0, slips=0, net=0, roi=0, ci_lo=NULL, leg_hit=NULL,
