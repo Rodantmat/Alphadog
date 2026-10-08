@@ -89,20 +89,22 @@ def _et_date(iso):
         return None
 
 
-def _pmap(fn, items, workers):
-    """Bounded parallel map that stops scheduling once the budget / TERM flag is set; returns [(item, result|None, error|None)]."""
+def _pmap(fn, items, workers, stop=None):
+    """Bounded parallel map in chunks of 2 x workers; stops scheduling once `stop()` (budget) or the TERM flag is set.
+    Returns [(item, result|None, error|None)] for the items that ran."""
     out = []
-    with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
-        futs = []
-        for it in items:
-            if _STOP["flag"]:
+    items = list(items)
+    n = max(1, workers)
+    with ThreadPoolExecutor(max_workers=n) as ex:
+        for i in range(0, len(items), 2 * n):
+            if _STOP["flag"] or (stop is not None and stop()):
                 break
-            futs.append((it, ex.submit(fn, it)))
-        for it, f in futs:
-            try:
-                out.append((it, f.result(), None))
-            except Exception as exc:  # noqa: BLE001
-                out.append((it, None, str(exc)))
+            chunk = items[i:i + 2 * n]
+            for it, f in [(it, ex.submit(fn, it)) for it in chunk]:
+                try:
+                    out.append((it, f.result(), None))
+                except Exception as exc:  # noqa: BLE001
+                    out.append((it, None, str(exc)))
     return out
 
 
