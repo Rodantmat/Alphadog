@@ -31,6 +31,8 @@ TABLES = [
     "nba_ref.referee_assignments", "nba_ref.referee_assignments_log",
     "nba_market.game_lines_snapshots|game_date", "nba_market.game_lines_snapshot_log",
     "nba_control.pipeline_runs", "nba_control.scheduler_log", "nba_config.classification_config",
+    # postseason certification (§31w, 2026-10-08): the cell eligibility and the per-strategy verdict the live engine reads
+    "nba_score.cell_certified_post", "nba_score.cell_postseason_eligibility", "nba_score.postseason_strategy_verdict",
 ]
 
 
