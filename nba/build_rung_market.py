@@ -42,8 +42,10 @@ BLOCK = f"""
 INSERT INTO nba_market.rung_market (game_date, snapshot_label, player, market, line, p_over_book, p_over_sd, books)
 WITH rungs AS (
   SELECT DISTINCT game_date, snapshot_label, player, base_market AS market, line
-  FROM nba_market.board_tiers
-  WHERE game_date >= %(d0)s AND game_date < %(d1)s
+  -- retention audit 2026-10-08: the legacy nba_market.board_tiers has NO writer (P3 maintains board_tiers_v2 only), so from
+  -- 10-20 it would never carry a live date; v2 restricted to PrizePicks is byte-identical to it over the history (verified)
+  FROM nba_market.board_tiers_v2
+  WHERE bookmaker = 'prizepicks' AND game_date >= %(d0)s AND game_date < %(d1)s
 ), bk AS (
   SELECT game_date, snapshot_label, player, replace(market_key,'_alternate','') AS market, line, bookmaker,
          max(CASE WHEN side='Over'  THEN price END) AS op,
