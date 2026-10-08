@@ -38,7 +38,8 @@ def main():
     # loaded a March-2026 ladder as if it were today's. P2 always passes LOAD_ASOF, so this guards
     # manual runs and replays only - but a wrong ladder loaded silently is the expensive kind of wrong.
     from datetime import datetime, timedelta, timezone
-    asof = os.environ.get("LOAD_ASOF") or datetime.now(timezone(timedelta(hours=-8))).date().isoformat()
+    from zoneinfo import ZoneInfo
+    asof = os.environ.get("LOAD_ASOF") or datetime.now(ZoneInfo("America/Los_Angeles")).date().isoformat()   # round 2: real PT clock
     docs = []
     # LOCAL FIRST (2026-09-25). The merge step writes nba/data/nba_baseline_ladder_<asof>.json on this
     # runner seconds before this step; fetching it back over raw.githubusercontent.com went through a
