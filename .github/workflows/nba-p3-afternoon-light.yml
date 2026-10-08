@@ -283,7 +283,7 @@ jobs:
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         continue-on-error: true
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           # VERIFIED NAMES, and they are NOT uniform - each scraper has its own. A generic SPORT does
           # nothing. Sleeper's default is multi-sport ("mlb,nba"), so leaving it unset silently scrapes
           # MLB too and doubles the runtime of a pipeline that must finish in minutes.
