@@ -138,9 +138,32 @@ jobs:
                       c.execute("""UPDATE nba_score.live_strategy_state SET state='red', live_cap=0,
                                    hurdles = coalesce(hurdles,'{}'::jsonb) || jsonb_build_object('REQUAL','FAIL '||%s::text), updated_at=now() WHERE strategy=%s""", (today.isoformat(), name))
                   elif verdict == 'PASS':
-                      # the ONLY path out of red: a clean weekly re-validation on a window that includes the live days that stopped it
-                      c.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s,
-                                   hurdles = jsonb_build_object('REQUAL','PASS '||%s::text), updated_at=now() WHERE strategy=%s AND state='red'""", (cap, today.isoformat(), name))
+                      # the ONLY path out of red: a clean weekly re-validation on a window that includes the live days that stopped it.
+                      # THE LIVE DAYS MUST ACTUALLY BE IN THE WINDOW (2026-10-08, certification round 2, P2A#5): the validator's
+                      # window is still 2024-25 -> 2025-26 (§29b rolls it later), so its PASS repeats every Monday regardless of
+                      # the live season - a strategy stopped by live hurdles would have been released every week and re-stopped
+                      # the next morning. Release now also requires the walk-forward test simulate_p5 applies: the day-blocked
+                      # bootstrap lower bound of the strategy's certified OOS slips THIS season (from Nov 1, >= 40 slate days) > 0.
+                      st = c.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
+                      if st and st[0] == 'red':
+                          from live_slip_engine import boot_lo
+                          import datetime as _dt
+                          tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith(('C_', 'D_', 'R_', 'W_')) else 'nba_score.slip_engine_slips'
+                          y0 = today.year if today.month >= 7 else today.year - 1
+                          season_now = f"{y0}-{(y0 + 1) % 100:02d}"
+                          g = c.execute(f"""SELECT count(*), sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
+                                             AND season=%s AND phase<>'final7' AND game_date >= %s AND game_date < %s GROUP BY game_date""",
+                                        (comp, size, structure, cap, season_now, _dt.date(y0, 11, 1), today)).fetchall()
+                          lo_live = boot_lo([(float(r[0]), float(r[0]) + float(r[1])) for r in g], 2000) if len(g) >= 40 else None
+                          if lo_live is not None and lo_live > 0:
+                              c.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s,
+                                           hurdles = jsonb_build_object('REQUAL','PASS '||%s::text), updated_at=now() WHERE strategy=%s AND state='red'""", (cap, today.isoformat(), name))
+                              print(f"  {name:<20} red -> paper (live-season walk-forward lower bound {lo_live:+.0%} on {len(g)} days)")
+                          else:
+                              c.execute("""UPDATE nba_score.live_strategy_state SET hurdles = coalesce(hurdles,'{}'::jsonb) || jsonb_build_object('REQUAL','HOLD '||%s::text), updated_at=now()
+                                           WHERE strategy=%s AND state='red'""", (today.isoformat(), name))
+                              print(f"  {name:<20} stays red: validator PASS but live-season walk-forward not passed "
+                                    f"({len(g)} days; lower bound {'n/a' if lo_live is None else f'{lo_live:+.0%}'})")
                   print(f"  {name:<20} {verdict:<12} {'' if roi is None else f'OOS {roi:+.0%} CI_lo {lo:+.0%}'}")
               c.commit()
           EOF
