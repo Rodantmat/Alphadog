@@ -1,1 +1,1 @@
-script: probe_pp_producers.py
+script: certify_pipeline.py
