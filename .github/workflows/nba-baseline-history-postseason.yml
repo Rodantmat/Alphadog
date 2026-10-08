@@ -50,6 +50,24 @@ jobs:
         run: |
           python -u nba/export_market_spreads_postseason.py
           bash nba/git_push_retry.sh "NBA postseason spreads ${{ github.event.inputs.season }} [skip ci]" nba/data/nba_market_spreads_postseason_*.json || true
+      - name: Board tiers for the postseason dates (one slate at a time, only dates the tier table lacks)
+        run: |
+          python - <<'EOF'
+          import os, subprocess, psycopg
+          s = os.environ["BT_TEST"]; y = int(s[:4]) + 1
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              ds = [r[0].isoformat() for r in c.execute("""
+                  SELECT DISTINCT game_date FROM nba_market.board_snapshots
+                  WHERE bookmaker='prizepicks' AND game_date BETWEEN %s AND %s
+                    AND game_date NOT IN (SELECT DISTINCT game_date FROM nba_market.board_tiers_v2
+                                          WHERE bookmaker='prizepicks' AND game_date BETWEEN %s AND %s)
+                  ORDER BY 1""", (f"{y}-04-13", f"{y}-06-30", f"{y}-04-13", f"{y}-06-30")).fetchall()]
+          print(f"board_tiers_v2 missing for {len(ds)} postseason dates", flush=True)
+          for d in ds:
+              subprocess.run(["python", "nba/build_board_tiers_v2.py"], check=True,
+                             env={**os.environ, "BT2_APPS": "prizepicks", "BT2_DATE": d}, stdout=subprocess.DEVNULL)
+              print(f"  tiers {d} ok", flush=True)
+          EOF
       - name: Board rung keys for the postseason dates
         run: |
           python - <<'EOF'
