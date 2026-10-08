@@ -44,6 +44,7 @@ BEGIN
          cell_size
   FROM r;
   CREATE INDEX ON nba_score.tier_map_legs_sel_mf_new (rank_key, game_date, prop, tier);
+  ANALYZE nba_score.tier_map_legs_sel_mf_new;   -- planner statistics BEFORE the engines join it (a fresh CTAS has none: the first P5 twin build sat 2 h in a cursor)
   DROP TABLE IF EXISTS nba_score.tier_map_legs_sel_mf;
   ALTER TABLE nba_score.tier_map_legs_sel_mf_new RENAME TO tier_map_legs_sel_mf;
   SELECT count(*) INTO n FROM nba_score.tier_map_legs_sel_mf;
