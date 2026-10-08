@@ -221,7 +221,9 @@ jobs:
       # TODAY'S MORNING GAME LINE, captured live (§29z-c) - as of min(08:00 PT, now). Then the export the baseline
       # reads. Both never fail the slate: the baseline has a documented fallback (the derived spread proxy).
       - name: Morning game line (live capture) and market export
+        id: soft_line
         if: ${{ steps.d.outputs.has_games == '1' }}
+        continue-on-error: true   # "never fail the slate" (the recipe falls back to the derived spread, printed); round 2
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GL_DATE: ${{ steps.d.outputs.asof }}
