@@ -172,7 +172,7 @@ def trailing10(conn, day, player_ids, post=False):
     return {(r[0], 'steals'): float(r[1]) for r in rows}
 
 
-def trailing_pf20(conn, day, player_ids):
+def trailing_pf20(conn, day, player_ids, post=False):
     """Trailing-20-game personal fouls per player_id, as of the day (§29r: the low-foul key needs it at pick time; the
     backtest's nba_score.player_pf20 sits on played-game rows and cannot supply a game that has not happened)."""
     rows = conn.execute("""SELECT x.pid, avg(x.pf) FROM (
