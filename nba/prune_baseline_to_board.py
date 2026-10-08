@@ -57,7 +57,8 @@ def main():
     one_date = (os.environ.get("PRUNE_DATE") or "").strip()
     season = (os.environ.get("PRUNE_SEASON") or "").strip()
     if not one_date and not season:
-        one_date = (datetime.now(timezone(timedelta(hours=-8))).date() - timedelta(days=1)).isoformat()
+        from zoneinfo import ZoneInfo
+        one_date = (datetime.now(ZoneInfo("America/Los_Angeles")).date() - timedelta(days=1)).isoformat()   # round 2: real PT clock
         print(f"no PRUNE_DATE / PRUNE_SEASON given - defaulting to yesterday PT: {one_date}", flush=True)
 
     conn = psycopg.connect(os.environ["DATABASE_URL"])
