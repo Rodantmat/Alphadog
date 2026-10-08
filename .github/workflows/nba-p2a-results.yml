@@ -216,6 +216,22 @@ jobs:
               print(f"board_rung_keys {d}: {n:,} keys (refreshed before the prune)", flush=True)
           EOF
           python nba/prune_baseline_to_board.py
+          # HELD DATES RETRIED (retention audit 2026-10-08): the prune now holds a live-season date whose full ladder file is
+          # not yet in the repo. Re-run for any earlier live-season slate (14 days back) that has board keys, a baseline and
+          # no prune-log row - once P2B's commit has landed, the hold clears here without anyone remembering it.
+          python - <<'EOF'
+          import os, subprocess, psycopg
+          d = os.environ["PRUNE_DATE"]
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              held = [r[0] for r in c.execute("""SELECT DISTINCT h.game_date FROM nba_score.baseline_history h
+                        WHERE h.game_date >= GREATEST(DATE '2026-07-01', %s::date - 14) AND h.game_date < %s::date
+                          AND EXISTS (SELECT 1 FROM nba_market.board_rung_keys k WHERE k.game_date = h.game_date)
+                          AND NOT EXISTS (SELECT 1 FROM nba_score.baseline_prune_log p WHERE p.game_date = h.game_date)
+                        ORDER BY 1""", (d, d)).fetchall()]
+          for h in held:
+              print(f"=== retrying held prune for {h}", flush=True)
+              subprocess.run(["python", "nba/prune_baseline_to_board.py"], env={**os.environ, "PRUNE_DATE": h.isoformat()}, check=False)
+          EOF
 
       # 3b) YESTERDAY'S final_hp, COMPLETE (from P2): rebuilt from the complete board so P2B's refits see it all.
       - name: Rebuild yesterday's final_hp from the complete board
