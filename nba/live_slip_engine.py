@@ -1045,6 +1045,15 @@ def replay(conn, d0, d1):
             d0 = max(d0, last + dt.timedelta(days=1))
             print(f"  RESUME from {d0} (last graded day {last})", flush=True)
     else:
+        # retention audit 2026-10-08: a replay without LS_RESUME wipes the live ledger exactly like reset() but had no guard.
+        # In season, with real live slips in the ledger, it is refused unless LS_RESET_FORCE=1 (the same deliberate override).
+        today = pt_today()
+        s0, s1 = regular_season_window(conn, today)
+        if s0 is not None and s0 <= today <= (s1 or today):
+            in_season = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date >= %s", (s0,)).fetchone()[0]
+            if in_season and os.environ.get('LS_RESET_FORCE') != '1':
+                raise SystemExit(f"REFUSED: replay without LS_RESUME would erase the live ledger - the regular season started {s0} and it "
+                                 f"holds {in_season} live slips (LS_RESUME=1 continues; LS_RESET_FORCE=1 overrides, deliberately)")
         conn.execute("DELETE FROM nba_score.live_slips"); conn.execute("DELETE FROM nba_score.live_pool"); conn.execute("DELETE FROM nba_score.live_state_history")
         for name, (comp, size, structure, cap, *_r) in STRATEGIES.items():
             conn.execute("""UPDATE nba_score.live_strategy_state SET state='paper', live_cap=%s, days=0, slips=0, net=0, roi=0, ci_lo=NULL, leg_hit=NULL,
