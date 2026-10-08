@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-08T13:48:56Z",
-  "fetched_at": "2026-10-08T13:49:25Z",
+  "started_at": "2026-10-08T20:01:32Z",
+  "fetched_at": "2026-10-08T20:02:05Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -25,7 +25,7 @@
     ],
     [
       "lines[match=225732]",
-      10
+      13
     ],
     [
       "pills[match=225732]",
@@ -33,7 +33,7 @@
     ],
     [
       "lines[match=225733]",
-      8
+      14
     ],
     [
       "pills[match=225733]",
@@ -41,7 +41,7 @@
     ],
     [
       "lines[match=225734]",
-      7
+      15
     ],
     [
       "pills[match=225734]",
@@ -49,7 +49,7 @@
     ],
     [
       "lines[match=225735]",
-      0
+      16
     ],
     [
       "pills[match=225735]",
@@ -57,7 +57,7 @@
     ],
     [
       "lines[match=225736]",
-      2
+      14
     ],
     [
       "pills[match=225736]",
@@ -65,7 +65,7 @@
     ],
     [
       "lines[match=225737]",
-      0
+      12
     ],
     [
       "pills[match=225737]",
@@ -202,7 +202,7 @@
     [
       "lines_with_stats[players]",
       0,
-      14
+      44
     ],
     [
       "alternate_projections",
@@ -220,32 +220,34 @@
       0
     ]
   ],
-  "lines": 77,
-  "legs": 77,
+  "lines": 134,
+  "legs": 134,
   "ladder_legs": 276,
   "ladder_lines_with_alternates": 12,
-  "players": 14,
-  "pregame_legs": 77,
+  "players": 44,
+  "pregame_legs": 134,
   "live_legs": 0,
   "by_stat": {
+    "Points": 44,
+    "Pts + Rebs + Asts": 40,
     "Moneyline": 38,
-    "Points": 14,
-    "Pts + Rebs + Asts": 13,
     "Margin of Victory": 6,
     "Total Points": 6
   },
   "by_line_type": {
-    "balanced": 77
+    "balanced": 134
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
+    "1.0": 88,
     "None": 44,
-    "1.0": 33
+    "0.91": 1,
+    "0.9": 1
   },
-  "github_run_id": "37787219616",
+  "github_run_id": "37836208669",
   "target_date_et": "2026-10-08",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 12.6
+  "elapsed_s": 14.2
 }
