@@ -76,8 +76,8 @@ def load(season, conn, pid_map, prop, market):
     h["line"] = h["line"].astype(float)
     h = h.drop_duplicates(subset=["game_date", "player_id", "line"])
 
-    t = pd.read_sql("""SELECT game_date, player, line, side, tier, kind FROM nba_market.board_tiers
-                       WHERE snapshot_label='window' AND base_market=%s""", conn, params=(market,))
+    t = pd.read_sql("""SELECT game_date, player, line, side, tier, kind FROM nba_market.board_tiers_v2
+                       WHERE snapshot_label='window' AND bookmaker='prizepicks' AND base_market=%s""", conn, params=(market,))
     if t.empty:
         return pd.DataFrame()
     t["game_date"] = pd.to_datetime(t["game_date"]).dt.date
