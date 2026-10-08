@@ -184,6 +184,8 @@ def main() -> int:
         "league_id": NBA_LEAGUE_ID, "fetched_at": utc_now(),
         "egress": egress, "proxy_used": bool(proxies),
         "rows": chosen.get("rows") if chosen else 0,
+        "row_count": chosen.get("rows") if chosen else 0,      # the key certify_pipeline reads (same as main.py's meta)
+        "total_pages": chosen.get("total_pages") if chosen else None,
         "future_pickable": chosen.get("future_pickable") if chosen else 0,
         "chosen_url": chosen.get("url") if chosen else None,
         "candidates": candidates,
