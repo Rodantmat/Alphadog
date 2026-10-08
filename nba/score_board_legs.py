@@ -361,12 +361,14 @@ def main():
     lost = lost + np.where(d["interpolated"].values, 4.0, 0.0)
     d["confidence"] = np.clip(BASE - lost, FLOOR, 99.5) / 100.0
 
-    hp100 = d["final_hp"].values * 100.0
-    cdev = (d["confidence"].values - CONF_NEUTRAL) / (1.0 - CONF_NEUTRAL)
-    lift = np.clip(cdev, 0, 1) * 0.50
-    drop = np.clip(-cdev, 0, 1) * 0.35
-    d["score"] = np.round(np.clip(hp100 + (100.0 - hp100) * lift - hp100 * drop, 0, 100), 2)
-    d["edge"] = np.round((d["final_hp"].values - BREAKEVEN) * 100.0, 2)
+    # ONE FORMULA (round-2 P3#17, 2026-10-08): score / edge come from build_final_hp.score_and_edge - the certified arithmetic
+    # (CONF_NEUTRAL 0.85, lift 0.50, drop 0.35, break-even 0.560) - instead of a copy here that could drift silently.
+    # Verified identical before the switch (the copy held the same constants).
+    import sys as _sys_se
+    _sys_se.path.insert(0, "nba")
+    from build_final_hp import score_and_edge as _score_and_edge, BREAKEVEN as _BE, CONF_NEUTRAL as _CN
+    assert abs(_BE["standard"] - BREAKEVEN) < 1e-12 and abs(_CN - CONF_NEUTRAL) < 1e-12, "score constants drifted between the two scripts"
+    d["score"], d["edge"] = _score_and_edge(d["final_hp"].values, d["confidence"].values)
 
     # 5b) ROUTING (strategy doc §31s G1 + G2; COMPASS fact 134; 2026-10-06). board_scored feeds SELECTION (P3's paper logger
     # nba_score.paper_pick_candidates reads it), so two leg classes that their gates did NOT admit to selection leave it here:
