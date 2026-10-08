@@ -450,3 +450,183 @@ survive verification are recorded as ⚪ with the reason.
 - COMPASS fact 87 (referee capture verified; P2B owns it), §5 "Weekly static" (P1 is the path; inventory tables without
   readers), fact 135 (this program's index and decisions). Strategy doc §31t (slip-system + reliability decisions and the
   re-certification figures). This ledger committed to the repo.
+
+---
+
+## ROUND 2 — independent re-audit of every pipeline, all findings verified and fixed (2026-10-07 23:00 → 2026-10-08 01:10 PT)
+
+**Method.** After Pass H, three independent read-only audits (P2A results, P2B slate, P3 afternoon; a fourth on the two
+live engines) re-read every workflow, script and DB object end to end without the ledger's conclusions, and returned 56
+findings. Each one was then verified against code AND data by this program (measured where a number could be measured),
+fixed through the bridge, parse/YAML-checked, and where a behaviour changed, exercised on a runner (probe runs) or the
+database. Decisions that changed the system's behaviour went to COMPASS (fact 135) and strategy §31t. Nothing below is
+asserted from the audit alone. Items the audits marked INFO are included when they changed something.
+
+### R2-P2A — results pipeline
+- **#1 🟢 gap audit never audited the schedule** (`check_delta_gaps.py` read keys the schedule file does not have → always the
+  team-log fallback, i.e. the scrape audited itself; B-3's "1,230 games" was that fallback). Reads `sched["games"]`,
+  `game_status == 3`, regular-season ids (002), tricode keys; local file first.
+- **#2 🟢 daily-delta scraper never exited non-zero** → `sys.exit(1)` when any of the 8 pulls fails; a dead night is red before
+  the loads (and the sync/loaders never see a stale file as fresh).
+- **#3 🟢 PrizePicks slip grade had no catch-up** (only yesterday; a red P2A orphaned the slate for good) → grade mode without
+  `LS_DATE` loops every ungraded slate `< today`, oldest first (a4dc540).
+- **#4 🟢 Underdog grade voided every leg on an empty box score and marked the slate graded** → empty stats: skip, leave
+  `graded_at` NULL (b3f7100).
+- **#5 🟢 P5 PASS released a sticky red from frozen 2024-25→2025-26 data** → a PASS releases a red only when the LIVE season's
+  own walk-forward lower bound (`boot_lo` over the current season's backtest slips from Nov 1, ≥ 40 days) > 0; else
+  `REQUAL 'HOLD <date>'` (a708df8); reads the configured backtest (20522a5).
+- **#6 🟢 prune then re-price lost whole-number prices** — measured 2026-03-15: 205 whole-number keys, 190 priced, 14 missing
+  the k+0.5 Over rung / 10 the k−0.5 Under (pruned because on no board). `refresh_board_rung_keys` now keeps those
+  neighbours (src `wn_neighbor`; DB + `nba/sql/refresh_board_rung_keys.sql`, a24b454); `build_final_hp` prices a
+  neighbour-only rung into `final_hp_derived` ('wn_neighbor'), never `final_hp` (b658ab1…c148b9a); `build_whole_number_hp`
+  prices from them with derivation **`whole_number_nb`** — priced (fact 134) but NOT selectable (the live engine reads
+  `'whole_number'` only) until that class has a backtest of its own (b6ff85c…6498114). History untouched.
+- **#7 🟢 replay `asof` was claimed but not acted on** (prune / final_hp / whole-number used the runner's yesterday; grader
+  and slip grades had no date) → resolve step emits `yday`; every dated step uses it; `GRADE_END` / `LS_DATE` / `UDL_DATE`
+  set only when `asof` is given (b5a177e…a7a1292).
+- **#8 🟢 season-file sync** refuses a delta file whose own `season` differs from the meta (rollover contamination) (7066e90).
+- **#9 🟢 scheduler** let P2B dispatch in the tick that recovered a dead P2A → a recovered predecessor stays `claimed` for its
+  successors (bounded by `p2b_latest` / `p3_deadline`); v2.2.1 (ce3bbb3, 3564634).
+- **#10 🟢 `calibrate` divided by zero** before its empty-data guard → guard first (409d849).
+- **#11 🟢 P4 `reset` wiped the ledger with no confirmation** → `LS_RESET_CONFIRM=RESET` (P4 input `confirm`) and refused once
+  the regular season holds live slips (`force_reset=1` overrides, deliberately) (5ee1911, 249a71a, ff40aaf). **Launch
+  checklist: run P4 `mode=reset confirm=RESET` once before 10-20's first pick.**
+- **#12 🟢 hurdle hysteresis counted a re-evaluated slate twice** → `CLEAN_LAST` = one count per slate (6776961).
+- **#13 🟢 matchup shards** (incremental, self-healing) are a soft step (da266a8, 769eb61).
+- **#14 🟢 schedule scraper** writes only on success; a season the file already holds coming back empty is a failure (ead72d3).
+- **#15 🟢 grader** writes `dnp` only when the player's team has a box score that day, else `game_not_found` (COMPASS 60)
+  (f2f301c, c775b67, 17cf03e).
+- **#16 🟢 ONE SLATE PREDICATE.** The label regex let the **NBA Cup Final** through (id prefix 006, label 'Emirates NBA Cup';
+  2025-12-16 in the certified history: 0 baseline rows, 1,412 PrizePicks legs, 0 slips — i.e. not a slate), while P3, P4
+  and the prune used `<> 'Preseason'` (play-in / playoff / All-Star days through). Now the view
+  **`nba_calendar.regular_season_games`** (`game_id LIKE '002%'`; `nba/sql/regular_season_games.sql`, b9382d0) is read by
+  the scheduler, P2B, P3, P4, certify, prune, both live engines and the freshness check (8c0dcc0…50802c1); the season
+  rollover guard keys on the id prefix in any pre-opener month (65d1ff1).
+- **#17 🟢 docstring drift** in `live_slip_engine.py` → the hurdles as implemented (5cd61d2, 733228e). §29a's old wording is
+  the doc chat's; noted in §31t.
+- **#18 data confirms:** (a) opening-night tip **19:00Z = 12:00 PT = 3 PM ET** (NBC Sports Boston; A-4 corrected); (b)
+  PrizePicks help center: a tie is a tie for every projection type, 3-Flex reverts to 2-Power — the code matches; (c)
+  `edge_monitor_ref` built 18:51:35Z and `live_strategy_calib` 18:51:33Z, both after the §31s rebuild (18:28Z); (e) the
+  grader tops up the weekly register from the daily roster file (9279fad).
+
+### R2-P2B — slate pipeline
+- **#1 🟢 final_hp priced yesterday's view of the board** (rung keys never refreshed in P2B) → refresh after the morning
+  archive, before the ladder build.
+- **#2 🟢 the live morning game line never reached the baseline** (event→game map only from played games; export seasons
+  excluded the new season) → map via `nba_calendar.games` + `nba_ref.teams` nickname match (verified 335/335 agree with
+  `event_game_map`), export seasons include `current_season()`.
+- **#3 🟢 opening day modelled as a late-2025-26 game** → `nba/ensure_season_files.py` creates the empty current-season input
+  files so the builders label the opener as the new season (return-ramp haircut no longer fires on opening night).
+- **#4 🟢 injury names resolved through the weekly register only** — measured: 34 of the 616 rostered players (10-07) were
+  not in it → the daily roster file tops up `_name_to_id` in both builders and the as-of calibration (997ca25, 8e68b33,
+  ce82348).
+- **#5 🟢 "morning" spread/total blended the window snapshot** (355 of 1,226 games differed, avg 0.94 pt) → morning-only
+  aggregates. Caveat kept: the certified history was built on the blend; not rebuilt.
+- **#6 🟢 recovery rerun died at "nothing to commit"** → abort only if the slate's ladder file is missing.
+- **#7 🟢 "never fail the slate" steps were hard failures** → market line/export, blowout, injury are soft with ids.
+- **#8 🟢 certify P2 vs workflow slate predicate** → one predicate (see P2A#16).
+- **#9 🟢 confidence training set halved at the opener** → `stats_seasons(3)`.
+- **#10 🟢 injury scrape overwrote a good file with an empty one** → `pick_session` None → exit 1, file untouched; and (P3#14)
+  zero snapshots on a slate day is a failed scan (`INJURY_EXPECT`), bounded to 600 s in P2B and P3.
+- **#11 🟢 new-season file set keyed on one file** → `ensure_season_files.py` creates all six.
+- **#12 🟢 periods builder** has the §31r roster rule (6fbc603).
+- **#13 🟢 duplicate component rungs** — measured 4,107 on the committed ladder → the merge dedupes (da9fcce).
+- **#14 🟢 opening-week ghost players** — measured 54 of 420 last-3-game participants are on NO roster (107 moved teams) →
+  live builds drop no-roster players; replays keep the §31r rule (135445f, e2d7342, 01d96b8, 33323c8).
+- **#15 🟢 crew poll vs build time** — E-4 measured 44 min for a 3-game slate; a full slate is ~95 min + loads → build budget
+  125 min (tunable `p2b_build_budget_min`), job timeout 300 (a885e45, 0cd4a17).
+- **#16 🟢 fixed UTC−8 clocks** → `ZoneInfo` in certify, delta, freshness, score_board_legs, loader, prune, referees, tiers.
+- **#17 🟢 morning archive** (and the close capture) archive only the apps that run captured (f7129a2, 8efa410).
+- **#18 🟢** loader run row records the rows' season (82ef8c1); the dated ladder record is gzipped (~8×; 4 GB/season →
+  ~0.5) and the loader reads `.json.gz` (8f24adb, 4fcc82f, 202139c); whole-number DDL only when missing (c0a6570).
+  **Round-3 item, measured and deliberately NOT changed in one place:** `board_outcomes` is unique per market key
+  INCLUDING `_alternate`, so a leg under both keys is counted twice by every consumer that strips the suffix (Jan 2026:
+  703,306 rows = 567,380 legs, +19% n) — the confidence-v3 graded set, the conformal fit, the as-of calibration
+  (`w = n/(n+K)`, K = 400: shifts ~2% smaller at the median cell, ~6% at p10) and the §31s currency maps share it
+  consistently. Deduping one consumer alone would break the chain's parity, so `AC_DEDUP` exists (default off) and the
+  fix is a chained recertification: dedupe everywhere → conformal → confidence v3 → as-of calibration → final_hp → tier
+  maps → slips → validate.
+
+### R2-P3 — afternoon pipeline
+- **#1 🟢 Underdog / Sleeper legs were never dated by tip** (every future-slate leg landed in today's `window`) → Underdog tip
+  from `leg.game_start` / `games[game_id].scheduled_at`; Sleeper tip from its public schedule endpoint
+  (`api.sleeper.app/schedule/nba/{phase}/{year}`); team markets filtered; the 10-07 rows cleaned.
+- **#2 🟢 Underdog scraper could not finish a regular-season slate in 300 s** (serial, sleeps, file written at the end) →
+  today's matches (Eastern tip date) get the full pill sweep, other days the base call only; pills / players / ladders on
+  a thread pool (`UNDERDOG_WORKERS` 4); wall-clock budget (`UNDERDOG_BUDGET_S` 240) + SIGTERM handler → a partial board is
+  still written (`meta.partial`, `elapsed_s`) (0f73da8…3df2fac). Probe 37744186435 on the preseason board: 38 matches →
+  6 today / 32 other, 5.2 s; all-matches sweep 1.9 s, 0 errors. In-season timing is read from `meta.elapsed_s` on 10-20.
+- **#3 🟢 live pick dropped the certified `broad_day` diversification** → computed in `pick()` exactly as the backtest and
+  passed to both builds (313eda8, 55cdb9b).
+- **#4 🟢 THE MARKET TERM (parity gap, decided).** Live has no sportsbook feed, so every live leg carries `f_books = 0`,
+  `f_agree = 0.55` — a uniform confidence deduction the certified history never had (the dead `rung_market` step pretended
+  otherwise). Measured by rebuilding the whole backtest market-free (`_mf` / `_mf_nosteals`, 478,580 / 475,060 slips):
+  every certified strategy stays positive in both seasons; ROI at cap, base → market-free (24-25 / 25-26):
+  A_wsteals_5flex 0.853→0.686 / 1.085→0.958 · A_core_3power 0.334→0.319 / 0.810→0.784 · A_regular_5power 0.523→0.459 /
+  1.205→1.089 · A_wrebounds_4flex 0.510→0.492 / 0.896→0.925 · B_demon_5flex 1.616→0.700 / 1.406→2.044 · B_demon_3flex
+  0.675→0.521 / 0.621→0.901 · C_wstocks_4flex 0.335→0.241 / 0.555→0.722 · D_points_3power 0.419→0.113 / 0.325→0.364 ·
+  R_stocks_4power 0.213→0.283 / −0.077→−0.077 · W_core_3power 0.136→0.165 / 0.419→0.419 · W_coredemon_3power
+  −0.044→0.027 / 0.175→0.175; validator survivors 17→16 (steals pool), 13→21 (no-steals pool). **Decision (option A;
+  Gemini concurred as reference):** the certified strategy set stands; everything the live engine is *measured against*
+  now comes from the market-free twin — the faithful simulation of what live does. Implemented: DB function
+  `nba_score.build_tier_map_legs_sel_mf()` (the certified selection rescored exactly as live, deductions read from
+  `confidence_model`; verified 0 score differences on all 2,700,213 rows vs the study table; `nba/sql`, 692e259); P5 steps
+  3c (rebuild + both twin engines, delta) and 5c (both twin validations); the tunable
+  `nba_config.classification_config['live_backtest_suffix'] = {"suffix": "_mf"}` read by `live_slip_engine.bt_table()` for
+  the hurdle calibration, the steals-anchor reference, P5's live simulation, the edge-monitor reference and P5's verdicts
+  (f10beb3…e18906d, 2038da7, 5807f7f, 257b3cb, 20522a5); P4 `edge_rebuild` input (ebd1192, c55a34f). Recalibration
+  dispatched (P4 `calibrate`, then `edge` + rebuild). Option B (an odds feed, ~$119/mo) remains available if the owner
+  wants the market term back; blank suffix returns to the market-inclusive tables. The Underdog paper engine has the
+  same gap against its own backtest (paper only) — round-3 twin.
+- **#5 🟢 a forced/late run wrote post-tip picks** → `late=1` turns off delta / score / paper / certify / both picks; both
+  engines refuse a post-tip pick for today on their own (`post_tip()`) (f8a663e…e041e2c, b795476, 9e1890c).
+- **#6 🟢 certify P3 accepted advance rows as "archived today"** → PrizePicks `window` legs fetched by this run (3 h),
+  `board_tiers_v2` window rows, `board_scored` built by this run; replay-aware (240ce92…20c2c42).
+- **#7 🟢 delta's "P2 view" cutoff 04:00 ET ≠ the baseline's 09:00 ET** → derived from `nba_asof.BASELINE_CUTOFF_LOCAL` (afa427d).
+- **#8 🟢 delta resolved teams from last season's log** → current roster first (abbreviations verified identical to the log
+  tricodes), log second (351bd70).
+- **#9 🟢 Underdog `fresh_absences` compared the −05:00-stamped `snapshot_ts` with `now()`** → compared with the real clock in
+  the stamp convention (verified +1 h in EDT) (c3a376f).
+- **#10 🟢 the MLB producer (`main.py`) sat on the NBA critical path** → the NBA-owned producer walks every page of the
+  board (`meta.total_pages`) and carries `row_count` / `total_pages` (d9608a9, 2eb681e); equivalence probe 37744844157:
+  194/194 projections, identical keys and included entities, same chosen endpoint → P3, P2B's morning pull and the close
+  capture use `nba/scrape_prizepicks_nba_board.py` (`PP_NBA_MIN_FUTURE_ROWS` 50 as before) (9e1ffa9, ceb2f28, d07e466).
+  `main.py` untouched.
+- **#11 🟢** `BT2_DATE` = the resolved slate; Pacific clock fallback (0fdaf96, ed857c3).
+- **#12 🟢 scoring every label** → once the window board exists, `routine` / `morning` legs are not scored (history held
+  window + close only); `BS_LABELS` override (2ae61ca, f88d264).
+- **#13 🟢 tie order** `score DESC, player, side, line` in both live loaders and the Underdog engine (821558a, 43e611a, 3b1894c).
+- **#14 🟢 injury scrape** bounded and expected to find snapshots on a slate day (db5a6a5, dfed139, 8a282b6, 4961129).
+- **#15 🟢 P3 commits through `nba/git_push_retry.sh`** (its comment was inverted) (492e4f2).
+- **#16 🟢 SQL that lived only in the database** → `nba/sql/` holds the hand-maintained sources (`refresh_board_rung_keys`,
+  `regular_season_games`, `build_tier_map_legs_sel_mf`) and `nba/dump_db_sql.py` + `nba-db-sql-dump.yml` (Monday 18:30Z and
+  on demand) record every NBA function (28) and view (9) in `db_functions.sql` / `db_views.sql` (154607c, 64ebc57,
+  b080b19); the hand source equals the dump.
+- **#17 🟢** `score_board_legs` computes score/edge through `build_final_hp.score_and_edge` with a constants assertion (2620e72).
+- **#18 🟢 Underdog team markets archived as player legs** → filtered (appearance type, stat, " @ " names).
+
+### R2-LIVE — the two engines (fourth audit)
+- **#1/#2 🟢 reverted-Flex and single-survivor grading** → voids reach `ENG.grade` (Nones preserved); one survivor pays 1.5×
+  on a hit and loses on a miss, whatever the original size (PP_PAYOUT_FINDINGS 79/79).
+- **#3 🟢 pass-70 points-Under exclusion applied to every strategy** (§31n had rejected it) → scoped to `D_points_3power`
+  (`MAX_LINE_BY_STRATEGY`); the half-stake rule is reachable again.
+- **#4 🟢 week-2 trough play staked retired / rotation-only / red strategies** → shadow unless family A/C.
+- **#5 🟢 sticky red lost to `week2` / `final7`** → `RED_STICKY` evaluated first in every branch (72b0091, 45ae9ca).
+- **#6 🟢 H5** two yellows cap at yellow inside the opening 21 days.
+- **#7 🟢 Underdog edge monitor's season key was a sliding 250-day window** → the shared `regular_season_window` (b3f7100).
+- **#9 🟢 board guard** counts unique half-point legs (0103fd5). **#10 🟢** Pacific clock (b3f7100).
+
+### Round-2 verification runs
+- Market-free builds 37741669120 / 37741678518 (478,580 / 475,060 slips); validations `_mf` / `_mf_nosteals` 07:31Z.
+- Probes: Underdog timing 37744186435; PrizePicks producer equivalence 37744844157; DB SQL dump 37745394508.
+- Dispatched for verification: P4 calibrate + edge rebuild on the twin; `nba-integration-test` (2026-01-10);
+  `nba-pp-parity` (10 slates). Results are recorded in the next pass entry.
+
+### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
+1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
+2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
+   the baseline history.
+3. `whole_number_nb` legs (P2A#6) — backtest the neighbour-priced class before it can be selected.
+4. Underdog market-free twin (P3#4) for the paper engine's hurdles and edge reference.
+5. Retire the market term from the certified scoring altogether (make market-free THE scoring) once the odds-feed decision
+   is final — then the twin tables disappear.
