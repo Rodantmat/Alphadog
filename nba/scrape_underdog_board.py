@@ -348,7 +348,9 @@ def main():
                 "categories": cats, "calls": calls, "lines": len(store["over_under_lines"]), "legs": len(legs), "ladder_legs": len(alt_legs), "ladder_lines_with_alternates": alt_calls, "players": len({l["player_id"] for l in legs if l["player_id"]}),
                 "pregame_legs": sum(1 for l in legs if not l["live"]), "live_legs": sum(1 for l in legs if l["live"]), "by_stat": dict(Counter(l["stat"] for l in legs).most_common(50)),
                 "by_line_type": dict(Counter(l["line_type"] for l in legs)), "unresolved_player_names": sum(1 for l in legs if l["appearance_type"] == "Player" and not l["player"]),
-                "multiplier_values": dict(Counter(str(l["higher_multiplier"]) for l in legs).most_common(15)), "github_run_id": os.environ.get("GITHUB_RUN_ID", "")}
+                "multiplier_values": dict(Counter(str(l["higher_multiplier"]) for l in legs).most_common(15)), "github_run_id": os.environ.get("GITHUB_RUN_ID", ""),
+                "target_date_et": target, "budget_s": budget_s, "workers": workers, "partial": partial,
+                "elapsed_s": round(time.monotonic() - (deadline - budget_s), 1)}
         (OUT / f"underdog_{sport.lower()}_current.json").write_text(json.dumps({"meta": meta, "legs": legs, "ladder": alt_legs, "raw_lines": list(store["over_under_lines"].values()), "players": store["players"], "appearances": store["appearances"], "games": store["games"], "teams": store["teams"]}, separators=(",", ":")))
         (OUT / f"underdog_{sport.lower()}_current_meta.json").write_text(json.dumps(meta, indent=2))
         print(f"{sport}: {len(legs)} legs (pregame {meta['pregame_legs']}, live {meta['live_legs']}), players={meta['players']}, categories={cats}, calls={calls}")
