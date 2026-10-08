@@ -63,6 +63,12 @@ jobs:
           tail -n 10 /tmp/pp_close.log
           if timeout --signal=TERM --kill-after=30s 300 python nba/scrape_underdog_board.py > /tmp/ud_close.log 2>&1; then ok="$ok,underdog"; else echo "=== Underdog close pull failed/timed out"; fi
           tail -n 10 /tmp/ud_close.log
+          # Sleeper + Fliff close snapshots (retention audit 2026-10-08): the close record was PrizePicks/Underdog only;
+          # the priced boards' line movement window->close is exactly what the §31v ledger will need. Parallel, bounded.
+          SLEEPER_SPORTS=nba SLEEPER_OUT_DIR=boards timeout --signal=TERM --kill-after=30s 300 python nba/scrape_sleeper_board.py > /tmp/sl_close.log 2>&1 & p_sl=$!
+          FLIFF_SPORTS=nba timeout --signal=TERM --kill-after=30s 300 python nba/scrape_fliff_board.py > /tmp/fl_close.log 2>&1 & p_fl=$!
+          if wait $p_sl; then ok="$ok,sleeper"; else echo "=== Sleeper close pull failed/timed out"; fi; tail -n 5 /tmp/sl_close.log
+          if wait $p_fl; then ok="$ok,fliff"; else echo "=== Fliff close pull failed/timed out"; fi; tail -n 5 /tmp/fl_close.log
           ok="${ok#,}"
           if [ -z "$ok" ]; then echo "::warning::no close board captured - nothing archived as 'close'"; else
             echo "archiving close boards for: $ok"
