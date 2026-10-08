@@ -113,8 +113,11 @@ def graded(season, conn, pid_map, props):
     # Effect on the fit: the cell MEAN is unchanged (same truth), n falls ~19% where both keys exist (measured Jan 2026:
     # 703,306 outcome rows = 567,380 distinct legs), so the shrink w = n/(n+K) with K=400 drops ~2% at the median cell
     # (n 2,500) and ~6% at the 10th percentile (n 750): shifts a little smaller, i.e. more conservative than the certified
-    # history's cells. AC_DEDUP=0 restores the old behaviour for a like-for-like replay.
-    if os.environ.get("AC_DEDUP", "1") != "0":
+    # history's cells. DEFAULT OFF (AC_DEDUP=1 enables): the same double count sits in build_confidence_v3's graded set
+    # (tmp_graded), the conformal fit and the §31s currency maps, so history and live share it consistently; fixing it in
+    # one consumer alone would break the certified chain's parity. It is a round-3 recertification item: dedupe in every
+    # consumer, then rebuild conformal -> confidence_v3 -> as-of calibration -> final_hp -> tier maps -> slips -> validate.
+    if os.environ.get("AC_DEDUP", "0") == "1":
         _n0 = len(o)
         o = o.drop_duplicates(subset=["game_date", "player_id", "prop", "line", "side"])
         print(f"  outcomes: {_n0:,} rows -> {len(o):,} distinct legs (standard/alternate duplicates removed)", flush=True)
