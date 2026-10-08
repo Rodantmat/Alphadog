@@ -528,7 +528,7 @@ def main():
                     "f_books": c_market,
                     "f_agree": np.where(c_market > 0, 0.85, 0.55),
                     "f_phase": d["phase"].map(
-                        {"1_oct_nov": 0.80, "2_dec_asb": 1.00, "3_post_asb": 0.88, "4_push": 0.92}
+                        {"1_oct_nov": 0.80, "2_dec_asb": 1.00, "3_post_asb": 0.88, "4_push": 0.92, "5_postseason": 0.85}
                     ).fillna(0.90).values,
                 }
                 lost = np.zeros(len(d))
