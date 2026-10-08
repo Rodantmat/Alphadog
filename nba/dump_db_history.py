@@ -23,6 +23,10 @@ TABLES = [
     "nba_market.board_snapshots|game_date", "nba_market.board_outcomes|game_date", "nba_market.game_lines_closing|game_date",
     "nba_market.game_lines_snapshots|game_date", "nba_daily.injury_report_snapshots|game_date", "nba_score.board_scored|game_date",
     "nba_score.baseline_history|game_date", "nba_score.final_hp|game_date", "nba_market.board_tiers_v2|game_date",
+    # MLB Odds API / ParlayAPI mirror (2026-10-08, owner: retain everything mined): paid credits, DB-only - the per-event
+    # board snapshots at 09:00 / 13:00 / 17:00 PT, the game lines, ParlayAPI closing lines and the live board captures
+    "market.mlb_odds_event_snapshots|game_date", "market.mlb_odds_game_lines|game_date", "market.mlb_odds_backfill_log|game_date",
+    "market.mlb_game_lines_closing|game_date", "market.mlb_live_market_captures|capture_date",
     # game_officials / player_game_starter_status are keyed by game_id (no date column) and their raw per-game JSON is
     # committed to the repo by P2A - covered there, not here
 ]
