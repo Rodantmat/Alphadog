@@ -450,10 +450,15 @@ def main():
             ct = r[13]
             if ct:
                 try:
-                    dt = ct if isinstance(ct, datetime) else datetime.fromisoformat(str(ct).replace("Z", "+00:00"))
-                    if dt.tzinfo is None:
-                        dt = dt.replace(tzinfo=timezone.utc)
-                    r[0] = dt.astimezone(ZoneInfo("America/New_York")).date()
+                    if isinstance(ct, str) and len(ct) == 10:
+                        # a date-only value is already the game's US date (Sleeper's schedule map) - never route it through
+                        # midnight-UTC -> ET, which would land on the previous day
+                        r[0] = date.fromisoformat(ct); r[13] = None
+                    else:
+                        dt = ct if isinstance(ct, datetime) else datetime.fromisoformat(str(ct).replace("Z", "+00:00"))
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=timezone.utc)
+                        r[0] = dt.astimezone(ZoneInfo("America/New_York")).date()
                 except Exception:  # noqa: BLE001
                     pass
             fixed.append(tuple(r))
