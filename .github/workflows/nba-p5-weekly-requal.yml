@@ -120,6 +120,16 @@ jobs:
           SV_TABLE_SUFFIX: "_nosteals"
         run: python -u nba/validate_slip_strategies.py
 
+      - name: 5c. Validation, market-free twin (steals pool and no-steals pool)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SV_TOPK: "30"
+          SV_BOOT: "2000"
+          SV_NULL: "30"
+        run: |
+          SV_TABLE_SUFFIX="_mf" python -u nba/validate_slip_strategies.py
+          SV_TABLE_SUFFIX="_mf_nosteals" python -u nba/validate_slip_strategies.py
+
       - name: 6. Verdicts -> live strategy state (fail = red/cap 0, flagged; never auto-replaced)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -127,7 +137,7 @@ jobs:
           python - <<'EOF'
           import os, json, psycopg, datetime as dt, sys
           sys.path.insert(0, 'nba')
-          from live_slip_engine import STRATEGIES, ROTATION_ONLY, ALLSTAR_ONLY
+          from live_slip_engine import STRATEGIES, ROTATION_ONLY, ALLSTAR_ONLY, bt_suffix
           # state-gated strategies (drought-only, pre-break-week-only) are judged by their own state, not by a full-season
           # validation they are designed to fail; their verdict is recorded but never turns them red
           STATE_GATED = set(ROTATION_ONLY) | set(ALLSTAR_ONLY)
