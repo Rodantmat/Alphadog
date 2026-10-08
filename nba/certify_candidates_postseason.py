@@ -1,102 +1,41 @@
 #!/usr/bin/env python3
 """
-NBA CANDIDATE CERTIFIER - POSTSEASON (strategy §31w P-5, 2026-10-08).
+NBA CELL CERTIFIER - POSTSEASON (strategy §31w P-5, 2026-10-08).
 
-The regular-season certifier (certify_candidates.py) reads its outcomes from nba_market.prop_universe, which is
-regular-season-only by construction (002 games). The postseason (play-in 005 + playoffs 004) is a different regime -
-short benches, starters' minutes up, series-level game plans, fewer games per slate - so its legs are certified on
-their OWN, with the SAME candidate configs, the SAME raw joins and the SAME ranking, swapping only the outcome source:
-
-  board_snapshots (prizepicks, window, snapshot_ts < commence_time)  -- the real board
-  -> board_outcomes (prizepicks window, graded from the postseason box score)   -- the real outcome
-  -> pp_leg_price (window, current per-line price)                             -- the real price
-  -> nba_score.final_hp, postseason rows only (game_id 004/005, phase 5_postseason)  -- the real ranks
+The live engine stakes legs from the certified CELLS of build_slip_engine.py (prop x tier x side x rank x n-band, each with its
+certified 2025-26 p.m). Those cells were certified on regular-season nights only. The postseason (play-in 005 + playoffs 004)
+is a different regime - short benches, starters' minutes up, series-level game plans, 1-4 games a night - so every cell is
+measured on postseason nights with EXACTLY the engine's own selection (build_slip_engine.eligible_legs, imported - never
+re-implemented) over the postseason tier map (nba_score.tier_map_legs_post: real PrizePicks window legs, current per-line price,
+board_outcomes grade, postseason final_hp ranks).
 
 WEIGHING THE POSTSEASON AGAINST THE REGULAR SEASON (owner 2026-10-08: "weigh properly comparing to the regular season").
-A postseason is ~50 slate days; a regular season is ~165. Fitting cuts on the postseason alone would chase noise, and
-ignoring it would assume the regimes are equal. So each config's postseason p.m is SHRUNK toward its regular-season
-certified p.m (the prior), with the prior worth K postseason days:
+Two postseasons are ~110 slate days against ~330 regular-season days. Fitting on the postseason alone chases noise; ignoring
+it assumes the regimes are equal. Each cell's postseason p.m (day-averaged, the certifier's unit) is SHRUNK toward the cell's
+certified regular-season p.m (the prior), the prior worth K postseason days:
         pm_w = (days_post * pm_post + K * pm_reg) / (days_post + K)
-and a config is POSTSEASON-ELIGIBLE only when
-        pm_w >= BE   AND   pm_post >= BE - floor_gap     (the postseason itself must not contradict the prior)
-K and floor_gap are tunables in nba_config.classification_config['postseason_weighting'] (seeded once, never hardcoded
-after that). With no postseason legs a config is NOT eligible (no evidence -> no play).
+A cell is POSTSEASON-ELIGIBLE only when  pm_w >= BE  AND  pm_post >= BE - floor_gap  (the postseason itself must not contradict
+the prior) AND days_post >= min_days. K, floor_gap and min_days are tunables in
+nba_config.classification_config['postseason_weighting'] (seeded once; never hardcoded after that). No postseason evidence ->
+not eligible. The live engine reads nba_score.cell_postseason_eligibility on postseason slates: only eligible cells enter the pool.
 
-Output: nba_score.cand_certified_post  (one row per config x season, season label '<season>_post', + one 'pooled_post'
-        row over both postseasons) and nba_score.cand_postseason_eligibility (one row per config: prior, postseason,
-        weighted, eligible).
+Output: nba_score.cell_certified_post (cell x season incl. 'pooled'), nba_score.cell_postseason_eligibility (one row per cell).
 Env: DATABASE_URL
 """
 import json
 import os
 import sys
+from collections import defaultdict
 
 import psycopg
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from certify_candidates import BE, CONFIGS  # noqa: E402  (ONE config list - the postseason never invents its own cells)
+import build_slip_engine as ENG  # noqa: E402  (ONE cell definition and ONE selection - the engine's own)
 
-DEFAULT_CFG = {"K_days": 50, "floor_gap": 0.02,
-               "note": "§31w postseason weighting: regular-season certified p.m is the prior worth K_days postseason days; "
-                       "eligible iff weighted p.m >= BE and postseason p.m >= BE - floor_gap"}
-
-SQL = """
-WITH legs AS (
-  SELECT game_date, season, player, side, h, price, kind, tier3,
-    CASE %(rank)s WHEN 'score' THEN s_score WHEN 'baseline_hp' THEN s_base ELSE s_final END AS s
-  FROM _raw WHERE prop=%(prop)s AND kind=%(kind)s AND (%(side)s='both' OR side=%(side)s)
-    AND (%(tier)s::int IS NULL OR tier3=%(tier)s::int)
-),
-ranked AS (SELECT *, row_number() OVER (PARTITION BY game_date ORDER BY s DESC NULLS LAST, player) rn FROM legs WHERE s IS NOT NULL),
-daily AS (SELECT season, game_date, avg(h*price) pm, avg(h) hit, avg(price) mult, count(*) got FROM ranked WHERE rn<=%(n)s GROUP BY 1,2)
-SELECT season, count(*) days, avg(hit) hit, avg(mult) mult, avg(pm) pm, avg(CASE WHEN pm>%(be)s THEN 1.0 ELSE 0 END) above
-FROM daily WHERE got=%(n)s
-GROUP BY ROLLUP(season) ORDER BY season NULLS LAST
-"""
-
-RAW = """
-CREATE TEMP TABLE _fh AS
-  SELECT season, game_date, player_id, prop, side, line, final_hp::float s_final, baseline_hp::float s_base, score::float s_score
-  FROM nba_score.final_hp WHERE game_id LIKE '004%%' OR game_id LIKE '005%%';
-CREATE INDEX ON _fh (game_date, player_id, prop, side, line);
-
-CREATE TEMP TABLE _bd AS
-  SELECT DISTINCT game_date, nba_ref.norm_name(player) pn, line, side,
-    replace(replace(market_key,'_alternate',''),'player_','') AS mk
-  FROM nba_market.board_snapshots
-  WHERE bookmaker='prizepicks' AND snapshot_label='window' AND snapshot_ts<commence_time
-    AND game_date IN (SELECT DISTINCT game_date FROM _fh);
-CREATE INDEX ON _bd (game_date, pn, side, line, mk);
-
-CREATE TEMP TABLE _bo AS
-  SELECT DISTINCT ON (game_date, pn, side, line, mk) game_date, pn, side, line, mk, h FROM (
-    SELECT game_date, nba_ref.norm_name(player) pn, side, line,
-      replace(replace(market_key,'_alternate',''),'player_','') mk,
-      CASE WHEN leg_result = CASE side WHEN 'Over' THEN 'over_win' ELSE 'under_win' END THEN 1 ELSE 0 END h
-    FROM nba_market.board_outcomes
-    WHERE leg_result IN ('over_win','under_win')      -- board_outcomes is book-agnostic: one graded row per (date, player, market, side, line)
-      AND game_date IN (SELECT DISTINCT game_date FROM _fh)) x
-  ORDER BY game_date, pn, side, line, mk;
-CREATE INDEX ON _bo (game_date, pn, side, line, mk);
-
-CREATE TEMP TABLE _pr AS
-  SELECT game_date, nm, side, line, kind, factor::float price, replace(base_market,'player_','') mk,
-    least(abs(COALESCE(NULLIF(tier,0), round(line-anchor_line)::int)),3) AS tier3
-  FROM nba_market.pp_leg_price WHERE snapshot_label='window' AND factor IS NOT NULL AND NOT coalesce(kind_position_mismatch,false)
-    AND game_date IN (SELECT DISTINCT game_date FROM _fh);
-CREATE INDEX ON _pr (game_date, nm, side, line, mk);
-
-CREATE TEMP TABLE _raw AS
-SELECT bd.game_date, f.season, m.norm_name player, f.prop, bd.side, bd.line, bo.h, pr.price, pr.kind, pr.tier3,
-       f.s_score, f.s_base, f.s_final
-FROM _bd bd
-JOIN _pr pr ON pr.game_date=bd.game_date AND pr.nm=bd.pn AND pr.side=bd.side AND pr.line=bd.line AND pr.mk=bd.mk
-JOIN _bo bo ON bo.game_date=bd.game_date AND bo.pn=bd.pn AND bo.side=bd.side AND bo.line=bd.line AND bo.mk=bd.mk
-JOIN nba_ref.player_name_map m ON m.norm_name=bd.pn
-JOIN _fh f ON f.game_date=bd.game_date AND f.player_id=m.player_id::text AND f.side=bd.side AND f.line=bd.line
-  AND f.prop=CASE bd.mk WHEN 'blocks_steals' THEN 'stocks' WHEN 'threes' THEN 'threes_made' WHEN 'points_rebounds_assists' THEN 'pra'
-    WHEN 'points_rebounds' THEN 'pts_reb' WHEN 'points_assists' THEN 'pts_ast' WHEN 'rebounds_assists' THEN 'reb_ast' ELSE bd.mk END
-"""
+BE = 0.55   # 3-pick Power break-even per leg (section 19i), the certifier's bar
+DEFAULT_CFG = {"K_days": 50, "floor_gap": 0.02, "min_days": 20,
+               "note": "§31w postseason weighting: the cell's certified regular-season p.m is the prior worth K_days postseason days; "
+                       "eligible iff weighted p.m >= 0.55, postseason p.m >= 0.55 - floor_gap and >= min_days postseason days"}
 
 
 def cfg(conn):
@@ -113,55 +52,75 @@ def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
     c = cfg(conn)
-    K, gap = float(c.get('K_days', 50)), float(c.get('floor_gap', 0.02))
-    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.cand_certified_post (LIKE nba_score.cand_certified INCLUDING DEFAULTS)""")
-    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.cand_postseason_eligibility (
-        prop text, kind text, tier int, side text, n int, rank_key text,
-        days_reg int, pm_reg double precision, days_post int, pm_post double precision, hit_post double precision,
+    K, gap, min_days = float(c.get('K_days', 50)), float(c.get('floor_gap', 0.02)), int(c.get('min_days', 20))
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.cell_certified_post (
+        cell text, season text, days int, legs int, hit double precision, mult double precision, pm double precision,
+        above double precision, built_at timestamptz DEFAULT now())""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.cell_postseason_eligibility (
+        cell text PRIMARY KEY, pm_reg double precision, days_post int, legs_post int, hit_post double precision, pm_post double precision,
         k_days double precision, pm_weighted double precision, eligible boolean, reason text, built_at timestamptz DEFAULT now())""")
-    conn.execute("DELETE FROM nba_score.cand_certified_post")
-    conn.execute("DELETE FROM nba_score.cand_postseason_eligibility")
-    conn.commit()
-    for stmt in RAW.split(';'):
-        if stmt.strip():
-            conn.execute(stmt.replace('%%', '%'))
-    conn.execute("CREATE INDEX ON _raw (prop, kind, tier3, side, game_date)")
-    conn.execute("ANALYZE _raw")
-    n_raw, n_days = conn.execute("SELECT count(*), count(DISTINCT game_date) FROM _raw").fetchone()
-    print(f"  postseason priced+graded+ranked board: {n_raw:,} legs over {n_days} days | K={K:g} days, floor_gap={gap:g}", flush=True)
-    # the prior: the regular-season certified row the live engine trusts (2025-26 from Nov 1 where present, else 2024-25)
-    prior = {}
-    for prop, kind, tier, side, n, rank, season, days, pm in conn.execute(
-            "SELECT prop, kind, tier, side, n, rank_key, season, days, pm FROM nba_score.cand_certified ORDER BY season").fetchall():
-        prior[(prop, kind, tier, side, n, rank)] = (days, pm)          # later season overwrites -> the most recent season wins
-    print(f"{'cell':<34}{'season':<14}{'days':>5}{'hit':>7}{'p.m':>7}", flush=True)
-    for prop, kind, tier, side, n, rank in CONFIGS:
-        rows = conn.execute(SQL, {'kind': kind, 'tier': tier, 'side': side, 'n': n, 'rank': rank, 'prop': prop, 'be': BE}).fetchall()
-        label = f"{prop} {kind[0].upper()}{tier or ''} {side} top{n} {rank}"
-        pooled = None
-        for season, days, hit, mult, pm, above in rows:
-            lab = f"{season}_post" if season else "pooled_post"
-            if season is None:
-                pooled = (days, hit, pm)
-            profit = 100 * (6 * 0.95 * pm ** 3 - 1)
-            conn.execute("""INSERT INTO nba_score.cand_certified_post (prop, kind, tier, side, n, rank_key, season, days, hit, mult, pm, above, profit_per_100)
-                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                         (prop, kind, tier, side, n, rank, lab, days, hit, mult, pm, above, profit))
-            print(f"{label:<34}{lab:<14}{days:>5}{hit:>7.3f}{pm:>7.3f}", flush=True)
-        d_reg, pm_reg = prior.get((prop, kind, tier, side, n, rank), (None, None))
-        if pooled is None or pm_reg is None:
-            elig, w, reason = False, None, 'no postseason legs' if pooled is None else 'no regular-season prior'
-            d_post, hit_post, pm_post = (pooled or (0, None, None))
+    days = defaultdict(list)
+    with conn.cursor(name='legs') as cur:
+        cur.itersize = 50000
+        cur.execute(ENG.LEG_SQL_SELF.replace("FROM nba_score.tier_map_legs l", "FROM nba_score.tier_map_legs_post l", 1))
+        cols = [d.name for d in cur.description]
+        for row in cur:
+            r = dict(zip(cols, row))
+            r['factor'] = float(r['factor']); r['score'] = float(r['score'])
+            days[r['game_date']].append(r)
+    print(f"postseason tier map: {sum(len(v) for v in days.values()):,} candidate legs over {len(days)} days | "
+          f"K={K:g} days, floor_gap={gap:g}, min_days={min_days}", flush=True)
+    # per (cell, season): list of day aggregates (hit, mult, pm, n)
+    acc = defaultdict(list)
+    for d in sorted(days):
+        rows = days[d]
+        season = rows[0]['season']
+        pool = ENG.eligible_legs(rows)
+        for cell, legs in pool.items():
+            legs = [l for l in legs if l['hit'] is not None]
+            if not legs:
+                continue
+            n = len(legs)
+            hit = sum(l['hit'] for l in legs) / n
+            mult = sum(l['factor'] for l in legs) / n
+            pm = sum(l['hit'] * l['factor'] for l in legs) / n
+            acc[(cell, season)].append((hit, mult, pm, n))
+            acc[(cell, 'pooled')].append((hit, mult, pm, n))
+    conn.execute("DELETE FROM nba_score.cell_certified_post")
+    conn.execute("DELETE FROM nba_score.cell_postseason_eligibility")
+    print(f"{'cell':<14}{'season':<9}{'days':>5}{'legs':>6}{'hit':>7}{'mult':>7}{'p.m':>7}{'>BE':>6}", flush=True)
+    for (cell, season), v in sorted(acc.items()):
+        nd = len(v)
+        hit = sum(x[0] for x in v) / nd; mult = sum(x[1] for x in v) / nd; pm = sum(x[2] for x in v) / nd
+        above = sum(1 for x in v if x[2] > BE) / nd
+        conn.execute("""INSERT INTO nba_score.cell_certified_post (cell, season, days, legs, hit, mult, pm, above)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)""", (cell, season, nd, sum(x[3] for x in v), hit, mult, pm, above))
+        print(f"{cell:<14}{season:<9}{nd:>5}{sum(x[3] for x in v):>6}{hit:>7.3f}{mult:>7.3f}{pm:>7.3f}{100 * above:>5.0f}%", flush=True)
+    print(f"\n{'cell':<14}{'prior':>7}{'days':>6}{'post':>7}{'weighted':>10}   verdict", flush=True)
+    for cell, (_prop, _tier, _side, _rank, _nband, edge) in ENG.CELLS.items():
+        v = acc.get((cell, 'pooled'), [])
+        nd = len(v)
+        legs = sum(x[3] for x in v)
+        if nd == 0:
+            elig, w, pm_post, hit_post, reason = False, None, None, None, 'no postseason legs'
         else:
-            d_post, hit_post, pm_post = pooled
-            w = (d_post * pm_post + K * pm_reg) / (d_post + K)
-            elig = (w >= BE) and (pm_post >= BE - gap)
-            reason = 'eligible' if elig else ('weighted below BE' if w < BE else 'postseason contradicts prior')
-        conn.execute("""INSERT INTO nba_score.cand_postseason_eligibility (prop, kind, tier, side, n, rank_key, days_reg, pm_reg, days_post,
-                        pm_post, hit_post, k_days, pm_weighted, eligible, reason) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                     (prop, kind, tier, side, n, rank, d_reg, pm_reg, d_post, pm_post, hit_post, K, w, elig, reason))
-        print(f"  -> prior {pm_reg if pm_reg is None else round(pm_reg, 3)} | weighted {w if w is None else round(w, 3)} | {reason}", flush=True)
-        conn.commit()
+            pm_post = sum(x[2] for x in v) / nd
+            hit_post = sum(x[0] for x in v) / nd
+            w = (nd * pm_post + K * edge) / (nd + K)
+            if nd < min_days:
+                elig, reason = False, f'too few postseason days ({nd} < {min_days})'
+            elif w < BE:
+                elig, reason = False, 'weighted p.m below break-even'
+            elif pm_post < BE - gap:
+                elig, reason = False, 'postseason contradicts the regular-season prior'
+            else:
+                elig, reason = True, 'eligible'
+        conn.execute("""INSERT INTO nba_score.cell_postseason_eligibility (cell, pm_reg, days_post, legs_post, hit_post, pm_post, k_days,
+                        pm_weighted, eligible, reason) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                     (cell, edge, nd, legs, hit_post, pm_post, K, w, elig, reason))
+        print(f"{cell:<14}{edge:>7.3f}{nd:>6}{'' if pm_post is None else f'{pm_post:.3f}':>7}{'' if w is None else f'{w:.3f}':>10}   {reason}",
+              flush=True)
+    conn.commit()
     conn.close()
     print("DONE", flush=True)
 
