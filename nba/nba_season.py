@@ -61,13 +61,16 @@ def active_stats_season(today=None):
     # new season's first non-preseason game is still ahead, the season with real data is the prior one.
     # Preseason games do not count: they are rejected for the projection pipeline. Missing or unreadable
     # file -> the old rule, unchanged.
-    if today.month == 10:
+    # any month of the new season year before the opener (round 2 P2A#16, 2026-10-08: was `month == 10` only, so a
+    # September call - or a season opening in November - answered the new season before a game was played); the opener is
+    # the first REGULAR-SEASON game by the league's id prefix (002), the one slate predicate
+    if today.month >= 7:
         try:
             import json
             from pathlib import Path
             games = json.loads(Path("nba/data/nba_schedule_current.json").read_text()).get("games", [])
             first = min((g["game_date"][:10] for g in games
-                         if g.get("season") == season and (g.get("game_label") or "") != "Preseason"), default=None)
+                         if g.get("season") == season and str(g.get("game_id") or "").startswith("002")), default=None)
             # <= not <: on opening MORNING no game of the new season has been played yet (P2 runs at
             # 08:45 PT), so the season with real data is still the prior one until the day after.
             if first and today.isoformat() <= first:
