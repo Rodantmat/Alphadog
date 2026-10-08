@@ -129,6 +129,17 @@ def main():
                   SET official_name=EXCLUDED.official_name, official_number=EXCLUDED.official_number,
                       game_id=EXCLUDED.game_id, official_code=EXCLUDED.official_code, captured_at=now()""",
                 [(d, m, s, n, str(num) if num else None, src, gid, code) for m, s, n, num, gid, code in rows])
+            # CREW HISTORY (retention audit 2026-10-08): the upsert keeps the LATEST crew only, so a crew change between
+            # the morning poll and tip (a referee swap, a late scratch) overwrote the earlier capture. Every capture is
+            # also appended, unchanged, to a log keyed by capture time; the live table stays the one consumers read.
+            cur.execute("""CREATE TABLE IF NOT EXISTS nba_ref.referee_assignments_log (
+                game_date date, matchup text, slot int, official_name text, official_number text, source text,
+                game_id text, official_code bigint, captured_at timestamptz NOT NULL DEFAULT now(),
+                PRIMARY KEY (game_date, matchup, slot, captured_at))""")
+            cur.executemany("""INSERT INTO nba_ref.referee_assignments_log
+                (game_date, matchup, slot, official_name, official_number, source, game_id, official_code)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
+                [(d, m, s, n, str(num) if num else None, src, gid, code) for m, s, n, num, gid, code in rows])
     conn.commit()
     with conn.cursor() as cur:
         cur.execute("SELECT count(*), count(DISTINCT game_date) FROM nba_ref.referee_assignments")
