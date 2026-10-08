@@ -415,7 +415,7 @@ def main():
             continue   # delta: bounds and the correlation map came from the whole history above; only build the new days
         rows = days[d]
         season = rows[0]['season']
-        ph = phase_of(season, d, bounds)
+        ph = SE_PHASE or phase_of(season, d, bounds)
         pool = eligible_legs(rows)
         fam_depth = defaultdict(set)
         for c, legs in pool.items():
