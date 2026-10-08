@@ -1,1 +1,1 @@
-script: certify_pipeline.py
+script: probe_price_shop_ledger.py
