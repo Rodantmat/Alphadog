@@ -90,9 +90,25 @@ jobs:
       - run: python -m pip install --upgrade pip "psycopg[binary]" requests pandas numpy scipy curl_cffi lxml html5lib
 
       # --- identity: who is on which team. Trades and two-way call-ups move these weekly. -----------
+      # PROXY FROM THE CREDENTIAL STORE (2026-10-08, full-system certification). The owner's rule keeps API keys and
+      # credentials in nba_config.external_credentials; the proxy URL now lives there too ('proxy_url'), so a provider or
+      # credential change is ONE row, not a secret edit in 30 workflows. The PROXY_URL secret stays as the fallback.
+      # Every later step reads ${{ env.PROXY_URL || secrets.PROXY_URL }}. psql ships on the GitHub runner image.
+      - name: Resolve proxy (credential store first, secret as fallback)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"; echo "proxy: credential store -> $(echo "$P" | sed 's#.*@##')"
+          else
+            echo "proxy: credential store has no proxy_url row - using the PROXY_URL secret"
+          fi
+
       - name: Teams and arenas
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
         run: |
           python nba/scrape_nba_stats_teams.py
           python nba/scrape_nba_stats_arenas.py
