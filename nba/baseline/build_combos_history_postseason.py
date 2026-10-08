@@ -21,11 +21,9 @@ def rep(src, old, new):
     return src.replace(old, new, 1)
 
 
-s = rep(s, '''    _rows = [x for x in _rows if x["game_date"]]''',
-        '''    _rows = [x for x in _rows if x["game_date"]]
-_rows = [x for x in _rows if str(x["game_id"]).startswith(("004", "005"))]''')
 s = rep(s, '''_out = Path("nba/data") / f"nba_baseline_history_{_season.replace('-', '_')}_combos.json"''',
-        '''_out = Path("nba/data") / f"nba_baseline_history_postseason_{_season.replace('-', '_')}_combos.json"''')
+        '''_rows = [x for x in _rows if str(x["game_id"]).startswith(("004", "005"))]   # after the try/except - postseason games only
+_out = Path("nba/data") / f"nba_baseline_history_postseason_{_season.replace('-', '_')}_combos.json"''')
 s = rep(s, '''_out.write_text(json.dumps({"meta": {"season": _season, "props": "combos", "rows": len(_rows),''',
         '''_out.write_text(json.dumps({"meta": {"season": _season, "props": "combos", "rows": len(_rows), "postseason": True,''')
 
