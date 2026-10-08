@@ -187,6 +187,19 @@ def main():
     recent = logs
     last_team = (recent.sort_values("GAME_DATE").drop_duplicates("PLAYER_ID", keep="last")
                  .set_index("PLAYER_ID")["TEAM"].to_dict())
+    # ROUND-2 P3#8 (2026-10-08): the CURRENT roster wins over the last game log - an offseason mover (LeBron LAL->PHI in the
+    # §31r example) must reallocate his minutes on his NEW team's ladder from opening night, not on last April's team until
+    # he has played. Same rule as live_slip_engine's BOARD_SQL (roster first, log second) and the §31r ladder builder.
+    roster = pd.read_sql("""SELECT p.nba_player_id::text AS pid, t.abbreviation AS team
+                            FROM nba_ref.players p JOIN nba_ref.teams t ON t.team_id = p.team_id
+                            WHERE p.active = 1 AND p.nba_player_id IS NOT NULL""", conn)
+    n_roster_override = 0
+    for pid, team in zip(roster["pid"], roster["team"]):
+        if team and last_team.get(pid) != team:
+            n_roster_override += 1
+        if team:
+            last_team[pid] = team
+    print(f"  team resolution: {len(roster):,} rostered players; {n_roster_override} differ from the last game log (roster wins)", flush=True)
     teams = {last_team.get(p) for p in (now_out | now_in)} - {None}
     print(f"  affected teams: {sorted(teams)}", flush=True)
 
