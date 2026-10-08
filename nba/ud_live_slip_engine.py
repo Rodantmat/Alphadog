@@ -235,6 +235,12 @@ def grade(conn, day):
     for pid, pts, reb, ast, fg3m, stl, blk, tov, mins in conn.execute("""SELECT nba_player_id::text, pts, reb, ast, fg3m, stl, blk, tov, min
             FROM nba_stats.player_game_log WHERE game_date=%s""", (day,)).fetchall():
         stats[pid] = dict(pts=pts, reb=reb, ast=ast, fg3m=fg3m, stl=stl, blk=blk, tov=tov, min=mins)
+    if not stats:
+        # NO BOX SCORE YET (certification round 2, 2026-10-08, P2A#4): grading on an empty log would void every leg as
+        # "DNP", refund every slip and stamp graded_at - permanently. The PrizePicks engine has the same guard
+        # (slate_graded); here the slate is left ungraded and retried the next morning.
+        print(f"  {day}: no player game logs landed for this slate yet - {len(slips)} Underdog slips left ungraded (retry next run)", flush=True)
+        return
     graded = 0
     for pf, comp, size, structure, k, legs, stake in slips:
         legs = legs if isinstance(legs, list) else json.loads(legs)
