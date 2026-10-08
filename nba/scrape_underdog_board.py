@@ -189,7 +189,8 @@ def main():
             except Exception as exc:  # noqa: BLE001
                 calls.append((f"lines[match={mid}]_error", str(exc)[:60]))
             filters = [(sid, "PickemStat") for sid in list(registry["pickem_stats"])] + [(gid, "MarketGroup") for gid in list(registry["market_groups"])]
-            res = _pmap(lambda f: _merge(get(_sess(), f"{base}&filter_id={f[0]}&filter_type={f[1]}", proxies)), filters, workers)
+            res = _pmap(lambda f: _merge(get(_sess(), f"{base}&filter_id={f[0]}&filter_type={f[1]}", proxies)), filters, workers,
+                        stop=lambda: over("per-match pills"))
             added = sum(r for _, r, e in res if e is None)
             for (fid, ftype), _, e in res:
                 if e:
