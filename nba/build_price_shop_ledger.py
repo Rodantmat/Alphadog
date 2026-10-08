@@ -134,6 +134,7 @@ def main():
     conn.execute(DDL); conn.commit()
     c = cfg(conn)
     margin = float(c.get('margin_pp', 0.0916))
+    ud_ref = float(c.get('ud_ref_per_leg', DEFAULT_CFG['ud_ref_per_leg']))
     apps = list(c.get('apps') or DEFAULT_CFG['apps'])
     sel = selected_legs(conn, day)
     if not sel:
