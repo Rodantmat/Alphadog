@@ -175,9 +175,9 @@ def trailing10(conn, day, player_ids, post=False):
 def trailing_pf20(conn, day, player_ids, post=False):
     """Trailing-20-game personal fouls per player_id, as of the day (§29r: the low-foul key needs it at pick time; the
     backtest's nba_score.player_pf20 sits on played-game rows and cannot supply a game that has not happened)."""
-    rows = conn.execute("""SELECT x.pid, avg(x.pf) FROM (
+    rows = conn.execute(f"""SELECT x.pid, avg(x.pf) FROM (
                              SELECT g.nba_player_id::text pid, g.pf, row_number() OVER (PARTITION BY g.nba_player_id ORDER BY g.game_date DESC) rn
-                             FROM nba_stats.player_game_log g WHERE g.game_date < %s AND g.nba_player_id::text = ANY(%s)) x
+                             FROM {_log_src(post)} g WHERE g.game_date < %s AND g.nba_player_id::text = ANY(%s)) x
                            WHERE x.rn <= 20 GROUP BY x.pid""", (day, list(player_ids))).fetchall()
     return {r[0]: float(r[1]) for r in rows}
 
