@@ -40,6 +40,12 @@ RAW = "https://raw.githubusercontent.com/Rodantmat/Alphadog/main/nba/data/"
 
 
 def fetch(name, timeout=300):
+    # repo file first, CDN fallback (certification round 2, 2026-10-08): on 2026-10-21 the first 2026-27 season file is
+    # committed by P2A minutes before P2B reads it; the CDN caches for minutes and a 404 here killed the slate.
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", name)
+    if os.path.exists(local):
+        with open(local) as f:
+            return json.load(f)
     with urllib.request.urlopen(urllib.request.Request(RAW + name, headers={"User-Agent": "alphadog"}), timeout=timeout) as r:
         return json.load(r)
 
