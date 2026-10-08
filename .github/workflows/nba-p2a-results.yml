@@ -234,7 +234,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           WN_WRITE: "1"
         run: |
-          export WN_DATE="$(TZ=America/Los_Angeles date -d yesterday +%F)"
+          export WN_DATE="${{ steps.d.outputs.yday }}"
           python -u nba/build_whole_number_hp.py
 
       - name: Grade paper-trading picks
