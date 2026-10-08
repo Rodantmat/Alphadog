@@ -131,7 +131,9 @@ def main():
     label = os.environ.get('PSL_LABEL', 'window')
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     conn.execute("SET statement_timeout = 0")
-    conn.execute(DDL); conn.commit()
+    for stmt in DDL.split(";\n"):
+        conn.execute(stmt)
+    conn.commit()
     c = cfg(conn)
     margin = float(c.get('margin_pp', 0.0916))
     ud_ref = float(c.get('ud_ref_per_leg', DEFAULT_CFG['ud_ref_per_leg']))
