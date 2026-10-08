@@ -660,6 +660,42 @@ asserted from the audit alone. Items the audits marked INFO are included when th
   unset), which is the designed behaviour (only an explicit FAIL turns a strategy red). Noted for the 10-20 launch: B_demon_3flex
   (cap 1) is a strategy the live scoring cannot reproduce in the top-30 and the §31u/COMPASS 136 review should weigh it.
 
+### After round 2 — owner's 2026-10-08 10:07 PT directions, closed the same day
+- **MLB scraper proxy:** owner rotated the GitHub secret `PROXY_URL` to the DataImpulse URL (the same value as `nba_config.external_credentials.proxy_url`);
+  verified by dispatch 37814179192 🟢 — PrizePicks MLB 565 rows / 653,085 bytes through `gw.dataimpulse.com:823`. The secret is also the
+  fallback of 10 NBA workflows, so the dead ProxyScrape value is gone everywhere. MLB code untouched.
+- **Launch checklist — opening-day P4 reset:** the ledger was already clean (0 live slips, 0 pool rows, 0 state-history rows; every
+  strategy `paper` with days/slips/net 0, `_ROTATION` normal), and the reset was executed anyway to certify the path: run 37815777318
+  🟢 `RESET: 0 ledger slips removed; states: … paper/cap … _ROTATION=normal/0`. Nothing to run again before 10-20 unless a replay
+  writes the ledger (the in-season refusal then protects the real season).
+- **Launch checklist — DataImpulse traffic meter (research):** DataImpulse exposes no usage/balance API reachable with the proxy
+  credentials (its Postman API needs a token issued against the dashboard password; docs.dataimpulse.com lists no stats endpoint).
+  What exists is a per-plan rolling **Traffic Limit** (1 h / 24 h / 7 d / 30 d windows, whole GB; actions: e-mail notification,
+  suspend, or both; suspension returns `USER_RATE_LIMIT_EXCEEDED`). Decision: the owner sets a 24-hour rolling limit with
+  **e-mail notification only** (never suspend — a suspended plan would fail P2B/P3 against a tip-off clock); our side has no
+  per-request byte accounting (30 scripts build their own proxies dict; adding a ledger is a cross-cutting change not worth the
+  risk before 10-20). Measured footprint: the MLB board pull is 0.65 MB (×12/day ≈ 8 MB/day); NBA boards are the same order; the
+  5 GB trial is weeks of normal operation. The dashboard figure is read once in the first in-season week to fix the burn rate.
+- **§31u confirmed by the owner; §31v written** (price-shopping research → conservative decision → daily ledger). Research sources
+  (web pass 2026-10-08): PrizePicks payouts (intercom.help/prizepicks …/9047668), PrizePicks DNP rules (prizepicks.com/help-center/injuries-and-dnps),
+  Sleeper rules (support.sleeper.com …/9047931, …/9261402 Flex, …/10722683 boosts, …/15382178 limits), Fliff terms (getfliff.com/terms-of-use),
+  Betr tables (cbssports.com/betting/news/betr, rotowire.com …/129524, squawka.com/us/?p=56274), break-even math (sickfade.com/calculators/pickem),
+  Establish The Run (establishtherun.com/how-to-beat-pick-em-on-underdog-fantasy), Underdog Math (moods.beehiiv.com/p/ud-math-2023),
+  Stokastic (stokastic.com …/how-to-find-value-on-prizepicks, …/nba-pickem-correlation-strategy, …/best-prizepicks-alternatives),
+  4for4 (4for4.com/2023/preseason/how-win-money-playing-pick-em-sites), OddsShopper Sleeper guide (oddsshopper.com …/how-to-play-sleeper-picks),
+  Props.com Sleeper review (props.com/fantasy/sleeper/review), BettingUSA Sleeper/Fliff reviews, OddsPapi Fliff classification (oddspapi.io/sportsbooks/fliff),
+  PlayerProfiler stack study (playerprofiler.com/?p=83046), Clemson DFS skill study (news.clemson.edu …). Gemini 2.5 Pro reference pass concurred and
+  added the stale-line flag.
+- **Price-shopping ledger built and verified:** `nba/build_price_shop_ledger.py` (commits 8323247 … 9d06096), P3 step `soft_psl` (b000572, 8090367),
+  config `classification_config['price_shop_ledger']` (margin_pp 0.0916, ud_ref_per_leg 1.8206, apps). Replay probe on 2026-04-10
+  (`PSL_SOURCE=backtest`): first run 37816681821 🔴 (`final_hp.player_id` is text — cast added, f9aec7a); second 37816966240 🟢;
+  third after the `m_eff` correction (Underdog's number is a payout modifier, not a per-leg price) 🟢 — 40 certified legs: PrizePicks
+  40/40 same line, Underdog 19 listed / 12 same line / 12 gate-pass (p 0.813 × m_eff 1.776 = 1.507), Betr history 30 / 26, Sleeper/Fliff
+  no 2025-26 archive. Table `nba_score.price_shop_ledger` (240 rows for the replay date).
+- **Archive note (not a defect, recorded):** the 105 Sleeper legs captured 2026-10-07 17:26Z sit under `game_date 2026-10-07` /
+  `routine` (pre-fix capture, before round-2 P3#1 dated Sleeper legs by the schedule map; include_preseason=true, so they cannot be
+  re-dated with certainty). Nothing decision-side reads `routine`; the first dated Sleeper archive is the 10-20 window capture.
+
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
 2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
