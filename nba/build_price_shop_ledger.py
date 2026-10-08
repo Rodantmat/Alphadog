@@ -157,10 +157,11 @@ def main():
             else:
                 o, listed, same_line, app_line, gap = (None, None, None, None), False, None, None, None
             m, price, kind = o[1], o[2], o[3]
-            pxm = (p * m) if (p is not None and m is not None and same_line) else None
-            gate = ((p - margin) * m >= 1.0) if pxm is not None else None
+            m_eff = None if m is None else (m * ud_ref if app == 'underdog' else m)
+            pxm = (p * m_eff) if (p is not None and m_eff is not None and same_line) else None
+            gate = ((p - margin) * m_eff >= 1.0) if pxm is not None else None
             rows.append((day, src, pid, rec['player'], prop, side, line, rec['tier'], app, listed, same_line, app_line, gap, kind, m, price, p, pxm, gate,
-                         sorted(rec['strategies'])))
+                         sorted(rec['strategies']), m_eff))
             s = stats.setdefault(app, {'n': 0, 'listed': 0, 'same': 0, 'priced': 0, 'gate': 0, 'pxm': []})
             s['n'] += 1; s['listed'] += listed; s['same'] += bool(same_line)
             if pxm is not None:
