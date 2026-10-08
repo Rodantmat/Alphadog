@@ -166,11 +166,25 @@ def rows_underdog(doc, gd, label):
         if dec <= 1.0:
             return None
         return round((dec - 1) * 100) if dec >= 2.0 else round(-100 / (dec - 1))
+    # TIP TIME (2026-10-08, full-system certification round 2, P3#1): the scraper writes the tip as `game_start` on legs and
+    # not at all on ladder legs; this archiver asked for `event_start_utc`, which no Underdog row ever carried, so EVERY
+    # Underdog leg was dated by the capture day - in season Underdog posts several days at once, so tomorrow's legs would
+    # have been archived as today's 'window' board (joined to today's final_hp, graded against today's box score, counted by
+    # the board guard). Now: leg.game_start, else games[game_id].scheduled_at from the scraper's games store.
+    _games = doc.get("games") or {}
+    def _tip(l):
+        t = l.get("game_start") or l.get("event_start_utc")
+        if not t and l.get("game_id") is not None:
+            g = _games.get(str(l.get("game_id"))) or {}
+            t = g.get("scheduled_at")
+        return t
     out = []
     for l in (doc.get("legs") or []) + (doc.get("ladder") or []):
         line = l.get("line")
         if line is None or not l.get("player"):
             continue
+        if str(l.get("appearance_type") or "Player").lower() != "player" and l.get("player_id") in (None, ""):
+            continue   # team markets (moneyline / total / spread ladders) are not player legs; no engine reads them
         _disp = str(l.get("stat") or l.get("stat_key") or "")
         mk = _ud.get(_disp.strip().lower())
         if mk is None:
