@@ -272,7 +272,7 @@ jobs:
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         continue-on-error: true
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           PRIZEPICKS_LEAGUE_ID: "7"
           PRIZEPICKS_SPORT: "nba"
           PRIZEPICKS_OUT_DIR: "boards"
