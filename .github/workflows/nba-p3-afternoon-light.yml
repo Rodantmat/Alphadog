@@ -145,8 +145,8 @@ jobs:
               # still captured and archived, and scoring / paper picks are skipped. No preseason pick
               # ever reaches the paper log.
               first_tip, games = c.execute(
-                  """SELECT min(game_datetime_utc), count(*) FROM nba_calendar.regular_season_games
-                     WHERE game_date = %s""",
+                  """SELECT min(game_datetime_utc), count(*) FROM nba_calendar.slate_games
+                     WHERE game_date = %s""",   # §31w P-6: slate_games = 002 + play-in 005 + playoffs 004
                   (slate,)).fetchone()   # the ONE slate predicate (round 2 P2A#16, 2026-10-08) - P3 used `<> 'Preseason'`, which let play-in / playoff / All-Star / Cup Final days through
               scored = c.execute(
                   "SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s", (slate,)).fetchone()[0]
