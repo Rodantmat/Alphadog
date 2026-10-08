@@ -140,6 +140,14 @@ def main():
         time.sleep(1)
     Path("nba/data/nba_delta_measure_types_meta.json").write_text(json.dumps(mt_meta, indent=2), encoding="utf-8")
     print(json.dumps(meta, indent=2))
+    # A MISSED NIGHT MUST FAIL LOUDLY (2026-10-08, full-system certification round 2, P2A#2). Every failed pull was only
+    # recorded in the meta and the script returned 0, so a dead proxy left yesterday's files in place, the loaders upserted
+    # nothing new with "ok", and the morning carried on as if the night had landed. Any failed pull now exits 1 before the
+    # commit / load steps (the successful files are kept; the meta names the failures).
+    failed = [e["key"] for e in errors] + [e["key"] for e in mt_meta["errors"]]
+    if failed:
+        print(f"daily delta FAILED for: {', '.join(failed)} - exiting 1 so the night is not silently missed", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
