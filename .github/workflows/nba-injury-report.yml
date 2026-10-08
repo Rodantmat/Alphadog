@@ -84,7 +84,9 @@ jobs:
             INJURY_MAX_DAYS=30 python nba/scrape_nba_injury_report.py | tail -3
             commit_now
             idx="nba/data/nba_injury_report_${INJURY_SEASON_SLUG}_index.json"
-            done_n=$(python -c "import json,sys;print(len(json.load(open('$idx'))['days_done']))" 2>/dev/null || echo 0)
+            # count only the days INSIDE the requested range (2026-10-08: the index holds the whole season, so a postseason range
+            # read as complete after its first 30-day chunk)
+            done_n=$(python -c "import json;d=json.load(open('$idx'))['days_done'];print(sum(1 for x in d if '$INJURY_FROM'<=x<='$INJURY_TO'))" 2>/dev/null || echo 0)
             total=$(python -c "from datetime import date;print((date.fromisoformat('$INJURY_TO')-date.fromisoformat('$INJURY_FROM')).days+1)")
             echo "chunk $i done: $done_n / $total days"
             if [ "$done_n" -ge "$total" ]; then echo "COMPLETE"; break; fi
