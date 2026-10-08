@@ -25,6 +25,12 @@ for src, dst in MAP.items():
     if not p.exists():
         print(f"skip {src} (missing)"); continue
     d = json.loads(p.read_text())
+    # ROUND-2 P2A#8 (2026-10-08): every delta file carries its own 'season'; a file the scrape could not refresh (left at
+    # the previous season on rollover morning) must never be copied under the new season's name. Mismatch = fail loud.
+    fs = d.get("season")
+    if fs and fs != season:
+        raise SystemExit(f"ABORT: {src} is season {fs} but the delta meta says {season} - a stale file must not be synced "
+                         f"as {dst} (rollover contamination)")
     recs = d.get("records") or d.get("rows") or []
     if not recs:
         print(f"skip {src} (empty)"); continue
