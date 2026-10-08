@@ -214,7 +214,7 @@ def main():
         added = 0
         if not over("per-player lines_with_stats"):
             res = _pmap(lambda aid: _merge(get(_sess(), f"{API}/v1/lobbies/content/lines_with_stats?appearance_id={aid}&{COMMON}", proxies)),
-                        [aid for aid in app_order[:250] if not over("per-player lines_with_stats")], workers)
+                        app_order[:250], workers, stop=lambda: over("per-player lines_with_stats"))
             for aid, r, e in res:
                 if e:
                     calls.append((f"lines_with_stats[{aid[:8]}]_error", e[:40]))
