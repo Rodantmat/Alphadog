@@ -619,8 +619,11 @@ asserted from the audit alone. Items the audits marked INFO are included when th
 ### Round-2 verification runs
 - Market-free builds 37741669120 / 37741678518 (478,580 / 475,060 slips); validations `_mf` / `_mf_nosteals` 07:31Z.
 - Probes: Underdog timing 37744186435; PrizePicks producer equivalence 37744844157; DB SQL dump 37745394508.
-- Dispatched for verification: P4 calibrate + edge rebuild on the twin; `nba-integration-test` (2026-01-10);
-  `nba-pp-parity` (10 slates). Results are recorded in the next pass entry.
+- **Verified 08:15–08:22Z:** P4 `calibrate` on the twin (37748619023) → `live_strategy_calib` rebuilt 08:16:06Z for all 13
+  rows (e.g. A_wsteals_5flex daily level 0.587, MC95 dd 88.7; B_demon_5flex 0.371 / 130.6); P4 `edge` + rebuild
+  (37748628727) → `edge_monitor_ref` 20 cells at 08:19:17Z. `nba-integration-test` 37748644639 (2026-01-10): **ALL PASS**,
+  ledgers rolled back to 0/0/0/0. `nba-pp-parity` 37748663722 (10 slates): ALIGNED_identical 120, grading disagreements
+  none, **apples-to-apples differences none**. Sim-slate 2026-10-20 re-dispatched on the final code (TEST label check).
 
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
