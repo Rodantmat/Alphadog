@@ -60,7 +60,12 @@ def main():
     # --- the SCHEDULE is the source of truth for what should exist -----------------------------
     try:
         sched = fetch("nba_schedule_current.json")
-        srows = sched.get("records") or sched.get("rows") or []
+        # THE REAL FILE SHAPE (fixed 2026-10-08, full-system certification round 2): scrape_nba_schedule.py writes
+        # {"games": [{game_id, season, game_date, game_status (3 = final), game_status_text, game_label,
+        # home_team_tricode, away_team_tricode, ...}]}. The audit looked for records/rows, GAME_DATE, STATUS and
+        # *_TEAM_ABBREVIATION - none exist - so `expected` was ALWAYS empty and the audit fell back to the team log, which is
+        # produced by the SAME scrape: a fully missed night compared stale-vs-stale and printed "No gaps".
+        srows = sched.get("games") or sched.get("records") or sched.get("rows") or []
     except Exception as exc:  # noqa: BLE001
         print(f"ABORT: cannot read the schedule ({str(exc)[:70]}) - nothing to audit against")
         sys.exit(2)
@@ -70,9 +75,15 @@ def main():
     for r in srows:
         gd = str(r.get("GAME_DATE") or r.get("game_date") or "")[:10]
         gid = str(r.get("GAME_ID") or r.get("game_id") or "")
-        status = str(r.get("STATUS") or r.get("status") or "").lower()
+        status = str(r.get("STATUS") or r.get("status") or r.get("game_status_text") or "").lower()
+        if r.get("game_status") == 3:
+            status = "final"
         if not gd or not gid:
             continue
+        if str(r.get("season") or season) != season:
+            continue                     # the file holds last season's games too (schedule spans both)
+        if str(r.get("game_label") or "").lower() == "preseason" or not gid.startswith("002"):
+            continue                     # the delta mines Regular Season only (B-3)
         if d_from and gd < d_from:
             continue
         if d_to and gd > d_to:
@@ -80,7 +91,8 @@ def main():
         if "final" not in status:        # only completed games can be in the logs
             continue
         expected[gd].add(gid)
-        for k in ("HOME_TEAM_ABBREVIATION", "VISITOR_TEAM_ABBREVIATION", "home_team", "away_team"):
+        for k in ("HOME_TEAM_ABBREVIATION", "VISITOR_TEAM_ABBREVIATION", "home_team", "away_team",
+                  "home_team_tricode", "away_team_tricode"):
             if r.get(k):
                 exp_teams[gid].add(str(r[k])[:3].upper())
 
