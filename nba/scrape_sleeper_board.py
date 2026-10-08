@@ -223,7 +223,7 @@ def main():
                 "by_wager_type": dict(Counter(l["wager_type"] for l in legs).most_common(40)), "by_line_type": dict(Counter(l["line_type"] for l in legs)),
                 "by_game_status": dict(Counter(l["game_status"] for l in legs)), "players": len({l["subject_id"] for l in legs}),
                 "multiplier_values": dict(Counter(str(l["over_multiplier"]) for l in legs).most_common(15)), "github_run_id": os.environ.get("GITHUB_RUN_ID", "")}
-        (OUT / f"sleeper_{sport}_current.json").write_text(json.dumps({"meta": meta, "legs": legs}, separators=(",", ":")))
+        (OUT / f"sleeper_{sport}_current.json").write_text(json.dumps({"meta": meta, "legs": legs, "games": games}, separators=(",", ":")))
         (OUT / f"sleeper_{sport}_current_meta.json").write_text(json.dumps(meta, indent=2))
         print(f"{sport}: {len(legs)} legs, {meta['players']} players, unknown={unknown}, line_types={meta['by_line_type']}")
 
