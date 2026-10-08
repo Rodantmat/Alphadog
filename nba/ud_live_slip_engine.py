@@ -110,8 +110,8 @@ def load_legs(conn, day):
 
 def stand_down(conn, day):
     """Pre-All-Star week (7 days ending at the last game before the February break) and the final regular-season week."""
-    dates = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_calendar.games
-        WHERE game_id LIKE '002%%' AND game_date BETWEEN %s - 200 AND %s + 200 ORDER BY 1""", (day, day)).fetchall()]
+    dates = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_calendar.regular_season_games
+        WHERE game_date BETWEEN %s - 200 AND %s + 200 ORDER BY 1""", (day, day)).fetchall()]
     if not dates:
         return None
     feb = [(d, n) for d, n in zip(dates, dates[1:]) if d.month == 2]
