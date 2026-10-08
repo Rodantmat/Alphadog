@@ -696,6 +696,65 @@ asserted from the audit alone. Items the audits marked INFO are included when th
   `routine` (pre-fix capture, before round-2 P3#1 dated Sleeper legs by the schedule map; include_preseason=true, so they cannot be
   re-dated with certainty). Nothing decision-side reads `routine`; the first dated Sleeper archive is the 10-20 window capture.
 
+### RETENTION CERTIFICATION (owner directive 2026-10-08 10:38 PT: "be sure that all the data is being saved … referee, lineups, all the factors, micro factors, sub factors, all the boards, the final board … retained for future usage and calibration and EV improvement")
+**Method.** A full code inventory of every NBA workflow step and script (output store, write mode, date key, every DELETE/TRUNCATE/overwrite
+path) by an independent read-only pass, then every risk checked against the live database. Owner rules applied: ingredients never lost;
+products reconstructable from the recipe; one set per day (a rerun updates); board-scoped baseline once a slate is graded.
+**Where everything lives (the map).** *Mined ingredients* → raw JSON committed to git by the pipeline that mined them (P1 weekly
+statics, DARKO, lineups, tracking, shot quality, team/player profiles; P2A game logs, measure types, per-game starter status and
+officials, quarter logs, matchups, schedule; P2B rosters, injury PDFs parsed, referee crews (DB), morning lines + spreads export;
+every board scraper's `boards/*_current.json` on every run) and loaded into dated Postgres tables (game logs per game_id, injury
+snapshots per snapshot_ts, board_snapshots per label, game_lines_snapshots, referee_assignments, defender_ratings as-of weekly,
+six profile `_asof` snapshots weekly). *Factors* → inside the dated ladder record `nba/data/nba_baseline_ladder_<date>.json.gz`
+(`meta.factor_fits`) + `baseline_ladder_runs.factor_fits`; the as-of calibration per as_of_date; the blowout / confidence refits.
+*Final board* → `final_hp` + `final_hp_derived` (D+I per date), `board_scored` (the day-of record), `board_tiers_v2`, `availability_delta`,
+`price_shop_ledger`. *Slips* → `live_slips`, `ud_live_slips`, `paper_picks`, `live_pool`, strategy state, `weekly_requal`, `certification_log`.
+**Findings and fixes (all live, 2026-10-08):**
+- 🔴→🟢 **R-1 (a certification gap, not only retention): the legacy `nba_market.board_tiers` had NO live writer** (P3 maintains
+  `board_tiers_v2` only) yet four readers used it — `build_rung_market.py` (P3) and `build_confidence_v3.py` (P2B daily refit, plus
+  its expression index), `apply_ladder_calibration.py`, `backtest_tier_selection_value.py`. From 10-20 the rung market and the
+  confidence refit would have seen no live tiers. Verified v2 (`bookmaker='prizepicks'`) ≡ legacy over Mar 1–Apr 12 (371,147 rows
+  each way differ ONLY in `nm`, null in the legacy table); all four readers moved to v2 (db2ba5a, f5633f1, d7d23f0, 3f4a220, bbcfd11);
+  the legacy table renamed `board_tiers_legacy_20261008` (kept, commented) so nothing can read it silently.
+- 🟢 **R-2 model parameters were latest-only** (`blowout_model`, `confidence_model`, `confidence_verification` whole-table replaces;
+  as-of calibration rebuilt per season): `nba/snapshot_model_params.py` (941af93) copies any table's rows as JSON into the append-only
+  `nba_score.model_params_history (as_of_date, source_table, row_md5, row)`; P2B snapshots the three refit tables and the as-of fit the
+  slate actually reads (`max(as_of_date) <= slate`) before final_hp (d0c2a35, 9533f4f); P5 snapshots `slip_validation*`,
+  `cand_certified`, `tier_map_summary` weekly (a16d494). Verified: the INSERT shape on `blowout_model` (35 rows, idempotent).
+- 🟢 **R-3 strategy state had no daily history in production** (`live_state_history` written only by replay): every daily grade now
+  records the post-grade state of all strategies (`record_state_history`, d6f1da0).
+- 🟢 **R-4 P4 replay wiped the live ledger with no guard**: a replay without `LS_RESUME` is refused in season when live slips exist,
+  same `LS_RESET_FORCE=1` override as reset (de778e7).
+- 🟢 **R-5 six weekly profile tables + the roster register had no as-of copy** (`player_onoff_profile`, `player_season_profile`,
+  `player_tracking_profile`, `nba_team.season_profile`, `nba_team.playtype_profile`, `nba_team.defense_vs_position`, `nba_ref.players`):
+  added to P1's `_asof` snapshot list (d7832cc); first snapshots Monday 10-12.
+- 🟢 **R-6 referee crews kept the latest crew only**: every capture also appended to `nba_ref.referee_assignments_log` keyed by
+  captured_at (b855b5f).
+- 🟢 **R-7 injury snapshots reached Postgres only through P3**: P2B now loads the day-before snapshots too (7a25b1e; idempotent loader).
+- 🟢 **R-8 Sleeper/Fliff reached Postgres once a day (window)**: both are captured and archived at **morning** (P2B, 75315b4) and
+  **close** (close-capture, 3cc238d), in parallel and bounded, archived only when the scraper exited 0. Verified by close-capture
+  37820328052 🟢: PrizePicks 228 (all 10-20 → routine), Underdog 54, **Sleeper 79 archived as close**, Fliff 0 player rows (the
+  preseason Fliff NBA board carries team markets only — "skipped 364 non-player-O/U legs"; **10-20 check: Fliff player props parse**).
+- 🟢 **R-9 the baseline prune's only full copy is the git-committed ladder .gz, and P2B's commit failure is a warning**: a live-season
+  date is now pruned only when `nba/data/nba_baseline_ladder_<date>.json(.gz)` exists in the P2A checkout; held dates are retried
+  automatically on later mornings (af2fd20, 9d9889c, 33824d7). Historical dates keep the documented board-scoped rule.
+- 🟢 **R-10 no logical backup of the database**: (a) provider: DigitalOcean managed PostgreSQL keeps **daily backups for 7 days**,
+  restore = a new cluster (docs.digitalocean.com …/restore-from-backups); (b) **weekly git archive of the DB-only ledgers**
+  (`nba/dump_db_ledgers.py` in `nba-db-sql-dump.yml`: 23 tables — live slips/pool/state/history/calib, weekly_requal, certification_log,
+  paper_picks, price_shop_ledger, model_params_history, edge monitors, UD paper slips, prune log, ladder runs, availability_delta,
+  referee tables, morning lines (live season), run records, scheduler log, classification_config; never credentials) — verified run
+  37820108443 🟢, committed 58248eb; (c) **off-database copy of the big ingredient history as GitHub Release assets** (no repo bloat,
+  2 GB/file): `nba/dump_db_history.py` + `nba-db-history-archive.yml` (monthly 1st + on demand) — verified run 37820889847 🟢 in
+  10 min: release `db-archive-2026-10-08` holds 20 assets, 905 MB — board_snapshots 11.6M + 15.4M rows (81 + 104 MB), board_outcomes
+  3.05M + 3.85M, game_lines_closing/snapshots, injury_report_snapshots 418k + 920k, board_scored 5.2M + 7.6M (115 + 165 MB),
+  baseline_history 4.2M + 4.5M, final_hp 3.4M + 3.8M, board_tiers_v2 0.7M + 1.5M.
+**Accepted as designed (owner rules), recorded:** intraday board captures collapse into one row per label (the "rerun = update" rule;
+the 2-hourly pulls stay as git commits of the board files); `final_hp` for yesterday is rebuilt by P2A from the complete board (the
+day-of values live in `board_scored`, and the day's parameters are now in `model_params_history`); weekly derived tables
+(`tier_map_bands`, `tier_map_legs_sel*`, `slip_engine_*`) are products, rebuilt by P5 from retained ingredients; an Underdog re-pick for
+a day is refused unless `UDL_FORCE=1`; repo-only ingredients (pt_defend/hustle/clutch, matchups, quarter logs, pairs, coaches) are safe
+in git.
+
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
 2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
