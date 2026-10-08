@@ -203,15 +203,20 @@ def main():
                 calls.append((f"lines[match={mid}]_error", str(exc)[:60]))
         reg_path.write_text(json.dumps(registry, indent=1))
         # 3b) per-player completeness pass: lines_with_stats returns EVERY market for the player (learns unseen stat ids too)
+        # today's players first (their appearance's match is on the target date), the rest after, all budget-bounded
+        def _app_today(a):
+            return all_matches or mdate(a.get("match_id")) == target
         seen_apps = {str(a.get("id")) for a in store["appearances"].values() if isinstance(a, dict) and a.get("type") == "Player" and a.get("player_id")}
+        app_order = sorted(seen_apps, key=lambda aid: (0 if _app_today(store["appearances"].get(aid, {})) else 1, aid))
         added = 0
-        for aid in sorted(seen_apps)[:250]:
-            try:
-                j = get(s, f"{API}/v1/lobbies/content/lines_with_stats?appearance_id={aid}&{COMMON}", proxies); harvest(j)
-                before = len(store["over_under_lines"]); merge(store, j); added += len(store["over_under_lines"]) - before
-            except Exception as exc:  # noqa: BLE001
-                calls.append((f"lines_with_stats[{aid[:8]}]_error", str(exc)[:40]))
-            time.sleep(0.25)
+        if not over("per-player lines_with_stats"):
+            res = _pmap(lambda aid: _merge(get(_sess(), f"{API}/v1/lobbies/content/lines_with_stats?appearance_id={aid}&{COMMON}", proxies)),
+                        [aid for aid in app_order[:250] if not over("per-player lines_with_stats")], workers)
+            for aid, r, e in res:
+                if e:
+                    calls.append((f"lines_with_stats[{aid[:8]}]_error", e[:40]))
+                else:
+                    added += r
         calls.append(("lines_with_stats[players]", added, len(seen_apps)))
         reg_path.write_text(json.dumps(registry, indent=1))
         # 3c) ALTERNATE LADDERS: for every over_under with has_alternates, /v3/over_unders/<id>/alternate_projections returns every rung
