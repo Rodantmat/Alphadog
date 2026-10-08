@@ -97,7 +97,11 @@ jobs:
           A="${{ github.event.inputs.asof }}"
           if [ -z "$A" ]; then A=$(TZ=America/Los_Angeles date +%F); fi
           echo "asof=$A" >> $GITHUB_OUTPUT
-          echo "P2A for slate $A - last night's results"
+          # yday = the slate graded, pruned and re-priced below. Round-2 P2A#7 (2026-10-08): the prune / final_hp / whole-number
+          # steps computed "yesterday" from the runner clock, so a replay with asof set claimed the past slate but acted on
+          # today's. Every dated step now derives from the resolved asof.
+          echo "yday=$(date -u -d "$A - 1 day" +%F)" >> $GITHUB_OUTPUT
+          echo "P2A for slate $A - last night's results ($(date -u -d "$A - 1 day" +%F))"
 
       # 1) MINE last night. Bulk current-season refresh + per-game starters/officials for new games.
       # PROXY FROM THE CREDENTIAL STORE (2026-10-08, full-system certification). The owner's rule keeps API keys and
