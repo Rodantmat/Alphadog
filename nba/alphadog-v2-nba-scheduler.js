@@ -23,7 +23,7 @@ import postgres from "postgres";
 // running run of that pipeline.
 
 const WORKER_NAME = "alphadog-v2-nba-scheduler";
-const VERSION = "alphadog-v2-nba-scheduler-v2.2.0";   // v2.2.0: stale-claim recovery (2026-10-07, full-system certification pass A)
+const VERSION = "alphadog-v2-nba-scheduler-v2.2.1";   // v2.2.1: a recovered predecessor blocks successors (2026-10-08, round 2 P2A#9); v2.2.0: stale-claim recovery
 const WORKFLOWS = {
   P1: "nba-p1-weekly-static.yml",
   P2A: "nba-p2a-results.yml",
