@@ -238,7 +238,7 @@ jobs:
         continue-on-error: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           PRIZEPICKS_LEAGUE_ID: "7"
           PRIZEPICKS_SPORT: "nba"
           PRIZEPICKS_OUT_DIR: "boards"
