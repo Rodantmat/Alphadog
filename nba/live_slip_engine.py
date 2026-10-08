@@ -699,7 +699,10 @@ def outcomes_boxscore(conn, day, slip_rows):
     reverts per PrizePicks' rule. Player from the leg's stored player_id, else nba_ref.norm_name(name) -> player_name_map."""
     box = {}
     for pid, pts, reb, ast, fg3m, stl, blk, tov, mins in conn.execute("""SELECT nba_player_id::text, pts, reb, ast, fg3m, stl, blk, tov, min
-                                                                          FROM nba_stats.player_game_log WHERE game_date=%s""", (day,)).fetchall():
+                                                                          FROM nba_stats.player_game_log WHERE game_date=%s
+                                                                          UNION ALL
+                                                                          SELECT nba_player_id::text, pts, reb, ast, fg3m, stl, blk, tov, min
+                                                                          FROM nba_stats.player_game_log_postseason WHERE game_date=%s""", (day, day)).fetchall():
         if mins and float(mins) > 0:
             box[pid] = tuple(float(x or 0) for x in (pts, reb, ast, fg3m, stl, blk, tov))
     out = {}
