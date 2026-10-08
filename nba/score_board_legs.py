@@ -151,7 +151,7 @@ def main():
     source = os.environ.get("BS_SOURCE", "archive").lower()
     board = pd.read_sql("""
         SELECT b.bookmaker AS app, b.player, b.market_key, b.line, b.side, b.multiplier,
-               m.player_id
+               m.player_id, b.snapshot_label
         FROM nba_market.board_snapshots b
         LEFT JOIN nba_ref.player_name_map m
                ON m.norm_name = nba_ref.norm_name(b.player)
