@@ -146,14 +146,17 @@ jobs:
                            in_validation boolean, v2_pass boolean, v6_pass boolean, oos_roi double precision, oos_ci_lo double precision,
                            verdict text, PRIMARY KEY (run_date, strategy))""")
               today = dt.date.today()
+              # the verdict tables follow the live engine's backtest (live_backtest_suffix: '_mf' = market-free twin)
+              sfx = bt_suffix(c)
               val = {(r[0], r[1], r[2]): r[3:] for r in c.execute(
-                  "SELECT composition, size, structure, v2_pass, v6_pass, oos_roi, oos_ci_lo FROM nba_score.slip_validation").fetchall()}
+                  f"SELECT composition, size, structure, v2_pass, v6_pass, oos_roi, oos_ci_lo FROM nba_score.slip_validation{sfx}").fetchall()}
               # family C (Regular without steals, 28f) is validated in the no-steals run's table
-              has_c = c.execute("SELECT to_regclass('nba_score.slip_validation_nosteals') IS NOT NULL").fetchone()[0]
+              has_c = c.execute(f"SELECT to_regclass('nba_score.slip_validation{sfx}_nosteals') IS NOT NULL").fetchone()[0]
               val_c = dict()
               if has_c:
-                  for r in c.execute("SELECT composition, size, structure, v2_pass, v6_pass, oos_roi, oos_ci_lo FROM nba_score.slip_validation_nosteals").fetchall():
+                  for r in c.execute(f"SELECT composition, size, structure, v2_pass, v6_pass, oos_roi, oos_ci_lo FROM nba_score.slip_validation{sfx}_nosteals").fetchall():
                       val_c[(r[0], r[1], r[2])] = r[3:]
+              print(f"verdicts from nba_score.slip_validation{sfx} / {sfx}_nosteals", flush=True)
               for name, (comp, size, structure, cap, *_r) in STRATEGIES.items():
                   v = (val_c if name.startswith(('C_', 'D_', 'R_', 'W_')) else val).get((comp, size, structure))
                   if v is None:
