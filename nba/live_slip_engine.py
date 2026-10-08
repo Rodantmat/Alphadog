@@ -182,8 +182,8 @@ def trailing_pf20(conn, day, player_ids, post=False):
     return {r[0]: float(r[1]) for r in rows}
 
 
-def attach_pf20(conn, day, legs):
-    pf = trailing_pf20(conn, day, {l['player_id'] for l in legs if l.get('player_id')})
+def attach_pf20(conn, day, legs, post=False):
+    pf = trailing_pf20(conn, day, {l['player_id'] for l in legs if l.get('player_id')}, post)
     for l in legs:
         l['pf20'] = pf.get(l.get('player_id'))
     return legs
