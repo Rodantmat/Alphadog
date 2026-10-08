@@ -774,6 +774,25 @@ NBA playoffs into the back data. Credits at start: paid key **4,999,977** (free 
   regions (empty markets are free); sport odds cost per market requested; the events list costs 1.
 - **Not yet done (owner's step 4, after MLB/NHL mining):** postseason box scores → outcomes (`board_outcomes`), baseline and
   final_hp for postseason dates; the whole chain is regular-season only by design today (the ONE slate predicate, game_id `002%`).
+- **NBA gap audit (owner 13:02 PT "double check, be sure there are no gaps"):** every scheduled game (2025-26 calendar: 1,230
+  regular + 91 postseason; 2024-25: schedule_norm 1,230 regular + ParlayAPI 90 postseason) checked for an ok window AND an ok close.
+  Real holes found and repaired by `nba/repair_board_gaps.py` (probe 37836739875): two NBA Cup closes 2024-11-29 (event id re-keyed
+  → resolved at tip-40, 4,153 / 4,044 rows), three early-tip windows 2024-11-10 / 12-31 (tip-2h, 4,957 / 3,968 rows) and 2025-04-13
+  ATL-ORL (only 18 rows exist at any time before tip — the source's own thin last-day board), one playoff close 2026-05-07 OKC-LAL
+  (tip-60, 7,568 rows). Everything else non-ok = postponed games whose original ids 404 (their make-up games are covered on the new
+  dates). Morning + window game lines: 426 / 426 board dates. **NBA history: no gaps.**
+- **MLB mirror (owner 13:02 PT: "exactly the same for MLB … mirror … same board times … current season + past season incl. playoffs").**
+  MLB's board times measured on `archive.board_leg_history`: 09:00 / 13:00 / 17:00 PT (09:00 = the morning board slips are placed
+  from). `mlb/backfill_mlb_odds.py` + `mlb-odds-backfill.yml` (8 shards): every game at each board time before first pitch, all 37
+  prop markets (20 base + 17 alternate), us_dfs + us (PrizePicks, Underdog, Pick6 + 9 books), raw responses stored lossless as
+  jsonb (`market.mlb_odds_event_snapshots`, ~70 KB each; view `market.mlb_board_snapshots_v` gives NBA-shaped rows), game lines at
+  the same times (`market.mlb_odds_game_lines`). Sample first (2025-10-14/15) then the full runs. **Result (credits ran to the floor):**
+  2025 regular 2,449 games — 09:00 complete (3 games had no board at 09:00), 13:00 missing for 295 games and 17:00 for 85 (late
+  Aug–Sep); 2025 postseason 47 games — complete at all three times; 2026 regular (opening day → Jul 15; Jul 16 → Sep 27 already held
+  from our own scrapers + ParlayAPI) 1,317 games — 12 dates (Jun 23 → Jul 15, alternate shards) not reached; 2026 postseason through
+  Oct 7 — 09:00 complete (23 games), 13:00 / 17:00 not reached. Paid key ≈ 6.5 k credits left. Re-keyed MLB events (rainouts,
+  doubleheaders) now re-listed at each board time (a6dde38). `mlb-odds-daily.yml` (02:30 PT) keeps pulling the last three days for
+  the rest of the postseason while the key has credits.
 - Side observation: GitHub delivered P2A's 13:30Z cron backstop at 19:21Z (≈6 h late) — the run-once claim made it a no-op
   ("already claimed … this run does nothing"), exactly as designed.
 
