@@ -274,7 +274,6 @@ def main():
                     "higher_prob_fantasy": prob(hi, "fantasy"), "lower_prob_fantasy": prob(lo, "fantasy"), "higher_prob_sportsbook": prob(hi, "sportsbook"), "lower_prob_sportsbook": prob(lo, "sportsbook"),
                     "higher_status": hi.get("status"), "lower_status": lo.get("status"), "game_id": app.get("match_id"), "updated_at": hi.get("updated_at") or lo.get("updated_at"),
                 })
-            time.sleep(0.25)
         # De-dupe ladder rungs: the same economic rung can be harvested twice (via a pill and via lines_with_stats)
         # and the board may have moved between calls. Key on (player_id or player, stat, line, is_main) and keep the
         # freshest row by updated_at - a selector must never see the same leg twice at two different prices.
