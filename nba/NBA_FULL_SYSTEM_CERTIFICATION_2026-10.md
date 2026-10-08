@@ -115,8 +115,10 @@ Status legend: 🔴 defect found · 🟠 fixed, verification pending · 🟢 fix
 ### A-4 ⚪ Sequence and timing rules (verified against code and the plan table)
 - Plan: P3 = min(13:15 PT, first tip − 30) + 1 min; P2B = min(08:05, P3 − 110); P2A = min(03:30, P2B − 60); P2B only
   after P2A finished or at its latest start; P3 only after P2B finished or at its deadline, never after the first tip;
-  CLOSE capture once in [tip − 25, tip). Opening night 10-20 (first tip 16:30 PT): P2A 03:30, P2B 08:05, P3 13:16,
-  P3 deadline 16:00, close 16:05 — recomputed offline from the deployed functions. ⚪
+  CLOSE capture once in [tip − 25, tip). **Corrected in round 2 (P2A#18a):** opening night 10-20's first tip is BOS@DET
+  at **19:00Z = 12:00 PT (3:00 PM ET, NBC/Peacock — confirmed online and in `nba_calendar.games` 0022600001)**, not
+  16:30 PT as first written here. Plan: P2A 03:30, P2B 08:05 (P3 − 110 = 09:41 is later), P3 11:31, P3 deadline 11:30,
+  close 11:35 — the P2B build (≤ 45 min for a 3-game slate, E-4) finishes well before. ⚪
 - A finished-but-failed predecessor does not block (documented design; P3 must still capture the board; its freshness gate
   refuses a pick without today's scores). ⚪ — the gate itself is checked in Pass E.
 - Run-once claim: atomic INSERT … ON CONFLICT; `force=true` re-claims with a note. ⚪
