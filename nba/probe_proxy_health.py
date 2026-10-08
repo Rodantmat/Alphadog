@@ -36,12 +36,32 @@ def probe(label, url, proxies=None, headers=None):
         return None
 
 
+def db_proxy_url():
+    """The proxy URL the owner stores in nba_config.external_credentials ('proxy_url') - the system's credential store
+    (API keys live there by rule). Preferred over the PROXY_URL secret when present, so a provider change is one row."""
+    dsn = os.environ.get("DATABASE_URL")
+    if not dsn:
+        return None
+    try:
+        import psycopg
+        with psycopg.connect(dsn) as c:
+            r = c.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'").fetchone()
+        return (r[0] or "").strip() if r else None
+    except Exception as exc:  # noqa: BLE001
+        print(f"db credential lookup failed: {str(exc)[:100]}")
+        return None
+
+
 def main():
-    proxy_url = (os.environ.get("PROXY_URL") or "").strip()
+    src = "nba_config.external_credentials/proxy_url"
+    proxy_url = db_proxy_url()
     if not proxy_url:
-        print("PROXY_URL not set on this runner"); sys.exit(1)
+        src = "PROXY_URL secret"
+        proxy_url = (os.environ.get("PROXY_URL") or "").strip()
+    if not proxy_url:
+        print("no proxy URL available (neither the DB credential nor the PROXY_URL secret)"); sys.exit(1)
     host = proxy_url.split("@")[-1].rstrip("/")
-    print(f"proxy host: {host}")
+    print(f"proxy host: {host}  (source: {src})")
     proxies = {"https": proxy_url, "http": proxy_url}
     s1 = probe("proxy  -> stats.nba.com scoreboardv2", "https://stats.nba.com/stats/scoreboardv2?GameDate=2026-10-21&LeagueID=00&DayOffset=0", proxies, NBA_HEADERS)
     probe("proxy  -> api.prizepicks.com projections", "https://api.prizepicks.com/projections?league_id=7&per_page=1", proxies)
