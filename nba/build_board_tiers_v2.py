@@ -114,8 +114,9 @@ def main():
     # Default is now ONE slate: delete that date's rows and rebuild just them. BT2_ALL=1 restores the
     # full truncate-and-rebuild for backfills; BT2_DATE=YYYY-MM-DD targets another date.
     full = os.environ.get("BT2_ALL", "0") == "1"
+    from zoneinfo import ZoneInfo as _ZI   # real Pacific clock (round 2 P3#11, 2026-10-08: was a fixed UTC-8)
     gd = None if full else (os.environ.get("BT2_DATE", "").strip()
-                            or datetime.now(timezone(timedelta(hours=-8))).date().isoformat())
+                            or datetime.now(_ZI("America/Los_Angeles")).date().isoformat())
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
     print(f"building board_tiers_v2 for {apps} "
