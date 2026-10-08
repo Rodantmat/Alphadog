@@ -59,6 +59,12 @@ OUTCOME_KEY_TO_PROP = {
 
 
 def fetch(name, timeout=300):
+    # repo file first (the runner has the checkout; the CDN caches for minutes and can 404/timeout transiently - a crash
+    # here would stop the slate before final_hp; certification round 2, 2026-10-08), CDN as the fallback
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", name)
+    if os.path.exists(local):
+        with open(local) as f:
+            return json.load(f)
     with urllib.request.urlopen(urllib.request.Request(RAW + name, headers={"User-Agent": "alphadog"}), timeout=timeout) as r:
         return json.load(r)
 
