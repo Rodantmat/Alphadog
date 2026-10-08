@@ -148,7 +148,7 @@ jobs:
       # loads them: 4 calls (2/3/4/5-man units) + 8 calls (measure types). nba-scrape.yml's cron is retired.
       - name: Lineups and tracking detail
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
         run: |
           python nba/scrape_nba_lineups.py
           python nba/scrape_nba_tracking_detail.py
