@@ -186,7 +186,7 @@ jobs:
       - name: Referee crews (polled until posted or the day's deadline)
         if: ${{ github.event.inputs.skip_mining != 'true' && steps.d.outputs.has_games == '1' }}
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REF_DATE: ${{ steps.d.outputs.asof }}
           REF_DEADLINE: ${{ steps.d.outputs.ref_deadline }}
