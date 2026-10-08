@@ -121,6 +121,12 @@ def main():
     # legs (seconds) instead of all 38.7M (~90 minutes). Blank = every date, which is what the
     # two-season replications use.
     FE_DATE = (os.environ.get("FE_DATE") or "").strip()
+    # FE_POSTSEASON=1 (strategy §31w P-4): price ONLY play-in / playoff game ids and replace ONLY those rows; every
+    # regular-season row of the season stays exactly as certified (the deletes below carry the same game-id scope).
+    FE_POSTSEASON = os.environ.get("FE_POSTSEASON", "0") == "1"
+    _PS = " AND (game_id LIKE '004%%' OR game_id LIKE '005%%')" if FE_POSTSEASON else ""
+    if FE_POSTSEASON:
+        print("scoped to POSTSEASON game ids (004/005) only", flush=True)
     if FE_DATE:
         print(f"scoped to slate {FE_DATE}", flush=True)
     conn = psycopg.connect(os.environ["DATABASE_URL"])
