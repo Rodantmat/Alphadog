@@ -228,7 +228,7 @@ jobs:
           slate = os.environ["REF_DATE"]
           def status():
               with psycopg.connect(os.environ["DATABASE_URL"]) as c:
-                  games = c.execute("SELECT count(*) FROM nba_calendar.regular_season_games WHERE game_date=%s", (slate,)).fetchone()[0]
+                  games = c.execute("SELECT count(*) FROM nba_calendar.slate_games WHERE game_date=%s", (slate,)).fetchone()[0]
                   crews = c.execute("SELECT count(DISTINCT matchup) FROM nba_ref.referee_assignments WHERE game_date=%s", (slate,)).fetchone()[0]
               return games, crews
           attempt = 0
