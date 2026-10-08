@@ -258,8 +258,10 @@ def rows_sleeper(doc, gd, label):
             m = l.get(key)
             if m is None:
                 continue
+            # commence_time: the scraper's schedule map gives the game DATE (US date), not a tip time; a date-only value is
+            # taken as the game date directly by the stamping step below (round 2, P3#1)
             out.append((gd, ev("sleeper", gd, l, "game_id", "event"), label, doc.get("meta", {}).get("fetched_at"), "sleeper", mk,
-                        l["player"], side, float(l["line"]), None, float(m), None, None, None))
+                        l["player"], side, float(l["line"]), None, float(m), None, None, l.get("game_date")))
     return out
 
 
