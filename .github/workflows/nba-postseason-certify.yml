@@ -1,0 +1,66 @@
+name: NBA Postseason Certification
+
+# strategy §31w P-5 (2026-10-08). The postseason's own certification chain, built from the regular season's certified pieces
+# (never touching their tables): postseason tier map (board_outcomes grade, postseason final_hp, market-free score as live) ->
+# the engine's cells measured on postseason nights and shrunk toward their certified p.m -> the certified slip engine over the
+# postseason map (steals pool + no-steals pool, phase 'postseason', suffixed tables) -> the per-strategy postseason gate and the
+# postseason board floor -> the walk-forward validator on the postseason tables (2024-25 postseason selects, 2025-26 postseason
+# scores) for the record. Run after the postseason final_hp is built; P5 re-runs it in-season once postseason nights exist.
+on:
+  workflow_call:
+    secrets:
+      DATABASE_URL:
+        required: true
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-postseason-certify
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+
+      - name: 1. Postseason tier map (full rebuild)
+        run: python -u nba/build_tier_map_legs_postseason.py
+
+      - name: 2. Cells on postseason nights, weighed against their certified p.m
+        run: python -u nba/certify_candidates_postseason.py
+
+      - name: 3. Slip engine over the postseason map (steals pool + no-steals pool)
+        env:
+          SE_LEGS_TABLE: nba_score.tier_map_legs_post
+          SE_LEGS_SELF: "1"
+          SE_PHASE: postseason
+          SE_CAP: "10"
+          SE_SIZES: "2,3,4,5,6"
+        run: |
+          SE_TABLE_SUFFIX="_post" python -u nba/build_slip_engine.py
+          SE_TABLE_SUFFIX="_post_nosteals" SE_EXCLUDE_CELLS="steals_R,steals_R_U" python -u nba/build_slip_engine.py
+
+      - name: 4. Per-strategy postseason gate + postseason board floor
+        run: python -u nba/certify_postseason_strategies.py
+
+      - name: 5. Walk-forward validator on the postseason tables (record)
+        continue-on-error: true
+        env:
+          SV_TOPK: "30"
+          SV_BOOT: "2000"
+          SV_NULL: "30"
+        run: |
+          SV_TABLE_SUFFIX="_post" python -u nba/validate_slip_strategies.py
+          SV_TABLE_SUFFIX="_post_nosteals" python -u nba/validate_slip_strategies.py
