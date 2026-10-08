@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-08T06:22:10Z",
-  "fetched_at": "2026-10-08T06:24:17Z",
+  "started_at": "2026-10-08T13:48:56Z",
+  "fetched_at": "2026-10-08T13:49:25Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -14,8 +14,18 @@
       50
     ],
     [
+      "matches",
+      38,
+      "today",
+      6,
+      "other",
+      32,
+      "target",
+      "2026-10-08"
+    ],
+    [
       "lines[match=225732]",
-      0
+      10
     ],
     [
       "pills[match=225732]",
@@ -23,7 +33,7 @@
     ],
     [
       "lines[match=225733]",
-      0
+      8
     ],
     [
       "pills[match=225733]",
@@ -31,7 +41,7 @@
     ],
     [
       "lines[match=225734]",
-      0
+      7
     ],
     [
       "pills[match=225734]",
@@ -47,7 +57,7 @@
     ],
     [
       "lines[match=225736]",
-      0
+      2
     ],
     [
       "pills[match=225736]",
@@ -62,265 +72,137 @@
       0
     ],
     [
-      "lines[match=225738]",
+      "lines[match=225738,other-day]",
       0
     ],
     [
-      "pills[match=225738]",
+      "lines[match=225739,other-day]",
       0
     ],
     [
-      "lines[match=225739]",
+      "lines[match=225740,other-day]",
       0
     ],
     [
-      "pills[match=225739]",
+      "lines[match=225741,other-day]",
       0
     ],
     [
-      "lines[match=225740]",
+      "lines[match=225742,other-day]",
       0
     ],
     [
-      "pills[match=225740]",
+      "lines[match=225744,other-day]",
       0
     ],
     [
-      "lines[match=225741]",
+      "lines[match=225743,other-day]",
       0
     ],
     [
-      "pills[match=225741]",
+      "lines[match=225745,other-day]",
       0
     ],
     [
-      "lines[match=225742]",
+      "lines[match=225746,other-day]",
       0
     ],
     [
-      "pills[match=225742]",
+      "lines[match=225747,other-day]",
       0
     ],
     [
-      "lines[match=225744]",
+      "lines[match=225748,other-day]",
       0
     ],
     [
-      "pills[match=225744]",
+      "lines[match=225749,other-day]",
       0
     ],
     [
-      "lines[match=225743]",
+      "lines[match=225750,other-day]",
       0
     ],
     [
-      "pills[match=225743]",
+      "lines[match=225753,other-day]",
       0
     ],
     [
-      "lines[match=225745]",
+      "lines[match=225752,other-day]",
       0
     ],
     [
-      "pills[match=225745]",
+      "lines[match=225754,other-day]",
       0
     ],
     [
-      "lines[match=225746]",
+      "lines[match=225755,other-day]",
       0
     ],
     [
-      "pills[match=225746]",
+      "lines[match=225756,other-day]",
       0
     ],
     [
-      "lines[match=225747]",
+      "lines[match=225757,other-day]",
       0
     ],
     [
-      "pills[match=225747]",
+      "lines[match=225758,other-day]",
       0
     ],
     [
-      "lines[match=225748]",
+      "lines[match=225760,other-day]",
       0
     ],
     [
-      "pills[match=225748]",
+      "lines[match=225759,other-day]",
       0
     ],
     [
-      "lines[match=225749]",
+      "lines[match=225761,other-day]",
       0
     ],
     [
-      "pills[match=225749]",
+      "lines[match=225762,other-day]",
       0
     ],
     [
-      "lines[match=225750]",
+      "lines[match=225765,other-day]",
       0
     ],
     [
-      "pills[match=225750]",
+      "lines[match=225763,other-day]",
       0
     ],
     [
-      "lines[match=225753]",
+      "lines[match=225766,other-day]",
       0
     ],
     [
-      "pills[match=225753]",
+      "lines[match=225764,other-day]",
       0
     ],
     [
-      "lines[match=225752]",
+      "lines[match=225767,other-day]",
       0
     ],
     [
-      "pills[match=225752]",
+      "lines[match=211122,other-day]",
       0
     ],
     [
-      "lines[match=225754]",
+      "lines[match=211123,other-day]",
       0
     ],
     [
-      "pills[match=225754]",
-      0
-    ],
-    [
-      "lines[match=225755]",
-      0
-    ],
-    [
-      "pills[match=225755]",
-      0
-    ],
-    [
-      "lines[match=225756]",
-      0
-    ],
-    [
-      "pills[match=225756]",
-      0
-    ],
-    [
-      "lines[match=225757]",
-      0
-    ],
-    [
-      "pills[match=225757]",
-      0
-    ],
-    [
-      "lines[match=225758]",
-      0
-    ],
-    [
-      "pills[match=225758]",
-      0
-    ],
-    [
-      "lines[match=225760]",
-      0
-    ],
-    [
-      "pills[match=225760]",
-      0
-    ],
-    [
-      "lines[match=225759]",
-      0
-    ],
-    [
-      "pills[match=225759]",
-      0
-    ],
-    [
-      "lines[match=225761]",
-      0
-    ],
-    [
-      "pills[match=225761]",
-      0
-    ],
-    [
-      "lines[match=225762]",
-      0
-    ],
-    [
-      "pills[match=225762]",
-      0
-    ],
-    [
-      "lines[match=225765]",
-      0
-    ],
-    [
-      "pills[match=225765]",
-      0
-    ],
-    [
-      "lines[match=225763]",
-      0
-    ],
-    [
-      "pills[match=225763]",
-      0
-    ],
-    [
-      "lines[match=225766]",
-      0
-    ],
-    [
-      "pills[match=225766]",
-      0
-    ],
-    [
-      "lines[match=225764]",
-      0
-    ],
-    [
-      "pills[match=225764]",
-      0
-    ],
-    [
-      "lines[match=225767]",
-      0
-    ],
-    [
-      "pills[match=225767]",
-      0
-    ],
-    [
-      "lines[match=211122]",
-      0
-    ],
-    [
-      "pills[match=211122]",
-      0
-    ],
-    [
-      "lines[match=211123]",
-      0
-    ],
-    [
-      "pills[match=211123]",
-      0
-    ],
-    [
-      "lines[match=211124]",
-      0
-    ],
-    [
-      "pills[match=211124]",
+      "lines[match=211124,other-day]",
       0
     ],
     [
       "lines_with_stats[players]",
       0,
-      0
+      14
     ],
     [
       "alternate_projections",
@@ -338,25 +220,32 @@
       0
     ]
   ],
-  "lines": 50,
-  "legs": 50,
+  "lines": 77,
+  "legs": 77,
   "ladder_legs": 276,
   "ladder_lines_with_alternates": 12,
-  "players": 0,
-  "pregame_legs": 50,
+  "players": 14,
+  "pregame_legs": 77,
   "live_legs": 0,
   "by_stat": {
     "Moneyline": 38,
+    "Points": 14,
+    "Pts + Rebs + Asts": 13,
     "Margin of Victory": 6,
     "Total Points": 6
   },
   "by_line_type": {
-    "balanced": 50
+    "balanced": 77
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
     "None": 44,
-    "1.0": 6
+    "1.0": 33
   },
-  "github_run_id": "37737136460"
+  "github_run_id": "37787219616",
+  "target_date_et": "2026-10-08",
+  "budget_s": 240.0,
+  "workers": 4,
+  "partial": null,
+  "elapsed_s": 12.6
 }
