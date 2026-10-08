@@ -415,8 +415,32 @@ survive verification are recorded as ⚪ with the reason.
   concluded about the spotlight board; 0 slips; rolled back; PRODUCTION AFTER: baseline_history 0, final_hp 0,
   final_hp_derived 0, live_slips 0. On game day the full board (hundreds of legs) is inside the domain.
 
+### A-8 🟠 Proxy provider replaced and the proxy URL moved into the credential store (2026-10-07 22:00 → 22:30 PT)
+- **Decision (owner):** ProxyScrape quoted $90.53 for 25 GB (~$3.62/GB at that tier; the $1.05/GB headline is a
+  volume rate). Research (webscraping.ai comparison, provider pricing pages): DataImpulse $1.00/GB, $5 minimum, no
+  expiry, user:pass gateway `gw.dataimpulse.com:823`, free US targeting, sticky sessions; Evomi $0.99/GB with a 15 GB
+  minimum; the premium tier ($4–7/GB) is unnecessary. Owner bought a 5 GB DataImpulse trial.
+- **Storage:** the URL lives in `nba_config.external_credentials` (`credential_key = 'proxy_url'`) — the system's
+  credential store by the owner's own rule (API keys live there). It is US-targeted in the username (`login__cr.us`).
+  Not written to memory or docs.
+- **Measured from a runner (probe 37731561015 / 37731969391):** exits are US residential (AT&T, Cablevision, …);
+  **stats.nba.com leaguestandingsv3 → 200** on the first attempt (ProxyScrape: 407; direct: tarpit); **PrizePicks
+  partner-api → 200, 217 KB** (the endpoint main.py uses); api.prizepicks.com → DataDome captcha through the proxy AND
+  direct (main.py already probes four endpoints and takes the partner API). Without US targeting the pool failed both
+  (stats.nba.com timeout, PrizePicks 403) — the `__cr.us` suffix is load-bearing.
+- **Wiring:** nine workflows (P1, P2A, P2B, P3, Betr harvest, close capture, probe, referees, injury report) gained a
+  "Resolve proxy (credential store first, secret as fallback)" step — `psql` reads the row, masks it, exports
+  `PROXY_URL` via `$GITHUB_ENV`; every proxy step reads `${{ env.PROXY_URL || secrets.PROXY_URL }}`. The GitHub secret
+  (which the bridge cannot set) is now only the fallback. MLB workflows untouched (owner rule) — they still read the
+  secret, i.e. ProxyScrape, until the owner updates it. `betr_harvest_cloud.py` builds the sticky-US username per
+  provider (`login__cr.us;sessid.<id>` for DataImpulse; verified against proxy.py's URL parser).
+- **Verify:** forced P1 run 37732636094 dispatched 22:29 PT through DataImpulse — still scraping at 14 min (the
+  proxy-down run died at 2 min). → pending: P1 green (A-3/A-5/C-1/G-2/G-3 land with it), P2A 03:30 PT, P3, Betr WNBA.
+- Residual: traffic budget. 5 GB ≈ one month at the measured mix; the Betr headless-Chrome harvest is the heaviest
+  consumer and is the first thing to trim (block images/fonts through the local forward proxy).
+
 ### Open in this pass
-- Proxy 407 (A-7) — owner action.
+- A-7 superseded by A-8 (new provider); watch the DataImpulse traffic meter.
 
 ---
 
