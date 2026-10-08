@@ -111,7 +111,17 @@ def two_way_fit(df, value_col, weight_col, ridge):
 
 
 def main():
-    seasons = [s.strip() for s in os.environ.get("DEF_SEASONS", "2024-25,2025-26").split(",")]
+    # Seasons follow the data (2026-10-08, full-system certification round 2): the default was the literal
+    # "2024-25,2025-26", so the 2026-27 season would never have been fitted and the weekly product would have frozen at
+    # 2026-04-09 all season (P1's certifier would have gone red every Monday from 10-26). Now: the two most recent
+    # seasons with real game data (nba_season.stats_seasons), oldest first; DEF_SEASONS still overrides.
+    if os.environ.get("DEF_SEASONS"):
+        seasons = [s.strip() for s in os.environ["DEF_SEASONS"].split(",")]
+    else:
+        import sys as _sys
+        _sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from nba_season import stats_seasons
+        seasons = list(reversed(stats_seasons(2)))
     cadence = int(os.environ.get("DEF_CADENCE_DAYS", "7"))
     ridge = float(os.environ.get("DEF_RIDGE", "50"))
     sample = int(os.environ.get("DEF_SAMPLE_DATES", "0"))
