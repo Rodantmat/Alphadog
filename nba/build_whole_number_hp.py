@@ -111,7 +111,7 @@ def build_day(conn, cfg, d, write):
           f"({100 * (len(out) // 2) / keys:.1f}%) -> {len(out):,} rows (both sides)" if keys else f"  {d}: no whole-number board keys", flush=True)
     if write and keys:
         with conn.transaction():
-            conn.execute("DELETE FROM nba_score.final_hp_derived WHERE game_date = %s AND derivation = 'whole_number'", (d,))
+            conn.execute("DELETE FROM nba_score.final_hp_derived WHERE game_date = %s AND derivation IN ('whole_number', 'whole_number_nb')", (d,))
             if out:
                 with conn.cursor() as cur:
                     cur.executemany(f"INSERT INTO nba_score.final_hp_derived ({COLS}) VALUES ({', '.join(['%s'] * 26)})", out)
