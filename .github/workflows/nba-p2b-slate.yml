@@ -365,7 +365,12 @@ jobs:
           meta["rows"] = len(rows)
           meta["props"] = sorted({r["prop"] for r in rows})
           meta["players"] = len({r["player_id"] for r in rows})
-          json.dump({"meta": meta, "ladder": rows}, open(f"nba/data/nba_baseline_ladder_{asof}.json", "w"))
+          # the dated record is GZIPPED (round-2 P2B#18, 2026-10-08): 15-38 MB of JSON per slate x ~165 slates was ~4 GB of
+          # repo growth per season; gzip is ~8x smaller. 'latest' stays plain JSON for the loader and any local reader;
+          # the loader reads either form (nba_baseline_ladder_<asof>.json or .json.gz).
+          import gzip
+          with gzip.open(f"nba/data/nba_baseline_ladder_{asof}.json.gz", "wt", encoding="utf-8") as g:
+              json.dump({"meta": meta, "ladder": rows}, g)
           json.dump({"meta": meta, "ladder": rows}, open("nba/data/nba_baseline_ladder_latest.json", "w"))
           print("merged ladder:", {k: v for k, v in meta.items() if k not in ("factor_fits",)})
           for f in glob.glob(f"nba/data/nba_baseline_ladder_{asof}_*.json"):
