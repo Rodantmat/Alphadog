@@ -645,6 +645,10 @@ asserted from the audit alone. Items the audits marked INFO are included when th
   step green, **no soft-step failures**; the gap audit now audits against the SCHEDULE ("newest completed slate in schedule
   2026-04-12 / in the delta 2026-04-12 — No gaps"); 130 rung keys refreshed for 10-07, nothing to prune (no baseline on a
   preseason day), grade catch-up found nothing placed; `pipeline_runs` row `success` at 10:45:28Z (finish job).
+- **P5 37750390757 🔴→🟢 (first twin build stalled):** steps 1–3b green (base chain intact); step 3c's slip engine sat
+  2 h 08 in its `legs` cursor — the freshly created `tier_map_legs_sel_mf` had **no planner statistics** (CTAS does not
+  analyze), so the 2.7M-row join to `prop_universe` took a hopeless plan. Cancelled by hand; the function now `ANALYZE`s the
+  new table before the rename (DB + `nba/sql`, b87e732); twin tables verified unchanged (478,580 / 475,060). Re-dispatched.
 
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
