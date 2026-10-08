@@ -88,7 +88,13 @@ def capture(conn):
         rows.append((day, label, f"own_{app}", fa, status, count_items(doc), json.dumps(doc)))
         print(f"  own_{app}: {count_items(doc)} items, fetched {fa.isoformat()} ({age_h:.1f} h old) -> {status}", flush=True)
     try:
-        r = requests.get(f"{PARLAY}/sports/baseball_mlb/props", headers={"X-API-Key": parlay_key(conn), "accept": "application/json"}, timeout=120)
+        # ParlayAPI answers 503 "props_temporarily_busy - retry in a couple of seconds" while its board rebuilds (seen 2026-10-08)
+        for attempt in range(6):
+            r = requests.get(f"{PARLAY}/sports/baseball_mlb/props", headers={"X-API-Key": parlay_key(conn), "accept": "application/json"}, timeout=120)
+            if r.status_code not in (429, 500, 502, 503, 504):
+                break
+            import time
+            time.sleep(5 + attempt * 10)
         doc = r.json() if r.status_code == 200 else {"http": r.status_code, "body": r.text[:500]}
         status = "ok" if r.status_code == 200 else "error"
         rows.append((day, label, "parlay_props", datetime.now(timezone.utc), status, count_items(doc), json.dumps(doc)))
