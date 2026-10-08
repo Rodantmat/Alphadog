@@ -85,8 +85,12 @@ def main():
             # season" and demanded fresh defender ratings. Those are built FROM PLAYED GAMES, so the
             # check asked for data that cannot exist yet and P1 went red for a reason no one could fix.
             # Freshness of a product derived from results is due only after there are results.
+            # ... and "played recently" means REGULAR-SEASON games played: the first P1 through the new proxy (2026-10-08
+            # 05:45Z) went red because five preseason dates counted as played and the certifier demanded defender ratings
+            # (built from regular-season logs) newer than 2026-04-09 - data that cannot exist before 10-21.
             cur.execute("""SELECT count(*) FROM nba_calendar.games
-                           WHERE game_date < %s AND game_date >= %s::date - 30""", (today, today))
+                           WHERE game_date < %s AND game_date >= %s::date - 30
+                             AND coalesce(game_label, '') !~* '(preseason|play-in|round|semifinal|final|all-star|rising stars)'""", (today, today))
             played_recently = int(cur.fetchone()[0] or 0)
             # The schedule-missing guard still looks BOTH ways: a schedule with nothing around today at
             # all is a real failure, distinct from a quiet off-season.
