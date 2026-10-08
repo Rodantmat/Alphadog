@@ -125,7 +125,7 @@ def main():
     print("ensuring expression indexes for the name join (first run builds them; minutes)", flush=True)
     for tbl, idx in (("nba_market.board_outcomes", "board_outcomes_nm_idx"),
                      ("nba_market.rung_market", "rung_market_nm_idx"),
-                     ("nba_market.board_tiers", "board_tiers_nm_idx")):
+                     ("nba_market.board_tiers_v2", "board_tiers_v2_nm_idx")):   # retention audit 2026-10-08: v2 is the live table
         schema = tbl.split(".")[0]
         try:
             with conn.cursor() as cur:
