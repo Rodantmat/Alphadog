@@ -4452,6 +4452,7 @@ no `github_trigger_workflow`, no dispatch, no deploy.**
 |---|---|---|---|
 | `claimscan.py` **run 1** | **1,797** | **1,420** | — |
 | `claimscan.py` **run 2** | **386** | **356** | **131** |
+<!-- diag-test-r241 -->
 
 🔴 **RUN 1 WAS THE INSTRUMENT FAILING, NOT THE CORPUS.** Its identifier class
 included `[A-Z][A-Z0-9_]{3,}` — and this corpus writes emphasis in capitals, so
