@@ -126,6 +126,16 @@ WHERE (l.tier='R' AND l.prop IN ('steals','turnovers','stocks','pts_ast','points
    OR (l.tier IN ('G1','G2') AND l.prop IN ('points','pra','pts_ast','pts_reb') AND l.rank_key='final_hp')
 """
 
+LEG_SQL_SELF = """
+SELECT l.rank_key, l.season, l.game_date, l.player, l.prop, l.tier, l.side, l.line, l.factor, l.hit, l.n_rank, l.score,
+       l.team_id, l.event_id, l.pf20
+FROM nba_score.tier_map_legs l
+WHERE (l.tier='R' AND l.prop IN ('steals','turnovers','stocks','pts_ast','points','pra','blocks','pts_reb','rebounds'))
+   OR (l.tier='D1' AND l.prop IN ('threes_made','assists'))
+   OR (l.tier='D3' AND l.prop='rebounds')
+   OR (l.tier IN ('G1','G2') AND l.prop IN ('points','pra','pts_ast','pts_reb') AND l.rank_key='final_hp')
+"""
+
 
 CORR_SQL = """
 WITH legs AS (
