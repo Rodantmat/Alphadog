@@ -102,7 +102,7 @@ def load_legs(conn, day):
     for l in legs:
         groups[(l['rank_key'], l['prop'], l['tier'])].append(l)
     for g in groups.values():
-        g.sort(key=lambda l: (-l['score'], l['player']))
+        g.sort(key=lambda l: (-l['score'], l['player'], l['side'], float(l['line'])))   # deterministic tie order (round-2 P3#13)
         for i, l in enumerate(g, start=1):
             l['n_rank'] = i
     return legs
