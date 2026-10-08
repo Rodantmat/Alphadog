@@ -266,11 +266,19 @@ jobs:
           ARCHIVE_APPS: "prizepicks,underdog"
         run: |
           set -uo pipefail
-          timeout --signal=TERM --kill-after=30s 300 python nba/scrape_prizepicks_nba_board.py > /tmp/pp_morning.log 2>&1 || echo "=== PrizePicks morning pull failed/timed out"
+          # ARCHIVE ONLY WHAT THIS RUN CAPTURED (round-2 P2B#17, 2026-10-08, the G-7 rule applied here): a timed-out or failed
+          # pull leaves the checked-out file from an earlier run on disk; archiving it as today's 'morning' snapshot would
+          # stamp stale lines with a fresh label. Apps are added to ARCHIVE_APPS only when their scraper exited 0.
+          ok=""
+          if timeout --signal=TERM --kill-after=30s 300 python nba/scrape_prizepicks_nba_board.py > /tmp/pp_morning.log 2>&1; then ok="$ok,prizepicks"; else echo "=== PrizePicks morning pull failed/timed out"; fi
           tail -n 10 /tmp/pp_morning.log
-          timeout --signal=TERM --kill-after=30s 300 python nba/scrape_underdog_board.py > /tmp/ud_morning.log 2>&1 || echo "=== Underdog morning pull failed/timed out"
+          if timeout --signal=TERM --kill-after=30s 300 python nba/scrape_underdog_board.py > /tmp/ud_morning.log 2>&1; then ok="$ok,underdog"; else echo "=== Underdog morning pull failed/timed out"; fi
           tail -n 10 /tmp/ud_morning.log
-          python nba/archive_live_boards.py
+          ok="${ok#,}"
+          if [ -z "$ok" ]; then echo "::warning::no morning board captured - nothing archived as 'morning'"; else
+            echo "archiving morning boards for: $ok"
+            ARCHIVE_APPS="$ok" python nba/archive_live_boards.py
+          fi
           # THE KEYS final_hp PRICES AGAINST (2026-10-08, certification round 2): build_final_hp reads TODAY's rungs from
           # nba_market.board_rung_keys, which only P2A (for yesterday) and P3 (after its 13:16 PT archive) refreshed - so the
           # slate's final_hp covered the board as of YESTERDAY's window and missed every rung posted overnight / this morning
