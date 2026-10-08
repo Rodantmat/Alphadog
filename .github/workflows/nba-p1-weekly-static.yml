@@ -213,7 +213,12 @@ jobs:
           python - <<'EOF'
           import os, psycopg
           TABLES = ["nba_stats.player_impact_rating", "nba_stats.player_playtype_profile", "nba_stats.player_shot_quality",
-                    "nba_stats.player_shot_quality_delta", "nba_stats.player_shot_zone_profile", "nba_stats.player_tracking_detail"]
+                    "nba_stats.player_shot_quality_delta", "nba_stats.player_shot_zone_profile", "nba_stats.player_tracking_detail",
+                    # retention audit 2026-10-08: these six were also overwritten weekly (keyed by player/team only) with no as-of copy
+                    "nba_stats.player_onoff_profile", "nba_stats.player_season_profile", "nba_stats.player_tracking_profile",
+                    "nba_team.season_profile", "nba_team.playtype_profile", "nba_team.defense_vs_position",
+                    # the roster register itself (team, active, bio) - weekly as-of, so "who was where" is answerable in SQL
+                    "nba_ref.players"]
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
               for t in TABLES:
                   hist = t + "_asof"
