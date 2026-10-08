@@ -402,6 +402,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           BT2_APPS: "prizepicks"
+          BT2_DATE: ${{ steps.d.outputs.asof }}   # the resolved slate, not the runner clock (round 2 P3#11)
         run: python nba/build_board_tiers_v2.py
 
       # 3) THE MARKET at the window - de-vigged book probability per rung
