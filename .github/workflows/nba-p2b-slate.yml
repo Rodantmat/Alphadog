@@ -375,7 +375,9 @@ jobs:
         run: python nba/build_asof_calibration.py
 
       - name: Refit the blowout model
+        id: soft_blowout
         if: ${{ steps.d.outputs.has_games == '1' }}
+        continue-on-error: true   # nba_score.blowout_model has NO production reader (the recipe derives P_BLOWOUT in-run) - research on the critical path; round 2
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python nba/build_blowout_model.py
