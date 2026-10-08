@@ -494,11 +494,15 @@ jobs:
 
       # 5) CERTIFY: today's legs scored, confidence non-null, score in 0-100, board captured
       - name: Certify P3
+        if: ${{ steps.d.outputs.late != '1' }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PIPE: "p3"
           CERT_DATE: ${{ steps.d.outputs.asof }}
         run: python nba/certify_pipeline.py
+      - name: Late run - nothing scored, nothing picked
+        if: ${{ steps.d.outputs.late == '1' }}
+        run: echo "::warning::late run (after first tip) - boards archived only; scoring, certify and picks skipped by rule (§29z-d)"
 
       # 5) SLIP PICK (2026-10-01, section 29): today's paper slips for every active strategy, built from the slate
       #    this run just scored and certified, through the certified slip rules. The freshness gate inside the engine
