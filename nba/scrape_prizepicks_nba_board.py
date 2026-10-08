@@ -132,6 +132,30 @@ def main() -> int:
                     print(f"  [{attempt}] {r.status_code} {url.split('?')[0]}", flush=True)
                     continue
                 doc = r.json()
+                # PAGINATION (round-2 P3#10, 2026-10-08): the API answers {"meta": {"current_page", "total_pages"}}; a board
+                # larger than per_page is served in pages and a one-page read would silently truncate the slate (the
+                # selector would see only the first N rows by PrizePicks' own rank). Walk every page and concatenate
+                # data + included; a page that fails makes the candidate incomplete (not chosen).
+                pages = int(((doc.get("meta") or {}).get("total_pages") or 1)) if isinstance(doc, dict) else 1
+                rec["total_pages"] = pages
+                if pages > 1:
+                    sep = "&" if "?" in url else "?"
+                    for pg in range(2, pages + 1):
+                        rp = requests.get(f"{url}{sep}page={pg}", headers=HEADERS, proxies=proxies, timeout=timeout,
+                                          impersonate="chrome124")
+                        if rp.status_code != 200:
+                            raise RuntimeError(f"page {pg}/{pages} http {rp.status_code} - candidate incomplete")
+                        dp = rp.json()
+                        doc["data"] = (doc.get("data") or []) + (dp.get("data") or [])
+                        doc["included"] = (doc.get("included") or []) + (dp.get("included") or [])
+                    # dedupe included (players/games repeat across pages) by (type, id)
+                    seen, inc = set(), []
+                    for x in doc.get("included") or []:
+                        k = (x.get("type"), x.get("id"))
+                        if k not in seen:
+                            seen.add(k); inc.append(x)
+                    doc["included"] = inc
+                    print(f"  [{attempt}] walked {pages} pages", flush=True)
                 rows = len(doc.get("data") or []) if isinstance(doc, dict) else 0
                 fut = future_pickable(doc)
                 rec.update({"ok": True, "rows": rows, "future_pickable": fut})
