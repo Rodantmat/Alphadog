@@ -69,6 +69,39 @@ STRATEGIES = {
     'R_stocks_4power':   ('single:stocks_R',      4, 'power', 1, 0.60, 30.0, 14, 4),   # re-measured (pass 79): +27% in long droughts (34/16) / -6% normal - ROTATION-ONLY (staked only in the drought state)
 }
 ROTATION_ONLY = {'R_stocks_4power'}
+
+
+# THE BACKTEST THE LIVE ENGINE CALIBRATES AGAINST (round 2 P3#4, 2026-10-08). The certified history scored legs with the
+# confidence model's market term (sportsbook feed); live has no feed, so live scores are market-free. The tunable
+# nba_config.classification_config['live_backtest_suffix'] ({"suffix": "_mf"}) points the hurdle calibration, the steals
+# anchor reference, P5's live simulation and the edge-monitor reference at the market-free rebuild
+# (nba_score.slip_engine_slips_mf / _mf_nosteals, from nba_score.build_tier_map_legs_sel_mf) - the faithful simulation of
+# what live does. Blank = the market-inclusive certified tables. LS_BACKTEST_SUFFIX overrides (tests).
+_BT_SUFFIX = None
+
+
+def bt_suffix(conn):
+    global _BT_SUFFIX
+    if _BT_SUFFIX is None:
+        env = os.environ.get('LS_BACKTEST_SUFFIX')
+        if env is not None:
+            _BT_SUFFIX = env.strip()
+        else:
+            try:
+                row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='live_backtest_suffix'").fetchone()
+                cfg = (row[0] if isinstance(row[0], dict) else json.loads(row[0])) if row else {}
+                _BT_SUFFIX = str(cfg.get('suffix') or '')
+            except Exception:  # noqa: BLE001
+                _BT_SUFFIX = ''
+        print(f"  backtest tables: nba_score.slip_engine_slips{_BT_SUFFIX}[_nosteals] ({'market-free' if _BT_SUFFIX else 'certified, market-inclusive'})", flush=True)
+    return _BT_SUFFIX
+
+
+def bt_table(conn, name):
+    """The backtest slip table a strategy is measured against: the no-steals pool for families C/D/R/W, the steals pool
+    otherwise, with the live_backtest_suffix applied."""
+    nosteals = name.startswith(('C_', 'D_', 'R_', 'W_'))
+    return f"nba_score.slip_engine_slips{bt_suffix(conn)}{'_nosteals' if nosteals else ''}"
 # pass 85: the pre-break week (7 days before the All-Star break) is a fixed calendar drought. Week-only strategies (W_ family,
 # steals-excluded pool) stake only in that week under plan B; they are skipped every other day.
 STRATEGIES['W_core_3power'] = ('core', 3, 'power', 3, 0.62, 30.0, 14, 5)          # steals-free core 3-Power: +41/+116% in the week
