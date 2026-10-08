@@ -117,6 +117,20 @@ s = rep(s, '''            hist = d[(d["season"].isin(TRAIN) | (d["ym"] < month))
             hist = d[(d["GAME_DATE"] < _t0) & d["tier"].notna()]''')
 s = rep(s, '''                reliab.append(pd.DataFrame({"prop": f"{prop}_{per}", "offset": off, "p_over": p_over, "p_param": p_param, "actual": (test[ycol] > line).astype(int).values, "anchor": test["anchor"].values, "line": line.values, "role_tier": test["role_tier"].values, "var_band": test["var_band"].values, "used_emp": used, "month": str(month)}))''',
 '''                reliab.append(pd.DataFrame({"prop": f"{prop}_{per}", "offset": off, "p_over": p_over, "p_param": p_param, "actual": (test[ycol] > line).astype(int).values, "anchor": test["anchor"].values, "line": line.values, "role_tier": test["role_tier"].values, "var_band": test["var_band"].values, "used_emp": used, "month": str(month), "PLAYER_ID": test["PLAYER_ID"].values, "GAME_ID": test["GAME_ID"].values, "GAME_DATE": test["GAME_DATE"].values, "TEAM_ID": test["TEAM_ID"].values, "base_prop": prop, "period_key": per}))''')
+# NOTHING TO PROJECT IS NOT A CRASH (2026-10-08, certification round 2 - sim-slate 37751807219). The period recipe keeps a
+# player-game only once his SEASON-partitioned rate36 exists (ewm, min_periods 3), so on an opening slate - every player's
+# first game of the new season - the test set is empty and `pd.concat([])` raised "No objects to concatenate", which would
+# have killed P2B's components step on 2026-10-20. (In the April-based rehearsal the real 2025-26 rows masked it.) An empty
+# period ladder is the recipe's own answer for such a slate (no certified cell uses period props); write it and exit 0.
+s = rep(s, '''rel = pd.concat(reliab, ignore_index=True)''',
+'''if not reliab:
+    _meta = {"asof": str(ASOF_D), "history_seasons": TRAIN, "current_season": TEST[0], "rows": 0, "props": [], "players": 0, "ot_rule": OT_MODE,
+             "recipe": "periods_ladder_v1 v3 (certified points 1H/4Q, at-standard 1Q/2H) + production patches",
+             "note": "no player-game of the slate has a season rate36 yet (opening games) - empty period ladder by design"}
+    (DATA / f"nba_baseline_ladder_{ASOF_D}_periods_{'_'.join(PERIODS)}_{'_'.join(BT_PROPS)}_{OT_MODE}.json").write_text(json.dumps({"meta": _meta, "ladder": []}))
+    print("PERIODS LADDER:", _meta)
+    raise SystemExit(0)
+rel = pd.concat(reliab, ignore_index=True)''')
 s = rep(s, '''more = rel.assign(side="more", p_side=rel["p_over"], hit=rel["actual"]); less = rel.assign(side="less", p_side=1 - rel["p_over"], hit=1 - rel["actual"])''',
 '''_PER = {"q1": "Q1", "h1": "H1", "h2": "H2", "q4": "Q4"}
 _lad = rel[pd.to_datetime(rel["GAME_DATE"]).dt.date == ASOF_D].sort_values("offset").drop_duplicates(subset=["PLAYER_ID", "GAME_ID", "prop", "line"], keep="last")
