@@ -25,7 +25,8 @@ def probe(label, url, proxies=None, headers=None):
     t0 = time.time()
     try:
         r = requests.get(url, headers=headers or {}, proxies=proxies, timeout=20, impersonate="chrome124")
-        print(f"  {label:<44} HTTP {r.status_code}  {len(r.content):>8} bytes  {time.time() - t0:5.1f}s")
+        snippet = "" if r.status_code < 400 else "  | " + " ".join(r.text[:160].split())
+        print(f"  {label:<44} HTTP {r.status_code}  {len(r.content):>8} bytes  {time.time() - t0:5.1f}s{snippet}")
         return r.status_code
     except Exception as exc:  # noqa: BLE001
         msg = str(exc)
