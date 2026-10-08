@@ -151,24 +151,56 @@ def main():
             for ln in (j.get("over_under_lines") or {}).values() if isinstance(j.get("over_under_lines"), dict) else (j.get("over_under_lines") or []):
                 ast = ((ln.get("over_under") or {}).get("appearance_stat") or {})
                 if ast.get("pickem_stat_id"): registry["pickem_stats"][ast["pickem_stat_id"]] = ast.get("display_stat") or registry["pickem_stats"].get(ast["pickem_stat_id"], "")
-        for mid, mtype in matches[:120]:
+        # budget + target date (round-2 P3#2): today's matches (Eastern date of the tip) get the full pill sweep, the rest only
+        # the base lines call; every sweep stops at the budget or on TERM and the file is still written below
+        budget_s = float(os.environ.get("UNDERDOG_BUDGET_S", "240"))
+        deadline = time.monotonic() + budget_s
+        workers = int(os.environ.get("UNDERDOG_WORKERS", "4"))
+        target = os.environ.get("UNDERDOG_DATE") or datetime.now(ET).date().isoformat()
+        all_matches = os.environ.get("UNDERDOG_ALL_MATCHES") == "1"
+        partial = None
+        def over(stage):
+            nonlocal partial
+            if _STOP["flag"] or time.monotonic() > deadline:
+                if partial is None:
+                    partial = f"{stage}: {_STOP['why'] or 'budget exhausted'}"
+                    calls.append(("partial", partial))
+                return True
+            return False
+        def mdate(mid):
+            g = store["games"].get(str(mid)) or store["solo_games"].get(str(mid)) or {}
+            return _et_date(g.get("scheduled_at") or g.get("start_time"))
+        today_m = [(m, t) for m, t in matches if all_matches or mdate(m) == target]
+        other_m = [(m, t) for m, t in matches if (m, t) not in today_m]
+        calls.append(("matches", len(matches), "today", len(today_m), "other", len(other_m), "target", target))
+        lock = threading.Lock()
+        def _merge(j):
+            with lock:
+                harvest(j); before = len(store["over_under_lines"]); merge(store, j)
+                return len(store["over_under_lines"]) - before
+        for mid, mtype in today_m[:120]:
+            if over("per-match pills"):
+                break
             base = f"{API}/v1/lobbies/content/lines?include_live=true&match_id={mid}&match_type={quote(str(mtype))}&{COMMON}&show_mass_option_markets=true"
             try:
-                j = get(s, base, proxies); harvest(j)
-                before = len(store["over_under_lines"]); merge(store, j); calls.append((f"lines[match={mid}]", len(store["over_under_lines"]) - before))
+                calls.append((f"lines[match={mid}]", _merge(get(s, base, proxies))))
             except Exception as exc:  # noqa: BLE001
                 calls.append((f"lines[match={mid}]_error", str(exc)[:60]))
             filters = [(sid, "PickemStat") for sid in list(registry["pickem_stats"])] + [(gid, "MarketGroup") for gid in list(registry["market_groups"])]
-            added = 0
-            for fid, ftype in filters:
-                try:
-                    j = get(s, f"{base}&filter_id={fid}&filter_type={ftype}", proxies); harvest(j)
-                    before = len(store["over_under_lines"]); merge(store, j); added += len(store["over_under_lines"]) - before
-                except Exception as exc:  # noqa: BLE001
-                    calls.append((f"lines[match={mid},{ftype}]_error", str(exc)[:40]))
-                time.sleep(0.25)
+            res = _pmap(lambda f: _merge(get(_sess(), f"{base}&filter_id={f[0]}&filter_type={f[1]}", proxies)), filters, workers)
+            added = sum(r for _, r, e in res if e is None)
+            for (fid, ftype), _, e in res:
+                if e:
+                    calls.append((f"lines[match={mid},{ftype}]_error", e[:40]))
             calls.append((f"pills[match={mid}]", added))
-            time.sleep(0.3)
+        for mid, mtype in other_m[:120]:   # other days: base lines only (featured + ladders), no pill sweep
+            if over("other-day matches"):
+                break
+            base = f"{API}/v1/lobbies/content/lines?include_live=true&match_id={mid}&match_type={quote(str(mtype))}&{COMMON}&show_mass_option_markets=true"
+            try:
+                calls.append((f"lines[match={mid},other-day]", _merge(get(s, base, proxies))))
+            except Exception as exc:  # noqa: BLE001
+                calls.append((f"lines[match={mid}]_error", str(exc)[:60]))
         reg_path.write_text(json.dumps(registry, indent=1))
         # 3b) per-player completeness pass: lines_with_stats returns EVERY market for the player (learns unseen stat ids too)
         seen_apps = {str(a.get("id")) for a in store["appearances"].values() if isinstance(a, dict) and a.get("type") == "Player" and a.get("player_id")}
