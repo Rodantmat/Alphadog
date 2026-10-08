@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-07T23:13:38Z",
-  "fetched_at": "2026-10-07T23:19:03Z",
+  "started_at": "2026-10-08T06:22:10Z",
+  "fetched_at": "2026-10-08T06:24:17Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -11,47 +11,7 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      46
-    ],
-    [
-      "lines[match=225727]",
-      0
-    ],
-    [
-      "pills[match=225727]",
-      0
-    ],
-    [
-      "lines[match=225729]",
-      12
-    ],
-    [
-      "pills[match=225729]",
-      0
-    ],
-    [
-      "lines[match=225728]",
-      9
-    ],
-    [
-      "pills[match=225728]",
-      0
-    ],
-    [
-      "lines[match=225730]",
-      9
-    ],
-    [
-      "pills[match=225730]",
-      0
-    ],
-    [
-      "lines[match=225731]",
-      11
-    ],
-    [
-      "pills[match=225731]",
-      0
+      50
     ],
     [
       "lines[match=225732]",
@@ -70,19 +30,19 @@
       0
     ],
     [
-      "lines[match=225735]",
-      0
-    ],
-    [
-      "pills[match=225735]",
-      0
-    ],
-    [
       "lines[match=225734]",
       0
     ],
     [
       "pills[match=225734]",
+      0
+    ],
+    [
+      "lines[match=225735]",
+      0
+    ],
+    [
+      "pills[match=225735]",
       0
     ],
     [
@@ -206,19 +166,19 @@
       0
     ],
     [
-      "lines[match=225752]",
-      0
-    ],
-    [
-      "pills[match=225752]",
-      0
-    ],
-    [
       "lines[match=225753]",
       0
     ],
     [
       "pills[match=225753]",
+      0
+    ],
+    [
+      "lines[match=225752]",
+      0
+    ],
+    [
+      "pills[match=225752]",
       0
     ],
     [
@@ -238,19 +198,19 @@
       0
     ],
     [
-      "lines[match=225757]",
-      0
-    ],
-    [
-      "pills[match=225757]",
-      0
-    ],
-    [
       "lines[match=225756]",
       0
     ],
     [
       "pills[match=225756]",
+      0
+    ],
+    [
+      "lines[match=225757]",
+      0
+    ],
+    [
+      "pills[match=225757]",
       0
     ],
     [
@@ -275,6 +235,62 @@
     ],
     [
       "pills[match=225759]",
+      0
+    ],
+    [
+      "lines[match=225761]",
+      0
+    ],
+    [
+      "pills[match=225761]",
+      0
+    ],
+    [
+      "lines[match=225762]",
+      0
+    ],
+    [
+      "pills[match=225762]",
+      0
+    ],
+    [
+      "lines[match=225765]",
+      0
+    ],
+    [
+      "pills[match=225765]",
+      0
+    ],
+    [
+      "lines[match=225763]",
+      0
+    ],
+    [
+      "pills[match=225763]",
+      0
+    ],
+    [
+      "lines[match=225766]",
+      0
+    ],
+    [
+      "pills[match=225766]",
+      0
+    ],
+    [
+      "lines[match=225764]",
+      0
+    ],
+    [
+      "pills[match=225764]",
+      0
+    ],
+    [
+      "lines[match=225767]",
+      0
+    ],
+    [
+      "pills[match=225767]",
       0
     ],
     [
@@ -304,12 +320,12 @@
     [
       "lines_with_stats[players]",
       0,
-      22
+      0
     ],
     [
       "alternate_projections",
-      10,
-      230,
+      12,
+      276,
       0,
       "deduped 0"
     ],
@@ -322,28 +338,25 @@
       0
     ]
   ],
-  "lines": 87,
-  "legs": 87,
-  "ladder_legs": 230,
-  "ladder_lines_with_alternates": 10,
-  "players": 22,
-  "pregame_legs": 84,
-  "live_legs": 3,
+  "lines": 50,
+  "legs": 50,
+  "ladder_legs": 276,
+  "ladder_lines_with_alternates": 12,
+  "players": 0,
+  "pregame_legs": 50,
+  "live_legs": 0,
   "by_stat": {
-    "Moneyline": 36,
-    "Points": 22,
-    "Pts + Rebs + Asts": 19,
-    "Margin of Victory": 5,
-    "Total Points": 5
+    "Moneyline": 38,
+    "Margin of Victory": 6,
+    "Total Points": 6
   },
   "by_line_type": {
-    "balanced": 87
+    "balanced": 50
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 45,
-    "None": 41,
-    "0.91": 1
+    "None": 44,
+    "1.0": 6
   },
-  "github_run_id": "37700913718"
+  "github_run_id": "37737136460"
 }
