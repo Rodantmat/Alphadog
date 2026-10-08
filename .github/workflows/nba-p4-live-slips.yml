@@ -98,6 +98,7 @@ jobs:
           LS_RESUME: ${{ github.event.inputs.resume }}
           LS_RESET_CONFIRM: ${{ github.event.inputs.confirm }}
           LS_RESET_FORCE: ${{ github.event.inputs.force_reset }}
+          LS_EDGE_REBUILD: ${{ github.event.inputs.edge_rebuild }}
         run: python -u nba/live_slip_engine.py
       - name: No regular-season slate
         if: steps.res.outputs.run != 'true'
