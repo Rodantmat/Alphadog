@@ -527,6 +527,7 @@ jobs:
         if: always()
         run: |
           L=""
+          [ "${{ steps.soft_injury.outcome }}" = "failure" ] && L="$L injury-report"
           [ "${{ steps.soft_pp.outcome }}" = "failure" ] && L="$L prizepicks-board"
           [ "${{ steps.soft_boards.outcome }}" = "failure" ] && L="$L other-boards"
           [ "${{ steps.soft_udpick.outcome }}" = "failure" ] && L="$L underdog-pick"
