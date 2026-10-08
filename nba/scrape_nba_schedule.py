@@ -132,8 +132,25 @@ def main():
     # upcoming season not being published yet is expected/normal, not a scrape failure.
     if per_season_meta.get(SEASONS[0], {}).get("real_count", 0) == 0:
         hard_error = f"completed_season_scrape_failed: {per_season_meta.get(SEASONS[0], {}).get('error')}"
+    # ROUND-2 P2A#14 (2026-10-08): a season that the file on disk already holds must never come back empty - once the
+    # league has published it, 0 games is a failed fetch, not "not released yet". nba_season.active_stats_season reads
+    # this file for its opening-day guard, so a current season silently dropped would un-guard the rollover.
+    try:
+        _prev = json.loads(OUTPUT_PATH.read_text(encoding="utf-8")).get("games", []) if OUTPUT_PATH.exists() else []
+    except Exception:  # noqa: BLE001
+        _prev = []
+    _prev_by_season = {}
+    for g in _prev:
+        _prev_by_season[g.get("season")] = _prev_by_season.get(g.get("season"), 0) + 1
+    for season in SEASONS:
+        if per_season_meta.get(season, {}).get("real_count", 0) == 0 and _prev_by_season.get(season, 0) > 0 and not hard_error:
+            hard_error = (f"season_{season}_came_back_empty: the file on disk holds {_prev_by_season[season]} games for it "
+                          f"({per_season_meta.get(season, {}).get('error')})")
 
-    OUTPUT_PATH.write_text(json.dumps({"games": all_games}, indent=2), encoding="utf-8")
+    # the data file is written ONLY on success (G-3 rule: a failed scrape leaves the previous good file untouched);
+    # the meta file always records the attempt
+    if not hard_error:
+        OUTPUT_PATH.write_text(json.dumps({"games": all_games}, indent=2), encoding="utf-8")
     OUTPUT_META_PATH.write_text(json.dumps({
         "fetched_at": fetched_at,
         "seasons_attempted": SEASONS,
