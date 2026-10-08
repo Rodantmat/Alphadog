@@ -910,7 +910,11 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
             state, live_cap = 'yellow', max(1, cap // 2)
         else:
             # clean: step DOWN only after 3 consecutive clean evaluations (hysteresis); a prior red never self-clears
-            clean_days += 1
+            # ONE COUNT PER SLATE (certification round 2, 2026-10-08): a re-evaluation of the same day (forced recovery, manual
+            # grade, the catch-up loop) must not advance the hysteresis - "one set per day"
+            if ph.get('CLEAN_LAST') != day.isoformat():
+                clean_days += 1
+            h['CLEAN_LAST'] = day.isoformat()
             if prev_state == 'red':
                 state, live_cap = 'red', 0
             elif prev_state in ('yellow', 'critical') and clean_days < 3:
