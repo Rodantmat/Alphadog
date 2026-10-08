@@ -163,6 +163,23 @@ def main():
     # baseline_prune_log and refuses a pruned date, because re-interpolating off-ladder legs from
     # far-apart board rungs would overwrite board_scored's day-of values with degraded ones.
     total_deleted = 0
+    # THE FULL LADDER MUST BE IN GIT BEFORE ITS OFF-BOARD RUNGS ARE DELETED (retention audit 2026-10-08). The prune is the
+    # one deliberate loss in the database; the only full copy of a live slate's ladder is nba/data/nba_baseline_ladder_<date>
+    # .json.gz, which P2B commits through git_push_retry.sh - a failed push is a warning there, not an abort. So a live-season
+    # date is pruned only when its dated ladder file exists in this checkout (the P2A runner checks out main). Historical
+    # dates (the two backfilled seasons) never had a file and keep the documented board-scoped rule. PRUNE_SKIP_FILE_CHECK=1
+    # overrides, deliberately.
+    from pathlib import Path as _P
+    _live_floor = dt.date(2026, 7, 1)
+    if os.environ.get("PRUNE_SKIP_FILE_CHECK") != "1":
+        held = []
+        for d in dates:
+            if d >= _live_floor and not any((_P("nba/data") / f"nba_baseline_ladder_{d.isoformat()}{ext}").exists() for ext in (".json.gz", ".json")):
+                held.append(d)
+        if held:
+            print(f"  HELD (not pruned): {', '.join(x.isoformat() for x in held)} - the dated ladder file is not in the repo checkout; "
+                  f"P2B's commit must land first (PRUNE_SKIP_FILE_CHECK=1 overrides)", flush=True)
+            dates = [d for d in dates if d not in set(held)]
     for i, d in enumerate(dates, 1):
         with conn.cursor() as cur:
             cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.baseline_history'))")
