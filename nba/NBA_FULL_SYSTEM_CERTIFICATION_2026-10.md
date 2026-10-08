@@ -641,6 +641,10 @@ asserted from the audit alone. Items the audits marked INFO are included when th
   over 22 props; period ladder empty by design; final_hp built in the sandbox; the real `pick()`: 148 scored PrizePicks legs
   (65 unscored = beyond-depth / neighbour-priced rungs routed to `final_hp_derived`, 0 unresolved) → board below the 179
   floor → nothing placed (§31j, the spotlight board); production untouched (0/0/0/0). The opening-night path is green.
+- **P2A 2026-10-08 (scheduled, 03:31 PT, run 37763883136) 🟢 — the first results pipeline on the round-2 code:** every
+  step green, **no soft-step failures**; the gap audit now audits against the SCHEDULE ("newest completed slate in schedule
+  2026-04-12 / in the delta 2026-04-12 — No gaps"); 130 rung keys refreshed for 10-07, nothing to prune (no baseline on a
+  preseason day), grade catch-up found nothing placed; `pipeline_runs` row `success` at 10:45:28Z (finish job).
 
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
