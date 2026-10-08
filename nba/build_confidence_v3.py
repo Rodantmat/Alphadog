@@ -256,7 +256,7 @@ def main():
             bt AS (
                 SELECT game_date, lower(regexp_replace(player,'[^A-Za-z]','','g')) AS nm, line, side,
                        min(kind) AS kind, min(tier) AS tier
-                FROM nba_market.board_tiers WHERE snapshot_label='window' GROUP BY 1,2,3,4
+                FROM nba_market.board_tiers_v2 WHERE snapshot_label='window' AND bookmaker='prizepicks' GROUP BY 1,2,3,4
             )
             SELECT f.season, f.game_date, f.prop, f.side, f.phase, f.final_hp, f.anchor,
                    f.n_uncertain, f.ladder_offset, f.player_id,
