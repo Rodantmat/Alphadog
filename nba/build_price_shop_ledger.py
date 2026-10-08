@@ -168,10 +168,10 @@ def main():
                 s['priced'] += 1; s['gate'] += bool(gate); s['pxm'].append(pxm)
     with conn.cursor() as cur:
         cur.executemany("""INSERT INTO nba_score.price_shop_ledger (game_date, source, player_id, player, prop, side, line, tier, app, listed, same_line,
-                           app_line, line_gap, kind, m, price, p, p_x_m, gate_pass, strategies)
-                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                           app_line, line_gap, kind, m, price, p, p_x_m, gate_pass, strategies, m_eff)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                            ON CONFLICT (game_date, source, player_id, prop, side, line, app) DO UPDATE SET listed=EXCLUDED.listed, same_line=EXCLUDED.same_line,
-                           app_line=EXCLUDED.app_line, line_gap=EXCLUDED.line_gap, kind=EXCLUDED.kind, m=EXCLUDED.m, price=EXCLUDED.price, p=EXCLUDED.p,
+                           app_line=EXCLUDED.app_line, line_gap=EXCLUDED.line_gap, kind=EXCLUDED.kind, m=EXCLUDED.m, m_eff=EXCLUDED.m_eff, price=EXCLUDED.price, p=EXCLUDED.p,
                            p_x_m=EXCLUDED.p_x_m, gate_pass=EXCLUDED.gate_pass, strategies=EXCLUDED.strategies, built_at=now()""", rows)
     conn.commit()
     print(f"  ledger: {len(rows)} rows written (margin {margin:.4f})", flush=True)
