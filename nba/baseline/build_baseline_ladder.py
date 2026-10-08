@@ -121,6 +121,14 @@ if os.environ.get("BT_INJURY", "1") == "1" and v_players:
         def _norm(x): return _re.sub(r"[^a-z]", "", _ud.normalize("NFKD", str(x or "")).encode("ascii", "ignore").decode().lower())
         _idx = json.loads((DATA / "nba_all_players.json").read_text()).get("records", []) if (DATA / "nba_all_players.json").exists() else []
         _name_to_id = {_norm(r_.get("DISPLAY_LAST_COMMA_FIRST")): str(r_["PERSON_ID"]) for r_ in _idx}
+        # round-2 P2B#4 (2026-10-08): the weekly register (P1) lacked 34 of the 616 rostered players on 10-07 (newcomers,
+        # two-ways); the DAILY roster file (P2B's own commonallplayers refresh) resolves them too, so an OUT newcomer is
+        # removed from the slate and his teammates get the with/without multiplier. Register entries win on a clash.
+        if _cr_path.exists():
+            for _p in json.loads(_cr_path.read_text()).get("players", []):
+                _k = _norm(_p.get("last_comma_first"))
+                if _k and _k not in _name_to_id and _p.get("id") is not None:
+                    _name_to_id[_k] = str(_p["id"])
         _TEAM_TRI = {"Atlanta Hawks": "ATL", "Boston Celtics": "BOS", "Brooklyn Nets": "BKN", "Charlotte Hornets": "CHA", "Chicago Bulls": "CHI", "Cleveland Cavaliers": "CLE", "Dallas Mavericks": "DAL", "Denver Nuggets": "DEN", "Detroit Pistons": "DET", "Golden State Warriors": "GSW", "Houston Rockets": "HOU", "Indiana Pacers": "IND", "LA Clippers": "LAC", "Los Angeles Clippers": "LAC", "Los Angeles Lakers": "LAL", "Memphis Grizzlies": "MEM", "Miami Heat": "MIA", "Milwaukee Bucks": "MIL", "Minnesota Timberwolves": "MIN", "New Orleans Pelicans": "NOP", "New York Knicks": "NYK", "Oklahoma City Thunder": "OKC", "Orlando Magic": "ORL", "Philadelphia 76ers": "PHI", "Phoenix Suns": "PHX", "Portland Trail Blazers": "POR", "Sacramento Kings": "SAC", "San Antonio Spurs": "SAS", "Toronto Raptors": "TOR", "Utah Jazz": "UTA", "Washington Wizards": "WAS"}
         _tri_to_tid = {}
         for g_ in _slate: _tri_to_tid[g_.get("home_team_tricode")] = str(g_["home_team_id"]); _tri_to_tid[g_.get("away_team_tricode")] = str(g_["away_team_id"])
