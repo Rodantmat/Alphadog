@@ -154,11 +154,20 @@ def leg_allowed(l, trail10=None):
     return True   # (pass 70's points-Under line cap is per strategy: MAX_LINE_BY_STRATEGY, applied in pick())
 
 
-def trailing10(conn, day, player_ids):
+# §31w (2026-10-08): on a POSTSEASON slate the trailing windows run straight on through the postseason games already played
+# (regular-season log + its twin nba_stats.player_game_log_postseason) - exactly what the postseason tier map's pf20 used. On a
+# regular-season slate the source stays the regular-season log alone (the certified definition: a previous postseason never
+# leaks into opening week).
+def _log_src(post):
+    return ("(SELECT nba_player_id, game_date, stl, pf FROM nba_stats.player_game_log UNION ALL "
+            "SELECT nba_player_id, game_date, stl, pf FROM nba_stats.player_game_log_postseason)" if post else "nba_stats.player_game_log")
+
+
+def trailing10(conn, day, player_ids, post=False):
     """Trailing-10-game steals average per player_id, as of the day (pass 45; the cushion of §29n at pick time)."""
-    rows = conn.execute("""SELECT x.pid, avg(x.stl) FROM (
+    rows = conn.execute(f"""SELECT x.pid, avg(x.stl) FROM (
                              SELECT g.nba_player_id::text pid, g.stl, row_number() OVER (PARTITION BY g.nba_player_id ORDER BY g.game_date DESC) rn
-                             FROM nba_stats.player_game_log g WHERE g.game_date < %s AND g.nba_player_id::text = ANY(%s)) x
+                             FROM {_log_src(post)} g WHERE g.game_date < %s AND g.nba_player_id::text = ANY(%s)) x
                            WHERE x.rn <= 10 GROUP BY x.pid""", (day, list(player_ids))).fetchall()
     return {(r[0], 'steals'): float(r[1]) for r in rows}
 
