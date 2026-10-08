@@ -272,8 +272,13 @@ async function tick(env, now, dryRun = false) {
     for (const p of ["P2A", "P2B", "P3"]) states[p] = await pipelineState(sql, env, p, date, true);
     for (const p of ["P2A", "P2B", "P3"]) {
       if (states[p].dead) {                       // a claimed slate whose run already ended: close it, recover once
-        out.push(await closeStaleClaim(sql, env, p, date, plan, now, states[p], dryRun));
-        states[p].status = "failure";              // successors see a FINISHED predecessor (same rule as a recorded failure)
+        const rec = await closeStaleClaim(sql, env, p, date, plan, now, states[p], dryRun);
+        out.push(rec);
+        // Round-2 P2A#9 (2026-10-08): when a forced recovery was (or will be) dispatched, the predecessor is NOT finished -
+        // it is being re-run. Successors keep waiting (bounded by p2b_latest / p3_deadline as for any claimed run) instead
+        // of building on logs the recovery is still loading. Only a dead claim that will not be recovered counts as finished.
+        const rerunning = rec.action === "recovery_dispatched" || rec.action === "recovery_dispatch_failed";
+        states[p].status = rerunning ? "claimed" : "failure";
         continue;
       }
       if (states[p].missed) continue;
