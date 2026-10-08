@@ -70,6 +70,13 @@ if SE_LEGS_TABLE not in PRODUCTION_LEG_SOURCES and SUFFIX == '':
     raise SystemExit("REFUSED: a test leg source must write to a suffixed table, never the certified one (set SE_TABLE_SUFFIX)")
 if not __import__('re').fullmatch(r'[a-z_]+\.[a-z0-9_]+', SE_LEGS_TABLE):
     raise SystemExit(f"REFUSED: invalid SE_LEGS_TABLE {SE_LEGS_TABLE!r}")
+# §31w P-5 (2026-10-08): a SELF-CONTAINED leg source carries team_id / event_id / pf20 itself (the postseason tier map,
+# nba_score.tier_map_legs_post - prop_universe is regular-season-only), and SE_PHASE pins one phase label for every day (the
+# postseason is its own phase; early/mid/late/final7 are regular-season calendar notions). Both are test-source-only options.
+SE_LEGS_SELF = os.environ.get('SE_LEGS_SELF', '0') == '1'
+SE_PHASE = os.environ.get('SE_PHASE', '').strip()
+if (SE_LEGS_SELF or SE_PHASE) and SUFFIX == '':
+    raise SystemExit("REFUSED: SE_LEGS_SELF / SE_PHASE are test-source options and must write to a suffixed table")
 T_SLIPS = f'nba_score.slip_engine_slips{SUFFIX}'
 T_LEGS = f'nba_score.slip_engine_legs{SUFFIX}'
 
