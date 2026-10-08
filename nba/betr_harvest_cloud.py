@@ -72,8 +72,17 @@ def start_local_proxy():
         return None, raw
     creds, host = raw.rsplit("@", 1)
     user, _, pw = creds.partition(":")
-    if "-session-" not in user:
-        sid = os.environ.get("BETR_SESSION_ID", "betrcloud1")
+    sid = os.environ.get("BETR_SESSION_ID", "betrcloud1")
+    # STICKY US SESSION, provider-aware (2026-10-08): the proxy moved from ProxyScrape to DataImpulse (credential store
+    # nba_config.external_credentials/proxy_url). Each provider spells targeting in the username differently:
+    #   DataImpulse  login__cr.us;sessid.<id>          (docs.dataimpulse.com/proxies/parameters/session-id; ~30-min session)
+    #   ProxyScrape  login-country-us-session-<id>-lifetime-10
+    # A URL that already carries a session is used as given.
+    if "dataimpulse" in host:
+        if "sessid." not in user:
+            base = user.split("__", 1)[0]          # drop any targeting already in the URL (e.g. __cr.us) and rebuild
+            user = f"{base}__cr.us;sessid.{sid}"
+    elif "-session-" not in user:
         user = f"{user}-country-us-session-{sid}-lifetime-10"
     cmd = [sys.executable, "-m", "proxy", "--hostname", "127.0.0.1", "--port", str(LOCAL_PORT),
            "--plugins", "proxy.plugin.ProxyPoolPlugin", "--proxy-pool", f"{user}:{pw}@{host}"]
