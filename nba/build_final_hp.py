@@ -608,10 +608,10 @@ def main():
                     # as-of calibration learns from. That is why no pipeline could own this script and
                     # final_hp ended up rebuilt by nothing. The delete now matches the slice computed.
                     if FE_DATE:
-                        cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s AND game_date=%s",
+                        cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s AND game_date=%s" + _PS,
                                     (season, prop, FE_DATE))
                     else:
-                        cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s", (season, prop))
+                        cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s" + _PS, (season, prop))
                     cur.executemany("""INSERT INTO nba_score.final_hp
                         (season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor,
                          baseline_hp, final_hp, cal_shift, score, edge, confidence, conf_tier,
