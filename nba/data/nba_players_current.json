@@ -4512,19 +4512,6 @@
       "team_abbreviation": "DAL"
     },
     {
-      "id": 1641798,
-      "full_name": "Jaylen Martin",
-      "last_comma_first": "Martin, Jaylen",
-      "roster_status": 1,
-      "from_year": "2023",
-      "to_year": "2026",
-      "player_code": "jaylen_martin",
-      "team_id": 1610612757,
-      "team_city": "Portland",
-      "team_name": "Trail Blazers",
-      "team_abbreviation": "POR"
-    },
-    {
       "id": 1630231,
       "full_name": "KJ Martin",
       "last_comma_first": "Martin, KJ",
@@ -4991,19 +4978,6 @@
       "team_city": "Cleveland",
       "team_name": "Cavaliers",
       "team_abbreviation": "CLE"
-    },
-    {
-      "id": 1630342,
-      "full_name": "Trhae Mitchell",
-      "last_comma_first": "Mitchell, Trhae",
-      "roster_status": 1,
-      "from_year": "2026",
-      "to_year": "2026",
-      "player_code": "trhae_mitchell",
-      "team_id": 1610612758,
-      "team_city": "Sacramento",
-      "team_name": "Kings",
-      "team_abbreviation": "SAC"
     },
     {
       "id": 1630596,
