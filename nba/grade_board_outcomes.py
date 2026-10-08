@@ -105,6 +105,21 @@ def load_players():
         if nm:
             by_id[str(x.get("PERSON_ID"))] = nm
             names.add(nm)
+    # round-2 P2A#18e (2026-10-08): the register is refreshed weekly by P1; the DAILY roster file (P2B) adds a mid-week
+    # debutant / call-up whose log rows would otherwise be dropped (unmatched_player) until the next Monday
+    try:
+        cur = _read_json("nba_players_current.json", timeout=120)
+        rows = cur.get("records") if isinstance(cur, dict) else cur
+        added = 0
+        for x in rows or []:
+            nm = norm_name(x.get("full_name"))
+            pid = str(x.get("id"))
+            if nm and pid not in by_id:
+                by_id[pid] = nm; names.add(nm); added += 1
+        if added:
+            print(f"  player map: +{added} from the daily roster file (not yet in the weekly register)", flush=True)
+    except Exception as exc:  # noqa: BLE001 - the register alone is the documented baseline
+        print(f"  daily roster file unavailable ({str(exc)[:60]}) - register only", flush=True)
     return by_id, names
 
 
