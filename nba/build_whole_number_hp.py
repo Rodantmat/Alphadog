@@ -100,7 +100,7 @@ def build_day(conn, cfg, d, write):
                                ("Under", uf / (of + uf), (ub / (ob + ub)) if (ob is not None and ub is not None and ob + ub > 0) else None)):
             fh = sig(a + b * lg(pf_)); bh = sig(a + b * lg(pb_)) if pb_ is not None else None
             out.append([season, d, gid, pid, prop, line, side, None, anchor, bh, fh, None, None, conf, ctier, cex, cq, cm, ptier, band, phase,
-                        nunc, now, None, "whole_number", round(tie, 5)])
+                        nunc, now, None, deriv, round(tie, 5)])
     if out:
         fh_arr = np.array([r[10] for r in out], dtype=float); cf_arr = np.array([r[13] if r[13] is not None else np.nan for r in out], dtype=float)
         sc, ed = score_and_edge(fh_arr, cf_arr)
