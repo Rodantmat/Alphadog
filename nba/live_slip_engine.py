@@ -508,6 +508,8 @@ def pick(conn, day, require_fresh=True):
     if not legs:
         print(f"  {day}: no scored window board legs - nothing to pick", flush=True)
         return
+    if postseason_slate(conn, day):
+        return pick_postseason(conn, day, legs)
     # OUT-OF-RANGE BOARD GUARD (2026-10-04, §31j). Every cell takes the top-n of the DAY'S board - relative, with no absolute
     # floor - so on a thin board "top 2" means "best of a few". Two seasons: the thinnest fifth of boards hit ~50% legs (+9.6%)
     # vs 61-66% on full boards, and the 2026-10-20 spotlight board (126 legs, 6 stars) sat below every validated slate.
