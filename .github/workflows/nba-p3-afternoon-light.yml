@@ -280,12 +280,15 @@ jobs:
         id: soft_pp
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
         continue-on-error: true
+        # NBA-OWNED PRODUCER (round-2 P3#10, 2026-10-08): nba/scrape_prizepicks_nba_board.py replaces the parameterised MLB
+        # file (main.py, owner rule: MLB code is not edited). Proven equivalent on the live board the same hour (probe run
+        # 37744844157: 194/194 projections, identical keys and included entities, same chosen endpoint), and it walks every
+        # page of the board (meta.total_pages) where main.py read one page of per_page=5000 and could not know it was short.
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
-          PRIZEPICKS_LEAGUE_ID: "7"
-          PRIZEPICKS_SPORT: "nba"
-          PRIZEPICKS_OUT_DIR: "boards"
-        run: timeout --signal=TERM --kill-after=30s 420 python main.py
+          PP_NBA_OUT_DIR: "boards"
+          PP_NBA_MIN_FUTURE_ROWS: "50"   # main.py's gate, kept
+        run: timeout --signal=TERM --kill-after=30s 420 python nba/scrape_prizepicks_nba_board.py
 
       - name: Other board scrapers
         id: soft_boards
