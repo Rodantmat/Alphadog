@@ -356,6 +356,7 @@ jobs:
         run: |
           L=""
           [ "${{ steps.soft_matchups.outcome }}" = "failure" ] && L="$L matchup-shards"
+          [ "${{ steps.soft_postseason.outcome }}" = "failure" ] && L="$L postseason-delta"
           [ "${{ steps.soft_wn.outcome }}" = "failure" ] && L="$L whole-number-reprice"
           [ "${{ steps.soft_edge.outcome }}" = "failure" ] && L="$L pp-edge-monitor"
           [ "${{ steps.soft_udgrade.outcome }}" = "failure" ] && L="$L underdog-grade"
