@@ -649,6 +649,16 @@ asserted from the audit alone. Items the audits marked INFO are included when th
   2 h 08 in its `legs` cursor — the freshly created `tier_map_legs_sel_mf` had **no planner statistics** (CTAS does not
   analyze), so the 2.7M-row join to `prop_universe` took a hopeless plan. Cancelled by hand; the function now `ANALYZE`s the
   new table before the rename (DB + `nba/sql`, b87e732); twin tables verified unchanged (478,580 / 475,060). Re-dispatched.
+- **P5 37767128033 🟢 (first full P5 on the market-free twin, 28 min end to end):** all 15 steps green; 3c rebuilt
+  `tier_map_legs_sel_mf` (2,700,213 rows, analyzed) and ran both twin engines as deltas (0 new days: 478,580 / 475,060
+  unchanged, high-water 2026-04-12); 5c wrote `slip_validation_mf` 11:26:04Z and `_mf_nosteals` 11:26:54Z (30 rows each);
+  step 6 printed `verdicts from nba_score.slip_validation_mf / _mf_nosteals` (the `bt_suffix` switch works end to end).
+  Twin verdicts vs the last base run (10-07): A_wsteals_5flex PASS +86/+47 (was +102/+60), A_core_5flex PASS +97/+53
+  (was +99/+59), B_demon_5flex PASS +227/+98 (was +160/+74); B_demon_3flex dropped from PASS to NOT_IN_TOP30 (the
+  market-free validator's top-30 does not contain its cell/size/structure); the other eight NOT_IN_TOP30 on both tables.
+  NOT_IN_TOP30 is recorded only — no `live_strategy_state` row changed (all 12 still `paper`, caps intact, REQUAL hurdle
+  unset), which is the designed behaviour (only an explicit FAIL turns a strategy red). Noted for the 10-20 launch: B_demon_3flex
+  (cap 1) is a strategy the live scoring cannot reproduce in the top-30 and the §31u/COMPASS 136 review should weigh it.
 
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
