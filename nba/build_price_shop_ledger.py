@@ -37,9 +37,14 @@ DDL = """CREATE TABLE IF NOT EXISTS nba_score.price_shop_ledger (
     tier text, app text NOT NULL, listed boolean, same_line boolean, app_line double precision, line_gap double precision,
     kind text, m double precision, price double precision, p double precision, p_x_m double precision, gate_pass boolean,
     strategies text[], built_at timestamptz DEFAULT now(),
-    PRIMARY KEY (game_date, source, player_id, prop, side, line, app))"""
+    PRIMARY KEY (game_date, source, player_id, prop, side, line, app));
+    ALTER TABLE nba_score.price_shop_ledger ADD COLUMN IF NOT EXISTS m_eff double precision"""
 
-DEFAULT_CFG = {"margin_pp": 0.0916, "apps": ["prizepicks", "underdog", "sleeper", "fliff", "betr", "betr_us_dfs"],
+# m is what the app DISPLAYS; m_eff is the per-leg decimal price the gate needs. Sleeper's per-side multiplier and Fliff's odds
+# ARE per-leg prices. Underdog's number is a payout MODIFIER on its standard table (main lines 1.00, alternates ~0.95), so its
+# per-leg price is modifier x the table's per-leg root: ud_ref_per_leg = 20^(1/5) = 1.8206 (the standard 5-pick, the same table
+# root PrizePicks' 5-Power carries). Flat-table apps (PrizePicks, Betr) have no per-leg price - availability is the question.
+DEFAULT_CFG = {"margin_pp": 0.0916, "ud_ref_per_leg": 1.8206, "apps": ["prizepicks", "underdog", "sleeper", "fliff", "betr", "betr_us_dfs"],
                "note": "price-shopping ledger (§31v): margin_pp = certified break-even distance; apps = bookmakers read from the window archive"}
 
 
