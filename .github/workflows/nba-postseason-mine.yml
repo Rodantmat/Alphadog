@@ -1,0 +1,56 @@
+name: NBA Postseason Mining (play-in + playoffs)
+
+# strategy §31w P-1: nba/scrape_nba_postseason.py mines the play-in and playoffs into *_postseason_<slug> files (regular-season
+# files untouched), then commits them. Proxy from the credential store first (DataImpulse), secret as fallback.
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: "seasons"
+        default: "2023-24,2024-25,2025-26"
+        required: false
+      parts:
+        description: "logs,measures,periods,pergame"
+        default: "logs,measures,periods,pergame"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-postseason-mine
+  cancel-in-progress: false
+
+jobs:
+  mine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip curl_cffi "psycopg[binary]"
+      - name: Resolve proxy (credential store first, secret as fallback)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"; echo "proxy: credential store -> $(echo "$P" | sed 's#.*@##')"
+          else
+            echo "proxy: credential store has no proxy_url row - using the PROXY_URL secret"
+          fi
+      - name: Mine
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+          POST_SEASONS: ${{ github.event.inputs.seasons }}
+          POST_PARTS: ${{ github.event.inputs.parts }}
+        run: python -u nba/scrape_nba_postseason.py
+      - name: Commit the postseason files
+        if: always()
+        run: bash nba/git_push_retry.sh "NBA postseason mining [skip ci]" nba/data/*postseason*
