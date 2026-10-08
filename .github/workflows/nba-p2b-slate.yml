@@ -427,6 +427,18 @@ jobs:
           C3_SEASONS: ${{ github.event.inputs.season }}
         run: python nba/build_confidence_v3.py
 
+      # 6a-bis) PARAMETER HISTORY (retention audit 2026-10-08): the three refit tables are whole-table replaces and the as-of
+      #   calibration is rebuilt per season, so the parameters that priced a past slate were unrecoverable. Snapshot them,
+      #   as of this slate, into nba_score.model_params_history (append-only, idempotent) BEFORE final_hp reads them.
+      - name: Snapshot the slate's model parameters (history)
+        if: ${{ steps.d.outputs.has_games == '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SNAP_DATE: ${{ steps.d.outputs.asof }}
+          SNAP_TABLES: "nba_score.blowout_model,nba_score.confidence_model,nba_score.confidence_verification,nba_score.ladder_calibration_asof|as_of_date='{d}'"
+        run: python nba/snapshot_model_params.py
+
       # 6b) FINAL_HP for the slate - AFTER both refits (it reads the calibration and the confidence model).
       - name: Build final_hp for the slate
         if: ${{ steps.d.outputs.has_games == '1' }}
