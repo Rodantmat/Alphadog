@@ -448,7 +448,7 @@ def main():
                 # were never cleared. Clear the slice so the store is exactly the board and only the board.
                 if write:
                     with conn.cursor() as cur:
-                        cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s"
+                        cur.execute("DELETE FROM nba_score.final_hp WHERE season=%s AND prop=%s" + _PS
                                     + (" AND game_date=%s" if FE_DATE else ""),
                                     (season, prop) + ((FE_DATE,) if FE_DATE else ()))
                         print(f"  {prop:<18} no board rung in scope - cleared {cur.rowcount:,} stale rows", flush=True)
