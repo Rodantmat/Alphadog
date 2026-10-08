@@ -1001,7 +1001,7 @@ def simulate_p5(conn, day):
         st = conn.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
         if not st or st[0] != 'red':
             continue
-        tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith(('C_', 'D_', 'R_', 'W_')) else 'nba_score.slip_engine_slips'
+        tbl = bt_table(conn, name)
         y0 = day.year if day.month >= 7 else day.year - 1
         season = f"{y0}-{(y0 + 1) % 100:02d}"
         g = conn.execute(f"""SELECT count(*), sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
