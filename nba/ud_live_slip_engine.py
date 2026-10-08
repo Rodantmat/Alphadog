@@ -131,7 +131,11 @@ def fresh_absences(conn, day):
     rows = conn.execute("""
       WITH rep AS (
         SELECT DISTINCT ON (player_name) player_name, team, status FROM nba_daily.injury_report_snapshots
-        WHERE game_date=%s AND snapshot_ts <= now() AND player_name IS NOT NULL ORDER BY player_name, snapshot_ts DESC),
+        -- snapshot_ts is ET WALL time stamped with a fixed -05:00 (scraper convention); compare it with the real clock
+        -- expressed the same way (ET wall re-labelled EST), never with now() directly (round-2 P3#9, 2026-10-08: in daylight
+        -- time now() was an hour early, hiding the latest hour of game-day reports from the half-stake rule)
+        WHERE game_date=%s AND snapshot_ts <= ((now() AT TIME ZONE 'America/New_York') AT TIME ZONE 'EST')
+          AND player_name IS NOT NULL ORDER BY player_name, snapshot_ts DESC),
       outp AS (
         SELECT nm.player_id, t.team_id FROM rep
         JOIN nba_ref.player_name_map nm ON nm.norm_name = nba_ref.norm_name(split_part(rep.player_name, ', ', 2) || ' ' || split_part(rep.player_name, ', ', 1))
