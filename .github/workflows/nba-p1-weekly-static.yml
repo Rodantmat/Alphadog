@@ -126,7 +126,7 @@ jobs:
       # --- weekly AS-OF tables: every value computed from games strictly before the snapshot date ----
       - name: Weekly as-of season tables (pt_defend, hustle, clutch, coaches, all_players)
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           SEASONS_N: ${{ github.event.inputs.seasons_n || '1' }}
           MODE: "season"
         run: python nba/scrape_nba_season_tables.py
