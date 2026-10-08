@@ -187,21 +187,22 @@ def main():
 
     def shift_for(prop, phase, band, side, gd):
         """the latest cell published at or before this game date - never a future one"""
-        arr = asof_cal.get((prop, phase, band, side))
-        if not arr and phase == "5_postseason":
-            # no postseason cell fitted yet for this (prop, band, side): fall back to the late-season push - the closest
-            # regular-season phase - rather than to no correction at all (strategy §31w principle 3)
-            arr = asof_cal.get((prop, "4_push", band, side))
-        if not arr:
-            return 0.0
-        lo, hi, out = 0, len(arr) - 1, 0.0
-        while lo <= hi:
-            mid = (lo + hi) // 2
-            if arr[mid][0] <= gd:
-                out = arr[mid][1]; lo = mid + 1
-            else:
-                hi = mid - 1
-        return out
+        def _latest(arr):
+            lo, hi, out = 0, len(arr) - 1, None
+            while lo <= hi:
+                mid = (lo + hi) // 2
+                if arr[mid][0] <= gd:
+                    out = arr[mid][1]; lo = mid + 1
+                else:
+                    hi = mid - 1
+            return out
+        out = _latest(asof_cal.get((prop, phase, band, side)) or [])
+        if out is None and phase == "5_postseason":
+            # no postseason cell PUBLISHED by this game date (none fitted yet, or only later ones - the first postseason nights
+            # always): fall back to the late-season push - the closest regular-season phase - rather than to no correction
+            # at all (strategy §31w principle 3). The score_board_legs rule is the same (4_push, then 5_postseason wins).
+            out = _latest(asof_cal.get((prop, "4_push", band, side)) or [])
+        return 0.0 if out is None else out
 
     tb = pd.read_sql("""SELECT kind, phase, band, n, gap FROM nba_score.tier_band_calibration""", conn)
     bandgap = {(r.kind, r.phase, r.band): (abs(float(r.gap)), int(r.n)) for r in tb.itertuples(index=False)}
