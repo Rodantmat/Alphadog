@@ -625,10 +625,10 @@ def main():
                     # the routed slice, same transaction (one set per day: the slice is replaced, never appended)
                     if FE_DATE:
                         cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation IN ('beyond_certified_depth', 'wn_neighbor') "
-                                    "AND season=%s AND prop=%s AND game_date=%s", (season, prop, FE_DATE))
+                                    "AND season=%s AND prop=%s AND game_date=%s" + _PS, (season, prop, FE_DATE))
                     else:
                         cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation IN ('beyond_certified_depth', 'wn_neighbor') "
-                                    "AND season=%s AND prop=%s", (season, prop))
+                                    "AND season=%s AND prop=%s" + _PS, (season, prop))
                     if deep_rows:
                         cur.executemany("""INSERT INTO nba_score.final_hp_derived
                             (season, game_date, game_id, player_id, prop, line, side, ladder_offset, anchor,
