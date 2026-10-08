@@ -52,7 +52,15 @@ def main():
         # gone rather than commented out. The two indexes that matter are created above and by the
         # confidence refit: baseline_history_uidx (uniqueness, 54.5M scans) and the wide lookup.
         prop_set = sorted({r["prop"] for r in rows})
-        cur.execute("DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)", (season, prop_set))
+        if meta.get("postseason"):
+            # POSTSEASON ARTIFACT (strategy §31w P-3): it carries only play-in/playoff game ids under the season label, so it
+            # replaces ONLY those - the season-wide delete below would have erased the certified regular-season history.
+            if any(not str(r["game_id"]).startswith(("004", "005")) for r in rows):
+                raise SystemExit("ABORT: a postseason artifact holds a non-postseason game id - refusing to load")
+            cur.execute("""DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)
+                           AND (game_id LIKE '004%%' OR game_id LIKE '005%%')""", (season, prop_set))
+        else:
+            cur.execute("DELETE FROM nba_score.baseline_history WHERE season = %s AND prop = ANY(%s)", (season, prop_set))
         # 🔑 LOAD BOARD-SCOPED (owner, 2026-09-25: "why rebuild everything just to clean it again?").
         # The recipe computes every rung regardless, but writing the full spectrum only to prune it
         # afterwards is waste: on 2026-09-24 that meant 19M rows written, 10.8M deleted, and a rewrite
