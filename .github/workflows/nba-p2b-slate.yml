@@ -174,7 +174,9 @@ jobs:
         run: python -u nba/refresh_player_name_map.py
 
       - name: Injury report (day-before filing)
+        id: soft_injury
         if: ${{ github.event.inputs.skip_mining != 'true' }}
+        continue-on-error: true   # the builder has a documented fallback (last committed report / P(plays) prior); visible in the soft list
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           INJURY_MODE: "daily"
