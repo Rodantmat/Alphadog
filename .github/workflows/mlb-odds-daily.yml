@@ -1,0 +1,40 @@
+name: MLB Odds API Daily (postseason keep-up)
+
+# Owner 2026-10-08: "be sure the system keeps mining the rest of the MLB playoffs". Every morning (02:30 PT) this pulls the
+# last three Pacific days at MLB's board times (09/13/17 PT) into market.mlb_odds_* with mlb/backfill_mlb_odds.py - the
+# same code and storage as the history backfill. Resumable (nothing is fetched twice); a day without games costs 1 credit
+# (the events list). If the paid key runs out, the calls fail, the run logs it and the history so far is untouched.
+# Retire this workflow after the World Series (or keep it for 2027 when MLB is rebuilt).
+on:
+  schedule:
+    - cron: '30 9 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-mlb-odds-daily
+  cancel-in-progress: false
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests
+      - name: Pull the last three days
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          export MLB_END=$(TZ=America/Los_Angeles date -d "yesterday" +%F)
+          export MLB_START=$(TZ=America/Los_Angeles date -d "3 days ago" +%F)
+          export MLB_CREDIT_FLOOR=5000
+          echo "pulling $MLB_START .. $MLB_END"
+          python -u mlb/backfill_mlb_odds.py
