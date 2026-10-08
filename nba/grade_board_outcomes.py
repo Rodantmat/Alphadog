@@ -151,6 +151,21 @@ def _read_json(name, timeout=300):
         return json.load(r)
 
 
+TEAM_HIST = {}   # norm_name -> sorted [(date, team)] from the logs, so a missing box-score row can be told apart:
+                 # his team played today (a scratch: dnp) vs his team has no box score today (postponed / partial pull:
+                 # game_not_found - COMPASS 60, round-2 P2A#15 2026-10-08). Settlement is the same (void); the record is not.
+
+
+def team_as_of(nm, d):
+    t = None
+    for dd_, tm in TEAM_HIST.get(nm, ()):
+        if dd_ <= d:
+            t = tm
+        else:
+            break
+    return t
+
+
 def load_logs(slug, pid_to_name):
     """Game logs are columnar-ish records keyed by PLAYER_ID (no name), MIN is a float.
     A season whose file does not exist yet (boards are archived from preseason, but the season file is first written by
