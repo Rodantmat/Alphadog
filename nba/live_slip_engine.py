@@ -1309,7 +1309,7 @@ def edge_reference(conn, rebuild=False):
     agg = defaultdict(lambda: [0, 0])
     for name in edge_daily_strategies():
         comp, size, structure, cap = STRATEGIES[name][:4]
-        tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith(('C_', 'D_', 'R_', 'W_')) else 'nba_score.slip_engine_slips'
+        tbl = bt_table(conn, name)
         for (lj,) in conn.execute(f"""SELECT legs_json FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
                                       AND phase<>'final7'""", (comp, size, structure, cap)).fetchall():
             for j in lj:
