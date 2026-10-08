@@ -60,6 +60,7 @@ def main():
         proxy_url = (os.environ.get("PROXY_URL") or "").strip()
     if not proxy_url:
         print("no proxy URL available (neither the DB credential nor the PROXY_URL secret)"); sys.exit(1)
+    os.environ["PROXY_URL"] = proxy_url          # so probe()'s error masking covers the DB value too
     host = proxy_url.split("@")[-1].rstrip("/")
     print(f"proxy host: {host}  (source: {src})")
     proxies = {"https": proxy_url, "http": proxy_url}
