@@ -189,7 +189,35 @@ def main():
                 "metadata": o0.get("metadata") or {}, "alt": False, "promo": True, "pick_stats": ln.get("pick_stats"),
             })
             promo_n += 1
+        # GAME DATES (2026-10-08, full-system certification round 2, P3#1). Sleeper lines carry only game_id, so the archiver
+        # dated every Sleeper leg by the CAPTURE day - and Sleeper posts several days at once (the 10-20 opener was on the
+        # board on 10-07). The public schedule endpoint maps game_id -> date (US game date) for the season's pre + regular
+        # phases: api.sleeper.app/schedule/<sport>/<pre|regular>/<year> (verified 2026-10-08: 2026 regular = 153 KB,
+        # 2026 pre = 22 KB). Each leg gets `game_date`; the file ships the `games` map; a schedule miss leaves game_date null
+        # (the archiver then falls back to the capture day and says so).
+        games = {}
+        if legs:
+            years = sorted({str(l.get("season") or "") for l in legs if l.get("season")}) or [str(datetime.now(timezone.utc).year)]
+            for yr in years:
+                for phase in ("pre", "regular", "post"):
+                    try:
+                        sched = fetch(s, f"https://api.sleeper.app/schedule/{sport}/{phase}/{yr}", proxies, tries=1).json()
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"{sport}: schedule {phase}/{yr} unavailable ({str(exc)[:80]})", file=sys.stderr)
+                        continue
+                    for g in sched if isinstance(sched, list) else []:
+                        gid = str(g.get("game_id") or "")
+                        if gid and g.get("date"):
+                            games[gid] = {"date": g.get("date"), "status": g.get("status"), "home": (g.get("home") or {}).get("team"),
+                                          "away": (g.get("away") or {}).get("team"), "phase": phase, "start_time": g.get("start_time")}
+            missing = 0
+            for l in legs:
+                g = games.get(str(l.get("game_id") or ""))
+                l["game_date"] = g["date"] if g else None
+                missing += 0 if g else 1
+            print(f"{sport}: schedule map {len(games)} games; legs without a game date: {missing}")
         meta = {"ok": True, "source": LINES_URL, "alt_source": ALT_URL, "promos_source": PROMOS_URL, "started_at": started, "fetched_at": fetched_at, "sport": sport,
+                "games_mapped": len(games), "legs_without_game_date": sum(1 for l in legs if not l.get("game_date")),
                 "legs": len(legs), "alt_legs": alt_n, "promo_legs": promo_n, "alt_fetch_ok": alt_by_sport.get(sport) is not None,
                 "promos_fetch_ok": promos is not None, "unknown_players": unknown,
                 "by_wager_type": dict(Counter(l["wager_type"] for l in legs).most_common(40)), "by_line_type": dict(Counter(l["line_type"] for l in legs)),
