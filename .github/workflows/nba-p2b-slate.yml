@@ -176,7 +176,7 @@ jobs:
       - name: Injury report (day-before filing)
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           INJURY_MODE: "daily"
         run: python nba/scrape_nba_injury_report.py
 
