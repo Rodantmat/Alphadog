@@ -25,7 +25,8 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg
 
-PT = timezone(timedelta(hours=-8))
+from zoneinfo import ZoneInfo
+PT = ZoneInfo("America/Los_Angeles")   # round 2, 2026-10-08: was a fixed UTC-8
 
 # (label, severity, sql, max_age_days, note)   sql returns ONE date/timestamp: the freshest thing stored.
 CHECKS = [
