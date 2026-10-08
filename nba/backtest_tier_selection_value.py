@@ -63,8 +63,8 @@ def main():
     hist = pd.concat(hist, ignore_index=True)
 
     tiers = pd.read_sql("""SELECT game_date, player, base_market, line, side, tier, kind
-                           FROM nba_market.board_tiers
-                           WHERE snapshot_label='window' AND base_market='player_points'""", conn)
+                           FROM nba_market.board_tiers_v2
+                           WHERE snapshot_label='window' AND bookmaker='prizepicks' AND base_market='player_points'""", conn)
     tiers["game_date"] = pd.to_datetime(tiers["game_date"]).dt.date
     tiers["line"] = tiers["line"].astype(float)
     tiers["player_id"] = tiers["player"].map(norm_name).map(pid_map)
