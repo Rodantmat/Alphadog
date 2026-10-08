@@ -24,13 +24,18 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg
 
-PT = timezone(timedelta(hours=-8))
+from zoneinfo import ZoneInfo
+PT = ZoneInfo("America/Los_Angeles")   # round-2 P2B#16 (2026-10-08): was a fixed UTC-8, an hour off Mar-Nov on a manual run
 
 
 def main():
     pipe = (os.environ.get("PIPE") or "p1").lower()
     strict = os.environ.get("CERT_STRICT", "1") == "1"
     today = os.environ.get("CERT_DATE") or datetime.now(PT).date().isoformat()
+    # a replay certifies a past slate: the "by THIS run" freshness windows below do not apply to it
+    live_day = today == datetime.now(PT).date().isoformat()
+    fresh = "AND fetched_at > now() - interval '3 hours'" if live_day else ""
+    fresh_built = "AND built_at > now() - interval '3 hours'" if live_day else ""
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = '120s'")
     fails, checks = [], 0
