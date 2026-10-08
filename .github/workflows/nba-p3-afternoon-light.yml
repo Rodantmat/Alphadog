@@ -189,8 +189,13 @@ jobs:
               print(f"::notice::Slate already scored ({scored} legs) - this later run is a no-op.")
               out.write("late=0\nhas_games=0\n"); raise SystemExit(0)
           if now > first_tip:
+              # ROUND-2 P3#5 (2026-10-08): "a late fallback pick is worse than no pick" (header) and §29z-d "P3 never
+              # after the first tip". The warning used to be the only effect - a forced run after tip re-scored the
+              # slate (overwriting the pre-tip decision snapshot) and wrote post-tip paper slips as 'placed'. Now a late
+              # run captures and archives the boards (research value) but scores NOTHING and picks NOTHING: late=1 turns
+              # the scoring, certify and pick steps off below. Both pick engines refuse a post-tip pick on their own too.
               print(f"::warning::LATE RUN - the first game tipped at {first_tip} UTC, before this run. "
-                    f"Legs for games already underway are stale; picks from them are post-tip.")
+                    f"Boards are captured and archived; scoring and picks are SKIPPED (post-tip picks are never placed).")
               out.write("late=1\n")
           else:
               out.write("late=0\n")
