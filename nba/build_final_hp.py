@@ -453,7 +453,7 @@ def main():
                                     (season, prop) + ((FE_DATE,) if FE_DATE else ()))
                         print(f"  {prop:<18} no board rung in scope - cleared {cur.rowcount:,} stale rows", flush=True)
                         cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation IN ('beyond_certified_depth', 'wn_neighbor') "
-                                    "AND season=%s AND prop=%s" + (" AND game_date=%s" if FE_DATE else ""),
+                                    "AND season=%s AND prop=%s" + _PS + (" AND game_date=%s" if FE_DATE else ""),
                                     (season, prop) + ((FE_DATE,) if FE_DATE else ()))
                     conn.commit()
                 continue
