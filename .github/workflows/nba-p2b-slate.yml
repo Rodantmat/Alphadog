@@ -387,15 +387,15 @@ jobs:
           # the merge must have PRODUCED the slate's ladder file; an UNCHANGED file is fine (a forced recovery after a
           # failure downstream of this commit rebuilds a byte-identical ladder - "one set per day" - and used to die here
           # with "nothing to commit"; certification round 2, 2026-10-08)
-          if [ ! -s "nba/data/nba_baseline_ladder_${{ steps.d.outputs.asof }}.json" ]; then
+          if [ ! -s "nba/data/nba_baseline_ladder_${{ steps.d.outputs.asof }}.json.gz" ]; then
             echo "ABORT: the merge produced no ladder file for ${{ steps.d.outputs.asof }}"; exit 1
           fi
-          git add nba/data/nba_baseline_ladder_*.json || true
+          git add nba/data/nba_baseline_ladder_*.json nba/data/nba_baseline_ladder_*.json.gz || true
           if git diff --cached --quiet; then
             echo "ladder for ${{ steps.d.outputs.asof }} is unchanged from the committed copy (rerun) - nothing to commit, continuing"
           fi
           git reset -q   # the helper stages, commits and pushes conflict-safely (2026-10-07)
-          bash nba/git_push_retry.sh "NBA P2B baseline ladder ${{ steps.d.outputs.asof }} [skip ci]" nba/data/nba_baseline_ladder_*.json
+          bash nba/git_push_retry.sh "NBA P2B baseline ladder ${{ steps.d.outputs.asof }} [skip ci]" nba/data/nba_baseline_ladder_*.json nba/data/nba_baseline_ladder_*.json.gz
 
       - name: Load baseline into Postgres
         if: ${{ steps.d.outputs.has_games == '1' }}
