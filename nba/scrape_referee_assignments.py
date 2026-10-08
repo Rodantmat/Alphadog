@@ -28,8 +28,8 @@ UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.3
 
 
 def pacific_today():
-    now = datetime.now(timezone.utc)
-    return (now - timedelta(hours=7 if 3 < now.month < 11 else 8)).date()
+    from zoneinfo import ZoneInfo   # real DST rule (round 2 P2B#16, 2026-10-08: the month test was wrong around the Mar/Nov switches)
+    return datetime.now(ZoneInfo("America/Los_Angeles")).date()
 
 
 def fetch_assignments(d, proxies):
