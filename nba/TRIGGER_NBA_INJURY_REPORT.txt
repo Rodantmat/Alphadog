@@ -1,7 +1,7 @@
 Trigger for nba-injury-report.yml
 mode: backfill
-from: 2025-04-14
-to: 2025-06-23
-slug: 2024_25
-last_triggered_utc: 2026-10-08T21:00:00Z
-trigger_reason: strategy §31w P-1 - 2024-25 postseason injury reports (play-in Apr 15 -> Finals Jun 22); 2025-26 postseason next
+from: 2026-04-14
+to: 2026-06-14
+slug: 2025_26
+last_triggered_utc: 2026-10-08T21:39:00Z
+trigger_reason: strategy §31w P-1 - 2025-26 postseason injury reports (play-in Apr 14 -> Finals Jun 13); 2024-25 postseason completed 21:38Z (71/71 days)
