@@ -631,6 +631,12 @@ asserted from the audit alone. Items the audits marked INFO are included when th
   local rebuild: 3 games, 93 virtual rows, 83 players, 2,901 points/rebounds rungs, `current_season 2026-27`. Re-dispatched.
 - P1 certify after the predicate fix: probe 37750173504 → **2/2, "Pipeline certified"** (the 10-08 forced P1 had landed every
   scrape and load and failed only there). First P5 on the market-free twin dispatched (37750390757).
+- **Sim-slate 37751807219 🔴→🟢 (second opening-night defect, found only once the first was fixed):** the baseline built
+  (93 virtual rows) but the **periods builder crashed** — the period recipe keeps a player-game only once his
+  season-partitioned `rate36` exists (ewm, min_periods 3), so on an opening slate the test set is empty and
+  `pd.concat([])` raised "No objects to concatenate". P2B's components step runs it under `set -e`: **10-20 would have
+  died there.** The April-based rehearsal (E-4) never saw it because the real 2025-26 rows filled the test set. Fix: an
+  empty period ladder is written and the builder exits 0 (no certified cell uses period props) (843974f). Re-dispatched.
 
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
