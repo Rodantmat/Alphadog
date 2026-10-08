@@ -170,7 +170,8 @@ def main():
     # dates (the two backfilled seasons) never had a file and keep the documented board-scoped rule. PRUNE_SKIP_FILE_CHECK=1
     # overrides, deliberately.
     from pathlib import Path as _P
-    _live_floor = dt.date(2026, 7, 1)
+    from datetime import date as _date
+    _live_floor = _date(2026, 7, 1)
     if os.environ.get("PRUNE_SKIP_FILE_CHECK") != "1":
         held = []
         for d in dates:
