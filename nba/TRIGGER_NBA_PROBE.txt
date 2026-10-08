@@ -1,1 +1,1 @@
-script: probe_proxy_health.py
+script: probe_sleeper_schedule.py
