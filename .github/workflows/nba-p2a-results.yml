@@ -192,6 +192,8 @@ jobs:
       - name: Grade last night's board outcomes
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # replay (asof given): the 7-day window ends at the resolved slate, not the runner's today (round 2, P2A#7)
+          GRADE_END: ${{ github.event.inputs.asof && steps.d.outputs.asof || '' }}
         run: python nba/grade_board_outcomes.py
 
       # 3a) RETENTION (owner rule 2026-09-24): prune yesterday's baseline to the board, keys refreshed first.
