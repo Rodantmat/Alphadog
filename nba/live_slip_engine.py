@@ -724,7 +724,7 @@ def outcomes_boxscore(conn, day, slip_rows):
 
 def grade(conn, day):
     ensure_tables(conn)
-    rows = conn.execute("SELECT strategy, k, legs_json, size, structure, status FROM nba_score.live_slips WHERE game_date=%s AND status IN ('placed','placed_week2','placed_week2_skip','placed_shadow','placed_week1_skip','placed_capped','placed_late')", (day,)).fetchall()
+    rows = conn.execute("SELECT strategy, k, legs_json, size, structure, status FROM nba_score.live_slips WHERE game_date=%s AND status IN ('placed','placed_week2','placed_week2_skip','placed_shadow','placed_week1_skip','placed_capped','placed_late','placed_post','placed_post_shadow')", (day,)).fetchall()
     if not rows:
         print(f"  {day}: nothing placed to grade", flush=True)
     outcomes = {}
