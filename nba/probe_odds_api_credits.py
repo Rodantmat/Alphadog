@@ -4,7 +4,7 @@ historical closing-odds still answers for a 2025 playoff date on the current tie
 import os
 
 import psycopg
-import requests
+from curl_cffi import requests   # the probe image ships curl_cffi, not requests
 
 conn = psycopg.connect(os.environ["DATABASE_URL"])
 keys = dict(conn.execute("SELECT credential_key, credential_value_encrypted FROM nba_config.external_credentials "
