@@ -424,6 +424,8 @@ def main():
                                              WHERE k.game_date = h.game_date AND k.player_id = h.player_id
                                                AND k.prop = h.prop AND k.period = %s AND k.line = h.line)""",
                             conn, params=(prop, _per, season, _base, _per, FE_DATE, FE_DATE, _per))
+            if FE_POSTSEASON and len(h):
+                h = h[h["game_id"].astype(str).str[:3].isin(["004", "005"])].copy()
             # INVARIANT (2026-09-26, answers the sweep's T26-11/A0): every row this build writes carries
             # prop = the LABEL (`points_q1` for a Q1 rung, `points` only for a FULL rung), so the upsert
             # key (game_date, player_id, prop, line, side) can never collide across periods - a Q1 5.5
