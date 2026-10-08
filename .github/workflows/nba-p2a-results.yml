@@ -279,6 +279,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           UDL_MODE: "grade"
+          UDL_DATE: ${{ github.event.inputs.asof && steps.d.outputs.yday || '' }}
         run: python -u nba/ud_live_slip_engine.py
 
       # UNDERDOG EDGE MONITOR (§31o): is the staked P5 portfolio still above break-even? Decisions only at 30 / 60 / 90 / 120
