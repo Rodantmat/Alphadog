@@ -77,10 +77,11 @@ def main():
 
     # SEASON GATE. Out of season none of this is due; judging it would train everyone to ignore red builds.
     with conn.cursor() as cur:
-        cur.execute("""SELECT count(*) FROM nba_calendar.games
+        # regular-season games only (round 2 P2A#16, 2026-10-08): preseason dates counted as "in season" here
+        cur.execute("""SELECT count(*) FROM nba_calendar.regular_season_games
                        WHERE game_date BETWEEN %s::date - 7 AND %s::date""", (today, today))
         recent_games = int(cur.fetchone()[0] or 0)
-        cur.execute("SELECT count(*) FROM nba_calendar.games WHERE game_date = %s", (today,))
+        cur.execute("SELECT count(*) FROM nba_calendar.regular_season_games WHERE game_date = %s", (today,))
         games_today = int(cur.fetchone()[0] or 0)
     in_season = recent_games > 0
     print(f"FACTOR FRESHNESS  (date {today} PT)  games today: {games_today}  games in last 7d: {recent_games}"
