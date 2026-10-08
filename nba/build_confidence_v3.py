@@ -108,7 +108,12 @@ def main():
         import sys
         sys.path.insert(0, "nba")
         from nba_season import stats_seasons
-        seasons = stats_seasons(2)
+        # THREE seasons, not two (2026-10-08, full-system certification round 2): with stats_seasons(2) the fit population
+        # stepped at the rollover - 10-20: 2025-26 + 2024-25 (2.2M graded legs); 10-21: 2026-27 + 2025-26, i.e. one night of
+        # new legs REPLACING the whole 2024-25 season, and the deductions feed `score` for every leg. With three, the two
+        # certified seasons stay in the fit all season and the live season accumulates on top (2023-24 has no board rows,
+        # so before the rollover the third season adds nothing).
+        seasons = stats_seasons(3)
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
 
