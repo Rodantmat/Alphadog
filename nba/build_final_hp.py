@@ -459,6 +459,9 @@ def main():
                 continue
             h["game_date"] = pd.to_datetime(h["game_date"]).dt.date
             h["phase"] = h["game_date"].map(phase_of)
+            # POSTSEASON PHASE (strategy §31w P-4): a play-in / playoff game is its own calibration phase, decided by the game
+            # id (April holds both regular-season and play-in nights), never the date's regular-season phase
+            h["phase"] = np.where(h["game_id"].astype(str).str[:3].isin(["004", "005"]), "5_postseason", h["phase"])
 
             # BOTH DIRECTIONS - every rung is offered Over and Under, so both get a final number
             over = h.assign(side="Over", baseline_hp=h["p_more"].astype(float))
