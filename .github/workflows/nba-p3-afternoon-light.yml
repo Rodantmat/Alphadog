@@ -215,7 +215,9 @@ jobs:
           fi
 
       - name: Day-of injury report
+        id: soft_injury
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true   # the availability delta has a documented fallback; an unreachable archive leaves the last report in place (round 2)
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           INJURY_MODE: "daily"        # verified name; IR_MODE does not exist
