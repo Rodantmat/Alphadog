@@ -87,7 +87,7 @@ def phase_of(dt):
 
 def graded(season, conn, pid_map, props):
     """Every leg with a final HP and a realised outcome, in date order."""
-    f = pd.read_sql("""SELECT game_date, player_id, prop, line, side, baseline_hp
+    f = pd.read_sql("""SELECT game_date, player_id, prop, line, side, baseline_hp, game_id
                        FROM nba_score.final_hp WHERE season=%s AND prop = ANY(%s)""",
                     conn, params=(season, props))
     if f.empty:
