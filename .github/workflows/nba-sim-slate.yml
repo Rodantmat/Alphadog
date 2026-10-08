@@ -63,6 +63,7 @@ jobs:
           BT_REPLAY: "0"
         run: |
           set -euo pipefail
+          python nba/ensure_season_files.py   # new-season labelling for an opener (certification round 2, P2B#3)
           for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
             echo "=== baseline pair: $PAIR"; BT_PROPS="$PAIR" python nba/baseline/build_baseline_ladder.py
           done
