@@ -1,1 +1,1 @@
-script: probe_odds_api_mlb_cost.py
+script: probe_repair_board_gaps.py
