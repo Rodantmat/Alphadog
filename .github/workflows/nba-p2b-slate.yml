@@ -431,6 +431,8 @@ jobs:
           [ "${{ steps.soft_rosters_apply.outcome }}" = "failure" ] && L="$L roster-apply"
           [ "${{ steps.soft_namemap.outcome }}" = "failure" ] && L="$L player-name-map"
           [ "${{ steps.soft_morning_board.outcome }}" = "failure" ] && L="$L morning-board-snapshot"
+          [ "${{ steps.soft_line.outcome }}" = "failure" ] && L="$L morning-game-line"
+          [ "${{ steps.soft_blowout.outcome }}" = "failure" ] && L="$L blowout-refit"
           [ "${{ steps.soft_wn.outcome }}" = "failure" ] && L="$L whole-number-pricing"
           L="${L# }"
           echo "list=$L" >> "$GITHUB_OUTPUT"
