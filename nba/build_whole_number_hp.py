@@ -88,9 +88,10 @@ def build_day(conn, cfg, d, write):
     rows = conn.execute(SQL, {"d": d}).fetchall()
     out = []
     now = dt.datetime.now(dt.timezone.utc)
-    for (pid, prop, line, season, gid, anchor, of, uf, ob, ub, oc, uc, octr, uctr, oex, uex, oq, uq, om, um, oband, uband, onu, unu, ptier, phase) in rows:
+    for (pid, prop, line, season, gid, anchor, of, uf, ob, ub, oc, uc, octr, uctr, oex, uex, oq, uq, om, um, oband, uband, onu, unu, ptier, phase, from_nb) in rows:
         if of + uf <= 0:
             continue
+        deriv = "whole_number_nb" if from_nb else "whole_number"
         low = 0 if (oc if oc is not None else 1.0) <= (uc if uc is not None else 1.0) else 1      # lower-confidence rung
         conf = (oc, uc)[low]; ctier = (octr, uctr)[low]; cex = (oex, uex)[low]; cq = (oq, uq)[low]; cm = (om, um)[low]
         band = (oband, uband)[low]; nunc = (onu, unu)[low]
