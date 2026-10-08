@@ -229,6 +229,7 @@ def load_logs(slug, pid_to_name):
         except Exception as exc:  # noqa: BLE001 - visible, and the period legs grade as no_stat
             print(f"  quarter {qq} logs unavailable for {slug} ({str(exc)[:60]}) - period legs will be no_stat", flush=True)
             qd = []
+        qd = list(qd) + _optional_records(f"nba_player_game_log_q{qq}_postseason_{slug}.json")
         q[qq] = {(str(x.get("GAME_DATE") or "")[:10], pid_to_name.get(str(x.get("PLAYER_ID")))): x for x in qd}
     for d, day in by_date.items():
         for nm, rec in day.items():
