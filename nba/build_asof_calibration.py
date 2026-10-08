@@ -110,7 +110,14 @@ def graded(season, conn, pid_map, props):
     # ONE OUTCOME PER LEG (round-2 P2B#18, 2026-10-08): board_outcomes is unique per market_key INCLUDING the _alternate
     # suffix, so a leg present under both keys (same date/player/prop/line/side, same box-score truth) merged twice and
     # inflated n for its cell. The outcome is a property of the box score, not of the key.
-    o = o.drop_duplicates(subset=["game_date", "player_id", "prop", "line", "side"])
+    # Effect on the fit: the cell MEAN is unchanged (same truth), n falls ~19% where both keys exist (measured Jan 2026:
+    # 703,306 outcome rows = 567,380 distinct legs), so the shrink w = n/(n+K) with K=400 drops ~2% at the median cell
+    # (n 2,500) and ~6% at the 10th percentile (n 750): shifts a little smaller, i.e. more conservative than the certified
+    # history's cells. AC_DEDUP=0 restores the old behaviour for a like-for-like replay.
+    if os.environ.get("AC_DEDUP", "1") != "0":
+        _n0 = len(o)
+        o = o.drop_duplicates(subset=["game_date", "player_id", "prop", "line", "side"])
+        print(f"  outcomes: {_n0:,} rows -> {len(o):,} distinct legs (standard/alternate duplicates removed)", flush=True)
     d = f.merge(o[["game_date", "player_id", "prop", "line", "side", "leg_result"]],
                 on=["game_date", "player_id", "prop", "line", "side"], how="inner")
     if d.empty:
