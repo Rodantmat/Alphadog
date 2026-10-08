@@ -130,7 +130,7 @@ def main():
             # Games but no board keys -> the archive is missing for a real slate; refuse and fail loud.
             games = 0
             if one_date:
-                cur.execute("SELECT count(*) FROM nba_calendar.regular_season_games WHERE game_date = %s", (one_date,))
+                cur.execute("SELECT count(*) FROM nba_calendar.slate_games WHERE game_date = %s", (one_date,))   # §31w P-6
                 games = cur.fetchone()[0]
             if games == 0:
                 print(f"No games on {label} - nothing to prune.", flush=True)
