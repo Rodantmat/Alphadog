@@ -68,9 +68,11 @@ def active_stats_season(today=None):
         try:
             import json
             from pathlib import Path
-            games = json.loads(Path("nba/data/nba_schedule_current.json").read_text()).get("games", [])
-            first = min((g["game_date"][:10] for g in games
-                         if g.get("season") == season and str(g.get("game_id") or "").startswith("002")), default=None)
+            if season not in _FIRST_GAME_CACHE:   # the 1.3 MB schedule file is read once per process, not per call
+                games = json.loads(Path("nba/data/nba_schedule_current.json").read_text()).get("games", [])
+                _FIRST_GAME_CACHE[season] = min((g["game_date"][:10] for g in games
+                                                 if g.get("season") == season and str(g.get("game_id") or "").startswith("002")), default=None)
+            first = _FIRST_GAME_CACHE[season]
             # <= not <: on opening MORNING no game of the new season has been played yet (P2 runs at
             # 08:45 PT), so the season with real data is still the prior one until the day after.
             if first and today.isoformat() <= first:
