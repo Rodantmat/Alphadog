@@ -199,7 +199,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          export PRUNE_DATE="$(TZ=America/Los_Angeles date -d yesterday +%F)"
+          export PRUNE_DATE="${{ steps.d.outputs.yday }}"
           python - <<'EOF'
           import os, psycopg
           d = os.environ["PRUNE_DATE"]
