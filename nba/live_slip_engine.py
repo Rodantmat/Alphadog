@@ -991,6 +991,21 @@ def evaluate_hurdles(conn, day, pool_sizes=None):
         print(f"  {name:<20} {state:<7} cap {live_cap} | days {days} slips {slips} net {net:+.1f} ROI {roi:+.0%} CI_lo {(ci_lo if ci_lo is not None else float('nan')):+.0%} "
               f"| leg {(leg_hit if leg_hit else 0):.3f}/{cert_hit} dd {dd:.1f}/{worst_dd} streak {streak}/{longest} | {h}", flush=True)
     conn.commit()
+    record_state_history(conn, day)
+
+
+def record_state_history(conn, day):
+    """Retention audit 2026-10-08: the daily grade updated live_strategy_state IN PLACE and only replay() wrote
+    live_state_history, so a season's state/hurdle transitions could not be reconstructed from the live ledger. Every
+    grade now records the post-grade state of every strategy under the graded day (idempotent per (day, strategy))."""
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.live_state_history (game_date date, strategy text, state text, live_cap int, days int,
+                    slips int, net double precision, roi double precision, ci_lo double precision, leg_hit double precision, drawdown double precision,
+                    streak int, hurdles jsonb, PRIMARY KEY (game_date, strategy))""")
+    conn.execute("""INSERT INTO nba_score.live_state_history (game_date, strategy, state, live_cap, days, slips, net, roi, ci_lo, leg_hit, drawdown, streak, hurdles)
+                    SELECT %s, strategy, state, live_cap, days, slips, net, roi, ci_lo, leg_hit, drawdown, streak, hurdles FROM nba_score.live_strategy_state
+                    ON CONFLICT (game_date, strategy) DO UPDATE SET state=EXCLUDED.state, live_cap=EXCLUDED.live_cap, days=EXCLUDED.days, slips=EXCLUDED.slips,
+                    net=EXCLUDED.net, roi=EXCLUDED.roi, ci_lo=EXCLUDED.ci_lo, leg_hit=EXCLUDED.leg_hit, drawdown=EXCLUDED.drawdown, streak=EXCLUDED.streak, hurdles=EXCLUDED.hurdles""", (day,))
+    conn.commit()
 
 
 def simulate_p5(conn, day):
