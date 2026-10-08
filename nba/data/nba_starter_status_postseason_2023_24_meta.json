@@ -1,0 +1,14 @@
+{
+  "fetched_at": "2026-10-08T20:53:29Z",
+  "season": "2023-24",
+  "method": "delta",
+  "row_count": 2430,
+  "games_covered": 88,
+  "last_delta": {
+    "attempted": 88,
+    "recovered_games": 88,
+    "errors": [],
+    "newly_empty": []
+  },
+  "known_empty_games": []
+}

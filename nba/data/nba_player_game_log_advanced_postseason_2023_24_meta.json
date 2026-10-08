@@ -1,12 +1,12 @@
 {
-  "fetched_at": "2026-10-08T20:57:55Z",
-  "season": "2024-25",
+  "fetched_at": "2026-10-08T20:52:27Z",
+  "season": "2023-24",
   "season_types": [
     "PlayIn",
     "Playoffs"
   ],
-  "record_count": 1934,
-  "games": 90,
+  "record_count": 1805,
+  "games": 88,
   "real_headers_seen": [
     "SEASON_YEAR",
     "PLAYER_ID",
