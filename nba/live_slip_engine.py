@@ -1021,6 +1021,11 @@ def calibrate(conn):
                              WHERE s.composition=%s AND s.size=%s AND s.structure=%s AND s.k<=%s AND s.phase<>'final7' GROUP BY s.game_date""",
                           (comp, size, structure, cap)).fetchall()
         daily_hits = [float(r[1]) for r in dh]
+        if not days or not daily_hits:
+            # round-2 P2A#10 (2026-10-08): the empty-data guard sat below the mean/bootstrap arithmetic, so a strategy with
+            # no backtest slips in its table raised ZeroDivisionError and aborted the whole calibration
+            print(f"  {name:<20} NO BACKTEST SLIPS in {tbl} for {comp} {size}-{structure} k<={cap} - not calibrated", flush=True)
+            continue
         mean_h = sum(daily_hits) / len(daily_hits)
         sd_daily = (sum((x - mean_h) ** 2 for x in daily_hits) / len(daily_hits)) ** 0.5
         def maxdd(seq):
