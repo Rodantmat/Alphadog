@@ -1,1 +1,1 @@
-script: certify_pipeline.py
+script: probe_odds_api_credits.py
