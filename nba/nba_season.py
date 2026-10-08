@@ -29,6 +29,9 @@ def current_season(today=None):
     return f"{start_year}-{str(start_year + 1)[2:]}"
 
 
+_FIRST_GAME_CACHE = {}
+
+
 def active_stats_season(today=None):
     """The season that actually HAS game data right now - distinct from current_season().
 
