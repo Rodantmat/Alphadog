@@ -130,6 +130,15 @@ jobs:
           SV_TABLE_SUFFIX="_mf" python -u nba/validate_slip_strategies.py
           SV_TABLE_SUFFIX="_mf_nosteals" python -u nba/validate_slip_strategies.py
 
+      # 5d. VERDICT HISTORY (retention audit 2026-10-08): the validator and certifier tables are whole-table replaces - last
+      #     week's inputs to the step-6 verdicts were gone. Snapshot them under this run's date (append-only, idempotent).
+      - name: 5d. Snapshot the week's validator and certifier tables (history)
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SNAP_TABLES: "nba_score.slip_validation,nba_score.slip_validation_nosteals,nba_score.slip_validation_mf,nba_score.slip_validation_mf_nosteals,nba_score.cand_certified,nba_score.tier_map_summary"
+        run: python nba/snapshot_model_params.py
+
       - name: 6. Verdicts -> live strategy state (fail = red/cap 0, flagged; never auto-replaced)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
