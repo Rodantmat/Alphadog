@@ -74,10 +74,8 @@ def main():
     tot = {"dates": 0, "snapshots": 0, "rows": 0, "skipped": 0, "errors": 0, "credits": 0}
     remaining = None
     while d <= end:
-        # skip the off-season gap between the two seasons
-        if date(2025, 4, 14) <= d <= date(2025, 10, 20):
-            d += timedelta(days=1)
-            continue
+        # (2026-10-08, playoff backfill) the hardcoded 2025-04-14..2025-10-20 skip excluded the 2025 play-in and playoffs;
+        # a date with no board rows costs nothing (skipped below), so no calendar skip is needed
         off = pt_offset(d)
         # first tip on the date (from the board table - already keyed by Pacific game date)
         with conn.cursor() as cur:
