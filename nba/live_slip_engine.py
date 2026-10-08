@@ -687,6 +687,105 @@ def pick(conn, day, require_fresh=True):
     print(f"  {day}: {n} paper slips placed across {len(STRATEGIES)} strategies ({len(legs)//3} board legs)", flush=True)
 
 
+def pick_postseason(conn, day, legs):
+    """§31w P-6 (2026-10-08): a play-in / playoff slate. Same board, same live scores (phase 5_postseason in final_hp), same pool code
+    (ENG.eligible_legs, the pass-45 leg filter, the regular-season correlation map, ENG.build_day_slips) - with the postseason's
+    OWN certification deciding what may stake, weighed against the regular season (nba/certify_candidates_postseason.py,
+    nba/certify_postseason_strategies.py, workflow nba-postseason-certify.yml):
+      * board floor   classification_config['postseason_board_floor'] (the smallest validated POSTSEASON board, §31j's rule in
+                      the postseason domain); no floor on record -> nothing placed (no certification -> no play)
+      * cells         only cells eligible in nba_score.cell_postseason_eligibility (postseason p.m shrunk toward the certified
+                      regular-season p.m) enter the pool
+      * strategies    stake only with verdict PASS in nba_score.postseason_strategy_verdict AND not a sticky regular-season red;
+                      everything else builds SHADOW slips (graded, never staked) - the postseason record keeps growing either way
+      * size          cap 1 for every strategy (1-4 game slates: the small-slate rule, 29n), the daily ceiling still applies
+      * calendar      none of the regular-season calendar rules (week 1/2, All-Star, late March, final 7) - they are about the
+                      regular-season calendar; the postseason is its own phase
+    Slips are recorded as 'placed_post' / 'placed_post_shadow' (-> 'graded_post' / 'graded_post_shadow'), OUTSIDE the
+    regular-season ledger: the hurdles, the paper gate and P5 never see them."""
+    def _cfg(key):
+        r = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key=%s", (key,)).fetchone()
+        return (r[0] if isinstance(r[0], dict) else json.loads(r[0])) if r else None
+    floor_cfg = _cfg('postseason_board_floor')
+    n_board = len({(l['player_id'], l['prop'], l['tier'], l['side'], l['line']) for l in legs if not l.get('whole_number')})
+    if not floor_cfg:
+        print(f"  {day}: POSTSEASON slate - no validated postseason board floor on record (nba-postseason-certify.yml has not run): "
+              f"NOTHING PLACED", flush=True)
+        return
+    if n_board < int(floor_cfg.get('min_board_legs', 0)):
+        print(f"  {day}: POSTSEASON slate - board of {n_board} scored legs is below the smallest validated postseason board "
+              f"({floor_cfg.get('min_board_legs')}) - out of domain, NOTHING PLACED", flush=True)
+        return
+    try:
+        elig = {r[0] for r in conn.execute("SELECT cell FROM nba_score.cell_postseason_eligibility WHERE eligible").fetchall()}
+        verdict = {r[0]: r[1] for r in conn.execute("SELECT strategy, verdict FROM nba_score.postseason_strategy_verdict").fetchall()}
+    except psycopg.errors.UndefinedTable:
+        conn.rollback()
+        elig, verdict = set(), {}
+    print(f"  {day}: POSTSEASON slate - board {n_board} legs (floor {floor_cfg.get('min_board_legs')}) | eligible cells "
+          f"{sorted(elig) or 'none'} | PASS strategies {sorted(k for k, v in verdict.items() if v == 'PASS') or 'none'}", flush=True)
+    cmap = ENG.load_corr(conn)
+    attach_pf20(conn, day, legs, post=True)
+    pool = ENG.eligible_legs(legs)
+    pool = {c: v for c, v in pool.items() if c in elig}
+    t10 = trailing10(conn, day, {l['player_id'] for v in pool.values() for l in v if l['prop'] == 'steals' and l.get('player_id')}, post=True)
+    pool = {c: [l for l in v if leg_allowed(l, t10)] for c, v in pool.items()}
+    _fam_depth = defaultdict(set)
+    for _c, _legs in pool.items():
+        for _l in _legs:
+            _fam_depth[_c.replace('_U', '')].add(_l['player'])
+    broad_day = sum(1 for _v in _fam_depth.values() if len(_v) >= 2) >= 5
+    pools = {'': pool}
+    for fam, excl in EXCLUDE_BY_FAMILY.items():
+        pools[fam] = {c: v for c, v in pool.items() if c not in excl}
+    states = {r[0]: (r[1], r[2], r[3]) for r in conn.execute("SELECT strategy, state, live_cap, hurdles FROM nba_score.live_strategy_state").fetchall()}
+    n = 0
+    placed_sigs = set()
+    for name, (comp, size, structure, cap, *_rest) in STRATEGIES.items():
+        if name in ALLSTAR_ONLY:
+            continue
+        st_row = states.get(name, ('paper', cap, {}))
+        hz = st_row[2] if isinstance(st_row[2], dict) else {}
+        sticky_red = st_row[0] == 'red' or hz.get('RED_STICKY') == '1'
+        shadow = cap == 0 or sticky_red or verdict.get(name) != 'PASS' or (name in ROTATION_ONLY)
+        fam_pool = pools.get(name[0], pool)
+        side_only = SIDE_FILTER_BY_STRATEGY.get(name)
+        if side_only:
+            fam_pool = {c: [l for l in v if l['side'] == side_only] for c, v in fam_pool.items()}
+        cap_rule = MAX_LINE_BY_STRATEGY.get(name)
+        if cap_rule:
+            cp, cs, cl = cap_rule
+            fam_pool = {c: [l for l in v if not (l['prop'] == cp and l['side'] == cs and float(l['line']) > cl)] for c, v in fam_pool.items()}
+        slips = ENG.build_day_slips(fam_pool, comp, size, structure, 1, cmap, broad_day)
+        pool_n = len({l['player'] for l in ENG.candidates_for(comp, fam_pool)})
+        conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
+                     (day, name, pool_n))
+        for k, slip in enumerate(slips, start=1):
+            st = 'placed_post_shadow' if shadow else 'placed_post'
+            sig = (structure, tuple(sorted((l['player'], l['prop'], l['side'], float(l['line'])) for l in slip)))
+            if st == 'placed_post':
+                if sig in placed_sigs:
+                    st = 'placed_post_shadow'      # an identical slip already staked today by an earlier strategy
+                else:
+                    staked = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s AND status='placed_post'", (day,)).fetchone()[0]
+                    if staked >= MAX_DAILY_STAKE:
+                        st = 'placed_post_shadow'  # the aggregate daily ceiling (pass 43)
+                    else:
+                        placed_sigs.add(sig)
+            conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                         (day, name, k, json.dumps([{'cell': l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': l['tier'],
+                                                     'side': l['side'], 'line': float(l['line']), 'factor': l['factor'], 'pf20': l.get('pf20')} for l in slip]),
+                          size, structure, st, star_under_weight(slip)))
+            n += 1
+        print(f"    {name:<20} {'SHADOW' if shadow else 'STAKE '} pool {pool_n:>3} | {len(slips)} slip(s)"
+              + ("" if not shadow else f" ({'retired' if cap == 0 else 'sticky red' if sticky_red else 'rotation-only' if name in ROTATION_ONLY else 'postseason verdict ' + str(verdict.get(name, 'none'))})"),
+              flush=True)
+    conn.commit()
+    staked = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s AND status='placed_post'", (day,)).fetchone()[0]
+    print(f"  {day}: POSTSEASON - {n} slips recorded ({staked} staked)", flush=True)
+
+
 # ------------------------------------------------------------------ GRADE
 GRADE_SOURCE = os.environ.get('LS_GRADE_SOURCE', 'boxscore').lower()   # boxscore (default) | universe (backtest table, parity tests)
 _STAT = {'points': lambda s: s[0], 'rebounds': lambda s: s[1], 'assists': lambda s: s[2], 'threes_made': lambda s: s[3],
