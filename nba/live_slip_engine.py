@@ -197,8 +197,8 @@ BOARD_SQL = """
         -- picked nothing. The parity slates came from the Odds API archive, which does name teams. Fallback = the schedule, the
         -- authority: the teams playing today, from nba_calendar.games.
         playing AS MATERIALIZED (
-          SELECT home_team_id t FROM nba_calendar.games WHERE game_date = %s
-          UNION SELECT away_team_id FROM nba_calendar.games WHERE game_date = %s)
+          SELECT home_team_id t FROM nba_calendar.regular_season_games WHERE game_date = %s
+          UNION SELECT away_team_id FROM nba_calendar.regular_season_games WHERE game_date = %s)
         SELECT pid.player_id, pr.player, pr.prop, pr.side, pr.line, pr.price, pr.kind, pr.tier3,
                {price_cols},
                CASE WHEN evt.home_id IS NOT NULL OR evt.away_id IS NOT NULL THEN
