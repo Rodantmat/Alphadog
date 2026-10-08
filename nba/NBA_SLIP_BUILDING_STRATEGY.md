@@ -2489,11 +2489,13 @@ rotations (starters' minutes up, deep bench out), slower pace and lower totals, 
 elimination, home/away alternation). Boards are thinner (≈ 1.6–2.6 k PrizePicks legs a night vs 4–8 k). Sample is small: two
 seasons ≈ 181 games / ≈ 110 slate days. The certified system was built and validated on regular-season nights only.
 **The principles (conservative, nothing certified is disturbed):**
-1. **Separate data, same tables.** Postseason game logs (base, advanced, measure types, quarters), starter status, officials,
-   matchups, injury reports are mined into their own files (`*_postseason_<slug>.json`) for 2023-24 (prior context), 2024-25 and
-   2025-26, and loaded into the same Postgres tables (game ids never collide). Every regular-season consumer that aggregates
-   "the season" gets an explicit `002` filter first (daily-delta completeness and DvP, the live engines' season block), so
-   regular-season numbers stay bit-identical.
+1. **Separate data, separate tables.** Postseason game logs (base, advanced, measure types, quarters), starter status,
+   officials, matchups, injury reports are mined into their own files (`*_postseason_<slug>.json`) for 2023-24 (prior
+   context), 2024-25 and 2025-26 (`nba/scrape_nba_postseason.py`, `nba-postseason-mine.yml`) and loaded into **twin tables**
+   `<table>_postseason` (`nba/load_postseason_logs.py`). Decided after a full consumer sweep: loading them into the
+   regular-season tables would have silently changed certified numbers (the `player_pf20` foul view, daily-delta DvP and
+   completeness, the live engine's season block → final-7 / week rules, research backsims, `prop_universe` phases).
+   Postseason-aware consumers union the twin explicitly; nothing regular-season reads it.
 2. **Walk-forward, postseason-aware history.** For a postseason slate the baseline sees the regular season PLUS the postseason
    games played before that night; regular-season slates (both past seasons and 2026-27) keep exactly the certified inputs.
 3. **Its own calibration phase.** `5_postseason` in every phase function (as-of calibration, final_hp, score_board_legs,
