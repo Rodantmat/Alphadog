@@ -285,6 +285,13 @@ jobs:
           tail -n 10 /tmp/pp_morning.log
           if timeout --signal=TERM --kill-after=30s 300 python nba/scrape_underdog_board.py > /tmp/ud_morning.log 2>&1; then ok="$ok,underdog"; else echo "=== Underdog morning pull failed/timed out"; fi
           tail -n 10 /tmp/ud_morning.log
+          # SLEEPER + FLIFF MORNING SNAPSHOTS (retention audit 2026-10-08): these boards reached Postgres once a day (P3's
+          # 'window' label); their 2-hourly pulls lived only as git commits of a *_current.json. Captured here in parallel
+          # (each bounded 5 min) so every app has a morning and a window record, like PrizePicks and Underdog.
+          SLEEPER_SPORTS=nba SLEEPER_OUT_DIR=boards timeout --signal=TERM --kill-after=30s 300 python nba/scrape_sleeper_board.py > /tmp/sl_morning.log 2>&1 & p_sl=$!
+          FLIFF_SPORTS=nba timeout --signal=TERM --kill-after=30s 300 python nba/scrape_fliff_board.py > /tmp/fl_morning.log 2>&1 & p_fl=$!
+          if wait $p_sl; then ok="$ok,sleeper"; else echo "=== Sleeper morning pull failed/timed out"; fi; tail -n 5 /tmp/sl_morning.log
+          if wait $p_fl; then ok="$ok,fliff"; else echo "=== Fliff morning pull failed/timed out"; fi; tail -n 5 /tmp/fl_morning.log
           ok="${ok#,}"
           if [ -z "$ok" ]; then echo "::warning::no morning board captured - nothing archived as 'morning'"; else
             echo "archiving morning boards for: $ok"
