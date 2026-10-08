@@ -126,9 +126,15 @@ def main():
         sys.exit("REFUSED: nba_config.classification_config['whole_number_recalibration'] missing - run fit_whole_number_recal.py with WN_WRITE=1")
     cfg = row[0] if isinstance(row[0], dict) else json.loads(row[0])
     if write:
-        for q in DDL:
-            conn.execute(q)
-        conn.execute(VIEW)
+        # §T23.5 lock pattern (round-2 P2B#18, 2026-10-08): the DDL runs only when the table or its unique index is missing -
+        # `CREATE ... IF NOT EXISTS` still takes a full table lock before it discovers the object exists, and this runs in
+        # P2A/P2B while other writers may hold final_hp_derived.
+        if (conn.execute("SELECT to_regclass('nba_score.final_hp_derived')").fetchone()[0] is None
+                or conn.execute("SELECT to_regclass('nba_score.final_hp_derived_key')").fetchone()[0] is None):
+            for q in DDL:
+                conn.execute(q)
+            conn.execute(VIEW)
+            conn.commit()
     if os.environ.get("WN_DATE"):
         days = [dt.date.fromisoformat(os.environ["WN_DATE"])]
     else:
