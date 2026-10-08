@@ -196,7 +196,7 @@ def pick_session(requests, proxy_url):
             print(f"injury-report preflight via {label}: {str(exc)[:120]}", flush=True)
     print("::warning::injury-report: NEITHER the proxy NOR a direct session can reach the PDF archive - every snapshot will be "
           "missed this run", flush=True)
-    return candidates[0][1]
+    return None
 
 
 def main():
