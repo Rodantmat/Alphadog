@@ -8,7 +8,9 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
-## 🟢 START HERE — RUN 243 (2026-10-08)
+## 🟢 START HERE — RUN 244 (2026-10-08)
+
+## RUN 243 (`2026-10-08`) — [body pending, see RUN243-B2 below]
 
 ## RUN 241 (`2026-10-08`) — [cont-h]
 
