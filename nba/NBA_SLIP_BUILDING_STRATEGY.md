@@ -2483,6 +2483,33 @@ Aimed at interactions between this session's changes rather than repeating earli
 **Replay on a certified slate (2026-04-10, mechanics test, `PSL_SOURCE=backtest`, probe 37816966240 + re-run):** 40 certified legs (the backtest's slips): PrizePicks 40/40 same line (sanity); **Underdog 19 listed, 12 at the same line, all 12 clear the conservative gate** (mean p 0.813, modifier 0.975 → m_eff 1.776, p × m_eff 1.507); **Betr (history) 30 listed, 26 same line** (65%); Sleeper/Fliff none (no 2025-26 archive — their first rows come 10-20). The low Underdog overlap is the §30b finding in action: the 0.5 defensive lines at the heart of the PrizePicks strategies are not on Underdog's board.
 **Operational decisions closed the same day:** the **opening-day P4 reset** (`mode=reset confirm=RESET`, run 37815777318) executed: 0 ledger slips removed, 12 strategies `paper` at cap, `_ROTATION` normal — the launch checklist item is done; the **MLB scraper's `PROXY_URL` secret** was rotated to DataImpulse by the owner and verified (run 37814179192: PrizePicks MLB 565 rows / 653 KB through `gw.dataimpulse.com`); **DataImpulse has no usage API** (the Postman API needs the dashboard password; docs: only a per-plan rolling **Traffic Limit** with e-mail notification) — the owner sets a 24-hour rolling limit with "Email notification" (NOT suspend) as the alarm, and our own measured footprint (MLB board 0.65 MB × 12/day; NBA boards of the same order; stats.nba.com deltas) puts the 5 GB trial at weeks, not days — the dashboard figure is read once in the first in-season week to fix the burn rate.
 
+### 31w. The postseason (play-in 005*, playoffs 004*) wired into the whole system — design (owner 2026-10-08: "everything the system does for the regular season must cover the postseason accordingly … its own specifics … smart about it, weighed properly against the regular season")
+**What the postseason is, for this system.** Short slates (1–4 games), the same two teams for up to seven nights, tighter
+rotations (starters' minutes up, deep bench out), slower pace and lower totals, no load management, series context (game 7,
+elimination, home/away alternation). Boards are thinner (≈ 1.6–2.6 k PrizePicks legs a night vs 4–8 k). Sample is small: two
+seasons ≈ 181 games / ≈ 110 slate days. The certified system was built and validated on regular-season nights only.
+**The principles (conservative, nothing certified is disturbed):**
+1. **Separate data, same tables.** Postseason game logs (base, advanced, measure types, quarters), starter status, officials,
+   matchups, injury reports are mined into their own files (`*_postseason_<slug>.json`) for 2023-24 (prior context), 2024-25 and
+   2025-26, and loaded into the same Postgres tables (game ids never collide). Every regular-season consumer that aggregates
+   "the season" gets an explicit `002` filter first (daily-delta completeness and DvP, the live engines' season block), so
+   regular-season numbers stay bit-identical.
+2. **Walk-forward, postseason-aware history.** For a postseason slate the baseline sees the regular season PLUS the postseason
+   games played before that night; regular-season slates (both past seasons and 2026-27) keep exactly the certified inputs.
+3. **Its own calibration phase.** `5_postseason` in every phase function (as-of calibration, final_hp, score_board_legs,
+   tier bands) fitted on postseason legs only, shrunk toward `4_push` while the sample is thin — never the regular season's
+   late-March push applied blindly to playoff nights.
+4. **Its own certification.** Postseason dates are their own slip-backtest phase (excluded from the regular-season
+   validations and from the `final7` bounds, which stay on `002` dates). A strategy stakes in the postseason only if its
+   postseason backtest passes the same V2 day-blocked bootstrap test on postseason days; otherwise paper/shadow. Board floors
+   for small slates come from the postseason board-size distribution, not the regular season's 179.
+5. **Live.** A slate predicate `nba_calendar.slate_games` (002 + 004 + 005; All-Star 003 and the NBA Cup final 006 stay out)
+   replaces the regular-season view wherever the question is "is there a slate tonight"; `regular_season_games` stays where
+   the question is "where is the regular season" (season bounds, week 2, final week).
+**Phases of the work (tracked in the certification ledger):** P-1 mine and load; P-2 grade postseason board legs; P-3 baseline
+history for postseason dates; P-4 final_hp with `5_postseason`; P-5 board_scored / tiers / tier map / slip backtests and the
+postseason certification; P-6 live wiring. Each phase is sampled first, verified, and documented before the next.
+
 ### 31b. Daily player name map refresh (`nba/refresh_player_name_map.py`, P2B step before anything resolves names; on-demand `nba-name-map-refresh.yml`)
 The register (`nba/data/nba_all_players.json`) is refreshed only manually and lacked all six sampled newcomers; `nba_ref.players` is current (P1 weekly). All 44 missing were plain absences (no namesake collisions). Incremental, collision-safe with the builder's own rule (absent → insert; mapped to an inactive player → repoint to the active one; mapped to a different active player → no change, logged CONFLICT), never deletes. SQL `nba_ref.norm_name` == Python `norm_name` on 10 edge cases (accents, Jr/II/III/V, hyphen, apostrophe). **Result: map 5,169 → 5,213; active players unresolved 44 → 0.**
 ### 31c. Close-board capture (`nba-close-capture.yml` + scheduler v2.1.0)
