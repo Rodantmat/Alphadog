@@ -115,7 +115,14 @@ def main():
     # without converting; nothing in this script does.
     from datetime import time as _time
     INJURY_STAMP_TZ = timezone(timedelta(hours=-5))
-    p2_build = datetime.combine(gd, _time(4, 0), tzinfo=INJURY_STAMP_TZ)      # 01:00 PT = 04:00 ET wall
+    # ROUND-2 P3#7 (2026-10-08): the "P2 view" is the baseline's own injury cutoff - nba_asof.BASELINE_CUTOFF_LOCAL (09:00 ET
+    # wall, the same -05:00 stamp convention) - not a separate 04:00 constant. With 04:00, a game-day report between 04:00
+    # and 09:00 ET (early-tip matinees) was already in the baseline AND counted as new here, so the delta re-applied it.
+    import sys as _sys_cut
+    _sys_cut.path.insert(0, "nba")
+    from nba_asof import BASELINE_CUTOFF_LOCAL as _BCL
+    _bh, _bm = (int(x) for x in _BCL.split(":"))
+    p2_build = datetime.combine(gd, _time(_bh, _bm), tzinfo=INJURY_STAMP_TZ)   # the baseline's cutoff, ET wall (09:00)
     p3_cut = datetime.combine(gd, _time(16, 15), tzinfo=INJURY_STAMP_TZ)      # 13:15 PT = 16:15 ET wall
     print(f"  P2 view: snapshots <= {p2_build:%Y-%m-%d %H:%M %Z}   "
           f"P3 view: <= {p3_cut:%Y-%m-%d %H:%M %Z}", flush=True)
