@@ -609,10 +609,10 @@ def main():
                           c_market=EXCLUDED.c_market""", rows)
                     # the routed slice, same transaction (one set per day: the slice is replaced, never appended)
                     if FE_DATE:
-                        cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation = 'beyond_certified_depth' "
+                        cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation IN ('beyond_certified_depth', 'wn_neighbor') "
                                     "AND season=%s AND prop=%s AND game_date=%s", (season, prop, FE_DATE))
                     else:
-                        cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation = 'beyond_certified_depth' "
+                        cur.execute("DELETE FROM nba_score.final_hp_derived WHERE derivation IN ('beyond_certified_depth', 'wn_neighbor') "
                                     "AND season=%s AND prop=%s", (season, prop))
                     if deep_rows:
                         cur.executemany("""INSERT INTO nba_score.final_hp_derived
