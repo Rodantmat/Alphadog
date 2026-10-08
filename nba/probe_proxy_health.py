@@ -54,11 +54,13 @@ def db_proxy_url():
 
 
 def main():
-    src = "nba_config.external_credentials/proxy_url"
-    proxy_url = db_proxy_url()
+    # the same order the pipelines see: the workflow's "Resolve proxy" step puts the credential-store URL into PROXY_URL
+    # (secret as fallback); the direct DB read here is only for a runner without that step
+    src = "PROXY_URL env (workflow resolver)"
+    proxy_url = (os.environ.get("PROXY_URL") or "").strip()
     if not proxy_url:
-        src = "PROXY_URL secret"
-        proxy_url = (os.environ.get("PROXY_URL") or "").strip()
+        src = "nba_config.external_credentials/proxy_url (direct)"
+        proxy_url = db_proxy_url() or ""
     if not proxy_url:
         print("no proxy URL available (neither the DB credential nor the PROXY_URL secret)"); sys.exit(1)
     os.environ["PROXY_URL"] = proxy_url          # so probe()'s error masking covers the DB value too
