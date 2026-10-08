@@ -28,8 +28,9 @@ round-2 P2A#17 2026-10-08), per strategy, evaluated on the live ledger only:
       asked for 1,000 slips); then 'active' only if the 10k day-blocked bootstrap lower bound on live ROI > 0
 State machine: paper -> active (CI gate) ; active -> yellow (any one hurdle: cap halves) ; yellow -> red (two hurdles after day 21,
   or any non-variance red: cap 0) ; a red is STICKY (RED_STICKY) until the weekly P5 PASS releases it (and P5 PASS releases it
-  only when the live season's own walk-forward lower bound > 0) ; yellow -> active when all hurdles clear for 7 days ; a
-  variance-only red (H2/H3 with H1/H7 clean) gets a one-shot 7-day grace per drawdown episode before it stops the strategy.
+  only when the live season's own walk-forward lower bound > 0) ; yellow/critical -> active after 3 consecutive clean slates
+  (CLEAN hysteresis, one count per slate) ; a variance-only red (H2/H3 with H1/H7 clean) goes 'critical' at cap 1 for a one-shot
+  7-day grace per drawdown episode, then red.
 
 Env: DATABASE_URL, LS_MODE (pick|grade), LS_DATE (default: today PT for pick, yesterday PT for grade).
 """
