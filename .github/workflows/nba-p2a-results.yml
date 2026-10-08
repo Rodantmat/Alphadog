@@ -305,6 +305,7 @@ jobs:
         if: always()
         run: |
           L=""
+          [ "${{ steps.soft_matchups.outcome }}" = "failure" ] && L="$L matchup-shards"
           [ "${{ steps.soft_wn.outcome }}" = "failure" ] && L="$L whole-number-reprice"
           [ "${{ steps.soft_edge.outcome }}" = "failure" ] && L="$L pp-edge-monitor"
           [ "${{ steps.soft_udgrade.outcome }}" = "failure" ] && L="$L underdog-grade"
