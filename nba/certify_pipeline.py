@@ -179,12 +179,22 @@ def main():
             check("INPUT: final_hp for today (from P2)",
                   "SELECT count(*) FROM nba_score.final_hp WHERE game_date = %s", (today,),
                   lambda v: v and int(v) > 0, "P2 owes this overnight")
-            check("board archived today",
-                  "SELECT count(*) FROM nba_market.board_snapshots WHERE game_date = %s", (today,),
-                  lambda v: v and int(v) > 0, "board legs captured")
-            check("board scored today",
-                  "SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s", (today,),
-                  lambda v: v and int(v) > 0, "legs scored by P3 itself")
+            # ROUND-2 P3#6 (2026-10-08): "archived today" used to accept ANY row with game_date = today - PrizePicks posts a
+            # slate up to 17 days early (archived 'routine'), so a run that captured nothing passed. The proof P3 captured
+            # this slate's decision board is a PrizePicks 'window' row FETCHED by this run (fetched_at within 3 h), plus a
+            # board_tiers_v2 row for today/window (the priced window the pick reads).
+            check("PrizePicks window board captured by THIS run",
+                  """SELECT count(*) FROM nba_market.board_snapshots
+                     WHERE game_date = %s AND bookmaker = 'prizepicks' AND snapshot_label = 'window'
+                       AND fetched_at > now() - interval '3 hours'""", (today,),
+                  lambda v: v and int(v) > 0, "window legs fetched in the last 3 h")
+            check("window board priced (board_tiers_v2)",
+                  """SELECT count(*) FROM nba_market.board_tiers_v2
+                     WHERE game_date = %s AND snapshot_label = 'window' AND app = 'prizepicks'""", (today,),
+                  lambda v: v and int(v) > 0, "window rungs priced for the pick")
+            check("board scored today (window label)",
+                  "SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s AND snapshot_label = 'window'", (today,),
+                  lambda v: v and int(v) > 0, "window legs scored by P3 itself")
         check("confidence model loaded",
               "SELECT count(*) FROM nba_score.confidence_model WHERE deduction > 0", (),
               lambda v: v and int(v) > 0, "measured deductions exist")
