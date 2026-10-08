@@ -1,0 +1,85 @@
+name: NBA Baseline History - Postseason
+
+# strategy §31w P-3. For one season: export the postseason morning spreads, refresh the postseason dates' board rung keys,
+# build every singles prop pair with the postseason builder (saving components), then the combos, loading each artifact
+# (the loader replaces ONLY postseason rows - meta.postseason). Regular-season history is untouched by construction.
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "2024-25 or 2025-26"
+        required: true
+      pairs:
+        description: "singles prop pairs (semicolon-separated); components points,rebounds,assists,steals,blocks,turnovers are required for combos"
+        default: "points,rebounds;assists,steals;blocks,turnovers;threes_made,fg3a;fga,ftm;personal_fouls"
+        required: false
+      combos:
+        description: "1 = build the combos after the singles"
+        default: "1"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-baseline-history-postseason-${{ github.event.inputs.season }}
+  cancel-in-progress: false
+
+jobs:
+  history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BT_TEST: ${{ github.event.inputs.season }}
+      BT_TRAIN: ${{ github.event.inputs.season == '2024-25' && '2023-24' || '2023-24,2024-25' }}
+      BT_LADDER_STEPS: "10"
+      BT_INJURY: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy scipy
+      - name: Postseason morning spreads (export + commit)
+        env:
+          MS_SEASONS: ${{ github.event.inputs.season }}
+        run: |
+          python -u nba/export_market_spreads_postseason.py
+          bash nba/git_push_retry.sh "NBA postseason spreads ${{ github.event.inputs.season }} [skip ci]" nba/data/nba_market_spreads_postseason_*.json || true
+      - name: Board rung keys for the postseason dates
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          s = os.environ["BT_TEST"]; y = int(s[:4]) + 1
+          d0, d1 = f"{y}-04-13", f"{y}-06-30"
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              c.execute("SET statement_timeout = 0")
+              n = c.execute("SELECT nba_market.refresh_board_rung_keys(%s, %s)", (d0, d1)).fetchone()[0]
+              c.commit()
+              print(f"board_rung_keys {d0}..{d1}: {n:,}", flush=True)
+          EOF
+      - name: Singles (postseason builder, components saved) + load
+        run: |
+          set -e
+          IFS=';' read -ra PAIRS <<< "${{ github.event.inputs.pairs }}"
+          for pair in "${PAIRS[@]}"; do
+            echo "=== $BT_TEST postseason :: $pair ==="
+            BT_PROPS="$pair" BT_SAVE_COMPONENTS=1 python nba/baseline/build_baseline_history_postseason.py
+            tag=$(echo "$pair" | tr ',' '-')
+            f="nba/data/nba_baseline_history_postseason_$(echo $BT_TEST | tr '-' '_')_${tag}.json"
+            test -s "$f"
+            HISTORY_FILE="$f" python nba/load_baseline_history.py
+            rm -f "$f"
+          done
+      - name: Combos (postseason) + load
+        if: ${{ github.event.inputs.combos == '1' }}
+        run: |
+          set -e
+          python nba/baseline/build_combos_history_postseason.py
+          f="nba/data/nba_baseline_history_postseason_$(echo $BT_TEST | tr '-' '_')_combos.json"
+          test -s "$f"
+          HISTORY_FILE="$f" python nba/load_baseline_history.py
