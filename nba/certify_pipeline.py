@@ -190,11 +190,11 @@ def main():
                   lambda v: v and int(v) > 0, "window legs fetched in the last 3 h")
             check("window board priced (board_tiers_v2)",
                   """SELECT count(*) FROM nba_market.board_tiers_v2
-                     WHERE game_date = %s AND snapshot_label = 'window' AND app = 'prizepicks'""", (today,),
+                     WHERE game_date = %s AND snapshot_label = 'window' AND bookmaker = 'prizepicks'""", (today,),
                   lambda v: v and int(v) > 0, "window rungs priced for the pick")
-            check("board scored today (window label)",
-                  "SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s AND snapshot_label = 'window'", (today,),
-                  lambda v: v and int(v) > 0, "window legs scored by P3 itself")
+            check("board scored by THIS run",
+                  "SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s AND built_at > now() - interval '3 hours'", (today,),
+                  lambda v: v and int(v) > 0, "legs scored by P3 itself, this run")
         check("confidence model loaded",
               "SELECT count(*) FROM nba_score.confidence_model WHERE deduction > 0", (),
               lambda v: v and int(v) > 0, "measured deductions exist")
