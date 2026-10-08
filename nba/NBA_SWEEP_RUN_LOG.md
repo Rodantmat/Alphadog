@@ -8,7 +8,9 @@ stopping to report, no waiting for answers. Every issue documented with severity
 held. Judgment calls taken under the standing rules and recorded below with the alternatives
 rejected; anything genuinely needing the owner is marked **OWNER DECISION** and the sweep moves on.
 
-## 🔵 START HERE — RUN 241 PLACEHOLDER
+## 🟢 START HERE — RUN 242 PLACEHOLDER
+
+## RUN 241 (`2026-10-08`) — <<CONT0>>
 
 ## RUN 240 (`2026-10-07`) — PRESCRIBED group re-verified live, all four unchanged (`T21-1`/`T20-2`/`T20-3`/`T23-1`): `nba/transcripts/` still only `README.md`(5,079B)/`journal.txt`(11,478B); `nba_score.final_hp` 7,215,296 rows/1,886,380,032B; `nba_market.board_outcomes` 6,905,452 rows/1,674,395,648B; `nba_score.sim_slip` 4,379 slips/310 nights (`game_date`); `nba_score.paper_picks` 0 rows; `config.scheduled_jobs` 10 total/2 enabled; `config.worker_schedules` 6 total/1 enabled. Anchor re-derived fresh via `NOW()=2026-10-07T16:10:53.624Z`, unchanged `game_date='2026-10-06'` (23:00:00Z tip ~6h49m out); `nba_calendar.games` 2026-10-06 → Preseason/4 unchanged; `nba_market.board_snapshots` underdog 2026-10-06 → 392, 17th consecutive flat pass. `nba_ref.referee_assignments` 0, unchanged. `T26-23`: 45th consecutive repeat, confirmed via this session's own task-prompt text, no owner reply. ▶ NEXT (RUN 241): rotate ALTERNATE group (`T26-15`/`T26-16`/`T26-17`/`check_bindings`/`T26-21`); re-derive anchor fresh. Corpus not closed — `T26-23`, `NBA_FINAL_SCORING_CALIBRATION.md`, `T26-21` GH_TOKEN remain owner-side blockers.
 
