@@ -36,6 +36,10 @@ on:
         description: "reset only: '1' allows a reset after the regular season has started (deliberate, erases the season's ledger)"
         default: ""
         required: false
+      edge_rebuild:
+        description: "edge mode only: '1' rebuilds nba_score.edge_monitor_ref from the configured backtest (live_backtest_suffix)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
