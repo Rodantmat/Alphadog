@@ -74,7 +74,7 @@ CREATE TEMP TABLE _bo AS
       replace(replace(market_key,'_alternate',''),'player_','') mk,
       CASE WHEN leg_result = CASE side WHEN 'Over' THEN 'over_win' ELSE 'under_win' END THEN 1 ELSE 0 END h
     FROM nba_market.board_outcomes
-    WHERE bookmaker='prizepicks' AND snapshot_label='window' AND leg_result IN ('over_win','under_win')
+    WHERE leg_result IN ('over_win','under_win')      -- board_outcomes is book-agnostic: one graded row per (date, player, market, side, line)
       AND game_date IN (SELECT DISTINCT game_date FROM _fh)) x
   ORDER BY game_date, pn, side, line, mk;
 CREATE INDEX ON _bo (game_date, pn, side, line, mk);
