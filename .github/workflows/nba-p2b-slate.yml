@@ -270,6 +270,9 @@ jobs:
           BT_REPLAY: ${{ github.event.inputs.asof != '' && '1' || '0' }}
         run: |
           set -euo pipefail
+          # the current season's input files must EXIST (empty is fine) so the first slates are modelled as a new season,
+          # not as late games of the previous one (nba/ensure_season_files.py - certification round 2); never committed.
+          python nba/ensure_season_files.py
           for PAIR in "points,rebounds" "assists,threes_made" "fga,fg3a" "ftm,fta" \
                       "fgm,dreb" "steals,blocks" "turnovers,personal_fouls" "oreb"; do
             echo "=== baseline pair: $PAIR"
