@@ -54,3 +54,8 @@ jobs:
       - name: Commit the postseason files
         if: always()
         run: bash nba/git_push_retry.sh "NBA postseason mining [skip ci]" nba/data/*postseason*
+      - name: Load into the *_postseason tables (regular-season tables untouched)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          POST_SEASONS: ${{ github.event.inputs.seasons }}
+        run: python -u nba/load_postseason_logs.py
