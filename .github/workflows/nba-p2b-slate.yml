@@ -436,7 +436,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SNAP_DATE: ${{ steps.d.outputs.asof }}
-          SNAP_TABLES: "nba_score.blowout_model,nba_score.confidence_model,nba_score.confidence_verification,nba_score.ladder_calibration_asof|as_of_date='{d}'"
+          # the as-of calibration keeps one fit per as_of_date (47 over two seasons); the slate reads the latest fit at or before
+          # its date, so that is the row set snapshotted under the slate's date
+          SNAP_TABLES: "nba_score.blowout_model,nba_score.confidence_model,nba_score.confidence_verification,nba_score.ladder_calibration_asof|as_of_date=(SELECT max(as_of_date) FROM nba_score.ladder_calibration_asof WHERE as_of_date<='{d}')"
         run: python nba/snapshot_model_params.py
 
       # 6b) FINAL_HP for the slate - AFTER both refits (it reads the calibration and the confidence model).
