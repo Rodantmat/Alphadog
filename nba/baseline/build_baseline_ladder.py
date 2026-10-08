@@ -85,7 +85,9 @@ for g_ in _slate:
         recent = players[(players["TEAM_ID"] == tid) & (players["season"] == TEST[0])].sort_values("GAME_DATE")
         last_games = recent["GAME_ID"].drop_duplicates().tail(3).tolist()
         _recent_roster = recent[recent["GAME_ID"].isin(last_games)]["PLAYER_ID"].unique().tolist()
-        roster = [p_ for p_ in _recent_roster if _cur_team.get(p_, tid) == tid]      # now on another team -> removed
+        # now on another team -> removed; on NO roster (retired / unsigned since last season's final games) -> removed too
+        # (round-2 P2B#14, 2026-10-08: opening-week ghost rows). With no roster file the old last-3 rule stands.
+        roster = [p_ for p_ in _recent_roster if (_cur_team.get(p_) == tid if _cur_team else True)]
         _ros_dropped += len(_recent_roster) - len(roster)
         for p_, t_ in _cur_team.items():                                              # today's roster: traded-in / returning / new
             if t_ == tid and p_ not in roster:
