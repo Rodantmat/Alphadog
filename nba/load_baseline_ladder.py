@@ -47,9 +47,16 @@ def main():
     # committed and only found the 'latest' copy. The legacy _combos / _periods names are gone: the
     # merge folds them into the one file, so those fetches only ever produced 404 noise.
     from pathlib import Path
-    for name in (f"nba_baseline_ladder_{asof}.json", "nba_baseline_ladder_latest.json"):
+    import gzip
+    for name in (f"nba_baseline_ladder_{asof}.json", f"nba_baseline_ladder_{asof}.json.gz", "nba_baseline_ladder_latest.json"):
         local = Path("nba/data") / name
-        d = json.loads(local.read_text()) if local.exists() else fetch(name)
+        if name.endswith(".gz"):   # the dated record is gzipped since round 2 (P2B#18); not served over the CDN path
+            if not local.exists():
+                continue
+            with gzip.open(local, "rt", encoding="utf-8") as g:
+                d = json.load(g)
+        else:
+            d = json.loads(local.read_text()) if local.exists() else fetch(name)
         if d and (d.get("meta") or {}).get("asof") == asof:
             docs.append((name, d))
             print(f"  loaded {name} ({'local' if local.exists() else 'http'}): {len(d.get('ladder') or [])} rows")
