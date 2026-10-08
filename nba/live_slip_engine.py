@@ -480,8 +480,15 @@ def post_tip(conn, day):
     Replays (day < today) are never post-tip. LS_ALLOW_POST_TIP=1 overrides (tests only)."""
     if day != pt_today() or os.environ.get('LS_ALLOW_POST_TIP') == '1':
         return False
-    first = conn.execute("SELECT min(game_datetime_utc) FROM nba_calendar.regular_season_games WHERE game_date=%s", (day,)).fetchone()[0]
+    first = conn.execute("SELECT min(game_datetime_utc) FROM nba_calendar.slate_games WHERE game_date=%s", (day,)).fetchone()[0]
     return bool(first) and dt.datetime.now(dt.timezone.utc) >= first
+
+
+def postseason_slate(conn, day):
+    """§31w: the slate is a play-in (005) / playoff (004) slate - by the league's own game-id prefix in the schedule."""
+    r = conn.execute("""SELECT count(*) FROM nba_calendar.games WHERE game_date=%s
+                        AND (game_id LIKE '004%%' OR game_id LIKE '005%%')""", (day,)).fetchone()
+    return bool(r and r[0])
 
 
 def pick(conn, day, require_fresh=True):
