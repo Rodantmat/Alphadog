@@ -239,6 +239,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+          BT_ASOF: ${{ steps.d.outputs.asof }}
           PRIZEPICKS_LEAGUE_ID: "7"
           PRIZEPICKS_SPORT: "nba"
           PRIZEPICKS_OUT_DIR: "boards"
