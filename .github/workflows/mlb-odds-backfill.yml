@@ -1,0 +1,67 @@
+name: MLB Odds API History (board mirror)
+
+# mlb/backfill_mlb_odds.py - MLB player-prop boards (us_dfs + us, 37 markets) at MLB's board times (09:00 / 13:00 / 17:00 PT)
+# plus game lines, stored lossless as raw jsonb (market.mlb_odds_*). Sharded by date so several runners pull at once;
+# resumable (a stored event+label is never fetched twice), stops at the credit floor.
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "start Pacific date"
+        required: true
+      end:
+        description: "end Pacific date"
+        required: true
+      labels:
+        description: "board times (pt0900,pt1300,pt1700)"
+        default: "pt0900,pt1300,pt1700"
+        required: false
+      props:
+        description: "1 = player props"
+        default: "1"
+        required: false
+      lines:
+        description: "1 = game lines"
+        default: "1"
+        required: false
+      skip_ranges:
+        description: "date ranges to skip, a:b,c:d"
+        default: ""
+        required: false
+      floor:
+        description: "stop below this many credits"
+        default: "30000"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" requests
+      - name: Pull shard ${{ matrix.shard }} of 8
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MLB_START: ${{ github.event.inputs.start }}
+          MLB_END: ${{ github.event.inputs.end }}
+          MLB_LABELS: ${{ github.event.inputs.labels }}
+          MLB_PROPS: ${{ github.event.inputs.props }}
+          MLB_LINES: ${{ github.event.inputs.lines }}
+          MLB_SKIP_RANGES: ${{ github.event.inputs.skip_ranges }}
+          MLB_CREDIT_FLOOR: ${{ github.event.inputs.floor }}
+          MLB_SHARD: ${{ matrix.shard }}
+          MLB_SHARDS: "8"
+        run: python -u mlb/backfill_mlb_odds.py
