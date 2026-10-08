@@ -216,7 +216,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           FE_WRITE: "1"
         run: |
-          export FE_DATE="$(TZ=America/Los_Angeles date -d yesterday +%F)"
+          export FE_DATE="${{ steps.d.outputs.yday }}"
           if [ "$(python - <<'EOF'
           import os, psycopg
           with psycopg.connect(os.environ["DATABASE_URL"]) as c:
