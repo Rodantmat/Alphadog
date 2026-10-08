@@ -182,9 +182,9 @@ jobs:
                       # bootstrap lower bound of the strategy's certified OOS slips THIS season (from Nov 1, >= 40 slate days) > 0.
                       st = c.execute("SELECT state FROM nba_score.live_strategy_state WHERE strategy=%s", (name,)).fetchone()
                       if st and st[0] == 'red':
-                          from live_slip_engine import boot_lo
+                          from live_slip_engine import boot_lo, bt_table
                           import datetime as _dt
-                          tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith(('C_', 'D_', 'R_', 'W_')) else 'nba_score.slip_engine_slips'
+                          tbl = bt_table(c, name)   # the configured backtest (market-free twin since round 2)
                           y0 = today.year if today.month >= 7 else today.year - 1
                           season_now = f"{y0}-{(y0 + 1) % 100:02d}"
                           g = c.execute(f"""SELECT count(*), sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
