@@ -330,6 +330,17 @@ jobs:
               d = json.load(open(f)); rows += d["ladder"]; meta = meta or d["meta"]
           if not meta:
               raise SystemExit(f"ABORT: no per-pair ladder files for {asof} - the builds produced nothing")
+          # ONE ROW PER RUNG (round-2 P2B#13, 2026-10-08): the components step rebuilds assists/steals/blocks/turnovers that
+          # the ladder loop already built (measured: 4,107 duplicate keys, identical values), so the merged file carried
+          # them twice and meta.rows was inflated; the loader deduped them silently. Dedupe here, first copy wins.
+          seen, uniq, dups = set(), [], 0
+          for r in rows:
+              k = (r.get("player_id"), r.get("game_id"), r.get("prop"), r.get("period") or "FULL", r.get("line"))
+              if k in seen:
+                  dups += 1; continue
+              seen.add(k); uniq.append(r)
+          rows = uniq
+          print(f"merge: {dups:,} duplicate rungs dropped (component pairs rebuilt by the components step)")
           meta["rows"] = len(rows)
           meta["props"] = sorted({r["prop"] for r in rows})
           meta["players"] = len({r["player_id"] for r in rows})
