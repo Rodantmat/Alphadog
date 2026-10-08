@@ -1336,8 +1336,23 @@ def main():
         day = dt.date.fromisoformat(d) if d else pt_today() - dt.timedelta(days=1)
         edge_monitor(conn, day)
     else:
-        day = dt.date.fromisoformat(d) if d else pt_today() - dt.timedelta(days=1)
-        grade(conn, day)
+        if d:
+            grade(conn, dt.date.fromisoformat(d))
+        else:
+            # CATCH-UP (2026-10-08, full-system certification round 2, P2A#3): grade EVERY slate before today that still holds
+            # placed slips, oldest first - not only yesterday. A night whose P2A failed before this step (or whose box scores
+            # had not landed) left its slips 'placed' forever: the ledger, hurdles, streaks and the edge monitor lost the day
+            # silently. grade() itself skips a slate whose box scores are still missing ("try again next run"), so an
+            # ungraded slate is retried every morning until it resolves. The Underdog engine already worked this way.
+            today = pt_today()
+            pending = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_score.live_slips
+                                                     WHERE status LIKE 'placed%%' AND game_date < %s ORDER BY 1""", (today,)).fetchall()]
+            if not pending:
+                pending = [today - dt.timedelta(days=1)]
+            elif len(pending) > 1:
+                print(f"  catch-up: {len(pending)} slates with placed slips before {today}: {pending[0]} .. {pending[-1]}", flush=True)
+            for day in pending:
+                grade(conn, day)
     conn.close()
 
 
