@@ -254,6 +254,19 @@ jobs:
           timeout --signal=TERM --kill-after=30s 300 python nba/scrape_underdog_board.py > /tmp/ud_morning.log 2>&1 || echo "=== Underdog morning pull failed/timed out"
           tail -n 10 /tmp/ud_morning.log
           python nba/archive_live_boards.py
+          # THE KEYS final_hp PRICES AGAINST (2026-10-08, certification round 2): build_final_hp reads TODAY's rungs from
+          # nba_market.board_rung_keys, which only P2A (for yesterday) and P3 (after its 13:16 PT archive) refreshed - so the
+          # slate's final_hp covered the board as of YESTERDAY's window and missed every rung posted overnight / this morning
+          # (new players above all; the derived +-10 rungs cover line moves of players already on the board). Refresh here,
+          # after the morning archive and before the ladder build, for the slate date.
+          python - <<'EOF'
+          import os, psycopg
+          d = os.environ["BT_ASOF"]
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              n = c.execute("SELECT nba_market.refresh_board_rung_keys(%s, %s)", (d, d)).fetchone()[0]
+              c.commit()
+              print(f"board_rung_keys {d}: {n:,} keys (refreshed after the morning archive, before the ladder build)", flush=True)
+          EOF
 
       - name: Commit today's inputs
         # conflict-safe commit (2026-10-07, nba/git_push_retry.sh): P1 and P2B both refresh the roster files
