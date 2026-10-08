@@ -151,6 +151,40 @@ jobs:
           python nba/scrape_nba_periods.py
           python nba/scrape_nba_schedule.py
 
+      # POSTSEASON DELTA (strategy §31w P-6, 2026-10-08). The daily delta above is regular-season-only (stats.nba.com
+      # SeasonType 'Regular Season'). When last night or the slate itself is a play-in / playoff day (game-id prefix 004/005 in
+      # nba_calendar.games), the season's postseason files are refreshed with the SAME miner the certified postseason history
+      # used (scrape_nba_postseason.py: league game logs + advanced, measure types, quarters, and per-game starters/officials
+      # as a delta), committed with the rest below, and loaded into the *_postseason twin tables. Regular-season days: a no-op.
+      # SOFT: a failed postseason refresh leaves yesterday's files (the baseline then misses one night of playoff form).
+      - name: Postseason delta (play-in / playoff days only)
+        id: soft_postseason
+        continue-on-error: true
+        if: ${{ github.event.inputs.skip_mining != 'true' }}
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ASOF: ${{ steps.d.outputs.asof }}
+          YDAY: ${{ steps.d.outputs.yday }}
+        run: |
+          set -euo pipefail
+          S=$(python - <<'EOF'
+          import os, sys, psycopg
+          sys.path.insert(0, "nba")
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              n = c.execute("""SELECT count(*) FROM nba_calendar.games WHERE game_date BETWEEN %s AND %s
+                               AND (game_id LIKE '004%%' OR game_id LIKE '005%%')""", (os.environ["YDAY"], os.environ["ASOF"])).fetchone()[0]
+          if n:
+              from datetime import date
+              d = date.fromisoformat(os.environ["ASOF"]); y = d.year if d.month >= 10 else d.year - 1
+              print(f"{y}-{str(y + 1)[-2:]}")
+          EOF
+          )
+          if [ -z "$S" ]; then echo "no play-in / playoff games on $YDAY..$ASOF - postseason delta not needed"; exit 0; fi
+          echo "postseason day - refreshing the $S postseason files"
+          POST_SEASONS="$S" python -u nba/scrape_nba_postseason.py
+          POST_SEASONS="$S" python -u nba/load_postseason_logs.py
+
       - name: Commit mined data
         if: ${{ github.event.inputs.skip_mining != 'true' }}
         # conflict-safe commit (2026-10-07, nba/git_push_retry.sh); a push that cannot land is a visible warning, not a
