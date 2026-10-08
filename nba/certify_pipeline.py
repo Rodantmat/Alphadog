@@ -189,10 +189,9 @@ def main():
             # this slate's decision board is a PrizePicks 'window' row FETCHED by this run (fetched_at within 3 h), plus a
             # board_tiers_v2 row for today/window (the priced window the pick reads).
             check("PrizePicks window board captured by THIS run",
-                  """SELECT count(*) FROM nba_market.board_snapshots
-                     WHERE game_date = %s AND bookmaker = 'prizepicks' AND snapshot_label = 'window'
-                       AND fetched_at > now() - interval '3 hours'""", (today,),
-                  lambda v: v and int(v) > 0, "window legs fetched in the last 3 h")
+                  f"""SELECT count(*) FROM nba_market.board_snapshots
+                     WHERE game_date = %s AND bookmaker = 'prizepicks' AND snapshot_label = 'window' {fresh}""", (today,),
+                  lambda v: v and int(v) > 0, "window legs fetched in the last 3 h" if live_day else "window legs (replay)")
             check("window board priced (board_tiers_v2)",
                   """SELECT count(*) FROM nba_market.board_tiers_v2
                      WHERE game_date = %s AND snapshot_label = 'window' AND bookmaker = 'prizepicks'""", (today,),
