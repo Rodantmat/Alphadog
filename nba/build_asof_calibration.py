@@ -107,6 +107,10 @@ def graded(season, conn, pid_map, props):
     o["player_id"] = o["player"].map(norm_name).map(pid_map)
     o = o[o["player_id"].notna()]
     o["line"] = o["line"].astype(float)
+    # ONE OUTCOME PER LEG (round-2 P2B#18, 2026-10-08): board_outcomes is unique per market_key INCLUDING the _alternate
+    # suffix, so a leg present under both keys (same date/player/prop/line/side, same box-score truth) merged twice and
+    # inflated n for its cell. The outcome is a property of the box score, not of the key.
+    o = o.drop_duplicates(subset=["game_date", "player_id", "prop", "line", "side"])
     d = f.merge(o[["game_date", "player_id", "prop", "line", "side", "leg_result"]],
                 on=["game_date", "player_id", "prop", "line", "side"], how="inner")
     if d.empty:
