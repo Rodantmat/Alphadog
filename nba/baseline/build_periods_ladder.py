@@ -36,6 +36,14 @@ s = SRC
 s = rep(s, '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner").sort_values(["season", "TEAM_ID", "GAME_DATE"])''',
 '''teams_adv = teams_adv.drop(columns=["GAME_DATE"], errors="ignore")
 teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner").sort_values(["season", "TEAM_ID", "GAME_DATE"])''')
+# empty season placeholders never change a dtype (round 2, 2026-10-08; see build_baseline_ladder.py): drop empty frames
+s = rep(s, '''full = pd.concat(full, ignore_index=True); teams = pd.concat(teams, ignore_index=True); teams_adv = pd.concat(teams_adv, ignore_index=True)''',
+'''def _cat(frames):
+    kept = [f_ for f_ in frames if len(f_)]
+    return pd.concat(kept if kept else frames, ignore_index=True)
+full = _cat(full); teams = _cat(teams); teams_adv = _cat(teams_adv)''')
+s = rep(s, '''    x = pd.concat(qs[q], ignore_index=True); x["GAME_ID"] = x["GAME_ID"].astype(str); x["PLAYER_ID"] = x["PLAYER_ID"].astype(str)''',
+'''    x = _cat(qs[q]); x["GAME_ID"] = x["GAME_ID"].astype(str); x["PLAYER_ID"] = x["PLAYER_ID"].astype(str)''')
 s = rep(s, '''full["PLAYER_ID"] = full["PLAYER_ID"].astype(str)''',
 '''full["PLAYER_ID"] = full["PLAYER_ID"].astype(str)
 ASOF_D = pd.Timestamp(os.environ["BT_ASOF"]).date() if os.environ.get("BT_ASOF") else pd.Timestamp.today().date()
