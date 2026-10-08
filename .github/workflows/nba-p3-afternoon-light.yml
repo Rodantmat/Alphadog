@@ -520,6 +520,18 @@ jobs:
           UDL_DATE: ${{ steps.d.outputs.asof }}
         run: python -u nba/ud_live_slip_engine.py
 
+      # PRICE-SHOPPING LEDGER (§31v, 2026-10-08): MEASUREMENT ONLY. For every leg the two engines selected today, every app's
+      # window price for the same leg (Sleeper multiplier, Underdog modifier, Fliff odds; availability on PrizePicks/Betr), the
+      # model's p, p*m and the conservative gate. No slip is built or changed; the daily summary is printed. Soft step.
+      - name: Price-shopping ledger (selected legs vs every app's price)
+        id: soft_psl
+        if: ${{ !cancelled() && steps.d.outputs.has_games == '1' && steps.d.outputs.late != '1' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PSL_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/build_price_shop_ledger.py
+
       # SOFT FAILURES MADE VISIBLE (2026-10-07, certification pass G): a failed Underdog pick never fails the run, so it was
       # invisible in nba_control.pipeline_runs. Recorded on the run row by the finish job (SOFT_FAILED) as a run warning + note.
       - name: Collect soft-step failures
