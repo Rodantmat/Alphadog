@@ -47,6 +47,17 @@ _cur = _season_of(ASOF)
 _all = sorted({p.name.split("nba_player_game_log_")[1][:7].replace("_", "-") for p in Path("nba/data").glob("nba_player_game_log_20*.json") if "_q" not in p.name and __import__("re").match(r"^\\d{4}_\\d{2}\\.json$", p.name.split("nba_player_game_log_")[1])})
 TEST = [_cur if _cur in _all else _all[-1]]; TRAIN = [x for x in _all if x < TEST[0]][-2:]; SEASONS = TRAIN + TEST
 print("ASOF", ASOF, "| history seasons", TRAIN, "| current", TEST)''')
+# EMPTY SEASON FILES NEVER CHANGE A DTYPE (2026-10-08, certification round 2 - found by the sim-slate rerun 37749440843).
+# The current season's placeholder (nba/ensure_season_files.py) has zero records, so its frame has NO columns; concatenating
+# it turned PLAYER_ID / TEAM_ID into float64 ("201935.0"), every roster id stopped matching, the slate had 0 virtual rows and
+# the recipe died with ZeroDivisionError. Empty frames are dropped from every concat (the season label is TEST, not the file).
+s = rep(s, '''players = pd.concat(P, ignore_index=True); teams = pd.concat(T, ignore_index=True); teams_adv = pd.concat(TA, ignore_index=True)''',
+'''def _cat(frames):
+    kept = [f_ for f_ in frames if len(f_)]
+    return pd.concat(kept if kept else frames, ignore_index=True)
+players = _cat(P); teams = _cat(T); teams_adv = _cat(TA)''')
+s = rep(s, '''ff = pd.concat(FF, ignore_index=True); sc = pd.concat(SC, ignore_index=True)''',
+'''ff = _cat(FF); sc = _cat(SC)''')
 s = rep(s, '''teams_adv = teams_adv.merge(teams[["season", "TEAM_ID", "GAME_ID", "GAME_DATE"]], on=["season", "TEAM_ID", "GAME_ID"], how="inner")''',
 '''# SHAPE PARITY (fixed 2026-09-24). The season backfill wrote the advanced team log in a SLIM shape
 # without GAME_DATE, and the recipe merges GAME_DATE in from `teams`. The daily delta sync writes the
