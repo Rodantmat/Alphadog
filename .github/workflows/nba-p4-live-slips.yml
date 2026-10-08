@@ -28,6 +28,14 @@ on:
         description: "replay: '1' continues from the last graded day instead of wiping"
         default: ""
         required: false
+      confirm:
+        description: "reset only: type RESET to wipe the live ledger (refused otherwise; refused in season unless force_reset=1)"
+        default: ""
+        required: false
+      force_reset:
+        description: "reset only: '1' allows a reset after the regular season has started (deliberate, erases the season's ledger)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
