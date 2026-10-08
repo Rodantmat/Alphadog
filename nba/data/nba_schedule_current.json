@@ -21191,8 +21191,8 @@
       "away_team_tricode": "MIN",
       "arena_name": "Hilton Coliseum",
       "arena_city": "Ames",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21206,8 +21206,8 @@
       "away_team_tricode": "PHX",
       "arena_name": "United Center",
       "arena_city": "Chicago",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21221,8 +21221,8 @@
       "away_team_tricode": "ORL",
       "arena_name": "FedExForum",
       "arena_city": "Memphis",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21236,8 +21236,8 @@
       "away_team_tricode": "MIL",
       "arena_name": "Paycom Center",
       "arena_city": "Oklahoma City",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21251,8 +21251,8 @@
       "away_team_tricode": "GSW",
       "arena_name": "Moda Center",
       "arena_city": "Portland",
-      "game_status": 1,
-      "game_status_text": "10:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
