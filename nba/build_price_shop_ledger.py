@@ -113,9 +113,10 @@ def app_board(conn, day, label, apps):
 
 
 def model_p(conn, day, pid, prop, side, line):
-    r = conn.execute("""SELECT final_hp FROM nba_score.final_hp WHERE game_date=%s AND player_id=%s AND prop=%s AND side=%s AND line=%s
+    # final_hp keys player_id as text (the ladder's convention); the ledger carries it as bigint - cast at the join
+    r = conn.execute("""SELECT final_hp FROM nba_score.final_hp WHERE game_date=%s AND player_id=%s::text AND prop=%s AND side=%s AND line=%s
                         UNION ALL
-                        SELECT final_hp FROM nba_score.final_hp_derived WHERE game_date=%s AND player_id=%s AND prop=%s AND side=%s AND line=%s
+                        SELECT final_hp FROM nba_score.final_hp_derived WHERE game_date=%s AND player_id=%s::text AND prop=%s AND side=%s AND line=%s
                         LIMIT 1""", (day, pid, prop, side, line, day, pid, prop, side, line)).fetchone()
     return float(r[0]) if r and r[0] is not None else None
 
