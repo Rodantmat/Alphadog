@@ -1,0 +1,65 @@
+name: NBA DB History Archive (release assets)
+
+# OFF-DATABASE COPY OF THE BIG INGREDIENT TABLES (retention audit 2026-10-08). The provider keeps seven days of cluster
+# backups; the two-season board/market history (27M Odds API rows on the paid plan) and everything graded against it
+# existed nowhere else. nba/dump_db_history.py writes each table per season as CSV.GZ; this job attaches the files to a
+# GitHub Release tagged db-archive-<date> (assets do not bloat the repo; 2 GB per file). Monthly on the 1st (the live
+# season's rows grow month by month) and on demand. Seasons/tables are inputs so a one-off (e.g. only 2026-27) is cheap.
+# Disk: the runner has ~14 GB free; the two seasons compress to a few GB.
+
+on:
+  schedule:
+    - cron: '0 9 1 * *'
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: "comma list of seasons to archive (default 2024-25,2025-26,2026-27)"
+        default: "2024-25,2025-26,2026-27"
+        required: false
+      tables:
+        description: "override the table list (schema.table|date_column, comma-separated); blank = the script's list"
+        default: ""
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-db-history-archive
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Dump the ingredient tables per season
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          HIST_SEASONS: ${{ github.event.inputs.seasons || '2024-25,2025-26,2026-27' }}
+          HIST_TABLES: ${{ github.event.inputs.tables }}
+        run: |
+          python -u nba/dump_db_history.py
+          ls -la db_history/
+          du -sh db_history/
+      - name: Attach to a GitHub Release (db-archive-<date>)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="db-archive-$(date -u +%F)"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --title "NBA DB history archive $tag" \
+              --notes "Off-database copy of the big NBA ingredient tables, per season, CSV.GZ (nba/dump_db_history.py; retention audit 2026-10-08). The database is the running copy; these assets are the record."
+          fi
+          for f in db_history/*.csv.gz; do
+            [ -s "$f" ] || continue
+            gh release upload "$tag" "$f" --clobber
+          done
+          gh release view "$tag" --json assets --jq '.assets[] | "\(.name) \(.size)"'
