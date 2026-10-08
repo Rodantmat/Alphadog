@@ -309,7 +309,11 @@ def main():
                     #   known league-wide but never in this season -> almost always a name-match problem
                     #   unknown entirely -> definitely a matching problem (or a team/combo market)
                     if nm in players_seen:
-                        res = "dnp"
+                        # his team's box score is here today -> a scratch (dnp); his team has no box score today
+                        # -> the game was not played / not pulled (game_not_found), never a dnp
+                        _tm = team_as_of(resolved or nm, ds)
+                        _teams_today = {r.get("team") for r in day.values()}
+                        res = "dnp" if (_tm is None or _tm in _teams_today) else "game_not_found"
                     elif nm in all_known_names:
                         res = "unmatched_not_in_season"
                     else:
