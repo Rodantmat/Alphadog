@@ -814,6 +814,47 @@ AS $function$
     (SELECT p_plays FROM nba_score.availability_prior WHERE level = 'global'));
 $function$;
 
+CREATE OR REPLACE FUNCTION nba_score.build_tier_map_legs_sel_mf()
+ RETURNS bigint
+ LANGUAGE plpgsql
+AS $function$
+DECLARE n bigint; d_books numeric; d_agree numeric;
+BEGIN
+  SELECT deduction INTO d_books FROM nba_score.confidence_model WHERE factor = 'f_books';
+  SELECT deduction INTO d_agree FROM nba_score.confidence_model WHERE factor = 'f_agree';
+  IF d_books IS NULL OR d_agree IS NULL THEN RAISE EXCEPTION 'confidence_model lacks f_books / f_agree'; END IF;
+  DROP TABLE IF EXISTS nba_score.tier_map_legs_sel_mf_new;
+  CREATE TABLE nba_score.tier_map_legs_sel_mf_new AS
+  WITH j AS (
+    SELECT s.*, f.confidence AS conf, f.c_market AS cm, f.final_hp AS hp
+    FROM nba_score.tier_map_legs_sel s
+    LEFT JOIN nba_ref.player_name_map m ON s.rank_key = 'final_score' AND m.norm_name = nba_ref.norm_name(s.player)
+    LEFT JOIN nba_score.final_hp f ON s.rank_key = 'final_score' AND f.game_date = s.game_date AND f.player_id = m.player_id::text
+                                   AND f.prop = s.prop AND f.side = s.side AND f.line = s.line
+  ), r AS (
+    SELECT j.*,
+      CASE WHEN j.rank_key <> 'final_score' OR j.cm IS NULL THEN j.score ELSE
+        round(least(100.0, greatest(0.0,
+          j.hp*100.0
+          + (100.0 - j.hp*100.0) * least(1.0, greatest(0.0, ((j.conf - (d_books*j.cm + CASE WHEN j.cm > 0 THEN d_agree*0.30 ELSE 0 END)/100.0) - 0.85)/0.15)) * 0.5
+          - j.hp*100.0 * least(1.0, greatest(0.0, -(((j.conf - (d_books*j.cm + CASE WHEN j.cm > 0 THEN d_agree*0.30 ELSE 0 END)/100.0) - 0.85)/0.15))) * 0.35
+        ))::numeric, 2)::double precision END AS score_mf
+    FROM j)
+  SELECT rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor,
+         score_mf AS score, hit,
+         CASE WHEN rank_key = 'final_score'
+              THEN row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score_mf DESC, player, side, line)::int
+              ELSE n_rank END AS n_rank,
+         cell_size
+  FROM r;
+  CREATE INDEX ON nba_score.tier_map_legs_sel_mf_new (rank_key, game_date, prop, tier);
+  ANALYZE nba_score.tier_map_legs_sel_mf_new;   -- planner statistics BEFORE the engines join it (a fresh CTAS has none: the first P5 twin build sat 2 h in a cursor)
+  DROP TABLE IF EXISTS nba_score.tier_map_legs_sel_mf;
+  ALTER TABLE nba_score.tier_map_legs_sel_mf_new RENAME TO tier_map_legs_sel_mf;
+  SELECT count(*) INTO n FROM nba_score.tier_map_legs_sel_mf;
+  RETURN n;
+END $function$;
+
 CREATE OR REPLACE FUNCTION nba_score.calibrated_p(p_prop text, p_kind text, p_side text, p_role text, p_model numeric, p_date date)
  RETURNS numeric
  LANGUAGE sql
