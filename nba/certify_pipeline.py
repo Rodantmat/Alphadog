@@ -197,7 +197,7 @@ def main():
                      WHERE game_date = %s AND snapshot_label = 'window' AND bookmaker = 'prizepicks'""", (today,),
                   lambda v: v and int(v) > 0, "window rungs priced for the pick")
             check("board scored by THIS run",
-                  "SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s AND built_at > now() - interval '3 hours'", (today,),
+                  f"SELECT count(*) FROM nba_score.board_scored WHERE game_date = %s {fresh_built}", (today,),
                   lambda v: v and int(v) > 0, "legs scored by P3 itself, this run")
         check("confidence model loaded",
               "SELECT count(*) FROM nba_score.confidence_model WHERE deduction > 0", (),
