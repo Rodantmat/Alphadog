@@ -226,7 +226,9 @@ jobs:
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           INJURY_MODE: "daily"        # verified name; IR_MODE does not exist
-        run: python nba/scrape_nba_injury_report.py
+          INJURY_EXPECT: ${{ steps.d.outputs.has_games == '1' && '1' || '0' }}   # a slate day must find snapshots (round 2 P3#14)
+        # bounded (round 2 P3#14): 2 days x ~84 URL probes x 30 s could run past the job on a slow proxy; 10 min is ample
+        run: timeout --signal=TERM --kill-after=30s 600 python nba/scrape_nba_injury_report.py
 
       # STORE IT (2026-09-23). The scraper writes JSON; until now nothing loaded it, so the binding
       # availability input was queryable nowhere and `nba_daily` held zero tables. One row per
