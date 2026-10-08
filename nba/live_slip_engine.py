@@ -1064,7 +1064,7 @@ def calibrate(conn):
     rng = random.Random(11)
     for name, (comp, size, structure, cap, cert_hit, worst_dd, longest, pool_floor) in STRATEGIES.items():
         cap = max(cap, 1)   # a retired (cap 0) strategy still runs shadow detectors; calibrate it at cap 1
-        tbl = 'nba_score.slip_engine_slips_nosteals' if name.startswith(('C_', 'D_', 'R_', 'W_')) else 'nba_score.slip_engine_slips'
+        tbl = bt_table(conn, name)
         days = conn.execute(f"""SELECT game_date, sum(profit) FROM {tbl} WHERE composition=%s AND size=%s AND structure=%s AND k<=%s
                                AND phase<>'final7' GROUP BY game_date ORDER BY game_date""", (comp, size, structure, cap)).fetchall()
         nets = [float(r[1]) for r in days]
