@@ -59,6 +59,17 @@ jobs:
           FE_WRITE: "1"
         run: python nba/build_final_hp.py
 
+      # §31w P-4 (2026-10-08): price ONLY the season's play-in / playoff game ids (FE_POSTSEASON=1 replaces only 004/005 rows;
+      # every regular-season row is untouched by construction).
+      - name: Rebuild final_hp for the season's POSTSEASON games only
+        if: ${{ github.event.inputs.task == 'final_hp_postseason' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_SEASONS: ${{ github.event.inputs.season }}
+          FE_WRITE: "1"
+          FE_POSTSEASON: "1"
+        run: python nba/build_final_hp.py
+
       - name: Factor freshness
         if: ${{ github.event.inputs.task == 'freshness' }}
         env:
