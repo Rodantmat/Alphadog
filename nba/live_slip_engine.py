@@ -563,11 +563,11 @@ def pick(conn, day, require_fresh=True):
         if cap_rule:
             cp, cs, cl = cap_rule
             fam_pool = {c: [l for l in v if not (l['prop'] == cp and l['side'] == cs and float(l['line']) > cl)] for c, v in fam_pool.items()}
-        slips = ENG.build_day_slips(fam_pool, comp, size, structure, use_cap, cmap)
+        slips = ENG.build_day_slips(fam_pool, comp, size, structure, use_cap, cmap, broad_day)
         # rotation deadlock fix (acceptance replay, pass 83): in rotation family A builds steals-excluded, so the steals cell
         # would go unobserved and its EWMA could never recover. One shadow slip from the FULL pool keeps it observed.
         if rotation and name.startswith('A_') and not week2:
-            for obs in ENG.build_day_slips(pools.get(name[0], pool), comp, size, structure, 1, cmap):
+            for obs in ENG.build_day_slips(pools.get(name[0], pool), comp, size, structure, 1, cmap, broad_day):
                 conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status)
                                 VALUES (%s,%s,900,%s,%s,%s,'placed_shadow') ON CONFLICT (game_date, strategy, k) DO NOTHING""",
                              (day, name, json.dumps([{'cell': l['cell'], 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'], 'tier': l['tier'],
