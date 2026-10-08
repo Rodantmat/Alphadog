@@ -133,7 +133,7 @@ jobs:
 
       - name: Team stats, on/off, playtypes, tracking
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
         run: |
           python nba/scrape_nba_team_stats.py
           python nba/scrape_nba_onoff.py
