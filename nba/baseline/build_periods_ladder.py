@@ -59,7 +59,7 @@ for g_ in _slate:
         recent = full[(full["TEAM_ID"] == tid) & (full["season"] == TEST[0])].sort_values("GAME_DATE")
         last_games = recent["GAME_ID"].drop_duplicates().tail(3).tolist()
         _recent_roster = recent[recent["GAME_ID"].isin(last_games)]["PLAYER_ID"].unique().tolist()
-        roster = [p_ for p_ in _recent_roster if (_cur_team.get(p_) == tid if _cur_team else True)]   # P2B#14: no roster -> out
+        roster = [p_ for p_ in _recent_roster if ((_cur_team.get(p_, tid) == tid) if (_replay or not _cur_team) else (_cur_team.get(p_) == tid))]   # P2B#14: no roster -> out (live only)
         for p_, t_ in _cur_team.items():
             if t_ == tid and p_ not in roster and p_ in _hist_ids:
                 roster.append(p_)
