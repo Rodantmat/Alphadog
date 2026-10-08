@@ -36,8 +36,7 @@ def main():
             SELECT ev.game_id, gn.game_date::text,
                    max(CASE WHEN s.market='spreads' AND s.outcome=s.home_team AND s.snapshot_label='morning' THEN s.point END),
                    avg(CASE WHEN s.market='totals' AND s.outcome='Over' AND s.snapshot_label='morning' THEN s.point END),
-                   max(CASE WHEN s.market='spreads' AND s.outcome=s.home_team AND s.snapshot_label='window' THEN s.point END),
-                   count(DISTINCT gn.game_id) OVER () AS n
+                   max(CASE WHEN s.market='spreads' AND s.outcome=s.home_team AND s.snapshot_label='window' THEN s.point END)
             FROM ev JOIN gn ON gn.game_id = ev.game_id
             JOIN nba_market.game_lines_snapshots s ON s.event_id = ev.event_id AND s.game_date = gn.game_date
             GROUP BY 1, 2""", (season,)).fetchall()
