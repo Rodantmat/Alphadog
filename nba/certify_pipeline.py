@@ -83,7 +83,9 @@ def main():
             # so on a play-in / playoff / All-Star day it demanded a slate the pipelines correctly did not build.
             # ... and since round 2 (2026-10-08) that one predicate is the view nba_calendar.regular_season_games
             # (game-id prefix 002: the label regex let the NBA Cup Final through - nba/sql/regular_season_games.sql).
-            cur.execute("SELECT count(*) FROM nba_calendar.regular_season_games WHERE game_date = %s", (today,))
+            # §31w P-6 (2026-10-08): the slate is nba_calendar.slate_games (002 + play-in 005 + playoffs 004), the pipelines' own
+            # gate; "played recently" below stays regular-season (it judges products built from regular-season logs).
+            cur.execute("SELECT count(*) FROM nba_calendar.slate_games WHERE game_date = %s", (today,))
             slate_games = int(cur.fetchone()[0] or 0)
             # PLAYED, NOT SCHEDULED (fixed 2026-09-23). This window used to be +/-30 days, so during the
             # preseason ramp - the 2026-27 schedule opens 2026-10-03, ten days out - it reported "in
