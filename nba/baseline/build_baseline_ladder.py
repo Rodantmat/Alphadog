@@ -87,7 +87,8 @@ for g_ in _slate:
         _recent_roster = recent[recent["GAME_ID"].isin(last_games)]["PLAYER_ID"].unique().tolist()
         # now on another team -> removed; on NO roster (retired / unsigned since last season's final games) -> removed too
         # (round-2 P2B#14, 2026-10-08: opening-week ghost rows). With no roster file the old last-3 rule stands.
-        roster = [p_ for p_ in _recent_roster if (_cur_team.get(p_) == tid if _cur_team else True)]
+        # (a replay of a past slate keeps the §31r rule - today's roster file says nothing about who was unsigned back then)
+        roster = [p_ for p_ in _recent_roster if ((_cur_team.get(p_, tid) == tid) if (_replay or not _cur_team) else (_cur_team.get(p_) == tid))]
         _ros_dropped += len(_recent_roster) - len(roster)
         for p_, t_ in _cur_team.items():                                              # today's roster: traded-in / returning / new
             if t_ == tid and p_ not in roster:
