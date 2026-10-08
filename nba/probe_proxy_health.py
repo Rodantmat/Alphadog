@@ -64,9 +64,32 @@ def main():
     host = proxy_url.split("@")[-1].rstrip("/")
     print(f"proxy host: {host}  (source: {src})")
     proxies = {"https": proxy_url, "http": proxy_url}
-    s1 = probe("proxy  -> stats.nba.com scoreboardv2", "https://stats.nba.com/stats/scoreboardv2?GameDate=2026-10-21&LeagueID=00&DayOffset=0", proxies, NBA_HEADERS)
-    probe("proxy  -> api.prizepicks.com projections", "https://api.prizepicks.com/projections?league_id=7&per_page=1", proxies)
-    probe("direct -> api.prizepicks.com projections", "https://api.prizepicks.com/projections?league_id=7&per_page=1")
+    # exit IP + geo (3 requests = 3 rotations unless the URL pins a session)
+    for i in range(3):
+        try:
+            r = requests.get("https://ipinfo.io/json", proxies=proxies, timeout=20, impersonate="chrome124")
+            j = r.json(); print(f"  exit {i+1}: {j.get('ip')} {j.get('country')} {j.get('region')} {j.get('org','')[:40]}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"  exit {i+1}: ERROR {str(exc).replace(proxy_url, '<PROXY_URL>')[:120]}")
+    # the REAL scraper request (same endpoint + headers + impersonation as scrape_nba_stats_teams.py), 3 attempts
+    stats_headers = {"Host": "stats.nba.com", "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9",
+                     "Accept-Encoding": "gzip, deflate, br", "Connection": "keep-alive", "Referer": "https://stats.nba.com/",
+                     "x-nba-stats-origin": "stats", "x-nba-stats-token": "true",
+                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"}
+    stats_url = "https://stats.nba.com/stats/leaguestandingsv3?LeagueID=00&Season=2025-26&SeasonType=Regular%20Season"
+    s1 = None
+    for i in range(3):
+        s = probe(f"proxy  -> stats.nba.com leaguestandingsv3 #{i+1}", stats_url, proxies, stats_headers)
+        if s is not None and (s1 is None or s < s1):
+            s1 = s
+        if s is not None and s < 400:
+            break
+    pp_headers = {"Accept": "application/json", "Accept-Language": "en-US,en;q=0.9", "Origin": "https://app.prizepicks.com",
+                  "Referer": "https://app.prizepicks.com/"}
+    for i in range(2):
+        probe(f"proxy  -> api.prizepicks.com projections #{i+1}", "https://api.prizepicks.com/projections?league_id=7&per_page=1", proxies, pp_headers)
+    probe("proxy  -> partner-api.prizepicks.com", "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1&single_stat=true", proxies, pp_headers)
+    probe("direct -> api.prizepicks.com projections", "https://api.prizepicks.com/projections?league_id=7&per_page=1", None, pp_headers)
     probe("direct -> darko.app __data.json", "https://www.darko.app/__data.json")
     ok = s1 is not None and s1 < 400
     print("PROXY " + ("OK - CONNECTs accepted again" if ok else "STILL DOWN (407 = the proxy refuses our credentials/plan; the sites are fine)"))
