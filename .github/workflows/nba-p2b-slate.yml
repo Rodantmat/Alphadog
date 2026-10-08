@@ -180,7 +180,7 @@ jobs:
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           INJURY_MODE: "daily"
-          INJURY_EXPECT: "1"   # a slate day (this job only runs with has_games) must find the day-before filings (round 2 P3#14)
+          INJURY_EXPECT: ${{ steps.d.outputs.has_games == '1' && '1' || '0' }}   # a slate day must find the day-before filings (round 2 P3#14)
         run: timeout --signal=TERM --kill-after=30s 600 python nba/scrape_nba_injury_report.py
 
       # D1 REFEREE CREWS - a baseline-stage factor that posts ~6-7 AM PT (~9 AM ET) and is never archived. Poll until
