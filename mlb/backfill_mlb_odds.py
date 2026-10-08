@@ -136,6 +136,13 @@ def main():
                   if datetime.fromisoformat(e["commence_time"].replace("Z", "+00:00")).astimezone(PT).date() == d]
         for label in labels:
             ts = at_pt(d, LABEL_HOURS[label])
+            # RE-LIST AT THE BOARD TIME (2026-10-08): MLB re-keys events on postponements/doubleheader changes - the 08:00 id
+            # 404s at 13:00. The list at the snapshot time carries the id that is valid then (1 credit).
+            if ts > at_pt(d, 8):
+                jl, remaining, _c, _e = get_json(s, f"{BASE}/historical/sports/baseball_mlb/events?date={z(ts)}&apiKey={key}")
+                if jl is not None:
+                    events = [e for e in (jl.get("data") or [])
+                              if datetime.fromisoformat(e["commence_time"].replace("Z", "+00:00")).astimezone(PT).date() == d]
             if remaining is not None and int(remaining) < floor:
                 print(f"STOP: credits remaining {remaining} below floor {floor}", flush=True)
                 print("PARTIAL", json.dumps(tot), flush=True)
