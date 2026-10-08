@@ -1,1 +1,1 @@
-script: probe_odds_api_credits.py
+script: probe_odds_api_mlb_cost.py
