@@ -242,6 +242,13 @@ def main():
                 txt = extract_text(content); ts2 = header_ts(txt) or ts
                 out += [{**r, "source_url": url} for r in parse_report(txt, ts2)]
                 time.sleep(0.3)
+        # ROUND-2 P3#14 (2026-10-08): on a day the league publishes reports (INJURY_EXPECT=1, set by P3 on a slate day) a scan
+        # that found ZERO snapshots is a failed scrape, not an empty report - the previous file stays and the step goes red
+        # (soft in P3, so the slate continues on the last report with a visible warning), instead of silently loading nothing.
+        if not out and os.environ.get("INJURY_EXPECT") == "1":
+            print(f"daily: 0 snapshots found for {[d.isoformat() for d in days]} on a slate day - a failed scan, "
+                  f"leaving nba_injury_report_current.json untouched", flush=True)
+            sys.exit(1)
         (DATA / "nba_injury_report_current.json").write_text(json.dumps({"meta": {"fetched_at": datetime.utcnow().isoformat() + "Z", "days": [d.isoformat() for d in days], "rows": len(out), "snapshots": len({r["snapshot_ts"] for r in out})}, "rows": out}))
         print("daily:", len(out), "rows,", len({r["snapshot_ts"] for r in out}), "snapshots")
     else:
