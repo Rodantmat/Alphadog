@@ -755,6 +755,28 @@ day-of values live in `board_scored`, and the day's parameters are now in `model
 a day is refused unless `UDL_FORCE=1`; repo-only ingredients (pt_defend/hustle/clutch, matchups, quarter logs, pairs, coaches) are safe
 in git.
 
+### ODDS API MINING PROGRAM — step 1, NBA play-in + playoffs, both seasons (owner 2026-10-08 11:52 PT; done 12:42 PT)
+Owner order: (1) NBA postseason boards + market for both past seasons, same books/markets as the backtest → report; (2) MLB
+(2025 full incl. postseason; 2026 rest incl. postseason; keep mining the live MLB postseason); (3) NHL with what is left; (4) wire the
+NBA playoffs into the back data. Credits at start: paid key **4,999,977** (free key 500, untouched).
+- **Boards (Odds API historical event odds, 21 markets, us_dfs + us, window + close — the backtest's exact shape):** 2024-25 postseason
+  was already in from the original backfill (90 events, both labels, 2025-04-15 → 06-22). 2025-26 postseason pulled today:
+  `nba-board-backfill` 37828947918 🟢 (2026-04-13 → 06-30): **91 events (= 6 play-in + 85 playoff on the calendar), window + close
+  both, 0 errors, 1.49 M rows**. Shape check: playoff dates carry the same 21 markets and the same 10 (2024-25) / 12 (2025-26) books
+  as regular-season dates (PrizePicks, Underdog, DraftKings … present on every sampled date).
+- **Closing game lines (ParlayAPI archive, `parlay_game_lines_backfill`):** 2024-25 postseason 455 rows / 90 games / 52 dates;
+  2025-26 postseason 839 rows / 91 games / 50 dates (the 2026 archive also carries the extra non-`_an` books ParlayAPI added in May 2026).
+- **Morning + window game-line snapshots (Odds API sport odds, h2h/spreads/totals):** `backfill_game_line_snapshots.py` had a
+  hardcoded 2025-04-14 → 10-20 skip that excluded the 2025 postseason — removed (ea66a85; a date with no board rows is skipped anyway).
+  Runs 37829464278 🟢 (2025: 50 dates, 100 snapshots, 11,622 rows, 0 errors) and 37833756736 🟢 (2026: 47 dates, 94 snapshots,
+  11,922 rows, 0 errors).
+- **Credits after step 1: 4,918,278** (≈ 81.7 k spent). Billing rule verified in the docs: event odds cost 10 × markets RETURNED ×
+  regions (empty markets are free); sport odds cost per market requested; the events list costs 1.
+- **Not yet done (owner's step 4, after MLB/NHL mining):** postseason box scores → outcomes (`board_outcomes`), baseline and
+  final_hp for postseason dates; the whole chain is regular-season only by design today (the ONE slate predicate, game_id `002%`).
+- Side observation: GitHub delivered P2A's 13:30Z cron backstop at 19:21Z (≈6 h late) — the run-once claim made it a no-op
+  ("already claimed … this run does nothing"), exactly as designed.
+
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
 2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
