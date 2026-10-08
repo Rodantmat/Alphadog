@@ -581,8 +581,10 @@ def main():
                              round(float(r.c_exist), 4), round(float(r.c_quality), 4), round(float(r.c_market), 4),
                              r.prop_tier, r.band, r.phase, int(r.n_uncertain))
                             for r in frame.itertuples(index=False)]
-                rows = _rowify(d[~deep])
-                deep_rows = [t + ("beyond_certified_depth",) for t in _rowify(d[deep])]
+                nb = d["wn_nb"].fillna(False).astype(bool).values
+                rows = _rowify(d[~deep & ~nb])
+                deep_rows = ([t + ("beyond_certified_depth",) for t in _rowify(d[deep & ~nb])]
+                             + [t + ("wn_neighbor",) for t in _rowify(d[nb])])
                 with conn.cursor() as cur:
                     cur.execute("SELECT pg_advisory_xact_lock(hashtext('nba_score.final_hp'))")
                     # WRITE SCOPE (fixed 2026-09-23). This DELETE was season+prop only, while FE_DATE
