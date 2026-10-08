@@ -50,8 +50,11 @@ def main():
     else:
         import sys
         sys.path.insert(0, "nba")
-        from nba_season import stats_seasons
-        seasons = stats_seasons(2)
+        from nba_season import stats_seasons, current_season
+        # the slate's own season must be exported even before its first game is PLAYED (stats_seasons anchors on
+        # active_stats_season, which stays 2025-26 until the morning after the opener - so 2026-10-20's morning line
+        # would have had no file). Certification round 2, 2026-10-08.
+        seasons = list(dict.fromkeys(stats_seasons(2) + [current_season()]))
     conn = psycopg.connect(os.environ["DATABASE_URL"])
     conn.execute("SET statement_timeout = 0")
     OUT.mkdir(parents=True, exist_ok=True)
