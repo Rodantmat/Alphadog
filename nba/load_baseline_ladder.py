@@ -116,7 +116,7 @@ def main():
              factor_fits, role_minutes_multiplier, source_file, loaded_at)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s, now())""",
             (asof, meta.get("slate_games"), players, len(rows), props,
-             [str(x) for x in (meta.get("history_seasons") or [])] or None, meta.get("current_season"),
+             [str(x) for x in (meta.get("history_seasons") or [])] or None, season,   # the season the ROWS carry (round-2 P2B#18: meta said 2025-26 on 2026-10-20)
              json.dumps(meta.get("factor_fits") or {}), json.dumps(meta.get("role_minutes_multiplier") or {}),
              ", ".join(n for n, _ in docs)))
     conn.commit()
