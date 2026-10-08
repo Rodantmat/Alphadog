@@ -397,15 +397,23 @@ def main():
         total = 0
         for prop in plist:
             _base, _per = (prop.rsplit("_", 1)[0], prop.rsplit("_", 1)[1].upper()) if prop in _PERIOD_LABELS else (prop, "FULL")
+            # wn_nb (2026-10-08, round-2 P2A#6): the rung is on no board of its own - it is only the k+-0.5 neighbour of a
+            # real whole-number line (src 'wn_neighbor' in board_rung_keys). It is priced like every other rung but written to
+            # final_hp_derived (derivation 'wn_neighbor'), never to final_hp, so the certified surface and the cutpoints are
+            # untouched; build_whole_number_hp reads it from final_hp_all to price the whole-number line.
             h = pd.read_sql("""SELECT h.game_date, h.game_id, h.player_id, %s AS prop, h.line, h.anchor, h.ladder_offset,
-                                      h.p_more, h.p_less, h.role_tier, h.used_emp
+                                      h.p_more, h.p_less, h.role_tier, h.used_emp,
+                                      EXISTS (SELECT 1 FROM _fe_board_keys k
+                                              WHERE k.game_date = h.game_date AND k.player_id = h.player_id
+                                                AND k.prop = h.prop AND k.period = %s AND k.line = h.line
+                                                AND k.src = 'wn_neighbor') AS wn_nb
                                FROM nba_score.baseline_history h
                                WHERE h.season=%s AND h.prop=%s AND coalesce(h.period, 'FULL') = %s
                                  AND (%s = '' OR h.game_date = NULLIF(%s,'')::date)
                                  AND EXISTS (SELECT 1 FROM _fe_board_keys k
                                              WHERE k.game_date = h.game_date AND k.player_id = h.player_id
                                                AND k.prop = h.prop AND k.period = %s AND k.line = h.line)""",
-                            conn, params=(prop, season, _base, _per, FE_DATE, FE_DATE, _per))
+                            conn, params=(prop, _per, season, _base, _per, FE_DATE, FE_DATE, _per))
             # INVARIANT (2026-09-26, answers the sweep's T26-11/A0): every row this build writes carries
             # prop = the LABEL (`points_q1` for a Q1 rung, `points` only for a FULL rung), so the upsert
             # key (game_date, player_id, prop, line, side) can never collide across periods - a Q1 5.5
