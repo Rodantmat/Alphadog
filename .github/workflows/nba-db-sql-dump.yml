@@ -1,0 +1,38 @@
+name: NBA DB SQL Dump
+
+# RECORD OF THE DATABASE-RESIDENT SQL (round-2 P3#16, 2026-10-08). Critical-path functions and views lived only in Postgres;
+# this writes every NBA-schema function and view into nba/sql/db_functions.sql / db_views.sql and commits them, so the SQL
+# is certifiable from source and recoverable from git. Weekly (Monday 18:30 UTC, half an hour before P1) and on demand.
+# Commits go through nba/git_push_retry.sh (this run's files win a collision - they are a dump of the live database).
+
+on:
+  schedule:
+    - cron: '30 18 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-db-sql-dump
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]"
+      - name: Dump functions and views
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/dump_db_sql.py
+      - name: Commit the record
+        run: bash nba/git_push_retry.sh "NBA DB SQL dump [skip ci]" nba/sql/db_functions.sql nba/sql/db_views.sql
