@@ -39,7 +39,7 @@ DDL = """CREATE TABLE IF NOT EXISTS nba_score.price_shop_ledger (
     strategies text[], built_at timestamptz DEFAULT now(),
     PRIMARY KEY (game_date, source, player_id, prop, side, line, app))"""
 
-DEFAULT_CFG = {"margin_pp": 0.0916, "apps": ["prizepicks", "underdog", "sleeper", "fliff", "betr"],
+DEFAULT_CFG = {"margin_pp": 0.0916, "apps": ["prizepicks", "underdog", "sleeper", "fliff", "betr", "betr_us_dfs"],
                "note": "price-shopping ledger (§31v): margin_pp = certified break-even distance; apps = bookmakers read from the window archive"}
 
 
