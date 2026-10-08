@@ -111,7 +111,9 @@ def capture(conn):
 
 def closing(conn):
     yday = datetime.now(PT).date() - timedelta(days=1)
-    d0 = date.fromisoformat(os.environ.get("MLB_CLOSE_START") or yday.isoformat())
+    # default window = the last 4 days: ParlayAPI's closing archive lags a day or two on late games, so a single-day
+    # keep-up would leave holes (seen 2026-10-08: 10-05..10-07 not yet published). Upsert makes the overlap free of dupes.
+    d0 = date.fromisoformat(os.environ.get("MLB_CLOSE_START") or (yday - timedelta(days=3)).isoformat())
     d1 = date.fromisoformat(os.environ.get("MLB_CLOSE_END") or yday.isoformat())
     key = parlay_key(conn)
     s = requests.Session()
