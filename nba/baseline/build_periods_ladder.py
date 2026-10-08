@@ -44,12 +44,25 @@ _replay = os.environ.get("BT_REPLAY", "0") == "1"
 _slate = [g_ for g_ in _sched if str(g_.get("game_date", ""))[:10] == str(ASOF_D) and (_replay or int(g_.get("game_status") or 1) != 3)]
 full = full[full["GAME_DATE"] < ASOF_D]; teams = teams[teams["GAME_DATE"] < ASOF_D]
 v_players, v_teams = [], []
+# §31r roster rule, same as the singles builder (round-2 P2B#12, 2026-10-08): last-3-games participants still on the team,
+# plus every current-roster player with game history; players now on another team are removed. File missing -> old behaviour.
+_cur_team = {}
+_cr_path = DATA / "nba_players_current.json"
+if _cr_path.exists():
+    for _p in json.loads(_cr_path.read_text()).get("players", []):
+        if _p.get("team_id") and str(_p.get("roster_status")) in ("1", "1.0", "True", "true"):
+            _cur_team[str(_p["id"])] = str(_p["team_id"])
+_hist_ids = set(full["PLAYER_ID"])
 for g_ in _slate:
     gid = str(g_["game_id"]); hid = str(g_["home_team_id"]); aid = str(g_["away_team_id"]); ht = g_.get("home_team_tricode", "HOME"); at = g_.get("away_team_tricode", "AWAY")
     for tid, is_h in ((hid, True), (aid, False)):
         recent = full[(full["TEAM_ID"] == tid) & (full["season"] == TEST[0])].sort_values("GAME_DATE")
         last_games = recent["GAME_ID"].drop_duplicates().tail(3).tolist()
-        roster = recent[recent["GAME_ID"].isin(last_games)]["PLAYER_ID"].unique().tolist()
+        _recent_roster = recent[recent["GAME_ID"].isin(last_games)]["PLAYER_ID"].unique().tolist()
+        roster = [p_ for p_ in _recent_roster if _cur_team.get(p_, tid) == tid]
+        for p_, t_ in _cur_team.items():
+            if t_ == tid and p_ not in roster and p_ in _hist_ids:
+                roster.append(p_)
         mu = f"{ht} vs. {at}" if is_h else f"{at} @ {ht}"
         for pid in roster: v_players.append({"season": TEST[0], "PLAYER_ID": pid, "TEAM_ID": tid, "GAME_ID": gid, "GAME_DATE": ASOF_D, "MATCHUP": mu})
         v_teams.append({"season": TEST[0], "TEAM_ID": tid, "GAME_ID": gid, "GAME_DATE": ASOF_D, "MATCHUP": mu})
