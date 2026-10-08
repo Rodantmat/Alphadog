@@ -3,8 +3,8 @@
   "source": "https://api.sleeper.app/lines/available?dynamic=true&include_preseason=true&enable_one_sided_lines=true",
   "alt_source": "https://api.sleeper.app/lines/available_alt?include_preseason=true",
   "promos_source": "https://api.sleeper.app/lines/promos?enable_one_sided_lines=true",
-  "started_at": "2026-10-08T19:57:16Z",
-  "fetched_at": "2026-10-08T19:57:23Z",
+  "started_at": "2026-10-08T20:18:44Z",
+  "fetched_at": "2026-10-08T20:18:46Z",
   "sport": "nba",
   "games_mapped": 1266,
   "legs_without_game_date": 0,
@@ -39,12 +39,12 @@
     "1.48": 3,
     "1.59": 3,
     "1.50": 3,
-    "1.73": 3,
     "1.76": 3,
     "1.52": 3,
     "1.65": 2,
     "1.51": 2,
-    "1.69": 2
+    "1.69": 2,
+    "1.75": 2
   },
-  "github_run_id": "37835684084"
+  "github_run_id": "37838168815"
 }
