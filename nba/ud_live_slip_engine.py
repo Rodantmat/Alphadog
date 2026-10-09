@@ -354,19 +354,41 @@ def grade(conn, day):
 # UNDERDOG EDGE MONITOR (§31o). Is the staked P5 portfolio still above break-even? Research and validation: §31o.
 #   reference  - certified hit rate per (cell, tier, side) from the P5 backtest slips (the table ud_bt_table() names - round 3
 #                #4: the market-free twin ud_slip_engine_slips_dlt_orig2_mf; stand-downs out), rebuilt when that table changes
-#   break-even - FIXED at -10.84 pp: measured by THINNING the real joint outcomes (each actual hit kept with prob p(s)/p,
-#                slips regraded by the engine's grade()) because Underdog legs co-move inside a slip and an independence
-#                model understates actual ROI by 24 pts; stable across seasons (-10.82 / -10.68), same P5 structure live
+#   break-even - delta* measured by THINNING the real joint outcomes (each actual hit kept with prob p(s)/p, slips regraded
+#                by the engine's grade()) because Underdog legs co-move inside a slip and an independence model understates
+#                actual ROI by 24 pts. On the certified build -10.84 pp (-10.82 / -10.68 per season); on the market-free twin
+#                (round 3 #4, 2026-10-09, run 37984011965) -9.46 pp (-8.91 / -10.13). The value in force is the tunable
+#                nba_config.classification_config['ud_edge_monitor'].delta_star (with confirm_z / alarm_z), never a constant.
 #   statistic  - per graded slate, the mean of (hit - certified p) over the staked P5 slip-legs (voids out)
 #   decision   - looks at 30 / 60 / 90 / 120 graded slates; z = (mean - delta*) / Newey-West SE (7 lags); CONFIRM if
-#                z >= 2.48, ALARM if z <= -2.95 (14-day block bootstrap of the real backtest with the truth AT break-even:
-#                <= ~5-6% false either way). Sticky per season; between looks the running z is information only.
+#                z >= confirm_z, ALARM if z <= alarm_z (14-day block bootstrap of the real backtest with the truth AT
+#                break-even: <= ~5-6% false either way; certified build 2.48 / -2.95, twin 2.24 / -2.94). Sticky per season;
+#                between looks the running z is information only.
 # ============================================================================================================================
 UD_EDGE_LOOKS = (30, 60, 90, 120)
-UD_EDGE_DELTA = float(os.environ.get('UDL_EDGE_DELTA', '-0.1084'))
+UD_EDGE_DELTA = float(os.environ.get('UDL_EDGE_DELTA', '-0.1084'))        # code defaults = the certified build; the DB tunable wins
 UD_EDGE_CONFIRM_Z = float(os.environ.get('UDL_EDGE_CONFIRM_Z', '2.48'))
 UD_EDGE_ALARM_Z = float(os.environ.get('UDL_EDGE_ALARM_Z', '-2.95'))
 UD_P5 = [('weighted:points_R_U', 4, 'standard', 1), ('weighted:points_R_U', 6, 'flex', 1), ('mains', 2, 'standard', 2)]
+_UD_EDGE = {}
+
+
+def ud_edge_cfg(conn):
+    """(delta_star, confirm_z, alarm_z) in force: nba_config.classification_config['ud_edge_monitor'] when present (round 3 #4:
+    the twin's -0.0946 / 2.24 / -2.94), else the code defaults above; UDL_EDGE_* env overrides win (tests)."""
+    if not _UD_EDGE:
+        cfg = {}
+        try:
+            row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='ud_edge_monitor'").fetchone()
+            cfg = (row[0] if isinstance(row[0], dict) else json.loads(row[0])) if row else {}
+        except Exception:  # noqa: BLE001
+            cfg = {}
+        _UD_EDGE['delta'] = float(os.environ['UDL_EDGE_DELTA']) if os.environ.get('UDL_EDGE_DELTA') else float(cfg.get('delta_star', UD_EDGE_DELTA))
+        _UD_EDGE['confirm'] = float(os.environ['UDL_EDGE_CONFIRM_Z']) if os.environ.get('UDL_EDGE_CONFIRM_Z') else float(cfg.get('confirm_z', UD_EDGE_CONFIRM_Z))
+        _UD_EDGE['alarm'] = float(os.environ['UDL_EDGE_ALARM_Z']) if os.environ.get('UDL_EDGE_ALARM_Z') else float(cfg.get('alarm_z', UD_EDGE_ALARM_Z))
+        print(f"  Underdog edge monitor: break-even {100*_UD_EDGE['delta']:+.2f} pp, confirm z >= {_UD_EDGE['confirm']:.2f}, alarm z <= {_UD_EDGE['alarm']:.2f}"
+              f" ({'tunable' if cfg else 'code defaults'})", flush=True)
+    return _UD_EDGE['delta'], _UD_EDGE['confirm'], _UD_EDGE['alarm']
 
 
 def ud_nw_se(seq, lags=7):
@@ -376,7 +398,7 @@ def ud_nw_se(seq, lags=7):
     return math.sqrt(max(var, 1e-12) / n)
 
 
-def ud_evaluate_edge(excess, delta=UD_EDGE_DELTA, prior=None):
+def ud_evaluate_edge(excess, delta=UD_EDGE_DELTA, prior=None, confirm_z=UD_EDGE_CONFIRM_Z, alarm_z=UD_EDGE_ALARM_Z):
     """PURE core: (rows for looks reached and not yet recorded, running (n, mean, se, z) for information)."""
     prior = prior or {}
     sticky = next((d for lk, d in sorted(prior.items()) if d in ('CONFIRMED', 'ALARM')), None)
@@ -387,9 +409,9 @@ def ud_evaluate_edge(excess, delta=UD_EDGE_DELTA, prior=None):
         seq = excess[:look]; mean = sum(seq) / look; se = ud_nw_se(seq); z = (mean - delta) / se
         if sticky:
             dec = sticky
-        elif z >= UD_EDGE_CONFIRM_Z:
+        elif z >= confirm_z:
             dec = sticky = 'CONFIRMED'
-        elif z <= UD_EDGE_ALARM_Z:
+        elif z <= alarm_z:
             dec = sticky = 'ALARM'
         else:
             dec = 'UNDECIDED'
@@ -491,20 +513,21 @@ def ud_edge_monitor(conn, day):
     days = sorted(d for d, (s, n) in by_day.items() if n > 0)
     excess = [by_day[d][0] / by_day[d][1] for d in days]
     prior = {lk: d for lk, d in conn.execute("SELECT look, decision FROM nba_score.ud_edge_monitor WHERE season_start=%s AND look > 0", (s0,)).fetchall()}
-    rows, running = ud_evaluate_edge(excess, UD_EDGE_DELTA, prior)
+    delta, confirm_z, alarm_z = ud_edge_cfg(conn)
+    rows, running = ud_evaluate_edge(excess, delta, prior, confirm_z, alarm_z)
     for look, mean, se, z, dec in rows:
         conn.execute("""INSERT INTO nba_score.ud_edge_monitor (season_start, look, slates, mean_excess, se, z, delta_star, decision)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (season_start, look) DO NOTHING""", (s0, look, look, mean, se, z, UD_EDGE_DELTA, dec))
-        print(f"  {day}: UNDERDOG EDGE MONITOR LOOK {look}: mean excess {100*mean:+.2f} pp vs break-even {100*UD_EDGE_DELTA:+.2f} pp, z {z:+.2f} -> {dec}", flush=True)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (season_start, look) DO NOTHING""", (s0, look, look, mean, se, z, delta, dec))
+        print(f"  {day}: UNDERDOG EDGE MONITOR LOOK {look}: mean excess {100*mean:+.2f} pp vs break-even {100*delta:+.2f} pp, z {z:+.2f} -> {dec}", flush=True)
     if running:
         n, mean, se, z = running
         conn.execute("""INSERT INTO nba_score.ud_edge_monitor (season_start, look, slates, mean_excess, se, z, delta_star, decision)
                         VALUES (%s,0,%s,%s,%s,%s,%s,'RUNNING (information only)') ON CONFLICT (season_start, look) DO UPDATE SET
                         slates=EXCLUDED.slates, mean_excess=EXCLUDED.mean_excess, se=EXCLUDED.se, z=EXCLUDED.z, decided_at=now()""",
-                     (s0, n, mean, se, z, UD_EDGE_DELTA))
+                     (s0, n, mean, se, z, delta))
         nxt = next((lk for lk in UD_EDGE_LOOKS if lk > n), None)
         print(f"  {day}: Underdog edge monitor (running, information only) - {n} slates, excess {100*mean:+.2f} pp, break-even "
-              f"{100*UD_EDGE_DELTA:+.2f} pp, z {z:+.2f}; next decision at slate {nxt}" + (f"; {missing} legs without a reference" if missing else ""), flush=True)
+              f"{100*delta:+.2f} pp, z {z:+.2f}; next decision at slate {nxt}" + (f"; {missing} legs without a reference" if missing else ""), flush=True)
     else:
         print(f"  {day}: Underdog edge monitor - {len(days)} graded slates with per-leg outcomes; nothing to evaluate yet", flush=True)
     conn.commit()
