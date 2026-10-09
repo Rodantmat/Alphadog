@@ -473,12 +473,14 @@ def main():
                             else:
                                 lobby_only = j   # events without projections for this league - not the board
                     except Exception as exc:  # noqa: BLE001
-                        k = f"graphql body unreadable ({type(exc).__name__})"
-                        seen_ops[k] = seen_ops.get(k, 0) + 1
+                        if pending.get(rid, 0) >= 3:
+                            k = f"graphql body unreadable after 3 tries ({type(exc).__name__}: {str(exc)[:60]})"
+                            seen_ops[k] = seen_ops.get(k, 0) + 1
                         continue
-                if not board and (lobby_only is not None or lobby_board is not None):
-                    # the lobby answered but the league board did not: nudge the league chip again
-                    click_league(sb)
+                if not board and (lobby_only is not None or lobby_board is not None) and time.time() - last_nudge > 20:
+                    # the lobby answered but the league board did not: press the league chip again (at most every 20 s)
+                    last_nudge = time.time()
+                    print(f"  league chip re-click: {click_league(sb)}", flush=True)
                 time.sleep(3)
             if not board:
                 where(sb, "deadline")
