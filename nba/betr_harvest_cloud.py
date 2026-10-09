@@ -421,6 +421,8 @@ def main():
                     chips = sb.execute_script("return Array.from(document.querySelectorAll('button,a,div[role=button],li')).map(e=>(e.innerText||'').trim()).filter(t=>t && t.length<24 && /NBA|WNBA|NFL|MLB|NHL|All|Sports/i.test(t)).slice(0,40);")
                     print(f"  routes seen: {hrefs}", flush=True)
                     print(f"  chips seen: {chips}", flush=True)
+                    body_text = sb.execute_script("return (document.body.innerText||'').split('\\n').map(s=>s.trim()).filter(s=>s && s.length<40).slice(0,120).join(' | ');")
+                    print(f"  visible text: {body_text[:1500]}", flush=True)
                 except Exception as exc:  # noqa: BLE001
                     print(f"  route discovery failed: {str(exc)[:80]}", flush=True)
     finally:
