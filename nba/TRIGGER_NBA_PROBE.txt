@@ -1,1 +1,1 @@
-script: probe_repair_board_gaps.py
+script: probe_pick_postseason.py
