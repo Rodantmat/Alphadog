@@ -184,6 +184,9 @@ jobs:
           echo "postseason day - refreshing the $S postseason files"
           POST_SEASONS="$S" python -u nba/scrape_nba_postseason.py
           POST_SEASONS="$S" python -u nba/load_postseason_logs.py
+          # per-game defensive matchups for last night's play-in / playoff games (own postseason shards, incremental -
+          # an uncovered game is retried next morning), the twin of the regular "Per-game matchups" step above
+          SEASON="$S" MATCHUPS_POSTSEASON=1 python -u nba/scrape_nba_matchups_pergame.py || echo "::warning::postseason matchups incomplete (retried next run)"
           # GAP AUDIT (the postseason twin of check_delta_gaps.py, which audits 002 games only): every play-in / playoff game
           # scheduled up to last night must be in the season's postseason box-score file with both teams
           SEASON="$S" python - <<'EOF'
