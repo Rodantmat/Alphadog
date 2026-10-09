@@ -104,12 +104,41 @@ STEPS = [
            CASE rk.rank_key WHEN 'final_hp' THEN t.s_final WHEN 'baseline_hp' THEN t.s_base ELSE t.s_score END AS score
          FROM dedup t CROSS JOIN (VALUES ('final_hp'),('baseline_hp'),('final_score')) rk(rank_key)
        )
-       SELECT rank_key, season, game_date, player, prop, side, line, kind, tier, sys_tier, price, score, h,
-         row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score DESC, player, side, line),
-         count(*) OVER (PARTITION BY rank_key, game_date, prop, tier),
-         game_id, player_id, team_id, event_id, pf20
+       SELECT rank_key, season, game_date, player, prop, side, line, kind, tier, sys_tier AS rung, price AS factor, score, h AS hit,
+              game_id, player_id, team_id, event_id, pf20, false AS whole_number
        FROM ranked""",
 ]
+
+# WHOLE-NUMBER LEGS (2026-10-09): the live postseason pick also selects whole-number board lines placed in the cells' currency
+# (live_slip_engine.whole_number_legs: final_hp_derived 'whole_number' -> wn_price -> wn_score). The postseason map carries them
+# the same way, so the backtest measures the pool the live pick draws from (as tier_map_legs_sel does for the regular season).
+# A tie (push on the whole line) is a void: hit NULL. A DNP has no outcome row and is dropped.
+WN_SQL = """
+SELECT pr.game_date, d.season, coalesce(m.display_name, pr.nm) player, m.player_id::text player_id, d.game_id, pr.prop, pr.side, pr.line,
+       pr.kind, pr.sys_tier, pr.price, d.final_hp::float pc, d.p_tie::float pt,
+       CASE o.leg_result WHEN 'push' THEN NULL ELSE (o.leg_result = CASE pr.side WHEN 'Over' THEN 'over_win' ELSE 'under_win' END)::int END hit,
+       o.event_id, pf.team_id, pf.pf20
+FROM _priced pr
+JOIN nba_ref.player_name_map m ON m.norm_name = pr.nm
+JOIN nba_score.final_hp_derived d ON d.derivation = 'whole_number' AND d.game_date = pr.game_date AND d.player_id = m.player_id::text
+     AND d.prop = pr.prop AND d.side = pr.side AND d.line = pr.line AND d.final_hp IS NOT NULL AND d.p_tie IS NOT NULL
+     AND (d.game_id LIKE '004%' OR d.game_id LIKE '005%')
+JOIN (SELECT DISTINCT ON (game_date, nba_ref.norm_name(player), replace(replace(market_key,'_alternate',''),'player_',''), side, line)
+             game_date, nba_ref.norm_name(player) pn, replace(replace(market_key,'_alternate',''),'player_','') mk, side, line, leg_result, event_id
+      FROM nba_market.board_outcomes WHERE leg_result IN ('over_win','under_win','push') AND line = floor(line)
+        AND game_date IN (SELECT DISTINCT game_date FROM _fh)
+      ORDER BY game_date, nba_ref.norm_name(player), replace(replace(market_key,'_alternate',''),'player_',''), side, line) o
+  ON o.game_date = pr.game_date AND o.pn = pr.nm AND o.mk = pr.mk AND o.side = pr.side AND o.line = pr.line
+LEFT JOIN _pf pf ON pf.pid = m.player_id::text AND pf.game_date = pr.game_date
+WHERE pr.line = floor(pr.line)"""
+
+FINAL = """INSERT INTO nba_score.tier_map_legs_post (rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor, score,
+                                                    hit, n_rank, cell_size, game_id, player_id, team_id, event_id, pf20)
+   SELECT rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor, score, hit,
+          row_number() OVER (PARTITION BY rank_key, game_date, prop, tier ORDER BY score DESC, player, side, line),
+          count(*) OVER (PARTITION BY rank_key, game_date, prop, tier),
+          game_id, player_id, team_id, event_id, pf20
+   FROM _hp"""
 
 
 def main():
