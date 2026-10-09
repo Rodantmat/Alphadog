@@ -937,6 +937,18 @@ with the SAME builder the regular season used, extended to read the postseason f
 - Open by design: PP slip-level walk-forward (G5) fails — selection on 97 nights is not provable; the deployment rests on the gate,
   the family robustness (all 60 whole-line 5-Flex variants positive in both postseasons) and the leg-level out-of-sample hit.
 
+### MULTIPLIER VALUE PROGRAM (owner 2026-10-09 09:27 PT: "stress, research, probe, mine, debug and understand multipliers … test it out, see if it's worth it, or we just keep the strategies")
+- Research run 37961709098 (`research_multiplier_value.py` 512e7f86, `nba-multiplier-value.yml`): 828,818 PrizePicks / 421,819
+  Underdog / 237,806 Pick6 graded legs; stages law → calib → gate → udsim → xapp → layer; tables `nba_score.mvp_*`. Strategy §31aa,
+  COMPASS 144. Verdict: no generic price gate, no cross-app staking; current strategies kept.
+- Price-shop ledger upgraded (`build_price_shop_ledger.py` 75febac8): `cell`, `p_cell`, `m_star`, `v_cell`, `gate_cell`; config
+  `price_shop_ledger` updated in the DB (ud_ref_per_leg 1.8206 → 1.8708, cell_margin 0.03; verified in the row). Replay probe
+  37963666768 (2026-04-10, backtest source): Underdog 12 same-line legs — model gate 12 pass at mean p×m 1.548, backtest-hit-rate gate
+  10 pass at mean 1.048; rows verified in the table (m_star per leg).
+- PrizePicks payout mining (`TRIGGER_NBA_PP_MAP.txt`) switched from WNBA back to NBA (it was due ~10-01; last NBA quote 09-21).
+- To verify in the apps on 10-20 (cannot be measured server-side): Sleeper slip payout vs the product of its multipliers; PrizePicks
+  3-/4-Flex tables (help centre 2.25/1.25 and 5/1.5 vs mined 3/1 and 6/1.5). Not scraped live: Pick6, ParlayPlay, Dabble.
+
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
 2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
