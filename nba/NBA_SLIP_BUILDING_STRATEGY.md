@@ -2662,6 +2662,64 @@ Plan on a single-digit-to-low-double-digit edge, ~50 one-unit slips per postseas
 The 4- and 5-Flex slips share most legs (one bet sized twice, not two bets). Overs, demons, goblins and every regular-season strategy
 stay off playoff slates.
 
+### 31aa. Multipliers — the pricing law of every app, the break-even multiplier of a leg, and whether a price gate adds anything (2026-10-09; owner: "now is the time to understand multipliers … use the hit rate of the legs we have on backtest, understand what's the multiplier needed for that leg to be worth it, then see the multiplier of the day … test it out, see if it's worth it, or we just keep the strategies that we have … layer by layer")
+**The number.** A leg enters a slip as a factor: per-leg-multiplier apps pay `base(n) × ∏mᵢ` (flat-table apps are m = 1), so a
+leg's contribution to the slip's EV is **`v = p × m × base(n)^(1/n)`** and it is worth playing when `v ≥ 1`, i.e. when the day's
+multiplier **`m ≥ m* = 1 / (p × root)`**. `p` = the leg's hit rate from the backtest. Roots (even line → per-leg return):
+PrizePicks 5-Flex 1/0.5425 = 1.8433, 6-Flex 1/0.5421; Underdog 2-Standard 3.5^½ = **1.8708** (53.45%), 3-Std 6.5^⅓ (53.58%),
+4-Std 12^¼ (53.73%); Sleeper / Fliff the per-leg decimal itself (root 1). Program `nba/research_multiplier_value.py`
+(workflow `nba-multiplier-value.yml`, run 37961709098, tables `nba_score.mvp_law / mvp_calib / mvp_gate / mvp_udsim / mvp_xapp /
+mvp_layer`). Prior work it builds on: `NBA_MULTIPLIERS.md` (PrizePicks pricing law, game_types mining), §30 (Underdog modifiers),
+§31u–§31v (no-back-data apps, price-shop ledger). Independent web research (help centres, RotoWire, Stokastic, 4for4, de-vig
+literature) agrees on the method: every serious tool compares a calibrated probability against the per-leg break-even.
+**1 · Each app's pricing law from its own history** (realized hit × m by multiplier bucket; an even, fair line reads 0.500):
+| | easier alternates (m 0.6–0.9) | main lines (m 1.00) | harder alternates (m 1.1 → 5+) |
+|---|---|---|---|
+| PrizePicks (pp_leg_price factor, 829k legs) | 0.476–0.489 | **0.500** | 0.434 → 0.388 |
+| Underdog (modifiers, 422k legs) | 0.466–0.470 | **0.499** | 0.466 (1.06) → 0.374 (1.41) |
+| Pick6 (Odds API multiplier, 238k legs, decoded here) | 0.449–0.463 | **0.496** | 0.431 → 0.369 |
+Pick6's multiplier is a **payout modifier exactly like Underdog's** (1.00 on both sides of the main line; alternates priced on Overs
+only, 0.5×–46.6×). On every app the main line is priced even (the house edge sits in the base table) and **every alternate carries
+an extra margin: 3–7% on the easier rungs, 13–26% on the harder rungs, growing with distance** (the favourite-longshot bias). Sleeper's
+NBA board (10-20, 29 two-sided pairs): per-side multipliers ≈ 1.78, overround 12.6% → per-side break-even ≈ 0.56 if its payout is
+the product (unverified; §31v). PrizePicks tables re-verified from mined quotes (2026-09-21): Power 3/6/10/20/37.5, Flex 3 {3, 1},
+4 {6, 1.5}, 5 {10, 2, 0.4}, 6 {25, 2, 0.4}; its help centre now shows 3-Flex 2.25/1.25 and 4-Flex 5/1.5 (possibly state-specific) —
+**check in the owner's app on 10-20**.
+**2 · The backtest hit-rate map** (isotonic `final_hp → realized hit` per side × prop × main/alt, fitted on PrizePicks legs of one
+season, applied out of season): PrizePicks calibrates cleanly (model 0.75 → 0.69 / 0.70 realized), Pick6 too (0.75 → 0.69); on
+**Underdog's lines the model is overconfident even after the map** (0.74 raw → 0.61 mapped → 0.58 / 0.57 realized) — a hit rate
+does not transfer across apps' line structures for free.
+**3 · A generic price gate (any leg, calibrated p × m × root ≥ τ) — NO EDGE.** Realized per-leg value, out of sample, every τ
+0.95–1.20: PrizePicks 0.95–0.97 / 0.90–0.92; Underdog 0.96–1.00 (best 0.997 [0.980, 1.014] at τ 1.02); Pick6 ≤ 0.93 against an even
+line. Underdog slips built from the gate alone (one per game, τ chosen on the other season): 2-Standard −3% / −20%, 3-Std +1% / −6%,
+4-Std +5% / −4%, 5-Std and 6-Flex unstable (+33% / −39%, +40% / −64%) — no lower bound above 0 anywhere. **The certified Underdog P5
+on the same seasons: 4-Std +145% / +105% (lo +70% / +35%), 6-Flex +137% / +214%, mains 2-Std +33% / +35% (lo +10% / +13%).**
+**4 · The certified legs on another app ("apps without a backtest").** The PrizePicks engine's certified legs (live strategies,
+7,187 distinct legs) priced with the other app's multiplier of the day, p = the cell's out-of-season hit rate:
+- **Underdog** (same line and side for 2,090 = 29%): those legs hit only **0.536 / 0.552** (the certified legs as a whole ≈ 0.60) →
+  realized value 1.005 / 1.039; gated (τ 1.00) 1.007 / 1.117. Underdog slips from them: 3-Std +17% / +25%, 2-Std −9% / +17%,
+  4-Std +41% / +20% on 50 / 49 days — **never provable** (every lower bound < 0).
+- **Why:** certified PrizePicks standard legs whose line is *better* than Underdog's main hit **0.601** (396), the *same* line **0.557**
+  (3,072), a *worse* line 0.548 (294), and legs Underdog does not post at all (steals and other niche props) **0.595** (6,092). The
+  certified edge lives largely where PrizePicks' line differs from the market or where no one else posts the prop — exactly the legs
+  that cannot be carried to another app at the same price.
+- **Pick6** (2025-26, 779 legs): gated value 1.12–1.15 against an even line (lo ≈ 1.04) — but Pick6's base table is unpublished and
+  Pick6 is not scraped live → no action.
+**5 · The gate as a layer on the certified slips** (p = certified cell hit rate, other season): Underdog 4-Std 2025-26 — slips whose
+every leg clears `p_cell × m × root ≥ 1` **+143%** (90) vs a leg below **+10%** (37); mains 2-Std +39% (244) vs +20% (52); in 2024-25
+every slip cleared (nothing to veto). Profit unchanged (the vetoed slips were near break-even, not losers) and one season of evidence →
+**a candidate, not a rule**. The lowest slip-value tercile of Underdog 4-Std is the weakest in both seasons (+34% / −3% vs +229% /
++242%). PrizePicks: inconsistent across seasons (A_wsteals legs-below +101% / +81% vs clear +65% / +180%; demon slips all "below" yet
++204%) → no PrizePicks layer.
+**DECISION: keep the strategies we have** (PrizePicks live set, Underdog P5, Playoff Unders). No generic multiplier gate; no
+cross-app staking. **Wired (measurement only):** the price-shop ledger (`build_price_shop_ledger.py`, P3) now carries the owner's
+number for every certified leg on every app — `p_cell` (the cell's backtest hit rate), **`m_star`** (the multiplier the leg needs on
+that app, in the app's displayed units), `v_cell = p_cell × m_eff`, `gate_cell = v_cell ≥ 1 + cell_margin` (0.03); Underdog's root
+corrected to the 2-pick 3.5^½ (was 20^(1/5), 2.7% low). Replay 2026-04-10: the old model-p gate passed 12 / 12 Underdog legs at a
+mean p × m of 1.548; the backtest-hit-rate gate passes 10 / 12 at 1.048 (two demon-assist legs need m ≥ 1.245, Underdog paid 1.05 /
+1.23). The live ledger (Sleeper, Fliff, Betr, Underdog from 10-20) is what any venue rule or Underdog veto will be certified on.
+PrizePicks payout mining (`nba-pp-payout-map`, 6-hourly) switched back from WNBA to the NBA board.
+
 ### 31b. Daily player name map refresh (`nba/refresh_player_name_map.py`, P2B step before anything resolves names; on-demand `nba-name-map-refresh.yml`)
 The register (`nba/data/nba_all_players.json`) is refreshed only manually and lacked all six sampled newcomers; `nba_ref.players` is current (P1 weekly). All 44 missing were plain absences (no namesake collisions). Incremental, collision-safe with the builder's own rule (absent → insert; mapped to an inactive player → repoint to the active one; mapped to a different active player → no change, logged CONFLICT), never deletes. SQL `nba_ref.norm_name` == Python `norm_name` on 10 edge cases (accents, Jr/II/III/V, hyphen, apostrophe). **Result: map 5,169 → 5,213; active players unresolved 44 → 0.**
 ### 31c. Close-board capture (`nba-close-capture.yml` + scheduler v2.1.0)
