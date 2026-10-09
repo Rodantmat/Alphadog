@@ -781,6 +781,39 @@ def pick_postseason(conn, day, legs):
         print(f"    {name:<20} {'SHADOW' if shadow else 'STAKE '} pool {pool_n:>3} | {len(slips)} slip(s)"
               + ("" if not shadow else f" ({'retired' if cap == 0 else 'sticky red' if sticky_red else 'rotation-only' if name in ROTATION_ONLY else 'postseason verdict ' + str(verdict.get(name, 'none'))})"),
               flush=True)
+    # PLAYOFF UNDERS (§31z, 2026-10-09): the postseason-only rule - balanced-line Unders, model p >= min_p, one per player, best
+    # first, one slip per strategy per night - built by playoff_unders.py, the SAME code its certification backtested. It stakes
+    # only with a PASS postseason verdict (certify_postseason_strategies.py); otherwise shadow. Tunables:
+    # classification_config['playoff_unders'].
+    import playoff_unders as PU
+    pcfg = PU.load_cfg(conn)
+    if pcfg.get('enabled', True):
+        acfg = PU.app_cfg(pcfg, 'pp')
+        cands = PU.candidates(PU.pivot_rank_rows([l for l in legs if not l.get('whole_number')]), acfg)
+        for name, spec in PU.strategies_for(pcfg, 'pp').items():
+            slip = PU.build_slip(cands, int(spec['size']), 'pp', acfg)
+            conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
+                         (day, name, len(cands)))
+            if slip is None:
+                print(f"    {name:<20} pool {len(cands):>3} | no slip (night too thin for {spec['size']} legs)", flush=True)
+                continue
+            st = 'placed_post' if verdict.get(name) == 'PASS' else 'placed_post_shadow'
+            sig = (spec['structure'], tuple(sorted((l['player'], l['prop'], l['side'], float(l['line'])) for l in slip)))
+            if st == 'placed_post':
+                staked = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s AND status='placed_post'", (day,)).fetchone()[0]
+                if sig in placed_sigs or staked >= MAX_DAILY_STAKE:
+                    st = 'placed_post_shadow'
+                else:
+                    placed_sigs.add(sig)
+            conn.execute("""INSERT INTO nba_score.live_slips (game_date, strategy, k, legs_json, size, structure, status, stake_weight)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (game_date, strategy, k) DO NOTHING""",
+                         (day, name, 1, json.dumps([{'cell': 'playoff_unders', 'player': l['player'], 'player_id': l.get('player_id'), 'prop': l['prop'],
+                                                     'tier': l['tier'], 'side': l['side'], 'line': float(l['line']), 'factor': l['factor'],
+                                                     'score': l.get(acfg.get('rank', 's_final'))} for l in slip]),
+                          int(spec['size']), spec['structure'], st, 1.0))
+            n += 1
+            print(f"    {name:<20} {'STAKE ' if st == 'placed_post' else 'SHADOW'} pool {len(cands):>3} | 1 slip "
+                  f"(postseason verdict {verdict.get(name, 'none')})", flush=True)
     conn.commit()
     staked = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s AND status='placed_post'", (day,)).fetchone()[0]
     print(f"  {day}: POSTSEASON - {n} slips recorded ({staked} staked)", flush=True)
