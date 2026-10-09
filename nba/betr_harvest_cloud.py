@@ -502,6 +502,10 @@ def main():
                 time.sleep(3)
             if not board:
                 where(sb, "deadline")
+                try:
+                    routed = routed or f"/{LEAGUE.lower()}" in (sb.get_current_url() or "").lower()
+                except Exception:  # noqa: BLE001
+                    pass
                 print(f"  wire: {seen_ops or 'no betr.app graphql / error responses seen'}", flush=True)
                 # ROUTE DISCOVERY (2026-10-09): the app now lands on /picks/home/lobby (the old /lobby/<league> redirects there);
                 # list the league links / chips it renders so the league navigation can be corrected without guessing.
