@@ -353,21 +353,6 @@ def main():
             log(f"     REGULAR-SEASON stress: {f(rr1)} ({rn1} nights) / {f(rr2)} ({rn2} nights)"
                 + (f"; P(losing season) {regdd['p_lose']:.1%}, drawdown p95 {regdd['dd95']:.1f}" if regdd else ''))
         # ---- the configuration written for live: the rule of the best finalist that clears G1-G4 (Flex preferred on PP)
-        best = None
-        for stk, (wk, k, g1, g2, g3, g4, r) in finals.items():
-            score = (g1 and g2 and g3 and g4, g1 and g3 and g4, wk)
-            if best is None or score > best[0]:
-                best = (score, k)
-        if best:
-            k = best[1]
-            chosen_cfg[app] = dict(rank=k[0], props=PROPSETS[k[1]], min_p=k[2], exclude_star=k[3], max_per_game=k[4])
-            strategies = {}
-            for stk, (wk, kk, g1, g2, g3, g4, r) in finals.items():
-                if kk[:5] == k[:5] and g1 and g3:
-                    nm = f"{'P' if app == 'pp' else 'U'}_unders_{kk[5]}{kk[6]}"
-                    strategies[nm] = {"app": app, "size": kk[5], "structure": kk[6]}
-            chosen_cfg[app]['strategies'] = strategies
-            log(f"\n   {app.upper()} CHOSEN RULE: {chosen_cfg[app]}")
     if WRITE_CFG and chosen_cfg:
         pp = chosen_cfg.get('pp', {})
         ud = chosen_cfg.get('ud', {})
