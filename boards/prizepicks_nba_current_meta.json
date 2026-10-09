@@ -3,16 +3,16 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-08T20:18:44Z",
+  "fetched_at": "2026-10-09T20:19:52Z",
   "egress": {
-    "ip": "88.223.44.177",
-    "city": "Dallas",
-    "region": "Texas",
+    "ip": "168.151.190.149",
+    "city": "New York City",
+    "region": "New York",
     "country": "US",
-    "loc": "32.7831,-96.8067",
-    "org": "AS7459 Grande Communications Networks, LLC",
-    "postal": "75201",
-    "timezone": "America/Chicago",
+    "loc": "40.7143,-74.0060",
+    "org": "AS204491 TEKNOSOS LLC",
+    "postal": "10004",
+    "timezone": "America/New_York",
     "readme": "https://ipinfo.io/missingauth"
   },
   "proxy_used": true,
@@ -20,7 +20,7 @@
   "row_count": 195,
   "total_pages": 1,
   "future_pickable": 195,
-  "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
+  "chosen_url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
   "candidates": [
     {
       "url": "https://api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
@@ -39,23 +39,20 @@
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true",
       "attempt": 1,
-      "http_status": 200,
-      "bytes": 220062,
-      "total_pages": 1,
-      "ok": true,
-      "rows": 195,
-      "future_pickable": 195
+      "http_status": 403,
+      "bytes": 94,
+      "error": "blocked"
     },
     {
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 220040,
+      "bytes": 220230,
       "total_pages": 1,
       "ok": true,
       "rows": 195,
       "future_pickable": 195
     }
   ],
-  "github_run_id": "37838168815"
+  "github_run_id": "37985872876"
 }

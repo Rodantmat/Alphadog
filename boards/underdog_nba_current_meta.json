@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-09T17:05:53Z",
-  "fetched_at": "2026-10-09T17:06:12Z",
+  "started_at": "2026-10-09T20:19:52Z",
+  "fetched_at": "2026-10-09T20:20:02Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -11,7 +11,7 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      39
+      49
     ],
     [
       "matches",
@@ -36,11 +36,11 @@
       0
     ],
     [
-      "lines[match=225741,other-day]",
+      "lines[match=225742,other-day]",
       0
     ],
     [
-      "lines[match=225742,other-day]",
+      "lines[match=225741,other-day]",
       0
     ],
     [
@@ -112,15 +112,15 @@
       0
     ],
     [
-      "lines[match=225762,other-day]",
-      0
-    ],
-    [
       "lines[match=225761,other-day]",
       0
     ],
     [
-      "lines[match=225763,other-day]",
+      "lines[match=225762,other-day]",
+      0
+    ],
+    [
+      "lines[match=225766,other-day]",
       0
     ],
     [
@@ -128,11 +128,11 @@
       0
     ],
     [
-      "lines[match=225765,other-day]",
+      "lines[match=225763,other-day]",
       0
     ],
     [
-      "lines[match=225766,other-day]",
+      "lines[match=225765,other-day]",
       0
     ],
     [
@@ -166,8 +166,8 @@
     ],
     [
       "alternate_projections",
-      6,
-      138,
+      16,
+      368,
       0,
       "deduped 0"
     ],
@@ -180,35 +180,38 @@
       0
     ]
   ],
-  "lines": 57,
-  "legs": 57,
-  "ladder_legs": 138,
-  "ladder_lines_with_alternates": 6,
+  "lines": 67,
+  "legs": 67,
+  "ladder_legs": 368,
+  "ladder_lines_with_alternates": 16,
   "players": 10,
-  "pregame_legs": 57,
+  "pregame_legs": 67,
   "live_legs": 0,
   "by_stat": {
     "Moneyline": 33,
     "Points": 10,
-    "Pts + Rebs + Asts": 8,
-    "Margin of Victory": 3,
-    "Total Points": 3
+    "Margin of Victory": 8,
+    "Total Points": 8,
+    "Pts + Rebs + Asts": 8
   },
   "by_line_type": {
-    "balanced": 57
+    "balanced": 67
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "None": 36,
-    "1.0": 18,
-    "0.61": 1,
-    "0.56": 1,
-    "1.04": 1
+    "None": 41,
+    "1.0": 16,
+    "1.04": 3,
+    "0.89": 2,
+    "0.56": 2,
+    "0.96": 1,
+    "0.91": 1,
+    "0.98": 1
   },
-  "github_run_id": "37963684006",
+  "github_run_id": "37985872876",
   "target_date_et": "2026-10-09",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 6.7
+  "elapsed_s": 9.2
 }
