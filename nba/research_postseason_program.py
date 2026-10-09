@@ -386,6 +386,15 @@ def select_cells(legs_post, app, permute=False, train=None):
                         acc[n][season].append(pm); hits[n][season].append(hit)
             for n in N_CUTS:
                 a = acc.get(n, {})
+                if train is not None:
+                    if len(a.get(train, [])) < MIN_DAYS:
+                        continue
+                    pt = sum(a[train]) / len(a[train]); ht = sum(hits[n][train]) / len(hits[n][train])
+                    cand = (pt, n, rank, pt, pt, len(a[train]), len(a[train]), ht, ht)
+                    weak = pt
+                    if best is None or (weak > best[0] + 1e-12) or (abs(weak - best[0]) <= 1e-12 and n > best[1]):
+                        best = cand
+                    continue
                 if len(a.get(S1, [])) < MIN_DAYS or len(a.get(S2, [])) < MIN_DAYS:
                     continue
                 p1, p2 = sum(a[S1]) / len(a[S1]), sum(a[S2]) / len(a[S2])
