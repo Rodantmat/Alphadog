@@ -2588,8 +2588,8 @@ postseason only** and a full-pipeline empirical null (`psr_validation`) → leg-
 on both regular seasons + envelopes (`psr_stress`).
 **A defect found on the way (fixed, re-certified):** `tier_map_legs_post.event_id` was NULL on every row (board_outcomes carries no
 event), so the postseason slip engine treated every pair as same-game — no cross-game-first ordering, and the regular-season
-negative-correlation ban fired on cross-game pairs. The builder now resolves the game from `game_id` (event_game_map); re-run
-37888… : 15,618 of 62,042 postseason slips are now cross-game; the postseason verdicts did not change (all SHADOW).
+negative-correlation ban fired on cross-game pairs. The builder now resolves the game from `game_id` (event_game_map); re-certified
+2026-10-09 05:32Z: 15,618 of 62,042 postseason slips are now cross-game; the postseason verdicts did not change (all SHADOW).
 | layer | PrizePicks | Underdog |
 |---|---|---|
 | cells ABOVE break-even in both postseasons | **26 vs null 12.3 (95th 18) — real**; almost all Unders: assists R U top-2 0.680 / 0.691, ALL R U top-7 0.635 / 0.641, BOARD R U 0.634 / 0.646, steals R U 0.630 / 0.632, reb_ast R U 0.633 / 0.624, pts_reb R U, rebounds R U, pra R U, points R U | 27 vs null 18.9 (95th 25) — marginal |
