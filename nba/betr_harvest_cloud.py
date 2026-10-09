@@ -314,6 +314,13 @@ def main():
                     if m.get("method") == "Network.responseReceived" and \
                        "fantasy.betr.app/graphql" in m["params"]["response"].get("url", ""):
                         ids.append(m["params"]["requestId"])
+                        st_code = m["params"]["response"].get("status")
+                        seen_ops[f"graphql {st_code}"] = seen_ops.get(f"graphql {st_code}", 0) + 1
+                    elif m.get("method") == "Network.responseReceived":
+                        u = m["params"]["response"].get("url", "")
+                        if "betr.app" in u and m["params"]["response"].get("status", 0) >= 400:
+                            k = f"{m['params']['response'].get('status')} {u.split('?')[0][:70]}"
+                            seen_ops[k] = seen_ops.get(k, 0) + 1
                 for rid in reversed(ids):
                     try:
                         b = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid})
