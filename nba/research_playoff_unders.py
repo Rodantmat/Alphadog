@@ -40,7 +40,8 @@ BOOT = int(os.environ.get('PU_BOOT') or '10000')
 WRITE_CFG = os.environ.get('PU_WRITE_CFG', '1') == '1'
 S1, S2 = '2024-25', '2025-26'
 RANKS = ['s_final', 's_base', 's_score']
-PROPSETS = {'main8': PU.MAIN_PROPS, 'all12': PU.MAIN_PROPS + PU.DEF_PROPS}
+PROPSETS = {'main8': PU.MAIN_PROPS, 'all12': PU.MAIN_PROPS + PU.DEF_PROPS,
+            'main8_half': PU.MAIN_PROPS, 'all12_half': PU.MAIN_PROPS + PU.DEF_PROPS}   # *_half: half-point lines only (sensitivity)
 MINP = [0.50, 0.55, 0.58, 0.62, 0.66]
 STRUCT = {'pp': [(3, 'power'), (3, 'flex'), (4, 'power'), (4, 'flex'), (5, 'power'), (5, 'flex'), (6, 'power'), (6, 'flex')],
           'ud': [(2, 'standard'), (3, 'standard'), (3, 'flex')]}
