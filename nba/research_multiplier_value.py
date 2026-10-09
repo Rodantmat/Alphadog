@@ -471,7 +471,8 @@ def stage_xapp(conn, ud, p6):
             # real Underdog slips from the certified legs: one pick per game, best value first, graded with Underdog's payout
             days = defaultdict(list)
             for l in matched:
-                days[l['game_date']].append(l)
+                if not final7(l['game_date']):
+                    days[l['game_date']].append(l)
             log("    Underdog slips from certified PrizePicks legs (one per game, best value first), ROI 2024-25 / 2025-26:")
             for size, st in UD_STRUCTS[:4]:
                 line = []
