@@ -62,6 +62,15 @@ jobs:
       - name: 4. Per-strategy postseason gate + postseason board floor
         run: python -u nba/certify_postseason_strategies.py
 
+      - name: 4b. Underdog postseason record (tier map + bands on Underdog's postseason boards; UD stays stake 0 on postseason)
+        continue-on-error: true
+        env:
+          TM_SUFFIX: _post
+          TM_SOURCE: nba_score.ud_window_legs_post
+          TM_REBUILD: "1"
+          TM_MIN_DAYS: "20"
+        run: python -u nba/build_ud_tier_map_bands.py
+
       - name: 5. Walk-forward validator on the postseason tables (record)
         continue-on-error: true
         env:
