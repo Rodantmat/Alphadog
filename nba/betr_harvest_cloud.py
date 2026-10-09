@@ -330,14 +330,7 @@ def main():
     try:
         with SB(**kw) as sb:
             sb.uc_open_with_reconnect(URL, reconnect_time=10)
-            try:
-                # a bigger CDP body buffer: with the default, 3 of 5 graphql bodies were already evicted when read (2026-10-09)
-                sb.driver.execute_cdp_cmd("Network.enable", {"maxTotalBufferSize": 200_000_000, "maxResourceBufferSize": 50_000_000})
-            except Exception:  # noqa: BLE001
-                try:
-                    sb.driver.execute_cdp_cmd("Network.enable", {})
-                except Exception:  # noqa: BLE001
-                    pass
+            enable_network(sb)
             where(sb, "first load")
             for _ in range(3):
                 try:
