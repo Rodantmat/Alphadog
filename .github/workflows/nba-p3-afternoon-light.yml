@@ -291,6 +291,25 @@ jobs:
           PP_NBA_MIN_FUTURE_ROWS: "50"   # main.py's gate, kept
         run: timeout --signal=TERM --kill-after=30s 420 python nba/scrape_prizepicks_nba_board.py
 
+      # BETR AT THE WINDOW (2026-10-09; owner: "if any board is not working properly, it's not soft"). The Betr cloud harvester
+      # runs in its own workflow (Chrome + Xvfb + the seeded session) on two GitHub crons, and GitHub dropped both crons on
+      # 10-09. P3 is dispatched by our own scheduler every slate day, so P3 now fires the harvest itself at the window; the
+      # harvester's concurrency group makes a cron + dispatch overlap harmless, and it never overwrites a good board with an
+      # empty one. The board lands in the repo a few minutes later (its own commit) and the next archive run picks it up.
+      - name: Dispatch the Betr cloud harvest (window)
+        id: soft_betr
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          code=$(curl -s -o /tmp/betr_dispatch.json -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/betr-cloud-harvest.yml/dispatches" \
+            -d '{"ref":"main"}')
+          echo "betr-cloud-harvest dispatch: http $code"
+          [ "$code" = "204" ] || { cat /tmp/betr_dispatch.json; exit 1; }
+
       - name: Other board scrapers
         id: soft_boards
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
