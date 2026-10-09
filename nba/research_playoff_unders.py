@@ -261,18 +261,24 @@ def main():
                 f"{'G1 ' if g1 else ''}{'G2 ' if g2 else ''}{'G3 ' if g3 else ''}{'G4' if g4 else ''}")
         # ---- G5 walk-forward over the whole grid + its null
         wf = {}
-        for direction, (tr, te) in (('fwd', (S1, S2)), ('rev', (S2, S1))):
-            wf[direction] = walk_forward(grid, tr, te)
-        null_best = {'fwd': [], 'rev': []}
-        null_top = {'fwd': [], 'rev': []}
+        # two pre-registered selection rules: the regular season's (highest training ROI, any structure) and the
+        # low-variance one this rule is deployed as (highest training ROI among Flex slips); PrizePicks only - Underdog has
+        # no Flex on 2-pick nights, so its rule is the first
+        rules = (('any', False), ('flex', True)) if app == 'pp' else (('any', False),)
+        for rule, fo in rules:
+            for direction, (tr, te) in (('fwd', (S1, S2)), ('rev', (S2, S1))):
+                wf[f'{direction}_{rule}'] = walk_forward(grid, tr, te, flex_only=fo)
+        null_best = defaultdict(list)
+        null_top = defaultdict(list)
         for i in range(NULLS):
             ng = run_grid(app, permuted(by_day))
-            for direction, (tr, te) in (('fwd', (S1, S2)), ('rev', (S2, S1))):
-                w = walk_forward(ng, tr, te)
-                if w:
-                    null_best[direction].append(w['test'] if w['test'] is not None else -1)
-                    null_top[direction].append(w['top10_test'] if w['top10_test'] is not None else -1)
-        for direction in ('fwd', 'rev'):
+            for rule, fo in rules:
+                for direction, (tr, te) in (('fwd', (S1, S2)), ('rev', (S2, S1))):
+                    w = walk_forward(ng, tr, te, flex_only=fo)
+                    if w:
+                        null_best[f'{direction}_{rule}'].append(w['test'] if w['test'] is not None else -1)
+                        null_top[f'{direction}_{rule}'].append(w['top10_test'] if w['top10_test'] is not None else -1)
+        for direction in wf:
             w = wf[direction]
             if not w:
                 continue
