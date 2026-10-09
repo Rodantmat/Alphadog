@@ -34,6 +34,7 @@ BE = float(os.environ.get('TM_BE') or '0.536')
 N_MAX = int(os.environ.get('TM_NMAX') or '25')
 PCT_MAX = int(os.environ.get('TM_PCTMAX') or '30')
 PLATEAU = 0.02
+MIN_DAYS = int(os.environ.get('TM_MIN_DAYS') or '60')   # §31w: the postseason record (_post) uses 20 - a postseason has <= 50 nights
 SUFFIX = os.environ.get('TM_SUFFIX') or ''            # §30r: '_curr' = the build on modifiers repriced to Underdog's current logic
 SOURCE = os.environ.get('TM_SOURCE') or 'nba_score.ud_window_legs'   # §30r: 'nba_score.ud_window_legs_curr'
 LEGS, BANDS, SUMMARY = f'nba_score.ud_tier_map_legs{SUFFIX}', f'nba_score.ud_tier_map_bands{SUFFIX}', f'nba_score.ud_tier_map_summary{SUFFIX}'
