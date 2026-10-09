@@ -949,7 +949,7 @@ with the SAME builder the regular season used, extended to read the postseason f
 - To verify in the apps on 10-20 (cannot be measured server-side): Sleeper slip payout vs the product of its multipliers; PrizePicks
   3-/4-Flex tables (help centre 2.25/1.25 and 5/1.5 vs mined 3/1 and 6/1.5). Not scraped live: Pick6, ParlayPlay, Dabble.
 
-### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
+### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch) — see ROUND 3 below for the 2026-10-09 outcome
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
 2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
    the baseline history.
