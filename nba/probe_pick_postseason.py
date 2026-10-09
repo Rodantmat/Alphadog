@@ -18,6 +18,42 @@ import psycopg
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import live_slip_engine as LS  # noqa: E402
+import build_tier_map_legs_postseason as TMP  # noqa: E402  (the certified map's market-free score, ONE definition)
+
+# A past slate's nba_score.final_hp.score carries the sportsbook market term (the feed existed then); live has no feed, so a
+# live night's score IS market-free - the score the postseason map was built on. To replay a past night the way live would
+# see it, the probe rescores final_score with the map builder's own statement (its _fh temp table), inside the rolled-back
+# transaction. final_hp / baseline_hp are untouched (identical in both).
+MF_STEP = next(st for st in TMP.STEPS if st.lstrip().startswith("CREATE TEMP TABLE _fh"))
+
+
+def market_free(conn, d, legs):
+    conn.execute(MF_STEP)
+    mf = {(str(r[0]), r[1], r[2], float(r[3])): r[4] for r in conn.execute(
+        "SELECT player_id, prop, side, line, s_score FROM _fh WHERE game_date=%s", (d,)).fetchall()}
+    n = 0
+    for l in legs:
+        if l['rank_key'] == 'final_score' and not l.get('whole_number'):
+            v = mf.get((str(l['player_id']), l['prop'], l['side'], float(l['line'])))
+            if v is not None and v != l['score']:
+                l['score'] = v
+                n += 1
+    # re-rank the final_score cells exactly as the loader does (score DESC, player, side, line)
+    from collections import defaultdict
+    groups = defaultdict(list)
+    for l in legs:
+        if l['rank_key'] == 'final_score':
+            groups[(l['prop'], l['tier'])].append(l)
+    for g in groups.values():
+        g.sort(key=lambda l: (-l['score'], l['player'], l['side'], float(l['line'])))
+        for i, l in enumerate(g, start=1):
+            l['n_rank'] = i
+    return n
+
+
+def nm(x):
+    import unicodedata
+    return ''.join(c for c in unicodedata.normalize('NFKD', x) if not unicodedata.combining(c)).lower()
 
 
 class NoCommit:
