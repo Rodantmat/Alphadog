@@ -277,8 +277,13 @@ def grade(conn, day):
         print(f"  {day}: no ungraded Underdog paper slips", flush=True)
         return
     stats = {}
+    # §31z (2026-10-09): the postseason box scores live in the *_postseason twin - without them every play-in / playoff slip stayed
+    # ungraded forever ("no player game logs landed"), the twin the PrizePicks grader already unions
     for pid, pts, reb, ast, fg3m, stl, blk, tov, mins in conn.execute("""SELECT nba_player_id::text, pts, reb, ast, fg3m, stl, blk, tov, min
-            FROM nba_stats.player_game_log WHERE game_date=%s""", (day,)).fetchall():
+            FROM nba_stats.player_game_log WHERE game_date=%s
+            UNION ALL
+            SELECT nba_player_id::text, pts, reb, ast, fg3m, stl, blk, tov, min
+            FROM nba_stats.player_game_log_postseason WHERE game_date=%s""", (day, day)).fetchall():
         stats[pid] = dict(pts=pts, reb=reb, ast=ast, fg3m=fg3m, stl=stl, blk=blk, tov=tov, min=mins)
     if not stats:
         # NO BOX SCORE YET (certification round 2, 2026-10-08, P2A#4): grading on an empty log would void every leg as
