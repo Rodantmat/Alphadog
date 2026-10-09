@@ -218,8 +218,12 @@ def main():
                 except Exception:  # noqa: BLE001
                     pass
                 time.sleep(4)
-            # seed session
-            st = os.environ.get("BETR_SESSION_STATE", "").strip()
+            # seed session (credential store first, renewed when the access token nears expiry - see renew_session_state)
+            st, src = load_session_state()
+            print(f"session state: {len(st)} bytes from the {src}", flush=True)
+            if st:
+                st, status = renew_session_state(st)
+                print(status, flush=True)
             if st:
                 try:
                     s = json.loads(st)
