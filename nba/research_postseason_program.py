@@ -781,9 +781,12 @@ def walk_forward(recs, train, test, min_days=25):
 
 
 def permute_day_hits(legs):
+    # within (night, prop, tier, side): keeps every cell type's base rate (a goblin keeps a goblin's hit rate, a demon a demon's),
+    # breaks only the rank -> outcome link. Permuting across the whole night (first run) handed demon prices goblin hit rates and
+    # manufactured profitable null cells (null mean 8.8 survivors vs 0 real) - a null that is easier than reality is no null.
     grp = defaultdict(list)
     for l in legs:
-        grp[(l['app'], l['game_date'])].append(l)
+        grp[(l['app'], l['game_date'], l['prop'], l['tier'], l['side'])].append(l)
     out = []
     for g in grp.values():
         hits = [l['hit'] for l in g]
