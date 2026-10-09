@@ -2532,6 +2532,22 @@ week its postseason record clears the bar. The regular-season edge is not assume
 verified on three past postseason slates with commit disabled (probe PASS). Model quality on postseason legs matches the
 regular season's late push (Brier 0.1940 vs 0.1956).
 
+**§31w PARITY BACKFILL (2026-10-09; owner: "all tables should match the rest of the season, all factors, everything … the full
+pipeline … the certification … covers the playoffs").** Principle: a postseason date must hold everything a regular-season date
+holds, built by the same code. Audit tool `nba_control.audit_postseason_cov(table)` (distinct dates: last regular month vs the
+postseason, both seasons); proof tool `nba_control.cert_fp(table, where)` (row count + sum of hashtext over the whole row).
+| layer | postseason fill (same builder as the regular season) |
+|---|---|
+| ingredients | injury snapshots (archive mode); `build_market_derived.py` event map + schedule_norm (reads the postseason player log); `build_rung_market.py` 2026-04..06; `build_scenario_calibration.py` (postseason games → `5_postseason`); `pp_refresh_prices` + `refresh_leg_price_cons`; `scrape_nba_matchups_pergame.py MATCHUPS_POSTSEASON=1` (own shards) — all in `nba-postseason-backfill.yml` |
+| baselines | `nba-baseline-history-postseason.yml` default pairs now include dreb,oreb;fgm,fta (the boards carry them) |
+| final_hp | `nba-final-hp-postseason.yml` matrix gains the dreb/oreb/fgm/fta group; both postseasons re-priced on the filled ingredients |
+| derived | whole-number lines (`wn` task), `board_scored` (`nba-score-history.yml` from/to over each postseason window), `pp_model_vs_price` (the item-1 recipe, date-scoped append), UD twins `ud_window_legs_post`, `ud_stat_actual`, `pp_line_history` |
+| certification | tier map carries whole-number legs priced as live; step 4b Underdog postseason record (`TM_SUFFIX=_post`, `TM_MIN_DAYS=20`) |
+| daily pipeline | P2A postseason step adds the per-game matchups delta |
+| leakage | `build_confidence_v3.py` excludes 004/005 from its fit; all other history fitters read `prop_universe` / tier maps whose postseason rows carry no grade |
+Result: 50 / 47 postseason dates in every production table; re-certified (37883055416) — same eligible cells, no strategy passes,
+shadow-only; probe PASS (37883821882); regular-season certified tables identical (ledger "POSTSEASON BACKFILL TO FULL PARITY").
+
 ### 31b. Daily player name map refresh (`nba/refresh_player_name_map.py`, P2B step before anything resolves names; on-demand `nba-name-map-refresh.yml`)
 The register (`nba/data/nba_all_players.json`) is refreshed only manually and lacked all six sampled newcomers; `nba_ref.players` is current (P1 weekly). All 44 missing were plain absences (no namesake collisions). Incremental, collision-safe with the builder's own rule (absent → insert; mapped to an inactive player → repoint to the active one; mapped to a different active player → no change, logged CONFLICT), never deletes. SQL `nba_ref.norm_name` == Python `norm_name` on 10 edge cases (accents, Jr/II/III/V, hyphen, apostrophe). **Result: map 5,169 → 5,213; active players unresolved 44 → 0.**
 ### 31c. Close-board capture (`nba-close-capture.yml` + scheduler v2.1.0)
