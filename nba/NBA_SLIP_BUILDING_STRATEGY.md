@@ -2548,6 +2548,33 @@ postseason, both seasons); proof tool `nba_control.cert_fp(table, where)` (row c
 Result: 50 / 47 postseason dates in every production table; re-certified (37883055416) — same eligible cells, no strategy passes,
 shadow-only; probe PASS (37883821882); regular-season certified tables identical (ledger "POSTSEASON BACKFILL TO FULL PARITY").
 
+### 31x. A playoff-native strategy — research (2026-10-09; owner: "research and find strategy focused on the playoffs")
+**Why the regular-season strategies fail in the playoffs, measured.** Research (pace ~92.6 vs 98.5 possessions in 2024; offensive
+rating below the regular season every year, −4.7 in the 2026 first round; 72% of playoff teams shoot a lower 3P% since 2010;
+rotations shrink to 8–9) predicts lower per-minute production. Our logs confirm it in **all three postseasons**: rotation regulars
+(≥ 24 regular-season minutes) play +0.2…+2.2 more minutes but produce **−0.10 to −0.12 PRA per minute less**; PRA lands below the
+regular-season average in **57% / 62% / 64%** of their playoff games (2023-24 / 2024-25 / 2025-26). The folk rule "stars play more
+→ overs" does not survive: the per-minute drop outweighs the minutes. On the PrizePicks playoff boards (balanced lines, research
+table `nba_score.post_research_legs`: every postseason window leg × actual stat × regular / playoff-to-date / in-series form) the
+**model's strong Overs fail** (final_hp ≥ 0.62: hit 0.462 / 0.511) while its **strong Unders hold** (≥ 0.58: 0.571 / 0.578; ≥ 0.62:
+0.56–0.62). Unders win across every main prop in both postseasons (0.53–0.55 unfiltered). Not robust (sign flips between seasons):
+in-series persistence, game number, the line vs playoff-to-date average. Minutes trend: Unders hold even when minutes rise.
+**Candidate "Playoff Unders" (one slip a night):** balanced (R) Unders on the 8 main props, model p ≥ 0.58, one prop per player,
+top k by model p. PrizePicks (day-blocked bootstrap, 10,000 resamples):
+| structure | break-even leg | 2024-25 | 2025-26 | both (95% CI) | leg hit |
+|---|---|---|---|---|---|
+| **5-pick Flex** | 0.543 | **+9%** | **+78%** | **+42% (−4%, +96%)** | 0.584 / 0.638 |
+| 6-pick Flex | 0.542 | +9% | +57% | +32% (−44%, +129%) | 0.612 / 0.617 |
+| 4-pick Flex | 0.550 | −10% | +47% | +18% (−18%, +58%) | 0.570 / 0.622 |
+| 3-pick Power | 0.550 | −52% | +40% | −7% | 0.567 / 0.603 |
+Underdog (balanced legs, same rule, 3-pick Standard 6.5×): **+43% / +24%, both +34% (−13%, +88%)**, legs 0.580 / 0.603 vs 0.536.
+Variants tested (threshold 0.62, all props, line ≥ regular average − 1, ≤ 2 legs per game) did not improve on the base rule.
+**Verdict:** the first playoff composition positive in BOTH postseasons on both apps, with a structural reason behind it — but
+its pooled lower bounds are still below zero (97 nights) and the side and threshold were chosen after seeing both seasons, so it
+does not pass the postseason gate. **Recommendation:** add it as a shadow postseason strategy (`P_unders_5flex` on PrizePicks,
+`P_unders_3std` on Underdog; tunables in `nba_config`), graded with the others from the 2027 play-in; it stakes only when the gate
+clears with the 2027 nights added. Owner decision pending.
+
 ### 31b. Daily player name map refresh (`nba/refresh_player_name_map.py`, P2B step before anything resolves names; on-demand `nba-name-map-refresh.yml`)
 The register (`nba/data/nba_all_players.json`) is refreshed only manually and lacked all six sampled newcomers; `nba_ref.players` is current (P1 weekly). All 44 missing were plain absences (no namesake collisions). Incremental, collision-safe with the builder's own rule (absent → insert; mapped to an inactive player → repoint to the active one; mapped to a different active player → no change, logged CONFLICT), never deletes. SQL `nba_ref.norm_name` == Python `norm_name` on 10 edge cases (accents, Jr/II/III/V, hyphen, apostrophe). **Result: map 5,169 → 5,213; active players unresolved 44 → 0.**
 ### 31c. Close-board capture (`nba-close-capture.yml` + scheduler v2.1.0)
