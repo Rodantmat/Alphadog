@@ -410,6 +410,21 @@ jobs:
           BT2_DATE: ${{ steps.d.outputs.asof }}   # the resolved slate, not the runner clock (round 2 P3#11)
         run: python nba/build_board_tiers_v2.py
 
+      # 2b) LIVE SPORTSBOOK PLAYER PROPS - the market term (owner 2026-10-09: "for props we use ParlayAPI"; strategy §31ac).
+      #     ParlayAPI's live NBA props (every sportsbook; 3 credits) -> raw capture (nba_market.parlay_props_captures) and the
+      #     sportsbook rows into nba_market.board_snapshots in the Odds API backfill's shape, so build_rung_market below counts
+      #     today's books per rung exactly as the certified history counted them. Soft: the pick never waits on a feed.
+      - name: Live sportsbook props (ParlayAPI) - the market term
+        id: soft_props
+        if: ${{ github.event.inputs.skip_scrape != 'true' }}
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CP_MODE: capture
+          CP_LABEL: window
+          CP_DATE: ${{ steps.d.outputs.asof }}
+        run: python -u nba/capture_parlay_props.py
+
       # 3) THE MARKET at the window - de-vigged book probability per rung
       - name: Market snapshot and rung market
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
@@ -418,6 +433,31 @@ jobs:
         run: |
           python nba/export_market_spreads.py
           python nba/build_rung_market.py
+
+      # 3b) MARKET REFRESH of final_hp (strategy §31ac). The history scored every leg with the window's book count; live final_hp
+      #     is built by P2B in the morning, before any sportsbook line exists. With the feed above in place, re-running the SAME
+      #     builder on the SAME inputs plus today's rung_market gives the leg its market term exactly as the history had it
+      #     (~1 min; whole-number lines re-priced after it). GATED by classification_config['market_feed'].refresh_final_hp:
+      #     it is switched on together with live_backtest_suffix -> '' (the market-inclusive certified tables) once the live
+      #     books-per-rung coverage is measured against the history's - never one without the other (the hurdles are
+      #     calibrated on whichever scoring the references carry).
+      - name: Market refresh of final_hp (gated by the market_feed tunable)
+        if: ${{ github.event.inputs.skip_scrape != 'true' && steps.d.outputs.has_games == '1' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FE_DATE: ${{ steps.d.outputs.asof }}
+          FE_WRITE: "1"
+          WN_DATE: ${{ steps.d.outputs.asof }}
+          WN_WRITE: "1"
+        run: |
+          ON=$(psql "$DATABASE_URL" -Atqc "SELECT coalesce((config_json->>'refresh_final_hp')::boolean, false) FROM nba_config.classification_config WHERE config_key='market_feed'" 2>/dev/null || echo f)
+          if [ "$ON" = "t" ]; then
+            echo "market refresh ON: rebuilding final_hp for $FE_DATE with today's rung_market"
+            python nba/build_final_hp.py
+            python -u nba/build_whole_number_hp.py
+          else
+            echo "market refresh OFF (classification_config['market_feed'].refresh_final_hp) - final_hp stays as P2B built it (market-free scoring, the twin references)"
+          fi
 
       - name: Commit day-of data
         if: ${{ github.event.inputs.skip_scrape != 'true' }}
