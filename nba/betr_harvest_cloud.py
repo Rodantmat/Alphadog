@@ -385,15 +385,18 @@ def main():
                 if len(src) > 5000:
                     break
                 time.sleep(3)
-            # navigate to league so the app fetches the board
-            for target in (f"{URL}lobby/{LEAGUE.lower()}", URL):
-                try:
-                    sb.uc_open_with_reconnect(target, reconnect_time=4); time.sleep(4)
-                except Exception:  # noqa: BLE001
-                    pass
-                print(f"  league chip click: {click_league(sb)}", flush=True)
-                time.sleep(3)
-                where(sb, f"after {target}")
+            # navigate to the league board. ONE detached navigation to the app root (the old /lobby/<league> route redirects
+            # to /picks/home/lobby anyway), then everything in-page with the CDP session attached: the league chip is
+            # pressed with a real mouse (click_league) so the app itself fires getEventsWithFilteredPlayers for the league.
+            try:
+                sb.uc_open_with_reconnect(URL, reconnect_time=4); time.sleep(4)
+            except Exception:  # noqa: BLE001
+                pass
+            enable_network(sb)
+            where(sb, "after root (attached)")
+            print(f"  league chip click: {click_league(sb)}", flush=True)
+            time.sleep(4)
+            where(sb, "after league chip")
             # capture. DIAGNOSED 2026-10-07 (full-system certification pass G): the app answers getUpcomingEventsV2 more than
             # once - the LOBBY response lists every upcoming event of every sport (163 "events" on 10-07, 117 on 10-06) with
             # NO players/projections, and the league board response carries the projections. The old loop took the first
