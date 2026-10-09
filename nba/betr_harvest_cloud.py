@@ -89,11 +89,12 @@ def flatten(body):
     mixed legs as the NBA board (run 38003010258). Events are filtered on their own league field; an event without one is
     kept only when nothing on it says another sport."""
     events, _op = board_events(body)
-    legs = []
+    legs = []; n_ev = 0
     for ev in events:
         lg = event_league(ev)
         if lg and lg != LEAGUE:
             continue
+        n_ev += 1
         buckets = [(t, t.get("players", []) or []) for t in (ev.get("teams") or [])]
         if ev.get("players"):
             buckets.append((None, ev.get("players")))
@@ -101,7 +102,7 @@ def flatten(body):
             for p in players:
                 for proj in (p.get("projections") or []):
                     legs.extend(parse_leg(ev, team, p, proj))
-    return legs, len(events)
+    return legs, n_ev
 
 
 # ---- local forward-proxy (unauth to Chrome, upstream to ProxyScrape US-sticky) --------------------
