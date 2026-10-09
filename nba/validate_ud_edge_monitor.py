@@ -21,6 +21,7 @@ def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     BT = U.ud_bt_table(conn)   # the tunable's backtest (round 3 #4: the market-free twin); UDL_BT_TABLE overrides
     p_ref = U.ud_edge_reference(conn, rebuild=True)
+    delta, confirm_z, alarm_z = U.ud_edge_cfg(conn)
     print(f"reference: {len(p_ref)} (cell, tier, side) keys rebuilt from the P5 backtest ({BT})", flush=True)
     for season in ('2024-25', '2025-26'):
         ds = [r[0] for r in conn.execute(f"SELECT DISTINCT game_date FROM {BT} WHERE season=%s ORDER BY 1", (season,)).fetchall()]
@@ -36,10 +37,10 @@ def main():
                 for j in lj:
                     k = (j['cell'], j['tier'], j['side']); by_day[gd][0] += int(j['hit']) - p_ref[k]; by_day[gd][1] += 1
         days = sorted(by_day); excess = [by_day[d][0] / by_day[d][1] for d in days]
-        print(f"\n{season}: {len(days)} staked slates, mean excess {100*sum(excess)/len(excess):+.2f} pp, break-even {100*U.UD_EDGE_DELTA:+.2f} pp", flush=True)
+        print(f"\n{season}: {len(days)} staked slates, mean excess {100*sum(excess)/len(excess):+.2f} pp, break-even {100*delta:+.2f} pp", flush=True)
         prior = {}
         for n in range(1, len(excess) + 1):
-            rows, running = U.ud_evaluate_edge(excess[:n], U.UD_EDGE_DELTA, prior)
+            rows, running = U.ud_evaluate_edge(excess[:n], delta, prior, confirm_z, alarm_z)
             for look, mean, se, z, dec in rows:
                 prior[look] = dec
                 print(f"  look {look:>3} ({days[look-1]}): mean {100*mean:+.2f} pp, se {100*se:.2f} pp, z {z:+.2f} -> {dec}", flush=True)
