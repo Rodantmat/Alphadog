@@ -828,7 +828,34 @@ Design and the as-built table: strategy §31w. Evidence, in order:
   (postseason contradicts the prior), goblin and assists_D1 (weighted p.m below break-even), stocks_R (1 postseason day). No
   strategy PASSES on one postseason (A_wsteals_5flex +47%, B_demon_5flex +67%, B_demon_3flex +41% at k = 1, every lower bound
   < 0) → all SHADOW. Postseason board floor min 485 / p10 560 / median 982 unique scored legs. Consistency fix: the backtest now
-  excludes the ineligible cells exactly as `pick_postseason` does (db6071d). Full two-season result below once 2025-26 is priced.
+  excludes the ineligible cells exactly as `pick_postseason` does (db6071d).
+- **P-4 for 2025-26 + recalibration:** serial build (00:24Z), as-of calibration rebuilt (00:48Z; 2025-26 now has 1,018 OWN
+  `5_postseason` cells beside the inherited prior), then the parallel workflow priced every 2025-26 postseason prop with them.
+  First parallel attempt saturated the database IO (nine jobs each copying + indexing the whole multi-season board-key table;
+  terminated 01:33Z, nothing written) → `FE_POSTSEASON` now copies only April–June keys (ffe8284) and the matrix runs 3 at a time
+  (c896f7d): the whole season priced in **~8 min** (37870418602 🟢) vs ~45 min serial.
+- **P-5 FULL RESULT, both postseasons (37871662776 🟢, 97 postseason slate days):**
+  cells weighed against the regular season — **eligible**: pra_R_U (post 0.660 / 0.702 → w 0.667), steals_R_U (0.620 / 0.513 →
+  0.616), stocks_R (0.564, 47 days → 0.588), points_R (0.578), pts_ast_R (0.577), pts_reb_R (0.576), blocks_R (0.567),
+  rebounds_D3 (0.561), rebounds_R (0.559); **not eligible**: steals_R and turnovers_R (postseason 0.526 / 0.517 contradicts the
+  prior), threes_D1, assists_D1 and the goblin extender (weighted p.m 0.526 / 0.509 / 0.504 < 0.55).
+  Strategies at k = 1 on the eligible pool: **none PASSES** — C_wstocks_4flex +62% (25 days, 2025-26 only), A_core_3power +15%
+  (2024-25 −100%, 2025-26 +17%), D_points_3power +11% (−4% / +28%), A_wrebounds_4flex +7%, A_regular_5power −44%; the demon
+  and steals-weighted strategies have no postseason pool once their cells are ineligible. Every pooled lower bound < 0.
+  The walk-forward validator on the postseason tables (select on 2024-25 postseason, score 2025-26 postseason): **0 of 29
+  survivors**, null expectation 0 — no postseason-native composition shows a provable edge either.
+  **Verdict: on two postseasons of evidence nothing stakes in the postseason; every strategy builds SHADOW slips** (graded,
+  recorded, outside the regular ledger), the board floor is **485** unique scored legs (p10 579, median 1,056), and P5 step 7
+  re-certifies weekly during play-in / playoff weeks with each live postseason night added — a strategy starts staking the
+  week its postseason lower bound clears 0 in every postseason. This is the conservative reading of "weigh properly": the
+  regular-season edge is not assumed to carry into a different regime without postseason evidence.
+- **Live path verified end to end on past slates** (probe `probe_pick_postseason.py`, run 37872250721 🟢, commit disabled +
+  rollback): control 2026-03-15 → not a postseason slate; 2026-04-15 (play-in), 2026-04-25 (first round), 2026-06-10 (Finals) →
+  postseason path taken; board 100% team- and event-resolved through the slate predicate (2026-06-10: 823 legs ≥ floor 485);
+  eligible cells and verdicts read; every strategy SHADOW with its reason; `live_slips` / `live_pool` row counts unchanged after
+  rollback → **PROBE PASS**.
+- **P2A postseason gap audit** added (every scheduled play-in / playoff game through last night must have both teams' box
+  scores in the season's postseason file; 2025-26 check offline: 91 / 91 games, both teams).
 - **P-6 live:** `nba_calendar.slate_games` created (002 + 004 + 005) and read by the scheduler (v2.3.0), P2B, P3, P4, prune,
   certify_pipeline and the live engine; P2A postseason delta; live ladder appends postseason files; `pick_postseason` (statuses
   outside the regular ledger); Underdog `stand_down:postseason`; P5 step 7 refreshes the postseason certification weekly in
