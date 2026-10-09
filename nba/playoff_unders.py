@@ -31,6 +31,9 @@ DEFAULT_CFG = {
     "min_p": 0.58,
     "exclude_star": False,
     "max_per_game": 99,
+    # stake_mode: 'gate' = a strategy with a PASS postseason verdict stakes (PP placed_post / UD paper_post stake 1);
+    # 'shadow' = every Playoff Unders slip is recorded and graded but never staked, whatever the verdict (the owner's one-row switch)
+    "stake_mode": "gate",
     "strategies": {
         "P_unders_5flex": {"app": "pp", "size": 5, "structure": "flex"},
         "P_unders_6flex": {"app": "pp", "size": 6, "structure": "flex"},
