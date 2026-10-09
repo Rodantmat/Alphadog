@@ -239,6 +239,31 @@ def renew_session_state(st):
         return st, f"session: renewal failed ({type(exc).__name__}: {str(exc)[:120]}) - using the state as loaded"
 
 
+def click_league(sb):
+    """Open the league board. The app (2026-10-09) renders a horizontal strip of league chips ("NFL | MLB | WNBA | CFB | ... |
+    NBA | ...") as leaf text nodes, most of them off-screen - an XPath visibility check never saw "NBA". Click the LEAF element
+    whose exact text is the league, by JS, after scrolling it into view; fall back to the old XPaths."""
+    try:
+        n = sb.execute_script(
+            "var L=arguments[0]; var els=Array.from(document.querySelectorAll('div,span,button,a,p')).filter(function(e){"
+            " return e.children.length===0 && (e.innerText||e.textContent||'').trim()===L;});"
+            " if(!els.length) return 0; var e=els[0]; e.scrollIntoView({inline:'center',block:'center'});"
+            " var t=e; for(var i=0;i<4&&t;i++){ if(t.getAttribute&&(t.getAttribute('role')==='button'||t.tagName==='BUTTON'||t.tagName==='A')) break; t=t.parentElement; }"
+            " (t||e).click(); e.click(); return els.length;", LEAGUE)
+        if n:
+            return f"js click on {n} '{LEAGUE}' leaf(s)"
+    except Exception as exc:  # noqa: BLE001
+        pass
+    for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//a[contains(.,"{LEAGUE}")]', f'//button[contains(.,"{LEAGUE}")]'):
+        try:
+            if sb.is_element_visible(xp):
+                sb.click(xp, timeout=4)
+                return f"xpath click {xp}"
+        except Exception:  # noqa: BLE001
+            continue
+    return "no league chip found"
+
+
 def where(sb, tag):
     """DIAGNOSTIC TRAIL (2026-10-09): every failure used to end in a bare 'NO BOARD'. Print where the browser actually is -
     URL, title, page size, and the tell-tales (Cloudflare challenge, /auth, the geo prompt, a proxy error page)."""
