@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "source": "github-runner uc+proxy picks.betr.app",
+  "league": "EPL",
+  "started_at": "2026-10-09T23:52:49Z",
+  "fetched_at": "2026-10-09T23:53:55Z",
+  "legs": 5011,
+  "alt_legs": 1793,
+  "players": 277,
+  "events": 10,
+  "board_op": "getUpcomingEventsV2",
+  "partial_lobby": false
+}
