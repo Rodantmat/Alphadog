@@ -126,7 +126,7 @@ def main():
     conn.execute("SET statement_timeout = 0")
     before = counts(conn)
     conn.commit()
-    print(f"ledger before: live_slips {before[0]:,} rows, live_pool {before[1]:,} rows", flush=True)
+    print(f"ledger before: live_slips {before[0]:,} rows, live_pool {before[1]:,} rows, ud_live_slips {before[2]:,} rows", flush=True)
     print(f"control {control}: postseason_slate = {LS.postseason_slate(conn, control)} (expected False)", flush=True)
     ok = not LS.postseason_slate(conn, control)
     for d in dates:
