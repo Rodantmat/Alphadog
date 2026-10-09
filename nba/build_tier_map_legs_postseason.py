@@ -146,6 +146,33 @@ def main():
     conn.execute("SET statement_timeout = 0")
     for st in STEPS:
         conn.execute(st)
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import live_slip_engine as L  # noqa: E402  (ONE whole-number pricing: wn_selection / wn_price / wn_score)
+    sel = L.wn_selection(conn)
+    n_wn = 0
+    if sel is None:
+        print("whole-number selection switched off - postseason map is half-point legs only (as live)", flush=True)
+    else:
+        cfg, maps = sel
+        rows = []
+        for (gd, season, player, pid, gid, prop, side, line, kind, sys_tier, price, pc, pt, hit, event, team, pf20) in conn.execute(WN_SQL).fetchall():
+            if kind not in ("standard", "goblin", "demon"):
+                continue
+            t3 = min(abs(int(sys_tier)), 3) if sys_tier is not None else 1
+            tier = "R" if kind == "standard" else ("G" if kind == "goblin" else "D") + str(t3)
+            p_eq = L.wn_price(cfg, pc, pt)
+            for rk in ("final_hp", "baseline_hp", "final_score"):
+                sc = L.wn_score(maps, rk, prop, tier, side, p_eq)
+                if sc is None:
+                    continue
+                rows.append((rk, season, gd, player, prop, side, line, kind, tier, sys_tier, price, sc, hit, gid, pid, team, event, pf20))
+        with conn.cursor() as cur:
+            cur.executemany("""INSERT INTO _hp (rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor, score, hit,
+                               game_id, player_id, team_id, event_id, pf20, whole_number) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,true)""",
+                            rows)
+        n_wn = len(rows)
+        print(f"whole-number legs priced into the postseason cells (live path): {n_wn:,} rank-key rows", flush=True)
+    conn.execute(FINAL)
     conn.commit()
     print(f"{'season':<9}{'rank':<13}{'days':>6}{'legs':>9}{'hit':>7}{'no team':>9}{'no event':>9}{'no pf20':>9}")
     for r in conn.execute("""SELECT season, rank_key, count(DISTINCT game_date), count(*), avg(hit),
