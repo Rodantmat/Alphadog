@@ -7,7 +7,9 @@ For each probe date (PROBE_DATES, default three 2025-26 postseason nights: a pla
   2. loads the board exactly as the live pick does (load_board_legs - pp_leg_price + final_hp, team/event resolution through the
      slate predicate);
   3. runs pick_postseason() inside a transaction whose commit is disabled, prints what it would have staked / shadowed, and
-     ROLLS BACK - nba_score.live_slips / live_pool are left exactly as they were (verified by row counts before and after).
+     ROLLS BACK - nba_score.live_slips / live_pool are left exactly as they were (verified by row counts before and after);
+  4. (§31z) Playoff Unders parity: each P_unders slip the live pick builds must equal the certified backtest's slip for that
+     night (nba_score.playoff_unders_slips), after the market-free rescoring below (names compared accent-insensitively).
 Env: DATABASE_URL, PROBE_DATES (comma list), PROBE_CONTROL (a regular-season date).
 """
 import datetime as dt
