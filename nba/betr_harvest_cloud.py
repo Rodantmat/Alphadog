@@ -339,6 +339,7 @@ def main():
     pending = {}        # graphql response ids whose body is still to be read (requestId -> tries)
     printed_reqs = set()
     last_nudge = 0.0
+    routed = False      # did the app ever show /picks/home/<LEAGUE> (the league chip registered)
     lp, proxy_arg = start_local_proxy()
     kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
     if proxy_arg:
