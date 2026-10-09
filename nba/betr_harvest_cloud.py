@@ -341,6 +341,9 @@ def main():
                         except Exception:  # noqa: BLE001
                             continue
                 time.sleep(3)
+            if not board:
+                where(sb, "deadline")
+                print(f"  wire: {seen_ops or 'no betr.app graphql / error responses seen'}", flush=True)
     finally:
         if lp:
             lp.terminate()
