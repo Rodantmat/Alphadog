@@ -442,10 +442,18 @@ def main():
                     elif m.get("method") == "Network.loadingFailed":
                         k = f"FAILED {m['params'].get('errorText', '?')[:40]} {m['params'].get('type', '')}"
                         seen_ops[k] = seen_ops.get(k, 0) + 1
-                for rid in reversed(ids):
+                # bodies are read once the response has finished loading; an id that fails is retried on the next
+                # passes (3 tries) instead of being dropped with the drained performance log
+                for rid in ids:
+                    pending[rid] = pending.get(rid, 0)
+                for rid in list(pending):
                     try:
+                        if pending[rid] >= 3:
+                            del pending[rid]; continue
+                        pending[rid] += 1
                         b = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid})
                         j = json.loads(b.get("body", ""))
+                        del pending[rid]
                         ops = sorted((j.get("data") or {}).keys()) if isinstance(j.get("data"), dict) else ["<no data>"]
                         k = f"graphql body {','.join(ops)[:60]}"
                         if k not in seen_ops:
