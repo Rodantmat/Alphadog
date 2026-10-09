@@ -49,8 +49,38 @@ def parse_leg(ev, team, player, proj):
     return legs
 
 
+# BOARD OPERATIONS. Betr renamed its GraphQL board operations (found 2026-10-09 by the wire trail): the lobby now answers
+# getUpcomingLobbyEventsV2 (+ getTopTrendingPlayersData) and a league board getEventsWithFilteredPlayers; getUpcomingEventsV2
+# (the 2026-09-28 shape) is kept first for parity with the archived boards. Whichever is present with events is the board.
+BOARD_OPS = ("getUpcomingEventsV2", "getEventsWithFilteredPlayers", "getUpcomingLobbyEventsV2")
+
+
+def board_events(body):
+    data = (body or {}).get("data") or {}
+    for op in BOARD_OPS:
+        v = data.get(op)
+        if isinstance(v, list):
+            return v, op
+        if isinstance(v, dict):
+            for k in ("events", "items", "data", "edges"):
+                if isinstance(v.get(k), list):
+                    return [e.get("node", e) if isinstance(e, dict) else e for e in v[k]], f"{op}.{k}"
+    return [], None
+
+
+def schema(x, depth=0, max_depth=4):
+    """compact shape of a JSON value for the log: dict keys / list length and the first element's shape"""
+    if depth >= max_depth:
+        return "…"
+    if isinstance(x, dict):
+        return {k: schema(v, depth + 1, max_depth) for k, v in list(x.items())[:14]}
+    if isinstance(x, list):
+        return [f"list[{len(x)}]", schema(x[0], depth + 1, max_depth) if x else None]
+    return type(x).__name__
+
+
 def flatten(body):
-    events = ((body or {}).get("data") or {}).get("getUpcomingEventsV2") or []
+    events, _op = board_events(body)
     legs = []
     for ev in events:
         buckets = [(t, t.get("players", []) or []) for t in (ev.get("teams") or [])]
