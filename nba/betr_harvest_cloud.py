@@ -227,12 +227,14 @@ def main():
                 sb.driver.execute_cdp_cmd("Network.enable", {})
             except Exception:  # noqa: BLE001
                 pass
+            where(sb, "first load")
             for _ in range(3):
                 try:
                     sb.uc_gui_click_captcha()
                 except Exception:  # noqa: BLE001
                     pass
                 time.sleep(4)
+            where(sb, "after captcha pass")
             # seed session (credential store first, renewed when the access token nears expiry - see renew_session_state)
             st, src = load_session_state()
             print(f"session state: {len(st)} bytes from the {src}", flush=True)
