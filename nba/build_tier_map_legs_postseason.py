@@ -174,6 +174,14 @@ def main():
         n_wn = len(rows)
         print(f"whole-number legs priced into the postseason cells (live path): {n_wn:,} rank-key rows", flush=True)
     conn.execute(FINAL)
+    # THE GAME KEY (2026-10-09 fix). board_outcomes carries no event_id (NULL on every row, regular season too - the regular map
+    # takes its game from prop_universe), so every postseason leg had event_id NULL: the slip engine then treated EVERY pair as
+    # same-game (None == None) - the cross-game-first order never applied and the negative-correlation ban fired on cross-game
+    # pairs. The game is known exactly from game_id: the Odds API event of that game (event_game_map, as live resolves it),
+    # else the game id itself (only equality is used).
+    conn.execute("""UPDATE nba_score.tier_map_legs_post t
+                    SET event_id = coalesce((SELECT min(m.event_id) FROM nba_market.event_game_map m WHERE m.game_id = t.game_id), t.game_id)
+                    WHERE t.event_id IS NULL AND t.game_id IS NOT NULL""")
     conn.commit()
     print(f"{'season':<9}{'rank':<13}{'days':>6}{'legs':>9}{'hit':>7}{'no team':>9}{'no event':>9}{'no pf20':>9}")
     for r in conn.execute("""SELECT season, rank_key, count(DISTINCT game_date), count(*), avg(hit),
