@@ -260,6 +260,7 @@ def main():
                     time.sleep(6)
                 except Exception as exc:  # noqa: BLE001
                     print("seed failed:", str(exc)[:100], flush=True)
+            where(sb, "after seeding")
             # clear geo + reach a booted page
             for i in range(40):
                 url = sb.get_current_url(); src = sb.get_page_source() or ""
