@@ -19,6 +19,10 @@ on:
         description: "slip table to validate"
         default: "nba_score.ud_slip_engine_slips_center"
         required: false
+      snapshot:
+        description: "suffix of a retained copy nba_score.ud_slip_validation<suffix> (blank = none; e.g. _dlt_orig2_mf)"
+        default: ""
+        required: false
 
 permissions:
   contents: read
@@ -46,4 +50,5 @@ jobs:
           SV_BOOT: ${{ github.event.inputs.boot }}
           SV_NULL: ${{ github.event.inputs.nulls }}
           SV_SOURCE: ${{ github.event.inputs.source }}
+          SV_SNAPSHOT: ${{ github.event.inputs.snapshot }}
         run: python -u nba/validate_ud_slip_strategies.py
