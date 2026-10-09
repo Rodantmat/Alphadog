@@ -1,1 +1,1 @@
-script: capture_parlay_props.py
+script: probe_capture_props_live.py
