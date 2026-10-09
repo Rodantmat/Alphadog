@@ -55,6 +55,7 @@ on:
 
 permissions:
   contents: write
+  actions: write     # 2026-10-09: P3 dispatches the Betr cloud harvest at the window (GitHub's crons for it were being dropped)
 
 concurrency:
   group: alphadog-nba-p3-afternoon
