@@ -675,8 +675,6 @@ def run_engine(app, legs, ecs, cmap, src, comps_only=None, sizes=None, cap=3, ph
                 for st in structures:
                     if app == 'ud' and st == 'flex' and size < 3:
                         continue
-                    if app == 'pp' and st == 'flex' and size < 3:
-                        continue
                     for k, slip in enumerate(build_slips(app, pool, cdef, all_names, size, st, cap, cmap, single), start=1):
                         hits, payout = SE.grade(slip, st) if app == 'pp' else ud_grade(slip, st)
                         sg = len(slip) - len({l['event_id'] for l in slip})
