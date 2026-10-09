@@ -1,0 +1,93 @@
+name: NBA Postseason Backfill (ingredients and derived tables)
+
+# strategy §31w (2026-10-09, owner: "all tables should match the rest of the season, all factors, everything"). Brings every
+# per-date / per-game ingredient and derived table the regular season has to the play-in / playoff dates of both history seasons,
+# with the SAME builders the regular season used (each one extended to read the postseason files, never touching regular rows):
+#   derived   market consensus + Odds API event -> NBA game map (+ schedule_norm), now including postseason games
+#   rungs     sportsbook rung market for the 2026 postseason months (2025's already built)
+#   scenario  realised availability branch per game (postseason games get phase 5_postseason)
+#   matchups  per-game defensive matchups (boxscorematchupsv3) for every play-in / playoff game, own shards (proxy)
+#   wn        whole-number board lines priced into final_hp_derived for every postseason date (run AFTER final_hp)
+# Board scoring of the postseason dates (board_scored) runs through nba-score-history.yml (from / to inputs).
+on:
+  workflow_dispatch:
+    inputs:
+      tasks:
+        description: "comma list: derived,rungs,scenario,matchups,wn"
+        default: "derived,rungs,scenario"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alphadog-nba-postseason-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TASKS: ${{ github.event.inputs.tasks }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy scipy curl_cffi requests
+
+      - name: Market consensus + event -> game map (postseason included)
+        if: contains(github.event.inputs.tasks, 'derived')
+        env:
+          DERIVED_STEP: all
+        run: python -u nba/build_market_derived.py
+
+      - name: Rung market, 2026 postseason months
+        if: contains(github.event.inputs.tasks, 'rungs')
+        env:
+          RUNG_FROM: "2026-04"
+          RUNG_TO: "2026-06"
+        run: python -u nba/build_rung_market.py
+
+      - name: Realised availability branch (scenario) incl. postseason games
+        if: contains(github.event.inputs.tasks, 'scenario')
+        env:
+          SC_SEASONS: "2024-25,2025-26"
+          SC_MAX_BRANCHES: '64'
+          SC_KEEP_ONLY_REALISED: '1'
+        run: python -u nba/build_scenario_calibration.py
+
+      - name: Resolve proxy (credential store first, secret as fallback)
+        if: contains(github.event.inputs.tasks, 'matchups')
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"; echo "proxy: credential store -> $(echo "$P" | sed 's#.*@##')"
+          else
+            echo "proxy: credential store has no proxy_url row - using the PROXY_URL secret"
+          fi
+      - name: Per-game matchups for every play-in / playoff game (own shards) + commit
+        if: contains(github.event.inputs.tasks, 'matchups')
+        env:
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+          MATCHUPS_POSTSEASON: "1"
+          MATCHUPS_MODE: backfill
+        run: |
+          for S in 2023-24 2024-25 2025-26; do
+            SEASON="$S" python -u nba/scrape_nba_matchups_pergame.py || echo "::warning::matchups $S incomplete (resumable - rerun)"
+          done
+          bash nba/git_push_retry.sh "NBA postseason matchups [skip ci]" nba/data/nba_matchups_pergame_postseason_*.json || true
+
+      - name: Whole-number board lines for every postseason date (after final_hp)
+        if: contains(github.event.inputs.tasks, 'wn')
+        env:
+          WN_WRITE: "1"
+        run: |
+          WN_FROM=2025-04-14 WN_TO=2025-06-30 python -u nba/build_whole_number_hp.py
+          WN_FROM=2026-04-13 WN_TO=2026-06-30 python -u nba/build_whole_number_hp.py
