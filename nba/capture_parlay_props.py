@@ -129,7 +129,11 @@ def normalize(items, cfg, label, slate):
         if alt:
             odds_key += "_alternate"
         line = it.get("line")
-        if line is None:
+        try:
+            line = float(line)
+        except (TypeError, ValueError):
+            continue
+        if line <= 0:            # probe 2026-10-09: FanDuel milestone rows ("to score N+") arrive as line 0.0 with -1100 prices - not a rung
             continue
         # the archive's game_date is the EASTERN date of the tip (archive_live_boards); ParlayAPI's own game_date is the fallback
         gd = et_date(it.get("commence_time"))
