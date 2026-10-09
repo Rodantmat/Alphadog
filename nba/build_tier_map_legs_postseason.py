@@ -79,8 +79,7 @@ STEPS = [
                SELECT nba_player_id, game_date, team_id, game_id, pf, true FROM nba_stats.player_game_log_postseason) u) w
        WHERE post""",
     "CREATE INDEX ON _pf (pid, game_date)",
-    """INSERT INTO nba_score.tier_map_legs_post (rank_key, season, game_date, player, prop, side, line, kind, tier, rung, factor, score,
-                                                hit, n_rank, cell_size, game_id, player_id, team_id, event_id, pf20)
+    """CREATE TEMP TABLE _hp AS
        WITH legs AS (
          SELECT f.season, pr.game_date, coalesce(m.display_name, pr.nm) player, f.player_id, f.game_id, pr.prop, pr.side, pr.line,
                 pr.kind, pr.sys_tier, pr.price, f.s_final, f.s_base, f.s_score, bo.h, bo.event_id, pf.team_id, pf.pf20
