@@ -17,6 +17,7 @@ Same columns as tier_map_legs (+ game_id, player_id, team_id, event_id, pf20) so
 (SE_LEGS_SELF=1). Full rebuild every run (two postseasons are small). Env: DATABASE_URL.
 """
 import os
+import sys
 
 import psycopg
 
