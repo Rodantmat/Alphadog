@@ -323,9 +323,13 @@ def main():
           "3_post_asb" if (_m == 2 and _day >= 15) or (_m == 3 and _day < 16) else "4_push")
     # POSTSEASON SLATE (strategy §31w P-4): a play-in / playoff night uses the 5_postseason cells, each missing cell falling
     # back to the late-season push (the build_final_hp rule) - decided by the night's game ids, never the date.
-    _post = conn.execute("""SELECT coalesce(bool_and(game_id LIKE '004%%' OR game_id LIKE '005%%'), false)
-                            FROM nba_calendar.games WHERE game_date = %s
-                              AND (game_id LIKE '002%%' OR game_id LIKE '004%%' OR game_id LIKE '005%%')""", (asof,)).fetchone()[0]
+    # the calendar holds 2025-26 onward only, so a past postseason night (2025 play-in / playoffs, history scoring) is
+    # recognised from the slate's own baseline game ids as well (2026-10-09)
+    _post = conn.execute("""SELECT coalesce(bool_and(g LIKE '004%%' OR g LIKE '005%%'), false) FROM (
+                              SELECT game_id g FROM nba_calendar.games WHERE game_date = %s
+                                AND (game_id LIKE '002%%' OR game_id LIKE '004%%' OR game_id LIKE '005%%')
+                              UNION SELECT DISTINCT game_id FROM nba_score.baseline_history WHERE game_date = %s) x""",
+                         (asof, asof)).fetchone()[0]
     if _post:
         print(f"  {asof} is a postseason slate - calibration phase 5_postseason (fallback 4_push)", flush=True)
     _phases = ["4_push", "5_postseason"] if _post else [ph]   # later in the list wins
