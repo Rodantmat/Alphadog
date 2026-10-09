@@ -360,7 +360,8 @@ def stage_udsim(conn, ud):
         l['v'] = (l['pcal'] * ud_disc(l['factor']) * ROOT_UD2) if l.get('pcal') is not None else None
     days = defaultdict(list)
     for l in ud:
-        days[l['game_date']].append(l)
+        if not final7(l['game_date']):          # the certified convention: the final regular-season week is out
+            days[l['game_date']].append(l)
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.mvp_udsim (source text, structure text, tau double precision, train text, test text,
                     train_roi double precision, test_roi double precision, test_lo double precision, test_days int, built_at timestamptz DEFAULT now())""")
     conn.execute("DELETE FROM nba_score.mvp_udsim WHERE source='gate_any_leg'")
