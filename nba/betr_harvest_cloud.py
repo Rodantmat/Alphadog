@@ -79,10 +79,21 @@ def schema(x, depth=0, max_depth=4):
     return type(x).__name__
 
 
+def event_league(ev):
+    return str(ev.get("league") or ev.get("leagueName") or (ev.get("sport") if isinstance(ev.get("sport"), str) else "") or "").upper()
+
+
 def flatten(body):
+    """legs of THIS league only. The lobby answer (getUpcomingLobbyEventsV2) mixes every sport - on 2026-10-09 it carried WNBA
+    finals, college football, UFC and esports next to 3 NBA preseason games; the first capture on the renamed API wrote 838
+    mixed legs as the NBA board (run 38003010258). Events are filtered on their own league field; an event without one is
+    kept only when nothing on it says another sport."""
     events, _op = board_events(body)
     legs = []
     for ev in events:
+        lg = event_league(ev)
+        if lg and lg != LEAGUE:
+            continue
         buckets = [(t, t.get("players", []) or []) for t in (ev.get("teams") or [])]
         if ev.get("players"):
             buckets.append((None, ev.get("players")))
