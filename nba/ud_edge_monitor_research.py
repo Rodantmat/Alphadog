@@ -4,7 +4,8 @@ UNDERDOG EDGE MONITOR RESEARCH (strategy doc §31o) - read-only. The §31k metho
 Payouts verified at the source (Underdog help center, 'Pick'em Standard & Flex Entry Payouts'): Standard 3.5/6.5/12/20/35x;
 Flex 0 losses 3.25/6/10/25x, 1 loss 1.09/1.4/2.5/2.6x, 6-pick 2 losses 0.25x; base assumes 1.0x per pick, pick multipliers
 scale it, and a multiplier pick must be correct for its boost - exactly build_ud_slip_engine.grade().
-  1. P5 slips (4-Std cap 1 + 6-Flex cap 1 + mains 2-Std cap 2) from ud_slip_engine_slips_dlt_orig2, stand-downs applied
+  1. P5 slips (4-Std cap 1 + 6-Flex cap 1 + mains 2-Std cap 2) from the backtest table EM_TABLE (default
+     ud_slip_engine_slips_dlt_orig2; round 3 #4 re-run on the market-free twin _dlt_orig2_mf), stand-downs applied
      (final 8 calendar days; the pre-All-Star week = 7 days up to the last game before the largest February gap).
   2. Certified p per (cell, tier, side) from those slips; EXACT expected payout by full enumeration of hit outcomes through the
      engine's own grade() (payout depends on WHICH legs hit in Flex) with the stored per-leg factors (modifier x haircut).
@@ -13,7 +14,7 @@ scale it, and a multiplier pick must be correct for its boost - exactly build_ud
   4. Daily exposure-weighted excess (hit - p): sd, autocorrelation, legs per slate.
   5. Group-sequential: looks every 30 slates, Newey-West SE (7 lags), boundaries calibrated by 14-day block bootstrap with
      the truth AT break-even; power under certified / realistic / below-break-even truths.
-Env: DATABASE_URL, EM_SIMS (default 400).
+Env: DATABASE_URL, EM_SIMS (default 400), EM_TABLE.
 """
 import itertools
 import math
@@ -28,6 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_ud_slip_engine as E  # noqa: E402
 
 SIMS = int(os.environ.get('EM_SIMS', '400'))
+BT = os.environ.get('EM_TABLE') or 'nba_score.ud_slip_engine_slips_dlt_orig2'
 rng = random.Random(11)
 P5 = [('weighted:points_R_U', 4, 'standard', 1), ('weighted:points_R_U', 6, 'flex', 1), ('mains', 2, 'standard', 2)]
 LOOKS = (30, 60, 90, 120)
@@ -52,14 +54,14 @@ def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
     stand = set()
     for season in ('2024-25', '2025-26'):
-        ds = [r[0] for r in conn.execute("SELECT DISTINCT game_date FROM nba_score.ud_slip_engine_slips_dlt_orig2 WHERE season=%s ORDER BY 1", (season,)).fetchall()]
+        ds = [r[0] for r in conn.execute(f"SELECT DISTINCT game_date FROM {BT} WHERE season=%s ORDER BY 1", (season,)).fetchall()]
         feb = [(a, b) for a, b in zip(ds, ds[1:]) if a.month == 2]
         lb = max(feb, key=lambda x: (x[1] - x[0]).days)[0]
         s1 = max(ds)
         stand |= {d for d in ds if (lb - d).days in range(0, 7) or (s1 - d).days <= 7}
     slips = []
     for comp, size, structure, cap in P5:
-        for gd, season, lj, profit, stake in conn.execute("""SELECT game_date, season, legs_json, profit, stake FROM nba_score.ud_slip_engine_slips_dlt_orig2
+        for gd, season, lj, profit, stake in conn.execute(f"""SELECT game_date, season, legs_json, profit, stake FROM {BT}
                 WHERE composition=%s AND size=%s AND structure=%s AND k<=%s""", (comp, size, structure, cap)).fetchall():
             if gd in stand:
                 continue
