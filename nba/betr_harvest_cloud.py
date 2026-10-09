@@ -323,6 +323,9 @@ def main():
     lobby_only = None   # a board-shaped answer without projections for this league (lobby), kept as evidence
     lobby_board = None  # the lobby's featured players of this league (fallback at the deadline)
     seen_ops = {}       # graphql operation names seen on the wire (diagnostic)
+    pending = {}        # graphql response ids whose body is still to be read (requestId -> tries)
+    printed_reqs = set()
+    last_nudge = 0.0
     lp, proxy_arg = start_local_proxy()
     kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
     if proxy_arg:
