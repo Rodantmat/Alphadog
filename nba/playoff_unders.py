@@ -54,6 +54,18 @@ def load_cfg(conn, seed=True):
     return dict(DEFAULT_CFG)
 
 
+def app_cfg(cfg, app):
+    """the rule for one app: the top-level keys are PrizePicks'; cfg['ud'] (when the research chose a different rule for Underdog)
+    overrides them for Underdog"""
+    if app == 'ud' and isinstance(cfg.get('ud'), dict) and cfg['ud']:
+        return {**cfg, **cfg['ud']}
+    return cfg
+
+
+def strategies_for(cfg, app):
+    return {n: s for n, s in (cfg.get('strategies') or {}).items() if s.get('app') == app}
+
+
 def pivot_rank_rows(rows):
     """live / tier-map rows come one per rank key (rank_key, score); the rule reads one leg with s_final / s_base / s_score"""
     legs = {}
