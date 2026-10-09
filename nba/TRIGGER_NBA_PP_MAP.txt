@@ -1,9 +1,9 @@
-league: wnba
+league: nba
 mode: multi
 max_quotes: 150
 altalt: 30
 drift: 15
-note: 2026-09-21 WNBA MULTI run - 2- and 3-alternate slips at 3..6 picks, every alternate priced alone in the same run,
-note: to model the multi-alternate haircut for NBA slip pricing. Also the first run of the board-row loader (Fantasy Score
-note: research: every stat's standard line side by side, all runs). WNBA = data source for NBA only.
-note: scheduled runs force delta mode. Switch back to "league: nba" when the NBA preseason board appears (~Oct 1-3).
+note: 2026-10-09 (§31aa) back to NBA - the 2026-27 NBA board is posted (opening night 10-20), so the 6-hourly delta mines the
+note: NBA per-leg prices (game_types quotes) again; the WNBA season is over. Previous: 2026-09-21 WNBA MULTI run - 2- and
+note: 3-alternate slips at 3..6 picks, every alternate priced alone in the same run, to model the multi-alternate haircut for NBA
+note: slip pricing (WNBA = data source for NBA only). Scheduled runs force delta mode.
