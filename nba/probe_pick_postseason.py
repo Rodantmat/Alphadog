@@ -88,6 +88,7 @@ def main():
         print(f"\n=== {d}: postseason_slate = {is_post}", flush=True)
         ok &= is_post
         legs = LS.load_board_legs(conn, d)
+        print(f"  market-free rescoring (as live scores it): {market_free(conn, d, legs):,} final_score values replaced", flush=True)
         n_board = len({(l['player_id'], l['prop'], l['tier'], l['side'], l['line']) for l in legs if not l.get('whole_number')})
         print(f"  board: {len(legs):,} rank-key rows, {n_board:,} unique scored legs, team resolved "
               f"{sum(1 for l in legs if l.get('team_id'))/max(len(legs), 1):.1%}, event resolved {sum(1 for l in legs if l.get('event_id'))/max(len(legs), 1):.1%}",
