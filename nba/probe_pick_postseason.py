@@ -116,7 +116,7 @@ def ud_parity(conn, d):
         if not same:
             print(f"        backtest had: {theirs}", flush=True)
     if not live and not bt:
-        print("    UD PARITY: no Underdog postseason board this night on either side (Underdog postseason coverage ends mid-May)", flush=True)
+        print("    UD PARITY: no Playoff Unders slip this night on either side (one pick per game: a one-game night builds none)", flush=True)
     return ok
 
 
