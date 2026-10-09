@@ -256,7 +256,8 @@ def where(sb, tag):
 def main():
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     board = None
-    lobby_only = None   # a getUpcomingEventsV2 answer without projections (lobby), kept as evidence
+    lobby_only = None   # a board-shaped answer without projections for this league (lobby), kept as evidence
+    lobby_board = None  # the lobby's featured players of this league (fallback at the deadline)
     seen_ops = {}       # graphql operation names seen on the wire (diagnostic)
     lp, proxy_arg = start_local_proxy()
     kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
