@@ -415,6 +415,20 @@ def main():
                         m = json.loads(e["message"])["message"]
                     except Exception:  # noqa: BLE001
                         continue
+                    if m.get("method") == "Network.requestWillBeSent" and \
+                       "fantasy.betr.app/graphql" in m["params"]["request"].get("url", ""):
+                        # which operation, for which league, the app actually asked - the request side of the diagnosis
+                        try:
+                            pj = json.loads(m["params"]["request"].get("postData") or "{}")
+                            pj = pj[0] if isinstance(pj, list) and pj else pj
+                            v = pj.get("variables") or {}
+                            vs = {k: v[k] for k in v if k.lower() in ("league", "leagues", "sport", "sports", "leagueid", "filter", "filters")}
+                            k = f"graphql request {pj.get('operationName')} {json.dumps(vs, separators=(',', ':'))[:80]}"
+                        except Exception:  # noqa: BLE001
+                            k = "graphql request (unparsed)"
+                        seen_ops[k] = seen_ops.get(k, 0) + 1
+                        if k not in printed_reqs:
+                            printed_reqs.add(k); print(f"  {k}", flush=True)
                     if m.get("method") == "Network.responseReceived" and \
                        "fantasy.betr.app/graphql" in m["params"]["response"].get("url", ""):
                         ids.append(m["params"]["requestId"])
