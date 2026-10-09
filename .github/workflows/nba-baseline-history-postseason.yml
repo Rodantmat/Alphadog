@@ -11,7 +11,7 @@ on:
         required: true
       pairs:
         description: "singles prop pairs (semicolon-separated); components points,rebounds,assists,steals,blocks,turnovers are required for combos"
-        default: "points,rebounds;assists,steals;blocks,turnovers;threes_made,fg3a;fga,ftm;personal_fouls"
+        default: "points,rebounds;assists,steals;blocks,turnovers;threes_made,fg3a;fga,ftm;personal_fouls;dreb,oreb;fgm,fta"
         required: false
       combos:
         description: "1 = build the combos after the singles"
