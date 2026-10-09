@@ -95,7 +95,7 @@ def candidates(legs, cfg):
     props = set(cfg.get('props') or MAIN_PROPS)
     min_p = float(cfg.get('min_p', 0.58))
     xs = [l for l in legs if l['tier'] == 'R' and l['side'] == 'Under' and l['prop'] in props
-          and l.get(rank) is not None and l[rank] >= min_p and not l.get('whole_number')
+          and l.get(rank) is not None and l[rank] >= min_p and not l.get('whole_number') and float(l['line']) % 1 != 0
           and not (cfg.get('exclude_star') and is_star(l))]
     xs.sort(key=lambda l: (-l[rank], l['player'], l['prop'], float(l['line'])))
     seen, out = set(), []
