@@ -410,6 +410,10 @@ def main():
             print(f"  league chip click: {click_league(sb)}", flush=True)
             time.sleep(4)
             where(sb, "after league chip")
+            try:
+                routed = f"/{LEAGUE.lower()}" in (sb.get_current_url() or "").lower()
+            except Exception:  # noqa: BLE001
+                routed = False
             # capture. DIAGNOSED 2026-10-07 (full-system certification pass G): the app answers getUpcomingEventsV2 more than
             # once - the LOBBY response lists every upcoming event of every sport (163 "events" on 10-07, 117 on 10-06) with
             # NO players/projections, and the league board response carries the projections. The old loop took the first
