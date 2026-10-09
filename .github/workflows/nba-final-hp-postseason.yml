@@ -53,7 +53,8 @@ jobs:
       max-parallel: 3
       matrix:
         props: ["points", "assists,threes_made", "rebounds", "pra", "pts_reb", "pts_ast", "reb_ast",
-                "steals,blocks,turnovers,stocks", "fga,fg3a,ftm,fantasy_score,personal_fouls,double_double"]
+                "steals,blocks,turnovers,stocks", "fga,fg3a,ftm,fantasy_score,personal_fouls,double_double",
+                "dreb,oreb,fgm,fta"]
     steps:
       - uses: actions/checkout@v4
         with:
