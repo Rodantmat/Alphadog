@@ -271,6 +271,11 @@ def main():
             LEFT JOIN rm ON rm.game_date=g.game_date AND rm.nm=g.nm AND rm.line=g.line
             LEFT JOIN bt ON bt.game_date=g.game_date AND bt.nm=g.nm AND bt.line=g.line AND bt.side=g.side
             WHERE f.season = ANY(%s) AND f.prop = %s AND g.prop = %s
+              -- §31w (2026-10-09): the deduction model is fitted on REGULAR-SEASON legs only. Postseason rows (game ids
+              -- 004/005) now share final_hp / board_outcomes; letting them into this fit would change every certified
+              -- regular-season confidence (and the market-free twin's deductions) without a recertification. The postseason
+              -- uses the regular-season deductions as its prior, like every other regular-season fit.
+              AND NOT (coalesce(f.game_id, '') LIKE '004%%' OR coalesce(f.game_id, '') LIKE '005%%')
             """, conn, params=(seasons, prop, prop))
         if not part.empty:
             frames.append(part)
