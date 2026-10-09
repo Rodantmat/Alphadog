@@ -834,7 +834,8 @@ def stage_validate(conn, recs, legs_post, ecs_by_app, cmap):
             log(f"\n== {app.upper()} WALK-FORWARD {direction}: cells discovered on {tr} only ({len(ecs_tr)} cells: "
                 f"{', '.join(c['cell'] for c in sorted(ecs_tr, key=lambda c: -c['weak'])[:12])}{' ...' if len(ecs_tr) > 12 else ''}); "
                 f"strategy chosen on {tr} (top {TOPK} by ROI at cap 1, >= 25 days, concentration <= 50%); scored on {te}: "
-                f"{real} survivors vs full-pipeline null mean {sum(nulls)/max(len(nulls),1):.2f} (95th {p95}, {len(nulls)} nulls)")
+                f"{real} survivors vs full-pipeline null mean {sum(nulls)/max(len(nulls),1):.2f} (95th {p95}, {len(nulls)} nulls); "
+                f"positive test-season lower bound before the teammate ban: {sum(1 for x in res if x['ci_lo'] is not None and x['ci_lo'] > 0)}")
             for x in res:
                 log(f"   {'SURVIVE' if x['survive'] else '       '} {x['key'][1]:<44}{x['key'][2]} {x['key'][3]:<8} train {pct(x['train_roi'])} "
                     f"({x['train_days']}d)  test {pct(x['test_roi'])} ({x['test_days']}d)  CI [{pct(x['ci_lo'])}, {pct(x['ci_hi'])}]  no-teammate {pct(x['banned_roi'])}")
