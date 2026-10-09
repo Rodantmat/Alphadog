@@ -789,6 +789,10 @@ def stage_validate(conn, recs, legs_post, ecs_by_app, cmap):
     results = {}
     for app in APPS:
         ar = [r for r in recs if r[0] == app]
+        null_recs = []
+        for _ in range(ENGINE_NULLS):
+            pl = permute_day_hits([l for l in legs_post if l['app'] == app])
+            null_recs.append(run_engine(app, pl, ecs_by_app[app], cmap if app == 'pp' else None, 'null'))
         for direction, (tr, te) in (('fwd', (S1, S2)), ('rev', (S2, S1))):
             res = walk_forward(ar, tr, te)
             results[(app, direction)] = res
