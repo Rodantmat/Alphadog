@@ -120,7 +120,7 @@ def main():
         if (i + 1) % 50 == 0: _flush(); print(f"{i + 1}/{len(todo)} ok={n_ok} empty={n_empty} fail={n_fail}")
         time.sleep(0.6)
     _flush()
-    sizes = {p.name: round(p.stat().st_size / 1e6, 1) for p in DATA.glob(f"nba_matchups_pergame_{slug}_20*.json")}
+    sizes = {p.name: round(p.stat().st_size / 1e6, 1) for p in DATA.glob(f"nba_matchups_pergame_{tag}_20*.json")}
     print(f"done: season={season} mode={mode} games={len(games)} covered={len(covered)} empty={len(empty)} rows={existing['meta']['rows']} fail={n_fail} shards_MB={sizes}")
     if n_fail and n_ok == 0: sys.exit(2)
 
