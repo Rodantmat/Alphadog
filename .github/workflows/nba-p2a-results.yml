@@ -184,6 +184,24 @@ jobs:
           echo "postseason day - refreshing the $S postseason files"
           POST_SEASONS="$S" python -u nba/scrape_nba_postseason.py
           POST_SEASONS="$S" python -u nba/load_postseason_logs.py
+          # GAP AUDIT (the postseason twin of check_delta_gaps.py, which audits 002 games only): every play-in / playoff game
+          # scheduled up to last night must be in the season's postseason box-score file with both teams
+          SEASON="$S" python - <<'EOF'
+          import json, os, sys, psycopg
+          s = os.environ["SEASON"]; slug = s.replace("-", "_")
+          recs = json.load(open(f"nba/data/nba_player_game_log_postseason_{slug}.json")).get("records", [])
+          have = {}
+          for r in recs:
+              have.setdefault(str(r.get("GAME_ID")), set()).add(str(r.get("TEAM_ID")))
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              exp = c.execute("""SELECT game_id, game_date FROM nba_calendar.games WHERE game_date <= %s
+                                 AND (game_id LIKE '004%%' OR game_id LIKE '005%%') AND game_date >= %s::date - 120 ORDER BY 2""",
+                              (os.environ["YDAY"], os.environ["YDAY"])).fetchall()
+          miss = [(g, str(d)) for g, d in exp if len(have.get(str(g), set())) < 2]
+          print(f"postseason gap audit {s}: {len(exp)} scheduled play-in/playoff games through {os.environ['YDAY']}, "
+                f"{len(exp) - len(miss)} with both teams' box scores; missing {miss or 'none'}", flush=True)
+          sys.exit(1 if miss else 0)
+          EOF
 
       - name: Commit mined data
         if: ${{ github.event.inputs.skip_mining != 'true' }}
