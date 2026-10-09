@@ -1056,6 +1056,8 @@ def main():
         ecs_by_app[app] = engine_cells([c for c in cells if c['app'] == app], [g for g in gated if g['app'] == app])
         log(f"{app.upper()} engine cells: {len(ecs_by_app[app])} ({sum(1 for c in ecs_by_app[app] if c['filt'])} signal-gated)")
     recs = stage_engine(conn, legs_post, ecs_by_app, cmap) if 'engine' in STAGES else []
+    if 'legwf' in STAGES:
+        stage_legwf(conn, legs_post)
     results = stage_validate(conn, recs, legs_post, ecs_by_app, cmap) if 'validate' in STAGES else {}
     if 'stress' in STAGES:
         reg_legs = []
