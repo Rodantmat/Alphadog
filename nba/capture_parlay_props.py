@@ -128,6 +128,14 @@ def normalize(items, cfg, label, slate):
             continue
         if alt:
             odds_key += "_alternate"
+        # NOT A PLAYER RUNG (probe 2026-10-09): ParlayAPI tags some team / period markets with a player key - Bovada's "Lowest
+        # Scoring Quarter Total Points O/U - Detroit Pistons" arrives as player_points with player = "Boston Celtics @ Detroit
+        # Pistons". A rung is a full-game line on a named player; anything else is kept raw and skipped.
+        pl = str(it.get("player") or "").strip(); mname = str(it.get("market") or "").lower(); per = str(it.get("period") or "FULL").upper()
+        if (not pl or "@" in pl or pl in (str(it.get("home_team") or ""), str(it.get("away_team") or "")) or per not in ("FULL", "GAME", "")
+                or any(w in mname for w in ("quarter", "half", "1st", "2nd", "3rd", "4th", "team", "total points o/u -"))):
+            unmapped[f"{mk} [{mname[:40]}]"] = unmapped.get(f"{mk} [{mname[:40]}]", 0) + 1
+            continue
         line = it.get("line")
         try:
             line = float(line)
