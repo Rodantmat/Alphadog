@@ -318,9 +318,12 @@ def main():
                         seen_ops[f"graphql {st_code}"] = seen_ops.get(f"graphql {st_code}", 0) + 1
                     elif m.get("method") == "Network.responseReceived":
                         u = m["params"]["response"].get("url", "")
-                        if "betr.app" in u and m["params"]["response"].get("status", 0) >= 400:
-                            k = f"{m['params']['response'].get('status')} {u.split('?')[0][:70]}"
+                        if "betr" in u and not u.endswith((".js", ".css", ".png", ".svg", ".woff2", ".woff", ".jpg", ".ico")):
+                            k = f"{m['params']['response'].get('status')} {u.split('?')[0][:80]}"
                             seen_ops[k] = seen_ops.get(k, 0) + 1
+                    elif m.get("method") == "Network.loadingFailed":
+                        k = f"FAILED {m['params'].get('errorText', '?')[:40]} {m['params'].get('type', '')}"
+                        seen_ops[k] = seen_ops.get(k, 0) + 1
                 for rid in reversed(ids):
                     try:
                         b = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid})
