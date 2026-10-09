@@ -301,7 +301,7 @@ def main():
                     finals[stk] = (wk, k, g1, g2, g3, g4, r)
         reg_legs = None
         for stk, (wk, k, g1, g2, g3, g4, r) in sorted(finals.items(), key=lambda x: -x[1][0]):
-            v = dict(rank=k[0], propset=k[1], props=PROPSETS[k[1]], min_p=k[2], exclude_star=k[3], max_per_game=k[4], size=k[5], structure=k[6])
+            v = dict(rank=k[0], propset=k[1], props=PROPSETS[k[1]], half_only=k[1].endswith('_half'), min_p=k[2], exclude_star=k[3], max_per_game=k[4], size=k[5], structure=k[6])
             rec = grid[k]
             lo10 = boot_lo(rec, BOOT)
             env = envelope(rec)
