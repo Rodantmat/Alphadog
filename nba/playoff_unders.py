@@ -107,6 +107,79 @@ def candidates(legs, cfg):
     return out
 
 
+BT_PP_SQL = """
+SELECT season, game_date, player, player_id, prop, tier, side, line, factor, hit, team_id, event_id, rank_key, score
+FROM nba_score.tier_map_legs_post WHERE tier='R' AND side='Under'"""
+BT_UD_SQL = """
+SELECT l.season, l.game_date, l.player, l.player_id, l.prop, l.tier, l.side, l.line, l.factor, l.hit,
+       coalesce(g.team_id, w.event_id) team_id, w.event_id, l.rank_key, l.score
+FROM nba_score.ud_tier_map_legs_post l
+LEFT JOIN (SELECT game_date, pn, prop, side, line, min(event_id) event_id FROM nba_score.ud_window_legs_post GROUP BY 1,2,3,4,5) w
+  ON w.game_date=l.game_date AND w.pn=l.player AND w.prop=l.prop AND w.side=l.side AND w.line=l.line
+LEFT JOIN nba_stats.player_game_log_postseason g ON g.player_id='nba_'||l.player_id AND g.game_date=l.game_date
+WHERE l.tier='R' AND l.side='Under'"""
+BT_COLS = ['season', 'game_date', 'player', 'player_id', 'prop', 'tier', 'side', 'line', 'factor', 'hit', 'team_id', 'event_id', 'rank_key', 'score']
+
+
+def ud_grade(slip, structure):
+    """the certified Underdog formula (build_ud_slip_engine STD / FLEX); a void leg is removed and the entry drops a size"""
+    import build_ud_slip_engine as UE
+    live = [l for l in slip if l['hit'] is not None]
+    k = len(live)
+    hits = sum(l['hit'] for l in live)
+    if k < 2:
+        return hits, 1.0                                   # refund
+    if structure == 'standard' or k == 2:
+        if hits < k:
+            return hits, 0.0
+        p = UE.STD[k]
+        for l in live:
+            p *= l['factor']
+        return hits, p
+    base = UE.FLEX.get((k, k - hits), 0.0)
+    if not base:
+        return hits, 0.0
+    p = base
+    for l in live:
+        if l['hit']:
+            p *= l['factor']
+    return hits, p
+
+
+def backtest(conn, cfg):
+    """the postseason backtest of every configured Playoff Unders strategy, built by THIS module's rule over the certified
+    postseason maps (PrizePicks: tier_map_legs_post; Underdog: ud_tier_map_legs_post + its game), graded by the certified payout
+    (PrizePicks build_slip_engine.grade, Underdog the formula above with the §30t 0.5% / 1% discount).
+    Returns {strategy: [(season, game_date, stake, payout, slip_legs), ...]} - one slip a night (k = 1)."""
+    import build_slip_engine as SE
+    out = {}
+    for app, sql in (('pp', BT_PP_SQL), ('ud', BT_UD_SQL)):
+        strats = strategies_for(cfg, app)
+        if not strats:
+            continue
+        rows = [dict(zip(BT_COLS, r)) for r in conn.execute(sql).fetchall()]
+        for r in rows:
+            r['line'] = float(r['line'])
+            r['factor'] = float(r['factor']) if r['factor'] is not None else None
+            if app == 'ud' and r['factor'] is not None:
+                r['factor'] *= 0.995 if abs(r['factor'] - 1.0) < 1e-9 else 0.99
+        days = {}
+        for r in rows:
+            days.setdefault(r['game_date'], []).append(r)
+        acfg = app_cfg(cfg, app)
+        for name, s in strats.items():
+            recs = []
+            for d in sorted(days):
+                legs = pivot_rank_rows(days[d])
+                slip = build_slip(candidates(legs, acfg), int(s['size']), app, acfg)
+                if slip is None:
+                    continue
+                hits, payout = SE.grade(slip, s['structure']) if app == 'pp' else ud_grade(slip, s['structure'])
+                recs.append((days[d][0]['season'], d, 1.0, payout, slip))
+            out[name] = recs
+    return out
+
+
 def build_slip(cands, size, app, cfg):
     """deterministic greedy: walk the candidates best first; a leg is skipped if its game already holds max_per_game legs
     (Underdog: 1 - one pick per game), or if it would leave a full PrizePicks slip on a single team. None if the night is too thin."""
