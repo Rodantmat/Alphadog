@@ -194,7 +194,7 @@ def main():
                 rank = next((i + 1 for i, b in enumerate(branches) if b[0] == rkey), None)
                 if rprob is None:
                     continue
-                ph = phase_of(gd)
+                ph = "5_postseason" if str(gid)[:3] in ("004", "005") else phase_of(gd)
                 out_rows.append((season, gd, gid, rkey, round(float(rprob), 6), k, len(branches),
                                  True, rank == 1, rank, ph))
                 c = cal[(ph, k)]
