@@ -98,7 +98,7 @@ def main():
     existing = json.loads(path.read_text()) if path.exists() else {"meta": {"covered": [], "empty": []}}
     covered = set(existing["meta"].get("covered", [])); empty = set(existing["meta"].get("empty", []))
     shards = {}
-    for p in DATA.glob(f"nba_matchups_pergame_{slug}_20*.json"):
+    for p in DATA.glob(f"nba_matchups_pergame_{tag}_20*.json"):
         d_ = json.loads(p.read_text()); shards[p.name.rsplit("_", 1)[1][:7]] = d_["rows"]
     todo = sorted(g for g in games if g not in covered and g not in empty)
     limit = int(os.environ.get("MAX_GAMES", "1400")); n_ok = n_empty = n_fail = 0
