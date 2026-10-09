@@ -397,7 +397,7 @@ def main():
                         k = f"graphql body unreadable ({type(exc).__name__})"
                         seen_ops[k] = seen_ops.get(k, 0) + 1
                         continue
-                if not board and lobby_only is not None:
+                if not board and (lobby_only is not None or lobby_board is not None):
                     # the lobby answered but the league board did not: nudge the league tab again
                     for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//a[contains(.,"{LEAGUE}")]',
                                f'//button[contains(.,"{LEAGUE}")]'):
