@@ -240,20 +240,45 @@ def renew_session_state(st):
 
 
 def click_league(sb):
-    """Open the league board. The app (2026-10-09) renders a horizontal strip of league chips ("NFL | MLB | WNBA | CFB | ... |
-    NBA | ...") as leaf text nodes, most of them off-screen - an XPath visibility check never saw "NBA". Click the LEAF element
-    whose exact text is the league, by JS, after scrolling it into view; fall back to the old XPaths."""
+    """Open the league board IN-PAGE (no navigation, so the CDP session stays attached and every graphql body is readable).
+    The app (2026-10-09) renders a horizontal strip of league chips ("NFL | MLB | WNBA | CFB | ... | NBA | ...") as leaf
+    text nodes of a React-Native-web Pressable, most of them off-screen. Run 38004204387 proved a synthetic JS .click()
+    does NOT register (the lobby stayed put): RNW's press responder wants real pointer events. So: scroll the leaf into
+    view, read its rect, and press it with a REAL mouse through CDP (Input.dispatchMouseEvent); fall back to a dispatched
+    pointer/mouse event sequence, then to the old XPaths."""
     try:
-        n = sb.execute_script(
+        rect = sb.execute_script(
             "var L=arguments[0]; var els=Array.from(document.querySelectorAll('div,span,button,a,p')).filter(function(e){"
             " return e.children.length===0 && (e.innerText||e.textContent||'').trim()===L;});"
-            " if(!els.length) return 0; var e=els[0]; e.scrollIntoView({inline:'center',block:'center'});"
-            " var t=e; for(var i=0;i<4&&t;i++){ if(t.getAttribute&&(t.getAttribute('role')==='button'||t.tagName==='BUTTON'||t.tagName==='A')) break; t=t.parentElement; }"
-            " (t||e).click(); e.click(); return els.length;", LEAGUE)
-        if n:
-            return f"js click on {n} '{LEAGUE}' leaf(s)"
+            " if(!els.length) return null; var e=els[0]; e.scrollIntoView({inline:'center',block:'center'});"
+            " var r=e.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2, els.length, r.width, r.height];", LEAGUE)
     except Exception as exc:  # noqa: BLE001
-        pass
+        rect = None; print(f"  league chip lookup failed: {str(exc)[:80]}", flush=True)
+    if rect and rect[3] > 0 and rect[4] > 0:
+        x, y = float(rect[0]), float(rect[1])
+        try:
+            time.sleep(0.5)
+            for ev in ({"type": "mouseMoved", "x": x, "y": y},
+                       {"type": "mousePressed", "x": x, "y": y, "button": "left", "clickCount": 1},
+                       {"type": "mouseReleased", "x": x, "y": y, "button": "left", "clickCount": 1}):
+                sb.driver.execute_cdp_cmd("Input.dispatchMouseEvent", ev)
+                time.sleep(0.12)
+            return f"cdp mouse click on '{LEAGUE}' leaf at ({x:.0f},{y:.0f}) [{int(rect[2])} leaf(s)]"
+        except Exception as exc:  # noqa: BLE001
+            print(f"  cdp mouse click failed: {str(exc)[:80]}", flush=True)
+        try:
+            n = sb.execute_script(
+                "var L=arguments[0]; var els=Array.from(document.querySelectorAll('div,span,button,a,p')).filter(function(e){"
+                " return e.children.length===0 && (e.innerText||e.textContent||'').trim()===L;});"
+                " if(!els.length) return 0; var e=els[0]; var r=e.getBoundingClientRect(); var o={bubbles:true,cancelable:true,"
+                " clientX:r.left+r.width/2, clientY:r.top+r.height/2, button:0, buttons:1, pointerId:1, pointerType:'mouse', isPrimary:true};"
+                " ['pointerdown','mousedown'].forEach(function(t){e.dispatchEvent(t.indexOf('pointer')==0?new PointerEvent(t,o):new MouseEvent(t,o));});"
+                " o.buttons=0; ['pointerup','mouseup','click'].forEach(function(t){e.dispatchEvent(t.indexOf('pointer')==0?new PointerEvent(t,o):new MouseEvent(t,o));});"
+                " return els.length;", LEAGUE)
+            if n:
+                return f"pointer-event sequence on {n} '{LEAGUE}' leaf(s)"
+        except Exception:  # noqa: BLE001
+            pass
     for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//a[contains(.,"{LEAGUE}")]', f'//button[contains(.,"{LEAGUE}")]'):
         try:
             if sb.is_element_visible(xp):
@@ -262,6 +287,20 @@ def click_league(sb):
         except Exception:  # noqa: BLE001
             continue
     return "no league chip found"
+
+
+def enable_network(sb):
+    """(re)enable the CDP Network domain with a big body buffer. uc_open_with_reconnect detaches chromedriver for the
+    navigation, so every response that arrives while it is detached has NO readable body afterwards ('graphql body
+    unreadable', 4 of 5 on run 38004204387 - the lobby answer with the league's featured players was among them). Call this
+    after every reconnect, and fetch the board through IN-PAGE actions (chip clicks) so the session stays attached."""
+    try:
+        sb.driver.execute_cdp_cmd("Network.enable", {"maxTotalBufferSize": 200_000_000, "maxResourceBufferSize": 50_000_000})
+    except Exception:  # noqa: BLE001
+        try:
+            sb.driver.execute_cdp_cmd("Network.enable", {})
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def where(sb, tag):
