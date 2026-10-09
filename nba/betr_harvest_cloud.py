@@ -383,9 +383,15 @@ def main():
                         seen_ops[k] = seen_ops.get(k, 0) + 1
                         evs, op = board_events(j)
                         if evs:
-                            if flatten(j)[0]:
-                                board = j; print(f"  board = {op} ({len(evs)} events)", flush=True); break
-                            lobby_only = j   # events without projections - not the board
+                            lg_legs, lg_ev = flatten(j)
+                            if lg_legs and not op.startswith("getUpcomingLobbyEventsV2"):
+                                board = j; print(f"  board = {op} ({lg_ev} {LEAGUE} events, {len(lg_legs)} legs)", flush=True); break
+                            if lg_legs:
+                                # the lobby's featured players of this league: a FALLBACK at the deadline, never preferred
+                                # over the league board (getEventsWithFilteredPlayers) that the league tab produces
+                                lobby_board = j
+                            else:
+                                lobby_only = j   # events without projections for this league - not the board
                     except Exception as exc:  # noqa: BLE001
                         k = f"graphql body unreadable ({type(exc).__name__})"
                         seen_ops[k] = seen_ops.get(k, 0) + 1
