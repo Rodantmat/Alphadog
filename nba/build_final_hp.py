@@ -159,7 +159,10 @@ def main():
         cur.execute(f"""
             CREATE TEMP TABLE _fe_board_keys AS
             SELECT game_date, player_id, prop, coalesce(period, 'FULL') AS period, line, src FROM nba_market.board_rung_keys
-            WHERE true {_date_clause.replace('b.game_date', 'game_date')}""", ([FE_DATE] if FE_DATE else []))
+            WHERE true {_date_clause.replace('b.game_date', 'game_date')}
+              {"AND extract(month from game_date) BETWEEN 4 AND 6" if (FE_POSTSEASON and not FE_DATE) else ""}""", ([FE_DATE] if FE_DATE else []))
+        # (FE_POSTSEASON without a slate: only April-June board keys can belong to a play-in / playoff game - the whole
+        #  multi-season key table is not copied and indexed per run; nine parallel prop jobs each did that, 2026-10-09)
         cur.execute("CREATE INDEX ON _fe_board_keys (game_date, player_id, prop, period, line)")
         cur.execute("SELECT count(*) FROM _fe_board_keys")
         if cur.fetchone()[0] == 0:
