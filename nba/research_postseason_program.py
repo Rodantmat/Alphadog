@@ -544,8 +544,11 @@ def stage_signals(conn, legs_post, cells):
 
 # ---------------------------------------------------------------------------------------------------------------- ENGINE
 def engine_cells(cells, gated):
-    """the cells the engine may use: ABOVE cells + signal-gated variants whose weaker p.m beats their parent's"""
+    """the cells the engine may use: ABOVE cells (+ signal-gated variants whose weaker p.m beats their parent's, only when
+    PSR_GATED=1 - the signal matrix's survivors did not exceed its permutation null on the first run, so by default they stay out)"""
     ec = [dict(c, filt=[]) for c in cells if c['status'] == 'ABOVE']
+    if os.environ.get('PSR_GATED', '0') != '1':
+        gated = []
     parent = {(c['app'], c['cell']): c['weak'] for c in cells}
     for g in gated:
         base_name = g['cell'].split('|')[0]
