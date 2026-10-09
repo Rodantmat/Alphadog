@@ -62,6 +62,27 @@ def main():
                                AND status IN ('placed_post','placed_post_shadow') GROUP BY 1,2 ORDER BY 1""", (d,)).fetchall()
         for r in rows:
             print(f"    would record: {r[0]:<20} {r[1]:<20} {r[2]} slip(s)", flush=True)
+        # PLAYOFF UNDERS PARITY (§31z): the live slip must be the slip the certification backtested for this night
+        # (nba_score.playoff_unders_slips, written by certify_postseason_strategies.py from playoff_unders.backtest)
+        live = conn.execute("""SELECT strategy, legs_json FROM nba_score.live_slips WHERE game_date=%s AND strategy LIKE 'P\\_unders\\_%%'""",
+                            (d,)).fetchall()
+        for strat, lj in live:
+            lj = lj if isinstance(lj, list) else __import__('json').loads(lj)
+            mine = sorted((l['player'], l['prop'], l['side'], float(l['line'])) for l in lj)
+            bt = conn.execute("SELECT legs_json FROM nba_score.playoff_unders_slips WHERE strategy=%s AND game_date=%s", (strat, d)).fetchone()
+            if bt is None:
+                print(f"    PARITY {strat}: no backtest slip for this night (live built {len(mine)} legs) -> MISMATCH", flush=True)
+                ok = False
+                continue
+            bj = bt[0] if isinstance(bt[0], list) else __import__('json').loads(bt[0])
+            theirs = sorted((l['player'], l['prop'], l['side'], float(l['line'])) for l in bj)
+            same = mine == theirs
+            ok &= same
+            print(f"    PARITY {strat}: live == certified backtest -> {'MATCH' if same else 'MISMATCH'}", flush=True)
+            for l in mine:
+                print(f"        {l[0]:<26} {l[1]:<12} {l[2]:<6} {l[3]:>5}", flush=True)
+            if not same:
+                print(f"        backtest had: {theirs}", flush=True)
         conn.rollback()
     after = counts(conn)
     print(f"\nledger after rollback: live_slips {after[0]:,}, live_pool {after[1]:,} -> {'UNCHANGED' if after == before else 'CHANGED (!)'}", flush=True)
