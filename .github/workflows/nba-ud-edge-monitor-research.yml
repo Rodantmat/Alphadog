@@ -7,6 +7,10 @@ on:
       sims:
         default: "400"
         required: false
+      table:
+        description: "P5 backtest slip table (round 3 #4: nba_score.ud_slip_engine_slips_dlt_orig2_mf = the market-free twin)"
+        default: "nba_score.ud_slip_engine_slips_dlt_orig2"
+        required: false
 
 permissions:
   contents: read
@@ -27,5 +31,6 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           EM_SIMS: ${{ github.event.inputs.sims }}
+          EM_TABLE: ${{ github.event.inputs.table }}
           UD_EXCL_CENTER: "1"
         run: python -u nba/ud_edge_monitor_research.py
