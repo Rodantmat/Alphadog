@@ -919,6 +919,24 @@ with the SAME builder the regular season used, extended to read the postseason f
   all SHADOW (D_points_3power +3% / 96 d, A_wrebounds_4flex +4% / 36 d, C_wstocks_4flex +19% / 34 d, R_stocks_4power +32% / 15 d;
   every lower bound < 0). Playoff strategy research: strategy §31y, COMPASS 142.
 
+### PLAYOFF UNDERS — gates, stress, certification, live parity (owner 2026-10-09: "run all the gates, stress it out … wire the logic, so it is ready for playoff time")
+- Research run 37897295209 (`research_playoff_unders.py`, code 9b994a4): 1,920 PP / 360 UD pre-registered variants, G1–G5 + 50-run
+  null; finalists stressed (10k lower bound, 7-night-block envelopes, leg-hit decay, same-game correlation, both regular seasons).
+  Config written to `classification_config['playoff_unders']`; `stake_mode: 'gate'` added by hand (verified in the row).
+- Certification (nba-postseason-certify 37898660065, 07:29Z): `postseason_strategy_verdict` — P_unders_5flex PASS (97 d, +63.5%,
+  lo +16.2%), P_unders_4flex PASS (+37.6%, lo +2.1%), U_unders_2standard PASS (49 d, +55.6%, lo +6.1%), P_unders_3power SHADOW;
+  regular-season strategies unchanged (all SHADOW on playoff slates). Slips in `nba_score.playoff_unders_slips`. Research and
+  certification numbers identical (one code path).
+- Live parity (probe 37899991171 → 37900420784, PROBE PASS): 2026-04-15 / 04-25 / 06-10, P_unders 3P / 4F / 5F live slips ==
+  certified backtest slips 9 / 9; UD PLAYOFF_UNDERS slip == backtest (04-25; no slip on either side on the one-game 06-10);
+  live_slips / live_pool / ud_live_slips row counts unchanged after rollback. First probe run (37899629054) FAILED on parity — cause:
+  the probe read a past night's market-inclusive `final_hp.score`; the map (and live, no feed) use the market-free score. Probe now
+  rescored with the builder's own `_fh` statement; names compared accent-insensitively (Jokic / Jokić). Not a live defect.
+- Code: `playoff_unders.py` (stake_mode), `live_slip_engine.py` / `ud_live_slip_engine.py` (stake only with PASS and
+  stake_mode 'gate'), `probe_pick_postseason.py` (PP + UD parity). No MLB file touched.
+- Open by design: PP slip-level walk-forward (G5) fails — selection on 97 nights is not provable; the deployment rests on the gate,
+  the family robustness (all 60 whole-line 5-Flex variants positive in both postseasons) and the leg-level out-of-sample hit.
+
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
 2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
