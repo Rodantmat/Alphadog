@@ -352,10 +352,11 @@ def stage_bands(conn, legs_post):
     log(f"bands: {len(rows):,} rows (app x rank x cell x cut x season)")
 
 
-def select_cells(legs_post, app, permute=False):
+def select_cells(legs_post, app, permute=False, train=None):
     """§19o/§24 rule, translated: per (cell, rank) the n maximizing the WEAKER postseason p.m (days >= MIN_DAYS in each);
-    ABOVE if the weaker p.m >= break-even, NEAR within 0.02. permute=True shuffles hits within (day, prop, tier, side) first."""
-    legs = [l for l in legs_post if l['app'] == app]
+    ABOVE if the weaker p.m >= break-even, NEAR within 0.02. permute=True shuffles hits within (day, prop, tier, side) first.
+    train=<season>: discovery on THAT season only (the walk-forward's honest V1 - the scored season never chooses a cell)."""
+    legs = [l for l in legs_post if l['app'] == app and (train is None or l['season'] == train)]
     if permute:
         grp = defaultdict(list)
         for l in legs:
