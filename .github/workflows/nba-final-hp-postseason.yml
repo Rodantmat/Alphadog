@@ -48,6 +48,9 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
+      # 3 at a time: nine concurrent jobs each copying + indexing the board-key table saturated the database's IO (2026-10-09
+      # 01:00Z, terminated); the key table is now limited to April-June in postseason mode and three jobs share the IO
+      max-parallel: 3
       matrix:
         props: ["points", "assists,threes_made", "rebounds", "pra", "pts_reb", "pts_ast", "reb_ast",
                 "steals,blocks,turnovers,stocks", "fga,fg3a,ftm,fantasy_score,personal_fouls,double_double"]
