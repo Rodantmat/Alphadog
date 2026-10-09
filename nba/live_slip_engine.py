@@ -797,7 +797,7 @@ def pick_postseason(conn, day, legs):
             if slip is None:
                 print(f"    {name:<20} pool {len(cands):>3} | no slip (night too thin for {spec['size']} legs)", flush=True)
                 continue
-            st = 'placed_post' if verdict.get(name) == 'PASS' else 'placed_post_shadow'
+            st = 'placed_post' if (verdict.get(name) == 'PASS' and pcfg.get('stake_mode', 'gate') == 'gate') else 'placed_post_shadow'
             sig = (spec['structure'], tuple(sorted((l['player'], l['prop'], l['side'], float(l['line'])) for l in slip)))
             if st == 'placed_post':
                 staked = conn.execute("SELECT count(*) FROM nba_score.live_slips WHERE game_date=%s AND status='placed_post'", (day,)).fetchone()[0]
