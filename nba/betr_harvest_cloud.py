@@ -407,6 +407,10 @@ def main():
                         except Exception:  # noqa: BLE001
                             continue
                 time.sleep(3)
+            if not board and lobby_board is not None:
+                board = lobby_board
+                print(f"  WARNING: league board never answered - using the LOBBY's {LEAGUE} players as a partial board "
+                      f"({len(flatten(board)[0])} legs); the league tab navigation needs attention", flush=True)
             if not board:
                 where(sb, "deadline")
                 print(f"  wire: {seen_ops or 'no betr.app graphql / error responses seen'}", flush=True)
