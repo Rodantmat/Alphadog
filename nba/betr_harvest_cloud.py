@@ -528,6 +528,14 @@ def main():
             print(f"NO {LEAGUE} BOARD WITH PROJECTIONS: the lobby answered with {n_ev} projection-less events "
                   f"(leagues seen: {leagues}); previous board file left untouched", file=sys.stderr)
             sys.exit(3)
+        alive = any(k.startswith("200 https://api.betr.app/api/v3/auth/") for k in seen_ops) or seen_ops.get("graphql 200", 0) > 0
+        if alive and not routed:
+            # PROVEN 2026-10-09 (runs 38005105453 WNBA, 38006445274 EPL - on-screen and scrolled chips both route to
+            # /picks/home/<LEAGUE> and fire LeagueUpcomingEvents{league}); the NBA chip did not route on 38006042574 with
+            # the lobby listing no NBA event: Betr had not opened the league. The session is alive (authed API 200s).
+            print(f"NO {LEAGUE} BOARD: the '{LEAGUE}' league chip does not route (Betr has not opened the {LEAGUE} board, "
+                  f"or the strip changed - see the trail above); session alive; previous board file left untouched", file=sys.stderr)
+            sys.exit(3)
         print("NO BOARD (session may have expired — re-run betr_export_session.py and update BETR_SESSION_STATE)",
               file=sys.stderr)
         sys.exit(2)
