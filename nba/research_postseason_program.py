@@ -959,8 +959,6 @@ def main():
     if 'stress' in STAGES:
         reg_legs = []
         for app in APPS:
-            pt = sorted({(c['prop'] if c['prop'] not in POOLS else p, c['tier']) for c in ecs_by_app[app]
-                         for p in (POOLS.get(c['prop'], [c['prop']]))})
             pt = sorted({(p, c['tier']) for c in ecs_by_app[app] for p in POOLS.get(c['prop'], [c['prop']])})
             if not pt:
                 continue
