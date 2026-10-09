@@ -7,8 +7,11 @@ PARITY WITH THE BACKTEST (every choice mirrors the certified build):
   legs      Underdog window board (nba_market.board_snapshots, bookmaker='underdog', label 'window'); modifier m = the archived
             payout modifier (§30h), fallback round(decimal / sqrt(3), 2) (§30i)
   resolver  nba_ref.norm_name(player) -> nba_ref.player_name_map -> nba_score.final_hp (date, player_id, prop, side, line) -
-            the certifier's own join (§30k); ranks final_hp / baseline_hp / score exactly as the tier map
-  tiers     R = 1.00, F1 0.90-0.99, F2 0.80-0.89, F3 < 0.80, B1 1.01-1.14, B2 1.15-1.39, B3 >= 1.40; duplicates keep the LOWEST m
+            the certifier's own join (§30k); ranks final_hp / baseline_hp / score exactly as the tier map. The score is
+            MARKET-FREE (market_free_score: identity on a live day, which has no sportsbook feed; the faithful live
+            score in a replay) and the backtest it is measured against is the market-free twin named by
+            classification_config['live_backtest_suffix'].ud_table / ud_legs_table (ud_bt_table; round 3 #4)
+  tiers    R = 1.00, F1 0.90-0.99, F2 0.80-0.89, F3 < 0.80, B1 1.01-1.14, B2 1.15-1.39, B3 >= 1.40; duplicates keep the LOWEST m
   engine    build_ud_slip_engine is IMPORTED (eligible_legs, candidates, build_day_slips, valid) with centers excluded (§30p),
             the original 14 certified cells (§30k) - live cannot drift from what was validated
   rules     one pick per game; pre-All-Star week and final regular-season week recorded as 'stand_down' (stake 0, §30p)
@@ -67,6 +70,33 @@ def tier_of(m):
     return 'F1' if m >= 0.90 else ('F2' if m >= 0.80 else 'F3')
 
 
+_MF = {}
+
+
+def market_free_score(conn, score, hp, conf, cm):
+    """THE MARKET-FREE SCORE (round 3 #4, 2026-10-09). final_hp.score = hp100 + headroom x lift - hp100 x drop, where lift / drop
+    come from the confidence; in the HISTORY the confidence carries the market term (f_books = books/4, f_agree 0.85 when
+    books agree) from the Odds API feed the backtest had. Live has no sportsbook feed: c_market = 0, f_agree 0.55 for every
+    leg - so on a live day this is the identity (cm = 0 -> score unchanged) and in a replay of a past slate it scores the leg
+    exactly as live would have: the same arithmetic as nba_score.build_ud_tier_map_legs_curr_mf() (nba/sql), the difference
+    of the formula at the market-free confidence and at the stored confidence added to the stored score (rounding cancels).
+    Deductions are read from nba_score.confidence_model, never hardcoded."""
+    if cm is None or float(cm) == 0 or score is None:
+        return score
+    if not _MF:
+        for f, d in conn.execute("SELECT factor, deduction FROM nba_score.confidence_model WHERE factor IN ('f_books','f_agree')").fetchall():
+            _MF[f] = float(d)
+        if 'f_books' not in _MF or 'f_agree' not in _MF:
+            raise RuntimeError('confidence_model lacks f_books / f_agree')
+    hp = float(hp); conf = float(conf); cm = float(cm)
+
+    def formula(c):
+        h = hp * 100.0; cdev = (c - 0.85) / 0.15
+        return min(100.0, max(0.0, h + (100.0 - h) * min(1.0, max(0.0, cdev)) * 0.5 - h * min(1.0, max(0.0, -cdev)) * 0.35))
+    c_mf = conf - (_MF['f_books'] * cm + _MF['f_agree'] * 0.30) / 100.0
+    return round(min(100.0, max(0.0, float(score) + formula(c_mf) - formula(conf))), 2)
+
+
 def load_legs(conn, day):
     rows = conn.execute("""
       WITH b AS (
@@ -76,21 +106,22 @@ def load_legs(conn, day):
         FROM nba_market.board_snapshots b
         WHERE b.bookmaker='underdog' AND b.snapshot_label='window' AND b.game_date=%s)
       SELECT b.event_id, b.pn, nm.player_id, b.mk, b.market_key, b.side, b.line, b.m,
-             f.final_hp::float, f.baseline_hp::float, f.score::float, left(pl.position,1)
+             f.final_hp::float, f.baseline_hp::float, f.score::float, left(pl.position,1), f.confidence::float, f.c_market::float
       FROM b JOIN nba_ref.player_name_map nm ON nm.norm_name = b.pn
       JOIN nba_score.final_hp f ON f.game_date=%s AND f.player_id=nm.player_id AND f.side=b.side AND f.line=b.line
        AND f.prop = (CASE b.mk """ + " ".join(f"WHEN '{k}' THEN '{v}'" for k, v in MKT.items()) + """ END)
       LEFT JOIN nba_ref.players pl ON pl.nba_player_id::text = nm.player_id::text
       WHERE f.final_hp IS NOT NULL AND f.baseline_hp IS NOT NULL AND f.score IS NOT NULL AND b.m > 0""", (day, day)).fetchall()
     best = {}
-    for ev, pn, pid, mk, mkey, side, line, m, s_f, s_b, s_s, pos in rows:
+    for ev, pn, pid, mk, mkey, side, line, m, s_f, s_b, s_s, pos, conf, cm in rows:
         prop = MKT.get(mk)
         if not prop:
             continue
         key = (pn, prop, side, float(line))
         if key not in best or m < best[key]['m']:      # duplicates keep the LOWEST modifier, as certified
             best[key] = dict(event_id=ev, player=pn, player_id=str(pid), prop=prop, side=side, line=float(line), m=m,
-                             kind='alt' if mkey.endswith('_alternate') else 'main', s_f=s_f, s_b=s_b, s_s=s_s, position=pos)
+                             kind='alt' if mkey.endswith('_alternate') else 'main', s_f=s_f, s_b=s_b,
+                             s_s=market_free_score(conn, s_s, s_f, conf, cm), position=pos)
     legs = []
     for b in best.values():
         for rk, s in (('final_hp', b['s_f']), ('baseline_hp', b['s_b']), ('final_score', b['s_s'])):
@@ -321,8 +352,8 @@ def grade(conn, day):
 
 # ============================================================================================================================
 # UNDERDOG EDGE MONITOR (§31o). Is the staked P5 portfolio still above break-even? Research and validation: §31o.
-#   reference  - certified hit rate per (cell, tier, side) from the P5 backtest slips (ud_slip_engine_slips_dlt_orig2,
-#                stand-downs out)
+#   reference  - certified hit rate per (cell, tier, side) from the P5 backtest slips (the table ud_bt_table() names - round 3
+#                #4: the market-free twin ud_slip_engine_slips_dlt_orig2_mf; stand-downs out), rebuilt when that table changes
 #   break-even - FIXED at -10.84 pp: measured by THINNING the real joint outcomes (each actual hit kept with prob p(s)/p,
 #                slips regraded by the engine's grade()) because Underdog legs co-move inside a slip and an independence
 #                model understates actual ROI by 24 pts; stable across seasons (-10.82 / -10.68), same P5 structure live
@@ -369,20 +400,55 @@ def ud_evaluate_edge(excess, delta=UD_EDGE_DELTA, prior=None):
     return rows, running
 
 
+_UD_BT = {}
+UD_BT_DEFAULT = {'ud_table': 'nba_score.ud_slip_engine_slips_dlt_orig2', 'ud_legs_table': 'nba_score.ud_tier_map_legs_curr'}
+
+
+def ud_bt_table(conn, which='ud_table'):
+    """The Underdog backtest the live engine is measured against: 'ud_table' = the slip build (edge-monitor reference,
+    parity, the edge-monitor validation), 'ud_legs_table' = its leg table (parity's leg universe). Read from the same
+    tunable row as the PrizePicks suffix, nba_config.classification_config['live_backtest_suffix'] (keys ud_table /
+    ud_legs_table); round 3 #4 (2026-10-09) points them at the market-free twin (nba_score.ud_slip_engine_slips_dlt_orig2_mf
+    on nba_score.ud_tier_map_legs_curr_mf, from nba_score.build_ud_tier_map_legs_curr_mf()) - the faithful simulation of a
+    live pipeline that has no sportsbook feed. Absent keys = the certified market-inclusive build. UDL_BT_TABLE /
+    UDL_BT_LEGS_TABLE override (tests)."""
+    env = {'ud_table': 'UDL_BT_TABLE', 'ud_legs_table': 'UDL_BT_LEGS_TABLE'}[which]
+    if os.environ.get(env):
+        return os.environ[env]
+    if not _UD_BT:
+        cfg = {}
+        try:
+            row = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='live_backtest_suffix'").fetchone()
+            cfg = (row[0] if isinstance(row[0], dict) else json.loads(row[0])) if row else {}
+        except Exception:  # noqa: BLE001
+            cfg = {}
+        for k, dflt in UD_BT_DEFAULT.items():
+            _UD_BT[k] = str(cfg.get(k) or dflt)
+        print(f"  Underdog backtest: {_UD_BT['ud_table']} on {_UD_BT['ud_legs_table']}"
+              f" ({'market-free twin' if _UD_BT['ud_table'].endswith('_mf') else 'certified, market-inclusive'})", flush=True)
+    return _UD_BT[which]
+
+
 def ud_edge_reference(conn, rebuild=False):
+    bt = ud_bt_table(conn)
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.ud_edge_monitor_ref (cell text, tier text, side text, p double precision, n int,
                     built_at timestamptz DEFAULT now(), PRIMARY KEY (cell, tier, side))""")
-    if conn.execute("SELECT count(*) FROM nba_score.ud_edge_monitor_ref").fetchone()[0] and not rebuild:
+    conn.execute("ALTER TABLE nba_score.ud_edge_monitor_ref ADD COLUMN IF NOT EXISTS src text")
+    # the reference is rebuilt when asked OR when it was built from another backtest table than the tunable now names
+    src = conn.execute("SELECT min(src), count(*) FROM nba_score.ud_edge_monitor_ref").fetchone()
+    if src[1] and src[0] == bt and not rebuild:
         return {(c, t, s): p for c, t, s, p in conn.execute("SELECT cell, tier, side, p FROM nba_score.ud_edge_monitor_ref").fetchall()}
+    if src[1] and src[0] != bt:
+        print(f"  Underdog edge reference rebuilt: was from {src[0] or '(unrecorded)'}, tunable names {bt}", flush=True)
     stand = set()
-    for (season,) in conn.execute("SELECT DISTINCT season FROM nba_score.ud_slip_engine_slips_dlt_orig2").fetchall():
-        ds = [r[0] for r in conn.execute("SELECT DISTINCT game_date FROM nba_score.ud_slip_engine_slips_dlt_orig2 WHERE season=%s ORDER BY 1", (season,)).fetchall()]
+    for (season,) in conn.execute(f"SELECT DISTINCT season FROM {bt}").fetchall():
+        ds = [r[0] for r in conn.execute(f"SELECT DISTINCT game_date FROM {bt} WHERE season=%s ORDER BY 1", (season,)).fetchall()]
         feb = [(a, b) for a, b in zip(ds, ds[1:]) if a.month == 2]
         lb = max(feb, key=lambda x: (x[1] - x[0]).days)[0]; s1 = max(ds)
         stand |= {d for d in ds if 0 <= (lb - d).days < 7 or (s1 - d).days <= 7}
     agg = defaultdict(lambda: [0, 0])
     for comp, size, structure, cap in UD_P5:
-        for gd, lj in conn.execute("""SELECT game_date, legs_json FROM nba_score.ud_slip_engine_slips_dlt_orig2
+        for gd, lj in conn.execute(f"""SELECT game_date, legs_json FROM {bt}
                                       WHERE composition=%s AND size=%s AND structure=%s AND k<=%s""", (comp, size, structure, cap)).fetchall():
             if gd in stand:
                 continue
@@ -390,7 +456,7 @@ def ud_edge_reference(conn, rebuild=False):
                 a = agg[(j['cell'], j['tier'], j['side'])]; a[0] += int(j['hit']); a[1] += 1
     conn.execute("DELETE FROM nba_score.ud_edge_monitor_ref")
     for (c, t, s), (h, n) in agg.items():
-        conn.execute("INSERT INTO nba_score.ud_edge_monitor_ref (cell, tier, side, p, n) VALUES (%s,%s,%s,%s,%s)", (c, t, s, min(max(h / n, 0.02), 0.98), n))
+        conn.execute("INSERT INTO nba_score.ud_edge_monitor_ref (cell, tier, side, p, n, src) VALUES (%s,%s,%s,%s,%s,%s)", (c, t, s, min(max(h / n, 0.02), 0.98), n, bt))
     conn.commit()
     return {k: min(max(h / n, 0.02), 0.98) for k, (h, n) in agg.items()}
 
