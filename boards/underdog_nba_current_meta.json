@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-09T09:20:50Z",
-  "fetched_at": "2026-10-09T09:21:10Z",
+  "started_at": "2026-10-09T17:05:53Z",
+  "fetched_at": "2026-10-09T17:06:12Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -11,29 +11,21 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      38
+      39
     ],
     [
       "matches",
-      34,
+      33,
       "today",
-      2,
+      1,
       "other",
       32,
       "target",
       "2026-10-09"
     ],
     [
-      "lines[match=225738]",
-      0
-    ],
-    [
-      "pills[match=225738]",
-      0
-    ],
-    [
       "lines[match=225739]",
-      0
+      18
     ],
     [
       "pills[match=225739]",
@@ -84,11 +76,11 @@
       0
     ],
     [
-      "lines[match=225752,other-day]",
+      "lines[match=225753,other-day]",
       0
     ],
     [
-      "lines[match=225753,other-day]",
+      "lines[match=225752,other-day]",
       0
     ],
     [
@@ -128,10 +120,6 @@
       0
     ],
     [
-      "lines[match=225766,other-day]",
-      0
-    ],
-    [
       "lines[match=225763,other-day]",
       0
     ],
@@ -141,6 +129,10 @@
     ],
     [
       "lines[match=225765,other-day]",
+      0
+    ],
+    [
+      "lines[match=225766,other-day]",
       0
     ],
     [
@@ -170,12 +162,12 @@
     [
       "lines_with_stats[players]",
       0,
-      0
+      10
     ],
     [
       "alternate_projections",
-      4,
-      92,
+      6,
+      138,
       0,
       "deduped 0"
     ],
@@ -188,30 +180,35 @@
       0
     ]
   ],
-  "lines": 38,
-  "legs": 38,
-  "ladder_legs": 92,
-  "ladder_lines_with_alternates": 4,
-  "players": 0,
-  "pregame_legs": 38,
+  "lines": 57,
+  "legs": 57,
+  "ladder_legs": 138,
+  "ladder_lines_with_alternates": 6,
+  "players": 10,
+  "pregame_legs": 57,
   "live_legs": 0,
   "by_stat": {
-    "Moneyline": 34,
-    "Margin of Victory": 2,
-    "Total Points": 2
+    "Moneyline": 33,
+    "Points": 10,
+    "Pts + Rebs + Asts": 8,
+    "Margin of Victory": 3,
+    "Total Points": 3
   },
   "by_line_type": {
-    "balanced": 38
+    "balanced": 57
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
     "None": 36,
-    "1.0": 2
+    "1.0": 18,
+    "0.61": 1,
+    "0.56": 1,
+    "1.04": 1
   },
-  "github_run_id": "37910584648",
+  "github_run_id": "37963684006",
   "target_date_et": "2026-10-09",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 9.8
+  "elapsed_s": 6.7
 }

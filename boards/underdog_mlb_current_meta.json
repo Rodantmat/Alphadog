@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "MLB",
-  "started_at": "2026-10-09T09:20:50Z",
-  "fetched_at": "2026-10-09T09:20:59Z",
+  "started_at": "2026-10-09T17:05:53Z",
+  "fetched_at": "2026-10-09T17:06:05Z",
   "categories": [
     "1st 5 Innings Moneyline",
     "1st 5 Innings Spread",
@@ -73,41 +73,41 @@
     ],
     [
       "lines_with_stats[players]",
-      109,
-      21
+      103,
+      20
     ],
     [
       "alternate_projections",
-      129,
-      397,
+      122,
+      381,
       0,
       "deduped 0"
     ],
     [
       "lines[mass=true]",
-      2
+      1
     ],
     [
       "lines[mass=false]",
       0
     ]
   ],
-  "lines": 160,
-  "legs": 160,
-  "ladder_legs": 397,
-  "ladder_lines_with_alternates": 129,
-  "players": 23,
-  "pregame_legs": 160,
+  "lines": 153,
+  "legs": 153,
+  "ladder_legs": 381,
+  "ladder_lines_with_alternates": 122,
+  "players": 21,
+  "pregame_legs": 153,
   "live_legs": 0,
   "by_stat": {
-    "Hits + Runs + RBIs": 21,
-    "Runs": 21,
-    "Hits": 20,
-    "Batter Walks": 20,
-    "Total Bases": 20,
-    "RBIs": 20,
-    "Home Runs": 20,
-    "Stolen Bases": 7,
+    "Hits + Runs + RBIs": 20,
+    "Hits": 19,
+    "Runs": 19,
+    "Total Bases": 19,
+    "Home Runs": 19,
+    "Batter Walks": 19,
+    "RBIs": 19,
+    "Stolen Bases": 8,
     "Moneyline": 5,
     "Spread": 2,
     "Total Runs": 2,
@@ -115,30 +115,30 @@
     "Pitching Outs Recorded": 1
   },
   "by_line_type": {
-    "balanced": 160
+    "balanced": 153
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "1.0": 10,
+    "1.0": 9,
     "None": 7,
-    "1.19": 7,
-    "1.47": 4,
-    "0.86": 3,
-    "1.09": 3,
-    "1.21": 3,
-    "0.81": 3,
+    "0.79": 5,
+    "1.47": 5,
+    "0.88": 4,
+    "0.81": 4,
+    "0.85": 4,
+    "1.22": 4,
+    "1.16": 4,
+    "1.67": 4,
+    "1.19": 4,
     "0.87": 3,
-    "1.22": 3,
-    "0.89": 3,
-    "3.57": 3,
+    "1.28": 3,
     "1.43": 3,
-    "1.51": 3,
-    "1.02": 2
+    "1.04": 2
   },
-  "github_run_id": "37910584648",
+  "github_run_id": "37963684006",
   "target_date_et": "2026-10-09",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 9.3
+  "elapsed_s": 12.4
 }
