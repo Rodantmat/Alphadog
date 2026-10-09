@@ -9,7 +9,8 @@ For each probe date (PROBE_DATES, default three 2025-26 postseason nights: a pla
   3. runs pick_postseason() inside a transaction whose commit is disabled, prints what it would have staked / shadowed, and
      ROLLS BACK - nba_score.live_slips / live_pool are left exactly as they were (verified by row counts before and after);
   4. (§31z) Playoff Unders parity: each P_unders slip the live pick builds must equal the certified backtest's slip for that
-     night (nba_score.playoff_unders_slips), after the market-free rescoring below (names compared accent-insensitively).
+     night (nba_score.playoff_unders_slips), after the market-free rescoring below (names compared accent-insensitively);
+     the same for the Underdog pick's PLAYOFF_UNDERS slip (ud_live_slip_engine.pick replayed, rolled back).
 Env: DATABASE_URL, PROBE_DATES (comma list), PROBE_CONTROL (a regular-season date).
 """
 import datetime as dt
