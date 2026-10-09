@@ -269,16 +269,30 @@ def all_cell_keys(app):
     return keys
 
 
+class DayLegs(list):
+    """one night's legs, indexed by (prop, tier, side) so a cell's pool is a dictionary lookup, not a scan"""
+    def __init__(self, *a):
+        super().__init__(*a)
+        self.idx = defaultdict(list)
+
+    def add(self, l):
+        self.append(l)
+        self.idx[(l['prop'], l['tier'], l['side'])].append(l)
+
+
 def by_day(legs):
-    d = defaultdict(list)
+    d = defaultdict(DayLegs)
     for l in legs:
-        d[l['game_date']].append(l)
+        d[l['game_date']].add(l)
     return d
 
 
 def cell_pool(day_legs, prop, tier, side):
-    props = POOLS.get(prop, [prop])
-    return [l for l in day_legs if l['prop'] in props and l['tier'] == tier and (side == 'both' or l['side'] == side)]
+    out = []
+    for p in POOLS.get(prop, [prop]):
+        for sd in (('Over', 'Under') if side == 'both' else (side,)):
+            out.extend(day_legs.idx.get((p, tier, sd), ()))
+    return out
 
 
 def ranked(pool, rank, prop):
