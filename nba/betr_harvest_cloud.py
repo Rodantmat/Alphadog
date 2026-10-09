@@ -197,10 +197,25 @@ def renew_session_state(st):
         return st, f"session: renewal failed ({type(exc).__name__}: {str(exc)[:120]}) - using the state as loaded"
 
 
+def where(sb, tag):
+    """DIAGNOSTIC TRAIL (2026-10-09): every failure used to end in a bare 'NO BOARD'. Print where the browser actually is -
+    URL, title, page size, and the tell-tales (Cloudflare challenge, /auth, the geo prompt, a proxy error page)."""
+    try:
+        url = sb.get_current_url(); title = sb.get_title() or ""; src = sb.get_page_source() or ""
+        low = src.lower()
+        tells = [t for t, pat in (("cloudflare-challenge", "verify you are human"), ("cf-block", "attention required"),
+                                   ("auth-page", "/auth"), ("geo-prompt", "allowlocation"), ("proxy-error", "proxy error"),
+                                   ("tunnel-failed", "err_tunnel"), ("turnstile", "turnstile")) if pat in low or pat in url.lower()]
+        print(f"  [{tag}] url={url} title={title[:60]!r} page={len(src)} tells={tells or 'none'}", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  [{tag}] (no page: {str(exc)[:80]})", flush=True)
+
+
 def main():
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     board = None
     lobby_only = None   # a getUpcomingEventsV2 answer without projections (lobby), kept as evidence
+    seen_ops = {}       # graphql operation names seen on the wire (diagnostic)
     lp, proxy_arg = start_local_proxy()
     kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
     if proxy_arg:
