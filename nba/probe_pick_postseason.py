@@ -107,7 +107,7 @@ def main():
                             (d,)).fetchall()
         for strat, lj in live:
             lj = lj if isinstance(lj, list) else __import__('json').loads(lj)
-            mine = sorted((l['player'], l['prop'], l['side'], float(l['line'])) for l in lj)
+            mine = sorted((nm(l['player']), l['prop'], l['side'], float(l['line'])) for l in lj)
             bt = conn.execute("SELECT legs_json FROM nba_score.playoff_unders_slips WHERE strategy=%s AND game_date=%s", (strat, d)).fetchone()
             if bt is None:
                 print(f"    PARITY {strat}: no backtest slip for this night (live built {len(mine)} legs) -> MISMATCH", flush=True)
