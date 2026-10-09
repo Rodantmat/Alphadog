@@ -220,6 +220,37 @@ def pick(conn, day):
                 conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
                                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", (day, pf, comp, size, structure, k, json.dumps(legs_json), stake, status, flag))
                 n_rows += 1
+    # PLAYOFF UNDERS on Underdog (§31z, 2026-10-09): on a play-in / playoff slate the postseason-only rule (playoff_unders.py, the
+    # same code its certification backtested) builds its slip(s) - one pick per game by Underdog's rule. Paper (stake 1) only with
+    # a PASS postseason verdict; otherwise recorded at stake 0 ('shadow_post'). Graded by grade() below like every paper slip.
+    if sd == 'postseason':
+        import playoff_unders as PU
+        pcfg = PU.load_cfg(conn)
+        if pcfg.get('enabled', True):
+            try:
+                verdict = {r[0]: r[1] for r in conn.execute("SELECT strategy, verdict FROM nba_score.postseason_strategy_verdict").fetchall()}
+            except psycopg.errors.UndefinedTable:
+                conn.rollback()
+                verdict = {}
+            acfg = PU.app_cfg(pcfg, 'ud')
+            pl = PU.pivot_rank_rows(legs)
+            for l in pl:
+                l['team_id'] = teams.get(l['player_id']) or l['event_id']
+            cands = PU.candidates(pl, acfg)
+            for name, spec in PU.strategies_for(pcfg, 'ud').items():
+                slip = PU.build_slip(cands, int(spec['size']), 'ud', acfg)
+                if slip is None:
+                    print(f"  {day}: {name} - no slip (fewer games than picks: Underdog takes one pick per game)", flush=True)
+                    continue
+                passed = verdict.get(name) == 'PASS'
+                legs_json = [{'cell': 'playoff_unders', 'player': l['player'], 'player_id': l['player_id'], 'prop': l['prop'], 'tier': l['tier'],
+                              'side': l['side'], 'line': l['line'], 'factor': l['factor'], 'event_id': l['event_id']} for l in slip]
+                conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
+                                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                             (day, 'PLAYOFF_UNDERS', name, int(spec['size']), spec['structure'], 1, json.dumps(legs_json),
+                              1.0 if passed else 0.0, 'paper_post' if passed else 'shadow_post', False))
+                n_rows += 1
+                print(f"  {day}: {name} - {'PAPER' if passed else 'SHADOW'} slip of {len(slip)} (postseason verdict {verdict.get(name, 'none')})", flush=True)
     conn.commit()
     print(f"  {day}: {len(legs)//3} Underdog legs scored | stand-down: {sd or 'no'} | teams with 2+ fresh absences: "
           f"{sum(1 for v in fresh.values() if v >= 2)} | {n_rows} paper slips logged (P5 + P4 shadow)", flush=True)
