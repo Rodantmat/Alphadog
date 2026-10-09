@@ -789,7 +789,7 @@ def pick_postseason(conn, day, legs):
     pcfg = PU.load_cfg(conn)
     if pcfg.get('enabled', True):
         acfg = PU.app_cfg(pcfg, 'pp')
-        cands = PU.candidates(PU.pivot_rank_rows([l for l in legs if not l.get('whole_number')]), acfg)
+        cands = PU.candidates(PU.pivot_rank_rows(legs), acfg)   # whole-number legs included, as the postseason map carries them
         for name, spec in PU.strategies_for(pcfg, 'pp').items():
             slip = PU.build_slip(cands, int(spec['size']), 'pp', acfg)
             conn.execute("INSERT INTO nba_score.live_pool (game_date, strategy, legs) VALUES (%s,%s,%s) ON CONFLICT (game_date, strategy) DO UPDATE SET legs=EXCLUDED.legs",
