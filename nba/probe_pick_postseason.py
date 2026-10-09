@@ -72,7 +72,51 @@ class NoCommit:
 
 def counts(conn):
     return (conn.execute("SELECT count(*) FROM nba_score.live_slips").fetchone()[0],
-            conn.execute("SELECT count(*) FROM nba_score.live_pool").fetchone()[0])
+            conn.execute("SELECT count(*) FROM nba_score.live_pool").fetchone()[0],
+            conn.execute("SELECT count(*) FROM nba_score.ud_live_slips").fetchone()[0])
+
+
+def ud_parity(conn, d):
+    """§31z: replay the Underdog pick (ud_live_slip_engine.pick) on a past postseason night inside the rolled-back transaction -
+    the post-tip guard is lifted for the replay only (a past night is always post-tip) and UDL_FORCE rebuilds over the logged
+    night - and compare its PLAYOFF_UNDERS slip with the certified backtest's (nba_score.playoff_unders_slips). The chosen
+    Underdog rule ranks by baseline_hp, which carries no market term, so no rescoring is needed. Returns ok (True when both
+    sides agree, including 'no slip' on both)."""
+    import ud_live_slip_engine as UL
+    saved = LS.post_tip
+    LS.post_tip = lambda c, day: False
+    os.environ['UDL_FORCE'] = '1'
+    try:
+        UL.pick(NoCommit(conn), d)
+    finally:
+        LS.post_tip = saved
+        os.environ.pop('UDL_FORCE', None)
+    live = {r[0]: (r[1], float(r[2]), r[3]) for r in conn.execute(
+        """SELECT composition, status, stake, legs_json FROM nba_score.ud_live_slips WHERE game_date=%s AND portfolio='PLAYOFF_UNDERS'""",
+        (d,)).fetchall()}
+    bt = {r[0]: r[1] for r in conn.execute("SELECT strategy, legs_json FROM nba_score.playoff_unders_slips WHERE app='ud' AND game_date=%s",
+                                           (d,)).fetchall()}
+    ok = True
+    for strat in sorted(set(live) | set(bt)):
+        if strat not in live or strat not in bt:
+            print(f"    UD PARITY {strat}: live {'built' if strat in live else 'none'} / backtest {'has' if strat in bt else 'none'} -> MISMATCH", flush=True)
+            ok = False
+            continue
+        st, stake, lj = live[strat]
+        lj = lj if isinstance(lj, list) else __import__('json').loads(lj)
+        bj = bt[strat] if isinstance(bt[strat], list) else __import__('json').loads(bt[strat])
+        mine = sorted((nm(l['player']), l['prop'], l['side'], float(l['line'])) for l in lj)
+        theirs = sorted((nm(l['player']), l['prop'], l['side'], float(l['line'])) for l in bj)
+        same = mine == theirs
+        ok &= same
+        print(f"    UD PARITY {strat} ({st}, stake {stake:g}): live == certified backtest -> {'MATCH' if same else 'MISMATCH'}", flush=True)
+        for l in mine:
+            print(f"        {l[0]:<26} {l[1]:<12} {l[2]:<6} {l[3]:>5}", flush=True)
+        if not same:
+            print(f"        backtest had: {theirs}", flush=True)
+    if not live and not bt:
+        print("    UD PARITY: no Underdog postseason board this night on either side (Underdog postseason coverage ends mid-May)", flush=True)
+    return ok
 
 
 def main():
