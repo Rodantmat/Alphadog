@@ -93,6 +93,16 @@ def main():
     for season in seasons:
         slug = season.replace("-", "_")
         logs = pd.DataFrame(fetch(f"nba_player_game_log_{slug}.json")["records"])
+        # POSTSEASON (§31w, 2026-10-09): the season's play-in / playoff box scores follow the regular season (same injury
+        # report shards, same branch rule), so the realised availability branch exists for postseason games too - read by
+        # build_final_hp (n_uncertain) exactly as for regular-season games. Regular-season rows are unchanged (they are
+        # computed first, in date order; the upsert key is the game id) and the calibration aggregate gets its own phase.
+        _pp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", f"nba_player_game_log_postseason_{slug}.json")
+        if os.path.exists(_pp):
+            _post = pd.DataFrame(json.load(open(_pp)).get("records") or [])
+            if len(_post):
+                logs = pd.concat([logs, _post[[c for c in logs.columns if c in _post.columns]]], ignore_index=True)
+                print(f"{season}: + {len(_post):,} postseason player-games", flush=True)
         logs["GAME_DATE"] = pd.to_datetime(logs["GAME_DATE"]).dt.date
         logs["PLAYER_ID"] = logs["PLAYER_ID"].astype(str)
         logs["GAME_ID"] = logs["GAME_ID"].astype(str)
