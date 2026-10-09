@@ -800,17 +800,25 @@ def stage_validate(conn, recs, legs_post, ecs_by_app, cmap):
         null_mean double precision, null_p95 int, nulls int, built_at timestamptz DEFAULT now())""")
     conn.execute("DELETE FROM nba_score.psr_validation"); conn.execute("DELETE FROM nba_score.psr_validation_null")
     results = {}
+    pct = lambda v: f"{v:+.0%}" if v is not None else "  n/a"
     for app in APPS:
-        ar = [r for r in recs if r[0] == app]
-        null_recs = []
-        for _ in range(ENGINE_NULLS):
-            pl = permute_day_hits([l for l in legs_post if l['app'] == app])
-            null_recs.append(run_engine(app, pl, ecs_by_app[app], cmap if app == 'pp' else None, 'null'))
+        legs_app = [l for l in legs_post if l['app'] == app]
         for direction, (tr, te) in (('fwd', (S1, S2)), ('rev', (S2, S1))):
-            res = walk_forward(ar, tr, te)
+            # HONEST V1: the cells are discovered on the TRAINING postseason only (the scored postseason never chooses a cell, a
+            # rank, a band or a strategy); the engine then builds slips on both, the strategy is chosen on the training season,
+            # and the other season scores it. The empirical null repeats the WHOLE pipeline on hit-permuted nights.
+            ecs_tr = engine_cells(select_cells(legs_app, app, train=tr), [])
+            recs_tr = run_engine(app, legs_app, ecs_tr, cmap if app == 'pp' else None, 'wf')
+            res = walk_forward(recs_tr, tr, te)
             results[(app, direction)] = res
             real = sum(1 for x in res if x['survive'])
-            nulls = sorted(sum(1 for x in walk_forward(nr, tr, te) if x['survive']) for nr in null_recs)
+            nulls = []
+            for _ in range(ENGINE_NULLS):
+                pl = permute_day_hits(legs_app)
+                ecs_n = engine_cells(select_cells(pl, app, train=tr), [])
+                nr = run_engine(app, pl, ecs_n, cmap if app == 'pp' else None, 'null')
+                nulls.append(sum(1 for x in walk_forward(nr, tr, te) if x['survive']))
+            nulls.sort()
             p95 = nulls[min(len(nulls) - 1, int(0.95 * len(nulls)))] if nulls else 0
             conn.execute("INSERT INTO nba_score.psr_validation_null (app, direction, real_survivors, null_mean, null_p95, nulls) VALUES (%s,%s,%s,%s,%s,%s)",
                          (app, direction, real, sum(nulls) / max(len(nulls), 1), p95, len(nulls)))
