@@ -1,0 +1,54 @@
+name: NBA Postseason Strategy Program (research)
+
+# strategy §31y (2026-10-09; owner: "sharpen it - compositions, signals, layers, all we did for the main season - and stress test the
+# same strategies on the main season"). nba/research_postseason_program.py runs the regular season's method on the two postseasons
+# (bands -> cells with a permutation null -> signal matrix with a null and stacks -> slip engine -> walk-forward both directions with
+# day-blocked bootstrap, empirical null and the teammate ban -> stress on both regular seasons + envelopes), PrizePicks and Underdog.
+# Research only: writes nba_score.psr_* tables, never a certified or live table.
+on:
+  workflow_dispatch:
+    inputs:
+      stages:
+        description: "comma list: load,bands,cells,signals,engine,validate,stress"
+        default: "load,bands,cells,signals,engine,validate,stress"
+        required: false
+      apps:
+        description: "pp,ud"
+        default: "pp,ud"
+        required: false
+      nulls:
+        description: "permutation nulls for cells / signals"
+        default: "20"
+        required: false
+      engine_nulls:
+        description: "engine re-runs under the empirical null"
+        default: "10"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-postseason-program
+  cancel-in-progress: false
+
+jobs:
+  program:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PSR_STAGE: ${{ github.event.inputs.stages }}
+      PSR_APPS: ${{ github.event.inputs.apps }}
+      PSR_NULL: ${{ github.event.inputs.nulls }}
+      PSR_ENGINE_NULL: ${{ github.event.inputs.engine_nulls }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+      - name: Postseason strategy program
+        run: python -u nba/research_postseason_program.py
