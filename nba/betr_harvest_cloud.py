@@ -331,13 +331,7 @@ def main():
                     sb.uc_open_with_reconnect(target, reconnect_time=4); time.sleep(4)
                 except Exception:  # noqa: BLE001
                     pass
-                for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//a[contains(.,"{LEAGUE}")]',
-                           f'//button[contains(.,"{LEAGUE}")]'):
-                    try:
-                        if sb.is_element_visible(xp):
-                            sb.click(xp, timeout=4); break
-                    except Exception:  # noqa: BLE001
-                        continue
+                print(f"  league chip click: {click_league(sb)}", flush=True)
                 time.sleep(3)
                 where(sb, f"after {target}")
             # capture. DIAGNOSED 2026-10-07 (full-system certification pass G): the app answers getUpcomingEventsV2 more than
