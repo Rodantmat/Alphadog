@@ -91,6 +91,112 @@ def start_local_proxy():
     return p, f"127.0.0.1:{LOCAL_PORT}"
 
 
+# ---- SELF-RENEWING SESSION (owner 2026-10-09: "one of the apps needs a key update every ~30 days - make it auto") --------
+# The seeded session's localStorage 'user-session-storage' carries three Keycloak JWTs: the ACCESS token (Bearer, 30-day exp),
+# the OFFLINE refresh token (never expires) and the ID token (30-day exp). Probe 38000165529 proved the refresh grant works
+# headless (account.betr.app, client betr-rn: new 30-day access + id token, rotated refresh token, refresh_expires_in 0).
+# So the harvester renews the session itself: when the access token is within RENEW_DAYS of expiry it refreshes with the
+# session's OWN refresh token, swaps the three tokens inside the stored value, and persists the renewed state in the
+# credential store (nba_config.external_credentials 'betr_session_state'), which is read FIRST on the next run; the GitHub
+# secret BETR_SESSION_STATE is only the seed / fallback. Nothing is ever printed but expiry dates and 6-char hashes.
+import base64
+import hashlib
+import re
+import urllib.parse
+import urllib.request
+
+KC_TOKEN = "https://account.betr.app/realms/betr/protocol/openid-connect/token"
+RENEW_DAYS = int(os.environ.get("BETR_RENEW_DAYS", "12"))
+JWT_RE = re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}")
+
+
+def _claims(tok):
+    try:
+        p = tok.split(".")[1]; p += "=" * (-len(p) % 4)
+        return json.loads(base64.urlsafe_b64decode(p))
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _h6(s):
+    return hashlib.sha256((s or "").encode()).hexdigest()[:6]
+
+
+def load_session_state():
+    """(state_json, source): the credential store's renewed copy first, the GitHub secret as the seed / fallback."""
+    db = os.environ.get("DATABASE_URL")
+    if db:
+        try:
+            import psycopg
+            with psycopg.connect(db) as c:
+                r = c.execute("SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='betr_session_state'").fetchone()
+            if r and r[0] and r[0].strip().startswith("{"):
+                return r[0].strip(), "credential store"
+        except Exception as exc:  # noqa: BLE001
+            print(f"session: credential store unavailable ({str(exc)[:80]}) - using the secret", flush=True)
+    return os.environ.get("BETR_SESSION_STATE", "").strip(), "secret"
+
+
+def renew_session_state(st):
+    """Refresh the Keycloak tokens inside the seeded session when the access token is close to expiry. Returns the (possibly
+    renewed) state JSON text and a short status line. Never raises: a failed renewal leaves the state as it was."""
+    try:
+        s = json.loads(st)
+        ls = s.get("localStorage") or {}
+        key = next((k for k, v in ls.items() if isinstance(v, str) and len(JWT_RE.findall(v)) >= 2), None)
+        if key is None:
+            return st, "session: no token bundle in localStorage (nothing to renew)"
+        toks = {}
+        for t in JWT_RE.findall(ls[key]):
+            c = _claims(t)
+            toks[c.get("typ")] = t
+        access, refresh, idt = toks.get("Bearer"), toks.get("Offline") or toks.get("Refresh"), toks.get("ID")
+        if not access or not refresh:
+            return st, f"session: bundle has {sorted(toks)} - cannot renew without Bearer + Offline"
+        exp = datetime.fromtimestamp(int(_claims(access).get("exp") or 0), timezone.utc)
+        days = (exp - datetime.now(timezone.utc)).total_seconds() / 86400
+        if days > RENEW_DAYS:
+            return st, f"session: access token {_h6(access)} valid until {exp:%Y-%m-%d} ({days:.1f} d) - no renewal needed"
+        cid = os.environ.get("BETR_CLIENT_ID", "").strip() or str(_claims(access).get("azp") or "betr-rn")
+        body = urllib.parse.urlencode({"grant_type": "refresh_token", "client_id": cid, "refresh_token": refresh}).encode()
+        req = urllib.request.Request(KC_TOKEN, data=body, headers={"Content-Type": "application/x-www-form-urlencoded",
+                                                                   "Accept": "application/json", "User-Agent": "okhttp/4.9.2"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            j = json.loads(r.read().decode())
+        new_access, new_refresh, new_id = j.get("access_token"), j.get("refresh_token"), j.get("id_token")
+        if not new_access:
+            return st, f"session: Keycloak answered without an access token ({sorted(j)})"
+        v = ls[key].replace(access, new_access)
+        if new_refresh:
+            v = v.replace(refresh, new_refresh)
+        if idt and new_id:
+            v = v.replace(idt, new_id)
+        ls[key] = v
+        s["localStorage"] = ls
+        s["renewed_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        new_exp = datetime.fromtimestamp(int(_claims(new_access).get("exp") or 0), timezone.utc)
+        out = json.dumps(s, separators=(",", ":"))
+        db = os.environ.get("DATABASE_URL")
+        persisted = "not persisted (no DATABASE_URL)"
+        if db:
+            try:
+                import psycopg
+                with psycopg.connect(db) as c:
+                    c.execute("""INSERT INTO nba_config.external_credentials (credential_key, credential_value_encrypted) VALUES ('betr_session_state', %s)
+                                 ON CONFLICT (credential_key) DO UPDATE SET credential_value_encrypted = EXCLUDED.credential_value_encrypted, updated_at = now()""", (out,))
+                    if new_refresh:
+                        c.execute("""INSERT INTO nba_config.external_credentials (credential_key, credential_value_encrypted) VALUES ('betr_refresh_token', %s)
+                                     ON CONFLICT (credential_key) DO UPDATE SET credential_value_encrypted = EXCLUDED.credential_value_encrypted, updated_at = now()""", (new_refresh,))
+                    c.commit()
+                persisted = "persisted to the credential store"
+            except Exception as exc:  # noqa: BLE001
+                persisted = f"NOT persisted ({str(exc)[:80]}) - the renewed tokens live only in this run"
+        return out, (f"session: RENEWED - access {_h6(access)} (exp {exp:%Y-%m-%d}) -> {_h6(new_access)} (exp {new_exp:%Y-%m-%d}), "
+                     f"refresh rotated: {bool(new_refresh and new_refresh != refresh)}; {persisted}")
+    except Exception as exc:  # noqa: BLE001
+        return st, f"session: renewal failed ({type(exc).__name__}: {str(exc)[:120]}) - using the state as loaded"
+
+
 def main():
     started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     board = None
