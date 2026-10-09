@@ -861,6 +861,54 @@ Design and the as-built table: strategy §31w. Evidence, in order:
   outside the regular ledger); Underdog `stand_down:postseason`; P5 step 7 refreshes the postseason certification weekly in
   play-in / playoff weeks. Every touched file compiles under 3.11, every workflow parses, every embedded bash / Python block checks.
 
+### POSTSEASON BACKFILL TO FULL PARITY — owner 2026-10-08 19:08 PT ("all tables should match the rest of the season, all factors, everything … the full pipeline … be sure the certification stands and covers the playoffs")
+A gap audit (`nba_control.audit_postseason_cov(table)`: distinct dates in the last regular month vs the postseason window, both
+seasons) found every ingredient the regular season's final_hp reads that was still empty on postseason dates. Each was filled
+with the SAME builder the regular season used, extended to read the postseason files and never writing a regular-season row:
+- **Ingredients:** injury snapshots 50 / 47 postseason dates (archive mode); `event_game_map` + `schedule_norm` 181 postseason
+  events (regular 2,454 rows hash-identical); `rung_market` 2026 postseason months (2025 already built; regular April rows
+  identical); `scenario_realised` postseason games (phase `5_postseason`; regular `n_uncertain` identical for all 1,937 games);
+  `pp_anchor_rescue` / `pp_leg_price_cons` from 2026-04-13 (priced share 99.5 %); per-game defensive matchups for every play-in
+  and playoff game of 2023-24 / 2024-25 / 2025-26 (88 / 90 / 91 games, 14,585 / 16,174 / 17,033 rows, none empty, own
+  `nba_matchups_pergame_postseason_*` shards, run 37874097414).
+- **Props the postseason boards carry that the baseline lacked:** dreb / oreb / fgm / fta (on 2024-25 postseason boards, as in the
+  regular season) → postseason baseline history for both seasons, then final_hp (8,054 legs). The workflow defaults now include them.
+- **final_hp rebuilt for both postseasons** on the filled ingredients (2024-25 runs 37879391507 / 37879411115, 2025-26 269,184
+  rows); every one of the 97 postseason dates priced. **Whole-number lines** priced into `final_hp_derived` (5,824 / 5,484 rows,
+  50 / 47 dates — same per-game density as the regular season). **board_scored** for every postseason date (50 / 47, every app).
+  **pp_model_vs_price** postseason rows appended with the file's own recipe (date-scoped; the regular rows are the 2026-09-21
+  snapshot and were not rewritten). Underdog's twins `ud_window_legs_post`, `ud_stat_actual`, `pp_line_history` (recipes
+  checked exact against regular dates).
+- **Coverage after the backfill** (dates, 2025 postseason / 2026 postseason): board_outcomes, baseline_history, final_hp,
+  final_hp_derived, board_scored, rung_market, pp_leg_price_cons, ud_stat_actual, pp_line_history, pp_model_vs_price — **50 / 47**
+  each, exactly like the regular months beside them (30 / 30).
+- **Leak closed:** `build_confidence_v3.py` now excludes 004/005 legs from the deduction-model fit (the regular-season
+  certified model must not learn from the postseason). Every other history-fitting consumer was audited: prop_universe's
+  postseason rows are `simulated` with no hit, so the tier map, certify_candidates and the WI / sel maps never see them.
+- **Pipeline:** P2A's postseason step now also scrapes last night's per-game matchups (`MATCHUPS_POSTSEASON=1`); the postseason
+  certification gains step 4b (Underdog postseason record: `ud_tier_map_legs_post` / bands / summary, 35,255 legs, UD stays
+  stake 0 on postseason slates); `build_tier_map_legs_postseason.py` now carries whole-number legs priced exactly as live
+  (`wn_selection` → `wn_price` → `wn_score`): 8,612 of 119,767 rank-key rows.
+- **Certification re-run on the backfilled data (37883055416 🟢, 97 postseason nights):** eligible cells unchanged in
+  membership — blocks_R, points_R, pra_R_U (weighted 0.579), pts_ast_R, pts_reb_R, rebounds_D3, rebounds_R, steals_R_U (0.616),
+  stocks_R; not eligible assists_D1, goblin, threes_D1 (below break-even), steals_R, turnovers_R (postseason contradicts the
+  prior). **No strategy passes** (best D_points_3power +3 % over 96 days, lower bound −38 %; A_wrebounds_4flex +7 % on 29 days);
+  walk-forward 0 of 30 survivors in both pools, null expectation 0.00 / 0.03 → **postseason stays SHADOW-ONLY**; board floor
+  485 (p10 579, median 1,056). **Probe re-run 37883821882: PROBE PASS** (postseason path on 2026-04-15 / 04-25 / 06-10, six
+  shadow slips on the Finals night, ledger unchanged after rollback).
+- **The regular-season certification stands — proven, not assumed.** Against the pre-backfill fingerprints and a mid-backfill
+  snapshot taken with the new reproducible function `nba_control.cert_fp(table, where)`: tier_map_legs / _sel / _sel_mf,
+  slip_engine_slips / _mf / _mf_nosteals, cand_certified, confidence_model, prop_universe, rung_market 2026-04-01..12,
+  event_game_map (002), scenario_realised (002) — **identical**; final_hp 002 (7,215,296 rows), baseline_history 002 (8,708,333),
+  board_outcomes outside the postseason windows (6,905,452) — same counts and **zero rows written since the snapshot**; tonight's
+  board_scored and final_hp_derived writes touched **0** regular-season dates.
+- **Deliberately not twinned** (documented): research-only tables with no production or certification reader and no producer in
+  the repo (leg_clv, tier_map_player_trail*, tier_map_rotation, starter/availability training, team_fresh_abs, player_ev_disp,
+  a5_feature, betr_window_legs, ud_leg_nvw / ud_leg_fresh) and the regular-season research matrices (cand_leg_features,
+  ud_cand_leg_features, absence panel, redistribution factors) — the postseason chain reads none of them. `double_double`
+  has no final_hp on postseason dates for the same reason it has none on live regular slates (the board carries it as a
+  Yes/No sentinel line −1, the certified 0.5 rows predate board scoping) — not a postseason gap; it is in no certified cell.
+
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
 2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
