@@ -133,6 +133,15 @@ def fetch(conn, sql, params=None, cols=None):
     return out
 
 
+def final7(d):
+    import datetime as _dt
+    s = season_of(d)
+    if s is None:
+        return False
+    end = _dt.date.fromisoformat(SEASON_BOUNDS[s][1])
+    return (end - d).days <= 7
+
+
 def season_of(d):
     s = str(d)
     for k, (a, b) in SEASON_BOUNDS.items():
