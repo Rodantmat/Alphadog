@@ -242,7 +242,7 @@ def pick(conn, day):
                 if slip is None:
                     print(f"  {day}: {name} - no slip (fewer games than picks: Underdog takes one pick per game)", flush=True)
                     continue
-                passed = verdict.get(name) == 'PASS'
+                passed = verdict.get(name) == 'PASS' and pcfg.get('stake_mode', 'gate') == 'gate'
                 legs_json = [{'cell': 'playoff_unders', 'player': l['player'], 'player_id': l['player_id'], 'prop': l['prop'], 'tier': l['tier'],
                               'side': l['side'], 'line': l['line'], 'factor': l['factor'], 'event_id': l['event_id']} for l in slip]
                 conn.execute("""INSERT INTO nba_score.ud_live_slips (game_date, portfolio, composition, size, structure, k, legs_json, stake, status, absence_flag)
