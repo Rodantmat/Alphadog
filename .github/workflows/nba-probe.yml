@@ -41,6 +41,7 @@ jobs:
           BETR_REFRESH_TOKEN: ${{ secrets.BETR_REFRESH_TOKEN }}
           BETR_CLIENT_ID: ${{ secrets.BETR_CLIENT_ID }}
           BETR_ACCESS_TOKEN: ${{ secrets.BETR_ACCESS_TOKEN }}
+          BETR_SESSION_STATE: ${{ secrets.BETR_SESSION_STATE }}
         run: |
           f=nba/TRIGGER_NBA_PROBE.txt
           S=$(grep -E '^script:' $f | head -1 | sed 's/^script:[[:space:]]*//')
