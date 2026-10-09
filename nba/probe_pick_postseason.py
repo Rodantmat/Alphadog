@@ -114,7 +114,7 @@ def main():
                 ok = False
                 continue
             bj = bt[0] if isinstance(bt[0], list) else __import__('json').loads(bt[0])
-            theirs = sorted((l['player'], l['prop'], l['side'], float(l['line'])) for l in bj)
+            theirs = sorted((nm(l['player']), l['prop'], l['side'], float(l['line'])) for l in bj)
             same = mine == theirs
             ok &= same
             print(f"    PARITY {strat}: live == certified backtest -> {'MATCH' if same else 'MISMATCH'}", flush=True)
