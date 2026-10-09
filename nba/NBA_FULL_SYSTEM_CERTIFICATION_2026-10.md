@@ -1025,5 +1025,36 @@ Each candidate was either executed or measured to its final-output effect and cl
   either way; retiring the term (market-free THE scoring, twins disappear) is a cosmetic simplification with the same chained
   recertification cost, and reinstating it live needs the odds feed (option B, ~$119/mo). Nothing is blocked on it.
 - **Also closed today:** the backup P2A cron (18:55Z) correctly refused the already-claimed 2026-10-09 run ("no pipeline runs
-  twice", run 37976672433); Betr Cloud Harvest's 17:45Z cron did not fire on 10-09 (GitHub cron drop; the 20:15Z slot and the
-  WNBA→NBA auto-switch on 10-20 are the ones that matter — verify the first NBA harvest on 10-20).
+  twice", run 37976672433); Betr Cloud Harvest's crons did not fire on 10-09 (GitHub cron drop; the WNBA board is gone
+  anyway — verify the first NBA harvest on 10-20).
+
+### THE MARKET TERM, LIVE (owner 2026-10-09 15:07 PT: "for market we're gonna get the Odds API … for props we use ParlayAPI … you handle properly"; strategy §31ac, COMPASS 146)
+
+- **Keys:** stored only in `nba_config.external_credentials` — the Odds API free key the owner named was already `odds_api_key`
+  (MLB/general, 500 credits/month); the ParlayAPI key he gave today is `parlay_api_key_alt` (the earlier Pro key `parlay_api_key`
+  stays the row in use, 12,828 credits). Nothing in memory, docs or the repo.
+- **Budget answer:** the free Odds API key cannot carry player props (~80+ credits a day) nor the morning game-line snapshot
+  (historical endpoint, 30/day ≈ 900/month); game lines already run on the paid NBA key (4.9M credits) — no change. Props from
+  ParlayAPI at 3 credits per window pull (~90 credits a month).
+- **Built:** `nba/capture_parlay_props.py` (acde2f3…9ded1b4) — ParlayAPI live NBA props → raw capture
+  `nba_market.parlay_props_captures` (lossless, one per slate × label; a probe stores under `probe_<label>`) + sportsbook rows
+  into `nba_market.board_snapshots` in the Odds API backfill's shape (certified book set only; `market_feed.market_map`
+  vocabulary; label `window` for the slate's games, `routine` for other dates; the archive's conflict key = idempotent).
+  P3: soft step "Live sportsbook props" before `build_rung_market` (7070d43, 15ec379, in the soft-failure collector) and the
+  gated "Market refresh of final_hp" after it. Tunable `classification_config['market_feed']`.
+- **Probe 37997921384 (inventory):** http 200, 727 items (10-09 preseason 70, 10-20 249, 10-21 408), credits 12,828; the
+  sportsbook keys ARE Odds-API-style (player_points / player_rebounds / …, Pinnacle `player_pts_rebs_asts`,
+  `player_threes_made` — mapped). **Defects found and guarded (9ded1b4):** FanDuel milestones ("To Score 30+ Points") tagged
+  `player_points` with line 0.0 and −1100 prices; Bovada "Lowest Scoring Quarter Total Points O/U – Detroit Pistons" tagged
+  `player_points` with player = "Boston Celtics @ Detroit Pistons" — 49 such rows reached `board_snapshots` (label `routine`,
+  10-20/21) in the first capture run and were moved to `board_snapshots_quarantine` with the reason; the guard (full-game line
+  > 0 on a named player; period FULL; no quarter/half/team markets) now refuses them. Pinnacle / Novig carry real ladders but
+  are outside the certified book set → not counted (the live term must count the history's books).
+- **End-to-end probe 37998795117 (capture mode, guarded code):** capture → `board_snapshots` → `build_rung_market` (current
+  month) mechanics green; 0 rungs priced today because the PrizePicks preseason window board holds no 10-09 legs — the first real
+  reading is 10-20. History reference for that reading: window rungs average 2.14 / 2.10 / 1.97 / 1.97 books (Oct–Jan),
+  14.7–16.6% with ≥ 4.
+- **Switch rule (not flipped):** `market_feed.refresh_final_hp` stays false until the first in-season week's books-per-rung
+  matches the history; then it is flipped together with `live_backtest_suffix.suffix → ''`, `.ud_table → _dlt_orig2`,
+  `ud_edge_monitor → certified` (one decision, four rows, same day). One without the other would score live legs on one
+  currency and calibrate hurdles on another.
