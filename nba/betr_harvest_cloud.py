@@ -449,7 +449,8 @@ def main():
     meta = {"ok": True, "source": "github-runner uc+proxy picks.betr.app", "league": LEAGUE,
             "started_at": started, "fetched_at": fetched, "legs": len(legs),
             "alt_legs": sum(1 for l in legs if l.get("alt")),
-            "players": len({l["player_id"] for l in legs}), "events": nevents}
+            "players": len({l["player_id"] for l in legs}), "events": nevents,
+            "board_op": board_events(board)[1], "partial_lobby": board is lobby_board}
     (OUT / f"betr_{LEAGUE.lower()}_current.json").write_text(json.dumps({"meta": meta, "legs": legs}, separators=(",", ":")))
     (OUT / f"betr_{LEAGUE.lower()}_current_meta.json").write_text(json.dumps(meta, indent=2))
     if LEAGUE == "NBA":
