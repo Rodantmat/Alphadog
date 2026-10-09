@@ -21266,8 +21266,8 @@
       "away_team_tricode": "NOP",
       "arena_name": "Kaseya Center",
       "arena_city": "Miami",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21281,8 +21281,8 @@
       "away_team_tricode": "ATL",
       "arena_name": "Frost Bank Center",
       "arena_city": "San Antonio",
-      "game_status": 1,
-      "game_status_text": "8:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21296,8 +21296,8 @@
       "away_team_tricode": "BOS",
       "arena_name": "Rocket Arena",
       "arena_city": "Cleveland",
-      "game_status": 1,
-      "game_status_text": "7:00 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21311,8 +21311,8 @@
       "away_team_tricode": "PHI",
       "arena_name": "Barclays Center",
       "arena_city": "Brooklyn",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21326,8 +21326,8 @@
       "away_team_tricode": "WAS",
       "arena_name": "Madison Square Garden",
       "arena_city": "New York",
-      "game_status": 1,
-      "game_status_text": "7:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
@@ -21341,8 +21341,8 @@
       "away_team_tricode": "SAC",
       "arena_name": "Crypto.com Arena",
       "arena_city": "Los Angeles",
-      "game_status": 1,
-      "game_status_text": "10:30 pm ET",
+      "game_status": 3,
+      "game_status_text": "Final",
       "game_label": "Preseason"
     },
     {
