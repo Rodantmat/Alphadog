@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-09T20:19:52Z",
-  "fetched_at": "2026-10-09T20:20:02Z",
+  "started_at": "2026-10-09T22:46:50Z",
+  "fetched_at": "2026-10-09T22:47:04Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -44,11 +44,11 @@
       0
     ],
     [
-      "lines[match=225743,other-day]",
+      "lines[match=225744,other-day]",
       0
     ],
     [
-      "lines[match=225744,other-day]",
+      "lines[match=225743,other-day]",
       0
     ],
     [
@@ -92,11 +92,11 @@
       0
     ],
     [
-      "lines[match=225756,other-day]",
+      "lines[match=225757,other-day]",
       0
     ],
     [
-      "lines[match=225757,other-day]",
+      "lines[match=225756,other-day]",
       0
     ],
     [
@@ -112,11 +112,19 @@
       0
     ],
     [
+      "lines[match=225762,other-day]",
+      0
+    ],
+    [
       "lines[match=225761,other-day]",
       0
     ],
     [
-      "lines[match=225762,other-day]",
+      "lines[match=225765,other-day]",
+      0
+    ],
+    [
+      "lines[match=225763,other-day]",
       0
     ],
     [
@@ -125,14 +133,6 @@
     ],
     [
       "lines[match=225764,other-day]",
-      0
-    ],
-    [
-      "lines[match=225763,other-day]",
-      0
-    ],
-    [
-      "lines[match=225765,other-day]",
       0
     ],
     [
@@ -200,18 +200,16 @@
   "unresolved_player_names": 0,
   "multiplier_values": {
     "None": 41,
-    "1.0": 16,
-    "1.04": 3,
-    "0.89": 2,
-    "0.56": 2,
-    "0.96": 1,
-    "0.91": 1,
-    "0.98": 1
+    "1.0": 14,
+    "1.04": 5,
+    "0.96": 3,
+    "0.91": 3,
+    "0.87": 1
   },
-  "github_run_id": "37985872876",
+  "github_run_id": "38000961065",
   "target_date_et": "2026-10-09",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 9.2
+  "elapsed_s": 5.7
 }
