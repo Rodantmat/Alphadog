@@ -150,7 +150,7 @@ def summarize(bands):
     for key, pts in by.items():
         pts.sort()
         days_top = pts[0][3]
-        if days_top < 60:
+        if days_top < MIN_DAYS:
             continue
         peak_cut, peak_pm, hit_peak = max(pts, key=lambda x: x[1])[0:3]
         plateau_to = max(c for c, pm, _, _ in pts if pm >= peak_pm - PLATEAU)
