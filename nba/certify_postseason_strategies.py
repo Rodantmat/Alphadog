@@ -92,6 +92,46 @@ def main():
         f = lambda x: '' if x is None else f"{100 * x:+.0f}%"   # noqa: E731
         print(f"{name:<20}{len(items):>5}{n_slips:>6}{f(roi):>8}" + "".join(f"{f(rs.get(s)):>9}" for s in seasons) + f"{f(lo):>8}   {verdict} - {reason}",
               flush=True)
+    # PLAYOFF UNDERS (§31z, 2026-10-09): the postseason-only rule (playoff_unders.py - the SAME code the live pick runs), its
+    # backtest over the certified postseason maps, and the SAME gate as every live strategy above (>= min_days nights, pooled
+    # day-blocked lower bound > 0, positive in each postseason). Slips kept in nba_score.playoff_unders_slips.
+    import playoff_unders as PU
+    pcfg = PU.load_cfg(conn)
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.playoff_unders_slips (strategy text, app text, season text, game_date date,
+        stake double precision, payout double precision, profit double precision, hits int, legs_json jsonb, built_at timestamptz DEFAULT now())""")
+    conn.execute("DELETE FROM nba_score.playoff_unders_slips")
+    if pcfg.get('enabled', True):
+        bt = PU.backtest(conn, pcfg)
+        for name, recs in bt.items():
+            spec = pcfg['strategies'][name]
+            items = [(float(st), float(pay)) for _s, _d, st, pay, _l in recs]
+            by_season = defaultdict(list)
+            for season, d, st, pay, slip in recs:
+                by_season[season].append((float(st), float(pay)))
+            roi = (sum(b for _, b in items) / sum(a for a, _ in items) - 1) if items else None
+            rs = {s: ((sum(b for _, b in v) / sum(a for a, _ in v) - 1) if v else None) for s, v in by_season.items()}
+            lo = LS.boot_lo(items, draws=LS.BOOT_DRAWS) if items else None
+            if len(items) < min_days:
+                verdict, reason = 'SHADOW', f'too few postseason slate days ({len(items)} < {min_days})'
+            elif lo is None or lo <= 0:
+                verdict, reason = 'SHADOW', 'pooled day-blocked lower bound not > 0'
+            elif any(rs.get(s) is None or rs[s] <= 0 for s in seasons):
+                verdict, reason = 'SHADOW', 'not positive in every postseason'
+            else:
+                verdict, reason = 'PASS', 'stakes on postseason slates (one slip a night)'
+            conn.execute("""INSERT INTO nba_score.postseason_strategy_verdict (strategy, composition, size, structure, k, source, days, slips, roi,
+                            roi_s1, roi_s2, boot_lo, verdict, reason) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                         (name, f"playoff_unders:{spec['app']}", int(spec['size']), spec['structure'], 1, 'playoff_unders.backtest', len(items), len(items),
+                          roi, rs.get(seasons[0]) if seasons else None, rs.get(seasons[1]) if len(seasons) > 1 else None, lo, verdict, reason))
+            with conn.cursor() as cur:
+                cur.executemany("""INSERT INTO nba_score.playoff_unders_slips (strategy, app, season, game_date, stake, payout, profit, hits, legs_json)
+                                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                                [(name, spec['app'], s, d, st, pay, pay - st, sum(l['hit'] or 0 for l in slip),
+                                  json.dumps([{'player': l['player'], 'prop': l['prop'], 'side': l['side'], 'line': float(l['line']),
+                                               'factor': l['factor'], 'hit': l['hit']} for l in slip])) for s, d, st, pay, slip in recs])
+            f = lambda x: '' if x is None else f"{100 * x:+.0f}%"   # noqa: E731
+            print(f"{name:<20}{len(items):>5}{len(items):>6}{f(roi):>8}" + "".join(f"{f(rs.get(s)):>9}" for s in seasons) + f"{f(lo):>8}   {verdict} - {reason}",
+                  flush=True)
     # postseason board floor: the smallest validated postseason board, in the live guard's unit (unique half-point scored legs)
     sizes = [r[0] for r in conn.execute("""SELECT count(DISTINCT (player_id, prop, tier, side, line)) FROM nba_score.tier_map_legs_post
                                            WHERE rank_key='final_hp' AND line <> floor(line) GROUP BY game_date ORDER BY 1""").fetchall()]
