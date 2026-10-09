@@ -96,11 +96,24 @@ def build_event_map(conn):
         print("team map (with static fallback):", len(abbr_to_full))
 
     games = {}
-    for slug in ("2024_25", "2025_26"):
+    # SEASONS + POSTSEASON (§31w, 2026-10-09): every season log present in the repo, AND its play-in / playoff log
+    # (nba_player_game_log_postseason_<slug>.json) - the map was hardcoded to the two regular seasons, so no postseason event
+    # (and no 2026-27 event) could ever map to a game id. Local checkout first, raw CDN as the fallback.
+    from pathlib import Path as _P
+    _dir = _P(os.path.dirname(os.path.abspath(__file__))) / "data"
+    _slugs = sorted({p.name[len("nba_player_game_log_"):len("nba_player_game_log_") + 7] for p in _dir.glob("nba_player_game_log_20*.json")
+                     if re.fullmatch(r"nba_player_game_log_\d{4}_\d{2}\.json", p.name)} | {"2024_25", "2025_26"})
+    _files = [f"nba_player_game_log_{s}.json" for s in _slugs] + [f"nba_player_game_log_postseason_{s}.json" for s in _slugs]
+    for fname in _files:
+        slug = fname
         try:
-            u = RAW + f"nba_player_game_log_{slug}.json"
-            with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "alphadog"}), timeout=300) as r:
-                doc = json.load(r)
+            if (_dir / fname).exists():
+                doc = json.loads((_dir / fname).read_text())
+            else:
+                if "postseason" in fname:
+                    continue
+                with urllib.request.urlopen(urllib.request.Request(RAW + fname, headers={"User-Agent": "alphadog"}), timeout=300) as r:
+                    doc = json.load(r)
             for x in doc.get("records") or []:
                 gid = str(x.get("GAME_ID") or "")
                 m = str(x.get("MATCHUP") or "")
