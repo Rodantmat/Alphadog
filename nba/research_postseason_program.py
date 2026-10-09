@@ -875,6 +875,81 @@ def envelope(daymap, n_days, sims=10000, block=1):
     return lose / sims, dds[sims // 2], dds[int(0.95 * sims)]
 
 
+def implied_roi(p, app):
+    """expected ROI of one slip of independent legs at leg hit p (factor 1.0 legs), per structure - the exact payout tables"""
+    out = {}
+    if app == 'pp':
+        for k in (3, 4, 5, 6):
+            out[f'{k}P'] = SE.POWER[k] * p ** k - 1
+            out[f'{k}F'] = sum(SE.FLEX.get((k, h), 0.0) * math.comb(k, h) * p ** h * (1 - p) ** (k - h) for h in range(k + 1)) - 1
+    else:
+        for k in (2, 3, 4, 5):
+            out[f'{k}S'] = UD_STD[k] * p ** k - 1
+    return out
+
+
+def stage_legwf(conn, legs_post):
+    """LEG-LEVEL WALK-FORWARD: slips are 1 a night (~50 observations a postseason - too few to resolve an edge); legs are
+    thousands. Cells (and their rank / band) are discovered on one postseason only; their legs are scored on the other, per night
+    (day-averaged p.m, the certifier's unit) with a day-blocked bootstrap CI; then the whole train-chosen family pooled.
+    The implied slip ROI at the pooled test hit rate (independent legs) translates the leg edge into slip terms."""
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.psr_leg_wf (app text, direction text, cell text, side text, train_pm double precision,
+        test_pm double precision, test_lo double precision, test_hi double precision, test_days int, test_legs int, built_at timestamptz DEFAULT now())""")
+    conn.execute("DELETE FROM nba_score.psr_leg_wf")
+    rows = []
+    for app in APPS:
+        legs_app = [l for l in legs_post if l['app'] == app]
+        lbd = by_day(legs_app)
+        for direction, (tr, te) in (('fwd', (S1, S2)), ('rev', (S2, S1))):
+            cells = [c for c in select_cells(legs_app, app, train=tr) if c['status'] == 'ABOVE']
+            fam = defaultdict(lambda: defaultdict(list))     # family -> day -> [legs] (dedup by leg identity)
+            log(f"\n== {app.upper()} LEG-LEVEL WALK-FORWARD {direction}: {len(cells)} cells ABOVE on {tr}; their legs on {te} ==")
+            for c in sorted(cells, key=lambda c: -c['weak']):
+                daypm = {}
+                for d, dl in lbd.items():
+                    if dl[0]['season'] != te:
+                        continue
+                    r = ranked(cell_pool(dl, c['prop'], c['tier'], c['side']), c['rank'], c['prop'])[:c['n']]
+                    pm, hit, g = pm_of(r)
+                    if pm is not None:
+                        daypm[d] = (pm, g)
+                        for l in r:
+                            for f in ('ALL_cells', 'UNDER_cells' if c['side'] == 'Under' else ('OVER_cells' if c['side'] == 'Over' else 'BOTH_cells'),
+                                      'R_tier' if c['tier'] == 'R' else 'priced_tier'):
+                                fam[f][d].append(l)
+                if not daypm:
+                    continue
+                vals = list(daypm.values())
+                m = sum(v for v, _ in vals) / len(vals)
+                bs = sorted(sum(random.choice(vals)[0] for _ in vals) / len(vals) for _ in range(2000))
+                rows.append((app, direction, c['cell'], c['side'], c['weak'], m, bs[50], bs[1949], len(vals), sum(g for _, g in vals)))
+                log(f"   {c['cell']:<20}{c['rank']:<9}n={c['n']:<3} train {c['weak']:.3f}  test {m:.3f} [{bs[50]:.3f}, {bs[1949]:.3f}]  {len(vals)} nights")
+            for f, days in fam.items():
+                per = []
+                for d, ls in days.items():
+                    seen, uniq = set(), []
+                    for l in ls:
+                        k = (l['player'], l['prop'], l['side'], l['line'], l['tier'])
+                        if k not in seen:
+                            seen.add(k); uniq.append(l)
+                    pm, hit, g = pm_of(uniq)
+                    if pm is not None:
+                        per.append((pm, hit, g))
+                if not per:
+                    continue
+                m = sum(p for p, _, _ in per) / len(per)
+                h = sum(x for _, x, _ in per) / len(per)
+                bs = sorted(sum(random.choice(per)[0] for _ in per) / len(per) for _ in range(2000))
+                rows.append((app, direction, f'FAMILY:{f}', None, None, m, bs[50], bs[1949], len(per), sum(g for _, _, g in per)))
+                imp = implied_roi(h, app) if f in ('UNDER_cells', 'R_tier') else {}
+                log(f"   FAMILY {f:<14} test p.m {m:.3f} [{bs[50]:.3f}, {bs[1949]:.3f}] hit {h:.3f} over {len(per)} nights"
+                    + (("   implied slip ROI at that hit (independent legs): " + ", ".join(f"{k} {v:+.0%}" for k, v in imp.items())) if imp else ""))
+    with conn.cursor() as cur:
+        cur.executemany("INSERT INTO nba_score.psr_leg_wf (app, direction, cell, side, train_pm, test_pm, test_lo, test_hi, test_days, test_legs) "
+                        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", rows)
+    conn.commit()
+
+
 def stage_stress(conn, recs_post, results, ecs_by_app, cmap, reg_legs):
     conn.execute("""CREATE TABLE IF NOT EXISTS nba_score.psr_stress (app text, composition text, size int, structure text, src text, season text,
         days int, slips int, roi double precision, ci_lo double precision, ci_hi double precision, max_dd double precision, max_losing_streak int,
