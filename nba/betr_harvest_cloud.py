@@ -246,24 +246,37 @@ def click_league(sb):
     does NOT register (the lobby stayed put): RNW's press responder wants real pointer events. So: scroll the leaf into
     view, read its rect, and press it with a REAL mouse through CDP (Input.dispatchMouseEvent); fall back to a dispatched
     pointer/mouse event sequence, then to the old XPaths."""
+    # the strip is a horizontal ScrollView: WNBA (on screen) pressed fine on run 38005105453, NBA (off screen, scrolled into
+    # view) did not on 38005446245 - the rect was read in the same script as the scroll. Scroll first, let the strip settle,
+    # then re-read the rect and check what elementFromPoint finds under it before pressing.
+    find_js = ("var L=arguments[0]; var els=Array.from(document.querySelectorAll('div,span,button,a,p')).filter(function(e){"
+               " return e.children.length===0 && (e.innerText||e.textContent||'').trim()===L;}); if(!els.length) return null;"
+               " var e=els[0];")
     try:
-        rect = sb.execute_script(
-            "var L=arguments[0]; var els=Array.from(document.querySelectorAll('div,span,button,a,p')).filter(function(e){"
-            " return e.children.length===0 && (e.innerText||e.textContent||'').trim()===L;});"
-            " if(!els.length) return null; var e=els[0]; e.scrollIntoView({inline:'center',block:'center'});"
-            " var r=e.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2, els.length, r.width, r.height];", LEAGUE)
+        sb.execute_script(find_js + " e.scrollIntoView({inline:'center',block:'center',behavior:'instant'}); return 1;", LEAGUE)
+        time.sleep(1.2)
+        rect = sb.execute_script(find_js + " var r=e.getBoundingClientRect(); var u=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2);"
+                                 " var hit=u&&(u===e||u.contains(e)||e.contains(u)); return [r.left+r.width/2, r.top+r.height/2, els.length,"
+                                 " r.width, r.height, hit?1:0, u?((u.innerText||'').trim().slice(0,20)):'', window.innerWidth, window.innerHeight];", LEAGUE)
     except Exception as exc:  # noqa: BLE001
         rect = None; print(f"  league chip lookup failed: {str(exc)[:80]}", flush=True)
     if rect and rect[3] > 0 and rect[4] > 0:
         x, y = float(rect[0]), float(rect[1])
+        on_screen = 0 <= x <= float(rect[7]) and 0 <= y <= float(rect[8])
         try:
-            time.sleep(0.5)
             for ev in ({"type": "mouseMoved", "x": x, "y": y},
                        {"type": "mousePressed", "x": x, "y": y, "button": "left", "clickCount": 1},
                        {"type": "mouseReleased", "x": x, "y": y, "button": "left", "clickCount": 1}):
                 sb.driver.execute_cdp_cmd("Input.dispatchMouseEvent", ev)
                 time.sleep(0.12)
-            return f"cdp mouse click on '{LEAGUE}' leaf at ({x:.0f},{y:.0f}) [{int(rect[2])} leaf(s)]"
+            time.sleep(2.5)
+            routed = LEAGUE.lower() in (sb.get_current_url() or "").lower()
+            if routed:
+                return (f"cdp mouse click on '{LEAGUE}' leaf at ({x:.0f},{y:.0f}) -> route reached "
+                        f"[{int(rect[2])} leaf(s), under pointer: {'leaf' if rect[5] else repr(rect[6])}]")
+            print(f"  cdp mouse click on '{LEAGUE}' leaf at ({x:.0f},{y:.0f}) did not change the route "
+                  f"(on screen: {on_screen}, viewport {int(rect[7])}x{int(rect[8])}, under pointer: "
+                  f"{'the leaf' if rect[5] else repr(rect[6])}) - trying a dispatched pointer sequence", flush=True)
         except Exception as exc:  # noqa: BLE001
             print(f"  cdp mouse click failed: {str(exc)[:80]}", flush=True)
         try:
