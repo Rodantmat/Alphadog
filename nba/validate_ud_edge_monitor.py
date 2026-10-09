@@ -19,16 +19,17 @@ import ud_live_slip_engine as U  # noqa: E402
 
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
+    BT = U.ud_bt_table(conn)   # the tunable's backtest (round 3 #4: the market-free twin); UDL_BT_TABLE overrides
     p_ref = U.ud_edge_reference(conn, rebuild=True)
-    print(f"reference: {len(p_ref)} (cell, tier, side) keys rebuilt from the P5 backtest", flush=True)
+    print(f"reference: {len(p_ref)} (cell, tier, side) keys rebuilt from the P5 backtest ({BT})", flush=True)
     for season in ('2024-25', '2025-26'):
-        ds = [r[0] for r in conn.execute("SELECT DISTINCT game_date FROM nba_score.ud_slip_engine_slips_dlt_orig2 WHERE season=%s ORDER BY 1", (season,)).fetchall()]
+        ds = [r[0] for r in conn.execute(f"SELECT DISTINCT game_date FROM {BT} WHERE season=%s ORDER BY 1", (season,)).fetchall()]
         feb = [(a, b) for a, b in zip(ds, ds[1:]) if a.month == 2]
         lb = max(feb, key=lambda x: (x[1] - x[0]).days)[0]; s1 = max(ds)
         stand = {d for d in ds if 0 <= (lb - d).days < 7 or (s1 - d).days <= 7}
         by_day = defaultdict(lambda: [0.0, 0])
         for comp, size, structure, cap in U.UD_P5:
-            for gd, lj in conn.execute("""SELECT game_date, legs_json FROM nba_score.ud_slip_engine_slips_dlt_orig2 WHERE season=%s
+            for gd, lj in conn.execute(f"""SELECT game_date, legs_json FROM {BT} WHERE season=%s
                                           AND composition=%s AND size=%s AND structure=%s AND k<=%s""", (season, comp, size, structure, cap)).fetchall():
                 if gd in stand:
                     continue
