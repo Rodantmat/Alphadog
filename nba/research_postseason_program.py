@@ -797,12 +797,7 @@ def stage_validate(conn, recs, legs_post, ecs_by_app, cmap):
             res = walk_forward(ar, tr, te)
             results[(app, direction)] = res
             real = sum(1 for x in res if x['survive'])
-            nulls = []
-            for _ in range(ENGINE_NULLS):
-                pl = permute_day_hits([l for l in legs_post if l['app'] == app])
-                nr = run_engine(app, pl, ecs_by_app[app], cmap if app == 'pp' else None, 'null')
-                nulls.append(sum(1 for x in walk_forward(nr, tr, te) if x['survive']))
-            nulls.sort()
+            nulls = sorted(sum(1 for x in walk_forward(nr, tr, te) if x['survive']) for nr in null_recs)
             p95 = nulls[min(len(nulls) - 1, int(0.95 * len(nulls)))] if nulls else 0
             conn.execute("INSERT INTO nba_score.psr_validation_null (app, direction, real_survivors, null_mean, null_p95, nulls) VALUES (%s,%s,%s,%s,%s,%s)",
                          (app, direction, real, sum(nulls) / max(len(nulls), 1), p95, len(nulls)))
