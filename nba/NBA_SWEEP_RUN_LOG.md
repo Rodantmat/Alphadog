@@ -10,6 +10,8 @@ rejected; anything genuinely needing the owner is marked **OWNER DECISION** and 
 
 ## 🟢 START HERE — RUN 244 (2026-10-09) <<R244-A>>
 
+**RUN 241-243, reconstructed**: their own entries here were lost to `github_patch_file` failure on this 5MB/9,565-line file. Their actual work mostly survived in the target docs: RUN 241 found `nba_ref.referee_assignments` `0`→`12` (confirmed live in `NBA_DATABASE.md:1253`); RUN 242 re-confirmed `12`, unchanged. No other trace of 241/243 survives here — treat their log entries as lost, not as "nothing happened."
+
 ## RUN 243 (`2026-10-08`) — [body pending, see RUN243-B2 below]
 
 ## RUN 241 (`2026-10-08`) — [cont-h]
