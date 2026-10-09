@@ -364,10 +364,15 @@ def main():
                         j = json.loads(b.get("body", ""))
                         ops = sorted((j.get("data") or {}).keys()) if isinstance(j.get("data"), dict) else ["<no data>"]
                         k = f"graphql body {','.join(ops)[:60]}"
+                        if k not in seen_ops:
+                            # first sight of each operation: print its shape (keys / list sizes, depth 4) so a renamed or
+                            # reshaped board is diagnosed from the log, never guessed
+                            print(f"  {k}: {json.dumps(schema(j.get('data')), separators=(',', ':'))[:1500]}", flush=True)
                         seen_ops[k] = seen_ops.get(k, 0) + 1
-                        if (j.get("data") or {}).get("getUpcomingEventsV2"):
+                        evs, op = board_events(j)
+                        if evs:
                             if flatten(j)[0]:
-                                board = j; break
+                                board = j; print(f"  board = {op} ({len(evs)} events)", flush=True); break
                             lobby_only = j   # events without projections - not the board
                     except Exception as exc:  # noqa: BLE001
                         k = f"graphql body unreadable ({type(exc).__name__})"
