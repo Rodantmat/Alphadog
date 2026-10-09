@@ -909,6 +909,16 @@ with the SAME builder the regular season used, extended to read the postseason f
   has no final_hp on postseason dates for the same reason it has none on live regular slates (the board carries it as a
   Yes/No sentinel line −1, the certified 0.5 rows predate board scoping) — not a postseason gap; it is in no certified cell.
 
+### POSTSEASON GAME KEY — defect found by the playoff program (2026-10-09)
+- `nba_score.tier_map_legs_post.event_id` NULL on all 359,301 rows (board_outcomes has no event column; the regular map takes its game
+  from prop_universe). Effect: `build_slip_engine` (SE_LEGS_SELF) saw None == None → every postseason pair "same game": cross-game-first
+  ordering never applied, the regular-season negative-correlation ban fired on cross-game pairs, `same_game` = size − 1 on every slip.
+- Fix: `build_tier_map_legs_postseason.py` resolves event_id from game_id via `nba_market.event_game_map` (fallback game_id); table
+  updated (181 / 181 games mapped, 0 fallbacks). Live pick unaffected (it resolves events itself; probe 100%).
+- Re-certified (nba-postseason-certify, 2026-10-09 05:32Z): 15,618 of 62,042 postseason slips cross-game (was 0); verdicts unchanged —
+  all SHADOW (D_points_3power +3% / 96 d, A_wrebounds_4flex +4% / 36 d, C_wstocks_4flex +19% / 34 d, R_stocks_4power +32% / 15 d;
+  every lower bound < 0). Playoff strategy research: strategy §31y, COMPASS 142.
+
 ### Round-3 candidates (measured, deliberately deferred — each is a chained recertification, not a patch)
 1. `board_outcomes` standard/alternate double count (P2B#18) — dedupe in every consumer and rebuild the chain.
 2. The certified history's blended morning/window spread (P2B#5) — rebuild `nba_market_spreads_*` morning-only and re-run
