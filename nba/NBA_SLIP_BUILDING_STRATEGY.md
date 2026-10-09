@@ -2610,6 +2610,58 @@ playoff-specific (the per-minute production drop, §31x); the certified regular-
 legs (model rank as found), PrizePicks 5- and 6-Flex, cap 1, Underdog 2-pick Standard on two-game nights; graded from the 2027
 play-in, staked only when the postseason gate clears with 2027 nights; Overs, demons and goblins never on a playoff slate.
 
+### 31z. Playoff Unders — every gate, every stress, wired for playoff time (2026-10-09; owner: "run all the gates, stress it out and be sure you tried everything possible and got the best of it, once done, wire the logic, so it is ready for playoff time")
+**One rule, one implementation.** `nba/playoff_unders.py` is the rule the research tunes, the certification backtests and both live
+engines run: R-tier (balanced-line) Unders, model score ≥ `min_p` under `rank` (final_score divided by 100 — it is published 0–100),
+optional star-line exclusion / half-point-only, one leg per player, best first; PrizePicks needs ≥ 2 teams and honours
+`max_per_game`, Underdog one pick per game; one slip per strategy per night. Whole-number lines are included (as the postseason map
+and the live board carry them). Tunables: `classification_config['playoff_unders']` (written by the research, `stake_mode` added).
+**The grid (pre-registered, `research_playoff_unders.py`, run 37897295209, tables `nba_score.psr_pu_grid` / `psr_pu_final`):**
+rank {final_hp, baseline_hp, final_score} × props {main 8, all 12, each also half-point-only} × min_p {0.50 … 0.66} × stars
+{keep, exclude} × per game {any, ≤ 2 (PP)} × structure (PP 3P 3F 4P 4F 5P 5F 6P 6F; UD 2S 3S 3F) = **1,920 PrizePicks and 360
+Underdog variants**. Gates: G1 positive in each postseason, G2 pooled day-blocked lower bound > 0, G3 ≥ 30 nights, G4 plateau (the
+neighbouring thresholds and the other two ranks also positive in both), G5 walk-forward both directions with a 50-run hit-permuted
+null (within night × prop × tier × side).
+| | PrizePicks | Underdog |
+|---|---|---|
+| G1+G3 | 638 / 1,920 | 78 / 360 |
+| +G2 | 57 | 5 |
+| +G4 | 51 | 5 |
+| G5 walk-forward (best variant on one postseason → the other) | **fails**: any-structure −100% / −55%, Flex-only −50% / −2%; top-10 −53% / −25% / −8% / −2% vs null −17% / +7% / −7% / +12% (the half-point variants are where the train-best overfits; without them the Flex rule held +18% / +20%) | fwd **+66% (null +13%, p 0.00)**, rev +11% (null +8%, p 0.50) |
+| family robustness | **every one of the 60 whole-line 5-Flex variants is positive in BOTH postseasons** (median +39%); 4-Flex 62%; Power structures 3–32% | 2-pick Standard 65% (median +24%) |
+**Reading:** slip-level *selection* is not provable on 97 nights (§31y said so; the bigger grid shows it again), but the edge is not
+the tuning — it is the family. The base Under hit on these legs is 0.537 / 0.539 (≈ PrizePicks 5-Flex break-even); the model's top
+Unders hit **0.624** on the chosen PP rule, and the leg-level walk-forward (§31y) holds 0.590 / 0.553 out of sample.
+**Deployed rule** (Flex preferred among G1–G4 variants, then the highest pooled lower bound; UD by lower bound):
+PrizePicks rank final_score, main 8 props, min_p 0.50 (not binding — 0.50 and 0.55 identical), stars kept, any per game;
+Underdog rank baseline_hp, all 12 props, min_p 0.66, one per game.
+| strategy | 2024-25 | 2025-26 | pooled | 10k lower bound | gates | P(losing a postseason) | drawdown p50 / p95 | ROI if legs hit 1 / 2 / 3 / 5 pts worse | regular-season stress |
+|---|---|---|---|---|---|---|---|---|---|
+| **P_unders_5flex** | +20% | +110% | **+64%** | **+16%** | G1–G4 | 1.5% | 6.4 / 11.6 u | +55 / +47 / +39 / +24% | +20% / +35% (P lose 5%) |
+| **P_unders_4flex** | +6% | +71% | +38% | +2% | G1–G3 | 5.1% | 6.5 / 12.0 u | +32 / +26 / +20 / +8% | +13% / +15% (P lose 14%) |
+| P_unders_3power | +2% | +69% | +35% | −10% | G1, G3 | 9.7% | 9.0 / 17.0 u | +28 / +22 / +18 / +5% | +22% / +5% |
+| **U_unders_2standard** | +44% | +66% | **+56%** | **+6%** | G1–G4 | 0.1% | 4.5 / 8.1 u | +51 / +47 / +41 / +33% | +8% / +42% (P lose 4%) |
+Same-game Under correlation ≈ 0 (PP 0.019 postseason / 0.002 regular; UD −0.027) — the independence the payouts assume holds.
+Envelopes: 50-night postseasons from 7-night blocks, 10,000 draws. Underdog builds only on multi-game nights (49 of 97 — rounds 1–2).
+**Certification (nba-postseason-certify, 2026-10-09 07:29Z, `postseason_strategy_verdict` + `playoff_unders_slips`):** identical
+numbers from the shared code — **P_unders_5flex PASS** (97 nights, +63.5%, lower bound +16.2%), **P_unders_4flex PASS** (+37.6%,
++2.1%), **U_unders_2standard PASS** (49 nights, +55.6%, +6.1%), P_unders_3power SHADOW. Every regular-season strategy stays
+SHADOW on playoff slates (§31w).
+**Live = backtest, proven (probe 37900420784, three past postseason nights, rolled back, ledger unchanged):** every Playoff Unders
+slip the live PrizePicks pick builds equals the certified backtest's slip for that night (9 / 9), and the Underdog pick's slip
+equals its backtest slip (2026-04-25; none on the one-game Finals night on either side). The probe first found a *probe* artefact,
+not a live defect: a past night's `final_hp.score` carries the market term, live has no feed (§31w) — the probe now replays with the
+map's own market-free score.
+**Wiring:** P3 → `pick_postseason` builds the Playoff Unders slips after the other strategies; PASS → `placed_post` (daily ceiling and
+dedupe respected), else `placed_post_shadow`; Underdog `stand_down:postseason` → PLAYOFF_UNDERS `paper_post` stake 1 (PASS) or
+`shadow_post` stake 0; both graded from the postseason box scores; P5 re-certifies weekly with each live postseason night.
+**`stake_mode`** (`'gate'` default | `'shadow'`): one row turns every Playoff Unders slip into a recorded-but-never-staked slip.
+**Honest expectation:** the +64% / +56% are in-sample (rule chosen on the same 97 nights). The out-of-sample anchors are the
+leg-level hit (PP 0.553–0.590 → 5-Flex ≈ +7% … +25%) and Underdog's forward walk (+66% on 25 nights, p 0.00; reverse +11%).
+Plan on a single-digit-to-low-double-digit edge, ~50 one-unit slips per postseason per strategy, a 10–15-unit drawdown being normal.
+The 4- and 5-Flex slips share most legs (one bet sized twice, not two bets). Overs, demons, goblins and every regular-season strategy
+stay off playoff slates.
+
 ### 31b. Daily player name map refresh (`nba/refresh_player_name_map.py`, P2B step before anything resolves names; on-demand `nba-name-map-refresh.yml`)
 The register (`nba/data/nba_all_players.json`) is refreshed only manually and lacked all six sampled newcomers; `nba_ref.players` is current (P1 weekly). All 44 missing were plain absences (no namesake collisions). Incremental, collision-safe with the builder's own rule (absent → insert; mapped to an inactive player → repoint to the active one; mapped to a different active player → no change, logged CONFLICT), never deletes. SQL `nba_ref.norm_name` == Python `norm_name` on 10 edge cases (accents, Jr/II/III/V, hyphen, apostrophe). **Result: map 5,169 → 5,213; active players unresolved 44 → 0.**
 ### 31c. Close-board capture (`nba-close-capture.yml` + scheduler v2.1.0)
