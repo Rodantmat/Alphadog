@@ -2576,6 +2576,40 @@ does not pass the postseason gate. **Recommendation:** add it as a shadow postse
 `P_unders_3std` on Underdog; tunables in `nba_config`), graded with the others from the 2027 play-in; it stakes only when the gate
 clears with the 2027 nights added. Owner decision pending.
 
+### 31y. The playoffs through the whole regular-season method, both apps, and the regular-season stress (2026-10-09; owner: "sharpen it — compositions, signals, layers, all we did for the main season … and stress test the same strategies for the main season")
+**Program:** `nba/research_postseason_program.py`, workflow `nba-postseason-program.yml` (research only; tables `nba_score.psr_*`). The
+§19–§28 / §30 chain on the two postseasons (50 + 47 nights), PrizePicks (tier map post, certified `grade()`) and Underdog (UD
+formula, 0.5% / 1% discount, **one pick per game**): granular bands (n 1–10, 10/20/33/50%, three ranks, 12 props + 4 prop pools,
+every tier and side; `psr_bands`) → cells with a permutation null (`psr_cells`) → signal matrix (11 signals incl. playoff ones:
+minutes trend, line vs regular / playoff form, in-series form, round, game number, home, rest, low-foul, role, model margin) with a
+null and pairwise stacks (`psr_signals`) → slip engine (compositions all / unders / overs / pooled / single / weighted, sizes 2–6,
+Power-Flex or Standard-Flex, cap 3; `psr_slips`) → walk-forward both directions **with the cells re-discovered on the training
+postseason only** and a full-pipeline empirical null (`psr_validation`) → leg-level walk-forward (`psr_leg_wf`) → the strategies
+on both regular seasons + envelopes (`psr_stress`).
+**A defect found on the way (fixed, re-certified):** `tier_map_legs_post.event_id` was NULL on every row (board_outcomes carries no
+event), so the postseason slip engine treated every pair as same-game — no cross-game-first ordering, and the regular-season
+negative-correlation ban fired on cross-game pairs. The builder now resolves the game from `game_id` (event_game_map); re-run
+37888… : 15,618 of 62,042 postseason slips are now cross-game; the postseason verdicts did not change (all SHADOW).
+| layer | PrizePicks | Underdog |
+|---|---|---|
+| cells ABOVE break-even in both postseasons | **26 vs null 12.3 (95th 18) — real**; almost all Unders: assists R U top-2 0.680 / 0.691, ALL R U top-7 0.635 / 0.641, BOARD R U 0.634 / 0.646, steals R U 0.630 / 0.632, reb_ast R U 0.633 / 0.624, pts_reb R U, rebounds R U, pra R U, points R U | 27 vs null 18.9 (95th 25) — marginal |
+| signal bands (lift ≥ 0.02 both postseasons) | 62 vs null 58.5 (95th 80) — **noise** | 29 vs null 35.8 — **noise** |
+| in-sample slip leaderboard | +150…+370% train ROIs | 2-pick Standard only on most nights (one pick per game) |
+| **honest walk-forward (cells + strategy chosen on one postseason, scored on the other)** | **0 survivors either direction** (null 0.0); not one positive lower bound even before the teammate ban; the train +150…+260% land at −88%…+32% | **0 survivors either direction** (null 0.0 / 0.75) |
+| **leg-level walk-forward** (thousands of legs) | train-chosen **Under** cells on the other postseason: **0.590 [0.556, 0.623]** (1,808 legs) and **0.553 [0.509, 0.594]** (905); **Over cells 0.491 / 0.440, demon / goblin tiers 0.481 / 0.413 — fail** | Unders 0.545 [0.513, 0.574] / 0.553 [0.519, 0.589] vs 0.536 — thin; Overs 0.460 / 0.465 fail |
+**What the playoffs support:** one structural, out-of-sample-stable leg edge — the model's top-ranked **Unders** (balanced lines);
+nothing else (Overs, demons, goblins, signal gates) survives. At the pooled out-of-sample Under hit (0.578, independent legs) a
+PrizePicks 5-Flex returns ≈ +25%, 6-Flex ≈ +38%; at the weaker postseason (0.553) +7% / +10%. Slip-level proof is out of reach
+with ~50 nights a postseason (one slip a night): even a real +25% edge cannot clear a day-blocked lower bound on 47 nights.
+**Regular-season stress (same strategies, both regular seasons, final week out):** the playoff Under strategies are weaker there and
+never provable — weighted:reb_ast_R_U 5-Flex +96% / +156% postseason → +26% / +17% regular (CI includes 0); PTSFAM_R_U 6-Flex
++151% / +130% → +20% / +48%; unders 6-Flex +76% / +174% → +6% / +32%; their Power versions carry 60–80-unit drawdowns and 60–74-day
+losing streaks in the regular season. Underdog 2-pick Unders +87% / +72% postseason → +16% / −19% regular. **The playoff edge is
+playoff-specific (the per-minute production drop, §31x); the certified regular-season strategies remain the regular-season set.**
+**Recommendation (owner decision):** a postseason-only shadow strategy "Playoff Unders" — the certified postseason Under cells' top
+legs (model rank as found), PrizePicks 5- and 6-Flex, cap 1, Underdog 2-pick Standard on two-game nights; graded from the 2027
+play-in, staked only when the postseason gate clears with 2027 nights; Overs, demons and goblins never on a playoff slate.
+
 ### 31b. Daily player name map refresh (`nba/refresh_player_name_map.py`, P2B step before anything resolves names; on-demand `nba-name-map-refresh.yml`)
 The register (`nba/data/nba_all_players.json`) is refreshed only manually and lacked all six sampled newcomers; `nba_ref.players` is current (P1 weekly). All 44 missing were plain absences (no namesake collisions). Incremental, collision-safe with the builder's own rule (absent → insert; mapped to an inactive player → repoint to the active one; mapped to a different active player → no change, logged CONFLICT), never deletes. SQL `nba_ref.norm_name` == Python `norm_name` on 10 edge cases (accents, Jr/II/III/V, hyphen, apostrophe). **Result: map 5,169 → 5,213; active players unresolved 44 → 0.**
 ### 31c. Close-board capture (`nba-close-capture.yml` + scheduler v2.1.0)
