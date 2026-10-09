@@ -293,12 +293,35 @@ def main():
                 f"(null mean {fp(w['null_best_mean'])}, p {fq(w['p_best'])}); top-10 on train -> test mean {fp(w['top10_test'])} "
                 f"(null mean {fp(w['null_top_mean'])}, p {fq(w['p_top'])})")
         # ---- finalists: the best G1-G3 variant per structure (G4 preferred), full stress
-        finals = {}
+        # the deployed rule: among variants clearing G1-G4, Flex first (the low-variance profile), then the highest pooled lower bound
+        best = None
         for wk, k, g1, g2, g3, g4, r in passing:
-            stk = (k[5], k[6])
-            if stk not in finals or (g2 and g4 and not (finals[stk][3] and finals[stk][5])):
-                if stk not in finals or (g2 and g4):
-                    finals[stk] = (wk, k, g1, g2, g3, g4, r)
+            if not (g2 and g4):
+                continue
+            score = (k[6] == 'flex' or app == 'ud', r[13] if r[13] is not None else -9)
+            if best is None or score > best[0]:
+                best = (score, k)
+        if best is None:      # nothing clears G1-G4: keep the strongest G1+G3 variant so the rule is still recorded (shadow)
+            for wk, k, g1, g2, g3, g4, r in passing:
+                score = (g4, wk)
+                if best is None or score > best[0]:
+                    best = (score, k)
+        if best:
+            k = best[1]
+            chosen_cfg[app] = dict(rank=k[0], props=PROPSETS[k[1]], half_only=k[1].endswith('_half'), min_p=k[2], exclude_star=k[3], max_per_game=k[4])
+            strategies = {}
+            for wk2, kk, g1, g2, g3, g4, r in passing:
+                if kk[:5] == k[:5] and g1 and g3:
+                    nm = f"{'P' if app == 'pp' else 'U'}_unders_{kk[5]}{kk[6]}"
+                    strategies[nm] = {"app": app, "size": kk[5], "structure": kk[6]}
+            chosen_cfg[app]['strategies'] = strategies
+            log(f"\n   {app.upper()} CHOSEN RULE: {chosen_cfg[app]}")
+        # the stress runs on exactly the strategies that will be certified and wired: the chosen rule's structures
+        finals = {}
+        if best:
+            for wk, kk, g1, g2, g3, g4, r in passing:
+                if kk[:5] == best[1][:5] and g1 and g3:
+                    finals[(kk[5], kk[6])] = (wk, kk, g1, g2, g3, g4, r)
         reg_legs = None
         for stk, (wk, k, g1, g2, g3, g4, r) in sorted(finals.items(), key=lambda x: -x[1][0]):
             v = dict(rank=k[0], propset=k[1], props=PROPSETS[k[1]], half_only=k[1].endswith('_half'), min_p=k[2], exclude_star=k[3], max_per_game=k[4], size=k[5], structure=k[6])
