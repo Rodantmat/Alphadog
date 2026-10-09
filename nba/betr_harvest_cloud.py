@@ -347,6 +347,15 @@ def main():
             if not board:
                 where(sb, "deadline")
                 print(f"  wire: {seen_ops or 'no betr.app graphql / error responses seen'}", flush=True)
+                # ROUTE DISCOVERY (2026-10-09): the app now lands on /picks/home/lobby (the old /lobby/<league> redirects there);
+                # list the league links / chips it renders so the league navigation can be corrected without guessing.
+                try:
+                    hrefs = sb.execute_script("return Array.from(document.querySelectorAll('a[href]')).map(a=>a.getAttribute('href')).filter(h=>/nba|wnba|lobby|league|sport/i.test(h)).slice(0,40);")
+                    chips = sb.execute_script("return Array.from(document.querySelectorAll('button,a,div[role=button],li')).map(e=>(e.innerText||'').trim()).filter(t=>t && t.length<24 && /NBA|WNBA|NFL|MLB|NHL|All|Sports/i.test(t)).slice(0,40);")
+                    print(f"  routes seen: {hrefs}", flush=True)
+                    print(f"  chips seen: {chips}", flush=True)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"  route discovery failed: {str(exc)[:80]}", flush=True)
     finally:
         if lp:
             lp.terminate()
