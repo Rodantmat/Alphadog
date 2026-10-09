@@ -421,6 +421,10 @@ def main():
                     print(f"  visible text: {body_text[:1500]}", flush=True)
                 except Exception as exc:  # noqa: BLE001
                     print(f"  route discovery failed: {str(exc)[:80]}", flush=True)
+                if lobby_board is not None:
+                    board = lobby_board
+                    print(f"  WARNING: league board never answered - using the LOBBY's {LEAGUE} players as a PARTIAL board "
+                          f"({len(flatten(board)[0])} legs); the league navigation needs attention (see the trail above)", flush=True)
     finally:
         if lp:
             lp.terminate()
