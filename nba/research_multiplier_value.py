@@ -197,7 +197,9 @@ class Calibrator:
             self.maps[k] = table
 
     def p(self, side, prop, alt, score):
-        t = self.maps.get((side, prop, alt)) or self.maps.get((side, '*', alt))
+        t = self.maps.get((side, prop, alt))
+        if t is None:
+            t = self.maps.get((side, '*', alt))
         if t is None or score is None:
             return None
         return float(t[min(int(score / 0.02), len(EDGES) - 1)])
