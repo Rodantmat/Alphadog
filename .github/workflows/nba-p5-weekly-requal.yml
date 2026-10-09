@@ -97,6 +97,40 @@ jobs:
           SE_TABLE_SUFFIX="_mf" python -u nba/build_slip_engine.py
           SE_TABLE_SUFFIX="_mf_nosteals" SE_EXCLUDE_CELLS="steals_R,steals_R_U" python -u nba/build_slip_engine.py
 
+      # UNDERDOG MARKET-FREE TWIN (round 3 #4, 2026-10-09; strategy §31ab): the Underdog paper engine is measured against
+      # nba_score.ud_slip_engine_slips_dlt_orig2_mf, built from ud_tier_map_legs_curr_mf (nba_score.build_ud_tier_map_legs_curr_mf,
+      # nba/sql) with the certified build's exact configuration. The Underdog backtest does not grow in season, but the
+      # deductions it is rescored with (confidence_model) can move with a recalibration - so the twin is refreshed here, and the
+      # edge-monitor reference (ud_edge_monitor_ref) is rebuilt from it. The certified _dlt_orig2 is never touched.
+      - name: "3e. Underdog market-free twin (refresh) + edge-monitor reference"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          UD_CAP: "5"
+          UD_SIZES: "2,3,4,5,6"
+          UD_EXCL_CENTER: "1"
+          UD_HC_MAIN: "0.005"
+          UD_HC_ALT: "0.01"
+          UD_LEGS_TABLE: nba_score.ud_tier_map_legs_curr_mf
+          UD_TABLE_SUFFIX: "_dlt_orig2_mf"
+        run: |
+          python - <<'EOF'
+          import os, psycopg
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              c.execute("SET statement_timeout = 0")
+              n = c.execute("SELECT nba_score.build_ud_tier_map_legs_curr_mf()").fetchone()[0]
+              c.commit()
+              print(f"ud_tier_map_legs_curr_mf: {n:,} legs (market-free rescoring of the certified Underdog legs)", flush=True)
+          EOF
+          python -u nba/build_ud_slip_engine.py
+          python - <<'EOF'
+          import os, sys, psycopg
+          sys.path.insert(0, "nba")
+          import ud_live_slip_engine as U
+          with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+              ref = U.ud_edge_reference(c, rebuild=True)
+              print(f"ud_edge_monitor_ref rebuilt from {U.ud_bt_table(c)}: {len(ref)} (cell, tier, side) keys", flush=True)
+          EOF
+
       - name: 4. Certification pass (frozen invariant list; any FAIL stops the loop here)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
