@@ -167,8 +167,10 @@ def main():
             if not same:
                 print(f"        backtest had: {theirs}", flush=True)
         conn.rollback()
+        ok &= ud_parity(conn, d)
+        conn.rollback()
     after = counts(conn)
-    print(f"\nledger after rollback: live_slips {after[0]:,}, live_pool {after[1]:,} -> {'UNCHANGED' if after == before else 'CHANGED (!)'}", flush=True)
+    print(f"\nledger after rollback: live_slips {after[0]:,}, live_pool {after[1]:,}, ud_live_slips {after[2]:,} -> {'UNCHANGED' if after == before else 'CHANGED (!)'}", flush=True)
     ok &= after == before
     conn.close()
     print("PROBE", "PASS" if ok else "FAIL", flush=True)
