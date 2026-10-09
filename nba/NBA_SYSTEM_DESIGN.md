@@ -2091,7 +2091,7 @@ report a valid zero; on a DataDome block it should fail — and the two look ide
 scraper.**
 
 **And the first lesson applies directly**: NBA **already has the correct pattern** in the delta
-worker's calendar-based pre-flight. ### ⚠⚠ THE DEEPER ROOT CAUSE — "correctly coded" is not "actually running"
+worker's calendar-based pre-flight. [r244-tool-test]### ⚠⚠ THE DEEPER ROOT CAUSE — "correctly coded" is not "actually running"
 > *"**The calendar tables that *SHOULD* have answered this question ALREADY EXISTED IN THE SCHEMA** —
 > **but ONE HAD NEVER BEEN POPULATED AT ALL (ZERO ROWS, EVER), and THE OTHER WAS WEEKS STALE.**
 > **The actual root cause WASN'T A MISSING FEATURE in the worker throwing the error — it was that THE
