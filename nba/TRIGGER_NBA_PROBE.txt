@@ -1,1 +1,1 @@
-script: probe_capture_props_live.py
+script: probe_price_shop_ledger.py
