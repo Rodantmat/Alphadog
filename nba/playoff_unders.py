@@ -89,15 +89,26 @@ def is_star(l):
     return t is not None and float(l['line']) >= t
 
 
+def score_of(l, rank):
+    """the leg's ranking score on a probability scale: final_hp / baseline_hp are probabilities; final_score is published on a
+    0-100 scale (measured 2026-10-09: mean 65 on postseason Unders), so it is divided by 100 before the min_p comparison"""
+    s = l.get(rank)
+    if s is None:
+        return None
+    s = float(s)
+    return s / 100.0 if rank == 's_score' and s > 1.5 else s
+
+
 def candidates(legs, cfg):
-    """the night's eligible legs, best first: balanced line, Under, configured prop, model p >= min_p, one per player"""
+    """the night's eligible legs, best first: balanced line (half-point AND whole-number lines, exactly as the live board and the
+    certified maps carry them - a whole-number tie voids the leg), Under, configured prop, model p >= min_p, one per player"""
     rank = cfg.get('rank', 's_final')
     props = set(cfg.get('props') or MAIN_PROPS)
     min_p = float(cfg.get('min_p', 0.58))
     xs = [l for l in legs if l['tier'] == 'R' and l['side'] == 'Under' and l['prop'] in props
-          and l.get(rank) is not None and l[rank] >= min_p and not l.get('whole_number') and float(l['line']) % 1 != 0
+          and score_of(l, rank) is not None and score_of(l, rank) >= min_p
           and not (cfg.get('exclude_star') and is_star(l))]
-    xs.sort(key=lambda l: (-l[rank], l['player'], l['prop'], float(l['line'])))
+    xs.sort(key=lambda l: (-score_of(l, rank), l['player'], l['prop'], float(l['line'])))
     seen, out = set(), []
     for l in xs:
         if l['player'] in seen:
