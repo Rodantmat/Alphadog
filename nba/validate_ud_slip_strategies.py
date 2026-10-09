@@ -16,7 +16,9 @@ Input: nba_score.ud_slip_engine_slips_center (the adopted rule set: one pick per
   V4  MONOTONICITY: OOS slips in 5 equal-volume bins by summed certified edge; ROI should rise with edge.
   V5  DECOMPOSITION: OOS profit by leg cell; flag one cell carrying > 60% of profit.
   (V6 teammate ban is not applicable: Underdog slips are one pick per game.)
-Output: nba_score.ud_slip_validation. Env: DATABASE_URL, SV_TOPK (30), SV_BOOT (10000), SV_NULL (200), SV_SOURCE.
+Output: nba_score.ud_slip_validation (+ a retained copy nba_score.ud_slip_validation<SV_SNAPSHOT> when SV_SNAPSHOT is set - the
+verdict history is never overwritten, retention 2026-10-08). Env: DATABASE_URL, SV_TOPK (30), SV_BOOT (10000), SV_NULL (200),
+SV_SOURCE, SV_SNAPSHOT (e.g. _dlt_orig2_mf).
 """
 import os
 import json
@@ -30,6 +32,7 @@ BOOT = int(os.environ.get('SV_BOOT') or '10000')
 NULLS = int(os.environ.get('SV_NULL') or '200')
 SOURCE = os.environ.get('SV_SOURCE') or 'nba_score.ud_slip_engine_slips_center'
 T_VAL = 'nba_score.ud_slip_validation'
+SNAPSHOT = os.environ.get('SV_SNAPSHOT') or ''
 S1, S2 = '2024-25', '2025-26'
 STD = {2: 3.5, 3: 6.5, 4: 12.0, 5: 20.0, 6: 35.0}
 FLEX = {(3, 0): 3.25, (3, 1): 1.09, (4, 0): 6.0, (4, 1): 1.4, (5, 0): 10.0, (5, 1): 2.5, (6, 0): 25.0, (6, 1): 2.6, (6, 2): 0.25}
@@ -226,6 +229,11 @@ def main():
     real_rev = run_direction(conn, strat, S2, S1, 'V1R reverse', rng)
     null_test(conn, strat, S1, S2, rng, real_fwd)
     null_test(conn, strat, S2, S1, rng, real_rev)
+    if SNAPSHOT:
+        conn.execute(f"DROP TABLE IF EXISTS {T_VAL}{SNAPSHOT}")
+        conn.execute(f"CREATE TABLE {T_VAL}{SNAPSHOT} AS SELECT * FROM {T_VAL}")
+        conn.commit()
+        print(f"  retained as {T_VAL}{SNAPSHOT}", flush=True)
     conn.close()
     print("DONE", flush=True)
 
