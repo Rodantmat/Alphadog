@@ -6943,6 +6943,19 @@
       "team_abbreviation": "BOS"
     },
     {
+      "id": 1643141,
+      "full_name": "Jahmyl Telfort",
+      "last_comma_first": "Telfort, Jahmyl",
+      "roster_status": 1,
+      "from_year": "2025",
+      "to_year": "2026",
+      "player_code": "jahmyl_telfort",
+      "team_id": 1610612746,
+      "team_city": "LA",
+      "team_name": "Clippers",
+      "team_abbreviation": "LAC"
+    },
+    {
       "id": 1631207,
       "full_name": "Dalen Terry",
       "last_comma_first": "Terry, Dalen",
