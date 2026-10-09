@@ -64,8 +64,8 @@ def variants(app):
                 for star in (False, True):
                     for mpg in ((99, 2) if app == 'pp' else (1,)):
                         for size, st in STRUCT[app]:
-                            yield dict(rank=rank, propset=ps, props=PROPSETS[ps], min_p=mp, exclude_star=star, max_per_game=mpg,
-                                       size=size, structure=st)
+                            yield dict(rank=rank, propset=ps, props=PROPSETS[ps], half_only=ps.endswith('_half'), min_p=mp, exclude_star=star,
+                                       max_per_game=mpg, size=size, structure=st)
 
 
 def vkey(v):
