@@ -104,7 +104,7 @@ def main():
     limit = int(os.environ.get("MAX_GAMES", "1400")); n_ok = n_empty = n_fail = 0
     def _flush():
         for ym, rows_ in shards.items():
-            (DATA / f"nba_matchups_pergame_{slug}_{ym}.json").write_text(json.dumps({"columns": COLS, "rows": rows_}, separators=(",", ":")))
+            (DATA / f"nba_matchups_pergame_{tag}_{ym}.json").write_text(json.dumps({"columns": COLS, "rows": rows_}, separators=(",", ":")))
         existing["meta"] = {"season": season, "covered": sorted(covered), "empty": sorted(empty), "rows": sum(len(v) for v in shards.values()), "columns": COLS, "shards": sorted(shards)}
         path.write_text(json.dumps({"meta": existing["meta"]}))
     for i, gid in enumerate(todo[:limit]):
