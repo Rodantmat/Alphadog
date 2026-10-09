@@ -4,12 +4,14 @@ UNDERDOG LIVE ENGINE - MULTI-SLATE PARITY (strategy doc §31f). READ-ONLY: nothi
 For every 2025-26 slate (the season whose backtest modifiers are the board's own - the 2024-25 backtest used delta-repriced
 modifiers, §30s, so it is not directly comparable), the live engine's OWN code (ud_live_slip_engine.load_legs ->
 build_ud_slip_engine.eligible_legs -> build_day_slips, the same calls pick() makes, minus the insert) is compared with the
-backtest build nba_score.ud_slip_engine_slips_dlt_orig2 (original cells, centers out) for P5's and P4's slots:
+backtest build named by classification_config['live_backtest_suffix'].ud_table (round 3 #4: the market-free twin
+nba_score.ud_slip_engine_slips_dlt_orig2_mf; before it the certified nba_score.ud_slip_engine_slips_dlt_orig2 - original
+cells, centers out) for P5's and P4's slots:
   SELECTION  slip leg sets identical per (composition, size, structure, k)
   SETTLEMENT live payout (ud_live_slip_engine.payout on box-score outcomes, Underdog's void rule) vs the backtest payout
              divided by the backtest's per-leg confidence discount (0.5% mains / 1% priced) - must agree to 1e-6;
              hits identical
-Env: DATABASE_URL.
+Env: DATABASE_URL, UDL_BT_TABLE / UDL_BT_LEGS_TABLE (override the tunable: compare against another build).
 """
 import math
 import os
@@ -32,9 +34,10 @@ def key(slip):
 
 def main():
     conn = psycopg.connect(os.environ['DATABASE_URL'])
-    days = [r[0] for r in conn.execute("""SELECT DISTINCT game_date FROM nba_score.ud_slip_engine_slips_dlt_orig2
+    BT, BT_LEGS = U.ud_bt_table(conn), U.ud_bt_table(conn, 'ud_legs_table')
+    days = [r[0] for r in conn.execute(f"""SELECT DISTINCT game_date FROM {BT}
                                           WHERE season='2025-26' ORDER BY 1""").fetchall()]
-    print(f"Underdog multi-slate parity over {len(days)} slates of 2025-26", flush=True)
+    print(f"Underdog multi-slate parity over {len(days)} slates of 2025-26 vs {BT} (legs {BT_LEGS})", flush=True)
     tot = Counter(); ex = []
     for i, day in enumerate(days, 1):
         legs = U.load_legs(conn, day)
@@ -60,8 +63,8 @@ def main():
         # ALIGNED: also restrict to the backtest's own leg universe (by player_id - the suffix / alias players are exactly the
         # ones whose NAMES differ between the backtest table and the canonical resolver), then re-rank identically
         uni = set(); bt_id = {}
-        for p, pn, pr, s, ln in conn.execute("""SELECT DISTINCT player_id, player, prop, side, line
-                 FROM nba_score.ud_tier_map_legs_curr WHERE game_date=%s""", (day,)).fetchall():
+        for p, pn, pr, s, ln in conn.execute(f"""SELECT DISTINCT player_id, player, prop, side, line
+                 FROM {BT_LEGS} WHERE game_date=%s""", (day,)).fetchall():
             uni.add((str(p), pr, s, float(ln))); bt_id[(pn, pr, s, float(ln))] = str(p)
         al = [dict(l) for l in kept if (str(l['player_id']), l['prop'], l['side'], float(l['line'])) in uni]
         tot['legs_outside_bt_universe'] += len(kept) - len(al)
@@ -74,8 +77,8 @@ def main():
                 l['n_rank'] = r
         pool_al = E.eligible_legs(al)
         bt = {}
-        for comp, size, structure, k, legs_json, hits, payout in conn.execute("""
-                SELECT composition, size, structure, k, legs_json, hits, payout FROM nba_score.ud_slip_engine_slips_dlt_orig2
+        for comp, size, structure, k, legs_json, hits, payout in conn.execute(f"""
+                SELECT composition, size, structure, k, legs_json, hits, payout FROM {BT}
                 WHERE game_date=%s""", (day,)).fetchall():
             bt[(comp, size, structure, k)] = (legs_json, hits, payout)
         for comp, size, structure, cap in SLOTS:
