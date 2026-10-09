@@ -76,13 +76,21 @@ def main():
     session = requests.Session(proxies={"https": proxy_url, "http": proxy_url} if proxy_url else None)
     season = os.environ.get("SEASON") or active_stats_season(); slug = season.replace("-", "_")
     mode = os.environ.get("MATCHUPS_MODE", "delta")
-    src = DATA / (f"nba_team_game_log_{slug}.json" if mode == "backfill" else "nba_delta_team_game_log.json")
-    tl = json.loads(src.read_text()).get("records", [])
+    # POSTSEASON (§31w, 2026-10-09): MATCHUPS_POSTSEASON=1 reads the season's play-in / playoff team log (kept current by P2A's
+    # postseason delta; both modes) and writes nba_matchups_pergame_postseason_<slug>_* - the regular-season shards, which the
+    # matchup / defender factors aggregate, are never touched.
+    post = os.environ.get("MATCHUPS_POSTSEASON", "0") == "1"
+    tag = f"postseason_{slug}" if post else slug
+    if post:
+        src = DATA / f"nba_team_game_log_postseason_{slug}.json"
+    else:
+        src = DATA / (f"nba_team_game_log_{slug}.json" if mode == "backfill" else "nba_delta_team_game_log.json")
+    tl = json.loads(src.read_text()).get("records", []) if (src.exists() or not post) else []
     games = {}
     for r in tl:
         gid = str(r["GAME_ID"])
-        if gid.startswith("002"): games[gid] = str(r["GAME_DATE"])[:10]
-    path = DATA / f"nba_matchups_pergame_{slug}_index.json"
+        if gid.startswith(("004", "005") if post else ("002",)): games[gid] = str(r["GAME_DATE"])[:10]
+    path = DATA / f"nba_matchups_pergame_{tag}_index.json"
     # STORAGE: GitHub rejects files >100 MB (a full season of pairings is ~170 MB as row dicts). Rows are stored as
     # COLUMNAR MONTHLY SHARDS nba_matchups_pergame_<slug>_<YYYY-MM>.json ({"columns":[...],"rows":[[...]]}) and the
     # index file carries covered/empty game ids. nba_asof.load_matchups(slug) reassembles them.
