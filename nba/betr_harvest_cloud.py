@@ -328,11 +328,16 @@ def main():
                     try:
                         b = sb.driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": rid})
                         j = json.loads(b.get("body", ""))
+                        ops = sorted((j.get("data") or {}).keys()) if isinstance(j.get("data"), dict) else ["<no data>"]
+                        k = f"graphql body {','.join(ops)[:60]}"
+                        seen_ops[k] = seen_ops.get(k, 0) + 1
                         if (j.get("data") or {}).get("getUpcomingEventsV2"):
                             if flatten(j)[0]:
                                 board = j; break
                             lobby_only = j   # events without projections - not the board
-                    except Exception:  # noqa: BLE001
+                    except Exception as exc:  # noqa: BLE001
+                        k = f"graphql body unreadable ({type(exc).__name__})"
+                        seen_ops[k] = seen_ops.get(k, 0) + 1
                         continue
                 if not board and lobby_only is not None:
                     # the lobby answered but the league board did not: nudge the league tab again
