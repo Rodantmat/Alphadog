@@ -120,9 +120,11 @@ def permuted(by_day):
     return out
 
 
-def walk_forward(grid, tr, te, min_days=25, top=10):
+def walk_forward(grid, tr, te, min_days=25, top=10, flex_only=False):
     ranked = []
     for k, rec in grid.items():
+        if flex_only and k[6] != 'flex':
+            continue
         r, n = roi(rec, tr)
         if r is not None and n >= min_days:
             ranked.append((r, k))
