@@ -1,0 +1,37 @@
+name: NBA Multiplier Value Program (research)
+
+# strategy §31aa: nba/research_multiplier_value.py - each app's pricing law, the backtest hit-rate map, the price gate
+# (p x m x root >= tau) out of sample, Underdog slips from the gate, the certified legs priced on other apps, and the gate as a
+# layer on the certified slips. Research only: writes nba_score.mvp_* tables, changes nothing the pipelines read.
+on:
+  workflow_dispatch:
+    inputs:
+      stages:
+        description: "comma list: law,calib,gate,udsim,xapp,layer"
+        default: "law,calib,gate,udsim,xapp,layer"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alphadog-nba-multiplier-value
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MVP_STAGES: ${{ github.event.inputs.stages }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip "psycopg[binary]" pandas numpy
+      - name: Multiplier value program
+        run: python -u nba/research_multiplier_value.py
