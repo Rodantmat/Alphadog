@@ -2567,7 +2567,8 @@ top k by model p. PrizePicks (day-blocked bootstrap, 10,000 resamples):
 | 6-pick Flex | 0.542 | +9% | +57% | +32% (−44%, +129%) | 0.612 / 0.617 |
 | 4-pick Flex | 0.550 | −10% | +47% | +18% (−18%, +58%) | 0.570 / 0.622 |
 | 3-pick Power | 0.550 | −52% | +40% | −7% | 0.567 / 0.603 |
-Underdog (balanced legs, same rule, 3-pick Standard 6.5×): **+43% / +24%, both +34% (−13%, +88%)**, legs 0.580 / 0.603 vs 0.536.
+Underdog (balanced legs, same rule, 3-pick Standard 6.5×): ~~+43% / +24%~~ **WITHDRAWN (§31y): that simulation ignored the
+Underdog rule of one pick per game (§30e-f); on 1–2-game playoff nights a 3-pick is not buildable.** Legs 0.580 / 0.603 vs 0.536 stand.
 Variants tested (threshold 0.62, all props, line ≥ regular average − 1, ≤ 2 legs per game) did not improve on the base rule.
 **Verdict:** the first playoff composition positive in BOTH postseasons on both apps, with a structural reason behind it — but
 its pooled lower bounds are still below zero (97 nights) and the side and threshold were chosen after seeing both seasons, so it
