@@ -278,9 +278,11 @@ def main():
             pb = (sum(1 for x in nb if x >= (w['test'] or -1)) / len(nb)) if nb else None
             pt = (sum(1 for x in nt if x >= (w['top10_test'] or -1)) / len(nt)) if nt else None
             w.update(null_best_mean=(sum(nb) / len(nb)) if nb else None, p_best=pb, null_top_mean=(sum(nt) / len(nt)) if nt else None, p_top=pt)
-            log(f"   G5 walk-forward {direction}: best on train {w['best']} train {w['train']:+.0%} -> test {w['test']:+.0%} "
-                f"(null mean {w['null_best_mean']:+.0%}, p {w['p_best']:.2f}); top-10 on train -> test mean {w['top10_test']:+.0%} "
-                f"(null mean {w['null_top_mean']:+.0%}, p {w['p_top']:.2f})")
+            fp = lambda x: 'n/a' if x is None else f"{x:+.0%}"   # noqa: E731
+            fq = lambda x: 'n/a' if x is None else f"{x:.2f}"    # noqa: E731
+            log(f"   G5 walk-forward {direction}: best on train {w['best']} train {fp(w['train'])} -> test {fp(w['test'])} "
+                f"(null mean {fp(w['null_best_mean'])}, p {fq(w['p_best'])}); top-10 on train -> test mean {fp(w['top10_test'])} "
+                f"(null mean {fp(w['null_top_mean'])}, p {fq(w['p_top'])})")
         # ---- finalists: the best G1-G3 variant per structure (G4 preferred), full stress
         finals = {}
         for wk, k, g1, g2, g3, g4, r in passing:
