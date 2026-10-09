@@ -957,3 +957,73 @@ with the SAME builder the regular season used, extended to read the postseason f
 4. Underdog market-free twin (P3#4) for the paper engine's hurdles and edge reference.
 5. Retire the market term from the certified scoring altogether (make market-free THE scoring) once the odds-feed decision
    is final — then the twin tables disappear.
+
+### ROUND 3 — the deferred candidates worked (owner 2026-10-09 12:25 PT: "Is the system perfect, done, nothing open, you covered everything? Get to work.")
+
+Each candidate was either executed or measured to its final-output effect and closed with the number; nothing is left as a bare caveat.
+
+- **#4 🟢 DONE — Underdog market-free twin.** The certified Underdog backtest (`ud_tier_map_legs_curr` → `_dlt_orig2`) ranks six of
+  its fourteen cells (rebounds_F2_U, rebounds_R, blocks_R, points_R_U, pts_reb_R_U, pra_R_U — points_R_U is the P5 backbone) by
+  `final_hp.score`, which in the history carries the confidence model's market term; the live engine reads the same column from a
+  daily `final_hp` that has no sportsbook feed. Built exactly as the PrizePicks twin (round 2 P3#4):
+  - DB function `nba_score.build_ud_tier_map_legs_curr_mf()` (source `nba/sql/build_ud_tier_map_legs_curr_mf.sql`, 64e30d5) →
+    `nba_score.ud_tier_map_legs_curr_mf`: 1,265,457 rows (= source); only `final_score` rows move — 101,052 of 421,819 legs carry a
+    market term (24%), mean shift −5.59 score points (range −12.28 … −0.04), the other 320,767 byte-identical (legs without a
+    market term keep the stored score: recomputing from the 4-decimal stored hp / confidence adds ±0.02 of rounding noise, so the
+    function adds the DIFFERENCE of the formula at the market-free and the stored confidence — verified by hand on 5 legs);
+    n_rank re-ordered for 167,298 legs, cell_size unchanged. Deductions read from `confidence_model`.
+  - Slip build `nba-ud-slip-engine` suffix `_dlt_orig2_mf` (run 37982775247, 5 min) with `_dlt_orig2`'s exact configuration
+    (original 14 cells, centers out, sizes 2–6, cap 5, haircut 0.5% mains / 1% priced; confirmed from the stored legs_json).
+  - **Effect (cap 1, stand-downs out; ROI 24-25 / 25-26, certified → twin):** weighted:points 4-Std 1.54 → 1.24 / 1.11 → 0.94;
+    weighted:points 6-Flex 1.46 → 0.50 / 2.25 → 1.84; mains 2-Std 0.35 → 0.34 / 0.37 → 0.38; weighted:points 2-Std (P4) 0.57 →
+    0.57 / 0.27 → 0.27. **P5 portfolio: 0.84 → 0.60 (lower 95% +0.24) / 0.89 → 0.78 (lower +0.33)** — positive with a positive
+    lower bound in both seasons on the faithful simulation. The 6-Flex slot alone loses its 2024-25 lower bound (+0.50, lower
+    −0.57, 82 slips); the same shape the PrizePicks twin showed (B_demon_5flex 1.62 → 0.70).
+  - **Validation battery on the twin** (`ud_slip_validation_dlt_orig2_mf`, run 37984002616; retained copy via the new
+    `SV_SNAPSHOT` input): forward 4 of 30 survive (weighted:points 4-Std OOS +94% lower +26%; mains 4-Std +102% / +32%;
+    weighted:points 3-Std; ex:points 4-Std), V3 null 0.01 expected → the edge is not selection; reverse 0 of 30 — the 2025-26
+    top-30 is dominated by 5–6-pick builds whose 2024-25 twin ROI collapses (6-Flex 0.50) and the 4-Std / 2-Std slots rank below
+    the cut. Read with the per-slot bounds above: the P5 portfolio stands on the twin; the market-free 2024-25 is the weaker season
+    for the big Underdog slips, as it is on PrizePicks.
+  - **Edge monitor re-measured on the twin** (`nba-ud-edge-monitor-research` run 37984011965, `EM_TABLE` input): thinning
+    break-even delta* −9.46 pp pooled (−8.91 / −10.13; certified build −10.84), boundaries confirm z ≥ 2.24 / alarm z ≤ −2.94
+    (800 bootstrap seasons at break-even, ≤ ~5–6% false either way); power: edge as certified confirmed by slate 60 in 85%, 8 pp
+    below break-even alarmed by slate 120 in 89%. **Now a DB tunable** `classification_config['ud_edge_monitor']` {delta_star
+    −0.0946, confirm_z 2.24, alarm_z −2.94} read by `ud_live_slip_engine.ud_edge_cfg()` (7caa2a9); code defaults = the certified
+    build; row removal = fallback.
+  - **Live engine wired (856f82c, 7caa2a9):** `load_legs` scores MARKET-FREE through `market_free_score()` — the identity on a
+    live day (c_market = 0) and the faithful live score in a replay; `ud_bt_table()` reads `classification_config
+    ['live_backtest_suffix'].ud_table / ud_legs_table` (set to the twin tables; the PrizePicks `suffix` row, one switch);
+    `ud_edge_reference` records its source table (`ud_edge_monitor_ref.src`) and rebuilds itself when the tunable changes;
+    `verify_ud_live_parity`, `validate_ud_edge_monitor`, `ud_edge_monitor_research` all read the tunable (bf58bc7, 42d701d,
+    c6601e6, 64262ac).
+  - **Live parity against the twin** (run 37984021311, every 2025-26 slate): ALIGNED 895 / 896 identical (the 1 = the known
+    2026-03-17 exact-score tie), raw 865 identical + 3 void-in-slip + 28 rank shifts, **settlement 868 / 868** — the Python
+    rescoring and the SQL function agree leg for leg.
+  - **Edge-monitor production code validated on the twin** (run 37985081231): reference rebuilt from the twin (16 keys,
+    `ud_edge_monitor_ref.src` = the twin); 2024-25 CONFIRMED at look 30 (z +3.08) and every later look; 2025-26 UNDECIDED at 30
+    (z +1.10), CONFIRMED at 60 / 90 / 120 (z +3.23 / +3.48 / +3.55); no false alarm in either season; the DB wrapper on today's
+    ledger correctly reports no regular season in progress.
+- **#1 🟡 CLOSED BY MEASUREMENT — `board_outcomes` standard/alternate double count.** Final-output effect computed on the stored
+  as-of calibration (869 / 873 cells per season): with n deflated by the measured 19% the shrink weight n/(n+400) changes the
+  log-odds shift by a median 0.0034 (≈ 0.08 pp at p = 0.5) and at most 0.045 (≈ 1.1 pp, the thinnest cells; median cell n 1,755 /
+  2,024, p10 556 / 570) — always toward a smaller shift (more conservative). Below the per-cell calibration SE (≈ 1–2 pp) and two
+  orders below the market term the twins remove (5.6 score points). Decision: the certified chain stands as built; `AC_DEDUP` and
+  the dedupe in every consumer go into the first post-launch chained recertification together with #2 (one rebuild, not two).
+- **#2 🟡 CLOSED BY MEASUREMENT — blended morning/window spread in the certified history.** Old vs new `nba_market_spreads_*`
+  (git 816cf44 vs f052462): 2024-25 375 / 1,228 games differ (avg 0.93 pt), 2025-26 355 / 1,226 (0.94); the spread reaches the
+  model only through 2-point buckets — p_blowout bucket flips 135 / 136 games (11%), sliding-scale flips 137 / 102, |Δ| ≥ 2 pt
+  36 / 41 (3%), favourite flips 10 / 20 (1%). An adjacent p_blowout bucket moves p_blowout by 0.01–0.06 and the minutes factor by
+  ≤ 0.4% (typically 0.1–0.2%) for players in those 11% of games — ≈ 0.3 pp of hit probability at most. Not a verdict-changing
+  leak; folded into the same post-launch chained recertification as #1.
+- **#3 🟡 CLOSED BY MEASUREMENT — `whole_number_nb` (neighbour-priced whole-number legs).** In the 2025-26 regular season 975 of
+  16,874 whole-number PrizePicks window keys (5.8%) have no `whole_number` price (unmapped player, unmodelled stat, or the pruned
+  neighbour rung this class would recover); whole-number legs are 8–16% of slip legs, so the class is < 1% of slip legs and too
+  thin for the §31s currency maps (fit per rank key × prop × tier × side). It stays priced-but-not-selectable (`final_hp_derived`
+  'whole_number_nb', live engine reads 'whole_number' only); the daily count is in the P2B log — revisit if it grows.
+- **#5 ⏸ OWNER DECISION — retire the market term.** With both apps measured against market-free twins the system is consistent
+  either way; retiring the term (market-free THE scoring, twins disappear) is a cosmetic simplification with the same chained
+  recertification cost, and reinstating it live needs the odds feed (option B, ~$119/mo). Nothing is blocked on it.
+- **Also closed today:** the backup P2A cron (18:55Z) correctly refused the already-claimed 2026-10-09 run ("no pipeline runs
+  twice", run 37976672433); Betr Cloud Harvest's 17:45Z cron did not fire on 10-09 (GitHub cron drop; the 20:15Z slot and the
+  WNBA→NBA auto-switch on 10-20 are the ones that matter — verify the first NBA harvest on 10-20).
