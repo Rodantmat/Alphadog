@@ -392,14 +392,8 @@ def main():
                         seen_ops[k] = seen_ops.get(k, 0) + 1
                         continue
                 if not board and (lobby_only is not None or lobby_board is not None):
-                    # the lobby answered but the league board did not: nudge the league tab again
-                    for xp in (f'//*[normalize-space(text())="{LEAGUE}"]', f'//a[contains(.,"{LEAGUE}")]',
-                               f'//button[contains(.,"{LEAGUE}")]'):
-                        try:
-                            if sb.is_element_visible(xp):
-                                sb.click(xp, timeout=4); break
-                        except Exception:  # noqa: BLE001
-                            continue
+                    # the lobby answered but the league board did not: nudge the league chip again
+                    click_league(sb)
                 time.sleep(3)
             if not board:
                 where(sb, "deadline")
