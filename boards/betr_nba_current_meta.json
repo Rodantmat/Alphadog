@@ -2,10 +2,13 @@
   "ok": true,
   "source": "github-runner uc+proxy picks.betr.app",
   "league": "NBA",
-  "started_at": "2026-10-09T23:11:05Z",
-  "fetched_at": "2026-10-09T23:12:23Z",
-  "legs": 838,
-  "alt_legs": 339,
-  "players": 20,
-  "events": 14
+  "started_at": "2026-10-09T23:46:19Z",
+  "fetched_at": "2026-10-09T23:50:53Z",
+  "legs": 0,
+  "alt_legs": 0,
+  "players": 0,
+  "events": 0,
+  "board_op": null,
+  "partial_lobby": false,
+  "note": "Betr has no NBA board open yet (2026-10-09, preseason): the NBA league chip does not route and the lobby lists no NBA event. Replaces the mixed-sport capture of run 38003010258; first real NBA board expected 2026-10-20."
 }
