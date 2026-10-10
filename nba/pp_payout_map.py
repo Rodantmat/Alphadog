@@ -105,20 +105,32 @@ def app_headers(extra=None):
     return h
 
 
+def _board_has_data(r):
+    try:
+        return r.status_code == 200 and bool((r.json() or {}).get("data"))
+    except Exception:  # noqa: BLE001  (a 200 that is not JSON - a challenge page - is not the board)
+        return False
+
+
 def fetch_board(px):
+    """the board, through the system retry policy (nba/net_retry.py): per host 4 attempts, full-jitter backoff, 429/5xx and
+    the 403 bot wall retried, proxy first then the runner's own IP, 3 minutes in all."""
     from curl_cffi import requests
+    from net_retry import Deadline, RetryError, request
+    budget = Deadline(180)
     for url in BOARD_URLS:
-        for attempt in (1, 2):
-            try:
-                r = requests.get(url, headers=BOARD_HEADERS, proxies=px, timeout=45, impersonate="chrome124")
-                print(f"BOARD|{r.status_code}|{url.split('/')[2]}|attempt {attempt}", flush=True)
-                if r.status_code == 200:
-                    doc = r.json()
-                    if (doc.get("data") or []):
-                        return doc
-            except Exception as exc:  # noqa: BLE001
-                print(f"BOARD|ERR|{str(exc)[:80]}", flush=True)
-            time.sleep(6)
+        s = requests.Session(impersonate="chrome124")
+        try:
+            r = request("GET", url, session=s, proxies=px, routes=("proxy", "direct"), tries=4, budget=budget,
+                        retry_403=True, headers=BOARD_HEADERS, timeout=45, label=f"pp board {url.split('/')[2]}",
+                        ok=_board_has_data)
+            print(f"BOARD|{r.status_code}|{url.split('/')[2]}", flush=True)
+            if r.status_code == 200:
+                return r.json()
+        except RetryError as exc:
+            print(f"BOARD|FAILED|{url.split('/')[2]}|{str(exc)[:120]}", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            print(f"BOARD|ERR|{str(exc)[:80]}", flush=True)
     return None
 
 
