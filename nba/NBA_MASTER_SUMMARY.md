@@ -1394,7 +1394,7 @@ the three-clean-pass cycle per transcript against the full set.
 | **41** | `2026-10-07-06-41-55-nba-full-system-certification-round1.txt` | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T41`), CLEAN `0`/`3` · 10-07 06:41 → 18:34 · `938` events / `4` real owner messages (incl. one *"Continue from where you left off"*; + `/model` switch — matches `§T41`'s header) |
 | **42** | `2026-10-07-18-36-11-nba-full-system-certification-round2-audits.txt` | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T42`; `S1`–`S4` audit reports read with it → `§T42.4`), CLEAN `0`/`3` · 10-07 18:36 → 10-08 07:11 · `1,209` events / `5` real owner messages · `S1` 66 / `S2` 142 / `S3` 122 / `S4` 148 events |
 | **43** | `2026-10-08-07-13-36-nba-round2-closure-p5-twin-no-backdata-research.txt` | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T43`), CLEAN `0`/`3` · 10-08 07:13 → 10:59 · `1,210` events / **`0` owner messages** (unattended) |
-| **44** | `2026-10-08-11-01-22-nba-retention-odds-mining-mlb-postseason-wiring.txt` | ⏳ **OPEN — `0` passes** · → 10-08 21:03 · `S5`–`S6` |
+| **44** | `2026-10-08-11-01-22-nba-retention-odds-mining-mlb-postseason-wiring.txt` | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T44`; `S5`–`S6` read with it → `§T44.4`), CLEAN `0`/`3` · 10-08 11:01 → 21:03 · `1,028` events / `12` real owner messages · `S5` 175 / `S6` 79 events |
 | **45** | `2026-10-08-21-04-33-nba-postseason-backfill-full-parity.txt` | ⏳ **OPEN — `0` passes** · → 10-09 02:49 · `S7` |
 | **46** | `2026-10-09-02-50-53-nba-playoff-roi-playoff-research-31x-31y.txt` | ⏳ **OPEN — `0` passes** · → 10-09 07:06 |
 | **47** | `2026-10-09-07-07-18-nba-playoff-unders-gates-multipliers-transcript-pack.txt` | ⏳ **OPEN — `0` passes** · → pack build · `S8`–`S9` |
