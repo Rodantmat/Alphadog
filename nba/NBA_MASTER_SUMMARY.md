@@ -44960,3 +44960,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **CLEAN → `3`/`3` ✅ CLOSED** (passes 25–27): `T36`.
 - **CLEAN → `2`/`3`**: `T35`, `T37`, `T38`, `T42`.
 - **CLEAN → `1`/`3`**: `T32`.
+
+---
+
+# §P28 — PASS 28 (`2026-10-10`): (tt) RULE 6 AND THE CORPUS BOUNDARY, OVER THE SWEEP'S OWN ADDITIONS SINCE PASS 14
+*Angle (tt):* every line the sweep added since pass 14 (`r6.py`: lines carrying "pass 14" … "pass 27" inside a `§Tnn` section of any of the twelve) checked for its home — is the content that transcript's own, and is anything from a later transcript or from after the corpus end (`2026-10-10 02:35Z`) more than a forward pointer or a dated live observation?
+- ✏️ **Two of the sweep's own additions sat in the wrong transcript's section** (RULE 6 — later content placed under an earlier transcript):
+  - pass 21's **rotation-exit limitation and the game-total test** (`T36` pass 35) had been written into `NBA_SYSTEM_DESIGN.md` **`§T35.7`** #8 — struck there with a pointer, placed in **`§T36.7`**. Pass 24 had then misread that item as `§T36.7` and added a note to it; the note, and `§P24`'s finding built on it, are struck — `§T35.7` #8's owner messages were correctly `T35`'s all along. `§P21`'s routing reference is corrected.
+  - pass 19's **`T36` `live_slips` status literals** had been written into `NBA_DATABASE.md` **`§T35.6`** — struck there with a pointer, placed in **`§T36.6`**.
+  ⇒ **`T35` CORRECTED, and `T36` REOPENS** (its section had been missing what it now holds).
+- Everything else the sweep added since pass 14 sits in its own transcript's section; the post-corpus items are dated live observations only (`§P26`'s line shifts and strategy states) — **no corpus-boundary breach**. Supersession notes that name the later transcript (e.g. `§T32`'s `§8b`–`§8e` row pointing to `T33`'s real-line re-test) follow the file's existing pattern.
+
+**Ledger**: pass `28` complete (`2026-10-10`).
+- **CORRECTED → `0`/`3`**: `T35`; **REOPENED → `0`/`3`**: `T36`.
+- **CLEAN → `3`/`3` ✅ CLOSED** (passes 26–28): `T37`, `T38`, `T42`.
+- **CLEAN → `2`/`3`**: `T32`.
