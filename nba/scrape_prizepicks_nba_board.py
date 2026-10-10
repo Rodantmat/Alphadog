@@ -150,8 +150,15 @@ def main() -> int:
                 if pages > 1:
                     sep = "&" if "?" in url else "?"
                     for pg in range(2, pages + 1):
-                        rp = requests.get(f"{url}{sep}page={pg}", headers=HEADERS, proxies=proxies, timeout=timeout,
-                                          impersonate="chrome124")
+                        # each page retried (3 attempts, 429/5xx/403-wall/connection errors) - one bad page used to
+                        # discard the whole candidate
+                        try:
+                            rp = net_request("GET", f"{url}{sep}page={pg}", proxies=proxies, routes=("proxy",), tries=3,
+                                             base=2, cap=10, timeout=timeout, budget=budget, retry_403=True,
+                                             label=f"pp page {pg}", headers=HEADERS, impersonate="chrome124",
+                                             session=requests.Session())
+                        except RetryError as exc:
+                            raise RuntimeError(f"page {pg}/{pages} failed after retries ({exc}) - candidate incomplete") from None
                         if rp.status_code != 200:
                             raise RuntimeError(f"page {pg}/{pages} http {rp.status_code} - candidate incomplete")
                         dp = rp.json()
