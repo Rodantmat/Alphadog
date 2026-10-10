@@ -44905,3 +44905,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `23` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T32`.
 - **CLEAN → `1`/`3`**: `T36`.
+
+---
+
+# §P24 — PASS 24 (`2026-10-10`): (oo) THE REVERSE DIRECTION — EVERY FIGURE AND QUOTATION IN `§T32` / `§T36` TRACED BACK
+*Angle (oo):* every figure and every italic quotation in `§T32` and `§T36` (and in the `§T32.*` / `§T36.*` lines of the other ten files) traced back to the transcript, the strategy doc or COMPASS, after normalising markdown, dashes and apostrophes and splitting quotes at their ellipses. Untraced figures were all live observations, section numbers or line numbers; untraced quotations were read in place.
+- ✏️ **`T32` — four owner quotations were not the exact words**, each struck and restored: *"… i wont set it tup right now"* (sic; was "set it up"); *"Explain me the issues I’ve by one, short and easy to understand"* (was *"one by one, short and easy"*); the break-even definition as dictated (*"one dollar per sleep, I put 10 sleeps a day, at the end of the day, I got back ten dollars"*); and the reason for Gemini (*"you tend to uh, make assumptions … So it's good to have a second opinion"*) — the last also in `NBA_SYSTEM_ARCHITECTURE.md` gotcha `5`.
+- ✏️ **`T36`** — one quotation in `§T36.1` merged four owner messages into one text; split into the exact messages (`04:26Z` / `05:50Z`, `04:56Z`, `05:17Z`). And `NBA_SYSTEM_DESIGN.md` `§T36.7` #8 quotes three owner messages of `2026-10-01` that sit in `T35`'s transcript — now stated.
+- Traced, no change: the remaining `§T32` / `§T36` quotations (line breaks rendered as sentence breaks; profanity shown `[—]`; a quotation's inner double quotes rendered as single).
+
+**Ledger**: pass `24` complete (`2026-10-10`).
+- **CORRECTED → `0`/`3`**: `T32`, `T36`.
