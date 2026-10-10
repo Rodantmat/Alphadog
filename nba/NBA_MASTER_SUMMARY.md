@@ -46488,3 +46488,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `107` complete (`2026-10-10`).
 - **CLEAN → `1`/`3`**: `T31` (pass 7 of its own count).
 - ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
+
+# §P108 — PASS 108 (`2026-10-10`): `T31` PASS 8 — A SEED-108 SAMPLE
+*Angle (as NEXT set it):* (z7) `20` sentences of `T31`'s prose drawn with seed `108`, each read whole in its message and judged from scratch.
+- 🆕 Not on file (in `§T31.4`): a third PowerShell trap — CMD's `^` continuation splitting a pasted command — beside the two `§T32.2` records. ⇒ `T31` back to `0`/`3`.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line); line `23` re-checked after the census commit.
+- Every quotation added since the pass-107 census commit: `qdiff.py` `0` flags (`1` quote counted); the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `108` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T31` (pass 8 of its own count).
+- ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
