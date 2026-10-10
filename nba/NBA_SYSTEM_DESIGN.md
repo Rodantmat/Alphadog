@@ -3087,3 +3087,15 @@ not, because no board has carried them yet).*
 🔑 **All three are the `F5-1` class** *(`"7` of `21` workers + `27` scripts are named in `0` of the
 twelve")* — ⚠ **but these were built on `2026-09-23`–`25` and are load-bearing TODAY**, *so they are
 not backlog: they are the newest and least-documented parts of the critical path.*
+
+---
+
+## 🆕 §T32.7 — **P3's "COMMIT DAY-OF DATA" STEP: A CONCURRENCY FAILURE FOUND BY RUNNING IT, FIXED, AND LATER RE-FIXED** *(source `T32`, `2026-09-28 05:40–05:49Z`, recovered transcript; live-verified `2026-10-10`)*
+
+**How it was found**: asked *"p1, p2, p3 and 5/6 board scrapers are complete and ready for all system steps, correct?"*, the build chat **ran P3 by hand instead of asserting it**. Preseason, so `games == 0` → capture + archive only, scoring skipped by design. **P3 failed at its last step**: the Betr and Underdog scrapers had pushed board files moments earlier, and the step's bare `git rebase` halted on a conflict in `underdog_nba_current_meta.json`.
+
+**The `T32` fix**: `git rebase -X theirs origin/main`, on conflict abort and `git merge -X theirs`, `6` retries, and **a warning, not a failure, if every retry loses** — *the data is already in Postgres; the board files refresh on the next run.* Re-run green: *"Pipeline certified. 2/2 checks passed."*
+
+⚠ **SUPERSEDED `2026-10-08` (round-2 certification, P3 #15)** — ✅ live `nba-p3-afternoon-light.yml:493–499`: every pipeline now pushes through **one shared helper, `nba/git_push_retry.sh`**, and the step's comment records a correction to the `T32` version: *its comment "claimed the remote's capture wins while `rebase -X theirs` actually kept THIS run's files (the replayed commit is 'theirs' during a rebase)"*. The failure policy is unchanged — **a push that cannot land is still a warning.** *(The round-2 audit itself is `T42`/`T43` material.)*
+
+🔑 **Design point this preserves**: in this system **Postgres is the store of record and the committed board JSON is a convenience copy** — which is why losing a push race is allowed to warn rather than fail the pipeline.
