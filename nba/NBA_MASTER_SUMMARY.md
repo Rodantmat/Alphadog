@@ -46460,3 +46460,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `105` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T31` (pass 5 of its own count).
 - ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
+
+# §P106 — PASS 106 (`2026-10-10`): `T31` PASS 6 — THE THINKING AND TOOL-RESULT STRATA
+*Angle (as NEXT set it):* (x7) `T31`'s `30` thinking blocks and the results of its `241` tool calls, read for findings and judged under `§P98`'s bar and the `T31` handling rules.
+- 🆕 Not on file (in `§T31.3`): the `_promo` strip in `nba_market.refresh_board_rung_keys` and the scorer (✅ live); the first `gemini-2.0-flash` `404` at `2026-09-28 01:33Z`, a week before the date on file; the Sleeper WNBA board file being that night's run (✅).
+- Judged, not recorded: the thinking blocks (all hidden); probe logs, web-search text, offline tests and upload checks.
+- Live reads this pass: one `SELECT pg_get_functiondef(...)`.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line); line `23` re-checked after the census commit.
+- No italic quotation added since the pass-105 census commit (`qdiff.py`: `0` quotes); the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `106` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T31` (pass 6 of its own count).
+- ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
