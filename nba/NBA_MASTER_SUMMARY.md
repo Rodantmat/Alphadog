@@ -46065,3 +46065,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T33`, `T34`.
 - **CLEAN → `1`/`3`**: `T38`. **CLEAN → `2`/`3`**: `T32`, `T35`, `T37`.
 - ✅ **CLOSED `3`/`3`**: `T36`, `T39`, `T40`–`T48` *(unchanged)*.
+
+---
+
+# §P79 — PASS 79 (`2026-10-10`): A SEED-79 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN
+*Angles (as NEXT set them):* (w5) a seed-`79` sample on `T32`–`T35`, `T37`, `T38` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty. Traced per transcript: `18` · `11` · `13` · `16` · `15` · `11`. (x5) the ≥ `5` scan re-run on the six still open after pass 79's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new in each).
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (`§11c`'s per-signal method) · **`T35`** (`§29l`'s slip-level week-2 mechanism) · **`T37`** (the Underdog engine's compositions and side switches; the live source of the fresh-absence flag). The three were at `2`/`3`; each goes back to `0`/`3`.
+- ✅ **Clean on this angle:** `T33`, `T34`, `T38`.
+- Judged, not recorded: the MLB lessons, PrizePicks quote mining (out of scope) and `§11d`'s test order (`T32`); next-step and robustness plans, later run (`T33`, `T34`); the candidate-rule list, later tested (`T37`).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-78 census commit: `qdiff.py` `0` flags (`4` quotes counted).
+
+**Ledger**: pass `79` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T35`, `T37`.
+- **CLEAN → `1`/`3`**: `T33`, `T34`. **CLEAN → `2`/`3`**: `T38`.
+- ✅ **CLOSED `3`/`3`**: `T36`, `T39`, `T40`–`T48` *(unchanged)*.
