@@ -8,6 +8,7 @@ writes. Grouped by role.
 > # 📑 **INDEX — `NBA_WORKERS.md`**
 > **Every worker and workflow** — what each does, how it is wired, what triggers it, and where it
 > fails. *Counts of workflows and crons are never quoted here; `§0.0` carries the commands.*
+> 🆕🔴 **`§T41.4` ADDED `2026-10-10`** — **`T41` (certification round 1): grader 404 crash (P2A failed 10-04→10-07), scheduler v2.2.0 dead-claim recovery, DARKO rewrite, `git_push_retry.sh`, `verify_static_loads` every-table check, referee capture that never worked, injury-report proxy preflight, live grading void reversion.** *(End of file.)*
 > 🆕🆕 **`§T40.4` ADDED `2026-10-10`** — **`T40`: G2 routing (`build_final_hp.py`, `score_board_legs.py`), `fit_wn_selection.py` + `whole_number_legs()` in the live engine, `build_tier_map_sel.py` (P5 step 1b), `COMBO_DEPTH` in `nba/baseline/build_combos_*`, `EDGE_DELTA −0.0916`.** *(End of file.)*
 > 🆕🆕 **`§T39.4` ADDED `2026-10-10`** — **`T39`: `integration_test_rollback.py`, `sync_current_rosters.py` (+ P2B roster steps), the builder's current-roster rule, `build_whole_number_hp.py` / `fit_whole_number_recal.py` (+ P2A/P2B whole-number steps), `build_recalibration_map.py` v2, the UD edge monitor in P2A, the gap-program research tools.** *(End of file.)*
 > 🆕🆕 **`§T38.4` ADDED `2026-10-10`** — **`T38`: `sim_slate.py` (sandboxed slate rehearsal), `edge_monitor_research.py` / `validate_edge_monitor.py` + `LS_MODE=edge` in P2A, `roi_curve.py`, the star-Under test; `LS_MIN_BOARD` 179 / `UDL_MIN_BOARD` 178; `stake_weight`.** *(End of file.)*
