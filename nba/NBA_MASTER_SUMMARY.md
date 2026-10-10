@@ -46099,3 +46099,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T34`.
 - **CLEAN → `1`/`3`**: `T32`, `T35`, `T37`. **CLEAN → `2`/`3`**: `T33`.
 - ✅ **CLOSED `3`/`3`**: `T36`, `T38`, `T39`, `T40`–`T48` *(pass 80)*.
+
+---
+
+# §P81 — PASS 81 (`2026-10-10`): A SEED-81 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN
+*Angles (as NEXT set them):* (a6) a seed-`81` sample on `T32`–`T35`, `T37` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty; each candidate residue searched on file by its substance and its section read from the transcript's heading before it was written. Traced per transcript: `18` · `16` · `12` · `17` · `14`. (b6) the ≥ `5` scan re-run on the five still open after pass 81's additions, compared against every earlier tier's list (pass 80's included): no flag that an earlier tier had not traced (`0` new in each).
+- 🆕 Not on file (AS STATED, in its transcript's section): **`T33`** (`§15c`'s note that Gemini's league-wide-night concern did not show).
+- ✅ **Clean on this angle:** `T32`, `T34`, `T35`, `T37`.
+- Judged, not recorded: PrizePicks slip-pricing functions (PP-prefixed objects, cross-reference only), the Chalkboard device-binding detail and plan steps (`T32`); the evaluator plan and table headers (`T33`, `T34`, `T35`, `T37`); the superseded `§25a` leaderboard's rows, recorded by headline (`T34`).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-80 census commit: `qdiff.py` `0` flags (`2` quotes counted).
+
+**Ledger**: pass `81` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T33`.
+- **CLEAN → `1`/`3`**: `T34`. **CLEAN → `2`/`3`**: `T32`, `T35`, `T37`.
+- ✅ **CLOSED `3`/`3`**: `T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
