@@ -45668,3 +45668,19 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL / REOPENED → `0`/`3`**: `T32`, `T33`, `T34`, `T35` (reopened from `2`/`3`), `T37`, `T39`; `T40`, `T41`, `T42`, `T44`, `T46`, `T47`, `T48` (reopened from `3`/`3`).
 - **CLEAN → `1`/`3`**: `T38`.
 - ✅ **CLOSED `3`/`3`**: `T36`.
+
+---
+
+# §P61 — PASS 61 (`2026-10-10`): (g4) THE DEEP CHECK OF `T43`, `T45`; (h4) WHAT PASS 60 OWED; (i4) CONFIRMATIONS AND SECOND SAMPLES
+*Angles:* (g4) `T43`/`T45` through `figmiss2.py`, `colocT.py` and the figure-free read; (h4) `colocT.py` on `T46`–`T48`, the figure-free `runlen.py` read on `T44`, `T46`, `T47`, `T48`; (i4) `T38` — `20` random strategy sentences hand-traced (seed `61`); `T37`, `T39`–`T42` — `figmiss2.py` + `colocT.py` re-run after their additions; `T32`–`T35` — a second figure-bearing sample of `20` (seed `61`).
+- 🆕 **`T43`** → `§T43.9` (one sentence: the Sleeper measurement comes before any paper slip). **REOPENED.** 🆕 **`T45`** → `§T45.9` (P-3's sample, the weighed `pra_R_U`, a retention line). **REOPENED.**
+- 🆕 **`T44`** (two `§31w` sentences), **`T46`** (the weighted verdict values, the band grid), **`T48`** (the feed probe) → their pass-61 bullets. ✅ **`T47` — CLEAN** (`colocT.py` `12` of `179`: run ids, the figures `§T47.9` recorded, or summary restatements; the figure-free read of `32` found nothing beyond; the payout-map line out of scope).
+- 🆕 **`T39`** (G2's first plan, `colocT.py`), **`T40`** (the routing test's `12,172` / `976` / `13,148` and the `162`-leg determinism failure — on file before only as a rounding-list mention) → their bullets. ✅ **`T37`** (`colocT.py` `10` of `572`, all on file or MLB player prices), **`T41`**, **`T42`** (`figmiss2.py` `0`, `colocT.py` `0`) — **CLEAN**. ✅ **`T38` — CLEAN** (all `20` sampled sentences traced; the spotlight-board reading is on file as the preview's verdict and the star-line finding).
+- 🆕 **`T32`** (four passages: the contrarian-form rule, fixed vs tiered, pooling for supply, the signals matrix), **`T33`** (one, a simulated-lines-era config line), **`T34`** (one table row) → their pass-61 bullets. ✅ **`T35` — CLEAN** (the `20` sampled sentences all traced).
+- ⚠ **Process slip:** the `§T40.8` and `§T39.9` confirmation patches went out in parallel on the same file (fourth instance); both landed, verified on main.
+- Every quotation added: `qdiff.py` `0` flags.
+
+**Ledger**: pass `61` complete (`2026-10-10`).
+- **NEW MATERIAL / REOPENED → `0`/`3`**: `T32`, `T33`, `T34`, `T39`, `T40`, `T44`, `T46`, `T48`; `T43`, `T45` (reopened from `3`/`3`).
+- **CLEAN → `1`/`3`**: `T35`, `T37`, `T41`, `T42`, `T47`. **CLEAN → `2`/`3`**: `T38`.
+- ✅ **CLOSED `3`/`3`**: `T36`.
