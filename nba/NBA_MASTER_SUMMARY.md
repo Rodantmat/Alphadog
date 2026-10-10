@@ -46595,3 +46595,17 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `113` complete (`2026-10-10`).
 - ⏳ **`T26`** — `33` passes, CLEAN `0`/`3` (new material this pass).
 - ✅ **CLOSED `3`/`3`**: `T31`–`T48`.
+
+---
+
+# §P114 — PASS 114 (`2026-10-10`): `T26` PASS 34 — THE DATING AUDIT
+*Angle (as NEXT set it):* (f8) every date the twelve attach to a `T26` event, checked against the message timestamps and the repo's commit times.
+- `119` date mentions on lines naming `T26`, plus a scan of "fixed / closed / added / since" beside `2026-09-24`. Twelve more stamps a day late, struck in place with a pointer each: `T23-2` ×`4`, `§4b` ×`4`, the injury archive's first load ×`1`, the delegation ×`3` (`§T26.R3`). One wrong cause beside a true date (the static tables' `2026-09-24` stamps are the hand load's per `§T27.4`, not the `scipy`-fixed run's): a pointer at each of three places, nothing struck.
+- The seed samples NEXT listed after the audit were not reached; they move to pass 115.
+- Process slips, caught in this pass: three pointers first landed with their closing asterisk doubled against the italic they sat in (`NBA_DATABASE.md`, `NBA_OPEN_ITEMS.md` item `B`, the `T26` index row) and were re-paired; `§T26.R3` first quoted the record's own words in italics, which this sweep keeps for transcript text, and they were set in plain quotes; `§T26.R3`'s running total first read eighteen and was corrected to nineteen.
+- `qdiff`: `19` quotes, `10` flagged, every one an older quote on a line this pass touched (each found verbatim in the base `b04e45fdb`).
+- No hourly-rotation commit had landed when this line was written (checked on main); line `23` is re-checked after the census commit. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `114` complete (`2026-10-10`).
+- ⏳ **`T26`** — `34` passes, CLEAN `0`/`3` (new material this pass).
+- ✅ **CLOSED `3`/`3`**: `T31`–`T48`.
