@@ -45003,6 +45003,9 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - `T35`: every owner message accounted — the two unmatched (`08:21`, `17:10`) are the bare progress questions `§T35`'s owner table already lists as *"not re-quoted"*. **CLEAN.**
 - 🆕 `T36`: one owner turn had no mention — **`04:22Z` *"Give a status in how are we at identifying and preventing droughts and negative days?"*** — and its `04:25Z` answer carried two figures nowhere else (*"ROI 78% → 91% … days losing 10+ units 29% → 22%"*) beside the state table → added to `§T36.1`. *(`07:10Z`, the other near-miss, is quoted there in short.)*
 
+- **The same recount over every closed transcript** (`T32`–`T34`, `T37`–`T48`): unmatched owner events are console pastes, attachments, system notices, task notifications and bare progress questions (*"Check out"*, *"How long for it to finish?"*, *"That for both seasons?"* in `T44`), all excluded by rule — **except in `T32`**: 🆕 **six instruction messages no pass had recorded** (`09-28 18:00`, `18:53`, `19:52`, `21:20`; `09-29 04:06`, `04:23`) — pass 2's `24`-character window had matched their generic openings elsewhere → added verbatim to `§T32.13`. ⇒ **`T32` reopens.**
+
 **Ledger**: pass `30` complete (`2026-10-10`).
 - **CLEAN → `2`/`3`**: `T35`.
-- **NEW MATERIAL → `0`/`3`**: `T36`.
+- **NEW MATERIAL → `0`/`3`**: `T36`; and **REOPENED → `0`/`3`**: `T32`.
+- **Stay ✅ CLOSED** (clean under the recount): `T33`, `T34`, `T37`–`T48`.
