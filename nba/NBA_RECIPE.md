@@ -1450,3 +1450,10 @@ THE REPOSITORY IS PUBLIC.**
 35. **Measure the trigger** — GitHub's cron ran hours late; **trigger at the minute from an external worker**, compute each day's times **from the first tip**, **chain** the pipelines, **watchdog at +5/+10**, and **claim every run once** (owner: *"No pipeline can run twice"*).
 36. **Align every new timing with the documentation first** (owner: *"Review documentation"*) — a capture artifact is not a rule.
 37. **A new board is solved before it is backtested** (owner, Underdog): the reference first, then research and Gemini, then the formula fitted to real quotes, then validated on the live board, then certified — and the live capture fixed before opening night.
+
+### STEP 14f — **A second board: rediscover everything, price the past at today's logic in balance, then wire and audit the live path** *(`T37`, `2026-10-03/04`; `NBA_MASTER_SUMMARY.md` `§T37`)*
+38. **Rediscover per board** (owner): rebuild the tier map with the board's own definition of a tier (Underdog: the modifier band), re-certify from the raw source, re-run the signal matrix — and **re-test everything the first board rejected** (owner: *"what did not work for the pp and may work for ud"* — exclude-centers and the 2-pick came from there).
+39. **Price the past at today's logic** (owner) — but **balanced** (owner: *"they are odds backed … balance very well"*): keep the operator's own per-leg decisions, apply only the measured regime drift, a small discount; weigh the season that needs no repricing first. Prove the feed is faithful before trusting it.
+40. **Validate in both directions** when seasons are different products (forward and reverse walk-forward).
+41. **A real leg signal that fails as a filter may still work as sizing** — drop-and-replace pulls in weaker legs; a half stake does not.
+42. **Audit the live wiring end to end before calling it ready** (owner: *"double check and certify … No guessing!"*): what table does the live path read, is it refreshed by a pipeline, does every name resolve, is every step ordered and isolated, does settlement match the backtest leg for leg.
