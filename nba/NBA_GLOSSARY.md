@@ -2241,3 +2241,8 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **selection leg pool (`tier_map_legs_sel`)** | certified tier map + whole-number legs as live prices them — what the certified slips, P5 and the monitors are now built on | `NBA_DATABASE.md` `§T40.6` |
 | **routing (G2)** | rungs beyond the certified depth written to `final_hp_derived` instead of `final_hp` / `board_scored`, so selection never sees them | `NBA_SYSTEM_DESIGN.md` `§T40.7` |
 | **certified depth** | per-prop maximum |offset| in the certified history (`selection_certified_depth` config) | `NBA_DATABASE.md` `§T39.6` |
+| **full-system certification ledger** | the build chat's `nba/NBA_FULL_SYSTEM_CERTIFICATION_2026-10.md` — passes A–H, rounds 2–3; every finding with evidence, fix, verification, status (🔴 🟠 🟢 ⚪) | `NBA_SYSTEM_DESIGN.md` `§T41.7` |
+| **dead claim / stale-claim recovery** | a `pipeline_runs` row still `claimed` whose GitHub run completed; scheduler v2.2.0 closes it and re-dispatches once with `force=true` | `NBA_SYSTEM_ARCHITECTURE.md` `§T41.8` |
+| **void reversion (PrizePicks)** | a slip pays the table of the legs left: Flex 2 left → 3× Power-style; 1 left → 1.5× × factor on a hit; refund only when none left | `NBA_MULTIPLIERS.md` `§T41.3` |
+| **adverse selection (offered Unders)** | the operator offers an Under at a high model probability mostly when it disagrees with the model — calibration must be judged on offered legs | `NBA_BASELINE_CALIBRATION.md` `§T41.5` |
+| **probe (`nba-probe.yml` + trigger file)** | a runner-side end-to-end test of one script without a pipeline run | `NBA_WORKERS.md` `§T41.4` |
