@@ -44723,6 +44723,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 `NBA_SYSTEM_DESIGN.md` `§T45.7` (the weighting rule; shadow-only by evidence; the postseason live path) · `NBA_SYSTEM_ARCHITECTURE.md` `§T45.8` (`slate_games` vs `regular_season_games`; P2A postseason delta; scheduler v2.3.0; IO-bound parallel builds) · `NBA_WORKERS.md` `§T45.4` · `NBA_DATABASE.md` `§T45.6` · `NBA_BASELINE_CALIBRATION.md` `§T45.5` (`5_postseason`; postseason model quality; regular-season cell drift) · `NBA_OPEN_ITEMS.md` `§T45 ITEMS` · `NBA_RECIPE.md` `STEP 14n` · `NBA_GLOSSARY.md`.
 **Ledger**: `T45` + `S7` pass `1` — **NEW MATERIAL**, CLEAN `0`/`3`.
 
+## §T45.9 — PASS 61 (`2026-10-10`): THE STRATEGY TEXT `T45` WROTE, THE DEEP CHECK *(AS STATED; numbered `.9` because `§T45.4`–`§T45.8` are taken in this or the other documents)*
+*Method:* the additions of `T45`'s `4` strategy/`COMPASS` writes (`~1,140` words — `§31w` AS BUILT, its result, facts `140` and the two-season verdict) through `figmiss2.py` (`2` of `20`, one a run id), `colocT.py` (`3` of `53`) and the figure-free read of `runlen.py`'s `12` sentences.
+- **P-3's sample**: *"Sample 2024-25 points + rebounds: 50 dates, 90 games, 245 players, 39,459 board-scoped rows."*; and *"Board tiers built for any postseason date lacking them."*
+- **The verdict's best cell, weighed**: *"eligible cells pra_R_U (0.660 / 0.702), steals_R_U, stocks_R, points_R, pts_ast_R, pts_reb_R, blocks_R, rebounds_D3, rebounds_R"*.
+- **Retention**: *"the twin tables are rebuilt from committed files"* (that their certification tables join the weekly ledger archive is on file).
+- ⇒ **`T45` fails the deep check — REOPENED, CLEAN `0`/`3`** (`S7` not reopened).
+
 # §T46 — `T46` · `2026-10-09-02-50-53-nba-playoff-roi-playoff-research-31x-31y` *(transcripts pack `2026-10-09`)* — 🆕 **POSTSEASON PARITY PROVEN WITHOUT TOUCHING THE REGULAR SEASON; THE OWNER'S ROI QUESTIONS ANSWERED WITH AN HONEST 2026-27 RANGE; THE PLAYOFFS STUDIED THROUGH THE WHOLE METHOD — ONLY THE MODEL'S UNDERS HOLD; A POSTSEASON GAME-KEY DEFECT; "PLAYOFF UNDERS" BEGINS**
 
 > *Chat track, pass `1` (**`5` real owner messages** among `787` events; all assistant prose including one `SendUserMessage`; every write call), recorded `2026-10-10`. Span `2026-10-09 02:50Z → 07:06Z`. Evidence base: the transcript; the ledger's **POSTSEASON BACKFILL TO FULL PARITY** (results) and **POSTSEASON GAME KEY**; strategy **`§31x`**, **`§31y`**, `§31w` (parity as built); COMPASS 140–142 — read-only, figures **AS STATED**. The Playoff Unders gates, certification and live parity (`§31z`, ledger *PLAYOFF UNDERS*) were coded at the end of this window and run in `T47`.*
