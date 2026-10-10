@@ -46547,3 +46547,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `111` complete (`2026-10-10`).
 - ✅ **CLOSED `3`/`3`** — **`T31`** (pass 111).
 - ✅ **CLOSED `3`/`3`**: `T31`–`T48` — every transcript in the range.
+
+---
+
+# §P112 — PASS 112 (`2026-10-10`): `T26` PASS 32 — THE OWNER STRATUM, ALL `45` MESSAGES
+*Angle (as NEXT set it):* (d8) every owner message in `T26` (`2026-09-23 19:22Z` → `2026-09-24 04:07Z`) judged against the record under `§P98`'s bar; the index row's count corrected first.
+- The `T26` index row read "`20` passes … STALE"; corrected to `32` passes, `0`/`3` (`31` by `2026-09-29` per `§T26.80`; this pass is the thirty-second). Struck, not deleted.
+- `45` messages: `15` under `30` characters; of the `30` others, `23` on file, `5` judged, `2` with residues (`§T26.R1`, a new section above `§T31`): the owner's `19:39Z` note that the Chalkboard board and the expanded Sleeper ladders waited on him, with the order of work he set (P2 and P3 first, then slips and ROI); and his `21:03Z` runtime bar for P3 (15–20 minutes "already awesome"; four boards then).
+- 🆕 A dating slip in the record, corrected: two `T26` rulings were dated `2026-09-24` in four places (`NBA_GLOSSARY.md`; `NBA_SYSTEM_DESIGN.md` `§T26.70` rulings 2 and 3; `NBA_OPEN_ITEMS.md`'s ranked-table header); the timestamps put them on `2026-09-23` (`19:39Z`, `23:26Z`). Each struck in place, pointing to `§T26.R1`. Found by checking every date sitting beside a quoted `T26` owner sentence against that message's timestamp.
+- The prose stratum (e8) was not reached in this pass; it is the next pass's angle.
+- `qdiff` flags `8` of `18` quotes: `7` are older quotes on lines this pass edited (each found verbatim in the base `e7562d7d2`); the eighth, *"P3 should run in about 5–8 minutes"*, is in the transcript with its dash escaped as `–`. None is a new misquote.
+- No hourly-rotation commit had landed when this line was written (checked on main); line `23` is re-checked after the census commit. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `112` complete (`2026-10-10`).
+- ⏳ **`T26`** — `32` passes, CLEAN `0`/`3` (new material this pass).
+- ✅ **CLOSED `3`/`3`**: `T31`–`T48`.
