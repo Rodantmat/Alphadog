@@ -43760,6 +43760,20 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 
 **Ledger**: `T35` pass `2` (`2026-10-10`, owner-message completeness) — **NEW MATERIAL** (`§T35.5`: the week-2 dollars, the worst-weeks ranking, P4/P5 run costs, why delta cannot shrink the statistics, the replay-#3 drought costs, the `49–50%` losing-day share, the owner's zero-clean-passes counter), CLEAN `0`/`3`.
 
+## §T35.6 — PASS 14 (`2026-10-10`, closing-reply re-read): THE ANSWERS, THE REPLAYS AND THE DECISIONS `§T35.2` COMPRESSED
+*All `51` final replies read end to end (`§P14`). Figures AS STATED; every money figure is the in-sample backtest or a replay of its moment; ✅ = live/code `2026-10-10`.*
+
+**1 — The eight strategies as they entered the live engine** (`06:13Z`, OOS 2025-26 ROI, `95%` CI): A weighted-steals 5-Flex cap 3 `+103%` (`+60…+149`) · A core 5-Flex cap 3 `+94%` (`+56…+135`) · A regular 5-Power cap 1 `+144%` (`+51…+248`) · A weighted-rebounds 4-Flex cap 1 `+86%` (`+50…+125`) · A core 3-Power cap 3 `+82%` (`+49…+116`) · B demon 5-Flex cap 3 `+129%` (`+55…+219`) · B demon 3-Flex cap 1 `+62%` (`+19…+110`) · C weighted-stocks 4-Flex cap 1 `+59%` (`+20…+100`). First `calibrate` on real backtests: demon MC95 losing streak `19` days vs historical `8–9`; demon per-leg hit `0.37–0.38`, not the hand-entered `0.41`.
+
+**2 — "If I played them all every day — worse losses or more balance?"** (`06:27Z`, 2025-26, final week excluded): all eight together **`+2,382` on `2,386` staked (`+100%`), `56%` of days positive, max drawdown `74.7` u, longest losing streak `6` days, daily Sharpe `0.50`** — above every single strategy (`0.22–0.40`; their streaks `6–18`). ⇒ *"more balance, not worse losses"* — **but limited**: the deepest drought of six of the eight starts the same day, **January 29** (the two weeks before the All-Star break), so the combined drawdown is *"nearly the sum of the individual drawdowns during that stretch"* ⇒ ***size the bankroll to the portfolio's `75` units, not any one strategy's.*** One strategy's 90-day ledger (weighted-steals 5-Flex, Jan 4 – Apr 12): `270` slips, `+246.0` u (`+91%`), full hits on `16` of `90` days, all-three-lost on `23`; money in bursts (Jan 8–12 `+61`, Mar 16–21 `+76`), the Jan 29 – Feb 11 run `−33.1`; *"a 60% leg day returns about half the stake and a 73% day returns double."*
+
+**3 — Daily load at caps** (`06:30Z`, `154` days 2025-26): the `16`-slip / `70`-leg ceiling is reached on **`123` of `154`** days; the short days are almost always **demon 5-Flex** (pool `~6` legs); the `70` legs come from *"maybe 25–30 distinct players a day, which is why the strategies move together."* Per season at `1` dollar/slip: 2024-25 `2,447` staked → `+1,266.03` (`+52%`, `61%` of slips paid zero); 2025-26 `2,498` → `+2,449.05` (`+98%`, `52%` zero).
+
+**4 — Week by week from opening night** (`06:42Z`, all eight): week 1 `+88%` / `+105%`; week 2 `−40%` / `−51%` (leg hit `41%` / `40%`); week 3 `+65%` / `+277%`; week 4 `+18%` / `+246%`; weeks 5–6 `−4%` / `+116%`; weeks 7–10 `−26%` / `+49%`; rest `+82%` / `+96%`. The Over/Under-gap regime: in 2024-25 the `70` "Overs 15+ points hot" days returned `−2%` vs `+70…+145%` otherwise; in 2025-26 the same days returned **`+121%`** — *"the half-trained ranker's tilt, fixed by the retrain."* Demon 3-Flex `+76%` and regular 5-Power `+45%` through the 2024-25 bleed.
+
+<!-- §T35.6 part 2 -->
+**Ledger**: `T35` pass `14` — **NEW MATERIAL** (`§T35.6`; `NBA_SYSTEM_DESIGN.md` `§T35.7` #7 corrected: the cap-6 / core-retired change was applied, not proposed), CLEAN `0`/`3`.
+
 ---
 
 # §T36 — `T36` · `2026-10-03-05-48-07-nba-live-engine-scheduler-launch-ready` *(recovered `2026-10-10` from the owner's claude.ai export)* — 🆕 **THE LOW-FOUL KEY, WEEK 2 AS A GATED PLAY, THE DROUGHT ROTATION, THE CALENDAR STATES, LAUNCH NUMBERS — THEN THE SCHEDULER, THE RUN-ONCE RULE, P2 → P2A + P2B, AND THE UNDERDOG FORMULA**
