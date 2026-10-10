@@ -29,7 +29,7 @@
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 47252,
+        "trending_count": 51580,
         "tv_channel": null,
         "updated_at": "2026-10-08T14:05:51.382-04:00"
       },
@@ -103,7 +103,7 @@
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 371,
+        "trending_count": 380,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:08:40.915-04:00"
       },
@@ -752,7 +752,7 @@
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 102,
+        "trending_count": 105,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:02.023-04:00"
       },
@@ -800,6 +800,78 @@
     },
     {
       "type": "projection",
+      "id": "15618097",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.549-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-106-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 43.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 12,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "PRA",
+        "stat_type": "Pts+Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:53.609-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "106"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975931",
       "attributes": {
         "adjusted_odds": null,
@@ -819,13 +891,13 @@
         "line_score": 42.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 12,
+        "rank": 13,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 1169,
+        "trending_count": 1211,
         "tv_channel": null,
         "updated_at": "2026-10-09T19:42:48.250-04:00"
       },
@@ -893,13 +965,13 @@
         "line_score": 40,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 13,
+        "rank": 14,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 1130,
+        "trending_count": 1173,
         "tv_channel": null,
         "updated_at": "2026-10-02T17:12:29.198-04:00"
       },
@@ -966,7 +1038,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 14,
+        "rank": 15,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -1038,7 +1110,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 15,
+        "rank": 16,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -1110,7 +1182,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 16,
+        "rank": 17,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -1182,7 +1254,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 17,
+        "rank": 18,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -1254,7 +1326,7 @@
         "line_score": 39.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 18,
+        "rank": 19,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "PRA",
@@ -1307,6 +1379,78 @@
     },
     {
       "type": "projection",
+      "id": "15618098",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.550-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-106-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 37.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 20,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "PRA",
+        "stat_type": "Pts+Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:53.663-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "106"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975925",
       "attributes": {
         "adjusted_odds": null,
@@ -1326,12 +1470,13 @@
         "line_score": 35.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 19,
+        "rank": 21,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
         "stat_type": "Pts+Rebs",
         "status": "pre_game",
+        "trending_count": 100,
         "tv_channel": null,
         "updated_at": "2026-10-09T19:42:18.172-04:00"
       },
@@ -1398,7 +1543,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 20,
+        "rank": 22,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Points",
@@ -1470,7 +1615,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 21,
+        "rank": 23,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -1542,13 +1687,13 @@
         "line_score": 34.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 22,
+        "rank": 24,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 151,
+        "trending_count": 155,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:02.109-04:00"
       },
@@ -1615,7 +1760,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 23,
+        "rank": 25,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Points",
@@ -1687,7 +1832,7 @@
         "line_score": 34.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 24,
+        "rank": 26,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -1759,13 +1904,13 @@
         "line_score": 34.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 25,
+        "rank": 27,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 412,
+        "trending_count": 428,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:01.999-04:00"
       },
@@ -1832,7 +1977,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 26,
+        "rank": 28,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -1904,7 +2049,7 @@
         "line_score": 33.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 27,
+        "rank": 29,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -1976,13 +2121,13 @@
         "line_score": 32.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 28,
+        "rank": 30,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
         "stat_type": "Pts+Asts",
         "status": "pre_game",
-        "trending_count": 113,
+        "trending_count": 119,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:06:26.429-04:00"
       },
@@ -2049,13 +2194,13 @@
         "line_score": 29.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 29,
+        "rank": 31,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 157,
+        "trending_count": 159,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:06:09.076-04:00"
       },
@@ -2122,7 +2267,7 @@
         "line_score": 29.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 30,
+        "rank": 32,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -2194,7 +2339,7 @@
         "line_score": 29.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 31,
+        "rank": 33,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -2266,13 +2411,13 @@
         "line_score": 29.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 32,
+        "rank": 34,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 265,
+        "trending_count": 269,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:47.156-04:00"
       },
@@ -2339,7 +2484,7 @@
         "line_score": 29.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 33,
+        "rank": 35,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -2411,13 +2556,13 @@
         "line_score": 29.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 34,
+        "rank": 36,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
         "stat_type": "Pts+Rebs",
         "status": "pre_game",
-        "trending_count": 108,
+        "trending_count": 110,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:55.545-04:00"
       },
@@ -2465,6 +2610,78 @@
     },
     {
       "type": "projection",
+      "id": "15618094",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.284-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-19-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 28.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 37,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:53.351-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13952665",
       "attributes": {
         "adjusted_odds": false,
@@ -2485,13 +2702,13 @@
         "line_score": 26.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 35,
+        "rank": 38,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 5217,
+        "trending_count": 5363,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:06:17.317-04:00"
       },
@@ -2539,6 +2756,78 @@
     },
     {
       "type": "projection",
+      "id": "15618095",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.285-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-19-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 26.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 39,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:53.405-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13952666",
       "attributes": {
         "adjusted_odds": false,
@@ -2559,13 +2848,13 @@
         "line_score": 24.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 36,
+        "rank": 40,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 4359,
+        "trending_count": 4498,
         "tv_channel": null,
         "updated_at": "2026-09-08T07:25:21.942-04:00"
       },
@@ -2632,7 +2921,7 @@
         "line_score": 24.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 37,
+        "rank": 41,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -2704,13 +2993,13 @@
         "line_score": 24.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 38,
+        "rank": 42,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 220,
+        "trending_count": 222,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:47.185-04:00"
       },
@@ -2758,6 +3047,78 @@
     },
     {
       "type": "projection",
+      "id": "15618096",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.286-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-19-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 22.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 43,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:53.462-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975884",
       "attributes": {
         "adjusted_odds": true,
@@ -2777,13 +3138,13 @@
         "line_score": 19.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 39,
+        "rank": 44,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 778,
+        "trending_count": 803,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:06:08.999-04:00"
       },
@@ -2850,7 +3211,7 @@
         "line_score": 19.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 40,
+        "rank": 45,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
@@ -2922,13 +3283,13 @@
         "line_score": 19.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 41,
+        "rank": 46,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 148,
+        "trending_count": 151,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:02.948-04:00"
       },
@@ -2995,13 +3356,13 @@
         "line_score": 19.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 42,
+        "rank": 47,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 531,
+        "trending_count": 554,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:47.170-04:00"
       },
@@ -3049,6 +3410,150 @@
     },
     {
       "type": "projection",
+      "id": "15618103",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.972-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-245-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 18.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 48,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Rebs+Asts",
+        "stat_type": "Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.094-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "245"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
+      "id": "15618102",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.971-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-245-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 16.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 49,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Rebs+Asts",
+        "stat_type": "Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.042-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "245"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975904",
       "attributes": {
         "adjusted_odds": null,
@@ -3068,13 +3573,13 @@
         "line_score": 14.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 43,
+        "rank": 50,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 214,
+        "trending_count": 223,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:03.007-04:00"
       },
@@ -3141,7 +3646,7 @@
         "line_score": 14.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 44,
+        "rank": 51,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
@@ -3213,7 +3718,7 @@
         "line_score": 13.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 45,
+        "rank": 52,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Assists",
@@ -3285,7 +3790,7 @@
         "line_score": 13.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 46,
+        "rank": 53,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -3338,6 +3843,78 @@
     },
     {
       "type": "projection",
+      "id": "15618104",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.973-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-245-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 12.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 54,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Rebs+Asts",
+        "stat_type": "Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.141-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "245"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975881",
       "attributes": {
         "adjusted_odds": true,
@@ -3357,13 +3934,13 @@
         "line_score": 11.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 47,
+        "rank": 55,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 4747,
+        "trending_count": 4844,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.036-04:00"
       },
@@ -3430,13 +4007,13 @@
         "line_score": 11.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 48,
+        "rank": 56,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 4996,
+        "trending_count": 5107,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:55.048-04:00"
       },
@@ -3484,10 +4061,10 @@
     },
     {
       "type": "projection",
-      "id": "13975883",
+      "id": "15618092",
       "attributes": {
-        "adjusted_odds": null,
-        "board_time": "2026-08-20T11:04:18.118-04:00",
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.060-04:00",
         "custom_image": null,
         "description": "BOS",
         "end_time": null,
@@ -3500,18 +4077,17 @@
         "is_live_scored": true,
         "is_promo": false,
         "league_ppid": "NBA",
-        "line_score": 9.5,
-        "odds_type": "standard",
+        "line_score": 10.5,
+        "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 49,
+        "rank": 57,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 601,
         "tv_channel": null,
-        "updated_at": "2026-10-07T08:49:26.401-04:00"
+        "updated_at": "2026-10-10T11:43:53.129-04:00"
       },
       "relationships": {
         "duration": {
@@ -3576,7 +4152,7 @@
         "line_score": 9.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 50,
+        "rank": 58,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Assists",
@@ -3648,7 +4224,7 @@
         "line_score": 8.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 51,
+        "rank": 59,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -3701,6 +4277,150 @@
     },
     {
       "type": "projection",
+      "id": "15618093",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.061-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-20-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 8.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 60,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Assists",
+        "stat_type": "Assists",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:53.183-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "20"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
+      "id": "15618100",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.738-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-22-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 8.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 61,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Rebounds",
+        "stat_type": "Rebounds",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:53.849-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "22"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975880",
       "attributes": {
         "adjusted_odds": true,
@@ -3720,13 +4440,13 @@
         "line_score": 7.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 52,
+        "rank": 62,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 165,
+        "trending_count": 168,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.047-04:00"
       },
@@ -3793,7 +4513,7 @@
         "line_score": 7.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 53,
+        "rank": 63,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -3865,13 +4585,13 @@
         "line_score": 7.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 54,
+        "rank": 64,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 163,
+        "trending_count": 167,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.107-04:00"
       },
@@ -3938,13 +4658,13 @@
         "line_score": 7.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 55,
+        "rank": 65,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 318,
+        "trending_count": 328,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:55.056-04:00"
       },
@@ -3992,6 +4712,78 @@
     },
     {
       "type": "projection",
+      "id": "15618099",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.737-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-22-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 6.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 66,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Rebounds",
+        "stat_type": "Rebounds",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:53.797-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "22"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975907",
       "attributes": {
         "adjusted_odds": true,
@@ -4011,7 +4803,7 @@
         "line_score": 4.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 56,
+        "rank": 67,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "3PTM",
@@ -4064,6 +4856,78 @@
     },
     {
       "type": "projection",
+      "id": "15618101",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:53.739-04:00",
+        "custom_image": null,
+        "description": "BOS",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_MXorbpoalrXOT11KmdzI3Vn6",
+        "group_key": "59107-22-NBA_game_MXorbpoalrXOT11KmdzI3Vn6-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 4.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 68,
+        "refundable": true,
+        "start_time": "2026-10-20T15:10:00.000-04:00",
+        "stat_display_name": "Rebounds",
+        "stat_type": "Rebounds",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:53.905-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181166"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "59107"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "22"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975879",
       "attributes": {
         "adjusted_odds": true,
@@ -4083,12 +4947,13 @@
         "line_score": 3.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 57,
+        "rank": 69,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
+        "trending_count": 114,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.872-04:00"
       },
@@ -4155,13 +5020,13 @@
         "line_score": 3.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 58,
+        "rank": 70,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 167,
+        "trending_count": 168,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:55.064-04:00"
       },
@@ -4228,13 +5093,13 @@
         "line_score": 3.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 59,
+        "rank": 71,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 525,
+        "trending_count": 536,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.827-04:00"
       },
@@ -4301,13 +5166,13 @@
         "line_score": 2.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 60,
+        "rank": 72,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 500,
+        "trending_count": 517,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:02:17.891-04:00"
       },
@@ -4374,13 +5239,13 @@
         "line_score": 1.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 61,
+        "rank": 73,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 292,
+        "trending_count": 301,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.854-04:00"
       },
@@ -4447,13 +5312,13 @@
         "line_score": 1.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 62,
+        "rank": 74,
         "refundable": true,
         "start_time": "2026-10-20T15:10:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 2179,
+        "trending_count": 2257,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.837-04:00"
       },
@@ -4520,7 +5385,7 @@
         "line_score": 44.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 63,
+        "rank": 75,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -4592,7 +5457,7 @@
         "line_score": 44.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 64,
+        "rank": 76,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
@@ -4664,7 +5529,7 @@
         "line_score": 44.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 65,
+        "rank": 77,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
@@ -4717,6 +5582,78 @@
     },
     {
       "type": "projection",
+      "id": "15618109",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.645-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-106-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 41.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 78,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "PRA",
+        "stat_type": "Pts+Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.710-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "106"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975953",
       "attributes": {
         "adjusted_odds": true,
@@ -4736,7 +5673,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 66,
+        "rank": 79,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -4808,7 +5745,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 67,
+        "rank": 80,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -4880,13 +5817,13 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 68,
+        "rank": 81,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 258,
+        "trending_count": 260,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:56.075-04:00"
       },
@@ -4953,7 +5890,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 69,
+        "rank": 82,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
@@ -5025,13 +5962,13 @@
         "line_score": 35.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 70,
+        "rank": 83,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 1055,
+        "trending_count": 1082,
         "tv_channel": null,
         "updated_at": "2026-10-06T09:09:54.364-04:00"
       },
@@ -5098,7 +6035,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 71,
+        "rank": 84,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Points",
@@ -5170,7 +6107,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 72,
+        "rank": 85,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -5242,7 +6179,7 @@
         "line_score": 34.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 73,
+        "rank": 86,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
@@ -5314,7 +6251,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 74,
+        "rank": 87,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -5386,7 +6323,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 75,
+        "rank": 88,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -5458,13 +6395,13 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 76,
+        "rank": 89,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 256,
+        "trending_count": 260,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.115-04:00"
       },
@@ -5512,6 +6449,78 @@
     },
     {
       "type": "projection",
+      "id": "15618110",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.645-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-106-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 33.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 90,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "PRA",
+        "stat_type": "Pts+Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.786-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "106"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975955",
       "attributes": {
         "adjusted_odds": null,
@@ -5531,7 +6540,7 @@
         "line_score": 32.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 77,
+        "rank": 91,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -5584,6 +6593,78 @@
     },
     {
       "type": "projection",
+      "id": "15618106",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.420-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-19-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 31.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 92,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.486-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975992",
       "attributes": {
         "adjusted_odds": null,
@@ -5600,18 +6681,18 @@
         "is_live_scored": true,
         "is_promo": false,
         "league_ppid": "NBA",
-        "line_score": 31.5,
+        "line_score": 30.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 78,
+        "rank": 93,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 1477,
+        "trending_count": 1529,
         "tv_channel": null,
-        "updated_at": "2026-10-09T07:38:39.901-04:00"
+        "updated_at": "2026-10-10T12:57:50.158-04:00"
       },
       "relationships": {
         "duration": {
@@ -5676,13 +6757,13 @@
         "line_score": 29.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 79,
+        "rank": 94,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 859,
+        "trending_count": 869,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:06:05.365-04:00"
       },
@@ -5749,7 +6830,7 @@
         "line_score": 29.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 80,
+        "rank": 95,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -5821,7 +6902,7 @@
         "line_score": 29.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 81,
+        "rank": 96,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -5893,13 +6974,13 @@
         "line_score": 29.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 82,
+        "rank": 97,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 523,
+        "trending_count": 539,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:56.078-04:00"
       },
@@ -5966,7 +7047,7 @@
         "line_score": 29.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 83,
+        "rank": 98,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -6038,7 +7119,7 @@
         "line_score": 29.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 84,
+        "rank": 99,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -6110,7 +7191,7 @@
         "line_score": 29.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 85,
+        "rank": 100,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
@@ -6163,6 +7244,78 @@
     },
     {
       "type": "projection",
+      "id": "15618107",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.421-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-19-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 27.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 101,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.537-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13952667",
       "attributes": {
         "adjusted_odds": false,
@@ -6183,13 +7336,13 @@
         "line_score": 25.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 86,
+        "rank": 102,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 7056,
+        "trending_count": 7254,
         "tv_channel": null,
         "updated_at": "2026-09-26T17:54:19.089-04:00"
       },
@@ -6256,13 +7409,13 @@
         "line_score": 24.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 87,
+        "rank": 103,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 230,
+        "trending_count": 233,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:06:05.299-04:00"
       },
@@ -6329,7 +7482,7 @@
         "line_score": 24.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 88,
+        "rank": 104,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -6401,7 +7554,7 @@
         "line_score": 24.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 89,
+        "rank": 105,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Points",
@@ -6473,13 +7626,13 @@
         "line_score": 24.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 90,
+        "rank": 106,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
         "stat_type": "Pts+Asts",
         "status": "pre_game",
-        "trending_count": 202,
+        "trending_count": 211,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:49.788-04:00"
       },
@@ -6546,13 +7699,13 @@
         "line_score": 24.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 91,
+        "rank": 107,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 656,
+        "trending_count": 680,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.115-04:00"
       },
@@ -6619,13 +7772,13 @@
         "line_score": 24.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 92,
+        "rank": 108,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
         "stat_type": "Pts+Rebs",
         "status": "pre_game",
-        "trending_count": 181,
+        "trending_count": 186,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:50.701-04:00"
       },
@@ -6692,13 +7845,13 @@
         "line_score": 23.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 93,
+        "rank": 109,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
         "stat_type": "Pts+Rebs",
         "status": "pre_game",
-        "trending_count": 112,
+        "trending_count": 118,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:50.698-04:00"
       },
@@ -6746,6 +7899,78 @@
     },
     {
       "type": "projection",
+      "id": "15618108",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.422-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-19-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 23.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 110,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.572-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975947",
       "attributes": {
         "adjusted_odds": true,
@@ -6765,13 +7990,13 @@
         "line_score": 19.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 94,
+        "rank": 111,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 1931,
+        "trending_count": 1988,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:06:05.288-04:00"
       },
@@ -6838,13 +8063,13 @@
         "line_score": 19.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 95,
+        "rank": 112,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 1668,
+        "trending_count": 1707,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:06:05.634-04:00"
       },
@@ -6911,13 +8136,13 @@
         "line_score": 19.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 96,
+        "rank": 113,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Asts",
         "stat_type": "Pts+Asts",
         "status": "pre_game",
-        "trending_count": 148,
+        "trending_count": 159,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:49.781-04:00"
       },
@@ -6984,7 +8209,7 @@
         "line_score": 19.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 97,
+        "rank": 114,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -7056,7 +8281,7 @@
         "line_score": 19.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 98,
+        "rank": 115,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
@@ -7129,13 +8354,13 @@
         "line_score": 17,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 99,
+        "rank": 116,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 31597,
+        "trending_count": 31959,
         "tv_channel": null,
         "updated_at": "2026-10-09T09:30:13.495-04:00"
       },
@@ -7202,13 +8427,13 @@
         "line_score": 14.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 100,
+        "rank": 117,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 2471,
+        "trending_count": 2545,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:06:05.634-04:00"
       },
@@ -7275,13 +8500,13 @@
         "line_score": 14.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 101,
+        "rank": 118,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 5343,
+        "trending_count": 5480,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:51.640-04:00"
       },
@@ -7348,7 +8573,7 @@
         "line_score": 14.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 102,
+        "rank": 119,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
@@ -7420,13 +8645,13 @@
         "line_score": 13.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 103,
+        "rank": 120,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 271,
+        "trending_count": 280,
         "tv_channel": null,
         "updated_at": "2026-10-09T16:46:22.695-04:00"
       },
@@ -7493,7 +8718,7 @@
         "line_score": 11.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 104,
+        "rank": 121,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Assists",
@@ -7546,6 +8771,150 @@
     },
     {
       "type": "projection",
+      "id": "15618112",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.984-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-245-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 11.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 122,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "Rebs+Asts",
+        "stat_type": "Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:55.038-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "245"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
+      "id": "15618113",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.985-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-245-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 10.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 123,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "Rebs+Asts",
+        "stat_type": "Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:55.084-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "245"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975944",
       "attributes": {
         "adjusted_odds": true,
@@ -7565,7 +8934,7 @@
         "line_score": 9.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 105,
+        "rank": 124,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Assists",
@@ -7637,13 +9006,13 @@
         "line_score": 9.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 106,
+        "rank": 125,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 184,
+        "trending_count": 188,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:59.645-04:00"
       },
@@ -7710,7 +9079,7 @@
         "line_score": 9.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 107,
+        "rank": 126,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Assists",
@@ -7782,7 +9151,7 @@
         "line_score": 9.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 108,
+        "rank": 127,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -7835,6 +9204,150 @@
     },
     {
       "type": "projection",
+      "id": "15618105",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.284-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-20-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 8.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 128,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "Assists",
+        "stat_type": "Assists",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.344-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "20"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
+      "id": "15618114",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.986-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-245-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 8.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 129,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "Rebs+Asts",
+        "stat_type": "Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:55.129-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "245"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975942",
       "attributes": {
         "adjusted_odds": true,
@@ -7854,7 +9367,7 @@
         "line_score": 7.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 109,
+        "rank": 130,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Assists",
@@ -7926,7 +9439,7 @@
         "line_score": 7.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 110,
+        "rank": 131,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -7998,13 +9511,13 @@
         "line_score": 6.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 111,
+        "rank": 132,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 259,
+        "trending_count": 273,
         "tv_channel": null,
         "updated_at": "2026-09-26T17:54:18.950-04:00"
       },
@@ -8071,13 +9584,13 @@
         "line_score": 6.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 112,
+        "rank": 133,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 115,
+        "trending_count": 118,
         "tv_channel": null,
         "updated_at": "2026-09-26T17:54:19.067-04:00"
       },
@@ -8144,7 +9657,7 @@
         "line_score": 5.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 113,
+        "rank": 134,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Assists",
@@ -8216,13 +9729,13 @@
         "line_score": 5.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 114,
+        "rank": 135,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 467,
+        "trending_count": 508,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:50.721-04:00"
       },
@@ -8289,13 +9802,13 @@
         "line_score": 5.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 115,
+        "rank": 136,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 315,
+        "trending_count": 326,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:55.245-04:00"
       },
@@ -8362,7 +9875,7 @@
         "line_score": 5.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 116,
+        "rank": 137,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -8434,7 +9947,7 @@
         "line_score": 4.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 117,
+        "rank": 138,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "3PTM",
@@ -8487,6 +10000,78 @@
     },
     {
       "type": "projection",
+      "id": "15618111",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:54.866-04:00",
+        "custom_image": null,
+        "description": "PHI",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "group_key": "188004-22-NBA_game_tUXFzHPTAM5qiV1qJoXXhy38-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 4.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 139,
+        "refundable": true,
+        "start_time": "2026-10-20T19:10:00.000-04:00",
+        "stat_display_name": "Rebounds",
+        "stat_type": "Rebounds",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:54.917-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181167"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "188004"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "22"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13975938",
       "attributes": {
         "adjusted_odds": true,
@@ -8506,7 +10091,7 @@
         "line_score": 3.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 118,
+        "rank": 140,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "3PTM",
@@ -8578,13 +10163,13 @@
         "line_score": 3.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 119,
+        "rank": 141,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 294,
+        "trending_count": 299,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:57.605-04:00"
       },
@@ -8651,13 +10236,13 @@
         "line_score": 2.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 120,
+        "rank": 142,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 6524,
+        "trending_count": 6710,
         "tv_channel": null,
         "updated_at": "2026-09-26T17:54:18.969-04:00"
       },
@@ -8724,13 +10309,13 @@
         "line_score": 2.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 121,
+        "rank": 143,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 208,
+        "trending_count": 216,
         "tv_channel": null,
         "updated_at": "2026-09-26T17:54:19.050-04:00"
       },
@@ -8797,7 +10382,7 @@
         "line_score": 2.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 122,
+        "rank": 144,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "3PTM",
@@ -8869,13 +10454,13 @@
         "line_score": 1.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 123,
+        "rank": 145,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 586,
+        "trending_count": 608,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:56.227-04:00"
       },
@@ -8942,13 +10527,13 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 124,
+        "rank": 146,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 806,
+        "trending_count": 830,
         "tv_channel": null,
         "updated_at": "2026-09-04T11:51:42.600-04:00"
       },
@@ -9015,13 +10600,13 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 125,
+        "rank": 147,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Double-Double",
         "stat_type": "Double-Double",
         "status": "pre_game",
-        "trending_count": 104,
+        "trending_count": 105,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:58.317-04:00"
       },
@@ -9088,13 +10673,13 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 126,
+        "rank": 148,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 2356,
+        "trending_count": 2460,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:50.628-04:00"
       },
@@ -9161,13 +10746,13 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 127,
+        "rank": 149,
         "refundable": true,
         "start_time": "2026-10-20T19:10:00.000-04:00",
         "stat_display_name": "Double-Double",
         "stat_type": "Double-Double",
         "status": "pre_game",
-        "trending_count": 208,
+        "trending_count": 237,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:10.579-04:00"
       },
@@ -9235,13 +10820,13 @@
         "line_score": 11.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 128,
+        "rank": 150,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 1847,
+        "trending_count": 1904,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.372-04:00"
       },
@@ -9309,13 +10894,13 @@
         "line_score": 3,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 129,
+        "rank": 151,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 290,
+        "trending_count": 299,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:09:46.043-04:00"
       },
@@ -9383,13 +10968,13 @@
         "line_score": 1.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 130,
+        "rank": 152,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 7695,
+        "trending_count": 7947,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.585-04:00"
       },
@@ -9456,7 +11041,7 @@
         "line_score": 54.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 131,
+        "rank": 153,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
@@ -9528,7 +11113,7 @@
         "line_score": 49.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 132,
+        "rank": 154,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
@@ -9600,7 +11185,7 @@
         "line_score": 49.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 133,
+        "rank": 155,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -9672,7 +11257,7 @@
         "line_score": 49.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 134,
+        "rank": 156,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
@@ -9744,7 +11329,7 @@
         "line_score": 44.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 135,
+        "rank": 157,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -9816,7 +11401,7 @@
         "line_score": 44.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 136,
+        "rank": 158,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -9888,13 +11473,13 @@
         "line_score": 44.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 137,
+        "rank": 159,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 102,
+        "trending_count": 106,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:38.175-04:00"
       },
@@ -9961,7 +11546,7 @@
         "line_score": 44.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 138,
+        "rank": 160,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -10033,13 +11618,13 @@
         "line_score": 44.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 139,
+        "rank": 161,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 196,
+        "trending_count": 199,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:38.125-04:00"
       },
@@ -10106,13 +11691,13 @@
         "line_score": 40.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 140,
+        "rank": 162,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 863,
+        "trending_count": 884,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:38.145-04:00"
       },
@@ -10179,13 +11764,13 @@
         "line_score": 40.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 141,
+        "rank": 163,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 1323,
+        "trending_count": 1370,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.526-04:00"
       },
@@ -10252,7 +11837,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 142,
+        "rank": 164,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
@@ -10324,7 +11909,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 143,
+        "rank": 165,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -10396,7 +11981,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 144,
+        "rank": 166,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -10468,7 +12053,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 145,
+        "rank": 167,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -10540,7 +12125,7 @@
         "line_score": 39.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 146,
+        "rank": 168,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -10593,6 +12178,78 @@
     },
     {
       "type": "projection",
+      "id": "15618120",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:55.818-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-106-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 38.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 169,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "PRA",
+        "stat_type": "Pts+Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:55.874-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "106"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13976046",
       "attributes": {
         "adjusted_odds": null,
@@ -10612,13 +12269,13 @@
         "line_score": 37.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 147,
+        "rank": 170,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
         "stat_type": "Pts+Rebs",
         "status": "pre_game",
-        "trending_count": 113,
+        "trending_count": 115,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:46.769-04:00"
       },
@@ -10685,13 +12342,13 @@
         "line_score": 36.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 148,
+        "rank": 171,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Asts",
         "stat_type": "Pts+Asts",
         "status": "pre_game",
-        "trending_count": 104,
+        "trending_count": 106,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:54.714-04:00"
       },
@@ -10758,12 +12415,13 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 149,
+        "rank": 172,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
+        "trending_count": 100,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:40.386-04:00"
       },
@@ -10830,7 +12488,7 @@
         "line_score": 34.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 150,
+        "rank": 173,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -10902,13 +12560,13 @@
         "line_score": 34.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 151,
+        "rank": 174,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
         "stat_type": "Pts+Rebs",
         "status": "pre_game",
-        "trending_count": 121,
+        "trending_count": 127,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:02.918-04:00"
       },
@@ -10975,13 +12633,13 @@
         "line_score": 34.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 152,
+        "rank": 175,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 273,
+        "trending_count": 282,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:38.082-04:00"
       },
@@ -11048,7 +12706,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 153,
+        "rank": 176,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
@@ -11120,7 +12778,7 @@
         "line_score": 34.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 154,
+        "rank": 177,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -11192,7 +12850,7 @@
         "line_score": 34.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 155,
+        "rank": 178,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -11264,13 +12922,13 @@
         "line_score": 34.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 156,
+        "rank": 179,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "PRA",
         "stat_type": "Pts+Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 771,
+        "trending_count": 803,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:38.132-04:00"
       },
@@ -11318,6 +12976,78 @@
     },
     {
       "type": "projection",
+      "id": "15618116",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:55.489-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-19-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 31.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 180,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:55.553-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13952669",
       "attributes": {
         "adjusted_odds": false,
@@ -11338,13 +13068,13 @@
         "line_score": 29.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 157,
+        "rank": 181,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 4868,
+        "trending_count": 4981,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.223-04:00"
       },
@@ -11411,7 +13141,7 @@
         "line_score": 29.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 158,
+        "rank": 182,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -11483,7 +13213,7 @@
         "line_score": 29.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 159,
+        "rank": 183,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
@@ -11555,13 +13285,13 @@
         "line_score": 29.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 160,
+        "rank": 184,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 219,
+        "trending_count": 222,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:38.270-04:00"
       },
@@ -11609,78 +13339,6 @@
     },
     {
       "type": "projection",
-      "id": "13976040",
-      "attributes": {
-        "adjusted_odds": null,
-        "board_time": "2026-08-20T11:04:37.742-04:00",
-        "custom_image": null,
-        "description": "OKC",
-        "end_time": null,
-        "event_type": "team",
-        "flash_sale_line_score": null,
-        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
-        "group_key": "173819-244-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
-        "in_game": false,
-        "is_live": false,
-        "is_live_scored": true,
-        "is_promo": false,
-        "league_ppid": "NBA",
-        "line_score": 29.5,
-        "odds_type": "standard",
-        "projection_type": "Single Stat",
-        "rank": 161,
-        "refundable": true,
-        "start_time": "2026-10-20T21:40:00.000-04:00",
-        "stat_display_name": "Pts+Asts",
-        "stat_type": "Pts+Asts",
-        "status": "pre_game",
-        "tv_channel": null,
-        "updated_at": "2026-10-08T15:05:14.995-04:00"
-      },
-      "relationships": {
-        "duration": {
-          "data": {
-            "type": "duration",
-            "id": "11"
-          }
-        },
-        "game": {
-          "data": {
-            "type": "game",
-            "id": "181168"
-          }
-        },
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "new_player": {
-          "data": {
-            "type": "new_player",
-            "id": "173819"
-          }
-        },
-        "projection_type": {
-          "data": {
-            "type": "projection_type",
-            "id": "2"
-          }
-        },
-        "score": {
-          "data": null
-        },
-        "stat_type": {
-          "data": {
-            "type": "stat_type",
-            "id": "244"
-          }
-        }
-      }
-    },
-    {
-      "type": "projection",
       "id": "13976042",
       "attributes": {
         "adjusted_odds": true,
@@ -11700,13 +13358,13 @@
         "line_score": 29.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 162,
+        "rank": 185,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Rebs",
         "stat_type": "Pts+Rebs",
         "status": "pre_game",
-        "trending_count": 225,
+        "trending_count": 238,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:46.772-04:00"
       },
@@ -11754,6 +13412,150 @@
     },
     {
       "type": "projection",
+      "id": "13976040",
+      "attributes": {
+        "adjusted_odds": null,
+        "board_time": "2026-08-20T11:04:37.742-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-244-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 28.5,
+        "odds_type": "standard",
+        "projection_type": "Single Stat",
+        "rank": 186,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "Pts+Asts",
+        "stat_type": "Pts+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:30:17.129-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "244"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
+      "id": "15618117",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:55.490-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-19-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 27.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 187,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:55.609-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13952671",
       "attributes": {
         "adjusted_odds": false,
@@ -11773,15 +13575,87 @@
         "line_score": 26,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 163,
+        "rank": 188,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 4144,
+        "trending_count": 4244,
         "tv_channel": null,
         "updated_at": "2026-08-19T17:07:30.269-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
+      "id": "15618118",
+      "attributes": {
+        "adjusted_odds": null,
+        "board_time": "2026-10-10T11:45:55.491-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-19-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 25.5,
+        "odds_type": "standard",
+        "projection_type": "Single Stat",
+        "rank": 189,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:55.681-04:00"
       },
       "relationships": {
         "duration": {
@@ -11846,13 +13720,13 @@
         "line_score": 24.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 164,
+        "rank": 190,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 797,
+        "trending_count": 820,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:40.372-04:00"
       },
@@ -11919,7 +13793,7 @@
         "line_score": 24.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 165,
+        "rank": 191,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
@@ -11992,7 +13866,7 @@
         "line_score": 24.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 166,
+        "rank": 192,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Pts+Asts",
@@ -12045,6 +13919,78 @@
     },
     {
       "type": "projection",
+      "id": "15618119",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:55.491-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-19-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 23.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 193,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "Points",
+        "stat_type": "Points",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:55.731-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "19"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13976033",
       "attributes": {
         "adjusted_odds": true,
@@ -12064,13 +14010,13 @@
         "line_score": 19.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 167,
+        "rank": 194,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 1122,
+        "trending_count": 1157,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:38.094-04:00"
       },
@@ -12137,7 +14083,7 @@
         "line_score": 19.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 168,
+        "rank": 195,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
@@ -12145,6 +14091,150 @@
         "status": "pre_game",
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:14.919-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "245"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
+      "id": "15618122",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:55.954-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-245-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 18.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 196,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "Rebs+Asts",
+        "stat_type": "Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:56.057-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "245"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
+      "id": "15618121",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:55.953-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-245-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 16.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 197,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "Rebs+Asts",
+        "stat_type": "Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:56.010-04:00"
       },
       "relationships": {
         "duration": {
@@ -12209,7 +14299,7 @@
         "line_score": 15.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 169,
+        "rank": 198,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -12281,13 +14371,13 @@
         "line_score": 14.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 170,
+        "rank": 199,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
         "stat_type": "Rebs+Asts",
         "status": "pre_game",
-        "trending_count": 163,
+        "trending_count": 166,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:14.914-04:00"
       },
@@ -12354,7 +14444,7 @@
         "line_score": 14.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 171,
+        "rank": 200,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebs+Asts",
@@ -12426,7 +14516,7 @@
         "line_score": 13.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 172,
+        "rank": 201,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -12479,6 +14569,78 @@
     },
     {
       "type": "projection",
+      "id": "15618123",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:55.955-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-245-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 12.5,
+        "odds_type": "goblin",
+        "projection_type": "Single Stat",
+        "rank": 202,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "Rebs+Asts",
+        "stat_type": "Rebs+Asts",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:56.105-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "245"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13976083",
       "attributes": {
         "adjusted_odds": false,
@@ -12498,13 +14660,13 @@
         "line_score": 11,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 173,
+        "rank": 203,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 556,
+        "trending_count": 573,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:08:00.701-04:00"
       },
@@ -12571,13 +14733,13 @@
         "line_score": 9.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 174,
+        "rank": 204,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
-        "trending_count": 557,
+        "trending_count": 568,
         "tv_channel": null,
         "updated_at": "2026-10-09T16:52:34.819-04:00"
       },
@@ -12644,7 +14806,7 @@
         "line_score": 9.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 175,
+        "rank": 205,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Assists",
@@ -12716,13 +14878,13 @@
         "line_score": 7.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 176,
+        "rank": 206,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 556,
+        "trending_count": 565,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:37.702-04:00"
       },
@@ -12789,15 +14951,15 @@
         "line_score": 5.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 177,
+        "rank": 207,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Assists",
         "stat_type": "Assists",
         "status": "pre_game",
-        "trending_count": 631,
+        "trending_count": 683,
         "tv_channel": null,
-        "updated_at": "2026-10-07T08:49:31.062-04:00"
+        "updated_at": "2026-10-10T12:57:49.868-04:00"
       },
       "relationships": {
         "duration": {
@@ -12862,7 +15024,7 @@
         "line_score": 5.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 178,
+        "rank": 208,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -12934,7 +15096,7 @@
         "line_score": 5.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 179,
+        "rank": 209,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Assists",
@@ -13006,7 +15168,7 @@
         "line_score": 4.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 180,
+        "rank": 210,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebounds",
@@ -13078,7 +15240,7 @@
         "line_score": 4.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 181,
+        "rank": 211,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Blocked Shots",
@@ -13131,6 +15293,78 @@
     },
     {
       "type": "projection",
+      "id": "15618115",
+      "attributes": {
+        "adjusted_odds": true,
+        "board_time": "2026-10-10T11:45:55.340-04:00",
+        "custom_image": null,
+        "description": "OKC",
+        "end_time": null,
+        "event_type": "team",
+        "flash_sale_line_score": null,
+        "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "group_key": "173819-20-NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw-11-false",
+        "in_game": false,
+        "is_live": false,
+        "is_live_scored": true,
+        "is_promo": false,
+        "league_ppid": "NBA",
+        "line_score": 4.5,
+        "odds_type": "demon",
+        "projection_type": "Single Stat",
+        "rank": 212,
+        "refundable": true,
+        "start_time": "2026-10-20T21:40:00.000-04:00",
+        "stat_display_name": "Assists",
+        "stat_type": "Assists",
+        "status": "pre_game",
+        "tv_channel": null,
+        "updated_at": "2026-10-10T11:43:55.404-04:00"
+      },
+      "relationships": {
+        "duration": {
+          "data": {
+            "type": "duration",
+            "id": "11"
+          }
+        },
+        "game": {
+          "data": {
+            "type": "game",
+            "id": "181168"
+          }
+        },
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "new_player": {
+          "data": {
+            "type": "new_player",
+            "id": "173819"
+          }
+        },
+        "projection_type": {
+          "data": {
+            "type": "projection_type",
+            "id": "2"
+          }
+        },
+        "score": {
+          "data": null
+        },
+        "stat_type": {
+          "data": {
+            "type": "stat_type",
+            "id": "20"
+          }
+        }
+      }
+    },
+    {
+      "type": "projection",
       "id": "13976019",
       "attributes": {
         "adjusted_odds": true,
@@ -13150,12 +15384,13 @@
         "line_score": 3.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 182,
+        "rank": 213,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Rebounds",
         "stat_type": "Rebounds",
         "status": "pre_game",
+        "trending_count": 106,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:38.566-04:00"
       },
@@ -13222,7 +15457,7 @@
         "line_score": 3.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 183,
+        "rank": 214,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "3PTM",
@@ -13294,7 +15529,7 @@
         "line_score": 3.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 184,
+        "rank": 215,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Assists",
@@ -13366,13 +15601,13 @@
         "line_score": 3.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 185,
+        "rank": 216,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Blocked Shots",
         "stat_type": "Blocked Shots",
         "status": "pre_game",
-        "trending_count": 5812,
+        "trending_count": 5971,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:37.747-04:00"
       },
@@ -13439,13 +15674,13 @@
         "line_score": 2.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 186,
+        "rank": 217,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 125,
+        "trending_count": 126,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:51.208-04:00"
       },
@@ -13512,7 +15747,7 @@
         "line_score": 2.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 187,
+        "rank": 218,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "3PTM",
@@ -13584,7 +15819,7 @@
         "line_score": 2.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 188,
+        "rank": 219,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Assists",
@@ -13656,13 +15891,13 @@
         "line_score": 2.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 189,
+        "rank": 220,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Blocked Shots",
         "stat_type": "Blocked Shots",
         "status": "pre_game",
-        "trending_count": 716,
+        "trending_count": 750,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:04:37.760-04:00"
       },
@@ -13729,13 +15964,13 @@
         "line_score": 2,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 190,
+        "rank": 221,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 393,
+        "trending_count": 411,
         "tv_channel": null,
         "updated_at": "2026-08-20T11:10:54.020-04:00"
       },
@@ -13802,13 +16037,13 @@
         "line_score": 1.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 191,
+        "rank": 222,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 156,
+        "trending_count": 162,
         "tv_channel": null,
         "updated_at": "2026-09-28T22:47:25.401-04:00"
       },
@@ -13875,13 +16110,13 @@
         "line_score": 0.5,
         "odds_type": "demon",
         "projection_type": "Single Stat",
-        "rank": 192,
+        "rank": 223,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Double-Double",
         "stat_type": "Double-Double",
         "status": "pre_game",
-        "trending_count": 138,
+        "trending_count": 139,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:49.675-04:00"
       },
@@ -13948,13 +16183,13 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 193,
+        "rank": 224,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "Double-Double",
         "stat_type": "Double-Double",
         "status": "pre_game",
-        "trending_count": 515,
+        "trending_count": 520,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:55.045-04:00"
       },
@@ -14021,13 +16256,13 @@
         "line_score": 0.5,
         "odds_type": "goblin",
         "projection_type": "Single Stat",
-        "rank": 194,
+        "rank": 225,
         "refundable": true,
         "start_time": "2026-10-20T21:40:00.000-04:00",
         "stat_display_name": "3PTM",
         "stat_type": "3-PT Made",
         "status": "pre_game",
-        "trending_count": 406,
+        "trending_count": 429,
         "tv_channel": null,
         "updated_at": "2026-10-08T15:05:51.188-04:00"
       },
@@ -14094,13 +16329,13 @@
         "line_score": 27.5,
         "odds_type": "standard",
         "projection_type": "Single Stat",
-        "rank": 195,
+        "rank": 226,
         "refundable": true,
         "start_time": "2026-10-21T19:40:00.000-04:00",
         "stat_display_name": "Points",
         "stat_type": "Points",
         "status": "pre_game",
-        "trending_count": 512,
+        "trending_count": 581,
         "tv_channel": null,
         "updated_at": "2026-10-08T14:00:26.816-04:00"
       },
@@ -14149,21 +16384,150 @@
   ],
   "included": [
     {
+      "type": "stat_type",
+      "id": "245",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Rebs+Asts",
+        "rank": 13
+      }
+    },
+    {
+      "type": "game",
+      "id": "181167",
+      "attributes": {
+        "created_at": "2026-08-19T17:06:16.222-04:00",
+        "end_time": null,
+        "external_game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+        "is_live": false,
+        "metadata": {
+          "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
+          "game_info": {
+            "teams": {
+              "away": {
+                "abbreviation": "PHI"
+              },
+              "home": {
+                "abbreviation": "NYK"
+              }
+            }
+          },
+          "league_name": "NBA",
+          "status": "scheduled"
+        },
+        "start_time": "2026-10-20T19:00:00.000-04:00",
+        "status": "scheduled",
+        "updated_at": "2026-09-20T00:11:02.939-04:00"
+      },
+      "relationships": {
+        "away_team_data": {
+          "data": {
+            "type": "team",
+            "id": "210"
+          }
+        },
+        "home_team_data": {
+          "data": {
+            "type": "team",
+            "id": "1367"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "155",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Double-Double",
+        "rank": 28
+      }
+    },
+    {
+      "type": "team",
+      "id": "870",
+      "attributes": {
+        "abbreviation": "SAS",
+        "logo": "https://static.prizepicks.com/production/falbr3yx1jcqkyvaas4srdohcf7k-SASpurs_Primary_Icon.png",
+        "market": "San Antonio",
+        "name": "Spurs",
+        "ppid": "NBA_team_rhHStKOUBRdqD3TZuZiPsuOO",
+        "primary_color": "C4CED4",
+        "secondary_color": "000000",
+        "tertiary_color": "000000"
+      }
+    },
+    {
+      "type": "projection_type",
+      "id": "2",
+      "attributes": {
+        "name": "Single Stat"
+      }
+    },
+    {
+      "type": "team",
+      "id": "212",
+      "attributes": {
+        "abbreviation": "MIA",
+        "logo": "https://static.prizepicks.com/production/2zrhl7kum3t6h1hc6w0des5lckah-MHeat_Primary_Icon.png",
+        "market": "Miami",
+        "name": "Heat",
+        "ppid": "NBA_team_tvgB9UbLXTIZiPJDlTUSmaFl",
+        "primary_color": "98002E",
+        "secondary_color": "000000",
+        "tertiary_color": "98002E"
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "106",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Pts+Rebs+Asts",
+        "rank": 1
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "31",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "3-PT Made",
+        "rank": 10
+      }
+    },
+    {
+      "type": "duration",
+      "id": "11",
+      "attributes": {
+        "name": "Full"
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "22",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Rebounds",
+        "rank": 4
+      }
+    },
+    {
       "type": "new_player",
-      "id": "173819",
+      "id": "188004",
       "attributes": {
         "combo": false,
-        "display_name": "Victor Wembanyama",
-        "image_url": "https://static.prizepicks.com/images/players/NBA/Victor_Wembanyama_NBA_player_2EsUEdOt5xmywxPr6qxPdHNs.webp",
-        "jersey_number": "1",
+        "display_name": "Jalen Brunson",
+        "image_url": "https://static.prizepicks.com/images/players/NBA/Jalen_Brunson_NBA_player_yiwlT8GHgktYu1WBoRvjpRr8-450.webp",
+        "jersey_number": "11",
         "league": "NBA",
         "league_id": 7,
-        "market": "San Antonio",
-        "name": "Victor Wembanyama",
-        "position": "F-C",
-        "ppid": "NBA_player_2EsUEdOt5xmywxPr6qxPdHNs",
-        "team": "SAS",
-        "team_name": "Spurs"
+        "market": "New York",
+        "name": "Jalen Brunson",
+        "position": "G",
+        "ppid": "NBA_player_yiwlT8GHgktYu1WBoRvjpRr8",
+        "team": "NYK",
+        "team_name": "Knicks"
       },
       "relationships": {
         "league": {
@@ -14175,23 +16539,9 @@
         "team_data": {
           "data": {
             "type": "team",
-            "id": "870"
+            "id": "1367"
           }
         }
-      }
-    },
-    {
-      "type": "team",
-      "id": "202",
-      "attributes": {
-        "abbreviation": "MIN",
-        "logo": "https://static.prizepicks.com/production/ei04jm85fjde8amhkzdanbjd9efe-MTimberwolves_Primary_Icon.png",
-        "market": "Minnesota",
-        "name": "Timberwolves",
-        "ppid": "NBA_team_lNxvMPpxeoAEK9U2DnWXAqD6",
-        "primary_color": "236192",
-        "secondary_color": "0C2340",
-        "tertiary_color": "236192"
       }
     },
     {
@@ -14222,347 +16572,6 @@
           "data": {
             "type": "team",
             "id": "202"
-          }
-        }
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "187999",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jayson Tatum",
-        "image_url": "https://static.prizepicks.com/images/players/NBA/Jayson_Tatum_NBA_player_m62yMQl0xSxuv8M28c75TQG0.webp",
-        "jersey_number": "0",
-        "league": "NBA",
-        "league_id": 7,
-        "market": "Boston",
-        "name": "Jayson Tatum",
-        "position": "F-G",
-        "ppid": "NBA_player_m62yMQl0xSxuv8M28c75TQG0",
-        "team": "BOS",
-        "team_name": "Celtics"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "191"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "31",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "3-PT Made",
-        "rank": 10
-      }
-    },
-    {
-      "type": "team",
-      "id": "870",
-      "attributes": {
-        "abbreviation": "SAS",
-        "logo": "https://static.prizepicks.com/production/falbr3yx1jcqkyvaas4srdohcf7k-SASpurs_Primary_Icon.png",
-        "market": "San Antonio",
-        "name": "Spurs",
-        "ppid": "NBA_team_rhHStKOUBRdqD3TZuZiPsuOO",
-        "primary_color": "C4CED4",
-        "secondary_color": "000000",
-        "tertiary_color": "000000"
-      }
-    },
-    {
-      "type": "duration",
-      "id": "11",
-      "attributes": {
-        "name": "Full"
-      }
-    },
-    {
-      "type": "league",
-      "id": "7",
-      "attributes": {
-        "active": true,
-        "f2p_enabled": true,
-        "full_logo": "https://static.prizepicks.com/production/3peehp8jkljh288s795sbelw2aje-NBA_Logoman_word_onDkBkgd.png",
-        "has_live_projections": false,
-        "icon": "basketball",
-        "image_url": "https://static.prizepicks.com/images/leagues/production/128.svg",
-        "last_five_games_enabled": true,
-        "league_icon_id": 128,
-        "logo": "https://static.prizepicks.com/production/2ws9gunjf9w20587f3a68wwben7x-NBA%20%281%29.png",
-        "name": "NBA",
-        "parent_id": null,
-        "parent_name": null,
-        "player_headshot_fallback": null,
-        "projections_count": 0,
-        "rank": 5,
-        "show_trending": true
-      },
-      "relationships": {
-        "projection_filters": {
-          "data": []
-        }
-      }
-    },
-    {
-      "type": "team",
-      "id": "1367",
-      "attributes": {
-        "abbreviation": "NYK",
-        "logo": "https://static.prizepicks.com/production/rwno322xja9wsr57r7yhbqby2zuk-NYKnicks_Global.png",
-        "market": "New York",
-        "name": "Knicks",
-        "ppid": "NBA_team_KQwkUC0GL7NbBAZupX5NkWqX",
-        "primary_color": "006cb6",
-        "secondary_color": "f58425",
-        "tertiary_color": "F58426"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "336267",
-      "attributes": {
-        "combo": false,
-        "display_name": "LeBron James",
-        "image_url": "https://static.prizepicks.com/images/manual/Lebron_James.webp",
-        "jersey_number": "23",
-        "league": "NBA",
-        "league_id": 7,
-        "market": "Philadelphia",
-        "name": "LeBron James",
-        "position": "F",
-        "ppid": "NBA_player_LItcyUXdmrL8VccUHVupA0OC",
-        "team": "PHI",
-        "team_name": "76ers"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "210"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "21",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Blocked Shots",
-        "rank": 28
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "245",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Rebs+Asts",
-        "rank": 13
-      }
-    },
-    {
-      "type": "game",
-      "id": "181168",
-      "attributes": {
-        "created_at": "2026-08-19T17:06:16.330-04:00",
-        "end_time": null,
-        "external_game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
-        "is_live": false,
-        "metadata": {
-          "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
-          "game_info": {
-            "teams": {
-              "away": {
-                "abbreviation": "OKC"
-              },
-              "home": {
-                "abbreviation": "SAS"
-              }
-            }
-          },
-          "league_name": "NBA",
-          "status": "scheduled"
-        },
-        "start_time": "2026-10-20T21:30:00.000-04:00",
-        "status": "scheduled",
-        "updated_at": "2026-09-21T00:11:03.689-04:00"
-      },
-      "relationships": {
-        "away_team_data": {
-          "data": {
-            "type": "team",
-            "id": "220"
-          }
-        },
-        "home_team_data": {
-          "data": {
-            "type": "team",
-            "id": "870"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "22",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Rebounds",
-        "rank": 4
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "243",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Pts+Rebs",
-        "rank": 16
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "155",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Double-Double",
-        "rank": 28
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "19",
-      "attributes": {
-        "lfg_ignored_leagues": [
-          305
-        ],
-        "name": "Points",
-        "rank": 1
-      }
-    },
-    {
-      "type": "projection_type",
-      "id": "2",
-      "attributes": {
-        "name": "Single Stat"
-      }
-    },
-    {
-      "type": "team",
-      "id": "191",
-      "attributes": {
-        "abbreviation": "BOS",
-        "logo": "https://static.prizepicks.com/production/qpqh46wc2daajgtaxsrtuzyh5ilh-BCeltics_Primary_Icon%20%281%29.png",
-        "market": "Boston",
-        "name": "Celtics",
-        "ppid": "NBA_team_0RO0gRLntbL2q8e7mHItVYzO",
-        "primary_color": "007A33",
-        "secondary_color": "007A33",
-        "tertiary_color": "FFFFFF"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "59107",
-      "attributes": {
-        "combo": false,
-        "display_name": "Cade Cunningham",
-        "image_url": "https://static.prizepicks.com/images/players/NBA/Cade_Cunningham_NBA_player_mq8YRxGgt7Csv81PJK3QsXJu.webp",
-        "jersey_number": "2",
-        "league": "NBA",
-        "league_id": 7,
-        "market": "Detroit",
-        "name": "Cade Cunningham",
-        "position": "G",
-        "ppid": "NBA_player_mq8YRxGgt7Csv81PJK3QsXJu",
-        "team": "DET",
-        "team_name": "Pistons"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "871"
-          }
-        }
-      }
-    },
-    {
-      "type": "stat_type",
-      "id": "244",
-      "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Pts+Asts",
-        "rank": 17
-      }
-    },
-    {
-      "type": "team",
-      "id": "210",
-      "attributes": {
-        "abbreviation": "PHI",
-        "logo": "https://static.prizepicks.com/production/i98xde0x304e8crifzg0go2viixq-P76ers_Global.png",
-        "market": "Philadelphia",
-        "name": "76ers",
-        "ppid": "NBA_team_ekUlxQdKtCHdRbOUV6Z3yhxU",
-        "primary_color": "006cb6",
-        "secondary_color": "ed174d",
-        "tertiary_color": "ED174C"
-      }
-    },
-    {
-      "type": "new_player",
-      "id": "188004",
-      "attributes": {
-        "combo": false,
-        "display_name": "Jalen Brunson",
-        "image_url": "https://static.prizepicks.com/images/players/NBA/Jalen_Brunson_NBA_player_yiwlT8GHgktYu1WBoRvjpRr8.webp",
-        "jersey_number": "11",
-        "league": "NBA",
-        "league_id": 7,
-        "market": "New York",
-        "name": "Jalen Brunson",
-        "position": "G",
-        "ppid": "NBA_player_yiwlT8GHgktYu1WBoRvjpRr8",
-        "team": "NYK",
-        "team_name": "Knicks"
-      },
-      "relationships": {
-        "league": {
-          "data": {
-            "type": "league",
-            "id": "7"
-          }
-        },
-        "team_data": {
-          "data": {
-            "type": "team",
-            "id": "1367"
           }
         }
       }
@@ -14624,54 +16633,44 @@
       }
     },
     {
-      "type": "stat_type",
-      "id": "106",
+      "type": "new_player",
+      "id": "59107",
       "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Pts+Rebs+Asts",
-        "rank": 1
+        "combo": false,
+        "display_name": "Cade Cunningham",
+        "image_url": "https://static.prizepicks.com/images/players/NBA/Cade_Cunningham_NBA_player_mq8YRxGgt7Csv81PJK3QsXJu-450.webp",
+        "jersey_number": "2",
+        "league": "NBA",
+        "league_id": 7,
+        "market": "Detroit",
+        "name": "Cade Cunningham",
+        "position": "G",
+        "ppid": "NBA_player_mq8YRxGgt7Csv81PJK3QsXJu",
+        "team": "DET",
+        "team_name": "Pistons"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "871"
+          }
+        }
       }
     },
     {
-      "type": "game",
-      "id": "181167",
+      "type": "stat_type",
+      "id": "244",
       "attributes": {
-        "created_at": "2026-08-19T17:06:16.222-04:00",
-        "end_time": null,
-        "external_game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
-        "is_live": false,
-        "metadata": {
-          "game_id": "NBA_game_tUXFzHPTAM5qiV1qJoXXhy38",
-          "game_info": {
-            "teams": {
-              "away": {
-                "abbreviation": "PHI"
-              },
-              "home": {
-                "abbreviation": "NYK"
-              }
-            }
-          },
-          "league_name": "NBA",
-          "status": "scheduled"
-        },
-        "start_time": "2026-10-20T19:00:00.000-04:00",
-        "status": "scheduled",
-        "updated_at": "2026-09-20T00:11:02.939-04:00"
-      },
-      "relationships": {
-        "away_team_data": {
-          "data": {
-            "type": "team",
-            "id": "210"
-          }
-        },
-        "home_team_data": {
-          "data": {
-            "type": "team",
-            "id": "1367"
-          }
-        }
+        "lfg_ignored_leagues": [],
+        "name": "Pts+Asts",
+        "rank": 17
       }
     },
     {
@@ -14689,12 +16688,35 @@
       }
     },
     {
-      "type": "stat_type",
-      "id": "20",
+      "type": "new_player",
+      "id": "173819",
       "attributes": {
-        "lfg_ignored_leagues": [],
-        "name": "Assists",
-        "rank": 12
+        "combo": false,
+        "display_name": "Victor Wembanyama",
+        "image_url": "https://static.prizepicks.com/images/players/NBA/Victor_Wembanyama_NBA_player_2EsUEdOt5xmywxPr6qxPdHNs-450.webp",
+        "jersey_number": "1",
+        "league": "NBA",
+        "league_id": 7,
+        "market": "San Antonio",
+        "name": "Victor Wembanyama",
+        "position": "F-C",
+        "ppid": "NBA_player_2EsUEdOt5xmywxPr6qxPdHNs",
+        "team": "SAS",
+        "team_name": "Spurs"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "870"
+          }
+        }
       }
     },
     {
@@ -14731,16 +16753,61 @@
     },
     {
       "type": "team",
-      "id": "212",
+      "id": "202",
       "attributes": {
-        "abbreviation": "MIA",
-        "logo": "https://static.prizepicks.com/production/2zrhl7kum3t6h1hc6w0des5lckah-MHeat_Primary_Icon.png",
-        "market": "Miami",
-        "name": "Heat",
-        "ppid": "NBA_team_tvgB9UbLXTIZiPJDlTUSmaFl",
-        "primary_color": "98002E",
-        "secondary_color": "000000",
-        "tertiary_color": "98002E"
+        "abbreviation": "MIN",
+        "logo": "https://static.prizepicks.com/production/ei04jm85fjde8amhkzdanbjd9efe-MTimberwolves_Primary_Icon.png",
+        "market": "Minnesota",
+        "name": "Timberwolves",
+        "ppid": "NBA_team_lNxvMPpxeoAEK9U2DnWXAqD6",
+        "primary_color": "236192",
+        "secondary_color": "0C2340",
+        "tertiary_color": "236192"
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "21",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Blocked Shots",
+        "rank": 28
+      }
+    },
+    {
+      "type": "league",
+      "id": "7",
+      "attributes": {
+        "active": true,
+        "f2p_enabled": true,
+        "full_logo": "https://static.prizepicks.com/production/3peehp8jkljh288s795sbelw2aje-NBA_Logoman_word_onDkBkgd.png",
+        "has_live_projections": false,
+        "icon": "basketball",
+        "image_url": "https://static.prizepicks.com/images/leagues/production/128.svg",
+        "last_five_games_enabled": true,
+        "league_icon_id": 128,
+        "logo": "https://static.prizepicks.com/production/2ws9gunjf9w20587f3a68wwben7x-NBA%20%281%29.png",
+        "name": "NBA",
+        "parent_id": null,
+        "parent_name": null,
+        "player_headshot_fallback": null,
+        "projections_count": 0,
+        "rank": 5,
+        "show_trending": true
+      },
+      "relationships": {
+        "projection_filters": {
+          "data": []
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "243",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Pts+Rebs",
+        "rank": 16
       }
     },
     {
@@ -14784,10 +16851,178 @@
           }
         }
       }
+    },
+    {
+      "type": "team",
+      "id": "191",
+      "attributes": {
+        "abbreviation": "BOS",
+        "logo": "https://static.prizepicks.com/production/qpqh46wc2daajgtaxsrtuzyh5ilh-BCeltics_Primary_Icon%20%281%29.png",
+        "market": "Boston",
+        "name": "Celtics",
+        "ppid": "NBA_team_0RO0gRLntbL2q8e7mHItVYzO",
+        "primary_color": "007A33",
+        "secondary_color": "007A33",
+        "tertiary_color": "FFFFFF"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "187999",
+      "attributes": {
+        "combo": false,
+        "display_name": "Jayson Tatum",
+        "image_url": "https://static.prizepicks.com/images/players/NBA/Jayson_Tatum_NBA_player_m62yMQl0xSxuv8M28c75TQG0.webp",
+        "jersey_number": "0",
+        "league": "NBA",
+        "league_id": 7,
+        "market": "Boston",
+        "name": "Jayson Tatum",
+        "position": "F-G",
+        "ppid": "NBA_player_m62yMQl0xSxuv8M28c75TQG0",
+        "team": "BOS",
+        "team_name": "Celtics"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "191"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "20",
+      "attributes": {
+        "lfg_ignored_leagues": [],
+        "name": "Assists",
+        "rank": 12
+      }
+    },
+    {
+      "type": "team",
+      "id": "1367",
+      "attributes": {
+        "abbreviation": "NYK",
+        "logo": "https://static.prizepicks.com/production/rwno322xja9wsr57r7yhbqby2zuk-NYKnicks_Global.png",
+        "market": "New York",
+        "name": "Knicks",
+        "ppid": "NBA_team_KQwkUC0GL7NbBAZupX5NkWqX",
+        "primary_color": "006cb6",
+        "secondary_color": "f58425",
+        "tertiary_color": "F58426"
+      }
+    },
+    {
+      "type": "team",
+      "id": "210",
+      "attributes": {
+        "abbreviation": "PHI",
+        "logo": "https://static.prizepicks.com/production/i98xde0x304e8crifzg0go2viixq-P76ers_Global.png",
+        "market": "Philadelphia",
+        "name": "76ers",
+        "ppid": "NBA_team_ekUlxQdKtCHdRbOUV6Z3yhxU",
+        "primary_color": "006cb6",
+        "secondary_color": "ed174d",
+        "tertiary_color": "ED174C"
+      }
+    },
+    {
+      "type": "new_player",
+      "id": "336267",
+      "attributes": {
+        "combo": false,
+        "display_name": "LeBron James",
+        "image_url": "https://static.prizepicks.com/images/manual/Lebron_James.webp",
+        "jersey_number": "23",
+        "league": "NBA",
+        "league_id": 7,
+        "market": "Philadelphia",
+        "name": "LeBron James",
+        "position": "F",
+        "ppid": "NBA_player_LItcyUXdmrL8VccUHVupA0OC",
+        "team": "PHI",
+        "team_name": "76ers"
+      },
+      "relationships": {
+        "league": {
+          "data": {
+            "type": "league",
+            "id": "7"
+          }
+        },
+        "team_data": {
+          "data": {
+            "type": "team",
+            "id": "210"
+          }
+        }
+      }
+    },
+    {
+      "type": "stat_type",
+      "id": "19",
+      "attributes": {
+        "lfg_ignored_leagues": [
+          305
+        ],
+        "name": "Points",
+        "rank": 1
+      }
+    },
+    {
+      "type": "game",
+      "id": "181168",
+      "attributes": {
+        "created_at": "2026-08-19T17:06:16.330-04:00",
+        "end_time": null,
+        "external_game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+        "is_live": false,
+        "metadata": {
+          "game_id": "NBA_game_8HoDrFS0yrZTLGI1t1pKa6bw",
+          "game_info": {
+            "teams": {
+              "away": {
+                "abbreviation": "OKC"
+              },
+              "home": {
+                "abbreviation": "SAS"
+              }
+            }
+          },
+          "league_name": "NBA",
+          "status": "scheduled"
+        },
+        "start_time": "2026-10-20T21:30:00.000-04:00",
+        "status": "scheduled",
+        "updated_at": "2026-09-21T00:11:03.689-04:00"
+      },
+      "relationships": {
+        "away_team_data": {
+          "data": {
+            "type": "team",
+            "id": "220"
+          }
+        },
+        "home_team_data": {
+          "data": {
+            "type": "team",
+            "id": "870"
+          }
+        }
+      }
     }
   ],
   "links": {
-    "self": "partner-api.prod01.universe.prizepicks.com/projections?league_id=7&per_page=5000"
+    "self": "partner-api.prod01.universe.prizepicks.com/projections?league_id=7&per_page=1000&single_stat=true"
   },
   "meta": {
     "current_page": 1,
