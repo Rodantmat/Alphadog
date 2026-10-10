@@ -44833,3 +44833,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`.
 - **CLEAN → `3`/`3` ✅ CLOSED** (passes 15–17): `T34`, `T35`, `T37`, `T38`, `T39`, `T40`, `T41`, `T42`, `T44`, `T46`, `T47`, `T48`.
 - **CLEAN → `2`/`3`**: `T33`, `T36`.
+
+---
+
+# §P18 — PASS 18 (`2026-10-10`): (gg) EVERY FIGURE OF THE FINAL REPLIES AND THE NARRATION, AND (hh) THE OWNER TURNS WITH THEIR ANSWERS — `T32`, `T33`, `T36` ONLY
+*Angle (gg):* every figure in `T32`'s and `T36`'s final replies, `T33`'s closing replies and the `T32` / `T36` narration — now including figures written as `817k` / `4.4M` and percentages, which the earlier checks skipped — matched against the twelve and the strategy doc; each miss read in place. *Angle (hh):* `T33`'s closing replies read straight through (`#0`–`#50`) against `§T33`, `NBA_GOBLIN_DEMON.md` and `NBA_BASELINE_CALIBRATION.md`.
+- 🆕 **`T32`** — the `06:02Z` certification table and the `20:02Z` coverage reply: **`prop_universe` by kind** (`817,117` / `482,398` / `367,509`, ✅ live exactly), pricing `99.55%`, and the coverage verdict *"final_hp = 21 props = all 21 historical board market types. At ceiling."* with how it was reached (`baseline_history` `29` props vs `final_hp` `21`, ✅ live) → `§T32.5`; goblins and demons on the **same `11`** props (✅ live) → `NBA_GOBLIN_DEMON.md` ④. And the `18:05Z` index check behind the *"confabulating"* claim listed only `board_scored` / `confidence_model` indexes while the doc session's index sits on `board_outcomes` (✅ live `pg_indexes`) → `§T32.6` #4.
+- 🆕 **`T36`** — the owner's before/after table (`18:40Z`) was recorded without its per-season, per-day and worst-day rows → added to `§T36.6` #4; the single-cell builder bug's mechanism (`MAX_PER_CELL = 2`, the shared `valid()`, the exemption) and the `66 / 66` certification of run `82c52e1d` (✅ live `certification_log`) → `§T36.6` #1.
+- **`T33`** — every figure resolves (the four misses: `+118%` single-cell turnovers, a voided `§13` ROI; `471k` UD legs, the `§15` archive recorded by its `§30b` rebuilds; a one-day join count; one row of the jackpot-demon table recorded by name); the straight read of `#0`–`#50` found each turn's content in `§T33.5` / `§T33.6`, `NBA_GOBLIN_DEMON.md` (`§19`–`§19j`) and `NBA_BASELINE_CALIBRATION.md` (`§16`, `§18`, `§19h`) — **CLEAN**.
+- Not recorded, by rule: the proxy host and port in `T32`'s Betr narration (credential-adjacent); old memory-file dumps quoted in the narration (earlier transcripts' material); the `T32` Fliff MLB count (MLB, out of scope).
+
+**Ledger**: pass `18` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T36`.
+- **CLEAN → `3`/`3` ✅ CLOSED** (passes 16–18): `T33`.
