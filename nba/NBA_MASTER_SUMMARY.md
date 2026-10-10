@@ -46841,3 +46841,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `130` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript (`T1`–`T48`, `S1`–`S9`), bases `§P127`. ⏳ **The project**: NOT COMPLETE — the owner's three additional complete sweeps, `0` of `3`.
+
+---
+
+# §P131 — PASS 131 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T1`, `T2`, `T3`
+*Angle (as NEXT set it):* (w8) the first of the owner's three additional complete sweeps, by `§P130`'s method: each source's prose (assistant and owner text; tool calls and results out) extracted whole, split into sentences of six words or more, scanned over all twelve for an uncovered run of ≥ `5` words, each listed sentence read whole in its message and searched on file by its substance and figures.
+- Tabulated in the shell before this line: `T1` `215` of `386` sentences listed, `T2` `183` of `312`, `T3` `117` of `244` — **`515` read and judged.** (`T1`'s tail and `T2`'s head overlap — the same messages, `22:07`–`22:23Z` on `2026-08-31` — as do `T2`'s tail and `T3`'s head; each was judged in both lists.)
+- On file, by substance: the separate NBA universe and its `14` schemas, the owner's operating model (three runs, the `/nba/` folder, Gemini as reference not verdict), the `nba.com` block from Workers (`520`/`526`, `403`) and the GitHub-Actions route, `curl_cffi` against the tarpit, the tool-list caching diagnosis and the trigger file, admin-sql deploying last, the git-push rebase retry, the static entities and their counts (`582` / `525` active / `1,822` aliases; `30` arenas, `19` with capacity; `80` officials from the Wikipedia roster), the "Undrafted" coercion, the on/off build (`661` rows), `DARKO` and the generic `player_impact_rating`, the SvelteKit embed and its bare-decimal fix (`530` players), the differential worker's own snapshot tables and the Hyperdrive caching artefact, `scheduleleaguev2` (`2,666` games; the Contents API size limit and `raw.githubusercontent.com`), `synergyplaytypes` (`3,364` / `630`), the tracking families (`4,652`), defender-distance shot quality. Judged: narration, waits, questions to the owner, plans later run, sample rows below the docs' grain.
+- Judged, not reproduced: the balldontlie key appears in full in `T1`'s handoff; the twelve already carry two partial fragments of balldontlie keys (`NBA_OPEN_ITEMS.md`), part of the item owner-cleared as `F2-1` on `2026-09-28`. Nothing added here.
+- **Nothing new — `T1`–`T3` clean in additional sweep `1`.** No commit other than this pass's landed since `b15cfc851` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `131` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way: `T1`–`T3` done, nothing new; next `T4`–`T6`.
