@@ -1512,3 +1512,11 @@ THE REPOSITORY IS PUBLIC.**
 81. **Before spending a shared budget, measure the real cost on a sample** — and know which production step reads the same key.
 82. **A different regime (the postseason) gets separate tables, its own calibration phase and its own certification** — never mixed into the certified regular-season inputs, never assumed to carry the regular season's edge.
 83. **Answer "is it perfect?" with what is proven and what is not** — the first live run is the final test; that is why it starts on paper.
+
+### STEP 14n — **Wire a new regime phase by phase — mine, grade, history, price, certify, live — weigh it against the old one, and let the evidence decide the stake** *(`T45`, `2026-10-08/09`; `NBA_MASTER_SUMMARY.md` `§T45`)*
+84. **Map every place the system assumes the old regime first** (a read-only sweep: season types, id predicates, file globs, date windows) — then change exactly those.
+85. **Phase the work and sample each phase** (one season, two props) before the full build; verify that nothing certified moved after each phase.
+86. **Weigh a thin new sample against the large certified one** with an explicit shrinkage (`K` nights of prior evidence) and refuse cells where the new regime contradicts the old.
+87. **The stake follows the evidence, not the wish**: if no strategy passes the regime's own gate, everything runs as shadow — graded, recorded, re-certified weekly — until one does.
+88. **The backtest and the live path must exclude the same things**; prove the live path on past nights with commit disabled and a rollback.
+89. **Bound parallel database work by IO**, not by how many runners are available.
