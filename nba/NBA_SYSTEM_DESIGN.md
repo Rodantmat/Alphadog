@@ -232,7 +232,7 @@ constraints that shaped it. This is the operational spec.
 
 ### 🔴 **RULING 3 — THE AT-REST CREDENTIAL FINDING IS ACCEPTED RISK. THE BOUNDARY MATTERS MORE THAN THE RULING.**
 
-> 📜 **OWNER, `T26`, `2026-09-24`** *(`sim 0.34`)*:
+> 📜 **OWNER, `T26`, ~~`2026-09-24`~~ `2026-09-23` `19:39Z`** *(`sim 0.34`; date corrected `2026-10-10`, pass 112, → `NBA_MASTER_SUMMARY.md` `§T26.R1`)*:
 > > *"so first about the two finds. **the encrypted data, it doesn't really matter. just i have access to it. nobody else accesses this database. so that's not really an issue.**"*
 >
 > ✅ *`"nobody else accesses"`: **`0` hits in the twelve** — the finding is recorded in three of them, **the owner's ruling on it in none.*** ⇒ **RECORDED AS AN ACCEPTED RISK**: *the `6` credentials stored in Postgres with no encrypt/decrypt step anywhere in the `190` files — two of them bare `36`-character values — are a risk the owner has seen, priced and accepted, on the stated ground that he is the only party with database access.*
