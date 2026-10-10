@@ -31,3 +31,17 @@ BEGIN
   END LOOP;
   RETURN (pts->(m-1)->>1)::float8;
 END $function$;
+
+-- The same curve as interpolation segments, for set-based use (regrade_pp_flex_alt.py): one row per adjacent pair of points,
+-- plus a flat segment below the first and above the last point (the clamp). Verified identical to the function on 190
+-- (n, misses, fp) cases; a (n, misses) PrizePicks does not pay has no segment -> the caller coalesces to 0.
+CREATE OR REPLACE VIEW nba_market.pp_flex_alt_segments AS
+WITH p AS (
+  SELECT n.key::int n, m.key::int misses, (e.v->>0)::float8 x, (e.v->>1)::float8 y, e.i
+  FROM nba_config.pp_slip_rules r, jsonb_each(r.rule_json->'tiers') n, jsonb_each(n.value) m,
+       LATERAL (SELECT v, ordinality i FROM jsonb_array_elements(m.value) WITH ORDINALITY t(v, ordinality)) e
+  WHERE r.rule_key = 'flex_alt_tiers'),
+s AS (SELECT n, misses, x x0, y y0, lead(x) OVER w x1, lead(y) OVER w y1, i, max(i) OVER (PARTITION BY n, misses) imax FROM p WINDOW w AS (PARTITION BY n, misses ORDER BY i))
+SELECT n, misses, x0, y0, x1, y1 FROM s WHERE x1 IS NOT NULL
+UNION ALL SELECT n, misses, 0, y0, x0, y0 FROM s WHERE i = 1
+UNION ALL SELECT n, misses, x0, y0, 1e9, y0 FROM s WHERE i = imax;
