@@ -2267,4 +2267,8 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **history archive (GitHub Release)** | monthly off-database CSV.GZ copy of the big ingredient tables (`db-archive-<date>`) | `NBA_SYSTEM_ARCHITECTURE.md` `§T44.8` |
 | **twin postseason tables (`*_postseason`)** | play-in / playoff data kept apart from the certified regular-season tables | `NBA_SYSTEM_DESIGN.md` `§T44.7` |
 | **`5_postseason`** | the calibration phase fitted on postseason legs, shrunk toward `4_push` while thin | `NBA_SYSTEM_DESIGN.md` `§T44.7` |
+| **`slate_games`** | the view of every slate night (002 regular + 004 playoffs + 005 play-in) — *"is there a slate tonight?"*; `regular_season_games` keeps answering *"where is the regular season?"* | `NBA_SYSTEM_ARCHITECTURE.md` `§T45.8` |
+| **postseason weighting (`pm_w`)** | `(days·pm_post + K·pm_reg)/(days + K)`, K = 50 — a cell's playoff hit rate shrunk toward its certified regular-season rate | `NBA_SYSTEM_DESIGN.md` `§T45.7` |
+| **`pick_postseason`** | the live engine's postseason path: postseason floor (485), eligible cells, per-strategy verdict, cap 1, own statuses outside the regular ledger | `NBA_SYSTEM_DESIGN.md` `§T45.7` |
+| **shadow (postseason)** | built and graded, never staked — every strategy whose postseason verdict is not PASS | `NBA_SYSTEM_DESIGN.md` `§T45.7` |
 | **placeholder season files (`ensure_season_files.py`)** | empty current-season input files written before the first game so the builders label the opener as the new season | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
