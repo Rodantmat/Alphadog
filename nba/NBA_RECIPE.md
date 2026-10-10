@@ -1389,3 +1389,27 @@ THE REPOSITORY IS PUBLIC.**
 > *(availability, three levels)* · **`§T26.12`** *(`A5`, and why granularity earned its keep there)* ·
 > **`F6-1`** *(why `baseline_ladder` is gone)* · **`F2-1`** / **`T22-1b`** *(the credential actions
 > still standing)*.
+
+---
+
+# 🆕 STEP 14 — **THE SLIP-BUILDING PROGRAM: FROM A FINISHED MODEL TO SLIPS** *(opened `2026-09-29 00:57Z`; written `2026-10-10` from `T32`, the recovered transcript — `NBA_MASTER_SUMMARY.md` `§T32.10`–`§T32.11`. Later transcripts extend this step; this entry records how it STARTED.)*
+
+**Precondition the owner set first (`2026-09-28 05:52Z`)**: *"we must certify it before moving to slip strategy"* — the backdata was certified group by group the same morning (`§T32.5`), and the system was declared complete *"missing only the chalkboard for now"* (`18:41Z`).
+
+**The ingredients, in the owner's own taxonomy** *(charter, `NBA_SLIP_BUILDING_STRATEGY.md` `§0`–`§1`)*: **ranks** (how legs are trailed and surfaced) → **signals** (a second layer that enhances or purges a rank) → **multipliers** (already priced: PrizePicks by the mapped model, Underdog by formula, derived lines conservatively) → **slip size** `2–6` → **slip type** Power/Flex → **app restrictions** → **correlation** (*"a basketball thing"* first, app rules second) → **strategy gates** (*"a reality check not a leg/slip killer"*).
+
+**The two non-negotiable rules the whole step runs on**: ① ***a backtest is a real replay*** — real board snapshots, real legs, real multipliers, real outcomes, day by day, never a few days extrapolated; ② ***data bands at 1% or finer.*** Plus: ROI over profit; a `50` legs/day/app placement ceiling; loss-frustration control; Gemini as a challenger; every imported claim proven on our own data.
+
+**The phase plan, as approved `2026-09-29`** *(strategy `§4`)*: **0** read the MLB references and open the doc → **1** ranks, with a research preface and recency/season-phase weighting → **2** signals → **3** slip mechanics per app (PrizePicks and Underdog first — the only two with back snapshots) → **4** gates → **4.5** owner review → **5** the automated engine.
+
+**What the first night built, in order**:
+1. `nba/build_recalibration_map.py` — the model is overconfident above `~0.55`; every `p` used for slip EV is the **as-of recalibrated** one (`NBA_BASELINE_CALIBRATION.md` `§T32.5`).
+2. `nba/NBA_SLIP_BUILDING_STRATEGY.md` — the program's own document, updated after every message (owner rule).
+3. The **validation ledger** (strategy `§7`) — every claim from MLB, the web or Gemini re-measured on NBA data before use; several refuted.
+4. `nba/build_rank_foundation.py` — the rank substrate, **report mode, never built** (`NBA_DATABASE.md` `§T32.6`).
+5. The six owner ranks tested granularly, new rank types researched (strategy `§8`); the **game-day replicability gate** (strategy `§9`) — nothing that cannot be computed at the P3 window may rank.
+6. Signals (strategy `§11`) — most flat; team total the one real survivor.
+7. `nba/build_slip_meta_model.py` — the feature combiner, report only (strategy `§12`).
+8. **The first end-to-end real-replay backtest** (strategy `§13`) — positive out of sample, then hardened by tie-break and all-combos tests.
+
+⚠ **Read the `T32` ROI figures as that night's numbers, not the program's result** — `§T33` re-examines the pool they ran on. **Where the program is now**: later sections of this step, as `T33`–`T48` are swept.
