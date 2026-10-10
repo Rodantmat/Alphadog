@@ -14946,7 +14946,7 @@ relative to the inline comment, but worth confirming.
 **A named, quantified, reproducible miss carried in the file's own header** — with the diagnosis
 (P(0 blocks) under-predicted for mid-volume shot-blockers), the evidence that it is structural
 (*"persists at any lambda"*), and **confirmation it reproduces out-of-sample** (same signs in the
-holdout). **That last clause is what makes it a known limitation rather than noise.**
+holdout). **That last clause is what makes it a known limitation rather than noise.** → *the next step on it — the zero-rate table that fixed this band on 2025-26 and only partly on the holdout — is `§T9.14h`.*
 
 #### T8.12d — **A rejection recorded with its numbers**
 > *"**REJECTED ON DATA**: player-own L0 cells (**n=40–80; regression-noise dominated; ELITE rebounds
