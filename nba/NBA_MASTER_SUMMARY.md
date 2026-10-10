@@ -44450,3 +44450,19 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 | `T32`, `T38`, `T39` | nothing outside recorded findings | **CLEAN** |
 
 **Ledger**: pass `8` complete (`2026-10-10`). **CLEAN `2`/`3`**: `T38`, `T39`. **CLEAN `1`/`3`**: `T32`. **CLEAN `0`/`3`** (pass 8 found NEW MATERIAL): `T34`, `T36`, `T37`.
+
+---
+
+# §P9 — PASS 9 (`2026-10-10`) ON `T32`, `T34`, `T36`–`T39`: COMPASS FACTS AND SUPERSEDED SECTIONS
+*Angles:* **(r)** every `NBA_COMPASS.md` fact numbered `108`+ (the facts the build chat wrote during `T32`–`T48`), checked for a citation or its content in the twelve — `13` are never cited by number (`122`, `136`, `138`, `139`, `141`, `142`, `144`, `146`–`151`); each one's content is present (`§T32.8`, `§31u`, retention, postseason mining, `§31x`, `§31y`, `§31aa`, `§31ac`, Betr, PrizePicks quotes, the retry policy); **`150` and `151` are after the corpus** (owner `20:04 PT` / `20:30 PT` on `10-09`, past `T48`'s `02:35Z` end — `T48-9`, not pulled backward). **(s)** every strategy section the strategy doc marks **retracted / superseded / corrected** (`§8a`, `§14h`, `§27`, `§30c`, `§30d`, `§30e`), checked wherever the twelve cite it for a supersession mark within the same line.
+
+| transcript | finding | verdict |
+|---|---|---|
+| `T32` | 🔴 `NBA_GLOSSARY.md` **"trailing"** cited strategy `§8a` (*"shorter windows sharper"*) with no mark that `§16b` corrected it (*"nearly powerless (corrects §8a/§14h for these props)"*) and `§18` retired hit-rate ranks as selectors → row annotated | **NEW MATERIAL** |
+| `T36` | 🔴 `NBA_DATABASE.md`'s board-table meaning-change note cited **`§30d`** — a section the strategy doc **retracts** (*"it compared against the wrong price field"*) → flagged; the encoding fact stands on `§30a`/`§30h` | **NEW MATERIAL** |
+| `T34`, `T37`, `T38`, `T39` | (r) content present; (s) no unmarked citation | **CLEAN** |
+
+**Ledger**: pass `9` complete (`2026-10-10`).
+- ✅ **CLOSED — CLEAN `3`/`3`** (passes 7, 8, 9): **`T38`**, **`T39`**.
+- **CLEAN `1`/`3`**: `T34`, `T37`.
+- **CLEAN `0`/`3`** (pass 9 found NEW MATERIAL): `T32`, `T36`.
