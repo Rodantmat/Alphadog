@@ -2260,4 +2260,11 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **flat board / priced board; price gate** | flat: one payout table for every leg (PrizePicks, Betr); priced: each side its own multiplier (Sleeper, Fliff) — playable only if p × m ≥ 1 + margin | `NBA_MULTIPLIERS.md` `§T43.3` |
 | **paper board** | an app without a backtest entering under the live engine's state machine, never staked before the paper gate and the sequential monitor | `NBA_SYSTEM_DESIGN.md` `§T43.7` |
 | **`AC_DEDUP`** | switch (default off) deduping standard/alternate outcomes in the as-of calibration — a round-3 chained recertification, not a one-consumer fix | `NBA_BASELINE_CALIBRATION.md` `§T43.5` |
+| **price-shopping ledger (`price_shop_ledger`)** | daily record, per leg the engines selected, of every app's listing, line gap, per-leg price and the gate `(p − 0.0916) × m_eff ≥ 1` — measurement only | `NBA_SYSTEM_DESIGN.md` `§T44.7` |
+| **`m_eff`** | an app's per-leg price; for Underdog the displayed modifier × a table root (`ud_ref_per_leg`) | `NBA_MULTIPLIERS.md` `§T44.3` |
+| **`model_params_history`** | append-only JSON snapshots of the parameter / verdict tables a slate or a week used | `NBA_DATABASE.md` `§T44.6` |
+| **retention map** | where every ingredient, factor, board and slip is kept (git raw files + dated Postgres + ladder record) | `NBA_SYSTEM_ARCHITECTURE.md` `§T44.8` |
+| **history archive (GitHub Release)** | monthly off-database CSV.GZ copy of the big ingredient tables (`db-archive-<date>`) | `NBA_SYSTEM_ARCHITECTURE.md` `§T44.8` |
+| **twin postseason tables (`*_postseason`)** | play-in / playoff data kept apart from the certified regular-season tables | `NBA_SYSTEM_DESIGN.md` `§T44.7` |
+| **`5_postseason`** | the calibration phase fitted on postseason legs, shrunk toward `4_push` while thin | `NBA_SYSTEM_DESIGN.md` `§T44.7` |
 | **placeholder season files (`ensure_season_files.py`)** | empty current-season input files written before the first game so the builders label the opener as the new season | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
