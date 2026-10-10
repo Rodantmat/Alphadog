@@ -46149,3 +46149,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `83` complete (`2026-10-10`).
 - **CLEAN → `1`/`3`**: `T37`. **CLEAN → `2`/`3`**: `T33`.
 - ✅ **CLOSED `3`/`3`**: `T32`, `T34`, `T35`, `T36`, `T38`, `T39`, `T40`–`T48` *(pass 83)*.
+
+---
+
+# §P84 — PASS 84 (`2026-10-10`): A SEED-84 SAMPLE ON THE TWO STILL OPEN; THE RE-RUN; `T33` CLOSES
+*Angles (as NEXT set them):* (g6) a seed-`84` sample on `T33`, `T37` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty; each candidate searched on file by its substance and its section read from the block's own heading. Traced: `12` · `13`. (h6) the ≥ `5` scan re-run on `T37` after pass 84's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new).
+- 🆕 Not on file (AS STATED, in its transcript's section): **`T37`** (`§30j`: the defensive props exist on Underdog only as balanced lines).
+- ✅ **Clean on this angle:** `T33` (its third clean angle → **CLOSED**).
+- ⚠ **Qualification of an earlier residue:** `T33`'s pass-75 bullet recorded the first tier map's "one goblin (pra T3 at 0.549, marginal)"; a search this pass found the cell's figures already on file in `§19d`'s multiplier-check rows, so that bullet now says it adds only the reading — noted in place by an inline qualifier (`RULE 40`; the original wording kept). It does not change `T33`'s closure (passes 82–84 are the three clean angles).
+- ⚠ **Process note:** the section finder used since pass 80 looks for the last heading before the sentence; when the sentence's raw form carries bold markers the plain-text lookup fails silently and returns the wrong heading. This pass located the sentence by a shorter fragment and read the block's own heading (`§30j`), and the earlier attributions were re-checked: each of them had been found by its plain text, so their headings stand.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-83 census commit: `qdiff.py` `0` flags (`4` quotes counted).
+
+**Ledger**: pass `84` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(pass 84)*.
