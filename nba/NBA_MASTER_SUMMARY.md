@@ -44975,3 +44975,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **CORRECTED → `0`/`3`**: `T35`; **REOPENED → `0`/`3`**: `T36`.
 - **CLEAN → `3`/`3` ✅ CLOSED** (passes 26–28): `T37`, `T38`, `T42`.
 - **CLEAN → `2`/`3`**: `T32`.
+
+---
+
+# §P29 — PASS 29 (`2026-10-10`): (uu) EVERY ✅ STATUS MARK IN `§T32` / `§T35` / `§T36`, RE-READ LIVE
+*Angle (uu):* the `224` ✅ marks inside these three transcripts' sections across the twelve (`ticks.py`), each re-taken where it states a live fact.
+- Re-read exact: `recalibration_map` `8,818` / `7,872` `use_map` / built `2026-10-06 06:55:04Z`; `confidence_model` `10` rows, built `2026-09-25 22:27:18Z`; `game_officials` `11,062`; `official_tendency` `78`, built `2026-09-23 22:43Z`; `rank_foundation` and `slip_meta_p` absent; `slip_validation_div` `18`, no `_deltatest` or `slip_engine_*_div` table; `leg_clv` `5,629`; `player_pf20` a VIEW; the four replay tables; `R_stocks_4power`, `D_points_3power`, `W_core_3power`, `W_coredemon_3power` in `live_strategy_state`; the scheduler switch enabled and ticking (`07:38Z`); `pipeline_runs` `25`; in code — `SE_DELTA`/`SE_SINCE`, `TM_DELTA`, `placed_shadow`, `week2_trough` at spike `≥ 0.03`, `nba/live_monitor.sql`, `build_rank_foundation.py:92` report-mode, `nba-p3-afternoon-light.yml:493–499` (`git_push_retry.sh`), `archive_live_boards.py:226–233`, the Betr artefacts.
+- **Dated observations that moved after the corpus end, annotated (not material)**: `live_strategy_calib` was recalibrated at `2026-10-10 04:27:01Z` — still `13` rows, `_ANCHOR_steals` identical, but `B_demon_5flex` now hist max dd `309.7` / MC95 `451.2` (was `115.2` / `130.6`) → `NBA_DATABASE.md` `§T35.6`, `NBA_GOBLIN_DEMON.md` `§T36.2`.
+- Nothing wrong, nothing new. **CLEAN for all three.**
+
+**Ledger**: pass `29` complete (`2026-10-10`).
+- **CLEAN → `3`/`3` ✅ CLOSED** (passes 27–29): `T32`.
+- **CLEAN → `1`/`3`**: `T35`, `T36`.
