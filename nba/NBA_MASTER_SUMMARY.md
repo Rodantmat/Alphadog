@@ -46238,7 +46238,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - 🆕 Not on file (AS STATED, in `§T37.9`): six clauses — `§30s`'s drift definition and its reason for rebounds F2's casualty, `§30t`'s reading of the in-sample figures, `§30u`'s interval for the 2-pick, `§30v`'s reading of the under-heavy result, `§30w`'s second flat.
 - Judged, not recorded: table headers; the research link on usage after absences; `§30r`'s cross-check clause in `§30s` (the supersession and the measurements both on file); the sizing simulation's setup (its Kelly fractions on file); the no-game-day context of the label defect (the defect and its counts on file).
 - Band counts after this pass's additions (coverage `< 0.15` / `0.15`–`0.30` / `0.30`–`0.50` / `0.50`–`0.70` / `≥ 0.70`): `67` / `39` / `58` / `81` / `179`.
-- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- ~~No hourly-rotation commit landed during the pass (checked on main before writing this line).~~ One hourly-rotation commit landed after this line was written — `2430ff253` (`2026-10-10` 11:11 PT, line 8 of this file only, the rotation's resume note); the census patch was refused once (not a fast-forward) and re-sent after main settled.
 - Every quotation added since the pass-89 census commit: `qdiff.py` `0` flags (`6` quotes counted).
 
 **Ledger**: pass `90` complete (`2026-10-10`).
