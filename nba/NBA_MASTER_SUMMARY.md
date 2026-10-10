@@ -43985,6 +43985,39 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 `NBA_SYSTEM_DESIGN.md` `§T38.7` (domain guards, edge monitor, star-Under sizing, realistic expectation) · `NBA_WORKERS.md` `§T38.4` · `NBA_DATABASE.md` `§T38.6` (`edge_monitor`, `edge_monitor_ref`, `live_slips.stake_weight`, `_sim_*` scratch) · `NBA_BASELINE_CALIBRATION.md` `§T38.5` (star-line Unders; board breadth; the leg-hit → ROI curve) · `NBA_MULTIPLIERS.md` `§T38.3` (PP payouts verified at source; exact payout engine; portfolio break-even) · `NBA_OPEN_ITEMS.md` `§T38 ITEMS` · `NBA_RECIPE.md` `STEP 14g` · `NBA_GLOSSARY.md`.
 **Ledger**: `T38` pass `1` — **NEW MATERIAL**, CLEAN `0`/`3`.
 
+## §T38.5 — PASS 14 (`2026-10-10`, closing-reply re-read): THE PREVIEW'S SLIPS, THE PER-STRATEGY 2025-26 BOOK, AND THE MONITOR'S NUMBERS
+*All `16` closing replies read end to end (`§P14`). Figures AS STATED, in-sample unless said otherwise.*
+
+**1 — What the October 20 preview placed** (`06:20Z`; sandboxed model build `256` scored legs; the board guard later counted the preview at `126` scored legs): core 3-Power — Wembanyama threes **Over 2.5** + Cunningham threes **Over 2.5** + Brunson assists **Over 7.5** (all first-step demons); demon 3-Flex — the same three legs (*"two slips on the same three legs double the same risk"*); regular 5-Power — Cunningham PRA **Under 39.5**, Tatum pts+ast **Under 32.5**, Gilgeous-Alexander pts+ast **Under 36.5**, Brunson points **Over 25.5**, Wembanyama pts+reb **Under 37.5**. Measured against two seasons (`06:33Z`): regular 5-Power `+72%` overall (`+82%` on small slates), demon 3-Flex `+64%`, core 3-Power `+54%` but `+3%` on small slates; these stars' demons hit below their cells (threes `37%` vs `43%`, assists `31%` vs `48%`); *"the chance all five hit is about 4–5%, at or below what a 5-pick Power needs."* Side facts: Underdog's live rows carry game ids (the team defect cannot apply there); **PrizePicks game ids embed the capture date**, so a game gets a new id each capture day.
+
+**2 — 2025-26 per strategy, the certified series** (`06:48Z`, 1 unit/slip, final week out):
+| strategy | return | win–lose days | longest losing streak | max dd | longest below a high |
+|---|---|---|---|---|---|
+| steals 5-Flex (cap 6) | `+106%` | `77–77` | `6` | `42.6` | `14` |
+| demon 5-Flex (cap 6) | `+142%` | `54–83` | `8` | `46.1` | `23` |
+| regular 5-Power | `+97%` | **`17–137`** | **`34`** | `34.0` | **`41`** |
+| rebounds 4-Flex | `+83%` | `82–72` | `6` | `8.5` | `17` |
+| core 3-Power (cap 3) | `+82%` | `77–77` | `6` | `21.0` | `18` |
+| demon 3-Flex | `+62%` | `54–100` | `9` | `14.6` | `36` |
+| stocks 4-Flex | `+61%` | `72–82` | `7` | `8.4` | `33` |
+| points 3-Power (cap 3) | `+36%` | `55–98` | `8` | `42.0` | `36` |
+| *core 5-Flex (retired, shadow)* | `+131%` | `65–89` | `11` | `8.4` | `17` |
+| *stocks 4-Power (rotation only)* | **`−8%`** | `13–126` | `28` | `40.4` | `88` |
+| **PrizePicks portfolio** (8 daily, `~20` slips/day) | **`+94%`** (`+2,948` on `3,136`) | **`99–55`** | **`6`** | `85.8` | **`9`** |
+| **Underdog P5** | `+89%` (`+464` on `522`) | `60–88` | `7` | `43.8` | `34` |
+| Underdog P4 (shadow) | `+83%` | `55–93` | `8` | `37.7` | `34` |
+2024-25 for contrast: core 3-Power `+14%`, regular 5-Power `+43%`. Worst drawdown in money at 1 dollar/slip: PrizePicks `137` (2024-25), Underdog `44` (2025-26). **Week by week, 2025-26** (`06:53Z`): PrizePicks lost in only **`3` of `24` weeks** (2, 8, 15; never more than `39`), best weeks early November and late March; **Underdog lost in `8` of `23` and was flat for `~8` weeks, mid-December to mid-January** (weeks 8–13), stood down for All-Star week and the final week.
+
+**3 — The auto-adjustment's blind spot, in numbers** (`07:02Z`): the daily leg-hit sd per strategy is `~0.22–0.25`, so over 14 days H1 needs a deficit of **`~13` points for yellow and `~20` for red** — a realistic `56–57%` will not trip it (good), but neither will a slide to break-even (bad); *"detecting a lost edge takes about 50–57 days at the median."* ⇒ the break-even monitor.
+
+**4 — The monitor's calibration rows and its two seasons** (`07:20Z`–`07:28Z`): power by slate 30 / 60 / 90 / 150 — as backtested `54 / 84 / 96 / 100%`; 2 points lower `42 / 65 / 80 / 97%`; 4 points lower `28 / 42 / 53 / 75%`; at break-even `~6%` false confirm and `~5%` false alarm; 5 points below break-even, alarm `83%` by slate 150 (`25%` by slate 30). The solver bug produced an absurd **`−47.7` points** before it was caught. Through the production code: **2024-25 legs `2.9` points below** the backtest rates with break-even `11.0` below — confirmed at slate 60 (Dec 26); **2025-26 `2.3` points above**, break-even `7.2` below — confirmed at slate 60 (Dec 22). The stated reading for the live season: *"if it's still undecided by slate 90: the edge is thin, near break-even, and isn't worth real stakes."*
+
+**5 — The exact ROI curve in money** (`07:42Z`, `6,186` backtest slips, at 1 dollar/slip a season): `0` points → `+86%` (`+2,667`) · `2` → `+64%` (`+1,979`) · `3` (what 2024-25 ran) → `+54%` (`+1,658`) · **`4` → `+44%` (`+1,353`)** · **`6` → `+23%` (`+721`)** · `8` → `+3%` (`+101`) · `9.4` → `−6%` (`−178`).
+
+**6 — The star-Under test, portfolio rows** (`08:22Z`): control `77.8% / 94.0%` (profit `2,374 / 2,948`, dd `137 / 86`); **half stake at all three thresholds `79.2–80.8% / 95.8–96.7%`**, profit within `±20`, dd `126–131 / 80`; **exclude `76.1–76.9% / 94.4%`**, dd up to `149 / 68` — *"lost money in 2024-25 at every threshold"*; half stake is *"the same winnings with about 3% less money on the line"*, concentrated in the points-heavy strategies (regular 5-Power `+15` points in 2025-26); the engine now **refuses a filtered build without a test suffix**; the stake rule passes `10` test cases.
+
+**Ledger**: `T38` pass `14` — **NEW MATERIAL** (`§T38.5`), CLEAN `0`/`3`.
+
 ---
 
 # §T39 — `T39` · `2026-10-04-18-07-21-nba-paper-trading-cert-edge-monitors-rosters-gaps-31k-31r` *(transcripts pack `2026-10-09`, segment 1 of 9 — the claude.ai chat's tail, imported when the chat moved into a Claude Code session on `2026-10-07 01:00Z`)* — 🆕 **THE UNDERDOG EDGE MONITOR, "NO LOOSE ENDS", THE ROLLED-BACK INTEGRATION TEST, DAILY ROSTERS (THE OLD BUILDER PROJECTED NOBODY ON OPENING NIGHT), AND THE GAP-CLOSURE PROGRAM G1–G4 — WHOLE-NUMBER LINES PRICED, THE RECALIBRATION MAP FINALLY BUILT**
