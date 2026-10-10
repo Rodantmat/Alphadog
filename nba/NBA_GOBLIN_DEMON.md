@@ -1080,7 +1080,7 @@ A demon row carries **`odds_type`**, **`adjusted_odds` as a BOOLEAN**, and **`li
 |---|---|
 | **PrizePicks** | rungs in the raw feed, labelled standard / goblin / demon |
 | **Underdog** | `alternate_projections` per line, **with both sides' multipliers** |
-| **Sleeper** | *"no alternate lines"* per the live session — **⚠ but T7's verified inventory found milestone lines 20+/25+/30+, "Sleeper's equivalent of Goblin/Demon ladders". Unresolved.** |
+| **Sleeper** | *"no alternate lines"* per the live session — **⚠ but T7's verified inventory found milestone lines 20+/25+/30+, "Sleeper's equivalent of Goblin/Demon ladders". Unresolved.** → 🆕 *resolved `2026-09-27` (`T31`): the ladder is `lines/available_alt`, over-only rungs, captured and archived as `_alternate` — `NBA_MASTER_SUMMARY.md` `§T31.1` (pass 104)* |
 | **Fliff** | alternate lines as separate proposals per market group |
 | **Betr** | tiers REGULAR / MINI_BOOSTED / BOOSTED / SUPER_BOOSTED / BOOSTED_4 / EDGE_1..4 |
 
