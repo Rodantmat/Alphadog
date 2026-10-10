@@ -1408,7 +1408,7 @@ THE REPOSITORY IS PUBLIC.**
 3. The **validation ledger** (strategy `§7`) — every claim from MLB, the web or Gemini re-measured on NBA data before use; several refuted.
 4. `nba/build_rank_foundation.py` — the rank substrate, **report mode, never built** (`NBA_DATABASE.md` `§T32.6`).
 5. The six owner ranks tested granularly, new rank types researched (strategy `§8`); the **game-day replicability gate** (strategy `§9`) — nothing that cannot be computed at the P3 window may rank.
-6. Signals (strategy `§11`) — most flat; team total the one real survivor.
+6. Signals (strategy `§11`) — most flat; team total the one real survivor. 🆕 *(`T32` pass 2, `2026-10-10`, `NBA_MASTER_SUMMARY.md` `§T32.13`)* **The owner's order for any new signal, `2026-09-29 04:28Z`**: ***"Test first, see if it really shows results and if so we backfill them and start generating them on the pipelines"*** — test on existing data → backfill only if it shows results → then wire into the pipelines; and every signal is tested on **each** rank (*"Ranks over rank, layered, can also be signals"*, `04:19Z`).
 7. `nba/build_slip_meta_model.py` — the feature combiner, report only (strategy `§12`).
 8. **The first end-to-end real-replay backtest** (strategy `§13`) — positive out of sample, then hardened by tie-break and all-combos tests.
 
