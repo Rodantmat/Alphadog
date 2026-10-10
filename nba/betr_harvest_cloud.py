@@ -144,6 +144,7 @@ def start_local_proxy():
 import base64
 import hashlib
 import re
+import urllib.error
 import urllib.parse
 import urllib.request
 
