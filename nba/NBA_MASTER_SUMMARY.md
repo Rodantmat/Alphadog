@@ -15561,6 +15561,14 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+## T17 — `2026-09-20-04-58-11-nba-confidence-calibration-final-engine-2026-09-19.txt` *(additional-sweep residue only — `§T17.1`–`§T17.4` sit in other documents of the twelve; see entry row `17`)*
+
+### T17.5 — 🆕 ADDITIONAL SWEEP `1` (`2026-10-10`, sweep pass 139, `§P139`): **A SILENT ONE-PROP RUN, A SECOND READING OF THE `0.00405` FIGURE, AND WHAT THE FIXED-CUT ELITE TIER SELECTED**
+*From the messages of `2026-09-16` `18:08Z`–`18:09Z` and `2026-09-18` `05:46Z`. Already on file: the fixed `0.35` / `0.55` / `0.75` cuts and their `0.04%` elite share (`NBA_FINAL_SCORING_CALIBRATION.md`), and the as-of cells' `0.01516` against `0.00405` on rebounds, read as `3.7×` (`NBA_BASELINE_CALIBRATION.md`).*
+- **The first full `final_hp` write ran one prop of thirty and reported success** (`18:08Z`): *"I passed `prop: ""` expecting "all props", but the workflow's `prop` input defaults to `points`, so it ran a single prop and reported success."*
+- **The same `0.00405` baseline figure, given a different cause** (`18:09Z`): *"with the market-backing join working, points moves 0.01442 on average, not the 0.00405 I reported before. The enrichment is doing roughly 3.5× more work than my earlier number suggested — that figure came from the run where the `rung_market` join was still broken."* ⚠ `0.00405` was first reported on rebounds (`2026-09-16 07:27Z`); the `3.7×` reading on file (`2026-09-17 05:57Z`) compares rebounds against the same figure as the pasted-table value. Both readings are recorded AS STATED; neither message reconciles them.
+- **Under the fixed cuts, the elite tier picked low-probability legs** (`2026-09-18 05:46Z`): *"Elite has avg HP 0.357 and score −16.2 — meaning the few legs that clear 0.75 are low-probability ones"*, because *"a leg at 0.36 sits further from 0.50 and so has lower Bernoulli variance and a tighter normalized residual. The tier is selecting predictable legs, not good ones — correct by its own definition, but useless as a ranking signal unless paired with HP."*
+
 ## T16 — `2026-09-19-18-20-09-nba-enrichment-blowout-matchup-2026-09-13.txt` *(additional-sweep residue only — `§T16.1`–`§T16.4` sit in other documents of the twelve; see entry row `16`)*
 
 ### T16.5 — 🆕 ADDITIONAL SWEEP `1` (`2026-10-10`, sweep pass 138, `§P138`): **THE FUNNEL'S TWO EXTRA TERMS, MEASURED — AND THE RE-TEST THE AUDIT OWED THE RATE RESPONSE**
