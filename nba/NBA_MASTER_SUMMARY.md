@@ -45163,3 +45163,11 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `42` complete (`2026-10-10`).
 - **CORRECTIONS → `0`/`3`**: `T36`.
+
+# §P43 — PASS 43 (`2026-10-10`): (jjj) THE `T35` / `T36` / `T37` BOUNDARIES
+*Angle (jjj):* `T36` runs `2026-10-02 00:52Z → 10-03 05:44Z` (corpus: first message `00:52:14Z`; `T35` ends `00:48Z`, `T37` starts `10-03 05:55Z`). Checked in both directions: every timestamp, strategy pass and `§` cited in `§T35` and in `T35`'s sections of the other seven files (`SYSTEM_DESIGN` `§T35.7`, `DATABASE` `§T35.6`, `GOBLIN_DEMON` `§T35.2`, `BASELINE_CALIBRATION` `§T35.5`, `SYSTEM_ARCHITECTURE` `§T35.8`, `WORKERS`, `MULTIPLIERS`); the same for `§T37` and its sections; and `§T36` for anything of `T37` or later.
+- `§T35`: every `10-02` time is at or before `00:48Z`; passes `24`+ and `§29o`–`§29q` appear only as forward pointers (*"belong to `T36`"*); the `T36` statuses in `DATABASE` `§T35.6` stand struck with their pointer (pass 28). `§T37`: span `10-03 05:55Z →`; its `§30i` correction of `T36`'s *"mains at 1.00 hit exactly 50.0%"* sits correctly in `T37` (and in `MULTIPLIERS` `§T37.3`, after `§T36.3`). `§T36`: the only later material is a dated live reading (scheduler `v2.3.0`, commit `2026-10-08`) and pointers already marked *"a later transcript"*. Item `T35-3`'s `T36` update is labelled by source.
+- **CLEAN** — nothing new, nothing corrected.
+
+**Ledger**: pass `43` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T36`.
