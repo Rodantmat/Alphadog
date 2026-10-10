@@ -46922,3 +46922,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `135` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T13` done (`3,088` sentences); next `T14`.
+
+---
+
+# §P136 — PASS 136 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T14`
+*Angle (as NEXT set it):* (b9) `§P131`'s method on `T14`.
+- Tabulated in the shell before this line (the scan re-run at this pass's head): `T14` `626` of `1,201` sentences listed — **all `626` read and judged** (its head overlaps `T13`'s tail at `02:28`–`02:33Z` on `2026-09-11`).
+- On file, by substance: the "everything must be sharp" sweep and its counts, the `event_game_map` and its parse fix (`2,454` events), the `book_curves` disk spike and the scoped `rung_market` (`1,057,765` rungs), the de-vig longshot question and the owner's ruling that the market is a confidence adjuster and ranking signal, the ladder-offset collapse onto one line (`7,363` rows), the combos gap (`1,660` legs) and `BT_LADDER_STEPS` ±10, the loader's delete-before-insert mistake, the `|| echo` silent failures removed, the coach-change static context and `k1`, national TV and All-Star set aside, `baseline_history` built from the harness (`12.49M` rows), the fantasy formula, the phase split with scenario precompute and the arrival order, board sizes (`4,503` / `8,700` legs), the database tier reasoning and the public-repo Actions minutes, the window game-line snapshots (`307,604` rows), the empty teams file and the static map, the two-way flag from the injury report, the new box-score stats with `oreb` excluded, coverage `89.6%`, dunks needing play-by-play, live board archiving not solved. Judged: narration, cost guesses for unbought plans, static coach names and dates (the factor and its source are on file), run timings and row counts below the docs' grain (a `2.55` books-per-rung average, the de-vigged mean `0.4845`, the period history's `152` game-days).
+- **Nothing new — `T14` clean in additional sweep `1`.** No commit other than this pass's landed since `74ad50494` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `136` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T14` done (`3,714` sentences); next `T15`.
