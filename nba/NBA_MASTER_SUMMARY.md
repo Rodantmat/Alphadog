@@ -44512,6 +44512,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 `NBA_SYSTEM_DESIGN.md` `§T48.7` (the switch rule; "not soft"; capture times; retry policy) · `NBA_SYSTEM_ARCHITECTURE.md` `§T48.8` (net_retry; capture schedule; Betr chain; PrizePicks quote transport; ParlayAPI feed) · `NBA_WORKERS.md` `§T48.4` · `NBA_DATABASE.md` `§T48.6` · `NBA_MULTIPLIERS.md` `§T48.3` (the Flex tables closed by the quote engine; Sleeper settled) · `NBA_OPEN_ITEMS.md` `§T48 ITEMS` · `NBA_RECIPE.md` `STEP 14q` · `NBA_GLOSSARY.md`.
 **Ledger**: `T48` pass `1` — **NEW MATERIAL**, CLEAN `0`/`3`. **First pass of every transcript `T32`–`T48` + `S1`–`S9` complete.**
 
+## §T48.4 — PASS 14 (`2026-10-10`, closing-reply re-read): THREE DEFECTS THE RETRY AUDIT NAMED
+*All `17` final replies read (`§P14`); replies `#20`–`#24` carry an organization id and a conversation id — **cited by number only, never reproduced** (`§T48` credential rule). AS STATED.*
+- **The retry audit's silent failures, beyond those in `§T48.0` #9** (`10-10 02:35Z`): ParlayAPI made **one attempt only, and a failed capture blocked any re-run that day**; the injury report treated a temporary network error on the latest filing as *"no filing"* with a green step; **the board scrapers' own retry loops could run `6–9` minutes inside a `5`-minute step limit, so the last attempts never happened.**
+- **A capture-timing defect fixed with the three-times schedule**: *"P3 had been archiving the previous day's Betr board. The Betr run now archives its own board as the window snapshot."* Removed with it: `36` routine NBA pulls a day from the Sleeper, Underdog and Fliff workflows (*"Nothing used them"*; those workflows now pull MLB only), both Betr crons, two of four daily payout-map runs — full browser sessions through the paid proxy `7 → 3` a day.
+- **Round 3's close-out checks** (`20:22Z`): the backup P2A cron *"correctly refused the already-claimed slate"*; GitHub dropped both Betr Cloud Harvest crons on `10-09`; `whole_number_nb` stays priced-not-selectable at `< 1%` of slip legs.
+**Ledger**: `T48` pass `14` — **NEW MATERIAL** (`§T48.4`), CLEAN `0`/`3`.
+
 ---
 
 # §P2 — PASS 2 (`2026-10-10`) ACROSS `T32`–`T48` + `S1`–`S9`: THREE MECHANICAL COMPLETENESS ANGLES
