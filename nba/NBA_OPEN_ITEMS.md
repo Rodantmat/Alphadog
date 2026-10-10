@@ -1590,6 +1590,8 @@ of a stalled counter and of a green check — and the session needed both.*
 
 ## 🔴 **T16 OPEN ITEMS — what the 2026-09-13 session leaves named and scoped**
 
+→ 🆕 *`2026-10-10`, additional sweep `1`: the rate response re-test the session named as owed four times, with no result in its prose, and rim deterrence's one leg-level test on a team-blocks proxy — `NBA_MASTER_SUMMARY.md` `§T16.5`.*
+
 | # | Item | State |
 |---|---|---|
 | **T16-1** 🔴🔴 | **THE VERIFICATION HARNESS THE SESSION CONCLUDED IT SHOULD HAVE BUILT FIRST** | *"The real question isn't 'which factor wins.' It's: **on any day of the past two seasons, how sharp is the final HP, at every granularity?** That's a verification harness, and **it's what I should have built BEFORE any factor work.**"* Specified as **one report over any date range, measuring final HP against outcomes, broken out by `prop × band × direction × rung × role tier × phase`, flagging every cell that misses tolerance.** ⚠ **Whether it was built is NOT RECORDED in this transcript.** 🔑 **It is the owner's acceptance criterion turned into an instrument** *(`NBA_SYSTEM_DESIGN.md` §0z §1)*. > 🔴 **`[LIVE-AUDIT]` `2026-09-28`: still NOT RECORDED, now cross-confirmed.** A repo-wide search for a script matching this spec (a report keyed on `prop × band × direction × rung × role tier × phase` against outcomes) — across every `.py` and workflow file — returns nothing. No instrument matching this description exists in the live repo. |
