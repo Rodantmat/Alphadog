@@ -45694,3 +45694,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL / REOPENED → `0`/`3`**: `T32`, `T33`, `T34`, `T39`, `T40`, `T44`, `T46`, `T48`; `T43`, `T45` (reopened from `3`/`3`).
 - **CLEAN → `1`/`3`**: `T35`, `T37`, `T41`, `T42`, `T47`. **CLEAN → `2`/`3`**: `T38`.
 - ✅ **CLOSED `3`/`3`**: `T36`.
+
+---
+
+# §P62 — PASS 62 (`2026-10-10`): A STRICTER CO-LOCATION ANGLE ON EVERY TRANSCRIPT `T32`–`T48`
+*Angle:* two new tools. **`colocAll.py`** — every figure of a multi-figure strategy sentence must sit inside one ~700-character window of the record (`colocT.py` asked only for two of them); **`colocOrphan.py`** — a figure is an orphan when it appears nowhere within ~700 characters of another figure of its sentence or of two of the sentence's own words. Every orphan read one by one against the record (table cells recorded in another layout, MLB lessons and the `§30d`/`§30e` screenshot material judged as before). *Deviation from NEXT:* this angle replaced the planned `20`-sentence samples (seed `62`), which move to pass 63, because it reaches every sentence rather than twenty.
+- 🆕 Found and recorded (AS STATED, each in its transcript's section): **`T32`** (2 — the rank-sharpness arithmetic, the scrapers' state at close) · **`T33`** (the two-season cells table's missing rows, `§19h`'s opening months, `§16`'s side × line classes) · **`T34`** (the constancy table, the `pra R` margin row, the playoff ingestion gap by month, the 60-day player-rate row and its cold end, the ~3,000-tests noise bar, the full-hit rates) · **`T35`** (pass 19's leg figures, the variance test's sample) · **`T36`** (the morning line's `329` backfilled days) · **`T37`** (PrizePicks bankroll guidance, the breadth test's explanation, `§31g`'s second count) · **`T38`** (the guards' full behaviour test, the solver's published comparison, the textbook boundary) · **`T41`** (the read-only P5 verdict figures, the `EDGE_DELTA` reason, the tie-recompute check) · **`T44`** (`§31v`'s mispricing and cross-app findings — and a pass-60 fixed-string false positive corrected: `"~15 s"` had matched `"~15 segments"`) · **`T45`** (the first postseason alone) · **`T46`** (the candidate table's other rows, the minutes side of the drop) · **`T47`** (Sleeper's first reading, the old gate's replay, the gate funnel `638 → 57 → 51` / `78 → 5 → 5`, the deployed rule's parameters).
+- ✅ **CLEAN on this angle:** `T39` (orphans: audit ids, fact numbers, figures on file), `T40` (orphans: fact numbers), `T42` (one fact number), `T43` (none), `T48` (one, already recorded in pass 60).
+- ⚠ **Process slips:** the `§T46.8` and `§T47.9` patches went out in parallel on the same file (fifth instance; both landed, verified); `§T38.8`'s first wording counted four passages for three (corrected the same pass).
+- Every quotation added: `qdiff.py` `0` flags.
+
+**Ledger**: pass `62` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T44`, `T45`, `T46`; **back to `0`/`3` from a clean count**: `T35`, `T37`, `T41`, `T47` (from `1`/`3`), `T38` (from `2`/`3`); **reopened from `3`/`3`**: `T36`.
+- **CLEAN → `1`/`3`**: `T39`, `T40`, `T43`, `T48`. **CLEAN → `2`/`3`**: `T42`.
