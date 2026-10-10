@@ -65,7 +65,7 @@ jobs:
             libnss3 libxss1 libasound2 libgbm1
 
       - run: |
-          python -m pip install --upgrade pip curl_cffi "psycopg[binary]" seleniumbase "proxy.py"
+          python -m pip install --upgrade pip primp curl_cffi "psycopg[binary]" seleniumbase "proxy.py"
           sbase get chromedriver || true
 
       # PROXY FROM THE CREDENTIAL STORE (owner rule: the proxy URL lives in nba_config.external_credentials 'proxy_url');
