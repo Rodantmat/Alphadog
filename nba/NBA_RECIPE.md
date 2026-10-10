@@ -1370,6 +1370,8 @@ of an effect.**
 segment adds is that they were taken TOGETHER, as one decision about granularity, and resolved in
 OPPOSITE directions by a single shared standard: *the held-out season judges.***
 
+→ 🆕 *`2026-10-10`: the rejected variant added the player's own rest bucket (the team back-to-back barely moved Questionables) — figures in `NBA_MASTER_SUMMARY.md` `§T26.R5`.*
+
 ### 🔴🔴 **AND THE REFUSAL — THE LINE BETWEEN A DECISION AND AN ACTION**
 
 > 🔑🔑🔑 ***"what i won't decide for you: **rotating the published api key and the postgres password,
