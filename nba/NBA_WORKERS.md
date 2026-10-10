@@ -3574,3 +3574,16 @@ these twelve.**
 | *(close)* | `nba-close-capture.yml` | the close board (PP + UD, label `close`), input-free; fired by the scheduler (**v2.1.0** `decideClose`, first tip − 25 min) |
 **New steps inside the daily pipelines** (✅ in the YAML): **P3** — *"Underdog paper pick (P5 + P4 shadow)"* after the PrizePicks slip pick, `continue-on-error`; **P2A** — *"Underdog paper grade"* after the PrizePicks grade (every ungraded slate before today), `continue-on-error`; **P2B** — the daily **player-name-map refresh** (before anything that resolves names) and the **`morning` DFS board snapshot** (PP + UD, gated on `has_games`, `continue-on-error`, each board capped at 5 min). **`live_slip_engine.py`**: `LS_LEG_SOURCE` default **`live`** (line `216`), `universe` for parity.
 **A timing harness** (`§31f`): *"exact copy of the scorer with only the output table redirected to a scratch table; dropped after"* — the P3 scorer measured at **20 s** on a 38,551-leg board without touching `board_scored`.
+
+---
+
+## 🆕 **§T38.4 — `T38` (`2026-10-04`): THE SLATE SANDBOX, THE EDGE MONITOR, THE ROI CURVE, THE STAR-UNDER TEST** *(source `T38`, `NBA_MASTER_SUMMARY.md` `§T38`; ✅ files present, all workflows `workflow_dispatch`, `2026-10-10`)*
+| script (`nba/`) | workflow | does |
+|---|---|---|
+| `sim_slate.py` | `nba-sim-slate.yml` | **sandboxed future-slate rehearsal**: model built with writes to scratch `nba_score._sim_*`, reads on production; the real `pick()` with commits suppressed, rolled back; refuses if production holds the slate; final step drops scratch and **fails unless production holds `0` rows** for it |
+| `edge_monitor_research.py` | `nba-edge-monitor-research.yml` | read-only research: exact expected payouts, break-even solve, confidence sequences vs group-sequential, bootstrap-calibrated boundaries, power |
+| `validate_edge_monitor.py` | `nba-edge-monitor-validate.yml` | the production edge-monitor code on real 2024-25 / 2025-26 data |
+| `roi_curve.py` | `nba-roi-curve.yml` | read-only: the portfolio's exact expected ROI vs uniform leg-hit deficit |
+| *(test builds)* | `nba-star-under-test.yml` | 8 sequential builds (control + 3 thresholds × main / steals-free), comparison, test tables dropped |
+**Code added to `live_slip_engine.py`** (✅): `LS_MODE=edge` (break-even monitor; `LS_EDGE_CONFIRM_Z` `3.28`, `LS_EDGE_ALARM_Z` `−3.09`, `LS_EDGE_REBUILD`); **`MIN_BOARD_LEGS` / `LS_MIN_BOARD` `179`** (line `133`); **`STAR_UNDER_LINES`** + `star_under_weight()` (line `137`) → `live_slips.stake_weight`; the live loader's **team rule** (board-named teams, else the game-log/roster team that plays that day). **`ud_live_slip_engine.py`**: `UDL_MIN_BOARD` `178`. **`build_slip_engine.py`**: `SE_EXCL_STAR_UNDER` (test only, refuses without a table suffix; thresholds `SE_STAR_POINTS` / `SE_STAR_PRA` / `SE_STAR_COMBO`). **P2A**: *"Edge monitor (break-even, group-sequential)"* after the PrizePicks grade, before the Underdog grade, `continue-on-error`.
+*Later Underdog counterparts present today* — `nba-ud-edge-monitor-research.yml`, `nba-ud-edge-monitor-validate.yml` — are `T39` material.
