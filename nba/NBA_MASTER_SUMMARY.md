@@ -45677,7 +45677,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - 🆕 **`T44`** (two `§31w` sentences), **`T46`** (the weighted verdict values, the band grid), **`T48`** (the feed probe) → their pass-61 bullets. ✅ **`T47` — CLEAN** (`colocT.py` `12` of `179`: run ids, the figures `§T47.9` recorded, or summary restatements; the figure-free read of `32` found nothing beyond; the payout-map line out of scope).
 - 🆕 **`T39`** (G2's first plan, `colocT.py`), **`T40`** (the routing test's `12,172` / `976` / `13,148` and the `162`-leg determinism failure — on file before only as a rounding-list mention) → their bullets. ✅ **`T37`** (`colocT.py` `10` of `572`, all on file or MLB player prices), **`T41`**, **`T42`** (`figmiss2.py` `0`, `colocT.py` `0`) — **CLEAN**. ✅ **`T38` — CLEAN** (all `20` sampled sentences traced; the spotlight-board reading is on file as the preview's verdict and the star-line finding).
 - 🆕 **`T32`** (four passages: the contrarian-form rule, fixed vs tiered, pooling for supply, the signals matrix), **`T33`** (one, a simulated-lines-era config line), **`T34`** (one table row) → their pass-61 bullets. ✅ **`T35` — CLEAN** (the `20` sampled sentences all traced).
-- ⚠ **Process slip:** the `§T40.8` and `§T39.9` confirmation patches went out in parallel on the same file (fourth instance); both landed, verified on main.
+- ⚠ **Process slips:** the `§T40.8` and `§T39.9` confirmation patches went out in parallel on the same file (fourth instance); both landed, verified on main. START HERE's strike of the pass-60 state was again first left unclosed (second instance) — closed the same pass.
 - Every quotation added: `qdiff.py` `0` flags.
 
 **Ledger**: pass `61` complete (`2026-10-10`).
