@@ -45885,3 +45885,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T33`, `T37`, `T38`, `T44`, `T46`, `T47`, `T48`.
 - **CLEAN → `1`/`3`**: `T32`, `T34`, `T35`, `T36`, `T39`. **CLEAN → `2`/`3`**: `T40`, `T43`.
 - ✅ **CLOSED `3`/`3`**: `T41`, `T42`, `T45`.
+
+# §P70 — PASS 70 (`2026-10-10`): A FRESH SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN
+*Angles (as NEXT set them):* (e5) a seed-`70` sample on `T32`–`T40`, `T43`, `T44`, `T46`–`T48` — `20` sentences each, drawn as `sampleCheckS.py` draws them and printed whole; every sentence read; those the checker passed (≥ `60%` 4-gram coverage and every figure present) accepted on the match, the rest traced by key phrases and figures across the eleven editable documents, the transcript passage opened where a check came back empty. Traced per transcript: `17` · `15` · `15` · `16` · `15` · `13` · `10` · `16` · `13` · `16` · `15` · `17` · `13` · `15`. (f5) the ≥ `5` scan re-run on all fourteen after pass 69's additions: no flag that an earlier tier had not traced.
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (the calibration ceiling; the availability values) · **`T33`** (the survivor summary; the structure-survives verdict) · **`T34`** (the every-n reading; the second wrong null's flaw; family C's reading and remedy) · **`T35`** (delta mode's speed; the calendar-rule reason; the cushion's slip-level reading) · **`T36`** (pass 35's research conclusion) · **`T37`** (the first-month lift; the Underdog skip verdict) · **`T38`** (the preview's empty families; the unit-case count) · **`T39`** (G1's first closing reading; the late pick's reason; the process rules) · **`T43`** (Gemini on `§29v`) · **`T46`** (the slip-level proof limit; the Underdog leaderboard cell) · **`T47`** (the `v` derivation; the ledger column definitions) · **`T48`** (the `2026-03-17` tie).
+- ✅ **Clean on this angle:** `T40` (its third clean angle in a row → **CLOSED**), `T44`.
+- Judged, not recorded: the retracted `§30d` shading figures (`T36`, as before); the pooled leaderboard (`T33`, as before); run ids; table headers; the Betr board's session detail (summary level, as before).
+- ⚠ **Process slips:** `§T36.6`'s new bullet first carried a self-contradictory status line — rewritten by strike. No hourly-rotation commit landed during the pass (checked on main).
+- Every quotation added since the pass-69 census commit: `qdiff.py` `0` flags.
+
+**Ledger**: pass `70` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`–`T39`, `T43`, `T46`–`T48`.
+- **CLEAN → `1`/`3`**: `T44`.
+- ✅ **CLOSED `3`/`3`**: `T40` *(pass 70)*, `T41`, `T42`, `T45`.
