@@ -236,6 +236,95 @@ fetch(url, opts).then(function(r){ return r.text().then(function(t){ done({statu
 """
 
 
+def _primp_targets():
+    """primp's emulation targets, newest Chrome first, then the Safari / Firefox targets that also answered.
+    WHY PRIMP (probe 38019790315, 2026-10-09): primp 'chrome_153' presents the SAME JA4 TLS fingerprint as the real
+    Chrome 154 (t13d1517h2_8daaf6152771_cb7bf5808d99; curl_cffi chrome150 is t13d1516..., one extension short - the
+    feature DataDome keys on), and the quote POST answered 200 with the payout table both from the runner's own IP and
+    through the raw proxy; chrome_152 / safari_26 / firefox_147 answered from the runner's IP. The newest target is
+    discovered at run time (pip installs the latest primp), so the path keeps up with Chrome by itself."""
+    try:
+        import primp
+    except Exception:  # noqa: BLE001
+        return []
+    out = []
+    for v in range(175, 139, -1):
+        try:
+            primp.Client(impersonate=f"chrome_{v}")
+            out.append(f"chrome_{v}")
+        except Exception:  # noqa: BLE001
+            continue
+        if len(out) == 2:
+            break
+    for t in ("safari_26", "firefox_147"):
+        try:
+            primp.Client(impersonate=t)
+            out.append(t)
+        except Exception:  # noqa: BLE001
+            pass
+    return out
+
+
+class PrimpQuoter(Quoter):
+    """Quotes over primp (Rust HTTP client with current-browser TLS/HTTP2 emulation): no browser, a few KB per quote.
+    Egress order per target: the runner's own IP first (no metered proxy traffic; answered 200 in the probe), then the
+    raw proxy. A wall (403 / DataDome) moves to the next egress, then the next target, on a fresh client (new cookies).
+    Headers as proven in the probe: the app's origin/referer/sec-fetch set, no x-device-* headers."""
+
+    ROUTES = ("direct", "proxy")
+
+    def __init__(self, px):
+        self.targets = _primp_targets()
+        if not self.targets:
+            raise RuntimeError("primp not installed / no emulation target")
+        self.raw = (px or {}).get("https")
+        self.slots = [(t, r) for t in self.targets for r in self.ROUTES if r == "direct" or self.raw]
+        super().__init__(px)
+
+    def new_session(self):
+        import primp
+        tgt, route = self.slots[self.ti % len(self.slots)]
+        self.target = f"primp:{tgt}:{route}"
+        kw = dict(impersonate=tgt, impersonate_os="windows", timeout=40, cookie_store=True)
+        if route == "proxy":
+            kw["proxy"] = self.raw
+        self.s = primp.Client(**kw)
+        try:
+            self.s.get(BOARD_URLS[0].replace("per_page=1000", "per_page=50"), headers=app_headers())
+        except Exception:  # noqa: BLE001
+            pass
+        print(f"SESSION|{self.target}", flush=True)
+        time.sleep(1.5)
+
+    def _post(self, picks):
+        body = {"new_wager": {"amount_bet_cents": 2000,
+                              "picks": [{"wager_type": side, "projection_id": pid} for pid, side in picks],
+                              "pick_protection": False},
+                "game_mode": "prizepools"}
+        r = self.s.post(API + "/game_types", headers=app_headers({"content-type": "application/json"}),
+                        content=json.dumps(body).encode())
+        return r.status_code, (r.text or "")
+
+
+def _probe_ok(q, probe, label, tries=None):
+    """one unrecorded 2-pick quote on each of the quoter's sessions (up to `tries`): True when one answers 200."""
+    n = tries or 1
+    for k in range(n):
+        try:
+            st, txt = q._post(probe)
+        except Exception as exc:  # noqa: BLE001
+            st, txt = -1, str(exc)[:120]
+        walled = "captcha-delivery" in (txt or "") or st == 403
+        if st == 200 and not walled:
+            print(f"TRANSPORT|{label}|{q.target} answered (200) - this rung serves the run", flush=True)
+            return True
+        print(f"TRANSPORT|{label}|{q.target} refused (status {st}{', wall' if walled else ''})", flush=True)
+        if k < n - 1:
+            q.ti += 1
+            q.new_session()
+    return False
+
+
 class BrowserQuoter(Quoter):
     """Quotes from the PrizePicks web app's own page context (fetch() with the page's datadome / cf_clearance cookies and
     Chrome's real TLS fingerprint). Proven 2026-10-09 (probe 38010173137): 2/3/4-pick all-standard + a goblin+demon pair
