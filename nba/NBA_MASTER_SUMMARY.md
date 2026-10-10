@@ -46933,3 +46933,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `136` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T14` done (`3,714` sentences); next `T15`.
+
+---
+
+# §P137 — PASS 137 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T15`
+*Angle (as NEXT set it):* (c9) `§P131`'s method on `T15`.
+- Tabulated in the shell before this line (the scan re-run at this pass's head): `T15` `609` of `1,084` sentences listed — **all `609` read and judged** (its head overlaps `T14`'s tail at `05:14`–`05:16Z` on `2026-09-12`).
+- On file, by substance: the enrichment engine design (components not probabilities, residual cells, the double-count rule), the research corrections (the fixed team-minutes pool, separate minutes and usage flows, pre-game ruled-out absences only), the absence panel and its "Last, First" name fix, the blowout contamination of the opponent effect, the five retracted panels and their conservation-gate values, the allocator that passed (`0.9930`, MAE `4.609`), `A2` shipped for `15` of `19` props and the rate response rejected, `B4`'s failures including the league-wide exposure-scoping bug and the near-zero betas after the fix, `N1` status resolution (`0.503`, Doubtful out, Questionable `0.552` rotation / `0.312` fringe, the reason and team splits), `A2` under window-time information, the live board archiver and Fliff's three bugs (`1,394` legs), the `oreb` arc (lambda, opportunity basis, estimator shrinkage, the DREB-defined archetype, `0.241` → `0.045`, the `0.1 pp` penalty), the reliability scorer and the all-props verdicts (fantasy and double-double penalised, periods verified), the deepest markets being the least exploitable. Judged: narration, research-source summaries (FiveThirtyEight, Unabated, the PLOS finding as cited), intermediate tables and sample sizes below the docs' grain.
+- **Nothing new — `T15` clean in additional sweep `1`.** No commit other than this pass's landed since `a5aff3ba4` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `137` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T15` done (`4,323` sentences); next `T16`.
