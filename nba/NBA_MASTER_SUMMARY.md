@@ -46168,7 +46168,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 ---
 
 # §P85 — PASS 85 (`2026-10-10`): A SEED-85 SAMPLE ON `T37`; THE RE-RUN
-*Angles (as NEXT set them):* (i6) a seed-`85` sample on `T37` — `20` sentences, printed whole; every sentence read; those the checker passed accepted on the match, the other `5` traced by key phrases and figures, the transcript passage opened where a check came back empty. (j6) the ≥ `5` scan re-run on `T37` after pass 84's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new).
+*Angles (as NEXT set them):* (i6) a seed-`85` sample on `T37` — `20` sentences, printed whole; every sentence read; those the checker passed accepted on the match, the other ~~`5`~~ `15` *(count corrected the same pass)* traced by key phrases and figures, the transcript passage opened where a check came back empty. (j6) the ≥ `5` scan re-run on `T37` after pass 84's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new).
 - ✅ **Clean on this angle:** `T37` — the early-slate cutoff gate and its 11:31 dispatch, the Underdog edge after repricing (the "paper only, 6-Flex only" stage), the widened drought envelopes, the final-week off-by-one fix, the parity test, the archive's label fix, the collapse of the same-cells build, the retest catalogue, the finer compositions, the live stand-down dates, the paper-grade wiring — all on file; the band-table header judged.
 - No hourly-rotation commit landed during the pass (checked on main before writing this line).
 - No quotation added since the pass-84 census commit.
