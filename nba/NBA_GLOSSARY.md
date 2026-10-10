@@ -2246,3 +2246,11 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **void reversion (PrizePicks)** | a slip pays the table of the legs left: Flex 2 left → 3× Power-style; 1 left → 1.5× × factor on a hit; refund only when none left | `NBA_MULTIPLIERS.md` `§T41.3` |
 | **adverse selection (offered Unders)** | the operator offers an Under at a high model probability mostly when it disagrees with the model — calibration must be judged on offered legs | `NBA_BASELINE_CALIBRATION.md` `§T41.5` |
 | **probe (`nba-probe.yml` + trigger file)** | a runner-side end-to-end test of one script without a pipeline run | `NBA_WORKERS.md` `§T41.4` |
+| **`RED_STICKY`** | hurdle flag set on every red evaluation; evaluated before any calendar window; released only by a PASS `REQUAL` (or the owner's manual SQL) | `NBA_SYSTEM_DESIGN.md` `§T42.7` |
+| **soft step / `soft_failed`** | a `continue-on-error` pipeline step; failed ones are collected into the job output `soft_failed` and written to the `pipeline_runs` row's note | `NBA_SYSTEM_ARCHITECTURE.md` `§T42.8` |
+| **proxy resolver (`proxy_url`)** | the workflow step that reads the proxy URL from `nba_config.external_credentials` first and falls back to the GitHub secret | `NBA_SYSTEM_ARCHITECTURE.md` `§T42.8` |
+| **`lobby_only` (Betr)** | a GraphQL answer to the events query that carries no projections — evidence, never the board | `NBA_WORKERS.md` `§T42.4` |
+| **dress rehearsal (sim-slate)** | `nba-sim-slate.yml`: the full P2B → P3 → pick chain on a future slate in a sandbox, production verified untouched | `NBA_SYSTEM_ARCHITECTURE.md` `§T42.8` |
+| **`broad_day`** | the certified builder's diversification tie-break, on when ≥ 5 families have ≥ 2 cells that day; the live pick now computes it the same way | `NBA_SYSTEM_DESIGN.md` `§T42.7` |
+| **market term / market-free twin** | the confidence deduction for sportsbook backing (`f_books`, `f_agree`) that live cannot reproduce; the certified history rescored without it (`_mf` tables) | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
+| **placeholder season files (`ensure_season_files.py`)** | empty current-season input files written before the first game so the builders label the opener as the new season | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
