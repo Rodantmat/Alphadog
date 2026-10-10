@@ -17994,6 +17994,14 @@ source is in none of the twelve. CLEAN 0/3 · 1 pass.**
 **DFS BOARD BACKFILL · MARKET SOURCES · THE PAID SUBSCRIPTION**
 *712 content blocks · **PASS 0 2026-09-21** · novelty baseline `5dfb72ab` → `/tmp/t11base/nba/` (32 files)*
 
+### T11.60 — 🆕 ADDITIONAL SWEEP `1` (`2026-10-10`, sweep pass 134, `§P134`): **THE ODDSPAPI PROBE'S VERDICT, AND THE GAME-LINE ARCHIVE'S DEPTH**
+*The twelve name OddsPapi only as an alternative researched (`NBA_OPEN_ITEMS.md`) and its key by name; what the probe on the owner's key found was not on file.* From `2026-09-10 02:19Z`, AS STATED:
+- the key valid on the free tier; the historical endpoint *"free and unmetered, one fixture per call"*, returning the full tick history;
+- *"historical data is available since January 2026 only"* — at best half of 2025-26, nothing for 2024-25;
+- *"Underdog and Sleeper do not exist in OddsPapi at all"*; PrizePicks exists but is a restricted bookmaker on that account, and every book on the free subscription shows no player props — unlocking it was put at *"plans reportedly from ~$49/month"*.
+- It was not pursued: thirteen minutes later the paid Odds API test returned both PrizePicks and Underdog boards for `2024-10-25` (on file).
+- And the ParlayAPI game-line archive, from `01:51Z`: *"64 sources, NBA from 2007 with 14 sources"*, the five `_an` books from Oct 2023 — the twelve carry the Oct 2023 – Jun 2026 window only.
+
 ### T11.59 — PASS 58 (**the FIFTEENTH two-direction judgment — the closure-deciding pass**) — **✅ CLEAN · all four headline findings SURVIVE, one of them tested EXHAUSTIVELY for the first time**
 *2026-09-21. **Built so that a system defect would have its best chance to appear** — each headline
 attacked at its weakest joint, not its strongest — *so that closure would be earned rather than
