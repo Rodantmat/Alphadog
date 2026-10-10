@@ -15561,6 +15561,14 @@ draws from.**
 > 🔑 **T10 has 14 owner turns — more than twice any transcript so far** (T9 had 5, T8 6). *The stratum
 > is the transcript's centre of gravity, not a side channel.*
 
+## T16 — `2026-09-19-18-20-09-nba-enrichment-blowout-matchup-2026-09-13.txt` *(additional-sweep residue only — `§T16.1`–`§T16.4` sit in other documents of the twelve; see entry row `16`)*
+
+### T16.5 — 🆕 ADDITIONAL SWEEP `1` (`2026-10-10`, sweep pass 138, `§P138`): **THE FUNNEL'S TWO EXTRA TERMS, MEASURED — AND THE RE-TEST THE AUDIT OWED THE RATE RESPONSE**
+*From the messages of `2026-09-13` `17:19Z`–`19:07Z`. Already on file: the funnel's `13.8%` result on `5,216` legs and B4 v3's block-count crudeness (`NBA_FINAL_SCORING_CALIBRATION.md` `§0a-T16` §2 and §4), and the blowout shrink's verdict as a duplicate of the recipe's mixture (`§T26.41`).*
+- **Blowout risk inside the funnel** (`18:16Z`): *"Blowout risk made it slightly worse — log-loss 0.7951 → 0.7978, MAE 5.392 → 5.405."*
+- **Rim deterrence inside the funnel** (`18:21Z`–`18:27Z`), placed at the shot-mix link because *"it reallocates attempts rather than reducing them"*: *"Rim deterrence also fails at the leg level — log-loss 0.7970 versus the clean funnel's 0.7951."* The transcript then qualifies it (`18:29Z`): *"Whether it survives once the funnel uses proper baseline minutes is untested, and my one attempt used a crude team-blocks proxy."* The measure it had named as owed (`17:25Z`): *"opponent rim attempts and rim FG% with the player on the floor"*.
+- **The rate response re-test** was named as owed at `17:19Z`, `17:25Z`, `17:40Z` and `17:56Z`, because its input *"was the broken usage assumption"*. ⚠ No re-test result appears in T16's prose (`14` prose lines name the rate response; shell grep), and the closing summary (`19:07Z`) lists it with the failures: *"A2 is harmful; blowout, rim, A5, M1 and the rate response all failed."*
+
 ## T15 — `2026-09-18-17-12-53-nba-enrichment-factors-a2-n1-reliability-audit-2026-09-12.txt`
 
 ### T15.1 — PASS 0 (**corpus + owner stratum**) — **🔑🔑 an explicit "save this" rule, and an ANTI-REJECTION order inside the factor-rejection transcript**
