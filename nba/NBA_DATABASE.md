@@ -3463,6 +3463,24 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T37.6 — **`T37` (`2026-10-03/04`): THE UNDERDOG PROGRAM'S TABLE FAMILY (`nba_score.ud_*`), AND `prop_universe` DEMOTED TO BACKTEST-ONLY** *(source `T37`, recovered transcript; live read-only `2026-10-10`)*
+✅ **`68` `nba_score.ud_*` relations live today.** Read them by family (suffix = the build that wrote it):
+| family | tables | what |
+|---|---|---|
+| universe | `ud_window_legs` (`450,206`), **`ud_window_legs_curr`** (`450,206` — the repriced legs, scenario per build) | historical UD legs at the window snapshot; `m` = payout modifier |
+| tier map | `ud_tier_map_legs` (est. `1.27 M`), `_curr`, `ud_tier_map_bands` (`23,004`), `_curr`, `ud_tier_map_summary` (`798`), `_curr` | the modifier-band tier map and its sweep |
+| certification | **`ud_cand_certified`** (`1,074` ✅ — the §30k grid), `_curr` (strict), `_dlt` (balanced) | raw-source certified cells |
+| signals | `ud_cand_leg_features` / `_x` (`253,519`), `ud_cand_signal_matrix` (`71,091`), `ud_failed_signal_matrix` (`28,127`), `ud_stat_actual` (est. `394k`), `ud_leg_fresh` (fresh-absence flags), **`ud_leg_nvw`** (materialized window no-vig — the fix for a 2½-h query the database killed), **`ud_leg_clv`** (window→close no-vig per leg, est. `1.28 M`) | leg features and tests |
+| engine | `ud_slip_engine_slips` (`211,831`) / `_legs` + suffixes **`_center`** (the adopted rule), `_center_hot`, `_hotform`, `_minfall`, `_minrise`, `_curr_center`, `_curr_center_hc0`, `_curr_center_orig`, **`_dlt_orig`**, **`_dlt_recert`**, `_dlt_orig2` / `_dlt_recert2` (finer compositions), `_dlt_orig_fresh`, `_dlt_orig_nv48`, `_dlt_recert_nv48`, `_dlt_under3` | one table pair per tested build; **the rejected builds are kept** (minfall, minrise, hotform, nv48, fresh, under3) |
+| validation | `ud_slip_validation` + `_curr_center`, `_dlt_orig`, `_dlt_recert` (60 rows each) | V1/V1R forward+reverse, V2, V3, V5 |
+| live | **`ud_live_slips`** (`0`) | the UD paper ledger |
+*Not created in `T37`*: the `_post` and `_mf` suffix families and `ud_edge_monitor(_ref)` — later transcripts.
+🔴 **`nba_market.prop_universe` is a BACKTEST table** (`§31`): written only by manual SQL functions (`build_prop_universe` from `pp_model_vs_price` / `pp_leg_price_cons` / `player_game_map`), **refreshed by no pipeline**. Until `T37` the live PP pick and grade read it. It also **lacks every Jr / Sr / II / III player** (its normalizer kept suffixes, the tiers table's `nm` keeps them too — `218` of `3,595` legs on 2026-01-10), and on 2026-03-08 `18` players had **NULL events** from `player_game_map`. *Read every `prop_universe`-based figure in the twelve as a backtest figure on that universe.*
+**`nba_ref.player_name_map`** — the register every name join resolves through on both apps; refreshed only by hand until `§31b`, so it **lacked every 2026-27 newcomer**; now refreshed daily in P2B. ✅ `5,221` rows.
+**`nba_market.board_snapshots`** gains the label **`morning`** (PP + UD at P2B's morning step, `§30y`) — ✅ `0` rows yet (the step is gated on a regular-season slate). The `close` label is written by the scheduler-fired close capture (`§31c`).
+
+---
+
 ## 🆕🔴 §T36.6 — **`T36` (`2026-10-02/03`): `nba_control` (THE SCHEDULER AND THE RUN-ONCE LEDGER), AND THE SLIP PROGRAM'S NEW `nba_score` TABLES** *(source `T36`, recovered transcript; live read-only `2026-10-10`)*
 **Schema `nba_control`** — operational control, not data. ✅ live columns:
 | table | columns | what writes it | live |
