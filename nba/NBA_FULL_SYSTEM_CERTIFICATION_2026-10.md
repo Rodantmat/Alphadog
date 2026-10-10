@@ -1087,3 +1087,36 @@ Each candidate was either executed or measured to its final-output effect and cl
   stay as backup; the workflow auto-switches WNBA → NBA on 10-20 UTC.
 - **Residual (watch):** ~10 `ERR_CONNECTION_CLOSED` XHRs per run through the DataImpulse proxy (tracking / images; the
   board still arrives). `nba/TRIGGER_NBA_PROBE.txt` reset to `probe_price_shop_ledger.py` (1651bfa).
+- **Proxy drops hardened (found by a run dispatched outside this session, 38007254948):** the first load was Chrome's own
+  net-error page through the proxy, every later call dropped (zero 200s) and the app fell back to `/auth` — logged as an
+  expired session although the session is valid to 10-28. Now: every navigation goes through `open_alive` (reloads while
+  Chrome shows a net-error page); a run with no answered Betr traffic exits **4** (`the proxy carried no Betr traffic … the
+  session was not the cause`); the workflow retries exit 4 once on a NEW sticky proxy session (per-run session ids). Exit 2
+  is reserved for a real session failure, 3 for a league Betr has not opened. Regression: WNBA 38009480495 → 738 legs.
+
+### PRIZEPICKS QUOTES — TEN DAYS BLIND, FIXED (2026-10-09; `PP_PAYOUT_FINDINGS.md` §0j)
+- Found while probing the 10-20 in-app checks: since 2026-09-30 DataDome answered every `/game_types` quote from
+  `pp_payout_map.py` (curl_cffi) with its captcha (every NBA / WNBA map file 09-30 → 10-09: 0 quotes). The 6-hourly runs
+  stayed green because the board GET worked and the file was written — the payout map, the price-drift monitor and the
+  per-leg price mining had no new data for ten days. **Not soft — fixed.**
+- **Fix:** quotes from the web app's own page in a real Chrome (SeleniumBase UC + Xvfb + the residential proxy — the Betr
+  chain): `BrowserQuoter` in `pp_payout_map.py` (a `Quoter` subclass: same records, budget, stop rules), default
+  `PP_TRANSPORT=browser`; a DataDome block restarts Chrome on a new proxy session (new exit IP); minimal headers (the old
+  `x-device-*` headers fail CORS preflight in a page). Workflow `nba-pp-payout-map.yml` gained the Chrome deps and the
+  credential-store proxy (it still read only the secret). Image blocking was tried to save proxy traffic and reverted:
+  DataDome challenged it (38010995054). **Production runs 38010541980 and 38011389251: 78 / 78 quotes 200 each, loaded.**
+  New tools: `nba/probe_pp_quote_browser.py`, `.github/workflows/nba-browser-probe.yml` (real-Chrome probes, no commit).
+- **Cost to watch:** a full-page Chrome session per 6-hourly map run is the second-heaviest proxy user after the Betr
+  harvest — read in the first in-season week with the DataImpulse dashboard (the owner keeps the plan as is).
+
+### THE 10-20 IN-APP CHECKS — PROBED (owner: "you can also probe the apps for everything")
+- **PrizePicks 3-/4-Flex — CLOSED by PrizePicks' own quote engine:** 3-Flex 3.0 / 1.0, 4-Flex 6.0 / 1.5 (Power 3 = 6.0,
+  4 = 10.0; 2-pick 3.0, Flex 2.0 / 0.5) — the mined tables the engines use, not the help centre's 2.25 / 1.25 and 5 / 1.5.
+- **Sleeper payout = product of multipliers — not answerable without an account:** the help centre states no formula
+  (Player Picks Rules, Combo Contests: Max all-hit, Flex one miss at 3+ / two at 5+, minimum Flex 1.25×, voids regraded as
+  if never included); probe 38008386302 found no payout rule in the public endpoints (`lines/available` 9,120 lines,
+  `available_alt` 3,341, `promos` 8 — only per-option `payout_multiplier`) nor in the web bundles; entry quotes need a
+  logged-in session. Sleeper stays a PAPER board (§31u): nothing is staked on it, so the rule is verified on the first real
+  entry, not assumed.
+- **Fliff NBA player props:** the 10-09 22:51Z board is still team markets only (426 legs: show-case, moneyline, spreads,
+  totals); the archiver already counts and skips non-player legs — the first NBA player-prop board shows up in P3's log.
