@@ -802,6 +802,7 @@ list with a non-success conclusion**, so **an operator reading only the conclusi
 broken job and re-debugs code that was never the problem.** 🔑 **The distinguishing evidence is the
 CONCLUSION VALUE — `cancelled`, not `failure` — and the timestamp's proximity to the workflow-file
 commits.** *Probed 2026-09-22: **0 of the twelve and 0 of the thirty** carry this distinction.*
+→ 🆕 *`2026-10-10`: the build chat's later statement of the rule for a run already in progress — an edit does not cancel it; a concurrency group holds one pending run, and a third dispatch cancels the pending one — is in `NBA_MASTER_SUMMARY.md` `§T28.2` (`2026-09-25`).*
 
 ✅ **Concurrency groups themselves are well documented here** *(9 of the thirty, 8 of the twelve —
 including `nba-engine-test.yml` having its own group)*. **What was missing is the FAILURE MODE they
