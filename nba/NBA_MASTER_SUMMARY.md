@@ -44559,6 +44559,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **`§31t` (1), the reversion fix's size**: *"1,120 single-survivor slips of 478,900 (0.23%) — 977.8 units paid vs 1,120 refunds assumed before"*.
 - **`§31t` (6), not defects**: *"archive_live_boards game dates are ET-of-tip, the runner clock is only a tipless fallback"*.
 - **Reliability (pass G)**: *"12 scrapers wrote their data file BEFORE the failure check (the DARKO 10-05 pattern) — every one now leaves the previous file untouched on failure"* (the count is the new part; the rule is on file).
+- **The proxy change's economics** (`colocT.py`, `1` of `61`; `figmiss.py` had matched `3.62` inside `23.62`): the old provider *"(407 since 17:20Z, $3.62/GB at the 25 GB tier)"*, the new one *"($1/GB, no expiry …)"* — the account's targeting suffix and URL are not reproduced (credential rule).
 - ⇒ **`T42` fails the deep check (small residue) — REOPENED, CLEAN `0`/`3`.**
 
 # §T43 — `T43` · `2026-10-08-07-13-36-nba-round2-closure-p5-twin-no-backdata-research` *(transcripts pack `2026-10-09`)* — 🆕 **ROUND 2 CLOSES: THE MARKET TERM IS DECIDED (A MARKET-FREE TWIN, NOT A REWRITE), ONE SLATE PREDICATE, THE OPENING-NIGHT PATH PROVEN BY TWO DEFECTS ONLY A REHEARSAL COULD FIND — AND THE OWNER'S "NO BACK DATA" QUESTION ANSWERED**
