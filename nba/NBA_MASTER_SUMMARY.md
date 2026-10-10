@@ -44859,3 +44859,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `19` complete (`2026-10-10`).
 - **CLEAN → `1`/`3`**: `T32`.
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+---
+
+# §P20 — PASS 20 (`2026-10-10`): (jj) THE WORKFLOW DISPATCHES AND RUN OUTCOMES THE CHATS READ — `T32` AND `T36`
+*Angle (jj):* not the prose but the tool traffic under it — every `github_trigger_workflow` call (`T32` `16`, `T36` `26`) with its inputs, and every run the chats' run listings show as `failure` / `cancelled` (`pages build and deployment` cancellations excluded as GitHub Pages noise), each matched to the twelve and to the doc track's own open items.
+- 🆕 **`T36` answers two of the doc track's own open questions**:
+  - **`T26-21`** (`NBA_OPEN_ITEMS.md`) asked whether P3 run `37081677730` was dispatched with `skip_scrape=true` — the doc track's tools could not read a dispatch's inputs. **The transcript holds the call**: the build chat dispatched `nba-p3-afternoon-light.yml` with `asof 2026-10-02`, `skip_scrape true` as the first test of its run-once guard; the second test (`37081829875`) and GitHub's own late cron run (`37082471004`) stopped at the claim. `Certify P3`'s failure was a correct catch of a stale board on a test run. ✅ live `nba_control.pipeline_runs`. ⇒ **`T26-21` CLOSED, no defect.**
+  - **`T26-22`** recorded `NBA Schedule Audit (diagnostic)` run `37084118810` without knowing who started it — **it was the scheduler worker's one-off test slot** (✅ live `nba_control.scheduler_log`: `00:56:20.997Z`, `test_dispatched`, `nba-schedule-audit.yml`).
+- 🆕 **`T32`** — `§T32.4` named no runs: the failed P3 commit-step run **`36382955251`** and the green re-run **`36383266256`** are now on it.
+- Everything else resolves: the Betr cloud-test failures are the iterations `§T32.1` narrates; P2 `37058555434` is `T26-20` / `T36-7`'s `pdfplumber` failure; the `T36` slip-engine, certification, calibration, replay, reset and dry-run dispatches are each in `§T36.2` / `§T36.6`; the `T36` Underdog board dispatches belong to `§30h`'s live-capture fix.
+
+**Ledger**: pass `20` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T36`.
