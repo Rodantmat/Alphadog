@@ -3473,7 +3473,7 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 | **`scheduler_log`** | `at, slot, pipeline, run_key, action, detail` | the worker (e.g. `dispatch_failed_will_retry`, v2.0.1) | `25` |
 | **`scheduler_switch`** | `id, enabled, updated_at, last_tick` | on/off switch + heartbeat | `enabled = true`; `last_tick` current |
 | `scheduler_test` | — | the one-off test slot (may only fire the audit workflow) | — |
-*(Also present in `nba_control`, not created in `T36`: `cert_fingerprints`, `job_runs`, `worker_run_log` — recorded when their transcript is read.)*
+*(Also present in `nba_control`, not created in `T36` and already recorded elsewhere in this file: `cert_fingerprints`, `job_runs`, `worker_run_log`.)*
 **Schema `nba_score` — created in `T36`:**
 | table | grain / content | live |
 |---|---|---|
