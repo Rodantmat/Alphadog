@@ -221,7 +221,8 @@ class BrowserQuoter(Quoter):
         self.target = "browser"
         os.environ.setdefault("BETR_SESSION_ID", f"ppmap{os.getenv('GITHUB_RUN_ID', '0')}")
         self._lp, proxy_arg = start_local_proxy()
-        kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True)
+        # images blocked: the residential proxy is metered (DataImpulse, per GB) and the quotes are API calls
+        kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, block_images=True)
         if proxy_arg:
             kw["proxy"] = proxy_arg
         self._cm = SB(**kw)
