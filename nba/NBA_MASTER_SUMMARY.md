@@ -45174,7 +45174,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **CLEAN → `1`/`3`**: `T36`.
 
 # §P44 — PASS 44 (`2026-10-10`): (kkk) THE FAILURES `T36` MET
-*Angle (kkk):* every tool result in `T36` reporting an error, a failed or cancelled run, a timeout or a refused write (`304` lines) sorted: the build chat's own SQL slips (`_inj` not persisting, a `GROUP BY` window, an ambiguous `season`, a missing `snapshot_ts`/`created_at`, `full` as a reserved word) and duplicate-match patch refusals — each corrected in the next call, nothing to record; the `failure` runs — P2's `pdfplumber` crash, the calibration crash on the `D`/`R` strategies, the P3 test run's `Certify` catch (`T26-21`, closed pass 23) — all on file; the `cancelled` runs — GitHub Pages noise and superseded dispatches, as pass 23 found.
+*Angle (kkk):* every tool result in `T36` reporting an error, a failed or cancelled run, a timeout or a refused write (`304` lines) sorted: the build chat's own SQL slips (`_inj` not persisting, a `GROUP BY` window, an ambiguous `season`, a missing `snapshot_ts`/`created_at`, `full` as a reserved word) and duplicate-match patch refusals — each corrected in the next call, nothing to record; the `failure` runs — P2's `pdfplumber` crash, the calibration crash on the `D`/`R` strategies, the P3 test run's `Certify` catch (`T26-21`, closed pass 20) — all on file; the `cancelled` runs — GitHub Pages noise and superseded dispatches, as pass 20 (`§P20`) found.
 - 🆕 **`T36`**: three tool limits the build chat worked around and the record did not carry — run logs visible only at completion, the bridge refusing explicit transactions, the sandbox's `300`-second command limit → `§T36.3`.
 
 **Ledger**: pass `44` complete (`2026-10-10`).
