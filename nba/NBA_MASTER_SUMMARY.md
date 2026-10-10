@@ -46952,3 +46952,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `137` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T15` done (`4,323` sentences); next `T16`.
+
+# §P138 — PASS 138 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T16`
+*Angle (as NEXT set it):* (d9) `§P131`'s method on `T16`.
+- Tabulated in the shell before this line (the scan re-run at pass 137's head): `T16` `517` of `1,198` sentences listed — **all `517` read and judged**.
+- On file, by substance: the first factor round and its redundancy reading, the research challenge and the correction of COMPASS fact 85, the two-way defender ratings (`111,768`, five channels, the interaction wins), the fitted usage allocation (`1.3696` → `1.5728`), the funnel's `13.8%` and the anchor test that ended it (`0.7299` vs `1.0123`), the retraction of A2's "shipped" claim and its four forms, the blowout shrink as a cruder duplicate (`§T26.41`), the tier × band × phase calibration grid and its out-of-sample result on `105,663` legs, the market-spread blowout model (`3.99` / `2.86` minutes, `39.7%` / `0.4%`, `66.6%` printed coverage), the 60-season-prop rebuild and its two deadlocks, the market-total matchup signal (`r` `0.4637`, MAE `9.08`). Judged: narration, research-source summaries (Sloan, the feature-engineering literature, RotoGrinders, Basketball-Reference's SPS, Stokastic), job-timing tables, and figures below the docs' grain (the single-season ratings count, per-band calibration pairs).
+- 🆕 **Residue — `§T16.5`** (new `## T16` holder heading plus `### T16.5`, before `## T15`): the funnel's blowout-risk and rim-deterrence terms with their leg-level figures (`0.7978`, `0.7970` against `0.7951`), the team-blocks proxy and the deterrence measure named as owed, and the rate response re-test named as owed four times with no result in the prose. Every quotation checked verbatim in the shell. Pointers: entry row `16` (its *"§T16.5 DOES NOT EXIST"* note, kept and marked as true when written) and `NBA_OPEN_ITEMS.md` under *T16 OPEN ITEMS*.
+- **`T16` not clean** — additional sweep `1` stays not clean. Commits this pass, all `[skip ci]`: `9c9d2c754`, `0c84221a1`, `b3815d518`, this ledger; no foreign commit since `fb0a7632d` when this line was written.
+
+**Ledger**: pass `138` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T16` done (`4,840` sentences); next `T17`.
