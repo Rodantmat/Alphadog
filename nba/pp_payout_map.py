@@ -42,7 +42,22 @@ BOARD_HEADERS = {"accept": "application/json, text/plain, */*", "accept-language
                  "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
                                "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
 KNOWN = ["13975905", "13976089"]
-QUOTE_TARGETS = ["chrome146", "chrome150", "chrome145"]
+def _newest_chrome_targets(n=3):
+    """the NEWEST Chrome fingerprints this curl_cffi build offers, newest first. HOW THE QUOTES WORKED BEFORE, AND WHY THEY
+    STOPPED (probe 38015965386, 2026-10-09): 09-21..09-29 curl_cffi 'chrome146' was answered because chrome146 was then a
+    current Chrome; by 10-09 the real Chrome is 154 and DataDome refuses every older TLS/HTTP2 fingerprint - all eight
+    targets, through the proxy, direct, on the same sticky exit IP, and even carrying a real Chrome's cookies (403
+    captcha). A hard-coded target list ages out silently; this picks the newest each run (`pip --upgrade` keeps
+    curl_cffi current), so the cheap path returns by itself when curl_cffi ships a current Chrome."""
+    try:
+        from curl_cffi.requests import BrowserType
+        nums = sorted({int(b.value[6:]) for b in BrowserType if re.fullmatch(r"chrome\d+", b.value)}, reverse=True)
+        return [f"chrome{x}" for x in nums[:n]] or ["chrome150"]
+    except Exception:  # noqa: BLE001
+        return ["chrome150", "chrome146", "chrome145"]
+
+
+QUOTE_TARGETS = _newest_chrome_targets()
 MAX_Q = int(os.getenv("PP_MAX_QUOTES", "250"))
 N_ALTALT = int(os.getenv("PP_ALTALT", "20"))
 MODE = (os.getenv("PP_MODE") or "full").strip().lower()   # full = research map | delta = monitoring
