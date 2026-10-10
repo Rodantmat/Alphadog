@@ -1413,3 +1413,11 @@ THE REPOSITORY IS PUBLIC.**
 8. **The first end-to-end real-replay backtest** (strategy `§13`) — positive out of sample, then hardened by tie-break and all-combos tests.
 
 ⚠ **Read the `T32` ROI figures as that night's numbers, not the program's result** — `§T33` re-examines the pool they ran on. **Where the program is now**: later sections of this step, as `T33`–`T48` are swept.
+
+### STEP 14b — **The pool is corrected twice, the ranks are tested the owner's way, and the method is reset** *(`T33`, `2026-09-29/30`)*
+9. **Build a harness, not more one-off queries** — `nba/build_slip_config_sweep.py`, run as a workflow (live queries were timing out on the heavy joins).
+10. **First correction — real lines only**: `8` of `20` props in `prop_universe` were simulated; every earlier result was re-run with `line_source='real'` (`CS_REAL_ONLY=1`). *(This sweep had recorded the split on `2026-09-25`, `§T25.3`.)*
+11. **Count DAYS, not slips** — every slip on a day shares the same few legs; a day-clustered bootstrap (Gate 1: P5 > 0) replaced slip counts as the evidence measure.
+12. **Second correction — the PrizePicks window board IS the pool**: `~14%` of "real" legs were never on PP's board at the decision moment. ROI levels halved; `2024-25` turned negative under the calibrated-cell eligibility rule.
+13. **Test the owner's ranks as he uses them — as pure selectors**: every past-hit-rate rank (plain line, player, trailing) picks at a coin flip on the PP NBA board; the model's probability of today's line picks `0.62`. ⇒ **sort by the raw model, price by the calibration** (`NBA_BASELINE_CALIBRATION.md` `§T33.5`). With a per-leg floor instead of the calibrated-cell rule, every structure was positive in both seasons.
+14. **The owner stops the work and resets the method** (`2026-09-30 00:18Z`): **map candidates first, no slips** — day by day, board-scoped, PrizePicks first, every prop × anchor tier (Regular / UA-Goblin T1–3 / OA-Demon T1–3), ranked by final HP, then baseline HP, then final score; top-n hit rate swept point by point (n and %), near-break-even kept for signals; only then the multiplier check. ⇒ `nba_score.tier_map_legs` + `nba/build_tier_map_bands.py` (`NBA_GOBLIN_DEMON.md` `§T33.2`). **The rest of the program builds on this map.**
