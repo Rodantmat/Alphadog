@@ -11440,7 +11440,7 @@ presents exactly as a mispriced line, and it points the wrong way with high conf
 |---|---|
 | **OT included in 2H/4Q on PrizePicks/Underdog, EXCLUDED on Sleeper** | T7 prop map — *"different products, different models"*; ~7–8% OT probability at a 1-point spread |
 | Fantasy scale **verified identical** (`1/1.2/1.5/3/3/−1`) across all three apps | T9 `prop_taxonomy` seeding — this one was checked |
-| Sleeper milestone lines (20+/25+/30+) vs "no alternate lines" | unresolved, `NBA_GOBLIN_DEMON.md` §9 |
+| Sleeper milestone lines (20+/25+/30+) vs "no alternate lines" | unresolved, `NBA_GOBLIN_DEMON.md` §9 → 🆕 *resolved `2026-09-27` (`T31`): Sleeper's ladder (`lines/available_alt`) captured and archived as `_alternate` — `NBA_MASTER_SUMMARY.md` `§T31.1` (pass 104); this also answers the owner-side "Sleeper alt-lines capture" listed above* |
 
 **The fantasy scale was the one checked, and it passed.** **The OT rule is the one that differs — and
 it is exactly a same-name-different-stat case.** A 4Q points line on Sleeper and on PrizePicks are
