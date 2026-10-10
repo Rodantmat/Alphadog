@@ -46377,6 +46377,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 *Angle (as NEXT set it):* (o7) `20` sentences drawn with seed `101` from `T37`'s strategy text, each read whole in its paragraph and judged under `§P98`'s bar; the `5` the checker flagged traced. (p7) no addition, so the scans were not re-run.
 - ✅ All `20` on file or judged (three headers). `T37` → `1`/`3`.
 - 🔴 A slip, corrected in the bullet: the header count was first written as four.
+- 🔴 A process slip: the index-row patch and the NEXT patch (`fd7383d09`, `19527dcfd`) went out in one message — two patches to this file at once, against the one-per-message rule (the same slip as pass 74's). Both applied cleanly in order; nothing to undo.
 - No hourly-rotation commit landed during the pass (checked on main before writing this line).
 - No quotation added since the pass-100 census commit.
 
