@@ -2215,6 +2215,20 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **P2A / P2B** | P2 split (`2026-10-02`): P2A = last night's results and grades; P2B = today's slate inputs, refits, baseline, `final_hp` | `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8` |
 | **Underdog modifier `mᵢ`** | ½ ÷ Underdog's probability for the side; Standard payout = base(n) × ∏ mᵢ × C | `NBA_MULTIPLIERS.md` `§T36.3` |
 | **fantasy price vs `decimal_price`** | Underdog's two price products on one option; the app shows the fantasy decimal where present | `NBA_MULTIPLIERS.md` `§T36.3` |
+| 🆕 **week-2 gated play / `week2_trough`** *(pass 46)* | week 2 played, not skipped, when the week-1 league steals+turnovers spike is `≥ +3%` (read on day 7): steals-excluded pool, slips with 2+ low-event Unders, cap 1; otherwise a normal week at cap 1 | `NBA_SYSTEM_DESIGN.md` `§T36.7` · `NBA_MASTER_SUMMARY.md` `§T36.2` `§29o` |
+| 🆕 **kill switch (week 2)** | the gated play stops for the rest of the week after `3` graded days with its staked legs under `50%` | `NBA_SYSTEM_DESIGN.md` `§T36.7` |
+| 🆕 **low-event Unders** | points-family or turnovers Unders — the legs that hold in the week-2 trough (slips with 2+ of them `+37%` vs `−75%` with none) | `NBA_MASTER_SUMMARY.md` `§T36.1` |
+| 🆕 **drought menu** | what still earns inside a long drought: demon 3-Flex, stocks-only 4-Power, points-only 3-Power, no-steals family A | `NBA_MASTER_SUMMARY.md` `§T36.6` #1 |
+| 🆕 **pre-break week / All-Star week state** | the `7` slate days before the All-Star break — a fixed calendar trough, planned for by `LS_ALLSTAR_PLAN` (plan B default) | `NBA_SYSTEM_DESIGN.md` `§T36.7` |
+| 🆕 **late-March raise** | season days `147–167`: the two best strategies' caps `6 → 9`, only when active at full cap | `NBA_SYSTEM_DESIGN.md` `§T36.7` |
+| 🆕 **holiday caution** | New Year's Eve and MLK Day treated as small slates — every strategy at cap 1 | `NBA_SYSTEM_DESIGN.md` `§T36.7` |
+| 🆕 **`MAX_DAILY_STAKE` / `placed_capped`** | the daily ceiling across all strategies (`LIVE_MAX_DAILY_STAKE`, `36` units); slips beyond it are recorded `placed_capped`, never staked, graded `graded_capped` | `NBA_WORKERS.md` `§T36.4` · `NBA_DATABASE.md` `§T36.6` |
+| 🆕 **`FAIL_STATE_GATED`** | P5's verdict for a drought-only or pre-break-only strategy that fails the full-season test it is built to fail — recorded, not turned red | `NBA_SYSTEM_DESIGN.md` `§T36.7` |
+| 🆕 **`season_block()`** | the engine's season window: the schedule merged with the played-games log, split at gaps `> 60` days | `NBA_MASTER_SUMMARY.md` `§T36.6` #8 |
+| 🆕 **watchdog (+5 / +10)** | the scheduler's re-dispatch `5` and `10` minutes after a slot, only if the slate is unclaimed and GitHub shows no run | `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8` |
+| 🆕 **morning-line capture** | `nba/capture_game_lines_morning.py` in P2B: the 08:00 PT game line the baseline reads, captured live (it had only ever been backfilled) | `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8` · `NBA_OPEN_ITEMS.md` `T36-6` |
+| 🆕 **late pick (`placed_late`)** | a record-only second pick from the close board (`LS_MODE=late_pick`); retired in a later transcript | `NBA_WORKERS.md` `§T36.4` |
+| 🆕 **`reset` mode** | `LS_MODE=reset`: the opening-day clean ledger, every strategy `paper` at its cap, the stored rotation state back to normal | `NBA_SYSTEM_DESIGN.md` `§T36.7` · `NBA_MASTER_SUMMARY.md` `§T36.6` #7 |
 | **R / F1–F3 / B1–B3 (Underdog)** | Underdog tiers = the side's modifier band: R balanced (`1.00`), F favoured (< 1.00), B boosted (> 1.00) | `NBA_GOBLIN_DEMON.md` `§T37.2` |
 | **snap zone** | Underdog mains within ~2 points of 50% no-vig are snapped to `1.00×` both sides | `NBA_MULTIPLIERS.md` `§T37.3` |
 | **margin regime** | Underdog's margin over the books' no-vig: 2024-25 `+0.1…+2.6` pts, 2025-26 `+2.1…+7.7` pts | `NBA_MULTIPLIERS.md` `§T37.3` |
