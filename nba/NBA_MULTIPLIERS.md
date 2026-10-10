@@ -2374,4 +2374,31 @@ whether `T22`'s `≈2.0/1.25/1.4` is `v1`.**
 - **Voids are a size reduction, not a loss** *(`§7f`)*: on `prop_universe` void/DNP `1.50%`, push `0.58%`; PrizePicks drops a voided leg and prices the slip one size down — the existing `nba_market.pp_power_after_voids(factors[], live)` already does this. **Never grade a void or push as a miss.**
 - **Payout convention in force** *(`§7a`, config `board_payout_conversion_rules`, "verified against app screenshots + 19 placed slips `2026-09-10`")*: slip multiplier = **product of leg multipliers** (the real `2–8%` slip-level haircut left out, so the model is conservative); Sleeper `1+(dec−1)×0.95`; Underdog `decimal(American)×0.963` — ✅ the same two constants this file already records.
 - 🔴 **Goblins at slip level** *(`§7p`, `§13b`)*: realized `0.71–0.74` hit but per-leg `m ≈ 0.65–0.73` ⇒ `p·m ≈ 0.48–0.52`; **all-goblin 3-pick Power, `2,011` real slips: `−86.2%` ROI.** Gemini's "+611% goblin Flex" used the **slip** payout (`6×`) for goblins that are priced **per leg** (`~0.7×`, product `~0.26×`) — refuted on real data. → `NBA_GOBLIN_DEMON.md` `§T32.4`.
-- ⚠ **Every slip ROI produced in `T32` (`+8.9%` 2-pick, `+23.9%` all-combos 3-pick, `+101%` 4-pick at `cal_p ≥ 0.62`, Flex-5 `+132%`) is a `T32`-era figure** — *the pool those numbers ran on is examined again in `T33`; read them with the supersession note `§T33` adds, not as current.*
+- ⚠ **Every slip ROI produced in `T32` (`+8.9%` 2-pick, `+23.9%` all-combos 3-pick, `+101%` 4-pick at `cal_p ≥ 0.62`, Flex-5 `+132%`) is a `T32`-era figure** — *the pool those numbers ran on is examined again in `T33`; read them with the supersession note `§T33` adds, not as current.* 🔴 **`T33` VERDICT (`2026-09-29`)**: those pools held **`48%` simulated-line legs** and **`~14%` legs PrizePicks never posted at the window** — the ROI levels are **void**; the break-even table, the Flex/Power crossover rule, Kelly-by-size, the void rule and the goblin pricing above are arithmetic on real payout tables and **stand**. (`NBA_MASTER_SUMMARY.md` `§T33.0`.)
+
+---
+
+## 🆕 §T33.3 — **UNDERDOG'S OFFICIAL PAYOUT TABLE, AND WHAT `× 0.963` ACTUALLY APPLIES TO** *(source `T33`, `2026-09-29`, recovered transcript; AS STATED from `NBA_SLIP_BUILDING_STRATEGY.md` `§15a`–`§15b`, sourced there to `help.underdogsports.com` "updated this week"; recorded `2026-10-10`)*
+
+**Underdog (Pick'em), official, `2026-09-29`**:
+| picks | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|
+| **Standard** (all hit) | `3.5×` | `6.5×` | **`12×`** | `20×` | `35×` | `65×` | `120×` |
+| **Flex** all hit | — | `3.25×` | `6×` | `10×` | `25×` | | |
+| **Flex** one miss | — | `1.09×` | `1.4×` | **`2.5×`** | `2.6×` | | |
+| **Flex** two misses | | | | | `0.25×` | | |
+⇒ **On identical legs Underdog pays more than PrizePicks at every size that matters**: 4-pick `12×` vs PP Power `10×` (`+20%`), 3-pick `6.5×` vs `6×`, 5-pick Flex one-miss `2.5×` vs `2×`.
+
+🔴 **SCOPE CORRECTION TO THIS FILE'S `× 0.963` RULE**: on the real UD window board, **every MAIN-line leg** for `turnovers`, `steals`, `blocks`, `blocks_steals`, `points`, `rebounds`, `assists`, `threes` carries a per-leg modifier of **exactly `1.0×`**; the sub-1.0 board average (`0.974`, P10 `0.83`) comes **entirely from alternate/ladder rungs**, which are separate rows. ⇒ **`board_payout_conversion_rules`' "UD = `decimal(American) × 0.963`" applies to Underdog's ALTERNATE rungs (priced by odds), not to its main lines** — read the `0.963` rows above with that scope. *(The `§`'s own sentence: "consistent with the above; main lines are 1.0×.")*
+
+**Coverage — the catch**: UD lists the defensive props on only **`~11–20%`** of the player-days PrizePicks does (turnovers `829` of `4,053`; steals `403` of `3,402`; blocks_steals `441` of `3,845`; blocks `192` of `1,956`), and where both list a player **the line is identical (`100%`; UD never lower)**. ⇒ ***Underdog is a payout upgrade on the ~15% of legs it shares with PrizePicks, not a separate pool*** — build from the PP pool; place on UD when every leg is also there at the same line.
+
+**App restrictions** *(`§15b`, official pages)*:
+| | PrizePicks | Underdog |
+|---|---|---|
+| same player twice | ❌ | ❌ |
+| teams per entry | same-game / same-team **allowed**, no extra pricing on standard Flex/Power | **≥ 2 teams** |
+| sizes | Flex `3–6`, Power `2–6` | Standard `2–8`, Flex `3–8` |
+| void / tie | the leg drops, the entry shrinks one size (`pp_power_after_voids`) | ties/voids shrink the entry |
+| correlation | — | **"correlated projections can modify your payout"** — a builder-time shift, readable only at placement |
+🔑 **The one structural block this adds**: `stocks` = blocks + steals **contains** `steals` and `blocks` — a player's steals leg and stocks leg must never share a slip (measured same-player covariance `+0.032`, the only non-zero pair in the defensive family — `§15c`).
