@@ -15156,7 +15156,7 @@ replacement."*
 
 #### T8.15d — Remaining, stated honestly
 - **Rebounds ELITE tails** (n=699, **~10 players**): *"mean right, shape ±3–5 at the outer rungs"* — a
-  dispersion-by-band fit is next
+  dispersion-by-band fit is next → ✅ *answered in `T9` — dispersion is not the cause (var/mean flat at every level); kept as a residual for in-season Platt: `§T9.14h`*
 - **Assists HIGH low rungs** (~3.3): *"the **left skew the research predicted**; **NegBin can't produce
   it**"* — T7.15b's mechanism showing up as a model-family limit
 - **3PM "less" 50–55**: *"the thinnest band on the board"*
