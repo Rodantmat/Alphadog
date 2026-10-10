@@ -152,7 +152,7 @@ def call(fn, *, tries=DEFAULT_TRIES, base=DEFAULT_BASE, cap=DEFAULT_CAP, budget=
             raise
         except retry_on as exc:  # noqa: PERF203
             last = exc
-            print(f"RETRY|{label}|attempt {attempt + 1}/{tries}|{type(exc).__name__}: {str(exc)[:110]}", flush=True)
+            print(f"RETRY|{label}|attempt {attempt + 1}/{tries}|{type(exc).__name__}: {redact(exc)[:110]}", flush=True)
             if attempt < tries - 1:
                 _sleep(backoff(attempt, base, cap), budget, label, attempt + 1, tries, "backing off")
     raise RetryError(f"{label}: {tries} attempt(s) failed", last)
