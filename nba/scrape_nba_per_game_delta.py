@@ -45,17 +45,20 @@ STATS_HEADERS = {
 
 
 def get_json(url, proxies):
-    last = None
-    for attempt in range(1, 3):
-        try:
-            resp = requests.get(url, headers=STATS_HEADERS, timeout=30, proxies=proxies, impersonate="chrome124")
-            resp.raise_for_status()
-            return resp.json(), None
-        except Exception as exc:  # noqa: BLE001
-            last = str(exc)
-            if attempt < 2:
-                time.sleep(3)
-    return None, last
+    """stats.nba.com through the system retry policy (nba/net_retry.py, 2026-10-09): 4 attempts (was 2), full-jitter
+    backoff (was a fixed 3 s), 429/5xx/connection errors retried, a final 4xx returned at once."""
+    from net_retry import RetryError, request
+    try:
+        resp = request("GET", url, session=requests, proxies=proxies, routes=("proxy",), tries=4, base=2, cap=15,
+                       timeout=30, label="stats boxscore", headers=STATS_HEADERS, impersonate="chrome124")
+    except RetryError as exc:
+        return None, str(exc)
+    if resp.status_code != 200:
+        return None, f"http {resp.status_code}"
+    try:
+        return resp.json(), None
+    except Exception as exc:  # noqa: BLE001
+        return None, f"not json: {str(exc)[:80]}"
 
 
 def fetch_starter_status(game_id, proxies):
