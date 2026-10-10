@@ -182,9 +182,10 @@ def main():
         return
     slate = datetime.strptime(os.environ["CP_DATE"], "%Y-%m-%d").date() if os.environ.get("CP_DATE") else datetime.now(ET).date()
     store_label = LABEL if MODE == "capture" else f"probe_{LABEL}"     # a probe never overwrites the day's real capture
-    prior = conn.execute("SELECT captured_at, n_items, n_written FROM nba_market.parlay_props_captures WHERE capture_date=%s AND label=%s AND sport=%s",
+    prior = conn.execute("SELECT captured_at, n_items, n_written, http_status FROM nba_market.parlay_props_captures WHERE capture_date=%s AND label=%s AND sport=%s",
                          (slate, store_label, SPORT)).fetchone()
-    if prior and not FORCE and MODE == "capture":
+    # a prior FAILED capture (http_status != 200, written by the failure branch below) must not block the re-run
+    if prior and prior[3] == 200 and not FORCE and MODE == "capture":
         print(f"{slate} {LABEL}: already captured at {prior[0]} ({prior[1]} items, {prior[2]} rows written) - one set per day (CP_FORCE=1 to redo)", flush=True)
         return
     status, remaining, doc = fetch(api_key(conn, cfg["key_name"]))
