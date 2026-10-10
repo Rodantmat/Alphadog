@@ -25,7 +25,8 @@ and today's Underdog paper slips (nba_score.ud_live_slips), one row per app in t
                   what the backtest actually hit - the owner's rule "use the hit rate of the legs we have on backtest".
     m_star      - the multiplier the leg NEEDS on that app to be worth it, in the app's displayed units:
                   1 / (p_cell x root_app) - Underdog modifier units (root = its 2-pick Standard 3.5^(1/2) = 1.8708, the
-                  most lenient Underdog break-even), Sleeper / Fliff per-leg decimal (root 1.0)
+                  most lenient Underdog break-even), Sleeper per-leg multiplier x (1 - slip_haircut)^(1/2) (its verified
+                  product rule net of the slip haircut, classification_config['sleeper_payout']), Fliff decimal (root 1.0)
     v_cell      - p_cell x m_eff (1.00 = break-even); gate_cell = v_cell >= 1 + cell_margin (config, default 0.03)
 Idempotent per (game_date, source, leg, app). Env: DATABASE_URL, PSL_DATE (slate, default today PT), PSL_LABEL (window).
 """
