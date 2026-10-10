@@ -44755,3 +44755,9 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **`T39`** (`24` closing replies, `10-04 20:45Z → 10-06 19:18Z`) — **NEW MATERIAL**, reopened: 🆕 **`§T39.5`** — the roster sizing (`494` of `16,765` by cause) and its replay dates; the per-season break-even swing behind the fixed `−8.99`; the integration test's slates; the gap program's numbers (ties, the blocks `0.0`, the backfill, per-stat depths, the rebounds change and revert); **the overconfidence-by-distance table — O5b measured**; the certified-depth configuration and its two live/backtest mismatches (turnovers `3` vs `2`, stocks `10` vs `5`).
 
 **Ledger**: `T39` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
+
+**`T40`** (`3` closing replies) — **NEW MATERIAL**, reopened: 🆕 **`§T40.5`** — the routing test's `12,172` identical rows; the owner's 11-line example worked through; the deep-rung backtest numbers; 🔴 `nba-combos-history.yml` had been forcing depth `10` (✅ code now unsets it).
+**`T41`** (`2` closing replies) — **NEW MATERIAL**, reopened: 🆕 **`§T41.5`** — `346,736` identical slips, ROI `+78.4% / +94.9%`, the `0.21 pp` method gap, the ranks (`61st` / `41st` / `44th` / `51st`) behind the four NOT_IN_TOP30 verdicts, the stale "all 8 pass" corrected, the closing sizes.
+**`T42`** (`6` closing replies) — **NEW MATERIAL**, reopened: 🆕 **`§T42.6`** — why residential, the traffic estimate by pipeline, the provider comparison, the US flag.
+
+**Ledger**: `T40`, `T41`, `T42` pass `14` — **NEW MATERIAL**, each CLEAN `0`/`3`.
