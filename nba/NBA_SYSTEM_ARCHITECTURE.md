@@ -2600,3 +2600,17 @@ P3 (score + archive window board) ──► P4 PICK (T34: 21:45 UTC / 14:45 PT, 
 - **No re-derivation at the live edge**: `live_slip_engine.py` **imports** the certified rules from `build_slip_engine.py` (cells, per-cell cap, correlation map, ordering, compression pricing). The live and backtest paths share one code path for the rules.
 - **Concurrency**: P4's replay and calibrate modes run under P4's concurrency group, so a long replay queues the next P4 job; the build chat noted *"I can't cancel a run through the bridge"* and cut replay cost instead (`LS_BOOT=500`, timeout `30 → 120` min).
 - ✅ **Today the timing links above are not crons**: neither `nba-p4-live-slips.yml` nor `nba-p5-weekly-requal.yml` has a `schedule:` (P4 dispatch-only; P5 `workflow_call` + dispatch) — the chain is now driven from elsewhere; *the transcript that rewired it is read later (RULE 6).* → ✅ **resolved by `T35` — `§T35.8` below.**
+
+---
+
+## 🆕 §T35.8 — **THE SLIP LAYER FOLDED INTO THE EXISTING PIPELINES (`2026-10-01 19:44Z`)** *(source `T35`, owner ruling verbatim in `NBA_MASTER_SUMMARY.md` `§T35.1`; AS STATED from strategy `§29i`; ✅ = live `2026-10-10`)*
+```
+P1 weekly static (Mon) ── … ── certify weekly layer ──► job: P5 requal (workflow_call, needs: weekly)
+P2 overnight          ── … ── grade outcomes ── certify P2 ──► step: slip GRADE   ⚠ today in nba-p2a-results.yml
+P3 afternoon          ── … ── score + archive ── certify slate ──► step: slip PICK (on steps.d.outputs.asof, if has_games)
+P4 / P5 workflows     ── manual only (pick/grade on a date · replay · calibrate · on-demand requal)
+```
+*Owner's rule*: ***"manual runs should run independently but once scheduled they should be incorporated by the existing pipelines."*** One pipeline per cadence; no slip-layer cron of its own.
+- **Ordering constraint** the build chat stated: the grade needs yesterday's outcomes (P2) and must run **before** today's pick so states are current — P2 `8:45 AM PT` precedes P3 `2:15 PM PT`.
+- **P5 under `workflow_call`**: P5's own `concurrency` group then applies to the caller run (*"which is fine"*, build chat).
+- ✅ **Live**: P1 line `290` calls P5; P3 line `580` runs the pick; the grade is in `nba-p2a-results.yml` line `334` (P2 was split into P2A/P2B after `T35` — that transcript explains it).
