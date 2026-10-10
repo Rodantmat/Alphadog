@@ -1180,3 +1180,25 @@ Each candidate was either executed or measured to its final-output effect and cl
   team game logs (2,460 rows), the Odds API sports list, a real injury PDF (104 KB) and a missing one (final, no retry);
   board workflow 38016836957 (PrizePicks / Underdog / Sleeper / Fliff on the new code, all green); Betr 38017239197 and
   Sleeper (MLB-only scheduled path) 38017240877 green with the conflict-safe push.
+
+### PRIZEPICKS CHEAP QUOTE PATH FOUND; SLEEPER REPLICATED TO NBA (owner 2026-10-09 20:04 PT: "The PrizePicks you still to try more, research online, use Gemini insight and you will find a way. As for the sleeper be sure that replicated to nba")
+- **PrizePicks — primp.** Research (curl_cffi releases, a 2026 DataDome guide, Gemini 2.5 Pro: the datadome cookie is
+  bound to the fingerprint that earned it) pointed at fingerprint currency, not cookies. Probe 38019790315
+  (`nba/probe_pp_quote_cheap.py`, `nba-browser-probe.yml` now installs primp) echoed each client at tls.peet.ws on one
+  exit IP: real Chrome 154 JA4 `t13d1517h2_8daaf6152771_cb7bf5808d99` = primp `chrome_153`; curl_cffi chrome150
+  `t13d1516…`; curl with the real Chrome's JA3/H2/client hints copied in `t13d1512…` (cannot express the new extension).
+  Quote POST: primp chrome_153 200 direct and 200 via the raw proxy; chrome_152 / safari_26 / firefox_147 200 direct; primp
+  default chrome(147) and every curl variant 403. `pp_payout_map.py`: `PrimpQuoter` first in the ladder (primp → curl →
+  real Chrome; newest primp Chrome target found at run time; runner IP first, raw proxy second; a bare 403 is a wall);
+  `nba-pp-payout-map.yml` installs primp. **Certified: run 38020184454, `primp:chrome_153:direct`, 78 / 78 status 200 with
+  tables, `new_rows=78` loaded, all 78 identical (picks and Power / Flex tables) to the two real-Chrome runs 021920Z and
+  010104Z.** No browser, no metered proxy traffic.
+- **Sleeper — replicated, one bug caught by the regression run.** DB tunable `classification_config['sleeper_payout']`,
+  DB function `nba_market.sleeper_slip_payout()` (source `nba/sql/sleeper_slip_payout.sql`; seven test cases match the
+  MLB placed slips), price-shop ledger prices a Sleeper leg at m × (1 − h)^½. The regression run 38019478623 FAILED: the
+  tunable row had been stored as a JSON *string* (double-encoded insert), so the ledger crashed reading it and the DB
+  function had silently used its 0.08 fallback. Fixed at the data (row is now a jsonb object; the function reads 0.08 from
+  it — verified by query) and in code (the ledger decodes a string row instead of crashing). Re-run 38019824113 green
+  (2026-04-10 replay, 240 ledger rows). **Not yet exercised with data:** the Sleeper NBA board archive starts 10-07
+  (preseason, no engine slips), so the Sleeper column was 0 listed in the replay — **10-20 check: the first in-season
+  window ledger shows Sleeper legs priced at m × 0.959.**
