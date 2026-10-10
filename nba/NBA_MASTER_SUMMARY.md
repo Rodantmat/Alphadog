@@ -46083,3 +46083,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T35`, `T37`.
 - **CLEAN → `1`/`3`**: `T33`, `T34`. **CLEAN → `2`/`3`**: `T38`.
 - ✅ **CLOSED `3`/`3`**: `T36`, `T39`, `T40`–`T48` *(unchanged)*.
+
+---
+
+# §P80 — PASS 80 (`2026-10-10`): A SEED-80 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN; `T38` CLOSES
+*Angles (as NEXT set them):* (y5) a seed-`80` sample on `T32`–`T35`, `T37`, `T38` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty. Traced per transcript: `18` · `14` · `14` · `15` · `5` · `11`. (z5) the ≥ `5` scan re-run on the five still open after pass 80's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new in each).
+- 🆕 Not on file (AS STATED, in its transcript's section): **`T34`** (`§25e`'s slip ordering in full).
+- ✅ **Clean on this angle:** `T32`, `T33`, `T35`, `T37`, `T38` (its third clean angle → **CLOSED**).
+- Judged, not recorded: the MLB lessons, the line-movement caveat and next-step plans (`T32`); `T38`'s monitor plan, later built, and table headers.
+- ⚠ **Process slips and corrections:** (1) the `§T32.14` pass-80 bullet first called the HP-family ranks' role labels a residue; a closer search found `§8b`'s distinct roles on file, so the claim was struck the same pass and `T32` counted clean. (2) Before writing the `T33` and `T34` bullets, every section attribution in passes `74`–`80` was checked against the transcript's own headings: `§T38.8`'s pass-77 bullet named `§31h` for a `§31i` sentence (corrected by strike), and this pass's `T34` bullet first named `§25d` for a `§25e` rule (corrected by strike). (3) `T33`'s deep-tier sentence, first read as new, was found on file in its ladder-expansion line before a bullet was written. No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-79 census commit: `qdiff.py` `0` flags (`3` quotes counted).
+
+**Ledger**: pass `80` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T34`.
+- **CLEAN → `1`/`3`**: `T32`, `T35`, `T37`. **CLEAN → `2`/`3`**: `T33`.
+- ✅ **CLOSED `3`/`3`**: `T36`, `T38`, `T39`, `T40`–`T48` *(pass 80)*.
