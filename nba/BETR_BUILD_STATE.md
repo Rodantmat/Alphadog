@@ -60,14 +60,54 @@ Workflow `.github/workflows/betr-cloud-harvest.yml` (cron 17:45 & 20:15 UTC = 10
 
 Secrets used: `PROXY_URL` (ProxyScrape residential), `BETR_SESSION_STATE` (seeded login).
 
-## NBA SWITCH (when games post 2026-10-20)
-NBA board is identical shape. Change the workflow's default league input to NBA (or dispatch with
-league=NBA). betr_harvest_cloud.py already writes betr_nba_current.json for NBA. Nothing else changes.
+## ★ 2026-10-09 — THE APP CHANGED; THE HARVESTER WAS RE-PROVEN (runs 38005105453 WNBA, 38006445274 EPL)
+Betr shipped a new web app between 10-07 and 10-09: it lands on `/picks/home/lobby` (the old `/lobby/<league>`
+redirects there), the league board is reached ONLY through a horizontal strip of league chips (`NFL | MLB | WNBA |
+CFB | NHL | … | NBA | CBB | …`, React-Native-web Pressables, most off-screen), the lobby answers
+`getUpcomingLobbyEventsV2` (+ `getTopTrendingPlayersData`, every sport mixed, featured players only) and the league
+board is the request `LeagueUpcomingEvents {league}` → response `getUpcomingEventsV2` (the 2026-09-28 shape, unchanged).
+What had to change in `nba/betr_harvest_cloud.py` (commits 98cbdc6 … 158cfe0), each step proven by a run:
+1. **League navigation = a REAL mouse press on the chip.** A JS `.click()` on the leaf does nothing (run 38004204387);
+   RNW's press responder needs pointer events. `click_league`: scroll the leaf into view (instant), let the strip settle
+   1.2 s, re-read its rect, check `elementFromPoint` is the leaf, then CDP `Input.dispatchMouseEvent` moved / pressed /
+   released; success = the route changes to `/picks/home/<LEAGUE>`. Fallbacks: dispatched pointer/mouse event sequence,
+   then the old XPaths. Proven on an on-screen chip (WNBA → 728 legs, 2 events) and a scrolled one (EPL → 5,011 legs,
+   10 events).
+2. **Stay attached.** `uc_open_with_reconnect` detaches chromedriver for the navigation, and every graphql body that
+   arrives while detached is unreadable afterwards (4 of 5 on 38004204387). Now ONE detached navigation to the root, then
+   `enable_network` (200 MB body buffer) and everything in-page; unread bodies are retried 3 passes instead of dropped.
+3. **League filter.** `flatten` keeps only events whose `league` is the harvested league — the first capture on the
+   renamed API (38003010258) wrote 838 WNBA/CFB/UFC legs as the NBA board; that file was withdrawn (964ba5d, honest empty
+   NBA board, never archived — `board_snapshots` has no betr rows since 10-01).
+4. **Geo prompt can return on the root reload** (38006831834) → `clear_geo` runs again after it, in-page.
+5. **Diagnostic trail** on every failure: `where()` (url / title / size / tells), request-side `graphql request <op>
+   {league}` lines, each response op's schema on first sight, the wire tally, chips and visible text — a renamed op or a
+   moved chip is read from the log, never guessed.
+**A chip that does not route = Betr has not opened that league.** NBA (38006042574) and CBB (38007354366, the control:
+out of season, off-screen, next to NBA in the strip) both: the press lands on the leaf, the route stays `/picks/home/lobby`,
+the lobby lists no event of that league, the session is alive (authed API 200s). The run exits 3 with
+`NO <LEAGUE> BOARD: the '<LEAGUE>' league chip does not route …`; exit 2 (`session may have expired`) is reserved for a
+run with no authenticated traffic at all. Known noise: ~10 `ERR_CONNECTION_CLOSED` XHRs per run through the DataImpulse
+proxy (tracking / image fetches; the board still arrives) — watch, not blocking.
+
+## NBA SWITCH (2026-10-20)
+The workflow resolves the league itself (`WNBA` until 2026-10-19 UTC, then `NBA`; the `league` input overrides), and
+**P3 dispatches the harvest at the window** (`nba-p3-afternoon-light.yml` step "Dispatch the Betr cloud harvest (window)",
+`permissions: actions: write`) because GitHub dropped both crons on 10-09; the crons stay as a backup. The first real NBA
+board is expected on 10-20 — until Betr opens the NBA board the NBA chip is inert (above) and the run is red by design,
+leaving `boards/betr_nba_current.json` (the honest empty board) untouched.
 
 ## MAINTENANCE
-- **Session expiry**: if a run logs `NO BOARD` and lands on /auth, the seeded session lapsed — re-run
-  `nba/betr_export_session.py` on the PC, update the `BETR_SESSION_STATE` secret. Cadence TBD; the
-  certifier's per-app betr freshness (reads the betr meta) will flag staleness.
+- **Session: self-renewing (2026-10-09; owner: "one of the apps needs a key every ~30 days — make it auto").** The seeded
+  session's `user-session-storage` carries three Keycloak JWTs (access, 30-day; OFFLINE refresh, never expires; id).
+  `renew_session_state` refreshes with the session's own refresh token at `account.betr.app/realms/betr` (client `betr-rn`,
+  probe 38000165529: headless refresh works, refresh token rotates) when the access token is within `BETR_RENEW_DAYS` (12) of
+  expiry, swaps the three tokens inside the stored value and persists it to `nba_config.external_credentials`
+  (`betr_session_state`, plus `betr_refresh_token`), which `load_session_state` reads FIRST; the GitHub secret
+  `BETR_SESSION_STATE` is the seed / fallback only. The log prints only expiry dates and 6-char hashes. Current access token
+  valid to 2026-10-28 → the first automatic renewal happens on the first run after 10-16. Manual re-seed
+  (`nba/betr_export_session.py` → the secret) is needed only if the refresh grant itself is ever refused (log line
+  `session: renewal failed …`).
 - **alt/boosted MULTIPLIER** still reads 0 (nonRegularPercentage); the payout likely lives on
   allowedOptions[].marketOption — capture when the multiplier/slip work resumes. Lines + alt ladder are complete.
 
