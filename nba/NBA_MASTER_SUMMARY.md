@@ -44581,3 +44581,10 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - 🆕 **`NBA_DATABASE.md` `tier_map_summary`** — the band columns (`peak_pm`, `plateau_to` = within `0.02` of peak, `hold_be_to`, `lose_at`, `status`), ✅ code-checked and live-counted.
 
 **Ledger**: `T33` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
+
+**`T34`** (`41` closing replies, `09-30 01:00Z → 10-01 05:41Z`) — **NEW MATERIAL**, reopened:
+- 🆕 **`§T34.7`** — the certification trail: all `14` run ids the replies name ✅ found in `certification_log` at their stated check counts, including the two runs that failed (`4` FAIL, `1` FAIL — the only `5` non-PASS rows in the table); the certified ledger per cell, ✅ identical in `cand_certified` today; and the decision detail behind `§20h`, `§21a`/`§21b` (starter status = post-window lookahead), `§24`, `§24b`, `§25`–`§28j`, `§29a`, and the `§29c` simulation evidence.
+- 🆕 `NBA_DATABASE.md` `certification_log` live state re-taken (`24` runs; a run at `2026-10-10 04:41Z`, after the corpus).
+- ⚠ **Tool lesson recorded**: a `github_patch_file` replacement containing the two characters dollar-backtick never landed (the proxy dropped the stream three times); the same text written as "dollars per 100-dollar" landed at once — *in a string replacement those two characters are the "text before the match" pattern.* Avoid them in `new_str`.
+
+**Ledger**: `T34` pass `14` — **NEW MATERIAL**, CLEAN `0`/`3`.
