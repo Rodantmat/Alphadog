@@ -202,6 +202,25 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
+## 0j. 🔑 THE QUOTE ENDPOINT IS BACK — THROUGH A REAL CHROME (2026-10-09)
+- **The break:** from 2026-09-30 every `/game_types` quote from `pp_payout_map.py` (curl_cffi, chrome145/146/150) got
+  DataDome's captcha interstitial (403; NBA and WNBA files `nba/data/pp_payouts*/` from 09-30 on: 0 quotes answered; last
+  200s 09-29). The board GET kept working, so nothing went red — the payout map, the price-drift monitor and the §31aa
+  multiplier work were blind for ten days.
+- **The fix (probe 38010173137, `nba/probe_pp_quote_browser.py`; workflow `nba-browser-probe.yml`):** a real Chrome
+  (SeleniumBase UC + Xvfb + the residential proxy — the Betr chain) opens `app.prizepicks.com`, collects DataDome's own
+  cookies (`datadome`, `cf_clearance`, …) and quotes with `fetch()` from the page. **Minimal headers only:** the
+  `x-device-id` / `x-device-info` headers the curl path sent make Chrome send a CORS preflight the API refuses (probe
+  38009508495). `pp_payout_map.py` now has `BrowserQuoter` (a `Quoter` subclass — same records, budget, deadline,
+  three-blocks stop), `PP_TRANSPORT=browser` default, `curl` kept; images blocked (metered proxy). **First production run
+  38010541980: 78 / 78 quotes 200, loaded into `nba_market.pp_mined_leg` / the quote table.** The 6-hourly delta resumes.
+- **The 10-20 "in-app" check, settled from PrizePicks' own quote engine (anonymous, prizepools, 2026-10-09):** all-standard
+  **Power 2 = 3.0, 3 = 6.0, 4 = 10.0; Flex 2 = 2.0 / 0.5 (1 hit), 3-Flex = 3.0 / 1.0, 4-Flex = 6.0 / 1.5** — exactly the
+  mined tables the engines use (`pp_flex_standard_payout`), not the help centre's 2.25 / 1.25 and 5 / 1.5. 5- and 6-pick from
+  the 2026-09 mining: Power 20 / 37.5, Flex 10 / 2 / 0.4 and 25 / 2 / 0.4. Goblin+demon 2-pick Tatum PRA 39.5 (g) +
+  Cunningham REB 5.5 (d): Power 2.8, Flex 1.9 / 0.5. The owner's own account could still differ by state promotion; the
+  quote is the operator's current default.
+
 ## 0i. 🔑 CHALKBOARD — THE BOARD IS UNREACHABLE, THE PRICING IS NOT (owner capture, 2026-09-27)
 
 **The proxy route reached everything the app does EXCEPT the priced board.** mitmproxy, iPhone,
