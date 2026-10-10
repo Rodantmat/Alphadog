@@ -2182,3 +2182,17 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **tier map** | `nba_score.tier_map_legs` — every real PP leg with its anchor tier, rank and outcome, per rank key | `NBA_DATABASE.md` `§T33.6` |
 | **gold band** | the run of top-n (or top-%) cuts in a cell where the hit rate beats the tier's own break-even, as large and constant as possible | `NBA_GOBLIN_DEMON.md` `§T33.2` · strategy `§19k` |
 | **`_alternate`** | PrizePicks' market suffix for goblin/demon ladders — must be folded to the base prop on joins | `T33-3` |
+| **constancy** | share of real slate days on which a cell's top-5 beat its per-leg break-even; separates a gold band (`≥ ~60–67%`) from a jackpot profile (`41–51%`) | `NBA_GOBLIN_DEMON.md` `§T34.2` · strategy `§19k` |
+| **jackpot profile** | a cell or slip whose average edge comes from a few big days (inconstant; high share of profit from the 5 best days) | strategy `§19k`, `§25b` |
+| **conditional gold** | a demon cell that is gold only WITH its signal stack (e.g. rebounds D1 cold + consistent) | `NBA_GOBLIN_DEMON.md` `§T34.2` |
+| **extender** | a goblin used as the one extra leg of a slip already winning on Regular legs — never standalone, never two | `NBA_GOBLIN_DEMON.md` `§T34.2` |
+| **rescued anchor / switch line** | a ladder with no pickable Regular line, anchored by the system on sportsbook consensus (`tier = 0`), tiered from `line − anchor_line` | `NBA_GOBLIN_DEMON.md` `§T34.2` |
+| **rank-over-rank** | a leg that is also top-3/top-5 under a second rank (final HP / baseline HP / final score) — one of the two layers that beat chance in the signal matrix | strategy `§22a` |
+| **certified (v1–v4)** | three consecutive runs of the frozen invariant list (`certify_slip_system.py`), all PASS, no code change between them | `NBA_SYSTEM_DESIGN.md` `§T34.7` · `certification_log` |
+| **family A / B / C** | A = steals-anchored Regular; B = demon-only; C = Regular without steals (`SE_EXCLUDE_CELLS`) | `NBA_SYSTEM_DESIGN.md` `§T34.7` |
+| **`final7`** | the last 7 days of a regular season — built and stored, excluded from qualification and from live play (H6) | strategy `§25e` |
+| **whole-board null** | the null where each slip leg hits at its tier's whole-board rate (R `0.500` … D3 `0.192`); `0` survivors in `100` draws | `NBA_BASELINE_CALIBRATION.md` `§T34.5` |
+| **V1–V6 / Q1–Q6** | the MLB falsification bar translated: walk-forward, bootstrap lower bound, null, monotonicity, decomposition, teammate ban → the qualification gates | `NBA_SYSTEM_DESIGN.md` `§T34.7` |
+| **P4 / P5** | P4 = daily live paper engine (`live_slip_engine.py`: pick / grade / replay / calibrate); P5 = weekly requalification | `NBA_WORKERS.md` `§T34.4` |
+| **H1–H7, `critical`, paper gate** | the live hurdle machine: CUSUM leg hit, MC drawdown/streak, pool, opening weeks, final week, pooled-steals portfolio CUSUM; `critical` = 7-day grace at cap 1; paper → active after `≥ 50` days, cap × 50 slips, live CI lower bound `> 0` | `NBA_SYSTEM_DESIGN.md` `§T34.7` |
+| **compression rule** | `payout = product` up to `9.1×`, then `9.1 × (product/9.1)^0.857` — replaces the slip program's flat `0.95` haircut | `NBA_MULTIPLIERS.md` `0.10-T22`, `§T34.3` |
