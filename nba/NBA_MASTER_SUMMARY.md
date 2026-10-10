@@ -45929,3 +45929,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T36`, `T37`, `T38`, `T39`, `T43`, `T47`.
 - **CLEAN → `1`/`3`**: `T35`, `T46`, `T48`. **CLEAN → `2`/`3`**: `T44`.
 - ✅ **CLOSED `3`/`3`**: `T40`, `T41`, `T42`, `T45`.
+
+# §P72 — PASS 72 (`2026-10-10`): A SEED-72 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN; `T44` CLOSES
+*Angles (as NEXT set them):* (i5) a seed-`72` sample on `T32`–`T39`, `T43`, `T44`, `T46`–`T48` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty. Traced per transcript: `18` · `14` · `14` · `17` · `13` · `10` · `9` · `14` · `18` · `13` · `14` · `10` · `17`. (j5) the ≥ `5` scan re-run after pass 71's additions: no flag that an earlier tier had not traced.
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (`§8k`'s compounding reading) · **`T33`** (the regression admission; the level rule; the raw-driver run; `§17c`'s first split) · **`T34`** (the cap's effect) · **`T35`** (the day-level variable list; the rest-day no-op) · **`T37`** (the minutes rules' reason; the pricing margin; `§30r`'s first conclusion) · **`T38`** (the bisection bug) · **`T39`** (the switch rule; the integrity list) · **`T47`** (the Finals-night note; where the edge lives).
+- ✅ **Clean on this angle:** `T36`, `T43`, `T44` (its third clean angle → **CLOSED**), `T46`, `T48`.
+- Judged, not recorded: the Rule B0c tie-break example (`T32`, MLB, as before); the PrizePicks quote transport and the Betr session-renewal detail (`T48`, out of scope / not followed); plans later executed (`T32` `§11`, `T37`, `T39`).
+- ⚠ **Process slips:** `§T35.6`'s new bullet first carried a self-contradictory status line — rewritten by strike (the same slip as pass 70's `§T36.6`). No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-71 census commit: `qdiff.py` `0` flags (`16` quotes).
+
+**Ledger**: pass `72` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T35`, `T37`, `T38`, `T39`, `T47`.
+- **CLEAN → `1`/`3`**: `T36`, `T43`. **CLEAN → `2`/`3`**: `T46`, `T48`.
+- ✅ **CLOSED `3`/`3`**: `T40`, `T41`, `T42`, `T44` *(pass 72)*, `T45`.
