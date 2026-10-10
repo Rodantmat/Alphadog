@@ -1526,3 +1526,11 @@ THE REPOSITORY IS PUBLIC.**
 91. **State live expectations as a range from the certified curve** (ROI per point of hit-rate; the break-even distance; the in-sample haircut), never as the backtest's number.
 92. **When slips per regime are too few to prove anything, read the legs**: pick on one sample, score on the other, at the leg level.
 93. **Correct your own earlier numbers in writing** (withdraw, don't overwrite) when better inputs change them.
+
+### STEP 14p — **Pre-register the variants, run every gate, stress the finalist, prove live == backtest — and test an idea in the owner's own terms before keeping or dropping it** *(`T47`, `2026-10-09`; `NBA_MASTER_SUMMARY.md` `§T47`)*
+94. **Pre-register the variant grid and the gates** (both samples positive, a lower bound above zero, a minimum of nights, neighbours positive, walk-forward vs a null) and choose the deployed rule **before** the stress runs.
+95. **Stress the finalist**: simulated seasons, block envelopes, leg-hit decay, same-game correlation, the other regime.
+96. **Prove the live slip equals the certified backtest slip** on past nights, with the same scoring the live path uses (market-free), commit disabled and a rollback.
+97. **Give the owner one switch** to turn a newly-staked strategy back to record-only.
+98. **Use the certified cell's hit rate, not the model's raw probability, when judging another app's price** — the raw p is overconfident on lines it was not certified on.
+99. **When an idea fails as a rule, keep it as a measurement** (`m*` in the daily ledger) — a later season can turn a candidate into a rule.
