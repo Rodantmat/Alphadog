@@ -2206,3 +2206,12 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **concept drift (pure)** | P(Y\|X) changes while P(X) does not — invisible to every input-side monitor | `NBA_BASELINE_CALIBRATION.md` `§T35.5` |
 | **cushion** | line minus the player's trailing-10 average; on steals Unders `0.25–0.5` hits `78%` vs `55%` below | `NBA_BASELINE_CALIBRATION.md` `§T35.5` |
 | **short / long drought** | short = 2–7 days, everything loses; long = 10–66 days, a cell or side cold for weeks while others (demons) hold | `NBA_GOBLIN_DEMON.md` `§T35.2` · strategy `§29k` |
+| **clean pass (owner's definition, `T36`)** | *"when online research and Gemini insight are completely exhausted and do not return anything useful back"* — a candidate that tests bad does not make a pass clean | `NBA_MASTER_SUMMARY.md` `§T36.1` |
+| **low-foul key (`SE_LOWFOUL`, `pf20`)** | ranking preference for legs on players under 1.8 personal fouls/game (trailing 20, before the game); size ≥ 4 | `NBA_BASELINE_CALIBRATION.md` `§T36.5` · `NBA_SYSTEM_DESIGN.md` `§T36.7` |
+| **rotation / `_ROTATION`** | the drought state: a steals or turnovers cell EWMA below 0.50 → family A builds steals-excluded, the stocks Power stakes | `NBA_SYSTEM_DESIGN.md` `§T36.7` |
+| **plan B (`LS_ALLSTAR_PLAN`)** | the pre-All-Star-break week's default: only the three short steals-free plays stake | `NBA_SYSTEM_DESIGN.md` `§T36.7` |
+| **scheduler worker** | `alphadog-v2-nba-scheduler` — Cloudflare, every minute; dispatches P2A / P2B / P3 / P1 at times computed from each day's first tip | `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8` |
+| **claim / run-once** | `nba/pipeline_claim.py` + `nba_control.pipeline_runs`: one run per pipeline per slate; later runs do nothing | `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8` |
+| **P2A / P2B** | P2 split (`2026-10-02`): P2A = last night's results and grades; P2B = today's slate inputs, refits, baseline, `final_hp` | `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8` |
+| **Underdog modifier `mᵢ`** | ½ ÷ Underdog's probability for the side; Standard payout = base(n) × ∏ mᵢ × C | `NBA_MULTIPLIERS.md` `§T36.3` |
+| **fantasy price vs `decimal_price`** | Underdog's two price products on one option; the app shows the fantasy decimal where present | `NBA_MULTIPLIERS.md` `§T36.3` |
