@@ -46476,3 +46476,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `106` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T31` (pass 6 of its own count).
 - ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
+
+# §P107 — PASS 107 (`2026-10-10`): `T31` PASS 7 — THE CLAIMS ANGLE
+*Angle (as NEXT set it):* (y7) every checkable assertion in `T31`'s assistant prose about the repo, workflows or database, re-checked live and against the record.
+- ✅ All confirmed live and on file, or superseded and recorded in a later transcript's section (`§T31.4`). `T31` → `1`/`3`; the count opens in a new section, `§T31.4`.
+- Live reads: repo files only (`scrape_sleeper_board.py`, `certify_pipeline.py`); no database read.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line); line `23` re-checked after the census commit.
+- No italic quotation added since the pass-106 census commit; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `107` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T31` (pass 7 of its own count).
+- ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
