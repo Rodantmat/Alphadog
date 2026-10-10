@@ -45951,3 +45951,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T35`, `T37`, `T38`, `T39`, `T47`.
 - **CLEAN → `1`/`3`**: `T36`, `T43`. **CLEAN → `2`/`3`**: `T46`, `T48`.
 - ✅ **CLOSED `3`/`3`**: `T40`, `T41`, `T42`, `T44` *(pass 72)*, `T45`.
+
+# §P73 — PASS 73 (`2026-10-10`): A SEED-73 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN; `T48` CLOSES
+*Angles (as NEXT set them):* (k5) a seed-`73` sample on `T32`–`T39`, `T43`, `T46`–`T48` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty. Traced per transcript: `17` · `13` · `8` · `16` · `14` · `10` · `9` · `14` · `18` · `14` · `11` · `15`. (l5) the ≥ `5` scan re-run after pass 72's additions: no flag that an earlier tier had not traced.
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (rank-coverage rows 4 and 6) · **`T33`** (`§14e`'s Gate 1 and its survivors) · **`T35`** (what the week-2 trough explains; the healthy-case detail) · **`T36`** (the single-bad-day reading; the operator-specific list) · **`T37`** (the absence finding's first reading) · **`T38`** (the monitor's code shape) · **`T39`** (the tie rule's second half) · **`T46`** (the leakage row's clause).
+- ✅ **Clean on this angle:** `T34`, `T43`, `T47`, `T48` (its third clean angle → **CLOSED**).
+- Judged, not recorded: MLB's own over-generalisation (`T32`, MLB); the candidate-rule list, later tested (`T37`); plans later executed (`T33`); run ids; the PrizePicks quote transport and the Betr session renewal (`T48`).
+- ⚠ **Process slips and corrections:** pass 70's `§T39.9` bullet called the late pick's reason not on file — a paraphrase sat in `§T39.0`; recorded under `§T39.9` (the pass-70 bullet keeps its exact wording and its one new clause). That note first placed the paraphrase in `NBA_OPEN_ITEMS.md` — corrected by strike after a grep. No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-72 census commit: `qdiff.py` `0` flags (`16` quotes).
+
+**Ledger**: pass `73` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T35`, `T36`, `T37`, `T38`, `T39`, `T46`.
+- **CLEAN → `1`/`3`**: `T34`, `T47`. **CLEAN → `2`/`3`**: `T43`.
+- ✅ **CLOSED `3`/`3`**: `T40`, `T41`, `T42`, `T44`, `T45`, `T48` *(pass 73)*.
