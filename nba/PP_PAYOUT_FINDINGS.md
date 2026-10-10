@@ -217,7 +217,7 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 - **The 10-20 "in-app" check, settled from PrizePicks' own quote engine (anonymous, prizepools, 2026-10-09):** all-standard
   **Power 2 = 3.0, 3 = 6.0, 4 = 10.0; Flex 2 = 2.0 / 0.5 (1 hit), 3-Flex = 3.0 / 1.0, 4-Flex = 6.0 / 1.5** — exactly the
   mined tables the engines use (`pp_flex_standard_payout`), not the help centre's 2.25 / 1.25 and 5 / 1.5. 5- and 6-pick from
-  the 2026-09 mining: Power 20 / 37.5, Flex 10 / 2 / 0.4 and 25 / 2 / 0.4. Goblin+demon 2-pick Tatum PRA 39.5 (g) +
+  the 2026-09 mining (WNBA board quotes, all-standard): Power 20 / 37.5, Flex 10 / 2 / 0.4 and 25 / 2 / 0.4. Goblin+demon 2-pick Tatum PRA 39.5 (g) +
   Cunningham REB 5.5 (d): Power 2.8, Flex 1.9 / 0.5. The owner's own account could still differ by state promotion; the
   quote is the operator's current default.
 
