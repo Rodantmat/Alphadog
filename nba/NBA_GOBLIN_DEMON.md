@@ -1776,3 +1776,15 @@ it reports was `NOT RECORDED` until this block.**
 does not verify that the table was built from correct inputs, that the strategy is implementable, or
 that `std3_power_130` is what `T24` says it is beyond its name and shape.* ***"The reported figures
 reproduce from `sim_slip`", never "the strategy works."***
+
+---
+
+## 🆕 §T32.4 — **GOBLINS AND DEMONS IN THE SLIP PROGRAM'S FIRST NIGHT: THE TIER IS THE STABLER ANCHOR, AND GOBLINS ARE PRICED OUT** *(source `T32`, `2026-09-28/29`, recovered transcript; AS STATED from `NBA_SLIP_BUILDING_STRATEGY.md` `§3`, `§7p`, `§8g`, `§10`, `§13b`; recorded `2026-10-10`)*
+
+**① The owner's anchoring principle, verbatim (`2026-09-29 00:57Z`)**: ***"Line Variations vs Goblin/Demon tiers: a line for example points at 10.5 will have different multiplier for different players, it is usable, but is a lot more volatile than using goblin/demon tiers, because we have a anchor and the anchor is board set for that specific player and tier will vary a lot less player to player, so less volatile to work with."*** ✅ **Tested the same night (`§8g`)**: goblin-tier cross-player hit-rate sd **`0.089`** vs a raw `points 15.5` line **`0.143`** — the tier is `~40%` less volatile, because the anchor is board-set per player. *Owner's claim validated with numbers.*
+
+**② Goblins hit often and still lose** *(`§7p`)*: realized `0.71–0.74` at the top bucket, but per-leg multiplier `~0.65–0.73` ⇒ **`p·m ≈ 0.48–0.52` — priced tight, by design.** **All-goblin 3-pick Power on `2,011` real slips: `−86.2%`** (`§13b`) — the refutation of Gemini's "goblins are gold" arithmetic, which applied the slip payout to legs PrizePicks prices individually. ⇒ ***a high hit rate on a goblin is the price, not the edge.***
+
+**③ Demons**: lower `p·m` still at the top bucket (`§7p`) — *with one exception the build chat flagged for follow-up*: by the "one ratio" value rank (`§10`), **`points` / DEMON (`p·m 0.580`) slightly beat `points` / standard (`0.571`)**, while for `assists`/`pra`/`rebounds` the best-value tier was STANDARD. *Recorded as a `T32`-era observation; later transcripts revisit tier value at slip level.*
+
+**④ Where tier/kind must be read from**: `board_scored` carries `tier`/`kind` **NULL on every row** (`§T32.5`, backdata certification) ⇒ goblin/demon analysis reads **`nba_market.prop_universe`** — the MLB `0/0` scar (a defaulted goblin/demon flag read as "standard" produced a fake `+1298%`) is why the program insists on the authoritative column *(strategy `§6`)*.
