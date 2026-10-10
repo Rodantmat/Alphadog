@@ -432,8 +432,8 @@ def main():
                             sb.driver.add_cookie(ck)
                         except Exception:  # noqa: BLE001
                             pass
-                    sb.uc_open_with_reconnect(URL, reconnect_time=6)
-                    time.sleep(6)
+                    open_alive(sb, URL, "after seeding")
+                    time.sleep(4)
                 except Exception as exc:  # noqa: BLE001
                     print("seed failed:", str(exc)[:100], flush=True)
             where(sb, "after seeding")
