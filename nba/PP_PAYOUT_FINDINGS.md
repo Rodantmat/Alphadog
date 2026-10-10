@@ -214,6 +214,16 @@ the calibration ever had. The name-map defect is repaired in the calibration its
   38009508495). `pp_payout_map.py` now has `BrowserQuoter` (a `Quoter` subclass — same records, budget, deadline,
   three-blocks stop), `PP_TRANSPORT=browser` default, `curl` kept; images blocked (metered proxy). **First production run
   38010541980: 78 / 78 quotes 200, loaded into `nba_market.pp_mined_leg` / the quote table.** The 6-hourly delta resumes.
+- **Why the 09-21 recipe stopped, and the ladder (probe 38015965386, `nba/probe_pp_quote_paths.py`, owner 18:58 PT: "find
+  out how you did it before and sharpen it").** §1's recipe (curl_cffi `chrome146`, a Session, a board-GET warm-up, the
+  proxy) worked while chrome146 was a current Chrome. On 10-09 the runner's real Chrome is **154** and curl_cffi's newest
+  fingerprint is **150**: every curl path is refused — 8 fingerprints via the proxy, 4 direct, 4 on one sticky exit IP,
+  and 6 hand-offs carrying a real Chrome's cookies (datadome, cf_clearance …), all 403 captcha. DataDome judges the TLS /
+  HTTP-2 fingerprint, so cookies alone do not carry. `pp_payout_map.py` now: picks the NEWEST curl fingerprints each run
+  (no hard-coded list), spends ONE probe quote on the cheap path, and falls to the real-Chrome page when walled
+  (`PP_TRANSPORT=auto`); the browser quote retries once after a page reload; the board GET runs through `nba/net_retry.py`.
+  When curl_cffi ships a current Chrome the cheap path comes back with no code change. Schedule: twice a day, both before
+  the decision window (16:30 / 19:45 UTC), was every 6 h.
 - **The 10-20 "in-app" check, settled from PrizePicks' own quote engine (anonymous, prizepools, 2026-10-09):** all-standard
   **Power 2 = 3.0, 3 = 6.0, 4 = 10.0; Flex 2 = 2.0 / 0.5 (1 hit), 3-Flex = 3.0 / 1.0, 4-Flex = 6.0 / 1.5** — exactly the
   mined tables the engines use (`pp_flex_standard_payout`), not the help centre's 2.25 / 1.25 and 5 / 1.5. 5- and 6-pick from
