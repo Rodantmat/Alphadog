@@ -21,7 +21,7 @@ from collections import defaultdict
 from seleniumbase import SB
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from betr_harvest_cloud import start_local_proxy, where  # noqa: E402  (the proven proxy chain)
+from betr_harvest_cloud import open_alive, start_local_proxy, where  # noqa: E402  (the proven proxy chain)
 
 API = "https://api.prizepicks.com"
 APP = "https://app.prizepicks.com/"
