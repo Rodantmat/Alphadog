@@ -3531,3 +3531,21 @@ these twelve.**
 | `nba-p5-weekly-requal.yml` | schedule **removed**; `workflow_call` + `workflow_dispatch`; weekly precision `SV_BOOT=2000`, `SV_NULL=30` set in the step env (a dispatch input and a repository-variable route were both tried and dropped while GitHub refused the file) | `workflow_call` + `workflow_dispatch` |
 **Measured cost** (build chat, `18:48Z`): P4 pick `< 1 min`; P4 grade `2–6 min` (the 10k bootstrap per strategy grows with the ledger); P5 full `~2 h`, delta `~70 min`, delta + weekly precision **`~30 min`**.
 🔑 **Process rule adopted in `T35`** (after the owner's `21:28Z` frustration): a **local state-machine simulator** (*"runs the full season of real daily hit series in under a second"*) is *"the required test before any hurdle change ships"* — hour-long replays are for confirmation only.
+
+---
+
+## 🆕🔴 **§T36.4 — `T36` (`2026-10-02/03`): THE SCHEDULER WORKER, THE CLAIM SCRIPT, P2A/P2B, AND THE ENGINE'S LAUNCH KNOBS** *(source `T36`, `NBA_MASTER_SUMMARY.md` `§T36`; architecture in `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8`; ✅ = in the repo `2026-10-10`)*
+| file | role | trigger ✅ today |
+|---|---|---|
+| **`nba/alphadog-v2-nba-scheduler.js`** (Cloudflare worker `alphadog-v2-nba-scheduler`) | every-minute cron → computes the day's plan from the first tip → dispatches P2A / P2B / P3 / P1 (and later `CLOSE`), with watchdogs; heartbeat (`last_tick`), on/off switch, `/simulate` dry run, a test slot that may only fire the audit workflow | Cloudflare cron `* * * * *` (in `generate_wrangler_configs.py`; registered in `nba/worker_manifest_nba.json`); **`v2.3.0`** |
+| **`nba/pipeline_claim.py`** | the run-once guard: `claim` / `finish` against `nba_control.pipeline_runs`; `force` for recovery | first/last job of P1, P2A, P2B, P3 |
+| `.github/workflows/nba-schedule-audit.yml` | diagnostic: every scheduled run's start delay from GitHub's API (the measurement behind the worker) | `workflow_dispatch` |
+| `.github/workflows/nba-p2a-results.yml` | P2A — last night's results, grading, `final_hp` rebuild, **slip grade** (`LS_MODE: "grade"`) and `edge` | scheduler + **late fallback cron `30 13 * * *`** |
+| `.github/workflows/nba-p2b-slate.yml` | P2B — injury report, referee crews (polled → D1 fallback), **`nba/capture_game_lines_morning.py`** (new — the live 08:00 PT morning line), market export, refits, baseline, `final_hp`, certify | scheduler only (no GitHub schedule) |
+| `.github/workflows/nba-p2-overnight-heavy.yml` | **RETIRED stub** — `workflow_dispatch` only, refuses to run | — |
+| `.github/workflows/nba-p3-afternoon-light.yml` | P3 — board, scoring, certify, **slip pick** | scheduler only (no GitHub schedule) |
+| `.github/workflows/nba-p1-weekly-static.yml` | P1 — weekly static + P5 | ✅ `workflow_dispatch` only (the scheduler fires it Mondays 19:00 UTC) |
+| `nba/live_monitor.sql` | the first-21-days monitor (seven cumulative checks) — run by hand | — |
+| `nba/scrape_underdog_board.py` / `nba/archive_live_boards.py` | **fixed in `§30h`**: the scraper now keeps the fantasy price/probability, the displayed price and the payout modifier; the archiver stores `price` = displayed price, `multiplier` = payout modifier | (inside the board pipelines) |
+**Engine knobs introduced in `T36`** (✅ in code): `SE_LOWFOUL` default **`1`** (size ≥ 4; `build_slip_engine.py` line `55`) · `SE_SAMETEAM` default `0` — ✅ its own comment now reads *"REJECTED by its side-table rebuild (kept for the record)"* · `LS_ALLSTAR_PLAN` default **`B`** (`live_slip_engine.py` line `110`) · **`LIVE_MAX_DAILY_STAKE` default `36`** (line `132`) · `LS_MODE=reset` (clean ledger before the first live pick) · `LS_MODE=late_pick` (record-only) — ✅ **today prints *"late_pick is retired (§31p)"*** (a later transcript).
+**Two launch-blocking install gaps fixed in `T36`**: `pdfplumber` missing from P2's and P3's `pip install` lines (commits `56a4dc18`, `1d344694`, `2026-10-03 00:08Z`); a systematic check of **all `62` scripts the four pipelines run** (following local imports) against each workflow's install line then found no other gap (`§29y`).
