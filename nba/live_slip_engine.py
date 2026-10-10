@@ -117,8 +117,8 @@ ALLSTAR_PLANS = {
     # no plan runs there. The All-Star games themselves are never a slate (game_id 003 is outside nba_calendar.slate_games).
     'B': {'W_core_3power': 3, 'A_wsteals_5flex': 6, 'W_coredemon_3power': 1},  # +62, 44% ROI, +30 / +32 (default)
     'C': {'W_core_3power': 3},                                                 # W_core 3-Power alone: +41% / +116% (minimal)
-    # 'A' = the previous rule (family A cap 1, points Power sits, demons stake): +24, 17%, -24 / +48
-    # 'D' = no special handling: +71, 30%, +21 / +51
+    # 'A' = the older rule (family A cap 1, points Power sits, demons stake) - measured 2026-10-02 on the old grader only
+    # 'D' = no special handling (the normal portfolio, demons red): +17.5, 8%, +22.4 / -5.0 (re-measured 2026-10-10)
 }
 # family C is the Regular-without-steals family (28f) and must be BUILT without the steals cells to be what it was validated as.
 # D and R build from the steals-excluded pool too (their compositions are single-cell; the exclusion is a no-op for them).
