@@ -46667,3 +46667,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `118` complete (`2026-10-10`).
 - ✅ **CLOSED `3`/`3`**: every transcript. From-scratch re-judgment: `T32` `300` of `811` listed sentences.
+
+---
+
+# §P119 — PASS 119 (`2026-10-10`): `T32`'S ≥ 5 LIST FROM SCRATCH, SENTENCES 301–811
+*Angle (as NEXT set it):* (k8) the rest of `T32`'s list, each sentence read whole and judged against all twelve, a figure check beside each.
+- `511` sentences read; nothing new (`§T32.15`). `T32`'s list is judged in full; `T32` stays ✅ CLOSED.
+- No hourly-rotation commit had landed since `b4c3d80d7` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `119` complete (`2026-10-10`).
+- ✅ **CLOSED `3`/`3`**: every transcript. From-scratch re-judgment: `T32` done (`811` of `811`); next `T33`.
