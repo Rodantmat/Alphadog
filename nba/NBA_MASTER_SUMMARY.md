@@ -44445,7 +44445,7 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 | transcript | the verdict no section carried | verdict |
 |---|---|---|
 | `T34` | 🆕 **a validator bug on its first run** (`§28`, `2026-09-30 22:04Z`): *"I'd used concentration as a selector, which disqualified 114 of 117 S1-positive strategies; MLB used it as a post-hoc flag, and that's what it is now."* | **NEW MATERIAL** |
-| `T36` | 🆕 **Bayesian online changepoint detection, tried as a drought detector and rejected**: *"on an all-or-nothing daily series it fires on every 0/22 day, detecting bad days rather than droughts"* — the reason the drought state stayed a threshold on a smoothed cell rate | **NEW MATERIAL** |
+| `T36` | 🆕 **Bayesian online changepoint detection, tried as a drought detector and rejected**: *"on an all-or-nothing daily series it fires on every 0/22 day, detecting bad days rather than droughts"* | **NEW MATERIAL** |
 | `T37` | 🆕 the name-map refresh's first live effect — **`5,169 → 5,213` entries**, every active player resolving (✅ `5,221` today; the earlier `5,169` live claims elsewhere are pre-refresh); 🆕 *"Overpriced stars on heavy favorites: rejected across the full Underdog board (51% either way)"* — one of `§30y`'s new angles not named in `§T37.2` | **NEW MATERIAL** |
 | `T32`, `T38`, `T39` | nothing outside recorded findings | **CLEAN** |
 
