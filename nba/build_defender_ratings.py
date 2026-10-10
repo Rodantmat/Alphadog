@@ -51,8 +51,19 @@ CHANNELS = ("def_pts", "def_fg", "def_3p", "def_tov", "def_foul")
 
 
 def fetch(name, timeout=300):
-    with urllib.request.urlopen(urllib.request.Request(RAW + name, headers={"User-Agent": "alphadog"}), timeout=timeout) as r:
-        return json.load(r)
+    """LOCAL FILE FIRST (2026-10-09): the index and shards are in the checkout (P1 commits them) - the remote CDN was read
+    every time, once, and a failed shard silently shrank the fit. Remote only when the file is not on disk, retried
+    (net_retry: 4 attempts, full-jitter backoff)."""
+    local = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", name)
+    if os.path.exists(local):
+        with open(local, encoding="utf-8") as f:
+            return json.load(f)
+    from net_retry import call
+
+    def once():
+        with urllib.request.urlopen(urllib.request.Request(RAW + name, headers={"User-Agent": "alphadog"}), timeout=timeout) as r:
+            return json.load(r)
+    return call(once, tries=4, base=3, cap=30, label=f"raw {name}")
 
 
 def load_matchups(slug):
