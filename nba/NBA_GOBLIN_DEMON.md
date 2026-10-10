@@ -192,6 +192,7 @@ its HP; the bands then tell us WHERE that HP is systematically wrong and BY HOW 
 × phase × band × direction`, and it beats the baseline OUT-OF-SAMPLE** — *fitted on 2024-25, applied
 to 2025-26; see `NBA_BASELINE_CALIBRATION.md` §0z-T16-B for the full result, the phase decay, and the
 scope limit that confines it to **board-offered lines**.*
+→ 🆕 *`2026-10-10`: on `2026-09-26` the build chat judged the table "nothing to wire" as a correction; ✅ live, `build_final_hp.py` reads it into a map no later line uses — `NBA_MASTER_SUMMARY.md` `§T29.1`.*
 
 ---
 
