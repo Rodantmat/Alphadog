@@ -9,7 +9,7 @@ context, and which document section. Any material term appearing more than once 
 > **Every term used across the NBA system — what it means, and where it came from.** *Two structures:
 > **`§Z`** is the flat lookup (term → location, covers `A`–`Z`); the **body blocks** hold the
 > definitions. Where they disagree, the body is newer.*
-> 📏 **`51` sections · re-derived `2026-09-25`** *(was `47` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_GLOSSARY.md ``
+> 📏 **`52` sections · re-derived `2026-10-10` (RUN, `+1`)** · 🆕 **the `SLIP-PROGRAM AND BETR-CLOUD TERMS` block at the end of the file (`T32` onward — `cal_p`, `p·m`, rank/signal/gate, trailing, real replay, all-combos, mirage, CLV, WOWY, DvP, Kelly, probe sport, UC Mode…)** · ~~**`51` sections · re-derived `2026-09-25`**~~ *(was `47` on `2026-09-23`; **`RULE 59` — re-derive, never quote**):* `` grep -cE '^(> *)*#{1,6} ' nba/NBA_GLOSSARY.md ``
 >
 > 🆕🔴🔴🔴 **SECTION ADDED `2026-09-25` — AND IT IS A ROUTING FACT, WHICH IS WHY IT LIVES HERE.**
 > | § | what it is |
