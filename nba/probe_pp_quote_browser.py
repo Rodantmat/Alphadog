@@ -36,9 +36,13 @@ fetch(url, opts).then(function(r){ return r.text().then(function(t){ done({statu
 """
 
 
-def page_fetch(sb, url, method="GET", body=None):
-    headers = {"accept": "application/json", "x-device-id": DEV,
-               "x-device-info": "anonymousId=,name=,os=web,osVersion=,platform=web,appVersion=,gameMode=prizepools,stateCode="}
+def page_fetch(sb, url, method="GET", body=None, device=False):
+    # run 38009508495: from the app's page a plain GET answers 200; adding x-device-id / x-device-info makes Chrome
+    # send a CORS preflight that the API refuses ("Failed to fetch"). Minimal headers by default; device=True retries
+    # the POST with the device id only, as the app's own requests may carry it.
+    headers = {"accept": "application/json"}
+    if device:
+        headers["x-device-id"] = DEV
     opts = {"method": method, "headers": headers, "credentials": "include"}
     if body is not None:
         headers["content-type"] = "application/json"
