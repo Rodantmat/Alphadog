@@ -3464,6 +3464,23 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕🔴 §T39.6 — **`T39` (`2026-10-04/07`): PRICES OUTSIDE `final_hp`, THE RECALIBRATION MAP THAT FINALLY EXISTS, AND THE CONFIG KEYS THAT HOLD THE FITS** *(source `T39`; live read-only `2026-10-10`)*
+| object | content | live |
+|---|---|---|
+| **`nba_score.final_hp_derived`** | derived prices **kept out of `final_hp`** on purpose (*"24 consumers incl. 4 DB functions"* read `final_hp`): `derivation` = `whole_number` (G1), and — later (`T40`) — `beyond_certified_depth`, `board_beyond_certified_depth`, `whole_number_nb`, `wn_neighbor`; history **cross-fit**, live **pooled**; one set per date (transactional) | `153,688` rows (`whole_number` `117,158`; `board_beyond_certified_depth` `35,624`; `wn_neighbor` `466`; `whole_number_nb` `438`; `beyond_certified_depth` `2`) |
+| **`nba_score.final_hp_all`** (view) | `final_hp` ∪ `final_hp_derived` — *"prices every leg"*; nothing decision-side read it at `T39` | view ✅ |
+| **`nba_score.recalibration_map`** (v2) | `fit_set` ∈ {2024-25, 2025-26 (each applied to the OTHER season), POOLED (live)} × `prop, kind, side, role_tier, p_bucket` → `lo, hi, n, model_p_mean, realized, calibrated_p, use_map`; shrinkage cell → (prop,kind,side) → (prop,kind) → kind, K 200; weighted PAV isotonic; **`use_map = false` on the 4 cells served raw** | `8,818` rows (first written `2026-10-06`) — **before that the table did not exist** although COMPASS fact 124 said the engine read it |
+| **`nba_score.calibrated_p(prop, kind, side, role_tier, model_p, game_date)`** (SQL function) | the map's interface: history → the other season's fit; live → POOLED; unseen role → the same bucket across roles | ✅ present |
+| **`nba_config.classification_config`** — key `whole_number_recalibration` | `{a −0.00008, b 0.31294, formula, per-prop tie scales …}` — *"tunables in the DB, never hardcoded"* | ✅ `2026-10-06` |
+| `nba_config.classification_config` — key `selection_certified_depth` | per-prop certified ladder depth; rungs beyond are routed to `final_hp_derived` (`T40` implementation) | ✅ `2026-10-06` |
+| `nba_score.tier_map_legs_wi` | gate-2 test table: certified tier map copied untouched + `213,759` whole-number rows (`21,381` ties kept as hit NULL) | *(test; status today — see `T40`)* |
+| **`nba_score.ud_edge_monitor`** / **`ud_edge_monitor_ref`** | the Underdog break-even monitor (looks, z, decision) and its certified reference from the P5 backtest | ✅ present |
+| `nba_ud_live_slips.legs_json` per-leg outcome | UD grading now writes each leg's `hit` true / false / `void` (dnp / push) — the monitor's input | — |
+**Dropped in `T39` after reconciliation** (`§31p`): `nba_score._probe_keys` (the 09-25 prune probe set) and `nba_score._calib_before_prune` (the pre-prune calibration snapshot — diffed first: **2024-25 restored bit-for-bit, 2025-26 differences = exactly the measured shift**). **Kept by design, not leftovers**: `nba_control.scheduler_test`, and the 09-22/23 simulator toolset (`nba_market.derived_backsim`, `derived_alt_backsim`, `fs_backsim`, `nba_score.sim_slip`, `sim_strategy`).
+**`nba_ref.players`** is now updated **daily** by `sync_current_rosters.py` (team changes, new players; never deactivates — that stays P1's job) — `2026-10-05` first run: `616` rostered, `3` team changes, `8` new players.
+
+---
+
 ## 🆕 §T38.6 — **`T38` (`2026-10-04`): THE EDGE MONITOR'S TABLES, `stake_weight`, AND THE SANDBOX'S SCRATCH SCHEMA** *(source `T38`; live read-only `2026-10-10`)*
 | object | content | live |
 |---|---|---|
