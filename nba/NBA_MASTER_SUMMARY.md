@@ -45031,3 +45031,19 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `32` complete (`2026-10-10`).
 - **CLEAN → `2`/`3`**: `T32`.
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+---
+
+# §P33 — PASS 33 (`2026-10-10`): (yy) `T36`'S FINAL REPLIES READ IN FULL; (zz) `T32`'S TABLES ROW BY ROW
+*Angle (yy):* all `67` of `T36`'s final replies (`961` lines) read start to end, each paragraph matched to its record. *Angle (zz):* every table row in `T32`'s transcript (`39` unique rows, plus the `21` in its final replies) checked figure by figure.
+- 🆕 **`T36`** — the earlier passes had matched figures; reading the prose found what carries no distinctive figure:
+  - six dry tests and Gemini outcomes (pass 28's distribution-shape transforms; Gemini's week-2 null and the no-fire branch; pass 36's trade-deadline churn and the contradicted playoff-race state; the absence panel, team spread, goblins and opponent absences; first game back; overtime on bad days) → `§T36.6` #3;
+  - the late pick's schedule need (*"a ~15:40 PT close pull … an owner scheduling item"*), pass 82's timing (*"3:30–3:40 PM PT"*), and Gemini's monitor draft rewritten (*"daily win rates … are noise"*) → `§T36.6` #3;
+  - the other-boards plan in order and the preseason-capture proposal (*"the archiver currently skips preseason"*) → the `§29v` row;
+  - the first Underdog universe's coverage (`95–98%` scored, `100%` graded, alternates `0.95–0.97×`, defensive lines from `1.5`) → `§T36.6` #6.
+  Everything else in the `67` replies is on file.
+- **`T32`** — every table row resolves (the overconfidence-by-prop table is in `NBA_BASELINE_CALIBRATION.md` `§T32.5` by its realized values; the Fliff row is MLB). **CLEAN.**
+
+**Ledger**: pass `33` complete (`2026-10-10`).
+- **CLEAN → `3`/`3` ✅ CLOSED** (passes 31–33): `T32`.
+- **NEW MATERIAL → `0`/`3`**: `T36`.
