@@ -43771,7 +43771,25 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 
 **4 — Week by week from opening night** (`06:42Z`, all eight): week 1 `+88%` / `+105%`; week 2 `−40%` / `−51%` (leg hit `41%` / `40%`); week 3 `+65%` / `+277%`; week 4 `+18%` / `+246%`; weeks 5–6 `−4%` / `+116%`; weeks 7–10 `−26%` / `+49%`; rest `+82%` / `+96%`. The Over/Under-gap regime: in 2024-25 the `70` "Overs 15+ points hot" days returned `−2%` vs `+70…+145%` otherwise; in 2025-26 the same days returned **`+121%`** — *"the half-trained ranker's tilt, fixed by the retrain."* Demon 3-Flex `+76%` and regular 5-Power `+45%` through the 2024-25 bleed.
 
-<!-- §T35.6 part 2 -->
+**5 — Week 2: the tests behind "uninformative, not wrong"** (`07:04Z`–`08:09Z`, in the order the explanations were offered and dropped):
+- *"New listings"* (`07:04Z`): `64%` of week-2 defensive legs were players not listed in week 1, hitting `44%`; veterans `52%` — **falsified at `07:21Z`** (established players hit `39%`, worse than anyone).
+- **The fade test** (`07:09Z`): on Regular lines the mirror leg is always posted at the same price — in week 2 the picks and their mirrors hit **`50/50` and `53/47`**; in every other window the picks beat their mirror by `8–22` points ⇒ *"the model isn't wrong in week 2; it's uninformative."* Only three cells clear break-even at top-3 in week 2 (assists D2, rebounds R Under, points D1) on `31–42` legs over two seasons.
+- Ordering power: *"12 points of discrimination in week 1 and 1 point in week 2 while its confidence is unchanged."*
+- 🔴 **A confidence-model hypothesis offered and withdrawn within ten minutes** (`07:38Z` → `07:46Z`): `f_phase` `"1_oct_nov": 0.80` and `f_time` were proposed as the cause, with an experiment (rebuild the first 28 days with confidence held at its season median); the next reply's walk of every link found *"the scenario and confidence layers don't touch the ranking"* — the experiment was not run. *Gemini's decisive test*: last season predicts week-2 production as well as week 3 (steals `r` `0.26` vs `0.22–0.23`).
+- **Structures in bad weeks** (`07:57Z`): Kind A (projection random) — least-bad 2- and 3-pick Flex `−37%` / `−38%`, the rest `−52%` to `−100%`; Kind B (variance) — 3-Power `−5%`, 3-Flex `−10%`, 2-Flex `−16%`, 5-Flex `−25%`, 4/5/6-Power `−76%` to `−100%`; normal weeks 5-Flex `+88%` vs 3-Flex `+33%`, 2-Flex `+11%` ⇒ the "safer" structures cost `~60%` of income to save `15–20` points in bad weeks.
+- **Why H8 (rolling projection-outcome correlation) was rejected before DDM replaced it** (`08:02Z`): the daily correlation swings `−0.27` to `+0.34` inside one bad week; smoothed, it fired on **day 5 of 7** in 2025-26 week 2 and **never** in 2024-25 weeks 5 and 8 — *"a detector that catches one of four weeks, late, is not a detector."* Pace (`08:09Z`): week 2 `100.1` vs `99.7–100.9`, corr `−0.007` — the fifteenth falsification; DARKO cited: blocks stabilise in `~41` games.
+
+**6 — The replays, in order** (all 2025-26, 161 days):
+| replay | code | result |
+|---|---|---|
+| #1 (`08:17Z`) | old CUSUM | B and C as designed (LB `+24…+49%`); **all five family-A strategies red on Dec 11** (*"the dead CUSUM"*) |
+| #2 (`16:35Z`) | day-blocked | family A active **Dec 20–26** (the paper gate at day 50), `37–47` days active, LB `+28…+40%` (from `−2…+18%`); two rule defects found (H1+H7 double count; a red self-clearing) |
+| acceptance #1 (`18:59Z`) | fixed rules | demon 5-Flex active Jan 6, `86` active days, `+552`, LB `+71%`; demon 3-Flex `+114`, LB `+26%`; stocks 4-Flex `96` days, `+148`, LB `+61%`; **family A red Feb 11 for `54` days** — an artefact (no P5 in replay); on data through Feb 15 all five still passed (LB `+16…+39%`) |
+| acceptance #2 (`21:21Z`) | + P5 simulated | all eight finish active, LB `+25…+71%`; family A nets `+107…+377` (vs `+78…+261`); but reds lasted `6–34` days — **the stop/restart deadlock** (a red places nothing, the H1 z froze at `3.14`, `4.1`, `3.62`) ⇒ shadow slips |
+| acceptance #3 (`22:33Z`) | + shadow slips | ***"passed. Family A's one real stop cleared on the next Monday; production cost two days. B and C never flagged."*** |
+H1's lingering yellow after a drought (up to two weeks) was **examined and kept** (`16:46Z`): an exponentially weighted window released one day sooner and added a false alarm; cost `~30–40` u of foregone income on the cap-3 strategies. 🔴 **An open question the replies left** (`21:30Z`): the anchor calibration's `p0` is `0.630` (`295` days); the simulator (`p0` `0.650`) said H7 should **not** have fired on Feb 11 on the certified steals series, but replay #2 fired it ⇒ *"the engine's live steals picks on those days differ from the certified backtest's … the gap between the slip engine and the backtest it's supposed to reproduce"* — to be diffed *"with a query"*; no result is in the replies (→ `T36`, `RULE 6`).
+
+<!-- §T35.6 part 3 -->
 **Ledger**: `T35` pass `14` — **NEW MATERIAL** (`§T35.6`; `NBA_SYSTEM_DESIGN.md` `§T35.7` #7 corrected: the cap-6 / core-retired change was applied, not proposed), CLEAN `0`/`3`.
 
 ---
