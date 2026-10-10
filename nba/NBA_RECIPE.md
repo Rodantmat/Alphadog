@@ -1472,3 +1472,10 @@ THE REPOSITORY IS PUBLIC.**
 51. **For every gap, separate coverage from selection** (owner: *"There should be no gaps!"*): price it honestly (out-of-sample recalibration, ties modelled), store it where no existing consumer reads it by accident, and admit it to selection only through the two-season gate. *A gap closed badly is worse than an open one.*
 52. **Test a documented fact against the system before relying on it** — the recalibration map the COMPASS said the engine read had never existed.
 53. **Realign on request** (owner `01:03Z`): read the documentation and the compass from step zero before continuing; check for drift every so often.
+
+### STEP 14i — **Strong legs of a new kind belong in slips — in the cell's own currency, with a safety discount, and on one leg pool for live and backtest** *(`T40`, `2026-10-07`; `NBA_MASTER_SUMMARY.md` `§T40`)*
+54. **Real board legs must be handled, not excluded** (owner: *"All legs on the [board] are real and the system should deal with it properly"*): derive a price for the new leg type (adjacent rungs → recalibration → tie model), take a **safety discount**, value a tie as part of a win.
+55. **Never rank an honest number against an uncalibrated one** — translate it into the cell's own raw-score currency (isotonic, cross-fitted) before ranking.
+56. **When live selection changes, rebuild every reference the monitors compare against** (certified slips, P5, edge reference, calibration) on the same leg pool; make every leg-hit reader tie-safe.
+57. **Route, don't delete, what selection must not see** — priced every day in a side table, kept out of the selection paths by construction; audit which table each selection path really reads.
+58. **Research = own research first; Gemini validates** (owner).
