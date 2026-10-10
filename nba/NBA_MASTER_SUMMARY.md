@@ -46272,3 +46272,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `92` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P93 — PASS 93 (`2026-10-10`): EVERY LISTED RUN ON `T37` RE-JUDGED FROM SCRATCH; THE RE-RUN
+*Angle (as NEXT set it):* (y6) all `188` sentences the ≥ `5` scan listed on `T37` after pass 92, each run re-judged without reference to the earlier tiers' verdicts — the full sentence read (the whole paragraph where the scan's stored text was cut short), searched on file by its substance, and any reading or consequence checked apart from the figures beside it (pass 92's slip). (z6) the scan re-run after the additions (`184` of `456` sentences with a run), compared against every earlier list: `0` new sentences (`7` runs changed wording on sentences this pass had just re-judged).
+- 🆕 Not on file (AS STATED, in `§T37.9`): ten clauses — `§30j`'s depth caveat; `§30p`'s not-re-testable items and its leg-level lean; `§30v`'s readings of the finer compositions; `§30x`'s absence-flag mechanism, its reason for the envelope gap, and its decision on the close-board rebuild; `§31g`'s stale-line consequence, its consumers and its tracking.
+- 🔴 What this says about the earlier tiers: the comparison rule ("no flag an earlier tier had not traced") carried forward every earlier verdict, including the ones that passed a reading because its figures were on file. Ten such readings stood in the lists until a from-scratch judgment.
+- Judged, not recorded: table headers and cell fragments; plans later run; the probe's MLB examples; framing lines; implementation notes (the Clippers' feed-name normalization, the calendar-id filter).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-92 census commit: `qdiff.py` `0` flags (`11` quotes counted).
+
+**Ledger**: pass `93` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
