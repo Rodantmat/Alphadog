@@ -2274,4 +2274,7 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **`cert_fp` (certification fingerprint)** | `nba_control.cert_fp(table, where)` — reproducible row fingerprint used to prove certified tables unchanged | `NBA_DATABASE.md` `§T46.6` |
 | **Playoff Unders** | the playoff-only candidate: the model's top standard-line Unders (≥ 58%, 8 main props, one per player) — PrizePicks 5/6-Flex, Underdog 2-pick | `NBA_SYSTEM_DESIGN.md` `§T46.7` |
 | **leg-level walk-forward** | cells picked on one sample (one playoff), legs scored on the other — used when slip counts are too small | `NBA_SYSTEM_DESIGN.md` `§T46.7` |
+| **`m*` (break-even multiplier)** | `1 / (p_cell × root)` — the smallest multiplier at which a certified leg is worth playing on an app | `NBA_MULTIPLIERS.md` `§T47.3` |
+| **`stake_mode`** | `playoff_unders` switch: `gate` stakes the PASS strategies on playoff slates; `shadow` makes every Playoff Unders slip record-only | `NBA_SYSTEM_DESIGN.md` `§T47.7` |
+| **pricing law (hit × m ≈ 0.500)** | on main lines every app prices fairly; the cut is in the payout table; alternates carry an extra cut | `NBA_MULTIPLIERS.md` `§T47.3` |
 | **placeholder season files (`ensure_season_files.py`)** | empty current-season input files written before the first game so the builders label the opener as the new season | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
