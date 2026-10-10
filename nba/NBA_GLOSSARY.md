@@ -2251,6 +2251,6 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **proxy resolver (`proxy_url`)** | the workflow step that reads the proxy URL from `nba_config.external_credentials` first and falls back to the GitHub secret | `NBA_SYSTEM_ARCHITECTURE.md` `§T42.8` |
 | **`lobby_only` (Betr)** | a GraphQL answer to the events query that carries no projections — evidence, never the board | `NBA_WORKERS.md` `§T42.4` |
 | **dress rehearsal (sim-slate)** | `nba-sim-slate.yml`: the full P2B → P3 → pick chain on a future slate in a sandbox, production verified untouched | `NBA_SYSTEM_ARCHITECTURE.md` `§T42.8` |
-| **`broad_day`** | the certified builder's diversification tie-break, on when ≥ 5 families have ≥ 2 cells that day; the live pick now computes it the same way | `NBA_SYSTEM_DESIGN.md` `§T42.7` |
+| **`broad_day`** | the certified builder's diversification tie-break, on when ≥ 5 cell families (`_U` folded) hold ≥ 2 distinct players that day; the live pick now computes it the same way | `NBA_SYSTEM_DESIGN.md` `§T42.7` |
 | **market term / market-free twin** | the confidence deduction for sportsbook backing (`f_books`, `f_agree`) that live cannot reproduce; the certified history rescored without it (`_mf` tables) | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
 | **placeholder season files (`ensure_season_files.py`)** | empty current-season input files written before the first game so the builders label the opener as the new season | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
