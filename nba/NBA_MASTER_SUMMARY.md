@@ -45049,3 +45049,17 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `33` complete (`2026-10-10`).
 - **CLEAN → `3`/`3` ✅ CLOSED** (passes 31–33): `T32`.
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P34 — PASS 34 (`2026-10-10`): (aaa) `T36`'S MID-TURN NARRATION READ STRAIGHT THROUGH
+*Angle (aaa):* the `438`-line extract of `T36`'s narration between tool calls (the build chat's own words while it worked, not its closing replies), each finding matched to its record; each lead followed into the replies and code. `T36` only — every other transcript of `T32`–`T48` is closed.
+- 🆕 **`T36`** — the narration surfaced what neither the replies' figures nor their prose had carried into the docs:
+  - the injury-report join gotcha (`injury_report_snapshots.team` holds full names; join on `nba_ref.teams.full_name`), live-verified → `NBA_DATABASE.md` `§T36.6`;
+  - the `01:04Z` status request and the `01:07Z` status (leg- and day-level symptoms, the backtest table, core 5-Flex in droughts `−50% → −20%` / `−18% → −7%`, the week-2 paper play `+37%` on `307` slips vs `−75%`, *"the third season is the test"*) → `§T36.1`;
+  - two engine defects the build chat caught in its own edits (slate size counted from a calendar holding no 2024-25 games; the `small_slate` loop leak), live-verified `:594–597`, `:637` → `§T36.3`;
+  - altitude, team schedule position, road trips and early-season assists — the figures behind tests the docs listed only by name → `NBA_BASELINE_CALIBRATION.md` `§T36.5` #2;
+  - the input facts and Gemini's critique behind the first P2A/P2B draft (referee crews `~9:00 a.m. ET`; the board-timing buckets; P2 `~1h55m` serial; the `1,200`-game tip-time check) → `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8`;
+  - from the replies the narration pointed to: `27`/`27` offline tests and the `62`-script library check → the `§29x`–`§29y` row; the snapped-`1.00` classes and the `690`-leg live verification → `NBA_MULTIPLIERS.md` `§T36.3`.
+  ⚠ The last two were in `T36`'s final replies, which `§P33` had read in full and called *"on file"*; that claim is struck there.
+
+**Ledger**: pass `34` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
