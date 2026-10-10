@@ -2807,6 +2807,8 @@ already on file at `NBA_MULTIPLIERS.md` §0.2f.*
 prop, line, side, model_value, final_hp, pick_rank, slip_no, threshold, snapshot_label, event_id` —
 under **`PRIMARY KEY (strategy, game_date, player)`**. *Full idempotency analysis at `§T20.94`.*
 
+> 🆕 *(pass 113, `2026-10-10`)* **Two changes since this reading** — the snapshot pinned to `window` (`2026-09-23`) and any date other than today refused unless `p_force` (`2026-09-24`) — → `NBA_MASTER_SUMMARY.md` `§T26.R2`.
+
 ## 4. GRADING — `nba_score.grade_paper_picks()`, called by `P2` step 3b
 
 Joins `nba_market.board_outcomes` on `game_date, player, line, side` with
