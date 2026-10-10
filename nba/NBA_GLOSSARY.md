@@ -2215,3 +2215,11 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **P2A / P2B** | P2 split (`2026-10-02`): P2A = last night's results and grades; P2B = today's slate inputs, refits, baseline, `final_hp` | `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8` |
 | **Underdog modifier `mᵢ`** | ½ ÷ Underdog's probability for the side; Standard payout = base(n) × ∏ mᵢ × C | `NBA_MULTIPLIERS.md` `§T36.3` |
 | **fantasy price vs `decimal_price`** | Underdog's two price products on one option; the app shows the fantasy decimal where present | `NBA_MULTIPLIERS.md` `§T36.3` |
+| **R / F1–F3 / B1–B3 (Underdog)** | Underdog tiers = the side's modifier band: R balanced (`1.00`), F favoured (< 1.00), B boosted (> 1.00) | `NBA_GOBLIN_DEMON.md` `§T37.2` |
+| **snap zone** | Underdog mains within ~2 points of 50% no-vig are snapped to `1.00×` both sides | `NBA_MULTIPLIERS.md` `§T37.3` |
+| **margin regime** | Underdog's margin over the books' no-vig: 2024-25 `+0.1…+2.6` pts, 2025-26 `+2.1…+7.7` pts | `NBA_MULTIPLIERS.md` `§T37.3` |
+| **strict vs balanced (`delta`) repricing** | strict = min(then, today's rule) + haircut (withdrawn); balanced = keep UD's per-leg pricing, apply only the measured drift to 2024-25 priced lines (adopted) | `NBA_MULTIPLIERS.md` `§T37.3` |
+| **reverse walk-forward (V1R)** | select on the later season, score on the earlier — required when the seasons are different products | `NBA_SYSTEM_DESIGN.md` `§T37.7` |
+| **P5 / P4 (Underdog paper)** | P5 = weighted:points 4-Std + 6-Flex (cap 1) + mains 2-Std (cap 2), primary; P4 = its shadow — *not* the PrizePicks P4/P5 workflows | `NBA_SYSTEM_DESIGN.md` `§T37.7` |
+| **live leg source (`LS_LEG_SOURCE`)** | `live` = `pp_leg_price` → name map → `final_hp` (default); `universe` = the backtest `prop_universe` path, parity tests only | `NBA_DATABASE.md` `§T37.6` |
+| **fresh absence** | a rotation player who played the team's previous game and is out today; 2+ on a team lowers hit rates → a half-stake candidate | `NBA_BASELINE_CALIBRATION.md` `§T37.5` |
