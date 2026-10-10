@@ -47167,3 +47167,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `152` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T30` done (`11,367` sentences); next `T31`.
+
+# §P153 — PASS 153 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T31`
+*Angle (as NEXT set it):* (s9) `§P131`'s method on `T31`, under `T31`'s handling.
+- Tabulated in the shell before this line (the scan at pass 152's head): `T31` `1,431` of `1,750` sentences listed (`2026-09-27 22:07Z` → `2026-09-28 02:41Z`). Sentences `1`–`760` read whole, the `7` carrying a token value excepted unread; sentences `761`–`1,431` (the Betr stretch) read through a filter that set aside `453` lines of the handled classes (Betr auth and token passages, proxy, browser and capture steps, the `2` carrying a token value) and the remaining `218` read whole.
+- On file, by substance: the Sleeper capture, ladder, promos and `pick_stats` (`§T31.1`, `§T31.3`), the UTF-16 upload cause (`§T31.1`), the Chalkboard outcome — board device-bound behind App Attest — and its three repo files (`§T31.1`, `§T32`), the owner's rulings and directives of the span (`§T31.1`, `§T31.2`), Gemini's `404` on `2026-09-28` (`§T31.3`), the raw-CDN stale cache, the Betr browser route and `betr_harvest.py` (`§T32.1`), SeleniumBase UC Mode as the tool named. Judged under the handling: Chalkboard's API map, gateway behaviour and pricing content (`PP_PAYOUT_FINDINGS.md` `§0i`, cross-reference only); the Betr Keycloak / offline-token and Ably passages (not followed); the seventeen Betr probes; the Apify cost discussion; the bot-detection research beyond tool names; the capture and local-script steps.
+- **Nothing new — `T31` clean in additional sweep `1`.** No credential, token or proxy value reproduced. No commit other than this pass's landed since `c33404d32` when this line was written. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `153` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T31` done (`12,798` sentences); next `T32`.
