@@ -44803,3 +44803,17 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `15` complete (`2026-10-10`).
 - **CLEAN → `1`/`3`**: `T32`, `T34`, `T35`, `T37`, `T38`, `T39`, `T40`, `T41`, `T42`, `T44`, `T46`, `T47`, `T48`.
 - **Finding → stays `0`/`3`**: `T33`, `T36` (a quotation each restored).
+
+---
+
+# §P16 — PASS 16 (`2026-10-10`): (dd) THE NARRATION BETWEEN THE FINAL REPLIES, AND (ff) THE LIVE COUNTS RE-TAKEN
+*Angle (dd):* for the four transcripts whose closing text exceeds their final replies (`T32` `402 KB`, `T35` `44 KB`, `T36` `104 KB`, `T48` `412 KB` of intermediate text), every line whose figures are mostly absent from the twelve, plus every decision / rejection / defect sentence, read in place; and the `T32` final replies around the slip-foundation turns re-read straight. *Angle (ff):* every `✅` live table count in the twelve re-taken (`livepairs.py`, `27` tables).
+- 🆕 **`T32` — the first correlation measurement (COMPASS fact `125`) was not in the twelve**: same-player overlapping props cov up to **`+0.214`** (pra + pts_reb, joint `0.453` vs `0.239`), same-team both-Over `−0.0036`, opposing teams `≈ 0` — the measured origin of *"one prop per player per slip"* → a new row in `§T32.11`; and **fact `123`'s mandate** (*"A 4-leg slip of '89%' legs claims a 63% joint hit but realizes ~10%"* ⇒ never multiply raw `model_p`) → `NBA_BASELINE_CALIBRATION.md` `§T32.5`. *Both sit in a final reply (`#115`, `#119`) that pass 14 had read — the straight read missed them; the second read found them.*
+- **`T35`, `T36`**: the intermediate narration carries the build chat's step-by-step work (the twelve-mechanism table of week 2, builder fixes, the build chat's own memory notes pasted from its memory tool — Sept material already documented under `T1`–`T30`) — **nothing new**.
+- **`T48`**: its intermediate text is mostly file and tool content the export inlines (the transcripts index, configs) — **nothing new**.
+- **(ff) live counts**: `24` of the `27` re-take exactly (`live_strategy_state` `13`, `recalibration_map` `8,818`, `tier_map_bands` `30,411`, `tier_map_summary` `990`, `wn_currency_map` `7,635`, `ud_window_legs` `450,206`, `injury_asof_pick` `28,349`, `price_shop_ledger` `240`, `game_officials` `11,062`, `player_game_starter_status` `97,079`, `slate_games` `2,521`, `sim_slip` `4,379` …); the three that grew (`nba_ref.players` `713 → 756`, `player_name_map` `5,169 → 5,221`, quarantine `7,921 → 7,970`) are dated claims already annotated by `§P12` (*"carry their dates and are left as written"*) — **nothing new**.
+
+**Ledger**: pass `16` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`.
+- **CLEAN → `2`/`3`**: `T34`, `T35`, `T37`, `T38`, `T39`, `T40`, `T41`, `T42`, `T44`, `T46`, `T47`, `T48`.
+- **CLEAN → `1`/`3`**: `T33`, `T36`.
