@@ -8,6 +8,7 @@ writes. Grouped by role.
 > # 📑 **INDEX — `NBA_WORKERS.md`**
 > **Every worker and workflow** — what each does, how it is wired, what triggers it, and where it
 > fails. *Counts of workflows and crons are never quoted here; `§0.0` carries the commands.*
+> 🆕🆕 **`§T38.4` ADDED `2026-10-10`** — **`T38`: `sim_slate.py` (sandboxed slate rehearsal), `edge_monitor_research.py` / `validate_edge_monitor.py` + `LS_MODE=edge` in P2A, `roi_curve.py`, the star-Under test; `LS_MIN_BOARD` 179 / `UDL_MIN_BOARD` 178; `stake_weight`.** *(End of file.)*
 > 🆕🆕 **`§T37.4` ADDED `2026-10-10`** — **`T37`: thirteen Underdog-program / parity scripts (`build_ud_*`, `certify_ud_candidates`, `validate_ud_slip_strategies`, `ud_live_slip_engine`, `parity_pp_leg_source`, …), all `workflow_dispatch`; UD paper pick in P3, UD paper grade in P2A, name-map refresh + morning DFS snapshot in P2B; close capture via the scheduler.** *(End of file.)*
 > 🆕🔴 **`§T36.4` ADDED `2026-10-10`** — **`T36`: the Cloudflare worker `alphadog-v2-nba-scheduler` (every-minute; P2A/P2B/P3 times follow each day's first tip), `nba/pipeline_claim.py` (run-once), P2 retired → `nba-p2a-results.yml` + `nba-p2b-slate.yml`, `capture_game_lines_morning.py`, `live_monitor.sql`, `SE_LOWFOUL`, `LS_ALLSTAR_PLAN`, `LIVE_MAX_DAILY_STAKE`.** *(End of file.)*
 > 🆕🆕 **`§T35.4` ADDED `2026-10-10`** — **`T35`: `TM_DELTA`/`SE_DELTA` (delta mode, proven exact), `SE_DIVERSIFY` on, the slip PICK as P3's last step, the GRADE as P2's (today P2A's), P5 as P1's last job; P4/P5 manual-only.** *(End of file.)*
