@@ -676,7 +676,7 @@ manually maintained.
 
 | certifier check | asserts | the pipeline actually writes |
 |---|---|---|
-| 🔴 **P2** `baseline_history has today` *(+2 more)* | `nba_score.baseline_history` — **written by `load_baseline_history.py`, which P2 does NOT invoke** | ✅ **`nba_score.baseline_ladder`** *(206,237 rows, via `load_baseline_ladder.py`, step 15)* |
+| 🔴 **P2** `baseline_history has today` *(+2 more)* | `nba_score.baseline_history` — **written by `load_baseline_history.py`, which P2 does NOT invoke** | ✅ **`nba_score.baseline_ladder`** *(206,237 rows, via `load_baseline_ladder.py`, step 15)* 🔴 *(pass-3 live re-check `2026-10-10`: table no longer exists — `F6-1`, `2026-09-25`; the check now reads `baseline_history`, `T20-6`)* |
 | 🔴 **P3** `final_hp has today` *(+2 more)* | `nba_score.final_hp` — **written by `build_final_hp.py`, which P3 does NOT invoke** | ✅ **`nba_score.board_scored`** *(via `score_board_legs.py`, step 10)* |
 | ⚠ **P1** `player name map populated` | `nba_ref.player_name_map` — written by `check_baseline_board_coverage.py`, not P1 | *(legitimately an INPUT check)* |
 
