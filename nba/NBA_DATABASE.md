@@ -788,6 +788,7 @@ later.***
 | `nba_score.board_scored` | 2,948 MB | 11,956,460 |
 
 > ### 🗂 **§T24.3 — THE `prop_universe` OBJECT SET, AND THE `12` INTEGRITY CHECKS THAT GUARD IT**
+> 🆕🔴 **`2026-10-10` (from `T37`)**: `prop_universe` is **refreshed by no pipeline** — a backtest table built by these manual functions; it lacks every Jr/Sr/II/III player; the live PrizePicks pick and grade read it until the `2026-10-03` wiring audit. **→ `§T37.6`.**
 > *`T24` pass `3`, recorded `2026-09-23`. **`T24` is a SECONDARY SOURCE — a session record, not a
 > verbatim transcript** *(its own header says so)*. ⚠ **`nba_market.prop_universe` is MID-REBUILD;
 > every count here is a dated snapshot, never a final figure.***
