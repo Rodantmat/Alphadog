@@ -1487,3 +1487,11 @@ THE REPOSITORY IS PUBLIC.**
 62. **Make every recoverable failure recover itself** (a dead claim) and **never let a failed scrape overwrite good data** (DARKO).
 63. **Test a capture against the live source, not its own assumptions** (the referee API date format).
 64. **Make graders follow the operator's documented rules exactly** (void reversion, single survivor).
+
+### STEP 14k — **Close every silent path: failures that leave no trace, files that overwrite good data, one app that stops everything, a sandbox that leaks — then re-certify, and keep secrets in the credential store** *(`T42`, `2026-10-07/08`; `NBA_MASTER_SUMMARY.md` `§T42`)*
+65. **After any slip-system fix, re-run the whole chain on the fixed engine** before calling it done: rebuild (main + no-steals) → certify → validate → break-even cross-check → calibrate → edge-monitor validate → integration test; compare every figure with the last certification (`T42`: identical — `478,900`, `66/0`, `17/13` vs null `0`, `−9.16 pp`).
+66. **A state that must persist is checked first** (sticky red before any calendar window); **a floor is compared in the unit it was measured in** (`179` unique half-point legs); **one season definition and one clock** are shared, not re-derived per engine.
+67. **No soft step fails silently** — name it on the run row and as a warning; **no failed scrape writes its data file**; **one dead source never blocks the others** — archive only what this run captured.
+68. **Test the sandbox, not just the model** — every new table a builder writes must be redirected and covered by the production-write check; finish by proving production untouched.
+69. **Credentials live in the credential store** (`nba_config.external_credentials`), resolved at run time before any fallback secret — never in docs, memory or the repo; a credential seen in a transcript is cited, never copied.
+70. **Re-audit with fresh eyes** (independent readers who do not see the ledger's conclusions), then **verify every finding against code AND data before fixing**; take an outside model's review as reference — split it into taken and rejected-with-evidence.
