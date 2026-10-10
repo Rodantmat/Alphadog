@@ -36570,7 +36570,7 @@ document — it is the one that says HOW TO REBUILD THE SYSTEM.*
 
 ⚠ **RULE 40: `DATED`, NOT `RETRACTED`.** *It was true when written. **Since then T3–T18 have ALL
 CLOSED on three consecutive clean passes, and T19 and T20 have been swept to `0/3` with rule 46's
-reads owed.*** ⇒ ***The passes happened. Eighteen transcripts of them. The steps were never written,
+reads owed.*** ⚠ *Inexact on the basis (`§P128`): by their own index rows `T3` closed on the amended rule and `T11`–`T17` on the standing closure judgment; all of `T3`–`T18` closed.* ⇒ ***The passes happened. Eighteen transcripts of them. The steps were never written,
 and the heading still promises them.***
 
 ## 🔴🔴🔴 CLAUSE (iii) — **HITS. THE THREE PIPELINES ARE ONE CLAUSE OF ONE ROW.**
