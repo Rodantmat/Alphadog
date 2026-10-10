@@ -114,16 +114,34 @@ def extract_text(pdf_bytes):
     return "\n".join(out)
 
 
+# RETRY (2026-10-09, owner: retry logic on every external step). A snapshot URL that does not exist answers 403/404 at
+# once and is final (most of the ~168 probed slots are empty by design). A timeout, connection error, 429 or 5xx used to
+# be read as "no snapshot" - so a transient error on the real latest filing was a silent miss with a green step. Those are
+# now retried (net_retry: 3 attempts, full-jitter backoff), inside one wall-clock budget that fits the step's 600 s cap.
+from net_retry import Deadline, RetryError, request as _net_request  # noqa: E402
+
+_SCAN_BUDGET = Deadline(float(os.environ.get("INJURY_SCAN_BUDGET_S", "540")))
+_TRANSIENT_MISSES = []
+
+
+def _get_pdf(session, url):
+    try:
+        r = _net_request("GET", url, session=session, tries=3, base=1.5, cap=8, timeout=30, budget=_SCAN_BUDGET,
+                         label="injury pdf", impersonate="chrome124")
+    except RetryError as exc:
+        _TRANSIENT_MISSES.append(url)
+        print(f"  injury pdf UNREACHABLE after retries (not a missing file): {url.rsplit('/', 1)[-1]} - {str(exc)[:80]}", flush=True)
+        return None
+    if r.status_code != 200 or not r.content.startswith(b"%PDF"):
+        return None
+    return url, r.content
+
+
 def fetch_snapshot(session, d, h, m):
     ap = "AM" if h < 12 else "PM"; h12 = h if h <= 12 else h - 12
     if h12 == 0: h12 = 12
     url = BASE.format(d=d.isoformat(), h=h12, m=m, ap=ap)
-    try:
-        r = session.get(url, timeout=30, impersonate="chrome124")
-        if r.status_code != 200 or not r.content.startswith(b"%PDF"): return None
-        return url, r.content
-    except Exception:  # noqa: BLE001
-        return None
+    return _get_pdf(session, url)
 
 
 def fetch_snapshot_hourly(session, d, h):
