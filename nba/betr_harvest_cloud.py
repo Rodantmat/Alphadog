@@ -586,6 +586,14 @@ def main():
             print(f"NO {LEAGUE} BOARD: the '{LEAGUE}' league chip does not route (Betr has not opened the {LEAGUE} board, "
                   f"or the strip changed - see the trail above); session alive; previous board file left untouched", file=sys.stderr)
             sys.exit(3)
+        ok_any = sum(v for k, v in seen_ops.items() if k.startswith("200 ") or k.startswith("204 "))
+        failed = sum(v for k, v in seen_ops.items() if k.startswith("FAILED"))
+        if not alive and ok_any == 0 and failed:
+            # run 38007254948: Chrome's net-error page on the first load, then every call dropped (ERR_CONNECTION_CLOSED,
+            # zero 200s) and the app fell back to /auth - with a session valid to 10-28. That is the proxy, not the session.
+            print(f"NO BOARD: the proxy carried no Betr traffic ({failed} failed requests, 0 answered) - the app fell back "
+                  f"to its logged-out page; the session was not the cause. Exit 4 = retry on a fresh proxy session.", file=sys.stderr)
+            sys.exit(4)
         print("NO BOARD (session may have expired — re-run betr_export_session.py and update BETR_SESSION_STATE)",
               file=sys.stderr)
         sys.exit(2)
