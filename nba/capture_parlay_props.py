@@ -89,13 +89,21 @@ def api_key(conn, name):
 
 
 def fetch(key):
-    req = urllib.request.Request(f"{PARLAY}/sports/{SPORT}/props", headers={"X-API-Key": key, "accept": "application/json", "User-Agent": "alphadog"})
+    """ParlayAPI props through the system retry policy (nba/net_retry.py; 2026-10-09 - it was ONE attempt and a
+    URLError / timeout crashed the step): 4 attempts, full-jitter backoff, 429 / 5xx / connection errors retried,
+    Retry-After honoured, 5 minutes in all. A final 4xx (bad key, out of credits) is returned at once."""
+    from net_retry import Deadline, RetryError, request
     try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            return r.status, r.headers.get("x-requests-remaining"), json.loads(r.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", "replace")[:300]
-        return e.code, e.headers.get("x-requests-remaining"), {"error": body}
+        r = request("GET", f"{PARLAY}/sports/{SPORT}/props", tries=4, budget=Deadline(300), timeout=120, label="parlayapi props",
+                    headers={"X-API-Key": key, "accept": "application/json", "User-Agent": "alphadog"})
+    except RetryError as exc:
+        last = exc.last
+        if last is not None and hasattr(last, "status_code"):
+            return last.status_code, last.headers.get("x-requests-remaining"), {"error": (last.text or "")[:300]}
+        return 0, None, {"error": f"no answer after retries: {str(exc)[:200]}"}
+    if r.status_code != 200:
+        return r.status_code, r.headers.get("x-requests-remaining"), {"error": (r.text or "")[:300]}
+    return 200, r.headers.get("x-requests-remaining"), r.json()
 
 
 def et_date(s):
