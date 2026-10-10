@@ -131,6 +131,14 @@ jobs:
               print(f"ud_edge_monitor_ref rebuilt from {U.ud_bt_table(c)}: {len(ref)} (cell, tier, side) keys", flush=True)
           EOF
 
+      # 2026-10-10: PrizePicks Flex slips WITH goblins / demons pay PrizePicks' quote-derived tiers (pp_slip_rules
+      # 'flex_alt_tiers', rebuilt after every payout-map run). Re-price the backtest slips to the CURRENT tiers before the
+      # certification pass (L11 recomputes with the same function); only slips whose payout changes are touched.
+      - name: 3f. Regrade Flex-with-alternates backtest slips to the current PrizePicks tiers
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u nba/regrade_pp_flex_alt.py
+
       - name: 4. Certification pass (frozen invariant list; any FAIL stops the loop here)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
