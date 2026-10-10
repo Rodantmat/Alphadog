@@ -43658,6 +43658,23 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 
 **Ledger**: `T34` pass `2` (`2026-10-10`, owner-message completeness) — **NEW MATERIAL** (`§T34.6`: the candidate lists per method, the rotation bands, the improvement bar, the days-kept measure, the `53`/`52` count note), CLEAN `0`/`3`.
 
+## §T34.7 — PASS 14 (`2026-10-10`, closing-reply re-read): THE CERTIFICATION TRAIL, THE CERTIFIED LEDGER, AND THE DECISION DETAIL `§T34.2` COMPRESSED
+*All `41` closing replies read end to end (`§P14`). Figures AS STATED by the build chat at its moment; ✅ = live `2026-10-10`, read-only.*
+
+**1 — The certification trail, run by run** — ✅ **every run id the replies name is in `nba_score.certification_log`, with the stated check count and result**:
+| runs (UTC `09-30` → `10-01`) | checks | result | what it certified |
+|---|---|---|---|
+| `2c3dce05` (`08:06`) | `52` | ✅ **`4` FAIL** — `L5.cell_size_equals_count`, `L6.n_bands_recompute_exact`, `L6.pct_bands_recompute_exact`, `L8.matrix_base_recompute_exact` | caught the `n_rank`/`cell_size`-before-dedupe defect (`201` Regular cells, `cell_size` two too high) |
+| `5ff7897f` (`08:32`) | `52` | ✅ **`1` FAIL** — `L8.matrix_base_recompute_exact` | the check, not the matrix: *"the matrix stores whole seasons (161 days) while my recompute filtered to November onward (150)"* — aligned, count restarted |
+| `02478851` · `195b6cb0` · `39105d90` (`08:41`–`08:51`) | `52` | ✅ `0` FAIL ×3 | **certified v1** (map → certified ledger) |
+| `02a0b845` · `317b4bb5` · `c5be831e` (`18:13`–`18:27`) | `54` | ✅ `0` FAIL ×3 | **v2** (+ L10 external facts: the live *Ways to Pick* table, the compression rule) |
+| `a60cbbb4` · `34f5ee09` · `b0cd494e` (`20:58`–`21:16`) | `66` | ✅ `0` FAIL ×3 | **v3** (+ `12` L11 slip invariants; board trace *"0 of 116 missing"*) |
+| `b6087a3f` · `a9b6ddeb` · `55db2ad7` (`10-01 03:29`–`04:33`) | `66` | ✅ `0` FAIL ×3 | **v4** (the per-cell-capped slips) |
+✅ **Live totals today**: `24` runs, `1,452` check rows, **`5` non-PASS — all five in the two runs above**; later runs `638bb05e`, `ce4aedf5`, `44df2e5b` (`10-07`), `fca2ab21` (`10-08`) and **`f53f7c90` at `2026-10-10 04:41Z`** (`66` / `0`), the last after `cand_certified` was rebuilt at `04:16–04:22Z` today. ⚠ *What ran at `04:16–04:41Z` today is after the corpus ends (`02:35Z`, `T48-9`) — recorded as observed, not explained (`RULE 6`).*
+
+<!-- §T34.7 part 2 -->
+**Ledger**: `T34` pass `14` — **NEW MATERIAL** (`§T34.7`; `NBA_DATABASE.md` `certification_log` live state), CLEAN `0`/`3`.
+
 ---
 
 # §T35 — `T35` · `2026-10-02-00-50-52-nba-live-engine-drift-research` *(recovered `2026-10-10` from the owner's claude.ai export)* — 🆕 **DETECTORS ON THE REAL STREAM, DELTA MODE, THE SLIP LAYER FOLDED INTO P1/P2/P3, WEEK 2, AND THE DROUGHT ANATOMY (PASSES 1–23)**
