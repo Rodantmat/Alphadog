@@ -243,7 +243,12 @@ class BrowserQuoter(Quoter):
                 pass
             self._cm = None
         if self._lp:
-            self._lp.terminate(); self._lp = None
+            self._lp.terminate()
+            try:
+                self._lp.wait(timeout=10)      # the next start reuses the same local port
+            except Exception:  # noqa: BLE001
+                self._lp.kill()
+            self._lp = None
 
     def new_session(self):
         # first call: start; after a DataDome block (Quoter.quote bumps self.ti): restart Chrome on a new proxy session
