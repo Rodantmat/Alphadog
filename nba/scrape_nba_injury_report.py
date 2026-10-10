@@ -149,12 +149,7 @@ def fetch_snapshot_hourly(session, d, h):
     ap = "AM" if h < 12 else "PM"; h12 = h if h <= 12 else h - 12
     if h12 == 0: h12 = 12
     url = f"https://ak-static.cms.nba.com/referee/injury/Injury-Report_{d.isoformat()}_{h12:02d}{ap}.pdf"
-    try:
-        r = session.get(url, timeout=30, impersonate="chrome124")
-        if r.status_code != 200 or not r.content.startswith(b"%PDF"): return None
-        return url, r.content
-    except Exception:  # noqa: BLE001
-        return None
+    return _get_pdf(session, url)
 
 
 _HDR_TS = re.compile(r"Injury\s*Report:\s*(\d{2})/(\d{2})/(\d{2})\s*(\d{2}):(\d{2})\s*(AM|PM)")
