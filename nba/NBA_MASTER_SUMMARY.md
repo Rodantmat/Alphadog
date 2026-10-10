@@ -44355,6 +44355,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 `NBA_SYSTEM_DESIGN.md` `§T44.7` (`§31v` decision; retention rules; postseason principles; "ready, not perfect") · `NBA_SYSTEM_ARCHITECTURE.md` `§T44.8` (backups at three levels; R-1; retention map; the shared Odds API key) · `NBA_WORKERS.md` `§T44.4` · `NBA_DATABASE.md` `§T44.6` · `NBA_MULTIPLIERS.md` `§T44.3` (break-evens; the stale 3-Power in `§31v`; `m_eff`) · `NBA_OPEN_ITEMS.md` `§T44 ITEMS` · `NBA_RECIPE.md` `STEP 14m` · `NBA_GLOSSARY.md`.
 **Ledger**: `T44` + `S5`–`S6` pass `1` — **NEW MATERIAL**, CLEAN `0`/`3`.
 
+## §T44.6 — PASS 14 (`2026-10-10`, closing-reply re-read): THREE VERIFICATION FIGURES
+*All `13` closing replies read (`§P14`); reply `#59` carries a credential value — **cited by number only, never reproduced**. AS STATED.*
+- **The price-shopping ledger's first real slate** (2026-04-10, `17:36Z`): besides Underdog (`19` of `40` listed, `12` at the same line), **Betr's 2025-26 history had `26` of the `40` certified legs at the same line** — the observation behind *"Betr is not a no-history board."*
+- **The `board_tiers` → `board_tiers_v2` switch, verified by data** (`18:43Z`): the rung set the rung-market build consumes is identical on both tables — **`79,217` = `79,217`** for April — and the row-by-row EXCEPT showed the only difference anywhere is a NULL `nm` in the legacy table.
+- **The first close capture with Sleeper and Fliff** (`18:20Z`): *"Sleeper 79 legs archived at close today"*; Fliff's preseason board carried team markets only, so its player-prop parsing waits for opening day.
+**Ledger**: `T44` pass `14` — **NEW MATERIAL** (`§T44.6`), CLEAN `0`/`3`.
+
 # §T45 — `T45` · `2026-10-08-21-04-33-nba-postseason-backfill-full-parity` *(transcripts pack `2026-10-09`)* — 🆕 **THE POSTSEASON WIRED END TO END (P-1…P-6): ON TWO POSTSEASONS OF EVIDENCE NOTHING STAKES — EVERY STRATEGY SHADOW; THE OWNER ASKS FOR FULL PARITY AND THE BACKFILL BEGINS**
 
 > *Chat track, pass `1` (**`1` real owner message** among `1,014` events; all assistant prose; every write call), recorded `2026-10-10`. Span `2026-10-08 21:04Z → 2026-10-09 02:49Z`. Evidence base: the transcript; the ledger's **POSTSEASON WIRING** (MLB keep-up excluded) and the opening of **POSTSEASON BACKFILL TO FULL PARITY**; strategy `§31w` *AS BUILT* and its two-season result; COMPASS 140 — read-only, figures **AS STATED**. The subagent `S7` (regular-season assumptions, spawned at `T44`'s end, `20:42 → 20:46Z`) is read with this pass (`§T45.4`). The parity backfill's certification re-run, its probe and the "regular-season certification stands" proof land after `02:49Z` (→ `T46`).*
