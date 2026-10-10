@@ -43870,7 +43870,25 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **3 — Calendar and leg findings, with their numbers**: **pre-break week** (pass 36) — defensive Unders `45% / 48%`, family A `−35%`, points Power `−67%`, demons `+58%`; **late March** (pass 42) — season days `147–167` the strongest stretch, deep slips to the bottom of the pool (demon k7–10 `+439%`, weighted-steals k7–10 `+144%`) ⇒ caps `6 → 9`; **points Power Under-only** (pass 34) `+41% / +73%` vs `+23% / +35%` with an Over leg; **late legs** (pass 53) — `23%` of PrizePicks' defensive props post after the window, top-3 late Overs `66%`, Unders `59%`, `~410` top-ranked legs a season outside the pool; tracking-based angles untestable — *"the as-of tracking history only starts in September 2026"*; only `11` player-prop pairs carry `8+` picks a season. **Rejected by validation**: the 6-Flex on big slates (pass 41, *"more variance, not more mean"*) and the same-team tie-break (pass 46: it reshaped `60%` of slips and the drought advantage *"didn't survive construction"*). Pass 29 noted the morning-of referee-assignment scraper *"exists but never captured"*; pass 30's research named Uhrín, Zambelli, Busseti (drawdown-constrained fractional Kelly, distribution-based stops, CLV).
 
-<!-- §T36.6 part 2 -->
+**4 — The owner's "before and after" (`18:38Z`), as the build chat laid it out** — 5-leg core (weighted-steals, core, regular Power, demons), same two seasons:
+| | before | + cap changes | + low-foul key |
+|---|---|---|---|
+| net | `+2,586` | `+3,628` | **`+3,954`** |
+| ROI | `90%` | `106%` | **`116%`** |
+| long droughts, net / ROI | **`−37` / `−4%`** | `+121` / `+10%` | **`+483` / `+39%`** |
+| max drawdown | `106` | `129` | `115` |
+| profit per unit of drawdown | `24` | `28` | **`34`** |
+| losing days | `55%` | `54%` | `53%` |
+*"The 'before' column already includes diversify, so the true starting point was a little worse."* Whole engine: before `+3,691` / `78%` / dd `188` → backtest now `+5,029` / `96%` / `135`; replay #5 (2025-26 only) `+2,582` / **`98%`** / **`69`**, days losing 10+ `28% → 30% → 21%`, **no strategy red all season**, worst day `−20` vs best `+203`; week 2 `−40% → +53%`; All-Star week family A `−43% → +112%`; the late-March raise added `+529`. The raw 2025-26 backtest with no rules made `~+2,769` ⇒ *"the rules cost very little upside while holding the drawdown far lower."* Calibration with the key: weighted-steals MC95 drawdown `73 → 66`.
+
+**5 — The replays that set the launch numbers**:
+- **Replay #5** found **the rotation locked on from December to April** (no steals graded in rotation, so the detector froze); the stocks Power, meant for droughts only, staked three months at `−22%` ⇒ the full-pool shadow slip.
+- **Replay #6** (`19:25Z`): Jan–Feb drought **`9` of `14`** slate days in rotation (Feb 3–11, from the drought's 5th day); December drought `4` of `16` (*"choppy, but on"*); **`1` false day in `79`** outside droughts (Jan 18). Saved `+2,879` / ROI `115%` / dd `44` / `12%` bad days — still on the calendar errors.
+- **2024-25 through the live engine for the first time** (`replay1_2024_25`, `21:27Z`): `+2,245` on `2,209` slips, ROI `102%`, dd `113`, `23%` of days losing 10+; **its ten-week mega-drought (Nov 16 – Jan 25) `+584` at `64%` on `911` slips** — *"the low-foul key prevented it, so the rotation mostly didn't need to fire"*; pre-break week `−47.5` on `75` slips under the old rule. The archive holds 2024-25 window and close pricing for **`214`** days. Fixes the replays forced: a **regular-season-only staking guard** (boards include Play-In and playoff days) and the P5 simulation hard-coded to 2025-26.
+- **The pre-break plans** (`20:44Z`, two seasons): **B (default) `+80` / `72%`** (`+29`, `+52`) · C (demon 3-Flex only) `+32` / `75%` · A (old rule) `+24` / `17%` (`−24`, `+48`) · D (nothing special) `+71` / `30%` — *"the old rule's leak was the demon 5-Flex left at full stakes, which flips between −41% and +68% in that week."* Replay #7 vs #6 in that week: `33` slips `+40.1` (`122%`) vs `76` slips `+53.5` (`70%`); 2024-25 rerun: plan B `+31.6` vs the old rule's `−33.2`.
+- **Final** (`23:58Z`): 2024-25 `+2,344` / `105%` / dd `113` / `23%`; 2025-26 `+2,627` / `113%` / dd `44` / `10%`; *"2024-25's 113-unit drawdown was three weeks around New Year, driven by the two highest-stake strategies, recovered in four days."*
+
+**6 — Underdog, the first data read** (`04:16Z`–`04:21Z`, before the formula): in 2024-25 *"under 1% of legs carried a multiplier"*; at the engine's exact line UD paid a flat `1.00×`; per-leg value on a 5-pick Standard — defensive Overs `79%` → `1.44`, points Unders `71%` → `1.30`, defensive Unders `66%` → `1.20`, PRA Unders `62%` → `1.13`, rebounds Unders `60%` → `1.10`; on the same `129` points-only slips UD paid what PrizePicks did (`+44%`); research showed UD posting defensive sides off the flat line (*"−175 on an Over 0.5 steals is roughly a 0.85× leg"*). ⚠ Every pricing statement here was superseded the same night by the formula (`NBA_MULTIPLIERS.md` `§T36.3`).
 **Ledger**: `T36` pass `14` — **NEW MATERIAL** (`§T36.6`; `NBA_BASELINE_CALIBRATION.md` `§T36.5` and `NBA_SYSTEM_DESIGN.md` `§T36.7` corrected — the holiday caution is a live cap-1 rule, not a dropped test), CLEAN `0`/`3`.
 
 ---
