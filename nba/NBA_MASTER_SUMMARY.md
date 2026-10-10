@@ -43300,7 +43300,7 @@ This section names the data, not a result.***
 | | |
 |---|---|
 | 🔴 **What `NBA_OPEN_ITEMS.md` said** | `ACT ON THIS` § `A` — ***"OWNER DECISIONS — nothing below moves without you"***, `14` rows |
-| ✅ **What is true from `2026-09-24`** | ***The owner does not make them. They are delegated, conditionally.*** **The condition is not optional and the owner states it four separate ways** *(segs `44`, `773`, `1029`, `1081`)*: **online research · deep system debug · study of this documentation · analysis of the live data.** *Escalation survives for one case only:* ***"if still not resolvable, then you can ask me."*** |
+| ✅ **What is true from ~~`2026-09-24`~~ `2026-09-23`** *(date corrected pass 114 → `§T26.R3`)* | ***The owner does not make them. They are delegated, conditionally.*** **The condition is not optional and the owner states it four separate ways** *(segs `44`, `773`, `1029`, `1081`)*: **online research · deep system debug · study of this documentation · analysis of the live data.** *Escalation survives for one case only:* ***"if still not resolvable, then you can ask me."*** |
 | ⚠ **What does NOT change** | 🔴 **`F2-1` (ROTATE the published key) and `T22-1b` (the live account session) are NOT decisions — they are ACTIONS ONLY THE OWNER CAN TAKE.** *No amount of research rotates a credential.* **They stay owner-only.** |
 
 ⇒ 📌 ***The `ACT ON THIS` heading was a true description of the regime that produced it and is a false
