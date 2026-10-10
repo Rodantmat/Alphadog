@@ -44916,3 +44916,21 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `24` complete (`2026-10-10`).
 - **CORRECTED → `0`/`3`**: `T32`, `T36`.
+
+---
+
+# §P25 — PASS 25 (`2026-10-10`): (pp) THE STRENGTHENED QUOTATION TRACE OVER EVERY TRANSCRIPT, AND (qq) OWNER-TURN TIMESTAMPS
+*Angle (pp):* pass 24's trace (`qall.py`: sources = every transcript, the strategy doc, COMPASS, the certification ledger and the repo's NBA code and workflows; markdown, dashes, apostrophes and spacing normalised; quotations split at ellipses and bracketed redactions) over every quotation in `§T33`–`§T48` and in every line of the other files that cites `T32`–`T48`. *Angle (qq):* each owner quotation in `§T32` / `§T36` with a time beside it, matched to the transcript's own message timestamp.
+- `§T33`–`§T48`: `383` quotations traced; flags read in place. ✏️ **Five were not the exact words**, each struck and restored:
+  - `§T35` — the drift explanation chain quoted a summary label (*new listings / model lag*, now unquoted) and *"fourteen mechanisms tested, all falsified; mechanism unknown"* (was "14 mechanisms, all falsified; …") → **`T35` reopens.**
+  - `§T37` and `NBA_OPEN_ITEMS.md` `T37-2` — *"the suffix and alias players the backtest table never resolved"* (was "… the backtest never held"); `§T37` — *"week-scale clustering that the day-to-day test (§30v) was too coarse to see"* (the reference had been dropped without an ellipsis) → **`T37` reopens.**
+  - `§T38.1` — the owner's *"Of I put a dollar per slip …"* (sic; had been corrected to "If") → **`T38` reopens.**
+  - `NBA_BASELINE_CALIBRATION.md` (`T42`, P2B#3) — a paraphrase in quotation marks replaced by the code line the build chat quoted, `TEST = _cur if _cur in _all else _all[-1]` → **`T42` reopens.**
+  - Traced as written, no change: quotes whose inner double quotes are rendered single, line breaks rendered as sentence breaks, cross-references to the docs' own labels, and the commit-message label of `T41`.
+- (qq) ✏️ **`T32`** — one row put two owner messages under one time (`06:32`); split into `06:27` and `06:32` with their exact words → `T32` stays `0`/`3`. **`T36`** — every timed owner quotation matches its message. *(The check reads `--- Human [...]` markers; transcripts without them were covered by (pp) only.)*
+- ⚠ **Process slip, recorded again**: two same-file patches were sent in one batch (the `§T38.1` and `§T37` strike-throughs); both landed, verified by grep. One patch per call stays the rule.
+
+**Ledger**: pass `25` complete (`2026-10-10`).
+- **CORRECTED → `0`/`3`**: `T32`; and **REOPENED → `0`/`3`**: `T35`, `T37`, `T38`, `T42`.
+- **CLEAN → `1`/`3`**: `T36`.
+- **Stay ✅ CLOSED** (clean under (pp)): `T33`, `T34`, `T39`, `T40`, `T41`, `T43`, `T44`, `T45`, `T46`, `T47`, `T48`.
