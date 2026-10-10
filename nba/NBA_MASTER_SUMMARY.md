@@ -46285,3 +46285,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `93` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P94 — PASS 94 (`2026-10-10`): `T37`'S ≥ 4 SCAN JUDGED FROM SCRATCH; BOTH SCANS RE-RUN
+*Angle (as NEXT set it):* (a7) the ≥ `4` scan on `T37` (`206` of `456` sentences with a run): the `22` sentences with a four-word run but none of five, and the `35` sentences whose four-word runs reach past their five-word runs — each read in its full paragraph, searched on file by its substance, any reading checked apart from its figures. (b7) both scans re-run after the additions (≥ `5`: `182`; ≥ `4`: `206`): `0` new sentences; `3` runs changed wording on sentences this pass had just judged (the PrizePicks picker's source — `pp_leg_price` over P3's tiers — is on file in `§T37`'s wiring record).
+- 🆕 Not on file (AS STATED, in `§T37.9`): three clauses — `§30q`'s portfolio flags (the concentration to watch live; the top-edge fifth), `§31f`'s typical P3 duration, `§31g`'s named readers.
+- Judged, not recorded: table fragments; framing; the all-void grading note (the void rule on file).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-93 census commit: `qdiff.py` `0` flags (`4` quotes counted).
+
+**Ledger**: pass `94` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
