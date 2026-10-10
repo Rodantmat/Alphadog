@@ -1479,3 +1479,11 @@ THE REPOSITORY IS PUBLIC.**
 56. **When live selection changes, rebuild every reference the monitors compare against** (certified slips, P5, edge reference, calibration) on the same leg pool; make every leg-hit reader tie-safe.
 57. **Route, don't delete, what selection must not see** — priced every day in a side table, kept out of the selection paths by construction; audit which table each selection path really reads.
 58. **Research = own research first; Gemini validates** (owner).
+
+### STEP 14j — **Certify the whole system the way the owner asked: follow the data, every step, evidence for every finding** *(`T41`, `2026-10-07`; `NBA_MASTER_SUMMARY.md` `§T41`)*
+59. **Write the directive down and realign to it every pass** (owner: *"Store these instructions so you don't drift"*); keep one ledger where every finding has evidence, fix, verification and status.
+60. **Follow the data through the chain**: triggers and sequence → mining → loading → calculations → board scoring → slips → reliability → docs.
+61. **Read the run ledger** (`pipeline_runs`) — a recorded failure nobody reads is a failure that repeats (P2A, four nights).
+62. **Make every recoverable failure recover itself** (a dead claim) and **never let a failed scrape overwrite good data** (DARKO).
+63. **Test a capture against the live source, not its own assumptions** (the referee API date format).
+64. **Make graders follow the operator's documented rules exactly** (void reversion, single survivor).
