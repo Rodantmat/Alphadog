@@ -1120,3 +1120,62 @@ Each candidate was either executed or measured to its final-output effect and cl
   entry, not assumed.
 - **Fliff NBA player props:** the 10-09 22:51Z board is still team markets only (426 legs: show-case, moneyline, spreads,
   totals); the archiver already counts and skips non-player legs — the first NBA player-prop board shows up in P3's log.
+
+### RETRIES, CAPTURE TIMES, THE PRIZEPICKS QUOTE PATH, SLEEPER (owner 2026-10-09 18:58 PT: "all of them need the proper retry logic … find out how you did [PrizePicks] before and sharpen it … Sleeper: look at alternate sources … the boards at strategic times that match my slip-placing times and our system needs")
+
+- **SLEEPER — SETTLED FROM OUR OWN RECORD (corrects the bullet above).** It was never an open question: the owner's MLB
+  work verified it against app screenshots and 19 placed slips (2026-09-10) and it sits in the DB,
+  `nba_config.classification_config['board_payout_conversion_rules']`: **slip multiplier = PRODUCT of the leg multipliers**
+  (observed 2–8% slip-level haircut vs the plain product; model the plain product, conservative); per-leg
+  `payout_multiplier = 1 + (decimal − 1) × 0.95`, verified exact. `MULTIPLIER_TABLES_MASTER.md` §5 adds the Flex rule
+  verified the same way: **Flex = a round-robin over the (n−1)-pick sub-combinations, each priced with the same per-leg
+  product** (3/3 Flex predicted 2.775× vs real 2.78×; 2/3 inside the predicted 0.884–0.963× range, real 0.92×). Outside
+  sources agree and add nothing contrary: BettingUSA ("payout multipliers are cumulative"), OddsAssist (2-pick examples
+  2.84× and 3.12× = products of ~1.69 and ~1.77 legs), Sleeper's help centre (Flex one miss at 3+, two at 5+, minimum
+  1.25×, voids regraded as if never included). Nothing for 10-20.
+- **PRIZEPICKS QUOTES — HOW IT WORKED, WHY IT STOPPED, WHAT NOW (probe 38015965386, `nba/probe_pp_quote_paths.py`).** 09-21 →
+  09-29 the quotes came from curl_cffi `chrome146` + a session + one board GET warm-up + the proxy (`PP_PAYOUT_FINDINGS`
+  §1) — chrome146 was then a current Chrome. On 10-09 the real Chrome on the runner is **154** and curl_cffi's newest
+  fingerprint is **150**: DataDome refuses every curl path — 8 fingerprints through the proxy, 4 direct, 4 on the same
+  sticky exit IP, and 6 hand-offs carrying a real Chrome's own cookies (all 403 captcha). The 09-21 recipe aged out with
+  Chrome; nothing on our side broke it. **Sharpened:** `pp_payout_map.py` now picks the NEWEST curl_cffi Chrome fingerprints
+  each run (no hard-coded list), spends ONE probe quote on the cheap path, and falls to the real-Chrome page context when
+  DataDome walls it (`PP_TRANSPORT=auto`); the browser quote retries once after a page reload; the board fetch runs through
+  the retry policy. When curl_cffi ships a current Chrome, the cheap path comes back by itself. Verified: run 38016455750
+  (curl refused → browser, 78 / 78 quotes, loaded; conflict-safe push on attempt 2).
+- **CAPTURE TIMES (traffic).** NBA boards are now captured only at the three scheduler-timed moments, all anchored to the
+  day's first tip: **MORNING** (P2B, ≤ 08:05 PT — line-shading research, PrizePicks + Underdog), **WINDOW** (P3,
+  min(13:15 PT, first tip − 30 min) — the decision board, every app, right before the slips are placed) and **CLOSE**
+  (first tip − 25 min). Removed: the NBA half of the Sleeper / Underdog / Fliff two-hourly workflows (36 'routine' NBA pulls
+  a day nothing reads; their scheduled runs are MLB-only now, MLB cadence unchanged — no MLB edit), both Betr crons
+  (P3 dispatches the harvest at the window, label `window`; the harvest archives its own board, because P3 archived the
+  PREVIOUS Betr file — the new one lands minutes after P3's archive step; P3's certifier no longer warns on Betr's file),
+  and the PrizePicks payout map's every-6-hours (now 09:30 and 12:45 PDT / 08:30 and 11:45 PST, both before the window).
+  Full-page Chrome sessions through the metered proxy: Betr 3 → 1 a day, PrizePicks map 4 → 2.
+- **RETRY LOGIC — ONE POLICY (`nba/net_retry.py`).** Transient (connection errors, timeouts, 408/425/429/5xx, the 403 bot
+  wall where the caller says so) retried with full-jitter exponential backoff and Retry-After; any other 4xx final at once;
+  ordered egress per attempt (direct then proxy where that was the proven pattern); a wall-clock budget so retries fit the
+  workflow `timeout` around them; credentials redacted from every message. The audit (subagent, 22 scripts with network
+  calls) and what changed:
+  - critical path: **ParlayAPI** (was one attempt; a failed capture also BLOCKED the re-run — the guard now reads
+    `http_status`), **injury-report PDFs** (a transient error was read as "no filing" — now retried, unreachable URLs
+    warned), **Underdog / Sleeper / Fliff** (one call could take 375–555 s against a 300 s cap — now a 90–120 s per-call
+    budget; an Underdog core-lobby failure was written as an ok:true EMPTY board and archived — now the previous file is
+    kept and the run fails), **PrizePicks board** (≈600 s of retries inside a 300/420 s wrapper; one bad page discarded the
+    board — now a 270 s budget, jittered waits, each page retried);
+  - P2A/P2B: stats.nba.com daily delta / per-game (2 → 4 attempts) / periods / schedule / matchups (429/5xx were retried
+    with NO wait) and the morning Odds API (500 was final) — all on the policy;
+  - P1 weekly: DARKO, Wikipedia officials, `commonallplayers`, per-team coaches (single-shot) retried;
+    `build_defender_ratings` reads the matchup files from the checkout first (it fetched every shard remotely, once);
+    P5's live ways-to-pick check retried;
+  - Betr: a dead first load exits 4 at once; the workflow runs up to 3 attempts on fresh sticky proxy sessions for exit
+    2 / 4 / a crash (exit 3 = league not open, not retried); the Keycloak refresh retries only when the token cannot have
+    rotated (429 / 5xx / connection never opened); P3's dispatch of the harvest retries 3×;
+  - workflows: the proxy lookup retries (3×) everywhere touched; every board / map / Betr commit goes through
+    `nba/git_push_retry.sh` (the old loops died on the first rebase conflict, or ended on `sleep` and lost a push silently).
+  - deliberately NOT blind-retried: the worker-load POSTs (P1 / P2A) — a timed-out load may still be running; a retry
+    would start a second concurrent load. `verify_static_loads.py` re-invokes by data, which is the right retry there.
+- **Verified live:** probe 38017235133 (`nba/probe_net_retry_live.py`) 5 / 5 — stats.nba.com schedule (4.8 MB) and
+  team game logs (2,460 rows), the Odds API sports list, a real injury PDF (104 KB) and a missing one (final, no retry);
+  board workflow 38016836957 (PrizePicks / Underdog / Sleeper / Fliff on the new code, all green); Betr 38017239197 and
+  Sleeper (MLB-only scheduled path) 38017240877 green with the conflict-safe push.
