@@ -2271,4 +2271,7 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **postseason weighting (`pm_w`)** | `(days·pm_post + K·pm_reg)/(days + K)`, K = 50 — a cell's playoff hit rate shrunk toward its certified regular-season rate | `NBA_SYSTEM_DESIGN.md` `§T45.7` |
 | **`pick_postseason`** | the live engine's postseason path: postseason floor (485), eligible cells, per-strategy verdict, cap 1, own statuses outside the regular ledger | `NBA_SYSTEM_DESIGN.md` `§T45.7` |
 | **shadow (postseason)** | built and graded, never staked — every strategy whose postseason verdict is not PASS | `NBA_SYSTEM_DESIGN.md` `§T45.7` |
+| **`cert_fp` (certification fingerprint)** | `nba_control.cert_fp(table, where)` — reproducible row fingerprint used to prove certified tables unchanged | `NBA_DATABASE.md` `§T46.6` |
+| **Playoff Unders** | the playoff-only candidate: the model's top standard-line Unders (≥ 58%, 8 main props, one per player) — PrizePicks 5/6-Flex, Underdog 2-pick | `NBA_SYSTEM_DESIGN.md` `§T46.7` |
+| **leg-level walk-forward** | cells picked on one sample (one playoff), legs scored on the other — used when slip counts are too small | `NBA_SYSTEM_DESIGN.md` `§T46.7` |
 | **placeholder season files (`ensure_season_files.py`)** | empty current-season input files written before the first game so the builders label the opener as the new season | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
