@@ -43443,7 +43443,7 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 | pool depth `[§7k]` | all-props pool `90` top legs/slate; **the 50-leg cap binds** |
 | form `[§7l]` | hot-hand ≈ neutral; cold→reversion `0.628`. 🔑 **Join bridge**: `prop_universe.player_id` (raw NBA id) ≠ `player_game_log.player_id` (`nba_…`) — use `player_game_log.nba_player_id::text` |
 | season phase `[§7m]` | late season `−2pp`, unpriced; `final_hp` LEFT-join `89.7%`, unjoined rows unbiased (`0.500`) |
-| player rank `[§7o]` | real only on peripheral props (`oreb/dreb/fga/fgm/fg3a/fta/ftm`, resid sd `0.031–0.035`) |
+| player rank `[§7o]` | ~~real only on peripheral props (`oreb/dreb/fga/fgm/fg3a/fta/ftm`, resid sd `0.031–0.035`)~~ 🔴 **SUPERSEDED `2026-09-29` (`§T33.0`, strategy `§14h`) — DEAD: every one of those props has SIMULATED lines; on real lines the residual sd is `0.004–0.006`, below noise** |
 | rank 1 granular `[§7p–7q]` | `steals/Under 0.722` (n `234`), `turnovers 0.62–0.63`, `stocks 0.61`; goblins `p·m ≈ 0.48–0.52`; variety = SUPPLY |
 | ranks `[§8–§8p]` | 10-game trailing monotone `0.484→0.582`; shorter windows sharper; anchor-distance **rejected**; **goblin tier cross-player sd `0.089` vs raw line `0.143`** (owner's tier-vs-line claim validated); model-vs-market edge; CLV strong but sparse |
 | replicability `[§9]` | **CLV is backtest-only** (no close snapshot at the P3 window) → validation metric, not a live rank |
