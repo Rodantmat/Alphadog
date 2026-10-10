@@ -45818,3 +45818,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T37`, `T39`.
 - **CLEAN → `1`/`3`**: `T36`, `T38`, `T40`, `T43`, `T44`, `T47`, `T48`. **CLEAN → `2`/`3`**: `T35`, `T46`.
 - ✅ **CLOSED `3`/`3`**: `T41`, `T42`, `T45`.
+
+# §P67 — PASS 67 (`2026-10-10`): THE GAP SCAN'S LAST TIER ON THE LARGE TRANSCRIPTS; A FINER SCAN ON THE SMALL ONES
+*Angles (as NEXT set them):* (w4) on `T32`–`T37`, `T39`, every sentence whose longest unrecorded run is `8`–`14` words — `405` · `154` · `198` · `116` · `140` · `111` · `74`. The same co-occurrence triage as pass 66 split them; the sentences it could not match (`210` · `80` · `96` · `47` · `64` · `53` · `30`) were read as the triage printed them (~`200` characters), with key phrases and figures checked across the eleven editable documents where the content was not recognised as already recorded; the rest were accepted on the match. (x4) on `T38`, `T40`, `T43`, `T44`, `T46`–`T48`, the gap scan at ≥ `5` words, diffed against the ≥ `8` list: the sentences whose longest unrecorded run is `5`–`7` words — `20` · `14` · `17` · `22` · `32` · `28` · `16` — each checked by its key phrases and figures (every one, not a triage). (y4) `T35` and `T46`'s third angle was (w4) / (x4) respectively.
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (`§8p`'s Edge Score clause; COMPASS fact 116's `46 → ~27 GB`, a variant of the `43 GB`→`27 GB` on file) · **`T33`** (the operator-drift figures; `§13l`'s coverage) · **`T34`** (`§20g`'s playable-leg supply; `§25d`'s stacks; `§27d`'s G5 reading; `§19n`'s join gap) · **`T35`** (Kind B weeks; the retired detector; the duplicates count; the Monday reading) · **`T37`** (the entry-timing verdict; `§30s`'s research item (3); the repricing-noise line) · **`T39`** (the endpoint latency note; the Underdog monitor; the sample size) · **`T38`** (the spotlight reading; the Underdog floor's qualifier) · **`T40`** (the other combos' depth) · **`T43`** (the opening-night matchup; Sleeper's 2-pick void rule) · **`T44`** (Sleeper's limits and payout caveat; the ledger archive path; two postseason-design clauses) · **`T46`** (the Underdog leg rates; the archive-mode snapshots; the 2027 staking condition) · **`T47`** (the grid's dimensions; the full G4 / G5 wording; the Underdog postseason statuses; the 2024-25 veto) · **`T48`** (Sleeper's entry rule).
+- ✅ **Clean on this angle:** `T36` (the tier's unmatched sentences all on file or judged).
+- Judged, not recorded: the MLB `PROXY_URL` rotation in `T44` (MLB, out of scope); run ids.
+- ⚠ **Process slips:** pass 66's method sentence over-stated the checks — corrected by strike in `§P66` this pass. `§T44.9`'s new bullet first said "stays" for a reset — corrected by strike ("back to"). No parallel same-file patches this pass. No hourly-rotation commit landed during the pass (checked on main).
+- Every quotation added since the pass-66 census commit: `qdiff.py` `0` flags (`40` quotes).
+
+**Ledger**: pass `67` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T35`, `T37`, `T38`, `T39`, `T40`, `T43`, `T44`, `T46`, `T47`, `T48`.
+- **CLEAN → `2`/`3`**: `T36`.
+- ✅ **CLOSED `3`/`3`**: `T41`, `T42`, `T45`.
