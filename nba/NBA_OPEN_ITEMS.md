@@ -18132,7 +18132,7 @@ are worth more per pass than any re-derivation.***
 
 ---
 
-## 🆕 **§T32 ITEMS — from the recovered `T32` (`2026-09-28/29`), recorded `2026-10-10`** *(source `NBA_MASTER_SUMMARY.md` `§T32`; each live-checked this day)*
+## 🆕 **§T32 ITEMS — from the recovered `T32` (`2026-09-28/29`), recorded `2026-10-10`** *(source `NBA_MASTER_SUMMARY.md` `§T32`; each live-checked this day)* · *(pass 42: this one table also holds **`§T33 ITEMS` · `§T34 ITEMS` · `§T35 ITEMS` · `§T36 ITEMS` · `§T37 ITEMS` · `§T38 ITEMS` · `§T39 ITEMS` · `§T40 ITEMS` · `§T41 ITEMS` · `§T42 ITEMS` · `§T43 ITEMS` · `§T44 ITEMS` · `§T45 ITEMS` · `§T46 ITEMS` · `§T47 ITEMS` · `§T48 ITEMS`** — the `T33-*` … `T48-*` rows below; the routing lists in `NBA_MASTER_SUMMARY.md` point here by those names, which had no heading of their own)*
 
 | ID | item | state |
 |---|---|---|
