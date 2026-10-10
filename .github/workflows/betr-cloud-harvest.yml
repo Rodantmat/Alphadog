@@ -80,8 +80,16 @@ jobs:
           BETR_SESSION_STATE: ${{ secrets.BETR_SESSION_STATE }}
           BETR_CLIENT_ID: ${{ secrets.BETR_CLIENT_ID }}
           BETR_LEAGUE: ${{ steps.lg.outputs.league }}
+        # exit 4 = the residential proxy carried no Betr traffic (run 38007254948) - one retry on a NEW sticky session
+        # (new exit IP). Exit 2 (session) / 3 (league not open) are not retried: retrying cannot change them.
         run: |
-          python nba/betr_harvest_cloud.py
+          set +e
+          BETR_SESSION_ID="betr${GITHUB_RUN_ID}a" python nba/betr_harvest_cloud.py; rc=$?
+          if [ $rc -eq 4 ]; then
+            echo "::warning::proxy carried no traffic - retrying once on a fresh proxy session"
+            BETR_SESSION_ID="betr${GITHUB_RUN_ID}b" python nba/betr_harvest_cloud.py; rc=$?
+          fi
+          exit $rc
       - name: Commit the board file
         run: |
           git config user.name "github-actions[bot]"
