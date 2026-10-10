@@ -1253,7 +1253,7 @@ PrizePicks — §0.9a's conclusion is untouched.)*
 | **Underdog** | **`alternate_projections`** rungs + fantasy & sportsbook probabilities | ✅ captured *(new in T13)* |
 | **Fliff** | **alternate lines as SEPARATE PROPOSALS per market** | ✅ captured |
 | **Betr** | **NINE tiers** *(regular · mini/boosted/super-boosted/boosted-4 · edge 1–4)* | ✅ captured — *see `NBA_SYSTEM_ARCHITECTURE.md` §0f-1* |
-| 🔴 **Sleeper** | ⚠ **main line captured; alt stats EXIST and are NOT** | ⏳ **open** |
+| 🔴 **Sleeper** | ⚠ **main line captured; alt stats EXIST and are NOT** | ⏳ **open** → 🆕 *captured and wired `2026-09-27` (`T31`: `lines/available_alt`, archived as `_alternate`; promos as `_promo`) — `NBA_MASTER_SUMMARY.md` `§T31.1` (pass 104)* |
 
 🔴 **SLEEPER IS THE ONE GAP, AND IT IS WELL-CHARACTERISED.** **The first conclusion was that Sleeper
 has no ladder at all** — *"its GraphQL schema introspection is open and **has no alternate-line query
