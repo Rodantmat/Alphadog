@@ -135,7 +135,9 @@ def main():
             for tid in team_ids:
                 url = f"https://stats.nba.com/stats/commonteamroster?LeagueID=00&Season={season}&TeamID={tid}"
                 try:
-                    r = session.get(url, headers=STATS_HEADERS, timeout=60, impersonate="chrome124"); r.raise_for_status()
+                    from net_retry import request as _net_request   # retried (2026-10-09; it was single-shot per team)
+                    r = _net_request("GET", url, session=session, tries=3, base=3, cap=20, timeout=60, label=f"coaches {tid}",
+                                     headers=STATS_HEADERS, impersonate="chrome124"); r.raise_for_status()
                     rs = next(x for x in r.json()["resultSets"] if x["name"] == "Coaches"); hdr = rs["headers"]
                     for row in rs["rowSet"]:
                         d_ = dict(zip(hdr, row)); recs.append({"TEAM_ID": tid, "SEASON": season, "COACH_ID": d_.get("COACH_ID"), "COACH_NAME": d_.get("COACH_NAME"), "COACH_TYPE": d_.get("COACH_TYPE"), "IS_ASSISTANT": d_.get("IS_ASSISTANT"), "SORT_SEQUENCE": d_.get("SORT_SEQUENCE")})
