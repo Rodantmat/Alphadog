@@ -54,7 +54,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
           PP_LEAGUE: ${{ github.event.inputs.league }}
-          BETR_SESSION_ID: browserprobe1
+          BETR_SESSION_ID: probe${{ github.run_id }}
         run: |
           echo "running ${{ github.event.inputs.script }}"
           python "nba/${{ github.event.inputs.script }}"
