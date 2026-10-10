@@ -1208,9 +1208,14 @@ Each candidate was either executed or measured to its final-output effect and cl
   vs the app at 03:31Z: LeBron PRA 31.5 1.83/1.73, Wembanyama 40.5 1.78/1.78, SGA 40.5 1.80/1.77, Brunson 35.5 1.72/1.85 —
   identical; Cunningham 39.5 MORE-only 1.72 = our one-sided leg (`under_multiplier` null); the 🔥 counters = `pick_stats.total`
   (SGA 493→497, Brunson 354→356 an hour later); Tatum moved 42.5 1.82/1.75 → 41.5 1.69/1.88 (Sleeper reprices live; overround
-  ≈12.4%, as measured in §31aa). **Still owed:** the entry rule on NBA (Max / Combo payout from the leg multipliers) — no
-  public quote endpoint; the owner was asked for three no-submit entry screens (cross-game 2-pick 3.257x product, 3-pick
-  6.124x product, a 4-pick with a same-game pair).
+  ≈12.4%, as measured in §31aa). **Entry rule proven on NBA (owner's no-submit entry screens, 22:20 PT):** 2-pick Max LeBron
+  MORE 1.79 × Wembanyama MORE 1.78 = 3.1862 → app **3.18** (plain product, cut to the cent); 3-pick Flex (+ Tatum LESS 1.75)
+  all hit → app **3.14** = round-robin mean 3.1446, two hit → app **1.05** = a sub-product / 3 (1.038–1.062) — round robin
+  exact, NO haircut; 3-pick Max → app **6.02** = product 5.5759 × **1.0797** (a 3-pick Max bonus, one point). The MLB-derived
+  8% haircut was wrong for NBA: `sleeper_payout.slip_haircut` 0.08 → **0.0** (MLB range kept as `slip_haircut_mlb_observed`);
+  the 3-pick bonus is recorded (`max_size_bonus_observed`) but not priced (`max_size_bonus_applied` 1.0) until a second
+  size confirms it. `nba_market.sleeper_slip_payout()` now returns 3.1862 / 3.1446 / 1.0621 on those entries; the price-shop
+  ledger prices Sleeper legs at the full multiplier (root 1.0). **Owed:** 4- and 5-pick Max screens (the size bonus).
 - **Underdog — capture proven, tables proven, one entry check owed.** The scheduled NBA capture held 0 player legs off game
   days (the lobby's per-match lines answer only for TODAY's matches; history: player legs only while preseason games were on,
   up to 44 players on 10-08). Probe 38021327258/38021646701 (`nba/probe_ud_future_props.py`: the production scraper forced onto
