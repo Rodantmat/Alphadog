@@ -43936,7 +43936,7 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - The build chat **appended the owner's realignment to its memory file** (`/areas/alphadog-nba-full-certification.md`) before starting round 2 — the *"store these instructions so you don't drift"* clause, applied.
 - 🔑 **Gemini is used as a reference, not an authority**: twice in this window its points were split into *taken* and *rejected with evidence*; its rejection of Option A on the market term was answered with a scratch-only study rather than a production rewrite.
 
-## §T42.5 — THE FOUR AUDIT REPORTS (`S1`–`S4`, swept with this pass)
+## §T42.4 — THE FOUR AUDIT REPORTS (`S1`–`S4`, swept with this pass)
 *Subagent transcripts of the build chat — each a read-only audit (*"do NOT modify any file … Report findings only"*), told not to repeat ledger items. Their findings are **claims until the build chat verified them**; the ledger records the verified ones. Recorded here: scope, routing, and what they **verified correct** or observed that no ledger line carries — AS STATED, code as of `10-07/08`.*
 | audit | window | scope | findings → where they went |
 |---|---|---|---|
