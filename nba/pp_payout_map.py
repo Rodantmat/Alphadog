@@ -226,8 +226,8 @@ class Quoter:
         return rec
 
 
-# auto (default) = one cheap curl_cffi probe quote with the newest fingerprint; if DataDome walls it, the real-Chrome
-# transport serves the run. browser / curl force one transport.
+# auto (default) = the ladder in make_quoter: primp (newest Chrome emulation) -> curl_cffi -> a real Chrome, each rung
+# decided by one unrecorded 2-pick probe quote. primp / curl / browser force one transport.
 TRANSPORT = (os.getenv("PP_TRANSPORT") or "auto").strip().lower()
 PAGE_FETCH_JS = """
 var url = arguments[0], opts = arguments[1], done = arguments[arguments.length - 1];
