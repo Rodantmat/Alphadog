@@ -45743,3 +45743,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T33`, `T34`, `T35`, `T37`, `T38`, `T47`; **back to `0`/`3` from a clean count**: `T39`, `T40`, `T43` (from `1`/`3`).
 - **CLEAN → `1`/`3`**: `T32`, `T36`, `T41`, `T44`, `T45`, `T46`. **CLEAN → `2`/`3`**: `T48`.
 - ✅ **CLOSED `3`/`3`**: `T42` (third consecutive clean pass: pass 61 `figmiss2.py` + `colocT.py`, pass 62 `colocAll.py` / `colocOrphan.py`, pass 63 (m4) + (n4)).
+
+---
+
+# §P64 — PASS 64 (`2026-10-10`): A FRESH HAND-TRACED SAMPLE ON EVERY OPEN TRANSCRIPT, AND THE ORPHAN RE-RUN
+*Angles (as NEXT set them):* (p4) a fresh `20`-sentence sample per open transcript (seed `64`, `sampleCheck.py` made seedable), each flag traced by hand — this time with a gap marker that brackets every run of words whose 3-word sequences appear nowhere in the eleven editable documents, so the trace starts at the unrecorded words rather than at the whole sentence; (q4) `colocOrphan.py` on every open transcript after pass 63's additions; (r4) `T48`'s third angle = (p4) + (q4).
+- **(q4)**: no new orphan on any transcript (compared line by line with pass 63's run); two fewer — `T33`'s, now recorded, and `T32`'s MLB `−12.5pp`, now named in `§P63`'s judged list.
+- **(p4)** flags per transcript (of `20`): `T32` 17 · `T33` 10 · `T34` 11 · `T35` 7 · `T36` 10 · `T37` 4 · `T38` 7 · `T39` 10 · `T40` 7 · `T41` 4 · `T43` 10 · `T44` 9 · `T45` 8 · `T46` 12 · `T47` 13 · `T48` 14. Most were paraphrases of recorded content, often recorded in a different section or document. 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (`§11h`'s reason the WOWY lift is small; `§11c`'s signal queue) · **`T35`** (`COMPASS`'s first week-2 hypothesis and how it fell) · **`T36`** (`§29y`'s day of the late P2; Gemini's compression hypothesis behind the league control) · **`T37`** (`§31d`'s third limit and its remedy) · **`T39`** (the roster replay's `100%` on returning / trade dates; why the monitor's status filter had to widen) · **`T40`** (G2 leaves period-label props unrouted) · **`T43`** (round 2's stated total of `56` findings, beside `§T42.4`'s per-session counts) · **`T46`** (`§31x`'s verdict reasoning) · **`T47`** (`§31z`'s honest expectation in full) · **`T48`** (Betr's new-app routes).
+- Judged, not recorded: `T48`'s session-renewal sentence (token handling — not followed); `T44`'s proxy-rotation sentence (credential-adjacent; its non-secret parts are on file); run ids.
+- ⚠ **Process slips, corrected the same pass by strike:** `§T43.9`'s first wording cited `§T42.7` for the audit table (it is `§T42.4`); `§T46.8`'s first wording said the candidate was superseded "the next day" (`§31x` and `§31z` share `2026-10-09`). One patch per message; the hourly-rotation writer did not touch the file during this pass's writes (re-read on main after the last one).
+- Every quotation added: `qdiff.py` `0` flags (`13` quotes).
+
+**Ledger**: pass `64` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T35`, `T37`, `T39`, `T40`, `T43`, `T47`; **back to `0`/`3` from a clean count**: `T32`, `T36`, `T46` (from `1`/`3`), `T48` (from `2`/`3`).
+- **CLEAN → `1`/`3`**: `T33`, `T34`, `T38`. **CLEAN → `2`/`3`**: `T41`, `T44`, `T45`.
+- ✅ **CLOSED `3`/`3`**: `T42` (pass 63).
