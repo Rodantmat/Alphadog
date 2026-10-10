@@ -225,7 +225,7 @@ constraints that shaped it. This is the operational spec.
 
 ### 🔴🔴 **RULING 2 — THE OWNER STATES, IN HIS OWN WORDS, THAT THE PIPELINES RUN UNMONITORED. THAT IS THE JUSTIFICATION FOR `A1` AND `A2`'s SEVERITY, AND IT IS HIS, NOT THE SWEEP'S.**
 
-> 📜 **OWNER, `T26`, `2026-09-24`** *(`sim 0.21`)*:
+> 📜 **OWNER, `T26`, ~~`2026-09-24`~~ `2026-09-23` `23:26Z`** *(`sim 0.21`; date corrected `2026-10-10`, pass 112, → `NBA_MASTER_SUMMARY.md` `§T26.R1`)*:
 > > *"all right, so fix p1, optimize p2, and also p1 if you need it, and get them both need to work. **they run um, not monitored, so get them to work**."*
 >
 > ⚠ *`"not monitored"` and `"unmonitored"`: **`0` hits in the twelve.** The CONCEPT "unattended" appears in seven of them — so the substance is not new — **but it appears as the sweep's own inference, never as the owner's stated operating condition.*** ⇒ 🔑🔑 ***That distinction is the whole value of this ruling: the ranked brief's `A1` (`T26-8`) and `A2` (`T26-9`) are rated `SILENT` and `UNCAUGHT` at the top of the list on the strength of "a silent failure costs a season before anyone looks". **The owner said the looking does not happen.** The rating is no longer the sweep's editorial judgement — it is the operating condition the owner specified, and `A1`/`A2` should be read that way.***
