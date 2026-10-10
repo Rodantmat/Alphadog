@@ -45241,3 +45241,10 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `50` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P51 — PASS 51 (`2026-10-10`): (rrr) THE ONE-FIGURE SENTENCES
+*Angle (rrr):* `onefig.py` — for each sentence `T36` wrote with exactly one figure, the figure must stand within `200` characters of one of the sentence's own content words in the docs. `45` flags: most are reply headers (`##### #100` …), timing formulas (`P3 − 110 min`), the owner's MLB-screenshot prices, the memory dump, and figures on file in another wording (*"0-Over slips −59%"*, *"~7.7%"*, *"540 MB"*).
+- 🆕 **`T36`**: the players test (*"327 distinct players … exactly one is a consistent loser … what chance yields from 327 draws"*) and the EWMA's cost side (*"7 / 10 / 5 days … (vs 6 / 6 / 3), at 15 false days (vs 9) … ~0.07 u"*) → `§T36.6` #9; the schedule audit's P1 line — both scheduled P1 runs (`09-21`, `09-28`) ended in `failure` — → `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8`.
+
+**Ledger**: pass `51` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
