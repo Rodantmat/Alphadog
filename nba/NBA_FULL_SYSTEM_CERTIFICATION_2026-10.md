@@ -1215,7 +1215,22 @@ Each candidate was either executed or measured to its final-output effect and cl
   8% haircut was wrong for NBA: `sleeper_payout.slip_haircut` 0.08 → **0.0** (MLB range kept as `slip_haircut_mlb_observed`);
   the 3-pick bonus is recorded (`max_size_bonus_observed`) but not priced (`max_size_bonus_applied` 1.0) until a second
   size confirms it. `nba_market.sleeper_slip_payout()` now returns 3.1862 / 3.1446 / 1.0621 on those entries; the price-shop
-  ledger prices Sleeper legs at the full multiplier (root 1.0). **Owed:** 4- and 5-pick Max screens (the size bonus).
+  ledger prices Sleeper legs at the full multiplier (root 1.0). **Larger entries (owner screens 22:24 PT):** 4-pick Max
+  (LeBron M 1.79, Tatum L 1.75, SGA M 1.80, Wemby M 1.78; SGA + Wemby same game) product 10.0365 → app **11.06** (×1.102); Flex
+  4/4 round robin 5.639 → app **6.09** (×1.08), 3/4 1.39–1.43 → app 1.52; 5-pick (+ Brunson LESS 36.5) Max 20.43, Flex
+  9.42 / 1.92 / 0.39; 6-pick (+ Cunningham LESS 39.5) Max 39.01, Flex 21.67 / 1.86 / 0.37 (those two legs' multipliers not on
+  screen). **Sleeper pays at least the plain product / round robin at every size seen**, with a bonus growing from 3 picks
+  — pricing keeps the plain product and round robin (never above the app); bonus recorded in `sleeper_payout`, unpriced.
+- **Underdog entry rule proven (owner's no-submit entry screens 22:26 PT, the new Underdog Sports app — it shows "~"
+  payouts, no per-pick multiplier on the slip):** 2-pick George PTS Higher 16.5 + Brunson PTS Lower 25.5 (both 1.87x mains)
+  **~3.5x** = Standard 3.5; 3-pick + Tatum PTS Higher 26.5 (same team as George) Max **~6.5x** = 6.5, Flex 2.92 / 0.98 vs table
+  3.25 / 1.09 (×0.90 — the same-team correlation adjustment); 4-pick + Cunningham PTS Lower 24.5 Max **~12x** = 12, Flex 6.69 /
+  1.3 vs 6 / 1.4; 5-pick + Duren PTS Higher 13.5 (1.76x → modifier 1.76/√3.5 = 0.9408) Max **~18.8x** = 20 × 0.9408 = 18.82 ✓,
+  Flex 8.74 / 2.32 vs 9.41 / 2.35; 6-pick + White PTS Lower 15.5 Max **~30.19x** vs 35 × 0.9408 = 32.93 (C = 0.917, five legs
+  from one game), Flex 21.85 / 2.41 / 0.23 vs 23.52 / 2.45 / 0.235. **So Underdog pays table(n) × ∏ modifiers × C**, the
+  engine's formula (§30), with C = 1 across games and ≠ 1 only for same-game stacks — the Underdog engine builds one pick per
+  game, so its slips carry C = 1; the only C > 1 seen (4-Flex 6.69 vs 6) is in our favour. The 2.87 vs 2.90 question is moot at
+  the precision the app now shows (18.82 either way).
 - **Underdog — capture proven, tables proven, one entry check owed.** The scheduled NBA capture held 0 player legs off game
   days (the lobby's per-match lines answer only for TODAY's matches; history: player legs only while preseason games were on,
   up to 44 players on 10-08). Probe 38021327258/38021646701 (`nba/probe_ud_future_props.py`: the production scraper forced onto
