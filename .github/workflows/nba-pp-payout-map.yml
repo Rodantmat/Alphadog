@@ -21,9 +21,15 @@ on:
   push:
     paths:
       - 'nba/TRIGGER_NBA_PP_MAP.txt'
-  schedule:                      # ENABLED 2026-09-21 - delta monitoring every 6 hours (owner may change or remove)
-    - cron: '15 */6 * * *'       # 00:15 / 06:15 / 12:15 / 18:15 UTC. Scheduled runs are forced into delta mode and
-                                 # read max_quotes / drift from the trigger file - a board surge is caught up gradually.
+  # STRATEGIC TIMES (owner 2026-10-09: "not multiple times a day but strategic times that match my slip-placing times and
+  # our system needs - that reduces traffic cost"). Was every 6 h (4 full-page Chrome sessions a day through the metered
+  # proxy). Now twice, both BEFORE the decision window (P3 = min(13:15 PT, first tip - 30 min)):
+  #   16:30 UTC = 09:30 PDT / 08:30 PST - the morning board is up: mine the legs posted overnight
+  #   19:45 UTC = 12:45 PDT / 11:45 PST - the board the slips are built from: new legs + the drift re-quotes
+  # Scheduled runs are forced into delta mode and read max_quotes / drift from the trigger file.
+  schedule:
+    - cron: '30 16 * * *'
+    - cron: '45 19 * * *'
 
 permissions:
   contents: write
@@ -40,14 +46,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0          # the conflict-safe push rebases onto origin/main - needs history
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # BROWSER TRANSPORT (2026-10-09): DataDome has refused every curl_cffi quote since 2026-09-30; quotes now come from the
-      # web app's own page in a real Chrome (SeleniumBase UC + Xvfb + the residential proxy - the Betr chain; probe
-      # 38010173137). PP_TRANSPORT=curl restores the old path.
+      # TRANSPORT LADDER (2026-10-09, PP_PAYOUT_FINDINGS §0j): one cheap curl_cffi probe quote with the NEWEST fingerprint
+      # first; DataDome has refused every curl fingerprint since 2026-09-30 (real Chrome is 154, curl_cffi's newest 150 -
+      # probe 38015965386), so today the quotes come from the web app's own page in a real Chrome (SeleniumBase UC + Xvfb
+      # + the residential proxy). The cheap path comes back by itself when curl_cffi ships a current Chrome.
       - name: System deps (Chrome fonts + Xvfb)
         run: |
           sudo apt-get update
@@ -66,7 +74,11 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          P=""
+          for i in 1 2 3; do
+            P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null) && break
+            echo "credential store not reachable (attempt $i/3)"; P=""; sleep $((i * 4))
+          done
           if [ -n "$P" ]; then
             echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
             echo "PROXY_URL=$P" >> "$GITHUB_ENV"; echo "proxy: credential store -> $(echo "$P" | sed 's#.*@##')"
@@ -77,7 +89,7 @@ jobs:
       - name: Map PrizePicks payouts
         env:
           PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
-          PP_TRANSPORT: browser
+          PP_TRANSPORT: auto
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PP_MAX_QUOTES: ${{ github.event.inputs.max_quotes || '250' }}
         run: |
@@ -103,19 +115,9 @@ jobs:
 
       - name: Commit payout map
         if: always()
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add nba/data/pp_payouts/*.json || true
-          git add nba/data/pp_payouts_wnba/*.json || true
-          if git diff --cached --quiet; then echo "No map output."; else
-            git commit -m "PP payout map [skip ci]"
-            for i in 1 2 3 4 5; do
-              if git push origin HEAD:main; then break; fi
-              git fetch origin main; git rebase origin/main; sleep $((RANDOM % 5 + 2))
-            done
-          fi
+        # ONE push helper (nba/git_push_retry.sh): the old loop ended on `sleep` after 5 failed pushes, so a lost
+        # commit exited 0 silently.
+        run: bash nba/git_push_retry.sh "PP payout map [skip ci]" nba/data/pp_payouts/*.json nba/data/pp_payouts_wnba/*.json
 
       - name: Load per-leg prices into Postgres
         if: always()
