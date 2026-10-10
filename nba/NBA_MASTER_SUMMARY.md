@@ -21723,6 +21723,11 @@ superseded. 🔴 CLEAN 0/3 · 1 pass.**
 
 ---
 
+### T10.29 — 🆕 ADDITIONAL SWEEP `1` (`2026-10-10`, sweep pass 134, `§P134`): **THREE BUILDER BUGS FROM THE PRODUCTION REPLAY**
+*From the message of `2026-09-09 20:36Z`, where the replay of `2026-03-15` took the combos and period builders into production (its row counts — `17,376` single-stat, `12,579` combos, `175` players — are on file).*
+- *"Two bugs surfaced and were fixed in the replay (virtual advanced-team rows must carry only keys; the completed-games filter must run before the slate is appended)."* — the period builder.
+- *"A latent season-detection bug (the new advanced file would have parsed as a bogus season) was caught and fixed in all three builders."* — found while wiring the daily plumbing that mirrors the current season's bulk files into season-named files, for the October rollover.
+
 ### T10.28 — PASS 28 (**literal audit, second run — the bare-identifier surface**) — **✅ CLEAN 3/3 · T10 CLOSES**
 *2026-09-21. The third of the closing three. Pass 22 audited `schema.table`, pass 23 the
 `factor_profile_cells` key columns; this is the rest of the bare-identifier surface.*
