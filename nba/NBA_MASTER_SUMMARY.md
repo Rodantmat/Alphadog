@@ -47148,3 +47148,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `150` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T28` done (`10,984` sentences); next `T29`.
+
+# §P151 — PASS 151 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T29`
+*Angle (as NEXT set it):* (q9) `§P131`'s method on `T29`.
+- Tabulated in the shell before this line (the scan at pass 150's head, after `§T28.2` and its pointers landed): `T29` `348` of `465` sentences listed — **all `348` read and judged** (its head overlaps `T28`'s tail at `2026-09-26 07:18Z`).
+- On file, by substance (each grepped before it was written): the reliability script's connection fix and heartbeat (`§T27.5`), the PrizePicks-scoped calibration measurement and its reconciliation (`§T27.6`), F6-3's derived penalties, the period rungs' suffixed labels (`§T26.78`), yesterday's `final_hp` rebuilt from the complete board (`§T26.72`), the dispatch census, the daily and weekly loaders and the two stale tables behind them (`§T26.79`), the per-app liveness check (`T26-9`), the `7,921` quarantined baseball rows (`T26-7`), Sleeper's `available_alt` (`§T31.1`). Judged: the capture instructions, the owner-actions list (credential items cleared later, values not reproduced), the `192` opening-night keys, progress narration.
+- 🆕 **Residue — `§T29-R` / `§T29.1`** (new `#` block after `§T28.2`): the board-scoped reliability audit's headline (five props certify; the full ladder's tails flattered every prop); the verdict that `tier_band_calibration` is nothing to wire (✅ live: `build_final_hp.py` reads it into a map no later line uses); P2's first scheduled run about three hours late; Sleeper's one-sided-lines flag (✅ live in the scraper). Every quotation checked verbatim in the shell. Pointers: `NBA_GOBLIN_DEMON.md` `0e-T16-B`, entry row `29`.
+- **`T29` not clean** — additional sweep `1` stays not clean. Commits this pass, all `[skip ci]`: `1c1dc31f9`, `1e92c5fe3`, `1e7ed5bd3`, this ledger; no foreign commit since `0f0b61ff9` when this line was written.
+
+**Ledger**: pass `151` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T29` done (`11,332` sentences); next `T30`.
