@@ -3735,3 +3735,16 @@ these twelve.**
 | **`nba/probe_pick_postseason.py`** *(new)* | live postseason pick on past nights, commit disabled + rollback |
 | `nba/dump_db_ledgers.py` · `nba/dump_db_history.py` | postseason certification tables join the weekly ledger archive (and paid MLB mirror tables the monthly history archive — MLB, out of scope) |
 | **Parity backfill (owner `19:08 PT`)**: `build_confidence_v3.py` (fit on regular-season legs only) · `build_market_derived.py` (event map / schedule cover every season present) · `build_scenario_calibration.py` (postseason games, own phase) · `scrape_nba_matchups_pergame.py` (postseason mode, own shards) · `score_board_legs.py` · **`nba-postseason-backfill.yml`** *(new)* | the fills whose results are `T46` |
+
+## 🆕🔴 **§T46.4 — `T46` (`2026-10-09 02:50Z → 07:06Z`): PARITY FILLS, THE PLAYOFF RESEARCH PROGRAM AND THE FIRST PLAYOFF-UNDERS CODE** *(source `T46`; AS STATED from the commit messages; ✅ = in the repo `2026-10-10`)*
+| file | what it does |
+|---|---|
+| `nba/build_ud_tier_map_bands.py` · `nba-postseason-certify.yml` | `TM_MIN_DAYS` (default 60, unchanged) so the Underdog postseason record can be built; certification step 4b = the Underdog postseason record |
+| `nba-p2a-results.yml` | the postseason step also scrapes last night's per-game matchups (`MATCHUPS_POSTSEASON=1`) |
+| `nba-final-hp-postseason.yml` · `nba-baseline-history-postseason.yml` | default groups include dreb / oreb / fgm / fta |
+| `nba/build_tier_map_legs_postseason.py` | **event_id resolved from game_id** (was NULL — every pair same-game in the postseason backtest) |
+| **`nba/research_postseason_program.py`** + **`nba-postseason-program.yml`** *(new, `§31y`)* | the playoffs through the whole regular-season method: cells, signals, compositions, train-only discovery, honest walk-forward with nulls permuted within (night, prop, tier, side), CI-only survivors, a leg-level walk-forward stage; PrizePicks 2-pick Flex (2× / 0.5×) included |
+| **`nba/playoff_unders.py`** *(new, `§31z`)* | the shared Playoff Unders selection — research, certification and live use the same code; per-app rule + strategy helpers; `final_score` on its 0–100 scale; whole-number legs in the pool as certified (a `half_only` option for research sensitivity) |
+| **`nba/research_playoff_unders.py`** + **`nba-playoff-unders-research.yml`** *(new)* | gates + stress (grid, walk-forward under two selection rules with nulls, envelopes, decay, correlation, regular-season stress) |
+| `nba/certify_postseason_strategies.py` | Playoff Unders backtest + verdict through the same gate |
+| `nba/live_slip_engine.py` · `nba/ud_live_slip_engine.py` | Playoff Unders on postseason slates (shared rule); the Underdog grader reads postseason box scores too |
