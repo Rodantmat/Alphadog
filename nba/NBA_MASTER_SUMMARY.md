@@ -46712,3 +46712,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `121` complete (`2026-10-10`).
 - ✅ **CLOSED `3`/`3`**: every transcript. From-scratch re-judgment: `T32`–`T34` done; next `T35`.
+
+---
+
+# §P122 — PASS 122 (`2026-10-10`): `T35`'S ≥ 5 LIST FROM SCRATCH
+*Angle (as NEXT set it):* (n8) `T35`'s list re-run over all twelve and every sentence judged from scratch.
+- `207` sentences read; nothing new (`§T35.9`). `T35` stays ✅ CLOSED.
+- A slip caught in the same pass: the new section first went in as `§T35.8`, an id `NBA_SYSTEM_ARCHITECTURE.md` already uses; renumbered `§T35.9`. The ids this run added (`§T26-R`, `§T26.R1`–`§T26.R4`, `§T32.15`, `§T33.8`, `§T34.9`) were checked against every heading in `nba/` and are unique.
+- No hourly-rotation commit had landed since `b4c3d80d7` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `122` complete (`2026-10-10`).
+- ✅ **CLOSED `3`/`3`**: every transcript. From-scratch re-judgment: `T32`–`T35` done; next `T36`.
