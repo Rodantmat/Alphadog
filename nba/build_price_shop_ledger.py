@@ -185,6 +185,14 @@ def main():
     margin = float(c.get('margin_pp', 0.0916))
     ud_ref = float(c.get('ud_ref_per_leg', DEFAULT_CFG['ud_ref_per_leg']))
     cell_margin = float(c.get('cell_margin', DEFAULT_CFG['cell_margin']))
+    # SLEEPER (2026-10-09, owner: "be sure [Sleeper's rule] is replicated to NBA"): a Sleeper slip pays the PRODUCT of the
+    # displayed multipliers minus a slip-level haircut (2-8% below the product on the owner's MLB slips; tunable
+    # classification_config['sleeper_payout'].slip_haircut, default the worst observed 8%). Per leg that is
+    # m x (1 - h)^(1/n); the 2-pick Max carries the most haircut per leg, so its root (1 - h)^(1/2) is the conservative
+    # per-leg price - it was treated as m itself (root 1.0), which overstated every Sleeper leg by up to 4%.
+    srow = conn.execute("SELECT config_json FROM nba_config.classification_config WHERE config_key='sleeper_payout'").fetchone()
+    sl_h = float(((srow[0] if srow else None) or {}).get('slip_haircut', 0.08))
+    sl_root = (1.0 - sl_h) ** 0.5
     rates = cell_rates(conn)
     apps = list(c.get('apps') or DEFAULT_CFG['apps'])
     sel = selected_legs(conn, day)
