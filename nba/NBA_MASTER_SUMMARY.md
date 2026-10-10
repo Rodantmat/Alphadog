@@ -45128,3 +45128,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `38` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P39 — PASS 39 (`2026-10-10`): (fff) PASSES 34–38 VERIFIED — QUOTES, ✅ MARKS, RULE 6
+*Angle (fff):* `qdiff.py` traced all `131` quotations the sweep added since pass 34 (every file under `nba/`) against the corpus, the strategy text, `COMPASS` and live code; every ✅ those passes wrote was re-read in live code; the `T36` sections were scanned for later-transcript content.
+- 🔴 **Three quotations were not exact** — corrected with strike and pointer: *"certified -43% -> lowfoul +79%, 162/-5"* (punctuation changed), *"It's almost certainly Underdog *Sportsbook's* price …"* (the first word changed), and the calendar-label commit (closing parenthesis invented; completed to the commit's own clause). Six more flags are inner `"` written as `'` inside an italic quote, and one quotes this file's own `§P21` — accepted.
+- 🔴 **One ✅ drifted inside the corpus**: the slate-size count now reads `nba_calendar.slate_games`, not `nba_calendar.games` — a later transcript's view; annotated in `§T36.3` with a pointer to `NBA_SYSTEM_ARCHITECTURE.md` `§T44.8`. Every other ✅ (`:637`, `:660`/`:688`/`:783`, the scheduler `:244`–`:247`, the slip-engine workflow `:72`–`:74`, the morning capture `:14`/`:17`/`:56`, the Underdog scraper `:270`/`:273`) re-read exactly.
+- RULE 6: the only later-transcript reference added to a `T36` section is that pointer.
+
+**Ledger**: pass `39` complete (`2026-10-10`).
+- **CORRECTIONS → `0`/`3`**: `T36`.
