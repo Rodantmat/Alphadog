@@ -96,9 +96,15 @@ proxy (tracking / image fetches; the board still arrives) — watch, not blockin
 ## NBA SWITCH (2026-10-20)
 The workflow resolves the league itself (`WNBA` until 2026-10-19 UTC, then `NBA`; the `league` input overrides), and
 **P3 dispatches the harvest at the window** (`nba-p3-afternoon-light.yml` step "Dispatch the Betr cloud harvest (window)",
-`permissions: actions: write`) because GitHub dropped both crons on 10-09; the crons stay as a backup. The first real NBA
-board is expected on 10-20 — until Betr opens the NBA board the NBA chip is inert (above) and the run is red by design,
-leaving `boards/betr_nba_current.json` (the honest empty board) untouched.
+`permissions: actions: write`, 3 tries) with `label=window`. **No crons any more** (owner 2026-10-09: boards at the
+slip-placing times, not several times a day — Betr is the heaviest proxy user): the 10:45 PT one captured a board nothing
+used and the 13:15 PT one duplicated the window. **The harvest archives its own NBA board** into `board_snapshots` with
+the dispatch's label — P3 archived before the harvest could land, so it only ever archived the previous day's Betr file;
+P3 no longer archives Betr and its certifier no longer warns on Betr's file (the harvest's own red/green is the signal).
+**Retries:** up to 3 harvester runs, each on a new sticky proxy session (exit 2, 4 or a crash; exit 3 = league not open is
+final); the board commit goes through `nba/git_push_retry.sh`. The first real NBA board is expected on 10-20 — until Betr
+opens the NBA board the NBA chip is inert (above) and the run is red by design, leaving `boards/betr_nba_current.json`
+(the honest empty board) untouched.
 
 ## MAINTENANCE
 - **Session: self-renewing (2026-10-09; owner: "one of the apps needs a key every ~30 days — make it auto").** The seeded
