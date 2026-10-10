@@ -42904,6 +42904,13 @@ deadline itself.
 
 ---
 
+# §T23.21 — 🆕 ADDITIONAL SWEEP `1` (`2026-10-10`, sweep pass 145, `§P145`): **T23 RAN ITS OWN SLIP-LEVEL STANDARDS BACKTEST — AND TWO LEAKAGE CHECKS BEYOND LINE MOVEMENT**
+*From the message of `2026-09-21 18:16Z`. Already on file: the threshold grid and the line-movement control (`NBA_FINAL_SCORING_CALIBRATION.md` `§0.16-F2`, whose `RULE 54` note says the control "rules out ONE leakage channel … says nothing about the others"), and `T24`'s replay (`§T24.1`, `+14.5% ± 4.2%` over `3,921` slips), filed as closing a `NOT RECORDED` that `§T23.3` left.*
+- **The configuration and result, AS STATED**: *"3-pick Power on the model's top standard legs (threshold 1.30), one leg per player per night, exact payouts, lines that never moved"* — `2024-25` `+14.2% ± 6.4%` (`162` nights / `1,882` slips), `2025-26` `+18.7% ± 6.1%` (`162` / `2,330`), both `+16.7% ± 4.4%` (`324` / `4,212`). The season figures match the grid's never-moved `1.30` · `3` cells (`+0.1419`, `+0.1867`).
+- **The two further checks**: on minutes leakage, *"The model's projected minutes miss real minutes by 5.5 minutes on average and land within one minute only 11% of the time. That's an honest projection."* On clustering, *"Counting each night as one observation, the result is still 3.8 standard errors above zero. It's volatile, though: half the nights lose."*
+- **Its own limit**: *"the model was designed while looking at these same seasons, so treat this as an upper bound."*
+- ⚠ So a slip-level standards backtest was run in `T23` itself, two days before `T24`'s; the two differ in nights, slips and ROI, and neither message compares them.
+
 # §T22.2 · §T22.3 · §T22.6 · §T22.7 · §T23.4 — 📋 **THE FIVE PASS RECORDS WHOSE CONTENT WENT TO THE SUBJECT DOCUMENTS**
 
 > 🔴 **WRITTEN AS A REPAIR, AND THE DEFECT WAS MINE.** *A verification pass on `2026-09-23` found
