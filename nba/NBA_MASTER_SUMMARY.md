@@ -44934,3 +44934,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **CORRECTED → `0`/`3`**: `T32`; and **REOPENED → `0`/`3`**: `T35`, `T37`, `T38`, `T42`.
 - **CLEAN → `1`/`3`**: `T36`.
 - **Stay ✅ CLOSED** (clean under (pp)): `T33`, `T34`, `T39`, `T40`, `T41`, `T43`, `T44`, `T45`, `T46`, `T47`, `T48`.
+
+---
+
+# §P26 — PASS 26 (`2026-10-10`): (rr) EVERY "READ FIRST" ITEM, CLAIM BY CLAIM — `T32`, `T35`, `T36`, `T37`, `T38`, `T42`
+*Angle (rr):* each numbered item of the six `.0` lists checked against the transcript — every figure (`zcheck.py`: all trace, the only stray being the export's `2,844`-message size), every quotation (`qall.py` re-run), every timed owner turn (`tscheck.py` re-run), and every ✅ status mark re-read live (code lines, table counts, strategy states).
+- ✏️ **`T32`** — one more owner quotation had silently corrected a typo: *"continue and remeber that nba has no board for now …"* (sic) restored. `T32` stays `0`/`3`.
+- **Dated live observations re-read, annotated, not transcript material** *(the `§P3` / `§P16` rule: dated claims keep their dates)*: the build chat's post-corpus commits of `2026-10-10 05:37Z` shifted `live_slip_engine.py`'s lines — `EXCLUDE_BY_FAMILY` `120 → 125` (`§T35.0`, `NBA_OPEN_ITEMS.md`), `LEG_SOURCE` `216 → 221` (`§T37.0`), the week-2 guard `562–569 → 563–574` (`NBA_SYSTEM_DESIGN.md` `§T36.7`), `MAX_DAILY_STAKE` `132 → 137` (`NBA_WORKERS.md` `§T36.4`), `EDGE_DELTA` `1391 → 1396` (`NBA_MULTIPLIERS.md` `§T40.3`); and `§T42.0`'s *"no red yet"* is now false — `B_demon_3flex` and `B_demon_5flex` are `red` since `05:01:35Z` with only a `REQUAL` key, still no `RED_STICKY` (the cause is post-corpus and is not recorded). Every other ✅ mark re-reads as written (`edge_monitor` `0`, `edge_monitor_ref` `20`, `stake_weight` column, `ud_live_slips` `0`, `pipeline_runs` `25`, scheduler `v2.3.0`, the retired P2 stub, the P5 call at `nba-p1-weekly-static.yml:290`, the `dup` status, the board guards).
+
+**Ledger**: pass `26` complete (`2026-10-10`).
+- **CORRECTED → `0`/`3`**: `T32`.
+- **CLEAN → `2`/`3`**: `T36`.
+- **CLEAN → `1`/`3`**: `T35`, `T37`, `T38`, `T42`.
