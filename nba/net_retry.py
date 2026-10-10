@@ -118,7 +118,7 @@ def request(method, url, *, session=None, proxies=None, routes=("direct",), trie
                 r = sender.request(method, url, proxies=(proxies if route == "proxy" else None), timeout=t, **kw)
             except Exception as exc:  # noqa: BLE001  (connection error, timeout, TLS, proxy tunnel)
                 last = exc
-                print(f"RETRY|{label}|attempt {attempt + 1}/{tries} via {route}|{type(exc).__name__}: {str(exc)[:90]}", flush=True)
+                print(f"RETRY|{label}|attempt {attempt + 1}/{tries} via {route}|{type(exc).__name__}: {redact(exc)[:90]}", flush=True)
                 continue
             last = r
             if ok(r):
