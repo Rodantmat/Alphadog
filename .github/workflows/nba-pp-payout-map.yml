@@ -45,11 +45,39 @@ jobs:
         with:
           python-version: '3.11'
 
-      - run: python -m pip install --upgrade pip curl_cffi "psycopg[binary]"
+      # BROWSER TRANSPORT (2026-10-09): DataDome has refused every curl_cffi quote since 2026-09-30; quotes now come from the
+      # web app's own page in a real Chrome (SeleniumBase UC + Xvfb + the residential proxy - the Betr chain; probe
+      # 38010173137). PP_TRANSPORT=curl restores the old path.
+      - name: System deps (Chrome fonts + Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji \
+            libnss3 libxss1 libasound2t64 libgbm1 || \
+          sudo apt-get install -y xvfb x11-utils fonts-liberation fonts-noto-color-emoji \
+            libnss3 libxss1 libasound2 libgbm1
+
+      - run: |
+          python -m pip install --upgrade pip curl_cffi "psycopg[binary]" seleniumbase "proxy.py"
+          sbase get chromedriver || true
+
+      # PROXY FROM THE CREDENTIAL STORE (owner rule: the proxy URL lives in nba_config.external_credentials 'proxy_url');
+      # the PROXY_URL secret stays as the fallback.
+      - name: Resolve proxy (credential store first, secret as fallback)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          P=$(psql "$DATABASE_URL" -Atqc "SELECT credential_value_encrypted FROM nba_config.external_credentials WHERE credential_key='proxy_url'" 2>/dev/null || true)
+          if [ -n "$P" ]; then
+            echo "::add-mask::$P"; echo "::add-mask::$(echo "$P" | sed -e 's#^[a-z]*://##' -e 's#@.*$##')"
+            echo "PROXY_URL=$P" >> "$GITHUB_ENV"; echo "proxy: credential store -> $(echo "$P" | sed 's#.*@##')"
+          else
+            echo "proxy: credential store has no proxy_url row - using the PROXY_URL secret"
+          fi
 
       - name: Map PrizePicks payouts
         env:
-          PROXY_URL: ${{ secrets.PROXY_URL }}
+          PROXY_URL: ${{ env.PROXY_URL || secrets.PROXY_URL }}
+          PP_TRANSPORT: browser
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PP_MAX_QUOTES: ${{ github.event.inputs.max_quotes || '250' }}
         run: |
