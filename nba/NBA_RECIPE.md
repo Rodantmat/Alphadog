@@ -1503,3 +1503,12 @@ THE REPOSITORY IS PUBLIC.**
 74. **Rehearse the opening night on the final code** and re-run the rehearsal after every fix: the first slate of a season exercises paths no mid-season replay reaches.
 75. **Keep the database's own code in the repository** (hand sources + a scheduled dump) — what lives only in the database cannot be certified or recovered.
 76. **A new board enters on paper, inside the certified pool, behind a price gate** — staked only after the paper gate and the sequential monitor.
+
+### STEP 14m — **Measure an idea before using it, keep every ingredient, back up off the database, and give a different regime its own evidence** *(`T44`, `2026-10-08`; `NBA_MASTER_SUMMARY.md` `§T44`)*
+77. **A promising idea without measured evidence becomes a ledger, not a rule** (price shopping): record it daily on the legs the engines actually select, then derive and backtest any rule from that record.
+78. **Inventory every write path** (store, mode, date key, every delete / overwrite) and check each against the database — retention gaps and certification gaps are found the same way (a table four readers used that nothing wrote).
+79. **Keep parameters as well as data** — anything a slate was priced with (refit models, the as-of fit it read, weekly verdicts) is snapshotted per date; strategy state gets a daily history.
+80. **Back up at three levels**: the provider's short window, a weekly git archive of the database-only ledgers, and a periodic off-database release of the big history.
+81. **Before spending a shared budget, measure the real cost on a sample** — and know which production step reads the same key.
+82. **A different regime (the postseason) gets separate tables, its own calibration phase and its own certification** — never mixed into the certified regular-season inputs, never assumed to carry the regular season's edge.
+83. **Answer "is it perfect?" with what is proven and what is not** — the first live run is the final test; that is why it starts on paper.
