@@ -50,7 +50,7 @@ def main():
                 c.commit()
             r = c.execute(f"""SELECT count(*) FILTER (WHERE payout_grader_v1 IS NOT NULL), sum(payout_grader_v1) FILTER (WHERE payout_grader_v1 IS NOT NULL),
                                      sum(payout) FILTER (WHERE payout_grader_v1 IS NOT NULL) FROM nba_score.{t}""").fetchone()
-            print(f"REGRADE|{t}|days {len(days)}|rows updated {n}|regraded total {r[0]}|old payout sum {r[1] or 0:.1f}|new {r[2] or 0:.1f}"
+            print(f"REGRADE|{t}|seasons {len(days)}|rows updated {n}|regraded total {r[0]}|old payout sum {r[1] or 0:.1f}|new {r[2] or 0:.1f}"
                   f"|{time.time() - t0:.0f}s", flush=True)
     return 0
 
