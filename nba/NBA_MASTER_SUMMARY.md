@@ -46297,3 +46297,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `94` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P95 — PASS 95 (`2026-10-10`): A SEED-95 SAMPLE OF `T37`, JUDGED FROM SCRATCH
+*Angle (as NEXT set it):* (c7) `20` sentences drawn with seed `95` from `T37`'s strategy text, each read whole in its paragraph and judged without reference to earlier verdicts — readings apart from figures; the `6` the checker flagged traced by key phrases and figures. (d7) no addition was made, so the scans were not re-run.
+- ✅ All `20` on file or judged (a table header). The first clean pass on `T37` since the full read began (pass 87).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- No quotation added since the pass-94 census commit.
+
+**Ledger**: pass `95` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
