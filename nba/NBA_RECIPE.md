@@ -1441,3 +1441,12 @@ THE REPOSITORY IS PUBLIC.**
 28. **No separate schedules** (owner): pick at the end of P3, grade at the end of P2, requalify at the end of P1; P4/P5 stay as manual entries.
 29. **Stake each distinct slip once** (`dup`); **make every family's label true in what it stakes** (`EXCLUDE_BY_FAMILY`); **keep a stopped strategy observing** (shadow slips).
 30. **Bad weeks and droughts — ask "why", then only adopt what is identifiable at the time** (owner): calendar rules (week 1 Over tilt, week 2 steals-excluded low-event play, final week off), structural rules (diversify, small-slate cap, demon cap 6, dedupe); leg-level findings go to the ranker's retrain list, not the slip layer. Stop when three consecutive passes are dry (owner: *"3 dry consecutive runs"*).
+
+### STEP 14e — **Launch-ready: a ranking key, states with plans, a trigger that keeps time, and a run that never repeats** *(`T36`, `2026-10-02/03`; `NBA_MASTER_SUMMARY.md` `§T36`)*
+31. **A pass is clean only when research and Gemini return nothing usable** (owner) — a candidate that tests bad is still a finding, so the pass is not clean.
+32. **Do not force skips; identify playability** (owner): a fixed trough is **planned** (week 2 gated by a signal, the pre-break week's plan B), a long drought is a **state** with a rotation, a single bad day is answered **structurally** (diversify, dedupe, the points Power).
+33. **Prefer a ranking key that aggregates to the slip over a detector** — the low-foul key turned family A's droughts positive where 70 passes of detectors could not.
+34. **Before launch, test the live path, not the backtest path** — the key was a no-op live, joins by name missed players, a static table would have stopped updating, blank inputs disabled the key, the calendar let playoffs through. A dry run through the production path, then reset.
+35. **Measure the trigger** — GitHub's cron ran hours late; **trigger at the minute from an external worker**, compute each day's times **from the first tip**, **chain** the pipelines, **watchdog at +5/+10**, and **claim every run once** (owner: *"No pipeline can run twice"*).
+36. **Align every new timing with the documentation first** (owner: *"Review documentation"*) — a capture artifact is not a rule.
+37. **A new board is solved before it is backtested** (owner, Underdog): the reference first, then research and Gemini, then the formula fitted to real quotes, then validated on the live board, then certified — and the live capture fixed before opening night.
