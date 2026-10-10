@@ -45009,3 +45009,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **CLEAN → `2`/`3`**: `T35`.
 - **NEW MATERIAL → `0`/`3`**: `T36`; and **REOPENED → `0`/`3`**: `T32`.
 - **Stay ✅ CLOSED** (clean under the recount): `T33`, `T34`, `T37`–`T48`.
+
+---
+
+# §P31 — PASS 31 (`2026-10-10`): (ww) EVERY OWNER QUESTION PAIRED WITH THE ANSWER HE GOT — `T32`, `T35`, `T36`
+*Angle (ww):* each owner message carrying a question mark (`T32` `10`, `T35` `26`, `T36` `12`) paired with the build chat's prose until the owner's next turn (`qa.py`), and every figure of that answer matched against the twelve.
+- Unmatched figures: `4` answers, each a table cell or an interval of a finding recorded by its headline — `T32` `03:38Z` (the trailing rank's per-season split, `0.585` vs `0.504` in 2025-26; recorded as *"holds both seasons"*); `T35` `06:12Z` (the survivors' ranges, `+56 to +135%` / `+60 to +149%`), `06:26Z` (per-strategy drought gaps), `06:32Z` (the per-season dollars returned, `$3,713.03` / `$4,947.05`, behind the recorded two-season `$8,660.09` / `+$3,715.09`). No answer's substance is missing.
+- **CLEAN for all three.**
+
+**Ledger**: pass `31` complete (`2026-10-10`).
+- **CLEAN → `3`/`3` ✅ CLOSED** (passes 29–31): `T35`.
+- **CLEAN → `1`/`3`**: `T32`, `T36`.
