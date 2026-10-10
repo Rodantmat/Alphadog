@@ -45329,3 +45329,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `54` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
 - **REOPENED → `0`/`3`**: `T35`.
+
+# §P55 — PASS 55 (`2026-10-10`): (vvv) `T35`'S STRATEGY TEXT; (www) `T36`'S DATABASE OBJECTS; AND THE FIGURE-FREE SENTENCES OF BOTH
+*Angle (vvv):* the strategy text `T35` wrote (`26` writes, `~10,700` words) through a generalized co-location check (`colocT.py`, `43` of `461` figure sentences flagged, each read) and all `43` of its long figure-free sentences read against the docs. *Angle (www):* every `nba_*` object named in `T36`'s SQL and writes (`102`) matched to the docs and, where missing, read live. Then the same figure-free read over `T36`'s `55` long figure-free strategy sentences.
+- 🆕 **`T35`** → `§T35.6` #8: the state machine's first simulation, the week-2 numbers, `§29e`'s missing table rows, the first replay's bounds, the drought anatomy, the portfolio blend and caps, good-vs-bad-day variables, the variance-test table, slate-size detail; then **`17` of `43` figure-free statements not on file** (the four treatment verdicts, the warning zone, the layering pattern, the leading indicator, *"trims the edge"*, the stats' timing prediction, *"one mechanism in two directions"* …) and pass 17's calibration table.
+- 🆕 **`T36`** → `§T36.6` #10: nine figure-free statements; → `NBA_DATABASE.md` `§T36.6`: the side tables (gone), the no-steals pair (✅ `475,434` / `1,806,040`), the as-of tracking table (✅ `23,260` rows from `2026-09-26`).
+- Every quotation added: `qdiff.py` `0` flags.
+
+**Ledger**: pass `55` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`, `T35`.
