@@ -2649,3 +2649,20 @@ Traps at the top: **`fgm` / `oreb` / `fga`** (invert) and **FRINGE** role (hit `
 **③ Why it does not leak** — S1-fit buckets predict S2 realized within **`≤ 0.012`** in every well-sampled bucket (`§7j`); the `≥ 0.75` tail drifts `+0.047` on small n, hence the shrinkage. **Held-out day `2026-01-15`** (`§7n`, map fit strictly before it): aggregate error `0.0035`; **high-confidence tail (`190` legs, `model_p ≥ 0.65`): raw `0.711` → calibrated `0.558` → realized `0.584`** — error `0.026` vs raw `0.127`, **~5× better where slip EV lives**. 📜 **The backtest rule this locked**: *the map used to price a leg on date D is fit only on data strictly before D* — the parity rule applied to slip building.
 
 **④ What it means for this file**: the `final_hp` this file calibrates is the **input** to a second, downstream calibration layer the slip program owns. ⚠ **`§T32.5`'s numbers predate the program's own real-lines correction (`§T33`)** — the overconfidence finding stands on the whole board; individual slip results built on it are revisited there.
+
+---
+
+## 🆕 §T33.5 — **SORT BY THE RAW MODEL, PRICE BY THE CALIBRATION: TWO ROLES, TWO NUMBERS** *(source `T33`, `2026-09-29`, recovered transcript; AS STATED from `NBA_SLIP_BUILDING_STRATEGY.md` `§16c`–`§16e`, `§18`)*
+
+**The finding that reversed a `§T32.5`-era assumption.** Ordering a day's legs by the **raw `model_p`** beats ordering them by the **calibrated cell** by **4–12 points of realized hit at every depth, in both seasons** (walk-forward, real lines):
+| season | top-3 cal / raw | top-5 cal / raw | top-8 cal / raw | raw top-5 *claimed* |
+|---|---|---|---|---|
+| `2024-25` | `0.415` / **`0.539`** | `0.467` / **`0.554`** | `0.503` / **`0.552`** | `0.609` |
+| `2025-26` | `0.596` / **`0.635`** | `0.589` / **`0.636`** | `0.585` / **`0.636`** | `0.712` |
+**Why**: a `13`-bucket calibration cell collapses the model's within-bucket ordering (`26` buckets: no better; a line-aware cell recovers half). **But the raw model over-states the LEVEL** (claims `0.712`, realizes `0.636`) — so it must **never price** a leg. ⇒ ***SORT by raw `model_p`; PRICE and decide ELIGIBILITY by the walk-forward calibrated value*** — *or, per the build chat, a per-leg calibration that preserves order (isotonic on `model_p` within prop × side).*
+
+**What the ranker is, measured three ways** *(`§16c`, `§18a`)* — correlation with the next hit on the real defensive pool: calibrated cell `0.139`, **raw `model_p` `0.152`**, player-agnostic line rate `0.031`, player history `0.016`; as pure daily top-5 selectors on the PP board: model `0.619`, plain line `0.497`, player `0.513`, trailing-10 `0.481`. ⇒ ***The edge is where the model places a specific player on a specific night — the baseline/final HP this file documents — not in a line's or a player's past hit rate.*** *(The owner's tier-map method of `T33`/`T34` keeps the model as the ranker inside each anchor tier — `NBA_GOBLIN_DEMON.md` `§T33.2`.)*
+
+**Sub-structure a flat threshold hides** *(`§16e`, raw-model top-8/day, defensive props, `2025-11` on)*: **Under, line `0.5` → `0.685`** ("zero tonight") · Over `0.5` → `0.632` · Under `≥1.5` → `0.624` · **Over `≥1.5` → `0.593`, claimed `0.725` — the most over-confident class in the family.**
+
+**Why `2024-25` looks weaker** *(`§19h`)*: from `2025-11` the defensive top-5 sits `0.58–0.61` every month, points `0.57–0.65`; `2024-25` wanders `0.48–0.60`; **both Octobers are weak**. The build chat's reading: ***the ranker changed, not the market*** — the final engine was rebuilt in summer `2026` on two seasons, so `2024-25` legs were ordered by a model trained on less. ⇒ *trust `2025-26` from November for level, use `2024-25` as the stress floor, never size on October.*
