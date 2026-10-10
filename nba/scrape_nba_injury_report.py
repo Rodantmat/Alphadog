@@ -258,6 +258,9 @@ def main():
         # ROUND-2 P3#14 (2026-10-08): on a day the league publishes reports (INJURY_EXPECT=1, set by P3 on a slate day) a scan
         # that found ZERO snapshots is a failed scrape, not an empty report - the previous file stays and the step goes red
         # (soft in P3, so the slate continues on the last report with a visible warning), instead of silently loading nothing.
+        if _TRANSIENT_MISSES:
+            print(f"::warning::{len(_TRANSIENT_MISSES)} injury-report URL(s) stayed unreachable after retries (network, not "
+                  f"missing files) - the latest filing may be among them: {[u.rsplit('/', 1)[-1] for u in _TRANSIENT_MISSES[:6]]}", flush=True)
         if not out and os.environ.get("INJURY_EXPECT") == "1":
             print(f"daily: 0 snapshots found for {[d.isoformat() for d in days]} on a slate day - a failed scan, "
                   f"leaving nba_injury_report_current.json untouched", flush=True)
