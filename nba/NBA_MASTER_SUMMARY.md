@@ -47014,3 +47014,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `142` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T20` done (`7,064` sentences); next `T21`.
+
+# §P143 — PASS 143 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T21`
+*Angle (as NEXT set it):* (i9) `§P131`'s method on `T21`.
+- Tabulated in the shell before this line (the scan ran at pass 141's head — NEXT's "pass 140's head" is inexact by pass 141's ledger only, and no residue landed in passes 141–142): `T21` `779` of `1,734` sentences listed — **all `779` read and judged** (its head overlaps `T20`'s tail at `2026-09-20` `18:31Z`).
+- On file, by substance: the T1 handoff lessons it recovered (the weighted-vs-day test `1.573` / `2.755`, lesson #14's definition mismatch, BallDontLie's `$39.99` tier and 600 requests/min, lesson #12's `~8%` vs `35–40%`, the startup plan, the shrinkage safety valve, the `14.5%` rounding case and its downgrade, the producer / consumer zero rule, the CI-diff and DST exposures), the sweep's own method history (the Cowork hand-off, the work order, pointer-style entries, the matcher and its `0.30` / `0.40` thresholds, `52.6%`, `17,061` blocks, chronological order, the depth ratio, the T2 re-read), and the live audits it confirmed (the seven-of-ten decay disagreement, `year_founded`, `x_minutes`, the `2026-09-02 20:25Z` calendar write, the static-layer freeze, `scope_lock`). Judged: narration, the owner's exchanges about pace and tooling, model-choice advice, and document-size tables. Not reproduced: the bridge host name the transcript prints.
+- **Nothing new — `T21` clean in additional sweep `1`.** No commit other than this pass's landed since `45014c2c6` when this line was written. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `143` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T21` done (`7,843` sentences); next `T22`.
