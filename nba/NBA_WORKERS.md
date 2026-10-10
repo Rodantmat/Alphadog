@@ -3714,3 +3714,24 @@ these twelve.**
 | **`nba/baseline/build_baseline_history_postseason.py`** · **`build_combos_history_postseason.py`** · **`nba/export_market_spreads_postseason.py`** · `nba-baseline-history-postseason.yml` *(new, P-3)* | the certified recipe + history patches + postseason data; emit only 004/005 games; `load_baseline_history.py` replaces only postseason rows (guarded) |
 | `nba/build_final_hp.py` · `build_asof_calibration.py` · `score_board_legs.py` (P-4) | `FE_POSTSEASON` scope; phase `5_postseason` by game id, fallback `4_push`; postseason confidence phase factor; every delete scoped to 004/005; as-of calibration fits `5_postseason` cells; scoring uses them on a postseason slate |
 | `nba-injury-report.yml` | backfill loop counts only days inside the requested range (postseason injury backfill) |
+
+## 🆕🔴 **§T45.4 — `T45` (`2026-10-08 21:04Z → 10-09 02:49Z`): THE POSTSEASON CERTIFIERS AND THE LIVE POSTSEASON PATH** *(source `T45`; AS STATED from the commit messages and `§31w` AS BUILT; ✅ = in the repo / DB `2026-10-10`)*
+| file | what it does |
+|---|---|
+| **`nba/build_tier_map_legs_postseason.py`** *(new, P-5)* | → `nba_score.tier_map_legs_post`: PP window legs × current price × `board_outcomes` grade × postseason `final_hp`; `final_score` rescored **market-free** as live scores it; deterministic `n_rank` tie-break; team / event / pf20 self-contained (pf20 over regular + postseason games); later in the window: half-point legs staged before ranking and **whole-number legs priced exactly as live** (`wn_selection → wn_price → wn_score`). ✅ `359,301` rows. *(Its `event_id` was NULL on every row — found and fixed `10-09`, later transcript.)* |
+| **`nba/certify_candidates_postseason.py`** *(new)* | measures the engine's own cells (`eligible_legs` imported) on postseason nights and weighs them against the certified p.m → `cand_certified_post`, `cell_postseason_eligibility`; grade is per leg (`board_outcomes` carries no bookmaker / label) |
+| **`nba/certify_postseason_strategies.py`** *(new)* | per-strategy postseason gate (day-blocked bootstrap on postseason nights, k = 1, both postseasons positive, ≥ 30 days) + the postseason board floor → `postseason_strategy_verdict` |
+| `nba/build_slip_engine.py` | **test-source options** `SE_LEGS_SELF=1` (self-contained leg SQL) and `SE_PHASE` (pins the phase label) for the postseason backtest → `slip_engine_slips_post` / `_post_nosteals` (✅ `62,042` slips) — *certified path unchanged* |
+| `.github/workflows/nba-postseason-certify.yml` *(new)* | tier map → cells → slip engine `_post` → strategy gate + floor → validator record; the backtest excludes the cells live excludes |
+| `nba/live_slip_engine.py` (nine-part patch + three) | postseason-aware trailing-10 steals and pf20; board team fallback, post-tip and slate size from `slate_games`; `postseason_slate()`; **`pick_postseason`**; grading of postseason slips into `graded_post*`; box-score outcomes include the postseason twin |
+| `nba/ud_live_slip_engine.py` | postseason slates → `stand_down:postseason` (stake 0) |
+| `nba/alphadog-v2-nba-scheduler.js` | **v2.3.0**: first tip from `slate_games` (✅ deployed) |
+| `nba-p2b-slate.yml` · `nba-p3-afternoon-light.yml` · `nba-p4-live-slips.yml` · `nba/prune_baseline_to_board.py` · `nba/certify_pipeline.py` | slate gate / referee poll / slate checks on `slate_games` |
+| `nba-p2a-results.yml` | postseason delta on play-in / playoff days (soft, own soft-failure entry) + postseason gap audit |
+| `nba/baseline/build_baseline_ladder.py` | the live ladder carries the season's postseason box scores when the files exist |
+| `nba-p5-weekly-requal.yml` | step 7: weekly postseason certification refresh in play-in / playoff weeks |
+| `nba/build_final_hp.py` · `nba-final-hp-postseason.yml` *(new)* | unpublished `5_postseason` cell → `4_push`; postseason scope copies April–June keys only; matrix max-parallel 3 |
+| `nba/export_market_spreads_postseason.py` | Postgres has no `count(DISTINCT) OVER` — the unused windowed count dropped |
+| **`nba/probe_pick_postseason.py`** *(new)* | live postseason pick on past nights, commit disabled + rollback |
+| `nba/dump_db_ledgers.py` · `nba/dump_db_history.py` | postseason certification tables join the weekly ledger archive (and paid MLB mirror tables the monthly history archive — MLB, out of scope) |
+| **Parity backfill (owner `19:08 PT`)**: `build_confidence_v3.py` (fit on regular-season legs only) · `build_market_derived.py` (event map / schedule cover every season present) · `build_scenario_calibration.py` (postseason games, own phase) · `scrape_nba_matchups_pergame.py` (postseason mode, own shards) · `score_board_legs.py` · **`nba-postseason-backfill.yml`** *(new)* | the fills whose results are `T46` |
