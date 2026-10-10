@@ -1,1 +1,1 @@
-script: probe_net_retry_live.py
+script: probe_price_shop_ledger.py
