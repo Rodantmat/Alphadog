@@ -44293,6 +44293,11 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: `T36` pass `14` — **NEW MATERIAL** (`§T36.6`; `NBA_BASELINE_CALIBRATION.md` `§T36.5` and `NBA_SYSTEM_DESIGN.md` `§T36.7` corrected — the holiday caution is a live cap-1 rule, not a dropped test), CLEAN `0`/`3`.
 
+## §T36.9 — PASS 123 (`2026-10-10`): THE ≥ 5 LIST JUDGED FROM SCRATCH *(the re-check `§P93` called for)*
+
+- **The list**: the ≥ `5` scan re-run over all twelve on `T36`'s strategy and `COMPASS` text — `295` of `566` sentences (computed in the shell). Seven hold figures not on file, all one table: the owner's seven Underdog MLB slip screenshots (product, shown payout, slip factor), whose reading — a per-pick factor near `0.98` and same-game discounts — is on file and whose MLB figures stay unrecorded by rule.
+- **All `295` read whole** and searched on file by substance: the drought passes (players, opponents, the injury feed found to exist, same-team pairs, convexity), the week-2 signal-gated play and its kill switch, the drought rotation and its EWMA, the single bad day closed at the mechanism, CLV inert on PrizePicks, the leg-level ranker features, the All-Star and tanking calendar states, the late pick, the month-by-month ranker lift, overtime, the low-foul key (its step at `1.8`, side-table validation, live-path bugs and the dispersion sibling that runs the other way), the live monitor, the replays and the calendar and rotation fixes, the pre-break plans, the board-by-board adapters, the scheduler and run-once rule, the P2A/P2B split, and the Underdog formula, archive recovery and live capture. Judged: MLB player examples, research-source names, framing and plans later run. **Nothing new — `T36` stays ✅ CLOSED.**
+
 ---
 
 # §T37 — `T37` · `2026-10-04-03-48-05-nba-wiring-audit-31x` *(recovered `2026-10-10` from the owner's claude.ai export)* — 🆕 **THE UNDERDOG PROGRAM END TO END (TIER MAP → CERTIFIER → SIGNALS → ENGINE → VALIDATION → REPRICING → PORTFOLIO → LIVE PAPER ENGINE), AND THE WIRING AUDIT THAT FOUND THE LIVE PICK READING A BACKTEST TABLE**
