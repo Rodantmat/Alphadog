@@ -2651,3 +2651,16 @@ CLOSE (first tip − 25 min) close board, PrizePicks + Underdog, label 'close', 
 - **Timing budget on early slates** (`§31f`): ~29 min from P3's dispatch to the first tip; scorer `20 s`, both picks `< 30 s`; P3 dominated by the capped board scrapers (PrizePicks 7 min, others 5 min in parallel) — worst case `~15–17` min.
 - **Opening night (2026-10-20)** simulated minute by minute with the deployed scheduler's own `computePlan` / `decide` / `decideClose`: P2A 03:30 → P2B 08:05 → **P3 11:31** → close 11:35; P3's own gate cutoff is 11:30 (*"a late start runs with a LATE RUN warning"*). A P2B stuck 4 h → P3 stops waiting at its deadline and runs; its freshness gate refuses a pick without today's scores.
 - ✅ **Live**: P3 line `587` *"Underdog paper pick (P5 + P4 shadow)"*; P2A line `352` *"Underdog paper grade"*; P2B line `184` *"Refresh the player name map"*; `nba-close-capture.yml` present; worker `WORKFLOWS.CLOSE = "nba-close-capture.yml"`.
+
+---
+
+## 🆕 §T39.8 — **THE DAILY CHAIN AFTER `T39` (`2026-10-07`): ROSTERS EVERY MORNING, PRICES FOR EVERY LEG, A MONITOR PER APP** *(source `T39`; ✅ = the committed workflow files `2026-10-10`)*
+```
+P2A … PP slip GRADE → PP edge monitor → UD paper GRADE (+ per-leg outcomes) → UD edge monitor → re-price yesterday's whole-number lines
+P2B rosters: refresh (commonallplayers) → apply to nba_ref.players → name map → injury report → … → ladder (current-roster rule) → final_hp → price whole-number lines (final_hp_derived)
+P3  … PP pick → UD paper pick                                   (unchanged)
+```
+- **Roster freshness moved from weekly (P1) to daily (P2B)** — *"P1 should cover it — if P1 does not identify it for P2, that is a big issue"* (owner). P1 keeps deactivations; P2B never deactivates. A failed scrape restores the committed file and refuses to apply.
+- **Prices live in two tables by design**: `final_hp` (what selection reads) and `final_hp_derived` (whole-number and, from `T40`, beyond-depth rungs) — joined only in the view `final_hp_all`. *The routing keeps every existing consumer untouched.*
+- **Isolation**: every new step is `continue-on-error` or isolated — *"never blocks the pipeline"* — like the Underdog steps (`§T37.8`).
+- ✅ P2B lines `161` / `173` (rosters), `476` (whole-number pricing); P2A lines `308` (re-price yesterday), `363` (UD edge monitor).
