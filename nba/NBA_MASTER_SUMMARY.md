@@ -1386,7 +1386,7 @@ the three-clean-pass cycle per transcript against the full set.
 | **34** | `2026-10-01-05-51-31-nba-slip-candidate-map-final-hp` *(export)* | ⏳ **OPEN — `0` passes** · → 10-01 05:51 · `84` msgs |
 | **35** | `2026-10-02-00-50-52-nba-live-engine-drift-research` *(export)* | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T35`), CLEAN `0`/`3` · `10-01 06:02` → `10-02 00:48` · `109` msgs / `55` owner |
 | **36** | `2026-10-03-05-48-07-nba-live-engine-scheduler-launch-ready` *(export)* | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T36`), CLEAN `0`/`3` · `10-02 00:52` → `10-03 05:44` · `134` msgs / `67` owner |
-| **37** | `2026-10-04-03-48-05-nba-wiring-audit-31x` *(export)* | ⏳ **OPEN — `0` passes** · → 10-04 03:48 · `64` msgs |
+| **37** | `2026-10-04-03-48-05-nba-wiring-audit-31x` *(export)* | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T37`), CLEAN `0`/`3` · `10-03 05:55` → `10-04 03:44` · `64` msgs / `32` owner |
 | **38** | *(unnamed — written at the 10-04 18:07 compaction; export)* | ⏳ **OPEN — `0` passes** · → 10-04 18:07 · `33` msgs |
 | **39** | `2026-10-04-18-07-21-nba-paper-trading-cert-edge-monitors-rosters-gaps-31k-31r.txt` | ⏳ **OPEN — `0` passes** · 10-04 18:07 → 10-07 01:00 (claude.ai tail, opens with its §30w–31o compaction summary) |
 | **40** | `2026-10-07-01-01-33-nba-whole-number-legs-deep-combo-rungs-31s.txt` | ⏳ **OPEN — `0` passes** · 10-07 01:01 → 06:40 |
