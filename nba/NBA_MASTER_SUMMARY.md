@@ -45306,3 +45306,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `53` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P54 — PASS 54 (`2026-10-10`): (uuu) THE STRATEGY TEXT `T36` WROTE, READ STRAIGHT THROUGH
+*Angle (uuu):* the planned word trace (`stratword.py`) proved useless — `474` of `555` sentences fall under `25%` because the docs paraphrase rather than copy — so the pass became a straight read of every addition `T36`'s `62` strategy-document writes made (`~17,000` words, `429` folded lines), each paragraph checked against backtick-stripped docs (`docs_now.txt`, the fix for the earlier greps' blind spot), plus a read of its `10` `COMPASS` additions.
+- 🆕 **`T36`** → `§T36.6` #10, six writes: passes 24–68 (teams, injuries, pass 28's research and full convexity table, `§29p`'s per-cell identification, `§29q` in full, referee crews, pass 30's sources, pass 31's books, role stability's definition, the NFL bias, the game total, the post-break and tanking figures, schedule position, line levels, the miss margin, the opponent panel, rank depth, team spread, late legs, track records, scorekeepers, holidays, monthly lift, overtime, the low-foul buckets and literature); passes 70–84 and replay #6 (the minutes confound, dispersion, Gemini's two named interactions, the encodings, pass 79's re-measure, calibration's 11 strategies, the RotoGrinders clock, replay #6's rotation days, the third calendar bug and the verified seasons); plan slip counts, replay #7 by strategy and `§29v`'s board detail; `§29w`–`§29z-b` (the drawdown share, the dry run, scheduler v1's tests, the early-slate math); `§29z-d` and `§30b`–`§30i` (Underdog's path and certification detail). Every quotation checked by `qdiff.py`: `0` flags.
+- 🆕 **`T35` — REOPENED**: the `COMPASS` additions repeat *"week 4+ Under tilt"*, which traced back to `T35`'s `00:46Z` reply framing the early season as **four calendar rules** — never recorded; added to `§T35` (✅ no week-4 rule in live code). This is the first finding `§P50` warned of: the closed transcripts were closed under weaker checks.
+
+**Ledger**: pass `54` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
+- **REOPENED → `0`/`3`**: `T35`.
