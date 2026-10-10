@@ -85,7 +85,8 @@ def main():
     n_q = 0
     try:
         with SB(**kw) as sb:
-            sb.uc_open_with_reconnect(APP, reconnect_time=10)
+            if not open_alive(sb, APP, "first load", tries=6):
+                print("the proxy never carried app.prizepicks.com (Chrome net-error page on every try)", flush=True)
             where(sb, "first load")
             for _ in range(3):
                 try:
