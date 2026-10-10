@@ -219,7 +219,7 @@ def main():
             else:
                 o, listed, same_line, app_line, gap = (None, None, None, None), False, None, None, None
             m, price, kind = o[1], o[2], o[3]
-            m_eff = None if m is None else (m * ud_ref if app == 'underdog' else m)
+            m_eff = None if m is None else (m * ud_ref if app == 'underdog' else (m * sl_root if app == 'sleeper' else m))
             pxm = (p * m_eff) if (p is not None and m_eff is not None and same_line) else None
             gate = ((p - margin) * m_eff >= 1.0) if pxm is not None else None
             root = ud_ref if app == 'underdog' else 1.0
