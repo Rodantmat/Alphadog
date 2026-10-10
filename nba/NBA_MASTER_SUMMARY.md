@@ -44872,3 +44872,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `20` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T36`.
+
+---
+
+# §P21 — PASS 21 (`2026-10-10`): (kk) EVERY GEMINI CONSULTATION AND (ll) EVERY WEB SEARCH — `T32` AND `T36`
+*Angle (kk):* each `call_gemini` (`T32` `8`, `T36` `23`) read with its prompt, Gemini's answer and the chat's next prose — was the suggestion adopted, tested, rejected, or left untestable, and is that outcome in the twelve? *Angle (ll):* each `web_search` query (`T32` `14`, `T36` `29`) matched to the finding it fed.
+- **`T32`** — all `8` resolve: the `404` on the deprecated `gemini-2.0-flash` and the `2.5-flash` pin (`NBA_SYSTEM_ARCHITECTURE.md` gotcha `5`); p·m is Power-only (`§6e`); 2-pick vs 3-pick (`§7h`); market edge ranks but is miscalibrated (`§8m`); CLV as a hard filter (`§8o`, later backtest-only); the signal library (`§11d`); the goblin/Flex `+611%` refuted on real slips (`§13b`). The `14` searches fed the Betr build, the Chalkboard hold and the slip research — each recorded. **CLEAN.**
+- 🆕 **`T36`** — three Gemini outcomes and two research results were not in the twelve: **the rotation's exit is a stated limitation** (pass 35: Gemini's exit rule *"released on a strong day and re-entered on the next 0/22 day"*) and the **game total** tested dry → `NBA_SYSTEM_DESIGN.md` `§T36.7` #8; **the foul key's Under-side confound** (*"partly a low-minutes proxy there, but a real edge in the realized hit either way"*) → `NBA_BASELINE_CALIBRATION.md`; **single bad days are slate-wide** (pass 43), **Cup nights** dry, **experience × back-to-back** dry (pass 46), and Gemini's passing-style candidate untestable → `§T36.6` #3. The rest resolve (convexity, EWMA, the two guards, retrain design, the 21-day monitor, state-aware sizing → `MAX_DAILY_STAKE`, the P2A/P2B critique, the Underdog formula).
+
+**Ledger**: pass `21` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T32`.
+- **NEW MATERIAL → `0`/`3`**: `T36`.
