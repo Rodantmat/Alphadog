@@ -45230,3 +45230,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `49` complete (`2026-10-10`).
 - **CORRECTIONS → `0`/`3`**: `T36`.
+
+# §P50 — PASS 50 (`2026-10-10`): (qqq) FIGURES THAT MATCHED ONLY BY COINCIDENCE
+*Angle (qqq):* `coloc.py` took every sentence `T36` wrote with two or more figures (final replies, narration, `187` commit messages, `72` strategy/`COMPASS` writes) and required its figures to stand **within `400` characters of each other** somewhere in the docs — the earlier traces only asked whether each figure appeared anywhere, and common numbers (`+46%`, `335`, `+77%` …) appear in many places. `71` sentences failed; each was read.
+- 🆕 **`T36`** → `§T36.6` #9: the drought menu in full (seven rows, per season, slips, normal weeks); the low-foul side table per strategy and its drought column; replay #5 by state and strategy and the first 2024-25 replay's rotation days; the launch table's other rows and where 2024-25's drawdown came from; the dry tests' own numbers (teams, opponents, Gemini's transforms, role stability, early assists, the cushion-and-foul premium); smaller figures; and from the commit messages pass 37's research and road-trip figures, pass 78, `player_pf20`'s rows, the plans' slip counts. → `NBA_MULTIPLIERS.md` `§T36.3`: the offline `1,057`/`1,057` check.
+- Not recorded, by rule or judgment: the owner's MLB screenshot slip tables (`§30d`, superseded, summarized) and the MLB reference; the build chat's memory dump read at `23:07Z`; run-progress lines (*"day 136 of ~164"*, *"119 of ~158 days"*); figures whose second number is a time or a count already on file in another form.
+- Quote check on the additions (`qdiff.py`): one inexact (*"Unders 66% and 65% in weeks 2–3 …"* — the words *"in weeks 2–3"* restored) — fixed in the next commit.
+
+**Ledger**: pass `50` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
