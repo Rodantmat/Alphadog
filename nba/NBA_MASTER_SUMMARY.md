@@ -44353,3 +44353,24 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - Dated live claims that have simply grown since (`nba_ref.players` `713` → `756`, `player_name_map` `5,169` → `5,221`, quarantine `7,921` → `7,970`) carry their dates and are left as written.
 
 **Ledger**: pass `3` complete for `T32`–`T48` + `S1`–`S9` (`2026-10-10`). **CLEAN `2`/`3`**: `T38`, `T41`, `T42`, `T48`, `S1`–`S9`. **CLEAN `1`/`3`**: `T33`, `T35`, `T37`, `T40`, `T43`–`T47`. **CLEAN `0`/`3`** (pass 3 found NEW MATERIAL): `T32`, `T34`, `T36`, `T39`.
+
+---
+
+# §P4 — PASS 4 (`2026-10-10`) ACROSS `T32`–`T48` + `S1`–`S9`: WRITE-MODE SQL, ATTACHMENTS, DISPATCHED WORKFLOWS — AND A BLIND SPOT IN PASS 2
+*Angles:* **(g)** every `run_sql_postgres` call with `allow_write` — each `DROP`/`DELETE`/`TRUNCATE`/`ALTER`/`UPDATE` target checked against the twelve, every production-table write read in place; **(h)** every owner attachment (`[FILE …]`, screenshots) checked for a record; **(i)** every `github_trigger_workflow` target checked against the twelve. 🔴 **And a correction to `§P2`**: angle (b) read only the first `800` characters after each write call, so a `path` that followed a long `content` field was never seen — re-run over the whole call, it found **eight** more written files (below).
+
+| transcript | (g) write SQL | (h) attachments | (i) dispatches + (b) re-run | pass-4 result |
+|---|---|---|---|---|
+| `T32`–`T35` | `T34`'s live-map `DELETE` already in `§T34.3`; `T35`'s `*_deltatest` scratch drops in `NBA_DATABASE.md` | `T32`: the session file `cb3.js` the build chat refused (`§T32.1` 🔐) — named here, never opened | clean | **CLEAN** |
+| `T36` | `ud_window_legs` rebuilt `4×`, `player_pf20` table → view, replays and scratch drops — all recorded; `slip_engine_slips_sameteam` (the `SE_SAMETEAM` test table, dropped) not worth a row | `IMG_6952`–`6960` (`§T36.5`), `IMG_6962`–`6965` (`§T36.1` `04:55Z`) | clean | **CLEAN** |
+| `T37` | 🆕 the `§31g` relabel applied to production rows from the chat (`UPDATE`/`DELETE`/`UPDATE` on `board_snapshots`) and the `_audit_state_before` snapshot → `§T37.3` | none | 🆕 `nba-ud-live-parity.yml`, `nba-p3-scoring-timing.yml`, **`nba/refresh_player_name_map.py`** (the daily P2B name-map refresh) → `NBA_WORKERS.md` `§P2.4` | **NEW MATERIAL** |
+| `T38` | clean | none | 🆕 `nba/star_under_compare.py` → `§P2.4` | **NEW MATERIAL** |
+| `T39`–`T47` | `T42`'s Underdog team-market `DELETE` and `T43`'s `refresh_board_rung_keys` rebuild already recorded (`NBA_DATABASE.md`, `§P2.4`) | `T42`'s six screenshots are the proxy-plan screens (`§T42` `05:51Z`) | clean | **CLEAN** |
+| `T48` | the Bovada `DELETE … RETURNING` → quarantine already recorded | the owner's account-export zips (`§T48` #1 — *"held no conversation content"*) | 🆕 `probe_betr_token_refresh.py`, `probe_sleeper_payout_config.py`, `probe_capture_props_live.py` → `§P2.4` | **NEW MATERIAL** |
+| `S1`–`S9` | none | none | none | **CLEAN** |
+
+**Ledger**: pass `4` complete for `T32`–`T48` + `S1`–`S9` (`2026-10-10`).
+- ✅ **CLOSED — CLEAN `3`/`3`** (passes 2, 3, 4 clean after the full first read): **`T41`**, **`T42`**, **`S1`–`S9`**.
+- **CLEAN `2`/`3`**: `T33`, `T35`, `T40`, `T43`, `T44`, `T45`, `T46`, `T47`.
+- **CLEAN `1`/`3`**: `T32`, `T34`, `T36`, `T39`.
+- **CLEAN `0`/`3`** (pass 4 found NEW MATERIAL): `T37`, `T38`, `T48` — *`T38` and `T48` had been at `2`/`3`; the blind spot in `§P2` is why.*
