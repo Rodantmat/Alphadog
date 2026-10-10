@@ -1,2 +1,1 @@
-script: regrade_pp_flex_alt.py
-# 2026-10-10: regrade every PrizePicks backtest Flex slip with alternates on PrizePicks' quote-derived tiers
+script: probe_price_shop_ledger.py
