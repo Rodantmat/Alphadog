@@ -46372,3 +46372,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `100` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P101 — PASS 101 (`2026-10-10`): A SEED-101 SAMPLE OF `T37`, JUDGED FROM SCRATCH
+*Angle (as NEXT set it):* (o7) `20` sentences drawn with seed `101` from `T37`'s strategy text, each read whole in its paragraph and judged under `§P98`'s bar; the `5` the checker flagged traced. (p7) no addition, so the scans were not re-run.
+- ✅ All `20` on file or judged (three headers). `T37` → `1`/`3`.
+- 🔴 A slip, corrected in the bullet: the header count was first written as four.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- No quotation added since the pass-100 census commit.
+
+**Ledger**: pass `101` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
