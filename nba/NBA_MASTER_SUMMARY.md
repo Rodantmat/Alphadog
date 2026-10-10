@@ -45991,3 +45991,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`, `T35`, `T38`, `T39`.
 - **CLEAN → `1`/`3`**: `T36`, `T37`, `T46`. **CLEAN → `2`/`3`**: `T47`.
 - ✅ **CLOSED `3`/`3`**: `T40`, `T41`, `T42`, `T43`, `T44`, `T45`, `T48` *(pass 74)*.
+
+---
+
+# §P75 — PASS 75 (`2026-10-10`): A SEED-75 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN; `T47` CLOSES
+*Angles (as NEXT set them):* (o5) a seed-`75` sample on `T32`–`T39`, `T46`, `T47` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty. Traced per transcript: `18` · `14` · `17` · `18` · `15` · `10` · `13` · `14` · `14` · `11`. (p5) the ≥ `5` scan re-run on the nine still open after pass 75's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new in each).
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T33`** (the first tier map's one goblin; `§16a`'s empty steals-Over cell; the demon cells' pricing reading) · **`T34`** (the goblin extender's 5-pick concentration and its 4-pick Power) · **`T37`** (the thin cells not certified) · **`T38`** (the monitor table's at-break-even row).
+- ✅ **Clean on this angle:** `T32`, `T35`, `T36`, `T39`, `T46`, `T47` (its third clean angle → **CLOSED**).
+- Judged, not recorded: `§11a`'s full signal inventory (a catalogue of table columns, documented table by table in `NBA_DATABASE.md`) and transitional lines (`T32`); plans later run (`T33`, `T34`, `T38`); the minutes-trend and price-table headers (`T34`, `T47`); the second audit's opening line (`T37`); the delta-mode table's validation-time parenthetical, as pass 72 judged its neighbour (`T35`); the MLB modifier example (`T36`, MLB).
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-74 census commit: `qdiff.py` `0` flags (`9` quotes counted).
+
+**Ledger**: pass `75` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T33`, `T34`, `T37`, `T38`.
+- **CLEAN → `1`/`3`**: `T32`, `T35`, `T39`. **CLEAN → `2`/`3`**: `T36`, `T46`.
+- ✅ **CLOSED `3`/`3`**: `T40`, `T41`, `T42`, `T43`, `T44`, `T45`, `T47`, `T48` *(pass 75)*.
