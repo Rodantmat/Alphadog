@@ -1520,3 +1520,9 @@ THE REPOSITORY IS PUBLIC.**
 87. **The stake follows the evidence, not the wish**: if no strategy passes the regime's own gate, everything runs as shadow — graded, recorded, re-certified weekly — until one does.
 88. **The backtest and the live path must exclude the same things**; prove the live path on past nights with commit disabled and a rollback.
 89. **Bound parallel database work by IO**, not by how many runners are available.
+
+### STEP 14o — **Prove the certified tables untouched by fingerprint, state the season's expectation as a range, and judge a small regime at the leg level** *(`T46`, `2026-10-09`; `NBA_MASTER_SUMMARY.md` `§T46`)*
+90. **Before and during any backfill beside certified data, fingerprint the certified tables** (`cert_fp`) and show them identical afterwards — *"checked against the database rather than assuming it."*
+91. **State live expectations as a range from the certified curve** (ROI per point of hit-rate; the break-even distance; the in-sample haircut), never as the backtest's number.
+92. **When slips per regime are too few to prove anything, read the legs**: pick on one sample, score on the other, at the leg level.
+93. **Correct your own earlier numbers in writing** (withdraw, don't overwrite) when better inputs change them.
