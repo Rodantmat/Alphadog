@@ -46510,3 +46510,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `109` complete (`2026-10-10`).
 - **CLEAN → `1`/`3`**: `T31` (pass 9 of its own count).
 - ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
+
+# §P110 — PASS 110 (`2026-10-10`): `T31` PASS 10 — A SEED-110 SAMPLE
+*Angle (as NEXT set it):* (b8) `20` sentences of `T31`'s prose drawn with seed `110`, each read whole in its message and judged from scratch.
+- ✅ All on file or judged (`§T31.4`). `T31` → `2`/`3`.
+- 🔴 A slip, corrected in the bullet: one category count was written as four before it was counted (it is five). From the next pass, a sample's categories are tabulated in the shell — sentence numbers by category — and the bullet is written from that table.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line); line `23` re-checked after the census commit.
+- No italic quotation added since the pass-109 census commit; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `110` complete (`2026-10-10`).
+- **CLEAN → `2`/`3`**: `T31` (pass 10 of its own count).
+- ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
