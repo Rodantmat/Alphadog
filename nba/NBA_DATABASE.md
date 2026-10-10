@@ -3627,7 +3627,7 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 **Schema `nba_score` — created in `T36`:**
 | table | grain / content | live |
 |---|---|---|
-| `injury_asof_pick` | per day × team × player: the injury status nearest the pick and the final status (pass 27) | `28,349` |
+| `injury_asof_pick` | per day × team × player: the injury status nearest the pick and the final status (pass 27) · 🆕 *(sweep pass 34, the build chat's narration, AS STATED; ✅ live)* **join gotcha**: `nba_daily.injury_report_snapshots.team` holds **full team names** (`Los Angeles Lakers`, `Atlanta Hawks` …), so the join is on `nba_ref.teams.full_name`, not `abbreviation` — the first attempt put *"Every leg … in 'no report'"* until the key was switched | `28,349` |
 | `leg_clv` | per engine leg: window line vs PrizePicks close — closing-line value (pass 30; found inert on PP) | `5,629` |
 | **`player_pf20`** — ⚠ **now a VIEW** | trailing-20 personal-foul rate per player-game; was a **static table ending `2026-04-12`**, turned into a view over the game log in `§29y` so P5's weekly rebuild keeps the low-foul key | view; `79,358` rows, max `game_date` `2026-04-12` (no regular-season games since) |
 | `replay6_2025_26`, `replay7_2025_26`, `replay2_2024_25` | saved acceptance-replay ledgers (`§29t`–`§29w`) | est. `3,015` / `2,918` / `2,862` |
