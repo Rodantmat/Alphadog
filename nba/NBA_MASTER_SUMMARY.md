@@ -44988,3 +44988,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `29` complete (`2026-10-10`).
 - **CLEAN → `3`/`3` ✅ CLOSED** (passes 27–29): `T32`.
 - **CLEAN → `1`/`3`**: `T35`, `T36`.
+
+---
+
+# §P30 — PASS 30 (`2026-10-10`): (vv) METADATA AND THE OWNER STRATUM, RE-DERIVED — `T35`, `T36`
+*Angle (vv):* span, message and owner-turn counts re-derived from the corpus markers; then every owner message matched (`owners.py`, six-word windows, normalised) to a mention in its `§Tnn` section or in a `Tnn`-tagged line of the other files.
+- **Metadata exact**: `T35` `109` messages / `55` owner, `2026-10-01 06:02Z → 10-02 00:48Z`; `T36` `134` / `67`, `10-02 00:52Z → 10-03 05:44Z` — as the index rows and headers state.
+- `T35`: every owner message accounted — the two unmatched (`08:21`, `17:10`) are the bare progress questions `§T35`'s owner table already lists as *"not re-quoted"*. **CLEAN.**
+- 🆕 `T36`: one owner turn had no mention — **`04:22Z` *"Give a status in how are we at identifying and preventing droughts and negative days?"*** — and its `04:25Z` answer carried two figures nowhere else (*"ROI 78% → 91% … days losing 10+ units 29% → 22%"*) beside the state table → added to `§T36.1`. *(`07:10Z`, the other near-miss, is quoted there in short.)*
+
+**Ledger**: pass `30` complete (`2026-10-10`).
+- **CLEAN → `2`/`3`**: `T35`.
+- **NEW MATERIAL → `0`/`3`**: `T36`.
