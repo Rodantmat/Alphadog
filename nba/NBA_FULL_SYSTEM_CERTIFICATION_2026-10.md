@@ -1058,3 +1058,32 @@ Each candidate was either executed or measured to its final-output effect and cl
   matches the history; then it is flipped together with `live_backtest_suffix.suffix → ''`, `.ud_table → _dlt_orig2`,
   `ud_edge_monitor → certified` (one decision, four rows, same day). One without the other would score live legs on one
   currency and calibrate hurdles on another.
+
+### THE BETR BOARD — not soft (owner 2026-10-09 15:35 PT: "If any board is not working properly, it's not soft"; the ~30-day key: "figure out if auto-update is better … that also does not depend on me")
+
+- **What broke:** Betr shipped a new web app between 10-07 and 10-09 — lands on `/picks/home/lobby`, league boards only
+  through a strip of league chips, lobby op renamed `getUpcomingLobbyEventsV2` (every sport mixed, featured players only);
+  the league board is `LeagueUpcomingEvents {league}` → `getUpcomingEventsV2` (shape unchanged). Both 10-09 crons were
+  also dropped by GitHub. First capture on the renamed API (38003010258) wrote 838 WNBA/CFB/UFC legs as the NBA board.
+- **Fixed and proven, each by a run** (`nba/betr_harvest_cloud.py` 98cbdc6 … 158cfe0; detail in `BETR_BUILD_STATE.md`
+  "2026-10-09"): league filter on the event's own league; the league chip pressed with a REAL mouse through CDP
+  (`Input.dispatchMouseEvent` after the strip settles — a JS click does nothing on the RN-web Pressable, 38004204387);
+  one detached navigation then everything in-page so every graphql body is readable (4 of 5 were lost while chromedriver
+  was detached); unread bodies retried; geo prompt cleared again after the root reload (38006831834); request-side op /
+  league logging and a full trail on every failure. **WNBA 38005105453: 728 legs / 21 players / 2 events (on-screen chip);
+  EPL 38006445274: 5,011 legs / 277 players / 10 events (scrolled chip)** — both committed as `boards/betr_<league>_current.json`.
+- **NBA today = Betr has not opened it.** NBA (38006042574) and the control CBB (38007354366, out of season, off-screen,
+  beside NBA in the strip): the press lands on the leaf, the route stays on the lobby, the lobby lists no event of that
+  league, authed API 200s (session alive). The run now says so (`NO <LEAGUE> BOARD: the '<LEAGUE>' league chip does not
+  route …`, exit 3) and leaves the board file untouched; `boards/betr_nba_current.json` is an honest empty NBA board
+  (964ba5d) — the mixed-sport capture never reached the DB (`board_snapshots` has no betr rows since 10-01).
+- **The ~30-day key is now automatic:** the session's Keycloak tokens (access 30-day, OFFLINE refresh never expires)
+  are refreshed by the harvester itself within 12 days of expiry (probe 38000165529 proved the headless refresh grant at
+  `account.betr.app`, client `betr-rn`) and persisted to `nba_config.external_credentials` (`betr_session_state`,
+  `betr_refresh_token`), read first on every run; the GitHub secret is only the seed. Current access token valid to
+  10-28 → first automatic renewal on the first run after 10-16; nothing on the owner unless the log ever says
+  `session: renewal failed`.
+- **Schedule:** P3 dispatches the harvest at the window (`nba-p3-afternoon-light.yml`, `actions: write`); the two crons
+  stay as backup; the workflow auto-switches WNBA → NBA on 10-20 UTC.
+- **Residual (watch):** ~10 `ERR_CONNECTION_CLOSED` XHRs per run through the DataImpulse proxy (tracking / images; the
+  board still arrives). `nba/TRIGGER_NBA_PROBE.txt` reset to `probe_price_shop_ledger.py` (1651bfa).
