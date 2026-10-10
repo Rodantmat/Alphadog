@@ -1534,3 +1534,11 @@ THE REPOSITORY IS PUBLIC.**
 97. **Give the owner one switch** to turn a newly-staked strategy back to record-only.
 98. **Use the certified cell's hit rate, not the model's raw probability, when judging another app's price** — the raw p is overconfident on lines it was not certified on.
 99. **When an idea fails as a rule, keep it as a measurement** (`m*` in the daily ledger) — a later season can turn a candidate into a rule.
+
+### STEP 14q — **A board that does not work is not soft: one retry policy, three capture moments, self-renewing keys, and live inputs measured before they are switched on** *(`T48`, `2026-10-09/10`; `NBA_MASTER_SUMMARY.md` `§T48`)*
+100. **Treat a failing board as a defect, never a caveat** — and check that "green" runs actually produced data (ten days of green runs with zero quotes).
+101. **Retry by one policy**: transient errors with jittered backoff and a budget that fits the workflow timeout; permanent errors fail at once; never blind-retry a load that may still be running.
+102. **Capture boards only when a decision or a study needs them** — morning, window, close, anchored to the first tip — and nothing in between.
+103. **Make expiring credentials renew themselves** and persist the renewal in the credential store; keep the external secret only as the seed.
+104. **Switch a new live input on only after a week's measurement matches the history**, and flip every dependent setting in the same change.
+105. **Close a deferred item either by doing it or by measuring its effect on the final output** — never leave it as a bare caveat.
