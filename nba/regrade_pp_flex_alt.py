@@ -27,10 +27,14 @@ SQL = """WITH s AS (
     (SELECT count(*) FILTER (WHERE (j->>'hit') IS NOT NULL) FROM jsonb_array_elements(legs_json) j)::int nlv,
     (SELECT exp(sum(ln((j->>'factor')::float)) FILTER (WHERE (j->>'hit') IS NOT NULL)) FROM jsonb_array_elements(legs_json) j) fprod,
     (SELECT bool_or(abs((j->>'factor')::float - 1) > 1e-9) FILTER (WHERE (j->>'hit') IS NOT NULL) FROM jsonb_array_elements(legs_json) j) live_alt
-  FROM nba_score.{t} WHERE game_date = %s AND structure = 'flex'),
-n AS (SELECT id, nba_market.pp_flex_alt_payout(nlv, nlv - hits, fprod) np FROM s WHERE nlv >= 3 AND live_alt)
+  FROM nba_score.{t} WHERE season = %s AND structure = 'flex'),
+n AS (SELECT s.id, coalesce((SELECT CASE WHEN g.x1 = g.x0 OR g.y1 = g.y0 THEN least(g.y0, g.y1) WHEN g.x0 <= 0 THEN g.y0
+                                         ELSE g.y0 + (g.y1 - g.y0) * (ln(s.fprod) - ln(g.x0)) / (ln(g.x1) - ln(g.x0)) END
+                                  FROM nba_market.pp_flex_alt_segments g WHERE g.n = s.nlv AND g.misses = s.nlv - s.hits AND s.fprod >= g.x0 AND s.fprod <= g.x1
+                                  ORDER BY g.x0 LIMIT 1), 0) np
+      FROM s WHERE s.nlv >= 3 AND s.live_alt)
 UPDATE nba_score.{t} x SET payout_grader_v1 = coalesce(x.payout_grader_v1, x.payout), payout = n.np, profit = n.np * x.stake - x.stake
-FROM n WHERE x.ctid = n.id"""
+FROM n WHERE x.ctid = n.id AND x.payout IS DISTINCT FROM n.np"""
 
 
 def main():
