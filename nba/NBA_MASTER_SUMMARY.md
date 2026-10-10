@@ -43882,7 +43882,7 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 | F-1…F-3 | grading and scope (`§T41.0` #6); single-survivor effect on the backtest **`1,120` slips (0.23%), the old refund assumption `142` units optimistic, ROI unchanged to the decimal** | ✅ |
 
 ## §T41.3 — PROCESS FACTS
-- 🔴 **Four nights of failure went unseen** — `nba_control.pipeline_runs` recorded `failure`, but nothing surfaced it until the owner's *"get all fixed and running"* sent the build chat looking. *(The doc track's hourly pass, running in the same days, did not catch it either.)*
+- 🔴 **Four nights of failure went unseen** — `nba_control.pipeline_runs` recorded `failure`, but nothing surfaced it until the owner's *"get all fixed and running"* sent the build chat looking. *(No `NBA_OPEN_ITEMS.md` row records it; whether the doc track's hourly pass saw it in its run log is not established here.)*
 - 🔑 **The owner switched the build chat's model** (`claude-fable-5-1`) minutes before issuing the certification directive.
 - 🔑 **The owner rejected a plan to split repositories** (`16:43Z`): one repository, ordered by folders.
 - **Probes from GitHub runners** (`nba-probe.yml` with a trigger file, `nba/TRIGGER_NBA_PROBE.txt`) are how the build chat tests a scraper end to end without a pipeline run; each probe is followed by a "restore trigger" commit.
