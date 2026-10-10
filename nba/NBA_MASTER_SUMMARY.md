@@ -36609,7 +36609,7 @@ scrapers it names. A reader is not told the other forty-one exist.**
 ▶ ***It did not "genuinely need nothing". It needed the entire T3–T20 build promoted from a summary
 table into steps, and it was never measured against its charter.*** **RULE 41's shape, confirmed on a
 second document — the first was `NBA_GLOSSARY.md`, found with no content commit for T12–T18 while
-seven transcripts closed `3/3`.**
+seven transcripts closed `3/3`.** ⚠ *Inexact (`§P128`): of the seven, only `T18` closed at `3`/`3`; `T12`–`T17` closed on the standing closure judgment.*
 
 ## ✅ THE REPAIR
 
