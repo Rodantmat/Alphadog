@@ -36,20 +36,20 @@ OUT = Path(os.environ.get("SLEEPER_OUT_DIR", "."))
 
 
 def fetch(session, url, proxies, tries=3):
-    last = None
-    for i in range(tries):
-        for use_proxy in (False, True):
-            try:
-                r = session.get(url, headers=UA, timeout=60, impersonate="chrome124", proxies=proxies if use_proxy else None)
-                if r.status_code == 200:
-                    return r
-                last = f"http {r.status_code}"
-            except Exception as exc:  # noqa: BLE001
-                last = str(exc)
-            if not proxies:
-                break
-        time.sleep(2 + i * 3)
-    raise RuntimeError(f"fetch failed {url}: {last}")
+    """one Sleeper call through the system retry policy (nba/net_retry.py, 2026-10-09): direct first then the proxy in
+    each attempt, full-jitter backoff, 429/5xx/connection errors retried, a final 4xx not, and a per-call budget
+    (SLEEPER_CALL_BUDGET_S, 90 s) - the old loop could spend 375 s on one call, past P3's 300 s cap. tries is at least 2
+    (the schedule probe passed 1 to stay fast over many URLs; a missing URL is a final 404 and costs one call anyway)."""
+    from net_retry import Deadline, RetryError, request
+    try:
+        r = request("GET", url, session=session, proxies=proxies, routes=("direct", "proxy"), tries=max(2, tries), base=2,
+                    cap=12, timeout=45, budget=Deadline(float(os.environ.get("SLEEPER_CALL_BUDGET_S", "90"))),
+                    label="sleeper", headers=UA, impersonate="chrome124")
+    except RetryError as exc:
+        raise RuntimeError(f"fetch failed {url}: {exc}") from None
+    if r.status_code != 200:
+        raise RuntimeError(f"fetch failed {url}: http {r.status_code}")
+    return r
 
 
 def slim_players(raw):
