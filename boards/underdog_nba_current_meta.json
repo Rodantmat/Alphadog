@@ -2,8 +2,8 @@
   "ok": true,
   "source": "underdog lobby content (match_grouped_lines -> per-match lines + pills -> lines_with_stats) + v3 alternate_projections ladders",
   "sport": "NBA",
-  "started_at": "2026-10-09T22:46:50Z",
-  "fetched_at": "2026-10-09T22:47:04Z",
+  "started_at": "2026-10-10T02:25:18Z",
+  "fetched_at": "2026-10-10T02:25:42Z",
   "categories": [
     "Points",
     "Pts + Rebs + Asts"
@@ -11,21 +11,21 @@
   "calls": [
     [
       "match_grouped_lines[core]",
-      49
+      60
     ],
     [
       "matches",
-      33,
+      44,
       "today",
       1,
       "other",
-      32,
+      43,
       "target",
       "2026-10-09"
     ],
     [
       "lines[match=225739]",
-      18
+      0
     ],
     [
       "pills[match=225739]",
@@ -44,11 +44,11 @@
       0
     ],
     [
-      "lines[match=225744,other-day]",
+      "lines[match=225743,other-day]",
       0
     ],
     [
-      "lines[match=225743,other-day]",
+      "lines[match=225744,other-day]",
       0
     ],
     [
@@ -92,11 +92,11 @@
       0
     ],
     [
-      "lines[match=225757,other-day]",
+      "lines[match=225756,other-day]",
       0
     ],
     [
-      "lines[match=225756,other-day]",
+      "lines[match=225757,other-day]",
       0
     ],
     [
@@ -104,11 +104,11 @@
       0
     ],
     [
-      "lines[match=225760,other-day]",
+      "lines[match=225759,other-day]",
       0
     ],
     [
-      "lines[match=225759,other-day]",
+      "lines[match=225760,other-day]",
       0
     ],
     [
@@ -120,7 +120,7 @@
       0
     ],
     [
-      "lines[match=225765,other-day]",
+      "lines[match=225764,other-day]",
       0
     ],
     [
@@ -128,11 +128,11 @@
       0
     ],
     [
-      "lines[match=225766,other-day]",
+      "lines[match=225765,other-day]",
       0
     ],
     [
-      "lines[match=225764,other-day]",
+      "lines[match=225766,other-day]",
       0
     ],
     [
@@ -145,6 +145,50 @@
     ],
     [
       "lines[match=225769,other-day]",
+      0
+    ],
+    [
+      "lines[match=225771,other-day]",
+      0
+    ],
+    [
+      "lines[match=225772,other-day]",
+      0
+    ],
+    [
+      "lines[match=225773,other-day]",
+      0
+    ],
+    [
+      "lines[match=225770,other-day]",
+      0
+    ],
+    [
+      "lines[match=225775,other-day]",
+      0
+    ],
+    [
+      "lines[match=225774,other-day]",
+      0
+    ],
+    [
+      "lines[match=225776,other-day]",
+      0
+    ],
+    [
+      "lines[match=225778,other-day]",
+      0
+    ],
+    [
+      "lines[match=225777,other-day]",
+      0
+    ],
+    [
+      "lines[match=225779,other-day]",
+      0
+    ],
+    [
+      "lines[match=225780,other-day]",
       0
     ],
     [
@@ -162,12 +206,12 @@
     [
       "lines_with_stats[players]",
       0,
-      10
+      0
     ],
     [
       "alternate_projections",
       16,
-      368,
+      370,
       0,
       "deduped 0"
     ],
@@ -180,36 +224,31 @@
       0
     ]
   ],
-  "lines": 67,
-  "legs": 67,
-  "ladder_legs": 368,
+  "lines": 60,
+  "legs": 60,
+  "ladder_legs": 370,
   "ladder_lines_with_alternates": 16,
-  "players": 10,
-  "pregame_legs": 67,
-  "live_legs": 0,
+  "players": 0,
+  "pregame_legs": 57,
+  "live_legs": 3,
   "by_stat": {
-    "Moneyline": 33,
-    "Points": 10,
+    "Moneyline": 44,
     "Margin of Victory": 8,
-    "Total Points": 8,
-    "Pts + Rebs + Asts": 8
+    "Total Points": 8
   },
   "by_line_type": {
-    "balanced": 67
+    "balanced": 60
   },
   "unresolved_player_names": 0,
   "multiplier_values": {
-    "None": 41,
-    "1.0": 14,
-    "1.04": 5,
-    "0.96": 3,
-    "0.91": 3,
-    "0.87": 1
+    "None": 52,
+    "1.0": 7,
+    "2.95": 1
   },
-  "github_run_id": "38000961065",
+  "github_run_id": "38016836957",
   "target_date_et": "2026-10-09",
   "budget_s": 240.0,
   "workers": 4,
   "partial": null,
-  "elapsed_s": 5.7
+  "elapsed_s": 10.0
 }

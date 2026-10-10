@@ -3,15 +3,16 @@
   "script_version": "alphadog-prizepicks-nba-producer-v1.0.0",
   "sport": "nba",
   "league_id": 7,
-  "fetched_at": "2026-10-09T20:19:52Z",
+  "fetched_at": "2026-10-10T02:25:18Z",
   "egress": {
-    "ip": "168.151.190.149",
-    "city": "New York City",
-    "region": "New York",
+    "ip": "23.252.132.134",
+    "hostname": "user-23-252-132-134.barbourville.com",
+    "city": "Barbourville",
+    "region": "Kentucky",
     "country": "US",
-    "loc": "40.7143,-74.0060",
-    "org": "AS204491 TEKNOSOS LLC",
-    "postal": "10004",
+    "loc": "36.8665,-83.8888",
+    "org": "AS13351 Barbourville Utility Commission",
+    "postal": "40906",
     "timezone": "America/New_York",
     "readme": "https://ipinfo.io/missingauth"
   },
@@ -47,12 +48,12 @@
       "url": "https://partner-api.prizepicks.com/projections?league_id=7&per_page=5000",
       "attempt": 1,
       "http_status": 200,
-      "bytes": 220230,
+      "bytes": 220254,
       "total_pages": 1,
       "ok": true,
       "rows": 195,
       "future_pickable": 195
     }
   ],
-  "github_run_id": "37985872876"
+  "github_run_id": "38016836957"
 }
