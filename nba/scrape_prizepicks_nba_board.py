@@ -101,6 +101,12 @@ def main() -> int:
     sleep_s = float(os.getenv("PP_NBA_RETRY_SLEEP_SECONDS", "8" if proxy_url else "60"))
     captcha_cooldown = float(os.getenv("PP_NBA_CAPTCHA_COOLDOWN_SECONDS", str(sleep_s * 2)))
     min_future = int(os.getenv("PP_NBA_MIN_FUTURE_ROWS", "20"))
+    # WALL-CLOCK BUDGET (2026-10-09, owner: proper retry logic on every external step). The retry plan (4 attempts x 4 URLs
+    # x 35 s + 16 s cooldowns) could run ~600 s while every caller wraps this script in `timeout 300` (P2B, CLOSE) or 420
+    # (P3) - the last attempts were killed, not made. Every attempt, page and sleep now fits PP_NBA_BUDGET_S (270 s), and
+    # sleeps are jittered (net_retry.backoff) instead of fixed.
+    from net_retry import Deadline, RetryError, backoff, request as net_request
+    budget = Deadline(float(os.getenv("PP_NBA_BUDGET_S", "270")))
 
     # PREFLIGHT: know the egress before blaming the target
     egress = None
