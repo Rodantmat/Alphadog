@@ -45544,3 +45544,20 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `58` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T33`, `T34`.
 - **CLEAN → `1`/`3`**: `T35`, `T36`.
+
+---
+
+# §P59 — PASS 59 (`2026-10-10`): (c4) THE DEEP CHECK OF THE CLOSED `T37`–`T39`; (d4) `T32`–`T34` CONFIRMATION AND A SECOND ANGLE ON `T35`/`T36`
+*Angle (c4):* the closed transcripts' strategy/`COMPASS` additions (`sa_extract.py`) through `figmiss.py`, `colocT.py` and the figure-free residue of `runlen.py`, every flag read in its section — the checks those transcripts had never had (their `3`/`3` rested on presence checks). *Angle (d4):* `T32`–`T34` — `figmiss.py` + `colocT.py` re-run after passes 56–58, plus a `25`-sentence random sample (seed `59`) of each one's figure-free list; `T35`/`T36` — `20` random strategy sentences each (seed `5959`), hand-traced to the record.
+- 🆕 **`T37`** — `figmiss.py` `50` of `413`, `colocT.py` `67` of `572`, figure-free `122`: the Underdog program `§30j`–`§31g` was recorded at summary level only → `§T37.9` (parts 1–7: tier map, constancy, signal matrix, PP-vs-UD, the slip engine, the minutes rules, the PrizePicks rejections re-tested, validation, the strict and balanced repricing, the portfolios, droughts and sizing, the deeper tests, new angles, the live engine, the wiring audit, early boards, and the figure-free residue). **REOPENED.**
+- 🆕 **`T38`** — `figmiss.py` `10` of `77`, `colocT.py` `7` of `121`, figure-free `22` → `§T38.8` (the preview's history, the six spotlight players, star-line Unders at slip level, the guards' test, the monitor research and its full power table, the real-data z path, the full ROI curve, the star-Under thresholds; and `10` figure-free sentences). **REOPENED.**
+- 🆕 **`T39`** — `figmiss.py` `34` of `236`, `colocT.py` `27` of `299`, figure-free `106` → `§T39.9` (rosters, closure, the final audit, G1 gates 1/1b/2 and production, G2's measurement and tail research, the distance finding, G3, G4; and the figure-free residue). **REOPENED.**
+- 🆕 **`T32`, `T33`, `T34`** — figures confirmed (`figmiss.py` `6` / `2` / `0`, all judged: MLB lessons, the not-to-quote leaderboard, or on file rounded; `colocT.py` `43` / `33` / `37`, every flag already in the judged lists of passes 57–58); the samples found five sentences not on file → `§T32.14`, `§T33.7`, `§T34.8` (pass-59 bullets).
+- ✅ **`T35`, `T36` — CLEAN on the second angle.** All `20` sampled sentences of each traced to the record; two details judged and not recorded — `T35`'s *"(a 2-minute aggregate read)"* (the row's reason, *"full where full is the exact form"*, is on file) and `T36`'s *"12 × 0.64⁴ = 2.01× — exactly the observed mean"* (the reconciliation of the owner's MLB slips, the `§30d` screenshot material kept at summary level since `§P52`).
+- 🔧 **Tool fix, recorded:** `colocT.py` stopped a write call's argument block only at `[TOOL RESULT]`; the pack-format transcripts put a `--- ` line first, so every write in `T39`, `T40`, `T41`, `T42`, `T44`, `T46`, `T47` failed to parse and the tool reported `0 of 0`. Fixed to stop at either (as `sa_extract.py` does); a recount shows `T32`–`T38` and `T48` unaffected (old = new write counts), so no earlier `colocT.py` verdict changes. `T40`–`T47` have not been through `colocT.py` yet.
+- ⚠ **Two process slips, struck in place:** `§T38.8` and `§T39.9` each first said the figure-free residue was settled before `runlen.py` had run on that transcript; both struck the same pass (RULE 40) and replaced by the measured result.
+- Every quotation added: `qdiff.py` `0` flags on each of the `16` patches checked.
+
+**Ledger**: pass `59` complete (`2026-10-10`).
+- **NEW MATERIAL / REOPENED → `0`/`3`**: `T32`, `T33`, `T34`; `T37`, `T38`, `T39` (reopened from `3`/`3`).
+- **CLEAN → `2`/`3`**: `T35`, `T36`.
