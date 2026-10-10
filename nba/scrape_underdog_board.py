@@ -34,20 +34,19 @@ COMMON = f"product=fantasy&product_experience_id={PXID}&state_config_id={STATE}"
 
 
 def get(session, url, proxies):
-    last = None
-    for attempt in range(3):
-        for use_proxy in (False, True):
-            try:
-                r = session.get(url, headers={**H, "client-request-id": str(uuid.uuid4())}, timeout=60, impersonate="safari_ios", proxies=proxies if use_proxy else None)
-                if r.status_code == 200:
-                    return r.json()
-                last = f"http {r.status_code}"
-            except Exception as exc:  # noqa: BLE001
-                last = str(exc)
-            if not proxies:
-                break
-        time.sleep(2 + attempt * 3)
-    raise RuntimeError(f"underdog fetch failed {url[:120]}: {last}")
+    """one Underdog call through the system retry policy (nba/net_retry.py, 2026-10-09): direct first then the proxy in
+    each attempt, 3 attempts, full-jitter backoff, 429/5xx/connection errors retried, final 4xx not, and a per-call
+    budget (UNDERDOG_CALL_BUDGET_S, 90 s) - the old loop could spend 375 s on ONE call, past P3's 300 s cap."""
+    from net_retry import Deadline, RetryError, request
+    try:
+        r = request("GET", url, session=session, proxies=proxies, routes=("direct", "proxy"), tries=3, base=2, cap=12,
+                    timeout=45, budget=Deadline(float(os.environ.get("UNDERDOG_CALL_BUDGET_S", "90"))), label="underdog",
+                    headers={**H, "client-request-id": str(uuid.uuid4())}, impersonate="safari_ios")
+    except RetryError as exc:
+        raise RuntimeError(f"underdog fetch failed {url[:120]}: {exc}") from None
+    if r.status_code != 200:
+        raise RuntimeError(f"underdog fetch failed {url[:120]}: http {r.status_code}")
+    return r.json()
 
 
 # ROUND-2 P3#2 (2026-10-08): the scraper was fully serial with sleeps (per match 1 + #pills calls, up to 250 players, one call per
