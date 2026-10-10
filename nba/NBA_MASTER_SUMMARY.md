@@ -44374,3 +44374,24 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - **CLEAN `2`/`3`**: `T33`, `T35`, `T40`, `T43`, `T44`, `T45`, `T46`, `T47`.
 - **CLEAN `1`/`3`**: `T32`, `T34`, `T36`, `T39`.
 - **CLEAN `0`/`3`** (pass 4 found NEW MATERIAL): `T37`, `T38`, `T48` — *`T38` and `T48` had been at `2`/`3`; the blind spot in `§P2` is why.*
+
+---
+
+# §P5 — PASS 5 (`2026-10-10`) ON THE STILL-OPEN `T32`–`T40`, `T43`–`T48`: STRATEGY SECTIONS AND CLOSING REPLIES
+*Angles:* **(j)** every heading of `NBA_SLIP_BUILDING_STRATEGY.md` (`261`), with the twelve's cited ranges expanded (`§29m–§29q` counts every section between), checked for a citation — **`14` never cited**, each read in place and traced to the transcript that wrote it; **(k)** every **bold** phrase in the build chat's closing reply to each owner turn, matched against the twelve by `24`-character windows (for the Claude Code era, where nearly every sentence is bold, only phrases that carry a figure).
+
+| transcript | (j) uncited strategy sections | (k) closing-reply claims | pass-5 result |
+|---|---|---|---|
+| `T32` | 🆕 `§6d` (MLB method discipline) → `NBA_RECIPE.md` step 14 item 3; `§12a`/`§12b` already in `§T32.11`/`§T32.13` | 🆕 the Chalkboard reply's evidence (*"Undefined Device"*) and its forward-the-JSON options → `NBA_SYSTEM_ARCHITECTURE.md` gotcha 7 | **NEW MATERIAL** |
+| `T33` | `§16a`/`§16b`, `§17a`/`§17d`, `§18b` — the content of `§T33.2`'s `§16`/`§17`/`§18` rows | clean | **CLEAN** |
+| `T34` | 🆕 `§25c` (the stricter first correlation rule; the cap scales) → `NBA_SYSTEM_DESIGN.md` slip rules; `§25a` leaderboard *(AS STATED, superseded by `§25e`/`§28`)*: one slip a day, gate = weaker season — demon 5-Flex `+134% / +74%` with **`0%` full hits** in `2025-26`, demon 3-Flex `+70% / +70%`, weighted:steals 6-Flex `+69% / +141%`, core 3-Power `+65%` (`2025-26`); `§21`/`§21d`, `§22b` already in `§T34.2` | clean | **NEW MATERIAL** |
+| `T35`, `T36` | none | clean | **CLEAN** |
+| `T37`, `T38` | none | clean (the uncaught phrases are headings and plan lists whose outcomes are recorded) | **CLEAN** |
+| `T39`, `T40` | none | clean (`166` mid-season changes, `0 → 169` of `179` opening-night players, the `8`-status monitor fix — all in `§T39.2` `§31q`/`§31r`) | **CLEAN** |
+| `T43`–`T48` | none in the corpus — 🔴 `§31ad` (*"PrizePicks Flex with goblins / demons"*) is written by **no** transcript: it belongs to the ledger blocks after the pack (`T48-9`), not pulled backward (`RULE 6`) | clean (the `~$119/month` option = `T43-5`) | **CLEAN** |
+
+**Ledger**: pass `5` complete (`2026-10-10`).
+- ✅ **CLOSED — CLEAN `3`/`3`** (passes 3, 4, 5): **`T33`**, **`T35`**, **`T40`**, **`T43`**, **`T44`**, **`T45`**, **`T46`**, **`T47`** — with `T41`, `T42`, `S1`–`S9` (closed in `§P4`).
+- **CLEAN `2`/`3`**: `T36`, `T39`.
+- **CLEAN `1`/`3`**: `T37`, `T38`, `T48`.
+- **CLEAN `0`/`3`** (pass 5 found NEW MATERIAL): `T32`, `T34`.
