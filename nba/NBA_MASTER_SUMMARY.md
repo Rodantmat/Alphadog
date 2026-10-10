@@ -46986,3 +46986,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `139` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T17` done (`5,756` sentences); next `T18`.
+
+# §P140 — PASS 140 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T18`
+*Angle (as NEXT set it):* (f9) `§P131`'s method on `T18`.
+- Tabulated in the shell before this line (the scan re-run at pass 139's head): `T18` `928` of `1,890` sentences listed — **all `928` read and judged** (its head overlaps `T17`'s tail at `2026-09-19` `00:27Z`).
+- On file, by substance: the confidence deduction model's three measurement fixes (the 5th / 95th extremes, the cap that was a no-op, the floor), the weights and the `0.9503`-range mean, the enhancing score and its worked examples, the PrizePicks multiplier hunt (the payload's label-only fields, DataDome, the `0.67` / `1.84` readings, the deferral), the diet (the `13 GB` table, `VACUUM FULL` blocked by space, plain `VACUUM`, the slimming test and its two retracted objections, fact 105), the cutoff correction (11 AM–1 PM local, Pacific clubs last at 1 PM PT, the 2:45 origin), the certifier and the gap audit, P2 / P3 and their defects, the per-prop ladder depth and the market-key mapping (`23,286` legs), the availability delta and the Klay Thompson replay, the switch-point anchors and the four-way taxonomy. Judged: narration, the owner's step-by-step device instructions, research and help-centre summaries, job-progress counts and figures below the docs' grain. Not reproduced: the proxy egress address the transcript prints.
+- 🆕 **Residue — `§T18.8`** (new `#` section before `§T18.7`): the first v3 replication's `0.890`–`0.961` / `0.922`–`0.960` confidence range, the five factors named as engine placeholders with the stated reason, the score consequence, and the fix that named two of them. Every quotation checked verbatim in the shell. Pointers: entry row `18` and the `③ WHY` block of the pinned-factor audit ("recorded nowhere").
+- **`T18` not clean** — additional sweep `1` stays not clean. Commits this pass, all `[skip ci]`: `1f6baaf8e`, `a7f1a618d`, `60142b1fe`, this ledger; no foreign commit since `dc98b73c0` when this line was written.
+
+**Ledger**: pass `140` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T18` done (`6,684` sentences); next `T19`.
