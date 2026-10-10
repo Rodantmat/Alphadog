@@ -45043,7 +45043,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
   - the late pick's schedule need (*"a ~15:40 PT close pull … an owner scheduling item"*), pass 82's timing (*"3:30–3:40 PM PT"*), and Gemini's monitor draft rewritten (*"daily win rates … are noise"*) → `§T36.6` #3;
   - the other-boards plan in order and the preseason-capture proposal (*"the archiver currently skips preseason"*) → the `§29v` row;
   - the first Underdog universe's coverage (`95–98%` scored, `100%` graded, alternates `0.95–0.97×`, defensive lines from `1.5`) → `§T36.6` #6.
-  Everything else in the `67` replies is on file.
+  ~~Everything else in the `67` replies is on file.~~ *(struck pass 34: the `00:04Z` and `05:35Z` replies still held unrecorded statements — `§P34`)*
 - **`T32`** — every table row resolves (the overconfidence-by-prop table is in `NBA_BASELINE_CALIBRATION.md` `§T32.5` by its realized values; the Fliff row is MLB). **CLEAN.**
 
 **Ledger**: pass `33` complete (`2026-10-10`).
