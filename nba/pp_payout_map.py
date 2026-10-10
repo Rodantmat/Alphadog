@@ -216,30 +216,39 @@ class BrowserQuoter(Quoter):
         import atexit
         from seleniumbase import SB
         from betr_harvest_cloud import open_alive, start_local_proxy   # the proven residential-proxy chain
-        self._open_alive = open_alive
+        self._open_alive, self._start_local_proxy, self._SB = open_alive, start_local_proxy, SB
         self.px, self.ti, self.blocks, self.n = px, 0, 0, 0
         self.target = "browser"
-        os.environ.setdefault("BETR_SESSION_ID", f"ppmap{os.getenv('GITHUB_RUN_ID', '0')}")
-        self._lp, proxy_arg = start_local_proxy()
+        self._cm, self._lp, self.sb = None, None, None
+        atexit.register(self.close)
+        self.new_session()
+
+    def _start(self):
+        # a NEW sticky proxy session per start (new exit IP): DataDome scores the IP as well as the browser
+        os.environ["BETR_SESSION_ID"] = f"ppmap{os.getenv('GITHUB_RUN_ID', '0')}x{self.ti}"
+        self._lp, proxy_arg = self._start_local_proxy()
         # NOT block_images: tried 2026-10-09 to save metered proxy traffic - DataDome challenged the image-blocked Chrome
         # (run 38010995054: three blocks, 0 quotes) while the full page passed (38010541980: 78 / 78). Keep the full page.
         kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True)
         if proxy_arg:
             kw["proxy"] = proxy_arg
-        self._cm = SB(**kw)
+        self._cm = self._SB(**kw)
         self.sb = self._cm.__enter__()
-        atexit.register(self.close)
-        self.new_session()
 
     def close(self):
-        try:
-            self._cm.__exit__(None, None, None)
-        except Exception:  # noqa: BLE001
-            pass
+        if self._cm is not None:
+            try:
+                self._cm.__exit__(None, None, None)
+            except Exception:  # noqa: BLE001
+                pass
+            self._cm = None
         if self._lp:
             self._lp.terminate(); self._lp = None
 
     def new_session(self):
+        # first call: start; after a DataDome block (Quoter.quote bumps self.ti): restart Chrome on a new proxy session
+        self.close()
+        self._start()
         ok = self._open_alive(self.sb, "https://app.prizepicks.com/", "pp app", tries=6)
         for _ in range(2):
             try:
