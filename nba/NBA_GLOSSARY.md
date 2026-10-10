@@ -2236,3 +2236,8 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **gap program G1–G4** | G1 whole-number lines, G2 deep rungs beyond the ladder, G3 rookies, G4 Underdog live keys | `NBA_SYSTEM_DESIGN.md` `§T39.7` |
 | **current-roster rule** | the daily ladder projects recent participants still on the team ∪ current-roster players with history | `NBA_SYSTEM_DESIGN.md` `§T39.7` |
 | **rolled-back integration test** | `integration_test_rollback.py`: production entry points end to end in one transaction, then rolled back | `NBA_WORKERS.md` `§T39.4` |
+| **`p_eq` (EV-equivalent probability)** | `(pc − SE)(1 − p_tie) + 0.5·p_tie` — a whole-number leg's win probability after the safety discount, with a tie valued at half a win | `NBA_BASELINE_CALIBRATION.md` `§T40.5` |
+| **currency map (`wn_currency_map`)** | isotonic map from a cell's raw score to realized hit, used to place an honest whole-number price on the cell's raw-score scale | `NBA_DATABASE.md` `§T40.6` |
+| **selection leg pool (`tier_map_legs_sel`)** | certified tier map + whole-number legs as live prices them — what the certified slips, P5 and the monitors are now built on | `NBA_DATABASE.md` `§T40.6` |
+| **routing (G2)** | rungs beyond the certified depth written to `final_hp_derived` instead of `final_hp` / `board_scored`, so selection never sees them | `NBA_SYSTEM_DESIGN.md` `§T40.7` |
+| **certified depth** | per-prop maximum |offset| in the certified history (`selection_certified_depth` config) | `NBA_DATABASE.md` `§T39.6` |
