@@ -3514,3 +3514,19 @@ these twelve.**
 ⚠ **The design as `T34` wrote it vs the repo today**: `§29a` gave P4 **two scheduled legs** (PICK `21:45 UTC`, GRADE `16:30 UTC`) and `§29b` gave P5 **a Monday `20:00 UTC` cron after P1**. ✅ Live, neither workflow carries a `schedule:` — P4 is dispatch-only (last commit `1c4db9a8` `2026-10-08`), P5 is callable (`29a011cb` `2026-10-09`). *The change belongs to a later transcript (RULE 6).* → ✅ **resolved by `T35` (`2026-10-01 19:44Z`) — see `§T35.4` below.** `live_slip_engine.py` was `15,529` bytes at its first commit (`e5528634`, `2026-10-01`) and is **`118,512`** bytes today.
 🔑 **Two safety rails built into the engine** (✅ in code today): `build_slip_engine.py` **refuses** (`SystemExit("REFUSED: …")`) to write a test leg source or a star-Under test into the unsuffixed certified tables; P5 **never** stakes, adds or replaces strategies, or overrides a red (*"by design"*, `§29b`).
 🔴 **Performance rule learned in `§24`** (standing for every join in this system): **`norm_name()` inside a join defeats every index** — a one-day `EXPLAIN` showed a full sequential scan + sort of `451k` universe rows per day; the certifier ran `38` min without finishing. Fix: precompute normalized keys into indexed temp tables (`~4` min).
+
+---
+
+## 🆕 **§T35.4 — `T35` (`2026-10-01`): DELTA KNOBS, THE SLIP LAYER INSIDE P1/P2/P3, AND THE ENGINE'S NEW MODES** *(source `T35`, `NBA_MASTER_SUMMARY.md` `§T35`; ✅ = in the repo `2026-10-10`)*
+| where | change in `T35` | ✅ today |
+|---|---|---|
+| `nba/build_tier_map_bands.py` | **`TM_DELTA=1`** / **`TM_SINCE`** — only days past the table's high-water mark; season windows **data-driven** (the hardcoded two-season list would have silently excluded 2026-27) | lines `98`–`103` |
+| `nba/build_slip_engine.py` | **`SE_DELTA=1`** / **`SE_SINCE`** — all legs loaded, only new days built; **`SE_DIVERSIFY`** default **on** (`§29k` pass 6); the report SQL's `full` column renamed (reserved word — every run had ended `failure` after committing) | `SE_DIVERSIFY` line `52` (`'1'`), delta lines `376`–`380` |
+| `nba/live_slip_engine.py` | day-blocked H1/H7 (z on `sd_daily_hit`); **shadow slips** (`placed_shadow` / `graded_shadow`); **`dup`**; **`EXCLUDE_BY_FAMILY`**; week-2 paper record from the steals-excluded pool + low-event tilt; replay mode simulates P5's Monday PASS; `LS_BOOT` | `EXCLUDE_BY_FAMILY` line `120`; `placed_shadow`, `dup`, week-2 logic present (the file has grown to `118,512` bytes since) |
+| `nba-p3-afternoon-light.yml` | **final step = the slip PICK** (`LS_MODE: "pick"`) on P3's resolved slate | line `580` |
+| `nba-p2-overnight-heavy.yml` | **final step = the slip GRADE** | ⚠ **moved**: today the grade is in **`nba-p2a-results.yml`** line `334` (`LS_MODE: "grade"`; an `edge` step at `347`) — the P2A/P2B split is later (RULE 6) |
+| `nba-p1-weekly-static.yml` | **final job = P5** via `workflow_call`, `needs: weekly` | line `290` `uses: ./.github/workflows/nba-p5-weekly-requal.yml` |
+| `nba-p4-live-slips.yml` | schedules **removed**; manual only (pick/grade on a date, `replay`, `calibrate`); default mode `pick` | `workflow_dispatch` only |
+| `nba-p5-weekly-requal.yml` | schedule **removed**; `workflow_call` + `workflow_dispatch`; weekly precision `SV_BOOT=2000`, `SV_NULL=30` set in the step env (a dispatch input and a repository-variable route were both tried and dropped while GitHub refused the file) | `workflow_call` + `workflow_dispatch` |
+**Measured cost** (build chat, `18:48Z`): P4 pick `< 1 min`; P4 grade `2–6 min` (the 10k bootstrap per strategy grows with the ledger); P5 full `~2 h`, delta `~70 min`, delta + weekly precision **`~30 min`**.
+🔑 **Process rule adopted in `T35`** (after the owner's `21:28Z` frustration): a **local state-machine simulator** (*"runs the full season of real daily hit series in under a second"*) is *"the required test before any hurdle change ships"* — hour-long replays are for confirmation only.
