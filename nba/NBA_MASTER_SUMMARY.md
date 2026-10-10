@@ -46232,3 +46232,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `89` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T37`.
 - ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+# §P90 — PASS 90 (`2026-10-10`): THE FOURTH BAND OF `T37`'S FULL READ; THE RE-RUN
+*Angle (as NEXT set it):* (s6) every strategy-text sentence of `T37` whose four-word coverage against the docs is `0.50`–`0.70` — `86` of `424` on the recount at the start, read whole; at this coverage each sentence's uncovered words (those no four-word run on file reaches) were listed first and traced by key phrases and figures; each candidate searched on file by its substance and its section read from its block's own heading, checked before the line was written. (t6) the ≥ `5` scan re-run on `T37` after the additions (`193` of `456` sentences with a run), compared against every earlier tier's list: `0` new sentences (`4` runs changed wording on sentences the earlier lists already held — the additions covered part of each).
+- 🆕 Not on file (AS STATED, in `§T37.9`): six clauses — `§30s`'s drift definition and its reason for rebounds F2's casualty, `§30t`'s reading of the in-sample figures, `§30u`'s interval for the 2-pick, `§30v`'s reading of the under-heavy result, `§30w`'s second flat.
+- Judged, not recorded: table headers; the research link on usage after absences; `§30r`'s cross-check clause in `§30s` (the supersession and the measurements both on file); the sizing simulation's setup (its Kelly fractions on file); the no-game-day context of the label defect (the defect and its counts on file).
+- Band counts after this pass's additions (coverage `< 0.15` / `0.15`–`0.30` / `0.30`–`0.50` / `0.50`–`0.70` / `≥ 0.70`): `67` / `39` / `58` / `81` / `179`.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-89 census commit: `qdiff.py` `0` flags (`6` quotes counted).
+
+**Ledger**: pass `90` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- ✅ **CLOSED `3`/`3`**: `T32`–`T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
