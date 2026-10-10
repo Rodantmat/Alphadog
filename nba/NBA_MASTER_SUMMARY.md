@@ -47158,3 +47158,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `151` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T29` done (`11,332` sentences); next `T30`.
+
+# §P152 — PASS 152 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T30`
+*Angle (as NEXT set it):* (r9) `§P131`'s method on `T30`.
+- Tabulated in the shell before this line (the scan at pass 151's head): `T30` `35` of `40` sentences listed — **all `35` read and judged** (`2026-09-27 22:02Z` → `22:07Z`, the capture-export exchange that `T31` continues).
+- Judged, all of it: mitmproxy export and upload troubleshooting (the record's entry row `30` already calls it "a null result"; the blank-upload cause, UTF-16, is on file from `§T31.1`); the Sleeper `available_alt` and one-sided calls named in passing (on file, `§T31.1`, `§T29.1`); one further Sleeper endpoint seen in the capture and used by no file in `nba/`, below the docs' grain.
+- **Nothing new — `T30` clean in additional sweep `1`.** No commit other than this pass's landed since `e31060ed5` when this line was written. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `152` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T30` done (`11,367` sentences); next `T31`.
