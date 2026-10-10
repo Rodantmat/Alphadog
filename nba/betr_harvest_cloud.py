@@ -383,30 +383,18 @@ def main():
                     print("seed failed:", str(exc)[:100], flush=True)
             where(sb, "after seeding")
             # clear geo + reach a booted page
-            for i in range(40):
-                url = sb.get_current_url(); src = sb.get_page_source() or ""
-                if "AllowLocation" in url:
-                    for xp in (f'//*[normalize-space(text())="{STATE}"]', f'//li[contains(.,"{STATE}")]',
-                               f'//option[normalize-space(text())="{STATE}"]', '//select'):
-                        try:
-                            if xp == '//select' and sb.is_element_visible(xp):
-                                sb.select_option_by_text(xp, STATE); break
-                            if sb.is_element_visible(xp):
-                                sb.click(xp, timeout=3); break
-                        except Exception:  # noqa: BLE001
-                            continue
-                    time.sleep(4); continue
-                if len(src) > 5000:
-                    break
-                time.sleep(3)
+            clear_geo(sb)
             # navigate to the league board. ONE detached navigation to the app root (the old /lobby/<league> route redirects
             # to /picks/home/lobby anyway), then everything in-page with the CDP session attached: the league chip is
-            # pressed with a real mouse (click_league) so the app itself fires getEventsWithFilteredPlayers for the league.
+            # pressed with a real mouse (click_league) so the app itself fires LeagueUpcomingEvents for the league.
             try:
                 sb.uc_open_with_reconnect(URL, reconnect_time=4); time.sleep(4)
             except Exception:  # noqa: BLE001
                 pass
             enable_network(sb)
+            # the geo prompt can come back on this load (run 38006831834: seeding landed on a booted root page, so the
+            # first pass had nothing to clear, and the root reload asked for the state) - clear it again, in-page
+            clear_geo(sb)
             where(sb, "after root (attached)")
             print(f"  league chip click: {click_league(sb)}", flush=True)
             time.sleep(4)
