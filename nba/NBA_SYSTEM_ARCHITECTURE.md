@@ -2635,3 +2635,19 @@ P1  = Mondays 19:00 UTC
 **The split** (owner's proposal `02:25Z`, built `§29z-d`): **P2A** (`nba-p2a-results.yml`) = last night — mining, per-game matchups, season files, loads + verify, gap audit, grading, prune + yesterday's `final_hp` rebuild, **paper and slip grades**. **P2B** (`nba-p2b-slate.yml`) = today — the day-before injury report as of the 09:00 ET baseline cutoff, referee crews polled until posted (deadline P3 − 85 min, then the D1 fallback), **the live 08:00 PT morning game line** + market export on game days only, the refits, today's ladder, `final_hp`, certification. *"Every step was taken verbatim from P2"*; the only new script is the morning-line capture. **P2 is a retired stub** that refuses to run.
 
 ✅ **Live `2026-10-10`**: worker **`v2.3.0`** (later changes noted in its header: stale-claim recovery v2.2.0, a recovered predecessor blocks successors v2.2.1, postseason slates v2.3.0 — later transcripts; and a fifth workflow, **`CLOSE: nba-close-capture.yml`** at first tip − 25 min, `§31c`) · `nba_control.scheduler_switch` `enabled = true`, `last_tick` current to the minute · `scheduler_plan` (`run_key, first_tip, p2a, p2b, p3, p3_deadline, computed_at`) `8` rows to `2026-10-09` · `scheduler_dispatches` `23` · `scheduler_log` `25` · `pipeline_runs` `25` across `P1`, `P2A`, `P2B`, `P3` · GitHub schedules: **P2A keeps a late fallback cron `30 13 * * *`**; **P2B none** (*"P2B depends on P2A, so only the scheduler worker starts it"*); **P3 none** (*"a late fallback pick is worse than no pick"*). ⚠ P3's YAML comment still reads *"fired … at 21:16 UTC, with watchdogs at 21:21 and 21:26"* — the v1 fixed time; the worker's v2 header governs.
+
+---
+
+## 🆕 §T37.8 — **THE DAILY CHAIN AFTER THE WIRING AUDIT (`2026-10-03`): TWO BOARDS, ONE CHAIN, ISOLATED PAPER STEPS** *(source `T37`; AS STATED from strategy `§31`–`§31f`; ✅ = the committed workflow files `2026-10-10`)*
+Step order **verified programmatically on the committed workflows** by the build chat (`§31d`), re-read here:
+```
+P2A (03:30 PT or earlier) … ingestion → load → verify → PrizePicks slip GRADE → Underdog paper GRADE (continue-on-error)
+P2B (08:05 PT or earlier) name-map REFRESH → injury report → morning game line → MORNING DFS snapshot (has_games, c-o-e) → … → final_hp
+P3  (min(13:15, tip−30)+1) injury report → PrizePicks board → window archive → rung keys → tiers → score → PrizePicks PICK → Underdog paper PICK (c-o-e)
+CLOSE (first tip − 25 min) close board, PrizePicks + Underdog, label 'close', input-free   ← scheduler v2.1.0
+```
+- **Isolation rule**: the Underdog steps and the name-map refresh are `continue-on-error` — *"paper only, they can never disturb PrizePicks."*
+- **The PrizePicks live pick now reads the live tables** (`pp_leg_price` → name map → `final_hp`), not `prop_universe` — the audit's blocker (`NBA_DATABASE.md` `§T37.6`).
+- **Timing budget on early slates** (`§31f`): ~29 min from P3's dispatch to the first tip; scorer `20 s`, both picks `< 30 s`; P3 dominated by the capped board scrapers (PrizePicks 7 min, others 5 min in parallel) — worst case `~15–17` min.
+- **Opening night (2026-10-20)** simulated minute by minute with the deployed scheduler's own `computePlan` / `decide` / `decideClose`: P2A 03:30 → P2B 08:05 → **P3 11:31** → close 11:35; P3's own gate cutoff is 11:30 (*"a late start runs with a LATE RUN warning"*). A P2B stuck 4 h → P3 stops waiting at its deadline and runs; its freshness gate refuses a pick without today's scores.
+- ✅ **Live**: P3 line `587` *"Underdog paper pick (P5 + P4 shadow)"*; P2A line `352` *"Underdog paper grade"*; P2B line `184` *"Refresh the player name map"*; `nba-close-capture.yml` present; worker `WORKFLOWS.CLOSE = "nba-close-capture.yml"`.
