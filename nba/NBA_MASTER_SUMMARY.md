@@ -44436,3 +44436,17 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - **CLEAN `3`/`3` → ✅ CLOSED**: `T48` (passes 5, 6, 7).
 - **CLEAN `1`/`3`**: `T38`, `T39`.
 - **CLEAN `0`/`3`** (pass 7 found NEW MATERIAL): `T32`, `T34`, `T36`, `T37`.
+
+---
+
+# §P8 — PASS 8 (`2026-10-10`) ON `T32`, `T34`, `T36`–`T39`: THE NARRATION'S VERDICTS
+*Angle (n):* every prose sentence of `70`+ characters carrying a verdict word (*found, fixed, rejected, confirmed, wrong, broke, missing, superseded, refuted, falsified, defect, bug, failed, silently*) with **no** `28`-character window in the twelve — `T32` `201`, `T34` `28`, `T36` `82`, `T37` `68`, `T38` `15`, `T39` `50` — each read in place. Nearly all restate recorded findings in other words (the drift incident, the open-items rulings, the overconfidence map, G4's Underdog stat keys, the rebounds `6 → 10` revert, the edge-monitor design, the scheduler, `pdfplumber`); the residue, recorded here *(AS STATED)*:
+
+| transcript | the verdict no section carried | verdict |
+|---|---|---|
+| `T34` | 🆕 **a validator bug on its first run** (`§28`, `2026-09-30 22:04Z`): *"I'd used concentration as a selector, which disqualified 114 of 117 S1-positive strategies; MLB used it as a post-hoc flag, and that's what it is now."* | **NEW MATERIAL** |
+| `T36` | 🆕 **Bayesian online changepoint detection, tried as a drought detector and rejected**: *"on an all-or-nothing daily series it fires on every 0/22 day, detecting bad days rather than droughts"* — the reason the drought state stayed a threshold on a smoothed cell rate | **NEW MATERIAL** |
+| `T37` | 🆕 the name-map refresh's first live effect — **`5,169 → 5,213` entries**, every active player resolving (✅ `5,221` today; the earlier `5,169` live claims elsewhere are pre-refresh); 🆕 *"Overpriced stars on heavy favorites: rejected across the full Underdog board (51% either way)"* — one of `§30y`'s new angles not named in `§T37.2` | **NEW MATERIAL** |
+| `T32`, `T38`, `T39` | nothing outside recorded findings | **CLEAN** |
+
+**Ledger**: pass `8` complete (`2026-10-10`). **CLEAN `2`/`3`**: `T38`, `T39`. **CLEAN `1`/`3`**: `T32`. **CLEAN `0`/`3`** (pass 8 found NEW MATERIAL): `T34`, `T36`, `T37`.
