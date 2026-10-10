@@ -44846,3 +44846,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `18` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T32`, `T36`.
 - **CLEAN → `3`/`3` ✅ CLOSED** (passes 16–18): `T33`.
+
+---
+
+# §P19 — PASS 19 (`2026-10-10`): (ii) THE BUILD CHAT'S OWN COMMIT MESSAGES — `T32` (`119`) AND `T36` (`198`)
+*Angle (ii):* the build chat wrote a one-line summary into every commit it made (strategy doc, COMPASS, code, workflows). Each message was matched against the twelve — every figure mechanically (the extended check of `§P18`), and every named mechanism, flag, status literal and fix by a read of the message list.
+- **`T32`** — all `119` messages resolve: the Betr build (`§T32.1`, `NBA_WORKERS.md`), COMPASS facts `108`–`127`, the strategy doc `§5`–`§13e` (the slip-program rows of `§T32`, `NBA_BASELINE_CALIBRATION.md`, `NBA_GOBLIN_DEMON.md`); the one unmatched figure (`111k` defender-rating rows) belongs to a test whose verdict — *blocked (no data)* — is recorded. **CLEAN.**
+- 🆕 **`T36`** — two things the commits record and the twelve did not: **(1)** calibration **crashed on the no-steals strategies** (the CUSUM leg stream read the certified table by name; fixed to the strategy's own table, and a strategy with no backtest legs is skipped with a warning — ✅ live `live_slip_engine.py:1251`, `:1264`) → `§T36.6` #5; **(2)** the `live_slips` status literals `T36` added — `placed_week2_skip`, `placed_capped`, `placed_late` and their graded forms (✅ live `:869`, `:923`–`:927`) → `NBA_DATABASE.md` (`live_slips.status`). Everything else resolves — e.g. `SE_SAMETEAM` (rejected, `§T36` passes 38–62), the week-2 kill switch, `MAX_DAILY_STAKE`, the calendar defects (`T36-4`), the live parity breaks (`T36-7`), the scheduler (`T36-1`), the Underdog certification (`NBA_MULTIPLIERS.md`, `§30i`).
+- *(jj)*, the tool results the chats read but did not restate, is **not run this pass** — it moves to pass 20.
+
+**Ledger**: pass `19` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T32`.
+- **NEW MATERIAL → `0`/`3`**: `T36`.
