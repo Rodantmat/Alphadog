@@ -221,8 +221,9 @@ class BrowserQuoter(Quoter):
         self.target = "browser"
         os.environ.setdefault("BETR_SESSION_ID", f"ppmap{os.getenv('GITHUB_RUN_ID', '0')}")
         self._lp, proxy_arg = start_local_proxy()
-        # images blocked: the residential proxy is metered (DataImpulse, per GB) and the quotes are API calls
-        kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, block_images=True)
+        # NOT block_images: tried 2026-10-09 to save metered proxy traffic - DataDome challenged the image-blocked Chrome
+        # (run 38010995054: three blocks, 0 quotes) while the full page passed (38010541980: 78 / 78). Keep the full page.
+        kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True)
         if proxy_arg:
             kw["proxy"] = proxy_arg
         self._cm = SB(**kw)
