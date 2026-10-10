@@ -45141,7 +45141,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 # §P40 — PASS 40 (`2026-10-10`): (ggg) THE WHOLE `T36` RECORD RE-TRACED AT A LOOSER BAR
 *Angle (ggg):* `senttrace.py` at `25%` over the `67` final replies and the narration (sentences with any figure not on file); `qall.py` over the full `§T36` section (`202` quotations); `numcheck.py` over the final replies and the narration against the docs plus the strategy text.
 - 🆕 **`T36`**: two figures the earlier traces passed over because their sentences were otherwise on file — *"2,391 players ruled Out after the pick"* (the `01:01Z` reply) → the `§29n` row; replay #5's *"2,627 slips"* (`18:18Z`) → `§T36.6` #4.
-- `qall.py`: `12` flags, all already accounted for — the three quotations struck in pass 39 (still shown under their strikes), one struck composite (pass 24), six inner-quote renderings, and two where the owner's line breaks are rendered as sentence breaks (`02:25Z`) — the words exact.
+- `qall.py`: `12` flags, all already accounted for — the three quotations struck in pass 39 (still shown under their strikes), one struck composite (pass 24), seven inner-quote renderings (`"` written as `'`), and one where the owner's line breaks are rendered as sentence breaks (`02:25Z`) — the words exact.
 - `numcheck.py`: one flag, `438k` (= `438,234`, on file).
 
 **Ledger**: pass `40` complete (`2026-10-10`).
