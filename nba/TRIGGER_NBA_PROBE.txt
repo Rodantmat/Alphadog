@@ -1,2 +1,1 @@
 script: probe_price_shop_ledger.py
-# 2026-10-09 regression run after the Sleeper slip-haircut root (sleeper_payout tunable)
