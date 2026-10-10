@@ -2752,6 +2752,27 @@ payouts (95th-percentile drawdowns 1.2–4x larger). **Consequence for the openi
 less edge and more drawdown than certified on 10-08; the Power strategies are untouched. Detail: ledger "PAYOUTS PROVEN APP BY
 APP", PP_PAYOUT_FINDINGS §0k.
 
+### 31ae. The All-Star window on the true payouts — pre-break plan rebuilt, post-break stays normal (2026-10-10; owner: "all-star games totally dropped, but the weeks/days before and after must be measured and properly addressed with the correspondent strong strategy")
+**The games.** The All-Star games (game_id 003) are never a slate — 0 in `nba_calendar.slate_games`.
+**Measured** on the regraded market-free twins (§31ad), final week out, both seasons (break after 2025-02-13 / 2026-02-12, games
+resume 02-19 both years), windows = the 7 days before the break (the engine's `in_allstar_week`), days 1–7 and 8–14 after.
+Per live strategy at its own cap (ROI 2024-25 / 2025-26): **before** — A_wsteals_5flex +49 / +14 (42 slips a season),
+W_core_3power +41 / +116, W_coredemon_3power +18 / +18 positive in both; A_regular_5power −100 / −100, both demon strategies
+negative, A_core_3power, D_points_3power, C_wstocks_4flex, A_wrebounds_4flex flip sign. **After** — the normal portfolio is the
+strongest play anywhere in the window.
+| window | plan | slips | net | 2024-25 | 2025-26 | worst day |
+|---|---|---|---|---|---|---|
+| 7 days before | normal portfolio | 210 | +17.5 | +22.4 | −5.0 | −15.0 |
+| 7 days before | old B (demon leg now red) | 56 | +35.5 | +9.8 | +25.7 | −4.0 |
+| 7 days before | **new B: W_core_3power ×3 + A_wsteals_5flex ×6 + W_coredemon_3power ×1** | 140 | **+62.1** | **+30.4** | **+31.7** | −10.0 |
+| 7 days before | W_core ×3 + A_wsteals ×3 | 84 | +57.9 | +42.5 | +15.4 | −6.0 |
+| days 1–7 after | **normal portfolio** | 210 | **+283.3** | +83.2 | +200.1 | −11.9 |
+| days 8–14 after | **normal portfolio** | 210 | **+102.4** | +53.0 | +49.3 | −15.0 |
+**In the engine** (`ALLSTAR_PLANS`): B (default) = the new B; C (fallback) = W_core_3power ×3 alone (+41 / +116); A / D kept as
+references. A plan strategy still stakes only if its own live state allows (a red A_wsteals_5flex shadows). After the break
+no plan runs — the normal portfolio, which beats every alternative in both post-break windows. Small-sample caution: 14 slate
+days in all, two seasons; the plan is chosen because it is the only shape positive and even in both seasons, not for its size.
+
 ### 31b. Daily player name map refresh (`nba/refresh_player_name_map.py`, P2B step before anything resolves names; on-demand `nba-name-map-refresh.yml`)
 The register (`nba/data/nba_all_players.json`) is refreshed only manually and lacked all six sampled newcomers; `nba_ref.players` is current (P1 weekly). All 44 missing were plain absences (no namesake collisions). Incremental, collision-safe with the builder's own rule (absent → insert; mapped to an inactive player → repoint to the active one; mapped to a different active player → no change, logged CONFLICT), never deletes. SQL `nba_ref.norm_name` == Python `norm_name` on 10 edge cases (accents, Jr/II/III/V, hyphen, apostrophe). **Result: map 5,169 → 5,213; active players unresolved 44 → 0.**
 ### 31c. Close-board capture (`nba-close-capture.yml` + scheduler v2.1.0)
