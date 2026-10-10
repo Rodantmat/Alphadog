@@ -39181,7 +39181,7 @@ ladder_offset, role_tier, used_emp` — **from `nba_score.baseline_history`.**
 **Live column list, `information_schema`, `2026-09-22`: `baseline_history` has TWENTY columns.**
 `n_uncertain` **is not among them** and no book-implied price is either, **so `f_time` and `f_agree`
 are pinned for want of an input** *(and `f_vol`/`f_exp` need a per-player history aggregate `P3`
-never builds)* — **defensible engineering, recorded nowhere.**
+never builds)* — **defensible engineering, recorded nowhere.** → 🆕 *`2026-10-10`, additional sweep `1`: T18 states the same reason for the engine's placeholders three days earlier (graded history the engine does not join at build time) — `§T18.8`.*
 
 🔴🔴 **But `proj_min` and `rate36` ARE among them — columns 19 and 20 — and the `SELECT` does not
 list them.** **`f_complete`'s divergence is AVAILABLE-BUT-UNUSED, not input-absent.**
