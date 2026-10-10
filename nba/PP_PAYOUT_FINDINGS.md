@@ -202,6 +202,25 @@ the calibration ever had. The name-map defect is repaired in the calibration its
 
 ---
 
+## 0k. 🔴 FLEX WITH GOBLINS / DEMONS — THE PARTIAL TIERS ARE FLAT, AND THE GRADER HAD SCALED THEM (2026-10-10)
+- **The law, from PrizePicks' own quotes** (48 MIXED quotes run 38020184454; 40 all-demon 3-/5-Flex quotes probe 38021265189,
+  `nba/probe_pp_demon_flex.py`; the 2026-09 WNBA mining — 917 quote tiers in all): with alternates in a Flex slip, the
+  **one-miss and two-miss tiers barely move with the factor product** — 3-Flex one miss ≈1.0x for fp 0.8–3.4, 1.5x at 3.6–3.9,
+  2.0x at 5.4, 2.25–2.5x at 6.4–6.8, 3.5–3.75x at 11.7–13.1, 10x at 52.7; 5-Flex one miss ≈2.0x up to fp 6.8, 8.5x at 9.8,
+  15–17.5x at 22–25; 5-Flex two misses 0.4x up to 6.8, 2x at 9.8, 3–4x at 22–53 — while the **all-hit tier rises faster than
+  FLEX × fp** (5-Flex fp 5.43: 87x; FLEX × fp compressed = 42x). Same picks re-quoted can differ by one rounding step (5-Flex
+  4/5: 15 vs 17.5) — the tiers carry a per-leg term we cannot see (as §"FLEX TIER RULE" found for 2-pick consolations).
+- **What was wrong:** `build_slip_engine.grade` paid FLEX[(n, hits)] × ∏ factors on every tier — the partial tiers 2–5x too
+  rich. "Demon Flex slips underpay anyway" (§FLEX TIER RULE, 2026-09-21) was true of the all-hit tier only.
+- **The fix:** `pp_slip_rules['flex_alt_tiers']` = the lower envelope of the quoted (fp, payout) points per size and misses,
+  interpolated in ln(fp), clamped (mean model/quote 0.95, max 1.013); `nba_market.pp_flex_alt_payout()` /
+  `pp_flex_alt_segments` (`nba/sql/pp_flex_alt_payout.sql`) = `build_slip_engine.flex_alt_payout` — one grader for live,
+  backtest, validator, certifier; rebuilt after every payout-map run (`nba/build_pp_flex_alt_tiers.py`); backtests re-priced by
+  `nba/regrade_pp_flex_alt.py` (P5 step 3f; old payouts kept in `payout_grader_v1`). Effects and verdicts: ledger "PAYOUTS
+  PROVEN APP BY APP".
+- **Power with alternates is unaffected and proven:** `pp_slip_power_conservative` never above the quote on all 48 MIXED live
+  quotes (closest 0.8% under); best estimate mean |error| 2.0%.
+
 ## 0j. 🔑 THE QUOTE ENDPOINT IS BACK — THROUGH A REAL CHROME (2026-10-09)
 - **The break:** from 2026-09-30 every `/game_types` quote from `pp_payout_map.py` (curl_cffi, chrome145/146/150) got
   DataDome's captcha interstitial (403; NBA and WNBA files `nba/data/pp_payouts*/` from 09-30 on: 0 quotes answered; last
