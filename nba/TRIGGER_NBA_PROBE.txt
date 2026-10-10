@@ -1,1 +1,2 @@
 script: probe_ud_future_props.py
+# rerun: print every price field
