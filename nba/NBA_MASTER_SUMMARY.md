@@ -44733,6 +44733,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **P-3's sample**: *"Sample 2024-25 points + rebounds: 50 dates, 90 games, 245 players, 39,459 board-scoped rows."*; and *"Board tiers built for any postseason date lacking them."*
 - **The verdict's best cell, weighed**: *"eligible cells pra_R_U (0.660 / 0.702), steals_R_U, stocks_R, points_R, pts_ast_R, pts_reb_R, blocks_R, rebounds_D3, rebounds_R"*.
 - **Retention**: *"the twin tables are rebuilt from committed files"* (that their certification tables join the weekly ledger archive is on file).
+- 🆕 *(pass 62, `colocAll.py` — one more, AS STATED)*: the first postseason alone — *"On one postseason (2024-25) no strategy passed (best +67% / +47% / +41% at k = 1, every lower bound < 0) — the two-season verdict is in the ledger."*
 - ⇒ **`T45` fails the deep check — REOPENED, CLEAN `0`/`3`** (`S7` not reopened).
 
 # §T46 — `T46` · `2026-10-09-02-50-53-nba-playoff-roi-playoff-research-31x-31y` *(transcripts pack `2026-10-09`)* — 🆕 **POSTSEASON PARITY PROVEN WITHOUT TOUCHING THE REGULAR SEASON; THE OWNER'S ROI QUESTIONS ANSWERED WITH AN HONEST 2026-27 RANGE; THE PLAYOFFS STUDIED THROUGH THE WHOLE METHOD — ONLY THE MODEL'S UNDERS HOLD; A POSTSEASON GAME-KEY DEFECT; "PLAYOFF UNDERS" BEGINS**
