@@ -45770,3 +45770,19 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T35`, `T37`, `T39`, `T40`, `T43`, `T47`; **back to `0`/`3` from a clean count**: `T32`, `T36`, `T46` (from `1`/`3`), `T48` (from `2`/`3`).
 - **CLEAN → `1`/`3`**: `T33`, `T34`, `T38`. **CLEAN → `2`/`3`**: `T41`, `T44`, `T45`.
 - ✅ **CLOSED `3`/`3`**: `T42` (pass 63).
+
+---
+
+# §P65 — PASS 65 (`2026-10-10`): THE EXHAUSTIVE GAP SCAN — EVERY SENTENCE, NOT A SAMPLE
+*Angle (as NEXT set it):* (s4) every strategy / `COMPASS` sentence of every open transcript marked word by word against the eleven editable documents (a word is "recorded" when any 3-word sequence through it appears there), and every sentence holding an unrecorded run of ≥ `8` words traced by hand; (t4) for `T41`, `T44`, `T45` (at `2`/`3`) this was the third angle.
+- **Scale and a deviation from NEXT:** sentences with a ≥ `8`-word run — `T32` 563 of 1,159 · `T33` 218 · `T34` 265 · `T35` 145 · `T36` 186 · `T37` 151 · `T38` 20 · `T39` 109 · `T40` 18 · `T41` 13 · `T43` 14 · `T44` 19 · `T45` 8 · `T46` 26 · `T47` 35 · `T48` 27. Every flagged sentence was traced for the ten smaller transcripts (`T38`, `T40`, `T41`, `T43`–`T48`); for the seven large ones (`T32`–`T37`, `T39`) this pass traced only the sentences with a run of ≥ `25` words (`26` · `9` · `8` · `3` · `6` · `6` · `7`); the ≥ `15` and ≥ `8` tiers carry to the next passes. Most flags were paraphrase: the record words the same facts differently, often in another section or document.
+- 🆕 Not on file (AS STATED, each in its transcript's section): **`T32`** (`§13b`'s depth headline; `§8o`'s CLV research; `§8p`'s anti-overfit protocol; `§11h`'s WOWY proxy) · **`T33`** (`§14g`'s month walk; `§17c`'s true-board change) · **`T34`** (`§28i`'s 3-Power steals floor) · **`T36`** (`§30a`'s value per leg; pass 31's premise) · **`T37`** (`§30w`'s CLV finding; `§30t`'s sweep by strategy) · **`T38`** (the monitor's false rates) · **`T39`** (the roster replay's method and per-date counts) · **`T40`** (the cutpoint rule's meaning for a live slate) · **`T43`** (`§31u`'s reason for dropping `§29v`) · **`T44`** (`§31v`'s verdict on its sources; the replay's Underdog overlap) · **`T47`** (`§31aa`'s profit reading; what venue rules are certified on) · **`T48`** (`§31ab`'s twin expectation; the 10-09 launch state; `§31ac`'s DFS-rows boundary).
+- ✅ **Clean on this angle:** `T35` (its three ≥ `25` sentences on file — the drift literature, the structures in bad weeks, the `COMPASS` `§29g–n` summary), `T41` (all `13` on file or the process rules restated), `T45` (all `8` on file), `T46` (all `26` on file or paraphrased).
+- 🔴 **An over-claim of pass 63 found and corrected:** `§T40.8`'s pass-63 bullet called gate 2's second-season count and profit new; both (`156,823` / `158,980`; `+2,374 → +2,353`, `+2,948 → +2,930`) were already in that section's pass-60 bullet. Struck in place.
+- ⚠ **Process slips, corrected by strike:** `§T32.14`'s first wording said `§13b` was superseded "within the hour" (timing not in the source); `§T33.7`'s first wording called its two passages pre-`§T33.0` levels (they are not simulated-line levels); `§T39.9`'s first wording called the "10 left" clause new (it was quoted in pass 59). One patch per message throughout this pass.
+- Every quotation added: `qdiff.py` `0` flags (`24` quotes). Credential check: `0`.
+
+**Ledger**: pass `65` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T32`, `T36`, `T37`, `T39`, `T40`, `T43`, `T47`, `T48`; **back to `0`/`3` from a clean count**: `T33`, `T34`, `T38` (from `1`/`3`), `T44` (from `2`/`3`).
+- **CLEAN → `1`/`3`**: `T35`, `T46`.
+- ✅ **CLOSED `3`/`3`**: `T41`, `T45` (passes 63–65: the hand-traced sample, the fresh sample, the exhaustive gap scan) · `T42` (pass 63).
