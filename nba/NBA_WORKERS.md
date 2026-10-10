@@ -8,6 +8,7 @@ writes. Grouped by role.
 > # 📑 **INDEX — `NBA_WORKERS.md`**
 > **Every worker and workflow** — what each does, how it is wired, what triggers it, and where it
 > fails. *Counts of workflows and crons are never quoted here; `§0.0` carries the commands.*
+> 🆕🔴 **`§T47.4` ADDED `2026-10-10`** — **`T47`: Playoff Unders `stake_mode` and parity probe, the multiplier value program (`research_multiplier_value.py`), the price-shop ledger's `m_star` columns, PrizePicks payout mining back on the NBA board.** *(End of file.)*
 > 🆕🔴 **`§T46.4` ADDED `2026-10-10`** — **`T46`: parity fills, the postseason research program (`research_postseason_program.py`), the postseason game-key fix, and the first Playoff Unders code (`playoff_unders.py`, `research_playoff_unders.py`).** *(End of file.)*
 > 🆕🔴 **`§T45.4` ADDED `2026-10-10`** — **`T45`: the postseason certifiers (`certify_candidates_postseason.py`, `certify_postseason_strategies.py`, `build_tier_map_legs_postseason.py`), slip-engine test-source options, `pick_postseason` in the live engine, scheduler v2.3.0, `slate_games` in every pipeline, parity backfill scripts.** *(End of file.)*
 > 🆕🔴 **`§T44.4` ADDED `2026-10-10`** — **`T44`: price-shopping ledger, retention scripts (model-parameter snapshots, DB-ledger and history archives), four readers moved off a table nothing wrote, referee capture log, prune guard, NBA board gap repair, and the postseason miners / loaders / builders (P-1…P-4 code).** *(End of file.)*
