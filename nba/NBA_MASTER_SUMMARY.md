@@ -46117,3 +46117,18 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T33`.
 - **CLEAN → `1`/`3`**: `T34`. **CLEAN → `2`/`3`**: `T32`, `T35`, `T37`.
 - ✅ **CLOSED `3`/`3`**: `T36`, `T38`, `T39`, `T40`–`T48` *(unchanged)*.
+
+---
+
+# §P82 — PASS 82 (`2026-10-10`): A SEED-82 SAMPLE ON EVERY OPEN TRANSCRIPT; THE RE-RUN; `T32` AND `T35` CLOSE
+*Angles (as NEXT set them):* (c6) a seed-`82` sample on `T32`–`T35`, `T37` — `20` sentences each, printed whole; every sentence read; those the checker passed accepted on the match, the rest traced by key phrases and figures, the transcript passage opened where a check came back empty; each candidate residue searched on file by its substance and its section read from the transcript's heading. Traced per transcript: `18` · `10` · `11` · `17` · `16`. (d6) the ≥ `5` scan re-run on the three still open after pass 82's additions, compared against every earlier tier's list: no flag that an earlier tier had not traced (`0` new in each).
+- 🆕 Not on file (AS STATED, in its transcript's section): **`T37`** (`§30u`'s paper-portfolio recommendation).
+- ✅ **Clean on this angle:** `T32` (its third clean angle → **CLOSED**), `T33`, `T34`, `T35` (its third clean angle → **CLOSED**).
+- Judged, not recorded: the MLB lessons (the Sleeper slot, the raw-URL lesson), the signal inventory and plan steps (`T32`); `§14e`'s season-effect caveat, resolved by `§14f` on file, and next steps (`T33`); table headers and the evaluator plan (`T34`, `T35`, `T37`).
+- ⚠ **Process slip and correction:** the `§T37.9` pass-82 bullet first wrote "stays" for a transcript that had been at `2`/`3`; corrected by strike the same pass. No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-81 census commit: `qdiff.py` `0` flags (`1` quote counted).
+
+**Ledger**: pass `82` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T37`.
+- **CLEAN → `1`/`3`**: `T33`. **CLEAN → `2`/`3`**: `T34`.
+- ✅ **CLOSED `3`/`3`**: `T32`, `T35`, `T36`, `T38`, `T39`, `T40`–`T48` *(pass 82)*.
