@@ -872,6 +872,19 @@
       "team_abbreviation": "NYK"
     },
     {
+      "id": 1643749,
+      "full_name": "Dion Brown",
+      "last_comma_first": "Brown, Dion",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "dion_brown",
+      "team_id": 1610612751,
+      "team_city": "Brooklyn",
+      "team_name": "Nets",
+      "team_abbreviation": "BKN"
+    },
+    {
       "id": 1627759,
       "full_name": "Jaylen Brown",
       "last_comma_first": "Brown, Jaylen",
@@ -3914,6 +3927,19 @@
       "team_abbreviation": "IND"
     },
     {
+      "id": 1630283,
+      "full_name": "Kylor Kelley",
+      "last_comma_first": "Kelley, Kylor",
+      "roster_status": 1,
+      "from_year": "2024",
+      "to_year": "2026",
+      "player_code": "kylor_kelley",
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
+    },
+    {
       "id": 1642939,
       "full_name": "Miles Kelly",
       "last_comma_first": "Kelly, Miles",
@@ -4380,6 +4406,19 @@
       "team_city": "Minnesota",
       "team_name": "Timberwolves",
       "team_abbreviation": "MIN"
+    },
+    {
+      "id": 1643019,
+      "full_name": "Gabe Madsen",
+      "last_comma_first": "Madsen, Gabe",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "gabe_madsen",
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
     },
     {
       "id": 1642863,
@@ -6215,6 +6254,19 @@
       "team_abbreviation": "DET"
     },
     {
+      "id": 1642283,
+      "full_name": "Jaxson Robinson",
+      "last_comma_first": "Robinson, Jaxson",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "jaxson_robinson",
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
+    },
+    {
       "id": 1629011,
       "full_name": "Mitchell Robinson",
       "last_comma_first": "Robinson, Mitchell",
@@ -6733,6 +6785,19 @@
       "team_city": "Oklahoma City",
       "team_name": "Thunder",
       "team_abbreviation": "OKC"
+    },
+    {
+      "id": 1628372,
+      "full_name": "Dennis Smith Jr.",
+      "last_comma_first": "Smith Jr., Dennis",
+      "roster_status": 1,
+      "from_year": "2017",
+      "to_year": "2026",
+      "player_code": "dennis_smith_jr",
+      "team_id": 1610612748,
+      "team_city": "Miami",
+      "team_name": "Heat",
+      "team_abbreviation": "MIA"
     },
     {
       "id": 1631095,
@@ -7411,6 +7476,19 @@
       "team_abbreviation": "BKN"
     },
     {
+      "id": 1643753,
+      "full_name": "Mohamed Wague",
+      "last_comma_first": "Wague, Mohamed",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "mohamed_wague",
+      "team_id": 1610612762,
+      "team_city": "Utah",
+      "team_name": "Jazz",
+      "team_abbreviation": "UTA"
+    },
+    {
       "id": 1631133,
       "full_name": "Jabari Walker",
       "last_comma_first": "Walker, Jabari",
@@ -7903,6 +7981,19 @@
       "team_city": "Brooklyn",
       "team_name": "Nets",
       "team_abbreviation": "BKN"
+    },
+    {
+      "id": 1643037,
+      "full_name": "Noam Yaacov",
+      "last_comma_first": "Yaacov, Noam",
+      "roster_status": 1,
+      "from_year": "2026",
+      "to_year": "2026",
+      "player_code": "noam_yaacov",
+      "team_id": 1610612739,
+      "team_city": "Cleveland",
+      "team_name": "Cavaliers",
+      "team_abbreviation": "CLE"
     },
     {
       "id": 1642905,
