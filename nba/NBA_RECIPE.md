@@ -387,7 +387,7 @@ that is the useful part.
 > ✅ **`6` active crons `2026-09-25`**: `P1` `0 19 * * 1` · **`P2` `45 15 * * *`** · **`P3` `15 21 * * *`** ·
 > `nba-scrape` `0 9 * * 1` · `nba-referees` `30 15 * * *` · `nba-pp-payout-map` `15 */6 * * *` *(the
 > build chat's — **out of scope**)*.
-> ~~🔴🔴 **DO NOT DO THIS BEFORE FIXING `T23-2`**~~ ✅ **`T23-2` was fixed `2026-09-24`; that precondition
+> ~~🔴🔴 **DO NOT DO THIS BEFORE FIXING `T23-2`**~~ ✅ **`T23-2` was fixed ~~`2026-09-24`~~ `2026-09-23` *(date corrected pass 114 → `NBA_MASTER_SUMMARY.md` `§T26.R3`)*; that precondition
 > is discharged.**
 >
 > ### 5 · 🚨 **DIAGNOSE A RED CERTIFIER**
