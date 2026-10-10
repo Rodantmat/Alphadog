@@ -3463,6 +3463,33 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T34.6 — **THE SLIP PROGRAM'S `T34` TABLES: MATRIX, CERTIFICATION, SLIPS, VALIDATION, LIVE** *(source `T34`, `2026-09-30 → 10-01`, recovered transcript; live row counts read-only `2026-10-10`; strategy `§` AS STATED)*
+
+All in schema **`nba_score`**; all written by the scripts in `NBA_WORKERS.md` `§T34.4`. *"T34 figure"* = the number the build chat reported; *"live"* = today's `count(*)`.
+| table | grain / what it holds | T34 figure | live `2026-10-10` |
+|---|---|---|---|
+| `tier_map_legs` *(T33, rebuilt)* | one row per PP window leg × `rank_key` (`final_hp` / `baseline_hp` / `final_score`): tier (system's), `factor` (current per-line), score, hit, `n_rank`, `cell_size` | `828,818` per rank, `323` days | ✅ `828,818` × `3`, `323` days |
+| `tier_map_bands` / `tier_map_summary` *(T33)* | per (rank, window, prop, tier, cut) — `cut_type` `n` or `pct` | `10,141` band rows after `§19m` | `30,411` / `990` |
+| `tier_map_player_trail` (+ `_trail2`) | per leg: the player's **prior** hit rate on (prop, tier, **side**) with appearances at 7 / 30 / 60 days and all-time | `828,818` | `828,818` (both) |
+| `tier_map_rotation` | per (day, prop, tier): realized p·m of the top-5/10/20/33/50% and top-1/3/5/10, with trailing 7/14/30/60/90-day averages over **strictly prior** days | — | `15,854` |
+| `cand_leg_features` | the `24` candidate cells' legs with every signal band attached | `440,679` | ✅ `440,679` |
+| `cand_signal_matrix` | per (cell, side, rank, cut, signal band or stack): base and enhanced p·m per season, `lift_s1` / `lift_s2`, `depth` | `116,527` (stacks to depth `5`) | `107,445` |
+| `cand_certified` | per (prop, kind, tier, side, n, rank_key, season): days, hit, mult, pm, above, `profit_per_100` — **the source of every quoted candidate number** (`§23a`) | — | `48` |
+| `certification_log` | per (`run_id`, `check_name`): PASS/FAIL, value, detail, `at` — the frozen invariant list | `52` → `54` → `66` checks per run | `23` runs; last `2026-10-08 11:19Z`, `66` checks |
+| `slip_engine_slips` / `slip_engine_legs` | one row per built slip (`game_date, season, phase, composition, size, structure, k, legs_json, hits, payout, stake, profit, same_game, same_team, teams, min_pair_corr, max_pair_corr`); `phase` carries `final7` | `483,802` → `480,246` → **`438,234`** (capped, `§28i`) | `478,900` *(rebuilt after `T34`)* |
+| `slip_engine_slips_nosteals` / `_legs_nosteals` | family C (`SE_EXCLUDE_CELLS=steals_R,steals_R_U`, `SE_TABLE_SUFFIX=_nosteals`) | `476,930` | `475,434` |
+| `slip_validation` (+ suffix) | V1–V6 per top-30 strategy | `30` | `30` |
+| `live_slips` | `game_date, strategy, k, legs_json, size, structure, status` (`placed` / `graded…` / `graded_void`), `hits, payout, profit, placed_at, graded_at, stake_weight` | replay rows **cleared** | **`0`** |
+| `live_pool` | the day's qualifying pool size per strategy | — | `0` |
+| `live_strategy_state` | per strategy: `state` (`paper` / `active` / `yellow` / `critical` / `red` / `off`), `live_cap`, days, slips, net, roi, `ci_lo`, `leg_hit`, drawdown, streak, `pool_avg`, `hurdles` | `8` strategies | `13` rows, all `paper` (+ `_ROTATION` `normal`) |
+| `live_state_history` / `live_strategy_calib` | per-day state snapshots (replay) / MC95 drawdown, streak, CUSUM `h` per strategy | — | `13` / `13` |
+| `weekly_requal` | `run_date, strategy, composition, size, structure, in_validation, v2_pass, v6_pass, oos_roi, oos_ci_lo, verdict` (PASS / FAIL / NOT_IN_TOP30) | — | `32` |
+⚠ **The figures move because these tables are rebuilt, not appended** — every engine/matrix run replaces its table; a later transcript's run is the one in the database today. *Quote the live count with its date, never a transcript's.*
+🔑 **Two `T34` data facts about other tables**: `nba_market.rung_market.nm` is **NULL on every row** (✅ `0` of `1,138,638`) — join on `norm_name(player)`; and `nba_market.prop_universe.hit` is **BOOLEAN**, not an integer (`§24` defect #1).
+🔴 **The `§21b` false negative**: the build chat concluded *"No injury table exists in the schema"* after probing `nba_context.injuries` and `nba_stats` only. ✅ **`nba_daily.injury_report_snapshots` exists — `1,378,317` rows from `2024-10-22`** (live-verified this sweep). → `NBA_OPEN_ITEMS.md` `T34-1`.
+
+---
+
 ## 🆕 §T33.6 — **THE TIER MAP AND THE `line_source` SPLIT THE SLIP PROGRAM TRIPPED ON (`2026-09-29/30`)** *(source `T33`, recovered transcript; live-verified `2026-10-10`)*
 
 | object | what it holds | state, live `2026-10-10` |
