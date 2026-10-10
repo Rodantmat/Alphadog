@@ -44948,3 +44948,15 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **CORRECTED → `0`/`3`**: `T32`.
 - **CLEAN → `2`/`3`**: `T36`.
 - **CLEAN → `1`/`3`**: `T35`, `T37`, `T38`, `T42`.
+
+---
+
+# §P27 — PASS 27 (`2026-10-10`): (ss) THE REVERSE FIGURE TRACE IN THE OTHER TEN FILES — `T32`, `T35`, `T36`, `T37`, `T38`, `T42`
+*Angle (ss):* every figure of three or more digits in each transcript's routed sections of the other ten files (`ftrace.py`: the sections whose heading carries `§Tnn.`), traced back to that transcript, the strategy doc, COMPASS or the certification ledger; lines marked as live re-reads set aside for a live check instead.
+- `6` figures did not trace, each settled: `T35` — `live_slip_engine.py`'s `118,512` bytes in `NBA_WORKERS.md` (a dated file-size observation, left as written); `T36` — `B_demon_5flex` hist max dd `115.2` (*"calibration today"*, a dated live read); `T37` — `ud_tier_map_bands` `23,004` and `ud_failed_signal_matrix` `28,127` (✅ re-taken live, exact, with `ud_tier_map_summary` `798`, `ud_cand_signal_matrix` `71,091`); `T42` — the `24.6%` of `193,604` `final_hp` rows with books (traced to the build chat's own query result, `share_with_books 0.246`) and the `board_rung_keys.src` split (✅ re-taken live: `derived 550,274 · real 4,138,772 · wn_neighbor 285`, exact).
+- No figure is wrong; nothing is new. **CLEAN for all six.**
+
+**Ledger**: pass `27` complete (`2026-10-10`).
+- **CLEAN → `3`/`3` ✅ CLOSED** (passes 25–27): `T36`.
+- **CLEAN → `2`/`3`**: `T35`, `T37`, `T38`, `T42`.
+- **CLEAN → `1`/`3`**: `T32`.
