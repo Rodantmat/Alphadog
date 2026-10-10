@@ -2196,3 +2196,13 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **P4 / P5** | P4 = daily live paper engine (`live_slip_engine.py`: pick / grade / replay / calibrate); P5 = weekly requalification | `NBA_WORKERS.md` `§T34.4` |
 | **H1–H7, `critical`, paper gate** | the live hurdle machine: CUSUM leg hit, MC drawdown/streak, pool, opening weeks, final week, pooled-steals portfolio CUSUM; `critical` = 7-day grace at cap 1; paper → active after `≥ 50` days, cap × 50 slips, live CI lower bound `> 0` | `NBA_SYSTEM_DESIGN.md` `§T34.7` |
 | **compression rule** | `payout = product` up to `9.1×`, then `9.1 × (product/9.1)^0.857` — replaces the slip program's flat `0.95` haircut | `NBA_MULTIPLIERS.md` `0.10-T22`, `§T34.3` |
+| **delta mode** | `TM_DELTA` / `SE_DELTA`: build only days past the high-water mark, with whole-history inputs recomputed; proven identical to a full rebuild | `NBA_SYSTEM_DESIGN.md` `§T35.7` · `NBA_WORKERS.md` `§T35.4` |
+| **day-blocked test** | a detector whose unit is the slate day (trailing-14-day mean daily hit vs calibrated mean, z on `sd_daily_hit`) — because a day's legs share 2–3 players | `NBA_SYSTEM_DESIGN.md` `§T35.7` |
+| **shadow slip** (`placed_shadow` / `graded_shadow`) | a stopped strategy's never-staked slip, read only by its detectors so it can recover | `NBA_DATABASE.md` `§T35.6` |
+| **`dup`** | a slip identical to one another strategy already placed that day — recorded, never staked | `NBA_DATABASE.md` `§T35.6` |
+| **`_ANCHOR_steals`** | the calibration row for the pooled steals cells across family A — what H7 reads | `NBA_DATABASE.md` `§T35.6` |
+| **week 2** | season days 7–13; negative for every strategy in both backtest seasons; the low-event week | `NBA_BASELINE_CALIBRATION.md` `§T35.5` · `T35-2` |
+| **Kind A / Kind B week** | A = the projection stops ordering outcomes (corr ≈ 0, concept drift); B = it orders them and the legs lose (variance) | `NBA_BASELINE_CALIBRATION.md` `§T35.5` |
+| **concept drift (pure)** | P(Y\|X) changes while P(X) does not — invisible to every input-side monitor | `NBA_BASELINE_CALIBRATION.md` `§T35.5` |
+| **cushion** | line minus the player's trailing-10 average; on steals Unders `0.25–0.5` hits `78%` vs `55%` below | `NBA_BASELINE_CALIBRATION.md` `§T35.5` |
+| **short / long drought** | short = 2–7 days, everything loses; long = 10–66 days, a cell or side cold for weeks while others (demons) hold | `NBA_GOBLIN_DEMON.md` `§T35.2` · strategy `§29k` |
