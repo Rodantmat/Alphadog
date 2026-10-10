@@ -3147,6 +3147,7 @@ not backlog: they are the newest and least-documented parts of the critical path
 | **calendar — late March** | cap raise 6 → 9 on full-cap active strategies (*"late-March raise"*) | weeks 22–24 the season's best |
 | **drought state** | **rotation** — EWMA (λ `0.15`) of the daily steals **or** turnovers cell hit below `0.50` → family A builds steals-excluded; `R_stocks_4power` stakes; a full-pool **shadow** slip keeps the steals cell observed so the state can release | `§29p`, `§29t` |
 | **slate size** | `≤ 4` games → cap 1 | `§29n` — the one day-level drought symptom |
+| 🆕 **holiday caution** *(pass 14, `2026-10-10`)* | **New Year's Eve and MLK Day (third Monday of January) → every strategy at cap 1** | pass 59: both lost in both seasons (`−8 / −15`, `−9 / −10` u); *"two observations each is thin, but a cap-1 day is cheap if it's noise"*; Black Friday won both, Christmas flips — ✅ `live_slip_engine.py:598–603` |
 | **leg filters** | steals Unders only at the **0.5** line; points Unders only at lines **`≤ 22.5`** (stars play through everything); `D_points_3power` Under-only | passes 45, 70, 34 |
 | **portfolio** | dedupe; **`LIVE_MAX_DAILY_STAKE` 36** units across all strategies (Gemini, pass 43) | — |
 | **hurdles** | day-blocked H1/H7, MC drawdown/streak, sticky red until P5 PASS; **state-gated strategies** (drought-only, pre-break-only) are recorded `FAIL_STATE_GATED` by P5 instead of turned red | `§29x` |
