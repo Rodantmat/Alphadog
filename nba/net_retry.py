@@ -68,6 +68,23 @@ def retry_after(resp):
         return None
 
 
+_SECRET_Q = None
+
+
+def redact(text):
+    """never print a credential: query values of apiKey / api_key / key / token / access_token / password, and
+    user:pass@ in proxy URLs, are masked in every message this module prints or raises (requests' connection errors
+    quote the full URL, query string included)."""
+    global _SECRET_Q
+    import re
+    if _SECRET_Q is None:
+        _SECRET_Q = (re.compile(r"(?i)((?:api_?key|apikey|key|token|access_token|password|secret)=)[^&\s'\"]+"),
+                     re.compile(r"(://)[^/@\s:]+:[^/@\s]+@"))
+    t = str(text)
+    t = _SECRET_Q[0].sub(r"\1***", t)
+    return _SECRET_Q[1].sub(r"\1***:***@", t)
+
+
 def _sleep(seconds, deadline, label, k, n, reason):
     if deadline is not None:
         seconds = min(seconds, max(0.0, deadline.left() - 1.0))
