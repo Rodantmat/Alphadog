@@ -45179,3 +45179,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `44` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P45 — PASS 45 (`2026-10-10`): (lll) THE CLOCK
+*Angle (lll):* `tscheck.py` (owner quotations against their message times) and a new `tscheck2.py` (every `HH:MMZ` followed by a quotation, owner or build chat, in `§T36` and the seven `T36` sections of the other files, against the corpus message that holds the words): `69` time-quote pairs found.
+- `tscheck.py`: no owner quotation under a wrong time.
+- `tscheck2.py`: `5` flags, all the script's reach rather than the record — two time ranges (`04:16Z`–`04:21Z`, `02:29Z`–`02:40Z`) where it took the range's end, one pair of times (`01:08Z`, `01:16Z`) where it took the second, and two quotations that carry their own time after the words (`22:24Z`, `05:49Z`) where it read the time before them.
+- **CLEAN** — nothing new, nothing corrected.
+
+**Ledger**: pass `45` complete (`2026-10-10`).
+- **CLEAN → `1`/`3`**: `T36`.
