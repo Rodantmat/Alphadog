@@ -412,21 +412,20 @@ class BrowserQuoter(Quoter):
 
 
 def make_quoter(px, probe=None):
-    """the transport ladder: curl_cffi (no page load, a few KB per quote) when PrizePicks answers it, else a real Chrome.
-    probe = [(projection_id, side), (projection_id, side)] - one 2-pick quote decides, and is not recorded."""
+    """the transport ladder, cheapest first: primp (current-Chrome emulation, no page load), curl_cffi, then a real Chrome.
+    probe = [(projection_id, side), (projection_id, side)] - one 2-pick quote per rung decides, and is not recorded."""
+    if TRANSPORT in ("auto", "primp"):
+        try:
+            q = PrimpQuoter(px)
+            if TRANSPORT == "primp" or not probe or _probe_ok(q, probe, "primp", tries=min(3, len(q.slots))):
+                return q
+        except Exception as exc:  # noqa: BLE001
+            print(f"TRANSPORT|primp unavailable ({type(exc).__name__}: {str(exc)[:100]})", flush=True)
     if TRANSPORT in ("auto", "curl"):
         q = Quoter(px)
-        if TRANSPORT == "curl" or not probe:
+        if TRANSPORT == "curl" or not probe or _probe_ok(q, probe, "curl"):
             return q
-        try:
-            st, txt = q._post(probe)
-        except Exception as exc:  # noqa: BLE001
-            st, txt = -1, str(exc)[:120]
-        walled = "captcha-delivery" in (txt or "")
-        if st == 200 and not walled:
-            print(f"TRANSPORT|curl|{q.target} answered (200) - the cheap path serves this run", flush=True)
-            return q
-        print(f"TRANSPORT|curl|{q.target} refused (status {st}{', DataDome' if walled else ''}) - switching to the browser", flush=True)
+        print("TRANSPORT|curl refused - switching to the browser", flush=True)
     try:
         return BrowserQuoter(px)
     except Exception as exc:  # noqa: BLE001
