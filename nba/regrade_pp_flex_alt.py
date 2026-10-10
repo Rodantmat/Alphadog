@@ -7,7 +7,9 @@ partial tiers 2-5x (48 live quotes run 38020184454, 40 all-demon quotes probe 38
 Per table: the old payout is KEPT in payout_grader_v1 (retain all data; set once, never overwritten), payout / profit are
 recomputed for every Flex slip whose LIVE legs (hit not null) include an alternate and that still plays as Flex (>= 3 live
 legs - a Flex reverting below 3 picks plays as Power and is unchanged; all-standard live legs keep the verified tables).
-Idempotent: re-running recomputes from the same legs and tiers. Batched by game_date so no statement runs long.
+Idempotent: re-running recomputes from the same legs and tiers and touches only rows whose payout changes (so a tier
+rebuild re-prices exactly the affected slips). Set-based through the view nba_market.pp_flex_alt_segments, one statement per
+season. Runs in P5 before the certification pass, so the backtest always matches the current tiers.
 Env: DATABASE_URL, REGRADE_TABLES (default: the six slip_engine_slips tables).
 """
 import os
