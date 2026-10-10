@@ -151,8 +151,15 @@ def normalise(raw_players):
 
 
 def fetch_text(url, proxies, accept):
+    """darko.app through the system retry policy (nba/net_retry.py, 2026-10-09; it was ONE attempt): proxy then direct,
+    3 attempts, full-jitter backoff, 429/5xx/connection errors retried, a final 4xx raised at once."""
+    from net_retry import RetryError, request
     h = dict(HEADERS); h["Accept"] = accept
-    resp = requests.get(url, headers=h, timeout=30, proxies=proxies, impersonate="chrome124")
+    try:
+        resp = request("GET", url, session=requests, proxies=proxies, routes=("proxy", "direct"), tries=3, base=3, cap=20,
+                       timeout=30, label="darko", headers=h, impersonate="chrome124")
+    except RetryError as exc:
+        raise RuntimeError(str(exc)) from None
     resp.raise_for_status()
     return resp.text
 
