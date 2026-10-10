@@ -45119,3 +45119,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `37` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P38 — PASS 38 (`2026-10-10`): (eee) `T36`'S STRATEGY AND `COMPASS` WRITES, FROM THEIR OWN TEXT
+*Angle (eee):* the `new_str` of every strategy-document and `COMPASS` write in `T36` (all `187` patch calls parse) split into sentences, each figure checked against the docs, and each sentence tested for whether it still stands in the current strategy file. `21` sentences carry a figure not on file; none was later overwritten.
+- 🆕 **`T36`**: the first Underdog build's per-season split → `NBA_DATABASE.md` (`ud_window_legs`); the snapped-`1.00` audit counts, the live-capture counts and the Flex fit residuals → `NBA_MULTIPLIERS.md` `§T36.3`.
+- Left at summary level, by judgment: the seven-slip shading table of `§30d` (owner MLB screenshots; superseded the same night, summarized as `0.69–0.91` in `§T36.5`) and its retracted `1.027 ± 0.060` / `0.085` (the retraction is on file); `§30c`'s `14,423`-leg efficiency figure (an MLB-reference citation).
+- The `10` `COMPASS` writes: every figure on file.
+
+**Ledger**: pass `38` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T36`.
