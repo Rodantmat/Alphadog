@@ -302,13 +302,20 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # label=window: the harvest archives the board it captures as THIS slate's decision snapshot (it lands minutes
+        # after P3's own archive step). Retried: 3 tries with backoff on any non-204 / network error.
         run: |
-          code=$(curl -s -o /tmp/betr_dispatch.json -w "%{http_code}" -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/betr-cloud-harvest.yml/dispatches" \
-            -d '{"ref":"main"}')
-          echo "betr-cloud-harvest dispatch: http $code"
-          [ "$code" = "204" ] || { cat /tmp/betr_dispatch.json; exit 1; }
+          code=000
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/betr_dispatch.json -w "%{http_code}" --max-time 30 -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/betr-cloud-harvest.yml/dispatches" \
+              -d '{"ref":"main","inputs":{"label":"window"}}') || code=000
+            echo "betr-cloud-harvest dispatch (attempt $i): http $code"
+            [ "$code" = "204" ] && exit 0
+            cat /tmp/betr_dispatch.json 2>/dev/null; sleep $((i * 8))
+          done
+          exit 1
 
       - name: Other board scrapers
         id: soft_boards
