@@ -44473,3 +44473,20 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 *Angles:* **(t)** every `nba_*` object named inside the `§T32`/`§T34`/`§T36`/`§T37` sections of the twelve (`39` distinct), re-checked for existence read-only — the six absent ones are each documented as absent (`nba_context.injuries` — the table the chat probed instead of the real one, `T34-1`; `nba_market.board_tiers` — renamed `board_tiers_legacy_20261008`, `T44-4`; `_audit_state_before` — dropped in the chat, `§T37.3`; `rank_foundation`, `slip_meta_p`, `slip_leg_features` — never built, `T32-2`/`§T33`); **(u)** every figure pair written `a / b` in those sections (season pairs, before/after) checked against the transcript and the two AS-STATED sources for **order** — a pair present only reversed would be a season swapped: **`0`** found.
 
 **Ledger**: pass `10` complete (`2026-10-10`) — **CLEAN** for all four. **CLEAN `2`/`3`**: `T34`, `T37`. **CLEAN `1`/`3`**: `T32`, `T36`.
+
+---
+
+# §P11 — PASS 11 (`2026-10-10`) ON `T32`, `T34`, `T36`, `T37`: CODE IDENTIFIERS
+*Angle (w):* every environment knob or constant the build chat named in prose or commit messages (`` `UPPER_SNAKE` `` or `NAME=value`), checked against the twelve, and the absent ones against the live code.
+
+| transcript | absent identifiers | verdict |
+|---|---|---|
+| `T32` | `FIREBASE_APPCHECK_DEBUG_TOKEN`, `MEETS_DEVICE_INTEGRITY` (the Chalkboard debug-token / Play Integrity concepts — recorded in `§T32.3` without the literal names); `GEMINI_API_KEY` (a secret's name); `C3_SAMPLE`, `SLIP_STRATEGY_V1_SPEC` (MLB-reference names); `THREE_POINTERS_MADE` (a Betr stat key, covered by the key-map note) | **CLEAN** |
+| `T34` | `T_SLIPS`, `T_LEGS` — internal table-name constants of `build_slip_engine.py` (`:81–82`), set from `SE_TABLE_SUFFIX` (recorded) | **CLEAN** |
+| `T36` | `LS_LATE` — the late pick's first switch; recorded under its later form `LS_MODE=late_pick`, retired in `T39` | **CLEAN** |
+| `T37` | 🆕 **`LS_GRADE_SOURCE`** (`boxscore` default / `universe` for parity) — live in `live_slip_engine.py:828`, never named → `NBA_SYSTEM_DESIGN.md` (PrizePicks live leg source); `AN_ONLY` — a research-script switch, not in live code | **NEW MATERIAL** |
+
+**Ledger**: pass `11` complete (`2026-10-10`).
+- ✅ **CLOSED — CLEAN `3`/`3`** (passes 9, 10, 11): **`T34`**.
+- **CLEAN `2`/`3`**: `T32`, `T36`.
+- **CLEAN `0`/`3`** (pass 11 found NEW MATERIAL): `T37`.
