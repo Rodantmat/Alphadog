@@ -42899,7 +42899,7 @@ deadline itself.
 ---
 
 > 📌 **TIERS**: ⚠ **AS STATED IN `T23`** — all figures; quotations verbatim; **not re-run by this
-> sweep**. 🔴 **`NOT RECORDED`** — the standards-only slip-level backtest; which constant set is
+> sweep**. 🔴 **`NOT RECORDED`** — the standards-only slip-level backtest *(→ 🆕 `2026-10-10`: `T23` reports one at `18:16Z` — `§T23.21`)*; which constant set is
 > current; the WNBA deadline date. ⚖️ **`pp_*` objects not queried; the WNBA table not read.**
 
 ---
