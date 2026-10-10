@@ -31,7 +31,7 @@ DEV = str(uuid.uuid4())
 
 FETCH_JS = """
 var url = arguments[0], opts = arguments[1], done = arguments[arguments.length - 1];
-fetch(url, opts).then(function(r){ return r.text().then(function(t){ done({status: r.status, text: t.slice(0, 200000)}); }); })
+fetch(url, opts).then(function(r){ return r.text().then(function(t){ done({status: r.status, text: t.slice(0, 30000000)}); }); })
   .catch(function(e){ done({status: -1, text: String(e)}); });
 """
 
