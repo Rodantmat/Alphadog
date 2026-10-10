@@ -79,7 +79,7 @@ def tables(txt):
 
 def main():
     lp, proxy_arg = start_local_proxy()
-    kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True)
+    kw = dict(uc=True, xvfb=True, locale="en-US", incognito=True, log_cdp_events=True)
     if proxy_arg:
         kw["proxy"] = proxy_arg
     n_q = 0
