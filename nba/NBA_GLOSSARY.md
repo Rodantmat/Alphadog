@@ -2228,3 +2228,11 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **δ\* (portfolio break-even)** | the uniform leg-hit shift below certified at which the portfolio's expected ROI is zero (`−9.24 pp` backtest) | `NBA_MULTIPLIERS.md` `§T38.3` |
 | **star-line Under / `stake_weight`** | a balanced Under at points ≥ 24.5, PRA ≥ 34.5, pts+ast/pts+reb ≥ 29.5; slips holding one stake 0.5 | `NBA_BASELINE_CALIBRATION.md` `§T38.5` |
 | **slate sandbox** (`sim_slate.py`) | rehearse a future slate with real code, scratch writes and rollback | `NBA_WORKERS.md` `§T38.4` |
+| **thinning (break-even by)** | keep each real hit with probability p(s)/p and regrade — lowers every leg's rate while keeping the slips' real co-movement | `NBA_MULTIPLIERS.md` `§T39.3` |
+| **tie (PrizePicks)** | a stat exactly on a whole-number line: neither win nor loss; the lineup drops one payout tier; a 2-pick Power with one tie pays 1.5× | `NBA_MULTIPLIERS.md` `§T39.3` |
+| **whole-number line / G1** | a line at an integer (ties possible); priced from adjacent half rungs, recalibrated (b ≈ 0.31) + tie model → `final_hp_derived` | `NBA_BASELINE_CALIBRATION.md` `§T39.5` |
+| **`final_hp_derived` / `final_hp_all`** | prices kept out of `final_hp` (whole-number, beyond certified depth); the view joins both | `NBA_DATABASE.md` `§T39.6` |
+| **`calibrated_p()`** | SQL function serving the recalibration map v2 (history: the other season's fit; live: POOLED) | `NBA_DATABASE.md` `§T39.6` |
+| **gap program G1–G4** | G1 whole-number lines, G2 deep rungs beyond the ladder, G3 rookies, G4 Underdog live keys | `NBA_SYSTEM_DESIGN.md` `§T39.7` |
+| **current-roster rule** | the daily ladder projects recent participants still on the team ∪ current-roster players with history | `NBA_SYSTEM_DESIGN.md` `§T39.7` |
+| **rolled-back integration test** | `integration_test_rollback.py`: production entry points end to end in one transaction, then rolled back | `NBA_WORKERS.md` `§T39.4` |
