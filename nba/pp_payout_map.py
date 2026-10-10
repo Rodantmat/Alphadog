@@ -291,12 +291,23 @@ class BrowserQuoter(Quoter):
                               "picks": [{"wager_type": side, "projection_id": pid} for pid, side in picks],
                               "pick_protection": False},
                 "game_mode": "prizepools"}
-        self.sb.driver.set_script_timeout(60)
-        r = self.sb.driver.execute_async_script(PAGE_FETCH_JS, API + "/game_types",
-                                                {"method": "POST", "credentials": "include",
-                                                 "headers": {"accept": "application/json", "content-type": "application/json"},
-                                                 "body": json.dumps(body)})
-        return int(r.get("status", -1)), (r.get("text") or "")
+        opts = {"method": "POST", "credentials": "include",
+                "headers": {"accept": "application/json", "content-type": "application/json"}, "body": json.dumps(body)}
+        for attempt in (1, 2):
+            try:
+                self.sb.driver.set_script_timeout(60)
+                r = self.sb.driver.execute_async_script(PAGE_FETCH_JS, API + "/game_types", opts)
+                st = int(r.get("status", -1))
+                if st == -1 and attempt == 1:
+                    raise RuntimeError(f"page fetch failed: {(r.get('text') or '')[:80]}")
+                return st, (r.get("text") or "")
+            except Exception as exc:  # noqa: BLE001  (script timeout - probe 38015965386 - or a failed fetch)
+                if attempt == 2:
+                    return -1, f"page fetch error: {type(exc).__name__}: {str(exc)[:160]}"
+                print(f"RETRY|pp quote (browser)|attempt 1/2|{type(exc).__name__}: {str(exc)[:80]}|reload app", flush=True)
+                self._open_alive(self.sb, "https://app.prizepicks.com/", "pp app (retry)", tries=4)
+                time.sleep(4)
+        return -1, "unreachable"
 
 
 def make_quoter(px):
