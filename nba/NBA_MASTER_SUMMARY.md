@@ -46654,3 +46654,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `117` complete (`2026-10-10`).
 - ✅ **CLOSED `3`/`3`** — **`T26`** (pass 117).
 - ✅ **CLOSED `3`/`3`**: `T1`–`T48` and `S1`–`S9` — every transcript in the corpus.
+
+---
+
+# §P118 — PASS 118 (`2026-10-10`): `T32`'S ≥ 5 LIST FROM SCRATCH, SENTENCES 1–300
+*Angle (as NEXT set it):* (j8) the transcripts closed by comparison, `T32` first: the ≥ `5` scan re-run over all twelve and every listed sentence judged from scratch.
+- `811` sentences listed (computed in the shell); `1`–`300` read whole and searched on file by substance, with a figure check beside each. Nothing new (`§T32.15`). `T32` stays ✅ CLOSED.
+- A slip caught in the same pass: `§T32.15` first called all five figure-check misses MLB or table material; one (sentence `748`) is an NBA tie-break reading, corrected the same pass.
+- No hourly-rotation commit had landed since `b4c3d80d7` when this line was written (checked on main); line `23` is re-checked after the census commit. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `118` complete (`2026-10-10`).
+- ✅ **CLOSED `3`/`3`**: every transcript. From-scratch re-judgment: `T32` `300` of `811` listed sentences.
