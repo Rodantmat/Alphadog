@@ -44120,6 +44120,14 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 `NBA_SYSTEM_DESIGN.md` `§T40.7` (whole-number legs admitted; currencies; routing) · `NBA_DATABASE.md` `§T40.6` (`wn_currency_map`, `tier_map_legs_sel`, `board_scored` routing, `final_hp_derived` derivations) · `NBA_WORKERS.md` `§T40.4` · `NBA_BASELINE_CALIBRATION.md` `§T40.5` (the currency problem; `p_eq`; the safety discount) · `NBA_MULTIPLIERS.md` `§T40.3` (tie value `M(n−1)/M(n)`; `EDGE_DELTA` −0.0916) · `NBA_OPEN_ITEMS.md` `§T40 ITEMS` · `NBA_RECIPE.md` `STEP 14i` · `NBA_GLOSSARY.md`.
 **Ledger**: `T40` pass `1` — **NEW MATERIAL**, CLEAN `0`/`3`.
 
+## §T40.5 — PASS 14 (`2026-10-10`, closing-reply re-read): FOUR DETAILS THE ARC LEFT OUT
+*All `3` closing replies read (`§P14`). AS STATED; ✅ = code `2026-10-10`.*
+- **The routing test's numbers** (`01:31Z`, real builder on 2026-01-15, points' depth lowered `14 → 10` and restored): **all `12,172` rows within depth identical**; the `976` deeper rows moved over unchanged; restoring the depth gave back exactly the original slate.
+- **The owner's worked example, answered** (`05:41Z`): a line of `11` with Over 11.5 at `60%` and Over 10.5 at `75%` ⇒ More wins `60%`, ties at exactly 11 `15%`, Less `25%`; raw no-tie chance `60 / 85 ≈ 71%` — then shrunk toward 50% by the cross-season correction, discounted by one SE, and the tie counted as half a win (PrizePicks drops the lineup one payout tier, e.g. `6×` → `3×` on a 3-pick Power).
+- **Deep combo rungs**: the history builder at live depths prices *"about 157,000 extra rungs per season that a real board posted"*; in the slip backtest they appear in `~1%` of slips and the portfolio falls `77.8% → 77.1%` and `94.0% → 93.4%` ⇒ priced daily, never selected.
+- 🔴 **A workflow that would have broken history/live parity**: `nba-combos-history.yml` was forcing the old depth `10` on every combos prop — fixed to use the live per-prop depths (✅ `nba-combos-history.yml:50–51`: the global depth is *"unset here … set, it overrides every prop"*). And one commit to `build_combos_history.py` carried a quoting error, fixed *"about a minute later, before anything ran it."*
+**Ledger**: `T40` pass `14` — **NEW MATERIAL** (`§T40.5`), CLEAN `0`/`3`.
+
 ---
 
 # §T41 — `T41` · `2026-10-07-06-41-55-nba-full-system-certification-round1` *(transcripts pack `2026-10-09`)* — 🆕 **THE OWNER ORDERS A FULL-SYSTEM CERTIFICATION; P2A HAD FAILED FOUR NIGHTS IN A ROW UNSEEN; A DEAD CLAIM WAS NEVER RECOVERED; THE REFEREE CAPTURE NEVER WORKED; THE SHARED PROXY WENT DOWN; LIVE GRADING DID NOT FOLLOW PRIZEPICKS' VOID RULES**
