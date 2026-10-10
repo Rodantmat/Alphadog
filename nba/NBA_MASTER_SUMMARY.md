@@ -44337,7 +44337,7 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 
 | transcript | (d) commit messages | (e) figures | (f) live | pass-3 result |
 |---|---|---|---|---|
-| `T32` | `§8m` market-edge design → `NBA_BASELINE_CALIBRATION.md` item 4 | clean (`2,844` = transcript line count) | clean | **NEW MATERIAL** |
+| `T32` | `§8m` market-edge design → `NBA_BASELINE_CALIBRATION.md` item 4 | clean (`2,844` = the owner's export message count, `§T32.0`, not a transcript figure) | clean | **NEW MATERIAL** |
 | `T33` | `§13g`–`§13k`, `§16f` are the `§T33.0`-voided ROI series; `§19i` = `§T33.5` | clean | clean | **CLEAN** |
 | `T34` | `§20e` within-prop mean reversion → `NBA_BASELINE_CALIBRATION.md` item 4b; `§19k`/`§19n` detail (`9,545` first band rows; `910,599` joinable vs `910,513`, `86` duplicate price keys; `10,763` sampled legs, `0/0/0` mismatches) recorded here | clean (`1,378,317` is live) | clean | **NEW MATERIAL** |
 | `T35` | clean | clean | clean | **CLEAN** |
