@@ -45197,7 +45197,7 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 - **NEW MATERIAL → `0`/`3`**: `T36`.
 
 # §P47 — PASS 47 (`2026-10-10`): (nnn) THE OPEN ENDS
-*Angle (nnn):* `27` statements in `T36`'s final replies that leave something open (*"next session"*, *"pending"*, *"candidate"*, *"third season"*, *"owner item"*, *"open question"*) each followed to an item or to its resolution.
+*Angle (nnn):* `28` lines in `T36`'s final replies that leave something open (*"next session"*, *"pending"*, *"candidate"*, *"third season"*, *"owner item"*, *"open question"*) each followed to an item or to its resolution.
 - 🆕 **`T36`** → `NBA_OPEN_ITEMS.md` **`T36-11`**: the late pick's owner-scheduled close pull had no item row — resolved later by the close capture (`§31c`, `T37`) and the late pick's retirement (`§31p`, `T39`).
 - On file or resolved: the retrain (`T35-3`); the late-March tanking Overs (*"a third-season candidate"*, `NBA_BASELINE_CALIBRATION.md` `§T36.5` #2); the week-2 play's third-season test (a live rule, watched by `live_monitor.sql` check 4); the first live `P2A → P2B → P3` chain and the Underdog live-board pricing check (both carried into `T37` — `NBA_SYSTEM_DESIGN.md` `§T37.7`); the `placed_capped` grading follow-up (done `05:12Z`); the referee scraper that *"exists but never captured"* (`§T36.6` #3); the P2A/P2B design *"pending your go"* (built); the Underdog payout screenshot (supplied `04:47Z`).
 
