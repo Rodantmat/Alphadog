@@ -17169,6 +17169,7 @@ recommends nothing and changed nothing; the measurements above are the input.**
 > 🔴 ***`market.prizepicks_board_stage` is `206 MB` at `reltuples = 0` — an EMPTY table carrying 206 MB
 > of index and bloat. The clearest reclaim in the list, and it needs no judgement about what the data
 > was for.***
+> → 🆕 *`2026-10-10`: reclaimed on `2026-09-24` — the index rebuilt `206 MB → 32 kB` on the empty table (✅ live `2208 kB`); `NBA_MASTER_SUMMARY.md` `§T27.8`. The reading above was true when taken.*
 > ⚠ **Thinnest provenance**: `stats_pitcher.metric_stage`, `market.prizepicks_board_stage`,
 > `backtest.ready_dataset`, `stats_hitter.metric_stage` — **`881 MB` combined, each named in exactly
 > ONE file repo-wide and ZERO times in the twelve.**
