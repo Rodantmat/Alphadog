@@ -46422,3 +46422,16 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `103` complete (`2026-10-10`).
 - ✅ **CLOSED `3`/`3`** — **`T37`** (pass 103).
 - ✅ **CLOSED `3`/`3`**: `T32`–`T48` — every transcript in the range.
+
+# §P104 — PASS 104 (`2026-10-10`): `T31` PASS 4 — ITS PROSE, READ IN TIME ORDER
+*Angle (as NEXT set it):* (u7) `T31`'s own text extracted from the transcript (`240` text blocks: `167` assistant, `73` owner; `2026-09-27 22:07Z` → `2026-09-28 02:41Z`), command blocks set aside, read in order and judged under `§P98`'s bar, with `T31`'s standing handling rules. The four-word coverage of its `1,366` sentences of ten words or more is low almost throughout (`1,328` below `0.15`) — the docs paraphrase this session rather than quote it — so the read was by substance, each candidate searched on file across the twelve, `T32`'s rows and the repo.
+- 🆕 Not on file (in `§T31.1`, a new section placed above `§T32`): Sleeper's ladder captured and wired, with the promo boosts and `pick_stats` (✅ code, board files and archive checked live — the WNBA board carries the session's `740` / `596`; the NBA archive has no Sleeper `_alternate` rows yet); the PowerShell UTF-16 gotcha; three Chalkboard files no doc lists (✅ live); five owner rulings, verbatim.
+- 🔁 Forward pointers (`RULE 6`) added to the four places that still carry Sleeper's ladder as missing or unresolved: `NBA_MULTIPLIERS.md`, `NBA_GOBLIN_DEMON.md`, `NBA_GLOSSARY.md`, `NBA_OPEN_ITEMS.md`.
+- Judged, not recorded: Chalkboard's API map, headers and replay results (outcome on file from `T32`); the Chalkboard pricing model's content (`PP_PAYOUT_FINDINGS.md` `§0i`); Betr's Keycloak / offline-token passages; the seventeen raw-HTTP Betr probes; the Apify cost discussion; the proxy's identity; capture-step instructions.
+- Live reads this pass: `SELECT` only (`nba_market.board_snapshots`, Sleeper keys in the last `20` days); repo files read, none changed outside the docs.
+- No hourly-rotation commit landed during the pass (checked on main before writing this line).
+- Every quotation added since the pass-103 census commit: `qdiff.py` `0` flags (`7` quotes counted); the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `104` complete (`2026-10-10`).
+- **NEW MATERIAL → `0`/`3`**: `T31` (pass 4 of its own count).
+- ✅ **CLOSED `3`/`3`**: `T32`–`T48` *(unchanged)*.
