@@ -136,7 +136,12 @@ def main():
             matches = [(mg.get("id"), mg.get("type") or "Game") for mg in (j.get("match_groups") or []) if isinstance(mg, dict) and mg.get("id")]
             calls.append(("match_grouped_lines[core]", len(store["over_under_lines"])))
         except Exception as exc:  # noqa: BLE001
+            # THE CORE CALL FAILED (after retries): this sport's board is UNKNOWN, not empty. Writing it as ok:true with 0
+            # legs (the old behaviour) archived an empty board as captured. Keep the previous file, fail the run loudly.
             calls.append(("match_grouped_lines_error", str(exc)[:80]))
+            core_failed.append(f"{sport}: {str(exc)[:120]}")
+            print(f"{sport}: CORE LOBBY CALL FAILED after retries - previous board file left untouched ({str(exc)[:120]})", flush=True)
+            continue
         # 2) per-match lines: Popular first, then every filter pill (PickemStat = stat ids discovered from the lines'
         #    over_under.appearance_stat.pickem_stat_id, MarketGroup = seeded ids) -> union = the full board
         SEED_STATS = {"MLB": ["311b6775-4d03-4466-8ab9-776442468b27", "4969134d-144f-4b30-b0bc-3e1932c84385", "53a72b17-e0a3-4d28-b98a-3ce5f7d58d92", "1f670d50-4b2e-4fde-b9c7-598418a986a1", "5efeda12-bacd-48b5-9d52-f64e00f7c9fd", "a74cd651-437c-4e6c-b011-c58789b09db7", "4dc8687c-fb40-486a-8be4-31c5a05dd3f1", "18993dd5-3442-44fd-8b09-a7d66bdf6723", "0e012ab0-1f09-40cf-8d63-85386f172dd2"]}
