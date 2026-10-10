@@ -2253,4 +2253,11 @@ ACTION, not a sweep task.** 📌 *Section `A` of `NBA_OPEN_ITEMS.md` is where it
 | **dress rehearsal (sim-slate)** | `nba-sim-slate.yml`: the full P2B → P3 → pick chain on a future slate in a sandbox, production verified untouched | `NBA_SYSTEM_ARCHITECTURE.md` `§T42.8` |
 | **`broad_day`** | the certified builder's diversification tie-break, on when ≥ 5 cell families (`_U` folded) hold ≥ 2 distinct players that day; the live pick now computes it the same way | `NBA_SYSTEM_DESIGN.md` `§T42.7` |
 | **market term / market-free twin** | the confidence deduction for sportsbook backing (`f_books`, `f_agree`) that live cannot reproduce; the certified history rescored without it (`_mf` tables) | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
+| **`live_backtest_suffix`** | the `classification_config` switch (`"_mf"`) that points every live measuring stick — hurdles, anchor, P5 simulate, edge reference, P5 verdicts — at the market-free twin tables | `NBA_SYSTEM_DESIGN.md` `§T43.7` |
+| **one slate predicate (`regular_season_games`)** | the view `nba_calendar.regular_season_games` (`game_id LIKE '002%'`) — what a slate is, everywhere | `NBA_DATABASE.md` `§T43.6` |
+| **`whole_number_nb`** | a whole-number price built from neighbour rungs (`wn_neighbor`) — priced, not selectable until backtested | `NBA_DATABASE.md` `§T43.6` |
+| **post-tip refusal (`post_tip()`)** | both live engines refuse to pick a slate after its first tip; a late P3 never scores or picks | `NBA_SYSTEM_DESIGN.md` `§T43.7` |
+| **flat board / priced board; price gate** | flat: one payout table for every leg (PrizePicks, Betr); priced: each side its own multiplier (Sleeper, Fliff) — playable only if p × m ≥ 1 + margin | `NBA_MULTIPLIERS.md` `§T43.3` |
+| **paper board** | an app without a backtest entering under the live engine's state machine, never staked before the paper gate and the sequential monitor | `NBA_SYSTEM_DESIGN.md` `§T43.7` |
+| **`AC_DEDUP`** | switch (default off) deduping standard/alternate outcomes in the as-of calibration — a round-3 chained recertification, not a one-consumer fix | `NBA_BASELINE_CALIBRATION.md` `§T43.5` |
 | **placeholder season files (`ensure_season_files.py`)** | empty current-season input files written before the first game so the builders label the opener as the new season | `NBA_BASELINE_CALIBRATION.md` `§T42.5` |
