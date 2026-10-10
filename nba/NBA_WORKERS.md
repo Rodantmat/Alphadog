@@ -566,7 +566,7 @@ the exposure countable rather than anecdotal.**
 
 > ### 🆕 §T26.14 — 🔴 **`P1` WAS CERTIFYING RED EVERY MONDAY, OUT OF SEASON — *"exactly how a team learns to ignore red builds"***
 >
-> *`T26`, `2026-09-24`. **Fixed the same day.***
+> *`T26`, ~~`2026-09-24`~~ `2026-09-23` `21:53Z` (date corrected `2026-10-10`, pass 113 → `NBA_MASTER_SUMMARY.md` `§T26.R2`). **Fixed the same day.***
 >
 > 🔴 **The mechanism.** *`P1`'s certifier demands `nba_ref.defender_ratings` be **under `8` days old**.
 > Out of season nothing refreshes it — it was stamped `2026-04-09` — so **every weekly run went red on
