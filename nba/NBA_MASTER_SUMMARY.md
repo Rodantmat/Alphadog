@@ -45154,3 +45154,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `41` complete (`2026-10-10`).
 - **NEW MATERIAL → `0`/`3`**: `T36`.
+
+# §P42 — PASS 42 (`2026-10-10`): (iii) CROSS-FILE CONSISTENCY OF THE `T36` RECORD
+*Angle (iii):* every `T36` section outside this file (`NBA_SYSTEM_DESIGN.md` `§T36.7`, `NBA_DATABASE.md` `§T36.6`, `NBA_GOBLIN_DEMON.md` `§T36.2`, `NBA_BASELINE_CALIBRATION.md` `§T36.5`, `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8`, `NBA_MULTIPLIERS.md` `§T36.3`, `NBA_WORKERS.md` `§T36.4`, the `T36-1`…`T36-10` items, `RECIPE` `STEP 14e`, the nine `GLOSSARY` rows) read against `§T36`; every figure traced to the `T36` corpus, the strategy text or `COMPASS` (all found, except the four dated live calibration values in `GOBLIN_DEMON`, which are live readings); every code line reference re-read; and every figure the sweep added in passes 34–41 re-checked against the docs as they stood **before** pass 34, with backticks stripped.
+- 🔴 **RULE 28 misses in the sweep's own additions** (the earlier novelty greps did not strip backticks): the `62`-script library check was already in `NBA_WORKERS.md` `§T36.4`; the Underdog archive's `0.60–7.89` range and `0.974` mean were already on file from the archive audits; the `41`-of-`156` early-tip count was already in `NBA_SYSTEM_ARCHITECTURE.md` `§T36.8`. Each now carries a pointer; nothing struck (the surrounding statements were new).
+- 🔴 **A pointer that resolved nowhere**: every routing list from `T32` to `T48` names `NBA_OPEN_ITEMS.md` `§T3x ITEMS`, but only `§T32 ITEMS` is a heading — the `T33-*` … `T48-*` rows sit in its one table. The heading now names all seventeen, so each pointer resolves. *(A navigation fix in the target file; no transcript's recorded content changed, so the closed transcripts stay closed.)*
+- Dated, not counted (`§P3`/`§P16` rule): `NBA_SYSTEM_DESIGN.md` `§T36.7`'s rotation reference `:981–988` → `:992–993` (lines shifted by the build chat's `2026-10-10 05:37Z` commits). The other references re-read exactly (`SE_LOWFOUL` `build_slip_engine.py:55`, `LS_ALLSTAR_PLAN` `:110`, `MAX_DAILY_STAKE` `:137`).
+
+**Ledger**: pass `42` complete (`2026-10-10`).
+- **CORRECTIONS → `0`/`3`**: `T36`.
