@@ -87,7 +87,10 @@ What had to change in `nba/betr_harvest_cloud.py` (commits 98cbdc6 … 158cfe0),
 out of season, off-screen, next to NBA in the strip) both: the press lands on the leaf, the route stays `/picks/home/lobby`,
 the lobby lists no event of that league, the session is alive (authed API 200s). The run exits 3 with
 `NO <LEAGUE> BOARD: the '<LEAGUE>' league chip does not route …`; exit 2 (`session may have expired`) is reserved for a
-run with no authenticated traffic at all. Known noise: ~10 `ERR_CONNECTION_CLOSED` XHRs per run through the DataImpulse
+run whose traffic flowed but never authenticated. **Exit 4 = the proxy carried no Betr traffic** (run 38007254948: Chrome's
+net-error page on the first load, zero 200s, the app fell back to `/auth` with a valid session) — every navigation now
+reloads through net-error pages (`open_alive`), and the workflow retries exit 4 once on a new sticky proxy session
+(`BETR_SESSION_ID=betr<run_id>a/b`). Known noise: ~10 `ERR_CONNECTION_CLOSED` XHRs per run through the DataImpulse
 proxy (tracking / image fetches; the board still arrives) — watch, not blocking.
 
 ## NBA SWITCH (2026-10-20)
