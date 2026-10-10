@@ -47077,3 +47077,13 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `147` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T25` done (`9,015` sentences); next `T26`.
+
+# §P148 — PASS 148 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T26`
+*Angle (as NEXT set it):* (n9) `§P131`'s method on `T26`.
+- Tabulated in the shell before this line (the scan at pass 146's head; no residue landed in pass 147): `T26` `838` of `1,503` sentences listed — **all `838` read and judged**.
+- On file, by substance: the season, deadlock and rollover fixes, `final_hp`'s owner and its restore, the injury archive's load and the status table at the `16:15 ET` cutoff, the availability prior (`11.3%`, `4.3%` on Questionables) and the four-level variant's loss, the `A5` starter fallback and "next man up" (`0.07034` vs `0.07211`), the own-season calibration (`9,231` cells), the `307,000`-leg no-history verdict and the `11.5%` → `0.5%` correction, the preseason verdict and its `game_label`, the referee arc, the certifier one table off, the replay's period rows (`41,174`), P3's `22` → `~2` minutes and its `25`-minute deadline. Judged: narration, the availability prior's sample outputs, the build chat's repair of its own patch to a document outside the twelve, the bench next-man-up check (`2.2%` → `8.9%`), the research summaries.
+- 🆕 **Residue — `§T26.R5`** (new `##` subsection after `§T26.R4`): the player's own rest tested and rejected in the availability prior's cell key, with the team back-to-back's null; the season gate's second fix the same evening (scheduled ±30 days → games played; ✅ commits `fcd9d4c0d`, `9b22d7146` and the live `certify_pipeline.py`); the no-history share of the candidate pool (`4.1%`, `158` of `3,836`); and the two-pass `final_hp` build with the `38.6%` check that justified the second. Every quotation checked verbatim in the shell. Pointers: `NBA_WORKERS.md` `§T26.14`, `NBA_RECIPE.md` decision 2, `NBA_BASELINE_CALIBRATION.md` `§T26.20`, entry row `26`.
+- **`T26` not clean** — additional sweep `1` stays not clean. Commits this pass, all `[skip ci]`: `b9791a07f`, `36df76c2e`, `93dd34dbc`, `82245b14f`, `cc98517bd`, this ledger. ⚠ One foreign commit landed after `0a555401c`: `9cf7e512f` (`2026-10-10 22:12Z`), the hourly rotation's own row in this file, `[skip ci]`; not this sweep's, not touched.
+
+**Ledger**: pass `148` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T26` done (`9,853` sentences); next `T27`.
