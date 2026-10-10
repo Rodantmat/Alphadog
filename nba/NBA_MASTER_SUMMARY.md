@@ -47005,3 +47005,12 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 
 **Ledger**: pass `141` complete (`2026-10-10`).
 - ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T19` done (`6,864` sentences); next `T20`.
+
+# §P142 — PASS 142 (`2026-10-10`): ADDITIONAL SWEEP `1` — `T20`
+*Angle (as NEXT set it):* (h9) `§P131`'s method on `T20`.
+- Tabulated in the shell before this line (the scan at pass 140's head, no residue landing since): `T20` `200` of `830` sentences listed — **all `200` read and judged** (its head overlaps `T19`'s tail at `2026-09-20` `06:24Z`).
+- On file, by substance: T7's season-boundary and decay findings, the 15–20 margin dead zone, the return ramp (`0.72` / `0.84` / `0.92` / `1.00`), the travel and altitude evidence, the More-only origin of the taxonomy problem, the `35`-vs-`460` relevance gap, T8's B2B mechanism (DNP-Rest) and the Orlando / Dallas pull spread, the stacked logit shift and the hierarchical fallback, the PrizePicks mechanics and lessons recovered from T1 (the day-blocked bootstrap, the thirteen-item guard table, lesson #13, the ~1.4× step, Non-Arbitrage, the six-member bug family, B0–B0c, `+5.31` / `+5.32`), the ladder config values. Judged: narration, document-progress reports and the owner's restated mandate.
+- **Nothing new — `T20` clean in additional sweep `1`.** No commit other than this pass's landed since `d4c401939` when this line was written. No italic quotation added; the credential grep on the twelve returns `0`.
+
+**Ledger**: pass `142` complete (`2026-10-10`).
+- ✅ **CLOSED**: every transcript, bases `§P127`. ⏳ **Additional sweep `1`** under way, **not clean**: `T1`–`T20` done (`7,064` sentences); next `T21`.
