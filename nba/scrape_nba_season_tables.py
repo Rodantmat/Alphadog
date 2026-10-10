@@ -113,7 +113,10 @@ def main():
     if "all_players" in tables:
         # PLAYER INDEX (every player, all seasons): the name -> id join for the injury report (names are "Last, First").
         url = f"https://stats.nba.com/stats/commonallplayers?IsOnlyCurrentSeason=0&LeagueID=00&Season={seasons[0]}"
-        r = session.get(url, headers=STATS_HEADERS, timeout=90, impersonate="chrome124"); r.raise_for_status()
+        # system retry policy (nba/net_retry.py, 2026-10-09; this call was single-shot)
+        from net_retry import request as _net_request
+        r = _net_request("GET", url, session=session, tries=4, base=5, cap=40, timeout=90, label="commonallplayers",
+                         headers=STATS_HEADERS, impersonate="chrome124"); r.raise_for_status()
         rs = next(x for x in r.json()["resultSets"] if x["name"] == "CommonAllPlayers"); hdr = rs["headers"]
         keep = ["PERSON_ID", "DISPLAY_LAST_COMMA_FIRST", "DISPLAY_FIRST_LAST", "ROSTERSTATUS", "FROM_YEAR", "TO_YEAR", "TEAM_ID", "TEAM_ABBREVIATION"]
         idx = [hdr.index(c) for c in keep if c in hdr]; cols = [hdr[i] for i in idx]
