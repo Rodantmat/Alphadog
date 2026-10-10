@@ -214,7 +214,9 @@ class Quoter:
         return rec
 
 
-TRANSPORT = (os.getenv("PP_TRANSPORT") or "browser").strip().lower()
+# auto (default) = one cheap curl_cffi probe quote with the newest fingerprint; if DataDome walls it, the real-Chrome
+# transport serves the run. browser / curl force one transport.
+TRANSPORT = (os.getenv("PP_TRANSPORT") or "auto").strip().lower()
 PAGE_FETCH_JS = """
 var url = arguments[0], opts = arguments[1], done = arguments[arguments.length - 1];
 fetch(url, opts).then(function(r){ return r.text().then(function(t){ done({status: r.status, text: t}); }); })
