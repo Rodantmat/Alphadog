@@ -3464,6 +3464,12 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T47.6 — **`T47` (`2026-10-09`): THE PLAYOFF-UNDERS CONFIG AND SLIPS, THE MULTIPLIER RESEARCH TABLES, THE LEDGER'S NEW COLUMNS** *(source `T47`; AS STATED from the ledger; live read-only `2026-10-10`; newest section placed above `§T46.6`)*
+- **`nba_config.classification_config['playoff_unders']`** — ✅ keys `enabled, rank, min_p, props, half_only, exclude_star, max_per_game, strategies, ud, stake_mode, note`; **`stake_mode = 'gate'`** (added by hand, verified).
+- **`nba_score.playoff_unders_slips`** — the certified Playoff Unders backtest slips; **`nba_score.postseason_strategy_verdict`** gains `P_unders_5flex` / `P_unders_4flex` / `U_unders_2standard` PASS and `P_unders_3power` SHADOW (✅ 14 rows, `built_at 2026-10-09 07:29Z`).
+- **`nba_score.mvp_*`** — the multiplier value program's research tables (law, calibration, gate, Underdog sim, cross-app, layer).
+- **`nba_score.price_shop_ledger`** gains `cell`, `p_cell`, `m_star`, `v_cell`, `gate_cell`; config `price_shop_ledger`: ✅ `margin_pp 0.0916`, **`ud_ref_per_leg 1.8708`**, **`cell_margin 0.03`**, apps incl. `betr_us_dfs`. Replay (2026-04-10): rows verified with `m_star` per leg.
+
 ## 🆕 §T46.6 — **`T46` (`2026-10-09`): TWO AUDIT FUNCTIONS, A GAME KEY THAT WAS NULL, AND THE PLAYOFF RESEARCH TABLE** *(source `T46`; AS STATED from the ledger; live read-only `2026-10-10`; newest section placed above `§T45.6`)*
 - **`nba_control.audit_postseason_cov(table)`** (✅ present): distinct dates in the last regular month vs the postseason window, both seasons — the per-table parity audit.
 - **`nba_control.cert_fp(table, where)`** (✅ present): a reproducible row fingerprint of a table slice — used to prove the certified regular-season tables identical before / during / after the postseason backfill.
