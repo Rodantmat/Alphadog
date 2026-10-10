@@ -100,11 +100,41 @@ def main():
             except Exception:  # noqa: BLE001
                 names = []
             print(f"cookies after app load: {names}", flush=True)
+            try:
+                body_text = sb.execute_script("return (document.body.innerText||'').split('\\n').map(s=>s.trim()).filter(s=>s).slice(0,40).join(' | ');")
+                print(f"visible text: {body_text[:600]}", flush=True)
+            except Exception as exc:  # noqa: BLE001
+                print(f"visible text failed: {str(exc)[:80]}", flush=True)
+            wire = {}
+            try:
+                for e in sb.driver.get_log("performance"):
+                    try:
+                        m = json.loads(e["message"])["message"]
+                    except Exception:  # noqa: BLE001
+                        continue
+                    if m.get("method") == "Network.responseReceived":
+                        u = m["params"]["response"].get("url", "")
+                        if "prizepicks" in u and not u.endswith((".js", ".css", ".png", ".svg", ".woff2", ".woff", ".jpg", ".ico")):
+                            k = f"{m['params']['response'].get('status')} {u.split('?')[0][:70]}"
+                            wire[k] = wire.get(k, 0) + 1
+                    elif m.get("method") == "Network.loadingFailed":
+                        k = f"FAILED {m['params'].get('errorText', '?')[:40]} {m['params'].get('type', '')}"
+                        wire[k] = wire.get(k, 0) + 1
+            except Exception as exc:  # noqa: BLE001
+                wire = {"performance log unavailable": str(exc)[:60]}
+            print(f"wire after app load: {wire}", flush=True)
             # 1. board through the page
             r = page_fetch(sb, f"{API}/projections?league_id={LEAGUE}&per_page=1000&single_stat=true")
             print(f"board via page fetch: status {r['status']}, {len(r['text'])} bytes", flush=True)
             if r["status"] != 200:
                 print(f"  body: {r['text'][:300]!r}", flush=True)
+                # plain GET, no custom headers (no CORS preflight) - separates a network/proxy failure from a CORS one
+                sb.driver.set_script_timeout(60)
+                r2 = sb.driver.execute_async_script(FETCH_JS, f"{API}/projections?league_id={LEAGUE}&per_page=5&single_stat=true",
+                                                    {"method": "GET", "credentials": "include"})
+                print(f"  plain GET: status {r2['status']}, {r2['text'][:200]!r}", flush=True)
+                r3 = sb.driver.execute_async_script(FETCH_JS, "https://api.prizepicks.com/leagues", {"method": "GET"})
+                print(f"  /leagues: status {r3['status']}, {r3['text'][:120]!r}", flush=True)
                 sys.exit(2)
             board = parse_board(json.loads(r["text"]))
             by_game = defaultdict(list)
