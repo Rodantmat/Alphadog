@@ -3463,6 +3463,20 @@ already there.**` over the whole archive → **`0` rows, `0` distinct keys***; �
 >   UNION ALL SELECT 'baseline_history', period, count(*) FROM nba_score.baseline_history GROUP BY 2;
 > ```
 
+## 🆕 §T32.6 — **THE SLIP PROGRAM'S FIRST OBJECTS (`2026-09-28/29`): ONE TABLE THAT EXISTS, TWO THAT NEVER DID, AND A REFEREE TABLE THREE TIMES THE SIZE ON FILE** *(source `T32`, recovered transcript; every row live-verified `2026-10-10`. ⚠ Placed HERE, above `§T26.57`, because this file's tail is a byte-duplicate block (`T26-15`) and no unique end-of-file anchor exists.)*
+
+| object | what it holds | state, live `2026-10-10` |
+|---|---|---|
+| **`nba_score.recalibration_map`** | the overconfidence correction: one row per `fit_set × prop × kind × side × role_tier × p_bucket` — `lo`, `hi`, `n`, `model_p_mean`, `realized`, `calibrated_p` (shrunk `n/(n+200)`, monotone), `use_map`, `built_at` | ✅ **`8,818` rows**, `fit_set ∈ {2024-25, 2025-26, POOLED}`, `7,872` with `use_map`, **one `built_at` = `2026-10-06 06:55:04Z`** · writer `nba/build_recalibration_map.py` (`RC_WRITE`) — *designed in `T32`, first written later* |
+| **`nba_score.rank_foundation`** | *designed*: one row per graded standard leg — as-of `cal_p`, `pm = cal_p·factor`, `hit`, `role_tier`, `season_phase`, LEFT-joined `baseline_hp`/`final_hp`/`score` | 🔴 **DOES NOT EXIST** (`to_regclass` NULL) — `nba/build_rank_foundation.py` is report-mode, `RF_WRITE=1` path never completed (`T32-2`) |
+| **`nba_score.slip_meta_p`** | *designed*: per-leg meta-model probability | 🔴 **DOES NOT EXIST** — `nba/build_slip_meta_model.py`, `MM_WRITE=0` (`T32-2`) |
+| `nba_stats.game_officials` | historical crews — the referee signal's real source | ✅ **`11,062` rows / three seasons** (see its own entry, superseded count) |
+| `nba_ref.official_tendency` | per-official `games`, raw and shrunk `pf`/`fta`, `pf_delta_vs_league`, league baselines | ✅ `78` rows, `built_at 2026-09-23 22:43Z` (pre-`T32`); `T32` tested the crew foul-tendency signal on top of it — **FLAT** on `points`/`ftm`/`fta` Over (strategy `§11g`) |
+
+🔑 **The join the program had to discover** *(strategy `§7l`)*: `nba_market.prop_universe.player_id` is the **raw** NBA id (`"201143"`); `nba_stats.player_game_log.player_id` is **prefixed** (`"nba_2544"`) — they join at `0`. **The bridge is `player_game_log.nba_player_id::text = prop_universe.player_id`.** *One more instance of the id/name-scheme hazard this file already tracks for `player_name_map` and `game_officials`.*
+
+---
+
 ## 🔴🔴🔴🔴 **§T26.57 — RANKED ITEM `C` DIAGNOSED: THE SCHEDULE SCRAPER RUNS DAILY AND ITS LOADER IS DISPATCHED BY NOTHING** *(source + `SELECT` 2026-09-26; the diagnosis is `0` of the twelve)*
 
 **Ranked item `C` has stood since `§T20.56` as a bare measurement**: *"THE SCHEDULE HAS NOT BEEN REFRESHED
