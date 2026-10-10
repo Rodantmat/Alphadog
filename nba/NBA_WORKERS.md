@@ -3761,3 +3761,17 @@ these twelve.**
 | **`nba/research_multiplier_value.py`** + **`nba-multiplier-value.yml`** *(new, `§31aa`)* | stages law → calib → gate → udsim → xapp → layer; tables `nba_score.mvp_*`; the UD sim and cross-app slips exclude the final week (the certified convention) |
 | `nba/build_price_shop_ledger.py` | the backtest-hit-rate gate — `cell`, `p_cell`, `m_star`, `v_cell`, `gate_cell`; Underdog root = 2-pick `3.5^0.5` |
 | `nba/TRIGGER_NBA_PP_MAP.txt` | PrizePicks payout mining pointed back at the NBA board (it was on the WNBA) — ⛔ *the payout-map track is out of scope; cross-reference only* |
+
+## 🆕🔴 **§T48.4 — `T48` (`2026-10-09 18:48Z → 10-10 02:35Z`): ROUND 3, THE LIVE PROPS FEED, BETR'S NEW APP, ONE RETRY POLICY** *(source `T48`; AS STATED from the ledger; ✅ = in the repo `2026-10-10`; payout-map files out of scope)*
+| file | what it does |
+|---|---|
+| DB `nba_score.build_ud_tier_map_legs_curr_mf()` + `nba/sql/build_ud_tier_map_legs_curr_mf.sql` | the Underdog market-free twin (round 3 #4) |
+| `nba/ud_live_slip_engine.py` | `market_free_score()` (identity on a live day, faithful in a replay); `ud_bt_table()` reads `live_backtest_suffix.ud_table / ud_legs_table`; `ud_edge_cfg()` reads `classification_config['ud_edge_monitor']`; the edge reference records and rebuilds on its source |
+| `verify_ud_live_parity` · `validate_ud_edge_monitor` · `ud_edge_monitor_research` | read the tunable; `EM_TABLE` / `SV_SNAPSHOT` inputs |
+| **`nba/capture_parlay_props.py`** *(new)* | ParlayAPI live NBA props → `parlay_props_captures` + `board_snapshots` (certified book set; mis-tag guard; quarantine) |
+| `nba-p3-afternoon-light.yml` | soft step *"Live sportsbook props"* (in the soft collector) → `build_rung_market` → gated *"Market refresh of final_hp"*; dispatches the Betr harvest at the window (`actions: write`, retried 3×) |
+| `nba/betr_harvest_cloud.py` · `betr-cloud-harvest.yml` | league filter; CDP mouse press on the league chip; in-page navigation; `open_alive`; exit codes 2 / 3 / 4; self-renewing Keycloak session persisted to the credential store; crons removed (P3 dispatches); auto WNBA → NBA on 10-20 |
+| **`nba/net_retry.py`** *(new)* | the one retry policy (applied in 22 scripts — see `NBA_SYSTEM_ARCHITECTURE.md` `§T48.8`) |
+| **`nba/probe_net_retry_live.py`** · **`.github/workflows/nba-browser-probe.yml`** *(new)* | live retry probe (5 / 5); real-Chrome probes with no commit |
+| the Sleeper / Underdog / Fliff board workflows | NBA half removed from the two-hourly schedules (MLB cadence unchanged) |
+| `build_defender_ratings.py` | reads the matchup files from the checkout first |
