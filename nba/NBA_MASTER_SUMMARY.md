@@ -44490,3 +44490,12 @@ The owner asked for the open items *"one by one, short and easy"* (`20:35`) and 
 - ✅ **CLOSED — CLEAN `3`/`3`** (passes 9, 10, 11): **`T34`**.
 - **CLEAN `2`/`3`**: `T32`, `T36`.
 - **CLEAN `0`/`3`** (pass 11 found NEW MATERIAL): `T37`.
+
+---
+
+# §P12 — PASS 12 (`2026-10-10`) ON `T32`, `T36`, `T37`: "STANDING" ROWS, AND A REGRESSION RE-RUN
+*Angles:* **(y)** every arc-table row in `§T32`/`§T36`/`§T37` whose status reads *standing* or ✅, checked against every place the strategy doc says a section was superseded, replaced, corrected, overturned, reversed, withdrawn, retracted, reopened or voided — **`0`** standing rows contradicted (one hit, `§30x`, is a false match: *"replacement effect again; §30x"*); **(z)** every earlier mechanical check — (a) owner messages, (b) written files over the whole call, (c) created objects, (d) commit `§` tags and figures, (w) identifiers — re-run on the current twelve, since eleven passes have changed them: the only residues are the ones already judged (console pastes; *"Document and continue"* ×2, quoted as such in `§T32.13`; globbed `nba/data/` outputs; the Underdog `_curr`/`_dlt` tables named by suffix in `NBA_DATABASE.md` `§T37.6`; commit figures behind recorded findings).
+
+**Ledger**: pass `12` complete (`2026-10-10`) — **CLEAN** for all three.
+- ✅ **CLOSED — CLEAN `3`/`3`** (passes 10, 11, 12): **`T32`**, **`T36`**.
+- **CLEAN `1`/`3`**: `T37`.
