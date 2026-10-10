@@ -40,25 +40,27 @@ def header(device_id, install_token):
 def call(session, host, hdr, request_obj, proxies):
     url = host.rstrip("/") + "/fc_mobile_api_public?" + urlencode(hdr)
     body = {"header": hdr, "invocation": {"request": request_obj}, "x_invocations": None, "x_sb_meta": {"sb_config_version": -1, "sb_user_profile_version": -1, "sb_user_profile_meta": None, "campaigns_meta": {"all_visible_campaigns_keys": {}}}}
-    last = None
-    for attempt in range(3):
-        for use_proxy in (False, True):
-            try:
-                r = session.post(url, json=body, headers={"accept": "application/json, text/plain, */*", "content-type": "application/json", "origin": "https://sports.getfliff.com", "referer": "https://sports.getfliff.com/", "user-agent": UA}, timeout=90, impersonate="chrome124", proxies=proxies if use_proxy else None)
-                if r.status_code == 200:
-                    j = r.json()
-                    if isinstance(j, dict) and j.get("result", {}).get("error"):
-                        last = str(j["result"]["error"])[:200]
-                    else:
-                        return j
-                else:
-                    last = f"http {r.status_code}"
-            except Exception as exc:  # noqa: BLE001
-                last = str(exc)[:200]
-            if not proxies:
-                break
-        time.sleep(2 + attempt * 3)
-    raise RuntimeError(f"fliff call failed: {last}")
+    # RETRY (nba/net_retry.py, 2026-10-09): each attempt tries direct then the proxy; an HTTP failure or an API-level
+    # result.error is retried 3 times with full-jitter backoff inside a per-call budget (FLIFF_CALL_BUDGET_S, 120 s) - the
+    # old loop could spend 555 s on one call, past P3's 300 s cap.
+    from net_retry import Deadline, RetryError, call as _retry_call, request
+    budget = Deadline(float(os.environ.get("FLIFF_CALL_BUDGET_S", "120")))
+    hdrs = {"accept": "application/json, text/plain, */*", "content-type": "application/json", "origin": "https://sports.getfliff.com",
+            "referer": "https://sports.getfliff.com/", "user-agent": UA}
+
+    def once():
+        r = request("POST", url, session=session, proxies=proxies, routes=("direct", "proxy"), tries=1, timeout=60,
+                    budget=budget, label="fliff", json=body, headers=hdrs, impersonate="chrome124")
+        if r.status_code != 200:
+            raise RuntimeError(f"http {r.status_code}")
+        j = r.json()
+        if isinstance(j, dict) and j.get("result", {}).get("error"):
+            raise RuntimeError(f"api error {str(j['result']['error'])[:160]}")
+        return j
+    try:
+        return _retry_call(once, tries=3, base=2, cap=12, budget=budget, label="fliff call")
+    except RetryError as exc:
+        raise RuntimeError(f"fliff call failed: {exc} ({str(exc.last)[:160]})") from None
 
 
 def sync(session, host, hdr, code, proxies, channel=-333, conflict=""):
