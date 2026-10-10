@@ -110,8 +110,13 @@ ALLSTAR_ONLY = {'W_core_3power', 'W_coredemon_3power'}
 ALLSTAR_PLAN = os.environ.get('LS_ALLSTAR_PLAN', 'B').upper()
 ALLSTAR_PLANS = {
     # stake only these strategies at these caps in the pre-break week; every other strategy shadows (observed, never staked)
-    'B': {'W_core_3power': 3, 'B_demon_3flex': 3, 'W_coredemon_3power': 1},   # +80, 72% ROI, +29 / +52 (default)
-    'C': {'B_demon_3flex': 3},                                                 # +32, 75% ROI, +15 / +17 (minimal)
+    # RE-MEASURED 2026-10-10 on PrizePicks' real Flex tiers (strategy §31ae; the old B / C leaned on B_demon_3flex, whose
+    # pre-break week is -79% / -43% on the true payouts and which is red). Market-free twin, final week out, 7 days before the
+    # break, both seasons: B = +62.1 on 140 slips (+30.4 / +31.7); old B without its demon leg +35.5 (+9.8 / +25.7); normal
+    # portfolio +17.5 (+22.4 / -5.0). After the break the NORMAL portfolio is best (days 1-7 +83 / +200, days 8-14 +53 / +49) -
+    # no plan runs there. The All-Star games themselves are never a slate (game_id 003 is outside nba_calendar.slate_games).
+    'B': {'W_core_3power': 3, 'A_wsteals_5flex': 6, 'W_coredemon_3power': 1},  # +62, 44% ROI, +30 / +32 (default)
+    'C': {'W_core_3power': 3},                                                 # W_core 3-Power alone: +41% / +116% (minimal)
     # 'A' = the previous rule (family A cap 1, points Power sits, demons stake): +24, 17%, -24 / +48
     # 'D' = no special handling: +71, 30%, +21 / +51
 }
