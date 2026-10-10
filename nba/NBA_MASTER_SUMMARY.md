@@ -1396,7 +1396,7 @@ the three-clean-pass cycle per transcript against the full set.
 | **43** | `2026-10-08-07-13-36-nba-round2-closure-p5-twin-no-backdata-research.txt` | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T43`), CLEAN `0`/`3` · 10-08 07:13 → 10:59 · `1,210` events / **`0` owner messages** (unattended) |
 | **44** | `2026-10-08-11-01-22-nba-retention-odds-mining-mlb-postseason-wiring.txt` | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T44`; `S5`–`S6` read with it → `§T44.4`), CLEAN `0`/`3` · 10-08 11:01 → 21:03 · `1,028` events / `12` real owner messages · `S5` 175 / `S6` 79 events |
 | **45** | `2026-10-08-21-04-33-nba-postseason-backfill-full-parity.txt` | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T45`; `S7` read with it → `§T45.4`), CLEAN `0`/`3` · 10-08 21:04 → 10-09 02:49 · `1,014` events / `1` real owner message · `S7` 98 events (spawned at `T44`'s end) |
-| **46** | `2026-10-09-02-50-53-nba-playoff-roi-playoff-research-31x-31y.txt` | ⏳ **OPEN — `0` passes** · → 10-09 07:06 |
+| **46** | `2026-10-09-02-50-53-nba-playoff-roi-playoff-research-31x-31y.txt` | ⏳ **OPEN — `1` pass** (`2026-10-10`, NEW MATERIAL → `§T46`), CLEAN `0`/`3` · 10-09 02:50 → 07:06 · `787` events / `5` real owner messages |
 | **47** | `2026-10-09-07-07-18-nba-playoff-unders-gates-multipliers-transcript-pack.txt` | ⏳ **OPEN — `0` passes** · → pack build · `S8`–`S9` |
 | **48** | *(export-only tail after the pack was built)* | ⏳ **OPEN — `0` passes** · 10-09 18:24 → 10-10 02:35 · `37` msgs (claude.ai mirror) |
 
