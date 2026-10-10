@@ -46571,3 +46571,17 @@ H1's lingering yellow after a drought (up to two weeks) was **examined and kept*
 **Ledger**: pass `112` complete (`2026-10-10`).
 - ⏳ **`T26`** — `32` passes, CLEAN `0`/`3` (new material this pass).
 - ✅ **CLOSED `3`/`3`**: `T31`–`T48`.
+
+---
+
+# §P113 — PASS 113 (`2026-10-10`): `T26` PASS 33 — THE ASSISTANT PROSE, IN TIME ORDER
+*Angle (as NEXT set it):* (e8) all `341` assistant text blocks read in order, judged against the twelve (`FINAL_SCORING_CALIBRATION` included) under `§P98`'s bar.
+- Read in full: `341` blocks, `150,268` characters. Five residues, in `§T26.R2`: the paper log's `window` pin and replay refusal (✅ live function), the referee factor absent from the certified recipe (✅ live grep), the measured `0.88`-of-`44` penalty answer, "evidence depth" not implemented (✅ live source), and three more `T26` stamps a day late.
+- Two stamps struck in place (`NBA_SYSTEM_DESIGN.md` `§T26.13`, `NBA_WORKERS.md` `§T26.14`); the third sits in `NBA_FINAL_SCORING_CALIBRATION.md` and is recorded in `§T26.R2` only. Two forward pointers added (`NBA_SYSTEM_DESIGN.md` paper-log specification; `NBA_WORKERS.md` `§T26.26` ⑥).
+- A method slip, caught: the first novelty checks of this pass ran against the eleven files without `FINAL_SCORING_CALIBRATION`; `§T26.5` (the availability fallback) sits there. Every candidate was re-checked against all twelve before it was written; the owner-stratum residues of pass 112 were re-checked the same way and stand.
+- `qdiff`: `10` quotes, `2` flagged, both with dashes escaped as `–`/`—` in the transcript. One quote from the live function comment spanned a comment line break; it now carries an ellipsis there (`nba/sql/db_functions.sql` lines `916`–`917` hold the same text).
+- No hourly-rotation commit had landed when this line was written (checked on main); line `23` is re-checked after the census commit. The credential grep on the twelve returns `0`.
+
+**Ledger**: pass `113` complete (`2026-10-10`).
+- ⏳ **`T26`** — `33` passes, CLEAN `0`/`3` (new material this pass).
+- ✅ **CLOSED `3`/`3`**: `T31`–`T48`.
