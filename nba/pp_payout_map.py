@@ -26,6 +26,7 @@ SAFETY: /game_types is a price quote. Nothing is ever placed.
 import json
 import os
 import random
+import re
 import sys
 import time
 import uuid
